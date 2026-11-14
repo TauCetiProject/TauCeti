@@ -1336,14 +1336,7 @@ def ofBoundedFrequencySupport (f : CoordinateSpace n × CoordinateSpace n → V 
         (le_max_left M 0))
       rw [Pi.div_apply, div_le_iff₀ (rpow_weight_pos ξ _)] at h
       exact h
-    · have hzero : (fun y => coordinateDeriv β (fun η => f (y, η)) ξ) = 0 := by
-        funext y
-        have hy : (fun η => f (y, η)) =ᶠ[nhds ξ] 0 :=
-          Filter.eventually_of_mem ((isOpen_lt continuous_const continuous_norm).mem_nhds hξ)
-            fun η hη => hR y η (le_of_lt hη)
-        rw [(hy.coordinateDeriv β).eq_of_nhds, coordinateDeriv_zero]
-        rfl
-      rw [mixedDeriv_def, hzero, coordinateDeriv_zero, Pi.zero_apply, norm_zero]
+    · rw [mixedDeriv_eq_zero_of_lt_norm hR hξ, norm_zero]
       exact mul_nonneg (le_max_right _ _) (rpow_weight_pos ξ _).le
 
 @[simp]

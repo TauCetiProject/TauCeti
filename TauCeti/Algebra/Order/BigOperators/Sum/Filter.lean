@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
+import Mathlib.Order.Interval.Finset.Nat
 import TauCeti.Algebra.BigOperators.Finset.Filter
 
 /-!
@@ -16,7 +17,9 @@ interval.  They are useful whenever a filtered finite sum is evaluated after all
 terms have been passed.
 
 It also gives positivity of the sum of a positive family over all indices except one, when the
-index type has at least two elements.
+index type has at least two elements, and bounds the sum of a nonnegative family on `ℕ` that is
+bounded by `C` and vanishes outside the window `|j - k| < L` by `(2 * L) • C`
+(`Finset.sum_le_of_eq_zero_of_dist_ge`).
 -/
 
 public section
@@ -54,5 +57,20 @@ theorem lt_sum_filter_of_lt_zero_of_forall_ne_zero_le [PartialOrder α] [LT M] (
   obtain rfl | hpq := hpq.eq_or_lt
   · exact hp
   · rwa [sum_filter_eq_zero_of_forall_ne_zero_le s hpq.not_ge ha]
+
+/-- A family of nonnegative terms bounded by `C`, all of which vanish outside the indices `k` with
+`|j - k| < L`, has sum at most `(2 * L) • C` over any finite set. -/
+theorem sum_le_of_eq_zero_of_dist_ge [PartialOrder M] [IsOrderedAddMonoid M] {f : ℕ → M} {C : M}
+    {j L : ℕ} (hf : ∀ k, 0 ≤ f k) (hC : ∀ k, f k ≤ C)
+    (hzero : ∀ k, j + L ≤ k ∨ k + L ≤ j → f k = 0) (s : Finset ℕ) :
+    ∑ k ∈ s, f k ≤ (2 * L) • C := by
+  have hcard : #(Ico (j - L) (j + L)) ≤ 2 * L := by simp only [Nat.card_Ico]; omega
+  calc ∑ k ∈ s, f k = ∑ k ∈ s with k ∈ Ico (j - L) (j + L), f k :=
+        (sum_filter_of_ne fun k _ h ↦ by_contra fun hk ↦ h (hzero k (by
+          simp only [mem_Ico, not_and_or, not_le, not_lt] at hk; omega))).symm
+    _ ≤ ∑ k ∈ Ico (j - L) (j + L), f k :=
+        sum_le_sum_of_subset_of_nonneg (fun k hk ↦ (mem_filter.1 hk).2) fun k _ _ ↦ hf k
+    _ ≤ #(Ico (j - L) (j + L)) • C := sum_le_card_nsmul _ _ _ fun k _ ↦ hC k
+    _ ≤ (2 * L) • C := nsmul_le_nsmul_left ((hf 0).trans (hC 0)) hcard
 
 end Finset

@@ -53,6 +53,9 @@ complex normed space, including Schwartz functions by coercion.
 * `TauCeti.fourier_smul_const`: the Fourier transform of `f · • v` is `𝓕 f · • v`.
 * `TauCeti.exp_inner_mul_I_eq_fourierChar`: the exponential `exp(i ⟪y, ξ⟫)` is the Fourier
   character at the frequency `ξ / 2π`.
+* `TauCeti.fourierChar_inner_sub`: the phase `𝐞 ⟪ζ, y - z⟫` splits as `𝐞 ⟪ζ, y⟫ 𝐞 (-⟪ζ, z⟫)`.
+* `MeasureTheory.Integrable.fourierChar_smul`: multiplying an integrable function by the
+  character `𝐞 ⟪·, w⟫` preserves integrability.
 -/
 
 public section
@@ -218,5 +221,18 @@ theorem exp_inner_mul_I_eq_fourierChar (y ξ : E) :
   congr 2
   push_cast
   field_simp
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The phase `exp(2πi ⟪ζ, y - z⟫)` splits as `exp(2πi ⟪ζ, y⟫) exp(-2πi ⟪ζ, z⟫)`. -/
+theorem fourierChar_inner_sub (ζ y z : E) :
+    (𝐞 ⟪ζ, y - z⟫ : ℂ) = 𝐞 ⟪ζ, y⟫ * 𝐞 (-⟪ζ, z⟫) := by
+  rw [inner_sub_right, sub_eq_add_neg, AddChar.map_add_eq_mul, Circle.coe_mul]
+
+omit [FiniteDimensional ℝ E] in
+/-- Multiplying an integrable function by the character `exp(2πi ⟪·, w⟫)` preserves
+integrability. -/
+theorem _root_.MeasureTheory.Integrable.fourierChar_smul {μ : Measure E} {g : E → F}
+    (hg : Integrable g μ) (w : E) : Integrable (fun ζ ↦ 𝐞 ⟪ζ, w⟫ • g ζ) μ := by
+  simpa only [inner_neg_right, neg_neg] using (Real.fourierIntegral_convergent_iff (-w)).2 hg
 
 end TauCeti

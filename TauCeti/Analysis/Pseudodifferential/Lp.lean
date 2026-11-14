@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Kernel
+public import TauCeti.MeasureTheory.Function.Lp.Operator.Integral.Adjoint
 public import TauCeti.MeasureTheory.Function.Lp.Operator.Integral.Basic
 public import TauCeti.MeasureTheory.Integral.DecayMajorant
 
@@ -37,8 +38,11 @@ order `0`.
   `∫ ‖K_a(x, y)‖ dy ≤ C_n A Rⁿ` and `∫ ‖K_a(x, y)‖ dx ≤ C_n A Rⁿ`.
 * `TauCeti.Symbol.quantizeLp`: for a symbol of order `m < -n` with estimates uniform in the
   position, the quantization as a bounded operator `Lᵖ(ℝⁿ; V) → Lᵖ(ℝⁿ; W)`.
+* `TauCeti.Symbol.quantizeLp_eq_integralOperatorLp`: it is the integral operator with kernel `K_a`.
 * `TauCeti.Symbol.coeFn_quantizeLp_toLp`: on Schwartz functions it is `Op(a)`.
 * `TauCeti.Symbol.norm_quantizeLp_le`: its norm is at most `C_n A Rⁿ`.
+* `TauCeti.Symbol.quantizeLp_comp_adjoint_eq_zero`: **frequency orthogonality**, on `L²`,
+  `Op(a) Op(b)† = 0` whenever `a(x, ξ) b(z, ξ)† = 0` for all positions `x`, `z` and frequencies `ξ`.
 
 ## References
 
@@ -59,7 +63,11 @@ namespace TauCeti
 namespace Symbol
 
 variable {n : ℕ} {m : ℝ}
-  {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W]
+
+section NormedSpace
+
+variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
+  [NormedSpace ℂ W]
 
 /-- **Schur bound in the second variable.** If at the position `x` the frequency slice of a
 symbol of order `m < -n` has `∫ ‖a(x, ξ)‖ dξ ≤ A` and its `(n + 1)`-st frequency derivatives have
@@ -133,7 +141,7 @@ private theorem IsUniform.exists_integral_norm_le {a : Symbol n V W m} (ha : a.I
 
 /-- A uniform symbol of order `m < -n` has a kernel with uniformly bounded row and column
 integrals. -/
-private theorem IsUniform.exists_lintegral_enorm_quantizationKernel_le {a : Symbol n V W m}
+theorem IsUniform.exists_lintegral_enorm_quantizationKernel_le {a : Symbol n V W m}
     (ha : a.IsUniform) (hm : m < -n) :
     ∃ B : ℝ≥0, (∀ x, ∫⁻ y, ‖quantizationKernel a.coefficient x y‖ₑ ≤ B) ∧
       ∀ y, ∫⁻ x, ‖quantizationKernel a.coefficient x y‖ₑ ≤ B := by
@@ -172,6 +180,15 @@ theorem coeFn_quantizeLp (u : Lp V p (volume : Measure (CoordinateSpace n))) :
     a.quantizeLp p hm ha u =ᵐ[volume] fun x ↦ ∫ y, quantizationKernel a.coefficient x y (u y) :=
   coeFn_integralOperatorLp u
 
+/-- `TauCeti.Symbol.quantizeLp` is the integral operator with kernel `K_a`, for any choice of
+bounds on the row and column integrals of `‖K_a‖`. -/
+theorem quantizeLp_eq_integralOperatorLp {A B : ℝ≥0}
+    (hA : ∀ᵐ x, ∫⁻ y, ‖quantizationKernel a.coefficient x y‖ₑ ≤ A)
+    (hB : ∀ᵐ y, ∫⁻ x, ‖quantizationKernel a.coefficient x y‖ₑ ≤ B) :
+    a.quantizeLp p hm ha = integralOperatorLp (quantizationKernel a.coefficient) p
+      (a.continuous_quantizationKernel hm).aestronglyMeasurable hA hB :=
+  ContinuousLinearMap.ext fun u ↦ (integralOperatorLp_eq_iff.2 (coeFn_quantizeLp u).symm).symm
+
 /-- On Schwartz functions, `TauCeti.Symbol.quantizeLp` is the quantization `Op(a)`. -/
 theorem coeFn_quantizeLp_toLp [CompleteSpace V] [CompleteSpace W]
     (u : 𝓢(CoordinateSpace n, V)) :
@@ -198,15 +215,48 @@ theorem norm_quantizeLp_le {A R : ℝ} (hR : 0 < R) (h₀ : ∀ x, ∫ ξ, ‖a.
   have hcol (y) : ∫⁻ x, ‖quantizationKernel a.coefficient x y‖ₑ ≤ B.toNNReal := by
     rw [ENNReal.ofNNReal_toNNReal]
     exact a.lintegral_enorm_quantizationKernel_left_le hm hR h₀ h₁ y
-  -- `quantizeLp` is the integral operator with these bounds.
-  have h : a.quantizeLp p hm ha = integralOperatorLp (quantizationKernel a.coefficient) p
-      (a.continuous_quantizationKernel hm).aestronglyMeasurable (ae_of_all _ hrow)
-      (ae_of_all _ hcol) :=
-    ContinuousLinearMap.ext fun u ↦ (integralOperatorLp_eq_iff.2 (coeFn_quantizeLp u).symm).symm
-  rw [h]
+  rw [quantizeLp_eq_integralOperatorLp (ae_of_all _ hrow) (ae_of_all _ hcol)]
   refine norm_integralOperatorLp_le_max.trans ?_
   have hA : 0 ≤ A := (integral_nonneg fun _ ↦ norm_nonneg _).trans (h₀ 0)
   rw [max_self, Real.coe_toNNReal _ (by positivity)]
+
+end NormedSpace
+
+section InnerProductSpace
+
+variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
+  [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W]
+
+open ContinuousLinearMap in
+/-- **Frequency orthogonality.** If `a(x, ξ) b(z, ξ)† = 0` for all positions `x`, `z` and every
+frequency `ξ`, for instance because `a` and `b` have disjoint frequency supports, then
+`Op(a) Op(b)† = 0` on `L²`. -/
+theorem quantizeLp_comp_adjoint_eq_zero {m' : ℝ} {a : Symbol n V W m} {b : Symbol n V W m'}
+    (hm : m < -n) (hm' : m' < -n) (ha : a.IsUniform) (hb : b.IsUniform)
+    (hab : ∀ x z ξ, a.coefficient (x, ξ) ∘L adjoint (b.coefficient (z, ξ)) = 0) :
+    a.quantizeLp 2 hm ha ∘L adjoint (b.quantizeLp 2 hm' hb) = 0 := by
+  obtain ⟨A, hA₁, hA₂⟩ := ha.exists_lintegral_enorm_quantizationKernel_le hm
+  obtain ⟨B, hB₁, hB₂⟩ := hb.exists_lintegral_enorm_quantizationKernel_le hm'
+  -- The kernel `∫ K_a(x, y) K_b(z, y)† dy` of the composition vanishes identically.
+  have hzero (x z : CoordinateSpace n) :
+      ∫ y, quantizationKernel a.coefficient x y ∘L adjoint (quantizationKernel b.coefficient z y) =
+        0 := by
+    have hK : Integrable (quantizationKernel a.coefficient x) :=
+      ⟨(continuous_quantizationKernel_right (a.integrable_coefficient hm x)).aestronglyMeasurable,
+        (hA₁ x).trans_lt ENNReal.coe_lt_top⟩
+    rw [integral_quantizationKernel_comp_adjoint (a.continuous_coefficient_slice x)
+      (a.integrable_coefficient hm x) hK (b.integrable_coefficient hm' z)]
+    simp [hab, Circle.smul_def]
+  rw [quantizeLp_eq_integralOperatorLp (ae_of_all _ hA₁) (ae_of_all _ hA₂),
+    quantizeLp_eq_integralOperatorLp (ae_of_all _ hB₁) (ae_of_all _ hB₂),
+    integralOperatorLp_comp_adjoint _ (ae_of_all _ hA₁) (ae_of_all _ hA₂) _ (ae_of_all _ hB₁)
+      (ae_of_all _ hB₂) (A := 0) (B := 0) (by simp [hzero, eNorm_eq_nnNorm])
+      (by simp [hzero, eNorm_eq_nnNorm])]
+  refine ContinuousLinearMap.ext fun u ↦ integralOperatorLp_eq_iff.2 ?_
+  simp only [hzero, zero_apply, integral_zero]
+  exact (Lp.coeFn_zero W 2 volume).symm
+
+end InnerProductSpace
 
 end Symbol
 

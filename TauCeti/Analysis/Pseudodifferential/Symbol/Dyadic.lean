@@ -28,6 +28,8 @@ the pieces with constants independent of `j`.
 
 ## Main declarations
 
+* `TauCeti.Symbol.IsUniform.ofBoundedFrequencySupport`: a uniform symbol of bounded frequency
+  support is a uniform symbol of every order.
 * `TauCeti.Symbol.littlewoodPaleyPiece φ a j`: the piece `ψⱼ(ξ) a(x, ξ)`, a symbol of order `m`.
 * `TauCeti.Symbol.hasSum_coefficient_littlewoodPaleyPiece`: the pieces sum to `a` pointwise, with
   finitely many nonzero terms at each point.
@@ -62,7 +64,7 @@ namespace TauCeti
 namespace Symbol
 
 variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
-  [NormedSpace ℂ W] {m : ℝ} (φ : ContDiffBump (0 : CoordinateSpace n))
+  [NormedSpace ℂ W] {m m' : ℝ} (φ : ContDiffBump (0 : CoordinateSpace n))
 
 /-! ### The Leibniz constant -/
 
@@ -75,6 +77,37 @@ private theorem leibnizConst_nonneg {B : ℕ → ℝ} (hB : ∀ k, 0 ≤ B k) {D
     (hD : ∀ w, 0 ≤ D w) (β : List (Fin n)) : 0 ≤ leibnizConst B D β :=
   Finset.sum_nonneg fun i _ => mul_nonneg (mul_nonneg (by positivity) (hB i))
     (Finset.sum_nonneg fun w _ => hD _)
+
+/-! ### Uniform symbols of bounded frequency support -/
+
+/-- A uniform symbol vanishing at every frequency of norm at least `R` is a uniform symbol of every
+order `m'`: on the ball of radius `R` the weights of the two orders are comparable. -/
+theorem IsUniform.ofBoundedFrequencySupport {a : Symbol n V W m} (ha : a.IsUniform) (R : ℝ)
+    (hR : ∀ x ξ, R ≤ ‖ξ‖ → a.coefficient (x, ξ) = 0) :
+    (ofBoundedFrequencySupport a.coefficient a.contDiff_coefficient R hR :
+      Symbol n V W m').IsUniform := by
+  refine isUniform_iff.2 fun α β => ?_
+  obtain ⟨C, hC0, hC⟩ := isUniform_iff.1 ha α β
+  refine ⟨C * (1 + R ^ 2) ^ (|m - m'| / 2), by positivity, fun x ξ => ?_⟩
+  rw [coefficient_ofBoundedFrequencySupport]
+  rcases le_or_gt ‖ξ‖ R with hξ | hξ
+  · have hw : 1 ≤ 1 + ‖ξ‖ ^ 2 := by nlinarith [sq_nonneg ‖ξ‖]
+    -- `⟨ξ⟩ ^ (m - |β|) = ⟨ξ⟩ ^ (m - m') ⟨ξ⟩ ^ (m' - |β|)` and `⟨ξ⟩ ^ (m - m') ≤ ⟨R⟩ ^ |m - m'|`
+    have hsplit : (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) =
+        (1 + ‖ξ‖ ^ 2) ^ ((m - m') / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m' - β.length) / 2) := by
+      rw [← Real.rpow_add (by positivity)]
+      ring_nf
+    have hR' : (1 + ‖ξ‖ ^ 2) ^ ((m - m') / 2) ≤ (1 + R ^ 2) ^ (|m - m'| / 2) :=
+      (Real.rpow_le_rpow_of_exponent_le hw (by linarith [le_abs_self (m - m')])).trans
+        (Real.rpow_le_rpow (by positivity)
+          (by gcongr) (by positivity))
+    calc ‖mixedDeriv α β a.coefficient x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := hC x ξ
+      _ ≤ C * ((1 + R ^ 2) ^ (|m - m'| / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m' - β.length) / 2)) := by
+        rw [hsplit]
+        gcongr
+      _ = C * (1 + R ^ 2) ^ (|m - m'| / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m' - β.length) / 2) := by ring
+  · rw [mixedDeriv_eq_zero_of_lt_norm hR hξ, norm_zero]
+    exact mul_nonneg (by positivity) (rpow_weight_pos ξ _).le
 
 /-! ### The Littlewood–Paley pieces of a symbol -/
 
