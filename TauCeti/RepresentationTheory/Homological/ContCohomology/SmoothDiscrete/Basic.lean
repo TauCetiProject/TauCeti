@@ -403,8 +403,6 @@ discrete source supplies `hX` as `TauCeti.IsSmoothDiscrete.stabilizer_isOpen`. -
 lemma IsSmoothDiscrete.of_surjective [SeparatelyContinuousMul G] {X Y : TopRep R G}
     [DiscreteTopology Y.V] (f : X ⟶ Y) (hf : Function.Surjective f.hom)
     (hX : ∀ x : X.V, IsOpen {g : G | X.ρ g x = x}) : IsSmoothDiscrete R Y := by
-  let := X.distribMulAction
-  let := Y.distribMulAction
   refine ⟨‹_›, fun y ↦ ?_⟩
   obtain ⟨x, rfl⟩ := hf y
   rw [← TopRep.coe_stabilizer]
