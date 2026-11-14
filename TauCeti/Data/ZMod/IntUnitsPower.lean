@@ -105,6 +105,18 @@ theorem eq_hilbertSign_iff (u : ℤˣ) (x : ZMod 2) : u = hilbertSign x ↔ (u =
   rcases Int.units_eq_one_or u with rfl | rfl <;>
     rcases (by decide : ∀ y : ZMod 2, y = 0 ∨ y = 1) x with rfl | rfl <;> simp
 
+/-- Coerced to `ℤ`, `TauCeti.hilbertSign x` is `(-1 : ℤ) ^ x.val`. -/
+theorem coe_hilbertSign (x : ZMod 2) : (hilbertSign x : ℤ) = (-1 : ℤ) ^ x.val := by
+  rcases (by decide : ∀ y : ZMod 2, y = 0 ∨ y = 1) x with rfl | rfl
+  · simp
+  · simp [hilbertSign_one]
+    rfl
+
+/-- The sign dictionary `TauCeti.hilbertSign` is injective. -/
+theorem hilbertSign_injective : Function.Injective hilbertSign :=
+  (AddEquiv.toMultiplicativeRight additiveIntUnitsAddEquiv).symm.injective.comp
+    Multiplicative.ofAdd.injective
+
 /-- **The sign group is the line `ZMod 2`, linearly.** `TauCeti.additiveIntUnitsAddEquiv` is
 automatically `ZMod 2`-linear, every additive map between `ZMod 2`-modules being so. -/
 def additiveIntUnitsLinearEquiv : Additive ℤˣ ≃ₗ[ZMod 2] ZMod 2 :=

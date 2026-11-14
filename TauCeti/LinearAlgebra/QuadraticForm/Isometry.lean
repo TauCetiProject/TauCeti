@@ -30,7 +30,9 @@ sum of squares along an equivalence of its index type, which complements Mathlib
 * `QuadraticMap.IsometryEquiv.polarKernelEquiv`: an isometric equivalence restricts to an
   equivalence of the kernels of polarization against corresponding vectors.
 * `QuadraticMap.IsometryEquiv.trans_apply`: composition of isometries acts by composition.
-* `QuadraticMap.IsometryEquiv.nondegenerate_iff`: nondegeneracy is invariant under isometry.
+* `QuadraticMap.IsometryEquiv.nondegenerate_iff`,
+  `QuadraticMap.IsometryEquiv.nondegenerate_polarBilin_iff`: nondegeneracy of a quadratic map and of
+  its polar bilinear form are invariant under isometry.
 * `QuadraticMap.isometryEquivNeg`: if `u * u = -1`, multiplication by `u` is an isometry from
   `Q` to `-Q`.
 * `QuadraticForm.isometryEquivWeightedSumSquaresReindex`: reindexing the weights of a weighted sum
@@ -188,6 +190,21 @@ theorem _root_.QuadraticMap.IsometryEquiv.nondegenerate_iff
     apply Cardinal.lift_le_one_iff.mp
     rw [← e.toLinearEquiv.lift_rank_map_eq Q₁.polarBilin.ker, hpolar]
     exact Cardinal.lift_le_one_iff.mpr hQ₂.rank_rad_polar_le
+
+/-- Nondegeneracy of the polar bilinear map is invariant under an isometric equivalence. -/
+theorem _root_.QuadraticMap.IsometryEquiv.nondegenerate_polarBilin_iff
+    {R : Type u} {M₁ : Type v} {M₂ : Type*} {N : Type w} [CommRing R]
+    [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    [AddCommGroup N] [Module R N]
+    {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
+    (e : Q₁.IsometryEquiv Q₂) :
+    Q₁.polarBilin.Nondegenerate ↔ Q₂.polarBilin.Nondegenerate := by
+  have hcongr :
+      e.toLinearEquiv.arrowCongr (e.toLinearEquiv.arrowCongr (LinearEquiv.refl R N))
+        Q₁.polarBilin = Q₂.polarBilin :=
+    LinearMap.ext₂ fun x y ↦ by
+      simp [polarBilin_apply_apply]
+  rw [← hcongr, LinearMap.nondegenerate_congr_iff]
 
 section Neg
 
