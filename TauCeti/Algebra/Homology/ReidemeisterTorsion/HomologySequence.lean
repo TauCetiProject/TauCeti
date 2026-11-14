@@ -108,16 +108,6 @@ section Interleave
 
 /-! ### Torsion of interleaved complexes -/
 
-private theorem negOnePow_three_mul (q : ℤ) : (3 * q).negOnePow = q.negOnePow :=
-  (Int.negOnePow_eq_iff _ _).2 ⟨q, by omega⟩
-
-private theorem negOnePow_three_mul_add_one (q : ℤ) :
-    (3 * q + 1).negOnePow = (q + 1).negOnePow :=
-  (Int.negOnePow_eq_iff _ _).2 ⟨q, by omega⟩
-
-private theorem negOnePow_three_mul_add_two (q : ℤ) : (3 * q + 2).negOnePow = q.negOnePow :=
-  (Int.negOnePow_eq_iff _ _).2 ⟨q + 1, by omega⟩
-
 private theorem det_eq_of_iso {M N : ModuleCat F} {r m : ℕ} (e : M ≅ N)
     (c c' : Basis (Fin r) F M) (d d' : Basis (Fin m) F N) (hr : r = m)
     (hc : ∀ i, e.hom (c i) = d (Fin.cast hr i))
@@ -193,12 +183,12 @@ theorem reidemeisterTorsion_interleave_eq_mul_finprod_det :
       (ChainComplex.interleave.rank_of_eq_three_mul_add_two h2)
       (ChainComplex.interleave.XIso₁_hom_basis hfg hgδ hδf b₁ b₂ b₃ h2)
       (ChainComplex.interleave.XIso₁_hom_basis hfg hgδ hδf b₁' b₂' b₃' h2)
-  have he₀ : (((3 : ℕ) : ℤ) * q + ((0 : Fin 3) : ℕ)).negOnePow = q.negOnePow := by
-    simpa using negOnePow_three_mul q
-  have he₁ : (((3 : ℕ) : ℤ) * q + ((1 : Fin 3) : ℕ)).negOnePow = (q + 1).negOnePow := by
-    simpa using negOnePow_three_mul_add_one q
-  have he₂ : (((3 : ℕ) : ℤ) * q + ((2 : Fin 3) : ℕ)).negOnePow = q.negOnePow := by
-    rw [h2, negOnePow_three_mul_add_two]
+  have he₀ : (((3 : ℕ) : ℤ) * q + ((0 : Fin 3) : ℕ)).negOnePow = q.negOnePow :=
+    (Int.negOnePow_eq_iff _ _).2 ⟨q, by simp; omega⟩
+  have he₁ : (((3 : ℕ) : ℤ) * q + ((1 : Fin 3) : ℕ)).negOnePow = (q + 1).negOnePow :=
+    (Int.negOnePow_eq_iff _ _).2 ⟨q, by simp; omega⟩
+  have he₂ : (((3 : ℕ) : ℤ) * q + ((2 : Fin 3) : ℕ)).negOnePow = q.negOnePow :=
+    (Int.negOnePow_eq_iff _ _).2 ⟨q + 1, by simp; omega⟩
   rw [hd₀, hd₁, hd₂, he₀, he₁, he₂]
   ring
 
@@ -340,38 +330,7 @@ theorem reidemeisterTorsion_interleave_eq_one
       (ChainComplex.interleave.XIso₃ hfg hgδ hδf n p hn).hom (bK n k) =
         γ p (Fin.cast (ChainComplex.interleave.rank_of_eq_three_mul hn) k) := by
     dsimp only [bK]; split_ifs <;> try omega
-    obtain rfl : p = n / 3 := by omega
-    exact hom_rangeBasisOfIso _ _ _ _ _ k
-  have hbK₁ (n p : ℤ) (hn : n = 3 * p + 1) (k) :
-      (ChainComplex.interleave.XIso₂ hfg hgδ hδf n p hn).hom (bK n k) =
-        β p (Fin.cast (ChainComplex.interleave.rank_of_eq_three_mul_add_one hn) k) := by
-    dsimp only [bK]; split_ifs <;> try omega
-    obtain rfl : p = n / 3 := by omega
-    exact hom_rangeBasisOfIso _ _ _ _ _ k
-  have hbK₂ (n p : ℤ) (hn : n = 3 * p + 2) (k) :
-      (ChainComplex.interleave.XIso₁ hfg hgδ hδf n p hn).hom (bK n k) =
-        α p (Fin.cast (ChainComplex.interleave.rank_of_eq_three_mul_add_two hn) k) := by
-    dsimp only [bK]; split_ifs <;> try omega
-    obtain rfl : p = n / 3 := by omega
-    exact hom_rangeBasisOfIso _ _ _ _ _ k
-  have hsK₀ (n p : ℤ) (hn : n = 3 * p) (hn1 : n + 1 = 3 * p + 1) (k) :
-      (ChainComplex.interleave.XIso₂ hfg hgδ hδf (n + 1) p hn1).hom (sK n k) =
-        sγ p (Fin.cast (ChainComplex.interleave.rank_of_eq_three_mul hn) k) := by
-    dsimp only [sK]; split_ifs <;> try omega
-    obtain rfl : p = n / 3 := by omega
-    exact Iso.inv_hom_id_apply _ _
-  have hsK₁ (n p : ℤ) (hn : n = 3 * p + 1) (hn1 : n + 1 = 3 * p + 2) (k) :
-      (ChainComplex.interleave.XIso₁ hfg hgδ hδf (n + 1) p hn1).hom (sK n k) =
-        sβ p (Fin.cast (ChainComplex.interleave.rank_of_eq_three_mul_add_one hn) k) := by
-    dsimp only [sK]; split_ifs <;> try omega
-    obtain rfl : p = n / 3 := by omega
-    exact Iso.inv_hom_id_apply _ _
-  have hsK₂ (n p : ℤ) (hn : n = 3 * p + 2) (hn1 : n + 1 = 3 * (p + 1)) (k) :
-      (ChainComplex.interleave.XIso₃ hfg hgδ hδf (n + 1) (p + 1) hn1).hom (sK n k) =
-        sα p (Fin.cast (ChainComplex.interleave.rank_of_eq_three_mul_add_two hn) k) := by
-    dsimp only [sK]; split_ifs <;> try omega
-    obtain rfl : p = n / 3 := by omega
-    exact Iso.inv_hom_id_apply _ _
+    obtain rfl : p = n / 3 := (by omega); exact hom_rangeBasisOfIso _ _ _ _ _ k
   rw [reidemeisterTorsion_eq_finprod
     (ChainComplex.interleave.finite_setOf_rank_ne_zero hfin₁ hfin₂ hfin₃) hK bK sK hsK]
   refine finprod_eq_one_of_forall_eq_one fun j ↦ ?_
@@ -387,7 +346,12 @@ theorem reidemeisterTorsion_interleave_eq_one
       (ChainComplex.interleave.rank_of_eq_three_mul_add_two hq)
       (ChainComplex.interleave.rank_of_eq_three_mul_add_one (by omega)) (hm₁ q)
       (ChainComplex.interleave.XIso₁_hom_basis hfg hgδ hδf b₁ b₂ b₃ hq) (hb₁ q)
-      (hbK₂ (j + 1) q hq) (hsK₁ j q (by omega) hq)
+      (fun k ↦ by
+        dsimp only [bK]; split_ifs <;> try omega
+        obtain rfl : q = (j + 1) / 3 := (by omega); exact hom_rangeBasisOfIso _ _ _ _ _ k)
+      (fun k ↦ by
+        dsimp only [sK]; split_ifs <;> try omega
+        obtain rfl : q = j / 3 := (by omega); exact Iso.inv_hom_id_apply _ _)
   · exact torsionBracket_eq_one_of_iso B (hK (j + 1)) (bK (j + 1)) (bK j) (sK j) (hsK j)
       (ChainComplex.interleave.XIso₂ hfg hgδ hδf (j + 1) q hq) (b₂ q)
       (fun k ↦ (β q k : X₂ q)) (sγ q)
@@ -395,7 +359,12 @@ theorem reidemeisterTorsion_interleave_eq_one
       (ChainComplex.interleave.rank_of_eq_three_mul_add_one hq)
       (ChainComplex.interleave.rank_of_eq_three_mul (by omega)) (hm₂ q)
       (ChainComplex.interleave.XIso₂_hom_basis hfg hgδ hδf b₁ b₂ b₃ hq) (hb₂ q)
-      (hbK₁ (j + 1) q hq) (hsK₀ j q (by omega) hq)
+      (fun k ↦ by
+        dsimp only [bK]; split_ifs <;> try omega
+        obtain rfl : q = (j + 1) / 3 := (by omega); exact hom_rangeBasisOfIso _ _ _ _ _ k)
+      (fun k ↦ by
+        dsimp only [sK]; split_ifs <;> try omega
+        obtain rfl : q = j / 3 := (by omega); exact Iso.inv_hom_id_apply _ _)
   · exact torsionBracket_eq_one_of_iso B (hK (j + 1)) (bK (j + 1)) (bK j) (sK j) (hsK j)
       (ChainComplex.interleave.XIso₃ hfg hgδ hδf (j + 1) (q + 1) hq) (b₃ (q + 1))
       (fun k ↦ (γ (q + 1) k : X₃ (q + 1))) (sα q)
@@ -403,7 +372,10 @@ theorem reidemeisterTorsion_interleave_eq_one
       (ChainComplex.interleave.rank_of_eq_three_mul hq)
       (ChainComplex.interleave.rank_of_eq_three_mul_add_two (by omega)) (hm₃ q)
       (ChainComplex.interleave.XIso₃_hom_basis hfg hgδ hδf b₁ b₂ b₃ hq) (hb₃ q)
-      (hbK₀ (j + 1) (q + 1) hq) (hsK₂ j q (by omega) hq)
+      (hbK₀ (j + 1) (q + 1) hq)
+      (fun k ↦ by
+        dsimp only [sK]; split_ifs <;> try omega
+        obtain rfl : q = j / 3 := (by omega); exact Iso.inv_hom_id_apply _ _)
 
 end Adapted
 
@@ -1041,26 +1013,19 @@ theorem reidemeisterTorsionWithHomology_eq_mul_of_shortExact
       (ChainComplex.interleave.basis _ _ _ h₁' h₂' h₃') = 1 :=
     reidemeisterTorsion_interleave_eq_one _ _ _ hS.acyclic_homologySequenceComplex h₁' h₂' h₃'
       hfin₁ hfin₂ hfin₃ α β γ sα hsα sβ hsβ sγ hsγ hm₁ hm₂ hm₃ hh₁' hh₂' hh₃'
-  have hinv₁ (q : ℤ) : (h₁ q).det (h₁' q) ^ ((q + 1).negOnePow : ℤ) =
-      (h₁' q).det (h₁ q) ^ (q.negOnePow : ℤ) := by
-    have hinv : (h₁ q).det (h₁' q) = ((h₁' q).det (h₁ q))⁻¹ :=
-      eq_inv_of_mul_eq_one_left <| by rw [Basis.det_mul_det, Basis.det_self]
-    rw [hinv, Int.negOnePow_succ, Units.val_neg, zpow_neg, inv_zpow, inv_inv]
-  have hinv₃ (q : ℤ) : (h₃ q).det (h₃' q) ^ ((q + 1).negOnePow : ℤ) =
-      (h₃' q).det (h₃ q) ^ (q.negOnePow : ℤ) := by
-    have hinv : (h₃ q).det (h₃' q) = ((h₃' q).det (h₃ q))⁻¹ :=
-      eq_inv_of_mul_eq_one_left <| by rw [Basis.det_mul_det, Basis.det_self]
-    rw [hinv, Int.negOnePow_succ, Units.val_neg, zpow_neg, inv_zpow, inv_inv]
-  have hcng₁ : ∏ᶠ q : ℤ, (h₁ q).det (h₁' q) ^ ((q + 1).negOnePow : ℤ) =
-      ∏ᶠ q : ℤ, (h₁' q).det (h₁ q) ^ (q.negOnePow : ℤ) := finprod_congr hinv₁
-  have hcng₃ : ∏ᶠ q : ℤ, (h₃ q).det (h₃' q) ^ ((q + 1).negOnePow : ℤ) =
-      ∏ᶠ q : ℤ, (h₃' q).det (h₃ q) ^ (q.negOnePow : ℤ) := finprod_congr hinv₃
+  have hcng {m : ℤ → ℕ} {M : ℤ → ModuleCat F} (b b' : ∀ q, Basis (Fin (m q)) F (M q)) :
+      ∏ᶠ q : ℤ, (b q).det (b' q) ^ ((q + 1).negOnePow : ℤ) =
+        ∏ᶠ q : ℤ, (b' q).det (b q) ^ (q.negOnePow : ℤ) :=
+    finprod_congr fun q ↦ by
+      have hinv : (b q).det (b' q) = ((b' q).det (b q))⁻¹ :=
+        eq_inv_of_mul_eq_one_left <| by rw [Basis.det_mul_det, Basis.det_self]
+      rw [hinv, Int.negOnePow_succ, Units.val_neg, zpow_neg, inv_zpow, inv_inv]
   rw [reidemeisterTorsionWithHomology_eq_mul_finprod_det_homology (c := c₂) (h := h₂') h₂,
     reidemeisterTorsionWithHomology_eq_mul_adapted hS c₁ c₃ c₂ hc₁ hc₃ hn α β γ sα hsα sβ hsβ
       sγ hsγ h₁' h₂' h₃' hm₁ hm₂ hm₃ hh₁' hh₂' hh₃',
     reidemeisterTorsionWithHomology_eq_mul_finprod_det_homology (c := c₁) (h := h₁) h₁',
     reidemeisterTorsionWithHomology_eq_mul_finprod_det_homology (c := c₃) (h := h₃) h₃',
-    hcng₁, hcng₃,
+    hcng h₁ h₁', hcng h₃ h₃',
     reidemeisterTorsion_interleave_eq_mul_finprod_det _ _ _ h₁' h₁ h₂' h₂ h₃' h₃, hH₁, one_mul]
   ring
 
@@ -1159,25 +1124,14 @@ theorem reidemeisterTorsionWithHomology_eq_mul_of_splitting
     (fun q k ↦ h₂ q (Fin.natAdd (m₁ q) k)) (fun q k ↦ by simp [γ, hh₃])
     h₁ h₂ h₃ hm₁ (fun _ ↦ rfl) hm₃ (fun q ↦ ?_) (fun q ↦ ?_) (fun q ↦ ?_)
   · ext k
-    obtain ⟨l, rfl⟩ := (finCongr (hm₁ q).symm).surjective k
-    have hc : Fin.cast (hm₁ q) ((finCongr (hm₁ q).symm) l) = l := Fin.ext (by simp)
-    rw [Function.comp_apply, hc]
-    induction l using Fin.addCases with
-    | left l => exact l.elim0
-    | right l =>
-      rw [Fin.append_right]
-      exact congrArg (h₁ q) (Fin.ext (by simp))
+    rw [Function.comp_apply, show Fin.cast (hm₁ q) k = Fin.natAdd 0 k from Fin.ext (by simp),
+      Fin.append_right]
   · ext k
     induction k using Fin.addCases <;> simp [β, hh₁]
   · ext k
-    obtain ⟨l, rfl⟩ := (finCongr (hm₃ q).symm).surjective k
-    have hc : Fin.cast (hm₃ q) ((finCongr (hm₃ q).symm) l) = l := Fin.ext (by simp)
-    rw [Function.comp_apply, hc]
-    induction l using Fin.addCases with
-    | left l =>
-      simp only [Fin.append_left, γ, Basis.map_apply, LinearEquiv.ofTop_symm_apply]
-      exact congrArg (h₃ (q + 1)) (Fin.ext (by simp))
-    | right l => exact l.elim0
+    rw [Function.comp_apply, show Fin.cast (hm₃ q) k = Fin.castAdd 0 k from Fin.ext (by simp),
+      Fin.append_left]
+    simp [γ]
 
 /-- **Torsion with homology bases of a direct sum.** The torsion of the biproduct `C₁ ⊞ C₃` of two
 based complexes with based homology, based by `biprodXBasis` on chains and `biprodHomologyBasis` on

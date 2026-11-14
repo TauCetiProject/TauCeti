@@ -523,23 +523,14 @@ theorem reidemeisterTorsion_homotopyCofiber_of_quasiIso
       sα hsα (fun _ ↦ Fin.elim0) (fun _ k ↦ k.elim0) (fun _ ↦ Fin.elim0) (fun _ k ↦ k.elim0)
       hm₁ (fun _ ↦ rfl) hm₃ (fun q ↦ ?_) (fun _ ↦ funext fun k ↦ k.elim0) (fun q ↦ ?_)
     · ext k
-      obtain ⟨l, rfl⟩ := (finCongr (hm₁ q).symm).surjective k
-      have hc' : Fin.cast (hm₁ q) ((finCongr (hm₁ q).symm) l) = l := Fin.ext (by simp)
-      rw [Function.comp_apply, hc']
-      induction l using Fin.addCases with
-      | left l =>
-        simp only [Fin.append_left, α, Basis.map_apply, LinearEquiv.ofTop_symm_apply]
-        exact congrArg (h₁ q) (Fin.ext (by simp))
-      | right l => exact l.elim0
+      rw [Function.comp_apply, show Fin.cast (hm₁ q) k = Fin.castAdd 0 k from Fin.ext (by simp),
+        Fin.append_left]
+      simp [α]
     · ext k
-      obtain ⟨l, rfl⟩ := (finCongr (hm₃ q).symm).surjective k
-      have hc' : Fin.cast (hm₃ q) ((finCongr (hm₃ q).symm) l) = l := Fin.ext (by simp)
-      rw [Function.comp_apply, hc']
-      induction l using Fin.addCases with
-      | left l => exact l.elim0
-      | right l =>
-        simp only [Fin.append_right, sα]
-        exact congrArg (h₃ (q + 1)) (Fin.ext (by simp))
+      rw [Function.comp_apply,
+        show Fin.cast (hm₃ q) k = Fin.natAdd 0 (Fin.cast (hν q) k) from Fin.ext (by simp),
+        Fin.append_right]
+      simp [sα]
   have hmul := reidemeisterTorsion_eq_mul_of_shortExact_acyclic_X₂ hS hcone_ac cL (zeroBasis cK)
     (basis φ cK cL) (fun i k ↦ basis_castAdd φ cK cL i k) (fun i k ↦ by
       rw [basis_natAdd, zeroBasis_apply]
