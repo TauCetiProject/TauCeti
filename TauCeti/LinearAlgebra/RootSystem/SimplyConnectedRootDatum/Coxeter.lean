@@ -50,16 +50,6 @@ public noncomputable section
 
 namespace TauCeti.DynkinType
 
-private def coxeterSystemOfMatrixEq {B W : Type*} [Group W] {M₁ M₂ : CoxeterMatrix B}
-    (h : M₁ = M₂) (cs : CoxeterSystem M₁ W) : CoxeterSystem M₂ W :=
-  h ▸ cs
-
-private theorem coxeterSystemOfMatrixEq_simple {B W : Type*} [Group W] {M₁ M₂ : CoxeterMatrix B}
-    (h : M₁ = M₂) (cs : CoxeterSystem M₁ W) (i : B) :
-    (coxeterSystemOfMatrixEq h cs).simple i = cs.simple i := by
-  subst h
-  rfl
-
 variable (t : DynkinType) (ht : t.Valid)
 
 /-- The Coxeter matrix of the pinned simply connected base, reindexed by the Bourbaki nodes,
@@ -68,10 +58,11 @@ theorem reindex_coxeterMatrixOfBase_simplyConnectedBase :
     (coxeterMatrixOfBase (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)).reindex
         (t.simpleSupportEquivSimplyConnectedBase ht).symm =
       t.coxeterMatrix := by
-  ext i j
-  rw [CoxeterMatrix.reindex_apply, Equiv.symm_symm, coxeterMatrixOfBase_apply,
-    coxeterMatrix_apply, t.cartanMatrix_simplyConnectedBase_apply ht,
-    t.cartanMatrix_simplyConnectedBase_apply ht]
+  let e := t.simpleSupportEquivSimplyConnectedBase ht
+  rw [coxeterMatrixOfBase_eq_coxeterMatrix_reindex e.symm (fun i j => by
+        simpa [e] using t.cartanMatrix_simplyConnectedBase_apply ht (e.symm i) (e.symm j)),
+    CoxeterMatrix.reindex_reindex, Equiv.symm_symm, Equiv.self_trans_symm,
+    CoxeterMatrix.reindex_refl]
 
 /-- **The Bourbaki-numbered Coxeter system of the pinned Weyl group.** By Tits' theorem, the
 Weyl group of `t.simplyConnectedRootDatum ht` is a Coxeter system for `t.coxeterMatrix` whose
@@ -79,9 +70,9 @@ Weyl group of `t.simplyConnectedRootDatum ht` is a Coxeter system for `t.coxeter
 def simplyConnectedWeylCoxeterSystem :
     CoxeterSystem t.coxeterMatrix (t.simplyConnectedRootDatum ht).weylGroup :=
   letI := t.isReduced_simplyConnectedRootDatum ht
-  coxeterSystemOfMatrixEq (t.reindex_coxeterMatrixOfBase_simplyConnectedBase ht)
-    ((weylCoxeterSystem (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)).reindex
-      (t.simpleSupportEquivSimplyConnectedBase ht).symm)
+  ((weylCoxeterSystem (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)).reindex
+      (t.simpleSupportEquivSimplyConnectedBase ht).symm).castMatrix
+    (t.reindex_coxeterMatrixOfBase_simplyConnectedBase ht)
 
 /-- The `i`-th simple reflection of `t.simplyConnectedWeylCoxeterSystem ht` is the reflection
 in the `i`-th Bourbaki simple root `t.simpleIndex ht i`. -/
@@ -90,8 +81,7 @@ theorem simplyConnectedWeylCoxeterSystem_simple (i : Fin t.rank) :
     (t.simplyConnectedWeylCoxeterSystem ht).simple i =
       RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i) := by
   let _ := t.isReduced_simplyConnectedRootDatum ht
-  rw [simplyConnectedWeylCoxeterSystem, coxeterSystemOfMatrixEq_simple]
-  simp
+  simp [simplyConnectedWeylCoxeterSystem]
 
 /-- Evaluating a word in `Fin t.rank` through `t.simplyConnectedWeylCoxeterSystem ht` gives
 `t.geckWeylWordProd ht`. -/

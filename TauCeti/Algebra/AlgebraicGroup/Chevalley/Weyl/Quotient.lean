@@ -10,7 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Weyl
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.BigCell.Triangular
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Braid.TripleBond
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.RankOne
-import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Weight.Order
+import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Weight.Blocks
 import TauCeti.GroupTheory.Coxeter.Basic
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Coxeter
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.WeightDegree
@@ -95,6 +95,26 @@ theorem weylWord_mem_weylSubgroup (A : Type v) [CommRing A] (l : List (Fin t.ran
     obtain ⟨i, _, rfl⟩ := List.mem_map.mp hg
     exact D.weylElement_mem_weylSubgroup A i
 
+private theorem weylWord_cons_mk (A : Type v) [CommRing A] (i : Fin t.rank)
+    (l : List (Fin t.rank)) :
+    (⟨((i :: l).map fun j => D.weylElement (t.simpleIndex ht j) A 1).prod,
+        D.weylWord_mem_weylSubgroup A (i :: l)⟩ : D.weylSubgroup A) =
+      ⟨D.weylElement (t.simpleIndex ht i) A 1, D.weylElement_mem_weylSubgroup A i⟩ *
+        ⟨(l.map fun j => D.weylElement (t.simpleIndex ht j) A 1).prod,
+          D.weylWord_mem_weylSubgroup A l⟩ :=
+  Subtype.ext (by simp [List.map_cons, List.prod_cons])
+
+private theorem torusPoints_mul_weylWord_mk (A : Type v) [CommRing A] (s : Fin t.rank → Aˣ)
+    (l : List (Fin t.rank))
+    (hg : D.torusPoints A s * (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod ∈
+      D.weylSubgroup A) :
+    (⟨D.torusPoints A s * (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod,
+        hg⟩ : D.weylSubgroup A) =
+      ⟨D.torusPoints A s, D.torusPoints_mem_weylSubgroup A s⟩ *
+        ⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod,
+          D.weylWord_mem_weylSubgroup A l⟩ :=
+  Subtype.ext (by simp)
+
 /-- Every element of `D.weylSubgroup A` factors as a point of the actual torus followed by a
 product of pinned simple Weyl representatives, over any commutative ring `A`. -/
 theorem mem_weylSubgroup_iff (A : Type v) [CommRing A] {g : D.points A} :
@@ -138,42 +158,6 @@ theorem mem_weylSubgroup_iff (A : Type v) [CommRing A] {g : D.points A} :
 
 /-! ## Lifting the Coxeter presentation to the Weyl quotient -/
 
-/-- A family of involutions in a group satisfying the braid-word equations of a Coxeter matrix
-satisfies `CoxeterMatrix.IsLiftable`. -/
-private theorem isLiftable_of_mul_self_of_braidWord {B Q : Type*} [Group Q]
-    (M : CoxeterMatrix B) (f : B → Q) (hsq : ∀ i, f i * f i = 1)
-    (hbraid : ∀ i j, ((CoxeterSystem.braidWord M i j).map f).prod =
-      ((CoxeterSystem.braidWord M j i).map f).prod) :
-    M.IsLiftable f := by
-  have hinv (i : B) : (f i)⁻¹ = f i := inv_eq_of_mul_eq_one_right (hsq i)
-  intro i j
-  have hrev : f j * f i = (f i * f j)⁻¹ := by rw [mul_inv_rev, hinv, hinv]
-  have hb := hbraid i j
-  rw [CoxeterSystem.braidWord, CoxeterSystem.braidWord, M.symmetric j i,
-    TauCeti.prod_map_alternatingWord, TauCeti.prod_map_alternatingWord, hrev, inv_pow] at hb
-  rcases Nat.even_or_odd' (M i j) with ⟨k, hm | hm⟩
-  · rw [hm] at hb ⊢
-    simp only [even_two, Even.mul_right, ↓reduceIte, one_mul,
-      Nat.mul_div_right _ zero_lt_two] at hb
-    rw [Nat.mul_comm, pow_mul, pow_two]
-    nth_rw 2 [hb]
-    exact mul_inv_cancel _
-  · rw [hm] at hb ⊢
-    have hnot : ¬ Even (2 * k + 1) := by simp [parity_simps]
-    have hdiv : (2 * k + 1) / 2 = k := by omega
-    simp only [hnot, ↓reduceIte, hdiv] at hb
-    have hmul : f i * (f j * (f i * f j) ^ k) * (f i * f j) ^ k =
-        f i * (f i * ((f i * f j) ^ k)⁻¹) * (f i * f j) ^ k :=
-      congrArg (fun x => f i * x * (f i * f j) ^ k) hb
-    rw [← mul_assoc (f i) (f i), hsq i, one_mul, inv_mul_cancel] at hmul
-    calc
-      (f i * f j) ^ (2 * k + 1) =
-          (f i * f j) * (f i * f j) ^ k * (f i * f j) ^ k := by
-        rw [← pow_succ', ← pow_add]
-        congr 1
-        omega
-      _ = 1 := by simpa only [mul_assoc] using hmul
-
 private theorem isLiftable_weylQuotient (A : Type v) [CommRing A] :
     t.coxeterMatrix.IsLiftable (fun i : Fin t.rank =>
       (QuotientGroup.mk
@@ -187,7 +171,7 @@ private theorem isLiftable_weylQuotient (A : Type v) [CommRing A] :
         (l.map fun k => D.weylElement (t.simpleIndex ht k) A 1).prod := by
     simpa only [Subgroup.coe_subtype, List.map_map, Function.comp_def] using
       (D.weylSubgroup A).subtype.map_list_prod (l.map n_sub)
-  apply isLiftable_of_mul_self_of_braidWord t.coxeterMatrix (fun i => q (n_sub i))
+  apply t.coxeterMatrix.isLiftable_of_mul_self_of_braidWord (f := fun i => q (n_sub i))
   · intro i
     rw [← map_mul, QuotientGroup.mk'_apply, QuotientGroup.eq_one_iff, Subgroup.mem_subgroupOf,
       Subgroup.coe_mul, D.weylElement_mul_self i A, D.simpleCorootPoints_eq_torusPoints]
@@ -232,8 +216,8 @@ theorem weylQuotientLift_geckWeylWordProd (A : Type v) [CommRing A] (l : List (F
     rw [geckWeylWordProd_nil, map_one, eq_comm, QuotientGroup.eq_one_iff]
     exact Subgroup.one_mem _
   | cons i l ih =>
-    rw [geckWeylWordProd_cons, map_mul, D.weylQuotientLift_ofIdx A i, ih, ← QuotientGroup.mk_mul]
-    rfl
+    rw [geckWeylWordProd_cons, map_mul, D.weylQuotientLift_ofIdx A i, ih, ← QuotientGroup.mk_mul,
+      D.weylWord_cons_mk A i l]
 
 /-- `weylQuotientLift` is surjective over every commutative ring `A`. -/
 theorem weylQuotientLift_surjective (A : Type v) [CommRing A] :
@@ -245,12 +229,8 @@ theorem weylQuotientLift_surjective (A : Type v) [CommRing A] :
   have htorus : (QuotientGroup.mk ⟨D.torusPoints A s, D.torusPoints_mem_weylSubgroup A s⟩ :
       D.weylSubgroup A ⧸ (((D.torusPoints A).range).subgroupOf (D.weylSubgroup A))) = 1 :=
     (QuotientGroup.eq_one_iff _).mpr ⟨s, rfl⟩
-  have hmul : (⟨D.torusPoints A s * (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod,
-      hg⟩ : D.weylSubgroup A) =
-      ⟨D.torusPoints A s, D.torusPoints_mem_weylSubgroup A s⟩ *
-        ⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod,
-          D.weylWord_mem_weylSubgroup A l⟩ := rfl
-  rw [D.weylQuotientLift_geckWeylWordProd A l, hmul, QuotientGroup.mk_mul, htorus, one_mul]
+  rw [D.weylQuotientLift_geckWeylWordProd A l, D.torusPoints_mul_weylWord_mk A s l hg,
+    QuotientGroup.mk_mul, htorus, one_mul]
 
 /-- Over every commutative ring `A`, any word in the pinned simple Weyl representatives that
 spells `1` in the Weyl group lies in the actual torus `(D.torusPoints A).range`. -/
@@ -267,34 +247,24 @@ theorem weylWord_mem_range_torusPoints_of_geckWeylWordProd_eq_one
 point of `D.positivePoints A` weight-block unitriangular. -/
 private theorem blockUnitriangular_of_mem_positivePoints (A : Type v) [CommRing A]
     {u : D.points A} (hu : u ∈ D.positivePoints A) :
-    let r := orderedWeightIndexEquiv (t.weightDegree ht)
-      (Subtype.val : Set.range D.weight → Fin t.rank → ℤ)
     (((u : Matrix.GeneralLinearGroup (Fin D.dim) A) : Matrix (Fin D.dim) (Fin D.dim) A)
-      ).BlockUnitriangular fun j => r ⟨D.weight j, Set.mem_range_self j⟩ := by
-  dsimp only
+      ).BlockUnitriangular (orderedWeightBlock (t.weightDegree ht) D.weight) := by
   rw [D.positivePoints_eq_closure] at hu
   induction hu using Subgroup.closure_induction with
   | mem g hg =>
     obtain ⟨γ, hγ, a, rfl⟩ := hg
-    have hmat : ((D.rootSubgroupPoints γ A a : Matrix.GeneralLinearGroup (Fin D.dim) A) :
-        Matrix (Fin D.dim) (Fin D.dim) A) =
-        kostantRootSubgroupMatrix (t.chevalleySystem ht) (t.lieBasis ht).h D.representation
-          D.lattice (kostantForm_chevalleySystem_smul_mem D.representation D.lattice
-            D.representation_mem_lattice D.isNilpotent_representation_rootGenerator) γ
-          (isNilpotent_apply_ι_chevalleySystem D.representation
-            D.isNilpotent_representation_rootGenerator γ) D.basis
-          ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm a) := by
-      rw [D.coe_rootSubgroupPoints, ← kostantRootSubgroupParam_chevalleySystem,
-        basisMatrix_kostantRootSubgroupParam]
-    rw [hmat]
-    refine Matrix.blockUnitriangular_of_apply_eq_one_apply_of_not_lt fun i j hij => ?_
-    apply kostantRootSubgroupMatrix_apply_eq_one_apply_of_forall_weight_ne
-      (t.chevalleySystem ht) (t.lieBasis ht).h D.representation D.lattice _ D.basis D.weight γ _
-      D.isCartanWeightVector_basis (t.lie_lieBasis_h_chevalleySystem ht γ) _
-    intro n hn heq
-    apply hij
-    exact orderedWeightIndexEquiv_lt_of_eq_add_nsmul (t.weightDegree ht) Subtype.val
-      (t.weightDegree_root_pos ht hγ) hn heq
+    rw [D.coe_rootSubgroupPoints, ← kostantRootSubgroupParam_chevalleySystem,
+      basisMatrix_kostantRootSubgroupParam]
+    exact blockUnitriangular_kostantRootSubgroupMatrix
+      (t.chevalleySystem ht) (t.lieBasis ht).h D.representation D.lattice
+      (kostantForm_chevalleySystem_smul_mem D.representation D.lattice
+        D.representation_mem_lattice D.isNilpotent_representation_rootGenerator)
+      D.basis D.weight (t.weightDegree ht) γ
+      (isNilpotent_apply_ι_chevalleySystem D.representation
+        D.isNilpotent_representation_rootGenerator γ)
+      D.isCartanWeightVector_basis (t.lie_lieBasis_h_chevalleySystem ht γ)
+      (t.weightDegree_root_pos ht hγ)
+      ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm a)
   | one => exact Matrix.blockUnitriangular_one
   | mul x y _ _ hx hy => exact hx.mul hy
   | inv x _ hx =>
@@ -311,9 +281,10 @@ theorem weylWord_mem_borelSubgroup_iff (A : Type v) [CommRing A] [Nontrivial A]
   constructor
   · intro hmem
     obtain ⟨u, hu, s, hs⟩ := (D.mem_borelSubgroup_iff A).mp ((D.borelSubgroup A).inv_mem hmem)
-    let r := orderedWeightIndexEquiv (t.weightDegree ht)
-      (Subtype.val : Set.range D.weight → Fin t.rank → ℤ)
-    let b (j : Fin D.dim) := r ⟨D.weight j, Set.mem_range_self j⟩
+    let r := orderedWeightBlockEquiv (t.weightDegree ht) D.weight
+    let b := orderedWeightBlock (t.weightDegree ht) D.weight
+    have hrb : (fun j => r ⟨D.weight j, Set.mem_range_self j⟩) = b :=
+      funext fun j => orderedWeightBlockEquiv_apply_mk (t.weightDegree ht) D.weight j _
     have hprod : (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod =
         D.torusPoints A s⁻¹ * u⁻¹ := by
       have hinv := congrArg Inv.inv hs
@@ -325,8 +296,9 @@ theorem weylWord_mem_borelSubgroup_iff (A : Type v) [CommRing A] [Nontrivial A]
       dsimp only [N]
       rw [D.coe_torusPoints A s⁻¹, kostantTorusMatrix_apply, diagGL_apply]
       simp only [hne, ↓reduceIte]
-    refine (D.exists_blockLDU_weylWord_iff l A r).mp ⟨1, N,
-      ((u⁻¹ : D.points A) : Matrix.GeneralLinearGroup (Fin D.dim) A),
+    refine (D.exists_blockLDU_weylWord_iff l A r).mp ?_
+    rw [hrb]
+    refine ⟨1, N, ((u⁻¹ : D.points A) : Matrix.GeneralLinearGroup (Fin D.dim) A),
       Matrix.blockUnitriangular_one,
       fun i j hlt => hNdiag fun hij => (ne_of_lt hlt) (congrArg b hij.symm),
       fun i j hlt => hNdiag fun hij => (ne_of_lt hlt) (congrArg (OrderDual.toDual ∘ b) hij.symm),
@@ -452,12 +424,8 @@ theorem weylProjection_weylWord (k : Type v) [Field k] (l : List (Fin t.rank)) :
       Subtype.ext (by simp)
     rw [h1, map_one, geckWeylWordProd_nil]
   | cons i l ih =>
-    have hcons : (⟨((i :: l).map fun j => D.weylElement (t.simpleIndex ht j) k 1).prod,
-        D.weylWord_mem_weylSubgroup k (i :: l)⟩ : D.weylSubgroup k) =
-        ⟨D.weylElement (t.simpleIndex ht i) k 1, D.weylElement_mem_weylSubgroup k i⟩ *
-          ⟨(l.map fun j => D.weylElement (t.simpleIndex ht j) k 1).prod,
-            D.weylWord_mem_weylSubgroup k l⟩ := rfl
-    rw [hcons, map_mul, D.weylProjection_weylElement k i, ih, geckWeylWordProd_cons]
+    rw [D.weylWord_cons_mk k i l, map_mul, D.weylProjection_weylElement k i, ih,
+      geckWeylWordProd_cons]
 
 /-- Over any field `k`, `weylQuotientEquiv` composed with the quotient map agrees with
 `D.weylProjection k`. -/
