@@ -24,7 +24,7 @@ orders (`Submodule.leftOrder`), singular moduli, Picard groups, and ring class f
 with algebraic elliptic-curve endomorphisms is asserted here):
 
 1. **Homothety classes, Picard group, and ring class Galois group**: sending `[f]` to
-   `PeriodPair.HomothetyClass.mk (root f).periodPair` identifies `PosDefProperClass n`,
+   `TauCeti.PeriodPair.HomothetyClass.mk (root f).periodPair` identifies `PosDefProperClass n`,
    `Pic (QuadraticOrder.numberFieldOrder (-n))`, and `Gal(H_O / K)` with homothety classes of
    lattices having left order `O_{-n}` (`cmHomothetyClassEquivPosDefProperClass`,
    `cmHomothetyClassEquivPic`, `cmHomothetyClassEquivGal`). Under `HomothetyClass.j`, these map
@@ -36,12 +36,13 @@ with algebraic elliptic-curve endomorphisms is asserted here):
    order (`eq_of_singularModulus_eq`), so Hilbert class polynomials of distinct discriminants are
    coprime in `ℂ[X]` (`isCoprime_hilbertClassPolynomial_of_ne`).
 3. **Canonical CM points `τ_D` and `f · τ_D`**: for `D < 0`, `cmPoint D` (`i √(-D) / 2` if
-   `D ≡ 0 mod 4`, `(3 + i √(-D)) / 2` if `D ≢ 0 mod 4`, following D. H. Shin) has real `j`-invariant
-   (`im_j_cmPoint`), and for `D ≡ 0, 1 mod 4` satisfies `τ_D² + B τ_D + C = 0`, spans
-   `complexOrder D`, and has principal singular modulus `j(τ_{-n})` (`j_cmPoint_neg_natCast`). Its
-   multiple `cmPointOfConductor D hD0 f = f · τ_D` spans the index-`f` suborder
-   `complexOrder (f² D) = ℤ + ℤ · f ω_D` (of conductor `f` when `D` is fundamental) with left order
-   `complexOrder (f² D)` (`leftOrder_lattice_periodPair_cmPointOfConductor`).
+   `D ≡ 0 mod 4`, `(3 + i √(-D)) / 2` if `D ≢ 0 mod 4`, following D. H. Shin) and its positive
+   multiples `cmPointOfIndex D hD0 f = f · τ_D` have real `j`-invariants (`im_j_cmPoint`,
+   `im_j_cmPointOfIndex`). For `D ≡ 0, 1 mod 4`, `cmPoint D` satisfies `τ_D² + B τ_D + C = 0`, spans
+   `complexOrder D`, and has principal singular modulus `j(τ_{-n})` (`j_cmPoint_neg_natCast`), while
+   `cmPointOfIndex D hD0 f` spans the index-`f` suborder `complexOrder (f² D) = ℤ + ℤ · f ω_D` (of
+   conductor `f` when `D` is fundamental) with left order `complexOrder (f² D)`
+   (`leftOrder_lattice_periodPair_cmPointOfIndex`).
 
 ## Main definitions
 
@@ -52,11 +53,11 @@ with algebraic elliptic-curve endomorphisms is asserted here):
   homothety classes, `PosDefProperClass n`, `Pic(O_{-n})`, and `Gal(H_O / ℚ(√(-n)))`.
 * `TauCeti.BinaryQuadraticForm.cmTraceCoeff`, `TauCeti.BinaryQuadraticForm.cmNormCoeff`,
   `TauCeti.BinaryQuadraticForm.cmForm`, `TauCeti.BinaryQuadraticForm.cmPoint`,
-  `TauCeti.BinaryQuadraticForm.cmPointOfConductor`: `τ_D`, its monic form, and `f · τ_D`.
+  `TauCeti.BinaryQuadraticForm.cmPointOfIndex`: `τ_D`, its monic form, and `f · τ_D`.
 
 ## Main results
 
-* `PeriodPair.HomothetyClass.leftOrder_eq_complexOrder_iff_isRoot_hilbertClassPolynomial`,
+* `TauCeti.PeriodPair.HomothetyClass.leftOrder_eq_complexOrder_iff_isRoot_hilbertClassPolynomial`,
   `WeierstrassCurve.leftOrder_periodLattice_eq_complexOrder_iff_isRoot_hilbertClassPolynomial`:
   period-lattice scalar multiplier order `O_{-n}` iff `j` is a root of `hilbertClassPolynomial n`.
 * `TauCeti.BinaryQuadraticForm.eq_of_singularModulus_eq`,
@@ -65,7 +66,8 @@ with algebraic elliptic-curve endomorphisms is asserted here):
 * `TauCeti.BinaryQuadraticForm.cmPoint_quadratic`,
   `TauCeti.BinaryQuadraticForm.lattice_periodPair_cmPoint`,
   `TauCeti.BinaryQuadraticForm.j_cmPoint_neg_natCast`, `TauCeti.BinaryQuadraticForm.im_j_cmPoint`,
-  `TauCeti.BinaryQuadraticForm.leftOrder_lattice_periodPair_cmPointOfConductor`: properties of
+  `TauCeti.BinaryQuadraticForm.im_j_cmPointOfIndex`,
+  `TauCeti.BinaryQuadraticForm.leftOrder_lattice_periodPair_cmPointOfIndex`: properties of
   `τ_D` and `f · τ_D`.
 
 ## References
@@ -269,14 +271,14 @@ end CMDictionary
 
 end TauCeti.BinaryQuadraticForm
 
-namespace PeriodPair.HomothetyClass
+namespace TauCeti.PeriodPair.HomothetyClass
 
-open TauCeti TauCeti.BinaryQuadraticForm
+open TauCeti.BinaryQuadraticForm
 
 /-- **Hilbert class polynomial characterization on homothety classes**: a homothety class `x` of
 complex period lattices has left order `complexOrder (-n)` if and only if `x.j` is a root of
 `hilbertClassPolynomial n`. -/
-theorem leftOrder_eq_complexOrder_iff_isRoot_hilbertClassPolynomial (x : PeriodPair.HomothetyClass)
+theorem leftOrder_eq_complexOrder_iff_isRoot_hilbertClassPolynomial (x : HomothetyClass)
     (n : ℕ) [NeZero n] (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1) :
     x.leftOrder = QuadraticOrder.complexOrder (-n)
         (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n)) hn ↔
@@ -285,7 +287,7 @@ theorem leftOrder_eq_complexOrder_iff_isRoot_hilbertClassPolynomial (x : PeriodP
   exact ⟨fun ⟨q, h⟩ ↦ ⟨q, h ▸ (j_posDefProperClassToHomothetyClass n q).symm⟩,
     fun ⟨q, hq⟩ ↦ ⟨q, j_injective ((j_posDefProperClassToHomothetyClass n q).trans hq)⟩⟩
 
-end PeriodPair.HomothetyClass
+end TauCeti.PeriodPair.HomothetyClass
 
 namespace TauCeti.BinaryQuadraticForm
 
@@ -317,9 +319,8 @@ theorem leftOrder_periodLattice_eq_complexOrder_iff_isRoot_hilbertClassPolynomia
     E.periodLattice.leftOrder =
         QuadraticOrder.complexOrder (-n) (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n)) hn ↔
       (hilbertClassPolynomial n).IsRoot E.j := by
-  obtain ⟨L, C, hu, rfl⟩ := E.exists_periodPair_variableChange_smul_eq
-  rw [periodLattice_eq_iff.mpr ⟨C, hu, rfl⟩, variableChange_j]
-  simpa only [PeriodPair.HomothetyClass.leftOrder_mk, PeriodPair.HomothetyClass.j_mk] using
+  obtain ⟨L, C, -, rfl⟩ := E.exists_periodPair_variableChange_smul_eq
+  simpa using
     (PeriodPair.HomothetyClass.mk L).leftOrder_eq_complexOrder_iff_isRoot_hilbertClassPolynomial n
       hn
 
@@ -446,7 +447,7 @@ theorem discrim_cmForm {D : ℤ} (hD : D % 4 = 0 ∨ D % 4 = 1) : (cmForm D).dis
   rw [discrim_def, discrim, cmForm_a, cmForm_b, cmForm_c]; linear_combination -h4
 
 /-- `cmForm D` is primitive. -/
-theorem isPrimitive_cmForm (D : ℤ) : (cmForm D).IsPrimitive :=
+@[simp] theorem isPrimitive_cmForm (D : ℤ) : (cmForm D).IsPrimitive :=
   isPrimitive_of_linearCombination_eq_one _ 1 0 0 (by simp)
 
 /-- For `n > 0` with `-n ≡ 0, 1 mod 4`, `cmForm (-n)` is primitive positive definite of
@@ -508,16 +509,85 @@ theorem coe_cmPoint_eq_complexGenerator_sub {D : ℤ} (hD0 : D < 0) (hD : D % 4 
     exact_mod_cast Int.mul_ediv_cancel' hdiv
   rw [coe_cmPoint, QuadraticOrder.complexGenerator_def]; linear_combination h2 / 2
 
+/-- **Rescaled CM point `f · τ_D ∈ ℍ`** (`f > 0`): spans the suborder `complexOrder (f² D)` of
+index `f` in `complexOrder D` for `D ≡ 0, 1 mod 4` (conductor `f` when `D` is fundamental). -/
+def cmPointOfIndex (D : ℤ) (hD0 : D < 0) (f : ℕ) [NeZero f] : ℍ :=
+  ⟨(f : ℂ) * (cmPoint D hD0 : ℂ), by
+    simpa [mul_im, coe_im] using
+      mul_pos (Nat.cast_pos.mpr (NeZero.pos f)) (cmPoint D hD0).im_pos⟩
+
+/-- Coercion of `cmPointOfIndex D hD0 f` to `ℂ` is `f · τ_D`. -/
+@[simp] theorem coe_cmPointOfIndex (D : ℤ) (hD0 : D < 0) (f : ℕ) [NeZero f] :
+    (cmPointOfIndex D hD0 f : ℂ) = (f : ℂ) * (cmPoint D hD0 : ℂ) := (rfl)
+
+/-- Real part of `cmPointOfIndex D hD0 f`. -/
+@[simp] theorem re_cmPointOfIndex (D : ℤ) (hD0 : D < 0) (f : ℕ) [NeZero f] :
+    (cmPointOfIndex D hD0 f).re = -(f : ℝ) * (cmTraceCoeff D : ℝ) / 2 := by
+  rw [← coe_re, coe_cmPointOfIndex]
+  simp only [mul_re, natCast_re, natCast_im, zero_mul, sub_zero, coe_re, re_cmPoint]; ring
+
+/-- Imaginary part of `cmPointOfIndex D hD0 f`. -/
+@[simp] theorem im_cmPointOfIndex (D : ℤ) (hD0 : D < 0) (f : ℕ) [NeZero f] :
+    (cmPointOfIndex D hD0 f).im = (f : ℝ) * √(-(D : ℝ)) / 2 := by
+  rw [← coe_im, coe_cmPointOfIndex]
+  simp only [mul_im, natCast_re, natCast_im, zero_mul, add_zero, coe_im, im_cmPoint]; ring
+
+/-- At `f = 1`, `cmPointOfIndex D hD0 1` equals `cmPoint D hD0`. -/
+@[simp] theorem cmPointOfIndex_one (D : ℤ) (hD0 : D < 0) :
+    cmPointOfIndex D hD0 1 = cmPoint D hD0 := by ext1; simp
+
+/-- **Monic integral quadratic satisfied by `f · τ_D`** for `D < 0` with `D ≡ 0, 1 mod 4`. -/
+theorem cmPointOfIndex_quadratic {D : ℤ} (hD0 : D < 0) (hD : D % 4 = 0 ∨ D % 4 = 1)
+    (f : ℕ) [NeZero f] :
+    (cmPointOfIndex D hD0 f : ℂ) ^ 2 +
+      (((f : ℤ) * cmTraceCoeff D : ℤ) : ℂ) * (cmPointOfIndex D hD0 f : ℂ) +
+      (((f : ℤ) ^ 2 * cmNormCoeff D : ℤ) : ℂ) = 0 := by
+  rw [coe_cmPointOfIndex]; push_cast
+  linear_combination (f : ℂ) ^ 2 * cmPoint_quadratic hD0 hD
+
+/-- **The period lattice `ℤ · (f τ_D) + ℤ` equals `complexOrder (f² D)`**. -/
+theorem lattice_periodPair_cmPointOfIndex {D : ℤ} (hD0 : D < 0)
+    (hD : D % 4 = 0 ∨ D % 4 = 1) (f : ℕ) [NeZero f] :
+    (cmPointOfIndex D hD0 f).periodPair.lattice =
+      Subalgebra.toSubmodule (QuadraticOrder.complexOrder ((f : ℤ) ^ 2 * D)
+        (mul_nonpos_of_nonneg_of_nonpos (sq_nonneg _) hD0.le)
+        (QuadraticOrder.sq_mul_emod_four_eq_zero_or_one hD f)) := by
+  ext z
+  rw [PeriodPair.mem_lattice, Subalgebra.mem_toSubmodule,
+    QuadraticOrder.mem_complexOrder_sq_mul_iff hD0.le hD f]
+  simp only [periodPair_ω₁, periodPair_ω₂, mul_one, coe_cmPointOfIndex,
+    coe_cmPoint_eq_complexGenerator_sub hD0 hD]
+  set q : ℤ := (D + cmTraceCoeff D) / 2
+  exact ⟨fun ⟨m, n, h⟩ ↦ ⟨n - m * f * q, m, by rw [← h]; push_cast; ring⟩,
+    fun ⟨m, k, h⟩ ↦ ⟨k, m + k * f * q, by rw [h]; push_cast; ring⟩⟩
+
+/-- **The multiplier order of `ℤ · (f τ_D) + ℤ` is `complexOrder (f² D)`**, the suborder of index
+`f` in `complexOrder D` (and of conductor `f` when `D` is a negative fundamental discriminant). -/
+theorem leftOrder_lattice_periodPair_cmPointOfIndex {D : ℤ} (hD0 : D < 0)
+    (hD : D % 4 = 0 ∨ D % 4 = 1) (f : ℕ) [NeZero f] :
+    (cmPointOfIndex D hD0 f).periodPair.lattice.leftOrder =
+      QuadraticOrder.complexOrder ((f : ℤ) ^ 2 * D)
+        (mul_nonpos_of_nonneg_of_nonpos (sq_nonneg _) hD0.le)
+        (QuadraticOrder.sq_mul_emod_four_eq_zero_or_one hD f) := by
+  rw [lattice_periodPair_cmPointOfIndex hD0 hD f, Subalgebra.leftOrder_toSubmodule]
+
+/-- `UpperHalfPlane.quadraticOrder` at `cmPointOfIndex D hD0 f` agrees with
+`complexOrder (f² D)`. -/
+theorem quadraticOrder_cmPointOfIndex {D : ℤ} (hD0 : D < 0) (hD : D % 4 = 0 ∨ D % 4 = 1)
+    (f : ℕ) [NeZero f] :
+    (cmPointOfIndex D hD0 f).quadraticOrder (cmPointOfIndex_quadratic hD0 hD f) =
+      QuadraticOrder.complexOrder ((f : ℤ) ^ 2 * D)
+        (mul_nonpos_of_nonneg_of_nonpos (sq_nonneg _) hD0.le)
+        (QuadraticOrder.sq_mul_emod_four_eq_zero_or_one hD f) := by
+  rw [← UpperHalfPlane.leftOrder_lattice_periodPair_eq_quadraticOrder]
+  exact leftOrder_lattice_periodPair_cmPointOfIndex hD0 hD f
+
 /-- **The period lattice `ℤ · τ_D + ℤ` equals `complexOrder D`** on the nose. -/
 theorem lattice_periodPair_cmPoint {D : ℤ} (hD0 : D < 0) (hD : D % 4 = 0 ∨ D % 4 = 1) :
     (cmPoint D hD0).periodPair.lattice =
       Subalgebra.toSubmodule (QuadraticOrder.complexOrder D hD0.le hD) := by
-  ext z
-  rw [PeriodPair.mem_lattice, Subalgebra.mem_toSubmodule, QuadraticOrder.mem_complexOrder_iff]
-  simp only [periodPair_ω₁, periodPair_ω₂, mul_one, coe_cmPoint_eq_complexGenerator_sub hD0 hD]
-  set q : ℤ := (D + cmTraceCoeff D) / 2
-  exact ⟨fun ⟨m, n, h⟩ ↦ ⟨n - m * q, m, by rw [← h]; push_cast; ring⟩,
-    fun ⟨m, k, h⟩ ↦ ⟨k, m + k * q, by rw [h]; push_cast; ring⟩⟩
+  rw [← cmPointOfIndex_one D hD0, lattice_periodPair_cmPointOfIndex hD0 hD 1]
+  exact congrArg Subalgebra.toSubmodule (QuadraticOrder.complexOrder_eq_iff.mpr (by simp))
 
 /-- **The multiplier order of `ℤ · τ_D + ℤ` is `complexOrder D`.** -/
 theorem leftOrder_lattice_periodPair_cmPoint {D : ℤ} (hD0 : D < 0)
@@ -570,89 +640,15 @@ theorem j_cmPoint_neg_natCast (n : ℕ) [NeZero n] (hn : (-n : ℤ) % 4 = 0 ∨ 
     Subtype.ext (hγ.symm.trans (SubMulAction.val_smul γ p).symm)
   rw [hsub, root_smul, ModularForm.j_smul_SL2Z]
 
+/-- **`j(f · τ_D)` is real** for every `D < 0` and positive `f`. -/
+@[simp] theorem im_j_cmPointOfIndex {D : ℤ} (hD0 : D < 0) (f : ℕ) [NeZero f] :
+    (ModularForm.j (cmPointOfIndex D hD0 f)).im = 0 :=
+  ModularForm.im_j_eq_zero_of_two_mul_re_eq_intCast (k := -(f : ℤ) * cmTraceCoeff D)
+    (by rw [re_cmPointOfIndex]; push_cast; ring)
+
 /-- **`j(τ_D)` is real** for every `D < 0`. -/
-theorem im_j_cmPoint {D : ℤ} (hD0 : D < 0) : (ModularForm.j (cmPoint D hD0)).im = 0 := by
-  have hJT : J • cmPoint D hD0 = _root_.ModularGroup.T ^ cmTraceCoeff D • cmPoint D hD0 := by
-    apply UpperHalfPlane.ext
-    simp only [coe_J_smul, modular_T_zpow_smul, coe_vadd, Complex.ofReal_intCast, coe_cmPoint,
-      map_div₀, map_add, map_neg, map_intCast, map_mul, Complex.conj_ofReal, Complex.conj_I,
-      Complex.conj_ofNat]
-    ring
-  exact Complex.conj_eq_iff_im.mp
-    ((ModularForm.j_J_smul (cmPoint D hD0)).symm.trans (by rw [hJT, ModularForm.j_smul_SL2Z]))
-
-/-- **Rescaled CM point `f · τ_D ∈ ℍ`** (`f > 0`): spans the suborder `complexOrder (f² D)` of
-index `f` in `complexOrder D` for `D ≡ 0, 1 mod 4` (conductor `f` when `D` is fundamental). -/
-def cmPointOfConductor (D : ℤ) (hD0 : D < 0) (f : ℕ) [NeZero f] : ℍ :=
-  ⟨(f : ℂ) * (cmPoint D hD0 : ℂ), by
-    simpa [mul_im, coe_im] using
-      mul_pos (Nat.cast_pos.mpr (NeZero.pos f)) (cmPoint D hD0).im_pos⟩
-
-/-- Coercion of `cmPointOfConductor D hD0 f` to `ℂ` is `f · τ_D`. -/
-@[simp] theorem coe_cmPointOfConductor (D : ℤ) (hD0 : D < 0) (f : ℕ) [NeZero f] :
-    (cmPointOfConductor D hD0 f : ℂ) = (f : ℂ) * (cmPoint D hD0 : ℂ) := (rfl)
-
-/-- Real part of `cmPointOfConductor D hD0 f`. -/
-@[simp] theorem re_cmPointOfConductor (D : ℤ) (hD0 : D < 0) (f : ℕ) [NeZero f] :
-    (cmPointOfConductor D hD0 f).re = -(f : ℝ) * (cmTraceCoeff D : ℝ) / 2 := by
-  rw [← coe_re, coe_cmPointOfConductor]
-  simp only [mul_re, natCast_re, natCast_im, zero_mul, sub_zero, coe_re, re_cmPoint]; ring
-
-/-- Imaginary part of `cmPointOfConductor D hD0 f`. -/
-@[simp] theorem im_cmPointOfConductor (D : ℤ) (hD0 : D < 0) (f : ℕ) [NeZero f] :
-    (cmPointOfConductor D hD0 f).im = (f : ℝ) * √(-(D : ℝ)) / 2 := by
-  rw [← coe_im, coe_cmPointOfConductor]
-  simp only [mul_im, natCast_re, natCast_im, zero_mul, add_zero, coe_im, im_cmPoint]; ring
-
-/-- At `f = 1`, `cmPointOfConductor D hD0 1` equals `cmPoint D hD0`. -/
-@[simp] theorem cmPointOfConductor_one (D : ℤ) (hD0 : D < 0) :
-    cmPointOfConductor D hD0 1 = cmPoint D hD0 := by ext1; simp
-
-/-- **Monic integral quadratic satisfied by `f · τ_D`** for `D < 0` with `D ≡ 0, 1 mod 4`. -/
-theorem cmPointOfConductor_quadratic {D : ℤ} (hD0 : D < 0) (hD : D % 4 = 0 ∨ D % 4 = 1)
-    (f : ℕ) [NeZero f] :
-    (cmPointOfConductor D hD0 f : ℂ) ^ 2 +
-      (((f : ℤ) * cmTraceCoeff D : ℤ) : ℂ) * (cmPointOfConductor D hD0 f : ℂ) +
-      (((f : ℤ) ^ 2 * cmNormCoeff D : ℤ) : ℂ) = 0 := by
-  rw [coe_cmPointOfConductor]; push_cast
-  linear_combination (f : ℂ) ^ 2 * cmPoint_quadratic hD0 hD
-
-/-- **The period lattice `ℤ · (f τ_D) + ℤ` equals `complexOrder (f² D)`**. -/
-theorem lattice_periodPair_cmPointOfConductor {D : ℤ} (hD0 : D < 0)
-    (hD : D % 4 = 0 ∨ D % 4 = 1) (f : ℕ) [NeZero f] :
-    (cmPointOfConductor D hD0 f).periodPair.lattice =
-      Subalgebra.toSubmodule (QuadraticOrder.complexOrder ((f : ℤ) ^ 2 * D)
-        (mul_nonpos_of_nonneg_of_nonpos (sq_nonneg _) hD0.le)
-        (QuadraticOrder.sq_mul_emod_four_eq_zero_or_one hD f)) := by
-  ext z
-  rw [PeriodPair.mem_lattice, Subalgebra.mem_toSubmodule,
-    QuadraticOrder.mem_complexOrder_sq_mul_iff hD0.le hD f]
-  simp only [periodPair_ω₁, periodPair_ω₂, mul_one, coe_cmPointOfConductor,
-    coe_cmPoint_eq_complexGenerator_sub hD0 hD]
-  set q : ℤ := (D + cmTraceCoeff D) / 2
-  exact ⟨fun ⟨m, n, h⟩ ↦ ⟨n - m * f * q, m, by rw [← h]; push_cast; ring⟩,
-    fun ⟨m, k, h⟩ ↦ ⟨k, m + k * f * q, by rw [h]; push_cast; ring⟩⟩
-
-/-- **The multiplier order of `ℤ · (f τ_D) + ℤ` is `complexOrder (f² D)`**, the suborder of index
-`f` in `complexOrder D` (and of conductor `f` when `D` is a negative fundamental discriminant). -/
-theorem leftOrder_lattice_periodPair_cmPointOfConductor {D : ℤ} (hD0 : D < 0)
-    (hD : D % 4 = 0 ∨ D % 4 = 1) (f : ℕ) [NeZero f] :
-    (cmPointOfConductor D hD0 f).periodPair.lattice.leftOrder =
-      QuadraticOrder.complexOrder ((f : ℤ) ^ 2 * D)
-        (mul_nonpos_of_nonneg_of_nonpos (sq_nonneg _) hD0.le)
-        (QuadraticOrder.sq_mul_emod_four_eq_zero_or_one hD f) := by
-  rw [lattice_periodPair_cmPointOfConductor hD0 hD f, Subalgebra.leftOrder_toSubmodule]
-
-/-- `UpperHalfPlane.quadraticOrder` at `cmPointOfConductor D hD0 f` agrees with
-`complexOrder (f² D)`. -/
-theorem quadraticOrder_cmPointOfConductor {D : ℤ} (hD0 : D < 0) (hD : D % 4 = 0 ∨ D % 4 = 1)
-    (f : ℕ) [NeZero f] :
-    (cmPointOfConductor D hD0 f).quadraticOrder (cmPointOfConductor_quadratic hD0 hD f) =
-      QuadraticOrder.complexOrder ((f : ℤ) ^ 2 * D)
-        (mul_nonpos_of_nonneg_of_nonpos (sq_nonneg _) hD0.le)
-        (QuadraticOrder.sq_mul_emod_four_eq_zero_or_one hD f) := by
-  rw [← UpperHalfPlane.leftOrder_lattice_periodPair_eq_quadraticOrder]
-  exact leftOrder_lattice_periodPair_cmPointOfConductor hD0 hD f
+@[simp] theorem im_j_cmPoint {D : ℤ} (hD0 : D < 0) : (ModularForm.j (cmPoint D hD0)).im = 0 := by
+  rw [← cmPointOfIndex_one D hD0, im_j_cmPointOfIndex]
 
 end CanonicalCMPoint
 
@@ -671,10 +667,10 @@ theorem coe_cmPoint_neg_three :
     (cmPoint (-3) (by decide) : ℂ) = (3 + (√(3 : ℝ) : ℂ) * I) / 2 := by
   rw [coe_cmPoint_of_emod_four_eq_one (by decide) (by decide)]; norm_num
 
-/-- At discriminant `-4` and any positive `f`, `cmPointOfConductor (-4) _ f` is `f · i`. -/
-theorem coe_cmPointOfConductor_neg_four (f : ℕ) [NeZero f] :
-    (cmPointOfConductor (-4) (by decide) f : ℂ) = (f : ℂ) * I := by
-  rw [coe_cmPointOfConductor, coe_cmPoint_neg_four]
+/-- At discriminant `-4` and any positive `f`, `cmPointOfIndex (-4) _ f` is `f · i`. -/
+theorem coe_cmPointOfIndex_neg_four (f : ℕ) [NeZero f] :
+    (cmPointOfIndex (-4) (by decide) f : ℂ) = (f : ℂ) * I := by
+  rw [coe_cmPointOfIndex, coe_cmPoint_neg_four]
 
 end Examples
 

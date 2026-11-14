@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.Elliptic.Topology
 public import TauCeti.RingTheory.IntegralOrder.LeftOrder
+import Mathlib.AlgebraicGeometry.EllipticCurve.IsomOfJ
+import Mathlib.Analysis.Complex.Polynomial.Basic
 
 /-!
 # The period lattice of a complex elliptic curve
@@ -145,22 +147,6 @@ theorem nonempty_continuousAddEquiv_periodLattice :
   exact ⟨L.weierstrassPointContinuousAddEquiv.trans
     (Projective.Point.continuousAddEquivVariableChange _ C).symm⟩
 
-end WeierstrassCurve
-
-namespace PeriodPair
-
-/-- Period pairs with the same Weierstrass `j`-invariant have the same complex multiplier order. -/
-theorem leftOrder_lattice_eq_of_weierstrassCurve_j_eq {L L' : PeriodPair}
-    (h : L.weierstrassCurve.j = L'.weierstrassCurve.j) :
-    L.lattice.leftOrder = L'.lattice.leftOrder := by
-  obtain ⟨c, hc⟩ := weierstrassCurve_j_eq_iff.mp h
-  rw [hc, lattice_smul]
-  exact (L.lattice.leftOrder_smul c.isUnit.isRegular.left (by simp)).symm
-
-end PeriodPair
-
-namespace WeierstrassCurve
-
 /-- Isomorphic complex elliptic curves have the same period-lattice multiplier order. -/
 @[simp] theorem leftOrder_variableChange_periodLattice (E : WeierstrassCurve ℂ) [E.IsElliptic]
     (C : VariableChange ℂ) : (C • E).periodLattice.leftOrder = E.periodLattice.leftOrder := by
@@ -171,10 +157,17 @@ namespace WeierstrassCurve
 order. -/
 theorem leftOrder_periodLattice_eq_of_j_eq {E E' : WeierstrassCurve ℂ} [E.IsElliptic]
     [E'.IsElliptic] (h : E.j = E'.j) : E.periodLattice.leftOrder = E'.periodLattice.leftOrder := by
-  obtain ⟨L, C, hu, rfl⟩ := E.exists_periodPair_variableChange_smul_eq
-  obtain ⟨L', C', hu', rfl⟩ := E'.exists_periodPair_variableChange_smul_eq
-  rw [periodLattice_eq_iff.mpr ⟨C, hu, rfl⟩, periodLattice_eq_iff.mpr ⟨C', hu', rfl⟩]
-  rw [variableChange_j, variableChange_j] at h
-  exact PeriodPair.leftOrder_lattice_eq_of_weierstrassCurve_j_eq h
+  obtain ⟨C, rfl⟩ := exists_variableChange_of_j_eq E E' h
+  exact (leftOrder_variableChange_periodLattice E C).symm
 
 end WeierstrassCurve
+
+namespace PeriodPair
+
+/-- Period pairs with the same Weierstrass `j`-invariant have the same complex multiplier order. -/
+theorem leftOrder_lattice_eq_of_weierstrassCurve_j_eq {L L' : PeriodPair}
+    (h : L.weierstrassCurve.j = L'.weierstrassCurve.j) :
+    L.lattice.leftOrder = L'.lattice.leftOrder := by
+  simpa using WeierstrassCurve.leftOrder_periodLattice_eq_of_j_eq h
+
+end PeriodPair

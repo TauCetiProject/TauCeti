@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.NumberField.Discriminant.Stickelberger
 public import TauCeti.NumberTheory.NumberField.Global.Orders.IntAddMulOrder
 public import TauCeti.NumberTheory.NumberField.Quadratic.ComplexEmbedding
-public import TauCeti.NumberTheory.QuadraticOrder.Field
+public import TauCeti.NumberTheory.QuadraticOrder.Basic
+import TauCeti.NumberTheory.NumberField.Global.Orders.Quadratic.OrderOfConductor
 
 /-!
 # Complex embeddings of imaginary quadratic orders
@@ -15,13 +17,16 @@ public import TauCeti.NumberTheory.QuadraticOrder.Field
 For `D ≤ 0` with `D ≡ 0, 1 mod 4`, `QuadraticAlgebra.complexEmbedding` maps the half-integral
 generator `(D + ω) / 2` of `ℚ(√D)` to `complexGenerator D = (D + √(-D) · i) / 2` and sends
 `TauCeti.QuadraticOrder.toSubalgebra D` to the `ℤ`-subalgebra
-`complexOrder D = ℤ[complexGenerator D] ⊆ ℂ` (degenerating to `ℤ` at `D = 0`). When `D < 0` with
-`D ≡ 0, 1 mod 4`, `complexOrder D` is the imaginary quadratic order of discriminant `D` in `ℂ` with
-integral basis `1, (D + √(-D) · i) / 2` (`equivComplexOrder`), and for all `D₁, D₂ ≤ 0` with
-`D₁, D₂ ≡ 0, 1 mod 4` the subalgebra `complexOrder D ⊆ ℂ` uniquely determines `D`
-(`complexOrder_eq_iff`). For `f : ℕ`, `complexOrder (f² D)` is `ℤ + ℤ · (f · complexGenerator D)`
-(of index `f` in `complexOrder D` when `D < 0` and `f > 0`, and the complex image of the order
-`ℤ + f 𝓞 K` of conductor `f` when `D` is a negative fundamental discriminant and `f > 0`).
+`complexOrder D = ℤ[complexGenerator D] ⊆ ℂ` (degenerating to `ℤ` at `D = 0`). Because conjugation
+fixes `complexOrder D` setwise, every ring homomorphism `ℚ(√D) →+* ℂ` maps `toSubalgebra D` onto
+`complexOrder D` (`map_toSubalgebra_eq_complexOrder`). When `D < 0` with `D ≡ 0, 1 mod 4`,
+`complexOrder D` is the imaginary quadratic order of discriminant `D` in `ℂ` with integral basis
+`1, (D + √(-D) · i) / 2` (`equivComplexOrder`), and for all `D₁, D₂ ≤ 0` with `D₁, D₂ ≡ 0, 1 mod 4`
+the subalgebra `complexOrder D ⊆ ℂ` uniquely determines `D` (`complexOrder_eq_iff`). For `f : ℕ`,
+`complexOrder (f² D)` is `ℤ + ℤ · (f · complexGenerator D)` (of index `f` in `complexOrder D` when
+`D < 0` and `f > 0`, and the image of `ℤ + f 𝓞 K` under any complex embedding of an imaginary
+quadratic field `K` of discriminant `D` when `f > 0`;
+see `map_toSubalgebra_intAddMulOrder_eq_complexOrder`).
 
 ## Main definitions
 
@@ -35,11 +40,12 @@ integral basis `1, (D + √(-D) · i) / 2` (`equivComplexOrder`), and for all `D
 * `TauCeti.QuadraticOrder.complexOrder_eq_bot_iff`, `TauCeti.QuadraticOrder.complexOrder_ne_bot`,
   `TauCeti.QuadraticOrder.complexOrder_eq_iff`: non-triviality and discriminant uniqueness of
   `complexOrder D`.
-* `TauCeti.QuadraticOrder.mem_complexOrder_sq_mul_iff`,
+* `TauCeti.QuadraticOrder.map_toSubalgebra_eq_complexOrder`,
+  `TauCeti.QuadraticOrder.mem_complexOrder_sq_mul_iff`,
   `TauCeti.QuadraticOrder.complexOrder_sq_mul_eq_adjoin`,
-  `TauCeti.QuadraticOrder.map_toSubalgebra_intAddMulOrder_eq_complexOrder_of_isFundamentalDiscr`:
+  `TauCeti.QuadraticOrder.map_toSubalgebra_intAddMulOrder_eq_complexOrder`:
   span presentation `ℤ + ℤ · (f · complexGenerator D)` of `complexOrder (f² D)` and comparison with
-  `ℤ + f 𝓞 K`.
+  `ℤ + f 𝓞 K` for any imaginary quadratic field `K` and complex embedding `K →+* ℂ`.
 
 ## References
 
@@ -100,6 +106,13 @@ theorem complexOrder_def (D : ℤ) (hD0 : D ≤ 0) (hD : D % 4 = 0 ∨ D % 4 = 1
       (toSubalgebra D hD).map ((complexEmbedding (Int.cast_nonpos.mpr hD0)).restrictScalars ℤ) :=
   (rfl)
 
+/-- `complexOrder D` is finitely generated over `ℤ`. -/
+instance instFiniteComplexOrder (D : ℤ) (hD0 : D ≤ 0) (hD : D % 4 = 0 ∨ D % 4 = 1) :
+    Module.Finite ℤ (complexOrder D hD0 hD) := by
+  let f := (complexEmbedding (Int.cast_nonpos.mpr hD0)).restrictScalars ℤ
+  exact Module.Finite.of_surjective (f.subalgebraMap (toSubalgebra D hD)).toLinearMap
+    (f.subalgebraMap_surjective _)
+
 /-- Elements of `complexOrder D` are precisely `m + k · complexGenerator D` for `m, k : ℤ`. -/
 theorem mem_complexOrder_iff (D : ℤ) (hD0 : D ≤ 0) (hD : D % 4 = 0 ∨ D % 4 = 1) {z : ℂ} :
     z ∈ complexOrder D hD0 hD ↔ ∃ m k : ℤ, z = m + k * complexGenerator D := by
@@ -120,6 +133,29 @@ theorem complexOrder_eq_adjoin (D : ℤ) (hD0 : D ≤ 0) (hD : D % 4 = 0 ∨ D %
     complexOrder D hD0 hD = Algebra.adjoin ℤ {complexGenerator D} := by
   rw [complexOrder_def, toSubalgebra_eq_adjoin, AlgHom.map_adjoin, Set.image_singleton,
     AlgHom.restrictScalars_apply, complexEmbedding_generator]
+
+/-- Every ring homomorphism `QuadraticAlgebra ℚ (D : ℚ) 0 →+* ℂ` maps `toSubalgebra D hD` onto
+`complexOrder D hD0 hD` (since conjugation fixes `complexOrder D hD0 hD` setwise). -/
+theorem map_toSubalgebra_eq_complexOrder {D : ℤ} (hD0 : D ≤ 0) (hD : D % 4 = 0 ∨ D % 4 = 1)
+    (φ : QuadraticAlgebra ℚ (D : ℚ) 0 →+* ℂ) :
+    (toSubalgebra D hD).map φ.toIntAlgHom = complexOrder D hD0 hD := by
+  rw [toSubalgebra_eq_adjoin, AlgHom.map_adjoin, Set.image_singleton, complexOrder_eq_adjoin]
+  rcases algHom_eq_or_eq_comp_starAlgEquiv (Int.cast_nonpos.mpr hD0) φ.toRatAlgHom with h | h
+  · have hφ : φ (generator D) = complexGenerator D := by
+      simpa using AlgHom.congr_fun h (generator D)
+    rw [RingHom.toIntAlgHom_apply, hφ]
+  · have hφ : φ (generator D) = (D : ℂ) - complexGenerator D := by
+      have := AlgHom.congr_fun h (generator D)
+      simp only [RingHom.toRatAlgHom_apply, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
+        starAlgEquiv_apply, complexEmbedding_star, complexEmbedding_generator] at this
+      rw [this, complexGenerator_def]; simp [Complex.conj_ofReal, map_ofNat]; ring
+    rw [RingHom.toIntAlgHom_apply, hφ]
+    refine le_antisymm ?_ ?_ <;> rw [Algebra.adjoin_le_iff, Set.singleton_subset_iff]
+    · exact sub_mem (Subalgebra.intCast_mem _ D) (Algebra.self_mem_adjoin_singleton ℤ _)
+    · have hmem : (D : ℂ) - ((D : ℂ) - complexGenerator D) ∈
+          Algebra.adjoin ℤ {(D : ℂ) - complexGenerator D} :=
+        sub_mem (Subalgebra.intCast_mem _ D) (Algebra.self_mem_adjoin_singleton ℤ _)
+      simpa using hmem
 
 /-- As a `ℤ`-submodule of `ℂ`, `complexOrder D` is spanned by `1` and `complexGenerator D`. -/
 theorem complexOrder_toSubmodule (D : ℤ) (hD0 : D ≤ 0) (hD : D % 4 = 0 ∨ D % 4 = 1) :
@@ -144,6 +180,15 @@ theorem complexOrder_ne_bot {D : ℤ} (hD0 : D < 0) (hD : D % 4 = 0 ∨ D % 4 = 
   rcases hD0.lt_or_eq with hlt | rfl
   · exact ⟨fun h ↦ absurd h (complexOrder_ne_bot hlt hD), fun h ↦ absurd h hlt.ne⟩
   · simp [complexOrder_eq_adjoin, complexGenerator]
+
+/-- For `D < 0`, an element of `ℚ(√D)` maps into `complexOrder D` under
+`QuadraticAlgebra.complexEmbedding` if and only if it belongs to `toSubalgebra D hD`. -/
+@[simp] theorem complexEmbedding_mem_complexOrder_iff {D : ℤ} {ha : (D : ℚ) ≤ 0} {hD_le : D ≤ 0}
+    {hD : D % 4 = 0 ∨ D % 4 = 1} (hD0 : D < 0) {z : QuadraticAlgebra ℚ (D : ℚ) 0} :
+    complexEmbedding ha z ∈ complexOrder D hD_le hD ↔ z ∈ toSubalgebra D hD := by
+  rw [complexOrder_def, Subalgebra.mem_map]
+  exact ⟨fun ⟨w, hw, hwz⟩ ↦ complexEmbedding_injective (by exact_mod_cast hD0) hwz ▸ hw,
+    fun hz ↦ ⟨z, hz, rfl⟩⟩
 
 /-- For `D < 0`, the distinguished complex embedding restricts to a `ℤ`-algebra isomorphism
 `toSubalgebra D hD ≃ₐ[ℤ] complexOrder D hD0.le hD`. -/
@@ -232,36 +277,34 @@ theorem complexOrder_sq_mul_eq_adjoin {D : ℤ} (hD0 : D ≤ 0) (hD : D % 4 = 0 
       mem_complexOrder_sq_mul_iff hD0 hD f]
     exact ⟨0, 1, by simp⟩
 
-/-- **The order `ℤ + f 𝓞 K` embeds onto `complexOrder (f² D)`**: for a negative fundamental
-discriminant `D` and a positive conductor `f`, the image of `intAddMulOrder K f` under the
-distinguished complex embedding of `K = ℚ(√D)` is `complexOrder (f² D) = ℤ + ℤ · f ω_D`. -/
-theorem map_toSubalgebra_intAddMulOrder_eq_complexOrder_of_isFundamentalDiscr {D : ℤ} (hD0 : D ≤ 0)
-    [Fact (¬ IsSquare D)] (hfund : Int.IsFundamentalDiscr D) (f : ℕ) [NeZero f] :
-    ((GlobalNumberFields.intAddMulOrder (QuadraticAlgebra ℚ (D : ℚ) 0) f).toSubalgebra).map
-        ((complexEmbedding (Int.cast_nonpos.mpr hD0)).restrictScalars ℤ) =
-      complexOrder ((f : ℤ) ^ 2 * D) (mul_nonpos_of_nonneg_of_nonpos (sq_nonneg _) hD0)
-        (sq_mul_emod_four_eq_zero_or_one hfund.1 f) := by
-  have hmax := (toSubalgebra_eq_integralClosure_iff D hfund.1).mpr hfund
-  ext z
-  rw [Subalgebra.mem_map, mem_complexOrder_sq_mul_iff hD0 hfund.1 f]
-  constructor
-  · rintro ⟨x, hx, rfl⟩
-    obtain ⟨a, y, rfl⟩ := GlobalNumberFields.NumberFieldOrder.mem_intAddMulOrder.mp hx
-    have hy : (y : QuadraticAlgebra ℚ (D : ℚ) 0) ∈ toSubalgebra D hfund.1 := hmax ▸ y.2
-    obtain ⟨m, k, hmk⟩ := (mem_toSubalgebra_iff D hfund.1 _).mp hy
-    refine ⟨a + f * m, k, ?_⟩
-    simp only [AlgHom.restrictScalars_apply, hmk, map_add, map_intCast, map_mul, map_natCast,
-      zsmul_eq_mul, mul_one, complexEmbedding_generator]
-    push_cast; ring
-  · rintro ⟨m, k, rfl⟩
-    have hw : k • generator D ∈ integralClosure ℤ (QuadraticAlgebra ℚ (D : ℚ) 0) :=
-      hmax ▸ (mem_toSubalgebra_iff D hfund.1 _).mpr ⟨0, k, by simp⟩
-    refine ⟨m + f * (⟨k • generator D, hw⟩ :
-        NumberField.RingOfIntegers (QuadraticAlgebra ℚ (D : ℚ) 0)),
-      GlobalNumberFields.NumberFieldOrder.mem_intAddMulOrder.mpr ⟨m, ⟨k • generator D, hw⟩, rfl⟩,
-      ?_⟩
-    simp only [AlgHom.restrictScalars_apply, map_add, map_intCast, map_mul, map_natCast,
-      zsmul_eq_mul, complexEmbedding_generator]
-    ring
+/-- **The order `ℤ + f 𝓞 K` embeds onto `complexOrder (f² · discr K)`**: for any imaginary quadratic
+number field `K` (`finrank ℚ K = 2`, `discr K ≤ 0`), any positive conductor `f`, and any complex
+embedding `φ : K →+* ℂ`, the image of `intAddMulOrder K f` under `φ` is
+`complexOrder (f² · discr K)`. -/
+theorem map_toSubalgebra_intAddMulOrder_eq_complexOrder {K : Type*} [Field K] [NumberField K]
+    (hK : Module.finrank ℚ K = 2) (hD0 : NumberField.discr K ≤ 0) (f : ℕ) [NeZero f]
+    (φ : K →+* ℂ) :
+    ((GlobalNumberFields.intAddMulOrder K f).toSubalgebra).map φ.toIntAlgHom =
+      complexOrder ((f : ℤ) ^ 2 * NumberField.discr K)
+        (mul_nonpos_of_nonneg_of_nonpos (sq_nonneg _) hD0)
+        (sq_mul_emod_four_eq_zero_or_one
+          (TauCeti.NumberField.discr_emod_four_eq_zero_or_one K) f) := by
+  set D := (f : ℤ) ^ 2 * NumberField.discr K
+  have hDlt : D < 0 := mul_neg_of_pos_of_neg
+    (sq_pos_of_pos (Nat.cast_pos.mpr (NeZero.pos f)))
+    (lt_of_le_of_ne hD0 (NumberField.discr_ne_zero K))
+  have : Fact (¬ IsSquare D) := ⟨fun ⟨r, hr⟩ ↦ by nlinarith [sq_nonneg r]⟩
+  have hD4 := sq_mul_emod_four_eq_zero_or_one
+    (TauCeti.NumberField.discr_emod_four_eq_zero_or_one K) f
+  obtain ⟨δ, hδ⟩ := Multiquadratic.exists_sq_eq_discr hK
+  have hfδ : ((f : K) * δ) ^ 2 = (D : K) := by rw [mul_pow, hδ]; push_cast [D]; ring
+  rw [← numberFieldOrderOfSqrt_eq_intAddMulOrder hK hD4 rfl ((f : K) * δ) hfδ,
+    numberFieldOrderOfSqrt_toSubalgebra, Subalgebra.map_map]
+  have hcomp :
+      φ.toIntAlgHom.comp ((algEquivOfSqrt D ((f : K) * δ) hfδ hK).toAlgHom.restrictScalars ℤ) =
+        (φ.comp (algEquivOfSqrt D ((f : K) * δ) hfδ hK).toRingHom).toIntAlgHom := by
+    ext x; rfl
+  rw [hcomp]
+  exact map_toSubalgebra_eq_complexOrder _ hD4 _
 
 end TauCeti.QuadraticOrder

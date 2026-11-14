@@ -289,7 +289,7 @@ theorem a_primPart_pos_iff (f : BinaryQuadraticForm ℤ) : 0 < f.primPart.a ↔ 
 
 /-- The primitive part of an integral form has strictly negative discriminant if and only if the
 form itself has strictly negative discriminant. -/
-theorem discrim_primPart_lt_zero_iff (f : BinaryQuadraticForm ℤ) :
+@[simp] theorem discrim_primPart_lt_zero_iff (f : BinaryQuadraticForm ℤ) :
     f.primPart.discrim < 0 ↔ f.discrim < 0 := by
   by_cases hf : f = 0
   · simp [hf]

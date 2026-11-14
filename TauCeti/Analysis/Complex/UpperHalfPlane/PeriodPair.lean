@@ -54,8 +54,8 @@ every lattice is a rescaling of `ℤ τ + ℤ` for some `τ` in the upper half-p
 * `PeriodPair.instMulActionUnitsComplex`: the rescaling action `c • (ω₁, ω₂) = (c ω₁, c ω₂)`.
 * `PeriodPair.latticeSMulEquiv`: multiplication by `c` from the lattice of `L` to that of `c • L`.
 * `PeriodPair.Homothetic`: homothety `∃ c : ℂˣ, L'.lattice = (c • L).lattice` between period pairs.
-* `PeriodPair.HomothetyClass`: the quotient of `PeriodPair` by homothety, with universal map
-  `PeriodPair.HomothetyClass.lift`.
+* `TauCeti.PeriodPair.HomothetyClass`: the quotient of `PeriodPair` by homothety, with universal map
+  `TauCeti.PeriodPair.HomothetyClass.lift`.
 
 ## Main results
 
@@ -925,10 +925,10 @@ theorem homothetic_periodPair_iff {τ τ' : ℍ} :
 
 end UpperHalfPlane
 
-namespace PeriodPair
+namespace TauCeti.PeriodPair
 
 /-- The equivalence relation of homothety on `PeriodPair`. -/
-private def homotheticSetoid : Setoid PeriodPair :=
+private def homotheticSetoid : Setoid _root_.PeriodPair :=
   ⟨Homothetic, Homothetic.refl, Homothetic.symm, Homothetic.trans⟩
 
 /-- A **homothety class** of complex period lattices: the quotient of `PeriodPair` by
@@ -938,32 +938,34 @@ def HomothetyClass : Type := Quotient homotheticSetoid
 namespace HomothetyClass
 
 /-- The homothety class of a period pair `L`. -/
-def mk (L : PeriodPair) : HomothetyClass := Quotient.mk homotheticSetoid L
+def mk (L : _root_.PeriodPair) : HomothetyClass := Quotient.mk homotheticSetoid L
 
 /-- Every homothety class is represented by a period pair. -/
 theorem mk_surjective : Function.Surjective mk := Quotient.mk_surjective
 
-/-- Induction principle for `PeriodPair.HomothetyClass`. -/
+/-- Induction principle for `TauCeti.PeriodPair.HomothetyClass`. -/
 @[elab_as_elim] protected theorem ind {motive : HomothetyClass → Prop} (h : ∀ L, motive (mk L))
     (x : HomothetyClass) : motive x := Quotient.ind h x
 
-/-- Lift a homothety-invariant function on `PeriodPair` to `PeriodPair.HomothetyClass`. -/
-def lift {α : Sort*} (f : PeriodPair → α) (hf : ∀ L L', L.Homothetic L' → f L = f L') :
+/-- Lift a homothety-invariant function on `PeriodPair` to `TauCeti.PeriodPair.HomothetyClass`. -/
+def lift {α : Sort*} (f : _root_.PeriodPair → α) (hf : ∀ L L', L.Homothetic L' → f L = f L') :
     HomothetyClass → α := Quotient.lift f hf
 
 /-- Evaluating `HomothetyClass.lift` on `mk L` applies the underlying function to `L`. -/
-@[simp] theorem lift_mk {α : Sort*} (f : PeriodPair → α)
-    (hf : ∀ L L', L.Homothetic L' → f L = f L') (L : PeriodPair) : lift f hf (mk L) = f L := (rfl)
+@[simp] theorem lift_mk {α : Sort*} (f : _root_.PeriodPair → α)
+    (hf : ∀ L L', L.Homothetic L' → f L = f L') (L : _root_.PeriodPair) :
+    lift f hf (mk L) = f L := (rfl)
 
 /-- Two period pairs determine the same homothety class if and only if they are homothetic. -/
-theorem mk_eq_mk_iff {L L' : PeriodPair} : mk L = mk L' ↔ L.Homothetic L' := Quotient.eq
+theorem mk_eq_mk_iff {L L' : _root_.PeriodPair} : mk L = mk L' ↔ L.Homothetic L' := Quotient.eq
 
 /-- Rescaling a period pair does not change its homothety class. -/
-@[simp] theorem mk_smul (c : ℂˣ) (L : PeriodPair) : mk (c • L) = mk L :=
+@[simp] theorem mk_smul (c : ℂˣ) (L : _root_.PeriodPair) : mk (c • L) = mk L :=
   mk_eq_mk_iff.mpr (homothetic_smul_left c L)
 
 /-- Period pairs with the same lattice determine the same homothety class. -/
-theorem mk_eq_of_lattice_eq {L L' : PeriodPair} (h : L.lattice = L'.lattice) : mk L = mk L' :=
+theorem mk_eq_of_lattice_eq {L L' : _root_.PeriodPair} (h : L.lattice = L'.lattice) :
+    mk L = mk L' :=
   mk_eq_mk_iff.mpr (.of_lattice_eq h)
 
 /-- Every homothety class is represented by `ℤ τ + ℤ` for some `τ ∈ ℍ`. -/
@@ -985,7 +987,7 @@ theorem mk_periodPair_eq_mk_periodPair_iff {τ τ' : ℍ} :
 
 end HomothetyClass
 
-end PeriodPair
+end TauCeti.PeriodPair
 
 namespace TauCeti
 
