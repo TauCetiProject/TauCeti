@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Convex.Cone.StrictInward
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
+public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
@@ -18,7 +19,8 @@ preferred chart at `x`, it lies in the strict inward cone of the range of the mo
 (`TauCeti.strictInwardTangentCone`). Since the range of a model is convex with nonempty interior,
 the derivatives of the changes of coordinates preserve these cones, so strict inwardness can be
 read in the preferred chart at any point whose domain contains `x`
-(`TauCeti.mem_strictInwardTangentCone_iff_tangentCoordChange`). More generally, differentials of
+(`TauCeti.mem_strictInwardTangentCone_iff_trivializationAt`,
+`TauCeti.mem_strictInwardTangentCone_iff_mvfderiv_extChartAt`). More generally, differentials of
 dense range preserve strict inwardness (`MDifferentiableAt.mapsTo_strictInwardTangentCone`). The
 cone in each tangent space is open, convex, nonempty and invariant under positive scaling; it is
 the whole tangent space exactly at interior points.
@@ -47,19 +49,43 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   (I : ModelWithCorners ℝ E H) [TopologicalSpace M] [ChartedSpace H M]
 
 /-- The strict inward cone in the tangent space at `x`: the tangent vectors which, read in the
-preferred chart at `x`, are strictly inward to the range of the model. A tangent vector is read in
-the preferred chart through `tangentSpaceCastModel`, as in Mathlib's `HasMFDerivAt`. -/
+preferred chart at `x`, are strictly inward to the range of the model. -/
 noncomputable def strictInwardTangentCone (x : M) : Set (TangentSpace I x) :=
   tangentSpaceCastModel I x ⁻¹' strictInwardCone (range I) (extChartAt I x x)
 
 variable {I}
 
-/-- A tangent vector is strictly inward when, read in the preferred chart, it is strictly inward
-to the range of the model. -/
-theorem mem_strictInwardTangentCone_iff {x : M} {v : TangentSpace I x} :
+private theorem mem_strictInwardTangentCone_iff_cast {x : M} {v : TangentSpace I x} :
     v ∈ strictInwardTangentCone I x ↔
       tangentSpaceCastModel I x v ∈ strictInwardCone (range I) (extChartAt I x x) :=
   Iff.rfl
+
+/-- The derivative of the preferred chart at its own base point reads tangent vectors through the
+identification of the tangent space with the model vector space. -/
+private theorem mvfderiv_extChartAt_self_apply (x : M) (v : TangentSpace I x) :
+    mvfderiv I (extChartAt I x) x v = tangentSpaceCastModel I x v := by
+  have heq : writtenInExtChartAt I 𝓘(ℝ, E) x (extChartAt I x) =ᶠ[𝓝[range I] extChartAt I x x]
+      id :=
+    eventuallyEq_of_mem (extChartAt_target_mem_nhdsWithin x) fun _ h ↦ by
+      simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
+        Function.comp_apply, id]
+      exact (extChartAt I x).right_inv h
+  have hu : UniqueDiffWithinAt ℝ (range I) (extChartAt I x x) :=
+    I.uniqueDiffOn _ (by rw [extChartAt_coe]; exact mem_range_self _)
+  have hd : MDifferentiableAt I 𝓘(ℝ, E) (extChartAt I x) x := by
+    rw [mdifferentiableAt_iff]
+    exact ⟨continuousAt_extChartAt x,
+      differentiableWithinAt_id.congr_of_eventuallyEq heq (by simp)⟩
+  rw [mvfderiv, ContinuousLinearMap.comp_apply, hd.mfderiv, heq.fderivWithin_eq (by simp),
+    fderivWithin_id hu]
+  rfl
+
+/-- A tangent vector is strictly inward exactly when its image under the derivative of the preferred
+chart is strictly inward to the range of the model. -/
+theorem mem_strictInwardTangentCone_iff {x : M} {v : TangentSpace I x} :
+    v ∈ strictInwardTangentCone I x ↔
+      mvfderiv I (extChartAt I x) x v ∈ strictInwardCone (range I) (extChartAt I x x) := by
+  rw [mvfderiv_extChartAt_self_apply, mem_strictInwardTangentCone_iff_cast]
 
 /-- The derivative of a change of coordinates sends strictly inward vectors to strictly inward
 vectors. -/
@@ -85,13 +111,29 @@ theorem tangentCoordChange_mem_strictInwardCone_iff [IsManifold I 1 M] {x y z : 
   have h' := tangentCoordChange_mem_strictInwardCone ⟨hz.2, hz.1⟩ h
   rwa [tangentCoordChange_comp ⟨⟨hz.1, hz.2⟩, hz.1⟩, tangentCoordChange_self hz.1] at h'
 
-/-- A tangent vector at `x` is strictly inward exactly when it is so read in the preferred chart
-at any point `y` whose domain contains `x`. -/
-theorem mem_strictInwardTangentCone_iff_tangentCoordChange [IsManifold I 1 M] {x y : M}
+/-- A tangent vector at `x` is strictly inward exactly when its coordinates in the tangent-bundle
+trivialization at any point `y` whose chart domain contains `x` are strictly inward. -/
+theorem mem_strictInwardTangentCone_iff_trivializationAt [IsManifold I 1 M] {x y : M}
     (hx : x ∈ (extChartAt I y).source) {v : TangentSpace I x} :
-    v ∈ strictInwardTangentCone I x ↔ tangentCoordChange I x y x (tangentSpaceCastModel I x v) ∈
-      strictInwardCone (range I) (extChartAt I y x) :=
-  (tangentCoordChange_mem_strictInwardCone_iff ⟨mem_extChartAt_source x, hx⟩).symm
+    v ∈ strictInwardTangentCone I x ↔ (trivializationAt E (TangentSpace I) y ⟨x, v⟩).2 ∈
+      strictInwardCone (range I) (extChartAt I y x) := by
+  rw [TangentBundle.trivializationAt_apply_tangentCoordChange]
+  exact (tangentCoordChange_mem_strictInwardCone_iff ⟨mem_extChartAt_source x, hx⟩).symm
+
+/-- A tangent vector at `x` is strictly inward exactly when its image under the derivative of the
+preferred chart at any point `y` whose domain contains `x` is strictly inward. -/
+theorem mem_strictInwardTangentCone_iff_mvfderiv_extChartAt [IsManifold I 1 M] {x y : M}
+    (hx : x ∈ (extChartAt I y).source) {v : TangentSpace I x} :
+    v ∈ strictInwardTangentCone I x ↔
+      mvfderiv I (extChartAt I y) x v ∈ strictInwardCone (range I) (extChartAt I y x) := by
+  have hv : mvfderiv I (extChartAt I y) x v = (trivializationAt E (TangentSpace I) y ⟨x, v⟩).2 := by
+    have hb : x ∈ (trivializationAt E (TangentSpace I) y).baseSet := by
+      rwa [TangentBundle.trivializationAt_baseSet, ← extChartAt_source I]
+    rw [extChartAt_source] at hx
+    rw [mvfderiv, ContinuousLinearMap.comp_apply,
+      ← TangentBundle.continuousLinearMapAt_trivializationAt hx]
+    exact (trivializationAt E (TangentSpace I) y).continuousLinearMapAt_apply_of_mem (R := ℝ) hb v
+  rw [hv, mem_strictInwardTangentCone_iff_trivializationAt hx]
 
 /-- **Differentials preserve strict inwardness.** A differential of dense range between manifolds
 with corners sends strictly inward tangent vectors to strictly inward tangent vectors. -/
@@ -109,9 +151,9 @@ theorem _root_.MDifferentiableAt.mapsTo_strictInwardTangentCone {E' H' M' : Type
   have h := hf.hasMFDerivAt.2.mapsTo_strictInwardCone hd I'.convex_range I'.nonempty_interior
     (Eventually.of_forall fun z ↦ by
       rw [writtenInExtChartAt, Function.comp_apply, extChartAt_coe]; exact mem_range_self _)
-    (mem_strictInwardTangentCone_iff.mp hv)
+    (mem_strictInwardTangentCone_iff_cast.mp hv)
   rw [writtenInExtChartAt, Function.comp_apply, Function.comp_apply, extChartAt_to_inv] at h
-  rw [mem_strictInwardTangentCone_iff]
+  rw [mem_strictInwardTangentCone_iff_cast]
   simpa using h
 
 variable (I)
@@ -151,14 +193,14 @@ variable {I}
 @[simp]
 theorem zero_mem_strictInwardTangentCone_iff {x : M} :
     (0 : TangentSpace I x) ∈ strictInwardTangentCone I x ↔ I.IsInteriorPoint x := by
-  rw [mem_strictInwardTangentCone_iff, map_zero, zero_mem_strictInwardCone_iff,
+  rw [mem_strictInwardTangentCone_iff_cast, map_zero, zero_mem_strictInwardCone_iff,
     ModelWithCorners.IsInteriorPoint]
 
 /-- Positive rescaling preserves and reflects strict inwardness of tangent vectors. -/
 @[simp]
 theorem smul_mem_strictInwardTangentCone_iff {x : M} {v : TangentSpace I x} {c : ℝ}
     (hc : 0 < c) : c • v ∈ strictInwardTangentCone I x ↔ v ∈ strictInwardTangentCone I x := by
-  rw [mem_strictInwardTangentCone_iff, mem_strictInwardTangentCone_iff, map_smul]
+  rw [mem_strictInwardTangentCone_iff_cast, mem_strictInwardTangentCone_iff_cast, map_smul]
   exact smul_mem_strictInwardCone_iff hc
 
 variable (I)
@@ -189,10 +231,6 @@ theorem exists_contMDiffSection_mem_strictInwardTangentCone [FiniteDimensional �
     (Manifold.contMDiffOn_symm_baseSet w).mono (hsource ▸ inter_subset_left), ?_⟩
   rintro y ⟨hy, hyw⟩
   rw [mem_ofPred_eq] at hyw
-  rw [mem_strictInwardTangentCone_iff_tangentCoordChange hy]
-  convert hyw
-  calc tangentCoordChange I y x₀ y (tangentSpaceCastModel I y (e.symm y w))
-      = (e ⟨y, e.symm y w⟩).2 := (TangentBundle.trivializationAt_apply_tangentCoordChange _).symm
-    _ = w := by rw [e.apply_mk_symm (hsource ▸ hy)]
+  rwa [mem_strictInwardTangentCone_iff_trivializationAt hy, e.apply_mk_symm (hsource ▸ hy)]
 
 end TauCeti
