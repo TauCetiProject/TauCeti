@@ -39,9 +39,8 @@ Mathlib's `leadingCoeff_preΨ` (`= n` for odd `n` and `= n / 2` for even `n`) an
   squarefree, an `n`-torsion point has integral `x`. The odd-prime case the Nagell–Lutz route
   quotes is the specialisation `n = p`; primality is not used.
 * `WeierstrassCurve.isInteger_x_of_even_torsion_of_squarefree`: for an **even** `n` with
-  `(n / 2 : R)` squarefree and `(2 : R) ≠ 0`, an `n`-torsion point that is not two-torsion has
-  integral `x`. `WeierstrassCurve.isInteger_x_of_order_four_of_squarefree` is the case `n = 4`,
-  where `4 / 2 = 2` collapses both arithmetic premises into `Squarefree (2 : R)`.
+  `(n / 2 : R)` squarefree, an `n`-torsion point that is not two-torsion has integral `x`;
+  `WeierstrassCurve.isInteger_x_of_order_four_of_squarefree` is the case `n = 4`.
 * `WeierstrassCurve.den_dvd_four_of_order_two`: order two is the genuine exception — the
   coordinates need not be integral, but the denominator of `x` divides `4`.
 
@@ -100,14 +99,10 @@ open Polynomial
 
 namespace WeierstrassCurve
 
-open WeierstrassCurve
-
-
-variable {R : Type*} [CommRing R] [IsDomain R] [UniqueFactorizationMonoid R]
-variable {K : Type*} [Field K] [DecidableEq K] [Algebra R K] [IsFractionRing R K]
+variable {R : Type*} [CommRing R] [UniqueFactorizationMonoid R]
+variable {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
 variable (W : WeierstrassCurve R)
 
-omit [DecidableEq K] in
 /-- For an **odd** `n` with `(n : R)` squarefree, an `n`-torsion point has integral
 `x`-coordinate.
 
@@ -123,6 +118,7 @@ theorem isInteger_x_of_odd_torsion_of_squarefree {x y : K}
     {n : ℤ} (hodd : ¬Even n)
     (htors : n • (Jacobian.Point.fromAffine (Affine.Point.some _ _ hns)) = 0)
     (hsf : Squarefree (n : R)) : IsLocalization.IsInteger R x := by
+  have := IsDomain.of_faithfulSMul R K
   have hψ := evalEval_ψ_eq_zero_of_zsmul_eq_zero (W.baseChange K) hns n htors
   -- The source's `evalEval_ψ_odd` is this composition; only its two halves are ported here.
   rw [(evalEval_ψ_eq_evalEval_Ψ (W.baseChange K) hns.left n).trans
@@ -135,7 +131,6 @@ theorem isInteger_x_of_odd_torsion_of_squarefree {x y : K}
     exact hsf
   exact isInteger_x_of_equation_of_is_root_of_squarefree_leadingCoeff W hns.left hψ hsf_lc
 
-omit [DecidableEq K] in
 /-- For an **even** `n` with `(n / 2 : R)` squarefree, a point killed by `n` but **not** by `2`
 has integral `x`-coordinate.
 
@@ -144,16 +139,18 @@ would make the point two-torsion, which `h2ne` excludes, so the first vanishes, 
 leading coefficient `n / 2`. Excluding order two is not a technicality — a two-torsion point need
 not be integral at all, and `den_dvd_four_of_order_two` is everything that survives there.
 
-`h2` is needed on top of `hsf`: it is `n / 2` that is squarefree, and `(n : R) = 2 * (n / 2 : R)`
-is what the leading-coefficient formula asks to be nonzero. The `y`-coordinate follows by
+No `(2 : R) ≠ 0` hypothesis is needed: `natDegree_preΨ_le` and `coeff_preΨ` pin the leading
+coefficient to `n / 2` directly from `(n / 2 : R) ≠ 0`, rather than via `leadingCoeff_preΨ`'s
+stronger `(n : R) ≠ 0` premise. The `y`-coordinate follows by
 `isInteger_y_of_equation_of_isInteger_x`. -/
 theorem isInteger_x_of_even_torsion_of_squarefree {x y : K}
     (hns : (W.baseChange K).toAffine.Nonsingular x y)
     {n : ℤ} (heven : Even n)
     (htors : n • (Jacobian.Point.fromAffine (Affine.Point.some _ _ hns)) = 0)
     (h2ne : (2 : ℤ) • Jacobian.Point.fromAffine (Affine.Point.some _ _ hns) ≠ 0)
-    (h2 : (2 : R) ≠ 0) (hsf : Squarefree ((n / 2 : ℤ) : R)) :
+    (hsf : Squarefree ((n / 2 : ℤ) : R)) :
     IsLocalization.IsInteger R x := by
+  have := IsDomain.of_faithfulSMul R K
   have hψ := evalEval_ψ_eq_zero_of_zsmul_eq_zero (W.baseChange K) hns n htors
   rw [evalEval_ψ_eq_evalEval_Ψ (W.baseChange K) hns.left n, _root_.WeierstrassCurve.Ψ,
     ite_eq_left heven, evalEval_mul, evalEval_C] at hψ
@@ -161,31 +158,29 @@ theorem isInteger_x_of_even_torsion_of_squarefree {x y : K}
   · have hmap : (W.baseChange K).preΨ n = (W.preΨ n).map (algebraMap R K) :=
       WeierstrassCurve.map_preΨ ..
     rw [hmap, eval_map, ← aeval_def] at hpreΨ
-    have hn : (n : R) ≠ 0 := by
-      rw [← Int.two_mul_ediv_two_of_even heven]
-      push_cast
-      exact mul_ne_zero h2 hsf.ne_zero
-    have hsf_lc : Squarefree (W.preΨ n).leadingCoeff := by
-      rw [W.leadingCoeff_preΨ hn, ite_eq_left heven]
-      exact hsf
-    exact isInteger_x_of_equation_of_is_root_of_squarefree_leadingCoeff W hns.left hpreΨ hsf_lc
+    have hcoeff : (W.preΨ n).coeff ((n.natAbs ^ 2 - if Even n then 4 else 1) / 2) =
+        ((n / 2 : ℤ) : R) := by
+      rw [W.coeff_preΨ, ite_eq_left heven]
+    have hlc : (W.preΨ n).leadingCoeff = ((n / 2 : ℤ) : R) := by
+      rw [leadingCoeff, natDegree_eq_of_le_of_coeff_ne_zero (W.natDegree_preΨ_le n)
+        (hcoeff ▸ hsf.ne_zero), hcoeff]
+    exact isInteger_x_of_equation_of_is_root_of_squarefree_leadingCoeff W hns.left hpreΨ
+      (hlc ▸ hsf)
   · exact absurd (zsmul_eq_zero_of_evalEval_ψ_eq_zero (W.baseChange K) hns 2
       (by rwa [WeierstrassCurve.ψ_two])) h2ne
 
-omit [DecidableEq K] in
 /-- **An order-four point is integral when `(2 : R)` is squarefree.** The index-four case of
-`isInteger_x_of_even_torsion_of_squarefree`, and the statement the Nagell–Lutz route quotes:
-`4 / 2 = 2`, so a single squarefree hypothesis carries both of that theorem's arithmetic
-premises. -/
+`isInteger_x_of_even_torsion_of_squarefree`, and the statement the Nagell–Lutz route quotes,
+since `4 / 2 = 2`. -/
 theorem isInteger_x_of_order_four_of_squarefree {x y : K}
     (hns : (W.baseChange K).toAffine.Nonsingular x y)
     (h4 : (4 : ℤ) • (Jacobian.Point.fromAffine (Affine.Point.some _ _ hns)) = 0)
     (h2ne : (2 : ℤ) • Jacobian.Point.fromAffine (Affine.Point.some _ _ hns) ≠ 0)
     (hsf : Squarefree (2 : R)) : IsLocalization.IsInteger R x :=
-  isInteger_x_of_even_torsion_of_squarefree W hns (by decide) h4 h2ne hsf.ne_zero
-    (by simpa using hsf)
+  isInteger_x_of_even_torsion_of_squarefree W hns (by decide) h4 h2ne (by simpa using hsf)
 
-omit [DecidableEq K] in
+variable [IsDomain R]
+
 /-- **Order two is the exception, and its denominator divides `4`.** A two-torsion point need not
 have integral coordinates; `ψ₂` vanishing forces `Ψ₂Sq` to vanish at `x`, and that polynomial's
 leading coefficient is `4`. -/
@@ -207,6 +202,5 @@ theorem den_dvd_four_of_order_two {x y : K}
   rw [hmap, eval_map, ← aeval_def] at hΨ_zero
   have hdvd := den_dvd_of_is_root hΨ_zero
   rwa [W.leadingCoeff_Ψ₂Sq h4_ne] at hdvd
-
 
 end WeierstrassCurve
