@@ -25,13 +25,13 @@ The two smallest knot instances are the `5 × 5` trefoil grid, with `τ = -1`
 `τ = -3` (`GridDiagram.tau_torusLink_two_three`). The unknot grids are the torus link grids with
 `q = 0`, so every unknot grid has `τ = 0` (`GridDiagram.tau_unknot`).
 
-These are statements about the diagrams: reading them as values of the concordance invariant of
-the presented knots requires the invariance of `GH⁻` under grid moves, which is not established
-here.
+These are statements about the diagrams; the corresponding statements for grid knots modulo grid
+moves are in `TauCeti.KnotTheory.Grid.Move.Tau`.
 
 ## Main results
 
-* `TauCeti.GridDiagram.two_mul_tau_torusLink`: `2 τ(torusLink p q) = -p q` on a torus knot grid.
+* `TauCeti.GridDiagram.two_mul_tau_torusLink` and `TauCeti.GridDiagram.tau_torusLink`:
+  `2 τ(torusLink p q) = -p q` and `τ(torusLink p q) = -(p q / 2)` on a torus knot grid.
 * `TauCeti.GridDiagram.tau_torusLink_one_two`, `TauCeti.GridDiagram.tau_torusLink_two_three`:
   `τ = -1` on the `5 × 5` trefoil grid and `τ = -3` on the `7 × 7` grid of the `(3, 4)` torus knot.
 * `TauCeti.GridDiagram.tau_unknot`: `τ = 0` on every unknot grid.
@@ -56,6 +56,15 @@ variable {p q : ℕ} (h : (p + 1).Coprime (q + 1)) (K : Type*) [Field K] [CharP 
 theorem two_mul_tau_torusLink :
     2 * ((isKnot_torusLink_iff p q).mpr h).tau K = -(p * q : ℤ) := by
   rw [IsKnot.tau_def, mul_neg, two_mul_supNonTorsionDegree_torusLink h K]
+
+/-- **`τ` of a torus knot grid**: on the standard grid of the `(p + 1, q + 1)` torus knot,
+`τ = -(p q / 2)`. -/
+theorem tau_torusLink :
+    ((isKnot_torusLink_iff p q).mpr h).tau K = -((p * q / 2 : ℕ) : ℤ) := by
+  have hτ := two_mul_tau_torusLink h K
+  rw [← Nat.cast_mul] at hτ
+  generalize p * q = n at hτ ⊢
+  omega
 
 /-- On the `5 × 5` trefoil grid, `τ = -1`. -/
 @[simp]

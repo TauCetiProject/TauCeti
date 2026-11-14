@@ -29,7 +29,7 @@ the one in which the inequality `|τ(K)| ≤ u(K)` of grid homology is proved: t
 maps bound the change of `τ` across a single cross-commutation, and summing along an unknotting
 sequence bounds `τ` by the unknotting number.
 
-The unknotting numbers of specific torus links are bounded in
+The unknotting numbers of torus knots and specific torus links are computed in
 `TauCeti.KnotTheory.Grid.TorusLink.UnknottingNumber`.
 
 ## Main definitions
@@ -96,6 +96,11 @@ theorem IsCrossingChange.componentCount_eq {L L' : GridLink} (h : IsCrossingChan
     L'.componentCount = L.componentCount := by
   obtain ⟨n, G, G', h, rfl, rfl⟩ := h
   simpa using h.componentCount_eq
+
+/-- A crossing change preserves whether a grid link is a knot. -/
+theorem IsCrossingChange.isKnot_iff {L L' : GridLink} (h : IsCrossingChange L L') :
+    L'.IsKnot ↔ L.IsKnot := by
+  rw [isKnot_def, h.componentCount_eq, isKnot_def]
 
 /-- The crossing change graph: two distinct grid links are adjacent when they differ by a crossing
 change. -/
