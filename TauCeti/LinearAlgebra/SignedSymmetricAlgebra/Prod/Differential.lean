@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Prod.Basic
 public import TauCeti.Algebra.Homology.DG.Algebra.TensorProduct
+public import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Derivation
 
 /-!
 # Differentials on the signed symmetric algebra of a product
@@ -102,6 +103,18 @@ theorem prodDifferential_inr (hV : dV 1 = 0) (b : SignedSym H) :
   rw [dgTensorDifferential_tmul_of_mem (SetLike.one_mem_graded (signedSymPiece G)), hV]
   simp
 
+/-- The product differential kills the unit when both factor maps do. -/
+@[simp]
+theorem prodDifferential_one (hV : dV 1 = 0) (hW : dW 1 = 0) :
+    prodDifferential G H dV dW 1 = 0 := by
+  simpa [hV] using prodDifferential_inl (G := G) (dV := dV) hW (1 : SignedSym G)
+
+/-- The product differential kills scalars when both factor maps kill the unit. -/
+@[simp]
+theorem prodDifferential_algebraMap (hV : dV 1 = 0) (hW : dW 1 = 0) (r : R) :
+    prodDifferential G H dV dW (algebraMap R (SignedSym (G.prod H)) r) = 0 := by
+  rw [Algebra.algebraMap_eq_smul_one, map_smul, prodDifferential_one hV hW, smul_zero]
+
 /-- On a generator pair the differential is the sum of the included factor values.
 No restriction on the word lengths of these values is imposed. -/
 @[simp]
@@ -125,32 +138,6 @@ theorem prodDifferential_inl_mul_inr {p : ℤ} {a : SignedSym G}
     ofProd_inl, ofProd_inr, GradedTensorProduct.tmul_one_mul_one_tmul]
   exact dgTensorDifferential_tmul_of_mem ha b
 
--- A graded map intertwines signed Leibniz maps if it does so on generators.
--- This handles both factor inclusions without any degree-shift or square-zero assumption.
-private theorem map_leibniz_of_generator {U : Type*} [AddCommGroup U] [Module R U]
-    {K : InternalGrading R U ℤ} {dU : SignedSym K →ₗ[R] SignedSym K}
-    (hU : ∀ {p : ℤ} {a : SignedSym K}, a ∈ signedSymPiece K p →
-      ∀ b, dU (a * b) = dU a * b + p.negOnePow • (a * dU b))
-    {d : SignedSym (G.prod H) →ₗ[R] SignedSym (G.prod H)}
-    (hd : ∀ {p : ℤ} {a : SignedSym (G.prod H)}, a ∈ signedSymPiece (G.prod H) p →
-      ∀ b, d (a * b) = d a * b + p.negOnePow • (a * d b))
-    (f : signedSymPiece K →ₐᵍ[R] signedSymPiece (G.prod H))
-    (hgen : ∀ x, d (f (generator K x)) = f (dU (generator K x)))
-    {p : ℤ} {a : SignedSym K} (ha : a ∈ signedSymPiece K p) :
-    d (f a) = f (dU a) := by
-  have hUone := map_one_eq_zero_of_leibniz hU
-  have hdone := map_one_eq_zero_of_leibniz hd
-  exact (homogeneous_induction K
-    (P := fun p a => a ∈ signedSymPiece K p ∧ d (f a) = f (dU a))
-    ⟨SetLike.one_mem_graded _, by simp [hUone, hdone]⟩
-    (fun p x hx => ⟨generator_mem_signedSymPiece K hx, hgen x⟩)
-    (fun p q a b ha hb => ⟨SetLike.mul_mem_graded ha.1 hb.1, by
-      rw [map_mul, hd (Graded.map_mem f ha.1), hU ha.1, ha.2, hb.2]
-      simp only [map_add, map_zsmul_unit, map_mul]⟩)
-    (fun p => ⟨zero_mem _, by simp⟩)
-    (fun p a b ha hb => ⟨add_mem ha.1 hb.1, by simp [ha.2, hb.2]⟩)
-    (fun p r a ha => ⟨Submodule.smul_mem _ r ha.1, by simp [ha.2]⟩) ha).2
-
 /-- A signed Leibniz map with the prescribed factor values on generators is the product
 differential. Only the signed Leibniz laws on the factors are needed, not degree-one
 homogeneity or square-zero laws. -/
@@ -165,19 +152,17 @@ theorem eq_prodDifferential
     (hgen : ∀ z : V × W, d (generator (G.prod H) z) =
       inl G H (dV (generator G z.1)) + inr G H (dW (generator H z.2))) :
     d = prodDifferential G H dV dW := by
-  have hinl {p : ℤ} {a : SignedSym G} (ha : a ∈ signedSymPiece G p) :=
-    map_leibniz_of_generator hV hleibniz (inl G H)
-      (fun x => by simpa using hgen (x, 0)) ha
-  have hinr {q : ℤ} {b : SignedSym H} (hb : b ∈ signedSymPiece H q) :=
-    map_leibniz_of_generator hW hleibniz (inr G H)
-      (fun y => by simpa using hgen (0, y)) hb
+  have hinl := map_leibniz_of_generator hV hleibniz (inl G H)
+    (fun x => by simpa using hgen (x, 0))
+  have hinr := map_leibniz_of_generator hW hleibniz (inr G H)
+    (fun y => by simpa using hgen (0, y))
   have hcomp : d ∘ₗ (toProd G H).toAlgHom.toLinearMap =
       prodDifferential G H dV dW ∘ₗ (toProd G H).toAlgHom.toLinearMap := by
     refine gradedTensor_linearMap_ext (signedSymPiece G) (signedSymPiece H)
-      fun p q a ha b hb => ?_
+      fun p q a ha b _ => ?_
     simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, GradedAlgHom.coe_toAlgHom,
       toProd_tmul, prodDifferential_inl_mul_inr ha,
-      hleibniz (Graded.map_mem (inl G H) ha), hinl ha, hinr hb]
+      hleibniz (Graded.map_mem (inl G H) ha), hinl a, hinr b]
   ext a
   simpa using LinearMap.congr_fun hcomp (ofProd G H a)
 
@@ -209,6 +194,30 @@ noncomputable def dgToProd (hV : IsDGAlgebra (signedSymPiece G) dV)
   toGradedAlgHom := toProd G H
   map_d' := prodDifferential_toProd G H dV dW
 
+/-- The underlying graded algebra map of the DG left inclusion. -/
+@[simp]
+theorem dgInl_toGradedAlgHom (hV : IsDGAlgebra (signedSymPiece G) dV)
+    (hW : IsDGAlgebra (signedSymPiece H) dW) :
+    (dgInl hV hW).toGradedAlgHom = inl G H := (rfl)
+
+/-- The underlying graded algebra map of the DG right inclusion. -/
+@[simp]
+theorem dgInr_toGradedAlgHom (hV : IsDGAlgebra (signedSymPiece G) dV)
+    (hW : IsDGAlgebra (signedSymPiece H) dW) :
+    (dgInr hV hW).toGradedAlgHom = inr G H := (rfl)
+
+/-- The underlying graded algebra map of the forward DG comparison. -/
+@[simp]
+theorem dgOfProd_toGradedAlgHom (hV : IsDGAlgebra (signedSymPiece G) dV)
+    (hW : IsDGAlgebra (signedSymPiece H) dW) :
+    (dgOfProd hV hW).toGradedAlgHom = ofProd G H := (rfl)
+
+/-- The underlying graded algebra map of the inverse DG comparison. -/
+@[simp]
+theorem dgToProd_toGradedAlgHom (hV : IsDGAlgebra (signedSymPiece G) dV)
+    (hW : IsDGAlgebra (signedSymPiece H) dW) :
+    (dgToProd hV hW).toGradedAlgHom = toProd G H := (rfl)
+
 /-- The DG left inclusion has the same values as the graded algebra inclusion. -/
 @[simp]
 theorem dgInl_apply (hV : IsDGAlgebra (signedSymPiece G) dV)
@@ -233,6 +242,38 @@ theorem dgToProd_apply (hV : IsDGAlgebra (signedSymPiece G) dV)
     (hW : IsDGAlgebra (signedSymPiece H) dW)
     (a : signedSymPiece G ᵍ⊗[R] signedSymPiece H) :
     dgToProd hV hW a = toProd G H a := (rfl)
+
+/-- The forward DG comparison sends the left inclusion to the tensor inclusion. -/
+@[simp]
+theorem dgOfProd_comp_dgInl (hV : IsDGAlgebra (signedSymPiece G) dV)
+    (hW : IsDGAlgebra (signedSymPiece H) dW) :
+    (dgOfProd hV hW).comp (dgInl hV hW) = dgTensorIncludeLeft hV hW := by
+  ext a
+  simp
+
+/-- The forward DG comparison sends the right inclusion to the tensor inclusion. -/
+@[simp]
+theorem dgOfProd_comp_dgInr (hV : IsDGAlgebra (signedSymPiece G) dV)
+    (hW : IsDGAlgebra (signedSymPiece H) dW) :
+    (dgOfProd hV hW).comp (dgInr hV hW) = dgTensorIncludeRight hV hW := by
+  ext b
+  simp
+
+/-- The inverse DG comparison sends the left tensor inclusion to the product inclusion. -/
+@[simp]
+theorem dgToProd_comp_dgTensorIncludeLeft (hV : IsDGAlgebra (signedSymPiece G) dV)
+    (hW : IsDGAlgebra (signedSymPiece H) dW) :
+    (dgToProd hV hW).comp (dgTensorIncludeLeft hV hW) = dgInl hV hW := by
+  ext a
+  simp [toProd_tmul]
+
+/-- The inverse DG comparison sends the right tensor inclusion to the product inclusion. -/
+@[simp]
+theorem dgToProd_comp_dgTensorIncludeRight (hV : IsDGAlgebra (signedSymPiece G) dV)
+    (hW : IsDGAlgebra (signedSymPiece H) dW) :
+    (dgToProd hV hW).comp (dgTensorIncludeRight hV hW) = dgInr hV hW := by
+  ext b
+  simp [toProd_tmul]
 
 /-- The DG product comparisons compose to the identity on `A(V × W)`. -/
 @[simp]
