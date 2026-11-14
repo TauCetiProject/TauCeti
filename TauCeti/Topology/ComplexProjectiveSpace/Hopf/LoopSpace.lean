@@ -91,6 +91,15 @@ theorem hopfProduct_apply (j : C(Circle, MooreLoopSpace (ComplexProjectiveSpace 
     hopfProduct v j p = j p.1 * MooreLoopSpace.map ⟨mk n, continuous_mk n⟩ rfl p.2 :=
   (rfl)
 
+/-- The based Hopf product `j ⋆ Ωq`, restricted to `{1} × ΩS²ⁿ⁺¹`, is the looped Hopf map `Ωq`
+when `j 1` is the unit. -/
+theorem hopfProduct_comp_prodMk_const_one
+    {j : C(Circle, MooreLoopSpace (ComplexProjectiveSpace n) (mk n v))} (hj : j 1 = 1) :
+    (hopfProduct v j).comp ((ContinuousMap.const _ (1 : Circle)).prodMk (ContinuousMap.id _)) =
+      (MooreLoopSpace.map (x := v) ⟨mk n, continuous_mk n⟩ rfl).toContinuousMap := by
+  ext1 γ
+  simp [hj]
+
 variable {v}
 
 /-- **The loop space of `CPⁿ` splits as `S¹ × ΩS²ⁿ⁺¹`.** For `n ≥ 1` and a based map
