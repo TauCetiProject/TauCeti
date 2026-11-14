@@ -11,19 +11,29 @@ public import TauCeti.RingTheory.Nilpotent.Log
 # Roots of unipotent units
 
 Let `A` be an associative, possibly noncommutative, rational algebra. A unit `u` of `A` is
-*unipotent* if `u - 1` is nilpotent. This file proves:
+*unipotent* if `u - 1` is nilpotent. The finite exponential and logarithm are mutually inverse
+bijections between nilpotent and unipotent elements, and `log (u ^ n) = n • log u`
+(`Units.log_zpow`). Taking an `m`-th root of a unipotent unit therefore amounts to dividing its
+logarithm by `m`, which gives unipotent units canonical roots of every nonzero integral order.
 
-* `Units.log_conj`: conjugation by a unit commutes with the finite logarithm,
-  `log (v * a * v⁻¹) = v * log a * v⁻¹`;
-* `Units.log_zpow`: `log (u ^ n) = n • log u` for every integer `n`;
-* `Units.zpow_exp_inv_smul_log`: for a nonzero integer `m`, the unipotent unit
-  `exp (m⁻¹ • log u)` is an `m`-th root of `u`;
-* `Units.eq_exp_inv_smul_log_of_zpow_eq` and `Units.existsUnique_isNilpotent_zpow_eq`: it is
-  the only unipotent `m`-th root of `u`.
+For a unipotent unit `u` and a nonzero integer `m`, this file proves:
+
+* `Units.zpow_nilpotentExpUnit_inv_smul_log`: the unipotent unit `exp (m⁻¹ • log u)` is an
+  `m`-th root of `u`;
+* `Units.eq_exp_inv_smul_log_of_zpow_eq`: every unipotent `m`-th root of a unit `u` is
+  `exp (m⁻¹ • log u)`; here only the root, not `u`, is assumed unipotent;
+* `Units.existsUnique_isNilpotent_sub_one_and_zpow_eq`: `u` has exactly one unipotent `m`-th
+  root.
 
 Uniqueness holds among unipotent units only: in `ℚ` the unit `-1` is a second square root
 of `1`. For `m = 0` it fails as soon as `A` has a unipotent unit other than `1`, since every
 unit has zeroth power `1`.
+
+Compare `TauCeti.RingTheory.Nilpotent.Sqrt`, which constructs a square root of `1 + x` for
+nilpotent `x` as a polynomial in `x` over any commutative ring in which `2` is a unit, without
+uniqueness, and `TauCeti.RingTheory.Nilpotent.BinomialPow`, which defines powers `u ^ t` with
+exponents `t` in a binomial ring. Here the algebra is rational, the order `m` is any nonzero
+integer, and the root is unique among unipotent units.
 -/
 
 public section
@@ -34,35 +44,10 @@ open IsNilpotent TauCeti
 
 variable {A : Type*} [Ring A] [Algebra ℚ A]
 
-/-- Conjugation by a unit commutes with the finite logarithm. When `a - 1` is not nilpotent,
-both sides are the junk value `0`. -/
-theorem log_conj (v : Aˣ) (a : A) :
-    log ((v : A) * a * (v⁻¹ : Aˣ)) = v * log a * (v⁻¹ : Aˣ) := by
-  have hsub : (v : A) * a * (v⁻¹ : Aˣ) - 1 = v * (a - 1) * (v⁻¹ : Aˣ) := by
-    simp [mul_sub, sub_mul, mul_assoc]
-  have hpow (i : ℕ) : ((v : A) * (a - 1) * (v⁻¹ : Aˣ)) ^ i = v * (a - 1) ^ i * (v⁻¹ : Aˣ) := by
-    induction i with
-    | zero => simp
-    | succ i ih => rw [_root_.pow_succ, ih, _root_.pow_succ]; simp [mul_assoc]
-  have hclass : nilpotencyClass ((v : A) * a * (v⁻¹ : Aˣ) - 1) = nilpotencyClass (a - 1) := by
-    simp only [nilpotencyClass, hsub, hpow]
-    congr 1
-    ext k
-    simp [mul_assoc]
-  rw [log_def, log_def, hclass, hsub]
-  simp only [hpow, Finset.mul_sum, Finset.sum_mul, mul_smul_comm,
-    smul_mul_assoc]
-
-/-- The finite logarithm of an integral power of a unipotent unit is the corresponding integral
-multiple of its logarithm. -/
-theorem log_zpow (u : Aˣ) (hu : IsNilpotent ((u : A) - 1)) (n : ℤ) :
-    log ((u ^ n : Aˣ) : A) = n • log (u : A) := by
-  rw [← exp_zsmul_log u hu n, log_exp ((isNilpotent_log hu).smul n)]
-
 /-- For a nonzero integer `m`, the unipotent unit `exp (m⁻¹ • log u)` is an `m`-th root of the
 unipotent unit `u`. -/
-theorem zpow_exp_inv_smul_log (u : Aˣ) (hu : IsNilpotent ((u : A) - 1)) {m : ℤ} (hm : m ≠ 0) :
-    nilpotentExpUnit ((isNilpotent_log hu).smul ((m : ℚ)⁻¹)) ^ m = u := by
+theorem zpow_nilpotentExpUnit_inv_smul_log (u : Aˣ) (hu : IsNilpotent ((u : A) - 1)) {m : ℤ}
+    (hm : m ≠ 0) : nilpotentExpUnit ((isNilpotent_log hu).smul ((m : ℚ)⁻¹)) ^ m = u := by
   set w := nilpotentExpUnit ((isNilpotent_log hu).smul ((m : ℚ)⁻¹))
   have hw : IsNilpotent ((w : A) - 1) := by
     simpa [w] using isNilpotent_exp_sub_one ((isNilpotent_log hu).smul ((m : ℚ)⁻¹))
@@ -79,11 +64,11 @@ theorem eq_exp_inv_smul_log_of_zpow_eq {u w : Aˣ} (hw : IsNilpotent ((w : A) - 
 
 /-- **Unipotent roots.** For a nonzero integer `m`, a unipotent unit has exactly one unipotent
 `m`-th root. -/
-theorem existsUnique_isNilpotent_zpow_eq (u : Aˣ) (hu : IsNilpotent ((u : A) - 1)) {m : ℤ}
-    (hm : m ≠ 0) : ∃! w : Aˣ, IsNilpotent ((w : A) - 1) ∧ w ^ m = u := by
+theorem existsUnique_isNilpotent_sub_one_and_zpow_eq (u : Aˣ) (hu : IsNilpotent ((u : A) - 1))
+    {m : ℤ} (hm : m ≠ 0) : ∃! w : Aˣ, IsNilpotent ((w : A) - 1) ∧ w ^ m = u := by
   refine ⟨nilpotentExpUnit ((isNilpotent_log hu).smul ((m : ℚ)⁻¹)),
     ⟨by simpa using isNilpotent_exp_sub_one ((isNilpotent_log hu).smul ((m : ℚ)⁻¹)),
-      zpow_exp_inv_smul_log u hu hm⟩, fun w ⟨hw, h⟩ ↦ Units.ext ?_⟩
+      zpow_nilpotentExpUnit_inv_smul_log u hu hm⟩, fun w ⟨hw, h⟩ ↦ Units.ext ?_⟩
   rw [eq_exp_inv_smul_log_of_zpow_eq hw hm h, coe_nilpotentExpUnit]
 
 end Units
