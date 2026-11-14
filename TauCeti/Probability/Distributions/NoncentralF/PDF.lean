@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.Distributions.NoncentralF.Basic
 import TauCeti.Probability.Distributions.Affine
 import TauCeti.Probability.Distributions.FisherSnedecor.Measurability
-import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 import Mathlib.Analysis.SpecificLimits.Normed
 
 /-!

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.BetaNegativeBinomial.Basic
 public import TauCeti.Probability.Distributions.YuleSimon.Basic
-import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 
 /-!
 # Yule–Simon as a beta-negative-binomial law
