@@ -6,13 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.SpecificGroups.Sporadic.McLaughlin.Basic
-import TauCeti.GroupTheory.GroupAction.Stabilizer.Chain
+public import TauCeti.GroupTheory.GroupAction.Stabilizer.Chain
 public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.GroupAction.Transitive
 import Mathlib.Data.Nat.Bits
+import TauCeti.Logic.Function.Rigidity
 
 /-!
-# The first four basic orbits of the McLaughlin permutation model
+# Basic orbits and a base of the McLaughlin permutation model
 
 The ATLAS degree-275 model is transitive, the orbit of point `1` under the
 stabilizer of `0` has length `112`, the orbit of `2` under the pointwise
@@ -26,8 +27,15 @@ encoded by bit rows, bounds the second orbit: both generators preserve the relat
 and its row at `0` is precisely the displayed second orbit. The third orbit consists
 of the points in that row, other than `1`, absent from the row at `1`. The fourth
 orbit consists of the points in the row at `2` absent from both rows at `0` and `1`.
-Every finite equation is checked
-in the kernel; the word and relation data carry no unproved group-theoretic assumptions.
+The six points `0, …, 5` form a base, and the stabilizer of `0, …, 4` has order two:
+its orbit of `5` is exactly `{5, 215}`.
+
+Rigidity uses the rank-and-anchor method also used in `HigmanSims.Orbits`: adjacency to
+short lists of already determined vertices uniquely determines the next vertex. Starting with five
+fixed points determines 35 vertices and restricts the image of `5` to two possibilities;
+fixing `5` as well determines
+all 275 vertices. Every finite equation is checked in the kernel; the word and relation data
+carry no unproved group-theoretic assumptions.
 
 ## References
 
@@ -480,6 +488,10 @@ private def pointSequence (i : ℕ) : Fin 275 := Fin.ofNat 275 i
 
 @[simp] private theorem pointSequence_three : pointSequence 3 = 3 := rfl
 
+@[simp] private theorem pointSequence_four : pointSequence 4 = 4 := rfl
+
+@[simp] private theorem pointSequence_five : pointSequence 5 = 5 := rfl
+
 private theorem stabilizerChain_insert (n : ℕ) {S : Set (Fin 275)}
     (h : McL.stabilizerChain pointSequence n =
       McL ⊓ fixingSubgroup (Equiv.Perm (Fin 275)) S) :
@@ -710,5 +722,278 @@ theorem card_eq_89812800_mul_card_fixingSubgroup :
     ncard_orbit_fixing_zero_one_two_three] at h3
   rw [card_eq_2494800_mul_card_fixingSubgroup, ← h3, ← mul_assoc]
   norm_num
+
+/-! ### Rigidity and the last basic orbit -/
+
+-- Ranks encode the order in which vertices become uniquely determined. The first five
+-- vertices force 35 vertices; vertex 5 is the last seed, of rank 35.
+private def rigidRank (i : Fin 275) : ℕ :=
+  (#[
+    #[0, 1, 2, 3, 4, 35, 36, 37, 148, 38, 149, 150, 151, 11, 152, 39, 40, 23, 153, 41,
+      154, 155, 42, 156, 157],
+    #[43, 158, 159, 44, 160, 24, 161, 45, 162, 46, 163, 47, 48, 164, 49, 50, 165, 166,
+      167, 168, 169, 51, 170, 52, 53],
+    #[171, 172, 173, 54, 55, 56, 25, 26, 174, 175, 176, 177, 178, 12, 179, 180, 27, 57,
+      58, 59, 181, 60, 182, 61, 13],
+    #[183, 184, 185, 62, 63, 64, 65, 66, 67, 68, 69, 186, 187, 7, 188, 189, 190, 70, 8,
+      71, 14, 72, 73, 74, 191],
+    #[192, 193, 75, 194, 195, 28, 76, 29, 77, 196, 15, 78, 79, 80, 16, 81, 197, 5,
+      198, 82, 199, 200, 17, 201, 202],
+    #[203, 83, 204, 84, 9, 205, 85, 86, 87, 206, 18, 207, 88, 89, 208, 90, 6, 30, 209,
+      210, 211, 91, 212, 213, 31],
+    #[214, 92, 215, 216, 93, 217, 19, 218, 32, 94, 219, 95, 96, 97, 220, 221, 222, 223,
+      98, 224, 225, 99, 226, 100, 101],
+    #[102, 227, 103, 104, 105, 106, 228, 33, 229, 107, 230, 231, 108, 109, 232, 233, 234,
+      20, 235, 110, 236, 237, 34, 238, 239],
+    #[111, 240, 241, 112, 113, 242, 243, 114, 115, 116, 117, 244, 245, 246, 118, 247,
+      248, 249, 119, 250, 251, 120, 121, 252, 122],
+    #[123, 124, 253, 10, 125, 126, 254, 127, 128, 255, 256, 257, 129, 130, 131, 258,
+      259, 260, 261, 262, 263, 132, 133, 134, 264],
+    #[135, 136, 137, 265, 21, 138, 139, 266, 267, 140, 141, 268, 269, 270, 271, 142,
+      143, 272, 22, 144, 145, 273, 274, 146, 147]] : Array (Array ℕ))
+    |>.getD (i.val / 25) #[]
+    |>.getD (i.val % 25) 0
+
+-- Each nonseed vertex is uniquely determined by its adjacencies to these earlier vertices.
+-- The lists were found by greedy refinement of adjacency signatures.
+private def rigidAnchors (i : Fin 275) : List (Fin 275) :=
+  (#[
+    #[[], [], [], [], [], [], [0, 141, 88, 105, 5], [0, 141, 129, 56, 5], [1, 141, 207, 88],
+      [4, 141, 93, 63, 5], [0, 2, 73, 4], [0, 117, 88, 229], [1, 141, 2, 156, 6],
+      [1, 117, 3, 228, 0], [1, 4, 88, 114, 7], [1, 141, 129, 13, 5], [0, 141, 88, 142, 5],
+      [0, 4, 93, 192], [4, 117, 210, 2], [3, 4, 141, 156, 5], [1, 141, 2, 156, 6],
+      [4, 141, 19, 2], [1, 117, 88, 110, 5], [0, 117, 187, 2], [0, 117, 151, 88]],
+    #[[1, 117, 88, 192, 5], [3, 117, 151, 1], [1, 117, 3, 177], [3, 117, 141, 93, 5],
+      [2, 141, 4, 53], [2, 141, 254, 4], [0, 141, 7, 3], [1, 117, 2, 110, 5], [0, 2, 83, 1],
+      [2, 3, 1, 149, 5], [2, 141, 82, 4], [0, 1, 88, 13, 5], [0, 1, 88, 156, 5],
+      [0, 4, 3, 34], [1, 141, 2, 95, 5], [0, 1, 129, 63, 5], [0, 141, 251, 88],
+      [4, 117, 2, 178], [2, 3, 1, 107, 9], [3, 4, 141, 93, 6], [0, 2, 178, 4],
+      [4, 117, 2, 17, 5], [1, 117, 159, 3], [1, 4, 129, 114, 5], [0, 2, 3, 117, 5]],
+    #[[1, 141, 88, 63, 7], [0, 2, 117, 129, 7], [1, 4, 200, 3], [4, 141, 93, 63, 5],
+      [0, 141, 88, 105, 5], [0, 141, 88, 57, 5], [3, 117, 13, 0], [3, 4, 63, 0],
+      [1, 117, 88, 168], [117, 141, 88, 93, 15], [2, 141, 39, 4], [1, 4, 48, 2],
+      [0, 117, 49, 88], [1, 4, 3, 228, 0], [0, 2, 4, 95, 6], [0, 4, 3, 174],
+      [2, 141, 254, 4], [1, 4, 88, 5], [1, 141, 2, 13, 5], [2, 228, 1, 57, 5],
+      [0, 1, 102, 2], [2, 93, 1, 142, 5], [0, 2, 4, 95, 6], [0, 1, 2, 95, 5],
+      [1, 117, 2, 88, 0]],
+    #[[4, 117, 69, 2], [0, 141, 94, 3], [1, 4, 221, 2], [117, 141, 93, 74, 5],
+      [3, 4, 141, 74, 5], [1, 4, 129, 110, 5], [117, 141, 93, 13, 5], [1, 141, 2, 95, 5],
+      [0, 2, 3, 4, 5], [117, 141, 88, 228, 5], [0, 117, 3, 95, 5], [0, 117, 177, 2],
+      [2, 93, 1, 105, 6], [3, 4, 117, 2], [0, 141, 16, 3], [0, 2, 128, 3],
+      [0, 1, 2, 156, 6], [1, 4, 2, 268, 5], [0, 2, 141, 3], [0, 141, 88, 57, 5],
+      [1, 4, 93, 129, 0], [1, 141, 129, 63, 5], [4, 141, 129, 228, 5],
+      [1, 117, 129, 114, 5], [1, 4, 2, 192, 6]],
+    #[[0, 2, 117, 129, 7], [3, 117, 141, 175], [0, 1, 129, 63, 5], [0, 4, 3, 74, 7],
+      [2, 93, 22, 1], [117, 141, 93, 268], [1, 141, 129, 13, 5], [0, 4, 3, 63],
+      [0, 141, 3, 66, 5], [0, 1, 2, 156, 6], [0, 1, 3, 228, 2], [4, 141, 129, 228, 5],
+      [1, 141, 88, 5], [1, 117, 88, 192, 5], [1, 141, 3, 228, 2],
+      [0, 117, 129, 228, 5], [4, 141, 88, 228, 6], [0, 1, 4, 2], [0, 4, 3, 79],
+      [0, 1, 88, 156, 5], [0, 1, 88, 132], [1, 4, 92, 3], [0, 1, 2, 88, 3],
+      [3, 117, 141, 81], [1, 117, 3, 28]],
+    #[[117, 141, 88, 93, 15], [2, 93, 1, 66, 5], [2, 93, 48, 1], [0, 1, 2, 63, 5],
+      [2, 3, 1, 0, 141], [0, 1, 3, 19], [0, 117, 3, 95, 5], [2, 141, 4, 63, 5],
+      [117, 141, 93, 74, 5], [0, 1, 36, 2], [1, 4, 2, 88, 0], [1, 4, 3, 268, 6],
+      [2, 141, 117, 13, 5], [2, 141, 117, 13, 5], [2, 3, 1, 107, 9],
+      [1, 4, 129, 114, 5], [0, 1, 4, 2], [4, 141, 93, 268], [0, 141, 3, 32],
+      [1, 117, 25, 2], [1, 117, 2, 192, 6], [1, 141, 3, 156, 5], [0, 4, 88, 228, 9],
+      [1, 117, 22, 2], [0, 2, 122, 4]],
+    #[[4, 141, 34, 88], [0, 2, 3, 117, 5], [4, 141, 111, 2], [4, 141, 214, 2],
+      [0, 4, 5, 2], [2, 141, 4, 9], [1, 117, 93, 129, 0], [1, 4, 88, 114, 7],
+      [0, 117, 3, 13], [1, 117, 2, 268, 5], [2, 141, 117, 84], [0, 117, 93, 74, 5],
+      [1, 117, 2, 114, 5], [1, 117, 2, 114, 5], [1, 141, 106, 2], [2, 228, 1, 56, 16],
+      [0, 4, 93, 63, 6], [1, 117, 32, 88], [117, 141, 88, 228, 5], [3, 4, 141, 93, 6],
+      [1, 117, 98, 2], [0, 1, 88, 13, 5], [1, 4, 67, 2], [0, 141, 3, 142, 5],
+      [3, 4, 141, 74, 5]],
+    #[[2, 141, 117, 110, 5], [0, 4, 93, 63, 6], [0, 117, 3, 135, 5], [0, 1, 2, 95, 5],
+      [0, 1, 2, 63, 5], [1, 4, 2, 110, 5], [0, 117, 3, 93, 6], [0, 117, 93, 192],
+      [0, 141, 129, 98], [1, 141, 88, 156, 5], [4, 117, 194, 2], [0, 2, 49, 1],
+      [0, 117, 3, 135, 5], [0, 1, 2, 13, 5], [3, 117, 49, 1], [1, 4, 140, 2],
+      [2, 141, 117, 28], [0, 1, 93, 129, 2], [1, 141, 3, 95, 6], [2, 228, 1, 66, 5],
+      [0, 141, 3, 208], [0, 141, 88, 17, 15], [0, 2, 122, 4], [1, 141, 15, 2],
+      [0, 117, 3, 93, 6]],
+    #[[1, 4, 2, 268, 5], [0, 4, 88, 228, 9], [4, 117, 71, 2], [0, 141, 129, 56, 5],
+      [0, 1, 2, 13, 5], [1, 141, 88, 63, 7], [0, 141, 129, 92], [1, 141, 2, 13, 5],
+      [1, 4, 3, 192, 5], [117, 141, 93, 13, 5], [2, 93, 1, 66, 5], [0, 141, 88, 17, 15],
+      [1, 141, 68, 88], [1, 117, 2, 192, 6], [3, 4, 141, 156, 5], [0, 4, 226, 88],
+      [1, 141, 39, 3], [0, 117, 88, 22], [0, 2, 117, 114, 5], [0, 4, 93, 114, 6],
+      [0, 4, 93, 114, 6], [1, 4, 88, 192, 5], [2, 228, 1, 57, 5], [1, 141, 3, 95, 6],
+      [2, 141, 4, 63, 5]],
+    #[[1, 4, 2, 110, 5], [0, 2, 3, 4, 5], [0, 1, 88, 84], [0, 2, 141, 3],
+      [2, 141, 117, 110, 5], [1, 117, 129, 114, 5], [1, 117, 88, 84], [3, 117, 141, 93, 5],
+      [0, 117, 129, 228, 5], [2, 228, 1, 56, 16], [0, 1, 73, 3], [4, 141, 88, 228, 6],
+      [1, 141, 3, 156, 5], [1, 117, 2, 268, 5], [2, 3, 1, 149, 5], [1, 4, 3, 268, 6],
+      [0, 2, 151, 1], [2, 93, 1, 105, 6], [0, 141, 55, 3], [1, 141, 82, 3],
+      [0, 1, 119, 2], [4, 117, 2, 17, 5], [1, 4, 129, 110, 5], [0, 4, 129, 228, 5],
+      [0, 4, 3, 74, 7]],
+    #[[2, 228, 1, 66, 5], [0, 141, 3, 66, 5], [2, 228, 1, 30, 5], [1, 4, 2, 192, 6],
+      [1, 141, 2, 88, 3], [2, 93, 1, 142, 5], [1, 4, 3, 192, 5], [117, 141, 129, 98],
+      [117, 141, 129, 230], [1, 141, 129, 63, 5], [1, 117, 88, 110, 5], [0, 141, 6, 3],
+      [1, 117, 113, 2], [0, 4, 3, 225], [4, 117, 2, 68], [0, 141, 88, 142, 5],
+      [0, 117, 93, 5], [0, 1, 40, 2], [1, 141, 93, 129, 2], [1, 117, 2, 110, 5],
+      [2, 228, 1, 30, 5], [0, 1, 3, 214], [0, 1, 37, 2], [0, 2, 117, 114, 5],
+      [0, 141, 3, 142, 5]]] : Array (Array (List (Fin 275))))
+    |>.getD (i.val / 25) #[]
+    |>.getD (i.val % 25) []
+
+private theorem rigidAnchors_rank : ∀ x, ∀ z ∈ rigidAnchors x, rigidRank z < rigidRank x := by
+  decide +kernel
+
+-- Split the finite uniqueness check into blocks of 25 vertices to stay within the
+-- default resource budget. Each block still compares its vertices with all 275 candidates.
+private def rigidCheck (i : ℕ) : Prop := ∀ x : Fin 275, x.val / 25 = i → 6 ≤ x.val → ∀ y,
+  (rigidAnchors x).map (related · y) = (rigidAnchors x).map (related · x) → y = x
+
+private theorem rigidCheck_zero : rigidCheck 0 := by
+  unfold rigidCheck
+  decide +kernel
+
+private theorem rigidCheck_one : rigidCheck 1 := by
+  unfold rigidCheck
+  decide +kernel
+
+private theorem rigidCheck_two : rigidCheck 2 := by
+  unfold rigidCheck
+  decide +kernel
+
+private theorem rigidCheck_three : rigidCheck 3 := by
+  unfold rigidCheck
+  decide +kernel
+
+private theorem rigidCheck_four : rigidCheck 4 := by
+  unfold rigidCheck
+  decide +kernel
+
+private theorem rigidCheck_five : rigidCheck 5 := by
+  unfold rigidCheck
+  decide +kernel
+
+private theorem rigidCheck_six : rigidCheck 6 := by
+  unfold rigidCheck
+  decide +kernel
+
+private theorem rigidCheck_seven : rigidCheck 7 := by
+  unfold rigidCheck
+  decide +kernel
+
+private theorem rigidCheck_eight : rigidCheck 8 := by
+  unfold rigidCheck
+  decide +kernel
+
+private theorem rigidCheck_nine : rigidCheck 9 := by
+  unfold rigidCheck
+  decide +kernel
+
+private theorem rigidCheck_ten : rigidCheck 10 := by
+  unfold rigidCheck
+  decide +kernel
+
+private theorem rigidAnchors_unique (x : Fin 275) (hx : 6 ≤ x.val) : ∀ y,
+    (rigidAnchors x).map (related · y) = (rigidAnchors x).map (related · x) → y = x := by
+  have h : ∀ i < 11, rigidCheck i := by
+    intro i hi
+    interval_cases i
+    exacts [rigidCheck_zero, rigidCheck_one, rigidCheck_two, rigidCheck_three, rigidCheck_four,
+      rigidCheck_five, rigidCheck_six, rigidCheck_seven, rigidCheck_eight, rigidCheck_nine,
+      rigidCheck_ten]
+  exact h (x.val / 25) (by omega) x rfl hx
+
+private theorem fixed_of_rank {g : Equiv.Perm (Fin 275)} (hg : g ∈ McL) (n : ℕ)
+    (hseed : ∀ x : Fin 275, rigidRank x < n → x.val < 6 → g x = x) :
+    ∀ x, rigidRank x < n → g x = x := by
+  apply Function.apply_eq_self_of_rank (⇑g) (seed := fun x ↦ x.val < 6)
+    (related_apply hg) n hseed
+  intro x _ hx y hy
+  apply rigidAnchors_unique x (by omega) y
+  exact List.map_congr_left fun z hz ↦ hy z (rigidAnchors_rank x z hz)
+
+private theorem image_five {g : Equiv.Perm (Fin 275)} (hg : g ∈ McL)
+    (hfix : ∀ x : Fin 275, x.val < 5 → g x = x) : g 5 = 5 ∨ g 5 = 215 := by
+  have hseed : ∀ x : Fin 275, rigidRank x < 35 → x.val < 6 → g x = x := by
+    intro x hx h6
+    apply hfix
+    have : ∀ x : Fin 275, rigidRank x < 35 → x.val < 6 → x.val < 5 := by decide +kernel
+    exact this x hx h6
+  have hf := fixed_of_rank hg 35 hseed
+  have hbound : ∀ y : Fin 275,
+      (∀ z ∈ ([0, 4, 88, 93] : List (Fin 275)), related z y = related z 5) →
+        y = 5 ∨ y = 215 := by decide +kernel
+  apply hbound
+  intro z hz
+  have hr : ∀ z ∈ ([0, 4, 88, 93] : List (Fin 275)), rigidRank z < 35 := by decide +kernel
+  exact related_fixed hg (hf z (hr z hz)) 5
+
+private theorem eq_one_of_fix_six {g : Equiv.Perm (Fin 275)} (hg : g ∈ McL)
+    (hfix : ∀ x : Fin 275, x.val < 6 → g x = x) : g = 1 := by
+  apply Equiv.ext
+  intro x
+  apply fixed_of_rank hg 275 (fun x _ hx ↦ hfix x hx)
+  have : ∀ x, rigidRank x < 275 := by decide +kernel
+  exact this x
+
+/-- The points `0, 1, 2, 3, 4, 5` form a base of the exact ATLAS McLaughlin model. -/
+theorem stabilizerChain_six_eq_bot : McL.stabilizerChain (Fin.ofNat 275) 6 = ⊥ := by
+  apply (Subgroup.eq_bot_iff_forall _).mpr
+  intro g hg
+  obtain ⟨hg, hfix⟩ := (Subgroup.mem_stabilizerChain_iff _ _).mp hg
+  apply eq_one_of_fix_six hg
+  intro x hx
+  simpa only [Equiv.Perm.smul_def, Fin.ofNat_eq_cast, Fin.cast_val_eq_self] using hfix x.val hx
+
+-- A collision on ordered five-tuples gives a word fixing 0,...,4 and exchanging 5 and 215.
+-- Its letters use the same terminal-bit encoding as the preceding orbit witnesses.
+private def tailWord : Equiv.Perm (Fin 275) := wordValue 17219424491389283195
+
+private theorem tailWord_spec :
+    (∀ x : Fin 275, x.val < 5 → tailWord x = x) ∧ tailWord 5 = 215 := by
+  decide +kernel
+
+/-- The orbit of `5` under the pointwise stabilizer of `{0, 1, 2, 3, 4}` is `{5, 215}`. -/
+theorem orbit_fixing_zero_one_two_three_four_five :
+    orbit ↥(McL ⊓ fixingSubgroup (Equiv.Perm (Fin 275)) ({0, 1, 2, 3, 4} : Set (Fin 275)))
+      (5 : Fin 275) = ({5, 215} : Set (Fin 275)) := by
+  ext x
+  constructor
+  · rintro ⟨g, rfl⟩
+    apply image_five g.property.1
+    intro z hz
+    have hfix := (mem_fixingSubgroup_iff (Equiv.Perm (Fin 275))).mp g.property.2
+    apply hfix
+    have : z = 0 ∨ z = 1 ∨ z = 2 ∨ z = 3 ∨ z = 4 := by omega
+    rcases this with rfl | rfl | rfl | rfl | rfl <;> simp
+  · intro hx
+    rcases hx with rfl | rfl
+    · exact mem_orbit_self _
+    · refine mem_orbit_iff.mpr ⟨⟨tailWord, wordValue_mem _, ?_⟩, tailWord_spec.2⟩
+      apply (mem_fixingSubgroup_iff (Equiv.Perm (Fin 275))).mpr
+      intro z hz
+      rcases hz with rfl | rfl | rfl | rfl | rfl
+      all_goals exact tailWord_spec.1 _ (by decide)
+
+/-- The sixth basic orbit in the ATLAS McLaughlin model has length two. -/
+@[simp] theorem ncard_orbit_fixing_zero_one_two_three_four_five :
+    (orbit ↥(McL ⊓ fixingSubgroup (Equiv.Perm (Fin 275)) ({0, 1, 2, 3, 4} : Set (Fin 275)))
+      (5 : Fin 275)).ncard = 2 := by
+  rw [orbit_fixing_zero_one_two_three_four_five]
+  simp
+
+private theorem stabilizerChain_five :
+    McL.stabilizerChain pointSequence 5 =
+      McL ⊓ fixingSubgroup (Equiv.Perm (Fin 275)) ({0, 1, 2, 3, 4} : Set (Fin 275)) := by
+  rw [stabilizerChain_insert 4 stabilizerChain_four]
+  congr 2
+  ext x
+  simp only [pointSequence_four, Set.mem_insert_iff, Set.mem_singleton_iff]
+  tauto
+
+/-- The pointwise stabilizer of `{0, 1, 2, 3, 4}` in the exact ATLAS model has order two. -/
+-- Simplify the subgroup's order before its membership predicate expands the intersection.
+@[simp↓] theorem card_fixing_zero_one_two_three_four :
+    Nat.card ↥(McL ⊓ fixingSubgroup (Equiv.Perm (Fin 275))
+      ({0, 1, 2, 3, 4} : Set (Fin 275))) = 2 := by
+  have h := McL.ncard_orbit_mul_card_stabilizerChain_succ pointSequence 5
+  have h6 : McL.stabilizerChain pointSequence 6 = ⊥ := stabilizerChain_six_eq_bot
+  rw [stabilizerChain_five, pointSequence_five] at h
+  simpa only [Nat.reduceAdd,
+    ncard_orbit_fixing_zero_one_two_three_four_five, h6, Subgroup.card_bot, mul_one] using h.symm
 
 end TauCeti.Sporadic.McL
