@@ -31,8 +31,8 @@ that a homomorphism into a pro-`p` group kills their intersection.
 
 * `IsPGroup.exists_pow_pow_eq_one_map`: every element in the image of a `p`-group under a monoid
   homomorphism has `p`-power order.
-* `IsPGroup.prod`: a product of two `p`-groups is a `p`-group.
-* `IsPGroup.pi`: a finite product of `p`-groups is a `p`-group.
+* `IsPGroup.prod`, `IsAddPGroup.prod`: a product of two `p`-groups is a `p`-group.
+* `IsPGroup.pi`, `IsAddPGroup.pi`: a finite product of `p`-groups is a `p`-group.
 * `IsPGroup.of_subgroup_of_quotient`: an extension of a `p`-group by a `p`-group is a
   `p`-group.
 * `TauCeti.disjoint_of_not_dvd_natCard_of_isPGroup`: a `p`-group meets a subgroup of order prime
@@ -67,6 +67,8 @@ theorem _root_.IsPGroup.exists_pow_pow_eq_one_map {M : Type*} [Monoid M] (hG : I
   (hG g).elim fun n hn => ⟨n, by rw [← map_pow, hn, map_one]⟩
 
 /-- A product of two `p`-groups is a `p`-group. -/
+@[to_additive _root_.IsAddPGroup.prod
+  /-- A product of two additive `p`-groups is an additive `p`-group. -/]
 theorem _root_.IsPGroup.prod (hG : IsPGroup p G) (hH : IsPGroup p H) :
     IsPGroup p (G × H) := by
   rintro ⟨g, h⟩
@@ -75,6 +77,7 @@ theorem _root_.IsPGroup.prod (hG : IsPGroup p G) (hH : IsPGroup p H) :
   exact ⟨m + n, Prod.ext (by simp [pow_add, pow_mul, hm]) (by simp [pow_add, pow_mul', hn])⟩
 
 /-- A product of finitely many `p`-groups is a `p`-group. -/
+@[to_additive /-- A product of finitely many additive `p`-groups is an additive `p`-group. -/]
 theorem _root_.IsPGroup.pi {ι : Type*} [Finite ι] {G : ι → Type*} [∀ i, Group (G i)]
     (hG : ∀ i, IsPGroup p (G i)) : IsPGroup p (∀ i, G i) := by
   cases nonempty_fintype ι

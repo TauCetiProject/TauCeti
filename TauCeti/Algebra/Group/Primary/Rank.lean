@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.PGroup
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import TauCeti.Algebra.Group.Primary.Generators
+public import TauCeti.GroupTheory.PGroup
 public import TauCeti.LinearAlgebra.FreeModule.ModN
 
 /-!
@@ -38,35 +38,6 @@ coprime orders (`AddGroup.rank_prod_eq_max_of_coprime_card`).
 -/
 
 public section
-
-namespace IsPGroup
-
-/-- A binary product of `p`-groups is a `p`-group. -/
-@[to_additive prod /-- A binary product of additive `p`-groups is an additive `p`-group. -/]
-theorem prod {p : ℕ} {G H : Type*} [Group G] [Group H] (hG : IsPGroup p G) (hH : IsPGroup p H) :
-    IsPGroup p (G × H) := by
-  rintro ⟨g, h⟩
-  obtain ⟨m, hm⟩ := hG g
-  obtain ⟨n, hn⟩ := hH h
-  refine ⟨m + n, ?_⟩
-  rw [Prod.pow_mk, Prod.mk_eq_one]
-  exact ⟨by rw [pow_add, pow_mul, hm, one_pow],
-    by rw [add_comm, pow_add, pow_mul, hn, one_pow]⟩
-
-/-- A finite indexed product of `p`-groups is a `p`-group. -/
-@[to_additive /-- A finite indexed product of additive `p`-groups is an additive `p`-group. -/]
-theorem pi {p : ℕ} {ι : Type*} [Finite ι] {G : ι → Type*} [∀ i, Group (G i)]
-    (hG : ∀ i, IsPGroup p (G i)) : IsPGroup p (∀ i, G i) := by
-  classical
-  let _ := Fintype.ofFinite ι
-  intro x
-  choose k hk using fun i ↦ hG i (x i)
-  refine ⟨Finset.univ.sup k, funext fun i ↦ ?_⟩
-  have hkK : k i ≤ Finset.univ.sup k := Finset.le_sup (Finset.mem_univ i)
-  rw [Pi.pow_apply, Pi.one_apply, ← Nat.sub_add_cancel hkK, pow_add, mul_comm, pow_mul, hk i,
-    one_pow]
-
-end IsPGroup
 
 namespace IsAddPGroup
 
