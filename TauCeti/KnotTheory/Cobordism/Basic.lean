@@ -343,8 +343,7 @@ def transDiffeomorph (S : KnotCobordism K₀ K₁)
     obtain ⟨ε, hε, h⟩ := S.exists_pos_range_inter_snd_le
     refine ⟨ε, hε, Set.ext fun p ↦ ?_⟩
     have hp := Set.ext_iff.1 h (Ψ.symm p.1, p.2)
-    have e (y) : Ψ y = p.1 ↔ y = Ψ.symm p.1 :=
-      ⟨fun h ↦ h ▸ (Ψ.symm_apply_apply y).symm, fun h ↦ h ▸ Ψ.apply_symm_apply p.1⟩
+    have e (y) : Ψ y = p.1 ↔ y = Ψ.symm p.1 := Ψ.toEquiv.eq_symm_apply.symm
     simp only [mem_inter_iff, mem_range, mem_ofPred_eq, mem_prod, mem_Iic, Prod.ext_iff,
       SmoothEmbedding.coe_transDiffeomorph, Function.comp_apply, e] at hp ⊢
     exact hp
@@ -352,8 +351,7 @@ def transDiffeomorph (S : KnotCobordism K₀ K₁)
     obtain ⟨ε, hε, h⟩ := S.exists_pos_range_inter_le_snd
     refine ⟨ε, hε, Set.ext fun p ↦ ?_⟩
     have hp := Set.ext_iff.1 h (Ψ.symm p.1, p.2)
-    have e (y) : Ψ y = p.1 ↔ y = Ψ.symm p.1 :=
-      ⟨fun h ↦ h ▸ (Ψ.symm_apply_apply y).symm, fun h ↦ h ▸ Ψ.apply_symm_apply p.1⟩
+    have e (y) : Ψ y = p.1 ↔ y = Ψ.symm p.1 := Ψ.toEquiv.eq_symm_apply.symm
     simp only [mem_inter_iff, mem_range, mem_ofPred_eq, mem_prod, mem_Ici, Prod.ext_iff,
       SmoothEmbedding.coe_transDiffeomorph, Function.comp_apply, e] at hp ⊢
     exact hp
