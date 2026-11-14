@@ -1,0 +1,186 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+public import TauCeti.Geometry.Toric.Delzant.CornerChop
+public import TauCeti.Geometry.Toric.Delzant.Simplex
+
+import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
+import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.MeasureTheory.Measure.Lebesgue.SimplexVolume.Basic
+
+/-!
+# Lattice-normalized volumes of Delzant polytopes
+
+Let `i : N →+ V` be an integral lattice. The moment polytope `Δ ⊆ V*` of a symplectic toric
+manifold is measured with the Lebesgue measure on `V*` for which the dual lattice
+`{x ∈ V* | ⟨x, n⟩ ∈ ℤ for every n ∈ N}` has covolume one; with this normalization the symplectic
+volume of the toric manifold is `(2π)ⁿ vol(Δ)`. This file computes that measure in coordinates
+and evaluates it on the simplex and on corner chops.
+
+A basis `b` of the lattice `N` gives *lattice coordinates* `x ↦ (⟨x, b k⟩)_k` on `V*`
+(`TauCeti.Toric.latticeCoord i b`), for an integral lattice a linear isomorphism `V* ≃ ℝ^κ`
+(`TauCeti.Toric.IsIntegralLattice.bijective_latticeCoord`) carrying the dual lattice onto `ℤ^κ`
+(`TauCeti.Toric.forall_apply_mem_range_intCast_iff`). The normalized volume of a set `S ⊆ V*` is
+the Lebesgue volume of its image in these coordinates. It does not depend on the basis: two bases
+of `N` differ by an integral matrix with integral inverse, whose determinant is `±1`
+(`TauCeti.Toric.volume_image_latticeCoord_congr`). In lattice coordinates a facet polyhedron is
+the polyhedron cut out by the coordinates of the normals
+(`TauCeti.Toric.IsIntegralLattice.image_latticeCoord_facetPolyhedron`).
+
+* **The simplex.** The standard simplex of size `a ≥ 0` in `ℝ^κ` has normalized volume
+  `aⁿ / n!` for `n = #κ` (`TauCeti.Toric.volume_image_latticeCoord_facetPolyhedron_simplex`).
+  For `a > 0` it is the moment polytope of `ℂPⁿ`. For `n = 0` the volume is `1`, the volume of
+  the one-point polytope.
+* **Corner chops.** Chopping a smooth vertex `v` off a facet polyhedron at a small depth `ε > 0`
+  removes exactly `εⁿ / n!` of normalized volume
+  (`TauCeti.Toric.IsSmoothVertex.eventually_volume_image_latticeCoord_cornerChop`). In the
+  coordinates `y j = ⟨x, u j⟩ - c j` given by the normals at `v`, which form a basis of `N`, the
+  removed corner is the simplex `{y ≥ 0, ∑ j, y j < ε}`, once `ε` is too small for the facets not
+  through `v` to meet it. On the symplectic side this is the volume `(2π)ⁿ εⁿ / n!` of the ball
+  removed by the toric blowup at the fixed point over `v`.
+
+## Main results
+
+* `TauCeti.Toric.volume_image_latticeCoord_congr`: the volume in lattice coordinates does not
+  depend on the lattice basis.
+* `TauCeti.Toric.volume_image_latticeCoord_facetPolyhedron_simplex`: the simplex of size `a`
+  has normalized volume `aⁿ / n!`.
+* `TauCeti.Toric.IsSmoothVertex.eventually_volume_image_latticeCoord_cornerChop`: a small corner
+  chop at depth `ε` removes normalized volume `εⁿ / n!`.
+
+## References
+
+* A. Cannas da Silva, *Lectures on Symplectic Geometry*, Lecture Notes in Mathematics 1764,
+  Springer, 2001, Sections 28 and 30.
+* V. Guillemin, *Moment Maps and Combinatorial Invariants of Hamiltonian `T^n`-spaces*,
+  Birkhäuser, 1994, Chapter 2.
+-/
+
+public section
+
+noncomputable section
+
+open Set MeasureTheory Filter Topology
+
+namespace TauCeti.Toric
+
+variable {ι κ κ' N V : Type*} [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ V]
+  {i : N →+ V}
+
+/-! ### Independence of the lattice basis -/
+
+/-- The volume in lattice coordinates is the same for two bases indexed by the same type: the
+change of coordinates is an integral matrix with integral inverse, of determinant `±1`. -/
+private theorem volume_image_latticeCoord_congr_of_index [Fintype κ]
+    (b b' : Module.Basis κ ℤ N) (s : Set (StrongDual ℝ V)) :
+    volume (latticeCoord i b' '' s) = volume (latticeCoord i b '' s) := by
+  classical
+  set A := (b.toMatrix b').transpose.map ((↑) : ℤ → ℝ) with hA
+  have himage : latticeCoord i b' '' s = Matrix.toLin' A '' (latticeCoord i b '' s) := by
+    rw [image_image]
+    exact image_congr fun x _ ↦ by rw [Matrix.toLin'_apply, latticeCoord_eq_mulVec b]
+  -- The integral determinant is a unit of `ℤ`.
+  have hunit : (b.toMatrix b').det * (b'.toMatrix b).det = 1 := by
+    rw [← Matrix.det_mul, Module.Basis.toMatrix_mul_toMatrix_flip, Matrix.det_one]
+  have hdet : |LinearMap.det (Matrix.toLin' A)| = 1 := by
+    rw [LinearMap.det_toLin', hA, ← Matrix.det_transpose, Matrix.transpose_map,
+      Matrix.transpose_transpose, ← Int.cast_det]
+    rcases Int.eq_one_or_neg_one_of_mul_eq_one hunit with h | h <;> simp [h]
+  rw [himage, Measure.addHaar_image_linearMap, hdet, ENNReal.ofReal_one, one_mul]
+
+/-- **The volume in lattice coordinates does not depend on the lattice basis.** For any two bases
+`b` and `b'` of the lattice `N`, the images of a set `s ⊆ V*` in the two lattice coordinate systems
+have the same Lebesgue volume. -/
+theorem volume_image_latticeCoord_congr [Fintype κ] [Fintype κ'] (b : Module.Basis κ ℤ N)
+    (b' : Module.Basis κ' ℤ N) (s : Set (StrongDual ℝ V)) :
+    volume (latticeCoord i b' '' s) = volume (latticeCoord i b '' s) := by
+  classical
+  -- Reindex `b'` by `κ`, which permutes the coordinates.
+  let e : κ' ≃ κ := b'.indexEquiv b
+  let F := MeasurableEquiv.arrowCongr' e.symm (MeasurableEquiv.refl ℝ)
+  have hF (y : κ → ℝ) (k' : κ') : F y k' = y (e k') := by
+    simp [F, MeasurableEquiv.arrowCongr', Equiv.arrowCongr', Equiv.arrowCongr]
+  have himage : latticeCoord i b' '' s = F '' (latticeCoord i (b'.reindex e) '' s) := by
+    rw [image_image]
+    exact image_congr fun x _ ↦ funext fun k' ↦ by simp [hF]
+  have hp := volume_preserving_arrowCongr' e.symm (MeasurableEquiv.refl ℝ) (MeasurePreserving.id _)
+  rw [himage, MeasurableEquiv.image_eq_preimage_symm, hp.symm.measure_preimage_equiv,
+    volume_image_latticeCoord_congr_of_index b]
+
+/-! ### The simplex -/
+
+/-- **The volume of the simplex.** For `a ≥ 0`, the standard simplex
+`{x | 0 ≤ ⟨x, e k⟩, ∑ k, ⟨x, e k⟩ ≤ a}` of size `a` in `(ℝ^κ)*` has lattice-normalized volume
+`aⁿ / n!` for `n = #κ`: its image in the coordinates of any basis of `ℤ^κ` has this Lebesgue
+volume. For `a > 0` this simplex is the moment polytope of `ℂPⁿ`. -/
+theorem volume_image_latticeCoord_facetPolyhedron_simplex [Fintype κ] [DecidableEq κ]
+    [Fintype κ'] (b : Module.Basis κ' ℤ (κ → ℤ)) {a : ℝ} (ha : 0 ≤ a) :
+    volume (latticeCoord ((Int.castAddHom ℝ).compLeft κ) b ''
+      facetPolyhedron ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ) (simplexSupport a)) =
+        ENNReal.ofReal (a ^ Fintype.card κ / (Fintype.card κ).factorial) := by
+  have hi : IsIntegralLattice ((Int.castAddHom ℝ).compLeft κ) :=
+    isIntegralLattice_of_basis (Pi.basisFun ℤ κ) (Pi.basisFun ℝ κ) fun j ↦ by
+      ext k
+      simp [Pi.basisFun_apply, Pi.single_apply, apply_ite]
+  rw [volume_image_latticeCoord_congr (Pi.basisFun ℤ κ) b,
+    hi.image_latticeCoord_facetPolyhedron, ← volume_setOf_nonneg_sum_le κ ha]
+  congr 1
+  ext y
+  simp [Option.forall, Pi.single_apply, and_comm]
+
+/-! ### Corner chops -/
+
+/-- **A small corner chop removes the volume of a small simplex.** Let `v` be a smooth vertex of
+the facet polyhedron `Δ` of an integral lattice of rank `n`, at which the facets indexed by `s`
+meet. For every sufficiently small `ε > 0`, chopping the corner `v` off `Δ` at depth `ε` removes
+lattice-normalized volume `εⁿ / n!`: in the coordinates of any lattice basis `b`,
+`vol(Δ) = vol(Δ_ε) + εⁿ / n!`. -/
+theorem IsSmoothVertex.eventually_volume_image_latticeCoord_cornerChop [Finite ι] [Fintype κ]
+    {u : ι → N} {c : ι → ℝ} {s : Finset ι} {v : StrongDual ℝ V}
+    (hi : IsIntegralLattice i) (hvΔ : v ∈ facetPolyhedron i u c) (hv : IsSmoothVertex i u c v)
+    (hs : (s : Set ι) = activeSet (facetPairing i u) c v) (b : Module.Basis κ ℤ N) :
+    ∀ᶠ ε in 𝓝[>] 0, volume (latticeCoord i b '' facetPolyhedron i u c) =
+      volume (latticeCoord i b ''
+        facetPolyhedron i (cornerChopNormal u s) (cornerChopSupport c s ε)) +
+        ENNReal.ofReal (ε ^ Fintype.card κ / (Fintype.card κ).factorial) := by
+  classical
+  filter_upwards [self_mem_nhdsWithin,
+    hv.eventually_facetPolyhedron_eq_cornerChop_union hvΔ hs] with ε (hε0 : 0 < ε) hsplit
+  -- The vertex basis `u j`, `j ∈ s`, of the lattice.
+  obtain ⟨b₀, hb₀⟩ := isSmoothVertex_def.1 hv
+  let bv : Module.Basis s ℤ N := b₀.reindex (Equiv.subtypeEquivRight fun j ↦ by
+    rw [← hs, Finset.mem_coe])
+  have hbv (j : s) : bv j = u j := by simp [bv, hb₀]
+  -- The corner removed by the chop: the points with nonnegative coordinates `⟨x, u j⟩ - c j`,
+  -- `j ∈ s`, of sum less than `ε`.
+  set C := {x : StrongDual ℝ V | (∀ j ∈ s, c j ≤ x (i (u j))) ∧ ∑ j ∈ s, (x (i (u j)) - c j) < ε}
+  have hdisj : Disjoint (facetPolyhedron i (cornerChopNormal u s) (cornerChopSupport c s ε)) C :=
+    disjoint_left.2 fun x hx' hxC ↦
+      (mem_facetPolyhedron_cornerChop_iff.1 hx').2.not_gt hxC.2
+  -- The chopped polyhedron is measurable in lattice coordinates.
+  have hmeas : MeasurableSet
+      (latticeCoord i b '' facetPolyhedron i (cornerChopNormal u s) (cornerChopSupport c s ε)) := by
+    rw [hi.image_latticeCoord_facetPolyhedron, ofPred_forall]
+    exact MeasurableSet.iInter fun j ↦ measurableSet_le measurable_const (by fun_prop)
+  -- In the coordinates of the vertex basis, the corner is a translate of the simplex
+  -- `{y ≥ 0, ∑ j, y j < ε}`.
+  have hcorner : latticeCoord i bv '' C =
+      (· + -fun j : s ↦ c j) ⁻¹' {y : s → ℝ | (∀ j, 0 ≤ y j) ∧ ∑ j, y j < ε} := by
+    ext y
+    obtain ⟨x, rfl⟩ := (hi.bijective_latticeCoord bv).2 y
+    rw [(hi.bijective_latticeCoord bv).1.mem_set_image]
+    simp only [C, mem_preimage, mem_ofPred_eq, ← sub_eq_add_neg, Pi.sub_apply, latticeCoord_apply,
+      hbv, sub_nonneg, Subtype.forall]
+    rw [Finset.sum_coe_sort s fun j ↦ x (i (u j)) - c j]
+  have hcard : Fintype.card s = Fintype.card κ := Fintype.card_congr (bv.indexEquiv b)
+  rw [hsplit, image_union,
+    measure_union' ((disjoint_image_iff (hi.bijective_latticeCoord b).1).2 hdisj) hmeas,
+    volume_image_latticeCoord_congr bv b C, hcorner, measure_preimage_add_right,
+    volume_setOf_nonneg_sum_lt s hε0, hcard]
+
+end TauCeti.Toric
