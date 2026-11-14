@@ -154,7 +154,7 @@ theorem W1p0.isCompactOperator_valueL (hp : p ≠ ∞)
     have hvalue : (W1p0.valueExtendByZeroL u : E → ℝ) =ᵐ[mu.restrict (Omega : Set E)]
         (W1p0.valueL u : E → ℝ) := by
       rw [W1p0.coeFn_valueExtendByZeroL_eq_value, W1p0.value_extendByZeroL, W1p0.valueL_apply]
-      exact coeFn_extendByZeroLpₗᵢ_restrict ℝ Omega.isOpen.measurableSet
+      exact coeFn_extendByZeroLpₗᵢ_restrict ℝ Omega.isOpen.nullMeasurableSet
         (SetLike.coe_subset_coe.mpr (le_top : Omega ≤ ⊤)) (W1p.value (u : W1p mu Omega p))
     filter_upwards [LpToLpRestrictCLM_coeFn ℝ (Omega : Set E) (T u), hvalue] with x hx hvaluex
     rw [ContinuousLinearMap.comp_apply, hx]

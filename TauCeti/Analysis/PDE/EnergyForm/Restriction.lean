@@ -80,10 +80,10 @@ jet field of `v`. -/
 private theorem jetField_extendByZeroL_ae (hU : U ≤ Omega) (v : W1p0 mu U 2) :
     jetField (W1p0.extendByZeroL hU v : W1p mu Omega 2) =ᵐ[mu.restrict Omega]
       (U : Set (EuclideanSpace ℝ ι)).indicator (jetField (v : W1p mu U 2)) := by
-  have hUm := U.isOpen.measurableSet
+  have hUn := U.isOpen.nullMeasurableSet (μ := mu)
   have hUO : (U : Set (EuclideanSpace ℝ ι)) ⊆ Omega := SetLike.coe_subset_coe.mpr hU
-  filter_upwards [coeFn_extendByZeroLpₗᵢ ℝ hUm hUO (W1p.value (v : W1p mu U 2)),
-    coeFn_extendByZeroLpₗᵢ ℝ hUm hUO (W1p.gradient (v : W1p mu U 2))] with x hx hy
+  filter_upwards [coeFn_extendByZeroLpₗᵢ ℝ hUn hUO (W1p.value (v : W1p mu U 2)),
+    coeFn_extendByZeroLpₗᵢ ℝ hUn hUO (W1p.gradient (v : W1p mu U 2))] with x hx hy
   rw [jetField_apply, W1p0.value_extendByZeroL, W1p0.gradient_extendByZeroL, hx, hy]
   by_cases hxU : x ∈ (U : Set (EuclideanSpace ℝ ι))
   · rw [indicator_of_mem hxU, indicator_of_mem hxU, indicator_of_mem hxU, jetField_apply]
@@ -193,10 +193,11 @@ theorem energyFormH1_restrictL_nonpos {a : EuclideanSpace ℝ ι → Matrix ι �
     (v : W1p0 mu U 2) (hv : ∀ᵐ x ∂mu.restrict U, 0 ≤ W1p.value (v : W1p mu U 2) x) :
     energyFormH1 a b c (W1p.restrictL hU u) (v : W1p mu U 2) ≤ 0 := by
   have hUm := U.isOpen.measurableSet
+  have hUn := hUm.nullMeasurableSet (μ := mu)
   rw [energyFormH1_restrictL]
   refine hu _ ?_
   rw [W1p0.value_extendByZeroL]
-  filter_upwards [coeFn_extendByZeroLpₗᵢ ℝ hUm (SetLike.coe_subset_coe.mpr hU)
+  filter_upwards [coeFn_extendByZeroLpₗᵢ ℝ hUn (SetLike.coe_subset_coe.mpr hU)
       (W1p.value (v : W1p mu U 2)),
     ae_restrict_of_ae ((ae_restrict_iff' hUm).1 hv)] with x hx hxv
   rw [hx]
@@ -263,13 +264,14 @@ theorem energyFormH1_restrictL_eq_setIntegral {a : EuclideanSpace ℝ ι → Mat
     energyFormH1 a b c (W1p.restrictL hU u) (v : W1p mu U 2) =
       ∫ x in U, f x * W1p.value (v : W1p mu U 2) x ∂mu := by
   have hUm := U.isOpen.measurableSet
+  have hUn := hUm.nullMeasurableSet (μ := mu)
   have hUO : (U : Set (EuclideanSpace ℝ ι)) ⊆ Omega := SetLike.coe_subset_coe.mpr hU
   rw [energyFormH1_restrictL, hu, W1p0.value_extendByZeroL]
-  calc ∫ x in Omega, f x * extendByZeroLpₗᵢ ℝ mu hUm hUO (W1p.value (v : W1p mu U 2)) x ∂mu
+  calc ∫ x in Omega, f x * extendByZeroLpₗᵢ ℝ mu hUn hUO (W1p.value (v : W1p mu U 2)) x ∂mu
       = ∫ x in Omega, (U : Set (EuclideanSpace ℝ ι)).indicator
           (fun x => f x * W1p.value (v : W1p mu U 2) x) x ∂mu := by
         refine integral_congr_ae ?_
-        filter_upwards [coeFn_extendByZeroLpₗᵢ ℝ hUm hUO (W1p.value (v : W1p mu U 2))] with x hx
+        filter_upwards [coeFn_extendByZeroLpₗᵢ ℝ hUn hUO (W1p.value (v : W1p mu U 2))] with x hx
         rw [hx]
         by_cases hxU : x ∈ (U : Set (EuclideanSpace ℝ ι))
         · rw [indicator_of_mem hxU, indicator_of_mem hxU]
@@ -322,13 +324,14 @@ theorem energyFormH1_restrictL_eq_neg_setIntegral_inner {a : EuclideanSpace ℝ 
     energyFormH1 a b c (W1p.restrictL hU u) (v : W1p mu U 2) =
       -∫ x in U, ⟪F x, W1p.gradient (v : W1p mu U 2) x⟫_ℝ ∂mu := by
   have hUm := U.isOpen.measurableSet
+  have hUn := hUm.nullMeasurableSet (μ := mu)
   have hUO : (U : Set (EuclideanSpace ℝ ι)) ⊆ Omega := SetLike.coe_subset_coe.mpr hU
   rw [energyFormH1_restrictL, hu, W1p0.gradient_extendByZeroL, neg_inj]
-  calc ∫ x in Omega, ⟪F x, extendByZeroLpₗᵢ ℝ mu hUm hUO (W1p.gradient (v : W1p mu U 2)) x⟫_ℝ ∂mu
+  calc ∫ x in Omega, ⟪F x, extendByZeroLpₗᵢ ℝ mu hUn hUO (W1p.gradient (v : W1p mu U 2)) x⟫_ℝ ∂mu
       = ∫ x in Omega, (U : Set (EuclideanSpace ℝ ι)).indicator
           (fun x => ⟪F x, W1p.gradient (v : W1p mu U 2) x⟫_ℝ) x ∂mu := by
         refine integral_congr_ae ?_
-        filter_upwards [coeFn_extendByZeroLpₗᵢ ℝ hUm hUO (W1p.gradient (v : W1p mu U 2))]
+        filter_upwards [coeFn_extendByZeroLpₗᵢ ℝ hUn hUO (W1p.gradient (v : W1p mu U 2))]
           with x hx
         rw [hx]
         by_cases hxU : x ∈ (U : Set (EuclideanSpace ℝ ι))

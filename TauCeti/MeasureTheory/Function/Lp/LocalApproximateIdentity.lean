@@ -11,7 +11,7 @@ public import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 /-!
 # Local convergence of mollifications after zero extension
 
-For a subset `t ⊆ s` of a measurable set `s` in a finite-dimensional real normed space,
+For a subset `t ⊆ s` of a null-measurable set `s` in a finite-dimensional real normed space,
 extend an `Lᵖ(s)` function by zero to the ambient space,
 average it against a normalized smooth bump, and restrict the result to `t`. As the radius
 shrinks, this converges in `Lᵖ(t)` to the original function restricted to `t` whenever
@@ -59,7 +59,7 @@ local instance : (mu.restrict (univ : Set E)).IsAddHaarMeasure := by
 zero extension with the normalized bump.  This identifies the abstract `Lᵖ` average used for
 norm convergence with the classical smooth convolution used for differentiation. -/
 theorem normedBumpLp_extendByZero_ae_eq_convolution (hp : p ≠ ∞)
-    (phi : ContDiffBump (0 : E)) (hs : MeasurableSet s)
+    (phi : ContDiffBump (0 : E)) (hs : NullMeasurableSet s mu)
     (f : Lp F p (mu.restrict s)) :
     normedBumpLp hp phi (mu.restrict (univ : Set E))
         (extendByZeroLpₗᵢ ℝ mu hs (subset_univ s) f) =ᵐ[mu.restrict (univ : Set E)]
@@ -68,17 +68,18 @@ theorem normedBumpLp_extendByZero_ae_eq_convolution (hp : p ≠ ∞)
   let f₀ : E → F := s.indicator (f : E → F)
   have hf₀ : MemLp f₀ p (mu.restrict (univ : Set E)) := by
     simpa only [f₀, Measure.restrict_univ] using
-      (memLp_indicator_iff_restrict hs.nullMeasurableSet).2 (Lp.memLp f)
+      (memLp_indicator_iff_restrict hs).2 (Lp.memLp f)
   have hext : hf₀.toLp f₀ = extendByZeroLpₗᵢ ℝ mu hs (subset_univ s) f := by
     apply Lp.ext
-    exact hf₀.coeFn_toLp.trans (coeFn_extendByZeroLpₗᵢ ℝ hs (subset_univ s) f).symm
+    exact hf₀.coeFn_toLp.trans
+      (coeFn_extendByZeroLpₗᵢ ℝ hs (subset_univ s) f).symm
   rw [← hext]
   simpa only [f₀] using normedBumpLp_ae_eq_convolution hp phi hf₀
 
 /-- Zero-extend an `Lᵖ(s)` field, mollify it, and restrict to `t ⊆ s`. For `p < ∞`, this
 converges in `Lᵖ(t)` to the original field restricted to `t`. -/
 theorem tendsto_normedBumpLp_extendByZero_restrict (hp : p ≠ ∞)
-    (hs : MeasurableSet s) (hts : t ⊆ s)
+    (hs : NullMeasurableSet s mu) (hts : t ⊆ s)
     {I : Type*} {l : Filter I} {phi : I → ContDiffBump (0 : E)}
     (hphi : Tendsto (fun i => (phi i).rOut) l (nhds 0))
     (f : Lp F p (mu.restrict s)) :
@@ -101,8 +102,8 @@ theorem tendsto_normedBumpLp_extendByZero_restrict (hp : p ≠ ∞)
       (ν := mu.restrict s) (c := 1) (by simp) (by
       simpa only [one_smul] using Measure.restrict_mono_set mu hts) f := by
     apply Lp.ext
-    have he := (coeFn_extendByZeroLpₗᵢ_restrict ℝ hs (subset_univ s) f).filter_mono
-      (MeasureTheory.ae_mono (Measure.restrict_mono_set mu hts))
+    have he := (coeFn_extendByZeroLpₗᵢ_restrict ℝ hs (subset_univ s)
+      f).filter_mono (MeasureTheory.ae_mono (Measure.restrict_mono_set mu hts))
     exact ((Lp.coeFn_LpToLpOfMeasureLeSMul _ _ _).trans he).trans
       (Lp.coeFn_LpToLpOfMeasureLeSMul _ _ _).symm
   simpa only [Function.comp_def, r, e, hre] using hlimit
