@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Connected.Characteristic
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Conjugation
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Smooth.LieAlgebra
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.Basic
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Dimension
@@ -21,7 +22,8 @@ For a closed subgroup `N` of an affine group `G`, `HopfIdeal.identityComponent` 
 to the coordinate algebra obtained by taking the identity component inside `N`.
 
 The identity component has the same tangent Lie algebra as `N`, and hence the same dimension
-when `N` is smooth. When `G` and `N` are reduced,
+when `N` is smooth. Conjugating `N` by a rational point `g` conjugates `N°`:
+`(gNg⁻¹)° = gN°g⁻¹`, an equality of closed subgroup schemes. When `G` and `N` are reduced,
 normality of `N` implies normality of `N°` in `G`: the identity component is characteristic
 in `N`, and normality can be tested on rational points. All statements are over an
 algebraically closed field; no connectedness of the ambient group is required.
@@ -30,7 +32,8 @@ algebraically closed field; no connectedness of the ambient group is required.
 
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 2.37 and Chapter 10.
 * The construction uses `CommHopfAlgCat.Hom.quotientIsoOfSurjective`; normality uses
-  `HopfIdeal.IsNormal.comapOfSurjective_of_forall_iso`.
+  `HopfIdeal.IsNormal.comapOfSurjective_of_forall_iso`; conjugation uses
+  `HopfIdeal.quotientConjugationEquiv`.
 -/
 
 public section
@@ -172,6 +175,19 @@ theorem ringKrullDim_quotient_identityComponent_of_smooth (I : HopfIdeal k H)
   let _ := I.smooth_identityComponent
   rw [ringKrullDim_quotient_eq_finrank_lieSubalgebra_of_smooth,
     lieSubalgebra_identityComponent, ringKrullDim_quotient_eq_finrank_lieSubalgebra_of_smooth]
+
+/-- **Identity components of conjugate subgroups.** Conjugating a closed subgroup `N` by a
+rational point `g` conjugates its identity component: `(gNg⁻¹)° = gN°g⁻¹`. -/
+@[simp]
+theorem identityComponent_conjugate (I : HopfIdeal k H) (g : WithConv (H →ₐ[k] k)) :
+    (I.conjugate g).identityComponent = I.identityComponent.conjugate g := by
+  ext x
+  -- Transport membership along the coordinate isomorphism `H ⧸ I.conjugate g ≃ H ⧸ I`.
+  rw [mem_identityComponent, mem_conjugate, mem_identityComponent,
+    ← HopfAlgebra.apply_mem_identityComponentHopfIdeal_iff
+      (I.quotientConjugationEquiv (I.conjugate g) g rfl)]
+  simp only [ConcreteCategory.hom_ofHom, Bialgebra.Quotient.mkBialgHom_apply,
+    quotientConjugationEquiv_mk]
 
 end
 
