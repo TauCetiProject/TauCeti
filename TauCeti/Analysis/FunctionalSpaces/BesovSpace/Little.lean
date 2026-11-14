@@ -305,9 +305,8 @@ theorem mem_littleBesov_iff_tendsto (hp : p ≠ ∞) {u : BesovSpace F φ s p �
   have hdense := SchwartzMap.denseRange_toLpCLM (F := F) (μ := (volume : Measure E)) hp
   rw [mem_littleBesov_iff, and_iff_left_iff_imp]
   intro _ j
-  have h := hdense (u.block j)
-  rwa [show ⇑(SchwartzMap.toLpCLM ℝ F p (volume : Measure E)) = fun f ↦ f.toLp p from
-    funext fun _ ↦ SchwartzMap.toLpCLM_apply] at h
+  -- `SchwartzMap.toLpCLM_apply` holds by `rfl`, so the dense range is the required one.
+  exact hdense (u.block j)
 
 end BesovSpace
 
