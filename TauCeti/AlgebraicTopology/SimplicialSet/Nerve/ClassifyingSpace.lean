@@ -15,11 +15,11 @@ import Mathlib.CategoryTheory.InducedCategory
 /-!
 # Classifying space of a category and of a functor
 
-The classifying space `TauCeti.classifyingSpace C` of a category `C : Type u` with
+The classifying space `TauCeti.CategoryTheory.classifyingSpace C` of a category `C : Type u` with
 `[Category.{v} C]` is the geometric realization `|nerve C| : TopCat.{max u v}` of its nerve, and a
 functor `F : C ⥤ D` between categories in the same object and morphism universes induces
-`TauCeti.classifyingSpaceMap F : classifyingSpace C ⟶ classifyingSpace D`, assembling into
-`TauCeti.classifyingSpaceFunctor : Cat.{v, u} ⥤ TopCat.{max u v}`.
+`TauCeti.CategoryTheory.classifyingSpaceMap F : classifyingSpace C ⟶ classifyingSpace D`,
+assembling into `TauCeti.CategoryTheory.classifyingSpaceFunctor : Cat.{v, u} ⥤ TopCat.{max u v}`.
 
 Each object `X : C` determines a canonical vertex `classifyingSpace.vertex X : classifyingSpace C`,
 and each morphism `f : X ⟶ Y` determines a path `classifyingSpace.edgePath f` from `vertex X` to
@@ -164,7 +164,7 @@ lemma discreteIso_hom_app_mk₀ (S : Type u) (s : S) :
 
 end CategoryTheory.nerve
 
-namespace TauCeti
+namespace TauCeti.CategoryTheory
 
 /-- `nerveMap` is injective on functors: `0`- and `1`-simplices of the nerve recover the action of a
 functor on objects and morphisms. -/
@@ -269,14 +269,14 @@ lemma vertex_eq_toSSetObjEquiv (X : C) :
   (vertex_eq_toTopObjMk X default).trans (SSet.toTopObjMk_def _ _)
 
 @[simp]
-lemma _root_.TauCeti.classifyingSpaceMap_vertex (F : C ⥤ D) (X : C) :
+lemma _root_.TauCeti.CategoryTheory.classifyingSpaceMap_vertex (F : C ⥤ D) (X : C) :
     classifyingSpaceMap F (vertex X) = vertex (F.obj X) := by
   rw [classifyingSpaceMap, vertex, SSet.toTop_map_toTopPoint, nerve.nerveMap_app_nerve_mk₀, vertex]
 
 /-- A constant functor `(Functor.const C).obj Y` realizes to the constant map at `vertex Y`. -/
 @[simp]
-lemma _root_.TauCeti.classifyingSpaceMap_const (C D : Type u) [Category.{v} C] [Category.{v} D]
-    (Y : D) :
+lemma _root_.TauCeti.CategoryTheory.classifyingSpaceMap_const (C D : Type u)
+    [Category.{v} C] [Category.{v} D] (Y : D) :
     classifyingSpaceMap ((Functor.const C).obj Y) =
       TopCat.const (X := classifyingSpace C) (vertex Y) :=
   SSet.toTop_hom_ext fun n s w ↦ by
@@ -777,4 +777,4 @@ end ExamplesAndChecks
 
 end classifyingSpace
 
-end TauCeti
+end TauCeti.CategoryTheory
