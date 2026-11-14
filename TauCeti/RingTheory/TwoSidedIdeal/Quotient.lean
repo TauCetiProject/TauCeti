@@ -257,7 +257,7 @@ instance commRing {A : Type*} [CommRing A] (I : TwoSidedIdeal A) : CommRing (A �
 instance algebra (I : TwoSidedIdeal A) : Algebra R (A ⧸ I) :=
   inferInstanceAs <| Algebra R (A ⧸ I.asIdeal)
 
-instance isScalarTower {S : Type*} [CommSemiring S] [Algebra R S] [Algebra S A]
+instance isScalarTower {S : Type*} [CommSemiring S] [SMul R S] [Algebra S A]
     [IsScalarTower R S A] (I : TwoSidedIdeal A) : IsScalarTower R S (A ⧸ I) :=
   inferInstanceAs <| IsScalarTower R S (A ⧸ I.asIdeal)
 
@@ -281,9 +281,18 @@ theorem idealQuotientMk_asIdeal_eq_mk (I : TwoSidedIdeal A) (a : A) :
     (Ideal.Quotient.mk I.asIdeal a : A ⧸ I) = mk I a :=
   (rfl)
 
-@[simp]
 theorem algebraMap_apply (I : TwoSidedIdeal A) (r : R) :
     algebraMap R (A ⧸ I) r = mk I (algebraMap R A r) :=
+  (rfl)
+
+@[simp]
+theorem mk_algebraMap (I : TwoSidedIdeal A) (r : R) :
+    mk I (algebraMap R A r) = algebraMap R (A ⧸ I) r :=
+  (rfl)
+
+@[simp]
+theorem mkRingHom_comp_algebraMap (I : TwoSidedIdeal A) :
+    (mkRingHom I).comp (algebraMap R A) = algebraMap R (A ⧸ I) :=
   (rfl)
 
 end Quotient
