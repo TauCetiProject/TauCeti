@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Lp.lpSpace
+public import Mathlib.Topology.Algebra.ContinuousAffineMap
 public import TauCeti.Analysis.Sobolev.Local.Basic
 public import TauCeti.Analysis.Sobolev.Local.Reflection
+import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.Calculus.BumpFunction.Normed
 import Mathlib.Analysis.Calculus.Deriv.Abs
@@ -25,6 +28,7 @@ import TauCeti.Analysis.Sobolev.Local.Coordinates
 import TauCeti.Analysis.Sobolev.Local.Holomorphic
 import TauCeti.Analysis.Sobolev.Local.Lipschitz
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
+import TauCeti.Analysis.Sobolev.WeakDeriv.MeasurePreserving
 import TauCeti.Analysis.Sobolev.WeakDeriv.NormRpow
 import TauCeti.Analysis.Sobolev.WeakDeriv.Removable
 import TauCeti.MeasureTheory.Integral.NormRpow
@@ -33,38 +37,38 @@ import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 /-!
 # Membership and non-membership examples for local Sobolev classes
 
-This file tests `TauCeti.MemWkpLoc` against explicit planar functions.
+This file tests `TauCeti.MemWkpLoc`, `TauCeti.MemLpLoc`, and `TauCeti.MemW1pLoc` against explicit
+functions on planar and general finite-dimensional Euclidean domains, including infinite-dimensional
+Banach targets.
 
-* The identity of `ℂ` is in every local Sobolev class, although it is not globally `Lᵖ` for
-  `0 < p`.
-* The map `z ↦ ‖z‖` is in every local `W^{1,p}` class, as a Lipschitz map
-  (`LipschitzWith.memWkpLoc_one`).
-* Polynomials are in every local Sobolev class on every set, as holomorphic maps on the plane
-  (`Differentiable.memWkpLoc`).
-* The map `z ↦ ‖z‖` is in the local class `W^{2,p}` exactly when `p < 2`, on every set whose
-  interior contains the origin: away from the origin its second derivative has norm between
-  `‖z‖⁻¹` and `2 ‖z‖⁻¹`, and `‖z‖ ^ (-p)` is integrable near the origin of the plane exactly when
-  `p < 2`. For `p < 2` the weak second derivative across the origin is that of the unit radial
-  field `z / ‖z‖` (`TauCeti.hasWeakFDerivOn_norm_rpow_neg_one_mul_inner`).
-* The indicator of the half-plane `{z | 0 < z.re}` has no weak derivative on any open set
-  meeting the imaginary axis, so it is in every local `Lᵖ` class but in no local `W^{k,p}` class
-  of positive order there.
-* On the closed upper half-disc `D⁺ = ball 0 1 ∩ {z | 0 ≤ z.im}`, the map `z ↦ √z.im` is in the
-  local class `W^{1,p}` exactly when `p < 2`, because the `Lᵖ` bounds reach the real axis. On the
-  open half-disc it is in that class for every `p`, although it is continuous up to the axis.
-* The map `z ↦ ‖z‖⁻¹` and the components `Re z / ‖z‖²` and `Im z / ‖z‖²` of the gradient of
-  `log ‖z‖` are locally `Lᵖ` near the origin exactly when `p < 2`, and `log ‖z‖` is in the local
-  class `W^{1,p}` there exactly when `p < 2`. These are the exponents of the divergence-form
-  equation `Δ log ‖z‖ = ∂ₛ(Re z / ‖z‖²) + ∂ₜ(Im z / ‖z‖²)`
-  (`TauCeti.integral_log_norm_mul_laplacian`).
-* The even reflection does not extend `u = Im z` from the upper half-disc to a local `W^{2,p}`
-  map, for any exponent: it gives `|Im z|`, whose first derivative jumps across the real axis. The
-  order-two reflection `u(s, -t) = -3 u(s, t) + 4 u(s, t / 2)` gives `Im z` back.
+* Linear and continuous affine maps into complete spaces, and in particular the identity of `E`, lie
+  in `MemW1pLoc p Ω` for all `p`, whereas the identity is not in `Lᵖ(E)` for `0 < p < ∞` on any
+  nontrivial space (`TauCeti.memW1pLoc_id`, `TauCeti.not_memLp_id`).
+* The norm `x ↦ ‖x‖` on any finite-dimensional real normed space lies in `MemW1pLoc p Ω` for every
+  `p` (`TauCeti.memW1pLoc_norm`); on `ℝ × ℝ` with the `max` norm its derivative at `(1, 1 / 2)` in
+  direction `(0, 1)` vanishes (`TauCeti.fderiv_norm_prod_apply_snd_eq_zero`), unlike the
+  inner-product formula. On `ℂ`, `z ↦ ‖z‖` lies in `W^{2,p}_loc` near `0` iff `p < 2`.
+* Polynomials on `ℂ` lie in every local Sobolev class (`Polynomial.memWkpLoc`).
+* On a nontrivial finite-dimensional space `E`, `x ↦ ‖x‖⁻¹` lies in `MemLpLoc p U` near `0` iff
+  `p < dim E` (`TauCeti.memLpLoc_norm_inv_iff_of_mem_nhds`, giving `p < 3` on `ℝ³`).
+* On a finite-dimensional inner product space `E`, for `α > -1` the radial map `x ↦ ‖x‖ ^ α • x`
+  lies in `MemW1pLoc p Ω` iff `x ↦ ‖x‖ ^ α` lies in `MemLpLoc p Ω`
+  (`TauCeti.memW1pLoc_norm_rpow_smul_self_iff`), and when `dim E ≥ 2` and `0 ∈ Ω` the unit radial
+  map `x ↦ ‖x‖⁻¹ • x` lies in `MemW1pLoc p Ω` iff `p < dim E` (`TauCeti.memW1pLoc_unitRadial_iff`,
+  specializing on `ℂ` to `z ↦ z / ‖z‖` iff `p < 2`).
+* The indicator of a half-space `{x | 0 < ℓ x}` lies in `MemLpLoc p U` for every `p` and in no
+  `MemW1pLoc p Ω` meeting `{x | ℓ x = 0}` (`TauCeti.memLpLoc_indicator_pos`,
+  `TauCeti.not_memW1pLoc_indicator_pos`).
+* For a scalar map `a ∈ MemW1pLoc p Ω` and a vector `v ∈ ℓ²(ℕ)`, `x ↦ a x • v` lies in
+  `MemW1pLoc p Ω` with weak derivative `h ↦ Da x h • v` (`TauCeti.MemW1pLoc.smul_const_lp_two`).
+* Planar half-disc and logarithmic profiles (`z ↦ √z.im`, `z ↦ log ‖z‖`, and reflection examples).
 
 ## References
 
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
   Appendix B.1.
+* W. Arendt and M. Kreuter, *Mapping theorems for Sobolev spaces of vector-valued functions*,
+  Studia Math. 240 (2018), 275–299, §2.
 -/
 
 public section
@@ -208,115 +212,190 @@ theorem memWkpLoc_two_norm_iff (h0 : (0 : ℂ) ∈ interior U) :
     MemWkpLoc p U 2 (fun z : ℂ => ‖z‖) ↔ p < 2 :=
   ⟨fun h => not_le.1 fun hp => not_memWkpLoc_two_norm hp h0 h, memWkpLoc_two_norm⟩
 
-/-! ### A jump across a line -/
+/-! ### A jump across a hyperplane -/
 
-/-- The indicator of the right half-plane is locally `Lᵖ` on every set, for every exponent. -/
-theorem memLpLoc_indicator_re_pos :
-    MemLpLoc p U ({z : ℂ | 0 < z.re}.indicator fun _ => (1 : ℝ)) := by
+/-- Integrating `deriv a` on `(0, ∞)` for a smooth bump `a` equal to `1` near `0` gives `-1`. -/
+private theorem integral_deriv_bump_mul_indicator_Ioi (a : ContDiffBump (0 : ℝ)) :
+    ∫ t : ℝ, deriv a t * (Ioi (0 : ℝ)).indicator (fun _ => (1 : ℝ)) t = -1 := by
+  have hfun : (fun t : ℝ => deriv a t * (Ioi (0 : ℝ)).indicator (fun _ => (1 : ℝ)) t) =
+      (Ioi (0 : ℝ)).indicator (deriv a) := by
+    funext t; by_cases ht : 0 < t <;> simp [Set.indicator, ht]
+  have hda : ∀ t, HasDerivAt a (deriv a t) t := fun t =>
+    ((a.contDiff (n := 1)).differentiable one_ne_zero t).hasDerivAt
+  have hdc : Continuous (deriv a) := (a.contDiff (n := 1)).continuous_deriv le_rfl
+  rw [hfun, integral_indicator measurableSet_Ioi,
+    integral_Ioi_of_hasDerivAt_of_tendsto (m := 0) a.continuous.continuousWithinAt
+      (fun t _ => hda t)
+      (hdc.integrable_of_hasCompactSupport a.hasCompactSupport.deriv).integrableOn,
+    a.one_of_mem_closedBall (mem_closedBall_self a.rIn_pos.le)]
+  · simp
+  · refine tendsto_const_nhds.congr' ?_
+    filter_upwards [eventually_ge_atTop a.rOut] with t ht
+    refine (a.zero_of_le_dist ?_).symm
+    rw [Real.dist_eq, sub_zero]
+    exact ht.trans (le_abs_self t)
+
+/-- On `ℝ × EuclideanSpace ℝ (Fin m)`, the indicator of `{q | 0 < q.1}` does not have weak
+directional derivative `0` in direction `(1, 0)` on any open set containing `(0, y₀)`. -/
+private theorem not_hasWeakLineDerivOn_indicator_fst_pos {m : ℕ}
+    {Ω' : Opens (ℝ × EuclideanSpace ℝ (Fin m))} {y₀ : EuclideanSpace ℝ (Fin m)}
+    (hy₀ : ((0 : ℝ), y₀) ∈ Ω') :
+    ¬ HasWeakLineDerivOn volume Ω'
+        (fun q : ℝ × EuclideanSpace ℝ (Fin m) => (Ioi (0 : ℝ)).indicator (fun _ => (1 : ℝ)) q.1)
+        0 (1, 0) := by
+  intro hline
+  have : (volume : Measure (ℝ × EuclideanSpace ℝ (Fin m))).IsAddHaarMeasure := by
+    rw [Measure.volume_eq_prod]; infer_instance
+  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 Ω'.isOpen (0, y₀) hy₀
+  let a : ContDiffBump (0 : ℝ) := ⟨ε / 4, ε / 2, by positivity, by linarith⟩
+  let b : ContDiffBump y₀ := ⟨ε / 4, ε / 2, by positivity, by linarith⟩
+  let f : ℝ × EuclideanSpace ℝ (Fin m) → ℝ := ((a : ℝ → ℝ) ∘ Prod.fst) * ((b : _ → ℝ) ∘ Prod.snd)
+  have hfs : tsupport f ⊆ closedBall (0, y₀) (ε / 2) := fun q hq => by
+    have hq1 := tsupport_comp_subset_preimage (a : ℝ → ℝ) continuous_fst
+      (tsupport_mul_subset_left hq)
+    have hq2 := tsupport_comp_subset_preimage (b : _ → ℝ) continuous_snd
+      (tsupport_mul_subset_right hq)
+    rw [mem_preimage, a.tsupport_eq, mem_closedBall] at hq1
+    rw [mem_preimage, b.tsupport_eq, mem_closedBall] at hq2
+    rw [mem_closedBall, Prod.dist_eq]
+    exact max_le hq1 hq2
+  let φ : 𝓓(Ω', ℝ) := ⟨f, (a.contDiff.comp contDiff_fst).mul (b.contDiff.comp contDiff_snd),
+    (isCompact_closedBall (0, y₀) _).of_isClosed_subset (isClosed_tsupport f) hfs,
+    fun q hq => hball (closedBall_subset_ball (half_lt_self hε) (hfs hq))⟩
+  have hφ : (φ : _ → ℝ) = f := TestFunction.coe_mk
+  have hda : ∀ t, HasDerivAt a (deriv a t) t := fun t =>
+    ((a.contDiff (n := 1)).differentiable one_ne_zero t).hasDerivAt
+  have hldf : ∀ q, lineDeriv ℝ (φ : _ → ℝ) q (1, 0) = deriv a q.1 * b q.2 := fun q => by
+    refine HasLineDerivAt.lineDeriv
+      (?_ : HasDerivAt (fun t : ℝ => (φ : _ → ℝ) (q + t • ((1 : ℝ), (0 : _)))) _ 0)
+    have h := ((hda (q.1 + 0)).comp_const_add q.1 0).mul_const (b q.2)
+    simp only [add_zero] at h
+    exact h.congr_of_eventuallyEq (Eventually.of_forall fun t => by simp [hφ, f])
+  have hkey := hline.integral_lineDeriv_smul_eq_neg_integral_smul φ
+  simp only [Pi.zero_apply, smul_zero, integral_zero, neg_zero] at hkey
+  have hkey' : ∫ q : ℝ × EuclideanSpace ℝ (Fin m),
+      (deriv a q.1 * (Ioi (0 : ℝ)).indicator (fun _ => (1 : ℝ)) q.1) * b q.2 = 0 := by
+    simpa only [hldf, smul_eq_mul, mul_right_comm] using hkey
+  have hprod := integral_prod_mul (μ := volume) (ν := volume)
+    (fun t => deriv a t * (Ioi (0 : ℝ)).indicator (fun _ => (1 : ℝ)) t) (fun y => b y)
+  rw [Measure.volume_eq_prod, hprod, integral_deriv_bump_mul_indicator_Ioi a] at hkey'
+  linarith [b.integral_pos (μ := volume)]
+
+section HalfSpaceIndicator
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- The indicator of an open half-space `{x | 0 < ℓ x}` is in `MemLpLoc p V` on every set `V` and
+for every exponent `p`. -/
+theorem memLpLoc_indicator_pos [MeasureSpace E] [BorelSpace E]
+    [(volume : Measure E).IsAddHaarMeasure] (ℓ : E →L[ℝ] ℝ) (p : ENNReal) (V : Set E) :
+    MemLpLoc p V ({x : E | 0 < ℓ x}.indicator fun _ => (1 : ℝ)) := by
   refine memLpLoc_iff.2 fun K _ hK => ?_
   have : IsFiniteMeasure (volume.restrict K) := ⟨by simpa using hK.measure_lt_top⟩
   exact memLp_indicator_const p
-    (measurableSet_lt measurable_const Complex.measurable_re).nullMeasurableSet 1
+    (measurableSet_lt measurable_const ℓ.continuous.measurable).nullMeasurableSet 1
     (Or.inr (measure_ne_top _ _))
+
+/-- Any nonzero continuous linear functional `ℓ : E →L[ℝ] ℝ` on a finite-dimensional real normed
+space admits a continuous linear equivalence `ℝ × EuclideanSpace ℝ (Fin m) ≃L[ℝ] E` under which `ℓ`
+is the first coordinate. -/
+private theorem exists_cle_prod_of_ne_zero [FiniteDimensional ℝ E] {ℓ : E →L[ℝ] ℝ} (hℓ : ℓ ≠ 0) :
+    ∃ (m : ℕ) (e : (ℝ × EuclideanSpace ℝ (Fin m)) ≃L[ℝ] E), ∀ q, ℓ (e q) = q.1 := by
+  obtain ⟨v, hv⟩ := DFunLike.ne_iff.1 hℓ
+  let w : E := (ℓ v)⁻¹ • v
+  have hℓw : ℓ w = 1 := by simp [w, inv_mul_cancel₀ hv]
+  let K := LinearMap.ker (ℓ : E →ₗ[ℝ] ℝ)
+  let m := Module.finrank ℝ K
+  let bK : K ≃ₗ[ℝ] EuclideanSpace ℝ (Fin m) :=
+    (Module.finBasis ℝ K).equivFun.trans (EuclideanSpace.basisFun (Fin m) ℝ).toBasis.equivFun.symm
+  let L : (ℝ × EuclideanSpace ℝ (Fin m)) ≃ₗ[ℝ] E :=
+    { toFun := fun q => q.1 • w + (bK.symm q.2 : E)
+      map_add' := fun q₁ q₂ => by simp [add_smul, add_add_add_comm]
+      map_smul' := fun c q => by simp [smul_add, mul_smul]
+      invFun := fun x => (ℓ x, bK ⟨x - ℓ x • w, by simp [K, LinearMap.mem_ker, hℓw]⟩)
+      left_inv := fun q => by
+        have hq2 : ℓ (bK.symm q.2 : E) = 0 := LinearMap.mem_ker.1 (bK.symm q.2).2
+        ext <;> simp [hℓw, hq2]
+      right_inv := fun x => by simp }
+  refine ⟨m, L.toContinuousLinearEquiv, fun q => ?_⟩
+  have hq2 : ℓ (bK.symm q.2 : E) = 0 := LinearMap.mem_ker.1 (bK.symm q.2).2
+  simp [L, hℓw, hq2]
+
+variable [FiniteDimensional ℝ E] [MeasureSpace E] [BorelSpace E]
+  [(volume : Measure E).IsAddHaarMeasure]
+
+/-- The indicator of a half-space `{x | 0 < ℓ x}` for a nonzero functional `ℓ` has no weak Fréchet
+derivative on any open set `Ω` meeting the hyperplane `{x | ℓ x = 0}`. -/
+theorem not_hasWeakFDerivOn_indicator_pos {ℓ : E →L[ℝ] ℝ} (hℓ : ℓ ≠ 0) {Ω : Opens E} {x₀ : E}
+    (hx₀ : x₀ ∈ Ω) (hx₀0 : ℓ x₀ = 0) (D : E → E →L[ℝ] ℝ) :
+    ¬ HasWeakFDerivOn volume Ω ({x : E | 0 < ℓ x}.indicator fun _ => (1 : ℝ)) D := by
+  intro hD
+  set u : E → ℝ := {x : E | 0 < ℓ x}.indicator fun _ => (1 : ℝ) with hu
+  set Ωp : Opens E := Ω ⊓ ⟨{x | 0 < ℓ x}, isOpen_lt continuous_const ℓ.continuous⟩
+  set Ωn : Opens E := Ω ⊓ ⟨{x | ℓ x < 0}, isOpen_lt ℓ.continuous continuous_const⟩
+  have hconst : HasWeakFDerivOn volume Ωp (fun _ => (1 : ℝ)) 0 :=
+    hasWeakFDerivOn_iff.2 fun v => by simpa using (hasWeakLineDerivOn_const (1 : ℝ))
+  have hp : HasWeakFDerivOn volume Ωp u 0 := hconst.congr_ae <|
+    (ae_restrict_iff' Ωp.isOpen.measurableSet).2 <| Eventually.of_forall fun x hx => by
+      simp [hu, Set.indicator_of_mem (show x ∈ {x : E | 0 < ℓ x} from hx.2)]
+  have hn : HasWeakFDerivOn volume Ωn u 0 := (hasWeakFDerivOn_zero (μ := volume)).congr_ae <|
+    (ae_restrict_iff' Ωn.isOpen.measurableSet).2 <| Eventually.of_forall fun x hx => by
+      have hz' : ¬ 0 < ℓ x := not_lt.2 (le_of_lt hx.2)
+      simp [hu, hz']
+  obtain ⟨v, hv⟩ := DFunLike.ne_iff.1 hℓ
+  have hker_ne : LinearMap.ker (ℓ : E →ₗ[ℝ] ℝ) ≠ ⊤ := fun htop =>
+    hv (LinearMap.mem_ker.1 (htop ▸ Submodule.mem_top))
+  have hnull : volume (LinearMap.ker (ℓ : E →ₗ[ℝ] ℝ) : Set E) = 0 :=
+    Measure.addHaar_submodule volume _ hker_ne
+  have hD0 : D =ᵐ[volume.restrict Ω] 0 := by
+    refine (ae_restrict_iff' Ω.isOpen.measurableSet).2 ?_
+    filter_upwards [(ae_restrict_iff' Ωp.isOpen.measurableSet).1 ((hD.mono inf_le_left).ae_eq hp),
+      (ae_restrict_iff' Ωn.isOpen.measurableSet).1 ((hD.mono inf_le_left).ae_eq hn),
+      measure_eq_zero_iff_ae_notMem.1 hnull] with x hxp hxn hx0 hxΩ
+    rcases lt_or_gt_of_ne (show ℓ x ≠ 0 from hx0) with h | h
+    · exact hxn ⟨hxΩ, h⟩
+    · exact hxp ⟨hxΩ, h⟩
+  obtain ⟨m, e, hℓe⟩ := exists_cle_prod_of_ne_zero hℓ
+  have : (volume : Measure (ℝ × EuclideanSpace ℝ (Fin m))).IsAddHaarMeasure := by
+    rw [Measure.volume_eq_prod]; infer_instance
+  let Ω' : Opens (ℝ × EuclideanSpace ℝ (Fin m)) := Ω.comap ⟨e, e.continuous⟩
+  have hpull :=
+    ((hD.congr_ae_deriv hD0).comp_continuousLinearEquiv (μ := volume) (U := Ω') e
+      fun _ hx => hx).hasWeakLineDerivOn (1, 0)
+  have hu_eq : u ∘ e = fun q => (Ioi (0 : ℝ)).indicator (fun _ => (1 : ℝ)) q.1 := by
+    funext q; by_cases hq : 0 < q.1 <;> simp [u, Function.comp_apply, Set.indicator, hℓe, hq]
+  have hy₀ : ((0 : ℝ), (e.symm x₀).2) ∈ Ω' := by
+    have he0 : ((0 : ℝ), (e.symm x₀).2) = e.symm x₀ :=
+      Prod.ext (by simp [← hℓe (e.symm x₀), hx₀0]) rfl
+    change e (0, (e.symm x₀).2) ∈ Ω
+    simpa [he0] using hx₀
+  rw [hu_eq] at hpull
+  exact not_hasWeakLineDerivOn_indicator_fst_pos hy₀
+    (hpull.congr_ae_deriv (Eventually.of_forall fun _ => by simp))
+
+/-- The indicator of a half-space `{x | 0 < ℓ x}` for a nonzero functional `ℓ` lies in no
+`MemW1pLoc p Ω` when `Ω` meets `{x | ℓ x = 0}`. -/
+theorem not_memW1pLoc_indicator_pos {ℓ : E →L[ℝ] ℝ} (hℓ : ℓ ≠ 0) {Ω : Opens E} {x₀ : E}
+    (hx₀ : x₀ ∈ Ω) (hx₀0 : ℓ x₀ = 0) :
+    ¬ MemW1pLoc p Ω ({x : E | 0 < ℓ x}.indicator fun _ => (1 : ℝ)) := fun h => by
+  obtain ⟨D, hD, -⟩ := h.exists_hasWeakFDerivOn
+  exact not_hasWeakFDerivOn_indicator_pos hℓ hx₀ hx₀0 D hD
+
+end HalfSpaceIndicator
+
+/-- The indicator of the right half-plane is locally `Lᵖ` on every set, for every exponent. -/
+theorem memLpLoc_indicator_re_pos :
+    MemLpLoc p U ({z : ℂ | 0 < z.re}.indicator fun _ => (1 : ℝ)) :=
+  memLpLoc_indicator_pos Complex.reCLM p U
 
 /-- The indicator of the right half-plane has no weak derivative on any open set meeting the
 imaginary axis: its distributional derivative is a measure carried by the axis. -/
 theorem not_hasWeakFDerivOn_indicator_re_pos {Ω : Opens ℂ} {z₀ : ℂ} (hz₀ : z₀ ∈ Ω)
     (hre : z₀.re = 0) (D : ℂ → ℂ →L[ℝ] ℝ) :
-    ¬ HasWeakFDerivOn volume Ω ({z : ℂ | 0 < z.re}.indicator fun _ => (1 : ℝ)) D := by
-  intro hD
-  set u : ℂ → ℝ := {z : ℂ | 0 < z.re}.indicator fun _ => (1 : ℝ) with hu
-  -- On each open half of `Ω` the indicator is constant, so `D` vanishes almost everywhere.
-  set Ωp : Opens ℂ := Ω ⊓ ⟨{z | 0 < z.re}, isOpen_lt continuous_const Complex.continuous_re⟩
-  set Ωn : Opens ℂ := Ω ⊓ ⟨{z | z.re < 0}, isOpen_lt Complex.continuous_re continuous_const⟩
-  have hconst : HasWeakFDerivOn volume Ωp (fun _ => (1 : ℝ)) 0 := hasWeakFDerivOn_iff.2 fun v => by
-    simpa using (hasWeakLineDerivOn_const (1 : ℝ) :
-      HasWeakLineDerivOn volume Ωp (fun _ => (1 : ℝ)) (fun _ => 0) v)
-  have hp : HasWeakFDerivOn volume Ωp u 0 := hconst.congr_ae <|
-    (ae_restrict_iff' Ωp.isOpen.measurableSet).2 <| Eventually.of_forall fun z hz => by
-      simp [hu, Set.indicator_of_mem (show z ∈ {z : ℂ | 0 < z.re} from hz.2)]
-  have hn : HasWeakFDerivOn volume Ωn u 0 := (hasWeakFDerivOn_zero (μ := volume)).congr_ae <|
-    (ae_restrict_iff' Ωn.isOpen.measurableSet).2 <| Eventually.of_forall fun z hz => by
-      have hz' : ¬ 0 < z.re := not_lt.2 (le_of_lt hz.2)
-      simp [hu, hz']
-  have hDp := (ae_restrict_iff' Ωp.isOpen.measurableSet).1 ((hD.mono inf_le_left).ae_eq hp)
-  have hDn := (ae_restrict_iff' Ωn.isOpen.measurableSet).1 ((hD.mono inf_le_left).ae_eq hn)
-  have hD0 : D =ᵐ[volume.restrict Ω] 0 := by
-    refine (ae_restrict_iff' Ω.isOpen.measurableSet).2 ?_
-    filter_upwards [hDp, hDn, measure_eq_zero_iff_ae_notMem.1 (Complex.volume_setOf_re_eq 0)]
-      with z hzp hzn hz0 hzΩ
-    rcases lt_or_gt_of_ne hz0 with h | h
-    · exact hzn ⟨hzΩ, h⟩
-    · exact hzp ⟨hzΩ, h⟩
-  have hline := (hD.congr_ae_deriv hD0).hasWeakLineDerivOn 1
-  -- Test against a product of bump functions centred at `z₀`.
-  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 Ω.isOpen z₀ hz₀
-  let a : ContDiffBump (0 : ℝ) := ⟨ε / 6, ε / 3, by positivity, by linarith⟩
-  let b : ContDiffBump z₀.im := ⟨ε / 6, ε / 3, by positivity, by linarith⟩
-  let f : ℂ → ℝ := ((a : ℝ → ℝ) ∘ Complex.re) * ((b : ℝ → ℝ) ∘ Complex.im)
-  have hfs : tsupport f ⊆ closedBall z₀ (2 * ε / 3) := by
-    intro z hz
-    have hzr : z ∈ Complex.re ⁻¹' tsupport a :=
-      tsupport_comp_subset_preimage (a : ℝ → ℝ) Complex.continuous_re (tsupport_mul_subset_left hz)
-    have hzi : z ∈ Complex.im ⁻¹' tsupport b :=
-      tsupport_comp_subset_preimage (b : ℝ → ℝ) Complex.continuous_im (tsupport_mul_subset_right hz)
-    rw [mem_preimage, a.tsupport_eq, mem_closedBall, Real.dist_eq, sub_zero] at hzr
-    rw [mem_preimage, b.tsupport_eq, mem_closedBall, Real.dist_eq] at hzi
-    rw [mem_closedBall, dist_eq_norm]
-    refine (Complex.norm_le_abs_re_add_abs_im _).trans ?_
-    simp only [Complex.sub_re, Complex.sub_im, hre, sub_zero]
-    simp only [a, b] at hzr hzi
-    linarith
-  have hfΩ : tsupport f ⊆ Ω := fun z hz =>
-    hball (closedBall_subset_ball (by linarith) (hfs hz))
-  let φ : 𝓓(Ω, ℝ) := ⟨f, (a.contDiff.comp Complex.reCLM.contDiff).mul
-      (b.contDiff.comp Complex.imCLM.contDiff),
-    (isCompact_closedBall z₀ _).of_isClosed_subset (isClosed_tsupport f) hfs, hfΩ⟩
-  have hφ : (φ : ℂ → ℝ) = f := TestFunction.coe_mk
-  have hkey := hline.integral_lineDeriv_smul_eq_neg_integral_smul φ
-  simp only [Pi.zero_apply, zero_apply, smul_zero, integral_zero, neg_zero] at hkey
-  -- Compute the pairing by Fubini.
-  have hda : ∀ x, HasDerivAt a (deriv a x) x := fun x =>
-    ((a.contDiff (n := 1)).differentiable one_ne_zero x).hasDerivAt
-  have hldf : ∀ z, lineDeriv ℝ (φ : ℂ → ℝ) z 1 = deriv a z.re * b z.im := by
-    intro z
-    refine HasLineDerivAt.lineDeriv
-      (?_ : HasDerivAt (fun t : ℝ => (φ : ℂ → ℝ) (z + t • (1 : ℂ))) _ 0)
-    have h := ((hda (z.re + 0)).comp_const_add z.re 0).mul_const (b z.im)
-    simp only [add_zero] at h
-    convert h using 1
-    funext t
-    simp [hφ, f]
-  have hint : ∫ z : ℂ, lineDeriv ℝ (φ : ℂ → ℝ) z 1 • u z =
-      ∫ q : ℝ × ℝ, (deriv a q.1 * (Ioi (0 : ℝ)).indicator 1 q.1) * b q.2 := by
-    rw [← Complex.volume_preserving_equiv_real_prod.integral_comp
-      Complex.measurableEquivRealProd.measurableEmbedding]
-    refine integral_congr_ae (Eventually.of_forall fun z => ?_)
-    simp only [hldf, smul_eq_mul, hu, Complex.measurableEquivRealProd]
-    by_cases hz : 0 < z.re <;> simp [Set.indicator, hz]
-  have hprod := integral_prod_mul (μ := (volume : Measure ℝ)) (ν := (volume : Measure ℝ))
-    (fun x => deriv a x * (Ioi (0 : ℝ)).indicator 1 x) (fun y => b y)
-  rw [hint, Measure.volume_eq_prod, hprod] at hkey
-  have hIoi : ∫ x : ℝ, deriv a x * (Ioi (0 : ℝ)).indicator 1 x = -1 := by
-    have hfun : (fun x : ℝ => deriv a x * (Ioi (0 : ℝ)).indicator 1 x) =
-        (Ioi (0 : ℝ)).indicator (deriv a) := by
-      funext x
-      by_cases hx : 0 < x <;> simp [Set.indicator, hx]
-    rw [hfun, integral_indicator measurableSet_Ioi]
-    have hdc : Continuous (deriv a) := (a.contDiff (n := 1)).continuous_deriv le_rfl
-    rw [integral_Ioi_of_hasDerivAt_of_tendsto (m := 0) a.continuous.continuousWithinAt
-      (fun x _ => hda x)
-      (hdc.integrable_of_hasCompactSupport a.hasCompactSupport.deriv).integrableOn ?_,
-      a.one_of_mem_closedBall (mem_closedBall_self (by simp only [a]; positivity))]
-    · simp
-    · refine tendsto_const_nhds.congr' ?_
-      filter_upwards [eventually_ge_atTop (ε / 3)] with x hx
-      refine (a.zero_of_le_dist ?_).symm
-      simp only [a, Real.dist_eq, sub_zero]
-      exact hx.trans (le_abs_self x)
-  rw [hIoi] at hkey
-  have hb := b.integral_pos (μ := volume)
-  linarith
+    ¬ HasWeakFDerivOn volume Ω ({z : ℂ | 0 < z.re}.indicator fun _ => (1 : ℝ)) D :=
+  not_hasWeakFDerivOn_indicator_pos (ℓ := Complex.reCLM)
+    (fun h => (one_ne_zero : (1 : ℝ) ≠ 0) (by simpa using DFunLike.congr_fun h (1 : ℂ)))
+    hz₀ hre D
 
 /-- The indicator of the right half-plane is in no local Sobolev class of positive order on a
 set whose interior meets the imaginary axis, although it is locally `Lᵖ` there. -/
@@ -604,5 +683,295 @@ theorem memWkpLoc_planarReflection_higherReflectionCoeff_two_im (U : Set ℂ) (k
     MemWkpLoc p U k (planarReflection (higherReflectionCoeff 2) fun z => z.im) := by
   rw [planarReflection_higherReflectionCoeff_two_im]
   exact Complex.imCLM.contDiff.memWkpLoc
+
+/-! ### Euclidean and Banach-valued examples for `MemLpLoc` and `MemW1pLoc` -/
+
+section EuclideanNormed
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasureSpace E] [BorelSpace E] [(volume : Measure E).IsAddHaarMeasure]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- Every continuous linear map into a Banach space lies in `MemW1pLoc p Ω` on every open set and
+for every exponent `p`. -/
+protected theorem _root_.ContinuousLinearMap.memW1pLoc [CompleteSpace F]
+    (L : E →L[ℝ] F) (p : ENNReal) (Ω : Opens E) :
+    MemW1pLoc p Ω L :=
+  L.contDiff.memW1pLoc le_rfl
+
+/-- Every continuous affine map into a Banach space lies in `MemW1pLoc p Ω` on every open set and
+for every exponent `p`. -/
+protected theorem _root_.ContinuousAffineMap.memW1pLoc [CompleteSpace F]
+    (A : E →ᴬ[ℝ] F) (p : ENNReal) (Ω : Opens E) :
+    MemW1pLoc p Ω A :=
+  A.contDiff.memW1pLoc le_rfl
+
+/-- The identity of `E` lies in `MemW1pLoc p Ω` for every open set `Ω` and every exponent `p`. -/
+theorem memW1pLoc_id (p : ENNReal) (Ω : Opens E) :
+    MemW1pLoc p Ω (id : E → E) :=
+  contDiff_id.memW1pLoc le_rfl
+
+/-- On a nontrivial finite-dimensional real normed space, the identity is not globally in `Lᵖ` for
+any `0 < p < ∞`: `MemW1pLoc` is genuinely local. -/
+theorem not_memLp_id [Nontrivial E] (hp₀ : p ≠ 0) (hp : p ≠ ⊤) :
+    ¬ MemLp (id : E → E) p volume := fun h => by
+  have hint := (integrable_norm_rpow_iff h.aestronglyMeasurable hp₀ hp).2 h
+  refine (volume : Measure E).not_integrable_norm_sub_rpow p.toReal 0 ?_
+  simpa only [sub_zero, id_eq] using hint
+
+/-- The norm `x ↦ ‖x‖` on any finite-dimensional real normed space lies in `MemW1pLoc p Ω` on every
+open set and for every exponent `p`. -/
+theorem memW1pLoc_norm (p : ENNReal) (Ω : Opens E) :
+    MemW1pLoc p Ω (fun x : E => ‖x‖) :=
+  lipschitzWith_one_norm.memW1pLoc
+
+/-- On `ℝ × ℝ` with its `max` norm `‖(x₁, x₂)‖ = max |x₁| |x₂|`, the derivative of the norm at
+`(1, 1 / 2)` in direction `(0, 1)` is `0`, whereas the inner-product formula `⟪x / ‖x‖, (0, 1)⟫`
+would be nonzero. -/
+theorem fderiv_norm_prod_apply_snd_eq_zero :
+    fderiv ℝ (fun y : ℝ × ℝ => ‖y‖) (1, 1 / 2) (0, 1) = 0 := by
+  have ho : IsOpen {y : ℝ × ℝ | |y.2| < y.1} :=
+    isOpen_lt (continuous_abs.comp continuous_snd) continuous_fst
+  have hmem : ((1 : ℝ), (1 / 2 : ℝ)) ∈ {y : ℝ × ℝ | |y.2| < y.1} := by norm_num
+  have heq : (fun y : ℝ × ℝ => ‖y‖) =ᶠ[𝓝 (1, 1 / 2)] Prod.fst := by
+    filter_upwards [ho.mem_nhds hmem] with y hy
+    have hy0 : 0 ≤ y.1 := (abs_nonneg y.2).trans hy.le
+    simp only [Prod.norm_def, Real.norm_eq_abs, abs_of_nonneg hy0, max_eq_left hy.le]
+  have hd : HasFDerivAt (fun y : ℝ × ℝ => ‖y‖) (ContinuousLinearMap.fst ℝ ℝ ℝ) (1, 1 / 2) :=
+    (ContinuousLinearMap.fst ℝ ℝ ℝ).hasFDerivAt.congr_of_eventuallyEq heq
+  rw [hd.fderiv]
+  rfl
+
+/-- On a nontrivial finite-dimensional real normed space, `x ↦ ‖x‖⁻¹` lies in `MemLpLoc p U` near
+the origin if and only if `p < dim E`. -/
+theorem memLpLoc_norm_inv_iff_of_mem_nhds [Nontrivial E] {U : Set E} (hU : U ∈ 𝓝 (0 : E)) :
+    MemLpLoc p U (fun x : E => ‖x‖⁻¹) ↔ p < Module.finrank ℝ E := by
+  refine ⟨fun h => ?_, fun h => memLpLoc_iff.2 fun K _ hK => hK.memLp_norm_inv_restrict h⟩
+  by_contra! hp
+  obtain ⟨ε, hε, hεU⟩ := nhds_basis_closedBall.mem_iff.1 hU
+  exact not_memLp_norm_inv_closedBall hε hp (memLpLoc_iff.1 h _ hεU (isCompact_closedBall 0 ε))
+
+/-- On `ℝ³` (`EuclideanSpace ℝ (Fin 3)`), `x ↦ ‖x‖⁻¹` is locally `Lᵖ` on the whole space if and only
+if `p < 3`. -/
+theorem memLpLoc_norm_inv_euclideanFinThree_iff :
+    MemLpLoc p (univ : Set (EuclideanSpace ℝ (Fin 3)))
+      (fun x : EuclideanSpace ℝ (Fin 3) => ‖x‖⁻¹) ↔ p < 3 := by
+  simpa [finrank_euclideanSpace_fin] using
+    memLpLoc_norm_inv_iff_of_mem_nhds (E := EuclideanSpace ℝ (Fin 3)) (p := p) univ_mem
+
+/-! #### Infinite-dimensional `ℓ²(ℕ)` target -/
+
+omit [FiniteDimensional ℝ E] [(volume : Measure E).IsAddHaarMeasure] in
+/-- For a scalar Sobolev function `a ∈ MemW1pLoc p Ω` with weak derivative `Da` and a fixed element
+`v ∈ ℓ²(ℕ)`, the map `x ↦ a x • v` lies in `MemW1pLoc p Ω` with weak derivative `h ↦ Da x h • v`;
+no basis of the target is used. -/
+theorem MemW1pLoc.smul_const_lp_two {Ω : Opens E} {a : E → ℝ} {Da : E → E →L[ℝ] ℝ}
+    (ha : MemW1pLoc p Ω a) (haD : HasWeakFDerivOn volume Ω a Da) (v : lp (fun _ : ℕ => ℝ) 2) :
+    MemW1pLoc p Ω (fun x => a x • v) ∧
+      HasWeakFDerivOn volume Ω (fun x => a x • v)
+        (fun x => ((ContinuousLinearMap.id ℝ ℝ).smulRight v).comp (Da x)) :=
+  ⟨ha.smul_const v, haD.clm_comp ((ContinuousLinearMap.id ℝ ℝ).smulRight v)⟩
+
+omit [FiniteDimensional ℝ E] [MeasureSpace E] [BorelSpace E]
+  [(volume : Measure E).IsAddHaarMeasure] in
+/-- For `α > -1`, `x ↦ ‖x‖ ^ α • x` is continuous on the whole space `E`, including at `0`. -/
+private theorem continuous_norm_rpow_smul_self {α : ℝ} (hα : -1 < α) :
+    Continuous (fun x : E => ‖x‖ ^ α • x) := by
+  rw [continuous_iff_continuousAt]
+  intro x
+  rcases eq_or_ne x 0 with rfl | hx
+  · rw [ContinuousAt, norm_zero, smul_zero, tendsto_zero_iff_norm_tendsto_zero]
+    have hc : Continuous fun y : E => ‖y‖ ^ (α + 1) :=
+      continuous_norm.rpow_const fun _ => Or.inr (by linarith)
+    have hlim : Tendsto (fun y : E => ‖y‖ ^ (α + 1)) (𝓝 0) (𝓝 0) := by
+      simpa [Real.zero_rpow (by linarith : α + 1 ≠ 0)] using hc.tendsto 0
+    refine hlim.congr' (Eventually.of_forall fun y => ?_)
+    dsimp only
+    rcases eq_or_ne y 0 with rfl | hy
+    · simp [Real.zero_rpow (by linarith : α + 1 ≠ 0)]
+    · rw [norm_smul, Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg y) _),
+        Real.rpow_add_one (norm_ne_zero_iff.2 hy)]
+  · exact (continuous_norm.continuousAt.rpow_const (Or.inl (norm_ne_zero_iff.2 hx))).smul
+      continuousAt_id
+
+end EuclideanNormed
+
+section EuclideanInnerProduct
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- Pointwise operator-norm bounds for the classical derivative
+`Dα x = ‖x‖ ^ α • id + (α * ‖x‖ ^ (α - 2)) • (innerSL ℝ x).smulRight x` of `x ↦ ‖x‖ ^ α • x`. -/
+private theorem norm_deriv_norm_rpow_smul_self_bounds {α : ℝ} (hα : -1 < α) (x : E) :
+    ‖‖x‖ ^ α • ContinuousLinearMap.id ℝ E +
+        (α * ‖x‖ ^ (α - 2)) • (innerSL ℝ x).smulRight x‖ ≤ (1 + |α|) * ‖x‖ ^ α ∧
+      (x ≠ 0 → (1 + α) * ‖x‖ ^ α ≤
+        ‖‖x‖ ^ α • ContinuousLinearMap.id ℝ E +
+          (α * ‖x‖ ^ (α - 2)) • (innerSL ℝ x).smulRight x‖) := by
+  set Dx : E →L[ℝ] E :=
+    ‖x‖ ^ α • ContinuousLinearMap.id ℝ E + (α * ‖x‖ ^ (α - 2)) • (innerSL ℝ x).smulRight x
+  constructor
+  · rcases eq_or_ne x 0 with rfl | hx
+    · rcases eq_or_ne α 0 with rfl | hα0
+      · simpa [Dx] using ContinuousLinearMap.norm_id_le
+      · simp [Dx, Real.zero_rpow hα0]
+    · have hx' : 0 < ‖x‖ := norm_pos_iff.2 hx
+      have hpow : ‖x‖ ^ (α - 2) * (‖x‖ * ‖x‖) = ‖x‖ ^ α := by
+        rw [← sq, ← Real.rpow_natCast, ← Real.rpow_add hx']
+        norm_num
+      calc ‖Dx‖ ≤ ‖‖x‖ ^ α • ContinuousLinearMap.id ℝ E‖ +
+            ‖(α * ‖x‖ ^ (α - 2)) • (innerSL ℝ x).smulRight x‖ := norm_add_le _ _
+        _ ≤ ‖x‖ ^ α * 1 + |α| * ‖x‖ ^ (α - 2) * (‖innerSL ℝ x‖ * ‖x‖) := by
+          rw [norm_smul, norm_smul, Real.norm_of_nonneg (Real.rpow_nonneg hx'.le _),
+            Real.norm_eq_abs, abs_mul, abs_of_nonneg (Real.rpow_nonneg hx'.le _),
+            (innerSL ℝ x).norm_smulRight_apply x]
+          gcongr
+          exact ContinuousLinearMap.norm_id_le
+        _ = (1 + |α|) * ‖x‖ ^ α := by
+          rw [innerSL_apply_norm, mul_assoc, hpow]
+          ring
+  · intro hx
+    have hx' : 0 < ‖x‖ := norm_pos_iff.2 hx
+    have hpow : ‖x‖ ^ (α - 2) * ‖x‖ ^ 2 = ‖x‖ ^ α := by
+      rw [← Real.rpow_natCast, ← Real.rpow_add hx']
+      norm_num
+    have happ : Dx x = ((1 + α) * ‖x‖ ^ α) • x := by
+      simp only [Dx, add_apply, smul_apply, ContinuousLinearMap.id_apply,
+        ContinuousLinearMap.smulRight_apply, innerSL_apply_apply, real_inner_self_eq_norm_sq,
+        smul_smul, ← add_smul]
+      congr 1
+      linear_combination α * hpow
+    have hle := Dx.le_opNorm x
+    have h1α : 0 ≤ (1 + α) * ‖x‖ ^ α := mul_nonneg (by linarith) (Real.rpow_nonneg hx'.le _)
+    rw [happ, norm_smul, Real.norm_of_nonneg h1α] at hle
+    exact le_of_mul_le_mul_right hle hx'
+
+/-- Trace identity for the classical derivatives of the coordinates of `x ↦ ‖x‖⁻¹ • x`:
+their divergence in an orthonormal basis equals `(dim E - 1) ‖x‖⁻¹`. -/
+private theorem sum_unitRadialCoordDeriv_apply_self [FiniteDimensional ℝ E] (x : E) :
+    ∑ i : Fin (Module.finrank ℝ E),
+        (‖x‖ ^ (-1 : ℝ) • innerSL ℝ (stdOrthonormalBasis ℝ E i) -
+          (‖x‖ ^ (-3 : ℝ) * ⟪x, stdOrthonormalBasis ℝ E i⟫) • innerSL ℝ x)
+          (stdOrthonormalBasis ℝ E i) =
+      ((Module.finrank ℝ E : ℝ) - 1) * ‖x‖⁻¹ := by
+  let b := stdOrthonormalBasis ℝ E
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  have hx' : 0 < ‖x‖ := norm_pos_iff.2 hx
+  have h3 : ‖x‖ ^ (-3 : ℝ) * ‖x‖ ^ 2 = ‖x‖⁻¹ := by
+    rw [← Real.rpow_natCast, ← Real.rpow_add hx', ← Real.rpow_neg_one]
+    norm_num
+  have hbi : ∀ i, ⟪b i, b i⟫ = 1 := fun i =>
+    real_inner_self_eq_norm_mul_norm (b i) |>.trans (by simp [b.norm_eq_one])
+  have hterm : ∀ i,
+      (‖x‖ ^ (-1 : ℝ) • innerSL ℝ (b i) - (‖x‖ ^ (-3 : ℝ) * ⟪x, b i⟫) • innerSL ℝ x) (b i) =
+        ‖x‖⁻¹ - ‖x‖ ^ (-3 : ℝ) * ⟪x, b i⟫ ^ 2 := fun i => by
+    simp only [sub_apply, smul_apply, innerSL_apply_apply, smul_eq_mul, hbi, mul_one,
+      Real.rpow_neg_one, sq, mul_assoc]
+  simp_rw [show stdOrthonormalBasis ℝ E = b from rfl, hterm, Finset.sum_sub_distrib,
+    Finset.sum_const, Finset.card_fin, nsmul_eq_mul, ← Finset.mul_sum, b.sum_sq_inner_left, h3]
+  ring
+
+variable [FiniteDimensional ℝ E] [MeasureSpace E] [BorelSpace E]
+  [(volume : Measure E).IsAddHaarMeasure] {p : ENNReal} {Ω : Opens E}
+
+/-- For `α > -1` on a nontrivial finite-dimensional inner product space, `x ↦ ‖x‖ ^ α • x` lies in
+`MemW1pLoc p Ω` if and only if `x ↦ ‖x‖ ^ α` lies in `MemLpLoc p Ω`. -/
+theorem memW1pLoc_norm_rpow_smul_self_iff [Nontrivial E] {α : ℝ} (hα : -1 < α) :
+    MemW1pLoc p Ω (fun x : E => ‖x‖ ^ α • x) ↔ MemLpLoc p Ω (fun x : E => ‖x‖ ^ α) := by
+  let D : E → E →L[ℝ] E := fun x =>
+    ‖x‖ ^ α • ContinuousLinearMap.id ℝ E + (α * ‖x‖ ^ (α - 2)) • (innerSL ℝ x).smulRight x
+  have hmeasD : Measurable D :=
+    ((measurable_norm.pow_const α).smul_const (ContinuousLinearMap.id ℝ E)).add
+      ((measurable_const.mul (measurable_norm.pow_const (α - 2))).smul
+        (isBoundedBilinearMap_smulRight.continuous.comp₂
+          (innerSL ℝ (E := E)).continuous continuous_id).measurable)
+  have hd : ∀ x : E, x ≠ 0 → HasFDerivAt (fun y : E => ‖y‖ ^ α • y) (D x) x := fun x hx =>
+    ((hasFDerivAt_norm_rpow_of_ne α hx).smul (hasFDerivAt_id x)).congr_fderiv
+      (by ext v; simp [D, mul_smul])
+  have hlocD : LocallyIntegrableOn D Ω volume := by
+    have hpos : -(Module.finrank ℝ E : ℝ) < α := by
+      have : (1 : ℝ) ≤ Module.finrank ℝ E := Nat.one_le_cast.2 Module.finrank_pos
+      linarith
+    have hker := (locallyIntegrable_norm_sub_rpow (mu := volume) hpos 0).smul (1 + |α|)
+    refine (hker.mono hmeasD.aestronglyMeasurable
+      (Eventually.of_forall fun x => ?_)).locallyIntegrableOn _
+    simp only [Pi.smul_apply, zero_sub, norm_neg, smul_eq_mul]
+    rw [Real.norm_of_nonneg (by positivity)]
+    exact (norm_deriv_norm_rpow_smul_self_bounds hα x).1
+  have hweak : HasWeakFDerivOn volume Ω (fun x : E => ‖x‖ ^ α • x) D :=
+    hasWeakFDerivOn_of_hasFDerivAt_off_countable (countable_singleton 0)
+      (continuous_norm_rpow_smul_self hα).continuousOn hlocD fun x hx => hd x hx.2
+  rw [(continuous_norm_rpow_smul_self hα).continuousOn.memW1pLoc_iff]
+  constructor
+  · rintro ⟨Du, hDu, hDuLp⟩
+    have hDLp := hDuLp.congr_ae (hDu.ae_eq hweak)
+    refine memLpLoc_iff.2 fun K hKΩ hK => ?_
+    have h1α : 0 < 1 + α := by linarith
+    refine (((memLpLoc_iff.1 hDLp K hKΩ hK).norm.const_mul (1 + α)⁻¹).of_le
+      (measurable_norm.pow_const α).aestronglyMeasurable ?_)
+    filter_upwards [ae_restrict_of_ae (volume.ae_ne 0)] with x hx0
+    rw [Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg x) _),
+      Real.norm_of_nonneg (mul_nonneg (inv_nonneg.2 h1α.le) (norm_nonneg _)),
+      le_inv_mul_iff₀ h1α]
+    exact (norm_deriv_norm_rpow_smul_self_bounds hα x).2 hx0
+  · intro hLp
+    refine ⟨D, hweak, memLpLoc_iff.2 fun K hKΩ hK => ?_⟩
+    refine ((memLpLoc_iff.1 hLp K hKΩ hK).const_mul (1 + |α|)).of_le
+      hmeasD.aestronglyMeasurable (Eventually.of_forall fun x => ?_)
+    rw [Real.norm_of_nonneg (mul_nonneg (by positivity) (Real.rpow_nonneg (norm_nonneg x) _))]
+    exact (norm_deriv_norm_rpow_smul_self_bounds hα x).1
+
+/-- **The unit radial map `x ↦ ‖x‖⁻¹ • x` is in `W^{1,p}_loc` near `0` iff `p < dim E`.**
+When `dim E ≥ 2` and `0 ∈ Ω`, the coordinate weak derivatives exist across `0` and have size
+`O(‖x‖⁻¹)`, while their divergence equals `(dim E - 1) ‖x‖⁻¹`. -/
+theorem memW1pLoc_unitRadial_iff (hd : 1 < Module.finrank ℝ E) (h0 : (0 : E) ∈ Ω) :
+    MemW1pLoc p Ω (fun x : E => ‖x‖⁻¹ • x) ↔ p < Module.finrank ℝ E := by
+  have : Nontrivial E := Module.nontrivial_of_finrank_pos (zero_lt_one.trans hd)
+  let b := stdOrthonormalBasis ℝ E
+  let D : Fin (Module.finrank ℝ E) → E → E →L[ℝ] ℝ := fun i x =>
+    ‖x‖ ^ (-1 : ℝ) • innerSL ℝ (b i) - (‖x‖ ^ (-3 : ℝ) * ⟪x, b i⟫) • innerSL ℝ x
+  have hcoord (i : Fin (Module.finrank ℝ E)) :
+      (fun x : E => b.toBasis.repr (‖x‖⁻¹ • x) i) = fun x => ‖x‖ ^ (-1 : ℝ) * ⟪x, b i⟫ := by
+    funext x
+    rw [OrthonormalBasis.coe_toBasis_repr_apply, b.repr_apply_apply, real_inner_smul_right,
+      real_inner_comm, Real.rpow_neg_one]
+  rw [b.toBasis.memW1pLoc_iff, ← memLpLoc_norm_inv_iff_of_mem_nhds (Ω.isOpen.mem_nhds h0)]
+  constructor
+  · intro h
+    have hDi : ∀ i, MemLpLoc p Ω (D i) := fun i => by
+      have hi : MemW1pLoc p Ω (fun x : E => ‖x‖ ^ (-1 : ℝ) * ⟪x, b i⟫) := hcoord i ▸ h i
+      exact hi.memLpLoc_of_hasWeakFDerivOn (hasWeakFDerivOn_norm_rpow_neg_one_mul_inner hd (b i) Ω)
+    have hdiv : MemLpLoc p Ω (fun x : E => ∑ i, D i x (b i)) :=
+      MemLpLoc.sum Finset.univ fun i _ =>
+        (hDi i).clm_comp (ContinuousLinearMap.apply ℝ ℝ (b i))
+    have hd1 : ((Module.finrank ℝ E : ℝ) - 1) ≠ 0 := by
+      linarith [show (1 : ℝ) < Module.finrank ℝ E from Nat.one_lt_cast.2 hd]
+    exact (hdiv.const_smul ((Module.finrank ℝ E : ℝ) - 1)⁻¹).congr fun x _ => by
+      simp only [Pi.smul_apply, smul_eq_mul]
+      rw [show (∑ i, D i x (b i)) = ((Module.finrank ℝ E : ℝ) - 1) * ‖x‖⁻¹ from
+        sum_unitRadialCoordDeriv_apply_self x, inv_mul_cancel_left₀ hd1]
+  · intro hinv i
+    rw [hcoord i]
+    refine memW1pLoc_iff.2 ⟨memLpLoc_iff.2 fun K _ hK => ?_, D i,
+      hasWeakFDerivOn_norm_rpow_neg_one_mul_inner hd (b i) Ω, memLpLoc_iff.2 fun K hKΩ hK => ?_⟩
+    · have : IsFiniteMeasure (volume.restrict K) := ⟨by simpa using hK.measure_lt_top⟩
+      exact MemLp.of_bound (by fun_prop : Measurable _).aestronglyMeasurable ‖b i‖
+        (Eventually.of_forall fun x => abs_norm_rpow_neg_one_mul_inner_le (b i) x)
+    · refine ((memLpLoc_iff.1 hinv K hKΩ hK).const_mul (2 * ‖b i‖)).of_le
+        (by fun_prop : Measurable _).aestronglyMeasurable (Eventually.of_forall fun x => ?_)
+      rw [Real.norm_of_nonneg (by positivity), ← Real.rpow_neg_one]
+      exact norm_norm_rpow_neg_one_smul_innerSL_sub_le (b i) x
+
+end EuclideanInnerProduct
+
+/-- On the complex plane, `z ↦ z / ‖z‖` lies in `MemW1pLoc p Ω` near `0` if and only if `p < 2`. -/
+theorem memW1pLoc_div_norm_iff {Ω : Opens ℂ} (h0 : (0 : ℂ) ∈ Ω) :
+    MemW1pLoc p Ω (fun z : ℂ => z / ‖z‖) ↔ p < 2 := by
+  have heq : (fun z : ℂ => z / ‖z‖) = fun z : ℂ => ‖z‖⁻¹ • z := by
+    funext z; simp [div_eq_inv_mul, Complex.real_smul]
+  rw [heq]
+  simpa [Complex.finrank_real_complex] using
+    memW1pLoc_unitRadial_iff (E := ℂ) (p := p) (by simp [Complex.finrank_real_complex]) h0
 
 end TauCeti

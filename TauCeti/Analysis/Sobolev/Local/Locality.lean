@@ -6,58 +6,59 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Local.Basic
+import Mathlib.Topology.Separation.Regular
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 
 /-!
-# Locality of the local Sobolev classes
+# Locality of the local Lebesgue and Sobolev classes
 
-The classes `TauCeti.MemLpLoc p U` and `TauCeti.MemWkpLoc p U k` have the sheaf property:
-membership can be checked near each point, and membership on every member of an open cover
-gives membership on the union. Concretely, for an arbitrary set `U ⊆ ℂ`, a function lies in
-the class on `U` exactly when every point of `U` has a neighbourhood within `U` on which it
-lies in the class. The set `U` need not be open: for a set reaching the real axis, such as a
-relatively open subset of the closed upper half-plane, the neighbourhoods are relative ones and
-the `Lᵖ` bounds reach the boundary, as in the definition.
+The classes `TauCeti.MemLpLoc p U`, `TauCeti.MemW1pLoc p Ω`, and `TauCeti.MemWkpLoc p U k` have
+the sheaf property: membership can be checked near each point, and membership on every member of an
+open cover gives membership on the union.
 
-This is what lets regularity statements be proved one point at a time, for instance in
-elliptic bootstrapping, and lets membership in coordinates be assembled from charts.
+* For `MemLpLoc p U` on a regular topological measure space `E`, membership on an arbitrary set `U`
+  holds if and only if every point of `U` has a relative neighbourhood on which it holds
+  (`TauCeti.memLpLoc_iff_locally`), and can be checked on the traces `U ∩ O i` of any open cover
+  (`TauCeti.memLpLoc_iff_forall_inter`, `TauCeti.memLpLoc_iSup_iff`).
+* For `MemW1pLoc p Ω` on an open subset of a finite-dimensional real normed space `E` carrying a
+  Borel measure, membership on `⨆ i, V i` holds if and only if it holds on each `V i`
+  (`TauCeti.memW1pLoc_iSup_iff`), and holds on `Ω` if and only if it holds on an open neighbourhood
+  of each point (`TauCeti.memW1pLoc_iff_locally`).
+* For `MemWkpLoc p U k` on an arbitrary subset `U ⊆ ℂ` (such as a half-disc reaching the real
+  axis), membership holds if and only if it holds on a relative neighbourhood of each point
+  (`TauCeti.memWkpLoc_iff_locally`, `TauCeti.memWkpLoc_iff_forall_inter`,
+  `TauCeti.memWkpLoc_iSup_iff`).
 
-## Main results
-
-* `TauCeti.memLpLoc_iff_locally` and `TauCeti.memWkpLoc_iff_locally`: membership holds exactly
-  when it holds on a relative neighbourhood of each point.
-* `TauCeti.memLpLoc_iff_forall_inter` and `TauCeti.memWkpLoc_iff_forall_inter`: membership on
-  `U` is membership on `U ∩ O i` for every member of an open cover `O` of `U`.
-* `TauCeti.memLpLoc_iSup_iff` and `TauCeti.memWkpLoc_iSup_iff`: the sheaf property for open
-  covers of an open set.
-
-For positive order the codomain is assumed complete: an empty cover carries no weak
-derivative to supply the completeness that the weak-derivative predicate demands.
+For positive order the codomain is assumed complete: an empty cover carries no weak derivative to
+supply the completeness that `TauCeti.HasWeakFDerivOn` demands.
 
 ## Implementation notes
 
 Local `Lᵖ` membership on a compact set is assembled from finitely many compact pieces by
-`IsCompact.induction_on`. At positive order the local weak derivatives are glued by
-`TauCeti.exists_hasWeakFDerivOn_iSup` on the interior of `U`, which is covered by the
-interiors of the sets `U ∩ O i`. The glued field is only determined almost everywhere on that
-interior, and the class on `U` also bounds it on the part of `U` outside its interior, which
-may have positive measure. The glued field is therefore set to zero off the interior of `U`;
-each local field may be replaced in the same way without leaving its class.
+`IsCompact.induction_on`, cutting by closed neighbourhoods from `closed_nhds_basis`. At positive
+order the local weak derivatives agree almost everywhere on overlaps by uniqueness and are glued by
+`TauCeti.exists_hasWeakFDerivOn_iSup`. For `MemWkpLoc` on a non-open set `U`, the glued derivative
+field is set to zero off `interior U` so that `Lᵖ` bounds up to the boundary of `U` are preserved.
 
 ## References
 
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
   Appendix B.1 (local Sobolev spaces).
+* W. Arendt and M. Kreuter, *Mapping theorems for Sobolev spaces of vector-valued functions*,
+  Studia Math. 240 (2018), 275–299, §2.
 -/
 
 public section
 
-open MeasureTheory Set TopologicalSpace Filter Metric
+open MeasureTheory Set TopologicalSpace Filter
 open scoped Topology
 
 namespace TauCeti
 
-variable {F : Type*} [NormedAddCommGroup F] {p : ENNReal} {U : Set ℂ} {f : ℂ → F}
+section MemLpLoc
+
+variable {E F : Type*} [TopologicalSpace E] [RegularSpace E] [MeasureSpace E]
+  [NormedAddCommGroup F] {p : ENNReal} {U : Set E} {f : E → F}
 
 /-- Local `Lᵖ` membership is a local property: it holds on `U` exactly when every point of `U`
 has a neighbourhood within `U` on which it holds. -/
@@ -71,13 +72,12 @@ theorem memLpLoc_iff_locally :
     fun x hx => ?_
   obtain ⟨V, hV, hfV⟩ := h x (hKU hx)
   obtain ⟨O, hO, hOV⟩ := mem_nhdsWithin_iff_exists_mem_nhds_inter.1 hV
-  obtain ⟨r, hr, hrO⟩ := nhds_basis_closedBall.mem_iff.1 hO
-  exact ⟨K ∩ closedBall x r, inter_mem_nhdsWithin K (closedBall_mem_nhds x hr),
-    memLpLoc_iff.1 hfV _ (fun z hz => hOV ⟨hrO hz.2, hKU hz.1⟩)
-      (hK.inter_right isClosed_closedBall)⟩
+  obtain ⟨C, ⟨hCnhds, hCcl⟩, hCO⟩ := (closed_nhds_basis x).mem_iff.1 hO
+  exact ⟨K ∩ C, inter_mem_nhdsWithin K hCnhds,
+    memLpLoc_iff.1 hfV _ (fun y hy => hOV ⟨hCO hy.2, hKU hy.1⟩) (hK.inter_right hCcl)⟩
 
 /-- Local `Lᵖ` membership on `U` can be checked on the traces `U ∩ O i` of an open cover. -/
-theorem memLpLoc_iff_forall_inter {ι : Type*} (O : ι → Opens ℂ) (hU : U ⊆ ⋃ i, (O i : Set ℂ)) :
+theorem memLpLoc_iff_forall_inter {ι : Type*} (O : ι → Opens E) (hU : U ⊆ ⋃ i, (O i : Set E)) :
     MemLpLoc p U f ↔ ∀ i, MemLpLoc p (U ∩ O i) f := by
   refine ⟨fun hf i => hf.mono_set inter_subset_left, fun h => memLpLoc_iff_locally.2 ?_⟩
   intro x hx
@@ -85,12 +85,44 @@ theorem memLpLoc_iff_forall_inter {ι : Type*} (O : ι → Opens ℂ) (hU : U �
   exact ⟨U ∩ O i, inter_mem_nhdsWithin U ((O i).isOpen.mem_nhds hi), h i⟩
 
 /-- Local `Lᵖ` membership on the union of open sets is membership on each of them. -/
-theorem memLpLoc_iSup_iff {ι : Type*} (V : ι → Opens ℂ) :
-    MemLpLoc p (⨆ i, V i : Opens ℂ) f ↔ ∀ i, MemLpLoc p (V i) f := by
+theorem memLpLoc_iSup_iff {ι : Type*} (V : ι → Opens E) :
+    MemLpLoc p (⨆ i, V i : Opens E) f ↔ ∀ i, MemLpLoc p (V i) f := by
   rw [memLpLoc_iff_forall_inter V (by simp)]
-  simp only [Opens.coe_iSup, inter_eq_right.2 (subset_iUnion (fun i => (V i : Set ℂ)) _)]
+  simp only [Opens.coe_iSup, inter_eq_right.2 (subset_iUnion (fun i => (V i : Set E)) _)]
 
-variable [NormedSpace ℝ F]
+end MemLpLoc
+
+section MemW1pLoc
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasureSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+  {p : ENNReal}
+
+/-- `MemW1pLoc` has the sheaf property for open covers: membership on `⨆ i, V i` holds if and
+only if it holds on each open set `V i` of the cover. Local weak derivatives agree almost
+everywhere on overlaps by uniqueness and glue via `TauCeti.exists_hasWeakFDerivOn_iSup`. -/
+theorem memW1pLoc_iSup_iff {ι : Type*} (V : ι → Opens E) {u : E → F} :
+    MemW1pLoc p (⨆ i, V i) u ↔ ∀ i, MemW1pLoc p (V i) u := by
+  refine ⟨fun hu i => hu.mono (le_iSup V i), fun h => ?_⟩
+  choose D hD hDLp using fun i => (h i).exists_hasWeakFDerivOn
+  obtain ⟨Du, hDu, hDuD⟩ := exists_hasWeakFDerivOn_iSup V D hD
+  exact memW1pLoc_iff.2 ⟨(memLpLoc_iSup_iff V).2 fun i => (h i).memLpLoc, Du, hDu,
+    (memLpLoc_iSup_iff V).2 fun i => (hDLp i).congr_ae (hDuD i).symm⟩
+
+/-- `MemW1pLoc` is a local property on open sets: membership on `Ω` holds if and only if every
+point of `Ω` has an open neighbourhood on which it holds. -/
+theorem memW1pLoc_iff_locally {Ω : Opens E} {u : E → F} :
+    MemW1pLoc p Ω u ↔ ∀ x ∈ Ω, ∃ V : Opens E, x ∈ V ∧ MemW1pLoc p V u := by
+  refine ⟨fun hu x hx => ⟨Ω, hx, hu⟩, fun h => ?_⟩
+  choose V hxV hV using fun x : Ω => h x x.2
+  have hΩ : Ω ≤ ⨆ x : Ω, V x := fun x hx => Opens.mem_iSup.2 ⟨⟨x, hx⟩, hxV ⟨x, hx⟩⟩
+  exact ((memW1pLoc_iSup_iff V).2 hV).mono hΩ
+
+end MemW1pLoc
+
+section MemWkpLoc
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {p : ENNReal} {U : Set ℂ} {f : ℂ → F}
 
 /-- Zeroing a function off the interior of `U` keeps it in its local Sobolev class: the weak
 derivatives only see the interior, and the `Lᵖ` bounds only improve. -/
@@ -156,5 +188,7 @@ theorem memWkpLoc_iff_locally [CompleteSpace F] {k : ℕ} :
     exact ⟨⟨O, hO⟩, hxO, hfV.mono fun z hz => hOV ⟨hz.2, hz.1⟩⟩
   choose O hxO hfO using hO
   exact (memWkpLoc_iff_forall_inter O fun x hx => mem_iUnion.2 ⟨⟨x, hx⟩, hxO ⟨x, hx⟩⟩).2 hfO
+
+end MemWkpLoc
 
 end TauCeti
