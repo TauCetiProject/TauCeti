@@ -112,7 +112,8 @@ theorem thetaSeries_realModel_typeARootLattice_two_slash_of_mem_Gamma0 {A : SL(2
     exact isCoprime_comm.mp ((ZMod.isUnit_intCast_iff_isCoprime _ _).mp hu)
   have hslash := hL.thetaSeries_slash_of_mem_Gamma0 (k := 1) (by simp [finrank_carrier]) hA'
   rw [Nat.cast_one] at hslash
-  rw [hslash, hL.thetaCharacter_intCast _ hcop, signedDiscr_realModel_typeARootLattice_two]
+  rw [hslash, hL.thetaCharacter_intCast (by simp [finrank_carrier]) hcop,
+    signedDiscr_realModel_typeARootLattice_two]
 
 /-- The theta series of the real model of `A₂` as a weight-one modular form on `Γ₁(3)`. -/
 def thetaFormRealModelTypeARootLatticeTwo :

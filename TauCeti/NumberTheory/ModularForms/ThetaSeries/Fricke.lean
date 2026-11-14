@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.ZLattice.FrickePartner
 public import TauCeti.NumberTheory.ModularForms.Fricke.Normalized
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.GeneralLevel
 
@@ -24,8 +23,8 @@ for Mathlib's weight-`k` slash, which carries the factor `(det W_N)^(k-1) = N^(k
 `(covol L)⁻¹ = (det L)^(-1/2)`. When `L` is even of level `N`, the lattice `√N • L^∨` is its
 Fricke partner (`TauCeti/Algebra/Module/ZLattice/FrickePartner.lean`), again even with level
 dividing `N`, so the Fricke matrix exchanges the theta series of a lattice and of its partner.
-The function-level identity itself needs neither evenness nor any relation between `N` and the
-level.
+The function-level identities themselves need neither evenness nor any relation between `N` and
+the level.
 
 Since `√N • (√N • L^∨)^∨ = L`, the same law applied to `√N • L^∨` sends its theta series back to
 a multiple of `Θ_L`, with constant `(-i)^k N⁻¹ covol L`. The product of the two constants is
@@ -37,23 +36,36 @@ The normalized Fricke operator `𝒲_N = (√N)^(2-k) • (· ∣[k] W_N)` of
 ```text
 (√N)^(2-k) • (Θ_L ∣[k] W_N) = (-i)^k (√N)^k (covol L)⁻¹ Θ_{√N • L^∨} .
 ```
-For an even full lattice `L` of level `N`, both operators lift to the bundled modular form
-`ZLattice.thetaFormOfLevel`, sending `Θ_L ∈ M_k(Γ₁(N))` to a scalar multiple of the restriction of
-`Θ_{√N • L^∨}` along `level (√N • L^∨) ∣ N`, with `(covol L)⁻¹ = |A_L|^(-1/2)` expressed without a
-measure on `E`. In particular, whenever `√N • L^∨` has the same theta series as `L` — notably when
-`L` is `N`-modular (`√N • L^∨ ≅ L`) — the involution relation `𝒲_N² = (-1)^k` and positivity of the
-covolume force `(√N)^k = |A_L|^(1/2)` and `𝒲_N Θ_L = (-i)^k Θ_L`.
+Its square is `(-1)^k • id`, so `𝒲_N` is an involution only when the weight `k` is even; even rank
+`n = 2k` does not force `k` to be even (for instance `A₂` has rank `2` and weight `k = 1`).
+
+For an even full lattice `L` of rank `2k` and level `N = level L`, the level of the Fricke
+partner `√N • L^∨` divides `N`, so its general-level theta form `thetaFormOfLevel` restricts to
+`Γ₁(N)`. The bundled operators `TauCeti.frickeOperator` and `TauCeti.normalizedFrickeOperator`
+exchange `thetaFormOfLevel` of `L` with this restriction of `thetaFormOfLevel` of `√N • L^∨`.
+Because the theta character `χ_L` is quadratic (`χ_L⁻¹ = χ_L`), the restricted theta form of the
+Fricke partner lies in the same nebentypus space `modFormCharSpace k χ_L`. Whenever `√N • L^∨`
+has the same theta series as `L` — notably when `L` is `N`-modular (`√N • L^∨ ≅ L`) — the square
+relation `𝒲_N² = (-1)^k` and positivity of the covolume force `(√N)^k = |A_L|^(1/2)` and
+`𝒲_N Θ_L = (-i)^k Θ_L`.
 
 ## Main statements
 
 * `ZLattice.thetaSeries_slash_frickeGL`: the raw Fricke slash of `Θ_L`.
 * `ZLattice.atkinLehnerNormalizer_smul_thetaSeries_slash_frickeGL`: its normalized form.
-* `ZLattice.thetaSeries_sqrt_smul_dual_slash_frickeGL`: the Fricke slash of `Θ_{√N • L^∨}`.
-* `ZLattice.IsEven.frickeOperator_thetaFormOfLevel`,
-  `ZLattice.IsEven.normalizedFrickeOperator_thetaFormOfLevel`: the bundled Fricke operators on
-  `thetaFormOfLevel`, sending `Θ_L` to the restricted theta form of `√N • L^∨`.
-* `ZLattice.IsEven.normalizedFrickeOperator_thetaFormOfLevel_of_thetaSeries_eq`,
-  `ZLattice.IsEven.normalizedFrickeOperator_thetaFormOfLevel_of_comap_eq`: Quebbemann's eigenvalue
+* `ZLattice.thetaSeries_sqrt_smul_dual_slash_frickeGL`,
+  `ZLattice.atkinLehnerNormalizer_smul_thetaSeries_sqrt_smul_dual_slash_frickeGL`: the raw and
+  normalized Fricke slash of `Θ_{√N • L^∨}`.
+* `ZLattice.frickeOperator_thetaFormOfLevel`,
+  `ZLattice.normalizedFrickeOperator_thetaFormOfLevel`: the raw and normalized Fricke operators on
+  `thetaFormOfLevel`.
+* `ZLattice.frickeOperator_restrict_thetaFormOfLevel_sqrt_level_smul_dual`,
+  `ZLattice.normalizedFrickeOperator_restrict_thetaFormOfLevel_sqrt_level_smul_dual`: the return
+  maps from the Fricke partner back to `thetaFormOfLevel`.
+* `ZLattice.restrict_thetaFormOfLevel_sqrt_level_smul_dual_mem_modFormCharSpace`: the restricted
+  theta form of the Fricke partner has the same nebentypus `χ_L` at level `N`.
+* `ZLattice.normalizedFrickeOperator_thetaFormOfLevel_of_thetaSeries_eq`,
+  `ZLattice.normalizedFrickeOperator_thetaFormOfLevel_of_comap_eq`: Quebbemann's eigenvalue
   identity `𝒲_N Θ_L = (-i)^k Θ_L` when `√N • L^∨` is theta-isospectral or isometric to `L`.
 
 ## References
@@ -144,62 +156,177 @@ theorem thetaSeries_sqrt_smul_dual_slash_frickeGL (hk : finrank ℝ E = 2 * k) :
   rw [zpow_sub₀ hN', zpow_natCast, zpow_one]
   field_simp
 
+/-- **The normalized Fricke operator sends the theta series of `√N • L^∨` back to `Θ_L`**: if
+`dim E = 2k` and `N` is a positive integer, then
+`(√N)^(2-k) • (Θ_{√N • L^∨} ∣[k] W_N) = (-i)^k (√N)^(-k) (covol L) Θ_L`. -/
+theorem atkinLehnerNormalizer_smul_thetaSeries_sqrt_smul_dual_slash_frickeGL
+    (hk : finrank ℝ E = 2 * k) :
+    atkinLehnerNormalizer N k •
+        (thetaSeries (√(N : ℝ) • dual L) ∣[(k : ℤ)] frickeGL ℝ N) =
+      ((-I) ^ k * ((√(N : ℝ) : ℂ) ^ k)⁻¹ * (covolume L : ℂ)) • thetaSeries L := by
+  have hs : ((√(N : ℝ) : ℝ) : ℂ) ≠ 0 :=
+    Complex.ofReal_ne_zero.mpr (Real.sqrt_pos.mpr (Nat.cast_pos.mpr (NeZero.pos N))).ne'
+  rw [thetaSeries_sqrt_smul_dual_slash_frickeGL L N hk, smul_smul, atkinLehnerNormalizer_def,
+    natCast_eq_ofReal_sqrt_zpow_two]
+  congr 1
+  rw [zpow_sub₀ hs, zpow_two, zpow_natCast]
+  field_simp
+
 end ThetaSeries
 
-section ThetaFormOfLevel
+section Bundled
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {L : Submodule ℤ E} [DiscreteTopology L] [IsZLattice ℝ L] {k : ℕ}
 
-/-- **The Fricke slash operator on `thetaFormOfLevel`.** For an even full lattice `L` of rank `2k`
-and level `N`, `frickeOperator` sends `Θ_L` to `(-i)^k N^(k-1) |A_L|^(-1/2)` times the theta form
-of its Fricke partner `√N • L^∨`, restricted to `Γ₁(N)`. -/
-theorem IsEven.frickeOperator_thetaFormOfLevel (hL : IsEven L) [NeZero (level L)]
+/-- On underlying functions, the raw Fricke operator `TauCeti.frickeOperator` carries
+`thetaFormOfLevel` to `(-i)^k N^{k-1} |A_L|^{-1/2} Θ_{√N • L^∨}`, where `N = level L`. -/
+theorem coe_frickeOperator_thetaFormOfLevel [NeZero (level L)] (hL : IsEven L)
     (hk : finrank ℝ E = 2 * k) :
-    frickeOperator (k : ℤ) (thetaFormOfLevel hL hk) =
+    ⇑(frickeOperator (N := level L) (k : ℤ) (thetaFormOfLevel hL hk)) =
+      ((-I) ^ k * (level L : ℂ) ^ ((k : ℤ) - 1) *
+        (√(Nat.card (DiscriminantGroup L) : ℝ) : ℂ)⁻¹) •
+        thetaSeries (√(level L : ℝ) • dual L) := by
+  borelize E
+  rw [coe_frickeOperator, coe_thetaFormOfLevel, thetaSeries_slash_frickeGL L (level L) hk,
+    hL.isIntegral.covolume_eq_sqrt_card_discriminantGroup]
+
+/-- **The raw Fricke operator on `thetaFormOfLevel`**: `TauCeti.frickeOperator` sends the
+general-level theta form of `L` to `(-i)^k N^{k-1} |A_L|^{-1/2}` times the restriction to
+`Γ₁(level L)` of the theta form of its Fricke partner `√(level L) • L^∨`. -/
+theorem frickeOperator_thetaFormOfLevel [NeZero (level L)] (hL : IsEven L)
+    (hk : finrank ℝ E = 2 * k) :
+    frickeOperator (N := level L) (k : ℤ) (thetaFormOfLevel hL hk) =
       ((-I) ^ k * (level L : ℂ) ^ ((k : ℤ) - 1) *
         (√(Nat.card (DiscriminantGroup L) : ℝ) : ℂ)⁻¹) •
         (thetaFormOfLevel (isEven_sqrt_level_smul_dual L) hk).restrict
           (CongruenceSubgroup.Gamma1_map_le_Gamma1_map_of_dvd
             hL.level_sqrt_level_smul_dual_dvd) := by
-  borelize E
-  apply DFunLike.coe_injective
-  rw [coe_frickeOperator, coe_thetaFormOfLevel, thetaSeries_slash_frickeGL L (level L) hk,
-    hL.isIntegral.covolume_eq_sqrt_card_discriminantGroup, FunLike.coe_smul,
-    ModularForm.coe_restrict, coe_thetaFormOfLevel]
+  apply ModularForm.ext
+  intro τ
+  rw [coe_frickeOperator_thetaFormOfLevel]
+  simp only [FunLike.coe_smul, Pi.smul_apply, ModularForm.coe_restrict, coe_thetaFormOfLevel]
 
-/-- **The normalized Fricke operator `𝒲_N` on `thetaFormOfLevel`.** For an even full lattice `L`
-of rank `2k` and level `N`, `normalizedFrickeOperator` sends `Θ_L` to `(-i)^k (√N)^k |A_L|^(-1/2)`
-times the theta form of its Fricke partner `√N • L^∨`, restricted to `Γ₁(N)`. -/
-theorem IsEven.normalizedFrickeOperator_thetaFormOfLevel (hL : IsEven L) [NeZero (level L)]
+/-- On underlying functions, the normalized Fricke operator
+`𝒲_N = TauCeti.normalizedFrickeOperator` carries `thetaFormOfLevel` to
+`(-i)^k (√N)^k |A_L|^{-1/2} Θ_{√N • L^∨}`, where `N = level L`. -/
+theorem coe_normalizedFrickeOperator_thetaFormOfLevel [NeZero (level L)] (hL : IsEven L)
     (hk : finrank ℝ E = 2 * k) :
-    normalizedFrickeOperator (k : ℤ) (thetaFormOfLevel hL hk) =
+    ⇑(normalizedFrickeOperator (N := level L) (k : ℤ) (thetaFormOfLevel hL hk)) =
+      ((-I) ^ k * (√(level L : ℝ) : ℂ) ^ k *
+        (√(Nat.card (DiscriminantGroup L) : ℝ) : ℂ)⁻¹) •
+        thetaSeries (√(level L : ℝ) • dual L) := by
+  borelize E
+  rw [coe_normalizedFrickeOperator, coe_thetaFormOfLevel,
+    atkinLehnerNormalizer_smul_thetaSeries_slash_frickeGL L (level L) hk,
+    hL.isIntegral.covolume_eq_sqrt_card_discriminantGroup]
+
+/-- **The normalized Fricke operator `𝒲_N` on `thetaFormOfLevel`**:
+`TauCeti.normalizedFrickeOperator` sends the general-level theta form of `L` to
+`(-i)^k (√N)^k |A_L|^{-1/2}` times the restriction to `Γ₁(level L)` of the theta form of its
+Fricke partner `√(level L) • L^∨`. -/
+theorem normalizedFrickeOperator_thetaFormOfLevel [NeZero (level L)] (hL : IsEven L)
+    (hk : finrank ℝ E = 2 * k) :
+    normalizedFrickeOperator (N := level L) (k : ℤ) (thetaFormOfLevel hL hk) =
       ((-I) ^ k * (√(level L : ℝ) : ℂ) ^ k *
         (√(Nat.card (DiscriminantGroup L) : ℝ) : ℂ)⁻¹) •
         (thetaFormOfLevel (isEven_sqrt_level_smul_dual L) hk).restrict
           (CongruenceSubgroup.Gamma1_map_le_Gamma1_map_of_dvd
             hL.level_sqrt_level_smul_dual_dvd) := by
+  apply ModularForm.ext
+  intro τ
+  rw [coe_normalizedFrickeOperator_thetaFormOfLevel]
+  simp only [FunLike.coe_smul, Pi.smul_apply, ModularForm.coe_restrict, coe_thetaFormOfLevel]
+
+/-- **The raw Fricke operator sends the Fricke partner back to `thetaFormOfLevel`**:
+`W_N` maps the restriction to `Γ₁(level L)` of the theta form of `√(level L) • L^∨` to
+`(-i)^k N⁻¹ |A_L|^{1/2}` times `thetaFormOfLevel hL hk`. -/
+theorem frickeOperator_restrict_thetaFormOfLevel_sqrt_level_smul_dual [NeZero (level L)]
+    (hL : IsEven L) (hk : finrank ℝ E = 2 * k) :
+    frickeOperator (N := level L) (k : ℤ)
+        ((thetaFormOfLevel (isEven_sqrt_level_smul_dual L) hk).restrict
+          (CongruenceSubgroup.Gamma1_map_le_Gamma1_map_of_dvd hL.level_sqrt_level_smul_dual_dvd)) =
+      ((-I) ^ k * (level L : ℂ)⁻¹ *
+        (√(Nat.card (DiscriminantGroup L) : ℝ) : ℂ)) • thetaFormOfLevel hL hk := by
   borelize E
-  apply DFunLike.coe_injective
-  rw [coe_normalizedFrickeOperator, coe_thetaFormOfLevel,
-    atkinLehnerNormalizer_smul_thetaSeries_slash_frickeGL L (level L) hk,
-    hL.isIntegral.covolume_eq_sqrt_card_discriminantGroup, FunLike.coe_smul,
-    ModularForm.coe_restrict, coe_thetaFormOfLevel]
+  apply ModularForm.ext
+  intro τ
+  rw [coe_frickeOperator, FunLike.coe_smul, Pi.smul_apply, coe_thetaFormOfLevel]
+  have hcoe : ⇑((thetaFormOfLevel (isEven_sqrt_level_smul_dual L) hk).restrict
+      (CongruenceSubgroup.Gamma1_map_le_Gamma1_map_of_dvd hL.level_sqrt_level_smul_dual_dvd)) =
+      thetaSeries (√(level L : ℝ) • dual L) := by
+    ext z
+    rw [ModularForm.coe_restrict, coe_thetaFormOfLevel]
+  rw [hcoe, thetaSeries_sqrt_smul_dual_slash_frickeGL L (level L) hk,
+    hL.isIntegral.covolume_eq_sqrt_card_discriminantGroup, Pi.smul_apply]
+
+/-- **The normalized Fricke operator `𝒲_N` sends the Fricke partner back to `thetaFormOfLevel`**:
+`𝒲_N` maps the restriction to `Γ₁(level L)` of the theta form of `√(level L) • L^∨` to
+`(-i)^k (√N)^(-k) |A_L|^{1/2}` times `thetaFormOfLevel hL hk`. -/
+theorem normalizedFrickeOperator_restrict_thetaFormOfLevel_sqrt_level_smul_dual [NeZero (level L)]
+    (hL : IsEven L) (hk : finrank ℝ E = 2 * k) :
+    normalizedFrickeOperator (N := level L) (k : ℤ)
+        ((thetaFormOfLevel (isEven_sqrt_level_smul_dual L) hk).restrict
+          (CongruenceSubgroup.Gamma1_map_le_Gamma1_map_of_dvd hL.level_sqrt_level_smul_dual_dvd)) =
+      ((-I) ^ k * ((√(level L : ℝ) : ℂ) ^ k)⁻¹ *
+        (√(Nat.card (DiscriminantGroup L) : ℝ) : ℂ)) • thetaFormOfLevel hL hk := by
+  borelize E
+  apply ModularForm.ext
+  intro τ
+  have hcoe : ⇑((thetaFormOfLevel (isEven_sqrt_level_smul_dual L) hk).restrict
+      (CongruenceSubgroup.Gamma1_map_le_Gamma1_map_of_dvd hL.level_sqrt_level_smul_dual_dvd)) =
+      thetaSeries (√(level L : ℝ) • dual L) := by
+    ext z
+    rw [ModularForm.coe_restrict, coe_thetaFormOfLevel]
+  have hfn := atkinLehnerNormalizer_smul_thetaSeries_sqrt_smul_dual_slash_frickeGL L (level L) hk
+  rw [coe_normalizedFrickeOperator, FunLike.coe_smul, Pi.smul_apply, coe_thetaFormOfLevel, hcoe]
+  simpa only [hL.isIntegral.covolume_eq_sqrt_card_discriminantGroup, Pi.smul_apply] using
+    congrFun hfn τ
+
+/-- **The restricted theta form of the Fricke partner lies in the same nebentypus space**:
+since `frickeOperator` carries `M_k(Γ₁(N), χ_L)` into `M_k(Γ₁(N), χ_L⁻¹)` and the theta
+character `χ_L` is quadratic, the restriction of the Fricke partner's theta form to `Γ₁(level L)`
+has nebentypus `χ_L`. -/
+theorem restrict_thetaFormOfLevel_sqrt_level_smul_dual_mem_modFormCharSpace [NeZero (level L)]
+    (hL : IsEven L) (hk : finrank ℝ E = 2 * k) :
+    (thetaFormOfLevel (isEven_sqrt_level_smul_dual L) hk).restrict
+        (CongruenceSubgroup.Gamma1_map_le_Gamma1_map_of_dvd hL.level_sqrt_level_smul_dual_dvd) ∈
+      modFormCharSpace (k : ℤ) (MulChar.equivToUnitHom (hL.thetaCharacter ⟨k, by omega⟩)) := by
+  have hmem := frickeOperator_mem_modFormCharSpace (N := level L) (k : ℤ)
+    (MulChar.equivToUnitHom (hL.thetaCharacter ⟨k, by omega⟩))
+    (thetaFormOfLevel_mem_modFormCharSpace hL hk)
+  have hinv : (MulChar.equivToUnitHom (hL.thetaCharacter ⟨k, by omega⟩))⁻¹ =
+      MulChar.equivToUnitHom (hL.thetaCharacter ⟨k, by omega⟩) := by
+    rw [← MulChar.mulEquivToUnitHom_apply, ← map_inv,
+      (hL.thetaCharacter_isQuadratic ⟨k, by omega⟩).inv, MulChar.mulEquivToUnitHom_apply]
+  rw [hinv, frickeOperator_thetaFormOfLevel] at hmem
+  have hcard : 0 < Nat.card (DiscriminantGroup L) := by
+    have := hL.isIntegral.finite_discriminantGroup
+    exact Nat.card_pos
+  have hc : (-I) ^ k * (level L : ℂ) ^ ((k : ℤ) - 1) *
+      (√(Nat.card (DiscriminantGroup L) : ℝ) : ℂ)⁻¹ ≠ 0 := by
+    refine mul_ne_zero (mul_ne_zero (pow_ne_zero _ (neg_ne_zero.mpr I_ne_zero)) ?_) ?_
+    · exact zpow_ne_zero _ (Nat.cast_ne_zero.mpr (NeZero.ne (level L)))
+    · exact inv_ne_zero
+        (Complex.ofReal_ne_zero.mpr (Real.sqrt_pos.mpr (Nat.cast_pos.mpr hcard)).ne')
+  simpa only [inv_smul_smul₀ hc] using Submodule.smul_mem _
+    ((-I) ^ k * (level L : ℂ) ^ ((k : ℤ) - 1) *
+      (√(Nat.card (DiscriminantGroup L) : ℝ) : ℂ)⁻¹)⁻¹ hmem
 
 /-- **Quebbemann's Fricke eigenvalue law for theta-isospectral Fricke partners.** If `L` is an even
 full lattice of rank `2k` whose Fricke partner `√(level L) • L^∨` has the same theta series as `L`,
 then `𝒲_{level L} Θ_L = (-i)^k • Θ_L`. -/
-theorem IsEven.normalizedFrickeOperator_thetaFormOfLevel_of_thetaSeries_eq (hL : IsEven L)
-    [NeZero (level L)] (hk : finrank ℝ E = 2 * k)
+theorem normalizedFrickeOperator_thetaFormOfLevel_of_thetaSeries_eq [NeZero (level L)]
+    (hL : IsEven L) (hk : finrank ℝ E = 2 * k)
     (hth : thetaSeries (√(level L : ℝ) • dual L) = thetaSeries L) :
-    normalizedFrickeOperator (k : ℤ) (thetaFormOfLevel hL hk) =
+    normalizedFrickeOperator (N := level L) (k : ℤ) (thetaFormOfLevel hL hk) =
       (-I) ^ k • thetaFormOfLevel hL hk := by
   borelize E
   set c : ℝ := √(level L : ℝ) ^ k * (covolume L)⁻¹
   have hc_pos : 0 < c :=
     mul_pos (pow_pos (Real.sqrt_pos.mpr (Nat.cast_pos.mpr (NeZero.pos (level L)))) k)
       (inv_pos.mpr (covolume_pos L))
-  have hw : normalizedFrickeOperator (k : ℤ) (thetaFormOfLevel hL hk) =
+  have hw : normalizedFrickeOperator (N := level L) (k : ℤ) (thetaFormOfLevel hL hk) =
       ((-I) ^ k * (c : ℂ)) • thetaFormOfLevel hL hk := by
     apply DFunLike.coe_injective
     rw [coe_normalizedFrickeOperator, coe_thetaFormOfLevel,
@@ -223,16 +350,16 @@ theorem IsEven.normalizedFrickeOperator_thetaFormOfLevel_of_thetaSeries_eq (hL :
 
 /-- **Quebbemann's Fricke eigenvalue law for `N`-modular lattices.** If `e : E ≃ₗᵢ[ℝ] E` carries
 `L` onto its Fricke partner `√(level L) • L^∨`, then `𝒲_{level L} Θ_L = (-i)^k • Θ_L`. -/
-theorem IsEven.normalizedFrickeOperator_thetaFormOfLevel_of_comap_eq (hL : IsEven L)
-    [NeZero (level L)] (hk : finrank ℝ E = 2 * k) (e : E ≃ₗᵢ[ℝ] E)
+theorem normalizedFrickeOperator_thetaFormOfLevel_of_comap_eq [NeZero (level L)]
+    (hL : IsEven L) (hk : finrank ℝ E = 2 * k) (e : E ≃ₗᵢ[ℝ] E)
     (he : ZLattice.comap ℝ L e.toLinearEquiv.toLinearMap = √(level L : ℝ) • dual L) :
-    normalizedFrickeOperator (k : ℤ) (thetaFormOfLevel hL hk) =
+    normalizedFrickeOperator (N := level L) (k : ℤ) (thetaFormOfLevel hL hk) =
       (-I) ^ k • thetaFormOfLevel hL hk :=
-  hL.normalizedFrickeOperator_thetaFormOfLevel_of_thetaSeries_eq hk <| by
+  normalizedFrickeOperator_thetaFormOfLevel_of_thetaSeries_eq hL hk <| by
     rw [← he]
     ext τ
     exact thetaSeries_comap L e τ
 
-end ThetaFormOfLevel
+end Bundled
 
 end ZLattice
