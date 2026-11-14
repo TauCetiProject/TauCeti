@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Topology.Sheaves.Stalks
 public import TauCeti.Topology.Sheaves.SupportedCohomology
-import Mathlib.Algebra.FiveLemma
 import Mathlib.Topology.Sheaves.LocallySurjective
 import TauCeti.CategoryTheory.Sites.EpiMono
 
@@ -837,29 +836,6 @@ private lemma bijective_postcomp_mk₀_supportedSectionsι_zero (hZS : Z ≤ S) 
     ((bijective_supportedSectionsFunctor_map_supportedSectionsι F hZS W).comp
       ((F.supportedSectionsSheaf S).supportedHZeroEquiv Z W).bijective)
 
-/-- A morphism `φ : S₁ ⟶ S₂` of short exact sequences, with `Ext^{j+1}(P, S₁.X₂)` and
-`Ext^{j+1}(P, S₂.X₂)` trivial, induces a bijection `Ext^{j+1}(P, S₁.X₁) → Ext^{j+1}(P, S₂.X₁)`
-as soon as `Ext^j(P, φ.τ₂)` is surjective and `Ext^j(P, φ.τ₃)` is bijective (right-exact case of
-the five lemma for the long exact `Ext` sequences). -/
-private lemma bijective_postcomp_mk₀_τ₁_of_shortExact
-    {S₁ S₂ : ShortComplex (Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u})}
-    (hS₁ : S₁.ShortExact) (hS₂ : S₂.ShortExact) (φ : S₁ ⟶ S₂)
-    (P : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}) (j : ℕ)
-    [Subsingleton (Ext P S₁.X₂ (j + 1))] [Subsingleton (Ext P S₂.X₂ (j + 1))]
-    (hτ₂ : Function.Surjective ((Ext.mk₀ φ.τ₂).postcomp P (add_zero j) :
-      Ext P S₁.X₂ j →+ Ext P S₂.X₂ j))
-    (hτ₃ : Function.Bijective ((Ext.mk₀ φ.τ₃).postcomp P (add_zero j) :
-      Ext P S₁.X₃ j →+ Ext P S₂.X₃ j)) :
-    Function.Bijective ((Ext.mk₀ φ.τ₁).postcomp P (add_zero (j + 1)) :
-      Ext P S₁.X₁ (j + 1) →+ Ext P S₂.X₁ (j + 1)) := by
-  refine AddMonoidHom.bijective_of_surjective_of_bijective_of_right_exact _ _ _ _ _ _ _
-    (AddMonoidHom.ext fun y ↦ ?_) (AddMonoidHom.ext fun y ↦ ?_)
-    (TauCeti.exact_postcomp₃ hS₁ P j (j + 1) rfl) (TauCeti.exact_postcomp₃ hS₂ P j (j + 1) rfl)
-    hτ₂ hτ₃ (fun x ↦ Ext.covariant_sequence_exact₁ _ hS₁ x (Subsingleton.elim _ _) rfl)
-    (fun x ↦ Ext.covariant_sequence_exact₁ _ hS₂ x (Subsingleton.elim _ _) rfl)
-  · simp [φ.comm₂₃]
-  · simp [ShortComplex.ShortExact.extClass_naturality hS₁ hS₂ φ]
-
 /-- **Degenerate edge comparison for `n = 0`.** If the local cohomology sheaves `𝓗_S^q(F)`
 vanish for all `q > 0`, then for every closed `Z ≤ S` the inclusion `Γ_S(F) ⟶ F` induces
 bijections `H_Z^j(W, Γ_S(F)) ⟶ H_Z^j(W, F)` in every degree `j`. -/
@@ -885,7 +861,7 @@ theorem bijective_postcomp_mk₀_supportedSectionsι
     -- the statement holds in degree `j` for the flasque sheaf `F₂` and for `F₃`
     have ih₂ := ih T.X₂ fun q ↦ isZero_supportedHSheaf_succ_of_isFlasque _ S q
     have ih₃ := ih T.X₃ fun q ↦ isZero_supportedHSheaf_X₃_of_shortExact S hT (h (q + 1))
-    exact bijective_postcomp_mk₀_τ₁_of_shortExact hT' hT φ _ j ih₂.2 ih₃
+    exact hT'.bijective_postcomp_mk₀_τ₁ hT φ _ j ih₂.2 ih₃
 
 /-- The base case `n = 1` of the degenerate edge comparison in positive degrees, for `Γ_S(F)`
 flasque and `𝓗_S^q(F) = 0` for `q ≥ 2`: `H_Z^k(-, F) ≅ H_Z^{j+1}(-, 𝓗_S¹(F))` for `k = j + 2`. -/
