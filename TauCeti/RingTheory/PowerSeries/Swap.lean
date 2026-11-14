@@ -32,6 +32,9 @@ as a ring homomorphism. It is an involution.
   inner variable of `G` to zero.
 * `PowerSeries.coeff_swap_derivative`: after exchanging the variables, the derivative in the outer
   variable becomes the derivative of each coefficient in the inner variable.
+* `PowerSeries.coeff_swap_derivative_swap`, `PowerSeries.swap_derivative_swap_mul`: the
+  derivative `swap ∘ d⁄dX ∘ swap` in the inner variable differentiates each coefficient and
+  satisfies the Leibniz rule.
 * `Polynomial.coeff_coeff_swapPowerSeries`: the coefficient of `Xⁱ` in the `tᵏ`-coefficient of
   `swapPowerSeries Q` is the `tᵏ`-coefficient of the coefficient of `Xⁱ` in `Q`.
 * `Polynomial.swapPowerSeries_C`, `Polynomial.swapPowerSeries_X`: the values of
@@ -111,6 +114,19 @@ theorem coeff_swap_derivative {R : Type*} [CommSemiring R] (G : R⟦X⟧⟦X⟧)
   simp only [coeff_coeff_swap, coeff_derivative]
   -- the factor `a + 1` is a natural number cast into `R⟦X⟧`, which `coeff N` passes through
   exact_mod_cast coeff_mul_natCast
+
+/-- **The derivative in the inner variable** `u`, written `swap ∘ d⁄dX ∘ swap`, differentiates each
+coefficient: the coefficient of `vᴺ` in `swap (d⁄dX (swap G))` is the derivative of the
+coefficient of `vᴺ` in `G`. -/
+theorem coeff_swap_derivative_swap {R : Type*} [CommSemiring R] (G : R⟦X⟧⟦X⟧) (N : ℕ) :
+    coeff N (swap (d⁄dX (swap G))) = d⁄dX (coeff N G) := by
+  simpa only [swap_swap] using coeff_swap_derivative (swap G) N
+
+/-- The **Leibniz rule for the derivative in the inner variable** `swap ∘ d⁄dX ∘ swap`. -/
+theorem swap_derivative_swap_mul {R : Type*} [CommSemiring R] (G H : R⟦X⟧⟦X⟧) :
+    swap (d⁄dX (swap (G * H))) = swap (d⁄dX (swap G)) * H + G * swap (d⁄dX (swap H)) := by
+  simp only [map_mul, Derivation.leibniz, smul_eq_mul, map_add, swap_swap]
+  ring
 
 end PowerSeries
 
