@@ -31,6 +31,8 @@ facts about these coproducts which are used to compare homology of tensor produc
   objects indexed by `ℕ`.  Tensoring with an identity is the map of coproducts induced by the
   whiskerings (`CategoryTheory.GradedObject.Monoidal.id_tensorHom_eq_mapMap`), so these facts
   apply to it.
+* The inclusion of a summand `X i ⊗ Y j` into the tensor product is a split monomorphism in a
+  category with zero morphisms (`CategoryTheory.GradedObject.Monoidal.isSplitMono_ιTensorObj`).
 * For graded objects indexed by `ℕ`, if `Y 0 = 0` then the summands of `X ⊗ Y` in degree
   `m + 1` are those of `X` tensored with `Y` shifted down by one, in degree `m`
   (`CategoryTheory.GradedObject.Monoidal.tensorObjSuccIso`).  This identifies the degree shift of
@@ -149,6 +151,15 @@ lemma id_tensorHom_eq_mapMap [AddMonoid I] [MonoidalCategory C] (X : GradedObjec
   dsimp [tensorHom, mapBifunctorMapMap]
   simp only [CategoryTheory.Functor.map_id, NatTrans.id_app, Category.id_comp]
   rfl
+
+/-- The inclusion of the summand `X₁ i₁ ⊗ X₂ i₂` into the tensor product of graded objects in
+degree `i₁ + i₂` is a split monomorphism in a category with zero morphisms, being a coprojection
+into a coproduct. -/
+instance isSplitMono_ιTensorObj [AddMonoid I] [MonoidalCategory C] [HasZeroMorphisms C]
+    (X₁ X₂ : GradedObject I C) [HasTensor X₁ X₂] (i₁ i₂ i₁₂ : I) (h : i₁ + i₂ = i₁₂) :
+    IsSplitMono (ιTensorObj X₁ X₂ i₁ i₂ i₁₂ h) := by
+  unfold ιTensorObj ιMapBifunctorMapObj GradedObject.ιMapObj
+  exact isSplitMono_sigma_ι _ _
 
 variable [HasZeroMorphisms C] [MonoidalCategory C] (X Y : GradedObject ℕ C)
   [∀ p, (tensorLeft (X p)).PreservesZeroMorphisms] (hY : IsZero (Y 0))
