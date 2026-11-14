@@ -33,12 +33,12 @@ is asserted here.
 For an abelian covering with deck group `H`, the norm is the one from the intermediate finite
 abelian covering with deck group `H ⧸ K`. Over a `ℚ`-algebra, the logarithm converts the norm
 of a principal unit into the trace of its logarithm
-(`TauCeti.NovikovSeries.log_normNonnegSubring`):
+(`TauCeti.NovikovSeries.log_algebraNorm`):
 
 `log (Norm u) = Tr (log u)`.
 
 At an exponent in `K`, this multiplies the logarithmic coefficient by `K.index`
-(`TauCeti.NovikovSeries.coeff_log_normNonnegSubring`). Thus a norm agreeing with `1`
+(`TauCeti.NovikovSeries.coeff_log_algebraNorm`). Thus a norm agreeing with `1`
 below a cutoff forces the original logarithmic coefficients at subgroup exponents
 below that cutoff to vanish
 (`TauCeti.NovikovSeries.coeff_log_eq_zero_of_algebraNorm_sub_one_mem_periodFiltration`).
@@ -189,12 +189,13 @@ theorem normNonnegSubring_one_add_sub_one_mem_posIdeal {a : nonnegSubring R N}
 principal unit `u` of the nonnegative subring of `Nov(R, H, N)`, the logarithm of its norm over
 the Novikov series on a finite-index subgroup `K` is the trace of its logarithm:
 `log (Norm u) = Tr (log u)`. -/
-theorem log_normNonnegSubring [Algebra ℚ R] {u : nonnegSubring R N}
+theorem log_algebraNorm [Algebra ℚ R] {u : nonnegSubring R N}
     (hu : u - 1 ∈ posIdeal R N) :
-    ((NormedSpace.log (normNonnegSubring K u) : nonnegSubring R (N.comp K.subtype)) :
-      NovikovSeries R K (N.comp K.subtype)) =
+    NormedSpace.log (Algebra.norm (NovikovSeries R K (N.comp K.subtype))
+      (u : NovikovSeries R H N)) =
       Algebra.trace (NovikovSeries R K (N.comp K.subtype)) (NovikovSeries R H N)
-        (NormedSpace.log u : nonnegSubring R N) := by
+        (NormedSpace.log (u : NovikovSeries R H N)) := by
+  rw [← coe_normNonnegSubring, ← coe_log_nonnegSubring, ← coe_log_nonnegSubring]
   set A := NovikovSeries R H N
   set B := NovikovSeries R K (N.comp K.subtype)
   have hφ := exists_period_rescale_subtype (N := N) K
@@ -237,12 +238,12 @@ theorem log_normNonnegSubring [Algebra ℚ R] {u : nonnegSubring R N}
 /-- Over a commutative `ℚ`-algebra, at an exponent in a finite-index subgroup, the
 logarithm of the subgroup norm of a principal unit `u` (`u - 1 ∈ posIdeal R N`) has
 coefficient equal to the subgroup index times the original logarithmic coefficient. -/
-theorem coeff_log_normNonnegSubring [Algebra ℚ R] {u : nonnegSubring R N}
+theorem coeff_log_algebraNorm [Algebra ℚ R] {u : nonnegSubring R N}
     (hu : u - 1 ∈ posIdeal R N) (x : K) :
-    ((NormedSpace.log (normNonnegSubring K u) : nonnegSubring R (N.comp K.subtype)) :
-      NovikovSeries R K (N.comp K.subtype)).coeff x =
-        K.index • (NormedSpace.log u : nonnegSubring R N).val.coeff x := by
-  rw [log_normNonnegSubring K hu,
+    (NormedSpace.log (Algebra.norm (NovikovSeries R K (N.comp K.subtype))
+      (u : NovikovSeries R H N))).coeff x =
+        K.index • (NormedSpace.log (u : NovikovSeries R H N)).coeff x := by
+  rw [log_algebraNorm K hu,
     trace_eq_index_smul_comap (exists_period_rescale_subtype _) (by simp),
     coeff_smul, coeff_comap, AddSubgroup.subtype_apply]
 
@@ -255,7 +256,7 @@ theorem coeff_log_eq_zero_of_algebraNorm_sub_one_mem_periodFiltration [Algebra �
     {C : ℝ} (hC : N g < C)
     (hcut : Algebra.norm (NovikovSeries R K (N.comp K.subtype))
       (u : NovikovSeries R H N) - 1 ∈ periodFiltration R (N.comp K.subtype) C) :
-    (NormedSpace.log u : nonnegSubring R N).val.coeff g = 0 := by
+    (NormedSpace.log (u : NovikovSeries R H N)).coeff g = 0 := by
   have hv : normNonnegSubring K u - 1 ∈ posIdeal R (N.comp K.subtype) := by
     simpa using normNonnegSubring_one_add_sub_one_mem_posIdeal K hu
   have hlogcut : (NormedSpace.log (normNonnegSubring K u) :
@@ -263,10 +264,9 @@ theorem coeff_log_eq_zero_of_algebraNorm_sub_one_mem_periodFiltration [Algebra �
     (isTopologicallyNilpotent_of_mem_posIdeal' hv).log_mem
       (I := periodIdeal R (N.comp K.subtype) C)
         (mem_periodIdeal.2 (by
-          rw [sub_eq_add_neg, Subring.coe_add, Subring.coe_neg, Subring.coe_one]
-          simpa only [coe_normNonnegSubring, sub_eq_add_neg] using hcut))
+          rwa [AddSubgroupClass.coe_sub, Subring.coe_one, coe_normNonnegSubring]))
   have hz := mem_periodFiltration.1 (mem_periodIdeal.1 hlogcut) ⟨g, hg⟩ hC
-  rw [coeff_log_normNonnegSubring K hu] at hz
+  rw [coe_log_nonnegSubring, coe_normNonnegSubring, coeff_log_algebraNorm K hu] at hz
   -- Multiplication by a nonzero index is injective over a rational algebra.
   let : HasUniqueDiv R := HasUniqueDiv.of_module_rat R
   exact (nsmul_right_injective K.index_ne_zero) (by simpa using hz)
@@ -283,8 +283,9 @@ theorem algebraNorm_exp [Algebra ℚ R] {a : nonnegSubring R N} (ha : a ∈ posI
   have hu : NormedSpace.exp a - 1 ∈ posIdeal R N := hnil.exp_sub_one_mem ha
   have hv := normNonnegSubring_one_add_sub_one_mem_posIdeal K hu
   rw [add_sub_cancel] at hv
-  have hlog := log_normNonnegSubring K hu
-  rw [hnil.log_exp] at hlog
+  have hlog := log_algebraNorm K hu
+  rw [← coe_normNonnegSubring, ← coe_log_nonnegSubring, ← coe_log_nonnegSubring,
+    hnil.log_exp] at hlog
   have hvnil := isTopologicallyNilpotent_of_mem_posIdeal' hv
   rw [← coe_exp_nonnegSubring _, ← coe_normNonnegSubring, ← hvnil.exp_log, ← hlog,
     coe_exp_nonnegSubring _]
