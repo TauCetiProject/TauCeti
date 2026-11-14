@@ -260,7 +260,6 @@ omit [FiniteDimensional ℝ V] in
 /-- The derivation action of `J` kills each complex line `v ∧ J v`:
 `D_J (v ∧ J v) = J v ∧ J v + v ∧ J (J v) = J v ∧ J v - v ∧ v = 0`. No orthogonality of `J` is
 needed. -/
-@[simp]
 theorem lieMap_ιMulti_apply (J : AlmostComplexStructure V) (v : V) :
     exteriorPower.lieMap 2 J.toLinearMap (ιMulti ℝ 2 ![v, J v]) = 0 := by
   have h : ∀ x : V, ιMulti ℝ 2 ![x, x] = 0 := fun x ↦
