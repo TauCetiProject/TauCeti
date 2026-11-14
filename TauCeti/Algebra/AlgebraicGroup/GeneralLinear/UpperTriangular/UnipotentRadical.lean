@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Dynamic.Weight.Unipotent.Radical
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.UpperTriangular.Basic
-import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Isomorphism
 
 /-!
 # The unipotent radical of the upper-triangular group

@@ -10,7 +10,6 @@ public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Dynamic.Weight.Levi.K
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Unipotent.Geometry
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Dynamic.Weight.Unipotent.Pointwise
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Reductive.Quotient
-import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Isomorphism
 
 /-!
 # Unipotent radicals of weight parabolics
@@ -55,10 +54,7 @@ weight-unipotent ideal is defined. -/
     FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal
         (weightParabolicFiniteTypeCoordinateHopfAlgebra k w) =
       weightUnipotentInParabolicHopfIdeal k w := by
-  let H : FiniteTypeCommHopfAlgCat.{u, u} k :=
-    ⟨weightParabolicCoordinateHopfAlgebra k w,
-      weightParabolicFiniteTypeCoordinateHopfAlgebra_obj k w ▸
-        (weightParabolicFiniteTypeCoordinateHopfAlgebra k w).property⟩
+  let H := weightParabolicFiniteTypeCoordinateHopfAlgebra k w
   let I := weightUnipotentInParabolicHopfIdeal k w
   let hUfinite : Algebra.FiniteType k (weightUnipotentCoordinateHopfAlgebra k w) := by
     let _ : Algebra.Smooth k (weightUnipotentCoordinateHopfAlgebra k w) := inferInstance
@@ -101,11 +97,8 @@ weight-unipotent ideal is defined. -/
   -- The central formal inputs are
   -- `unipotentRadicalDefiningIdeal_eq_kernelHopfIdeal_of_reductive` and
   -- `reductiveCommHopfAlgProperty_weightLeviFiniteTypeCoordinateHopfAlgebra`.
-  have hRaw : FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal H = I := by
-    rw [← hker]
-    exact unipotentRadicalDefiningIdeal_eq_kernelHopfIdeal_of_reductive
-      H D hD f hleft.injective (hker ▸ hI)
-  exact hRaw
+  exact (unipotentRadicalDefiningIdeal_eq_kernelHopfIdeal_of_reductive
+    H D hD f hleft.injective (hker ▸ hI)).trans hker
 
 end
 
