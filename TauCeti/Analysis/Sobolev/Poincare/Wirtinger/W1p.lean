@@ -15,6 +15,7 @@ import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Measure.MeasurableHull
 
 /-!
 # The Poincaré–Wirtinger inequality on `W^{1,p}(Ω)`
@@ -306,16 +307,13 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_of_convex (hp : p ≠ ∞)
     ((measure_mono subset_closure).trans_lt hb.isCompact_closure.measure_lt_top).ne
   have hSfin : mu S ≠ ∞ := ne_top_of_le_ne_top hOfin (measure_mono hS)
   -- Replace `S` by a measurable set with the same restricted measure.
-  set S' : Set E := Omega ∩ toMeasurable mu S
-  have hres : mu.restrict S' = mu.restrict S := by
-    rw [← Measure.restrict_restrict Omega.isOpen.measurableSet, Measure.restrict_toMeasurable hSfin,
-      Measure.restrict_restrict Omega.isOpen.measurableSet, inter_eq_right.2 hS]
+  obtain ⟨S', hS'Ω, hS'm, hres⟩ :=
+    exists_measurableSet_subset_restrict_eq Omega.isOpen.measurableSet hS hSfin
   have hmu : mu S' = mu S := by
     rw [← Measure.restrict_apply_univ, hres, Measure.restrict_apply_univ]
   have hmuR : mu.real S' = mu.real S := by rw [measureReal_def, measureReal_def, hmu]
   have h := W1p.eLpNorm_value_sub_setAverage_le_of_convex_of_nullMeasurableSet (S := S') hp hconv hb
-    (Omega.isOpen.measurableSet.inter (measurableSet_toMeasurable mu S)).nullMeasurableSet
-    inter_subset_left (hmu ▸ hS0) u
+    hS'm.nullMeasurableSet hS'Ω (hmu ▸ hS0) u
   rwa [hres, hmuR] at h
 
 /-- **The Poincaré–Wirtinger inequality on a ball.**  On a ball of radius `R` the constant of

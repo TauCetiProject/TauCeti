@@ -15,6 +15,7 @@ import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Basic
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.Lebesgue.Exhaustion
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Measure.MeasurableHull
 import TauCeti.Topology.Instances.ENNReal
 
 /-!
@@ -381,19 +382,16 @@ private theorem setLIntegral_enorm_sub_setAverage_le_of_integrableOn
       ENNReal.ofReal (μ.real (ball 0 1) ^ (1 - (finrank ℝ E : ℝ)⁻¹) *
         diam (Ω : Set E) ^ finrank ℝ E / μ.real S) * μ A ^ (finrank ℝ E : ℝ)⁻¹ *
         totalVariationOn μ Ω u := by
-  -- Replace `S` by the measurable set `Ω ∩ toMeasurable μ S`, with the same restricted measure.
+  -- Replace `S` by a measurable subset of `Ω` with the same restricted measure.
   have hSfin : μ S ≠ ∞ := ne_top_of_le_ne_top hb.measure_lt_top.ne (measure_mono hS)
-  set S' := (Ω : Set E) ∩ toMeasurable μ S
-  have hres : μ.restrict S' = μ.restrict S := by
-    rw [← Measure.restrict_restrict Ω.isOpen.measurableSet, Measure.restrict_toMeasurable hSfin,
-      Measure.restrict_restrict Ω.isOpen.measurableSet, inter_eq_right.2 hS]
+  obtain ⟨S', hS'Ω, hS'm, hres⟩ :=
+    exists_measurableSet_subset_restrict_eq Ω.isOpen.measurableSet hS hSfin
   have hμ : μ S' = μ S := by
     rw [← Measure.restrict_apply_univ, hres, Measure.restrict_apply_univ]
   have havg : ⨍ y in S', u y ∂μ = ⨍ y in S, u y ∂μ := by rw [hres]
   have hreal : μ.real S' = μ.real S := by rw [measureReal_def, measureReal_def, hμ]
   rw [← havg, ← hreal]
-  exact setLIntegral_enorm_sub_setAverage_le_of_measurableSet hΩc hb hu
-    (Ω.isOpen.measurableSet.inter (measurableSet_toMeasurable μ S)) inter_subset_left
+  exact setLIntegral_enorm_sub_setAverage_le_of_measurableSet hΩc hb hu hS'm hS'Ω
     (hμ ▸ hS₀) hA
 
 /-- A function locally integrable on a bounded convex open set `Ω` and of finite total variation

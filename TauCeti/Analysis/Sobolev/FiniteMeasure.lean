@@ -192,11 +192,10 @@ theorem W1p.eLpNorm_value_le_mul_rpow_mul_enorm_gradient_of_eq_ball
     rw [eLpNorm_measure_zero]
     exact zero_le
   -- `E` is nontrivial: in dimension `0` we would have `δ < 0`, but `p ≤ q` gives `0 ≤ δ`.
-  have hp1 : (1 : ℝ≥0∞) ≤ p := Fact.out
-  have hpq' : p.toReal ≤ q := ENNReal.toReal_le_of_le_ofReal q.2 (by simpa using hpq)
-  have hp0 : 0 < p.toReal :=
-    ENNReal.toReal_pos (zero_lt_one.trans_le hp1).ne' (ne_top_of_le_ne_top ENNReal.coe_ne_top hpq)
-  have hδ0 : 0 ≤ δ := hδ ▸ sub_nonneg.2 (inv_anti₀ hp0 hpq')
+  have hδ0 : 0 ≤ δ := by
+    simpa only [one_div, ENNReal.coe_toReal, hδ] using
+      ENNReal.one_div_toReal_sub_one_div_toReal_nonneg
+        (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)).ne' hpq
   have hfin : 0 < finrank ℝ E := by
     refine Nat.pos_of_ne_zero fun h0 ↦ ?_
     rw [h0, Nat.cast_zero, inv_zero] at hδn

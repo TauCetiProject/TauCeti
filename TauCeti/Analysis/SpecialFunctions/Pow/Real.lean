@@ -469,10 +469,8 @@ theorem Real.rpow_finsum_of_pos {α : Type*} {a : ℝ} (ha : 0 < a) {f : α → 
     · simp
     rw [finprod_of_infinite_mulSupport]
     intro h
-    refine hf (h.subset fun i (hi : f i ≠ 0) h1 ↦ ?_)
-    have h2 := congrArg Real.log h1
-    rw [Real.log_rpow ha, Real.log_one] at h2
-    exact hi ((mul_eq_zero.1 h2).resolve_right (Real.log_ne_zero_of_pos_of_ne_one ha ha1))
+    exact hf (h.subset fun i hi h1 ↦
+      hi ((Real.rpow_right_inj ha ha1).1 (h1.trans (Real.rpow_zero a).symm)))
   rw [finsum_eq_sum f hf, finprod_eq_prod_of_mulSupport_subset _ (s := hf.toFinset)
     fun i hi ↦ hf.mem_toFinset.mpr fun h ↦ hi (by simp [h]), Real.rpow_sum_of_pos ha]
 
