@@ -6,13 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.UniqueFactorizationDomain.Basic
+public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Domain
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.SmoothComparison
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Weierstrass
 public import TauCeti.RingTheory.Polynomial.Rueckert
 
 import TauCeti.Analysis.Analytic.Uniqueness
-import TauCeti.Geometry.Manifold.Complex.Analytic
-import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Domain
 import TauCeti.Geometry.Manifold.Complex.StructureSheaf.StalkPullback
 import TauCeti.RingTheory.Polynomial.Distinguished
 
@@ -39,9 +38,9 @@ hypotheses (`RingHom.IsRueckert`):
 
 Rückert's factorial descent (`RingHom.IsRueckert.uniqueFactorizationMonoid`) then passes unique
 factorisation from `𝒪_{E, x₀}` to `𝒪_{E × ℂ, (x₀, w₀)}`. Starting from `ℂ` in dimension zero,
-induction on the complex dimension handles every finite-dimensional model space, and charts transfer
-the property to arbitrary finite-dimensional complex manifolds without boundary, as well as to
-Mathlib's native complex-smooth structure sheaf via `smoothStalkIso`.
+dimension induction and chart pullback (`stalk_induction`) transfer the property to arbitrary
+finite-dimensional complex manifolds without boundary, as well as to Mathlib's native
+complex-smooth structure sheaf via `smoothStalkIso`.
 
 ## Main declarations
 
@@ -61,29 +60,16 @@ Mathlib's native complex-smooth structure sheaf via `smoothStalkIso`.
 
 public noncomputable section
 
-open Filter Module Polynomial Topology
+open Filter Polynomial Topology
 open scoped ContDiff Manifold
 
 namespace TauCeti.holomorphicStructureSheaf
 
 section ModelSpace
 
-variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℂ E]
+variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
 
-private def stalkEquivOfEq {p q : E} (hpq : p = q) :
-    (holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk p ≃+*
-      (holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk q := by
-  subst hpq
-  exact RingEquiv.refl _
-
-private theorem toFilterGerm_stalkEquivOfEq {p q : E} (hpq : p = q)
-    (s : (holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk p) {F : E → ℂ}
-    (hF : toFilterGerm 𝓘(ℂ, E) E p (𝓝 p) le_rfl s = F) :
-    toFilterGerm 𝓘(ℂ, E) E q (𝓝 q) le_rfl (stalkEquivOfEq hpq s) = F := by
-  subst hpq
-  exact hF
-
-private theorem exists_aut_mul_eq_evalVertical [FiniteDimensional ℂ E] (x₀ : E) (w₀ : ℂ)
+private theorem exists_aut_mul_eq_evalVertical (x₀ : E) (w₀ : ℂ)
     {b : (holomorphicStructureSheaf 𝓘(ℂ, E × ℂ) (E × ℂ)).presheaf.stalk (x₀, w₀)} (hb : b ≠ 0) :
     ∃ (α : (holomorphicStructureSheaf 𝓘(ℂ, E × ℂ) (E × ℂ)).presheaf.stalk (x₀, w₀) ≃+*
         (holomorphicStructureSheaf 𝓘(ℂ, E × ℂ) (E × ℂ)).presheaf.stalk (x₀, w₀))
@@ -110,11 +96,13 @@ private theorem exists_aut_mul_eq_evalVertical [FiniteDimensional ℂ E] (x₀ :
     (Eventually.of_forall fun p ↦ by simp [φ, ψ]) (Eventually.of_forall fun p ↦ by simp [φ, ψ])
   let α : (holomorphicStructureSheaf 𝓘(ℂ, E × ℂ) (E × ℂ)).presheaf.stalk (x₀, w₀) ≃+*
       (holomorphicStructureSheaf 𝓘(ℂ, E × ℂ) (E × ℂ)).presheaf.stalk (x₀, w₀) :=
-    (stalkEquivOfEq hφ0.symm).trans (RingEquiv.ofBijective f hbij)
+    (RingEquiv.cast (R := fun p ↦
+      (holomorphicStructureSheaf 𝓘(ℂ, E × ℂ) (E × ℂ)).presheaf.stalk p) hφ0.symm).trans
+      (RingEquiv.ofBijective f hbij)
   have hαb : toFilterGerm 𝓘(ℂ, E × ℂ) (E × ℂ) (x₀, w₀) (𝓝 (x₀, w₀)) le_rfl (α b) =
       fun p ↦ F (φ p) := by
     simp only [α, RingEquiv.trans_apply, RingEquiv.ofBijective_apply, f,
-      toFilterGerm_stalkPullback, toFilterGerm_stalkEquivOfEq hφ0.symm b (hbF _ le_rfl),
+      toFilterGerm_stalkPullback, toFilterGerm_ringEquivCast hφ0.symm (hbF _ le_rfl),
       Germ.coe_compTendsto]
     rfl
   have hφ_slice : ∀ w : ℂ, φ (x₀, w) = L (q.1, q.2 + (w - w₀)) := fun w ↦ by
@@ -124,11 +112,6 @@ private theorem exists_aut_mul_eq_evalVertical [FiniteDimensional ℂ E] (x₀ :
       _ = L q + L ((0 : E), w - w₀) := by rw [hLq]
       _ = L (q.1, q.2 + (w - w₀)) := by rw [← L.map_add, Prod.mk_add_mk, add_zero]
   have hslice' : analyticOrderAt (fun w ↦ F (φ (x₀, w))) w₀ ≠ ⊤ := by
-    have hφ_an : AnalyticAt ℂ φ (x₀, w₀) :=
-      analyticAt_const.add ((L.analyticAt _).comp (analyticAt_id.sub analyticAt_const))
-    have hline_an : AnalyticAt ℂ (fun w : ℂ ↦ (x₀, w)) w₀ := analyticAt_const.prod analyticAt_id
-    have _ : AnalyticAt ℂ (fun w ↦ F (φ (x₀, w))) w₀ :=
-      ((hφ0.symm ▸ hF).comp hφ_an).comp hline_an
     rw [Ne, analyticOrderAt_eq_top]
     refine fun h0 ↦ hslice ?_
     rw [analyticOrderAt_eq_top]
@@ -141,8 +124,6 @@ private theorem exists_aut_mul_eq_evalVertical [FiniteDimensional ℂ E] (x₀ :
     ((map_residue_verticalPowerSeries_ne_zero_iff hαb).2 hslice')
   refine ⟨α, hu.unit⁻¹, P, hP, ?_⟩
   rw [hfac, mul_left_comm, hu.val_inv_mul, mul_one]
-
-variable [FiniteDimensional ℂ E]
 
 /-- Vertical polynomial evaluation `evalVertical x₀ w₀ : (𝒪_{E, x₀})[X] →+* 𝒪_{E × ℂ, (x₀, w₀)}`
 satisfies the Rückert hypotheses for the polynomials distinguished at the maximal ideal of
@@ -160,38 +141,6 @@ theorem isRueckert_evalVertical (x₀ : E) (w₀ : ℂ) :
     exact ⟨r, ⟨q, by linear_combination hdiv⟩⟩
   exists_mul_eq hb := exists_aut_mul_eq_evalVertical x₀ w₀ hb
 
-/-- On a zero-dimensional space, evaluation identifies every holomorphic stalk with `ℂ`, hence it is
-a unique factorisation domain. -/
-private theorem uniqueFactorizationMonoid_stalk_of_finrank_eq_zero (hE : finrank ℂ E = 0) (x : E) :
-    UniqueFactorizationMonoid ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x) := by
-  have : Subsingleton E := Module.finrank_zero_iff.1 hE
-  exact (evalEquivOfNhdsEqPure (I := 𝓘(ℂ, E)) (congrFun (nhds_discrete E) x)).symm.toMulEquiv
-    |>.uniqueFactorizationMonoid inferInstance
-
-/-- If the holomorphic stalks of `E` are unique factorisation domains, so are those of `E × ℂ`. -/
-private theorem uniqueFactorizationMonoid_stalk_prod
-    (hE : ∀ x : E,
-      UniqueFactorizationMonoid ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x))
-    (p : E × ℂ) :
-    UniqueFactorizationMonoid
-      ((holomorphicStructureSheaf 𝓘(ℂ, E × ℂ) (E × ℂ)).presheaf.stalk p) := by
-  have := hE p.1
-  exact (isRueckert_evalVertical p.1 p.2).uniqueFactorizationMonoid
-
-/-- Holomorphic stalks of a finite-dimensional complex normed space are unique factorisation
-domains, by induction on the complex dimension. -/
-private theorem uniqueFactorizationMonoid_stalk_of_finrank_eq :
-    ∀ (n : ℕ) (V : Type) [NormedAddCommGroup V] [NormedSpace ℂ V] [FiniteDimensional ℂ V],
-      finrank ℂ V = n → ∀ x : V,
-        UniqueFactorizationMonoid ((holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk x)
-  | 0, _, _, _, _, hV, x => uniqueFactorizationMonoid_stalk_of_finrank_eq_zero hV x
-  | n + 1, V, _, _, _, hV, x => by
-    let e : V ≃L[ℂ] (Fin n → ℂ) × ℂ := ContinuousLinearEquiv.ofFinrankEq (by simp [hV])
-    have hprod := uniqueFactorizationMonoid_stalk_prod
-      (uniqueFactorizationMonoid_stalk_of_finrank_eq n (Fin n → ℂ) (by simp)) (e x)
-    exact (RingEquiv.ofBijective _ (e.holomorphicStalkPullback_bijective x)).toMulEquiv
-      |>.uniqueFactorizationMonoid hprod
-
 end ModelSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
@@ -201,16 +150,10 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimension
 /-- The stalk of holomorphic functions at any point of a finite-dimensional complex manifold
 without boundary is a unique factorisation domain. -/
 instance stalkUniqueFactorizationMonoid (x : X) :
-    UniqueFactorizationMonoid ((holomorphicStructureSheaf I X).presheaf.stalk x) := by
-  let : IsManifold I ω X := IsManifold.of_ne_zero ω one_ne_zero inferInstance
-  -- Pass via a chart and a linear equivalence to a model space in `Type`.
-  obtain ⟨E', _, _, _, ⟨e⟩⟩ : ∃ (E' : Type) (_ : NormedAddCommGroup E') (_ : NormedSpace ℂ E')
-      (_ : FiniteDimensional ℂ E'), Nonempty (E ≃L[ℂ] E') :=
-    ⟨Fin (finrank ℂ E) → ℂ, inferInstance, inferInstance, inferInstance,
-      ⟨ContinuousLinearEquiv.ofFinrankEq (by simp)⟩⟩
-  have hm := uniqueFactorizationMonoid_stalk_of_finrank_eq _ E' rfl ((e ∘ extChartAt I x) x)
-  exact (RingEquiv.ofBijective _ (stalkPullback_comp_extChartAt_bijective x e)).toMulEquiv
-    |>.uniqueFactorizationMonoid hm
+    UniqueFactorizationMonoid ((holomorphicStructureSheaf I X).presheaf.stalk x) :=
+  stalk_induction (fun R _ ↦ UniqueFactorizationMonoid R)
+    (fun e h ↦ e.toMulEquiv.uniqueFactorizationMonoid h) inferInstance
+    (fun hV p ↦ have := hV p.1; (isRueckert_evalVertical p.1 p.2).uniqueFactorizationMonoid) x
 
 /-- A stalk of Mathlib's complex-smooth structure sheaf on a finite-dimensional complex manifold
 without boundary is a unique factorisation domain, via its comparison with holomorphic germs. -/
