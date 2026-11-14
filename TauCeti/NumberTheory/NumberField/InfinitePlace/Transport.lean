@@ -45,6 +45,11 @@ in another universe, such as `Shrink K`.
   multiplicity.
 * `NumberField.InfinitePlace.embedding_of_isReal_equivOfRingEquiv`: the real embedding of the
   transported place is the real embedding of the original place composed with `e.symm`.
+* `NumberField.InfinitePlace.apply_eq_of_eq_equivOfRingEquiv`,
+  `NumberField.InfinitePlace.eq_equivOfRingEquiv_iff`: `w = equivOfRingEquiv e v` holds precisely
+  when `e` carries the place absolute value `v` to `w`; consequently two intertwined places share
+  realness, complexity, and multiplicity (`isReal_iff_of_apply_eq`, `isComplex_iff_of_apply_eq`,
+  `mult_eq_of_apply_eq`).
 * `NumberField.InfinitePlace.realEquivOfRingEquiv_refl_apply`,
   `NumberField.InfinitePlace.realEquivOfRingEquiv_refl`,
   `NumberField.InfinitePlace.realEquivOfRingEquiv_symm`,
@@ -155,6 +160,37 @@ theorem embedding_of_isReal_equivOfRingEquiv (e : K ≃+* L) {w : InfinitePlace 
     embedding_of_isReal hw =
       (embedding_of_isReal ((isReal_equivOfRingEquiv_iff e w).mp hw)).comp (e.symm : L →+* K) :=
   embedding_of_isReal_comap (e.symm : L →+* K) ((isReal_equivOfRingEquiv_iff e w).mp hw)
+
+/-- If `w = equivOfRingEquiv e v`, then `e` carries the place absolute value `v` to `w`. -/
+theorem apply_eq_of_eq_equivOfRingEquiv (e : K ≃+* L) {v : InfinitePlace K}
+    {w : InfinitePlace L} (h : w = equivOfRingEquiv e v) (x : K) :
+    w (e x) = v x := by
+  subst h
+  simp
+
+/-- An infinite place `w` of `L` equals `equivOfRingEquiv e v` precisely when `e` carries the place
+absolute value `v` to `w`. This supplies and characterizes the hypothesis of
+`AbsoluteValue.Completion.congr` on infinite places. -/
+theorem eq_equivOfRingEquiv_iff {e : K ≃+* L} {v : InfinitePlace K} {w : InfinitePlace L} :
+    w = equivOfRingEquiv e v ↔ ∀ x, w (e x) = v x := by
+  refine ⟨apply_eq_of_eq_equivOfRingEquiv e, fun h ↦ ?_⟩
+  ext y
+  rw [equivOfRingEquiv_apply, ← h, RingEquiv.apply_symm_apply]
+
+/-- Two infinite places intertwined by a ring isomorphism are simultaneously real. -/
+theorem isReal_iff_of_apply_eq {e : K ≃+* L} {v : InfinitePlace K} {w : InfinitePlace L}
+    (he : ∀ x, w (e x) = v x) : w.IsReal ↔ v.IsReal := by
+  rw [eq_equivOfRingEquiv_iff.mpr he, isReal_equivOfRingEquiv_iff]
+
+/-- Two infinite places intertwined by a ring isomorphism are simultaneously complex. -/
+theorem isComplex_iff_of_apply_eq {e : K ≃+* L} {v : InfinitePlace K} {w : InfinitePlace L}
+    (he : ∀ x, w (e x) = v x) : w.IsComplex ↔ v.IsComplex := by
+  rw [eq_equivOfRingEquiv_iff.mpr he, isComplex_equivOfRingEquiv_iff]
+
+/-- Two infinite places intertwined by a ring isomorphism have the same multiplicity. -/
+theorem mult_eq_of_apply_eq {e : K ≃+* L} {v : InfinitePlace K} {w : InfinitePlace L}
+    (he : ∀ x, w (e x) = v x) : w.mult = v.mult := by
+  rw [eq_equivOfRingEquiv_iff.mpr he, mult_equivOfRingEquiv]
 
 /-- The bijection between the real places of two fields induced by a ring isomorphism
 `e : K ≃+* L`. -/
