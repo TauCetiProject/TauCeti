@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Measure.Prod
 public import Mathlib.MeasureTheory.Measure.Real
 public import Mathlib.MeasureTheory.Measure.WithDensity
 public import Mathlib.Topology.EMetricSpace.Defs
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
 
 /-!
 # Marginal masses and sections of product measures
@@ -26,7 +27,9 @@ For a probability measure `μ`, the pairs with a coordinate in a set `s` have `�
 at most `2 * μ s` (`MeasureTheory.Measure.prod_self_union_le_two_mul`). Weighting by a function
 of the first coordinate commutes with taking the first marginal (`fst_withDensity`).
 Projecting a measurable restriction of a product weights the first factor by the masses of
-its vertical sections (`map_fst_restrict_prod_eq_withDensity`).
+its vertical sections (`map_fst_restrict_prod_eq_withDensity`). Rectangle bounds also give
+finite interval-selection masses and a local-finiteness criterion for projected restrictions
+away from an initial endpoint.
 
 If the pushforward of a product `(μ.map Z).prod ρ` along `(z, t) ↦ (z, f z t)` is the joint law of
 `(Z, X)` for a nonzero finite `μ`, then `ρ` is a probability measure
@@ -56,6 +59,73 @@ public section
 open scoped ENNReal
 
 namespace MeasureTheory.Measure
+
+/-- Projecting a joint measure restricted to `u ×ˢ A` assigns mass `μ ((s ∩ u) ×ˢ A)`
+to each measurable set `s` in the first coordinate. -/
+@[simp]
+theorem map_fst_restrict_prod_apply {α β : Type*} [MeasurableSpace α]
+    [MeasurableSpace β] (μ : Measure (α × β)) (u : Set α) (A : Set β)
+    {s : Set α} (hs : MeasurableSet s) :
+    ((μ.restrict (u ×ˢ A)).map Prod.fst) s = μ ((s ∩ u) ×ˢ A) := by
+  rw [map_apply measurable_fst hs, ← Set.prod_univ,
+    restrict_apply (hs.prod MeasurableSet.univ)]
+  simp only [Set.prod_inter_prod, Set.univ_inter]
+
+/-- The mass of a rectangle under a product measure is bounded by the product of its masses,
+without measurability or s-finiteness assumptions. -/
+theorem prod_prod_le {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
+    (μ : Measure α) (ν : Measure β) (s : Set α) (t : Set β) :
+    μ.prod ν (s ×ˢ t) ≤ μ s * ν t := by
+  by_cases hν : SFinite ν
+  · let := hν
+    exact le_of_eq (prod_prod s t)
+  · simp [prod_eq_zero_of_not_sfinite hν]
+
+/-- A bounded right-closed interval paired with a finite-mass selection has finite product
+mass when the first measure is locally finite. The second measure need not be s-finite. -/
+theorem measure_Ioc_prod_lt_top {α β : Type*} [Preorder α] [TopologicalSpace α]
+    [CompactIccSpace α] [MeasurableSpace α] [MeasurableSpace β]
+    (μ : Measure α) [IsLocallyFiniteMeasure μ] (ν : Measure β)
+    {A : Set β} (hνA : ν A ≠ ∞) (a b : α) : (μ.prod ν) (Set.Ioc a b ×ˢ A) < ∞ :=
+  (prod_prod_le μ ν _ _).trans_lt (ENNReal.mul_lt_top measure_Ioc_lt_top hνA.lt_top)
+
+/-- A rectangle consisting of a bounded right-closed interval and a singleton has finite mass
+under any measure finite on compact sets. -/
+theorem measure_Ioc_prod_singleton_lt_top {α β : Type*} [Preorder α]
+    [TopologicalSpace α] [CompactIccSpace α] [MeasurableSpace α]
+    [TopologicalSpace β] [MeasurableSpace β] (μ : Measure (α × β))
+    [IsFiniteMeasureOnCompacts μ] (y : β) (a b : α) : μ (Set.Ioc a b ×ˢ {y}) < ∞ :=
+  (measure_mono (Set.prod_mono Set.Ioc_subset_Icc_self Set.Subset.rfl)).trans_lt
+    (isCompact_Icc.prod isCompact_singleton).measure_lt_top
+
+/-- A projected restriction above an endpoint is locally finite if all its bounded
+right-closed windows have finite mass. No finiteness at the excluded endpoint is needed. -/
+theorem isLocallyFiniteMeasure_map_fst_restrict_Ioi_prod {α β : Type*} [LinearOrder α]
+    [TopologicalSpace α] [ClosedIciTopology α] [ClosedIicTopology α]
+    [MeasurableSpace α] [OpensMeasurableSpace α] [MeasurableSpace β]
+    (μ : Measure (α × β)) (a : α) (A : Set β)
+    (hfin : ∀ t : α, μ (Set.Ioc a t ×ˢ A) < ∞) :
+    IsLocallyFiniteMeasure ((μ.restrict (Set.Ioi a ×ˢ A)).map Prod.fst) := by
+  apply Measure.isLocallyFiniteMeasure_of_measure_Iic_lt_top
+  intro t
+  rw [map_fst_restrict_prod_apply _ _ _ measurableSet_Iic,
+    Set.inter_comm (Set.Iic t), Set.Ioi_inter_Iic]
+  exact hfin t
+
+/-- A first marginal is locally finite when the joint measure is locally finite and the
+second space is compact. -/
+theorem isLocallyFiniteMeasure_map_fst {α β : Type*} [MeasurableSpace α]
+    [MeasurableSpace β] [TopologicalSpace α] [TopologicalSpace β] [OpensMeasurableSpace α]
+    [CompactSpace β] (μ : Measure (α × β))
+    [IsLocallyFiniteMeasure μ] : IsLocallyFiniteMeasure (μ.map Prod.fst) := by
+  refine ⟨fun x ↦ ?_⟩
+  obtain ⟨W, hW, hWo, hWfin⟩ :=
+    (isCompact_singleton (x := x)).prod isCompact_univ |>.exists_open_superset_measure_lt_top μ
+  obtain ⟨u, v, huo, _, hxu, hv, huv⟩ :=
+    generalized_tube_lemma isCompact_singleton isCompact_univ hWo hW
+  refine ⟨u, huo.mem_nhds (hxu (Set.mem_singleton x)), ?_⟩
+  rw [map_apply measurable_fst huo.measurableSet, ← Set.prod_univ]
+  exact (measure_mono ((Set.prod_mono Set.Subset.rfl hv).trans huv)).trans_lt hWfin
 
 /-- Projecting the part of a product measure in a measurable set gives the first measure
 weighted by the masses of the vertical sections. Only the second factor must be s-finite. -/

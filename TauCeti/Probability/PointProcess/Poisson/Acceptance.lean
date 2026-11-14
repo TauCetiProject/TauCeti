@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.PointProcess.Poisson.Basic
 public import TauCeti.MeasureTheory.Measure.Prod
 public import TauCeti.MeasureTheory.Measure.NNReal
+public import Mathlib.Probability.Distributions.Bernoulli
 
 /-!
 # Poisson acceptance regions and monotone coupling
@@ -46,6 +47,56 @@ theorem IsPoissonRandomMeasure.acceptance [SFinite Q]
       (Λ.withDensity fun x ↦ Q (Prod.mk x ⁻¹' A)) := by
   simpa only [Measure.map_fst_restrict_prod_eq_withDensity Λ Q hA] using
     (hM.restrict hA).map measurable_fst
+
+/-- Selecting a measurable mark set from a product-intensity Poisson measure and projecting
+onto the ground space multiplies the intensity by the mass of that mark set. -/
+theorem IsPoissonRandomMeasure.acceptance_univ_prod [SFinite Q]
+    (hM : IsPoissonRandomMeasure P M (Λ.prod Q))
+    {A : Set E} (hA : MeasurableSet A) :
+    IsPoissonRandomMeasure P (fun ω ↦ ((M ω).restrict (univ ×ˢ A)).map Prod.fst)
+      (Q A • Λ) := by
+  simpa only [mk_preimage_prod_right (mem_univ _), withDensity_const] using
+    hM.acceptance (MeasurableSet.univ.prod hA)
+
+/-- Selecting a finite-mass mark set from a scaled product intensity multiplies the ground
+scale by the mass of that mark set, including scale zero. -/
+theorem IsPoissonRandomMeasure.acceptance_univ_prod_smul [SFinite Q] {r : ℝ≥0}
+    (h : IsPoissonRandomMeasure P M (((r : ℝ≥0∞) • Λ).prod Q))
+    {A : Set E} (hA : MeasurableSet A) (hQA : Q A ≠ ∞ := by finiteness) :
+    IsPoissonRandomMeasure P (fun ω ↦ ((M ω).restrict (univ ×ˢ A)).map Prod.fst)
+      (((r * (Q A).toNNReal : ℝ≥0) : ℝ≥0∞) • Λ) := by
+  have hscale : Q A • (r : ℝ≥0∞) • Λ =
+      ((r * (Q A).toNNReal : ℝ≥0) : ℝ≥0∞) • Λ := by
+    rw [smul_smul, ENNReal.coe_mul, ENNReal.coe_toNNReal hQA, mul_comm]
+  simpa only [hscale] using h.acceptance_univ_prod hA
+
+/-- Bernoulli mark selection scales an arbitrary ground intensity by `p` or `1-p`,
+including both endpoint parameters. -/
+theorem IsPoissonRandomMeasure.acceptance_univ_prod_singleton_of_bernoulliMeasure
+    {M : Ω → Measure (X × Bool)} {p : unitInterval}
+    (h : IsPoissonRandomMeasure P M (Λ.prod (bernoulliMeasure true false p))) (b : Bool) :
+    IsPoissonRandomMeasure P (fun ω ↦ ((M ω).restrict (univ ×ˢ {b})).map Prod.fst)
+      (((if b then unitInterval.toNNReal p else
+        1 - unitInterval.toNNReal p : ℝ≥0) : ℝ≥0∞) • Λ) := by
+  have hb : ((bernoulliMeasure true false p) {b}).toNNReal =
+      if b then unitInterval.toNNReal p else 1 - unitInterval.toNNReal p := by
+    cases b
+    · simpa using eq_tsub_of_add_eq (unitInterval.toNNReal_symm_add_toNNReal p)
+    · simp
+  simpa only [← hb, ENNReal.coe_toNNReal (measure_ne_top _ _)] using
+    h.acceptance_univ_prod (measurableSet_singleton b)
+
+/-- Bernoulli colour selection splits a scaled ground intensity into scales `r*p` and
+`r*(1-p)`, including both endpoint parameters and scale zero. -/
+theorem IsPoissonRandomMeasure.acceptance_univ_prod_singleton_smul_of_bernoulliMeasure
+    {M : Ω → Measure (X × Bool)} {r : ℝ≥0} {p : unitInterval}
+    (h : IsPoissonRandomMeasure P M
+      (((r : ℝ≥0∞) • Λ).prod (bernoulliMeasure true false p))) (b : Bool) :
+    IsPoissonRandomMeasure P (fun ω ↦ ((M ω).restrict (univ ×ˢ {b})).map Prod.fst)
+      (((r * if b then unitInterval.toNNReal p else
+        1 - unitInterval.toNNReal p : ℝ≥0) : ℝ≥0∞) • Λ) := by
+  simpa only [smul_smul, ENNReal.coe_mul, mul_comm] using
+    h.acceptance_univ_prod_singleton_of_bernoulliMeasure b
 
 /-- Accepting a Lebesgue mark `u` exactly when `u ≤ f x` produces a Poisson random measure
 with intensity `Λ.withDensity f`, including at zero and infinite values of `f`. -/
