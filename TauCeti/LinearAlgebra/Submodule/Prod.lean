@@ -14,7 +14,7 @@ public import Mathlib.Order.SupIndep
 Products of submodules commute with indexed suprema, and a family of products is independent
 exactly when both families of factors are. The two coordinate copies `Submodule.fst` and
 `Submodule.snd` of the factors of a product module are cut out by the vanishing of the other
-coordinate and are complementary.
+coordinate and are complementary. Products of submodules are compared componentwise.
 
 ## Main declarations
 
@@ -24,6 +24,8 @@ coordinate and are complementary.
 * `Submodule.mem_fst_iff`, `Submodule.mem_snd_iff`: membership in the coordinate copies of the
   factors.
 * `Submodule.isCompl_fst_snd`: the coordinate copies of the two factors are complementary.
+* `Submodule.prod_le_prod_iff`, `Submodule.prod_inj`: products of submodules are compared
+  componentwise.
 -/
 
 public section
@@ -44,6 +46,18 @@ coordinate vanishes. -/
 @[simp]
 theorem mem_snd_iff {x : M × N} : x ∈ Submodule.snd R M N ↔ x.1 = 0 :=
   mem_comap.trans (mem_bot R)
+
+/-- A product of submodules lies in another exactly when the factors do. -/
+@[simp]
+theorem prod_le_prod_iff {p₁ p₂ : Submodule R M} {q₁ q₂ : Submodule R N} :
+    p₁.prod q₁ ≤ p₂.prod q₂ ↔ p₁ ≤ p₂ ∧ q₁ ≤ q₂ := by
+  rw [le_prod_iff, prod_map_fst, prod_map_snd]
+
+/-- Two products of submodules are equal exactly when their factors are. -/
+@[simp]
+theorem prod_inj {p₁ p₂ : Submodule R M} {q₁ q₂ : Submodule R N} :
+    p₁.prod q₁ = p₂.prod q₂ ↔ p₁ = p₂ ∧ q₁ = q₂ := by
+  simp only [le_antisymm_iff, prod_le_prod_iff, and_and_and_comm]
 
 variable (R M N)
 

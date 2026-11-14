@@ -7,8 +7,10 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Level
+public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Prod
 public import TauCeti.Geometry.Symplectic.Manifold.Descent
 
+import TauCeti.Algebra.Lie.Coadjoint
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 
 /-!
@@ -46,6 +48,13 @@ since the null directions of `σ` on `ker dμ` are `𝔤_c · i(z)`
 action is locally free and `i` is an immersion, `Q` has dimension `dim M - dim 𝔤 - dim 𝔤_c`
 (`TauCeti.SmoothTwoForm.IsMomentMap.finrank_add_finrank_add_finrank_lieAnnihilator`).
 
+Level data of moment maps `μ₁` at `c₁` and `μ₂` at `c₂` give level data `i₁ × i₂`, `p₁ × p₂` of
+the moment map `μ₁(x₁).coprod μ₂(x₂)` of the componentwise action of `𝔤₁ × 𝔤₂` at `c₁.coprod c₂`,
+whose stabilizer is `(𝔤₁)_{c₁} × (𝔤₂)_{c₂}`, so `Q₁ × Q₂` carries a unique reduced symplectic form
+(`IsMomentMap.existsUnique_isSymplectic_mpullback_prodMap_eq_mpullback_prodMap`).
+By naturality of the product form (`TauCeti.SmoothTwoForm.mpullback_prodMap_prod`) it is the
+product of the reduced forms of the factors.
+
 For a group-level moment map `μ` of a Lie group `G` acting by symplectomorphisms, the cocycle of
 `μ` vanishes and `K` may act through any map `φ : K → G` with `i (k • z) = φ k • i z`, such as the
 inclusion of the stabilizer `G_c`; invariance of `i^* σ` is then automatic
@@ -63,6 +72,8 @@ The reduced form computes the reduced Hamiltonian dynamics of
   reduced dimension `dim Q + dim 𝔤 + dim 𝔤_c = dim M`.
 * `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.existsUnique_isSymplectic_mpullback_eq_mpullback`:
   the reduced symplectic form of a group-level moment map.
+* `IsMomentMap.existsUnique_isSymplectic_mpullback_prodMap_eq_mpullback_prodMap`:
+  the reduced symplectic form of a product of level data.
 
 ## References
 
@@ -202,6 +213,102 @@ theorem finrank_add_finrank_add_finrank_lieAnnihilator (h : σ.IsMomentMap a μ)
     finrank_tangentSpace] at hrn
   have hlev := h.finrank_ker_differential_add_finrank hσx hfree
   omega
+
+section prod
+
+variable {E₁ H₁ M₁ : Type*} [NormedAddCommGroup E₁] [NormedSpace ℝ E₁] [FiniteDimensional ℝ E₁]
+  [TopologicalSpace H₁] {I₁ : ModelWithCorners ℝ E₁ H₁} [TopologicalSpace M₁]
+  [ChartedSpace H₁ M₁] [IsManifold I₁ ∞ M₁]
+  {E₂ H₂ M₂ : Type*} [NormedAddCommGroup E₂] [NormedSpace ℝ E₂] [FiniteDimensional ℝ E₂]
+  [TopologicalSpace H₂] {I₂ : ModelWithCorners ℝ E₂ H₂} [TopologicalSpace M₂]
+  [ChartedSpace H₂ M₂] [IsManifold I₂ ∞ M₂]
+  {𝔤₁ 𝔤₂ : Type*} [LieRing 𝔤₁] [LieAlgebra ℝ 𝔤₁] [LieRing 𝔤₂] [LieAlgebra ℝ 𝔤₂]
+  {σ₁ : SmoothTwoForm I₁ M₁} {σ₂ : SmoothTwoForm I₂ M₂}
+  {a₁ : InfinitesimalAction 𝔤₁ I₁ M₁} {a₂ : InfinitesimalAction 𝔤₂ I₂ M₂}
+  {μ₁ : M₁ → Module.Dual ℝ 𝔤₁} {μ₂ : M₂ → Module.Dual ℝ 𝔤₂}
+  {EZ₁ HZ₁ Z₁ : Type*} [NormedAddCommGroup EZ₁] [NormedSpace ℝ EZ₁] [TopologicalSpace HZ₁]
+  {J₁ : ModelWithCorners ℝ EZ₁ HZ₁} [TopologicalSpace Z₁] [ChartedSpace HZ₁ Z₁]
+  [IsManifold J₁ ∞ Z₁]
+  {EZ₂ HZ₂ Z₂ : Type*} [NormedAddCommGroup EZ₂] [NormedSpace ℝ EZ₂] [TopologicalSpace HZ₂]
+  {J₂ : ModelWithCorners ℝ EZ₂ HZ₂} [TopologicalSpace Z₂] [ChartedSpace HZ₂ Z₂]
+  [IsManifold J₂ ∞ Z₂]
+  {EQ₁ HQ₁ Q₁ : Type*} [NormedAddCommGroup EQ₁] [NormedSpace ℝ EQ₁] [TopologicalSpace HQ₁]
+  {JQ₁ : ModelWithCorners ℝ EQ₁ HQ₁} [TopologicalSpace Q₁] [ChartedSpace HQ₁ Q₁]
+  [IsManifold JQ₁ ∞ Q₁]
+  {EQ₂ HQ₂ Q₂ : Type*} [NormedAddCommGroup EQ₂] [NormedSpace ℝ EQ₂] [TopologicalSpace HQ₂]
+  {JQ₂ : ModelWithCorners ℝ EQ₂ HQ₂} [TopologicalSpace Q₂] [ChartedSpace HQ₂ Q₂]
+  [IsManifold JQ₂ ∞ Q₂]
+  {i₁ : Z₁ → M₁} {i₂ : Z₂ → M₂} {p₁ : Z₁ → Q₁} {p₂ : Z₂ → Q₂}
+  {c₁ : Module.Dual ℝ 𝔤₁} {c₂ : Module.Dual ℝ 𝔤₂}
+
+/-- **The reduced symplectic form of a product.** Let `i₁ : Z₁ → M₁`, `p₁ : Z₁ → Q₁` and
+`i₂ : Z₂ → M₂`, `p₂ : Z₂ → Q₂` be level data for moment maps `μ₁` at `c₁` and `μ₂` at `c₂`, in the
+sense of `TauCeti.SmoothTwoForm.IsMomentMap.existsUnique_isSymplectic_mpullback_eq_mpullback`,
+with `K₁` and `K₂` acting along the fibres of `p₁` and `p₂`. Then `i₁ × i₂`, `p₁ × p₂` are level
+data for the moment map `μ₁(x₁).coprod μ₂(x₂)` of the componentwise action of `𝔤₁ × 𝔤₂` at
+`c₁.coprod c₂`, with `K₁ × K₂` acting componentwise, so there is a unique symplectic form on
+`Q₁ × Q₂` pulling back along `p₁ × p₂` to the restriction of the product form along `i₁ × i₂`. -/
+theorem existsUnique_isSymplectic_mpullback_prodMap_eq_mpullback_prodMap [J₁.Boundaryless]
+    [J₂.Boundaryless] {K₁ K₂ : Type*} [SMul K₁ Z₁] [SMul K₂ Z₂] (h₁ : σ₁.IsMomentMap a₁ μ₁)
+    (h₂ : σ₂.IsMomentMap a₂ μ₂) (hσ₁ : σ₁.IsSymplectic) (hσ₂ : σ₂.IsSymplectic)
+    (hi₁ : ContMDiff J₁ I₁ ∞ i₁) (hi₂ : ContMDiff J₂ I₂ ∞ i₂)
+    (hμi₁ : ∀ z, μ₁ (i₁ z) = c₁) (hμi₂ : ∀ z, μ₂ (i₂ z) = c₂)
+    (hc₁ : ∀ z, σ₁.momentCocycle a₁ μ₁ (i₁ z) = 0) (hc₂ : ∀ z, σ₂.momentCocycle a₂ μ₂ (i₂ z) = 0)
+    (hrange₁ : ∀ z, LinearMap.range (mfderiv J₁ I₁ i₁ z).toLinearMap =
+      LinearMap.ker (h₁.differential (i₁ z)))
+    (hrange₂ : ∀ z, LinearMap.range (mfderiv J₂ I₂ i₂ z).toLinearMap =
+      LinearMap.ker (h₂.differential (i₂ z)))
+    (hp₁ : IsSubmersion J₁ JQ₁ ∞ p₁) (hp₂ : IsSubmersion J₂ JQ₂ ∞ p₂)
+    (hsurj₁ : Surjective p₁) (hsurj₂ : Surjective p₂)
+    (hker₁ : ∀ z, (mfderiv J₁ JQ₁ p₁ z).ker =
+      ((lieAnnihilator ℝ 𝔤₁ c₁).toSubmodule.map (a₁.eval (i₁ z))).comap
+        (mfderiv J₁ I₁ i₁ z).toLinearMap)
+    (hker₂ : ∀ z, (mfderiv J₂ JQ₂ p₂ z).ker =
+      ((lieAnnihilator ℝ 𝔤₂ c₂).toSubmodule.map (a₂.eval (i₂ z))).comap
+        (mfderiv J₂ I₂ i₂ z).toLinearMap)
+    (hK₁ : ∀ k : K₁, ContMDiff J₁ J₁ ∞ fun z : Z₁ ↦ k • z)
+    (hK₂ : ∀ k : K₂, ContMDiff J₂ J₂ ∞ fun z : Z₂ ↦ k • z)
+    (hpK₁ : ∀ (k : K₁) z, p₁ (k • z) = p₁ z) (hpK₂ : ∀ (k : K₂) z, p₂ (k • z) = p₂ z)
+    (hfib₁ : ∀ z z', p₁ z = p₁ z' → ∃ k : K₁, k • z = z')
+    (hfib₂ : ∀ z z', p₂ z = p₂ z' → ∃ k : K₂, k • z = z')
+    (hinv₁ : ∀ k : K₁, SmoothForm.mpullback (fun z : Z₁ ↦ k • z) (hK₁ k)
+      (SmoothForm.mpullback i₁ hi₁ σ₁) = SmoothForm.mpullback i₁ hi₁ σ₁)
+    (hinv₂ : ∀ k : K₂, SmoothForm.mpullback (fun z : Z₂ ↦ k • z) (hK₂ k)
+      (SmoothForm.mpullback i₂ hi₂ σ₂) = SmoothForm.mpullback i₂ hi₂ σ₂) :
+    ∃! η : SmoothTwoForm (JQ₁.prod JQ₂) (Q₁ × Q₂),
+      η.IsSymplectic ∧ SmoothForm.mpullback (Prod.map p₁ p₂) (hp₁.prodMap hp₂).contMDiff η =
+        SmoothForm.mpullback (Prod.map i₁ i₂) (hi₁.prodMap hi₂) (σ₁.prod σ₂) := by
+  have := FiniteDimensional.completeSpace ℝ E₁
+  have := FiniteDimensional.completeSpace ℝ E₂
+  -- `K₁ × K₂` acts on `Z₁ × Z₂` componentwise.
+  let _ : SMul (K₁ × K₂) (Z₁ × Z₂) := ⟨fun k z ↦ (k.1 • z.1, k.2 • z.2)⟩
+  have hdi₁ z := (hi₁ z).mdifferentiableAt (n := ∞) (by simp)
+  have hdi₂ z := (hi₂ z).mdifferentiableAt (n := ∞) (by simp)
+  have hdp₁ z := (hp₁.contMDiff z).mdifferentiableAt (n := ∞) (by simp)
+  have hdp₂ z := (hp₂.contMDiff z).mdifferentiableAt (n := ∞) (by simp)
+  refine (h₁.prodMap h₂).existsUnique_isSymplectic_mpullback_eq_mpullback (c := c₁.coprod c₂)
+    (K := K₁ × K₂) (hσ₁.prod hσ₂) (hi₁.prodMap hi₂) (fun z ↦ by simp [hμi₁, hμi₂])
+    (fun z ↦ (momentCocycle_prodMap_eq_zero_iff _).2 ⟨hc₁ z.1, hc₂ z.2⟩)
+    (fun z ↦ (range_mfderiv_prodMap_eq_ker_differential_prodMap_iff h₁ h₂ (hdi₁ z.1)
+      (hdi₂ z.2)).2 ⟨hrange₁ z.1, hrange₂ z.2⟩)
+    (hp₁.prodMap hp₂) (hsurj₁.prodMap hsurj₂)
+    (fun z ↦ by
+      rw [Module.Dual.toSubmodule_lieAnnihilator_coprod]
+      exact (InfinitesimalAction.ker_mfderiv_prodMap_eq_comap_map_eval_prodMap_iff a₁ a₂ _ _
+        (hdi₁ z.1) (hdi₂ z.2) (hdp₁ z.1) (hdp₂ z.2)).2 ⟨hker₁ z.1, hker₂ z.2⟩)
+    (fun k ↦ (hK₁ k.1).prodMap (hK₂ k.2)) (fun k z ↦ Prod.ext (hpK₁ k.1 z.1) (hpK₂ k.2 z.2))
+    (fun z z' hzz' ↦ ?_) fun k ↦ ?_
+  · obtain ⟨k₁, hk₁⟩ := hfib₁ z.1 z'.1 congr($hzz'.1)
+    obtain ⟨k₂, hk₂⟩ := hfib₂ z.2 z'.2 congr($hzz'.2)
+    exact ⟨(k₁, k₂), Prod.ext hk₁ hk₂⟩
+  · -- The action of `k` is the product map of the actions of its components.
+    have h := mpullback_prodMap_prod (hK₁ k.1) (hK₂ k.2) (SmoothForm.mpullback i₁ hi₁ σ₁)
+      (SmoothForm.mpullback i₂ hi₂ σ₂)
+    rw [hinv₁, hinv₂] at h
+    rw [mpullback_prodMap_prod hi₁ hi₂]
+    exact h
+
+end prod
 
 end IsMomentMap
 
