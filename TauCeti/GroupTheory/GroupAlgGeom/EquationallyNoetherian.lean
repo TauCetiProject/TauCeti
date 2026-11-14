@@ -47,6 +47,10 @@ are nonabelian, with `cᵢ` and `dᵢ` two noncommuting elements placed in the c
 * `TauCeti.GroupAlgGeom.IsEquationallyNoetherian.exists_finite`,
   `TauCeti.GroupAlgGeom.IsEquationallyNoetherian.exists_finite_Rad_eq`: the finite subsystem, for
   any finite type of variables, with the same algebraic set and the same radical.
+* `TauCeti.GroupAlgGeom.IsEquationallyNoetherian.exists_forall_ge_V_eq`,
+  `TauCeti.GroupAlgGeom.IsEquationallyNoetherian.exists_forall_ge_Rad_eq`: for any finite type
+  of variables, decreasing sequences of algebraic sets and increasing sequences of radicals are
+  eventually constant.
 * `TauCeti.GroupAlgGeom.IsEquationallyNoetherian.of_injective`: subgroups of equationally
   Noetherian groups are equationally Noetherian.
 * `TauCeti.GroupAlgGeom.IsEquationallyNoetherian.comp`: restricting the coefficients preserves the
@@ -107,6 +111,34 @@ theorem exists_finite_Rad_eq (h : IsEquationallyNoetherian ι) [Finite X] (S : S
     ∃ S₀ ⊆ S, S₀.Finite ∧ Rad ι S₀ = Rad ι S := by
   obtain ⟨S₀, hS₀, hfin, hV⟩ := h.exists_finite S
   exact ⟨S₀, hS₀, hfin, by rw [Rad_def, Rad_def, hV]⟩
+
+/-- Over an equationally Noetherian group, a decreasing sequence of algebraic sets in a finite type
+of variables is eventually constant. -/
+theorem exists_forall_ge_V_eq (h : IsEquationallyNoetherian ι) [Finite X]
+    {S : ℕ → Set (GX G X)} (hS : Antitone fun k => V ι (S k)) :
+    ∃ m, ∀ k, m ≤ k → V ι (S k) = V ι (S m) := by
+  -- The radicals of the systems increase and define the same algebraic sets.
+  have hR : Monotone fun k => (Rad ι (S k) : Set (GX G X)) := fun _ _ hij =>
+    SetLike.coe_subset_coe.2 (by rw [Rad_def, Rad_def]; exact I_antitone ι (hS hij))
+  obtain ⟨S₀, hS₀, hfin, hV⟩ := h.exists_finite (⋃ k, (Rad ι (S k) : Set (GX G X)))
+  lift S₀ to Finset (GX G X) using hfin
+  obtain ⟨m, hm⟩ := hR.directed_le.exists_mem_subset_of_finset_subset_biUnion hS₀
+  refine ⟨m, fun k hk => (hS hk).antisymm ?_⟩
+  calc V ι (S m) = V ι (Rad ι (S m) : Set (GX G X)) := (V_Rad _).symm
+    _ ⊆ V ι S₀ := V_antitone ι hm
+    _ = V ι (⋃ k, (Rad ι (S k) : Set (GX G X))) := hV
+    _ ⊆ V ι (Rad ι (S k) : Set (GX G X)) :=
+      V_antitone ι (Set.subset_iUnion (fun k => (Rad ι (S k) : Set (GX G X))) k)
+    _ = V ι (S k) := V_Rad _
+
+/-- Over an equationally Noetherian group, an increasing sequence of radicals of systems in a
+finite type of variables is eventually constant. -/
+theorem exists_forall_ge_Rad_eq (h : IsEquationallyNoetherian ι) [Finite X]
+    {S : ℕ → Set (GX G X)} (hS : Monotone fun k => Rad ι (S k)) :
+    ∃ m, ∀ k, m ≤ k → Rad ι (S k) = Rad ι (S m) := by
+  obtain ⟨m, hm⟩ := h.exists_forall_ge_V_eq (S := S) fun _ _ hij => by
+    simpa only [V_Rad] using V_antitone ι (SetLike.coe_subset_coe.2 (hS hij))
+  exact ⟨m, fun k hk => by rw [Rad_def, Rad_def, hm k hk]⟩
 
 /-- The source of an injective homomorphism compatible with the coefficients into an equationally
 Noetherian group is equationally Noetherian; in particular so is every subgroup containing the

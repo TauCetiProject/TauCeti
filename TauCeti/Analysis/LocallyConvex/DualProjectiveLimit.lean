@@ -192,7 +192,7 @@ theorem exists_bound_of_continuous (q : Seminorm 𝕜 (dualProjectiveLimit T)) (
     refine Seminorm.finset_sup_apply_le (by positivity) fun i hi ↦ ?_
     refine (norm_apply_le_prod_mul f (hN i hi)).trans ?_
     gcongr
-    simpa only [D, NNReal.coe_sum, NNReal.coe_prod, coe_nnnorm] using
+    simpa only [D, NNReal.coe_sum, NNReal.coe_prod, coe_nnNorm] using
       Finset.single_le_sum (f := fun i ↦ ∏ k ∈ Finset.Ico i N, ‖T k‖)
         (fun i _ ↦ by positivity) hi
   simpa [NNReal.smul_def, mul_assoc] using mul_le_mul_of_nonneg_left hsup C.coe_nonneg
