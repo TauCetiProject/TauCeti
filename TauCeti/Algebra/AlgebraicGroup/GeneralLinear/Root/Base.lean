@@ -263,35 +263,17 @@ noncomputable def diagonalRootBase (n : ℕ) : (diagonalRootDatum.{u} (n + 1)).B
     rw [hcoroot]
     exact linearIndependent_diagonalSimpleCoroot n
   root_mem_or_neg_mem p := by
-    rw [image_root_diagonalSimpleSupport, range_diagonalSimpleRoot]
-    rcases le_total (p.1.1.down : ℕ) (p.1.2.down : ℕ) with h | h
-    · left
-      rw [diagonalRootDatum_root]
-      rw [diagonalRoot_eq_coordinateRoot p.1.1.down p.1.2.down,
-        coordinateRoot_eq_coordinate_sub n p.1.1.down p.1.2.down]
-      exact sub_mem_closure_of_le (diagonalCharacterCoordinate n)
-        (Nat.lt_succ_iff.mp p.1.2.down.isLt) h
-    · right
-      rw [diagonalRootDatum_root]
-      rw [diagonalRoot_eq_coordinateRoot p.1.1.down p.1.2.down,
-        coordinateRoot_eq_coordinate_sub n p.1.1.down p.1.2.down, neg_sub]
-      exact sub_mem_closure_of_le (diagonalCharacterCoordinate n)
-        (Nat.lt_succ_iff.mp p.1.1.down.isLt) h
+    rw [image_root_diagonalSimpleSupport, range_diagonalSimpleRoot, diagonalRootDatum_root,
+      diagonalRoot_eq_coordinateRoot p.1.1.down p.1.2.down,
+      coordinateRoot_eq_coordinate_sub n p.1.1.down p.1.2.down]
+    exact sub_mem_closure_or_neg_mem_closure (diagonalCharacterCoordinate n)
+      (Nat.lt_succ_iff.mp p.1.1.down.isLt) (Nat.lt_succ_iff.mp p.1.2.down.isLt)
   coroot_mem_or_neg_mem p := by
-    rw [image_coroot_diagonalSimpleSupport, range_diagonalSimpleCoroot]
-    rcases le_total (p.1.1.down : ℕ) (p.1.2.down : ℕ) with h | h
-    · left
-      rw [diagonalRootDatum_coroot]
-      rw [diagonalCoroot_eq_coordinateCoroot p.1.1.down p.1.2.down,
-        coordinateCoroot_eq_coordinate_sub n p.1.1.down p.1.2.down]
-      exact sub_mem_closure_of_le (diagonalCocharacterCoordinate n)
-        (Nat.lt_succ_iff.mp p.1.2.down.isLt) h
-    · right
-      rw [diagonalRootDatum_coroot]
-      rw [diagonalCoroot_eq_coordinateCoroot p.1.1.down p.1.2.down,
-        coordinateCoroot_eq_coordinate_sub n p.1.1.down p.1.2.down, neg_sub]
-      exact sub_mem_closure_of_le (diagonalCocharacterCoordinate n)
-        (Nat.lt_succ_iff.mp p.1.1.down.isLt) h
+    rw [image_coroot_diagonalSimpleSupport, range_diagonalSimpleCoroot, diagonalRootDatum_coroot,
+      diagonalCoroot_eq_coordinateCoroot p.1.1.down p.1.2.down,
+      coordinateCoroot_eq_coordinate_sub n p.1.1.down p.1.2.down]
+    exact sub_mem_closure_or_neg_mem_closure (diagonalCocharacterCoordinate n)
+      (Nat.lt_succ_iff.mp p.1.1.down.isLt) (Nat.lt_succ_iff.mp p.1.2.down.isLt)
 
 /-- The support of the diagonal base is the image of the consecutive-root index map. -/
 theorem diagonalRootBase_support (n : ℕ) :
@@ -324,41 +306,19 @@ private theorem diagonalRootIndexOfNe_snd {n : ℕ} (i j : Fin n) (hij : i ≠ j
 private theorem diagonalRootIndexOfNe_isPos_of_lt (n : ℕ) (i j : Fin (n + 1))
     (hij : i < j) :
     (diagonalRootBase.{u} n).IsPos (diagonalRootIndexOfNe i j hij.ne) := by
-  induction hdist : j.val - i.val using Nat.strong_induction_on generalizing i j with
-  | ind d ih =>
-      by_cases hadj : i.val + 1 = j.val
-      · let a : Fin n := ⟨i.val, by omega⟩
-        have hidx : diagonalRootIndexOfNe i j hij.ne = diagonalSimpleRootIndex n a := by
-          apply Subtype.ext
-          apply Prod.ext
-          · simp [a]
-          · simp [a, hadj]
-        rw [hidx]
-        exact RootPairing.Base.isPos_of_mem_support
-          ((mem_diagonalRootBase_support n _).2 ⟨a, rfl⟩)
-      · let k : Fin (n + 1) := ⟨i.val + 1, by omega⟩
-        have hik : i < k := by simp [Fin.lt_def, k]
-        have hkj : k < j := by simp only [Fin.lt_def, k]; omega
-        have hdist' : j.val - k.val < d := by simp only [k]; omega
-        have hkpos := ih (j.val - k.val) hdist' k j hkj rfl
-        let a : Fin n := ⟨i.val, by omega⟩
-        have hipos : (diagonalRootBase.{u} n).IsPos
-            (diagonalRootIndexOfNe i k hik.ne) := by
-          have hidx : diagonalRootIndexOfNe i k hik.ne =
-              diagonalSimpleRootIndex n a := by
-            apply Subtype.ext
-            apply Prod.ext
-            · simp [a]
-            · simp [a, k]
-          rw [hidx]
-          exact RootPairing.Base.isPos_of_mem_support
-            ((mem_diagonalRootBase_support n _).2 ⟨a, rfl⟩)
-        exact RootPairing.Base.IsPos.add hipos hkpos (by
-          rw [diagonalRootDatum_root, diagonalRootDatum_root, diagonalRootDatum_root]
-          ext x
-          simp only [diagonalRoot_apply, diagonalRootIndexOfNe_fst,
-            diagonalRootIndexOfNe_snd, ULift.down_up, Finsupp.add_apply]
-          ring)
+  have h : (diagonalRootDatum.{u} (n + 1)).root (diagonalRootIndexOfNe i j hij.ne) ∈
+      AddSubmonoid.closure
+        ((diagonalRootDatum.{u} (n + 1)).root '' (diagonalSimpleSupport n : Set _)) := by
+    rw [image_root_diagonalSimpleSupport, range_diagonalSimpleRoot, diagonalRootDatum_root,
+      diagonalRootIndexOfNe_fst, diagonalRootIndexOfNe_snd,
+      diagonalRoot_eq_coordinateRoot i j, coordinateRoot_eq_coordinate_sub n i j]
+    exact sub_mem_closure_of_le (diagonalCharacterCoordinate n)
+      (Nat.lt_succ_iff.mp j.isLt) hij.le
+  exact (mem_posRoots _ _ _).1 ((mem_posRoots_iff_root_mem_posRootCone _ _).2 <|
+    AddSubmonoid.closure_le.2 (by
+      rintro _ ⟨q, hq, rfl⟩
+      exact root_mem_posRootCone_of_mem_posRoots _ _
+        ((mem_posRoots _ _ _).2 ((diagonalRootBase.{u} n).isPos_of_mem_support hq))) h)
 
 /-- A diagonal root is positive for the consecutive-root base exactly when its row index is
 strictly smaller than its column index. -/
