@@ -30,9 +30,10 @@ and independent of `s`, vanishes (`TauCeti.SmoothTwoForm.hamiltonianCurvature_cy
 nondegenerate two-form on a finite-dimensional model, the identity holds for differentiable maps and
 jointly differentiable Hamiltonians on the domain times the manifold. Neither closedness of the
 two-form nor the Floer equation is needed for this pointwise identity. For solutions of the equation
-the density is nonnegative under tameness, and is half the standard quadratic energy density. The
-almost complex structure may be chosen independently at each domain point, as is needed for
-domain-dependent perturbations.
+the density is nonnegative as soon as `ω(v, J v) > 0` for nonzero `v`, without nondegeneracy
+(`SmoothTwoForm.floerEnergyDensity_nonneg_of_forall_pos`), and is half the standard quadratic
+energy density. The almost complex structure may be chosen independently at each domain point, as
+is needed for domain-dependent perturbations.
 
 Integrating the identity over a rectangle `[a₁, b₁] × [a₂, b₂]` of the domain gives
 
@@ -404,15 +405,29 @@ theorem floerEnergyDensity_eq_stdComplexLineEnergyDensity_div_two
     ContinuousLinearMap.coe_coe]
   ring
 
+/-- A Floer solution has nonnegative energy density for a structure `J` on the target fiber with
+`ω(v, J v) > 0` for every nonzero `v`. Neither nondegeneracy nor closedness of `ω` is used. -/
+theorem floerEnergyDensity_nonneg_of_forall_pos {J : AlmostComplexStructure (TangentSpace I (u z))}
+    (hJ : ∀ v : TangentSpace I (u z), v ≠ 0 → 0 < SmoothBundleForm.eval₂ ω (u z) v (J v))
+    (h : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
+      (ω.perturbedMFDeriv Ks Kt u z).toLinearMap) :
+    0 ≤ ω.floerEnergyDensity Ks Kt u z := by
+  have hP := h.apply_stdComplexLineImag
+  simp only [ContinuousLinearMap.coe_coe] at hP
+  rw [floerEnergyDensity_def, hP]
+  rcases eq_or_ne (ω.perturbedMFDeriv Ks Kt u z stdComplexLineReal) 0 with h0 | h0
+  · rw [h0, map_zero, SmoothBundleForm.eval₂_apply]
+    exact (ContinuousAlternatingMap.map_coord_zero _ 0 rfl).ge
+  · exact (hJ _ h0).le
+
 /-- A Floer solution has nonnegative energy density for a tamed structure on the target fiber. -/
 theorem floerEnergyDensity_nonneg {J : AlmostComplexStructure (TangentSpace I (u z))}
     (hω : ω.IsNondegenerate) (hJ : (hω.symplecticFormAt (u z)).Tames J)
     (h : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
       (ω.perturbedMFDeriv Ks Kt u z).toLinearMap) :
-    0 ≤ ω.floerEnergyDensity Ks Kt u z := by
-  simpa only [floerEnergyDensity_def, IsNondegenerate.symplecticFormAt_apply,
-    ContinuousLinearMap.coe_coe] using
-      h.symplecticForm_apply_stdComplexLineReal_stdComplexLineImag_nonneg hJ
+    0 ≤ ω.floerEnergyDensity Ks Kt u z :=
+  floerEnergyDensity_nonneg_of_forall_pos (fun v hv ↦ by
+    simpa only [IsNondegenerate.symplecticFormAt_apply] using hJ v hv) h
 
 /-- For a solution of the Floer equation `∂_s u + J η = 0` with `η = ∂_t u - X_{K_t}(u)`, for a
 perturbation `K = K_t dt` without `ds` component, the energy density at `z` is `ω(η, J η)`. -/

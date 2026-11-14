@@ -15,6 +15,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
+import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 
 /-!
@@ -572,15 +573,9 @@ theorem norm_fderiv_stdComplexLineReal_sq_le (ω : SymplecticForm V)
   rw [ω.floerEnergyDensity_eq_of_isComplexLinearMap h, perturbedFDeriv_apply_stdComplexLineReal]
   set a := fderiv ℝ u z stdComplexLineReal
   set X := ω.hamiltonianVectorField (Ks z) (u z)
-  -- `‖a‖ ≤ ‖a - X‖ + ‖X‖`, and `c ‖a - X‖²` is at most the energy density `ω(a - X, J (a - X))`.
-  have htri : ‖a‖ ≤ ‖a - X‖ + ‖X‖ := norm_le_norm_sub_add a X
-  have hsq : ‖a‖ ^ 2 ≤ 2 * ‖a - X‖ ^ 2 + 2 * ‖X‖ ^ 2 := by
-    nlinarith [norm_nonneg a, norm_nonneg (a - X), norm_nonneg X, sq_nonneg (‖a - X‖ - ‖X‖)]
-  have hle : ‖a - X‖ ^ 2 ≤ 1 / c * ω (a - X) (J (a - X)) := by
-    rw [one_div_mul_eq_div, le_div_iff₀ hc, mul_comm]
-    exact hJc (a - X)
-  rw [div_eq_mul_one_div 2 c, mul_assoc]
-  linarith
+  -- `a = (a - X) + X`, and `c ‖a - X‖²` is at most the energy density `ω(a - X, J (a - X))`.
+  simpa only [sub_add_cancel] using
+    norm_add_sq_le_of_mul_norm_sq_le (b := X) hc (hJc (a - X)) le_rfl
 
 /-- **The energy density plus the curvature is exact.** For a `C²` map `u` into a symplectic
 vector space and a perturbation `K = K_s ds + K_t dt`, the Floer energy density plus the
