@@ -31,12 +31,15 @@ supplies one; `map_specialize` carries the conclusion to every `W` over every co
 
 * `WeierstrassCurve.formalAdd_assoc` : **the associativity of the addition series**, for every
   Weierstrass curve over every commutative ring.
-* `WeierstrassCurve.thetaPoint_add_of_subst_separates` : the chord addition of parametrized
+* `WeierstrassCurve.thetaPoint_add_of_ne` and
+  `WeierstrassCurve.thetaPoint_add_of_subst_separates` : the chord addition of parametrized
   points, `θ(q₁) + θ(q₂) = θ(F(q₁, q₂))` on the curve `WeierstrassCurve.fracCurve` over a fraction
-  field of the series ring, whenever a substitution separates `q₁` from `q₂`. It is exported, with
-  the parametrized point `WeierstrassCurve.thetaPoint` and its coordinates
-  (`WeierstrassCurve.thetaPoint_eq_some`), because it is also how the addition series is compared
-  with other descriptions of the group law of `W`, such as the projective addition laws.
+  field of the series ring, whenever `q₁` is neither `q₂` nor its formal inverse (for example when
+  a substitution separates `q₁` from `q₂`). Together with the parametrized point
+  `WeierstrassCurve.thetaPoint`, its coordinates (`WeierstrassCurve.thetaPoint_eq_some`), its
+  negation (`WeierstrassCurve.thetaPoint_neg`), and its injectivity
+  (`WeierstrassCurve.thetaPoint_inj`), these compare the formal group series with other
+  descriptions of the group law of `W`, such as projective addition laws and isogeny point maps.
 
 ## Provenance
 
@@ -193,7 +196,7 @@ private theorem map_subst_pair_X_formalAdd {σ' S : Type*} [CommRing S] (φ : O 
 
 /-- The addition series at a pair, read through a further substitution `g` that sends the first
 parameter to `X` and the second to `0`: the right unit law makes the result `X`. -/
-private theorem subst_subst_pair_formalAdd_eq_X {σ' : Type*}
+theorem subst_subst_pair_formalAdd_eq_X {σ' : Type*}
     {g : σ' → MvPowerSeries Unit O} (hg : HasSubst g) {a b : MvPowerSeries σ' O}
     (ha : constantCoeff a = 0) (hb : constantCoeff b = 0)
     (hga : subst g a = PowerSeries.X) (hgb : subst g b = 0) :
@@ -470,7 +473,7 @@ private theorem thetaPoint_add (hΔ : (fracCurve W σ KK).Δ ≠ 0)
 The formal inverse was built to be the parameter of the reflected point, so this identifies that
 construction with the group inverse of `fracCurve W`. Both coordinates come out of the two
 readings of the inverse, `ι(q) = -(q * u(q)⁻¹)` and `w(ι(q)) = -(w(q) * u(q)⁻¹)`. -/
-private theorem thetaPoint_neg (hΔ : (fracCurve W σ KK).Δ ≠ 0)
+theorem thetaPoint_neg (hΔ : (fracCurve W σ KK).Δ ≠ 0)
     {q : MvPowerSeries σ O} (hq : constantCoeff q = 0) (hq0 : q ≠ 0)
     (hi : constantCoeff (PowerSeries.subst q (formalInverse W)) = 0)
     (hi0 : PowerSeries.subst q (formalInverse W) ≠ 0) :
@@ -506,7 +509,7 @@ private theorem thetaPoint_neg (hΔ : (fracCurve W σ KK).Δ ≠ 0)
 
 The `y`-coordinate `-1 / w(q)` already pins down `w(q)`, and the `x`-coordinate `q / w(q)` then
 pins down `q`. -/
-private theorem thetaPoint_inj (hΔ : (fracCurve W σ KK).Δ ≠ 0)
+theorem thetaPoint_inj (hΔ : (fracCurve W σ KK).Δ ≠ 0)
     {q₁ q₂ : MvPowerSeries σ O} (h₁ : constantCoeff q₁ = 0) (h₂ : constantCoeff q₂ = 0)
     (hq₁0 : q₁ ≠ 0) (hq₂0 : q₂ ≠ 0)
     (h : W.thetaPoint hΔ h₁ hq₁0 = W.thetaPoint hΔ h₂ hq₂0) : q₁ = q₂ := by
@@ -583,7 +586,7 @@ This is the form the associativity argument uses. Both nondegeneracy hypotheses 
 `thetaPoint_add` come out of those two: the intercept is nonzero by
 `pair_intercept_ne_zero_of_ne`, and the cross combination is then nonzero too, since
 `subst_pair_formalIntercept_mul_sub` factors it as `ν(q₁, q₂) (q₁ - q₂)`. -/
-private theorem thetaPoint_add_of_ne (hΔ : (fracCurve W σ KK).Δ ≠ 0)
+theorem thetaPoint_add_of_ne (hΔ : (fracCurve W σ KK).Δ ≠ 0)
     {q₁ q₂ : MvPowerSeries σ O} (h₁ : constantCoeff q₁ = 0) (h₂ : constantCoeff q₂ = 0)
     (hq₁0 : q₁ ≠ 0) (hq₂0 : q₂ ≠ 0) (hne₁ : q₁ ≠ q₂)
     (hne₂ : q₁ ≠ PowerSeries.subst q₂ (formalInverse W))
