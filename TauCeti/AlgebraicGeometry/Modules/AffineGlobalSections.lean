@@ -10,7 +10,7 @@ public import Mathlib.AlgebraicGeometry.Group.Affine
 public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
 public import TauCeti.AlgebraicGeometry.Modules.Localization
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Colimits
-public import Mathlib.Algebra.Category.ModuleCat.EpiMono
+public import Mathlib.Algebra.Category.ModuleCat.Kernels
 public import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
 import TauCeti.AlgebraicGeometry.AffineScheme
 
@@ -20,7 +20,10 @@ import TauCeti.AlgebraicGeometry.AffineScheme
 Mathlib's `AlgebraicGeometry.tildeEquiv` identifies quasicoherent modules on `Spec R` with
 `R`-modules. Consequently an epimorphism between quasicoherent modules is surjective on global
 sections, even when the epimorphism is taken in the category of all sheaves of modules.
-The same surjectivity holds over every affine open of an arbitrary scheme.
+The same surjectivity holds over every affine open of an arbitrary scheme, and sections over an
+affine open `U` identify the ambient cokernel of a morphism `g : M ⟶ N` of quasicoherent modules
+with the module quotient `Γ(N, U) ⧸ range(g(U))`
+(`AlgebraicGeometry.Scheme.Modules.sectionsCokernelEquiv`).
 
 Consequently, global sections preserve short exact sequences whose middle and right terms are
 quasicoherent. This is the affine exactness step used in Serre's affine acyclicity theorem; see
@@ -38,7 +41,7 @@ sections by restriction to basic opens.
 
 public section
 
-open AlgebraicGeometry CategoryTheory Opposite TopologicalSpace
+open AlgebraicGeometry CategoryTheory Limits Opposite TopologicalSpace
 
 namespace TauCeti
 
@@ -232,3 +235,47 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.isIso_of_mono_of_surjective_sect
 end AlgebraicGeometry
 
 end TauCeti
+
+namespace AlgebraicGeometry.Scheme.Modules
+
+universe u
+
+noncomputable section
+
+open TauCeti.AlgebraicGeometry
+
+variable {X : Scheme.{u}}
+
+/-- Taking sections over an open subset preserves zero morphisms of sheaves of modules. -/
+instance sectionsFunctor_preservesZeroMorphisms (U : X.Opens) :
+    (sectionsFunctor U).PreservesZeroMorphisms where
+  map_zero _ _ := ModuleCat.hom_ext (LinearMap.ext fun _ ↦ rfl)
+
+/-- Over an affine open `U` of `X`, the sections of the ambient cokernel of a morphism `g : M ⟶ N`
+of quasicoherent sheaves identify `Γ(X, U)`-linearly with the quotient of `Γ(N, U)` by the image of
+`g` over `U`. -/
+def sectionsCokernelEquiv {M N : X.Modules} (g : M ⟶ N) [M.IsQuasicoherent] [N.IsQuasicoherent]
+    {U : X.Opens} (hU : IsAffineOpen U) :
+    Γ(cokernel g, U) ≃ₗ[Γ(X, U)] Γ(N, U) ⧸ LinearMap.range ((sectionsFunctor U).map g).hom :=
+  have : PreservesColimit (parallelPair g 0) (sectionsFunctor U) :=
+    ⟨fun hc ↦ ⟨isColimitMapCoconeSectionsFunctor
+      (by rintro (_ | _) <;> dsimp <;> infer_instance) hc hU⟩⟩
+  (PreservesCokernel.iso (sectionsFunctor U) g ≪≫
+    ModuleCat.cokernelIsoRangeQuotient ((sectionsFunctor U).map g)).toLinearEquiv
+
+/-- Under `sectionsCokernelEquiv`, the projection `N ⟶ cokernel g` acts on sections over `U` as the
+quotient map. -/
+theorem sectionsCokernelEquiv_π_app {M N : X.Modules} (g : M ⟶ N) [M.IsQuasicoherent]
+    [N.IsQuasicoherent] {U : X.Opens} (hU : IsAffineOpen U) (s : Γ(N, U)) :
+    sectionsCokernelEquiv g hU ((cokernel.π g).app U s) = Submodule.Quotient.mk s := by
+  have : PreservesColimit (parallelPair g 0) (sectionsFunctor U) :=
+    ⟨fun hc ↦ ⟨isColimitMapCoconeSectionsFunctor
+      (by rintro (_ | _) <;> dsimp <;> infer_instance) hc hU⟩⟩
+  exact ConcreteCategory.congr_hom
+    ((PreservesCokernel.π_iso_hom_assoc (sectionsFunctor U) g
+      (ModuleCat.cokernelIsoRangeQuotient ((sectionsFunctor U).map g)).hom).trans
+      (ModuleCat.cokernel_π_cokernelIsoRangeQuotient_hom ((sectionsFunctor U).map g))) s
+
+end
+
+end AlgebraicGeometry.Scheme.Modules
