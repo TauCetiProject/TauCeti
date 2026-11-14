@@ -11,6 +11,7 @@ public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
 public import TauCeti.GroupTheory.Perm.SwapFactors
 import Mathlib.Tactic.Abel
 import TauCeti.Data.Fin.Basic
+import TauCeti.GroupTheory.Perm.WreathProduct.Basic
 
 /-!
 # The cycles of a permutation acting separately on the two halves of a sum
@@ -35,6 +36,10 @@ one. Every cycle stays inside one of the two halves, so all the cycle data simpl
   summand share a cycle exactly when they share a cycle of the permutation of that summand.
 * `Equiv.Perm.existsUnique_sameCycle_sumCongr`: representatives of the cycles of the two summands
   together represent the cycles of the sum.
+* `Equiv.Perm.exists_sumCongr_mul_prodCongrLeft_of_commute_swap`: a permutation of `α ⊕ α`
+  commuting with `Sum.swap` factors into `Equiv.Perm.sumCongr π π` and a fibrewise permutation
+  along `Equiv.boolProdEquivSum α`.
+* `Equiv.Perm.sign_sumComm`: the sign of `Equiv.sumComm α α` is `(-1) ^ Fintype.card α`.
 * `Equiv.Perm.finSumPerm`: the same construction read on `Fin (m + n)` through
   `finSumFinEquiv`, with `Equiv.Perm.finSumPermHom` packaging it as a monoid homomorphism from
   `Equiv.Perm (Fin m) × Equiv.Perm (Fin n)`, and with the two cycle-counting results transported.
@@ -407,6 +412,47 @@ theorem finRotate_add_eq_swap_mul_finSumPerm [NeZero m] [NeZero n] :
     rw [Perm.mul_apply, finSumPerm_apply_natAdd, swap_apply_def]
     split_ifs <;> simp only [Fin.ext_iff, Fin.val_castAdd, Fin.val_natAdd, Fin.val_zero,
       Fin.coe_finRotate_eq_ite] at * <;> split_ifs at * <;> omega
+
+/-- **Centralizer of `Sum.swap` in `Equiv.Perm (α ⊕ α)`.** Every permutation of `α ⊕ α` commuting
+with `Sum.swap` permutes the `α`-fibres by some `π : Equiv.Perm α` and, within each fibre, acts on
+its two elements through `Equiv.boolProdEquivSum α`. -/
+theorem exists_sumCongr_mul_prodCongrLeft_of_commute_swap {ψ : Perm (α ⊕ α)}
+    (hψ : ∀ x, ψ x.swap = (ψ x).swap) :
+    ∃ (π : Perm α) (τ : α → Perm Bool),
+      ψ = Perm.sumCongr π π *
+        (Equiv.boolProdEquivSum α).permCongr (Equiv.prodCongrLeft τ) := by
+  let f : α × Bool ≃ α ⊕ α := (Equiv.prodComm α Bool).trans (Equiv.boolProdEquivSum α)
+  have hf_swap (x : α × Bool) : f (x.1, !x.2) = (f x).swap := by
+    rcases x with ⟨i, _ | _⟩ <;> rfl
+  have hf_symm_swap (z : α ⊕ α) : f.symm z.swap = ((f.symm z).1, !(f.symm z).2) := by
+    rcases z with i | i <;> rfl
+  obtain ⟨w, hw⟩ :=
+    (TauCeti.WreathProduct.mem_range_imprimitiveToPerm_bool_iff (σ := f.symm.permCongr ψ)).mpr
+      fun x => by simp only [Equiv.permCongr_apply, Equiv.symm_symm, hf_swap, hψ, hf_symm_swap]
+  have hmap (c : Bool) (j : α) :
+      Perm.sumCongr w.right w.right (Equiv.boolProdEquivSum α (c, j)) =
+        Equiv.boolProdEquivSum α (c, w.right j) := by
+    cases c <;> rfl
+  refine ⟨w.right, fun i => w.left (w.right i), Equiv.ext fun z => ?_⟩
+  obtain ⟨⟨i, b⟩, rfl⟩ := f.surjective z
+  have hw' := congrArg f (DFunLike.congr_fun hw (i, b))
+  rw [TauCeti.WreathProduct.imprimitiveToPerm_apply, Equiv.permCongr_apply, Equiv.symm_symm,
+    f.apply_symm_apply] at hw'
+  rw [← hw']
+  simp only [f, Equiv.trans_apply, Equiv.prodComm_apply, Prod.swap_prod_mk, Perm.mul_apply,
+    Equiv.permCongr_apply, Equiv.symm_apply_apply, Equiv.prodCongrLeft_apply, hmap,
+    Perm.smul_def]
+
+/-- **The sign of `Equiv.sumComm α α`** is `(-1) ^ Fintype.card α`, since it is the product of the
+`|α|` disjoint transpositions exchanging `Sum.inl i` with `Sum.inr i`. -/
+theorem sign_sumComm (α : Type*) [Fintype α] [DecidableEq α] :
+    sign (Equiv.sumComm α α) = (-1 : ℤˣ) ^ Fintype.card α := by
+  have heq : Equiv.sumComm α α =
+      (Equiv.boolProdEquivSum α).permCongr
+        (Equiv.prodCongrLeft fun _ : α => swap false true) := by
+    ext (i | i) <;> rfl
+  rw [heq, sign_permCongr, sign_prodCongrLeft]
+  simp [sign_swap (by decide : false ≠ true)]
 
 end Equiv.Perm
 
