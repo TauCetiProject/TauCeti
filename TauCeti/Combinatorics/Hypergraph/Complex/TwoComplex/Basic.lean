@@ -23,10 +23,10 @@ when the graded complex contains all vertices. Thus an isolated vertex is retain
 ambient vertex type rather than by extra data in the carrier.
 
 The complete complex contains every pair and triple. Its face counts and edge-to-triangle ratio are
-provided both as binomial coefficients and as formulas in characteristic-zero division rings and
-fields, for use in normalizing sums over edges and triangles. `TwoComplex.Adj` expresses edge
-adjacency of two vertices without requiring decidable equality on the vertex type, alongside
-distinct-vertex and increasing-vertex decompositions for edges and triangles.
+provided both as binomial coefficients and as formulas in characteristic-zero division rings, for
+use in normalizing sums over edges and triangles. `TwoComplex.Adj` expresses edge adjacency of two
+vertices without requiring decidable equality on the vertex type, alongside distinct-vertex and
+increasing-vertex decompositions for edges and triangles.
 -/
 
 public section
@@ -208,18 +208,18 @@ theorem natCast_card_triangles_complete {K : Type*} [DivisionRing K] [CharZero K
   norm_num [descPochhammer_succ_eval, Nat.factorial_succ]
 
 /-- On `complete V` with `3 ≤ Fintype.card V`, the edge-to-triangle ratio `#edges / #triangles` in a
-characteristic-zero field equals `3 / (Fintype.card V - 2)`. -/
-theorem card_edges_div_card_triangles_complete {K : Type*} [Field K] [CharZero K]
+characteristic-zero division ring equals `3 / (Fintype.card V - 2)`. -/
+theorem card_edges_div_card_triangles_complete {K : Type*} [DivisionRing K] [CharZero K]
     (hV : 3 ≤ Fintype.card V) :
     ((complete V).edges.card : K) / (complete V).triangles.card = 3 / (Fintype.card V - 2) := by
-  rw [natCast_card_edges_complete, natCast_card_triangles_complete]
-  have hn0 : (Fintype.card V : K) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
-  have hn1 : (Fintype.card V : K) - 1 ≠ 0 := by
-    rw [← Nat.cast_one, ← Nat.cast_sub (by omega)]; exact Nat.cast_ne_zero.mpr (by omega)
-  have hn2 : (Fintype.card V : K) - 2 ≠ 0 := by
-    rw [← Nat.cast_ofNat, ← Nat.cast_sub (by omega)]; exact Nat.cast_ne_zero.mpr (by omega)
-  rw [div_eq_div_iff (div_ne_zero (mul_ne_zero (mul_ne_zero hn0 hn1) hn2) (by norm_num)) hn2]
-  ring
+  have hsub : (Fintype.card V : K) - 2 = ((Fintype.card V - 2 : ℕ) : K) := by
+    rw [Nat.cast_sub (by omega), Nat.cast_ofNat]
+  have h3 : (3 : K) = ((3 : ℕ) : K) := (Nat.cast_ofNat (n := 3)).symm
+  rw [card_edges_complete, card_triangles_complete, hsub, h3,
+    (Nat.commute_cast _ (Fintype.card V - 2)).div_eq_div_iff
+      (Nat.cast_ne_zero.mpr (Nat.choose_pos hV).ne') (Nat.cast_ne_zero.mpr (by omega)),
+    ← Nat.cast_mul, ← Nat.cast_mul, Nat.mul_comm 3]
+  exact congrArg Nat.cast (Nat.choose_succ_right_eq (Fintype.card V) 2).symm
 
 end FiniteVertices
 
@@ -284,11 +284,10 @@ theorem adj_iff_pair_mem_edges [DecidableEq V] (X : TwoComplex V) (u v : V) :
     have hsub : ({u, v} : Finset V) ⊆ e := insert_subset_iff.mpr ⟨hu, singleton_subset_iff.mpr hv⟩
     rwa [eq_of_subset_of_card_le hsub (by rw [X.edge_card e he, card_pair huv])]
   · intro he
-    have huv : u ≠ v := fun h => by have hc := X.edge_card _ he; subst h; simp at hc
-    exact ⟨huv, {u, v}, he, by simp, by simp⟩
+    exact ⟨card_pair_eq_two_iff.mp (X.edge_card _ he), {u, v}, he, by simp, by simp⟩
 
 /-- Any two distinct vertices of a filled triangle are adjacent. -/
-theorem adj_of_mem_triangle (X : TwoComplex V) {t : Finset V} (ht : t ∈ X.triangles)
+theorem adj_of_mem_triangles (X : TwoComplex V) {t : Finset V} (ht : t ∈ X.triangles)
     {u v : V} (hu : u ∈ t) (hv : v ∈ t) (huv : u ≠ v) : X.Adj u v := by
   classical
   rw [adj_iff_pair_mem_edges]

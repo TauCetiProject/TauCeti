@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.CoboundaryExpansion.CheegerConstant
-public import TauCeti.Combinatorics.Hypergraph.Complex.TwoComplex.Link
+import TauCeti.Combinatorics.Hypergraph.Complex.TwoComplex.Link
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
 
@@ -73,24 +73,33 @@ theorem starGauge_apply (α : Cochain X G) (x u : V) : α.starGauge x u = α u x
 
 theorem starGauge_self (α : Cochain X G) (x : V) : α.starGauge x x = 1 := α.apply_self x
 
-/-- On `complete V` under a conjugation-invariant norm, the edge cost of `α.starGauge x` on an edge
-`e` vanishes when `x ∈ e` and equals `α.triangleDefect ℓ (insert x e)` when `x ∉ e`. -/
+/-- On `complete V` under a conjugation-invariant norm, the edge cost of `α.starGauge x` on any
+finset `e` vanishes when `x ∈ e` and equals `α.triangleDefect ℓ (insert x e)` when `x ∉ e`. -/
 theorem edgeCost_starGauge_complete [Fintype V] [DecidableEq V] {ℓ : GroupNorm G}
-    (hℓ : ℓ.toGroupSeminorm.IsConjInvariant) (α : Cochain (complete V) G) (x : V) {e : Finset V}
-    (he : e ∈ (complete V).edges) :
+    (hℓ : ℓ.toGroupSeminorm.IsConjInvariant) (α : Cochain (complete V) G) (x : V)
+    (e : Finset V) :
     α.edgeCost ℓ (α.starGauge x) e = if x ∈ e then 0 else α.triangleDefect ℓ (insert x e) := by
-  obtain ⟨u, v, huv, rfl⟩ := card_eq_two.mp ((mem_edges_complete e).mp he)
-  rw [α.edgeCost_of_mem_edges ℓ (α.starGauge x) he huv (by simp) (by simp)]
-  by_cases hx : x ∈ ({u, v} : Finset V)
-  · simp only [hx, ↓reduceIte]
-    rcases mem_insert.mp hx with rfl | hx'
-    · simp [α.apply_swap x v]
-    · rw [mem_singleton.mp hx']; simp
-  · simp only [hx, ↓reduceIte]
-    have ht : insert x ({u, v} : Finset V) ∈ (complete V).triangles := by
-      rw [mem_triangles_complete, card_insert_of_notMem hx, card_pair huv]
-    rw [α.triangleDefect_triple hℓ ht]
-    simp [starGauge_apply, holonomy_def, (α.apply_swap u x).symm]
+  by_cases he : e ∈ (complete V).edges
+  · obtain ⟨u, v, huv, rfl⟩ := card_eq_two.mp ((mem_edges_complete e).mp he)
+    rw [α.edgeCost_of_mem_edges ℓ (α.starGauge x) he huv (by simp) (by simp)]
+    by_cases hx : x ∈ ({u, v} : Finset V)
+    · simp only [hx, ↓reduceIte]
+      rcases mem_insert.mp hx with rfl | hx'
+      · simp [α.apply_swap x v]
+      · rw [mem_singleton.mp hx']; simp
+    · simp only [hx, ↓reduceIte]
+      have ht : insert x ({u, v} : Finset V) ∈ (complete V).triangles := by
+        rw [mem_triangles_complete, card_insert_of_notMem hx, card_pair huv]
+      rw [α.triangleDefect_triple hℓ ht]
+      simp [starGauge_apply, holonomy_def, (α.apply_swap u x).symm]
+  · rw [α.edgeCost_of_notMem_edges ℓ (α.starGauge x) he]
+    by_cases hx : x ∈ e
+    · simp [hx]
+    · have ht : insert x e ∉ (complete V).triangles := by
+        rw [mem_triangles_complete, card_insert_of_notMem hx]
+        have hc : e.card ≠ 2 := mt (mem_edges_complete e).mpr he
+        omega
+      simp [hx, ht]
 
 /-- The star identity on the complete two-complex (Beasley, Proposition 1; Chapman–Lubotzky II,
 Proposition 3.2): under a conjugation-invariant group norm, summing the costs of all star gauges
@@ -102,7 +111,7 @@ theorem sum_cost_starGauge [Fintype V] [LinearOrder V] {ℓ : GroupNorm G}
   have h := sum_vertex_edges_complete (V := V) (α.triangleDefect ℓ)
   rw [nsmul_eq_mul, Nat.cast_ofNat, ← α.defect_eq_sum_triangles hℓ] at h
   rw [← h]
-  exact sum_congr rfl fun x _ => sum_congr rfl fun e he => α.edgeCost_starGauge_complete hℓ x he
+  exact sum_congr rfl fun x _ => sum_congr rfl fun e _ => α.edgeCost_starGauge_complete hℓ x e
 
 end StarGauge
 

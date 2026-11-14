@@ -29,13 +29,11 @@ With respect to a `LinearOrder` on a finite vertex type `V` and a `GroupNorm` `�
   (`α u v = β u * (β v)⁻¹`).
 
 Gauge transformations leave `gaugeDist` unchanged for every group norm, and leave `defect`
-unchanged when `ℓ` is conjugation invariant; under conjugation invariance, every filled-triangle
-holonomy norm bounds `gaugeDist` from below (`Cochain.norm_holonomy_le_gaugeDist`). For finite
-coefficient groups `G`, the gauge-distance infimum is attained, vanishes precisely on coboundaries,
-and under a conjugation-invariant norm can be computed over gauges pinned to `1` at any chosen
-vertex. Whenever `X` has at least one filled triangle and `G` is nontrivial, a single-edge cochain
-witnesses a non-coboundary and (for finite `G` or conjugation-invariant `ℓ`) strictly positive
-gauge distance.
+unchanged when `ℓ` is conjugation invariant. For finite coefficient groups `G`, the gauge-distance
+infimum is attained, vanishes precisely on coboundaries, and under a conjugation-invariant norm can
+be computed over gauges pinned to `1` at any chosen vertex. Whenever `X` has at least one filled
+triangle and `G` is nontrivial, a single-edge cochain witnesses non-identity holonomy, a
+non-coboundary, and (for finite `G`) strictly positive gauge distance.
 
 ## References
 
@@ -256,6 +254,23 @@ theorem holonomy_def (α : Cochain X G) (u v w : V) :
 @[simp]
 theorem holonomy_one (u v w : V) : (1 : Cochain X G).holonomy u v w = 1 := by simp [holonomy_def]
 
+@[simp, grind =]
+theorem holonomy_self_left (α : Cochain X G) (u w : V) : α.holonomy u u w = 1 := by
+  simp [holonomy_def, α.apply_swap w u]
+
+@[simp, grind =]
+theorem holonomy_self_right (α : Cochain X G) (u v : V) : α.holonomy u v v = 1 := by
+  simp [holonomy_def, α.apply_swap v u]
+
+@[simp, grind =]
+theorem holonomy_self_left_right (α : Cochain X G) (u v : V) : α.holonomy u v u = 1 := by
+  simp [holonomy_def, α.apply_swap v u]
+
+/-- Exchanging the second and third vertices of a triple inverts the holonomy. -/
+theorem inv_holonomy (α : Cochain X G) (u v w : V) :
+    (α.holonomy u v w)⁻¹ = α.holonomy u w v := by
+  rw [holonomy_def, holonomy_def, α.apply_swap w u, α.apply_swap v w, α.apply_swap u v]; group
+
 /-- Under a gauge `β`, the holonomy around three mutually adjacent vertices is conjugated by
 `β u`. -/
 theorem holonomy_smul (β : V → G) (α : Cochain X G) {u v w : V}
@@ -401,9 +416,9 @@ theorem IsCoboundary.defect_eq_zero {α : Cochain X G} (hα : α.IsCoboundary) (
   rw [defect_def]
   refine sum_eq_zero fun p hp => ?_
   obtain ⟨hlt₁, hlt₂, ht⟩ := (mem_filter.mp hp).2
-  rw [hα.holonomy_eq_one (X.adj_of_mem_triangle ht (by simp) (by simp) hlt₁.ne)
-    (X.adj_of_mem_triangle ht (by simp) (by simp) hlt₂.ne)
-    (X.adj_of_mem_triangle ht (by simp) (by simp) (hlt₁.trans hlt₂).ne'), map_one_eq_zero]
+  rw [hα.holonomy_eq_one (X.adj_of_mem_triangles ht (by simp) (by simp) hlt₁.ne)
+    (X.adj_of_mem_triangles ht (by simp) (by simp) hlt₂.ne)
+    (X.adj_of_mem_triangles ht (by simp) (by simp) (hlt₁.trans hlt₂).ne'), map_one_eq_zero]
 
 /-- Every coboundary has gauge distance zero. -/
 theorem IsCoboundary.gaugeDist_eq_zero {α : Cochain X G} (hα : α.IsCoboundary) (ℓ : GroupNorm G) :
@@ -413,6 +428,7 @@ theorem IsCoboundary.gaugeDist_eq_zero {α : Cochain X G} (hα : α.IsCoboundary
     (α.gaugeDist_nonneg ℓ)
 
 /-- Gauge equivariance of cost: `cost (β • α) γ = cost α (β * γ)`, for every group norm `ℓ`. -/
+@[simp]
 theorem cost_smul (ℓ : GroupNorm G) (α : Cochain X G) (β γ : V → G) :
     (β • α).cost ℓ γ = α.cost ℓ (β * γ) := by
   rw [cost_def, cost_def]
@@ -433,9 +449,9 @@ theorem defect_smul {ℓ : GroupNorm G} (hℓ : ℓ.toGroupSeminorm.IsConjInvari
   rw [defect_def, defect_def]
   refine sum_congr rfl fun p hp => ?_
   obtain ⟨hlt₁, hlt₂, ht⟩ := (mem_filter.mp hp).2
-  rw [holonomy_smul β α (X.adj_of_mem_triangle ht (by simp) (by simp) hlt₁.ne)
-    (X.adj_of_mem_triangle ht (by simp) (by simp) hlt₂.ne)
-    (X.adj_of_mem_triangle ht (by simp) (by simp) (hlt₁.trans hlt₂).ne')]
+  rw [holonomy_smul β α (X.adj_of_mem_triangles ht (by simp) (by simp) hlt₁.ne)
+    (X.adj_of_mem_triangles ht (by simp) (by simp) hlt₂.ne)
+    (X.adj_of_mem_triangles ht (by simp) (by simp) (hlt₁.trans hlt₂).ne')]
   exact hℓ.map_inv_mul_mul (α.holonomy p.1 p.2.1 p.2.2) (β p.1)
 
 /-- Multiplying a gauge on the right by a constant group element conjugates every edge term, so it
@@ -449,69 +465,6 @@ theorem cost_mul_const {ℓ : GroupNorm G} (hℓ : ℓ.toGroupSeminorm.IsConjInv
       g⁻¹ * ((β p.1)⁻¹ * α p.1 p.2 * β p.2) * g := by group
   rw [h]; exact hℓ.map_inv_mul_mul _ g
 
-private def orientEdge (a b : V) : V × V := if a < b then (a, b) else (b, a)
-
-/-- Under a conjugation-invariant norm, the holonomy norm around three mutually adjacent vertices
-is bounded above by the cost of any gauge `β`. -/
-theorem norm_holonomy_le_cost {ℓ : GroupNorm G} (hℓ : ℓ.toGroupSeminorm.IsConjInvariant)
-    (α : Cochain X G) (β : V → G) {u v w : V}
-    (huv : X.Adj u v) (hvw : X.Adj v w) (hwu : X.Adj w u) :
-    ℓ (α.holonomy u v w) ≤ α.cost ℓ β := by
-  let f : V × V → ℝ := fun p => ℓ ((β p.1)⁻¹ * α p.1 p.2 * β p.2)
-  let E := univ.filter (fun p : V × V => p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges)
-  have hmem {a b : V} (hab : X.Adj a b) : orientEdge a b ∈ E := by
-    rcases lt_or_gt_of_ne hab.ne with hlt | hgt
-    · simp [E, orientEdge, hlt, (X.adj_iff_pair_mem_edges a b).mp hab]
-    · simp [E, orientEdge, asymm hgt, hgt, (X.adj_iff_pair_mem_edges b a).mp hab.symm]
-  have hpair (a b : V) : ({(orientEdge a b).1, (orientEdge a b).2} : Finset V) = {a, b} := by
-    by_cases hlt : a < b <;> simp [orientEdge, hlt, pair_comm]
-  have heval (a b : V) : f (orientEdge a b) = ℓ ((β a)⁻¹ * α a b * β b) := by
-    by_cases hlt : a < b
-    · simp [f, orientEdge, hlt]
-    · simp only [f, orientEdge, hlt, ↓reduceIte]
-      have hinv : ((β a)⁻¹ * α a b * β b)⁻¹ = (β b)⁻¹ * α b a * β a := by
-        rw [α.apply_swap a b]; group
-      rw [← hinv, map_inv_eq_map]
-  have hne_adj {a b c : V} (hab : a ≠ b) (hac : a ≠ c) :
-      orientEdge a b ≠ orientEdge b c := fun h => by
-    have hp : ({a, b} : Finset V) = {b, c} := (hpair a b).symm.trans
-      ((congrArg (fun p : V × V => ({p.1, p.2} : Finset V)) h).trans (hpair b c))
-    have ha : a ∈ ({b, c} : Finset V) := hp ▸ mem_insert_self a {b}
-    simp [hab, hac] at ha
-  have hne₁₂ := hne_adj huv.ne hwu.ne.symm
-  have hne₂₃ := hne_adj hvw.ne huv.ne.symm
-  have hne₁₃ := (hne_adj hwu.ne hvw.ne.symm).symm
-  have hsub : ({orientEdge u v, orientEdge v w, orientEdge w u} : Finset (V × V)) ⊆ E := by
-    simp [insert_subset_iff, hmem huv, hmem hvw, hmem hwu]
-  have hsum : f (orientEdge u v) + f (orientEdge v w) + f (orientEdge w u) ≤ α.cost ℓ β := by
-    rw [add_assoc, ← sum_pair hne₂₃, ← sum_insert (by simp [hne₁₂, hne₁₃])]
-    exact sum_le_sum_of_subset_of_nonneg hsub fun _ _ _ => apply_nonneg ℓ _
-  rw [heval u v, heval v w, heval w u] at hsum
-  have hhol : (β u)⁻¹ * α.holonomy u v w * β u =
-      ((β u)⁻¹ * α u v * β v) * ((β v)⁻¹ * α v w * β w) * ((β w)⁻¹ * α w u * β u) := by
-    simp only [holonomy_def]; group
-  refine ((hℓ.map_inv_mul_mul (α.holonomy u v w) (β u)).symm.le.trans ?_).trans hsum
-  rw [hhol]
-  exact (map_mul_le_add ℓ _ _).trans (add_le_add (map_mul_le_add ℓ _ _) le_rfl)
-
-/-- Under a conjugation-invariant norm, the holonomy norm around three mutually adjacent vertices
-bounds `gaugeDist` from below. -/
-theorem norm_holonomy_le_gaugeDist {ℓ : GroupNorm G} (hℓ : ℓ.toGroupSeminorm.IsConjInvariant)
-    (α : Cochain X G) {u v w : V}
-    (huv : X.Adj u v) (hvw : X.Adj v w) (hwu : X.Adj w u) :
-    ℓ (α.holonomy u v w) ≤ α.gaugeDist ℓ :=
-  (α.le_gaugeDist_iff ℓ).mpr fun β => α.norm_holonomy_le_cost hℓ β huv hvw hwu
-
-/-- Under a conjugation-invariant norm, any cochain with a non-identity holonomy around three
-mutually adjacent vertices has strictly positive gauge distance, without requiring `G` to be
-finite. -/
-theorem gaugeDist_pos_of_holonomy_ne_one_of_isConjInvariant {ℓ : GroupNorm G}
-    (hℓ : ℓ.toGroupSeminorm.IsConjInvariant) {α : Cochain X G} {u v w : V}
-    (huv : X.Adj u v) (hvw : X.Adj v w) (hwu : X.Adj w u)
-    (h : α.holonomy u v w ≠ 1) : 0 < α.gaugeDist ℓ :=
-  lt_of_lt_of_le ((apply_nonneg ℓ _).lt_of_ne' (mt (map_eq_zero_iff_eq_one ℓ).mp h))
-    (α.norm_holonomy_le_gaugeDist hℓ huv hvw hwu)
-
 /-! ### Pinned gauges and finite coefficient groups -/
 
 /-- Under a conjugation-invariant norm, restricting gauges to take value `1` at a chosen vertex
@@ -523,19 +476,18 @@ theorem iInf_cost_apply_eq_one {ℓ : GroupNorm G} (hℓ : ℓ.toGroupSeminorm.I
   refine le_antisymm ?_ (le_ciInf fun β => α.gaugeDist_le_cost ℓ β.1)
   refine le_ciInf fun β => ?_
   let β' : {γ : V → G // γ v₀ = 1} := ⟨fun u => β u * (β v₀)⁻¹, mul_inv_cancel (β v₀)⟩
-  have hbdd : BddBelow (Set.range fun γ : {γ : V → G // γ v₀ = 1} => α.cost ℓ γ.1) :=
-    ⟨0, by rintro _ ⟨γ, rfl⟩; exact α.cost_nonneg ℓ γ.1⟩
-  exact (ciInf_le hbdd β').trans_eq (α.cost_mul_const hℓ β (β v₀)⁻¹)
+  exact (ciInf_le ((α.bddBelow_range_cost ℓ).range_comp_right Subtype.val) β').trans_eq
+    (α.cost_mul_const hℓ β (β v₀)⁻¹)
 
 /-- Under a conjugation-invariant norm, `c ≤ α.gaugeDist ℓ` holds if and only if `c ≤ α.cost ℓ β`
 for every gauge `β` pinned to `1` at `v₀`. -/
 theorem le_gaugeDist_iff_apply_eq_one {ℓ : GroupNorm G} (hℓ : ℓ.toGroupSeminorm.IsConjInvariant)
     (α : Cochain X G) (v₀ : V) {c : ℝ} :
     c ≤ α.gaugeDist ℓ ↔ ∀ β : V → G, β v₀ = 1 → c ≤ α.cost ℓ β := by
-  have : Nonempty {β : V → G // β v₀ = 1} := ⟨⟨1, rfl⟩⟩
-  have hbdd : BddBelow (Set.range fun γ : {γ : V → G // γ v₀ = 1} => α.cost ℓ γ.1) :=
-    ⟨0, by rintro _ ⟨γ, rfl⟩; exact α.cost_nonneg ℓ γ.1⟩
-  rw [← α.iInf_cost_apply_eq_one hℓ v₀, le_ciInf_iff hbdd, Subtype.forall]
+  rw [α.le_gaugeDist_iff ℓ]
+  exact ⟨fun h β _ => h β, fun h β =>
+    (h (fun u => β u * (β v₀)⁻¹) (mul_inv_cancel (β v₀))).trans_eq
+      (α.cost_mul_const hℓ β (β v₀)⁻¹)⟩
 
 /-- When `G` is finite, the infimum defining `gaugeDist` is attained by some gauge. -/
 theorem exists_cost_eq_gaugeDist [Finite G] (ℓ : GroupNorm G) (α : Cochain X G) :
@@ -578,16 +530,19 @@ end Cochain
 
 section Existence
 
-private theorem exists_holonomy_ne_one_of_triangles_nonempty {V G : Type*} [Group G]
+/-- Whenever `X` has at least one filled triangle and `G` is nontrivial, supporting a non-identity
+element on one edge of that triangle produces a cochain with non-identity holonomy around three
+mutually adjacent vertices. -/
+theorem exists_holonomy_ne_one_of_triangles_nonempty {V G : Type*} [Group G]
     [Nontrivial G] {X : TwoComplex V} (htri : X.triangles.Nonempty) :
     ∃ (α : Cochain X G) (u v w : V),
       X.Adj u v ∧ X.Adj v w ∧ X.Adj w u ∧ α.holonomy u v w ≠ 1 := by
   obtain ⟨t, ht⟩ := htri
   obtain ⟨u, v, w, huv, huw, hvw, hu, hv, hw⟩ := X.exists_vertices_of_mem_triangles ht
   obtain ⟨g, hg⟩ := exists_ne (1 : G)
-  have hadj_uv : X.Adj u v := X.adj_of_mem_triangle ht hu hv huv
+  have hadj_uv : X.Adj u v := X.adj_of_mem_triangles ht hu hv huv
   refine ⟨Cochain.singleEdge X u v g, u, v, w, hadj_uv,
-    X.adj_of_mem_triangle ht hv hw hvw, X.adj_of_mem_triangle ht hw hu huw.symm, ?_⟩
+    X.adj_of_mem_triangles ht hv hw hvw, X.adj_of_mem_triangles ht hw hu huw.symm, ?_⟩
   rwa [Cochain.holonomy_singleEdge hadj_uv huw.symm hvw.symm g]
 
 /-- Whenever `X` has at least one filled triangle and `G` is nontrivial, `X` admits a 1-cochain
@@ -608,17 +563,6 @@ theorem exists_gaugeDist_pos_of_triangles_nonempty {V G : Type*} [Fintype V] [Li
   obtain ⟨α, hα⟩ := exists_not_isCoboundary_of_triangles_nonempty (G := G) htri
   exact ⟨α, (α.gaugeDist_pos_iff_not_isCoboundary ℓ).mpr hα⟩
 
-/-- Whenever `X` has at least one filled triangle, `G` is nontrivial, and `ℓ` is conjugation
-invariant, some 1-cochain on `X` has strictly positive gauge distance (without requiring `G` to be
-finite). -/
-theorem exists_gaugeDist_pos_of_triangles_nonempty_of_isConjInvariant {V G : Type*}
-    [Fintype V] [LinearOrder V] [Group G] [Nontrivial G] {X : TwoComplex V}
-    (htri : X.triangles.Nonempty) {ℓ : GroupNorm G} (hℓ : ℓ.toGroupSeminorm.IsConjInvariant) :
-    ∃ α : Cochain X G, 0 < α.gaugeDist ℓ := by
-  obtain ⟨α, u, v, w, huv, hvw, hwu, hhol⟩ :=
-    exists_holonomy_ne_one_of_triangles_nonempty (G := G) htri
-  exact ⟨α, Cochain.gaugeDist_pos_of_holonomy_ne_one_of_isConjInvariant hℓ huv hvw hwu hhol⟩
-
 /-- On `complete V` with `3 ≤ Fintype.card V` and nontrivial `G`, there exists a cochain that is
 not a coboundary. -/
 theorem exists_not_isCoboundary_complete {V G : Type*} [Fintype V] [Group G] [Nontrivial G]
@@ -633,15 +577,6 @@ theorem exists_gaugeDist_pos_complete {V G : Type*} [Fintype V] [LinearOrder V]
     ∃ α : Cochain (complete V) G, 0 < α.gaugeDist ℓ :=
   exists_gaugeDist_pos_of_triangles_nonempty
     (card_pos.mp (card_triangles_complete (V := V) ▸ Nat.choose_pos hV)) ℓ
-
-/-- On `complete V` with `3 ≤ Fintype.card V`, nontrivial `G`, and conjugation-invariant `ℓ`,
-there exists a cochain at strictly positive gauge distance (without requiring `G` to be finite). -/
-theorem exists_gaugeDist_pos_complete_of_isConjInvariant {V G : Type*} [Fintype V] [LinearOrder V]
-    [Group G] [Nontrivial G] (hV : 3 ≤ Fintype.card V) {ℓ : GroupNorm G}
-    (hℓ : ℓ.toGroupSeminorm.IsConjInvariant) :
-    ∃ α : Cochain (complete V) G, 0 < α.gaugeDist ℓ :=
-  exists_gaugeDist_pos_of_triangles_nonempty_of_isConjInvariant
-    (card_pos.mp (card_triangles_complete (V := V) ▸ Nat.choose_pos hV)) hℓ
 
 end Existence
 
