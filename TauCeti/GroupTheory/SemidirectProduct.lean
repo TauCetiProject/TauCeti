@@ -111,9 +111,10 @@ subgroups are disjoint. -/
 @[simp]
 theorem ker_monoidHomSubgroup_eq_bot_iff :
     (monoidHomSubgroup hLE).ker = ⊥ ↔ Disjoint H K := by
-  rw [Subgroup.eq_bot_iff_forall, disjoint_iff_inf_le]
+  rw [Subgroup.eq_bot_iff_forall]
   constructor
-  · intro hker g hg
+  · rw [disjoint_iff_inf_le]
+    intro hker g hg
     have hx : (⟨⟨g, hg.1⟩, ⟨g⁻¹, K.inv_mem hg.2⟩⟩ :
         H ⋊[(H.normalizerMonoidHom).comp (Subgroup.inclusion hLE)] K) ∈
           (monoidHomSubgroup hLE).ker := by
@@ -121,12 +122,10 @@ theorem ker_monoidHomSubgroup_eq_bot_iff :
       exact (inv_inv g).symm
     exact congrArg (fun y : H => (y : G)) (congrArg SemidirectProduct.left (hker _ hx))
   · intro hdisj x hx
-    have hpair := (mem_ker_monoidHomSubgroup_iff hLE x).mp hx
-    have hrightH : (x.right : G) ∈ H := by
-      rw [← inv_inv (x.right : G), ← hpair]
-      exact H.inv_mem x.left.property
-    have hright1 : (x.right : G) = 1 := hdisj ⟨hrightH, x.right.property⟩
-    ext <;> simp [hpair, hright1]
+    rw [MonoidHom.mem_ker, monoidHomSubgroup_apply] at hx
+    obtain ⟨hl, hr⟩ :=
+      Subgroup.disjoint_iff_mul_eq_one.mp hdisj x.left.property x.right.property hx
+    ext <;> simp [hl, hr]
 
 /-- Multiplication from the semidirect product is injective if and only if the two subgroups are
 disjoint. -/
@@ -222,14 +221,6 @@ theorem mulEquivSubgroup_comp_inl :
 theorem mulEquivSubgroup_comp_inr :
     (MonoidHom.ofClass (mulEquivSubgroup h)).comp inr = K.subtype := by
   ext b
-  simp
-
-/-- Decomposing an explicit product along `(mulEquivSubgroup h).symm` returns `inl a * inr b`.
-This is not `@[simp]` because `map_mul` and `mulEquivSubgroup_symm_apply` already rewrite the
-left-hand side. -/
-theorem mulEquivSubgroup_symm_mul (a : H) (b : K) :
-    (mulEquivSubgroup h).symm ((a : G) * b) = inl a * inr b := by
-  rw [MulEquiv.symm_apply_eq]
   simp
 
 /-- The inverse of `mulEquivSubgroup` sends an element of the normal subgroup to the left

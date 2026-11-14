@@ -130,11 +130,13 @@ theorem toEquiv_semidirectProductMulEquiv_symm :
   ext y <;> rfl
 
 /-- The left component of `semidirectProductMulEquiv.symm` is `leftProjection`. -/
+@[simp]
 theorem left_semidirectProductMulEquiv_symm (x : H) :
     (h.semidirectProductMulEquiv.symm x).left = h.leftProjection x :=
   (h.leftProjection_apply x).symm
 
 /-- The right component of `semidirectProductMulEquiv.symm` is `rightProjection`. -/
+@[simp]
 theorem right_semidirectProductMulEquiv_symm (x : H) :
     (h.semidirectProductMulEquiv.symm x).right = h.rightProjection x :=
   (h.rightProjection_apply x).symm
@@ -147,16 +149,6 @@ theorem semidirectProductMulEquiv_symm_apply (x : H) :
         SemidirectProduct.inr (h.rightProjection x) := by
   rw [← h.left_semidirectProductMulEquiv_symm, ← h.right_semidirectProductMulEquiv_symm,
     SemidirectProduct.inl_left_mul_inr_right]
-
-/-- Decomposing an explicit product in `H` into the semidirect product returns the two factors. -/
-@[simp]
-theorem semidirectProductMulEquiv_symm_mul (n : N) (k : K) :
-    h.semidirectProductMulEquiv.symm
-      ⟨(n : G) * k, H.mul_mem (h.left_le n.property) (h.right_le k.property)⟩ =
-      SemidirectProduct.inl n * SemidirectProduct.inr k := by
-  rw [MulEquiv.symm_apply_eq]
-  apply Subtype.ext
-  simp
 
 /-- The inverse of `semidirectProductMulEquiv` sends an included element of `N` to `inl`. -/
 @[simp]
