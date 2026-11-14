@@ -301,9 +301,9 @@ theorem legendreF_add_pi {k : ℝ} (hk : k ^ 2 < 1) (φ : ℝ) :
     legendreF (φ + π) k = legendreF φ k + 2 * legendreK k := by
   simpa using legendreF_add_int_mul_pi hk φ 1
 
-theorem legendreF_int_mul_pi {k : ℝ} (hk : k ^ 2 < 1) (n : ℤ) :
-    legendreF (n * π) k = 2 * n * legendreK k := by
-  simpa using legendreF_add_int_mul_pi hk 0 n
+theorem legendreF_int_mul_pi (k : ℝ) (n : ℤ) :
+    legendreF (n * π) k = 2 * n * legendreK k :=
+  integral_comp_sin_sq_int_mul_pi (fun s ↦ (1 - k ^ 2 * s) ^ (-1 / 2 : ℝ)) n
 
 /-- For `k ^ 2 < 1`, the Lebesgue integral of the integrand of the first kind over `(0, π)` is
 `F(π, k) = 2 K(k)`, as an identity in `ℝ≥0∞`. -/
@@ -311,7 +311,7 @@ theorem lintegral_Ioo_zero_pi_legendreF_integrand {k : ℝ} (hk : k ^ 2 < 1) :
     ∫⁻ θ in Ioo 0 π, ENNReal.ofReal ((1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ)) =
       ENNReal.ofReal (2 * legendreK k) := by
   have h2 : 2 * legendreK k = legendreF π k := by
-    simpa using (legendreF_int_mul_pi hk 1).symm
+    simpa using (legendreF_int_mul_pi k 1).symm
   rw [h2, legendreF_def, intervalIntegral.integral_of_le pi_pos.le, integral_Ioc_eq_integral_Ioo,
     ofReal_integral_eq_lintegral_ofReal
       ((continuous_legendreF_integrand hk).integrableOn_Icc.mono_set Ioo_subset_Icc_self)
@@ -531,7 +531,7 @@ theorem legendrePi_add_pi {k α2 : ℝ} (hk : k ^ 2 < 1) (hα : α2 < 1) (φ : �
 
 /-- `Π(nπ, k, α²) = 2 n Π(k, α²)` for every integer `n`, with no restriction on the parameters (if
 the integrand is not integrable on `[0, π/2]`, both sides are `0`). -/
-theorem legendrePi_int_mul_pi {k α2 : ℝ} (n : ℤ) :
+theorem legendrePi_int_mul_pi (k α2 : ℝ) (n : ℤ) :
     legendrePi (n * π) k α2 = 2 * n * legendrePic k α2 :=
   integral_comp_sin_sq_int_mul_pi (fun s ↦ (1 - α2 * s)⁻¹ * (1 - k ^ 2 * s) ^ (-1 / 2 : ℝ)) n
 
