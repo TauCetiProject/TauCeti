@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.LineBundle.LocalBasis
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Sections
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Pullback
 public import TauCeti.AlgebraicGeometry.RelativeProj.TwistingSheaf.Map
+public import TauCeti.AlgebraicGeometry.RelativeProj.ClosedImmersion
 
 /-!
 # Pulling back the twisting sheaves of a relative `Proj`
@@ -38,6 +39,11 @@ bundle sending local sections onto local bases is an isomorphism
   hypothesis makes the pullback of `𝒪(n)` invertible.
 * `CategoryTheory.CommMon.isIso_relativeProjTwistingSheafMap`: the glued morphism
   `f^* 𝒪(n) ⟶ 𝒪(n)` is an isomorphism under the covering hypothesis above.
+
+* `CategoryTheory.CommMon.isIso_relativeProjTwistingSheafMap_of_epi_one`: the comparison is an
+  isomorphism for a map epimorphic in degree one onto an algebra generated in degree one.
+* `CategoryTheory.CommMon.isIso_relativeProjTwistingSheafMap_of_isGeneratedInDegreeOne`: the
+  comparison is an isomorphism for every map out of an algebra generated in degree one.
 
 ## Implementation notes
 
@@ -247,5 +253,28 @@ theorem _root_.CategoryTheory.CommMon.isIso_relativeProjTwistingSheafMap
   exact Eq.mpr (congrArg Function.Bijective (funext key))
     ((Proj.twistingSheaf.chartSectionsLinearEquiv n _ (Graded.map_mem _ hb) _ hW).bijective.comp
       (ConcreteCategory.bijective_of_isIso ((colimit.ι A.relativeProjGluingData.functor U).app W)))
+
+/-- A graded map that is an epimorphism in degree one onto an algebra generated in degree one
+pulls each twisting sheaf back isomorphically. -/
+@[stacks 01N1]
+theorem _root_.CategoryTheory.CommMon.isIso_relativeProjTwistingSheafMap_of_epi_one
+    [Epi (φ.hom.hom 1)] (h : A.IsGeneratedInDegreeOne) :
+    IsIso (CommMon.relativeProjTwistingSheafMap φ hφ n) :=
+  CommMon.isIso_relativeProjTwistingSheafMap φ hφ n fun U ↦
+    CommMon.exists_mem_basicOpen_gradedSectionsGradedHom_of_epi_one φ U.toOpens U.2
+      (CommMon.isGeneratedInDegreeOne_iff_adjoin_zero_union_one_eq_top.mp h U.toOpens U.2)
+
+/-- A graded map out of an algebra generated in degree one pulls each twisting sheaf back
+isomorphically, whenever it induces a morphism on relative `Proj`. -/
+theorem _root_.CategoryTheory.CommMon.isIso_relativeProjTwistingSheafMap_of_isGeneratedInDegreeOne
+    (hB : B.IsGeneratedInDegreeOne) :
+    IsIso (CommMon.relativeProjTwistingSheafMap φ hφ n) := by
+  refine CommMon.isIso_relativeProjTwistingSheafMap φ hφ n fun U y ↦ ?_
+  obtain ⟨⟨b, hb⟩, hy⟩ := TopologicalSpace.Opens.mem_iSup.mp
+    ((Proj.iSup_basicOpen_eq_top_of_adjoin_eq_top _
+      (CommMon.isGeneratedInDegreeOne_iff.mp hB U.toOpens U.2)).ge
+        (Set.mem_univ (Proj.map (CommMon.gradedSectionsGradedHom φ U.toOpens)
+          (hφ U.toOpens U.2) y)))
+  exact ⟨b, hb, hy⟩
 
 end TauCeti
