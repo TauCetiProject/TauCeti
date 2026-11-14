@@ -121,7 +121,7 @@ theorem oddPairing_mk_mk (m n : ℕ) (u : GL (Fin n) (Unitization ℂ A))
           ((Real.Gamma ((2 * m + 1 : ℝ) / 2 + 1) : ℂ))⁻¹) •
         matrixCochainExtension (Fin n) (2 * m + 1)
           ((φ : relativeCyclicCochains ℂ A M (2 * m + 1)) :
-            MultilinearMap ℂ (fun _ : Fin (2 * m + 2) ↦ Unitization ℂ A) M)
+            MultilinearMap (RingHom.id ℂ) (fun _ : Fin (2 * m + 2) ↦ Unitization ℂ A) M)
           fun k ↦ if Even (k : ℕ) then ↑u⁻¹ - 1 else ↑u - 1 := by
   rw [oddPairing_apply, AlgebraicK1.oddPairing_mk, toAdd_ofAdd, LinearMap.comp_apply,
     reducedCyclicCohomology.toCyclic_mk,
