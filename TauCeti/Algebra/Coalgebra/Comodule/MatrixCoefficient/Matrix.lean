@@ -9,6 +9,7 @@ import Mathlib.RingTheory.Coalgebra.CoassocSimps
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.RingTheory.HopfAlgebra.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
+public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Adjoin
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Comul
 
 /-!
@@ -31,6 +32,8 @@ character of the represented group: the determinant character of the comodule.
   along the coalgebra morphism.
 * `TauCeti.Comodule.coact_basis_eq_sum_coefficientMatrix`: the coaction of a basis vector is the
   corresponding column of the coefficient matrix.
+* `TauCeti.Comodule.mem_matrixCoefficientSubmodule_iff_exists_matrix`: membership in the
+  matrix-coefficient submodule as a linear combination of entries of `coefficientMatrix`.
 * `TauCeti.Comodule.comul_coefficientMatrix_eq_sum` and
   `TauCeti.Comodule.counit_coefficientMatrix`: the coalgebra identities.
 * `TauCeti.Comodule.coefficientMatrix_mul_map_antipode` and
@@ -111,6 +114,37 @@ theorem coact_basis_eq_sum_coefficientMatrix (b : Basis ι R M) (j : ι) :
     coact (R := R) (C := C) (M := M) (b j) =
       ∑ i, b i ⊗ₜ[R] coefficientMatrix (C := C) b i j :=
   coact_eq_sum_basis_matrixCoefficient (C := C) b (b j)
+
+/-- An element of `C` belongs to the matrix-coefficient submodule of a comodule with finite basis
+`b` precisely when it is an `R`-linear combination of entries of `coefficientMatrix b`. -/
+theorem mem_matrixCoefficientSubmodule_iff_exists_matrix (b : Basis ι R M) {x : C} :
+    x ∈ matrixCoefficientSubmodule (R := R) (C := C) (M := M) ↔
+      ∃ X : Matrix ι ι R, x = ∑ i, ∑ j, X i j • coefficientMatrix (C := C) b i j := by
+  let L : Matrix ι ι R →ₗ[R] C :=
+    { toFun X := ∑ i, ∑ j, X i j • coefficientMatrix (C := C) b i j
+      map_add' X Y := by
+        simp only [Matrix.add_apply, add_smul, Finset.sum_add_distrib]
+      map_smul' r X := by
+        simp only [Matrix.smul_apply, smul_eq_mul, mul_smul, RingHom.id_apply, Finset.smul_sum] }
+  have hle : matrixCoefficientSubmodule (R := R) (C := C) (M := M) ≤ LinearMap.range L := by
+    refine matrixCoefficientSubmodule_le fun φ m ↦
+      ⟨Matrix.of fun i j ↦ φ (b i) * b.repr m j, ?_⟩
+    dsimp only [L, LinearMap.coe_mk, AddHom.coe_mk, Matrix.of_apply]
+    conv_rhs => rw [← b.sum_repr m, ← matrixCoefficientLinear_apply]
+    rw [map_sum, Finset.sum_comm]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    rw [LinearMap.map_smul, matrixCoefficientLinear_apply, matrixCoefficient_def,
+      coact_basis_eq_sum_coefficientMatrix b j, map_sum, map_sum, Finset.smul_sum]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    simp [coefficientMatrix_apply, mul_comm (φ (b i)), mul_smul]
+  constructor
+  · intro hx
+    obtain ⟨X, rfl⟩ := hle hx
+    exact ⟨X, rfl⟩
+  · rintro ⟨X, rfl⟩
+    refine Submodule.sum_mem _ fun i _ ↦ Submodule.sum_mem _ fun j _ ↦ ?_
+    rw [coefficientMatrix_apply]
+    exact Submodule.smul_mem _ _ (matrixCoefficient_mem_submodule (b.coord i) (b j))
 
 /-- Comultiplication of a coefficient entry is matrix multiplication across the two tensor
 factors. -/
