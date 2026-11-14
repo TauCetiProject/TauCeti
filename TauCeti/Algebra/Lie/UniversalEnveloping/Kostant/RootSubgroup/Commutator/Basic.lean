@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Basic
 public import TauCeti.RingTheory.Nilpotent.ChevalleyCommutator
 public import TauCeti.RingTheory.Nilpotent.RootString.Basic
 import Mathlib.RingTheory.Nilpotent.Basic
+import TauCeti.Algebra.Lie.UniversalEnveloping.Commutator.DoublyLaced
 
 /-!
 # Chevalley commutator relations for Kostant root subgroups
@@ -306,35 +307,11 @@ theorem kostantRootSubgroupPoints_mul_of_lie_lie_eq {i j k l : ι} {c d : ℤ}
         kostantRootSubgroupPoints e h ρ M hM k hk p *
         kostantRootSubgroupPoints e h ρ M hM l hl q *
         kostantRootSubgroupPoints e h ρ M hM i hi f := by
-  -- The commutator of the first two root vectors is `c` times the third.
-  have hxy := mul_eq_mul_add_zsmul_of_lie_eq ρ hij
-  -- The second bracket is twice the fourth root vector, scaled by `d`.
-  have hik := hiij
-  rw [hij, lie_zsmul] at hik
-  have hxz : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) *
-        (c • ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k))) =
-      c • ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k)) *
-          ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) +
-        2 • (d • ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l))) := by
-    simpa only [one_zsmul, one_mul] using
-      (zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq ρ
-        (p := 1) (q := c) (r := d) (n := 2) (by simpa using hik))
-  -- The remaining brackets vanish.
-  have hcxw := commute_of_lie_eq_zero ρ hil
-  have hcyz := commute_of_lie_eq_zero ρ hjk
-  -- Stability of `M` under the divided powers of the two scaled root vectors.
-  have hMz := dividedPower_zsmul_apply_mem e h ρ M hM c k
-  have hMw := dividedPower_zsmul_apply_mem e h ρ M hM d l
-  have hz := hk.smul c
   refine Units.ext ?_
   simp only [Units.val_mul, kostantRootSubgroupPoints_val]
-  rw [hp, hq, ← baseChangeExp_zsmul c M
-      (fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM k n hv) hMz hk,
-    ← baseChangeExp_zsmul d M
-      (fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM l n hv) hMw hl]
-  exact baseChangeExp_mul_baseChangeExp_of_commutator_eq_two_nsmul M hxy hxz
-    (Commute.smul_right hcxw d) (Commute.smul_right hcyz c)
-    hi hj hz _ _ hMz hMw _ _
+  rw [hp, hq]
+  exact baseChangeExp_mul_baseChangeExp_of_lie_lie_eq ρ M hij hiij hil hjk hi hj hk hl
+    _ _ _ _ _ _
 
 /-- The Chevalley commutator relation for the chain `β`, `α + β`, `2α + β`, with the two extra
 `𝔾ₐ`-points written out: their parameters are `c t u` and `d t² u`. -/

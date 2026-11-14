@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Subgroup
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.StructureConstant
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Commutator.DoublyLaced
+import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.MultiplyLacedRelations
 
 /-!
 # The Chevalley commutator formula for root strings of length at most three
@@ -89,6 +89,24 @@ private theorem ne_zero_of_eq_nsmul_root_add_nsmul_root
     ((t.simplyConnectedRootDatum ht).linearIndependent_of_add_mem_range_root' ⟨γ, hγ⟩) _ _
       hw.symm).1
   omega
+
+private theorem doublyLaced_vanishing_brackets
+    (hγ : (t.simplyConnectedRootDatum ht).root γ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
+    (hδ : (t.simplyConnectedRootDatum ht).root δ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root γ)
+    (hαδ : (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root δ ∉
+      Set.range (t.simplyConnectedRootDatum ht).root)
+    (hβγ : (t.simplyConnectedRootDatum ht).root β + (t.simplyConnectedRootDatum ht).root γ ∉
+      Set.range (t.simplyConnectedRootDatum ht).root) :
+    ⁅t.chevalleySystem ht α, t.chevalleySystem ht δ⁆ = 0 ∧
+      ⁅t.chevalleySystem ht β, t.chevalleySystem ht γ⁆ = 0 :=
+  ⟨lie_chevalleySystem_eq_zero hαδ
+      (ne_zero_of_eq_nsmul_root_add_nsmul_root hγ (a := 3) (b := 1) (by decide)
+        (by rw [hδ, hγ]; module)),
+    lie_chevalleySystem_eq_zero hβγ
+      (ne_zero_of_eq_nsmul_root_add_nsmul_root hγ (a := 1) (b := 2) one_ne_zero
+        (by rw [hγ]; module))⟩
 
 variable {V : Type*} [AddCommGroup V] [Module ℚ V]
 variable (ρ : _root_.UniversalEnvelopingAlgebra ℚ (t.lieAlgebra ht) →ₐ[ℚ] Module.End ℚ V)
@@ -182,8 +200,27 @@ theorem commutatorElement_chevalleyRootSubgroup_of_root_eq_two_nsmul_add
   have hβγ : (t.simplyConnectedRootDatum ht).root β + (t.simplyConnectedRootDatum ht).root γ =
       (t.simplyConnectedRootDatum ht).root α + 2 • (t.simplyConnectedRootDatum ht).root β := by
     rw [hγ]; module
-  exact commutatorElement_chevalleyRootSubgroup_of_add_eq_of_add_eq ρ M hM hnil
-    hγ hδ' (hαδ ▸ hα) (hβγ ▸ hβ) A u v
+  obtain ⟨hil, hjk⟩ := doublyLaced_vanishing_brackets hγ hδ' (hαδ ▸ hα) (hβγ ▸ hβ)
+  let e := t.chevalleySystem ht
+  let d := t.structureConstant ht α β * t.structureConstant ht α γ / 2
+  have hdiv : 2 * d = t.structureConstant ht α β * t.structureConstant ht α γ :=
+    Int.mul_ediv_cancel' (two_dvd_structureConstant_mul_structureConstant hγ)
+  have hiij : ⁅e α, ⁅e α, e β⁆⁆ = (2 * d) • e δ := by
+    rw [lie_chevalleySystem_eq_structureConstant_zsmul hγ, lie_zsmul,
+      lie_chevalleySystem_eq_structureConstant_zsmul hδ', smul_smul, hdiv]
+  have hM' := kostantForm_chevalleySystem_smul_mem ρ M hM hnil
+  simp_rw [← kostantRootSubgroupParam_chevalleySystem ρ M hM hnil,
+    kostantRootSubgroupParam_apply]
+  simpa only [MulEquiv.apply_symm_apply, toAdd_ofAdd] using
+    commutatorElement_kostantRootSubgroupPoints_of_lie_lie_eq' e (t.lieBasis ht).h ρ M hM'
+      (A := A)
+      (lie_chevalleySystem_eq_structureConstant_zsmul hγ) hiij hil hjk
+      (isNilpotent_apply_ι_chevalleySystem ρ hnil α)
+      (isNilpotent_apply_ι_chevalleySystem ρ hnil β)
+      (isNilpotent_apply_ι_chevalleySystem ρ hnil γ)
+      (isNilpotent_apply_ι_chevalleySystem ρ hnil δ)
+      ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm (Multiplicative.ofAdd u))
+      ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm (Multiplicative.ofAdd v))
 
 /-- **The two-factor Chevalley commutator formula, long root first.** If `γ = α + β` and
 `δ = α + 2β` are roots while `2α + β` and `α + 3β` are not, then over every commutative ring of
@@ -214,6 +251,9 @@ theorem commutatorElement_chevalleyRootSubgroup_of_root_eq_add_two_nsmul
           (Multiplicative.ofAdd
             (((-(t.structureConstant ht β α * t.structureConstant ht β γ / 2) : ℤ) : A) *
               (u * v ^ 2))) := by
+  have hγ' : (t.simplyConnectedRootDatum ht).root γ =
+      (t.simplyConnectedRootDatum ht).root β + (t.simplyConnectedRootDatum ht).root α :=
+    hγ.trans (add_comm _ _)
   have hδ' : (t.simplyConnectedRootDatum ht).root δ =
       (t.simplyConnectedRootDatum ht).root β + (t.simplyConnectedRootDatum ht).root γ := by
     rw [hδ, hγ]; module
@@ -223,8 +263,27 @@ theorem commutatorElement_chevalleyRootSubgroup_of_root_eq_add_two_nsmul
   have hαγ : (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root γ =
       2 • (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β := by
     rw [hγ]; module
-  exact commutatorElement_chevalleyRootSubgroup_of_add_eq_of_add_rev_eq ρ M hM hnil
-    hγ hδ' (hβδ ▸ hβ) (hαγ ▸ hα) A u v
+  obtain ⟨hjl, hik⟩ := doublyLaced_vanishing_brackets hγ' hδ' (hβδ ▸ hβ) (hαγ ▸ hα)
+  let e := t.chevalleySystem ht
+  let d := t.structureConstant ht β α * t.structureConstant ht β γ / 2
+  have hdiv : 2 * d = t.structureConstant ht β α * t.structureConstant ht β γ :=
+    Int.mul_ediv_cancel' (two_dvd_structureConstant_mul_structureConstant hγ')
+  have hjji : ⁅e β, ⁅e β, e α⁆⁆ = (2 * d) • e δ := by
+    rw [lie_chevalleySystem_eq_structureConstant_zsmul hγ', lie_zsmul,
+      lie_chevalleySystem_eq_structureConstant_zsmul hδ', smul_smul, hdiv]
+  have hM' := kostantForm_chevalleySystem_smul_mem ρ M hM hnil
+  simp_rw [← kostantRootSubgroupParam_chevalleySystem ρ M hM hnil,
+    kostantRootSubgroupParam_apply]
+  simpa only [MulEquiv.apply_symm_apply, toAdd_ofAdd, Int.cast_neg] using
+    commutatorElement_kostantRootSubgroupPoints_of_lie_lie_rev_eq' e (t.lieBasis ht).h ρ M hM'
+      (A := A)
+      (lie_chevalleySystem_eq_structureConstant_zsmul hγ) hjji hjl hik
+      (isNilpotent_apply_ι_chevalleySystem ρ hnil α)
+      (isNilpotent_apply_ι_chevalleySystem ρ hnil β)
+      (isNilpotent_apply_ι_chevalleySystem ρ hnil γ)
+      (isNilpotent_apply_ι_chevalleySystem ρ hnil δ)
+      ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm (Multiplicative.ofAdd u))
+      ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm (Multiplicative.ofAdd v))
 
 /-- The single-term Chevalley product relation, when the sum-root vector commutes with both
 input vectors. No restriction on Dynkin type or root lengths is required. -/

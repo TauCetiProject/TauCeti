@@ -50,9 +50,12 @@ monomials `u ^ a (t u) ^ b (t ^ 2 u) ^ c t ^ q` into which `t ^ m u ^ n` factors
 * `TauCeti.baseChangeExp_mul_baseChangeExp_of_commutator_eq_two_nsmul`: the Chevalley commutator
   relation.
 * `TauCeti.baseChangeExp_conj_of_commutator_eq_two_nsmul`: its conjugation form.
+* `TauCeti.commutatorElement_baseChangeExpHom_of_commutator_eq_two_nsmul`: its element-commutator
+  form for one-parameter subgroups.
 
 ## References
 
+* R. Steinberg, *Lectures on Chevalley Groups*, Chapter 3, Lemma 15.
 * R. W. Carter, *Simple Groups of Lie Type*, §4.2 and Theorem 5.2.2.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §§25--26.
 * J. C. Jantzen, *Representations of Algebraic Groups*, II.1.
@@ -63,6 +66,7 @@ public section
 namespace TauCeti
 
 open Finset TensorProduct
+open scoped commutatorElement
 
 universe u v
 
@@ -304,6 +308,45 @@ theorem baseChangeExp_conj_of_commutator_eq_two_nsmul
       hMx hMy hMz hMw t u,
     mul_assoc, ← baseChangeExp_add x M hMx hx t (-t), add_neg_cancel,
     baseChangeExp_zero x M hMx hx, mul_one]
+
+/-- The element-commutator form of the Chevalley commutator relation for the chain
+`β`, `α + β`, `2α + β`: in the group of `R`-linear automorphisms of `R ⊗[ℤ] M`,
+`⁅E_x(t), E_y(u)⁆ = E_z(t * u) E_w(t ^ 2 * u)`. Commutation of `y` and `w` is not assumed
+separately, as it follows from `x * y = y * x + z`, `x * z = z * x + 2 • w`, and `Commute y z`
+via `Commute.of_commutator_eq_of_commutator_eq_smul_left`. -/
+theorem commutatorElement_baseChangeExpHom_of_commutator_eq_two_nsmul
+    {x y z w : A} (M : S) (hxy : x * y = y * x + z) (hxz : x * z = z * x + 2 • w)
+    (hxw : Commute x w) (hyz : Commute y z)
+    (hx : IsNilpotent x) (hy : IsNilpotent y) (hz : IsNilpotent z) (hw : IsNilpotent w)
+    (hMx : ∀ n, ∀ v ∈ M, Associative.dividedPower n x • v ∈ M)
+    (hMy : ∀ n, ∀ v ∈ M, Associative.dividedPower n y • v ∈ M)
+    (hMz : ∀ n, ∀ v ∈ M, Associative.dividedPower n z • v ∈ M)
+    (hMw : ∀ n, ∀ v ∈ M, Associative.dividedPower n w • v ∈ M)
+    (t u : Multiplicative R) :
+    ⁅baseChangeExpHom x M hMx hx t, baseChangeExpHom y M hMy hy u⁆ =
+      baseChangeExpHom z M hMz hz
+          (Multiplicative.ofAdd (Multiplicative.toAdd t * Multiplicative.toAdd u)) *
+        baseChangeExpHom w M hMw hw
+          (Multiplicative.ofAdd (Multiplicative.toAdd t ^ 2 * Multiplicative.toAdd u)) := by
+  have hyw : Commute y w := hyz.of_commutator_eq_of_commutator_eq_smul_left (R := ℚ) (c := 2)
+    hxy (by simpa only [← Nat.cast_smul_eq_nsmul ℚ, Nat.cast_ofNat] using hxz)
+    (isUnit_iff_ne_zero.mpr (by norm_num))
+  have hconj : baseChangeExpHom x M hMx hx t * baseChangeExpHom y M hMy hy u *
+        (baseChangeExpHom x M hMx hx t)⁻¹ =
+      baseChangeExpHom y M hMy hy u *
+        baseChangeExpHom z M hMz hz
+          (Multiplicative.ofAdd (Multiplicative.toAdd t * Multiplicative.toAdd u)) *
+        baseChangeExpHom w M hMw hw
+          (Multiplicative.ofAdd (Multiplicative.toAdd t ^ 2 * Multiplicative.toAdd u)) :=
+    LinearEquiv.toLinearMap_inj.mp <| by
+      rw [← map_inv]
+      simp only [LinearEquiv.coe_toLinearMap_mul, baseChangeExpHom_toLinearMap, toAdd_inv,
+        toAdd_ofAdd]
+      exact baseChangeExp_conj_of_commutator_eq_two_nsmul M hxy hxz hxw hyz hx hy hz
+        hMx hMy hMz hMw (Multiplicative.toAdd t) (Multiplicative.toAdd u)
+  rw [commutatorElement_def, hconj, mul_assoc (baseChangeExpHom y M hMy hy u),
+    ((commute_baseChangeExpHom M hyz hMy hMz hy hz u _).mul_right
+      (commute_baseChangeExpHom M hyw hMy hMw hy hw u _)).mul_inv_cancel]
 
 end Commutator
 
