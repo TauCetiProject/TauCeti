@@ -274,18 +274,19 @@ theorem paths_eq_nil (hf : IsCirculation f) : D.paths = [] :=
 
 /-- A path component of a decomposition is nonnegative. -/
 theorem assignment_nonneg_of_mem_paths {p : WeightedWalk Q K} (hp : p ∈ D.paths) :
-    0 ≤ p.assignment := fun x y e ↦ by
-  by_cases he : ⟨x, y, e⟩ ∈ p.walk.arrows
-  · exact (D.assignment_apply_of_mem_arrows hp he).symm ▸ (D.weight_pos_of_mem_paths p hp).le
-  · simp [WeightedWalk.assignment_def, walkAssignment_eq_zero_of_notMem p.walk p.weight he]
+    0 ≤ p.assignment := by
+  have hq := (D.weight_pos_of_mem_paths p hp).le
+  rw [WeightedWalk.assignment_def]
+  exact (walkAssignment_mem_Icc (D.isPath_walk p hp).nodup_arrows hq (fun _ _ _ ↦ hq)
+    fun _ _ ↦ le_rfl).1
 
 /-- A cycle component of a decomposition is nonnegative. -/
 theorem assignment_nonneg_of_mem_cycles {c : WeightedClosedWalk Q K} (hc : c ∈ D.cycles) :
-    0 ≤ c.assignment := fun x y e ↦ by
-  by_cases he : ⟨x, y, e⟩ ∈ c.walk.arrows
-  · exact (D.assignment_apply_of_mem_arrows_of_mem_cycles hc he).symm ▸
-      (D.weight_pos_of_mem_cycles c hc).le
-  · simp [WeightedClosedWalk.assignment_def, walkAssignment_eq_zero_of_notMem c.walk c.weight he]
+    0 ≤ c.assignment := by
+  have hq := (D.weight_pos_of_mem_cycles c hc).le
+  rw [WeightedClosedWalk.assignment_def]
+  exact (walkAssignment_mem_Icc (D.isCycle_walk c hc).nodup_arrows hq (fun _ _ _ ↦ hq)
+    fun _ _ ↦ le_rfl).1
 
 end Preorder
 
