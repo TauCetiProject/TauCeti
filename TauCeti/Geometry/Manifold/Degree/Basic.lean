@@ -45,6 +45,8 @@ compact boundaryless manifold to a connected one, is proved in
   `1` and a constant map into a manifold of positive dimension has degree `0`.
 * `TauCeti.degreeAtRegularValue_modEq_ncard`: over a regular value the degree has the parity of
   the number of preimages.
+* `TauCeti.degreeAtRegularValue_comp_of_isOrientationPreservingAt`: precomposing with a
+  bijection that is differentiable and orientation-preserving on the fibre preserves the degree.
 * `TauCeti.degree_id`, `TauCeti.degree_const`: the identity of a nonempty manifold has degree `1`
   and a constant map into a manifold of positive dimension has degree `0`.
 
@@ -163,6 +165,25 @@ theorem degreeAtRegularValue_modEq_ncard (hy : IsRegularValue I J f y) :
           (hy.isRegularPoint hx) with h' | h' <;> simp [h']
     rw [h0, Set.Infinite.ncard h]
     rfl
+
+/-- Precomposing with a bijection that is differentiable and orientation-preserving on the fibre
+over `y` preserves the degree at `y`. -/
+theorem degreeAtRegularValue_comp_of_isOrientationPreservingAt
+    {E'' H'' P : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E''] [FiniteDimensional ℝ E'']
+    [TopologicalSpace H''] {K : ModelWithCorners ℝ E'' H''} [TopologicalSpace P]
+    [ChartedSpace H'' P] [IsManifold K 1 P] (o'' : Manifold.Orientation K P ι)
+    {g : P → M} (hg_bij : Bijective g)
+    (hfd : ∀ p, f (g p) = y → MDifferentiableAt I J f (g p))
+    (hgd : ∀ p, f (g p) = y → MDifferentiableAt K I g p)
+    (hg : ∀ p, f (g p) = y → IsOrientationPreservingAt o'' o g p) :
+    degreeAtRegularValue o'' o' (f ∘ g) y = degreeAtRegularValue o o' f y := by
+  have hbij : ((f ∘ g) ⁻¹' {y}).BijOn g (f ⁻¹' {y}) :=
+    ⟨fun _ hp ↦ hp, hg_bij.injective.injOn, fun x hx ↦ by
+      obtain ⟨p, rfl⟩ := hg_bij.surjective x
+      exact ⟨p, hx, rfl⟩⟩
+  refine finsum_mem_eq_of_bijOn g hbij fun p hp ↦ ?_
+  rw [orientationSign_comp (hfd p hp) (hgd p hp),
+    orientationSign_of_isOrientationPreservingAt (hg p hp), mul_one]
 
 open Classical in
 /-- The *mapping degree* of `f : M → N` with respect to orientations `o` of `M` and `o'` of `N`:
