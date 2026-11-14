@@ -139,6 +139,28 @@ theorem kostantRootSubgroup_congr {I' : Type*} (e' : I' → L)
       kostantRootSubgroupComodule_coact, he]
   rw [kostantRootSubgroup_def, kostantRootSubgroup_def, hcoord]
 
+/-- Equal represented root operators give equal root-subgroup coordinate maps, even when the
+operators are obtained from representations of different Lie algebras. The integral lattice and
+its basis are kept fixed. -/
+theorem kostantRootSubgroupCoordinateMap_eq_of_action_eq
+    {L' : Type*} [LieRing L'] [LieAlgebra ℚ L'] {I' κ' : Type*}
+    (e' : I' → L') (h' : κ' → L')
+    (ρ' : _root_.UniversalEnvelopingAlgebra ℚ L' →ₐ[ℚ] Module.End ℚ V)
+    (hM' : ∀ u ∈ kostantForm e' h', ∀ m ∈ M, ρ' u m ∈ M)
+    (i' : I') (hnil' : IsNilpotent (ρ' (_root_.UniversalEnvelopingAlgebra.ι ℚ (e' i'))))
+    (hact : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) =
+      ρ' (_root_.UniversalEnvelopingAlgebra.ι ℚ (e' i'))) :
+    kostantRootSubgroupCoordinateMap e h ρ M hM i hnil b =
+      kostantRootSubgroupCoordinateMap e' h' ρ' M hM' i' hnil' b := by
+  apply CommHopfAlgCat.hom_ext
+  apply BialgHom.coe_toAlgHom_injective
+  apply GeneralLinear.coordinateHopfAlgebra_algHom_ext ℤ n
+  intro r s
+  simp only [BialgHom.coe_toAlgHom]
+  rw [kostantRootSubgroupCoordinateMap_X, kostantRootSubgroupCoordinateMap_X]
+  simp only [Comodule.coefficientMatrix_apply, Comodule.matrixCoefficient_def,
+    kostantRootSubgroupComodule_coact, hact]
+
 section Points
 
 variable (A : Type*) [CommRing A]
