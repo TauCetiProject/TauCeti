@@ -71,7 +71,7 @@ on the tropical generators. -/
 @[ext]
 theorem monoidHom_ext {Q : Type*} [Monoid Q] ⦃f g : Trop J →* Q⦄
     (h : ∀ j, f (generator j) = g (generator j)) : f = g :=
-  InfTropical.monoidHom_ext h
+  MonoidHom.ext_finsupp_mint h
 
 @[simp]
 theorem generator_inj {i j : J} : generator i = generator j ↔ i = j := by

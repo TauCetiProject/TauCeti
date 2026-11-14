@@ -205,12 +205,6 @@ section Finsupp
 
 variable {J J' J'' : Type*} [AddZeroClass A] [SemilatticeInf A]
 
-/-- A homomorphism from integer exponents is determined by its values on the standard generators. -/
-@[ext]
-theorem monoidHom_ext {Q : Type*} [Monoid Q] ⦃f g : InfTropical (J →₀ ℤ) →* Q⦄
-    (h : ∀ j, f (ofAdd (Finsupp.single j 1)) = g (ofAdd (Finsupp.single j 1))) : f = g :=
-  Finsupp.mulHom_ext' fun j => MonoidHom.ext_mint (h j)
-
 /-- Relabelling the exponent indices is an equivalence preserving both tropical operations. -/
 noncomputable def reindex (e : J ≃ J') :
     InfTropical (J →₀ A) ≃+* InfTropical (J' →₀ A) where
