@@ -18,6 +18,7 @@ import Mathlib.Topology.Metrizable.Urysohn
 import TauCeti.GroupTheory.Amenable.Extension
 import TauCeti.GroupTheory.Amenable.Finite
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
+import TauCeti.MeasureTheory.Group.Action
 import TauCeti.Topology.Compactification.OnePoint.Amenable
 
 /-!
@@ -32,17 +33,18 @@ measures.
 
 When `G` is finite the conclusion is immediate. When `G` is infinite, choose `g_n ∈ G` with
 `‖φ g_n‖ → ∞`. On the compact unit sphere of `2 × 2` matrices over `𝕜`, a subsequence of
-`‖φ g_n‖⁻¹ • φ g_n` converges to a matrix `B` of norm `1` and determinant `0`. Such a `2 × 2`
-matrix has rank one: its kernel is spanned by a nonzero vector `v₀` (giving a point `p`) and its
-image is spanned by a nonzero vector `w₀` (giving a point `q`). Away from `p`,
+`‖φ g_n‖⁻¹ • φ g_n` converges to a matrix `B` of norm `1` and determinant `0`. By
+`Projectivization.exists_linearProjectionDomain_eq_and_linearProjection_eq_of_det_eq_zero`,
+`Projectivization.linearProjection B.mulVecLin` is defined away from a point `p` and takes a
+constant value `q` there, so away from `p`,
 `Projectivization.tendsto_smul_of_tendsto_smul_coe` shows that `φ g_n • y → q`; passing to a
 further subsequence, `φ g_n • p` also converges to some `r`. Dominated convergence of
 `∫ f(φ g_n • y) dμ(y) = ∫ f(y) dμ(y)` identifies `μ` with the convex combination
-`μ {p} • δ_r + μ {p}ᶜ • δ_q`, so `μ` has an atom `x₀`. Every point in the `G`-orbit of `x₀` has the
-same positive mass, forcing the orbit to be finite. Thus the stabilizer of `x₀` in `G` has finite
-index; since projective-line stabilizers in `GL(2, 𝕜)` are amenable
+`μ {p} • δ_r + μ {p}ᶜ • δ_q`, so `μ` has an atom `x₀`. Thus the stabilizer of `x₀` in `G` has
+finite index (`MeasureTheory.finiteIndex_stabilizer_of_smulInvariant_of_measure_singleton_ne_zero`);
+since projective-line stabilizers in `GL(2, 𝕜)` are amenable
 (`MonoidHom.amenable_comap_projectivization_stabilizer`), so is `G`
-(`TauCeti.Amenable.of_finiteIndex`).
+(`Subgroup.amenable_of_finiteIndex`).
 
 Specializing to closed discrete subgroups of `SL(2, 𝕜)` (Fuchsian and Kleinian groups) and to
 injective homomorphisms into `GL(2, ℤ)` supplies the invariant-measure step in Burger's criterion
@@ -79,133 +81,10 @@ open scoped BoundedContinuousFunction LinearAlgebra.Projectivization MatrixGroup
 
 namespace TauCeti
 
-section RankOne
-
-/-- Over any field `K`, a nonzero `2 × 2` matrix of determinant `0` has a one-dimensional kernel
-and a one-dimensional image: there exist `p, q : ℙ K (Fin 2 → K)` such that every `y ≠ p` lies in
-`Projectivization.linearProjectionDomain B.mulVecLin` and maps to `q` under
-`Projectivization.linearProjection B.mulVecLin`. -/
-private theorem exists_rank_one_projectivization {K : Type*} [Field K]
-    {B : Matrix (Fin 2) (Fin 2) K} (hB0 : B ≠ 0) (hdet : B.det = 0) :
-    ∃ p q : ℙ K (Fin 2 → K), ∀ y : ℙ K (Fin 2 → K), y ≠ p →
-      ∃ (_ : y ∈ Projectivization.linearProjectionDomain B.mulVecLin),
-        Projectivization.linearProjection B.mulVecLin y = q := by
-  have hne : ∃ i₀ j₀ : Fin 2, B i₀ j₀ ≠ 0 := by
-    by_contra! h
-    exact hB0 (Matrix.ext h)
-  obtain ⟨i₀, j₀, hij⟩ := hne
-  rw [Matrix.det_fin_two] at hdet
-  -- Column `j₀` spans the image, and `![-B i₀ 1, B i₀ 0]` spans the kernel.
-  let w₀ : Fin 2 → K := fun i => B i j₀
-  have hw₀ : w₀ ≠ 0 := fun h => hij (congrFun h i₀)
-  let v₀ : Fin 2 → K := ![-B i₀ 1, B i₀ 0]
-  have hv₀ : v₀ ≠ 0 := by
-    intro h
-    fin_cases j₀
-    · exact hij (by simpa [v₀] using congrFun h 1)
-    · exact hij (neg_eq_zero.mp (by simpa [v₀] using congrFun h 0))
-  have hcol (v : Fin 2 → K) : B.mulVecLin v = (((B *ᵥ v) i₀) / B i₀ j₀) • w₀ := by
-    ext i
-    simp only [Matrix.mulVecLin_apply, Pi.smul_apply, smul_eq_mul, w₀]
-    field_simp [hij]
-    fin_cases i <;> fin_cases i₀ <;> fin_cases j₀ <;>
-      simp only [Fin.zero_eta, Fin.mk_one, Fin.isValue, Matrix.mulVec, dotProduct,
-        Fin.sum_univ_two] <;>
-      grind
-  have hker (v : Fin 2 → K) (hv : (B *ᵥ v) i₀ = 0) : ∃ c : K, v = c • v₀ := by
-    simp only [Matrix.mulVec, dotProduct, Fin.sum_univ_two] at hv
-    fin_cases j₀
-    · simp only [Fin.zero_eta, Fin.isValue] at hij
-      refine ⟨v 1 / B i₀ 0, ?_⟩
-      ext k
-      fin_cases k <;> simp only [Fin.zero_eta, Fin.mk_one, Fin.isValue, Pi.smul_apply, smul_eq_mul,
-        v₀, Matrix.cons_val_zero, Matrix.cons_val_one]
-      · field_simp [hij]
-        linear_combination hv
-      · exact (div_mul_cancel₀ _ hij).symm
-    · simp only [Fin.mk_one, Fin.isValue] at hij
-      refine ⟨-v 0 / B i₀ 1, ?_⟩
-      ext k
-      fin_cases k <;> simp only [Fin.zero_eta, Fin.mk_one, Fin.isValue, Pi.smul_apply, smul_eq_mul,
-        v₀, Matrix.cons_val_zero, Matrix.cons_val_one]
-      · field_simp [hij]
-      · field_simp [hij]
-        linear_combination hv
-  refine ⟨Projectivization.mk K v₀ hv₀, Projectivization.mk K w₀ hw₀, fun y hy => ?_⟩
-  have hBy : (B *ᵥ y.rep) i₀ ≠ 0 := by
-    intro h0
-    obtain ⟨c, hc⟩ := hker y.rep h0
-    apply hy
-    rw [← y.mk_rep]
-    exact (Projectivization.mk_eq_mk_iff' K _ _ _ hv₀).2 ⟨c, hc.symm⟩
-  have hdom : B.mulVecLin y.rep ≠ 0 := fun h => hBy (congrFun h i₀)
-  have hy_dom : y ∈ Projectivization.linearProjectionDomain B.mulVecLin := by
-    rw [← y.mk_rep, Projectivization.mk_mem_linearProjectionDomain_iff]
-    exact hdom
-  refine ⟨hy_dom, ?_⟩
-  conv_lhs => rw [← y.mk_rep]
-  rw [Projectivization.linearProjection_mk _ _ hdom]
-  exact (Projectivization.mk_eq_mk_iff' K _ _ _ hw₀).2
-    ⟨(B *ᵥ y.rep) i₀ / B i₀ j₀, (hcol y.rep).symm⟩
-
-end RankOne
-
 section Furstenberg
 
 variable {𝕜 : Type*} [RCLike 𝕜] [MeasurableSpace (ℙ 𝕜 (Fin 2 → 𝕜))]
   [BorelSpace (ℙ 𝕜 (Fin 2 → 𝕜))]
-
-/-- If a group `G` preserves a Borel probability measure `μ` on `ℙ 𝕜 (Fin 2 → 𝕜)` via `φ` and `μ`
-charges the singleton `{x₀}`, then the stabilizer of `x₀` in `G` has finite index. -/
-private theorem finiteIndex_comap_stabilizer_of_measure_singleton_ne_zero {G : Type*} [Group G]
-    (φ : G →* GL (Fin 2) 𝕜) {μ : Measure (ℙ 𝕜 (Fin 2 → 𝕜))} [IsProbabilityMeasure μ]
-    (hμ : ∀ g : G, Measure.map (φ g • ·) μ = μ) {x₀ : ℙ 𝕜 (Fin 2 → 𝕜)} (hx₀ : μ {x₀} ≠ 0) :
-    ((stabilizer (GL (Fin 2) 𝕜) x₀).comap φ).FiniteIndex := by
-  let S : Subgroup G := (stabilizer (GL (Fin 2) 𝕜) x₀).comap φ
-  have : Finite (G ⧸ S) := by
-    by_contra hinf
-    rw [not_finite_iff_infinite] at hinf
-    let orb : G ⧸ S → ℙ 𝕜 (Fin 2 → 𝕜) :=
-      Quotient.lift (fun g : G => φ g • x₀) fun a b hab => by
-        have hfix : φ (a⁻¹ * b) • x₀ = x₀ := QuotientGroup.leftRel_apply.mp hab
-        rw [map_mul, map_inv, mul_smul, inv_smul_eq_iff] at hfix
-        exact hfix.symm
-    have horb_inj : Function.Injective orb := by
-      intro q₁ q₂ hq
-      induction q₁ using Quotient.inductionOn with | h a => ?_
-      induction q₂ using Quotient.inductionOn with | h b => ?_
-      apply Quotient.sound
-      apply QuotientGroup.leftRel_apply.mpr
-      rw [Subgroup.mem_comap, mem_stabilizer_iff, map_mul, map_inv, mul_smul, inv_smul_eq_iff]
-      exact hq.symm
-    have horb_meas (q : G ⧸ S) : μ.real {orb q} = μ.real {x₀} := by
-      induction q using Quotient.inductionOn with | h g => ?_
-      have hpre : (φ g • ·) ⁻¹' {φ g • x₀} = ({x₀} : Set (ℙ 𝕜 (Fin 2 → 𝕜))) := by
-        ext y
-        simp [(MulAction.injective (φ g)).eq_iff]
-      have hm : μ {φ g • x₀} = μ {x₀} := by
-        calc μ {φ g • x₀}
-            = (Measure.map (φ g • ·) μ) {φ g • x₀} := by rw [hμ g]
-          _ = μ ((φ g • ·) ⁻¹' {φ g • x₀}) :=
-              Measure.map_apply (continuous_const_smul (φ g)).measurable (measurableSet_singleton _)
-          _ = μ {x₀} := by rw [hpre]
-      simp [orb, Measure.real, hm]
-    have hpos : 0 < μ.real {x₀} :=
-      ENNReal.toReal_pos hx₀ (measure_ne_top μ {x₀})
-    obtain ⟨N, hN⟩ := exists_nat_gt (1 / μ.real {x₀})
-    obtain ⟨F, hF⟩ := Infinite.exists_subset_card_eq (G ⧸ S) N
-    have hsum : (N : ℝ) * μ.real {x₀} ≤ 1 := by
-      have hdisj : (F : Set (G ⧸ S)).PairwiseDisjoint (fun q => ({orb q} : Set _)) :=
-        fun q₁ _ q₂ _ hne => Set.disjoint_singleton.2 (horb_inj.ne hne)
-      calc (N : ℝ) * μ.real {x₀}
-          = ∑ q ∈ F, μ.real {orb q} := by simp [horb_meas, hF]
-        _ = μ.real (⋃ q ∈ F, ({orb q} : Set (ℙ 𝕜 (Fin 2 → 𝕜)))) :=
-            (measureReal_biUnion_finset hdisj fun _ _ => measurableSet_singleton _).symm
-        _ ≤ μ.real Set.univ := measureReal_mono (Set.subset_univ _)
-        _ = 1 := by simp
-    have hgt : 1 < (N : ℝ) * μ.real {x₀} := (div_lt_iff₀ hpos).mp hN
-    linarith
-  exact Subgroup.finiteIndex_of_finite_quotient
 
 open scoped Matrix.Norms.Elementwise in
 /-- **Furstenberg's lemma on the projective line.** If a group `G` admits an injective homomorphism
@@ -263,18 +142,21 @@ theorem hasFoelnerSets_of_map_smul_projectivization_eq {G : Type*} [Group G]
         from rfl, Matrix.det_smul, Fintype.card_fin, norm_mul, norm_pow, RCLike.norm_ofReal,
         abs_of_nonneg (inv_nonneg.mpr (hM_pos (k₁ n)).le), hdet, mul_one]
     exact norm_eq_zero.mp (tendsto_nhds_unique hdet_tendsto hdet_zero)
-  obtain ⟨p, q, hpq⟩ := exists_rank_one_projectivization hB0 hB_det
+  obtain ⟨p, q, hp_dom, hpq⟩ :=
+    Projectivization.exists_linearProjectionDomain_eq_and_linearProjection_eq_of_det_eq_zero
+      hB0 hB_det
   -- Pass to a further subsequence so `φ (u _) • p` also converges to some `r`.
   obtain ⟨r, -, k₂, hk₂, hrk₂⟩ :=
     isCompact_univ.tendsto_subseq (x := fun n => φ (u (k₁ n)) • p) (fun _ => mem_univ _)
   let gseq : ℕ → G := fun n => u (k₁ (k₂ n))
   have hlim_off {y : ℙ 𝕜 (Fin 2 → 𝕜)} (hy : y ≠ p) :
       Tendsto (fun n => φ (gseq n) • y) atTop (𝓝 q) := by
-    obtain ⟨hy_dom, hy_proj⟩ := hpq y hy
+    have hy_dom : y ∈ Projectivization.linearProjectionDomain B.mulVecLin :=
+      hp_dom.symm ▸ Set.mem_compl_singleton_iff.mpr hy
     have hsub : Tendsto (fun n => (((M (k₁ (k₂ n)))⁻¹ : ℝ) : 𝕜) •
         (φ (gseq n) : Matrix (Fin 2) (Fin 2) 𝕜)) atTop (𝓝 B) :=
       hBk₁.comp hk₂.tendsto_atTop
-    simpa [hy_proj] using
+    simpa [hpq y hy] using
       Projectivization.tendsto_smul_of_tendsto_smul_coe hsub tendsto_const_nhds hy_dom
   -- Dominated convergence identifies `μ` with `μ {p} • dirac r + μ {p}ᶜ • dirac q`.
   let ν : Measure (ℙ 𝕜 (Fin 2 → 𝕜)) := μ {p} • Measure.dirac r + μ {p}ᶜ • Measure.dirac q
@@ -344,11 +226,19 @@ theorem hasFoelnerSets_of_map_smul_projectivization_eq {G : Type*} [Group G]
     rw [h1, h0 r, h0 q, add_zero] at hle
     exact one_ne_zero (le_bot_iff.mp hle)
   obtain ⟨x₀, hx₀⟩ := hatom
-  have : ((stabilizer (GL (Fin 2) 𝕜) x₀).comap φ).FiniteIndex :=
-    finiteIndex_comap_stabilizer_of_measure_singleton_ne_zero φ hμ hx₀
+  have : SMulInvariantMeasure φ.range (ℙ 𝕜 (Fin 2 → 𝕜)) μ :=
+    ⟨fun ⟨_, g, rfl⟩ s hs =>
+      (Measure.map_apply (continuous_const_smul (φ g)).measurable hs).symm.trans
+        (congrArg (· s) (hμ g))⟩
+  have hfin_range : (stabilizer φ.range x₀).FiniteIndex :=
+    finiteIndex_stabilizer_of_smulInvariant_of_measure_singleton_ne_zero φ.range hx₀
+  have : ((stabilizer (GL (Fin 2) 𝕜) x₀).comap φ).FiniteIndex := by
+    rw [Subgroup.finiteIndex_iff, Subgroup.index_comap, Subgroup.relIndex, stabilizer_subgroupOf,
+      ← Subgroup.finiteIndex_iff]
+    exact hfin_range
   have : Amenable ((stabilizer (GL (Fin 2) 𝕜) x₀).comap φ) :=
     φ.amenable_comap_projectivization_stabilizer hφ x₀
-  exact Amenable.of_finiteIndex ((stabilizer (GL (Fin 2) 𝕜) x₀).comap φ)
+  exact ((stabilizer (GL (Fin 2) 𝕜) x₀).comap φ).amenable_of_finiteIndex
 
 /-- Topological-group version of `hasFoelnerSets_of_map_smul_projectivization_eq`: the group is
 amenable for every group topology. -/

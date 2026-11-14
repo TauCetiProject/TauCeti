@@ -38,7 +38,7 @@ the iterated mean is left invariant when `n` and `m` are.
   amenable.
 * `TauCeti.amenable_iff_subgroup_quotient`: a discrete group with a normal subgroup `N` is
   amenable exactly when `N` and `G ⧸ N` are.
-* `TauCeti.amenable_iff_of_finiteIndex`, `TauCeti.Amenable.of_finiteIndex`: a discrete group is
+* `Subgroup.amenable_iff_of_finiteIndex`, `Subgroup.amenable_of_finiteIndex`: a discrete group is
   amenable iff a finite-index subgroup of it is amenable.
 
 ## References
@@ -191,19 +191,25 @@ theorem Amenable.of_subgroup_quotient (N : Subgroup G) [N.Normal] [Amenable N]
     [Amenable (G ⧸ N)] : Amenable G :=
   (amenable_iff_subgroup_quotient N).2 ⟨‹_›, ‹_›⟩
 
+end TauCeti
+
+namespace Subgroup
+
+variable {G : Type*} [Group G] [TopologicalSpace G] [DiscreteTopology G]
+
 /-- A discrete group is amenable exactly when a finite-index subgroup of it is amenable: its
 normal core still has finite index, hence finite quotient. -/
 theorem amenable_iff_of_finiteIndex (H : Subgroup G) [H.FiniteIndex] :
-    Amenable G ↔ Amenable H := by
+    TauCeti.Amenable G ↔ TauCeti.Amenable H := by
   refine ⟨fun _ => inferInstance, fun _ => ?_⟩
-  have : Amenable H.normalCore :=
+  have : TauCeti.Amenable H.normalCore :=
     .of_injective (Subgroup.inclusion H.normalCore_le) (Subgroup.inclusion_injective _)
   have := QuotientGroup.discreteTopology (isOpen_discrete (H.normalCore : Set G))
   exact .of_subgroup_quotient H.normalCore
 
 /-- A discrete group with an amenable finite-index subgroup is amenable. -/
-theorem Amenable.of_finiteIndex (H : Subgroup G) [H.FiniteIndex] [Amenable H] :
-    Amenable G :=
-  (amenable_iff_of_finiteIndex H).2 ‹_›
+theorem amenable_of_finiteIndex (H : Subgroup G) [H.FiniteIndex] [TauCeti.Amenable H] :
+    TauCeti.Amenable G :=
+  H.amenable_iff_of_finiteIndex.2 ‹_›
 
-end TauCeti
+end Subgroup
