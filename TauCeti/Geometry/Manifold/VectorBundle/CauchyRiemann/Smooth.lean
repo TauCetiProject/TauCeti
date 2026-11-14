@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import Mathlib.Geometry.Manifold.BumpFunction
 import Mathlib.Geometry.Manifold.Notation
 
 /-!
@@ -24,6 +25,8 @@ a set to `C^n` sections of `Hom(TM, V)` there.
 
 ## Main results
 
+* `TauCeti.IsRealCauchyRiemannOperator.contMDiffCovariantDerivativeOn_mono_of_isOpen`: a real
+  Cauchy–Riemann operator which is `C^n` on a set is `C^n` on each open subset, by locality.
 * `TauCeti.IsRealCauchyRiemannOperator.contMDiffOn_difference` and
   `TauCeti.IsRealCauchyRiemannOperator.contMDiffOn_antilinearPart`: smoothness of the zeroth-order
   terms of smooth real Cauchy–Riemann operators.
@@ -39,7 +42,7 @@ a set to `C^n` sections of `Hom(TM, V)` there.
 public section
 
 open Bundle
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold Topology
 
 namespace TauCeti
 
@@ -57,6 +60,33 @@ open SmoothAlmostComplexStructure
 variable [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, ContinuousSMul ℂ (V x)]
 
 variable [FiniteDimensional ℝ E] [T2Space M] {u : Set M} {n : ℕ∞ω}
+
+omit [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, ContinuousSMul ℂ (V x)] in
+/-- **Locality of the regularity of a real Cauchy–Riemann operator.** If a real Cauchy–Riemann
+operator is `C^n` on a set `s`, sending sections which are `C^(n + 1)` on `s` to `C^n` one-forms
+on `s`, then it is `C^n` on every open subset `u ⊆ s`. As in
+`ContMDiffCovariantDerivativeOn.mono_of_isOpen`, a section which is `C^(n + 1)` on `u` is cut off
+by a bump function, and the operator only sees its germ. -/
+theorem IsRealCauchyRiemannOperator.contMDiffCovariantDerivativeOn_mono_of_isOpen
+    [VectorBundle ℝ F V] {n : ℕ∞} {s : Set M} (hD : IsRealCauchyRiemannOperator F j D)
+    (h : ContMDiffCovariantDerivativeOn F n D s) (hu : IsOpen u) (hus : u ⊆ s) :
+    ContMDiffCovariantDerivativeOn F n D u where
+  contMDiff {σ} hσ y hy := by
+    -- Cut `σ` off by a bump function equal to one near `y` and supported in `u`.
+    obtain ⟨ρ, -, hρ⟩ :=
+      (SmoothBumpFunction.nhds_basis_tsupport (I := I) y).mem_iff.mp (hu.mem_nhds hy)
+    have hρσ : CMDiff (n + 1) (T% ((ρ : M → ℝ) • σ)) :=
+      (ρ.contMDiff.of_le (mod_cast le_top)).contMDiffOn.smul_section_of_tsupport hu hρ hσ
+    have hρσ' := (h.contMDiff hρσ.contMDiffOn y (hus hy)).contMDiffAt
+      (Filter.mem_of_superset (hu.mem_nhds hy) hus)
+    -- Near `y` the cut-off section agrees with `σ`, so the operator agrees on them there.
+    have heq : ∀ᶠ z in 𝓝 y, D ((ρ : M → ℝ) • σ) z = D σ z := by
+      filter_upwards [hu.mem_nhds hy, ρ.eventuallyEq_one.eventually_nhds] with z hz hρz
+      refine hD.apply_eq_of_eventuallyEq
+        (((hσ z hz).contMDiffAt (hu.mem_nhds hz)).mdifferentiableAt (by simp)) ?_
+      filter_upwards [hρz] with w hw
+      simp [hw]
+    exact (hρσ'.congr_of_eventuallyEq (heq.mono fun z hz ↦ by simp only [hz])).contMDiffWithinAt
 
 omit [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, ContinuousSMul ℂ (V x)] in
 /-- If two real Cauchy–Riemann operators send `C^(n + 1)` sections over `u` to `C^n` sections of
