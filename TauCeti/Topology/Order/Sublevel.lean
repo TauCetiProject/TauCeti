@@ -76,9 +76,9 @@ homeomorphism preserving the value of `f` (`Flow.bandHomeomorph`): a point of th
 the point where its flow line meets the level `a`, together with its value. Inside the band the
 flow moves `f` at unit speed backwards in time as well (`Flow.apply_eq_sub_of_mem_Icc`). On the
 open superlevel `V = {a < f}`, pushing the level `f⁻¹(a)` up into a collar `f⁻¹[a, s]` along the
-flow is a homotopy equivalence onto the sublevel `f⁻¹(a, s]` of `V`
+flow is a homotopy equivalence to the sublevel `f⁻¹(a, s]` of `V`
 (`Flow.exists_homotopyEquiv_level_sublevel`), and pushing the bottom of the collar back down is a
-homotopy equivalence from the sublevel `f⁻¹(a, b]` of `V` onto the band `f⁻¹[a, b]`
+homotopy equivalence from the sublevel `f⁻¹(a, b]` of `V` to the band `f⁻¹[a, b]`
 (`Flow.exists_homotopyEquiv_sublevel_band`).
 
 Along an inducing map `j : M → X` whose range contains a band `F⁻¹[a, b]`, compactness of the
@@ -590,8 +590,7 @@ open scoped ContinuousMap in
 /-- **A collar of a level as a sublevel of the open superlevel.** Let `φ` be a flow
 moving `f` at unit speed through a collar `f⁻¹[a, s]`, `a < s`, and let `V` be the open set
 `{a < f}`. Pushing the level `f⁻¹(a)` up to the middle level `(a + s) / 2` of the collar is a
-homotopy equivalence onto the sublevel `f⁻¹(a, s]` of `V`, whose inverse flows each point down to
-`f⁻¹(a)`. -/
+homotopy equivalence to the sublevel `f⁻¹(a, s]` of `V`. -/
 theorem exists_homotopyEquiv_level_sublevel (hf : Continuous f) {s : ℝ} (has : a < s)
     (hφ : ∀ y t, f y ∈ Icc a s → f y - t ∈ Icc a s → f (φ t y) = f y - t)
     (V : TopologicalSpace.Opens X) (hV : ∀ x, x ∈ V ↔ a < f x) :
