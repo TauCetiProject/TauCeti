@@ -46,9 +46,7 @@ env:
 jobs:
   build-docs:
     # Keep hourly docs builds independent of the hosted-runner backlog.
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-16x32-with-features
-      - namespace-features:github.run-id=${{ github.run_id }}
+    runs-on: ubuntu-24.04
     # A full rebuild (after a pin bump) analyzes all of TauCeti; everything else is far quicker.
     timeout-minutes: 300
     permissions:

@@ -63,7 +63,7 @@ theorem realEmbedding_injective [NeZero m] : Function.Injective (realEmbedding m
   funext i
   have hcoord := congrFun h i
   simp only [realEmbedding_apply] at hcoord
-  exact Rat.cast_injective ((div_left_inj' (Real.sqrt_ne_zero'.mpr
+  exact Rat.cast_injective ((div_left_inj₀ (Real.sqrt_ne_zero'.mpr
     (by exact_mod_cast NeZero.pos m))).mp hcoord)
 
 /-- The real Construction A carrier is the normalized image of its rational carrier. -/
@@ -94,7 +94,7 @@ theorem intCast_div_sqrt_mem_realLattice [NeZero m] {C : AddSubgroup (ι → ZMo
   · rintro ⟨w, hw, h⟩
     have hwz : w = z := by
       funext i
-      exact Int.cast_injective ((div_left_inj' (Real.sqrt_ne_zero'.mpr
+      exact Int.cast_injective ((div_left_inj₀ (Real.sqrt_ne_zero'.mpr
         (by exact_mod_cast NeZero.pos m))).mp (congrFun h i))
     simpa [hwz] using hw
   · exact fun hz ↦ ⟨z, hz, rfl⟩
