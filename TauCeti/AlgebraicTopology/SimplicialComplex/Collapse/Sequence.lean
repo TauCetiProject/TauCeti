@@ -156,10 +156,14 @@ theorem exists_homotopyEquiv (h : CollapsesTo K L) (hK : K ≤ A.toPreAbstractSi
       (e : {x : Realization A // x.1.support ∈ L} → {x : Realization A // x.1.support ∈ K}) =
         fun x => ⟨x.1, h.le x.2⟩ := by
   obtain ⟨r, hr, hR⟩ := h.exists_strong_deformation_retraction hK
-  refine ⟨.ofDeformationRetraction _ r hr hR.homotopic.symm, ?_⟩
+  refine ⟨.ofDeformationRetraction (ContinuousMap.inclusion
+    (s := {x : Realization A | x.1.support ∈ L})
+    (t := {x : Realization A | x.1.support ∈ K}) fun _ hx => h.le hx) r hr
+    hR.homotopic.symm, ?_⟩
   funext x
+  apply Subtype.ext
   rw [ContinuousMap.HomotopyEquiv.ofDeformationRetraction_toFun]
-  rfl
+  exact ContinuousMap.inclusion_apply_coe (s := {x : Realization A | x.1.support ∈ L}) _ x
 
 /-- If `K` collapses to `L`, the polyhedron of `L` is contractible exactly when that of `K` is,
 inside any containing weak realization. -/
@@ -186,9 +190,11 @@ theorem exists_homotopyEquiv_realization {K L : AbstractSimplicialComplex ι}
       mem_toPreAbstractSimplicialComplex.mpr (support_mem K x))).trans (Homeomorph.Set.univ _)
   refine ⟨eL.toHomotopyEquiv.trans (e.trans eK.toHomotopyEquiv), ?_⟩
   funext x
-  change (eK (e (eL x)) : Realization K) = _
-  rw [he]
-  rfl
+  apply Subtype.ext
+  simp only [ContinuousMap.HomotopyEquiv.trans_apply, Homeomorph.coe_toHomotopyEquiv, eK, eL,
+    Homeomorph.trans_apply, Homeomorph.Set.univ_apply, he, Homeomorph.setCongr,
+    Homeomorph.homeomorph_mk_coe]
+  rw [Set.equivOfEq_apply, Set.equivOfEq_apply, Topology.IsEmbedding.toHomeomorph_apply_coe]
 
 /-- If `K` collapses to `L`, the realization of `L` is contractible exactly when the realization
 of `K` is. -/
