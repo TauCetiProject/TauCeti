@@ -88,7 +88,8 @@ private theorem exists_isMorseOn_tsupport_sub_inter_compl (f φ : C^∞⟮I, M; 
     {𝒰 : Set C^∞⟮I, M; 𝓘(ℝ), ℝ⟯} (h𝒰 : 𝒰 ∈ 𝓝 φ) :
     ∃ ψ ∈ 𝒰, IsMorseOn I ψ K₁ ∧ tsupport (fun x ↦ ψ x - φ x) ⊆ W ∩ Cᶜ := by
   -- `f` is Morse on an open neighbourhood `V` of `C`.
-  obtain ⟨V, hV, hCV, hfV⟩ := hfC.exists_isOpen_superset f.contMDiff
+  obtain ⟨V, hV, hCV, hfV⟩ :=
+    hfC.exists_isOpen_superset (.of_forall fun _ ↦ f.contMDiff.contMDiffAt)
   have hO : IsOpen (tsupport fun x ↦ φ x - f x)ᶜ := (isClosed_tsupport _).isOpen_compl
   -- Near `C` the function `φ` is still `f`, hence Morse.
   have hφV : IsMorseOn I φ (V ∩ (tsupport fun x ↦ φ x - f x)ᶜ) :=

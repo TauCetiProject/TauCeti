@@ -326,7 +326,7 @@ theorem eventually_forall_isManifoldNondegenerateCriticalPoint {f : C^n⟮I, M; 
   choose! U hU hUg using fun x hx ↦
     exists_mem_nhds_eventually_forall_isManifoldNondegenerateCriticalPoint hn
       (eventually_mem_criticalPoints_imp_isManifoldNondegenerateCriticalPoint
-        (f.contMDiff.of_le (one_le_two.trans hn)) (hf x hx))
+        ((f.contMDiff.of_le (one_le_two.trans hn)) x) (hf x hx))
   obtain ⟨t, htK, hKt⟩ := hK.elim_nhds_subcover U hU
   filter_upwards [(eventually_all_finset t).2 fun x hx ↦ hUg x (htK x hx)] with g hg y hy hcrit
   obtain ⟨x, hxt, hyx⟩ := mem_iUnion₂.1 (hKt hy)

@@ -10,15 +10,17 @@ public import TauCeti.Geometry.Manifold.Morse.Generic.Basic
 /-!
 # Relative Morse approximation on compact sets
 
-A smooth function which is already Morse near the intersection of a compact set with a closed
+A smooth function which is already Morse on the intersection of a compact set with a closed
 set can be made Morse on the compact set without changing it near the closed set. The perturbation
 has compact support in the complement of the closed set and can be chosen in any weak Whitney
 neighbourhood. This is
 the local relative step used when treating successively larger compact regions of a manifold.
 No global Morse approximation or convergence of infinitely many perturbations is asserted.
 
-The proof applies compactly supported local Morse approximation away from a smaller
-neighbourhood of the protected set, preserving nondegeneracy on the remaining compact region.
+The proof first finds an open neighbourhood of the intersection on which the function is Morse
+(`TauCeti.IsMorseOn.exists_isOpen_superset`), then applies compactly supported local Morse
+approximation away from a smaller neighbourhood of the protected set, preserving nondegeneracy on
+the remaining compact region.
 
 ## References
 
@@ -49,7 +51,8 @@ theorem exists_isMorseOn_hasCompactSupport_sub_compl
     {𝒰 : Set C^∞⟮I, M; 𝓘(ℝ), ℝ⟯} (h𝒰 : 𝒰 ∈ 𝓝 f) :
     ∃ g ∈ 𝒰, IsMorseOn I g K ∧ HasCompactSupport (fun y ↦ g y - f y) ∧
       tsupport (fun y ↦ g y - f y) ⊆ Cᶜ := by
-  obtain ⟨V, hV, hKCV, hfV⟩ := hfKC.exists_isOpen_superset f.contMDiff
+  obtain ⟨V, hV, hKCV, hfV⟩ :=
+    hfKC.exists_isOpen_superset (.of_forall fun _ ↦ f.contMDiff.contMDiffAt)
   have : LocallyCompactSpace H := I.locallyCompactSpace
   have : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace H M
   obtain ⟨O, hO, hKCO, hOV⟩ := (hK.inter_right hC).exists_isOpen_closure_subset
