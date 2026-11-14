@@ -23,6 +23,12 @@ provide the resulting `SeminormedRing`, `NormedRing`, and `NormedAlgebra` instan
 * `TwoSidedIdeal.Quotient.nonUnitalSeminormedRing` and
   `TwoSidedIdeal.Quotient.nonUnitalNormedRing`: quotient seminormed and normed ring structures on
   `A ⧸ I` for `I : TwoSidedIdeal A`.
+* `TwoSidedIdeal.Quotient.nonUnitalSeminormedCommRing`,
+  `TwoSidedIdeal.Quotient.nonUnitalNormedCommRing`, `TwoSidedIdeal.Quotient.seminormedCommRing` and
+  `TwoSidedIdeal.Quotient.normedCommRing`: the commutative variants of these structures.
+* `TwoSidedIdeal.Quotient.norm_mk_le`, `TwoSidedIdeal.Quotient.exists_norm_mk_lt`,
+  `TwoSidedIdeal.Quotient.norm_mk_eq` and `TwoSidedIdeal.Quotient.continuous_mk`: the basic
+  properties of the quotient norm and of the projection `mk I`.
 * `TwoSidedIdeal.Quotient.seminormedRing`, `TwoSidedIdeal.Quotient.normedRing`, and
   `TwoSidedIdeal.Quotient.normedAlgebra`: unital and algebra counterparts on `R ⧸ I`.
 -/
