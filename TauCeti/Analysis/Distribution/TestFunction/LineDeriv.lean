@@ -107,7 +107,7 @@ directional derivative. -/
 @[simp]
 theorem coe_lineDerivCLM (φ : 𝓓(Ω, F)) (v : E) :
     ⇑(lineDerivCLM ℝ v φ : 𝓓(Ω, F)) = fun x ↦ lineDeriv ℝ (φ : E → F) x v :=
-  funext fun _ ↦ lineDerivCLM_apply_of_le le_top
+  funext (lineDerivOp_apply φ v)
 
 /-- The classical directional derivative of a test function is its Fréchet derivative evaluated in
 that direction. -/
