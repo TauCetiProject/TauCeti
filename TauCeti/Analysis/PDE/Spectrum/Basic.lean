@@ -143,6 +143,14 @@ def dirichletSolutionOperator
     Lp ℝ 2 (mu.restrict Omega) →L[ℝ] Lp ℝ 2 (mu.restrict Omega) :=
   hcoercive.formSolutionOperator W1p0.valueL
 
+/-- The solution operator of the Dirichlet problem is the solution operator of the energy form
+along the value inclusion `H¹₀(Ω) → L²(Ω)`. -/
+theorem dirichletSolutionOperator_def
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) :
+    dirichletSolutionOperator hcoeff hcoercive = hcoercive.formSolutionOperator W1p0.valueL :=
+  (rfl)
+
 /-- The abstract solution map of the energy form along the value inclusion is the weak solution
 of the Dirichlet problem. -/
 theorem formSolutionMap_valueL_eq_weakSolutionDirichlet
@@ -150,9 +158,8 @@ theorem formSolutionMap_valueL_eq_weakSolutionDirichlet
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) (f : Lp ℝ 2 (mu.restrict Omega)) :
     hcoercive.formSolutionMap W1p0.valueL f = weakSolutionDirichlet hcoeff hcoercive f := by
   refine (IsCoercive.eq_formSolutionMap hcoercive W1p0.valueL fun v ↦ ?_).symm
-  rw [energyFormH1L0_apply, W1p0.valueL_apply, ← dirichletForcing_apply f v,
-    dirichletForcing_apply_eq_setIntegral]
-  exact (isWeakSolutionDirichlet_iff f _).mp
+  rw [W1p0.valueL_apply]
+  exact (isWeakSolutionDirichlet_iff_forall_energyFormH1L0_eq_inner hcoeff f _).mp
     (isWeakSolutionDirichlet_weakSolutionDirichlet hcoeff hcoercive f) v
 
 /-- The solution operator returns the value component of the weak solution. -/

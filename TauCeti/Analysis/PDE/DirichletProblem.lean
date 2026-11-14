@@ -366,6 +366,17 @@ theorem isCoercive_energyFormH1L0
   calc C * ‖w‖ * ‖w‖ = C * ‖w‖ ^ 2 := by ring
     _ ≤ _ := hlower w
 
+/-- **The weak formulation through the bundled energy form.** `u ∈ H¹₀(Ω)` is a weak solution of
+`L u = f` exactly when `energyFormH1L0 hcoeff u v = ⟪f, v⟫_{L²(Ω)}` for every `v ∈ H¹₀(Ω)`: the
+variational equation of the energy form along the value inclusion `H¹₀(Ω) → L²(Ω)`. -/
+theorem isWeakSolutionDirichlet_iff_forall_energyFormH1L0_eq_inner
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (f : Lp ℝ 2 (mu.restrict Omega)) (u : W1p0 mu Omega 2) :
+    IsWeakSolutionDirichlet a b c f u ↔
+      ∀ v : W1p0 mu Omega 2,
+        energyFormH1L0 hcoeff u v = ⟪f, W1p.value (v : W1p mu Omega 2)⟫_ℝ := by
+  simp only [IsWeakSolutionDirichlet, energyFormH1L0_apply, dirichletForcing_apply]
+
 /-- **The weak solution of the Dirichlet problem**, produced by Lax--Milgram from coercivity of
 the energy form. It is characterised by
 `TauCeti.PDE.isWeakSolutionDirichlet_weakSolutionDirichlet` together with
