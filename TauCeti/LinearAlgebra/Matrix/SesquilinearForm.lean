@@ -52,9 +52,11 @@ this gives `B(y, x) = ε σ(B(x, y))` (`Matrix.comp_dotProduct_mulVec_swap`) and
 `B(u + c x, u + c x)` when `x` is isotropic (`Matrix.comp_add_smul_dotProduct_mulVec_add_smul`).
 
 Over a field, if the trace `t ↦ t + ε σ(t)` is onto the elements `s` with `σ(s) = ε s` (which
-forces `ε * ε = 1` when `Q ≠ 0` or `Q` is invertible over a nonempty index type,
-`Matrix.mul_self_eq_one_of_trace` and `Matrix.mul_self_eq_one_of_trace_of_det_ne_zero`), a vector
-`u` with `B(u, x) ≠ 0` corrects to an isotropic `u + c x`
+forces `ε * ε = 1` and hence `σ(ε) = ε` when `Q ≠ 0` or `Q` is invertible over a nonempty index
+type, `Matrix.mul_self_eq_one_of_trace`, `Matrix.mul_self_eq_one_of_trace_of_det_ne_zero`,
+`Matrix.map_eq_self_of_mul_self_eq_one`, and
+`Matrix.map_eq_self_of_mul_self_eq_one_of_det_ne_zero`), a vector `u` with `B(u, x) ≠ 0` corrects
+to an isotropic `u + c x`
 (`Matrix.exists_comp_add_smul_dotProduct_mulVec_add_smul_eq_zero`). For invertible `Q`, one or two
 vectors outside a line `K ∙ u` are separated from `u` by the form when `σ` is surjective
 (`Matrix.exists_comp_dotProduct_mulVec_eq_zero_and_ne_zero`,
@@ -62,9 +64,10 @@ vectors outside a line `K ∙ u` are separated from `u` by the form when `σ` is
 `B(u, x) = 0` and `u ∉ K ∙ x` this yields an isotropic vector orthogonal to `x` and not to `u`
 (`Matrix.exists_comp_dotProduct_mulVec_self_eq_zero_and_eq_zero_and_ne_zero`); any two nonzero
 vectors also pair nontrivially with a common vector
-(`Matrix.exists_comp_dotProduct_mulVec_ne_zero_pair`). If moreover the trace
-has a nonzero kernel element and some nonzero vector is isotropic, a matrix scaling every isotropic
-vector is scalar (`Matrix.exists_eq_scalar_of_forall_mulVec_eq_smul`).
+(`Matrix.exists_comp_dotProduct_mulVec_ne_zero_pair`), and any vector orthogonal on the left to the
+whole space vanishes (`Matrix.eq_zero_of_forall_comp_dotProduct_mulVec_eq_zero`). If moreover the
+trace has a nonzero kernel element and some nonzero vector is isotropic, a matrix scaling every
+isotropic vector is scalar (`Matrix.exists_eq_scalar_of_forall_mulVec_eq_smul`).
 -/
 
 public section
@@ -276,6 +279,25 @@ theorem mul_self_eq_one_of_trace_of_det_ne_zero [Nonempty n] (hσ : Function.Inv
   rintro rfl
   exact hdet det_zero
 
+omit [DecidableEq n] [Fintype n] in
+/-- For a nonzero `ε`-Hermitian matrix with `ε * ε = 1`, the sign `ε` is fixed by `σ`. -/
+theorem map_eq_self_of_mul_self_eq_one (hσ : Function.Involutive σ) (hQ : (Q.map σ)ᵀ = ε • Q)
+    (hε : ε * ε = 1) (hQ0 : Q ≠ 0) : σ ε = ε := by
+  obtain ⟨i, j, hij⟩ : ∃ i j, Q i j ≠ 0 := by
+    by_contra h
+    exact hQ0 (Matrix.ext fun i j ↦ not_not.mp fun h' ↦ h ⟨i, j, h'⟩)
+  have hε' : σ ε * ε = 1 :=
+    mul_right_cancel₀ hij <| by simpa using Matrix.ext_iff.mpr (map_mul_self_smul_eq_self hσ hQ) i j
+  exact mul_right_cancel₀ (left_ne_zero_of_mul_eq_one hε) (hε'.trans hε.symm)
+
+/-- Over a nonempty index type, an invertible `ε`-Hermitian matrix with `ε * ε = 1` satisfies
+`σ(ε) = ε`. -/
+theorem map_eq_self_of_mul_self_eq_one_of_det_ne_zero [Nonempty n] (hσ : Function.Involutive σ)
+    (hQ : (Q.map σ)ᵀ = ε • Q) (hdet : Q.det ≠ 0) (hε : ε * ε = 1) : σ ε = ε := by
+  refine map_eq_self_of_mul_self_eq_one hσ hQ hε ?_
+  rintro rfl
+  exact hdet det_zero
+
 omit [DecidableEq n] in
 /-- **Correcting a vector to an isotropic one.** If the trace `t ↦ t + ε σ(t)` is onto the
 elements `s` with `σ(s) = ε s`, then for isotropic `x` and `B(u, x) ≠ 0` some `u + c • x` is
@@ -357,6 +379,18 @@ theorem exists_comp_dotProduct_mulVec_ne_zero_pair (hdet : Q.det ≠ 0) {x y : n
         by rwa [comp_add_dotProduct_mulVec, hvy, zero_add]⟩
     · exact ⟨w, hwx, hw⟩
   · exact ⟨v, hv, hvy⟩
+
+/-- For an invertible `Q` and a ring endomorphism `σ` of a field, a vector orthogonal on the left
+to every vector is zero. -/
+theorem eq_zero_of_forall_comp_dotProduct_mulVec_eq_zero {σ : K →+* K} (hdet : Q.det ≠ 0)
+    {x : n → K} (hx : ∀ y : n → K, (σ ∘ x) ⬝ᵥ (Q *ᵥ y) = 0) : x = 0 := by
+  have hvec : (σ ∘ x) ᵥ* Q = 0 := funext fun j ↦ by
+    have h := hx (Pi.single j 1)
+    rwa [dotProduct_mulVec, dotProduct_single_one] at h
+  have hσx : σ ∘ x = 0 := by
+    by_contra hne
+    exact hdet (exists_vecMul_eq_zero_iff.mp ⟨σ ∘ x, hne, hvec⟩)
+  exact funext fun i ↦ σ.injective (by simpa using congrFun hσx i)
 
 /-- **A matrix scaling every isotropic vector is scalar.** Let `σ` be an involution and `Q` an
 invertible `ε`-Hermitian matrix, and suppose that the trace `t ↦ t + ε σ(t)` is onto the
