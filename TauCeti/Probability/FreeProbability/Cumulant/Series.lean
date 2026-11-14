@@ -62,6 +62,8 @@ and the moment series determine each other.
   `TauCeti.IsFreelyIndependentElements.rSeries_add`.
 * `TauCeti.rSeries_add_algebraMap`, `TauCeti.momentSeries_smul`,
   `TauCeti.freeCumulantSeries_smul` and `TauCeti.rSeries_smul` — shifts and dilations.
+* `TauCeti.map_momentSeries`, `TauCeti.map_freeCumulantSeries` and `TauCeti.map_rSeries` —
+  transport of the series under a ring homomorphism on the scalar ring.
 
 ## References
 
@@ -98,6 +100,14 @@ theorem coeff_momentSeries (n : ℕ) : coeff n (momentSeries φ a) = φ (a ^ n) 
 @[simp]
 theorem constantCoeff_momentSeries : constantCoeff (momentSeries φ a) = φ 1 := by
   rw [← coeff_zero_eq_constantCoeff_apply, coeff_momentSeries, pow_zero]
+
+/-- Applying a ring homomorphism to the coefficients of the moment series is post-composing `φ`
+with it. -/
+@[simp]
+theorem map_momentSeries {S : Type*} [Semiring S] (f : R →+* S) :
+    PowerSeries.map f (momentSeries φ a) = momentSeries (f ∘ φ) a := by
+  ext n
+  simp
 
 end MomentSeries
 
@@ -178,6 +188,22 @@ theorem freeCumulantSeries_eq_one_add_X_mul_rSeries :
 theorem coeff_succ_freeCumulantSeries (n : ℕ) :
     coeff (n + 1) (freeCumulantSeries φ a) = coeff n (rSeries φ a) := by
   rw [coeff_freeCumulantSeries, coeff_rSeries]
+
+/-- Applying a ring homomorphism to the coefficients of the free cumulant series is post-composing
+`φ` with it. -/
+@[simp]
+theorem map_freeCumulantSeries {S : Type*} [CommRing S] (f : R →+* S) :
+    PowerSeries.map f (freeCumulantSeries φ a) = freeCumulantSeries (f ∘ φ) a := by
+  ext n
+  simp [map_freeCumulant]
+
+/-- Applying a ring homomorphism to the coefficients of the R-series is post-composing `φ` with
+it. -/
+@[simp]
+theorem map_rSeries {S : Type*} [CommRing S] (f : R →+* S) :
+    PowerSeries.map f (rSeries φ a) = rSeries (f ∘ φ) a := by
+  ext n
+  simp [map_freeCumulant]
 
 /-- The free cumulant series depends only on the moment series: if `φ (a ^ n) = ψ (b ^ n)` for
 every `n`, then `a` and `b` have the same free cumulants. No normalisation is needed. -/

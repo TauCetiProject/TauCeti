@@ -88,6 +88,8 @@ traciality are never assumed. For `s = ∅` the cumulant
 * `TauCeti.partitionMoment_congr`, `TauCeti.partitionCumulant_congr` and
   `TauCeti.freeCumulant_congr` — block moments and cumulants depend only on the letters at the
   positions of `s`.
+* `TauCeti.map_partitionMoment`, `TauCeti.map_partitionCumulant` and `TauCeti.map_freeCumulant` —
+  block moments and free cumulants commute with post-composing the functional by a homomorphism.
 
 ## References
 
@@ -482,5 +484,34 @@ theorem freeCumulant_eq_of_orderIso (e : NoncrossingPartition s ≃o Noncrossing
   rw [freeCumulant_def, partitionCumulant_eq_of_orderIso φ e h, e.map_top, freeCumulant_def]
 
 end OrderIso
+
+section Hom
+
+variable {S F : Type*}
+
+/-- Applying a monoid homomorphism to the values of a functional applies it to every block
+moment. -/
+theorem map_partitionMoment [CommMonoid R] [CommMonoid S] [Monoid A] [FunLike F R S]
+    [MonoidHomClass F R S] (f : F) (φ : A → R) (a : α → A) (P : Finpartition s) :
+    f (partitionMoment φ a P) = partitionMoment (f ∘ φ) a P := by
+  simp [partitionMoment_def]
+
+/-- Applying a ring homomorphism to the values of a functional applies it to the free cumulant of
+every noncrossing partition. -/
+theorem map_partitionCumulant [CommRing R] [CommRing S] [Monoid A] [FunLike F R S]
+    [RingHomClass F R S] (f : F) (φ : A → R) (a : α → A) (π : NoncrossingPartition s) :
+    f (partitionCumulant φ a π) = partitionCumulant (f ∘ φ) a π := by
+  refine congrFun (eq_partitionCumulant_of_forall_sum_Iic (f ∘ φ) a
+    (fun σ => f (partitionCumulant φ a σ)) fun τ => ?_) π
+  rw [← map_sum, sum_Iic_partitionCumulant, map_partitionMoment]
+
+/-- Applying a ring homomorphism to the values of a functional applies it to every free
+cumulant. -/
+theorem map_freeCumulant [CommRing R] [CommRing S] [Monoid A] [FunLike F R S]
+    [RingHomClass F R S] (f : F) (φ : A → R) (a : α → A) (s : Finset α) :
+    f (freeCumulant φ a s) = freeCumulant (f ∘ φ) a s := by
+  rw [freeCumulant_def, freeCumulant_def, map_partitionCumulant]
+
+end Hom
 
 end TauCeti
