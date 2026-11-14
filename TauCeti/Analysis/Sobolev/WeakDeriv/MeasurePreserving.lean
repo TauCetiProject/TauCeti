@@ -54,6 +54,9 @@ multiplied by a Lipschitz constant of `Φ` on `closure W`, and these tend to zer
 * `TauCeti.HasWeakFDerivOn.comp_continuousLinearEquiv`,
   `ContinuousLinearEquiv.hasWeakFDerivOn_comp_iff`: the case of a measure-preserving
   continuous linear equivalence, such as a linear isometry between inner product spaces.
+* `TauCeti.HasWeakFDerivOn.comp_continuousLinearEquiv_of_isAddHaarMeasure`,
+  `ContinuousLinearEquiv.hasWeakFDerivOn_comp_iff_of_isAddHaarMeasure`: the case of an arbitrary
+  continuous linear equivalence between spaces carrying additive Haar measures.
 
 ## References
 
@@ -251,5 +254,33 @@ theorem _root_.ContinuousLinearEquiv.hasWeakFDerivOn_comp_iff {U : Opens E} {V :
   have hVU : MapsTo e.symm V U := fun y hy => by simpa [hUV] using hy
   simpa [Function.comp_def, ContinuousLinearMap.comp_assoc] using
     h.comp_continuousLinearEquiv e.symm he' hVU
+
+/-- **The weak chain rule for an arbitrary continuous linear equivalence.** Between
+finite-dimensional real normed spaces carrying any additive Haar measures `μ` and `ν`, every
+continuous linear equivalence `e : E ≃L[ℝ] E'` carries `μ` to an additive Haar measure `μ.map e`
+on `E'`. Since weak derivatives do not depend on the choice of additive Haar measure, `u ∘ e` has
+weak derivative `x ↦ D (e x) ∘L e` on `U` whenever `u` has weak derivative `D` on `V` and
+`e` maps `U` into `V`, with no measure-preservation hypothesis on `e`. -/
+theorem HasWeakFDerivOn.comp_continuousLinearEquiv_of_isAddHaarMeasure {U : Opens E} {V : Opens E'}
+    {u : E' → F} {D : E' → E' →L[ℝ] F} (h : HasWeakFDerivOn ν V u D) (e : E ≃L[ℝ] E')
+    (hUV : MapsTo e U V) :
+    HasWeakFDerivOn μ U (u ∘ e) fun x => (D (e x)).comp (e : E →L[ℝ] E') :=
+  have : (μ.map e).IsAddHaarMeasure := e.isAddHaarMeasure_map μ
+  (h.of_isAddHaarMeasure (μ.map e)).comp_continuousLinearEquiv e
+    ⟨e.continuous.measurable, rfl⟩ hUV
+
+/-- **Equivalence of weak derivatives under an arbitrary continuous linear equivalence.** For any
+continuous linear equivalence `e : E ≃L[ℝ] E'` between finite-dimensional real normed spaces with
+additive Haar measures `μ` and `ν` and `U = e ⁻¹' V`, `u ∘ e` has weak derivative
+`x ↦ D (e x) ∘L e` on `U` with respect to `μ` if and only if `u` has weak derivative `D` on `V`
+with respect to `ν`. -/
+theorem _root_.ContinuousLinearEquiv.hasWeakFDerivOn_comp_iff_of_isAddHaarMeasure {U : Opens E}
+    {V : Opens E'} {u : E' → F} {D : E' → E' →L[ℝ] F} (e : E ≃L[ℝ] E')
+    (hUV : (U : Set E) = e ⁻¹' V) :
+    HasWeakFDerivOn μ U (u ∘ e) (fun x => (D (e x)).comp (e : E →L[ℝ] E')) ↔
+      HasWeakFDerivOn ν V u D := by
+  have : (μ.map e).IsAddHaarMeasure := e.isAddHaarMeasure_map μ
+  exact (e.hasWeakFDerivOn_comp_iff ⟨e.continuous.measurable, rfl⟩ hUV).trans
+    (hasWeakFDerivOn_isAddHaarMeasure_iff ν)
 
 end TauCeti
