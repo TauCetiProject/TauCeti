@@ -71,7 +71,9 @@ namespace Submodule
 
 section Unitization
 
-variable {R A : Type*} [CommRing R] [NonUnitalRing A] [Module R A]
+section NonAssocSemiring
+
+variable {R A : Type*} [Semiring R] [NonUnitalNonAssocSemiring A] [Module R A]
 
 /-- Left scalar action `(r, a) • x = r • x + a * x` of `Unitization R A` on an `R`-submodule
 `L : Submodule R A` closed under left multiplication by `A`. Provided as a definition taking the
@@ -98,10 +100,15 @@ theorem inr_coe_unitizationSMul (L : Submodule R A) (hmul : ∀ a : A, ∀ x ∈
   · simp
   · simp [coe_unitizationSMul]
 
-variable [IsScalarTower R A A] [SMulCommClass R A A]
+end NonAssocSemiring
+
+section Semiring
+
+variable {R A : Type*} [CommSemiring R] [NonUnitalSemiring A] [Module R A]
+  [IsScalarTower R A A] [SMulCommClass R A A]
 
 /-- Left `Unitization R A`-module structure on an `R`-submodule `L : Submodule R A` closed under
-left multiplication by `A`, transported along the injective inclusion `L → A → Unitization R A`. -/
+left multiplication by `A`, induced by multiplication in `Unitization R A`. -/
 @[instance_reducible]
 def unitizationModule (L : Submodule R A) (hmul : ∀ a : A, ∀ x ∈ L, a * x ∈ L) :
     Module (Unitization R A) L :=
@@ -120,6 +127,8 @@ theorem mem_annihilator_unitization_iff (L : Submodule R A) (hmul : ∀ a : A, �
   rw [Module.mem_annihilator]
   refine ⟨fun h x hx => congrArg Subtype.val (h ⟨x, hx⟩), fun h x => Subtype.ext (h x x.2)⟩
 
+end Semiring
+
 end Unitization
 
 end Submodule
@@ -137,7 +146,7 @@ def IsEssential (I : TwoSidedIdeal A) : Prop :=
 
 theorem isEssential_def {I : TwoSidedIdeal A} :
     I.IsEssential ↔ ∀ J : TwoSidedIdeal A, J ≠ ⊥ → I ⊓ J ≠ ⊥ :=
-  Iff.rfl
+  (Iff.rfl)
 
 /-- Contrapositive characterization: `I` is essential iff `I ⊓ J = ⊥` forces `J = ⊥`. -/
 theorem isEssential_iff_eq_bot {I : TwoSidedIdeal A} :
@@ -188,22 +197,24 @@ section NonUnitalRing
 variable {A : Type*} [NonUnitalRing A]
 
 /-- The *left annihilator* `{a : A | ∀ x ∈ I, a * x = 0}` of a two-sided ideal `I`, bundled as a
-two-sided ideal of `A`. Right absorption uses that `I` is a left ideal. -/
+two-sided ideal of `A`. -/
 def leftAnnihilator (I : TwoSidedIdeal A) : TwoSidedIdeal A :=
   mk' {a : A | ∀ x ∈ I, a * x = 0}
     (fun x _ => zero_mul x)
     (fun {_ _} ha hb x hx => by rw [add_mul, ha x hx, hb x hx, add_zero])
     (fun {_} ha x hx => by rw [neg_mul, ha x hx, neg_zero])
     (fun {_ _} ha x hx => by rw [mul_assoc, ha x hx, mul_zero])
+    -- Right absorption uses that `I` is a left ideal.
     (fun {_ r} ha x hx => by rw [mul_assoc]; exact ha (r * x) (I.mul_mem_left r x hx))
 
 /-- The *right annihilator* `{a : A | ∀ x ∈ I, x * a = 0}` of a two-sided ideal `I`, bundled as a
-two-sided ideal of `A`. Left absorption uses that `I` is a right ideal. -/
+two-sided ideal of `A`. -/
 def rightAnnihilator (I : TwoSidedIdeal A) : TwoSidedIdeal A :=
   mk' {a : A | ∀ x ∈ I, x * a = 0}
     (fun x _ => mul_zero x)
     (fun {_ _} ha hb x hx => by rw [mul_add, ha x hx, hb x hx, add_zero])
     (fun {_} ha x hx => by rw [mul_neg, ha x hx, neg_zero])
+    -- Left absorption uses that `I` is a right ideal.
     (fun {r _} ha x hx => by rw [← mul_assoc]; exact ha (x * r) (I.mul_mem_right x r hx))
     (fun {_ _} ha x hx => by rw [← mul_assoc, ha x hx, zero_mul])
 
@@ -282,8 +293,7 @@ theorem leftAnnihilator_anti : Antitone (leftAnnihilator (A := A)) :=
   gc_leftAnnihilator_rightAnnihilator.monotone_l
 
 theorem rightAnnihilator_anti : Antitone (rightAnnihilator (A := A)) :=
-  fun _ _ h _ ha => mem_rightAnnihilator.mpr fun _ hx =>
-    mul_eq_zero_of_mem_rightAnnihilator (h hx) ha
+  fun _ _ h => gc_leftAnnihilator_rightAnnihilator.monotone_u h
 
 theorem le_rightAnnihilator_leftAnnihilator (I : TwoSidedIdeal A) :
     I ≤ I.leftAnnihilator.rightAnnihilator :=
@@ -329,10 +339,10 @@ theorem rightAnnihilator_iSup {ι : Sort*} (I : ι → TwoSidedIdeal A) :
     (⨆ i, I i).rightAnnihilator = ⨅ i, (I i).rightAnnihilator :=
   gc_leftAnnihilator_rightAnnihilator.u_iInf
 
-/-- Any two-sided ideal disjoint from `I` lies in `I.leftAnnihilator`: for `a ∈ J` and `x ∈ I`,
-`a * x` belongs to `I ⊓ J = ⊥`. -/
+/-- Any two-sided ideal disjoint from `I` lies in `I.leftAnnihilator`. -/
 theorem le_leftAnnihilator_of_inf_eq_bot {I J : TwoSidedIdeal A} (h : I ⊓ J = ⊥) :
     J ≤ I.leftAnnihilator :=
+  -- For `a ∈ J` and `x ∈ I`, `a * x` belongs to `I ⊓ J = ⊥`.
   le_leftAnnihilator_iff.mpr fun a ha x hx =>
     (mem_bot _).mp <| h ▸ (⟨I.mul_mem_left a x hx, J.mul_mem_right a x ha⟩ : a * x ∈ I ⊓ J)
 
@@ -403,20 +413,32 @@ theorem rightAnnihilator_top : (⊤ : TwoSidedIdeal R).rightAnnihilator = ⊥ :=
 two-sided ideal. -/
 theorem isEssential_of_isEssential_asIdeal {I : TwoSidedIdeal R}
     (hI : TauCeti.IsEssential I.asIdeal) : I.IsEssential :=
-  isEssential_iff_eq_bot.mpr fun J hIJ => by
-    have hinf : I.asIdeal ⊓ J.asIdeal = ⊥ := by
-      ext x
-      rw [Submodule.mem_inf, mem_asIdeal, mem_asIdeal, Submodule.mem_bot, ← mem_bot R, ← hIJ]
-      rfl
-    have hJ : J.asIdeal = ⊥ := TauCeti.isEssential_iff.mp hI J.asIdeal hinf
-    ext x
-    rw [← mem_asIdeal, hJ, Submodule.mem_bot, mem_bot R]
+  isEssential_iff_eq_bot.mpr fun J hIJ =>
+    orderIsoIsTwoSided.injective <| Subtype.ext <|
+      TauCeti.isEssential_iff.mp hI J.asIdeal (by rw [← gc.u_inf, hIJ, bot_asIdeal])
 
 end Ring
 
+section CommRing
+
+/-- In a commutative ring, a two-sided ideal is essential if and only if its underlying ideal is
+essential as an `R`-submodule. -/
+theorem isEssential_iff_isEssential_asIdeal {R : Type*} [CommRing R] {I : TwoSidedIdeal R} :
+    I.IsEssential ↔ TauCeti.IsEssential I.asIdeal :=
+  ⟨fun hI => TauCeti.isEssential_iff.mpr fun K hIK => by
+      have hK : Ideal.toTwoSided K = ⊥ := isEssential_iff_eq_bot.mp hI (Ideal.toTwoSided K) <|
+        orderIsoIsTwoSided.injective <| Subtype.ext <| by
+          simp [gc.u_inf, hIK]
+      simpa using congrArg asIdeal hK,
+   isEssential_of_isEssential_asIdeal⟩
+
+end CommRing
+
 section Unitization
 
-variable {R A : Type*} [CommRing R] [NonUnitalRing A] [Module R A]
+section NonAssocRing
+
+variable {R A : Type*} [Semiring R] [NonUnitalNonAssocRing A] [Module R A]
 
 /-- Left scalar action `(r, a) • x = r • x + a * x` of `Unitization R A` on a two-sided ideal `I`
 closed under `R`-scalar multiplication. Provided as a definition taking the scalar-absorption
@@ -442,7 +464,12 @@ theorem inr_coe_unitizationSMulOfSMulMem (I : TwoSidedIdeal A)
   · simp
   · simp [coe_unitizationSMulOfSMulMem]
 
-variable [IsScalarTower R A A] [SMulCommClass R A A]
+end NonAssocRing
+
+section CommSemiring
+
+variable {R A : Type*} [CommSemiring R] [NonUnitalRing A] [Module R A]
+  [IsScalarTower R A A] [SMulCommClass R A A]
 
 /-- Left `Unitization R A`-module structure `(r, a) • x = r • x + a * x` on an `R`-invariant
 two-sided ideal `I : TwoSidedIdeal A`. -/
@@ -463,11 +490,14 @@ theorem mem_annihilator_unitizationOfSMulMem_iff (I : TwoSidedIdeal A)
   rw [Module.mem_annihilator]
   refine ⟨fun h x hx => congrArg Subtype.val (h ⟨x, hx⟩), fun h x => Subtype.ext (h x x.2)⟩
 
+end CommSemiring
+
 /-- For an `R`-invariant two-sided ideal `I` of a nonunital `R`-algebra `A`, `I.leftAnnihilator` is
 the preimage of `(Module.annihilator (Unitization R A) I).toTwoSided` under
 `Unitization.inrNonUnitalAlgHom R A`. -/
-theorem leftAnnihilator_eq_comap_unitization_of_smul_mem (I : TwoSidedIdeal A)
-    (hsmul : ∀ (r : R) {x : A}, x ∈ I → r • x ∈ I) :
+theorem leftAnnihilator_eq_comap_unitization_of_smul_mem {R A : Type*} [CommRing R]
+    [NonUnitalRing A] [Module R A] [IsScalarTower R A A] [SMulCommClass R A A]
+    (I : TwoSidedIdeal A) (hsmul : ∀ (r : R) {x : A}, x ∈ I → r • x ∈ I) :
     letI := I.unitizationModuleOfSMulMem hsmul
     I.leftAnnihilator =
       TwoSidedIdeal.comap (Unitization.inrNonUnitalAlgHom R A)
@@ -495,16 +525,15 @@ theorem rightAnnihilator_top_of_isProperStar : (⊤ : TwoSidedIdeal A).rightAnni
     star_mul_self_eq_zero.mp (mul_eq_zero_of_mem_rightAnnihilator (mem_top A) ha)
 
 /-- For a `star`-closed two-sided ideal `I` in a ring with proper involution, the left and right
-annihilators of `I` coincide: if `a * y = 0` for all `y ∈ I`, then for `x ∈ I` we have
-`star (x * a) ∈ I`, so `(x * a) * star (x * a) = x * (a * star (x * a)) = 0`, forcing `x * a = 0`.
--/
+annihilators of `I` coincide. -/
 theorem leftAnnihilator_eq_rightAnnihilator_of_star_mem {I : TwoSidedIdeal A}
     (hstar : ∀ {x : A}, x ∈ I → star x ∈ I) :
     I.leftAnnihilator = I.rightAnnihilator := by
   ext a
   rw [mem_leftAnnihilator, mem_rightAnnihilator]
   refine ⟨fun ha x hx => ?_, fun ha x hx => ?_⟩
-  · refine mul_star_self_eq_zero.mp ?_
+  · -- Since `star (x * a) ∈ I`, `(x * a) * star (x * a) = x * (a * star (x * a)) = 0`.
+    refine mul_star_self_eq_zero.mp ?_
     rw [mul_assoc, ha (star (x * a)) (hstar (I.mul_mem_right x a hx)), mul_zero]
   · refine star_mul_self_eq_zero.mp ?_
     rw [← mul_assoc, ha (star (a * x)) (hstar (I.mul_mem_left a x hx)), zero_mul]
@@ -522,6 +551,12 @@ theorem star_mem_leftAnnihilator_of_star_mem {I : TwoSidedIdeal A}
       (mem_leftAnnihilator_iff_mul_right_of_star_mem hstar).mp ha (star x) (hstar hx)
     simpa using congrArg star hxa
 
+theorem star_mem_rightAnnihilator_of_star_mem {I : TwoSidedIdeal A}
+    (hstar : ∀ {x : A}, x ∈ I → star x ∈ I) {a : A} (ha : a ∈ I.rightAnnihilator) :
+    star a ∈ I.rightAnnihilator := by
+  rw [← leftAnnihilator_eq_rightAnnihilator_of_star_mem hstar] at ha ⊢
+  exact star_mem_leftAnnihilator_of_star_mem hstar ha
+
 theorem star_mem_leftAnnihilator_iff_of_star_mem {I : TwoSidedIdeal A}
     (hstar : ∀ {x : A}, x ∈ I → star x ∈ I) {a : A} :
     star a ∈ I.leftAnnihilator ↔ a ∈ I.leftAnnihilator :=
@@ -529,10 +564,11 @@ theorem star_mem_leftAnnihilator_iff_of_star_mem {I : TwoSidedIdeal A}
    star_mem_leftAnnihilator_of_star_mem hstar⟩
 
 /-- In a ring with proper involution, a `star`-closed two-sided ideal meets its annihilator
-trivially: for `a ∈ I ⊓ I.leftAnnihilator`, `star a ∈ I` gives `a * star a = 0`, hence `a = 0`. -/
+trivially. -/
 theorem inf_leftAnnihilator_eq_bot_of_star_mem {I : TwoSidedIdeal A}
     (hstar : ∀ {x : A}, x ∈ I → star x ∈ I) :
     I ⊓ I.leftAnnihilator = ⊥ :=
+  -- For `a ∈ I ⊓ I.leftAnnihilator`, `star a ∈ I` gives `a * star a = 0`, hence `a = 0`.
   le_bot_iff.mp fun _ ha => (mem_bot _).mpr <|
     mul_star_self_eq_zero.mp (mul_eq_zero_of_mem_leftAnnihilator ha.2 (hstar ha.1))
 
@@ -571,9 +607,117 @@ theorem isEssential_iff_leftAnnihilator_eq_bot_of_star_mem {I : TwoSidedIdeal A}
       (inf_leftAnnihilator_eq_bot_of_star_mem hstar),
    isEssential_of_leftAnnihilator_eq_bot⟩
 
+theorem isEssential_iff_rightAnnihilator_eq_bot_of_star_mem {I : TwoSidedIdeal A}
+    (hstar : ∀ {x : A}, x ∈ I → star x ∈ I) :
+    I.IsEssential ↔ I.rightAnnihilator = ⊥ := by
+  rw [isEssential_iff_leftAnnihilator_eq_bot_of_star_mem hstar,
+    leftAnnihilator_eq_rightAnnihilator_of_star_mem hstar]
+
 end ProperStar
 
 section Prod
+
+/-- In a product `A × B`, the first-factor ideal `A × {0} = ker snd` is essential if and only if `B`
+is a subsingleton. -/
+@[simp]
+theorem isEssential_ker_snd_iff {A B : Type*} [NonUnitalNonAssocRing A]
+    [NonUnitalNonAssocRing B] :
+    (TwoSidedIdeal.ker (NonUnitalRingHom.snd A B)).IsEssential ↔ Subsingleton B := by
+  rw [isEssential_iff_eq_bot]
+  refine ⟨fun h => ⟨fun b₁ b₂ => ?_⟩, fun _ J hJ => ?_⟩
+  · have hinf : TwoSidedIdeal.ker (NonUnitalRingHom.snd A B) ⊓
+        TwoSidedIdeal.ker (NonUnitalRingHom.fst A B) = ⊥ := by
+      ext p
+      simp [mem_inf, mem_ker, Prod.ext_iff, and_comm]
+    have hbot := h _ hinf
+    have hmem : ((0 : A), b₁ - b₂) ∈ (⊥ : TwoSidedIdeal (A × B)) :=
+      hbot ▸ (mem_ker _).mpr rfl
+    exact sub_eq_zero.mp (congrArg Prod.snd ((mem_bot _).mp hmem))
+  · have htop : TwoSidedIdeal.ker (NonUnitalRingHom.snd A B) = ⊤ := by
+      ext p
+      simp [mem_ker, Subsingleton.elim p.2 0]
+    simpa [htop] using hJ
+
+/-- In a product `A × B`, the second-factor ideal `{0} × B = ker fst` is essential if and only if
+`A` is a subsingleton. -/
+@[simp]
+theorem isEssential_ker_fst_iff {A B : Type*} [NonUnitalNonAssocRing A]
+    [NonUnitalNonAssocRing B] :
+    (TwoSidedIdeal.ker (NonUnitalRingHom.fst A B)).IsEssential ↔ Subsingleton A := by
+  rw [isEssential_iff_eq_bot]
+  refine ⟨fun h => ⟨fun a₁ a₂ => ?_⟩, fun _ J hJ => ?_⟩
+  · have hinf : TwoSidedIdeal.ker (NonUnitalRingHom.fst A B) ⊓
+        TwoSidedIdeal.ker (NonUnitalRingHom.snd A B) = ⊥ := by
+      ext p
+      simp [mem_inf, mem_ker, Prod.ext_iff]
+    have hbot := h _ hinf
+    have hmem : (a₁ - a₂, (0 : B)) ∈ (⊥ : TwoSidedIdeal (A × B)) :=
+      hbot ▸ (mem_ker _).mpr rfl
+    exact sub_eq_zero.mp (congrArg Prod.fst ((mem_bot _).mp hmem))
+  · have htop : TwoSidedIdeal.ker (NonUnitalRingHom.fst A B) = ⊤ := by
+      ext p
+      simp [mem_ker, Subsingleton.elim p.1 0]
+    simpa [htop] using hJ
+
+/-- In a product `A × B` of nonunital rings, the left annihilator of `ker snd = A × {0}` is the
+preimage of `(⊤ : TwoSidedIdeal A).leftAnnihilator` along `fst`. -/
+theorem leftAnnihilator_ker_snd_eq_comap {A B : Type*} [NonUnitalRing A] [NonUnitalRing B] :
+    (TwoSidedIdeal.ker (NonUnitalRingHom.snd A B)).leftAnnihilator =
+      (⊤ : TwoSidedIdeal A).leftAnnihilator.comap (NonUnitalRingHom.fst A B) := by
+  ext p
+  rw [mem_leftAnnihilator, mem_comap, mem_leftAnnihilator]
+  refine ⟨fun h a _ => congrArg Prod.fst (h (a, 0) ((mem_ker _).mpr rfl)), fun h x hx => ?_⟩
+  have hx2 : x.2 = 0 := (mem_ker _).mp hx
+  ext
+  · exact h x.1 (mem_top A)
+  · simp [hx2]
+
+theorem rightAnnihilator_ker_snd_eq_comap {A B : Type*} [NonUnitalRing A] [NonUnitalRing B] :
+    (TwoSidedIdeal.ker (NonUnitalRingHom.snd A B)).rightAnnihilator =
+      (⊤ : TwoSidedIdeal A).rightAnnihilator.comap (NonUnitalRingHom.fst A B) := by
+  ext p
+  rw [mem_rightAnnihilator, mem_comap, mem_rightAnnihilator]
+  refine ⟨fun h a _ => congrArg Prod.fst (h (a, 0) ((mem_ker _).mpr rfl)), fun h x hx => ?_⟩
+  have hx2 : x.2 = 0 := (mem_ker _).mp hx
+  ext
+  · exact h x.1 (mem_top A)
+  · simp [hx2]
+
+/-- In a product `A × B` of nonunital rings, the left annihilator of `ker fst = {0} × B` is the
+preimage of `(⊤ : TwoSidedIdeal B).leftAnnihilator` along `snd`. -/
+theorem leftAnnihilator_ker_fst_eq_comap {A B : Type*} [NonUnitalRing A] [NonUnitalRing B] :
+    (TwoSidedIdeal.ker (NonUnitalRingHom.fst A B)).leftAnnihilator =
+      (⊤ : TwoSidedIdeal B).leftAnnihilator.comap (NonUnitalRingHom.snd A B) := by
+  ext p
+  rw [mem_leftAnnihilator, mem_comap, mem_leftAnnihilator]
+  refine ⟨fun h b _ => congrArg Prod.snd (h (0, b) ((mem_ker _).mpr rfl)), fun h x hx => ?_⟩
+  have hx1 : x.1 = 0 := (mem_ker _).mp hx
+  ext
+  · simp [hx1]
+  · exact h x.2 (mem_top B)
+
+theorem rightAnnihilator_ker_fst_eq_comap {A B : Type*} [NonUnitalRing A] [NonUnitalRing B] :
+    (TwoSidedIdeal.ker (NonUnitalRingHom.fst A B)).rightAnnihilator =
+      (⊤ : TwoSidedIdeal B).rightAnnihilator.comap (NonUnitalRingHom.snd A B) := by
+  ext p
+  rw [mem_rightAnnihilator, mem_comap, mem_rightAnnihilator]
+  refine ⟨fun h b _ => congrArg Prod.snd (h (0, b) ((mem_ker _).mpr rfl)), fun h x hx => ?_⟩
+  have hx1 : x.1 = 0 := (mem_ker _).mp hx
+  ext
+  · simp [hx1]
+  · exact h x.2 (mem_top B)
+
+theorem leftAnnihilator_ker_snd_of_ring {A B : Type*} [Ring A] [NonUnitalRing B] :
+    (TwoSidedIdeal.ker (NonUnitalRingHom.snd A B)).leftAnnihilator =
+      TwoSidedIdeal.ker (NonUnitalRingHom.fst A B) := by
+  ext p
+  simp [leftAnnihilator_ker_snd_eq_comap, mem_comap, mem_ker]
+
+theorem leftAnnihilator_ker_fst_of_ring {A B : Type*} [NonUnitalRing A] [Ring B] :
+    (TwoSidedIdeal.ker (NonUnitalRingHom.fst A B)).leftAnnihilator =
+      TwoSidedIdeal.ker (NonUnitalRingHom.snd A B) := by
+  ext p
+  simp [leftAnnihilator_ker_fst_eq_comap, mem_comap, mem_ker]
 
 /-- In a product `A × B` whose first factor has a proper involution, the left annihilator of the
 first-factor ideal `A × {0} = ker snd` is the second-factor ideal `{0} × B = ker fst`. -/
@@ -582,13 +726,7 @@ theorem leftAnnihilator_ker_snd {A B : Type*} [NonUnitalRing A] [StarRing A] [Is
     (TwoSidedIdeal.ker (NonUnitalRingHom.snd A B)).leftAnnihilator =
       TwoSidedIdeal.ker (NonUnitalRingHom.fst A B) := by
   ext p
-  rw [mem_leftAnnihilator, mem_ker]
-  refine ⟨fun h => ?_, fun hp x hx => ?_⟩
-  · have hp0 := congrArg Prod.fst (h (star p.1, 0) (by simp [mem_ker]))
-    exact mul_star_self_eq_zero.mp (by simpa using hp0)
-  · have hx2 : x.2 = 0 := by simpa [mem_ker] using hx
-    have hp1 : p.1 = 0 := hp
-    ext <;> simp [hp1, hx2]
+  simp [leftAnnihilator_ker_snd_eq_comap, mem_comap, mem_ker]
 
 /-- In a product `A × B` whose second factor has a proper involution, the left annihilator of the
 second-factor ideal `{0} × B = ker fst` is the first-factor ideal `A × {0} = ker snd`. -/
@@ -597,13 +735,7 @@ theorem leftAnnihilator_ker_fst {A B : Type*} [NonUnitalRing A]
     (TwoSidedIdeal.ker (NonUnitalRingHom.fst A B)).leftAnnihilator =
       TwoSidedIdeal.ker (NonUnitalRingHom.snd A B) := by
   ext p
-  rw [mem_leftAnnihilator, mem_ker]
-  refine ⟨fun h => ?_, fun hp x hx => ?_⟩
-  · have hp0 := congrArg Prod.snd (h (0, star p.2) (by simp [mem_ker]))
-    exact mul_star_self_eq_zero.mp (by simpa using hp0)
-  · have hx1 : x.1 = 0 := by simpa [mem_ker] using hx
-    have hp2 : p.2 = 0 := hp
-    ext <;> simp [hp2, hx1]
+  simp [leftAnnihilator_ker_fst_eq_comap, mem_comap, mem_ker]
 
 end Prod
 

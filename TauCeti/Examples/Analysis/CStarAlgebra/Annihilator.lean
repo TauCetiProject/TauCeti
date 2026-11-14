@@ -9,6 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
 public import Mathlib.Analysis.CStarAlgebra.ContinuousMap
 public import Mathlib.Topology.UnitInterval
 public import TauCeti.Analysis.CStarAlgebra.Annihilator
+public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Discrete
 
 /-!
 # Concrete examples of ideal annihilators and essential ideals in C⋆-algebras
@@ -25,8 +26,9 @@ multiplier-homomorphism API across four distinct C⋆-algebraic regimes:
    annihilator, while `multiplierHom` is not injective.
 3. **Genuinely nonunital algebra** `C₀(ℕ, ℂ)` of null complex sequences:
    `C₀(ℕ, ℂ)` has no left multiplicative identity, `(⊤).leftAnnihilator = ⊥`, and the proper closed
-   ideal `{f ∈ C₀(ℕ, ℂ) | f 0 = 0}` has nonzero annihilator supported at `0`, exercising
-   `TwoSidedIdeal.leftAnnihilator_eq_comap_unitization` on a genuinely nonunital C⋆-algebra.
+   ideal `{f ∈ C₀(ℕ, ℂ) | f 0 = 0}` has nonzero annihilator supported at `0`, exercising both
+   `TwoSidedIdeal.leftAnnihilator_eq_comap_unitization` and `Submodule.unitizationModule` on a
+   genuinely nonunital C⋆-algebra.
 4. **Proper essential closed ideal** in `C(unitInterval, ℂ)`:
    `ker (evalStarAlgHom ℂ ℂ 0) = {f ∈ C([0, 1], ℂ) | f 0 = 0}` is a nonzero proper closed ideal
    whose annihilator is `⊥` by density of `(0, 1]` in `[0, 1]`; hence it is essential, embeds
@@ -50,19 +52,17 @@ section Matrix
 /-- The C⋆-algebra of `2 × 2` complex matrices. -/
 abbrev Mat2 := CStarMatrix (Fin 2) (Fin 2) ℂ
 
-theorem mat2_nontrivial : Nontrivial Mat2 := by
-  refine ⟨0, 1, fun h => zero_ne_one (α := ℂ) ?_⟩
-  simpa using congrArg (fun M : Mat2 => M 0 0) h
-
 theorem mat2_leftAnnihilator_bot : (⊥ : TwoSidedIdeal Mat2).leftAnnihilator = ⊤ :=
   TwoSidedIdeal.leftAnnihilator_bot
 
 theorem mat2_leftAnnihilator_top : (⊤ : TwoSidedIdeal Mat2).leftAnnihilator = ⊥ :=
   TwoSidedIdeal.leftAnnihilator_top
 
-theorem mat2_not_isClosedEssential_bot : ¬ (⊥ : TwoSidedIdeal Mat2).IsClosedEssential := by
-  have _ := mat2_nontrivial
-  exact TwoSidedIdeal.not_isClosedEssential_bot
+theorem mat2_not_isClosedEssential_bot : ¬ (⊥ : TwoSidedIdeal Mat2).IsClosedEssential :=
+  TwoSidedIdeal.not_isClosedEssential_bot
+
+theorem mat2_not_isEssential_bot : ¬ (⊥ : TwoSidedIdeal Mat2).IsEssential :=
+  TwoSidedIdeal.not_isEssential_bot
 
 theorem mat2_isClosedEssential_top : (⊤ : TwoSidedIdeal Mat2).IsClosedEssential :=
   TwoSidedIdeal.isClosedEssential_top
@@ -117,27 +117,14 @@ end Prod
 
 section NullSequences
 
-/-- The Kronecker delta sequence at `n : ℕ` as an element of `C₀(ℕ, ℂ)`. -/
-def deltaSeq (n : ℕ) : C₀(ℕ, ℂ) where
-  toFun k := if k = n then 1 else 0
-  continuous_toFun := continuous_of_discreteTopology
-  zero_at_infty' := tendsto_nhds_of_eventually_eq <|
-    Eventually.mono (isCompact_singleton (x := n)).compl_mem_cocompact fun _ hk =>
-      ite_eq_right_iff.mpr fun h => (hk h).elim
-
-@[simp]
-theorem deltaSeq_apply (n k : ℕ) : deltaSeq n k = if k = n then 1 else 0 := by
-  rfl
-
 /-- `C₀(ℕ, ℂ)` has no left multiplicative identity, confirming that it is genuinely nonunital. -/
 theorem no_left_identity_nullSeq : ¬ ∃ e : C₀(ℕ, ℂ), ∀ f : C₀(ℕ, ℂ), e * f = f := by
   rintro ⟨e, he⟩
   have he_one : ∀ n : ℕ, e n = 1 := by
     intro n
-    have hn := DFunLike.congr_fun (he (deltaSeq n)) n
+    have hn := DFunLike.congr_fun (he (ZeroAtInftyContinuousMap.single n 1)) n
     simpa using hn
-  have hlim0 : Tendsto (e : ℕ → ℂ) cofinite (𝓝 0) := by
-    simpa only [Filter.cocompact_eq_cofinite] using zero_at_infty e
+  have hlim0 : Tendsto (e : ℕ → ℂ) cofinite (𝓝 0) := e.tendsto_cofinite
   have hlim1 : Tendsto (e : ℕ → ℂ) cofinite (𝓝 1) := by
     simpa only [funext he_one] using (tendsto_const_nhds (x := (1 : ℂ)) (f := cofinite))
   exact one_ne_zero (tendsto_nhds_unique hlim1 hlim0)
@@ -165,8 +152,8 @@ theorem evalZeroNullSeqHom_apply (f : C₀(ℕ, ℂ)) : evalZeroNullSeqHom f = f
 abbrev nullSeqVanishingAtZero : TwoSidedIdeal C₀(ℕ, ℂ) :=
   TwoSidedIdeal.ker evalZeroNullSeqHom
 
-theorem deltaSeq_zero_mem_leftAnnihilator_nullSeqVanishingAtZero :
-    deltaSeq 0 ∈ nullSeqVanishingAtZero.leftAnnihilator := by
+theorem single_zero_mem_leftAnnihilator_nullSeqVanishingAtZero :
+    ZeroAtInftyContinuousMap.single 0 (1 : ℂ) ∈ nullSeqVanishingAtZero.leftAnnihilator := by
   rw [TwoSidedIdeal.mem_leftAnnihilator]
   intro f hf
   have hf0 : f 0 = 0 := (TwoSidedIdeal.mem_ker evalZeroNullSeqHom).mp hf
@@ -180,23 +167,37 @@ theorem not_isClosedEssential_nullSeqVanishingAtZero :
     ¬ nullSeqVanishingAtZero.IsClosedEssential := by
   rw [TwoSidedIdeal.isClosedEssential_iff_leftAnnihilator_eq_bot]
   intro hbot
-  have hmem := deltaSeq_zero_mem_leftAnnihilator_nullSeqVanishingAtZero
-  rw [hbot, TwoSidedIdeal.mem_bot] at hmem
-  have h10 := DFunLike.congr_fun hmem 0
-  simp at h10
+  have hmem := single_zero_mem_leftAnnihilator_nullSeqVanishingAtZero
+  rw [hbot, TwoSidedIdeal.mem_bot, ZeroAtInftyContinuousMap.single_eq_zero_iff] at hmem
+  exact one_ne_zero hmem
 
 /-- Concrete check of `TwoSidedIdeal.leftAnnihilator_eq_comap_unitization` on `C₀(ℕ, ℂ)`:
-`deltaSeq 0` pulls back into the `Unitization ℂ C₀(ℕ, ℂ)`-annihilator of
-`nullSeqVanishingAtZero`. -/
-theorem deltaSeq_zero_mem_comap_unitization_annihilator :
-    letI := nullSeqVanishingAtZero.unitizationModule (NonUnitalStarAlgHom.isClosed_ker _)
-    deltaSeq 0 ∈
+`ZeroAtInftyContinuousMap.single 0 1` lies in the pullback of the
+`Unitization ℂ C₀(ℕ, ℂ)`-annihilator of `nullSeqVanishingAtZero`. -/
+theorem single_zero_mem_comap_unitization_annihilator :
+    letI := nullSeqVanishingAtZero.unitizationModule
+    ZeroAtInftyContinuousMap.single 0 (1 : ℂ) ∈
       TwoSidedIdeal.comap (Unitization.inrNonUnitalAlgHom ℂ C₀(ℕ, ℂ))
         (Module.annihilator (Unitization ℂ C₀(ℕ, ℂ)) nullSeqVanishingAtZero).toTwoSided := by
-  let hclosed := NonUnitalStarAlgHom.isClosed_ker evalZeroNullSeqHom
-  let _ := nullSeqVanishingAtZero.unitizationModule hclosed
-  rw [← nullSeqVanishingAtZero.leftAnnihilator_eq_comap_unitization hclosed]
-  exact deltaSeq_zero_mem_leftAnnihilator_nullSeqVanishingAtZero
+  let _ := nullSeqVanishingAtZero.unitizationModule
+  rw [← nullSeqVanishingAtZero.leftAnnihilator_eq_comap_unitization]
+  exact single_zero_mem_leftAnnihilator_nullSeqVanishingAtZero
+
+/-- Concrete check of `Submodule.unitizationModule` on the closed left ideal
+`nullSeqVanishingAtZero.toSubmodule` in `C₀(ℕ, ℂ)`. -/
+theorem inr_single_zero_mem_submodule_unitization_annihilator :
+    letI := nullSeqVanishingAtZero.toSubmodule.unitizationModule
+      fun a x hx => nullSeqVanishingAtZero.mul_mem_left a x hx
+    ((ZeroAtInftyContinuousMap.single 0 (1 : ℂ) : C₀(ℕ, ℂ)) : Unitization ℂ C₀(ℕ, ℂ)) ∈
+      Module.annihilator (Unitization ℂ C₀(ℕ, ℂ)) nullSeqVanishingAtZero.toSubmodule := by
+  let hmul : ∀ a : C₀(ℕ, ℂ), ∀ x ∈ nullSeqVanishingAtZero.toSubmodule,
+      a * x ∈ nullSeqVanishingAtZero.toSubmodule :=
+    fun a x hx => nullSeqVanishingAtZero.mul_mem_left a x hx
+  let _ := nullSeqVanishingAtZero.toSubmodule.unitizationModule hmul
+  rw [nullSeqVanishingAtZero.toSubmodule.mem_annihilator_unitization_iff hmul]
+  intro f hf
+  simpa using TwoSidedIdeal.mul_eq_zero_of_mem_leftAnnihilator
+    single_zero_mem_leftAnnihilator_nullSeqVanishingAtZero hf
 
 end NullSequences
 
@@ -234,10 +235,10 @@ theorem vanishingAtZero_ne_top : vanishingAtZero ≠ ⊤ := by
   have h10 : (1 : ℂ) = 0 := by simpa using (TwoSidedIdeal.mem_ker _).mp hmem
   exact one_ne_zero h10
 
-/-- The annihilator of `{f ∈ C([0, 1], ℂ) | f 0 = 0}` is `⊥`: testing against `coordMap` forces
-`f t = 0` for all `t ≠ 0`, and `1 / (n + 1) → 0` forces `f 0 = 0` by continuity. -/
+/-- The annihilator of `{f ∈ C([0, 1], ℂ) | f 0 = 0}` in `C(unitInterval, ℂ)` is `⊥`. -/
 theorem leftAnnihilator_vanishingAtZero : vanishingAtZero.leftAnnihilator = ⊥ := by
   refine le_bot_iff.mp fun f hf => (TwoSidedIdeal.mem_bot _).mpr ?_
+  -- Testing against `coordMap` forces `f t = 0` for `t ≠ 0`, and `1 / (n + 1) → 0` gives `f 0 = 0`.
   have hmul : f * coordMap = 0 :=
     TwoSidedIdeal.mul_eq_zero_of_mem_leftAnnihilator hf coordMap_mem_vanishingAtZero
   have hpos : ∀ t : unitInterval, (t : ℝ) ≠ 0 → f t = 0 := by
@@ -264,6 +265,9 @@ theorem leftAnnihilator_vanishingAtZero : vanishingAtZero.leftAnnihilator = ⊥ 
 /-- `vanishingAtZero` is a proper nonzero essential closed ideal of `C(unitInterval, ℂ)`. -/
 theorem isClosedEssential_vanishingAtZero : vanishingAtZero.IsClosedEssential :=
   TwoSidedIdeal.isClosedEssential_iff_leftAnnihilator_eq_bot.mpr leftAnnihilator_vanishingAtZero
+
+theorem isEssential_vanishingAtZero : vanishingAtZero.IsEssential :=
+  TwoSidedIdeal.isClosedEssential_iff_isEssential.mp isClosedEssential_vanishingAtZero
 
 /-- Because `vanishingAtZero` is essential, `C(unitInterval, ℂ)` embeds isometrically into
 `𝓜(ℂ, vanishingAtZero)`. -/

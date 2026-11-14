@@ -33,12 +33,12 @@ In the unital case `[CStarAlgebra A]`, `I.leftAnnihilator` agrees with
 In the nonunital case `[NonUnitalCStarAlgebra A]`, a closed two-sided ideal `I` absorbs complex
 scalars (`TwoSidedIdeal.smul_mem_of_isClosed`), hence carries the left `Unitization ℂ A`-module
 action `(r, a) • x = r • x + a * x` (`TwoSidedIdeal.unitizationSMul`,
-`TwoSidedIdeal.unitizationModule`, provided as definitions taking `IsClosed (I : Set A)` rather than
-global instances). Under this action, `I.leftAnnihilator` coincides with
-`TwoSidedIdeal.comap (Unitization.inrNonUnitalAlgHom ℂ A)` applied to
+`TwoSidedIdeal.unitizationModule`, provided as `@[instance_reducible]` definitions taking
+`[IsClosed (I : Set A)]` rather than global instances). Under this action, `I.leftAnnihilator`
+coincides with `TwoSidedIdeal.comap (Unitization.inrNonUnitalAlgHom ℂ A)` applied to
 `(Module.annihilator (Unitization ℂ A) I).toTwoSided`
-(`TwoSidedIdeal.leftAnnihilator_eq_comap_unitization`), and closedness, complex-linearity, and
-`star`-invariance transport across this identification.
+(`TwoSidedIdeal.leftAnnihilator_eq_comap_unitization`), so this pullback is closed and closed under
+complex scalars and `star`.
 
 Finally, for any closed two-sided ideal `I`, the canonical contractive `⋆`-homomorphism
 `I.multiplierHom : A →⋆ₙₐ[ℂ] 𝓜(ℂ, I)` into the multiplier algebra of `I` has kernel
@@ -51,12 +51,13 @@ Finally, for any closed two-sided ideal `I`, the canonical contractive `⋆`-hom
   `TwoSidedIdeal.isClosedEssential_iff_leftAnnihilator_eq_bot`: symmetry, disjointness, double
   annihilator inclusion, and essentiality in any `NonUnitalCStarAlgebra`.
 * `TwoSidedIdeal.isClosed_annihilator_toTwoSided`, `TwoSidedIdeal.smul_mem_annihilator_toTwoSided`,
-  and `TwoSidedIdeal.star_mem_annihilator_toTwoSided`: property transport for
-  `(Module.annihilator A I).toTwoSided` in unital C⋆-algebras.
+  and `TwoSidedIdeal.star_mem_annihilator_toTwoSided`: closedness, complex scalar absorption, and
+  `star`-invariance of `(Module.annihilator A I).toTwoSided` in unital C⋆-algebras.
 * `TwoSidedIdeal.unitizationSMul`, `TwoSidedIdeal.unitizationModule`, and
   `TwoSidedIdeal.leftAnnihilator_eq_comap_unitization`: left `Unitization ℂ A`-module action on a
   closed ideal `I` and identification of `I.leftAnnihilator` with the pullback of
-  `Module.annihilator (Unitization ℂ A) I`, together with property-transport lemmas.
+  `Module.annihilator (Unitization ℂ A) I`, together with closedness, scalar-absorption, and
+  `star`-invariance of that pullback.
 * `TwoSidedIdeal.multiplierHom`, `TwoSidedIdeal.ker_multiplierHom`, and
   `TwoSidedIdeal.multiplierHom_injective_iff_isClosedEssential`: the canonical homomorphism
   `A →⋆ₙₐ[ℂ] 𝓜(ℂ, I)` and its kernel and injectivity characterizations.
@@ -79,10 +80,10 @@ section NonUnitalCStarAlgebra
 
 variable {A : Type*} [NonUnitalCStarAlgebra A]
 
-/-- In any C⋆-algebra, the left and right annihilators of a two-sided ideal `I` coincide: passing to
-`I.topologicalClosure` preserves both annihilators and yields a `star`-closed ideal. -/
+/-- In any C⋆-algebra, the left and right annihilators of a two-sided ideal `I` coincide. -/
 theorem leftAnnihilator_eq_rightAnnihilator (I : TwoSidedIdeal A) :
     I.leftAnnihilator = I.rightAnnihilator := by
+  -- Passing to `I.topologicalClosure` preserves both annihilators and yields a `star`-closed ideal.
   have _ : IsClosed (I.topologicalClosure : Set A) := I.isClosed_topologicalClosure
   rw [← I.leftAnnihilator_topologicalClosure, ← I.rightAnnihilator_topologicalClosure]
   exact leftAnnihilator_eq_rightAnnihilator_of_star_mem I.topologicalClosure.star_mem_of_isClosed
@@ -164,6 +165,10 @@ theorem isClosedEssential_iff_isEssential {I : TwoSidedIdeal A} :
       (isClosedEssential_iff_leftAnnihilator_eq_bot.mp h),
    IsEssential.isClosedEssential⟩
 
+theorem isEssential_iff_leftAnnihilator_eq_bot {I : TwoSidedIdeal A} :
+    I.IsEssential ↔ I.leftAnnihilator = ⊥ := by
+  rw [← isClosedEssential_iff_isEssential, isClosedEssential_iff_leftAnnihilator_eq_bot]
+
 theorem IsClosedEssential.inf {I J : TwoSidedIdeal A}
     (hI : I.IsClosedEssential) (hJ : J.IsClosedEssential) : (I ⊓ J).IsClosedEssential :=
   isClosedEssential_iff_isEssential.mpr
@@ -192,31 +197,35 @@ theorem mem_annihilator_toTwoSided_iff {I : TwoSidedIdeal A} {a : A} :
     a ∈ (Module.annihilator A I).toTwoSided ↔ ∀ x ∈ I, a * x = 0 := by
   rw [← leftAnnihilator_eq_annihilator, mem_leftAnnihilator]
 
-/-- Transport of closedness from `I.leftAnnihilator` to `(Module.annihilator A I).toTwoSided`. -/
+/-- For any two-sided ideal `I` of a unital C⋆-algebra `A`, `(Module.annihilator A I).toTwoSided` is
+closed. -/
 instance isClosed_annihilator_toTwoSided (I : TwoSidedIdeal A) :
     IsClosed (((Module.annihilator A I).toTwoSided : TwoSidedIdeal A) : Set A) :=
   I.leftAnnihilator_eq_annihilator ▸ I.isClosed_leftAnnihilator
 
-/-- Transport of closedness from `I.leftAnnihilator` to `Module.annihilator A I`. -/
+/-- For any two-sided ideal `I` of a unital C⋆-algebra `A`, `Module.annihilator A I` is closed. -/
 instance isClosed_annihilator (I : TwoSidedIdeal A) :
     IsClosed (Module.annihilator A I : Set A) := by
   simpa only [Ideal.coe_toTwoSided] using isClosed_annihilator_toTwoSided I
 
-/-- Transport of complex scalar absorption to `(Module.annihilator A I).toTwoSided`. -/
+/-- For any two-sided ideal `I` of a unital C⋆-algebra `A`, `(Module.annihilator A I).toTwoSided` is
+closed under complex scalar multiplication. -/
 theorem smul_mem_annihilator_toTwoSided (I : TwoSidedIdeal A) (c : ℂ) {a : A}
     (ha : a ∈ (Module.annihilator A I).toTwoSided) :
     c • a ∈ (Module.annihilator A I).toTwoSided := by
   rw [← leftAnnihilator_eq_annihilator] at ha ⊢
   exact I.smul_mem_leftAnnihilator c ha
 
-/-- Transport of `star`-invariance to `(Module.annihilator A I).toTwoSided`. -/
+/-- For any two-sided ideal `I` of a unital C⋆-algebra `A`, `(Module.annihilator A I).toTwoSided` is
+closed under `star`. -/
 theorem star_mem_annihilator_toTwoSided {I : TwoSidedIdeal A} {a : A}
     (ha : a ∈ (Module.annihilator A I).toTwoSided) :
     star a ∈ (Module.annihilator A I).toTwoSided := by
   rw [← leftAnnihilator_eq_annihilator] at ha ⊢
   exact star_mem_leftAnnihilator ha
 
-/-- Transport of `star`-invariance to `Module.annihilator A I`. -/
+/-- For any two-sided ideal `I` of a unital C⋆-algebra `A`, `Module.annihilator A I` is closed under
+`star`. -/
 theorem star_mem_annihilator {I : TwoSidedIdeal A} {a : A} (ha : a ∈ Module.annihilator A I) :
     star a ∈ Module.annihilator A I :=
   Ideal.mem_toTwoSided.mp (star_mem_annihilator_toTwoSided (Ideal.mem_toTwoSided.mpr ha))
@@ -228,98 +237,105 @@ section Unitization
 variable {A : Type*} [NonUnitalCStarAlgebra A]
 
 /-- Left scalar action `(r, a) • x = r • x + a * x` of `Unitization ℂ A` on a closed two-sided
-ideal `I : TwoSidedIdeal A`. Provided as a definition taking the closedness hypothesis rather than
-as a global instance. -/
+ideal `I : TwoSidedIdeal A`. Provided as a definition rather than a global instance. -/
 @[instance_reducible]
-def unitizationSMul (I : TwoSidedIdeal A) (hI : IsClosed (I : Set A)) :
+def unitizationSMul (I : TwoSidedIdeal A) [IsClosed (I : Set A)] :
     SMul (Unitization ℂ A) I :=
-  I.unitizationSMulOfSMulMem fun r _ hx => @smul_mem_of_isClosed A _ I hI r _ hx
+  I.unitizationSMulOfSMulMem fun r _ hx => I.smul_mem_of_isClosed r hx
 
-theorem coe_unitizationSMul (I : TwoSidedIdeal A) (hI : IsClosed (I : Set A))
+theorem coe_unitizationSMul (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
     (u : Unitization ℂ A) (x : I) :
-    (letI := I.unitizationSMul hI; ((u • x : I) : A)) = u.fst • (x : A) + u.snd * (x : A) :=
+    (letI := I.unitizationSMul; ((u • x : I) : A)) = u.fst • (x : A) + u.snd * (x : A) :=
   I.coe_unitizationSMulOfSMulMem _ u x
 
-theorem inr_coe_unitizationSMul (I : TwoSidedIdeal A) (hI : IsClosed (I : Set A))
+theorem inr_coe_unitizationSMul (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
     (u : Unitization ℂ A) (x : I) :
-    (letI := I.unitizationSMul hI; (((u • x : I) : A) : Unitization ℂ A)) =
+    (letI := I.unitizationSMul; (((u • x : I) : A) : Unitization ℂ A)) =
       u * ((x : A) : Unitization ℂ A) :=
   I.inr_coe_unitizationSMulOfSMulMem _ u x
 
 /-- Left `Unitization ℂ A`-module structure `(r, a) • x = r • x + a * x` on a closed two-sided
-ideal `I : TwoSidedIdeal A`. Provided as a definition taking `IsClosed (I : Set A)` rather than as a
-global instance. -/
+ideal `I : TwoSidedIdeal A`. Provided as a definition rather than a global instance. -/
 @[instance_reducible]
-def unitizationModule (I : TwoSidedIdeal A) (hI : IsClosed (I : Set A)) :
+def unitizationModule (I : TwoSidedIdeal A) [IsClosed (I : Set A)] :
     Module (Unitization ℂ A) I :=
-  I.unitizationModuleOfSMulMem fun r _ hx => @smul_mem_of_isClosed A _ I hI r _ hx
+  I.unitizationModuleOfSMulMem fun r _ hx => I.smul_mem_of_isClosed r hx
 
-theorem mem_annihilator_unitization_iff (I : TwoSidedIdeal A) (hI : IsClosed (I : Set A))
+theorem mem_annihilator_unitization_iff (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
     {u : Unitization ℂ A} :
-    (letI := I.unitizationModule hI; u ∈ Module.annihilator (Unitization ℂ A) I) ↔
+    (letI := I.unitizationModule; u ∈ Module.annihilator (Unitization ℂ A) I) ↔
       ∀ x ∈ I, u.fst • x + u.snd * x = 0 :=
   I.mem_annihilator_unitizationOfSMulMem_iff _
 
 /-- For a closed two-sided ideal `I` of a nonunital C⋆-algebra `A`, `I.leftAnnihilator` coincides
 with the preimage of `(Module.annihilator (Unitization ℂ A) I).toTwoSided` along
 `Unitization.inrNonUnitalAlgHom ℂ A`. -/
-theorem leftAnnihilator_eq_comap_unitization (I : TwoSidedIdeal A) (hI : IsClosed (I : Set A)) :
-    letI := I.unitizationModule hI
+theorem leftAnnihilator_eq_comap_unitization (I : TwoSidedIdeal A) [IsClosed (I : Set A)] :
+    letI := I.unitizationModule
     I.leftAnnihilator =
       TwoSidedIdeal.comap (Unitization.inrNonUnitalAlgHom ℂ A)
         (Module.annihilator (Unitization ℂ A) I).toTwoSided :=
   I.leftAnnihilator_eq_comap_unitization_of_smul_mem _
 
-/-- Transport of closedness across `leftAnnihilator_eq_comap_unitization`. -/
-theorem isClosed_comap_annihilator_unitization (I : TwoSidedIdeal A) (hI : IsClosed (I : Set A)) :
-    letI := I.unitizationModule hI
+/-- For a closed two-sided ideal `I` of a nonunital C⋆-algebra `A`, the preimage of
+`(Module.annihilator (Unitization ℂ A) I).toTwoSided` along `Unitization.inrNonUnitalAlgHom ℂ A` is
+closed. -/
+theorem isClosed_comap_annihilator_unitization (I : TwoSidedIdeal A) [IsClosed (I : Set A)] :
+    letI := I.unitizationModule
     IsClosed
       ((TwoSidedIdeal.comap (Unitization.inrNonUnitalAlgHom ℂ A)
           (Module.annihilator (Unitization ℂ A) I).toTwoSided : TwoSidedIdeal A) : Set A) := by
-  let _ := I.unitizationModule hI
-  rw [← I.leftAnnihilator_eq_comap_unitization hI]
+  let _ := I.unitizationModule
+  rw [← I.leftAnnihilator_eq_comap_unitization]
   exact I.isClosed_leftAnnihilator
 
-/-- Transport of complex scalar absorption across `leftAnnihilator_eq_comap_unitization`. -/
-theorem smul_mem_comap_annihilator_unitization (I : TwoSidedIdeal A) (hI : IsClosed (I : Set A))
+/-- For a closed two-sided ideal `I` of a nonunital C⋆-algebra `A`, the preimage of
+`(Module.annihilator (Unitization ℂ A) I).toTwoSided` along `Unitization.inrNonUnitalAlgHom ℂ A` is
+closed under complex scalar multiplication. -/
+theorem smul_mem_comap_annihilator_unitization (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
     (c : ℂ) {a : A} :
-    letI := I.unitizationModule hI
+    letI := I.unitizationModule
     a ∈ TwoSidedIdeal.comap (Unitization.inrNonUnitalAlgHom ℂ A)
           (Module.annihilator (Unitization ℂ A) I).toTwoSided →
       c • a ∈ TwoSidedIdeal.comap (Unitization.inrNonUnitalAlgHom ℂ A)
           (Module.annihilator (Unitization ℂ A) I).toTwoSided := by
-  let _ := I.unitizationModule hI
-  rw [← I.leftAnnihilator_eq_comap_unitization hI]
+  let _ := I.unitizationModule
+  rw [← I.leftAnnihilator_eq_comap_unitization]
   exact I.smul_mem_leftAnnihilator c
 
-/-- Transport of `star`-invariance across `leftAnnihilator_eq_comap_unitization`. -/
-theorem star_mem_comap_annihilator_unitization (I : TwoSidedIdeal A) (hI : IsClosed (I : Set A))
+/-- For a closed two-sided ideal `I` of a nonunital C⋆-algebra `A`, the preimage of
+`(Module.annihilator (Unitization ℂ A) I).toTwoSided` along `Unitization.inrNonUnitalAlgHom ℂ A` is
+closed under `star`. -/
+theorem star_mem_comap_annihilator_unitization (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
     {a : A} :
-    letI := I.unitizationModule hI
+    letI := I.unitizationModule
     a ∈ TwoSidedIdeal.comap (Unitization.inrNonUnitalAlgHom ℂ A)
           (Module.annihilator (Unitization ℂ A) I).toTwoSided →
       star a ∈ TwoSidedIdeal.comap (Unitization.inrNonUnitalAlgHom ℂ A)
           (Module.annihilator (Unitization ℂ A) I).toTwoSided := by
-  let _ := I.unitizationModule hI
-  rw [← I.leftAnnihilator_eq_comap_unitization hI]
+  let _ := I.unitizationModule
+  rw [← I.leftAnnihilator_eq_comap_unitization]
   exact star_mem_leftAnnihilator
 
 end Unitization
 
 section MultiplierHom
 
-variable {A : Type*} [NonUnitalCStarAlgebra A] (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
+variable {A : Type*} [NonUnitalCStarAlgebra A]
 
 /-- The canonical contractive `⋆`-homomorphism `A →⋆ₙₐ[ℂ] 𝓜(ℂ, I)` induced by left and right
 multiplication of `A` on a closed two-sided ideal `I`, transported from
 `NonUnitalStarSubalgebra.multiplierHom` along `I.toNonUnitalStarSubalgebraEquiv`. -/
-noncomputable def multiplierHom : A →⋆ₙₐ[ℂ] 𝓜(ℂ, I) :=
+noncomputable def multiplierHom (I : TwoSidedIdeal A) [IsClosed (I : Set A)] :
+    A →⋆ₙₐ[ℂ] 𝓜(ℂ, I) :=
   (DoubleCentralizer.congr I.toNonUnitalStarSubalgebraEquiv.symm).toNonUnitalStarAlgHom.comp
     (I.toNonUnitalStarSubalgebra.multiplierHom fun a x hx =>
       I.mem_toNonUnitalStarSubalgebra.mpr
         (I.mul_mem_left a x (I.mem_toNonUnitalStarSubalgebra.mp hx)))
 
-variable {I}
+section
+
+variable {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
 
 @[simp]
 theorem multiplierHom_fst_apply (a : A) (x : I) :
@@ -364,6 +380,8 @@ theorem multiplierHom_eq_zero_iff {a : A} :
     NonUnitalStarSubalgebra.multiplierHom_eq_zero_iff, mem_leftAnnihilator]
   simp only [mem_toNonUnitalStarSubalgebra]
 
+end
+
 /-- The kernel of `I.multiplierHom : A →⋆ₙₐ[ℂ] 𝓜(ℂ, I)` is the left annihilator of `I`. -/
 @[simp]
 theorem ker_multiplierHom (I : TwoSidedIdeal A) [IsClosed (I : Set A)] :
@@ -371,11 +389,13 @@ theorem ker_multiplierHom (I : TwoSidedIdeal A) [IsClosed (I : Set A)] :
   ext a
   rw [mem_ker, multiplierHom_eq_zero_iff]
 
+section
+
+variable {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
+
 theorem multiplierHom_injective_iff_leftAnnihilator_eq_bot :
     Function.Injective I.multiplierHom ↔ I.leftAnnihilator = ⊥ := by
-  rw [injective_iff_map_eq_zero, eq_bot_iff]
-  refine ⟨fun h a ha => (mem_bot _).mpr (h a (multiplierHom_eq_zero_iff.mpr ha)),
-    fun h a ha => (mem_bot _).mp (h (multiplierHom_eq_zero_iff.mp ha))⟩
+  rw [← ker_eq_bot, ker_multiplierHom]
 
 /-- For a closed two-sided ideal `I` of a C⋆-algebra `A`, the canonical map `A →⋆ₙₐ[ℂ] 𝓜(ℂ, I)` is
 injective if and only if `I` is an essential closed ideal of `A`. -/
@@ -391,6 +411,8 @@ theorem IsClosedEssential.isometry_multiplierHom (hI : I.IsClosedEssential) :
   NonUnitalStarAlgHom.isometry I.multiplierHom
     (multiplierHom_injective_iff_isClosedEssential.mpr hI)
 
+end
+
 end MultiplierHom
 
 section Prod
@@ -402,9 +424,9 @@ theorem leftAnnihilator_ker_snd_nonUnitalStarAlgHom :
     (TwoSidedIdeal.ker (NonUnitalStarAlgHom.snd ℂ A B)).leftAnnihilator =
       TwoSidedIdeal.ker (NonUnitalStarAlgHom.fst ℂ A B) := by
   have hsnd : TwoSidedIdeal.ker (NonUnitalStarAlgHom.snd ℂ A B) =
-      TwoSidedIdeal.ker (NonUnitalRingHom.snd A B) := rfl
+      TwoSidedIdeal.ker (NonUnitalRingHom.snd A B) := by ext; simp [mem_ker]
   have hfst : TwoSidedIdeal.ker (NonUnitalStarAlgHom.fst ℂ A B) =
-      TwoSidedIdeal.ker (NonUnitalRingHom.fst A B) := rfl
+      TwoSidedIdeal.ker (NonUnitalRingHom.fst A B) := by ext; simp [mem_ker]
   rw [hsnd, hfst, leftAnnihilator_ker_snd]
 
 @[simp]
@@ -412,42 +434,24 @@ theorem leftAnnihilator_ker_fst_nonUnitalStarAlgHom :
     (TwoSidedIdeal.ker (NonUnitalStarAlgHom.fst ℂ A B)).leftAnnihilator =
       TwoSidedIdeal.ker (NonUnitalStarAlgHom.snd ℂ A B) := by
   have hfst : TwoSidedIdeal.ker (NonUnitalStarAlgHom.fst ℂ A B) =
-      TwoSidedIdeal.ker (NonUnitalRingHom.fst A B) := rfl
+      TwoSidedIdeal.ker (NonUnitalRingHom.fst A B) := by ext; simp [mem_ker]
   have hsnd : TwoSidedIdeal.ker (NonUnitalStarAlgHom.snd ℂ A B) =
-      TwoSidedIdeal.ker (NonUnitalRingHom.snd A B) := rfl
+      TwoSidedIdeal.ker (NonUnitalRingHom.snd A B) := by ext; simp [mem_ker]
   rw [hfst, hsnd, leftAnnihilator_ker_fst]
 
 @[simp]
 theorem isClosedEssential_ker_snd_nonUnitalStarAlgHom_iff :
     (TwoSidedIdeal.ker (NonUnitalStarAlgHom.snd ℂ A B)).IsClosedEssential ↔ Subsingleton B := by
-  rw [isClosedEssential_iff_leftAnnihilator_eq_bot, leftAnnihilator_ker_snd_nonUnitalStarAlgHom,
-    eq_bot_iff]
-  refine ⟨fun h => ⟨fun b₁ b₂ => ?_⟩, fun _ p hp => ?_⟩
-  · have hmem : ((0 : A), b₁ - b₂) ∈ TwoSidedIdeal.ker (NonUnitalStarAlgHom.fst ℂ A B) := by
-      simp [mem_ker]
-    have hzero : ((0 : A), b₁ - b₂) = 0 := (mem_bot _).mp (h hmem)
-    exact sub_eq_zero.mp (congrArg Prod.snd hzero)
-  · have hp1 : p.1 = 0 := by simpa [mem_ker] using hp
-    refine (mem_bot _).mpr ?_
-    ext
-    · exact hp1
-    · exact Subsingleton.elim p.2 0
+  have hsnd : TwoSidedIdeal.ker (NonUnitalStarAlgHom.snd ℂ A B) =
+      TwoSidedIdeal.ker (NonUnitalRingHom.snd A B) := by ext; simp [mem_ker]
+  rw [isClosedEssential_iff_isEssential, hsnd, isEssential_ker_snd_iff]
 
 @[simp]
 theorem isClosedEssential_ker_fst_nonUnitalStarAlgHom_iff :
     (TwoSidedIdeal.ker (NonUnitalStarAlgHom.fst ℂ A B)).IsClosedEssential ↔ Subsingleton A := by
-  rw [isClosedEssential_iff_leftAnnihilator_eq_bot, leftAnnihilator_ker_fst_nonUnitalStarAlgHom,
-    eq_bot_iff]
-  refine ⟨fun h => ⟨fun a₁ a₂ => ?_⟩, fun _ p hp => ?_⟩
-  · have hmem : (a₁ - a₂, (0 : B)) ∈ TwoSidedIdeal.ker (NonUnitalStarAlgHom.snd ℂ A B) := by
-      simp [mem_ker]
-    have hzero : (a₁ - a₂, (0 : B)) = 0 := (mem_bot _).mp (h hmem)
-    exact sub_eq_zero.mp (congrArg Prod.fst hzero)
-  · have hp2 : p.2 = 0 := by simpa [mem_ker] using hp
-    refine (mem_bot _).mpr ?_
-    ext
-    · exact Subsingleton.elim p.1 0
-    · exact hp2
+  have hfst : TwoSidedIdeal.ker (NonUnitalStarAlgHom.fst ℂ A B) =
+      TwoSidedIdeal.ker (NonUnitalRingHom.fst A B) := by ext; simp [mem_ker]
+  rw [isClosedEssential_iff_isEssential, hfst, isEssential_ker_fst_iff]
 
 end Prod
 
