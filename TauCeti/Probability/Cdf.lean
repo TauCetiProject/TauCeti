@@ -34,7 +34,8 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
 * `MeasureTheory.Measure.cdf_map` computes the cdf of an almost-everywhere measurable pushforward;
 * `MeasureTheory.Measure.continuousAt_cdf_iff` characterizes continuity of a real probability
   law's cdf at a point by vanishing singleton mass;
-* `MeasureTheory.Measure.continuous_cdf_of_noAtoms` proves continuity for atomless real laws;
+* `MeasureTheory.Measure.continuous_cdf_of_noAtoms` and `MeasureTheory.Measure.continuous_cdf_iff`
+  characterize global cdf continuity of real probability laws by null singletons;
 * `MeasureTheory.Measure.measure_Ioo_eq_zero_of_cdf_eq` shows that an open interval on which the
   cdf is constant is null;
 * `MeasureTheory.Measure.measure_plateau_eq_zero` and
@@ -206,6 +207,17 @@ theorem measureReal_Ioi_eq_one_sub_cdf (ν : Measure ℝ) [IsProbabilityMeasure 
     ν.real (Ioi x) = 1 - cdf ν x := by
   rw [← compl_Iic, probReal_compl_eq_one_sub measurableSet_Iic, cdf_eq_real]
 
+/-- If `ν` has no atom at `x`, the closed upper ray `Ici x` has real mass `1 - cdf ν x`. -/
+theorem measureReal_Ici_eq_one_sub_cdf_of_measure_singleton_eq_zero {ν : Measure ℝ}
+    [IsProbabilityMeasure ν] {x : ℝ} (hx : ν {x} = 0) : ν.real (Ici x) = 1 - cdf ν x := by
+  rw [← measureReal_congr (Ioi_ae_eq_Ici' hx), measureReal_Ioi_eq_one_sub_cdf]
+
+/-- For an atomless real probability measure, the closed upper ray `Ici x` has real mass
+`1 - cdf ν x`. -/
+theorem measureReal_Ici_eq_one_sub_cdf (ν : Measure ℝ) [IsProbabilityMeasure ν]
+    [NullSingletonClass ν] (x : ℝ) : ν.real (Ici x) = 1 - cdf ν x :=
+  measureReal_Ici_eq_one_sub_cdf_of_measure_singleton_eq_zero (measure_singleton x)
+
 /-- For a symmetric real law, the mass below `-x` is the mass above `x`, which is
 `1 - cdf μ x`. -/
 theorem measureReal_Iio_neg (μ : Measure ℝ) [IsProbabilityMeasure μ] [μ.IsNegInvariant]
@@ -328,6 +340,13 @@ probability measure on `ℝ` is continuous when every singleton has measure zero
 theorem continuous_cdf_of_noAtoms (ν : Measure ℝ) [IsProbabilityMeasure ν]
     [NullSingletonClass ν] : Continuous (cdf ν) :=
   continuous_iff_continuousAt.2 fun x ↦ (continuousAt_cdf_iff ν x).2 (measure_singleton x)
+
+/-- The cumulative distribution function of a real probability measure `ν` is continuous if and
+only if every singleton has `ν`-measure zero. -/
+theorem continuous_cdf_iff (ν : Measure ℝ) [IsProbabilityMeasure ν] :
+    Continuous (cdf ν) ↔ NullSingletonClass ν :=
+  ⟨fun h ↦ ⟨fun x ↦ (continuousAt_cdf_iff ν x).1 h.continuousAt⟩,
+    fun _ ↦ continuous_cdf_of_noAtoms ν⟩
 
 /-- A real probability law gives no mass to an open interval on which its cumulative distribution
 function is constant. -/

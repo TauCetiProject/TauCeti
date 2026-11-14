@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.TruncatedNormal.Basic
 public import Mathlib.Probability.Moments.Variance
+import TauCeti.Probability.Distributions.Gaussian.Moments
 import TauCeti.Probability.Distributions.Tilted
 
 /-!
@@ -160,11 +161,9 @@ theorem integral_id_truncatedNormalMeasure (hv : v ≠ 0) (hlr : l < r)
       m + v * (gaussianPDFRealEReal m v l - gaussianPDFRealEReal m v r) /
         (gaussianReal m v).real s := by
   have hZ := (measureReal_gaussianReal_pos m hv hlr hs₁).ne'
-  have h := deriv_mgf_zero (X := id) (μ := truncatedNormalMeasure m v s) (by simp)
-  rw [(hasDerivAt_mgf_id_truncatedNormalMeasure hv hlr hs₁ hs₂ 0).deriv] at h
-  simp only [id_eq, mul_zero, add_zero, zero_pow two_ne_zero, zero_div, exp_zero,
-    one_mul] at h
-  rw [← h]
+  rw [truncatedNormalMeasure_def, ProbabilityTheory.cond, integral_smul_measure,
+    setIntegral_id_gaussianReal m v hlr.le hs₁ hs₂, ENNReal.toReal_inv, ← measureReal_def,
+    smul_eq_mul]
   field_simp
 
 /-- The variance of a normal law of positive variance truncated to an interval with extended

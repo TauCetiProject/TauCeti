@@ -13,6 +13,7 @@ public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Interval
 public import Mathlib.MeasureTheory.Measure.TotalVariation.Basic
 public import TauCeti.MeasureTheory.Measure.Support
+public import TauCeti.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 
 /-!
 # Conditional measures and the law of total probability
@@ -30,7 +31,9 @@ singletons, where the finite sum of measures becomes `MeasureTheory.Measure.sum`
 zero contribute nothing, so no positivity hypothesis on the fibres is needed.
 
 Conditioning on almost-everywhere equal events gives equal conditional measures, and a function
-bounded on a measurable event is integrable for the conditional measure on it. A measurable map
+bounded on a measurable event is integrable for the conditional measure on it. Conditioning a
+measure on any set on which its restriction has null singletons preserves null singletons. A
+measurable map
 that scales measure by a constant factor carries conditional measures to conditional measures.
 Conditional measures also depend measurably on a measurable family of finite measures and a
 jointly measurable family of conditioning events. In particular, conditioning between measurable
@@ -49,6 +52,7 @@ recovers the law.
 
 * `ProbabilityTheory.sum_meas_smul_cond_fiber_of_countable`
 * `ProbabilityTheory.cond_congr_ae`
+* `ProbabilityTheory.instNullSingletonClass_cond`
 * `MeasureTheory.Measure.toNNReal_smul_integral_cond_eq_setIntegral`
 * `Measurable.cond`, `Measurable.cond_const`, and `Measurable.cond_preimage_Ioc` (with the
   corresponding `Icc`, `Ioo`, and `Ico` forms)
@@ -86,6 +90,13 @@ theorem MeasureTheory.Measure.support_cond {X : Type*} [TopologicalSpace X]
 namespace ProbabilityTheory
 
 variable {Ω β : Type*} [MeasurableSpace Ω] [MeasurableSpace β]
+
+/-- Conditioning a measure whose restriction to `s` has null singletons preserves null singletons,
+including when `s` has zero or infinite mass or `μ` has atoms outside `s`. -/
+instance instNullSingletonClass_cond {μ : Measure Ω} {s : Set Ω}
+    [NullSingletonClass (μ.restrict s)] : NullSingletonClass (μ[|s]) := by
+  rw [cond]
+  infer_instance
 
 /-- Conditioning on almost-everywhere equal events gives equal conditional measures. -/
 theorem cond_congr_ae {μ : Measure Ω} {s t : Set Ω} (h : s =ᵐ[μ] t) :

@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.DotProduct
-public import Mathlib.Probability.Distributions.Gaussian.Real
+public import TauCeti.Probability.Distributions.Gaussian.Basic
 public import TauCeti.Probability.Moments.Pi
 import Mathlib.MeasureTheory.Integral.Gamma
+import TauCeti.MeasureTheory.Measure.Real
 
 /-!
 # Moments of the real Gaussian distribution
@@ -28,6 +29,8 @@ The formulas follow the standard calculation in, for example, Johnson, Kotz, and
   linear form `y ⬝ᵥ g` on a finite product of centred real Gaussian laws.
 * `centralMoment_id_two_mul_add_one_gaussianReal` says that every odd centered moment vanishes.
 * `integral_sq_gaussianReal` evaluates the second raw moment.
+* `setIntegral_id_gaussianReal` evaluates the unnormalized first moment over any interval with
+  extended real bounds.
 * `integrable_abs_gaussianReal` and `integrable_abs_add_abs_gaussianReal` give absolute
   first-moment integrability for one or two Gaussian coordinates.
 -/
@@ -215,6 +218,85 @@ theorem centralMoment_id_two_mul_add_one_gaussianReal (m : ℝ) (v : ℝ≥0) (n
         exact (odd_two_mul_add_one n).neg_pow x
       _ = _ := integral_neg _
   linarith
+
+/-- The centered first moment of `gaussianReal m v` over the lower cut up to an extended bound `e`
+is `-v * gaussianPDFRealEReal m v e` (including at zero variance and infinite bounds, where both
+sides vanish). -/
+private theorem setIntegral_sub_preimage_Iic_gaussianReal (m : ℝ) (v : ℝ≥0) (e : EReal) :
+    ∫ x in Real.toEReal ⁻¹' Iic e, (x - m) ∂gaussianReal m v =
+      -(v : ℝ) * gaussianPDFRealEReal m v e := by
+  have hid : Integrable (fun x : ℝ ↦ x) (gaussianReal m v) :=
+    (memLp_id_gaussianReal' (μ := m) (v := v) 1 (by simp)).integrable le_rfl
+  rcases eq_or_ne v 0 with rfl | hv
+  · classical
+    by_cases hm : (m : EReal) ≤ e <;> simp [hm, restrict_dirac]
+  induction e with
+  | bot =>
+    have hbot : Real.toEReal ⁻¹' Iic (⊥ : EReal) = ∅ := by ext x; simp
+    rw [hbot]
+    simp
+  | top =>
+    have htop : Real.toEReal ⁻¹' Iic (⊤ : EReal) = univ := by ext x; simp
+    rw [htop, setIntegral_univ, integral_sub hid (integrable_const m), integral_id_gaussianReal,
+      integral_const, probReal_univ]
+    simp
+  | coe a =>
+    have hv' : 0 < (v : ℝ) := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hv)
+    have hderiv (x : ℝ) (_ : x ∈ Iic a) :
+        HasDerivAt (fun y ↦ -(v : ℝ) * gaussianPDFReal m v y)
+          (gaussianPDFReal m v x * (x - m)) x := by
+      convert (hasDerivAt_gaussianPDFReal m v x).const_mul (-(v : ℝ)) using 1
+      field_simp [hv'.ne']
+    have hint : Integrable (fun x : ℝ ↦ gaussianPDFReal m v x * (x - m)) := by
+      simpa only [Pi.sub_apply, smul_eq_mul] using
+        (integrable_gaussianReal_iff_integrable_gaussianPDFReal_smul hv).1
+          (hid.sub (integrable_const m))
+    have htend : Filter.Tendsto (fun y ↦ -(v : ℝ) * gaussianPDFReal m v y)
+        Filter.atBot (nhds 0) := by
+      have hsq : Filter.Tendsto (fun y : ℝ ↦ -(y - m) ^ 2 / (2 * (v : ℝ)))
+          Filter.atBot Filter.atBot := by
+        have h1 : Filter.Tendsto (fun y : ℝ ↦ -(y - m)) Filter.atBot Filter.atTop :=
+          Filter.tendsto_neg_atBot_atTop.comp
+            (Filter.tendsto_atBot_add_const_right _ (-m) Filter.tendsto_id)
+        have h2 : Filter.Tendsto (fun y : ℝ ↦ (y - m) ^ 2) Filter.atBot Filter.atTop :=
+          ((Filter.tendsto_pow_atTop (by decide : 2 ≠ 0)).comp h1).congr fun y ↦ by dsimp; ring
+        exact (Filter.tendsto_neg_atTop_atBot.comp h2).atBot_div_const (by positivity)
+      have hexp := ((Real.tendsto_exp_atBot.comp hsq).const_mul
+        (√(2 * π * (v : ℝ)))⁻¹).const_mul (-(v : ℝ))
+      simpa [gaussianPDFReal_def] using hexp
+    have hpre : Real.toEReal ⁻¹' Iic (a : EReal) = Iic a := by ext x; simp
+    rw [hpre, gaussianReal_of_var_ne_zero m hv,
+      setIntegral_withDensity_eq_setIntegral_toReal_smul' (Iic a) (measurable_gaussianPDF m v)
+        (ae_restrict_of_ae (ae_of_all _ fun _ ↦ gaussianPDF_lt_top)) (fun x ↦ x - m)]
+    simp only [toReal_gaussianPDF, smul_eq_mul, gaussianPDFRealEReal_coe]
+    rw [integral_Iic_of_hasDerivAt_of_tendsto' hderiv hint.integrableOn htend, sub_zero]
+
+/-- The unnormalized set integral of the identity over any set between the open and closed
+intervals with extended bounds `l ≤ r` against `gaussianReal m v` (including at zero variance). -/
+theorem setIntegral_id_gaussianReal (m : ℝ) (v : ℝ≥0) {l r : EReal} {s : Set ℝ} (hlr : l ≤ r)
+    (hs₁ : Real.toEReal ⁻¹' Ioo l r ⊆ s) (hs₂ : s ⊆ Real.toEReal ⁻¹' Icc l r) :
+    ∫ x in s, x ∂gaussianReal m v =
+      m * (gaussianReal m v).real s +
+        v * (gaussianPDFRealEReal m v l - gaussianPDFRealEReal m v r) := by
+  rcases eq_or_ne v 0 with rfl | hv
+  · classical
+    by_cases hm : m ∈ s <;> simp [hm, restrict_dirac, measureReal_def]
+  have := nullSingletonClass_gaussianReal (μ := m) hv
+  have hid : Integrable (fun x : ℝ ↦ x) (gaussianReal m v) :=
+    (memLp_id_gaussianReal' (μ := m) (v := v) 1 (by simp)).integrable le_rfl
+  have hsub : Integrable (fun x : ℝ ↦ x - m) (gaussianReal m v) := hid.sub (integrable_const m)
+  have hdecomp : (∫ x in s, x ∂gaussianReal m v) =
+      (∫ x in s, (x - m) ∂gaussianReal m v) + ∫ _ in s, m ∂gaussianReal m v := by
+    rw [← integral_add hsub.integrableOn (integrable_const m).integrableOn]
+    congr with x
+    ring
+  rw [hdecomp, setIntegral_const, smul_eq_mul,
+    setIntegral_congr_set ((gaussianReal m v).ae_eq_preimage_Ioc hs₁ hs₂),
+    ← Iic_sdiff_Iic, preimage_sdiff,
+    setIntegral_sdiff (measurableSet_Iic.preimage measurable_coe_real_ereal)
+      hsub.integrableOn (preimage_mono (Iic_subset_Iic.2 hlr)),
+    setIntegral_sub_preimage_Iic_gaussianReal, setIntegral_sub_preimage_Iic_gaussianReal]
+  ring
 
 end TauCeti.Probability
 
