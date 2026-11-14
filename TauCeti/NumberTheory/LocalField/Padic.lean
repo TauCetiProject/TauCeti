@@ -52,7 +52,8 @@ concrete p-adic norm and valuation APIs.
 * `TauCeti.Padic.valuation_eq_one_of_coe_eq`: a unit of `ℤ_[p]` has valuation one in `ℚ_[p]`.
 * `TauCeti.Padic.spanSingleton_natCast_pow_eq_maximalIdeal_zpow`: `p ^ n 𝒪[ℚ_[p]] = 𝓂 ^ n`.
 * `Padic.not_isSquare_neg_one_of_mod_four_ne_one`: `-1` is nonsquare in `ℚ_[p]` when
-  `p ≢ 1 (mod 4)`.
+  `p ≢ 1 (mod 4)`; its case `p = 2` is the instance `Fact (¬ IsSquare (-1 : ℚ_[2]))`, which makes
+  the quadratic algebra `ℚ_2(i)` a field.
 * `Padic.not_isSquare_intCast_of_not_isSquare_zmod`: an integer that is not a square modulo a
   power of `p` is not a square in `ℚ_[p]`; `Padic.not_isSquare_five` (`5` in `ℚ_[2]`) and
   `Padic.not_isSquare_neg_three` (`-3` in `ℚ_[5]`) are its two instances.
@@ -249,6 +250,10 @@ theorem not_isSquare_neg_one_of_mod_four_ne_one (hp : p % 4 ≠ 1) :
       (by rw [IsSquare]; decide)
   simpa using not_isSquare_intCast_of_not_isSquare_zmod (p := p) (a := -1) (k := 1)
     (by rw [pow_one, Int.cast_neg, Int.cast_one, ZMod.exists_sq_eq_neg_one_iff]; omega)
+
+/-- `-1` is not a square in `ℚ_2`, so the quadratic algebra `ℚ_2(i)` is a field. -/
+instance : Fact (¬ IsSquare (-1 : ℚ_[2])) :=
+  ⟨not_isSquare_neg_one_of_mod_four_ne_one 2 (by decide)⟩
 
 /-- `5` is not a square in `ℚ_[2]`, since no square is `5` modulo `8`. -/
 theorem not_isSquare_five : ¬IsSquare (5 : ℚ_[2]) := by
