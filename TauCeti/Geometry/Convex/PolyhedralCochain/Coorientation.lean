@@ -23,9 +23,9 @@ Adapted from `Mei/Geometry/Convex/PolyhedralCochain/Coorientation.lean` at
 
 The integral equation comes from
 `IsRationalNormalPolyhedron.exists_direction_eq_ker`. The sign is selected
-using the cell's conormal form and Mathlib's
-`mem_span_of_iInf_ker_le_ker`: scalar-valued linear maps with the same kernel
-are proportional. No primitive normal, rational offset, boundedness or absence
+using `Module.Ray.IsConormal.eq_or_eq_neg` and the cell's normal-quotient
+dimension: its prescribed orientation is the ray of the integral one-form or
+the reversed ray. No primitive normal, rational offset, boundedness or absence
 of lineality is required.
 -/
 
@@ -42,59 +42,36 @@ variable {N V : Type*} [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ 
 
 /-- A codimension-one oriented cell has a nonzero integral normal cutting out
 its direction and inducing precisely its prescribed conormal orientation. -/
-theorem exists_integral_coorientation (σ : OrientedCell h 1) :
+theorem exists_ker_realCharacter_eq_direction_and_sign_eq_evalSign (σ : OrientedCell h 1) :
     ∃ m : N →+ ℤ, m ≠ 0 ∧
       (h.realCharacter m).ker = (affineSpan ℝ σ.carrier).direction ∧
       ∀ v : V, SignType.sign (h.realCharacter m v) =
         σ.orientation.evalSign (fun _ : Fin 1 => v) := by
   have := h.finiteDimensional
-  -- Read the conormal one-form as a covector, whose kernel is the cell direction.
-  let f : V →ₗ[ℝ] ℝ :=
-    (AlternatingMap.ofSubsingleton ℝ V ℝ (0 : Fin 1)).symm σ.orientation.someVector
-  have hfapply (v : V) : f v = σ.orientation.someVector (fun _ : Fin 1 => v) := rfl
-  have hf : f ≠ 0 := by
-    intro hf
-    apply σ.orientation.someVector_ne_zero
-    ext v
-    have he := congrArg (fun g : V →ₗ[ℝ] ℝ => g (v 0)) hf
-    rw [hfapply] at he
-    have hv : (fun _ : Fin 1 => v 0) = v := funext fun j => congrArg v (Fin.eq_zero j).symm
-    simpa only [hv, LinearMap.zero_apply, zero_apply] using he
-  have hle : (affineSpan ℝ σ.carrier).direction ≤ f.ker := by
-    intro v hv
-    exact (Submodule.mem_conormalForms.mp
-      (Module.Ray.isConormal_iff.mp σ.isConormal)) (fun _ => v) 0 hv
-  have hdir : (affineSpan ℝ σ.carrier).direction = f.ker :=
-    Submodule.eq_of_le_of_finrank_eq hle (by
-      have hdim := σ.finrank_direction_add
-      have hfker := Module.Dual.finrank_ker_add_one_of_ne_zero hf
-      omega)
-  -- Rational-normality supplies an integral equation of the same hyperplane.
   obtain ⟨m, hm, hms⟩ := σ.rational.exists_direction_eq_ker
     σ.nonempty σ.finrank_direction_add
-  have hmker := hms.symm
-  have hspan : h.realCharacter m ∈ Submodule.span ℝ ({f} : Set (V →ₗ[ℝ] ℝ)) := by
-    simpa using (mem_span_of_iInf_ker_le_ker
-      (L := fun _ : Unit => f) (K := h.realCharacter m)
-      (by simpa only [iInf_const] using (hdir.symm.trans hmker.symm).le))
-  obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp hspan
-  have hc0 : c ≠ 0 := by
-    intro hc0
-    have hz : h.realCharacter m = 0 := by simpa only [hc0, zero_smul] using hc.symm
+  let α := AlternatingMap.ofSubsingleton ℝ V ℝ (0 : Fin 1) (h.realCharacter m)
+  have hα : α ≠ 0 := by
+    intro he
+    have hzero : AlternatingMap.ofSubsingleton ℝ V ℝ (0 : Fin 1) (0 : V →ₗ[ℝ] ℝ) = 0 := by
+      ext w
+      simp
+    have hz : h.realCharacter m = 0 :=
+      (AlternatingMap.ofSubsingleton ℝ V ℝ (0 : Fin 1)).injective (he.trans hzero.symm)
     exact hm (h.realCharacter_injective (by simpa using hz))
-  have hsign (v : V) : SignType.sign (f v) =
-        σ.orientation.evalSign (fun _ : Fin 1 => v) := by
-    simpa only [Module.Ray.someVector_ray, ← hfapply] using
-      (Module.Ray.evalSign_rayOfNeZero σ.orientation.someVector_ne_zero
-        (fun _ : Fin 1 => v)).symm
-  -- Reverse the integral equation precisely when its scalar factor is negative.
-  rcases lt_or_gt_of_ne hc0 with hcneg | hcpos
+  have hcon : (rayOfNeZero ℝ α hα).IsConormal (affineSpan ℝ σ.carrier).direction := by
+    rw [Module.Ray.isConormal_rayOfNeZero_iff, Submodule.mem_conormalForms]
+    intro w j hw
+    rw [hms, LinearMap.mem_ker] at hw
+    simpa [α, Fin.eq_zero j] using hw
+  rcases σ.isConormal.eq_or_eq_neg hcon
+    (by simpa using σ.finrank_quotient_direction) with ho | ho
+  · refine ⟨m, hm, hms.symm, fun v => ?_⟩
+    rw [ho, Module.Ray.evalSign_rayOfNeZero]
+    simp [α]
   · refine ⟨-m, neg_ne_zero.mpr hm, ?_, fun v => ?_⟩
-    · simpa only [map_neg, LinearMap.ker_neg] using hmker
-    · have he : h.realCharacter (-m) v = (-c) * f v := by
-        rw [map_neg, LinearMap.neg_apply, ← hc, LinearMap.smul_apply, smul_eq_mul, neg_mul]
-      rw [he, sign_mul, sign_pos (neg_pos.mpr hcneg), one_mul, hsign]
-  · refine ⟨m, hm, hmker, fun v => ?_⟩
-    rw [← hc, LinearMap.smul_apply, smul_eq_mul, sign_mul, sign_pos hcpos, one_mul, hsign]
+    · simpa only [map_neg, LinearMap.ker_neg] using hms.symm
+    · rw [ho, Module.Ray.evalSign_neg, Module.Ray.evalSign_rayOfNeZero]
+      simp [α, Left.sign_neg]
 
 end TauCeti.OrientedCell
