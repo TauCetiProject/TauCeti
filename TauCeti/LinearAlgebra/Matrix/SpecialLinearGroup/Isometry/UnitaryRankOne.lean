@@ -17,8 +17,9 @@ For an involution `σ` of a commutative ring, consider the determinant-one isome
 `diag(t, σ(t)/t, 1/σ(t))`. The signed reversal matrix itself is a determinant-one isometry,
 is an involution, and conjugates the torus parameter to `1/σ(t)`.
 
-The parametrization exhausts all diagonal isometries over any commutative ring. These formulas
-supply the torus and a fixed representative of the nontrivial relative Weyl element of `SU₃`.
+The parametrization exhausts all diagonal determinant-one isometries over any commutative ring.
+These formulas supply the torus and a fixed representative of the nontrivial relative Weyl element
+of `SU₃`.
 They work in characteristic two as well as odd characteristic.
 
 ## References

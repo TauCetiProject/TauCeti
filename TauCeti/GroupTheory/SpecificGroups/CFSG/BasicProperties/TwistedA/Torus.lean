@@ -11,11 +11,12 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.UnitaryRa
 /-!
 # A torus and fixed Weyl representative in the Steinberg fixed points of `²A₂(q)`
 
-The finite special unitary model with signed reversal Gram matrix is identified with the
-actual Steinberg fixed points by `TauCeti.TypeALieIndex.specialUnitaryEquivFixedPoints`.
-Transport the injective diagonal-torus parametrization and the signed reversal Weyl
-representative along this identification. The representative has square one, normalizes
-the torus by `t ↦ σ(t)⁻¹`, and lies outside it, including in characteristic two.
+The finite special unitary model `TauCeti.UnitaryRankOne.Group` with signed reversal Gram
+matrix is identified with the actual Steinberg fixed points by
+`TauCeti.TypeALieIndex.specialIsometryEquivFixedPoints`. Transport the injective diagonal-torus
+parametrization by `𝔽_{q²}ˣ` and the signed reversal Weyl representative along this identification.
+Writing `σ` for the `q`-power Frobenius involution of `𝔽_{q²}`, the representative has square one,
+normalizes the torus by `t ↦ σ(t)⁻¹`, and lies outside it, including in characteristic two.
 
 The coefficient formula records the actual matrix over the algebraic closure, not merely
 an abstract isomorphic copy. No generation, Bruhat decomposition or simplicity is asserted.

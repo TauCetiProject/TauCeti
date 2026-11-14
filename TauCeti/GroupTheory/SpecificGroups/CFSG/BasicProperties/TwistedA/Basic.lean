@@ -37,6 +37,10 @@ modulo its centre. Nothing here asserts that this quotient is nontrivial or simp
   `SL_{r+1}(𝔽_{q²})`.
 * `TauCeti.TypeALieIndex.coe_specialUnitaryEquivFixedPoints`: the fixed point attached to a finite
   matrix is that matrix read over the closure.
+* `TauCeti.TypeALieIndex.specialIsometryEquivFixedPoints`: the determinant-one isometries of the
+  signed reversal form over `𝔽_{q²}` are identified with the Steinberg fixed points of `²A_r(q)`.
+* `TauCeti.TypeALieIndex.coe_specialIsometryEquivFixedPoints`: the special-isometry comparison
+  sends a finite matrix to its coefficient extension over the closure.
 
 ## References
 
