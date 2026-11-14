@@ -50,7 +50,8 @@ theorem span_eq_top_of_compactSpace_quotient (L : AddSubgroup V) [CompactSpace (
   obtain ⟨f, hf0, hfker⟩ :=
     Submodule.exists_dual_map_eq_bot_of_lt_top (Ne.lt_top hne) inferInstance
   have hker : L ≤ f.toAddMonoidHom.ker := fun x hx =>
-    LinearMap.le_ker_iff_map.mpr hfker (Submodule.subset_span hx)
+    AddMonoidHom.mem_ker.mpr <| LinearMap.mem_ker.mp <|
+      LinearMap.le_ker_iff_map.mpr hfker (Submodule.subset_span hx)
   let φ := QuotientAddGroup.lift L f.toAddMonoidHom hker
   have hφ : Continuous φ :=
     (QuotientAddGroup.isQuotientMap_mk L).continuous_iff.mpr
