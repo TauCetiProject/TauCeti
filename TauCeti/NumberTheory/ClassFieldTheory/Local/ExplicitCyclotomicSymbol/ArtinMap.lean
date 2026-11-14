@@ -12,6 +12,7 @@ import TauCeti.Data.ZMod.Units
 import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.FiniteExtension
 import TauCeti.NumberTheory.ClassFieldTheory.Local.ExplicitCyclotomicSymbol.Norm
 import TauCeti.NumberTheory.ClassFieldTheory.Local.Unramified
+import TauCeti.NumberTheory.LocalField.AlgebraicExtension.ValuativeExtension
 import TauCeti.NumberTheory.LocalField.Norm.Basic
 import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Basic
 import TauCeti.NumberTheory.LocalField.UnitsDecomposition
@@ -40,7 +41,8 @@ The proof uses no Lubin–Tate theory. It compares, at each finite level `pⁿ`,
 the Artin symbol of a uniformizer `p u` with an automorphism acting through the explicit symbol
 `cyclotomicSymbol`, inside a cyclotomic extension of `ℚ_p` on which local reciprocity forces the
 two to agree on the roots of unity of order `pⁿ`. Norm functoriality of the Artin map then passes
-from `ℚ_p` to its finite extensions.
+from `ℚ_p` to its finite extensions, whose local-field valuation automatically extends the `p`-adic
+valuation (`ValuativeExtension.of_isIntegral`).
 
 At a finite level, a representative in `Gal(L/ℚ_p)` of the Artin symbol of `pᵏ u` raises every
 root of unity of order dividing `pⁿ` in `L` to the power `u⁻¹ mod pⁿ`
@@ -90,6 +92,8 @@ norms `a² - 3b²` fill only `1 + 3ℤ_3`, while the image is all of `ℤ_3ˣ`.
 
 * J. S. Milne, *Class Field Theory*, Chapter VII, Example 8.2, for the explicit symbols.
 * J. Neukirch, *Algebraic Number Theory*, Chapter V, §2, for the norm residue symbol over `ℚ_p`.
+* [J.-P. Serre, *Corps Locaux*][serre1968], Chapter XIV, §3, for the cyclotomic normalization over
+  finite extensions.
 -/
 
 public section
@@ -303,10 +307,12 @@ of `u`:
 ```text
 χ_cyc (Art_F u) = N_{F/ℚ_p}(u)⁻¹.
 ```
--/
+
+Compatibility of the valuation of `F` with the `p`-adic valuation requires no separate hypothesis
+(`ValuativeExtension.of_isIntegral`). -/
 theorem localCyclotomicCharacter_artinMap_unit (F : Type) [Field F] [ValuativeRel F]
     [TopologicalSpace F] [IsNonarchimedeanLocalField F] [Algebra ℚ_[p] F]
-    [FiniteDimensional ℚ_[p] F] [ValuativeExtension ℚ_[p] F] (u : Fˣ)
+    [FiniteDimensional ℚ_[p] F] (u : Fˣ)
     (hu : ValuativeRel.valuation F (u : F) = 1) (σ : Field.absoluteGaloisGroup F)
     (hσ : (σ : Field.absoluteGaloisGroupAbelianization F) = artinMap F u) :
     Units.map (algebraMap ℤ_[p] ℚ_[p]).toMonoidHom (localCyclotomicCharacter p F σ) =
@@ -314,6 +320,7 @@ theorem localCyclotomicCharacter_artinMap_unit (F : Type) [Field F] [ValuativeRe
   -- Instance search does not find `Nontrivial ℚ_[p]` within its budget, so it is supplied from
   -- the field structure.
   have : Nontrivial ℚ_[p] := DivisionRing.toNontrivial
+  have : ValuativeExtension ℚ_[p] F := ValuativeExtension.of_isIntegral ℚ_[p] F
   -- The norm of `u` is a unit of `ℤ_p`.
   have hv : (Algebra.normUnits ℚ_[p] u : ℚ_[p]).valuation = 0 := by
     rw [← _root_.Padic.toAdd_normalizedValuation_eq_valuation,
@@ -464,6 +471,7 @@ theorem localCyclotomicCharacter_artinMap_uniformizer (ϖ : Kˣ)
   rw [hχ, hnorm, map_inv]
   simp
 
+omit [ValuativeExtension ℚ_[p] K] in
 /-- **The cyclotomic characters of the Artin symbols of units are the unit norms.** For a finite
 extension `K/ℚ_p`, the values `χ_cyc(Art_K u)` at the units `u` of the valuation ring of `K` form
 the subgroup of `ℤ_pˣ` of norms `N_{K/ℚ_p}(u)` of such units, since
