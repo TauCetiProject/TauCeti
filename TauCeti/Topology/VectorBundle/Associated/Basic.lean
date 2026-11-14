@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.FiberBundle.Associated.Basic
 public import Mathlib.Topology.VectorBundle.Basic
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
+public import Mathlib.LinearAlgebra.Alternating.Basic
 
 /-!
 # Vector structures on associated bundles
@@ -16,6 +17,12 @@ A continuous linear action on a finite-dimensional normed space makes the existi
 bundle into a native `VectorBundle`, with its original topology and atlas. A point of the
 principal fibre identifies the model vector space linearly with the associated fibre; changing
 that point acts by the given representation, with the convention `[p g, v] = [p, g v]`.
+
+Structure on the model that is compatible with the representation therefore descends to the
+fibers: an equivariant alternating map `η` induces `TauCeti.AssociatedBundle.alternatingMap`, which
+reads `[p, v i] ↦ [p, η v]` in every frame `p` (`TauCeti.AssociatedBundle.alternatingMap_mk`).
+The induced alternating map vanishes only when `η` does
+(`TauCeti.AssociatedBundle.alternatingMap_eq_zero_iff`).
 
 ## References
 
@@ -170,5 +177,65 @@ theorem coordChangeL_apply [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
       associatedBundleCore_indexAt]
     exact ⟨⟨hb.1, mem_baseSet_trivializationAt G P b⟩, hb.2⟩
   · simpa only [baseSet_trivializationAt] using hb
+
+/-! ### Descent of structure on the model -/
+
+variable (G P) in
+/-- The point of the principal fiber over `b` with coordinate `1` in the chart at `b`, used to
+read structure on the model in the fibers. -/
+private def refPoint (b : B) : P b := (FiberBundle.homeomorphAt G P b).symm 1
+
+variable (𝕜 G P F) in
+/-- The associated fibers have the dimension of the model. -/
+@[simp]
+theorem finrank_eq (b : B) : Module.finrank 𝕜 (AssociatedBundle G P F b) = Module.finrank 𝕜 F :=
+  (mkContinuousLinearEquiv 𝕜 G (F := F) (refPoint G P b)).toLinearEquiv.finrank_eq.symm
+
+/-- The associated fibers of a finite-dimensional model are finite-dimensional. -/
+instance instFiniteDimensional [FiniteDimensional 𝕜 F] (b : B) :
+    FiniteDimensional 𝕜 (AssociatedBundle G P F b) :=
+  (mkContinuousLinearEquiv 𝕜 G (F := F) (refPoint G P b)).toLinearEquiv.finiteDimensional
+
+section AlternatingMap
+
+variable {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
+  [DistribMulAction G F'] [SMulCommClass G 𝕜 F'] [ContinuousSMul G F'] {ι : Type*}
+
+variable (G P) in
+/-- The alternating map on the fibers over `b` induced by an alternating map `η` on the model,
+read through a fixed reference point of the principal fiber over `b`. When `η` is equivariant it
+reads `[p, v i] ↦ [p, η v]` in every frame `p` (`TauCeti.AssociatedBundle.alternatingMap_mk`), so it
+does not depend on that choice. -/
+def alternatingMap (η : F [⋀^ι]→ₗ[𝕜] F') (b : B) :
+    AssociatedBundle G P F b [⋀^ι]→ₗ[𝕜] AssociatedBundle G P F' b :=
+  ((mkContinuousLinearEquiv 𝕜 G (F := F') (refPoint G P b)).toLinearEquiv :
+      F' →ₗ[𝕜] AssociatedBundle G P F' b).compAlternatingMap
+    (η.compLinearMap ((mkContinuousLinearEquiv 𝕜 G (F := F) (refPoint G P b)).symm.toLinearEquiv :
+      AssociatedBundle G P F b →ₗ[𝕜] F))
+
+/-- **An equivariant alternating map in a frame.** If `η (g • v) = g • η v`, then in every
+frame `p` the induced alternating map sends the classes `[p, v i]` to `[p, η v]`. -/
+@[simp]
+theorem alternatingMap_mk {η : F [⋀^ι]→ₗ[𝕜] F'}
+    (hη : ∀ (g : G) (v : ι → F), η (fun i ↦ g • v i) = g • η v) {b : B} (p : P b)
+    (v : ι → F) :
+    alternatingMap G P η b (fun i ↦ mk G p (v i)) = mk G p (η v) := by
+  simp only [alternatingMap, LinearMap.compAlternatingMap_apply,
+    AlternatingMap.compLinearMap_apply, LinearEquiv.coe_coe,
+    ContinuousLinearEquiv.coe_toLinearEquiv,
+    mkContinuousLinearEquiv_symm_apply_mk, hη, mkContinuousLinearEquiv_apply]
+  rw [← mk_smul, PrincipalBundle.smul_division]
+
+/-- The induced alternating map vanishes only when the model alternating map does. -/
+@[simp]
+theorem alternatingMap_eq_zero_iff {η : F [⋀^ι]→ₗ[𝕜] F'} (b : B) :
+    alternatingMap G P η b = 0 ↔ η = 0 :=
+  -- Composing with the frame equivalences on the values and on the arguments preserves zero.
+  ((mkContinuousLinearEquiv 𝕜 G (F := F') (refPoint G P b)).toLinearEquiv.alternatingMapCongrRight
+      (M'' := AssociatedBundle G P F b) (ι := ι)).map_eq_zero_iff.trans
+    (η.compLinearEquiv_eq_zero_iff
+      (mkContinuousLinearEquiv 𝕜 G (F := F) (refPoint G P b)).symm.toLinearEquiv)
+
+end AlternatingMap
 
 end TauCeti.AssociatedBundle
