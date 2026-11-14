@@ -397,11 +397,12 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add_of_e
         (C₀ * (L * (X + Y) + (X + Y)) + (X + Y))) := by gcongr
     _ = _ := by ring
 
-/-- **The semi-Fredholm estimate along a Floer trajectory.** Let `H` be a one-periodic, jointly
-`C²` Hamiltonian whose suspended vector field is globally Lipschitz, and let `J_t(y)` be a `C¹`
-family of almost complex structures. Let `u : ℝ × ℝ → V` be a `C¹` map along which `J_t` is
-`ω`-compatible, whose loops converge uniformly to one-periodic orbits `xm` at `-∞` and `xp` at
-`+∞`, nondegenerate and with `J_t` compatible along them, while its slice defect
+/-- **The semi-Fredholm estimate along a Floer trajectory.** Let `H` be a jointly `C²`
+Hamiltonian whose suspended vector field is globally Lipschitz, and let `J_t(y)` be a `C¹` family
+of almost complex structures. Let `u : ℝ × ℝ → V` be a `C¹` map along which `J_t` is
+`ω`-compatible, whose loops converge uniformly to orbits `xm` at `-∞` and `xp` at `+∞` starting at
+nondegenerate fixed points of the time-one map, as for nondegenerate one-periodic orbits of a
+one-periodic Hamiltonian, with `J_t` compatible along them, while its slice defect
 `∂t u - X_{H_t}(u)` tends uniformly to zero at both ends, as for a Floer trajectory from `xm` to
 `xp`. Then there are `C ≥ 0` and `T` such that every `C²` map `ξ` of period one in `t` that
 vanishes for `s ∉ (a, b)` satisfies
@@ -412,12 +413,10 @@ over `[a, b] × [0, 1]`, for the linearized Floer operator `D_u` of the datum `K
 theorem exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add
     (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
     (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
-    (hH : ContDiff ℝ 2 (Function.uncurry H)) (hHp : Function.Periodic H 1) {xm xp : ℝ → V}
+    (hH : ContDiff ℝ 2 (Function.uncurry H)) {xm xp : ℝ → V}
     (hxm : ∀ t, HasDerivAt xm (ω.hamiltonianVectorField (H t) (xm t)) t)
-    (hxpm : Function.Periodic xm 1)
     (hndm : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (xm 0))
     (hxp : ∀ t, HasDerivAt xp (ω.hamiltonianVectorField (H t) (xp t)) t)
-    (hxpp : Function.Periodic xp 1)
     (hndp : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (xp 0))
     {J : ℝ → V → AlmostComplexStructure V}
     (hJ : ContDiff ℝ 1 fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
@@ -440,11 +439,11 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add
   have hu' (l : Filter ℝ) : ∀ᶠ s in l, ∀ t ∈ Icc (0 : ℝ) 1, ContDiffAt ℝ 1 u (s, t) :=
     Eventually.of_forall fun _ _ _ ↦ hu.contDiffAt
   obtain ⟨Cp, -, Up, hUp, hp⟩ :=
-    ω.exists_mem_forall_setIntegral_le_mul_setIntegral_norm_floerLinearization_sq hX hH hHp hxp
-      hxpp hndp hJ hJxp (hu' atTop) huxp hδp
+    ω.exists_mem_forall_setIntegral_le_mul_setIntegral_norm_floerLinearization_sq hX hH hxp hndp
+      hJ hJxp (hu' atTop) huxp hδp
   obtain ⟨Cm, -, Um, hUm, hm⟩ :=
-    ω.exists_mem_forall_setIntegral_le_mul_setIntegral_norm_floerLinearization_sq hX hH hHp hxm
-      hxpm hndm hJ hJxm (hu' atBot) huxm hδm
+    ω.exists_mem_forall_setIntegral_le_mul_setIntegral_norm_floerLinearization_sq hX hH hxm hndm
+      hJ hJxm (hu' atBot) huxm hδm
   obtain ⟨Rp, hRp⟩ := mem_atTop_sets.1 hUp
   obtain ⟨Rm, hRm⟩ := mem_atBot_sets.1 hUm
   exact ω.exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add_of_ends

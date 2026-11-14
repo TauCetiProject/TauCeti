@@ -507,10 +507,11 @@ theorem eventually_exists_mem_forall_setIntegral_exp_mul_le_mul_setIntegral_floe
     _ = _ := by rw [hRHS, mul_assoc]
 
 open MeasureTheory in
-/-- **The end estimate in the norm of `V`.** Let `x` be a nondegenerate one-periodic orbit of a
-one-periodic, jointly `C²` Hamiltonian `H` whose suspended vector field is globally Lipschitz,
-let `J_t(y)` be a `C¹` family of almost complex structures that are `ω`-compatible along `x`,
-and let `u` be a map that is `C¹` on the slices `s` eventually along a filter `l`, whose loops
+/-- **The end estimate in the norm of `V`.** Let `x` be an orbit of a jointly `C²` Hamiltonian
+`H` whose suspended vector field is globally Lipschitz, with `x(0)` a nondegenerate fixed point of
+the time-one map, as for a nondegenerate one-periodic orbit of a one-periodic Hamiltonian; let
+`J_t(y)` be a `C¹` family of almost complex structures that are `ω`-compatible along `x`, and let
+`u` be a map that is `C¹` on the slices `s` eventually along a filter `l`, whose loops
 converge uniformly to `x` along `l` while its slice defect `∂t u - X_{H_t}(u)` tends uniformly to
 zero. Then there are a constant `C ≥ 0` and a set `U ∈ l` of slices such that every `C²` map `ξ`
 of period one in `t`, vanishing on the slices `s = a` and `s = b` with `[a, b] ⊆ U`, satisfies
@@ -522,9 +523,8 @@ over `[a, b] × [0, 1]`, for the linearized Floer operator `D_u` of the datum `K
 theorem exists_mem_forall_setIntegral_le_mul_setIntegral_norm_floerLinearization_sq
     (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
     (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
-    (hH : ContDiff ℝ 2 (Function.uncurry H)) (hHp : Function.Periodic H 1) {x : ℝ → V}
+    (hH : ContDiff ℝ 2 (Function.uncurry H)) {x : ℝ → V}
     (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t)
-    (hxp : Function.Periodic x 1)
     (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0))
     {J : ℝ → V → AlmostComplexStructure V}
     (hJ : ContDiff ℝ 1 fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
@@ -542,8 +542,8 @@ theorem exists_mem_forall_setIntegral_le_mul_setIntegral_norm_floerLinearization
             (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
             (fun w ↦ H w.2) u ξ z‖ ^ 2 := by
   obtain ⟨C₁, hC₁, U, hU, hest⟩ :=
-    ω.exists_mem_forall_setIntegral_le_mul_setIntegral_floerLinearization hX hH hHp hx hxp hnd hJ
-      hJx hu hux hδ
+    ω.exists_mem_forall_setIntegral_le_mul_setIntegral_floerLinearization hX hH hx hnd hJ hJx hu
+      hux hδ
   have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
   have hJxc : Continuous fun t ↦ (J t (x t)).toLinearMap.toContinuousLinearMap :=
     hJ.continuous.comp (continuous_id.prodMk hxc)
