@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 public import TauCeti.Geometry.Manifold.SmoothIsotopy.Euclidean
 public import TauCeti.Geometry.Manifold.SmoothIsotopy.Extension
@@ -61,7 +60,7 @@ public section
 noncomputable section
 
 open Set Topology Manifold
-open scoped Manifold ContDiff
+open scoped ContDiff
 
 namespace TauCeti.SmoothEmbedding
 
