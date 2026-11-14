@@ -729,8 +729,8 @@ noncomputable def gammaOneNaiveRelRepData : (gammaOneNaive B N).RelRepData where
   representableBy X :=
     naiveLevelRepresentableBy _ fun _ ↦ X.curve.existsUnique_comp_torsionPointHom N
 
-/-- The object representing `[Γ₁(N)]` over `X` is the naive locus of the universal point
-`torsionPointHom` of `E[N]`. -/
+/-- The object representing the naive problem `[Γ₁(N)]` over `X = (E/S)` is the naive locus of
+the universal point `torsionPointHom` of `E[N]`. -/
 @[simp]
 theorem gammaOneNaiveRelRepData_rep (X : EllObj B) :
     (gammaOneNaiveRelRepData (B := B) (N := N)).rep X =
@@ -796,8 +796,8 @@ noncomputable def gammaNaiveRelRepData : (gammaNaive B N).RelRepData where
   representableBy X :=
     naiveLevelRepresentableBy _ fun _ ↦ X.curve.existsUnique_comp_torsionPairHom N
 
-/-- The object representing `[Γ(N)]` over `X` is the naive locus of the universal pair
-`torsionPairHom` of points of `E[N]`. -/
+/-- The object representing the naive problem `[Γ(N)]` over `X = (E/S)` is the naive locus of
+the universal pair `torsionPairHom` of points of `E[N]`. -/
 @[simp]
 theorem gammaNaiveRelRepData_rep (X : EllObj B) :
     (gammaNaiveRelRepData (B := B) (N := N)).rep X =
