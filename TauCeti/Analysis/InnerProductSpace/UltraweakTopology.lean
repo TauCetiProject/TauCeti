@@ -84,6 +84,10 @@ theorem toCLM_injective :
     Function.Injective (toCLM : ContinuousLinearMapUltraweak 𝕜 E F → E →L[𝕜] F) :=
   equiv.injective
 
+theorem ofCLM_injective :
+    Function.Injective (ofCLM : (E →L[𝕜] F) → ContinuousLinearMapUltraweak 𝕜 E F) :=
+  equiv.symm.injective
+
 instance instAddCommGroup : AddCommGroup (ContinuousLinearMapUltraweak 𝕜 E F) :=
   equiv.addCommGroup
 
@@ -363,6 +367,32 @@ theorem isInducing_restrict_toWOT {s : Set (ContinuousLinearMapUltraweak 𝕜 E 
   rw [nhds_subtype, ← tendsto_iff_comap]
   exact (tendsto_iff_tendsto_toWOT_of_eventually_norm_le
     (Eventually.of_forall fun B : s ↦ hs B B.2)).2 tendsto_comap
+
+/-- **Bounded-set closure agreement with the weak operator topology.** For any norm-bounded set
+`t` of operators into a complete inner product space, an operator lies in the ultraweak closure of
+`t` if and only if it lies in the weak operator closure of `t`. -/
+theorem ofCLM_mem_closure_image_iff_of_norm_le {t : Set (E →L[𝕜] F)} {C : ℝ}
+    (ht : ∀ T ∈ t, ‖T‖ ≤ C) {x : E →L[𝕜] F} :
+    ofCLM x ∈ closure (ofCLM '' t) ↔
+      ContinuousLinearMapWOT.ofCLM x ∈ closure (ContinuousLinearMapWOT.ofCLM '' t) := by
+  refine ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
+  · simpa only [Set.image_image, Function.comp_def] using
+      mem_closure_image continuous_toWOT.continuousAt hx
+  · let l : Filter (E →WOT[𝕜] F) :=
+      𝓝[ContinuousLinearMapWOT.ofCLM '' t] (ContinuousLinearMapWOT.ofCLM x)
+    have : l.NeBot := mem_closure_iff_nhdsWithin_neBot.1 hx
+    have hmem : ∀ᶠ T in l, ContinuousLinearMapWOT.toCLM T ∈ t := by
+      refine eventually_mem_nhdsWithin.mono ?_
+      rintro T ⟨S, hS, rfl⟩
+      exact hS
+    have hlim : Tendsto (fun T : E →WOT[𝕜] F ↦ ofCLM (ContinuousLinearMapWOT.toCLM T)) l
+        (𝓝 (ofCLM x)) :=
+      (tendsto_iff_tendsto_toWOT_of_eventually_norm_le
+        (hmem.mono fun T hT ↦ ht _ hT)).2
+        ((tendsto_nhdsWithin_of_tendsto_nhds tendsto_id).congr fun T ↦
+          (ContinuousLinearMapWOT.equiv.left_inv T).symm)
+    exact mem_closure_of_tendsto hlim
+      (hmem.mono fun T hT ↦ ⟨ContinuousLinearMapWOT.toCLM T, hT, rfl⟩)
 
 end Comparison
 

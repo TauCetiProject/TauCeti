@@ -86,6 +86,10 @@ theorem toCLM_injective :
     Function.Injective (toCLM : ContinuousLinearMapUltrastrong 𝕜 E F → E →L[𝕜] F) :=
   equiv.injective
 
+theorem ofCLM_injective :
+    Function.Injective (ofCLM : (E →L[𝕜] F) → ContinuousLinearMapUltrastrong 𝕜 E F) :=
+  equiv.symm.injective
+
 instance instAddCommGroup : AddCommGroup (ContinuousLinearMapUltrastrong 𝕜 E F) :=
   equiv.addCommGroup
 
@@ -333,6 +337,32 @@ theorem isInducing_restrict_toPointwiseConvergenceCLM
   rw [nhds_subtype, ← tendsto_iff_comap]
   exact (tendsto_iff_tendsto_toPointwiseConvergenceCLM_of_eventually_norm_le
     (Eventually.of_forall fun B : s ↦ hs B B.2)).2 tendsto_comap
+
+/-- **Bounded-set closure agreement with the strong operator topology.** For any norm-bounded set
+`t` of operators, an operator lies in the ultrastrong closure of `t` if and only if it lies in the
+strong operator closure of `t`. -/
+theorem ofCLM_mem_closure_image_iff_of_norm_le {t : Set (E →L[𝕜] F)} {C : ℝ}
+    (ht : ∀ T ∈ t, ‖T‖ ≤ C) {x : E →L[𝕜] F} :
+    ofCLM x ∈ closure (ofCLM '' t) ↔
+      ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E F x ∈
+        closure (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E F '' t) := by
+  set q := ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E F
+  refine ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
+  · simpa only [Set.image_image, Function.comp_def] using
+      mem_closure_image continuous_toPointwiseConvergenceCLM.continuousAt hx
+  · let toCLM : (E →Lₚₜ[𝕜] F) → (E →L[𝕜] F) :=
+      (UniformConvergenceCLM.ofFun (RingHom.id 𝕜) F {s : Set E | s.Finite}).symm
+    let l : Filter (E →Lₚₜ[𝕜] F) := 𝓝[q '' t] (q x)
+    have : l.NeBot := mem_closure_iff_nhdsWithin_neBot.1 hx
+    have hmem : ∀ᶠ T in l, toCLM T ∈ t := by
+      refine (eventually_mem_nhdsWithin (a := q x) (s := q '' t)).mono ?_
+      rintro T ⟨S, hS, rfl⟩
+      exact hS
+    have hlim : Tendsto (fun T : E →Lₚₜ[𝕜] F ↦ ofCLM (toCLM T)) l (𝓝 (ofCLM x)) :=
+      (tendsto_iff_tendsto_toPointwiseConvergenceCLM_of_eventually_norm_le
+        (hmem.mono fun T hT ↦ ht _ hT)).2
+        (tendsto_nhdsWithin_of_tendsto_nhds (tendsto_id (x := 𝓝 (q x))))
+    exact mem_closure_of_tendsto hlim (hmem.mono fun T hT ↦ ⟨toCLM T, hT, rfl⟩)
 
 end Comparison
 

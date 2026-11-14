@@ -74,6 +74,7 @@ def dualEvalLp : (ι → E) →ₗ[𝕜] (StrongDual 𝕜 E →L[𝕜] PiLp p (f
   map_add' x y := by ext f i; simp
   map_smul' c x := by ext f i; simp
 
+omit [Fintype ι] [Fact (1 ≤ p)] in
 /-- Dual evaluation is the family of scalar evaluations, viewed in `PiLp`. -/
 @[simp]
 theorem dualEvalLp_apply (x : ι → E) (f : StrongDual 𝕜 E) :
