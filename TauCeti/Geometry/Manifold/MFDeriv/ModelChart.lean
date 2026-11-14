@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import TauCeti.Analysis.Calculus.TangentCone.Chart
+import TauCeti.Geometry.Manifold.ContMDiff.Groupoid
 
 /-!
 # Calculus in the charts of a manifold modelled on its own model space
@@ -32,20 +33,21 @@ open set.
 * `TauCeti.isInvertible_mfderiv_chart`: the derivative of a chart of the `C^1` maximal atlas is
   invertible.
 * `TauCeti.contDiffAt_symm_trans_of_mem_maximalAtlas`: a transition map between two charts of the
-  `C^n` maximal atlas is `C^n` on its source, and
+  `C^n` maximal atlas is `C^n` at every point of its source
+  (`TauCeti.contDiffOn_symm_trans_of_mem_maximalAtlas`: on its source), and
   `TauCeti.contDiffAt_symm_trans_symm_of_mem_maximalAtlas`: its inverse is `C^n` on its target.
 * `TauCeti.exists_hasFDerivAt_symm_trans`: such a transition map, for `n ≠ 0`, has an invertible
   derivative at each point of its source, which is strict over `ℝ` or `ℂ`
   (`TauCeti.exists_hasStrictFDerivAt_symm_trans`).
+* `TauCeti.exists_hasFDerivAt_symm_trans_of_mem_atlas`: the same when the first chart is in the
+  atlas, which avoids needing `IsManifold` to know that it lies in the maximal atlas; it rests on
+  `TauCeti.contDiffAt_of_mem_contDiffGroupoid`.
 * `TauCeti.fderiv_symm_trans_comp_eq`: the chain rule for transitions between charts of the
   maximal atlas, read through the preferred chart.
 * `TauCeti.trans_mem_maximalAtlas_of_contDiffAt`: a chart of the `C^n` maximal atlas followed by a
   `C^n` chart of the model space with `C^n` inverse is again in the maximal atlas.
 * `TauCeti.mfderiv_eq_zero_iff_of_eqOn`: on the source of `e`, the differential of `f` vanishes at
   `y` if and only if the Fréchet derivative of `h` vanishes at `e y`.
-* `TauCeti.mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm`: the differential of
-  `f` vanishes at `x` if and only if the Fréchet derivative of its coordinate expression in the
-  preferred chart vanishes at `extChartAt 𝓘(𝕜, E) x x`.
 * `TauCeti.isOpen_setOf_mfderiv_ne_zero`: the points where the differential of a `C^1` map is
   nonzero form an open set.
 -/
@@ -135,6 +137,14 @@ theorem contDiffAt_symm_trans_of_mem_maximalAtlas {q' : OpenPartialHomeomorph M 
   exact (contMDiffAt_of_mem_maximalAtlas hq' hz.2).comp z
     (contMDiffAt_symm_of_mem_maximalAtlas hq hz.1)
 
+/-- A transition map `q.symm.trans q'` between two charts of the maximal atlas is `C^n` on its
+source. -/
+theorem contDiffOn_symm_trans_of_mem_maximalAtlas {q' : OpenPartialHomeomorph M E}
+    (hq : q ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M)
+    (hq' : q' ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M) :
+    ContDiffOn 𝕜 n (q.symm.trans q') (q.symm.trans q').source := fun _ hz ↦
+  (contDiffAt_symm_trans_of_mem_maximalAtlas hq hq' hz).contDiffWithinAt
+
 /-- **Chain rule for chart transitions.** Read through the preferred chart at `y`, the derivative
 at `q y` of the transition `e ∘ q⁻¹` between two charts of the maximal atlas, composed with the
 derivative `A` of the transition to `q`, is the derivative `B` of the transition to `e`. -/
@@ -208,6 +218,21 @@ theorem exists_hasFDerivAt_symm_trans (hn : n ≠ 0)
     ((contDiffAt_symm_trans_symm_of_mem_maximalAtlas hq hq'
       ((q.symm.trans q').map_source hz)).differentiableAt hn)
 
+/-- The transition map `q.symm.trans q'` from a chart `q` of the atlas to a chart `q'` of the
+`C^n` maximal atlas, `n ≠ 0`, has an invertible derivative at each point of its source. Since `q`
+is in the atlas, its membership in the `C^n` maximal atlas, which `exists_hasFDerivAt_symm_trans`
+takes as a hypothesis and which in general comes from an `IsManifold` instance, is not needed. -/
+theorem exists_hasFDerivAt_symm_trans_of_mem_atlas (hn : n ≠ 0) (hq : q ∈ atlas E M)
+    (hq' : q' ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M)
+    {z : E} (hz : z ∈ (q.symm.trans q').source) :
+    ∃ A : E ≃L[𝕜] E, HasFDerivAt (q.symm.trans q') (A : E →L[𝕜] E) z := by
+  have h := hq' q hq
+  refine OpenPartialHomeomorph.exists_hasFDerivAt_of_chart _ hz
+    ((contDiffAt_of_mem_contDiffGroupoid h.2 hz).differentiableAt hn)
+    ((contDiffAt_of_mem_contDiffGroupoid ?_ ((q.symm.trans q').map_source hz)).differentiableAt hn)
+  rw [OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm, OpenPartialHomeomorph.symm_symm]
+  exact h.1
+
 end FDeriv
 
 section StrictFDeriv
@@ -224,6 +249,24 @@ theorem exists_hasStrictFDerivAt_symm_trans (hn : n ≠ 0)
     ∃ A : E ≃L[𝕜] E, HasStrictFDerivAt (q.symm.trans q') (A : E →L[𝕜] E) z := by
   obtain ⟨A, hA⟩ := exists_hasFDerivAt_symm_trans hn hq hq' hz
   exact ⟨A, (contDiffAt_symm_trans_of_mem_maximalAtlas hq hq' hz).hasStrictFDerivAt hA hn⟩
+
+/-- In charts `q` and `q'` of the maximal atlas around `y`, the parametrization
+`z ↦ q.symm (q y + z)` of a subspace `F` is strictly differentiable at `0` in the chart `q'`, with
+derivative the derivative of the transition `q' ∘ q.symm` at `q y` restricted to `F`. -/
+theorem hasStrictFDerivAt_comp_symm_add_subtypeL {y : M} (hn : n ≠ 0)
+    (hq : q ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M)
+    (hq' : q' ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M)
+    (hyq : y ∈ q.source) (hyq' : y ∈ q'.source) (F : Submodule 𝕜 E) :
+    HasStrictFDerivAt (fun z : F ↦ q' (q.symm (q y + (z : E))))
+      (fderiv 𝕜 (q.symm.trans q') (q y) ∘L F.subtypeL) 0 := by
+  have hyτ : q y ∈ (q.symm.trans q').source := by
+    simp [q.map_source hyq, q.left_inv hyq, hyq']
+  have hτ : HasStrictFDerivAt (q.symm.trans q') (fderiv 𝕜 (q.symm.trans q') (q y))
+      (q y + ((0 : F) : E)) := by
+    simpa using (contDiffAt_symm_trans_of_mem_maximalAtlas hq hq' hyτ).hasStrictFDerivAt_fderiv hn
+  have hlin : HasStrictFDerivAt (fun z : F ↦ q y + (z : E)) F.subtypeL 0 :=
+    F.subtypeL.hasStrictFDerivAt.const_add _
+  exact HasStrictFDerivAt.comp (f := fun z : F ↦ q y + (z : E)) 0 hτ hlin
 
 end StrictFDeriv
 
@@ -248,18 +291,6 @@ theorem contDiffOn_comp_chartAt_symm {n : WithTop ℕ∞} [IsManifold 𝓘(𝕜,
   (hf.comp_contMDiffOn contMDiffOn_chart_symm).contDiffOn
 
 variable [IsManifold 𝓘(𝕜, E) 1 M]
-
-/-- The differential of `f` vanishes at `x` if and only if the Fréchet derivative of the
-coordinate expression of `f` in the preferred extended chart at `x` vanishes at
-`extChartAt 𝓘(𝕜, E) x x`. -/
-theorem mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm {x : M} :
-    mfderiv 𝓘(𝕜, E) 𝓘(𝕜, F) f x = 0 ↔
-      fderiv 𝕜 (f ∘ (extChartAt 𝓘(𝕜, E) x).symm) (extChartAt 𝓘(𝕜, E) x x) = 0 := by
-  have hext : ((extChartAt 𝓘(𝕜, E) x).symm : E → M) = (chartAt E x).symm := by ext; simp
-  have hext' : extChartAt 𝓘(𝕜, E) x x = chartAt E x x := by simp
-  rw [hext, hext']
-  exact mfderiv_eq_zero_iff_of_eqOn (IsManifold.chart_mem_maximalAtlas x)
-    (eqOn_comp_chartAt_symm x) (mem_chart_source E x)
 
 /-- The points where the differential of a `C^1` function is nonzero form an open set. -/
 theorem isOpen_setOf_mfderiv_ne_zero (hf : ContMDiff 𝓘(𝕜, E) 𝓘(𝕜, F) 1 f) :

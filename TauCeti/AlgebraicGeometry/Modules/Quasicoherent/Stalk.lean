@@ -62,7 +62,7 @@ theorem isLocalizedModule_germₗ [M.IsQuasicoherent] (hU : IsAffineOpen U) :
     obtain ⟨f, hfV, hxf⟩ := hU.exists_basicOpen_le ⟨x, hxV⟩ x.2
     -- The powers of `f` avoid the prime ideal of `x`, since `x ∈ D(f)`.
     have hf : Submonoid.powers f ≤ (hU.primeIdealOf x).asIdeal.primeCompl := Submonoid.powers_le.2
-      (Ideal.mem_primeCompl_iff.2 ((hU.mem_basicOpen_iff_notMem_primeIdealOf x.2 f).1 hxf))
+      (Ideal.mem_primeCompl_iff.2 ((hU.mem_basicOpen_iff_notMem_primeIdealOf x f).1 hxf))
     have := M.isLocalizedModule_basicOpenRestrict hU f
     obtain ⟨⟨a, c⟩, hac⟩ := IsLocalizedModule.surj (Submonoid.powers f) (M.basicOpenRestrict f)
       (M.presheaf.map (homOfLE hfV).op m)
@@ -80,7 +80,7 @@ theorem isLocalizedModule_germₗ [M.IsQuasicoherent] (hU : IsAffineOpen U) :
     obtain ⟨f, hfW, hxf⟩ := hU.exists_basicOpen_le ⟨x, hxW⟩ x.2
     -- The powers of `f` avoid the prime ideal of `x`, since `x ∈ D(f)`.
     have hf : Submonoid.powers f ≤ (hU.primeIdealOf x).asIdeal.primeCompl := Submonoid.powers_le.2
-      (Ideal.mem_primeCompl_iff.2 ((hU.mem_basicOpen_iff_notMem_primeIdealOf x.2 f).1 hxf))
+      (Ideal.mem_primeCompl_iff.2 ((hU.mem_basicOpen_iff_notMem_primeIdealOf x f).1 hxf))
     have := M.isLocalizedModule_basicOpenRestrict hU f
     -- Restriction to `D(f)` factors through the neighbourhood `W` where `a` and `b` agree.
     have hres (i : W ⟶ U) (m : Γ(M, U)) :

@@ -261,7 +261,7 @@ private theorem monotoneOn_setIntegral_norm_gradient_sq
     MonotoneOn (fun t => ∫ x in ball z t, ‖W1p.gradient u x‖ ^ 2) (Ioc 0 R) :=
   fun _ _ t ht hst => setIntegral_mono_set
     (integrableOn_norm_gradient_sq u ((ball_subset_ball ht.2).trans hball))
-    (ae_of_all _ fun _ => by positivity) (ball_subset_ball hst).eventuallyLE
+    (ae_of_all _ fun _ => by positivity) (ball_subset_ball hst).eventuallySubset
 
 /-- **Morrey decay of the gradient.** For `α > 0` there are `θ ∈ (0, 1]` and `C`, depending only
 on `n`, `α`, `λ`, `Λ` and `M`, such that the following holds. Let `u ∈ H¹(Ω)` solve
@@ -360,7 +360,7 @@ private theorem monotoneOn_setIntegral_norm_gradient_sub_setAverage_sq
       measure_ball_lt_top.ne _)).trans
     (setIntegral_mono_set ((Lp.memLp (W1p.gradient u)).integrableOn_norm_sub_sq_of_subset ht'
       measure_ball_lt_top.ne _) (ae_of_all _ fun _ => by positivity)
-      (ball_subset_ball hst).eventuallyLE)
+      (ball_subset_ball hst).eventuallySubset)
 
 /-- **Campanato decay of the gradient from a Morrey bound.** Let `α > 0`, `β ≤ n + 1` and
 `2α + β < n + 3`, and let `θ ∈ (0, 1]` and `L ≥ 0`. There is `C`, depending only on `n`, `α`, `β`,
@@ -802,7 +802,7 @@ theorem exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWith_matri
     intro Omega u a G Ka KG S R h
     exact absurd h.pos hlam
   have hα' : (0 : ℝ) < α := hα
-  obtain ⟨θ, C₀, hθ, hθ1, hC₀, hdec⟩ :=
+  obtain ⟨θ, C₀, hθ, hθ1, _, hdec⟩ :=
     exists_setIntegral_norm_gradient_sub_setAverage_sq_le_of_holderOnWith (n := n) hα hα1
       (Lam := Lam) (M := M) hlam
   obtain ⟨ω, hωdef⟩ : ∃ ω, ω = volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :=

@@ -7,7 +7,6 @@ module
 
 public import Mathlib.GroupTheory.Perm.Sign
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Rational
-public import TauCeti.LinearAlgebra.RootSystem.Weyl.CartanType
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.ReflectionPerm
 import TauCeti.Algebra.AlgebraicGroup.SplitTorus.RootDatum.Basic
 
@@ -23,8 +22,9 @@ symmetric group.
 
 The comparison only uses the reflection permutations and the faithfulness of the action on root
 indices, so it applies verbatim to the pinned integral datum and to the pinned rational root
-system, which share their reflection permutations. Cartan-type rigidity transports the rational
-result to every finite reduced crystallographic root system of type `Aₙ`.
+system, which share their reflection permutations. The identification for an arbitrary root
+pairing with a base of type `Aₙ`, marked by its simple reflections, is in
+`TauCeti/LinearAlgebra/RootSystem/Weyl/TypeA/Presentation.lean`.
 
 ## Main definitions
 
@@ -34,12 +34,6 @@ result to every finite reduced crystallographic root system of type `Aₙ`.
   pinned integral datum and `Equiv.Perm (Fin (n + 1))`.
 * `TauCeti.DynkinType.typeARationalWeylGroupEquiv`: the corresponding equivalence for the pinned
   rational root system.
-
-## Main results
-
-* `RootPairing.weylGroup_equiv_perm_of_typeA`: **the Weyl group of every finite
-  reduced crystallographic root system of type `Aₙ` is the symmetric group on `n + 1` letters.**
-* `RootPairing.card_weylGroup_of_hasCartanType_A`: its order is `(n + 1)!`.
 
 ## References
 
@@ -248,36 +242,3 @@ theorem typeARationalWeylGroupEquiv_ofIdx_typeASimpleIndex (hn : 1 ≤ n) (i : F
 end
 
 end TauCeti.DynkinType
-
-namespace TauCeti
-
-noncomputable section
-
-variable {ι M N : Type*} [AddCommGroup M] [Module ℚ M] [AddCommGroup N] [Module ℚ N]
-  (P : RootPairing ι ℚ M N) [Finite ι] [P.IsRootSystem] [P.IsCrystallographic] [P.IsReduced]
-  (b : P.Base)
-
-/-- **A root system of type `Aₙ` has Weyl group the symmetric group on `n + 1` letters.**
-
-The equivalence is noncanonical for an arbitrary root system because `HasCartanType` records only
-the existence of a labelling of the simple roots. It is obtained by transporting the explicit
-coordinate equivalence for the pinned rational root system through Cartan-type rigidity. -/
-theorem _root_.RootPairing.weylGroup_equiv_perm_of_typeA {n : ℕ} (hn : 1 ≤ n)
-    (h : HasCartanType P b (.A n)) :
-    Nonempty (P.weylGroup ≃* Equiv.Perm (Fin (n + 1))) := by
-  let ht : (DynkinType.A n).Valid := DynkinType.valid_A.mpr hn
-  obtain ⟨e⟩ := nonempty_weylGroup_mulEquiv_of_hasCartanType b
-    ((DynkinType.A n).rationalBase ht) (.A n) h
-    (DynkinType.hasCartanType_rationalRootSystem (.A n) ht)
-  exact ⟨e.trans (DynkinType.typeARationalWeylGroupEquiv n hn)⟩
-
-/-- The Weyl group of a root system of type `Aₙ` has order `(n + 1)!`. -/
-theorem _root_.RootPairing.card_weylGroup_of_hasCartanType_A {n : ℕ} (hn : 1 ≤ n)
-    (h : HasCartanType P b (.A n)) :
-    Nat.card P.weylGroup = Nat.factorial (n + 1) := by
-  obtain ⟨e⟩ := P.weylGroup_equiv_perm_of_typeA b hn h
-  rw [Nat.card_congr e.toEquiv, Nat.card_perm, Nat.card_fin]
-
-end
-
-end TauCeti
