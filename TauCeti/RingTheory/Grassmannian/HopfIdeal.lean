@@ -330,10 +330,12 @@ private theorem exists_isHopfIdeal_map {B K L : Type*} [CommRing B] [Ring K] [Ri
   refine ⟨J.toIdeal, ?_, inferInstance, inferInstance⟩
   dsimp only [J]
   rw [TauCeti.HopfIdeal.map_toIdeal, TauCeti.HopfIdeal.ofIsHopfIdeal_toIdeal]
-  change (I.map e.toAlgEquiv).restrictScalars B = _
   ext y
-  simp only [Submodule.restrictScalars_mem, Ideal.mem_map_of_equiv, Submodule.mem_map,
-    AlgEquiv.toLinearMap_apply, BialgEquiv.coe_toAlgEquiv]
+  rw [Submodule.restrictScalars_mem,
+    Ideal.mem_map_iff_of_surjective (e.toBialgHom : K →+* L) e.surjective]
+  simp only [Submodule.mem_map, AlgEquiv.toLinearMap_apply, BialgEquiv.coe_toAlgEquiv,
+    RingHom.coe_coe, BialgEquiv.toBialgHom_eq_coe, BialgEquiv.coe_toBialgHom,
+    Submodule.restrictScalars_mem]
 
 /-- A bialgebra equivalence preserves and reflects the two-sided Hopf-ideal condition. -/
 private theorem exists_isHopfIdeal_map_iff {B K L : Type*} [CommRing B] [Ring K] [Ring L]
@@ -342,8 +344,11 @@ private theorem exists_isHopfIdeal_map_iff {B K L : Type*} [CommRing B] [Ring K]
       J.IsHopfIdeal B) ↔
       ∃ I : Ideal K, I.restrictScalars B = P ∧ I.IsTwoSided ∧ I.IsHopfIdeal B := by
   refine ⟨fun h ↦ ?_, exists_isHopfIdeal_map e⟩
-  have hP : (P.map e.toAlgEquiv.toLinearMap).map e.symm.toAlgEquiv.toLinearMap = P :=
-    (Submodule.map_symm_eq_iff e.toAlgEquiv.toLinearEquiv).2 rfl
+  have hP : (P.map e.toAlgEquiv.toLinearMap).map e.symm.toAlgEquiv.toLinearMap = P := by
+    rw [← Submodule.map_comp]
+    convert Submodule.map_id P
+    ext
+    simp
   simpa only [hP] using exists_isHopfIdeal_map e.symm h
 
 variable {R R' : Type*} [CommRing R] [CommRing R'] [Algebra R R'] {k : ℕ} {A : Type w}
@@ -376,7 +381,8 @@ theorem hopfIdealLocus_baseChangeEquiv (N : G(k, A ⊗[R'] (R' ⊗[R] H); A)) :
       (baseChangeEquiv R' N).hopfIdealLocus ≤ RingHom.ker g ↔
         N.hopfIdealLocus ≤ RingHom.ker g := by
     have h := hopfIdealLocus_le_ker_iff (g.restrictScalars R) (baseChangeEquiv R' N)
-    rw [← baseChangeEquiv_map] at h
+    rw [← baseChangeEquiv_map, ← RingHom.ker_coe_toRingHom (g.restrictScalars R),
+      AlgHom.coe_restrictScalars, RingHom.ker_coe_toRingHom] at h
     exact h.trans ((exists_isHopfIdeal_baseChangeEquiv_iff _).trans
       (hopfIdealLocus_le_ker_iff g N).symm)
   refine le_antisymm ?_ ?_
