@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Metrizable.Basic
 public import TauCeti.Topology.CategoryTheory.Nerve
 
 /-!
@@ -18,6 +19,14 @@ its remaining string, with the matching endpoint equation. In degree zero,
 Thus the topology defined by recording all composite arrows introduces no extra topology
 beyond that of composable strings. These identifications apply to topological groupoids
 without discarding any isotropy arrows.
+
+For any category whose total arrows carry a topology, recording all arrows `i ⟶ j` (`i ≤ j`)
+embeds `ComposableArrows C n` into a finite product of copies of `Quiver.Total C`
+(`CategoryTheory.ComposableArrows.isEmbedding_totalArrowTuple`). Hence `ComposableArrows C n`
+inherits separation, regularity, countability and metrizability from `Quiver.Total C` with no
+continuity assumption on the category operations. When source, target, units and composition
+are continuous, `C` is Hausdorff and `Quiver.Total C` is compact, each nerve level is compact
+(`CategoryTheory.ComposableArrows.compactSpace_of_compactSpace`).
 
 Composition is required to be continuous on the subspace of pairs with matching endpoints.
 No topology on individual hom types and no new category or groupoid carrier is used.
@@ -35,6 +44,54 @@ open CategoryTheory Topology
 universe v u
 
 namespace CategoryTheory.ComposableArrows
+
+section Embedding
+
+variable {C : Type u} [Category.{v} C] [TopologicalSpace (Quiver.Total C)] {n : ℕ}
+
+/-- Recording all total arrows `F.totalArrow i j hij` (`i ≤ j`) embeds strings of `n` composable
+arrows into a finite product of copies of `Quiver.Total C`. No continuity of source, target,
+units or composition is needed. -/
+theorem isEmbedding_totalArrowTuple :
+    IsEmbedding fun (F : ComposableArrows C n)
+      (p : (i : Fin (n + 1)) × (j : Fin (n + 1)) × PLift (i ≤ j)) ↦
+        F.totalArrow p.1 p.2.1 p.2.2.down := by
+  refine ⟨⟨le_antisymm ?_ ?_⟩, fun F G h ↦ ext_of_totalArrow fun i j hij ↦
+    congrFun h ⟨i, j, ⟨hij⟩⟩⟩
+  · simp only [instTopologicalSpace, Pi.topologicalSpace, induced_iInf, induced_compose]
+    exact le_iInf fun ⟨i, j, ⟨hij⟩⟩ ↦ iInf_le_of_le i <| iInf_le_of_le j <| iInf_le _ hij
+  · simp only [instTopologicalSpace, Pi.topologicalSpace, induced_iInf, induced_compose]
+    exact le_iInf fun i ↦ le_iInf fun j ↦ le_iInf fun hij ↦
+      iInf_le _ (⟨i, j, ⟨hij⟩⟩ : (i : Fin (n + 1)) × (j : Fin (n + 1)) × PLift (i ≤ j))
+
+instance instT0Space [T0Space (Quiver.Total C)] : T0Space (ComposableArrows C n) :=
+  isEmbedding_totalArrowTuple.t0Space
+
+instance instT1Space [T1Space (Quiver.Total C)] : T1Space (ComposableArrows C n) :=
+  isEmbedding_totalArrowTuple.t1Space
+
+instance instT2Space [T2Space (Quiver.Total C)] : T2Space (ComposableArrows C n) :=
+  isEmbedding_totalArrowTuple.t2Space
+
+instance instRegularSpace [RegularSpace (Quiver.Total C)] : RegularSpace (ComposableArrows C n) :=
+  isEmbedding_totalArrowTuple.isInducing.regularSpace
+
+instance instT3Space [T3Space (Quiver.Total C)] : T3Space (ComposableArrows C n) :=
+  isEmbedding_totalArrowTuple.t3Space
+
+instance instFirstCountableTopology [FirstCountableTopology (Quiver.Total C)] :
+    FirstCountableTopology (ComposableArrows C n) :=
+  isEmbedding_totalArrowTuple.firstCountableTopology
+
+instance instSecondCountableTopology [SecondCountableTopology (Quiver.Total C)] :
+    SecondCountableTopology (ComposableArrows C n) :=
+  isEmbedding_totalArrowTuple.secondCountableTopology
+
+instance instMetrizableSpace [TopologicalSpace.MetrizableSpace (Quiver.Total C)] :
+    TopologicalSpace.MetrizableSpace (ComposableArrows C n) :=
+  isEmbedding_totalArrowTuple.metrizableSpace
+
+end Embedding
 
 variable {C : Type u} [Category.{v} C] [TopologicalSpace C]
   [TopologicalSpace (Quiver.Total C)]
@@ -187,5 +244,28 @@ theorem continuous_iff_first_tail {Y : Type*} [TopologicalSpace Y] {n : ℕ}
   rw [← (precompHomeomorph hs hu hc n).comp_continuous_iff]
   simp only [continuous_induced_rng, continuous_prodMk, Function.comp_def,
     precompHomeomorph_apply]
+
+include hs hu hc in
+/-- When source, target, units and composition are continuous, `C` is Hausdorff and
+`Quiver.Total C` is compact, every level of the nerve is compact: `C` is compact as the image of
+`Quiver.Total C` under the source map, and each positive level is a closed fiber product in a
+compact product. -/
+theorem compactSpace_of_compactSpace
+    (ht : Continuous (Quiver.Total.right : Quiver.Total C → C))
+    [T2Space C] [CompactSpace (Quiver.Total C)] (n : ℕ) :
+    CompactSpace (ComposableArrows C n) := by
+  induction n with
+  | zero =>
+    have hsurj : Function.Surjective (Quiver.Total.left : Quiver.Total C → C) :=
+      fun x ↦ ⟨⟨x, x, 𝟙 x⟩, rfl⟩
+    have : CompactSpace C := hsurj.compactSpace hs
+    exact (zeroHomeomorph hs hu).symm.compactSpace
+  | succ n ih =>
+    have hclosed :
+        IsClosed {p : Quiver.Total C × ComposableArrows C n | p.1.right = p.2.left} :=
+      isClosed_eq (ht.comp continuous_fst) ((continuous_obj hs 0).comp continuous_snd)
+    have : CompactSpace {p : Quiver.Total C × ComposableArrows C n // p.1.right = p.2.left} :=
+      isCompact_iff_compactSpace.mp hclosed.isCompact
+    exact (precompHomeomorph hs hu hc n).symm.compactSpace
 
 end CategoryTheory.ComposableArrows
