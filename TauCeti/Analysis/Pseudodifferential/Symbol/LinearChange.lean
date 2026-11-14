@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # Linear changes of variables of symbols
@@ -53,6 +54,54 @@ open scoped ContDiff
 namespace TauCeti
 
 variable {n : ℕ}
+
+/-- **Symbol estimates under a linear change of variables.** Estimates of order `m` for the mixed
+derivatives of `f` on a set `S` of positions transfer to `(x, ξ) ↦ f(P x, Q ξ)` on the positions
+`x` with `P x ∈ S`, for a continuous linear map `P` and a linear automorphism `Q`. The weights
+`⟨Q ξ⟩` and `⟨ξ⟩` are comparable because `Q` is invertible. -/
+theorem exists_norm_mixedDeriv_comp_prodMap_le_mul_rpow_weight {A : Type*}
+    [NormedAddCommGroup A] [NormedSpace ℝ A] {f : CoordinateSpace n × CoordinateSpace n → A}
+    (hf : ContDiff ℝ ∞ f) (P : CoordinateSpace n →L[ℝ] CoordinateSpace n)
+    (Q : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) {S : Set (CoordinateSpace n)} {m : ℝ}
+    (h : ∀ α β : List (Fin n), ∃ C : ℝ, 0 ≤ C ∧ ∀ x ∈ S, ∀ ξ,
+      ‖mixedDeriv α β f x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2))
+    (α β : List (Fin n)) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ x, P x ∈ S → ∀ ξ,
+      ‖mixedDeriv α β (fun p => f (P p.1, Q p.2)) x ξ‖ ≤
+        C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
+  choose B hB0 hB using h
+  -- The weights `⟨Q ξ⟩` and `⟨ξ⟩` are comparable, since `‖Q ξ‖ ≤ c₀ ‖ξ‖` and `‖ξ‖ ≤ c₀ ‖Q ξ‖`.
+  set c₀ := max (max ‖(Q : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖
+    ‖(Q.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖) 1
+  have hc₀ : 1 ≤ c₀ := le_max_right _ _
+  set c := c₀ ^ |m - β.length|
+  have hc0 : 0 ≤ c := by positivity
+  have hc (ξ : CoordinateSpace n) : (1 + ‖Q ξ‖ ^ 2) ^ ((m - β.length) / 2) ≤
+      c * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
+    refine one_add_norm_sq_rpow_le_of_norm_le_mul hc₀ _ ?_ ?_
+    · exact ((Q : CoordinateSpace n →L[ℝ] CoordinateSpace n).le_opNorm ξ).trans
+        (mul_le_mul_of_nonneg_right ((le_max_left _ _).trans (le_max_left _ _)) (norm_nonneg _))
+    · exact (Q.antilipschitzWith.le_mul_norm (map_zero Q) ξ).trans (mul_le_mul_of_nonneg_right
+        ((le_max_right _ _).trans (le_max_left _ _)) (norm_nonneg _))
+  set M := max ‖P‖ ‖(Q : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖
+  set D := ∑ t : Fin (α.length + β.length) → Fin n,
+    B (List.ofFn fun i => t (Fin.castAdd β.length i)) (List.ofFn fun i => t (Fin.natAdd α.length i))
+  have hD : 0 ≤ D := Finset.sum_nonneg fun _ _ => hB0 _ _
+  have hM : 0 ≤ M := le_max_of_le_left (norm_nonneg _)
+  refine ⟨M ^ (α.length + β.length) * (D * c), mul_nonneg (pow_nonneg hM _) (mul_nonneg hD hc0),
+    fun x hx ξ => ?_⟩
+  refine (norm_mixedDeriv_comp_prodMap_le α β (hf.of_le (by exact_mod_cast le_top)) P Q x
+    ξ).trans ?_
+  rw [mul_assoc]
+  refine mul_le_mul_of_nonneg_left ?_ (by positivity)
+  simp only [D, Finset.sum_mul]
+  refine Finset.sum_le_sum fun t _ => ?_
+  have h := hB (List.ofFn fun i => t (Fin.castAdd β.length i))
+    (List.ofFn fun i => t (Fin.natAdd α.length i)) (P x) hx (Q ξ)
+  simp only [List.length_ofFn] at h
+  refine h.trans ?_
+  rw [mul_assoc]
+  exact mul_le_mul_of_nonneg_left (hc ξ) (hB0 _ _)
 
 namespace Symbol
 
