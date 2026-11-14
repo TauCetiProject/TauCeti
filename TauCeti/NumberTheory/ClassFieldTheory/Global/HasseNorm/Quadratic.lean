@@ -12,6 +12,8 @@ import Mathlib.Algebra.QuadraticAlgebra.Basic
 import Mathlib.Algebra.Ring.Shrink
 import Mathlib.RingTheory.Finiteness.Small
 import Mathlib.Tactic.NormNum.IsSquare
+import TauCeti.Algebra.Algebra.Equiv
+import TauCeti.Algebra.Ring.Equiv
 import TauCeti.Analysis.Normed.Field.WithAbs
 import TauCeti.NumberTheory.ClassFieldTheory.Global.HasseNorm.Basic
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Transport

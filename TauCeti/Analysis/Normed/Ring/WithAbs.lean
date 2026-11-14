@@ -48,6 +48,8 @@ section Isometry
 
 variable {R T : Type*} [Ring R] [Ring T] {v : AbsoluteValue R ℝ} {w : AbsoluteValue T ℝ}
 
+-- Not `@[simp]`: `WithAbs.map_apply` already simplifies `WithAbs.map v w f x` on the left-hand
+-- side (`simpNF`).
 /-- A ring homomorphism carrying `v` to `w` preserves norms on `WithAbs`. -/
 theorem norm_map {f : R →+* T} (hf : ∀ x, w (f x) = v x) (x : WithAbs v) :
     ‖WithAbs.map v w f x‖ = ‖x‖ := by
@@ -58,6 +60,8 @@ theorem isometry_map_of_apply_eq {f : R →+* T} (hf : ∀ x, w (f x) = v x) :
     Isometry (WithAbs.map v w f) :=
   AddMonoidHomClass.isometry_of_norm _ (norm_map hf)
 
+-- Not `@[simp]`: `WithAbs.congr_apply` already simplifies `WithAbs.congr v w σ x` on the left-hand
+-- side (`simpNF`).
 /-- A ring isomorphism carrying `v` to `w` preserves norms on `WithAbs`. -/
 theorem norm_congr {σ : R ≃+* T} (hσ : ∀ x, w (σ x) = v x) (x : WithAbs v) :
     ‖WithAbs.congr v w σ x‖ = ‖x‖ :=

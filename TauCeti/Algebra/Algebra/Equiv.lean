@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Algebra.Equiv
 import Mathlib.Algebra.GroupWithZero.Units.Lemmas
+import TauCeti.Algebra.Ring.Equiv
 
 /-!
 # Algebra automorphisms as ring automorphisms; cancelling factors
@@ -22,8 +23,10 @@ The remaining lemmas relate the action of an algebra automorphism on one factor 
 on a product or quotient with a fixed cancellable factor. An automorphism negating a nonzero
 element is nontrivial when multiplication by `2` is injective. An automorphism multiplying an
 element by a fixed factor `c` multiplies it by `cᵏ` under its `k`-th power. Finally, compatible
-ring equivalences `e : K ≃+* K'` and `eL : L ≃+* L'` induce a group isomorphism
-`RingEquiv.algAutCongr : (L ≃ₐ[K] L) ≃* (L' ≃ₐ[K'] L')` by conjugation.
+ring equivalences intertwining `algebraMap` induce a group isomorphism
+`RingEquiv.algAutCongr : (L ≃ₐ[K] L) ≃* (L' ≃ₐ[K'] L')` by conjugation and transport solvability
+of binary quadratic equations with base coefficients
+(`RingEquiv.exists_sq_sub_mul_sq_algebraMap_iff`).
 -/
 
 public section
@@ -85,6 +88,8 @@ theorem apply_div_eq_neg_iff [DivisionRing A] [Algebra R A] (σ : A ≃ₐ[R] A)
 end AlgEquiv
 
 namespace RingEquiv
+
+section AlgAutCongr
 
 variable {K K' L L' : Type*} [CommSemiring K] [CommSemiring K'] [Semiring L] [Semiring L']
   [Algebra K L] [Algebra K' L']
@@ -160,5 +165,17 @@ theorem algAutCongr_refl_toRingEquiv [Algebra K L'] (φ : L ≃ₐ[K] L')
     (h : ∀ c : K, (φ : L ≃+* L') (algebraMap K L c) = algebraMap K L' (RingEquiv.refl K c)) :
     algAutCongr (RingEquiv.refl K) (φ : L ≃+* L') h = AlgEquiv.autCongr φ := by
   ext; rfl
+
+end AlgAutCongr
+
+/-- A ring isomorphism `τ : A ≃+* B` intertwining `algebraMap` along `e : K → L` preserves
+solvability of `a = x² - d y²` for coefficients in the base. -/
+theorem exists_sq_sub_mul_sq_algebraMap_iff {K L A B : Type*} [CommSemiring K] [CommSemiring L]
+    [Ring A] [Ring B] [Algebra K A] [Algebra L B] {e : K → L} (τ : A ≃+* B)
+    (hτ : ∀ c : K, τ (algebraMap K A c) = algebraMap L B (e c)) (a d : K) :
+    (∃ x y : B, algebraMap L B (e a) = x ^ 2 - algebraMap L B (e d) * y ^ 2) ↔
+      ∃ x y : A, algebraMap K A a = x ^ 2 - algebraMap K A d * y ^ 2 := by
+  rw [← hτ a, ← hτ d]
+  exact τ.exists_sq_sub_mul_sq_iff _ _
 
 end RingEquiv
