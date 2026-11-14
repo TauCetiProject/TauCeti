@@ -60,6 +60,8 @@ defined from it.
   dual basis.
 * `ZLattice.dual_span_orthonormalBasis`: the `ℤ`-span of an orthonormal basis is self-dual.
 * `ZLattice.dual_span_singleton`: the dual of `c ℤ ⊆ ℝ` (`c ≠ 0`) is `c⁻¹ ℤ`.
+* `ZLattice.dual_le_span_singleton_iff`, `ZLattice.dual_lt_span_singleton_iff`: criteria on
+  `c : ℝ` for `(c ℤ)^∨ ≤ c ℤ` and `(c ℤ)^∨ < c ℤ`.
 * `ZLattice.inf_dual_span_singleton_eq_bot_of_irrational_sq`: when `c²` is irrational, `c ℤ ⊆ ℝ`
   meets its dual `c⁻¹ ℤ` only at `0`.
 * `ZLattice.dual_dual`: the dual of the dual of a full lattice is the lattice itself.
@@ -176,6 +178,47 @@ theorem dual_span_singleton {c : ℝ} (hc : c ≠ 0) :
     calc (n : ℝ) * c * ((m : ℝ) * c⁻¹)
         = (m : ℝ) * (n : ℝ) * (c * c⁻¹) := by ring
       _ = (m : ℝ) * (n : ℝ) := by rw [mul_inv_cancel₀ hc, mul_one]
+
+/-- The dual of `c ℤ ⊆ ℝ` is contained in `c ℤ` if and only if `(m : ℝ) * c ^ 2 = 1` for some
+`m : ℤ` (equivalently, `c ≠ 0` and `c⁻² ∈ ℤ`). -/
+theorem dual_le_span_singleton_iff {c : ℝ} :
+    dual (span ℤ {c} : Submodule ℤ ℝ) ≤ span ℤ {c} ↔
+      ∃ m : ℤ, (m : ℝ) * c ^ 2 = 1 := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · refine ⟨fun h ↦ ?_, fun ⟨m, hm⟩ ↦ by norm_num at hm⟩
+    have h1 : (1 : ℝ) ∈ span ℤ {(0 : ℝ)} := h (mem_dual.mpr fun y hy ↦ ⟨0, by simp_all⟩)
+    rw [span_singleton_eq_bot.mpr rfl, mem_bot] at h1
+    exact (one_ne_zero h1).elim
+  · rw [dual_span_singleton hc, span_singleton_le_iff_mem, Submodule.mem_span_singleton]
+    refine exists_congr fun m ↦ ?_
+    rw [zsmul_eq_mul]
+    exact ⟨fun h ↦ by linear_combination c * h + mul_inv_cancel₀ hc,
+      fun h ↦ mul_right_cancel₀ hc (by linear_combination h - inv_mul_cancel₀ hc)⟩
+
+/-- The dual of `c ℤ ⊆ ℝ` is strictly contained in `c ℤ` if and only if `(m : ℝ) * c ^ 2 = 1` for
+some `m : ℤ` and `|c| ≠ 1`. -/
+theorem dual_lt_span_singleton_iff {c : ℝ} :
+    dual (span ℤ {c} : Submodule ℤ ℝ) < span ℤ {c} ↔
+      (∃ m : ℤ, (m : ℝ) * c ^ 2 = 1) ∧ |c| ≠ 1 := by
+  rw [lt_iff_le_not_ge, dual_le_span_singleton_iff]
+  refine and_congr_right fun ⟨m, hm⟩ ↦ ?_
+  have hc : c ≠ 0 := fun h0 ↦ by simp [h0] at hm
+  refine not_congr ?_
+  rw [dual_span_singleton hc, span_singleton_le_iff_mem, Submodule.mem_span_singleton,
+    abs_eq zero_le_one, ← sq_eq_one_iff]
+  refine ⟨fun ⟨k, hk⟩ ↦ ?_, fun hc2 ↦ ⟨1, ?_⟩⟩
+  · have hkc : (k : ℝ) = c ^ 2 := by
+      rw [zsmul_eq_mul] at hk
+      calc (k : ℝ) = (k : ℝ) * c⁻¹ * c := (inv_mul_cancel_right₀ hc k).symm
+        _ = c * c := by rw [hk]
+        _ = c ^ 2 := (sq c).symm
+    have hmk_real : (m : ℝ) * k = 1 := by rw [hkc, hm]
+    have hmk : m * k = 1 := by exact_mod_cast hmk_real
+    have hk0 : (0 : ℤ) < k := by exact_mod_cast (hkc ▸ sq_pos_of_ne_zero hc : (0 : ℝ) < k)
+    have hk1 : k = 1 := Int.eq_one_of_mul_eq_one_left hk0.le hmk
+    simpa [hk1] using hkc.symm
+  · rw [one_smul]
+    exact mul_left_cancel₀ hc (by rw [mul_inv_cancel₀ hc, ← sq, hc2])
 
 /-- When `c²` is irrational, the rank-one lattice `c ℤ ⊆ ℝ` meets its dual `c⁻¹ ℤ` only at `0`. -/
 theorem inf_dual_span_singleton_eq_bot_of_irrational_sq {c : ℝ} (hc : Irrational (c ^ 2)) :
