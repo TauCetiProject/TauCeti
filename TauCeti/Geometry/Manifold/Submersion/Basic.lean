@@ -37,7 +37,11 @@ is the preimage under `dφ` of the fixed subspace `L⁻¹ (0 × F)` of the model
 
 When the model of the source has no boundary, a submersion at `x` has a `C^n` local section through
 `x` over an open neighbourhood of `f x`, read off from the normal-form charts
-(`Manifold.IsSubmersionAt.exists_contMDiffOn_section`).
+(`Manifold.IsSubmersionAt.exists_contMDiffOn_section`). Consequently smoothness descends along a
+submersion: `g` is `C^m` at `f x` exactly when `g ∘ f` is `C^m` at `x`
+(`Manifold.IsSubmersionAt.contMDiffAt_comp_iff`), and along a surjective submersion a `C^m` map
+constant on the fibres factors through a unique `C^m` map
+(`Manifold.IsSubmersion.existsUnique_contMDiff_comp_eq`).
 
 ## Main results
 
@@ -55,11 +59,17 @@ When the model of the source has no boundary, a submersion at `x` has a `C^n` lo
   source of the normal-form chart.
 * `Manifold.IsSubmersionAtOfComplement.exists_contMDiffOn_section`,
   `Manifold.IsSubmersionAt.exists_contMDiffOn_section`: local sections of a submersion.
+* `Manifold.IsSubmersionAt.contMDiffAt_comp_iff`, `Manifold.IsSubmersion.contMDiff_comp_iff`:
+  smoothness descends along a submersion.
+* `Manifold.IsSubmersion.existsUnique_contMDiff_comp_eq`: smooth maps constant on the fibres of a
+  surjective submersion descend to smooth maps.
 
 ## References
 
 * J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Springer GTM 218 (2013),
-  Theorem 4.12 (local form of a submersion) and Theorem 4.26 (local sections of submersions).
+  Theorem 4.12 (local form of a submersion), Theorem 4.26 (local sections of submersions) and
+  Theorems 4.29 and 4.30 (characteristic property of surjective submersions, passing smoothly to
+  the quotient).
 -/
 
 public section
@@ -312,6 +322,44 @@ theorem IsSubmersionAt.exists_contMDiffOn_section [I.Boundaryless] (h : IsSubmer
     ∃ U : Set N, IsOpen U ∧ f x ∈ U ∧ ∃ s : N → M, s (f x) = x ∧ ContMDiffOn J I n s U ∧
       ∀ y ∈ U, f (s y) = y :=
   h.isSubmersionAtOfComplement_complement.exists_contMDiffOn_section
+
+section Descent
+
+variable {E''' : Type*} [NormedAddCommGroup E'''] [NormedSpace 𝕜 E'''] {H''' : Type*}
+  [TopologicalSpace H'''] {K : ModelWithCorners 𝕜 E''' H'''} {P : Type*} [TopologicalSpace P]
+  [ChartedSpace H''' P] {m : ℕ∞ω} {g : N → P}
+
+/-- **Smoothness descends along a submersion.** If `f` is a `C^n` submersion at `x` with
+boundaryless source and `m ≤ n`, a map `g` is `C^m` at `f x` exactly when `g ∘ f` is `C^m` at `x`.
+Near `f x`, `g` is `g ∘ f` composed with a local section of `f`. -/
+theorem IsSubmersionAt.contMDiffAt_comp_iff [I.Boundaryless] (h : IsSubmersionAt I J n f x)
+    (hm : m ≤ n) : ContMDiffAt I K m (g ∘ f) x ↔ ContMDiffAt J K m g (f x) := by
+  refine ⟨fun hg ↦ ?_, fun hg ↦ hg.comp x (h.contMDiffAt.of_le hm)⟩
+  obtain ⟨U, hU, hxU, s, hsx, hs, hfs⟩ := h.exists_contMDiffOn_section
+  have hgs : ContMDiffAt J K m ((g ∘ f) ∘ s) (f x) :=
+    (hsx ▸ hg).comp (f x) ((hs.of_le hm).contMDiffAt (hU.mem_nhds hxU))
+  exact hgs.congr_of_eventuallyEq <| eventually_of_mem (hU.mem_nhds hxU) fun y hy ↦ by
+    rw [comp_apply, comp_apply, hfs y hy]
+
+/-- **Smoothness descends along a surjective submersion.** If `f` is a surjective `C^n` submersion
+with boundaryless source and `m ≤ n`, a map `g` is `C^m` exactly when `g ∘ f` is. -/
+theorem IsSubmersion.contMDiff_comp_iff [I.Boundaryless] (h : IsSubmersion I J n f)
+    (hsurj : Surjective f) (hm : m ≤ n) : ContMDiff I K m (g ∘ f) ↔ ContMDiff J K m g := by
+  refine ⟨fun hg y ↦ ?_, fun hg ↦ hg.comp (h.contMDiff.of_le hm)⟩
+  obtain ⟨x, rfl⟩ := hsurj y
+  exact ((h.isSubmersionAt x).contMDiffAt_comp_iff hm).1 (hg x)
+
+/-- **Smooth maps constant on fibres descend along a surjective submersion.** If `f` is a
+surjective `C^n` submersion with boundaryless source, `m ≤ n`, and a `C^m` map `g` is constant on
+the fibres of `f`, then `g` factors as `g' ∘ f` for a unique map `g'`, and `g'` is `C^m`. -/
+theorem IsSubmersion.existsUnique_contMDiff_comp_eq [I.Boundaryless] (h : IsSubmersion I J n f)
+    (hsurj : Surjective f) (hm : m ≤ n) {g : M → P} (hg : ContMDiff I K m g)
+    (hgf : FactorsThrough g f) : ∃! g' : N → P, ContMDiff J K m g' ∧ g' ∘ f = g := by
+  have hcomp : (g ∘ surjInv hsurj) ∘ f = g := funext fun x ↦ hgf (surjInv_eq hsurj (f x))
+  refine ⟨g ∘ surjInv hsurj, ⟨(h.contMDiff_comp_iff hsurj hm).1 (by rwa [hcomp]), hcomp⟩,
+    fun g' hg' ↦ hsurj.injective_comp_right (hg'.2.trans hcomp.symm)⟩
+
+end Descent
 
 end LocalSection
 

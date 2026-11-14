@@ -14,7 +14,8 @@ public import TauCeti.Topology.Algebra.Group.Profinite.Free.Automorphism
 # Labute's normal form for the dyadic Demushkin groups of even rank
 
 Let `F = freeProP 2 (Fin n)` be the free pro-`2` group on an even number `n` of generators and let
-`r ∈ Φ(F)` be a relator presenting a Demushkin group `G = ⟨x₁, …, x_n ∣ r⟩` with `q(G) = 2`.
+`r` be a relator presenting a Demushkin group `G = ⟨x₁, …, x_n ∣ r⟩` with `q(G) = 2`; such a
+relator automatically lies in `Φ(F)`.
 Labute's Theorem 3 says that a continuous automorphism of `F` carries `r` to one of the words
 
   `x₁^{2+α} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)`, `2 ≤ f < ∞`, or
@@ -54,8 +55,8 @@ how the classification pins them, and this file proves only the existence of the
   `q' = 2^f` for some `f ≥ 2`.
 * `exists_continuousMulEquiv_apply_eq_padicPow_mul_labuteComm_mul_demushkinWordNeTwo`, in the
   namespace `TauCeti.IsDemushkin`: **Labute's Theorem 3 for `q = 2` and even rank**, the previous
-  statement for a relator in `Φ(F)` presenting a Demushkin group with `q = 2` on an even number of
-  generators.
+  statement for a relator presenting a Demushkin group with `q = 2` on an even number of
+  generators (such a relator automatically lies in `Φ(F)`).
 * `exists_continuousMulEquiv_presentedProP_padicPow_mul_labuteComm_mul_demushkinWordNeTwo`, in the
   namespace `TauCeti.IsDemushkin`: a Demushkin group at `p = 2` of even rank `n` with `q = 2` is
   topologically isomorphic to
@@ -155,7 +156,7 @@ private theorem exists_continuousMulEquiv_apply_head_mul_map_succ_succ (α : ℤ
     simp only [map_demushkinWordNeTwo, Function.comp_def, map_succ_map_succ_freeProPGen]
   exact ⟨E, by rw [map_mul, hEhead, hEtail]⟩
 
-/-- **The exact form of the dyadic relators of even rank.** Let `n ≥ 2` be even and let
+/-- **The exact form of the dyadic relators of even rank.** Let `n` be even and let
 `r ∈ λ_1(F)` be a relator of the free pro-`2` group `F` on `n` generators with the class of
 `x₁² (x₁, x₂) (x₃, x₄) ⋯ (x_{n-1}, x_n)` in `gr_1(F)`. Then a continuous automorphism of `F` carries
 `r` to `x₁^{2+α} (x₁, x₂) x₃^{q} (x₃, x₄) ⋯ (x_{n-1}, x_n)`, where `α ∈ ℤ₂` is divisible by `4` and
@@ -164,7 +165,7 @@ private theorem exists_continuousMulEquiv_apply_head_mul_map_succ_succ (α : ℤ
 theorem assumes only the degree-one class of `r`, not that `r` is the relator of a Demushkin
 group. -/
 theorem exists_continuousMulEquiv_apply_eq_padicPow_mul_labuteComm_mul_demushkinWordNeTwo {n : ℕ}
-    (hn : Even n) (hn0 : 0 < n) (r : pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1)
+    (hn : Even n) (r : pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1)
     (h : gradedMk 2 (freeProP 2 (Fin n)) 1 r = gradedMk 2 (freeProP 2 (Fin n)) 1
       ⟨demushkinWordNeTwo 2 n (freeProPGen 2 n),
         demushkinWordNeTwo_mem_pLowerCentralSeries_one dvd_rfl n _⟩) :
@@ -174,6 +175,9 @@ theorem exists_continuousMulEquiv_apply_eq_padicPow_mul_labuteComm_mul_demushkin
           labuteComm (freeProPGen 2 n 0) (freeProPGen 2 n 1) *
           demushkinWordNeTwo q (n - 2) fun i ↦ freeProPGen 2 n (i + 2) := by
   have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
+  rcases Nat.eq_zero_or_pos n with rfl | hn0
+  · -- Rank zero: the free pro-`2` group on no generators is trivial.
+    exact ⟨ContinuousMulEquiv.refl _, 0, 0, dvd_zero _, Or.inl rfl, Subsingleton.elim _ _⟩
   have hn2 : 2 ≤ n := by
     obtain ⟨m, hm⟩ := hn
     omega
@@ -211,14 +215,14 @@ end freeProP
 namespace IsDemushkin
 
 /-- **Labute's normal form for `q = 2` and even rank** (Labute, Theorem 3, case (3)). Let
-`r ∈ Φ(F)` be a relator of the free pro-`2` group on an even number `n` of generators presenting a
+`r` be a relator of the free pro-`2` group on an even number `n` of generators presenting a
 Demushkin group `G = ⟨x₁, …, x_n ∣ r⟩` with `q(G) = 2`. Then a continuous automorphism of `F`
 carries `r` to `x₁^{2+α} (x₁, x₂) x₃^{q'} (x₃, x₄) ⋯ (x_{n-1}, x_n)`, where `α ∈ ℤ₂` is divisible
 by `4` and `q' = 0`, Labute's level `f = ∞`, or `q' = 2^f` for some `f ≥ 2`. The last factor is the
 `q ≠ 2` word `x₃^{q'} (x₃, x₄) ⋯ (x_{n-1}, x_n)` on `n - 2` letters, read on the generators shifted
 by two. -/
 theorem exists_continuousMulEquiv_apply_eq_padicPow_mul_labuteComm_mul_demushkinWordNeTwo {n : ℕ}
-    (hn : Even n) {r : freeProP 2 (Fin n)} (hr : r ∈ proPFrattini 2 (freeProP 2 (Fin n)))
+    (hn : Even n) {r : freeProP 2 (Fin n)}
     (hG : IsDemushkin 2 (presentedProP 2 (Fin n) {r})) (hq : demushkinQ hG = 2) :
     ∃ (e : freeProP 2 (Fin n) ≃ₜ* freeProP 2 (Fin n)) (α : ℤ_[2]) (q : ℕ),
       (4 : ℤ_[2]) ∣ α ∧ (q = 0 ∨ ∃ f, 2 ≤ f ∧ q = 2 ^ f) ∧
@@ -226,6 +230,7 @@ theorem exists_continuousMulEquiv_apply_eq_padicPow_mul_labuteComm_mul_demushkin
           labuteComm (freeProPGen 2 n 0) (freeProPGen 2 n 1) *
           demushkinWordNeTwo q (n - 2) fun i ↦ freeProPGen 2 n (i + 2) := by
   have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
+  have hr := hG.mem_proPFrattini_of_presentedProP_singleton
   -- A Demushkin group has positive rank, so `n ≥ 2`.
   have hn0 : 0 < n := by
     have := hG.demushkinRank_pos
@@ -256,7 +261,7 @@ theorem exists_continuousMulEquiv_apply_eq_padicPow_mul_labuteComm_mul_demushkin
   -- The exact form of a relator with that class.
   obtain ⟨e, α, q, hα, hq', he⟩ :=
     freeProP.exists_continuousMulEquiv_apply_eq_padicPow_mul_labuteComm_mul_demushkinWordNeTwo hn
-      hn0 ⟨e₀ r, hmem⟩ h
+      ⟨e₀ r, hmem⟩ h
   exact ⟨e₀.trans e, α, q, hα, hq', by rw [ContinuousMulEquiv.trans_apply]; exact he⟩
 
 /-- **Labute's normal form for a Demushkin group of even rank with `q = 2`, intrinsic form**
@@ -282,7 +287,7 @@ theorem exists_continuousMulEquiv_presentedProP_padicPow_mul_labuteComm_mul_demu
       (hG.nondegenerate_degreeOneForm hr e)
   have hq' : demushkinQ hG' = 2 := (demushkinQ_congr hG' hG e).trans hq
   obtain ⟨e', α, q, hα, hq'', he'⟩ :=
-    exists_continuousMulEquiv_apply_eq_padicPow_mul_labuteComm_mul_demushkinWordNeTwo hn hr hG' hq'
+    exists_continuousMulEquiv_apply_eq_padicPow_mul_labuteComm_mul_demushkinWordNeTwo hn hG' hq'
   exact ⟨α, q, hα, hq'', ⟨e.symm.trans (presentedProP.congrSingleton e' he')⟩⟩
 
 end IsDemushkin

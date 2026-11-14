@@ -65,6 +65,7 @@ noncomputable section
 
 open Module Set
 open scoped InnerProductSpace
+open scoped Pointwise
 
 namespace LinearMap.BilinForm
 

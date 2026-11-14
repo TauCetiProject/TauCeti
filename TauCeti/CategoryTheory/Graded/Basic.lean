@@ -90,7 +90,7 @@ class GradedLinearQuiver (R : Type w) [Ring R] (C : Type u) where
   /-- The `R`-module of morphisms from `X` to `Y`. -/
   homModule : C → C → ModuleCat.{v} R
   /-- The internal `ℤ`-grading of the hom module from `X` to `Y`. -/
-  grading : (X Y : C) → InternalGrading R (homModule X Y)
+  grading : (X Y : C) → InternalGrading R (homModule X Y) ℤ
 
 namespace GradedLinearQuiver
 

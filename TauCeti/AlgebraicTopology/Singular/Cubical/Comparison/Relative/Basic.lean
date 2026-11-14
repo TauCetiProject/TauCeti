@@ -67,6 +67,8 @@ relative homotopy invariance of cubical homology is transported from the simplic
   (`TopPair.isSplitMono_normalizedCubicalChainComplex_map_f`).
 * `TopPair.quasiIso_singularToCubicalRel`, `TopPair.quasiIso_cubicalToSingularRel`: the relative
   comparison maps are quasi-isomorphisms.
+* `TopPair.homologyMap_cubicalChainComplexMap_eq`: on relative cubical homology, a map of pairs
+  induces its relative singular homology map, conjugated by the comparison isomorphisms.
 * `TopPair.Homotopy.congr_homologyMap_cubicalChainComplexMap`: homotopic maps of pairs induce the
   same map on relative cubical homology.
 * `TopPair.exists_boundary_eq_sub_add_map_of_injective`: when `Hₙ(X) → Hₙ(X, A)` is injective
@@ -697,6 +699,14 @@ theorem singularCubicalHomologyIso_inv_naturality {P P' : TopPair.{u}} (f : P �
       (singularCubicalHomologyIso k P n).inv ≫ P.singularHomologyMap f (ModuleCat.of k k) n := by
   rw [Iso.eq_inv_comp, singularCubicalHomologyIso_hom_naturality_assoc, Iso.hom_inv_id,
     Category.comp_id]
+
+/-- On relative cubical homology, a map of pairs induces its relative singular homology map,
+conjugated by the comparison isomorphisms. -/
+theorem homologyMap_cubicalChainComplexMap_eq {P P' : TopPair.{u}} (f : P ⟶ P') (n : ℕ) :
+    HomologicalComplex.homologyMap (cubicalChainComplexMap k f) n =
+      (singularCubicalHomologyIso k P n).inv ≫ P.singularHomologyMap f (ModuleCat.of k k) n ≫
+        (singularCubicalHomologyIso k P' n).hom := by
+  rw [Iso.eq_inv_comp, singularCubicalHomologyIso_hom_naturality]
 
 /-- The inverse comparison isomorphisms of absolute and relative homology commute with the maps
 from absolute to relative homology: an absolute cubical class, read in relative cubical homology

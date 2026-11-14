@@ -93,6 +93,10 @@ def coeFnAddMonoidHom : GTPattern n →+ ℕ → ℕ → ℤ where
 theorem coeFnAddMonoidHom_apply (P : GTPattern n) : coeFnAddMonoidHom P = ⇑P :=
   (rfl)
 
+/-- A pattern is determined by its array of entries. -/
+theorem coeFnAddMonoidHom_injective : Function.Injective (coeFnAddMonoidHom (n := n)) :=
+  fun P Q h ↦ DFunLike.coe_injective (by simpa using h)
+
 @[simp, norm_cast]
 theorem coe_sum {ι : Type*} (s : Finset ι) (P : ι → GTPattern n) :
     ⇑(∑ i ∈ s, P i) = ∑ i ∈ s, ⇑(P i) :=

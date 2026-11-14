@@ -31,6 +31,11 @@ merely adapted replacement at a general stopping time requires additional measur
 For any native local property, the stopped stages converge almost surely at each fixed time
 to the original process (`ProbabilityTheory.Locally.ae_tendsto_stoppedProcess_localSeq`).
 
+Cutting localizing times off at the initial time outside increasing, exhausting initial events
+preserves localization (`ProbabilityTheory.IsLocalizingSequence.piecewise_bot`). The corresponding
+indicator-restricted stopped stages suffice to establish any local property
+(`ProbabilityTheory.IsLocalizingSequence.locally_of_indicator`).
+
 Enlarging a filtration preserves its localizing sequences. The stopping-time property
 transports to the larger filtration, while monotonicity and divergence are unchanged.
 
@@ -47,10 +52,49 @@ open scoped Topology
 
 namespace ProbabilityTheory
 
+/-- Cutting a localizing sequence off at the initial time outside increasing initial-measurable
+events which eventually contain almost every sample point preserves localization. -/
+theorem IsLocalizingSequence.piecewise_bot {ι Ω : Type*} [Preorder ι] [OrderBot ι]
+    [TopologicalSpace ι] [OrderTopology ι] {mΩ : MeasurableSpace Ω}
+    {ℱ : Filtration ι mΩ} {P : Measure Ω} {τ : ℕ → Ω → WithTop ι}
+    (hτ : IsLocalizingSequence ℱ τ P) {A : ℕ → Set Ω} [∀ n, DecidablePred (· ∈ A n)]
+    (hA : ∀ n, MeasurableSet[ℱ ⊥] (A n)) (hmono : Monotone A)
+    (hexhaust : ∀ᵐ ω ∂P, ∀ᶠ n in atTop, ω ∈ A n) :
+    IsLocalizingSequence ℱ (fun n ↦ (A n).piecewise (τ n) (fun _ ↦ ⊥)) P := by
+  refine ⟨⟨fun n ↦ ?_, ?_⟩, ?_⟩
+  · exact (hτ.isStoppingTime n).piecewise_of_le (isStoppingTime_const ℱ ⊥)
+      (i := ⊥) (by simp) (by simp) (hA n)
+  · filter_upwards [hτ.tendsto_top, hexhaust] with ω hω hlarge
+    exact hω.congr' (hlarge.mono fun n hn ↦ by simp [hn])
+  · filter_upwards [hτ.mono] with ω hω n m hnm
+    by_cases hn : ω ∈ A n
+    · have hm : ω ∈ A m := hmono hnm hn
+      simpa [Set.piecewise, hn, hm] using hω hnm
+    · simp [Set.piecewise, hn]
+
 variable {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
   [TopologicalSpace ι] [OrderTopology ι] {mΩ : MeasurableSpace Ω}
   {ℱ : Filtration ι mΩ} {P : Measure Ω} {τ : ℕ → Ω → WithTop ι}
   {X : ι → Ω → E} [Zero E]
+
+/-- To establish a native local property, it suffices to establish it for stopped stages
+restricted to increasing, exhausting initial-measurable events. The localizers are cut off
+at the initial time outside those events, without any sigma-finiteness assumption. -/
+theorem IsLocalizingSequence.locally_of_indicator (hτ : IsLocalizingSequence ℱ τ P)
+    {A : ℕ → Set Ω} (hA : ∀ n, MeasurableSet[ℱ ⊥] (A n)) (hmono : Monotone A)
+    (hexhaust : ∀ᵐ ω ∂P, ∀ᶠ n in atTop, ω ∈ A n) {p : (ι → Ω → E) → Prop}
+    (hp : ∀ n, p (fun t ↦ (A n).indicator (stoppedProcess
+      (fun s ↦ {ω | ⊥ < τ n ω}.indicator (X s)) (τ n) t))) :
+    Locally p ℱ X P := by
+  classical
+  refine ⟨_, hτ.piecewise_bot hA hmono hexhaust, fun n ↦ ?_⟩
+  convert hp n using 1
+  ext t ω
+  simp only [stoppedProcess_indicator_pos_apply]
+  by_cases hω : ω ∈ A n
+  · simp only [Set.piecewise, hω, ↓reduceIte, Set.indicator_of_mem hω]
+    simp only [stoppedProcess_indicator_pos_apply]
+  · simp [hω]
 
 /-- On one common full-measure event, native stopped stages along a localizing sequence
 are eventually equal to the original path on each bounded initial time interval.

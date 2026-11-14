@@ -125,8 +125,8 @@ private theorem mapValue_laurentPath
     Matrix.SpecialOrthogonalGroup.coe_finTwoOfUnit]
   ext j k
   fin_cases j
-  · fin_cases k <;> norm_num [Matrix.of_apply, hu, laurentEval_C]
-  · fin_cases k <;> norm_num [Matrix.of_apply, hu, laurentEval_C]
+  · fin_cases k <;> norm_num [Matrix.of_apply, hu]
+  · fin_cases k <;> norm_num [Matrix.of_apply, hu]
 
 /-- The characteristic-two affine-line path with parameter `b`. -/
 private noncomputable def charTwoMatrixPath (b : K) (h2 : (2 : K) = 0) :

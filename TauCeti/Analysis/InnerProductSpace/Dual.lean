@@ -207,7 +207,7 @@ section FiniteDimensional
 
 variable (𝕜 E) [FiniteDimensional 𝕜 E]
 
-local instance : CompleteSpace E := FiniteDimensional.complete 𝕜 E
+local instance : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 E
 
 /-- The Hermitian metric on the algebraic dual transported through the conjugate-linear Riesz
 isomorphism. Its value on `⟪x, ·⟫` and `⟪y, ·⟫` is `⟪y, x⟫`. -/
@@ -279,7 +279,7 @@ theorem dualMetric_self_eq_zero_iff (φ : Module.Dual 𝕜 E) :
 variable {𝕜 E} {F : Type*} [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
   [FiniteDimensional 𝕜 F]
 
-local instance : CompleteSpace F := FiniteDimensional.complete 𝕜 F
+local instance : CompleteSpace F := FiniteDimensional.completeSpace 𝕜 F
 
 /-- The transpose of an operator acts on Riesz functionals through its Hermitian adjoint. -/
 @[simp]

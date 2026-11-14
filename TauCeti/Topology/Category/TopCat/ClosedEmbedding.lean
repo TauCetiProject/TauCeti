@@ -25,7 +25,9 @@ complexes:
   (`TauCeti.TopCat.isClosedEmbedding_sigmaMap`);
 * transfinite composition: if every successor map of a well-order-continuous diagram is a closed
   embedding, then so is every transition map
-  (`TauCeti.TopCat.isClosedEmbedding_map_of_isWellOrderContinuous`), and a transfinite composition
+  (`TauCeti.TopCat.isClosedEmbedding_map_of_isWellOrderContinuous`), so the maps from the stages
+  of a sequence of closed embeddings to its colimit are closed embeddings
+  (`TauCeti.TopCat.isClosedEmbedding_ι_of_isColimit_of_succ`), and a transfinite composition
   of closed embeddings is a closed embedding (the `IsStableUnderTransfiniteComposition` instance).
   Mathlib's `MorphismProperty.TransfiniteCompositionOfShape.mem_incl_app` then shows that the map
   from each stage of such a composition to the composite is a closed embedding.
@@ -196,6 +198,14 @@ theorem isClosedEmbedding_map_of_isWellOrderContinuous (F : J ⥤ TopCat.{u})
     · exact isClosedEmbedding_ι_of_isColimit (fun a b hab ↦ ih b.1 b.2 _)
         (F.isColimitOfIsWellOrderContinuous j hj) ⟨i, hij⟩
     · simpa using IsClosedEmbedding.id
+
+/-- If every successor map of a sequence in `TopCat` is a closed embedding, then so is the map from
+each stage to its colimit. -/
+theorem isClosedEmbedding_ι_of_isColimit_of_succ {F : ℕ ⥤ TopCat.{u}}
+    (hF : ∀ k : ℕ, IsClosedEmbedding (F.map (homOfLE k.le_succ))) {c : Cocone F}
+    (hc : IsColimit c) (k : ℕ) : IsClosedEmbedding (c.ι.app k) :=
+  isClosedEmbedding_ι_of_isColimit
+    (fun _ _ hij ↦ isClosedEmbedding_map_of_isWellOrderContinuous F (fun n _ ↦ hF n) hij) hc k
 
 /-- In a transfinite composition of closed embeddings in `TopCat`, the map from each stage to the
 composite is a closed embedding. Once the `IsStableUnderTransfiniteComposition` instance below is

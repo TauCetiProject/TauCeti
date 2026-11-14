@@ -290,7 +290,7 @@ theorem InfinitePlace.embedding_of_isReal_comap {k : Type*} [Field k] (f : k →
 Mathlib's `AbsoluteValue.LiesOver` instance is this statement for `AbsoluteValue.under`, which is
 not the spelling `InfinitePlace.comap` produces, so it is registered here. Constructions indexed by
 `w.comap (algebraMap k K)` that consume a `LiesOver` hypothesis, such as
-`NumberField.LiesOver.completionMap`, need it. -/
+`AbsoluteValue.Completion.map`, need it. -/
 instance InfinitePlace.liesOver_comap {k : Type*} [Field k] [Algebra k K]
     (w : InfinitePlace K) : w.LiesOver (w.comap (algebraMap k K)) :=
   ⟨rfl⟩
