@@ -7,13 +7,15 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Rational
 public import Mathlib.LinearAlgebra.RootSystem.Finite.G2
+import TauCeti.LinearAlgebra.RootSystem.RankTwo
 
 /-!
-# The classical doubly-laced root systems are not G₂
+# Pinned root systems outside G₂
 
-The Cartan integers of the pinned rational systems of types B and C have absolute value at
-most two. These instances make the root-string bounds outside G₂ available for the classical
-families in arbitrary valid rank, in particular for collecting their positive root subgroups.
+The pinned rational root system is not G₂ when its Dynkin type is not G₂, and its Cartan
+integers then have absolute value at most two. In types B and C, instances make these
+root-string bounds available in arbitrary valid rank, in particular for collecting their
+positive root subgroups.
 
 ## References
 
@@ -24,32 +26,34 @@ public section
 
 namespace TauCeti.DynkinType
 
-private theorem isNotG2_rationalRootSystem_of_abs_pairing_le_two
-    {t : DynkinType} {ht : t.Valid}
-    (hbound : ∀ i j, |(t.simplyConnectedRootDatum ht).pairing i j| ≤ 2) :
-    (t.rationalRootSystem ht).IsNotG2 where
-  pairingIn_mem_zero_one_two i j := by
-    have heq : (t.rationalRootSystem ht).pairingIn ℤ i j =
-        (t.simplyConnectedRootDatum ht).pairing i j := by
-      rw [pairingIn_rationalRootSystem]
-      exact (t.simplyConnectedRootDatum ht).algebraMap_pairingIn ℤ i j
-    have h := abs_le.mp (hbound i j)
-    rw [heq]
-    simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
-    omega
+variable (t : DynkinType) (ht : t.Valid)
+
+/-- The rational root system has no triple bond unless its Dynkin type is `G₂`. -/
+theorem isNotG2_rationalRootSystem (h : t ≠ .G2) :
+    (t.rationalRootSystem ht).IsNotG2 := by
+  rw [← RootPairing.not_isG2_iff_isNotG2]
+  intro hG2
+  exact h ((t.hasCartanType_rationalRootSystem ht).eq_of_valid
+    (hasCartanType_G2_of_isG2 hG2 (t.rationalBase ht)) ht (by simp))
+
+variable {t} in
+/-- Outside type `G₂`, the pinned datum has Cartan integers bounded by two, as required
+by the general double-chain lemmas. -/
+theorem pairingIn_simplyConnectedRootDatum_mem_zero_one_two_of_ne_G2
+    (h : t ≠ .G2) (α β : Fin t.numRoots) :
+    (t.simplyConnectedRootDatum ht).pairingIn ℤ α β ∈ ({-2, -1, 0, 1, 2} : Set ℤ) := by
+  let := t.isNotG2_rationalRootSystem ht h
+  simpa using RootPairing.IsNotG2.pairingIn_mem_zero_one_two
+    (P := t.rationalRootSystem ht) α β
 
 /-- The Cartan integers of the rational type-B system lie between `-2` and `2`. -/
 instance instIsNotG2RationalRootSystemB (n : ℕ) (hn : (B n).Valid) :
     ((B n).rationalRootSystem hn).IsNotG2 :=
-  isNotG2_rationalRootSystem_of_abs_pairing_le_two (by
-    rw [simplyConnectedRootDatum_B]
-    exact abs_pairing_typeBSimplyConnectedRootDatum_le_two)
+  (B n).isNotG2_rationalRootSystem hn (by simp)
 
 /-- The Cartan integers of the rational type-C system lie between `-2` and `2`. -/
 instance instIsNotG2RationalRootSystemC (n : ℕ) (hn : (C n).Valid) :
     ((C n).rationalRootSystem hn).IsNotG2 :=
-  isNotG2_rationalRootSystem_of_abs_pairing_le_two (by
-    rw [simplyConnectedRootDatum_C]
-    exact abs_pairing_typeCSimplyConnectedRootDatum_le_two)
+  (C n).isNotG2_rationalRootSystem hn (by simp)
 
 end TauCeti.DynkinType

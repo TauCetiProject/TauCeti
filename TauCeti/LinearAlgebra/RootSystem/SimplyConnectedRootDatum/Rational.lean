@@ -8,7 +8,6 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Pi
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Irreducible
 public import TauCeti.LinearAlgebra.RootSystem.Positive
-public import TauCeti.LinearAlgebra.RootSystem.RankTwo
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Assembly
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
 
@@ -233,24 +232,6 @@ theorem hasCartanType_rationalRootSystem :
 which over a field of characteristic zero forces irreducibility. -/
 instance instIsIrreducibleRationalRootSystem : (t.rationalRootSystem ht).IsIrreducible :=
   (hasCartanType_rationalRootSystem t ht).isIrreducible ht
-
-/-- The rational root system has no triple bond unless its Dynkin type is `G₂`. -/
-theorem isNotG2_rationalRootSystem (h : t ≠ .G2) :
-    (t.rationalRootSystem ht).IsNotG2 := by
-  rw [← RootPairing.not_isG2_iff_isNotG2]
-  intro hG2
-  exact h ((t.hasCartanType_rationalRootSystem ht).eq_of_valid
-    (hasCartanType_G2_of_isG2 hG2 (t.rationalBase ht)) ht (by simp))
-
-variable {t} in
-/-- Outside type `G₂`, the pinned datum has Cartan integers bounded by two, as required
-by the general double-chain lemmas. -/
-theorem pairingIn_simplyConnectedRootDatum_mem_zero_one_two_of_ne_G2
-    (h : t ≠ .G2) (α β : Fin t.numRoots) :
-    (t.simplyConnectedRootDatum ht).pairingIn ℤ α β ∈ ({-2, -1, 0, 1, 2} : Set ℤ) := by
-  let := t.isNotG2_rationalRootSystem ht h
-  simpa using RootPairing.IsNotG2.pairingIn_mem_zero_one_two
-    (P := t.rationalRootSystem ht) α β
 
 /-! ## The Bourbaki numbering of the base support -/
 

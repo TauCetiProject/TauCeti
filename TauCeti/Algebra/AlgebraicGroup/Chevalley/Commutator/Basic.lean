@@ -38,7 +38,7 @@ remaining pairs of type `G₂` are in `TauCeti.Algebra.AlgebraicGroup.Chevalley.
 The formulas hold over every commutative ring, including rings of characteristic two and three.
 The first three are the identities `TauCeti.DynkinType.commute_chevalleyRootSubgroup`,
 `TauCeti.DynkinType.commutatorElement_chevalleyRootSubgroup_of_root_eq_add` and
-`TauCeti.DynkinType.commutatorElement_chevalleyRootSubgroup_of_add_eq_of_add_eq` on the
+`TauCeti.DynkinType.commutatorElement_chevalleyRootSubgroup_of_root_eq_add_of_root_eq_add` on the
 lattice of `D`, written in its weight basis. The fourth is the third with the roles of `α` and
 `β` exchanged; its coefficient of `x_{α+2β}` is `c_{12} = -M_{β,α,2}`, with the sign fixed by the
 convention `⁅x, y⁆ = x y x⁻¹ y⁻¹`.
@@ -142,7 +142,7 @@ theorem commutatorElement_rootSubgroup_of_root_eq_two_nsmul_add
       (t.simplyConnectedRootDatum ht).root α + 2 • (t.simplyConnectedRootDatum ht).root β := by
     rw [hγ]; module
   rw [← map_commutatorElement, ← map_mul,
-    commutatorElement_chevalleyRootSubgroup_of_add_eq_of_add_eq D.representation D.lattice
+    commutatorElement_chevalleyRootSubgroup_of_root_eq_add_of_root_eq_add D.representation D.lattice
       D.representation_mem_lattice D.isNilpotent_representation_rootGenerator hγ hδ'
       (hαδ ▸ hα) (hβγ ▸ hβ) (CommAlgCat.of ℤ A) u v]
 
@@ -187,11 +187,10 @@ theorem commutatorElement_rootSubgroup_of_root_eq_add_two_nsmul
     norm_num at this
   have hαδ (s w : Multiplicative A) :
       Commute (D.rootSubgroupPoints α A s) (D.rootSubgroupPoints δ A w) := by
-    have hsum : P.root α + P.root δ = 2 • P.root γ := by rw [hδ, hγ]; module
-    refine D.commute_rootSubgroup (by rw [hsum]; exact P.nsmul_notMem_range_root)
-      (fun hz => ?_) A s.toAdd w.toAdd
-    have := (hind 2 2 (by rw [hsum, hγ] at hz; linear_combination hz)).1
-    norm_num at this
+    obtain ⟨hsum, hzero⟩ :=
+      P.root_add_root_notMem_range_root_and_ne_zero_of_root_eq_add_of_root_eq_add
+        (hγ.trans (add_comm _ _)) (by rw [hδ, hγ]; module)
+    exact D.commute_rootSubgroup hsum hzero A s.toAdd w.toAdd
   -- Conjugating the formula with `β` first, at the parameter `-u`, by `x_α(u)` fixes both factors.
   have hconj : ⁅D.rootSubgroupPoints α A (Multiplicative.ofAdd u),
       D.rootSubgroupPoints β A (Multiplicative.ofAdd v)⁆ =

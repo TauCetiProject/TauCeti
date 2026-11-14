@@ -120,7 +120,7 @@ theorem root_add_root_notMem_range_root_of_chainBotCoeff_eq_zero_of_chainTopCoef
 
 /-- The sum `α + δ`, where `δ = 2α + β` is the last root of a double chain with
 Cartan integers bounded by two, is not a root. -/
-theorem root_add_root_notMem_range_root_left_of_root_eq_add_of_root_eq_add
+theorem root_add_root_notMem_range_root_left_of_pairingIn_mem_zero_one_two_of_double_chain
     {α β γ δ : ι} (hγ : P.root γ = P.root α + P.root β)
     (hδ : P.root δ = P.root α + P.root γ) :
     P.root α + P.root δ ∉ Set.range P.root := by
@@ -130,7 +130,7 @@ theorem root_add_root_notMem_range_root_left_of_root_eq_add_of_root_eq_add
 
 /-- The sum `β + γ` of the initial and middle roots of a double chain with Cartan
 integers bounded by two is not a root. -/
-theorem root_add_root_notMem_range_root_right_of_root_eq_add_of_root_eq_add
+theorem root_add_root_notMem_range_root_right_of_pairingIn_mem_zero_one_two_of_double_chain
     {α β γ δ : ι} (hγ : P.root γ = P.root α + P.root β)
     (hδ : P.root δ = P.root α + P.root γ) :
     P.root β + P.root γ ∉ Set.range P.root := by
