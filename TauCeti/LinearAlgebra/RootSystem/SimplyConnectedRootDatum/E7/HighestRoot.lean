@@ -32,7 +32,8 @@ from the table instead.
   `(2, 2, 3, 4, 3, 2, 1)`.
 * `TauCeti.DynkinType.root_highestRoot_sub_mem_posRootCone_e7`: it lies above every root.
 * `TauCeti.DynkinType.height_highestRoot_e7SimplyConnectedBase`: its height is `17`.
-* `TauCeti.DynkinType.ncard_posRoots_e7SimplyConnectedBase`: there are `63` positive roots.
+* `TauCeti.DynkinType.ncard_posRoots_e7SimplyConnectedRootDatum`: there are `63` positive roots,
+  for any base.
 
 ## References
 
@@ -61,15 +62,13 @@ Bourbaki numbering of the simple roots. -/
 @[simp]
 theorem rootCoefficients_e7SimplyConnectedBase (j : Fin 126) (i : Fin 7) :
     e7SimplyConnectedBase.rootCoefficients j ⟨e7SimpleIndex i, by simp⟩ = e7Coroot j i :=
-  e7SimplyConnectedBase.rootCoefficients_apply_of_bijOn bijOn_e7SimpleIndex
-    (root_e7_eq_sum_coroot_smul j) i
+  e7SimplyConnectedBase.rootCoefficients_apply_of_injective e7SimpleIndex_injective
+    (fun _ ↦ by simp) (root_e7_eq_sum_coroot_smul j) i
 
 private lemma rootCoefficients_le_e7 (j : Fin 126) :
-    e7SimplyConnectedBase.rootCoefficients j ≤ e7SimplyConnectedBase.rootCoefficients 62 := by
-  intro k
-  obtain ⟨i, -, hi⟩ := bijOn_e7SimpleIndex.surjOn k.2
-  obtain rfl : k = ⟨e7SimpleIndex i, by simp⟩ := Subtype.ext hi.symm
-  simpa using e7Coroot_le_apply_62 j i
+    e7SimplyConnectedBase.rootCoefficients j ≤ e7SimplyConnectedBase.rootCoefficients 62 :=
+  (e7SimplyConnectedBase.rootCoefficients_le_iff_of_surjOn (fun _ ↦ by simp)
+    bijOn_e7SimpleIndex.surjOn).mpr fun i ↦ by simpa using e7Coroot_le_apply_62 j i
 
 /-- **The highest root of the pinned `E₇` datum has index `62`**, the last positive root of the
 table. -/
@@ -78,6 +77,7 @@ theorem highestRoot_e7SimplyConnectedBase : e7SimplyConnectedBase.highestRoot = 
 
 /-- **The simple-root coefficients of the highest root of `E₇`** are the Bourbaki marks
 `(2, 2, 3, 4, 3, 2, 1)`. -/
+@[simp high]
 theorem rootCoefficients_highestRoot_e7SimplyConnectedBase (i : Fin 7) :
     e7SimplyConnectedBase.rootCoefficients e7SimplyConnectedBase.highestRoot
         ⟨e7SimpleIndex i, by simp⟩ = ![2, 2, 3, 4, 3, 2, 1] i := by
@@ -95,16 +95,17 @@ theorem root_highestRoot_sub_mem_posRootCone_e7 (j : Fin 126) :
 @[simp]
 theorem height_highestRoot_e7SimplyConnectedBase :
     e7SimplyConnectedBase.height e7SimplyConnectedBase.highestRoot = 17 := by
-  rw [highestRoot_e7SimplyConnectedBase, e7SimplyConnectedBase.height_eq_sum_of_bijOn
-    bijOn_e7SimpleIndex (root_e7_eq_sum_coroot_smul 62), e7Coroot_apply_62]
+  rw [e7SimplyConnectedBase.height_eq_sum_rootCoefficients_of_bijOn bijOn_e7SimpleIndex]
+  simp only [rootCoefficients_highestRoot_e7SimplyConnectedBase]
   decide
 
-/-- The pinned `E₇` datum has `63` positive roots. -/
-theorem ncard_posRoots_e7SimplyConnectedBase :
-    (posRoots e7SimplyConnectedRootDatum e7SimplyConnectedBase).ncard = 63 := by
-  have h := two_mul_ncard_posRoots e7SimplyConnectedRootDatum e7SimplyConnectedBase
-  simp only [Nat.card_eq_fintype_card, Fintype.card_fin] at h
-  omega
+/-- **The pinned `E₇` datum has `63` positive roots.** Exactly half of its `126` roots are positive,
+for any base. -/
+@[simp]
+theorem ncard_posRoots_e7SimplyConnectedRootDatum (b : e7SimplyConnectedRootDatum.Base) :
+    (posRoots e7SimplyConnectedRootDatum b).ncard = 63 := by
+  rw [ncard_posRoots_eq_natCard_div_two]
+  norm_num
 
 end TauCeti.DynkinType
 

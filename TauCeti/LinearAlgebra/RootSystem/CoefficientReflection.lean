@@ -35,12 +35,16 @@ the Weyl orbit of the simple root `α`, so reducedness cannot be dropped from th
 * `RootPairing.Base.coe_toWeightBasisInt_equivFun_symm_coefficientReflection`: evaluation in the
   root lattice intertwines the reflection on columns with the actual reflection.
 * `RootPairing.Base.rootCoefficients_eq_iff`: the characterization of the column of a root.
-* `RootPairing.Base.rootCoefficients_apply_of_bijOn` and `RootPairing.Base.height_eq_sum_of_bijOn`:
-  the column and the height of a root, read from an expansion in a relabelling of the simple roots.
+* `RootPairing.Base.rootCoefficients_apply_of_injective`: the column of a root, read from an
+  expansion in a relabelling of some simple roots.
+* `RootPairing.Base.height_eq_sum_rootCoefficients_of_bijOn`: the height of a root, as the sum of
+  its column along a relabelling of the simple roots.
 * `RootPairing.Base.coefficientReflection_rootCoefficients`: the reflection on columns computes the
   column of the reflected root.
 * `RootPairing.Base.zero_le_rootCoefficients_iff`: a root is positive exactly when its column is
   nonnegative.
+* `RootPairing.Base.rootCoefficients_le_iff_of_surjOn`: columns compare entrywise along a
+  relabelling of the simple roots.
 * `RootPairing.Base.root_sub_root_mem_posRootCone_iff`: one root lies above another in the positive
   root cone exactly when its column dominates the other column.
 * `RootPairing.Base.eq_highestRoot_of_forall_rootCoefficients_le`: a root whose column dominates
@@ -114,17 +118,21 @@ theorem rootCoefficients_apply_of_root_eq_sum {i : ι} {f : ι → ℤ}
   exact congrFun hc k
 
 /-- The entries of the column of a root, from an expansion in coordinates indexed by a finite type
-`κ` whose map `e` to the root indices is a bijection onto the simple roots. -/
-theorem rootCoefficients_apply_of_bijOn {κ : Type*} [Fintype κ] {e : κ → ι}
-    (he : BijOn e univ b.support) {i : ι} {c : κ → ℤ} (h : P.root i = ∑ k, c k • P.root (e k))
-    (k : κ) : b.rootCoefficients i ⟨e k, he.mapsTo trivial⟩ = c k := by
-  have hinj : Injective e := fun k l hkl ↦ he.injOn trivial trivial hkl
+`κ` whose map `e` to the root indices is an injection into the simple roots. -/
+theorem rootCoefficients_apply_of_injective {κ : Type*} [Fintype κ] {e : κ → ι} (he : Injective e)
+    (hmem : ∀ k, e k ∈ b.support) {i : ι} {c : κ → ℤ} (h : P.root i = ∑ k, c k • P.root (e k))
+    (k : κ) : b.rootCoefficients i ⟨e k, hmem k⟩ = c k := by
+  classical
   have hf : P.root i = ∑ j ∈ b.support, extend e c 0 j • P.root j := by
-    rw [h]
-    exact Finset.sum_nbij e (fun k _ ↦ he.mapsTo trivial)
-      (by simpa only [Finset.coe_univ] using he.injOn)
-      (by simpa only [Finset.coe_univ] using he.surjOn) fun k _ ↦ by rw [hinj.extend_apply]
-  rw [b.rootCoefficients_apply_of_root_eq_sum hf, hinj.extend_apply]
+    rw [h, ← Finset.sum_subset (s₁ := Finset.univ.map ⟨e, he⟩), Finset.sum_map]
+    · simp [he.extend_apply]
+    · intro j hj
+      obtain ⟨k, -, rfl⟩ := Finset.mem_map.mp hj
+      exact hmem k
+    · intro j _ hj
+      rw [extend_apply' (f := e) c 0 j fun ⟨k, hk⟩ ↦
+        hj (Finset.mem_map.mpr ⟨k, Finset.mem_univ k, hk⟩), Pi.zero_apply, zero_smul]
+  rw [b.rootCoefficients_apply_of_root_eq_sum hf, he.extend_apply]
 
 /-- Distinct roots have distinct columns. -/
 theorem rootCoefficients_injective : Injective b.rootCoefficients := fun i j hij ↦
@@ -155,15 +163,15 @@ theorem sum_rootCoefficients_eq_height (i : ι) : ∑ k, b.rootCoefficients i k 
   simp_rw [b.rootCoefficients_apply_of_root_eq_sum hf, height_eq_sum hf]
   exact Finset.sum_coe_sort b.support f
 
-/-- The height of a root is the sum of its coefficients in an expansion indexed by a finite type
-`κ` whose map `e` to the root indices is a bijection onto the simple roots. -/
-theorem height_eq_sum_of_bijOn {κ : Type*} [Fintype κ] {e : κ → ι}
-    (he : BijOn e univ b.support) {i : ι} {c : κ → ℤ} (h : P.root i = ∑ k, c k • P.root (e k)) :
-    b.height i = ∑ k, c k := by
+/-- The height of a root is the sum of the entries of its column, relabelled along a bijection `e`
+from a finite type `κ` onto the simple roots. -/
+theorem height_eq_sum_rootCoefficients_of_bijOn {κ : Type*} [Fintype κ] {e : κ → ι}
+    (he : BijOn e univ b.support) (i : ι) :
+    b.height i = ∑ k, b.rootCoefficients i ⟨e k, he.mapsTo trivial⟩ := by
   rw [← sum_rootCoefficients_eq_height]
   refine (Fintype.sum_bijective (fun k ↦ (⟨e k, he.mapsTo trivial⟩ : b.support))
-    ⟨fun k l hkl ↦ he.injOn trivial trivial (congrArg Subtype.val hkl), fun j ↦ ?_⟩ c _
-    fun k ↦ (b.rootCoefficients_apply_of_bijOn he h k).symm).symm
+    ⟨fun k l hkl ↦ he.injOn trivial trivial (congrArg Subtype.val hkl), fun j ↦ ?_⟩ _ _
+    fun k ↦ rfl).symm
   obtain ⟨k, -, hk⟩ := he.surjOn j.2
   exact ⟨k, Subtype.ext hk⟩
 
@@ -199,6 +207,16 @@ theorem root_sub_root_mem_posRootCone_iff {i j : ι} :
     rw [← sub_smul, ← Int.toNat_of_nonneg (sub_nonneg.mpr (h k)), natCast_zsmul]
     exact (TauCeti.posRootCone P b).nsmul_mem (TauCeti.root_mem_posRootCone_of_mem_posRoots P b
       ((TauCeti.mem_posRoots P b _).mpr (isPos_of_mem_support k.2))) _
+
+/-- Two columns compare entrywise along any map `e` from a type `κ` onto the simple roots. -/
+theorem rootCoefficients_le_iff_of_surjOn {κ : Type*} {e : κ → ι} (hmem : ∀ k, e k ∈ b.support)
+    (he : SurjOn e univ b.support) {i j : ι} :
+    b.rootCoefficients j ≤ b.rootCoefficients i ↔
+      ∀ k, b.rootCoefficients j ⟨e k, hmem k⟩ ≤ b.rootCoefficients i ⟨e k, hmem k⟩ := by
+  refine ⟨fun h k ↦ h _, fun h l ↦ ?_⟩
+  obtain ⟨k, -, hk⟩ := he l.2
+  obtain rfl : l = ⟨e k, hmem k⟩ := Subtype.ext hk.symm
+  exact h k
 
 /-- **A root whose column dominates the column of every root is the highest root.** Neither
 reducedness nor irreducibility is assumed. -/

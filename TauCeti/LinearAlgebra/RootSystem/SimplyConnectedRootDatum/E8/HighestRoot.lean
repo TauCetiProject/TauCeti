@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.CoefficientReflection
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.E8.Datum
--- The finite certificate evaluates the existing coroot table.
+-- The finite certificates evaluate the existing coroot table.
 import all TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.E8.Basic
 
 /-!
@@ -15,10 +15,10 @@ import all TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.E8.Basic
 
 Type `E₈` is simply laced, so the simple-root coefficients of a root of the pinned datum are the
 simple-coroot coordinates of its coroot, which the datum stores in the table
-`TauCeti.DynkinType.e8Coroot`. Reading the table, the root at index `119` dominates every root
-coefficientwise. Hence it is the highest root, with the Bourbaki marks `(2, 3, 4, 6, 5, 4, 3, 2)`
-as coefficients and height `29`, and it lies above every root in the positive root cone. The datum
-has `120` positive roots.
+`TauCeti.DynkinType.e8Coroot`. By `TauCeti.DynkinType.e8Coroot_le_apply_119` the root at index
+`119` dominates every root coefficientwise. Hence it is the highest root, with the Bourbaki marks
+`(2, 3, 4, 6, 5, 4, 3, 2)` as coefficients and height `29`, and it lies above every root in the
+positive root cone. The datum has `120` positive roots.
 
 Over `ℤ` the datum is not irreducible in the sense of `RootPairing.IsIrreducible`, since for
 instance the sublattice of even vectors is reflection-invariant, so the general highest-root
@@ -27,6 +27,8 @@ from the table instead.
 
 ## Main results
 
+* `TauCeti.DynkinType.e8Root_apply_119`: the entry of the root table at index `119`.
+* `TauCeti.DynkinType.e8Coroot_le_apply_119`: the coroot at index `119` dominates every coroot.
 * `TauCeti.DynkinType.rootCoefficients_e8SimplyConnectedBase`: the coefficients of a root are the
   coordinates of its coroot.
 * `TauCeti.DynkinType.highestRoot_e8SimplyConnectedBase`: the highest root has index `119`.
@@ -34,7 +36,8 @@ from the table instead.
   `(2, 3, 4, 6, 5, 4, 3, 2)`.
 * `TauCeti.DynkinType.root_highestRoot_sub_mem_posRootCone_e8`: it lies above every root.
 * `TauCeti.DynkinType.height_highestRoot_e8SimplyConnectedBase`: its height is `29`.
-* `TauCeti.DynkinType.ncard_posRoots_e8SimplyConnectedBase`: there are `120` positive roots.
+* `TauCeti.DynkinType.ncard_posRoots_e8SimplyConnectedRootDatum`: there are `120` positive roots,
+  for any base.
 
 ## References
 
@@ -63,21 +66,25 @@ Bourbaki numbering of the simple roots. -/
 @[simp]
 theorem rootCoefficients_e8SimplyConnectedBase (j : Fin 240) (i : Fin 8) :
     e8SimplyConnectedBase.rootCoefficients j ⟨e8SimpleIndex i, by simp⟩ = e8Coroot j i :=
-  e8SimplyConnectedBase.rootCoefficients_apply_of_bijOn bijOn_e8SimpleIndex
-    (root_e8_eq_sum_coroot_smul j) i
+  e8SimplyConnectedBase.rootCoefficients_apply_of_injective e8SimpleIndex_injective
+    (fun _ ↦ by simp) (root_e8_eq_sum_coroot_smul j) i
 
-/-- The root at index `119` has the largest coordinates in the `E₈` coroot table. -/
-private lemma e8Coroot_le_apply_119 (j : Fin 240) (i : Fin 8) :
+attribute [simp] e8Coroot_apply_last_positive
+
+/-- The last positive entry of the `E₈` root table has fundamental-weight coordinates
+`(0, 0, 0, 0, 0, 0, 0, 1)`. -/
+@[simp] theorem e8Root_apply_119 : e8Root 119 = ![0, 0, 0, 0, 0, 0, 0, 1] := by decide +kernel
+
+/-- **The root at index `119` has the largest coordinates in the `E₈` coroot table.** -/
+theorem e8Coroot_le_apply_119 (j : Fin 240) (i : Fin 8) :
     e8Coroot j i ≤ e8Coroot 119 i := by
   revert j i
   decide +kernel
 
 private lemma rootCoefficients_le_e8 (j : Fin 240) :
-    e8SimplyConnectedBase.rootCoefficients j ≤ e8SimplyConnectedBase.rootCoefficients 119 := by
-  intro k
-  obtain ⟨i, -, hi⟩ := bijOn_e8SimpleIndex.surjOn k.2
-  obtain rfl : k = ⟨e8SimpleIndex i, by simp⟩ := Subtype.ext hi.symm
-  simpa using e8Coroot_le_apply_119 j i
+    e8SimplyConnectedBase.rootCoefficients j ≤ e8SimplyConnectedBase.rootCoefficients 119 :=
+  (e8SimplyConnectedBase.rootCoefficients_le_iff_of_surjOn (fun _ ↦ by simp)
+    bijOn_e8SimpleIndex.surjOn).mpr fun i ↦ by simpa using e8Coroot_le_apply_119 j i
 
 /-- **The highest root of the pinned `E₈` datum has index `119`**, the last positive root of the
 table. -/
@@ -86,6 +93,7 @@ theorem highestRoot_e8SimplyConnectedBase : e8SimplyConnectedBase.highestRoot = 
 
 /-- **The simple-root coefficients of the highest root of `E₈`** are the Bourbaki marks
 `(2, 3, 4, 6, 5, 4, 3, 2)`. -/
+@[simp high]
 theorem rootCoefficients_highestRoot_e8SimplyConnectedBase (i : Fin 8) :
     e8SimplyConnectedBase.rootCoefficients e8SimplyConnectedBase.highestRoot
         ⟨e8SimpleIndex i, by simp⟩ = ![2, 3, 4, 6, 5, 4, 3, 2] i := by
@@ -104,16 +112,17 @@ theorem root_highestRoot_sub_mem_posRootCone_e8 (j : Fin 240) :
 @[simp]
 theorem height_highestRoot_e8SimplyConnectedBase :
     e8SimplyConnectedBase.height e8SimplyConnectedBase.highestRoot = 29 := by
-  rw [highestRoot_e8SimplyConnectedBase, e8SimplyConnectedBase.height_eq_sum_of_bijOn
-    bijOn_e8SimpleIndex (root_e8_eq_sum_coroot_smul 119), e8Coroot_apply_last_positive]
+  rw [e8SimplyConnectedBase.height_eq_sum_rootCoefficients_of_bijOn bijOn_e8SimpleIndex]
+  simp only [rootCoefficients_highestRoot_e8SimplyConnectedBase]
   decide
 
-/-- The pinned `E₈` datum has `120` positive roots. -/
-theorem ncard_posRoots_e8SimplyConnectedBase :
-    (posRoots e8SimplyConnectedRootDatum e8SimplyConnectedBase).ncard = 120 := by
-  have h := two_mul_ncard_posRoots e8SimplyConnectedRootDatum e8SimplyConnectedBase
-  simp only [Nat.card_eq_fintype_card, Fintype.card_fin] at h
-  omega
+/-- **The pinned `E₈` datum has `120` positive roots.** Exactly half of its `240` roots are
+positive, for any base. -/
+@[simp]
+theorem ncard_posRoots_e8SimplyConnectedRootDatum (b : e8SimplyConnectedRootDatum.Base) :
+    (posRoots e8SimplyConnectedRootDatum b).ncard = 120 := by
+  rw [ncard_posRoots_eq_natCard_div_two]
+  norm_num
 
 end TauCeti.DynkinType
 
