@@ -104,8 +104,6 @@ private theorem incidentBlockComponent_injective :
   exact hcq (B.1.2.mem_support_of_ne D.1.2 hne' B.2 D.2
     (c.neighborInBlock_mem B) (c.neighborInBlock_mem D) q)
 
-variable [Finite V]
-
 private theorem incidentBlockComponent_surjective :
     Function.Surjective c.incidentBlockComponent := by
   intro C
@@ -205,6 +203,8 @@ theorem degree_blockCutGraph_eq_natCard_deletedComponent
     [Fintype ↑(G.blockCutGraph.neighborSet (.inr c))] :
     G.blockCutGraph.degree (.inr c) = Nat.card c.DeletedComponent := by
   rw [← ncard_neighborSet, c.ncard_neighborSet_blockCutGraph_eq_natCard_deletedComponent]
+
+variable [Finite V]
 
 /-- **The block--cut degree formula.** Deleting a cut vertex adds its block--cut degree minus
 one to the number of connected components. -/
