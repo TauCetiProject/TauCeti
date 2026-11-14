@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Perturbation.Manifold
 import TauCeti.Geometry.Manifold.VectorBundle.Translate
 import TauCeti.Geometry.Manifold.MFDeriv.Parametric.Basic
-import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
+import TauCeti.Analysis.Calculus.Deriv.Mul
 
 /-!
 # Joint first variation of the intrinsic Floer operator
@@ -70,8 +70,11 @@ theorem floerOperator_add_smul_coefficients (u : ℝ × ℝ → M) (z : ℝ × �
   simp only [floerOperator_def, add_apply, smul_apply, map_sub, smul_sub, smul_add]
   abel
 
-/-- The affine coefficient correction has a derivative at zero even when the perturbation
-fields are only continuous. This difference isolates the part independent of the connection. -/
+/-- For a jointly `C²` map family, the affine coefficient correction has a derivative at zero
+when `J z` and the Hamiltonian vector field of `Kt z` are differentiable at `u 0 z`, while
+`Y z` and the Hamiltonian vector fields of `δKs z` and `δKt z` are continuous there. All four
+scalar Hamiltonians are differentiable at `u r z` for `r` near zero. This difference isolates
+the part independent of the connection. -/
 private theorem hasDerivAt_sectionCoord_floerOperator_coefficient_difference
     {u : ℝ → ℝ × ℝ → M} {z : ℝ × ℝ}
     (hu : ContMDiffAt 𝓘(ℝ, ℝ × (ℝ × ℝ)) I 2 (Function.uncurry u) (0, z))
@@ -149,8 +152,11 @@ private theorem hasDerivAt_sectionCoord_floerOperator_coefficient_difference
     (u r) z hr.1 hr.2.1 hr.2.2.1 hr.2.2.2 r]
   simp [γ]
 
-/-- The simultaneous affine-coefficient Floer operator is differentiable as a tangent-bundle map
-at zero. Only continuity of the perturbation directions is needed; no connection is required. -/
+/-- For a jointly `C²` map family, the simultaneous affine-coefficient Floer operator is
+differentiable as a tangent-bundle map at zero, without a connection. The endomorphism field
+`J z` and the Hamiltonian vector fields of `Ks z` and `Kt z` are differentiable at `u 0 z`;
+`Y z` and the Hamiltonian vector fields of `δKs z` and `δKt z` need only be continuous there.
+All four scalar Hamiltonians are differentiable at `u r z` for `r` near zero. -/
 theorem mdifferentiableAt_floerOperator_add_smul_coefficients
     {u : ℝ → ℝ × ℝ → M} {z : ℝ × ℝ}
     (hu : ContMDiffAt 𝓘(ℝ, ℝ × (ℝ × ℝ)) I 2 (Function.uncurry u) (0, z))
@@ -187,10 +193,10 @@ variable [FiniteDimensional ℝ E]
 /-- **Joint intrinsic first variation.** For a jointly `C²` map family, a torsion-free
 connection, and affine paths of the two Hamiltonian coefficients and the endomorphism field,
 the covariant derivative at zero is the map linearization plus the three coefficient
-terms. The fixed coefficient fields need only be differentiable at the base image point;
-the perturbation directions need only be continuous there. The scalar Hamiltonians must be
-differentiable along the map family near zero, so their Hamiltonian fields respect affine
-combinations there. -/
+terms. The endomorphism field `J z` and the Hamiltonian vector fields of `Ks z` and `Kt z`
+are differentiable at `u 0 z`; `Y z` and the Hamiltonian vector fields of `δKs z` and `δKt z`
+need only be continuous there. All four scalar Hamiltonians are differentiable at `u r z`
+for `r` near zero, so their Hamiltonian vector fields respect affine combinations there. -/
 theorem alongCurve_floerOperator_add_smul_coefficients
     (cov : CovariantDerivative I E (TangentSpace I : M → Type _))
     (htor : cov.IsTorsionFree) {u : ℝ → ℝ × ℝ → M} {z : ℝ × ℝ}

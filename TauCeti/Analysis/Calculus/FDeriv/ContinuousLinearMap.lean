@@ -36,8 +36,6 @@ maps on the left with a fixed one composes its derivative with that map.
 
 * `HasFDerivWithinAt.clm_apply_of_eq_zero`: the derivative of `y ↦ c y (u y)` at a zero of
   `u`, assuming only continuity of `c`.
-* `HasDerivWithinAt.smul_of_eq_zero` and `HasDerivAt.smul_of_eq_zero`: the scalar-multiplication
-  rule at a zero of the scalar factor, with only continuity of the vector factor.
 * `TauCeti.fderiv_clm_apply_const_apply`: the derivative of `y ↦ c y v` in the direction `w` is
   `Dc(w) v`; `TauCeti.fderiv_clm_apply_const_apply₂` is the form for fields of bilinear maps,
   and `TauCeti.fderiv_fderiv_clm_apply_const_apply₂` is its second-derivative analogue.
@@ -92,26 +90,6 @@ theorem _root_.HasFDerivWithinAt.clm_apply_of_eq_zero {c : E → F →L[𝕜] F'
   · funext y
     simp
   · simp
-
-/-- At a zero of a differentiable scalar factor, the vector factor need only be continuous
-within the parameter set to differentiate their scalar multiple. -/
-theorem _root_.HasDerivWithinAt.smul_of_eq_zero {c : 𝕜 → 𝕜} {c' : 𝕜} {f : 𝕜 → F}
-    {s : Set 𝕜} {x : 𝕜} (hc : HasDerivWithinAt c c' s x)
-    (hf : ContinuousWithinAt f s x) (hc0 : c x = 0) :
-    HasDerivWithinAt (fun y ↦ c y • f y) (c' • f x) s x := by
-  have hd := HasFDerivWithinAt.clm_apply_of_eq_zero
-    (ContinuousAt.comp_continuousWithinAt
-      (ContinuousLinearMap.toSpanSingletonCLE : F ≃L[𝕜] 𝕜 →L[𝕜] F).continuousAt hf)
-    hc.hasFDerivWithinAt hc0
-  simpa using hd.hasDerivWithinAt
-
-/-- At a zero of a differentiable scalar factor, the vector factor need only be continuous
-to differentiate their scalar multiple. -/
-theorem _root_.HasDerivAt.smul_of_eq_zero {c : 𝕜 → 𝕜} {c' : 𝕜} {f : 𝕜 → F}
-    {x : 𝕜} (hc : HasDerivAt c c' x) (hf : ContinuousAt f x) (hc0 : c x = 0) :
-    HasDerivAt (fun y ↦ c y • f y) (c' • f x) x := by
-  rw [← hasDerivWithinAt_univ]
-  exact hc.hasDerivWithinAt.smul_of_eq_zero hf.continuousWithinAt hc0
 
 /-- The derivative of the evaluation pairing `(x, φ) ↦ φ x` between a space and its continuous
 linear maps into `F` at `(x, φ)` is `(δx, δφ) ↦ φ δx + δφ x`. For `F = 𝕜` this is the pairing of a

@@ -190,8 +190,9 @@ theorem floerLinearization_add
 end Algebra
 
 omit [FiniteDimensional ℝ E] in
-/-- For a jointly `C²` map family and differentiable coefficient fields, the fixed-coefficient
-Floer operator is differentiable as a map into the tangent bundle along the parameter curve. -/
+/-- For a jointly `C²` map family, if `J z` and the Hamiltonian vector fields of `Ks z` and
+`Kt z` are differentiable at `u q z`, the fixed-coefficient Floer operator is differentiable
+as a map into the tangent bundle along the parameter curve. -/
 theorem mdifferentiableAt_floerOperator (ω : SmoothTwoForm I M)
     (J : ℝ × ℝ → ∀ x : M, TangentSpace I x →L[ℝ] TangentSpace I x)
     (Ks Kt : ℝ × ℝ → M → ℝ) {u : ℝ → ℝ × ℝ → M} {q : ℝ} {z : ℝ × ℝ}

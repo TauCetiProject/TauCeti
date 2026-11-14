@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Mul
 import TauCeti.Analysis.Asymptotics.Lemmas
+import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 
 /-!
 # Directional derivative estimates for scalar multiplication
@@ -24,8 +25,13 @@ instance, to a norm, which is Lipschitz but need not be differentiable. As in Ma
 rule `fderiv_smul`, the scalar factor may take values in a normed ring acting on the codomain,
 not only in the base field.
 
+At a zero of a differentiable scalar factor, continuity of the vector factor suffices for
+Fréchet differentiability of their product, including scalars in a normed algebra.
+
 ## Main results
 
+* `HasFDerivWithinAt.smul_of_eq_zero` and `HasFDerivAt.smul_of_eq_zero`: the scalar-multiplication
+  rule at a zero of the scalar factor, with only continuity of the vector factor.
 * `TauCeti.fderiv_smul_apply`: the Leibniz rule for the derivative of a scalar multiple, applied to
   a direction.
 * `TauCeti.cutoff_sq_mul_norm_fderiv_sq_le`: the two-direction cutoff derivative estimate.
@@ -42,6 +48,28 @@ section Leibniz
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E F : Type*} [NormedAddCommGroup E]
   [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] {𝕜' : Type*} [NormedRing 𝕜']
   [NormedAlgebra 𝕜 𝕜'] [Module 𝕜' F] [IsBoundedSMul 𝕜' F] [IsScalarTower 𝕜 𝕜' F]
+
+/-- At a zero of a differentiable scalar factor, the vector factor need only be continuous
+within the parameter set to differentiate their scalar multiple. Scalars may take values in a
+normed algebra over the base field. -/
+theorem _root_.HasFDerivWithinAt.smul_of_eq_zero {c : E → 𝕜'} {c' : E →L[𝕜] 𝕜'} {f : E → F}
+    {s : Set E} {x : E} (hc : HasFDerivWithinAt c c' s x)
+    (hf : ContinuousWithinAt f s x) (hc0 : c x = 0) :
+    HasFDerivWithinAt (fun y ↦ c y • f y) (c'.smulRight (f x)) s x := by
+  have hd := HasFDerivWithinAt.clm_apply_of_eq_zero
+    (ContinuousAt.comp_continuousWithinAt
+      (ContinuousLinearMap.lsmul 𝕜 𝕜' (E := F)).flip.continuous.continuousAt hf)
+    hc hc0
+  exact hd.congr_fderiv (by ext v; rfl)
+
+/-- At a zero of a differentiable scalar factor, the vector factor need only be continuous
+to differentiate their scalar multiple. Scalars may take values in a normed algebra over the
+base field. -/
+theorem _root_.HasFDerivAt.smul_of_eq_zero {c : E → 𝕜'} {c' : E →L[𝕜] 𝕜'} {f : E → F}
+    {x : E} (hc : HasFDerivAt c c' x) (hf : ContinuousAt f x) (hc0 : c x = 0) :
+    HasFDerivAt (fun y ↦ c y • f y) (c'.smulRight (f x)) x := by
+  rw [← hasFDerivWithinAt_univ]
+  exact hc.hasFDerivWithinAt.smul_of_eq_zero hf.continuousWithinAt hc0
 
 /-- **The Leibniz rule for the directional derivative of a scalar multiple.** The derivative of
 `c • f` at `x` in the direction `e` is `c x` times that of `f`, plus that of `c` times `f x`. -/
