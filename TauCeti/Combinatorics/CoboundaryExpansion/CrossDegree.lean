@@ -199,7 +199,7 @@ theorem sum_agreeCount_mul_inv_le_of_forall_option [Fintype V] (E : Finset (V ×
     simp_rw [hsome, card_filter]
     rw [sum_comm]
     simp_rw [← card_filter, card_filter_val_lt]
-    rw [sum_const, card_univ, smul_eq_mul]
+    rw [sum_const, card_univ, smul_eq_mul, min_comm]
   rw [hswap, ← hdom, mul_sum]
   exact sum_le_sum fun y _ => hφ (φ y)
 
@@ -535,7 +535,7 @@ theorem ciInf_sum_distErr_lex (α : V → V → Perm (Fin n)) (m : ℕ) :
             ∑ e ∈ ({p : V × V | p.1 < p.2} : Finset (V × V)),
               distErr (α e.1 e.2) (β₀ e.1 * (β₀ e.2)⁻¹) := by
   set EV : Finset (V × V) := {p : V × V | p.1 < p.2}
-  set Q : Finset (ι × ι) := {q : ι × ι | q.1 < q.2}
+  set Q : Finset (ι × ι) := {q : ι × ι | q.1 < q.2} with hQ_def
   let b₀ : ℝ := 1 - (min n m : ℝ) / max n m
   let base : ℝ := (Fintype.card V * (Fintype.card ι).choose 2 : ℕ) * b₀
   have hQ : #Q = (Fintype.card ι).choose 2 := by
@@ -544,7 +544,8 @@ theorem ciInf_sum_distErr_lex (α : V → V → Perm (Fin n)) (m : ℕ) :
   -- excess over the baseline `b₀`.
   let ev : (V → ι → Perm (Fin m)) ≃ ((V ×ₗ ι) → Perm (Fin m)) :=
     (Equiv.curry V ι (Perm (Fin m))).symm.trans (Equiv.arrowCongr toLex (.refl _))
-  have hev (β' : V → ι → Perm (Fin m)) (v : V) (a : ι) : ev β' (toLex (v, a)) = β' v a := rfl
+  have hev (β' : V → ι → Perm (Fin m)) (v : V) (a : ι) : ev β' (toLex (v, a)) = β' v a := by
+    simp [ev]
   let c (β' : V → ι → Perm (Fin m)) : ℝ :=
     ∑ v : V, ∑ q ∈ Q, (distErr (1 : Perm (Fin n)) (β' v q.1 * (β' v q.2)⁻¹) - b₀)
   have hc (β' : V → ι → Perm (Fin m)) : 0 ≤ c β' :=
@@ -567,7 +568,7 @@ theorem ciInf_sum_distErr_lex (α : V → V → Perm (Fin n)) (m : ℕ) :
           (#Q : ℝ) * b₀ +
             ∑ q ∈ Q, (distErr (1 : Perm (Fin n)) (β' v q.1 * (β' v q.2)⁻¹) - b₀) := by
         simp [sum_sub_distrib, nsmul_eq_mul]
-      change (∑ v : V, ∑ q ∈ Q, distErr (1 : Perm (Fin n)) (β' v q.1 * (β' v q.2)⁻¹)) = _
+      simp_rw [← hQ_def]
       simp only [hterm, sum_add_distrib, sum_const, card_univ, nsmul_eq_mul,
         hQ, base, c, Nat.cast_mul, mul_assoc]
     rw [hintra, add_assoc]

@@ -31,7 +31,7 @@ This file supplements Mathlib's `Mathlib.GroupTheory.Perm.Fin`.
   `decide +kernel` certificate small.
 * `Equiv.Perm.sum_comp_symm_apply_zero`: summing a function of `σ⁻¹ 0` over all permutations of
   `Fin (n + 1)` counts each value `n!` times.
-* `Equiv.Perm.card_filter_val_lt`: a permutation of `Fin m` maps `min n m` indices below `n`.
+* `Equiv.Perm.card_filter_val_lt`: a permutation of `Fin n` maps `min n m` indices below `m`.
 -/
 
 public section
@@ -111,10 +111,10 @@ section
 
 open _root_.Finset
 
-/-- A permutation of `Fin m` maps `min n m` indices into `{0, ..., n - 1}`. -/
-theorem card_filter_val_lt {m : ℕ} (β : Perm (Fin m)) (n : ℕ) :
-    #{y : Fin m | (β y : ℕ) < n} = min n m :=
-  (card_equiv β fun _ => by simp).trans (Fin.card_filter_val_lt.trans (min_comm m n))
+/-- A permutation of `Fin n` maps `min n m` indices below `m`. -/
+theorem card_filter_val_lt {n m : ℕ} (σ : Perm (Fin n)) :
+    #{i : Fin n | (σ i : ℕ) < m} = min n m :=
+  (card_equiv σ fun _ => by simp).trans Fin.card_filter_val_lt
 
 end
 

@@ -21,9 +21,10 @@ Main results:
   `n ≠ 0`, the distance with errors is the normalized Hamming distance
   `movedNorm (Fin n) (σ⁻¹ * τ) / n`, and `(n : ℝ) * distErr σ τ = movedNorm (Fin n) (σ⁻¹ * τ)` holds
   for every `n : ℕ`;
-* `Equiv.Perm.agreeCount_one_right`, `Equiv.Perm.distErr_one_right`, and
-  `Equiv.Perm.agreeCount_mul_inv_eq_card_filter`: agreements against the identity permutation and
-  against a degree-`m` quotient `g * h⁻¹`;
+* `Equiv.Perm.agreeCount_one_right`, `Equiv.Perm.distErr_one_right_of_le`,
+  `Equiv.Perm.distErr_one_right`, and `Equiv.Perm.agreeCount_mul_inv_eq_card_filter`: agreements
+  and distances with errors against the identity permutation and against a degree-`m` quotient
+  `g * h⁻¹`;
 * `Equiv.Perm.distErr_comm`, `Equiv.Perm.distErr_eq_zero_iff`, and `Equiv.Perm.distErr_pos_iff`:
   symmetry, vanishing only on equal permutations of equal nonzero degree, and positivity;
 * `Equiv.Perm.one_sub_min_div_max_le_distErr` and `Equiv.Perm.one_div_add_one_le_distErr_of_ne`:
@@ -208,6 +209,21 @@ number `m - #τ.support` of fixed points of `τ`. -/
 theorem agreeCount_one_left_of_ge {n : ℕ} (τ : Perm (Fin m)) (hmn : m ≤ n) :
     agreeCount (1 : Perm (Fin n)) τ = m - #τ.support :=
   (agreeCount_comm 1 τ).trans (agreeCount_one_right_of_le τ hmn)
+
+/-- When `n ≤ m`, the distance with errors from `σ : Perm (Fin n)` to `1 : Perm (Fin m)` equals
+`1 - n / m + movedNorm (Fin n) σ / m`. -/
+theorem distErr_one_right_of_le (σ : Perm (Fin n)) {m : ℕ} (hnm : n ≤ m) :
+    distErr σ (1 : Perm (Fin m)) = 1 - (n : ℝ) / m + movedNorm (Fin n) σ / m := by
+  have hle : #σ.support ≤ n := (card_le_univ _).trans_eq (Fintype.card_fin n)
+  rw [distErr_def, agreeCount_one_right_of_le σ hnm, Nat.max_eq_right hnm, Nat.cast_sub hle,
+    movedNorm_apply]
+  ring
+
+/-- When `m ≤ n`, the distance with errors from `1 : Perm (Fin n)` to `τ : Perm (Fin m)` equals
+`1 - m / n + movedNorm (Fin m) τ / n`. -/
+theorem distErr_one_left_of_ge {n : ℕ} (τ : Perm (Fin m)) (hmn : m ≤ n) :
+    distErr (1 : Perm (Fin n)) τ = 1 - (m : ℝ) / n + movedNorm (Fin m) τ / n :=
+  (distErr_comm 1 τ).trans (distErr_one_right_of_le τ hmn)
 
 /-- In equal nonzero degree, the distance with errors from `σ` to `1` is `movedNorm (Fin n) σ / n`.
 -/
