@@ -220,12 +220,12 @@ private theorem exists_mapsTo_of_mapsTo_image (hf : ContinuousOn f (closedBall 0
     hf.continuousOn_invFunOn_image_of_isCompact (isCompact_closedBall 0 1) sdiff_subset hinj
       (disjoint_left.2 fun _ ⟨x', hx', hx'z⟩ ⟨x'', hx'', hx''z⟩ ↦
         hx''.2 (hx''z.trans (hx'z.symm.trans (not_not.1 fun h ↦ hx'.2 ⟨hx'.1, h⟩))))
-  obtain ⟨g, hgc, hgi, hfg, hgX, hgP⟩ := hf.exists_continuousOn_injOn_lift hinv hinj
-    (fun x hx hxy _ ↦ ⟨hx, hxy⟩)
-    (fun x hx ↦ hkc.continuousAt (isOpen_compl_singleton.mem_nhds (hfp hx)))
-    (hki.mono fun _ ⟨x, hx, hxz⟩ ↦ hxz ▸ hfp hx) hkid (fun x hx hxy ↦ hkP ⟨hx, hxy⟩) subset_rfl
-    hinj
-  refine ⟨g, hgc, hgi, fun x hx ↦ ?_, fun x hx ↦ hgX x hx.1 hx.2⟩
+  have hfQ : f '' Q ⊆ {p}ᶜ := fun _ ⟨x, hx, hxz⟩ ↦ hxz ▸ hfp hx
+  obtain ⟨g, hgc, hfg, hgX, hgP, hgi⟩ := hf.exists_continuousOn_injOn_lift hinv hinj
+    (fun x hx hxy _ ↦ ⟨hx, hxy⟩) (hkc.mono hfQ) (hkid.filter_mono nhdsWithin_le_nhds)
+    fun x hx hxy ↦ hkP ⟨hx, hxy⟩
+  refine ⟨g, hgc, hgi Q subset_rfl (hki.mono hfQ) hinj, fun x hx ↦ ?_,
+    fun x hx ↦ hgX x hx.1 hx.2⟩
   -- `g` maps `Q` into `U`.
   by_cases hxy : f x = y
   · rw [hgX x hx hxy]
@@ -354,36 +354,27 @@ private theorem exists_continuousOn_injOn_preimage_singleton [FiniteDimensional 
     · exact hkN (mem_image_of_mem g hx) h
   -- Off the two fibres, `g` is inverted by `invFunOn g P`, continuously since the sphere is
   -- compact.
-  have hgP : g '' P = ({p, q} : Set (sphere (0 : F) 1))ᶜ := by
-    ext y
-    refine ⟨fun ⟨_, hx, hxy⟩ ↦ hxy ▸ hx, fun hy ↦ ?_⟩
-    obtain ⟨x, rfl⟩ := hgs y
-    exact ⟨x, hy, rfl⟩
+  have hgP : g '' P = ({p, q} : Set (sphere (0 : F) 1))ᶜ := hgs.image_preimage ({p, q}ᶜ)
   have hinv : ContinuousOn (invFunOn g P) (g '' P) :=
     hg.continuousOn.continuousOn_invFunOn_image_of_isCompact isCompact_univ (subset_univ P)
-      hinj (disjoint_left.2 fun _ ⟨y, hy, hyz⟩ ⟨y', hy', hy'z⟩ ↦
-        hy' (by rw [mem_preimage, hy'z, ← hyz]; exact not_not.1 hy.2))
+      hinj (by rw [hgP, disjoint_image_left]; exact disjoint_sdiff_left)
   -- The map `φ`: the identity on `A` and `g⁻¹ ∘ k ∘ g` elsewhere. It is injective off `B`, since
   -- `g` is injective off `A ∪ B`.
-  obtain ⟨φ, hφc, hφi, hgφ, hφA, hφP⟩ := hg.continuousOn.exists_continuousOn_injOn_lift hinv
-    hinj (fun x _ _ hx ↦ (hgP ▸ hx :))
-    (fun x hx ↦ hkc.continuousAt (isOpen_compl_singleton.mem_nhds (hgQ hx)))
-    (hki.mono fun _ ⟨x, hx, hxz⟩ ↦ hxz ▸ hgQ hx) hkid (fun x hx hxp ↦ hgP ▸ hkpq hx hxp)
-    (R := Q \ g ⁻¹' {q}) sdiff_subset (hinj.mono fun x ⟨⟨_, hxq⟩, hxp⟩ ↦ by
-      simp only [P, mem_compl_iff, mem_preimage, mem_insert_iff, mem_singleton_iff, not_or]
-      exact ⟨hxp, hxq⟩)
+  have hgQ' : g '' Q ⊆ {g w}ᶜ := fun _ ⟨x, hx, hxz⟩ ↦ hxz ▸ hgQ hx
+  obtain ⟨φ, hφc, hgφ, -, hφP, hφi⟩ := hg.continuousOn.exists_continuousOn_injOn_lift hinv
+    hinj (fun x _ _ hx ↦ (hgP ▸ hx :)) (hkc.mono hgQ') (hkid.filter_mono nhdsWithin_le_nhds)
+    fun x hx hxp ↦ hgP ▸ hkpq hx hxp
   -- `φ` sends exactly the points of `B` in `Q` to `φ b`, for any `b ∈ B`.
   obtain ⟨b, hb⟩ := hgs q
   have hbQ : b ∈ Q := hBQ hb
   have hbp : g b ≠ p := hb ▸ hpq.symm
-  refine ⟨φ, φ b, hφc, hφi, fun x hx ↦ ⟨fun h ↦ ?_, fun h ↦ hinj (hφP x hx (h ▸ hpq.symm))
-    (hφP b hbQ hbp) (by rw [hgφ x hx, hgφ b hbQ, h, hb])⟩⟩
-  by_cases hxp : g x = p
-  · -- `φ b` lies in `P`, so it is not the point `x` of `A` fixed by `φ`.
-    refine absurd (hφP b hbQ hbp) ?_
-    rw [← h, hφA x hx hxp]
-    simp [P, hxp]
-  · exact hki (hgQ hx) hqs (by rw [← hgφ x hx, h, hgφ b hbQ, hb])
+  refine ⟨φ, φ b, hφc, hφi (Q \ g ⁻¹' {q}) sdiff_subset
+    (hki.mono ((image_mono sdiff_subset).trans hgQ')) (hinj.mono fun x ⟨⟨_, hxq⟩, hxp⟩ ↦ by
+      simp only [P, mem_compl_iff, mem_preimage, mem_insert_iff, mem_singleton_iff, not_or]
+      exact ⟨hxp, hxq⟩),
+    fun x hx ↦ ⟨fun h ↦ hki (hgQ hx) hqs (by rw [← hgφ x hx, h, hgφ b hbQ, hb]),
+      fun h ↦ hinj (hφP x hx (h ▸ hpq.symm)) (hφP b hbQ hbp)
+        (by rw [hgφ x hx, hgφ b hbQ, h, hb])⟩⟩
 
 /-- **Brown's theorem on two inverse sets.** Let `E` be a real normed space of dimension `n ≥ 2`,
 and let `g` be a continuous surjection of the unit sphere `Sⁿ` of a real inner product space of
