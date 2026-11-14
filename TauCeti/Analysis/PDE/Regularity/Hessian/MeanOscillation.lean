@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.Wkp.Basic
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 import TauCeti.Analysis.Matrix.Contraction
+import TauCeti.Analysis.MeanInequalities
 import TauCeti.Analysis.PDE.Ellipticity.Average
 import TauCeti.Analysis.PDE.Regularity.DifferentiatedEquation
 import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
@@ -17,6 +18,7 @@ import TauCeti.Analysis.Sobolev.Wkp.Restriction
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.MeanInequalities
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Mean oscillation of the Hessian for non-divergence-form equations
@@ -538,14 +540,8 @@ theorem setAverage_ball_norm_iteratedGradient_sub_setAverage_sq_le_of_abs_sub_le
   have hθ : ∀ᵐ x ∂μr, 0 ≤ θ x ∧ θ x ≤ K := by
     filter_upwards [haM] with x hx
     exact ⟨by positivity, by simpa [K, sq] using Matrix.sum_sum_abs_le hx⟩
-  have hK : 0 ≤ K := by
-    have := ae_restrict_neBot.2 (measure_ball_pos volume x₀ hr).ne'
-    obtain ⟨x, hx⟩ := hθ.exists
-    exact hx.1.trans hx.2
   set Iθ := ∫ x in ball x₀ r, θ x
-  have hIθ : 0 ≤ Iθ := integral_nonneg_of_ae (hθ.mono fun x hx => hx.1)
   set IH := ∫ x in ball x₀ r, ‖H x‖ ^ (2 * q)
-  have hIH : 0 ≤ IH := integral_nonneg fun x => by positivity
   -- Hölder's inequality with the bounded weight `θ` and exponents `q'`, `q` bounds the error
   -- term `∫ θ² ‖D²u‖²` of the frozen comparison.
   have hΘ : ∫ x in ball x₀ r, θ x ^ 2 * ‖H x‖ ^ 2 ≤
@@ -556,24 +552,17 @@ theorem setAverage_ball_norm_iteratedGradient_sub_setAverage_sq_le_of_abs_sub_le
   -- Pass to averages: `|B_ρ| = (ρ / r)^(n + 1) |B_r|`.
   set V : ℝ := volume.real (ball x₀ r)
   have hV : 0 < V := ENNReal.toReal_pos (measure_ball_pos volume x₀ hr).ne' measure_ball_lt_top.ne
-  have hVρ : volume.real (ball x₀ ρ) = (ρ / r) ^ (n + 1) * V := by
-    simp only [V, measureReal_def, Measure.addHaar_ball_of_pos volume x₀ hρ,
-      Measure.addHaar_ball_of_pos volume x₀ hr, finrank_euclideanSpace_fin, ENNReal.toReal_mul,
-      ENNReal.toReal_ofReal (pow_nonneg hρ.le _), ENNReal.toReal_ofReal (pow_nonneg hr.le _),
-      div_pow]
-    field_simp
   have havg : ∀ (t : ℝ) (g : EuclideanSpace ℝ (Fin (n + 1)) → ℝ),
       ⨍ x in ball x₀ t, g x = (volume.real (ball x₀ t))⁻¹ * ∫ x in ball x₀ t, g x :=
     fun t g => by rw [setAverage_eq, smul_eq_mul]
   rw [havg ρ (fun x => ‖H x - ⨍ y in ball x₀ ρ, H y‖ ^ 2),
     havg r (fun x => ‖H x - ⨍ y in ball x₀ r, H y‖ ^ 2), havg r (fun x => f x ^ 2), havg r θ,
-    havg r (fun x => ‖H x‖ ^ (2 * q)), hVρ]
+    havg r (fun x => ‖H x‖ ^ (2 * q)),
+    volume.addHaar_real_ball_eq_div_pow_mul x₀ x₀ hρ hr, finrank_euclideanSpace_fin]
   have hsplit : (K ^ (2 * q' - 1) * (V⁻¹ * Iθ)) ^ q'⁻¹ * (V⁻¹ * IH) ^ q⁻¹ =
       V⁻¹ * ((K ^ (2 * q' - 1) * Iθ) ^ q'⁻¹ * IH ^ q⁻¹) := by
-    rw [mul_left_comm,
-      Real.mul_rpow (inv_nonneg.2 hV.le) (mul_nonneg (Real.rpow_nonneg hK _) hIθ),
-      Real.mul_rpow (inv_nonneg.2 hV.le) hIH, mul_mul_mul_comm, ← Real.rpow_add (inv_pos.2 hV),
-      hq.symm.inv_add_inv_eq_one, Real.rpow_one]
+    rw [mul_left_comm]
+    exact Real.mul_rpow_inv_mul_mul_rpow_inv hq.symm.inv_add_inv_eq_one (inv_nonneg.2 hV.le) _ _
   rw [hsplit]
   have hs : 0 < ρ / r := div_pos hρ hr
   refine (mul_le_mul_of_nonneg_left (key.trans (mul_le_mul_of_nonneg_left (add_le_add le_rfl

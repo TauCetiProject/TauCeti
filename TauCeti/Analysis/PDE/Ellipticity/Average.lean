@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Average
 public import TauCeti.Analysis.PDE.Ellipticity.Basic
+import Mathlib.Analysis.Convex.Integral
 import TauCeti.MeasureTheory.Integral.Average
 
 /-!
@@ -48,25 +49,17 @@ theorem UniformlyEllipticOn.setAverage [DecidableEq n] {Y : Type*}
     simp only [dotProduct, mulVec]
     exact integrable_finsetSum _ fun i _ =>
       (integrable_finsetSum _ fun j _ => (ha i j).mul_const _).const_mul _
-  have hpos : 0 < (μ s).toReal⁻¹ := inv_pos.2 (ENNReal.toReal_pos hμ0 hμ)
-  -- An average of functions bounded below by `c` on `s` is bounded below by `c`.
-  have hle : ∀ (c : ℝ) (g : X → ℝ), IntegrableOn g s μ → (∀ x ∈ s, c ≤ g x) →
-      c ≤ ⨍ x in s, g x ∂μ := fun c g hg hcg => by
-    rw [← setAverage_const hμ0 hμ c, setAverage_eq, setAverage_eq, smul_eq_mul, smul_eq_mul]
-    exact mul_le_mul_of_nonneg_left (setIntegral_mono_on (integrableOn_const hμ) hg hs hcg)
-      hpos.le
+  -- Both bounds pass to the average because they cut out closed convex sets
+  -- (`Convex.set_average_mem`).
   refine UniformlyEllipticOn.of_bounds h.pos h.le (fun _ _ ξ => ?_) (fun _ _ η ξ => ?_)
-  · rw [toQuadraticForm'_apply, dotProduct_mulVec_setAverage ha]
-    refine hle _ _ (hint _ _) fun x hx => ?_
-    rw [← toQuadraticForm'_apply]
+  · rw [toQuadraticForm'_apply, dotProduct_mulVec_setAverage ha, ← Set.mem_Ici]
+    refine (convex_Ici _).set_average_mem isClosed_Ici hμ0 hμ
+      (ae_restrict_of_forall_mem hs fun x hx => ?_) (hint _ _)
+    rw [Set.mem_Ici, ← toQuadraticForm'_apply]
     exact h.lower_bound hx ξ
-  · rw [dotProduct_mulVec_setAverage ha, abs_le]
-    constructor
-    · refine hle _ _ (hint _ _) fun x hx => ?_
-      exact neg_le_of_abs_le (h.upper_bound hx η ξ)
-    · rw [← neg_le_neg_iff, ← average_neg]
-      refine hle _ _ (hint _ _).neg fun x hx => ?_
-      exact neg_le_neg (le_of_abs_le (h.upper_bound hx η ξ))
+  · rw [dotProduct_mulVec_setAverage ha, abs_le, ← Set.mem_Icc]
+    exact (convex_Icc _ _).set_average_mem isClosed_Icc hμ0 hμ
+      (ae_restrict_of_forall_mem hs fun x hx => abs_le.1 (h.upper_bound hx η ξ)) (hint _ _)
 
 end PDE
 
