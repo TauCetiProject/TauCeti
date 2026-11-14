@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Analytic.ChangeOrigin
 import Mathlib.Analysis.Analytic.Polynomial
 import Mathlib.RingTheory.Algebraic.Integral
+import TauCeti.Analysis.Analytic.Uniqueness
 import TauCeti.Order.Filter.Germ.MvPolynomial
 
 /-!
@@ -28,17 +29,18 @@ here.
 
 This file proves that being a Nash germ is a property of the germ, that it propagates to nearby
 points, and that Nash germs form a subring of the analytic germs that is closed under inverses of
-nonvanishing germs:
+nonvanishing germs and under exact analytic division by nonzero Nash germs:
 
 * polynomial functions, in particular constants and coordinate functions, are Nash germs;
 * sums, negations, differences, products, powers, finite sums and finite products of Nash germs
   are Nash germs;
-* the inverse and quotients of Nash germs are Nash germs where the denominator does not vanish.
+* the inverse and quotients of Nash germs are Nash germs where the denominator does not vanish, and
+  an analytic quotient of Nash germs is Nash whenever the divisor germ is nonzero.
 
 The algebraic closure properties come from Mathlib's algebraic elements of an algebra over a
-domain (`IsAlgebraic.add`, `IsAlgebraic.mul`, `IsAlgebraic.invOf`): a polynomial relation near `x`
-is exactly algebraicity of the germ of `f` at `x` over `ℝ[y]`, where polynomials act on germs as
-polynomial functions (`Filter.Germ.isAlgebraic_coe_iff`).
+domain (`IsAlgebraic.add`, `IsAlgebraic.mul`, `IsAlgebraic.invOf`, `IsAlgebraic.of_mul`): a
+polynomial relation near `x` is exactly algebraicity of the germ of `f` at `x` over `ℝ[y]`, where
+polynomials act on germs as polynomial functions (`Filter.Germ.isAlgebraic_coe_iff`).
 
 ## Main declarations
 
@@ -48,7 +50,8 @@ polynomial functions (`Filter.Germ.isAlgebraic_coe_iff`).
 * `TauCeti.IsNashAt.congr`: Nash germs depend only on the germ.
 * `TauCeti.IsNashAt.eventually_isNashAt`: a Nash germ at `x` is a Nash germ at every nearby point.
 * `MvPolynomial.isNashAt_eval`, `TauCeti.IsNashAt.add`, `TauCeti.IsNashAt.mul`,
-  `TauCeti.IsNashAt.inv`, `TauCeti.IsNashAt.div`: the algebraic closure properties.
+  `TauCeti.IsNashAt.inv`, `TauCeti.IsNashAt.div`, `TauCeti.IsNashAt.of_mul`: the algebraic closure
+  properties.
 
 ## References
 
@@ -203,5 +206,47 @@ theorem IsNashAt.inv (hf : IsNashAt f x) (h0 : f x ≠ 0) : IsNashAt f⁻¹ x :=
 theorem IsNashAt.div (hf : IsNashAt f x) (hg : IsNashAt g x) (h0 : g x ≠ 0) :
     IsNashAt (f / g) x := by
   simpa [div_eq_mul_inv] using hf.mul (hg.inv h0)
+
+/-! ### Exact division -/
+
+/-- The `ℝ[y]`-subalgebra of `Germ (𝓝 x) ℝ` consisting of germs represented by functions analytic
+at `x`. -/
+private noncomputable def analyticGermSubalgebra (x : σ → ℝ) :
+    Subalgebra (MvPolynomial σ ℝ) (Germ (𝓝 x) ℝ) where
+  carrier := {ξ | ∃ h : (σ → ℝ) → ℝ, AnalyticAt ℝ h x ∧ (h : Germ (𝓝 x) ℝ) = ξ}
+  mul_mem' := by
+    rintro _ _ ⟨h₁, hh₁, rfl⟩ ⟨h₂, hh₂, rfl⟩
+    exact ⟨h₁ * h₂, hh₁.mul hh₂, Germ.coe_mul h₁ h₂⟩
+  add_mem' := by
+    rintro _ _ ⟨h₁, hh₁, rfl⟩ ⟨h₂, hh₂, rfl⟩
+    exact ⟨h₁ + h₂, hh₁.add hh₂, Germ.coe_add h₁ h₂⟩
+  algebraMap_mem' p :=
+    ⟨fun y ↦ MvPolynomial.eval y p, AnalyticOnNhd.eval_mvPolynomial p x (Set.mem_univ x),
+      (Germ.mvPolynomialAlgebra_algebraMap_apply (𝓝 x) p).symm⟩
+
+/-- **Exact analytic division of Nash germs.** If `g` is a nonzero Nash germ at `x`, `u` is
+analytic at `x`, and `g * u` is a Nash germ at `x`, then `u` is a Nash germ at `x`. Unlike
+`TauCeti.IsNashAt.div`, the divisor `g` may vanish at `x`. -/
+@[to_fun]
+theorem IsNashAt.of_mul {u : (σ → ℝ) → ℝ} (hg : IsNashAt g x) (hgu : IsNashAt (g * u) x)
+    (hg0 : ¬ g =ᶠ[𝓝 x] 0) (hu : AnalyticAt ℝ u x) : IsNashAt u x := by
+  let G : analyticGermSubalgebra x := ⟨(g : Germ (𝓝 x) ℝ), g, hg.analyticAt, rfl⟩
+  let U : analyticGermSubalgebra x := ⟨(u : Germ (𝓝 x) ℝ), u, hu, rfl⟩
+  have hG_nzd : G ∈ nonZeroDivisors (analyticGermSubalgebra x) := by
+    rw [mem_nonZeroDivisors_iff_left]
+    rintro ⟨_, h, hh, rfl⟩ hmul
+    have hmul' : g * h =ᶠ[𝓝 x] 0 := by
+      rw [← Germ.coe_eq, Germ.coe_mul, Germ.coe_zero]
+      exact congrArg Subtype.val hmul
+    apply Subtype.ext
+    rw [Subalgebra.coe_zero, ← Germ.coe_zero, Germ.coe_eq]
+    exact ((hg.analyticAt.mul_eventuallyEq_zero_iff hh).1 hmul').resolve_left hg0
+  have hG_alg : IsAlgebraic (MvPolynomial σ ℝ) G :=
+    Subalgebra.isAlgebraic_iff_isAlgebraic_val.2 hg.isAlgebraic
+  have hGU_alg : IsAlgebraic (MvPolynomial σ ℝ) (G * U) := by
+    rw [Subalgebra.isAlgebraic_iff_isAlgebraic_val, Subalgebra.coe_mul, ← Germ.coe_mul]
+    exact hgu.isAlgebraic
+  exact .of_isAlgebraic hu <|
+    Subalgebra.isAlgebraic_iff_isAlgebraic_val.1 (IsAlgebraic.of_mul hG_nzd hG_alg hGU_alg)
 
 end TauCeti

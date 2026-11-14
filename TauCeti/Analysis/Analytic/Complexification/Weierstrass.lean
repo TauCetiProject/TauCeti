@@ -48,13 +48,20 @@ proof of the local structure of semianalytic sets.
 
 ## Main results
 
+* `TauCeti.eventuallyEq_of_weierstrassPreparation_of_finiteDimensional`,
+  `TauCeti.eventuallyEq_of_weierstrassDivision_of_finiteDimensional`: uniqueness of holomorphic
+  Weierstrass preparation and division over an arbitrary finite-dimensional complex normed space.
 * `TauCeti.eventually_apply_star_of_weierstrassPreparation`,
   `TauCeti.eventually_apply_star_of_weierstrassDivision`: the coefficients, unit, quotient and
   remainder of a Weierstrass preparation or division of holomorphic functions commuting with
   conjugation themselves commute with conjugation near a real point.
 * `AnalyticAt.exists_weierstrassPreparation_real`: **real analytic Weierstrass preparation.**
-* `AnalyticAt.exists_weierstrassDivision_monicOfCoeff_real`: **real analytic Weierstrass division**
-  by a real Weierstrass polynomial.
+* `AnalyticAt.exists_weierstrassDivision_monicOfCoeff_real`,
+  `AnalyticAt.exists_weierstrassDivision_real`: **real analytic Weierstrass division** by a real
+  Weierstrass polynomial and by any real analytic function of finite vertical vanishing order.
+* `TauCeti.eventuallyEq_of_weierstrassPreparation_real`,
+  `TauCeti.eventuallyEq_of_weierstrassDivision_real`: uniqueness of real analytic Weierstrass
+  preparation and division germs.
 
 ## References
 
@@ -69,8 +76,88 @@ open Filter Topology
 
 namespace TauCeti
 
-variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
-  [StarAddMonoid E] [StarModule ℂ E] [ContinuousStar E]
+section Star
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
+
+/-- **Uniqueness of holomorphic Weierstrass preparation over a finite-dimensional base.** Two
+holomorphic Weierstrass preparations `P_c (w - w₀) * u = P_{c'} (w - w₀) * u'` near `(x₀, w₀)` in
+`E × ℂ`, with lower coefficients vanishing at `x₀` and units nonvanishing at `(x₀, w₀)`, have the
+same coefficient germs at `x₀` and the same unit germ at `(x₀, w₀)`. -/
+theorem eventuallyEq_of_weierstrassPreparation_of_finiteDimensional
+    {x₀ : E} {w₀ : ℂ} {d : ℕ} {c c' : Fin d → E → ℂ} {u u' : E × ℂ → ℂ}
+    (hc : ∀ i, AnalyticAt ℂ (c i) x₀) (hc0 : ∀ i, c i x₀ = 0)
+    (hu : AnalyticAt ℂ u (x₀, w₀)) (hu0 : u (x₀, w₀) ≠ 0)
+    (hc' : ∀ i, AnalyticAt ℂ (c' i) x₀) (hc'0 : ∀ i, c' i x₀ = 0)
+    (hu' : AnalyticAt ℂ u' (x₀, w₀)) (hu'0 : u' (x₀, w₀) ≠ 0)
+    (h : (fun p : E × ℂ ↦ (Polynomial.monicOfCoeff (fun i ↦ c i p.1)).eval (p.2 - w₀) * u p)
+      =ᶠ[𝓝 (x₀, w₀)]
+        fun p ↦ (Polynomial.monicOfCoeff (fun i ↦ c' i p.1)).eval (p.2 - w₀) * u' p) :
+    (∀ i, c i =ᶠ[𝓝 x₀] c' i) ∧ u =ᶠ[𝓝 (x₀, w₀)] u' := by
+  let e : E ≃L[ℂ] (Fin (Module.finrank ℂ E) → ℂ) :=
+    (Module.finBasis ℂ E).equivFun.toContinuousLinearEquiv
+  let e₂ : (E × ℂ) ≃L[ℂ] ((Fin (Module.finrank ℂ E) → ℂ) × ℂ) :=
+    e.prodCongr (ContinuousLinearEquiv.refl ℂ ℂ)
+  obtain ⟨hcc, huu⟩ := eventuallyEq_of_weierstrassPreparation
+    (c := fun i ↦ c i ∘ e.symm) (c' := fun i ↦ c' i ∘ e.symm)
+    (u := u ∘ e₂.symm) (u' := u' ∘ e₂.symm)
+    (fun i ↦ (hc i).comp_of_eq (e.symm.analyticAt _) (e.symm_apply_apply x₀))
+    (fun i ↦ by simp [hc0 i])
+    (hu.comp_of_eq (e₂.symm.analyticAt _) (Prod.ext (e.symm_apply_apply x₀) rfl))
+    (by simpa [e₂] using hu0)
+    (fun i ↦ (hc' i).comp_of_eq (e.symm.analyticAt _) (e.symm_apply_apply x₀))
+    (fun i ↦ by simp [hc'0 i])
+    (hu'.comp_of_eq (e₂.symm.analyticAt _) (Prod.ext (e.symm_apply_apply x₀) rfl))
+    (by simpa [e₂] using hu'0) <| by
+      have hT : Tendsto e₂.symm (𝓝 (e x₀, w₀)) (𝓝 (x₀, w₀)) := by
+        simpa [e₂] using e₂.symm.continuous.tendsto (e x₀, w₀)
+      exact (hT.eventually h).mono fun p hp ↦ hp
+  refine ⟨fun i ↦ ?_, ?_⟩
+  · filter_upwards [(e.continuous.tendsto x₀).eventually (hcc i)] with x hx
+    simpa [Function.comp_apply] using hx
+  · have hT : Tendsto e₂ (𝓝 (x₀, w₀)) (𝓝 (e x₀, w₀)) := e₂.continuous.tendsto (x₀, w₀)
+    filter_upwards [hT.eventually huu] with p hp
+    simpa [Function.comp_apply, e₂] using hp
+
+/-- **Uniqueness of holomorphic Weierstrass division over a finite-dimensional base.** Two
+holomorphic Weierstrass divisions
+`P_c (w - w₀) * q + ∑ i, r i x * (w - w₀) ^ i = P_c (w - w₀) * q' + ∑ i, r' i x * (w - w₀) ^ i`
+near `(x₀, w₀)` in `E × ℂ`, with lower coefficients `c i x` vanishing at `x₀`, have the same
+quotient germ at `(x₀, w₀)` and the same remainder coefficient germs at `x₀`. -/
+theorem eventuallyEq_of_weierstrassDivision_of_finiteDimensional
+    {x₀ : E} {w₀ : ℂ} {d : ℕ} {c : Fin d → E → ℂ} {q q' : E × ℂ → ℂ} {r r' : Fin d → E → ℂ}
+    (hc : ∀ i, AnalyticAt ℂ (c i) x₀) (hc0 : ∀ i, c i x₀ = 0)
+    (hq : AnalyticAt ℂ q (x₀, w₀)) (hr : ∀ i, AnalyticAt ℂ (r i) x₀)
+    (hq' : AnalyticAt ℂ q' (x₀, w₀)) (hr' : ∀ i, AnalyticAt ℂ (r' i) x₀)
+    (h : (fun p : E × ℂ ↦ (Polynomial.monicOfCoeff (fun i ↦ c i p.1)).eval (p.2 - w₀) * q p +
+        ∑ i : Fin d, r i p.1 * (p.2 - w₀) ^ (i : ℕ)) =ᶠ[𝓝 (x₀, w₀)]
+      fun p ↦ (Polynomial.monicOfCoeff (fun i ↦ c i p.1)).eval (p.2 - w₀) * q' p +
+        ∑ i : Fin d, r' i p.1 * (p.2 - w₀) ^ (i : ℕ)) :
+    q =ᶠ[𝓝 (x₀, w₀)] q' ∧ ∀ i, r i =ᶠ[𝓝 x₀] r' i := by
+  let e : E ≃L[ℂ] (Fin (Module.finrank ℂ E) → ℂ) :=
+    (Module.finBasis ℂ E).equivFun.toContinuousLinearEquiv
+  let e₂ : (E × ℂ) ≃L[ℂ] ((Fin (Module.finrank ℂ E) → ℂ) × ℂ) :=
+    e.prodCongr (ContinuousLinearEquiv.refl ℂ ℂ)
+  obtain ⟨hqq, hrr⟩ := eventuallyEq_of_weierstrassDivision
+    (c := fun i ↦ c i ∘ e.symm) (q := q ∘ e₂.symm) (q' := q' ∘ e₂.symm)
+    (r := fun i ↦ r i ∘ e.symm) (r' := fun i ↦ r' i ∘ e.symm)
+    (fun i ↦ (hc i).comp_of_eq (e.symm.analyticAt _) (e.symm_apply_apply x₀))
+    (fun i ↦ by simp [hc0 i])
+    (hq.comp_of_eq (e₂.symm.analyticAt _) (Prod.ext (e.symm_apply_apply x₀) rfl))
+    (fun i ↦ (hr i).comp_of_eq (e.symm.analyticAt _) (e.symm_apply_apply x₀))
+    (hq'.comp_of_eq (e₂.symm.analyticAt _) (Prod.ext (e.symm_apply_apply x₀) rfl))
+    (fun i ↦ (hr' i).comp_of_eq (e.symm.analyticAt _) (e.symm_apply_apply x₀)) <| by
+      have hT : Tendsto e₂.symm (𝓝 (e x₀, w₀)) (𝓝 (x₀, w₀)) := by
+        simpa [e₂] using e₂.symm.continuous.tendsto (e x₀, w₀)
+      exact (hT.eventually h).mono fun p hp ↦ hp
+  refine ⟨?_, fun i ↦ ?_⟩
+  · have hT : Tendsto e₂ (𝓝 (x₀, w₀)) (𝓝 (e x₀, w₀)) := e₂.continuous.tendsto (x₀, w₀)
+    filter_upwards [hT.eventually hqq] with p hp
+    simpa [Function.comp_apply, e₂] using hp
+  · filter_upwards [(e.continuous.tendsto x₀).eventually (hrr i)] with x hx
+    simpa [Function.comp_apply] using hx
+
+variable [StarAddMonoid E] [StarModule ℂ E] [ContinuousStar E]
 
 /-- **Conjugation symmetry of the Weierstrass preparation.** Let `f` commute with conjugation near
 a point `(x₀, w₀)` fixed by conjugation, and let `f (x, w) = P_x (w - w₀) * u (x, w)` be a
@@ -90,12 +177,13 @@ theorem eventually_apply_star_of_weierstrassPreparation {f : E × ℂ → ℂ} {
   have hstar : Tendsto star (𝓝 (x₀, w₀)) (𝓝 (x₀, w₀)) := by
     simpa [hp₀] using (continuous_star (R := E × ℂ)).tendsto (x₀, w₀)
   -- conjugating the factorization of `f` gives a second Weierstrass preparation of `f`
-  obtain ⟨hcc, huu⟩ := eventuallyEq_of_weierstrassPreparation (c' := fun i ↦ star ∘ c i ∘ star)
-    (u' := star ∘ u ∘ star) hc hc0 hu hu0 (fun i ↦ hx₀ ▸ (hc i).star_star)
-    (fun i ↦ by simp [hx₀, hc0]) (hp₀ ▸ hu.star_star) (by simpa [hp₀] using hu0) <| by
-      filter_upwards [hfac, hf, hstar.eventually hfac] with p hp hfp hfp'
-      rw [← hp, ← star_star (f p), ← hfp, hfp', star_mul', Polynomial.star_eval_monicOfCoeff]
-      simp [hw₀]
+  obtain ⟨hcc, huu⟩ :=
+    eventuallyEq_of_weierstrassPreparation_of_finiteDimensional (c' := fun i ↦ star ∘ c i ∘ star)
+      (u' := star ∘ u ∘ star) hc hc0 hu hu0 (fun i ↦ hx₀ ▸ (hc i).star_star)
+      (fun i ↦ by simp [hx₀, hc0]) (hp₀ ▸ hu.star_star) (by simpa [hp₀] using hu0) <| by
+        filter_upwards [hfac, hf, hstar.eventually hfac] with p hp hfp hfp'
+        rw [← hp, ← star_star (f p), ← hfp, hfp', star_mul', Polynomial.star_eval_monicOfCoeff]
+        simp [hw₀]
   refine ⟨fun i ↦ ?_, ?_⟩
   · filter_upwards [hcc i] with x hx
     simp [hx]
@@ -122,26 +210,29 @@ theorem eventually_apply_star_of_weierstrassDivision {g : E × ℂ → ℂ} {x�
   have hstar : Tendsto star (𝓝 (x₀, w₀)) (𝓝 (x₀, w₀)) := by
     simpa [hp₀] using (continuous_star (R := E × ℂ)).tendsto (x₀, w₀)
   -- conjugating the division of `g` gives a second Weierstrass division of `g`
-  obtain ⟨hqq, hrr⟩ := eventuallyEq_of_weierstrassDivision (q' := star ∘ q ∘ star)
-    (r' := fun i ↦ star ∘ r i ∘ star) hc hc0 hq hr (hp₀ ▸ hq.star_star)
-    (fun i ↦ hx₀ ▸ (hr i).star_star) <| by
-      filter_upwards [hdiv, hg, hstar.eventually hdiv,
-        (continuous_fst.tendsto (x₀, w₀)).eventually (eventually_all.2 hcstar)]
-        with p hp hgp hgp' hcp
-      rw [← hp, ← star_star (g p), ← hgp, hgp', star_add, star_mul',
-        Polynomial.star_eval_monicOfCoeff, star_sum]
-      simp [hw₀, hcp, star_pow]
+  obtain ⟨hqq, hrr⟩ :=
+    eventuallyEq_of_weierstrassDivision_of_finiteDimensional (q' := star ∘ q ∘ star)
+      (r' := fun i ↦ star ∘ r i ∘ star) hc hc0 hq hr (hp₀ ▸ hq.star_star)
+      (fun i ↦ hx₀ ▸ (hr i).star_star) <| by
+        filter_upwards [hdiv, hg, hstar.eventually hdiv,
+          (continuous_fst.tendsto (x₀, w₀)).eventually (eventually_all.2 hcstar)]
+          with p hp hgp hgp' hcp
+        rw [← hp, ← star_star (g p), ← hgp, hgp', star_add, star_mul',
+          Polynomial.star_eval_monicOfCoeff, star_sum]
+        simp [hw₀, hcp, star_pow]
   refine ⟨?_, fun i ↦ ?_⟩
   · filter_upwards [hqq] with p hp
     simp [hp]
   · filter_upwards [hrr i] with x hx
     simp [hx]
 
+end Star
+
 end TauCeti
 
 namespace AnalyticAt
 
-variable {ι : Type} [Fintype ι]
+variable {ι : Type*} [Fintype ι]
 
 /-- The inclusion of the real points of `ι → ℂ` is real analytic. -/
 private theorem analyticAt_ofReal_pi (x₀ : ι → ℝ) :
@@ -267,4 +358,151 @@ theorem exists_weierstrassDivision_monicOfCoeff_real {d : ℕ}
   simp only [TauCeti.Polynomial.eval_monicOfCoeff, Complex.ofReal_mul, Complex.ofReal_add,
     Complex.ofReal_pow, Complex.ofReal_sum, Complex.ofReal_sub, ← hCp, hQp, hRp]
 
+/-- **Real analytic Weierstrass division theorem.** Let `f, g : (ι → ℝ) × ℝ → ℝ` be real analytic
+at `(x₀, t₀)`, with `ι` finite, and suppose the vertical slice `t ↦ f (x₀, t)` has finite order of
+vanishing `d` at `t₀`. Then there exist `q` real analytic at `(x₀, t₀)` and
+`r : Fin d → (ι → ℝ) → ℝ` real analytic at `x₀` such that near `(x₀, t₀)`,
+`g (x, t) = f (x, t) * q (x, t) + ∑ i : Fin d, r i x * (t - t₀) ^ (i : ℕ)`. -/
+theorem exists_weierstrassDivision_real {f g : (ι → ℝ) × ℝ → ℝ} {x₀ : ι → ℝ} {t₀ : ℝ} {d : ℕ}
+    (hg : AnalyticAt ℝ g (x₀, t₀)) (hf : AnalyticAt ℝ f (x₀, t₀))
+    (hd : analyticOrderAt (fun t ↦ f (x₀, t)) t₀ = d) :
+    ∃ (q : (ι → ℝ) × ℝ → ℝ) (r : Fin d → (ι → ℝ) → ℝ),
+      AnalyticAt ℝ q (x₀, t₀) ∧ (∀ i, AnalyticAt ℝ (r i) x₀) ∧
+      g =ᶠ[𝓝 (x₀, t₀)] fun p ↦ f p * q p + ∑ i : Fin d, r i p.1 * (p.2 - t₀) ^ (i : ℕ) := by
+  obtain ⟨c, u, hc, hc0, hu, hu0, hprep⟩ := hf.exists_weierstrassPreparation_real hd
+  obtain ⟨q₀, r, hq₀, hr, hdiv⟩ := hg.exists_weierstrassDivision_monicOfCoeff_real hc hc0
+  refine ⟨fun p ↦ q₀ p / u p, r, hq₀.fun_div hu hu0, hr, ?_⟩
+  filter_upwards [hprep, hdiv, hu.continuousAt.eventually_ne hu0] with p hp hgp hup
+  rw [hgp, hp, mul_assoc, mul_div_cancel₀ _ hup]
+
 end AnalyticAt
+
+namespace TauCeti
+
+section RealUniqueness
+
+variable {ι : Type*} [Fintype ι]
+
+/-- **Uniqueness of the real analytic Weierstrass preparation.** Two real Weierstrass preparations
+`P_c (t - t₀) * u = P_{c'} (t - t₀) * u'` near `(x₀, t₀)`, with lower coefficients vanishing at
+`x₀` and units nonvanishing at `(x₀, t₀)`, have the same coefficient germs at `x₀` and the same
+unit germ at `(x₀, t₀)`. -/
+theorem eventuallyEq_of_weierstrassPreparation_real {x₀ : ι → ℝ} {t₀ : ℝ} {d : ℕ}
+    {c c' : Fin d → (ι → ℝ) → ℝ} {u u' : (ι → ℝ) × ℝ → ℝ}
+    (hc : ∀ i, AnalyticAt ℝ (c i) x₀) (hc0 : ∀ i, c i x₀ = 0)
+    (hu : AnalyticAt ℝ u (x₀, t₀)) (hu0 : u (x₀, t₀) ≠ 0)
+    (hc' : ∀ i, AnalyticAt ℝ (c' i) x₀) (hc'0 : ∀ i, c' i x₀ = 0)
+    (hu' : AnalyticAt ℝ u' (x₀, t₀)) (hu'0 : u' (x₀, t₀) ≠ 0)
+    (h : (fun p : (ι → ℝ) × ℝ ↦ (Polynomial.monicOfCoeff (fun i ↦ c i p.1)).eval (p.2 - t₀) * u p)
+      =ᶠ[𝓝 (x₀, t₀)]
+        fun p ↦ (Polynomial.monicOfCoeff (fun i ↦ c' i p.1)).eval (p.2 - t₀) * u' p) :
+    (∀ i, c i =ᶠ[𝓝 x₀] c' i) ∧ u =ᶠ[𝓝 (x₀, t₀)] u' := by
+  let x₀ℂ : ι → ℂ := fun j ↦ (x₀ j : ℂ)
+  choose ρ hρ C hC hCc _ using fun i ↦ (hc i).exists_complexification
+  choose ρ' hρ' C' hC' hC'c _ using fun i ↦ (hc' i).exists_complexification
+  obtain ⟨U, hU, hUu, _⟩ := hu.exists_complexification_prod
+  obtain ⟨U', hU', hU'u, _⟩ := hu'.exists_complexification_prod
+  have hCan (i : Fin d) : AnalyticAt ℂ (C i) x₀ℂ := hC i _ (Metric.mem_ball_self (hρ i))
+  have hC'an (i : Fin d) : AnalyticAt ℂ (C' i) x₀ℂ := hC' i _ (Metric.mem_ball_self (hρ' i))
+  have hCc' : ∀ᶠ x in 𝓝 x₀, ∀ i, (C i fun j ↦ (x j : ℂ)) = c i x :=
+    eventually_all.2 fun i ↦ Filter.mem_of_superset (Metric.ball_mem_nhds x₀ (hρ i)) (hCc i)
+  have hC'c' : ∀ᶠ x in 𝓝 x₀, ∀ i, (C' i fun j ↦ (x j : ℂ)) = c' i x :=
+    eventually_all.2 fun i ↦ Filter.mem_of_superset (Metric.ball_mem_nhds x₀ (hρ' i)) (hC'c i)
+  have hC0 (i : Fin d) : C i x₀ℂ = 0 := by rw [hCc'.self_of_nhds i, hc0 i, Complex.ofReal_zero]
+  have hC'0 (i : Fin d) : C' i x₀ℂ = 0 := by rw [hC'c'.self_of_nhds i, hc'0 i, Complex.ofReal_zero]
+  have hU0 : U (x₀ℂ, (t₀ : ℂ)) ≠ 0 := by rw [hUu.self_of_nhds]; exact_mod_cast hu0
+  have hU'0 : U' (x₀ℂ, (t₀ : ℂ)) ≠ 0 := by rw [hU'u.self_of_nhds]; exact_mod_cast hu'0
+  have hPan {A : Fin d → (ι → ℂ) → ℂ} (hA : ∀ i, AnalyticAt ℂ (A i) x₀ℂ) :
+      AnalyticAt ℂ (fun p : (ι → ℂ) × ℂ ↦
+        (Polynomial.monicOfCoeff (fun i ↦ A i p.1)).eval (p.2 - t₀)) (x₀ℂ, (t₀ : ℂ)) := by
+    simp_rw [Polynomial.eval_monicOfCoeff]
+    exact ((analyticAt_snd.sub analyticAt_const).pow d).add <|
+      Finset.univ.analyticAt_fun_sum fun i _ ↦
+        ((hA i).comp_of_eq analyticAt_fst rfl).mul ((analyticAt_snd.sub analyticAt_const).pow _)
+  obtain ⟨hCC', hUU'⟩ := eventuallyEq_of_weierstrassPreparation_of_finiteDimensional
+    hCan hC0 hU hU0 hC'an hC'0 hU' hU'0 <|
+      AnalyticAt.eventuallyEq_of_eventually_real_prod
+        ((hPan hCan).mul hU) ((hPan hC'an).mul hU') <| by
+        have hfst : Tendsto Prod.fst (𝓝 (x₀, t₀)) (𝓝 x₀) := continuous_fst.tendsto (x₀, t₀)
+        filter_upwards [h, hUu, hU'u, hfst.eventually hCc', hfst.eventually hC'c']
+          with p hp hUp hU'p hCp hC'p
+        simp only [Polynomial.eval_monicOfCoeff] at hp ⊢
+        simp only [hCp, hC'p, hUp, hU'p]
+        exact_mod_cast hp
+  have hπx : ContinuousAt (fun x : ι → ℝ ↦ fun j ↦ (x j : ℂ)) x₀ :=
+    (continuous_pi fun j ↦ Complex.continuous_ofReal.comp (continuous_apply j)).continuousAt
+  have hπp : ContinuousAt (fun p : (ι → ℝ) × ℝ ↦ ((fun j ↦ (p.1 j : ℂ)), (p.2 : ℂ))) (x₀, t₀) :=
+    (((continuous_pi fun j ↦ Complex.continuous_ofReal.comp (continuous_apply j)).comp
+      continuous_fst).prodMk (Complex.continuous_ofReal.comp continuous_snd)).continuousAt
+  refine ⟨fun i ↦ ?_, ?_⟩
+  · filter_upwards [hCc', hC'c', hπx.tendsto.eventually (hCC' i)] with x hx hx' hCx
+    exact Complex.ofReal_injective ((hx i).symm.trans (hCx.trans (hx' i)))
+  · filter_upwards [hUu, hU'u, hπp.tendsto.eventually hUU'] with p hp hp' hUp
+    exact Complex.ofReal_injective (hp.symm.trans (hUp.trans hp'))
+
+/-- **Uniqueness of the real analytic Weierstrass division.** Two real Weierstrass divisions
+`P_c (t - t₀) * q + ∑ i, r i x * (t - t₀) ^ i = P_c (t - t₀) * q' + ∑ i, r' i x * (t - t₀) ^ i`
+near `(x₀, t₀)` by the real Weierstrass polynomial `P_c = TauCeti.Polynomial.monicOfCoeff c`, with
+coefficients `c i x` vanishing at `x₀`, have the same quotient germ at `(x₀, t₀)` and the same
+remainder coefficient germs at `x₀`. -/
+theorem eventuallyEq_of_weierstrassDivision_real {x₀ : ι → ℝ} {t₀ : ℝ} {d : ℕ}
+    {c : Fin d → (ι → ℝ) → ℝ} {q q' : (ι → ℝ) × ℝ → ℝ} {r r' : Fin d → (ι → ℝ) → ℝ}
+    (hc : ∀ i, AnalyticAt ℝ (c i) x₀) (hc0 : ∀ i, c i x₀ = 0)
+    (hq : AnalyticAt ℝ q (x₀, t₀)) (hr : ∀ i, AnalyticAt ℝ (r i) x₀)
+    (hq' : AnalyticAt ℝ q' (x₀, t₀)) (hr' : ∀ i, AnalyticAt ℝ (r' i) x₀)
+    (h : (fun p : (ι → ℝ) × ℝ ↦ (Polynomial.monicOfCoeff (fun i ↦ c i p.1)).eval (p.2 - t₀) * q p +
+        ∑ i : Fin d, r i p.1 * (p.2 - t₀) ^ (i : ℕ)) =ᶠ[𝓝 (x₀, t₀)]
+      fun p ↦ (Polynomial.monicOfCoeff (fun i ↦ c i p.1)).eval (p.2 - t₀) * q' p +
+        ∑ i : Fin d, r' i p.1 * (p.2 - t₀) ^ (i : ℕ)) :
+    q =ᶠ[𝓝 (x₀, t₀)] q' ∧ ∀ i, r i =ᶠ[𝓝 x₀] r' i := by
+  let x₀ℂ : ι → ℂ := fun j ↦ (x₀ j : ℂ)
+  choose ρc hρc C hC hCc _ using fun i ↦ (hc i).exists_complexification
+  choose ρr hρr R hR hRr _ using fun i ↦ (hr i).exists_complexification
+  choose ρr' hρr' R' hR' hR'r _ using fun i ↦ (hr' i).exists_complexification
+  obtain ⟨Q, hQ, hQq, _⟩ := hq.exists_complexification_prod
+  obtain ⟨Q', hQ', hQ'q, _⟩ := hq'.exists_complexification_prod
+  have hCan (i : Fin d) : AnalyticAt ℂ (C i) x₀ℂ := hC i _ (Metric.mem_ball_self (hρc i))
+  have hRan (i : Fin d) : AnalyticAt ℂ (R i) x₀ℂ := hR i _ (Metric.mem_ball_self (hρr i))
+  have hR'an (i : Fin d) : AnalyticAt ℂ (R' i) x₀ℂ := hR' i _ (Metric.mem_ball_self (hρr' i))
+  have hCc' : ∀ᶠ x in 𝓝 x₀, ∀ i, (C i fun j ↦ (x j : ℂ)) = c i x :=
+    eventually_all.2 fun i ↦ Filter.mem_of_superset (Metric.ball_mem_nhds x₀ (hρc i)) (hCc i)
+  have hRr' : ∀ᶠ x in 𝓝 x₀, ∀ i, (R i fun j ↦ (x j : ℂ)) = r i x :=
+    eventually_all.2 fun i ↦ Filter.mem_of_superset (Metric.ball_mem_nhds x₀ (hρr i)) (hRr i)
+  have hR'r' : ∀ᶠ x in 𝓝 x₀, ∀ i, (R' i fun j ↦ (x j : ℂ)) = r' i x :=
+    eventually_all.2 fun i ↦ Filter.mem_of_superset (Metric.ball_mem_nhds x₀ (hρr' i)) (hR'r i)
+  have hC0 (i : Fin d) : C i x₀ℂ = 0 := by rw [hCc'.self_of_nhds i, hc0 i, Complex.ofReal_zero]
+  have hDan {B : (ι → ℂ) × ℂ → ℂ} {A : Fin d → (ι → ℂ) → ℂ}
+      (hB : AnalyticAt ℂ B (x₀ℂ, (t₀ : ℂ))) (hA : ∀ i, AnalyticAt ℂ (A i) x₀ℂ) :
+      AnalyticAt ℂ (fun p : (ι → ℂ) × ℂ ↦
+        (Polynomial.monicOfCoeff (fun i ↦ C i p.1)).eval (p.2 - t₀) * B p +
+          ∑ i : Fin d, A i p.1 * (p.2 - t₀) ^ (i : ℕ)) (x₀ℂ, (t₀ : ℂ)) := by
+    simp_rw [Polynomial.eval_monicOfCoeff]
+    exact ((((analyticAt_snd.sub analyticAt_const).pow d).add <|
+      Finset.univ.analyticAt_fun_sum fun i _ ↦
+        ((hCan i).comp_of_eq analyticAt_fst rfl).mul
+          ((analyticAt_snd.sub analyticAt_const).pow _)).mul hB).add <|
+      Finset.univ.analyticAt_fun_sum fun i _ ↦
+        ((hA i).comp_of_eq analyticAt_fst rfl).mul ((analyticAt_snd.sub analyticAt_const).pow _)
+  obtain ⟨hQQ', hRR'⟩ := eventuallyEq_of_weierstrassDivision_of_finiteDimensional
+    hCan hC0 hQ hRan hQ' hR'an <|
+      AnalyticAt.eventuallyEq_of_eventually_real_prod (hDan hQ hRan) (hDan hQ' hR'an) <| by
+        have hfst : Tendsto Prod.fst (𝓝 (x₀, t₀)) (𝓝 x₀) := continuous_fst.tendsto (x₀, t₀)
+        filter_upwards [h, hQq, hQ'q, hfst.eventually hCc', hfst.eventually hRr',
+          hfst.eventually hR'r'] with p hp hQp hQ'p hCp hRp hR'p
+        simp only [Polynomial.eval_monicOfCoeff] at hp ⊢
+        simp only [hCp, hRp, hR'p, hQp, hQ'p]
+        exact_mod_cast hp
+  have hπx : ContinuousAt (fun x : ι → ℝ ↦ fun j ↦ (x j : ℂ)) x₀ :=
+    (continuous_pi fun j ↦ Complex.continuous_ofReal.comp (continuous_apply j)).continuousAt
+  have hπp : ContinuousAt (fun p : (ι → ℝ) × ℝ ↦ ((fun j ↦ (p.1 j : ℂ)), (p.2 : ℂ))) (x₀, t₀) :=
+    (((continuous_pi fun j ↦ Complex.continuous_ofReal.comp (continuous_apply j)).comp
+      continuous_fst).prodMk (Complex.continuous_ofReal.comp continuous_snd)).continuousAt
+  refine ⟨?_, fun i ↦ ?_⟩
+  · filter_upwards [hQq, hQ'q, hπp.tendsto.eventually hQQ'] with p hp hp' hQp
+    exact Complex.ofReal_injective (hp.symm.trans (hQp.trans hp'))
+  · filter_upwards [hRr', hR'r', hπx.tendsto.eventually (hRR' i)] with x hx hx' hRx
+    exact Complex.ofReal_injective ((hx i).symm.trans (hRx.trans (hx' i)))
+
+end RealUniqueness
+
+end TauCeti

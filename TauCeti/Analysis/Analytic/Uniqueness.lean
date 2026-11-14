@@ -44,6 +44,8 @@ lives.
   vanishes near `p` exactly when all its restrictions to lines through `p` vanish near `0`.
 * `AnalyticAt.exists_continuousLinearEquiv_analyticOrderAt_ne_top`: after a linear change of
   coordinates, a function on `E × 𝕜` not vanishing near `p` has finite order in the last variable.
+* `AnalyticAt.smul_eventuallyEq_zero_iff`, `AnalyticAt.mul_eventuallyEq_zero_iff`: analytic germs at
+  a point have no zero divisors.
 
 ## References
 
@@ -134,5 +136,48 @@ theorem AnalyticAt.exists_continuousLinearEquiv_analyticOrderAt_ne_top {f : E ×
     rw [← hL, ← L.map_smul, ← L.map_add]
     simp
   simpa [hLt] using ht
+
+/-- **No zero divisors among scalar and vector analytic germs.** For scalar `f : E → 𝕜` and
+vector-valued `g : E → F` analytic at `p`, the product `f • g` vanishes near `p` if and only if
+`f` vanishes near `p` or `g` vanishes near `p`. -/
+theorem AnalyticAt.smul_eventuallyEq_zero_iff {f : E → 𝕜} {g : E → F} {p : E}
+    (hf : AnalyticAt 𝕜 f p) (hg : AnalyticAt 𝕜 g p) :
+    f • g =ᶠ[𝓝 p] 0 ↔ f =ᶠ[𝓝 p] 0 ∨ g =ᶠ[𝓝 p] 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.elim (fun h₀ ↦ h₀.mono fun x hx ↦ by simp [hx])
+    (fun h₀ ↦ h₀.mono fun x hx ↦ by simp [hx])⟩
+  rw [or_iff_not_imp_left]
+  intro hf0
+  let e : F →L[𝕜] UniformSpace.Completion F := UniformSpace.Completion.toComplL
+  obtain ⟨r₁, hr₁, hfr⟩ := hf.exists_ball_analyticOnNhd
+  obtain ⟨r₂, hr₂, hgr⟩ := ((e.analyticAt _).comp hg).exists_ball_analyticOnNhd
+  obtain ⟨r₃, hr₃, h0⟩ := Metric.eventually_nhds_iff_ball.1 h
+  set r := min r₁ (min r₂ r₃)
+  have hr : 0 < r := lt_min hr₁ (lt_min hr₂ hr₃)
+  have hq_ex : ∃ q ∈ ball p r, f q ≠ 0 := by
+    by_contra! hall
+    exact hf0 (eventually_of_mem (ball_mem_nhds p hr) hall)
+  obtain ⟨q, hq, hfq⟩ := hq_ex
+  have hqr₁ : q ∈ ball p r₁ := ball_subset_ball (min_le_left _ _) hq
+  have hzero_q : (e ∘ g) =ᶠ[𝓝 q] 0 := by
+    filter_upwards [(hfr q hqr₁).continuousAt.eventually_ne hfq,
+      isOpen_ball.mem_nhds (ball_subset_ball ((min_le_right _ _).trans (min_le_right _ _)) hq)]
+      with y hfy hy₃
+    have hy0 : e (f y • g y) = 0 := by simpa using congrArg e (h0 y hy₃)
+    rw [map_smul] at hy0
+    exact (smul_eq_zero.1 hy0).resolve_left hfy
+  let : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ 𝕜 E
+  have hr₂ : ball p r ⊆ ball p r₂ :=
+    ball_subset_ball ((min_le_right _ _).trans (min_le_left _ _))
+  have heq := (hgr.mono hr₂).eqOn_zero_of_preconnected_of_eventuallyEq_zero
+    (convex_ball p r).isPreconnected hq hzero_q
+  filter_upwards [ball_mem_nhds p hr] with y hy
+  exact UniformSpace.Completion.coe_injective F (by simpa [e] using heq hy)
+
+/-- **No zero divisors among scalar analytic germs.** Two scalar functions analytic at `p` have
+product vanishing near `p` if and only if one of them vanishes near `p`. -/
+theorem AnalyticAt.mul_eventuallyEq_zero_iff {f g : E → 𝕜} {p : E}
+    (hf : AnalyticAt 𝕜 f p) (hg : AnalyticAt 𝕜 g p) :
+    f * g =ᶠ[𝓝 p] 0 ↔ f =ᶠ[𝓝 p] 0 ∨ g =ᶠ[𝓝 p] 0 := by
+  simpa only [smul_eq_mul] using hf.smul_eventuallyEq_zero_iff hg
 
 end

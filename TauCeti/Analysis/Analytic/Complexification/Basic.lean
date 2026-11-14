@@ -61,8 +61,9 @@ commutes with complex conjugation near the point, not only the one constructed h
 * `AnalyticAt.exists_complexification_pi`: the same for real analytic maps to `κ → ℝ`.
 * `AnalyticAt.exists_complexification_prod`: the same for real analytic functions on
   `(ι → ℝ) × ℝ`, with values in `ℂ` on `(ι → ℂ) × ℂ`.
-* `AnalyticAt.eventually_eq_zero_of_eventually_real`, `AnalyticAt.eventuallyEq_of_eventually_real`:
-  the identity theorem for complex analytic functions on the real points.
+* `AnalyticAt.eventually_eq_zero_of_eventually_real`, `AnalyticAt.eventuallyEq_of_eventually_real`,
+  `AnalyticAt.eventuallyEq_of_eventually_real_prod`: the identity theorem for complex analytic
+  functions on the real points.
 * `AnalyticAt.eventually_comp_eq_id_of_eventually_real`: complex analytic extensions preserve a
   composition law equal to the identity near a real point.
 * `AnalyticAt.eventually_apply_star`: a complex analytic function that is real at the real points
@@ -459,6 +460,40 @@ theorem exists_complexification_prod {f : (ι → ℝ) × ℝ → ℝ} {x₀ : �
     fun p ↦ by simp only [Function.comp_apply, hLstar, hGstar]⟩
   filter_upwards [L.continuous.continuousAt.preimage_mem_nhds (ball_mem_nhds _ hr)] with p hp
   rw [Function.comp_apply, hL, hGf _ hp, Function.comp_apply, L.symm_apply_apply]
+
+/-- Two complex analytic functions on `(ι → ℂ) × ℂ`, with `ι` finite, that agree at the real
+points near `(x₀, t₀)` agree near `((fun i ↦ (x₀ i : ℂ)), (t₀ : ℂ))`. -/
+theorem eventuallyEq_of_eventually_real_prod {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {F G : (ι → ℂ) × ℂ → E} {x₀ : ι → ℝ} {t₀ : ℝ}
+    (hF : AnalyticAt ℂ F ((fun i ↦ (x₀ i : ℂ)), (t₀ : ℂ)))
+    (hG : AnalyticAt ℂ G ((fun i ↦ (x₀ i : ℂ)), (t₀ : ℂ)))
+    (h : ∀ᶠ p in 𝓝 (x₀, t₀),
+      F ((fun i ↦ (p.1 i : ℂ)), (p.2 : ℂ)) = G ((fun i ↦ (p.1 i : ℂ)), (p.2 : ℂ))) :
+    F =ᶠ[𝓝 ((fun i ↦ (x₀ i : ℂ)), (t₀ : ℂ))] G := by
+  let L : ((ι → ℝ) × ℝ) ≃L[ℝ] (Option ι → ℝ) :=
+    ((LinearEquiv.prodComm ℝ _ _).trans
+      (LinearEquiv.piOptionEquivProd ℝ (M := fun _ : Option ι ↦ ℝ)).symm).toContinuousLinearEquiv
+  let Lℂ : ((ι → ℂ) × ℂ) ≃L[ℂ] (Option ι → ℂ) :=
+    ((LinearEquiv.prodComm ℂ _ _).trans
+      (LinearEquiv.piOptionEquivProd ℂ (M := fun _ : Option ι ↦ ℂ)).symm).toContinuousLinearEquiv
+  have hL (p : (ι → ℝ) × ℝ) : Lℂ ((fun i ↦ (p.1 i : ℂ)), (p.2 : ℂ)) = fun o ↦ (L p o : ℂ) := by
+    funext o; cases o <;> simp [L, Lℂ, LinearEquiv.piOptionEquivProd]
+  have hsymm (z : Option ι → ℝ) : Lℂ.symm (fun o ↦ (z o : ℂ)) =
+      ((fun i ↦ ((L.symm z).1 i : ℂ)), ((L.symm z).2 : ℂ)) :=
+    Lℂ.injective (by rw [Lℂ.apply_symm_apply, hL, L.apply_symm_apply])
+  have heq : F ∘ Lℂ.symm =ᶠ[𝓝 fun o ↦ (L (x₀, t₀) o : ℂ)] G ∘ Lℂ.symm := by
+    refine AnalyticAt.eventuallyEq_of_eventually_real
+      (hF.comp_of_eq (Lℂ.symm.analyticAt _) (by rw [← hL, Lℂ.symm_apply_apply]))
+      (hG.comp_of_eq (Lℂ.symm.analyticAt _) (by rw [← hL, Lℂ.symm_apply_apply])) ?_
+    have hT : Tendsto L.symm (𝓝 (L (x₀, t₀))) (𝓝 (x₀, t₀)) := by
+      simpa using L.symm.continuous.tendsto (L (x₀, t₀))
+    filter_upwards [hT.eventually h] with z hz
+    simpa only [Function.comp_apply, hsymm] using hz
+  have hTℂ : Tendsto Lℂ (𝓝 ((fun i ↦ (x₀ i : ℂ)), (t₀ : ℂ)))
+      (𝓝 fun o ↦ (L (x₀, t₀) o : ℂ)) :=
+    hL (x₀, t₀) ▸ Lℂ.continuous.tendsto ((fun i ↦ (x₀ i : ℂ)), (t₀ : ℂ))
+  filter_upwards [hTℂ.eventually heq] with z hz
+  simpa only [Function.comp_apply, Lℂ.symm_apply_apply] using hz
 
 /-- **Conjugation compatibility of complexifications.** A complex analytic function of finitely
 many variables that takes real values at the real points near a real point `a` commutes with

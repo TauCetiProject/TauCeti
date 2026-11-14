@@ -24,6 +24,9 @@ field (`TauCeti.isCompact_setOf_le_card_aroots`).
 * `Polynomial.Monic.le_card_roots_iff_exists_prod_mul_monicOfCoeff_eq`: a monic polynomial of
   degree `n` has at least `k` roots exactly when it is `∏ j, (X - x j)` times a monic
   polynomial of degree `n - k`.
+* `Polynomial.Monic.prod_X_sub_C_eq_iff_forall_le_rootMultiplicity`: a split monic polynomial of
+  degree `n` equals `∏ j, (X - C (x j))` if and only if each value `x j` occurs in `x` at most
+  its root multiplicity times.
 -/
 
 public section
@@ -50,5 +53,32 @@ theorem le_card_roots_iff_exists_prod_mul_monicOfCoeff_eq {R : Type*} [CommRing 
       smul_eq_mul, mul_one] at this
     omega
   exact ⟨fun i ↦ q.coeff i, by rw [monicOfCoeff_coeff hq' hqdeg, hq]⟩
+
+/-- A split monic polynomial `p` of degree `n` over a domain equals `∏ j, (X - C (x j))`
+for a tuple `x : Fin n → R` if and only if each entry `x j` occurs in `x` at most
+`p.rootMultiplicity (x j)` times. -/
+theorem prod_X_sub_C_eq_iff_forall_le_rootMultiplicity {R : Type*} [CommRing R] [IsDomain R]
+    [DecidableEq R] {p : R[X]} (hp : p.Monic) (hs : p.Splits) {n : ℕ} (hdeg : p.natDegree = n)
+    (x : Fin n → R) :
+    ∏ j, (X - C (x j)) = p ↔
+      ∀ j, (Finset.univ.filter fun l ↦ x l = x j).card ≤ p.rootMultiplicity (x j) := by
+  have hcount (a : R) :
+      (Finset.univ.val.map x).count a = (Finset.univ.filter fun l ↦ x l = a).card := by
+    simp [eq_comm]
+  refine ⟨fun h j ↦ ?_, fun h ↦ ?_⟩
+  · rw [← h, ← count_roots, roots_prod_X_sub_C_map, hcount]
+  · have hle : Finset.univ.val.map x ≤ p.roots := by
+      rw [Multiset.le_iff_count]
+      intro a
+      by_cases ha : a ∈ Finset.univ.val.map x
+      · obtain ⟨j, -, rfl⟩ := Multiset.mem_map.1 ha
+        rw [hcount, count_roots]
+        exact h j
+      · rw [Multiset.count_eq_zero_of_notMem ha]
+        exact Nat.zero_le _
+    have hcard : p.roots.card ≤ (Finset.univ.val.map x).card := by
+      simp [← hs.natDegree_eq_card_roots, hdeg]
+    exact (eq_prod_X_sub_C_of_monic_of_roots_eq hp (by simp [hdeg])
+      (Multiset.eq_of_le_of_card_le hle hcard).symm).symm
 
 end Polynomial.Monic
