@@ -234,7 +234,7 @@ private theorem integral_burkholderPhi_haarSum_le_succ {p : ℝ} (hp : 2 ≤ p)
   have hRHS : ∫ x in dyadicCell N, Φ (N + 1) x =
       (∫ x in dyadicCell (2 * N), Φ (N + 1) x) + ∫ x in dyadicCell (2 * N + 1), Φ (N + 1) x := by
     conv_lhs => rw [dyadicCell_eq_union hN]
-    exact setIntegral_union (disjoint_dyadicCell_two_mul hN) (measurableSet_dyadicCell _)
+    exact setIntegral_union disjoint_dyadicCell_two_mul (measurableSet_dyadicCell _)
       (hΦ (N + 1)).integrableOn (hΦ (N + 1)).integrableOn
   rw [hLHS, hRHS, setIntegral_dyadicCell_two_mul_burkholderPhi p c d hN hx₀,
     setIntegral_dyadicCell_two_mul_add_one_burkholderPhi p c d hN hx₀]
