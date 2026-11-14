@@ -195,6 +195,13 @@ theorem equiv_trans (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ 𝕜 F) (d
     (b.equiv c e₁).trans (c.equiv d e₂) = b.equiv d (e₁.trans e₂) :=
   b.ext_linearIsometryEquiv fun i ↦ by simp
 
+/-- Applying `b.equiv c e₁` followed by `c.equiv d e₂` equals applying `b.equiv d (e₁.trans e₂)`. -/
+@[simp]
+theorem equiv_trans_apply (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ 𝕜 F)
+    (d : HilbertBasis μ 𝕜 G) (e₁ : ι ≃ κ) (e₂ : κ ≃ μ) (x : E) :
+    c.equiv d e₂ (b.equiv c e₁ x) = b.equiv d (e₁.trans e₂) x := by
+  rw [← LinearIsometryEquiv.trans_apply, equiv_trans]
+
 /-- Transporting `b` along `b.equiv c e` produces `c.reindex e.symm`. -/
 @[simp]
 theorem mapₗᵢ_equiv (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ 𝕜 F) (e : ι ≃ κ) :

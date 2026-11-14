@@ -326,6 +326,13 @@ theorem lpCongrLeft_trans (e₁ : α ≃ β) (e₂ : β ≃ γ) :
   ext v k
   rfl
 
+/-- Applying two `LinearIsometryEquiv.lpCongrLeft` equivalences in succession reindexes along the
+composed equivalence. -/
+@[simp]
+theorem lpCongrLeft_trans_apply (e₁ : α ≃ β) (e₂ : β ≃ γ) (v : lp (fun _ : α ↦ H) q) :
+    lpCongrLeft q 𝕜 H e₂ (lpCongrLeft q 𝕜 H e₁ v) = lpCongrLeft q 𝕜 H (e₁.trans e₂) v := by
+  rw [← LinearIsometryEquiv.trans_apply, lpCongrLeft_trans]
+
 /-- `LinearIsometryEquiv.lpCongrLeft` transports single-coordinate vectors along `e`. -/
 @[simp high]
 theorem lpCongrLeft_single [DecidableEq α] [DecidableEq β] (e : α ≃ β) (i : α) (v : H) :

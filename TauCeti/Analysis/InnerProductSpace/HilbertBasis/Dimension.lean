@@ -434,7 +434,6 @@ theorem hilbertDim_of_subsingleton [Subsingleton E] : hilbertDim 𝕜 E = 0 := b
   rw [b.hilbertDim_eq, Cardinal.mk_eq_zero]
 
 /-- The Hilbert dimension of `E` vanishes if and only if `E` is trivial. -/
-@[simp]
 theorem hilbertDim_eq_zero_iff : hilbertDim 𝕜 E = 0 ↔ Subsingleton E := by
   obtain ⟨w, b, -⟩ := exists_hilbertBasis 𝕜 E
   rw [b.hilbertDim_eq, Cardinal.mk_eq_zero_iff, b.subsingleton_iff_isEmpty]
@@ -506,6 +505,23 @@ theorem hilbertDim_eq_zero_or_pos_natCast_or_aleph0 [TopologicalSpace.SeparableS
   · exact Or.inr (Or.inr (hilbertDim_eq_aleph0_iff.2 ⟨‹_›, hfin⟩))
 
 end Properties
+
+end TauCeti
+
+namespace Submodule
+
+/-- A complete subspace of an inner product space has Hilbert dimension `0` if and only if it is
+`⊥`. -/
+@[simp]
+theorem hilbertDim_eq_zero {𝕜 : Type*} {E : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+    {K : Submodule 𝕜 E} [CompleteSpace K] :
+    TauCeti.hilbertDim 𝕜 K = 0 ↔ K = ⊥ := by
+  rw [TauCeti.hilbertDim_eq_zero_iff, Submodule.subsingleton_iff_eq_bot]
+
+end Submodule
+
+namespace TauCeti
 
 section Separable
 
