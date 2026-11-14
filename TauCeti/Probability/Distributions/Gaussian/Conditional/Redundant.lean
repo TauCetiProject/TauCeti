@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Distributions.Gaussian.LowDimension
-import TauCeti.MeasureTheory.Constructions.EuclideanSpace
+public import TauCeti.Probability.Distributions.Gaussian.Conditional.Basic
+
+import TauCeti.LinearAlgebra.Matrix.RowCol
 
 /-!
 # Gaussian conditioning on redundant observations
@@ -30,6 +31,7 @@ public section
 noncomputable section
 
 open Matrix MeasureTheory ProbabilityTheory
+open scoped NNReal
 
 namespace TauCeti.Probability
 
@@ -41,16 +43,8 @@ variance, including when the observed covariance is singular. -/
 theorem gaussianCondCov_vecMulVec (u : ι → ℝ) (v : κ → ℝ) (hv : v ≠ 0) :
     (vecMulVec (Sum.elim u v) (Sum.elim u v)).gaussianCondCov = 0 := by
   have hd : v ⬝ᵥ v ≠ 0 := fun h ↦ hv (dotProduct_self_eq_zero.mp h)
-  have h₂₂ : (vecMulVec (Sum.elim u v) (Sum.elim u v)).submatrix Sum.inr Sum.inr =
-      vecMulVec v v := rfl
-  have h₁₂ : (vecMulVec (Sum.elim u v) (Sum.elim u v)).submatrix Sum.inl Sum.inr =
-      vecMulVec u v := rfl
-  have h₂₁ : (vecMulVec (Sum.elim u v) (Sum.elim u v)).submatrix Sum.inr Sum.inl =
-      vecMulVec v u := rfl
-  have h₁₁ : (vecMulVec (Sum.elim u v) (Sum.elim u v)).submatrix Sum.inl Sum.inl =
-      vecMulVec u u := rfl
-  rw [Matrix.gaussianCondCov_def, h₂₂, h₁₂, h₂₁, h₁₁,
-    covariancePseudoInverse_vecMulVec]
+  simp only [Matrix.gaussianCondCov_def, submatrix_vecMulVec,
+    Sum.elim_comp_inl, Sum.elim_comp_inr, covariancePseudoInverse_vecMulVec]
   ext i j
   simp only [Matrix.sub_apply, Matrix.zero_apply, Matrix.mul_smul,
     Matrix.smul_mul, vecMulVec_mul_vecMulVec, vecMulVec_smul, smul_smul,
@@ -72,11 +66,8 @@ theorem gaussianCondMean_vecMulVec (m : EuclideanSpace ℝ (ι ⊕ κ))
     m.gaussianCondMean (vecMulVec (Sum.elim u v) (Sum.elim u v)) x =
       (sumEquivProd m).1 + WithLp.toLp 2
         (fun i ↦ u i * (v ⬝ᵥ (x - (sumEquivProd m).2)) / (v ⬝ᵥ v)) := by
-  have h₂₂ : (vecMulVec (Sum.elim u v) (Sum.elim u v)).submatrix Sum.inr Sum.inr =
-      vecMulVec v v := rfl
-  have h₁₂ : (vecMulVec (Sum.elim u v) (Sum.elim u v)).submatrix Sum.inl Sum.inr =
-      vecMulVec u v := rfl
-  rw [gaussianCondMean_def, h₂₂, h₁₂, covariancePseudoInverse_vecMulVec]
+  simp only [gaussianCondMean_def, submatrix_vecMulVec,
+    Sum.elim_comp_inl, Sum.elim_comp_inr, covariancePseudoInverse_vecMulVec]
   congr 1
   ext i
   simp only [Matrix.toLpLin_apply, Matrix.mul_smul, vecMulVec_mul_vecMulVec,
@@ -98,87 +89,114 @@ theorem gaussianCondKernel_vecMulVec (m : EuclideanSpace ℝ (ι ⊕ κ))
   rw [gaussianCondKernel_apply, TauCeti.Probability.gaussianCondCov_vecMulVec u v hv,
     gaussianCondMean_vecMulVec, TauCeti.Probability.multivariateGaussian_zero_right]
 
-end EuclideanSpace
-
-namespace TauCeti.Probability
-
-/-- Replicating a standard Gaussian gives the centered Gaussian with every covariance entry
-one. This includes the empty coordinate type. -/
-theorem map_replicate_gaussianReal (ι : Type*) [Fintype ι] [DecidableEq ι] :
-    (gaussianReal 0 1).map (fun z ↦ WithLp.toLp 2 (fun _ : ι ↦ z)) =
-      multivariateGaussian 0 (Matrix.of fun _ _ : ι ↦ (1 : ℝ)) := by
-  let L : Matrix ι Unit ℝ := Matrix.of fun _ _ ↦ 1
-  have h := map_affine_multivariateGaussian (0 : EuclideanSpace ℝ Unit)
-    Matrix.PosSemidef.one L 0
-  rw [EuclideanSpace.multivariateGaussian_eq_map_single] at h
-  simp only [PiLp.zero_apply, Matrix.one_apply_eq, Real.toNNReal_one] at h
-  rw [Measure.map_map (by fun_prop) (EuclideanSpace.measurable_single default), Matrix.mul_one] at h
-  have hcov : L * Lᵀ = Matrix.of (fun _ _ : ι ↦ (1 : ℝ)) := by
-    ext i j
-    simp [L, Matrix.mul_apply]
-  have hL (z : ℝ) : L.toEuclideanLin (EuclideanSpace.single () z) =
-      WithLp.toLp 2 (fun _ : ι ↦ z) := by
-    ext i
-    simp [L, Matrix.toLpLin_apply]
-  simpa only [map_zero, add_zero, Function.comp_def, hL, hcov] using h
-
-end TauCeti.Probability
-
-namespace EuclideanSpace
-
-/-- Conditioning one copy of a standard Gaussian on a nonempty block of identical copies
+/-- For a constant mean and positive constant covariance, the conditional Gaussian kernel
 uses the average observation at every ambient input, including off the diagonal support. -/
-theorem gaussianCondKernel_replicate {κ : Type*} [Fintype κ] [DecidableEq κ] [Nonempty κ]
-    (x : EuclideanSpace ℝ κ) :
-    (0 : EuclideanSpace ℝ (Unit ⊕ κ)).gaussianCondKernel
-        (Matrix.of fun _ _ ↦ (1 : ℝ)) x =
-      Measure.dirac (WithLp.toLp 2 (fun _ : Unit ↦ (∑ j, x j) / Fintype.card κ)) := by
-  have hv : (fun _ : κ ↦ (1 : ℝ)) ≠ 0 := by
+theorem gaussianCondKernel_toLp_const_of_const [Nonempty κ] (μ : ℝ) {c : ℝ}
+    (hc : 0 < c) (x : EuclideanSpace ℝ κ) :
+    gaussianCondKernel (WithLp.toLp 2 (fun _ : ι ⊕ κ ↦ μ))
+        (Matrix.of fun _ _ ↦ c) x =
+      Measure.dirac (WithLp.toLp 2 (fun _ : ι ↦ (∑ j, x j) / Fintype.card κ)) := by
+  have hs : Real.sqrt c ≠ 0 := (Real.sqrt_pos.mpr hc).ne'
+  have hv : (fun _ : κ ↦ Real.sqrt c) ≠ 0 := by
     intro h
     obtain ⟨j⟩ := ‹Nonempty κ›
-    exact one_ne_zero (congrFun h j)
-  simpa [vecMulVec, dotProduct, EuclideanSpace.sumEquivProd] using
-    EuclideanSpace.gaussianCondKernel_vecMulVec (0 : EuclideanSpace ℝ (Unit ⊕ κ))
-      (fun _ ↦ 1) (fun _ ↦ 1) hv x
+    exact hs (congrFun h j)
+  have h := gaussianCondKernel_vecMulVec (WithLp.toLp 2 (fun _ ↦ μ))
+    (fun _ : ι ↦ Real.sqrt c) (fun _ : κ ↦ Real.sqrt c) hv x
+  have hmean : (sumEquivProd (WithLp.toLp 2 (fun _ : ι ⊕ κ ↦ μ))) =
+      (WithLp.toLp 2 (fun _ : ι ↦ μ), WithLp.toLp 2 (fun _ : κ ↦ μ)) := by
+    ext <;> rfl
+  have helim : Sum.elim (fun _ : ι ↦ Real.sqrt c) (fun _ : κ ↦ Real.sqrt c) =
+      (fun _ ↦ Real.sqrt c) := by
+    simpa only [← Function.const_def] using
+      (Sum.elim_const_const (α := ι) (β := κ) (Real.sqrt c))
+  rw [helim, vecMulVec_const_const, Real.mul_self_sqrt hc.le, hmean] at h
+  rw [h]
+  congr 1
+  ext i
+  simp only [PiLp.add_apply, Pi.sub_apply, dotProduct, mul_sub, Finset.sum_sub_distrib,
+    ← Finset.mul_sum, Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
+  have hn : (Fintype.card κ : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
+  field_simp
+  ring
+
+/-- At a constant observation, the constant-parameter conditional Gaussian kernel is the
+Dirac law at that observation, for any common mean and positive variance. -/
+theorem gaussianCondKernel_toLp_const_of_const_toLp_const [Nonempty κ] (μ : ℝ)
+    {c : ℝ} (hc : 0 < c) (z : ℝ) :
+    gaussianCondKernel (WithLp.toLp 2 (fun _ : ι ⊕ κ ↦ μ))
+        (Matrix.of fun _ _ ↦ c) (WithLp.toLp 2 (fun _ ↦ z)) =
+      Measure.dirac (WithLp.toLp 2 (fun _ : ι ↦ z)) := by
+  simpa using gaussianCondKernel_toLp_const_of_const (ι := ι) μ hc
+    (WithLp.toLp 2 (fun _ : κ ↦ z))
+
+/-- With zero mean and positive constant covariance, the conditional Gaussian kernel at a
+constant observation is the Dirac law at that observation, even for singular observed covariance. -/
+@[simp 1100]
+theorem gaussianCondKernel_zero_of_const_toLp_const [Nonempty κ] {c : ℝ}
+    (hc : 0 < c) (z : ℝ) :
+    (0 : EuclideanSpace ℝ (ι ⊕ κ)).gaussianCondKernel
+        (Matrix.of fun _ _ ↦ c) (WithLp.toLp 2 (fun _ ↦ z)) =
+      Measure.dirac (WithLp.toLp 2 (fun _ : ι ↦ z)) := by
+  simpa only [← Pi.zero_def, WithLp.toLp_zero] using
+    gaussianCondKernel_toLp_const_of_const_toLp_const (ι := ι) (κ := κ) 0 hc z
 
 end EuclideanSpace
 
-namespace TauCeti.Probability
+namespace ProbabilityTheory.HasLaw
 
-/-- Observing two identical copies determines the retained Gaussian, although the observed
-covariance has rank one in dimension two. -/
-@[simp 1100]
-theorem gaussianCondKernel_duplicate (z : ℝ) :
-    (0 : EuclideanSpace ℝ (Unit ⊕ Fin 2)).gaussianCondKernel
-        (Matrix.of fun _ _ ↦ (1 : ℝ)) (WithLp.toLp 2 (fun _ ↦ z)) =
-      Measure.dirac (WithLp.toLp 2 (fun _ : Unit ↦ z)) := by
-  simpa [Fin.sum_univ_two, ← two_mul] using
-    EuclideanSpace.gaussianCondKernel_replicate (WithLp.toLp 2 (fun _ : Fin 2 ↦ z))
+attribute [local instance] Fintype.ofFinite
 
-/-- The conditional law of a standard Gaussian given two copies of itself is a Dirac law.
-The formula uses the average to specify the extension outside the diagonal observed support. -/
-theorem condDistrib_gaussian_duplicate {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
-    [IsFiniteMeasure P] {Z : Ω → ℝ} (hZ : HasLaw Z (gaussianReal 0 1) P) :
-    condDistrib (fun ω ↦ WithLp.toLp 2 (fun _ : Unit ↦ Z ω))
-        (fun ω ↦ WithLp.toLp 2 (fun _ : Fin 2 ↦ Z ω)) P =ᵐ[
-      P.map (fun ω ↦ WithLp.toLp 2 (fun _ : Fin 2 ↦ Z ω))]
-      (fun x ↦ Measure.dirac (WithLp.toLp 2 (fun _ : Unit ↦ (x 0 + x 1) / 2))) := by
-  let X : Ω → EuclideanSpace ℝ (Unit ⊕ Fin 2) :=
-    fun ω ↦ WithLp.toLp 2 (fun _ ↦ Z ω)
-  have hX : HasLaw X (multivariateGaussian 0 (Matrix.of fun _ _ ↦ (1 : ℝ))) P := by
-    rw [← map_replicate_gaussianReal]
-    exact (hasLaw_map (X := fun z : ℝ ↦ WithLp.toLp 2 (fun _ : Unit ⊕ Fin 2 ↦ z))
+/-- Given a nonempty block of copies of a scalar Gaussian, the conditional law of another
+block agrees almost everywhere under the observed law with the Dirac law at its average.
+This includes zero variance; no off-support claim about `condDistrib` is made. -/
+theorem condDistrib_toLp_const_gaussianReal {Ω ι κ : Type*} [MeasurableSpace Ω]
+    [Finite ι] [Fintype κ] [Nonempty κ]
+    {P : Measure Ω} [IsFiniteMeasure P] {Z : Ω → ℝ} {μ : ℝ} {v : ℝ≥0}
+    (hZ : HasLaw Z (gaussianReal μ v) P) :
+    condDistrib (Ω := EuclideanSpace ℝ ι) (β := EuclideanSpace ℝ κ)
+        (fun ω ↦ WithLp.toLp 2 (fun _ ↦ Z ω))
+        (fun ω ↦ (WithLp.toLp 2 (fun _ ↦ Z ω) : EuclideanSpace ℝ κ)) P =ᵐ[
+      P.map (β := EuclideanSpace ℝ κ) (fun ω ↦ WithLp.toLp 2 (fun _ ↦ Z ω))]
+      (fun x ↦ Measure.dirac (α := EuclideanSpace ℝ ι)
+        (WithLp.toLp 2 (fun _ ↦ (∑ j, x j) / Fintype.card κ))) := by
+  classical
+  by_cases hv : v = 0
+  · -- The deterministic-function identity also covers the zero-variance boundary.
+    let Y : Ω → EuclideanSpace ℝ κ := fun ω ↦ WithLp.toLp 2 (fun _ ↦ Z ω)
+    let f : EuclideanSpace ℝ κ → EuclideanSpace ℝ ι :=
+      fun x ↦ WithLp.toLp 2 (fun _ ↦ (∑ j, x j) / Fintype.card κ)
+    have hf : Measurable f := by fun_prop
+    have hY : AEMeasurable Y P := (by fun_prop : Measurable
+      (fun z : ℝ ↦ WithLp.toLp 2 (fun _ : κ ↦ z))).comp_aemeasurable hZ.aemeasurable
+    have hcomp : f ∘ Y = (fun ω ↦ WithLp.toLp 2 (fun _ : ι ↦ Z ω)) := by
+      funext ω
+      simp [f, Y]
+    have h := condDistrib_comp_self hY hf
+    rw [hcomp] at h
+    filter_upwards [h] with x hx
+    simpa only [Kernel.deterministic_apply, f] using hx
+  let X : Ω → EuclideanSpace ℝ (ι ⊕ κ) := fun ω ↦ WithLp.toLp 2 (fun _ ↦ Z ω)
+  let m : EuclideanSpace ℝ (ι ⊕ κ) := WithLp.toLp 2 (fun _ ↦ μ)
+  let S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ := Matrix.of fun _ _ ↦ (v : ℝ)
+  have hX : HasLaw X (multivariateGaussian m S) P := by
+    rw [← TauCeti.Probability.map_toLp_const_gaussianReal]
+    exact (hasLaw_map (X := fun z : ℝ ↦ WithLp.toLp 2 (fun _ : ι ⊕ κ ↦ z))
       (by fun_prop)).comp hZ
-  have hS : (Matrix.of fun _ _ : Unit ⊕ Fin 2 ↦ (1 : ℝ)).PosSemidef := by
-    simpa [Matrix.vecMulVec] using
-      Matrix.posSemidef_vecMulVec_self_star (fun _ : Unit ⊕ Fin 2 ↦ (1 : ℝ))
-  have h := condDistrib_multivariateGaussian X 0 hX hS
-  have hk : ⇑((0 : EuclideanSpace ℝ (Unit ⊕ Fin 2)).gaussianCondKernel
-      (Matrix.of fun _ _ ↦ (1 : ℝ))) =
-      (fun x ↦ Measure.dirac (WithLp.toLp 2 (fun _ : Unit ↦ (x 0 + x 1) / 2))) := by
-    funext x
-    simpa [Fin.sum_univ_two] using EuclideanSpace.gaussianCondKernel_replicate x
-  rw [hk] at h
-  simpa [X, EuclideanSpace.sumEquivProd] using h
+  have hS : S.PosSemidef := by
+    have h := (Matrix.posSemidef_vecMulVec_self_star (fun _ : ι ⊕ κ ↦ (1 : ℝ))).smul
+      v.coe_nonneg
+    have hcov : (v : ℝ) • vecMulVec (fun _ : ι ⊕ κ ↦ (1 : ℝ)) (fun _ ↦ 1) = S := by
+      ext
+      simp [S, vecMulVec_apply]
+    simpa only [star_trivial, hcov] using h
+  have h := TauCeti.Probability.condDistrib_multivariateGaussian X m hX hS
+  have hblocks (ω : Ω) : EuclideanSpace.sumEquivProd (X ω) =
+      (WithLp.toLp 2 (fun _ : ι ↦ Z ω), WithLp.toLp 2 (fun _ : κ ↦ Z ω)) := by
+    ext <;> rfl
+  simp only [hblocks] at h
+  filter_upwards [h] with x hx
+  exact hx.trans (EuclideanSpace.gaussianCondKernel_toLp_const_of_const μ
+    (NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hv)) x)
 
-end TauCeti.Probability
+end ProbabilityTheory.HasLaw

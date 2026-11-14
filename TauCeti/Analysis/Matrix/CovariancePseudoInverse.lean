@@ -151,8 +151,8 @@ theorem covariancePseudoInverse_smul (C : Matrix ι ι ℝ) {c : ℝ} (hc : 0 �
     rw [covariancePseudoInverse_of_not_posSemidef hC, covariancePseudoInverse_of_not_posSemidef hcC,
       smul_zero]
 
-/-- The pseudoinverse of a rank-one covariance is its outer product divided by the square
-of the vector's squared length. The formula also holds for the zero vector. -/
+/-- The covariance pseudoinverse of `vecMulVec v v` is that same outer product divided by
+the square of `v ⬝ᵥ v`. The formula also holds for `v = 0`. -/
 theorem covariancePseudoInverse_vecMulVec (v : ι → ℝ) :
     (vecMulVec v v).covariancePseudoInverse = (v ⬝ᵥ v)⁻¹ ^ 2 • vecMulVec v v := by
   by_cases hv : v = 0

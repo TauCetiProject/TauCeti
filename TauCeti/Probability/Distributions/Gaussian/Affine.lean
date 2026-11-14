@@ -172,6 +172,23 @@ theorem map_comp_multivariateGaussian (m : EuclideanSpace ℝ ι) {S : Matrix ι
     simp [L, Matrix.mul_apply, Matrix.one_apply]
   simpa [hL, hcov] using map_affine_multivariateGaussian m hS L 0
 
+/-- Repeating a scalar Gaussian in every coordinate gives the Gaussian with constant mean
+and covariance. This includes zero variance and the empty coordinate type. -/
+theorem map_toLp_const_gaussianReal (ι : Type*) [Fintype ι] [DecidableEq ι]
+    (μ : ℝ) (v : ℝ≥0) :
+    (gaussianReal μ v).map (fun z ↦ WithLp.toLp 2 (fun _ : ι ↦ z)) =
+      multivariateGaussian (WithLp.toLp 2 (fun _ : ι ↦ μ))
+        (Matrix.of fun _ _ : ι ↦ (v : ℝ)) := by
+  let m : EuclideanSpace ℝ Unit := WithLp.toLp 2 (fun _ ↦ μ)
+  let S : Matrix Unit Unit ℝ := (v : ℝ) • 1
+  have hS : S.PosSemidef := Matrix.PosSemidef.one.smul v.coe_nonneg
+  have heval := (measurePreserving_eval_multivariateGaussian (μ := m) hS (i := ())).map_eq
+  simp only [m, S, Matrix.smul_apply, Matrix.one_apply_eq,
+    smul_eq_mul, mul_one, Real.toNNReal_coe] at heval
+  rw [← heval, Measure.map_map (by fun_prop) (by fun_prop)]
+  simpa [Function.comp_def, m, S, Matrix.submatrix] using
+    map_comp_multivariateGaussian m hS (fun _ : ι ↦ ())
+
 /-- An identity-covariance Gaussian is the product of its unit-variance Gaussian coordinate
 laws, transported to Euclidean space. -/
 theorem multivariateGaussian_one_eq_map_pi (m : EuclideanSpace ℝ ι) :

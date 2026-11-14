@@ -8,7 +8,9 @@ module
 public import Mathlib.LinearAlgebra.Matrix.RowCol
 
 /-!
-# Products of matrices with replaced columns
+# Outer products and products with replaced columns
+
+The outer-product lemmas describe row and column restriction and constant vectors.
 
 `Matrix.updateCol_mul_updateCol_apply_self` computes the replaced column of a product of matrices
 with the same column replaced, when the new column of the right factor is `1` at that index and
@@ -18,6 +20,19 @@ supported on a set of rows together with it.
 public section
 
 namespace Matrix
+
+/-- Restricting the rows and columns of an outer product restricts its two vectors. -/
+theorem submatrix_vecMulVec {α m n p q : Type*} [Mul α]
+    (u : m → α) (v : n → α) (r : p → m) (c : q → n) :
+    (vecMulVec u v).submatrix r c = vecMulVec (u ∘ r) (v ∘ c) := by
+  ext i j
+  simp [vecMulVec_apply]
+
+/-- The outer product of constant vectors is the constant matrix of their product. -/
+theorem vecMulVec_const_const {α m n : Type*} [Mul α] (a b : α) :
+    vecMulVec (fun _ : m ↦ a) (fun _ : n ↦ b) = of (fun _ _ ↦ a * b) := by
+  ext
+  simp [vecMulVec_apply]
 
 /-- The column `a` of a product of matrices with replaced columns `a`, when the new column `y` of
 the right factor is `1` at `a` and supported on `S ∪ {a}`. -/
