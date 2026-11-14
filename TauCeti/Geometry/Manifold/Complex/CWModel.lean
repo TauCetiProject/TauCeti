@@ -11,7 +11,6 @@ public import TauCeti.Geometry.Manifold.Complex.Pseudoconvex.Morse
 public import TauCeti.Geometry.Manifold.Morse.CWModel.Proper
 public import TauCeti.Geometry.Manifold.RegularValue.Polynomial
 import TauCeti.AlgebraicTopology.Cellular.Dimension
-import TauCeti.Geometry.Manifold.Morse.Exhaustion
 import TauCeti.Topology.Maps.Proper.Basic
 import TauCeti.Topology.Maps.Proper.Metric
 
@@ -46,12 +45,14 @@ the global CW homotopy models of Andreotti–Frankel and Milnor:
   is a proper bounded-below strictly plurisubharmonic Morse exhaustion, giving both a global
   Hausdorff CW model of `M` of dimension at most `n` and compatible finite CW models of the
   Euclidean ball intersections `{x | ‖i x - a‖² ≤ r k}`
-  (`TauCeti.exists_cwComplex_sublevel_homotopyEquiv_norm_sq_sub_comp`,
-  `TauCeti.exists_cwComplex_homotopyEquiv_of_isProperMap_holomorphic_immersion`,
+  (`TauCeti.exists_cwComplex_sublevel_homotopyEquiv_norm_sq_sub_comp`). Transporting an inner
+  product along a continuous linear equivalence extends the global `n`-dimensional CW homotopy model
+  to proper holomorphic immersions into any proper complex normed space and closed holomorphic
+  embeddings into any finite-dimensional complex normed space
+  (`TauCeti.exists_cwComplex_homotopyEquiv_of_isProperMap_holomorphic_immersion`,
   `TauCeti.exists_cwComplex_homotopyEquiv_of_isClosedEmbedding`, and the `Manifold.IsImmersion`
-  forms including targets `σ → ℂ`). Neither finite-dimensionality of the model space `E` nor
-  second-countability of `M` is assumed separately, and for closed embeddings Hausdorffness of `M`
-  is deduced automatically from the embedding.
+  forms). Neither finite-dimensionality of the model space `E` nor second-countability of `M` is
+  assumed separately, and for closed embeddings Hausdorffness of `M` follows from the embedding.
 * **Smooth affine complete intersections.** If `p : ι → MvPolynomial σ ℂ` has surjective Jacobian
   at every point of `TauCeti.affineZeroLocus p`, then `affineZeroLocus p` is homotopy equivalent to
   a Hausdorff CW complex with no cells in dimensions strictly above its complex dimension
@@ -59,6 +60,9 @@ the global CW homotopy models of Andreotti–Frankel and Milnor:
 
 ## Main results
 
+* `TauCeti.ComplexManifold.cwType`, `TauCeti.ComplexManifold.cwType_of_isProperMap`, and
+  `TauCeti.ComplexManifold.cwType_of_isClosedEmbedding`: CW type of sigma-compact `C^n` (`n ≠ 0`)
+  complex manifolds and of complex manifolds admitting proper maps or closed embeddings.
 * `exists_finite_cwComplex_extension_homotopyEquiv_sublevel_of_isManifoldStronglyPseudoconvexAt`
   and `exists_finite_cwComplex_homotopyEquiv_sublevel_of_isManifoldStronglyPseudoconvexAt` (in
   `TauCeti.IsMorse`): finite CW models of compact regular bands and sublevels of strongly
@@ -73,10 +77,10 @@ the global CW homotopy models of Andreotti–Frankel and Milnor:
   homotopy models of smooth strongly `q`-pseudoconvex and strictly plurisubharmonic exhaustions.
 * `TauCeti.exists_cwComplex_sublevel_homotopyEquiv_norm_sq_sub_comp`,
   `TauCeti.exists_cwComplex_homotopyEquiv_of_isProperMap_holomorphic_immersion`,
-  `TauCeti.exists_cwComplex_homotopyEquiv_of_isClosedEmbedding`, and
-  `Manifold.IsImmersion.exists_cwComplex_homotopyEquiv_of_isClosedEmbedding_pi`: Andreotti–Frankel
-  and Milnor CW dimension bounds for proper holomorphic immersions and closed holomorphic
-  embeddings.
+  `TauCeti.exists_cwComplex_homotopyEquiv_of_isClosedEmbedding`,
+  `Manifold.IsImmersion.exists_cwComplex_homotopyEquiv_of_isProperMap`, and
+  `Manifold.IsImmersion.exists_cwComplex_homotopyEquiv_of_isClosedEmbedding`: Andreotti–Frankel and
+  Milnor CW dimension bounds for proper holomorphic immersions and closed holomorphic embeddings.
 * `TauCeti.exists_cwComplex_sublevel_homotopyEquiv_affineZeroLocus`,
   `TauCeti.exists_cwComplex_homotopyEquiv_affineZeroLocus`, and `TauCeti.cwType_affineZeroLocus`:
   CW homotopy model and CW type of smooth affine complete intersections.
@@ -101,15 +105,54 @@ universe u
 
 namespace TauCeti
 
-/-- A nonempty Hausdorff complex manifold carrying a proper real-valued map is locally compact, so
-its complex model space is finite-dimensional. -/
-private theorem finiteDimensional_of_isProperMap_real {E M : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℂ E] [TopologicalSpace M] [ChartedSpace E M] [T2Space M] [Nonempty M]
-    {f : M → ℝ} (hp : IsProperMap f) : FiniteDimensional ℂ E := by
-  have : WeaklyLocallyCompactSpace M :=
-    ⟨fun x ↦ ⟨f ⁻¹' Icc (f x - 1) (f x + 1), hp.isCompact_preimage isCompact_Icc,
-      hp.continuous.continuousAt (Icc_mem_nhds (by linarith) (by linarith))⟩⟩
-  exact FiniteDimensional.of_locallyCompact_manifold M 𝓘(ℂ, E)
+/-! ### CW type of sigma-compact complex manifolds -/
+
+namespace ComplexManifold
+
+section CWType
+
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
+  [TopologicalSpace H] {M : Type u} [TopologicalSpace M] [T2Space M]
+
+variable (M) (I : ModelWithCorners ℂ E H) [I.Boundaryless] [ChartedSpace H M] in
+/-- **Sigma-compact complex manifolds have CW type.** A sigma-compact Hausdorff manifold modelled on
+a boundaryless complex model `I` over a finite-dimensional space, of class `C^n` for some `n ≠ 0`,
+is homotopy equivalent to a CW complex. -/
+theorem cwType [SigmaCompactSpace M] {n : ℕ∞ω} (hn : n ≠ 0) [h : IsManifold I n M] : CWType M :=
+  have : FiniteDimensional ℝ E := .trans ℝ ℂ E
+  have : IsManifold (I.restrictScalars ℝ) ∞ M :=
+    I.isManifold_restrictScalars ℝ (h.of_ne_zero ∞ hn)
+  CWType.of_isManifold M (I.restrictScalars ℝ)
+
+omit [FiniteDimensional ℂ E] in
+variable (I : ModelWithCorners ℂ E H) [I.Boundaryless] [ChartedSpace H M] in
+/-- A Hausdorff manifold modelled on a boundaryless complex model `I`, of class `C^n` for some
+`n ≠ 0`, admitting a proper map to a weakly locally compact sigma-compact space has CW type,
+without a separate finite-dimensionality assumption on `E`. -/
+theorem cwType_of_isProperMap {n : ℕ∞ω} (hn : n ≠ 0) [IsManifold I n M] {Y : Type*}
+    [TopologicalSpace Y] [WeaklyLocallyCompactSpace Y] [SigmaCompactSpace Y] {f : M → Y}
+    (hf : IsProperMap f) : CWType M := by
+  rcases isEmpty_or_nonempty M with _ | _
+  · exact (Homeomorph.empty : M ≃ₜ PEmpty.{u + 1}).cwType
+  have := hf.weaklyLocallyCompactSpace
+  have : FiniteDimensional ℂ E := FiniteDimensional.of_locallyCompact_manifold M I
+  have := hf.sigmaCompactSpace
+  exact cwType M I hn
+
+omit [FiniteDimensional ℂ E] [T2Space M] in
+variable (I : ModelWithCorners ℂ E H) [I.Boundaryless] [ChartedSpace H M] in
+/-- A manifold modelled on a boundaryless complex model `I`, of class `C^n` for some `n ≠ 0`,
+admitting a closed topological embedding into a weakly locally compact sigma-compact Hausdorff space
+has CW type. -/
+theorem cwType_of_isClosedEmbedding {n : ℕ∞ω} (hn : n ≠ 0) [IsManifold I n M] {Y : Type*}
+    [TopologicalSpace Y] [T2Space Y] [WeaklyLocallyCompactSpace Y] [SigmaCompactSpace Y]
+    {i : M → Y} (hi : IsClosedEmbedding i) : CWType M :=
+  have : T2Space M := hi.isEmbedding.t2Space
+  cwType_of_isProperMap I hn hi.isProperMap
+
+end CWType
+
+end ComplexManifold
 
 /-! ### Strongly `q`-pseudoconvex and strictly plurisubharmonic Morse functions -/
 
@@ -183,13 +226,11 @@ theorem exists_finite_cwComplex_homotopyEquiv_sublevel_of_isManifoldStrictlyPlur
       ∀ m, Nonempty (cell (univ : Set W) m ≃
         ↥{x ∈ criticalPoints 𝓘(ℝ, E) f ∩ {x | f x ≤ b} | manifoldMorseIndex 𝓘(ℝ, E) f x = m}) := by
   rcases isEmpty_or_nonempty {x | f x ≤ b} with hEmpty | _
-  · have hEmptyCell (m : ℕ) : IsEmpty (cell (univ : Set PEmpty.{u + 1}) m) :=
-      ⟨fun c ↦ PEmpty.elim (map m c 0)⟩
-    refine ⟨PEmpty.{u + 1}, _, inferInstance, inferInstance, inferInstance,
-      ⟨Homeomorph.empty.toHomotopyEquiv⟩, fun k _ ↦ hEmptyCell k, fun m ↦ ⟨?_⟩⟩
-    have : IsEmpty ↥{x ∈ criticalPoints 𝓘(ℝ, E) f ∩ {x | f x ≤ b} |
+  · have (m : ℕ) : IsEmpty ↥{x ∈ criticalPoints 𝓘(ℝ, E) f ∩ {x | f x ≤ b} |
         manifoldMorseIndex 𝓘(ℝ, E) f x = m} := ⟨fun ⟨x, hx, _⟩ ↦ hEmpty.false ⟨x, hx.2⟩⟩
-    exact Equiv.equivOfIsEmpty _ _
+    exact ⟨PEmpty.{u + 1}, _, inferInstance, inferInstance, inferInstance,
+      ⟨Homeomorph.empty.toHomotopyEquiv⟩, fun _ _ ↦ inferInstance,
+      fun _ ↦ ⟨Equiv.equivOfIsEmpty _ _⟩⟩
   have : FiniteDimensional ℝ E :=
     finiteDimensional_of_isCompact_sublevel hf.contMDiff.continuous hcompact hb
   have : FiniteDimensional ℂ E := Module.Finite.of_restrictScalars_finite ℝ ℂ E
@@ -201,9 +242,10 @@ theorem exists_finite_cwComplex_homotopyEquiv_sublevel_of_isManifoldStrictlyPlur
 sublevel models.** Let `f` be a proper real Morse function, bounded below, on a Hausdorff complex
 manifold `M` of complex dimension `n`, strongly `q`-pseudoconvex at every critical point. Then `M`
 is homotopy equivalent to a Hausdorff CW complex `X` with one `m`-cell per index-`m` critical point
-of `f` and no cells above dimension `n + q`, realized as the union of closed embeddings of finite
-CW models of regular sublevels `{f ≤ a k}` of dimension at most `n + q` commuting with `h : X ≃ₕ M`.
--/
+of `f` and no cells above dimension `n + q`, realized as the coherent union of cellular closed
+embeddings `j k : C(W k, X)` of finite CW models `W k` (linked by cellular closed embeddings
+`ι k : C(W k, W (k + 1))`) of regular sublevels `{f ≤ a k}` of dimension at most `n + q` commuting
+with `h : X ≃ₕ M`. -/
 theorem exists_cwComplex_sublevel_homotopyEquiv_of_isManifoldStronglyPseudoconvexAt
     {q : ℕ} (hf : IsMorse 𝓘(ℝ, E) f) (hp : IsProperMap f) (hbdd : BddBelow (range f))
     (hq : ∀ x ∈ criticalPoints 𝓘(ℝ, E) f, IsManifoldStronglyPseudoconvexAt E q f x) :
@@ -211,11 +253,17 @@ theorem exists_cwComplex_sublevel_homotopyEquiv_of_isManifoldStronglyPseudoconve
       (_ : CWComplex (univ : Set X)) (h : X ≃ₕ M)
       (W : ℕ → Type u) (_ : ∀ k, TopologicalSpace (W k)) (_ : ∀ k, T2Space (W k))
       (_ : ∀ k, CWComplex (univ : Set (W k))) (_ : ∀ k, RelCWComplex.Finite (univ : Set (W k)))
-      (j : ∀ k, C(W k, X)) (hSub : ∀ k, W k ≃ₕ {x | f x ≤ a k}),
+      (ι : ∀ k, C(W k, W (k + 1))) (j : ∀ k, C(W k, X)) (hSub : ∀ k, W k ≃ₕ {x | f x ≤ a k}),
       StrictMono a ∧ Tendsto a atTop atTop ∧ (∀ k, IsRegularValue 𝓘(ℝ, E) 𝓘(ℝ) f (a k)) ∧
-      (∀ x, a 0 < f x) ∧ (∀ k, IsClosedEmbedding (j k)) ∧ ⋃ k, range (j k) = univ ∧
+      (∀ x, a 0 < f x) ∧ (∀ k, IsClosedEmbedding (ι k)) ∧ (∀ k, IsClosedEmbedding (j k)) ∧
+      (∀ k w, j (k + 1) (ι k w) = j k w) ∧
+      IsCoherentWith (range fun k ↦ range (j k)) ∧ ⋃ k, range (j k) = univ ∧
       (∀ k w, h (j k w) = (hSub k w : M)) ∧
       (∀ k, MapsTo h.symm {x | f x ≤ a k} (range (j k))) ∧
+      (∃ (ιc : ∀ k m, cell (univ : Set (W k)) m → cell (univ : Set (W (k + 1))) m)
+         (jc : ∀ k m, cell (univ : Set (W k)) m → cell (univ : Set X) m),
+        (∀ k m c x, map m (ιc k m c) x = ι k (map m c x)) ∧
+        ∀ k m c x, map m (jc k m c) x = j k (map m c x)) ∧
       (∀ m, finrank ℂ E + q < m → IsEmpty (cell (univ : Set X) m)) ∧
       (∀ k m, finrank ℂ E + q < m → IsEmpty (cell (univ : Set (W k)) m)) ∧
       (∀ m, Nonempty (cell (univ : Set X) m ≃
@@ -225,18 +273,8 @@ theorem exists_cwComplex_sublevel_homotopyEquiv_of_isManifoldStronglyPseudoconve
           manifoldMorseIndex 𝓘(ℝ, E) f x = m}) := by
   have : IsManifold 𝓘(ℂ, E) 2 M := IsManifold.of_ne_zero 2 one_ne_zero ‹_›
   have : IsManifold 𝓘(ℝ, E) ∞ M := IsManifold.restrictScalars_of_ne_zero ∞ one_ne_zero ‹_›
-  have hidx (x : M) (hx : x ∈ criticalPoints 𝓘(ℝ, E) f) :
-      manifoldMorseIndex 𝓘(ℝ, E) f x ≤ finrank ℂ E + q :=
+  exact hf.exists_cwComplex_sublevel_homotopyEquiv_of_manifoldMorseIndex_le hp hbdd fun x hx ↦
     (hq x hx).manifoldMorseIndex_le_of_mem_criticalPoints (hf.contMDiff x) hx
-  obtain ⟨a, X, _, _, _, h, W, _, _, _, _, j, hSub, hmono, htop, hreg, ha0, hemb, hunion, hcomm,
-      hMaps, hXcell, hWcell⟩ :=
-    hf.exists_cwComplex_sublevel_homotopyEquiv hp hbdd
-  refine ⟨a, X, _, ‹_›, ‹_›, h, W, _, ‹_›, ‹_›, ‹_›, j, hSub, hmono, htop, hreg, ha0, hemb,
-    hunion, hcomm, hMaps, fun m hm ↦ ?_, fun k m hm ↦ ?_, hXcell, hWcell⟩
-  · exact (hXcell m).some.isEmpty_congr.2
-      ⟨fun ⟨x, hx, hxm⟩ ↦ ((hidx x hx).trans_lt (hxm ▸ hm)).false⟩
-  · exact (hWcell k m).some.isEmpty_congr.2
-      ⟨fun ⟨x, ⟨hx, _⟩, hxm⟩ ↦ ((hidx x hx).trans_lt (hxm ▸ hm)).false⟩
 
 /-- **The CW model of a proper strongly `q`-pseudoconvex Morse function.** Let `f` be a proper real
 Morse function, bounded below, on a Hausdorff complex manifold `M` of complex dimension `n`,
@@ -268,14 +306,11 @@ theorem exists_cwComplex_homotopyEquiv_of_isManifoldStrictlyPlurisubharmonicAt
       Nonempty (M ≃ₕ X) ∧ (∀ k, finrank ℂ E < k → IsEmpty (cell (univ : Set X) k)) ∧
       ∀ m, Nonempty (cell (univ : Set X) m ≃
         ↥{x ∈ criticalPoints 𝓘(ℝ, E) f | manifoldMorseIndex 𝓘(ℝ, E) f x = m}) := by
-  rcases isEmpty_or_nonempty M with hEmpty | _
-  · have hEmptyCell (m : ℕ) : IsEmpty (cell (univ : Set PEmpty.{u + 1}) m) :=
-      ⟨fun c ↦ PEmpty.elim (map m c 0)⟩
-    have hEmptyCrit (m : ℕ) : IsEmpty ↥{x ∈ criticalPoints 𝓘(ℝ, E) f |
-        manifoldMorseIndex 𝓘(ℝ, E) f x = m} := ⟨fun x ↦ hEmpty.false x.1⟩
-    exact ⟨PEmpty.{u + 1}, _, inferInstance, inferInstance, ⟨Homeomorph.empty.toHomotopyEquiv⟩,
-      fun k _ ↦ hEmptyCell k, fun m ↦ ⟨Equiv.equivOfIsEmpty _ _⟩⟩
-  have : FiniteDimensional ℂ E := finiteDimensional_of_isProperMap_real hp
+  rcases isEmpty_or_nonempty M with _ | _
+  · exact ⟨PEmpty.{u + 1}, _, inferInstance, inferInstance, ⟨Homeomorph.empty.toHomotopyEquiv⟩,
+      fun _ _ ↦ inferInstance, fun _ ↦ ⟨Equiv.equivOfIsEmpty _ _⟩⟩
+  have := hp.weaklyLocallyCompactSpace
+  have : FiniteDimensional ℂ E := FiniteDimensional.of_locallyCompact_manifold M 𝓘(ℂ, E)
   simpa only [add_zero] using
     hf.exists_cwComplex_homotopyEquiv_of_isManifoldStronglyPseudoconvexAt (q := 0) hp hbdd
       fun x hx ↦ (hpsh x hx).isManifoldStronglyPseudoconvexAt 0
@@ -335,15 +370,6 @@ theorem exists_cwComplex_homotopyEquiv_of_isProperMap_of_isManifoldStronglyPseud
       hf hp hbdd hq isClosed_empty isOpen_empty (subset_refl _) isMorseOn_empty
   exact ⟨X, _, ‹_›, ‹_›, hX, hdim⟩
 
-/-- Any Hausdorff complex manifold admitting a smooth proper bounded-below everywhere strongly
-`q`-pseudoconvex function has CW type. -/
-theorem cwType_of_isProperMap_of_isManifoldStronglyPseudoconvexAt {q : ℕ} {f : M → ℝ}
-    (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ f) (hp : IsProperMap f) (hbdd : BddBelow (range f))
-    (hq : ∀ x, IsManifoldStronglyPseudoconvexAt E q f x) : CWType M := by
-  obtain ⟨X, _, _, _, ⟨h⟩, -⟩ :=
-    exists_cwComplex_homotopyEquiv_of_isProperMap_of_isManifoldStronglyPseudoconvexAt hf hp hbdd hq
-  exact (h.trans (Homeomorph.Set.univ X).symm.toHomotopyEquiv).cwType
-
 omit [FiniteDimensional ℂ E] in
 /-- **CW homotopy model of a complex manifold with a strictly plurisubharmonic exhaustion.** If a
 Hausdorff complex manifold `M` admits a smooth proper bounded-below everywhere strictly
@@ -358,22 +384,12 @@ theorem exists_cwComplex_homotopyEquiv_of_isProperMap_of_isManifoldStrictlyPluri
       Nonempty (M ≃ₕ X) ∧ ∀ k, finrank ℂ E < k → IsEmpty (cell (univ : Set X) k) := by
   rcases isEmpty_or_nonempty M with _ | _
   · exact ⟨PEmpty.{u + 1}, _, inferInstance, inferInstance, ⟨Homeomorph.empty.toHomotopyEquiv⟩,
-      fun _ _ ↦ ⟨fun c ↦ PEmpty.elim (map _ c 0)⟩⟩
-  have : FiniteDimensional ℂ E := finiteDimensional_of_isProperMap_real hp
+      fun _ _ ↦ inferInstance⟩
+  have := hp.weaklyLocallyCompactSpace
+  have : FiniteDimensional ℂ E := FiniteDimensional.of_locallyCompact_manifold M 𝓘(ℂ, E)
   simpa only [add_zero] using
     exists_cwComplex_homotopyEquiv_of_isProperMap_of_isManifoldStronglyPseudoconvexAt (q := 0)
       hf hp hbdd fun x ↦ (hpsh x).isManifoldStronglyPseudoconvexAt 0
-
-omit [FiniteDimensional ℂ E] in
-/-- Any Hausdorff complex manifold admitting a smooth proper bounded-below everywhere strictly
-plurisubharmonic function has CW type. -/
-theorem cwType_of_isProperMap_of_isManifoldStrictlyPlurisubharmonicAt {f : M → ℝ}
-    (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ f) (hp : IsProperMap f) (hbdd : BddBelow (range f))
-    (hpsh : ∀ x, IsManifoldStrictlyPlurisubharmonicAt E f x) : CWType M := by
-  obtain ⟨X, _, _, _, ⟨h⟩, -⟩ :=
-    exists_cwComplex_homotopyEquiv_of_isProperMap_of_isManifoldStrictlyPlurisubharmonicAt hf hp
-      hbdd hpsh
-  exact (h.trans (Homeomorph.Set.univ X).symm.toHomotopyEquiv).cwType
 
 end PseudoconvexExhaustion
 
@@ -387,11 +403,12 @@ variable {E : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℂ E]
 /-- **Milnor's squared-distance CW exhaustion along a proper holomorphic immersion.** Let
 `i : M → F` be a proper holomorphic immersion of a Hausdorff complex manifold `M` into a proper
 complex inner product space `F`. For some centre `a : F`, the squared distance `ρ(x) = ‖i x - a‖²`
-is a proper Morse function on `M`, and there exist strictly increasing regular radii `r : ℕ → ℝ`
-tending to infinity with `r 0` below all values of `ρ`, a Hausdorff CW complex `X` with a homotopy
-equivalence `h : X ≃ₕ M` and no cells above `finrank ℂ E` whose `m`-cells correspond to the
-index-`m` critical points of `ρ`, and compatible finite CW models `W k ≃ₕ {x | ‖i x - a‖² ≤ r k}`
-of dimension at most `finrank ℂ E` exhausting `X` along closed embeddings. -/
+is a proper Morse function on `M`, and there exist strictly increasing regular values `r : ℕ → ℝ`
+of `ρ` tending to infinity with `r 0` below all values of `ρ`, a Hausdorff CW complex `X` with a
+homotopy equivalence `h : X ≃ₕ M` and no cells above `finrank ℂ E` whose `m`-cells correspond to
+the index-`m` critical points of `ρ`, and finite CW models `W k ≃ₕ {x | ‖i x - a‖² ≤ r k}` of
+dimension at most `finrank ℂ E` linked by cellular closed embeddings `ι k : C(W k, W (k + 1))` and
+exhausting `X` coherently along cellular closed embeddings `j k : C(W k, X)`. -/
 theorem exists_cwComplex_sublevel_homotopyEquiv_norm_sq_sub_comp {F : Type*}
     [NormedAddCommGroup F] [InnerProductSpace ℂ F] [ProperSpace F] {i : M → F}
     (hi : MDifferentiable 𝓘(ℂ, E) 𝓘(ℂ, F) i)
@@ -400,13 +417,22 @@ theorem exists_cwComplex_sublevel_homotopyEquiv_norm_sq_sub_comp {F : Type*}
       (_ : CWComplex (univ : Set X)) (h : X ≃ₕ M)
       (W : ℕ → Type u) (_ : ∀ k, TopologicalSpace (W k)) (_ : ∀ k, T2Space (W k))
       (_ : ∀ k, CWComplex (univ : Set (W k))) (_ : ∀ k, RelCWComplex.Finite (univ : Set (W k)))
-      (j : ∀ k, C(W k, X)) (hSub : ∀ k, W k ≃ₕ {x | ‖i x - a‖ ^ 2 ≤ r k}),
+      (ι : ∀ k, C(W k, W (k + 1))) (j : ∀ k, C(W k, X))
+      (hSub : ∀ k, W k ≃ₕ {x | ‖i x - a‖ ^ 2 ≤ r k}),
       IsMorse 𝓘(ℝ, E) (fun x ↦ ‖i x - a‖ ^ 2) ∧
+      IsProperMap (fun x ↦ ‖i x - a‖ ^ 2) ∧
       StrictMono r ∧ Tendsto r atTop atTop ∧
       (∀ k, IsRegularValue 𝓘(ℝ, E) 𝓘(ℝ) (fun x ↦ ‖i x - a‖ ^ 2) (r k)) ∧
-      (∀ x, r 0 < ‖i x - a‖ ^ 2) ∧ (∀ k, IsClosedEmbedding (j k)) ∧ ⋃ k, range (j k) = univ ∧
+      (∀ x, r 0 < ‖i x - a‖ ^ 2) ∧
+      (∀ k, IsClosedEmbedding (ι k)) ∧ (∀ k, IsClosedEmbedding (j k)) ∧
+      (∀ k w, j (k + 1) (ι k w) = j k w) ∧
+      IsCoherentWith (range fun k ↦ range (j k)) ∧ ⋃ k, range (j k) = univ ∧
       (∀ k w, h (j k w) = (hSub k w : M)) ∧
       (∀ k, MapsTo h.symm {x | ‖i x - a‖ ^ 2 ≤ r k} (range (j k))) ∧
+      (∃ (ιc : ∀ k m, cell (univ : Set (W k)) m → cell (univ : Set (W (k + 1))) m)
+         (jc : ∀ k m, cell (univ : Set (W k)) m → cell (univ : Set X) m),
+        (∀ k m c x, map m (ιc k m c) x = ι k (map m c x)) ∧
+        ∀ k m c x, map m (jc k m c) x = j k (map m c x)) ∧
       (∀ m, finrank ℂ E < m → IsEmpty (cell (univ : Set X) m)) ∧
       (∀ k m, finrank ℂ E < m → IsEmpty (cell (univ : Set (W k)) m)) ∧
       (∀ m, Nonempty (cell (univ : Set X) m ≃
@@ -436,50 +462,45 @@ theorem exists_cwComplex_sublevel_homotopyEquiv_norm_sq_sub_comp {F : Type*}
         hi.contMDiff hinj hip
     exact ⟨hMR, a, ha, hap, hbdd, hidx⟩
   obtain ⟨_, a, ha, hap, hbdd, hidx⟩ := hex
-  obtain ⟨r, X, _, _, _, h, W, _, _, _, _, j, hSub, hmono, htop, hreg, hr0, hemb, hunion, hcomm,
-      hMaps, hXcell, hWcell⟩ :=
-    ha.exists_cwComplex_sublevel_homotopyEquiv hap hbdd
-  refine ⟨a, r, X, _, ‹_›, ‹_›, h, W, _, ‹_›, ‹_›, ‹_›, j, hSub, ha, hmono, htop, hreg, hr0, hemb,
-    hunion, hcomm, hMaps, fun m hm ↦ ?_, fun k m hm ↦ ?_, hXcell, hWcell⟩
-  · exact (hXcell m).some.isEmpty_congr.2
-      ⟨fun ⟨x, hx, hxm⟩ ↦ ((hidx x hx).trans_lt (hxm ▸ hm)).false⟩
-  · exact (hWcell k m).some.isEmpty_congr.2
-      ⟨fun ⟨x, ⟨hx, _⟩, hxm⟩ ↦ ((hidx x hx).trans_lt (hxm ▸ hm)).false⟩
+  obtain ⟨r, X, _, _, _, h, W, _, _, _, _, ι, j, hSub, hrest⟩ :=
+    ha.exists_cwComplex_sublevel_homotopyEquiv_of_manifoldMorseIndex_le hap hbdd hidx
+  exact ⟨a, r, X, _, ‹_›, ‹_›, h, W, _, ‹_›, ‹_›, ‹_›, ι, j, hSub, ha, hap, hrest⟩
 
 /-- **Andreotti–Frankel–Milnor CW theorem for proper holomorphic immersions.** If a Hausdorff
-complex manifold `M` admits a proper holomorphic immersion into a proper complex inner product
-space, then `M` is homotopy equivalent to a Hausdorff CW complex with no cells in dimensions
-strictly greater than `finrank ℂ E`. Neither finite-dimensionality of `E` nor second-countability
-of `M` is assumed separately. -/
+complex manifold `M` admits a proper holomorphic immersion into a proper complex normed space, then
+`M` is homotopy equivalent to a Hausdorff CW complex with no cells in dimensions strictly greater
+than `finrank ℂ E`. Neither finite-dimensionality of `E` nor second-countability of `M` is assumed
+separately. -/
 theorem exists_cwComplex_homotopyEquiv_of_isProperMap_holomorphic_immersion {F : Type*}
-    [NormedAddCommGroup F] [InnerProductSpace ℂ F] [ProperSpace F] {i : M → F}
+    [NormedAddCommGroup F] [NormedSpace ℂ F] [ProperSpace F] {i : M → F}
     (hi : MDifferentiable 𝓘(ℂ, E) 𝓘(ℂ, F) i)
     (hinj : ∀ x, Injective (mvfderiv 𝓘(ℂ, E) i x)) (hip : IsProperMap i) :
     ∃ (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X) (_ : CWComplex (univ : Set X)),
       Nonempty (M ≃ₕ X) ∧ ∀ k, finrank ℂ E < k → IsEmpty (cell (univ : Set X) k) := by
-  obtain ⟨_, _, X, _, _, _, h, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hdim, -, -, -⟩ :=
-    exists_cwComplex_sublevel_homotopyEquiv_norm_sq_sub_comp hi hinj hip
+  -- Transport an inner product from `EuclideanSpace ℂ (Fin (finrank ℂ F))` along a continuous
+  -- complex linear equivalence so that Milnor's squared-distance exhaustion applies.
+  have : FiniteDimensional ℂ F := .of_locallyCompactSpace ℂ
+  let e : F ≃L[ℂ] EuclideanSpace ℂ (Fin (finrank ℂ F)) :=
+    ContinuousLinearEquiv.ofFinrankEq finrank_euclideanSpace_fin.symm
+  have hein : ∀ x, Injective (mvfderiv 𝓘(ℂ, E) (e ∘ i) x) := fun x v w hvw ↦ by
+    simp only [mvfderiv_comp_apply_of_differentiableAt e.differentiableAt (hi x), e.fderiv] at hvw
+    exact hinj x (e.injective hvw)
+  obtain ⟨_, _, X, _, _, _, h, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -,
+      hdim, -⟩ :=
+    exists_cwComplex_sublevel_homotopyEquiv_norm_sq_sub_comp
+      ((e.contDiff.contMDiff.mdifferentiable one_ne_zero).comp hi) hein
+      (e.toHomeomorph.isClosedEmbedding.isProperMap.comp hip)
   exact ⟨X, _, ‹_›, ‹_›, ⟨h.symm⟩, hdim⟩
-
-/-- Any Hausdorff complex manifold admitting a proper holomorphic immersion into a proper complex
-inner product space has CW type. -/
-theorem cwType_of_isProperMap_holomorphic_immersion {F : Type*} [NormedAddCommGroup F]
-    [InnerProductSpace ℂ F] [ProperSpace F] {i : M → F}
-    (hi : MDifferentiable 𝓘(ℂ, E) 𝓘(ℂ, F) i)
-    (hinj : ∀ x, Injective (mvfderiv 𝓘(ℂ, E) i x)) (hip : IsProperMap i) : CWType M := by
-  obtain ⟨X, _, _, _, ⟨h⟩, -⟩ :=
-    exists_cwComplex_homotopyEquiv_of_isProperMap_holomorphic_immersion hi hinj hip
-  exact (h.trans (Homeomorph.Set.univ X).symm.toHomotopyEquiv).cwType
 
 omit [T2Space M] in
 /-- **Andreotti–Frankel–Milnor CW theorem for closed holomorphic embeddings** (Milnor, *Morse
 Theory*, Theorem 7.2). Every complex manifold admitting a holomorphic immersion into a
-finite-dimensional complex inner product space which is a closed topological embedding is homotopy
+finite-dimensional complex normed space which is a closed topological embedding is homotopy
 equivalent to a Hausdorff CW complex with no cells in dimensions strictly greater than
-`finrank ℂ E`. Hausdorffness and second-countability of `M`, as well as finite-dimensionality of
-`E`, follow automatically from the closed embedding. -/
+`finrank ℂ E`. Hausdorffness and second-countability of `M` follow from the closed embedding, and no
+separate `FiniteDimensional ℂ E` assumption is needed. -/
 theorem exists_cwComplex_homotopyEquiv_of_isClosedEmbedding {F : Type*} [NormedAddCommGroup F]
-    [InnerProductSpace ℂ F] [FiniteDimensional ℂ F] {i : M → F}
+    [NormedSpace ℂ F] [FiniteDimensional ℂ F] {i : M → F}
     (hi : MDifferentiable 𝓘(ℂ, E) 𝓘(ℂ, F) i)
     (hinj : ∀ x, Injective (mvfderiv 𝓘(ℂ, E) i x)) (hclosed : IsClosedEmbedding i) :
     ∃ (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X) (_ : CWComplex (univ : Set X)),
@@ -488,15 +509,6 @@ theorem exists_cwComplex_homotopyEquiv_of_isClosedEmbedding {F : Type*} [NormedA
   have : FiniteDimensional ℝ F := .trans ℝ ℂ F
   exact exists_cwComplex_homotopyEquiv_of_isProperMap_holomorphic_immersion hi hinj
     hclosed.isProperMap
-
-omit [T2Space M] in
-/-- Every complex manifold admitting a closed holomorphic embedding into a finite-dimensional
-complex inner product space has CW type. -/
-theorem cwType_of_isClosedEmbedding {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F]
-    [FiniteDimensional ℂ F] {i : M → F} (hi : MDifferentiable 𝓘(ℂ, E) 𝓘(ℂ, F) i)
-    (hinj : ∀ x, Injective (mvfderiv 𝓘(ℂ, E) i x)) (hclosed : IsClosedEmbedding i) : CWType M := by
-  obtain ⟨X, _, _, _, ⟨h⟩, -⟩ := exists_cwComplex_homotopyEquiv_of_isClosedEmbedding hi hinj hclosed
-  exact (h.trans (Homeomorph.Set.univ X).symm.toHomotopyEquiv).cwType
 
 end HolomorphicImmersion
 
@@ -508,10 +520,13 @@ section AffineZeroLocus
 `p : ι → MvPolynomial σ ℂ` be a finite polynomial family whose Jacobian matrix is surjective at
 every point of `V = affineZeroLocus p`, so that `V` is a closed complex submanifold of `ℂ^σ` of
 complex dimension `d = |σ| - |ι|`. For some Euclidean centre `a`, the squared distance
-`y ↦ ‖toLp 2 y - a‖²` is a Morse function on `V`, and there exist strictly increasing regular radii
-`r : ℕ → ℝ` tending to infinity, a Hausdorff CW complex `X` with `h : X ≃ₕ V` and no cells above
-dimension `d`, and compatible finite CW models `W k` of dimension at most `d` for the compact ball
-intersections `{y ∈ V | ‖toLp 2 y - a‖² ≤ r k}` exhausting `X` along closed embeddings. -/
+`ρ(y) = ‖toLp 2 y - a‖²` is a proper Morse function on `V`, and there exist strictly increasing
+regular values `r : ℕ → ℝ` of `ρ` tending to infinity with `r 0` below all values of `ρ`, a
+Hausdorff CW complex `X` with `h : X ≃ₕ V` and no cells above dimension `d` whose `m`-cells
+correspond to the index-`m` critical points of `ρ`, and finite CW models `W k` of dimension at most
+`d` for the compact sublevels `{y ∈ V | ‖toLp 2 y - a‖² ≤ r k}` linked by cellular closed embeddings
+`i k : C(W k, W (k + 1))` and exhausting `X` coherently along cellular closed embeddings
+`j k : C(W k, X)`. -/
 theorem exists_cwComplex_sublevel_homotopyEquiv_affineZeroLocus {σ : Type u} {ι : Type*}
     [Fintype σ] [Fintype ι] {p : ι → MvPolynomial σ ℂ}
     (hp : ∀ x ∈ affineZeroLocus p, Surjective (jacobiMatrixAt p x).mulVec) :
@@ -520,30 +535,48 @@ theorem exists_cwComplex_sublevel_homotopyEquiv_affineZeroLocus {σ : Type u} {�
       (_ : T2Space X) (_ : CWComplex (univ : Set X)) (h : X ≃ₕ affineZeroLocus p)
       (W : ℕ → Type u) (_ : ∀ k, TopologicalSpace (W k)) (_ : ∀ k, T2Space (W k))
       (_ : ∀ k, CWComplex (univ : Set (W k))) (_ : ∀ k, RelCWComplex.Finite (univ : Set (W k)))
-      (j : ∀ k, C(W k, X))
+      (i : ∀ k, C(W k, W (k + 1))) (j : ∀ k, C(W k, X))
       (hSub : ∀ k, W k ≃ₕ {y : affineZeroLocus p | ‖WithLp.toLp 2 (y : σ → ℂ) - a‖ ^ 2 ≤ r k}),
       IsMorse 𝓘(ℝ, Fin (Fintype.card σ - Fintype.card ι) → ℂ)
         (fun y : affineZeroLocus p ↦ ‖WithLp.toLp 2 (y : σ → ℂ) - a‖ ^ 2) ∧
-      StrictMono r ∧ Tendsto r atTop atTop ∧ (∀ k, IsClosedEmbedding (j k)) ∧
-      ⋃ k, range (j k) = univ ∧ (∀ k w, h (j k w) = (hSub k w : affineZeroLocus p)) ∧
+      IsProperMap (fun y : affineZeroLocus p ↦ ‖WithLp.toLp 2 (y : σ → ℂ) - a‖ ^ 2) ∧
+      StrictMono r ∧ Tendsto r atTop atTop ∧
+      (∀ k, IsRegularValue 𝓘(ℝ, Fin (Fintype.card σ - Fintype.card ι) → ℂ) 𝓘(ℝ)
+        (fun y : affineZeroLocus p ↦ ‖WithLp.toLp 2 (y : σ → ℂ) - a‖ ^ 2) (r k)) ∧
+      (∀ y : affineZeroLocus p, r 0 < ‖WithLp.toLp 2 (y : σ → ℂ) - a‖ ^ 2) ∧
+      (∀ k, IsClosedEmbedding (i k)) ∧ (∀ k, IsClosedEmbedding (j k)) ∧
+      (∀ k w, j (k + 1) (i k w) = j k w) ∧
+      IsCoherentWith (range fun k ↦ range (j k)) ∧ ⋃ k, range (j k) = univ ∧
+      (∀ k w, h (j k w) = (hSub k w : affineZeroLocus p)) ∧
       (∀ k, MapsTo h.symm {y : affineZeroLocus p | ‖WithLp.toLp 2 (y : σ → ℂ) - a‖ ^ 2 ≤ r k}
         (range (j k))) ∧
+      (∃ (ic : ∀ k m, cell (univ : Set (W k)) m → cell (univ : Set (W (k + 1))) m)
+         (jc : ∀ k m, cell (univ : Set (W k)) m → cell (univ : Set X) m),
+        (∀ k m c x, map m (ic k m c) x = i k (map m c x)) ∧
+        ∀ k m c x, map m (jc k m c) x = j k (map m c x)) ∧
       (∀ m, Fintype.card σ - Fintype.card ι < m → IsEmpty (cell (univ : Set X) m)) ∧
-      ∀ k m, Fintype.card σ - Fintype.card ι < m → IsEmpty (cell (univ : Set (W k)) m) := by
+      (∀ k m, Fintype.card σ - Fintype.card ι < m → IsEmpty (cell (univ : Set (W k)) m)) ∧
+      (∀ m, Nonempty (cell (univ : Set X) m ≃
+        ↥{y ∈ criticalPoints 𝓘(ℝ, Fin (Fintype.card σ - Fintype.card ι) → ℂ)
+            (fun z : affineZeroLocus p ↦ ‖WithLp.toLp 2 (z : σ → ℂ) - a‖ ^ 2) |
+          manifoldMorseIndex 𝓘(ℝ, Fin (Fintype.card σ - Fintype.card ι) → ℂ)
+            (fun z : affineZeroLocus p ↦ ‖WithLp.toLp 2 (z : σ → ℂ) - a‖ ^ 2) y = m})) ∧
+      ∀ k m, Nonempty (cell (univ : Set (W k)) m ≃
+        ↥{y ∈ criticalPoints 𝓘(ℝ, Fin (Fintype.card σ - Fintype.card ι) → ℂ)
+            (fun z : affineZeroLocus p ↦ ‖WithLp.toLp 2 (z : σ → ℂ) - a‖ ^ 2) ∩
+            {y : affineZeroLocus p | ‖WithLp.toLp 2 (y : σ → ℂ) - a‖ ^ 2 ≤ r k} |
+          manifoldMorseIndex 𝓘(ℝ, Fin (Fintype.card σ - Fintype.card ι) → ℂ)
+            (fun z : affineZeroLocus p ↦ ‖WithLp.toLp 2 (z : σ → ℂ) - a‖ ^ 2) y = m}) := by
   let _ := affineZeroLocusChartedSpace hp
   have := isManifold_affineZeroLocus hp 1
   have hclosed : IsClosedEmbedding
       (fun y : affineZeroLocus p ↦ WithLp.toLp 2 (y : σ → ℂ)) :=
     (EuclideanSpace.equiv σ ℂ).symm.toHomeomorph.isClosedEmbedding.comp
       (isClosed_affineZeroLocus p).isClosedEmbedding_subtypeVal
-  obtain ⟨a, r, X, _, _, _, h, W, _, _, _, _, j, hSub, ha, hmono, htop, -, -, hemb, hunion,
-      hcomm, hMaps, hdim, hWdim, -, -⟩ :=
+  simpa only [Module.finrank_fin_fun] using
     exists_cwComplex_sublevel_homotopyEquiv_norm_sq_sub_comp
       ((contMDiff_toLp_coe_affineZeroLocus hp 1).mdifferentiable one_ne_zero)
       (injective_mvfderiv_toLp_coe_affineZeroLocus hp) hclosed.isProperMap
-  exact ⟨a, r, X, _, ‹_›, ‹_›, h, W, _, ‹_›, ‹_›, ‹_›, j, hSub, ha, hmono, htop, hemb, hunion,
-    hcomm, hMaps, fun m hm ↦ hdim m (by rwa [Module.finrank_fin_fun]),
-    fun k m hm ↦ hWdim k m (by rwa [Module.finrank_fin_fun])⟩
 
 /-- **CW homotopy model of a smooth affine complete intersection** (Milnor, *Morse Theory*, Theorem
 7.2). Let `p : ι → MvPolynomial σ ℂ` be a finite polynomial family whose Jacobian matrix is
@@ -555,17 +588,10 @@ theorem exists_cwComplex_homotopyEquiv_affineZeroLocus {σ : Type u} {ι : Type*
     ∃ (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X) (_ : CWComplex (univ : Set X)),
       Nonempty (affineZeroLocus p ≃ₕ X) ∧
       ∀ k, Fintype.card σ - Fintype.card ι < k → IsEmpty (cell (univ : Set X) k) := by
-  let _ := affineZeroLocusChartedSpace hp
-  have := isManifold_affineZeroLocus hp 1
-  have hclosed : IsClosedEmbedding
-      (fun y : affineZeroLocus p ↦ WithLp.toLp 2 (y : σ → ℂ)) :=
-    (EuclideanSpace.equiv σ ℂ).symm.toHomeomorph.isClosedEmbedding.comp
-      (isClosed_affineZeroLocus p).isClosedEmbedding_subtypeVal
-  obtain ⟨X, _, _, _, hX, hdim⟩ :=
-    exists_cwComplex_homotopyEquiv_of_isClosedEmbedding
-      ((contMDiff_toLp_coe_affineZeroLocus hp 1).mdifferentiable one_ne_zero)
-      (injective_mvfderiv_toLp_coe_affineZeroLocus hp) hclosed
-  exact ⟨X, _, ‹_›, ‹_›, hX, fun k hk ↦ hdim k (by rwa [Module.finrank_fin_fun])⟩
+  obtain ⟨_, _, X, _, _, _, h, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -,
+      hdim, -⟩ :=
+    exists_cwComplex_sublevel_homotopyEquiv_affineZeroLocus hp
+  exact ⟨X, _, ‹_›, ‹_›, ⟨h.symm⟩, hdim⟩
 
 /-- Every smooth affine complete intersection over `ℂ` has CW type. -/
 theorem cwType_affineZeroLocus {σ : Type u} {ι : Type*} [Fintype σ] [Finite ι]
@@ -574,7 +600,7 @@ theorem cwType_affineZeroLocus {σ : Type u} {ι : Type*} [Fintype σ] [Finite �
     CWType (affineZeroLocus p) := by
   let := Fintype.ofFinite ι
   obtain ⟨X, _, _, _, ⟨h⟩, -⟩ := exists_cwComplex_homotopyEquiv_affineZeroLocus hp
-  exact (h.trans (Homeomorph.Set.univ X).symm.toHomotopyEquiv).cwType
+  exact h.cwType
 
 end AffineZeroLocus
 
@@ -589,10 +615,10 @@ variable {E : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
 /-- **Andreotti–Frankel–Milnor CW theorem for `Manifold.IsImmersion` along a proper map.** If
 `i : M → F` is a proper holomorphic `C^r` immersion (`r ≠ 0`) of a Hausdorff complex manifold into a
-proper complex inner product space, then `M` is homotopy equivalent to a Hausdorff CW complex with
-no cells in dimensions strictly greater than `finrank ℂ E`. -/
+proper complex normed space, then `M` is homotopy equivalent to a Hausdorff CW complex with no cells
+in dimensions strictly greater than `finrank ℂ E`. -/
 theorem exists_cwComplex_homotopyEquiv_of_isProperMap [T2Space M] {F : Type*}
-    [NormedAddCommGroup F] [InnerProductSpace ℂ F] [ProperSpace F] {r : ℕ∞ω} {i : M → F}
+    [NormedAddCommGroup F] [NormedSpace ℂ F] [ProperSpace F] {r : ℕ∞ω} {i : M → F}
     (hi : IsImmersion 𝓘(ℂ, E) 𝓘(ℂ, F) r i) (hr : r ≠ 0) (hip : IsProperMap i) :
     ∃ (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X) (_ : CWComplex (univ : Set X)),
       Nonempty (M ≃ₕ X) ∧ ∀ k, finrank ℂ E < k → IsEmpty (cell (univ : Set X) k) :=
@@ -601,44 +627,16 @@ theorem exists_cwComplex_homotopyEquiv_of_isProperMap [T2Space M] {F : Type*}
     (fun x ↦ TauCeti.injective_mvfderiv_iff.2 (hi.mfderiv_injective hr x)) hip
 
 /-- **Andreotti–Frankel–Milnor CW theorem for `Manifold.IsImmersion` along a closed embedding.** If
-`i : M → F` is a holomorphic `C^r` immersion (`r ≠ 0`) into a finite-dimensional complex inner
-product space which is a closed embedding, then `M` is homotopy equivalent to a Hausdorff CW complex
-with no cells in dimensions strictly greater than `finrank ℂ E`. -/
+`i : M → F` is a holomorphic `C^r` immersion (`r ≠ 0`) into a finite-dimensional complex normed
+space which is a closed embedding, then `M` is homotopy equivalent to a Hausdorff CW complex with no
+cells in dimensions strictly greater than `finrank ℂ E`. -/
 theorem exists_cwComplex_homotopyEquiv_of_isClosedEmbedding {F : Type*} [NormedAddCommGroup F]
-    [InnerProductSpace ℂ F] [FiniteDimensional ℂ F] {r : ℕ∞ω} {i : M → F}
+    [NormedSpace ℂ F] [FiniteDimensional ℂ F] {r : ℕ∞ω} {i : M → F}
     (hi : IsImmersion 𝓘(ℂ, E) 𝓘(ℂ, F) r i) (hr : r ≠ 0) (hclosed : IsClosedEmbedding i) :
     ∃ (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X) (_ : CWComplex (univ : Set X)),
       Nonempty (M ≃ₕ X) ∧ ∀ k, finrank ℂ E < k → IsEmpty (cell (univ : Set X) k) :=
   TauCeti.exists_cwComplex_homotopyEquiv_of_isClosedEmbedding (hi.contMDiff.mdifferentiable hr)
     (fun x ↦ TauCeti.injective_mvfderiv_iff.2 (hi.mfderiv_injective hr x)) hclosed
-
-/-- **Proper holomorphic immersion into `σ → ℂ`.** Post-composing with the continuous linear
-equivalence `(σ → ℂ) ≃L[ℂ] EuclideanSpace ℂ σ` supplies a Hermitian inner product without requiring
-an `InnerProductSpace` instance on `σ → ℂ`. -/
-theorem exists_cwComplex_homotopyEquiv_of_isProperMap_pi [T2Space M] {σ : Type*} [Fintype σ]
-    {r : ℕ∞ω} {i : M → σ → ℂ} (hi : IsImmersion 𝓘(ℂ, E) 𝓘(ℂ, σ → ℂ) r i) (hr : r ≠ 0)
-    (hip : IsProperMap i) :
-    ∃ (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X) (_ : CWComplex (univ : Set X)),
-      Nonempty (M ≃ₕ X) ∧ ∀ k, finrank ℂ E < k → IsEmpty (cell (univ : Set X) k) := by
-  set e := (EuclideanSpace.equiv σ ℂ).symm
-  refine TauCeti.exists_cwComplex_homotopyEquiv_of_isProperMap_holomorphic_immersion
-    ((e.contDiff.contMDiff.mdifferentiable one_ne_zero).comp (hi.contMDiff.mdifferentiable hr))
-    (fun x v w hvw ↦ ?_) (e.toHomeomorph.isClosedEmbedding.isProperMap.comp hip)
-  simp only [TauCeti.mvfderiv_comp_apply_of_differentiableAt e.differentiableAt
-    ((hi.contMDiff x).mdifferentiableAt hr), e.fderiv, mvfderiv_apply_eq_mfderiv_apply] at hvw
-  exact hi.mfderiv_injective hr x (e.injective hvw)
-
-/-- **Closed holomorphic embedding into `σ → ℂ` (Milnor, *Morse Theory*, Theorem 7.2).** Every
-complex manifold admitting a closed holomorphic `C^r` embedding (`r ≠ 0`) into `σ → ℂ`
-(`[Fintype σ]`, in particular `Fin N → ℂ`) is homotopy equivalent to a Hausdorff CW complex with no
-cells in dimensions strictly greater than `finrank ℂ E`. -/
-theorem exists_cwComplex_homotopyEquiv_of_isClosedEmbedding_pi {σ : Type*} [Fintype σ]
-    {r : ℕ∞ω} {i : M → σ → ℂ} (hi : IsImmersion 𝓘(ℂ, E) 𝓘(ℂ, σ → ℂ) r i) (hr : r ≠ 0)
-    (hclosed : IsClosedEmbedding i) :
-    ∃ (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X) (_ : CWComplex (univ : Set X)),
-      Nonempty (M ≃ₕ X) ∧ ∀ k, finrank ℂ E < k → IsEmpty (cell (univ : Set X) k) := by
-  have : T2Space M := hclosed.isEmbedding.t2Space
-  exact hi.exists_cwComplex_homotopyEquiv_of_isProperMap_pi hr hclosed.isProperMap
 
 end Manifold.IsImmersion
 
@@ -660,7 +658,7 @@ example {n N : ℕ} {M : Type u} [TopologicalSpace M] [ChartedSpace (Fin n → �
     ∃ (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X) (_ : CWComplex (univ : Set X)),
       Nonempty (M ≃ₕ X) ∧ ∀ k, n < k → IsEmpty (cell (univ : Set X) k) := by
   obtain ⟨X, _, _, _, hX, hdim⟩ :=
-    hi.exists_cwComplex_homotopyEquiv_of_isClosedEmbedding_pi (by simp) hclosed
+    hi.exists_cwComplex_homotopyEquiv_of_isClosedEmbedding (by simp) hclosed
   exact ⟨X, _, ‹_›, ‹_›, hX, fun k hk ↦ hdim k (by rwa [Module.finrank_fin_fun])⟩
 
 /-- **Check: smooth affine complex curves (`n = 1`).** Every complex curve charted on `ℂ` admitting
@@ -672,7 +670,7 @@ example {N : ℕ} {M : Type u} [TopologicalSpace M] [ChartedSpace ℂ M] [IsMani
     ∃ (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X) (_ : CWComplex (univ : Set X)),
       Nonempty (M ≃ₕ X) ∧ ∀ k, 1 < k → IsEmpty (cell (univ : Set X) k) := by
   obtain ⟨X, _, _, _, hX, hdim⟩ :=
-    hi.exists_cwComplex_homotopyEquiv_of_isClosedEmbedding_pi (by simp) hclosed
+    hi.exists_cwComplex_homotopyEquiv_of_isClosedEmbedding (by simp) hclosed
   exact ⟨X, _, ‹_›, ‹_›, hX, fun k hk ↦ hdim k (by rwa [Module.finrank_self])⟩
 
 /-- The defining polynomial `z₀ z₁ - 1` of the smooth affine hyperbola `ℂ* ↪ ℂ²`. -/
