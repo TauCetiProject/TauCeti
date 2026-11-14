@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Dynamics.Flow.ClosedOrbit
 public import TauCeti.Geometry.Manifold.Flow.Complete
+public import TauCeti.Geometry.Manifold.Instances.AddCircle
 public import Mathlib.Dynamics.Flow
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import TauCeti.Geometry.Diffeomorphism.Group
@@ -43,6 +45,10 @@ boundaryless manifold is complete (`isCompleteVectorField_of_compactSpace`).
   diffeomorphism; `TauCeti.globalFlowDiffeomorph_symm_apply`: its inverse is the time-`(-t)` map.
 * `TauCeti.globalFlowDiffeomorphHom`: the flow as a homomorphism from the additive group `ℝ` to
   the group of `C^n` self-diffeomorphisms.
+* `Flow.PeriodicTrajectory.contMDiff_circleMap_iff`,
+  `Flow.PeriodicTrajectory.hasMFDerivAt_circleMap`, `TauCeti.contMDiff_circleMap_globalFlow`,
+  `TauCeti.hasMFDerivAt_circleMap_globalFlow`: regularity and velocity of the circle
+  parametrization `AddCircle c.period → M` of a periodic trajectory.
 
 ## References
 
@@ -288,5 +294,158 @@ theorem toMul_globalFlowDiffeomorphHom {n : ℕ∞} (hn : 1 ≤ n) [IsManifold I
     (globalFlowDiffeomorphHom hcomplete hn hvn t).toMul =
       globalFlowDiffeomorph hcomplete hn hvn t :=
   (rfl)
+
+end TauCeti
+
+/-! ### Circle parametrizations of periodic trajectories on manifolds -/
+
+namespace Flow.PeriodicTrajectory
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] {ϕ : Flow ℝ M}
+
+/-- The circle parametrization `c.circleMap` of a periodic trajectory is `C^n` (`n : ℕ∞ω`) if and
+only if its real lift `s ↦ ϕ s c.point` is `C^n`. -/
+theorem contMDiff_circleMap_iff (c : Flow.PeriodicTrajectory ϕ) {n : ℕ∞ω} :
+    ContMDiff 𝓘(ℝ) I n c.circleMap ↔ ContMDiff 𝓘(ℝ) I n (fun s ↦ ϕ s c.point) := by
+  have hcomp : c.circleMap ∘ ((↑) : ℝ → AddCircle c.period) = fun s ↦ ϕ s c.point :=
+    funext c.circleMap_coe
+  rw [← (AddCircle.isLocalDiffeomorph_coe c.period n).contMDiff_comp_iff
+    QuotientAddGroup.mk_surjective le_rfl, hcomp]
+
+/-- If `s ↦ ϕ s c.point` is an integral curve of `v`, then `c.circleMap` is differentiable at `θ`
+with velocity `v (c.circleMap θ)`. -/
+theorem hasMFDerivAt_circleMap (c : Flow.PeriodicTrajectory ϕ)
+    {v : (x : M) → TangentSpace I x} (h : IsMIntegralCurve (fun s ↦ ϕ s c.point) v)
+    (θ : AddCircle c.period) :
+    HasMFDerivAt 𝓘(ℝ) I c.circleMap θ
+      ((1 : ℝ →L[ℝ] ℝ).smulRight (v (c.circleMap θ))) := by
+  induction θ using QuotientAddGroup.induction_on with
+  | H t =>
+    have hcomp : c.circleMap ∘ ((↑) : ℝ → AddCircle c.period) =
+        fun s ↦ ϕ s c.point := funext c.circleMap_coe
+    have hlift : HasMFDerivAt 𝓘(ℝ) I (c.circleMap ∘ ((↑) : ℝ → AddCircle c.period)) t
+        ((1 : ℝ →L[ℝ] ℝ).smulRight (v (c.circleMap t))) := by
+      rw [hcomp, c.circleMap_coe]
+      exact h t
+    have hd : MDifferentiableAt 𝓘(ℝ) I c.circleMap t :=
+      ((AddCircle.isLocalDiffeomorph_coe c.period 1 t).mdifferentiableAt_comp_iff one_ne_zero).1
+        hlift.mdifferentiableAt
+    rw [← AddCircle.mfderiv_comp_coe.symm.trans hlift.mfderiv]
+    exact hd.hasMFDerivAt
+
+end Flow.PeriodicTrajectory
+
+namespace TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I 1 M]
+  [BoundarylessManifold I M]
+  {v : (x : M) → TangentSpace I x}
+  (hv : ContMDiff I I.tangent 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
+  (hcomplete : IsCompleteVectorField v)
+
+/-- For a complete `C^n` vector field (`1 ≤ n`), the circle parametrization `c.circleMap` of any
+periodic trajectory of `globalFlow` is `C^n`. -/
+theorem contMDiff_circleMap_globalFlow {n : ℕ∞} (hn : 1 ≤ n) [IsManifold I n M]
+    (hvn : ContMDiff I I.tangent n (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
+    (c : Flow.PeriodicTrajectory
+      (globalFlow v (hvn.of_le (by exact_mod_cast hn)) hcomplete)) :
+    ContMDiff 𝓘(ℝ) I n c.circleMap :=
+  c.contMDiff_circleMap_iff.2 <|
+    (contMDiff_globalFlow_uncurry hcomplete hn hvn).comp (contMDiff_id.prodMk contMDiff_const)
+
+include hv hcomplete in
+/-- For a complete `C¹` vector field `v`, the circle parametrization `c.circleMap` of any periodic
+trajectory of `globalFlow` is differentiable at `θ` with velocity `v (c.circleMap θ)`. -/
+theorem hasMFDerivAt_circleMap_globalFlow
+    (c : Flow.PeriodicTrajectory (globalFlow v hv hcomplete)) (θ : AddCircle c.period) :
+    HasMFDerivAt 𝓘(ℝ) I c.circleMap θ
+      ((1 : ℝ →L[ℝ] ℝ).smulRight (v (c.circleMap θ))) :=
+  c.hasMFDerivAt_circleMap (isMIntegralCurve_globalFlow hv hcomplete c.point) θ
+
+/-- Construct a periodic trajectory of `globalFlow` from a non-stationary base point `x` (`v x ≠ 0`)
+and a positive return time `T`. -/
+noncomputable def periodicTrajectoryGlobalFlow {x : M} (hv0 : v x ≠ 0) {T : ℝ} (hT : 0 < T)
+    (hfix : globalFlow v hv hcomplete T x = x) :
+    Flow.PeriodicTrajectory (globalFlow v hv hcomplete) where
+  point := x
+  period := T
+  period_pos := hT
+  apply_period := hfix
+  exists_apply_ne := by
+    by_contra h
+    exact hv0 ((forall_globalFlow_eq_self_iff hv hcomplete x).1
+      fun t ↦ not_not.1 (not_exists.1 h t))
+
+/-- The base point of `periodicTrajectoryGlobalFlow` is `x`. -/
+@[simp]
+theorem point_periodicTrajectoryGlobalFlow {x : M} (hv0 : v x ≠ 0) {T : ℝ} (hT : 0 < T)
+    (hfix : globalFlow v hv hcomplete T x = x) :
+    (periodicTrajectoryGlobalFlow hv hcomplete hv0 hT hfix).point = x :=
+  (rfl)
+
+/-- The period of `periodicTrajectoryGlobalFlow` is `T`. -/
+@[simp]
+theorem period_periodicTrajectoryGlobalFlow {x : M} (hv0 : v x ≠ 0) {T : ℝ} (hT : 0 < T)
+    (hfix : globalFlow v hv hcomplete T x = x) :
+    (periodicTrajectoryGlobalFlow hv hcomplete hv0 hT hfix).period = T :=
+  (rfl)
+
+/-- Evaluating the circle parametrization of `periodicTrajectoryGlobalFlow` at `(t : ℝ)` gives the
+global flow at time `t`. -/
+theorem circleMap_periodicTrajectoryGlobalFlow_coe {x : M} (hv0 : v x ≠ 0) {T : ℝ} (hT : 0 < T)
+    (hfix : globalFlow v hv hcomplete T x = x) (t : ℝ) :
+    (periodicTrajectoryGlobalFlow hv hcomplete hv0 hT hfix).circleMap t =
+      globalFlow v hv hcomplete t x :=
+  Flow.PeriodicTrajectory.circleMap_coe _ t
+
+/-- Construct a periodic trajectory of `globalFlow` from a periodic integral curve `γ` with
+`v (γ 0) ≠ 0`. -/
+noncomputable def periodicTrajectoryGlobalFlowOfIntegralCurve {γ : ℝ → M}
+    (hγ : IsMIntegralCurve γ v) (hv0 : v (γ 0) ≠ 0) {T : ℝ} (hT : 0 < T)
+    (hper : Function.Periodic γ T) :
+    Flow.PeriodicTrajectory (globalFlow v hv hcomplete) :=
+  periodicTrajectoryGlobalFlow hv hcomplete hv0 hT <| by
+    rw [globalFlow_eq_of_isMIntegralCurve hv hcomplete hγ T]
+    simpa using hper 0
+
+/-- Unfolds `periodicTrajectoryGlobalFlowOfIntegralCurve` in terms of
+`periodicTrajectoryGlobalFlow`. -/
+theorem periodicTrajectoryGlobalFlowOfIntegralCurve_def {γ : ℝ → M}
+    (hγ : IsMIntegralCurve γ v) (hv0 : v (γ 0) ≠ 0) {T : ℝ} (hT : 0 < T)
+    (hper : Function.Periodic γ T) :
+    periodicTrajectoryGlobalFlowOfIntegralCurve hv hcomplete hγ hv0 hT hper =
+      periodicTrajectoryGlobalFlow hv hcomplete hv0 hT (by
+        rw [globalFlow_eq_of_isMIntegralCurve hv hcomplete hγ T]
+        simpa using hper 0) :=
+  (rfl)
+
+/-- The base point of `periodicTrajectoryGlobalFlowOfIntegralCurve` is `γ 0`. -/
+@[simp]
+theorem point_periodicTrajectoryGlobalFlowOfIntegralCurve {γ : ℝ → M}
+    (hγ : IsMIntegralCurve γ v) (hv0 : v (γ 0) ≠ 0) {T : ℝ} (hT : 0 < T)
+    (hper : Function.Periodic γ T) :
+    (periodicTrajectoryGlobalFlowOfIntegralCurve hv hcomplete hγ hv0 hT hper).point = γ 0 :=
+  (rfl)
+
+/-- The period of `periodicTrajectoryGlobalFlowOfIntegralCurve` is `T`. -/
+@[simp]
+theorem period_periodicTrajectoryGlobalFlowOfIntegralCurve {γ : ℝ → M}
+    (hγ : IsMIntegralCurve γ v) (hv0 : v (γ 0) ≠ 0) {T : ℝ} (hT : 0 < T)
+    (hper : Function.Periodic γ T) :
+    (periodicTrajectoryGlobalFlowOfIntegralCurve hv hcomplete hγ hv0 hT hper).period = T :=
+  (rfl)
+
+/-- Evaluating the circle parametrization of `periodicTrajectoryGlobalFlowOfIntegralCurve` at
+`(t : ℝ)` recovers `γ t`. -/
+theorem circleMap_periodicTrajectoryGlobalFlowOfIntegralCurve_coe {γ : ℝ → M}
+    (hγ : IsMIntegralCurve γ v) (hv0 : v (γ 0) ≠ 0) {T : ℝ} (hT : 0 < T)
+    (hper : Function.Periodic γ T) (t : ℝ) :
+    (periodicTrajectoryGlobalFlowOfIntegralCurve hv hcomplete hγ hv0 hT hper).circleMap t =
+      γ t := by
+  rw [periodicTrajectoryGlobalFlowOfIntegralCurve, circleMap_periodicTrajectoryGlobalFlow_coe,
+    globalFlow_eq_of_isMIntegralCurve hv hcomplete hγ t]
 
 end TauCeti

@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Flow.ReturnDerivative
+public import TauCeti.Geometry.Manifold.VectorField.Transverse
+public import TauCeti.LinearAlgebra.Projection
 import TauCeti.LinearAlgebra.Charpoly.Quotient
 
 /-!
@@ -33,6 +35,9 @@ The main results are:
   `v p` (`TauCeti.mfderiv_flowOf_apply_self`). Thus `N` and the monodromy have the same
   eigenvalues other than `1`
   (`TauCeti.hasEigenvalue_normalReturnDerivative_iff_hasEigenvalue_mfderiv_flowOf`).
+* `TauCeti.equivOfIsCompl_conj_normalReturnDerivative`: for any `DΦ_{T₀}`-invariant complement `ξ`
+  of `ℝ ∙ v p`, projection along `v p` (`Submodule.equivOfIsCompl`) conjugates `N` to the
+  restriction of `DΦ_{T₀}` to `ξ`.
 
 As in `TauCeti.Geometry.Manifold.Flow.ReturnDerivative`, `T₀` need not be the least period, and the
 return branch need not be the first return to the section.
@@ -82,12 +87,108 @@ theorem charpoly_returnDerivative_eq_X_mul (hgv : mvfderiv I g p (v p) ≠ 0)
   rw [LinearMap.charpoly_eq_charpoly_restrict_mul_charpoly_mapQ K A hK, hQ, LinearMap.charpoly_zero,
     hrank, pow_one, mul_comm, normalReturnDerivative_def]
 
+section InvariantComplement
+
+variable (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
+  (hP : (T₀, p) ∈ flowDomain v) (hp : flowOf v T₀ p = p)
+include hv hP hp
+
+/-- **Characteristic polynomial of the monodromy on an invariant complement.** If `p` returns to
+itself at time `T₀` with `v p ≠ 0`, `ξ` is a complement of `ℝ ∙ v p`, and `R : Module.End ℝ ξ`
+agrees with `DΦ_{T₀}` on `ξ`, the characteristic polynomial of `DΦ_{T₀}` is `X - 1` times that of
+`R`. -/
+theorem charpoly_mfderiv_flowOf_eq_X_sub_one_mul_of_isCompl (hv0 : v p ≠ 0)
+    {ξ : Submodule ℝ (TangentSpace I p)} (hξ : IsCompl ξ (ℝ ∙ v p))
+    {R : Module.End ℝ ξ} (hR : ∀ w : ξ, (R w : TangentSpace I p) = mfderiv I I (flowOf v T₀) p w) :
+    (mfderiv I I (flowOf v T₀) p).toLinearMap.charpoly = (X - 1) * R.charpoly := by
+  let Mo : Module.End ℝ (TangentSpace I p) := (mfderiv I I (flowOf v T₀) p).toLinearMap
+  have hfix : Mo (v p) = v p := (mfderiv_flowOf_apply_self hv hP).trans (congrArg v hp)
+  set L := ℝ ∙ v p
+  have hL : L ≤ L.comap Mo := by
+    intro x hx
+    obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.1 hx
+    rw [Submodule.mem_comap, map_smul, hfix]
+    exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self _)
+  have hres : Mo.restrict (p := L) (q := L) hL = 1 := by
+    ext ⟨x, hx⟩
+    obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.1 hx
+    rw [LinearMap.coe_restrict_apply, map_smul, hfix, one_apply_eq_self]
+  let e := L.quotientEquivOfIsCompl ξ hξ.symm
+  have hconj : e.conj (L.mapQ L Mo hL) = R := by
+    ext u
+    simp only [e, LinearEquiv.conj_apply, LinearMap.coe_comp, LinearEquiv.coe_coe, comp_apply,
+      Submodule.quotientEquivOfIsCompl_symm_apply, Submodule.mapQ_apply,
+      Submodule.quotientEquivOfIsCompl_apply_mk]
+    have hMo : Mo u = R u := (hR u).symm
+    rw [hMo]
+    exact congrArg Subtype.val (Submodule.projectionOnto_apply_of_mem_left hξ (R u).2)
+  rw [LinearMap.charpoly_eq_charpoly_restrict_mul_charpoly_mapQ L Mo hL, hres,
+    LinearMap.charpoly_one, finrank_span_singleton hv0, pow_one, ← LinearEquiv.charpoly_conj e,
+    hconj]
+
+end InvariantComplement
+
 section Return
 
 variable (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
   (hP : (T₀, p) ∈ flowDomain v) (hp : flowOf v T₀ p = p) (hg : ContMDiffAt I 𝓘(ℝ) 1 g p)
   (hgv : mvfderiv I g p (v p) ≠ 0)
 include hv hP hp hg hgv
+
+/-- **Invariant-complement monodromy conjugacy.** If `ξ` is any `DΦ_{T₀}`-invariant complement of
+`ℝ ∙ v p` at a periodic point `p` and `R : Module.End ℝ ξ` agrees with `DΦ_{T₀}` on `ξ`, projection
+along `v p` (`Submodule.equivOfIsCompl`) conjugates the normal return derivative on `ker dg_p` to
+`R`. -/
+theorem equivOfIsCompl_conj_normalReturnDerivative
+    {h : LinearMap.range (returnDerivative v g T₀ p) ≤
+      LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ)}
+    {ξ : Submodule ℝ (TangentSpace I p)} (hξ : IsCompl ξ (ℝ ∙ v p))
+    {R : Module.End ℝ ξ} (hR : ∀ w : ξ, (R w : TangentSpace I p) = mfderiv I I (flowOf v T₀) p w) :
+    (Submodule.equivOfIsCompl _ ξ (ℝ ∙ v p) (isCompl_ker_mvfderiv_span_singleton hgv) hξ).conj
+        (normalReturnDerivative v g T₀ p h) = R := by
+  set K := LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ)
+  let Mo : Module.End ℝ (TangentSpace I p) := (mfderiv I I (flowOf v T₀) p).toLinearMap
+  -- The tangent spaces at `flowOf v T₀ p` and at `p` are both the model space `E`, so
+  -- `congrArg v hp` is a well-typed equation of vectors in `E`.
+  have hfix : Mo (v p) = v p := (mfderiv_flowOf_apply_self hv hP).trans (congrArg v hp)
+  set L := ℝ ∙ v p
+  have hL : L ≤ L.comap Mo := by
+    intro x hx
+    obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.1 hx
+    rw [Submodule.mem_comap, map_smul, hfix]
+    exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self _)
+  let e₁ := L.quotientEquivOfIsCompl K (isCompl_ker_mvfderiv_span_singleton hgv).symm
+  have hconj₁ : e₁.conj (L.mapQ L Mo hL) = normalReturnDerivative v g T₀ p h := by
+    ext w
+    have hform := mfderiv_flowTransition_apply hv hP (by rwa [hp]) (by rwa [hp]) w
+    rw [congrArg v hp] at hform
+    simp only [e₁, LinearEquiv.conj_apply, LinearMap.coe_comp, LinearEquiv.coe_coe, comp_apply,
+      Submodule.quotientEquivOfIsCompl_symm_apply, Submodule.mapQ_apply,
+      Submodule.quotientEquivOfIsCompl_apply_mk]
+    have hDP : returnDerivative v g T₀ p w ∈ K :=
+      h (LinearMap.mem_range_self _ (w : TangentSpace I p))
+    -- `Mo w` differs from the return derivative by a multiple of `v p`, which the projection kills.
+    have hMo : Mo w =
+        returnDerivative v g T₀ p w - mvfderiv I (flowHittingTime v g T₀ p) p w • v p := by
+      rw [returnDerivative_apply]
+      exact eq_sub_of_add_eq' hform.symm
+    rw [hMo, map_sub, map_smul,
+      Submodule.projectionOnto_apply_of_mem_right _ (Submodule.mem_span_singleton_self _),
+      Submodule.projectionOnto_apply_of_mem_left _ hDP, smul_zero, sub_zero]
+    exact (coe_normalReturnDerivative_apply w).symm
+  let e₂ := L.quotientEquivOfIsCompl ξ hξ.symm
+  have hconj₂ : e₂.conj (L.mapQ L Mo hL) = R := by
+    ext u
+    simp only [e₂, LinearEquiv.conj_apply, LinearMap.coe_comp, LinearEquiv.coe_coe, comp_apply,
+      Submodule.quotientEquivOfIsCompl_symm_apply, Submodule.mapQ_apply,
+      Submodule.quotientEquivOfIsCompl_apply_mk]
+    have hMo : Mo u = R u := (hR u).symm
+    rw [hMo]
+    exact congrArg Subtype.val (Submodule.projectionOnto_apply_of_mem_left hξ (R u).2)
+  rw [Submodule.equivOfIsCompl_def, ← hconj₁, ← hconj₂]
+  ext u
+  simp only [LinearEquiv.conj_apply_apply, LinearEquiv.trans_apply, LinearEquiv.symm_trans_apply,
+    LinearEquiv.symm_symm, LinearEquiv.symm_apply_apply, e₁, e₂, K, L]
 
 /-- **The monodromy and the normal return derivative.** If `p` returns to itself at time `T₀`, the
 characteristic polynomial of the derivative `DΦ_{T₀}` at `p` of the time-`T₀` map of the flow is
@@ -114,10 +215,7 @@ theorem charpoly_mfderiv_flowOf_eq_X_sub_one_mul
     ext ⟨x, hx⟩
     obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.1 hx
     rw [LinearMap.coe_restrict_apply, map_smul, hfix, one_apply_eq_self]
-  have hcompl : IsCompl L K :=
-    ⟨(Submodule.disjoint_span_singleton_of_notMem hgv).symm,
-      codisjoint_iff.2 (LinearMap.span_singleton_sup_ker_eq_top _ hgv)⟩
-  let e := Submodule.quotientEquivOfIsCompl L K hcompl
+  let e := L.quotientEquivOfIsCompl K (isCompl_ker_mvfderiv_span_singleton hgv).symm
   have hconj : e.conj (L.mapQ L Mo hL) = normalReturnDerivative v g T₀ p h := by
     ext w
     have hform := mfderiv_flowTransition_apply hv hP (by rwa [hp]) (by rwa [hp]) w

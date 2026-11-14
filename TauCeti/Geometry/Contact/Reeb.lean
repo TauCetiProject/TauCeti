@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Contact.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Interior
+public import TauCeti.Geometry.Manifold.VectorField.Transverse
+public import TauCeti.LinearAlgebra.Projection
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
 
 /-!
@@ -36,7 +38,8 @@ constant `c ≠ 0` this gives `R_(c α) = R_α / c`
 (`TauCeti.SmoothForm.IsContactForm.reebVectorField_smul`), and in particular `R_(-α) = -R_α`.
 
 All statements here are pointwise linear algebra at each point, applying
-`Module.Dual.reebVector` to the covector `α_x` and the bilinear form `dα_x`.
+`Module.Dual.reebVector` to the covector `α_x` and the bilinear form `dα_x`, together with the
+existence of local transverse functions (`exists_contMDiffAt_and_mvfderiv_reebVectorField_eq_one`).
 
 ## Main declarations
 
@@ -48,6 +51,10 @@ All statements here are pointwise linear algebra at each point, applying
 * `TauCeti.SmoothForm.IsContactForm.eq_reebVectorField_iff`: uniqueness.
 * `TauCeti.SmoothForm.IsContactForm.isCompl_kerDistribution_span_reebVectorField`: the splitting
   `T_x M = ξ_x ⊕ ℝ R_α(x)`.
+* `TauCeti.SmoothForm.IsContactForm.kerSectionEquivKerDistribution`: projection along `R_α(x)` from
+  the tangent hyperplane `ker dg_x` of a transverse function to `ξ_x`.
+* `TauCeti.SmoothForm.IsContactForm.exists_contMDiffAt_and_mvfderiv_reebVectorField_eq_one`:
+  existence of a function `g` smooth at `x` with `dg_x(R_α x) = 1`.
 * `TauCeti.SmoothForm.IsContactForm.reebVectorField_eq_inv_smul_add_iff`: the rescaling law.
 
 ## References
@@ -61,7 +68,7 @@ public section
 noncomputable section
 
 open Module
-open scoped Manifold
+open scoped ContDiff Manifold
 
 namespace TauCeti
 
@@ -149,6 +156,55 @@ theorem IsContactForm.isCompl_kerDistribution_span_reebVectorField (hα : α.IsC
     (x : M) : IsCompl (α.kerDistribution x) (ℝ ∙ α.reebVectorField x) := by
   rw [kerDistribution_def]
   exact (isContactForm_def.1 hα x).isCompl_ker_span_reebVector
+
+/-- The projection along `R_α(x)` gives a linear equivalence between the tangent space `ker dg_x`
+of any function `g` with `dg_x(R_α x) ≠ 0` and the contact hyperplane `ξ_x = ker α_x`. -/
+def IsContactForm.kerSectionEquivKerDistribution (hα : α.IsContactForm) {g : M → ℝ} {x : M}
+    (hgv : mvfderiv I g x (α.reebVectorField x) ≠ 0) :
+    LinearMap.ker (mvfderiv I g x : TangentSpace I x →ₗ[ℝ] ℝ) ≃ₗ[ℝ] α.kerDistribution x :=
+  Submodule.equivOfIsCompl _ _ (ℝ ∙ α.reebVectorField x)
+    (isCompl_ker_mvfderiv_span_singleton hgv)
+    (hα.isCompl_kerDistribution_span_reebVectorField x)
+
+/-- Unfolds `IsContactForm.kerSectionEquivKerDistribution` as `Submodule.equivOfIsCompl` along
+`ℝ ∙ R_α(x)`. -/
+theorem IsContactForm.kerSectionEquivKerDistribution_def (hα : α.IsContactForm) {g : M → ℝ}
+    {x : M} (hgv : mvfderiv I g x (α.reebVectorField x) ≠ 0) :
+    hα.kerSectionEquivKerDistribution hgv =
+      Submodule.equivOfIsCompl _ _ (ℝ ∙ α.reebVectorField x)
+        (isCompl_ker_mvfderiv_span_singleton hgv)
+        (hα.isCompl_kerDistribution_span_reebVectorField x) :=
+  (rfl)
+
+/-- `kerSectionEquivKerDistribution` evaluates by projecting onto `α.kerDistribution x` along
+`ℝ ∙ R_α(x)`. -/
+@[simp]
+theorem IsContactForm.kerSectionEquivKerDistribution_apply (hα : α.IsContactForm) {g : M → ℝ}
+    {x : M} (hgv : mvfderiv I g x (α.reebVectorField x) ≠ 0)
+    (v : LinearMap.ker (mvfderiv I g x : TangentSpace I x →ₗ[ℝ] ℝ)) :
+    hα.kerSectionEquivKerDistribution hgv v =
+      (α.kerDistribution x).projectionOnto (ℝ ∙ α.reebVectorField x)
+        (hα.isCompl_kerDistribution_span_reebVectorField x) v :=
+  Submodule.equivOfIsCompl_apply _ _ _ _ _ v
+
+/-- The inverse of `kerSectionEquivKerDistribution` evaluates by projecting onto `ker dg_x` along
+`ℝ ∙ R_α(x)`. -/
+@[simp]
+theorem IsContactForm.kerSectionEquivKerDistribution_symm_apply (hα : α.IsContactForm)
+    {g : M → ℝ} {x : M} (hgv : mvfderiv I g x (α.reebVectorField x) ≠ 0)
+    (v : α.kerDistribution x) :
+    (hα.kerSectionEquivKerDistribution hgv).symm v =
+      (LinearMap.ker (mvfderiv I g x : TangentSpace I x →ₗ[ℝ] ℝ)).projectionOnto
+        (ℝ ∙ α.reebVectorField x) (isCompl_ker_mvfderiv_span_singleton hgv) v :=
+  Submodule.equivOfIsCompl_symm_apply _ _ _ _ _ v
+
+/-- At any point `x` of a smooth contact manifold, there exists a function `g : M → ℝ`, smooth at
+`x`, with `dg_x(R_α x) = 1`, whose level `{g = g x}` is a local section transverse to the Reeb
+vector field. -/
+theorem IsContactForm.exists_contMDiffAt_and_mvfderiv_reebVectorField_eq_one
+    (hα : α.IsContactForm) [IsManifold I ∞ M] (x : M) :
+    ∃ g : M → ℝ, ContMDiffAt I 𝓘(ℝ) ∞ g x ∧ mvfderiv I g x (α.reebVectorField x) = 1 :=
+  exists_contMDiffAt_and_mvfderiv_eq_one (by simp) (hα.reebVectorField_ne_zero x)
 
 /-- **Rescaling law for the Reeb vector field.** Let `α` be a contact form and `β = f α` for a
 function `f`, `C¹` at `x`. Then `R_β(x) = R_α(x) / f(x) + y` exactly when `y` lies in

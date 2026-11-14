@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.RegularValue.Level
+import Mathlib.Analysis.Normed.Module.HahnBanach
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 
 /-!
@@ -45,6 +47,8 @@ boundary is crossed outwards by a vector field, as for Liouville domains.
   the nonvanishing of `df(Z)` on the level.
 * `TauCeti.frontier_setOf_le_eq_of_mvfderiv_pos`: the frontier of a sublevel set whose level is
   crossed outwards by a vector field is the level.
+* `TauCeti.exists_contMDiffAt_and_mvfderiv_eq_one`: for any nonzero tangent vector `v` at `x`,
+  there exists a local `C^n` function `g` with `dg_x(v) = 1`.
 
 ## References
 
@@ -55,7 +59,7 @@ boundary is crossed outwards by a vector field, as for Liouville domains.
 public section
 
 open Filter Module Set
-open scoped Manifold Topology
+open scoped ContDiff Manifold Topology
 
 namespace TauCeti
 
@@ -110,6 +114,37 @@ theorem frontier_setOf_le_eq_of_mvfderiv_pos {Z : (x : M) → TangentSpace I x} 
     (mem_closure_setOf_lt_of_mvfderiv_pos (hpos x hx))⟩
 
 end Crossing
+
+/-- If `dg_x(v) ≠ 0`, the hyperplane `ker dg_x` is complementary to the line `ℝ ∙ v`. -/
+theorem isCompl_ker_mvfderiv_span_singleton {g : M → ℝ} {x : M} {v : TangentSpace I x}
+    (hgv : mvfderiv I g x v ≠ 0) :
+    IsCompl (LinearMap.ker (mvfderiv I g x : TangentSpace I x →ₗ[ℝ] ℝ)) (ℝ ∙ v) :=
+  ⟨Submodule.disjoint_span_singleton_of_notMem hgv,
+    codisjoint_iff.2 (by rw [sup_comm]; exact LinearMap.span_singleton_sup_ker_eq_top _ hgv)⟩
+
+/-- **Existence of a local transverse function.** For any nonzero tangent vector `v` at `x` on a
+`C^n` manifold (`1 ≤ n`), there exists a function `g : M → ℝ`, `C^n` at `x`, with `dg_x(v) = 1`.
+No finite-dimensionality or boundarylessness hypothesis is needed. -/
+theorem exists_contMDiffAt_and_mvfderiv_eq_one {n : ℕ∞ω} (hn : 1 ≤ n) [IsManifold I n M]
+    {x : M} {v : TangentSpace I x} (hv : v ≠ 0) :
+    ∃ g : M → ℝ, ContMDiffAt I 𝓘(ℝ) n g x ∧ mvfderiv I g x v = 1 := by
+  have : IsManifold I 1 M := IsManifold.of_le hn
+  -- `TangentSpace I x` is definitionally the model space `E`, which carries the norm for
+  -- Hahn–Banach.
+  let w : E := v
+  have hw : ‖w‖ ≠ 0 := norm_ne_zero_iff.2 hv
+  obtain ⟨φ, -, hφ⟩ := exists_dual_vector (𝕜 := ℝ) w hw
+  let ℓ : E →L[ℝ] ℝ := ‖w‖⁻¹ • φ
+  refine ⟨ℓ ∘ extChartAt I x,
+    ℓ.contDiff.contMDiff.contMDiffAt.comp x contMDiffAt_extChartAt, ?_⟩
+  have hmd : MDifferentiableAt I 𝓘(ℝ, E) (extChartAt I x) x :=
+    (contMDiffAt_extChartAt (I := I) (n := 1) (x := x)).mdifferentiableAt one_ne_zero
+  rw [ℓ.mvfderiv_comp_apply hmd]
+  have hchart : mvfderiv I (extChartAt I x) x v = w := by
+    rw [mvfderiv, mfderiv_extChartAt_self]
+    rfl
+  rw [hchart]
+  simp [ℓ, hφ, inv_mul_cancel₀ hw]
 
 variable {f : M → ℝ} {c : ℝ} [I.Boundaryless] [FiniteDimensional ℝ E] [IsManifold I 1 M]
   (hf : ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ) 1 f x) (hreg : IsRegularValue I 𝓘(ℝ) f c)
