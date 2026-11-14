@@ -9,7 +9,10 @@ public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 public import Mathlib.Analysis.InnerProductSpace.NormDet
-public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
+public import Mathlib.Geometry.Manifold.LocalDiffeomorph
+import TauCeti.Geometry.Manifold.ChartedSpace
+import TauCeti.Geometry.Manifold.Polish
+import TauCeti.MeasureTheory.Covering.DisjointCover
 
 /-!
 # Change of variables for the Riemannian volume
@@ -30,10 +33,10 @@ every point of the carrier, and for arbitrary nonnegative weights. It applies to
 subdomains such as truncated strips even when the map is not injective on an open neighborhood.
 It also identifies the pushforward of the Jacobian-weighted coordinate measure.
 
-For maps that are `C¹` on an open neighborhood of the carrier, the Bochner formula and its
+For maps differentiable at every point of the carrier, the Bochner formula and its
 integrability equivalence allow weights in any real normed space. The integrand need not be
 measurable or integrable for the integral equality. Specializations cover partial diffeomorphisms
-and local diffeomorphisms injective on open domains, at any regularity `n ≥ 1`.
+and local diffeomorphisms injective on measurable carriers, at any regularity `n ≠ 0`.
 
 The space `F` and the model space of `M` may differ, provided they have the same dimension. No
 orientation is used, and `M` may have boundary or corners.
@@ -56,20 +59,25 @@ orientation is used, and `M` may have boundary or corners.
   injective differentiable map whose image lies in a preferred chart.
 * `Module.Basis.setLIntegral_riemannianVolume_image_of_injOn`: nonnegative change of variables
   on a measurable injective carrier, without measurability assumptions on the weight.
-* `Module.Basis.map_withDensity_riemannianJacobian_of_injOn`: the corresponding pushforward
-  measure identity.
+* `Module.Basis.map_withDensity_riemannianJacobian_of_injOn` and
+  `Module.Basis.restrict_map_withDensity_riemannianJacobian_of_injOn`: the corresponding
+  pushforward identities for the map and its subtype restriction.
+* `Module.Basis.aemeasurable_ofReal_riemannianJacobian`: almost everywhere measurability of the
+  Jacobian weight on a carrier of pointwise differentiability.
 * `Module.Basis.setIntegral_riemannianVolume_image_of_injOn` and
   `Module.Basis.integrableOn_riemannianVolume_image_iff_of_injOn`: Bochner change of variables
-  and integrability on measurable injective carriers of maps that are `C¹` nearby.
+  and integrability on measurable injective carriers of pointwise differentiable maps.
 * `PartialDiffeomorph.map_withDensity_riemannianJacobian` and
   `PartialDiffeomorph.setLIntegral_riemannianVolume_eq`: the measure and nonnegative integral
   specializations to partial diffeomorphisms.
 * `PartialDiffeomorph.setIntegral_riemannianVolume_eq` and
   `PartialDiffeomorph.integrableOn_riemannianVolume_iff`: Bochner integral and integrability
   formulas for partial diffeomorphisms.
-* `IsLocalDiffeomorphOn.setIntegral_riemannianVolume_image` and
+* `IsLocalDiffeomorphOn.map_withDensity_riemannianJacobian`,
+  `IsLocalDiffeomorphOn.setLIntegral_riemannianVolume_image`,
+  `IsLocalDiffeomorphOn.setIntegral_riemannianVolume_image` and
   `IsLocalDiffeomorphOn.integrableOn_riemannianVolume_image_iff`: the corresponding formulas
-  for local diffeomorphisms injective on open sets.
+  for local diffeomorphisms injective on measurable sets.
 
 ## References
 
@@ -365,6 +373,92 @@ theorem setLIntegral_riemannianVolume_image_of_subset_chart
   simp only [Function.comp_apply]
   rw [riemannianJacobian_comp_continuousLinearEquiv A c (hf _ hx), hcb]
 
+private theorem aemeasurable_ofReal_riemannianJacobian_of_model
+    (b : Module.Basis ι ℝ E) {f : E → M} {s : Set E} (hs : MeasurableSet s)
+    (hf : ∀ x ∈ s, MDifferentiableAt 𝓘(ℝ, E) I f x) :
+    AEMeasurable (fun x ↦ ENNReal.ofReal (riemannianJacobian (I := I) b f x))
+      (b.addHaar.restrict s) := by
+  have hc : ContinuousOn f s := fun x hx ↦ (hf x hx).continuousAt.continuousWithinAt
+  have : IsManifold I (0 + 1) M := by
+    simpa using (inferInstance : IsManifold I 1 M)
+  have : IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x) :=
+    IsContinuousRiemannianBundle.toIsContMDiffZero
+  obtain ⟨t, ht, hcover⟩ := LindelofSpace.elim_nhds_subcover
+    (fun x : M ↦ (chartAt H x).source) fun x ↦ chart_source_mem_nhds H x
+  have : Countable t := ht.to_subtype
+  let a := fun α : t ↦ f ⁻¹' (chartAt H α.val).source ∩ s
+  have ha (α : t) : MeasurableSet (a α) := by
+    dsimp only [a]
+    rw [inter_comm, ← Subtype.image_preimage_coe]
+    exact (MeasurableEmbedding.subtype_coe hs).measurableSet_image.mpr
+      (hc.domRestrict.measurable (chartAt H α.val).open_source.measurableSet)
+  have hUnion : ⋃ α, a α = s := by
+    simp only [a, ← iUnion_inter, ← preimage_iUnion, iUnion_subtype, hcover,
+      preimage_univ, univ_inter]
+  -- On each chart piece, the coordinate derivative is a.e. measurable and the metric is continuous.
+  have hfin : AEMeasurable (fun x ↦ ENNReal.ofReal
+      (riemannianJacobian (I := I) (Module.finBasis ℝ E) f x)) (b.addHaar.restrict s) := by
+    rw [← hUnion]
+    apply AEMeasurable.iUnion
+    intro α
+    let D := fun x ↦ (mfderiv I 𝓘(ℝ, E) (extChartAt I α.val) (f x) ∘L
+      mfderiv 𝓘(ℝ, E) I f x : E →L[ℝ] E)
+    have hD : ∀ x ∈ a α, HasFDerivWithinAt (extChartAt I α.val ∘ f) (D x) (a α) x := by
+      intro x hx
+      have h := (hf x hx.2).hasMFDerivAt.hasFDerivAt_extChartAt_comp hx.1
+      rw [TangentBundle.continuousLinearMapAt_trivializationAt hx.1] at h
+      exact h.hasFDerivWithinAt
+    have hdensity : ContinuousOn
+        (fun x ↦ ENNReal.ofReal (chartVolumeDensity (I := I) α.val (f x))) (a α) := by
+      apply ENNReal.continuous_ofReal.comp_continuousOn
+      apply (contMDiffOn_chartVolumeDensity (I := I) (n := 0) α.val).continuousOn.comp
+        (hc.mono inter_subset_right)
+      intro x hx
+      rw [TangentBundle.trivializationAt_baseSet]
+      exact hx.1
+    apply ((aemeasurable_ofReal_abs_det_fderivWithin b.addHaar (ha α) hD).mul
+      (hdensity.aemeasurable (ha α))).congr
+    filter_upwards [ae_restrict_mem (ha α)] with x hx
+    rw [riemannianJacobian_finBasis_eq_abs_det_mul_chartVolumeDensity hx.1,
+      ENNReal.ofReal_mul (abs_nonneg _)]
+    rfl
+  -- Transfer the weight from the coordinate basis to the chosen basis.
+  let e : ι ≃ Fin (Module.finrank ℝ E) :=
+    Fintype.equivFinOfCardEq (Module.finrank_eq_card_basis b).symm
+  apply (aemeasurable_const.mul hfin : AEMeasurable
+      (fun x ↦ ENNReal.ofReal |(Module.finBasis ℝ E).det (b.reindex e)| *
+        ENNReal.ofReal (riemannianJacobian (I := I) (Module.finBasis ℝ E) f x))
+      (b.addHaar.restrict s)).congr
+  exact Filter.Eventually.of_forall fun x ↦ by
+    simp only [Pi.mul_apply]
+    rw [← ENNReal.ofReal_mul (abs_nonneg _),
+      ← riemannianJacobian_changeBasis, riemannianJacobian_reindex]
+
+/-- The Jacobian weight is almost everywhere measurable on a measurable carrier on which the
+map is differentiable at every point, when the source and target model have equal dimension. -/
+theorem _root_.Module.Basis.aemeasurable_ofReal_riemannianJacobian
+    (b : Module.Basis ι ℝ F) (hdim : Module.finrank ℝ F = Module.finrank ℝ E)
+    {f : F → M} {s : Set F} (hs : MeasurableSet s)
+    (hf : ∀ x ∈ s, MDifferentiableAt 𝓘(ℝ, F) I f x) :
+    AEMeasurable (fun x ↦ ENNReal.ofReal (riemannianJacobian (I := I) b f x))
+      (b.addHaar.restrict s) := by
+  have : FiniteDimensional ℝ F := b.finiteDimensional_of_finite
+  let A : E ≃L[ℝ] F := ContinuousLinearEquiv.ofFinrankEq hdim.symm
+  let c := b.map A.symm.toLinearEquiv
+  have hcb : c.map A.toLinearEquiv = b := by
+    ext i
+    simp [c, Module.Basis.map_apply]
+  have hμ : Measure.map A c.addHaar = b.addHaar := by
+    rw [Module.Basis.map_addHaar, hcb]
+  have hA : MeasurableEmbedding A := A.toHomeomorph.measurableEmbedding
+  rw [← hμ, hA.restrict_map, hA.aemeasurable_map_iff]
+  apply (aemeasurable_ofReal_riemannianJacobian_of_model c
+    (hs.preimage A.continuous.measurable)
+    (fun x hx ↦ (hf (A x) hx).comp x A.differentiableAt.mdifferentiableAt)).congr
+  filter_upwards [ae_restrict_mem (hs.preimage A.continuous.measurable)] with x hx
+  simp only [Function.comp_apply,
+    riemannianJacobian_comp_continuousLinearEquiv A c (hf _ hx), hcb]
+
 /-- Change of variables for an injective map differentiable at every point of a measurable
 carrier. The nonnegative weight need not be measurable, and the manifold need not be Hausdorff. -/
 theorem _root_.Module.Basis.setLIntegral_riemannianVolume_image_of_injOn
@@ -375,23 +469,21 @@ theorem _root_.Module.Basis.setLIntegral_riemannianVolume_image_of_injOn
       ∫⁻ x in s, ENNReal.ofReal (riemannianJacobian (I := I) b f x) * φ (f x) ∂b.addHaar := by
   have : FiniteDimensional ℝ F := b.finiteDimensional_of_finite
   have hc : ContinuousOn f s := fun x hx ↦ (hf x hx).continuousAt.continuousWithinAt
-  have he := I.measurableEmbedding_domRestrict_of_continuousOn_injOn hc hs hinj
+  have : T2Space H := I.isClosedEmbedding.isEmbedding.t2Space
+  have he := hc.measurableEmbedding_chartedSpace F H hs hinj
   have himage {a : Set F} (ha : MeasurableSet a) (has : a ⊆ s) :
       MeasurableSet (f '' a) := by
     rw [← inter_eq_right.mpr has, ← Subtype.image_preimage_coe, ← image_comp]
     exact he.measurableSet_image.mpr (ha.preimage measurable_subtype_coe)
   -- Partition the target into disjoint measurable chart pieces and pull them back to the carrier.
-  obtain ⟨t, ht, hcover⟩ := LindelofSpace.elim_nhds_subcover
-    (fun x : M ↦ (chartAt H x).source) fun x ↦ chart_source_mem_nhds H x
-  have htne : t.Nonempty := by
-    obtain ⟨α, hα, _⟩ := mem_iUnion₂.mp (hcover.symm ▸ mem_univ (f 0))
-    exact ⟨α, hα⟩
-  obtain ⟨c, rfl⟩ := ht.exists_eq_range htne
-  simp only [Set.biUnion_range] at hcover
-  let d := disjointed (fun n ↦ (chartAt H (c n)).source)
+  have := I.secondCountableTopology
+  have := ChartedSpace.secondCountable_of_lindelof H M
+  obtain ⟨d, hd, hddisj, hcover, hsub⟩ :=
+    exists_disjoint_measurableSet_cover_of_mem_nhds (S := univ) ⟨f 0, mem_univ _⟩
+      (fun x : M ↦ (chartAt H x).source) (fun x _ ↦ chart_source_mem_nhds H x)
+      (fun x _ ↦ (chartAt H x).open_source.measurableSet)
+  choose c _ hcsub using hsub
   let a := fun n ↦ f ⁻¹' d n ∩ s
-  have hd (n : ℕ) : MeasurableSet (d n) :=
-    MeasurableSet.disjointed (fun n ↦ (chartAt H (c n)).open_source.measurableSet) n
   have ha (n : ℕ) : MeasurableSet (a n) := by
     dsimp only [a]
     rw [inter_comm, ← Subtype.image_preimage_coe]
@@ -399,16 +491,16 @@ theorem _root_.Module.Basis.setLIntegral_riemannianVolume_image_of_injOn
       (hc.domRestrict.measurable (hd n))
   have has (n : ℕ) : a n ⊆ s := inter_subset_right
   have hmap (n : ℕ) : MapsTo f (a n) (chartAt H (c n)).source :=
-    fun _ hx ↦ disjointed_subset (fun n ↦ (chartAt H (c n)).source) n hx.1
+    fun _ hx ↦ hcsub n hx.1
   have hdisj : Pairwise (fun i j ↦ Disjoint (a i) (a j)) := fun i j hij ↦
-    ((disjoint_disjointed (fun n ↦ (chartAt H (c n)).source) hij).preimage f).mono
+    ((hddisj hij).preimage f).mono
       inter_subset_left inter_subset_left
   have himdisj : Pairwise (fun i j ↦ Disjoint (f '' a i) (f '' a j)) := fun i j hij ↦
-    (disjoint_disjointed (fun n ↦ (chartAt H (c n)).source) hij).mono
+    (hddisj hij).mono
       (image_subset_iff.mpr fun _ hx ↦ hx.1) (image_subset_iff.mpr fun _ hx ↦ hx.1)
   have hUnion : ⋃ n, a n = s := by
-    simp only [a, ← iUnion_inter, ← preimage_iUnion, d, iUnion_disjointed, hcover,
-      preimage_univ, univ_inter]
+    have hcover' : ⋃ n, d n = univ := eq_univ_of_univ_subset hcover
+    simp only [a, ← iUnion_inter, ← preimage_iUnion, hcover', preimage_univ, univ_inter]
   -- Sum the single-chart formula over the partition, allowing arbitrary nonnegative weights.
   calc
     _ = ∫⁻ y in ⋃ n, f '' a n, φ y ∂riemannianVolume I M := by
@@ -446,34 +538,47 @@ theorem _root_.Module.Basis.map_withDensity_riemannianJacobian_of_injOn
     withDensity_apply', Measure.restrict_restrict' hs]
   exact hcov.symm
 
-/-- A `C¹` partial diffeomorphism carries the Jacobian-weighted coordinate measure on its
-source to Riemannian volume restricted to its target. -/
+/-- A `C^n` partial diffeomorphism, with `n ≠ 0`, carries the Jacobian-weighted coordinate measure
+on its source to Riemannian volume restricted to its target. -/
 theorem _root_.PartialDiffeomorph.map_withDensity_riemannianJacobian
-    (Φ : PartialDiffeomorph 𝓘(ℝ, F) I F M 1) (b : Module.Basis ι ℝ F)
-    (hdim : Module.finrank ℝ F = Module.finrank ℝ E) :
+    {n : ℕ∞ω} (Φ : PartialDiffeomorph 𝓘(ℝ, F) I F M n) (hn : n ≠ 0)
+    (b : Module.Basis ι ℝ F) :
     Measure.map Φ ((b.addHaar.restrict Φ.source).withDensity
       (fun x ↦ ENNReal.ofReal (riemannianJacobian (I := I) b Φ x))) =
       (riemannianVolume I M).restrict Φ.target := by
+  obtain hsource | ⟨x, hx⟩ := Φ.source.eq_empty_or_nonempty
+  · have htarget : Φ.target = ∅ := by
+      rw [← Φ.toPartialEquiv.image_source_eq_target, hsource, image_empty]
+    simp [hsource, htarget]
+  have hdim : Module.finrank ℝ F = Module.finrank ℝ E :=
+    (IsLocalDiffeomorphAt.mfderivToContinuousLinearEquiv
+      (Φ.isLocalDiffeomorphAt 𝓘(ℝ, F) I n hx) hn).toLinearEquiv.finrank_eq
   simpa only [Φ.toPartialEquiv.image_source_eq_target] using
     b.map_withDensity_riemannianJacobian_of_injOn hdim Φ.open_source.measurableSet
-      Φ.toPartialEquiv.injOn (fun x hx ↦
-        (Φ.contMDiffOn_toFun.contMDiffAt (Φ.open_source.mem_nhds hx)).mdifferentiableAt one_ne_zero)
+      Φ.toPartialEquiv.injOn (fun _ hx ↦ Φ.mdifferentiableAt hn hx)
 
-/-- Change of variables over the target of a `C¹` partial diffeomorphism, for arbitrary
-nonnegative weights. -/
+/-- Change of variables over the target of a `C^n` partial diffeomorphism, with `n ≠ 0`, for
+arbitrary nonnegative weights. -/
 theorem _root_.PartialDiffeomorph.setLIntegral_riemannianVolume_eq
-    (Φ : PartialDiffeomorph 𝓘(ℝ, F) I F M 1) (b : Module.Basis ι ℝ F)
-    (hdim : Module.finrank ℝ F = Module.finrank ℝ E) (φ : M → ℝ≥0∞) :
+    {n : ℕ∞ω} (Φ : PartialDiffeomorph 𝓘(ℝ, F) I F M n) (hn : n ≠ 0)
+    (b : Module.Basis ι ℝ F) (φ : M → ℝ≥0∞) :
     ∫⁻ y in Φ.target, φ y ∂riemannianVolume I M =
       ∫⁻ x in Φ.source, ENNReal.ofReal (riemannianJacobian (I := I) b Φ x) * φ (Φ x)
         ∂b.addHaar := by
+  obtain hsource | ⟨x, hx⟩ := Φ.source.eq_empty_or_nonempty
+  · have htarget : Φ.target = ∅ := by
+      rw [← Φ.toPartialEquiv.image_source_eq_target, hsource, image_empty]
+    simp [hsource, htarget]
+  have hdim : Module.finrank ℝ F = Module.finrank ℝ E :=
+    (IsLocalDiffeomorphAt.mfderivToContinuousLinearEquiv
+      (Φ.isLocalDiffeomorphAt 𝓘(ℝ, F) I n hx) hn).toLinearEquiv.finrank_eq
   simpa only [Φ.toPartialEquiv.image_source_eq_target] using
     b.setLIntegral_riemannianVolume_image_of_injOn hdim Φ.open_source.measurableSet
-      Φ.toPartialEquiv.injOn (fun x hx ↦
-        (Φ.contMDiffOn_toFun.contMDiffAt (Φ.open_source.mem_nhds hx)).mdifferentiableAt one_ne_zero)
-      φ
+      Φ.toPartialEquiv.injOn (fun _ hx ↦ Φ.mdifferentiableAt hn hx) φ
 
-private theorem map_withDensity_riemannianJacobian_domRestrict
+/-- The subtype restriction of an injective differentiable map pushes the Jacobian-weighted
+coordinate measure to Riemannian volume on its image. -/
+theorem _root_.Module.Basis.restrict_map_withDensity_riemannianJacobian_of_injOn
     (b : Module.Basis ι ℝ F) (hdim : Module.finrank ℝ F = Module.finrank ℝ E)
     {f : F → M} {s : Set F} (hs : MeasurableSet s) (hinj : InjOn f s)
     (hf : ∀ x ∈ s, MDifferentiableAt 𝓘(ℝ, F) I f x) :
@@ -492,24 +597,20 @@ private theorem map_withDensity_riemannianJacobian_domRestrict
 
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
 
-/-- Bochner change of variables on a measurable injective carrier for a map that is `C¹`
-on an open neighborhood of the carrier. The integrand need not be measurable or integrable. -/
+/-- Bochner change of variables on a measurable injective carrier for a map differentiable
+at every point of the carrier. The integrand need not be measurable or integrable. -/
 theorem _root_.Module.Basis.setIntegral_riemannianVolume_image_of_injOn
     (b : Module.Basis ι ℝ F) (hdim : Module.finrank ℝ F = Module.finrank ℝ E)
-    {f : F → M} {s U : Set F} (hs : MeasurableSet s) (hU : IsOpen U) (hsub : s ⊆ U)
-    (hf : ContMDiffOn 𝓘(ℝ, F) I 1 f U) (hinj : InjOn f s) (φ : M → G) :
+    {f : F → M} {s : Set F} (hs : MeasurableSet s) (hinj : InjOn f s)
+    (hf : ∀ x ∈ s, MDifferentiableAt 𝓘(ℝ, F) I f x) (φ : M → G) :
     ∫ y in f '' s, φ y ∂riemannianVolume I M =
       ∫ x in s, riemannianJacobian (I := I) b f x • φ (f x) ∂b.addHaar := by
   have : FiniteDimensional ℝ F := b.finiteDimensional_of_finite
-  have he := I.measurableEmbedding_domRestrict_of_continuousOn_injOn
-    (hf.continuousOn.mono hsub) hs hinj
-  have hdiff (x : F) (hx : x ∈ s) : MDifferentiableAt 𝓘(ℝ, F) I f x :=
-    (hf.contMDiffAt (hU.mem_nhds (hsub hx))).mdifferentiableAt one_ne_zero
-  have hρ : AEMeasurable (fun x ↦ ENNReal.ofReal (riemannianJacobian (I := I) b f x))
-      (b.addHaar.restrict s) :=
-    ((ENNReal.continuous_ofReal.comp_continuousOn
-      (continuousOn_riemannianJacobian b hf hU)).mono hsub).aemeasurable hs
-  rw [← map_withDensity_riemannianJacobian_domRestrict b hdim hs hinj hdiff,
+  have : T2Space H := I.isClosedEmbedding.isEmbedding.t2Space
+  have hc : ContinuousOn f s := fun x hx ↦ (hf x hx).continuousAt.continuousWithinAt
+  have he := hc.measurableEmbedding_chartedSpace F H hs hinj
+  have hρ := b.aemeasurable_ofReal_riemannianJacobian hdim hs hf
+  rw [← b.restrict_map_withDensity_riemannianJacobian_of_injOn hdim hs hinj hf,
     he.integral_map]
   simp only [Set.domRestrict_apply]
   rw [integral_subtype_comap hs (fun x ↦ φ (f x)),
@@ -518,23 +619,19 @@ theorem _root_.Module.Basis.setIntegral_riemannianVolume_image_of_injOn
   simp only [ENNReal.toReal_ofReal (riemannianJacobian_nonneg b f _)]
 
 /-- Integrability on an injective image of a measurable carrier is equivalent to integrability
-of the Jacobian-weighted pullback, for a map that is `C¹` on an open neighborhood. -/
+of the Jacobian-weighted pullback, for a map differentiable at every point of the carrier. -/
 theorem _root_.Module.Basis.integrableOn_riemannianVolume_image_iff_of_injOn
     (b : Module.Basis ι ℝ F) (hdim : Module.finrank ℝ F = Module.finrank ℝ E)
-    {f : F → M} {s U : Set F} (hs : MeasurableSet s) (hU : IsOpen U) (hsub : s ⊆ U)
-    (hf : ContMDiffOn 𝓘(ℝ, F) I 1 f U) (hinj : InjOn f s) (φ : M → G) :
+    {f : F → M} {s : Set F} (hs : MeasurableSet s) (hinj : InjOn f s)
+    (hf : ∀ x ∈ s, MDifferentiableAt 𝓘(ℝ, F) I f x) (φ : M → G) :
     IntegrableOn φ (f '' s) (riemannianVolume I M) ↔
       IntegrableOn (fun x ↦ riemannianJacobian (I := I) b f x • φ (f x)) s b.addHaar := by
   have : FiniteDimensional ℝ F := b.finiteDimensional_of_finite
-  have he := I.measurableEmbedding_domRestrict_of_continuousOn_injOn
-    (hf.continuousOn.mono hsub) hs hinj
-  have hdiff (x : F) (hx : x ∈ s) : MDifferentiableAt 𝓘(ℝ, F) I f x :=
-    (hf.contMDiffAt (hU.mem_nhds (hsub hx))).mdifferentiableAt one_ne_zero
-  have hρ : AEMeasurable (fun x ↦ ENNReal.ofReal (riemannianJacobian (I := I) b f x))
-      (b.addHaar.restrict s) :=
-    ((ENNReal.continuous_ofReal.comp_continuousOn
-      (continuousOn_riemannianJacobian b hf hU)).mono hsub).aemeasurable hs
-  rw [IntegrableOn, ← map_withDensity_riemannianJacobian_domRestrict b hdim hs hinj hdiff,
+  have : T2Space H := I.isClosedEmbedding.isEmbedding.t2Space
+  have hc : ContinuousOn f s := fun x hx ↦ (hf x hx).continuousAt.continuousWithinAt
+  have he := hc.measurableEmbedding_chartedSpace F H hs hinj
+  have hρ := b.aemeasurable_ofReal_riemannianJacobian hdim hs hf
+  rw [IntegrableOn, ← b.restrict_map_withDensity_riemannianJacobian_of_injOn hdim hs hinj hf,
     he.integrable_map_iff]
   rw [Set.domRestrict_eq, ← Function.comp_assoc,
     ← integrableOn_iff_comap_subtypeVal hs, IntegrableOn, restrict_withDensity hs,
@@ -543,53 +640,101 @@ theorem _root_.Module.Basis.integrableOn_riemannianVolume_image_iff_of_injOn
   simp only [ENNReal.toReal_ofReal (riemannianJacobian_nonneg b f _), Function.comp_apply,
     IntegrableOn]
 
-/-- Bochner change of variables over the target of a `C^n` partial diffeomorphism, for `n ≥ 1`.
+/-- Bochner change of variables over the target of a `C^n` partial diffeomorphism, for `n ≠ 0`.
 No measurability or integrability assumption on the integrand is needed. -/
 theorem _root_.PartialDiffeomorph.setIntegral_riemannianVolume_eq
-    {n : ℕ∞ω} (Φ : PartialDiffeomorph 𝓘(ℝ, F) I F M n) (hn : 1 ≤ n)
-    (b : Module.Basis ι ℝ F) (hdim : Module.finrank ℝ F = Module.finrank ℝ E) (φ : M → G) :
+    {n : ℕ∞ω} (Φ : PartialDiffeomorph 𝓘(ℝ, F) I F M n) (hn : n ≠ 0)
+    (b : Module.Basis ι ℝ F) (φ : M → G) :
     ∫ y in Φ.target, φ y ∂riemannianVolume I M =
       ∫ x in Φ.source, riemannianJacobian (I := I) b Φ x • φ (Φ x) ∂b.addHaar := by
+  obtain hsource | ⟨x, hx⟩ := Φ.source.eq_empty_or_nonempty
+  · have htarget : Φ.target = ∅ := by
+      rw [← Φ.toPartialEquiv.image_source_eq_target, hsource, image_empty]
+    simp [hsource, htarget]
+  have hdim : Module.finrank ℝ F = Module.finrank ℝ E :=
+    (IsLocalDiffeomorphAt.mfderivToContinuousLinearEquiv
+      (Φ.isLocalDiffeomorphAt 𝓘(ℝ, F) I n hx) hn).toLinearEquiv.finrank_eq
   simpa only [Φ.toPartialEquiv.image_source_eq_target] using
     b.setIntegral_riemannianVolume_image_of_injOn hdim Φ.open_source.measurableSet
-      Φ.open_source Subset.rfl (Φ.contMDiffOn_toFun.of_le hn) Φ.toPartialEquiv.injOn φ
+      Φ.toPartialEquiv.injOn (fun _ hx ↦ Φ.mdifferentiableAt hn hx) φ
 
-/-- Integrability on the target of a `C^n` partial diffeomorphism, for `n ≥ 1`, is equivalent
+/-- Integrability on the target of a `C^n` partial diffeomorphism, for `n ≠ 0`, is equivalent
 to integrability of the Jacobian-weighted pullback on its source. -/
 theorem _root_.PartialDiffeomorph.integrableOn_riemannianVolume_iff
-    {n : ℕ∞ω} (Φ : PartialDiffeomorph 𝓘(ℝ, F) I F M n) (hn : 1 ≤ n)
-    (b : Module.Basis ι ℝ F) (hdim : Module.finrank ℝ F = Module.finrank ℝ E) (φ : M → G) :
+    {n : ℕ∞ω} (Φ : PartialDiffeomorph 𝓘(ℝ, F) I F M n) (hn : n ≠ 0)
+    (b : Module.Basis ι ℝ F) (φ : M → G) :
     IntegrableOn φ Φ.target (riemannianVolume I M) ↔
       IntegrableOn (fun x ↦ riemannianJacobian (I := I) b Φ x • φ (Φ x)) Φ.source b.addHaar := by
+  obtain hsource | ⟨x, hx⟩ := Φ.source.eq_empty_or_nonempty
+  · have htarget : Φ.target = ∅ := by
+      rw [← Φ.toPartialEquiv.image_source_eq_target, hsource, image_empty]
+    simp [hsource, htarget]
+  have hdim : Module.finrank ℝ F = Module.finrank ℝ E :=
+    (IsLocalDiffeomorphAt.mfderivToContinuousLinearEquiv
+      (Φ.isLocalDiffeomorphAt 𝓘(ℝ, F) I n hx) hn).toLinearEquiv.finrank_eq
   simpa only [Φ.toPartialEquiv.image_source_eq_target] using
     b.integrableOn_riemannianVolume_image_iff_of_injOn hdim Φ.open_source.measurableSet
-      Φ.open_source Subset.rfl (Φ.contMDiffOn_toFun.of_le hn) Φ.toPartialEquiv.injOn φ
+      Φ.toPartialEquiv.injOn (fun _ hx ↦ Φ.mdifferentiableAt hn hx) φ
 
-/-- Bochner change of variables for a `C^n` local diffeomorphism, `n ≥ 1`, injective on an
-open set. The integrand need not be measurable or integrable. -/
+/-- An injective local diffeomorphism on a measurable carrier pushes its Jacobian-weighted
+coordinate measure to Riemannian volume on its image. -/
+theorem _root_.IsLocalDiffeomorphOn.map_withDensity_riemannianJacobian
+    {n : ℕ∞ω} {g : F → M} {s : Set F} (hg : IsLocalDiffeomorphOn 𝓘(ℝ, F) I n g s)
+    (hn : n ≠ 0) (hs : MeasurableSet s) (hinj : InjOn g s) (b : Module.Basis ι ℝ F) :
+    Measure.map g ((b.addHaar.restrict s).withDensity
+      (fun x ↦ ENNReal.ofReal (riemannianJacobian (I := I) b g x))) =
+      (riemannianVolume I M).restrict (g '' s) := by
+  obtain rfl | ⟨x, hx⟩ := s.eq_empty_or_nonempty
+  · simp
+  have hdim : Module.finrank ℝ F = Module.finrank ℝ E :=
+    ((hg ⟨x, hx⟩).mfderivToContinuousLinearEquiv hn).toLinearEquiv.finrank_eq
+  exact b.map_withDensity_riemannianJacobian_of_injOn hdim hs hinj
+    (fun x hx ↦ (hg ⟨x, hx⟩).mdifferentiableAt hn)
+
+/-- Nonnegative change of variables for an injective local diffeomorphism on a measurable
+carrier. The weight need not be measurable. -/
+theorem _root_.IsLocalDiffeomorphOn.setLIntegral_riemannianVolume_image
+    {n : ℕ∞ω} {g : F → M} {s : Set F} (hg : IsLocalDiffeomorphOn 𝓘(ℝ, F) I n g s)
+    (hn : n ≠ 0) (hs : MeasurableSet s) (hinj : InjOn g s) (b : Module.Basis ι ℝ F)
+    (φ : M → ℝ≥0∞) :
+    ∫⁻ y in g '' s, φ y ∂riemannianVolume I M =
+      ∫⁻ x in s, ENNReal.ofReal (riemannianJacobian (I := I) b g x) * φ (g x) ∂b.addHaar := by
+  obtain rfl | ⟨x, hx⟩ := s.eq_empty_or_nonempty
+  · simp
+  have hdim : Module.finrank ℝ F = Module.finrank ℝ E :=
+    ((hg ⟨x, hx⟩).mfderivToContinuousLinearEquiv hn).toLinearEquiv.finrank_eq
+  exact b.setLIntegral_riemannianVolume_image_of_injOn hdim hs hinj
+    (fun x hx ↦ (hg ⟨x, hx⟩).mdifferentiableAt hn) φ
+
+/-- Bochner change of variables for an injective local diffeomorphism on a measurable carrier.
+The integrand need not be measurable or integrable. -/
 theorem _root_.IsLocalDiffeomorphOn.setIntegral_riemannianVolume_image
-    {n : ℕ∞ω} {g : F → M} {U : Set F} (hg : IsLocalDiffeomorphOn 𝓘(ℝ, F) I n g U)
-    (hn : 1 ≤ n) (hU : IsOpen U) (hinj : InjOn g U) (b : Module.Basis ι ℝ F)
-    (hdim : Module.finrank ℝ F = Module.finrank ℝ E) (φ : M → G) :
-    ∫ y in g '' U, φ y ∂riemannianVolume I M =
-      ∫ x in U, riemannianJacobian (I := I) b g x • φ (g x) ∂b.addHaar := by
-  simpa only [IsLocalDiffeomorphOn.partialDiffeomorphOfInjOn_source,
-    IsLocalDiffeomorphOn.partialDiffeomorphOfInjOn_target,
-    IsLocalDiffeomorphOn.coe_partialDiffeomorphOfInjOn] using
-    (hg.partialDiffeomorphOfInjOn hU hinj).setIntegral_riemannianVolume_eq hn b hdim φ
+    {n : ℕ∞ω} {g : F → M} {s : Set F} (hg : IsLocalDiffeomorphOn 𝓘(ℝ, F) I n g s)
+    (hn : n ≠ 0) (hs : MeasurableSet s) (hinj : InjOn g s) (b : Module.Basis ι ℝ F)
+    (φ : M → G) :
+    ∫ y in g '' s, φ y ∂riemannianVolume I M =
+      ∫ x in s, riemannianJacobian (I := I) b g x • φ (g x) ∂b.addHaar := by
+  obtain rfl | ⟨x, hx⟩ := s.eq_empty_or_nonempty
+  · simp
+  have hdim : Module.finrank ℝ F = Module.finrank ℝ E :=
+    ((hg ⟨x, hx⟩).mfderivToContinuousLinearEquiv hn).toLinearEquiv.finrank_eq
+  exact b.setIntegral_riemannianVolume_image_of_injOn hdim hs hinj
+    (fun x hx ↦ (hg ⟨x, hx⟩).mdifferentiableAt hn) φ
 
-/-- Integrability over the image of an injective `C^n` local diffeomorphism, `n ≥ 1`, on an
-open set is equivalent to integrability of its Jacobian-weighted pullback. -/
+/-- Integrability over the image of an injective local diffeomorphism on a measurable carrier
+is equivalent to integrability of its Jacobian-weighted pullback. -/
 theorem _root_.IsLocalDiffeomorphOn.integrableOn_riemannianVolume_image_iff
-    {n : ℕ∞ω} {g : F → M} {U : Set F} (hg : IsLocalDiffeomorphOn 𝓘(ℝ, F) I n g U)
-    (hn : 1 ≤ n) (hU : IsOpen U) (hinj : InjOn g U) (b : Module.Basis ι ℝ F)
-    (hdim : Module.finrank ℝ F = Module.finrank ℝ E) (φ : M → G) :
-    IntegrableOn φ (g '' U) (riemannianVolume I M) ↔
-      IntegrableOn (fun x ↦ riemannianJacobian (I := I) b g x • φ (g x)) U b.addHaar := by
-  simpa only [IsLocalDiffeomorphOn.partialDiffeomorphOfInjOn_source,
-    IsLocalDiffeomorphOn.partialDiffeomorphOfInjOn_target,
-    IsLocalDiffeomorphOn.coe_partialDiffeomorphOfInjOn] using
-    (hg.partialDiffeomorphOfInjOn hU hinj).integrableOn_riemannianVolume_iff hn b hdim φ
+    {n : ℕ∞ω} {g : F → M} {s : Set F} (hg : IsLocalDiffeomorphOn 𝓘(ℝ, F) I n g s)
+    (hn : n ≠ 0) (hs : MeasurableSet s) (hinj : InjOn g s) (b : Module.Basis ι ℝ F)
+    (φ : M → G) :
+    IntegrableOn φ (g '' s) (riemannianVolume I M) ↔
+      IntegrableOn (fun x ↦ riemannianJacobian (I := I) b g x • φ (g x)) s b.addHaar := by
+  obtain rfl | ⟨x, hx⟩ := s.eq_empty_or_nonempty
+  · simp
+  have hdim : Module.finrank ℝ F = Module.finrank ℝ E :=
+    ((hg ⟨x, hx⟩).mfderivToContinuousLinearEquiv hn).toLinearEquiv.finrank_eq
+  exact b.integrableOn_riemannianVolume_image_iff_of_injOn hdim hs hinj
+    (fun x hx ↦ (hg ⟨x, hx⟩).mdifferentiableAt hn) φ
 
 end Chart
 
