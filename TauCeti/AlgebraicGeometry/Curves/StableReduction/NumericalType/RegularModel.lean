@@ -56,6 +56,8 @@ The combinatorial theory of `TauCeti.NumericalType`, such as its signed genus
 * `AlgebraicGeometry.Scheme.Hom.specialFiberNumericalType_weight_mul_genus`:
   `wᵢ gᵢ = dim_k H¹(Cᵢ, 𝒪_{Cᵢ})`, comparing the genus over the constant field with the genus
   over the residue field.
+* `AlgebraicGeometry.Scheme.Hom.specialFiberNumericalType_adj_iff`: two distinct components are
+  adjacent exactly when they intersect.
 
 ## Implementation notes
 
@@ -176,6 +178,20 @@ theorem specialFiberNumericalType_intersection :
     (toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).intersection =
       toBase.specialFiberIntersectionMatrix hX hη :=
   (rfl)
+
+/-- Two components are adjacent in the numerical type of a regular model exactly when they are
+distinct and their closures meet. -/
+theorem specialFiberNumericalType_adj_iff
+    (i j : (toBase.finite_setOf_base_eq_closedPoint
+      (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset) :
+    (toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).Adj i j ↔
+      i ≠ j ∧ (closure {((i : CodimensionOnePoint X) : X)} ∩
+        closure {((j : CodimensionOnePoint X) : X)}).Nonempty := by
+  exact (NumericalType.adj_iff
+    (T := toBase.specialFiberNumericalType hX hη hC hπ hreg hconn) (i := i) (j := j)).trans
+      (and_congr_right fun hij ↦ toBase.specialFiberIntersectionMatrix_pos_iff hX hη
+        (fun _ ↦ toBase.finiteDimensional_cohomology_zero_subscheme_closure_singleton)
+        hC.finiteDimensional_one hij)
 
 /-- The genus of a component `C` of the special fibre in the numerical type of a regular model is
 `dim_κ H¹(C, 𝒪_C)` over the constant field `κ = H⁰(C, 𝒪_C)` of `C`. -/

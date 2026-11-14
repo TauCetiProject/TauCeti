@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.EulerCharacteristic
 public import TauCeti.AlgebraicGeometry.Cohomology.Trivial
+public import TauCeti.AlgebraicGeometry.Geometrically.GlobalSections
 
 /-!
 # Cohomology over the field of constants
@@ -36,6 +37,9 @@ both sides use Mathlib's `finrank`, which is zero on an infinite-dimensional spa
 
 ## Main results
 
+* `AlgebraicGeometry.Scheme.Modules.finiteDimensional_cohomology_zero_trivial_of_universallyClosed`:
+  `H⁰(X, 𝒪_X)` is finite-dimensional for integral schemes universally closed and locally of
+  finite type over a field.
 * `AlgebraicGeometry.Scheme.Modules.finrank_cohomology_eq_finrank_cohomology_zero_trivial_mul`:
   `dim_k Hⁱ(X, M) = dim_k H⁰(X, 𝒪_X) · dim_κ Hⁱ(X, M)` when `κ = Γ(X, 𝒪_X)` is a field.
 * `AlgebraicGeometry.Scheme.Modules.finrank_cohomology_zero_trivial_dvd_finrank_cohomology` and
@@ -62,6 +66,19 @@ namespace AlgebraicGeometry.Scheme.Modules
 variable {X : Scheme.{u}}
 
 variable (k : Type u) [Field k] [X.Over (Spec (.of k))]
+
+/-- The zeroth cohomology of the structure sheaf of an integral scheme universally closed and
+locally of finite type over a field is finite-dimensional over that field. -/
+theorem finiteDimensional_cohomology_zero_trivial_of_universallyClosed (X : Scheme.{u})
+    [X.Over (Spec (.of k))] [IsIntegral X] [UniversallyClosed (X ↘ Spec (.of k))]
+    [LocallyOfFiniteType (X ↘ Spec (.of k))] :
+    FiniteDimensional k (Cohomology (InvertibleSheaf.trivial X).obj 0) := by
+  let M : X.Modules := SheafOfModules.unit X.ringCatSheaf
+  let _ : Algebra k Γ(X, ⊤) := (baseRingToGlobalSections k X).toAlgebra
+  have : Module.Finite k Γ(M, ⊤) :=
+    finite_baseRingToGlobalSections X k
+  exact Module.Finite.equiv ((trivialCohomologyBaseLinearEquiv k X 0).trans
+    (cohomologyZeroBaseLinearEquiv k X M)).symm
 
 /-- **The tower law over the constant field.** If the ring `κ = Γ(X, 𝒪_X)` of global functions of
 a scheme over a field `k` is a field, then `dim_k Hⁱ(X, M) = dim_k H⁰(X, 𝒪_X) · dim_κ Hⁱ(X, M)` for
