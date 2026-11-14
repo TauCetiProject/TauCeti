@@ -123,19 +123,43 @@ variable (U : S.Etale)
 
 /-- The functor from the localization at `U` of the small étale site of `S` to the small étale
 site of `U.left`, sending `V ⟶ U` to the underlying étale morphism of schemes. -/
-@[expose, simps]
+@[expose, simps obj]
 noncomputable def Etale.overForward : Over U ⥤ U.left.Etale where
   obj V := Etale.mk V.hom.left
   map {V W} f := MorphismProperty.Over.homMk f.left.left (congrArg (·.left) (Over.w f))
 
+@[simp]
+theorem Etale.overForward_obj_hom (V : Over U) : ((Etale.overForward U).obj V).hom = V.hom.left :=
+  (rfl)
+
+@[simp]
+theorem Etale.overForward_map_left {V W : Over U} (f : V ⟶ W) :
+    ((Etale.overForward U).map f).left = f.left.left :=
+  (rfl)
+
 /-- The functor from the small étale site of `U.left` to the localization at `U` of the small
 étale site of `S`, regarding an étale `U.left`-scheme as an étale `S`-scheme over `U`. -/
-@[expose, simps]
+@[expose, simps obj]
 noncomputable def Etale.overBackward : U.left.Etale ⥤ Over U where
   obj W := Over.mk (Y := Etale.mk (W.hom ≫ U.hom)) (MorphismProperty.Over.homMk W.hom)
   map {V W} f := Over.homMk (MorphismProperty.Over.homMk f.left
     (MorphismProperty.Over.w_assoc f U.hom))
     (MorphismProperty.Over.Hom.ext (MorphismProperty.Over.w f))
+
+@[simp]
+theorem Etale.overBackward_obj_hom_left (W : U.left.Etale) :
+    ((Etale.overBackward U).obj W).hom.left = W.hom :=
+  (rfl)
+
+@[simp]
+theorem Etale.overBackward_obj_left_hom (W : U.left.Etale) :
+    ((Etale.overBackward U).obj W).left.hom = W.hom ≫ U.hom :=
+  (rfl)
+
+@[simp]
+theorem Etale.overBackward_map_left_left {V W : U.left.Etale} (f : V ⟶ W) :
+    ((Etale.overBackward U).map f).left.left = f.left :=
+  (rfl)
 
 /-- The localization at `U` of the small étale site of `S` is equivalent to the small étale site
 of `U.left`. -/
@@ -180,6 +204,12 @@ theorem Etale.overEquivalence_counit_app_left (W : U.left.Etale) :
 theorem Etale.overEquivalence_counitInv_app_left (W : U.left.Etale) :
     ((Etale.overEquivalence U).counitInv.app W).left = 𝟙 W.left :=
   (rfl)
+
+instance : (Etale.overForward U).IsEquivalence :=
+  (Etale.overEquivalence U).isEquivalence_functor
+
+instance : (Etale.overBackward U).IsEquivalence :=
+  (Etale.overEquivalence U).isEquivalence_inverse
 
 instance : (Etale.overEquivalence U).functor.IsCocontinuous ((smallEtaleTopology S).over U)
     (smallEtaleTopology U.left) where
@@ -279,7 +309,9 @@ are the restriction maps of `F` along `g`, regarded as a morphism of étale `S`-
 theorem Etale.sheafRestrict_obj_obj_map (F : Sheaf (smallEtaleTopology S) A)
     {X Y : (U.left.Etale)ᵒᵖ} (g : X ⟶ Y) :
     ((Etale.sheafRestrict U A).obj F).obj.map g =
-      F.obj.map ((Etale.overBackward U).map g.unop).left.op :=
+      F.obj.map (Quiver.Hom.op (X := (Etale.mk (Y.unop.hom ≫ U.hom) : S.Etale))
+        (Y := Etale.mk (X.unop.hom ≫ U.hom))
+        (MorphismProperty.Over.homMk g.unop.left (MorphismProperty.Over.w_assoc g.unop U.hom))) :=
   (rfl)
 
 /-- The restriction of a morphism of sheaves acts on sections over an étale `U.left`-scheme `X`
