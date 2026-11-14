@@ -408,7 +408,7 @@ theorem isWeakHomotopyEquivalence_of_forall_bijective_succ [PathConnectedSpace X
   · -- Degree zero: both homotopy sets are trivial.
     have := (TauCeti.pathConnectedSpace_iff_subsingleton_homotopyGroup_zero x).1 inferInstance
     have := (TauCeti.pathConnectedSpace_iff_subsingleton_homotopyGroup_zero (f x)).1 inferInstance
-    exact ⟨fun _ _ _ ↦ Subsingleton.elim _ _, fun _ ↦ ⟨default, Subsingleton.elim _ _⟩⟩
+    exact Function.bijective_of_subsingleton' _
   · exact h n
 
 /-- **Weak homotopy equivalences through path components.** A map is a weak homotopy equivalence

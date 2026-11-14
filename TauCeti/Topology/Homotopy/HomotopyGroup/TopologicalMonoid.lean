@@ -146,7 +146,7 @@ theorem bijective_map_mul_of_bijective_of_subsingleton [Nonempty N] {f : C(X, M)
   classical
   -- Take `φ = id`: the image of `g_*` is trivial.
   refine bijective_map_mul_of_bijective_comp hf hg (MonoidHom.id _) hfb
-    (fun _ _ _ ↦ Subsingleton.elim _ _) fun c ↦ ⟨fun hc ↦ ⟨1, ?_⟩, fun ⟨b, hb⟩ ↦ ?_⟩
+    (Function.injective_of_subsingleton _) fun c ↦ ⟨fun hc ↦ ⟨1, ?_⟩, fun ⟨b, hb⟩ ↦ ?_⟩
   · rw [map_one, ← MonoidHom.id_apply _ c, hc]
   · rw [MonoidHom.id_apply, ← hb, Subsingleton.elim b 1, map_one]
 
@@ -160,7 +160,7 @@ theorem bijective_map_mul_of_subsingleton_of_bijective [Nonempty N] {f : C(X, M)
   classical
   -- Take `φ` to the trivial group: the image of `g_*` is everything.
   exact bijective_map_mul_of_bijective_comp hf hg (1 : HomotopyGroup N M 1 →* Unit)
-    ⟨fun _ _ _ ↦ Subsingleton.elim _ _, fun _ ↦ ⟨1, Subsingleton.elim _ _⟩⟩ hgb.1
+    (Function.bijective_of_subsingleton' _) hgb.1
     fun c ↦ iff_of_true (Subsingleton.elim _ _) (hgb.2 c)
 
 end HomotopyGroup

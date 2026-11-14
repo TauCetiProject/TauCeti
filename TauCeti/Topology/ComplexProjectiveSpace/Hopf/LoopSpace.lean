@@ -107,9 +107,6 @@ theorem isWeakHomotopyEquivalence_hopfProduct (hn : n ≠ 0)
   have : PathConnectedSpace
       (MooreLoopSpace (sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) v) :=
     (MooreLoopSpace.pathConnectedSpace_iff_subsingleton_pi1 v).2 (hS 1 (by omega))
-  have : PathConnectedSpace (MooreLoopSpace (ComplexProjectiveSpace n) (mk n v)) :=
-    (MooreLoopSpace.pathConnectedSpace_iff_subsingleton_pi1 _).2
-      (HomotopyGroup.pi1MulEquivFundamentalGroup.toEquiv.subsingleton_congr.2 inferInstance)
   refine ContinuousMap.isWeakHomotopyEquivalence_of_forall_bijective_succ
     (x := (1, 1)) (by simp [hj] : hopfProduct v j (1, 1) = 1) fun k ↦ ?_
   rcases k with _ | k
