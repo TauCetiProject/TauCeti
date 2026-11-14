@@ -43,7 +43,7 @@ discs `‖w - c_i‖ < ‖a_i‖ / 2` of the three input ends are pairwise disjo
 (`TauCeti.Floer.norm_associativityCenter_add_le`), and for `0 < f` the scales do not vanish
 (`TauCeti.Floer.associativityScale_ne_zero`). Therefore the data
 `K_τ = puncturedSpherePerturbation (associativityCenter f τ) (associativityScale f τ) H Hout`
-form a smooth one-parameter family
+form a family that is smooth jointly in `f` and `τ`
 (`TauCeti.Floer.contMDiffAt_puncturedSpherePerturbation_associativity`), which is `H_i(t) dt` far
 out on each input end and `Hout(t) dt` far out on the output end at every `τ`
 (`TauCeti.Floer.puncturedSpherePerturbation_cylindricalEndLift`,
@@ -94,7 +94,7 @@ def associativityCenter (f τ : ℝ) : Fin 3 → ℂ :=
 of `c` shrinks from `-1` to `-f` during the first eighth of the path and turns through `i f` to
 `f` during the fifth and sixth; the scale of `a` grows from `f` to `1` during the last eighth. -/
 def associativityScale (f τ : ℝ) : Fin 3 → ℂ :=
-  ![((f + (1 - f) * smoothTransition (8 * τ - 7) : ℝ) : ℂ), ((-f : ℝ) : ℂ),
+  ![((f + (1 - f) * smoothTransition (8 * τ - 7) : ℝ) : ℂ), -(f : ℂ),
     ((-1 + (1 - f) * smoothTransition (8 * τ) + f * smoothTransition (8 * τ - 4) +
         f * smoothTransition (8 * τ - 5) : ℝ) : ℂ) +
       ((f * smoothTransition (8 * τ - 4) - f * smoothTransition (8 * τ - 5) : ℝ) : ℂ) * Complex.I]
@@ -115,7 +115,7 @@ theorem associativityScale_zero (f τ : ℝ) :
     associativityScale f τ 0 = ((f + (1 - f) * smoothTransition (8 * τ - 7) : ℝ) : ℂ) :=
   (rfl)
 
-@[simp] theorem associativityScale_one (f τ : ℝ) : associativityScale f τ 1 = ((-f : ℝ) : ℂ) :=
+@[simp] theorem associativityScale_one (f τ : ℝ) : associativityScale f τ 1 = -(f : ℂ) :=
   (rfl)
 
 theorem associativityScale_two (f τ : ℝ) :
@@ -124,6 +124,31 @@ theorem associativityScale_two (f τ : ℝ) :
       ((f * smoothTransition (8 * τ - 4) - f * smoothTransition (8 * τ - 5) : ℝ) : ℂ) *
         Complex.I :=
   (rfl)
+
+@[simp] theorem associativityCenter_one_re (f τ : ℝ) :
+    (associativityCenter f τ 1).re = f + (1 - f) * smoothTransition (8 * τ - 2) := by
+  simp [associativityCenter_one]
+
+@[simp] theorem associativityCenter_one_im (f τ : ℝ) : (associativityCenter f τ 1).im = 0 := by
+  simp [associativityCenter_one]
+
+@[simp] theorem associativityCenter_two_re (f τ : ℝ) :
+    (associativityCenter f τ 2).re = 1 - f * smoothTransition (8 * τ - 3) := by
+  simp [associativityCenter_two]
+
+@[simp] theorem associativityCenter_two_im (f τ : ℝ) :
+    (associativityCenter f τ 2).im = smoothTransition (8 * τ - 1) - smoothTransition (8 * τ - 6) := by
+  simp [associativityCenter_two]
+
+@[simp] theorem associativityScale_two_re (f τ : ℝ) :
+    (associativityScale f τ 2).re = -1 + (1 - f) * smoothTransition (8 * τ) +
+      f * smoothTransition (8 * τ - 4) + f * smoothTransition (8 * τ - 5) := by
+  simp [associativityScale_two]
+
+@[simp] theorem associativityScale_two_im (f τ : ℝ) :
+    (associativityScale f τ 2).im = f * smoothTransition (8 * τ - 4) -
+      f * smoothTransition (8 * τ - 5) := by
+  simp [associativityScale_two]
 
 /-- The transition of the `k`-th eighth vanishes before it starts. -/
 private theorem stage_eq_zero {k : ℝ} (h : 8 * τ ≤ k) : smoothTransition (8 * τ - k) = 0 :=
@@ -185,36 +210,44 @@ theorem associativityScale_of_one_le (hτ : 1 ≤ τ) :
     push_cast
     ring
 
-/-- **The path of centers is smooth.** -/
-theorem contDiff_associativityCenter {n : ℕ∞} (f : ℝ) : ContDiff ℝ n (associativityCenter f) := by
+/-- **The path of centers is smooth jointly in the plumbing factor and the parameter.** -/
+theorem contDiff_uncurry_associativityCenter {n : ℕ∞} :
+    ContDiff ℝ n (uncurry associativityCenter) := by
   refine contDiff_pi.2 fun i => ?_
   fin_cases i
-  · simpa using contDiff_const
-  · simp only [Fin.mk_one, associativityCenter_one, ← Complex.ofRealCLM_apply]
+  · simpa [uncurry_def] using contDiff_const
+  · simp only [Fin.mk_one, uncurry_def, associativityCenter_one, ← Complex.ofRealCLM_apply]
     fun_prop
-  · simp only [Fin.reduceFinMk, associativityCenter_two, ← Complex.ofRealCLM_apply]
+  · simp only [Fin.reduceFinMk, uncurry_def, associativityCenter_two, ← Complex.ofRealCLM_apply]
+    fun_prop
+
+/-- **The path of centers is smooth.** -/
+theorem contDiff_associativityCenter {n : ℕ∞} (f : ℝ) : ContDiff ℝ n (associativityCenter f) :=
+  contDiff_uncurry_associativityCenter.comp (contDiff_const.prodMk contDiff_id)
+
+/-- **The path of scales is smooth jointly in the plumbing factor and the parameter.** -/
+theorem contDiff_uncurry_associativityScale {n : ℕ∞} :
+    ContDiff ℝ n (uncurry associativityScale) := by
+  refine contDiff_pi.2 fun i => ?_
+  fin_cases i
+  · simp only [Fin.zero_eta, uncurry_def, associativityScale_zero, ← Complex.ofRealCLM_apply]
+    fun_prop
+  · simp only [Fin.mk_one, uncurry_def, associativityScale_one, ← Complex.ofRealCLM_apply]
+    fun_prop
+  · simp only [Fin.reduceFinMk, uncurry_def, associativityScale_two, ← Complex.ofRealCLM_apply]
     fun_prop
 
 /-- **The path of scales is smooth.** -/
-theorem contDiff_associativityScale {n : ℕ∞} (f : ℝ) : ContDiff ℝ n (associativityScale f) := by
-  refine contDiff_pi.2 fun i => ?_
-  fin_cases i
-  · simp only [Fin.zero_eta, associativityScale_zero, ← Complex.ofRealCLM_apply]
-    fun_prop
-  · simpa using contDiff_const
-  · simp only [Fin.reduceFinMk, associativityScale_two, ← Complex.ofRealCLM_apply]
-    fun_prop
+theorem contDiff_associativityScale {n : ℕ∞} (f : ℝ) : ContDiff ℝ n (associativityScale f) :=
+  contDiff_uncurry_associativityScale.comp (contDiff_const.prodMk contDiff_id)
 
 /-! #### Norm estimates along the path -/
 
 /-- After the first eighth, the scale of `c` has norm at most `f`. -/
 private theorem norm_associativityScale_two_le (hf : 0 ≤ f) (hτ : 1 ≤ 8 * τ) :
     ‖associativityScale f τ 2‖ ≤ f := by
-  rw [associativityScale_two, stage_zero_eq_one hτ]
   refine (Complex.norm_le_abs_re_add_abs_im _).trans ?_
-  simp only [Complex.add_re, Complex.ofReal_re, Complex.re_ofReal_mul, Complex.I_re, mul_zero,
-    add_zero, Complex.add_im, Complex.ofReal_im, Complex.im_ofReal_mul, Complex.I_im, mul_one,
-    zero_add]
+  rw [associativityScale_two_re, associativityScale_two_im, stage_zero_eq_one hτ]
   have h₄ := smoothTransition.nonneg (8 * τ - 4)
   have h₄' := smoothTransition.le_one (8 * τ - 4)
   have h₅ := smoothTransition.nonneg (8 * τ - 5)
@@ -230,11 +263,9 @@ private theorem norm_associativityScale_two_le_one (hf : 0 ≤ f) (hf₁ : f ≤
     ‖associativityScale f τ 2‖ ≤ 1 := by
   rcases le_or_gt 1 (8 * τ) with h | h
   · exact (norm_associativityScale_two_le hf h).trans hf₁
-  rw [associativityScale_two, stage_eq_zero (show 8 * τ ≤ 4 by linarith),
-    stage_eq_zero (show 8 * τ ≤ 5 by linarith)]
   refine (Complex.norm_le_abs_re_add_abs_im _).trans ?_
-  simp only [Complex.add_re, Complex.ofReal_re, Complex.re_ofReal_mul, Complex.I_re, mul_zero,
-    add_zero, Complex.add_im, Complex.ofReal_im, Complex.im_ofReal_mul, Complex.I_im, mul_one,
+  rw [associativityScale_two_re, associativityScale_two_im,
+    stage_eq_zero (show 8 * τ ≤ 4 by linarith), stage_eq_zero (show 8 * τ ≤ 5 by linarith),
     sub_self, abs_zero]
   have h₀ := smoothTransition.nonneg (8 * τ)
   have h₀' := smoothTransition.le_one (8 * τ)
@@ -242,13 +273,26 @@ private theorem norm_associativityScale_two_le_one (hf : 0 ≤ f) (hf₁ : f ≤
   nlinarith
 
 /-- The norm of the scale of `a`. -/
-private theorem norm_associativityScale_zero (hf : 0 ≤ f) (hf₁ : f ≤ 1) :
+private theorem norm_associativityScale_zero (hf : 0 ≤ f) :
     ‖associativityScale f τ 0‖ = f + (1 - f) * smoothTransition (8 * τ - 7) := by
-  rw [associativityScale_zero, Complex.norm_real, Real.norm_eq_abs]
-  exact abs_of_nonneg (add_nonneg hf (mul_nonneg (by linarith) (smoothTransition.nonneg _)))
+  rw [associativityScale_zero]
+  refine Complex.norm_of_nonneg ?_
+  have := smoothTransition.nonneg (8 * τ - 7)
+  have := smoothTransition.le_one (8 * τ - 7)
+  nlinarith
+
+/-- The norm of the scale of `b`. -/
+private theorem norm_associativityScale_one (hf : 0 ≤ f) : ‖associativityScale f τ 1‖ = f := by
+  rw [associativityScale_one, norm_neg, Complex.norm_of_nonneg hf]
+
+/-- The norm of the center of `b`. -/
+private theorem norm_associativityCenter_one (hf : 0 ≤ f) (hf₁ : f ≤ 1) :
+    ‖associativityCenter f τ 1‖ = f + (1 - f) * smoothTransition (8 * τ - 2) :=
+  Complex.norm_of_nonneg (add_nonneg hf (mul_nonneg (by linarith) (smoothTransition.nonneg _)))
 
 /-- **The scales along the associativity path do not vanish.** -/
-theorem associativityScale_ne_zero (hf : 0 < f) (i : Fin 3) : associativityScale f τ i ≠ 0 := by
+theorem associativityScale_ne_zero (hf : 0 < f) (τ : ℝ) (i : Fin 3) :
+    associativityScale f τ i ≠ 0 := by
   have h₀ := smoothTransition.nonneg (8 * τ)
   have h₀' := smoothTransition.le_one (8 * τ)
   have h₇ := smoothTransition.nonneg (8 * τ - 7)
@@ -260,13 +304,12 @@ theorem associativityScale_ne_zero (hf : 0 < f) (i : Fin 3) : associativityScale
       linarith
     · nlinarith [mul_nonneg hf.le (sub_nonneg.2 h₇')]
   · simp [hf.ne']
-  · simp only [Fin.reduceFinMk, associativityScale_two]
+  · simp only [Fin.reduceFinMk]
     intro h0
     have hre := congrArg Complex.re h0
     have him := congrArg Complex.im h0
-    simp only [Complex.add_re, Complex.ofReal_re, Complex.re_ofReal_mul, Complex.I_re, mul_zero,
-      add_zero, Complex.add_im, Complex.ofReal_im, Complex.im_ofReal_mul, Complex.I_im, mul_one,
-      zero_add, Complex.zero_re, Complex.zero_im] at hre him
+    rw [associativityScale_two_re, Complex.zero_re] at hre
+    rw [associativityScale_two_im, Complex.zero_im] at him
     rcases le_or_gt (8 * τ) 4 with h | h
     · rw [stage_eq_zero h, stage_eq_zero (by linarith)] at hre
       rcases h₀.eq_or_lt with h0' | h0'
@@ -289,9 +332,8 @@ private theorem associativity_add_le_norm_sub_zero_one (hf : 0 ≤ f) (hf₁ : f
   have h₂ := smoothTransition.nonneg (8 * τ - 2)
   have h₂' := smoothTransition.le_one (8 * τ - 2)
   have h₇ := smoothTransition.le_one (8 * τ - 7)
-  rw [associativityCenter_zero, associativityCenter_one, zero_sub, norm_neg, Complex.norm_real,
-    Real.norm_eq_abs, norm_associativityScale_zero hf hf₁, associativityScale_one,
-    Complex.norm_real, Real.norm_eq_abs, abs_neg, abs_of_nonneg hf, abs_of_nonneg (by nlinarith)]
+  rw [associativityCenter_zero, zero_sub, norm_neg, norm_associativityCenter_one hf hf₁,
+    norm_associativityScale_zero hf, norm_associativityScale_one hf]
   rcases le_or_gt (8 * τ) 7 with h | h
   · rw [stage_eq_zero h]
     nlinarith
@@ -307,13 +349,11 @@ private theorem associativity_add_le_norm_sub_zero_two (hf : 0 ≤ f) (hf₃ : 3
   have h₃ := smoothTransition.le_one (8 * τ - 3)
   have h₇ := smoothTransition.le_one (8 * τ - 7)
   have hre : 1 - f ≤ ‖associativityCenter f τ 0 - associativityCenter f τ 2‖ := by
-    rw [associativityCenter_zero, zero_sub, norm_neg, associativityCenter_two]
+    rw [associativityCenter_zero, zero_sub, norm_neg]
     refine le_trans ?_ (Complex.abs_re_le_norm _)
-    simp only [Complex.add_re, Complex.ofReal_re, Complex.re_ofReal_mul, Complex.I_re, mul_zero,
-      add_zero]
-    rw [abs_of_nonneg (by nlinarith)]
+    rw [associativityCenter_two_re, abs_of_nonneg (by nlinarith)]
     nlinarith
-  rw [norm_associativityScale_zero hf hf₁]
+  rw [norm_associativityScale_zero hf]
   rcases le_or_gt (8 * τ) 7 with h | h
   · have := norm_associativityScale_two_le_one hf hf₁ (τ := τ)
     rw [stage_eq_zero h]
@@ -326,46 +366,30 @@ private theorem associativity_add_le_norm_sub_one_two (hf : 0 ≤ f) (hf₃ : 3 
     ‖associativityScale f τ 1‖ / 2 + ‖associativityScale f τ 2‖ / 2 ≤
       ‖associativityCenter f τ 1 - associativityCenter f τ 2‖ := by
   have hf₁ : f ≤ 1 := by linarith
-  have hsub : ∀ x y z : ℝ, (x : ℂ) - ((y : ℂ) + (z : ℂ) * Complex.I) =
-      ((x - y : ℝ) : ℂ) + ((-z : ℝ) : ℂ) * Complex.I := fun x y z => by
-    push_cast
-    ring
-  rw [associativityScale_one, Complex.norm_real, Real.norm_eq_abs, abs_neg, abs_of_nonneg hf,
-    associativityCenter_one, associativityCenter_two, hsub]
-  rcases le_or_gt (8 * τ) 1 with h | h
+  rw [norm_associativityScale_one hf]
+  rcases le_or_gt (8 * τ) 2 with h | h
   · have := norm_associativityScale_two_le_one hf hf₁ (τ := τ)
-    rw [stage_eq_zero (show 8 * τ ≤ 2 by linarith), stage_eq_zero (show 8 * τ ≤ 3 by linarith)]
     refine le_trans ?_ (Complex.abs_re_le_norm _)
-    simp only [Complex.add_re, Complex.ofReal_re, Complex.re_ofReal_mul, Complex.I_re, mul_zero,
-      add_zero]
-    rw [abs_of_nonpos (by linarith)]
+    rw [Complex.sub_re, associativityCenter_one_re, associativityCenter_two_re, stage_eq_zero h,
+      stage_eq_zero (show 8 * τ ≤ 3 by linarith), abs_of_nonpos (by linarith)]
     linarith
-  have hc : ‖associativityScale f τ 2‖ ≤ f := norm_associativityScale_two_le hf h.le
-  rcases le_or_gt (8 * τ) 2 with h' | h'
-  · rw [stage_eq_zero h', stage_eq_zero (show 8 * τ ≤ 3 by linarith)]
-    refine le_trans ?_ (Complex.abs_re_le_norm _)
-    simp only [Complex.add_re, Complex.ofReal_re, Complex.re_ofReal_mul, Complex.I_re, mul_zero,
-      add_zero]
-    rw [abs_of_nonpos (by linarith)]
-    linarith
-  rcases le_or_gt (8 * τ) 6 with h'' | h''
-  · rw [stage_eq_one (k := 1) (by linarith), stage_eq_zero h'']
-    refine le_trans ?_ (Complex.abs_im_le_norm _)
-    simp only [Complex.add_im, Complex.ofReal_im, Complex.im_ofReal_mul, Complex.I_im, mul_one,
-      zero_add]
+  have hc : ‖associativityScale f τ 2‖ ≤ f := norm_associativityScale_two_le hf (by linarith)
+  rcases le_or_gt (8 * τ) 6 with h' | h'
+  · refine le_trans ?_ (Complex.abs_im_le_norm _)
+    rw [Complex.sub_im, associativityCenter_one_im, associativityCenter_two_im,
+      stage_eq_one (k := 1) (by linarith), stage_eq_zero h']
     norm_num
     linarith
-  · rw [stage_eq_one (k := 2) (by linarith), stage_eq_one (k := 3) (by linarith)]
-    refine le_trans ?_ (Complex.abs_re_le_norm _)
-    simp only [Complex.add_re, Complex.ofReal_re, Complex.re_ofReal_mul, Complex.I_re, mul_zero,
-      add_zero]
-    rw [abs_of_nonneg (by linarith)]
+  · refine le_trans ?_ (Complex.abs_re_le_norm _)
+    rw [Complex.sub_re, associativityCenter_one_re, associativityCenter_two_re,
+      stage_eq_one (k := 2) (by linarith), stage_eq_one (k := 3) (by linarith),
+      abs_of_nonneg (by linarith)]
     linarith
 
 /-- **The input discs stay disjoint along the associativity path.** For `0 ≤ f` and `3 f ≤ 1`,
 the discs `‖w - c_i‖ < ‖a_i‖ / 2` of the three input ends are pairwise disjoint at every point of
 the path. -/
-theorem pairwise_add_le_norm_associativityCenter_sub (hf : 0 ≤ f) (hf₃ : 3 * f ≤ 1) :
+theorem pairwise_add_le_norm_associativityCenter_sub (hf : 0 ≤ f) (hf₃ : 3 * f ≤ 1) (τ : ℝ) :
     Pairwise fun i j => ‖associativityScale f τ i‖ / 2 + ‖associativityScale f τ j‖ / 2 ≤
       ‖associativityCenter f τ i - associativityCenter f τ j‖ := by
   have hab := associativity_add_le_norm_sub_zero_one (τ := τ) hf (by linarith)
@@ -389,7 +413,7 @@ theorem pairwise_add_le_norm_associativityCenter_sub (hf : 0 ≤ f) (hf₃ : 3 *
 /-- **The input discs stay inside the disc where the output datum vanishes.** For `0 ≤ f ≤ 1`,
 every input disc `‖w - c_i‖ < ‖a_i‖ / 2` along the associativity path lies in the disc
 `‖w‖ ≤ 2 exp (2π)`. -/
-theorem norm_associativityCenter_add_le (hf : 0 ≤ f) (hf₁ : f ≤ 1) (i : Fin 3) :
+theorem norm_associativityCenter_add_le (hf : 0 ≤ f) (hf₁ : f ≤ 1) (τ : ℝ) (i : Fin 3) :
     ‖associativityCenter f τ i‖ + ‖associativityScale f τ i‖ / 2 ≤ 2 * Real.exp (2 * π) := by
   have hexp : 2 ≤ Real.exp (2 * π) := by
     have := Real.add_one_le_exp (2 * π)
@@ -406,24 +430,20 @@ theorem norm_associativityCenter_add_le (hf : 0 ≤ f) (hf₁ : f ≤ 1) (i : Fi
   have hc : ‖associativityCenter f τ i‖ ≤ 2 := by
     fin_cases i
     · simp
-    · rw [Fin.mk_one, associativityCenter_one, Complex.norm_real, Real.norm_eq_abs,
-        abs_of_nonneg (by nlinarith)]
+    · rw [Fin.mk_one, norm_associativityCenter_one hf hf₁]
       nlinarith
     · simp only [Fin.reduceFinMk]
-      rw [associativityCenter_two]
       refine (Complex.norm_le_abs_re_add_abs_im _).trans ?_
-      simp only [Complex.add_re, Complex.ofReal_re, Complex.re_ofReal_mul, Complex.I_re,
-        mul_zero, add_zero, Complex.add_im, Complex.ofReal_im, Complex.im_ofReal_mul,
-        Complex.I_im, mul_one, zero_add]
-      rw [abs_of_nonneg (by nlinarith)]
+      rw [associativityCenter_two_re, associativityCenter_two_im, abs_of_nonneg (by nlinarith)]
       have : |smoothTransition (8 * τ - 1) - smoothTransition (8 * τ - 6)| ≤ 1 :=
         abs_le.2 ⟨by linarith, by linarith⟩
       nlinarith
   have ha : ‖associativityScale f τ i‖ ≤ 1 := by
     fin_cases i
-    · rw [Fin.zero_eta, norm_associativityScale_zero hf hf₁]
+    · rw [Fin.zero_eta, norm_associativityScale_zero hf]
       nlinarith
-    · simp [abs_of_nonneg hf, hf₁]
+    · rw [Fin.mk_one, norm_associativityScale_one hf]
+      exact hf₁
     · exact norm_associativityScale_two_le_one hf hf₁
   linarith
 
@@ -494,20 +514,22 @@ variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
 
 /-- **The data along the associativity path form a smooth family.** For period-one Hamiltonians
 of class `C^n` and `0 < f`, the datum of the sphere with the input ends of the associativity
-path is `C^n` jointly in the parameter `τ`, the domain point and the target point, at every domain
-point other than the three centers. -/
+path is `C^n` jointly in the plumbing factor `f`, the parameter `τ`, the domain point and the
+target point, at every domain point other than the three centers. -/
 theorem contMDiffAt_puncturedSpherePerturbation_associativity {n : ℕ∞}
     (hH : ∀ i, Periodic (H i) 1) (hHs : ∀ i, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (H i)))
     (hHout : Periodic Hout 1) (hHouts : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry Hout))
     (hf : 0 < f) {w : ℂ} (hw : ∀ i, w ≠ associativityCenter f τ i) (x : M) :
-    ContMDiffAt (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
-      (fun p : ℝ × (ℂ × M) => puncturedSpherePerturbation (associativityCenter f p.1)
-        (associativityScale f p.1) H Hout p.2.1 p.2.2) (τ, (w, x)) := by
-  have hcfg : ContMDiffAt 𝓘(ℝ, ℝ) 𝓘(ℝ, (Fin 3 → ℂ) × (Fin 3 → ℂ)) n
-      (fun τ => (associativityCenter f τ, associativityScale f τ)) τ :=
-    ((contDiff_associativityCenter f).prodMk (contDiff_associativityScale f)).contMDiff.contMDiffAt
+    ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
+      (fun p : (ℝ × ℝ) × (ℂ × M) => puncturedSpherePerturbation
+        (associativityCenter p.1.1 p.1.2) (associativityScale p.1.1 p.1.2) H Hout p.2.1 p.2.2)
+      ((f, τ), (w, x)) := by
+  have hcfg : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, (Fin 3 → ℂ) × (Fin 3 → ℂ)) n
+      (fun p : ℝ × ℝ => (associativityCenter p.1 p.2, associativityScale p.1 p.2)) (f, τ) :=
+    (contDiff_uncurry_associativityCenter.prodMk
+      contDiff_uncurry_associativityScale).contMDiff.contMDiffAt
   exact (contMDiffAt_puncturedSpherePerturbation hH hHs hHout hHouts
-    (associativityScale_ne_zero hf) hw x).comp (τ, (w, x))
+    (associativityScale_ne_zero hf τ) hw x).comp ((f, τ), (w, x))
     ((hcfg.comp _ contMDiffAt_fst).prodMk contMDiffAt_snd)
 
 end Family
@@ -520,7 +542,7 @@ open Floer
 
 variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M] [IsManifold I ⊤ M]
-  {H : Fin 3 → ℝ → M → ℝ} {Hout : ℝ → M → ℝ} {f τ : ℝ}
+  {H : Fin 3 → ℝ → M → ℝ} {Hout : ℝ → M → ℝ} {f : ℝ}
 
 /-- **The curvature along the associativity path is bounded uniformly.** Let the inputs `a`, `b`,
 `c` carry period-one `C¹` Hamiltonians `H i` on a manifold `M` with a two-form `ω`, with
@@ -532,7 +554,7 @@ theorem lintegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_associa
     (ω : SmoothTwoForm I M) (hH : ∀ i, Periodic (H i) 1)
     (hHs : ∀ i, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H i))) (hHout : Periodic Hout 1)
     (hHouts : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry Hout)) (hf : 0 < f)
-    (hf₃ : 3 * f ≤ 1) {B : Fin 3 → ℝ} {Bout : ℝ} (hB : ∀ i t x, |H i t x| ≤ B i)
+    (hf₃ : 3 * f ≤ 1) (τ : ℝ) {B : Fin 3 → ℝ} {Bout : ℝ} (hB : ∀ i t x, |H i t x| ≤ B i)
     (hBout : ∀ t x, |Hout t x| ≤ Bout) (u : ℝ × ℝ → M) :
     ∫⁻ z, ‖ω.hamiltonianCurvature
         (fun z x ↦ puncturedSpherePerturbation (associativityCenter f τ) (associativityScale f τ) H
@@ -548,9 +570,9 @@ theorem lintegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_associa
     have := norm_nonneg (associativityScale f τ i)
     nlinarith
   refine lintegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_le ω hH hHs hHout hHouts
-    (associativityScale_ne_zero hf) (fun i j hij => ?_) (fun i => ?_) hB hBout u
+    (associativityScale_ne_zero hf τ) (fun i j hij => ?_) (fun i => ?_) hB hBout u
   · exact (add_le_add (hr i) (hr j)).trans
-      (pairwise_add_le_norm_associativityCenter_sub hf.le hf₃ hij)
-  · linarith [hr i, norm_associativityCenter_add_le hf.le hf₁ (τ := τ) i]
+      (pairwise_add_le_norm_associativityCenter_sub hf.le hf₃ τ hij)
+  · linarith [hr i, norm_associativityCenter_add_le hf.le hf₁ τ i]
 
 end TauCeti.SmoothTwoForm
