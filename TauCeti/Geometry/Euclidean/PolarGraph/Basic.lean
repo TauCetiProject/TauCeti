@@ -88,7 +88,7 @@ def deckShift (k : ℤ) (p : PolarPoint) : PolarPoint :=
     deckShift k (deckShift (-k) p) = p := by
   rw [← deckShift_add, neg_add_cancel, deckShift_zero]
 
-@[simp, grind =] theorem deckShift_right_inj {k l : ℤ} {p : PolarPoint} :
+@[simp, grind =] theorem deckShift_left_inj {k l : ℤ} {p : PolarPoint} :
     deckShift k p = deckShift l p ↔ k = l := by
   constructor
   · intro h
@@ -98,10 +98,18 @@ def deckShift (k : ℤ) (p : PolarPoint) : PolarPoint :=
   · rintro rfl
     rfl
 
+@[simp, grind =] theorem deckShift_right_inj {k : ℤ} {p q : PolarPoint} :
+    deckShift k p = deckShift k q ↔ p = q := by
+  constructor
+  · intro h
+    simpa only [deckShift_neg_deckShift] using congrArg (deckShift (-k)) h
+  · rintro rfl
+    rfl
+
 /-- Only the zero deck translation fixes a polar point. -/
 @[simp] theorem deckShift_eq_self_iff {k : ℤ} {p : PolarPoint} :
     deckShift k p = p ↔ k = 0 := by
-  simpa only [deckShift_zero] using (deckShift_right_inj (k := k) (l := 0) (p := p))
+  simpa only [deckShift_zero] using (deckShift_left_inj (k := k) (l := 0) (p := p))
 
 /-- The image of a polar point in the punctured complex plane. -/
 def projection (p : PolarPoint) : ℂ :=
