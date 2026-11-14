@@ -58,10 +58,11 @@ theorem tendsto_nhdsNE (e : OpenPartialHomeomorph X Y) {x : X} (hx : x ∈ e.sou
 
 /-- An open partial homeomorphism maps the punctured neighbourhood filter of a point of its source
 onto the punctured neighbourhood filter of its image. This is the analogue of Mathlib's
-`Homeomorph.map_punctured_nhds_eq`, and the proof follows Mathlib's
-`OpenPartialHomeomorph.map_nhds_eq`, with `tendsto_nhdsNE` in place of continuity. -/
+`Homeomorph.map_punctured_nhds_eq`. -/
 theorem map_nhdsNE_eq (e : OpenPartialHomeomorph X Y) {x : X} (hx : x ∈ e.source) :
     map e (𝓝[≠] x) = 𝓝[≠] (e x) :=
+  -- The proof follows Mathlib's `OpenPartialHomeomorph.map_nhds_eq`, with `tendsto_nhdsNE` in
+  -- place of continuity.
   le_antisymm (e.tendsto_nhdsNE hx) <|
     le_map_of_right_inverse
       (eventually_nhdsWithin_of_eventually_nhds (e.eventually_right_inverse' hx))
