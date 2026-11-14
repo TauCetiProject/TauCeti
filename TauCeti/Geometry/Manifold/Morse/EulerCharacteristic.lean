@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.FiniteCWType
 public import TauCeti.Geometry.Manifold.Morse.Inequalities
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Basic
-import Mathlib.Algebra.BigOperators.ModEq
 import Mathlib.Algebra.Field.ULift
 import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Sphere
 import TauCeti.Geometry.Manifold.Morse.Generic.Basic
