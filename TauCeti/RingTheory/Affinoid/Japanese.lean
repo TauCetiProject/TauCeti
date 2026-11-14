@@ -29,11 +29,12 @@ finite extension domains (`TauCeti.Ring.IsJapanese.of_finite`), `A` is Japanese.
 affinoid algebra `A`, `A` is Noetherian (`TauCeti.IsAffinoidAlgebra.isNoetherianRing`) and every
 prime quotient `A ⧸ p` is an affinoid domain and therefore Japanese, so `A` is Nagata.
 
-Consequently (`TauCeti.Ring.IsNagata.finite_integralClosure`), for any reduced `A`-algebra `B`
-essentially of finite type, the integral closure of `A` in `B` is a finite `A`-module. In
-particular, when `A` is reduced, its normalization in any total ring of fractions `F` is a finite
-`A`-module; when `K` is nontrivially normed, `TauCeti.IsAffinoidAlgebra.of_finite` shows that these
-integral closures are again affinoid `K`-algebras.
+Consequently (`TauCeti.Ring.IsNagata.finite_of_isIntegralClosure`), for any reduced `A`-algebra `B`
+essentially of finite type, any integral closure `C` of `A` in `B` is a finite `A`-module. In
+particular, when `A` is reduced, `A` is N-1 (`TauCeti.Ring.IsNagata.isN1`) so its normalization in
+any total ring of fractions `F` is a finite `A`-module; when `K` is nontrivially normed,
+`TauCeti.IsAffinoidAlgebra.of_finite` shows that these integral closures are again affinoid
+`K`-algebras (`TauCeti.IsAffinoidAlgebra.of_isIntegralClosure`).
 
 ## Main results
 
@@ -41,17 +42,19 @@ integral closures are again affinoid `K`-algebras.
   field is Japanese.
 * `TauCeti.IsAffinoidAlgebra.isNagata`: every affinoid algebra over a complete ultrametric normed
   field is Nagata.
-* `TauCeti.MvPowerSeries.isNagata_tate`: the Tate algebra `K⟨X₁, …, Xₙ⟩` in finitely many variables
-  is Nagata.
-* `TauCeti.IsAffinoidAlgebra.finite_integralClosure`: finiteness of the integral closure of an
-  affinoid algebra in any reduced algebra essentially of finite type over it.
+* `TauCeti.MvPowerSeries.isNagata_isRestricted_subring`: the Tate algebra `K⟨X₁, …, Xₙ⟩` in
+  finitely many variables is Nagata.
+* `TauCeti.IsAffinoidAlgebra.finite_of_isIntegralClosure` and
+  `TauCeti.IsAffinoidAlgebra.finite_integralClosure`: finiteness of any integral closure of an
+  affinoid algebra in a reduced algebra essentially of finite type over it.
 * `TauCeti.IsAffinoidAlgebra.finite_of_isIntegralClosure_of_isFractionRing` and
   `TauCeti.IsAffinoidAlgebra.finite_integralClosure_fractionRing`: finiteness of the normalization
   of a reduced affinoid algebra in its total ring of fractions.
-* `TauCeti.IsAffinoidAlgebra.integralClosure`,
+* `TauCeti.IsAffinoidAlgebra.of_isIntegralClosure`,
+  `TauCeti.IsAffinoidAlgebra.integralClosure`,
   `TauCeti.IsAffinoidAlgebra.of_isIntegralClosure_of_isFractionRing`, and
   `TauCeti.IsAffinoidAlgebra.integralClosure_fractionRing`: over a nontrivially normed complete
-  ultrametric field, these normalizations are again affinoid `K`-algebras.
+  ultrametric field, these integral closures and normalizations are again affinoid `K`-algebras.
 
 ## References
 
@@ -92,13 +95,22 @@ theorem isNagata (hA : IsAffinoidAlgebra K A) : Ring.IsNagata A where
   isJapanese_quotient p _ := (hA.quotient p).isJapanese
 
 /-- **Finiteness of integral closures over an affinoid algebra.** For any affinoid algebra `A` over
-a complete ultrametric normed field and any reduced `A`-algebra `B` essentially of finite type, the
-integral closure of `A` in `B` is a finite `A`-module. -/
+a complete ultrametric normed field, any reduced `A`-algebra `B` essentially of finite type, and any
+integral closure `C` of `A` in `B`, `C` is a finite `A`-module. -/
+theorem finite_of_isIntegralClosure (hA : IsAffinoidAlgebra K A) (B : Type*) [CommRing B]
+    [IsReduced B] [Algebra A B] [Algebra.EssFiniteType A B]
+    (C : Type*) [CommRing C] [Algebra A C] [Algebra C B] [IsScalarTower A C B]
+    [IsIntegralClosure C A B] :
+    Module.Finite A C := by
+  have := hA.isNagata
+  exact Ring.IsNagata.finite_of_isIntegralClosure B C
+
+/-- For any affinoid algebra `A` over a complete ultrametric normed field and any reduced
+`A`-algebra `B` essentially of finite type, `_root_.integralClosure A B` is a finite `A`-module. -/
 theorem finite_integralClosure (hA : IsAffinoidAlgebra K A) (B : Type*) [CommRing B] [IsReduced B]
     [Algebra A B] [Algebra.EssFiniteType A B] :
-    Module.Finite A (_root_.integralClosure A B) := by
-  have := hA.isNagata
-  exact Ring.IsNagata.finite_integralClosure B
+    Module.Finite A (_root_.integralClosure A B) :=
+  hA.finite_of_isIntegralClosure B (_root_.integralClosure A B)
 
 /-- **Finiteness of normalization of a reduced affinoid algebra.** For a reduced affinoid algebra
 `A` over a complete ultrametric normed field, any total ring of fractions `F` of `A`, and any
@@ -108,16 +120,15 @@ theorem finite_of_isIntegralClosure_of_isFractionRing [IsReduced A] (hA : IsAffi
     (C : Type*) [CommRing C] [Algebra A C] [Algebra C F] [IsScalarTower A C F]
     [IsIntegralClosure C A F] :
     Module.Finite A C := by
-  have : IsReduced F := IsLocalization.isReduced (nonZeroDivisors A) F
-  have : Algebra.EssFiniteType A F := .of_isLocalization (S := F) (nonZeroDivisors A)
-  have := hA.finite_integralClosure F
-  exact .equiv (IsIntegralClosure.equiv A (_root_.integralClosure A F) F C).toLinearEquiv
+  have := hA.isNagata
+  exact Ring.IsN1.finite_of_isIntegralClosure F C
 
 /-- The normalization `_root_.integralClosure A (FractionRing A)` of a reduced affinoid algebra `A`
 in its canonical total ring of fractions is a finite `A`-module. -/
 theorem finite_integralClosure_fractionRing [IsReduced A] (hA : IsAffinoidAlgebra K A) :
-    Module.Finite A (_root_.integralClosure A (FractionRing A)) :=
-  hA.finite_of_isIntegralClosure_of_isFractionRing (FractionRing A) _
+    Module.Finite A (_root_.integralClosure A (FractionRing A)) := by
+  have := hA.isNagata
+  exact Ring.IsN1.finite_integralClosure_fractionRing
 
 end NormedField
 
@@ -126,14 +137,24 @@ section NontriviallyNormedField
 variable {K : Type*} {A : Type*} [NontriviallyNormedField K] [IsUltrametricDist K]
   [CompleteSpace K] [CommRing A] [Algebra K A]
 
+/-- Over a nontrivially normed complete ultrametric field `K`, any integral closure `C` of an
+affinoid `K`-algebra `A` in a reduced `A`-algebra `B` essentially of finite type is again an
+affinoid `K`-algebra. -/
+theorem of_isIntegralClosure (hA : IsAffinoidAlgebra K A) (B : Type*) [CommRing B] [IsReduced B]
+    [Algebra A B] [Algebra.EssFiniteType A B]
+    {C : Type*} [CommRing C] [Algebra K C] [Algebra A C] [IsScalarTower K A C]
+    [Algebra C B] [IsScalarTower A C B] [IsIntegralClosure C A B] :
+    IsAffinoidAlgebra K C := by
+  have := hA.finite_of_isIntegralClosure B C
+  exact hA.of_finite
+
 /-- Over a nontrivially normed complete ultrametric field `K`, the integral closure of an affinoid
 `K`-algebra `A` in any reduced `A`-algebra `B` essentially of finite type (with a compatible
 `K`-algebra structure) is again an affinoid `K`-algebra. -/
 theorem integralClosure (hA : IsAffinoidAlgebra K A) {B : Type*} [CommRing B] [IsReduced B]
     [Algebra K B] [Algebra A B] [IsScalarTower K A B] [Algebra.EssFiniteType A B] :
-    IsAffinoidAlgebra K (_root_.integralClosure A B) := by
-  have := hA.finite_integralClosure B
-  exact hA.of_finite
+    IsAffinoidAlgebra K (_root_.integralClosure A B) :=
+  hA.of_isIntegralClosure B
 
 /-- Over a nontrivially normed complete ultrametric field `K`, any integral closure `C` of a
 reduced affinoid `K`-algebra `A` in a total ring of fractions `F` of `A` is an affinoid
@@ -143,26 +164,46 @@ theorem of_isIntegralClosure_of_isFractionRing [IsReduced A] (hA : IsAffinoidAlg
     {C : Type*} [CommRing C] [Algebra K C] [Algebra A C] [IsScalarTower K A C]
     [Algebra C F] [IsScalarTower A C F] [IsIntegralClosure C A F] :
     IsAffinoidAlgebra K C := by
-  have := hA.finite_of_isIntegralClosure_of_isFractionRing F C
-  exact hA.of_finite
+  have : IsReduced F := IsLocalization.isReduced (nonZeroDivisors A) F
+  have : Algebra.EssFiniteType A F := .of_isLocalization (S := F) (nonZeroDivisors A)
+  exact hA.of_isIntegralClosure F
 
 /-- Over a nontrivially normed complete ultrametric field `K`, the normalization
 `_root_.integralClosure A (FractionRing A)` of a reduced affinoid `K`-algebra `A` in its total ring
 of fractions is an affinoid `K`-algebra. -/
 theorem integralClosure_fractionRing [IsReduced A] (hA : IsAffinoidAlgebra K A) :
     IsAffinoidAlgebra K (_root_.integralClosure A (FractionRing A)) :=
-  hA.integralClosure
+  hA.of_isIntegralClosure_of_isFractionRing (FractionRing A)
 
 end NontriviallyNormedField
 
+end TauCeti.IsAffinoidAlgebra
+
+namespace TauCeti.MvPowerSeries
+
+open _root_.MvPowerSeries
+
+/-- **Tate algebras are Nagata.** Over any complete ultrametric normed field `K`, the Tate algebra
+`K⟨X₁, …, Xₙ⟩` in finitely many variables is a Nagata ring. -/
+instance isNagata_isRestricted_subring {σ : Type*} {K : Type*} [NormedField K]
+    [IsUltrametricDist K] [CompleteSpace K] [Finite σ] :
+    Ring.IsNagata (IsRestricted.subring (R := K) (fun _ : σ ↦ 1)) :=
+  isAffinoidAlgebra_tate.isNagata
+
+end TauCeti.MvPowerSeries
+
+namespace TauCeti.IsAffinoidAlgebra
+
+open _root_.MvPowerSeries
+
 section Examples
 
-/-- A non-reduced affinoid quotient such as `K⟨X⟩ ⧸ (X²)` is Nagata. -/
+/-- A non-reduced affinoid quotient such as `K⟨X⟩ ⧸ (X²)` is Nagata by typeclass synthesis. -/
 example {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K] :
     let T := IsRestricted.subring (R := K) (fun _ : Fin 1 ↦ 1)
     let x : T := ⟨_root_.MvPowerSeries.X 0, isRestricted_X _ 0⟩
     Ring.IsNagata (T ⧸ Ideal.span ({x ^ 2} : Set T)) :=
-  (isAffinoidAlgebra_tate.quotient _).isNagata
+  inferInstance
 
 /-- Over a nontrivially normed complete ultrametric field `K`, the normalization `C` of a reduced
 affinoid `K`-algebra `A` in its total ring of fractions is simultaneously finite over `A`, an
@@ -188,16 +229,3 @@ example {K : Type*} {A : Type*} [NontriviallyNormedField K] [IsUltrametricDist K
 end Examples
 
 end TauCeti.IsAffinoidAlgebra
-
-namespace TauCeti.MvPowerSeries
-
-open _root_.MvPowerSeries
-
-/-- **Tate algebras are Nagata.** Over any complete ultrametric normed field `K`, the Tate algebra
-`K⟨X₁, …, Xₙ⟩` in finitely many variables is a Nagata ring. -/
-theorem isNagata_tate {σ : Type*} {K : Type*} [NormedField K] [IsUltrametricDist K]
-    [CompleteSpace K] [Finite σ] :
-    Ring.IsNagata (IsRestricted.subring (R := K) (fun _ : σ ↦ 1)) :=
-  isAffinoidAlgebra_tate.isNagata
-
-end TauCeti.MvPowerSeries

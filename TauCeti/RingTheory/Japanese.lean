@@ -50,9 +50,10 @@ need to be tested.
 
 * `TauCeti.Ring.IsN1 R`: the domain `R` is N-1.
 * `TauCeti.Ring.IsJapanese R`: the domain `R` is Japanese (N-2).
-* `TauCeti.Ring.IsJapanese.finite_integralClosure`: the defining property of a Japanese ring for
-  an arbitrary model `K` of its fraction field and a finitely generated, possibly transcendental,
-  field extension `L` of `K` in any universe.
+* `TauCeti.Ring.IsJapanese.finite_integralClosure` and
+  `TauCeti.Ring.IsJapanese.finite_of_isIntegralClosure`: the defining property of a Japanese ring
+  for an arbitrary model `K` of its fraction field, a finitely generated (possibly transcendental)
+  field extension `L` of `K`, and any integral closure `C` of `R` in `L`.
 * `TauCeti.Ring.IsN1.of_isIntegrallyClosed`: an integrally closed ring is N-1.
 * `TauCeti.Ring.IsJapanese.of_field`: a field is Japanese.
 * `TauCeti.Ring.IsJapanese.of_isIntegrallyClosed`: a Noetherian integrally closed domain with
@@ -144,6 +145,13 @@ instance finite_integralClosure [IsN1 R] (K : Type v) [CommRing K] [Algebra R K]
   have := finite_integralClosure_fractionRing (R := R)
   .equiv (FractionRing.algEquiv R K).mapIntegralClosure.toLinearEquiv
 
+/-- Any integral closure `C` of an N-1 ring `R` in a model `K` of its total ring of fractions is a
+finite `R`-module. -/
+theorem finite_of_isIntegralClosure [IsN1 R] (K : Type v) (C : Type*) [CommRing K] [Algebra R K]
+    [IsFractionRing R K] [CommRing C] [Algebra R C] [Algebra C K] [IsScalarTower R C K]
+    [IsIntegralClosure C R K] : Module.Finite R C :=
+  .equiv (IsIntegralClosure.equiv R (integralClosure R K) K C).toLinearEquiv
+
 /-- A ring whose integral closure in some model of its total ring of fractions is finite is
 N-1. -/
 theorem of_finite_integralClosure (K : Type v) [CommRing K] [Algebra R K] [IsFractionRing R K]
@@ -205,6 +213,16 @@ theorem finite_integralClosure [IsJapanese R] (K : Type v) (L : Type w)
   refine .of_surjective i.mapIntegralClosure.toLinearMap fun ⟨y, hy⟩ ↦ ?_
   have hyA : y ∈ algebraicClosure K L := mem_algebraicClosure_iff'.mpr (hy.tower_top (A := K))
   exact ⟨⟨⟨y, hyA⟩, (isIntegral_algHom_iff i Subtype.val_injective).mp hy⟩, rfl⟩
+
+/-- Any integral closure `C` of a Japanese domain `R` in a finitely generated field extension `L`
+of an arbitrary model `K` of the fraction field of `R` is a finite `R`-module. -/
+theorem finite_of_isIntegralClosure [IsJapanese R] (K : Type v) (L : Type w) (C : Type*)
+    [Field K] [Field L] [Algebra R K] [IsFractionRing R K] [Algebra K L] [Algebra R L]
+    [IsScalarTower R K L] [Algebra.EssFiniteType K L]
+    [CommRing C] [Algebra R C] [Algebra C L] [IsScalarTower R C L] [IsIntegralClosure C R L] :
+    Module.Finite R C :=
+  have := finite_integralClosure (R := R) K L
+  .equiv (IsIntegralClosure.equiv R (integralClosure R L) L C).toLinearEquiv
 
 /-- A domain `R` is Japanese as soon as its integral closure in every finite extension of some
 model `K` of its fraction field, in the universe of `R`, is a finite `R`-module. -/

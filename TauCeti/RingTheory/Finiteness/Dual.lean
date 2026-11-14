@@ -5,17 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
 public import Mathlib.RingTheory.Localization.FractionRing
 public import Mathlib.RingTheory.Noetherian.Defs
+public import TauCeti.LinearAlgebra.Dual.DoubleDual
 
-import Mathlib.LinearAlgebra.Dimension.Finrank
-import Mathlib.LinearAlgebra.Dimension.Free
 import Mathlib.LinearAlgebra.Dual.Basis
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
-import Mathlib.LinearAlgebra.FreeModule.Basic
 import Mathlib.RingTheory.Finiteness.Finsupp
 import Mathlib.RingTheory.Localization.Integer
 import Mathlib.RingTheory.Noetherian.Basic
@@ -36,13 +33,11 @@ is finite-dimensional over `K`, any functional `φ : N →ₗ[R] R` that is nonz
 finitely generated image (as `R` is Noetherian) while the `K`-span of `ker φ` avoids `x₀` (clearing
 denominators in `K = Frac(R)`), lowering the `K`-dimension and concluding by induction.
 
-In particular, the integral closure `C` of a Noetherian domain `R` in a finite extension `L` of
-`K` is a finite `R`-module if and only if `Module.Dual.eval R C` is injective.
+In particular, the integral closure `C` of a Noetherian domain `R` in a module-finite `K`-algebra
+`L` is a finite `R`-module if and only if `Module.Dual.eval R C` is injective.
 
 ## Main results
 
-* `Module.Dual.injective_eval_iff`: `Module.Dual.eval R M` is injective if and only if every nonzero
-  element of `M` is not killed by some `R`-linear functional.
 * `Submodule.injective_dual_eval_of_fg`: over any domain `R` with fraction field `K`, a finitely
   generated `R`-submodule of a `K`-vector space has injective double-dual evaluation.
 * `Submodule.fg_of_forall_exists_dual_ne_zero`: over a Noetherian domain `R` with fraction field
@@ -50,11 +45,11 @@ In particular, the integral closure `C` of a Noetherian domain `R` in a finite e
   finitely generated.
 * `Submodule.fg_iff_injective_dual_eval` and `Submodule.finite_iff_injective_dual_eval`: the
   resulting equivalence for submodules.
-* `LinearMap.finite_iff_injective_dual_eval` and
+* `LinearMap.finite_iff_injective_dual_eval_of_injective` and
   `Module.Finite.of_injective_of_forall_exists_dual_ne_zero`: the corresponding statements for an
   `R`-module admitting an injective `R`-linear map into a finite-dimensional `K`-vector space.
 * `TauCeti.IsIntegralClosure.finite_iff_injective_dual_eval`: characterization of finiteness of an
-  integral closure in a finite extension of the fraction field.
+  integral closure in a module-finite `K`-algebra.
 
 ## References
 
@@ -63,20 +58,6 @@ In particular, the integral closure `C` of a Noetherian domain `R` in a finite e
 
 public section
 
-/-- The canonical evaluation map `Module.Dual.eval R M` into the double dual is injective if and
-only if `Module.Dual R M` separates nonzero points of `M`. -/
-theorem Module.Dual.injective_eval_iff {R : Type*} {M : Type*} [CommRing R] [AddCommGroup M]
-    [Module R M] :
-    Function.Injective (Module.Dual.eval R M) ↔
-      ∀ x : M, x ≠ 0 → ∃ φ : Module.Dual R M, φ x ≠ 0 := by
-  rw [injective_iff_map_eq_zero]
-  refine ⟨fun h x hx ↦ ?_, fun h x hx ↦ ?_⟩
-  · by_contra! hall
-    exact hx (h x (LinearMap.ext hall))
-  · by_contra hx0
-    obtain ⟨φ, hφ⟩ := h x hx0
-    exact hφ (by simpa using LinearMap.congr_fun hx φ)
-
 section Domain
 
 variable {R : Type*} [CommRing R] [IsDomain R] (K : Type*) [Field K] [Algebra R K]
@@ -84,10 +65,9 @@ variable {R : Type*} [CommRing R] [IsDomain R] (K : Type*) [Field K] [Algebra R 
   [IsScalarTower R K V]
 include K
 
-/-- Over an integral domain `R` with fraction field `K`, a finitely generated `R`-submodule `N` of
-any `K`-vector space `V` has separating `R`-dual: clearing a common denominator of the values of a
-`K`-linear functional on a finite generating set yields an `R`-linear functional on `N`. Neither
-`IsNoetherianRing R` nor `FiniteDimensional K V` is needed. -/
+/-- Over an integral domain `R` with fraction field `K`, `Module.Dual.eval R N` is injective for
+any finitely generated `R`-submodule `N` of a `K`-vector space `V` (without `IsNoetherianRing R` or
+`FiniteDimensional K V`). -/
 theorem Submodule.injective_dual_eval_of_fg {N : Submodule R V} (hN : N.FG) :
     Function.Injective (Module.Dual.eval R N) := by
   classical
@@ -214,8 +194,8 @@ theorem Submodule.finite_iff_injective_dual_eval {N : Submodule R V} :
 /-- For an `R`-module `M` admitting an injective `R`-linear map into a finite-dimensional vector
 space over `K = Frac(R)` (`R` a Noetherian domain), `M` is finite over `R` if and only if
 `Module.Dual.eval R M` is injective. -/
-theorem LinearMap.finite_iff_injective_dual_eval {M : Type*} [AddCommGroup M] [Module R M]
-    {f : M →ₗ[R] V} (hf : Function.Injective f) :
+theorem LinearMap.finite_iff_injective_dual_eval_of_injective {M : Type*} [AddCommGroup M]
+    [Module R M] {f : M →ₗ[R] V} (hf : Function.Injective f) :
     Module.Finite R M ↔ Function.Injective (Module.Dual.eval R M) := by
   let e : M ≃ₗ[R] LinearMap.range f := LinearEquiv.ofInjective f hf
   rw [Module.Finite.equiv_iff e, Submodule.finite_iff_injective_dual_eval K,
@@ -233,7 +213,7 @@ theorem Module.Finite.of_injective_of_forall_exists_dual_ne_zero {M : Type*} [Ad
     [Module R M] {f : M →ₗ[R] V} (hf : Function.Injective f)
     (hsep : ∀ x : M, x ≠ 0 → ∃ φ : Module.Dual R M, φ x ≠ 0) :
     Module.Finite R M :=
-  (f.finite_iff_injective_dual_eval K hf).mpr (Module.Dual.injective_eval_iff.mpr hsep)
+  (f.finite_iff_injective_dual_eval_of_injective K hf).mpr (Module.Dual.injective_eval_iff.mpr hsep)
 
 end Noetherian
 
@@ -241,15 +221,15 @@ end Domain
 
 namespace TauCeti.IsIntegralClosure
 
-/-- Let `R` be a Noetherian domain with fraction field `K`, `L / K` a finite extension, and `C` an
-integral closure of `R` in `L`. Then `C` is a finite `R`-module if and only if
+/-- Let `R` be a Noetherian domain with fraction field `K`, `L` a module-finite `K`-algebra, and
+`C` an integral closure of `R` in `L`. Then `C` is a finite `R`-module if and only if
 `Module.Dual.eval R C` is injective. -/
 theorem finite_iff_injective_dual_eval (R : Type*) (K : Type*) (L : Type*) (C : Type*)
     [CommRing R] [IsDomain R] [IsNoetherianRing R] [Field K] [Algebra R K] [IsFractionRing R K]
-    [Field L] [Algebra R L] [Algebra K L] [IsScalarTower R K L] [FiniteDimensional K L]
+    [CommRing L] [Algebra R L] [Algebra K L] [IsScalarTower R K L] [Module.Finite K L]
     [CommRing C] [Algebra R C] [Algebra C L] [IsScalarTower R C L] [IsIntegralClosure C R L] :
     Module.Finite R C ↔ Function.Injective (Module.Dual.eval R C) :=
-  (IsScalarTower.toAlgHom R C L).toLinearMap.finite_iff_injective_dual_eval K
+  (IsScalarTower.toAlgHom R C L).toLinearMap.finite_iff_injective_dual_eval_of_injective K
     (IsIntegralClosure.algebraMap_injective C R L)
 
 end TauCeti.IsIntegralClosure

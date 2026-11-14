@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Torsion.Free
+public import Mathlib.LinearAlgebra.Quotient.Defs
 public import Mathlib.RingTheory.MvPowerSeries.Basic
 
 import Mathlib.LinearAlgebra.Quotient.Basic
@@ -24,10 +26,10 @@ This file defines the convolution `MvPowerSeries.convSMul` and proves its module
 additive in both arguments, constant series act through their constants, and it is compatible
 with multiplication of series. For `E = R` it is the coefficient family of the product
 (`MvPowerSeries.convSMul_coeff`), and linear maps of coefficient modules commute with it
-(`MvPowerSeries.convSMul_comp`). When `E` has no zero `R`-scalar divisors, nonzero power series act
-faithfully on nonzero coefficient families (`MvPowerSeries.convSMul_eq_zero`), which implies
-coefficientwise descent along submodules (`MvPowerSeries.coeff_mem_of_map_mul_coeff_mem`). No norm
-or topology is needed.
+(`MvPowerSeries.convSMul_comp`). When `E` is `R`-torsion-free over a cancellative `R`, nonzero
+power series act faithfully on nonzero coefficient families (`MvPowerSeries.convSMul_eq_zero`),
+which implies coefficientwise descent along submodules
+(`MvPowerSeries.coeff_mem_of_coeff_map_mul_mem`). No norm or topology is needed.
 
 ## Implementation notes
 
@@ -120,9 +122,9 @@ theorem convSMul_coeff (f g : MvPowerSeries σ R) :
   ext t
   simp [convSMul_apply, coeff_mul]
 
-/-- When `E` has no zero `R`-scalar divisors, the convolution of a nonzero series with a nonzero
-coefficient family is nonzero. -/
-theorem eq_zero_or_eq_zero_of_convSMul_eq_zero [NoZeroSMulDivisors R E]
+/-- When `E` is `R`-torsion-free over a cancellative `R`, the convolution of a nonzero series with
+a nonzero coefficient family is nonzero. -/
+theorem eq_zero_or_eq_zero_of_convSMul_eq_zero [IsCancelMulZero R] [Module.IsTorsionFree R E]
     {f : MvPowerSeries σ R} {a : (σ →₀ ℕ) → E} (h : convSMul f a = 0) :
     f = 0 ∨ a = 0 := by
   classical
@@ -153,32 +155,24 @@ theorem eq_zero_or_eq_zero_of_convSMul_eq_zero [NoZeroSMulDivisors R E]
       rw [coeff_eq_zero_of_lt_lexOrder hu, zero_smul]
     · rw [hq_min htri, smul_zero]
   have hpq : coeff p f • a q = 0 := by rw [← hsum, h, Pi.zero_apply]
-  exact (NoZeroSMulDivisors.eq_zero_or_eq_zero_of_smul_eq_zero hpq).elim
-    (coeff_ne_zero_of_lexOrder hp.symm) hq_ne
+  exact (smul_eq_zero.mp hpq).elim (coeff_ne_zero_of_lexOrder hp.symm) hq_ne
 
 @[simp]
-theorem convSMul_eq_zero [NoZeroSMulDivisors R E]
+theorem convSMul_eq_zero [IsCancelMulZero R] [Module.IsTorsionFree R E]
     {f : MvPowerSeries σ R} {a : (σ →₀ ℕ) → E} :
     convSMul f a = 0 ↔ f = 0 ∨ a = 0 :=
   ⟨eq_zero_or_eq_zero_of_convSMul_eq_zero, fun h ↦ h.elim (fun hf ↦ by simp [hf]) fun ha ↦ by
     simp [ha]⟩
 
-/-- For an `R`-algebra `S` and an `R`-saturated submodule `E ⊆ S`, if `f : MvPowerSeries σ R` is
-nonzero and every coefficient of `map (algebraMap R S) f * g` lies in `E`, then every coefficient
-of `g` lies in `E`. -/
-theorem coeff_mem_of_map_mul_coeff_mem_of_smul_mem {R : Type*} {S : Type*} [CommRing R] [Ring S]
-    [Algebra R S] (E : Submodule R S) (hE : ∀ {r : R} {s : S}, r ≠ 0 → r • s ∈ E → s ∈ E)
+/-- For an `R`-algebra `S` and an `R`-submodule `E ⊆ S` with torsion-free quotient `S ⧸ E`, if
+`f : MvPowerSeries σ R` is nonzero and every coefficient of `map (algebraMap R S) f * g` lies in
+`E`, then every coefficient of `g` lies in `E`. -/
+theorem coeff_mem_of_coeff_map_mul_mem {R : Type*} {S : Type*} [CommRing R] [IsCancelMulZero R]
+    [Ring S] [Algebra R S] (E : Submodule R S) [Module.IsTorsionFree R (S ⧸ E)]
     {f : MvPowerSeries σ R} (hf : f ≠ 0) {g : MvPowerSeries σ S}
     (hfg : ∀ t, coeff t (MvPowerSeries.map (algebraMap R S) f * g) ∈ E) (t : σ →₀ ℕ) :
     coeff t g ∈ E := by
   classical
-  have : NoZeroSMulDivisors R (S ⧸ E) := ⟨by
-    rintro r x hrx
-    obtain ⟨s, rfl⟩ := Submodule.Quotient.mk_surjective E x
-    by_cases hr : r = 0
-    · exact Or.inl hr
-    · refine Or.inr ((Submodule.Quotient.mk_eq_zero E).mpr (hE hr ?_))
-      exact (Submodule.Quotient.mk_eq_zero E).mp hrx⟩
   have hconv : convSMul f (E.mkQ ∘ fun d ↦ coeff d g) = 0 := by
     rw [convSMul_comp]
     ext d
@@ -192,14 +186,29 @@ theorem coeff_mem_of_map_mul_coeff_mem_of_smul_mem {R : Type*} {S : Type*} [Comm
     (eq_zero_or_eq_zero_of_convSMul_eq_zero hconv).resolve_left hf
   exact (Submodule.Quotient.mk_eq_zero E).mp (congrFun ha0 t)
 
-/-- Over a field `K`, if `f : MvPowerSeries σ K` is nonzero and every coefficient of
-`map (algebraMap K S) f * g` lies in a `K`-submodule `E ⊆ S`, then every coefficient of `g` lies in
-`E`. -/
-theorem coeff_mem_of_map_mul_coeff_mem {K : Type*} {S : Type*} [Field K] [Ring S] [Algebra K S]
-    (E : Submodule K S) {f : MvPowerSeries σ K} (hf : f ≠ 0) {g : MvPowerSeries σ S}
-    (hfg : ∀ t, coeff t (MvPowerSeries.map (algebraMap K S) f * g) ∈ E) (t : σ →₀ ℕ) :
-    coeff t g ∈ E :=
-  coeff_mem_of_map_mul_coeff_mem_of_smul_mem E
-    (fun {r s} hr hrs ↦ by simpa [inv_smul_smul₀ hr] using E.smul_mem r⁻¹ hrs) hf hfg t
+/-- For an `R`-algebra `S` and an `R`-saturated submodule `E ⊆ S`, if `f : MvPowerSeries σ R` is
+nonzero and every coefficient of `map (algebraMap R S) f * g` lies in `E`, then every coefficient
+of `g` lies in `E`. -/
+theorem coeff_mem_of_coeff_map_mul_mem_of_smul_mem {R : Type*} {S : Type*} [CommRing R] [Ring S]
+    [Algebra R S] (E : Submodule R S) (hE : ∀ {r : R} {s : S}, r ≠ 0 → r • s ∈ E → s ∈ E)
+    {f : MvPowerSeries σ R} (hf : f ≠ 0) {g : MvPowerSeries σ S}
+    (hfg : ∀ t, coeff t (MvPowerSeries.map (algebraMap R S) f * g) ∈ E) (t : σ →₀ ℕ) :
+    coeff t g ∈ E := by
+  by_contra ht
+  have : Nontrivial R := ⟨1, 0, fun h10 ↦ ht <| by
+    rw [← one_smul R (coeff t g), h10, zero_smul]
+    exact E.zero_mem⟩
+  have : NoZeroDivisors R := ⟨fun {a b} hab ↦ by
+    by_contra! hab'
+    refine ht (hE hab'.2 (hE hab'.1 ?_))
+    rw [← mul_smul, hab, zero_smul]
+    exact E.zero_mem⟩
+  have : Module.IsTorsionFree R (S ⧸ E) := .of_smul_eq_zero fun r x hrx ↦ by
+    obtain ⟨s, rfl⟩ := Submodule.Quotient.mk_surjective E x
+    by_cases hr : r = 0
+    · exact Or.inl hr
+    · exact Or.inr ((Submodule.Quotient.mk_eq_zero E).mpr
+        (hE hr ((Submodule.Quotient.mk_eq_zero E).mp hrx)))
+  exact ht (coeff_mem_of_coeff_map_mul_mem E hf hfg t)
 
 end MvPowerSeries
