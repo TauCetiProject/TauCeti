@@ -497,16 +497,7 @@ noncomputable def yOneBaseMap {B' B : Scheme.{u}} (g : B' ⟶ B) (N : ℕ) [NeZe
 /-- **The base of `EllObj.yOne B N` commutes with arbitrary base change `g : B' ⟶ B`.** -/
 theorem isPullback_yOneBaseMap {B' B : Scheme.{u}} (g : B' ⟶ B) (N : ℕ) [NeZero N] :
     IsPullback (yOneBaseMap g N) (yOne B' N).structureMap (yOne B N).structureMap g := by
-  have houter : IsPullback (prod.map g (𝟙 (UniversalTate.yOne.{u} N)) ≫ prod.snd)
-      (prod.fst : B' ⨯ UniversalTate.yOne.{u} N ⟶ B')
-      (terminal.from (UniversalTate.yOne.{u} N)) (g ≫ terminal.from B) := by
-    rw [prod.map_snd, Category.comp_id, terminal.comp_from g]
-    exact (IsPullback.of_hasBinaryProduct' B' (UniversalTate.yOne.{u} N)).flip
-  have hprod : IsPullback (prod.map g (𝟙 (UniversalTate.yOne.{u} N)))
-      (prod.fst : B' ⨯ UniversalTate.yOne.{u} N ⟶ B')
-      (prod.fst : B ⨯ UniversalTate.yOne.{u} N ⟶ B) g :=
-    IsPullback.of_right houter (prod.map_fst _ _)
-      (IsPullback.of_hasBinaryProduct' B (UniversalTate.yOne.{u} N)).flip
+  have hprod := (IsPullback.of_prod_fst_with_id g (UniversalTate.yOne.{u} N)).flip
   refine hprod.of_iso' (yOneBaseIsoProd B' N) (yOneBaseIsoProd B N) (Iso.refl _) (Iso.refl _)
     ?_ ?_ ?_ ?_ <;> simp [yOneBaseMap]
 
@@ -596,6 +587,7 @@ structure morphism of the fine moduli scheme `Y₁(N)` to `B` is smooth of relat
 theorem smoothOfRelativeDimension_one_yOne_structureMap
     (hN : ∀ b : B, (N : B.residueField b) ≠ 0) (h4 : 4 ≤ N) :
     SmoothOfRelativeDimension 1 (yOne B N).structureMap := by
+  have := HasRingHomProperty.instIsZariskiLocalAtTarget (@SmoothOfRelativeDimension.{u} 1)
   refine IsZariskiLocalAtTarget.of_forall_exists_morphismRestrict
     (P := @SmoothOfRelativeDimension.{u} 1) fun b ↦ ?_
   by_cases h2 : (2 : B.residueField b) = 0
