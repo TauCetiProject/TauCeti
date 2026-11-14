@@ -117,14 +117,14 @@ theorem memWkpLoc_comp_chart_transition {φ φ' : OpenPartialHomeomorph X ℂ}
   exact A.toLinearEquiv.isUnit_det'.ne_zero
 
 /-- **Change of target chart through a `C¹` map.** If `ψ ∘ v` is a continuous `W^{1,p}_loc` map on
-a measurable set `W` with `v` mapping `W` into the source of `ψ`, and `f` is `C¹` on an open set
+a set `W` with `v` mapping `W` into the source of `ψ`, and `f` is `C¹` on an open set
 containing `v '' W`, then `ψ' ∘ f ∘ v` is in `W^{1,p}_loc(W)` for every chart `ψ'` of the target
 whose source contains `f '' (v '' W)`. -/
 theorem memWkpLoc_extend_comp [I.Boundaryless] [CompleteSpace F']
     {ψ : OpenPartialHomeomorph M H} (hψ : ψ ∈ IsManifold.maximalAtlas I ∞ M)
     {ψ' : OpenPartialHomeomorph N H'} (hψ' : ψ' ∈ IsManifold.maximalAtlas I' ∞ N)
     {f : M → N} {t : Set M} (hf : ContMDiffOn I I' 1 f t) (ht : IsOpen t)
-    {v : ℂ → M} {W : Set ℂ} (hW : MeasurableSet W) (hv : MemWkpLoc p W 1 (ψ.extend I ∘ v))
+    {v : ℂ → M} {W : Set ℂ} (hv : MemWkpLoc p W 1 (ψ.extend I ∘ v))
     (hvc : ContinuousOn (ψ.extend I ∘ v) W)
     (hmaps : MapsTo v W (ψ.source ∩ (t ∩ f ⁻¹' ψ'.source))) :
     MemWkpLoc p W 1 (ψ'.extend I' ∘ f ∘ v) := by
@@ -143,8 +143,8 @@ theorem memWkpLoc_extend_comp [I.Boundaryless] [CompleteSpace F']
     have hvw := hmaps hw
     refine ⟨(ψ.extend I).map_source (by simpa using hvw.1), ?_⟩
     simpa [ψ.left_inv hvw.1] using hvw.2
-  refine (hv.contDiffOn_comp hvc hO (contMDiffOn_iff_contDiffOn.1 hh) hmaps').congr_fun
-    (fun w hw ↦ ?_) hW
+  refine (hv.contDiffOn_comp hvc hO (contMDiffOn_iff_contDiffOn.1 hh) hmaps').congr
+    fun w hw ↦ ?_
   simp [ψ.left_inv (hmaps hw).1]
 
 /-! ### Chart independence -/
@@ -178,8 +178,7 @@ theorem memWkpLocMapOn_iff_of_subset_maximalAtlas (hk : k ≤ 1) (hs : IsOpen s)
       φ'.isOpen_inter_preimage_symm φ.open_source
     refine ⟨_, inter_mem_nhdsWithin _ (hO.mem_nhds ⟨hz.1, hxφ⟩),
       (memWkpLoc_comp_chart_transition (hA hφA) hφ' le_rfl (h φ hφA ψ hψ) inter_subset_right
-        fun w hw ↦ ?_).congr_fun (fun w hw ↦ ?_)
-        ((isOpen_chart hc hs φ' ψ).inter hO).measurableSet⟩
+        fun w hw ↦ ?_).congr fun w hw ↦ ?_⟩
     · refine ⟨φ.map_source hw.2.2, ?_⟩
       simpa [Function.comp_apply, φ.left_inv hw.2.2] using hw.1.2
     · simp [φ.left_inv hw.2.2]
@@ -192,7 +191,7 @@ theorem memWkpLocMapOn_iff_of_subset_maximalAtlas (hk : k ≤ 1) (hs : IsOpen s)
       (φ'.target ∩ φ'.symm ⁻¹' (s ∩ u ⁻¹' ψ.source)) := by
     simpa only [mfld_simps] using hc.extend_comp_extend_symm (J := 𝓘(ℝ, ℂ)) φ' ψ
   exact memWkpLoc_extend_comp (hB hψB) hψ' contMDiffOn_id isOpen_univ
-    ((isOpen_chart hc hs φ' ψ').inter hO).measurableSet ((h1 ψ hψB).mono inter_subset_right)
+    ((h1 ψ hψB).mono inter_subset_right)
     (hcψ.mono inter_subset_right) fun w hw ↦ ⟨hw.2.2.2, mem_univ _, hw.1.2.2⟩
 
 /-- **Chart independence on the whole surface.** For `k ≤ 1`, it suffices to test the coordinate
@@ -283,9 +282,6 @@ theorem MemWkpLocMapOnGroupoid.contMDiffOn_comp {n : ℕ∞ω} {f : M → N} {t 
     (inter_subset_left.trans φ.extend_target_subset_range)
     (φ.extend_target_inter_preimage_mem_nhdsWithin hO ⟨hz.1, hz.2.1, mem_chart_source _ _⟩)), ?_⟩
   exact memWkpLoc_extend_comp (IsManifold.chart_mem_maximalAtlas _) hψ' (hf.of_le hkn) ht
-    ((φ.measurableSet_extend_target_inter_preimage
-      (hc.isOpen_inter_preimage hS ψ'.open_source)).inter
-      (φ.measurableSet_extend_target_inter_preimage hO))
     ((hv.memWkpLoc_chart hφ (IsManifold.chart_mem_maximalAtlas _)).mono inter_subset_right)
     ((hv.continuousOn.extend_comp_extend_symm φ ψ).mono inter_subset_right)
     fun w hw ↦ ⟨hw.2.2.2, hSt hw.2.2.1, hw.1.2.2⟩

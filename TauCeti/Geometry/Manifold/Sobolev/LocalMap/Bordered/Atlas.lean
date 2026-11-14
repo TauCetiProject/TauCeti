@@ -31,9 +31,9 @@ classes of any structure groupoid (`TauCeti.memWkpLocMapOnGroupoid_zero_iff`,
 A change of bordered holomorphic chart `e` is smooth only up to the real axis. Its Schwarz
 reflection `TauCeti.ClosedUpperHalfPlane.schwarzDouble e` is a holomorphic chart of `ℂ` that agrees
 with `e` on the closed upper half-plane. So the change of holomorphic chart
-`TauCeti.memWkpLoc_comp_chart_transition` along the reflection, which holds on arbitrary measurable
-subsets of the plane, applies on the relatively open test sets. Changing the chart of `M` is the
-chain rule `TauCeti.memWkpLoc_extend_comp`, which also holds on measurable subsets of the plane.
+`TauCeti.memWkpLoc_comp_chart_transition` along the reflection, which holds on arbitrary subsets
+of the plane, applies on the relatively open test sets. Changing the chart of `M` is the chain rule
+`TauCeti.memWkpLoc_extend_comp`, which also holds on arbitrary subsets of the plane.
 The steps are glued with the locality of the planar classes, `memWkpLoc_iff_locally`.
 
 ## Main declarations
@@ -86,14 +86,14 @@ variable {X : Type*} [TopologicalSpace X] [ChartedSpace ClosedUpperHalfPlane X]
 
 /-- **Change of bordered holomorphic chart.** Precomposition with the transition map
 `φ ∘ φ'⁻¹` between two bordered holomorphic charts preserves the planar classes of order at most
-one on measurable subsets of the overlap. The transition map is read through its Schwarz
+one on subsets of the overlap. The transition map is read through its Schwarz
 reflection, a holomorphic chart of `ℂ` agreeing with it on the closed upper half-plane. -/
 private theorem memWkpLoc_comp_bordered_transition
     {φ φ' : OpenPartialHomeomorph X ClosedUpperHalfPlane}
     (hφ : φ ∈ borderedHolomorphicGroupoid.maximalAtlas X)
     (hφ' : φ' ∈ borderedHolomorphicGroupoid.maximalAtlas X)
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {g : ℂ → E} {V W : Set ℂ} (hk : k ≤ 1)
-    (hg : MemWkpLoc p V k g) (hW : MeasurableSet W)
+    (hg : MemWkpLoc p V k g)
     (hWφ : W ⊆ (φ'.extend closedUpperHalfPlaneModel).target ∩
       (φ'.extend closedUpperHalfPlaneModel).symm ⁻¹' φ.source)
     (hmaps : MapsTo (φ.extend closedUpperHalfPlaneModel ∘
@@ -125,7 +125,7 @@ private theorem memWkpLoc_comp_bordered_transition
       ← closedUpperHalfPlaneModel_symm_eq_fold (hupper z hz)]
     exact ⟨hzt.1, hzφ⟩
   refine (memWkpLoc_comp_chart_transition hΦ (contDiffGroupoid 1 𝓘(ℂ)).id_mem_maximalAtlas hk hg
-    (fun z hz ↦ ⟨mem_univ z, hsub z hz⟩) fun z hz ↦ ?_).congr_fun (fun z hz ↦ ?_) hW
+    (fun z hz ↦ ⟨mem_univ z, hsub z hz⟩) fun z hz ↦ ?_).congr fun z hz ↦ ?_
   · simpa only [Function.comp_apply, OpenPartialHomeomorph.refl_symm,
       OpenPartialHomeomorph.refl_apply, id_eq, hagree z hz] using hmaps hz
   · simp only [Function.comp_apply, OpenPartialHomeomorph.refl_symm,
@@ -160,17 +160,13 @@ theorem memWkpLocMapOnBordered_iff_of_subset_maximalAtlas (hk : k ≤ 1) (hs : I
       (φ'.extend closedUpperHalfPlaneModel).symm ⁻¹' (s ∩ u ⁻¹' ψ.source)) 1
       (ψ.extend I ∘ u ∘ (φ'.extend closedUpperHalfPlaneModel).symm) := by
     intro ψ hψ
-    have hO := hc.isOpen_inter_preimage hs ψ.open_source
     refine memWkpLoc_iff_locally.2 fun z hz ↦ ?_
     obtain ⟨φ, hφA, hxφ⟩ := hAs _ hz.2.1
-    have hW := (φ'.measurableSet_extend_target_inter_preimage (I := closedUpperHalfPlaneModel)
-      hO).inter (φ'.measurableSet_extend_target_inter_preimage (I := closedUpperHalfPlaneModel)
-        φ.open_source)
     refine ⟨_, inter_mem self_mem_nhdsWithin (nhdsWithin_mono _
       (inter_subset_left.trans φ'.extend_target_subset_range)
       (φ'.extend_target_inter_preimage_mem_nhdsWithin φ.open_source ⟨hz.1, hxφ⟩)),
-      (memWkpLoc_comp_bordered_transition (hA hφA) hφ' le_rfl (h φ hφA ψ hψ) hW
-        inter_subset_right fun w hw ↦ ?_).congr_fun (fun w hw ↦ ?_) hW⟩
+      (memWkpLoc_comp_bordered_transition (hA hφA) hφ' le_rfl (h φ hφA ψ hψ)
+        inter_subset_right fun w hw ↦ ?_).congr fun w hw ↦ ?_⟩
     · obtain ⟨⟨-, hws, hwψ⟩, -, hwφ⟩ := hw
       refine ⟨(φ.extend closedUpperHalfPlaneModel).map_source (by rwa [φ.extend_source]), ?_⟩
       rw [mem_preimage, Function.comp_apply, φ.extend_left_inv hwφ]
@@ -185,9 +181,6 @@ theorem memWkpLocMapOnBordered_iff_of_subset_maximalAtlas (hk : k ≤ 1) (hs : I
     (inter_subset_left.trans φ'.extend_target_subset_range)
     (φ'.extend_target_inter_preimage_mem_nhdsWithin hO ⟨hz.1, hz.2.1, hxψ⟩)), ?_⟩
   exact memWkpLoc_extend_comp (hB hψB) hψ' contMDiffOn_id isOpen_univ
-    ((φ'.measurableSet_extend_target_inter_preimage
-      (hc.isOpen_inter_preimage hs ψ'.open_source)).inter
-      (φ'.measurableSet_extend_target_inter_preimage hO))
     ((h1 ψ hψB).mono inter_subset_right) ((hc.extend_comp_extend_symm φ' ψ).mono inter_subset_right)
     fun w hw ↦ ⟨hw.2.2.2, mem_univ _, hw.1.2.2⟩
 
@@ -272,19 +265,17 @@ section Interior
 
 variable [HasGroupoid X borderedHolomorphicGroupoid] [CompleteSpace F]
 
-/-- On the interior, a local Sobolev map up to the boundary on an open set `s` is a local Sobolev
-map of the Riemann surface `borderedInterior X` on the part of `s` in the interior, with the same
-order `k ≤ 1` and exponent. In the preferred charts the coordinate expressions of the interior
+/-- On the interior, a local Sobolev map up to the boundary on a set `s` is a local Sobolev map of
+the Riemann surface `borderedInterior X` on the part of `s` in the interior, with the same order
+`k ≤ 1` and exponent. In the preferred charts the coordinate expressions of the interior
 are those up to the boundary, restricted to the open upper half-plane; any other holomorphic chart
 of the interior is reached by a change of holomorphic chart. -/
 theorem MemWkpLocMapOnBordered.memWkpLocMapOn_preimage (hu : MemWkpLocMapOnBordered I p k u s)
-    (hk : k ≤ 1) (hs : IsOpen s) :
+    (hk : k ≤ 1) :
     MemWkpLocMapOn I p k (u ∘ (↑)) ((↑) ⁻¹' s : Set (borderedInterior X)) := by
-  have hs' : IsOpen ((↑) ⁻¹' s : Set (borderedInterior X)) := hs.preimage continuous_subtype_val
   have hc : ContinuousOn (u ∘ (↑)) ((↑) ⁻¹' s : Set (borderedInterior X)) :=
     hu.continuousOn.comp continuous_subtype_val.continuousOn (mapsTo_preimage _ _)
   refine memWkpLocMapOn_iff.2 ⟨hc, fun φ hφ ψ hψ ↦ ?_⟩
-  have hO := hc.isOpen_inter_preimage hs' ψ.open_source
   -- In the preferred charts of the interior, the coordinate tests are those up to the boundary.
   have hx : ∀ x : borderedInterior X, MemWkpLoc p ((chartAt ℂ x).target ∩
       (chartAt ℂ x).symm ⁻¹' ((↑) ⁻¹' s ∩ (u ∘ (↑)) ⁻¹' ψ.source)) k
@@ -313,8 +304,7 @@ theorem MemWkpLocMapOnBordered.memWkpLocMapOn_preimage (hu : MemWkpLocMapOnBorde
         exact hzψ
       · simp only [Function.comp_apply, hsymm]
     exact ((hu.memWkpLoc_chart (borderedHolomorphicGroupoid.chart_mem_maximalAtlas (x : X))
-      hψ).mono fun z hz ↦ (hmem z hz).1).congr_fun (fun z hz ↦ (hmem z hz).2.symm)
-      ((chartAt ℂ x).isOpen_inter_preimage_symm hO).measurableSet
+      hψ).mono fun z hz ↦ (hmem z hz).1).congr fun z hz ↦ (hmem z hz).2
   -- Change from the preferred chart to `φ`.
   refine memWkpLoc_iff_locally.2 fun z hz ↦ ?_
   set x := φ.symm z
@@ -322,8 +312,7 @@ theorem MemWkpLocMapOnBordered.memWkpLocMapOn_preimage (hu : MemWkpLocMapOnBorde
     φ.isOpen_inter_preimage_symm (chartAt ℂ x).open_source
   refine ⟨_, inter_mem_nhdsWithin _ (hN.mem_nhds ⟨hz.1, mem_chart_source ℂ x⟩),
     (memWkpLoc_comp_chart_transition (IsManifold.chart_mem_maximalAtlas x) hφ hk (hx x)
-      inter_subset_right fun w hw ↦ ?_).congr_fun (fun w hw ↦ ?_)
-      ((φ.isOpen_inter_preimage_symm hO).inter hN).measurableSet⟩
+      inter_subset_right fun w hw ↦ ?_).congr fun w hw ↦ ?_⟩
   · refine ⟨(chartAt ℂ x).map_source hw.2.2, ?_⟩
     rw [mem_preimage, Function.comp_apply, (chartAt ℂ x).left_inv hw.2.2]
     exact hw.1.2
@@ -337,7 +326,7 @@ theorem memWkpLocMapOnBordered_image_iff {s : Set (borderedInterior X)} (hk : k 
     MemWkpLocMapOnBordered I p k u ((↑) '' s) ↔ MemWkpLocMapOn I p k (u ∘ (↑)) s := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.memWkpLocMapOnBordered_image hs⟩
   simpa [Subtype.val_injective.preimage_image] using
-    h.memWkpLocMapOn_preimage hk ((borderedInterior X).isOpen.isOpenMap_subtype_val s hs)
+    h.memWkpLocMapOn_preimage hk
 
 /-- A map is a local Sobolev map up to the boundary on the interior of a Riemann surface with
 boundary exactly when it is a local Sobolev map of the Riemann surface `borderedInterior X`, for
@@ -391,8 +380,7 @@ theorem memWkpLocMapOnBordered_sqrt_im (hp : p < 2) :
       rw [coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hz]
       exact ⟨hz, hzn⟩
   rw [hset]
-  refine (memWkpLoc_sqrt_im_iff.2 hp).congr_fun (fun z hz ↦ ?_)
-    Metric.isOpen_ball.measurableSet_inter_setOf_im_nonneg
+  refine (memWkpLoc_sqrt_im_iff.2 hp).congr fun z hz ↦ ?_
   simp [chartAt_self_eq, extChartAt, coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hz.2]
 
 end TauCeti

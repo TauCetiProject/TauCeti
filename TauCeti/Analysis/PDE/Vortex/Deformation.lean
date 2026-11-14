@@ -391,6 +391,17 @@ theorem equation_apply_two (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
       x z 0 * x z 2 - x z 1 * x z 3 := by
   rfl
 
+/-- In the real field coordinates, `2 ∂bar_a α = ∇₁ α + i ∇₂ α` is twice the complex-equation
+defect: `∇₁ α + i ∇₂ α = 2 (E₁ + i E₂)`, where `E₁` and `E₂` are the second and third components
+of `TauCeti.Vortex.equation`. -/
+theorem covariantDerivative_one_add_I_mul_covariantDerivative_I {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    {z : ℂ} (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z)
+    (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z) :
+    covariantDerivative x z 1 + I * covariantDerivative x z I =
+      2 * ((equation x z 1 : ℂ) + (equation x z 2 : ℂ) * I) := by
+  apply Complex.ext <;>
+    simp [covariantDerivative_re hp hq, covariantDerivative_im hp hq] <;> ring
+
 /-- The vortex defects at a point depend only on the germ of the field there. -/
 theorem equation_congr_nhds {x y : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ} (h : x =ᶠ[𝓝 z] y) :
     equation x z = equation y z := by
