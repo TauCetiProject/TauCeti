@@ -11,22 +11,24 @@ public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Finite
 public import TauCeti.Algebra.Coalgebra.Subcoalgebra.Basic
 
 /-!
-# The coefficient subcoalgebra of a finite free comodule
+# The coefficient subcoalgebra of a free comodule
 
-Expanding the comultiplication of a matrix coefficient in a finite basis `(eᵢ)` gives
+Expanding the comultiplication of a matrix coefficient in a basis `(eᵢ)` gives the finite sum
 
 ```text
-Δ(c(φ, m)) = ∑ i, c(φ, eᵢ) ⊗ c(eⁱ, m).
+Δ(c(φ, m)) = ∑ᶠ i, c(φ, eᵢ) ⊗ c(eⁱ, m).
 ```
 
-Consequently, over a commutative semiring, the matrix-coefficient submodule of a finite free
-comodule is finite and stable under comultiplication, and hence defines a finite subcoalgebra.
+Consequently, over a commutative semiring, the matrix-coefficient submodule of a free comodule
+is stable under comultiplication, and hence defines a subcoalgebra. When the comodule is also
+finite, this subcoalgebra is finite.
 
 ## Main declarations
 
-* `TauCeti.Comodule.matrixCoefficientSubcoalgebra`: the coefficient subcoalgebra of a finite
-  free comodule.
-* `TauCeti.Comodule.matrixCoefficientSubcoalgebra_finite`: its underlying module is finite.
+* `TauCeti.Comodule.matrixCoefficientSubcoalgebra`: the coefficient subcoalgebra of a free
+  comodule.
+* `TauCeti.Comodule.matrixCoefficientSubcoalgebra_finite`: its underlying module is finite when
+  the comodule is finite.
 * `TauCeti.Comodule.matrixCoefficientSubcoalgebra_le_iff`: its universal property.
 
 ## References
@@ -49,8 +51,8 @@ variable [CommSemiring R]
 variable [AddCommMonoid C] [Module R C] [Coalgebra R C]
 variable [AddCommMonoid M] [Module R M] [Comodule R C M]
 
-/-- The subcoalgebra spanned by the matrix coefficients of a finite free comodule. -/
-noncomputable def matrixCoefficientSubcoalgebra [Module.Free R M] [Module.Finite R M] :
+/-- The subcoalgebra spanned by the matrix coefficients of a free comodule. -/
+noncomputable def matrixCoefficientSubcoalgebra [Module.Free R M] :
     Subcoalgebra R C :=
   Subcoalgebra.ofSubmodule
     (matrixCoefficientSubmodule (R := R) (C := C) (M := M)) <| by
@@ -67,9 +69,9 @@ noncomputable def matrixCoefficientSubcoalgebra [Module.Free R M] [Module.Finite
             (Coalgebra.comul (R := R) (A := C))) ?_) hc
       intro φ m
       rw [Submodule.mem_comap]
-      rw [comul_matrixCoefficient_eq_sum (Module.Free.chooseBasis R M)]
-      exact Submodule.sum_mem _ fun i _ =>
-        Submodule.apply_mem_map₂ _
+      rw [comul_matrixCoefficient_eq_finsum (Module.Free.chooseBasis R M)]
+      exact finsum_induction (· ∈ _) (Submodule.zero_mem _) (fun _ _ => Submodule.add_mem _)
+        fun i => Submodule.apply_mem_map₂ _
           (matrixCoefficient_mem_submodule (R := R) (C := C) φ
             (Module.Free.chooseBasis R M i))
           (matrixCoefficient_mem_submodule (R := R) (C := C)
@@ -83,7 +85,7 @@ noncomputable def matrixCoefficientSubcoalgebra [Module.Free R M] [Module.Finite
 /-- The underlying submodule of the coefficient subcoalgebra is the matrix-coefficient
 submodule. -/
 @[simp]
-theorem matrixCoefficientSubcoalgebra_toSubmodule [Module.Free R M] [Module.Finite R M] :
+theorem matrixCoefficientSubcoalgebra_toSubmodule [Module.Free R M] :
     (matrixCoefficientSubcoalgebra (R := R) (C := C) (M := M)).toSubmodule =
       matrixCoefficientSubmodule (R := R) (C := C) (M := M) :=
   (rfl)
@@ -98,7 +100,7 @@ instance matrixCoefficientSubcoalgebra_finite [Module.Free R M] [Module.Finite R
 /-- Membership in the coefficient subcoalgebra is membership in the matrix-coefficient
 submodule. -/
 @[simp]
-theorem mem_matrixCoefficientSubcoalgebra [Module.Free R M] [Module.Finite R M] {c : C} :
+theorem mem_matrixCoefficientSubcoalgebra [Module.Free R M] {c : C} :
     c ∈ matrixCoefficientSubcoalgebra (R := R) (C := C) (M := M) ↔
       c ∈ matrixCoefficientSubmodule (R := R) (C := C) (M := M) :=
   (Iff.rfl)
@@ -109,7 +111,7 @@ This is not a `simp` lemma: `mem_matrixCoefficientSubcoalgebra` and
 `matrixCoefficient_mem_submodule` already discharge the goal, and tagging it would make it
 `simpNF`-redundant. -/
 theorem matrixCoefficient_mem_subcoalgebra
-    [Module.Free R M] [Module.Finite R M] (φ : Module.Dual R M) (m : M) :
+    [Module.Free R M] (φ : Module.Dual R M) (m : M) :
     matrixCoefficient (R := R) (C := C) φ m ∈
       matrixCoefficientSubcoalgebra (R := R) (C := C) (M := M) :=
   mem_matrixCoefficientSubcoalgebra.2
@@ -118,7 +120,7 @@ theorem matrixCoefficient_mem_subcoalgebra
 /-- The coefficient subcoalgebra is the smallest subcoalgebra containing all matrix
 coefficients. -/
 theorem matrixCoefficientSubcoalgebra_le
-    [Module.Free R M] [Module.Finite R M] {D : Subcoalgebra R C}
+    [Module.Free R M] {D : Subcoalgebra R C}
     (hD : ∀ (φ : Module.Dual R M) (m : M),
       matrixCoefficient (R := R) (C := C) φ m ∈ D) :
     matrixCoefficientSubcoalgebra (R := R) (C := C) (M := M) ≤ D := by
@@ -131,7 +133,7 @@ theorem matrixCoefficientSubcoalgebra_le
 /-- The coefficient subcoalgebra is contained in a subcoalgebra exactly when that
 subcoalgebra contains every matrix coefficient. -/
 theorem matrixCoefficientSubcoalgebra_le_iff
-    [Module.Free R M] [Module.Finite R M] {D : Subcoalgebra R C} :
+    [Module.Free R M] {D : Subcoalgebra R C} :
     matrixCoefficientSubcoalgebra (R := R) (C := C) (M := M) ≤ D ↔
       ∀ (φ : Module.Dual R M) (m : M),
         matrixCoefficient (R := R) (C := C) φ m ∈ D := by

@@ -25,12 +25,12 @@ from `M` to the regular right comodule `C`. Applying the counit recovers `φ`, s
 linear dual separates vectors, these morphisms do too. For a free module, they continue to
 separate vectors after extending scalars to any commutative algebra.
 
-For a finite free comodule, every coefficient morphism lands in the finite coefficient
-subcoalgebra, viewed as a regular subcomodule. Conversely, the ranges of all coefficient
-morphisms generate that regular subcomodule. This supplies an intended downstream naturality
-bridge for Tannakian reconstruction: for each finite comodule, naturality along these corestricted
-maps compares its component with components on finite regular subcomodules, and joint separation
-then recovers the original finite-comodule component.
+For a free comodule, every coefficient morphism lands in the coefficient subcoalgebra, viewed as a
+regular subcomodule (a finite one when the comodule is finite). Conversely, the ranges of all
+coefficient morphisms generate that regular subcomodule. This supplies an intended downstream
+naturality bridge for Tannakian reconstruction: for each finite comodule, naturality along these
+corestricted maps compares its component with components on finite regular subcomodules, and joint
+separation then recovers the original finite-comodule component.
 
 ## Main declarations
 
@@ -43,7 +43,7 @@ then recovers the original finite-comodule component.
   vectors in a free module.
 * `TauCeti.Comodule.eq_of_baseChange_matrixCoefficientHom_eq`: joint separation after
   scalar extension.
-* `TauCeti.Comodule.matrixCoefficientSubcoalgebraHom`: corestriction to the finite coefficient
+* `TauCeti.Comodule.matrixCoefficientSubcoalgebraHom`: corestriction to the coefficient
   subcoalgebra.
 * `TauCeti.Comodule.iSup_range_matrixCoefficientHom_eq`: the ranges of the coefficient
   morphisms generate the coefficient subcoalgebra as a regular subcomodule.
@@ -190,16 +190,16 @@ theorem eq_of_baseChange_matrixCoefficientHom_eq {x y : A ⊗[R] M}
 
 end BaseChange
 
-section Finite
+section Free
 
-variable [Module.Free R M] [Module.Finite R M]
+variable [Module.Free R M]
 
 section Corestrict
 
 variable [Module.Flat R C]
 
 /-- A matrix-coefficient morphism corestricted to the coefficient subcoalgebra, viewed as a
-finite regular subcomodule. -/
+regular subcomodule. -/
 noncomputable def matrixCoefficientSubcoalgebraHom (φ : Module.Dual R M) :
     Hom R C M
     (matrixCoefficientSubcoalgebra (R := R) (C := C) (M := M)).toRegularSubcomodule :=
@@ -255,6 +255,6 @@ theorem iSup_range_matrixCoefficientHom_eq :
   rw [← Subcomodule.mem_toSubmodule, ← Subcomodule.mem_toSubmodule,
     TauCeti.Subcoalgebra.toRegularSubcomodule_toSubmodule, hsub]
 
-end Finite
+end Free
 
 end TauCeti.Comodule
