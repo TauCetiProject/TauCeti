@@ -250,6 +250,24 @@ theorem negativeNormalProjection_apply_eq_zero_iff {s : S} {v : i.NormalSpace s 
     h.negativeNormalProjection hn g s v = 0 ↔ v ∈ h.positiveNormalSpace hn g s :=
   Submodule.projection_apply_eq_zero_iff _
 
+/-- The projection kills the positive normal space. -/
+@[simp]
+theorem negativeNormalProjection_apply_eq_zero_of_mem {s : S} {v : i.NormalSpace s hn}
+    (hv : v ∈ h.positiveNormalSpace hn g s) : h.negativeNormalProjection hn g s v = 0 :=
+  Submodule.projection_apply_of_mem_right _ hv
+
+/-- The projection fixes exactly the negative normal space. -/
+@[simp]
+theorem negativeNormalProjection_apply_eq_self_iff {s : S} {v : i.NormalSpace s hn} :
+    h.negativeNormalProjection hn g s v = v ↔ v ∈ h.negativeNormalSpace hn g s :=
+  Submodule.projection_eq_self_iff _ _
+
+/-- The projection onto the negative normal space is idempotent. -/
+@[simp]
+theorem isIdempotentElem_negativeNormalProjection (s : S) :
+    IsIdempotentElem (h.negativeNormalProjection hn g s) :=
+  Submodule.isIdempotentElem_projection _
+
 /-- The projection of `v` is the unique `x` in the negative normal space with `v - x` in the
 positive normal space. -/
 theorem negativeNormalProjection_apply_eq_of_mem {s : S} {v x : i.NormalSpace s hn}
@@ -257,7 +275,7 @@ theorem negativeNormalProjection_apply_eq_of_mem {s : S} {v x : i.NormalSpace s 
     h.negativeNormalProjection hn g s v = x := by
   conv_lhs => rw [← add_sub_cancel x v]
   rw [map_add, h.negativeNormalProjection_apply_of_mem hn g hx,
-    (h.negativeNormalProjection_apply_eq_zero_iff hn g).mpr hvx, add_zero]
+    h.negativeNormalProjection_apply_eq_zero_of_mem hn g hvx, add_zero]
 
 /-- **The normal Hessian splits along the negative and positive normal spaces**: it is the sum of
 its values on the negative components and on the positive components, the cross terms vanishing

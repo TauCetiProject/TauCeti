@@ -54,7 +54,8 @@ In the namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`:
   `adaptedMetric_inner_of_mem_positiveNormalSpace` and
   `adaptedMetric_inner_eq_zero_of_mem_negativeNormalSpace`: on `ν⁻` it is `-Hess / 2`, on `ν⁺` it is
   `Hess / 2`, and `ν⁻` and `ν⁺` are orthogonal for it.
-* `normalHessian_apply_self_eq`: `Hess (v, v) = 2 (‖v⁺‖² - ‖v⁻‖²)` in `g'`.
+* `normalHessian_apply_eq`: `Hess (v, w) = 2 (g' (v⁺, w⁺) - g' (v⁻, w⁻))`, so in particular
+  `Hess (v, v) = 2 (‖v⁺‖² - ‖v⁻‖²)` in `g'`.
 * `negativeNormalSpace_adaptedMetric`, `positiveNormalSpace_adaptedMetric` and
   `negativeNormalProjection_adaptedMetric`: the splitting is the same for `g'` as for `g`.
 * `contMDiffAdaptedMetric`: the adapted metric of a `C^k` fibre metric as a `C^k` fibre metric.
@@ -152,7 +153,7 @@ private theorem adaptedFormCoord_apply {s : S} (x y : Fin (finrank ℝ (i.Normal
 /-- **The fibre metric adapted to the normal Hessian.** For a Morse–Bott submanifold with a fibre
 metric `g` on its normal bundle, the fibre metric `(v, w) ↦ (Hess (v⁺, w⁺) - Hess (v⁻, w⁻)) / 2`,
 where `v⁻` and `v⁺` are the components of `v` in the negative and positive normal spaces relative
-to `g`. In it the normal Hessian is `2 (‖v⁺‖² - ‖v⁻‖²)` (`normalHessian_apply_self_eq`). -/
+to `g`. In it the normal Hessian is `2 (‖v⁺‖² - ‖v⁻‖²)` (`normalHessian_apply_eq`). -/
 def adaptedMetric : RiemannianMetric fun s ↦ i.NormalSpace s hn where
   inner s := (h.adaptedForm hn g s).toContinuousBilinearMap
   symm s v w := by
@@ -203,7 +204,7 @@ theorem adaptedMetric_inner_of_mem_positiveNormalSpace {s : S} {v : i.NormalSpac
     (hv : v ∈ h.positiveNormalSpace hn g s) (w : i.NormalSpace s hn) :
     (h.adaptedMetric hn g).inner s v w = h.normalHessian hn s v w / 2 := by
   have hP : h.negativeNormalProjection hn g s v = 0 :=
-    (h.negativeNormalProjection_apply_eq_zero_iff hn g).mpr hv
+    h.negativeNormalProjection_apply_eq_zero_of_mem hn g hv
   rw [adaptedMetric_inner, h.normalHessian_apply_eq_add hn g v w, hP]
   simp
 
@@ -214,20 +215,21 @@ theorem adaptedMetric_inner_eq_zero_of_mem_negativeNormalSpace {s : S} {v w : i.
   rw [h.adaptedMetric_inner_of_mem_negativeNormalSpace hn g hv,
     h.normalHessian_eq_zero_of_mem_negativeNormalSpace hn g hv hw, neg_zero, zero_div]
 
-/-- **The normal Hessian in the adapted metric.** The normal Hessian of `v` is twice the squared
-norm of its positive component minus twice the squared norm of its negative component, both taken
-in the adapted metric. -/
-theorem normalHessian_apply_self_eq {s : S} (v : i.NormalSpace s hn) :
-    h.normalHessian hn s v v =
+/-- **The normal Hessian in the adapted metric.** The normal Hessian of `v` and `w` is twice the
+adapted inner product of their positive components minus twice that of their negative components.
+For `w = v` it is twice the squared norm of the positive component minus twice the squared norm of
+the negative component, both taken in the adapted metric. -/
+theorem normalHessian_apply_eq {s : S} (v w : i.NormalSpace s hn) :
+    h.normalHessian hn s v w =
       2 * ((h.adaptedMetric hn g).inner s (v - h.negativeNormalProjection hn g s v)
-          (v - h.negativeNormalProjection hn g s v) -
+          (w - h.negativeNormalProjection hn g s w) -
         (h.adaptedMetric hn g).inner s (h.negativeNormalProjection hn g s v)
-          (h.negativeNormalProjection hn g s v)) := by
+          (h.negativeNormalProjection hn g s w)) := by
   rw [h.adaptedMetric_inner_of_mem_positiveNormalSpace hn g
       (h.sub_negativeNormalProjection_apply_mem hn g v),
     h.adaptedMetric_inner_of_mem_negativeNormalSpace hn g
       (h.negativeNormalProjection_apply_mem hn g v),
-    h.normalHessian_apply_eq_add hn g v v]
+    h.normalHessian_apply_eq_add hn g v w]
   ring
 
 /-- The normal Hessian acts as `-2` times the adapted metric on the negative normal space. -/
@@ -429,6 +431,25 @@ theorem toRiemannianMetric_contMDiffAdaptedMetric (h : i.IsNondegenerateCritical
     letI := i.normalSpaceVectorBundle hn hdim
     (h.contMDiffAdaptedMetric hn hk hf hdim g).toRiemannianMetric =
       h.adaptedMetric hn g.toRiemannianMetric :=
+  (rfl)
+
+/-- The inner product of the `C^k` adapted metric is that of the adapted metric. -/
+@[simp]
+theorem contMDiffAdaptedMetric_inner (h : i.IsNondegenerateCriticalSubmanifold f)
+    (hk : k + 1 ≤ n) (hf : ∀ s, ContMDiffAt I 𝓘(ℝ) (k + 2) f (i s))
+    (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
+    (g : haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+      haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+      letI := i.normalSpaceFiberBundle hn hdim
+      letI := i.normalSpaceVectorBundle hn hdim
+      ContMDiffRiemannianMetric J k P fun s ↦ i.NormalSpace s hn) :
+    haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+    haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+    haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+    letI := i.normalSpaceFiberBundle hn hdim
+    letI := i.normalSpaceVectorBundle hn hdim
+    (h.contMDiffAdaptedMetric hn hk hf hdim g).inner =
+      (h.adaptedMetric hn g.toRiemannianMetric).inner :=
   (rfl)
 
 end Smooth
