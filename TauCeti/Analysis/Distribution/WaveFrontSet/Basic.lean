@@ -163,6 +163,12 @@ theorem localFourier_smul_cutoff (T : 𝓓'(Ω, ℂ)) (c : ℂ) (φ : 𝓓(Ω, �
 theorem localFourier_zero_cutoff (T : 𝓓'(Ω, ℂ)) (η : E) : T.localFourier 0 η = 0 := by
   simpa using localFourier_smul_cutoff T 0 0 η
 
+/-- The localized Fourier transform is additive over a finite sum of cutoffs. -/
+@[simp]
+theorem localFourier_sum_cutoff {ι : Type*} (T : 𝓓'(Ω, ℂ)) (s : Finset ι) (ψ : ι → 𝓓(Ω, ℂ))
+    (η : E) : T.localFourier (∑ i ∈ s, ψ i) η = ∑ i ∈ s, T.localFourier (ψ i) η := by
+  simp only [localFourier, map_sum]
+
 /-- At the zero frequency the localized Fourier transform is the pairing `T φ` with the cutoff. -/
 @[simp]
 theorem localFourier_at_zero (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) :

@@ -290,9 +290,8 @@ theorem exists_cone_forall_decay_of_forall_isMicrolocallySmoothAt {T : 𝓓'(Ω,
     exact ⟨C, fun η hη ↦ hC η (mem_iInter₂.1 hη i.1 i.2)⟩
   choose C hC using hpiece
   refine ⟨∑ i, C i, fun η hη ↦ ?_⟩
-  have hφ : T.localFourier φ η = ∑ i, T.localFourier (ψ i) η :=
-    (congrArg (T.localFourier · η) hsum).symm.trans <| map_sum (AddMonoidHom.mk'
-      (fun φ ↦ T.localFourier φ η) fun φ ψ ↦ localFourier_add_cutoff T φ ψ η) ψ Finset.univ
+  have hφ : T.localFourier φ η = ∑ i, T.localFourier (ψ i) η := by
+    rw [← localFourier_sum_cutoff, hsum]
   calc (1 + ‖η‖) ^ N * ‖T.localFourier φ η‖
       ≤ (1 + ‖η‖) ^ N * ∑ i, ‖T.localFourier (ψ i) η‖ := by
         rw [hφ]

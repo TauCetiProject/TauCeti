@@ -55,8 +55,8 @@ concentrates `χ T` at the image point.
   `Distribution.cutoffPushforwardCLM_id`, `Distribution.cutoffPushforwardCLM_cutoffPushforwardCLM`
   (functoriality), `Distribution.dsupport_cutoffPushforwardCLM_subset` (support),
   `Distribution.cutoffPushforwardCLM_id_eq_smulLeftCLM` (along the identity it is `χ T`),
-  `Distribution.cutoffPushforwardCLM_mapCLM`, `Distribution.cutoffPushforwardCLM_delta` and
-  `Distribution.cutoffPushforwardCLM_const_apply`.
+  `Distribution.cutoffPushforwardCLM_mapCLM`, `Distribution.cutoffPushforwardCLM_delta`,
+  `Distribution.cutoffPushforwardCLM_const` and `Distribution.cutoffPushforwardCLM_const_apply`.
 * `Distribution.complexPairing_cutoffPushforwardCLM`: the complex-linear extension of `Φ_* T` to
   complex test functions is computed by the same formula.
 
@@ -275,6 +275,15 @@ theorem cutoffPushforwardCLM_const_apply (y : E') (T : 𝓓'(Ω, G)) (g : 𝓓(�
     cutoffPushforwardCLM χ (fun _ ↦ y) contDiffOn_const T g = g y • T χ := by
   rw [cutoffPushforwardCLM_apply, cutoffCompCLM_const, map_smul]
 
+/-- The pushforward of `T` along the constant map at `y` is the point mass at `y` with value `T χ`:
+all of `χ T` is concentrated at `y`. -/
+theorem cutoffPushforwardCLM_const (y : E') {hc : ContDiffOn ℝ (⊤ : ℕ∞) (fun _ : E ↦ y) Ω}
+    (T : 𝓓'(Ω, G)) :
+    (cutoffPushforwardCLM χ (fun _ ↦ y) hc T : 𝓓'(Ω', G)) =
+      mapCLM (ContinuousLinearMap.toSpanSingleton ℝ (T χ)) (delta y) := by
+  ext g
+  simp [delta_apply]
+
 /-- **The support of a pushforward**: the support of the pushforward of `T` with a cutoff `χ` lies
 in the image under `Φ` of the part of the support of `T` in the support of `χ`. In particular it
 is compact. -/
@@ -339,7 +348,15 @@ end Pushforward
 theorem complexPairing_cutoffPushforwardCLM (T : 𝓓'(Ω, ℂ)) (g : 𝓓(Ω', ℂ)) :
     (cutoffPushforwardCLM χ Φ hΦ T).complexPairing g =
       T.complexPairing (cutoffCompCLM χ Φ hΦ g) := by
-  simp only [complexPairing_apply, cutoffPushforwardCLM_apply]
-  congr 3 <;> ext x <;> simp
+  have hre : cutoffCompCLM χ Φ hΦ (postcompCLM (𝕜 := ℝ) Complex.reCLM g) =
+      postcompCLM (𝕜 := ℝ) Complex.reCLM (cutoffCompCLM χ Φ hΦ g) := by
+    ext x
+    simp
+  have him : cutoffCompCLM χ Φ hΦ (postcompCLM (𝕜 := ℝ) Complex.imCLM g) =
+      postcompCLM (𝕜 := ℝ) Complex.imCLM (cutoffCompCLM χ Φ hΦ g) := by
+    ext x
+    simp
+  rw [complexPairing_apply, complexPairing_apply, cutoffPushforwardCLM_apply,
+    cutoffPushforwardCLM_apply, hre, him]
 
 end Distribution
