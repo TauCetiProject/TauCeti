@@ -73,7 +73,7 @@ lemma δ_app_pullbackSections_μ (N : X.Modules) (x : Γ(M, U)) (y : Γ(N, U)) :
   have hn := congr($(Functor.LaxMonoidal.μ_natural (Scheme.Modules.sectionsFunctor U)
     ((pullbackPushforwardAdjunction g).unit.app M)
     ((pullbackPushforwardAdjunction g).unit.app N)) (x ⊗ₜ y))
-  have hp := TauCeti.SheafOfModules.pushforward_μ_app_tmul.{u} g.toRingCatSheafHom
+  have hp := SheafOfModules.pushforward_μ_app_tmul.{u} g.toRingCatSheafHom
     ((pullback g).obj M) ((pullback g).obj N) (op U) (pullbackSections g M U x)
       (pullbackSections g N U y)
   exact h.trans ((congrArg _ hn.symm).trans hp)
