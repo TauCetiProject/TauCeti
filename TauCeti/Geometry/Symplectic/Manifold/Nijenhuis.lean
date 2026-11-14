@@ -188,9 +188,8 @@ theorem nijenhuis_apply {X Y : Π x : M, TangentSpace I x}
 about the Nijenhuis tensor at `x` reduce to statements about the Nijenhuis expression. -/
 private lemma nijenhuis_apply_extend (v w : TangentSpace I x) :
     J.nijenhuis x v w = J.nijenhuisAux (extend E v) (extend E w) x := by
-  conv_lhs => rw [← extend_apply_self E v, ← extend_apply_self E w]
-  exact J.nijenhuis_apply_eq_nijenhuisAux (mdifferentiableAt_extend ..)
-    (mdifferentiableAt_extend ..)
+  unfold nijenhuis
+  apply TensorialAt.mkHom₂_apply_eq_extend
 
 /-- The Nijenhuis tensor vanishes everywhere exactly when
 `[JX, JY] = [X, Y] + J[JX, Y] + J[X, JY]` for all vector fields differentiable at the point. -/
