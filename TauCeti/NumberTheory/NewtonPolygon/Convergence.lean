@@ -29,8 +29,7 @@ This file relates `λ` and the Newton slopes of `f` to the pointwise convergence
   `f.newtonPolygon v`.
 * Over a discretely normed extension `A` whose nonzero norms are integer powers `b ^ m`, whenever
   `λ = t ∈ ℝ` is not an integer, the pointwise convergence radius is strictly smaller than
-  `f.radius`, and when `A` is complete and ultrametric and `b ^ ⌊t⌋` is attained in `A`, it equals
-  `b ^ ⌊t⌋`.
+  `f.radius`, and when `A` is complete and `b ^ ⌊t⌋` is attained in `A`, it equals `b ^ ⌊t⌋`.
 
 ## Main results
 
@@ -45,8 +44,8 @@ This file relates `λ` and the Newton slopes of `f` to the pointwise convergence
   algebraically closed nontrivially normed extensions `L`.
 * `PowerSeries.convergenceRadius_eq_ofReal_zpow_floor` and
   `PowerSeries.convergenceRadius_lt_radius_of_linearGrowthInf`: rounding down to `b ^ ⌊t⌋` in
-  complete ultrametric extensions and strict inequality `f.convergenceRadius A < f.radius` for
-  non-integral limiting slope `t` when nonzero norms are integer powers of `b`.
+  complete extensions and strict inequality `f.convergenceRadius A < f.radius` for non-integral
+  limiting slope `t` when nonzero norms are integer powers of `b`.
 
 ## References
 
@@ -168,19 +167,17 @@ private theorem not_isRestricted_zpow_floor_add_one {t : ℝ}
     (Real.rpow_lt_rpow_left_iff hb |>.mpr (by exact_mod_cast Int.lt_floor_add_one t))
 
 /-- **Discretely normed extensions round non-integral limiting slopes down.** Let `A` be a complete
-ultrametric extension whose nonzero norms are integer powers of `b`. If the lower linear growth of
-`v (aₙ)` is a non-integral real number `t` (`(⌊t⌋ : ℝ) < t`) and `b ^ ⌊t⌋` is attained as a norm in
-`A`, then `f.convergenceRadius A = ENNReal.ofReal (b ^ ⌊t⌋)`. -/
+extension whose nonzero norms are integer powers of `b`. If the lower linear growth of `v (aₙ)` is
+a non-integral real number `t` (`(⌊t⌋ : ℝ) < t`) and `b ^ ⌊t⌋` is attained as a norm in `A`, then
+`f.convergenceRadius A = ENNReal.ofReal (b ^ ⌊t⌋)`. -/
 theorem convergenceRadius_eq_ofReal_zpow_floor (A : Type*) [SeminormedRing A] [SMul K A]
-    [NormSMulClass K A] [NormMulClass A] [IsUltrametricDist A] [CompleteSpace A]
+    [NormSMulClass K A] [NormMulClass A] [CompleteSpace A]
     (hdisc : ∀ y : A, ‖y‖ ≠ 0 → ∃ m : ℤ, ‖y‖ = b ^ m) {t : ℝ}
     (ht : (linearGrowthInf fun n ↦ (v (coeff n f)).toEReal) = t) (hfloor : (⌊t⌋ : ℝ) < t)
     (hatt : ∃ x : A, ‖x‖ = b ^ ⌊t⌋) :
-    f.convergenceRadius A = ENNReal.ofReal (b ^ ⌊t⌋) := by
-  have hres : f.IsRestricted (b ^ ⌊t⌋) := isRestricted_of_lt_radius <| by
-    rw [Real.eNorm_eq_ofReal (zpow_pos (zero_lt_one.trans hb) ⌊t⌋).le]
-    exact ofReal_zpow_lt_radius_of_linearGrowthInf f v hb hv ht hfloor
-  exact convergenceRadius_eq_ofReal_zpow hb hdisc hatt hres
+    f.convergenceRadius A = ENNReal.ofReal (b ^ ⌊t⌋) :=
+  convergenceRadius_eq_ofReal_zpow_of_lt_radius hb hdisc hatt
+    (ofReal_zpow_lt_radius_of_linearGrowthInf f v hb hv ht hfloor)
     (not_isRestricted_zpow_floor_add_one f v hb hv ht)
 
 /-- If every nonzero norm in `A` is an integer power of `b` and the lower linear growth of `v (aₙ)`
