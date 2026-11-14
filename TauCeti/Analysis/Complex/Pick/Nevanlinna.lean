@@ -62,6 +62,10 @@ first restricts away from that point. -/
 def circleCayleyInv (z : Circle) : ℝ :=
   -(z : ℂ).im / (1 - (z : ℂ).re)
 
+/-- The real boundary coordinate in terms of the real and imaginary parts. -/
+theorem circleCayleyInv_def (z : Circle) :
+    circleCayleyInv z = -(z : ℂ).im / (1 - (z : ℂ).re) := (rfl)
+
 /-- Applying the real boundary coordinate after the boundary Cayley map gives the original real
 number. -/
 @[simp]
