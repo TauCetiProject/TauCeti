@@ -21,8 +21,9 @@ records the arithmetic of comparing two weight vectors, and of rounding one onto
 
 When a weight vector `g` is dominated by `f` away from one designated atom `x₀` -- so that `g`
 arises from `f` by transferring weight onto `x₀` -- the designated atom can only gain, and it
-gains exactly the total excess `∑ x ∈ s, (f x - g x)`.  Only equality of the two finite total
-masses is used there, not normalization to one.
+gains exactly the total excess `∑ x ∈ s, (f x - g x)`.  Only equality of the two total masses and
+finiteness of `f` away from `x₀` are used there, not normalization to one: the weights at `x₀`
+may be infinite.
 
 A weighted sum with weights summing to one is at most twice its part over the large terms, as
 soon as it is at least twice the threshold separating large terms from small ones.
@@ -104,29 +105,30 @@ theorem sum_mul_le_two_mul_sum_mul_ite {J : Type*} [Fintype J] {w : J → ℝ≥
 variable {s : Finset X} {f g : X → ℝ≥0∞} {x₀ : X}
 
 /-- The total weight of `g` away from `x₀` is finite and at most that of `f`. -/
-private theorem sum_erase_le_and_ne_top [DecidableEq X]
-    (hfg : ∑ x ∈ s, f x = ∑ x ∈ s, g x) (hne : ∑ x ∈ s, f x ≠ ⊤)
+private theorem sum_erase_le_and_ne_top [DecidableEq X] (hne : ∀ x ∈ s, x ≠ x₀ → f x ≠ ⊤)
     (hdom : ∀ x ∈ s, x ≠ x₀ → g x ≤ f x) :
-    ∑ x ∈ s.erase x₀, g x ≤ ∑ x ∈ s.erase x₀, f x ∧ ∑ x ∈ s.erase x₀, g x ≠ ⊤ :=
-  ⟨Finset.sum_le_sum fun x hx => hdom x (Finset.mem_of_mem_erase hx) (Finset.ne_of_mem_erase hx),
-    ne_top_of_le_ne_top (hfg ▸ hne) (Finset.sum_le_sum_of_subset (Finset.erase_subset _ _))⟩
+    ∑ x ∈ s.erase x₀, g x ≤ ∑ x ∈ s.erase x₀, f x ∧ ∑ x ∈ s.erase x₀, g x ≠ ⊤ := by
+  have hle : ∑ x ∈ s.erase x₀, g x ≤ ∑ x ∈ s.erase x₀, f x :=
+    Finset.sum_le_sum fun x hx => hdom x (Finset.mem_of_mem_erase hx) (Finset.ne_of_mem_erase hx)
+  refine ⟨hle, ne_top_of_le_ne_top (ENNReal.sum_ne_top.2 fun x hx => ?_) hle⟩
+  exact hne x (Finset.mem_of_mem_erase hx) (Finset.ne_of_mem_erase hx)
 
-/-- Away from `x₀` the smaller of two weight vectors of equal finite total mass is `g`, so the
-designated atom `x₀` can only gain weight. -/
+/-- Away from `x₀` the smaller of two weight vectors of equal total mass is `g`, and `f` is finite
+there, so the designated atom `x₀` can only gain weight. -/
 theorem le_of_sum_eq_of_forall_ne_le (hx₀ : x₀ ∈ s) (hfg : ∑ x ∈ s, f x = ∑ x ∈ s, g x)
-    (hne : ∑ x ∈ s, f x ≠ ⊤) (hdom : ∀ x ∈ s, x ≠ x₀ → g x ≤ f x) : f x₀ ≤ g x₀ := by
+    (hne : ∀ x ∈ s, x ≠ x₀ → f x ≠ ⊤) (hdom : ∀ x ∈ s, x ≠ x₀ → g x ≤ f x) : f x₀ ≤ g x₀ := by
   classical
-  obtain ⟨hle, hfin⟩ := sum_erase_le_and_ne_top hfg hne hdom
+  obtain ⟨hle, hfin⟩ := sum_erase_le_and_ne_top hne hdom
   refine (ENNReal.add_le_add_iff_right hfin).1 ?_
   calc f x₀ + ∑ x ∈ s.erase x₀, g x ≤ f x₀ + ∑ x ∈ s.erase x₀, f x := by gcongr
     _ = g x₀ + ∑ x ∈ s.erase x₀, g x := by simpa only [Finset.add_sum_erase _ _ hx₀] using hfg
 
 /-- The designated atom `x₀` absorbs exactly the total weight transferred onto it. -/
 theorem add_sum_tsub_eq_of_forall_ne_le (hx₀ : x₀ ∈ s) (hfg : ∑ x ∈ s, f x = ∑ x ∈ s, g x)
-    (hne : ∑ x ∈ s, f x ≠ ⊤) (hdom : ∀ x ∈ s, x ≠ x₀ → g x ≤ f x) :
+    (hne : ∀ x ∈ s, x ≠ x₀ → f x ≠ ⊤) (hdom : ∀ x ∈ s, x ≠ x₀ → g x ≤ f x) :
     f x₀ + ∑ x ∈ s, (f x - g x) = g x₀ := by
   classical
-  refine (ENNReal.add_left_inj (sum_erase_le_and_ne_top hfg hne hdom).2).1 ?_
+  refine (ENNReal.add_left_inj (sum_erase_le_and_ne_top hne hdom).2).1 ?_
   have hsub : ∑ x ∈ s.erase x₀, (f x - g x) + ∑ x ∈ s.erase x₀, g x = ∑ x ∈ s.erase x₀, f x := by
     rw [← Finset.sum_add_distrib]
     exact Finset.sum_congr rfl fun x hx => tsub_add_cancel_of_le
