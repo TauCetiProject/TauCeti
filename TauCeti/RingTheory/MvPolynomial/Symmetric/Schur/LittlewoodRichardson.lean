@@ -10,6 +10,7 @@ public import TauCeti.Combinatorics.Young.Partitions
 public import TauCeti.Combinatorics.Young.LittlewoodRichardson.Yamanouchi
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Bialternant
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Symmetric
+import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Basis
 
 /-!
 # The Littlewood–Richardson rule in Stembridge's form
@@ -26,7 +27,9 @@ This is `TauCeti.diagramSchurPoly_mul_diagramSchurPoly`. The sum runs over the p
 `c_ν` is the number `Nat.card (TauCeti.LRTableau λ ν μ)` of Littlewood–Richardson tableaux, by the
 bijection `TauCeti.lrTableauEquivYamanouchi`; for taller `ν` the Schur polynomial `s_ν` vanishes.
 So the coefficients may equally be taken to be the Littlewood–Richardson coefficients
-(`TauCeti.diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau`).
+(`TauCeti.diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau`). Comparing coefficients
+in the `ℤ`-linearly independent Schur basis in `|λ| + |μ|` variables immediately gives the symmetry
+`c^ν_{λ μ} = c^ν_{μ λ}` (`TauCeti.natCard_lrTableau_comm`).
 
 ## Stembridge's proof
 
@@ -55,6 +58,8 @@ commutative semiring.
 * `TauCeti.diagramSchurPoly_mul_diagramSchurPoly`: **the Littlewood–Richardson rule**.
 * `TauCeti.diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau`: the
   Littlewood–Richardson rule with the Littlewood–Richardson coefficients `c^ν_{λ μ}`.
+* `TauCeti.natCard_lrTableau_comm`: **symmetry of the Littlewood–Richardson coefficients**,
+  `c^ν_{λ μ} = c^ν_{μ λ}`.
 
 ## References
 
@@ -327,5 +332,56 @@ theorem diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau {R : Type
       fun hT i c hc =>
         (SemistandardYoungTableau.apply_lt_colLen_zero_of_rowLen_add_content_eq hT.2 hc).trans_le hν
   · rw [diagramSchurPoly_eq_zero_of_lt_colLen (Nat.lt_of_not_le hν), smul_zero, smul_zero]
+
+/-- **Symmetry of the Littlewood–Richardson coefficients**: `c^ν_{λ μ} = c^ν_{μ λ}` for all Young
+diagrams `λ`, `ν`, and `μ`, deduced from commutativity of Schur polynomial multiplication and
+`ℤ`-linear independence of the Schur basis in `|λ| + |μ|` variables. -/
+theorem natCard_lrTableau_comm (lam outer μ : YoungDiagram) :
+    Nat.card (LRTableau lam outer μ) = Nat.card (LRTableau μ outer lam) := by
+  by_cases hcard : outer.card = lam.card + μ.card
+  · set d := lam.card + μ.card
+    set N := Fintype.card (Fin d)
+    let e : (μ.card + lam.card).Partition ≃ d.Partition :=
+      { toFun p := (ofPartition p).toPartition
+          ((YoungDiagram.card_ofPartition p).trans (add_comm μ.card lam.card))
+        invFun p := (ofPartition p).toPartition
+          ((YoungDiagram.card_ofPartition p).trans (add_comm lam.card μ.card))
+        left_inv p := by
+          simp [YoungDiagram.ofPartition_toPartition, YoungDiagram.toPartition_ofPartition]
+        right_inv p := by
+          simp [YoungDiagram.ofPartition_toPartition, YoungDiagram.toPartition_ofPartition] }
+    have he (p : (μ.card + lam.card).Partition) : ofPartition (e p) = ofPartition p := by
+      simp [e, YoungDiagram.ofPartition_toPartition]
+    have hmul :
+        ∑ ν : d.Partition,
+          (Nat.card (LRTableau lam (ofPartition ν) μ) : ℤ) • schurPoly (Fin d) ℤ ν =
+        ∑ ν : d.Partition,
+          (Nat.card (LRTableau μ (ofPartition ν) lam) : ℤ) • schurPoly (Fin d) ℤ ν := by
+      have h₁ :=
+        diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau (N := N) (R := ℤ) lam μ
+      have h₂ :=
+        diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau (N := N) (R := ℤ) μ lam
+      have heq_diag :
+          ∑ ν : d.Partition,
+            Nat.card (LRTableau lam (ofPartition ν) μ) • diagramSchurPoly N ℤ (ofPartition ν) =
+          ∑ ν : d.Partition,
+            Nat.card (LRTableau μ (ofPartition ν) lam) • diagramSchurPoly N ℤ (ofPartition ν) := by
+        rw [← h₁, mul_comm, h₂]
+        exact (Finset.sum_congr rfl fun p _ => by simp only [he]).trans
+          (Equiv.sum_comp e fun ν =>
+            Nat.card (LRTableau μ (ofPartition ν) lam) • diagramSchurPoly N ℤ (ofPartition ν))
+      have hren := congrArg (MvPolynomial.rename (Fintype.equivFin (Fin d)).symm) heq_diag
+      simpa only [N, map_sum, map_nsmul, ← schurPoly_eq_rename, natCast_zsmul] using hren
+    have hli := (linearIndependent_iff'ₛ.mp
+      (linearIndependent_schurPoly (R := ℤ) (σ := Fin d) (n := d) (Fintype.card_fin d).ge))
+      Finset.univ
+      (fun ν => (Nat.card (LRTableau lam (ofPartition ν) μ) : ℤ))
+      (fun ν => (Nat.card (LRTableau μ (ofPartition ν) lam) : ℤ))
+      hmul (outer.toPartition hcard) (Finset.mem_univ _)
+    rw [YoungDiagram.ofPartition_toPartition] at hli
+    exact Int.ofNat_inj.mp hli
+  · have hcard' : outer.card ≠ μ.card + lam.card := by omega
+    rw [@Nat.card_of_isEmpty _ (isEmpty_lrTableau_of_card_ne hcard),
+      @Nat.card_of_isEmpty _ (isEmpty_lrTableau_of_card_ne hcard')]
 
 end TauCeti
