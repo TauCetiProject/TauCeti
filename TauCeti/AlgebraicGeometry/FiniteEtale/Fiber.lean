@@ -19,7 +19,8 @@ identified with the identity and with composites of base changes by `pullbackId`
 identifications are coherent: `pullbackComp x (𝟙 S)` is the base change of `pullbackId`
 (`pullbackComp_id_inv_app_comp_eqToHom`), and the two identifications of base change along a
 triple composite agree (`pullbackComp_comp_inv_app_comp_eqToHom`), up to the equalities
-`x ≫ 𝟙 S = x` and `x ≫ f ≫ g = (x ≫ f) ≫ g`.
+`x ≫ 𝟙 S = x` and `x ≫ f ≫ g = (x ≫ f) ≫ g`. In particular, base change along a scheme
+isomorphism is an equivalence of categories (`pullbackIsoEquiv`).
 
 For a geometric point `x : Spec Ω ⟶ S`, with `Ω` a separably closed field, the
 *geometric fibre functor* `FiniteEtaleScheme.fiber x` sends a finite étale `S`-scheme `X` to the
@@ -139,6 +140,41 @@ theorem pullbackComp_comp_inv_app_comp_eqToHom (x : V ⟶ T) (f : T ⟶ S) (g : 
         (pullbackComp x f).inv.app ((pullback g).obj X) ≫ (pullbackComp (x ≫ f) g).inv.app X :=
   -- As above, the identity is checked in `Over V`.
   ObjectProperty.hom_ext _ (Over.pullbackComp_comp_inv_app_comp_eqToHom x f g X.obj)
+
+/-- Base change of finite étale schemes along a scheme isomorphism is an equivalence. -/
+noncomputable def pullbackIsoEquiv (e : T ≅ S) :
+    FiniteEtaleScheme S ≌ FiniteEtaleScheme T :=
+  CategoryTheory.Equivalence.mk (pullback e.hom) (pullback e.inv)
+    (pullbackId.symm ≪≫ eqToIso (congrArg pullback e.inv_hom_id.symm) ≪≫
+      pullbackComp e.inv e.hom)
+    ((pullbackComp e.hom e.inv).symm ≪≫ eqToIso (congrArg pullback e.hom_inv_id) ≪≫ pullbackId)
+
+@[simp]
+theorem pullbackIsoEquiv_functor (e : T ≅ S) :
+    (pullbackIsoEquiv e).functor = pullback e.hom :=
+  (rfl)
+
+@[simp]
+theorem pullbackIsoEquiv_inverse (e : T ≅ S) :
+    (pullbackIsoEquiv e).inverse = pullback e.inv :=
+  (rfl)
+
+/-- Base change of finite étale schemes along an isomorphism is an equivalence of categories. -/
+instance isEquivalence_pullback (f : T ⟶ S) [IsIso f] : (pullback f).IsEquivalence := by
+  rw [← asIso_hom f, ← pullbackIsoEquiv_functor]
+  exact (pullbackIsoEquiv (asIso f)).isEquivalence_functor
+
+/-- Faithfulness of `FiniteEtaleScheme.pullback` is invariant under precomposition with an
+isomorphism of base schemes. -/
+theorem faithful_pullback_of_iso (e : T ≅ S) (f : S ⟶ U) (g : T ⟶ U) (he : e.hom ≫ f = g)
+    [(pullback f).Faithful] : (pullback g).Faithful :=
+  Functor.Faithful.of_iso (eqToIso (congrArg pullback he.symm) ≪≫ pullbackComp e.hom f).symm
+
+/-- Fullness of `FiniteEtaleScheme.pullback` is invariant under precomposition with an isomorphism
+of base schemes. -/
+theorem full_pullback_of_iso (e : T ≅ S) (f : S ⟶ U) (g : T ⟶ U) (he : e.hom ≫ f = g)
+    [(pullback f).Full] : (pullback g).Full :=
+  Functor.Full.of_iso (eqToIso (congrArg pullback he.symm) ≪≫ pullbackComp e.hom f).symm
 
 variable {Ω : Type u} [Field Ω] [IsSepClosed Ω]
 

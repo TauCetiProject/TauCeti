@@ -7,13 +7,13 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModule.Basic
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Fiber
-public import TauCeti.AlgebraicGeometry.FiniteEtale.MorphismProperty
 public import TauCeti.AlgebraicGeometry.VectorBundle.FiniteLocallyFree
 import TauCeti.AlgebraicGeometry.AdicThickeningSystem.Etale
 import TauCeti.AlgebraicGeometry.AdicThickeningSystem.Pullback
 import TauCeti.AlgebraicGeometry.RelativeSpec.BaseChange
 import TauCeti.AlgebraicGeometry.RelativeSpec.Equivalence
 import TauCeti.AlgebraicGeometry.VectorBundle.Pushforward
+import TauCeti.CategoryTheory.EqToHom
 
 /-!
 # Formal completion criterion for full faithfulness of finite étale restriction
@@ -54,9 +54,9 @@ sheaves of algebras:
    descends preservation of the unit and multiplication from the thickenings.
 
 Finally, `V(I)` is canonically isomorphic over `X` to the zeroth level `V(I ^ 1)` of
-`X.formalCompletion I`, and any closed immersion `i : Z ⟶ X` is canonically isomorphic over `X` to
-`i.ker.subschemeι`, giving the corresponding statements for `I.subschemeι`, for arbitrary closed
-immersions, and for Mathlib's `MorphismProperty.Over` presentation.
+`X.formalCompletion I` (`Scheme.formalCompletion.subschemeIsoLevelZero`), and any closed immersion
+`i : Z ⟶ X` factors through an isomorphism `Z ≅ i.ker.subscheme` over `X` (`i.toImage`), giving the
+corresponding statements for `I.subschemeι` and for arbitrary closed immersions.
 
 ## Main declarations
 
@@ -65,14 +65,11 @@ immersions, and for Mathlib's `MorphismProperty.Over` presentation.
   faithful;
 * `TauCeti.FiniteEtaleScheme.full_pullback_subschemeι`: fullness when completion on
   `FiniteLocallyFreeSheaf X` is full and faithful;
-* `TauCeti.FiniteEtaleScheme.fullyFaithfulPullbackSubschemeι` and
-  `TauCeti.FiniteEtaleScheme.fullyFaithful_of_completion_coherent`: full faithfulness (Stacks 0EL8);
+* `TauCeti.FiniteEtaleScheme.fullyFaithfulPullbackSubschemeι`: full faithfulness (Stacks 0EL8);
 * `TauCeti.FiniteEtaleScheme.faithful_pullback_of_isClosedImmersion`,
   `TauCeti.FiniteEtaleScheme.full_pullback_of_isClosedImmersion`, and
   `TauCeti.FiniteEtaleScheme.fullyFaithfulPullbackOfIsClosedImmersion`: the same for an arbitrary
-  closed immersion `i : Z ⟶ X` with ideal sheaf `i.ker`;
-* `TauCeti.FiniteEtaleScheme.overPullback_fullyFaithful_of_completion_coherent`: the companion
-  statement for `MorphismProperty.Over.pullback (@IsFinite ⊓ @Etale) ⊤ I.subschemeι`.
+  closed immersion `i : Z ⟶ X` with ideal sheaf `i.ker`.
 
 ## References
 
@@ -91,34 +88,9 @@ namespace TauCeti.FiniteEtaleScheme
 
 noncomputable section
 
-/-- The monoidal structure of `Z.Modules`, stated for the unfolded type
-`SheafOfModules Z.ringCatSheaf`, which typeclass search does not see through the definition of
-`Scheme.Modules`. -/
-local instance monoidalCategorySheafOfModules (Z : Scheme.{u}) :
-    MonoidalCategory (_root_.SheafOfModules Z.ringCatSheaf) :=
-  Scheme.Modules.instMonoidalCategory Z
+attribute [local instance] monoidalCategorySheafOfModules
 
 section AlgebraPresentation
-
-/-- Faithfulness of `relativeSpec Z` at the level of underlying algebra morphisms. -/
-private lemma eq_of_relativeSpecMap_eq {Z : Scheme.{u}} {B₁ B₂ : QuasicoherentAlgebra Z}
-    {u v : B₁ ⟶ B₂} (h : CommMon.relativeSpecMap u.hom = CommMon.relativeSpecMap v.hom) :
-    u = v := by
-  have hmap : (relativeSpec Z).map u.op = (relativeSpec Z).map v.op := by
-    apply MorphismProperty.Over.Hom.ext
-    exact h
-  exact Quiver.Hom.op_inj ((relativeSpec Z).map_injective hmap)
-
-/-- Fullness of `relativeSpec Z`: any morphism `Spec_Z B₁ ⟶ Spec_Z B₂` over `Z` is
-`CommMon.relativeSpecMap ψ.hom` for some `ψ : B₂ ⟶ B₁`. -/
-private lemma exists_relativeSpecMap_eq {Z : Scheme.{u}} (B₁ B₂ : QuasicoherentAlgebra Z)
-    (g : B₁.obj.relativeSpec ⟶ B₂.obj.relativeSpec)
-    (hg : g ≫ B₂.obj.relativeSpecToBase = B₁.obj.relativeSpecToBase) :
-    ∃ ψ : B₂ ⟶ B₁, CommMon.relativeSpecMap ψ.hom = g := by
-  let g' : (relativeSpec Z).obj (op B₁) ⟶ (relativeSpec Z).obj (op B₂) :=
-    MorphismProperty.Over.homMk g hg
-  refine ⟨((relativeSpec Z).preimage g').unop, ?_⟩
-  exact congrArg (·.left) ((relativeSpec Z).map_preimage g')
 
 variable (X : Scheme.{u})
 
@@ -201,6 +173,25 @@ private lemma formalRelSpecSnd_app (A : QuasicoherentAlgebra X) (n : ℕ) :
         ((AdicThickeningSystem.ofScheme.map A.obj.relativeSpecToBase).app n) :=
   AdicThickeningSystem.pullback.snd_app _ _ n
 
+private lemma formalRelSpec_X_hom_ext {Z : Scheme.{u}} {A : QuasicoherentAlgebra X} {n : ℕ}
+    {u v : Z ⟶ (formalRelSpec I A).X n}
+    (hproj : u ≫ (formalRelSpecProj I A).app n = v ≫ (formalRelSpecProj I A).app n)
+    (hsnd : u ≫ (formalRelSpecSnd I A).app n = v ≫ (formalRelSpecSnd I A).app n) :
+    u = v := by
+  rw [formalRelSpecProj_app] at hproj
+  rw [formalRelSpecSnd_app] at hsnd
+  exact Limits.pullback.hom_ext hproj hsnd
+
+private lemma formalRelSpec_ι_proj (A : QuasicoherentAlgebra X) (n : ℕ) :
+    (formalRelSpec I A).ι n ≫ (formalRelSpecProj I A).app (n + 1) =
+      (formalRelSpecProj I A).app n ≫ (X.formalCompletion I).ι n :=
+  (formalRelSpecProj I A).naturality n
+
+private lemma formalRelSpec_ι_snd (A : QuasicoherentAlgebra X) (n : ℕ) :
+    (formalRelSpec I A).ι n ≫ (formalRelSpecSnd I A).app (n + 1) =
+      (formalRelSpecSnd I A).app n :=
+  ((formalRelSpecSnd I A).naturality n).trans (Category.comp_id _)
+
 private instance etale_formalRelSpecProj_app (A : QuasicoherentAlgebra X)
     [het : Etale A.obj.relativeSpecToBase] (n : ℕ) :
     Etale ((formalRelSpecProj I A).app n) := by
@@ -276,6 +267,20 @@ private lemma formalRelSpecMap_snd {A₁ A₂ : QuasicoherentAlgebra X} (b : A�
         AdicThickeningSystem.ofScheme.map (CommMon.relativeSpecMap b.hom) :=
   AdicThickeningSystem.pullback.lift_snd _ _ _
 
+@[reassoc (attr := simp)]
+private lemma formalRelSpecMap_app_proj {A₁ A₂ : QuasicoherentAlgebra X} (b : A₂ ⟶ A₁) (n : ℕ) :
+    (formalRelSpecMap I b).app n ≫ (formalRelSpecProj I A₂).app n =
+      (formalRelSpecProj I A₁).app n := by
+  rw [← AdicThickeningSystem.comp_app, formalRelSpecMap_proj]
+
+@[reassoc (attr := simp)]
+private lemma formalRelSpecMap_app_snd {A₁ A₂ : QuasicoherentAlgebra X} (b : A₂ ⟶ A₁) (n : ℕ) :
+    (formalRelSpecMap I b).app n ≫ (formalRelSpecSnd I A₂).app n =
+      (formalRelSpecSnd I A₁).app n ≫ CommMon.relativeSpecMap b.hom := by
+  rw [← AdicThickeningSystem.comp_app, formalRelSpecMap_snd, AdicThickeningSystem.comp_app,
+    AdicThickeningSystem.ofScheme_map_app]
+  rfl
+
 /-- Under `formalRelSpecLevelIso`, the `n`-th component of `formalRelSpecMap I b` is the relative
 spectrum map of the pulled-back algebra morphism `iₙ^* b`. -/
 private lemma formalRelSpecLevelIso_hom_map_inv {A₁ A₂ : QuasicoherentAlgebra X} (b : A₂ ⟶ A₁)
@@ -286,58 +291,13 @@ private lemma formalRelSpecLevelIso_hom_map_inv {A₁ A₂ : QuasicoherentAlgebr
         ((QuasicoherentAlgebra.pullback (Scheme.formalCompletion.toScheme X I n)).map b).hom := by
   rw [← cancel_mono (formalRelSpecLevelIso I A₂ n).hom, Category.assoc, Category.assoc,
     Iso.inv_hom_id, Category.comp_id]
-  let lhs := (formalRelSpecLevelIso I A₁ n).hom ≫ (formalRelSpecMap I b).app n
-  let m := CommMon.relativeSpecMap
-    ((QuasicoherentAlgebra.pullback (Scheme.formalCompletion.toScheme X I n)).map b).hom
-  let rhs := m ≫ (formalRelSpecLevelIso I A₂ n).hom
-  apply Limits.pullback.hom_ext
-  · have hfst := (formalRelSpecProj_app I A₂ n).symm
-    have hmap :
-        (formalRelSpecMap I b).app n ≫ (formalRelSpecProj I A₂).app n =
-          (formalRelSpecProj I A₁).app n :=
-      (AdicThickeningSystem.comp_app _ _ n).symm.trans
-        (congrArg (·.app n) (formalRelSpecMap_proj I b))
-    have hL :=
-      (congrArg (lhs ≫ ·) hfst).trans <|
-        (Category.assoc _ _ _).trans <|
-          (congrArg ((formalRelSpecLevelIso I A₁ n).hom ≫ ·) hmap).trans
-            (formalRelSpecLevelIso_hom_fst I A₁ n)
-    have hR :=
-      (congrArg (rhs ≫ ·) hfst).trans <|
-        (Category.assoc _ _ _).trans <|
-          (congrArg (m ≫ ·) (formalRelSpecLevelIso_hom_fst I A₂ n)).trans
-            (CommMon.relativeSpecMap_relativeSpecToBase _)
-    exact hL.trans hR.symm
-  · have hsnd := (formalRelSpecSnd_app I A₂ n).symm
-    have hmap :
-        (formalRelSpecMap I b).app n ≫ (formalRelSpecSnd I A₂).app n =
-          (formalRelSpecSnd I A₁).app n ≫ CommMon.relativeSpecMap b.hom :=
-      (AdicThickeningSystem.comp_app _ _ n).symm.trans <|
-        (congrArg (·.app n) (formalRelSpecMap_snd I b)).trans <|
-          (AdicThickeningSystem.comp_app _ _ n).trans
-            (congrArg ((formalRelSpecSnd I A₁).app n ≫ ·)
-              (AdicThickeningSystem.ofScheme_map_app _ n))
-    have hL :=
-      (congrArg (lhs ≫ ·) hsnd).trans <|
-        (Category.assoc _ _ _).trans <|
-          (congrArg ((formalRelSpecLevelIso I A₁ n).hom ≫ ·) hmap).trans
-            (formalRelSpecLevelIso_hom_snd_assoc I A₁ n _)
-    have hR :=
-      (congrArg (rhs ≫ ·) hsnd).trans <|
-        (Category.assoc _ _ _).trans <|
-          (congrArg (m ≫ ·) (formalRelSpecLevelIso_hom_snd I A₂ n)).trans
-            (relativeSpecMap_pullback_map_relativeSpecPullbackFst A₁
-              (Scheme.formalCompletion.toScheme X I n) b)
-    exact hL.trans hR.symm
-
-/-- Transporting `relativeSpecPullbackFst` along an equality of base morphisms. -/
-private lemma relativeSpecPullbackFst_congr {Y : Scheme.{u}} (A : QuasicoherentAlgebra X)
-    {f₁ f₂ : Y ⟶ X} (hf : f₁ = f₂) :
-    CommMon.relativeSpecMap
-        (eqToHom (congrArg (fun f ↦ (QuasicoherentAlgebra.pullback f).obj A) hf)).hom ≫
-      relativeSpecPullbackFst A f₁ = relativeSpecPullbackFst A f₂ := by
-  subst hf
-  simp
+  apply formalRelSpec_X_hom_ext
+  · simp
+  · simp only [Category.assoc, formalRelSpecMap_app_snd, formalRelSpecLevelIso_hom_snd]
+    exact (Category.assoc _ _ _).symm.trans
+      ((congrArg (· ≫ _) (formalRelSpecLevelIso_hom_snd I A₁ n)).trans
+        (relativeSpecMap_pullback_map_relativeSpecPullbackFst A₁
+          (Scheme.formalCompletion.toScheme X I n) b).symm)
 
 /-- The algebra reduction isomorphism `(ι n)^* (i_{n + 1}^* A) ≅ iₙ^* A` on the `n`-th thickening.
 -/
@@ -359,61 +319,16 @@ private lemma formalRelSpecLevelIso_hom_ι (A : QuasicoherentAlgebra X) (n : ℕ
           ((QuasicoherentAlgebra.pullback (Scheme.formalCompletion.toScheme X I (n + 1))).obj A)
           ((X.formalCompletion I).ι n) ≫
         (formalRelSpecLevelIso I A (n + 1)).hom := by
-  let lhs := (formalRelSpecLevelIso I A n).hom ≫ (formalRelSpec I A).ι n
-  let c₁ := ((QuasicoherentAlgebra.pullbackComp ((X.formalCompletion I).ι n)
-      (Scheme.formalCompletion.toScheme X I (n + 1))).hom.app A).hom
-  let c₂ := (eqToHom (congrArg (fun f ↦ (QuasicoherentAlgebra.pullback f).obj A)
-      (Scheme.formalCompletion.ι_toScheme X I n))).hom
-  let p₁ := CommMon.relativeSpecMap (pullbackTransitionAlgIso I A n).hom.hom
-  let p₂ := relativeSpecPullbackFst
-    ((QuasicoherentAlgebra.pullback (Scheme.formalCompletion.toScheme X I (n + 1))).obj A)
-    ((X.formalCompletion I).ι n)
-  let rhs := p₁ ≫ p₂ ≫ (formalRelSpecLevelIso I A (n + 1)).hom
-  apply Limits.pullback.hom_ext
-  · have hfst := (formalRelSpecProj_app I A (n + 1)).symm
-    have hL :=
-      (congrArg (lhs ≫ ·) hfst).trans <|
-        (Category.assoc _ _ _).trans <|
-          (congrArg ((formalRelSpecLevelIso I A n).hom ≫ ·)
-            ((formalRelSpecProj I A).naturality n)).trans
-            (formalRelSpecLevelIso_hom_fst_assoc I A n ((X.formalCompletion I).ι n))
-    have hR :=
-      (congrArg (rhs ≫ ·) hfst).trans <|
-        (Category.assoc p₁ (p₂ ≫ (formalRelSpecLevelIso I A (n + 1)).hom) _).trans <|
-          (congrArg (p₁ ≫ ·) <|
-            (Category.assoc p₂ (formalRelSpecLevelIso I A (n + 1)).hom _).trans <|
-              (congrArg (p₂ ≫ ·) (formalRelSpecLevelIso_hom_fst I A (n + 1))).trans
-                (relativeSpecPullbackFst_relativeSpecToBase _ _)).trans
-            (CommMon.relativeSpecMap_relativeSpecToBase_assoc
-              (pullbackTransitionAlgIso I A n).hom.hom ((X.formalCompletion I).ι n))
-    exact hL.trans hR.symm
-  · have hsnd := (formalRelSpecSnd_app I A (n + 1)).symm
-    have hnat :
-        (formalRelSpec I A).ι n ≫ (formalRelSpecSnd I A).app (n + 1) =
-          (formalRelSpecSnd I A).app n :=
-      ((formalRelSpecSnd I A).naturality n).trans (Category.comp_id _)
-    have hL :=
-      (congrArg (lhs ≫ ·) hsnd).trans <|
-        (Category.assoc _ _ _).trans <|
-          (congrArg ((formalRelSpecLevelIso I A n).hom ≫ ·) hnat).trans
-            (formalRelSpecLevelIso_hom_snd I A n)
-    have hpull :
-        p₁ ≫ p₂ ≫ relativeSpecPullbackFst A (Scheme.formalCompletion.toScheme X I (n + 1)) =
-          relativeSpecPullbackFst A (Scheme.formalCompletion.toScheme X I n) :=
-      (congrArg (· ≫ p₂ ≫ relativeSpecPullbackFst A (Scheme.formalCompletion.toScheme X I (n + 1)))
-          (CommMon.relativeSpecMap_comp c₁ c₂)).trans <|
-        (Category.assoc _ _ _).trans <|
-          (congrArg (CommMon.relativeSpecMap c₂ ≫ ·)
-            (relativeSpecPullbackFst_comp A (Scheme.formalCompletion.toScheme X I (n + 1))
-              ((X.formalCompletion I).ι n)).symm).trans
-            (relativeSpecPullbackFst_congr A (Scheme.formalCompletion.ι_toScheme X I n))
-    have hR :=
-      (congrArg (rhs ≫ ·) hsnd).trans <|
-        (Category.assoc p₁ (p₂ ≫ (formalRelSpecLevelIso I A (n + 1)).hom) _).trans <|
-          (congrArg (p₁ ≫ ·) <|
-            (Category.assoc p₂ (formalRelSpecLevelIso I A (n + 1)).hom _).trans <|
-              congrArg (p₂ ≫ ·) (formalRelSpecLevelIso_hom_snd I A (n + 1))).trans hpull
-    exact hL.trans hR.symm
+  apply formalRelSpec_X_hom_ext
+  · rw [Category.assoc, formalRelSpec_ι_proj, formalRelSpecLevelIso_hom_fst_assoc]
+    simp
+  · simp only [Category.assoc, formalRelSpec_ι_snd, formalRelSpecLevelIso_hom_snd,
+      pullbackTransitionAlgIso, Iso.trans_hom, Iso.app_hom, eqToIso.hom,
+      ObjectProperty.FullSubcategory.comp_hom, CommMon.relativeSpecMap_comp]
+    exact (formalRelSpecLevelIso_hom_snd I A n).trans
+      ((relativeSpecPullbackFst_congr A (Scheme.formalCompletion.ι_toScheme X I n)).symm.trans
+        (congrArg (_ ≫ ·) (relativeSpecPullbackFst_comp A
+          (Scheme.formalCompletion.toScheme X I (n + 1)) ((X.formalCompletion I).ι n))))
 
 /-- Auxiliary equality identifying `(pullbackComp g f).hom.app A ≫ eqToHom _` on underlying modules.
 -/
@@ -445,6 +360,32 @@ private lemma pullbackTransitionAlgIso_hom_module_eq (A : QuasicoherentAlgebra X
           (QuasicoherentAlgebra.pullback_obj_X
             (Scheme.formalCompletion.toScheme X I n) A).symm :=
   pullbackComp_eqToHom_module_eq (Scheme.formalCompletion.ι_toScheme X I n) A
+
+/-- If `f^* β` underlies an algebra map `f^* A₂ ⟶ f^* A₁`, then `f^*` equalizes the two composites
+in the unitality equation `η[A₂] ≫ β = η[A₁]`. -/
+private lemma pullback_map_one_eq {Z : Scheme.{u}} (f : Z ⟶ X)
+    {A₁ A₂ : QuasicoherentAlgebra X} (β : A₂.obj.X ⟶ A₁.obj.X)
+    (ψ : (QuasicoherentAlgebra.pullback f).obj A₂ ⟶ (QuasicoherentAlgebra.pullback f).obj A₁)
+    (hβ : ψ.hom.hom.hom =
+      eqToHom (QuasicoherentAlgebra.pullback_obj_X f A₂) ≫
+        (Scheme.Modules.pullback f).map β ≫
+        eqToHom (QuasicoherentAlgebra.pullback_obj_X f A₁).symm) :
+    (Scheme.Modules.pullback f).map (η[A₂.obj.X] ≫ β) =
+      (Scheme.Modules.pullback f).map η[A₁.obj.X] := by
+  have h₁ :
+      η[((QuasicoherentAlgebra.pullback f).obj A₂).obj.X] ≫
+          eqToHom (QuasicoherentAlgebra.pullback_obj_X f A₂) ≫
+          (Scheme.Modules.pullback f).map β ≫
+          eqToHom (QuasicoherentAlgebra.pullback_obj_X f A₁).symm =
+        η[((QuasicoherentAlgebra.pullback f).obj A₁).obj.X] := by
+    have h := ψ.hom.hom.isMonHom_hom.one_hom
+    simp only [hβ] at h
+    exact h
+  rw [QuasicoherentAlgebra.pullback_obj_one f A₂,
+    QuasicoherentAlgebra.pullback_obj_one f A₁] at h₁
+  simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp] at h₁
+  rw [cancel_epi, ← Category.assoc, cancel_mono] at h₁
+  exact (Functor.map_comp _ _ _).trans h₁
 
 /-- If `f^* β` underlies an algebra map `f^* A₂ ⟶ f^* A₁`, then `f^*` equalizes the two composites
 in the multiplicativity equation `μ ≫ β = (β ⊗ₘ β) ≫ μ`. -/
@@ -534,53 +475,14 @@ private lemma formalRelSpecZeroIso_inv_map_hom
       (((pullback (Scheme.formalCompletion.toScheme X I 0)).map
         ((relSpecFiniteEtale X).map f)).hom).left := by
   apply Limits.pullback.hom_ext
-  · have hmap :
-        (formalRelSpecMap I f.unop.hom).app 0 ≫ (formalRelSpecSnd I C₂.unop.obj).app 0 =
-          (formalRelSpecSnd I C₁.unop.obj).app 0 ≫ CommMon.relativeSpecMap f.unop.hom.hom :=
-      (AdicThickeningSystem.comp_app _ _ 0).symm.trans <|
-        (congrArg (·.app 0) (formalRelSpecMap_snd I f.unop.hom)).trans <|
-          (AdicThickeningSystem.comp_app _ _ 0).trans
-            (congrArg ((formalRelSpecSnd I C₁.unop.obj).app 0 ≫ ·)
-              (AdicThickeningSystem.ofScheme_map_app _ 0))
-    have hL :=
-      (Category.assoc (formalRelSpecZeroIso I C₁.unop.obj).inv
-          ((formalRelSpecMap I f.unop.hom).app 0 ≫ (formalRelSpecZeroIso I C₂.unop.obj).hom)
-          _).trans <|
-        (congrArg ((formalRelSpecZeroIso I C₁.unop.obj).inv ≫ ·) <|
-          (Category.assoc ((formalRelSpecMap I f.unop.hom).app 0)
-              (formalRelSpecZeroIso I C₂.unop.obj).hom _).trans <|
-            (congrArg ((formalRelSpecMap I f.unop.hom).app 0 ≫ ·)
-              (formalRelSpecZeroIso_hom_fst I C₂.unop.obj)).trans hmap).trans
-          (formalRelSpecZeroIso_inv_snd_assoc I C₁.unop.obj _)
-    exact hL.trans (Limits.pullback.lift_fst _ _ _).symm
-  · have hmap :
-        (formalRelSpecMap I f.unop.hom).app 0 ≫ (formalRelSpecProj I C₂.unop.obj).app 0 =
-          (formalRelSpecProj I C₁.unop.obj).app 0 :=
-      (AdicThickeningSystem.comp_app _ _ 0).symm.trans
-        (congrArg (·.app 0) (formalRelSpecMap_proj I f.unop.hom))
-    have hL :=
-      (Category.assoc (formalRelSpecZeroIso I C₁.unop.obj).inv
-          ((formalRelSpecMap I f.unop.hom).app 0 ≫ (formalRelSpecZeroIso I C₂.unop.obj).hom)
-          _).trans <|
-        (congrArg ((formalRelSpecZeroIso I C₁.unop.obj).inv ≫ ·) <|
-          (Category.assoc ((formalRelSpecMap I f.unop.hom).app 0)
-              (formalRelSpecZeroIso I C₂.unop.obj).hom _).trans <|
-            (congrArg ((formalRelSpecMap I f.unop.hom).app 0 ≫ ·)
-              (formalRelSpecZeroIso_hom_snd I C₂.unop.obj)).trans hmap).trans
-          (formalRelSpecZeroIso_inv_proj I C₁.unop.obj)
-    exact hL.trans (Limits.pullback.lift_snd _ _ _).symm
-
-private lemma iso_hom_comp_inv_comp {C : Type*} [Category C] {X₁ Y₁ X₂ Y₂ Z : C}
-    (e₁ : X₁ ≅ Y₁) (e₂ : X₂ ≅ Y₂) (g : Y₁ ⟶ Y₂) (p₁ : X₁ ⟶ Z) (p₂ : X₂ ⟶ Z)
-    (q₁ : Y₁ ⟶ Z) (q₂ : Y₂ ⟶ Z)
-    (h₁ : e₁.hom ≫ q₁ = p₁) (h₂ : e₂.inv ≫ p₂ = q₂) (hg : g ≫ q₂ = q₁) :
-    (e₁.hom ≫ g ≫ e₂.inv) ≫ p₂ = p₁ := by
-  rw [Category.assoc, Category.assoc, h₂, hg, h₁]
-
-private lemma iso_inv_hom_conj_inv_hom {C : Type*} [Category C] {X₁ Y₁ X₂ Y₂ : C}
-    (e₁ : X₁ ≅ Y₁) (e₂ : X₂ ≅ Y₂) (g : Y₁ ⟶ Y₂) :
-    e₁.inv ≫ (e₁.hom ≫ g ≫ e₂.inv) ≫ e₂.hom = g := by
-  simp
+  · dsimp only [relSpecFiniteEtale]
+    simp only [Category.assoc, formalRelSpecZeroIso_hom_fst, pullback_map_hom,
+      Over.pullback_map_left, Over.mk_hom, ObjectProperty.homMk_hom, Over.homMk_left,
+      Limits.pullback.lift_fst]
+    exact (congrArg (_ ≫ ·) (formalRelSpecMap_app_snd I f.unop.hom 0)).trans
+      ((Category.assoc _ _ _).symm.trans
+        (congrArg (· ≫ _) (formalRelSpecZeroIso_inv_snd I C₁.unop.obj)))
+  · simp [relSpecFiniteEtale]
 
 private lemma naturality_of_eqToHom_conj {C₁ C₂ : Type*} [Category C₁] [Category C₂]
     (G : C₁ ⥤ C₂) {M₂ M₁ P₂ P₁ : C₁} {Q₂ Q₁ N₂ N₁ R₂ R₁ : C₂}
@@ -597,139 +499,118 @@ private lemma naturality_of_eqToHom_conj {C₁ C₂ : Type*} [Category C₁] [Ca
   subst eA₂ eA₁ p₂ p₁ r₂ r₁
   simpa using h
 
-private lemma eq_eqToHom_conj_of_eq {C : Type*} [Category C] {X₂ X₁ Y₂ Y₁ : C}
-    (e₂ : X₂ = Y₂) (e₁ : X₁ = Y₁) (f : X₂ ⟶ X₁) (g : Y₂ ⟶ Y₁)
-    (h : g = eqToHom e₂.symm ≫ f ≫ eqToHom e₁) :
-    f = eqToHom e₂ ≫ g ≫ eqToHom e₁.symm := by
-  subst e₂ e₁
-  simpa using h.symm
-
-/-- Faithfulness of pullback to the zeroth level `V(I ^ 1)` of `X.formalCompletion I`. -/
-private lemma faithful_pullback_toScheme_zero
+/-- Two morphisms between quasicoherent algebras with finite locally free underlying modules
+agree if their pullbacks to all thickenings `V(I ^ (n + 1))` agree, provided completion on
+finite locally free sheaves is faithful. -/
+private lemma eq_of_forall_pullback_toScheme_map_eq
     [(FiniteLocallyFreeSheaf.toFinitelyPresented X ⋙
-      Scheme.formalCompletion.completionFunctor X I).Faithful] :
-    (pullback (Scheme.formalCompletion.toScheme X I 0)).Faithful := by
-  refine (pullback (Scheme.formalCompletion.toScheme X I 0)).faithful_of_comp_essSurj
-    (relSpecFiniteEtale X) fun {C₁ C₂} f₁ f₂ hfg ↦ ?_
-  obtain ⟨f₁, rfl⟩ := (relSpecFiniteEtale X).map_surjective f₁
-  obtain ⟨f₂, rfl⟩ := (relSpecFiniteEtale X).map_surjective f₂
-  congr 1
-  have h0 : (formalRelSpecMap I f₁.unop.hom).app 0 = (formalRelSpecMap I f₂.unop.hom).app 0 := by
-    rw [← cancel_epi (formalRelSpecZeroIso I C₁.unop.obj).inv,
-      ← cancel_mono (formalRelSpecZeroIso I C₂.unop.obj).hom,
-      Category.assoc, Category.assoc,
-      formalRelSpecZeroIso_inv_map_hom I f₁,
-      formalRelSpecZeroIso_inv_map_hom I f₂]
-    exact congrArg (fun k ↦ k.hom.left) hfg
-  have : Etale C₂.unop.obj.obj.relativeSpecToBase := C₂.unop.property.2.2
-  have hsys : formalRelSpecMap I f₁.unop.hom = formalRelSpecMap I f₂.unop.hom :=
-    AdicThickeningSystem.hom_ext_of_formallyUnramified (formalRelSpecProj I C₂.unop.obj)
-      ((formalRelSpecMap_proj I f₁.unop.hom).trans (formalRelSpecMap_proj I f₂.unop.hom).symm) h0
-  let E₁ : FiniteLocallyFreeSheaf X := ⟨C₁.unop.obj.obj.X, C₁.unop.property.1⟩
-  let E₂ : FiniteLocallyFreeSheaf X := ⟨C₂.unop.obj.obj.X, C₂.unop.property.1⟩
-  let u₁ : E₂ ⟶ E₁ := ObjectProperty.homMk f₁.unop.hom.hom.hom.hom
-  let u₂ : E₂ ⟶ E₁ := ObjectProperty.homMk f₂.unop.hom.hom.hom.hom
-  have hu : (FiniteLocallyFreeSheaf.toFinitelyPresented X ⋙
-        Scheme.formalCompletion.completionFunctor X I).map u₁ =
-      (FiniteLocallyFreeSheaf.toFinitelyPresented X ⋙
-        Scheme.formalCompletion.completionFunctor X I).map u₂ := by
+      Scheme.formalCompletion.completionFunctor X I).Faithful]
+    {A₁ A₂ : QuasicoherentAlgebra X}
+    (hA₁ : Scheme.Modules.isFiniteLocallyFree X A₁.obj.X)
+    (hA₂ : Scheme.Modules.isFiniteLocallyFree X A₂.obj.X)
+    {b₁ b₂ : A₂ ⟶ A₁}
+    (hb : ∀ n,
+      (QuasicoherentAlgebra.pullback (Scheme.formalCompletion.toScheme X I n)).map b₁ =
+        (QuasicoherentAlgebra.pullback (Scheme.formalCompletion.toScheme X I n)).map b₂) :
+    b₁ = b₂ := by
+  let F₀ := FiniteLocallyFreeSheaf.toFinitelyPresented X ⋙
+    Scheme.formalCompletion.completionFunctor X I
+  let E₁ : FiniteLocallyFreeSheaf X := ⟨A₁.obj.X, hA₁⟩
+  let E₂ : FiniteLocallyFreeSheaf X := ⟨A₂.obj.X, hA₂⟩
+  let u₁ : E₂ ⟶ E₁ := ObjectProperty.homMk b₁.hom.hom.hom
+  let u₂ : E₂ ⟶ E₁ := ObjectProperty.homMk b₂.hom.hom.hom
+  have hu : F₀.map u₁ = F₀.map u₂ := by
     refine AdicThickeningSystem.CoherentFormalModule.hom_ext fun n ↦ ?_
-    have hn :
-        (QuasicoherentAlgebra.pullback (Scheme.formalCompletion.toScheme X I n)).map f₁.unop.hom =
-          (QuasicoherentAlgebra.pullback (Scheme.formalCompletion.toScheme X I n)).map
-            f₂.unop.hom := by
-      apply eq_of_relativeSpecMap_eq
-      rw [← formalRelSpecLevelIso_hom_map_inv I f₁.unop.hom n,
-        ← formalRelSpecLevelIso_hom_map_inv I f₂.unop.hom n, hsys]
-    have hmod := congrArg (fun k ↦ k.hom.hom.hom) hn
+    have hmod := congrArg (fun k ↦ k.hom.hom.hom) (hb n)
     simp only [QuasicoherentAlgebra.pullback_map_hom_hom_hom] at hmod
-    exact (cancel_mono (eqToHom (QuasicoherentAlgebra.pullback_obj_X _ _).symm)).mp
-      ((cancel_epi (eqToHom (QuasicoherentAlgebra.pullback_obj_X _ _))).mp hmod)
-  have heq : u₁ = u₂ :=
-    (FiniteLocallyFreeSheaf.toFinitelyPresented X ⋙
-      Scheme.formalCompletion.completionFunctor X I).map_injective hu
-  apply Quiver.Hom.unop_inj
-  apply ObjectProperty.hom_ext
+    exact TauCeti.eq_of_eqToHom_conjugate _ _ hmod
+  have heq : u₁ = u₂ := F₀.map_injective hu
   apply ObjectProperty.hom_ext
   apply CommMon.hom_ext
   exact congrArg (·.hom) heq
 
-/-- Fullness of pullback to the zeroth level `V(I ^ 1)` of `X.formalCompletion I`. -/
-private lemma full_pullback_toScheme_zero
-    [(FiniteLocallyFreeSheaf.toFinitelyPresented X ⋙
-      Scheme.formalCompletion.completionFunctor X I).Full]
-    [(FiniteLocallyFreeSheaf.toFinitelyPresented X ⋙
-      Scheme.formalCompletion.completionFunctor X I).Faithful] :
-    (pullback (Scheme.formalCompletion.toScheme X I 0)).Full := by
-  let F₀ := FiniteLocallyFreeSheaf.toFinitelyPresented X ⋙
-    Scheme.formalCompletion.completionFunctor X I
-  refine (pullback (Scheme.formalCompletion.toScheme X I 0)).full_of_comp_essSurj
-    (relSpecFiniteEtale X) fun {C₁ C₂} φ₀ ↦ ?_
-  let A₁ := C₁.unop.obj
-  let A₂ := C₂.unop.obj
-  have : Etale A₂.obj.relativeSpecToBase := C₂.unop.property.2.2
-  -- Step 1: lift `φ₀` across all levels of `X.formalCompletion I`.
-  let a₀ : (formalRelSpec I A₁).X 0 ⟶ (formalRelSpec I A₂).X 0 :=
-    (formalRelSpecZeroIso I A₁).hom ≫ φ₀.hom.left ≫ (formalRelSpecZeroIso I A₂).inv
-  have ha₀ : a₀ ≫ (formalRelSpecProj I A₂).app 0 = (formalRelSpecProj I A₁).app 0 :=
-    iso_hom_comp_inv_comp (formalRelSpecZeroIso I A₁) (formalRelSpecZeroIso I A₂) φ₀.hom.left
-      _ _ _ _ (formalRelSpecZeroIso_hom_snd I A₁) (formalRelSpecZeroIso_inv_proj I A₂)
-      (Over.w φ₀.hom)
-  let a : formalRelSpec I A₁ ⟶ formalRelSpec I A₂ :=
-    AdicThickeningSystem.liftOfEtale (formalRelSpecProj I A₁) (formalRelSpecProj I A₂) a₀ ha₀
-  -- Step 2: convert each level `a.app n` to an algebra morphism `ψ n : iₙ^* A₂ ⟶ iₙ^* A₁`.
+/-- A morphism `formalRelSpec I A₁ ⟶ formalRelSpec I A₂` over `X.formalCompletion I` corresponds
+to a compatible tower of algebra morphisms `iₙ^* A₂ ⟶ iₙ^* A₁`. -/
+private lemma exists_compatible_tower_of_formalRelSpec_hom {A₁ A₂ : QuasicoherentAlgebra X}
+    (a : formalRelSpec I A₁ ⟶ formalRelSpec I A₂)
+    (ha : ∀ n, a.app n ≫ (formalRelSpecProj I A₂).app n = (formalRelSpecProj I A₁).app n) :
+    ∃ ψ : ∀ n,
+        (QuasicoherentAlgebra.pullback (Scheme.formalCompletion.toScheme X I n)).obj A₂ ⟶
+          (QuasicoherentAlgebra.pullback (Scheme.formalCompletion.toScheme X I n)).obj A₁,
+      (∀ n, CommMon.relativeSpecMap (ψ n).hom =
+        (formalRelSpecLevelIso I A₁ n).hom ≫ a.app n ≫ (formalRelSpecLevelIso I A₂ n).inv) ∧
+      (∀ n, (QuasicoherentAlgebra.pullback ((X.formalCompletion I).ι n)).map (ψ (n + 1)) ≫
+        (pullbackTransitionAlgIso I A₁ n).hom =
+          (pullbackTransitionAlgIso I A₂ n).hom ≫ ψ n) := by
   have hex (n : ℕ) :
       ∃ ψ : (QuasicoherentAlgebra.pullback (Scheme.formalCompletion.toScheme X I n)).obj A₂ ⟶
           (QuasicoherentAlgebra.pullback (Scheme.formalCompletion.toScheme X I n)).obj A₁,
         CommMon.relativeSpecMap ψ.hom =
           (formalRelSpecLevelIso I A₁ n).hom ≫ a.app n ≫ (formalRelSpecLevelIso I A₂ n).inv := by
     apply exists_relativeSpecMap_eq
-    simp only [a, Category.assoc, formalRelSpecLevelIso_inv_toBase,
-      AdicThickeningSystem.liftOfEtale_app_comp, formalRelSpecLevelIso_hom_fst]
+    simp [ha n]
   choose ψ hψ using hex
-  -- Step 3: verify that `ψ` commutes with the algebra reduction isomorphisms.
-  have hψ_nat (n : ℕ) :
-      (QuasicoherentAlgebra.pullback ((X.formalCompletion I).ι n)).map (ψ (n + 1)) ≫
-          (pullbackTransitionAlgIso I A₁ n).hom =
-        (pullbackTransitionAlgIso I A₂ n).hom ≫ ψ n := by
-    apply eq_of_relativeSpecMap_eq
-    apply (isPullback_relativeSpecPullbackFst
-      ((QuasicoherentAlgebra.pullback (Scheme.formalCompletion.toScheme X I (n + 1))).obj A₂)
-      ((X.formalCompletion I).ι n)).hom_ext
-    · calc
-        CommMon.relativeSpecMap
-            ((QuasicoherentAlgebra.pullback ((X.formalCompletion I).ι n)).map (ψ (n + 1)) ≫
-              (pullbackTransitionAlgIso I A₁ n).hom).hom ≫
-            relativeSpecPullbackFst _ ((X.formalCompletion I).ι n) =
-          CommMon.relativeSpecMap (pullbackTransitionAlgIso I A₁ n).hom.hom ≫
-            CommMon.relativeSpecMap
-              ((QuasicoherentAlgebra.pullback ((X.formalCompletion I).ι n)).map (ψ (n + 1))).hom ≫
+  refine ⟨ψ, hψ, fun n ↦ ?_⟩
+  apply eq_of_relativeSpecMap_eq
+  apply (isPullback_relativeSpecPullbackFst
+    ((QuasicoherentAlgebra.pullback (Scheme.formalCompletion.toScheme X I (n + 1))).obj A₂)
+    ((X.formalCompletion I).ι n)).hom_ext
+  · calc
+      CommMon.relativeSpecMap
+          ((QuasicoherentAlgebra.pullback ((X.formalCompletion I).ι n)).map (ψ (n + 1)) ≫
+            (pullbackTransitionAlgIso I A₁ n).hom).hom ≫
+          relativeSpecPullbackFst _ ((X.formalCompletion I).ι n) =
+        CommMon.relativeSpecMap (pullbackTransitionAlgIso I A₁ n).hom.hom ≫
+          CommMon.relativeSpecMap
+            ((QuasicoherentAlgebra.pullback ((X.formalCompletion I).ι n)).map (ψ (n + 1))).hom ≫
+          relativeSpecPullbackFst _ ((X.formalCompletion I).ι n) := by
+        simp only [ObjectProperty.FullSubcategory.comp_hom, CommMon.relativeSpecMap_comp,
+          Category.assoc]
+      _ = CommMon.relativeSpecMap (pullbackTransitionAlgIso I A₁ n).hom.hom ≫
+            relativeSpecPullbackFst _ ((X.formalCompletion I).ι n) ≫
+            CommMon.relativeSpecMap (ψ (n + 1)).hom := by
+        simp only [relativeSpecMap_pullback_map_relativeSpecPullbackFst]
+      _ = ((formalRelSpecLevelIso I A₁ n).hom ≫ (formalRelSpec I A₁).ι n) ≫
+            a.app (n + 1) ≫ (formalRelSpecLevelIso I A₂ (n + 1)).inv := by
+        simp only [hψ (n + 1), formalRelSpecLevelIso_hom_ι I A₁ n, Category.assoc]
+      _ = (formalRelSpecLevelIso I A₁ n).hom ≫ a.app n ≫
+            ((formalRelSpecLevelIso I A₂ n).inv ≫ (formalRelSpecLevelIso I A₂ n).hom) ≫
+            (formalRelSpec I A₂).ι n ≫ (formalRelSpecLevelIso I A₂ (n + 1)).inv := by
+        simp only [Category.assoc, reassoc_of% (a.naturality n), Iso.inv_hom_id_assoc]
+      _ = CommMon.relativeSpecMap (ψ n).hom ≫
+            CommMon.relativeSpecMap (pullbackTransitionAlgIso I A₂ n).hom.hom ≫
             relativeSpecPullbackFst _ ((X.formalCompletion I).ι n) := by
-          simp only [ObjectProperty.FullSubcategory.comp_hom, CommMon.relativeSpecMap_comp,
-            Category.assoc]
-        _ = CommMon.relativeSpecMap (pullbackTransitionAlgIso I A₁ n).hom.hom ≫
-              relativeSpecPullbackFst _ ((X.formalCompletion I).ι n) ≫
-              CommMon.relativeSpecMap (ψ (n + 1)).hom := by
-          simp only [relativeSpecMap_pullback_map_relativeSpecPullbackFst]
-        _ = ((formalRelSpecLevelIso I A₁ n).hom ≫ (formalRelSpec I A₁).ι n) ≫
-              a.app (n + 1) ≫ (formalRelSpecLevelIso I A₂ (n + 1)).inv := by
-          simp only [hψ (n + 1), formalRelSpecLevelIso_hom_ι I A₁ n, Category.assoc]
-        _ = (formalRelSpecLevelIso I A₁ n).hom ≫ a.app n ≫
-              ((formalRelSpecLevelIso I A₂ n).inv ≫ (formalRelSpecLevelIso I A₂ n).hom) ≫
-              (formalRelSpec I A₂).ι n ≫ (formalRelSpecLevelIso I A₂ (n + 1)).inv := by
-          simp only [Category.assoc, reassoc_of% (a.naturality n), Iso.inv_hom_id_assoc]
-        _ = CommMon.relativeSpecMap (ψ n).hom ≫
-              CommMon.relativeSpecMap (pullbackTransitionAlgIso I A₂ n).hom.hom ≫
-              relativeSpecPullbackFst _ ((X.formalCompletion I).ι n) := by
-          simp only [hψ n, Category.assoc, reassoc_of% (formalRelSpecLevelIso_hom_ι I A₂ n),
-            Iso.hom_inv_id, Category.comp_id]
-        _ = _ := by
-          simp only [ObjectProperty.FullSubcategory.comp_hom, CommMon.relativeSpecMap_comp,
-            Category.assoc]
-    · simp only [CommMon.relativeSpecMap_relativeSpecToBase]
-  -- Step 4: package the underlying module maps as a morphism in `CoherentFormalModule` and lift.
-  let E₁ : FiniteLocallyFreeSheaf X := ⟨A₁.obj.X, C₁.unop.property.1⟩
-  let E₂ : FiniteLocallyFreeSheaf X := ⟨A₂.obj.X, C₂.unop.property.1⟩
+        simp only [hψ n, Category.assoc, reassoc_of% (formalRelSpecLevelIso_hom_ι I A₂ n),
+          Iso.hom_inv_id, Category.comp_id]
+      _ = _ := by
+        simp only [ObjectProperty.FullSubcategory.comp_hom, CommMon.relativeSpecMap_comp,
+          Category.assoc]
+  · simp only [CommMon.relativeSpecMap_relativeSpecToBase]
+
+/-- Any compatible tower of algebra morphisms `iₙ^* A₂ ⟶ iₙ^* A₁` between pullbacks of
+quasicoherent algebras with finite locally free underlying modules descends to an algebra
+morphism `A₂ ⟶ A₁` when completion on finite locally free sheaves is full and faithful. -/
+private lemma exists_hom_of_compatible_tower
+    [(FiniteLocallyFreeSheaf.toFinitelyPresented X ⋙
+      Scheme.formalCompletion.completionFunctor X I).Full]
+    [(FiniteLocallyFreeSheaf.toFinitelyPresented X ⋙
+      Scheme.formalCompletion.completionFunctor X I).Faithful]
+    {A₁ A₂ : QuasicoherentAlgebra X}
+    (hA₁ : Scheme.Modules.isFiniteLocallyFree X A₁.obj.X)
+    (hA₂ : Scheme.Modules.isFiniteLocallyFree X A₂.obj.X)
+    (ψ : ∀ n,
+      (QuasicoherentAlgebra.pullback (Scheme.formalCompletion.toScheme X I n)).obj A₂ ⟶
+        (QuasicoherentAlgebra.pullback (Scheme.formalCompletion.toScheme X I n)).obj A₁)
+    (hψ_nat : ∀ n,
+      (QuasicoherentAlgebra.pullback ((X.formalCompletion I).ι n)).map (ψ (n + 1)) ≫
+        (pullbackTransitionAlgIso I A₁ n).hom =
+          (pullbackTransitionAlgIso I A₂ n).hom ≫ ψ n) :
+    ∃ b : A₂ ⟶ A₁, ∀ n,
+      (QuasicoherentAlgebra.pullback (Scheme.formalCompletion.toScheme X I n)).map b = ψ n := by
+  let F₀ := FiniteLocallyFreeSheaf.toFinitelyPresented X ⋙
+    Scheme.formalCompletion.completionFunctor X I
+  let E₁ : FiniteLocallyFreeSheaf X := ⟨A₁.obj.X, hA₁⟩
+  let E₂ : FiniteLocallyFreeSheaf X := ⟨A₂.obj.X, hA₂⟩
   let α : F₀.obj E₂ ⟶ F₀.obj E₁ :=
     { app n :=
         eqToHom
@@ -753,9 +634,19 @@ private lemma full_pullback_toScheme_zero
       eqToHom (QuasicoherentAlgebra.pullback_obj_X (Scheme.formalCompletion.toScheme X I n) A₂) ≫
         (Scheme.Modules.pullback (Scheme.formalCompletion.toScheme X I n)).map β ≫
         eqToHom
-          (QuasicoherentAlgebra.pullback_obj_X (Scheme.formalCompletion.toScheme X I n) A₁).symm :=
-    eq_eqToHom_conj_of_eq _ _ _ _ (congrArg (fun k ↦ k.app n) (F₀.map_preimage α))
-  -- Step 5: descend `IsMonHom` from all thickenings to `X` using `F₀.Faithful`.
+          (QuasicoherentAlgebra.pullback_obj_X
+            (Scheme.formalCompletion.toScheme X I n) A₁).symm := by
+    let iₙ := Scheme.formalCompletion.toScheme X I n
+    have h : (Scheme.Modules.pullback iₙ).map β =
+        eqToHom (QuasicoherentAlgebra.pullback_obj_X iₙ A₂).symm ≫
+          (ψ n).hom.hom.hom ≫
+          eqToHom (QuasicoherentAlgebra.pullback_obj_X iₙ A₁) :=
+      congrArg (fun k ↦ k.app n) (F₀.map_preimage α)
+    rw [h]
+    exact (TauCeti.eqToHom_conjugate_cancel
+      (QuasicoherentAlgebra.pullback_obj_X iₙ A₂).symm
+      (QuasicoherentAlgebra.pullback_obj_X iₙ A₁).symm
+      (ψ n).hom.hom.hom).symm
   have hone : η[A₂.obj.X] ≫ β = η[A₁.obj.X] := by
     let Uflf : FiniteLocallyFreeSheaf X :=
       ⟨𝟙_ X.Modules, (Scheme.Modules.isMonoidal_isFiniteLocallyFree X).prop_unit⟩
@@ -764,89 +655,94 @@ private lemma full_pullback_toScheme_zero
     suffices m₁ = m₂ from congrArg (·.hom) this
     apply F₀.map_injective
     refine AdicThickeningSystem.CoherentFormalModule.hom_ext fun n ↦ ?_
-    let iₙ := Scheme.formalCompletion.toScheme X I n
-    have h₁ :
-        η[((QuasicoherentAlgebra.pullback iₙ).obj A₂).obj.X] ≫
-            eqToHom (QuasicoherentAlgebra.pullback_obj_X iₙ A₂) ≫
-            (Scheme.Modules.pullback iₙ).map β ≫
-            eqToHom (QuasicoherentAlgebra.pullback_obj_X iₙ A₁).symm =
-          η[((QuasicoherentAlgebra.pullback iₙ).obj A₁).obj.X] := by
-      have h := (ψ n).hom.hom.isMonHom_hom.one_hom
-      simp only [hβ n] at h
-      exact h
-    rw [QuasicoherentAlgebra.pullback_obj_one iₙ A₂,
-      QuasicoherentAlgebra.pullback_obj_one iₙ A₁] at h₁
-    simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp] at h₁
-    rw [cancel_epi, ← Category.assoc, cancel_mono] at h₁
-    dsimp only [F₀, Functor.comp_map, Scheme.formalCompletion.completionFunctor_map_app, m₁, m₂,
-      ObjectProperty.homMk_hom]
-    exact (Functor.map_comp _ _ _).trans h₁
+    exact pullback_map_one_eq (Scheme.formalCompletion.toScheme X I n) β (ψ n) (hβ n)
   have hmul : μ[A₂.obj.X] ≫ β = (β ⊗ₘ β) ≫ μ[A₁.obj.X] := by
     let Tflf : FiniteLocallyFreeSheaf X :=
       ⟨A₂.obj.X ⊗ A₂.obj.X,
-        (Scheme.Modules.isMonoidal_isFiniteLocallyFree X).prop_tensor _ _ C₂.unop.property.1
-          C₂.unop.property.1⟩
+        (Scheme.Modules.isMonoidal_isFiniteLocallyFree X).prop_tensor _ _ hA₂ hA₂⟩
     let m₁ : Tflf ⟶ E₁ := ObjectProperty.homMk (μ[A₂.obj.X] ≫ β)
     let m₂ : Tflf ⟶ E₁ := ObjectProperty.homMk ((β ⊗ₘ β) ≫ μ[A₁.obj.X])
     suffices m₁ = m₂ from congrArg (·.hom) this
     apply F₀.map_injective
     refine AdicThickeningSystem.CoherentFormalModule.hom_ext fun n ↦ ?_
     exact pullback_map_mul_eq (Scheme.formalCompletion.toScheme X I n) β (ψ n) (hβ n)
-  -- Step 6: assemble the lifted algebra map `b : A₂ ⟶ A₁` and verify its level-zero base change.
-  let b : A₂ ⟶ A₁ := ObjectProperty.homMk (CommMon.homMk (@Mon.Hom.mk _ _ _ _ _ β ⟨hone, hmul⟩))
+  refine ⟨ObjectProperty.homMk (CommMon.homMk (@Mon.Hom.mk _ _ _ _ _ β ⟨hone, hmul⟩)), fun n ↦ ?_⟩
+  apply ObjectProperty.hom_ext
+  apply CommMon.hom_ext
+  exact (QuasicoherentAlgebra.pullback_map_hom_hom_hom _ _).trans (hβ n).symm
+
+/-- Faithfulness of pullback to the zeroth level `V(I ^ 1)` of `X.formalCompletion I`. -/
+private lemma faithful_pullback_toScheme_zero
+    [(FiniteLocallyFreeSheaf.toFinitelyPresented X ⋙
+      Scheme.formalCompletion.completionFunctor X I).Faithful] :
+    (pullback (Scheme.formalCompletion.toScheme X I 0)).Faithful := by
+  refine (pullback (Scheme.formalCompletion.toScheme X I 0)).faithful_of_comp_essSurj
+    (relSpecFiniteEtale X) fun {C₁ C₂} f₁ f₂ hfg ↦ ?_
+  obtain ⟨f₁, rfl⟩ := (relSpecFiniteEtale X).map_surjective f₁
+  obtain ⟨f₂, rfl⟩ := (relSpecFiniteEtale X).map_surjective f₂
+  congr 1
+  have h0 : (formalRelSpecMap I f₁.unop.hom).app 0 = (formalRelSpecMap I f₂.unop.hom).app 0 := by
+    rw [← cancel_epi (formalRelSpecZeroIso I C₁.unop.obj).inv,
+      ← cancel_mono (formalRelSpecZeroIso I C₂.unop.obj).hom,
+      Category.assoc, Category.assoc,
+      formalRelSpecZeroIso_inv_map_hom I f₁,
+      formalRelSpecZeroIso_inv_map_hom I f₂]
+    exact congrArg (fun k ↦ k.hom.left) hfg
+  have : Etale C₂.unop.obj.obj.relativeSpecToBase := C₂.unop.property.2.2
+  have hsys : formalRelSpecMap I f₁.unop.hom = formalRelSpecMap I f₂.unop.hom :=
+    AdicThickeningSystem.hom_ext_of_formallyUnramified (formalRelSpecProj I C₂.unop.obj)
+      ((formalRelSpecMap_proj I f₁.unop.hom).trans (formalRelSpecMap_proj I f₂.unop.hom).symm) h0
+  apply Quiver.Hom.unop_inj
+  apply ObjectProperty.hom_ext
+  refine eq_of_forall_pullback_toScheme_map_eq I C₁.unop.property.1 C₂.unop.property.1 fun n ↦ ?_
+  apply eq_of_relativeSpecMap_eq
+  rw [← formalRelSpecLevelIso_hom_map_inv I f₁.unop.hom n,
+    ← formalRelSpecLevelIso_hom_map_inv I f₂.unop.hom n, hsys]
+
+/-- Fullness of pullback to the zeroth level `V(I ^ 1)` of `X.formalCompletion I`. -/
+private lemma full_pullback_toScheme_zero
+    [(FiniteLocallyFreeSheaf.toFinitelyPresented X ⋙
+      Scheme.formalCompletion.completionFunctor X I).Full]
+    [(FiniteLocallyFreeSheaf.toFinitelyPresented X ⋙
+      Scheme.formalCompletion.completionFunctor X I).Faithful] :
+    (pullback (Scheme.formalCompletion.toScheme X I 0)).Full := by
+  refine (pullback (Scheme.formalCompletion.toScheme X I 0)).full_of_comp_essSurj
+    (relSpecFiniteEtale X) fun {C₁ C₂} φ₀ ↦ ?_
+  let A₁ := C₁.unop.obj
+  let A₂ := C₂.unop.obj
+  have : Etale A₂.obj.relativeSpecToBase := C₂.unop.property.2.2
+  let a₀ : (formalRelSpec I A₁).X 0 ⟶ (formalRelSpec I A₂).X 0 :=
+    (formalRelSpecZeroIso I A₁).hom ≫ φ₀.hom.left ≫ (formalRelSpecZeroIso I A₂).inv
+  have ha₀ : a₀ ≫ (formalRelSpecProj I A₂).app 0 = (formalRelSpecProj I A₁).app 0 :=
+    (Category.assoc _ _ _).trans
+      ((congrArg (_ ≫ ·)
+        ((Category.assoc _ _ _).trans
+          ((congrArg (_ ≫ ·) (formalRelSpecZeroIso_inv_proj I A₂)).trans
+            (Over.w φ₀.hom)))).trans
+        (formalRelSpecZeroIso_hom_snd I A₁))
+  let a : formalRelSpec I A₁ ⟶ formalRelSpec I A₂ :=
+    AdicThickeningSystem.liftOfEtale (formalRelSpecProj I A₁) (formalRelSpecProj I A₂) a₀ ha₀
+  obtain ⟨ψ, hψ, hψ_nat⟩ := exists_compatible_tower_of_formalRelSpec_hom I a fun n ↦
+    AdicThickeningSystem.liftOfEtale_app_comp _ _ a₀ ha₀ n
+  obtain ⟨b, hb⟩ := exists_hom_of_compatible_tower I C₁.unop.property.1 C₂.unop.property.1 ψ hψ_nat
   let f : C₁ ⟶ C₂ := (ObjectProperty.homMk b).op
   refine ⟨(relSpecFiniteEtale X).map f, ?_⟩
   apply ObjectProperty.hom_ext
   apply Over.OverMorphism.ext
-  have hb₀ :
-      (QuasicoherentAlgebra.pullback (Scheme.formalCompletion.toScheme X I 0)).map b = ψ 0 := by
-    apply ObjectProperty.hom_ext
-    apply CommMon.hom_ext
-    exact (QuasicoherentAlgebra.pullback_map_hom_hom_hom _ b).trans (hβ 0).symm
   have hmap₀ : (formalRelSpecMap I b).app 0 = a₀ := by
     have hconj := formalRelSpecLevelIso_hom_map_inv I b 0
-    rw [hb₀, hψ 0, AdicThickeningSystem.liftOfEtale_app_zero] at hconj
+    rw [hb 0, hψ 0, AdicThickeningSystem.liftOfEtale_app_zero] at hconj
     rwa [cancel_epi, cancel_mono] at hconj
-  exact (formalRelSpecZeroIso_inv_map_hom I f).symm.trans <|
-    (congrArg (fun x ↦ (formalRelSpecZeroIso I A₁).inv ≫ x ≫ (formalRelSpecZeroIso I A₂).hom)
-      hmap₀).trans
-      (iso_inv_hom_conj_inv_hom (formalRelSpecZeroIso I A₁) (formalRelSpecZeroIso I A₂)
-        φ₀.hom.left)
+  rw [← formalRelSpecZeroIso_inv_map_hom I f]
+  dsimp only [f, Quiver.Hom.unop_op, ObjectProperty.homMk_hom]
+  rw [hmap₀]
+  exact (Iso.inv_hom_id_assoc (formalRelSpecZeroIso I A₁) _).trans
+    ((Category.assoc _ _ _).trans
+      ((congrArg (_ ≫ ·) (formalRelSpecZeroIso I A₂).inv_hom_id).trans (Category.comp_id _)))
 
 end FormalSystem
 
 section Transport
-
-/-- Base change of finite étale schemes along a scheme isomorphism is an equivalence. -/
-private def pullbackIsoEquiv {Z Z' : Scheme.{u}} (e : Z ≅ Z') :
-    FiniteEtaleScheme Z' ≌ FiniteEtaleScheme Z :=
-  CategoryTheory.Equivalence.mk (pullback e.hom) (pullback e.inv)
-    (pullbackId.symm ≪≫ eqToIso (congrArg pullback e.inv_hom_id.symm) ≪≫
-      pullbackComp e.inv e.hom)
-    ((pullbackComp e.hom e.inv).symm ≪≫ eqToIso (congrArg pullback e.hom_inv_id) ≪≫ pullbackId)
-
-private lemma faithful_pullback_of_iso {Z Z' X : Scheme.{u}} (e : Z ≅ Z') (f : Z' ⟶ X)
-    (g : Z ⟶ X) (he : e.hom ≫ f = g) [(pullback f).Faithful] :
-    (pullback g).Faithful := by
-  have : (pullback e.hom).IsEquivalence := (pullbackIsoEquiv e).isEquivalence_functor
-  exact Functor.Faithful.of_iso (eqToIso (congrArg pullback he.symm) ≪≫ pullbackComp e.hom f).symm
-
-private lemma full_pullback_of_iso {Z Z' X : Scheme.{u}} (e : Z ≅ Z') (f : Z' ⟶ X)
-    (g : Z ⟶ X) (he : e.hom ≫ f = g) [(pullback f).Full] :
-    (pullback g).Full := by
-  have : (pullback e.hom).IsEquivalence := (pullbackIsoEquiv e).isEquivalence_functor
-  exact Functor.Full.of_iso (eqToIso (congrArg pullback he.symm) ≪≫ pullbackComp e.hom f).symm
-
-/-- The canonical isomorphism `V(I) ≅ V(I ^ 1)` between the closed subscheme of `I` and the zeroth
-level of `X.formalCompletion I`. -/
-private def subschemeIsoLevelZero (X : Scheme.{u}) (I : X.IdealSheafData) :
-    I.subscheme ≅ (X.formalCompletion I).X 0 where
-  hom := Scheme.IdealSheafData.inclusion (pow_one I).le
-  inv := Scheme.IdealSheafData.inclusion (pow_one I).ge
-  hom_inv_id := (Scheme.IdealSheafData.inclusion_comp _ _).trans
-    (Scheme.IdealSheafData.inclusion_id _)
-  inv_hom_id := (Scheme.IdealSheafData.inclusion_comp _ _).trans
-    (Scheme.IdealSheafData.inclusion_id _)
 
 /-- If the completion functor on finite locally free `𝒪_X`-modules is faithful, then restricting
 finite étale schemes over `X` to the closed subscheme `V(I)` is faithful. -/
@@ -855,11 +751,9 @@ instance faithful_pullback_subschemeι (X : Scheme.{u}) (I : X.IdealSheafData)
       Scheme.formalCompletion.completionFunctor X I).Faithful] :
     (pullback I.subschemeι).Faithful := by
   have := faithful_pullback_toScheme_zero I
-  exact faithful_pullback_of_iso (subschemeIsoLevelZero X I)
+  exact faithful_pullback_of_iso (Scheme.formalCompletion.subschemeIsoLevelZero X I)
     (Scheme.formalCompletion.toScheme X I 0) I.subschemeι
-    (by
-      rw [Scheme.formalCompletion.toScheme_def]
-      exact Scheme.IdealSheafData.inclusion_subschemeι (pow_one I).le)
+    (Scheme.formalCompletion.subschemeIsoLevelZero_hom_toScheme X I)
 
 /-- If the completion functor on finite locally free `𝒪_X`-modules is fully faithful, then
 restricting finite étale schemes over `X` to the closed subscheme `V(I)` is full. -/
@@ -870,11 +764,9 @@ instance full_pullback_subschemeι (X : Scheme.{u}) (I : X.IdealSheafData)
       Scheme.formalCompletion.completionFunctor X I).Faithful] :
     (pullback I.subschemeι).Full := by
   have := full_pullback_toScheme_zero I
-  exact full_pullback_of_iso (subschemeIsoLevelZero X I)
+  exact full_pullback_of_iso (Scheme.formalCompletion.subschemeIsoLevelZero X I)
     (Scheme.formalCompletion.toScheme X I 0) I.subschemeι
-    (by
-      rw [Scheme.formalCompletion.toScheme_def]
-      exact Scheme.IdealSheafData.inclusion_subschemeι (pow_one I).le)
+    (Scheme.formalCompletion.subschemeIsoLevelZero_hom_toScheme X I)
 
 /-- **Full faithfulness of restriction to a closed subscheme from coherent completion.** When
 completion on finite locally free `𝒪_X`-modules along `V(I)` is fully faithful, pulling back finite
@@ -888,26 +780,6 @@ def fullyFaithfulPullbackSubschemeι (X : Scheme.{u}) (I : X.IdealSheafData)
     (pullback I.subschemeι).FullyFaithful :=
   .ofFullyFaithful _
 
-/-- **Formal completion criterion for finite étale covers (Stacks, Lemma 58.17.1 (0EL8)).** If the
-completion functor from finite locally free `𝒪_X`-modules to coherent formal modules on
-`X.formalCompletion I` is fully faithful, then restriction of finite étale schemes from `X` to
-`V(I)` is full and faithful. -/
-@[stacks 0EL8]
-theorem fullyFaithful_of_completion_coherent (X : Scheme.{u}) (I : X.IdealSheafData)
-    [(FiniteLocallyFreeSheaf.toFinitelyPresented X ⋙
-      Scheme.formalCompletion.completionFunctor X I).Full]
-    [(FiniteLocallyFreeSheaf.toFinitelyPresented X ⋙
-      Scheme.formalCompletion.completionFunctor X I).Faithful] :
-    (pullback I.subschemeι).Full ∧ (pullback I.subschemeι).Faithful :=
-  ⟨inferInstance, inferInstance⟩
-
-/-- Any closed immersion `i : Z ⟶ X` factors through an isomorphism `Z ≅ V(i.ker)` over `X`. -/
-private def closedImmersionIsoSubscheme {Z X : Scheme.{u}} (i : Z ⟶ X) [IsClosedImmersion i] :
-    Z ≅ i.ker.subscheme :=
-  @asIso _ _ _ _
-    (IsClosedImmersion.lift i.ker.subschemeι i (Scheme.IdealSheafData.ker_subschemeι i.ker).le)
-    (IsClosedImmersion.isIso_lift i.ker.subschemeι i (Scheme.IdealSheafData.ker_subschemeι i.ker))
-
 /-- If completion on finite locally free `𝒪_X`-modules along the closed immersion `i : Z ⟶ X` is
 faithful, then pulling back finite étale schemes along `i` is faithful. -/
 theorem faithful_pullback_of_isClosedImmersion {Z X : Scheme.{u}} (i : Z ⟶ X)
@@ -915,8 +787,7 @@ theorem faithful_pullback_of_isClosedImmersion {Z X : Scheme.{u}} (i : Z ⟶ X)
     [(FiniteLocallyFreeSheaf.toFinitelyPresented X ⋙
       Scheme.formalCompletion.completionFunctor X i.ker).Faithful] :
     (pullback i).Faithful :=
-  faithful_pullback_of_iso (closedImmersionIsoSubscheme i) i.ker.subschemeι i
-    (IsClosedImmersion.lift_fac _ _ _)
+  faithful_pullback_of_iso (asIso i.toImage) i.ker.subschemeι i i.toImage_imageι
 
 /-- If completion on finite locally free `𝒪_X`-modules along the closed immersion `i : Z ⟶ X` is
 fully faithful, then pulling back finite étale schemes along `i` is full. -/
@@ -927,8 +798,7 @@ theorem full_pullback_of_isClosedImmersion {Z X : Scheme.{u}} (i : Z ⟶ X)
     [(FiniteLocallyFreeSheaf.toFinitelyPresented X ⋙
       Scheme.formalCompletion.completionFunctor X i.ker).Faithful] :
     (pullback i).Full :=
-  full_pullback_of_iso (closedImmersionIsoSubscheme i) i.ker.subschemeι i
-    (IsClosedImmersion.lift_fac _ _ _)
+  full_pullback_of_iso (asIso i.toImage) i.ker.subschemeι i i.toImage_imageι
 
 /-- **Full faithfulness of restriction along an arbitrary closed immersion `i : Z ⟶ X`** when
 completion on finite locally free `𝒪_X`-modules along `i.ker` is fully faithful.
@@ -944,27 +814,6 @@ def fullyFaithfulPullbackOfIsClosedImmersion {Z X : Scheme.{u}} (i : Z ⟶ X)
   have := full_pullback_of_isClosedImmersion i
   have := faithful_pullback_of_isClosedImmersion i
   .ofFullyFaithful _
-
-/-- Companion form of `fullyFaithful_of_completion_coherent` for Mathlib's
-`(@IsFinite ⊓ @Etale).Over ⊤` presentation of finite étale schemes.
-Stacks, Lemma 58.17.1 (0EL8). -/
-@[stacks 0EL8]
-theorem overPullback_fullyFaithful_of_completion_coherent (X : Scheme.{u}) (I : X.IdealSheafData)
-    [(FiniteLocallyFreeSheaf.toFinitelyPresented X ⋙
-      Scheme.formalCompletion.completionFunctor X I).Full]
-    [(FiniteLocallyFreeSheaf.toFinitelyPresented X ⋙
-      Scheme.formalCompletion.completionFunctor X I).Faithful] :
-    letI : (@IsFinite ⊓ @Etale : MorphismProperty Scheme.{u}).IsStableUnderBaseChange := .inf
-    (MorphismProperty.Over.pullback (@IsFinite ⊓ @Etale) ⊤ I.subschemeι).Full ∧
-      (MorphismProperty.Over.pullback (@IsFinite ⊓ @Etale) ⊤ I.subschemeι).Faithful := by
-  have : (@IsFinite ⊓ @Etale : MorphismProperty Scheme.{u}).IsStableUnderBaseChange := .inf
-  let G := MorphismProperty.Over.pullback (@IsFinite ⊓ @Etale) ⊤ I.subschemeι
-  let e : (equivOver X).inverse ⋙ pullback I.subschemeι ⋙ (equivOver I.subscheme).functor ≅ G :=
-    Functor.isoWhiskerLeft (equivOver X).inverse (pullbackCompEquivOver I.subschemeι) ≪≫
-      (Functor.associator _ _ _).symm ≪≫
-      Functor.isoWhiskerRight (equivOver X).counitIso G ≪≫
-      Functor.leftUnitor G
-  exact ⟨Functor.Full.of_iso e, Functor.Faithful.of_iso e⟩
 
 end Transport
 

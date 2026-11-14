@@ -14,7 +14,6 @@ import Mathlib.RingTheory.Flat.EquationalCriterion
 import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.BaseChange
 import TauCeti.AlgebraicGeometry.Modules.Tilde.Pushforward
-import TauCeti.AlgebraicGeometry.Morphisms.Finite.Basic
 import TauCeti.AlgebraicGeometry.VectorBundle.Affine.Basic
 import TauCeti.AlgebraicGeometry.VectorBundle.OpenCover
 
@@ -48,20 +47,24 @@ spectra of commutative rings:
   (`Algebra.FinitePresentation.of_finitePresentation`).
 
 Packaging stability under `f_*` on the full subcategory `FiniteLocallyFreeSheaf` gives the direct
-image functor `FiniteLocallyFreeSheaf.pushforward f`, together with its additivity and identity and
-composition comparisons.
+image functor `FiniteLocallyFreeSheaf.pushforward f`, its adjunction
+`FiniteLocallyFreeSheaf.pullbackPushforwardAdjunction f` with `FiniteLocallyFreeSheaf.pullback f`,
+and its additivity and identity and composition comparisons.
 
 ## Main declarations
 
-* `AlgebraicGeometry.Scheme.Modules.isFiniteLocallyFree_pushforward`: direct image along a finite,
+* `AlgebraicGeometry.Scheme.Modules.isFiniteLocallyFree_pushforward`,
+  `AlgebraicGeometry.Scheme.Modules.isLocallyFree_pushforward`, and
+  `AlgebraicGeometry.Scheme.Modules.isFinitePresentation_pushforward`: direct image along a finite,
   flat, locally finitely presented morphism preserves finite local freeness;
 * `AlgebraicGeometry.Scheme.Modules.isFiniteLocallyFree_pushforward_unit`: for such `f : X ⟶ Y`,
   `f_* 𝒪_X` is finite locally free;
-* `AlgebraicGeometry.Scheme.Modules.isFinite_and_flat_and_locallyOfFinitePresentation_iff`:
+* `AlgebraicGeometry.Scheme.Hom.isFinite_and_flat_and_locallyOfFinitePresentation_iff`:
   `f` is finite, flat, and locally of finite presentation if and only if `f` is affine and
   `f_* 𝒪_X` is finite locally free (Stacks 02KB);
 * `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.pushforward`: the direct image functor
-  `FiniteLocallyFreeSheaf X ⥤ FiniteLocallyFreeSheaf Y`, with `pushforwardId` and `pushforwardComp`.
+  `FiniteLocallyFreeSheaf X ⥤ FiniteLocallyFreeSheaf Y`, with `pushforwardCompιIso`,
+  `pullbackPushforwardAdjunction`, `pushforwardId`, and `pushforwardComp`.
 
 ## References
 
@@ -80,18 +83,6 @@ namespace AlgebraicGeometry.Scheme.Modules
 
 open TauCeti.AlgebraicGeometry
 
-private lemma isQuasicoherent_of_isFiniteLocallyFree {X : Scheme.{u}} {M : X.Modules}
-    (hM : isFiniteLocallyFree X M) : M.IsQuasicoherent := by
-  let F : _root_.SheafOfModules X.ringCatSheaf := M
-  have : F.IsLocallyFree := hM.1
-  exact inferInstanceAs F.IsQuasicoherent
-
-private lemma isFiniteLocallyFree_pullback_of_isFiniteLocallyFree {X Y : Scheme.{u}} (g : X ⟶ Y)
-    {M : Y.Modules} (hM : isFiniteLocallyFree Y M) :
-    isFiniteLocallyFree X ((pullback g).obj M) := by
-  obtain ⟨_, _⟩ := hM
-  exact ⟨isLocallyFree_pullback g M, isFinitePresentation_pullback g M⟩
-
 section SpecMap
 
 variable {R S : CommRingCat.{u}} (φ : R ⟶ S)
@@ -107,10 +98,10 @@ private lemma isFiniteLocallyFree_pushforward_specMap [IsFinite (Spec.map φ)] [
   have : _root_.Module.FinitePresentation R S :=
     _root_.Module.FinitePresentation.of_finite_of_finitePresentation R S
   have hprojRS : _root_.Module.Projective R S := _root_.Module.Flat.projective_of_finitePresentation
-  let E : FiniteLocallyFreeSheaf (Spec S) := ⟨M, hM⟩
-  have : M.IsQuasicoherent := isQuasicoherent_of_isFiniteLocallyFree hM
+  have ⟨_, _⟩ := hM
+  have : M.IsQuasicoherent := SheafOfModules.instIsQuasicoherentOfIsFinitePresentation M
   let N : ModuleCat.{u} S := moduleSpecΓFunctor.obj M
-  obtain ⟨hfinN, hprojN⟩ := FiniteLocallyFreeSheaf.finite_projective_moduleSpecΓ E
+  obtain ⟨hfinN, hprojN⟩ := FiniteLocallyFreeSheaf.finite_projective_moduleSpecΓ ⟨M, hM⟩
   have : _root_.Module.Finite R ((ModuleCat.restrictScalars φ.hom).obj N) :=
     (ModuleCat.isFG_iff _).mp
       (φ.hom.isFG_restrictScalars_of_finite hfinRS ((ModuleCat.isFG_iff _).mpr hfinN))
@@ -125,27 +116,19 @@ private lemma isFiniteLocallyFree_pushforward_specMap [IsFinite (Spec.map φ)] [
 private lemma isFinite_and_flat_and_locallyOfFinitePresentation_specMap
     (h : isFiniteLocallyFree (Spec R) ((pushforward (Spec.map φ)).obj (𝟙_ (Spec S).Modules))) :
     IsFinite (Spec.map φ) ∧ Flat (Spec.map φ) ∧ LocallyOfFinitePresentation (Spec.map φ) := by
-  let e : tilde ((ModuleCat.restrictScalars φ.hom).obj (ModuleCat.of S S)) ≅
-      (pushforward (Spec.map φ)).obj (𝟙_ (Spec S).Modules) :=
-    tildeRestrictScalarsIsoPushforward φ (ModuleCat.of S S) ≪≫
-      (pushforward (Spec.map φ)).mapIso (tildeSelf (R := S))
-  obtain ⟨hfin, hproj⟩ := (isFiniteLocallyFree_tilde_iff _).mp
-    ((isFiniteLocallyFree (Spec R)).prop_of_iso e.symm h)
   let : Algebra R S := φ.hom.toAlgebra
-  -- Identify `S` as an `R`-algebra with the restriction of scalars of the regular `S`-module `S`.
-  let linEquiv : ((ModuleCat.restrictScalars φ.hom).obj (ModuleCat.of S S) : Type u) ≃ₗ[R] S :=
-    { toFun s := s
-      invFun s := s
-      left_inv _ := rfl
-      right_inv _ := rfl
-      map_add' _ _ := rfl
-      map_smul' r s := ModuleCat.restrictScalars.smul_def φ.hom r s }
-  have : _root_.Module.Finite R S := _root_.Module.Finite.equiv linEquiv
-  have : _root_.Module.Projective R S := _root_.Module.Projective.of_equiv linEquiv
+  let e : tilde (ModuleCat.of R S) ≅
+      (pushforward (Spec.map φ)).obj (𝟙_ (Spec S).Modules) :=
+    (tilde.functor R).mapIso (ModuleCat.restrictScalarsAlgebraMapIso (R := R) (S := S) S).symm ≪≫
+      tildeRestrictScalarsIsoPushforward φ (ModuleCat.of S S) ≪≫
+      (pushforward (Spec.map φ)).mapIso (tildeSelf (R := S))
+  obtain ⟨hfin, hproj⟩ : _root_.Module.Finite R S ∧ _root_.Module.Projective R S :=
+    (isFiniteLocallyFree_tilde_iff (ModuleCat.of R S)).mp
+      ((isFiniteLocallyFree (Spec R)).prop_of_iso e.symm h)
   have hflat : _root_.Module.Flat R S := inferInstance
   have : _root_.Module.FinitePresentation R S := _root_.Module.finitePresentation_of_projective R S
   have hfp : Algebra.FinitePresentation R S := Algebra.FinitePresentation.of_finitePresentation R S
-  exact ⟨(IsFinite.SpecMap_iff φ).mpr ‹_›, Flat.SpecMap_iff.mpr hflat,
+  exact ⟨(IsFinite.SpecMap_iff φ).mpr hfin, Flat.SpecMap_iff.mpr hflat,
     (LocallyOfFinitePresentation.SpecMap_iff φ).mpr hfp⟩
 
 end SpecMap
@@ -175,41 +158,37 @@ private lemma isFiniteLocallyFree_pushforward_affine [IsAffine Y] [IsFinite f] [
     [LocallyOfFinitePresentation f] {M : X.Modules} (hM : isFiniteLocallyFree X M) :
     isFiniteLocallyFree Y ((pushforward f).obj M) := by
   have : IsAffine X := isAffine_of_isAffineHom f
-  have : M.IsQuasicoherent := isQuasicoherent_of_isFiniteLocallyFree hM
+  obtain ⟨_, _⟩ := hM
+  have : M.IsQuasicoherent := SheafOfModules.instIsQuasicoherentOfIsFinitePresentation M
   let φ := Spec.preimage (X.isoSpec.inv ≫ f ≫ Y.isoSpec.hom)
   have hφ : Spec.map φ = X.isoSpec.inv ≫ f ≫ Y.isoSpec.hom := Spec.map_preimage _
   have : IsFinite (Spec.map φ) := by rw [hφ]; infer_instance
   have : Flat (Spec.map φ) := by rw [hφ]; infer_instance
   have : LocallyOfFinitePresentation (Spec.map φ) := by rw [hφ]; infer_instance
-  have hpull : isFiniteLocallyFree (Spec Γ(X, ⊤)) ((pullback X.isoSpec.inv).obj M) :=
-    isFiniteLocallyFree_pullback_of_isFiniteLocallyFree X.isoSpec.inv hM
-  have hSpec : isFiniteLocallyFree (Spec Γ(Y, ⊤))
+  obtain ⟨_, _⟩ : isFiniteLocallyFree (Spec Γ(Y, ⊤))
       ((pullback Y.isoSpec.inv).obj ((pushforward f).obj M)) :=
     (isFiniteLocallyFree (Spec Γ(Y, ⊤))).prop_of_iso (pushforwardIsoSpecMap f M).symm
-      (isFiniteLocallyFree_pushforward_specMap φ hpull)
+      (isFiniteLocallyFree_pushforward_specMap φ ⟨inferInstance, inferInstance⟩)
   let e : (pullback Y.isoSpec.hom).obj ((pullback Y.isoSpec.inv).obj ((pushforward f).obj M)) ≅
       (pushforward f).obj M :=
     (pullbackComp Y.isoSpec.hom Y.isoSpec.inv).app ((pushforward f).obj M) ≪≫
       eqToIso (congrArg (fun g ↦ (pullback g).obj ((pushforward f).obj M)) Y.isoSpec.hom_inv_id) ≪≫
       (pullbackId Y).app ((pushforward f).obj M)
-  exact (isFiniteLocallyFree Y).prop_of_iso e
-    (isFiniteLocallyFree_pullback_of_isFiniteLocallyFree Y.isoSpec.hom hSpec)
+  exact (isFiniteLocallyFree Y).prop_of_iso e ⟨inferInstance, inferInstance⟩
 
 private lemma isFinite_and_flat_and_locallyOfFinitePresentation_affine [IsAffine X] [IsAffine Y]
     (h : isFiniteLocallyFree Y ((pushforward f).obj (𝟙_ X.Modules))) :
     IsFinite f ∧ Flat f ∧ LocallyOfFinitePresentation f := by
+  obtain ⟨_, _⟩ := h
   let φ := Spec.preimage (X.isoSpec.inv ≫ f ≫ Y.isoSpec.hom)
   have hφ : Spec.map φ = X.isoSpec.inv ≫ f ≫ Y.isoSpec.hom := Spec.map_preimage _
-  have hY : isFiniteLocallyFree (Spec Γ(Y, ⊤))
-      ((pullback Y.isoSpec.inv).obj ((pushforward f).obj (𝟙_ X.Modules))) :=
-    isFiniteLocallyFree_pullback_of_isFiniteLocallyFree Y.isoSpec.inv h
   let e : (pullback Y.isoSpec.inv).obj ((pushforward f).obj (𝟙_ X.Modules)) ≅
       (pushforward (Spec.map φ)).obj (𝟙_ (Spec Γ(X, ⊤)).Modules) :=
     pushforwardIsoSpecMap f (𝟙_ X.Modules) ≪≫
       (pushforward (Spec.map φ)).mapIso (pullbackObjUnitIso X.isoSpec.inv)
   obtain ⟨hfin, hflat, hfp⟩ :=
     isFinite_and_flat_and_locallyOfFinitePresentation_specMap φ
-      ((isFiniteLocallyFree (Spec Γ(Y, ⊤))).prop_of_iso e hY)
+      ((isFiniteLocallyFree (Spec Γ(Y, ⊤))).prop_of_iso e ⟨inferInstance, inferInstance⟩)
   have hf : f = X.isoSpec.hom ≫ Spec.map φ ≫ Y.isoSpec.inv := by
     rw [hφ, Category.assoc, Category.assoc, Iso.hom_inv_id, Category.comp_id,
       Iso.hom_inv_id_assoc]
@@ -229,17 +208,30 @@ theorem isFiniteLocallyFree_pushforward [IsFinite f] [Flat f] [LocallyOfFinitePr
     {M : X.Modules} (hM : isFiniteLocallyFree X M) :
     isFiniteLocallyFree Y ((pushforward f).obj M) := by
   let 𝒰 := Y.affineCover
-  have : M.IsQuasicoherent := isQuasicoherent_of_isFiniteLocallyFree hM
+  obtain ⟨_, _⟩ := hM
+  have : M.IsQuasicoherent := SheafOfModules.instIsQuasicoherentOfIsFinitePresentation M
   refine (isFiniteLocallyFree_iff_forall_pullback 𝒰 ((pushforward f).obj M)).mpr fun i ↦ ?_
   have H : IsPullback (Limits.pullback.fst f (𝒰.f i)) (Limits.pullback.snd f (𝒰.f i)) f (𝒰.f i) :=
     IsPullback.of_hasPullback f (𝒰.f i)
   have := isIso_pushforwardBaseChange_app H M
-  have hpull : isFiniteLocallyFree (Limits.pullback f (𝒰.f i))
-      ((pullback (Limits.pullback.fst f (𝒰.f i))).obj M) :=
-    isFiniteLocallyFree_pullback_of_isFiniteLocallyFree (Limits.pullback.fst f (𝒰.f i)) hM
   exact (isFiniteLocallyFree (𝒰.X i)).prop_of_iso
     (asIso ((pushforwardBaseChange H.toCommSq).app M)).symm
-    (isFiniteLocallyFree_pushforward_affine (Limits.pullback.snd f (𝒰.f i)) hpull)
+    (isFiniteLocallyFree_pushforward_affine (Limits.pullback.snd f (𝒰.f i))
+      ⟨inferInstance, inferInstance⟩)
+
+/-- Direct image along a finite, flat, locally finitely presented morphism preserves local freeness
+of finitely presented `𝒪_X`-modules. -/
+instance isLocallyFree_pushforward [IsFinite f] [Flat f] [LocallyOfFinitePresentation f]
+    (M : X.Modules) [M.IsLocallyFree] [M.IsFinitePresentation] :
+    ((pushforward f).obj M).IsLocallyFree :=
+  (isFiniteLocallyFree_pushforward f ⟨‹_›, ‹_›⟩).1
+
+/-- Direct image along a finite, flat, locally finitely presented morphism preserves finite
+presentation of locally free `𝒪_X`-modules. -/
+instance isFinitePresentation_pushforward [IsFinite f] [Flat f] [LocallyOfFinitePresentation f]
+    (M : X.Modules) [M.IsLocallyFree] [M.IsFinitePresentation] :
+    ((pushforward f).obj M).IsFinitePresentation :=
+  (isFiniteLocallyFree_pushforward f ⟨‹_›, ‹_›⟩).2
 
 /-- If `f : X ⟶ Y` is finite, flat, and locally of finite presentation, then `f_* 𝒪_X` is a finite
 locally free `𝒪_Y`-module. -/
@@ -252,21 +244,23 @@ theorem isFiniteLocallyFree_pushforward_unit [IsFinite f] [Flat f]
 morphism of schemes `f : X ⟶ Y` is finite, flat, and locally of finite presentation if and only if
 `f` is affine and `f_* 𝒪_X` is a finite locally free `𝒪_Y`-module. -/
 @[stacks 02KB]
-theorem isFinite_and_flat_and_locallyOfFinitePresentation_iff :
+theorem _root_.AlgebraicGeometry.Scheme.Hom.isFinite_and_flat_and_locallyOfFinitePresentation_iff :
     IsFinite f ∧ Flat f ∧ LocallyOfFinitePresentation f ↔
       IsAffineHom f ∧ isFiniteLocallyFree Y ((pushforward f).obj (𝟙_ X.Modules)) := by
   refine ⟨fun ⟨_, _, _⟩ ↦ ⟨inferInstance, isFiniteLocallyFree_pushforward_unit f⟩,
     fun ⟨_, h⟩ ↦ ?_⟩
   let 𝒰 := Y.affineCover
-  observe hasFiniteAffineProperty : HasAffineProperty @IsFinite.{u}
-    (fun X _ f _ ↦ IsAffine X ∧ RingHom.Finite (f.appTop).hom)
-  have : IsZariskiLocalAtTarget @IsFinite.{u} :=
-    @HasAffineProperty.instIsZariskiLocalAtTarget _ _ hasFiniteAffineProperty
+  have : IsZariskiLocalAtTarget @IsIntegralHom.{u} :=
+    @HasAffineProperty.instIsZariskiLocalAtTarget _ _ IsIntegralHom.hasAffineProperty
+  have : IsZariskiLocalAtTarget @LocallyOfFiniteType.{u} :=
+    HasRingHomProperty.instIsZariskiLocalAtTarget _ (Q := @RingHom.FiniteType)
   have : IsZariskiLocalAtTarget @Flat.{u} :=
     HasRingHomProperty.instIsZariskiLocalAtTarget _ (Q := @RingHom.Flat)
   have : IsZariskiLocalAtTarget @LocallyOfFinitePresentation.{u} :=
     HasRingHomProperty.instIsZariskiLocalAtTarget _ (Q := @RingHom.FinitePresentation)
-  rw [IsZariskiLocalAtTarget.iff_of_openCover (P := @IsFinite) 𝒰,
+  rw [IsFinite.iff_isIntegralHom_and_locallyOfFiniteType,
+    IsZariskiLocalAtTarget.iff_of_openCover (P := @IsIntegralHom) 𝒰,
+    IsZariskiLocalAtTarget.iff_of_openCover (P := @LocallyOfFiniteType) 𝒰,
     IsZariskiLocalAtTarget.iff_of_openCover (P := @Flat) 𝒰,
     IsZariskiLocalAtTarget.iff_of_openCover (P := @LocallyOfFinitePresentation) 𝒰]
   have hcover (i : 𝒰.I₀) : IsFinite (Limits.pullback.snd f (𝒰.f i)) ∧
@@ -290,7 +284,12 @@ theorem isFinite_and_flat_and_locallyOfFinitePresentation_iff :
       (Limits.pullback.snd f (𝒰.f i))
       ((isFiniteLocallyFree (𝒰.X i)).prop_of_iso e
         ((isFiniteLocallyFree_iff_forall_pullback 𝒰 _).mp h i))
-  exact ⟨fun i ↦ by rw [Scheme.Cover.pullbackHom]; exact (hcover i).1,
+  exact ⟨⟨fun i ↦ by
+        rw [Scheme.Cover.pullbackHom]
+        exact ((IsFinite.iff_isIntegralHom_and_locallyOfFiniteType _).mp (hcover i).1).1,
+      fun i ↦ by
+        rw [Scheme.Cover.pullbackHom]
+        exact ((IsFinite.iff_isIntegralHom_and_locallyOfFiniteType _).mp (hcover i).1).2⟩,
     fun i ↦ by rw [Scheme.Cover.pullbackHom]; exact (hcover i).2.1,
     fun i ↦ by rw [Scheme.Cover.pullbackHom]; exact (hcover i).2.2⟩
 
@@ -312,6 +311,14 @@ def pushforward (f : X ⟶ Y) [IsFinite f] [Flat f] [LocallyOfFinitePresentation
     ((Scheme.Modules.isFiniteLocallyFree X).ι ⋙ Scheme.Modules.pushforward f)
     fun E ↦ Scheme.Modules.isFiniteLocallyFree_pushforward f E.property
 
+/-- Direct image of finite locally free sheaves is the lift of module pushforward to the full
+subcategories of finite locally free sheaves. -/
+theorem pushforward_def (f : X ⟶ Y) [IsFinite f] [Flat f] [LocallyOfFinitePresentation f] :
+    pushforward f = (Scheme.Modules.isFiniteLocallyFree Y).lift
+      ((Scheme.Modules.isFiniteLocallyFree X).ι ⋙ Scheme.Modules.pushforward f)
+      (fun E ↦ Scheme.Modules.isFiniteLocallyFree_pushforward f E.property) :=
+  (rfl)
+
 /-- The underlying `𝒪_Y`-module of `f_* E` is the module-level pushforward. -/
 @[simp]
 lemma pushforward_obj_obj (f : X ⟶ Y) [IsFinite f] [Flat f] [LocallyOfFinitePresentation f]
@@ -331,6 +338,69 @@ lemma pushforward_map_hom (f : X ⟶ Y) [IsFinite f] [Flat f] [LocallyOfFinitePr
   cases pushforward_obj_obj f F
   unfold pushforward
   simp
+
+/-- Direct image of finite locally free sheaves commutes with the inclusion into all modules. -/
+def pushforwardCompιIso (f : X ⟶ Y) [IsFinite f] [Flat f] [LocallyOfFinitePresentation f] :
+    pushforward f ⋙ (Scheme.Modules.isFiniteLocallyFree Y).ι ≅
+      (Scheme.Modules.isFiniteLocallyFree X).ι ⋙ Scheme.Modules.pushforward f :=
+  ObjectProperty.liftCompιIso _ _ _
+
+@[simp]
+lemma pushforwardCompιIso_hom_app (f : X ⟶ Y) [IsFinite f] [Flat f]
+    [LocallyOfFinitePresentation f] (E : FiniteLocallyFreeSheaf X) :
+    (pushforwardCompιIso f).hom.app E = eqToHom (pushforward_obj_obj f E) :=
+  (rfl)
+
+@[simp]
+lemma pushforwardCompιIso_inv_app (f : X ⟶ Y) [IsFinite f] [Flat f]
+    [LocallyOfFinitePresentation f] (E : FiniteLocallyFreeSheaf X) :
+    (pushforwardCompιIso f).inv.app E = eqToHom (pushforward_obj_obj f E).symm :=
+  (rfl)
+
+/-- Pullback of finite locally free sheaves along a finite, flat, locally finitely presented
+morphism `f : X ⟶ Y` is left adjoint to direct image, restricting Mathlib's
+`Scheme.Modules.pullbackPushforwardAdjunction`. -/
+def pullbackPushforwardAdjunction (f : X ⟶ Y) [IsFinite f] [Flat f]
+    [LocallyOfFinitePresentation f] :
+    pullback f ⊣ pushforward f :=
+  (Scheme.Modules.pullbackPushforwardAdjunction f).restrictFullyFaithful
+    (Scheme.Modules.isFiniteLocallyFree Y).fullyFaithfulι
+    (Scheme.Modules.isFiniteLocallyFree X).fullyFaithfulι
+    (pullbackCompιIso f).symm (pushforwardCompιIso f).symm
+
+/-- On underlying modules, the unit of `pullbackPushforwardAdjunction` is the unit of Mathlib's
+`Scheme.Modules.pullbackPushforwardAdjunction`. -/
+@[simp]
+theorem pullbackPushforwardAdjunction_unit_app_hom (f : X ⟶ Y) [IsFinite f] [Flat f]
+    [LocallyOfFinitePresentation f] (E : FiniteLocallyFreeSheaf Y) :
+    ((pullbackPushforwardAdjunction f).unit.app E).hom =
+      (Scheme.Modules.pullbackPushforwardAdjunction f).unit.app E.obj ≫
+        eqToHom ((pushforward_obj_obj f ((pullback f).obj E)).trans
+          (congrArg (Scheme.Modules.pushforward f).obj (pullback_obj_obj f E))).symm := by
+  have h :=
+    (Scheme.Modules.pullbackPushforwardAdjunction f).map_restrictFullyFaithful_unit_app
+      (Scheme.Modules.isFiniteLocallyFree Y).fullyFaithfulι
+      (Scheme.Modules.isFiniteLocallyFree X).fullyFaithfulι
+      (L := pullback f) (R := pushforward f)
+      (pullbackCompιIso f).symm (pushforwardCompιIso f).symm E
+  exact h.trans (by simp [eqToHom_map])
+
+/-- On underlying modules, the counit of `pullbackPushforwardAdjunction` is the counit of Mathlib's
+`Scheme.Modules.pullbackPushforwardAdjunction`. -/
+@[simp]
+theorem pullbackPushforwardAdjunction_counit_app_hom (f : X ⟶ Y) [IsFinite f] [Flat f]
+    [LocallyOfFinitePresentation f] (E : FiniteLocallyFreeSheaf X) :
+    ((pullbackPushforwardAdjunction f).counit.app E).hom =
+      eqToHom ((pullback_obj_obj f ((pushforward f).obj E)).trans
+        (congrArg (Scheme.Modules.pullback f).obj (pushforward_obj_obj f E))) ≫
+        (Scheme.Modules.pullbackPushforwardAdjunction f).counit.app E.obj := by
+  have h :=
+    (Scheme.Modules.pullbackPushforwardAdjunction f).map_restrictFullyFaithful_counit_app
+      (Scheme.Modules.isFiniteLocallyFree Y).fullyFaithfulι
+      (Scheme.Modules.isFiniteLocallyFree X).fullyFaithfulι
+      (L := pullback f) (R := pushforward f)
+      (pullbackCompιIso f).symm (pushforwardCompιIso f).symm E
+  exact h.trans (by simp [eqToHom_map])
 
 /-- Direct image of finite locally free sheaves is additive. -/
 instance pushforward_additive (f : X ⟶ Y) [IsFinite f] [Flat f] [LocallyOfFinitePresentation f] :
@@ -366,7 +436,8 @@ theorem pushforwardId_inv_app_hom (X : Scheme.{u}) (E : FiniteLocallyFreeSheaf X
   simp only [pushforwardId, NatIso.ofComponents_inv_app, ObjectProperty.isoMk_inv,
     Iso.trans_inv, eqToIso.inv, ObjectProperty.homMk_hom, Iso.app_inv]
 
-private lemma pushforwardComp_obj_obj (f : X ⟶ Y) (g : Y ⟶ Z) [IsFinite f] [Flat f]
+/-- The underlying `𝒪_Z`-module of successive direct images is the composite module pushforward. -/
+lemma pushforwardComp_obj_obj (f : X ⟶ Y) (g : Y ⟶ Z) [IsFinite f] [Flat f]
     [LocallyOfFinitePresentation f] [IsFinite g] [Flat g] [LocallyOfFinitePresentation g]
     (E : FiniteLocallyFreeSheaf X) :
     ((pushforward f ⋙ pushforward g).obj E).obj =
@@ -405,7 +476,7 @@ theorem pushforwardComp_hom_app_hom (f : X ⟶ Y) (g : Y ⟶ Z) [IsFinite f] [Fl
     [LocallyOfFinitePresentation f] [IsFinite g] [Flat g] [LocallyOfFinitePresentation g]
     (E : FiniteLocallyFreeSheaf X) :
     ((pushforwardComp f g).hom.app E).hom =
-      eqToHom (by simp only [Functor.comp_obj, pushforward_obj_obj]) ≫
+      eqToHom (pushforwardComp_obj_obj f g E) ≫
         (Scheme.Modules.pushforwardComp f g).hom.app E.obj ≫
         eqToHom (pushforward_obj_obj (f ≫ g) E).symm := by
   simp only [pushforwardComp, NatIso.ofComponents_hom_app, ObjectProperty.isoMk_hom,
@@ -419,9 +490,7 @@ theorem pushforwardComp_inv_app_hom (f : X ⟶ Y) (g : Y ⟶ Z) [IsFinite f] [Fl
     ((pushforwardComp f g).inv.app E).hom =
       eqToHom (pushforward_obj_obj (f ≫ g) E) ≫
         (Scheme.Modules.pushforwardComp f g).inv.app E.obj ≫
-        eqToHom (show (Scheme.Modules.pushforward f ⋙ Scheme.Modules.pushforward g).obj E.obj =
-          ((pushforward f ⋙ pushforward g).obj E).obj by
-            simp only [Functor.comp_obj, pushforward_obj_obj]) := by
+        eqToHom (pushforwardComp_obj_obj f g E).symm := by
   simp only [pushforwardComp, NatIso.ofComponents_inv_app, ObjectProperty.isoMk_inv,
     Iso.trans_inv, eqToIso.inv, ObjectProperty.homMk_hom, Iso.app_inv, Category.assoc]
 

@@ -42,6 +42,8 @@ same reductions, so this is the formal spectrum `Spf R̂` of the adic ring `R̂`
   `V(I ^ (n + 1)) ⟶ X`.
 * `AlgebraicGeometry.Scheme.formalCompletion.toOfScheme`: the canonical morphism from `X/V(I)` to
   the constant adic thickening system of `X`.
+* `AlgebraicGeometry.Scheme.formalCompletion.subschemeIsoLevelZero`: the canonical isomorphism
+  `V(I) ≅ (X.formalCompletion I).X 0` over `X`.
 * `AlgebraicGeometry.Scheme.formalCompletion.map`: functoriality in pairs `(X, I)`.
 * `AlgebraicGeometry.Scheme.formalCompletion.botIso`: the formal completion along `V(⊥)` is the
   constant system of `X`.
@@ -185,6 +187,24 @@ noncomputable def toOfScheme : X.formalCompletion I ⟶ AdicThickeningSystem.ofS
 theorem toOfScheme_app (n : ℕ) : (toOfScheme X I).app n = toScheme X I n :=
   (rfl)
 
+/-- The canonical isomorphism `V(I) ≅ V(I ^ 1)` between the closed subscheme cut out by `I` and
+the zeroth level of `X.formalCompletion I`. -/
+noncomputable def subschemeIsoLevelZero : I.subscheme ≅ (X.formalCompletion I).X 0 where
+  hom := inclusion (pow_one I).le
+  inv := inclusion (pow_one I).ge
+  hom_inv_id := (inclusion_comp _ _).trans (inclusion_id _)
+  inv_hom_id := (inclusion_comp _ _).trans (inclusion_id _)
+
+@[reassoc (attr := simp)]
+theorem subschemeIsoLevelZero_hom_toScheme :
+    (subschemeIsoLevelZero X I).hom ≫ toScheme X I 0 = I.subschemeι :=
+  inclusion_subschemeι (pow_one I).le
+
+@[reassoc (attr := simp)]
+theorem subschemeIsoLevelZero_inv_subschemeι :
+    (subschemeIsoLevelZero X I).inv ≫ I.subschemeι = toScheme X I 0 :=
+  inclusion_subschemeι (pow_one I).ge
+
 /-- The ideal sheaf of `V(I ^ (n + 1))` in `V(I ^ (n + 2))` is the inverse image of `I ^ (n + 1)`
 along `V(I ^ (n + 2)) ⟶ X`. -/
 @[simp]
@@ -214,9 +234,18 @@ noncomputable def botIso : X.formalCompletion ⊥ ≅ AdicThickeningSystem.ofSch
   AdicThickeningSystem.isoMk (fun n ↦ (asIso (toScheme X ⊥ n) : _ ≅ X)) fun n ↦
     (ι_toScheme X ⊥ n).trans (Category.comp_id _).symm
 
-@[simp]
 theorem botIso_hom_app (n : ℕ) : (botIso X).hom.app n = toScheme X ⊥ n :=
   (AdicThickeningSystem.isoMk_hom_app _ _ n).trans (asIso_hom (toScheme X ⊥ n))
+
+/-- The forward morphism of `botIso` is `toOfScheme X ⊥`. -/
+@[simp]
+theorem botIso_hom : (botIso X).hom = toOfScheme X ⊥ := by
+  ext n
+  exact botIso_hom_app X n
+
+instance isIso_toOfScheme_bot : IsIso (toOfScheme X ⊥) := by
+  rw [← botIso_hom]
+  infer_instance
 
 /-- The formal completion along the empty closed subscheme `V(⊤)` has empty levels. -/
 instance isEmpty_X_top (n : ℕ) : IsEmpty ((X.formalCompletion ⊤).X n) := by
@@ -352,6 +381,13 @@ theorem specIso_inv_app_toScheme (J : Ideal R) (n : ℕ) :
   rw [specIso, Iso.symm_inv, AdicThickeningSystem.isoMk_hom_app, specLevelIso_hom_toScheme,
     AdicThickeningSystem.spfToSpec_app]
 
+/-- Under `specIso`, `toOfScheme` corresponds to `spfToSpec`. -/
+@[reassoc (attr := simp)]
+theorem specIso_inv_toOfScheme (J : Ideal R) :
+    (specIso J).inv ≫ toOfScheme _ _ = AdicThickeningSystem.spfToSpec J := by
+  ext n
+  exact specIso_inv_app_toScheme J n
+
 /-- For a finitely generated ideal `J` of `R`, the formal completion of `Spec R` along `V(J)` is
 the formal spectrum of the `J`-adic completion `R̂` of `R`, compatibly with the morphisms to
 `Spec R` (`specIsoSpfCompletion_inv_app_toScheme`). Stacks, Lemma 87.14.6 (0GBA). -/
@@ -372,6 +408,17 @@ theorem specIsoSpfCompletion_inv_app_toScheme (J : Ideal R) (fg : J.FG) (n : ℕ
   rw [specIsoSpfCompletion, Iso.trans_inv, Iso.symm_inv, AdicThickeningSystem.comp_app,
     Category.assoc, specIso_inv_app_toScheme]
   exact congrArg (·.app n) (Spf.completionIso_hom_spfToSpec J fg)
+
+/-- Under `specIsoSpfCompletion`, `toOfScheme` factors through
+`Spf.toSpec (AdicRing.completion J fg)`. -/
+@[reassoc (attr := simp)]
+theorem specIsoSpfCompletion_inv_toOfScheme (J : Ideal R) (fg : J.FG) :
+    (specIsoSpfCompletion J fg).inv ≫ toOfScheme _ _ =
+      Spf.toSpec (AdicRing.completion J fg) ≫
+        AdicThickeningSystem.ofScheme.map
+          (Spec.map (CommRingCat.ofHom (algebraMap R (AdicCompletion J R)))) := by
+  ext n
+  exact specIsoSpfCompletion_inv_app_toScheme J fg n
 
 end formalCompletion
 
