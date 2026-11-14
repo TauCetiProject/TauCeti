@@ -68,10 +68,9 @@ namespace TauCeti.ValuationSpectrum
 
 section Induction
 
-variable {A : Type v} [CommRing A] [UniformSpace A] [IsTopologicalRing A] [IsHuberRing A]
+variable {A : Type v} [CommRing A] [UniformSpace A] [IsTopologicalRing A]
   (P : PairOfDefinition A) {Aplus : Subring A}
 
-omit [IsHuberRing A] in
 /-- Restriction from `W` to its two Laurent pieces, read on the presheaf rather than on the
 presentation limits, is inducing when it is inducing on the presentation limits. -/
 private theorem isInducing_presheafMap_inf_laurentCoverOpen {W : Opens ↥(spa Aplus)} (f : A)
@@ -98,7 +97,6 @@ private theorem isInducing_presheafMap_inf_laurentCoverOpen {W : Opens ↥(spa A
   all_goals
     exact eqToHom_apply_presentationLimitPresheaf_map_apply P _ x
 
-omit [IsHuberRing A] in
 /-- **The topological induction of Wedhorn's Lemma 8.34(i).** Suppose that, for every rational
 subset `W` of `Spa(A, A⁺)` and every `f ∈ A`, sections on `W` carry the topology induced by
 restriction to the two Laurent pieces `W ∩ {|f| ≤ 1}` and `W ∩ {|f| ≥ 1}`. Then sections on a
