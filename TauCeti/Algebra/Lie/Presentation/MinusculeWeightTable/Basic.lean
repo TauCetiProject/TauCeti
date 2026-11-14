@@ -10,6 +10,7 @@ public import Mathlib.Data.Matrix.PEquiv
 public import TauCeti.Algebra.Lie.Presentation.Serre
 import TauCeti.Algebra.Lie.GeneralLinear.DiagonalCartan
 import TauCeti.Algebra.Lie.Sl2.WeightString
+import TauCeti.LinearAlgebra.Matrix.WeightSupport
 
 /-!
 # Chevalley generators from a minuscule weight table
@@ -44,6 +45,13 @@ coroots, so the reflection equation reads `wt (s_i a) j = wt a j - wt a i * CM j
   indices, with derived equivariance laws for reflections and Chevalley generators, and
   `TauCeti.MinusculeWeightTable.Symmetry.rootPerm` the permutation it induces on the positive and
   negative simple-root indices.
+* `TauCeti.MinusculeWeightTable.signedRootIndex`: the positive or negative simple-root index at a
+  node, selected by a sign.
+* `TauCeti.MinusculeWeightTable.negWeights`: the table with every weight negated, which exchanges
+  the raising and lowering matrices (`negWeights_raisingMatrix`, `negWeights_loweringMatrix`).
+* `TauCeti.MinusculeWeightTable.signed`: selects the original or negated table (`signed_true`,
+  `signed_false`), with the same Cartan matrix and simple reflections, the selected raising and
+  lowering matrices, and a negative weight at each node where the original table has one.
 * `TauCeti.MinusculeWeightTable.raisingMatrix`, `loweringMatrix` and `cartanGeneratorMatrix`: the
   integral Chevalley generators the table names.
 * `TauCeti.MinusculeWeightTable.serreRepresentation`: the representation of the Serre presentation
@@ -55,7 +63,10 @@ coroots, so the reflection equation reads `wt (s_i a) j = wt a j - wt a i * CM j
   `cartanGeneratorMatrix_apply`: their entry formulas.
 * `TauCeti.MinusculeWeightTable.raisingMatrix_apply_eq_zero_of_weight_sub_ne` and
   `loweringMatrix_apply_eq_zero_of_weight_sub_ne`: the raising and lowering matrices vanish off the
-  entries whose weight difference is the positive or negative simple root.
+  entries whose weight difference is the positive or negative simple root;
+  `raisingMatrix_map_apply_eq_zero_of_weight_sub_ne` and
+  `raisingMatrix_mul_raisingMatrix_apply_eq_zero_of_weight_sub_ne_add` are the one-coordinate
+  forms over any ring, for a raising matrix and for a product of two.
 * `TauCeti.MinusculeWeightTable.raisingMatrix_map_mulVec_reflection` and
   `loweringMatrix_map_mulVec_reflection`: at the reflection of a weight of coordinate `-1` or `1`,
   the raising or lowering matrix applied to a vector reads off that vector at the weight.
@@ -285,6 +296,92 @@ end RootPerm
 
 end Symmetry
 
+/-! ## Signed simple-root indices -/
+
+/-- The index of a signed simple root among the positive and negative simple-root indices
+`B ⊕ B`: `.inl i` for the positive sign `true` and `.inr i` for the negative sign `false`. -/
+def signedRootIndex (positive : Bool) (i : B) : B ⊕ B :=
+  if positive then .inl i else .inr i
+
+@[simp]
+theorem signedRootIndex_true (i : B) : signedRootIndex true i = .inl i :=
+  (rfl)
+
+@[simp]
+theorem signedRootIndex_false (i : B) : signedRootIndex false i = .inr i :=
+  (rfl)
+
+/-! ## The negated table -/
+
+/-- **The negated table**: every weight negated, with the same Cartan matrix and the same simple
+reflections. Its raising matrices are the lowering matrices of the original table and conversely
+(`negWeights_raisingMatrix`, `negWeights_loweringMatrix`), so it describes the negative simple-root
+subgroups of a carrier in the language of the positive ones. -/
+def negWeights : MinusculeWeightTable B ι where
+  cartanMatrix := T.cartanMatrix
+  weight a := -T.weight a
+  reflection := T.reflection
+  cartanMatrix_diag := T.cartanMatrix_diag
+  cartanMatrix_offDiag_nonpos := T.cartanMatrix_offDiag_nonpos
+  cartanMatrix_zero_comm := T.cartanMatrix_zero_comm
+  weight_eq_neg_one_or_eq_zero_or_eq_one a i := by
+    rcases T.weight_eq_neg_one_or_eq_zero_or_eq_one a i with h | h | h
+    · exact Or.inr (Or.inr (by simpa using congrArg Neg.neg h))
+    · exact Or.inr (Or.inl (by simpa using congrArg Neg.neg h))
+    · exact Or.inl (by simpa using congrArg Neg.neg h)
+  weight_reflection i a j := by
+    dsimp
+    rw [T.weight_reflection]
+    ring
+  weight_injective := fun a b h ↦ T.weight_injective (neg_injective h)
+
+/-- Weight negation preserves the Cartan matrix. -/
+@[simp]
+theorem negWeights_cartanMatrix : T.negWeights.cartanMatrix = T.cartanMatrix :=
+  (rfl)
+
+/-- The weights of the negated table are the negatives of the original weights. -/
+@[simp]
+theorem negWeights_weight (a : ι) : T.negWeights.weight a = -T.weight a :=
+  (rfl)
+
+/-- Weight negation preserves the simple reflections. -/
+@[simp]
+theorem negWeights_reflection : T.negWeights.reflection = T.reflection :=
+  (rfl)
+
+/-- The original table for a positive sign, and its negated table for a negative sign. -/
+def signed (positive : Bool) : MinusculeWeightTable B ι :=
+  if positive then T else T.negWeights
+
+/-- The positive sign selects the original table. -/
+@[simp]
+theorem signed_true : T.signed true = T :=
+  (rfl)
+
+/-- The negative sign selects the negated table. -/
+@[simp]
+theorem signed_false : T.signed false = T.negWeights :=
+  (rfl)
+
+/-- Selecting a sign preserves the Cartan matrix. -/
+@[simp]
+theorem signed_cartanMatrix (positive : Bool) :
+    (T.signed positive).cartanMatrix = T.cartanMatrix := by
+  cases positive <;> simp
+
+/-- The signed table has the original weights or their negatives. -/
+@[simp]
+theorem signed_weight (positive : Bool) (a : ι) :
+    (T.signed positive).weight a = if positive then T.weight a else -T.weight a := by
+  cases positive <;> simp
+
+/-- Selecting a sign preserves the simple reflections. -/
+@[simp]
+theorem signed_reflection (positive : Bool) :
+    (T.signed positive).reflection = T.reflection := by
+  cases positive <;> simp
+
 /-! ## The reflected weights -/
 
 /-- A simple reflection negates the corresponding simple-coroot coordinate. -/
@@ -302,6 +399,16 @@ theorem reflection_apply_apply (i : B) (a : ι) : T.reflection i (T.reflection i
   rw [T.weight_reflection i (T.reflection i a) j, T.weight_reflection i a j,
     T.weight_reflection_self]
   ring
+
+/-- A negative weight at a node gives a negative weight there in either signed table. -/
+theorem signed_exists_weight_eq_neg_one (positive : Bool) (i : B)
+    (h : ∃ a, T.weight a i = -1) : ∃ a, (T.signed positive).weight a i = -1 := by
+  obtain ⟨a, ha⟩ := h
+  cases positive with
+  | false =>
+    refine ⟨T.reflection i a, ?_⟩
+    simp [ha]
+  | true => exact ⟨a, by rwa [signed_true]⟩
 
 /-- A simple reflection is an involutive map of the weight table. -/
 theorem reflection_involutive (i : B) : Function.Involutive (T.reflection i) :=
@@ -463,6 +570,34 @@ theorem loweringMatrix_apply (i : B) (a b : ι) :
   simp only [raisingPEquiv, PEquiv.symm]
   simp [loweringTarget, eq_comm]
 
+/-- The raising matrix of the negated table is the lowering matrix of the original table. -/
+@[simp]
+theorem negWeights_raisingMatrix (i : B) : T.negWeights.raisingMatrix i = T.loweringMatrix i := by
+  ext a b
+  simp only [raisingMatrix_apply, loweringMatrix_apply, negWeights_weight, negWeights_reflection,
+    Pi.neg_apply, neg_eq_iff_eq_neg, neg_neg]
+
+/-- The lowering matrix of the negated table is the raising matrix of the original table. -/
+@[simp]
+theorem negWeights_loweringMatrix (i : B) : T.negWeights.loweringMatrix i = T.raisingMatrix i := by
+  ext a b
+  simp only [raisingMatrix_apply, loweringMatrix_apply, negWeights_weight, negWeights_reflection,
+    Pi.neg_apply, neg_eq_iff_eq_neg]
+
+/-- The signed table selects the raising or lowering matrix at the signed root index. -/
+@[simp]
+theorem signed_raisingMatrix (positive : Bool) (i : B) :
+    (T.signed positive).raisingMatrix i =
+      Sum.elim T.raisingMatrix T.loweringMatrix (signedRootIndex positive i) := by
+  cases positive <;> simp
+
+/-- The signed table selects the lowering or raising matrix at the signed root index. -/
+@[simp]
+theorem signed_loweringMatrix (positive : Bool) (i : B) :
+    (T.signed positive).loweringMatrix i =
+      Sum.elim T.loweringMatrix T.raisingMatrix (signedRootIndex positive i) := by
+  cases positive <;> simp
+
 /-- A raising matrix vanishes off the entries whose weight difference is its simple root, the
 `i`-th column of the Cartan matrix. -/
 theorem raisingMatrix_apply_eq_zero_of_weight_sub_ne (i : B) (a b : ι)
@@ -487,6 +622,14 @@ theorem loweringMatrix_apply_eq_zero_of_weight_sub_ne (i : B) (a b : ι)
   rw [Pi.sub_apply, Pi.neg_apply, T.weight_reflection, hb]
   ring
 
+/-- A raising matrix cast into any ring vanishes off the entries whose weight difference at a node
+`k` is the Cartan entry `cartanMatrix k i`, the `k`-th coordinate of the `i`-th simple root. -/
+theorem raisingMatrix_map_apply_eq_zero_of_weight_sub_ne {R : Type*} [Ring R] (i k : B) (a b : ι)
+    (h : T.weight a k - T.weight b k ≠ T.cartanMatrix k i) :
+    ((T.raisingMatrix i).map (Int.cast : ℤ → R)) a b = 0 := by
+  rw [Matrix.map_apply, T.raisingMatrix_apply_eq_zero_of_weight_sub_ne i a b
+    (fun he ↦ h (congrFun he k)), Int.cast_zero]
+
 /-- The column of a raising matrix cast into any additive group with one is the reflected
 coordinate vector exactly at a raising edge, and otherwise is zero. -/
 @[simp]
@@ -506,6 +649,27 @@ theorem loweringMatrix_map_col {R : Type*} [AddGroupWithOne R]
       if T.weight a i = 1 then Pi.single (T.reflection i a) 1 else 0 := by
   ext b
   simp [Matrix.col_apply, Pi.single_apply, ite_and, ite_apply]
+
+/-- Multiplying a matrix on the right by a raising matrix over any ring: the column `b` of `M * Eᵢ`
+is the column `sᵢ b` of `M` when `wt b i = -1`, and zero otherwise. -/
+theorem mul_raisingMatrix_map_apply [Fintype ι] {R : Type*} [Ring R] (i : B) (M : Matrix ι ι R)
+    (a b : ι) :
+    (M * (T.raisingMatrix i).map (Int.cast : ℤ → R)) a b =
+      if T.weight b i = -1 then M a (T.reflection i b) else 0 := by
+  by_cases hb : T.weight b i = -1
+  all_goals simp [Matrix.mul_apply, hb]
+
+/-- The product of two raising matrices cast into any ring vanishes off the entries whose weight
+difference at a node `k` is the sum `cartanMatrix k i + cartanMatrix k j` of the `k`-th
+coordinates of the two simple roots. -/
+theorem raisingMatrix_mul_raisingMatrix_apply_eq_zero_of_weight_sub_ne_add [Fintype ι] {R : Type*}
+    [Ring R] (i j k : B) (a b : ι)
+    (h : T.weight a k - T.weight b k ≠ T.cartanMatrix k i + T.cartanMatrix k j) :
+    ((T.raisingMatrix i).map (Int.cast : ℤ → R) *
+      (T.raisingMatrix j).map (Int.cast : ℤ → R)) a b = 0 :=
+  Matrix.mul_apply_eq_zero_of_sub_ne_add (fun a ↦ T.weight a k) _ _ _ _
+    (T.raisingMatrix_map_apply_eq_zero_of_weight_sub_ne i k)
+    (T.raisingMatrix_map_apply_eq_zero_of_weight_sub_ne j k) a b h
 
 private theorem matrix_map_row_reflection {R : Type*} [AddGroupWithOne R]
     (i : B) (c : ℤ) (M : Matrix ι ι ℤ)
@@ -735,6 +899,7 @@ theorem loweringMatrix_pow_two (i : B) : T.loweringMatrix i ^ 2 = 0 := by
   · simp [hb]
 
 /-- The raising matrix cast into any ring squares to zero. -/
+@[simp]
 theorem raisingMatrix_map_mul_self {R : Type*} [Ring R] (i : B) :
     (T.raisingMatrix i).map (Int.cast : ℤ → R) * (T.raisingMatrix i).map (Int.cast : ℤ → R) =
       0 := by
@@ -743,6 +908,7 @@ theorem raisingMatrix_map_mul_self {R : Type*} [Ring R] (i : B) :
   simpa only [RingHom.mapMatrix_apply, Int.coe_castRingHom, pow_two] using h
 
 /-- The lowering matrix cast into any ring squares to zero. -/
+@[simp]
 theorem loweringMatrix_map_mul_self {R : Type*} [Ring R] (i : B) :
     (T.loweringMatrix i).map (Int.cast : ℤ → R) * (T.loweringMatrix i).map (Int.cast : ℤ → R) =
       0 := by
