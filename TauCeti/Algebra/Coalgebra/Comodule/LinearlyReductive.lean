@@ -54,8 +54,6 @@ arbitrary field.
 * `TauCeti.Comodule.IsCompletelyReducible.of_exists_isCompl` and
   `TauCeti.Comodule.IsCompletelyReducible.exists_isCompl`: construct and use complete
   reducibility through complementary subcomodules.
-* `TauCeti.Subcomodule.projection`: the projection onto a subcomodule along a complementary
-  subcomodule, as a comodule endomorphism.
 * `TauCeti.Comodule.isCompletelyReducible_iff_forall_exists_hom`: complete reducibility means
   that every subcomodule is the image of a comodule endomorphism fixing it pointwise.
 * `TauCeti.Comodule.isCompletelyReducible_of_forall_eq_bot_or_eq_top`: a comodule with no
@@ -164,14 +162,8 @@ theorem isCompletelyReducible_of_forall_eq_bot_or_eq_top
 /-- A comodule on a subsingleton module is completely reducible. -/
 theorem isCompletelyReducible_of_subsingleton [Subsingleton V] :
     IsCompletelyReducible k C V :=
-  isCompletelyReducible_of_forall_eq_bot_or_eq_top fun W ↦ Or.inl <| by
-    ext m
-    constructor
-    · intro _
-      rw [Subcomodule.mem_bot]
-      exact Subsingleton.elim _ _
-    · intro hm
-      exact (Subcomodule.mem_bot.mp hm) ▸ zero_mem W
+  isCompletelyReducible_of_forall_eq_bot_or_eq_top fun _ ↦
+    Or.inl (Subcomodule.toSubmodule_eq_bot.mp (Subsingleton.elim _ _))
 
 /-- A comodule whose subcomodule lattice is simple is completely reducible. -/
 theorem isCompletelyReducible_of_isSimpleOrder
@@ -367,7 +359,6 @@ private theorem isCompletelyReducible_of_finite
     {V : Type w} [AddCommMonoid V] [Module k V] [Comodule k C V] [Module.Finite k V] :
     Comodule.IsCompletelyReducible k C V := by
   let : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
-  let : Module.Free k V := Module.Free.of_divisionRing k V
   let e : V ≃ₗ[k] (Fin (Module.finrank k V) → k) := (Module.finBasis k V).equivFun
   let _ : Comodule k C (Fin (Module.finrank k V) → k) := Comodule.Transport e
   exact (Comodule.isCompletelyReducible_transport_iff k e).mp (h _)
@@ -577,13 +568,11 @@ private noncomputable def equivariantProjection (p : V →ₗ[k] V) : V →ₗ[k
 private theorem equivariantProjection_apply (p : V →ₗ[k] V) (v : V) :
     equivariantProjection k G V p v =
       (weightDecomposition k G V v).sum fun g w ↦ weightProj k G V g (p w) := by
-  classical
   rfl
 
 private theorem equivariantProjection_of_mem_weightSpace (p : V →ₗ[k] V)
     {g : G} {v : V} (hv : v ∈ weightSpace k G V g) :
     equivariantProjection k G V p v = weightProj k G V g (p v) := by
-  classical
   rw [equivariantProjection_apply]
   have hdecomp : weightDecomposition k G V v = Finsupp.single g v := by
     apply Finsupp.ext
@@ -611,7 +600,6 @@ private noncomputable def equivariantProjectionHom (p : V →ₗ[k] V) :
 private theorem equivariantProjection_mem_subcomodule
     (N : Subcomodule k (MonoidAlgebra k G) V) (p : V →ₗ[k] V)
     (hp : ∀ v, p v ∈ N) (v : V) : equivariantProjection k G V p v ∈ N := by
-  classical
   rw [equivariantProjection_apply]
   exact Submodule.sum_mem N.toSubmodule fun g _ ↦
     weightProj_mem_subcomodule (R := k) (G := G) (V := V) N g (hp _)
@@ -620,7 +608,6 @@ private theorem equivariantProjection_apply_of_mem
     (N : Subcomodule k (MonoidAlgebra k G) V) (p : V →ₗ[k] V)
     (hp : ∀ {v}, v ∈ N → p v = v) {v : V} (hv : v ∈ N) :
     equivariantProjection k G V p v = v := by
-  classical
   rw [equivariantProjection_apply]
   have hterm : ∀ g ∈ (weightDecomposition k G V v).support,
       weightProj k G V g (p (weightProj k G V g v)) = weightProj k G V g v := by
