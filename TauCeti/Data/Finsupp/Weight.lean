@@ -290,12 +290,12 @@ instance fintypeDegreeLe {σ : Type*} [Fintype σ] [DecidableEq σ] (n : ℕ) :
 /-- The number of exponent vectors of degree `n` in `Fintype.card σ` variables is
 `(Fintype.card σ).multichoose n`. -/
 @[simp]
-theorem card_degree_eq (σ : Type*) [Fintype σ] [DecidableEq σ] (n : ℕ) :
+theorem card_degree_eq (σ : Type*) [Fintype σ] (n : ℕ)
+    [Fintype {s : σ →₀ ℕ // s.degree = n}] :
     Fintype.card {s : σ →₀ ℕ // s.degree = n} = (Fintype.card σ).multichoose n := by
-  let _ : Fintype ↑{s : σ →₀ ℕ | s.degree = n} := fintypeDegreeEq n
-  refine (Fintype.card_of_finset' (p := {s : σ →₀ ℕ | s.degree = n})
-    ((Finset.univ : Finset σ).finsuppAntidiag n)
-    (fun s ↦ by simp [Finset.mem_finsuppAntidiag, degree_eq_sum])).trans ?_
+  classical
+  refine (Fintype.card_of_subtype ((Finset.univ : Finset σ).finsuppAntidiag n)
+    fun s ↦ by simp [Finset.mem_finsuppAntidiag, degree_eq_sum]).trans ?_
   rw [Finset.card_finsuppAntidiag_nat_eq_multichoose, Finset.card_univ]
 
 /-- The `Nat.card` of exponent vectors of degree `n` in finitely many variables `σ` is
@@ -310,13 +310,14 @@ theorem natCard_degree_eq (σ : Type*) [Finite σ] (n : ℕ) :
 /-- The number of exponent vectors of degree at most `n` in `Fintype.card σ` variables is
 `(Fintype.card σ + n).choose (Fintype.card σ)`. -/
 @[simp]
-theorem card_degree_le (σ : Type*) [Fintype σ] [DecidableEq σ] (n : ℕ) :
+theorem card_degree_le (σ : Type*) [Fintype σ] (n : ℕ)
+    [Fintype {s : σ →₀ ℕ // s.degree ≤ n}] :
     Fintype.card {s : σ →₀ ℕ // s.degree ≤ n} =
       (Fintype.card σ + n).choose (Fintype.card σ) := by
-  let _ : Fintype ↑{s : σ →₀ ℕ | s.degree ≤ n} := fintypeDegreeLe n
-  refine (Fintype.card_of_finset' (p := {s : σ →₀ ℕ | s.degree ≤ n})
+  classical
+  refine (Fintype.card_of_subtype
     ((Finset.range (n + 1)).biUnion (Finset.univ : Finset σ).finsuppAntidiag)
-    (fun s ↦ by simp [Finset.mem_finsuppAntidiag, ← degree_eq_sum])).trans ?_
+    fun s ↦ by simp [Finset.mem_finsuppAntidiag, ← degree_eq_sum]).trans ?_
   rw [Finset.card_biUnion]
   · simp_rw [Finset.card_finsuppAntidiag_nat_eq_multichoose, Finset.card_univ]
     rw [Nat.sum_range_multichoose, add_comm]

@@ -7,7 +7,6 @@ module
 
 import Mathlib.Algebra.Polynomial.SpecificDegree
 import Mathlib.RingTheory.AdjoinRoot
-import Mathlib.RingTheory.LocalRing.Length
 import Mathlib.RingTheory.PrincipalIdealDomain
 import TauCeti.RingTheory.Length
 import TauCeti.RingTheory.LocalRing.HilbertSamuel

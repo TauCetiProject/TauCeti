@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Data.Finsupp.Weight
 public import Mathlib.Order.PiLex
-public import Mathlib.Order.UpperLower.Basic
+public import Mathlib.Order.UpperLower.CompleteLattice
+public import Mathlib.Order.WellFoundedSet
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Data.Finsupp.PWO
 import Mathlib.Order.Antichain
@@ -18,7 +19,7 @@ import Mathlib.Order.Minimal
 import TauCeti.Order.PiLex
 
 /-!
-# Lexicographic stabilization of degree-bounded complement counts for upper sets in `σ →₀ ℕ`
+# Well-foundedness and stabilization of complement counts for upper sets in `σ →₀ ℕ`
 
 In finitely many variables `σ`, Dickson's lemma (`Finsupp.wellQuasiOrderedLE`) implies that no
 sequence of upward-closed subsets `D j ⊆ (σ →₀ ℕ)` can have strictly lexicographically decreasing
@@ -27,12 +28,17 @@ along a nonprincipal ultrafilter `𝓤` on `ℕ`, the limit upper set
 `Dlim = {α | ∀ᶠ j in 𝓤, α ∈ D j}` has finitely many minimal elements by Dickson's lemma, so some
 `D j₀` contains `Dlim`; a strict lexicographic drop from `j₀` to `j₀ + 1` at some least degree `n₁`
 would then force a strict lexicographic increase between `j₀ + 1` and a later `j₂` agreeing with
-`Dlim` up to degree `n₁`. Consequently, any sequence of upper sets whose degree-bounded complement
-counts are lexicographically nonincreasing eventually stabilizes in those counts
+`Dlim` up to degree `n₁`. Consequently, the range of degree-bounded complement counts of upper sets
+in `Lex (ℕ → ℕ)` is well-founded (`TauCeti.isWF_range_toLex_card_degree_le_notMem_upperSet`), and
+any sequence of upper sets whose degree-bounded complement counts are lexicographically
+nonincreasing eventually stabilizes in those counts
 (`TauCeti.exists_forall_ge_card_degree_le_notMem_eq_of_isUpperSet`).
 
 ## Main results
 
+* `TauCeti.isWF_range_toLex_card_degree_le_notMem_upperSet`: for `[Finite σ]`, the range of
+  `D : UpperSet (σ →₀ ℕ) ↦ toLex (fun n ↦ Nat.card {α : σ →₀ ℕ // α.degree ≤ n ∧ α ∉ D})` is
+  well-founded (`Set.IsWF`).
 * `TauCeti.exists_forall_ge_card_degree_le_notMem_eq_of_isUpperSet`: for `[Finite σ]`, any sequence
   of upper sets `D : ℕ → Set (σ →₀ ℕ)` whose degree-bounded complement counts are nonincreasing in
   `Lex (ℕ → ℕ)` is eventually constant in those counts.
@@ -110,6 +116,15 @@ private theorem not_strictAnti_toLex_diagramHilbert {σ : Type*} [Finite σ]
       lt_of_lt_of_eq hlt_n₁ (hj₂_eq n₁ le_rfl).symm⟩
   exact (hanti hj₂_gt).not_gt hlt₂
 
+/-- For finitely many variables `σ`, the set of degree-bounded complement-count functions of upper
+sets `D : UpperSet (σ →₀ ℕ)`, ordered lexicographically in `Lex (ℕ → ℕ)`, is well-founded. -/
+theorem isWF_range_toLex_card_degree_le_notMem_upperSet {σ : Type*} [Finite σ] :
+    (Set.range fun D : UpperSet (σ →₀ ℕ) ↦
+      toLex (fun n ↦ Nat.card {α : σ →₀ ℕ // α.degree ≤ n ∧ α ∉ D})).IsWF := by
+  refine Set.isWF_iff_no_descending_seq.mpr fun f hf hmem ↦ ?_
+  choose D hD using hmem
+  exact not_strictAnti_toLex_diagramHilbert (fun n ↦ (D n).upper) ((funext hD).symm ▸ hf)
+
 /-- For finitely many variables `σ`, any sequence of upward-closed subsets `D : ℕ → Set (σ →₀ ℕ)`
 whose degree-bounded complement counts are lexicographically nonincreasing is eventually constant
 in those counts. -/
@@ -120,23 +135,13 @@ theorem exists_forall_ge_card_degree_le_notMem_eq_of_isUpperSet {σ : Type*} [Fi
     ∃ j₀, ∀ j, j₀ ≤ j →
       (fun n ↦ Nat.card {α : σ →₀ ℕ // α.degree ≤ n ∧ α ∉ D j}) =
         (fun n ↦ Nat.card {α : σ →₀ ℕ // α.degree ≤ n ∧ α ∉ D j₀}) := by
-  have hanti : Antitone (fun j ↦ toLex (diagramHilbert (D j))) :=
-    antitone_nat_of_succ_le hlex
-  by_contra! hnot
-  have hstep : ∀ j₀, ∃ j, j₀ < j ∧
-      toLex (diagramHilbert (D j)) < toLex (diagramHilbert (D j₀)) := fun j₀ ↦ by
-    obtain ⟨j, hjle, hjne⟩ := hnot j₀
-    have hjlt : j₀ < j := lt_of_le_of_ne hjle fun hEq ↦ hjne (hEq ▸ rfl)
-    exact ⟨j, hjlt, lt_of_le_of_ne (hanti hjle) (toLex_inj.ne.mpr hjne)⟩
-  let next (j : ℕ) : ℕ := Classical.choose (hstep j)
-  have hnext : ∀ j, toLex (diagramHilbert (D (next j))) < toLex (diagramHilbert (D j)) :=
-    fun j ↦ (Classical.choose_spec (hstep j)).2
-  let subseq (k : ℕ) : ℕ := next^[k] 0
-  have hstrict : StrictAnti (fun k ↦ toLex (diagramHilbert (D (subseq k)))) :=
-    strictAnti_nat_of_succ_lt fun k ↦ by
-      dsimp only [subseq]
-      rw [Function.iterate_succ_apply']
-      exact hnext (subseq k)
-  exact not_strictAnti_toLex_diagramHilbert (fun k ↦ hD (subseq k)) hstrict
+  let S := Set.range fun U : UpperSet (σ →₀ ℕ) ↦
+    toLex (fun n ↦ Nat.card {α : σ →₀ ℕ // α.degree ≤ n ∧ α ∉ U})
+  have : WellFoundedLT S := isWF_range_toLex_card_degree_le_notMem_upperSet
+  let seq : ℕ → S := fun j ↦
+    ⟨toLex (fun n ↦ Nat.card {α : σ →₀ ℕ // α.degree ≤ n ∧ α ∉ D j}), ⟨D j, hD j⟩, rfl⟩
+  have hanti : Antitone seq := antitone_nat_of_succ_le fun j ↦ Subtype.mk_le_mk.mpr (hlex j)
+  obtain ⟨j₀, hj₀⟩ := WellFoundedLT.antitone_chain_condition hanti
+  exact ⟨j₀, fun j hj ↦ toLex_inj.mp (congrArg Subtype.val (hj₀ j hj)).symm⟩
 
 end TauCeti

@@ -307,12 +307,14 @@ section Noetherian
 variable {A : Type*} [CommRing A] [IsLocalRing A] [IsNoetherianRing A]
 
 /-- Over a Noetherian local ring `A`, `localQuotientHilbertSamuel A I n` is never `⊤`. -/
+@[simp]
 theorem localQuotientHilbertSamuel_ne_top (I : Ideal A) (n : ℕ) :
     localQuotientHilbertSamuel A I n ≠ ⊤ :=
   Module.length_ne_top_iff.mpr (I.isFiniteLength_quotient_sup_maximalIdeal_pow (n + 1))
 
 /-- Over a Noetherian local ring `A`, every value of `localQuotientHilbertSamuel A I` is strictly
 less than `⊤`. -/
+@[simp]
 theorem localQuotientHilbertSamuel_lt_top (I : Ideal A) (n : ℕ) :
     localQuotientHilbertSamuel A I n < ⊤ :=
   lt_top_iff_ne_top.mpr (localQuotientHilbertSamuel_ne_top I n)

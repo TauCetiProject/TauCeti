@@ -37,15 +37,15 @@ sets in `σ →₀ ℕ` (`TauCeti.exists_forall_ge_card_degree_le_notMem_eq_of_i
 lexicographic initial diagrams yields lexicographic stabilization
 (`TauCeti.exists_forall_ge_localQuotientHilbertSamuel_eq_of_lex`, `TauCeti.hsLexStabilization`) and
 hence pointwise stabilization (`TauCeti.exists_forall_ge_localQuotientHilbertSamuel_eq_of_le`) for
-Hilbert–Samuel functions of ideals in `MvPowerSeries σ K` (Bierstone–Milman 1989, Theorem 5.2.1;
-Bierstone–Milman–Temkin 2011, §6.1).
+Hilbert–Samuel functions of ideals in `MvPowerSeries σ (K j)` across possibly varying coefficient
+fields `K j` (Bierstone–Milman 1989, Theorem 5.2.1; Bierstone–Milman–Temkin 2011, §6.1).
 
 ## Main results
 
 * `TauCeti.localQuotientHilbertSamuel_mvPowerSeries`: `H_I(n)` equals the `Nat.card` of
   `{α : σ →₀ ℕ // α.degree ≤ n ∧ α ∉ degLex.initialDiagram I}`.
-* `TauCeti.localQuotientHilbertSamuel_eq_of_initialDiagram_degLex_eq`: ideals with equal
-  `degLex.initialDiagram` have equal Hilbert–Samuel functions.
+* `TauCeti.localQuotientHilbertSamuel_eq_of_initialDiagram_degLex_eq`: ideals over possibly
+  distinct fields with equal `degLex.initialDiagram` have equal Hilbert–Samuel functions.
 * `TauCeti.localQuotientHilbertSamuel_mvPowerSeries_bot`,
   `TauCeti.localQuotientHilbertSamuel_mvPowerSeries_span_image_X`,
   `TauCeti.localQuotientHilbertSamuel_mvPowerSeries_span_X`,
@@ -55,7 +55,7 @@ Bierstone–Milman–Temkin 2011, §6.1).
 * `TauCeti.exists_forall_ge_localQuotientHilbertSamuel_eq_of_lex`,
   `TauCeti.hsLexStabilization`,
   `TauCeti.exists_forall_ge_localQuotientHilbertSamuel_eq_of_le`: lexicographic and pointwise
-  stabilization of realized Hilbert–Samuel functions in `MvPowerSeries σ K` and
+  stabilization of realized Hilbert–Samuel functions in `MvPowerSeries σ (K j)` and
   `MvPowerSeries (Fin n) K`.
 
 ## References
@@ -108,13 +108,14 @@ theorem localQuotientHilbertSamuel_mvPowerSeries {σ K : Type*} [Field K] [Finit
   rw [localQuotientHilbertSamuel_def, MvPowerSeries.length_restrictScalars (R := K),
     linEquiv.length_eq, Module.length_eq_finrank, Module.finrank_fin_fun]
 
-/-- Two ideals of `MvPowerSeries σ K` with the same graded lexicographic initial diagram have the
-same Hilbert–Samuel function. -/
-theorem localQuotientHilbertSamuel_eq_of_initialDiagram_degLex_eq {σ K : Type*} [Field K]
-    [Finite σ] [LinearOrder σ] {I J : Ideal (MvPowerSeries σ K)}
+/-- Two ideals of `MvPowerSeries σ K₁` and `MvPowerSeries σ K₂` with the same graded lexicographic
+initial diagram have the same Hilbert–Samuel function. -/
+theorem localQuotientHilbertSamuel_eq_of_initialDiagram_degLex_eq
+    {σ : Type*} {K₁ : Type*} {K₂ : Type*} [Field K₁] [Field K₂] [Finite σ] [LinearOrder σ]
+    {I : Ideal (MvPowerSeries σ K₁)} {J : Ideal (MvPowerSeries σ K₂)}
     (h : MonomialOrder.degLex.initialDiagram I = MonomialOrder.degLex.initialDiagram J) :
-    localQuotientHilbertSamuel (MvPowerSeries σ K) I =
-      localQuotientHilbertSamuel (MvPowerSeries σ K) J := by
+    localQuotientHilbertSamuel (MvPowerSeries σ K₁) I =
+      localQuotientHilbertSamuel (MvPowerSeries σ K₂) J := by
   ext n
   rw [localQuotientHilbertSamuel_mvPowerSeries, localQuotientHilbertSamuel_mvPowerSeries, h]
 
@@ -208,20 +209,22 @@ end FormalHilbertSamuel
 
 section Stabilization
 
-/-- **Lexicographic Hilbert–Samuel stabilization** over `MvPowerSeries σ K` (`[Finite σ]`): every
-lexicographically nonincreasing sequence of Hilbert–Samuel functions realized by ideals in
-`MvPowerSeries σ K` is eventually constant (Bierstone–Milman 1989, Theorem 5.2.1). -/
-theorem exists_forall_ge_localQuotientHilbertSamuel_eq_of_lex {σ K : Type*} [Field K] [Finite σ]
-    (I : ℕ → Ideal (MvPowerSeries σ K))
-    (h : ∀ j, toLex (localQuotientHilbertSamuel (MvPowerSeries σ K) (I (j + 1))) ≤
-      toLex (localQuotientHilbertSamuel (MvPowerSeries σ K) (I j))) :
+/-- **Lexicographic Hilbert–Samuel stabilization** over `MvPowerSeries σ (K j)` (`[Finite σ]`):
+every lexicographically nonincreasing sequence of Hilbert–Samuel functions realized by ideals `I j`
+in `MvPowerSeries σ (K j)` (allowing the coefficient field `K j` to vary with `j`) is eventually
+constant (Bierstone–Milman 1989, Theorem 5.2.1). -/
+theorem exists_forall_ge_localQuotientHilbertSamuel_eq_of_lex
+    {σ : Type*} {K : ℕ → Type*} [∀ j, Field (K j)] [Finite σ]
+    (I : ∀ j, Ideal (MvPowerSeries σ (K j)))
+    (h : ∀ j, toLex (localQuotientHilbertSamuel (MvPowerSeries σ (K (j + 1))) (I (j + 1))) ≤
+      toLex (localQuotientHilbertSamuel (MvPowerSeries σ (K j)) (I j))) :
     ∃ j₀, ∀ j, j₀ ≤ j →
-      localQuotientHilbertSamuel (MvPowerSeries σ K) (I j) =
-        localQuotientHilbertSamuel (MvPowerSeries σ K) (I j₀) := by
+      localQuotientHilbertSamuel (MvPowerSeries σ (K j)) (I j) =
+        localQuotientHilbertSamuel (MvPowerSeries σ (K j₀)) (I j₀) := by
   let _ : LinearOrder σ := LinearOrder.lift' (Finite.equivFin σ) (Finite.equivFin σ).injective
   let D : ℕ → Set (σ →₀ ℕ) := fun j ↦ MonomialOrder.degLex.initialDiagram (I j)
   let dCount (j n : ℕ) : ℕ := Nat.card {α : σ →₀ ℕ // α.degree ≤ n ∧ α ∉ D j}
-  have hval : ∀ j n, localQuotientHilbertSamuel (MvPowerSeries σ K) (I j) n =
+  have hval : ∀ j n, localQuotientHilbertSamuel (MvPowerSeries σ (K j)) (I j) n =
       (dCount j n : ℕ∞) := fun j n ↦
     localQuotientHilbertSamuel_mvPowerSeries (I j) n
   have hlex : ∀ j, toLex (dCount (j + 1)) ≤ toLex (dCount j) := fun j ↦ by
@@ -249,16 +252,17 @@ theorem hsLexStabilization (K : Type*) [Field K] (n : ℕ)
       localQuotientHilbertSamuel _ (I j) = localQuotientHilbertSamuel _ (I j₀) :=
   exists_forall_ge_localQuotientHilbertSamuel_eq_of_lex I fun j ↦ Pi.Lex.toLex_le_toLex.mpr (h j)
 
-/-- **Pointwise Hilbert–Samuel stabilization** over `MvPowerSeries σ K` (`[Finite σ]`): every
-pointwise nonincreasing sequence of Hilbert–Samuel functions realized by ideals in
-`MvPowerSeries σ K` is eventually constant. -/
-theorem exists_forall_ge_localQuotientHilbertSamuel_eq_of_le {σ K : Type*} [Field K] [Finite σ]
-    (I : ℕ → Ideal (MvPowerSeries σ K))
-    (h : ∀ j n, localQuotientHilbertSamuel (MvPowerSeries σ K) (I (j + 1)) n ≤
-      localQuotientHilbertSamuel (MvPowerSeries σ K) (I j) n) :
+/-- **Pointwise Hilbert–Samuel stabilization** over `MvPowerSeries σ (K j)` (`[Finite σ]`): every
+pointwise nonincreasing sequence of Hilbert–Samuel functions realized by ideals `I j` in
+`MvPowerSeries σ (K j)` is eventually constant. -/
+theorem exists_forall_ge_localQuotientHilbertSamuel_eq_of_le
+    {σ : Type*} {K : ℕ → Type*} [∀ j, Field (K j)] [Finite σ]
+    (I : ∀ j, Ideal (MvPowerSeries σ (K j)))
+    (h : ∀ j n, localQuotientHilbertSamuel (MvPowerSeries σ (K (j + 1))) (I (j + 1)) n ≤
+      localQuotientHilbertSamuel (MvPowerSeries σ (K j)) (I j) n) :
     ∃ j₀, ∀ j, j₀ ≤ j →
-      localQuotientHilbertSamuel (MvPowerSeries σ K) (I j) =
-        localQuotientHilbertSamuel (MvPowerSeries σ K) (I j₀) :=
+      localQuotientHilbertSamuel (MvPowerSeries σ (K j)) (I j) =
+        localQuotientHilbertSamuel (MvPowerSeries σ (K j₀)) (I j₀) :=
   exists_forall_ge_localQuotientHilbertSamuel_eq_of_lex I fun j ↦ Pi.toLex_monotone (h j)
 
 end Stabilization
