@@ -156,13 +156,17 @@ theorem ord_sub_pow_sub_self_le_of_ord_neg_of_not_dvd {n : ℕ} (hn : 1 < n) {u 
   (ord_sub_pow_sub_self_eq_min hn hu w (ord_sub_pow_le_of_not_dvd hdiv w)).trans_le
     (min_le_left _ _)
 
-/-- Let `n > 1` divide the negative order of `u`, and suppose that `w ^ n` does not agree
+/-- Let `n` divide the negative order of `u`, and suppose that `w ^ n` does not agree
 with `u` beyond the leading order of `u`. Then the representative `u - (w ^ n - w)` has a pole
 whose order is divisible by `n`: this substitution neither makes `u` integral nor produces a
 pole of order prime to `n`. -/
-theorem ord_sub_pow_sub_self_neg_and_dvd {n : ℕ} (hn : 1 < n) {u : R} (hu : v.ord u < 0)
+theorem ord_sub_pow_sub_self_neg_and_dvd {n : ℕ} {u : R} (hu : v.ord u < 0)
     (hdvd : (n : ℤ) ∣ v.ord u) (w : R) (hroot : v.ord (u - w ^ n) ≤ v.ord u) :
     v.ord (u - (w ^ n - w)) < 0 ∧ (n : ℤ) ∣ v.ord (u - (w ^ n - w)) := by
+  obtain rfl | rfl | hn : n = 0 ∨ n = 1 ∨ 1 < n := by omega
+  · rw [Nat.cast_zero] at hdvd
+    exact absurd (zero_dvd_iff.mp hdvd) hu.ne
+  · simpa only [pow_one, sub_self, sub_zero, Nat.cast_one, one_dvd, and_true] using hu
   rw [ord_sub_pow_sub_self_eq_min hn hu w hroot]
   refine ⟨(min_le_left _ _).trans_lt hu, ?_⟩
   rcases min_choice (v.ord u) (n * v.ord w) with h | h <;> rw [h]

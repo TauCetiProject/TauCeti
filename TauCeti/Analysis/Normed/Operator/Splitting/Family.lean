@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.ContDiff.ContinuousLinearMap
 public import TauCeti.Analysis.Normed.Operator.Splitting.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
@@ -24,9 +25,10 @@ inverse depending continuously on `x` for a continuous family
 (`ContinuousLinearMap.exists_isOpen_continuousOn_inverse_prod_comp`).
 For stabilized Fredholm operators the model `G` is finite dimensional, so these
 charts are the local input for the determinant bundle construction. For a stabilizer `V` of the
-target, the `V`-component of the normalized right inverse of `A x + inclusion_V` likewise has the
-regularity of the family (`ContinuousLinearMap.contDiffAt_snd_comp_kerSection_coprod`); where `V`
-is complementary to the range, it is the projection onto `V` along the range.
+target, the normalized right inverse of `A x + inclusion_V` likewise has the regularity of the
+family (`ContinuousLinearMap.contDiffAt_kerSection_coprod`), and so does its `V`-component
+(`ContinuousLinearMap.contDiffAt_snd_comp_kerSection_coprod`); where `V` is complementary to the
+range, that component is the projection onto `V` along the range.
 
 The construction uses Mathlib's smooth inversion of bounded operators and the
 fixed-operator kernel section from `Splitting.Basic`.
@@ -56,33 +58,59 @@ theorem contDiffAt_kerSection {A : E →L[𝕜] F} {q : E →L[𝕜] G} {n : ℕ
   exact (h.contDiffAt_map_inverse.comp (A, q) hp.contDiffAt).clm_comp
     (contDiffAt_const (c := inr 𝕜 F G))
 
+/-- Kernel sections are continuous at any parameter where the operator and the complementary
+coordinate are continuous and their pair is invertible. -/
+theorem _root_.ContinuousAt.kerSection {X : Type*} [TopologicalSpace X] {A : X → E →L[𝕜] F}
+    {q : X → E →L[𝕜] G} {x : X} (hA : ContinuousAt A x) (hq : ContinuousAt q x)
+    (h : ((A x).prod (q x)).IsInvertible) :
+    ContinuousAt (fun y ↦ (A y).kerSection (q y)) x :=
+  (contDiffAt_kerSection (n := 0) h).continuousAt.comp (f := fun y ↦ (A y, q y)) (hA.prodMk hq)
+
+/-- Kernel sections have the regularity of the operator and the complementary coordinate at any
+parameter where their pair is invertible. -/
+theorem _root_.ContDiffAt.kerSection {X : Type*} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+    {A : X → E →L[𝕜] F} {q : X → E →L[𝕜] G} {x : X} {n : ℕ∞ω} (hA : ContDiffAt 𝕜 n A x)
+    (hq : ContDiffAt 𝕜 n q x) (h : ((A x).prod (q x)).IsInvertible) :
+    ContDiffAt 𝕜 n (fun y ↦ (A y).kerSection (q y)) x :=
+  (contDiffAt_kerSection h).comp (f := fun y ↦ (A y, q y)) x (hA.prodMk hq)
+
 section Stabilizer
 
 variable {V : Submodule 𝕜 F} [CompleteSpace V] {q : (E × V) →L[𝕜] G}
+
+/-- The normalized right inverse of `T x + inclusion_V` is continuous at every parameter where
+the family is continuous and the pairing with `q` is invertible. -/
+theorem continuousAt_kerSection_coprod {X : Type*} [TopologicalSpace X]
+    {T : X → E →L[𝕜] F} {x : X} (hT : ContinuousAt T x)
+    (hinv : (((T x).coprod V.subtypeL).prod q).IsInvertible) :
+    ContinuousAt (fun y ↦ q.kerSection ((T y).coprod V.subtypeL)) x :=
+  continuousAt_const.kerSection (hT.continuousLinearMapCoprod continuousAt_const)
+    (isInvertible_prod_comm.mp hinv)
 
 /-- The stabilizer component of the normalized right inverse of `T x + inclusion_V` is continuous
 at every parameter where the family is continuous and the pairing with `q` is invertible. -/
 theorem continuousAt_snd_comp_kerSection_coprod {X : Type*} [TopologicalSpace X]
     {T : X → E →L[𝕜] F} {x : X} (hT : ContinuousAt T x)
     (hinv : (((T x).coprod V.subtypeL).prod q).IsInvertible) :
-    ContinuousAt (fun y ↦ snd 𝕜 E V ∘L q.kerSection ((T y).coprod V.subtypeL)) x := by
-  have hker := (contDiffAt_kerSection (n := 0) (isInvertible_prod_comm.mp hinv)).continuousAt
-  exact continuousAt_const.clm_comp <| hker.comp
-    (f := fun y ↦ (q, (T y).coprod V.subtypeL))
-    (continuousAt_const.prodMk (hT.continuousLinearMapCoprod continuousAt_const))
+    ContinuousAt (fun y ↦ snd 𝕜 E V ∘L q.kerSection ((T y).coprod V.subtypeL)) x :=
+  continuousAt_const.clm_comp (continuousAt_kerSection_coprod hT hinv)
+
+/-- The normalized right inverse of `T x + inclusion_V` has the regularity of the operator family,
+at every parameter where the pairing with `q` is invertible. -/
+theorem contDiffAt_kerSection_coprod {X : Type*} [NormedAddCommGroup X]
+    [NormedSpace 𝕜 X] {T : X → E →L[𝕜] F} {x : X} {n : ℕ∞ω} (hT : ContDiffAt 𝕜 n T x)
+    (hinv : (((T x).coprod V.subtypeL).prod q).IsInvertible) :
+    ContDiffAt 𝕜 n (fun y ↦ q.kerSection ((T y).coprod V.subtypeL)) x :=
+  contDiffAt_const.kerSection (hT.continuousLinearMapCoprod contDiffAt_const)
+    (isInvertible_prod_comm.mp hinv)
 
 /-- The stabilizer component of the normalized right inverse of `T x + inclusion_V` has the
 regularity of the operator family, at every parameter where the pairing with `q` is invertible. -/
 theorem contDiffAt_snd_comp_kerSection_coprod {X : Type*} [NormedAddCommGroup X]
     [NormedSpace 𝕜 X] {T : X → E →L[𝕜] F} {x : X} {n : ℕ∞ω} (hT : ContDiffAt 𝕜 n T x)
     (hinv : (((T x).coprod V.subtypeL).prod q).IsInvertible) :
-    ContDiffAt 𝕜 n (fun y ↦ snd 𝕜 E V ∘L q.kerSection ((T y).coprod V.subtypeL)) x := by
-  have hcoprod : ContDiffAt 𝕜 n (fun y ↦ (T y).coprod V.subtypeL) x := by
-    simp_rw [← comp_fst_add_comp_snd]
-    exact (hT.clm_comp contDiffAt_const).add contDiffAt_const
-  exact contDiffAt_const.clm_comp <|
-    (contDiffAt_kerSection (isInvertible_prod_comm.mp hinv)).comp
-      (f := fun y ↦ (q, (T y).coprod V.subtypeL)) x (contDiffAt_const.prodMk hcoprod)
+    ContDiffAt 𝕜 n (fun y ↦ snd 𝕜 E V ∘L q.kerSection ((T y).coprod V.subtypeL)) x :=
+  contDiffAt_const.clm_comp (contDiffAt_kerSection_coprod hT hinv)
 
 end Stabilizer
 
@@ -92,10 +120,8 @@ variable {X : Type*} [TopologicalSpace X] {A : X → E →L[𝕜] F} {q : E →L
 the operator and the complementary coordinate vary. -/
 theorem _root_.Continuous.kerSection {A : X → E →L[𝕜] F} {q : X → E →L[𝕜] G}
     (hA : Continuous A) (hq : Continuous q) (h : ∀ x, ((A x).prod (q x)).IsInvertible) :
-    Continuous (fun x ↦ (A x).kerSection (q x)) := by
-  refine continuous_iff_continuousAt.mpr fun x ↦ ?_
-  exact (contDiffAt_kerSection (n := 0) (h x)).continuousAt.comp
-    (f := fun x ↦ (A x, q x)) (hA.continuousAt.prodMk hq.continuousAt)
+    Continuous (fun x ↦ (A x).kerSection (q x)) :=
+  continuous_iff_continuousAt.mpr fun x ↦ hA.continuousAt.kerSection hq.continuousAt (h x)
 
 /-- Kernel sections are continuous on any continuous family of invertible pairs with a fixed
 complementary coordinate. -/

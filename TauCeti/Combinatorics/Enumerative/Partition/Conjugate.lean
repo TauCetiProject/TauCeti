@@ -19,7 +19,9 @@ are the column lengths of the original partition: `Nat.Partition.sum_map_conjuga
 sum over them into a sum over columns, where column `k` counts the parts larger than `k`.
 Consequently dominance can be read off column by column: `μ` dominates `ν` exactly when, for every
 `k`, the first `k` columns of the Young diagram of `μ` hold at most as many boxes as those of `ν`
-(`Nat.Partition.dominates_iff_forall_sum_map_min_le`).
+(`Nat.Partition.dominates_iff_forall_sum_map_min_le`). Counting columns also identifies the
+conjugate of the shape `(n + 1, 1)` as `(2, 1ⁿ)`
+(`TauCeti.Nat.Partition.conjugate_parts_singletonSecondRow`).
 
 The reversal theorem supplies the order duality behind the row/column symmetry of Specht
 modules and permutation modules.
@@ -250,3 +252,35 @@ theorem dominates_iff_forall_sum_map_min_le {n : ℕ} {μ ν : n.Partition} :
     YoungDiagram.rowLens_ofPartition_eq_sort_parts, hsort, hsort]
 
 end Nat.Partition
+
+namespace TauCeti.Nat.Partition
+
+/-- **The conjugate of the shape `(n + 1, 1)` is `(2, 1ⁿ)`**: the first column of `(n + 1, 1)` has
+two cells and each of the next `n` columns has one. -/
+theorem conjugate_parts_singletonSecondRow (n : ℕ) :
+    (singletonSecondRow n).conjugate.parts = 2 ::ₘ Multiset.replicate n 1 := by
+  ext j
+  rcases eq_or_ne j 0 with rfl | hj
+  · rw [(singletonSecondRow n).conjugate.count_parts_zero]
+    simp [Multiset.count_replicate]
+  -- Count the multiplicity of `j` as the sum of its indicator, the form of a column count.
+  have hcount (s : Multiset ℕ) : s.count j = (s.map fun x ↦ if x = j then 1 else 0).sum := by
+    rw [Multiset.sum_map_eq_nsmul_single j fun _ h _ ↦ by simp [h]]
+    simp
+  rw [hcount, hcount, (singletonSecondRow n).sum_map_conjugate_parts _ (by simp [hj.symm])
+    (m := n + 1) (by simp), Finset.sum_range_succ']
+  have hk (k : ℕ) (hk : k ∈ Finset.range n) :
+      ((singletonSecondRow n).parts.filter (k + 1 < ·)).card = 1 := by
+    simp [Finset.mem_range.mp hk]
+  rw [Finset.sum_congr rfl fun k hk' ↦ by rw [hk k hk']]
+  simp [Multiset.filter_singleton, add_comm]
+
+/-- The shape `(2, 1)` of `3` is its own conjugate. -/
+@[simp]
+theorem conjugate_singletonSecondRow_one :
+    (singletonSecondRow 1).conjugate = singletonSecondRow 1 := by
+  ext1
+  rw [conjugate_parts_singletonSecondRow, singletonSecondRow_parts]
+  rfl
+
+end TauCeti.Nat.Partition
