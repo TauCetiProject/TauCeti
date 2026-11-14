@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Relative
+import Mathlib.Algebra.Homology.HomologySequenceLemmas
 
 /-!
 # Functoriality of relative singular homology with local coefficients
@@ -19,7 +20,8 @@ The coefficient system on `A` obtained by first pulling `L` back to `X` and then
 `A` is canonically isomorphic to the pullback to `A` of the restriction of `L` to `B`.  This
 comparison makes the maps on subspace and ambient chains into a morphism of the short exact
 sequences of a pair.  Consequently the relative map commutes with the connecting morphism in the
-long exact sequence.
+long exact sequence, and by the five lemma it is a quasi-isomorphism when the maps on ambient and
+subspace chains are (`TopPair.quasiIso_twistedChainComplexMap_of_quasiIso`).
 
 Together with `TauCeti.AlgebraicTopology.Singular.Twisted.Basic`, this supplies functoriality of
 twisted singular homology for maps of spaces and maps of pairs.
@@ -323,6 +325,27 @@ lemma homologyMap_twistedSubspaceChainComplexMap (k : ℕ) :
         LocalCoefficientSystem.twistedHomologyMap (Hom.snd f) (Q.subspaceSystem L) k := by
   rw [twistedSubspaceChainComplexMap, HomologicalComplex.homologyMap_comp]
 
+/-- A property of morphisms of modules that respects isomorphisms holds for the map induced by a
+map of pairs on the twisted homology of the subspaces, through the comparison of the pulled-back
+coefficient systems, as soon as it holds for the map induced by the subspace component. -/
+lemma homologyMap_twistedChainComplexShortComplexMap_τ₁_mem
+    (Pr : MorphismProperty (ModuleCat.{max v w} R)) [Pr.RespectsIso] (k : ℕ)
+    (h : Pr (LocalCoefficientSystem.twistedHomologyMap (Hom.snd f) (Q.subspaceSystem L) k)) :
+    Pr (HomologicalComplex.homologyMap (twistedChainComplexShortComplexMap f L).τ₁ k) := by
+  rw [twistedChainComplexShortComplexMap_τ₁, homologyMap_twistedSubspaceChainComplexMap,
+    Pr.cancel_left_of_respectsIso]
+  exact h
+
+/-- A property of morphisms of modules holds for the map induced by a map of pairs on the
+twisted homology of the ambient spaces as soon as it holds for the map induced by the ambient
+component. -/
+lemma homologyMap_twistedChainComplexShortComplexMap_τ₂_mem
+    (Pr : MorphismProperty (ModuleCat.{max v w} R)) (k : ℕ)
+    (h : Pr (LocalCoefficientSystem.twistedHomologyMap (Hom.fst f) L k)) :
+    Pr (HomologicalComplex.homologyMap (twistedChainComplexShortComplexMap f L).τ₂ k) := by
+  rw [twistedChainComplexShortComplexMap_τ₂]
+  exact h
+
 /-- The homology maps induced by a map of pairs commute with the inclusions of the subspaces,
 after the canonical comparison of their pulled-back coefficient systems. -/
 lemma twistedHomologyMap_naturality_pair (k : ℕ) :
@@ -357,5 +380,21 @@ lemma twistedHomologyδ_naturality (n m : ℕ) (h : m + 1 = n := by lia) :
       twistedChainComplexShortComplexMap_τ₃,
       homologyMap_twistedSubspaceChainComplexMap] at hδ
     exact hδ
+
+/-- A map of pairs which induces quasi-isomorphisms on the twisted chains of the ambient spaces
+and of the subspaces induces a quasi-isomorphism on relative twisted chains. -/
+lemma quasiIso_twistedChainComplexMap_of_quasiIso
+    [QuasiIso (LocalCoefficientSystem.twistedChainComplexMap (Hom.fst f) L)]
+    [QuasiIso (LocalCoefficientSystem.twistedChainComplexMap (Hom.snd f) (Q.subspaceSystem L))] :
+    QuasiIso (twistedChainComplexMap f L) := by
+  have : QuasiIso (twistedSubspaceChainComplexMap f L) := by
+    rw [twistedSubspaceChainComplexMap_def]
+    infer_instance
+  have := HomologicalComplex.HomologySequence.quasiIso_τ₃
+    (twistedChainComplexShortComplexMap f L) (P.shortExact_twistedChainComplexShortComplex _)
+    (Q.shortExact_twistedChainComplexShortComplex L)
+    (by rw [twistedChainComplexShortComplexMap_τ₁]; infer_instance)
+    (by rw [twistedChainComplexShortComplexMap_τ₂]; infer_instance)
+  rwa [twistedChainComplexShortComplexMap_τ₃] at this
 
 end TopPair
