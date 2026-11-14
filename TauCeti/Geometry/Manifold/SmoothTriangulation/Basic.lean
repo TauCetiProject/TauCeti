@@ -23,7 +23,8 @@ triangulations through which a smooth manifold acquires its PL structure: by Whi
 every smooth manifold, with or without boundary, has one, and any two have linearly isomorphic
 subdivisions (Munkres, Theorems 10.5 and 10.6).
 
-A closed simplex is not open in any ambient space, so smoothness on it is smoothness within a set.
+A nonempty closed simplex has empty interior in the coordinate space `σ → ℝ`, so smoothness on it
+is smoothness within a set.
 We read a map on the closed coordinate simplex `StandardSimplex σ` in barycentric coordinates,
 that is, as a map on the set of weight vectors of Mathlib's `Convexity.StdSimplex ℝ σ` inside the
 finite-dimensional space `σ → ℝ`. The map is a `Cⁿ` *immersion of the simplex* if it is the
@@ -32,9 +33,10 @@ simplex, a derivative within the simplex that is injective on the directions of 
 vectors with coordinate sum zero; all derivatives within the simplex agree on these directions.
 Munkres calls such maps non-degenerate. The notion is meant for `1 ≤ n`, as in Munkres; for
 `n = 0` it still asks for an injective derivative. Munkres asks for an extension to a
-neighbourhood of the simplex in its plane rather than smoothness within the closed simplex; for a
-closed simplex the two agree by Whitney's extension theorem, and the formulation within the
-simplex also makes sense when `M` has boundary or corners.
+neighbourhood of the simplex in its plane rather than smoothness within the closed simplex. We use
+smoothness within the closed simplex: it makes sense when `M` has boundary or corners, where an
+extension into `M` itself need not exist (the identity of `[0, 1]` has no differentiable extension
+into `[0, 1]` near `0`).
 
 Munkres defines a `Cʳ` triangulation as a homeomorphism onto `M` whose differential is injective
 on the closed star of every point, not only on every closed simplex. By his Theorem 8.4 the two
@@ -94,7 +96,11 @@ variable (I n) in
 the simplex if, in barycentric coordinates, it is the restriction of a map `F : (σ → ℝ) → M` that
 is `Cⁿ` within the standard simplex (the weight vectors of `Convexity.StdSimplex ℝ σ`) and that
 has, at every point of the simplex, a derivative within the simplex which is injective on the
-directions of the simplex, the vectors with coordinate sum zero. -/
+directions of the simplex, the vectors with coordinate sum zero.
+
+Because `F` is a total map, for the empty vertex set `σ = ∅` (the empty coordinate simplex) this
+holds exactly when `M` is nonempty. The convention is harmless: faces of an abstract simplicial
+complex are nonempty, so `IsSmoothTriangulation` never involves `σ = ∅`. -/
 def IsSimplexImmersion {σ : Finset ι} (g : StandardSimplex σ → M) : Prop :=
   ∃ F : (σ → ℝ) → M, (∀ x : StandardSimplex σ, F (fun a => x.1 a) = g x) ∧
     ContMDiffOn 𝓘(ℝ, σ → ℝ) I n F (range fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights) ∧
