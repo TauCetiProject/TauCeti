@@ -21,7 +21,9 @@ import TauCeti.RingTheory.MvPowerSeries.Order
 positive polyradius `c`, equipped with the extended Gauss norm through `WithAbs`. Its norm is
 multiplicative and ultrametric, both the Tate algebra and coefficient field embed isometrically,
 and no coordinate indeterminate has an `n`-th root for `n ≠ 1`
-(`TauCeti.MvPowerSeries.pow_ne_algebraMap_gaussFractionField_X`).
+(`TauCeti.MvPowerSeries.pow_ne_algebraMap_gaussFractionField_X`) or a root of the quadratic
+`Y ^ 2 + X i ^ 2 * Y + X i` in any characteristic
+(`TauCeti.MvPowerSeries.sq_add_algebraMap_X_sq_mul_add_algebraMap_X_ne_zero`).
 Injective ring homomorphisms between Tate algebras extend across fractions to ring homomorphisms
 between their Gauss-normed fraction fields (`RingHom.gaussFractionFieldMap`), preserving the
 extended Gauss norm when the Tate-algebra map is norm-preserving
@@ -162,6 +164,58 @@ theorem pow_ne_algebraMap_gaussFractionField_X (i : σ) {n : ℕ} (hn : n ≠ 1)
   have hmod := congrArg (· % n) (by exact_mod_cast hord_eq : n * a = 1 + n * b)
   rw [Nat.mul_mod_right, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt (by omega)] at hmod
   exact zero_ne_one hmod
+
+private theorem sq_add_X_sq_mul_add_X_mul_sq_ne_zero {R : Type*}
+    [CommSemiring R] [NoZeroDivisors R] [Nontrivial R] (i : σ)
+    {A B : _root_.MvPowerSeries σ R} (hB : B ≠ 0) :
+    A ^ 2 + X i ^ 2 * A * B + X i * B ^ 2 ≠ 0 := by
+  rcases eq_or_ne A 0 with rfl | hA
+  · rw [sq, zero_mul, mul_zero, zero_mul, zero_add, zero_add]
+    exact mul_ne_zero (X_ne_zero i) (pow_ne_zero 2 hB)
+  obtain ⟨a, ha⟩ := ENat.ne_top_iff_exists.mp (order_eq_top_iff.not.mpr hA)
+  obtain ⟨b, hb⟩ := ENat.ne_top_iff_exists.mp (order_eq_top_iff.not.mpr hB)
+  have ho1 : (A ^ 2).order = ((2 * a : ℕ) : ℕ∞) := by
+    rw [order_pow, ← ha, nsmul_eq_mul]; norm_cast
+  have ho2 : (X i * B ^ 2).order = ((1 + 2 * b : ℕ) : ℕ∞) := by
+    rw [order_mul, order_X, order_pow, ← hb, nsmul_eq_mul]; norm_cast
+  have ho3 : (X i ^ 2 * A * B).order = ((2 + a + b : ℕ) : ℕ∞) := by
+    rw [order_mul, order_mul, order_pow, order_X, ← ha, ← hb, nsmul_eq_mul]; norm_cast
+  have hne12 : (A ^ 2).order ≠ (X i * B ^ 2).order := by rw [ho1, ho2, ne_eq, Nat.cast_inj]; omega
+  have hmin_cast (x y : ℕ) : (min (x : ℕ∞) (y : ℕ∞)) = ((min x y : ℕ) : ℕ∞) :=
+    (Monotone.map_min (fun _ _ ↦ Nat.cast_le.mpr)).symm
+  have ho12 : (A ^ 2 + X i * B ^ 2).order = ((min (2 * a) (1 + 2 * b) : ℕ) : ℕ∞) := by
+    rw [order_add_of_order_ne hne12, ho1, ho2, hmin_cast]
+  have hne_sum : (A ^ 2 + X i * B ^ 2).order ≠ (X i ^ 2 * A * B).order := by
+    rw [ho12, ho3, ne_eq, Nat.cast_inj]; omega
+  rw [add_right_comm, ne_eq, ← order_eq_top_iff, order_add_of_order_ne hne_sum, ho12, ho3,
+    hmin_cast]
+  exact ENat.natCast_ne_top _
+
+/-- For any coordinate indeterminate `x₀ = X i` in `GaussFractionField σ K c` (in any
+characteristic, including `2`), no `z : GaussFractionField σ K c` satisfies
+`z ^ 2 + x₀ ^ 2 * z + x₀ = 0`. -/
+theorem sq_add_algebraMap_X_sq_mul_add_algebraMap_X_ne_zero (i : σ)
+    (z : GaussFractionField σ K c) :
+    let x₀ := algebraMap Tate (GaussFractionField σ K c) ⟨X i, isRestricted_X c i⟩
+    z ^ 2 + x₀ ^ 2 * z + x₀ ≠ 0 := by
+  let F := GaussFractionField σ K c
+  let X₀ : Tate := ⟨X i, isRestricted_X c i⟩
+  intro x₀ hz
+  obtain ⟨A, B, hB_mem, rfl⟩ := IsFractionRing.div_surjective Tate z
+  have hB_F_ne : algebraMap Tate F B ≠ 0 :=
+    IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors hB_mem
+  have hclear : algebraMap Tate F (A ^ 2 + X₀ ^ 2 * A * B + X₀ * B ^ 2) = 0 := by
+    have hmul := congrArg (· * (algebraMap Tate F B) ^ 2) hz
+    simp only [zero_mul, map_add, map_mul, map_pow] at hmul ⊢
+    dsimp only [x₀, X₀, F] at hmul hB_F_ne ⊢
+    field_simp [hB_F_ne] at hmul
+    linear_combination hmul
+  have hT0 : A ^ 2 + X₀ ^ 2 * A * B + X₀ * B ^ 2 = 0 :=
+    (map_eq_zero_iff _ (IsFractionRing.injective Tate F)).mp hclear
+  exact sq_add_X_sq_mul_add_X_mul_sq_ne_zero σ i
+    (Subtype.coe_ne_coe.mpr (nonZeroDivisors.ne_zero hB_mem))
+    (by simpa only [Subring.coe_add, Subring.coe_mul, SubmonoidClass.coe_pow,
+      ZeroMemClass.coe_zero] using congrArg Subtype.val hT0)
 
 instance : IsUltrametricDist (GaussFractionField σ K c) :=
   (isNonarchimedean_gaussFractionNorm σ K c).isUltrametricDist_withAbs
