@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Normed.Lp.lpHolder
 public import Mathlib.MeasureTheory.Function.Holder
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
-import TauCeti.Analysis.Normed.Lp.Reindex
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.MeasureTheory.Function.Holder
 
@@ -33,7 +32,7 @@ term by `2^{ks} 2^{-ks} = 1` the series is bounded by Hölder's inequality in `�
 
 `‖⟨u, w⟩‖ ≤ C ‖B‖ ‖u‖_{B^s_{p,q}} ‖w‖_{B^{-s}_{p',q'}}`,
 
-where `C` depends only on `φ` and `s`, not on the exponents.
+where `C` is independent of the exponents, of `B` and of `u, w`.
 
 The pairing extends the action of tempered distributions on test functions, from either side. If
 `w` is a scalar Schwartz function `ψ`, then `⟨u, w⟩ = u ψ` for the pairing `B v c = c • v`
@@ -53,7 +52,7 @@ holds for all exponents.
 * `ContinuousLinearMap.hasSum_besovPairing` and `ContinuousLinearMap.besovPairing_apply`: the
   pairing is the sum of the series `∑ₖ ∑_{k + 1 - L ≤ j < k + L} ∫ B ((Δₖ u) x) ((Δⱼ w) x) dx`.
 * `ContinuousLinearMap.exists_norm_besovPairing_le`: `‖⟨u, w⟩‖ ≤ C ‖B‖ ‖u‖ ‖w‖`, with `C`
-  depending only on `φ` and `s`.
+  independent of the exponents, of `B` and of `u, w`.
 * `TauCeti.BesovSpace.toDistr_apply_eq_besovPairing` and
   `TauCeti.BesovSpace.besovPairing_eq_toDistr_apply`: on scalar Schwartz functions the pairing is
   the action of a tempered distribution.
@@ -180,6 +179,8 @@ variable (φ s p p' q q') in
 `q, q'`, induced by a continuous bilinear map `B`. Here `Δ⁺ₖ` is the sum of the blocks `Δⱼ` with
 `|j - k| < L`, where `L = φ.littlewoodPaleyOverlap` is the least `L` such that pieces of the
 partition whose indices differ by at least `L` have disjoint supports; thus `Δ⁺ₖ Δₖ = Δₖ`
+(`TemperedDistribution.littlewoodPaleyBlock_eq_sum_Ico_littlewoodPaleyBlock`). The pairing is the
+sum of the series `∑ₖ ∑_{|j - k| < L} ∫ B ((Δₖ u) x) ((Δⱼ w) x) dx`
 (`ContinuousLinearMap.besovPairing_apply`). On scalar Schwartz functions it is the action of a
 tempered distribution (`TauCeti.BesovSpace.toDistr_apply_eq_besovPairing`,
 `TauCeti.BesovSpace.besovPairing_eq_toDistr_apply`). -/
@@ -283,9 +284,10 @@ private theorem besovPairing_eq_of_tendsto (B : F →L[ℂ] G →L[ℂ] K) {u : 
     (summable_lpPairing B u w).hasSum.tendsto_sum_nat
 
 variable (φ s) in
-/-- **Hölder's inequality for the Besov pairing.** There is `C`, depending only on `φ` and `s`, such
-that `‖⟨u, w⟩‖ ≤ C ‖B‖ ‖u‖_{B^s_{p,q}} ‖w‖_{B^{-s}_{p',q'}}` for all Hölder conjugate pairs
-`p, p'` and `q, q'`, every continuous bilinear map `B` and all `u` and `w`. -/
+/-- **Hölder's inequality for the Besov pairing.** There is `C`, independent of the exponents, of
+`B` and of `u, w`, such that `‖⟨u, w⟩‖ ≤ C ‖B‖ ‖u‖_{B^s_{p,q}} ‖w‖_{B^{-s}_{p',q'}}` for all
+Hölder conjugate pairs `p, p'` and `q, q'`, every continuous bilinear map `B` and all `u` and
+`w`. -/
 theorem exists_norm_besovPairing_le :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ {p p' q q' : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ p')] [Fact (1 ≤ q)]
       [Fact (1 ≤ q')] [p.HolderConjugate p'] [q.HolderConjugate q'] (B : F →L[ℂ] G →L[ℂ] K)
