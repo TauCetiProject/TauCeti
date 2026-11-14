@@ -30,10 +30,11 @@ proves **microlocal elliptic regularity**: at a noncharacteristic covector, `T` 
 `WF(T) ⊆ WF(P T) ∪ Char(P)`
 
 (`Distribution.waveFrontSet_subset_waveFrontSet_sum_smul_iteratedLineDerivOp_union`). Together
-with the reverse microlocality `WF(P T) ⊆ WF(T)` of differential operators, an operator elliptic in the sense that
-`σ_M(P)` vanishes nowhere off zero satisfies `WF(P T) = WF(T)`, and hence has the same singular
-support: `P T` is smooth on an open set exactly when `T` is. The Laplacian is the basic example
-(`Distribution.waveFrontSet_laplacianCLM`).
+with the reverse microlocality `WF(P T) ⊆ WF(T)` of differential operators
+(`Distribution.waveFrontSet_sum_smul_iteratedLineDerivOp_subset`), an operator elliptic in the
+sense that `σ_M(P)` vanishes nowhere off zero satisfies `WF(P T) = WF(T)`, and hence has the same
+singular support: `P T` is smooth on an open set exactly when `T` is. The Laplacian is the basic
+example (`Distribution.waveFrontSet_laplacianCLM`).
 
 ## The argument
 

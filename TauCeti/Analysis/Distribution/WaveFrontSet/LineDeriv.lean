@@ -41,6 +41,8 @@ rapid decay of every order.
   `Distribution.waveFrontSet_iteratedLineDerivOp_subset`: the wave front set of a derivative.
 * `Distribution.waveFrontSet_sum_smul_smulLeftCLM_iteratedLineDerivOp_subset`: differential
   operators with smooth coefficients do not enlarge the wave front set.
+* `Distribution.waveFrontSet_sum_smul_iteratedLineDerivOp_subset`: the same for constant
+  coefficients.
 
 ## References
 
