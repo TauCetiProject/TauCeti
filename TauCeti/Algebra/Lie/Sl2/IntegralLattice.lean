@@ -29,7 +29,7 @@ lattice.
 
 The lattice is also identified with `Fin (n + 1) → ℤ`, proving directly that it is finite free
 of rank `n + 1` and spans `V(n)` over `ℚ`. This is the rank-one admissible-lattice input to the
-Chevalley--Demazure construction in Layer 9 of the ReductiveGroups roadmap.
+Chevalley--Demazure construction.
 
 ## Main declarations
 

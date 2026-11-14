@@ -11,7 +11,7 @@ import TauCeti.Geometry.Manifold.ContMDiff.Defs
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 
 /-!
-# Finiteness of the Riemannian distance, and the induced metric space
+# Comparison and finiteness of the Riemannian distance, and the induced metric space
 
 `Manifold.riemannianEDist I x y` is the infimum of the lengths of `C¹` paths from `x` to `y`, an
 *extended* distance: it is `∞` as soon as no such path exists. This file identifies exactly when it
@@ -29,6 +29,10 @@ is the special case that matters downstream.
 
 ## Main results
 
+* `TauCeti.Manifold.riemannianEDist_le_mul`: a `C¹` map with differential uniformly bounded by
+  a positive constant increases Riemannian extended distances by at most that factor.
+* `TauCeti.IsRiemannianManifold.lipschitzWith_of_norm_mfderiv_le`: the corresponding global
+  Lipschitz estimate when both ambient extended distances are Riemannian.
 * `TauCeti.Manifold.riemannianEDist_lt_top_iff_mem_connectedComponent`: the Riemannian distance from
   `x` to `y` is finite if and only if `y` lies in the connected component of `x`.
 * `TauCeti.Manifold.riemannianEDist_ne_top`: on a preconnected manifold the Riemannian distance is
@@ -98,6 +102,34 @@ theorem le_riemannianEDist_of_forall_le_pathELength {x y : M} {c : ℝ≥0∞}
   obtain ⟨r, hr1, hr2⟩ := ENNReal.lt_iff_exists_nnreal_btwn.1 hle
   obtain ⟨γ, h0, h1, hγ, hl⟩ := exists_lt_of_riemannianEDist_lt hr1
   exact absurd ((h γ h0 h1 hγ).trans hl.le) (not_le.2 hr2)
+
+section Comparison
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {K : Type*} [TopologicalSpace K] {J : ModelWithCorners ℝ F K}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace K N]
+  [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
+
+/-- A `C¹` map whose differential is bounded by a positive constant increases Riemannian
+extended distances by at most that factor. Positivity allows infinitely distant components. -/
+theorem riemannianEDist_le_mul {f : M → N} (hf : ContMDiff I J 1 f) {C : ℝ≥0}
+    (hC0 : C ≠ 0) (hC : ∀ x (v : TangentSpace I x), ‖mfderiv I J f x v‖ ≤ C * ‖v‖)
+    (x y : M) : riemannianEDist J (f x) (f y) ≤ C * riemannianEDist I x y := by
+  rw [← ENNReal.div_le_iff' (ENNReal.coe_ne_zero.2 hC0) ENNReal.coe_ne_top]
+  refine le_riemannianEDist_of_forall_le_pathELength fun γ h0 h1 hγ ↦ ?_
+  rw [ENNReal.div_le_iff' (ENNReal.coe_ne_zero.2 hC0) ENNReal.coe_ne_top]
+  refine (riemannianEDist_le_pathELength (hf.comp_contMDiffOn hγ)
+    (congrArg f h0) (congrArg f h1) zero_le_one).trans ?_
+  rw [pathELength_eq_lintegral_mfderiv_Ioo, pathELength_eq_lintegral_mfderiv_Ioo,
+    ← MeasureTheory.lintegral_const_mul' _ _ ENNReal.coe_ne_top]
+  refine MeasureTheory.setLIntegral_mono' measurableSet_Ioo fun t ht ↦ ?_
+  have hdiff := (hγ.contMDiffAt (Icc_mem_nhds ht.1 ht.2)).mdifferentiableAt one_ne_zero
+  rw [mfderiv_comp t ((hf _).mdifferentiableAt one_ne_zero) hdiff, ContinuousLinearMap.comp_apply,
+    ← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_coe_nnreal,
+    ← ENNReal.ofReal_mul C.coe_nonneg]
+  exact ENNReal.ofReal_le_ofReal (hC _ _)
+
+end Comparison
 
 variable [IsManifold I 1 M] [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
 
@@ -241,6 +273,20 @@ theorem lipschitzOnWith_of_norm_curveVelocity_le {γ : ℝ → M} {s : Set ℝ} 
         exact mul_le_mul_of_nonneg_right (hK z (hsub hz)) dist_nonneg
     _ = K * edist u v := by
         rw [ENNReal.ofReal_mul K.coe_nonneg, ENNReal.ofReal_coe_nnreal, edist_dist]
+
+/-- A `C¹` map between Riemannian manifolds with differential bounded by a positive constant
+is Lipschitz with that constant. -/
+theorem lipschitzWith_of_norm_mfderiv_le
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {K : Type*} [TopologicalSpace K] {J : ModelWithCorners ℝ F K}
+    {N : Type*} [PseudoEMetricSpace N] [ChartedSpace K N]
+    [RiemannianBundle (fun y : N ↦ TangentSpace J y)] [IsRiemannianManifold J N]
+    {f : M → N} (hf : ContMDiff I J 1 f) {C : ℝ≥0} (hC0 : C ≠ 0)
+    (hC : ∀ x (v : TangentSpace I x), ‖mfderiv I J f x v‖ ≤ C * ‖v‖) :
+    LipschitzWith C f := by
+  intro x y
+  rw [IsRiemannianManifold.out (I := J), IsRiemannianManifold.out (I := I)]
+  exact Manifold.riemannianEDist_le_mul hf hC0 hC x y
 
 section LocalLipschitz
 

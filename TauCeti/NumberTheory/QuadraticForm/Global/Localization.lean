@@ -27,8 +27,6 @@ On square classes of global units the place maps are computed by the localized u
 
 -/
 
--- Provenance: TauCetiRoadmap/GlobalQuadraticForms/README.md, Layer 0.1, and Suggested.lean.
-
 public section
 noncomputable section
 

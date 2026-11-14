@@ -116,7 +116,7 @@ private theorem ramificationIdx_mul_relativeDegree_eq_two_of_conorm_eq {P : Plac
   set f := relativeDegree k k⟮x⟯ P
   set c := D₀.coeff P₀
   have hc : 0 < c := by
-    rcases (Int.natCast_nonneg e).lt_or_eq with he | he
+    rcases (Int.natCast_nonneg e).lt_or_eq with _ | he
     · nlinarith
     · rw [← he] at hcoeff
       omega
@@ -344,7 +344,7 @@ theorem isHyperellipticFunctionField_of_isPoleNumber_two_of_perfectField [Perfec
     {P : Place k F} (hP : P.degree = 1) (hpole : P.IsPoleNumber 2) :
     IsHyperellipticFunctionField k F :=
   isHyperellipticFunctionField_iff_two_le_genus_and_exists_finrank_adjoin_eq_two.mpr
-    ⟨hg, exists_transcendental_finrank_adjoin_eq_two_of_degree_eq_two hF hex (by omega)
+    ⟨hg, exists_transcendental_finrank_adjoin_eq_two_of_degree_eq_two hF hex
       (by simp [hP]) (two_le_dim_two_zsmul_ofPoint_of_isPoleNumber_two hF hex hpole)⟩
 
 end TauCeti
