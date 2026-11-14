@@ -829,15 +829,21 @@ theorem IsReduced.edgePath_normalForm {b : Γ.V} {p : 𝔸.AlternatingPath a b} 
     (d : 𝔸.Transversal) : (normalForm d p.toPath).toPath.edgePath = p.toPath.edgePath :=
   (isReduced_normalForm_aux d p hp).2
 
+/-- Homotopic reduced alternating paths have the same underlying edge path. -/
+theorem IsReduced.edgePath_eq_of_homotopic {b : Γ.V} {p q : 𝔸.AlternatingPath a b}
+    (hp : p.IsReduced) (hq : q.IsReduced) (h : p.toPath.Homotopic q.toPath) :
+    p.toPath.edgePath = q.toPath.edgePath := by
+  rw [← hp.edgePath_normalForm default, ← hq.edgePath_normalForm default,
+    normalForm_eq_of_homotopic default h]
+
 /-- **Britton's lemma for graphs of groups**: a reduced closed alternating path homotopic to a
 single vertex group letter `g` has length zero and equals `single g`. -/
 theorem IsReduced.eq_single_of_homotopic_ofVertex {p : 𝔸.AlternatingPath a a} (hp : p.IsReduced)
     {g : 𝔸.vertexGroup a} (h : p.toPath.Homotopic (Path.ofVertex g)) : p = .single g := by
-  have hedge := hp.edgePath_normalForm default
-  rw [(normalForm_eq_normalForm_iff default).mpr h, normalForm_ofVertex] at hedge
+  have hedge := hp.edgePath_eq_of_homotopic (isReduced_single g) h
   cases p with
   | single g' => exact congrArg single (Path.ofVertex_homotopic_ofVertex_iff.mp h)
-  | cons q e h' => simp at hedge
+  | cons _ _ _ => simp at hedge
 
 /-- A reduced closed alternating path homotopic to the empty path equals `single 1`. -/
 theorem IsReduced.eq_single_one_of_homotopic_nil {p : 𝔸.AlternatingPath a a} (hp : p.IsReduced)

@@ -250,30 +250,10 @@ end segment
 
 /-- The one-edge graph of groups of a free product `A ∗ B`: the segment with vertex groups `A` at
 `false` and `B` at `true` and trivial edge group `PUnit`. -/
-@[expose] def freeProductGraph (A B : Type w) [Group A] [Group B] :
+abbrev freeProductGraph (A B : Type w) [Group A] [Group B] :
     GraphOfGroups.{0, 0, w, 0} SerreGraph.segment :=
   segment (1 : PUnit →* A) (1 : PUnit →* B) (Function.injective_of_subsingleton _)
     (Function.injective_of_subsingleton _)
-
-section freeProductGraph
-
-variable (A B : Type w) [Group A] [Group B]
-
-@[simp] theorem freeProductGraph_ω_false :
-    (freeProductGraph A B).ω false = (1 : PUnit →* B) := (rfl)
-
-@[simp] theorem freeProductGraph_ω_true :
-    (freeProductGraph A B).ω true = (1 : PUnit →* A) := (rfl)
-
-@[simp] theorem freeProductGraph_α_false :
-    (freeProductGraph A B).α false = (1 : PUnit →* A) :=
-  segment_α_false ..
-
-@[simp] theorem freeProductGraph_α_true :
-    (freeProductGraph A B).α true = (1 : PUnit →* B) :=
-  segment_α_true ..
-
-end freeProductGraph
 
 /-- The graph of groups of an HNN extension: one vertex with group `G`, one loop with edge
 group `C`, and monomorphisms `f g : C →* G`. The dart `((), true)` has `α = f` and `ω = g`. -/
