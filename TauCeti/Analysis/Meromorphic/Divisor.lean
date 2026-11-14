@@ -26,9 +26,12 @@ of support finite and bounds sums over their subsets by the corresponding closed
 
 * `MeromorphicOn.divisor_eq_analyticOrderNatAt` — at a point where `f` is analytic, the divisor
   reads `analyticOrderNatAt f z`.
-* `AnalyticAt.divisor_apply_eq_zero` — the divisor vanishes where `f` is analytic and nonzero.
-* `MeromorphicOn.divisor_norm_sublevel_finite` — finitely many support points occur in each
-  norm sublevel over a proper normed field.
+* `AnalyticAt.divisor_apply_eq_zero`, `AnalyticAt.apply_eq_zero_of_divisor_ne_zero` — the divisor
+  vanishes where `f` is analytic and nonzero, so any support point where `f` is analytic is a zero.
+* `MeromorphicOn.divisor_norm_sublevel_finite`,
+  `MeromorphicOn.tendsto_sum_divisor_norm_sublevel_atTop` — finitely many support points occur in
+  each norm sublevel over a proper normed field, and integer-radius sublevel sums of a summable
+  family converge to its sum.
 * `AnalyticOnNhd.tsum_divisor_subtype_le_sum_closedBall` — a support-subset multiplicity sum
   is bounded by the containing closed-ball count.
 * `MeromorphicOn.meromorphicOrderAt_eq_of_divisor_eq` — equal divisors determine equal finite
@@ -59,6 +62,19 @@ theorem MeromorphicOn.divisor_norm_sublevel_finite
   rintro z ⟨ρ, hρ, rfl⟩
   have hρ' : ‖(ρ : 𝕜)‖ ≤ R := hρ
   exact ⟨by simpa only [Metric.mem_closedBall, dist_zero_right] using hρ', ρ.property⟩
+
+/-- For a summable family on the whole-space divisor support over a proper normed field, the finite
+partial sums over integer-radius norm sublevels converge to its sum. -/
+theorem MeromorphicOn.tendsto_sum_divisor_norm_sublevel_atTop
+    {𝕜 E M : Type*} [NontriviallyNormedField 𝕜] [ProperSpace 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [AddCommMonoid M] [TopologicalSpace M]
+    {f : 𝕜 → E} {g : (divisor f Set.univ).support → M} {L : M} (hg : HasSum g L) :
+    Filter.Tendsto (fun n : ℕ ↦ ∑ ρ ∈ (divisor_norm_sublevel_finite f n).toFinset, g ρ)
+      Filter.atTop (nhds L) := by
+  refine hg.comp (Filter.tendsto_atTop.mpr fun t ↦ ?_)
+  refine Filter.eventually_atTop.mpr ⟨t.sup fun ρ ↦ ⌈‖(ρ : 𝕜)‖⌉₊, fun n hn ρ hρ ↦ ?_⟩
+  rw [Set.Finite.mem_toFinset, Set.mem_ofPred_eq]
+  exact (Nat.le_ceil _).trans (Nat.cast_le.mpr ((Finset.le_sup hρ).trans hn))
 
 /-- Summing divisor multiplicities over a bounded subset of whole-space support is bounded
 by the divisor count on the containing closed ball. -/
@@ -121,6 +137,14 @@ theorem AnalyticAt.divisor_apply_eq_zero {𝕜 E : Type*} [NontriviallyNormedFie
         hf.analyticOrderAt_eq_zero.mpr hfz, ENat.toNat_zero, Nat.cast_zero]
     · simp [hz]
   · exact MeromorphicOn.divisor_eq_zero_of_not_meromorphicOn hm
+
+/-- If the divisor of `f` on `U` is nonzero at a point where `f` is analytic, then `f` vanishes
+there. No meromorphy hypothesis on `U` is needed. -/
+theorem AnalyticAt.apply_eq_zero_of_divisor_ne_zero {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : 𝕜 → E} {U : Set 𝕜} {z : 𝕜}
+    (hf : AnalyticAt 𝕜 f z) (hz : MeromorphicOn.divisor f U z ≠ 0) : f z = 0 := by
+  by_contra hfz
+  exact hz (hf.divisor_apply_eq_zero hfz)
 
 /-- Equal divisors determine equal meromorphic orders at a point where both orders are finite.
 The two functions may take values in different normed spaces over the same field. -/

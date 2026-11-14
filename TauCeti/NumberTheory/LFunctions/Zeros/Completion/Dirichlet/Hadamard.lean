@@ -123,7 +123,6 @@ theorem re_logDeriv_dirichletData_entireCompletion_zero (hne : χ ≠ 1) :
     (dirichletData_hasMeromorphicContinuation χ hχ).differentiable_entireCompletion
     (dirichletData_entireCompletion_zero_ne_zero χ hχ hne)
     (re_mem_Icc_of_dirichletData_entireCompletion_eq_zero χ hχ hne)
-    (DirichletCharacter.rootNumber_ne_zero hχ)
     (dirichletData_entireCompletion_one_sub_eq_rootNumber_mul_conj_conj χ hχ hne)
 
 /-- **Cancelled real-part partial-fraction expansion.** Off the zeros of
@@ -139,7 +138,6 @@ theorem re_logDeriv_dirichletData_entireCompletion_eq_tsum (hne : χ ≠ 1) {s :
     (dirichletData_hasMeromorphicContinuation χ hχ).differentiable_entireCompletion
     (dirichletData_entireCompletion_zero_ne_zero χ hχ hne)
     (re_mem_Icc_of_dirichletData_entireCompletion_eq_zero χ hχ hne)
-    (DirichletCharacter.rootNumber_ne_zero hχ)
     (dirichletData_entireCompletion_one_sub_eq_rootNumber_mul_conj_conj χ hχ hne) hs
 
 /-- On `1 ≤ Re s`, the real part of the logarithmic derivative of a primitive nonprincipal
@@ -197,12 +195,10 @@ theorem finite_zero_sum_le_logDeriv (hne : χ ≠ 1) (S : Finset ℂ) (hS : ∀ 
   have hF_nonneg (ρ : ℂ) : 0 ≤ F ρ := by
     rcases le_or_gt (d ρ) 0 with hd0 | hdpos
     · simp [F, Int.toNat_of_nonpos hd0]
-    · have hρ_strip := re_mem_Ioo_of_divisor_dirichletData_entireCompletion_pos χ hχ hne hdpos
-      refine mul_nonneg (Nat.cast_nonneg _) ?_
-      rw [one_div, inv_re]
-      refine div_nonneg ?_ (normSq_nonneg _)
-      rw [sub_re]
-      linarith [hρ_strip.2]
+    · have hΛρ := ((dirichletData_hasMeromorphicContinuation χ hχ
+          ).analyticAt_entireCompletion ρ).apply_eq_zero_of_divisor_ne_zero hdpos.ne'
+      exact mul_nonneg (Nat.cast_nonneg _)
+        (re_one_div_sub_pos_of_dirichletData_entireCompletion_eq_zero χ hχ hne hΛρ hσ1).le
   have hfin_le : ∑ ρ ∈ S, F ρ ≤ (logDeriv Λ₀ σ).re := by
     rw [← hF_sum.tsum_eq]
     exact hF_sum.summable.sum_le_tsum S fun ρ _ ↦ hF_nonneg ρ

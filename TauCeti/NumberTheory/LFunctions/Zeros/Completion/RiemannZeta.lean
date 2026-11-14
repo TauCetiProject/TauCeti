@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.FiniteOrder
 public import TauCeti.NumberTheory.LFunctions.Zeros.Divisor
 
 import Mathlib.NumberTheory.LSeries.Nonvanishing
+import TauCeti.Analysis.Complex.Conformal.Reflection.LogDeriv
 import TauCeti.Analysis.Complex.GrowthOrder.Logarithmic
 import TauCeti.NumberTheory.LSeries.HurwitzZetaGrowth
 
@@ -217,20 +218,15 @@ theorem re_logDeriv_zetaEntireCompletion_zero :
       -∑' ρ : (MeromorphicOn.divisor zetaEntireCompletion Set.univ).support,
         ((MeromorphicOn.divisor zetaEntireCompletion Set.univ ρ).toNat : ℝ) * (1 / (ρ : ℂ)).re :=
   orderLE_zetaEntireCompletion.re_logDeriv_zero_eq_neg_tsum differentiable_zetaEntireCompletion
-    zetaEntireCompletion_zero_ne_zero re_mem_Icc_of_zetaEntireCompletion_eq_zero one_ne_zero
+    zetaEntireCompletion_zero_ne_zero re_mem_Icc_of_zetaEntireCompletion_eq_zero
     zetaEntireCompletion_one_sub_eq_conj_conj
 
 /-- `logDeriv zetaEntireCompletion` is real on the real axis. -/
 theorem im_logDeriv_zetaEntireCompletion_ofReal (σ : ℝ) :
     (logDeriv zetaEntireCompletion σ).im = 0 := by
-  have h : zetaEntireCompletion = conj ∘ zetaEntireCompletion ∘ conj := by
-    ext z
-    simp [Function.comp_def, zetaEntireCompletion_conj]
-  have hconj : logDeriv zetaEntireCompletion (conj (σ : ℂ)) =
-      conj (logDeriv zetaEntireCompletion σ) := by
-    conv_lhs => rw [h]
-    rw [logDeriv_apply, logDeriv_apply, deriv_conj_conj]
-    simp
+  have hconj := logDeriv_conj_eq_conj_logDeriv_of_ne_zero (F := zetaEntireCompletion)
+    one_ne_zero isOpen_univ (fun z _ ↦ by rw [one_mul, zetaEntireCompletion_conj])
+    (Set.mem_univ (σ : ℂ))
   rw [conj_ofReal] at hconj
   exact conj_eq_iff_im.mp hconj.symm
 
@@ -242,7 +238,7 @@ theorem re_logDeriv_zetaEntireCompletion_eq_tsum {s : ℂ} (hs : zetaEntireCompl
         ((MeromorphicOn.divisor zetaEntireCompletion Set.univ ρ).toNat : ℝ) *
           (1 / (s - ρ)).re :=
   orderLE_zetaEntireCompletion.re_logDeriv_eq_tsum differentiable_zetaEntireCompletion
-    zetaEntireCompletion_zero_ne_zero re_mem_Icc_of_zetaEntireCompletion_eq_zero one_ne_zero
+    zetaEntireCompletion_zero_ne_zero re_mem_Icc_of_zetaEntireCompletion_eq_zero
     zetaEntireCompletion_one_sub_eq_conj_conj hs
 
 /-- On `1 ≤ Re s`, `Re (logDeriv zetaEntireCompletion s)` is nonnegative. -/

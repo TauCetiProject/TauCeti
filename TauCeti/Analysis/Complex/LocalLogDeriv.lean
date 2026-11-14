@@ -41,8 +41,9 @@ point are counted by Jensen's formula, and the remaining part of `logDeriv f` is
   `4 (r + ‖z - z₀‖) / (r - ‖z - z₀‖) ^ 2 * log M`.
 * `AnalyticOnNhd.norm_logDeriv_sub_finsum_divisor_half_le`: the classical radii `R / 2` and
   `R / 4`, with the bound `48 / R * log M`.
-* `AnalyticOnNhd.norm_logDeriv_sub_logDeriv_sub_finsum_divisor_le`: subtracting the expansion at
-  `z₀` bounds `logDeriv f z - logDeriv f z₀` on `closedBall z₀ (R / 8)` by
+* `AnalyticOnNhd.norm_logDeriv_sub_logDeriv_sub_finsum_divisor_le`: for `z ∈ closedBall z₀ (R / 8)`
+  with `f z ≠ 0`, `logDeriv f z - logDeriv f z₀` differs from
+  `∑ᶠ ρ, m_ρ (1 / (z - ρ) - 1 / (z₀ - ρ))` over the zeros in `closedBall z₀ (R / 2)` by at most
   `384 ‖z - z₀‖ / R ^ 2 * log M`.
 
 ## Implementation notes

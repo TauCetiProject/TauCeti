@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.CanonicalProduct.Divisor
 public import TauCeti.Analysis.Complex.GrowthOrder
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Complex.DivisorFactorization
 import TauCeti.Analysis.Complex.GrowthOrder.Zero.Summability
 import TauCeti.Analysis.Complex.LocalLogDeriv
@@ -45,9 +46,10 @@ The proof follows Landau's local logarithmic-derivative method (Montgomery–Vau
 
 When every zero of `f` lies in the closed critical strip `0 ≤ Re ρ ≤ 1`, the bound
 `0 ≤ Re (1 / ρ) ≤ ‖ρ⁻¹‖ ^ 2` makes `∑' ρ, m_ρ * Re (1 / ρ)` and `∑' ρ, m_ρ * Re (1 / (s - ρ))`
-separately summable. Under a functional symmetry `f (1 - z) = c * conj (f (conj z))` with `c ≠ 0`,
-permuting the zeros by `ρ ↦ 1 - conj ρ` yields `Re (logDeriv f 0) = -∑' ρ, m_ρ * Re (1 / ρ)` and
-eliminates the constant term from `Re (logDeriv f s)`.
+separately summable. Under a functional symmetry `f (1 - z) = c * conj (f (conj z))`, permuting the
+zeros by `ρ ↦ 1 - conj ρ` (`TauCeti.divisor_one_sub_conj`, `TauCeti.logDeriv_one_sub_conj`) yields
+`Re (logDeriv f 0) = -∑' ρ, m_ρ * Re (1 / ρ)` and eliminates the constant term from
+`Re (logDeriv f s)`.
 
 ## Main results
 
@@ -60,6 +62,8 @@ eliminates the constant term from `Re (logDeriv f s)`.
   `Multipliable` and `∏' ρ : ℂ, weierstrassFactorOne (s / ρ) ^ m_ρ`.
 * `TauCeti.OrderLE.logDeriv_eq_add_tsum`, `TauCeti.OrderLE.hasSumLocallyUniformlyOn_logDeriv`:
   pointwise and locally uniform partial-fraction expansions of `logDeriv f`.
+* `TauCeti.divisor_one_sub_conj`, `TauCeti.logDeriv_one_sub_conj`: invariance of the whole-plane
+  divisor and reflection of `logDeriv f` under `z ↦ 1 - conj z`.
 * `TauCeti.OrderLE.re_logDeriv_zero_eq_neg_tsum`, `TauCeti.OrderLE.re_logDeriv_eq_tsum`:
   real-part cancellation `Re (logDeriv f 0) = -∑' ρ, m_ρ * Re (1 / ρ)` and
   `Re (logDeriv f s) = ∑' ρ, m_ρ * Re (1 / (s - ρ))` under critical-strip zero location and
@@ -147,17 +151,70 @@ private theorem finsum_divisor_closedBall_eq_sum_sublevel {f : ℂ → ℂ}
   dsimp only [emb]
   rw [Function.Embedding.coeFn_mk, hcast, zero_sub, div_neg, sub_neg_eq_add]
 
-/-- A summable family on the whole-plane divisor support is the limit of its finite partial sums
-over closed balls of integer radius. -/
-private theorem tendsto_sum_sublevel_atTop {E : Type*} [AddCommMonoid E] [TopologicalSpace E]
-    (f : ℂ → ℂ) {g : (MeromorphicOn.divisor f Set.univ).support → E} {L : E}
-    (hg : HasSum g L) :
-    Tendsto (fun n : ℕ ↦ ∑ ρ ∈ (MeromorphicOn.divisor_norm_sublevel_finite f n).toFinset, g ρ)
-      atTop (𝓝 L) := by
-  refine hg.comp (tendsto_atTop.mpr fun t ↦ ?_)
-  refine Filter.eventually_atTop.mpr ⟨t.sup fun ρ ↦ ⌈‖(ρ : ℂ)‖⌉₊, fun n hn ρ hρ ↦ ?_⟩
-  rw [Set.Finite.mem_toFinset, Set.mem_ofPred_eq]
-  exact (Nat.le_ceil _).trans (Nat.cast_le.mpr ((Finset.le_sup hρ).trans hn))
+/-- A point where an entire function does not vanish lies outside its whole-plane divisor
+support. -/
+private theorem notMem_divisor_support_of_ne_zero {f : ℂ → ℂ} (hf : Differentiable ℂ f)
+    {s : ℂ} (hs : f s ≠ 0) : s ∉ (MeromorphicOn.divisor f Set.univ).support :=
+  Function.notMem_support.mpr ((hf.analyticAt s).divisor_apply_eq_zero hs)
+
+/-- Applying the subtracted Landau bound on `closedBall 0 (2 * n)` at growth exponent `3 / 2`
+bounds the difference between `logDeriv f s - logDeriv f 0` and the radius-`n` partial-fraction sum
+by `O(n ^ (-2)) + O(n ^ (-1 / 2))`. -/
+private theorem exists_eventually_norm_logDeriv_sub_sum_sublevel_le {f : ℂ → ℂ}
+    (h : OrderLE f 1) (hf : Differentiable ℂ f) (hf0 : f 0 ≠ 0) {s : ℂ} (hs : f s ≠ 0) :
+    ∃ K : ℝ, ∀ᶠ n : ℕ in atTop,
+      ‖logDeriv f s - logDeriv f 0 -
+          ∑ ρ ∈ (MeromorphicOn.divisor_norm_sublevel_finite f n).toFinset,
+            ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℂ) * (1 / (s - ρ) + 1 / ρ)‖ ≤
+        384 * ‖s‖ * Real.log K * ((2 * (n : ℝ)) ^ 2)⁻¹ +
+          384 * ‖s‖ * (2 * (n : ℝ)) ^ (-(1 / 2 : ℝ)) := by
+  obtain ⟨C, _, hC⟩ := (h.isBigO (by norm_num : (1 : ℝ) < 3 / 2)).exists_pos
+  obtain ⟨L, _, hL⟩ := Filter.hasBasis_cobounded_norm.mem_iff.mp hC.bound
+  set K : ℝ := max 1 (C / ‖f 0‖)
+  have hK0 : 0 < K := lt_of_lt_of_le zero_lt_one (le_max_left _ _)
+  refine ⟨K, ?_⟩
+  filter_upwards [eventually_ge_atTop 1, eventually_ge_atTop ⌈L⌉₊,
+    eventually_ge_atTop ⌈4 * ‖s‖⌉₊] with n hn1 hnL hns
+  have hn_pos : (0 : ℝ) < n := Nat.cast_pos.mpr hn1
+  have hR_pos : 0 < 2 * (n : ℝ) := by positivity
+  have hRL : L ≤ 2 * (n : ℝ) := by
+    have : L ≤ (n : ℝ) := (Nat.le_ceil L).trans (Nat.cast_le.mpr hnL)
+    linarith
+  have hsR : ‖s - 0‖ ≤ 2 * (n : ℝ) / 8 := by
+    have : 4 * ‖s‖ ≤ (n : ℝ) := (Nat.le_ceil _).trans (Nat.cast_le.mpr hns)
+    rw [sub_zero]
+    linarith
+  let M : ℝ := K * Real.exp ((2 * (n : ℝ)) ^ (3 / 2 : ℝ))
+  have hM : ∀ w ∈ sphere (0 : ℂ) (2 * (n : ℝ)), ‖f w‖ ≤ M * ‖f 0‖ := fun w hw ↦ by
+    have hwR : ‖w‖ = 2 * (n : ℝ) := by simpa [dist_zero_right] using hw
+    have hwbound : ‖f w‖ ≤ C * Real.exp ((2 * (n : ℝ)) ^ (3 / 2 : ℝ)) := by
+      have hLw : ‖f w‖ ≤ C * ‖Real.exp (‖w‖ ^ (3 / 2 : ℝ))‖ := hL (hRL.trans hwR.symm.le)
+      rw [Real.norm_eq_abs, Real.abs_exp, hwR] at hLw
+      exact hLw
+    have hCK : C ≤ K * ‖f 0‖ := by
+      rw [← div_le_iff₀ (norm_pos_iff.mpr hf0)]
+      exact le_max_right _ _
+    calc ‖f w‖ ≤ C * Real.exp ((2 * (n : ℝ)) ^ (3 / 2 : ℝ)) := hwbound
+      _ ≤ (K * ‖f 0‖) * Real.exp ((2 * (n : ℝ)) ^ (3 / 2 : ℝ)) := by gcongr
+      _ = M * ‖f 0‖ := by dsimp [M]; ring
+  have hball : AnalyticOnNhd ℂ f (closedBall 0 (2 * (n : ℝ))) := fun z _ ↦ hf.analyticAt z
+  have hlandau := hball.norm_logDeriv_sub_logDeriv_sub_finsum_divisor_le hR_pos hf0 hM hsR hs
+  have hhalf : 2 * (n : ℝ) / 2 = (n : ℝ) := by ring
+  rw [hhalf, finsum_divisor_closedBall_eq_sum_sublevel hf n s, sub_zero] at hlandau
+  refine hlandau.trans (le_of_eq ?_)
+  have hlogM : Real.log M = Real.log K + (2 * (n : ℝ)) ^ (3 / 2 : ℝ) := by
+    dsimp [M]
+    rw [Real.log_mul hK0.ne' (Real.exp_pos _).ne', Real.log_exp]
+  have hrpow : (2 * (n : ℝ)) ^ (3 / 2 : ℝ) / (2 * (n : ℝ)) ^ 2 =
+      (2 * (n : ℝ)) ^ (-(1 / 2 : ℝ)) := by
+    rw [← Real.rpow_two (2 * (n : ℝ)), ← Real.rpow_sub hR_pos]
+    norm_num
+  rw [hlogM]
+  calc 384 * ‖s‖ / (2 * (n : ℝ)) ^ 2 * (Real.log K + (2 * (n : ℝ)) ^ (3 / 2 : ℝ))
+      = 384 * ‖s‖ * Real.log K * ((2 * (n : ℝ)) ^ 2)⁻¹ +
+          384 * ‖s‖ * ((2 * (n : ℝ)) ^ (3 / 2 : ℝ) / (2 * (n : ℝ)) ^ 2) := by ring
+    _ = 384 * ‖s‖ * Real.log K * ((2 * (n : ℝ)) ^ 2)⁻¹ +
+          384 * ‖s‖ * (2 * (n : ℝ)) ^ (-(1 / 2 : ℝ)) := by rw [hrpow]
 
 /-- Off the zeros of an entire function `f` of order at most `1` with `f 0 ≠ 0`, `logDeriv f`
 differs from `logDeriv (divisorProductOne f)` by the constant `logDeriv f 0`. -/
@@ -165,70 +222,14 @@ theorem logDeriv_eq_add_logDeriv_divisorProductOne {f : ℂ → ℂ}
     (h : OrderLE f 1) (hf : Differentiable ℂ f) (hf0 : f 0 ≠ 0) {s : ℂ} (hs : f s ≠ 0) :
     logDeriv f s = logDeriv f 0 + logDeriv (divisorProductOne f) s := by
   have hsum := h.summable_divisor_toNat_mul_norm_inv_sq hf
-  have h0 : (0 : ℂ) ∉ (MeromorphicOn.divisor f Set.univ).support :=
-    Function.notMem_support.mpr ((hf.analyticAt 0).divisor_apply_eq_zero hf0)
-  have hssupp : s ∉ (MeromorphicOn.divisor f Set.univ).support :=
-    Function.notMem_support.mpr ((hf.analyticAt s).divisor_apply_eq_zero hs)
-  -- Growth bound at the intermediate exponent `3 / 2 ∈ (1, 2)`.
-  obtain ⟨C, _, hC⟩ := (h.isBigO (by norm_num : (1 : ℝ) < 3 / 2)).exists_pos
-  obtain ⟨L, _, hL⟩ := Filter.hasBasis_cobounded_norm.mem_iff.mp hC.bound
-  set K : ℝ := max 1 (C / ‖f 0‖)
-  have hK0 : 0 < K := lt_of_lt_of_le zero_lt_one (le_max_left _ _)
+  have h0 := notMem_divisor_support_of_ne_zero hf hf0
+  have hssupp := notMem_divisor_support_of_ne_zero hf hs
   let g : (MeromorphicOn.divisor f Set.univ).support → ℂ := fun ρ ↦
     ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℂ) * (1 / (s - ρ) + 1 / ρ)
   have hg_sum : HasSum g (logDeriv (divisorProductOne f) s) := by
     rw [logDeriv_divisorProductOne h0 hsum hssupp]
     exact (summable_norm_natCast_divisor_mul_one_div_sub_add_one_div h0 hsum hssupp).of_norm.hasSum
-  -- Compare at radius `R = 2 * n` and send `n → ∞`.
-  have hbound : ∀ᶠ n : ℕ in atTop,
-      ‖logDeriv f s - logDeriv f 0 -
-          ∑ ρ ∈ (MeromorphicOn.divisor_norm_sublevel_finite f n).toFinset, g ρ‖ ≤
-        384 * ‖s‖ * Real.log K * ((2 * (n : ℝ)) ^ 2)⁻¹ +
-          384 * ‖s‖ * (2 * (n : ℝ)) ^ (-(1 / 2 : ℝ)) := by
-    filter_upwards [eventually_ge_atTop 1, eventually_ge_atTop ⌈L⌉₊,
-      eventually_ge_atTop ⌈4 * ‖s‖⌉₊] with n hn1 hnL hns
-    have hn_pos : (0 : ℝ) < n := Nat.cast_pos.mpr hn1
-    have hR_pos : 0 < 2 * (n : ℝ) := by positivity
-    have hRL : L ≤ 2 * (n : ℝ) := by
-      have : L ≤ (n : ℝ) := (Nat.le_ceil L).trans (Nat.cast_le.mpr hnL)
-      linarith
-    have hsR : ‖s - 0‖ ≤ 2 * (n : ℝ) / 8 := by
-      have : 4 * ‖s‖ ≤ (n : ℝ) := (Nat.le_ceil _).trans (Nat.cast_le.mpr hns)
-      rw [sub_zero]
-      linarith
-    let M : ℝ := K * Real.exp ((2 * (n : ℝ)) ^ (3 / 2 : ℝ))
-    have hM : ∀ w ∈ sphere (0 : ℂ) (2 * (n : ℝ)), ‖f w‖ ≤ M * ‖f 0‖ := fun w hw ↦ by
-      have hwR : ‖w‖ = 2 * (n : ℝ) := by simpa [dist_zero_right] using hw
-      have hwbound : ‖f w‖ ≤ C * Real.exp ((2 * (n : ℝ)) ^ (3 / 2 : ℝ)) := by
-        have hLw : ‖f w‖ ≤ C * ‖Real.exp (‖w‖ ^ (3 / 2 : ℝ))‖ :=
-          hL (show L ≤ ‖w‖ by linarith)
-        rw [Real.norm_eq_abs, Real.abs_exp, hwR] at hLw
-        exact hLw
-      have hCK : C ≤ K * ‖f 0‖ := by
-        rw [← div_le_iff₀ (norm_pos_iff.mpr hf0)]
-        exact le_max_right _ _
-      calc ‖f w‖ ≤ C * Real.exp ((2 * (n : ℝ)) ^ (3 / 2 : ℝ)) := hwbound
-        _ ≤ (K * ‖f 0‖) * Real.exp ((2 * (n : ℝ)) ^ (3 / 2 : ℝ)) := by gcongr
-        _ = M * ‖f 0‖ := by dsimp [M]; ring
-    have hlandau := (show AnalyticOnNhd ℂ f (closedBall 0 (2 * (n : ℝ))) from
-        fun z _ ↦ hf.analyticAt z).norm_logDeriv_sub_logDeriv_sub_finsum_divisor_le
-      hR_pos hf0 hM hsR hs
-    have hhalf : 2 * (n : ℝ) / 2 = (n : ℝ) := by ring
-    rw [hhalf, finsum_divisor_closedBall_eq_sum_sublevel hf n s, sub_zero] at hlandau
-    refine hlandau.trans (le_of_eq ?_)
-    have hlogM : Real.log M = Real.log K + (2 * (n : ℝ)) ^ (3 / 2 : ℝ) := by
-      dsimp [M]
-      rw [Real.log_mul hK0.ne' (Real.exp_pos _).ne', Real.log_exp]
-    have hrpow : (2 * (n : ℝ)) ^ (3 / 2 : ℝ) / (2 * (n : ℝ)) ^ 2 =
-        (2 * (n : ℝ)) ^ (-(1 / 2 : ℝ)) := by
-      rw [← Real.rpow_two (2 * (n : ℝ)), ← Real.rpow_sub hR_pos]
-      norm_num
-    rw [hlogM]
-    calc 384 * ‖s‖ / (2 * (n : ℝ)) ^ 2 * (Real.log K + (2 * (n : ℝ)) ^ (3 / 2 : ℝ))
-        = 384 * ‖s‖ * Real.log K * ((2 * (n : ℝ)) ^ 2)⁻¹ +
-            384 * ‖s‖ * ((2 * (n : ℝ)) ^ (3 / 2 : ℝ) / (2 * (n : ℝ)) ^ 2) := by ring
-      _ = 384 * ‖s‖ * Real.log K * ((2 * (n : ℝ)) ^ 2)⁻¹ +
-            384 * ‖s‖ * (2 * (n : ℝ)) ^ (-(1 / 2 : ℝ)) := by rw [hrpow]
+  obtain ⟨K, hbound⟩ := exists_eventually_norm_logDeriv_sub_sum_sublevel_le h hf hf0 hs
   have htwo_nat : Tendsto (fun n : ℕ ↦ 2 * (n : ℝ)) atTop atTop :=
     (tendsto_natCast_atTop_atTop (R := ℝ)).const_mul_atTop two_pos
   have hrhs : Tendsto (fun n : ℕ ↦ 384 * ‖s‖ * Real.log K * ((2 * (n : ℝ)) ^ 2)⁻¹ +
@@ -245,7 +246,7 @@ theorem logDeriv_eq_add_logDeriv_divisorProductOne {f : ℂ → ℂ}
   have hlhs : Tendsto (fun n : ℕ ↦ ‖logDeriv f s - logDeriv f 0 -
       ∑ ρ ∈ (MeromorphicOn.divisor_norm_sublevel_finite f n).toFinset, g ρ‖)
       atTop (𝓝 ‖logDeriv f s - logDeriv f 0 - logDeriv (divisorProductOne f) s‖) :=
-    (tendsto_const_nhds.sub (tendsto_sum_sublevel_atTop f hg_sum)).norm
+    (tendsto_const_nhds.sub (MeromorphicOn.tendsto_sum_divisor_norm_sublevel_atTop hg_sum)).norm
   have hzero : ‖logDeriv f s - logDeriv f 0 - logDeriv (divisorProductOne f) s‖ ≤ 0 :=
     le_of_tendsto_of_tendsto hlhs hrhs hbound
   have heq := norm_le_zero_iff.mp hzero
@@ -317,9 +318,9 @@ theorem summable_norm_natCast_divisor_mul_one_div_sub_add_one_div {f : ℂ → �
     Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
       ‖((MeromorphicOn.divisor f Set.univ ρ).toNat : ℂ) * (1 / (s - ρ) + 1 / ρ)‖) :=
   TauCeti.summable_norm_natCast_divisor_mul_one_div_sub_add_one_div
-    (Function.notMem_support.mpr ((hf.analyticAt 0).divisor_apply_eq_zero hf0))
+    (notMem_divisor_support_of_ne_zero hf hf0)
     (h.summable_divisor_toNat_mul_norm_inv_sq hf)
-    (Function.notMem_support.mpr ((hf.analyticAt s).divisor_apply_eq_zero hs))
+    (notMem_divisor_support_of_ne_zero hf hs)
 
 /-- **Partial-fraction expansion of the logarithmic derivative** at order at most one: away from
 the zeros of `f`, `logDeriv f s = logDeriv f 0 + ∑' ρ, m_ρ * (1 / (s - ρ) + 1 / ρ)`. -/
@@ -329,9 +330,9 @@ theorem logDeriv_eq_add_tsum {f : ℂ → ℂ}
       ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℂ) * (1 / (s - ρ) + 1 / ρ) := by
   rw [h.logDeriv_eq_add_logDeriv_divisorProductOne hf hf0 hs,
     logDeriv_divisorProductOne
-      (Function.notMem_support.mpr ((hf.analyticAt 0).divisor_apply_eq_zero hf0))
+      (notMem_divisor_support_of_ne_zero hf hf0)
       (h.summable_divisor_toNat_mul_norm_inv_sq hf)
-      (Function.notMem_support.mpr ((hf.analyticAt s).divisor_apply_eq_zero hs))]
+      (notMem_divisor_support_of_ne_zero hf hs)]
 
 /-- The paired partial-fraction series converges locally uniformly on `{s | f s ≠ 0}` to
 `logDeriv f - logDeriv f 0`. -/
@@ -342,13 +343,12 @@ theorem hasSumLocallyUniformlyOn_logDeriv {f : ℂ → ℂ}
         ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℂ) * (1 / (s - ρ) + 1 / ρ))
       (fun s ↦ logDeriv f s - logDeriv f 0) {s : ℂ | f s ≠ 0} := by
   have hsum := h.summable_divisor_toNat_mul_norm_inv_sq hf
-  have h0 : (0 : ℂ) ∉ (MeromorphicOn.divisor f Set.univ).support :=
-    Function.notMem_support.mpr ((hf.analyticAt 0).divisor_apply_eq_zero hf0)
+  have h0 := notMem_divisor_support_of_ne_zero hf hf0
   have hset : {s : ℂ | f s ≠ 0} = ((MeromorphicOn.divisor f Set.univ).support)ᶜ := by
     ext s
     simp only [Set.mem_ofPred_eq, Set.mem_compl_iff]
     constructor
-    · exact fun hs ↦ Function.notMem_support.mpr ((hf.analyticAt s).divisor_apply_eq_zero hs)
+    · exact notMem_divisor_support_of_ne_zero hf
     · intro hs hfs
       exact divisorProductOne_ne_zero hsum h0 hs
         ((divisorProductOne_eq_zero_iff hf hf0 hsum s).mpr hfs)
@@ -359,13 +359,55 @@ theorem hasSumLocallyUniformlyOn_logDeriv {f : ℂ → ℂ}
       exact hs'
     rw [h.logDeriv_eq_add_logDeriv_divisorProductOne hf hf0 hfs, add_sub_cancel_left]
 
+end OrderLE
+
 /-! ### Critical-strip zero location and real-part cancellation -/
 
-/-- Every point in the divisor support of an entire function is a zero of the function. -/
-private theorem apply_eq_zero_of_mem_divisor_support {f : ℂ → ℂ} (hf : Differentiable ℂ f)
-    (ρ : (MeromorphicOn.divisor f Set.univ).support) : f ρ = 0 := by
-  by_contra hne
-  exact ρ.property ((hf.analyticAt ρ).divisor_apply_eq_zero hne)
+/-- Under a functional-conjugation symmetry `f (1 - z) = c * conj (f (conj z))`, the whole-plane
+divisor of `f` is invariant under `z ↦ 1 - conj z`. -/
+theorem divisor_one_sub_conj {f : ℂ → ℂ} {c : ℂ}
+    (hfe : ∀ z : ℂ, f (1 - z) = c * conj (f (conj z))) (z : ℂ) :
+    MeromorphicOn.divisor f Set.univ (1 - conj z) = MeromorphicOn.divisor f Set.univ z := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · have hf0 : f = 0 := funext fun w ↦ by simpa using hfe (1 - w)
+    simp [hf0]
+  · by_cases hm : MeromorphicOn f Set.univ
+    · have hm1 : meromorphicOrderAt (fun w : ℂ ↦ f (1 - w)) (conj z) =
+          meromorphicOrderAt f (1 - conj z) :=
+        meromorphicOrderAt_comp_of_deriv_ne_zero (f := f) (g := fun w : ℂ ↦ 1 - w) (by fun_prop)
+          (by simp)
+      have hsmul : (fun w : ℂ ↦ c * conj (f (conj w))) = c • (conj ∘ f ∘ conj) := by
+        ext w
+        simp [Function.comp_def, smul_eq_mul]
+      have hm2 : meromorphicOrderAt (fun w : ℂ ↦ c * conj (f (conj w))) (conj z) =
+          meromorphicOrderAt f z := by
+        rw [hsmul, meromorphicOrderAt_const_smul_eq_meromorphicOrderAt hc,
+          TauCeti.meromorphicOrderAt_conj_conj, conj_conj]
+      have hmo : meromorphicOrderAt f (1 - conj z) = meromorphicOrderAt f z := by
+        rw [← hm1, funext hfe, hm2]
+      rw [hm.divisor_apply (Set.mem_univ _), hm.divisor_apply (Set.mem_univ _), hmo]
+    · simp [MeromorphicOn.divisor_eq_zero_of_not_meromorphicOn hm]
+
+/-- Under a functional-conjugation symmetry `f (1 - z) = c * conj (f (conj z))`, the logarithmic
+derivative satisfies `logDeriv f (1 - conj z) = -conj (logDeriv f z)`. -/
+theorem logDeriv_one_sub_conj {f : ℂ → ℂ} {c : ℂ}
+    (hfe : ∀ z : ℂ, f (1 - z) = c * conj (f (conj z))) (z : ℂ) :
+    logDeriv f (1 - conj z) = -conj (logDeriv f z) := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · have hf0 : f = 0 := funext fun w ↦ by simpa using hfe (1 - w)
+    simp [hf0, logDeriv_apply]
+  · have hlhs : logDeriv (fun w : ℂ ↦ f (1 - w)) (conj z) = -logDeriv f (1 - conj z) := by
+      rw [logDeriv_apply, logDeriv_apply, deriv_comp_const_sub, neg_div]
+    have hrhs : logDeriv (fun w : ℂ ↦ c * conj (f (conj w))) (conj z) =
+        conj (logDeriv f z) := by
+      have hmul : (fun w : ℂ ↦ c * conj (f (conj w))) = fun w ↦ c * (conj ∘ f ∘ conj) w := rfl
+      rw [hmul, logDeriv_const_mul (conj z) _ hc, logDeriv_apply, logDeriv_apply, deriv_conj_conj]
+      simp
+    have heq : -logDeriv f (1 - conj z) = conj (logDeriv f z) := by
+      rw [← hlhs, funext hfe, hrhs]
+    linear_combination -heq
+
+namespace OrderLE
 
 /-- When every zero of `f` has real part in `[0, 1]`, the real parts `m_ρ * Re (1 / ρ)` are
 nonnegative and summable, bounded termwise by `m_ρ * ‖ρ⁻¹‖ ^ 2`. -/
@@ -376,10 +418,10 @@ theorem summable_divisor_toNat_mul_re_one_div {f : ℂ → ℂ}
       ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (ρ : ℂ)).re) := by
   refine Summable.of_nonneg_of_le (fun ρ ↦ ?_) (fun ρ ↦ ?_)
     (h.summable_divisor_toNat_mul_norm_inv_sq hf)
-  · have hρ := hstrip ρ (apply_eq_zero_of_mem_divisor_support hf ρ)
-    rw [one_div, inv_re]
-    exact mul_nonneg (Nat.cast_nonneg _) (div_nonneg hρ.1 (normSq_nonneg _))
-  · have hρ := hstrip ρ (apply_eq_zero_of_mem_divisor_support hf ρ)
+  · have hρ := hstrip ρ ((hf.analyticAt ρ).apply_eq_zero_of_divisor_ne_zero ρ.property)
+    exact mul_nonneg (Nat.cast_nonneg _)
+      (by simpa only [one_div, Complex.inv_re_nonneg] using hρ.1)
+  · have hρ := hstrip ρ ((hf.analyticAt ρ).apply_eq_zero_of_divisor_ne_zero ρ.property)
     refine mul_le_mul_of_nonneg_left ?_ (Nat.cast_nonneg _)
     rw [one_div, inv_re, normSq_eq_norm_sq, norm_inv, inv_pow, ← one_div]
     exact div_le_div_of_nonneg_right hρ.2 (sq_nonneg _)
@@ -397,9 +439,7 @@ theorem summable_divisor_toNat_mul_re_one_div_sub {f : ℂ → ℂ}
       (h.summable_norm_natCast_divisor_mul_one_div_sub_add_one_div hf hf0 hs).of_norm
   have hinv := h.summable_divisor_toNat_mul_re_one_div hf hstrip
   refine (hpair.sub hinv).congr fun ρ ↦ ?_
-  change (((MeromorphicOn.divisor f Set.univ ρ).toNat : ℂ) * (1 / (s - ρ) + 1 / ρ)).re -
-      ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (ρ : ℂ)).re = _
-  rw [mul_re, natCast_re, natCast_im, zero_mul, sub_zero, add_re]
+  simp only [mul_re, natCast_re, natCast_im, zero_mul, sub_zero, add_re]
   ring
 
 /-- Splitting `Re (logDeriv f s)` into `Re (logDeriv f 0)`, `∑' ρ, m_ρ * Re (1 / (s - ρ))`, and
@@ -426,54 +466,32 @@ private theorem re_logDeriv_eq_add_tsum_add_tsum {f : ℂ → ℂ}
   rw [h.logDeriv_eq_add_tsum hf hf0 hs, add_re, htsum_re, Summable.tsum_add hsub hinv, add_assoc]
 
 /-- **Real-part formula for the Hadamard linear constant.** Let `f` be entire of order at most `1`
-with `f 0 ≠ 0`, all zeros in `0 ≤ Re ρ ≤ 1`, and `f (1 - z) = c * conj (f (conj z))` for a nonzero
+with `f 0 ≠ 0`, all zeros in `0 ≤ Re ρ ≤ 1`, and `f (1 - z) = c * conj (f (conj z))` for a
 constant `c`. Then `Re (logDeriv f 0) = -∑' ρ, m_ρ * Re (1 / ρ)`. -/
 theorem re_logDeriv_zero_eq_neg_tsum {f : ℂ → ℂ}
     (h : OrderLE f 1) (hf : Differentiable ℂ f) (hf0 : f 0 ≠ 0)
     (hstrip : ∀ ρ : ℂ, f ρ = 0 → ρ.re ∈ Set.Icc 0 1)
-    {c : ℂ} (hc : c ≠ 0) (hfe : ∀ z : ℂ, f (1 - z) = c * conj (f (conj z))) :
+    {c : ℂ} (hfe : ∀ z : ℂ, f (1 - z) = c * conj (f (conj z))) :
     (logDeriv f 0).re = -∑' ρ : (MeromorphicOn.divisor f Set.univ).support,
       ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (ρ : ℂ)).re := by
+  have hc : c ≠ 0 := by
+    rintro rfl
+    have h0 := hfe 1
+    simp only [sub_self, zero_mul] at h0
+    exact hf0 h0
   have hf1 : f 1 ≠ 0 := by
-    have := hfe 0
-    rw [sub_zero, map_zero] at this
-    rw [this]
+    have h1 := hfe 0
+    rw [sub_zero, map_zero] at h1
+    rw [h1]
     exact mul_ne_zero hc (star_ne_zero.mpr hf0)
-  -- Differentiating `f (1 - z) = c * conj (f (conj z))` at `0` gives
-  -- `-logDeriv f 1 = conj (logDeriv f 0)`.
   have hlog1 : (logDeriv f 1).re = -(logDeriv f 0).re := by
-    have hlhs : logDeriv (fun z : ℂ ↦ f (1 - z)) 0 = -logDeriv f 1 := by
-      rw [logDeriv_apply, logDeriv_apply, deriv_comp_const_sub, sub_zero, neg_div]
-    have hrhs : logDeriv (fun z : ℂ ↦ c * conj (f (conj z))) 0 = conj (logDeriv f 0) := by
-      have hmul : (fun z : ℂ ↦ c * conj (f (conj z))) = fun z ↦ c * (conj ∘ f ∘ conj) z := rfl
-      rw [hmul, logDeriv_const_mul 0 _ hc, logDeriv_apply, logDeriv_apply, deriv_conj_conj]
-      simp
-    have heq : -logDeriv f 1 = conj (logDeriv f 0) := by
-      rw [← hlhs, funext hfe, hrhs]
-    have hre := congrArg re heq
-    simp only [neg_re, conj_re] at hre
-    linarith
-  -- The functional symmetry permutes the whole-plane divisor by `z ↦ 1 - conj z`.
-  have hfa : AnalyticOnNhd ℂ f Set.univ := fun z _ ↦ hf.analyticAt z
+    have h0 := congrArg re (logDeriv_one_sub_conj hfe 0)
+    simpa using h0
   let d := MeromorphicOn.divisor f Set.univ
-  have hd_sym (z : ℂ) : d (1 - conj z) = d z := by
-    have hm1 : meromorphicOrderAt (fun w : ℂ ↦ f (1 - w)) (conj z) =
-        meromorphicOrderAt f (1 - conj z) :=
-      meromorphicOrderAt_comp_of_deriv_ne_zero (f := f) (g := fun w : ℂ ↦ 1 - w) (by fun_prop)
-        (by simp)
-    have hm2 : meromorphicOrderAt (fun w : ℂ ↦ c * conj (f (conj w))) (conj z) =
-        meromorphicOrderAt f z := by
-      rw [show (fun w : ℂ ↦ c * conj (f (conj w))) = c • (conj ∘ f ∘ conj) by
-          ext w; simp [Function.comp_def, smul_eq_mul],
-        meromorphicOrderAt_const_smul_eq_meromorphicOrderAt hc,
-        TauCeti.meromorphicOrderAt_conj_conj, conj_conj]
-    have hmo : meromorphicOrderAt f (1 - conj z) = meromorphicOrderAt f z := by
-      rw [← hm1, funext hfe, hm2]
-    dsimp only [d]
-    rw [MeromorphicOn.divisor_apply hfa.meromorphicOn (Set.mem_univ _),
-      MeromorphicOn.divisor_apply hfa.meromorphicOn (Set.mem_univ _), hmo]
   have hmem_sym (ρ : d.support) : 1 - conj (ρ : ℂ) ∈ d.support :=
-    Function.mem_support.mpr (by rw [hd_sym]; exact Function.mem_support.mp ρ.property)
+    Function.mem_support.mpr (by
+      rw [divisor_one_sub_conj hfe]
+      exact Function.mem_support.mp ρ.property)
   let e : d.support ≃ d.support :=
     { toFun := fun ρ ↦ ⟨1 - conj (ρ : ℂ), hmem_sym ρ⟩
       invFun := fun ρ ↦ ⟨1 - conj (ρ : ℂ), hmem_sym ρ⟩
@@ -486,9 +504,10 @@ theorem re_logDeriv_zero_eq_neg_tsum {f : ℂ → ℂ}
     refine tsum_congr fun ρ ↦ ?_
     have heρ : (e ρ : ℂ) = 1 - conj (ρ : ℂ) := rfl
     have hd_eq : (d (e ρ)).toNat = (d ρ).toNat := by
-      rw [heρ, hd_sym]
+      rw [heρ, divisor_one_sub_conj hfe]
+    have hconj_div : (1 : ℂ) / (1 - conj (ρ : ℂ)) = conj (1 / (1 - (ρ : ℂ))) := by simp
     have hre_eq : (1 / (e ρ : ℂ)).re = (1 / (1 - (ρ : ℂ))).re := by
-      rw [heρ, show (1 : ℂ) / (1 - conj (ρ : ℂ)) = conj (1 / (1 - (ρ : ℂ))) by simp, conj_re]
+      rw [heρ, hconj_div, conj_re]
     rw [hd_eq, hre_eq]
   have hexp1 := h.re_logDeriv_eq_add_tsum_add_tsum hf hf0 hstrip hf1
   rw [hperm, hlog1] at hexp1
@@ -500,12 +519,12 @@ theorem re_logDeriv_zero_eq_neg_tsum {f : ℂ → ℂ}
 theorem re_logDeriv_eq_tsum {f : ℂ → ℂ}
     (h : OrderLE f 1) (hf : Differentiable ℂ f) (hf0 : f 0 ≠ 0)
     (hstrip : ∀ ρ : ℂ, f ρ = 0 → ρ.re ∈ Set.Icc 0 1)
-    {c : ℂ} (hc : c ≠ 0) (hfe : ∀ z : ℂ, f (1 - z) = c * conj (f (conj z)))
+    {c : ℂ} (hfe : ∀ z : ℂ, f (1 - z) = c * conj (f (conj z)))
     {s : ℂ} (hs : f s ≠ 0) :
     (logDeriv f s).re = ∑' ρ : (MeromorphicOn.divisor f Set.univ).support,
       ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (s - ρ)).re := by
   rw [h.re_logDeriv_eq_add_tsum_add_tsum hf hf0 hstrip hs,
-    h.re_logDeriv_zero_eq_neg_tsum hf hf0 hstrip hc hfe]
+    h.re_logDeriv_zero_eq_neg_tsum hf hf0 hstrip hfe]
   ring
 
 /-- When every zero lies in `0 ≤ Re ρ ≤ 1` and `1 ≤ Re s`, every summand `m_ρ * Re (1 / (s - ρ))`
@@ -515,12 +534,10 @@ theorem tsum_divisor_toNat_mul_re_one_div_sub_nonneg {f : ℂ → ℂ}
     {s : ℂ} (hs : 1 ≤ s.re) :
     0 ≤ ∑' ρ : (MeromorphicOn.divisor f Set.univ).support,
       ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (s - ρ)).re := by
-  refine tsum_nonneg fun ρ ↦ ?_
-  have hρ := hstrip ρ (apply_eq_zero_of_mem_divisor_support hf ρ)
-  rw [one_div, inv_re]
-  refine mul_nonneg (Nat.cast_nonneg _) (div_nonneg ?_ (normSq_nonneg _))
-  rw [sub_re]
-  linarith [hρ.2]
+  refine tsum_nonneg fun ρ ↦ mul_nonneg (Nat.cast_nonneg _) ?_
+  have hρ := hstrip ρ ((hf.analyticAt ρ).apply_eq_zero_of_divisor_ne_zero ρ.property)
+  rw [one_div, Complex.inv_re_nonneg, sub_re, sub_nonneg]
+  exact hρ.2.trans hs
 
 end OrderLE
 
