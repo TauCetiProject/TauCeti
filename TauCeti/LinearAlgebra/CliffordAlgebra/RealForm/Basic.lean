@@ -470,33 +470,24 @@ def realCliffordPositiveSplitIsometry (p q : ℕ) :
 theorem realCliffordPositiveSplitIsometry_fst_pos (p q : ℕ)
     (v : Fin ((p + 1) + q) → ℝ) (i : Fin p) :
     (realCliffordPositiveSplitIsometry p q v).1 (Fin.castAdd q i) =
-      v (Fin.castAdd q i.castSucc) := by
-  -- The composed-isometry coercion does not expose the shared splitter with `dsimp`.
-  change (realCliffordSplitIsometry p 1 q 0 v).1 _ = _
-  rw [realCliffordSplitIsometry_fst_pos]
-  congr 1
+      v (Fin.castAdd q i.castSucc) :=
+  realCliffordSplitIsometry_fst_pos p 1 q 0 v i
 
 /-- The negative coordinates retained by `realCliffordPositiveSplitIsometry`. -/
 @[simp]
 theorem realCliffordPositiveSplitIsometry_fst_neg (p q : ℕ)
     (v : Fin ((p + 1) + q) → ℝ) (i : Fin q) :
     (realCliffordPositiveSplitIsometry p q v).1 (Fin.natAdd p i) =
-      v (Fin.natAdd (p + 1) i) := by
-  -- The composed-isometry coercion does not expose the shared splitter with `dsimp`.
-  change (realCliffordSplitIsometry p 1 q 0 v).1 _ = _
-  rw [realCliffordSplitIsometry_fst_neg]
-  congr 1
+      v (Fin.natAdd (p + 1) i) :=
+  realCliffordSplitIsometry_fst_neg p 1 q 0 v i
 
 /-- The last positive coordinate extracted by `realCliffordPositiveSplitIsometry`. -/
 @[simp]
 theorem realCliffordPositiveSplitIsometry_snd (p q : ℕ)
     (v : Fin ((p + 1) + q) → ℝ) :
     (realCliffordPositiveSplitIsometry p q v).2 =
-      v (Fin.castAdd q (Fin.last p)) := by
-  -- The composed-isometry coercion does not expose the shared splitter with `dsimp`.
-  change (realCliffordSplitIsometry p 1 q 0 v).2 0 = _
-  convert realCliffordSplitIsometry_snd_pos p 1 q 0 v (0 : Fin 1) using 1 <;>
-    congr
+      v (Fin.castAdd q (Fin.last p)) :=
+  realCliffordSplitIsometry_snd_pos p 1 q 0 v 0
 
 /-- The coordinate isometry which separates the last positive and negative coordinates of the
 signature form as a hyperbolic plane. -/
@@ -510,40 +501,32 @@ def realBottSplitIsometry (p q : ℕ) :
 theorem realBottSplitIsometry_fst_pos (p q : ℕ)
     (v : Fin ((p + 1) + (q + 1)) → ℝ) (i : Fin p) :
     (realBottSplitIsometry p q v).1 (Fin.castAdd q i) =
-      v (Fin.castAdd (q + 1) i.castSucc) := by
-  -- The bundled-isometry coercion does not expose the shared splitter with `dsimp`.
-  change (realCliffordSplitIsometry p 1 q 1 v).1 _ = _
-  rw [realCliffordSplitIsometry_fst_pos]
-  congr 1
+      v (Fin.castAdd (q + 1) i.castSucc) :=
+  realCliffordSplitIsometry_fst_pos p 1 q 1 v i
 
 /-- The negative coordinates retained by `realBottSplitIsometry`. -/
 @[simp]
 theorem realBottSplitIsometry_fst_neg (p q : ℕ)
     (v : Fin ((p + 1) + (q + 1)) → ℝ) (i : Fin q) :
     (realBottSplitIsometry p q v).1 (Fin.natAdd p i) =
-      v (Fin.natAdd (p + 1) i.castSucc) := by
-  -- The bundled-isometry coercion does not expose the shared splitter with `dsimp`.
-  change (realCliffordSplitIsometry p 1 q 1 v).1 _ = _
-  rw [realCliffordSplitIsometry_fst_neg]
-  congr 1
+      v (Fin.natAdd (p + 1) i.castSucc) :=
+  realCliffordSplitIsometry_fst_neg p 1 q 1 v i
 
 /-- The last positive coordinate extracted by `realBottSplitIsometry`. -/
 @[simp]
 theorem realBottSplitIsometry_snd_zero (p q : ℕ)
     (v : Fin ((p + 1) + (q + 1)) → ℝ) :
     (realBottSplitIsometry p q v).2 0 =
-      v (Fin.castAdd (q + 1) (Fin.last p)) := by
-  convert realCliffordSplitIsometry_snd_pos p 1 q 1 v (0 : Fin 1) using 1 <;>
-    congr
+      v (Fin.castAdd (q + 1) (Fin.last p)) :=
+  realCliffordSplitIsometry_snd_pos p 1 q 1 v 0
 
 /-- The last negative coordinate extracted by `realBottSplitIsometry`. -/
 @[simp]
 theorem realBottSplitIsometry_snd_one (p q : ℕ)
     (v : Fin ((p + 1) + (q + 1)) → ℝ) :
     (realBottSplitIsometry p q v).2 1 =
-      v (Fin.natAdd (p + 1) (Fin.last q)) := by
-  convert realCliffordSplitIsometry_snd_neg p 1 q 1 v (0 : Fin 1) using 1 <;>
-    congr
+      v (Fin.natAdd (p + 1) (Fin.last q)) :=
+  realCliffordSplitIsometry_snd_neg p 1 q 1 v 0
 
 /-- The coordinate isometry which turns the sign-switched form into the standard signature. -/
 def realCliffordSignSwitchStandardIsometry (p q : ℕ) :
