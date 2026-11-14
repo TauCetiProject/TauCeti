@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.VectorBundle.Hom
 public import Mathlib.Algebra.Group.TransferInstance
 public import Mathlib.Topology.ContinuousMap.Algebra
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Pi
 
 /-!
 # Descent of vector-bundle maps from coordinates
@@ -30,7 +31,11 @@ whole common domain, with chart expressions `VectorBundleCore.inChartCoordinates
 `VectorBundleCore.continuousOn_inChartCoordinates`.
 `CoordinateHom.fiberMapEquiv` identifies coordinate morphisms with these continuous
 sections. For a finite-dimensional source model over a complete scalar field these are exactly
-the continuous fibrewise linear maps of total spaces, by `TauCeti.continuous_hom_bundle_iff`.
+the continuous fibrewise linear maps of total spaces, by `TauCeti.continuous_hom_bundle_iff`;
+when the source model is a finite coordinate space `α → 𝕜`,
+`CoordinateHom.ofContinuousTotalSpacePi` extracts the chart operators directly from a continuous
+total-space map without assuming `CompleteSpace 𝕜`, and `CoordinateHom.invOfBijectivePi`
+inverts fibrewise bijective coordinate morphisms between finite coordinate models.
 `CoordinateHom.comp` composes coordinate morphisms; in charts it multiplies the chart
 operators through any intermediate chart (`CoordinateHom.operator_comp`), and it is
 associative and unital for `CoordinateHom.id`.
@@ -367,6 +372,112 @@ theorem comp_add (b : CoordinateHom W V) (a c : CoordinateHom Z W) :
   apply fiberMap_injective
   funext x
   simp only [fiberMap_comp, fiberMap_add, ContinuousLinearMap.comp_add]
+
+section PiSource
+
+variable {α β : Type*} [Fintype α] [Fintype β]
+
+/-- When the source model is a finite coordinate space `α → 𝕜`, any fibrewise continuous linear
+map inducing a continuous map of total spaces defines a coordinate morphism, without assuming
+`CompleteSpace 𝕜`. -/
+def ofContinuousTotalSpacePi (Z : VectorBundleCore 𝕜 B (α → 𝕜) ι)
+    (W : VectorBundleCore 𝕜 B G κ) (f : B → (α → 𝕜) →L[𝕜] G)
+    (hf : Continuous fun p : Z.TotalSpace ↦ (⟨p.proj, f p.proj p.2⟩ : W.TotalSpace)) :
+    CoordinateHom Z W where
+  operator i j :=
+    ⟨fun x ↦ Z.inChartCoordinates W i j x.1 (f x.1), by
+      classical
+      refine TauCeti.continuous_pi_clm_iff_apply.2 fun k ↦ ?_
+      have hsymm : Continuous fun x : ↥(Z.baseSet i ∩ W.baseSet j) ↦
+          (Z.localTriv i).toOpenPartialHomeomorph.symm (x.1, (Pi.single k 1 : α → 𝕜)) :=
+        (Z.localTriv i).toOpenPartialHomeomorph.continuousOn_symm.comp_continuous
+          (continuous_subtype_val.prodMk
+            (continuous_const : Continuous fun _ ↦ (Pi.single k 1 : α → 𝕜)))
+          fun x ↦ (Z.mem_localTriv_target i (x.1, (Pi.single k 1 : α → 𝕜))).2
+            (by rw [← Z.baseSet_at]; exact x.2.1)
+      refine (((W.localTriv j).continuousOn.comp_continuous (hf.comp hsymm) fun x ↦ ?_).snd).congr
+        fun x ↦ ?_
+      · rw [W.mem_localTriv_source]
+        simpa only [Function.comp_apply, Z.localTriv_symm_fst] using x.2.2
+      · simp only [inChartCoordinates_apply, Function.comp_apply,
+          Z.localTriv_symm_fst, W.localTriv_apply]⟩
+  compatible i i' j j' x hi hi' hj hj' v := by
+    simp only [ContinuousMap.coe_mk, inChartCoordinates_apply]
+    rw [W.coordChange_comp _ j j' x ⟨⟨W.mem_baseSet_at x, hj⟩, hj'⟩,
+      Z.coordChange_comp i i' _ x ⟨⟨hi, hi'⟩, Z.mem_baseSet_at x⟩]
+
+@[simp] theorem fiberMap_ofContinuousTotalSpacePi (Z : VectorBundleCore 𝕜 B (α → 𝕜) ι)
+    (W : VectorBundleCore 𝕜 B G κ) (f : B → (α → 𝕜) →L[𝕜] G)
+    (hf : Continuous fun p : Z.TotalSpace ↦ (⟨p.proj, f p.proj p.2⟩ : W.TotalSpace)) (x : B) :
+    (ofContinuousTotalSpacePi Z W f hf).fiberMap x = f x :=
+  inChartCoordinates_indexAt Z W x (f x)
+
+end PiSource
+
+end CoordinateHom
+
+/-- Every transition operator of a `VectorBundleCore` on the overlap of two charts is bijective,
+with inverse given by the reverse transition operator. -/
+theorem coordChange_bijective (Z : VectorBundleCore 𝕜 B F ι) {i j : ι} {x : B}
+    (hi : x ∈ Z.baseSet i) (hj : x ∈ Z.baseSet j) :
+    Function.Bijective (Z.coordChange i j x) :=
+  ⟨fun u v huv ↦ by
+    have hcomp := Z.coordChange_comp i j i x ⟨⟨hi, hj⟩, hi⟩
+    simpa only [Z.coordChange_self i x hi] using
+      (hcomp u).symm.trans ((congrArg (Z.coordChange j i x) huv).trans (hcomp v)),
+   fun w ↦ ⟨Z.coordChange j i x w, by
+    simpa only [Z.coordChange_self j x hj] using
+      Z.coordChange_comp j i j x ⟨⟨hj, hi⟩, hj⟩ w⟩⟩
+
+namespace CoordinateHom
+
+/-- On an overlap of source chart `i` and target chart `j`, the chart operator of `a` at `x` is
+bijective if and only if the represented fibre map `a.fiberMap x` is bijective. -/
+theorem operator_bijective_iff {Z : VectorBundleCore 𝕜 B F ι} {W : VectorBundleCore 𝕜 B G κ}
+    (a : CoordinateHom Z W) {i : ι} {j : κ} {x : B}
+    (hi : x ∈ Z.baseSet i) (hj : x ∈ W.baseSet j) :
+    Function.Bijective (a.operator i j ⟨x, hi, hj⟩) ↔ Function.Bijective (a.fiberMap x) := by
+  rw [a.operator_eq, inChartCoordinates_def, ContinuousLinearMap.coe_comp,
+    ContinuousLinearMap.coe_comp,
+    (W.coordChange_bijective (W.mem_baseSet_at x) hj).of_comp_iff',
+    (Z.coordChange_bijective hi (Z.mem_baseSet_at x)).of_comp_iff]
+
+/-- Invert a fibrewise bijective coordinate morphism between vector bundle cores modelled on finite
+coordinate spaces `α → 𝕜` and `β → 𝕜`, without assuming `CompleteSpace 𝕜`. -/
+noncomputable def invOfBijectivePi {α β : Type*} [Fintype α] [Fintype β]
+    (Z : VectorBundleCore 𝕜 B (α → 𝕜) ι) (W : VectorBundleCore 𝕜 B (β → 𝕜) κ)
+    (a : CoordinateHom Z W) (ha : ∀ x, Function.Bijective (a.fiberMap x)) :
+    CoordinateHom W Z where
+  operator i j :=
+    ⟨fun z ↦ (a.operator j i ⟨z.1, z.2.2, z.2.1⟩).inverse,
+      ((a.operator j i).continuous.comp
+        (continuous_subtype_val.subtype_mk fun z ↦ ⟨z.2.2, z.2.1⟩)).pi_clm_inverse
+        fun z ↦ (a.operator_bijective_iff z.2.2 z.2.1).2 (ha z.1)⟩
+  compatible i i' j j' x hi hi' hj hj' v := by
+    simp only [ContinuousMap.coe_mk]
+    have hbij_ij := (a.operator_bijective_iff hj hi).2 (ha x)
+    have hbij_i'j' := (a.operator_bijective_iff hj' hi').2 (ha x)
+    have hinv_ij := (a.operator j i ⟨x, hj, hi⟩).isInvertible_of_bijective_pi hbij_ij
+    have hinv_i'j' := (a.operator j' i' ⟨x, hj', hi'⟩).isInvertible_of_bijective_pi hbij_i'j'
+    apply hinv_i'j'.injective
+    rw [hinv_i'j'.self_apply_inverse]
+    have hcompat := a.compatible j j' i i' x hj hj' hi hi'
+      ((a.operator j i ⟨x, hj, hi⟩).inverse v)
+    rw [hinv_ij.self_apply_inverse] at hcompat
+    exact hcompat.symm
+
+@[simp]
+theorem fiberMap_invOfBijectivePi {α β : Type*} [Fintype α] [Fintype β]
+    (Z : VectorBundleCore 𝕜 B (α → 𝕜) ι) (W : VectorBundleCore 𝕜 B (β → 𝕜) κ)
+    (a : CoordinateHom Z W) (ha : ∀ x, Function.Bijective (a.fiberMap x)) (x : B) :
+    (invOfBijectivePi Z W a ha).fiberMap x = (a.fiberMap x).inverse := by
+  refine ContinuousLinearMap.ext fun v ↦ ?_
+  have hinv := (a.fiberMap x).isInvertible_of_bijective_pi (ha x)
+  apply hinv.injective
+  rw [hinv.self_apply_inverse, (invOfBijectivePi Z W a ha).fiberMap_def, a.fiberMap_def]
+  exact ((a.operator (Z.indexAt x) (W.indexAt x) _).isInvertible_of_bijective_pi
+    ((a.operator_bijective_iff (Z.mem_baseSet_at x) (W.mem_baseSet_at x)).2
+      (ha x))).self_apply_inverse v
 
 end CoordinateHom
 end VectorBundleCore

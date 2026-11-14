@@ -22,7 +22,8 @@ strict equalities of functors, not just equality of bundle classes. Pullback is 
 compatible with trivial cores and Whitney sums (`pullback_trivial`, `pullback_whitneySum`).
 The reconstructed bundle is identified with Mathlib's actual pullback by `pullbackHomeomorph`,
 which carries each core chart to Mathlib's pulled-back trivialization
-(`pullbackHomeomorph_localTriv`).
+(`pullbackHomeomorph_localTriv`) and characterizes continuity into the pulled-back total space by
+continuity of the base projection and of the lifted map (`continuous_pullback_iff`).
 
 The construction uses Mathlib's vector-bundle cores and native pullback topology,
 and `VectorBundleCore.CoordinateHom` for descent of continuous linear bundle maps.
@@ -278,5 +279,18 @@ theorem pullbackHomeomorph_naturality {A D : FiniteRankBundleCore 𝕜 Y} (a : A
     ((a.totalSpaceMap_mk (f x) v).symm.trans
       (congrArg a.totalSpaceMap
         (Pullback.lift_mk (E := A.core.Fiber) (F := Fin A.rank → 𝕜) f x v).symm))
+
+/-- A map into the total space of `A.pullback f` is continuous if and only if its base projection
+and its lift to `A.core.TotalSpace` are both continuous. -/
+theorem continuous_pullback_iff {A : FiniteRankBundleCore 𝕜 Y} {f : C(X, Y)}
+    {g : Z → (A.pullback f).core.TotalSpace} :
+    Continuous g ↔
+      Continuous (fun z ↦ (g z).proj) ∧
+        Continuous (fun z ↦ TotalSpace.mk' (Fin A.rank → 𝕜) (E := A.core.Fiber)
+          (f (g z).proj) (g z).2) := by
+  rw [(A.pullbackHomeomorph f).isInducing.continuous_iff,
+    (inducing_pullbackTotalSpaceEmbedding (Fin A.rank → 𝕜) A.core.Fiber f).continuous_iff,
+    continuous_prodMk]
+  rfl
 
 end TauCeti.FiniteRankBundleCore
