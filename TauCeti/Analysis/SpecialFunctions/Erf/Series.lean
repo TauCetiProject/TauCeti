@@ -46,6 +46,9 @@ Laplace-type integrals without losing integrability near the origin.
   `Real.tsum_pow_add_two_mul_div_Gamma_div_two_add_one_le`: for all `x : ℝ`, shifted tails of the
   half-Gamma series satisfy both the uniform polynomial-free bound `< 2 exp(x²)` and the
   vanishing-order factorial bound `≤ 2 x^{2L} / L! * exp(x²)`.
+* `Real.continuous_tsum_pow_div_Gamma_div_two_add_one`,
+  `Real.continuous_tsum_pow_add_div_Gamma_div_two_add_one`: continuity on `ℝ` of the half-Gamma
+  series and its `M`-shifted tails.
 
 ## References
 
@@ -305,5 +308,25 @@ theorem tsum_pow_add_two_mul_div_Gamma_div_two_add_one_le (x : ℝ) (L : ℕ) :
           gcongr
           exact (tsum_pow_div_Gamma_div_two_add_one_lt_two_mul_exp |x|).le
     _ = 2 * x ^ (2 * L) / L ! * rexp (x ^ 2) := by rw [sq_abs]; ring
+
+/-- Continuity on `ℝ` of the `M`-shifted half-Gamma series
+`z ↦ ∑_{k ≥ 0} z^{k + M} / Γ((k + M) / 2 + 1)`. -/
+theorem continuous_tsum_pow_add_div_Gamma_div_two_add_one (M : ℕ) :
+    Continuous fun z : ℝ => ∑' k : ℕ, z ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1) := by
+  have heq : (fun z : ℝ => ∑' k : ℕ, z ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1)) =
+      fun z : ℝ => rexp (z ^ 2) * (1 + TauCeti.Real.erf z) -
+        ∑ m ∈ Finset.range M, z ^ m / Real.Gamma ((m : ℝ) / 2 + 1) := by
+    ext z
+    have hsplit := (summable_pow_div_Gamma_div_two_add_one z).sum_add_tsum_nat_add M
+    rw [TauCeti.Real.tsum_pow_div_Gamma_div_two_add_one] at hsplit
+    linarith
+  rw [heq]
+  exact ((Real.continuous_exp.comp (continuous_pow 2)).mul
+    (continuous_const.add TauCeti.Real.continuous_erf)).sub (by fun_prop)
+
+/-- Continuity on `ℝ` of the half-Gamma series `z ↦ ∑_{m ≥ 0} z^m / Γ(m / 2 + 1)`. -/
+theorem continuous_tsum_pow_div_Gamma_div_two_add_one :
+    Continuous fun z : ℝ => ∑' m : ℕ, z ^ m / Real.Gamma ((m : ℝ) / 2 + 1) := by
+  simpa using continuous_tsum_pow_add_div_Gamma_div_two_add_one 0
 
 end Real

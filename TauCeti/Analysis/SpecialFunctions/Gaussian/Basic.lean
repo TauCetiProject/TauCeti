@@ -12,13 +12,17 @@ import Mathlib.Tactic.GCongr
 /-!
 # Elementary Gaussian bounds
 
-A polynomial weight times a real Gaussian is bounded. This file records an explicit bound for
-`(1 + r) ^ m * exp (-a r²)` on `r ≥ 0`, the scalar estimate behind the decay of Gaussian Schwartz
-functions.
+A polynomial weight times a real Gaussian is bounded, and completing the square absorbs a linear
+tilt into half the Gaussian weight. This file records an explicit bound for
+`(1 + r) ^ m * exp (-a r²)` on `r ≥ 0` (the scalar estimate behind the decay of Gaussian Schwartz
+functions) and the uniform bound `exp (-b u² - c u) ≤ exp (c² / (2 b)) * exp (-(b / 2) u²)` for
+`0 < b`.
 
 ## Main results
 
 * `TauCeti.one_add_pow_mul_exp_neg_mul_sq_le`: an explicit bound for `(1 + r) ^ m * exp (-a r²)`.
+* `TauCeti.exp_neg_mul_sq_sub_mul_le`: uniform completing-the-square bound for
+  `exp (-b u² - c u)` when `0 < b`.
 -/
 
 public section
@@ -54,5 +58,17 @@ theorem one_add_pow_mul_exp_neg_mul_sq_le {a : ℝ} (ha : 0 < a) (m : ℕ) {r : 
     _ = m ! / (a / 2) ^ m * Real.exp a := by
       rw [mul_assoc, mul_left_comm (Real.exp (a / 2 * u ^ 2)), ← Real.exp_add, add_neg_cancel,
         Real.exp_zero, mul_one]
+
+/-- For `0 < b`, `exp (-b u² - c u) ≤ exp (c² / (2 b)) * exp (-(b / 2) u²)` uniformly in
+`c u : ℝ`. -/
+theorem exp_neg_mul_sq_sub_mul_le {b : ℝ} (hb : 0 < b) (c u : ℝ) :
+    Real.exp (-b * u ^ 2 - c * u) ≤ Real.exp (c ^ 2 / (2 * b)) * Real.exp (-(b / 2) * u ^ 2) := by
+  rw [← Real.exp_add]
+  refine Real.exp_le_exp.mpr ?_
+  have hsq : 0 ≤ b / 2 * (u + c / b) ^ 2 := by positivity
+  have hexpand : b / 2 * (u + c / b) ^ 2 = b / 2 * u ^ 2 + c * u + c ^ 2 / (2 * b) := by
+    field_simp
+    ring
+  linarith
 
 end TauCeti
