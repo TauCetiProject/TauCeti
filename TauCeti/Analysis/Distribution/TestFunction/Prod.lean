@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.TestFunction
+public import Mathlib.Analysis.Normed.Lp.ProdLp
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
@@ -34,7 +35,10 @@ the tensor product of distributions.
 For complex smooth functions `φ` supported in a compact set `K₁ ⊆ E` and `ψ` supported in a
 compact set `K₂ ⊆ D`, the tensor product `(x, y) ↦ φ x * ψ y` is a smooth function supported in
 `K₁ ×ˢ K₂` (`ContDiffMapSupportedIn.tensor`), bilinear in `φ` and `ψ`. These are the tensor
-products of test functions against which Schwartz kernels are tested.
+products of test functions against which Schwartz kernels are tested. On an open subset `W` of
+the `L^p` product `WithLp p (E × D)`, test functions `φ` on `Ω` and `ψ` on `O` supported close
+enough to a point of `W` have the product test function `(x, y) ↦ φ x * ψ y` on `W`
+(`TestFunction.exists_nhds_prod_cutoff`).
 
 ## Main declarations
 
@@ -45,6 +49,8 @@ products of test functions against which Schwartz kernels are tested.
   support `TestFunction.tsupport_sliceRight_subset`, derivative bound
   `TestFunction.norm_iteratedFDeriv_sliceRight_le` and derivatives
   `TestFunction.sliceRight_lineDerivOp_zero_prod`.
+* `TestFunction.exists_nhds_prod_cutoff`: products of test functions supported near a point
+  of an open subset of `WithLp p (E × D)` are test functions on it.
 * `ContDiffMapSupportedIn.tensor`: the tensor product `(x, y) ↦ φ x * ψ y` of complex smooth
   functions `φ`, `ψ` supported in compact sets `K₁`, `K₂`, supported in `K₁ ×ˢ K₂`, with
   `ContDiffMapSupportedIn.tensor_apply` and its bilinearity.
@@ -54,8 +60,8 @@ public section
 
 noncomputable section
 
-open Set TopologicalSpace TauCeti LineDeriv
-open scoped Distributions
+open Set TopologicalSpace TauCeti LineDeriv WithLp
+open scoped Distributions ENNReal Topology
 
 namespace TestFunction
 
@@ -80,7 +86,6 @@ private def prodSMulSupportedInCLM (ψ : 𝓓(O, ℝ)) (K : Compacts E) :
     cont := by
       -- Leibniz: the `i`-th derivative is controlled by the first `i` derivatives of `φ`, with
       -- constants given by bounds for the derivatives of `ψ`.
-      have hle (m : ℕ) : (m : WithTop ℕ∞) ≤ (⊤ : ℕ∞) := mod_cast le_top
       choose M hM using fun j : ℕ ↦
         (ψ.contDiff.continuous_iteratedFDeriv (m := j) (mod_cast le_top)).norm
           |>.bddAbove_range_of_hasCompactSupport (ψ.hasCompactSupport.iteratedFDeriv j).norm
@@ -95,11 +100,11 @@ private def prodSMulSupportedInCLM (ψ : 𝓓(O, ℝ)) (K : Compacts E) :
       refine Finset.sum_le_sum fun j hj ↦ ?_
       have hj : j ≤ i := Nat.lt_succ_iff.1 (Finset.mem_range.1 hj)
       have hψj : ‖iteratedFDeriv ℝ j (ψ ∘ Prod.snd) p‖ ≤ |M j| :=
-        (norm_iteratedFDeriv_comp_snd_le ψ.contDiff p (hle j)).trans
+        (norm_iteratedFDeriv_comp_snd_le p).trans
           ((hM j ⟨p.2, rfl⟩).trans (le_abs_self _))
       have hφj : ‖iteratedFDeriv ℝ (i - j) (φ ∘ Prod.fst) p‖ ≤
           (Finset.range (i + 1)).sup (ContDiffMapSupportedIn.seminorm ℝ E F ⊤ K) φ :=
-        (norm_iteratedFDeriv_comp_fst_le φ.contDiff p (hle (i - j))).trans
+        (norm_iteratedFDeriv_comp_fst_le p).trans
           ((ContDiffMapSupportedIn.norm_iteratedFDeriv_apply_le_seminorm_top ℝ).trans
             (Seminorm.le_finset_sup_apply (Finset.mem_range.2 (by omega))))
       calc (i.choose j : ℝ) * ‖iteratedFDeriv ℝ j (fun p : E × D ↦ ψ p.2) p‖ *
@@ -194,7 +199,7 @@ theorem sliceRight_smul (c : ℝ) (φ : 𝓓(V, F)) (x : E) :
 `‖Dⁱ (y ↦ φ (x, y)) y‖ ≤ ‖Dⁱ φ (x, y)‖`. -/
 theorem norm_iteratedFDeriv_sliceRight_le (φ : 𝓓(V, F)) (i : ℕ) (x : E) (y : D) :
     ‖iteratedFDeriv ℝ i (sliceRight hO φ x) y‖ ≤ ‖iteratedFDeriv ℝ i φ (x, y)‖ :=
-  _root_.ContDiff.norm_iteratedFDeriv_prod_right_le φ.contDiff i (mod_cast le_top) x y
+  φ.contDiff.contDiffAt.norm_iteratedFDeriv_prod_right_le i (mod_cast le_top)
 
 /-- Differentiating in the second variable commutes with taking slices:
 `∂_{(0, w)} φ (x, ·) = ∂_{w} (φ (x, ·))`. -/
@@ -213,6 +218,36 @@ theorem sliceRight_prodSMulCLM (ψ : 𝓓(O, ℝ)) (hV : (Ω : Set E) ×ˢ (O : 
     (φ : 𝓓(Ω, ℝ)) (x : E) : sliceRight hO (prodSMulCLM ψ hV φ) x = φ x • ψ := by
   ext y
   simp [mul_comm]
+
+/-- Around a point `z` of an open set `W ⊆ WithLp p (E × D)` there are neighbourhoods `B₁` of
+`z.fst` and `B₂` of `z.snd` such that test functions `φ` on `Ω` supported in `B₁` and `ψ` on `O`
+supported in `B₂` have a product test function `χ (x, y) = φ x * ψ y` on `W`, supported in the
+product of their supports. -/
+theorem exists_nhds_prod_cutoff {p : ℝ≥0∞} [Fact (1 ≤ p)] {W : Opens (WithLp p (E × D))}
+    {z : WithLp p (E × D)} (hz : z ∈ W) :
+    ∃ B₁ ∈ 𝓝 z.fst, ∃ B₂ ∈ 𝓝 z.snd, ∀ (φ : 𝓓(Ω, ℂ)) (ψ : 𝓓(O, ℂ)), tsupport φ ⊆ B₁ →
+      tsupport ψ ⊆ B₂ → ∃ χ : 𝓓(W, ℂ), (∀ q, χ q = φ q.fst * ψ q.snd) ∧
+        tsupport χ ⊆ ofLp ⁻¹' (tsupport φ ×ˢ tsupport ψ) := by
+  -- A box `B₁ × B₂` around `z` whose copy in `WithLp p (E × D)` lies in `W`.
+  have hW : toLp p ⁻¹' (W : Set (WithLp p (E × D))) ∈ 𝓝 (ofLp z) :=
+    (W.isOpen.preimage (prod_continuous_toLp p E D)).mem_nhds (by simpa using hz)
+  obtain ⟨B₁, hB₁, B₂, hB₂, hB⟩ := mem_nhds_prod_iff.1 hW
+  refine ⟨B₁, hB₁, B₂, hB₂, fun φ ψ hφ hψ ↦ ?_⟩
+  -- The product is supported in the compact set `ofLp ⁻¹' (tsupport φ ×ˢ tsupport ψ)`.
+  set K : Set (WithLp p (E × D)) := ofLp ⁻¹' (tsupport φ ×ˢ tsupport ψ)
+  have hK : IsCompact K :=
+    (prodContinuousLinearEquiv p ℝ E D).toHomeomorph.isCompact_preimage.2
+      (φ.hasCompactSupport.isCompact.prod ψ.hasCompactSupport.isCompact)
+  have hsupp : tsupport (fun q : WithLp p (E × D) ↦ φ q.fst * ψ q.snd) ⊆ K := fun q hq ↦
+    ⟨tsupport_comp_subset_preimage φ (continuous_fst.comp (prod_continuous_ofLp p E D))
+        (tsupport_mul_subset_left hq),
+      tsupport_comp_subset_preimage ψ (continuous_snd.comp (prod_continuous_ofLp p E D))
+        (tsupport_mul_subset_right hq)⟩
+  have hKW : K ⊆ W := fun q ⟨hq₁, hq₂⟩ ↦ by
+    simpa using hB ⟨hφ hq₁, hψ hq₂⟩
+  exact ⟨⟨fun q ↦ φ q.fst * ψ q.snd,
+    (φ.contDiff.comp (fstL p ℝ E D).contDiff).mul (ψ.contDiff.comp (sndL p ℝ E D).contDiff),
+    hK.of_isClosed_subset (isClosed_tsupport _) hsupp, hsupp.trans hKW⟩, fun _ ↦ (rfl), hsupp⟩
 
 end TestFunction
 

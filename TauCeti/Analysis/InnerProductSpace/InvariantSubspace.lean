@@ -23,6 +23,12 @@ For a bounded operator `A` on a Hilbert space and a complete subspace invariant 
 and its adjoint, the adjoint of the restriction of `A` is the restriction of the adjoint
 (`ContinuousLinearMap.adjoint_restrict`), so the restriction of a normal operator is normal
 (`IsStarNormal.restrict`).
+
+For a kernel, `Commute.starProjection_ker` deduces projection commutation
+from commutation with the operator and its adjoint. This kernel-projection argument is adapted
+from [AtiyahSinger/Analysis/FredholmPaths.lean][fredholm-paths] in Lean-Atiyah-Singer.
+
+[fredholm-paths]: https://github.com/alpha-squared-labs/Lean-Atiyah-Singer/blob/09fc7bab3f9ff606901bde4b5a5580470da63a70/AtiyahSinger/Analysis/FredholmPaths.lean
 -/
 
 public section
@@ -175,6 +181,23 @@ theorem ContinuousLinearMap.isReducing_adjoint_iff [CompleteSpace E] [U.HasOrtho
   rw [isReducing_iff_mem_invtSubmodule_adjoint, isReducing_iff_mem_invtSubmodule_adjoint,
     adjoint_adjoint, and_comm]
 
+/-- A kernel invariant under an operator and its adjoint has a commuting projection. -/
+theorem Commute.starProjection_ker [CompleteSpace E] {B T : E →L[𝕜] E}
+    (hBT : Commute B T) (hBTstar : Commute B (star T)) :
+    Commute B.ker.starProjection T := by
+  have hker (S : E →L[𝕜] E) (hBS : Commute B S) :
+      B.ker ∈ Module.End.invtSubmodule (S : Module.End 𝕜 E) := by
+    intro x hx
+    have hBx : B x = 0 := by
+      simpa only [ContinuousLinearMap.coe_coe] using LinearMap.mem_ker.mp hx
+    apply LinearMap.mem_ker.mpr
+    calc
+      B (S x) = S (B x) := congrArg (fun A : E →L[𝕜] E ↦ A x) hBS.eq
+      _ = 0 := by rw [hBx, map_zero]
+  apply Submodule.isReducing_coe_iff_commute_starProjection.mp
+  exact ContinuousLinearMap.isReducing_iff_mem_invtSubmodule_adjoint.mpr
+    ⟨hker T hBT, hker (star T) hBTstar⟩
+
 /-- On a finite-dimensional space, a subspace reduces an endomorphism `A` exactly when it is
 invariant under both `A` and its adjoint. -/
 theorem Module.End.isReducing_iff_mem_invtSubmodule_adjoint [FiniteDimensional 𝕜 E]
@@ -189,25 +212,25 @@ theorem Module.End.isReducing_adjoint_iff [FiniteDimensional 𝕜 E] {A : End �
   rw [isReducing_iff_mem_invtSubmodule_adjoint, isReducing_iff_mem_invtSubmodule_adjoint,
     LinearMap.adjoint_adjoint, and_comm]
 
-/-- For an invariant subspace of a symmetric map, applying the complementary projection to
-`A X - X M` is the same as forming the residual of the projected trial map. No isometry or
+/-- For a subspace `U` reducing `A`, applying the orthogonal projection onto `Uᗮ` to the
+residual `A X - X M` gives the residual of the projected trial map. No symmetry, isometry or
 finite-dimensionality hypothesis is needed.
 
 The corresponding DKPS projected-residual statement is in
 `ForTauCeti/Analysis/InnerProductSpace/Residual/AngleEmbedding.lean` (Jon Crall and
-GPT 5.6 High; Kitware, Apache-2.0). The proof uses invariant-projection commutation. -/
-theorem LinearMap.IsSymmetric.sylvester_starProjection_orthogonal_comp
-    {F : Type*} [AddCommGroup F] [Module 𝕜 F] {A : E →ₗ[𝕜] E}
-    (hA : A.IsSymmetric) {U : Submodule 𝕜 E} [U.HasOrthogonalProjection]
-    (hU : U ∈ Module.End.invtSubmodule A) (X : F →ₗ[𝕜] E) (M : F →ₗ[𝕜] F) :
+GPT 5.6 High; Kitware, Apache-2.0). -/
+theorem Submodule.IsReducing.sylvester_starProjection_orthogonal_comp
+    {F : Type*} [AddCommMonoid F] [Module 𝕜 F] {A : E →ₗ[𝕜] E} {U : Submodule 𝕜 E}
+    [U.HasOrthogonalProjection] (hU : U.IsReducing A) (X : F →ₗ[𝕜] E) (M : F →ₗ[𝕜] F) :
     A ∘ₗ (Uᗮ.starProjection.toLinearMap ∘ₗ X) -
         (Uᗮ.starProjection.toLinearMap ∘ₗ X) ∘ₗ M =
       Uᗮ.starProjection.toLinearMap ∘ₗ (A ∘ₗ X - X ∘ₗ M) := by
+  -- The projection onto `Uᗮ` commutes with `A`, since `Uᗮ` reduces `A` as well.
+  have hcomm := (Uᗮ.isReducing_iff_commute_starProjection A).mp
+    ((isReducing_orthogonal_iff U A).mpr hU)
   ext x
-  have hU' := hA.orthogonalComplement_mem_invtSubmodule (p := U) hU
-  have hcomm := hA.starProjection_apply_comm hU' (X x)
-  simp only [LinearMap.sub_apply, LinearMap.comp_apply, ContinuousLinearMap.coe_coe, map_sub]
-  rw [hcomm]
+  simp only [LinearMap.sub_apply, LinearMap.comp_apply, map_sub,
+    ← _root_.mul_apply_eq_comp, hcomm.eq]
 
 namespace ContinuousLinearMap
 

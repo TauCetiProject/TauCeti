@@ -12,6 +12,9 @@ public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 public import TauCeti.Topology.Algebra.Group.Basic
 public import TauCeti.Topology.Algebra.Group.Neighborhood
 import Mathlib.Algebra.Ring.Int.Parity
+import Mathlib.Topology.Algebra.IsUniformGroup.Basic
+import Mathlib.Topology.UniformSpace.CompleteSeparated
+import TauCeti.Topology.Algebra.IsUniformGroup.Defs
 
 /-!
 # Subgroups and topological closure
@@ -92,6 +95,9 @@ series of a profinite group.
   subgroup containing the commutators of a topological generating set contains the closure of
   the commutator subgroup.
 * `Subgroup.instCompactSpace_of_isClosed`: a closed subgroup of a compact group is compact.
+* `Subgroup.isClosed_of_weaklyLocallyCompactSpace`: a weakly locally compact subgroup of a
+  `T0` topological group is closed; the additive version is
+  `AddSubgroup.isClosed_of_weaklyLocallyCompactSpace`.
 * `Subgroup.isCompact_sup_of_le_normalizer`: the join of two compact subgroups, the first
   normalizing the second, is compact.
 * `Subgroup.isCompact_conj_smul`: a conjugate of a compact subgroup is compact.
@@ -226,6 +232,23 @@ theorem index_comap_of_denseRange [ContinuousConstSMul G G] {G' : Type*} [Group 
     simpa [mem_leftCoset_iff] using U.inv_mem ((mem_leftCoset_iff g).1 hx)
 
 variable [IsTopologicalGroup G]
+
+/-- A weakly locally compact subgroup of a `T0` topological group is closed. -/
+@[to_additive /-- A weakly locally compact additive subgroup of a `T0` topological additive
+group is closed. -/]
+theorem isClosed_of_weaklyLocallyCompactSpace [T0Space G] (K : Subgroup G)
+    [WeaklyLocallyCompactSpace K] : IsClosed (K : Set G) := by
+  let _ : UniformSpace G := IsTopologicalGroup.rightUniformSpace G
+  let _ : IsRightUniformGroup G := IsTopologicalGroup.isRightUniformGroup G
+  let _ : UniformSpace K := IsTopologicalGroup.rightUniformSpace K
+  let _ : IsRightUniformGroup K := IsTopologicalGroup.isRightUniformGroup K
+  let _ : CompleteSpace K := IsRightUniformGroup.completeSpace_of_weaklyLocallyCompactSpace K
+  have he : IsUniformEmbedding (K.subtype : K → G) :=
+    MonoidHom.isUniformEmbedding_of_isEmbedding_right (f := K.subtype)
+      Topology.IsEmbedding.subtypeVal
+  have h : IsClosed (Set.range (Subtype.val : K → G)) := by
+    simpa only [Subgroup.coe_subtype] using he.isClosedEmbedding.isClosed_range
+  exact (Subtype.range_val (s := (K : Set G))) ▸ h
 
 omit [IsTopologicalGroup G] in
 /-- The inclusion of a subgroup into a larger subgroup is continuous. -/

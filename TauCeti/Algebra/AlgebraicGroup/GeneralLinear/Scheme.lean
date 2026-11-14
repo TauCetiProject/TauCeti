@@ -147,6 +147,25 @@ noncomputable def groupSchemeSpecIso :
     Scheme.Spec.mapIso
       (coordinateHopfAlgebraAlgEquiv R n).toRingEquiv.toCommRingCatIso.op
 
+/-- The raw-coordinate presentation map in terms of the bundled coordinate Hopf algebra. -/
+lemma groupSchemeSpecIso_hom :
+    (groupSchemeSpecIso R n).hom =
+      eqToHom (groupScheme_X_left R n) ≫
+        Spec.map (CommRingCat.ofHom (coordinateHopfAlgebraAlgEquiv R n).toAlgHom) := by
+  simp only [groupSchemeSpecIso, Iso.trans_hom, eqToIso.hom, Functor.mapIso_hom,
+    Iso.op_hom, Scheme.Spec_map, Quiver.Hom.unop_op, RingEquiv.toCommRingCatIso_hom,
+    AlgEquiv.toRingEquiv_toRingHom, AlgEquiv.toAlgHom_toRingHom]
+
+/-- The inverse raw-coordinate presentation map in terms of the bundled coordinate Hopf
+algebra. -/
+lemma groupSchemeSpecIso_inv :
+    (groupSchemeSpecIso R n).inv =
+      Spec.map (CommRingCat.ofHom (coordinateHopfAlgebraAlgEquiv R n).symm.toAlgHom) ≫
+        eqToHom (groupScheme_X_left R n).symm := by
+  simp only [groupSchemeSpecIso, Iso.trans_inv, eqToIso.inv, Functor.mapIso_inv,
+    Iso.op_inv, Scheme.Spec_map, Quiver.Hom.unop_op, RingEquiv.toCommRingCatIso_inv,
+    AlgEquiv.toRingEquiv_symm, AlgEquiv.toRingEquiv_toRingHom, AlgEquiv.toAlgHom_toRingHom]
+
 private lemma groupScheme_X_hom_bundled :
     (groupScheme R n).X.hom =
       eqToHom (groupScheme_X_left R n) ≫

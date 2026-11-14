@@ -580,7 +580,7 @@ private theorem integral_floerEnergyDensity_image_endChart_eq (ω : SymplecticFo
           ω.hamiltonianAction (H q) (fun t ↦ (u ∘ endChart q) (a, t)) := by
     rw [setIntegral_congr_fun (measurableSet_Icc.prod measurableSet_Icc) fun w hw ↦
       ω.floerEnergyDensity_congr_perturbation (Ks' := fun _ _ ↦ 0) (Kt' := fun w ↦ H q w.2) _
-        (funext (pairOfPantsEndComponent_one_of_pos (hH q) (by linarith [h2 w.1 hw.1])))
+        (funext (pairOfPantsEndComponent_one_of_pos (by linarith [h2 w.1 hw.1])))
         (pairOfPantsEndComponent_I_of_two_le (hH q) (h2 w.1 hw.1))]
     exact ω.integral_floerEnergyDensity_endChart_eq_hamiltonianAction_sub (hHs q) hu q hab
       fun s hs ↦ by linarith [h2 s hs]

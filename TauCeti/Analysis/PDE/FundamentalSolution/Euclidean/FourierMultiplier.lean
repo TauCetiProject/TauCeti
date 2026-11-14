@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Fourier.HessianMultiplier
 public import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Potential
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
+import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Cutoff
 import TauCeti.Analysis.Normed.Lp.SmoothApprox
@@ -133,8 +134,6 @@ private theorem annulus_bound_nonneg (hn : 3 ≤ n) {C R A : ℝ} (hR : 1 ≤ R)
     have := (norm_nonneg _).trans (hχ' 0)
     rwa [le_div_iff₀ hR0, zero_mul] at this
   have hV := volume_real_unitBall_pos n
-  have hCd : 0 ≤ ((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ :=
-    inv_nonneg.2 (mul_nonneg (by linarith) hV.le)
   have hCn :
       0 ≤ ((n : ℝ) * ((n : ℝ) - 2) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ :=
     inv_nonneg.2 (mul_nonneg (mul_nonneg (by linarith) (by linarith)) hV.le)
@@ -163,14 +162,12 @@ private theorem norm_laplacian_smul_newtonianKernel_convolution_add_le_of_norm_m
   have hC : 0 ≤ C := by
     have := (norm_nonneg _).trans (hχ' 0)
     rwa [le_div_iff₀ hR0, zero_mul] at this
-  have hCd : 0 ≤ Cd := inv_nonneg.2 (mul_nonneg (by linarith) (volume_real_unitBall_pos n).le)
   have hCn : 0 ≤ Cn := inv_nonneg.2 (mul_nonneg (mul_nonneg (by linarith) (by linarith))
     (volume_real_unitBall_pos n).le)
   have hu : ContDiff ℝ ∞ u := contDiff_newtonianKernel_convolution hφ hc
   have hΔu : Δ u = -φ := laplacian_newtonianKernel_convolution hn (hφ.of_le (by simp)) hc
   have hφx : ∀ y : EuclideanSpace ℝ (Fin n), R₀ < ‖y‖ → φ y = 0 := fun y hy =>
     image_eq_zero_of_notMem_tsupport fun h => (mem_closedBall_zero_iff.1 (hR₀ h)).not_gt hy
-  have hA₀ := integral_nonneg (μ := volume) (f := fun y => ‖φ y‖) fun y => norm_nonneg _
   -- On the annulus, expand `Δ(χ u)` by the Leibniz rule.
   have hxR₀ : R / 2 ≤ ‖x‖ - R₀ := by linarith
   have hpow : (‖x‖ - R₀) ^ (2 - (n : ℝ)) ≤ (R / 2) ^ (2 - (n : ℝ)) :=
@@ -178,14 +175,13 @@ private theorem norm_laplacian_smul_newtonianKernel_convolution_add_le_of_norm_m
   -- Since `1 ≤ R`, the faster decay `(R / 2) ^ (1 - n)` of `Du` is at most `2 (R / 2) ^ (2 - n)`.
   have hpow₁ := rpow_one_sub_le_two_mul_rpow_two_sub (by linarith : (1 : ℝ) ≤ n) hR hxR₀
   have hgrad : ‖∇ χ x‖ ≤ C / R := by
-    simpa only [gradient, LinearIsometryEquiv.norm_map] using hχ' x
+    rw [norm_gradient_eq_norm_fderiv]
+    exact hχ' x
   rw [(hχ.contDiffAt.of_le (by simp)).laplacian_fun_smul (hu.contDiffAt.of_le (by simp)), hΔu,
     Pi.neg_apply, hφx x (by linarith), neg_zero, smul_zero, zero_add, add_zero]
   have hR₀x : R₀ < ‖x‖ := by linarith
-  have hφi := hφ.continuous.integrable_of_hasCompactSupport (μ := volume) hc
-  have h₁ := norm_fderiv_newtonianKernel_convolution_le (by omega) hφi
-    ((subset_tsupport φ).trans hR₀) hR₀x
-  have h₂ := norm_newtonianKernel_convolution_le hn hφi ((subset_tsupport φ).trans hR₀) hR₀x
+  have h₁ := norm_fderiv_newtonianKernel_convolution_le ((subset_tsupport φ).trans hR₀) hR₀x
+  have h₂ := norm_newtonianKernel_convolution_le hn ((subset_tsupport φ).trans hR₀) hR₀x
   have hΔχ : ‖Δ χ x‖ ≤ C / R := (hχ'' x).trans (div_le_div_of_nonneg_left hC hR0
     (by nlinarith))
   calc ‖(2 : ℝ) • fderiv ℝ u x (∇ χ x) + Δ χ x • u x‖
@@ -259,7 +255,6 @@ private theorem tendsto_mul_rpow_mul_measureReal_closedBall_rpow (hn : 3 ≤ n) 
       rw [← Real.rpow_neg_one, ← Real.rpow_add hR, ← Real.rpow_add hR]
       congr 1
       ring
-    have h₂ : (0 : ℝ) < 2 ^ (2 - (n : ℝ)) := by positivity
     rw [h₁]
     field_simp
     simp only [c]
@@ -304,8 +299,8 @@ private theorem exists_continuousOn_norm_le_cthickening {s : Set (EuclideanSpace
       (continuous_const.sub continuous_id).continuousAt).eval_const _ |>.continuousWithinAt
   refine ((iteratedFDeriv ℝ 2 (newtonianKernel n) (x - y)).le_opNorm _).trans ?_
   simp only [Fin.prod_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one]
-  refine mul_le_mul_of_nonneg_right ((norm_iteratedFDeriv_two_newtonianKernel_le
-    (hne y hy)).trans (mul_le_mul_of_nonneg_left ?_ (by positivity))) (by positivity)
+  refine mul_le_mul_of_nonneg_right ((norm_iteratedFDeriv_two_newtonianKernel_le (x - y)).trans
+    (mul_le_mul_of_nonneg_left ?_ (by positivity))) (by positivity)
   exact Real.rpow_le_rpow_of_nonpos hη (hdist y hy) (neg_nonpos.2 (Nat.cast_nonneg n))
 
 section Multiplier

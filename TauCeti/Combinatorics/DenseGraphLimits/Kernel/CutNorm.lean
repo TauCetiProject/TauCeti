@@ -17,19 +17,19 @@ This file defines the cut norm of a bounded symmetric kernel on a finite measure
 `‖K‖□ = sup |∫_(S × T) K|`,
 
 where the supremum ranges over measurable sets `S` and `T`.  The file develops the interface needed
-by the cut-distance and counting-lemma layers: the bound of every rectangle by the cut norm, the
+by the cut distance and the counting lemma: the bound of every rectangle by the cut norm, the
 seminorm laws, and the comparison with the `L¹` norm.  The integrals themselves —
 `rectIntegral`, `testIntegral`, `partialIntegral` and their analytic API — are in
-`Kernel.Integral`, so a consumer needing only those does not reach the supremum layer.
+`Kernel.Integral`, so a consumer needing only those need not import this file.
 
 The definition uses strict representatives, consistently with `SymmKernel`.  Consequently all
-pointwise algebra happens before integration; a later layer proves invariance under a.e. equality.
+pointwise algebra happens before integration; invariance under a.e. equality is
+`TauCeti.DenseGraphLimits.cutNorm_congr_ae`.
 
 ## Main definitions
 
 * `TauCeti.DenseGraphLimits.cutNorm` is the supremum of the absolute rectangle integrals.
-* `TauCeti.DenseGraphLimits.cutNormSet` is the separately roadmap-pinned textbook set-form name for
-  the same quantity.
+* `TauCeti.DenseGraphLimits.cutNormSet` is the textbook set-form name for the same quantity.
 * `TauCeti.DenseGraphLimits.cutNormSigned` is the signed cut norm: the same supremum taken over
   measurable `[-1,1]`-valued test functions rather than over indicators.
 
@@ -57,8 +57,6 @@ pointwise algebra happens before integration; a later layer proves invariance un
 
 * L. Lovász, *Large Networks and Graph Limits*, §8.2.1.
 * S. Janson, *Graphons, cut norm and distance, couplings and rearrangements*, §4.
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 1 — the cut norm, its set form, and
-  the signed form; the signatures follow `TauCetiRoadmap/DenseGraphLimits/Suggested.lean`.
 * The definition and rectangle-integral interface follow `Graphon/CutNorm.lean` in
   `cameronfreer/graphon` (Apache 2.0) at commit
   `6eccca5bbe5c9df46d7129bf59575b8b9b1d6699`; the strict-kernel integrability and full seminorm
@@ -106,11 +104,12 @@ noncomputable def cutNormSigned [IsFiniteMeasure μ] (K : SymmKernel Ω μ) : �
     (v : Ω → ℝ) (_ : Measurable v) (_ : ∀ y, v y ∈ Icc (-1 : ℝ) 1),
     |K.testIntegral (ν : Measure Ω) u v|
 
+section FiniteMeasure
+
 variable [IsFiniteMeasure μ]
 
-/-- The cut norm is definitionally its separately roadmap-pinned measurable-set form.  This is not
-a `simp` lemma: `cutNorm` is the normal form that the rest of the API, and hence the `simp` set, is
-stated in. -/
+/-- The cut norm is definitionally its measurable-set form.  This is not a `simp` lemma: `cutNorm`
+is the normal form that the rest of the API, and hence the `simp` set, is stated in. -/
 theorem cutNorm_eq_cutNormSet (K : SymmKernel Ω μ) : cutNorm μ K = cutNormSet μ K := (rfl)
 
 /-- The set-form cut norm is the iterated supremum over measurable rectangles. -/
@@ -176,27 +175,27 @@ private theorem bddAbove_range_of_forall_le {I : Sort*} {f : I → ℝ} {C : ℝ
     (h : ∀ i, f i ≤ C) : BddAbove (range f) :=
   ⟨C, Set.forall_mem_range.2 h⟩
 
-/-- Every measurable rectangle integral is bounded by the cut norm. -/
-theorem abs_rectIntegral_le_cutNorm (K : SymmKernel Ω μ) {S T : Set Ω}
-    (hS : MeasurableSet S) (hT : MeasurableSet T) :
+/-- Every rectangle integral is bounded by the cut norm. -/
+theorem abs_rectIntegral_le_cutNorm (K : SymmKernel Ω μ) (S T : Set Ω) :
     |K.rectIntegral μ S T| ≤ cutNorm μ K := by
-  rw [cutNorm_eq_cutNormSet, cutNormSet_def]
+  rw [SymmKernel.rectIntegral_toMeasurable μ K S T, cutNorm_eq_cutNormSet, cutNormSet_def]
   apply le_ciSup_of_le (bddAbove_range_of_forall_le fun S =>
-    iSup_measurableSet_left_le_integral_abs μ K S) S
+    iSup_measurableSet_left_le_integral_abs μ K S) (toMeasurable μ S)
   apply le_ciSup_of_le (bddAbove_range_of_forall_le fun _ =>
-    iSup_right_le_integral_abs μ K S) hS
+    iSup_right_le_integral_abs μ K (toMeasurable μ S)) (measurableSet_toMeasurable μ S)
   apply le_ciSup_of_le (bddAbove_range_of_forall_le fun T =>
-    iSup_measurableSet_right_le_integral_abs μ K S T) T
+    iSup_measurableSet_right_le_integral_abs μ K (toMeasurable μ S) T) (toMeasurable μ T)
   exact le_ciSup (bddAbove_range_of_forall_le fun _ =>
-    K.abs_rectIntegral_le_integral_abs μ S T) hT
+    K.abs_rectIntegral_le_integral_abs μ (toMeasurable μ S) (toMeasurable μ T))
+    (measurableSet_toMeasurable μ T)
 
 /-- The cut norm is at most `C` exactly when every measurable rectangle integral is. -/
 theorem cutNorm_le_iff {K : SymmKernel Ω μ} {C : ℝ} :
     cutNorm μ K ≤ C ↔
       ∀ S, MeasurableSet S → ∀ T, MeasurableSet T → |K.rectIntegral μ S T| ≤ C := by
   constructor
-  · intro h S hS T hT
-    exact (abs_rectIntegral_le_cutNorm μ K hS hT).trans h
+  · intro h S _ T _
+    exact (abs_rectIntegral_le_cutNorm μ K S T).trans h
   · exact cutNorm_le μ
 
 /-- Any strict lower bound on the cut norm is exceeded by some measurable rectangle integral. -/
@@ -208,14 +207,13 @@ theorem exists_lt_abs_rectIntegral (K : SymmKernel Ω μ) {c : ℝ} (h : c < cut
   intro S hS T hT
   exact le_of_not_gt fun hST => h' ⟨S, T, hS, hT, hST⟩
 
-/-- **On a finite carrier the cut norm is attained.** When the carrier is finite and every subset
-of it is measurable, the supremum defining the cut norm is a maximum over rectangles. -/
-theorem exists_cutNorm_eq_abs_rectIntegral [Finite Ω] [MeasurableSingletonClass Ω]
+/-- **On a finite carrier the cut norm is attained.** When the carrier is finite, the supremum
+defining the cut norm is a maximum over rectangles. -/
+theorem exists_cutNorm_eq_abs_rectIntegral [Finite Ω]
     (K : SymmKernel Ω μ) : ∃ S T : Set Ω, cutNorm μ K = |K.rectIntegral μ S T| := by
   obtain ⟨p, hp⟩ := Finite.exists_max fun p : Set Ω × Set Ω => |K.rectIntegral μ p.1 p.2|
   exact ⟨p.1, p.2, le_antisymm (cutNorm_le μ fun S _ T _ => hp (S, T))
-    (abs_rectIntegral_le_cutNorm μ K (Set.toFinite _).measurableSet
-      (Set.toFinite _).measurableSet)⟩
+    (abs_rectIntegral_le_cutNorm μ K p.1 p.2)⟩
 
 /-- The cut norm is nonnegative. -/
 theorem cutNorm_nonneg (K : SymmKernel Ω μ) : 0 ≤ cutNorm μ K := by
@@ -235,8 +233,10 @@ theorem cutNorm_le_toReal_eLpNorm (K : SymmKernel Ω μ) :
   refine (cutNorm_le_integral_abs μ K).trans (le_of_eq ?_)
   have hK : AEStronglyMeasurable (fun p : Ω × Ω => K p.1 p.2) (μ.prod μ) :=
     K.measurable.aestronglyMeasurable
-  rw [eLpNorm_one_eq_lintegral_enorm hK, ← integral_norm_eq_lintegral_enorm hK]
+  rw [eLpNorm_one_eq_lintegral_eNorm hK, ← integral_norm_eq_lintegral_eNorm hK]
   simp only [Real.norm_eq_abs]
+
+end FiniteMeasure
 
 /-- A pointwise bound on a kernel bounds its cut norm, on a probability carrier.
 
@@ -255,7 +255,9 @@ square is an extremal rectangle. -/
 theorem cutNorm_eq_abs_of_forall_eq [IsProbabilityMeasure μ] {K : SymmKernel Ω μ} {c : ℝ}
     (hK : ∀ x y, K x y = c) : cutNorm μ K = |c| := by
   refine le_antisymm (cutNorm_le_of_forall_abs_le μ K fun x y => (hK x y).symm ▸ le_rfl) ?_
-  simpa [hK] using abs_rectIntegral_le_cutNorm μ K MeasurableSet.univ MeasurableSet.univ
+  simpa [hK] using abs_rectIntegral_le_cutNorm μ K Set.univ Set.univ
+
+variable [IsFiniteMeasure μ]
 
 /-- The zero kernel has cut norm zero. -/
 @[simp]
@@ -283,10 +285,10 @@ theorem cutNorm_sub_rev (K L : SymmKernel Ω μ) :
 theorem cutNorm_add_le (K L : SymmKernel Ω μ) :
     cutNorm μ (K + L) ≤ cutNorm μ K + cutNorm μ L := by
   apply cutNorm_le μ
-  intro S hS T hT
+  intro S _ T _
   rw [SymmKernel.rectIntegral_add]
   exact (abs_add_le _ _).trans (add_le_add
-    (abs_rectIntegral_le_cutNorm μ K hS hT) (abs_rectIntegral_le_cutNorm μ L hS hT))
+    (abs_rectIntegral_le_cutNorm μ K S T) (abs_rectIntegral_le_cutNorm μ L S T))
 
 /-- The cut norm of a difference is at most the sum of the two cut norms. -/
 theorem cutNorm_sub_le (K L : SymmKernel Ω μ) :
@@ -319,7 +321,7 @@ theorem cutNorm_le_cutNorm_comap {α : Type*} [MeasurableSpace α] {ν : Measure
     cutNorm μ K ≤ cutNorm ν (K.comap f hf.measurable ν) :=
   cutNorm_le μ fun S hS T hT => by
     rw [← SymmKernel.rectIntegral_comap_preimage μ hf K hS hT]
-    exact abs_rectIntegral_le_cutNorm ν _ (hf.measurable hS) (hf.measurable hT)
+    exact abs_rectIntegral_le_cutNorm ν _ _ _
 
 omit [MeasurableSpace Ω] in
 /-- An indicator of the constant-one function takes values in `[-1,1]`. -/
@@ -421,7 +423,7 @@ theorem abs_testIntegral_le_cutNorm (K : SymmKernel Ω μ) {u v : Ω → ℝ}
       ≤ |K.testIntegral μ v (S.indicator 1)| := hSle
     _ ≤ |K.testIntegral μ (T.indicator 1) (S.indicator 1)| := hTle
     _ = |K.rectIntegral μ T S| := by rw [K.testIntegral_indicator_one μ hT hS]
-    _ ≤ cutNorm μ K := abs_rectIntegral_le_cutNorm μ K hT hS
+    _ ≤ cutNorm μ K := abs_rectIntegral_le_cutNorm μ K T S
 
 /-- **The cut norm is the `[0,1]`-test-function supremum.**  The cut norm of `K` is the supremum,
 over measurable `[0,1]`-valued test functions `u` and `v`, of `|∫∫ u(x) v(y) K(x,y)|`.

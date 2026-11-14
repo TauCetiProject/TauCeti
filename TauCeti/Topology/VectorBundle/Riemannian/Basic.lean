@@ -31,6 +31,8 @@ vectors converge too.
 
 * `Continuous.norm_bundle`: the fiber norm of a continuous map into the fibers of a continuous
   Riemannian bundle is continuous, with `TauCeti.continuous_norm_bundle` its tautological case.
+* `IsOpen.norm_lt_bundle`: the vectors of norm less than `r` over an open set form an open subset
+  of the total space.
 * `IsCompact.norm_le_bundle`: the vectors of norm at most `r` over a compact set form a compact
   subset of the total space.
 * `IsCompact.norm_le_bundle_of_continuous`: the same for a continuous fiber norm with locally
@@ -73,6 +75,13 @@ theorem continuous_norm_bundle : Continuous fun z : TotalSpace F E ↦ ‖z.2‖
     (continuous_id.congr fun z ↦ (TotalSpace.eta z).symm)
 
 end TauCeti
+
+/-- In a continuous Riemannian bundle, the vectors of norm less than `r` lying over an open subset
+of the base form an open subset of the total space. -/
+theorem IsOpen.norm_lt_bundle {U : Set B} (hU : IsOpen U) (r : ℝ) :
+    IsOpen {z : TotalSpace F E | z.proj ∈ U ∧ ‖z.2‖ < r} :=
+  (hU.preimage (FiberBundle.continuous_proj F E)).inter
+    (isOpen_lt (TauCeti.continuous_norm_bundle F E) continuous_const)
 
 end Norm
 

@@ -48,6 +48,8 @@ none of this assumes σ-finiteness.
 * `TauCeti.integral_modularCharacter_smul_inv_eq_self` and
   `TauCeti.integral_inv_eq_integral_modularCharacter_smul`: the inversion formula on compactly
   supported integrands.
+* `MeasureTheory.Measure.measure_mul_right_null_of_innerRegular`: right translation preserves null
+  sets of an inner regular locally finite left-invariant measure (without `[μ.IsOpenPosMeasure]`).
 * `MeasureTheory.Measure.isMulRightInvariant_withDensity_modularCharacter`: `μ.withDensity c`
   is right invariant for an inner regular Haar measure `μ`.
 * `MeasureTheory.Measure.inv_eq_withDensity_modularCharacter`: `μ.inv = μ.withDensity c` for an
@@ -76,6 +78,7 @@ public section
 
 open MeasureTheory
 open scoped NNReal ENNReal
+open scoped Pointwise
 
 namespace TauCeti
 
@@ -258,6 +261,26 @@ private theorem isMulRightInvariant_withDensity_modularCharacter_of_map
   simp only [Pi.smul_apply, smul_eq_mul, ← ENNReal.coe_mul]
   rw [map_mul, mul_left_comm, ← map_mul, mul_inv_cancel, map_one, mul_one]
 
+/-- Right translation preserves null sets of an inner regular locally finite left-invariant
+measure on a locally compact group, without requiring `[μ.IsOpenPosMeasure]` or
+`[MeasurableMul₂ G]`. In particular, this applies on any σ-compact locally compact group when
+`[IsLocallyFiniteMeasure μ]` and `[μ.InnerRegularCompactLTTop]` hold. -/
+theorem measure_mul_right_null_of_innerRegular [μ.IsMulLeftInvariant]
+    [IsFiniteMeasureOnCompacts μ] [μ.InnerRegular] (g : G) {s : Set G} :
+    μ ((· * g) ⁻¹' s) = 0 ↔ μ s = 0 := by
+  rcases eq_or_ne μ 0 with rfl | hμ0
+  · simp
+  · have hpos_univ : 0 < μ Set.univ := pos_iff_ne_zero.mpr (mt measure_univ_eq_zero.mp hμ0)
+    obtain ⟨K, -, hK, hμK⟩ := MeasurableSet.univ.exists_lt_isCompact hpos_univ
+    have : μ.IsOpenPosMeasure :=
+      isOpenPosMeasure_of_mulLeftInvariant_of_compact _ hK hμK.ne'
+    have : μ.IsHaarMeasure := {}
+    have hmap := (MeasurableEquiv.mulRight g).map_apply (μ := μ) s
+    rw [MeasurableEquiv.coe_mulRight, map_right_mul_eq_modularCharacterFun_smul μ g,
+      _root_.smul_apply, nnreal_smul_coe_apply] at hmap
+    have hpos : modularCharacterFun g ≠ 0 := (modularCharacterFun_pos g).ne'
+    simp [← hmap, hpos]
+
 variable [μ.IsHaarMeasure]
 
 /-- Weighting an inner regular Haar measure by the modular character gives a right invariant
@@ -361,7 +384,7 @@ theorem measure_mul_right_null_of_regular (g : G) {s : Set G} :
 @[fun_prop]
 theorem quasiMeasurePreserving_mul_right_of_regular (g : G) :
     QuasiMeasurePreserving (· * g) μ μ :=
-  ⟨measurable_mul_const g, by
+  ⟨(measurable_mul_const g).aemeasurable, by
     rw [map_right_mul_eq_modularCharacter_smul_of_regular]
     exact smul_absolutelyContinuous⟩
 
@@ -433,7 +456,7 @@ theorem measure_inv_null_of_regular {s : Set G} : μ s⁻¹ = 0 ↔ μ s = 0 := 
 /-- Inversion is quasi-measure-preserving for a regular Haar measure. -/
 @[fun_prop]
 theorem quasiMeasurePreserving_inv_of_regular : QuasiMeasurePreserving Inv.inv μ μ :=
-  ⟨measurable_inv, inv_absolutelyContinuous_of_regular μ⟩
+  ⟨measurable_inv.aemeasurable, inv_absolutelyContinuous_of_regular μ⟩
 
 /-- For a regular Haar measure, `y ↦ y⁻¹ * x` is quasi-measure-preserving: it is inversion
 followed by right translation by `x`. -/
