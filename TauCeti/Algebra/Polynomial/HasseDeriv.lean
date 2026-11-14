@@ -14,7 +14,7 @@ import Mathlib.Data.Int.Interval
 import Mathlib.Data.Nat.Factorial.NatCast
 import Mathlib.Data.Rat.Floor
 import Mathlib.Data.ZMod.Basic
-import TauCeti.Data.Nat.Factorial.NatCast
+import TauCeti.Algebra.Polynomial.Derivative
 
 /-!
 # Univariate Hasse jets: comparison with ordinary derivatives and nonvanishing
@@ -24,7 +24,8 @@ evaluating the `k`-th ordinary derivative multiplies `(hasseDeriv k f).eval a` b
 `k !` is a unit in `R` — in particular for `k < p` in any ring of prime characteristic `p`
 (`IsUnit.natCast_factorial_iff_of_charP`) — the ordinary and Hasse jets of order `k` vanish at the
 same points. For `k ≥ p` in positive characteristic `p`, `p` divides `k !` and `derivative^[k]`
-vanishes identically while `hasseDeriv p (X ^ p) = 1`.
+vanishes identically (`Polynomial.iterate_derivative_eq_zero_of_charP`) while
+`hasseDeriv p (X ^ p) = 1`.
 
 Over an integral domain, the root multiplicity of a nonzero polynomial `P` at `a` is the order of
 its first nonvanishing Hasse derivative at `a`
@@ -47,8 +48,6 @@ of Evertse's integer-grid nonvanishing lemma: for every `B > 0` and every nonzer
   `Polynomial.eval_iterate_derivative_eq_zero_iff_eval_hasseDeriv_eq_zero_of_lt_charP`: when `k !`
   is a unit (in particular when `k < p` in prime characteristic `p`), ordinary and Hasse jets of
   order `k` vanish together.
-* `Polynomial.iterate_derivative_eq_zero_of_charP`: in positive characteristic `p`,
-  `derivative^[k] f = 0` for all `k ≥ p`.
 * `Polynomial.exists_eval_hasseDeriv_ne_zero_of_natDegree_lt`: over an integral domain, if `P ≠ 0`
   and `P.natDegree < #S * (k + 1)`, some Hasse derivative of `P` of order `≤ k` is nonzero on `S`.
 * `Polynomial.exists_int_eval_hasseDeriv_ne_zero`: over a domain of characteristic zero, if `P ≠ 0`,
@@ -90,14 +89,6 @@ theorem eval_iterate_derivative_eq_zero_iff_eval_hasseDeriv_eq_zero_of_lt_charP 
     (derivative^[k] f).eval a = 0 ↔ (hasseDeriv k f).eval a = 0 :=
   eval_iterate_derivative_eq_zero_iff_eval_hasseDeriv_eq_zero
     ((IsUnit.natCast_factorial_iff_of_charP p).mpr hk) f a
-
-/-- In positive characteristic `p`, every iterated ordinary derivative of order `k ≥ p` vanishes
-identically, since `p` divides `k !`. -/
-theorem iterate_derivative_eq_zero_of_charP {R : Type*} [Semiring R] {p : ℕ} [CharP R p]
-    (hp : 0 < p) {k : ℕ} (hk : p ≤ k) (f : R[X]) :
-    derivative^[k] f = 0 := by
-  rw [← factorial_smul_hasseDeriv, LinearMap.smul_apply, ← Nat.cast_smul_eq_nsmul R,
-    Nat.cast_factorial_eq_zero_of_le hp (CharP.cast_eq_zero R p) hk, zero_smul]
 
 /-- Over an integral domain, if `P ≠ 0` has degree strictly less than `#S * (k + 1)`, then some
 Hasse derivative of `P` of order at most `k` does not vanish at some point of `S`. -/
