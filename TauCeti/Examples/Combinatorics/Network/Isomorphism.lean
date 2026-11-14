@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Network.Isomorphism.Residual
-public import Mathlib.Logic.Equiv.Bool
+import Mathlib.Logic.Equiv.Bool
 import Mathlib.Algebra.Order.Group.Int
 
 /-!
@@ -18,14 +18,12 @@ and one of the two parallel arrows is saturated. Residual transport keeps the fo
 tags distinct and commutes with a canonical adjustment to zero.
 -/
 
-public section
-
 namespace TauCeti.Examples.ResidualIsomorphism
 
 /-- A network with two arrows per ordered pair and signed bounds. Exposed so its arrow types
 compute as `Bool` in the relabelling and residual examples. -/
 @[expose, reducible]
-def network : Network ℤ Bool where
+public def network : Network ℤ Bool where
   Hom _ _ := Bool
   lower := fun {_ _} _ ↦ -2
   upper := fun {_ _} _ ↦ 3
@@ -110,8 +108,37 @@ example (lo hi g : N.Assignment ℤ) :
     e.residualAssignmentEquiv ℤ (residualCapacity lo hi g) =
       residualCapacity (e.assignmentEquiv ℤ lo) (e.assignmentEquiv ℤ hi)
         (e.assignmentEquiv ℤ g) := by
-  simp
+  rw [e.residualAssignmentEquiv_residualCapacity]
 
 end NaturalBounds
+
+-- Bundled simplification continues after transport normalizes to the unbundled equivalence.
+section BundledTransport
+
+variable {V W : Type*} [Fintype V] [Fintype W]
+  {N : Network ℤ V} {M : Network ℤ W}
+  [∀ x y, Fintype (N.Hom x y)] [∀ x y, Fintype (M.Hom x y)]
+  (e : N.Iso M) (f : N.Assignment ℤ) (hf : f ∈ Set.Icc N.lower N.upper)
+
+example : (e.residual f hf).assignmentEquiv ℤ 0 = 0 := by simp
+
+example (r : TauCeti.Assignment (ResidualHom N.Hom) ℤ) (x : V) :
+    excessAt ((e.residual f hf).assignmentEquiv ℤ r) ((e.residual f hf).vertexEquiv x) =
+      excessAt r x := by
+  simp
+
+example (r : TauCeti.Assignment (ResidualHom N.Hom) ℤ) :
+    IsCirculation ((e.residual f hf).assignmentEquiv ℤ r) ↔ IsCirculation r := by
+  simp
+
+end BundledTransport
+
+-- Swapping and coefficient transport need only an order relation on the original bounds.
+example {V W K R : Type*} [LE K] {N : Network K V} {M : Network K W} (e : N.Iso M)
+    (r : TauCeti.Assignment (ResidualHom N.Hom) R) {x y : V}
+    (a : ResidualHom N.Hom x y) :
+    e.residualAssignmentEquiv R r ((Sum.map (e.homEquiv x y) (e.homEquiv y x) a).swap) =
+      r a.swap := by
+  simp
 
 end TauCeti.Examples.ResidualIsomorphism
