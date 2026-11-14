@@ -98,4 +98,31 @@ theorem swap_min_max {α : Type*} [LinearOrder α] (a b : α) :
   · rw [min_eq_left h, max_eq_right h]
   · rw [min_eq_right h, max_eq_left h, swap_comm]
 
+/-- Equivalences `e : α ≃ β` intertwining `f : α → γ` and `g : β → γ` correspond to
+families of equivalences between the corresponding fibers `{a // f a = c} ≃ {b // g b = c}`. -/
+def fiberEquiv {α β γ : Type*} (f : α → γ) (g : β → γ) :
+    {e : α ≃ β // ∀ a, g (e a) = f a} ≃ ∀ c : γ, {a // f a = c} ≃ {b // g b = c} where
+  toFun e c :=
+    { toFun := fun a ↦ ⟨e.1 a.1, (e.2 a.1).trans a.2⟩
+      invFun := fun b ↦ ⟨e.1.symm b.1, by rw [← e.2, e.1.apply_symm_apply, b.2]⟩
+      left_inv := fun a ↦ Subtype.ext (e.1.symm_apply_apply a.1)
+      right_inv := fun b ↦ Subtype.ext (e.1.apply_symm_apply b.1) }
+  invFun e := ⟨ofFiberEquiv e, fun a ↦ ofFiberEquiv_map e a⟩
+  left_inv e := Subtype.ext <| Equiv.ext fun _ ↦ rfl
+  right_inv e := funext fun c ↦ Equiv.ext fun ⟨a, ha⟩ ↦ by subst ha; rfl
+
+/-- Applying `Equiv.fiberEquiv` on a fiber `c` applies the underlying equivalence. -/
+@[simp]
+theorem coe_fiberEquiv_apply {α β γ : Type*} (f : α → γ) (g : β → γ)
+    (e : {e : α ≃ β // ∀ a, g (e a) = f a}) (c : γ) (a : {a // f a = c}) :
+    ((fiberEquiv f g e c a : {b // g b = c}) : β) = e.1 a.1 :=
+  (rfl)
+
+/-- Applying the inverse of `Equiv.fiberEquiv` evaluates the fiber equivalence at `f a`. -/
+@[simp]
+theorem coe_fiberEquiv_symm_apply {α β γ : Type*} (f : α → γ) (g : β → γ)
+    (e : ∀ c : γ, {a // f a = c} ≃ {b // g b = c}) (a : α) :
+    (((fiberEquiv f g).symm e : α ≃ β) a : β) = (e (f a) ⟨a, rfl⟩).1 :=
+  (rfl)
+
 end Equiv

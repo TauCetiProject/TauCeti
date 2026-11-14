@@ -229,6 +229,29 @@ theorem fixedField_stabilizer_trivial (i : Fin n) :
     simp [MulAction.mem_stabilizer_iff]
   rw [hstab, InfiniteGalois.fixedField_bot]
 
+/-- Disjoint union of a finite family of Galois sets, labelled along
+`b : Fin n ≃ Σ i, Fin (d i)`. -/
+def sigma {ι : Type*} [Fintype ι] {d : ι → ℕ} (b : Fin n ≃ Σ i, Fin (d i))
+    (ρ : ∀ i, GaloisSet K (d i)) : GaloisSet K n :=
+  ⟨b.symm.permCongrHom.toMonoidHom.comp
+      { toFun := fun σ ↦ Equiv.Perm.sigmaCongrRight fun i ↦ (ρ i).val σ
+        map_one' := Equiv.ext fun ⟨i, j⟩ ↦ by simp
+        map_mul' := fun σ τ ↦ Equiv.ext fun ⟨i, j⟩ ↦ by simp },
+    by
+      refine Subgroup.isOpen_mono (H₁ := ⨅ i, (ρ i).val.ker) (fun σ hσ ↦ ?_)
+        (by simpa [Subgroup.coe_iInf] using isOpen_iInter_of_finite fun i ↦ (ρ i).property)
+      simp only [Subgroup.mem_iInf, MonoidHom.mem_ker] at hσ ⊢
+      ext j
+      simp [hσ]⟩
+
+/-- The permutation of a disjoint union of Galois sets acts inside each block. -/
+@[simp]
+theorem sigma_val_apply {ι : Type*} [Fintype ι] {d : ι → ℕ} (b : Fin n ≃ Σ i, Fin (d i))
+    (ρ : ∀ i, GaloisSet K (d i))
+    (σ : SeparableClosure K ≃ₐ[K] SeparableClosure K) (j : Fin n) :
+    (sigma b ρ).val σ j = b.symm ⟨(b j).1, (ρ (b j).1).val σ (b j).2⟩ :=
+  (rfl)
+
 /-! ### Transitive Galois sets from open subgroups -/
 
 /-- The labelled Galois set given by the coset action on `G ⧸ H` for an open subgroup `H`,
