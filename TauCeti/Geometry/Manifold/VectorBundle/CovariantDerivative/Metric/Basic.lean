@@ -22,6 +22,10 @@ This module characterizes metric compatibility as the vanishing of `derivMetricT
 assuming manifold regularity
 (`CovariantDerivative.isMetricCompatible_iff_derivMetricTensor_eq_zero`).
 
+For differentiable sections with locally constant inner product, metric compatibility gives
+the skew-symmetry identity for their covariant derivatives, including orthogonality to a
+section of locally constant length.
+
 For sections whose covariant derivatives vanish, metric compatibility implies that their inner
 product has vanishing differential (`IsMetricCompatible.hasMFDerivAt_inner_of_eq_zero`,
 `IsMetricCompatible.mvfderiv_inner_eq_zero_of_cov_eq_zero`), is locally constant on open sets
@@ -78,6 +82,29 @@ theorem IsMetricCompatible.hasMFDerivAt_inner_of_eq_zero (hcov : cov.IsMetricCom
       inner_zero_left, inner_zero_right, add_zero, map_zero] using
       hcov.mvfderiv_inner_eq (fun _ ↦ w) hσ hτ
   simpa only [hd] using (hσ.inner_bundle hτ).hasMFDerivAt
+
+/-- For a metric-compatible connection, two differentiable sections with locally constant
+inner product have skew-symmetric covariant derivatives at the point. -/
+theorem IsMetricCompatible.inner_apply_add_inner_apply_eq_zero_of_eventuallyEq_const
+    (hcov : cov.IsMetricCompatible) {σ τ : Π x : M, V x} {x : M}
+    (hσ : MDiffAt (T% σ) x) (hτ : MDiffAt (T% τ) x) {c : ℝ}
+    (hc : (fun y ↦ inner ℝ (σ y) (τ y)) =ᶠ[𝓝 x] fun _ ↦ c)
+    (v : TangentSpace I x) :
+    inner ℝ (cov σ x v) (τ x) + inner ℝ (σ x) (cov τ x v) = 0 := by
+  classical
+  simpa only [Pi.single_eq_same, hc.mvfderiv_eq, mvfderiv_const, zero_apply] using
+    (hcov.mvfderiv_inner_eq (Pi.single x v) hσ hτ).symm
+
+/-- The covariant derivative of a section of locally constant length is orthogonal to that
+section for a metric-compatible connection. -/
+theorem IsMetricCompatible.inner_apply_self_eq_zero_of_eventuallyEq_const
+    (hcov : cov.IsMetricCompatible) {σ : Π x : M, V x} {x : M}
+    (hσ : MDiffAt (T% σ) x) {c : ℝ}
+    (hc : (fun y ↦ inner ℝ (σ y) (σ y)) =ᶠ[𝓝 x] fun _ ↦ c)
+    (v : TangentSpace I x) : inner ℝ (cov σ x v) (σ x) = 0 := by
+  have h := hcov.inner_apply_add_inner_apply_eq_zero_of_eventuallyEq_const hσ hσ hc v
+  rw [real_inner_comm (cov σ x v) (σ x)] at h
+  linarith
 
 /-- For a metric-compatible connection, the inner product of two sections that are differentiable
 and parallel at `x` has vanishing differential at `x`. -/
