@@ -515,10 +515,11 @@ theorem norm_map_discBundleRelCWComplex {x : Fin m → ℝ} (hx : x ∈ closedBa
   exact congrArg (fun v : TotalSpace F E ↦ ‖v.2‖) hv
 
 /-- The characteristic map of the cell of the disc bundle `D(E)` over the `n`-cell `j` of `B`, with
-characteristic map `φ`, is fibrewise a linear isometry: there is an orthonormal frame
-`L y : ℝʳ ≃ₗᵢ E (φ y)` along `φ`, depending continuously on `y`, such that the point of the closed
-unit ball with base coordinates `y` and fibre coordinates `z` goes to the vector `L y (ρ z)` over
-`φ y`, where `ρ` is the radial homeomorphism of the sup-norm and Euclidean unit balls of `ℝʳ`. -/
+characteristic map `φ`, is fibrewise an orthonormal frame applied to the radial image of the fibre
+coordinates: there is an orthonormal frame `L y : ℝʳ ≃ₗᵢ E (φ y)` along `φ`, depending
+continuously on `y`, such that the point of the closed unit ball with base coordinates `y` and fibre
+coordinates `z` goes to the vector `L y (ρ z)` over `φ y`, where `ρ` is the radial homeomorphism of
+the sup-norm and Euclidean unit balls of `ℝʳ`. -/
 theorem exists_linearIsometryEquiv_map_discBundleRelCWComplex {n : ℕ}
     (j : cell (univ : Set B) n) (h : n + finrank ℝ F = m) :
     ∃ L : ∀ y : closedBall (0 : Fin n → ℝ) 1,
