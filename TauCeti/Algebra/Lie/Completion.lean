@@ -145,6 +145,15 @@ theorem completion_ext {x y : completion I hI}
     (h : ∀ k, completionProjection I hI k x = completionProjection I hI k y) : x = y :=
   completion_ext_aux I hI h
 
+/-- Any representative of the order-`k` module projection computes the Lie projection. -/
+theorem completionProjection_of_representative (k : ℕ) (x : completion I hI) (a : L)
+    (ha : ModuleTower.quotientsπ Js hs k a = (ModuleTower.quotients Js hs).limπ k x) :
+    completionProjection I hI k x = (I k).mkQ a := by
+  -- Expose the underlying linear projection to rewrite via the module-tower quotient equivalence.
+  change projectionLinear I hI k x = (I k).mkQ a
+  simp only [projectionLinear, LinearMap.comp_apply, LinearEquiv.coe_coe, ← ha,
+    quotientEquiv_π, LieIdeal.mkQ_apply]
+
 /-- Quotient representatives compute the module projection of a completed bracket. -/
 theorem limπ_bracket_of_representatives (k : ℕ) (x y : completion I hI) (a b : L)
     (ha : ModuleTower.quotientsπ Js hs k a = (ModuleTower.quotients Js hs).limπ k x)
@@ -152,12 +161,10 @@ theorem limπ_bracket_of_representatives (k : ℕ) (x y : completion I hI) (a b 
     (ModuleTower.quotients Js hs).limπ k ⁅x, y⁆ = ModuleTower.quotientsπ Js hs k ⁅a, b⁆ := by
   apply (quotientEquiv I hI k).injective
   rw [quotientEquiv_π, LieSubmodule.Quotient.mk_bracket]
-  have hx : projectionLinear I hI k x = LieSubmodule.Quotient.mk a := by
-    simp only [projectionLinear, LinearMap.comp_apply, LinearEquiv.coe_coe, ← ha,
-      quotientEquiv_π]
-  have hy : projectionLinear I hI k y = LieSubmodule.Quotient.mk b := by
-    simp only [projectionLinear, LinearMap.comp_apply, LinearEquiv.coe_coe, ← hb,
-      quotientEquiv_π]
+  have hx : projectionLinear I hI k x = LieSubmodule.Quotient.mk a :=
+    completionProjection_of_representative I hI k x a ha
+  have hy : projectionLinear I hI k y = LieSubmodule.Quotient.mk b :=
+    completionProjection_of_representative I hI k y b hb
   exact (projectionLinear_bracket I hI k x y).trans (congrArg₂ Bracket.bracket hx hy)
 
 /-- Completed Lie projections commute with all quotient transitions. -/
