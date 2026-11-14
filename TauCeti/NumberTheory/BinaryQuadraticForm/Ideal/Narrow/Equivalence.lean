@@ -6,8 +6,8 @@ Authors: Wentao Li
 module
 
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.Narrow.Class
-public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.Normalization
-public import TauCeti.NumberTheory.BinaryQuadraticForm.PositiveRepresentative
+import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.Normalization
+import TauCeti.NumberTheory.BinaryQuadraticForm.PositiveRepresentative
 
 /-!
 # Proper classes and the narrow Picard group
@@ -18,6 +18,15 @@ the signed basis comparison then recovers a proper equivalence. Positive-leading
 normalization identifies this comparison with the original sign-corrected form-ideal map.
 These constructions give the bijection into the supplier's native narrow Picard group.
 
+## Main results
+
+* `TauCeti.BinaryQuadraticForm.properClassToNarrowPic_surjective`: the map from proper classes of
+  primitive forms of a nonsquare discriminant to the narrow Picard group is surjective.
+* `TauCeti.BinaryQuadraticForm.properClassToNarrowPic_injective`: it is injective for positive
+  discriminant.
+* `TauCeti.BinaryQuadraticForm.properClassEquivNarrowPic`: the resulting bijection for positive
+  nonsquare discriminant.
+
 ## References
 
 * D. A. Cox, *Primes of the Form x² + ny²*, §7, Theorem 7.7 and the narrow analogue.
@@ -27,7 +36,7 @@ public section
 noncomputable section
 
 open FractionalIdeal
-open scoped MatrixGroups nonZeroDivisors
+open scoped MatrixGroups
 
 namespace TauCeti.BinaryQuadraticForm
 
