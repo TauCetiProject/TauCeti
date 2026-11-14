@@ -29,7 +29,7 @@ in `S³` carries `1` to any chosen point, so it suffices to treat `S³ ⊆ ℍ` 
 (`TauCeti.sphereGroupHomeomorphIteratedLoopSpace`). The local homology of the projection
 `S³ × Ω²S³ → S³` along the fibre over `1` is
 `H₄(S³ × Ω²S³, (S³ ∖ {1}) × Ω²S³) ≅ H₁(Ω²S³; ℤ) ≅ π₃(S³) ≅ ℤ`
-(`TauCeti.TopCat.singularHomologyComplFiberProdIso`,
+(`TauCeti.singularHomologyComplFiberProdIso`,
 `TauCeti.doubleLoopSpaceFirstHomologySphereAddEquiv`), and the localization onto it is an
 epimorphism because `S³ ∖ {1}` is contractible (`TauCeti.epi_fiberLocalization_fst`). So some
 class of degree `4 > 3` lives over the fundamental class.
@@ -70,7 +70,7 @@ private theorem isAbundantWithTwoSpheres_sphere_quaternion_one :
     have : Nontrivial (((singularHomologyFunctor (ModuleCat.{0} ℤ) 1).obj
         (ModuleCat.of ℤ ℤ)).obj (TopCat.of F)) :=
       (doubleLoopSpaceFirstHomologySphereAddEquiv ob 1).toEquiv.nontrivial
-    exact (TopCat.singularHomologyComplFiberProdIso (B := TopCat.of (sphere (0 : ℍ) 1)) ℤ
+    exact (singularHomologyComplFiberProdIso ℤ
       (chartAt (EuclideanSpace ℝ (Fin 3)) (1 : sphere (0 : ℍ) 1))
       (mem_chart_source (EuclideanSpace ℝ (Fin 3)) (1 : sphere (0 : ℍ) 1)) F 1 4
       (by simp)).toLinearEquiv.toEquiv.nontrivial
