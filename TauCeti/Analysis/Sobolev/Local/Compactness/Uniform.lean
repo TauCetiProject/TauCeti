@@ -11,6 +11,8 @@ import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.Analysis.Sobolev.Wkp.Chain
 import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Data.ENNReal.Inv
+import TauCeti.MeasureTheory.Function.LpSeminorm.Cauchy
+import TauCeti.Topology.Algebra.IsUniformGroup.Basic
 
 /-!
 # Locally uniform convergence of local Rellich subsequences for `p > 2`
@@ -123,9 +125,10 @@ theorem uniformCauchySeqOn_preciseRepresentative_of_tendsto_eLpNorm_sub (hp : 2 
     (eventually_mul_rpow_lt_nhdsGT_zero hα (C * (2 * M)) (half_pos hε))).exists
   set T := r ^ (-(2 / p.toReal))
   have hT : 0 < T := Real.rpow_pos_of_pos hr0 _
-  obtain ⟨N, hN⟩ := eventually_atTop_prod_self.1 (prod_atTop_atTop_eq (α := ℕ) (β := ℕ) ▸
-    (hfc _ hK.cthickening hRK).eventually
-      (gt_mem_nhds (ENNReal.ofReal_pos.2 (show 0 < ε / (2 * T) by positivity))))
+  have hev := (hfc _ hK.cthickening hRK).eventually
+    (gt_mem_nhds (ENNReal.ofReal_pos.2 (show 0 < ε / (2 * T) by positivity)))
+  rw [prod_atTop_atTop_eq] at hev
+  obtain ⟨N, hN⟩ := eventually_atTop_prod_self.1 hev
   refine ⟨N, fun m hm n hn x hx => ?_⟩
   have hxr : closedBall x (2 * r) ⊆ cthickening R K :=
     (closedBall_subset_cthickening hx _).trans (cthickening_mono (by linarith) K)
@@ -181,11 +184,8 @@ theorem tendstoLocallyUniformlyOn_preciseRepresentative_of_tendsto_eLpNorm (hp :
     simpa only [sub_sub_cancel] using (memLpLoc_iff.1 (hf m) K hKΩ hK).sub (memLp_iff.2 hm)
   have hfc : ∀ K : Set ℂ, IsCompact K → K ⊆ Ω →
       Tendsto (fun mn : ℕ × ℕ => eLpNorm (f mn.1 - f mn.2) p (volume.restrict K))
-        (atTop ×ˢ atTop) (𝓝 0) := fun K hK hKΩ => by
-    have h := ((hfg K hK hKΩ).comp tendsto_fst).add ((hfg K hK hKΩ).comp tendsto_snd)
-    rw [add_zero] at h
-    exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds h (fun _ => bot_le)
-      fun mn => by rw [← sub_sub_sub_cancel_right (f mn.1) (f mn.2) g]; exact eLpNorm_sub_le hp1
+        (atTop ×ˢ atTop) (𝓝 0) := fun K hK hKΩ =>
+    tendsto_eLpNorm_sub_prod_of_tendsto_eLpNorm_sub (hfg K hK hKΩ)
   have hcauchy : ∀ K : Set ℂ, IsCompact K → K ⊆ Ω →
       UniformCauchySeqOn (fun m => preciseRepresentative volume (f m)) atTop K := fun K hK hKΩ =>
     uniformCauchySeqOn_preciseRepresentative_of_tendsto_eLpNorm_sub hp hf hD hDbdd hfc hK hKΩ
@@ -455,23 +455,12 @@ theorem _root_.Module.Basis.tendstoLocallyUniformlyOn_preciseRepresentative_of_t
       (fun m z => preciseRepresentative volume (fun w => b.repr (u m w) i) z • b i)
       (fun z => preciseRepresentative volume (fun w => b.repr (v w) i) z • b i) atTop Ω :=
     fun i => by
-      simpa [Function.comp_def] using
+      simpa only [Function.comp_def, ContinuousLinearMap.smulRight_apply,
+        one_apply_eq_self] using
         (ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (b i)).uniformContinuous
           |>.comp_tendstoLocallyUniformlyOn (hc i)
-  have hsum : ∀ s : Finset ι, TendstoLocallyUniformlyOn
-      (fun m z => ∑ i ∈ s, preciseRepresentative volume (fun w => b.repr (u m w) i) z • b i)
-      (fun z => ∑ i ∈ s, preciseRepresentative volume (fun w => b.repr (v w) i) z • b i)
-      atTop Ω := by
-    intro s
-    classical
-    induction s using Finset.induction_on with
-    | empty =>
-      simpa only [Finset.sum_empty] using
-        (tendsto_const_nhds (x := (0 : F)) (f := atTop (α := ℕ))).tendstoUniformlyOn_const
-          (Ω : Set ℂ) |>.tendstoLocallyUniformlyOn
-    | insert a s ha ih =>
-      simpa only [Finset.sum_insert ha, Pi.add_def] using (hterm a).add ih
-  refine ((hsum Finset.univ).congr fun m => ?_).congr_right ?_
+  refine ((TendstoLocallyUniformlyOn.finsetSum Finset.univ fun i _ => hterm i).congr
+    fun m => ?_).congr_right ?_
   · exact (b.eqOn_preciseRepresentative_sum_repr hp1 (b.memWkpLoc_iff.2 (hum m)).memLpLoc fun i =>
       (hum m i).continuousOn_preciseRepresentative hp).symm
   · exact (b.eqOn_preciseRepresentative_sum_repr hp1 hv.memLpLoc hcv).symm

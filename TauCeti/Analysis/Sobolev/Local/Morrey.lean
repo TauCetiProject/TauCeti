@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Sobolev.Local.Basic
 public import TauCeti.Analysis.Sobolev.W1p.InteriorMorrey
 public import TauCeti.MeasureTheory.Function.PreciseRepresentative
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.Analysis.Sobolev.Local.Coordinates
 import TauCeti.Analysis.Sobolev.Local.W1p
 import TauCeti.Analysis.Sobolev.WeakDeriv.Classical
@@ -238,35 +237,6 @@ theorem MemWkpLoc.exists_dist_preciseRepresentative_le (hp : 2 < p) :
         gcongr
         linarith
 
-/-- **Averaging over a planar ball.** If `p ≠ 0`, `u` has finite `Lᵖ(B(x, r))` seminorm and
-`t ≤ ‖u y‖` for almost every `y ∈ B(x, r)`, then `t ≤ r^{-2/p} ‖u‖_{Lᵖ(B(x, r))}`, as the
-volume of `B(x, r)` is at least `r ^ 2`. -/
-private theorem le_rpow_neg_mul_toReal_eLpNorm_of_ae_le {G : Type*} [NormedAddCommGroup G]
-    (hp : p ≠ 0) {u : ℂ → G} {x : ℂ} {r t : ℝ} (hr : 0 < r)
-    (hu : eLpNorm u p (volume.restrict (ball x r)) ≠ ∞)
-    (h : ∀ᵐ y ∂volume.restrict (ball x r), t ≤ ‖u y‖) :
-    t ≤ r ^ (-(2 / p.toReal)) * (eLpNorm u p (volume.restrict (ball x r))).toReal := by
-  have havg := le_toReal_eLpNorm_div_of_ae_le hp
-    (fun h => (measure_ball_pos volume x hr).ne' (Measure.restrict_eq_zero.1 h))
-    (by rw [Measure.restrict_apply_univ]; exact measure_ball_lt_top.ne) hu h
-  rw [Measure.restrict_apply_univ] at havg
-  set s : ℝ := 1 / p.toReal
-  have hVs : r ^ (2 * s) ≤ (volume (ball x r)).toReal ^ s := by
-    rw [Real.rpow_mul hr.le, Complex.volume_ball]
-    refine Real.rpow_le_rpow (by positivity) ?_ (by positivity)
-    simp only [ENNReal.toReal_mul, ENNReal.toReal_pow, ENNReal.toReal_ofReal hr.le,
-      ENNReal.coe_toReal, NNReal.coe_real_pi, Real.rpow_two]
-    nlinarith [Real.two_le_pi, sq_nonneg r]
-  have hexp : r ^ (-(2 / p.toReal)) = (r ^ (2 * s))⁻¹ := by
-    rw [← Real.rpow_neg hr.le]
-    congr 1
-    simp only [s]
-    ring
-  calc t ≤ (eLpNorm u p (volume.restrict (ball x r))).toReal / (volume (ball x r)).toReal ^ s :=
-        havg
-    _ ≤ (eLpNorm u p (volume.restrict (ball x r))).toReal / r ^ (2 * s) := by gcongr
-    _ = _ := by rw [hexp, div_eq_mul_inv, mul_comm]
-
 /-- **The local Morrey sup bound.** Let `2 < p ≤ ∞` and `α = 1 - 2 / p`. There is a constant
 `C > 0`, depending only on `p` and `F`, such that the following holds. Let `u ∈ MemWkpLoc p Ω 1`
 with weak derivative `D` on `Ω`, let `r > 0` and let `x` be a point with `closedBall x (2 r) ⊆ Ω`.
@@ -276,7 +246,7 @@ Then the precise representative `u*` of `u` satisfies
 
 The proof averages the local Morrey inequality
 `TauCeti.MemWkpLoc.exists_dist_preciseRepresentative_le` over `B(x, r)`, through
-`MeasureTheory.le_toReal_eLpNorm_div_of_ae_le`. -/
+`Complex.le_rpow_neg_mul_toReal_eLpNorm_restrict_ball_of_ae_le`. -/
 theorem MemWkpLoc.exists_norm_preciseRepresentative_le (hp : 2 < p) :
     ∃ C : ℝ, 0 < C ∧ ∀ {Ω : Opens ℂ} {u : ℂ → F} {D : ℂ → ℂ →L[ℝ] F}, MemWkpLoc p Ω 1 u →
       HasWeakFDerivOn volume Ω u D → ∀ {x : ℂ} {r : ℝ}, 0 < r → closedBall x (2 * r) ⊆ Ω →
@@ -315,7 +285,8 @@ theorem MemWkpLoc.exists_norm_preciseRepresentative_le (hp : 2 < p) :
     rw [hy]
     exact hpt y hyB
   -- Average the pointwise bound over `B`.
-  have := le_rpow_neg_mul_toReal_eLpNorm_of_ae_le (zero_lt_one.trans_le hp1).ne' hr
+  have := Complex.le_rpow_neg_mul_toReal_eLpNorm_restrict_ball_of_ae_le
+    (zero_lt_one.trans_le hp1).ne' hr
     ((memLpLoc_iff.1 hu.memLpLoc _ hxr (isCompact_closedBall _ _)).mono_measure
       (Measure.restrict_mono hBK le_rfl)).eLpNorm_ne_top hae
   linarith
