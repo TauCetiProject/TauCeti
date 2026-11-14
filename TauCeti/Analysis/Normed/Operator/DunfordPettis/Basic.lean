@@ -274,7 +274,7 @@ theorem HasDunfordPettisProperty.tendsto_apply (h : HasDunfordPettisProperty �
   obtain ⟨e₀, he₀⟩ := exists_ne (0 : E)
   set e : E := (‖e₀‖⁻¹ : 𝕜) • e₀
   have he : ‖e‖ = 1 := norm_smul_inv_norm he₀
-  let ι : 𝕜 →L[𝕜] Completion E := (1 : 𝕜 →L[𝕜] 𝕜).smulRight (e : Completion E)
+  let ι : 𝕜 →L[𝕜] Completion E := ContinuousLinearMap.toSpanSingleton 𝕜 (e : Completion E)
   let T : E →L[𝕜] C₀(ℕ, Completion E) := (compLeft ι ⟨‖ι‖, ι.le_opNorm⟩).comp T₀
   have hT : Tendsto (fun n ↦ T (x n)) atTop (𝓝 0) :=
     ContinuousLinearMap.isDunfordPettis_iff_tendsto_zero.1
