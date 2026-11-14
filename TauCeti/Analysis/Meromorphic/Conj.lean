@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Star
 public import Mathlib.Analysis.Complex.CauchyIntegral
-public import Mathlib.Analysis.Meromorphic.Order
+public import Mathlib.Analysis.Meromorphic.NormalForm
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 
 /-!
@@ -28,6 +28,7 @@ its dual, whose completed function is the reflection of the original one.
   reflection preserves meromorphy.
 * `TauCeti.meromorphicOrderAt_conj_conj`: reflection preserves the order of a meromorphic
   function.
+* `TauCeti.toMeromorphicNFOn_conj_conj`: reflection commutes with normalization on a set.
 -/
 
 public section
@@ -67,6 +68,21 @@ theorem TauCeti.meromorphicAt_conj_conj_iff :
 theorem Meromorphic.conj_conj (hf : Meromorphic f) : Meromorphic (conj ∘ f ∘ conj) :=
   fun _ ↦ TauCeti.meromorphicAt_conj_conj_iff.2 (hf _)
 
+/-- Reflection preserves whole-plane meromorphy in both directions. -/
+@[simp]
+theorem TauCeti.meromorphic_conj_conj_iff :
+    Meromorphic (conj ∘ f ∘ conj) ↔ Meromorphic f :=
+  ⟨fun hf ↦ by simpa [Function.comp_def] using hf.conj_conj, Meromorphic.conj_conj⟩
+
+/-- Reflection preserves meromorphy on a set and reflects its domain. -/
+@[simp]
+theorem TauCeti.meromorphicOn_conj_conj_iff {U : Set ℂ} :
+    MeromorphicOn (conj ∘ f ∘ conj) U ↔ MeromorphicOn f (conj ⁻¹' U) := by
+  constructor <;> intro h z hz
+  · simpa only [meromorphicAt_conj_conj_iff, Complex.conj_conj] using h (conj z) hz
+  · exact meromorphicAt_conj_conj_iff.mpr
+      (h (conj z) (by simpa only [Set.mem_preimage, Complex.conj_conj] using hz))
+
 /-- Reflection across the real axis preserves the order of a meromorphic function:
 the order of `conj ∘ f ∘ conj` at `x` is the order of `f` at `conj x`. -/
 @[simp]
@@ -91,3 +107,83 @@ theorem TauCeti.meromorphicOrderAt_conj_conj :
       ⟨conj ∘ g ∘ conj, analyticAt_conj_conj_iff.2 hg, by simpa using hg0, ?_⟩
     filter_upwards [hconj.eventually hfg] with z hz
     simp [hz]
+
+/-- Reflection across the real axis preserves meromorphic normal form. -/
+theorem MeromorphicNFAt.conj_conj (hf : MeromorphicNFAt f x) :
+    MeromorphicNFAt (conj ∘ f ∘ conj) (conj x) := by
+  rw [meromorphicNFAt_iff_analyticAt_or] at hf ⊢
+  rcases hf with ha | ⟨hm, ho, hz⟩
+  · exact Or.inl ha.conj_conj
+  · exact Or.inr ⟨hm.conj_conj, by simpa using ho, by simp [Function.comp_def, hz]⟩
+
+/-- Reflection preserves meromorphic normal form at the reflected point. -/
+@[simp]
+theorem TauCeti.meromorphicNFAt_conj_conj_iff :
+    MeromorphicNFAt (conj ∘ f ∘ conj) x ↔ MeromorphicNFAt f (conj x) :=
+  ⟨fun hf ↦ by simpa [Function.comp_def] using hf.conj_conj, fun hf ↦ by
+    simpa using hf.conj_conj⟩
+
+/-- Reflection preserves meromorphic normal form on a set and reflects its domain. -/
+@[simp]
+theorem TauCeti.meromorphicNFOn_conj_conj_iff {U : Set ℂ} :
+    MeromorphicNFOn (conj ∘ f ∘ conj) U ↔ MeromorphicNFOn f (conj ⁻¹' U) := by
+  constructor <;> intro h z hz
+  · simpa only [meromorphicNFAt_conj_conj_iff, Complex.conj_conj] using h hz
+  · exact meromorphicNFAt_conj_conj_iff.mpr
+      (h (by simpa only [Set.mem_preimage, Complex.conj_conj] using hz))
+
+/-- Normalizing a meromorphic germ commutes with reflection across the real axis. -/
+@[simp]
+theorem TauCeti.toMeromorphicNFAt_conj_conj (f : ℂ → ℂ) (x : ℂ) :
+    toMeromorphicNFAt (conj ∘ f ∘ conj) x =
+      conj ∘ toMeromorphicNFAt f (conj x) ∘ conj := by
+  funext y
+  by_cases hf : MeromorphicAt f (conj x)
+  · by_cases hy : y = x
+    · subst y
+      have hc : Tendsto conj (𝓝[≠] x) (𝓝[≠] (conj x)) :=
+        Complex.continuous_conj.continuousWithinAt.tendsto_nhdsWithin fun z hz ↦
+          (starRingEnd ℂ).injective.ne hz
+      have hn : MeromorphicNFAt (conj ∘ toMeromorphicNFAt f (conj x) ∘ conj) x := by
+        simpa only [Complex.conj_conj] using
+          (meromorphicNFAt_toMeromorphicNFAt (f := f) (x := conj x)).conj_conj
+      apply (meromorphicNFAt_toMeromorphicNFAt.eventuallyEq_nhdsNE_iff_eventuallyEq_nhds hn).mp _
+        |>.eq_of_nhds
+      filter_upwards [(meromorphicAt_conj_conj_iff.mpr hf).eq_nhdsNE_toMeromorphicNFAt,
+        hc.eventually hf.eq_nhdsNE_toMeromorphicNFAt] with z hz hz'
+      simp only [Function.comp_apply] at hz ⊢
+      rw [← hz, ← hz']
+    · simp only [Function.comp_apply]
+      rw [← (meromorphicAt_conj_conj_iff.mpr hf).eqOn_compl_singleton_toMeromorphicNFAt
+          (by simpa using hy),
+        ← hf.eqOn_compl_singleton_toMeromorphicNFAt
+          (by simpa only [Set.mem_compl_iff, Set.mem_singleton_iff,
+            (starRingEnd ℂ).injective.eq_iff] using hy)]
+      rfl
+  · rw [toMeromorphicNFAt_of_not_meromorphicAt hf,
+      toMeromorphicNFAt_of_not_meromorphicAt (meromorphicAt_conj_conj_iff.not.mpr hf)]
+    simp
+
+/-- Normalizing on a set commutes with reflection, including the zero fallback when the
+function is not meromorphic on that set. -/
+@[simp]
+theorem TauCeti.toMeromorphicNFOn_conj_conj (f : ℂ → ℂ) (U : Set ℂ) :
+    toMeromorphicNFOn (conj ∘ f ∘ conj) U =
+      conj ∘ toMeromorphicNFOn f (conj ⁻¹' U) ∘ conj := by
+  funext x
+  simp only [Function.comp_apply]
+  by_cases hf : MeromorphicOn f (conj ⁻¹' U)
+  · have hm := meromorphicOn_conj_conj_iff.mpr hf
+    by_cases hx : x ∈ U
+    · rw [toMeromorphicNFOn_eq_toMeromorphicNFAt hm hx,
+        toMeromorphicNFOn_eq_toMeromorphicNFAt hf
+          (by simpa only [Set.mem_preimage, Complex.conj_conj] using hx),
+        toMeromorphicNFAt_conj_conj]
+      rfl
+    · rw [toMeromorphicNFOn_eq_self_on_compl hm hx,
+        toMeromorphicNFOn_eq_self_on_compl hf
+          (by simpa only [Set.mem_compl_iff, Set.mem_preimage, Complex.conj_conj] using hx)]
+      rfl
+  · simp only [toMeromorphicNFOn_of_not_meromorphicOn hf,
+      toMeromorphicNFOn_of_not_meromorphicOn (meromorphicOn_conj_conj_iff.not.mpr hf),
+      Pi.zero_apply, map_zero]
