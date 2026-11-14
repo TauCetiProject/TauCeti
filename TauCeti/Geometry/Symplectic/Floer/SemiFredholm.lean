@@ -81,7 +81,7 @@ private theorem setIntegral_sobolev_eq {ξ : ℝ × ℝ → V} {a b a' b' : ℝ}
       ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
         ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 + ‖ξ z‖ ^ 2) :=
   setIntegral_Icc_prod_eq_of_forall_fst_notMem_eq_zero measurableSet_Icc ha hb fun z hz ↦ by
-    have h := eventuallyEq_zero_of_forall_fst_notMem_Icc hξ hz
+    have h := eventuallyEq_zero_of_forall_notMem_Ioo_of_fst_notMem_Icc hξ hz
     simp [h.fderiv_eq, h.eq_of_nhds]
 
 /-- The `L²` norm of `D_u ξ` over `[a', b'] × [0, 1]`, for `ξ` vanishing for `s ∉ (a, b)`, is its
@@ -93,7 +93,7 @@ private theorem setIntegral_norm_floerLinearization_sq_eq (ω : SymplecticForm V
       ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖ω.floerLinearization J Ks Kt u ξ z‖ ^ 2 :=
   setIntegral_Icc_prod_eq_of_forall_fst_notMem_eq_zero measurableSet_Icc ha hb fun z hz ↦ by
     rw [ω.floerLinearization_congr_of_eventuallyEq J Ks Kt u
-      (eventuallyEq_zero_of_forall_fst_notMem_Icc hξ hz), floerLinearization_zero]
+      (eventuallyEq_zero_of_forall_notMem_Ioo_of_fst_notMem_Icc hξ hz), floerLinearization_zero]
     simp
 
 omit [FiniteDimensional ℝ V] in
