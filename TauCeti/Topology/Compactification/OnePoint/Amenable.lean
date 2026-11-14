@@ -27,6 +27,17 @@ We first establish amenability with the discrete topology; the subgroup transfer
 then applies to every group topology on the represented group.
 The native projective-line stabilizer equivalence and the amenable-extension
 theorem provide the two steps of the proof.
+
+## Main results
+
+* `OnePoint.amenable_pgl_stabilizer`, `OnePoint.amenable_gl_stabilizer`: point stabilizers on
+  `OnePoint K` in `PGL(2, K)` and `GL(2, K)` are amenable.
+* `Projectivization.amenable_gl_stabilizer`, `Projectivization.amenable_sl_stabilizer`: point
+  stabilizers on `ℙ K (Fin 2 → K)` in `GL(2, K)` and `SL(2, K)` are amenable without
+  `[DecidableEq K]`.
+* `MonoidHom.amenable_comap_onePoint_stabilizer`,
+  `MonoidHom.amenable_comap_projectivization_stabilizer`: preimages of point stabilizers along an
+  injective homomorphism into `GL(2, K)` are amenable.
 -/
 
 public section
@@ -81,7 +92,50 @@ theorem amenable_gl_stabilizer [TopologicalSpace (GL (Fin 2) K)]
 
 end OnePoint
 
+namespace Projectivization
+
+open scoped LinearAlgebra.Projectivization
+
+variable {K : Type*} [Field K]
+
+/-- Every general-linear point stabilizer on the projective line `ℙ K (Fin 2 → K)` is amenable
+for every group topology. -/
+theorem amenable_gl_stabilizer [TopologicalSpace (GL (Fin 2) K)]
+    [IsTopologicalGroup (GL (Fin 2) K)] (x : ℙ K (Fin 2 → K)) :
+    TauCeti.Amenable (stabilizer (GL (Fin 2) K) x) := by
+  classical
+  have hstab : stabilizer (GL (Fin 2) K) x =
+      stabilizer (GL (Fin 2) K) ((OnePoint.equivProjectivization K).symm x) := by
+    ext g
+    simp only [mem_stabilizer_iff]
+    rw [← (OnePoint.equivProjectivization K).injective.eq_iff,
+      OnePoint.equivProjectivization_smul, Equiv.apply_symm_apply]
+  exact hstab ▸ OnePoint.amenable_gl_stabilizer _
+
+/-- Every special-linear point stabilizer on the projective line `ℙ K (Fin 2 → K)` is amenable
+for every group topology. -/
+theorem amenable_sl_stabilizer [TopologicalSpace SL(2, K)] [IsTopologicalGroup SL(2, K)]
+    (x : ℙ K (Fin 2 → K)) :
+    TauCeti.Amenable (stabilizer SL(2, K) x) := by
+  let : TopologicalSpace (GL (Fin 2) K) := ⊥
+  let : DiscreteTopology (GL (Fin 2) K) := ⟨rfl⟩
+  have := amenable_gl_stabilizer x
+  have hstab : stabilizer SL(2, K) x =
+      (stabilizer (GL (Fin 2) K) x).comap Matrix.SpecialLinearGroup.toGL := by
+    ext g
+    -- Both actions multiply representatives on `ℙ K (Fin 2 → K)` by the underlying matrix.
+    have hsmul : Matrix.SpecialLinearGroup.toGL g • x = g • x := rfl
+    simp [mem_stabilizer_iff, hsmul]
+  exact hstab ▸ TauCeti.Amenable.of_injective
+    (Matrix.SpecialLinearGroup.toGL.subgroupComap _)
+    (Matrix.SpecialLinearGroup.toGL.subgroupComap_injective _
+      Matrix.SpecialLinearGroup.toGL_injective)
+
+end Projectivization
+
 namespace MonoidHom
+
+open scoped LinearAlgebra.Projectivization
 
 /-- An injective matrix representation has amenable projective-line point stabilizers.
 The subgroup is written as a comap so that no choice of a pulled-back action is needed.
@@ -93,6 +147,18 @@ theorem amenable_comap_onePoint_stabilizer {K : Type*} [Field K] [DecidableEq K]
   let : TopologicalSpace (GL (Fin 2) K) := ⊥
   let : DiscreteTopology (GL (Fin 2) K) := ⟨rfl⟩
   have := OnePoint.amenable_gl_stabilizer x
+  exact TauCeti.Amenable.of_injective (φ.subgroupComap _)
+    (φ.subgroupComap_injective _ hφ)
+
+/-- An injective `2 × 2` matrix representation has amenable point stabilizers on the projective
+line `ℙ K (Fin 2 → K)`, for every group topology on the represented group. -/
+theorem amenable_comap_projectivization_stabilizer {K : Type*} [Field K]
+    {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+    (φ : G →* GL (Fin 2) K) (hφ : Function.Injective φ) (x : ℙ K (Fin 2 → K)) :
+    TauCeti.Amenable ((stabilizer (GL (Fin 2) K) x).comap φ) := by
+  let : TopologicalSpace (GL (Fin 2) K) := ⊥
+  let : DiscreteTopology (GL (Fin 2) K) := ⟨rfl⟩
+  have := Projectivization.amenable_gl_stabilizer x
   exact TauCeti.Amenable.of_injective (φ.subgroupComap _)
     (φ.subgroupComap_injective _ hφ)
 
