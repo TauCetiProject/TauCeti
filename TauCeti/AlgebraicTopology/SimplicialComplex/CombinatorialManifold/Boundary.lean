@@ -334,20 +334,12 @@ theorem IsCombinatorialManifold.link_combinatorialBoundary (hK : IsCombinatorial
   have hlinkM : IsCombinatorialManifold (link K σ) (n - σ.card) := hb.isCombinatorialManifold
   refine SetLike.ext fun ρ => ?_
   rw [mem_link_nonempty, hK.mem_combinatorialBoundary_iff,
-    hlinkM.mem_combinatorialBoundary_iff, mem_link_nonempty]
-  constructor
-  · rintro ⟨hne, hdis, hρσK, hcard, hball⟩
-    have hcard_union : (ρ ∪ σ).card = ρ.card + σ.card := card_union_of_disjoint hdis
-    have hlink_eq : link (link K σ) ρ = link K (ρ ∪ σ) := by
-      rw [link_link hdis.symm, union_comm]
-    have hdim_eq : n - σ.card - ρ.card = n - (ρ ∪ σ).card := by omega
-    exact ⟨⟨hne, hdis, hρσK⟩, by omega, by rwa [hlink_eq, hdim_eq]⟩
-  · rintro ⟨⟨hne, hdis, hρσK⟩, hcard, hball⟩
-    have hcard_union : (ρ ∪ σ).card = ρ.card + σ.card := card_union_of_disjoint hdis
-    have hlink_eq : link (link K σ) ρ = link K (ρ ∪ σ) := by
-      rw [link_link hdis.symm, union_comm]
-    have hdim_eq : n - σ.card - ρ.card = n - (ρ ∪ σ).card := by omega
-    exact ⟨hne, hdis, hρσK, by omega, by rwa [← hlink_eq, ← hdim_eq]⟩
+    hlinkM.mem_combinatorialBoundary_iff, mem_link_nonempty, and_assoc, and_assoc]
+  refine and_congr_right fun _ => and_congr_right fun hdis => and_congr_right fun _ => ?_
+  have hcard_union : (ρ ∪ σ).card = ρ.card + σ.card := card_union_of_disjoint hdis
+  have hdim_eq : n - σ.card - ρ.card = n - (ρ ∪ σ).card := by omega
+  rw [link_link hdis.symm, union_comm σ ρ, hdim_eq]
+  exact ⟨fun ⟨_, hball⟩ => ⟨by omega, hball⟩, fun ⟨_, hball⟩ => ⟨by omega, hball⟩⟩
 
 end ManifoldCharacterization
 
@@ -372,38 +364,24 @@ private theorem insert_mem_combinatorialBoundary_stellarSubdivision_iff {m : ℕ
       map_link_closedStar_inf_deletion_eq_join hσ hnot hface]
   simp only [hjoin]
   have hsdiff_pos : 1 ≤ (σ \ ω).card := card_pos.mpr (sdiff_nonempty.mpr hnot)
-  constructor
-  · rintro ⟨k, hball⟩
+  by_cases h1 : (σ \ ω).card = 1
+  · obtain ⟨x, hx⟩ := card_eq_one.mp h1
+    simp only [hx, simplexBoundary_singleton, bot_join,
+      isCombinatorialBall_map_iff _ Sum.inr_injective]
+    exact ⟨fun ⟨k, hb⟩ => let ⟨hc, heq⟩ := card_le_and_dim_eq_of_ball_link hK hface hb
+      ⟨hc, heq ▸ hb⟩, fun ⟨_, hb⟩ => ⟨_, hb⟩⟩
+  · have hbdry := isCombinatorialSphere_simplexBoundary (V := σ \ ω)
+      (n := (σ \ ω).card - 2) (by omega)
+    refine ⟨fun ⟨k, hball⟩ => ?_, fun ⟨_, hb⟩ => ⟨_, hbdry.join_ball hb⟩⟩
     have hle_top : (ω ∪ σ).card ≤ m + 2 := hK.isPure.card_le hface
     by_cases htop : (ω ∪ σ).card = m + 2
     · rw [(hK.link_eq_bot_iff hface).mpr htop, join_bot,
         isCombinatorialBall_map_iff _ Sum.inl_injective] at hball
-      by_cases h1 : (σ \ ω).card = 1
-      · obtain ⟨x, hx⟩ := card_eq_one.mp h1
-        rw [hx, simplexBoundary_singleton] at hball
-        exact (hball.ne_bot rfl).elim
-      · exact ((isCombinatorialSphere_simplexBoundary (V := σ \ ω)
-          (n := (σ \ ω).card - 2) (by omega)).not_isCombinatorialBall hball).elim
+      exact (hbdry.not_isCombinatorialBall hball).elim
     · have hle : (ω ∪ σ).card ≤ m + 1 := by omega
       rcases hK.isCombinatorialSphere_or_isCombinatorialBall_link hface hle with hs | hb
-      · by_cases h1 : (σ \ ω).card = 1
-        · obtain ⟨x, hx⟩ := card_eq_one.mp h1
-          rw [hx, simplexBoundary_singleton, bot_join,
-            isCombinatorialBall_map_iff _ Sum.inr_injective] at hball
-          exact (hs.not_isCombinatorialBall hball).elim
-        · have hbdry := isCombinatorialSphere_simplexBoundary (V := σ \ ω)
-            (n := (σ \ ω).card - 2) (by omega)
-          exact ((hbdry.join hs).not_isCombinatorialBall hball).elim
+      · exact ((hbdry.join hs).not_isCombinatorialBall hball).elim
       · exact ⟨hle, hb⟩
-  · rintro ⟨_, hb⟩
-    by_cases h1 : (σ \ ω).card = 1
-    · obtain ⟨x, hx⟩ := card_eq_one.mp h1
-      refine ⟨m + 1 - (ω ∪ σ).card, ?_⟩
-      rw [hx, simplexBoundary_singleton, bot_join]
-      exact hb.map _ Sum.inr_injective
-    · have hbdry := isCombinatorialSphere_simplexBoundary (V := σ \ ω)
-        (n := (σ \ ω).card - 2) (by omega)
-      exact ⟨_, hbdry.join_ball hb⟩
 
 private theorem notMem_mem_combinatorialBoundary_stellarSubdivision_iff {m : ℕ} {τ : Finset ι}
     (hK : IsCombinatorialManifold K (m + 1)) (hσ : σ ∈ K) (hv : ({v} : Finset ι) ∉ K)

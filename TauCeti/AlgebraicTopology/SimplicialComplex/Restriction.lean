@@ -67,22 +67,10 @@ theorem map_val_restrict_of_subset (K : PreAbstractSimplicialComplex ι) {s : Se
 gives `K.restrict t`. -/
 theorem map_inclusion_restrict_of_subset (K : PreAbstractSimplicialComplex ι) {s t : Set ι}
     (hst : s ⊆ t) [DecidableEq t] (hs : ∀ σ ∈ K, (σ : Set ι) ⊆ s) :
-    (K.restrict s).map (Set.inclusion hst) = K.restrict t := by
-  refine SetLike.ext fun τ => ?_
-  have hinj := Finset.image_injective (Subtype.val_injective (p := (· ∈ t)))
-  rw [mem_map_iff, mem_restrict_iff]
-  constructor
-  · rintro ⟨ρ, hρ, rfl⟩
-    rwa [Finset.image_image, Set.val_comp_inclusion]
-  · intro hτ
-    let : DecidablePred (· ∈ s) := Classical.decPred _
-    have hsub : (τ.image Subtype.val : Set ι) ⊆ s := hs _ hτ
-    let ρ : Finset s := (τ.image Subtype.val).subtype (· ∈ s)
-    have hρ : ρ.image Subtype.val = τ.image Subtype.val := by
-      simpa only [ρ, Finset.map_eq_image, Function.Embedding.coe_subtype] using
-        Finset.subtype_map_of_mem hsub
-    refine ⟨ρ, (mem_restrict_iff K s ρ).mpr (hρ.symm ▸ hτ), hinj ?_⟩
-    rwa [Finset.image_image, Set.val_comp_inclusion]
+    (K.restrict s).map (Set.inclusion hst) = K.restrict t :=
+  (map_inj Subtype.val_injective).mp <| by
+    rw [map_map, Set.val_comp_inclusion, map_val_restrict_of_subset K hs,
+      map_val_restrict_of_subset K fun σ hσ => (hs σ hσ).trans hst]
 
 end PreAbstractSimplicialComplex
 

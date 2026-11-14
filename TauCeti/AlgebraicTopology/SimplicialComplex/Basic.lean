@@ -79,6 +79,12 @@ theorem finite_faces_map_iff_of_injective {κ : Type*} [DecidableEq κ]
   rw [faces_map]
   exact Set.finite_image_iff (Finset.image_injective hf).injOn
 
+/-- Injectively mapping vertices preserves and reflects equality of precomplexes. -/
+theorem map_inj {κ : Type*} [DecidableEq κ] {f : ι → κ} (hf : Function.Injective f) :
+    K.map f = L.map f ↔ K = L :=
+  ⟨fun h => PreAbstractSimplicialComplex.ext
+    (Set.image_injective.mpr (Finset.image_injective hf) (congrArg faces h)), fun h => h ▸ rfl⟩
+
 /-- A finite set is a face of an intersection of two precomplexes exactly when it is a face of
 both. -/
 @[simp]

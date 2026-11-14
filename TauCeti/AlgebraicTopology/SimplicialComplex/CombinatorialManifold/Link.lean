@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.CombinatorialManifold.Map
 import TauCeti.AlgebraicTopology.SimplicialComplex.CombinatorialManifold.Pure
+import TauCeti.AlgebraicTopology.SimplicialComplex.CombinatorialManifold.ZeroDimensional
 import TauCeti.AlgebraicTopology.SimplicialComplex.Join.Combinatorial
 import TauCeti.AlgebraicTopology.SimplicialComplex.Join.Star
 import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Facet
@@ -41,9 +42,10 @@ complements of top-dimensional subballs:
 4. Stellar invariance at dimension `n` then transports `isCombinatorialManifold_simplex` and
    `isCombinatorialManifold_simplexBoundary` to arbitrary combinatorial `n`-balls and `n`-spheres.
 
-The same argument specialized to complexes whose vertex links are all spheres shows that every
-non-maximal face link in a combinatorial `n`-sphere is a combinatorial `(n - σ.card)`-sphere, so
-spherical links in any combinatorial manifold propagate upward along face inclusions.
+In a combinatorial `n`-sphere, no non-maximal face link can be a ball — a ball link would supply a
+codimension-1 face whose link does not have two vertices, contradicting
+`IsCombinatorialSphere.encard_faces_link_eq_two` — so every non-maximal face link is a sphere, and
+spherical links in any complex propagate upward along face inclusions.
 
 ## Main results
 
@@ -317,170 +319,34 @@ end MainResults
 
 section SphereLinks
 
-universe u
-
-private def AllVertexLinksSpheres {α : Type u} [DecidableEq α]
-    (X : PreAbstractSimplicialComplex α) (m : ℕ) : Prop :=
-  ∀ ⦃v : α⦄, ({v} : Finset α) ∈ X → IsCombinatorialSphere (link X {v}) m
-
-private def SphereLinksAt (k : ℕ) : Prop :=
-  ∀ {α : Type u} [DecidableEq α] {X : PreAbstractSimplicialComplex α} {σ : Finset α},
-    IsCombinatorialSphere X k → σ ∈ X → σ.card ≤ k →
-      IsCombinatorialSphere (link X σ) (k - σ.card)
-
-private theorem sphere_link_of_allVertexLinksSpheres {m : ℕ}
-    (ih : ∀ k ≤ m, SphereLinksAt.{u} k)
-    {α : Type u} [DecidableEq α] {X : PreAbstractSimplicialComplex α}
-    (hX : AllVertexLinksSpheres X m) {σ : Finset α} (hσ : σ ∈ X) (hcard : σ.card ≤ m + 1) :
-    IsCombinatorialSphere (link X σ) (m + 1 - σ.card) := by
-  obtain ⟨u, hu⟩ := (X.isRelLowerSet_faces hσ).1
-  have huS : IsCombinatorialSphere (link X {u}) m := hX (singleton_mem_of_mem hσ hu)
-  by_cases h1 : σ.card = 1
-  · obtain ⟨w, rfl⟩ := card_eq_one.mp h1
-    simpa only [card_singleton, Nat.add_sub_cancel] using hX hσ
-  · have hpos : 1 ≤ (σ.erase u).card := by
-      have hc := card_erase_of_mem hu
-      have hs : 1 ≤ σ.card := card_pos.mpr ⟨u, hu⟩
-      omega
-    have her_mem : σ.erase u ∈ link X {u} := by
-      refine mem_link_nonempty.mpr ⟨card_pos.mp hpos,
-        disjoint_singleton_right.mpr (notMem_erase u σ), ?_⟩
-      rwa [union_singleton, insert_erase hu]
-    have her_le : (σ.erase u).card ≤ m := by
-      have hc := card_erase_of_mem hu
-      omega
-    have hrec := ih m le_rfl huS her_mem her_le
-    have hlink_eq : link (link X {u}) (σ.erase u) = link X σ := by
-      rw [link_link (disjoint_singleton_left.mpr (notMem_erase u σ)),
-        singleton_union, insert_erase hu]
-    have hdim_eq : m - (σ.erase u).card = m + 1 - σ.card := by
-      have hc := card_erase_of_mem hu
-      omega
-    rwa [hlink_eq, hdim_eq] at hrec
-
-private theorem allVertexLinksSpheres_stellarSubdivision_iff {m : ℕ}
-    (ih : ∀ k ≤ m, SphereLinksAt.{u} k)
-    {α : Type u} [DecidableEq α] {X : PreAbstractSimplicialComplex α} {σ : Finset α} {v : α}
-    (hM : IsCombinatorialManifold X (m + 1)) (hσ : σ ∈ X) (hv : ({v} : Finset α) ∉ X) :
-    AllVertexLinksSpheres (stellarSubdivision X σ v) m ↔ AllVertexLinksSpheres X m := by
-  have hσne : σ.Nonempty := (X.isRelLowerSet_faces hσ).1
-  constructor
-  · intro hsub w hw
-    have hvw : v ∉ ({w} : Finset α) := notMem_of_singleton_notMem hv hw
-    by_cases hsub' : σ ⊆ {w}
-    · obtain rfl := hσne.subset_singleton_iff.mp hsub'
-      have hlink := hsub (singleton_mem_stellarSubdivision_iff.mpr hw)
-      rwa [link_stellarSubdivision_singleton hv,
-        closedStar_singleton_inf_deletion_singleton] at hlink
-    · have hw' : ({w} : Finset α) ∈ stellarSubdivision X σ v :=
-        (mem_stellarSubdivision_iff_of_notMem hvw).mpr ⟨hw, hsub'⟩
-      have he := (stellarEquivalent_link_stellarSubdivision_of_notMem
-        (notMem_link_of_notMem hv) hvw (sdiff_nonempty.mpr hsub')).stellarEquivalentUpToRelabeling
-      exact IsCombinatorialSphere.of_stellarEquivalentUpToRelabeling he (hsub hw')
-  · intro hX w hw
-    by_cases hwv : w = v
-    · subst hwv
-      have hcard_le : σ.card ≤ m + 2 := hM.isPure.card_le hσ
-      have hcard_pos : 1 ≤ σ.card := card_pos.mpr hσne
-      by_cases htop : σ.card = m + 2
-      · rw [link_stellarSubdivision_singleton hv,
-          closedStar_inf_deletion_eq_simplexBoundary_of_link_eq_bot hσ
-            ((hM.link_eq_bot_iff hσ).mpr htop)]
-        exact isCombinatorialSphere_simplexBoundary htop
-      · by_cases h1 : σ.card = 1
-        · obtain ⟨u, rfl⟩ := card_eq_one.mp h1
-          rw [link_stellarSubdivision_singleton hv, closedStar_singleton_inf_deletion_singleton]
-          exact hX hσ
-        · have h2 : 2 ≤ σ.card := by omega
-          have hbdry : IsCombinatorialSphere (simplexBoundary σ) (σ.card - 2) :=
-            isCombinatorialSphere_simplexBoundary (by omega)
-          have hls := sphere_link_of_allVertexLinksSpheres ih hX hσ (by omega)
-          have hdim : (σ.card - 2) + (m + 1 - σ.card) + 1 = m := by omega
-          rw [link_stellarSubdivision_singleton hv,
-            ← isCombinatorialSphere_map_iff _ (partitionEmbedding (· ∈ σ)).injective,
-            map_closedStar_inf_deletion_eq_join hσ]
-          exact hdim ▸ hbdry.join hls
-    · have hvw : v ∉ ({w} : Finset α) := by simpa [eq_comm] using hwv
-      obtain ⟨hwX, havoid⟩ := (mem_stellarSubdivision_iff_of_notMem hvw).mp hw
-      have he := (stellarEquivalent_link_stellarSubdivision_of_notMem
-        (notMem_link_of_notMem hv) hvw
-        (sdiff_nonempty.mpr havoid)).symm.stellarEquivalentUpToRelabeling
-      exact IsCombinatorialSphere.of_stellarEquivalentUpToRelabeling he (hX hwX)
-
-private theorem allVertexLinksSpheres_map_iff {α β : Type*} [DecidableEq α] [DecidableEq β]
-    {X : PreAbstractSimplicialComplex α} {m : ℕ} (f : α → β) (hf : Function.Injective f) :
-    AllVertexLinksSpheres (X.map f) m ↔ AllVertexLinksSpheres X m := by
-  constructor
-  · intro h v hv
-    have hl := h (singleton_mem_map_iff.mpr ⟨v, hv, rfl⟩)
-    rwa [← image_singleton f v, ← map_link f hf, isCombinatorialSphere_map_iff f hf] at hl
-  · intro h y hy
-    obtain ⟨v, hv, rfl⟩ := singleton_mem_map_iff.mp hy
-    rw [← image_singleton f v, ← map_link f hf, isCombinatorialSphere_map_iff f hf]
-    exact h hv
-
-private theorem isCombinatorialManifold_and_allVertexLinksSpheres_iff {m : ℕ}
-    (ih : ∀ k ≤ m, SphereLinksAt.{u} k)
-    {α : Type u} [DecidableEq α] {X Y : PreAbstractSimplicialComplex α}
-    (h : StellarEquivalentUpToRelabeling X Y) :
-    (IsCombinatorialManifold X (m + 1) ∧ AllVertexLinksSpheres X m) ↔
-      (IsCombinatorialManifold Y (m + 1) ∧ AllVertexLinksSpheres Y m) := by
-  have hst : ∀ {γ : Type u} [DecidableEq γ] {A B : PreAbstractSimplicialComplex γ},
-      StellarEquivalent A B →
-        ((IsCombinatorialManifold A (m + 1) ∧ AllVertexLinksSpheres A m) ↔
-          (IsCombinatorialManifold B (m + 1) ∧ AllVertexLinksSpheres B m)) := by
-    intro γ _ A B he
-    refine he.induction_on
-      (P := fun A B => (IsCombinatorialManifold A (m + 1) ∧ AllVertexLinksSpheres A m) ↔
-        (IsCombinatorialManifold B (m + 1) ∧ AllVertexLinksSpheres B m))
-      ?_ (fun _ => Iff.rfl) (fun _ _ h => h.symm) (fun _ _ _ h₁ h₂ => h₁.trans h₂)
-    intro C D hmove
-    obtain ⟨σ, v, hσ, hv, rfl⟩ := isStellarMove_iff.mp hmove
-    refine ⟨fun ⟨hM, hS⟩ => ⟨hM.stellarSubdivision hσ hv,
-        (allVertexLinksSpheres_stellarSubdivision_iff ih hM hσ hv).mpr hS⟩,
-      fun ⟨hM, hS⟩ => ?_⟩
-    have hMC := hM.of_stellarSubdivision hσ hv
-    exact ⟨hMC, (allVertexLinksSpheres_stellarSubdivision_iff ih hMC hσ hv).mp hS⟩
-  refine h.induction_on
-    (P := fun A B => (IsCombinatorialManifold A (m + 1) ∧ AllVertexLinksSpheres A m) ↔
-      (IsCombinatorialManifold B (m + 1) ∧ AllVertexLinksSpheres B m))
-    ?_ (fun _ => Iff.rfl) (fun _ _ h => h.symm) (fun _ _ _ h₁ h₂ => h₁.trans h₂)
-  intro C D f g he
-  have hCf := and_congr (isCombinatorialManifold_map_iff (K := C) (n := m + 1) f f.injective)
-    (allVertexLinksSpheres_map_iff (X := C) (m := m) f f.injective)
-  have hDg := and_congr (isCombinatorialManifold_map_iff (K := D) (n := m + 1) g g.injective)
-    (allVertexLinksSpheres_map_iff (X := D) (m := m) g g.injective)
-  exact hCf.symm.trans ((hst he).trans hDg)
-
-private theorem sphereLinksAt : ∀ n : ℕ, SphereLinksAt.{u} n := by
-  intro n
-  induction n using Nat.strong_induction_on with
-  | ind n ih =>
-    intro α _ X σ hX hσ hcard
-    cases n with
-    | zero =>
-      have hpos : 1 ≤ σ.card := card_pos.mpr (X.isRelLowerSet_faces hσ).1
-      omega
-    | succ m =>
-      obtain ⟨V, hV, he⟩ := isCombinatorialSphere_iff.mp hX
-      have hVB : IsCombinatorialManifold (simplexBoundary V) (m + 1) ∧
-          AllVertexLinksSpheres (simplexBoundary V) m := by
-        refine ⟨isCombinatorialManifold_simplexBoundary hV, fun v hv => ?_⟩
-        have hvV : v ∈ V := (singleton_mem_simplexBoundary.mp hv).1
-        simpa only [card_singleton, Nat.add_sub_cancel] using
-          isCombinatorialSphere_link_simplexBoundary hV (singleton_subset_iff.mpr hvV) (by simp)
-      have hXS := (isCombinatorialManifold_and_allVertexLinksSpheres_iff
-        (fun k hk => ih k (Nat.lt_succ_of_le hk)) he).mpr hVB
-      exact sphere_link_of_allVertexLinksSpheres (fun k hk => ih k (Nat.lt_succ_of_le hk))
-        hXS.2 hσ hcard
-
 /-- In a combinatorial `n`-sphere `K`, the link of every face `σ ∈ K` with `σ.card ≤ n` is a
 combinatorial `(n - σ.card)`-sphere. -/
 theorem IsCombinatorialSphere.isCombinatorialSphere_link
     {ι : Type*} [DecidableEq ι] {K : PreAbstractSimplicialComplex ι} {σ : Finset ι} {n : ℕ}
     (hK : IsCombinatorialSphere K n) (hσ : σ ∈ K) (hcard : σ.card ≤ n) :
-    IsCombinatorialSphere (link K σ) (n - σ.card) :=
-  sphereLinksAt n hK hσ hcard
+    IsCombinatorialSphere (link K σ) (n - σ.card) := by
+  rcases hK.isCombinatorialManifold.isCombinatorialSphere_or_isCombinatorialBall_link hσ hcard
+    with hs | hb
+  · exact hs
+  · have hpos : 1 ≤ σ.card := card_pos.mpr (K.isRelLowerSet_faces hσ).1
+    cases n with
+    | zero => omega
+    | succ m =>
+      cases hd : m + 1 - σ.card with
+      | zero =>
+        rw [hd, isCombinatorialBall_zero_iff] at hb
+        obtain ⟨w, hw⟩ := hb
+        have h2 := hK.encard_faces_link_eq_two hσ (by omega)
+        rw [hw, faces_simplex_singleton, Set.encard_singleton] at h2
+        exact ((by decide : (1 : ℕ∞) ≠ 2) h2).elim
+      | succ k =>
+        rw [hd] at hb
+        obtain ⟨ρ, hρ, hρcard, hne2⟩ := hb.exists_encard_faces_link_ne_two
+        obtain ⟨_, hdis, hρσ⟩ := mem_link_nonempty.mp hρ
+        have hcard_union : (σ ∪ ρ).card = m + 1 := by
+          rw [card_union_of_disjoint hdis.symm]; omega
+        rw [link_link hdis.symm] at hne2
+        exact (hne2 (hK.encard_faces_link_eq_two (union_comm ρ σ ▸ hρσ) hcard_union)).elim
 
 /-- Spherical face links propagate upward in any precomplex: if `τ ⊆ σ` with `σ ∈ K`,
 `σ.card ≤ n`, and `link K τ` is a combinatorial `(n - τ.card)`-sphere, then `link K σ` is a

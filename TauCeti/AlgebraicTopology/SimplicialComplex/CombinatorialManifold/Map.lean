@@ -35,6 +35,8 @@ complexes.
 
 * `PreAbstractSimplicialComplex.IsCombinatorialSphere.encard_faces_link_eq_two`: every codimension-1
   face of a combinatorial `(n + 1)`-sphere has a two-face link.
+* `PreAbstractSimplicialComplex.IsCombinatorialBall.exists_encard_faces_link_ne_two`: every
+  combinatorial `(n + 1)`-ball has a codimension-1 face whose link does not have two faces.
 * `PreAbstractSimplicialComplex.isCombinatorialBall_map_iff`: injective vertex maps preserve and
   reflect combinatorial `n`-balls.
 * `PreAbstractSimplicialComplex.isCombinatorialSphere_map_iff`: injective vertex maps preserve and
@@ -204,20 +206,31 @@ theorem IsCombinatorialSphere.encard_faces_link_eq_two {ι : Type*} [DecidableEq
     exact Set.encard_pair (by simpa using hxy)
   exact ((isPure_and_hasTwoCofacets_iff_of_stellarEquivalentUpToRelabeling he).mpr hVB).2 ρ hρ hcard
 
-private theorem not_isCombinatorialSphere_simplex_succ {α : Type*} [DecidableEq α]
+private theorem not_hasTwoCofacets_simplex {α : Type*} [DecidableEq α]
     {W : Finset α} {m : ℕ} (hW : W.card = m + 2) :
-    ¬ IsCombinatorialSphere (simplex W) (m + 1) := by
-  intro hS
+    ¬ HasTwoCofacets m (simplex W) := by
+  intro h2c
   obtain ⟨x, hx⟩ := card_pos.mp (by omega : 0 < W.card)
-  have hcard_er : (W.erase x).card = m + 1 := by
-    rw [card_erase_of_mem hx, hW]
-    omega
-  have her_mem : W.erase x ∈ simplex W :=
-    mem_simplex.mpr ⟨card_pos.mp (by omega), erase_subset x W⟩
-  have h2 := hS.encard_faces_link_eq_two her_mem hcard_er
+  have hcard_er : (W.erase x).card = m + 1 := by rw [card_erase_of_mem hx, hW]; omega
+  have h2 := h2c (W.erase x) (mem_simplex.mpr ⟨card_pos.mp (by omega), erase_subset x W⟩) hcard_er
   rw [link_simplex (erase_subset x W), sdiff_erase_self hx, faces_simplex_singleton,
     Set.encard_singleton] at h2
   exact (by decide : (1 : ℕ∞) ≠ 2) h2
+
+/-- Every combinatorial `(n + 1)`-ball has a codimension-1 face whose link does not have two
+faces. -/
+theorem IsCombinatorialBall.exists_encard_faces_link_ne_two {ι : Type*} [DecidableEq ι]
+    {K : PreAbstractSimplicialComplex ι} {n : ℕ} (hK : IsCombinatorialBall K (n + 1)) :
+    ∃ ρ ∈ K, ρ.card = n + 1 ∧ (link K ρ).faces.encard ≠ 2 := by
+  by_contra! hall
+  obtain ⟨W, hW, he⟩ := isCombinatorialBall_iff.mp hK
+  exact not_hasTwoCofacets_simplex hW
+    ((isPure_and_hasTwoCofacets_iff_of_stellarEquivalentUpToRelabeling he).mp ⟨hK.isPure, hall⟩).2
+
+private theorem not_isCombinatorialSphere_simplex_succ {α : Type*} [DecidableEq α]
+    {W : Finset α} {m : ℕ} (hW : W.card = m + 2) :
+    ¬ IsCombinatorialSphere (simplex W) (m + 1) := fun hS =>
+  not_hasTwoCofacets_simplex hW fun _ hρ hc => hS.encard_faces_link_eq_two hρ hc
 
 end TwoCofacets
 

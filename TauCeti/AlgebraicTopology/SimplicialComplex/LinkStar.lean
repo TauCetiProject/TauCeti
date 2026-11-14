@@ -413,39 +413,28 @@ theorem closedStar_singleton_inf_deletion_singleton (v : ι) :
 @[simp]
 theorem map_closedStar {κ : Type*} [DecidableEq κ] (f : ι → κ) (hf : Function.Injective f) :
     (closedStar K σ).map f = closedStar (K.map f) (σ.image f) := by
-  refine SetLike.ext fun ω => ?_
-  constructor
+  refine SetLike.ext fun ω => ⟨?_, fun hω => ?_⟩
   · rintro ⟨ρ, hρ, rfl⟩
     obtain ⟨hne, hρσ⟩ := mem_closedStar_nonempty.mp hρ
-    refine mem_closedStar_nonempty.mpr ⟨hne.image f, ?_⟩
-    rw [← image_union]
-    exact mem_map_iff.mpr ⟨ρ ∪ σ, hρσ, rfl⟩
-  · intro hω
-    obtain ⟨hωK, hωσ⟩ := mem_closedStar.mp hω
-    obtain ⟨ρ, hρK, rfl⟩ := mem_map_iff.mp hωK
-    rw [← image_union] at hωσ
-    obtain ⟨η, hηK, hη⟩ := mem_map_iff.mp hωσ
-    obtain rfl := (image_injective hf) hη
-    exact mem_map_iff.mpr ⟨ρ, mem_closedStar.mpr ⟨hρK, hηK⟩, rfl⟩
+    exact mem_closedStar_nonempty.mpr
+      ⟨hne.image f, image_union (f := f) ρ σ ▸ mem_map_iff.mpr ⟨ρ ∪ σ, hρσ, rfl⟩⟩
+  · obtain ⟨⟨ρ, hρK, rfl⟩, hωσ⟩ := (mem_closedStar.mp hω).imp_left mem_map_iff.mp
+    obtain ⟨η, hηK, hη⟩ := mem_map_iff.mp (image_union (f := f) ρ σ ▸ hωσ)
+    exact mem_map_iff.mpr ⟨ρ, mem_closedStar.mpr ⟨hρK, image_injective hf hη ▸ hηK⟩, rfl⟩
 
 /-- An injective vertex map commutes with taking the link of a face. -/
 @[simp]
 theorem map_link {κ : Type*} [DecidableEq κ] (f : ι → κ) (hf : Function.Injective f) :
     (link K σ).map f = link (K.map f) (σ.image f) := by
-  refine SetLike.ext fun ω => ?_
-  constructor
+  refine SetLike.ext fun ω => ⟨?_, fun hω => ?_⟩
   · rintro ⟨ρ, hρ, rfl⟩
     obtain ⟨hne, hdis, hρσ⟩ := mem_link_nonempty.mp hρ
-    refine mem_link_nonempty.mpr ⟨hne.image f, (disjoint_image hf).mpr hdis, ?_⟩
-    rw [← image_union]
-    exact mem_map_iff.mpr ⟨ρ ∪ σ, hρσ, rfl⟩
-  · intro hω
-    obtain ⟨hωK, hdis, hωσ⟩ := mem_link.mp hω
-    obtain ⟨ρ, hρK, rfl⟩ := mem_map_iff.mp hωK
-    rw [← image_union] at hωσ
-    obtain ⟨η, hηK, hη⟩ := mem_map_iff.mp hωσ
-    obtain rfl := (image_injective hf) hη
-    exact mem_map_iff.mpr ⟨ρ, mem_link.mpr ⟨hρK, (disjoint_image hf).mp hdis, hηK⟩, rfl⟩
+    exact mem_link_nonempty.mpr ⟨hne.image f, (disjoint_image hf).mpr hdis,
+      image_union (f := f) ρ σ ▸ mem_map_iff.mpr ⟨ρ ∪ σ, hρσ, rfl⟩⟩
+  · obtain ⟨hωK, hdis, hωσ⟩ := mem_link.mp hω
+    obtain ⟨ρ, hρ, rfl⟩ := mem_map_iff.mp (map_closedStar f hf ▸ mem_closedStar.mpr ⟨hωK, hωσ⟩)
+    exact mem_map_iff.mpr ⟨ρ, mem_link.mpr
+      ⟨(mem_closedStar.mp hρ).1, (disjoint_image hf).mp hdis, (mem_closedStar.mp hρ).2⟩, rfl⟩
 
 end PreAbstractSimplicialComplex
 
