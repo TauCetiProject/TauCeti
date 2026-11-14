@@ -114,18 +114,13 @@ def bvSubmodule (μ : Measure E) (Ω : Opens E) : Submodule ℝ (E →₁[μ.res
     simp only [Set.mem_ofPred_eq]
     rw [totalVariationOn_congr_ae (Lp.coeFn_zero ℝ 1 (μ.restrict Ω)), totalVariationOn_zero]
     exact ENNReal.zero_lt_top
-  add_mem' := by
-    intro u v hu hv
-    simp only [Set.mem_ofPred_eq] at hu hv ⊢
-    rw [totalVariationOn_congr_ae (Lp.coeFn_add u v)]
-    exact (totalVariationOn_add_le
-      (IntegrableOn.locallyIntegrableOn (L1.integrable_coeFn u))).trans_lt
-        (ENNReal.add_lt_top.mpr ⟨hu, hv⟩)
-  smul_mem' := by
-    intro c u hu
-    simp only [Set.mem_ofPred_eq] at hu ⊢
-    rw [totalVariationOn_congr_ae (Lp.coeFn_smul c u), totalVariationOn_smul]
-    exact ENNReal.mul_lt_top (by finiteness) hu
+  add_mem' {u v} hu hv := by
+    rw [Set.mem_ofPred_eq, totalVariationOn_congr_ae (Lp.coeFn_add u v)]
+    exact (memBV_iff.mp ((memBV_iff.mpr ⟨L1.integrable_coeFn u, hu⟩).add
+      (memBV_iff.mpr ⟨L1.integrable_coeFn v, hv⟩))).2
+  smul_mem' c u hu := by
+    rw [Set.mem_ofPred_eq, totalVariationOn_congr_ae (Lp.coeFn_smul c u)]
+    exact (memBV_iff.mp ((memBV_iff.mpr ⟨L1.integrable_coeFn u, hu⟩).smul c)).2
 
 /-- Almost-everywhere classes of integrable functions with finite total variation on `Ω`.
 The wrapper gives this space its BV norm, independently of the weaker inherited `L¹` norm. -/
