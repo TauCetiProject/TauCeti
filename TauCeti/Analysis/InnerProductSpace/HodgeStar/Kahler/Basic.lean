@@ -485,17 +485,15 @@ include he h₀ h₂ in
 `w ∧ J w` of the complementary complex line of a unitary frame `(u, J u, w, J w)`. -/
 theorem hodgeStar_ιMulti_apply (u : V) :
     o.hodgeStar hkl (ιMulti ℝ 2 ![u, J u]) = ‖u‖ ^ 2 • J.kahlerForm - ιMulti ℝ 2 ![u, J u] := by
-  have hJ := inner_apply_apply_of_orthonormalBasis h₀ h₂
-  refine ext_inner_ιMulti_two fun a b ↦ ?_
-  rw [← real_inner_self_eq_norm_sq]
-  simp only [inner_sub_left, real_inner_smul_left, inner_kahlerForm_ιMulti hJ,
-    o.inner_hodgeStar_ιMulti_two hkl, inner_ιMulti_two, o.volumeForm_robust e he, Basis.det_apply,
-    Matrix.det_fin_four]
-  simp only [e.inner_eq_sum_repr, conj_trivial, Fin.sum_univ_four, Basis.toMatrix_apply,
-    OrthonormalBasis.coe_toBasis_repr_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.cons_val_two, Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons,
-    repr_apply h₀ h₂]
-  ring
+  -- The case `ξ = a = u` of `ιMulti_sub_ιMulti_add_hodgeStar`, where `u ∧ J u - J u ∧ u` is
+  -- `2 (u ∧ J u)`.
+  have h := ιMulti_sub_ιMulti_add_hodgeStar h₀ h₂ hkl he u u
+  have hswap : ιMulti ℝ 2 ![J u, u] = -ιMulti ℝ 2 ![u, J u] := by
+    rw [← (ιMulti ℝ 2).map_swap ![u, J u] (i := 0) (j := 1) (by decide)]
+    congr 1
+    ext i; fin_cases i <;> rfl
+  rw [hswap, sub_neg_eq_add, map_add, real_inner_self_eq_norm_sq] at h
+  linear_combination (norm := module) (2⁻¹ : ℝ) • h
 
 include he h₀ h₂ in
 /-- **A `J`-invariant two-form is a multiple of `ω` plus an anti-self-dual form**: for

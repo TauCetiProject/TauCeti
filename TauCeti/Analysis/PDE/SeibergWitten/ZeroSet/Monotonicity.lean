@@ -10,10 +10,9 @@ public import TauCeti.Geometry.Euclidean.Volume.Polar
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 public import TauCeti.Analysis.InnerProductSpace.AlternatingForm
 import TauCeti.Analysis.Calculus.DifferentialForm.KahlerFlux
+import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 
 /-!
-# Taubes's monotonicity inequality for the defect energy
-
 # Taubes's monotonicity inequality for the defect energy
 
 In the large-parameter analysis of the Seiberg–Witten equations on a symplectic four-manifold, a
@@ -42,7 +41,8 @@ The argument is Taubes's. The flux identity for the `ω`-component of the closed
 (`TauCeti.AlmostComplexStructure.ae_setIntegral_ball_inner_kahlerForm_eq`) expresses
 `∫_{ball x σ} ⟪ω, F⟫` as `(σ / 2)` times the integral over the sphere of `B(w, w)`, the Hermitian
 part of `F` on a unit vector `w` orthogonal to the radial direction and its `J`-image. Two pointwise
-consequences of the curvature equation and the coarse bounds then compare both sides with the
+consequences of the curvature equation and the coarse bounds, from
+`TauCeti.Analysis.PDE.SeibergWitten.LargeParameterCurvature`, then compare both sides with the
 defect density:
 
 * in the interior, `(r / 4) |1 - |φ|² - |β|²| ≤ ⟪ω, F⟫ + (√2 N + C) / 2`, because
@@ -58,6 +58,7 @@ derivative `4 |B₁| σ³` of the volume of the ball.
 
 The fields are global in the chart: the curvature is `F = -db` for a `C²` connection form `b` on the
 whole space, as in `TauCeti.Analysis.PDE.SeibergWitten.CutoffCurrent`, and `φ`, `β` are continuous.
+Such an `F` is a closed `C¹` two-form, the input of the flux identity.
 Deriving the coarse bounds from the equations, and the curvature corrections `(1 + C σ)` on a curved
 four-manifold, are not done here.
 
@@ -65,9 +66,6 @@ four-manifold, are not done here.
 
 * `TauCeti.SeibergWitten.exists_ae_measure_closedBall_le_mul_deriv_add`: the monotonicity
   inequality for the defect energy.
-* `TauCeti.SeibergWitten.mul_abs_one_sub_sub_le_inner_kahlerForm_add`,
-  `TauCeti.SeibergWitten.mul_inner_kahlerForm_sub_hermitianForm_le`: the two pointwise comparisons
-  with the defect density.
 
 ## References
 
@@ -85,144 +83,6 @@ open CliffordAlgebra Module Metric MeasureTheory Filter Set exteriorPower
 open scoped RealInnerProductSpace Topology
 
 namespace TauCeti.SeibergWitten
-
-section Pointwise
-
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (finrank ℝ V = 4)]
-  {Q : QuadraticForm ℝ V} {o : Orientation ℝ V (Fin 4)}
-  {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℂ W] [FiniteDimensional ℂ W]
-  {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W}
-
-attribute [local instance] finiteDimensional_of_finrank_four
-
-variable {e : OrthonormalBasis (Fin 4) ℝ V} {J : AlmostComplexStructure V}
-  (h₀ : J (e 0) = e 1) (h₂₃ : J (e 2) = e 3) (hQ : ∀ v, Q v = -‖v‖ ^ 2)
-  (hkl : 2 + 2 = finrank ℝ V) (he : e.toBasis.orientation = o)
-  {r C N : ℝ} {F η : ⋀[ℝ]^2 V} {φ β : positiveHalfSpinors o ρ}
-
-include h₀ h₂₃ hQ he
-
-/-- At a solution of the large-parameter curvature equation the defect density
-`(r / 4) |1 - |φ|² - |β|²|` is at most the `ω`-component `⟪ω, F⟫` of the curvature, up to a
-bounded error. -/
-theorem mul_abs_one_sub_sub_le_inner_kahlerForm_add (hr : 1 ≤ r) (hC : 0 ≤ C)
-    (hφ : cliffordProjection o ρ J.kahlerForm φ = φ)
-    (hβ : cliffordProjection o ρ J.kahlerForm β = 0)
-    (hF : F + o.hodgeStar hkl F = (r / 4) • J.kahlerForm -
-      (quadraticTwoForm o ρ hkl (((√r : ℝ) : ℂ) • (φ + β)) : ⋀[ℝ]^2 V) - η)
-    (hη : ‖η‖ ≤ N) (hφβ : ‖φ‖ ^ 2 + ‖β‖ ^ 2 ≤ 1 + C / r) :
-    r / 4 * |1 - ‖φ‖ ^ 2 - ‖β‖ ^ 2| ≤ ⟪J.kahlerForm, F⟫ + (√2 * N + C) / 2 := by
-  have hr0 : 0 < r := by linarith
-  have hJ := AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃
-  have hω := AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he
-  have hω₂ : ‖J.kahlerForm‖ ^ 2 = 2 := AlmostComplexStructure.norm_kahlerForm_sq_eq_two hJ
-  have hc := inner_div_two_eq_of_add_hodgeStar_eq hQ hkl hω hω₂ hφ hβ hr0.le hF
-  have hωη : ⟪J.kahlerForm, η⟫ ≤ √2 * N := by
-    have hω' : ‖J.kahlerForm‖ = √2 := by rw [← hω₂, Real.sqrt_sq (norm_nonneg _)]
-    calc ⟪J.kahlerForm, η⟫ ≤ ‖J.kahlerForm‖ * ‖η‖ := real_inner_le_norm _ _
-      _ ≤ √2 * N := by rw [hω']; gcongr
-  -- `r |1 - |φ|² - |β|²| ≤ r (1 - |φ|² + |β|²) + 2 C`, by cases on the sign.
-  have hdef : r * |1 - ‖φ‖ ^ 2 - ‖β‖ ^ 2| ≤ r * (1 - ‖φ‖ ^ 2 + ‖β‖ ^ 2) + 2 * C := by
-    have hCr : r * (C / r) = C := mul_div_cancel₀ C hr0.ne'
-    rcases le_total 0 (1 - ‖φ‖ ^ 2 - ‖β‖ ^ 2) with h | h
-    · rw [abs_of_nonneg h]
-      nlinarith [mul_nonneg hr0.le (sq_nonneg ‖β‖)]
-    · rw [abs_of_nonpos h]
-      nlinarith [mul_nonneg hr0.le (sq_nonneg ‖β‖)]
-  linarith
-
-/-- At a solution of the large-parameter curvature equation satisfying the coarse bounds, the
-radial integrand `‖v‖² ⟪ω, F⟫ - B(v, v)` of the ball-sphere identity
-`TauCeti.AlmostComplexStructure.ae_setIntegral_ball_inner_kahlerForm_eq` is at most `‖v‖²` times
-`(1 + C / √r)` times the defect density `(r / 4) |1 - |φ|² - |β|²|`, up to a bounded error. -/
-theorem mul_inner_kahlerForm_sub_hermitianForm_le (hr : 1 ≤ r) (hC : 0 ≤ C)
-    (hφ : cliffordProjection o ρ J.kahlerForm φ = φ)
-    (hβ : cliffordProjection o ρ J.kahlerForm β = 0)
-    (hF : F + o.hodgeStar hkl F = (r / 4) • J.kahlerForm -
-      (quadraticTwoForm o ρ hkl (((√r : ℝ) : ℂ) • (φ + β)) : ⋀[ℝ]^2 V) - η)
-    (hη : ‖η‖ ≤ N)
-    (hFm : ‖(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)‖ ≤
-      r / (4 * √2) * (1 + C / √r) * max (1 - ‖φ‖ ^ 2) 0 + C)
-    (hβK : ‖β‖ ^ 2 ≤ C / r * max (1 - ‖φ‖ ^ 2) 0 + C / r ^ 2) (v : V) :
-    ‖v‖ ^ 2 * ⟪J.kahlerForm, F⟫ - J.hermitianForm F v v ≤
-      ‖v‖ ^ 2 * ((1 + C / √r) * (r / 4 * |1 - ‖φ‖ ^ 2 - ‖β‖ ^ 2|) +
-        ((1 + C) * C / 2 + C / 4 + √2 * N / 4 + C / √2)) := by
-  have hr0 : 0 < r := by linarith
-  have hJ := AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃
-  have hω := AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he
-  have hω₂ : ‖J.kahlerForm‖ ^ 2 = 2 := AlmostComplexStructure.norm_kahlerForm_sq_eq_two hJ
-  have hc := inner_div_two_eq_of_add_hodgeStar_eq hQ hkl hω hω₂ hφ hβ hr0.le hF
-  have hωη : -⟪J.kahlerForm, η⟫ ≤ √2 * N := by
-    have hω' : ‖J.kahlerForm‖ = √2 := by rw [← hω₂, Real.sqrt_sq (norm_nonneg _)]
-    calc -⟪J.kahlerForm, η⟫ ≤ ‖J.kahlerForm‖ * ‖η‖ := by
-          rw [← inner_neg_right]
-          exact (real_inner_le_norm _ _).trans_eq (by rw [norm_neg])
-      _ ≤ √2 * N := by rw [hω']; gcongr
-  have hB := AlmostComplexStructure.abs_hermitianForm_apply_self_sub_le h₀ h₂₃ hkl he F v
-  set m := ‖(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)‖
-  set a := ‖φ‖ ^ 2
-  set bb := ‖β‖ ^ 2
-  set w := max (1 - a) 0
-  set δ := C / √r
-  have ha : 0 ≤ a := sq_nonneg _
-  have hw0 : 0 ≤ w := le_max_right _ _
-  have hw1 : w ≤ 1 := max_le (by linarith) zero_le_one
-  have h1a : 1 - a ≤ w := le_max_left _ _
-  have hs1 : 1 ≤ √r := Real.one_le_sqrt.2 hr
-  have hδ0 : 0 ≤ δ := by positivity
-  have hδC : δ ≤ C := div_le_self hC hs1
-  have hs2p : 0 < √2 := by positivity
-  -- The coarse bound on `β`: `r |β|² ≤ C w + C / r ≤ 2 C`.
-  have hrb : r * bb ≤ 2 * C := by
-    have h := mul_le_mul_of_nonneg_left hβK hr0.le
-    have e1 : r * (C / r * w + C / r ^ 2) = C * w + C / r := by field_simp
-    have hCr : C / r ≤ C := div_le_self hC hr
-    nlinarith
-  -- The vacuum defect `w` is controlled by the defect density and `|β|²`.
-  have hwd : w ≤ |1 - a - bb| + bb := by
-    rcases le_total (1 - a) 0 with h | h
-    · have hw : w = 0 := max_eq_right h
-      rw [hw]; positivity
-    · have hw : w = 1 - a := max_eq_left h
-      rw [hw]; linarith [le_abs_self (1 - a - bb)]
-  -- The anti-self-dual bound divided by `√2`.
-  have hm : m / √2 ≤ r / 8 * (1 + δ) * w + C / √2 := by
-    rw [div_le_iff₀ hs2p]
-    have : r / 8 * (1 + δ) * w * √2 = r / (4 * √2) * (1 + δ) * w := by
-      field_simp
-      rw [Real.sq_sqrt zero_le_two]
-      ring
-    rw [add_mul, this, div_mul_cancel₀ _ hs2p.ne']
-    exact hFm
-  have hmain : ⟪J.kahlerForm, F⟫ / 2 + m / √2 ≤
-      (1 + δ) * (r / 4 * |1 - a - bb|) + ((1 + C) * C / 2 + C / 4 + √2 * N / 4 + C / √2) := by
-    have hd : r / 4 * w ≤ r / 4 * |1 - a - bb| + C / 2 := by
-      have := mul_le_mul_of_nonneg_left hwd (by positivity : (0 : ℝ) ≤ r / 4)
-      linarith
-    have hA : r / 8 * (1 - a + bb) ≤ r / 8 * w + C / 4 := by
-      have := mul_le_mul_of_nonneg_left h1a (by positivity : (0 : ℝ) ≤ r / 8)
-      linarith
-    have hδw : 0 ≤ r / 8 * δ * w := by positivity
-    have hδd : δ * (C / 2) ≤ C * (C / 2) := mul_le_mul_of_nonneg_right hδC (by positivity)
-    have hdd : (1 + δ) * (r / 4 * w) ≤ (1 + δ) * (r / 4 * |1 - a - bb| + C / 2) :=
-      mul_le_mul_of_nonneg_left hd (by linarith)
-    have e1 : r / 8 * (1 + δ) * w = r / 8 * w + r / 8 * δ * w := by ring
-    have e2 : (1 + δ) * (r / 4 * w) = 2 * (r / 8 * w) + 2 * (r / 8 * δ * w) := by ring
-    have e3 : (1 + δ) * (r / 4 * |1 - a - bb| + C / 2) =
-        (1 + δ) * (r / 4 * |1 - a - bb|) + C / 2 + δ * (C / 2) := by ring
-    have e4 : (1 + C) * C / 2 = C / 2 + C * (C / 2) := by ring
-    linarith [e1, e2, e3, e4]
-  have hv := sq_nonneg ‖v‖
-  have hBle : ‖v‖ ^ 2 * ⟪J.kahlerForm, F⟫ - J.hermitianForm F v v ≤
-      ‖v‖ ^ 2 * (⟪J.kahlerForm, F⟫ / 2 + m / √2) := by
-    have h := (abs_le.1 hB).1
-    have e : ‖v‖ ^ 2 * (⟪J.kahlerForm, F⟫ / 2 + m / √2) =
-        ‖v‖ ^ 2 * ⟪J.kahlerForm, F⟫ - ⟪J.kahlerForm, F⟫ / 2 * ‖v‖ ^ 2 + m / √2 * ‖v‖ ^ 2 := by ring
-    rw [e]
-    linarith
-  exact hBle.trans (mul_le_mul_of_nonneg_left hmain hv)
-
-end Pointwise
 
 section Integrated
 
@@ -288,8 +148,18 @@ theorem exists_ae_measure_closedBall_le_mul_deriv_add {C N : ℝ} (hC : 0 ≤ C)
   have hdc : Continuous d :=
     continuous_const.mul ((continuous_const.sub (hφc.norm.pow 2)).sub (hβc.norm.pow 2)).abs
   have hd0 (y : V) : 0 ≤ d y := by positivity
-  have hFc : Continuous F :=
-    AlmostComplexStructure.continuous_of_alternatingFormEquiv_eq_neg_extDeriv hb hF
+  -- The curvature `F = -db` is a closed `C¹` two-form.
+  have hF1 : ContDiff ℝ 1 F := by
+    have h := (alternatingFormEquiv V 2).symm.toContinuousLinearEquiv.contDiff.comp
+      (contDiff_extDeriv hb (by norm_num : (1 : WithTop ℕ∞) + 1 ≤ 2)).neg
+    convert h using 1
+    funext y
+    simp [← hF y]
+  have hdF (y : V) : extDeriv (fun z ↦ alternatingFormEquiv V 2 (F z)) y = 0 := by
+    rw [show (fun z ↦ alternatingFormEquiv V 2 (F z)) = (-1 : ℝ) • extDeriv b from
+      funext fun z ↦ by simp [hF z], extDeriv_smul, extDeriv_extDeriv hb (by simp)]
+    simp
+  have hFc : Continuous F := hF1.continuous
   set g : V → ℝ := fun y ↦ ⟪J.kahlerForm, F y⟫
   have hg : Continuous g := continuous_const.inner hFc
   set Qf : V → ℝ := fun y ↦ ‖y - x‖ ^ 2 * g y - J.hermitianForm (F y) (y - x) (y - x)
@@ -313,10 +183,10 @@ theorem exists_ae_measure_closedBall_le_mul_deriv_add {C N : ℝ} (hC : 0 ≤ C)
       ENNReal.toReal_ofReal (setIntegral_nonneg measurableSet_ball fun y _ ↦ hd0 y)]
   -- The two pointwise bounds on the ball.
   have hint (y : V) (hy : y ∈ ball x R) : d y ≤ g y + N₁ :=
-    mul_abs_one_sub_sub_le_inner_kahlerForm_add h₀ h₂₃ hQ hkl he hr hC (hφ y hy) (hβ y hy)
+    mul_abs_one_sub_sub_le_inner_kahlerForm_add h₀ h₂₃ hQ hkl he (hφ y hy) (hβ y hy) hr hC
       (hFeq y hy) (hη y hy) (hφβ y hy)
   have hbd (y : V) (hy : y ∈ ball x R) : Qf y ≤ ‖y - x‖ ^ 2 * ((1 + δ) * d y + K₂) :=
-    mul_inner_kahlerForm_sub_hermitianForm_le h₀ h₂₃ hQ hkl he hr hC (hφ y hy) (hβ y hy)
+    mul_inner_kahlerForm_sub_hermitianForm_le h₀ h₂₃ hQ hkl he (hφ y hy) (hβ y hy) hr
       (hFeq y hy) (hη y hy) (hFm y hy) (hβK y hy) (y - x)
   -- Integrability on almost every sphere.
   have hsph {f : V → ℝ} (hf : Continuous f) :
@@ -340,7 +210,7 @@ theorem exists_ae_measure_closedBall_le_mul_deriv_add {C N : ℝ} (hC : 0 ≤ C)
     simp only [V₁, measureReal_def]
     ring
   filter_upwards [AlmostComplexStructure.ae_setIntegral_ball_inner_kahlerForm_eq h₀ h₂₃ hkl he
-      hb hF x, ae_hasDerivAt_setIntegral_ball x hdc.locallyIntegrable,
+      hF1 hdF x, ae_hasDerivAt_setIntegral_ball x hdc.locallyIntegrable,
     ae_hasDerivAt_setIntegral_ball x (f := fun _ : V ↦ (1 : ℝ)) (locallyIntegrable_const 1),
     hsph hQc, hsph hdc, hsph (continuous_const (y := (1 : ℝ)))] with σ h1 h2 h3 hQs hds h1s hσ
   obtain ⟨hσ0, hσR⟩ := hσ

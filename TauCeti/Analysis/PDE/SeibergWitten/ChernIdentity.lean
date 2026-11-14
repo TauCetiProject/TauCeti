@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.SelfDual
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Integral
+import TauCeti.Analysis.PDE.SeibergWitten.LargeParameterCurvature
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
 
 /-!
@@ -29,8 +30,8 @@ gives the **Chern identity**
 `r ∫_X (1 - |α|² + |β|²) vol = 4 ⟨[F] ∪ [ω], [X]⟩ + 2 ∫_X ⟨ω, η⟩ vol`
 
 (`TauCeti.SeibergWitten.mul_integralTopForm_one_sub_add_eq`). Combined with the pointwise bound
-`|α|² + |β|² ≤ 1 + C / r`, which gives `r |1 - |α|² - |β|²| ≤ r (1 - |α|² + |β|²) + 2 C`, it
-yields Taubes's **`L¹` defect bound**
+`|α|² + |β|² ≤ 1 + C / r`, which gives `r |1 - |α|² - |β|²| ≤ r (1 - |α|² + |β|²) + 2 C`
+(`TauCeti.SeibergWitten.mul_abs_one_sub_sub_le`), it yields Taubes's **`L¹` defect bound**
 
 `r ∫_X |1 - |χ|²| vol ≤ 4 ⟨[F] ∪ [ω], [X]⟩ + 2 ∫_X ⟨ω, η⟩ vol + 2 C Vol(X)`
 
@@ -47,8 +48,6 @@ pointwise identity.
 
 ## Main results
 
-* `TauCeti.SeibergWitten.mul_abs_one_sub_sub_le`: the pointwise inequality
-  `r |1 - s - t| ≤ r (1 - s + t) + 2 C` under `s + t ≤ 1 + C / r` and `t ≥ 0`.
 * `TauCeti.SeibergWitten.mul_integralTopForm_one_sub_add_eq`: the Chern identity.
 * `TauCeti.SeibergWitten.mul_integralTopForm_abs_one_sub_sub_le`: the `L¹` defect bound.
 
@@ -68,18 +67,6 @@ open Bundle
 open scoped Manifold
 
 namespace TauCeti.SeibergWitten
-
-/-- **The spinor defect is controlled by the `ω`-component.** If `0 ≤ t`, `0 ≤ C` and
-`s + t ≤ 1 + C / r` with `r > 0`, then `r |1 - s - t| ≤ r (1 - s + t) + 2 C`. With `s = |α|²` and
-`t = |β|²`, the right side is the `ω`-component of the large-parameter curvature equation up to
-the constant `2 C`. -/
-theorem mul_abs_one_sub_sub_le {s t r C : ℝ} (hr : 0 < r) (hC : 0 ≤ C) (ht : 0 ≤ t)
-    (hst : s + t ≤ 1 + C / r) :
-    r * |1 - s - t| ≤ r * (1 - s + t) + 2 * C := by
-  have h : r * (s + t) ≤ r + C := by
-    calc r * (s + t) ≤ r * (1 + C / r) := mul_le_mul_of_nonneg_left hst hr.le
-      _ = r + C := by field_simp
-  rcases abs_cases (1 - s - t) with ⟨h₁, _⟩ | ⟨h₁, _⟩ <;> rw [h₁] <;> nlinarith
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]

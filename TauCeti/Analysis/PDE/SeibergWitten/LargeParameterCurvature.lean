@@ -36,6 +36,13 @@ are:
   (`TauCeti.AlmostComplexStructure.hermitianForm_apply_eq`). Under Taubes's bounds
   `|α|² + |β|² ≤ 1 + K / r` and `|β|² ≤ (K / r) w₊ + K / r²` it satisfies
   `c = r w₊ / 8 + O(1)` (`abs_inner_div_two_sub_le`).
+* **The defect density.** Under `|α|² + |β|² ≤ 1 + C / r`,
+  `r |1 - |α|² - |β|²| ≤ r (1 - |α|² + |β|²) + 2 C` (`mul_abs_one_sub_sub_le`), so the defect
+  density `(r / 4) |1 - |α|² - |β|²|` is at most `⟪ω, F⟫ + (√2 N + C) / 2` when `|η| ≤ N`
+  (`mul_abs_one_sub_sub_le_inner_kahlerForm_add`). Conversely, under the coarse anti-self-dual
+  bound below, the radial integrand `‖v‖² ⟪ω, F⟫ - B(v, v)` of Taubes's monotonicity argument is
+  at most `‖v‖² (1 + C / √r)` times the defect density up to a bounded error
+  (`mul_inner_kahlerForm_sub_hermitianForm_le`).
 * **The self-dual part.** `‖2 F⁺ + η‖² ≤ (r² / 8) ((1 - |α|² + |β|²)² + 4 |α|² |β|²)`
   (`norm_add_hodgeStar_add_sq_le`), because the cross term `q'(α u₀, β)` of `q(Ψ)` is orthogonal
   to `ω`. Under the same two bounds this gives
@@ -121,6 +128,18 @@ private theorem sq_add_mul_le_sq_max_add {s b r K : ℝ} (hs : 0 ≤ s) (hb : 0 
     -- Here `0 ≤ s - 1 + b ≤ K u` and `b ≤ K u²`.
     have h1 : (s - 1 + b) ^ 2 ≤ (K * u) ^ 2 := pow_le_pow_left₀ (by linarith) (by linarith) 2
     nlinarith
+
+/-- **The spinor defect is controlled by the `ω`-component.** If `0 ≤ t`, `0 ≤ C` and
+`s + t ≤ 1 + C / r` with `r > 0`, then `r |1 - s - t| ≤ r (1 - s + t) + 2 C`. With `s = |α|²` and
+`t = |β|²`, the right side is the `ω`-component of the large-parameter curvature equation up to
+the constant `2 C`. -/
+theorem mul_abs_one_sub_sub_le {s t r C : ℝ} (hr : 0 < r) (hC : 0 ≤ C) (ht : 0 ≤ t)
+    (hst : s + t ≤ 1 + C / r) :
+    r * |1 - s - t| ≤ r * (1 - s + t) + 2 * C := by
+  have h : r * (s + t) ≤ r + C := by
+    calc r * (s + t) ≤ r * (1 + C / r) := mul_le_mul_of_nonneg_left hst hr.le
+      _ = r + C := by field_simp
+  rcases abs_cases (1 - s - t) with ⟨h₁, _⟩ | ⟨h₁, _⟩ <;> rw [h₁] <;> nlinarith
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (finrank ℝ V = 4)]
   {Q : QuadraticForm ℝ V} {o : Orientation ℝ V (Fin 4)}
@@ -542,6 +561,120 @@ theorem infDist_positiveCone_le_of_add_hodgeStar_eq
     grind
   rw [← heq]
   gcongr
+
+/-- **The defect density is controlled by the `ω`-component**: if
+`F + ⋆F = (r / 4) ω - q(√r (φ + β)) - η` with `‖η‖ ≤ N` and the coarse bound
+`‖φ‖² + ‖β‖² ≤ 1 + C / r`, then the defect density `(r / 4) |1 - ‖φ‖² - ‖β‖²|` is at most
+`⟪ω, F⟫ + (√2 N + C) / 2`. -/
+theorem mul_abs_one_sub_sub_le_inner_kahlerForm_add (hr : 1 ≤ r) {C N : ℝ} (hC : 0 ≤ C)
+    (hF : F + o.hodgeStar hkl F = (r / 4) • J.kahlerForm -
+      (quadraticTwoForm o ρ hkl (((√r : ℝ) : ℂ) • (φ + β)) : ⋀[ℝ]^2 V) - η)
+    (hη : ‖η‖ ≤ N) (hφβ : ‖φ‖ ^ 2 + ‖β‖ ^ 2 ≤ 1 + C / r) :
+    r / 4 * |1 - ‖φ‖ ^ 2 - ‖β‖ ^ 2| ≤ ⟪J.kahlerForm, F⟫ + (√2 * N + C) / 2 := by
+  have hr0 : 0 < r := by linarith
+  have hJ := AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃
+  have hω := AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he
+  have hω₂ : ‖J.kahlerForm‖ ^ 2 = 2 := AlmostComplexStructure.norm_kahlerForm_sq_eq_two hJ
+  have hc := inner_div_two_eq_of_add_hodgeStar_eq hQ hkl hω hω₂ hφ hβ hr0.le hF
+  have hωη : ⟪J.kahlerForm, η⟫ ≤ √2 * N := by
+    have hω' : ‖J.kahlerForm‖ = √2 := by rw [← hω₂, Real.sqrt_sq (norm_nonneg _)]
+    calc ⟪J.kahlerForm, η⟫ ≤ ‖J.kahlerForm‖ * ‖η‖ := real_inner_le_norm _ _
+      _ ≤ √2 * N := by rw [hω']; gcongr
+  have hdef := mul_abs_one_sub_sub_le hr0 hC (sq_nonneg ‖β‖) hφβ
+  linarith
+
+/-- **The radial Hermitian integrand is controlled by the defect density**: if
+`F + ⋆F = (r / 4) ω - q(√r (φ + β)) - η` with `‖η‖ ≤ N`, the coarse bounds
+`‖β‖² ≤ (C / r) w₊ + C / r²` and `‖F⁻‖ ≤ (r / (4 √2)) (1 + C / √r) w₊ + C` hold,
+`w₊ = max (1 - ‖φ‖²) 0`, then `‖v‖² ⟪ω, F⟫ - B(v, v)` is at most `‖v‖²` times
+`(1 + C / √r)` times the defect density `(r / 4) |1 - ‖φ‖² - ‖β‖²|`, up to a bounded error. This
+is the integrand of the ball-sphere identity
+`TauCeti.AlmostComplexStructure.ae_setIntegral_ball_inner_kahlerForm_eq`. -/
+theorem mul_inner_kahlerForm_sub_hermitianForm_le (hr : 1 ≤ r) {C N : ℝ}
+    (hF : F + o.hodgeStar hkl F = (r / 4) • J.kahlerForm -
+      (quadraticTwoForm o ρ hkl (((√r : ℝ) : ℂ) • (φ + β)) : ⋀[ℝ]^2 V) - η)
+    (hη : ‖η‖ ≤ N)
+    (hFm : ‖(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)‖ ≤
+      r / (4 * √2) * (1 + C / √r) * max (1 - ‖φ‖ ^ 2) 0 + C)
+    (hβK : ‖β‖ ^ 2 ≤ C / r * max (1 - ‖φ‖ ^ 2) 0 + C / r ^ 2) (v : V) :
+    ‖v‖ ^ 2 * ⟪J.kahlerForm, F⟫ - J.hermitianForm F v v ≤
+      ‖v‖ ^ 2 * ((1 + C / √r) * (r / 4 * |1 - ‖φ‖ ^ 2 - ‖β‖ ^ 2|) +
+        ((1 + C) * C / 2 + C / 4 + √2 * N / 4 + C / √2)) := by
+  have hr0 : 0 < r := by linarith
+  have hC : 0 ≤ C := nonneg_of_le_div_mul_add_div (sq_nonneg _) hr0 (le_max_right _ _) hβK
+  have hJ := AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃
+  have hω := AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he
+  have hω₂ : ‖J.kahlerForm‖ ^ 2 = 2 := AlmostComplexStructure.norm_kahlerForm_sq_eq_two hJ
+  have hc := inner_div_two_eq_of_add_hodgeStar_eq hQ hkl hω hω₂ hφ hβ hr0.le hF
+  have hωη : -⟪J.kahlerForm, η⟫ ≤ √2 * N := by
+    have hω' : ‖J.kahlerForm‖ = √2 := by rw [← hω₂, Real.sqrt_sq (norm_nonneg _)]
+    calc -⟪J.kahlerForm, η⟫ ≤ ‖J.kahlerForm‖ * ‖η‖ := by
+          rw [← inner_neg_right]
+          exact (real_inner_le_norm _ _).trans_eq (by rw [norm_neg])
+      _ ≤ √2 * N := by rw [hω']; gcongr
+  have hB := AlmostComplexStructure.abs_hermitianForm_apply_self_sub_le h₀ h₂₃ hkl he F v
+  set m := ‖(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)‖
+  set a := ‖φ‖ ^ 2
+  set bb := ‖β‖ ^ 2
+  set w := max (1 - a) 0
+  set δ := C / √r
+  have ha : 0 ≤ a := sq_nonneg _
+  have hw0 : 0 ≤ w := le_max_right _ _
+  have hw1 : w ≤ 1 := max_le (by linarith) zero_le_one
+  have h1a : 1 - a ≤ w := le_max_left _ _
+  have hs1 : 1 ≤ √r := Real.one_le_sqrt.2 hr
+  have hδ0 : 0 ≤ δ := by positivity
+  have hδC : δ ≤ C := div_le_self hC hs1
+  have hs2p : 0 < √2 := by positivity
+  -- The coarse bound on `β`: `r |β|² ≤ C w + C / r ≤ 2 C`.
+  have hrb : r * bb ≤ 2 * C := by
+    have h := mul_le_mul_of_nonneg_left hβK hr0.le
+    have e1 : r * (C / r * w + C / r ^ 2) = C * w + C / r := by field_simp
+    have hCr : C / r ≤ C := div_le_self hC hr
+    nlinarith
+  -- The vacuum defect `w` is controlled by the defect density and `|β|²`.
+  have hwd : w ≤ |1 - a - bb| + bb := by
+    rcases le_total (1 - a) 0 with h | h
+    · have hw : w = 0 := max_eq_right h
+      rw [hw]; positivity
+    · have hw : w = 1 - a := max_eq_left h
+      rw [hw]; linarith [le_abs_self (1 - a - bb)]
+  -- The anti-self-dual bound divided by `√2`.
+  have hm : m / √2 ≤ r / 8 * (1 + δ) * w + C / √2 := by
+    rw [div_le_iff₀ hs2p]
+    have : r / 8 * (1 + δ) * w * √2 = r / (4 * √2) * (1 + δ) * w := by
+      field_simp
+      rw [Real.sq_sqrt zero_le_two]
+      ring
+    rw [add_mul, this, div_mul_cancel₀ _ hs2p.ne']
+    exact hFm
+  have hmain : ⟪J.kahlerForm, F⟫ / 2 + m / √2 ≤
+      (1 + δ) * (r / 4 * |1 - a - bb|) + ((1 + C) * C / 2 + C / 4 + √2 * N / 4 + C / √2) := by
+    have hd : r / 4 * w ≤ r / 4 * |1 - a - bb| + C / 2 := by
+      have := mul_le_mul_of_nonneg_left hwd (by positivity : (0 : ℝ) ≤ r / 4)
+      linarith
+    have hA : r / 8 * (1 - a + bb) ≤ r / 8 * w + C / 4 := by
+      have := mul_le_mul_of_nonneg_left h1a (by positivity : (0 : ℝ) ≤ r / 8)
+      linarith
+    have hδw : 0 ≤ r / 8 * δ * w := by positivity
+    have hδd : δ * (C / 2) ≤ C * (C / 2) := mul_le_mul_of_nonneg_right hδC (by positivity)
+    have hdd : (1 + δ) * (r / 4 * w) ≤ (1 + δ) * (r / 4 * |1 - a - bb| + C / 2) :=
+      mul_le_mul_of_nonneg_left hd (by linarith)
+    have e1 : r / 8 * (1 + δ) * w = r / 8 * w + r / 8 * δ * w := by ring
+    have e2 : (1 + δ) * (r / 4 * w) = 2 * (r / 8 * w) + 2 * (r / 8 * δ * w) := by ring
+    have e3 : (1 + δ) * (r / 4 * |1 - a - bb| + C / 2) =
+        (1 + δ) * (r / 4 * |1 - a - bb|) + C / 2 + δ * (C / 2) := by ring
+    have e4 : (1 + C) * C / 2 = C / 2 + C * (C / 2) := by ring
+    linarith [e1, e2, e3, e4]
+  have hv := sq_nonneg ‖v‖
+  have hBle : ‖v‖ ^ 2 * ⟪J.kahlerForm, F⟫ - J.hermitianForm F v v ≤
+      ‖v‖ ^ 2 * (⟪J.kahlerForm, F⟫ / 2 + m / √2) := by
+    have h := (abs_le.1 hB).1
+    have e : ‖v‖ ^ 2 * (⟪J.kahlerForm, F⟫ / 2 + m / √2) =
+        ‖v‖ ^ 2 * ⟪J.kahlerForm, F⟫ - ⟪J.kahlerForm, F⟫ / 2 * ‖v‖ ^ 2 + m / √2 * ‖v‖ ^ 2 := by ring
+    rw [e]
+    linarith
+  exact hBle.trans (mul_le_mul_of_nonneg_left hmain hv)
 
 end AntiSelfDual
 

@@ -11,13 +11,13 @@ public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Hermitian
 public import TauCeti.Geometry.Euclidean.Volume.Polar
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.Analysis.InnerProductSpace.Calculus
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.Analysis.Calculus.DifferentialForm.Integral
-import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Calculus.DifferentialForm.Wedge
+import TauCeti.Analysis.Calculus.RadialPrimitive
 import TauCeti.Analysis.InnerProductSpace.HodgeStar.AlternatingForm
 import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Topology.Algebra.GroupWithZero.DivId
 import TauCeti.Topology.Instances.Real.TSupport
 
 /-!
@@ -51,7 +51,8 @@ The proof uses no divergence theorem on balls. For a radial cutoff `χ = H ‖·
 
 `∫ χ ⟪ω, F⟫ = -∫ (H'(‖y - x‖) / (2 ‖y - x‖)) (‖y - x‖² ⟪ω, F⟫ - B(y - x, y - x))`.
 
-Taking `H(t) = ∫_t^∞ ϕ` for a test function `ϕ` on `(0, ∞)`, the left side is
+Taking `H(t) = ∫_t^∞ ϕ` for a test function `ϕ` on `(0, ∞)`
+(`TauCeti.exists_contDiff_deriv_eq_neg_of_tsupport_subset_Ioi`), the left side is
 `∫ ϕ(s) ∫_{ball x s} ⟪ω, F⟫ ds` by slicing into balls
 (`TauCeti.integral_setIntegral_Ioi_norm_sub_mul_eq_integral_mul_setIntegral_ball`) and the right
 side is `∫ ϕ(s) (2 s)⁻¹ ∫_{sphere x s} (…) ds` by polar integration
@@ -59,17 +60,16 @@ side is `∫ ϕ(s) (2 s)⁻¹ ∫_{sphere x s} (…) ds` by polar integration
 variations (`IsOpen.ae_eq_zero_of_integral_contDiff_smul_eq_zero`) then identifies the two
 integrands for almost every `s`.
 
-The curvature is that of a global `C²` connection form `b`, `F = -db`, read as a two-vector
-through `TauCeti.alternatingFormEquiv`; this is how the statements of
-`TauCeti.Analysis.PDE.SeibergWitten.CutoffCurrent` present `i F_a` in a chart.
+The two-form `F` is a `C¹` family of two-vectors whose form under `TauCeti.alternatingFormEquiv`
+is closed. The curvature `F = -db` of a `C²` connection form `b`, which is how the statements of
+`TauCeti.Analysis.PDE.SeibergWitten.CutoffCurrent` present `i F_a` in a chart, is such a form.
 
 ## Main results
 
 * `TauCeti.AlmostComplexStructure.ae_setIntegral_ball_inner_kahlerForm_eq`: the ball-sphere
   identity for the `ω`-component of a closed two-form.
-* `TauCeti.AlmostComplexStructure.continuous_of_alternatingFormEquiv_eq_neg_extDeriv`,
-  `TauCeti.AlmostComplexStructure.continuous_hermitianForm_apply_sub_apply_sub`: continuity of the
-  two integrands.
+* `TauCeti.AlmostComplexStructure.continuous_hermitianForm_apply_sub_apply_sub`: continuity of
+  the radial Hermitian integrand.
 
 ## References
 
@@ -83,60 +83,6 @@ noncomputable section
 
 open Module exteriorPower Filter MeasureTheory Metric Set ContinuousAlternatingMap
 open scoped RealInnerProductSpace Topology
-
-namespace TauCeti
-
-/-- A primitive `H` of `-ϕ` for a test function `ϕ` supported in `(0, ∞)`, constant near `0` and
-vanishing far out: `H t = ∫ s in Ioi t, ϕ s`. -/
-private theorem exists_contDiff_deriv_eq_neg_of_tsupport_subset_Ioi {ϕ : ℝ → ℝ} (hϕc : Continuous ϕ)
-    (hc : HasCompactSupport ϕ) (hϕ : tsupport ϕ ⊆ Ioi 0) :
-    ∃ H : ℝ → ℝ, ContDiff ℝ 1 H ∧ (∀ t, deriv H t = -ϕ t) ∧ (∀ᶠ t in 𝓝 0, H t = H 0) ∧
-      (∃ R, ∀ t, R ≤ t → H t = 0) ∧ ∀ t, H t = ∫ s in Ioi t, ϕ s := by
-  obtain ⟨ε, hε, R, hlow, hhigh⟩ := hc.exists_pos_forall_eq_zero_of_tsupport_subset_Ioi hϕ
-  set H : ℝ → ℝ := fun t ↦ ∫ s in t..R, ϕ s with hHdef
-  have hderiv (t : ℝ) : HasDerivAt H (-ϕ t) t :=
-    intervalIntegral.integral_hasDerivAt_left (hϕc.intervalIntegrable _ _)
-      (hϕc.stronglyMeasurableAtFilter _ _) hϕc.continuousAt
-  have hd : deriv H = fun t ↦ -ϕ t := funext fun t ↦ (hderiv t).deriv
-  have hzero (t : ℝ) (ht : R ≤ t) : H t = 0 := by
-    simp only [hHdef]
-    rw [intervalIntegral.integral_symm, neg_eq_zero]
-    refine intervalIntegral.integral_zero_ae (Eventually.of_forall fun s hs ↦ hhigh s ?_)
-    rw [uIoc_of_le ht] at hs
-    exact hs.1.le
-  refine ⟨H, contDiff_one_iff_deriv.2 ⟨fun t ↦ (hderiv t).differentiableAt, ?_⟩,
-    fun t ↦ (hderiv t).deriv, ?_, ⟨R, hzero⟩, fun t ↦ ?_⟩
-  · rw [hd]; exact hϕc.neg
-  · filter_upwards [Iio_mem_nhds hε] with t ht
-    simp only [hHdef]
-    rw [← intervalIntegral.integral_add_adjacent_intervals (b := 0)
-      (hϕc.intervalIntegrable _ _) (hϕc.intervalIntegrable _ _)]
-    have h0 : ∫ s in t..0, ϕ s = 0 := by
-      refine intervalIntegral.integral_zero_ae (Eventually.of_forall fun s hs ↦ hlow s ?_)
-      rcases le_total t 0 with h | h
-      · rw [uIoc_of_le h] at hs; linarith [hs.2, mem_Iio.1 ht]
-      · rw [uIoc_of_ge h] at hs; linarith [hs.2, mem_Iio.1 ht]
-    rw [h0, zero_add]
-  · rcases le_total t R with htR | htR
-    · simp only [hHdef]
-      rw [intervalIntegral.integral_of_le htR]
-      refine (setIntegral_eq_of_subset_of_forall_sdiff_eq_zero measurableSet_Ioi
-        Ioc_subset_Ioi_self fun s hs ↦ hhigh s ?_).symm
-      exact le_of_lt (not_le.1 fun h ↦ hs.2 ⟨hs.1, h⟩)
-    · rw [hzero t htR, setIntegral_eq_zero_of_forall_eq_zero fun s hs ↦
-        hhigh s (htR.trans (le_of_lt hs))]
-
-/-- If `ϕ` vanishes near `0`, then `t ↦ ϕ t / (2 t)` is continuous. -/
-private theorem continuous_div_two_mul_of_eventually_eq_zero {ϕ : ℝ → ℝ} (hϕc : Continuous ϕ)
-    (h0 : ∀ᶠ t in 𝓝 0, ϕ t = 0) : Continuous fun t ↦ ϕ t / (2 * t) := by
-  refine continuous_iff_continuousAt.2 fun t ↦ ?_
-  rcases eq_or_ne t 0 with rfl | ht
-  · refine (continuousAt_const (y := (0 : ℝ))).congr ?_
-    filter_upwards [h0] with s hs
-    simp [hs]
-  · exact hϕc.continuousAt.div (continuousAt_const.mul continuousAt_id) (by simpa using ht)
-
-end TauCeti
 
 namespace TauCeti.AlmostComplexStructure
 
@@ -225,17 +171,6 @@ private theorem extDeriv_radialForm {J : AlmostComplexStructure V} (hJ : ∀ v w
 
 /-! ### Continuity of the integrands -/
 
-/-- A family of two-vectors whose forms are the negated exterior derivative of a `C²` one-form is
-continuous. -/
-theorem continuous_of_alternatingFormEquiv_eq_neg_extDeriv {b : V → V [⋀^Fin 1]→L[ℝ] ℝ}
-    {F : V → ⋀[ℝ]^2 V} (hb : ContDiff ℝ 2 b)
-    (hF : ∀ y, alternatingFormEquiv V 2 (F y) = -extDeriv b y) : Continuous F := by
-  have h := ((alternatingFormEquiv V 2).symm.toContinuousLinearEquiv.continuous).comp
-    (contDiff_extDeriv hb (by norm_num : (1 : WithTop ℕ∞) + 1 ≤ 2)).continuous.neg
-  convert h using 1
-  funext y
-  simp [← hF y]
-
 /-- The Hermitian part of a continuous family of two-vectors, evaluated on the radial vector
 `y - x`, is continuous in `y`. -/
 theorem continuous_hermitianForm_apply_sub_apply_sub {J : AlmostComplexStructure V}
@@ -259,19 +194,20 @@ variable {e : OrthonormalBasis (Fin 4) ℝ V} {J : AlmostComplexStructure V}
   (he : e.toBasis.orientation = o)
 
 include h₀ h₂ hkl he in
-/-- **Integration by parts against a radial cutoff.** For the curvature `F = -db` of a `C²`
-connection form and a `C¹` radial cutoff `χ = H ‖· - x‖` constant near `x` and compactly
-supported, `∫ χ ⟪ω, F⟫ = -∫ (H' / (2 ‖y - x‖)) (‖y - x‖² ⟪ω, F⟫ - F(y - x, J (y - x)))`:
+/-- **Integration by parts against a radial cutoff.** For a closed `C¹` two-form `F` and a `C¹`
+radial cutoff `χ = H ‖· - x‖` constant near `x` and compactly supported,
+`∫ χ ⟪ω, F⟫ = -∫ (H' / (2 ‖y - x‖)) (‖y - x‖² ⟪ω, F⟫ - F(y - x, J (y - x)))`:
 the primitive `λ = ι_{y - x} ω / 2` of `ω` moves the derivative onto `χ`. -/
 private theorem integral_inner_kahlerForm_add_eq_zero [MeasurableSpace V] [BorelSpace V]
-    {b : V → V [⋀^Fin 1]→L[ℝ] ℝ} {F : V → ⋀[ℝ]^2 V} (hb : ContDiff ℝ 2 b)
-    (hF : ∀ y, alternatingFormEquiv V 2 (F y) = -extDeriv b y) {H : ℝ → ℝ}
+    {F : V → ⋀[ℝ]^2 V} (hF : ContDiff ℝ 1 F)
+    (hdF : ∀ y, extDeriv (fun z ↦ alternatingFormEquiv V 2 (F z)) y = 0) {H : ℝ → ℝ}
     (hH : ContDiff ℝ 1 H) (hH₀ : ∀ᶠ t in 𝓝 0, H t = H 0) {R : ℝ} (hHR : ∀ t, R ≤ t → H t = 0)
     (x : V) :
     ∫ y, (H ‖y - x‖ * ⟪J.kahlerForm, F y⟫ + deriv H ‖y - x‖ / (2 * ‖y - x‖) *
       (‖y - x‖ ^ 2 * ⟪J.kahlerForm, F y⟫ - J.hermitianForm (F y) (y - x) (y - x))) = 0 := by
   have hJ := inner_apply_apply_of_orthonormalBasis h₀ h₂
-  have hdb : ContDiff ℝ 1 (extDeriv b) := contDiff_extDeriv hb (by norm_num)
+  have hφ : ContDiff ℝ 1 fun z ↦ alternatingFormEquiv V 2 (F z) :=
+    (alternatingFormEquiv V 2).toContinuousLinearEquiv.contDiff.comp hF
   have hrf := contDiff_radialForm (J := J) hH hH₀ x
   have hc : HasCompactSupport (J.radialForm H x) := by
     refine HasCompactSupport.intro (isCompact_closedBall x R) fun y hy ↦ ?_
@@ -279,19 +215,18 @@ private theorem integral_inner_kahlerForm_add_eq_zero [MeasurableSpace V] [Borel
       rw [mem_closedBall, dist_eq_norm, not_le] at hy; exact hy.le
     simp [radialForm, hHR _ hR]
     rfl
-  obtain ⟨-, h⟩ := e.toBasis.integral_extDeriv_eq_zero (hdb.wedge hrf)
-    (hc.wedge_left (φ := extDeriv b))
+  obtain ⟨-, h⟩ := e.toBasis.integral_extDeriv_eq_zero (hφ.wedge hrf)
+    (hc.wedge_left (φ := fun z ↦ alternatingFormEquiv V 2 (F z)))
   rw [e.addHaar_eq_volume] at h
-  rw [← neg_eq_zero, ← integral_neg, ← h]
+  rw [← h]
   refine integral_congr_ae (Eventually.of_forall fun y ↦ ?_)
   have hL := extDeriv_pairedWedge (ContinuousLinearMap.mul ℝ ℝ)
-    ((hdb.differentiable one_ne_zero) y) ((hrf.differentiable one_ne_zero) y) e.toBasis
+    ((hφ.differentiable one_ne_zero) y) ((hrf.differentiable one_ne_zero) y) e.toBasis
   simp only [← wedge_def] at hL
-  have hdb' : extDeriv b y = alternatingFormEquiv V 2 (-F y) := by rw [map_neg, hF, neg_neg]
   refine Eq.trans ?_ hL.symm
-  rw [extDeriv_extDeriv hb (by simp)]
-  simp only [Pi.zero_apply, wedge_def, pairedWedge_zero_left]
-  simp only [← wedge_def, hdb', extDeriv_radialForm hJ hH hH₀ x y]
+  rw [hdF y]
+  simp only [wedge_def, pairedWedge_zero_left]
+  simp only [← wedge_def, extDeriv_radialForm hJ hH hH₀ x y]
   have hsymm (z : ⋀[ℝ]^2 V) : (o.hodgeStar hkl).symm z = o.hodgeStar hkl z := by
     rw [LinearEquiv.symm_apply_eq, o.hodgeStar_hodgeStar_of_even even_two]
   rw [o.alternatingFormEquiv_wedge_alternatingFormEquiv_apply hkl, hsymm]
@@ -301,17 +236,16 @@ private theorem integral_inner_kahlerForm_add_eq_zero [MeasurableSpace V] [Borel
     exact e.toBasis.det_self
   rw [hvol, map_add, map_smul, map_smul, hodgeStar_kahlerForm h₀ h₂ hkl he,
     hodgeStar_ιMulti_apply h₀ h₂ hkl he]
-  simp only [inner_neg_left, inner_add_right, inner_smul_right, inner_sub_right,
-    real_inner_comm (F y), hermitianForm_apply_self, ContinuousAlternatingMap.coe_zero,
-    Pi.zero_apply, mul_one, zero_add]
+  simp only [inner_add_right, inner_smul_right, inner_sub_right, real_inner_comm (F y),
+    hermitianForm_apply_self, ContinuousAlternatingMap.coe_zero, Pi.zero_apply, mul_one, zero_add]
   rw [real_inner_comm]
   ring
 
 include h₀ h₂ hkl he in
-/-- **The flux of a closed two-form through spheres.** Let `F` be the curvature `-db` of a `C²`
-connection form `b` on an oriented four-dimensional inner product space with a positively oriented
-unitary frame for `J`. For almost every radius `σ > 0`, the integral of the `ω`-component of `F`
-over the ball `ball x σ` is the flux
+/-- **The flux of a closed two-form through spheres.** Let `F` be a closed `C¹` two-form, read as
+a two-vector through `TauCeti.alternatingFormEquiv`, on an oriented four-dimensional inner product
+space with a positively oriented unitary frame for `J`. For almost every radius `σ > 0`, the
+integral of the `ω`-component of `F` over the ball `ball x σ` is the flux
 
 `∫_{ball x σ} ⟪ω, F⟫ = (2 σ)⁻¹ ∫_{sphere x σ} (‖y - x‖² ⟪ω, F y⟫ - F(y)(y - x, J (y - x)))`
 
@@ -321,8 +255,8 @@ through its boundary sphere, against `3`-dimensional Hausdorff measure. Here
 The integrand on the sphere is `σ² B(w, w)` for a unit vector `w` orthogonal to `y - x` and
 `J (y - x)`. -/
 theorem ae_setIntegral_ball_inner_kahlerForm_eq [MeasurableSpace V] [BorelSpace V]
-    {b : V → V [⋀^Fin 1]→L[ℝ] ℝ} {F : V → ⋀[ℝ]^2 V} (hb : ContDiff ℝ 2 b)
-    (hF : ∀ y, alternatingFormEquiv V 2 (F y) = -extDeriv b y) (x : V) :
+    {F : V → ⋀[ℝ]^2 V} (hF : ContDiff ℝ 1 F)
+    (hdF : ∀ y, extDeriv (fun z ↦ alternatingFormEquiv V 2 (F z)) y = 0) (x : V) :
     ∀ᵐ σ : ℝ, 0 < σ → ∫ y in ball x σ, ⟪J.kahlerForm, F y⟫ =
       (2 * σ)⁻¹ * ∫ y in sphere x σ, (‖y - x‖ ^ 2 * ⟪J.kahlerForm, F y⟫ -
         J.hermitianForm (F y) (y - x) (y - x)) ∂μHE[finrank ℝ V - 1] := by
@@ -330,7 +264,7 @@ theorem ae_setIntegral_ball_inner_kahlerForm_eq [MeasurableSpace V] [BorelSpace 
   -- against the radial cutoff `H(‖y - x‖)`, `H(t) = ∫_t^∞ ϕ`, shows `∫ ϕ (G - (2 σ)⁻¹ S) = 0`
   -- for every test function `ϕ` on `(0, ∞)`; `G - (2 σ)⁻¹ S` is locally integrable there, so it
   -- vanishes almost everywhere.
-  have hFc : Continuous F := continuous_of_alternatingFormEquiv_eq_neg_extDeriv hb hF
+  have hFc : Continuous F := hF.continuous
   set g : V → ℝ := fun y ↦ ⟪J.kahlerForm, F y⟫ with hgdef
   set Q : V → ℝ := fun y ↦ ‖y - x‖ ^ 2 * g y - J.hermitianForm (F y) (y - x) (y - x) with hQdef
   have hg : Continuous g := continuous_const.inner hFc
@@ -377,12 +311,13 @@ theorem ae_setIntegral_ball_inner_kahlerForm_eq [MeasurableSpace V] [BorelSpace 
     obtain ⟨ε, hε, R, hlow, hhigh⟩ := hc.exists_pos_forall_eq_zero_of_tsupport_subset_Ioi hs
     obtain ⟨H, hH1, hHd, hH0, ⟨R', hHR⟩, hHI⟩ :=
       exists_contDiff_deriv_eq_neg_of_tsupport_subset_Ioi hϕ.continuous hc hs
-    have hstar := integral_inner_kahlerForm_add_eq_zero h₀ h₂ hkl he hb hF hH1 hH0 hHR x
+    have hstar := integral_inner_kahlerForm_add_eq_zero h₀ h₂ hkl he hF hdF hH1 hH0 hHR x
     simp only [hHd] at hstar
     -- The weight `t ↦ ϕ t / (2 t)` is continuous and vanishes beyond `R`.
-    have hk : Continuous fun t ↦ ϕ t / (2 * t) :=
-      continuous_div_two_mul_of_eventually_eq_zero hϕ.continuous
-        (eventually_lt_nhds hε |>.mono fun t ht ↦ hlow t ht)
+    have hk : Continuous fun t ↦ ϕ t / (2 * t) := by
+      simp_rw [div_mul_eq_div_div_swap]
+      exact (hϕ.continuous.div_id_of_eventuallyEq_zero
+        ((eventually_lt_nhds hε).mono fun t ht ↦ hlow t ht)).div_const 2
     have hI₁ : Integrable fun y ↦ H ‖y - x‖ * g y := by
       refine Continuous.integrable_of_hasCompactSupport
         ((hH1.continuous.comp (continuous_id.sub continuous_const).norm).mul hg) ?_
