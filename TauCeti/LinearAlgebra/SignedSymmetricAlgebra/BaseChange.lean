@@ -15,7 +15,8 @@ import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Maps
 
 `SignedSym.baseChangeEquiv` identifies scalar extension of the signed symmetric algebra with
 the signed symmetric algebra on the scalar-extended internally graded module. The comparison
-sends a pure tensor of a generator to the generator of that tensor and preserves input degree.
+sends a pure tensor of a generator to the generator of that tensor, preserves input degree,
+and is natural in degree-preserving linear maps.
 It works over arbitrary commutative rings, without flatness, freeness, or an invertible 2.
 
 The signed quotient follows J. Pardon, *Contact homology and virtual fundamental cycles*,
@@ -66,10 +67,15 @@ private noncomputable def baseChangeGenerator :
     V →ₗ[R] SignedSym (G.baseChange S) :=
   ((generator (G.baseChange S)).restrictScalars R).comp (TensorProduct.mk R S V 1)
 
+private theorem baseChangeGenerator_apply (x : V) :
+    baseChangeGenerator G S x = generator (G.baseChange S) ((1 : S) ⊗ₜ[R] x) := by
+  simp [baseChangeGenerator]
+
 private theorem baseChangeGenerator_mul_generator (p q : ℤ) (x y : V)
     (hx : x ∈ G.piece p) (hy : y ∈ G.piece q) :
     baseChangeGenerator G S x * baseChangeGenerator G S y =
       ((p * q).negOnePow : ℤ) • (baseChangeGenerator G S y * baseChangeGenerator G S x) := by
+  simp only [baseChangeGenerator_apply]
   exact generator_mul_generator (G.baseChange S)
     (by simpa using Submodule.tmul_mem_baseChange_of_mem (1 : S) hx)
     (by simpa using Submodule.tmul_mem_baseChange_of_mem (1 : S) hy)
@@ -82,9 +88,7 @@ private noncomputable def toBaseChangeAux :
       have hx' : (1 : S) ⊗ₜ[R] x ∈ (G.baseChange S).piece p := by
         simpa only [InternalGrading.baseChange_piece] using
           Submodule.tmul_mem_baseChange_of_mem (1 : S) hx
-      simpa only [add_zero, baseChangeGenerator, LinearMap.comp_apply,
-        LinearMap.coe_restrictScalars, TensorProduct.mk_apply,
-        Submodule.restrictScalars_mem] using
+      simpa only [add_zero, baseChangeGenerator_apply, Submodule.restrictScalars_mem] using
         generator_mem_signedSymPiece (G.baseChange S) hx')
 
 private noncomputable def toBaseChange :
@@ -95,8 +99,7 @@ private noncomputable def toBaseChange :
 private theorem toBaseChange_tmul_generator (s : S) (x : V) :
     toBaseChange G S (s ⊗ₜ[R] generator G x) = generator (G.baseChange S) (s ⊗ₜ[R] x) := by
   rw [toBaseChange, GradedAlgHom.liftEquiv_tmul, toBaseChangeAux, gradedLift_generator]
-  simp only [baseChangeGenerator, LinearMap.comp_apply, LinearMap.coe_restrictScalars,
-    TensorProduct.mk_apply]
+  rw [baseChangeGenerator_apply]
   rw [← map_smul, TensorProduct.smul_tmul']
   simp
 
@@ -122,12 +125,17 @@ noncomputable def baseChangeEquiv :
         intro x
         simp [toBaseChange_tmul_generator, fromBaseChange_generator])
 
+private theorem coe_baseChangeEquiv :
+    ⇑(baseChangeEquiv G S) = ⇑(toBaseChange G S) := by
+  ext
+  simp [baseChangeEquiv]
+
 /-- The forward comparison carries tensors of generators to generators of tensors. -/
 @[simp]
 theorem baseChangeEquiv_tmul_generator (s : S) (x : V) :
     baseChangeEquiv G S (s ⊗ₜ[R] generator G x) =
-      generator (G.baseChange S) (s ⊗ₜ[R] x) :=
-  toBaseChange_tmul_generator G S s x
+      generator (G.baseChange S) (s ⊗ₜ[R] x) := by
+  simp [baseChangeEquiv, toBaseChange_tmul_generator]
 
 /-- The comparison carries scalar pure tensors to scalars in the extended algebra. -/
 @[simp]
@@ -140,8 +148,8 @@ theorem baseChangeEquiv_tmul_one (s : S) :
 @[simp]
 theorem baseChangeEquiv_symm_generator (x : S ⊗[R] V) :
     (baseChangeEquiv G S).symm (generator (G.baseChange S) x) =
-      (generator G).baseChange S x :=
-  fromBaseChange_generator G S x
+      (generator G).baseChange S x := by
+  simp [baseChangeEquiv, fromBaseChange_generator]
 
 /-- Applying the comparison after scalar extension of the generator gives the extended
 algebra's generator, on arbitrary tensors. -/
@@ -151,38 +159,51 @@ theorem baseChangeEquiv_baseChange_generator (x : S ⊗[R] V) :
   rw [← baseChangeEquiv_symm_generator]
   exact (baseChangeEquiv G S).apply_symm_apply _
 
-/-- The scalar-extension comparison preserves the integer input degree. -/
-theorem isHomogeneous_baseChangeEquiv :
-    LinearMap.IsHomogeneous (baseChangeEquiv G S).toLinearMap
-      (fun p ↦ (signedSymPiece G p).baseChange S) (signedSymPiece (G.baseChange S)) 0 := by
-  refine LinearMap.isHomogeneous_def.2 fun p x hx => ?_
-  rw [baseChangeEquiv, AlgEquiv.toLinearMap_ofAlgHom, AlgHom.toLinearMap_apply]
-  simpa only [add_zero, AlgHom.toRingHom_eq_coe, RingHom.coe_coe] using
-    (toBaseChange G S).map_mem hx
-
 /-- The comparison preserves and reflects each homogeneous input-degree piece. -/
 @[simp high]
 theorem baseChangeEquiv_mem_signedSymPiece_iff {p : ℤ} (x : S ⊗[R] SignedSym G) :
     baseChangeEquiv G S x ∈ signedSymPiece (G.baseChange S) p ↔
       x ∈ (signedSymPiece G p).baseChange S := by
-  -- `ofAlgHom` retains the forward graded map as its underlying function.
-  change toBaseChange G S x ∈ signedSymPiece (G.baseChange S) p ↔ _
-  exact Graded.map_mem_iff_of_injective (toBaseChange G S) (baseChangeEquiv G S).injective
+  have hinj := (baseChangeEquiv G S).injective
+  rw [coe_baseChangeEquiv] at hinj ⊢
+  exact Graded.map_mem_iff_of_injective (toBaseChange G S) hinj
+
+/-- The inverse comparison preserves and reflects each homogeneous input-degree piece. -/
+theorem baseChangeEquiv_symm_mem_baseChange_signedSymPiece_iff {p : ℤ}
+    (x : SignedSym (G.baseChange S)) :
+    (baseChangeEquiv G S).symm x ∈ (signedSymPiece G p).baseChange S ↔
+      x ∈ signedSymPiece (G.baseChange S) p := by
+  rw [← baseChangeEquiv_mem_signedSymPiece_iff, AlgEquiv.apply_symm_apply]
+
+/-- The scalar-extension comparison preserves the integer input degree. -/
+theorem isHomogeneous_baseChangeEquiv :
+    LinearMap.IsHomogeneous (baseChangeEquiv G S).toLinearMap
+      (fun p ↦ (signedSymPiece G p).baseChange S) (signedSymPiece (G.baseChange S)) 0 := by
+  refine LinearMap.isHomogeneous_def.2 fun p x hx => ?_
+  simpa only [add_zero, AlgEquiv.toLinearMap_apply] using
+    (baseChangeEquiv_mem_signedSymPiece_iff G S x).2 hx
 
 /-- The inverse scalar-extension comparison also preserves the integer input degree. -/
 theorem isHomogeneous_baseChangeEquiv_symm :
     LinearMap.IsHomogeneous (baseChangeEquiv G S).symm.toLinearMap
       (signedSymPiece (G.baseChange S)) (fun p ↦ (signedSymPiece G p).baseChange S) 0 := by
   refine LinearMap.isHomogeneous_def.2 fun p x hx => ?_
-  simpa only [add_zero, AlgEquiv.toLinearMap_apply, AlgEquiv.apply_symm_apply] using
-    (baseChangeEquiv_mem_signedSymPiece_iff G S ((baseChangeEquiv G S).symm x)).mp
-      (by simpa only [AlgEquiv.apply_symm_apply] using hx)
+  simpa only [add_zero, AlgEquiv.toLinearMap_apply] using
+    (baseChangeEquiv_symm_mem_baseChange_signedSymPiece_iff G S x).2 hx
 
-/-- The inverse comparison preserves and reflects each homogeneous input-degree piece. -/
-theorem baseChangeEquiv_symm_mem_signedSymPiece_iff {p : ℤ}
-    (x : SignedSym (G.baseChange S)) :
-    (baseChangeEquiv G S).symm x ∈ (signedSymPiece G p).baseChange S ↔
-      x ∈ signedSymPiece (G.baseChange S) p := by
-  rw [← baseChangeEquiv_mem_signedSymPiece_iff, AlgEquiv.apply_symm_apply]
+variable {W : Type*} [AddCommGroup W] [Module R W] (H : InternalGrading R W ℤ)
+
+/-- The scalar-extension comparison is natural in degree-preserving linear maps. -/
+theorem baseChangeEquiv_naturality (f : V →ₗ[R] W)
+    (hf : LinearMap.IsHomogeneous f G.piece H.piece 0) :
+    (map (G.baseChange S) (H.baseChange S) (f.baseChange S)
+      (hf.baseChange_internalGrading S)).comp (baseChangeEquiv G S).toAlgHom =
+        (baseChangeEquiv H S).toAlgHom.comp
+          (Algebra.TensorProduct.map (AlgHom.id S S) (map G H f hf)) := by
+  apply Algebra.TensorProduct.ext
+  · exact Subsingleton.elim _ _
+  · apply hom_ext
+    intro x
+    simp
 
 end TauCeti.SignedSym

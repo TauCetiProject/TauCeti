@@ -36,7 +36,7 @@ noncomputable def baseChange : InternalGrading S (S ⊗[R] M) ι where
   isInternal := G.isInternal.baseChange
 
 /-- The pieces of the extended grading are the scalar extensions of the original pieces. -/
-@[simp]
+@[simp, grind =]
 theorem baseChange_piece (i : ι) : (G.baseChange S).piece i = (G.piece i).baseChange S := (rfl)
 
 /-- The homogeneous component of a pure tensor is the tensor of its homogeneous component. -/
@@ -44,8 +44,9 @@ theorem baseChange_piece (i : ι) : (G.baseChange S).piece i = (G.piece i).baseC
 theorem coe_decompose_baseChange_tmul (s : S) (x : M) (i : ι) :
     (DirectSum.decompose (G.baseChange S).piece (s ⊗ₜ[R] x) i : S ⊗[R] M) =
       s ⊗ₜ[R] (DirectSum.decompose G.piece x i : M) := by
-  have hd : (G.baseChange S).instDecompositionSubmodulePiece =
+  have hd : (inferInstance : DirectSum.Decomposition (G.baseChange S).piece) =
       DirectSum.Decomposition.baseChange G.piece := Subsingleton.elim _ _
+  dsimp only [inferInstance] at hd
   rw [hd]
   exact DirectSum.coe_decompose_baseChange_tmul G.piece s x i
 
@@ -81,6 +82,7 @@ variable {R M N ι : Type*} [CommSemiring R]
   [AddMonoid ι] [DecidableEq ι] {f : M →ₗ[R] N} {q : ι}
 
 /-- Scalar extension preserves the degree of a homogeneous map of internally graded modules. -/
+@[grind ←]
 theorem baseChange_internalGrading {G : InternalGrading R M ι} {H : InternalGrading R N ι}
     (hf : IsHomogeneous f G.piece H.piece q) (S : Type*) [CommSemiring S] [Algebra R S] :
     IsHomogeneous (f.baseChange S) (G.baseChange S).piece (H.baseChange S).piece q := by
