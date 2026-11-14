@@ -30,6 +30,9 @@ statement covers a function whose support is compact inside `Ω`.
 * `TauCeti.Wkp.mem_closure_range_restrictL_ofTestFunctionₗ_top_of_shift`: under the ball
   condition above, `u` lies in the closure of the restrictions to `Ω` of test functions on the
   whole space.
+* `TauCeti.Wkp.range_restrictL_ofTestFunctionₗ_top`: identifies the range of restricted
+  whole-space test functions in `W^{k,p}(Ω)` with elements represented almost everywhere on `Ω` by
+  smooth compactly supported functions on `E`.
 
 ## References
 
@@ -284,5 +287,23 @@ theorem mem_closure_range_restrictL_ofTestFunctionₗ_top_of_shift (hp : p ≠ �
       restrictL (le_top : Omega ≤ ⊤) k (ofTestFunctionₗ (mu := mu) (p := p) k psi)) :=
   mem_closure_of_tendsto (tendsto_restrictL_shiftTest hp hK hphi hh hball k u hu)
     (Eventually.of_forall fun _ => ⟨_, rfl⟩)
+
+/-- An element of `W^{k,p}(Ω)` is the restriction of a test function on the whole space if and only
+if its value is represented almost everywhere on `Ω` by a smooth compactly supported function on
+`E`. -/
+theorem range_restrictL_ofTestFunctionₗ_top (k : ℕ) :
+    (range fun psi : 𝓓((⊤ : Opens E), ℝ) =>
+      restrictL (le_top : Omega ≤ ⊤) k (ofTestFunctionₗ (mu := mu) (p := p) k psi)) =
+    {u : Wkp mu Omega p k | ∃ f : E → ℝ, ContDiff ℝ (⊤ : ℕ∞) f ∧ HasCompactSupport f ∧
+      (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f} := by
+  ext u
+  constructor
+  · rintro ⟨psi, rfl⟩
+    exact ⟨psi, psi.contDiff, psi.hasCompactSupport,
+      value_restrictL_ofTestFunctionₗ_ae (le_top : Omega ≤ ⊤) k psi⟩
+  · rintro ⟨f, hf, hsupp, hu⟩
+    let psi : 𝓓((⊤ : Opens E), ℝ) := ⟨f, hf, hsupp, subset_univ _⟩
+    exact ⟨psi, ext k (Lp.ext
+      ((value_restrictL_ofTestFunctionₗ_ae (le_top : Omega ≤ ⊤) k psi).trans hu.symm))⟩
 
 end TauCeti.Wkp
