@@ -55,8 +55,7 @@ set is a closed ball of radius `diam s / 2`
 ## References
 
 * R. J. Gardner, *The Brunn–Minkowski inequality*, Bull. Amer. Math. Soc. **39** (2002),
-  355–405, for the Brunn–Minkowski inequality and the difference-body argument
-  deducing the isodiametric inequality from it.
+  355–405, for the Brunn–Minkowski inequality.
 * R. Schneider, *Convex Bodies: The Brunn–Minkowski Theory*, 2nd ed., Cambridge University
   Press, 2014, Theorem 7.1.1, for the equality case of Brunn–Minkowski for convex bodies.
 -/
