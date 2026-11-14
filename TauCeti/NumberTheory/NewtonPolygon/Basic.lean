@@ -184,14 +184,19 @@ theorem newtonPolygon_X_pow_mul (k : ℕ) :
   simp only [newtonPolygon_def, coeff_X_pow_mul', apply_ite v, AddValuation.map_zero]
   exact lowerConvexEnvelope_shift (fun n => v (coeff n f)) k
 
+section CommRing
+
+variable {R : Type*} [CommRing R] (f : R⟦X⟧) (v : AddValuation R (WithTop ℝ))
+
 /-- Substituting `c X` for `X` shears the Newton polygon by the valuation of `c`, provided
 that valuation is finite. -/
-theorem newtonPolygon_rescale {R : Type*} [CommRing R] (f : R⟦X⟧)
-    (v : AddValuation R (WithTop ℝ)) {c : R} (hc : v c ≠ ⊤) :
+theorem newtonPolygon_rescale {c : R} (hc : v c ≠ ⊤) :
     (rescale c f).newtonPolygon v = fun n => f.newtonPolygon v n + n • v c := by
   simp only [newtonPolygon_def, coeff_rescale, AddValuation.map_mul, AddValuation.map_pow,
     add_comm (_ • _)]
   exact lowerConvexEnvelope_add_nsmul _ hc
+
+end CommRing
 
 /-- Mapping the coefficients along a ring homomorphism compatible with the valuations
 preserves the Newton polygon. -/
