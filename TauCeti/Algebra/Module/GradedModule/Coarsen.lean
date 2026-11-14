@@ -33,6 +33,7 @@ super (parity-graded) object, for example when Koszul signs only depend on parit
 
 * `TauCeti.coarsenGrading_le_iff`: the universal property of the coarsened pieces, and
   `TauCeti.coarsenGrading_induction`: the corresponding induction principle on elements.
+* `TauCeti.coarsenGrading_apply_of_injective`: coarsening along an injective map keeps each piece.
 * `TauCeti.decompose_coarsenGrading`: the coarsened homogeneous components are the sums of the
   original components in each fibre.
 * `TauCeti.mem_coarsenGrading_iff`: an element lies in the coarsened piece of degree `k` exactly
@@ -78,6 +79,12 @@ theorem le_coarsenGrading (ℳ : ι → Submodule R M) (f : ι → κ) (i : ι) 
 theorem mem_coarsenGrading_of_mem {ℳ : ι → Submodule R M} (f : ι → κ) {i : ι} {x : M}
     (hx : x ∈ ℳ i) : x ∈ coarsenGrading ℳ f (f i) :=
   le_coarsenGrading ℳ f i hx
+
+/-- Coarsening along an injective map of index types merges no pieces: the coarsened piece of
+degree `f i` is `ℳ i`. -/
+theorem coarsenGrading_apply_of_injective (ℳ : ι → Submodule R M) {f : ι → κ}
+    (hf : Function.Injective f) (i : ι) : coarsenGrading ℳ f (f i) = ℳ i :=
+  le_antisymm (coarsenGrading_le_iff.2 fun _ hj ↦ (congrArg ℳ (hf hj)).le) (le_coarsenGrading ℳ f i)
 
 /-- Induction on membership in a coarsened piece: a property that holds on every piece of the
 fibre over `k` and is closed under zero and addition holds on the coarsened piece of degree `k`. -/
