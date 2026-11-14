@@ -87,6 +87,10 @@ the basis arguments uses it.
   `spa Aplus` (Wedhorn Corollary 7.53 specialization).
 * `TauCeti.ValuationSpectrum.exists_unit_forall_mem_spa_exists_vlt`: for a finite standard cover
   of a Tate ring, a unit is strictly dominated at every point by some numerator.
+* `TauCeti.ValuationSpectrum.exists_rationalSubset_eq_insert_pseudoUniformizer_pow`: every
+  rational subset with open numerator ideal can be presented as `R((insert (ϖ ^ N) T) / s)` with
+  `insert (ϖ ^ N) T ⊆ Aplus` and `s ∈ Aplus` for a given open subring `Aplus` and
+  pseudouniformiser `ϖ`.
 
 ## References
 
@@ -558,6 +562,77 @@ theorem exists_unit_forall_mem_spa_exists_vlt (Aplus : Subring A) {T : Finset A}
 end Tate
 
 end TopologicalRing
+
+section PseudoUniformizer
+
+variable [SeparatelyContinuousMul A]
+
+open scoped Classical in
+/-- Over a ring with separately continuous multiplication and a pseudouniformiser `ϖ`, every
+rational subset with open numerator ideal has a presentation `R((insert (ϖ ^ N) T) / s)` with all
+elements of `insert (ϖ ^ N) T` and `s` in a given open subring `Aplus` and a power of `ϖ` among
+its numerators. -/
+theorem exists_rationalSubset_eq_insert_pseudoUniformizer_pow (Aplus : Subring A)
+    (hAplus : IsOpen (Aplus : Set A)) {ϖ : A} (hϖ : IsPseudoUniformizer ϖ)
+    (T₀ : Finset A) (s₀ : A) (hT₀ : IsOpen ((Ideal.span (T₀ : Set A) : Ideal A) : Set A)) :
+    ∃ (N : ℕ) (T : Finset A) (s : A),
+      (∀ f ∈ insert (ϖ ^ N) T, f ∈ Aplus) ∧ s ∈ Aplus ∧
+      rationalSubset Aplus T₀ s₀ = rationalSubset Aplus (insert (ϖ ^ N) T) s := by
+  have hnil := hϖ.isTopologicallyNilpotent
+  obtain ⟨n, hn⟩ :=
+    hnil.exists_pow_mem_of_mem_nhds (hT₀.mem_nhds (Ideal.span (T₀ : Set A)).zero_mem)
+  have htop : Ideal.span (T₀ : Set A) = ⊤ :=
+    Ideal.eq_top_of_isUnit_mem _ hn (hϖ.isUnit.pow n)
+  have h1 : (1 : A) ∈ Ideal.span (T₀ : Set A) := htop ▸ Submodule.mem_top
+  obtain ⟨c, -, hc⟩ := Submodule.mem_span_finset.mp h1
+  have hM₀ : ∃ M₀ : ℕ, ϖ ^ M₀ ∈ Aplus ∧ ∀ t ∈ T₀, c t * ϖ ^ M₀ ∈ Aplus :=
+    ((hnil.eventually_mem (hAplus.mem_nhds Aplus.zero_mem)).and
+      ((Filter.eventually_all_finite T₀.finite_toSet).mpr fun t _ ↦
+        eventually_mul_pow_mem_of_isTopologicallyNilpotent hnil hAplus (c t))).exists
+  obtain ⟨M₀, hϖ₀, hM₀⟩ := hM₀
+  have hM₁ : ∃ M₁ : ℕ,
+      ϖ ^ M₁ ∈ Aplus ∧ s₀ * ϖ ^ M₁ ∈ Aplus ∧ ∀ t ∈ T₀, t * ϖ ^ M₁ ∈ Aplus :=
+    ((hnil.eventually_mem (hAplus.mem_nhds Aplus.zero_mem)).and
+      ((eventually_mul_pow_mem_of_isTopologicallyNilpotent hnil hAplus s₀).and
+        ((Filter.eventually_all_finite T₀.finite_toSet).mpr fun t _ ↦
+          eventually_mul_pow_mem_of_isTopologicallyNilpotent hnil hAplus t))).exists
+  obtain ⟨M₁, hϖ₁, hs₁, hT₁⟩ := hM₁
+  refine ⟨M₀ + M₁, T₀.image (fun t ↦ t * ϖ ^ M₁), s₀ * ϖ ^ M₁, ?_, hs₁, ?_⟩
+  · intro f hf
+    rcases Finset.mem_insert.mp hf with rfl | hf
+    · rw [pow_add]
+      exact mul_mem hϖ₀ hϖ₁
+    · obtain ⟨t, ht, rfl⟩ := Finset.mem_image.mp hf
+      exact hT₁ t ht
+  have hunit : IsUnit (ϖ ^ M₁) := hϖ.isUnit.pow M₁
+  rw [← rationalSubset_image_mul_right Aplus T₀ s₀ (ϖ ^ M₁) hunit]
+  symm
+  refine rationalSubset_insert_of_forall_vle Aplus _ _ (ϖ ^ (M₀ + M₁)) fun v hv ↦ ?_
+  rw [rationalSubset_image_mul_right Aplus T₀ s₀ (ϖ ^ M₁) hunit] at hv
+  rw [← valuation_le_iff, pow_add, map_mul, map_mul]
+  have hle : v.valuation (ϖ ^ M₀) ≤ v.valuation s₀ := by
+    calc v.valuation (ϖ ^ M₀)
+      = v.valuation (ϖ ^ M₀ * ∑ t ∈ T₀, c t • t) := by rw [hc, mul_one]
+    _ = v.valuation (∑ t ∈ T₀, (c t * ϖ ^ M₀) * t) := by
+        rw [Finset.mul_sum]
+        congr 1
+        refine Finset.sum_congr rfl fun t _ ↦ ?_
+        rw [smul_eq_mul]
+        ring
+    _ ≤ v.valuation s₀ := by
+        refine v.valuation.map_sum_le fun t ht ↦ ?_
+        calc v.valuation ((c t * ϖ ^ M₀) * t)
+            = v.valuation (c t * ϖ ^ M₀) * v.valuation t := map_mul _ _ _
+          _ ≤ 1 * v.valuation s₀ := by
+              gcongr
+              · exact valuation_le_one_of_mem_spa
+                  (rationalSubset_subset_spa Aplus T₀ s₀ hv) (hM₀ t ht)
+              · exact (valuation_le_iff v t s₀).mpr
+                  (((mem_rationalSubset_iff Aplus T₀ s₀ v).mp hv).2.1 t ht)
+          _ = v.valuation s₀ := one_mul _
+  gcongr
+
+end PseudoUniformizer
 
 end TauCeti.ValuationSpectrum
 
