@@ -228,13 +228,9 @@ theorem tangentRepresentation_mem_orthogonal_orbitTangent
     tangentRepresentation hd g u ∈ (hσ.symplecticFormAt x).orthogonal
       ((InfinitesimalAction.fundamental I G I' M).orbitTangent x) := by
   have : ContMDiffConstSMul I' ∞ G M := ⟨ContMDiffSMul.contMDiff_const_smul (I := I)⟩
-  refine SymplecticForm.mem_orthogonal_iff.2 fun w hw ↦ ?_
-  -- Write `w = dg_x w'` with `w' = d(g⁻¹)_x w`, again an orbit direction, and use that `dg_x`
-  -- preserves `σ_x`.
-  have hw' := tangentRepresentation_mem_orbitTangent_fundamental hd g⁻¹ hw
-  rw [← tangentRepresentation_apply_inv_apply hd g w,
-    hσ.symplecticFormAt_tangentRepresentation hσG hd g]
-  exact SymplecticForm.mem_orthogonal_iff.1 hu _ hw'
+  exact SymplecticForm.apply_mem_orthogonal (ρ := (tangentRepresentation hd).toRepresentation)
+    (hσ.symplecticFormAt_tangentRepresentation hσG hd)
+    (fun g _ hv ↦ tangentRepresentation_mem_orbitTangent_fundamental hd g hv) g hu
 
 /-- **The stabilizer representation on the symplectic slice.** If the stabilizer `H = G_x` of a
 smooth Lie group action preserves a nondegenerate two-form `σ`, its tangent representation

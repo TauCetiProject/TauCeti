@@ -114,20 +114,6 @@ theorem tangentRepresentation_apply
     tangentRepresentation hd g = mfderiv I I (fun y : M ↦ (g : G) • y) x :=
   (rfl)
 
-/-- `dg_x` undoes `d(g⁻¹)_x` on `T_x M`. -/
-theorem tangentRepresentation_apply_inv_apply
-    (hd : ∀ g ∈ stabilizer G x, MDifferentiableAt I I (fun y : M ↦ g • y) x)
-    (g : stabilizer G x) (v : TangentSpace I x) :
-    tangentRepresentation hd g (tangentRepresentation hd g⁻¹ v) = v := by
-  simp [← mul_apply_eq_comp, ← map_mul, -tangentRepresentation_apply]
-
-/-- `d(g⁻¹)_x` undoes `dg_x` on `T_x M`. -/
-theorem tangentRepresentation_inv_apply_apply
-    (hd : ∀ g ∈ stabilizer G x, MDifferentiableAt I I (fun y : M ↦ g • y) x)
-    (g : stabilizer G x) (v : TangentSpace I x) :
-    tangentRepresentation hd g⁻¹ (tangentRepresentation hd g v) = v := by
-  simpa only [inv_inv] using tangentRepresentation_apply_inv_apply hd g⁻¹ v
-
 /-- The tangent representation of the stabilizer of `x`, as a homomorphism to the group of linear
 automorphisms of `T_x M`. -/
 noncomputable def tangentAut
