@@ -77,19 +77,29 @@ theorem latticeCoord_eq_mulVec [Fintype κ] (b : Module.Basis κ ℤ N) (b' : Mo
 
 /-- **The dual lattice in lattice coordinates.** A point of `V*` takes integer values on the
 lattice exactly when its lattice coordinates are integers. -/
-theorem forall_apply_mem_range_intCast_iff [Finite κ] (b : Module.Basis κ ℤ N)
-    (x : StrongDual ℝ V) :
+theorem forall_apply_mem_range_intCast_iff (b : Module.Basis κ ℤ N) (x : StrongDual ℝ V) :
     (∀ n, x (i n) ∈ range ((↑) : ℤ → ℝ)) ↔ ∀ k, latticeCoord i b x k ∈ range ((↑) : ℤ → ℝ) := by
-  have := Fintype.ofFinite κ
   refine ⟨fun h k ↦ h (b k), fun h n ↦ ?_⟩
-  choose m hm using h
-  exact ⟨∑ k, b.repr n k * m k, by simp [apply_eq_sum_latticeCoord b x n, hm]⟩
+  induction b.mem_span n using Submodule.span_induction with
+  | mem m hm =>
+    obtain ⟨k, rfl⟩ := hm
+    exact h k
+  | zero => exact ⟨0, by simp⟩
+  | add m m' _ _ hm hm' =>
+    obtain ⟨p, hp⟩ := hm
+    obtain ⟨q, hq⟩ := hm'
+    exact ⟨p + q, by simp [hp, hq]⟩
+  | smul z m _ hm =>
+    obtain ⟨p, hp⟩ := hm
+    exact ⟨z * p, by simp [hp]⟩
 
 /-- For an integral lattice, the lattice coordinates in any basis are a linear isomorphism
 `V* ≃ ℝ^κ`: the images `i (b k)` of a lattice basis form a real basis of `V`. With
 `forall_apply_mem_range_intCast_iff`, they carry the dual lattice onto `ℤ^κ`. -/
-theorem IsIntegralLattice.bijective_latticeCoord [Finite κ] (hi : IsIntegralLattice i)
+theorem IsIntegralLattice.bijective_latticeCoord (hi : IsIntegralLattice i)
     (b : Module.Basis κ ℤ N) : Function.Bijective (latticeCoord i b) := by
+  have := hi.finite
+  have := Module.Finite.finite_basis b
   let B := hi.isBaseChange.basis b
   have hB (k : κ) : B k = i (b k) := by simpa using hi.isBaseChange.basis_apply b k
   refine ⟨fun x y hxy ↦ ContinuousLinearMap.coe_injective (B.ext fun k ↦ ?_), fun y ↦ ?_⟩
