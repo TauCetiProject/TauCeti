@@ -22,7 +22,8 @@ scaling two forms by the same non-zero-divisor preserves whether they are isomet
 `LinearMap.BilinForm.IsometryEquiv.symm_apply_apply` and
 `LinearMap.BilinForm.IsometryEquiv.apply_symm_apply` for Mathlib's isometric equivalences, which
 map the kernel of one form onto the kernel of the other
-(`LinearMap.BilinForm.IsometryEquiv.map_ker`).
+(`LinearMap.BilinForm.IsometryEquiv.map_ker`) and preserve separation and nondegeneracy
+(`LinearMap.BilinForm.IsometryEquiv.nondegenerate_iff`).
 Isometric bilinear forms have isometric associated quadratic maps
 (`LinearMap.BilinForm.Equivalent.toQuadraticMap`). The isometry group and the determinant,
 base-change, and orthogonal-complement API are developed in
@@ -143,6 +144,33 @@ theorem map_ker (f : B₁.IsometryEquiv B₂) :
   -- Every vector of `M₂` is `f z`, and `B₂ (f x) (f z) = B₁ x z`.
   rw [← (f : M₁ ≃ₗ[R] M₂).toEquiv.forall_congr_right]
   simp
+
+/-- Left separation of a bilinear form is invariant under an isometric equivalence. -/
+theorem separatingLeft_iff (f : B₁.IsometryEquiv B₂) :
+    B₁.SeparatingLeft ↔ B₂.SeparatingLeft := by
+  refine ⟨fun h x hx => ?_, fun h x hx => ?_⟩
+  · rw [← f.apply_symm_apply x, h (f.symm x) fun y => ?_, map_zero]
+    rw [← f.map_app, f.apply_symm_apply]
+    exact hx (f y)
+  · rw [← f.symm_apply_apply x, h (f x) fun y => ?_, map_zero]
+    rw [← f.apply_symm_apply y, f.map_app]
+    exact hx (f.symm y)
+
+/-- Right separation of a bilinear form is invariant under an isometric equivalence. -/
+theorem separatingRight_iff (f : B₁.IsometryEquiv B₂) :
+    B₁.SeparatingRight ↔ B₂.SeparatingRight := by
+  refine ⟨fun h y hy => ?_, fun h y hy => ?_⟩
+  · rw [← f.apply_symm_apply y, h (f.symm y) fun x => ?_, map_zero]
+    rw [← f.map_app, f.apply_symm_apply]
+    exact hy (f x)
+  · rw [← f.symm_apply_apply y, h (f y) fun x => ?_, map_zero]
+    rw [← f.apply_symm_apply x, f.map_app]
+    exact hy (f.symm x)
+
+/-- Nondegeneracy of a bilinear form is invariant under an isometric equivalence. -/
+theorem nondegenerate_iff (f : B₁.IsometryEquiv B₂) :
+    B₁.Nondegenerate ↔ B₂.Nondegenerate :=
+  f.separatingLeft_iff.and f.separatingRight_iff
 
 end IsometryEquiv
 

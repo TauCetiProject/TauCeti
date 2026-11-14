@@ -31,6 +31,10 @@ sum of squares along an equivalence of its index type, which complements Mathlib
   equivalence of the kernels of polarization against corresponding vectors.
 * `QuadraticMap.IsometryEquiv.trans_apply`: composition of isometries acts by composition.
 * `QuadraticMap.IsometryEquiv.nondegenerate_iff`: nondegeneracy is invariant under isometry.
+* `QuadraticMap.IsometryEquiv.polarBilinIsometryEquiv`,
+  `QuadraticMap.IsometryEquiv.nondegenerate_polarBilin_iff`: an isometric equivalence of quadratic
+  forms induces an isometric equivalence of their polar bilinear forms and preserves polar
+  nondegeneracy.
 * `QuadraticMap.isometryEquivNeg`: if `u * u = -1`, multiplication by `u` is an isometry from
   `Q` to `-Q`.
 * `QuadraticForm.isometryEquivWeightedSumSquaresReindex`: reindexing the weights of a weighted sum
@@ -188,6 +192,48 @@ theorem _root_.QuadraticMap.IsometryEquiv.nondegenerate_iff
     apply Cardinal.lift_le_one_iff.mp
     rw [← e.toLinearEquiv.lift_rank_map_eq Q₁.polarBilin.ker, hpolar]
     exact Cardinal.lift_le_one_iff.mpr hQ₂.rank_rad_polar_le
+
+/-- An isometric equivalence of scalar-valued quadratic maps induces an isometric equivalence of
+their polar bilinear forms. -/
+def _root_.QuadraticMap.IsometryEquiv.polarBilinIsometryEquiv
+    {R : Type u} {M₁ : Type v} {M₂ : Type*}
+    [CommRing R] [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
+    (e : Q₁.IsometryEquiv Q₂) :
+    LinearMap.BilinForm.IsometryEquiv Q₁.polarBilin Q₂.polarBilin where
+  toLinearEquiv := e.toLinearEquiv
+  map_app' x y := by simp
+
+/-- `QuadraticMap.IsometryEquiv.polarBilinIsometryEquiv` acts through the original equivalence. -/
+@[simp]
+theorem _root_.QuadraticMap.IsometryEquiv.polarBilinIsometryEquiv_apply
+    {R : Type u} {M₁ : Type v} {M₂ : Type*}
+    [CommRing R] [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
+    (e : Q₁.IsometryEquiv Q₂) (x : M₁) :
+    e.polarBilinIsometryEquiv x = e x :=
+  (rfl)
+
+/-- The inverse of `QuadraticMap.IsometryEquiv.polarBilinIsometryEquiv` acts through the inverse
+equivalence. -/
+@[simp]
+theorem _root_.QuadraticMap.IsometryEquiv.polarBilinIsometryEquiv_symm_apply
+    {R : Type u} {M₁ : Type v} {M₂ : Type*}
+    [CommRing R] [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
+    (e : Q₁.IsometryEquiv Q₂) (x : M₂) :
+    e.polarBilinIsometryEquiv.symm x = e.symm x :=
+  (rfl)
+
+/-- Nondegeneracy of the polar bilinear form is invariant under an isometric equivalence of
+quadratic forms. -/
+theorem _root_.QuadraticMap.IsometryEquiv.nondegenerate_polarBilin_iff
+    {R : Type u} {M₁ : Type v} {M₂ : Type*}
+    [CommRing R] [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
+    (e : Q₁.IsometryEquiv Q₂) :
+    Q₁.polarBilin.Nondegenerate ↔ Q₂.polarBilin.Nondegenerate :=
+  e.polarBilinIsometryEquiv.nondegenerate_iff
 
 section Neg
 

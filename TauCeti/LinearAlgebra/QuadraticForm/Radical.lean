@@ -51,7 +51,8 @@ regular case.
   trivial kernel is nondegenerate.
 * `QuadraticMap.nondegenerate_of_isCompl`: a quadratic map vanishing on a submodule complementary
   to another, which its polar form pairs perfectly, is nondegenerate.
-* `QuadraticMap.isSymm_polarBilin`: the polar form is symmetric.
+* `QuadraticMap.isSymm_polarBilin`, `QuadraticMap.isAlt_polarBilin`: the polar form of a
+  scalar-valued quadratic map is symmetric, and alternating in characteristic two.
 * `QuadraticMap.polarBilin_restrict`: polarization commutes with restriction to a submodule.
 * `QuadraticMap.Nondegenerate.isCompl_orthogonal`: a finite-dimensional subspace on which the
   form restricts nondegenerately is complementary to its polar orthogonal complement.
@@ -95,6 +96,10 @@ regular case.
   part has trivial radical, so it is nondegenerate when `2` is invertible.
 * `QuadraticMap.radical_lift`: on the quotient by a submodule of the radical, the radical is the
   image of the radical.
+* `QuadraticMap.ker_polarBilin_lift`, `QuadraticMap.ker_polarBilin_le_radical_iff`,
+  `QuadraticMap.nondegenerate_polarBilin_lift_of_ker_le_radical`: when the quadratic form vanishes
+  on the polar kernel, the polar kernel lies in the radical and the descended form on the quotient
+  has nondegenerate polar form in every characteristic.
 * `QuadraticMap.Equivalent.lift_radical`: isometric maps have isometric regular parts.
 * `QuadraticMap.equivalent_lift_radical_of_equivalent_zero_prod`,
   `QuadraticMap.nonempty_linearEquiv_radical_of_equivalent_zero_prod`: in any splitting
@@ -113,6 +118,12 @@ variable {R M P : Type*} [CommRing R] [AddCommGroup M] [AddCommGroup P]
 theorem isSymm_polarBilin (Q : QuadraticForm R M) :
     LinearMap.BilinForm.IsSymm Q.polarBilin :=
   ⟨fun x y => polar_comm Q x y⟩
+
+/-- In characteristic two, the polar bilinear map of a quadratic map is alternating. -/
+theorem isAlt_polarBilin [CharP R 2] (Q : QuadraticMap R M P) :
+    Q.polarBilin.IsAlt := fun x => by
+  rw [polarBilin_apply_apply, polar_self, ← Nat.cast_smul_eq_nsmul R,
+    CharP.cast_eq_zero R 2, zero_smul]
 
 /-- Polarization commutes with restricting a quadratic map to a submodule. -/
 @[simp]
@@ -259,6 +270,57 @@ possibly degenerate form. -/
 theorem nondegenerate_lift_radical [Invertible (2 : R)] (Q : QuadraticMap R M P) :
     (Q.lift Q.radical le_rfl).Nondegenerate := by
   rw [nondegenerate_iff_radical_eq_bot, radical_lift_radical]
+
+/-- Polarization on the quotient by a submodule of the radical agrees on representatives with the
+original polarization. -/
+@[simp]
+theorem polar_lift_mk (Q : QuadraticMap R M P) {N : Submodule R M} (hN : N ≤ Q.radical)
+    (x y : M) :
+    polar (Q.lift N hN) (Submodule.Quotient.mk x) (Submodule.Quotient.mk y) = polar Q x y := by
+  rw [polar, ← Submodule.Quotient.mk_add, lift_mk, lift_mk, lift_mk, ← polar]
+
+/-- On the quotient by a submodule `N` of the radical, the kernel of the polar bilinear form is
+the image of the polar kernel. -/
+theorem ker_polarBilin_lift (Q : QuadraticMap R M P) {N : Submodule R M} (hN : N ≤ Q.radical) :
+    (Q.lift N hN).polarBilin.ker = Q.polarBilin.ker.map N.mkQ := by
+  ext x
+  induction x using Submodule.Quotient.induction_on with
+  | H m =>
+    refine ⟨fun hx => ⟨m, ?_, rfl⟩, ?_⟩
+    · simp only [SetLike.mem_coe, LinearMap.mem_ker] at hx ⊢
+      ext y
+      simpa only [polarBilin_apply_apply, LinearMap.zero_apply, polar_lift_mk] using
+        LinearMap.congr_fun hx (Submodule.Quotient.mk y)
+    · rintro ⟨m', hm', hmm'⟩
+      rw [← hmm']
+      simp only [SetLike.mem_coe, LinearMap.mem_ker] at hm' ⊢
+      ext y
+      simpa only [LinearMap.comp_apply, Submodule.mkQ_apply, polarBilin_apply_apply,
+        LinearMap.zero_apply, polar_lift_mk] using LinearMap.congr_fun hm' y
+
+/-- The polar kernel lies in the radical if and only if it is totally isotropic, in every
+characteristic. -/
+theorem ker_polarBilin_le_radical_iff (Q : QuadraticMap R M P) :
+    Q.polarBilin.ker ≤ Q.radical ↔ Q.IsTotallyIsotropic Q.polarBilin.ker := by
+  rw [isTotallyIsotropic_iff]
+  exact ⟨fun h x hx => (h hx).1, fun h x hx => ⟨h x hx, hx⟩⟩
+
+/-- The radical equals the polar kernel if and only if the polar kernel is totally isotropic, in
+every characteristic. -/
+theorem radical_eq_ker_polarBilin_iff (Q : QuadraticMap R M P) :
+    Q.radical = Q.polarBilin.ker ↔ Q.IsTotallyIsotropic Q.polarBilin.ker :=
+  ⟨fun h => isTotallyIsotropic_iff.mpr fun _ hx => (h.symm ▸ hx).1,
+    fun h => le_antisymm Q.radical_le_ker_polarBilin (Q.ker_polarBilin_le_radical_iff.mpr h)⟩
+
+omit [AddCommGroup P] [Module R P] in
+/-- When the polar kernel of a scalar-valued quadratic map lies in its radical, the induced
+quadratic form on `M ⧸ Q.polarBilin.ker` has nondegenerate polar form in every characteristic. -/
+theorem nondegenerate_polarBilin_lift_of_ker_le_radical (Q : QuadraticForm R M)
+    (hker : Q.polarBilin.ker ≤ Q.radical) :
+    (Q.lift Q.polarBilin.ker hker).polarBilin.Nondegenerate := by
+  rw [LinearMap.IsRefl.nondegenerate_iff_separatingLeft
+      (Q.lift Q.polarBilin.ker hker).isSymm_polarBilin.isRefl,
+    LinearMap.separatingLeft_iff_ker_eq_bot, ker_polarBilin_lift, Submodule.mkQ_map_self]
 
 /-- **An isometry out of a quadratic map with trivial radical is injective.** Its kernel lies in the
 radical: an element `x` killed by `f` has `Q₁ x = Q₂ 0 = 0` and `Q₁ (x + n) = Q₂ (f n) = Q₁ n`. -/

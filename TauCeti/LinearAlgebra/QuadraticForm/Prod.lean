@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.QuadraticForm.Prod
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.Projection
+public import TauCeti.LinearAlgebra.BilinearForm.Prod
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
 import TauCeti.LinearAlgebra.Prod
 
@@ -70,6 +71,10 @@ the two summands gives an orthogonal family of the orthogonal sum.
   the determinants.
 * `QuadraticMap.isOrthoᵢ_associated_prod`: orthogonal families of the summands concatenate to an
   orthogonal family of `Q₁.prod Q₂`.
+* `QuadraticMap.polarBilin_eq_prod`, `QuadraticMap.nondegenerate_polarBilin_prod_iff`,
+  `QuadraticMap.nondegenerate_polarBilin_pi_iff`: the polar form of an orthogonal product of
+  quadratic forms is the product of their polar forms, and polar nondegeneracy of a product or
+  finite `pi` sum is componentwise.
 
 ## References
 
@@ -530,5 +535,57 @@ theorem isOrthoᵢ_associated_prod {ι₁ ι₂ : Type*} {v₁ : ι₁ → M₁}
   · simpa using h₂ i j (Sum.inr.inj_iff.not.1 hij)
 
 end Orthogonal
+
+section PolarProd
+
+variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+
+/-- The polar bilinear form of an orthogonal product of quadratic forms is the block-diagonal
+product of their polar bilinear forms. -/
+theorem polarBilin_eq_prod (Q₁ : QuadraticForm R M) (Q₂ : QuadraticForm R N) :
+    (Q₁.prod Q₂).polarBilin = LinearMap.BilinForm.prod Q₁.polarBilin Q₂.polarBilin :=
+  LinearMap.ext fun ⟨x₁, x₂⟩ ↦ LinearMap.ext fun ⟨y₁, y₂⟩ ↦ by simp
+
+/-- The polar bilinear form of an orthogonal product of quadratic forms is nondegenerate exactly
+when the polar bilinear forms of both factors are nondegenerate. -/
+theorem nondegenerate_polarBilin_prod_iff {Q₁ : QuadraticForm R M} {Q₂ : QuadraticForm R N} :
+    (Q₁.prod Q₂).polarBilin.Nondegenerate ↔
+      Q₁.polarBilin.Nondegenerate ∧ Q₂.polarBilin.Nondegenerate := by
+  rw [polarBilin_eq_prod]
+  exact LinearMap.BilinForm.nondegenerate_prod_iff
+
+end PolarProd
+
+section PolarPi
+
+variable {ι R : Type*} [Fintype ι] [CommRing R] {M : ι → Type*}
+  [∀ i, AddCommGroup (M i)] [∀ i, Module R (M i)]
+
+/-- The polar bilinear form of a finite orthogonal sum of quadratic forms is nondegenerate
+exactly when the polar bilinear form of each summand is nondegenerate. -/
+theorem nondegenerate_polarBilin_pi_iff {Q : ∀ i, QuadraticForm R (M i)} :
+    (QuadraticMap.pi Q).polarBilin.Nondegenerate ↔ ∀ i, (Q i).polarBilin.Nondegenerate := by
+  classical
+  have hrefl_pi : (QuadraticMap.pi Q).polarBilin.IsRefl := fun x y h ↦ by
+    rwa [polarBilin_apply_apply, polar_comm, ← polarBilin_apply_apply]
+  have hrefl (i : ι) : (Q i).polarBilin.IsRefl := fun x y h ↦ by
+    rwa [polarBilin_apply_apply, polar_comm, ← polarBilin_apply_apply]
+  rw [LinearMap.IsRefl.nondegenerate_iff_separatingLeft hrefl_pi]
+  simp_rw [fun i ↦ LinearMap.IsRefl.nondegenerate_iff_separatingLeft (hrefl i)]
+  refine ⟨fun h i x hx ↦ ?_, fun h x hx ↦ funext fun i ↦ h i (x i) fun y ↦ ?_⟩
+  · have h0 : Pi.single i x = 0 := h (Pi.single i x) fun z ↦ by
+      rw [polarBilin_apply_apply, QuadraticMap.Ring.polar_pi,
+        Finset.sum_eq_single i (fun j _ hj ↦ ?_) (fun hi ↦ absurd (Finset.mem_univ i) hi),
+        Pi.single_eq_same, ← polarBilin_apply_apply, hx (z i)]
+      rw [Pi.single_eq_of_ne hj, polar_zero_left]
+    simpa using congrFun h0 i
+  · have hxy := hx (Pi.single i y)
+    rw [polarBilin_apply_apply, QuadraticMap.Ring.polar_pi,
+      Finset.sum_eq_single i (fun j _ hj ↦ ?_) (fun hi ↦ absurd (Finset.mem_univ i) hi),
+      Pi.single_eq_same, ← polarBilin_apply_apply] at hxy
+    · exact hxy
+    · rw [Pi.single_eq_of_ne hj, polar_zero_right]
+
+end PolarPi
 
 end QuadraticMap
