@@ -230,10 +230,7 @@ def totalSpaceSchemeBaseChangeIso :
     FiniteLocallyFreeSheaf.pullback f ⋙ totalSpaceScheme Y ≅
       totalSpaceScheme X ⋙ baseChangeAffineSchemeOver f :=
   Functor.isoWhiskerRight
-      (NatIso.ofComponents (F := FiniteLocallyFreeSheaf.pullback f ⋙ dualFunctor.rightOp)
-        (G := dualFunctor.rightOp ⋙ (FiniteLocallyFreeSheaf.pullback f).op)
-        (fun E ↦ (pullbackDualIso f E).op)
-        fun g ↦ Quiver.Hom.unop_inj (pullbackDualIso_naturality f g).symm)
+      (Functor.isoWhiskerLeft (opOp (FiniteLocallyFreeSheaf X)) (NatIso.op (pullbackDualNatIso f)))
       ((toQuasicoherent Y).op ⋙ (symmetricAlgebra Y).op ⋙ relativeSpec Y) ≪≫
     Functor.isoWhiskerLeft dualFunctor.rightOp
       (Functor.isoWhiskerRight
@@ -255,8 +252,9 @@ lemma totalSpaceSchemeBaseChangeIso_hom_app (E : FiniteLocallyFreeSheaf X) :
         (relativeSpec Y).map
           ((symmetricAlgebra Y).map ((pullbackToQuasicoherentIso f).inv.app (dual E))).op ≫
           (relativeSpecSymmetricAlgebraBaseChangeIso f).hom.app
-            (op ((toQuasicoherent X).obj (dual E))) :=
-  (rfl)
+            (op ((toQuasicoherent X).obj (dual E))) := by
+  rw [← pullbackDualNatIso_hom_app f (op E)]
+  rfl
 
 variable (E : FiniteLocallyFreeSheaf X)
 
