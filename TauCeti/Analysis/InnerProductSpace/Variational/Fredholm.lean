@@ -119,11 +119,8 @@ theorem finiteDimensional_ker_one_sub_smul_formPerturbationOperator (hB : IsCoer
     FiniteDimensional ℝ
       (LinearMap.ker
         ((1 - kappa • hB.formPerturbationOperator J : V →L[ℝ] V) : V →ₗ[ℝ] V)) := by
-  exact ContinuousLinearMap.finiteDimensional_ker_of_compact_estimate
-    (1 - kappa • hB.formPerturbationOperator J : V →L[ℝ] V)
-    (K := kappa • hB.formPerturbationOperator J)
-    ((hB.isCompactOperator_formPerturbationOperator hJ).smul kappa) (C := 1)
-    (fun x ↦ by simpa using norm_le_norm_sub_add x ((kappa • hB.formPerturbationOperator J) x))
+  exact ((hB.isCompactOperator_formPerturbationOperator hJ).smul
+    kappa).finiteDimensional_ker_one_sub
 
 /-- **The variational Fredholm alternative.**  For a compact continuous linear map `J`, either the
 homogeneous perturbation of `B` by `κ ⟪J ·, J ·⟫` has a nonzero solution, or every represented
