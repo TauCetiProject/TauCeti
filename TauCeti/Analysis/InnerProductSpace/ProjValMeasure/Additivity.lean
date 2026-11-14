@@ -8,13 +8,17 @@ module
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Basic
 
 /-!
-# Orthogonal countable splitting for projection-valued measures
+# Orthogonal countable splitting and vector operations for diagonal spectral measures
 
 The diagonal scalar measure records the squared norm of the projection of a
-Hilbert-space vector onto a measurable spectral region. For a countable
-measurable partition, these squared norms sum to the squared norm of the
-original vector. The identity applies to projection-valued measures on
-arbitrary measurable spaces.
+Hilbert-space vector onto a measurable spectral region (`enorm_sq_proj_apply`).
+For a countable measurable partition, these squared norms sum to the squared
+norm of the original vector (`tsum_enorm_sq_proj`). Because the diagonal measure
+is characterized by these squared projection norms, it vanishes at `0`
+(`diag_zero`), scales quadratically under scalar multiplication (`diag_smul`),
+satisfies the parallelogram-type subadditivity `P.diag (ξ + η) ≤ 2 • P.diag ξ + 2 • P.diag η`
+(`diag_add_le`), and restricts to `B` along `P.proj B hB` (`diag_proj`).
+The identities apply to projection-valued measures on arbitrary measurable spaces.
 
 Adapted from Kitware's DKPS formalization in
 `ForTauCeti/Analysis/InnerProductSpace/ProjValMeasure/Additivity.lean`.
@@ -60,6 +64,50 @@ theorem tsum_enorm_sq_proj (P : ProjValMeasure X H) {ι : Type*} [Countable ι]
     _ = (P.diag ξ) (⋃ k, B k) := (measure_iUnion hdisj hB).symm
     _ = (P.diag ξ) Set.univ := by rw [hcov]
     _ = ‖ξ‖ₑ ^ 2 := P.diag_univ ξ
+
+/-- The diagonal scalar measure of the zero vector is the zero measure. -/
+@[simp]
+theorem diag_zero (P : ProjValMeasure X H) : P.diag 0 = 0 := by
+  ext B hB
+  rw [← P.enorm_sq_proj_apply B hB 0]
+  simp
+
+/-- Scaling a vector by `c` scales its diagonal scalar measure by `‖c‖ₑ ^ 2`. -/
+theorem diag_smul (P : ProjValMeasure X H) (c : ℂ) (ξ : H) :
+    P.diag (c • ξ) = (‖c‖ₑ ^ 2) • P.diag ξ := by
+  ext B hB
+  rw [smul_apply, ← P.enorm_sq_proj_apply B hB (c • ξ), map_smul, eNorm_smul, mul_pow,
+    P.enorm_sq_proj_apply B hB ξ, smul_eq_mul]
+
+/-- The diagonal scalar measure of a sum is bounded by twice the sum of the two diagonal
+measures. -/
+theorem diag_add_le (P : ProjValMeasure X H) (ξ η : H) :
+    P.diag (ξ + η) ≤ (2 : ℝ≥0∞) • P.diag ξ + (2 : ℝ≥0∞) • P.diag η := by
+  refine Measure.le_iff.2 fun B hB => ?_
+  have hreal : ‖P.proj B hB (ξ + η)‖ ^ 2 ≤
+      2 * ‖P.proj B hB ξ‖ ^ 2 + 2 * ‖P.proj B hB η‖ ^ 2 := by
+    have htri : ‖P.proj B hB (ξ + η)‖ ≤ ‖P.proj B hB ξ‖ + ‖P.proj B hB η‖ := by
+      rw [map_add]
+      exact norm_add_le _ _
+    have hsq : ‖P.proj B hB (ξ + η)‖ ^ 2 ≤ (‖P.proj B hB ξ‖ + ‖P.proj B hB η‖) ^ 2 :=
+      pow_le_pow_left₀ (norm_nonneg _) htri 2
+    nlinarith [sq_nonneg (‖P.proj B hB ξ‖ - ‖P.proj B hB η‖)]
+  have henn : ENNReal.ofReal (‖P.proj B hB (ξ + η)‖ ^ 2) ≤
+      ENNReal.ofReal (2 * ‖P.proj B hB ξ‖ ^ 2 + 2 * ‖P.proj B hB η‖ ^ 2) :=
+    ENNReal.ofReal_le_ofReal hreal
+  rw [ENNReal.ofReal_add (by positivity) (by positivity),
+    ENNReal.ofReal_mul zero_le_two, ENNReal.ofReal_mul zero_le_two, ENNReal.ofReal_ofNat] at henn
+  simpa only [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm, P.enorm_sq_proj_apply _ hB,
+    add_apply, smul_apply, smul_eq_mul] using henn
+
+/-- Applying a measurable-set projection restricts the diagonal scalar measure to that set. -/
+@[simp]
+theorem diag_proj (P : ProjValMeasure X H) (B : Set X) (hB : MeasurableSet B) (ξ : H) :
+    P.diag (P.proj B hB ξ) = (P.diag ξ).restrict B := by
+  ext C hC
+  rw [Measure.restrict_apply hC, ← P.enorm_sq_proj_apply C hC,
+    ← mul_apply_eq_comp, P.proj_inter C B hC hB,
+    P.enorm_sq_proj_apply (C ∩ B) (hC.inter hB) ξ]
 
 end ProjValMeasure
 end TauCeti

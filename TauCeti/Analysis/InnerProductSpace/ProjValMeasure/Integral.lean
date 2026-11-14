@@ -53,6 +53,8 @@ continuous extension `LinearMap.extendOfNorm`.
 * `ProjValMeasure.norm_integral_le`: a pointwise bound on the symbol bounds the operator norm.
 * `ProjValMeasure.norm_sq_integral_apply`: the vector norm identity
   `‖(∫ f dP) ξ‖ ^ 2 = ∫ ‖f x‖ ^ 2 d(P.diag ξ)(x)`.
+* `ProjValMeasure.diag_integral`: the diagonal measure of `(∫ f dP) ξ` is `P.diag ξ` with density
+  `x ↦ ‖f x‖ₑ ^ 2`.
 * `ProjValMeasure.integral_apply_eq_zero_iff`: `(∫ f dP) ξ = 0` iff `f = 0` almost everywhere
   for `P.diag ξ`.
 
@@ -68,7 +70,7 @@ public section
 noncomputable section
 
 open MeasureTheory Filter Topology
-open scoped InnerProductSpace
+open scoped InnerProductSpace ENNReal
 
 namespace TauCeti
 namespace ProjValMeasure
@@ -341,6 +343,39 @@ theorem integral_apply_eq_zero_iff (P : ProjValMeasure X H) (f : BoundedBorelFun
   rw [← norm_eq_zero, ← pow_eq_zero_iff (n := 2) two_ne_zero, norm_sq_integral_apply,
     integral_eq_zero_iff_of_nonneg (fun x => by positivity) hint]
   simp [EventuallyEq]
+
+/-- The diagonal measure of `(∫ g dP) ξ` is `P.diag ξ` weighted by `x ↦ ‖g x‖ₑ ^ 2`. -/
+@[simp]
+theorem diag_integral (P : ProjValMeasure X H) (g : BoundedBorelFunction X) (ξ : H) :
+    P.diag (P.integral g ξ) = (P.diag ξ).withDensity fun x => ‖g x‖ₑ ^ 2 := by
+  have hint : Integrable (fun x => ‖g x‖ ^ 2) (P.diag ξ) :=
+    .of_bound (g.measurable.norm.pow_const 2).aestronglyMeasurable (‖g‖ ^ 2)
+      (Eventually.of_forall fun x => by
+        rw [Real.norm_of_nonneg (by positivity)]
+        exact pow_le_pow_left₀ (norm_nonneg _) (g.norm_coe_le_norm x) 2)
+  ext B hB
+  have hmul :
+      BoundedBorelFunction.indicator B hB 1 * g = BoundedBorelFunction.indicator B hB g := by
+    ext x
+    by_cases hx : x ∈ B <;> simp [hx]
+  have hproj :
+      P.proj B hB (P.integral g ξ) = P.integral (BoundedBorelFunction.indicator B hB g) ξ := by
+    rw [← P.integral_indicator hB, ← mul_apply_eq_comp, ← map_mul, hmul]
+  have hind : (fun x => ‖BoundedBorelFunction.indicator B hB g x‖ ^ 2) =
+      B.indicator fun x => ‖g x‖ ^ 2 := by
+    ext x
+    by_cases hx : x ∈ B <;> simp [hx]
+  calc
+    P.diag (P.integral g ξ) B = ENNReal.ofReal ((P.diag (P.integral g ξ) B).toReal) :=
+      (ENNReal.ofReal_toReal (measure_ne_top _ _)).symm
+    _ = ENNReal.ofReal (∫ x in B, ‖g x‖ ^ 2 ∂(P.diag ξ)) := by
+      rw [← P.norm_sq_proj_apply B hB, hproj, P.norm_sq_integral_apply, hind,
+        MeasureTheory.integral_indicator hB]
+    _ = ∫⁻ x in B, ‖g x‖ₑ ^ 2 ∂(P.diag ξ) := by
+      rw [ofReal_integral_eq_lintegral_ofReal hint.integrableOn (ae_of_all _ fun _ => sq_nonneg _)]
+      refine lintegral_congr fun x => ?_
+      rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
+    _ = ((P.diag ξ).withDensity fun x => ‖g x‖ₑ ^ 2) B := (withDensity_apply _ hB).symm
 
 end ProjValMeasure
 end TauCeti

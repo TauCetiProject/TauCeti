@@ -33,6 +33,14 @@ against `μ_(ξ,ξ)` gives the Bochner integral against `P.diag ξ`.
   `⟪ψ, (∫ f dP) ξ⟫` is the integral of `f` against `μ_(ψ,ξ)`.
 * `ProjValMeasure.integral_polarizedComplexMeasure_self`: integration of any `f : X → ℂ` against
   `μ_(ξ,ξ)` is the Bochner integral against `P.diag ξ`.
+* `ProjValMeasure.polarizedComplexMeasure_integral_right` and
+  `ProjValMeasure.polarizedComplexMeasure_integral_left`: applying `∫ g dP` to either vector
+  weights `μ_(ψ,ξ)` by `g` or `star g`.
+* `ProjValMeasure.polarizedComplexMeasure_proj_right` and
+  `ProjValMeasure.polarizedComplexMeasure_proj_left`: applying `P(B)` to either vector restricts
+  `μ_(ψ,ξ)` to `B`.
+* `ProjValMeasure.lintegral_enorm_variation_polarizedComplexMeasure_le`: the `L¹` variation norm of
+  a bounded Borel symbol `g` against `|μ_(ψ,ξ)|` is bounded by `‖ψ‖ * ‖(∫ g dP) ξ‖`.
 
 ## References
 
@@ -44,7 +52,7 @@ against `μ_(ξ,ξ)` gives the Bochner integral against `P.diag ξ`.
 public section
 
 open MeasureTheory Filter Topology
-open scoped InnerProductSpace
+open scoped InnerProductSpace ENNReal
 
 namespace TauCeti
 namespace ProjValMeasure
@@ -109,6 +117,71 @@ theorem integral_polarizedComplexMeasure_self (P : ProjValMeasure X H) (f : X �
     ∫ᵛ x, f x ∂[ContinuousLinearMap.mul ℝ ℂ; P.polarizedComplexMeasure ξ ξ] =
       ∫ x, f x ∂(P.diag ξ) := by
   rw [polarizedComplexMeasure_self_eq_withDensityᵥ, VectorMeasure.integral_mul_withDensityᵥ_one]
+
+/-- Applying `∫ g dP` in the linear argument weights the polarized complex measure by `g`. -/
+theorem polarizedComplexMeasure_integral_right (P : ProjValMeasure X H)
+    (g : BoundedBorelFunction X) (ψ ξ : H) :
+    P.polarizedComplexMeasure ψ (P.integral g ξ) =
+      (P.polarizedComplexMeasure ψ ξ).withDensity g (ContinuousLinearMap.mul ℝ ℂ) := by
+  ext B hB
+  have hmul :
+      BoundedBorelFunction.indicator B hB 1 * g = BoundedBorelFunction.indicator B hB g := by
+    ext x
+    by_cases hx : x ∈ B <;> simp [hx]
+  rw [P.polarizedComplexMeasure_apply ψ (P.integral g ξ) B hB, ← P.integral_indicator hB,
+    ← mul_apply_eq_comp, ← map_mul, hmul,
+    ← P.integral_polarizedComplexMeasure_eq_inner_integral,
+    BoundedBorelFunction.coe_indicator, VectorMeasure.integral_indicator hB,
+    VectorMeasure.withDensity_apply (g.integrable _)]
+
+/-- Applying `∫ g dP` in the conjugate-linear argument weights the polarized complex measure by
+`star g`. -/
+theorem polarizedComplexMeasure_integral_left (P : ProjValMeasure X H)
+    (g : BoundedBorelFunction X) (ψ ξ : H) :
+    P.polarizedComplexMeasure (P.integral g ψ) ξ =
+      (P.polarizedComplexMeasure ψ ξ).withDensity (star g) (ContinuousLinearMap.mul ℝ ℂ) := by
+  have heq : P.polarizedComplexMeasure (P.integral g ψ) ξ =
+      P.polarizedComplexMeasure ψ (P.integral (star g) ξ) := by
+    ext B hB
+    rw [P.polarizedComplexMeasure_apply _ _ B hB, P.polarizedComplexMeasure_apply _ _ B hB,
+      ← ContinuousLinearMap.adjoint_inner_right, ← ContinuousLinearMap.star_eq_adjoint,
+      ← map_star, ← mul_apply_eq_comp, ← P.integral_indicator hB, ← map_mul,
+      mul_comm, map_mul, P.integral_indicator hB, mul_apply_eq_comp]
+  rw [heq, P.polarizedComplexMeasure_integral_right (star g) ψ ξ, BoundedBorelFunction.coe_star]
+
+/-- Applying `P(B)` in the linear argument restricts the polarized complex measure to `B`. -/
+@[simp]
+theorem polarizedComplexMeasure_proj_right (P : ProjValMeasure X H) (B : Set X)
+    (hB : MeasurableSet B) (ψ ξ : H) :
+    P.polarizedComplexMeasure ψ (P.proj B hB ξ) = (P.polarizedComplexMeasure ψ ξ).restrict B := by
+  ext C hC
+  rw [VectorMeasure.restrict_apply _ hB hC, P.polarizedComplexMeasure_apply _ _ C hC,
+    ← mul_apply_eq_comp, P.proj_inter C B hC hB,
+    P.polarizedComplexMeasure_apply _ _ (C ∩ B) (hC.inter hB)]
+
+/-- Applying `P(B)` in the conjugate-linear argument restricts the polarized complex measure to
+`B`. -/
+@[simp]
+theorem polarizedComplexMeasure_proj_left (P : ProjValMeasure X H) (B : Set X)
+    (hB : MeasurableSet B) (ψ ξ : H) :
+    P.polarizedComplexMeasure (P.proj B hB ψ) ξ = (P.polarizedComplexMeasure ψ ξ).restrict B := by
+  ext C hC
+  rw [VectorMeasure.restrict_apply _ hB hC, P.polarizedComplexMeasure_apply _ _ C hC,
+    ← ContinuousLinearMap.adjoint_inner_right, (P.isSelfAdjoint_proj B hB).adjoint_eq,
+    ← mul_apply_eq_comp, P.proj_inter B C hB hC,
+    P.proj_congr (Set.inter_comm B C) (hB.inter hC) (hC.inter hB),
+    P.polarizedComplexMeasure_apply _ _ (C ∩ B) (hC.inter hB)]
+
+/-- For a bounded Borel symbol `g`, the lower Lebesgue integral of `‖g‖ₑ` against the variation of
+`μ_(ψ,ξ)` is bounded by `‖ψ‖ * ‖(∫ g dP) ξ‖`. -/
+theorem lintegral_enorm_variation_polarizedComplexMeasure_le (P : ProjValMeasure X H)
+    (g : BoundedBorelFunction X) (ψ ξ : H) :
+    ∫⁻ t, ‖g t‖ₑ ∂(P.polarizedComplexMeasure ψ ξ).variation ≤
+      ENNReal.ofReal (‖ψ‖ * ‖P.integral g ξ‖) := by
+  have hvar := P.polarizedComplexMeasure_variation_univ_le ψ (P.integral g ξ)
+  rwa [P.polarizedComplexMeasure_integral_right g ψ ξ,
+    VectorMeasure.variation_withDensity_mul (g.integrable _),
+    withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ] at hvar
 
 end ProjValMeasure
 end TauCeti
