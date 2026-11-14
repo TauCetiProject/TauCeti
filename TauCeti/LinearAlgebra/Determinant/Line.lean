@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Dual.Lemmas
+public import Mathlib.LinearAlgebra.Ray
 public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 public import TauCeti.LinearAlgebra.ExteriorPower.Invertible
 public import TauCeti.LinearAlgebra.LinearMap.Ker
@@ -60,18 +61,22 @@ the linear algebra itself is standard.
 * `LinearMap.detLineCongrKerCoker`: the isomorphism of determinant lines induced by isomorphisms
   of kernels and of cokernels.
 * `LinearMap.detLineCongr`: transport of determinant lines along a commuting square.
+* `LinearMap.instNegRayDetLine`, `LinearMap.instInvolutiveNegRayDetLine`: the opposite orientation
+  of the determinant line of `f`, as `Module.Ray`'s negation, found by instance search.
 
 ## Main results
 
-* `TauCeti.finrank_detLine`: the determinant line of a finite free module has rank one.
+* `TauCeti.finrank_detLine`: the determinant line of a free module has rank one (for a module that
+  is not finite, by the `finrank = 0` convention).
 * `TauCeti.instInvertibleDetLine`: the determinant line of a finite free module is an invertible
   module.
 * `LinearEquiv.detLineCongr_refl`, `LinearEquiv.detLineCongr_trans`,
   `LinearEquiv.detLineCongr_symm`: the induced isomorphisms are functorial.
 * `LinearEquiv.detLineCongr_apply_eq_det_smul`: an automorphism acts on the determinant line by
   its determinant.
-* `LinearMap.finrank_detLine`: the determinant line of a linear map between vector spaces with
-  finite-dimensional kernel and cokernel has dimension one.
+* `LinearMap.finrank_detLine`: the determinant line of a linear map between vector spaces has
+  dimension one (for an infinite-dimensional kernel or cokernel, by the `finrank = 0`
+  convention).
 * `LinearMap.detLineCongr_refl`, `LinearMap.detLineCongr_trans` and `LinearMap.detLineCongr_symm`:
   transport along commuting squares is functorial.
 * `LinearMap.detLineCongr_apply_eq_det_smul`: automorphisms of source and target act on the
@@ -112,10 +117,16 @@ variable (R : Type*) [CommRing R] (V : Type*) [AddCommGroup V] [Module R V]
 finite free module it is free of rank one (`TauCeti.finrank_detLine`). -/
 abbrev detLine : Type _ := ⋀[R]^(finrank R V) V
 
-/-- The determinant line of a finite free module has rank one. -/
-theorem finrank_detLine [Nontrivial R] [Module.Free R V] [Module.Finite R V] :
+/-- The determinant line of a free module has rank one. For a module that is not finite, `finrank`
+is `0` by convention and the determinant line is `⋀⁰ V ≃ R`. -/
+theorem finrank_detLine [Nontrivial R] [Module.Free R V] :
     finrank R (detLine R V) = 1 := by
-  simp [detLine]
+  by_cases hV : Module.Finite R V
+  · simp [detLine]
+  · have h : finrank R V = 0 := Module.finrank_of_not_finite hV
+    unfold detLine
+    rw [h]
+    exact (exteriorPower.zeroEquiv R V).finrank_eq.trans (Module.finrank_self R)
 
 /-- The determinant line of a finite free module is an invertible module, so that it cancels
 against its dual: `det V ⊗ (det V)^* ≃ R` (`Module.Invertible.linearEquiv`). -/
@@ -484,13 +495,36 @@ section Field
 variable {K : Type*} [Field K] {M N : Type*} [AddCommGroup M] [Module K M]
   [AddCommGroup N] [Module K N]
 
-/-- The determinant line of a linear map with finite-dimensional kernel and cokernel is a line. -/
-theorem finrank_detLine (f : M →ₗ[K] N) [FiniteDimensional K (ker f)]
-    [FiniteDimensional K (N ⧸ range f)] : finrank K f.detLine = 1 := by
+/-- The determinant line of a linear map between vector spaces is a line. When the kernel is not
+finite-dimensional, its determinant line is `⋀[K]^0 (ker f) ≃ K` by the `finrank` convention, and
+likewise for the cokernel. -/
+theorem finrank_detLine (f : M →ₗ[K] N) :
+    finrank K f.detLine = 1 := by
   rw [finrank_tensorProduct, Subspace.dual_finrank_eq, TauCeti.finrank_detLine,
     TauCeti.finrank_detLine]
 
 end Field
+
+section Orientation
+
+variable {R : Type*} [CommRing R] [PartialOrder R] [IsStrictOrderedRing R] {M N : Type*}
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+
+/-- Negation of orientations of the determinant line of `f`, sending an orientation to the opposite
+one. This is `Module.Ray`'s negation; instance search does not find it unaided, since it reaches
+the additive group structure of the tensor product `f.detLine` only through nested
+unification. -/
+instance instNegRayDetLine (f : M →ₗ[R] N) : Neg (Module.Ray R f.detLine) :=
+  @instNegRay R _ _ _ f.detLine TensorProduct.addCommGroup _
+
+/-- Negation of orientations of the determinant line of `f` is involutive. This is `Module.Ray`'s
+involutive negation, supplied for the same reason as `LinearMap.instNegRayDetLine`, so that
+`neg_neg` applies to orientations of determinant lines. -/
+instance instInvolutiveNegRayDetLine (f : M →ₗ[R] N) :
+    InvolutiveNeg (Module.Ray R f.detLine) :=
+  @Module.Ray.instInvolutiveNeg R _ _ _ f.detLine TensorProduct.addCommGroup _
+
+end Orientation
 
 end LinearMap
 

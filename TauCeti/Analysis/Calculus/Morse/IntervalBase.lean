@@ -336,7 +336,7 @@ theorem lipschitzOnWith_neg_gradient_intervalBasePotential (C : ℝ) :
     rw [abs_le]
     constructor <;> nlinarith
   simp only [gradient_intervalBasePotential, dist_eq_norm, Real.norm_eq_abs, NNReal.coe_mul,
-    NNReal.coe_ofNat, coe_nnnorm]
+    NNReal.coe_ofNat, coe_nnNorm]
   have hdiff : -(C * a * (a ^ 2 - 1)) - -(C * b * (b ^ 2 - 1)) =
       C * (a - b) * (1 - (a ^ 2 + a * b + b ^ 2)) := by ring
   rw [hdiff, abs_mul, abs_mul]
