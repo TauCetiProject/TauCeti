@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeD.ForkCorner
-import all TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeD.Basic
 import TauCeti.RepresentationTheory.Quiver.Representation.AsModule
 
 /-!
