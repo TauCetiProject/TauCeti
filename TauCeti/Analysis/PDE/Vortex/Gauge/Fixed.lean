@@ -32,6 +32,10 @@ front of the three rows of `linearizedEquation`, and `gaugeFixedAdjoint` is its 
 ## Main results
 
 * `gaugeAdjoint_gaugeDirection`: `d₀* d₀ f = -Δ f + (|α|² / 4) f` pointwise, at every field.
+* `gaugeFixedOperator_fun_smul` and `gaugeFixedAdjoint_fun_smul`: the Leibniz rules of `L_x` and
+  `L_x*` for a real weight, whose commutators are the principal symbols
+  `gaugeFixedOperatorSymbol` and `gaugeFixedAdjointSymbol`; both symbols scale norms by the norm
+  of the covector (`norm_sq_gaugeFixedOperatorSymbol`, `norm_sq_gaugeFixedAdjointSymbol`).
 * `gaugeFixedOperator_gaugeFixedAdjoint`: the pointwise Weitzenböck formula for `L_x L_x*` at
   every field, with the vortex defects `equation x` appearing explicitly. In complex notation,
   with `φ = α / 2`, `η = (ξ, ζ)`, `∇ = d + a` and the complex defect `E = ∂bar_a α`, it reads
@@ -323,6 +327,88 @@ theorem gaugeFixedAdjoint_fun_smul (x : ℂ → EuclideanSpace ℝ (Fin 4))
   fin_cases i <;>
     simp [gaugeFixedAdjoint_apply_zero, gaugeFixedAdjoint_apply_one,
       gaugeFixedAdjoint_apply_two, gaugeFixedAdjoint_apply_three, hd] <;> ring
+
+/-- The principal symbol of the gauge-fixed vortex operator, acting on a real covector and a field
+value. It is independent of the vortex coefficients. -/
+def gaugeFixedOperatorSymbol (d : ℂ →L[ℝ] ℝ) (v : EuclideanSpace ℝ (Fin 4)) :
+    EuclideanSpace ℝ (Fin 4) :=
+  !₂[d 1 * v 0 + d I * v 1, d I * v 0 - d 1 * v 1, d 1 * v 2 - d I * v 3, d 1 * v 3 + d I * v 2]
+
+/-- Coordinate formula for the principal symbol of the gauge-fixed operator. -/
+theorem gaugeFixedOperatorSymbol_def (d : ℂ →L[ℝ] ℝ) (v : EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedOperatorSymbol d v =
+      !₂[d 1 * v 0 + d I * v 1, d I * v 0 - d 1 * v 1, d 1 * v 2 - d I * v 3,
+        d 1 * v 3 + d I * v 2] := (rfl)
+
+/-- The first connection component of the operator symbol. -/
+@[simp]
+theorem gaugeFixedOperatorSymbol_apply_zero (d : ℂ →L[ℝ] ℝ)
+    (v : EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedOperatorSymbol d v 0 = d 1 * v 0 + d I * v 1 := (rfl)
+
+/-- The second connection component of the operator symbol. -/
+@[simp]
+theorem gaugeFixedOperatorSymbol_apply_one (d : ℂ →L[ℝ] ℝ)
+    (v : EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedOperatorSymbol d v 1 = d I * v 0 - d 1 * v 1 := (rfl)
+
+/-- The real section component of the operator symbol. -/
+@[simp]
+theorem gaugeFixedOperatorSymbol_apply_two (d : ℂ →L[ℝ] ℝ)
+    (v : EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedOperatorSymbol d v 2 = d 1 * v 2 - d I * v 3 := (rfl)
+
+/-- The imaginary section component of the operator symbol. -/
+@[simp]
+theorem gaugeFixedOperatorSymbol_apply_three (d : ℂ →L[ℝ] ℝ)
+    (v : EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedOperatorSymbol d v 3 = d 1 * v 3 + d I * v 2 := (rfl)
+
+/-- The symbol of the gauge-fixed operator preserves squared norms up to the squared covector
+norm. -/
+theorem norm_sq_gaugeFixedOperatorSymbol (d : ℂ →L[ℝ] ℝ) (v : EuclideanSpace ℝ (Fin 4)) :
+    ‖gaugeFixedOperatorSymbol d v‖ ^ 2 = ‖d‖ ^ 2 * ‖v‖ ^ 2 := by
+  rw [orthonormalBasisOneI.norm_dual]
+  simp [gaugeFixedOperatorSymbol_def, EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four,
+    Fin.sum_univ_two, coe_orthonormalBasisOneI]
+  ring
+
+/-- The operator symbol commutes with real scaling of the covector. -/
+@[simp]
+theorem gaugeFixedOperatorSymbol_smul_left (r : ℝ) (d : ℂ →L[ℝ] ℝ)
+    (v : EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedOperatorSymbol (r • d) v = r • gaugeFixedOperatorSymbol d v := by
+  ext i
+  fin_cases i <;> simp <;> ring
+
+/-- The operator symbol commutes with real scaling of the field value. -/
+@[simp]
+theorem gaugeFixedOperatorSymbol_smul_right (d : ℂ →L[ℝ] ℝ) (r : ℝ)
+    (v : EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedOperatorSymbol d (r • v) = r • gaugeFixedOperatorSymbol d v := by
+  ext i
+  fin_cases i <;> simp <;> ring
+
+/-- The Leibniz rule of the gauge-fixed operator for a real weight, with its exact symbol
+commutator. -/
+theorem gaugeFixedOperator_fun_smul (x : ℂ → EuclideanSpace ℝ (Fin 4))
+    {y : ℂ → EuclideanSpace ℝ (Fin 4)} {w : ℂ → ℝ} {z : ℂ}
+    (hw : DifferentiableAt ℝ w z) (hy : DifferentiableAt ℝ y z) :
+    gaugeFixedOperator x (fun t ↦ w t • y t) z =
+      w z • gaugeFixedOperator x y z + gaugeFixedOperatorSymbol (fderiv ℝ w z) (y z) := by
+  have hyi (i : Fin 4) : DifferentiableAt ℝ (fun t ↦ y t i) z :=
+    (EuclideanSpace.proj (𝕜 := ℝ) i).differentiableAt.comp z hy
+  have hd (i : Fin 4) (v : ℂ) :
+      fderiv ℝ (fun t ↦ w t * y t i) z v =
+        fderiv ℝ w z v * y z i + w z * fderiv ℝ (fun t ↦ y t i) z v := by
+    rw [fderiv_fun_mul hw (hyi i)]
+    simp only [add_apply, smul_apply, smul_eq_mul]
+    ring
+  ext i
+  fin_cases i <;>
+    simp [gaugeFixedOperatorSymbol_def, gaugeFixedOperator_apply_zero,
+      gaugeFixedOperator_apply_one, gaugeFixedOperator_apply_two, gaugeFixedOperator_apply_three,
+      hd] <;> ring
 
 /-- **The gauge Laplacian**: at every field, `d₀* d₀ f = -Δ f + (|α|² / 4) f`, where
 `|α|² / 4 = p² + q²`. No regularity of the field is needed. -/

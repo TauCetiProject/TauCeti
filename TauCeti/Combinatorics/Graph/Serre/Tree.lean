@@ -19,8 +19,9 @@ An acyclic graph has no loop, hence no dart at all when it has at most one verte
 restriction `Γ.restrict S hS` is acyclic exactly when no nonempty reduced closed path of `Γ` has
 all its darts in `S`.
 
-The one-vertex graph without edges and the segment are trees. A rose with a petal is not a tree,
-since its petal is a reduced loop.
+A graph without darts, such as the graph `noEdge V` without edges, is acyclic, and it is a tree
+exactly when it has one vertex. A graph without vertices is not a tree. The segment is a tree.
+A rose with a petal is not a tree, since its petal is a reduced loop.
 
 ## References
 
@@ -122,6 +123,23 @@ theorem isTree_iff_existsUnique_isReduced : Γ.IsTree ↔
     ?_⟩
   exact (Γ.isAcyclic_iff_eq_of_isReduced).mpr fun a b p q hp hq => (h a b).unique hp hq
 
+/-- A Serre graph without darts is acyclic: its only closed paths are empty. -/
+theorem isAcyclic_of_isEmpty_dart [IsEmpty Γ.E] : Γ.IsAcyclic := by
+  refine (isAcyclic_iff Γ).mpr fun u p _ => ?_
+  cases p with
+  | nil => rfl
+  | cons p e => exact isEmptyElim e.1
+
+/-- A Serre graph without darts is a tree exactly when it has exactly one vertex. -/
+theorem isTree_iff_of_isEmpty_dart [IsEmpty Γ.E] :
+    Γ.IsTree ↔ Nonempty Γ.V ∧ Subsingleton Γ.V := by
+  rw [isTree_iff, Γ.connected_iff_of_forall_src_eq_tgt isEmptyElim,
+    and_iff_left Γ.isAcyclic_of_isEmpty_dart]
+
+/-- A Serre graph without vertices is not a tree: a tree is connected. -/
+theorem not_isTree_of_isEmpty [IsEmpty Γ.V] : ¬Γ.IsTree :=
+  fun h => Γ.not_connected_of_isEmpty h.connected
+
 section Restrict
 
 variable (S : Set Γ.E) (hS : ∀ e ∈ S, Γ.rev e ∈ S)
@@ -144,27 +162,22 @@ theorem isAcyclic_restrict_iff : (Γ.restrict S hS).IsAcyclic ↔
 
 /-- The restriction to the empty set of darts is acyclic. -/
 theorem isAcyclic_restrict_empty : (Γ.restrict ∅ fun _ h => h.elim).IsAcyclic :=
-  (Γ.isAcyclic_restrict_iff _ _).mpr fun _ p _ hp => Quiver.Path.eq_nil_of_length_zero _ (by
-    rw [← Path.length_darts, List.eq_nil_iff_forall_not_mem.mpr fun e he => hp e he,
-      List.length_nil])
+  isAcyclic_of_isEmpty_dart _
 
 end Restrict
 
+/-- A graph without edges is acyclic. -/
+@[simp] theorem noEdge_isAcyclic {V : Type u} : (noEdge.{u, v} V).IsAcyclic :=
+  isAcyclic_of_isEmpty_dart _
+
+/-- A graph without edges is a tree exactly when it has exactly one vertex. -/
+@[simp] theorem noEdge_isTree_iff {V : Type u} :
+    (noEdge.{u, v} V).IsTree ↔ Nonempty V ∧ Subsingleton V :=
+  isTree_iff_of_isEmpty_dart _
+
 /-- The graph with one vertex and no edges is a tree. -/
-theorem single_vertex_isTree : point.{u, v}.IsTree := by
-  rw [isTree_iff]
-  refine ⟨?_, ?_⟩
-  · rw [point.{u, v}.connected_iff]
-    refine ⟨⟨PUnit.unit⟩, ?_⟩
-    rw [point.{u, v}.preconnected_iff]
-    intro u v
-    cases u
-    cases v
-    exact ⟨(@Quiver.Path.nil point.{u, v}.V point.{u, v}.toQuiver PUnit.unit)⟩
-  · intro u p _
-    cases p with
-    | nil => rfl
-    | cons p e => exact e.1.elim
+theorem single_vertex_isTree : (noEdge.{u, v} PUnit).IsTree :=
+  noEdge_isTree_iff.mpr ⟨inferInstance, inferInstance⟩
 
 /-- The segment, two vertices joined by a single pair of darts, is a tree. -/
 theorem segment_isTree : segment.IsTree := by

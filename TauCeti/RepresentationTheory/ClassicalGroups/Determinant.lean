@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
-public import TauCeti.RepresentationTheory.CharacterTwist
+public import TauCeti.RepresentationTheory.Character.Twist
 
 /-!
 # Determinant-power representations of the general linear group

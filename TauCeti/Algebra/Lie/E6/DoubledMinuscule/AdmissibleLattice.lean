@@ -39,6 +39,8 @@ Here the representation is the doubled one, with the contragredient block `V(ϖ�
 * `TauCeti.E6DoubledMinuscule.isSl2Triple_rep_serreRootGenerator`: the represented generators at
   every node form an `sl₂` triple.
 * `TauCeti.E6DoubledMinuscule.lattice`: the coordinate `ℤ`-lattice.
+* `TauCeti.E6DoubledMinuscule.matrixBasis` and `TauCeti.E6DoubledMinuscule.matrixWeight`: its
+  basis and weights in the fifty-four matrix coordinates.
 * `TauCeti.E6DoubledMinuscule.rep_serreKostantForm_mem_lattice`: the Serre Kostant form preserves
   the lattice.
 
@@ -246,6 +248,10 @@ theorem isSl2Triple_rep_serreRootGenerator (i : Fin 6) :
 noncomputable def lattice : Submodule ℤ ((Fin 27 ⊕ Fin 27) → ℚ) :=
   TauCeti.coordinateLattice (Fin 27 ⊕ Fin 27)
 
+/-- The doubled minuscule coordinate lattice is finitely generated and spans the rational module. -/
+instance instIsLatticeLattice : Submodule.IsLattice ℚ lattice where
+  __ := TauCeti.instIsLatticeCoordinateLattice (Fin 27 ⊕ Fin 27)
+
 /-- A vector belongs to the doubled minuscule lattice exactly when every coordinate is integral. -/
 @[simp]
 theorem mem_lattice_iff {v : (Fin 27 ⊕ Fin 27) → ℚ} :
@@ -314,5 +320,64 @@ theorem rep_serreKostantForm_mem_lattice
     (TauCeti.serreH ℚ (CartanMatrix.E 6)ᵀ) rep
     (wt := e6DoubledMinusculeWeight) rep_serreRootGenerator_sq
     (fun k _ hw ↦ rep_serreRootGenerator_mem_lattice k hw) isCartanWeightVector_single hu hv
+
+/-! ## The fifty-four matrix coordinates -/
+
+/-- The order in which the two minuscule blocks are laid out along the matrix coordinates of the
+doubled carrier: `finSumFinEquiv` after the numeral identification `27 + 27 = 54`, so that the
+twenty-seven coordinates of `V(ϖ₁)` come first and the twenty-seven coordinates of `V(ϖ₆)` after
+them. -/
+def matrixIndexEquiv : Fin 27 ⊕ Fin 27 ≃ Fin 54 :=
+  finSumFinEquiv.trans (finCongr (by norm_num))
+
+/-- The `V(ϖ₁)` block occupies the first twenty-seven matrix coordinates. -/
+@[simp]
+theorem val_matrixIndexEquiv_inl (a : Fin 27) : (matrixIndexEquiv (.inl a) : ℕ) = a := by
+  simp only [matrixIndexEquiv, Equiv.trans_apply, finSumFinEquiv_apply_left, finCongr_apply,
+    Fin.val_cast, Fin.val_castAdd]
+
+/-- The `V(ϖ₆)` block occupies the last twenty-seven matrix coordinates. -/
+@[simp]
+theorem val_matrixIndexEquiv_inr (a : Fin 27) : (matrixIndexEquiv (.inr a) : ℕ) = 27 + a := by
+  simp only [matrixIndexEquiv, Equiv.trans_apply, finSumFinEquiv_apply_right, finCongr_apply,
+    Fin.val_cast, Fin.val_natAdd]
+
+/-- The admissible doubled minuscule lattice basis, read in the fifty-four matrix coordinates. -/
+noncomputable def matrixBasis : Module.Basis (Fin 54) ℤ lattice :=
+  latticeBasis.reindex matrixIndexEquiv
+
+/-- The matrix-coordinate basis vector at `a` is the block-coordinate one at the block index that
+`matrixIndexEquiv` places at `a`. -/
+@[simp]
+theorem matrixBasis_apply (a : Fin 54) :
+    matrixBasis a = latticeBasis (matrixIndexEquiv.symm a) := by
+  rw [matrixBasis, Module.Basis.reindex_apply]
+
+/-- The fifty-four weights of `V(ϖ₁) ⊕ V(ϖ₆)`, read in the fifty-four matrix coordinates. -/
+def matrixWeight : Fin 54 → Fin 6 → ℤ :=
+  e6DoubledMinusculeWeight ∘ matrixIndexEquiv.symm
+
+/-- The weight at the matrix coordinate `a` is the doubled minuscule weight at the block index
+that `matrixIndexEquiv` places at `a`. -/
+@[simp]
+theorem matrixWeight_apply (a : Fin 54) :
+    matrixWeight a = e6DoubledMinusculeWeight (matrixIndexEquiv.symm a) :=
+  (rfl)
+
+/-- Every matrix-coordinate basis vector has its named Cartan weight. -/
+theorem isCartanWeightVector_matrixBasis (a : Fin 54) :
+    TauCeti.UniversalEnvelopingAlgebra.IsCartanWeightVector
+      (TauCeti.serreH ℚ (CartanMatrix.E 6)ᵀ) rep (matrixWeight a)
+      ((matrixBasis a : lattice) : (Fin 27 ⊕ Fin 27) → ℚ) := by
+  rw [matrixBasis_apply, matrixWeight_apply]
+  exact isCartanWeightVector_latticeBasis _
+
+/-- **The doubled minuscule weights span the full type-`E₆` character lattice.** Reordering the
+weight family along `matrixIndexEquiv` does not change its range, so this is
+`TauCeti.DynkinType.span_range_e6DoubledMinusculeWeight_eq_top`. -/
+theorem span_range_matrixWeight_eq_top :
+    Submodule.span ℤ (Set.range matrixWeight) = ⊤ := by
+  rw [matrixWeight, matrixIndexEquiv.symm.surjective.range_comp]
+  exact span_range_e6DoubledMinusculeWeight_eq_top
 
 end TauCeti.E6DoubledMinuscule

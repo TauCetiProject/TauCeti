@@ -54,6 +54,10 @@ route to Morse homology.
   intervals.
 * `IsIntegralCurveOn.integral_norm_gradient_sq_eq_sub` and
   `IsIntegralCurve.integral_norm_gradient_sq_eq_sub`: the energy identity.
+* `IsIntegralCurveOn.intervalIntegrable_norm_gradient`: the speed is integrable on compact time
+  intervals.
+* `IsIntegralCurveOn.mul_sq_le_sub_of_le_norm_gradient`: a lower bound `κ` on the speed during a
+  time interval of length `ℓ` makes `f` drop by at least `ℓ κ²`.
 * `IsIntegralCurve.gradient_eq_zero_of_eventually_const_value`: a trajectory on which
   `f` is eventually constant passes through critical points.
 * `IsIntegralCurve.gradient_eq_zero_of_periodic` and
@@ -176,6 +180,36 @@ theorem integral_norm_gradient_sq_eq_sub
     (fun t ht ↦ (hd t ht).continuousWithinAt)
     (fun t ht ↦ ((hd t ⟨ht.1.le, ht.2.le⟩).hasDerivAt (Icc_mem_nhds ht.1 ht.2)).hasDerivWithinAt)
     (intervalIntegrable_norm_gradient_sq a b (hγ.mono hsub) hf), neg_sub_neg]
+
+/-- The speed `‖∇f(γ(t))‖` of a negative gradient trajectory is integrable on every compact time
+interval, assuming only differentiability of the defining function along that interval: it is
+the square root of the integrable squared gradient, and is dominated by `1 + ‖∇f(γ(t))‖²`. -/
+theorem intervalIntegrable_norm_gradient
+    (a b : ℝ) (hγ : IsIntegralCurveOn γ (fun _ x ↦ -∇ f x) [[a, b]])
+    (hf : ∀ t ∈ [[a, b]], DifferentiableAt ℝ f (γ t)) :
+    IntervalIntegrable (fun t ↦ ‖∇ f (γ t)‖) volume a b := by
+  have hsq := intervalIntegrable_norm_gradient_sq a b hγ hf
+  refine ((intervalIntegrable_const (c := (1 : ℝ))).add hsq).mono_fun' ?_
+    (Eventually.of_forall fun t ↦ ?_)
+  · have hmeas := Real.continuous_sqrt.comp_aestronglyMeasurable
+      (intervalIntegrable_iff.mp hsq).aestronglyMeasurable
+    simpa only [Function.comp_def, Real.sqrt_sq (norm_nonneg _)] using hmeas
+  · simp only [norm_norm]
+    nlinarith [sq_nonneg (‖∇ f (γ t)‖ - 1)]
+
+/-- **Energy drop from a lower bound on the speed.** If the gradient has norm at least `κ ≥ 0`
+along a negative gradient trajectory during `[a, b]`, then `f` drops by at least `(b - a) κ²`. -/
+theorem mul_sq_le_sub_of_le_norm_gradient {κ : ℝ} (hab : a ≤ b)
+    (hγ : IsIntegralCurveOn γ (fun _ x ↦ -∇ f x) s) (hsub : Icc a b ⊆ s)
+    (hf : ∀ t ∈ Icc a b, DifferentiableAt ℝ f (γ t)) (hκ : 0 ≤ κ)
+    (hle : ∀ t ∈ Icc a b, κ ≤ ‖∇ f (γ t)‖) :
+    (b - a) * κ ^ 2 ≤ f (γ a) - f (γ b) := by
+  rw [← uIcc_of_le hab] at hsub hf hle
+  rw [← integral_norm_gradient_sq_eq_sub hγ hsub hf, ← smul_eq_mul,
+    ← intervalIntegral.integral_const]
+  exact intervalIntegral.integral_mono_on hab intervalIntegrable_const
+    (intervalIntegrable_norm_gradient_sq a b (hγ.mono hsub) hf) fun t ht ↦
+      pow_le_pow_left₀ hκ (hle t (by rwa [uIcc_of_le hab])) 2
 
 end IsIntegralCurveOn
 

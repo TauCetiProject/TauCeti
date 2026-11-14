@@ -34,7 +34,12 @@ the formula `x = z² ∨ y = z² ∨ x y = z²` holds at every solution of `[x, 
 (`mem_V_commutator_iff`, `IsFreeGroup.exists_eq_sq_of_commute`), but not at the generic point of
 `[x, y] = 1` (`not_exists_genericPoint_eq_sq`). Over a non-abelian free group a disjunction of
 equations is equivalent to a single equation; with that encoding, which is not formalized here,
-this example gives an equation compatible with `[x, y] = 1` without an `S`-lift.
+this example gives an equation compatible with `[x, y] = 1` without an `S`-lift. With an
+inequation such an example is immediate: over a nontrivial group, `[y, x] = 1 ∧ y ≠ 1` is
+compatible with every system, taking `y = x` over a solution with `x ≠ 1` and any `y ≠ 1` over
+one with `x = 1`, but it admits an `S`-lift only when the coordinate group of `S` is nontrivial
+(`isCompatibleNe_commutator_iff`, `hasLiftNe_commutator_iff`). This fails for the equation
+`x = 1` over the trivial coefficient group.
 
 The definitions follow the sources, which take `H = G` and assume that `S` has a solution. For a
 system `S` without solutions the coordinate group is trivial, so every system of equations is
@@ -71,6 +76,12 @@ compatible with `S` and admits an `S`-lift (`isCompatible_of_V_eq_empty`,
 * `TauCeti.GroupAlgGeom.Lift.hasLift_sq_eq_sq`,
   `TauCeti.GroupAlgGeom.Lift.not_isCompatible_empty_sq`: `y² = x²` lifts over every system, while
   `y² = x` is not compatible with the empty system over a free group.
+* `TauCeti.GroupAlgGeom.Lift.hasLift_range_mul_inv`: the system `y = u_y(X)`, for words
+  `u_y ∈ G[X]`, admits an `S`-lift for every system `S`.
+* `TauCeti.GroupAlgGeom.Lift.isCompatibleNe_commutator_iff`,
+  `TauCeti.GroupAlgGeom.Lift.hasLiftNe_commutator_iff`: the system `[y, x] = 1 ∧ y ≠ 1` is
+  compatible with `S` exactly when `H` is nontrivial, and admits an `S`-lift exactly when the
+  coordinate group of `S` is nontrivial.
 * `TauCeti.GroupAlgGeom.Lift.not_exists_genericPoint_eq_sq`: over a free group on a nonempty set,
   none of `x`, `y` and `x y` is a square at the generic point of `[x, y] = 1`, while one of them is
   a square at every solution (`IsFreeGroup.exists_eq_sq_of_commute`).
@@ -392,6 +403,13 @@ theorem hasLift_sq_eq_sq (ι : G →* H) (S : Set (GX G X)) (x : X) (y : Y) :
       {(inr (of (Sum.inr y)) : GX G (X ⊕ Y)) ^ 2 * (inr (of (Sum.inl x)) ^ 2)⁻¹} :=
   hasLift_of_mem_V_inl (w := fun _ => inr (of x)) (by simp)
 
+/-- The equations `y = u_y(X)`, for words `u_y ∈ G[X]`, admit the lift `y = u_y` to the generic
+point of every system. -/
+theorem hasLift_range_mul_inv (ι : G →* H) (S : Set (GX G X)) (u : Y → GX G X) :
+    HasLift ι S (Set.range fun y : Y => (inr (FreeGroup.of (Sum.inr y)) : GX G (X ⊕ Y)) *
+      (Monoid.Coprod.map (.id G) (FreeGroup.map Sum.inl) (u y))⁻¹) :=
+  hasLift_of_mem_V_inl (w := u) <| mem_V.2 fun _ ⟨y, hy⟩ => by simp [← hy]
+
 /-- The equation `y² = x` is compatible with the empty system over `H` if and only if every
 element of `H` is a square. -/
 theorem isCompatible_empty_sq_iff (ι : G →* H) :
@@ -436,6 +454,71 @@ theorem not_isCompatibleNe_diagonal (ι : G →* H) :
   intro h
   obtain ⟨w, hw, hne⟩ := h (fun _ => 1) (by simp)
   exact hne (by simpa using hw)
+
+private theorem exists_sumElim_commutator_iff {K : Type*} [Group K] {κ : G →* K} {p : X → K} {x : X}
+    {y : Y} :
+    (∃ w : Y → K, Sum.elim p w ∈
+        V κ {⁅(inr (FreeGroup.of (Sum.inr y)) : GX G (X ⊕ Y)), inr (FreeGroup.of (Sum.inl x))⁆} ∧
+      eval κ (Sum.elim p w) (inr (FreeGroup.of (Sum.inr y))) ≠ 1) ↔ Nontrivial K := by
+  refine ⟨fun ⟨w, _, hw⟩ => nontrivial_of_ne _ _ (by simpa using hw), fun _ => ?_⟩
+  -- Over the point `p`, take `y = p x` when `p x ≠ 1`, and any `y ≠ 1` otherwise.
+  by_cases hp : p x = 1
+  · obtain ⟨c, hc⟩ := exists_ne (1 : K)
+    exact ⟨fun _ => c, mem_V_commutator_iff.2 (by simp [hp]), by simpa using hc⟩
+  · exact ⟨fun _ => p x, mem_V_commutator_iff.2 (by simp), by simpa using hp⟩
+
+/-- The system `[y, x] = 1 ∧ y ≠ 1` is compatible with a system `S` if and only if `H` is
+nontrivial: over a solution with `x ≠ 1` take `y = x`, and over a solution with `x = 1` any
+`y ≠ 1`. -/
+theorem isCompatibleNe_commutator_iff {ι : G →* H} {S : Set (GX G X)} {x : X} {y : Y} :
+    IsCompatibleNe ι S
+        {⁅(inr (FreeGroup.of (Sum.inr y)) : GX G (X ⊕ Y)), inr (FreeGroup.of (Sum.inl x))⁆}
+        (inr (FreeGroup.of (Sum.inr y))) ↔ Nontrivial H := by
+  refine ⟨fun h => not_subsingleton_iff_nontrivial.1 fun _ => not_isCompatibleNe_of_subsingleton h,
+    fun _ => isCompatibleNe_iff.2 fun _ _ => exists_sumElim_commutator_iff.2 ‹_›⟩
+
+/-- The system `[y, x] = 1 ∧ y ≠ 1` has a solution at the generic point of `S` if and only if the
+coordinate group of `S` is nontrivial. -/
+theorem hasLiftNe_commutator_iff {ι : G →* H} {S : Set (GX G X)} {x : X} {y : Y} :
+    HasLiftNe ι S
+        {⁅(inr (FreeGroup.of (Sum.inr y)) : GX G (X ⊕ Y)), inr (FreeGroup.of (Sum.inl x))⁆}
+        (inr (FreeGroup.of (Sum.inr y))) ↔ Nontrivial (CoordGroup ι S) :=
+  hasLiftNe_iff.trans exists_sumElim_commutator_iff
+
+/-- For the empty system over a nontrivial group, with generic point `μ`: the system
+`[y, x] = 1 ∧ y ≠ 1` is compatible, also over the solutions with `x = 1`, and `y = x` is a lift,
+as the point `(μ, y = μ x)` solves `[y, x] = 1` and `μ x ≠ 1`. -/
+example [Nontrivial H] (ι : G →* H) (x : X) :
+    let μ := CoordGroup.genericPoint ι (∅ : Set (GX G X))
+    IsCompatibleNe ι (∅ : Set (GX G X))
+        {⁅(inr (FreeGroup.of (Sum.inr ())) : GX G (X ⊕ Unit)), inr (FreeGroup.of (Sum.inl x))⁆}
+        (inr (FreeGroup.of (Sum.inr ()))) ∧
+      Sum.elim μ (fun _ : Unit => μ x) ∈ V (CoordGroup.coeff ι ∅)
+        {⁅(inr (FreeGroup.of (Sum.inr ())) : GX G (X ⊕ Unit)), inr (FreeGroup.of (Sum.inl x))⁆} ∧
+      eval (CoordGroup.coeff ι ∅) (Sum.elim μ (fun _ : Unit => μ x))
+        (inr (FreeGroup.of (Sum.inr ()))) ≠ 1 := by
+  obtain ⟨h, hh⟩ := exists_ne (1 : H)
+  refine ⟨isCompatibleNe_commutator_iff.2 ‹_›, mem_V_commutator_iff.2 (by simp), ?_⟩
+  simpa using CoordGroup.genericPoint_ne_one_iff.2 ⟨fun _ => h, by simp, hh⟩
+
+/-- Over the trivial coefficient group and a nontrivial group `H`, the system `[y, x] = 1 ∧ y ≠ 1`
+is compatible with the equation `x = 1` but has no lift to its generic point: the only solution
+of `x = 1` is trivial, so its coordinate group is trivial. -/
+example [Nontrivial H] (κ : Unit →* H) :
+    IsCompatibleNe κ {(inr (FreeGroup.of ()) : GX Unit Unit)}
+        {⁅(inr (FreeGroup.of (Sum.inr ())) : GX Unit (Unit ⊕ Unit)),
+          inr (FreeGroup.of (Sum.inl ()))⁆} (inr (FreeGroup.of (Sum.inr ()))) ∧
+      ¬HasLiftNe κ {(inr (FreeGroup.of ()) : GX Unit Unit)}
+        {⁅(inr (FreeGroup.of (Sum.inr ())) : GX Unit (Unit ⊕ Unit)),
+          inr (FreeGroup.of (Sum.inl ()))⁆} (inr (FreeGroup.of (Sum.inr ()))) := by
+  refine ⟨isCompatibleNe_commutator_iff.2 ‹_›, ?_⟩
+  -- Every word vanishes at the only solution `x = 1`, so the coordinate group is trivial.
+  obtain rfl : κ = 1 := Subsingleton.elim _ _
+  have : Subsingleton (CoordGroup (1 : Unit →* H) {(inr (FreeGroup.of ()) : GX Unit Unit)}) :=
+    CoordGroup.subsingleton_iff.2 fun v hv => by
+      obtain rfl : v = 1 := funext fun _ => by simpa using hv
+      exact eval_one_one
+  exact not_hasLiftNe_of_subsingleton
 
 /-- Over a free group on a nonempty set, none of `x`, `y` and `x y` is a square in the coordinate
 group of the equation `[x, y] = 1`. -/
