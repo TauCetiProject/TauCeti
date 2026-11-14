@@ -6,13 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
+public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.MeasureTheory.Function.L1Space.Integrable
+public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.Analysis.Calculus.FDeriv.Const
+import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.Normed.Group.Bounded
 import Mathlib.MeasureTheory.Function.LocallyIntegrable
-import Mathlib.MeasureTheory.Integral.IntegrableOn
 import Mathlib.MeasureTheory.Measure.Prod
+import TauCeti.Analysis.RCLike.OperatorNorm
 
 /-!
 # Integrability of the applied derivative and of derivative energy densities
@@ -28,6 +31,11 @@ compact support. A weighted squared defect `c z * ‖fderiv w z e₁ + A z (fder
 integrable when it vanishes off a compact set on which `c` and `A` are continuous, so they need
 not be continuous elsewhere.
 
+Integrability of the squared norm of the derivative implies integrability of the squared norm of
+the derivative applied to any fixed vector. Conversely, for a map out of an `RCLike` field that
+satisfies a Cauchy--Riemann equation `∂ₜu = A (∂ₛu)` with `‖A‖` bounded, integrability of the
+squared norm of the real-direction derivative `∂ₛu` implies integrability of `‖du‖²`.
+
 On a Euclidean product `ℝ × V`, the derivative of such a function in a fixed direction is also
 integrable on the product of a half-line with `V`.
 
@@ -41,6 +49,10 @@ integrable on the product of a half-line with `V`.
   `TauCeti.integrable_norm_fderiv_sq_add`, `TauCeti.integrable_cutoff_sq_mul_norm_fderiv_sq`,
   `TauCeti.integrable_mul_norm_defect_sq`: integrability of the derivative energy densities
   in two directions.
+* `TauCeti.integrable_norm_fderiv_apply_sq`: integrability of `‖fderiv 𝕜 u z v‖ ^ 2` from
+  integrability of `‖fderiv 𝕜 u z‖ ^ 2`.
+* `TauCeti.integrableOn_norm_fderiv_sq_of_apply_I_eq`: integrability of `‖fderiv ℝ u z‖ ^ 2` from
+  integrability of `‖fderiv ℝ u z 1‖ ^ 2` under a Cauchy--Riemann equation.
 * `TauCeti.integrable_fderiv_apply_prod`: the directional derivative of a compactly supported
   `C¹` function on `ℝ × V` is integrable on the product of `Ioi a` with `V`.
 -/
@@ -130,7 +142,45 @@ theorem integrable_mul_norm_defect_sq (e₁ e₂ : E) {w : E → F} {c : E → �
     (hc.mul (((hdw.clm_apply continuousOn_const).add
       (hA.clm_apply (hdw.clm_apply continuousOn_const))).norm.pow 2)).integrableOn_compact hS
 
+/-- If the squared norm of the derivative of a map into a complete space is integrable, then so is
+the squared norm of the derivative applied to any fixed vector `v`: it is bounded by
+`‖v‖ ^ 2 * ‖fderiv 𝕜 u z‖ ^ 2`. -/
+theorem integrable_norm_fderiv_apply_sq [CompleteSpace F] {ν : Measure E} {u : E → F}
+    (h : Integrable (fun z ↦ ‖fderiv 𝕜 u z‖ ^ 2) ν) (v : E) :
+    Integrable (fun z ↦ ‖fderiv 𝕜 u z v‖ ^ 2) ν := by
+  borelize F
+  refine (h.const_mul (‖v‖ ^ 2)).mono'
+    ((measurable_fderiv_apply_const 𝕜 u v).norm.pow_const 2).aestronglyMeasurable
+    (.of_forall fun z ↦ ?_)
+  rw [norm_pow, norm_norm, ← mul_pow, mul_comm]
+  gcongr
+  exact (fderiv 𝕜 u z).le_opNorm v
+
 end Energy
+
+section CauchyRiemann
+
+variable {K : Type*} [RCLike K] [MeasurableSpace K] [OpensMeasurableSpace K] {G : Type*}
+  [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
+
+/-- **Energy from the real-direction energy.** If `u : K → G` out of an `RCLike` field satisfies the
+Cauchy--Riemann equation `∂ₜu = A z (∂ₛu)` on a measurable set `s`, with `‖A z‖ ≤ M` there, and
+`‖∂ₛu‖²` is integrable on `s`, then so is `‖du‖²`: it is bounded by `(1 + M)² ‖∂ₛu‖²`. -/
+theorem integrableOn_norm_fderiv_sq_of_apply_I_eq {ν : Measure K} {u : K → G}
+    {A : K → G →L[ℝ] G} {M : ℝ} {s : Set K} (hs : MeasurableSet s)
+    (hCR : ∀ z ∈ s, fderiv ℝ u z RCLike.I = A z (fderiv ℝ u z 1)) (hA : ∀ z ∈ s, ‖A z‖ ≤ M)
+    (h : IntegrableOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) s ν) :
+    IntegrableOn (fun z ↦ ‖fderiv ℝ u z‖ ^ 2) s ν := by
+  borelize (K →L[ℝ] G)
+  refine (h.const_mul ((1 + M) ^ 2)).mono'
+    ((measurable_fderiv ℝ u).norm.pow_const 2).aestronglyMeasurable
+    ((ae_restrict_iff' hs).2 (.of_forall fun z hz ↦ ?_))
+  rw [norm_pow, norm_norm, ← mul_pow]
+  exact pow_le_pow_left₀ (norm_nonneg _)
+    ((fderiv ℝ u z).norm_le_of_apply_I_eq (hCR z hz) (hA z hz) le_rfl) 2
+
+end CauchyRiemann
+
 section Prod
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
