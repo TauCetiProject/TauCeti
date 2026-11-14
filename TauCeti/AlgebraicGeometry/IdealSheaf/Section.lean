@@ -33,7 +33,9 @@ of a unique section.
   `AlgebraicGeometry.Scheme.IdealSheafData.eq_sectionOfIsIso_iff`;
 * `AlgebraicGeometry.Scheme.IdealSheafData.isIso_subschemeι_comp_iff`: an ideal sheaf is the ideal
   sheaf of a section of a separated morphism `f` exactly when its closed subscheme maps
-  isomorphically to the base.
+  isomorphically to the base;
+* `TauCeti.prodKerSection`: the canonical lift of each `x i : S ⟶ X` in a finite family to the
+  closed subscheme cut out by `∏ k, (x k).ker`.
 -/
 
 public section

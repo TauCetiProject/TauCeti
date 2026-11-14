@@ -60,8 +60,11 @@ full set of sections of `Z_T` over `T` (`fullSetLocus_le_ker_iff`).
   change.
 * `TauCeti.AlgebraicGeometry.isFullSetOfSections_pullback_subschemeι_fullSetLocus`: over the
   full-set locus, the base-changed sections are a full set of sections.
-* `TauCeti.AlgebraicGeometry.isFullSetOfSections_iff_of_isAffine`: over an affine base, a full
-  set of sections is detected on global sections alone.
+* `TauCeti.AlgebraicGeometry.isFullSetOfSections_iff_of_isAffine` and
+  `TauCeti.AlgebraicGeometry.isFullSetOfSections_iff_sectionTopAlgHom_of_isAffine`: over an affine
+  base, a full set of sections is detected on global sections alone.
+* `TauCeti.AlgebraicGeometry.prod_comap_ofIdealTop_span_singleton`: pulling back a principal ideal
+  sheaf `(u)` along sections and multiplying gives `(∏ i, sᵢ^*(u))`.
 * `TauCeti.AlgebraicGeometry.isFullSetOfSections_iff_of_iso`,
   `TauCeti.AlgebraicGeometry.fullSetLocus_eq_of_iso`,
   `TauCeti.AlgebraicGeometry.isFullSetOfSections_iff_of_equiv`, and
@@ -94,17 +97,14 @@ of the section values of `u`. -/
 theorem prod_comap_ofIdealTop_span_singleton {ι : Type*} {s : ι → (S ⟶ Z)}
     (hs : ∀ i, s i ≫ g = 𝟙 S) (t : Finset ι) (u : Γ(Z, ⊤)) :
     ∏ i ∈ t, (ofIdealTop (Ideal.span {u})).comap (s i) =
-      ofIdealTop (Ideal.span
-        {∏ i ∈ t, sectionAlgHom g (hs i) ⊤ (Z.presheaf.map (eqToHom g.preimage_top).op u)}) := by
+      ofIdealTop (Ideal.span {∏ i ∈ t, sectionTopAlgHom g (hs i) u}) := by
   classical
   induction t using Finset.induction_on with
-  | empty =>
-    ext U : 2
-    simp [Ideal.map_top, one_eq_top]
+  | empty => ext U : 2; simp [Ideal.map_top, one_eq_top]
   | insert a t ha ih =>
     rw [Finset.prod_insert ha, Finset.prod_insert ha, ih, comap_ofIdealTop, Ideal.map_span,
       Set.image_singleton, ← ofIdealTop_mul, Ideal.span_singleton_mul_span_singleton,
-      sectionAlgHom_top_map_apply g (hs a) u]
+      sectionTopAlgHom_apply]
 
 variable {ι : Type*} (s : ι → (S ⟶ Z)) (hs : ∀ i, s i ≫ g = 𝟙 S)
 
@@ -364,6 +364,20 @@ theorem isFullSetOfSections_iff_of_isAffine [IsAffine S] :
   rw [fullSetLocus_ideal, ideal_bot, Pi.bot_apply]
   exact (fullSetLocusIdeal_eq_bot_iff (fun i ↦ sectionAlgHom g (hs i) U)).2 h
 
+/-- **Over an affine base, a full set of sections is detected on `Γ(Z, ⊤)` via
+`sectionTopAlgHom`.** -/
+theorem isFullSetOfSections_iff_sectionTopAlgHom_of_isAffine [IsAffine S] :
+    IsFullSetOfSections g s hs ↔
+      letI := g.appTop.hom.toAlgebra
+      TauCeti.IsFullSetOfSections (fun i ↦ sectionTopAlgHom g (hs i)) := by
+  rw [isFullSetOfSections_iff_of_isAffine]
+  let := g.appTop.hom.toAlgebra
+  let := (g.app ⊤).hom.toAlgebra
+  refine (TauCeti.isFullSetOfSections_comp_algEquiv_iff g.preimageTopAlgEquiv).symm.trans ?_
+  refine Iff.of_eq (congrArg TauCeti.IsFullSetOfSections (funext fun i ↦ AlgHom.ext fun u ↦ ?_))
+  rw [AlgHom.comp_apply, AlgEquiv.toAlgHom_apply, g.preimageTopAlgEquiv_apply,
+    sectionAlgHom_top_map_apply, sectionTopAlgHom_apply]
+
 /-- **The full-set locus is invariant under isomorphisms over `S`.** -/
 theorem fullSetLocus_eq_of_iso {Z' : Scheme.{u}} {g' : Z' ⟶ S}
     [IsFinite g'] [Flat g'] [LocallyOfFinitePresentation g'] (e : Z' ≅ Z) (heg : e.hom ≫ g = g')
@@ -415,29 +429,26 @@ number of sections.** -/
 theorem IsFullSetOfSections.finrank_eq_card (h : IsFullSetOfSections g s hs) (p : S) :
     g.finrank p = Fintype.card ι := by
   let r := S.fromSpecResidueField p; let g_p := Limits.pullback.fst r g
-  let U : (Spec (S.residueField p)).affineOpens := ⟨⊤, isAffineOpen_top _⟩
-  have hU := (IsFullSetOfSections.pullback g s hs r h) U
-  let : Algebra Γ(Spec (S.residueField p), U) Γ(Limits.pullback r g, g_p ⁻¹ᵁ U) :=
-    (g_p.app U).hom.toAlgebra
-  let eA : Γ(Spec (S.residueField p), U) ≃+* S.residueField p :=
+  have htop := (isFullSetOfSections_iff_sectionTopAlgHom_of_isAffine g_p _ _).1
+    (IsFullSetOfSections.pullback g s hs r h)
+  let : Algebra Γ(Spec (S.residueField p), ⊤) Γ(Limits.pullback r g, ⊤) := g_p.appTop.hom.toAlgebra
+  let : Algebra Γ(Spec (S.residueField p), ⊤) Γ(Limits.pullback r g, g_p ⁻¹ᵁ ⊤) :=
+    (g_p.app ⊤).hom.toAlgebra
+  let eA : Γ(Spec (S.residueField p), ⊤) ≃+* S.residueField p :=
     (Scheme.ΓSpecIso (S.residueField p)).commRingCatIsoToRingEquiv
-  let eB : Γ(Limits.pullback r g, g_p ⁻¹ᵁ U) ≃+* Γ(Limits.pullback r g, ⊤) :=
-    ((Limits.pullback r g).presheaf.mapIso
-      (eqToIso g_p.preimage_top.symm).op).commRingCatIsoToRingEquiv
-  have : Nontrivial Γ(Spec (S.residueField p), U) := eA.toEquiv.nontrivial
-  have : IsLocalRing Γ(Spec (S.residueField p), U) := eA.symm.isLocalRing
-  have : Module.Finite Γ(Spec (S.residueField p), U) Γ(Limits.pullback r g, g_p ⁻¹ᵁ U) :=
-    g_p.finite_app U U.2
-  have := g_p.projective_app U
-  have : Module.Free Γ(Spec (S.residueField p), U) Γ(Limits.pullback r g, g_p ⁻¹ᵁ U) :=
+  have : Nontrivial Γ(Spec (S.residueField p), ⊤) := eA.toEquiv.nontrivial
+  have : IsLocalRing Γ(Spec (S.residueField p), ⊤) := eA.symm.isLocalRing
+  have : Module.Finite Γ(Spec (S.residueField p), ⊤) Γ(Limits.pullback r g, ⊤) := g_p.finite_appTop
+  have := g_p.projective_app ⟨⊤, isAffineOpen_top _⟩
+  have : Module.Projective Γ(Spec (S.residueField p), ⊤) Γ(Limits.pullback r g, ⊤) :=
+    .of_equiv g_p.preimageTopAlgEquiv.symm.toLinearEquiv
+  have : Module.Free Γ(Spec (S.residueField p), ⊤) Γ(Limits.pullback r g, ⊤) :=
     Module.free_of_flat_of_isLocalRing
   let : Algebra (S.residueField p) Γ(Limits.pullback r g, ⊤) :=
     ((Scheme.ΓSpecIso (S.residueField p)).inv ≫ g_p.appTop).hom.toAlgebra
-  have hfinrank := Algebra.finrank_eq_of_equiv_equiv eA eB (RingHom.ext fun x ↦
-    (congrArg (fun φ : Γ(Spec (S.residueField p), ⊤) ⟶ Γ(Limits.pullback r g, ⊤) ↦ φ.hom x)
-      (Iso.hom_inv_id_assoc (Scheme.ΓSpecIso (S.residueField p)) g_p.appTop)).trans
-      (congrArg (fun φ : Γ(Spec (S.residueField p), ⊤) ⟶ Γ(Limits.pullback r g, ⊤) ↦ φ.hom x)
-        (app_top_comp_map_preimage_top g_p).symm))
-  rw [g.finrank_eq_finrank_pullback_fromSpecResidueField p rfl, ← hfinrank, hU.card_eq_finrank]
+  have hfinrank := Algebra.finrank_eq_of_equiv_equiv eA (RingEquiv.refl _)
+    (RingHom.ext fun x ↦ congr($(Iso.hom_inv_id_assoc
+      (Scheme.ΓSpecIso (S.residueField p)) g_p.appTop).hom x))
+  rw [g.finrank_eq_finrank_pullback_fromSpecResidueField p rfl, ← hfinrank, htop.card_eq_finrank]
 
 end TauCeti.AlgebraicGeometry

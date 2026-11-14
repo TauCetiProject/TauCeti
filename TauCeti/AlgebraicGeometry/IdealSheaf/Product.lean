@@ -98,15 +98,13 @@ theorem isFinite_mul_subschemeι_comp {X S : Scheme.{u}} (I J : X.IdealSheafData
       rw [range_subschemeι, range_subschemeι, ← TopologicalSpace.Closeds.coe_sup, ← support_mul,
         ← range_subschemeι]
       exact ⟨z, rfl⟩
-    have hw : ∃ w, (q ≫ (I * J).subschemeι) w = (I * J).subschemeι z := by
-      rcases hz with ⟨y, hy⟩ | ⟨y, hy⟩
-      · refine ⟨(coprod.inl : I.subscheme ⟶ I.subscheme ⨿ J.subscheme) y, ?_⟩
-        rw [← Scheme.Hom.comp_apply]; simpa [q] using hy
-      · refine ⟨(coprod.inr : J.subscheme ⟶ I.subscheme ⨿ J.subscheme) y, ?_⟩
-        rw [← Scheme.Hom.comp_apply]; simpa [q] using hy
-    obtain ⟨w, hw⟩ := hw
-    rw [Scheme.Hom.comp_apply] at hw
-    exact ⟨w, (I * J).subschemeι.isEmbedding.injective hw⟩⟩
+    have hlift {W : Scheme.{u}} (ι : W ⟶ I.subscheme ⨿ J.subscheme) (y : W)
+        (hy : (ι ≫ q ≫ (I * J).subschemeι) y = (I * J).subschemeι z) : ∃ w, q w = z := by
+      rw [Scheme.Hom.comp_apply, Scheme.Hom.comp_apply] at hy
+      exact ⟨ι y, (I * J).subschemeι.isEmbedding.injective hy⟩
+    rcases hz with ⟨y, hy⟩ | ⟨y, hy⟩
+    exacts [hlift coprod.inl y (by simp [q, hy]),
+      hlift coprod.inr y (by simp [q, hy])]⟩
   have : IsFinite (q ≫ ((I * J).subschemeι ≫ f)) := hqcomp ▸ inferInstance
   have : UniversallyClosed ((I * J).subschemeι ≫ f) :=
     .of_comp_surjective q ((I * J).subschemeι ≫ f)

@@ -12,7 +12,7 @@ import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Degree.Sum
 import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
 import TauCeti.AlgebraicGeometry.IdealSheaf.Rank
 import TauCeti.AlgebraicGeometry.IdealSheaf.Stalk
-import TauCeti.RingTheory.Ideal.Maps
+import TauCeti.AlgebraicGeometry.Restrict
 import TauCeti.RingTheory.LocalRing.SemilocalPrincipal
 import TauCeti.RingTheory.Norm.FullSetOfSections.SectionKernel
 import TauCeti.RingTheory.Norm.Quotient
@@ -30,13 +30,10 @@ properness assumption on `f` and no reducedness assumption on `S`.
 
 ## Proof outline
 
-Both directions reduce to `S = Spec R` for a local ring `R`, where every closed subscheme finite
-over `S` has semilocal coordinate ring (`Scheme.Hom.finite_maximalSpectrum_appTop`):
-* **Divisor sum `⇒` full set** (`isFullSetOfSections_prod_ker`): inducting on `ι` via
-  `Fintype.induction_empty_option`, stalkwise principal kernels and annihilators
-  (`IsEffectiveCartier.exists_map_ker_inclusion_appTop_eq_span_singleton_and_annihilator`) patch to
-  a global generator `u`
-  (`Ideal.exists_eq_span_singleton_and_annihilator_of_finite_maximalSpectrum`), so
+Over `S = Spec R` (`R` local), finite `S`-schemes are semilocal (`finite_maximalSpectrum_appTop`):
+* **Divisor sum `⇒` full set** (`isFullSetOfSections_prod_ker`): inducting via
+  `Fintype.induction_empty_option`, stalkwise principal kernels and annihilators patch to a global
+  generator `u` (`Ideal.exists_eq_span_singleton_and_annihilator_of_finite_maximalSpectrum`), and
   `IsFullSetOfSections.optionElim_of_ker_span_singleton` extends the full set of sections.
 * **Full set `⇒` divisor sum** (`eq_prod_ker_of_isFullSetOfSections`): pulling back along
   `φ : Spec R ⟶ X` and its graph section `δ` yields `δ.ker.comap I.subschemeι = (u)`
@@ -46,16 +43,14 @@ over `S` has semilocal coordinate ring (`Scheme.Hom.finite_maximalSpectrum_appTo
 
 ## Main results
 
-* `TauCeti.AlgebraicGeometry.isFullSetOfSections_prod_ker` and
-  `TauCeti.AlgebraicGeometry.eq_prod_ker_of_isFullSetOfSections`: the two implications of
-  Katz–Mazur Theorem 1.8.3.
-* `TauCeti.AlgebraicGeometry.isFullSetOfSections_subschemeι_comp_iff`,
-  `TauCeti.AlgebraicGeometry.isFullSetOfSections_iff_ker_eq_prod_ker`, and
-  `TauCeti.AlgebraicGeometry.eq_of_isFullSetOfSections`: **Katz–Mazur, Theorem 1.8.3** and
-  uniqueness of a finite locally free closed subscheme admitting a full set of sections.
-* `TauCeti.AlgebraicGeometry.fullSetLocus_subschemeι_comp_eq_equalityLocus` and
-  `TauCeti.AlgebraicGeometry.fullSetLocus_eq_equalityLocus`: equality of `fullSetLocus` and
-  `equalityLocus` on `S`.
+* `TauCeti.AlgebraicGeometry.isFullSetOfSections_prod_ker`,
+  `TauCeti.AlgebraicGeometry.eq_prod_ker_of_isFullSetOfSections`,
+  `TauCeti.AlgebraicGeometry.isFullSetOfSections_subschemeι_comp_iff`, and
+  `TauCeti.AlgebraicGeometry.isFullSetOfSections_iff_ker_eq_prod_ker`: **Katz–Mazur 1.8.3**.
+* `TauCeti.AlgebraicGeometry.eq_of_isFullSetOfSections`,
+  `TauCeti.AlgebraicGeometry.fullSetLocus_subschemeι_comp_eq_equalityLocus`, and
+  `TauCeti.AlgebraicGeometry.fullSetLocus_eq_equalityLocus`: closed-subscheme uniqueness and
+  identification of `fullSetLocus` with `equalityLocus`.
 
 ## References
 
@@ -75,22 +70,6 @@ open _root_.AlgebraicGeometry Scheme.IdealSheafData
 
 /-! ### Divisor sum implies full set of sections -/
 
-private lemma exists_ker_span_singleton_and_annihilator_of_finite_maximalSpectrum
-    {R : Type u} [CommRing R] [Finite (MaximalSpectrum R)] {X : Scheme.{u}} (f : X ⟶ Spec (.of R))
-    {I₁ D' : X.IdealSheafData} (hCartier : I₁.IsEffectiveCartier)
-    (hI₁ : I₁ * D' ≤ I₁) (hD' : I₁ * D' ≤ D') [IsFinite ((I₁ * D').subschemeι ≫ f)] :
-    ∃ u : Γ((I₁ * D').subscheme, ⊤),
-      RingHom.ker (inclusion hI₁).appTop.hom = Ideal.span {u} ∧
-        RingHom.ker (inclusion hD').appTop.hom = (Ideal.span {u}).annihilator := by
-  let g := (I₁ * D').subschemeι ≫ f
-  have : IsAffine (I₁ * D').subscheme := isAffine_of_isAffineHom g
-  have := g.finite_maximalSpectrum_appTop
-  refine Ideal.exists_eq_span_singleton_and_annihilator_of_finite_maximalSpectrum _ _ fun M _ ↦ ?_
-  obtain ⟨a, ha₁, ha₂⟩ :=
-    IsEffectiveCartier.exists_map_ker_inclusion_appTop_eq_span_singleton_and_annihilator hCartier
-      hI₁ hD' ((isAffineOpen_top (I₁ * D').subscheme).fromSpec ⟨M, inferInstance⟩)
-  exact IsAffineOpen.exists_map_atPrime_eq_span_singleton_and_annihilator M ha₁ ha₂
-
 private lemma isFullSetOfSections_option_of_ker_span_singleton {Y Z Z' : Scheme.{u}} [IsAffine Y]
     (g : Z ⟶ Y) [IsFinite g] [Flat g] [LocallyOfFinitePresentation g]
     (g' : Z' ⟶ Y) [IsFinite g'] [Flat g'] [LocallyOfFinitePresentation g']
@@ -101,52 +80,31 @@ private lemma isFullSetOfSections_option_of_ker_span_singleton {Y Z Z' : Scheme.
     (hann : RingHom.ker ι_map.appTop.hom = (Ideal.span {u}).annihilator)
     (ih : IsFullSetOfSections g' s' hs') : IsFullSetOfSections g s hs := by
   have : IsAffine Z := isAffine_of_isAffineHom g
-  let U : Y.affineOpens := ⟨⊤, isAffineOpen_top Y⟩
-  let : Algebra Γ(Y, U) Γ(Z, g ⁻¹ᵁ U) := (g.app U).hom.toAlgebra
-  let : Algebra Γ(Y, U) Γ(Z', g' ⁻¹ᵁ U) := (g'.app U).hom.toAlgebra
-  have : IsLocalRing Γ(Y, U) := hloc
-  have : Module.Finite Γ(Y, U) Γ(Z', g' ⁻¹ᵁ U) := g'.finite_app U U.2
-  have := g'.projective_app U
-  have : Module.Free Γ(Y, U) Γ(Z', g' ⁻¹ᵁ U) := Module.free_of_flat_of_isLocalRing
-  let eZ : Γ(Z, ⊤) ≃+* Γ(Z, g ⁻¹ᵁ ⊤) :=
-    (Z.presheaf.mapIso (eqToIso g.preimage_top).op).commRingCatIsoToRingEquiv
-  let eZ' : Γ(Z', ⊤) ≃+* Γ(Z', g' ⁻¹ᵁ ⊤) :=
-    (Z'.presheaf.mapIso (eqToIso g'.preimage_top).op).commRingCatIsoToRingEquiv
-  let π_hom : Γ(Z, g ⁻¹ᵁ ⊤) ⟶ Γ(Z', g' ⁻¹ᵁ ⊤) :=
-    Z.presheaf.map (eqToHom g.preimage_top.symm).op ≫ ι_map.appTop ≫
-      Z'.presheaf.map (eqToHom g'.preimage_top).op
-  let π : Γ(Z, g ⁻¹ᵁ U) →ₐ[Γ(Y, U)] Γ(Z', g' ⁻¹ᵁ U) :=
-    { π_hom.hom with
-      commutes' r := by
-        have hcomm : g.app ⊤ ≫ π_hom = g'.app ⊤ := by
-          simp only [π_hom, app_top_comp_map_preimage_top_assoc]
-          rw [← Scheme.Hom.comp_appTop_assoc, hιg, appTop_comp_map_preimage_top]
-        exact congrArg (fun φ : Γ(Y, ⊤) ⟶ Γ(Z', g' ⁻¹ᵁ ⊤) ↦ φ.hom r) hcomm }
-  have hπ : Function.Surjective π :=
-    (eZ'.surjective.comp (ι_map.app_surjective ⊤ (isAffineOpen_top Z))).comp eZ.symm.surjective
-  have hker_σ0 : RingHom.ker (sectionAlgHom g (hs none) ⊤) = Ideal.span {eZ u} := by
-    rw [ker_sectionAlgHom_top g (hs none), hker_s0, Ideal.map_span, Set.image_singleton]; rfl
-  have hann' : RingHom.ker π = (Ideal.span {eZ u}).annihilator := by
-    ext b
-    have hb : b ∈ RingHom.ker π ↔ eZ.symm b ∈ RingHom.ker ι_map.appTop.hom := by
-      rw [RingHom.mem_ker, show π b = eZ' (ι_map.appTop.hom (eZ.symm b)) from rfl,
-        map_eq_zero_iff eZ' eZ'.injective, RingHom.mem_ker]
-    rw [hb, hann, Submodule.mem_annihilator_span_singleton,
-      Submodule.mem_annihilator_span_singleton, smul_eq_mul, smul_eq_mul,
-      ← map_eq_zero_iff eZ eZ.injective, map_mul, eZ.apply_symm_apply]
-  have hopt := ((isFullSetOfSections_iff_of_isAffine g' s' hs').1 ih)
+  let := g.appTop.hom.toAlgebra; let := g'.appTop.hom.toAlgebra; let := (g'.app ⊤).hom.toAlgebra
+  have : Module.Finite Γ(Y, ⊤) Γ(Z', ⊤) := g'.finite_appTop
+  have := g'.projective_app ⟨⊤, isAffineOpen_top Y⟩
+  have : Module.Projective Γ(Y, ⊤) Γ(Z', ⊤) := .of_equiv g'.preimageTopAlgEquiv.symm.toLinearEquiv
+  have : Module.Free Γ(Y, ⊤) Γ(Z', ⊤) := Module.free_of_flat_of_isLocalRing
+  let π : Γ(Z, ⊤) →ₐ[Γ(Y, ⊤)] Γ(Z', ⊤) :=
+    { ι_map.appTop.hom with
+      commutes' r := congr($((Scheme.Hom.comp_appTop ι_map g).symm.trans
+        (congrArg Scheme.Hom.appTop hιg)).hom r) }
+  have hπ : Function.Surjective π := fun y ↦ by
+    let := ι_map.appTop.hom.toAlgebra; let := (ι_map.app ⊤).hom.toAlgebra
+    obtain ⟨x, hx⟩ := ι_map.app_surjective ⊤ (isAffineOpen_top Z) (ι_map.preimageTopAlgEquiv y)
+    refine ⟨x, ι_map.preimageTopAlgEquiv.injective ?_⟩
+    have hπx : π x = ι_map.appTop x := rfl
+    rw [hπx, ι_map.preimageTopAlgEquiv_apply, ← CommRingCat.comp_apply,
+      ι_map.appTop_comp_map_preimage_top, hx]
+  have hker_σ0 : RingHom.ker (sectionTopAlgHom g (hs none)) = Ideal.span {u} := by
+    rw [← hker_s0]; ext; simp
+  have hann' : RingHom.ker π = (Ideal.span {u}).annihilator := hann
+  have hopt := ((isFullSetOfSections_iff_sectionTopAlgHom_of_isAffine g' s' hs').1 ih)
     |>.optionElim_of_ker_span_singleton hπ hker_σ0 hann'
-  rw [isFullSetOfSections_iff_of_isAffine]
+  rw [isFullSetOfSections_iff_sectionTopAlgHom_of_isAffine]
   refine (Iff.of_eq (congrArg TauCeti.IsFullSetOfSections (funext fun o ↦ AlgHom.ext fun b ↦ ?_))).1
     hopt
-  cases o with
-  | none => rfl
-  | some j =>
-    rw [Option.elim_some, AlgHom.comp_apply,
-      show π b = Z'.presheaf.map (eqToHom g'.preimage_top).op
-        (ι_map.appTop (Z.presheaf.map (eqToHom g.preimage_top.symm).op b)) from rfl,
-      sectionAlgHom_top_map_apply, ← CommRingCat.comp_apply, ← Scheme.Hom.comp_appTop, hcomp j,
-      sectionAlgHom_top_apply]
+  rcases o with _ | j <;> simp [π, ← CommRingCat.comp_apply, ← Scheme.Hom.comp_appTop, hcomp]
 
 private lemma isFullSetOfSections_option_prodKerSection_of_isLocalRing
     {R : Type u} [CommRing R] [IsLocalRing R] {X : Scheme.{u}} {f : X ⟶ Spec (.of R)}
@@ -168,9 +126,15 @@ private lemma isFullSetOfSections_option_prodKerSection_of_isLocalRing
   have : LocallyOfFinitePresentation (M.subschemeι ≫ f) :=
     hopt ▸ locallyOfFinitePresentation_prod_ker hx
   have : IsAffine M.subscheme := isAffine_of_isAffineHom (M.subschemeι ≫ f)
-  obtain ⟨u, hu₁, hu₂⟩ := exists_ker_span_singleton_and_annihilator_of_finite_maximalSpectrum f
-    (Scheme.Hom.isRelativeEffectiveCartier_ker_of_smoothOfRelativeDimension
-      (x none) (hx none)).isEffectiveCartier hI₁ hD'
+  have := (M.subschemeι ≫ f).finite_maximalSpectrum_appTop
+  have hCart := (Scheme.Hom.isRelativeEffectiveCartier_ker_of_smoothOfRelativeDimension
+    (x none) (hx none)).isEffectiveCartier
+  obtain ⟨u, hu₁, hu₂⟩ := Ideal.exists_eq_span_singleton_and_annihilator_of_finite_maximalSpectrum
+    _ _ fun P _ ↦ by
+      obtain ⟨a, ha₁, ha₂⟩ :=
+        hCart.exists_map_ker_inclusion_appTop_eq_span_singleton_and_annihilator hI₁ hD'
+          ((isAffineOpen_top M.subscheme).fromSpec ⟨P, inferInstance⟩)
+      exact M.subscheme.exists_map_atPrime_eq_span_singleton_and_annihilator P ha₁ ha₂
   let sM (k : Option ι) : Spec (.of R) ⟶ M.subscheme := prodKerSection x k ≫ inclusion hopt.ge
   have hsM (k : Option ι) : sM k ≫ (M.subschemeι ≫ f) = 𝟙 _ := by
     simp [sM, inclusion_subschemeι_assoc, hx]
@@ -202,9 +166,8 @@ private lemma isFullSetOfSections_prodKerSection_of_isLocalRing
         (prodKerSection x) (prodKerSection_comp hx)) ?_ ?_ ?_ ι x hx
   · intro α β _ e hα x hx
     let _ : Fintype α := Fintype.ofEquiv β e.symm
-    let x' : α → (Spec (.of R) ⟶ X) := x ∘ e
-    have hx' (j : α) : x' j ≫ f = 𝟙 _ := hx (e j)
-    have hpeq : ∏ j, (x' j).ker = ∏ i, (x i).ker := Fintype.prod_equiv e _ _ fun _ ↦ rfl
+    have hx' (j : α) : x (e j) ≫ f = 𝟙 _ := hx (e j)
+    have hpeq : ∏ j, (x (e j)).ker = ∏ i, (x i).ker := Fintype.prod_equiv e _ _ fun _ ↦ rfl
     have := isFinite_prod_ker hx; have := flat_prod_ker hx
     have := locallyOfFinitePresentation_prod_ker hx
     have : IsIso (inclusion hpeq.ge) := IsClosedImmersion.isIso_of_ker_eq _ _ (inclusion hpeq.ge)
@@ -212,10 +175,7 @@ private lemma isFullSetOfSections_prodKerSection_of_isLocalRing
     have h1 := (isFullSetOfSections_iff_of_iso ((∏ i, (x i).ker).subschemeι ≫ f)
       (fun j ↦ prodKerSection x (e j)) (fun j ↦ prodKerSection_comp hx (e j))
       (asIso (inclusion hpeq.ge)) (inclusion_subschemeι_assoc hpeq.ge f) (prodKerSection_comp hx')
-      fun j ↦ by
-        rw [← cancel_mono (∏ i, (x i).ker).subschemeι, asIso_hom, Category.assoc,
-          inclusion_subschemeι, prodKerSection_subschemeι, prodKerSection_subschemeι]; rfl).1
-      (hα x' hx')
+      fun j ↦ by simp [← cancel_mono (∏ i, (x i).ker).subschemeι]).1 (hα (fun j ↦ x (e j)) hx')
     exact (isFullSetOfSections_iff_of_equiv ((∏ i, (x i).ker).subschemeι ≫ f) (prodKerSection x)
       (prodKerSection_comp hx) (fun j ↦ prodKerSection_comp hx (e j)) e fun _ ↦ rfl).1 h1
   · intro x hx
@@ -224,10 +184,8 @@ private lemma isFullSetOfSections_prodKerSection_of_isLocalRing
     have := locallyOfFinitePresentation_prod_ker hx
     have hD₀ : D₀ = ⊤ := Finset.prod_empty.trans one_eq_top
     have : IsEmpty D₀.subscheme := hD₀ ▸ inferInstance
-    have hbot : (D₀.subschemeι ≫ f) ⁻¹ᵁ ⊤ = ⊥ := by ext z; exact isEmptyElim z
-    have : Subsingleton Γ(D₀.subscheme, (D₀.subschemeι ≫ f) ⁻¹ᵁ ⊤) := hbot ▸ inferInstance
-    rw [isFullSetOfSections_iff_of_isAffine]
-    let := ((D₀.subschemeι ≫ f).app ⊤).hom.toAlgebra
+    rw [isFullSetOfSections_iff_sectionTopAlgHom_of_isAffine]
+    let _ := (D₀.subschemeι ≫ f).appTop.hom.toAlgebra
     exact TauCeti.isFullSetOfSections_of_subsingleton _
   · exact fun _ _ ih _ hx ↦
       isFullSetOfSections_option_prodKerSection_of_isLocalRing hx (ih _ fun j ↦ hx (some j))
@@ -277,31 +235,22 @@ private lemma prod_comap_ofIdealTop_span_le_ker
     {s : ι → (Y ⟶ Z)} (hs : ∀ i, s i ≫ g = 𝟙 Y) (hfull : IsFullSetOfSections g s hs) (u : Γ(Z, ⊤))
     {ℓ : W ⟶ Z} {w : W ⟶ Y} (hℓg : ℓ ≫ g = w) (hu : ofIdealTop (Ideal.span {u}) ≤ ℓ.ker) :
     ∏ i, (ofIdealTop (Ideal.span {u})).comap (s i) ≤ w.ker := by
-  let U : Y.affineOpens := ⟨⊤, isAffineOpen_top Y⟩
-  let : Algebra Γ(Y, U) Γ(Z, g ⁻¹ᵁ U) := (g.app U).hom.toAlgebra
-  let : Algebra Γ(Y, U) Γ(W, ⊤) := w.appTop.hom.toAlgebra
-  have : IsLocalRing Γ(Y, U) := hloc
-  have : Module.Finite Γ(Y, U) Γ(Z, g ⁻¹ᵁ U) := g.finite_app U U.2
-  have := g.projective_app U
-  have : Module.Free Γ(Y, U) Γ(Z, g ⁻¹ᵁ U) := Module.free_of_flat_of_isLocalRing
-  let u' : Γ(Z, g ⁻¹ᵁ ⊤) := Z.presheaf.map (eqToHom g.preimage_top).op u
-  rw [prod_comap_ofIdealTop_span_singleton g hs Finset.univ u,
-    ← ((isFullSetOfSections_iff g s hs).1 hfull U).norm_eq_prod u', ofIdealTop_le_ker_iff,
-    Ideal.span_singleton_le_iff_mem, RingHom.mem_ker]
-  have hℓu : ℓ.appTop.hom u = 0 :=
-    (ofIdealTop_le_ker_iff ℓ (Ideal.span {u})).mp hu (Ideal.mem_span_singleton_self u)
-  let τ : Γ(Z, g ⁻¹ᵁ U) →ₐ[Γ(Y, U)] Γ(W, ⊤) :=
-    { (Z.presheaf.map (eqToHom g.preimage_top.symm).op ≫ ℓ.appTop).hom with
-      commutes' r := by
-        have hcomm : g.app ⊤ ≫ Z.presheaf.map (eqToHom g.preimage_top.symm).op ≫ ℓ.appTop =
-            w.appTop := by
-          rw [app_top_comp_map_preimage_top_assoc, ← Scheme.Hom.comp_appTop, hℓg]
-        exact congrArg (fun φ : Γ(Y, ⊤) ⟶ Γ(W, ⊤) ↦ φ.hom r) hcomm }
-  refine τ.algebraMap_norm_eq_zero_of_map_eq_zero ?_
-  rw [show τ u' = ℓ.appTop (Z.presheaf.map (eqToHom g.preimage_top.symm).op u') from rfl,
-    ← CommRingCat.comp_apply (Z.presheaf.map _) (Z.presheaf.map _), ← Functor.map_comp, eqToHom_op,
-    eqToHom_op, eqToHom_trans, eqToHom_refl, CategoryTheory.Functor.map_id, CommRingCat.id_apply]
-  exact hℓu
+  let _ : Algebra Γ(Y, ⊤) Γ(Z, ⊤) := g.appTop.hom.toAlgebra
+  let _ : Algebra Γ(Y, ⊤) Γ(W, ⊤) := w.appTop.hom.toAlgebra
+  let _ : Algebra Γ(Y, ⊤) Γ(Z, g ⁻¹ᵁ ⊤) := (g.app ⊤).hom.toAlgebra
+  have : Module.Finite Γ(Y, ⊤) Γ(Z, ⊤) := g.finite_appTop
+  have := g.projective_app ⟨⊤, isAffineOpen_top Y⟩
+  have : Module.Projective Γ(Y, ⊤) Γ(Z, ⊤) := .of_equiv g.preimageTopAlgEquiv.symm.toLinearEquiv
+  have : Module.Free Γ(Y, ⊤) Γ(Z, ⊤) := Module.free_of_flat_of_isLocalRing
+  have htop := (isFullSetOfSections_iff_sectionTopAlgHom_of_isAffine g s hs).1 hfull
+  rw [prod_comap_ofIdealTop_span_singleton g hs Finset.univ u, ← htop.norm_eq_prod u,
+    ofIdealTop_le_ker_iff, Ideal.span_singleton_le_iff_mem, RingHom.mem_ker]
+  let τ : Γ(Z, ⊤) →ₐ[Γ(Y, ⊤)] Γ(W, ⊤) :=
+    { ℓ.appTop.hom with
+      commutes' r := congr($((Scheme.Hom.comp_appTop ℓ g).symm.trans
+        (congrArg Scheme.Hom.appTop hℓg)).hom r) }
+  exact τ.algebraMap_norm_eq_zero_of_map_eq_zero
+    ((ofIdealTop_le_ker_iff ℓ (Ideal.span {u})).mp hu (Ideal.mem_span_singleton_self u))
 
 private lemma comap_prod_ker_le_comap_of_isLocalRing
     {R : Type u} [CommRing R] [IsLocalRing R] {X : Scheme.{u}} {f : X ⟶ Spec (.of R)}
@@ -313,8 +262,8 @@ private lemma comap_prod_ker_le_comap_of_isLocalRing
     (hδ : δ ≫ f = 𝟙 _) : (∏ i, (s i ≫ I.subschemeι).ker).comap δ ≤ I.comap δ := by
   have hCartier : δ.ker.IsEffectiveCartier :=
     (Scheme.Hom.isRelativeEffectiveCartier_ker_of_smoothOfRelativeDimension δ hδ).isEffectiveCartier
-  obtain ⟨u, hu⟩ := exists_eq_ofIdealTop_span_singleton_of_stalkIdeal (I.subschemeι ≫ f)
-    (δ.ker.comap I.subschemeι) fun z ↦ by
+  obtain ⟨u, hu⟩ := (δ.ker.comap I.subschemeι).exists_eq_ofIdealTop_span_singleton_of_stalkIdeal
+    (I.subschemeι ≫ f) fun z ↦ by
       obtain ⟨V, hzV, α, -, hα⟩ := (isEffectiveCartier_iff δ.ker).mp hCartier (I.subschemeι z)
       refine ⟨(I.subschemeι.stalkMap z).hom ((X.presheaf.germ V.1 _ hzV).hom α), ?_⟩
       rw [δ.ker.stalkIdeal_comap, δ.ker.stalkIdeal_eq_map V _ hzV, hα, Ideal.map_span,
@@ -359,14 +308,14 @@ theorem prod_ker_le_of_isFullSetOfSections {I : X.IdealSheafData}
   let _ : LocallyOfFinitePresentation ((I.comap pX).subschemeι ≫ f') :=
     MorphismProperty.of_isPullback H_I inferInstance
   have hfull' : IsFullSetOfSections ((I.comap pX).subschemeι ≫ f')
-      (pullbackSubschemeSection H I s hs) (pullbackSubschemeSection_comp H I s hs) := by
+      (I.pullbackSubschemeSection H s hs) (I.pullbackSubschemeSection_comp H s hs) := by
     rw [← fullSetLocus_le_ker_iff_of_isPullback (I.subschemeι ≫ f) s hs H_I
-      (pullbackSubschemeSection_comp H I s hs) (pullbackSubschemeSection_subschemeMap H I s hs),
+      (I.pullbackSubschemeSection_comp H s hs) (I.pullbackSubschemeSection_subschemeMap H s hs),
       (isFullSetOfSections_iff_fullSetLocus_eq_bot _ _ _).1 hfull]; exact bot_le
   have hδφ : graphSection (T := Over.mk t) (Over.homMk φ rfl) ≫ pX = φ :=
     graphSection_snd (T := Over.mk t) (Over.homMk φ rfl)
-  rw [← hδφ, comap_comp, comap_comp, ← prod_ker_pullbackSubschemeSection H I s hs]
-  exact comap_prod_ker_le_comap_of_isLocalRing (pullbackSubschemeSection_comp H I s hs) hfull'
+  rw [← hδφ, comap_comp, comap_comp, ← I.prod_ker_pullbackSubschemeSection H s hs]
+  exact comap_prod_ker_le_comap_of_isLocalRing (I.pullbackSubschemeSection_comp H s hs) hfull'
     (graphSection_fst (T := Over.mk t) (Over.homMk φ rfl))
 
 /-- **Full set of sections implies divisor sum** (Katz–Mazur, Theorem 1.8.3, `(⇒)`): if `s` is a
@@ -405,23 +354,6 @@ theorem isFullSetOfSections_subschemeι_comp_iff {I : X.IdealSheafData}
     fun i ↦ by
       rw [← cancel_mono D.subschemeι, asIso_hom, Category.assoc, inclusion_subschemeι,
         prodKerSection_subschemeι]).2 (isFullSetOfSections_prod_ker hx)
-
-/-- **Katz–Mazur, Theorem 1.8.3** (closed-immersion form). For a separated smooth curve `f : X ⟶ S`
-and a closed immersion `i : Z ⟶ X` with `i ≫ f` finite locally free, sections `s : ι → (S ⟶ Z)`
-form a full set of sections iff `i.ker = ∏ k, (s k ≫ i).ker`. -/
-theorem isFullSetOfSections_iff_ker_eq_prod_ker {Z : Scheme.{u}} (i : Z ⟶ X)
-    [IsClosedImmersion i] [IsFinite (i ≫ f)] [Flat (i ≫ f)] [LocallyOfFinitePresentation (i ≫ f)]
-    {s : ι → (S ⟶ Z)} (hs : ∀ k, s k ≫ (i ≫ f) = 𝟙 S) :
-    IsFullSetOfSections (i ≫ f) s hs ↔ i.ker = ∏ k, (s k ≫ i).ker := by
-  let e : Z ≅ i.ker.subscheme := asIso i.toImage
-  have heg : e.hom ≫ (i.ker.subschemeι ≫ f) = i ≫ f := i.toImage_imageι_assoc f
-  have hs' (k : ι) : (s k ≫ e.hom) ≫ (i.ker.subschemeι ≫ f) = 𝟙 S := by
-    rw [Category.assoc, heg, hs k]
-  have hker (k : ι) : (s k ≫ e.hom) ≫ i.ker.subschemeι = s k ≫ i := by
-    rw [Category.assoc]; exact congrArg (s k ≫ ·) i.toImage_imageι
-  rw [isFullSetOfSections_iff_of_iso (i.ker.subschemeι ≫ f) (fun k ↦ s k ≫ e.hom) hs' e heg hs
-    (fun _ ↦ rfl), isFullSetOfSections_subschemeι_comp_iff hs']
-  simp_rw [hker]
 
 /-- **Uniqueness of the closed subscheme admitting a full set of sections**: on a separated smooth
 curve `X ⟶ S`, at most one finite locally free closed subscheme can admit a given family of
@@ -468,8 +400,8 @@ theorem fullSetLocus_subschemeι_comp_eq_equalityLocus {I : X.IdealSheafData}
   let _ : LocallyOfFinitePresentation ((I.comap pX).subschemeι ≫ f') :=
     MorphismProperty.of_isPullback H_I inferInstance
   rw [fullSetLocus_le_ker_iff_of_isPullback (I.subschemeι ≫ f) s hs H_I
-    (pullbackSubschemeSection_comp H I s hs) (pullbackSubschemeSection_subschemeMap H I s hs),
-    isFullSetOfSections_subschemeι_comp_iff, prod_ker_pullbackSubschemeSection H I s hs,
+    (I.pullbackSubschemeSection_comp H s hs) (I.pullbackSubschemeSection_subschemeMap H s hs),
+    isFullSetOfSections_subschemeι_comp_iff, I.prod_ker_pullbackSubschemeSection H s hs,
     equalityLocus_le_ker_iff_of_isPullback I D H]
 
 /-- **On a separated smooth curve, the full-set locus equals the divisor equality locus**
@@ -493,6 +425,20 @@ theorem fullSetLocus_eq_equalityLocus {Z : Scheme.{u}} (i : Z ⟶ X)
   rw [fullSetLocus_eq_of_iso (i.ker.subschemeι ≫ f) (fun k ↦ s k ≫ e.hom) hs' e heg hs
     (fun _ ↦ rfl), fullSetLocus_subschemeι_comp_eq_equalityLocus hs']
   congr 1; simp_rw [hker]
+
+/-- **Katz–Mazur, Theorem 1.8.3** (closed-immersion form). For a separated smooth curve `f : X ⟶ S`
+and a closed immersion `i : Z ⟶ X` with `i ≫ f` finite locally free, sections `s : ι → (S ⟶ Z)`
+form a full set of sections iff `i.ker = ∏ k, (s k ≫ i).ker`. -/
+theorem isFullSetOfSections_iff_ker_eq_prod_ker {Z : Scheme.{u}} (i : Z ⟶ X)
+    [IsClosedImmersion i] [IsFinite (i ≫ f)] [Flat (i ≫ f)] [LocallyOfFinitePresentation (i ≫ f)]
+    {s : ι → (S ⟶ Z)} (hs : ∀ k, s k ≫ (i ≫ f) = 𝟙 S) :
+    IsFullSetOfSections (i ≫ f) s hs ↔ i.ker = ∏ k, (s k ≫ i).ker := by
+  have := SmoothOfRelativeDimension.smooth 1 f
+  have hx (k : ι) : (s k ≫ i) ≫ f = 𝟙 S := by rw [Category.assoc, hs k]
+  let _ := isFinite_prod_ker hx; let _ := flat_prod_ker hx
+  let _ := locallyOfFinitePresentation_prod_ker hx
+  rw [isFullSetOfSections_iff_fullSetLocus_eq_bot, fullSetLocus_eq_equalityLocus i hs,
+    equalityLocus_eq_bot_iff]
 
 end MainTheorem
 

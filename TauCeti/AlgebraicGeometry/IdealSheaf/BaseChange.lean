@@ -30,11 +30,9 @@ closed immersion `j`, pulling back is therefore a left inverse to pushing forwar
 (`AlgebraicGeometry.Scheme.IdealSheafData.comap_map_of_isClosedImmersion`,
 `AlgebraicGeometry.Scheme.Hom.comap_ker_comp_of_isClosedImmersion`), while pushing forward an
 inverse image recovers the supremum with `j.ker`
-(`AlgebraicGeometry.Scheme.IdealSheafData.map_comap_of_isClosedImmersion`). In
-
-of its ideal sheaf (`AlgebraicGeometry.Scheme.IdealSheafData.ker_eq_comap_of_isPullback`), and
-the same holds for the ideal sheaf of any quasi-compact morphism pulled back along an open
-immersion
+(`AlgebraicGeometry.Scheme.IdealSheafData.map_comap_of_isClosedImmersion`). Analogously, the ideal
+sheaf of any quasi-compact morphism pulled back along an open immersion is the inverse image of its
+ideal sheaf
 (`AlgebraicGeometry.Scheme.IdealSheafData.ker_eq_comap_of_isPullback_of_isOpenImmersion`). In
 particular, for a section `s` of `f : X ⟶ S` which is a closed immersion, the ideal sheaf of its
 base change `T ⟶ X ×_S T` along `g : T ⟶ S` is the inverse image of the ideal sheaf of `s`
@@ -49,7 +47,9 @@ for two closed-immersion sections `δ` and `x₀` of the same morphism, pulling 
 The closed subscheme of the inverse image `I.comap g` along `g : X' ⟶ X` is the base change of the
 closed subscheme of `I` along `g`; when `X'` is itself a base change of `X ⟶ S`, it is the base
 change over `S` of the closed subscheme of `I`
-(`AlgebraicGeometry.Scheme.IdealSheafData.isPullback_subschemeMap_comap`). Hence, if the closed
+(`AlgebraicGeometry.Scheme.IdealSheafData.isPullback_subschemeMap_comap`), and sections of `V(I)`
+base-change to sections of `V(I.comap g)` via
+`AlgebraicGeometry.Scheme.IdealSheafData.pullbackSubschemeSection`. Hence, if the closed
 subscheme of `I` is finite over a base `S` and `g` is finite, so is the closed subscheme of
 `I.comap g` (`AlgebraicGeometry.Scheme.IdealSheafData.isFinite_comap_subschemeι_comp`). If the
 closed subscheme of `I` is finite and flat over `S` and `g` is finite and flat of constant rank
@@ -304,8 +304,8 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.ker_eq_comap_of_isPullback_section
 
 section PullbackSubschemeSection
 
-variable {X' S' : Scheme.{u}} {f : X ⟶ S} {pX : X' ⟶ X} {f' : X' ⟶ S'} {t : S' ⟶ S}
-  (H : IsPullback pX f' f t) (I : X.IdealSheafData) {ι : Type*} (s : ι → (S ⟶ I.subscheme))
+variable (I : X.IdealSheafData) {X' S' : Scheme.{u}} {f : X ⟶ S} {pX : X' ⟶ X} {f' : X' ⟶ S'}
+  {t : S' ⟶ S} (H : IsPullback pX f' f t) {ι : Type*} (s : ι → (S ⟶ I.subscheme))
   (hs : ∀ i, s i ≫ (I.subschemeι ≫ f) = 𝟙 S)
 
 /-- **Base change of sections of a closed subscheme.** Given a pullback square `H` for `f : X ⟶ S`
@@ -316,26 +316,26 @@ noncomputable def pullbackSubschemeSection (i : ι) : S' ⟶ (I.comap pX).subsch
 /-- Each `pullbackSubschemeSection` is a section of `V(I.comap pX) ⟶ S'`. -/
 @[reassoc (attr := simp)]
 theorem pullbackSubschemeSection_comp (i : ι) :
-    pullbackSubschemeSection H I s hs i ≫ ((I.comap pX).subschemeι ≫ f') = 𝟙 S' :=
+    I.pullbackSubschemeSection H s hs i ≫ ((I.comap pX).subschemeι ≫ f') = 𝟙 S' :=
   (I.isPullback_subschemeMap_comap f H).flip.lift_fst _ _ _
 
 /-- Composing `pullbackSubschemeSection` with `V(I.comap pX) ⟶ V(I)` recovers `t ≫ s i`. -/
 @[reassoc (attr := simp)]
 theorem pullbackSubschemeSection_subschemeMap (i : ι) :
-    pullbackSubschemeSection H I s hs i ≫ subschemeMap (I.comap pX) I pX (I.le_map_comap pX) =
+    I.pullbackSubschemeSection H s hs i ≫ subschemeMap (I.comap pX) I pX (I.le_map_comap pX) =
       t ≫ s i :=
   (I.isPullback_subschemeMap_comap f H).flip.lift_snd _ _ _
 
 /-- For sections `s` of `V(I) ⟶ S` over a separated morphism `f : X ⟶ S`, the product of the kernels
-of `pullbackSubschemeSection H I s hs i ≫ V(I.comap pX) ⟶ X'` is the inverse image along `pX` of
+of `I.pullbackSubschemeSection H s hs i ≫ V(I.comap pX) ⟶ X'` is the inverse image along `pX` of
 `∏ i, (s i ≫ V(I) ⟶ X).ker`. -/
 theorem prod_ker_pullbackSubschemeSection [IsSeparated f] [Fintype ι] :
-    ∏ i, (pullbackSubschemeSection H I s hs i ≫ (I.comap pX).subschemeι).ker =
+    ∏ i, (I.pullbackSubschemeSection H s hs i ≫ (I.comap pX).subschemeι).ker =
       (∏ i, (s i ≫ I.subschemeι).ker).comap pX := by
   rw [comap_prod]
   refine Finset.prod_congr rfl fun i _ ↦ ?_
   have hx : (s i ≫ I.subschemeι) ≫ f = 𝟙 S := by rw [Category.assoc, hs i]
-  have hx' : (pullbackSubschemeSection H I s hs i ≫ (I.comap pX).subschemeι) ≫ f' = 𝟙 S' := by
+  have hx' : (I.pullbackSubschemeSection H s hs i ≫ (I.comap pX).subschemeι) ≫ f' = 𝟙 S' := by
     rw [Category.assoc, pullbackSubschemeSection_comp]
   have := Scheme.Hom.isClosedImmersion_of_comp_eq_id (s i ≫ I.subschemeι) hx
   refine Scheme.Hom.ker_eq_comap_of_isPullback_section H hx hx' ?_
