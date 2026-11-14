@@ -19,7 +19,8 @@ is irrational. This supplies the irrational-square condition `Irrational (c ^ 2)
 non-integral lattices `c ℤ ⊆ ℝ` such as `2 ^ (1 / 4) ℤ`.
 
 For an irrational real number `θ`, the only integer solution of `a + b * θ = 0` has
-`a = b = 0` (`Irrational.intCast_add_mul_eq_zero_iff`).
+`a = b = 0` (`Irrational.intCast_add_mul_eq_zero_iff`). In particular, for `c ≠ 0`, no integer
+multiple `k c` equals `c θ` (`Irrational.intCast_mul_ne_mul`).
 
 If `θ₁` or `θ₂` is irrational, an integer matrix of nonzero determinant cannot send `(θ₁, θ₂)`
 into `ℚ²`: for `j ≠ 0` and `a d - b c ≠ 0`, `j (a θ₁ + b θ₂)` and `j (c θ₁ + d θ₂)` are not both
@@ -31,6 +32,8 @@ twists of the powers and finite-cover pullbacks of a flat line over a torus with
 
 * `Irrational.intCast_add_mul_eq_zero_iff`: an integer relation between one and an irrational
   real number has both coefficients zero.
+* `Irrational.intCast_mul_ne_mul`: for `c ≠ 0`, an integer multiple of `c` is not an irrational
+  multiple of `c`.
 * `TauCeti.irrational_rpow_one_quarter_sq_iff`: for `0 ≤ x`,
   `Irrational ((x ^ (1 / 4 : ℝ)) ^ 2) ↔ Irrational √x`.
 * `Nat.Prime.irrational_rpow_one_quarter_sq`: for prime `p`,
@@ -112,5 +115,10 @@ theorem intCast_add_mul_eq_zero_iff {θ : ℝ} (hθ : Irrational θ) {a b : ℤ}
     exact ⟨Int.cast_eq_zero.mp ha, hb⟩
   · rintro ⟨rfl, rfl⟩
     simp only [Int.cast_zero, zero_mul, add_zero]
+
+/-- An integer multiple of a nonzero real number `c` is not an irrational multiple of `c`. -/
+theorem intCast_mul_ne_mul {a : ℝ} (ha : Irrational a) {c : ℝ} (hc : c ≠ 0) (k : ℤ) :
+    (k : ℝ) * c ≠ c * a := fun h ↦
+  ha.ne_int k (mul_left_cancel₀ hc (by rw [← h]; ring))
 
 end Irrational
