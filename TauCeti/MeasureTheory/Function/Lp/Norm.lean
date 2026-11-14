@@ -77,6 +77,10 @@ bounds.
   bounded by `C` multiplies its norm by at most `C`.
 * `MeasureTheory.MemLp.eLpNorm_rpow_toReal_eq_enorm_integral`: for `0 < q < ∞`, the `q`-th power of
   the `L^q` norm of `f` is the norm of the integral of `‖f‖ ^ q`.
+* `LinearIsometry.norm_compLp` and `LinearIsometry.norm_compLpL`: post-composing an `Lᵖ` function
+  with a linear isometry preserves its `Lᵖ` norm.
+* `ContinuousLinearMap.norm_apply_one_compLp` and `ContinuousLinearMap.norm_apply_one_compLpL`:
+  evaluating an `Lᵖ` family of linear maps `𝕜 →L[𝕜] E` at `1` preserves its `Lᵖ` norm.
 -/
 
 public section
@@ -448,3 +452,61 @@ theorem MemLp.eLpNorm_rpow_toReal_eq_enorm_integral {V : Type*} [NormedAddCommGr
 end IntegralRpow
 
 end MeasureTheory
+
+section CompLpNorm
+
+open MeasureTheory
+open scoped ENNReal
+
+namespace LinearIsometry
+
+variable {α E F 𝕜₁ 𝕜₂ : Type*} {_ : MeasurableSpace α} {μ : Measure α} {p : ℝ≥0∞}
+  [NormedAddCommGroup E] [NormedAddCommGroup F]
+  [NontriviallyNormedField 𝕜₁] [NontriviallyNormedField 𝕜₂]
+  [NormedSpace 𝕜₁ E] [NormedSpace 𝕜₂ F] {σ : 𝕜₁ →+* 𝕜₂} [RingHomIsometric σ]
+
+/-- Post-composing an `Lᵖ` function with a semilinear isometry preserves its `Lᵖ` norm. -/
+@[simp]
+theorem norm_compLp (L : E →ₛₗᵢ[σ] F) (f : Lp E p μ) :
+    ‖L.toContinuousLinearMap.compLp f‖ = ‖f‖ := by
+  rw [Lp.norm_def, Lp.norm_def]
+  congr 1
+  refine eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _) (Lp.aestronglyMeasurable _) ?_
+  filter_upwards [L.toContinuousLinearMap.coeFn_compLp f] with x hx
+  rw [hx, L.coe_toContinuousLinearMap, L.norm_map]
+
+/-- Post-composing an `Lᵖ` function with a semilinear isometry via `compLpL` preserves its `Lᵖ`
+norm. -/
+@[simp]
+theorem norm_compLpL [Fact (1 ≤ p)] (L : E →ₛₗᵢ[σ] F) (f : Lp E p μ) :
+    ‖L.toContinuousLinearMap.compLpL p μ f‖ = ‖f‖ :=
+  L.norm_compLp f
+
+end LinearIsometry
+
+namespace ContinuousLinearMap
+
+variable {α E 𝕜 : Type*} {_ : MeasurableSpace α} {μ : Measure α} {p : ℝ≥0∞}
+  [NormedAddCommGroup E] [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E]
+
+/-- Pointwise evaluation at `1 : 𝕜` on `Lp (𝕜 →L[𝕜] E) p μ` preserves the `Lᵖ` norm. -/
+@[simp]
+theorem norm_apply_one_compLp (f : Lp (𝕜 →L[𝕜] E) p μ) :
+    ‖(ContinuousLinearMap.apply 𝕜 E (1 : 𝕜)).compLp f‖ = ‖f‖ := by
+  have h : ContinuousLinearMap.apply 𝕜 E (1 : 𝕜) =
+      (ContinuousLinearMap.toSpanSingletonLIE 𝕜 E).symm.toLinearIsometry.toContinuousLinearMap := by
+    ext φ
+    simp
+  rw [h]
+  exact (ContinuousLinearMap.toSpanSingletonLIE 𝕜 E).symm.toLinearIsometry.norm_compLp f
+
+/-- Pointwise evaluation at `1 : 𝕜` via `compLpL` on `Lp (𝕜 →L[𝕜] E) p μ` preserves the `Lᵖ`
+norm. -/
+@[simp]
+theorem norm_apply_one_compLpL [Fact (1 ≤ p)] (f : Lp (𝕜 →L[𝕜] E) p μ) :
+    ‖(ContinuousLinearMap.apply 𝕜 E (1 : 𝕜)).compLpL p μ f‖ = ‖f‖ :=
+  norm_apply_one_compLp f
+
+end ContinuousLinearMap
+
+end CompLpNorm

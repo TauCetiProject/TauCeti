@@ -8,19 +8,23 @@ module
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 
 /-!
-# Finite sums of `MemLp.toLp` classes
+# Finite sums of `MemLp.toLp` classes and `compLp` functoriality
 
 Mathlib provides `MeasureTheory.MemLp.toLp_zero`, `MeasureTheory.MemLp.toLp_add`, and
 `MeasureTheory.Lp.coeFn_finsetSum`, as well as `MeasureTheory.memLp_finsetSum` and
 `MeasureTheory.memLp_finsetSum'`. This file records the companion identities identifying the `Lp`
-class of a finite sum of `Lᵖ` functions with the sum of their `Lp` classes, for any `MemLp`
-witness on the sum.
+class of a finite sum of `Lᵖ` functions with the sum of their `Lp` classes, together with the
+composition and identity laws for `ContinuousLinearMap.compLp` and `ContinuousLinearMap.compLpL`.
 
 ## Main declarations
 
 * `MeasureTheory.MemLp.toLp_finsetSum'`: `hsum.toLp (∑ i ∈ s, f i) = ∑ i ∈ s, (hf i).toLp (f i)`.
 * `MeasureTheory.MemLp.toLp_finsetSum`:
   `hsum.toLp (fun x ↦ ∑ i ∈ s, f i x) = ∑ i ∈ s, (hf i).toLp (f i)`.
+* `ContinuousLinearMap.comp_compLp`, `ContinuousLinearMap.comp_compLpL`,
+  `ContinuousLinearMap.compLpL_compLpL`: composition laws for `compLp` and `compLpL`.
+* `ContinuousLinearMap.id_compLp`, `ContinuousLinearMap.id_compLpL`: identity laws for `compLp` and
+  `compLpL`.
 -/
 
 public section
@@ -47,3 +51,46 @@ theorem toLp_finsetSum (hsum : MemLp (fun x ↦ ∑ i ∈ s, f i x) p μ) (hf : 
   exact toLp_congr _ _ (.of_forall fun x ↦ (Finset.sum_apply x s f).symm)
 
 end MeasureTheory.MemLp
+
+namespace ContinuousLinearMap
+
+open MeasureTheory
+
+variable {α E F G 𝕜 : Type*} {_ : MeasurableSpace α} {μ : Measure α} {p : ℝ≥0∞}
+  [NormedAddCommGroup E] [NormedAddCommGroup F] [NormedAddCommGroup G]
+  [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E] [NormedSpace 𝕜 F] [NormedSpace 𝕜 G]
+
+/-- Composing `Lp` pushforwards of continuous linear maps agrees with the pushforward of their
+composition. -/
+theorem comp_compLp (L : F →L[𝕜] G) (M : E →L[𝕜] F) (f : Lp E p μ) :
+    L.compLp (M.compLp f) = (L.comp M).compLp f := by
+  ext1
+  filter_upwards [L.coeFn_compLp (M.compLp f), M.coeFn_compLp f, (L.comp M).coeFn_compLp f] with
+    x hx1 hx2 hx3
+  rw [hx1, hx2, hx3, comp_apply]
+
+/-- Composing `compLpL` operators agrees with `compLpL` of the composed operator. -/
+theorem comp_compLpL [Fact (1 ≤ p)] (L : F →L[𝕜] G) (M : E →L[𝕜] F) :
+    (L.compLpL p μ).comp (M.compLpL p μ) = (L.comp M).compLpL p μ := by
+  ext1 f
+  exact L.comp_compLp M f
+
+/-- Applying `compLpL` in succession agrees with `compLpL` of the composed operator. -/
+theorem compLpL_compLpL [Fact (1 ≤ p)] (L : F →L[𝕜] G) (M : E →L[𝕜] F) (f : Lp E p μ) :
+    L.compLpL p μ (M.compLpL p μ f) = (L.comp M).compLpL p μ f :=
+  L.comp_compLp M f
+
+/-- Pushing an `Lp` function forward along the identity map returns it unchanged. -/
+@[simp]
+theorem id_compLp (f : Lp E p μ) : (ContinuousLinearMap.id 𝕜 E).compLp f = f := by
+  ext1
+  exact (ContinuousLinearMap.id 𝕜 E).coeFn_compLp f
+
+/-- The `compLpL` operator of the identity map is the identity operator on `Lp`. -/
+@[simp]
+theorem id_compLpL [Fact (1 ≤ p)] :
+    (ContinuousLinearMap.id 𝕜 E).compLpL p μ = ContinuousLinearMap.id 𝕜 (Lp E p μ) := by
+  ext1 f
+  exact id_compLp f
+
+end ContinuousLinearMap

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.GraphStep.ScalarProjection
 public import TauCeti.Analysis.Sobolev.W1p.Density
 public import TauCeti.MeasureTheory.Function.Lp.FiniteDimensional
+import TauCeti.MeasureTheory.Function.Lp.Basic
 
 /-!
 # Smooth compactly supported fields are dense in vector-valued `W^{1,p}(ℝⁿ)`
@@ -26,8 +27,9 @@ test function `ψ` gives the smooth compactly supported field `x ↦ ψ x • b�
 
 ## Main declarations
 
-* `TauCeti.WeakDerivStep.smulRightW1pL`: the bounded linear map `u ↦ (x ↦ u x • b)` from scalar
-  Sobolev functions to `F`-valued ones.
+* `TauCeti.WeakDerivStep.smulRightW1pL`, `TauCeti.WeakDerivStep.smulRightBaseW1pL`: the bounded
+  linear maps `u ↦ (x ↦ u x • b)` from scalar Sobolev functions into the identity-based and
+  `ι`-based weak-derivative graphs.
 * `TauCeti.WeakDerivStep.prev_smulRightW1pL_ofTestFunctionₗ_ae_eq`: for a test function `ψ`, this
   field is represented by `x ↦ ψ x • b`.
 * `TauCeti.WeakDerivStep.sum_smulRightW1pL_toW1pL`: a field is the sum of its coordinate fields.
@@ -127,6 +129,45 @@ theorem prev_smulRightW1pL_ofTestFunctionₗ_ae_eq (b : F) (φ : 𝓓(Omega, ℝ
   filter_upwards [(ContinuousLinearMap.toSpanSingleton ℝ b).coeFn_compLpL
     (testFunctionLp (mu := mu) p φ), testFunctionLp_apply_ae (mu := mu) p φ] with x hx hφ
   rw [hx, ContinuousLinearMap.toSpanSingleton_apply, hφ]
+
+/-- The bounded linear map sending a scalar Sobolev function `w` to `x ↦ w x • a` in the
+weak-derivative graph over `ι.compLpL p (mu.restrict Omega)`. -/
+def smulRightBaseW1pL {D : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D]
+    (ι : D →L[ℝ] F) (a : D) :
+    W1p mu Omega p →L[ℝ] WeakDerivStep mu Omega p (ι.compLpL p (mu.restrict Omega)) :=
+  ContinuousLinearMap.codRestrict
+    ((WithLp.prodContinuousLinearEquiv 2 ℝ _ _).symm.toContinuousLinearMap.comp
+      ((((ContinuousLinearMap.toSpanSingleton ℝ a).compLpL p (mu.restrict Omega)).comp
+          W1p.valueL).prod
+        (((smulRightGradientL (ι a)).compLpL p (mu.restrict Omega)).comp W1p.gradientL)))
+    _ fun w ↦ (mem_weakDerivStepSubmodule_iff_hasWeakFDerivOn _ _).mpr <| by
+      have hcomp : ι.comp (ContinuousLinearMap.toSpanSingleton ℝ a) =
+          ContinuousLinearMap.toSpanSingleton ℝ (ι a) := by
+        ext
+        simp
+      have hae : ι.compLpL p (mu.restrict Omega)
+          ((ContinuousLinearMap.toSpanSingleton ℝ a).compLpL p (mu.restrict Omega) (W1p.value w)) =
+            (ContinuousLinearMap.toSpanSingleton ℝ (ι a)).compLpL p (mu.restrict Omega)
+              (W1p.value w) := by
+        rw [ContinuousLinearMap.compLpL_compLpL, hcomp]
+      simpa [hae] using hasWeakFDerivOn_smulRight (ι a) w
+
+/-- The value of `smulRightBaseW1pL ι a w` is the class of `x ↦ w x • a`. -/
+@[simp]
+theorem prev_smulRightBaseW1pL {D : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D]
+    (ι : D →L[ℝ] F) (a : D) (w : W1p mu Omega p) :
+    prev _ (smulRightBaseW1pL ι a w) =
+      (ContinuousLinearMap.toSpanSingleton ℝ a).compLpL p (mu.restrict Omega) (W1p.value w) := by
+  simp [prev_coe, smulRightBaseW1pL]
+
+/-- The weak derivative of `smulRightBaseW1pL ι a w` is the class of
+`x ↦ (v ↦ ⟪∇w x, v⟫ • ι a)`. -/
+@[simp]
+theorem weakFDeriv_smulRightBaseW1pL {D : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D]
+    (ι : D →L[ℝ] F) (a : D) (w : W1p mu Omega p) :
+    weakFDeriv _ (smulRightBaseW1pL ι a w) =
+      (smulRightGradientL (ι a)).compLpL p (mu.restrict Omega) (W1p.gradient w) := by
+  simp [weakFDeriv_coe, smulRightBaseW1pL]
 
 end CompleteSpace
 

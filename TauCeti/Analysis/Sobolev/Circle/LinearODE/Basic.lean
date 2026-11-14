@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Calculus.ContinuousMap.Basic
 public import TauCeti.Analysis.Fredholm.CompactPerturbation
 public import TauCeti.Analysis.Sobolev.Circle.OfContinuousMap
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
+import TauCeti.Topology.Algebra.Module.ComplexSmulI
 
 /-!
 # Periodic linear differential operators on the circle Sobolev spaces
@@ -64,6 +65,12 @@ comparing weak and classical derivatives
   whose continuous representative solves `ζ' = S ζ` classically.
 * `TauCeti.CircleSobolev.isInvertible_loopOperator_iff`: `L_S` is invertible exactly when
   `ζ' = S ζ` has no nonzero continuous periodic solution.
+* `TauCeti.CircleSobolev.isFredholm_I_smul_loopOperator`,
+  `TauCeti.CircleSobolev.index_I_smul_loopOperator`,
+  `TauCeti.CircleSobolev.isInvertible_I_smul_loopOperator_iff`,
+  `TauCeti.CircleSobolev.norm_inverse_I_smul_loopOperator`,
+  `TauCeti.CircleSobolev.I_smul_loopOperator_sub_smul_const_I`: Fredholmness, index zero,
+  invertibility, inverse norm, and constant-`I` loop shift of `I • loopOperator T S`.
 
 ## References
 
@@ -248,6 +255,51 @@ theorem isInvertible_loopOperator_iff (S : C(AddCircle T, E →L[ℝ] E)) :
         ((h _ ((loopOperator_eq_zero_iff T S a).1 ha)).trans (map_zero _).symm)
     exact (isFredholm_loopOperator T S).isInvertible_of_injective_of_index_eq_zero hinj
       (index_loopOperator T S)
+
+/-- `I • loopOperator T S` is a Fredholm operator of real Banach spaces. -/
+theorem isFredholm_I_smul_loopOperator (S : C(AddCircle T, E →L[ℝ] E)) :
+    (I • loopOperator T S).IsFredholm := by
+  rw [← Complex.smulIEquiv_comp]
+  exact (isFredholm_loopOperator T S).equiv_comp (Complex.smulIEquiv _)
+
+/-- `I • loopOperator T S` has Fredholm index zero. -/
+@[simp]
+theorem index_I_smul_loopOperator (S : C(AddCircle T, E →L[ℝ] E)) :
+    (I • loopOperator T S).index = 0 := by
+  rw [← Complex.smulIEquiv_comp, ContinuousLinearMap.index_equiv_comp, index_loopOperator]
+
+/-- `I • loopOperator T S` is invertible if and only if `loopOperator T S` is invertible. -/
+@[simp]
+theorem isInvertible_I_smul_loopOperator_iff (S : C(AddCircle T, E →L[ℝ] E)) :
+    (I • loopOperator T S).IsInvertible ↔ (loopOperator T S).IsInvertible := by
+  rw [← Complex.smulIEquiv_comp, ContinuousLinearMap.isInvertible_equiv_comp]
+
+/-- `I • loopOperator T S` and `loopOperator T S` have equal inverse norms. -/
+@[simp]
+theorem norm_inverse_I_smul_loopOperator (S : C(AddCircle T, E →L[ℝ] E)) :
+    ‖(I • loopOperator T S).inverse‖ = ‖(loopOperator T S).inverse‖ := by
+  let e : CircleSobolev 0 E ≃ₗᵢ[ℝ] CircleSobolev 0 E :=
+    ⟨(Complex.smulIEquiv (CircleSobolev 0 E)).symm.toLinearEquiv, fun y ↦ by simp [norm_smul]⟩
+  have he :
+      ((Complex.smulIEquiv (CircleSobolev 0 E)).symm :
+        CircleSobolev 0 E →L[ℝ] CircleSobolev 0 E) = (e : _ →L[ℝ] _) := by
+    ext y
+    simp [e]
+  rw [← Complex.smulIEquiv_comp, ContinuousLinearMap.inverse_equiv_comp, he]
+  exact (loopOperator T S).inverse.opNorm_comp_linearIsometryEquiv e
+
+/-- Subtracting the constant complex-structure loop `δ • (I • id)` from `S` subtracts `δ • ι` from
+the asymptotic loop operator `I • loopOperator T S`. -/
+theorem I_smul_loopOperator_sub_smul_const_I (S : C(AddCircle T, E →L[ℝ] E)) (δ : ℝ) :
+    I • loopOperator T (S - δ • ContinuousMap.const _ (I • ContinuousLinearMap.id ℝ E)) =
+      I • loopOperator T S - δ • (inclusion (E := E) zero_le_one).restrictScalars ℝ := by
+  ext a : 1
+  simp only [smul_apply, loopOperator_sub, add_apply, mulLoop_smul,
+    mulLoop_const_smul_id T (s := 1) (by norm_num), smul_add, sub_apply,
+    ContinuousLinearMap.coe_restrictScalars']
+  rw [← Complex.coe_smul δ (I • inclusion zero_le_one a), smul_smul, smul_smul,
+    show I * (δ : ℂ) * I = -(δ : ℂ) by linear_combination (δ : ℂ) * I_sq, neg_smul,
+    Complex.coe_smul, sub_eq_add_neg]
 
 end CircleSobolev
 

@@ -21,7 +21,7 @@ commutes with it is continuous complex-linear.
 ## Main definitions and results
 
 * `Complex.smulIEquiv`: multiplication by `i` as a real continuous linear equivalence, with
-  `smulIEquiv_apply` and `smulIEquiv_symm_apply`.
+  `smulIEquiv_apply`, `smulIEquiv_symm_apply`, and `smulIEquiv_comp`.
 * `ContinuousLinearMap.complexOfMapISmul`: a continuous real-linear map between complex modules
   that commutes with multiplication by `i`, as a continuous complex-linear map.
 -/
@@ -47,6 +47,14 @@ theorem smulIEquiv_apply (x : X) : smulIEquiv X x = I • x := by
 @[simp]
 theorem smulIEquiv_symm_apply (x : X) : (smulIEquiv X).symm x = -I • x := by
   rw [ContinuousLinearEquiv.symm_apply_eq, smulIEquiv_apply, I_smul_neg_I_smul]
+
+/-- Post-composing a continuous real-linear map with `Complex.smulIEquiv` multiplies it by `I`. -/
+@[simp]
+theorem smulIEquiv_comp {Y : Type*} [AddCommGroup Y] [TopologicalSpace Y] [Module ℝ Y]
+    (L : Y →L[ℝ] X) :
+    (smulIEquiv X : X →L[ℝ] X).comp L = I • L := by
+  ext y
+  simp
 
 end Complex
 
