@@ -129,7 +129,7 @@ theorem exists_paths_setSeparator_sum_eq [Finite V] [DecidableEq V] (c : V → �
     fun i ↦ (r i).trimToSetsTarget (ha₀ i) (hb₀ i), P, X'.toLeft,
     fun i ↦ (r i).trimToSetsSource_mem (ha₀ i) (hb₀ i),
     fun i ↦ (r i).trimToSetsTarget_mem (ha₀ i) (hb₀ i),
-    fun i ↦ ArrowWalk.isPath_trimToSets (hr i) _ _,
+    fun i ↦ (hr i).trimToSets _ _,
     fun i _ hv ↦ (r i).notMem_and_notMem_of_mem_vertices_trimToSets _ _ hv, fun v ↦ ?_,
     fun a ha b hb h ↦ hX' ?_, ?_⟩
   · -- A member through `v` comes from a member of the packing through `inl v`.

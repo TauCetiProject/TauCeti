@@ -227,7 +227,7 @@ theorem SetFlow.exists_paths_card_eq_val [Fintype V] [∀ x y, Fintype (Q x y)]
     fun i ↦ (P i).trimToSetsTarget (hA i) (hB i), fun i ↦ (P i).trimToSets (hA i) (hB i), ?_,
     fun i ↦ (P i).trimToSetsSource_mem (hA i) (hB i),
     fun i ↦ (P i).trimToSetsTarget_mem (hA i) (hB i),
-    fun i ↦ ArrowWalk.isPath_trimToSets (D.isPath_walk _ (List.getElem_mem i.isLt)) _ _,
+    fun i ↦ (D.isPath_walk _ (List.getElem_mem i.isLt)).trimToSets _ _,
     fun i _ hv ↦ (P i).notMem_and_notMem_of_mem_vertices_trimToSets (hA i) (hB i) hv,
     fun i e he ↦ D.apply_eq_one_of_mem_arrows hf (List.getElem_mem _)
       ((P i).arrows_trimToSets_subset (hA i) (hB i) he),

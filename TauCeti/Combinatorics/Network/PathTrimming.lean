@@ -35,7 +35,7 @@ with two distinguished terminals.
   first vertex in `B` at or after its source.
 * `TauCeti.ArrowWalk.notMem_of_mem_tail_vertices_trimToSets`: the trimmed walk contains no vertex
   of `A` after its source.
-* `TauCeti.ArrowWalk.isPath_trimToSets`: trimming a path produces a path.
+* `TauCeti.ArrowWalk.IsPath.trimToSets`: trimming a path produces a path.
 * `TauCeti.ArrowWalk.vertices_trimToSets_subset` and
   `TauCeti.ArrowWalk.arrows_trimToSets_subset`: trimming introduces no vertices or arrows.
 * `TauCeti.ArrowWalk.notMem_and_notMem_of_mem_vertices_trimToSets`: internal vertices of the
@@ -75,7 +75,7 @@ private noncomputable def trimToSetsData (p : ArrowWalk Q s t) (hs : s ∈ A) (h
         ∀ z ∈ x.2.2.vertices.dropLast, z ∉ B} :=
   Classical.choice <| by
     obtain ⟨a, ha, b, hb, q, before, after, hfactor, hA, hB⟩ :=
-      p.exists_eq_comp_comp_interior_notMem hs ht
+      p.exists_eq_comp_comp_forall_notMem hs ht
     exact ⟨⟨⟨a, b, q⟩, ha, hb, ⟨before, after, hfactor, hA⟩, hB⟩⟩
 
 /-- The source of the walk obtained by trimming `p` between the terminal sets `A` and `B`. -/
@@ -125,13 +125,17 @@ theorem notMem_of_mem_tail_vertices_trimToSets (p : ArrowWalk Q s t) (hs : s ∈
   let ⟨_, after, _, hA⟩ := p.exists_eq_comp_trimToSets_comp hs ht
   hA z (tail_vertices_subset_tail_vertices_comp _ after hz)
 
+namespace IsPath
+
 /-- Trimming a path between terminal sets produces a path. -/
 @[simp]
-theorem isPath_trimToSets {p : ArrowWalk Q s t} (hp : p.IsPath) (hs : s ∈ A) (ht : t ∈ B) :
+theorem trimToSets {p : ArrowWalk Q s t} (hp : p.IsPath) (hs : s ∈ A) (ht : t ∈ B) :
     (p.trimToSets hs ht).IsPath := by
   obtain ⟨before, after, h, -⟩ := p.exists_eq_comp_trimToSets_comp hs ht
   rw [h] at hp
   exact hp.of_comp_right.of_comp_left
+
+end IsPath
 
 /-- A trimmed walk visits only vertices of the original walk. -/
 theorem vertices_trimToSets_subset (p : ArrowWalk Q s t) (hs : s ∈ A) (ht : t ∈ B) :
@@ -213,9 +217,11 @@ private theorem trimToSets_spec_of_eq_comp_comp {a b : V} {p : ArrowWalk Q s t}
     (hA : ∀ z ∈ (q.comp after).vertices.tail, z ∉ A) (hB : ∀ z ∈ q.vertices.dropLast, z ∉ B) :
     p.trimToSetsSource hs ht = a ∧ p.trimToSetsTarget hs ht = b ∧ HEq (p.trimToSets hs ht) q :=
   let ⟨_, _, h', hA'⟩ := p.exists_eq_comp_trimToSets_comp hs ht
-  eq_comp_comp_inj_of_forall_notMem h' h (p.trimToSetsSource_mem hs ht) ha
+  let huniq := comp_comp_inj_of_forall_notMem (p.trimToSetsSource_mem hs ht) ha
     (p.trimToSetsTarget_mem hs ht) hb hA' hA
     (fun _ ↦ p.notMem_of_mem_dropLast_vertices_trimToSets hs ht) hB
+  let ⟨ha', hb', _, hq, _⟩ := huniq.mp (h'.symm.trans h)
+  ⟨ha', hb', hq⟩
 
 /-- The source of a trimmed walk is the start of any segment of the walk that begins at its last
 vertex in `A` and ends at the first vertex in `B` at or after it. -/
@@ -322,17 +328,17 @@ theorem trimToSets_trimToSets_heq (p : ArrowWalk Q s t) (hs : s ∈ A) (ht : t �
     fun _ ↦ p.notMem_of_mem_dropLast_vertices_trimToSets hs ht
 
 /-- Trimming two vertex-disjoint walks preserves their vertex-disjointness. -/
-theorem disjoint_vertices_trimToSets {s₁ t₁ s₂ t₂ : V} {p : ArrowWalk Q s₁ t₁}
-    {q : ArrowWalk Q s₂ t₂} (h : p.vertices.Disjoint q.vertices) (hs₁ : s₁ ∈ A) (ht₁ : t₁ ∈ B)
-    (hs₂ : s₂ ∈ A) (ht₂ : t₂ ∈ B) :
+theorem disjoint_vertices_trimToSets {A₁ B₁ A₂ B₂ : Set V} {s₁ t₁ s₂ t₂ : V}
+    {p : ArrowWalk Q s₁ t₁} {q : ArrowWalk Q s₂ t₂} (h : p.vertices.Disjoint q.vertices)
+    (hs₁ : s₁ ∈ A₁) (ht₁ : t₁ ∈ B₁) (hs₂ : s₂ ∈ A₂) (ht₂ : t₂ ∈ B₂) :
     (p.trimToSets hs₁ ht₁).vertices.Disjoint (q.trimToSets hs₂ ht₂).vertices :=
   fun _ hz₁ hz₂ ↦ h (p.vertices_trimToSets_subset hs₁ ht₁ hz₁)
     (q.vertices_trimToSets_subset hs₂ ht₂ hz₂)
 
 /-- Trimming two arrow-disjoint walks preserves their arrow-disjointness. -/
-theorem disjoint_arrows_trimToSets {s₁ t₁ s₂ t₂ : V} {p : ArrowWalk Q s₁ t₁}
-    {q : ArrowWalk Q s₂ t₂} (h : p.arrows.Disjoint q.arrows) (hs₁ : s₁ ∈ A) (ht₁ : t₁ ∈ B)
-    (hs₂ : s₂ ∈ A) (ht₂ : t₂ ∈ B) :
+theorem disjoint_arrows_trimToSets {A₁ B₁ A₂ B₂ : Set V} {s₁ t₁ s₂ t₂ : V}
+    {p : ArrowWalk Q s₁ t₁} {q : ArrowWalk Q s₂ t₂} (h : p.arrows.Disjoint q.arrows)
+    (hs₁ : s₁ ∈ A₁) (ht₁ : t₁ ∈ B₁) (hs₂ : s₂ ∈ A₂) (ht₂ : t₂ ∈ B₂) :
     (p.trimToSets hs₁ ht₁).arrows.Disjoint (q.trimToSets hs₂ ht₂).arrows :=
   fun _ ha₁ ha₂ ↦ h (p.arrows_trimToSets_subset hs₁ ht₁ ha₁)
     (q.arrows_trimToSets_subset hs₂ ht₂ ha₂)
