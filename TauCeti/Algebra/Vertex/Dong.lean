@@ -24,11 +24,12 @@ of orders `N_AB`, `N_AC` and `N_BC`, then `A₍ₙ₎B` and `C` are local of ord
 
 The proof works with the three-variable distribution `[[A(x), B(w)], C(z)]`, read
 coefficientwise, on which multiplication by `x - w`, `x - z` and `w - z` are commuting
-operators (`TauCeti.FormalDistribution.mulX` and its analogues). By the Jacobi identity it is
-the sum of `[A(x), [B(w), C(z)]]`, killed by `(w - z)^N_BC`, and `[[A(x), C(z)], B(w)]`,
-killed by `(x - z)^N_AC`, while the whole distribution is killed by `(x - w)^N_AB`. Writing
-`w - z = (x - z) - (x - w)` and expanding, every term of `(w - z)^(N_AB + N_AC + N_BC)` falls
-under one of these three annihilators (`Commute.sub_pow_smul_add_eq_zero`).
+operators (`TauCeti.FormalDistribution.ThreeVariable.mulX` and its analogues). By the Jacobi
+identity it is the sum of `[A(x), [B(w), C(z)]]`, killed by `(w - z)^N_BC`, and
+`[[A(x), C(z)], B(w)]`, killed by `(x - z)^N_AC`, while the whole distribution is killed by
+`(x - w)^N_AB`. Writing `w - z = (x - z) - (x - w)` and expanding, every term of
+`(w - z)^(N_AB + N_AC + N_BC)` falls under one of these three annihilators
+(`Commute.sub_pow_smul_add_eq_zero`).
 Taking the residue against `(x - w)ⁿ` commutes with multiplication by `w - z`.
 
 In a formal vertex algebra all fields are pairwise local, so every nonnegative residue product
@@ -56,7 +57,7 @@ public section
 
 noncomputable section
 
-open Finset TauCeti.FormalDistribution
+open Finset TauCeti.FormalDistribution.ThreeVariable
 open scoped VertexOperator
 
 namespace VertexOperator

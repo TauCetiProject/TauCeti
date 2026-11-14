@@ -19,20 +19,21 @@ every distribution, and the three multiplications commute. Polynomials in them, 
 
 ## Main definitions
 
-* `TauCeti.FormalDistribution.mulX`, `TauCeti.FormalDistribution.mulW`,
-  `TauCeti.FormalDistribution.mulZ`: multiplication by `x`, `w` and `z`.
+* `TauCeti.FormalDistribution.ThreeVariable.mulX`,
+  `TauCeti.FormalDistribution.ThreeVariable.mulW`,
+  `TauCeti.FormalDistribution.ThreeVariable.mulZ`: multiplication by `x`, `w` and `z`.
 
 ## Main results
 
-* `TauCeti.FormalDistribution.mulX_pow_apply` and its analogues: multiplication by `x^k`
-  shifts the first index by `k`.
-* `TauCeti.FormalDistribution.commute_mulX_mulW` and its analogues: the multiplications by the
-  three variables commute.
+* `TauCeti.FormalDistribution.ThreeVariable.mulX_pow_apply` and its analogues: multiplication
+  by `x^k` shifts the first index by `k`.
+* `TauCeti.FormalDistribution.ThreeVariable.commute_mulX_mulW` and its analogues: the
+  multiplications by the three variables commute.
 -/
 
 public section
 
-namespace TauCeti.FormalDistribution
+namespace TauCeti.FormalDistribution.ThreeVariable
 
 variable {M : Type*} [AddCommGroup M]
 
@@ -118,4 +119,4 @@ theorem commute_mulX_mulZ : Commute (mulX (M := M)) mulZ :=
 theorem commute_mulW_mulZ : Commute (mulW (M := M)) mulZ :=
   LinearMap.ext fun _ ↦ rfl
 
-end TauCeti.FormalDistribution
+end TauCeti.FormalDistribution.ThreeVariable
