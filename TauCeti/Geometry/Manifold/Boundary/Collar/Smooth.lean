@@ -8,7 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.Boundary.Collar.Global
 public import TauCeti.Geometry.Manifold.Boundary.Collar.Local
-public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 
 /-!
@@ -144,12 +144,13 @@ theorem isOpen_range : IsOpen (range c) := c.isLocalDiffeomorph.isOpen_range
 theorem boundary_subset_range : (𝓡∂ (n + 1)).boundary M ⊆ range c := fun x hx ↦
   ⟨(⟨x, hx⟩, normalIioOpensZero one_pos), c.apply_zero _⟩
 
-/-- The image of a smooth collar, an open neighbourhood of the boundary. -/
-def opensRange : TopologicalSpace.Opens M := ⟨range c, c.isOpen_range⟩
+/-- The image of a smooth collar, an open neighbourhood of the boundary. This is Mathlib's
+`IsLocalDiffeomorph.image` of the underlying local diffeomorphism. -/
+def opensRange : TopologicalSpace.Opens M := c.isLocalDiffeomorph.image
 
 /-- The image of a smooth collar is the range of its underlying map. -/
 @[simp]
-theorem coe_opensRange : (c.opensRange : Set M) = range c := (rfl)
+theorem coe_opensRange : (c.opensRange : Set M) = range c := c.isLocalDiffeomorph.image_coe
 
 /-- A point lies in the image of a smooth collar exactly when the collar reaches it. -/
 @[simp]
@@ -186,6 +187,7 @@ theorem diffeomorphOpensRange_symm_apply_boundary (x : ↥((𝓡∂ (n + 1)).bou
   c.diffeomorphOpensRange.symm_apply_eq.2 (Subtype.ext (by simp))
 
 /-- A point of `∂M × [0, 1)` is sent to the boundary exactly when its depth is zero. -/
+@[simp]
 theorem apply_mem_boundary_iff (p : ↥((𝓡∂ (n + 1)).boundary M) × normalIioOpens 1) :
     c p ∈ (𝓡∂ (n + 1)).boundary M ↔ p.2 = normalIioOpensZero one_pos := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
