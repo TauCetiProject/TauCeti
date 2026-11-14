@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyClosed
-import TauCeti.Geometry.RingedSpace.LocallyRingedSpace
+import TauCeti.Geometry.RingedSpace.LocallyRingedSpace.Basic
 
 /-!
 # Descent of morphisms along contractions
@@ -21,7 +21,7 @@ map is a quotient map.
 This file shows that such a `c` is a categorical quotient for maps which are constant on its
 fibres: a morphism `h : X ⟶ Z` to an arbitrary scheme `Z` whose underlying map is constant on the
 fibres of `c` factors uniquely through `c`. The construction uses nothing about schemes, so it is
-carried out for locally ringed spaces in `TauCeti.Geometry.RingedSpace.LocallyRingedSpace`
+carried out for locally ringed spaces in `TauCeti.Geometry.RingedSpace.LocallyRingedSpace.Basic`
 (`AlgebraicGeometry.LocallyRingedSpace.Hom.descOfIsQuotientMap`), and the scheme versions here are
 deduced from it; in particular no separatedness of `Z` is needed. A morphism `X ⟶ Z` over a base
 `S` which is constant on every geometric fibre of `c` is constant on its set-theoretic fibres,
