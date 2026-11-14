@@ -23,8 +23,8 @@ of several integer degrees. The additional parity relations already hold in the 
 quotient by bilinearity and supercommutativity.
 
 The construction follows J. Pardon, *Contact homology and virtual fundamental cycles*,
-equation (1.1) and Definition 2.48. It does not construct the grading of the parity quotient
-or its odd derivations.
+equation (1.1) and Definition 2.48. No grading of the parity quotient or odd derivation is
+constructed in this file.
 -/
 
 public section
