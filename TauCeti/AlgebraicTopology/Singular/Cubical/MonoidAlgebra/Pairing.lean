@@ -51,9 +51,10 @@ operations of the chain systems of trajectory spaces in Morse theory.
   push-forwards of chains, with the one-sided forms
   `TauCeti.cubicalChainPairing_cubicalChainModuleLinearMap_left` and
   `TauCeti.cubicalChainPairing_cubicalChainModuleLinearMap_right`.
-* `TauCeti.cubicalChainPairing_lof_point`: pairing with a point is a push-forward.
-* `TauCeti.smul_eq_cubicalChainPairing`, `TauCeti.op_smul_eq_cubicalChainPairing`: the actions of
-  the chains of a monoid are the pairings of the actions on the space.
+* `TauCeti.cubicalChainPairing_lof_point_left`: pairing with a point is a push-forward.
+* `TauCeti.cubicalChainModuleEquiv_smul_eq_cubicalChainPairing`,
+  `TauCeti.op_cubicalChainModuleEquiv_smul_eq_cubicalChainPairing`: the actions of the chains of a
+  monoid are the pairings of the actions on the space.
 * `TauCeti.cubicalChainTensorHom_tmul`: the induced morphism is the pairing on pure tensors.
 * `TauCeti.cubicalChainDifferential_cubicalChainSumPairing`,
   `TauCeti.cubicalChainSumPairing_assoc`, `TauCeti.cubicalChainSumPairing_mulMap`: the Leibniz
@@ -343,7 +344,8 @@ variable {G Y : Type*} [Monoid G] [TopologicalSpace G] [ContinuousMul G] [Topolo
 
 /-- **The left action is a pairing**: a chain of `G` acts on the left by the pairing induced by
 the action `G × Y → Y`. -/
-theorem smul_eq_cubicalChainPairing [MulAction G Y] [ContinuousSMul G Y]
+theorem cubicalChainModuleEquiv_smul_eq_cubicalChainPairing [MulAction G Y]
+    [ContinuousSMul G Y]
     (a : cubicalChainModule G H R) (n : cubicalChainModule Y K R) :
     cubicalChainModuleEquiv G H R a • n = cubicalChainPairing H K R (leftActMap G Y) a n := by
   induction a using cubicalChainModule.induction_on with
@@ -357,7 +359,8 @@ theorem smul_eq_cubicalChainPairing [MulAction G Y] [ContinuousSMul G Y]
 
 /-- **The right action is a pairing**: a chain of `G` acts on the right by the pairing induced by
 the action `Y × G → Y`. -/
-theorem op_smul_eq_cubicalChainPairing [MulAction Gᵐᵒᵖ Y] [ContinuousSMul Gᵐᵒᵖ Y]
+theorem op_cubicalChainModuleEquiv_smul_eq_cubicalChainPairing [MulAction Gᵐᵒᵖ Y]
+    [ContinuousSMul Gᵐᵒᵖ Y]
     (a : cubicalChainModule G G R) (m : cubicalChainModule Y G R) :
     op (cubicalChainModuleEquiv G G R a) • m = cubicalChainPairing G G R (actMap Y G) m a := by
   induction a using cubicalChainModule.induction_on with
@@ -642,7 +645,8 @@ variable {X : Type*} {Y Z : Type u} [TopologicalSpace X] [TopologicalSpace Y] [T
 
 /-- **Pairing with a point**: pairing with the `0`-cube at `x` is the push-forward along
 `y ↦ f (x, y)`. -/
-theorem cubicalChainPairing_lof_point (f : C(X × Y, Z)) (x : X) (n : cubicalChainModule Y K R) :
+theorem cubicalChainPairing_lof_point_left (f : C(X × Y, Z)) (x : X)
+    (n : cubicalChainModule Y K R) :
     cubicalChainPairing H K R f (cubicalChainModuleLof X H R 0 (ofCube X R (SingularCube.point x)))
         n =
       cubicalChainModuleLinearMap R

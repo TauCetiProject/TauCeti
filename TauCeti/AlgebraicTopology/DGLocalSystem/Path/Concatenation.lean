@@ -157,7 +157,8 @@ private theorem pathChainPrepend_symm_concat (γ : MoorePathBetween B a b)
         (pathChainConcat B a b c R (tmul R (loopChainAlgebra B b R) m n)) =
       cubicalChainModuleEquiv _ _ R (cubicalChainModuleLinearMap R (retraceLoop γ) m) • n := by
   rw [pathChainConcat_tmul, cubicalChainModuleLinearMap_cubicalChainPairing,
-    smul_eq_cubicalChainPairing, cubicalChainPairing_cubicalChainModuleLinearMap_left]
+    cubicalChainModuleEquiv_smul_eq_cubicalChainPairing,
+    cubicalChainPairing_cubicalChainModuleLinearMap_left]
   refine congrArg (fun F ↦ cubicalChainPairing _ _ R F m n) (ContinuousMap.ext fun ⟨σ, τ⟩ ↦ ?_)
   exact MoorePathBetween.ext (by simp [retraceLoop, MoorePathBetween.toMoorePath_leftAct,
     MoorePath.trans_assoc])
@@ -168,9 +169,10 @@ private theorem op_smul_pathPointChain (γ : MoorePathBetween B a b)
     op (cubicalChainModuleEquiv _ _ R (cubicalChainModuleLinearMap R (retraceLoop γ) m)) •
         pathPointChain (R := R) γ =
       pathChainPrepend R γ b (pathChainPrepend R γ.symm b m) := by
-  rw [op_smul_eq_cubicalChainPairing, cubicalChainPairing_cubicalChainModuleLinearMap_right,
-    cubicalChainPairing_lof_point, pathChainPrepend_apply,
-    pathChainPrepend_apply, ← LinearMap.comp_apply, ← cubicalChainModuleLinearMap_comp]
+  rw [op_cubicalChainModuleEquiv_smul_eq_cubicalChainPairing,
+    cubicalChainPairing_cubicalChainModuleLinearMap_right, cubicalChainPairing_lof_point_left,
+    pathChainPrepend_apply, pathChainPrepend_apply, ← LinearMap.comp_apply,
+    ← cubicalChainModuleLinearMap_comp]
   refine congrArg (fun F ↦ cubicalChainModuleLinearMap R F m) (ContinuousMap.ext fun σ ↦ ?_)
   exact MoorePathBetween.ext (by simp [retraceLoop, MoorePathBetween.toMoorePath_rightAct])
 
@@ -179,7 +181,7 @@ private theorem pathChainConcat_pathPointChain (γ : MoorePathBetween B a b)
     (y : cubicalChainModule (MoorePathBetween B b c) (MooreLoopSpace B c) R) :
     pathChainConcat B a b c R (tmul R (loopChainAlgebra B b R) (pathPointChain γ) y) =
       pathChainPrepend R γ c y := by
-  rw [pathChainConcat_tmul, cubicalChainPairing_lof_point, pathChainPrepend_apply]
+  rw [pathChainConcat_tmul, cubicalChainPairing_lof_point_left, pathChainPrepend_apply]
   exact congrArg (fun F ↦ cubicalChainModuleLinearMap R F y) (ContinuousMap.ext fun _ ↦ by simp)
 
 /-- Concatenating, prepending `γ⁻¹` and tensoring with the point `γ` is, by the balancing
