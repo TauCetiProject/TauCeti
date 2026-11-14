@@ -210,7 +210,7 @@ theorem kroneckerSym_eq_zero_iff {a b : ℤ} : kroneckerSym a b = 0 ↔ a.gcd b 
   -- Writing `|b| = 2 ^ e * m` with `m` odd, `a` and `b` have a common factor exactly when `a` is
   -- even and `e ≠ 0`, or `a` and `m` have one.
   rw [kroneckerSym_of_ne_zero a hb, Int.gcd_eq_natAbs_gcd_natAbs, Ne,
-    ← Nat.coprime_iff_gcd_eq_one, Nat.coprime_iff_coprime_ordCompl Nat.prime_two]
+    ← Nat.coprime_iff_gcd_eq_one, Nat.coprime_iff_coprime_ordCompl (p := 2)]
   simp only [mul_eq_zero, hs, false_or, pow_eq_zero_iff', χ₈_intCast_eq_zero_iff,
     jacobiSym.eq_zero_iff, Ne, hm, not_false_eq_true, true_and, Int.gcd_eq_natAbs_gcd_natAbs,
     Int.natAbs_natCast, not_and_or, not_imp, Nat.coprime_iff_gcd_eq_one, ← Int.natCast_dvd,
