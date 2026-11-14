@@ -6,27 +6,30 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.HilbertSymbol.Basic
-public import TauCeti.NumberTheory.NumberField.InfinitePlace.Transport
+public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Transport
 public import TauCeti.NumberTheory.NumberField.RingOfIntegers.Transport
 public import TauCeti.NumberTheory.QuadraticForm.Global.Localization
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Transport
 
 /-!
-# Transporting localized units and Hilbert symbols along an isomorphism of fields
+# Transporting localized units, Hilbert symbols, and local norm equations along field isomorphisms
 
 A ring isomorphism `e : K ≃+* L` of number fields identifies the finite places of `K` with those of
-`L` by `HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e)` and the real places of
-`K` with those of `L` by `NumberField.InfinitePlace.realEquivOfRingEquiv e`. At each pair of
-corresponding finite places `v` and `w`, `adicCompletionCongr` extends `e` to a ring isomorphism
-`K_v ≃+* L_w` that intertwines `unitAtFinitePlace`, preserves local squares, and preserves the
-norm-equation Hilbert symbol. At each real place `w`, `realEquivOfRingEquiv e` intertwines
-`unitAtRealPlace` on the nose in `ℝˣ`.
+`L` by `HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e)` and the infinite and
+real places of `K` with those of `L` by `NumberField.InfinitePlace.equivOfRingEquiv e` and
+`NumberField.InfinitePlace.realEquivOfRingEquiv e`. At each pair of corresponding finite places `v`
+and `w`, `adicCompletionCongr` extends `e` to a ring isomorphism `K_v ≃+* L_w` that intertwines
+`unitAtFinitePlace`, preserves local squares, preserves the norm-equation Hilbert symbol, and
+preserves solvability of the quadratic norm equation `a = x² - d y²`. At each pair of corresponding
+infinite places `w` and `w'`, `AbsoluteValue.Completion.congr` extends `e` to `K_w ≃+* L_{w'}` and
+likewise preserves solvability of `a = x² - d y²`; at real places `realEquivOfRingEquiv e`
+intertwines `unitAtRealPlace` on the nose in `ℝˣ`.
 
-Reindexing along the two place bijections shows that the product of the finite-place Hilbert
-symbols `(a_v, b_v)_v` and the product of the real-place Hilbert symbols `(a_w, b_w)_w` are both
-invariant under `e`. In particular, global statements expressed through local squareness and
-localized Hilbert symbols transfer along `Shrink.ringEquiv K : Shrink.{0} K ≃+* K` from `Type` to
-number fields in any universe.
+Reindexing along the place bijections shows that the product of the finite-place Hilbert symbols
+`(a_v, b_v)_v`, the product of the real-place Hilbert symbols `(a_w, b_w)_w`, and everywhere-local
+solvability of `a = x² - d y²` are all invariant under `e`. In particular, global statements
+expressed through local squareness, localized Hilbert symbols, or local norm equations transfer
+along `Shrink.ringEquiv K : Shrink.{0} K ≃+* K` from `Type` to number fields in any universe.
 
 ## Main results
 
@@ -40,12 +43,20 @@ number fields in any universe.
   finite place is preserved along `e`.
 * `TauCeti.finprod_hilbertSymbol_unitAtFinitePlace_ringEquiv`: the product of the finite-place
   Hilbert symbols is preserved along `e`.
+* `TauCeti.exists_sq_sub_mul_sq_adicCompletion_iff_of_ringEquiv`,
+  `TauCeti.exists_sq_sub_mul_sq_adicCompletion_equivOfRingEquiv`,
+  `TauCeti.forall_adicCompletion_exists_sq_sub_mul_sq_iff_of_ringEquiv`: solvability of
+  `a = x² - d y²` in adic completions is preserved along `e`.
 * `TauCeti.unitAtRealPlace_realEquivOfRingEquiv`,
   `TauCeti.unitAtRealPlace_realEquivOfRingEquiv_units_map`: `unitAtRealPlace` at a transported real
   place pulls back along `e.symm`, and is unchanged when both place and unit are transported along
   `e`.
 * `TauCeti.prod_hilbertSymbol_unitAtRealPlace_ringEquiv`: the product of the real-place Hilbert
   symbols is preserved along `e`.
+* `TauCeti.exists_sq_sub_mul_sq_infinitePlaceCompletion_iff_of_apply_eq`,
+  `TauCeti.exists_sq_sub_mul_sq_infinitePlaceCompletion_equivOfRingEquiv`,
+  `TauCeti.forall_infinitePlaceCompletion_exists_sq_sub_mul_sq_iff_of_ringEquiv`: solvability of
+  `a = x² - d y²` in archimedean completions is preserved along `e`.
 -/
 
 public section
@@ -140,9 +151,57 @@ theorem finprod_hilbertSymbol_unitAtFinitePlace_ringEquiv (e : K ≃+* L) (a b :
   rw [← finprod_comp_equiv (HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e))]
   exact finprod_congr fun v ↦ hilbertSymbol_unitAtFinitePlace_equivOfRingEquiv e v a b
 
+/-- Solvability of `a = x² - d y²` in the adic completion is preserved under a ring isomorphism
+`e : K ≃+* L` of number fields carrying `v` to `w`. -/
+theorem exists_sq_sub_mul_sq_adicCompletion_iff_of_ringEquiv (e : K ≃+* L)
+    {v : HeightOneSpectrum (𝓞 K)} {w : HeightOneSpectrum (𝓞 L)}
+    (hvw : w.asIdeal = Ideal.map (RingOfIntegers.mapRingEquiv e) v.asIdeal) (d a : K) :
+    (∃ x y : w.adicCompletion L,
+        algebraMap L (w.adicCompletion L) (e a) =
+          x ^ 2 - algebraMap L (w.adicCompletion L) (e d) * y ^ 2) ↔
+      ∃ x y : v.adicCompletion K,
+        algebraMap K (v.adicCompletion K) a =
+          x ^ 2 - algebraMap K (v.adicCompletion K) d * y ^ 2 := by
+  have he (x : K) : w.valuation L (e x) = v.valuation K x := by
+    simpa using valuation_ringEquivOfRingEquiv (K := K) (K' := L)
+      (RingOfIntegers.mapRingEquiv e) hvw x
+  rw [← adicCompletionCongr_algebraMap he a, ← adicCompletionCongr_algebraMap he d,
+    exists_eq_sq_sub_mul_sq_map_iff]
+
+/-- Solvability of `a = x² - d y²` in the adic completion is preserved when both the finite place
+and the coefficients are transported along `e : K ≃+* L`. -/
+theorem exists_sq_sub_mul_sq_adicCompletion_equivOfRingEquiv (e : K ≃+* L)
+    (v : HeightOneSpectrum (𝓞 K)) (d a : K) :
+    (∃ x y :
+        (HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e) v).adicCompletion L,
+        algebraMap L
+          ((HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e) v).adicCompletion L)
+          (e a) =
+          x ^ 2 -
+            algebraMap L
+              ((HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e) v).adicCompletion
+                L) (e d) * y ^ 2) ↔
+      ∃ x y : v.adicCompletion K,
+        algebraMap K (v.adicCompletion K) a =
+          x ^ 2 - algebraMap K (v.adicCompletion K) d * y ^ 2 :=
+  exists_sq_sub_mul_sq_adicCompletion_iff_of_ringEquiv e
+    (asIdeal_equivOfRingEquiv (RingOfIntegers.mapRingEquiv e) v) d a
+
+/-- Solvability of `a = x² - d y²` in every finite completion is preserved under a ring isomorphism
+`e : K ≃+* L` of number fields. -/
+theorem forall_adicCompletion_exists_sq_sub_mul_sq_iff_of_ringEquiv (e : K ≃+* L) (d a : K) :
+    (∀ w : HeightOneSpectrum (𝓞 L), ∃ x y : w.adicCompletion L,
+        algebraMap L (w.adicCompletion L) (e a) =
+          x ^ 2 - algebraMap L (w.adicCompletion L) (e d) * y ^ 2) ↔
+      ∀ v : HeightOneSpectrum (𝓞 K), ∃ x y : v.adicCompletion K,
+        algebraMap K (v.adicCompletion K) a =
+          x ^ 2 - algebraMap K (v.adicCompletion K) d * y ^ 2 :=
+  ((HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e)).forall_congr fun v ↦
+    (exists_sq_sub_mul_sq_adicCompletion_equivOfRingEquiv e v d a).symm).symm
+
 end FinitePlace
 
-section RealPlace
+section InfinitePlace
 
 variable {K L : Type*} [Field K] [Field L]
 
@@ -181,6 +240,45 @@ theorem prod_hilbertSymbol_unitAtRealPlace_ringEquiv
     rw [unitAtRealPlace_realEquivOfRingEquiv_units_map,
       unitAtRealPlace_realEquivOfRingEquiv_units_map]
 
-end RealPlace
+/-- Solvability of `a = x² - d y²` in an archimedean completion is preserved under a ring
+isomorphism `e : K ≃+* L` intertwining `w` and `w'`. -/
+theorem exists_sq_sub_mul_sq_infinitePlaceCompletion_iff_of_apply_eq
+    {e : K ≃+* L} {w : InfinitePlace K} {w' : InfinitePlace L}
+    (hw : ∀ x, w' (e x) = w x) (d a : K) :
+    (∃ x y : w'.Completion,
+        algebraMap L w'.Completion (e a) =
+          x ^ 2 - algebraMap L w'.Completion (e d) * y ^ 2) ↔
+      ∃ x y : w.Completion,
+        algebraMap K w.Completion a =
+          x ^ 2 - algebraMap K w.Completion d * y ^ 2 := by
+  rw [← AbsoluteValue.Completion.congr_algebraMap hw a,
+    ← AbsoluteValue.Completion.congr_algebraMap hw d, exists_eq_sq_sub_mul_sq_map_iff]
+
+/-- Solvability of `a = x² - d y²` in an archimedean completion is preserved when both the infinite
+place and the coefficients are transported along `e : K ≃+* L`. -/
+theorem exists_sq_sub_mul_sq_infinitePlaceCompletion_equivOfRingEquiv (e : K ≃+* L)
+    (w : InfinitePlace K) (d a : K) :
+    (∃ x y : (InfinitePlace.equivOfRingEquiv e w).Completion,
+        algebraMap L (InfinitePlace.equivOfRingEquiv e w).Completion (e a) =
+          x ^ 2 - algebraMap L (InfinitePlace.equivOfRingEquiv e w).Completion (e d) * y ^ 2) ↔
+      ∃ x y : w.Completion,
+        algebraMap K w.Completion a =
+          x ^ 2 - algebraMap K w.Completion d * y ^ 2 :=
+  exists_sq_sub_mul_sq_infinitePlaceCompletion_iff_of_apply_eq (eq_equivOfRingEquiv_iff.mp rfl) d a
+
+/-- Solvability of `a = x² - d y²` in every archimedean completion is preserved under a ring
+isomorphism `e : K ≃+* L` of fields. -/
+theorem forall_infinitePlaceCompletion_exists_sq_sub_mul_sq_iff_of_ringEquiv (e : K ≃+* L)
+    (d a : K) :
+    (∀ w' : InfinitePlace L, ∃ x y : w'.Completion,
+        algebraMap L w'.Completion (e a) =
+          x ^ 2 - algebraMap L w'.Completion (e d) * y ^ 2) ↔
+      ∀ w : InfinitePlace K, ∃ x y : w.Completion,
+        algebraMap K w.Completion a =
+          x ^ 2 - algebraMap K w.Completion d * y ^ 2 :=
+  ((InfinitePlace.equivOfRingEquiv e).forall_congr fun w ↦
+    (exists_sq_sub_mul_sq_infinitePlaceCompletion_equivOfRingEquiv e w d a).symm).symm
+
+end InfinitePlace
 
 end TauCeti

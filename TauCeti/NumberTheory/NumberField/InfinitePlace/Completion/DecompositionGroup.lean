@@ -5,9 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
--- Construct the extension on the underlying uniform completions.
-import all Mathlib.Analysis.Normed.Field.WithAbs
-
 public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Extension
 
 /-!
@@ -52,9 +49,12 @@ from the decomposition group.
 
 ## Main results
 
-* `NumberField.InfinitePlace.completionCongr_algebraMap` and
-  `NumberField.InfinitePlace.eq_completionCongr_of_continuous`: `completionCongr` extends `σ`,
-  uniquely among continuous maps.
+* `NumberField.InfinitePlace.toRingEquiv_completionCongr`,
+  `NumberField.InfinitePlace.completionCongr_algebraMap`,
+  `NumberField.InfinitePlace.norm_completionCongr`, and
+  `NumberField.InfinitePlace.eq_completionCongr_of_continuous`: `completionCongr` lifts
+  `AbsoluteValue.Completion.congr`, preserves the norm, and extends `σ` uniquely among continuous
+  maps.
 * `NumberField.InfinitePlace.decompositionHom_injective`: the decomposition group embeds into
   `Aut(L_w/K_v)`, and `restrictNormalHom_restrictScalarsHom_decompositionHom` says that restricting
   its action back to `L` recovers the automorphism.
@@ -102,53 +102,25 @@ instance liesOver_smul (v : InfinitePlace K) (σ : L ≃ₐ[K] L) (w : InfiniteP
     simp
   exact ⟨congrArg Subtype.val h⟩
 
-/-- `σ` is an isometry from `L` with the absolute value `w` to `L` with the absolute value
-`σ • w`. -/
-private theorem isometry_withAbsCongr (σ : L ≃ₐ[K] L) {w w' : InfinitePlace L}
-    (h : w' = σ • w) : Isometry (WithAbs.congr w.1 w'.1 σ.toRingEquiv) :=
-  AddMonoidHomClass.isometry_of_norm _ fun x ↦ by
-    simp only [WithAbs.norm_eq_apply_ofAbs, WithAbs.congr_apply]
-    exact apply_eq_of_eq_smul σ h x.ofAbs
-
-/-- The ring isomorphism `L_w ≃ L_{w'}` extending the isometry `σ`. -/
-private def completionRingEquiv (σ : L ≃ₐ[K] L) {w w' : InfinitePlace L} (h : w' = σ • w) :
-    w.Completion ≃+* w'.Completion :=
-  (AbsoluteValue.Completion.equiv w.1).trans
-    ((UniformSpace.Completion.mapRingEquiv _
-    (isometry_withAbsCongr σ h).continuous
-    ((isometry_withAbsCongr σ h).right_inv
-      (WithAbs.congr w.1 w'.1 σ.toRingEquiv).right_inv).continuous).trans
-    (AbsoluteValue.Completion.equiv w'.1).symm)
-
-private theorem continuous_completionRingEquiv (σ : L ≃ₐ[K] L) {w w' : InfinitePlace L}
-    (h : w' = σ • w) : Continuous (completionRingEquiv σ h) :=
-  (AbsoluteValue.Completion.continuous_ofCompletion w'.1).comp <|
-    UniformSpace.Completion.continuous_map.comp <|
-      AbsoluteValue.Completion.continuous_toCompletion w.1
-
-private theorem completionRingEquiv_coe (σ : L ≃ₐ[K] L) {w w' : InfinitePlace L}
-    (h : w' = σ • w) (x : WithAbs w.1) :
-    completionRingEquiv σ h x = (WithAbs.congr w.1 w'.1 σ.toRingEquiv x : WithAbs w'.1) :=
-  AbsoluteValue.Completion.toCompletion_injective w'.1 <|
-    UniformSpace.Completion.mapRingHom_coe (isometry_withAbsCongr σ h).continuous x
-
 variable (v : InfinitePlace K)
 
 /-- The isomorphism of completions `L_w ≃ₐ[K_v] L_{w'}` induced by an automorphism `σ` of `L/K`
 carrying `w` to `w'`: the continuous extension of `σ`. -/
 def completionCongr (σ : L ≃ₐ[K] L) {w w' : InfinitePlace L} [w.LiesOver v] [w'.LiesOver v]
     (h : w' = σ • w) : w.Completion ≃ₐ[v.Completion] w'.Completion :=
-  AlgEquiv.ofRingEquiv (f := completionRingEquiv σ h) fun a ↦ by
+  AlgEquiv.ofRingEquiv
+    (f := AbsoluteValue.Completion.congr σ.toRingEquiv (apply_eq_of_eq_smul σ h)) fun a ↦ by
     -- both sides are continuous in `a`, and `σ` fixes the image of `K`
     induction a using AbsoluteValue.Completion.induction_on with
     | hp =>
-      exact isClosed_eq ((continuous_completionRingEquiv σ h).comp
-        (AbsoluteValue.Completion.continuous_map v.1 w.1))
-        (AbsoluteValue.Completion.continuous_map v.1 w'.1)
+      exact isClosed_eq
+        ((AbsoluteValue.Completion.continuous_congr _).comp
+          (continuous_algebraMap v.Completion w.Completion))
+        (continuous_algebraMap v.Completion w'.Completion)
     | ih a =>
       rw [AbsoluteValue.Completion.algebraMap_apply_of_liesOver,
         AbsoluteValue.Completion.algebraMap_apply_of_liesOver, AbsoluteValue.Completion.map_coe,
-        AbsoluteValue.Completion.map_coe, completionRingEquiv_coe]
+        AbsoluteValue.Completion.map_coe, AbsoluteValue.Completion.congr_coe]
       congr 2
       apply WithAbs.ofAbs_injective
       simp
@@ -159,17 +131,30 @@ section completionCongr
 
 variable {w w' : InfinitePlace L} [w.LiesOver v] [w'.LiesOver v]
 
+/-- The ring isomorphism underlying `completionCongr` is `AbsoluteValue.Completion.congr`. -/
+@[simp]
+theorem toRingEquiv_completionCongr (σ : L ≃ₐ[K] L) (h : w' = σ • w) :
+    (completionCongr v σ h).toRingEquiv =
+      AbsoluteValue.Completion.congr σ.toRingEquiv (apply_eq_of_eq_smul σ h) :=
+  (rfl)
+
 /-- `completionCongr v σ h` extends `σ`. -/
 @[simp]
 theorem completionCongr_algebraMap (σ : L ≃ₐ[K] L) (h : w' = σ • w) (x : L) :
     completionCongr v σ h (x : w.Completion) = (σ x : w'.Completion) :=
-  completionRingEquiv_coe σ h (WithAbs.toAbs w.1 x)
+  AbsoluteValue.Completion.congr_coe (apply_eq_of_eq_smul σ h) (WithAbs.toAbs w.1 x)
+
+/-- `completionCongr` preserves the norm. -/
+@[simp]
+theorem norm_completionCongr (σ : L ≃ₐ[K] L) (h : w' = σ • w) (x : w.Completion) :
+    ‖completionCongr v σ h x‖ = ‖x‖ :=
+  AbsoluteValue.Completion.norm_congr (apply_eq_of_eq_smul σ h) x
 
 variable (v) in
 /-- `completionCongr` is continuous. -/
 theorem continuous_completionCongr (σ : L ≃ₐ[K] L) (h : w' = σ • w) :
     Continuous (completionCongr v σ h) :=
-  continuous_completionRingEquiv σ h
+  AbsoluteValue.Completion.continuous_congr (apply_eq_of_eq_smul σ h)
 
 /-- `completionCongr` is the only continuous map `L_w → L_{w'}` extending `σ`. -/
 theorem eq_completionCongr_of_continuous (σ : L ≃ₐ[K] L) (h : w' = σ • w)

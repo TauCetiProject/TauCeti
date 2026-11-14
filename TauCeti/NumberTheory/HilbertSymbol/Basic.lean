@@ -196,22 +196,25 @@ theorem hilbertSymbol_inv_right (a b : Kˣ) :
   · exact IsSquare.mul_self a
   · simpa only [inv_mul_cancel] using (IsSquare.one : IsSquare (1 : Kˣ))
 
+-- Not `@[simp]`: the left-hand side is headed by `Exists`, which would index under a wildcard key.
+/-- A ring isomorphism preserves solvability of the binary quadratic norm equation
+`b = x² - a y²`. -/
+theorem exists_eq_sq_sub_mul_sq_map_iff {R S : Type*} [Ring R] [Ring S] (e : R ≃+* S)
+    (a b : R) :
+    (∃ x y : S, e b = x ^ 2 - e a * y ^ 2) ↔ ∃ x y : R, b = x ^ 2 - a * y ^ 2 := by
+  constructor
+  · rintro ⟨x, y, h⟩
+    exact ⟨e.symm x, e.symm y, e.injective (by simpa using h)⟩
+  · rintro ⟨x, y, h⟩
+    exact ⟨e x, e y, by simp [h]⟩
+
 /-- The Hilbert symbol is invariant under a ring isomorphism of fields: the norm equation
 `b = x² - a y²` is solvable over `K` exactly when its image is solvable over `L`. -/
 @[simp]
 theorem hilbertSymbol_units_map_ringEquiv {L : Type*} [Field L] (e : K ≃+* L) (a b : Kˣ) :
     hilbertSymbol (Units.map (e : K →* L) a) (Units.map (e : K →* L) b) = hilbertSymbol a b := by
   classical
-  have he : (∃ x y : L, ((Units.map (e : K →* L) b : Lˣ) : L) =
-      x ^ 2 - (Units.map (e : K →* L) a : Lˣ) * y ^ 2) ↔
-      ∃ x y : K, (b : K) = x ^ 2 - a * y ^ 2 := by
-    simp only [Units.coe_map, MonoidHom.coe_ofClass]
-    constructor
-    · rintro ⟨x, y, h⟩
-      exact ⟨e.symm x, e.symm y, e.injective (by simpa using h)⟩
-    · rintro ⟨x, y, h⟩
-      exact ⟨e x, e y, by simp [h]⟩
-  simp only [hilbertSymbol_def, he]
+  simp [hilbertSymbol_def, exists_eq_sq_sub_mul_sq_map_iff]
 
 -- The quotient-representative construction follows
 -- `TauCeti.BrauerGroup.quaternionClassOnSquareClasses`.

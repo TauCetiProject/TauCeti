@@ -50,6 +50,13 @@ in another universe, such as `Shrink K`.
   `NumberField.InfinitePlace.realEquivOfRingEquiv_symm`,
   `NumberField.InfinitePlace.realEquivOfRingEquiv_trans_apply`,
   `NumberField.InfinitePlace.realEquivOfRingEquiv_trans`: functoriality of `realEquivOfRingEquiv`.
+* `NumberField.InfinitePlace.eq_equivOfRingEquiv_iff`,
+  `NumberField.InfinitePlace.isReal_iff_of_apply_eq`,
+  `NumberField.InfinitePlace.isComplex_iff_of_apply_eq`,
+  `NumberField.InfinitePlace.mult_eq_of_apply_eq`,
+  `NumberField.InfinitePlace.embedding_of_isReal_comp_of_apply_eq`,
+  `NumberField.InfinitePlace.embedding_of_isReal_apply_of_apply_eq`: cast-free forms for an
+  arbitrary target place `w'` satisfying `∀ x, w' (e x) = w x`.
 -/
 
 public section
@@ -202,5 +209,47 @@ theorem realEquivOfRingEquiv_trans (e : K ≃+* L) (e' : L ≃+* M) :
     realEquivOfRingEquiv (e.trans e') =
       (realEquivOfRingEquiv e).trans (realEquivOfRingEquiv e') :=
   Equiv.ext fun w ↦ (realEquivOfRingEquiv_trans_apply e e' w).symm
+
+/-- An infinite place `w'` of `L` equals `equivOfRingEquiv e w` precisely when `e` intertwines `w`
+and `w'` on every element of `K`. -/
+theorem eq_equivOfRingEquiv_iff {e : K ≃+* L} {w : InfinitePlace K} {w' : InfinitePlace L} :
+    w' = equivOfRingEquiv e w ↔ ∀ x, w' (e x) = w x := by
+  refine ⟨fun h x ↦ by subst h; simp, fun h ↦ InfinitePlace.ext _ _ fun y ↦ ?_⟩
+  rw [equivOfRingEquiv_apply, ← h, e.apply_symm_apply]
+
+/-- If a ring isomorphism `e : K ≃+* L` intertwines `w` and `w'`, then `w'` is real iff `w` is
+real. -/
+theorem isReal_iff_of_apply_eq {e : K ≃+* L} {w : InfinitePlace K} {w' : InfinitePlace L}
+    (hw : ∀ x, w' (e x) = w x) : w'.IsReal ↔ w.IsReal := by
+  rw [eq_equivOfRingEquiv_iff.mpr hw, isReal_equivOfRingEquiv_iff]
+
+/-- If a ring isomorphism `e : K ≃+* L` intertwines `w` and `w'`, then `w'` is complex iff `w` is
+complex. -/
+theorem isComplex_iff_of_apply_eq {e : K ≃+* L} {w : InfinitePlace K} {w' : InfinitePlace L}
+    (hw : ∀ x, w' (e x) = w x) : w'.IsComplex ↔ w.IsComplex := by
+  rw [eq_equivOfRingEquiv_iff.mpr hw, isComplex_equivOfRingEquiv_iff]
+
+/-- If a ring isomorphism `e : K ≃+* L` intertwines `w` and `w'`, then `w'` and `w` have the same
+multiplicity. -/
+theorem mult_eq_of_apply_eq {e : K ≃+* L} {w : InfinitePlace K} {w' : InfinitePlace L}
+    (hw : ∀ x, w' (e x) = w x) : w'.mult = w.mult := by
+  rw [eq_equivOfRingEquiv_iff.mpr hw, mult_equivOfRingEquiv]
+
+/-- If a ring isomorphism `e : K ≃+* L` intertwines real places `w` and `w'`, composing the real
+embedding of `w'` with `e` gives the real embedding of `w`. -/
+theorem embedding_of_isReal_comp_of_apply_eq {e : K ≃+* L} {w : InfinitePlace K}
+    {w' : InfinitePlace L} (hw : ∀ x, w' (e x) = w x) (hw' : w'.IsReal) :
+    (embedding_of_isReal hw').comp (e : K →+* L) =
+      embedding_of_isReal ((isReal_iff_of_apply_eq hw).mp hw') := by
+  obtain rfl := eq_equivOfRingEquiv_iff.mpr hw
+  ext x
+  simp
+
+/-- Pointwise form of `embedding_of_isReal_comp_of_apply_eq`. -/
+theorem embedding_of_isReal_apply_of_apply_eq {e : K ≃+* L} {w : InfinitePlace K}
+    {w' : InfinitePlace L} (hw : ∀ x, w' (e x) = w x) (hw' : w'.IsReal) (x : K) :
+    embedding_of_isReal hw' (e x) =
+      embedding_of_isReal ((isReal_iff_of_apply_eq hw).mp hw') x :=
+  RingHom.congr_fun (embedding_of_isReal_comp_of_apply_eq hw hw') x
 
 end NumberField.InfinitePlace
