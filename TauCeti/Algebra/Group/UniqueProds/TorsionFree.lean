@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.UniqueProds.Basic
+public import Mathlib.Algebra.Module.Torsion.Free
 import Mathlib.Algebra.Group.UniqueProds.VectorSpace
 import Mathlib.GroupTheory.DivisibleHull
 import Mathlib.GroupTheory.MonoidLocalization.GrothendieckGroup
@@ -42,3 +43,23 @@ instance (priority := low) HasUniqueRoots.to_twoUniqueProds [CancelCommMonoid M]
     [HasUniqueRoots M] : TwoUniqueProds M :=
   -- As for `AffineMonoid.to_twoUniqueProds`, transfer the additive statement along `Additive M`.
   Multiplicative.instTwoUniqueProdsOfTwoUniqueSums (M := Additive M)
+
+/-- An additively torsion-free cancellative commutative monoid has two unique sums. -/
+instance (priority := low) IsAddTorsionFree.to_twoUniqueSums [AddCancelCommMonoid M]
+    [IsAddTorsionFree M] : TwoUniqueSums M :=
+  have := IsAddTorsionFree.hasUniqueDiv (M := M)
+  inferInstance
+
+/-- A torsion-free cancellative commutative monoid has two unique products. -/
+@[to_additive existing]
+instance (priority := low) IsMulTorsionFree.to_twoUniqueProds [CancelCommMonoid M]
+    [IsMulTorsionFree M] : TwoUniqueProds M :=
+  have := IsMulTorsionFree.hasUniqueRoots (M := M)
+  inferInstance
+
+/-- A torsion-free `ℤ`-module has two unique sums; in particular this applies automatically to
+every free `ℤ`-module. -/
+instance (priority := low) Module.IsTorsionFree.to_twoUniqueSums {G : Type*} [AddCommGroup G]
+    [Module.IsTorsionFree ℤ G] : TwoUniqueSums G :=
+  have : HasUniqueDiv G := .of_isTorsionFree ℤ G
+  inferInstance

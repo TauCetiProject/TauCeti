@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.Algebra.Module.Projective
 public import Mathlib.LinearAlgebra.FreeModule.Basic
 public import Mathlib.RingTheory.PrincipalIdealDomain
+import Mathlib.Algebra.EuclideanDomain.Int
 import Mathlib.LinearAlgebra.Basis.Prod
 import Mathlib.SetTheory.Cardinal.Order
 
@@ -148,3 +149,10 @@ theorem Function.Exact.free_of_injective_of_projective_of_isPrincipalIdealRing
     Module.projective_lifting_property g.rangeRestrict .id g.surjective_rangeRestrict
   have hex : Function.Exact f g.rangeRestrict := fun x ↦ Subtype.ext_iff.trans (h x)
   exact .of_equiv (hex.splitSurjectiveEquiv hf ⟨l, hl⟩).1.symm
+
+/-- Every additive subgroup of a free `ℤ`-module is a free `ℤ`-module, with no finiteness
+assumption on either group. -/
+theorem AddSubgroup.free_int {G : Type*} [AddCommGroup G] [Module.Free ℤ G] (H : AddSubgroup G) :
+    Module.Free ℤ H :=
+  Module.Free.of_injective_of_projective_of_isPrincipalIdealRing
+    H.subtype.toIntLinearMap H.subtype_injective

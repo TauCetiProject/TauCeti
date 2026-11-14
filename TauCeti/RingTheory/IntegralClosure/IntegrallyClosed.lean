@@ -237,3 +237,27 @@ theorem isIntegrallyClosedIn_map_of_ker_le (S : Subring A) [IsIntegrallyClosedIn
     exact ⟨a, Subring.isIntegrallyClosedIn_iff.mp inferInstance ha, rfl⟩
 
 end Subring
+
+namespace IsIntegrallyClosed
+
+/-- A commutative ring that is a retract of an integrally closed ring along a homomorphism sending
+non-zero-divisors to non-zero-divisors is itself integrally closed. -/
+theorem of_retract {R A : Type*} [CommRing R] [CommRing A] [IsIntegrallyClosed A]
+    (i : R →+* A) (r : A →+* R) (hir : ∀ x, r (i x) = x)
+    (hnzd : nonZeroDivisors R ≤ (nonZeroDivisors A).comap i) : IsIntegrallyClosed R := by
+  rw [isIntegrallyClosed_iff (FractionRing R)]
+  intro x hx
+  let φ : FractionRing R →+* FractionRing A := IsLocalization.map (FractionRing A) i hnzd
+  have hφ : φ.comp (algebraMap R (FractionRing R)) = (algebraMap A (FractionRing A)).comp i :=
+    IsLocalization.map_comp _
+  obtain ⟨⟨a, b⟩, rfl⟩ := IsLocalization.mk'_surjective (nonZeroDivisors R) x
+  obtain ⟨f, hf⟩ := IsIntegrallyClosed.algebraMap_eq_of_integral (hx.map_of_comp_eq i φ hφ.symm)
+  have hfb : f * i b = i a := IsFractionRing.injective A (FractionRing A) <| by
+    rw [map_mul, hf, IsLocalization.map_mk', IsLocalization.mk'_spec]
+  have hrfb : r f * b = a := by
+    have h := congrArg r hfb
+    rwa [map_mul, hir, hir] at h
+  refine ⟨r f, IsLocalization.eq_mk'_iff_mul_eq.mpr ?_⟩
+  rw [← map_mul, hrfb]
+
+end IsIntegrallyClosed

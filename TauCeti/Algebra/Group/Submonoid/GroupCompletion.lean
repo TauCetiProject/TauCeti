@@ -42,6 +42,39 @@ theorem coe_toGroupClosure (s : S) : (S.toGroupClosure s : G) = s :=
 theorem toGroupClosure_injective : Function.Injective S.toGroupClosure :=
   (S.subtype.injective_codRestrict _ _).mpr S.subtype_injective
 
+/-- The additive range of `S.toGroupClosure` inside the generated group is the pullback of `S`
+along the subgroup inclusion. -/
+@[simp]
+theorem mrange_toGroupClosure :
+    AddMonoidHom.mrange S.toGroupClosure = S.comap (AddSubgroup.closure (S : Set G)).subtype := by
+  ext g
+  simp only [AddMonoidHom.mem_mrange, mem_comap, AddSubgroup.coe_subtype]
+  exact ⟨fun ⟨s, hs⟩ ↦ hs ▸ s.property, fun hg ↦ ⟨⟨g, hg⟩, rfl⟩⟩
+
+/-- The pullback of an additive submonoid `T` to an additive subgroup `H` is canonically
+isomorphic to the intersection `T ⊓ H.toAddSubmonoid`, via the inclusion of `H` in `G`. -/
+def comapSubtypeEquivInf (T : AddSubmonoid G) (H : AddSubgroup G) :
+    ↥(T.comap H.subtype) ≃+ ↥(T ⊓ H.toAddSubmonoid) where
+  toFun x := ⟨x.1.1, x.2, x.1.2⟩
+  invFun y := ⟨⟨y.1, y.2.2⟩, y.2.1⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_add' _ _ := rfl
+
+/-- `comapSubtypeEquivInf` preserves the underlying element of `G`. -/
+@[simp]
+theorem coe_comapSubtypeEquivInf (T : AddSubmonoid G) (H : AddSubgroup G)
+    (x : T.comap H.subtype) :
+    ((comapSubtypeEquivInf T H x : ↥(T ⊓ H.toAddSubmonoid)) : G) = x.1 :=
+  (rfl)
+
+/-- The inverse of `comapSubtypeEquivInf` preserves the underlying element of `G`. -/
+@[simp]
+theorem coe_comapSubtypeEquivInf_symm (T : AddSubmonoid G) (H : AddSubgroup G)
+    (y : ↥(T ⊓ H.toAddSubmonoid)) :
+    (((comapSubtypeEquivInf T H).symm y : ↥(T.comap H.subtype)) : H) = ⟨y.1, y.2.2⟩ :=
+  (rfl)
+
 end
 
 variable [AddCommGroup G] (S : AddSubmonoid G)

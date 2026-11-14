@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.Submonoid.Finiteness
 public import TauCeti.Algebra.Group.Submonoid.GroupCompletion
 public import TauCeti.Algebra.Group.Submonoid.NSMulSaturation
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import TauCeti.Algebra.MonoidAlgebra.IsIntegral
 public import TauCeti.Algebra.MonoidAlgebra.MapDomain
+import Mathlib.RingTheory.FiniteType
 
 /-!
 # Integral monomials and saturation of semigroups
@@ -18,8 +20,11 @@ Let `f : M →+ N` be a homomorphism of commutative monoids, inducing `R[M] → 
 `single x c` of `R[N]` is integral over `R[M]` as soon as some positive multiple of `x` lies in the
 image of `f`, that is, when `x` lies in the positive-multiple saturation of
 `AddMonoidHom.mrange f`. When `c` is not nilpotent and `N` is cancellative, this is also
-necessary. For the inclusion of a submonoid `S ≤ N` it follows that `R[sat S]` is integral over
-`R[S]`.
+necessary. Whenever `N` lies in the saturation of `AddMonoidHom.mrange f`, `R[N]` is integral over
+`R[M]`, and if `N` is finitely generated then `R[N]` is a finite `R[M]`-module
+(`AddMonoidAlgebra.finite_mapDomainRingHom`). Combining this with Gordan's lemma
+(`AddSubmonoid.FG.nsmulSaturation`) makes `R[sat S]` and the generated-lattice saturation algebra
+finite over `R[S]` when `S` is a finitely generated submonoid of a free abelian group.
 
 When `N = G` is a free abelian group and `R` is reduced, the integral closure of `R[M]` in `R[G]` is
 graded (`AddMonoidAlgebra.isIntegralElem_single_coeff`), so it consists exactly of the elements
@@ -39,8 +44,12 @@ reference to a fraction field, through `IsIntegrallyClosed.pow_dvd_pow_iff`.
 
 * `AddMonoidAlgebra.isIntegralElem_single_iff`: for `c` not nilpotent, `single x c` is integral
   over `R[M]` iff `x ∈ (AddMonoidHom.mrange f).nsmulSaturation`.
-* `AddMonoidAlgebra.isIntegral_mapDomainRingHom_inclusion_nsmulSaturation`: `R[sat S]` is
-  integral over `R[S]`.
+* `AddMonoidAlgebra.isIntegral_mapDomainRingHom` and `AddMonoidAlgebra.finite_mapDomainRingHom`:
+  integrality and finiteness of `R[M] → R[N]` when `N` lies in the saturation of `mrange f`.
+* `AddSubmonoid.FG.finite_mapDomainRingHom_inclusion_nsmulSaturation` and
+  `AddSubmonoid.FG.finite_mapDomainRingHom_inclusion_nsmulSaturation_inf_closure`: finite
+  generation of saturation algebras as `R[S]`-modules for finitely generated `S` in a free abelian
+  group.
 * `AddMonoidAlgebra.isIntegralElem_iff_forall_mem_support`: for a free abelian group `G` and a
   reduced ring `R`, an element of `R[G]` is integral over `R[M]` iff its support lies in the
   saturation of the image of `f`.
@@ -103,17 +112,37 @@ theorem isIntegralElem_single_iff [IsRightCancelAdd N] (f : M →+ N) {x : N} {c
     Finset.sum_eq_zero fun i hi ↦ hterm i (Finset.mem_range.mp hi), hp.coeff_natDegree] at hcoeff
   exact hc ⟨p.natDegree, by simpa [single_pow] using hcoeff⟩
 
-/-- The algebra of the saturation of `S` is integral over the algebra of `S`. -/
-theorem isIntegral_mapDomainRingHom_inclusion_nsmulSaturation (S : AddSubmonoid N) :
-    (mapDomainRingHom R (AddSubmonoid.inclusion S.le_nsmulSaturation)).IsIntegral := by
+/-- If every element of `N` has a positive multiple in the image of `f : M →+ N`, then `R[N]` is
+integral over `R[M]`. -/
+theorem isIntegral_mapDomainRingHom (f : M →+ N)
+    (hf : ∀ y : N, y ∈ (AddMonoidHom.mrange f).nsmulSaturation) :
+    (mapDomainRingHom R f).IsIntegral := by
   intro y
   induction y using induction_linear with
   | zero => exact RingHom.isIntegralElem_zero _
   | add y z hy hz => exact hy.add _ hz
-  | single x r =>
-    obtain ⟨n, hn, hnx⟩ := AddSubmonoid.mem_nsmulSaturation.mp x.property
-    exact isIntegralElem_single _ (AddSubmonoid.mem_nsmulSaturation.mpr
-      ⟨n, hn, ⟨n • (x : N), hnx⟩, Subtype.ext (by simp)⟩) r
+  | single x r => exact isIntegralElem_single f (hf x) r
+
+/-- If `N` is finitely generated and every element of `N` lies in the saturation of the image of
+`f : M →+ N`, then `R[N]` is a finitely generated `R[M]`-module along `mapDomainRingHom R f`. -/
+theorem finite_mapDomainRingHom [AddMonoid.FG N] (f : M →+ N)
+    (hf : ∀ y : N, y ∈ (AddMonoidHom.mrange f).nsmulSaturation) :
+    (mapDomainRingHom R f).Finite := by
+  refine (isIntegral_mapDomainRingHom f hf).to_finite ?_
+  refine RingHom.FiniteType.of_comp_finiteType (f := algebraMap R (AddMonoidAlgebra R M)) ?_
+  have hcomp : (mapDomainRingHom R f).comp (algebraMap R (AddMonoidAlgebra R M)) =
+      algebraMap R (AddMonoidAlgebra R N) := by
+    ext r
+    simp
+  rw [hcomp, RingHom.finiteType_algebraMap]
+  infer_instance
+
+/-- The algebra of the saturation of `S` is integral over the algebra of `S`. -/
+theorem isIntegral_mapDomainRingHom_inclusion_nsmulSaturation (S : AddSubmonoid N) :
+    (mapDomainRingHom R (AddSubmonoid.inclusion S.le_nsmulSaturation)).IsIntegral := by
+  refine isIntegral_mapDomainRingHom _ fun x ↦ ?_
+  obtain ⟨n, hn, hnx⟩ := AddSubmonoid.mem_nsmulSaturation.mp x.property
+  exact AddSubmonoid.mem_nsmulSaturation.mpr ⟨n, hn, ⟨n • (x : N), hnx⟩, Subtype.ext (by simp)⟩
 
 section FreeGroup
 
@@ -140,6 +169,16 @@ end AddMonoidAlgebra
 namespace AddSubmonoid
 
 open AddMonoidAlgebra
+
+/-- For submonoids `S ≤ T` of an additive commutative monoid `N` with `T` finitely generated and
+contained in `S.nsmulSaturation`, the algebra `R[T]` is a finite `R[S]`-module. -/
+theorem finite_mapDomainRingHom_inclusion {N : Type*} [AddCommMonoid N] (R : Type*) [CommRing R]
+    {S T : AddSubmonoid N} (hST : S ≤ T) (hT : T.FG) (hsat : T ≤ S.nsmulSaturation) :
+    (mapDomainRingHom R (inclusion hST)).Finite := by
+  have : AddMonoid.FG T := hT
+  refine finite_mapDomainRingHom _ fun y ↦ ?_
+  obtain ⟨n, hn, hny⟩ := mem_nsmulSaturation.mp (hsat y.property)
+  exact mem_nsmulSaturation.mpr ⟨n, hn, ⟨n • (y : N), hny⟩, Subtype.ext (by simp)⟩
 
 variable {N : Type*} [AddCommMonoid N] [IsRightCancelAdd N]
 
@@ -228,6 +267,22 @@ theorem isIntegrallyClosedIn_iff_nsmulSaturated [Nontrivial R] [IsReduced R] :
   · refine (hrange x).mpr fun g hg ↦ ?_
     rw [← nsmulSaturation_eq_self hS]
     exact (hint x).mp hx g hg
+
+/-- **Finite generation of the saturation algebra.** For a finitely generated submonoid `S` of a
+free abelian group `G`, the algebra `R[sat S]` is a finite `R[S]`-module. -/
+theorem FG.finite_mapDomainRingHom_inclusion_nsmulSaturation {S : AddSubmonoid G} (hS : S.FG) :
+    (mapDomainRingHom R (inclusion S.le_nsmulSaturation)).Finite :=
+  finite_mapDomainRingHom_inclusion R S.le_nsmulSaturation hS.nsmulSaturation le_rfl
+
+/-- For a finitely generated submonoid `S` of a free abelian group `G`, the algebra of the
+saturation of `S` inside its generated subgroup `AddSubgroup.closure S` is a finite
+`R[S]`-module. -/
+theorem FG.finite_mapDomainRingHom_inclusion_nsmulSaturation_inf_closure {S : AddSubmonoid G}
+    (hS : S.FG) :
+    (mapDomainRingHom R
+      (inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure))).Finite :=
+  finite_mapDomainRingHom_inclusion R (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure)
+    hS.nsmulSaturation_inf_closure inf_le_left
 
 end FreeGroup
 
