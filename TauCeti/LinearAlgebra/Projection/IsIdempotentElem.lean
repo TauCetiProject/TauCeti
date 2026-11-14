@@ -26,7 +26,7 @@ public section
 
 namespace LinearMap.IsIdempotentElem
 
-variable {R M : Type*} [Ring R] [AddCommGroup M] [Module R M] {p q : M →ₗ[R] M}
+variable {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M] {p q : M →ₗ[R] M}
 
 /-- The ranges of idempotents `p` and `q` with `p * q = 0` are disjoint. -/
 theorem disjoint_range (hp : IsIdempotentElem p) (hpq : p * q = 0) :
