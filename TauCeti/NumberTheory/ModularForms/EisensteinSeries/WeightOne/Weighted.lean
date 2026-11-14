@@ -171,12 +171,14 @@ lemma weightedE1_zero : weightedE1 (0 : (Fin 2 → ZMod N) → ℂ) = 0 := by
   simp [weightedE1]
 
 /-- The series is linear in the weight: sums. -/
+@[simp]
 lemma weightedE1_add (W W' : (Fin 2 → ZMod N) → ℂ) :
     weightedE1 (W + W') = weightedE1 W + weightedE1 W' := by
   ext z
   simp [weightedE1, add_mul, Finset.sum_add_distrib, mul_add]
 
 /-- The series is linear in the weight: scalar multiples. -/
+@[simp]
 lemma weightedE1_smul (c : ℂ) (W : (Fin 2 → ZMod N) → ℂ) :
     weightedE1 (c • W) = c • weightedE1 W := by
   ext z

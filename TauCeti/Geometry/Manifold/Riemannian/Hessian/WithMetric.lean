@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Hessian.Conformal
 public import TauCeti.Geometry.Manifold.Riemannian.Hessian.Isometry
-public import TauCeti.Geometry.Manifold.Riemannian.WithMetric
+public import TauCeti.Geometry.Manifold.Riemannian.WithMetric.Basic
 
 /-!
 # Hessians on metric-indexed manifolds
@@ -100,7 +100,7 @@ theorem hessian_rescale
 gives the Hessian transformation for the Yamabe conformal factor, at `C¹` metric regularity. -/
 theorem hessian_rescale_rpow
     {g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)} (hn : 1 ≤ n)
-    {a : M → ℝ} (ha : ContMDiff I 𝓘(ℝ) n a) (ha_pos : ∀ x, 0 < a x) (p : ℝ)
+    {a : M → ℝ} (ha_pos : ∀ x, 0 < a x) (p : ℝ)
     {hf : ContMDiff I 𝓘(ℝ) n fun x ↦ a x ^ p} {hf_pos : ∀ x, 0 < a x ^ p}
     {u : M → ℝ} {x : M} (hu : ContMDiffAt I 𝓘(ℝ) 2 u x) (v w : TangentSpace I x) :
     (letI : IsContMDiffRiemannianBundle I 1 E
@@ -120,6 +120,6 @@ theorem hessian_rescale_rpow
           mvfderiv I a x w * mvfderiv I u x v -
           ⟪mgradient I a x, mgradient I u x⟫_ℝ * ⟪v, w⟫_ℝ)) := by
   rw [hessian_comp_ofWithMetric hn hu, hessian_comp_ofWithMetric hn hu]
-  exact g.hessian_rescale_rpow hn ha ha_pos p hu v w
+  exact g.hessian_rescale_rpow hn ha_pos p hu v w
 
 end TauCeti.WithMetric

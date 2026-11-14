@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpOrder
+public import Mathlib.Order.PartialSups
 
 /-!
 # `Lᵖ` is an ordered module
@@ -15,11 +16,36 @@ the values is monotone, then so is scalar multiplication on `Lᵖ` classes, sinc
 almost everywhere pointwise. In particular real `Lᵖ` is an ordered real module, which is the
 hypothesis under which Mathlib's Bochner integral of almost everywhere nonnegative functions is
 nonnegative (`MeasureTheory.integral_nonneg_of_ae`), now applicable to `Lᵖ`-valued functions.
+Finite running suprema also preserve `MemLp`.
+
+The positive part of a real `Lᵖ` class is nonnegative (`MeasureTheory.Lp.posPart_nonneg`), and it
+vanishes exactly when the class is nonpositive (`MeasureTheory.Lp.posPart_eq_zero_iff`).
 -/
 
 public section
 
 open scoped ENNReal
+
+namespace MeasureTheory
+
+/-- The supremum of a nonempty finite family of `Lᵖ` functions is in `Lᵖ`. -/
+theorem memLp_finset_sup' {α E ι : Type*} {m : MeasurableSpace α} {μ : Measure[m] α}
+    {p : ℝ≥0∞} [NormedAddCommGroup E] [Lattice E] [HasSolidNorm E]
+    [IsOrderedAddMonoid E] {s : Finset ι} (hs : s.Nonempty) {f : ι → α → E}
+    (hf : ∀ j ∈ s, MemLp (f j) p μ) : MemLp (s.sup' hs f) p μ :=
+  Finset.sup'_induction _ _ (p := fun g ↦ MemLp g p μ)
+    (fun _ hf _ hg ↦ hf.sup hg) hf
+
+/-- A finite running supremum of `Lᵖ` functions is in `Lᵖ`. -/
+theorem MemLp.partialSups {α E ι : Type*} {m : MeasurableSpace α} {μ : Measure α}
+    {p : ℝ≥0∞} [NormedAddCommGroup E] [Lattice E] [HasSolidNorm E]
+    [IsOrderedAddMonoid E] [Preorder ι] [LocallyFiniteOrderBot ι]
+    {f : ι → α → E} {i : ι} (hf : ∀ j ≤ i, MemLp (f j) p μ) :
+    MemLp (partialSups f i) p μ := by
+  rw [partialSups_apply]
+  exact memLp_finset_sup' _ (fun j hj ↦ hf j (Finset.mem_Iic.mp hj))
+
+end MeasureTheory
 
 namespace MeasureTheory.Lp
 
@@ -45,5 +71,30 @@ instance [SMulPosMono 𝕜 E] : SMulPosMono 𝕜 (Lp E p μ) where
 
 /-- `Lᵖ` with values in an ordered module is an ordered module, ordered almost everywhere. -/
 instance [IsOrderedModule 𝕜 E] : IsOrderedModule 𝕜 (Lp E p μ) where
+
+/-- The positive part of a real `Lᵖ` class is nonnegative. -/
+@[simp]
+theorem posPart_nonneg (f : Lp ℝ p μ) : 0 ≤ Lp.posPart f := by
+  rw [← coeFn_nonneg]
+  filter_upwards [coeFn_posPart f] with x hx
+  rw [Pi.zero_apply, hx]
+  exact le_max_right _ _
+
+/-- The positive part of a real `Lᵖ` class vanishes exactly when the class is nonpositive. -/
+@[simp]
+theorem posPart_eq_zero_iff {f : Lp ℝ p μ} : Lp.posPart f = 0 ↔ f ≤ 0 := by
+  rw [← coeFn_le]
+  constructor
+  · intro h
+    have hpos : Lp.posPart f =ᵐ[μ] 0 := by
+      rw [h]
+      exact coeFn_zero ℝ p μ
+    filter_upwards [coeFn_posPart f, hpos, coeFn_zero ℝ p μ] with x hx h₀ h₀'
+    rw [h₀', Pi.zero_apply, ← max_eq_right_iff, ← hx, h₀, Pi.zero_apply]
+  · intro h
+    refine Lp.ext ?_
+    filter_upwards [coeFn_posPart f, coeFn_zero ℝ p μ, h] with x hx h₀ hle
+    rw [hx, h₀, Pi.zero_apply, max_eq_right_iff]
+    exact hle.trans_eq h₀
 
 end MeasureTheory.Lp

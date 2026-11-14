@@ -9,6 +9,7 @@ public import Mathlib.Data.Set.BoolIndicator
 public import TauCeti.Combinatorics.SimpleGraph.Measurable
 import Mathlib.Data.Finset.Sym
 import Mathlib.Order.Sym2
+import TauCeti.Data.Sym.Sym2
 
 /-!
 # Edge coordinates of an infinite simple graph
@@ -208,54 +209,34 @@ namespace Equiv.Perm
 
 open TauCeti.DenseGraphLimits
 
-/-- A permutation of the vertices relabels the unordered non-diagonal edge coordinates. -/
-def edgeIndexMap (e : Equiv.Perm ℕ) : EdgeIndex ≃ EdgeIndex where
-  toFun p := ⟨Sym2.map e p.1, fun h => p.2 ((Sym2.isDiag_map e.injective).mp h)⟩
-  invFun p := ⟨Sym2.map e.symm p.1, fun h => p.2 ((Sym2.isDiag_map e.symm.injective).mp h)⟩
-  left_inv p := by
-    apply Subtype.ext
-    -- The subtype coercions hide the two successive `Sym2.map`s from rewriting.
-    change Sym2.map e.symm (Sym2.map e p.1) = p.1
-    rw [Sym2.map_map, e.symm_comp_self, Sym2.map_id]
-    rfl
-  right_inv p := by
-    apply Subtype.ext
-    -- The subtype coercions hide the two successive `Sym2.map`s from rewriting.
-    change Sym2.map e (Sym2.map e.symm p.1) = p.1
-    rw [Sym2.map_map, e.self_comp_symm, Sym2.map_id]
-    rfl
+/-- A permutation of the vertices relabels the unordered non-diagonal edge coordinates: it is
+the restriction of `Sym2.equivCongr e` to the non-diagonal pairs, which it preserves. -/
+def edgeIndexMap (e : Equiv.Perm ℕ) : EdgeIndex ≃ EdgeIndex :=
+  (Sym2.equivCongr e).subtypeEquiv fun p ↦ by
+    rw [Sym2.equivCongr_apply, Sym2.isDiag_map e.injective]
 
 /-- Vertex relabelling acts on an edge coordinate by applying the permutation to both endpoints. -/
 @[simp]
 theorem edgeIndexMap_val (e : Equiv.Perm ℕ) (p : EdgeIndex) :
-    (edgeIndexMap e p).1 = Sym2.map e p.1 := (rfl)
+    (edgeIndexMap e p).1 = Sym2.map e p.1 := by
+  simp only [edgeIndexMap, Equiv.subtypeEquiv_apply, Sym2.equivCongr_apply]
 
 /-- The identity vertex relabelling induces the identity edge-coordinate relabelling. -/
 @[simp]
-theorem edgeIndexMap_refl : edgeIndexMap (Equiv.refl ℕ) = Equiv.refl EdgeIndex := by
-  apply Equiv.ext
-  intro p
-  apply Subtype.ext
-  exact congrFun Sym2.map_id p.1
+theorem edgeIndexMap_refl : edgeIndexMap (Equiv.refl ℕ) = Equiv.refl EdgeIndex :=
+  Equiv.ext fun p ↦ Subtype.ext <| by simp
 
 /-- Successive vertex relabellings induce the corresponding successive coordinate relabellings. -/
 @[simp]
 theorem edgeIndexMap_trans (e₁ e₂ : Equiv.Perm ℕ) :
-    edgeIndexMap (e₁.trans e₂) = (edgeIndexMap e₁).trans (edgeIndexMap e₂) := by
-  apply Equiv.ext
-  intro p
-  apply Subtype.ext
-  -- Unfold the two equivalence applications so functoriality of `Sym2.map` applies.
-  change Sym2.map ⇑(e₁.trans e₂) p.1 = Sym2.map ⇑e₂ (Sym2.map ⇑e₁ p.1)
-  rw [Sym2.map_map, Equiv.coe_trans]
+    edgeIndexMap (e₁.trans e₂) = (edgeIndexMap e₁).trans (edgeIndexMap e₂) :=
+  Equiv.ext fun p ↦ Subtype.ext <| by simp [Sym2.map_map]
 
 /-- Inverting a vertex relabelling inverts the induced edge-coordinate relabelling. -/
 @[simp]
 theorem edgeIndexMap_symm (e : Equiv.Perm ℕ) :
-    (edgeIndexMap e).symm = edgeIndexMap e.symm := by
-  apply Equiv.ext
-  intro p
-  rfl
+    (edgeIndexMap e).symm = edgeIndexMap e.symm :=
+  Equiv.ext fun p ↦ (edgeIndexMap e).symm_apply_eq.mpr <| Subtype.ext <| by simp [Sym2.map_map]
 
 /-- Relabelling an infinite graph is the same as relabelling its Boolean edge coordinates. -/
 @[simp]

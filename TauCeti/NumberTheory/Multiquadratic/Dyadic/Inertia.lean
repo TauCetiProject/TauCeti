@@ -158,7 +158,7 @@ omit hr hd in
 private theorem apply_eq_self_of_div_two {w : K} {c : ℤ} (hw : (w / 2) ^ 2 = algebraMap ℤ K c)
     (hc : c % 4 = 1) : τ w = w := by
   have h := apply_eq_self_of_mem_inertia_of_mod_four_eq_one hw hc Q hτ
-  rwa [map_div₀, map_ofNat, div_left_inj' two_ne_zero] at h
+  rwa [map_div₀, map_ofNat, div_left_inj₀ two_ne_zero] at h
 
 omit hd in
 /-- Inertia above `2` fixes `rᵢ rⱼ` when `dᵢ` and `dⱼ` are both `3` modulo `4`. -/

@@ -272,7 +272,6 @@ theorem projectivePlaneHeight_eq_of_mem_projectivePlaneTopChart_source {y : ℙ 
   simp only [Fin.sum_univ_two, Fin.val_zero, Fin.val_one, Nat.ofNat_pos, ↓reduceIte,
     Nat.one_lt_ofNat, projectivePlaneTopChart_apply, neg_one_mul, projectivePlaneHeight_mk]
   rw [← neg_add, ← sub_eq_add_neg, key]
-  have hs : 0 < v 0 ^ 2 + v 1 ^ 2 + v 2 ^ 2 := by positivity
   field_simp
   ring
 
@@ -553,14 +552,10 @@ private theorem projectivePlaneHeight_flatten_le {v : Fin 3 → ℝ} (hv : v ≠
     have h := (projectivePlaneHeight_mk_lt_two_iff v hv).2 hd
     rw [projectivePlaneHeight_mk, div_lt_iff₀ (sum_sq_pos hv)] at h
     linarith
-  have hs₀ : 0 ≤ (1 - t) ^ 2 := sq_nonneg _
   have hs₁ : (1 - t) ^ 2 ≤ 1 := by nlinarith
   simp only [projectivePlaneHeight_mk, flatten_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
     Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons, mul_pow]
   rw [div_le_div_iff₀ (by nlinarith [sq_nonneg (v 0), sq_nonneg (v 1)]) (sum_sq_pos hv)]
-  have key : (v 1 ^ 2 + 2 * v 2 ^ 2) * (v 0 ^ 2 + v 1 ^ 2 + (1 - t) ^ 2 * v 2 ^ 2) -
-      (v 1 ^ 2 + 2 * ((1 - t) ^ 2 * v 2 ^ 2)) * (v 0 ^ 2 + v 1 ^ 2 + v 2 ^ 2) =
-      (1 - (1 - t) ^ 2) * v 2 ^ 2 * (2 * v 0 ^ 2 + v 1 ^ 2) := by ring
   nlinarith [mul_nonneg (mul_nonneg (sub_nonneg.2 hs₁) (sq_nonneg (v 2))) hd'.le]
 
 /-- The family of projections `[v] ↦ [x : y : (1 - t) z]` is jointly continuous off the
@@ -569,27 +564,11 @@ private theorem continuousOn_linearProjection_flatten :
     ContinuousOn (fun p : I × ℙ ℝ (Fin 3 → ℝ) ↦ linearProjection (flatten p.1) p.2)
       (univ ×ˢ linearProjectionDomain dropLast) := by
   rintro ⟨t, y⟩ ⟨-, hy⟩
-  refine ContinuousAt.continuousWithinAt ?_
-  have hq : IsOpenQuotientMap
-      (Prod.map id (mk' ℝ) : I × {v : Fin 3 → ℝ // v ≠ 0} → I × ℙ ℝ (Fin 3 → ℝ)) :=
-    IsOpenQuotientMap.id.prodMap isOpenQuotientMap_mk'
-  obtain ⟨v, rfl⟩ := isOpenQuotientMap_mk'.surjective y
-  -- The point `(t, [v])` is the image of `(t, v)` under the quotient map.
-  rw [show (t, mk' ℝ v) = Prod.map id (mk' ℝ) (t, v) from rfl, ← hq.continuousAt_comp_iff]
-  let U := {x : I × {v : Fin 3 → ℝ // v ≠ 0} | dropLast x.2.1 ≠ 0}
-  have hU : IsOpen U := isOpen_ne_fun
-    (dropLast.continuous_of_finiteDimensional.comp (continuous_subtype_val.comp continuous_snd))
-    continuous_const
-  have hx : (t, v) ∈ U := by
-    simpa [U, mk'_eq_mk, mk_mem_linearProjectionDomain_iff] using hy
-  refine ContinuousOn.continuousAt ?_ (hU.mem_nhds hx)
-  rw [continuousOn_iff_continuous_domRestrict]
-  have hne (x : U) : flatten x.1.1 x.1.2.1 ≠ 0 := flatten_ne_zero x.2 _
-  refine (continuous_mk (K := ℝ) (f := fun x : U ↦ flatten x.1.1 x.1.2.1) ?_ hne).congr
-    fun x ↦ ?_
-  · exact continuous_flatten.comp ((continuous_subtype_val.comp continuous_fst).prodMk
-      (continuous_subtype_val.comp continuous_snd) |>.comp continuous_subtype_val)
-  · simp [mk'_eq_mk, linearProjection_mk _ _ (hne x)]
+  refine (continuousAt_linearProjection (G := fun t : I ↦ flatten t)
+    (continuous_flatten.comp (continuous_subtype_val.prodMap continuous_id)) ?_).continuousWithinAt
+  induction y using ind with | h v hv =>
+  rw [mk_mem_linearProjectionDomain_iff] at hy ⊢
+  exact flatten_ne_zero hy t
 
 variable {c : ℝ}
 

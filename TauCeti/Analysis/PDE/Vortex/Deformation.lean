@@ -70,7 +70,22 @@ def sectionValue (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) : ℂ :=
 theorem sectionValue_apply (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     sectionValue x z = 2 * ((x z 2 : ℂ) + (x z 3 : ℂ) * I) := (rfl)
 
+/-- The section of a sum of fields is the sum of their sections. -/
+@[simp]
+theorem sectionValue_add (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    sectionValue (x + y) z = sectionValue x z + sectionValue y z := by
+  simp only [sectionValue_apply, Pi.add_apply, PiLp.add_apply, ofReal_add]
+  ring
+
+/-- The section of a real multiple of a field is the multiple of its section. -/
+@[simp]
+theorem sectionValue_smul (t : ℝ) (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    sectionValue (t • x) z = t * sectionValue x z := by
+  simp only [sectionValue_apply, Pi.smul_apply, PiLp.smul_apply, smul_eq_mul, ofReal_mul]
+  ring
+
 /-- The section of a difference of fields is the difference of their sections. -/
+@[simp]
 theorem sectionValue_sub (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     sectionValue (x - y) z = sectionValue x z - sectionValue y z := by
   simp only [sectionValue_apply, Pi.sub_apply, PiLp.sub_apply, ofReal_sub]
@@ -296,8 +311,6 @@ continuous. -/
 theorem continuous_covariantDerivative {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ 1 x)
     (v : ℂ) : Continuous fun z ↦ covariantDerivative x z v := by
   have hxi (i : Fin 4) : ContDiff ℝ 1 fun w ↦ x w i := (contDiff_piLp 2).1 hx i
-  have hdx (i : Fin 4) : Continuous fun z ↦ fderiv ℝ (fun w ↦ x w i) z v :=
-    ((hxi i).continuous_fderiv one_ne_zero).clm_apply continuous_const
   have := hx.continuous
   simp only [covariantDerivative_apply, sectionValue_apply,
     fderiv_sectionValue_apply ((hxi 2).differentiable one_ne_zero _)
@@ -377,6 +390,17 @@ theorem equation_apply_two (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     equation x z 2 = fderiv ℝ (fun w ↦ x w 3) z 1 + fderiv ℝ (fun w ↦ x w 2) z I +
       x z 0 * x z 2 - x z 1 * x z 3 := by
   rfl
+
+/-- In the real field coordinates, `2 ∂bar_a α = ∇₁ α + i ∇₂ α` is twice the complex-equation
+defect: `∇₁ α + i ∇₂ α = 2 (E₁ + i E₂)`, where `E₁` and `E₂` are the second and third components
+of `TauCeti.Vortex.equation`. -/
+theorem covariantDerivative_one_add_I_mul_covariantDerivative_I {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    {z : ℂ} (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z)
+    (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z) :
+    covariantDerivative x z 1 + I * covariantDerivative x z I =
+      2 * ((equation x z 1 : ℂ) + (equation x z 2 : ℂ) * I) := by
+  apply Complex.ext <;>
+    simp [covariantDerivative_re hp hq, covariantDerivative_im hp hq] <;> ring
 
 /-- The vortex defects at a point depend only on the germ of the field there. -/
 theorem equation_congr_nhds {x y : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ} (h : x =ᶠ[𝓝 z] y) :

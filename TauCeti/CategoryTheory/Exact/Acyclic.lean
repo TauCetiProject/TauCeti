@@ -190,6 +190,17 @@ theorem p_descZ {T : C} (n : ℤ) (k : K.X n ⟶ T) (hk : h.i n ≫ k = 0) :
 
 instance (n : ℤ) : Epi (h.p n) := (E.isDeflation_g (h.conflation n)).epi
 
+instance (n : ℤ) : Mono (h.i n) := (E.isInflation_f (h.conflation n)).mono
+
+/-- The morphism into the cycles `Zⁿ` induced by a morphism into `Kⁿ` killed by `Kⁿ ↠ Zⁿ⁺¹`. -/
+noncomputable def liftZ {T : C} (n : ℤ) (k : T ⟶ K.X n) (hk : k ≫ h.p n = 0) : T ⟶ h.Z n :=
+  (E.isKernelCokernelPair _ (h.conflation n)).lift k hk
+
+@[reassoc (attr := simp)]
+theorem liftZ_i {T : C} (n : ℤ) (k : T ⟶ K.X n) (hk : k ≫ h.p n = 0) :
+    h.liftZ n k hk ≫ h.i n = k :=
+  (E.isKernelCokernelPair _ (h.conflation n)).lift_f k hk
+
 end descZ
 
 section ofTruncation
@@ -341,7 +352,6 @@ theorem acyclic_mappingCone {K L : CochainComplex C ℤ} (φ : K ⟶ L) (hK : E.
   open CochainComplex.mappingCone in
   obtain ⟨A⟩ := hK
   obtain ⟨B⟩ := hL
-  have hA (n : ℤ) := E.isKernelCokernelPair _ (A.conflation n)
   have hB (n : ℤ) := E.isKernelCokernelPair _ (B.conflation n)
   -- The chain map restricts to the cycles.
   have hz (n : ℤ) : (A.i n ≫ φ.f n) ≫ B.p n = 0 := by

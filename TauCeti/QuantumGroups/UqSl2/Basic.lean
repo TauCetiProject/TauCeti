@@ -258,7 +258,6 @@ theorem k_mul_f_mul_e_mul_kInv : k q * f q * (e q * kInv q) = f q * e q := by
     simp [hq]
 
 /-- A tuple in a complex algebra satisfying the defining relations of `UqSl2 q`. -/
-@[ext]
 structure GeneratorTuple (q : ℂ) (A : Type*) [Ring A] [Algebra ℂ A] where
   /-- The proposed image of `E`. -/
   e : A
@@ -302,6 +301,17 @@ def toFun (x : GeneratorTuple q A) : Generator → A
 
 /-- The function underlying a tuple takes the inverse-weight label to its inverse-weight element. -/
 @[simp] theorem toFun_kInv (x : GeneratorTuple q A) : x.toFun .kInv = x.kInv := (rfl)
+
+/-- Two generator tuples with the same images of `E`, `F` and `K` are equal: the images of `K⁻¹`
+agree, being the inverse of the image of `K`. -/
+@[ext]
+theorem ext {x y : GeneratorTuple q A} (he : x.e = y.e) (hf : x.f = y.f) (hk : x.k = y.k) :
+    x = y := by
+  have hkInv : x.kInv = y.kInv :=
+    left_inv_eq_right_inv (a := y.k) (by rw [← hk, x.kInv_mul_k]) y.k_mul_kInv
+  cases x
+  cases y
+  congr
 
 end GeneratorTuple
 

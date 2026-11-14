@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # The Euclidean Yamabe bubbles
@@ -164,9 +165,17 @@ theorem bubble_pos {t : ℝ} (ht : 0 < t) (b x : E) : 0 < bubble t b x := by
   rw [bubble_apply]
   positivity
 
-/-- A bubble of nonzero scale is smooth. -/
-theorem contDiff_bubble {t : ℝ} (ht : t ≠ 0) (b : E) {m : WithTop ℕ∞} :
-    ContDiff ℝ m (bubble t b) := by
+/-- A bubble of scale `0` is constant, equal to `0 ^ ((n - 2) / 2)`. -/
+theorem bubble_zero_left (b : E) :
+    bubble 0 b = fun _ ↦ (0 : ℝ) ^ (((Module.finrank ℝ E : ℝ) - 2) / 2) := by
+  funext x
+  simp [bubble_apply]
+
+/-- A bubble is smooth. For `t = 0` it is constant, equal to `0 ^ ((n - 2) / 2)`. -/
+theorem contDiff_bubble (t : ℝ) (b : E) {m : WithTop ℕ∞} : ContDiff ℝ m (bubble t b) := by
+  rcases eq_or_ne t 0 with rfl | ht
+  · rw [bubble_zero_left]
+    exact contDiff_const
   rw [contDiff_iff_contDiffAt]
   intro x
   have hq : ∀ y : E, t ^ 2 + ‖y - b‖ ^ 2 ≠ 0 := fun y ↦ by positivity
@@ -180,14 +189,20 @@ theorem bubble_zero_sub (t : ℝ) (b x : E) : bubble t 0 (x - b) = bubble t b x 
   rw [bubble_apply, bubble_apply, sub_zero]
 
 /-- The bubble of scale `t` centred at the origin is the rescaled standard bubble:
-`U_{t,0}(t x) = t ^ (-(n - 2) / 2) U_{1,0}(x)`. -/
-theorem bubble_zero_smul {t : ℝ} (ht : 0 < t) (x : E) :
+`U_{t,0}(t x) = t ^ (-(n - 2) / 2) U_{1,0}(x)`. For `t = 0` both sides are the constant
+`0 ^ ((n - 2) / 2)`, and for `t < 0` the real powers of negative numbers agree as well. -/
+theorem bubble_zero_smul (t : ℝ) (x : E) :
     bubble t 0 (t • x) = t ^ (-(((Module.finrank ℝ E : ℝ) - 2) / 2)) * bubble 1 0 x := by
-  have hbase : 2 * t / (t ^ 2 + ‖t • x - 0‖ ^ 2) = t⁻¹ * (2 * 1 / (1 ^ 2 + ‖x - 0‖ ^ 2)) := by
-    rw [sub_zero, sub_zero, norm_smul, Real.norm_of_nonneg ht.le]
+  rcases eq_or_ne t 0 with rfl | ht
+  · by_cases hk : ((Module.finrank ℝ E : ℝ) - 2) / 2 = 0
+    · simp [bubble_apply, hk]
+    · have hk' : -(((Module.finrank ℝ E : ℝ) - 2) / 2) ≠ 0 := neg_ne_zero.2 hk
+      simp [bubble_apply, Real.zero_rpow hk, Real.zero_rpow hk']
+  have hbase : 2 * t / (t ^ 2 + ‖t • x - 0‖ ^ 2) = (2 * 1 / (1 ^ 2 + ‖x - 0‖ ^ 2)) * t⁻¹ := by
+    rw [sub_zero, sub_zero, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs]
     field_simp
-  rw [bubble_apply, bubble_apply, hbase, Real.mul_rpow (inv_nonneg.mpr ht.le) (by positivity),
-    Real.inv_rpow ht.le, Real.rpow_neg ht.le]
+  rw [bubble_apply, bubble_apply, hbase, Real.mul_rpow_of_nonneg_left (by positivity),
+    ← Real.rpow_neg_eq_inv_rpow, mul_comm]
 
 /-- The square of a bubble under translation and dilation:
 `U_{t,b}(b + t x)² = t ^ (-(n - 2)) U_{1,0}(x)²`. -/
@@ -196,7 +211,7 @@ theorem bubble_sq_add_smul {t : ℝ} (ht : 0 < t) (b x : E) :
       t ^ (-((finrank ℝ E : ℝ) - 2)) * bubble 1 0 x ^ 2 := by
   have hb : bubble t b (b + t • x) =
       t ^ (-(((finrank ℝ E : ℝ) - 2) / 2)) * bubble 1 0 x := by
-    rw [← bubble_zero_sub, add_sub_cancel_left, bubble_zero_smul ht]
+    rw [← bubble_zero_sub, add_sub_cancel_left, bubble_zero_smul]
   have hexp : -(((finrank ℝ E : ℝ) - 2) / 2) * (2 : ℕ) =
       -((finrank ℝ E : ℝ) - 2) := by push_cast; ring
   rw [hb, mul_pow, ← Real.rpow_mul_natCast ht.le, hexp]
@@ -246,11 +261,22 @@ theorem bubble_rpow_four_div_finrank_sub_two (hn : finrank ℝ E ≠ 2) {t : ℝ
 /-- **The differential of a bubble**:
 `D U_{t,b}(x)[v] = -((n - 2) / (t² + ‖x - b‖²)) U_{t,b}(x) ⟪x - b, v⟫`,
 where `n = finrank ℝ E`. The canonical map to the dual gives this formula without
-completeness; only its Riesz inverse, used to define the gradient, needs completeness. -/
-theorem hasFDerivAt_bubble {t : ℝ} (ht : 0 < t) (b x : E) :
+completeness; only its Riesz inverse, used to define the gradient, needs completeness. For `t = 0`
+the bubble is constant and both sides vanish. -/
+theorem hasFDerivAt_bubble (t : ℝ) (b x : E) :
     HasFDerivAt (bubble t b)
       (toDualMap ℝ E
         (-(((finrank ℝ E : ℝ) - 2) / (t ^ 2 + ‖x - b‖ ^ 2) * bubble t b x) • (x - b))) x := by
+  rcases eq_or_ne t 0 with rfl | ht
+  · have hc := bubble_zero_left (E := E) b
+    have h0 : ((finrank ℝ E : ℝ) - 2) / (0 ^ 2 + ‖x - b‖ ^ 2) * bubble 0 b x = 0 := by
+      rw [hc]
+      by_cases hk : ((finrank ℝ E : ℝ) - 2) / 2 = 0
+      · have : (finrank ℝ E : ℝ) - 2 = 0 := by linarith
+        simp [this]
+      · simp [Real.zero_rpow hk]
+    rw [h0, neg_zero, zero_smul, map_zero, hc]
+    exact hasFDerivAt_const _ _
   set k : ℝ := ((finrank ℝ E : ℝ) - 2) / 2
   have hQ : 0 < t ^ 2 + ‖x - b‖ ^ 2 := by positivity
   -- Write the bubble as `F ∘ q` with `q y = t² + ‖y - b‖²` and `F s = (2 t s⁻¹) ^ k`.
@@ -282,25 +308,25 @@ variable [CompleteSpace E] in
 /-- **The gradient of a bubble**:
 `∇U_{t,b}(x) = -((n - 2) / (t² + ‖x - b‖²)) U_{t,b}(x) (x - b)`, where `n` is the dimension of
 `E`. -/
-theorem hasGradientAt_bubble {t : ℝ} (ht : 0 < t) (b x : E) :
+theorem hasGradientAt_bubble (t : ℝ) (b x : E) :
     HasGradientAt (bubble t b)
       (-(((finrank ℝ E : ℝ) - 2) / (t ^ 2 + ‖x - b‖ ^ 2) * bubble t b x) • (x - b)) x := by
   rw [hasGradientAt_iff_hasFDerivAt, toDual_apply_eq_toDualMap_apply]
-  exact hasFDerivAt_bubble ht b x
+  exact hasFDerivAt_bubble t b x
 
 variable [CompleteSpace E] in
 /-- The gradient of a bubble, as a value of `gradient`. -/
-theorem gradient_bubble {t : ℝ} (ht : 0 < t) (b x : E) :
+theorem gradient_bubble (t : ℝ) (b x : E) :
     ∇ (bubble t b) x =
       -(((finrank ℝ E : ℝ) - 2) / (t ^ 2 + ‖x - b‖ ^ 2) * bubble t b x) • (x - b) :=
-  (hasGradientAt_bubble ht b x).gradient
+  (hasGradientAt_bubble t b x).gradient
 
 /-- The exact norm of the first differential, including the dimensions below two. -/
 theorem norm_fderiv_bubble {t : ℝ} (ht : 0 < t) (b x : E) :
     ‖fderiv ℝ (bubble t b) x‖ =
       |(finrank ℝ E : ℝ) - 2| * bubble t b x * ‖x - b‖ /
         (t ^ 2 + ‖x - b‖ ^ 2) := by
-  rw [(hasFDerivAt_bubble ht b x).fderiv, LinearIsometry.norm_map,
+  rw [(hasFDerivAt_bubble t b x).fderiv, LinearIsometry.norm_map,
     norm_smul, norm_neg, Real.norm_eq_abs, abs_mul, abs_div,
     abs_of_pos (bubble_pos ht b x), abs_of_pos (by positivity : 0 < t ^ 2 + ‖x - b‖ ^ 2)]
   ring
@@ -310,7 +336,6 @@ theorem norm_fderiv_bubble {t : ℝ} (ht : 0 < t) (b x : E) :
 theorem norm_fderiv_bubble_sq {t : ℝ} (ht : 0 < t) (b x : E) :
     ‖fderiv ℝ (bubble t b) x‖ ^ 2 = (((finrank ℝ E : ℝ) - 2) / (2 * t)) ^ 2 * ‖x - b‖ ^ 2 *
       (2 * t / (t ^ 2 + ‖x - b‖ ^ 2)) ^ finrank ℝ E := by
-  have hQ : 0 < t ^ 2 + ‖x - b‖ ^ 2 := by positivity
   have hU2 : bubble t b x ^ 2 =
       (2 * t / (t ^ 2 + ‖x - b‖ ^ 2)) ^ finrank ℝ E / (2 * t / (t ^ 2 + ‖x - b‖ ^ 2)) ^ 2 := by
     have ha : 0 < 2 * t / (t ^ 2 + ‖x - b‖ ^ 2) := by positivity
@@ -324,19 +349,27 @@ end Gradient
 variable [FiniteDimensional ℝ E]
 
 /-- The Laplacian of a real power of the bubble profile `y ↦ 2 t / (t² + ‖y - b‖²)`, by the chain
-rule through the squared distance to `b`. -/
-theorem laplacian_div_add_norm_sub_sq_rpow {t : ℝ} (ht : 0 < t) (k : ℝ) (b x : E) :
+rule through the squared distance to `b`. For `t = 0` the profile is `0` and both sides vanish. -/
+theorem laplacian_div_add_norm_sub_sq_rpow (t k : ℝ) (b x : E) :
     Δ (fun y : E ↦ ((2 * t / (t ^ 2 + ‖y - b‖ ^ 2)) ^ k : ℝ)) x =
       (2 * t) ^ k * (t ^ 2 + ‖x - b‖ ^ 2) ^ (-k - 2) *
         (4 * k * (k + 1) * ‖x - b‖ ^ 2 -
           2 * (Module.finrank ℝ E : ℝ) * k * (t ^ 2 + ‖x - b‖ ^ 2)) := by
+  rcases eq_or_ne t 0 with rfl | ht
+  · have hc : (fun y : E ↦ ((2 * 0 / (0 ^ 2 + ‖y - b‖ ^ 2)) ^ k : ℝ)) = fun _ ↦ (0 : ℝ) ^ k := by
+      funext y
+      simp
+    rw [hc, laplacian_const, Pi.zero_apply]
+    by_cases hk : k = 0
+    · simp [hk]
+    · simp [Real.zero_rpow hk]
   have hqpos : ∀ y : E, 0 < t ^ 2 + ‖y - b‖ ^ 2 := fun y ↦ by positivity
   -- Write the power as `F ∘ q` with `q y = t² + ‖y - b‖²` and `F s = (2 t) ^ k s ^ (-k)`.
   have hUF : (fun y : E ↦ ((2 * t / (t ^ 2 + ‖y - b‖ ^ 2)) ^ k : ℝ)) =
       (fun s ↦ (2 * t) ^ k * s ^ (-k)) ∘ fun y ↦ t ^ 2 + ‖y - b‖ ^ 2 := by
     funext y
-    rw [Function.comp_apply, Real.div_rpow (by positivity) (hqpos y).le,
-      Real.rpow_neg (hqpos y).le, div_eq_mul_inv]
+    rw [Function.comp_apply, Real.div_rpow_of_pos_right (hqpos y), Real.rpow_neg (hqpos y).le,
+      div_eq_mul_inv]
   have hFd : deriv (fun s : ℝ ↦ (2 * t) ^ k * s ^ (-k)) =
       fun s ↦ (2 * t) ^ k * (-k * s ^ (-k - 1)) := by
     funext s
@@ -383,7 +416,7 @@ theorem laplacian_bubble {t : ℝ} (ht : 0 < t) (b x : E) :
   have hU : bubble t b = fun y : E ↦
       ((2 * t / (t ^ 2 + ‖y - b‖ ^ 2)) ^ (((Module.finrank ℝ E : ℝ) - 2) / 2) : ℝ) :=
     funext (bubble_apply t b)
-  rw [hU, laplacian_div_add_norm_sub_sq_rpow ht, criticalExponent_def]
+  rw [hU, laplacian_div_add_norm_sub_sq_rpow, criticalExponent_def]
   set n : ℝ := (Module.finrank ℝ E : ℝ)
   have hQ : 0 < t ^ 2 + ‖x - b‖ ^ 2 := by positivity
   rcases eq_or_ne n 2 with hn | hn

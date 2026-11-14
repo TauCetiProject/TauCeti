@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Fork
 import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Branch
+import TauCeti.Data.Fintype.Card.LT
 import Mathlib.Tactic.IntervalCases
 
 /-!
@@ -128,13 +129,13 @@ theorem exists_weight_intersection_branch_eight_eq
         if i = j then -(2 * (w : ℤ)) else if i + 1 = j ∨ j + 1 = i then (w : ℤ) else 0) ∧
       ∀ {i : ℕ}, i < 7 → T.intersection (c i) branch = if i = 3 then (w : ℤ) else 0 := by
   have hcard : 7 < Fintype.card T.Component := hc.le_card_snoc hbranch_ne
-  obtain ⟨w, hw, hwb, hedge, hab, hbranch_zero⟩ :=
+  obtain ⟨w, hw, hwb, -, hab, hbranch_zero⟩ :=
     T.exists_weight_intersection_branch_seven_eq (hc.mono (by omega))
       (fun i hi ↦ hbranch_ne i (by omega)) hbranch_self hbranch_pos
   let r : ℕ → T.Component := fun i ↦ c (6 - i)
   have hr : T.IsSelfIntersectionMinusTwoChain 6 r := by
     simpa [r] using hc.reverse.mono (s := 6) (by omega)
-  obtain ⟨w', hwr, -, hredge, -, hrbranch_zero⟩ :=
+  obtain ⟨w', hwr, -, -, -, hrbranch_zero⟩ :=
     T.exists_weight_intersection_branch_seven_eq hr (fun i hi ↦ hbranch_ne (6 - i) (by omega))
       hbranch_self (by simpa [r] using hbranch_pos)
   have hww : (w' : ℤ) = w := (hwr 3 (by omega)).symm.trans (hw 3 (by omega))
@@ -142,11 +143,6 @@ theorem exists_weight_intersection_branch_eight_eq
     obtain h | rfl : i < 6 ∨ i = 6 := by omega
     · exact hw i h
     · simpa [r, hww] using hwr 0 (by omega)
-  have hedge' (i : ℕ) (hi : i + 1 < 7) : T.intersection (c i) (c (i + 1)) = w := by
-    obtain h | rfl : i < 5 ∨ i = 5 := by omega
-    · exact hedge i (by omega)
-    · rw [T.intersection_comm]
-      simpa [r, hww] using hredge 0 (by omega)
   have hbranch_entry {i : ℕ} (hi : i < 7) :
       T.intersection (c i) branch = if i = 3 then (w : ℤ) else 0 := by
     split_ifs with h3
@@ -155,7 +151,7 @@ theorem exists_weight_intersection_branch_eight_eq
     · obtain h | rfl : i < 6 ∨ i = 6 := by omega
       · exact hbranch_zero i h h3
       · simpa [r] using hrbranch_zero 0 (by omega) (by omega)
-  exact ⟨w, hwb, hweight, fun hi hj ↦ hc.intersection_eq_ite hcard hweight hedge' hi hj,
+  exact ⟨w, hwb, hweight, fun hi hj ↦ hc.intersection_eq_ite hcard hweight hi hj,
     fun hi ↦ hbranch_entry hi⟩
 
 namespace IsSelfIntersectionMinusTwoChain
@@ -174,15 +170,14 @@ theorem intersection_branch_eq_zero {c : ℕ → T.Component}
   have hbranch_pos : 0 < T.intersection (c 3) branch :=
     (T.offDiagonal_nonneg _ _ (hbranch_ne 3 (by omega)).symm).lt_of_ne
       (Ne.symm hbranch_nonzero)
-  obtain ⟨w, hwb, hweight, hentry, hbranch_entry⟩ :=
+  obtain ⟨w, hwb, _, hentry, hbranch_entry⟩ :=
     T.exists_weight_intersection_branch_eight_eq hc hbranch_ne hbranch_self hbranch_pos
   -- The affine `E₇` marks `1, 2, 3, 4, 3, 2, 1` on the chain and `2` on the branch give a
   -- positive vector whose rows all vanish, contradicting negative definiteness.
   let d : ℕ → T.Component := fun i ↦ if i = 7 then branch else c i
   let y : ℕ → ℤ := fun i ↦ if i = 7 then 2 else if i ≤ 3 then i + 1 else 7 - i
-  have hd_inj : ∀ i < 8, ∀ j < 8, d i = d j → i = j := by
-    simpa only [d] using hc.injOn_snoc hbranch_ne
-  refine T.not_forall_sum_intersection_mul_nonneg_of_pos hd_inj hcard (y := y)
+  refine T.not_forall_sum_intersection_mul_nonneg_of_pos (c := d)
+    (Fintype.exists_forall_lt_ne_of_lt_card d hcard) (y := y)
     (fun i _ ↦ by simp only [y]; split_ifs <;> omega) ⟨0, by omega, by simp [y]⟩ fun i hi ↦ ?_
   interval_cases i <;>
     norm_num [Finset.sum_range_succ, d, y] <;>

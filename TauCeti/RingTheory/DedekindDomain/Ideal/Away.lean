@@ -243,7 +243,7 @@ theorem mem_integralIdealsAway_iff_count_eq_zero {S : Finset (HeightOneSpectrum 
       ∀ v ∈ S, FractionalIdeal.count K v (I : FractionalIdeal R⁰ K) = 0 := by
   rw [mem_integralIdealsAway_iff]
   refine and_congr_right fun hI ↦ forall_congr' fun v ↦ forall_congr' fun _ ↦ ?_
-  rw [FractionalIdeal.count_coe K v hI, Int.natCast_eq_zero,
+  rw [FractionalIdeal.count_coeIdeal K v hI, Int.natCast_eq_zero,
     ← Associates.count_ne_zero_iff_dvd hI v.irreducible, not_not]
 
 variable (K) in

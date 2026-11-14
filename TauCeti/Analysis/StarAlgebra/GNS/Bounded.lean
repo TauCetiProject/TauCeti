@@ -76,7 +76,7 @@ namespace StarPositiveFunctional
 section NonUnital
 
 variable {A : Type*} [NonUnitalRing A] [Module ℂ A] [StarRing A] [StarModule ℂ A]
-  [IsScalarTower ℂ A A] [SMulCommClass ℂ A A] (φ : StarPositiveFunctional A)
+  [IsScalarTower ℂ A A] (φ : StarPositiveFunctional A)
 
 /-- The Hilbert-space completion of the algebraic GNS inner product space `φ.GNS`. -/
 abbrev HilbertGNS : Type _ := Completion φ.GNS
@@ -344,10 +344,40 @@ theorem apply_star_mul_self_le_of_cstar {A C : Type*} [NonUnitalRing A] [Module 
   simp_rw [← StarHomClass.map_star f, ← map_mul f, hφ, ← mul_assoc] at hω
   exact hω
 
+/-- An element coming from a unital C⋆-algebra acts on any positive-functional GNS space
+with quadratic-form bound given by its original C⋆-norm. No norm on the target algebra or
+continuity of its positive functional is required. -/
+theorem apply_star_mul_self_le_of_cstar_source {A B : Type*} [CStarAlgebra A] [Ring B]
+    [Algebra ℂ B] [StarRing B]
+    (φ : StarPositiveFunctional B) (f : A →⋆ₐ[ℂ] B) (a : A) (b : B) :
+    φ (star b * star (f a) * f a * b) ≤ (‖a‖ : ℂ) ^ 2 * φ (star b * b) := by
+  let := CStarAlgebra.spectralOrder A
+  let := CStarAlgebra.spectralOrderedRing (A := A)
+  obtain ⟨c, hc⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.mp
+    (sub_nonneg.mpr (CStarAlgebra.star_mul_le_algebraMap_norm_sq a))
+  have h := φ.square_nonneg (f c * b)
+  have hf : f (algebraMap ℝ A (‖a‖ ^ 2)) = (‖a‖ : ℂ) ^ 2 • (1 : B) := by
+    simp [IsScalarTower.algebraMap_apply ℝ ℂ A, Algebra.algebraMap_eq_smul_one,
+      Complex.ofReal_pow]
+  have hc' : star (f c) * f c = (‖a‖ : ℂ) ^ 2 • (1 : B) - star (f a) * f a := by
+    simpa only [map_sub, map_mul, StarHomClass.map_star, hf] using (congrArg f hc).symm
+  have heq : star (f c * b) * (f c * b) =
+      (‖a‖ : ℂ) ^ 2 • (star b * b) - star b * star (f a) * f a * b := by
+    simp only [star_mul, ← mul_assoc, mul_assoc (star b) (star (f c)), hc', mul_sub,
+      sub_mul, mul_smul_comm, smul_mul_assoc, mul_one]
+  rw [heq, map_sub, map_smul] at h
+  exact sub_nonneg.mp h
+
 section Unital
 
 variable {A : Type*} [Ring A] [Algebra ℂ A] [StarRing A] [StarModule ℂ A]
   (φ : StarPositiveFunctional A)
+
+/-- Elements in the image of a C⋆-algebra act continuously on the algebraic GNS space. -/
+theorem continuous_leftMul_of_cstar_source {C : Type*} [CStarAlgebra C]
+    (f : C →⋆ₐ[ℂ] A) (a : C) : Continuous (φ.leftMul (f a)) :=
+  (φ.continuous_leftMul_iff _).mpr
+    ⟨‖a‖, norm_nonneg _, φ.apply_star_mul_self_le_of_cstar_source f a⟩
 
 theorem continuous_leftMul_one : Continuous (φ.leftMul (1 : A)) := by
   have h : φ.leftMul (1 : A) = LinearMap.id := by

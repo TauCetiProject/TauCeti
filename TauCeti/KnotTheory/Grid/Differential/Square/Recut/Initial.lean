@@ -275,7 +275,7 @@ private theorem exists_unique_isRepartition_of_col_cut (D : GridRectangleDecompo
   refine ⟨E, ⟨⟨hDdisj, hEdisj, hunion⟩, hmiddle, hEfirst, hEsecond, hE1right,
     hE2right, Or.inl ⟨hcol, hmidE, hE1left, hE2left⟩⟩, ?_⟩
   intro E' hE'
-  rcases hE' with ⟨_, _, _, _, hE1right', hE2right', hcols'⟩
+  rcases hE' with ⟨_, _, _, _, hE1right', _, hcols'⟩
   have hlefts : E'.first.left = D.first.right ∧
       E'.second.left = D.first.left := by
     rcases hcols' with ⟨_, _, hE1left', hE2left'⟩ |
@@ -284,7 +284,6 @@ private theorem exists_unique_isRepartition_of_col_cut (D : GridRectangleDecompo
     · exact (hcol_exclusive ⟨hcol, hcol'⟩).elim
   exact GridRectangleDecomposition.ext (hlefts.1.trans hE1left.symm)
     (hE1right'.trans hE1right.symm) (hlefts.2.trans hE2left.symm)
-    (hE2right'.trans hE2right.symm)
 
 /-- The recut of two empty rectangles with a common initial side column in the configuration where
 the terminal side of the second rectangle lies inside the column span of the first one: the new
@@ -315,7 +314,7 @@ private theorem exists_unique_isRepartition_of_complementary_col_cut
                 E.first.left = D.first.left ∧ E.second.left = D.second.right)) := by
   have hab : D.first.left ≠ D.first.right := D.first.left_ne_right
   have had := D.first_left_ne_second_right_of_left_eq_left hleft
-  obtain ⟨hmid_first, -⟩ := D.middle_apply_of_left_eq_left hleft hright
+  obtain ⟨_, -⟩ := D.middle_apply_of_left_eq_left hleft hright
   have hD1 := D.first.toGridRectangle_eq
   have hD2 := D.toGridRectangle_second_of_left_eq_left hleft hright
   obtain ⟨E, ⟨hmidE, hE1left, hE1right, hE2left, hE2right⟩, hE1, hE2, hEfirst, hEsecond⟩ :=
@@ -340,7 +339,7 @@ private theorem exists_unique_isRepartition_of_complementary_col_cut
   refine ⟨E, ⟨⟨hDdisj, hEdisj, hunion⟩, hmiddle, hEfirst, hEsecond, hE1right,
     hE2right, Or.inr ⟨hcol, hmidE, hE1left, hE2left⟩⟩, ?_⟩
   intro E' hE'
-  rcases hE' with ⟨_, _, _, _, hE1right', hE2right', hcols'⟩
+  rcases hE' with ⟨_, _, _, _, hE1right', _, hcols'⟩
   have hlefts : E'.first.left = D.first.left ∧
       E'.second.left = D.second.right := by
     rcases hcols' with ⟨hcol', _, _, _⟩ |
@@ -349,15 +348,14 @@ private theorem exists_unique_isRepartition_of_complementary_col_cut
     · exact ⟨hE1left', hE2left'⟩
   exact GridRectangleDecomposition.ext (hlefts.1.trans hE1left.symm)
     (hE1right'.trans hE1right.symm) (hlefts.2.trans hE2left.symm)
-    (hE2right'.trans hE2right.symm)
 
 /-- Two composable empty rectangles that share their initial side column and no other side admit
 a *recut*: the L-shaped union of their domains has a second decomposition into two empty
 rectangles, through a different intermediate grid state.
 
 The two cyclic orders of the three side columns give the two shapes of the new cut, and in each
-of them the intermediate state and the four side columns of the recut are computed, which by
-`GridRectangleDecomposition.ext` determine it.
+of them the intermediate state and the four side columns of the recut are computed, and these
+determine the recut uniquely.
 
 Emptiness of both rectangles enters twice. It fixes the cyclic order of the three side columns
 and of the three corner rows, and it then transfers to the two new rectangles: the part of a new
@@ -377,9 +375,7 @@ theorem exists_isRepartition_of_isEmpty_of_left_eq_left (D : GridRectangleDecomp
                 E.first.left = D.first.left ∧ E.second.left = D.second.right)) := by
   -- The three side columns, the target state and the two old rectangles, all read in the source
   -- state `x`.
-  have hab : D.first.left ≠ D.first.right := D.first.left_ne_right
-  have had := D.first_left_ne_second_right_of_left_eq_left hleft
-  obtain ⟨hmid_first, hmid_second⟩ := D.middle_apply_of_left_eq_left hleft hright
+  obtain ⟨_, hmid_second⟩ := D.middle_apply_of_left_eq_left hleft hright
   have hmid : D.middle = x.swapColumns D.first.left D.first.right :=
     D.first.target_eq_swapColumns
   have hz : z = (x.swapColumns D.first.left D.first.right).swapColumns D.first.left

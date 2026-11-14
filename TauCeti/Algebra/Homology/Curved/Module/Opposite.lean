@@ -50,10 +50,11 @@ universe uR uA uM
 variable {R : Type uR} {A : Type uA} {M : Type uM}
   [CommRing R] [Ring A] [Algebra R A]
   [AddCommGroup M] [Module R M] [Module A M] [IsScalarTower R A M]
-  {G : InternalGrading R A} {H : InternalGrading R M}
+  {G : InternalGrading R A ℤ} {H : InternalGrading R M ℤ}
   [GradedAlgebra G.piece] [SetLike.GradedSMul G.piece H.piece]
   {d : A →ₗ[R] A} {w : A} {h : IsCurvedDGAlgebra G.piece d w} {dM : M →ₗ[R] M}
 
+omit [IsScalarTower R A M] in
 /-- The curvature `-op w` of the graded opposite acts on a module element by minus the original
 left action of `w`: the curvature has even degree, so no Koszul sign appears. -/
 private theorem leftToRight_neg_op_curvature_smul (h : IsCurvedDGAlgebra G.piece d w) (x : M) :

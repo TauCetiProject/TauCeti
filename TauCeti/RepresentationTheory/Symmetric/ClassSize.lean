@@ -41,8 +41,6 @@ equality `σ.partition.parts = μ.parts` of the underlying multisets, which dete
 
 ## References
 
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 6, the class-sizes build item.
 * Mathlib's `Mathlib.GroupTheory.Perm.Centralizer`, for the cycle-type count.
 -/
 
@@ -188,8 +186,8 @@ theorem card_partition_parts_mul_zPart {n : ℕ} (h : Fintype.card α = n) (μ :
   rw [hfib]
   exact card_partition_mul_zPart μ
 
-/-- The class-size formula for `Equiv.Perm (Fin n)`, the form the roadmap states: the permutations
-with partition `μ` number `n ! / zPart μ`. -/
+/-- The class-size formula for `Equiv.Perm (Fin n)`: the permutations with partition `μ` number
+`n ! / zPart μ`. -/
 theorem card_partition_parts_mul_zPart_fin (n : ℕ) (μ : n.Partition) :
     Nat.card {σ : Equiv.Perm (Fin n) // σ.partition.parts = μ.parts} * zPart μ = n ! :=
   card_partition_parts_mul_zPart (Fintype.card_fin n) μ

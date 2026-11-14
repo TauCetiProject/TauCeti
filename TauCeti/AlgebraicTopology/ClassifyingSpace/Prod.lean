@@ -220,9 +220,9 @@ theorem subsingleton_groupHomology_prod
   -- Transport along the identifications `Hₙ(BG; k) ≅ Hₙ(G, k)` of all three groups.
   have := subsingleton_classifyingSpace_prod_singularHomology G H k
     (fun n ↦ (classifyingSpaceSingularHomologyIsoGroupHomology k G (n + 1)).toLinearEquiv
-      |>.toEquiv.subsingleton)
+      |>.toEquiv.subsingleton_congr.2 (hG n))
     (fun n ↦ (classifyingSpaceSingularHomologyIsoGroupHomology k H (n + 1)).toLinearEquiv
-      |>.toEquiv.subsingleton)
+      |>.toEquiv.subsingleton_congr.2 (hH n))
     n
   (classifyingSpaceSingularHomologyIsoGroupHomology k (G × H) (n + 1)).symm.toLinearEquiv
     |>.toEquiv.subsingleton

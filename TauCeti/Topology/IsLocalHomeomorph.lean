@@ -16,6 +16,7 @@ public import TauCeti.Topology.SeparatedMap
 # Local homeomorphisms: path-connectedness, local inverses, fiber sums, products, base change
 
 A map that is a local homeomorphism at each point of an open set sends that set to an open set.
+Being a local homeomorphism at a point only depends on the germ of the map there.
 
 A local homeomorphism `p : E → B` identifies a neighbourhood of each point of `E` with an open
 subset of `B`, so `E` inherits any property of `B` that is local and stable under passing to open
@@ -42,6 +43,8 @@ groupoid.
 
 * `IsLocalHomeomorphOn.isOpen_image`: a local homeomorphism on an open set maps it to an open
   set.
+* `IsLocalHomeomorphOn.congr_of_eventuallyEq`: being a local homeomorphism at a point depends only
+  on the germ of the map there.
 * `IsLocalHomeomorph.locallyPathConnectedSpace`: the domain of a local homeomorphism into a
   locally path-connected space is locally path-connected.
 * `IsLocalHomeomorph.localInverseAt_comp_eventuallyEq`: near `z`, a local inverse composed with
@@ -70,6 +73,17 @@ theorem _root_.IsLocalHomeomorphOn.isOpen_image {f : E → B} {s : Set E}
     (hf : IsLocalHomeomorphOn f s) (hs : IsOpen s) : IsOpen (f '' s) :=
   isOpen_iff_mem_nhds.2 <| Set.forall_mem_image.2 fun _ hx ↦
     hf.map_nhds_eq hx ▸ Filter.image_mem_map (hs.mem_nhds hx)
+
+/-- Being a local homeomorphism at the points of `s` only depends on the germs of the map at
+those points. -/
+theorem _root_.IsLocalHomeomorphOn.congr_of_eventuallyEq {f g : E → B} {s : Set E}
+    (hf : IsLocalHomeomorphOn f s) (hfg : ∀ x ∈ s, f =ᶠ[𝓝 x] g) : IsLocalHomeomorphOn g s := by
+  refine IsLocalHomeomorphOn.mk g s fun x hx ↦ ?_
+  obtain ⟨e, hxe, he⟩ := hf x hx
+  obtain ⟨U, hfgU, hUo, hxU⟩ := eventually_nhds_iff.1 (hfg x hx)
+  refine ⟨e.restrOpen U hUo, by simpa using ⟨hxe, hxU⟩, fun z hz ↦ ?_⟩
+  rw [OpenPartialHomeomorph.restrOpen_source] at hz
+  rw [← hfgU z hz.2, he, OpenPartialHomeomorph.coe_restrOpen]
 
 /-- **A local homeomorphism with locally path-connected codomain has locally path-connected
 domain.** In particular the total space of a covering of a locally path-connected space is
@@ -250,5 +264,15 @@ theorem _root_.IsLocalHomeomorph.of_isEmbedding_of_range_eq {X' Y' : Type*}
     exact (congrFun hcomm x'').symm.trans (by rw [Function.comp_apply, hx'', hu])
 
 end Pullback
+
+/-- A map is a local homeomorphism if its composite with a surjective local homeomorphism is
+a local homeomorphism. -/
+theorem of_comp_of_surjective {X Y Z : Type*}
+    [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
+    {f : X → Y} {g : Y → Z} (hgf : IsLocalHomeomorph (g ∘ f))
+    (hf : IsLocalHomeomorph f) (hsurj : Function.Surjective f) : IsLocalHomeomorph g := by
+  have h := hgf.isLocalHomeomorphOn.of_comp_right hf.isLocalHomeomorphOn
+    (s := Set.univ)
+  rwa [Set.image_univ, hsurj.range_eq, ← isLocalHomeomorph_iff_isLocalHomeomorphOn_univ] at h
 
 end IsLocalHomeomorph

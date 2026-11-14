@@ -92,7 +92,7 @@ lemma image_sq_div_const_Ioi {ν : ℝ} (hν : 0 < ν) {y : ℝ} (hy : 0 ≤ y) 
 lemma injOn_sq_div_const_Ioi {ν : α} (hν : ν ≠ 0) :
     InjOn (fun z : α => z ^ 2 / ν) (Ioi 0) := fun _ hz _ hw h =>
   (pow_left_strictMonoOn₀ two_ne_zero).injOn (mem_Ici.2 (le_of_lt hz)) (mem_Ici.2 (le_of_lt hw))
-    ((div_left_inj' hν).1 h)
+    ((div_left_inj₀ hν).1 h)
 
 /-- The derivative of the chart `z ↦ z ^ 2 / ν`. -/
 lemma hasDerivAt_sq_div_const (ν z : 𝕜) :

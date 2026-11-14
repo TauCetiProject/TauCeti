@@ -13,7 +13,7 @@ public import Mathlib.CategoryTheory.Limits.Preserves.Basic
 
 Stability under colimits of a fixed shape is preserved by intersections and by
 inverse image along a functor preserving those colimits. Intersections also preserve
-stability under filtered colimits. These rules allow closure
+stability under filtered colimits and under coproducts. These rules allow closure
 properties of quasi-isomorphisms to be deduced from those of isomorphisms.
 -/
 
@@ -42,6 +42,11 @@ instance IsStableUnderFilteredColimits.inf {P Q : MorphismProperty C}
     [P.IsStableUnderFilteredColimits.{w, w'}] [Q.IsStableUnderFilteredColimits.{w, w'}] :
     (P ⊓ Q).IsStableUnderFilteredColimits.{w, w'} where
   isStableUnderColimitsOfShape J _ _ := by infer_instance
+
+/-- The intersection of two properties stable under coproducts is stable under coproducts. -/
+instance IsStableUnderCoproducts.inf {P Q : MorphismProperty C}
+    [P.IsStableUnderCoproducts.{w}] [Q.IsStableUnderCoproducts.{w}] :
+    (P ⊓ Q).IsStableUnderCoproducts.{w} where
 
 /-- Inverse image along a colimit-preserving functor preserves stability under
 colimits of the same shape. -/

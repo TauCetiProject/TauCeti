@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Basic
-public import TauCeti.Analysis.PDE.Vortex.GaugeFixed
+public import TauCeti.Analysis.PDE.Vortex.Gauge.Fixed
 import Mathlib.Topology.Algebra.Field
 import TauCeti.Analysis.Calculus.FDeriv.RestrictScalars
 import TauCeti.Analysis.Complex.AtInfinity
@@ -217,8 +217,6 @@ theorem tendsto_sectionValue_translateField {x : ℂ → EuclideanSpace ℝ (Fin
     (isCompact_singleton : IsCompact ({-a} : Set ℂ)).compl_mem_cocompact] with z hz hza
   have hz0 : z ≠ 0 := by simpa using hz
   have hza0 : z + a ≠ 0 := fun h ↦ hza (by simpa using eq_neg_of_add_eq_zero_left h)
-  have h₁ : z / (‖z‖ : ℂ) ≠ 0 := by simp [hz0]
-  have h₂ : (z + a) / (‖z + a‖ : ℂ) ≠ 0 := by simp [hza0]
   have h₃ : (‖z‖ : ℂ) ≠ 0 := by simpa using hz0
   have h₄ : (‖z + a‖ : ℂ) ≠ 0 := by simpa using hza0
   rw [sectionValue_translateField, mul_assoc, ← inv_pow, ← inv_pow, ← mul_pow]
