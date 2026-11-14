@@ -170,7 +170,8 @@ private theorem orientationSignlessPreprojectiveIdeal_map_eq :
           (orientationPathAlgebraEquiv o k).symm :=
         signlessPreprojectiveIdeal_asIdeal_le_comap k (orientationPathAlgebraEquiv o k).symm _
           fun i => by
-            rw [orientationPathAlgebraEquiv_symm_signlessPreprojectiveRelator]
+            rw [orientationPathAlgebraEquiv_symm_signlessPreprojectiveRelator,
+              TwoSidedIdeal.mem_asIdeal]
             exact signlessPreprojectiveRelator_mem_signlessPreprojectiveIdeal k _
       _ = (signlessPreprojectiveIdeal k (DoubledQuiver G)).asIdeal.map
           (orientationPathAlgebraEquiv o k : _ →+* _) :=
@@ -179,7 +180,7 @@ private theorem orientationSignlessPreprojectiveIdeal_map_eq :
   · refine Ideal.map_le_iff_le_comap.mpr ?_
     exact signlessPreprojectiveIdeal_asIdeal_le_comap k (orientationPathAlgebraEquiv o k) _
       fun i => by
-        rw [orientationPathAlgebraEquiv_signlessPreprojectiveRelator]
+        rw [orientationPathAlgebraEquiv_signlessPreprojectiveRelator, TwoSidedIdeal.mem_asIdeal]
         exact signlessPreprojectiveRelator_mem_signlessPreprojectiveIdeal k _
 
 /-- Restoring an orientation identifies the signless algebra of the doubled graph with the

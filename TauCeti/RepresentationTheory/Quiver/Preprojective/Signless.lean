@@ -200,17 +200,15 @@ theorem signlessPreprojectiveRelator_mem_signlessPreprojectiveIdeal (v : R) :
 variable {R} in
 /-- A ring homomorphism out of the path algebra sending every signless relator into a two-sided
 ideal of the target pulls that ideal back above the signless ideal. -/
-theorem signlessPreprojectiveIdeal_asIdeal_le_comap [Finite R] {B F : Type*} [Ring B]
+theorem signlessPreprojectiveIdeal_asIdeal_le_comap [Finite R] {B F : Type*} [Semiring B]
     [FunLike F (pathAlgebra k R) B] [RingHomClass F (pathAlgebra k R) B] (f : F)
-    (I : TwoSidedIdeal B) (hf : ∀ v : R, f (signlessPreprojectiveRelator k v) ∈ I) :
-    (signlessPreprojectiveIdeal k R).asIdeal ≤ I.asIdeal.comap f := by
-  have h : signlessPreprojectiveIdeal k R ≤ I.comap (f : pathAlgebra k R →+* B) := by
+    (I : Ideal B) [I.IsTwoSided] (hf : ∀ v : R, f (signlessPreprojectiveRelator k v) ∈ I) :
+    (signlessPreprojectiveIdeal k R).asIdeal ≤ I.comap f := by
+  have h : signlessPreprojectiveIdeal k R ≤ (I.comap f).toTwoSided := by
     rw [signlessPreprojectiveIdeal_eq_span, TwoSidedIdeal.span_le]
     rintro _ ⟨v, rfl⟩
-    exact (TwoSidedIdeal.mem_comap _).mpr (hf v)
-  exact fun _ hx => by
-    simpa only [Ideal.mem_comap, TwoSidedIdeal.mem_asIdeal, TwoSidedIdeal.mem_comap,
-      RingHom.coe_coe] using h hx
+    exact Ideal.mem_toTwoSided.mpr (hf v)
+  exact fun _ hx => Ideal.mem_toTwoSided.mp (h hx)
 
 end Ideal
 
