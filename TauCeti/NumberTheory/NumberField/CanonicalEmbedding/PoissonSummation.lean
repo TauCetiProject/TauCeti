@@ -320,10 +320,10 @@ instance (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L] [IsZLattice ℝ
     exact IsZLattice.span_top
 
 open scoped Classical in
-/-- **Biduality**: the dual of the dual of a full lattice of the mixed space is the lattice. -/
+/-- **Biduality**: the dual of the dual of a discrete lattice of the mixed space is the lattice. -/
 @[simp]
-theorem mixedDual_mixedDual (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
-    [IsZLattice ℝ L] : mixedDual K (mixedDual K L) = L := by
+theorem mixedDual_mixedDual (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L] :
+    mixedDual K (mixedDual K L) = L := by
   rw [mixedDual_eq_comap, comap_mixedDual, ZLattice.dual_dual, ZLattice.comap_comp]
   ext
   simp
