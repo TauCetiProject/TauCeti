@@ -560,8 +560,7 @@ theorem fderiv_coefficient_slice_single (a : Symbol n V W m) (j : Fin n)
 /-- The mixed derivatives of `∂_{ξ_j} a` are those of `a` with one more frequency derivative. -/
 @[simp]
 theorem mixedDeriv_frequencyDeriv (j : Fin n) (a : Symbol n V W m) (α β : List (Fin n))
-    (x ξ : CoordinateSpace n) :
-    mixedDeriv α β (frequencyDeriv j a).coefficient x ξ =
+    (x ξ : CoordinateSpace n) : mixedDeriv α β (frequencyDeriv j a).coefficient x ξ =
       mixedDeriv α (β ++ [j]) a.coefficient x ξ := by
   have h : (frequencyDeriv j a).coefficient =
       fun p => coordinateDeriv [j] (fun η => a.coefficient (p.1, η)) p.2 :=
@@ -643,9 +642,8 @@ theorem exists_norm_iteratedFDeriv_coefficient_le (a : Symbol n V W m)
       ‖iteratedFDeriv ℝ k a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
   choose A hA0 hA using fun r : Fin k → Fin n ⊕ Fin n => a.exists_bound K hK
     ((List.ofFn r).filterMap Sum.getLeft?) ((List.ofFn r).filterMap Sum.getRight?)
-  refine ⟨∑ r, A r, Finset.sum_nonneg fun r _ => hA0 r, fun x hx ξ => ?_⟩
-  refine (norm_iteratedFDeriv_le_sum_mixedDeriv (a.contDiff_coefficient.of_le (by simp))
-    x ξ).trans ?_
+  refine ⟨∑ r, A r, Finset.sum_nonneg fun r _ => hA0 r, fun x hx ξ =>
+    (norm_iteratedFDeriv_le_sum_mixedDeriv (a.contDiff_coefficient.of_le (by simp)) x ξ).trans ?_⟩
   rw [Finset.sum_mul]
   exact Finset.sum_le_sum fun r _ => (hA r x hx ξ).trans <| mul_le_mul_of_nonneg_left
     (rpow_weight_le_rpow_weight ξ (sub_le_self m (Nat.cast_nonneg _))) (hA0 r)
