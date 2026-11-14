@@ -129,6 +129,11 @@ namespace Subalgebra
 
 variable {σ R : Type*} [CommRing R] (A : Subalgebra R (MvPolynomial σ R)) (w : σ → ℕ)
 
+/-- Over a commutative ring, the subalgebra weight Rees algebra is a commutative ring. -/
+noncomputable instance weightReesAlgebraCommRing : CommRing (A.weightReesAlgebra w) :=
+  letI : CommRing A := A.toCommRing
+  @Subalgebra.toCommRing R A[X] _ _ _ (A.weightReesAlgebra w)
+
 /-- Under bounded relation certificates, the SAGBI Rees presentation is exactly the embedded
 Rees algebra of the induced filtration, not merely an algebra with the same generators. -/
 theorem map_weightReesAlgebra_eq_range_weightReesAeval
