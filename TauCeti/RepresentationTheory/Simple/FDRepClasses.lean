@@ -32,7 +32,8 @@ symmetric group, where the comparison identifies the two classifications by the 
   isomorphism class of the `k[G]`-module a simple object carries.
 * `TauCeti.SimpleFDRepClasses.toSimpleSubmoduleClasses_injective`: distinct classes of simple
   objects carry distinct classes of modules, so the comparison identifies the categorical
-  classification with a part of the module-level one.
+  classification with a part of the module-level one; in particular `SimpleFDRepClasses k G` is
+  `Finite` whenever `k[G]` is semisimple.
 -/
 
 public section
@@ -80,6 +81,11 @@ theorem toSimpleSubmoduleClasses_injective [IsSemisimpleRing k[G]] :
   rw [toSimpleSubmoduleClasses_mk, toSimpleSubmoduleClasses_mk, simpleModuleClass_eq_iff,
     ← Representation.nonempty_equiv_iff, ← nonempty_fdRepIso_iff, mk_eq_mk_iff]
   exact id
+
+/-- Over a semisimple monoid algebra there are only finitely many isomorphism classes of simple
+objects of `FDRep k G`. -/
+instance [IsSemisimpleRing k[G]] : Finite (SimpleFDRepClasses k G) :=
+  .of_injective _ toSimpleSubmoduleClasses_injective
 
 end Field
 

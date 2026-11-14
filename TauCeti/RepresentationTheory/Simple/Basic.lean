@@ -64,8 +64,9 @@ drag in the semisimple isotypic-component theory that only the comparison needs.
 * `Rep.simple_of_isIrreducible` and `Rep.isIrreducible_of_simple`: the two directions as an
   instance and a theorem, respectively.
 * `FDRep.simple_iff_isIrreducible`: the same for `FDRep k G`.
-* `FDRep.simple_of_isIrreducible` and `FDRep.isIrreducible_of_simple`: the corresponding instance
-  and theorem for `FDRep`.
+* `FDRep.simple_of_isIrreducible`, `FDRep.simple_of`, and `FDRep.isIrreducible_of_simple`: the
+  corresponding instances (for an object of `FDRep k G` and for `FDRep.of ρ`) and theorem for
+  `FDRep`.
 * `FDRep.isSimpleModule_asModule_of_simple`: the instance making Mathlib's simple-module API on
   `X.ρ.asModule` available from `Simple X` alone.
 * `TauCeti.SimpleFDRepClasses`: the isomorphism classes of simple objects of `FDRep k G`.
@@ -159,6 +160,12 @@ theorem FDRep.simple_iff_isIrreducible (X : FDRep k G) :
 instance FDRep.simple_of_isIrreducible (X : FDRep k G)
     [Representation.IsIrreducible X.ρ] : Simple X :=
   (FDRep.simple_iff_isIrreducible X).mpr ‹_›
+
+/-- Bundling an irreducible finite-dimensional representation with `FDRep.of` produces a simple
+object of `FDRep k G`. -/
+instance FDRep.simple_of {V : Type u} [AddCommGroup V] [Module k V] [FiniteDimensional k V]
+    (ρ : Representation k G V) [ρ.IsIrreducible] : Simple (FDRep.of ρ) :=
+  (FDRep.simple_iff_isIrreducible (FDRep.of ρ)).mpr ((FDRep.of_ρ' ρ).symm ▸ ‹_›)
 
 /-- A simple object of `FDRep k G` carries an irreducible representation. -/
 theorem FDRep.isIrreducible_of_simple (X : FDRep k G) [Simple X] :

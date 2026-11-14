@@ -7,17 +7,21 @@ module
 
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Dimension.Free
+import Mathlib.LinearAlgebra.Dimension.Finrank
 import TauCeti.Algebra.Ring.SquareZero
+import TauCeti.LinearAlgebra.Matrix.Adjugate.FinTwo
 
 /-!
-# Determinants of finite-order maps fixing a hyperplane
+# Determinants of finite-order linear maps
 
 A finite-order endomorphism fixing a hyperplane pointwise and having determinant one is
 the identity when its order is invertible in the field. The invertibility hypothesis
-excludes modular transvections.
+excludes modular transvections. This is the linear-algebra input for faithfulness of the
+determinant character of a hyperplane's pointwise stabilizer in a finite linear group.
 
-This is the linear-algebra input for faithfulness of the determinant character of a
-hyperplane's pointwise stabilizer in a finite linear group.
+In rank two over a domain away from characteristic two, an involutive endomorphism of
+determinant one need not be given a fixed hyperplane: adjugation forces it to be scalar,
+so it is either `1` or `-1` (`LinearMap.eq_one_or_eq_neg_one_of_mul_self_eq_one_of_det_eq_one`).
 
 ## References
 
@@ -27,6 +31,8 @@ hyperplane's pointwise stabilizer in a finite linear group.
 public section
 
 namespace LinearMap
+
+section Hyperplane
 
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
 
@@ -60,5 +66,37 @@ theorem eq_one_of_det_eq_one_of_pow_eq_one (f : V →ₗ[K] V) (W : Submodule K 
     exact hn.isUnit.map _
   exact sub_eq_zero.1 (TauCeti.eq_zero_of_one_add_pow_eq_one_of_sq_eq_zero hsq hunit
     (by simpa using hpow))
+
+end Hyperplane
+
+section RankTwo
+
+variable {R M : Type*} [CommRing R] [NoZeroDivisors R] [AddCommGroup M] [Module R M]
+  [Module.Free R M] [Module.Finite R M]
+
+/-- **Every involutive endomorphism of determinant one on a rank-two free module over a domain
+away from characteristic two is `1` or `-1`.** -/
+theorem eq_one_or_eq_neg_one_of_mul_self_eq_one_of_det_eq_one (h2 : (2 : R) ≠ 0)
+    (hdim : Module.finrank R M = 2) {f : M →ₗ[R] M} (hf : f * f = 1) (hdet : f.det = 1) :
+    f = 1 ∨ f = -1 := by
+  have : Nontrivial R := ⟨⟨2, 0, h2⟩⟩
+  have : IsDomain R := NoZeroDivisors.to_isDomain R
+  let b : Module.Basis (Fin 2) R M := Module.finBasisOfFinrankEq R M hdim
+  have hmat : LinearMap.toMatrix b b f * LinearMap.toMatrix b b f = 1 := by
+    rw [← LinearMap.toMatrix_mul, hf, LinearMap.toMatrix_one]
+  have hdet' : (LinearMap.toMatrix b b f).det = 1 := by
+    rwa [LinearMap.det_toMatrix]
+  rcases Matrix.eq_one_or_eq_neg_one_of_mul_self_eq_one_of_det_eq_one h2 hmat hdet' with h | h
+  · exact Or.inl ((LinearMap.toMatrix b b).injective (h.trans (LinearMap.toMatrix_one b).symm))
+  · exact Or.inr ((LinearMap.toMatrix b b).injective
+      (h.trans (by rw [map_neg, LinearMap.toMatrix_one])))
+
+/-- **Power form of `LinearMap.eq_one_or_eq_neg_one_of_mul_self_eq_one_of_det_eq_one`.** -/
+theorem eq_one_or_eq_neg_one_of_sq_eq_one_of_det_eq_one (h2 : (2 : R) ≠ 0)
+    (hdim : Module.finrank R M = 2) {f : M →ₗ[R] M} (hf : f ^ 2 = 1) (hdet : f.det = 1) :
+    f = 1 ∨ f = -1 :=
+  eq_one_or_eq_neg_one_of_mul_self_eq_one_of_det_eq_one h2 hdim (by rwa [← sq]) hdet
+
+end RankTwo
 
 end LinearMap

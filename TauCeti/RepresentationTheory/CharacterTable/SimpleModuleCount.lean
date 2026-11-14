@@ -37,8 +37,10 @@ supply the injection and the count of conjugacy classes.
 
 ## Main results
 
-* `TauCeti.card_simpleSubmoduleClasses_le_card_conjClasses`: over a field with `k[G]` semisimple,
-  the isomorphism classes of simple `k[G]`-modules are at most the conjugacy classes of `G`.
+* `TauCeti.card_simpleSubmoduleClasses_le_card_conjClasses` and
+  `TauCeti.card_simpleFDRepClasses_le_card_conjClasses`: over a field with `k[G]` semisimple, the
+  isomorphism classes of simple `k[G]`-modules, resp. of simple objects of `FDRep k G`, are at most
+  the conjugacy classes of `G`.
 * `TauCeti.SimpleSubmoduleClasses.bijective_of_injective_of_card_conjClasses_le` and
   `TauCeti.SimpleFDRepClasses.bijective_of_injective_of_card_conjClasses_le`: an injection into the
   isomorphism classes of simple modules, resp. of simple objects of `FDRep k G`, from a type with
@@ -70,6 +72,15 @@ theorem card_simpleSubmoduleClasses_le_card_conjClasses :
   rw [Nat.card_congr (simpleSubmoduleClassesEquiv k[G] k[G]), ← finrank_center_monoidAlgebra k G]
   exact card_isotypicComponents_le_finrank_center k k[G]
 
+/-- **Categorical form of `TauCeti.card_simpleSubmoduleClasses_le_card_conjClasses`**: over any
+field whose group algebra is semisimple, the isomorphism classes of simple objects of `FDRep k G`
+are at most as many as the conjugacy classes of `G`. -/
+theorem card_simpleFDRepClasses_le_card_conjClasses :
+    Nat.card (SimpleFDRepClasses k G) ≤ Nat.card (ConjClasses G) :=
+  (Nat.card_le_card_of_injective _
+    SimpleFDRepClasses.toSimpleSubmoduleClasses_injective).trans
+      (card_simpleSubmoduleClasses_le_card_conjClasses k G)
+
 variable {k G}
 
 /-- **Enough pairwise non-isomorphic simple modules are all of them.** An injection into the
@@ -88,11 +99,6 @@ conjugacy classes bound them too. -/
 theorem SimpleFDRepClasses.bijective_of_injective_of_card_conjClasses_le {ι : Type*}
     {f : ι → SimpleFDRepClasses k G} (hf : Function.Injective f)
     (h : Nat.card (ConjClasses G) ≤ Nat.card ι) : Function.Bijective f :=
-  have : Finite (SimpleFDRepClasses k G) :=
-    .of_injective _ SimpleFDRepClasses.toSimpleSubmoduleClasses_injective
-  hf.bijective_of_nat_card_le
-    (((Nat.card_le_card_of_injective _
-      SimpleFDRepClasses.toSimpleSubmoduleClasses_injective).trans
-        (card_simpleSubmoduleClasses_le_card_conjClasses k G)).trans h)
+  hf.bijective_of_nat_card_le ((card_simpleFDRepClasses_le_card_conjClasses k G).trans h)
 
 end TauCeti
