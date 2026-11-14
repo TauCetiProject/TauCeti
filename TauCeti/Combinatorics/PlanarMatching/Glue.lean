@@ -808,8 +808,10 @@ private theorem nestFn_shiftFrom (c L : ℕ) (φ ψ : ℕ → ℕ) (v : ℕ) :
     nestFn c L φ ψ (shiftFrom c L v) = shiftFrom c L (φ v) := by
   by_cases hv : v < c
   · simp [nestFn, shiftFrom_of_lt hv, hv]
-  · rw [shiftFrom_of_le (by omega)]
-    simp [nestFn, show ¬ v + L < c by omega, show ¬ v + L < c + L by omega]
+  · have h₁ : ¬ v + L < c := by omega
+    have h₂ : ¬ v + L < c + L := by omega
+    rw [shiftFrom_of_le (by omega)]
+    simp [nestFn, h₁, h₂]
 
 private theorem nestFn_add (c : ℕ) {L j : ℕ} (φ ψ : ℕ → ℕ) (hj : j < L) :
     nestFn c L φ ψ (c + j) = c + ψ j := by
@@ -893,7 +895,7 @@ private theorem appendFn_nestFn_right {K K' c L : ℕ} (φ ψ χ : ℕ → ℕ) 
     · have : K' + L ≤ shiftFrom c L u := by unfold shiftFrom; split_ifs <;> omega
       rw [appendFn_of_le _ _ (by omega), appendFn_of_le _ _ (by omega), shiftFrom_add_add]
   · rw [nestFn_add _ _ _ hj, appendFn_of_le_of_lt _ _ (by omega) (by omega),
-      show K + c + j - K = c + j by omega, nestFn_add _ _ _ hj, Nat.add_assoc]
+      Nat.add_assoc K c j, Nat.add_sub_cancel_left, nestFn_add _ _ _ hj, Nat.add_assoc]
 
 /-- Nesting two blocks at the same position is nesting their juxtaposition. -/
 private theorem nestFn_nestFn_eq_nestFn_appendFn {c L L' : ℕ} (φ ψ χ : ℕ → ℕ) :
@@ -907,7 +909,7 @@ private theorem nestFn_nestFn_eq_nestFn_appendFn {c L L' : ℕ} (φ ψ χ : ℕ 
     rcases exists_shiftFrom_or_add c L' v with ⟨w, rfl⟩ | ⟨i, hi, rfl⟩
     · rw [nestFn_shiftFrom, e, e, nestFn_shiftFrom]
     · rw [nestFn_add _ _ _ hi, shiftFrom_of_le (by omega), shiftFrom_of_le (by omega),
-        show c + i + L = c + (L + i) by omega, nestFn_add _ _ _ (by omega),
+        Nat.add_assoc c i L, Nat.add_comm i L, nestFn_add _ _ _ (by omega),
         appendFn_of_le_of_lt _ _ (by omega) (by omega), Nat.add_sub_cancel_left]
       omega
   · rw [nestFn_add _ _ _ hj, nestFn_add _ _ _ (by omega), appendFn_of_lt _ _ hj]
@@ -959,9 +961,9 @@ private theorem nestFn_of_le (x : PlanarMatching (k + r)) (y : PlanarMatching l)
 private theorem pv_not_lt_pv {K : ℕ} (x : PlanarMatching K) {a b : ℕ} (hab : a < b)
     (hb : b < pv x a) (ha : a < K) : ¬ pv x a < pv x b := by
   have hbK : b < K := lt_trans hb (pv_lt x ha)
-  have h := Equiv.Perm.isNoncrossingMatching_iff.mp x.2
-    (show (⟨a, ha⟩ : Fin K) < ⟨b, hbK⟩ from hab)
-    (show (⟨b, hbK⟩ : Fin K) < x.1.val ⟨a, ha⟩ by rw [Fin.lt_def, ← pv_of_lt x ha]; exact hb)
+  have hab' : (⟨a, ha⟩ : Fin K) < ⟨b, hbK⟩ := Fin.mk_lt_mk.mpr hab
+  have hb' : (⟨b, hbK⟩ : Fin K) < x.1.val ⟨a, ha⟩ := Fin.lt_def.mpr (pv_of_lt x ha ▸ hb)
+  have h := Equiv.Perm.isNoncrossingMatching_iff.mp x.2 hab' hb'
   rwa [Fin.lt_def, ← pv_of_lt x ha, ← pv_of_lt x hbK] at h
 
 private theorem nestFn_not_lt (x : PlanarMatching (k + r)) (y : PlanarMatching l) {a b : ℕ}
@@ -1118,7 +1120,7 @@ theorem cast_nest_nest {k' r' r'' : ℕ} (h : k + (k' + r') + r = k + k' + r'')
   have e : pv (cast h (x.nest y)) = pv (x.nest y) := funext (pv_cast h _)
   refine ext_pv fun q _ => ?_
   rw [pv_cast, pv_nest, e, pv_nest, pv_nest, pv_nest,
-    nestFn_nestFn_assoc _ _ _ (by omega : k' ≤ k' + r'), show k' + r' + l = k' + l + r' by omega]
+    nestFn_nestFn_assoc _ _ _ (by omega : k' ≤ k' + r'), Nat.add_right_comm k' r' l]
 
 /-- Nesting commutes with relabelling the size of the inserted matching. -/
 theorem nest_cast {l' : ℕ} (h : l = l') (x : PlanarMatching (k + r)) (y : PlanarMatching l) :
@@ -1170,10 +1172,9 @@ theorem add_zero_nest (x : PlanarMatching (k + 0)) (y : PlanarMatching l) :
   rcases exists_shiftFrom_or_add k l q with ⟨v, rfl⟩ | ⟨j, hj, rfl⟩
   · have hv : v < k := lt_of_shiftFrom_lt hq
     rw [nestFn_shiftFrom, shiftFrom_of_lt hv, appendFn_of_lt _ _ (by omega : v < k + 0),
-      shiftFrom_of_lt (show pv x v < k from pv_lt x (by omega))]
+      shiftFrom_of_lt (lt_of_lt_of_eq (pv_lt x (by omega)) (Nat.add_zero k))]
   · rw [nestFn_add _ _ _ hj, appendFn_of_le_of_lt _ _ (by omega) (by omega),
-      show k + j - (k + 0) = j by omega]
-    rfl
+      Nat.add_zero, Nat.add_sub_cancel_left]
 
 /-- Nesting into a matching with no points before the insertion position juxtaposes on the
 left. -/
