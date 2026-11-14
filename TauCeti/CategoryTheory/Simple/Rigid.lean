@@ -99,7 +99,7 @@ theorem classOfUnitReprRightDualIso_inv :
 
 /-- The inverse comparison carries evaluation to the unit evaluation. -/
 @[reassoc (attr := simp)]
-theorem classOfUnitReprRightDualIso_inv_evaluation :
+theorem classOfUnitReprRightDualIso_inv_whiskerRight_evaluation :
     (classOfUnitReprRightDualIso (C := C)).inv ▷ _ ≫
         ε_ (classOf (𝟙_ C)).repr (classOf (𝟙_ C)).reprᘁ =
       (λ_ _).hom ≫ (classOfReprIso (𝟙_ C)).hom := by
@@ -109,7 +109,7 @@ theorem classOfUnitReprRightDualIso_inv_evaluation :
 
 /-- The forward comparison carries coevaluation to the unit coevaluation. -/
 @[reassoc (attr := simp)]
-theorem coevaluation_classOfUnitReprRightDualIso_hom :
+theorem coevaluation_comp_whiskerLeft_classOfUnitReprRightDualIso_hom :
     η_ (classOf (𝟙_ C)).repr (classOf (𝟙_ C)).reprᘁ ≫
         _ ◁ (classOfUnitReprRightDualIso (C := C)).hom =
       (classOfReprIso (𝟙_ C)).inv ≫ (ρ_ _).inv := by

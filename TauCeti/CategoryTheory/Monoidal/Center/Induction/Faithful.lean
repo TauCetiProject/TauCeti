@@ -97,7 +97,8 @@ variable {C : Type u} [Category.{v} C] [Abelian C] [MonoidalCategory C]
 /-- A morphism is recovered from its induced matrix by taking the unit-to-unit entry and
 identifying the unit summands with the original source and target.
 This is not a simp lemma: biproduct simplification already reduces its left-hand side. -/
-theorem inductionUnitSummandIso_inv_ι_inductionMap_π_hom {X Y : C} (f : X ⟶ Y) :
+theorem inductionUnitSummandIso_inv_ι_inductionMap_π_inductionUnitSummandIso_hom
+    {X Y : C} (f : X ⟶ Y) :
     (inductionUnitSummandIso X).inv ≫
       biproduct.ι (inductionSummand X) (SimpleClasses.classOf (𝟙_ C)) ≫ inductionMap f ≫
       biproduct.π (inductionSummand Y) (SimpleClasses.classOf (𝟙_ C)) ≫
@@ -119,7 +120,7 @@ instance induction_faithful : (induction k C).Faithful where
     have h' : inductionMap f = inductionMap g := by
       simpa only [induction_map_f, induction_obj, inductionCenterObj_fst] using
         congrArg (fun t ↦ t.f) h
-    rw [← inductionUnitSummandIso_inv_ι_inductionMap_π_hom f, h',
-      inductionUnitSummandIso_inv_ι_inductionMap_π_hom]
+    rw [← inductionUnitSummandIso_inv_ι_inductionMap_π_inductionUnitSummandIso_hom f, h',
+      inductionUnitSummandIso_inv_ι_inductionMap_π_inductionUnitSummandIso_hom]
 
 end CategoryTheory.Center
