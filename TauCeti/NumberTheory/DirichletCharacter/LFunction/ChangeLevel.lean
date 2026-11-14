@@ -132,6 +132,15 @@ the open right half-plane `Re(s) > 0`, including `s = 1` for principal character
     meromorphicOrderAt_mul (χ.meromorphic_LFunction s) (hPdiff.analyticAt s).meromorphicAt,
     hPord, add_zero]
 
+/-- On the open right half-plane `Re(s) > 0`, the principal Dirichlet `L`-function modulo `N` has
+the same meromorphic order as `riemannZeta` (including `-1` at `s = 1`). -/
+theorem meromorphicOrderAt_LFunctionTrivChar_eq_riemannZeta {N : ℕ} [NeZero N] {s : ℂ}
+    (hs : 0 < s.re) :
+    meromorphicOrderAt (LFunctionTrivChar N) s = meromorphicOrderAt riemannZeta s := by
+  have hch : changeLevel (one_dvd N) (1 : DirichletCharacter ℂ 1) = 1 := map_one _
+  have h := meromorphicOrderAt_LFunction_changeLevel (1 : DirichletCharacter ℂ 1) (one_dvd N) hs
+  rwa [hch, LFunction_modOne_eq] at h
+
 /-- Uniform comparison of the L-functions before and after a level change in either direction.
 In particular it applies to the primitive character at its conductor and the original character
 at its ambient level. -/

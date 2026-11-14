@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.LSeries.Dirichlet
 public import TauCeti.Analysis.Meromorphic.Divisor
+import TauCeti.Analysis.Meromorphic.Order
 
 /-!
 # Meromorphy and poles of the completed Riemann zeta function
@@ -25,8 +26,10 @@ continuation.
 * `TauCeti.analyticAt_completedRiemannZeta`
 * `TauCeti.meromorphicOrderAt_completedRiemannZeta_zero`,
   `TauCeti.meromorphicOrderAt_completedRiemannZeta_one`
-* `TauCeti.meromorphic_riemannZeta` and `TauCeti.meromorphicOrderAt_riemannZeta_one`: the
-  uncompleted function `riemannZeta` is meromorphic on `ℂ` with a simple pole at `1`.
+* `TauCeti.meromorphic_riemannZeta`, `TauCeti.meromorphicOrderAt_riemannZeta_one`, and
+  `TauCeti.meromorphicOrderAt_riemannZeta_pos_iff`: the uncompleted function `riemannZeta` is
+  meromorphic on `ℂ` with a simple pole at `1`, so positive meromorphic order characterizes its
+  zeros away from `1`.
 * `TauCeti.meromorphicOrderAt_completedRiemannZeta_neg_two_mul_nat_add_one`: `Λ` is regular and
   nonzero at the trivial zeros `-2(n + 1)` of `riemannZeta`, where `Γ_ℝ` has its poles.
 * `TauCeti.zero_lt_divisor_completedRiemannZeta_iff`: the points of positive divisor of `Λ` are
@@ -104,6 +107,14 @@ theorem meromorphicOrderAt_riemannZeta_one :
   rw [meromorphicOrderAt_congr heq, meromorphicOrderAt_mul (meromorphic_completedRiemannZeta 1)
     (Complex.differentiable_Gammaℝ_inv.analyticAt 1).meromorphicAt,
     meromorphicOrderAt_completedRiemannZeta_one, hΓ, add_zero]
+
+/-- The Riemann zeta function has positive meromorphic order at `s` if and only if
+`riemannZeta s = 0` and `s ≠ 1`. -/
+theorem meromorphicOrderAt_riemannZeta_pos_iff {s : ℂ} :
+    0 < meromorphicOrderAt riemannZeta s ↔ riemannZeta s = 0 ∧ s ≠ 1 := by
+  rcases eq_or_ne s 1 with rfl | hs
+  · simp [meromorphicOrderAt_riemannZeta_one]
+  · simp [(analyticOn_riemannZeta s hs).meromorphicOrderAt_pos_iff_eq_zero, hs]
 
 /-- The completed Riemann zeta function does not vanish on the half-plane `1 < re s`. -/
 theorem completedRiemannZeta_ne_zero_of_one_lt_re {s : ℂ} (hs : 1 < s.re) :

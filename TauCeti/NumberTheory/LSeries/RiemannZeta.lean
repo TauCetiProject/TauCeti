@@ -217,7 +217,7 @@ private theorem differentiableOn_mul_integral_fract :
     · simp only [g, Set.indicator_of_mem (Set.mem_Ici.mpr ht), norm_real, Real.norm_eq_abs,
         abs_of_nonneg (Int.fract_nonneg t)]
       exact (Int.fract_lt_one t).le
-    · simp [g, Set.indicator_of_notMem (show t ∉ Set.Ici (1 : ℝ) from ht)]
+    · simp [g, Set.indicator_of_notMem (mt Set.mem_Ici.mp ht)]
   have hg_loc : MeasureTheory.LocallyIntegrableOn g (Set.Ioi 0) :=
     ((MeasureTheory.locallyIntegrable_const (1 : ℝ)).mono hg_meas.aestronglyMeasurable
       (.of_forall fun t ↦ by simpa using hg_bound t)).locallyIntegrableOn _
@@ -225,8 +225,7 @@ private theorem differentiableOn_mul_integral_fract :
     Asymptotics.isBigO_iff.mpr ⟨1, Eventually.of_forall fun t ↦ by simpa using hg_bound t⟩
   have hg_zero (r : ℝ) : g =O[𝓝[>] 0] fun t : ℝ ↦ t ^ (-r) :=
     Asymptotics.IsBigO.of_bound 0 <| eventually_of_mem (Ioo_mem_nhdsGT zero_lt_one) fun t ht ↦ by
-      have hnt : t ∉ Set.Ici (1 : ℝ) := not_le.mpr ht.2
-      simp [g, Set.indicator_of_notMem hnt]
+      simp [g, Set.indicator_of_notMem (mt Set.mem_Ici.mp ht.2.not_ge)]
   have hmellin (s : ℂ) :
       ∫ t in Set.Ioi (1 : ℝ), ((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1)) = mellin g (-s) := by
     have hEq : Set.EqOn (fun t : ℝ ↦ (t : ℂ) ^ (-s - 1) • g t)
@@ -236,8 +235,7 @@ private theorem differentiableOn_mul_integral_fract :
       by_cases h1 : 1 ≤ t
       · rw [Set.indicator_of_mem (Set.mem_Ici.mpr h1)]
         simp only [g, Set.indicator_of_mem (Set.mem_Ici.mpr h1), smul_eq_mul, mul_comm, neg_add']
-      · have hnt : t ∉ Set.Ici (1 : ℝ) := h1
-        simp [g, Set.indicator_of_notMem hnt]
+      · simp [g, Set.indicator_of_notMem (mt Set.mem_Ici.mp h1)]
     rw [mellin, MeasureTheory.setIntegral_congr_fun measurableSet_Ioi hEq,
       MeasureTheory.setIntegral_indicator measurableSet_Ici,
       Set.inter_eq_right.mpr (Set.Ici_subset_Ioi.mpr zero_lt_one),

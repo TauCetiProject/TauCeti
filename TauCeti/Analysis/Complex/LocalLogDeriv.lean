@@ -41,11 +41,13 @@ point are counted by Jensen's formula, and the remaining part of `logDeriv f` is
   `4 (r + ‖z - z₀‖) / (r - ‖z - z₀‖) ^ 2 * log M`.
 * `AnalyticOnNhd.norm_logDeriv_sub_finsum_divisor_half_le`: the classical radii `R / 2` and
   `R / 4`, with the bound `48 / R * log M`.
-* `AnalyticOnNhd.neg_re_logDeriv_add_sum_divisor_half_le`: the retained-zero real-part inequality
-  summing over an arbitrary `S : Finset ℂ` when all zeros in `closedBall z₀ (R / 2)` have real
-  part at most `z.re`.
-* `AnalyticOnNhd.coe_divisor_half_eq_meromorphicOrderAt`: on `closedBall z₀ (R / 2)`, the divisor
-  of `f` agrees with `meromorphicOrderAt f` whenever `f z₀ ≠ 0`.
+* `AnalyticOnNhd.neg_re_logDeriv_add_sum_divisor_le` and
+  `AnalyticOnNhd.neg_re_logDeriv_add_sum_divisor_half_le`: the retained-zero real-part
+  inequalities summing over an arbitrary `S : Finset ℂ` when all zeros in the inner disc have
+  real part at most `z.re`, for general `2 r ≤ R` and at `r = R / 2`.
+* `TauCeti.exists_neg_re_logDeriv_add_sum_divisor_half_le`: the horizontal-segment
+  specialization into a zero-free half-plane `{σ₁ ≤ re}` from a centre lower bound and a
+  sphere growth bound.
 
 ## Implementation notes
 
@@ -190,31 +192,38 @@ theorem norm_logDeriv_sub_finsum_divisor_half_le (hf : AnalyticOnNhd ℂ f (clos
         field_simp
         ring
 
-/-- **Retained-zero real-part form of Landau's lemma.** Let `f` be analytic on `closedBall z₀ R`
-with `R ≠ 0` and `‖f w‖ ≤ M * ‖f z₀‖` on `sphere z₀ R`. Suppose `‖z - z₀‖ ≤ R / 4`, `f z ≠ 0`,
-and every zero `ρ` of `f` in `closedBall z₀ (R / 2)` satisfies `ρ.re ≤ z.re`. Then for any finite
-set `S : Finset ℂ`,
-`-(logDeriv f z).re + ∑ ρ ∈ S, (divisor f (closedBall z₀ (R / 2)) ρ : ℝ) * ((z - ρ)⁻¹).re ≤
-  48 / R * Real.log M`. -/
-theorem neg_re_logDeriv_add_sum_divisor_half_le (hf : AnalyticOnNhd ℂ f (closedBall z₀ R))
-    (hR : R ≠ 0) {M : ℝ} (hM : ∀ w ∈ sphere z₀ R, ‖f w‖ ≤ M * ‖f z₀‖)
-    {z : ℂ} (hz : ‖z - z₀‖ ≤ R / 4) (hfz : f z ≠ 0)
-    (hre : ∀ ρ ∈ closedBall z₀ (R / 2), f ρ = 0 → ρ.re ≤ z.re) (S : Finset ℂ) :
-    -(logDeriv f z).re +
-        ∑ ρ ∈ S, (divisor f (closedBall z₀ (R / 2)) ρ : ℝ) * ((z - ρ)⁻¹).re ≤
-      48 / R * Real.log M := by
-  classical
-  have hRpos : 0 < R := lt_of_le_of_ne (by linarith [norm_nonneg (z - z₀)]) hR.symm
-  have hz₀ : f z₀ ≠ 0 := fun h0 ↦ (norm_pos_iff.2 hfz).not_ge <| by
-    simpa [h0] using Complex.norm_le_of_forall_mem_sphere_norm_mul_le (P := fun _ ↦ 1) hRpos
+private theorem ne_zero_of_forall_mem_sphere_norm_le_mul (hf : AnalyticOnNhd ℂ f (closedBall z₀ R))
+    (hR : 0 < R) {M : ℝ} (hM : ∀ w ∈ sphere z₀ R, ‖f w‖ ≤ M * ‖f z₀‖)
+    {z : ℂ} (hz : z ∈ closedBall z₀ R) (hfz : f z ≠ 0) : f z₀ ≠ 0 :=
+  fun h0 ↦ (norm_pos_iff.2 hfz).not_ge <| by
+    simpa [h0] using Complex.norm_le_of_forall_mem_sphere_norm_mul_le (P := fun _ ↦ 1) hR
       (hf.differentiableOn.diffContOnCl_ball Subset.rfl) (fun _ _ ↦ one_ne_zero)
-      (fun _ _ ↦ le_rfl) (by simpa using hM) (by rw [mem_closedBall, dist_eq_norm]; linarith)
-  set D := divisor f (closedBall z₀ (R / 2))
+      (fun _ _ ↦ le_rfl) (by simpa using hM) hz
+
+/-- **Retained-zero real-part form of Landau's lemma.** Let `f` be analytic on `closedBall z₀ R`
+with `2 r ≤ R` and `‖f w‖ ≤ M * ‖f z₀‖` on `sphere z₀ R`. Suppose `‖z - z₀‖ < r`, `f z ≠ 0`, and
+every zero `ρ` of `f` in `closedBall z₀ r` satisfies `ρ.re ≤ z.re`. Then for any finite set
+`S : Finset ℂ`,
+`-(logDeriv f z).re + ∑ ρ ∈ S, (divisor f (closedBall z₀ r) ρ : ℝ) * ((z - ρ)⁻¹).re ≤
+  4 * (r + ‖z - z₀‖) / (r - ‖z - z₀‖) ^ 2 * Real.log M`. -/
+theorem neg_re_logDeriv_add_sum_divisor_le (hf : AnalyticOnNhd ℂ f (closedBall z₀ R))
+    (hrR : 2 * r ≤ R) {M : ℝ} (hM : ∀ w ∈ sphere z₀ R, ‖f w‖ ≤ M * ‖f z₀‖)
+    {z : ℂ} (hz : ‖z - z₀‖ < r) (hfz : f z ≠ 0)
+    (hre : ∀ ρ ∈ closedBall z₀ r, f ρ = 0 → ρ.re ≤ z.re) (S : Finset ℂ) :
+    -(logDeriv f z).re +
+        ∑ ρ ∈ S, (divisor f (closedBall z₀ r) ρ : ℝ) * ((z - ρ)⁻¹).re ≤
+      4 * (r + ‖z - z₀‖) / (r - ‖z - z₀‖) ^ 2 * Real.log M := by
+  classical
+  have hr : 0 < r := (norm_nonneg _).trans_lt hz
+  have hRpos : 0 < R := by linarith
+  have hz₀ : f z₀ ≠ 0 := hf.ne_zero_of_forall_mem_sphere_norm_le_mul hRpos hM
+    (by rw [mem_closedBall, dist_eq_norm]; linarith) hfz
+  set D := divisor f (closedBall z₀ r)
   have hfin : D.support.Finite := D.finiteSupport (isCompact_closedBall _ _)
   have hg_nonneg (ρ : ℂ) : 0 ≤ (D ρ : ℝ) * ((z - ρ)⁻¹).re := by
     by_cases hD : D ρ = 0
     · simp [hD]
-    have hρ_mem : ρ ∈ closedBall z₀ (R / 2) := D.supportWithinDomain hD
+    have hρ_mem : ρ ∈ closedBall z₀ r := D.supportWithinDomain hD
     have hfρ : f ρ = 0 := by_contra fun hne ↦
       hD ((hf ρ (closedBall_subset_closedBall (by linarith) hρ_mem)).divisor_apply_eq_zero hne)
     have hD0 : 0 ≤ (D ρ : ℝ) :=
@@ -230,40 +239,105 @@ theorem neg_re_logDeriv_add_sum_divisor_half_le (hf : AnalyticOnNhd ℂ f (close
     simp [div_eq_mul_inv, Complex.re_sum, ← Complex.ofReal_intCast]
   have hsub : ∑ ρ ∈ S, (D ρ : ℝ) * ((z - ρ)⁻¹).re ≤ ∑ ρ ∈ T, (D ρ : ℝ) * ((z - ρ)⁻¹).re :=
     Finset.sum_le_sum_of_subset_of_nonneg Finset.subset_union_left fun ρ _ _ ↦ hg_nonneg ρ
-  have hmain := hf.norm_logDeriv_sub_finsum_divisor_half_le hRpos hz₀ hM hz hfz
-  have h1 : -(logDeriv f z - ∑ᶠ ρ, (D ρ : ℂ) / (z - ρ)).re ≤ 48 / R * Real.log M :=
+  have hmain := hf.norm_logDeriv_sub_finsum_divisor_le hrR hz₀ hM hz hfz
+  have h1 : -(logDeriv f z - ∑ᶠ ρ, (D ρ : ℂ) / (z - ρ)).re ≤
+      4 * (r + ‖z - z₀‖) / (r - ‖z - z₀‖) ^ 2 * Real.log M :=
     (neg_le_abs _).trans ((Complex.abs_re_le_norm _).trans hmain)
   rw [hsum, Complex.sub_re, hre_sum] at h1
   linarith
 
-/-- On `closedBall z₀ (R / 2)`, if `f` is analytic on `closedBall z₀ R` with `f z₀ ≠ 0`, the
-divisor of `f` agrees with `meromorphicOrderAt f` (in particular, `meromorphicOrderAt f ρ ≠ ⊤`). -/
-theorem coe_divisor_half_eq_meromorphicOrderAt (hf : AnalyticOnNhd ℂ f (closedBall z₀ R))
-    (hz₀ : f z₀ ≠ 0) {ρ : ℂ} (hρ : ρ ∈ closedBall z₀ (R / 2)) :
-    (divisor f (closedBall z₀ (R / 2)) ρ : WithTop ℤ) = meromorphicOrderAt f ρ := by
-  rcases lt_trichotomy R 0 with hR | rfl | hR
-  · linarith [dist_nonneg (x := ρ) (y := z₀), mem_closedBall.1 hρ]
-  · have hρz : ρ = z₀ := by simpa using hρ
-    subst hρz
-    have ha : AnalyticAt ℂ f ρ := hf ρ (by simp)
-    rw [ha.divisor_apply_eq_zero hz₀, ha.meromorphicOrderAt_eq, ha.analyticOrderAt_eq_zero.2 hz₀]
-    rfl
-  · have hρb : ρ ∈ ball z₀ R := by rw [mem_ball]; linarith [mem_closedBall.1 hρ]
-    have ha : AnalyticAt ℂ f ρ := hf ρ (ball_subset_closedBall hρb)
-    have htop : meromorphicOrderAt f ρ ≠ ⊤ := by
-      rw [ha.meromorphicOrderAt_eq]
-      intro h
-      have ha_top : analyticOrderAt f ρ = ⊤ := by
-        cases ho : analyticOrderAt f ρ with
-        | top => rfl
-        | coe n => simp [ho] at h
-      exact hz₀ ((hf.mono ball_subset_closedBall).eqOn_zero_of_preconnected_of_eventuallyEq_zero
-        (convex_ball z₀ R).isPreconnected hρb (analyticOrderAt_eq_top.1 ha_top)
-        (mem_ball_self hR))
-    rw [(hf.mono (closedBall_subset_closedBall (by linarith))).meromorphicOn.divisor_apply hρ,
-      WithTop.coe_untop₀_of_ne_top htop]
+/-- **Retained-zero real-part form of Landau's lemma** in the classical normalization. Let `f` be
+analytic on `closedBall z₀ R` with `R ≠ 0` and `‖f w‖ ≤ M * ‖f z₀‖` on `sphere z₀ R`. Suppose
+`‖z - z₀‖ ≤ R / 4`, `f z ≠ 0`, and every zero `ρ` of `f` in `closedBall z₀ (R / 2)` satisfies
+`ρ.re ≤ z.re`. Then for any finite set `S : Finset ℂ`,
+`-(logDeriv f z).re + ∑ ρ ∈ S, (divisor f (closedBall z₀ (R / 2)) ρ : ℝ) * ((z - ρ)⁻¹).re ≤
+  48 / R * Real.log M`. This is `AnalyticOnNhd.neg_re_logDeriv_add_sum_divisor_le` at `r = R / 2`.
+-/
+theorem neg_re_logDeriv_add_sum_divisor_half_le (hf : AnalyticOnNhd ℂ f (closedBall z₀ R))
+    (hR : R ≠ 0) {M : ℝ} (hM : ∀ w ∈ sphere z₀ R, ‖f w‖ ≤ M * ‖f z₀‖)
+    {z : ℂ} (hz : ‖z - z₀‖ ≤ R / 4) (hfz : f z ≠ 0)
+    (hre : ∀ ρ ∈ closedBall z₀ (R / 2), f ρ = 0 → ρ.re ≤ z.re) (S : Finset ℂ) :
+    -(logDeriv f z).re +
+        ∑ ρ ∈ S, (divisor f (closedBall z₀ (R / 2)) ρ : ℝ) * ((z - ρ)⁻¹).re ≤
+      48 / R * Real.log M := by
+  have hRpos : 0 < R := lt_of_le_of_ne (by linarith [norm_nonneg (z - z₀)]) hR.symm
+  have hz₀ : f z₀ ≠ 0 := hf.ne_zero_of_forall_mem_sphere_norm_le_mul hRpos hM
+    (by rw [mem_closedBall, dist_eq_norm]; linarith) hfz
+  have hM1 : 1 ≤ M :=
+    (hf.differentiableOn.diffContOnCl_ball Subset.rfl).one_le_of_forall_mem_sphere_norm_le_mul
+      hRpos hz₀ hM
+  refine (hf.neg_re_logDeriv_add_sum_divisor_le (by linarith) hM (by linarith) hfz hre S).trans
+    (mul_le_mul_of_nonneg_right ?_ (Real.log_nonneg hM1))
+  calc 4 * (R / 2 + ‖z - z₀‖) / (R / 2 - ‖z - z₀‖) ^ 2
+      ≤ 4 * (R / 2 + R / 4) / (R / 2 - R / 4) ^ 2 := by
+        have h4 : 0 < R / 2 - R / 4 := by linarith
+        gcongr
+    _ = 48 / R := by
+        field_simp
+        ring
 
 end AnalyticOnNhd
+
+namespace TauCeti
+
+/-- **Uniform horizontal-segment form of Landau's retained-zero inequality.** Fix a radius `R > 0`,
+a centre abscissa `σ₀`, a zero-free boundary `σ₁`, a centre lower bound `b > 0`, a growth factor
+`c`, and a base `K₀ > 1`. There is a constant `A > 0` depending only on `(R, b, c, K₀)` such that
+for every `f` analytic on `closedBall (σ₀ + t * I) R` with `b ≤ ‖f (σ₀ + t * I)‖`, `‖f w‖ ≤ c * K`
+on `sphere (σ₀ + t * I) R` (`K₀ ≤ K`), and no zeros with `σ₁ ≤ re` in
+`closedBall (σ₀ + t * I) (R / 2)`, at every `σ > σ₁` with `|σ - σ₀| ≤ R / 4` and for every finite
+set `S : Finset ℂ`,
+`-(logDeriv f (σ + t * I)).re +
+  ∑ ρ ∈ S, (divisor f (closedBall (σ₀ + t * I) (R / 2)) ρ : ℝ) * ((σ + t * I - ρ)⁻¹).re ≤
+  A * Real.log K`. -/
+theorem exists_neg_re_logDeriv_add_sum_divisor_half_le
+    {σ₀ σ₁ R b c K₀ : ℝ} (hR : 0 < R) (hb : 0 < b) (hK₀ : 1 < K₀) :
+    ∃ A : ℝ, 0 < A ∧ ∀ {f : ℂ → ℂ} {σ t K : ℝ},
+      AnalyticOnNhd ℂ f (closedBall (σ₀ + t * Complex.I) R) →
+      b ≤ ‖f (σ₀ + t * Complex.I)‖ →
+      (∀ w ∈ sphere (σ₀ + t * Complex.I) R, ‖f w‖ ≤ c * K) →
+      (∀ w ∈ closedBall (σ₀ + t * Complex.I) (R / 2), σ₁ ≤ w.re → f w ≠ 0) →
+      σ₁ < σ → |σ - σ₀| ≤ R / 4 → K₀ ≤ K → ∀ S : Finset ℂ,
+        -(logDeriv f (σ + t * Complex.I)).re +
+            ∑ ρ ∈ S, (divisor f (closedBall (σ₀ + t * Complex.I) (R / 2)) ρ : ℝ) *
+              (((σ : ℂ) + t * Complex.I - ρ)⁻¹).re ≤
+          A * Real.log K := by
+  set C₀ : ℝ := max 1 c / b
+  have hC₀ : 0 < C₀ := by positivity
+  have hlogK₀ : 0 < Real.log K₀ := Real.log_pos hK₀
+  refine ⟨48 / R * (max 0 (Real.log C₀) / Real.log K₀ + 1), by positivity,
+    fun {f σ t K} hf hb₀ hM₀ hzf hσ hσσ₀ hK S ↦ ?_⟩
+  set z₀ : ℂ := σ₀ + t * Complex.I
+  have hK_pos : 0 < K := (zero_lt_one.trans hK₀).trans_le hK
+  have h1le : 1 ≤ b⁻¹ * ‖f z₀‖ := (le_inv_mul_iff₀ hb).2 (by simpa using hb₀)
+  have hM (w : ℂ) (hw : w ∈ sphere z₀ R) : ‖f w‖ ≤ C₀ * K * ‖f z₀‖ := by
+    calc ‖f w‖ ≤ c * K := hM₀ w hw
+      _ ≤ max 1 c * K := mul_le_mul_of_nonneg_right (le_max_right _ _) hK_pos.le
+      _ ≤ max 1 c * K * (b⁻¹ * ‖f z₀‖) := le_mul_of_one_le_right (by positivity) h1le
+      _ = C₀ * K * ‖f z₀‖ := by simp only [C₀, div_eq_mul_inv]; ring
+  have hz : ‖(σ : ℂ) + t * Complex.I - z₀‖ ≤ R / 4 := by
+    rw [show (σ : ℂ) + t * Complex.I - z₀ = ((σ - σ₀ : ℝ) : ℂ) from
+      Complex.ext (by simp [z₀]) (by simp [z₀]), Complex.norm_real, Real.norm_eq_abs]
+    exact hσσ₀
+  have hfz : f ((σ : ℂ) + t * Complex.I) ≠ 0 :=
+    hzf _ (by rw [mem_closedBall, dist_eq_norm]; linarith) (by simp [hσ.le])
+  have hre (ρ : ℂ) (hρ : ρ ∈ closedBall z₀ (R / 2)) (hρ0 : f ρ = 0) :
+      ρ.re ≤ ((σ : ℂ) + t * Complex.I).re := by
+    have hlt : ρ.re < σ₁ := by_contra fun h ↦ hzf ρ hρ (not_lt.mp h) hρ0
+    simp; linarith
+  have hmain := hf.neg_re_logDeriv_add_sum_divisor_half_le hR.ne' hM hz hfz hre S
+  have hlog_ge : Real.log K₀ ≤ Real.log K := Real.log_le_log (zero_lt_one.trans hK₀) hK
+  have hmax : Real.log C₀ ≤ max 0 (Real.log C₀) / Real.log K₀ * Real.log K := by
+    calc Real.log C₀ ≤ max 0 (Real.log C₀) := le_max_right _ _
+      _ = max 0 (Real.log C₀) / Real.log K₀ * Real.log K₀ := (div_mul_cancel₀ _ hlogK₀.ne').symm
+      _ ≤ max 0 (Real.log C₀) / Real.log K₀ * Real.log K :=
+        mul_le_mul_of_nonneg_left hlog_ge (div_nonneg (le_max_left _ _) hlogK₀.le)
+  rw [Real.log_mul hC₀.ne' hK_pos.ne'] at hmain
+  have hmul := mul_le_mul_of_nonneg_left (add_le_add_right hmax (Real.log K))
+    (by positivity : (0 : ℝ) ≤ 48 / R)
+  linarith
+
+end TauCeti
 
 /-! ### Example
 

@@ -8,7 +8,11 @@ module
 public import Mathlib.NumberTheory.LSeries.Nonvanishing
 public import Mathlib.NumberTheory.LSeries.PrimesInAP
 public import TauCeti.NumberTheory.ArithmeticFunction.VonMangoldt
+import TauCeti.Analysis.SpecialFunctions.Log.ProdPowDvd
+import TauCeti.Analysis.SpecialFunctions.Pow.EulerFactor
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.ChangeLevel
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.Conjugate
+import TauCeti.NumberTheory.LSeries.ThreeFourOne
 
 /-!
 # Uniform Euler logarithmic derivatives of Dirichlet `L`-functions
@@ -27,10 +31,12 @@ At real `σ > 1` the real parts satisfy the same bound, for every character. For
 character the logarithmic derivative is moreover real, and the prime series is the cast of the
 corresponding real series.
 
-The file also records the classical nonnegative combinations of logarithmic derivatives on
-`1 < σ` used in zero-free-region arguments (`Re (ζ′/ζ(σ)) + Re (L′/L(σ, χ)) ≤ 0` and
-`3 Re (ζ′/ζ(σ)) + 4 Re (L′/L(σ + i t, χ)) + Re (L′/L(σ + 2 i t, χ²)) ≤ 0`), together with the
-comparison `‖L′/L(s, 1_N) - ζ′/ζ(s)‖ ≤ log N` for the principal character on `1 ≤ re s`.
+The file also records the triangle-inequality comparison `‖L′/L(s, χ)‖ ≤ -Re (ζ′/ζ(σ))` on
+`1 < σ ≤ re s`, the classical nonnegative combinations of logarithmic derivatives
+(`Re (ζ′/ζ(re s)) + Re (L′/L(s, χ)) ≤ 0` and
+`3 Re (ζ′/ζ(σ)) + 4 Re (L′/L(σ + i t, χ)) + Re (L′/L(σ + 2 i t, χ²)) ≤ 0`), and the level-change
+comparison `‖L′/L(s, changeLevel hMN ψ) - L′/L(s, ψ)‖ ≤ log N` on `1 ≤ re s` (specializing to
+`‖L′/L(s, 1_N) - ζ′/ζ(s)‖ ≤ log N`).
 
 The constant's summability, `ArithmeticFunction.vonMangoldt.summable_nonprime_div`, is in
 `TauCeti.NumberTheory.ArithmeticFunction.VonMangoldt`.
@@ -47,11 +53,14 @@ The constant's summability, `ArithmeticFunction.vonMangoldt.summable_nonprime_di
   arguments.
 * `DirichletCharacter.im_logDeriv_LFunction_ofReal`: `L′/L(σ, χ)` is real for a real-valued
   character.
-* `DirichletCharacter.re_logDeriv_riemannZeta_add_re_logDeriv_LFunction_nonpos` and
-  `DirichletCharacter.three_mul_re_logDeriv_riemannZeta_add_four_add_nonpos`: the `1 + χ` and
-  `3-4-1` logarithmic-derivative inequalities on `1 < σ`.
-* `DirichletCharacter.norm_logDeriv_trivChar_sub_logDeriv_riemannZeta_le`: the deleted-Euler-factor
-  logarithmic-derivative bound `‖L′/L(s, 1_N) - ζ′/ζ(s)‖ ≤ log N` on `1 ≤ re s`.
+* `DirichletCharacter.norm_logDeriv_LFunction_le_of_le_re`,
+  `DirichletCharacter.norm_logDeriv_LFunction_le`,
+  `DirichletCharacter.re_logDeriv_riemannZeta_add_re_logDeriv_LFunction_nonpos`, and
+  `DirichletCharacter.threeFourOne_re_logDeriv_riemannZeta_LFunction_nonpos`: the half-plane
+  triangle inequality and the `1 + χ` and `3-4-1` logarithmic-derivative inequalities.
+* `DirichletCharacter.norm_logDeriv_LFunction_changeLevel_sub_le` and
+  `DirichletCharacter.norm_logDeriv_LFunctionTrivChar_sub_logDeriv_riemannZeta_le`: the
+  deleted-Euler-factor logarithmic-derivative bounds on `1 ≤ re s`.
 -/
 
 public section
@@ -217,48 +226,47 @@ end Real
 
 /-! ### Nonnegative combinations and deleted Euler factors -/
 
-omit χ in
-private theorem three_add_four_re_add_re_sq_nonneg {z : ℂ} (hz : ‖z‖ ≤ 1) :
-    0 ≤ 3 + 4 * z.re + (z ^ 2).re := by
-  have hnorm : ‖z‖ ^ 2 ≤ 1 := by nlinarith [norm_nonneg z]
-  rw [Complex.sq_norm, Complex.normSq_apply] at hnorm
-  rw [sq, Complex.mul_re]
-  nlinarith [sq_nonneg (1 + z.re)]
+/-- **Triangle-inequality bound for `L′/L` against `-ζ′/ζ`.** For every Dirichlet character `χ` of
+positive level, `1 < σ` and `σ ≤ s.re`, `‖L′/L(s, χ)‖ ≤ -Re (ζ′/ζ(σ))`. -/
+theorem norm_logDeriv_LFunction_le_of_le_re [NeZero N] {σ : ℝ} (hσ : 1 < σ) (hs : σ ≤ s.re) :
+    ‖logDeriv (LFunction χ) s‖ ≤ -(logDeriv riemannZeta σ).re := by
+  set χ₀ : DirichletCharacter ℂ 1 := 1
+  have hs' : 1 < s.re := hσ.trans_le hs
+  have hσ' : 1 < (σ : ℂ).re := by simpa using hσ
+  have S₀ := LSeriesSummable_twist_vonMangoldt χ₀ hσ'
+  have hterm₀ (n : ℕ) : ‖term (↗χ * ↗Λ) s n‖ ≤ (term (↗χ₀ * ↗Λ) σ n).re := by
+    rcases eq_or_ne n 0 with rfl | hn
+    · simp
+    have hn1 : (1 : ℝ) ≤ n := mod_cast Nat.one_le_iff_ne_zero.mpr hn
+    rw [norm_term_eq, ite_eq_right hn, term_of_ne_zero hn, Pi.mul_apply, Pi.mul_apply, norm_mul,
+      Complex.norm_real, Real.norm_of_nonneg vonMangoldt_nonneg,
+      show χ₀ n = 1 from MulChar.one_apply (isUnit_of_subsingleton _), one_mul,
+      ← Complex.ofReal_natCast, ← Complex.ofReal_cpow n.cast_nonneg, Complex.div_ofReal_re,
+      Complex.ofReal_re]
+    exact div_le_div₀ vonMangoldt_nonneg
+      (mul_le_of_le_one_left vonMangoldt_nonneg (χ.norm_le_one n))
+      (by positivity) (Real.rpow_le_rpow_of_exponent_le hn1 hs)
+  rw [← LFunction_modOne_eq (χ := χ₀), χ₀.logDeriv_LFunction_eq_neg_LSeries hσ',
+    χ.logDeriv_LFunction_eq_neg_LSeries hs', norm_neg, Complex.neg_re, neg_neg, LSeries, LSeries]
+  exact tsum_of_norm_bounded (Complex.hasSum_re S₀.hasSum) hterm₀
+
+/-- For every Dirichlet character `χ` of positive level and `1 < s.re`,
+`‖L′/L(s, χ)‖ ≤ -Re (ζ′/ζ(s.re))`. -/
+theorem norm_logDeriv_LFunction_le [NeZero N] (hs : 1 < s.re) :
+    ‖logDeriv (LFunction χ) s‖ ≤ -(logDeriv riemannZeta s.re).re :=
+  χ.norm_logDeriv_LFunction_le_of_le_re hs le_rfl
 
 /-- **The `1 + χ` logarithmic-derivative inequality.** For every Dirichlet character `χ` of
-positive level and real `σ > 1`, `Re (ζ′/ζ(σ)) + Re (L′/L(σ, χ)) ≤ 0`. -/
-theorem re_logDeriv_riemannZeta_add_re_logDeriv_LFunction_nonpos [NeZero N] {σ : ℝ}
-    (hσ : 1 < σ) :
-    (logDeriv riemannZeta σ).re + (logDeriv (LFunction χ) σ).re ≤ 0 := by
-  set χ₀ : DirichletCharacter ℂ 1 := 1
-  have hs : 1 < (σ : ℂ).re := by simpa using hσ
-  have h0 : Summable fun n ↦ (term (↗χ₀ * ↗Λ) σ n).re :=
-    (Complex.hasSum_re (LSeriesSummable_twist_vonMangoldt χ₀ hs).hasSum).summable
-  have h1 : Summable fun n ↦ (term (↗χ * ↗Λ) σ n).re :=
-    (Complex.hasSum_re (LSeriesSummable_twist_vonMangoldt χ hs).hasSum).summable
-  rw [← LFunction_modOne_eq (χ := χ₀), χ₀.logDeriv_LFunction_eq_neg_LSeries hs,
-    χ.logDeriv_LFunction_eq_neg_LSeries hs, Complex.neg_re, Complex.neg_re, LSeries, LSeries,
-    Complex.re_tsum (LSeriesSummable_twist_vonMangoldt χ₀ hs),
-    Complex.re_tsum (LSeriesSummable_twist_vonMangoldt χ hs)]
-  suffices 0 ≤ ∑' n, ((term (↗χ₀ * ↗Λ) σ n).re + (term (↗χ * ↗Λ) σ n).re) by
-    rw [h0.tsum_add h1] at this; linarith
-  refine tsum_nonneg fun n ↦ ?_
-  rcases eq_or_ne n 0 with rfl | hn
-  · simp
-  have hχ₀n : χ₀ n = 1 := MulChar.one_apply (isUnit_of_subsingleton _)
-  have hre : -1 ≤ (χ n).re := (abs_le.mp ((Complex.abs_re_le_norm _).trans (χ.norm_le_one n))).1
-  rw [term_of_ne_zero hn, term_of_ne_zero hn, Pi.mul_apply, Pi.mul_apply, hχ₀n, one_mul,
-    ← Complex.ofReal_natCast, ← Complex.ofReal_cpow n.cast_nonneg, Complex.div_ofReal_re,
-    Complex.div_ofReal_re, Complex.ofReal_re, Complex.re_mul_ofReal, ← add_div]
-  have hnum : 0 ≤ Λ n + (χ n).re * Λ n := by
-    have : 0 ≤ (1 + (χ n).re) * Λ n := mul_nonneg (by linarith) vonMangoldt_nonneg
-    linarith
-  exact div_nonneg hnum (Real.rpow_nonneg n.cast_nonneg _)
+positive level and `1 < s.re`, `Re (ζ′/ζ(s.re)) + Re (L′/L(s, χ)) ≤ 0`. -/
+theorem re_logDeriv_riemannZeta_add_re_logDeriv_LFunction_nonpos [NeZero N] (hs : 1 < s.re) :
+    (logDeriv riemannZeta s.re).re + (logDeriv (LFunction χ) s).re ≤ 0 := by
+  linarith [(le_abs_self _).trans ((Complex.abs_re_le_norm _).trans
+    (χ.norm_logDeriv_LFunction_le hs))]
 
 /-- **The `3-4-1` logarithmic-derivative inequality.** For every Dirichlet character `χ` of
 positive level, real `σ > 1` and real `t`,
 `3 Re (ζ′/ζ(σ)) + 4 Re (L′/L(σ + i t, χ)) + Re (L′/L(σ + 2 i t, χ²)) ≤ 0`. -/
-theorem three_mul_re_logDeriv_riemannZeta_add_four_add_nonpos [NeZero N] {σ : ℝ}
+theorem threeFourOne_re_logDeriv_riemannZeta_LFunction_nonpos [NeZero N] {σ : ℝ}
     (hσ : 1 < σ) (t : ℝ) :
     3 * (logDeriv riemannZeta σ).re + 4 * (logDeriv (LFunction χ) (σ + t * Complex.I)).re +
       (logDeriv (LFunction (χ ^ 2)) (σ + 2 * t * Complex.I)).re ≤ 0 := by
@@ -282,125 +290,93 @@ theorem three_mul_re_logDeriv_riemannZeta_add_four_add_nonpos [NeZero N] {σ : �
   refine tsum_nonneg fun n ↦ ?_
   rcases eq_or_ne n 0 with rfl | hn
   · simp
-  have hn0 : (n : ℂ) ≠ 0 := mod_cast hn
-  set z : ℂ := χ n * (n : ℂ) ^ (-(t * Complex.I))
+  have hn_pos : 0 < (n : ℝ) := mod_cast Nat.pos_of_ne_zero hn
+  set z : ℂ := χ n * (n : ℂ) ^ (-(t * Complex.I)) with hz_def
   have hz : ‖z‖ ≤ 1 := by
-    rw [norm_mul, ← Complex.ofReal_natCast,
-      Complex.norm_cpow_eq_rpow_re_of_pos (mod_cast Nat.pos_of_ne_zero hn)]
+    rw [norm_mul, ← Complex.ofReal_natCast, Complex.norm_cpow_eq_rpow_re_of_pos hn_pos]
     simpa using χ.norm_le_one n
-  have hterm {ψ : DirichletCharacter ℂ N} {u : ℂ} :
-      term (↗ψ * ↗Λ) (σ + u) n = ((Λ n / (n : ℝ) ^ σ : ℝ) : ℂ) * (ψ n * (n : ℂ) ^ (-u)) := by
-    rw [term_of_ne_zero hn, Pi.mul_apply, div_eq_mul_inv, ← Complex.cpow_neg, neg_add,
-      Complex.cpow_add _ _ hn0, ← Complex.ofReal_natCast, ← Complex.ofReal_neg,
-      ← Complex.ofReal_cpow n.cast_nonneg, Real.rpow_neg n.cast_nonneg, Complex.ofReal_div,
-      Complex.ofReal_inv, div_eq_mul_inv]
-    ring
-  have ht₀ : term (↗χ₀ * ↗Λ) σ n = ((Λ n / (n : ℝ) ^ σ : ℝ) : ℂ) := by
-    simp [term_of_ne_zero hn, χ₀, MulChar.one_apply (isUnit_of_subsingleton _),
-      Complex.ofReal_cpow n.cast_nonneg]
+  have hterm {M : ℕ} {ψ : DirichletCharacter ℂ M} (u : ℂ) :
+      (term (↗ψ * ↗Λ) (σ + u) n).re =
+        (Λ n / (n : ℝ) ^ σ) * (ψ n * (n : ℂ) ^ (-u)).re := by
+    have hpow : (n : ℂ) ^ (-(σ + u)) = (((n : ℝ) ^ σ)⁻¹ : ℝ) * (n : ℂ) ^ (-u) := by
+      rw [neg_add, Complex.cpow_add _ _ (mod_cast hn), ← Complex.ofReal_natCast,
+        ← Complex.ofReal_neg, ← Complex.ofReal_cpow hn_pos.le, Real.rpow_neg hn_pos.le]
+    have hmul : term (↗ψ * ↗Λ) (σ + u) n =
+        ((Λ n / (n : ℝ) ^ σ : ℝ) : ℂ) * (ψ n * (n : ℂ) ^ (-u)) := by
+      rw [term_of_ne_zero hn, Pi.mul_apply, div_eq_mul_inv, ← Complex.cpow_neg, hpow,
+        div_eq_mul_inv, Complex.ofReal_mul]
+      ring
+    rw [hmul, Complex.re_ofReal_mul]
+  have ht₀ : (term (↗χ₀ * ↗Λ) σ n).re = Λ n / (n : ℝ) ^ σ := by
+    simpa [χ₀, MulChar.one_apply (isUnit_of_subsingleton _)] using hterm (ψ := χ₀) 0
   have ht₂ : (χ ^ 2) n * (n : ℂ) ^ (-(2 * (t : ℂ) * Complex.I)) = z ^ 2 := by
-    rw [sq χ, MulChar.mul_apply, show -(2 * (t : ℂ) * Complex.I) = (2 : ℕ) * -(t * Complex.I) by
-      push_cast; ring, Complex.cpow_nat_mul]
-    simp only [z]; ring
-  rw [ht₀, hterm, show ((σ : ℂ) + 2 * t * Complex.I) = σ + (2 * (t : ℂ) * Complex.I) by rfl,
-    hterm, ht₂, Complex.ofReal_re, Complex.re_ofReal_mul, Complex.re_ofReal_mul]
-  have hzeq : χ n * (n : ℂ) ^ (-(t * Complex.I)) = z := rfl
-  rw [hzeq]
-  nlinarith [div_nonneg (vonMangoldt_nonneg (n := n)) (Real.rpow_nonneg n.cast_nonneg σ),
-    three_add_four_re_add_re_sq_nonneg hz]
-
-omit χ in
-private theorem not_differentiableAt_LFunctionTrivChar_one [NeZero N] :
-    ¬ DifferentiableAt ℂ (LFunction (1 : DirichletCharacter ℂ N)) 1 := by
-  intro hd
-  have h0 : Tendsto (fun z ↦ (z - 1) * LFunctionTrivChar N z) (𝓝[≠] 1) (𝓝 0) := by
-    have h := (((continuous_id.sub (continuous_const (y := (1 : ℂ)))).tendsto (1 : ℂ)).mul
-      hd.continuousAt.tendsto).mono_left (nhdsWithin_le_nhds (s := {1}ᶜ))
-    simpa [LFunctionTrivChar] using h
-  exact LFunctionTrivChar₁_apply_one_ne_zero N
-    (by simpa using (tendsto_nhds_unique h0 (LFunctionTrivChar_residue_one (N := N))).symm)
-
-omit χ in
-private theorem norm_logDeriv_one_sub_prime_cpow_le {p : ℕ} (hp : p.Prime) (hs : 1 ≤ s.re) :
-    1 - (p : ℂ) ^ (-s) ≠ 0 ∧
-      ‖logDeriv (fun z : ℂ ↦ 1 - (p : ℂ) ^ (-z)) s‖ ≤ Real.log p := by
-  have hp_pos : 0 < (p : ℝ) := mod_cast hp.pos
-  have hp_gt1 : (1 : ℝ) < p := mod_cast hp.one_lt
-  have hp_ge2 : (2 : ℝ) ≤ p := mod_cast hp.two_le
-  have hp0 : (p : ℂ) ≠ 0 := mod_cast hp.ne_zero
-  have hd : HasDerivAt (fun z : ℂ ↦ 1 - (p : ℂ) ^ (-z)) ((p : ℂ) ^ (-s) * Real.log p) s := by
-    convert ((hasDerivAt_neg s).const_cpow (.inl hp0)).const_sub 1 using 2
-    rw [← Complex.ofReal_natCast, ← Complex.ofReal_log p.cast_nonneg]
+    have hexp : -(2 * (t : ℂ) * Complex.I) = (2 : ℕ) * -(t * Complex.I) := by
+      push_cast; ring
+    rw [sq χ, MulChar.mul_apply, hexp, Complex.cpow_nat_mul, hz_def]
     ring
-  have hw : ‖(p : ℂ) ^ (-s)‖ ≤ (p : ℝ)⁻¹ := by
-    rw [← Complex.ofReal_natCast, Complex.norm_cpow_eq_rpow_re_of_pos hp_pos, Complex.neg_re,
-      ← Real.rpow_neg_one]
-    exact Real.rpow_le_rpow_of_exponent_le hp_gt1.le (by linarith)
-  have hlo : 1 - (p : ℝ)⁻¹ ≤ ‖1 - (p : ℂ) ^ (-s)‖ := by
-    have := norm_sub_norm_le (1 : ℂ) ((p : ℂ) ^ (-s))
-    simp only [norm_one] at this
-    linarith
-  have hden_pos : 0 < 1 - (p : ℝ)⁻¹ := sub_pos.mpr (inv_lt_one_of_one_lt₀ hp_gt1)
-  have hlog : 0 ≤ Real.log p := Real.log_nonneg hp_gt1.le
-  refine ⟨norm_pos_iff.mp (hden_pos.trans_le hlo), ?_⟩
-  rw [logDeriv_apply, hd.deriv, norm_div, norm_mul, Complex.norm_real, Real.norm_of_nonneg hlog]
-  calc
-    ‖(p : ℂ) ^ (-s)‖ * Real.log p / ‖1 - (p : ℂ) ^ (-s)‖
-      ≤ (p : ℝ)⁻¹ * Real.log p / (1 - (p : ℝ)⁻¹) := by gcongr
-    _ = Real.log p / ((p : ℝ) - 1) := by field_simp [hp_pos.ne']
-    _ ≤ Real.log p / 1 := by gcongr; linarith
-    _ = Real.log p := div_one _
+  rw [ht₀, hterm (t * Complex.I), ← hz_def, hterm (2 * t * Complex.I), ht₂]
+  have h341 := TauCeti.LSeries.threeFourOneCombination_nonneg hz
+  rw [TauCeti.LSeries.threeFourOneCombination_def] at h341
+  nlinarith [div_nonneg (vonMangoldt_nonneg (n := n)) (Real.rpow_nonneg hn_pos.le σ)]
 
 omit χ in
-/-- **Deleted Euler factors in the logarithmic derivative.** On the closed half-plane `1 ≤ re s`,
-the logarithmic derivative of the principal character modulo `N` differs from `ζ′/ζ(s)` by at most
-`log N` in norm. At `s = 1` both functions fail to be differentiable, so both logarithmic
-derivatives vanish and the bound holds trivially. -/
-theorem norm_logDeriv_trivChar_sub_logDeriv_riemannZeta_le [NeZero N] (hs : 1 ≤ s.re) :
-    ‖logDeriv (LFunction (1 : DirichletCharacter ℂ N)) s - logDeriv riemannZeta s‖ ≤
-      Real.log N := by
-  rcases eq_or_ne s 1 with rfl | hs1
-  · have hζ : ¬ DifferentiableAt ℂ riemannZeta 1 := by
-      simpa [LFunction_modOne_eq] using not_differentiableAt_LFunctionTrivChar_one (N := 1)
-    rw [logDeriv_eq_zero_of_not_differentiableAt _ _ not_differentiableAt_LFunctionTrivChar_one,
-      logDeriv_eq_zero_of_not_differentiableAt _ _ hζ, sub_self, norm_zero]
+/-- **Deleted Euler factors in the logarithmic derivative under level change.** On the closed
+half-plane `1 ≤ re s`, raising the level of a character `ψ` modulo `M` to a multiple `N` changes
+`logDeriv` by at most `log N` in norm. At `s = 1` for `ψ = 1`, both `L`-functions fail to be
+differentiable so both logarithmic derivatives vanish. -/
+theorem norm_logDeriv_LFunction_changeLevel_sub_le {M : ℕ} [NeZero M] [NeZero N]
+    (ψ : DirichletCharacter ℂ M) (hMN : M ∣ N) (hs : 1 ≤ s.re) :
+    ‖logDeriv (changeLevel hMN ψ).LFunction s - logDeriv ψ.LFunction s‖ ≤ Real.log N := by
+  by_cases h1 : s = 1 ∧ ψ = 1
+  · obtain ⟨rfl, rfl⟩ := h1
+    have hch : changeLevel hMN (1 : DirichletCharacter ℂ M) = 1 := map_one _
+    have hnd {K : ℕ} [NeZero K] : ¬ DifferentiableAt ℂ (1 : DirichletCharacter ℂ K).LFunction 1 :=
+      mt ((1 : DirichletCharacter ℂ K).differentiableAt_LFunction_iff 1).mp (by simp)
+    rw [hch, logDeriv_eq_zero_of_not_differentiableAt _ _ hnd,
+      logDeriv_eq_zero_of_not_differentiableAt _ _ hnd, sub_self, norm_zero]
     exact Real.log_nonneg (Nat.one_le_cast.mpr NeZero.one_le)
-  set f : ℕ → ℂ → ℂ := fun p z ↦ 1 - (p : ℂ) ^ (-z)
+  have h : s ≠ 1 ∨ ψ ≠ 1 := not_and_or.mp h1
+  set f : ℕ → ℂ → ℂ := fun p z ↦ 1 - ψ p * (p : ℂ) ^ (-z)
   have hdf (p : ℕ) (hp : p ∈ N.primeFactors) : Differentiable ℂ (f p) := by
     have hp0 : (p : ℂ) ≠ 0 := mod_cast (Nat.prime_of_mem_primeFactors hp).ne_zero
-    exact (differentiable_const 1).sub (differentiable_id.neg.const_cpow (.inl hp0))
+    exact (differentiable_const 1).sub ((differentiable_id.neg.const_cpow (.inl hp0)).const_mul _)
+  have hPs : (∏ p ∈ N.primeFactors, f p) s ≠ 0 := by
+    simpa [f, Finset.prod_apply] using
+      prod_one_sub_mul_prime_cpow_ne_zero (N := N) ψ (zero_lt_one.trans_le hs)
   have hnef (p : ℕ) (hp : p ∈ N.primeFactors) : f p s ≠ 0 :=
-    (norm_logDeriv_one_sub_prime_cpow_le (Nat.prime_of_mem_primeFactors hp) hs).1
+    prod_ne_zero_iff.mp (by simpa [Finset.prod_apply] using hPs) p hp
   have hPdiff : Differentiable ℂ (∏ p ∈ N.primeFactors, f p) :=
     prod_induction _ (Differentiable ℂ) (fun _ _ hg hh ↦ hg.mul hh) (differentiable_const 1) hdf
-  have hPs : (∏ p ∈ N.primeFactors, f p) s ≠ 0 := by
-    rw [Finset.prod_apply]
-    exact prod_ne_zero_iff.mpr hnef
-  have heq : LFunction (1 : DirichletCharacter ℂ N) =ᶠ[𝓝 s]
-      (∏ p ∈ N.primeFactors, f p) * riemannZeta := by
-    filter_upwards [eventually_ne_nhds hs1] with z hz
-    simpa [f, LFunctionTrivChar, Finset.prod_apply] using LFunctionTrivChar_eq_mul_riemannZeta hz
-  have hlog : logDeriv (LFunction (1 : DirichletCharacter ℂ N)) s - logDeriv riemannZeta s =
+  have heq : (changeLevel hMN ψ).LFunction =ᶠ[𝓝 s] ψ.LFunction * ∏ p ∈ N.primeFactors, f p := by
+    rcases h with hs1 | hψ
+    · filter_upwards [eventually_ne_nhds hs1] with z hz
+      simp [f, Finset.prod_apply, LFunction_changeLevel hMN ψ (.inr hz)]
+    · exact Eventually.of_forall fun z ↦ by
+        simp [f, Finset.prod_apply, LFunction_changeLevel hMN ψ (.inl hψ)]
+  have hlog : logDeriv (changeLevel hMN ψ).LFunction s - logDeriv ψ.LFunction s =
       ∑ p ∈ N.primeFactors, logDeriv (f p) s := by
     rw [(logDeriv_congr_nhds heq).eq_of_nhds,
-      logDeriv_mul s hPs (riemannZeta_ne_zero_of_one_le_re hs) (hPdiff s)
-        (differentiableAt_riemannZeta hs1),
-      add_sub_cancel_right]
+      logDeriv_mul s (LFunction_ne_zero_of_one_le_re ψ h.symm hs) hPs
+        (ψ.differentiableAt_LFunction s h) (hPdiff s),
+      add_sub_cancel_left]
     exact logDeriv_prod hnef fun p hp ↦ hdf p hp s
-  have hprod_pos : 0 < ∏ p ∈ N.primeFactors, (p : ℝ) :=
-    prod_pos fun p hp ↦ mod_cast (Nat.prime_of_mem_primeFactors hp).pos
-  have hprod_le : ∏ p ∈ N.primeFactors, (p : ℝ) ≤ N := by
-    rw [← Nat.cast_prod]
-    exact_mod_cast Nat.le_of_dvd (NeZero.pos N) (Nat.prod_primeFactors_dvd N)
+  have hsum_log : ∑ p ∈ N.primeFactors, Real.log p ≤ Real.log N := by
+    simpa [Nat.cast_prod] using Int.sum_mul_log_le_log_abs (P := N.primeFactors) (fun _ ↦ 1)
+      (z := (N : ℤ)) (mod_cast NeZero.ne N)
+      (by simpa [Nat.cast_prod] using Int.natCast_dvd_natCast.mpr (Nat.prod_primeFactors_dvd N))
   rw [hlog]
-  calc
-    ‖∑ p ∈ N.primeFactors, logDeriv (f p) s‖
-      ≤ ∑ p ∈ N.primeFactors, ‖logDeriv (f p) s‖ := norm_sum_le _ _
-    _ ≤ ∑ p ∈ N.primeFactors, Real.log p :=
-        sum_le_sum fun p hp ↦
-          (norm_logDeriv_one_sub_prime_cpow_le (Nat.prime_of_mem_primeFactors hp) hs).2
-    _ = Real.log (∏ p ∈ N.primeFactors, (p : ℝ)) :=
-        (Real.log_prod fun p hp ↦ mod_cast (Nat.prime_of_mem_primeFactors hp).ne_zero).symm
-    _ ≤ Real.log N := Real.log_le_log hprod_pos hprod_le
+  refine (norm_sum_le _ _).trans ((sum_le_sum fun p hp ↦ ?_).trans hsum_log)
+  simpa [f] using Complex.norm_logDeriv_one_sub_mul_ofReal_cpow_neg_le (q := p)
+    (mod_cast (Nat.prime_of_mem_primeFactors hp).two_le) (ψ.norm_le_one p) hs
+
+omit χ in
+/-- **Deleted Euler factors in the logarithmic derivative of the principal character.** On the
+closed half-plane `1 ≤ re s`, the logarithmic derivative of `LFunctionTrivChar N` differs from
+`ζ′/ζ(s)` by at most `log N` in norm. -/
+theorem norm_logDeriv_LFunctionTrivChar_sub_logDeriv_riemannZeta_le [NeZero N] (hs : 1 ≤ s.re) :
+    ‖logDeriv (LFunctionTrivChar N) s - logDeriv riemannZeta s‖ ≤ Real.log N := by
+  have hch : changeLevel (one_dvd N) (1 : DirichletCharacter ℂ 1) = 1 := map_one _
+  simpa [hch, LFunctionTrivChar, LFunction_modOne_eq] using
+    norm_logDeriv_LFunction_changeLevel_sub_le (1 : DirichletCharacter ℂ 1) (one_dvd N) hs
 
 end DirichletCharacter
