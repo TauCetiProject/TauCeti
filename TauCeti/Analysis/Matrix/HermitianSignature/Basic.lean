@@ -225,6 +225,25 @@ theorem signature_neg (hA : A.IsHermitian) : hA.neg.signature = -hA.signature :=
   rw [realify_neg, Matrix.signature_neg, hA.signature_realify] at h
   omega
 
+/-- Positive real scaling preserves the signature of a Hermitian matrix. -/
+@[simp]
+theorem signature_smul_of_pos (hA : A.IsHermitian) {c : ℝ} (hc : 0 < c) :
+    (hA.smul (isSelfAdjoint_iff.mpr (star_trivial c))).signature =
+      hA.signature := by
+  have h := (hA.smul (isSelfAdjoint_iff.mpr (star_trivial c))).signature_realify
+  rw [realify_smul, Matrix.signature_smul_of_pos hc, hA.signature_realify] at h
+  omega
+
+/-- Negative real scaling negates the signature of a Hermitian matrix. -/
+@[simp]
+theorem signature_smul_of_neg (hA : A.IsHermitian) {c : ℝ} (hc : c < 0) :
+    (hA.smul (isSelfAdjoint_iff.mpr (star_trivial c))).signature =
+      -hA.signature := by
+  have h := congrArg Neg.neg (hA.signature_smul_of_pos (neg_pos.mpr hc))
+  rw [← signature_neg] at h
+  convert h using 2
+  simp
+
 /-- A Hermitian matrix congruent to its negation by an invertible matrix has signature zero. -/
 theorem signature_eq_zero_of_congr_neg [DecidableEq ι] {P : Matrix ι ι 𝕜}
     (hP : IsUnit P.det) (hA : A.IsHermitian) (hneg : P * A * Pᴴ = -A) :
