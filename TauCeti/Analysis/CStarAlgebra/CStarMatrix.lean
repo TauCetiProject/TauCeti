@@ -15,7 +15,10 @@ import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 
 /-!
-# Positivity in matrix C⋆-algebras by quadratic forms
+# Rectangular matrix operations and positivity by quadratic forms
+
+We record associativity and conjugate-transpose identities for rectangular C⋆-matrices, together
+with their conversion to ordinary matrices.
 
 For a non-unital C⋆-algebra `A` and a finite type `n`, Mathlib makes `CStarMatrix n n A` a
 C⋆-algebra and orders it by the spectral order. This file proves that a matrix `M` is positive in
@@ -32,8 +35,9 @@ Hilbert C⋆-module.
 
 * `CStarMatrix.instNonUnitalContinuousFunctionalCalculusReal`: the real continuous functional
   calculus of `CStarMatrix n n A`, which instance search does not find on its own.
-* `CStarMatrix.ofMatrix_symm_mul`, `CStarMatrix.ofMatrix_symm_star`: reading a C⋆-matrix as an
-  ordinary matrix respects multiplication and sends `star` to the conjugate transpose.
+* `CStarMatrix.ofMatrix_symm_mul`, `CStarMatrix.ofMatrix_symm_conjTranspose`,
+  `CStarMatrix.ofMatrix_symm_star`: reading a C⋆-matrix as an ordinary matrix preserves
+  rectangular multiplication and conjugate transpose, and sends `star` to conjugate transpose.
 * `CStarMatrix.isSelfAdjoint_of_forall_isSelfAdjoint_sum`: a matrix all of whose quadratic forms
   are self-adjoint is self-adjoint. This is purely algebraic, and holds over any complex
   star-algebra whose star is proper.
@@ -68,13 +72,41 @@ instance instSMulCommClassSelf [Fintype n] [Monoid R] [NonUnitalNonAssocSemiring
 
 /-- Reading a C⋆-matrix as an ordinary matrix respects multiplication. -/
 @[simp]
-lemma ofMatrix_symm_mul [Fintype n] [Mul A] [AddCommMonoid A] (M N : CStarMatrix n n A) :
+lemma ofMatrix_symm_mul {m k : Type*} [Fintype n] [Mul A] [AddCommMonoid A]
+    (M : CStarMatrix m n A) (N : CStarMatrix n k A) :
     ofMatrix.symm (M * N) = ofMatrix.symm M * ofMatrix.symm N := (rfl)
+
+/-- Reading a rectangular C⋆-matrix as an ordinary matrix preserves conjugate transpose. -/
+@[simp]
+lemma ofMatrix_symm_conjTranspose {m : Type*} [Star A] (M : CStarMatrix m n A) :
+    ofMatrix.symm M.conjTranspose = (ofMatrix.symm M)ᴴ := (rfl)
 
 /-- Reading a C⋆-matrix as an ordinary matrix sends `star` to the conjugate transpose. -/
 @[simp]
 lemma ofMatrix_symm_star [Star A] (M : CStarMatrix n n A) :
     ofMatrix.symm (star M) = (ofMatrix.symm M)ᴴ := (rfl)
+
+/-- Rectangular matrix multiplication is associative. -/
+lemma mul_assoc_rectangular {m k l : Type*} [Fintype n] [Fintype k] [NonUnitalSemiring A]
+    (M : CStarMatrix m n A) (N : CStarMatrix n k A) (P : CStarMatrix k l A) :
+    (M * N) * P = M * (N * P) := by
+  apply ofMatrix.symm.injective
+  simp only [ofMatrix_symm_mul, Matrix.mul_assoc]
+
+/-- Conjugate transpose reverses rectangular multiplication. -/
+@[simp]
+lemma conjTranspose_mul {m k : Type*} [Fintype n] [NonUnitalNonAssocSemiring A] [StarRing A]
+    (M : CStarMatrix m n A) (N : CStarMatrix n k A) :
+    (M * N).conjTranspose = N.conjTranspose * M.conjTranspose := by
+  apply ofMatrix.symm.injective
+  simp only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose, Matrix.conjTranspose_mul]
+
+/-- Conjugate transpose of rectangular matrices is involutive. -/
+@[simp]
+lemma conjTranspose_conjTranspose {m : Type*} [InvolutiveStar A] (M : CStarMatrix m n A) :
+    M.conjTranspose.conjTranspose = M := by
+  apply ofMatrix.symm.injective
+  simp only [ofMatrix_symm_conjTranspose, Matrix.conjTranspose_conjTranspose]
 
 /-- A matrix over a complex star-algebra with proper star all of whose quadratic forms are
 self-adjoint is self-adjoint. -/
