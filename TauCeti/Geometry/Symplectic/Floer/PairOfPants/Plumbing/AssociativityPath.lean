@@ -137,7 +137,8 @@ theorem associativityScale_two (f τ : ℝ) :
   simp [associativityCenter_two]
 
 @[simp] theorem associativityCenter_two_im (f τ : ℝ) :
-    (associativityCenter f τ 2).im = smoothTransition (8 * τ - 1) - smoothTransition (8 * τ - 6) := by
+    (associativityCenter f τ 2).im =
+      smoothTransition (8 * τ - 1) - smoothTransition (8 * τ - 6) := by
   simp [associativityCenter_two]
 
 @[simp] theorem associativityScale_two_re (f τ : ℝ) :
@@ -330,7 +331,6 @@ private theorem associativity_add_le_norm_sub_zero_one (hf : 0 ≤ f) (hf₁ : f
     ‖associativityScale f τ 0‖ / 2 + ‖associativityScale f τ 1‖ / 2 ≤
       ‖associativityCenter f τ 0 - associativityCenter f τ 1‖ := by
   have h₂ := smoothTransition.nonneg (8 * τ - 2)
-  have h₂' := smoothTransition.le_one (8 * τ - 2)
   have h₇ := smoothTransition.le_one (8 * τ - 7)
   rw [associativityCenter_zero, zero_sub, norm_neg, norm_associativityCenter_one hf hf₁,
     norm_associativityScale_zero hf, norm_associativityScale_one hf]
@@ -530,7 +530,7 @@ theorem contMDiffAt_puncturedSpherePerturbation_associativity {n : ℕ∞}
       contDiff_uncurry_associativityScale).contMDiff.contMDiffAt
   exact (contMDiffAt_puncturedSpherePerturbation hH hHs hHout hHouts
     (associativityScale_ne_zero hf τ) hw x).comp ((f, τ), (w, x))
-    ((hcfg.comp _ contMDiffAt_fst).prodMk contMDiffAt_snd)
+    ((hcfg.comp ((f, τ), (w, x)) contMDiffAt_fst).prodMk contMDiffAt_snd)
 
 end Family
 
