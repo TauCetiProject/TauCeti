@@ -11,8 +11,8 @@ public import TauCeti.Analysis.ConstantSpeed
 /-!
 # Null traces of absolutely continuous curves
 
-An absolutely continuous curve in a finite-dimensional real normed space of dimension greater
-than one has an additive-Haar-null trace.
+An absolutely continuous curve in a real normed space of dimension greater than one has an
+additive-Haar-null trace.
 -/
 
 public section
@@ -21,10 +21,9 @@ open MeasureTheory Set
 
 namespace AbsolutelyContinuousOnInterval
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [MeasurableSpace E] [BorelSpace E] {γ : ℝ → E} {a b : ℝ}
 
-omit [FiniteDimensional ℝ E] in
 /-- The trace of an absolutely continuous curve is additive-Haar-null in ambient dimension
 greater than one. -/
 theorem addHaar_image_uIcc_eq_zero (hγ : AbsolutelyContinuousOnInterval γ a b)
