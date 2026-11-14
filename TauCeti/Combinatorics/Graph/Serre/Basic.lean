@@ -122,6 +122,14 @@ theorem toGeomEdge_eq_toGeomEdge_iff {e f : Γ.E} :
     · rfl
     · exact (Γ.toGeomEdge_rev e).symm
 
+variable {Γ} in
+/-- Two darts with the same initial vertex and distinct terminal vertices lie on distinct geometric
+edges. -/
+theorem toGeomEdge_ne_toGeomEdge_of_src_eq_of_tgt_ne {e₁ e₂ : Γ.E} (hsrc : Γ.src e₁ = Γ.src e₂)
+    (h : Γ.tgt e₁ ≠ Γ.tgt e₂) : Γ.toGeomEdge e₁ ≠ Γ.toGeomEdge e₂ := by
+  rw [Ne, toGeomEdge_eq_toGeomEdge_iff]
+  rintro (rfl | rfl) <;> simp_all
+
 /-- A function on darts taking the same value on mutually reverse darts descends to geometric
 edges. -/
 def GeomEdge.lift {β : Sort*} (f : Γ.E → β) (hf : ∀ e, f (Γ.rev e) = f e) :
