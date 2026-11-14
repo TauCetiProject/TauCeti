@@ -151,6 +151,44 @@ theorem weightTwist_comp (f : StrictHom c d) (f' : StrictHom d g) :
 
 end StrictHom
 
+namespace StrictIso
+
+variable {c : NormalCrystal P b B} {d : NormalCrystal P b B'}
+  {g : NormalCrystal P b B''}
+
+/-- Twist the source and target of a strict isomorphism by the same central weight. -/
+def weightTwist (ψ : StrictIso c d) (χ : X)
+    (hχ : ∀ i : b.support, P.toLinearMap χ (P.coroot i) = 0) :
+    StrictIso (c.weightTwist χ hχ) (d.weightTwist χ hχ) where
+  toEquiv := ψ.toEquiv
+  wt_toFun x := by simp
+  e_toFun i x := by simp
+
+@[simp]
+theorem weightTwist_apply (ψ : StrictIso c d) (χ : X) (hχ) (x : B) :
+    ψ.weightTwist χ hχ x = ψ x := (rfl)
+
+@[simp]
+theorem weightTwist_symm (ψ : StrictIso c d) (χ : X) (hχ) :
+    (ψ.weightTwist χ hχ).symm = ψ.symm.weightTwist χ hχ := by
+  ext x
+  apply EquivLike.injective (ψ.weightTwist χ hχ)
+  simp
+
+@[simp]
+theorem weightTwist_refl :
+    (StrictIso.refl c).weightTwist χ hχ = StrictIso.refl (c.weightTwist χ hχ) := by
+  ext x
+  simp
+
+@[simp]
+theorem weightTwist_trans (ψ : StrictIso c d) (φ : StrictIso d g) :
+    (ψ.trans φ).weightTwist χ hχ = (ψ.weightTwist χ hχ).trans (φ.weightTwist χ hχ) := by
+  ext x
+  simp
+
+end StrictIso
+
 /-- The one-element normal crystal of a weight annihilating the simple coroots. -/
 def central : NormalCrystal P b PUnit where
   wt _ := χ

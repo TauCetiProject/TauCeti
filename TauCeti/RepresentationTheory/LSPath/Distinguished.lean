@@ -410,6 +410,17 @@ theorem HasDistinguished.reverse (h : HasDistinguished S π) : HasDistinguished 
   obtain ⟨p, hp, rfl⟩ := hasDistinguished_iff.1 h
   exact hasDistinguished_iff.2 ⟨_, hp.reverseTimed, ofSegments_map_snd_reverseTimed p⟩
 
+/-- Reversing a centrally shifted path shifts the reversed path by `-χ` on `-S`. -/
+theorem reverse_shiftDistinguished (h : HasDistinguished S π)
+    (hS : S.Pairwise fun u v ↦ ¬ SameRay 𝕜 u v) (χ : V) :
+    (shiftDistinguished S χ π).reverse = shiftDistinguished (-S) (-χ) π.reverse := by
+  have hS_neg : (-S).Pairwise fun u v ↦ ¬ SameRay 𝕜 u v := fun u hu v hv huv hray ↦
+    hS (Set.mem_neg.1 hu) (Set.mem_neg.1 hv) (neg_inj.ne.mpr huv) (sameRay_neg_iff.mpr hray)
+  have hrev : π.reverse = ofSegments 𝕜 ((reverseTimed (distinguished S π)).map Prod.snd) := by
+    rw [ofSegments_map_snd_reverseTimed, ofSegments_distinguished h]
+  rw [shiftDistinguished, ← ofSegments_map_snd_reverseTimed, reverseTimed_shiftTimed, hrev,
+    shiftDistinguished_ofSegments (isDistinguished_distinguished h).reverseTimed hS_neg]
+
 end TauCeti.PLPath
 
 namespace TauCeti.LSPath
