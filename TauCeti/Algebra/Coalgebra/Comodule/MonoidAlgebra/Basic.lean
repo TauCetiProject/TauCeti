@@ -16,7 +16,7 @@ public import TauCeti.Algebra.Coalgebra.Comodule.PointsAction
 public import TauCeti.Algebra.Coalgebra.Comodule.TensorProduct
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
 import TauCeti.Algebra.Module.Submodule.Finite
-import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
+public import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
 
 /-!
 # The weight decomposition of a comodule over a monoid algebra
@@ -70,6 +70,9 @@ weight vectors is a weight vector whose weight is the product of their weights.
   weight `g` are multiples of `g`.
 * `TauCeti.Comodule.Hom.map_mem_weightSpace`: a comodule morphism preserves the weight
   submodules.
+* `TauCeti.Comodule.Hom.weightSpace_eq_comap_of_injective`: an injective comodule morphism pulls
+  the weight submodules of its target back to those of its source; for a subcomodule this is
+  `TauCeti.Comodule.weightSpace_subcomodule`.
 * `TauCeti.Comodule.weightProj_mem_subcomodule`: every subcomodule is stable under the weight
   projections.
 * `TauCeti.Comodule.range_weightProj`: the `g`-weight submodule is the range of the `g`-weight
@@ -543,6 +546,20 @@ theorem map_weightSpace_le (f : Hom R (MonoidAlgebra R G) V W) (g : G) :
   rintro _ ⟨v, hv, rfl⟩
   exact f.map_mem_weightSpace hv
 
+/-- **An injective comodule morphism over `R[G]` identifies the `g`-weight submodule of its source
+with the preimage of that of its target.** The morphism commutes with the weight projections, and an
+injective one detects when a vector is fixed by them. -/
+theorem weightSpace_eq_comap_of_injective (f : Hom R (MonoidAlgebra R G) W V)
+    (hf : Function.Injective f) (g : G) :
+    weightSpace R G W g = (weightSpace R G V g).comap f.toLinearMap := by
+  ext w
+  refine ⟨f.map_mem_weightSpace, fun hw ↦ ?_⟩
+  have h : f (weightProj R G W g w) = f w := by
+    rw [f.map_weightProj]
+    exact weightProj_of_mem hw
+  rw [← hf h]
+  exact weightProj_mem_weightSpace g w
+
 end Hom
 
 /-- Every subcomodule over a monoid algebra is stable under the weight projections. -/
@@ -556,6 +573,23 @@ theorem weightProj_mem_subcomodule (N : Subcomodule R (MonoidAlgebra R G) V)
     simpa only [Subcomodule.subtype_apply] using hmap
   rw [← hmap']
   exact (weightProj R G N g (⟨v, hv⟩ : N)).2
+
+/-- The `g`-weight submodule of a subcomodule, with its inherited coaction, is the trace on it of
+the `g`-weight submodule of the ambient comodule. -/
+@[simp]
+theorem weightSpace_subcomodule (N : Subcomodule R (MonoidAlgebra R G) V) (g : G) :
+    letI : Comodule R (MonoidAlgebra R G) N := Subcomodule.instComodule N
+    weightSpace R G N g = (weightSpace R G V g).comap (SMulMemClass.subtype N) := by
+  rw [Hom.weightSpace_eq_comap_of_injective (Subcomodule.subtype N)
+    (fun a b h ↦ Subtype.val_injective (by simpa using h)) g, Subcomodule.subtype_toLinearMap]
+
+/-- A vector of a subcomodule is a weight vector of the subcomodule exactly when it is one of the
+ambient comodule. -/
+theorem mem_weightSpace_subcomodule {N : Subcomodule R (MonoidAlgebra R G) V} {g : G} {n : N} :
+    letI : Comodule R (MonoidAlgebra R G) N := Subcomodule.instComodule N
+    n ∈ weightSpace R G N g ↔ (n : V) ∈ weightSpace R G V g := by
+  rw [weightSpace_subcomodule]
+  rfl
 
 variable (R G V)
 
