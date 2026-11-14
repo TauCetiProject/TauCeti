@@ -131,12 +131,13 @@ theorem eval_comp_generator {Q : Type*} [CommGroup Q] (f : Trop J →* Q) :
 theorem eval_generator_left : eval generator = MonoidHom.id (Trop J) :=
   eval_comp_generator (MonoidHom.id (Trop J))
 
+/-- A tropical exponent vector is the product of the corresponding integer powers of generators. -/
 theorem ofAdd_eq_prod (a : J →₀ ℤ) :
     InfTropical.ofAdd a = a.prod (fun j n ↦ generator j ^ n) := by
-  have he : eval (generator : J → Trop J) = MonoidHom.id (Trop J) := eval_generator_left
-  rw [show InfTropical.ofAdd a = MonoidHom.id (Trop J) (InfTropical.ofAdd a) from rfl, ← he]
-  exact eval_ofAdd (fun j ↦ generator j) a
+  simpa only [eval_generator_left, MonoidHom.id_apply] using (eval_ofAdd (generator : J → Trop J) a)
 
+/-- Evaluation commutes with postcomposition by a group homomorphism;
+`comp_eval_apply` is the pointwise form. -/
 @[simp]
 theorem comp_eval {Q R : Type*} [CommGroup Q] [CommGroup R] (f : Q →* R) (q : J → Q) :
     f.comp (eval q) = eval (f ∘ q) := by

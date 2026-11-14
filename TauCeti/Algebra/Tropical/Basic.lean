@@ -187,7 +187,8 @@ instance [SemilatticeInf A] : AddCommSemigroup (InfTropical A) where
   add_assoc a b c := ext (by simp only [toAdd_add, inf_assoc])
   add_comm a b := ext (by simp only [toAdd_add, inf_comm])
 
-instance [AddCommGroup A] [SemilatticeInf A] [IsOrderedAddMonoid A] : Distrib (InfTropical A) where
+instance [AddGroup A] [SemilatticeInf A] [AddLeftMono A] [AddRightMono A] :
+    Distrib (InfTropical A) where
   left_distrib a b c := by
     apply ext
     simp only [toAdd_mul, toAdd_add]
