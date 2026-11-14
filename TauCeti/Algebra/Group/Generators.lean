@@ -1,12 +1,14 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Wentao Li
+Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
 public import TauCeti.Algebra.Module.SpanRank
+public import TauCeti.GroupTheory.Rank
 public import Mathlib.LinearAlgebra.Pi
+import Mathlib.Algebra.Group.ULift
 import Mathlib.Data.Nat.ChineseRemainder
 import Mathlib.GroupTheory.OrderOfElement
 import TauCeti.SetTheory.Cardinal.Finite
@@ -21,9 +23,10 @@ the least number of generators of the product is the maximum of the least number
 If one factor is infinite, coprimality forces all the others to be trivial, and the statements
 reduce to that factor.
 
-The generator number is Mathlib's `Submodule.spanFinrank` over `ℤ`, the least number of generators
-of a finitely generated group. By Mathlib's convention it is `0` for a group that is not finitely
-generated, so for such factors the generator-number statement holds by that convention only.
+Results are given for both Mathlib's `Submodule.spanFinrank` over `ℤ` and `AddGroup.rank`. By
+Mathlib's convention `Submodule.spanFinrank` is `0` for a group that is not finitely generated, so
+for such factors the `spanFinrank` statement holds by that convention only; the `AddGroup.rank`
+statements assume finitely generated factors (`AddGroup.FG`).
 -/
 
 public section
@@ -151,3 +154,55 @@ theorem spanFinrank_pi_eq_sup_of_coprime_card
       using h
 
 end TauCeti.AddCommGroup
+
+namespace AddGroup
+
+/-- For a finite family of finitely generated abelian groups of pairwise coprime orders,
+`AddGroup.rank` of their product is the supremum of the generator ranks of the factors. -/
+theorem rank_pi_eq_sup_of_coprime_card {ι : Type*} [Fintype ι] (M : ι → Type*)
+    [∀ i, AddCommGroup (M i)] [∀ i, AddGroup.FG (M i)]
+    (hcop : Pairwise fun i j ↦ (Nat.card (M i)).Coprime (Nat.card (M j))) :
+    AddGroup.rank (∀ i, M i) = Finset.univ.sup (fun i ↦ AddGroup.rank (M i)) := by
+  simp_rw [AddGroup.rank_eq_spanFinrank_top]
+  exact TauCeti.AddCommGroup.spanFinrank_pi_eq_sup_of_coprime_card M hcop
+
+private theorem rank_prod_eq_max_of_coprime_card_aux.{u} {M N : Type u}
+    [AddCommGroup M] [AddCommGroup N] [AddGroup.FG M] [AddGroup.FG N]
+    (hcop : (Nat.card M).Coprime (Nat.card N)) :
+    AddGroup.rank (M × N) = max (AddGroup.rank M) (AddGroup.rank N) := by
+  let F : Bool → Type u := fun b ↦ match b with | true => M | false => N
+  let _ : ∀ b, AddCommGroup (F b) := fun b ↦ by cases b <;> dsimp [F] <;> infer_instance
+  have : ∀ b, AddGroup.FG (F b) := fun b ↦ by cases b <;> dsimp [F] <;> infer_instance
+  have hF : Pairwise fun i j ↦ (Nat.card (F i)).Coprime (Nat.card (F j)) := by
+    intro i j hij
+    cases i <;> cases j
+    · exact (hij rfl).elim
+    · exact hcop.symm
+    · exact hcop
+    · exact (hij rfl).elim
+  let e : (M × N) ≃+ ∀ b, F b :=
+    { toFun := fun p b ↦ match b with | true => p.1 | false => p.2
+      invFun := fun f ↦ (f true, f false)
+      left_inv := fun ⟨_, _⟩ ↦ rfl
+      right_inv := fun f ↦ funext fun b ↦ by cases b <;> rfl
+      map_add' := fun _ _ ↦ funext fun b ↦ by cases b <;> rfl }
+  rw [AddGroup.rank_congr e, rank_pi_eq_sup_of_coprime_card F hF]
+  have huniv : (Finset.univ : Finset Bool) = {true, false} := by decide
+  rw [huniv, Finset.sup_insert, Finset.sup_singleton]
+
+/-- For two finitely generated abelian groups of coprime orders, `AddGroup.rank (M × N)` is the
+maximum of `AddGroup.rank M` and `AddGroup.rank N`. -/
+theorem rank_prod_eq_max_of_coprime_card.{u, v} (M : Type u) (N : Type v)
+    [AddCommGroup M] [AddCommGroup N] [AddGroup.FG M] [AddGroup.FG N]
+    (hcop : (Nat.card M).Coprime (Nat.card N)) :
+    AddGroup.rank (M × N) = max (AddGroup.rank M) (AddGroup.rank N) := by
+  have hcop' : (Nat.card (ULift.{v} M)).Coprime (Nat.card (ULift.{u} N)) := by
+    simpa using hcop
+  have eM : ULift.{v} M ≃+ M := AddEquiv.ulift
+  have eN : ULift.{u} N ≃+ N := AddEquiv.ulift
+  have : AddGroup.FG (ULift.{v} M) := .of_surjective eM.symm eM.symm.surjective
+  have : AddGroup.FG (ULift.{u} N) := .of_surjective eN.symm eN.symm.surjective
+  rw [← AddGroup.rank_congr (eM.prodCongr eN), rank_prod_eq_max_of_coprime_card_aux hcop',
+    AddGroup.rank_congr eM, AddGroup.rank_congr eN]
+
+end AddGroup
