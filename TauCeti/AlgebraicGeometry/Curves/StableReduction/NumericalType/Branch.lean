@@ -65,7 +65,7 @@ theorem exists_weight_intersection_branch_six_eq (hcard : 6 < Fintype.card T.Com
     (h₄ : T.intersection c₄ c₄ = -(2 * (T.weight c₄ : ℤ)))
     (h₅ : T.intersection c₅ c₅ = -(2 * (T.weight c₅ : ℤ)))
     (h₆ : T.intersection c₆ c₆ = -(2 * (T.weight c₆ : ℤ)))
-    (h₁₃ : c₁ ≠ c₃) (h₁₄ : c₁ ≠ c₄) (h₁₅ : c₁ ≠ c₅) (h₁₆ : c₁ ≠ c₆)
+    (h₁₃ : c₁ ≠ c₃) (h₁₄ : c₁ ≠ c₄) (h₁₆ : c₁ ≠ c₆)
     (h₂₄ : c₂ ≠ c₄) (h₂₅ : c₂ ≠ c₅) (h₂₆ : c₂ ≠ c₆)
     (h₃₅ : c₃ ≠ c₅) (h₄₆ : c₄ ≠ c₆) (h₅₆ : c₅ ≠ c₆)
     (e₁₂ : 0 < T.intersection c₁ c₂) (e₂₃ : 0 < T.intersection c₂ c₃)
@@ -93,7 +93,7 @@ theorem exists_weight_intersection_branch_six_eq (hcard : 6 < Fintype.card T.Com
   -- Neither end of the chain meets the other, nor the interior of the chain.
   obtain ⟨-, -, z₁₅, -, z₂₅, z₃₅⟩ :=
     T.intersection_eq_zero_of_chain_five (by omega) h₁ h₂ h₃ h₄ h₅
-      h₁₃ h₁₄ h₁₅ h₂₄ h₂₅ h₃₅ e₁₂ e₂₃ e₃₄ e₄₅
+      h₁₃ h₂₄ h₃₅ e₁₂ e₂₃ e₃₄ e₄₅
   have hww : (w' : ℤ) = w := hw₃'.symm.trans hw₃
   have a₄₅ : T.intersection c₄ c₅ = w := by rw [T.intersection_comm c₄ c₅, a₅₄, hww]
   exact ⟨w, hw₁, hw₂, hw₃, hw₄, hw₅'.trans hww, hw₆, a₁₂, a₂₃, a₃₄, a₄₅, a₃₆,
@@ -175,10 +175,10 @@ theorem intersection_eq_zero_of_branch_six (hcard : 7 < Fintype.card T.Component
     (h₅ : T.intersection c₅ c₅ = -(2 * (T.weight c₅ : ℤ)))
     (h₆ : T.intersection c₆ c₆ = -(2 * (T.weight c₆ : ℤ)))
     (h₇ : T.intersection c₇ c₇ = -(2 * (T.weight c₇ : ℤ)))
-    (h₁₃ : c₁ ≠ c₃) (h₁₄ : c₁ ≠ c₄) (h₁₅ : c₁ ≠ c₅) (h₁₆ : c₁ ≠ c₆) (h₁₇ : c₁ ≠ c₇)
+    (h₁₃ : c₁ ≠ c₃) (h₁₄ : c₁ ≠ c₄) (h₁₆ : c₁ ≠ c₆)
     (h₂₄ : c₂ ≠ c₄) (h₂₅ : c₂ ≠ c₅) (h₂₆ : c₂ ≠ c₆) (h₂₇ : c₂ ≠ c₇)
     (h₃₅ : c₃ ≠ c₅) (h₃₇ : c₃ ≠ c₇) (h₄₆ : c₄ ≠ c₆) (h₄₇ : c₄ ≠ c₇)
-    (h₅₆ : c₅ ≠ c₆) (h₅₇ : c₅ ≠ c₇) (h₆₇ : c₆ ≠ c₇)
+    (h₅₆ : c₅ ≠ c₆) (h₆₇ : c₆ ≠ c₇)
     (e₁₂ : 0 < T.intersection c₁ c₂) (e₂₃ : 0 < T.intersection c₂ c₃)
     (e₃₄ : 0 < T.intersection c₃ c₄) (e₄₅ : 0 < T.intersection c₄ c₅)
     (e₃₆ : 0 < T.intersection c₃ c₆) :
@@ -190,16 +190,16 @@ theorem intersection_eq_zero_of_branch_six (hcard : 7 < Fintype.card T.Component
   obtain ⟨w, hw₁, hw₂, hw₃, hw₄, hw₅, hw₆, a₁₂, a₂₃, a₃₄, a₄₅, a₃₆,
       z₁₃, z₁₄, z₁₅, z₁₆, z₂₄, z₂₅, z₂₆, z₃₅, z₄₆, z₅₆⟩ :=
     T.exists_weight_intersection_branch_six_eq (by omega) h₁ h₂ h₃ h₄ h₅ h₆
-      h₁₃ h₁₄ h₁₅ h₁₆ h₂₄ h₂₅ h₂₆ h₃₅ h₄₆ h₅₆ e₁₂ e₂₃ e₃₄ e₄₅ e₃₆
+      h₁₃ h₁₄ h₁₆ h₂₄ h₂₅ h₂₆ h₃₅ h₄₆ h₅₆ e₁₂ e₂₃ e₃₄ e₄₅ e₃₆
   -- The branched chain on `c₁, …, c₃, c₆, c₇` and `c₄`, obtained by exchanging the roles of the
   -- leg `c₄ - c₅` and the lengthened branch `c₆ - c₇`.
   obtain ⟨w', hw₁', -, -, -, hw₇', -, -, -, -, a₆₇, -, -, -, z₁₇, -, -, z₂₇, -, z₃₇, -, z₇₄⟩ :=
     T.exists_weight_intersection_branch_six_eq (by omega) h₁ h₂ h₃ h₆ h₇ h₄
-      h₁₃ h₁₆ h₁₇ h₁₄ h₂₆ h₂₇ h₂₄ h₃₇ h₄₆.symm h₄₇.symm e₁₂ e₂₃ e₃₆ e₆₇ e₃₄
+      h₁₃ h₁₆ h₁₄ h₂₆ h₂₇ h₂₄ h₃₇ h₄₆.symm h₄₇.symm e₁₂ e₂₃ e₃₆ e₆₇ e₃₄
   -- The remaining pair is the two ends of the chain `c₅ - c₄ - c₃ - c₆ - c₇`.
   obtain ⟨-, -, z₅₇, -, -, -⟩ :=
     T.intersection_eq_zero_of_chain_five (by omega) h₅ h₄ h₃ h₆ h₇
-      h₃₅.symm h₅₆ h₅₇ h₄₆ h₄₇ h₃₇
+      h₃₅.symm h₄₆ h₃₇
       (T.intersection_comm c₄ c₅ ▸ e₄₅) (T.intersection_comm c₃ c₄ ▸ e₃₄) e₃₆ e₆₇
   have hww : (w' : ℤ) = w := hw₁'.symm.trans hw₁
   have hw₇ : (T.weight c₇ : ℤ) = w := hw₇'.trans hww

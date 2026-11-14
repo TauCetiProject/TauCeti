@@ -81,7 +81,7 @@ private lemma affineE6_weights_intersections (c : Fin 7 → T.Component)
     T.exists_weight_intersection_branch_six_eq hcard
       (hself 2) (hself 1) (hself 0) (hself 3) (hself 4) (hself 5)
       (hne (by decide)) (hne (by decide)) (hne (by decide)) (hne (by decide)) (hne (by decide))
-      (hne (by decide)) (hne (by decide)) (hne (by decide)) (hne (by decide)) (hne (by decide))
+      (hne (by decide)) (hne (by decide)) (hne (by decide)) (hne (by decide))
       (hadj 2 1 (by simp)) (hadj 1 0 (by simp)) (hadj 0 3 (by simp)) (hadj 3 4 (by simp))
       (hadj 0 5 (by simp))
   have hbase : (w : ℤ) = T.weight (c 0) := hwcenter.symm
@@ -91,7 +91,7 @@ private lemma affineE6_weights_intersections (c : Fin 7 → T.Component)
     T.exists_weight_intersection_branch_six_eq hcard
       (hself 2) (hself 1) (hself 0) (hself 5) (hself 6) (hself 3)
       (hne (by decide)) (hne (by decide)) (hne (by decide)) (hne (by decide)) (hne (by decide))
-      (hne (by decide)) (hne (by decide)) (hne (by decide)) (hne (by decide)) (hne (by decide))
+      (hne (by decide)) (hne (by decide)) (hne (by decide)) (hne (by decide))
       (hadj 2 1 (by simp)) (hadj 1 0 (by simp)) (hadj 0 5 (by simp)) (hadj 5 6 (by simp))
       (hadj 0 3 (by simp))
   have hbase' : (w' : ℤ) = T.weight (c 0) := hwcenter'.symm
@@ -101,7 +101,7 @@ private lemma affineE6_weights_intersections (c : Fin 7 → T.Component)
     T.exists_weight_intersection_branch_six_eq hcard
       (hself 4) (hself 3) (hself 0) (hself 5) (hself 6) (hself 1)
       (hne (by decide)) (hne (by decide)) (hne (by decide)) (hne (by decide)) (hne (by decide))
-      (hne (by decide)) (hne (by decide)) (hne (by decide)) (hne (by decide)) (hne (by decide))
+      (hne (by decide)) (hne (by decide)) (hne (by decide)) (hne (by decide))
       (hadj 4 3 (by simp)) (hadj 3 0 (by simp)) (hadj 0 5 (by simp)) (hadj 5 6 (by simp))
       (hadj 0 1 (by simp))
   have hw : ∀ i, T.weight (c i) = T.weight (c 0) := by
@@ -137,8 +137,7 @@ private lemma card_eq_seven_of_affineE6 (c : Fin 7 → T.Component)
     (hself 2) (hself 1) (hself 0) (hself 3) (hself 4) (hself 5) (hself 6)
     (hne (by decide)) (hne (by decide)) (hne (by decide)) (hne (by decide)) (hne (by decide))
     (hne (by decide)) (hne (by decide)) (hne (by decide)) (hne (by decide)) (hne (by decide))
-    (hne (by decide)) (hne (by decide)) (hne (by decide)) (hne (by decide)) (hne (by decide))
-    (hne (by decide))
+    (hne (by decide)) (hne (by decide)) (hne (by decide))
     (hadj 2 1 (by simp)) (hadj 1 0 (by simp)) (hadj 0 3 (by simp))
     (hadj 3 4 (by simp)) (hadj 0 5 (by simp))
   exact (hadj 5 6 (by simp)).ne' hz
