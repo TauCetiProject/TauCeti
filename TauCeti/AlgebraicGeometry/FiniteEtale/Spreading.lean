@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Fiber
 public import TauCeti.AlgebraicGeometry.Stalk
 import Mathlib.AlgebraicGeometry.Morphisms.Separated
-import Mathlib.CategoryTheory.Limits.Shapes.Pullback.Connected
 import Mathlib.Tactic.Observe
 import TauCeti.AlgebraicGeometry.Gluing.BinaryOpen
 import TauCeti.AlgebraicGeometry.Limits.AffineTransition
@@ -46,7 +45,7 @@ public section
 
 noncomputable section
 
-open AlgebraicGeometry CategoryTheory Opposite TopologicalSpace
+open AlgebraicGeometry CategoryTheory Opposite TopologicalSpace TauCeti.AlgebraicGeometry
 
 universe u
 
@@ -106,80 +105,6 @@ section LimitSpreading
 
 variable {I : Type u} [Category.{u} I] (D : I ⥤ Scheme.{u}) (c : Limits.Cone D)
 
-private abbrev pullbackDiagram (i₀ : I) (Y : FiniteEtaleScheme (D.obj i₀)) :
-    Over i₀ ⥤ Scheme.{u} where
-  obj j := Limits.pullback Y.obj.hom (D.map j.hom)
-  map {j k} f :=
-    Limits.pullback.map Y.obj.hom (D.map j.hom) Y.obj.hom (D.map k.hom)
-      (𝟙 _) (D.map f.left) (𝟙 _) (by simp) (by simp [← D.map_comp])
-  map_id j := by apply Limits.pullback.hom_ext <;> simp
-  map_comp f g := by apply Limits.pullback.hom_ext <;> simp
-
-private abbrev pullbackDiagramSnd (i₀ : I) (Y : FiniteEtaleScheme (D.obj i₀)) :
-    pullbackDiagram D i₀ Y ⟶ Over.forget i₀ ⋙ D where
-  app j := Limits.pullback.snd Y.obj.hom (D.map j.hom)
-  naturality f := by simp [pullbackDiagram]
-
-private abbrev pullbackDiagramToBase (i₀ : I) (Y : FiniteEtaleScheme (D.obj i₀)) :
-    pullbackDiagram D i₀ Y ⟶ (Functor.const (Over i₀)).obj (D.obj i₀) where
-  app j := Limits.pullback.snd Y.obj.hom (D.map j.hom) ≫ D.map j.hom
-  naturality f := by simp [pullbackDiagram, ← D.map_comp]
-
-private abbrev pullbackDiagramCone (i₀ : I) (Y : FiniteEtaleScheme (D.obj i₀)) :
-    Limits.Cone (pullbackDiagram D i₀ Y) where
-  pt := Limits.pullback Y.obj.hom (c.π.app i₀)
-  π :=
-    { app := fun j ↦
-        Limits.pullback.map Y.obj.hom (c.π.app i₀) Y.obj.hom (D.map j.hom)
-          (𝟙 _) (c.π.app j.left) (𝟙 _) (by simp) (by simp [c.w])
-      naturality := fun {_ _} f ↦ by
-        dsimp [pullbackDiagram]
-        apply Limits.pullback.hom_ext <;> simp [c.w] }
-
-private theorem isPullback_pullbackDiagram_map {i₀ : I} (Y : FiniteEtaleScheme (D.obj i₀))
-    {j k : Over i₀} (f : j ⟶ k) :
-    IsPullback ((pullbackDiagram D i₀ Y).map f) (Limits.pullback.snd Y.obj.hom (D.map j.hom))
-      (Limits.pullback.snd Y.obj.hom (D.map k.hom)) (D.map f.left) := by
-  refine IsPullback.of_right ?_ (by simp [pullbackDiagram])
-    (IsPullback.of_hasPullback Y.obj.hom (D.map k.hom))
-  have h1 : (pullbackDiagram D i₀ Y).map f ≫ Limits.pullback.fst Y.obj.hom (D.map k.hom) =
-      Limits.pullback.fst Y.obj.hom (D.map j.hom) := by simp [pullbackDiagram]
-  have h2 : D.map f.left ≫ D.map k.hom = D.map j.hom := by rw [← D.map_comp, Over.w f]
-  rw [h1, h2]
-  exact IsPullback.of_hasPullback Y.obj.hom (D.map j.hom)
-
-private instance isAffineHom_pullbackDiagram_map [∀ {i j : I} (f : i ⟶ j), IsAffineHom (D.map f)]
-    {i₀ : I} (Y : FiniteEtaleScheme (D.obj i₀)) {j k : Over i₀} (f : j ⟶ k) :
-    IsAffineHom ((pullbackDiagram D i₀ Y).map f) :=
-  MorphismProperty.of_isPullback (isPullback_pullbackDiagram_map D Y f).flip inferInstance
-
-private instance compactSpace_pullbackDiagram_obj [∀ i, CompactSpace (D.obj i)]
-    {i₀ : I} (Y : FiniteEtaleScheme (D.obj i₀)) (j : Over i₀) :
-    CompactSpace ((pullbackDiagram D i₀ Y).obj j) :=
-  QuasiCompact.compactSpace_of_compactSpace (Limits.pullback.snd Y.obj.hom (D.map j.hom))
-
-private instance quasiSeparatedSpace_pullbackDiagram_obj [∀ i, QuasiSeparatedSpace (D.obj i)]
-    {i₀ : I} (Y : FiniteEtaleScheme (D.obj i₀)) (j : Over i₀) :
-    QuasiSeparatedSpace ((pullbackDiagram D i₀ Y).obj j) :=
-  quasiSeparatedSpace_of_quasiSeparated (Limits.pullback.snd Y.obj.hom (D.map j.hom))
-
-private def isLimitPullbackDiagramCone [IsCofiltered I] (hc : Limits.IsLimit c)
-    (i₀ : I) (Y : FiniteEtaleScheme (D.obj i₀)) :
-    Limits.IsLimit (pullbackDiagramCone D c i₀ Y) := by
-  have : IsConnected (Over i₀) := isConnected_of_hasTerminal (Over i₀)
-  refine Limits.isLimitOfIsPullbackOfIsConnected (pullbackDiagramSnd D i₀ Y)
-    (pullbackDiagramCone D c i₀ Y) (c.whisker (Over.forget i₀))
-    { hom := Limits.pullback.snd Y.obj.hom (c.π.app i₀)
-      w := fun j ↦ by simp [pullbackDiagramCone, pullbackDiagramSnd] }
-    (fun j ↦ ?_) ((Functor.Initial.isLimitWhiskerEquiv (Over.forget i₀) c).symm hc)
-  refine IsPullback.of_right ?_ (by simp [pullbackDiagramCone])
-    (IsPullback.of_hasPullback Y.obj.hom (D.map j.hom))
-  have h1 : (pullbackDiagramCone D c i₀ Y).π.app j ≫ Limits.pullback.fst Y.obj.hom (D.map j.hom) =
-      Limits.pullback.fst Y.obj.hom (c.π.app i₀) := by simp [pullbackDiagramCone]
-  have h2 : (c.whisker (Over.forget i₀)).π.app j = c.π.app j.left := rfl
-  rw [h1, h2, c.w j.hom]
-  exact IsPullback.of_hasPullback Y.obj.hom (c.π.app i₀)
-
 section FstProj
 
 variable {Z S : Scheme.{u}} {g : Z ⟶ S} {Y Y₁ Y₂ Y₃ : FiniteEtaleScheme S}
@@ -238,20 +163,20 @@ end FstProj
 private def resStageHom {i₀ : I} {Y₁ Y₂ : FiniteEtaleScheme (D.obj i₀)} {k j : Over i₀}
     (u : k ⟶ j) (β : (pullback (D.map j.hom)).obj Y₁ ⟶ (pullback (D.map j.hom)).obj Y₂) :
     (pullback (D.map k.hom)).obj Y₁ ⟶ (pullback (D.map k.hom)).obj Y₂ :=
-  mkOfFstProj ((pullbackDiagram D i₀ Y₁).map u ≫ fstProj β) (by
-    rw [Category.assoc, fstProj_comp_hom]; simp [pullbackDiagram, ← D.map_comp])
+  mkOfFstProj ((pullbackDiagram D i₀ Y₁.obj.hom).map u ≫ fstProj β) (by
+    rw [Category.assoc, fstProj_comp_hom]; simp [← D.map_comp])
 
 private theorem fstProj_resStageHom {i₀ : I} {Y₁ Y₂ : FiniteEtaleScheme (D.obj i₀)}
     {k j : Over i₀} (u : k ⟶ j)
     (β : (pullback (D.map j.hom)).obj Y₁ ⟶ (pullback (D.map j.hom)).obj Y₂) :
-    fstProj (resStageHom D u β) = (pullbackDiagram D i₀ Y₁).map u ≫ fstProj β :=
+    fstProj (resStageHom D u β) = (pullbackDiagram D i₀ Y₁.obj.hom).map u ≫ fstProj β :=
   fstProj_mkOfFstProj _ _
 
 private theorem resStageHom_id {i₀ : I} {Y : FiniteEtaleScheme (D.obj i₀)}
     {k j : Over i₀} (u : k ⟶ j) :
     resStageHom D u (𝟙 ((pullback (D.map j.hom)).obj Y)) = 𝟙 ((pullback (D.map k.hom)).obj Y) := by
   apply hom_ext_of_fstProj
-  simp [fstProj_resStageHom, pullbackDiagram]
+  simp [fstProj_resStageHom]
 
 private theorem resStageHom_comp {i₀ : I} {Y₁ Y₂ Y₃ : FiniteEtaleScheme (D.obj i₀)}
     {k j : Over i₀} (u : k ⟶ j)
@@ -259,11 +184,10 @@ private theorem resStageHom_comp {i₀ : I} {Y₁ Y₂ Y₃ : FiniteEtaleScheme 
     (β₂ : (pullback (D.map j.hom)).obj Y₂ ⟶ (pullback (D.map j.hom)).obj Y₃) :
     resStageHom D u (β₁ ≫ β₂) = resStageHom D u β₁ ≫ resStageHom D u β₂ := by
   apply hom_ext_of_fstProj
-  have hcomm : homLeft (resStageHom D u β₁) ≫ (pullbackDiagram D i₀ Y₂).map u =
-      (pullbackDiagram D i₀ Y₁).map u ≫ homLeft β₁ := by
+  have hcomm : homLeft (resStageHom D u β₁) ≫ (pullbackDiagram D i₀ Y₂.obj.hom).map u =
+      (pullbackDiagram D i₀ Y₁.obj.hom).map u ≫ homLeft β₁ := by
     rw [resStageHom, homLeft_mkOfFstProj]
-    exact Limits.pullback.hom_ext (by simp [pullbackDiagram, fstProj])
-      (by simp [pullbackDiagram, homLeft_snd])
+    exact Limits.pullback.hom_ext (by simp [fstProj]) (by simp [homLeft_snd])
   rw [fstProj_resStageHom, fstProj_comp, fstProj_comp, fstProj_resStageHom,
     ← Category.assoc, ← hcomm, Category.assoc]
 
@@ -273,15 +197,13 @@ private theorem cone_π_fstProj_comp {i₀ : I} {Z₁ Z₂ Z₃ : FiniteEtaleSch
     (γ : (pullback (c.π.app i₀)).obj Z₂ ⟶ (pullback (c.π.app i₀)).obj Z₃)
     (βα : (pullback (D.map j.hom)).obj Z₁ ⟶ (pullback (D.map j.hom)).obj Z₂)
     (βγ : (pullback (D.map j.hom)).obj Z₂ ⟶ (pullback (D.map j.hom)).obj Z₃)
-    (hβα : (pullbackDiagramCone D c i₀ Z₁).π.app j ≫ fstProj βα = fstProj α)
-    (hβγ : (pullbackDiagramCone D c i₀ Z₂).π.app j ≫ fstProj βγ = fstProj γ) :
-    (pullbackDiagramCone D c i₀ Z₁).π.app j ≫ fstProj (βα ≫ βγ) = fstProj (α ≫ γ) := by
-  have hcomm : (pullbackDiagramCone D c i₀ Z₁).π.app j ≫ homLeft βα =
-      homLeft α ≫ (pullbackDiagramCone D c i₀ Z₂).π.app j := by
-    dsimp [pullbackDiagramCone]
+    (hβα : (pullbackDiagramCone D c i₀ Z₁.obj.hom).π.app j ≫ fstProj βα = fstProj α)
+    (hβγ : (pullbackDiagramCone D c i₀ Z₂.obj.hom).π.app j ≫ fstProj βγ = fstProj γ) :
+    (pullbackDiagramCone D c i₀ Z₁.obj.hom).π.app j ≫ fstProj (βα ≫ βγ) = fstProj (α ≫ γ) := by
+  have hcomm : (pullbackDiagramCone D c i₀ Z₁.obj.hom).π.app j ≫ homLeft βα =
+      homLeft α ≫ (pullbackDiagramCone D c i₀ Z₂.obj.hom).π.app j := by
     refine Limits.pullback.hom_ext (by simpa [fstProj] using hβα) ?_
-    rw [Category.assoc, homLeft_snd, Limits.pullback.lift_snd,
-      Category.assoc, Limits.pullback.lift_snd, ← Category.assoc, homLeft_snd]
+    simp [homLeft_snd, reassoc_of% homLeft_snd]
   rw [fstProj_comp, fstProj_comp, ← Category.assoc, hcomm, Category.assoc, hβγ]
 
 /-- Morphism descent from the limit of a cofiltered affine-transition diagram of qcqs schemes to a
@@ -292,30 +214,34 @@ private theorem exists_stageHom_of_isLimit [IsCofiltered I]
     (hc : Limits.IsLimit c) {i₀ : I} {Z₁ Z₂ : FiniteEtaleScheme (D.obj i₀)}
     (α : (pullback (c.π.app i₀)).obj Z₁ ⟶ (pullback (c.π.app i₀)).obj Z₂) :
     ∃ (j : Over i₀) (β : (pullback (D.map j.hom)).obj Z₁ ⟶ (pullback (D.map j.hom)).obj Z₂),
-      (pullbackDiagramCone D c i₀ Z₁).π.app j ≫ fstProj β = fstProj α := by
-  have ha : (pullbackDiagramCone D c i₀ Z₁).π ≫ pullbackDiagramToBase D i₀ Z₁ =
+      (pullbackDiagramCone D c i₀ Z₁.obj.hom).π.app j ≫ fstProj β = fstProj α := by
+  have ha : (pullbackDiagramCone D c i₀ Z₁.obj.hom).π ≫ pullbackDiagramToBase D i₀ Z₁.obj.hom =
       (Functor.const (Over i₀)).map (fstProj α ≫ Z₂.obj.hom) := by
-    ext j; dsimp [pullbackDiagramCone, pullbackDiagramToBase]
-    rw [fstProj_comp_hom, Limits.pullback.lift_snd_assoc, Category.assoc, c.w j.hom]
+    ext j
+    simp [fstProj_comp_hom, c.w j.hom]
   obtain ⟨j, g, hg₁, hg₂⟩ :=
     Scheme.exists_π_app_comp_eq_of_locallyOfFinitePresentation
-      (pullbackDiagram D i₀ Z₁) (pullbackDiagramToBase D i₀ Z₁) Z₂.obj.hom
-      (pullbackDiagramCone D c i₀ Z₁) (isLimitPullbackDiagramCone D c hc i₀ Z₁) (fstProj α) ha
-  exact ⟨j, mkOfFstProj g hg₂, by rw [fstProj_mkOfFstProj, hg₁]⟩
+      (pullbackDiagram D i₀ Z₁.obj.hom) (pullbackDiagramToBase D i₀ Z₁.obj.hom) Z₂.obj.hom
+      (pullbackDiagramCone D c i₀ Z₁.obj.hom) (isLimitPullbackDiagramCone D c hc i₀ Z₁.obj.hom)
+      (fstProj α) ha
+  exact ⟨j, mkOfFstProj g (hg₂.trans (pullbackDiagramToBase_app D i₀ Z₁.obj.hom j)),
+    by rw [fstProj_mkOfFstProj, hg₁]⟩
 
 /-- Eventual equality at a further stage for two stage morphisms whose limit projections agree. -/
 private theorem exists_resStageHom_eq_of_isLimit [IsCofiltered I]
     [∀ {i j : I} (f : i ⟶ j), IsAffineHom (D.map f)] [∀ i, CompactSpace (D.obj i)]
     (hc : Limits.IsLimit c) {i₀ : I} {Z₁ Z₂ : FiniteEtaleScheme (D.obj i₀)} (j : Over i₀)
     (β₁ β₂ : (pullback (D.map j.hom)).obj Z₁ ⟶ (pullback (D.map j.hom)).obj Z₂)
-    (hπ : (pullbackDiagramCone D c i₀ Z₁).π.app j ≫ fstProj β₁ =
-      (pullbackDiagramCone D c i₀ Z₁).π.app j ≫ fstProj β₂) :
+    (hπ : (pullbackDiagramCone D c i₀ Z₁.obj.hom).π.app j ≫ fstProj β₁ =
+      (pullbackDiagramCone D c i₀ Z₁.obj.hom).π.app j ≫ fstProj β₂) :
     ∃ (k : Over i₀) (u : k ⟶ j), resStageHom D u β₁ = resStageHom D u β₂ := by
   obtain ⟨k, u, hu⟩ :=
     Scheme.exists_hom_comp_eq_comp_of_locallyOfFiniteType
-      (pullbackDiagram D i₀ Z₁) (pullbackDiagramToBase D i₀ Z₁) Z₂.obj.hom
-      (pullbackDiagramCone D c i₀ Z₁) (isLimitPullbackDiagramCone D c hc i₀ Z₁)
-      (fstProj β₁) (fstProj β₂) (fstProj_comp_hom β₁).symm (fstProj_comp_hom β₂).symm hπ
+      (pullbackDiagram D i₀ Z₁.obj.hom) (pullbackDiagramToBase D i₀ Z₁.obj.hom) Z₂.obj.hom
+      (pullbackDiagramCone D c i₀ Z₁.obj.hom) (isLimitPullbackDiagramCone D c hc i₀ Z₁.obj.hom)
+      (fstProj β₁) (fstProj β₂)
+      ((pullbackDiagramToBase_app D i₀ Z₁.obj.hom j).trans (fstProj_comp_hom β₁).symm)
+      ((pullbackDiagramToBase_app D i₀ Z₁.obj.hom j).trans (fstProj_comp_hom β₂).symm) hπ
   exact ⟨k, u, hom_ext_of_fstProj (by rw [fstProj_resStageHom, fstProj_resStageHom, hu])⟩
 
 /-- Along a cofiltered limit of quasi-compact quasi-separated schemes with affine transition
@@ -359,18 +285,21 @@ theorem exists_pullback_map_eq_of_isLimit [IsCofiltered I]
     ∃ (k : I) (fk : k ⟶ i₀), (pullback (D.map fk)).map β₁ = (pullback (D.map fk)).map β₂ := by
   let j₀ : Over i₀ := Over.mk (𝟙 i₀)
   have hfst (β : Y₁ ⟶ Y₂) :
-      (pullbackDiagramCone D c i₀ Y₁).π.app j₀ ≫ fstProj ((pullback (D.map j₀.hom)).map β) =
+      (pullbackDiagramCone D c i₀ Y₁.obj.hom).π.app j₀ ≫
+          fstProj ((pullback (D.map j₀.hom)).map β) =
         fstProj ((pullback (c.π.app i₀)).map β) := by
-    dsimp [j₀, pullbackDiagramCone, fstProj, homLeft]; simp
+    dsimp [j₀, fstProj, homLeft]; simp
   have hπ :
-      (pullbackDiagramCone D c i₀ Y₁).π.app j₀ ≫ fstProj ((pullback (D.map j₀.hom)).map β₁) =
-        (pullbackDiagramCone D c i₀ Y₁).π.app j₀ ≫ fstProj ((pullback (D.map j₀.hom)).map β₂) := by
+      (pullbackDiagramCone D c i₀ Y₁.obj.hom).π.app j₀ ≫
+          fstProj ((pullback (D.map j₀.hom)).map β₁) =
+        (pullbackDiagramCone D c i₀ Y₁.obj.hom).π.app j₀ ≫
+          fstProj ((pullback (D.map j₀.hom)).map β₂) := by
     rw [hfst β₁, hfst β₂, h]
   obtain ⟨k, u, hu⟩ := exists_resStageHom_eq_of_isLimit D c hc j₀ _ _ hπ
   have hres (β : Y₁ ⟶ Y₂) :
       resStageHom D u ((pullback (D.map j₀.hom)).map β) = (pullback (D.map k.hom)).map β := by
     apply hom_ext_of_fstProj
-    rw [fstProj_resStageHom]; dsimp [j₀, pullbackDiagram, fstProj, homLeft]; simp
+    rw [fstProj_resStageHom]; dsimp [j₀, fstProj, homLeft]; simp
   exact ⟨k.left, k.hom, (hres β₁).symm.trans (hu.trans (hres β₂))⟩
 
 /-- Along a cofiltered limit of quasi-compact quasi-separated schemes with affine transition
@@ -389,26 +318,26 @@ theorem exists_iso_pullback_of_isLimit [IsCofiltered I]
   let j₃ : Over i₀ := IsCofiltered.min j₁ j₂
   let φ₃ := resStageHom D (IsCofiltered.minToLeft j₁ j₂) φ₁
   let ψ₃ := resStageHom D (IsCofiltered.minToRight j₁ j₂) ψ₂
-  have hφ₃ : (pullbackDiagramCone D c i₀ Y₁).π.app j₃ ≫ fstProj φ₃ = fstProj e.hom := by
-    rw [fstProj_resStageHom, ← Category.assoc, (pullbackDiagramCone D c i₀ Y₁).w, hφ₁]
-  have hψ₃ : (pullbackDiagramCone D c i₀ Y₂).π.app j₃ ≫ fstProj ψ₃ = fstProj e.inv := by
-    rw [fstProj_resStageHom, ← Category.assoc, (pullbackDiagramCone D c i₀ Y₂).w, hψ₂]
-  have hcomp₁ : (pullbackDiagramCone D c i₀ Y₁).π.app j₃ ≫ fstProj (φ₃ ≫ ψ₃) =
-      (pullbackDiagramCone D c i₀ Y₁).π.app j₃ ≫ fstProj (𝟙 _) := by
+  have hφ₃ : (pullbackDiagramCone D c i₀ Y₁.obj.hom).π.app j₃ ≫ fstProj φ₃ = fstProj e.hom := by
+    rw [fstProj_resStageHom, ← Category.assoc, (pullbackDiagramCone D c i₀ Y₁.obj.hom).w, hφ₁]
+  have hψ₃ : (pullbackDiagramCone D c i₀ Y₂.obj.hom).π.app j₃ ≫ fstProj ψ₃ = fstProj e.inv := by
+    rw [fstProj_resStageHom, ← Category.assoc, (pullbackDiagramCone D c i₀ Y₂.obj.hom).w, hψ₂]
+  have hcomp₁ : (pullbackDiagramCone D c i₀ Y₁.obj.hom).π.app j₃ ≫ fstProj (φ₃ ≫ ψ₃) =
+      (pullbackDiagramCone D c i₀ Y₁.obj.hom).π.app j₃ ≫ fstProj (𝟙 _) := by
     rw [cone_π_fstProj_comp D c e.hom e.inv φ₃ ψ₃ hφ₃ hψ₃, e.hom_inv_id, fstProj_id, fstProj_id]
-    simp [pullbackDiagramCone]
+    simp
   obtain ⟨j₄, u₃, hu₃⟩ := exists_resStageHom_eq_of_isLimit D c hc j₃ (φ₃ ≫ ψ₃) (𝟙 _) hcomp₁
   let φ₄ := resStageHom D u₃ φ₃
   let ψ₄ := resStageHom D u₃ ψ₃
   have hφ₄ψ₄ : φ₄ ≫ ψ₄ = 𝟙 _ := by rw [← resStageHom_comp, hu₃, resStageHom_id]
-  have hφ₄ : (pullbackDiagramCone D c i₀ Y₁).π.app j₄ ≫ fstProj φ₄ = fstProj e.hom := by
-    rw [fstProj_resStageHom, ← Category.assoc, (pullbackDiagramCone D c i₀ Y₁).w u₃, hφ₃]
-  have hψ₄ : (pullbackDiagramCone D c i₀ Y₂).π.app j₄ ≫ fstProj ψ₄ = fstProj e.inv := by
-    rw [fstProj_resStageHom, ← Category.assoc, (pullbackDiagramCone D c i₀ Y₂).w u₃, hψ₃]
-  have hcomp₂ : (pullbackDiagramCone D c i₀ Y₂).π.app j₄ ≫ fstProj (ψ₄ ≫ φ₄) =
-      (pullbackDiagramCone D c i₀ Y₂).π.app j₄ ≫ fstProj (𝟙 _) := by
+  have hφ₄ : (pullbackDiagramCone D c i₀ Y₁.obj.hom).π.app j₄ ≫ fstProj φ₄ = fstProj e.hom := by
+    rw [fstProj_resStageHom, ← Category.assoc, (pullbackDiagramCone D c i₀ Y₁.obj.hom).w u₃, hφ₃]
+  have hψ₄ : (pullbackDiagramCone D c i₀ Y₂.obj.hom).π.app j₄ ≫ fstProj ψ₄ = fstProj e.inv := by
+    rw [fstProj_resStageHom, ← Category.assoc, (pullbackDiagramCone D c i₀ Y₂.obj.hom).w u₃, hψ₃]
+  have hcomp₂ : (pullbackDiagramCone D c i₀ Y₂.obj.hom).π.app j₄ ≫ fstProj (ψ₄ ≫ φ₄) =
+      (pullbackDiagramCone D c i₀ Y₂.obj.hom).π.app j₄ ≫ fstProj (𝟙 _) := by
     rw [cone_π_fstProj_comp D c e.inv e.hom ψ₄ φ₄ hψ₄ hφ₄, e.inv_hom_id, fstProj_id, fstProj_id]
-    simp [pullbackDiagramCone]
+    simp
   obtain ⟨j₅, u₄, hu₄⟩ := exists_resStageHom_eq_of_isLimit D c hc j₄ (ψ₄ ≫ φ₄) (𝟙 _) hcomp₂
   exact ⟨j₅.left, j₅.hom, ⟨{
     hom := resStageHom D u₄ φ₄
@@ -466,15 +395,13 @@ variable {X : Scheme.{u}} (U : X.Opens) {s : X}
 
 private def stalkOpensObjIso {W₀ : X.AffineOpenNhds s} (j : Over W₀) :
     (stalkOpensDiagram X U s W₀).obj j ≅ (j.left.opens.ι ⁻¹ᵁ U).toScheme :=
-  TauCeti.AlgebraicGeometry.opensDiagramObjIso
-      (X.affineOpenNhdsDiagram s) W₀ (W₀.opens.ι ⁻¹ᵁ U) j ≪≫
+  opensDiagramObjIso (X.affineOpenNhdsDiagram s) W₀ (W₀.opens.ι ⁻¹ᵁ U) j ≪≫
     j.left.opens.toScheme.isoOfEq
       (by rw [← Scheme.Hom.comp_preimage, Scheme.affineOpenNhdsDiagram_map, X.homOfLE_ι])
 
 private def stalkOpensConePtIso (W₀ : X.AffineOpenNhds s) :
     (stalkOpensCone X U s W₀).pt ≅ (X.fromSpecStalk s ⁻¹ᵁ U).toScheme :=
-  TauCeti.AlgebraicGeometry.opensConePtIso
-      (X.affineOpenNhdsDiagram s) (X.specStalkCone s) W₀ (W₀.opens.ι ⁻¹ᵁ U) ≪≫
+  opensConePtIso (X.affineOpenNhdsDiagram s) (X.specStalkCone s) W₀ (W₀.opens.ι ⁻¹ᵁ U) ≪≫
     (Spec (X.presheaf.stalk s)).isoOfEq
       (by rw [← Scheme.Hom.comp_preimage, Scheme.specStalkCone_π_app,
         Scheme.Opens.fromSpecStalkOfMem_ι])
@@ -483,10 +410,10 @@ private theorem stalkOpensDiagram_map_comp_objIso_hom_ι {W₀ : X.AffineOpenNhd
     {j k : Over W₀} (f : j ⟶ k) :
     (stalkOpensDiagram X U s W₀).map f ≫ (stalkOpensObjIso U k).hom ≫ (k.left.opens.ι ⁻¹ᵁ U).ι =
       (stalkOpensObjIso U j).hom ≫ (j.left.opens.ι ⁻¹ᵁ U).ι ≫
-        X.homOfLE (Scheme.AffineOpenNhds.mk_le_mk.mp (leOfHom f.left)) := by
+        X.homOfLE (Scheme.AffineOpenNhds.le_iff.mp (leOfHom f.left)) := by
   simp only [stalkOpensObjIso, Iso.trans_hom, Category.assoc, Scheme.isoOfEq_hom_ι,
     Scheme.isoOfEq_hom_ι_assoc]
-  rw [← Category.assoc, TauCeti.AlgebraicGeometry.opensDiagram_map_comp_objIso_hom,
+  rw [← Category.assoc, opensDiagram_map_comp_objIso_hom,
     Category.assoc, Scheme.Hom.resLE_comp_ι, Scheme.affineOpenNhdsDiagram_map X s f.left]
 
 private theorem stalkOpensCone_π_app_comp_objIso_hom_ι {W₀ : X.AffineOpenNhds s} (j : Over W₀) :
@@ -495,7 +422,7 @@ private theorem stalkOpensCone_π_app_comp_objIso_hom_ι {W₀ : X.AffineOpenNhd
         j.left.opens.fromSpecStalkOfMem s j.left.mem := by
   simp only [stalkOpensObjIso, stalkOpensConePtIso, Iso.trans_hom, Category.assoc,
     Scheme.isoOfEq_hom_ι, Scheme.isoOfEq_hom_ι_assoc]
-  rw [← Category.assoc, TauCeti.AlgebraicGeometry.opensCone_π_app_comp_objIso_hom,
+  rw [← Category.assoc, opensCone_π_app_comp_objIso_hom,
     Category.assoc, Scheme.Hom.resLE_comp_ι, Scheme.specStalkCone_π_app X s j.left]
 
 private def stalkOpensTopToOpen (W₀ : X.AffineOpenNhds s) :
@@ -537,7 +464,7 @@ private theorem stalkOpensStageIso_hom_map_toNhds {W₀ : X.AffineOpenNhds s}
     (stalkOpensStageIso U k).hom ≫
         (stalkOpensDiagram X U s W₀).map fk ≫ stalkOpensTopToNhds U W₀ =
       X.homOfLE (U := U ⊓ k.left.opens) (V := k.left.opens) inf_le_right ≫
-        X.homOfLE (Scheme.AffineOpenNhds.mk_le_mk.mp (leOfHom k.hom)) := by
+        X.homOfLE (Scheme.AffineOpenNhds.le_iff.mp (leOfHom k.hom)) := by
   have hfk : fk.left = k.hom := by simpa using Over.w fk
   have hmap := stalkOpensDiagram_map_comp_objIso_hom_ι U fk
   simp only [Over.mk_left] at hmap
@@ -612,7 +539,7 @@ theorem exists_spread_fromSpecStalk {X : Scheme.{u}} {U : X.Opens} [QuasiCompact
       ((pullback fV).obj V) ((pullback fW).obj YW₀) eLim
   let W : X.AffineOpenNhds s := k.left
   let mapk : W.opens.toScheme ⟶ W₀.opens.toScheme :=
-    X.homOfLE (Scheme.AffineOpenNhds.mk_le_mk.mp (leOfHom k.hom))
+    X.homOfLE (Scheme.AffineOpenNhds.le_iff.mp (leOfHom k.hom))
   let YW : FiniteEtaleScheme W.opens.toScheme := (pullback mapk).obj YW₀
   let eRange := stalkOpensStageIso U k
   obtain ⟨eGlue⟩ :

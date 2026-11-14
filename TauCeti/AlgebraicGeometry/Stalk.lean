@@ -99,7 +99,7 @@ theorem ext {W₁ W₂ : X.AffineOpenNhds x} (h : W₁.opens = W₂.opens) : W�
   Subtype.ext (Subtype.ext h)
 
 @[simp]
-theorem mk_le_mk {W₁ W₂ : X.AffineOpenNhds x} : W₁ ≤ W₂ ↔ W₁.opens ≤ W₂.opens :=
+theorem le_iff {W₁ W₂ : X.AffineOpenNhds x} : W₁ ≤ W₂ ↔ W₁.opens ≤ W₂.opens :=
   Iff.rfl
 
 instance : Nonempty (X.AffineOpenNhds x) := by
@@ -130,7 +130,7 @@ variable (X x) in
 @[expose, simps]
 def toOpenNhds : X.AffineOpenNhds x ⥤ OpenNhds x where
   obj W := ⟨W.opens, W.mem⟩
-  map f := homOfLE (Subtype.mk_le_mk.mpr (mk_le_mk.mp (leOfHom f)))
+  map f := homOfLE (Subtype.mk_le_mk.mpr (le_iff.mp (leOfHom f)))
 
 instance : (toOpenNhds X x).Initial := by
   refine Functor.initial_of_exists_of_isCofiltered (toOpenNhds X x) (fun U ↦ ?_)
@@ -146,7 +146,7 @@ end AffineOpenNhds
 @[expose, simps, implicit_reducible]
 def affineOpenNhdsDiagram : X.AffineOpenNhds x ⥤ Scheme.{u} where
   obj W := W.opens.toScheme
-  map f := X.homOfLE (AffineOpenNhds.mk_le_mk.mp (leOfHom f))
+  map f := X.homOfLE (AffineOpenNhds.le_iff.mp (leOfHom f))
   map_id W := X.homOfLE_rfl W.opens
   map_comp f g := (X.homOfLE_homOfLE (leOfHom f) (leOfHom g)).symm
 
@@ -239,24 +239,40 @@ abbrev stalkDirectSystemObj (W : (X.AffineOpenNhds x)ᵒᵈ) : Type u :=
 def stalkDirectSystemMap (W₁ W₂ : (X.AffineOpenNhds x)ᵒᵈ) (h : W₁ ≤ W₂) :
     X.stalkDirectSystemObj x W₁ →+* X.stalkDirectSystemObj x W₂ :=
   (X.presheaf.map
-    (homOfLE (AffineOpenNhds.mk_le_mk.mp (OrderDual.ofDual_le_ofDual.mpr h))).op).hom
+    (homOfLE (AffineOpenNhds.le_iff.mp (OrderDual.ofDual_le_ofDual.mpr h))).op).hom
+
+/-- Evaluation of `stalkDirectSystemMap` as presheaf restriction. -/
+@[simp]
+theorem stalkDirectSystemMap_apply (W₁ W₂ : (X.AffineOpenNhds x)ᵒᵈ) (h : W₁ ≤ W₂)
+    (s : X.stalkDirectSystemObj x W₁) :
+    X.stalkDirectSystemMap x W₁ W₂ h s =
+      X.presheaf.map
+        (homOfLE (AffineOpenNhds.le_iff.mp (OrderDual.ofDual_le_ofDual.mpr h))).op s := by
+  rfl
 
 instance : DirectedSystem (X.stalkDirectSystemObj x) (X.stalkDirectSystemMap x · · ·) where
-  map_self W s := by simp [stalkDirectSystemMap]
+  map_self _ _ := by simp
   map_map _ _ _ _ _ s := by
-    dsimp [stalkDirectSystemMap]
-    rw [← CommRingCat.comp_apply, ← X.presheaf.map_comp]
+    simp only [stalkDirectSystemMap_apply, ← CommRingCat.comp_apply, ← X.presheaf.map_comp]
     rfl
 
 /-- The canonical ring homomorphism from the concrete directed colimit of affine open section rings
 around `x` to the stalk `𝒪_{X,x}`. -/
-def stalkRingHomFromDirectLimit :
+private def stalkRingHomFromDirectLimit :
     Ring.DirectLimit (X.stalkDirectSystemObj x) (X.stalkDirectSystemMap x · · ·) →+*
       X.presheaf.stalk x :=
   Ring.DirectLimit.lift (X.stalkDirectSystemObj x) (X.stalkDirectSystemMap x · · ·)
     (X.presheaf.stalk x)
     (fun W ↦ (X.presheaf.germ (OrderDual.ofDual W).opens x (OrderDual.ofDual W).mem).hom)
-    (fun W₁ W₂ h s ↦ by simp [stalkDirectSystemMap])
+    (fun _ _ _ _ ↦ by simp)
+
+@[simp]
+private theorem stalkRingHomFromDirectLimit_of (W : (X.AffineOpenNhds x)ᵒᵈ)
+    (s : X.stalkDirectSystemObj x W) :
+    X.stalkRingHomFromDirectLimit x
+        (Ring.DirectLimit.of (X.stalkDirectSystemObj x) (X.stalkDirectSystemMap x · · ·) W s) =
+      X.presheaf.germ (OrderDual.ofDual W).opens x (OrderDual.ofDual W).mem s := by
+  simp [stalkRingHomFromDirectLimit]
 
 /-- The canonical ring isomorphism from the concrete directed colimit of affine open section rings
 around `x` to the stalk `𝒪_{X,x}`. -/
@@ -269,8 +285,7 @@ def stalkRingEquivDirectLimit :
     rw [RingHom.mem_ker] at hz
     induction z using Ring.DirectLimit.induction_on with
     | ih W s =>
-      dsimp [stalkRingHomFromDirectLimit] at hz
-      rw [Ring.DirectLimit.lift_of] at hz
+      rw [stalkRingHomFromDirectLimit_of] at hz
       have hz0 :
           X.presheaf.germ (OrderDual.ofDual W).opens x (OrderDual.ofDual W).mem s =
             X.presheaf.germ (OrderDual.ofDual W).opens x (OrderDual.ofDual W).mem 0 :=
@@ -287,17 +302,15 @@ def stalkRingEquivDirectLimit :
       TopCat.Presheaf.exists_mem_germ_eq_of_isBasis X.isBasis_affineOpens X.presheaf x t
     let W : (X.AffineOpenNhds x)ᵒᵈ := OrderDual.toDual ⟨⟨V, hV⟩, hxV⟩
     let sW : X.stalkDirectSystemObj x W := s
-    refine ⟨Ring.DirectLimit.of _ _ W sW, ?_⟩
-    rw [stalkRingHomFromDirectLimit, Ring.DirectLimit.lift_of]
-    rfl
+    exact ⟨Ring.DirectLimit.of _ _ W sW, X.stalkRingHomFromDirectLimit_of x W sW⟩
 
 @[simp]
 theorem stalkRingEquivDirectLimit_of (W : (X.AffineOpenNhds x)ᵒᵈ)
     (s : X.stalkDirectSystemObj x W) :
     X.stalkRingEquivDirectLimit x
         (Ring.DirectLimit.of (X.stalkDirectSystemObj x) (X.stalkDirectSystemMap x · · ·) W s) =
-      X.presheaf.germ (OrderDual.ofDual W).opens x (OrderDual.ofDual W).mem s := by
-  simp [stalkRingEquivDirectLimit, stalkRingHomFromDirectLimit]
+      X.presheaf.germ (OrderDual.ofDual W).opens x (OrderDual.ofDual W).mem s :=
+  X.stalkRingHomFromDirectLimit_of x W s
 
 /-- Every proper open `U ≠ ⊤` of a scheme `X` misses the generic point `s` of an irreducible
 component of `X \ U`; every strict generization of `s` lies in `U`. -/
