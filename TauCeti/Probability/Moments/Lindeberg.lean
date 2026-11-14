@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.Taylor.Basic
 public import TauCeti.MeasureTheory.Integral.Pi
 public import TauCeti.MeasureTheory.Integral.Prod
-import TauCeti.MeasureTheory.Function.PolynomialMemLp
+import TauCeti.MeasureTheory.Function.L1Space.Integrable
 
 /-!
 # Lindeberg replacement
@@ -79,7 +79,7 @@ theorem abs_integral_sub_integral_le {μ ν : Measure ℝ} [IsFiniteMeasure μ]
       apply (integrable_norm_iff
         (by fun_prop : AEStronglyMeasurable (fun t : ℝ ↦ t ^ (r + 1)) ρ)).1
       simpa only [Real.norm_eq_abs, norm_pow] using h
-    have hpoly := integrable_pow_of_integrable_pow_of_le hkle hpow
+    have hpoly := integrable_pow_of_le hkle hpow
     have hterm := (hpoly.const_mul (iteratedDeriv k g 0)).div_const (k !)
     simpa [smul_eq_mul, sub_zero, div_eq_mul_inv, mul_comm, mul_left_comm, mul_assoc] using hterm
   have hPint : ∀ (ρ : Measure ℝ) [IsFiniteMeasure ρ],

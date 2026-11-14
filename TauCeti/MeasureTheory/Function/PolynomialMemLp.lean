@@ -21,9 +21,10 @@ against any measure on `ℝ` whose polynomial moments are finite (up to the rele
   combination of moments;
 * `integrable_eval_of_forall_integrable_pow` — the all-moments corollary: every polynomial is
   integrable when every monomial is;
+* `tendsto_integral_eval_of_forall_le_natDegree` — convergence of polynomial integrals from
+  eventual integrability and convergence of monomial integrals up to the polynomial's degree;
 * `tendsto_integral_eval_of_tendsto_integral_pow` — convergence of polynomial integrals from
   eventual integrability and convergence of monomial integrals;
-* `integrable_pow_of_integrable_pow_of_le` — lower powers are integrable when a higher power is;
 * `integrable_pow_of_ae_abs_le` — every monomial is integrable against a finite measure
   concentrated on a bounded interval, so such measures satisfy the moment hypothesis;
 * `abs_integral_eval_sub_le` — a polynomial that approximates a bounded continuous function within
@@ -74,11 +75,40 @@ theorem integral_eval_eq_sum_range {q : ℝ[X]}
 
 /-- If every monomial is eventually integrable against `μᵢ`, then eventually all monomials up to
 the degree of a given polynomial are integrable. -/
-private theorem eventually_forall_le_natDegree_integrable {ι : Type*} {l : Filter ι}
+theorem eventually_forall_le_natDegree_integrable {ι : Type*} {l : Filter ι}
     {μs : ι → Measure ℝ}
     (hμs : ∀ n, ∀ᶠ i in l, Integrable (fun x : ℝ => x ^ n) (μs i)) (p : ℝ[X]) :
     ∀ᶠ i in l, ∀ k ≤ p.natDegree, Integrable (fun x : ℝ => x ^ k) (μs i) :=
   (eventually_all_finite (Set.finite_Iic p.natDegree)).2 fun n _ => hμs n
+
+/-- Convergence of the moments up to the degree of `p` implies convergence of its integral. -/
+theorem tendsto_integral_eval_of_forall_le_natDegree {ι : Type*} {l : Filter ι}
+    {μs : ι → Measure ℝ} {μ : Measure ℝ} (p : ℝ[X])
+    (hμs : ∀ n ≤ p.natDegree, ∀ᶠ i in l, Integrable (fun x : ℝ => x ^ n) (μs i))
+    (hμ : ∀ n ≤ p.natDegree, Integrable (fun x : ℝ => x ^ n) μ)
+    (h : ∀ n ≤ p.natDegree,
+      Tendsto (fun i => ∫ x, x ^ n ∂μs i) l (𝓝 (∫ x, x ^ n ∂μ))) :
+    Tendsto (fun i => ∫ x, p.eval x ∂μs i) l (𝓝 (∫ x, p.eval x ∂μ)) := by
+  rw [integral_eval_eq_sum_range hμ]
+  refine (tendsto_finsetSum _ fun n hn =>
+    (h n (Nat.lt_succ_iff.1 (Finset.mem_range.1 hn))).const_mul (p.coeff n)).congr' ?_
+  filter_upwards [(eventually_all_finite (Set.finite_Iic p.natDegree)).2 hμs] with i hi
+  exact (integral_eval_eq_sum_range hi).symm
+
+/-- If the moments up to the degree of `p` converge to prescribed values, the polynomial integrals
+converge to the corresponding linear combination of those values. -/
+theorem tendsto_integral_eval_of_forall_le_natDegree_of_moments {ι : Type*} {l : Filter ι}
+    {μs : ι → Measure ℝ} {m : ℕ → ℝ} (p : ℝ[X])
+    (hμs : ∀ n ≤ p.natDegree, ∀ᶠ i in l, Integrable (fun x : ℝ => x ^ n) (μs i))
+    (h : ∀ n ≤ p.natDegree,
+      Tendsto (fun i => ∫ x, x ^ n ∂μs i) l (𝓝 (m n))) :
+    Tendsto (fun i => ∫ x, p.eval x ∂μs i) l
+      (𝓝 (∑ n ∈ Finset.range (p.natDegree + 1), p.coeff n * m n)) := by
+  refine (tendsto_finsetSum _ fun n hn =>
+    (h n (Nat.lt_succ_iff.1 (Finset.mem_range.1 hn))).const_mul (p.coeff n)).congr' ?_
+  filter_upwards [(eventually_all_finite (Set.finite_Iic p.natDegree)).2
+    (fun n hn => hμs n (Set.mem_Iic.mp hn))] with i hi
+  exact (integral_eval_eq_sum_range hi).symm
 
 /-- If every moment `∫ xⁿ dμᵢ` converges to `∫ xⁿ dμ`, then so does the integral of every real
 polynomial. The moments must be genuine: each monomial is assumed integrable against `μ` and,
@@ -89,10 +119,8 @@ theorem tendsto_integral_eval_of_tendsto_integral_pow {ι : Type*} {l : Filter �
     (hμ : ∀ n, Integrable (fun x : ℝ => x ^ n) μ)
     (h : ∀ n, Tendsto (fun i => ∫ x, x ^ n ∂μs i) l (𝓝 (∫ x, x ^ n ∂μ))) (p : ℝ[X]) :
     Tendsto (fun i => ∫ x, p.eval x ∂μs i) l (𝓝 (∫ x, p.eval x ∂μ)) := by
-  rw [integral_eval_eq_sum_range fun n _ => hμ n]
-  refine (tendsto_finsetSum _ fun n _ => (h n).const_mul (p.coeff n)).congr' ?_
-  filter_upwards [eventually_forall_le_natDegree_integrable hμs p] with i hi
-  exact (integral_eval_eq_sum_range hi).symm
+  exact tendsto_integral_eval_of_forall_le_natDegree p (fun n _ => hμs n)
+    (fun n _ => hμ n) (fun n _ => h n)
 
 /-- A real polynomial is integrable against any measure all of whose polynomial moments are
 finite. -/
@@ -100,17 +128,6 @@ theorem integrable_eval_of_forall_integrable_pow
     (hmom : ∀ k : ℕ, Integrable (fun x : ℝ => x ^ k) μ) (q : ℝ[X]) :
     Integrable (fun x : ℝ => q.eval x) μ :=
   integrable_eval_of_forall_le_natDegree fun k _ => hmom k
-
-/-- Lower powers are integrable against a finite measure whenever a higher power is integrable. -/
-theorem integrable_pow_of_integrable_pow_of_le [IsFiniteMeasure μ] {k n : ℕ} (hkn : k ≤ n)
-    (h : Integrable (fun x : ℝ => x ^ n) μ) : Integrable (fun x : ℝ => x ^ k) μ := by
-  have hnorm : Integrable (fun x : ℝ => ‖x‖ ^ n) μ := by
-    simpa only [norm_pow] using h.norm
-  have hnormk : Integrable (fun x : ℝ => ‖x‖ ^ k) μ :=
-    integrable_norm_pow_of_le aestronglyMeasurable_id hkn hnorm
-  apply (integrable_norm_iff
-    (by fun_prop : AEStronglyMeasurable (fun x : ℝ => x ^ k) μ)).1
-  simpa only [norm_pow] using hnormk
 
 /-- Every monomial is integrable against a finite measure that is almost everywhere concentrated
 on `[-R, R]`, so such a measure satisfies the moment hypothesis of the results above. -/
