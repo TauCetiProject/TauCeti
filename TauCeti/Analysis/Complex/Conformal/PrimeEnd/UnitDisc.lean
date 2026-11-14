@@ -143,7 +143,7 @@ theorem isNullChain_unitDiscRadialChain (hζ : ‖ζ‖ = 1) :
   nullChainDomain_succ_subset n := by
     rw [nullChainDomain_unitDiscRadialChain hζ, nullChainDomain_unitDiscRadialChain hζ]
     exact inter_subset_inter_right _ fun z hz => (level_strictMono n.lt_succ_self).trans hz
-  eventually_chordal_lt ε hε := by
+  eventually_chordalDist_lt ε hε := by
     refine (eventually_eight_mul_lt hε).mono fun n hsmall z hz w hw => ?_
     have ht := abs_level_lt_one n
     have hzb : ‖z‖ ≤ 1 := by
@@ -154,7 +154,7 @@ theorem isNullChain_unitDiscRadialChain (hζ : ‖ζ‖ = 1) :
     have hw' := norm_sub_sq_le hζ hwb (inner_eq_of_mem_unitDiscChord hζ hw).ge
     have hzw : ‖z - w‖ < ε :=
       lt_of_pow_lt_pow_left₀ 2 hε.le (by linarith [norm_sub_sq_le_two_mul z w ζ])
-    exact (chordal_le_norm_sub z w).trans_lt hzw
+    exact (chordalDist_le_norm_sub z w).trans_lt hzw
 
 /-- The prime end of the unit disc at a point `ζ` of the unit circle, represented by the radial
 chain of chords perpendicular to `ζ`. -/
