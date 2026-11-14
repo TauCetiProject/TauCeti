@@ -53,7 +53,7 @@ open scoped TensorProduct
 
 namespace TauCeti
 
-open LieAlgebra _root_.LieModule Module
+open LieAlgebra Module
 
 universe u v w
 
