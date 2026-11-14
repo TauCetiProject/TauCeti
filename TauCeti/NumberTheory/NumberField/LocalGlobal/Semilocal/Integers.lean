@@ -10,6 +10,7 @@ public import Mathlib.Topology.Algebra.Module.Compact
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Basic
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Approximation
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.IntegralClosure
+import TauCeti.RingTheory.IsTensorProduct.BaseChange
 
 /-!
 # The integral semi-local decomposition of a number field
@@ -133,81 +134,26 @@ theorem integralSemilocalHom_surjective : Function.Surjective (integralSemilocal
   exact (Submodule.isCompact_of_fg hsfg).isClosed.closure_subset_iff.mpr hs
     (denseRange_algebraMap_integers_pi_liesOver L v y)
 
-private def integralFieldBaseChangeEquiv :
-    v.adicCompletion K ⊗[𝒪 K] 𝒪 L ≃ₐ[v.adicCompletion K]
-      v.adicCompletion K ⊗[K] L :=
-  (Algebra.TensorProduct.cancelBaseChange (𝒪 K) K (v.adicCompletion K)
-      (v.adicCompletion K) (𝒪 L)).symm.trans
-    (Algebra.TensorProduct.congr (.refl : v.adicCompletion K ≃ₐ[v.adicCompletion K]
-      v.adicCompletion K) (Algebra.IsPushout.equiv (𝒪 K) K (𝒪 L) L))
-
-@[simp]
-private theorem integralFieldBaseChangeEquiv_tmul (a : v.adicCompletion K) (x : 𝒪 L) :
-    integralFieldBaseChangeEquiv L v (a ⊗ₜ x) = a ⊗ₜ (x : L) := by
-  simp [integralFieldBaseChangeEquiv, Algebra.IsPushout.equiv_tmul]
-
-private def integralFieldBaseChangeAlgHom :
-    v.adicCompletion K ⊗[𝒪 K] 𝒪 L →ₐ[𝒪 K]
-      v.adicCompletion K ⊗[K] L :=
-  { (integralFieldBaseChangeEquiv L v).toRingEquiv.toRingHom with
-    commutes' := fun r ↦ by
-      -- The source uses its tensor-product algebra over `𝒪 K`, whereas the equivalence is
-      -- linear over the completion. Exposing both algebra maps lets the pure-tensor lemma bridge
-      -- these non-definitionally-equal structures.
-      change integralFieldBaseChangeEquiv L v
-          (algebraMap (𝒪 K) (v.adicCompletion K) r ⊗ₜ[𝒪 K] (1 : 𝒪 L)) =
-        algebraMap (𝒪 K) (v.adicCompletion K) r ⊗ₜ[K] (1 : L)
-      rw [integralFieldBaseChangeEquiv_tmul]
-      rfl }
-
-private def adicCompletionIntegersToCompletion :
-    v.adicCompletionIntegers K →ₐ[𝒪 K] v.adicCompletion K :=
-  @AlgHom.restrictScalars (𝒪 K) (v.adicCompletionIntegers K)
-    (v.adicCompletionIntegers K) (v.adicCompletion K) _ _ _ _ _ _ _ _ _
-    (@IsScalarTower.of_algebraMap_eq (𝒪 K) (v.adicCompletionIntegers K)
-      (v.adicCompletionIntegers K) _ _ _ _ _ _ fun _ ↦ rfl)
-    (@IsScalarTower.of_algebraMap_eq (𝒪 K) (v.adicCompletionIntegers K)
-      (v.adicCompletion K) _ _ _ _ _ _ fun _ ↦ rfl)
-    (Algebra.ofId (v.adicCompletionIntegers K) (v.adicCompletion K))
-
-private def integralTensorToBaseChange :
-    v.adicCompletionIntegers K ⊗[𝒪 K] 𝒪 L →ₐ[𝒪 K]
-      v.adicCompletion K ⊗[𝒪 K] 𝒪 L :=
-  { (Algebra.TensorProduct.map (adicCompletionIntegersToCompletion v)
-      (AlgHom.id (𝒪 K) (𝒪 L))).toRingHom with
-    commutes' := fun _ ↦ rfl }
-
-omit [NumberField L] in
-@[simp]
-private theorem integralTensorToBaseChange_tmul
-    (a : v.adicCompletionIntegers K) (x : 𝒪 L) :
-    integralTensorToBaseChange L v (a ⊗ₜ x) = (a : v.adicCompletion K) ⊗ₜ x := rfl
-
-omit [NumberField L] in
-private theorem integralTensorToBaseChange_injective :
-    Function.Injective (integralTensorToBaseChange L v) := by
-  -- Expose the underlying linear tensor map; the bundled algebra structures differ, but the
-  -- functions are definitionally the same.
-  change Function.Injective (TensorProduct.map
-    (adicCompletionIntegersToCompletion v).toLinearMap
-    (AlgHom.id (𝒪 K) (𝒪 L)).toLinearMap)
-  exact TensorProduct.map_injective_of_flat_flat _ _ Subtype.val_injective Function.injective_id
+omit [Field L] [NumberField L] [Algebra K L] in
+local instance (v : HeightOneSpectrum (𝒪 K)) :
+    IsScalarTower (𝒪 K) (v.adicCompletionIntegers K) (v.adicCompletion K) :=
+  ⟨fun _ _ _ ↦ by simp only [Algebra.smul_def, map_mul]; exact mul_assoc _ _ _⟩
 
 /-- The canonical inclusion of the integral tensor product in the field tensor product. -/
 def integralSemilocalToField :
     v.adicCompletionIntegers K ⊗[𝒪 K] 𝒪 L →ₐ[𝒪 K]
       v.adicCompletion K ⊗[K] L :=
-  (integralFieldBaseChangeAlgHom L v).comp (integralTensorToBaseChange L v)
+  baseChangeOfTower (𝒪 K) K (v.adicCompletionIntegers K) (v.adicCompletion K) (𝒪 L) L
 
 variable {L v}
 
+omit [NumberField L] in
 /-- The inclusion in the field tensor product on a pure tensor. -/
 @[simp]
 theorem integralSemilocalToField_tmul (a : v.adicCompletionIntegers K) (x : 𝒪 L) :
     integralSemilocalToField L v (a ⊗ₜ x) =
-      (a : v.adicCompletion K) ⊗ₜ (x : L) := by
-  rw [integralSemilocalToField, AlgHom.comp_apply, integralTensorToBaseChange_tmul]
-  exact integralFieldBaseChangeEquiv_tmul (L := L) (v := v) (a : v.adicCompletion K) x
+      (a : v.adicCompletion K) ⊗ₜ (x : L) :=
+  baseChangeOfTower_tmul (𝒪 K) K (v.adicCompletionIntegers K) (v.adicCompletion K) (𝒪 L) L a x
 
 private theorem algebraMap_adicCompletionExtension_coe
     (a : v.adicCompletionIntegers K)
@@ -249,11 +195,8 @@ variable (L v)
 
 /-- The canonical inclusion of the integral tensor product in the field tensor product is
 injective. -/
-theorem integralSemilocalToField_injective : Function.Injective (integralSemilocalToField L v) := by
-  intro x y hxy
-  apply integralTensorToBaseChange_injective L v
-  apply (integralFieldBaseChangeEquiv L v).injective
-  exact hxy
+theorem integralSemilocalToField_injective : Function.Injective (integralSemilocalToField L v) :=
+  baseChangeOfTower_injective (𝒪 K) K (v.adicCompletionIntegers K) (v.adicCompletion K) (𝒪 L) L
 
 /-- The integral semi-local map is injective. -/
 theorem integralSemilocalHom_injective : Function.Injective (integralSemilocalHom L v) := by

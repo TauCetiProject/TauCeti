@@ -327,17 +327,10 @@ theorem constantsEquiv_symm_apply (Q : Place k' F') :
 theorem valuation_constantsEquiv (Q : Place k F') :
     (constantsEquiv k k' F' Q).valuation = Q.valuation := (rfl)
 
-theorem valuation_constantsEquiv_symm (Q : Place k' F') :
-    ((constantsEquiv k k' F').symm Q).valuation = Q.valuation := (rfl)
-
 @[simp]
 theorem integers_constantsEquiv (Q : Place k F') :
     (constantsEquiv k k' F' Q).integers = Q.integers :=
   SetLike.ext fun x ↦ by rw [mem_integers_iff, mem_integers_iff, valuation_constantsEquiv]
-
-theorem integers_constantsEquiv_symm (Q : Place k' F') :
-    ((constantsEquiv k k' F').symm Q).integers = Q.integers := by
-  rw [constantsEquiv_symm_apply, integers_restrictConstants]
 
 end Constants
 
@@ -675,6 +668,26 @@ noncomputable def relativeDegree : ℕ :=
 theorem relativeDegree_def :
     relativeDegree k F P' = Module.finrank (P'.restrict k F).ResidueField P'.ResidueField := by
   rw [relativeDegree]
+
+/-- Restricting the constant field of `P'` to `k` does not change its relative degree over
+`F / k`. -/
+@[simp]
+theorem relativeDegree_restrictConstants :
+    relativeDegree k F (P'.restrictConstants k) = relativeDegree k F P' := by
+  let eBelow := RingEquiv.subringCongr
+    (congrArg (fun P ↦ P.integers.toSubring) (restrict_restrictConstants k F P'))
+  let eAbove := RingEquiv.subringCongr
+    (congrArg ValuationSubring.toSubring (integers_restrictConstants (k := k) P'))
+  rw [relativeDegree_def, relativeDegree_def]
+  refine Algebra.finrank_eq_of_equiv_equiv (IsLocalRing.ResidueField.mapEquiv eBelow)
+    (IsLocalRing.ResidueField.mapEquiv eAbove) (RingHom.ext fun x ↦ ?_)
+  obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective x
+  simp only [RingHom.coe_comp, Function.comp_apply, RingEquiv.toRingHom_eq_coe,
+    RingEquiv.coe_toRingHom, IsLocalRing.ResidueField.algebraMap_residue,
+    IsLocalRing.ResidueField.mapEquiv_apply, IsLocalRing.ResidueField.map_residue]
+  refine congrArg (IsLocalRing.residue P'.integers) (Subtype.ext ?_)
+  rw [RingEquiv.coe_subringCongr_apply, coe_algebraMap_integers, coe_algebraMap_integers,
+    RingEquiv.coe_subringCongr_apply]
 
 omit [Algebra k F'] [IsScalarTower k k' F'] in
 /-- Through the constants `k'`, the valuation ring of `P'` is a `k`-algebra. This is not an

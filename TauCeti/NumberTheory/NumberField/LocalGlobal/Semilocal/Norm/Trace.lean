@@ -59,11 +59,11 @@ theorem trace_integralSemilocalToField_tmul_mul
         (integralSemilocalToField L v (a ⊗ₜ x) * (1 ⊗ₜ d)) =
       (a : v.adicCompletion K) *
         algebraMap K (v.adicCompletion K) (Algebra.trace K L ((x : L) * d)) := by
-  have ha : (a : v.adicCompletion K) ⊗ₜ[K] ((x : L) * d) =
-      (a : v.adicCompletion K) • ((1 : v.adicCompletion K) ⊗ₜ[K] ((x : L) * d)) := by
-    rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-  rw [integralSemilocalToField_tmul, Algebra.TensorProduct.tmul_mul_tmul, mul_one, ha,
-    map_smul, Algebra.trace_baseChange_tmul, smul_eq_mul]
+  have : IsScalarTower (𝒪 K) (v.adicCompletionIntegers K) (v.adicCompletion K) :=
+    ⟨fun _ _ _ ↦ by simp only [Algebra.smul_def, map_mul]; exact mul_assoc _ _ _⟩
+  simpa using
+    Algebra.trace_baseChangeOfTower_tmul_mul (R := 𝒪 K) (K := K)
+      (A := v.adicCompletion K) a x d
 
 attribute [local instance] Fintype.ofFinite in
 /-- The norm of the local étale algebra is the product of the norms of its semilocal components. -/

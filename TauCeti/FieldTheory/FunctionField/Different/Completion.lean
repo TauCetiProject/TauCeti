@@ -9,7 +9,6 @@ public import Mathlib.RingTheory.Flat.EquationalCriterion
 public import TauCeti.FieldTheory.FunctionField.Different.Complementary
 public import TauCeti.FieldTheory.FunctionField.Different.Localization
 public import TauCeti.FieldTheory.FunctionField.Place.Completion.Semilocal
-public import TauCeti.FieldTheory.FunctionField.Place.Completion.Separable
 public import TauCeti.RingTheory.DedekindDomain.Different.Discriminant
 public import TauCeti.RingTheory.DedekindDomain.Different.DualFamily
 
@@ -79,26 +78,6 @@ namespace TauCeti.Place
 
 attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
 
-section FiberSeparable
-
-open scoped PlaceCompletion
-
-variable {k k' F F' : Type*} [Field k] [Field k'] [Field F] [Field F']
-  [Algebra k F] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [Algebra F F']
-  [IsScalarTower k k' F'] [IsScalarTower k F F']
-  [FiniteDimensional F F'] [Algebra.IsSeparable F F'] {P : Place k F}
-
-/-- Separability of `F̂'_Q` over `F̂_P` for a place `Q` in the fiber over `P`. -/
-theorem fiberCompletion_isSeparable (Q : {P' : Place k' F' // P'.restrict k F = P}) :
-    Algebra.IsSeparable P.Completion Q.1.Completion :=
-  P.isSeparable_completion Q.1 Q.2
-
--- Register `fiberCompletion_isSeparable` alongside the `PlaceCompletion` fiber instances from
--- `Place/Completion/Semilocal.lean`.
-scoped[PlaceCompletion] attribute [instance] TauCeti.Place.fiberCompletion_isSeparable
-
-end FiberSeparable
-
 section SinglePlace
 
 variable {k k' F F' : Type*} [Field k] [Field k'] [Field F] [Field F']
@@ -142,24 +121,15 @@ omit [Field k'] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [IsScalarTower k k
   [IsScalarTower k F F'] [FiniteDimensional F F'] [Algebra.IsSeparable F F'] in
 /-- On the image of `𝒪̂_P ⊗[𝒪_P] 𝒪'_P`, the trace pairing with an element of the local
 complementary module takes values in `𝒪̂_P`. -/
-private theorem trace_integralSemilocalToField_mul_mem [Algebra.IsIntegral F F']
+private theorem trace_integralSemilocalToField_mul_mem
     (P : Place k F) {d : F'}
     (hd : d ∈ Submodule.traceDual P.integers F (1 : Submodule (integralClosure P.integers F') F'))
     (t : P.completionPlace.integers ⊗[P.integers] integralClosure P.integers F') :
     Algebra.trace P.Completion (P.Completion ⊗[F] F')
         (integralSemilocalToField F' P t * (1 ⊗ₜ d)) ∈
       (algebraMap P.completionPlace.integers P.Completion).range := by
-  induction t using TensorProduct.inductionOn with
-  | add t u ht hu =>
-    rw [map_add, add_mul, map_add]
-    exact add_mem ht hu
-  | tmul a x =>
-    obtain ⟨r, hr⟩ := Submodule.mem_traceDual.mp hd _ (Submodule.mem_one.mpr ⟨x, rfl⟩)
-    rw [Subalgebra.algebraMap_apply, Algebra.traceForm_apply, mul_comm] at hr
-    refine ⟨a * algebraMap P.integers P.completionPlace.integers r, ?_⟩
-    rw [trace_integralSemilocalToField_tmul_mul, ← hr]
-    simp only [ValuationSubring.algebraMap_apply, MulMemClass.coe_mul,
-      coe_algebraMap_completionIntegers]
+  rw [integralSemilocalToField_eq_baseChangeOfTower]
+  exact trace_baseChangeOfTower_mul_mem hd t
 
 open scoped PlaceCompletion in
 /-- An element of the complementary module of `𝒪'_P` over `𝒪_P` maps into the trace dual of
@@ -184,7 +154,8 @@ theorem completionEmbedding_mem_traceDual_completionIntegers
     have hP₀ : P'₀.restrict k F = P := (restrict_restrictConstants k F P').trans hP
     set Q₀ : {Q : Place k F' // Q.restrict k F = P} := ⟨P'₀, hP₀⟩
     let z₀ : Q₀.1.completionPlace.integers :=
-      ⟨(z : P'.Completion), (mem_completionPlace_integers_restrictConstants P').mpr z.2⟩
+      ⟨(z : P'.Completion),
+        by simpa only [Q₀, P'₀, integers_completionPlace_restrictConstants] using z.2⟩
     let f : ∀ Q : {Q : Place k F' // Q.restrict k F = P}, Q.1.completionPlace.integers :=
       Pi.single Q₀ z₀
     let t := (integralSemilocalEquiv k F' P).symm f
@@ -318,67 +289,15 @@ theorem map_differentIdeal_eq_differentIdeal_completionIntegers
     map_inv₀, FractionalIdeal.extendedHom'_apply,
     extended_dual_one_eq_dual_one_completionIntegers P P' hP]
 
-omit [FiniteDimensional F F'] [Algebra.IsSeparable F F'] in
-/-- An ideal `I` of `𝒪'_P` whose nonzero elements have `P'`-order at least `n`, and which contains
-a nonzero element of `P'`-order `n`, generates `𝔪̂_{P'} ^ n` in `𝒪̂_{P'}`. -/
-private theorem map_integralClosureToCompletionIntegers_eq_maximalIdeal_pow
-    [Algebra.IsIntegral F F'] (P' : Place k' F')
-    {I : Ideal (integralClosure (P'.restrict k F).integers F')} {n : ℕ}
-    (hle : ∀ y ∈ I, y ≠ 0 → (n : ℤ) ≤ P'.ord (y : F'))
-    (hex : ∃ y ∈ I, y ≠ 0 ∧ P'.ord (y : F') = n) :
-    I.map ((P'.restrict k F).integralClosureToCompletionIntegers P' rfl) =
-      maximalIdeal P'.completionPlace.integers ^ n := by
-  refine le_antisymm (Ideal.map_le_iff_le_comap.mpr fun y hy ↦ ?_) fun z hz ↦ ?_
-  · rw [Ideal.mem_comap, P'.completionPlace.mem_maximalIdeal_pow_iff_coe_mem_filtration,
-      coe_integralClosureToCompletionIntegers, P'.completionEmbedding_mem_filtration_iff]
-    rcases eq_or_ne y 0 with rfl | hy0
-    · simp
-    exact (P'.mem_filtration_iff_le_ord (by simpa using hy0)).mpr (hle y hy hy0)
-  · obtain ⟨y, hy, hy0, hord⟩ := hex
-    let yc := (P'.restrict k F).integralClosureToCompletionIntegers P' rfl y
-    have hyc0 : (yc : P'.Completion) ≠ 0 := by
-      rw [coe_integralClosureToCompletionIntegers]
-      exact (map_ne_zero _).mpr (by simpa using hy0)
-    have hinv_ord : P'.completionPlace.ord (yc : P'.Completion)⁻¹ = -(n : ℤ) := by
-      rw [P'.completionPlace.ord_inv, coe_integralClosureToCompletionIntegers,
-        ord_completionEmbedding, hord]
-    have hfil : (z : P'.Completion) ∈ P'.completionPlace.filtration n :=
-      (P'.completionPlace.mem_maximalIdeal_pow_iff_coe_mem_filtration n z).mp hz
-    have hq_int : (yc : P'.Completion)⁻¹ * (z : P'.Completion) ∈ P'.completionPlace.integers :=
-      P'.completionPlace.mul_mem_integers_of_mem_filtration hinv_ord hfil
-    have hz_eq : z = ⟨(yc : P'.Completion)⁻¹ * (z : P'.Completion), hq_int⟩ * yc :=
-      Subtype.ext (by rw [MulMemClass.coe_mul, mul_comm, mul_inv_cancel_left₀ hyc0])
-    rw [hz_eq]
-    exact Ideal.mul_mem_left _ _ (Ideal.mem_map_of_mem _ hy)
-
-/-- The centre of `P'` on `𝒪'_P` contains a nonzero element of `P'`-order `1`. -/
-theorem exists_mem_centerIntegralClosure_ord_eq_one (P' : Place k' F') :
-    ∃ π ∈ (centerIntegralClosure k F P').asIdeal,
-      π ≠ 0 ∧ P'.ord (π : F') = 1 := by
-  obtain ⟨π, hπ⟩ := (centerIntegralClosure k F P').intValuation_exists_uniformizer
-  have hπ0 : π ≠ 0 := by
-    rintro rfl
-    rw [map_zero] at hπ
-    exact WithZero.coe_ne_zero hπ.symm
-  have hπ0' : (π : F') ≠ 0 := by simpa using hπ0
-  have hval : P'.valuation (π : F') = WithZero.exp (-1 : ℤ) := by
-    rw [← Subalgebra.algebraMap_apply,
-      ← P'.valuation_center (algebraMap_mem_integers_of_mem_integralClosure k F P'),
-      ← centerIntegralClosure_def, HeightOneSpectrum.valuation_of_algebraMap, hπ]
-  have hmem : π ∈ (centerIntegralClosure k F P').asIdeal := by
-    rw [centerIntegralClosure_def, mem_center_asIdeal, Subalgebra.algebraMap_apply, hval,
-      ← WithZero.exp_zero, WithZero.exp_lt_exp]
-    omega
-  exact ⟨π, hmem, hπ0, (P'.ord_eq_iff_valuation_eq_exp_neg hπ0').mpr hval⟩
-
+variable (k F) in
 /-- **The centre of `P'` on `𝒪'_P` generates the completed maximal ideal `𝔪̂_{P'}`.** -/
 theorem map_centerIntegralClosure_completionIntegers (P' : Place k' F') :
     (centerIntegralClosure k F P').asIdeal.map
         ((P'.restrict k F).integralClosureToCompletionIntegers P' rfl) =
       maximalIdeal P'.completionPlace.integers := by
   rw [← pow_one (maximalIdeal P'.completionPlace.integers)]
-  refine map_integralClosureToCompletionIntegers_eq_maximalIdeal_pow P'
-    (fun y hy hy0 ↦ ?_) (exists_mem_centerIntegralClosure_ord_eq_one P')
+  refine (P'.restrict k F).map_integralClosureToCompletionIntegers_eq_maximalIdeal_pow P' rfl
+    (fun y hy hy0 ↦ ?_) (exists_mem_centerIntegralClosure_ord_eq_one k F P')
   rw [centerIntegralClosure_def,
     P'.mem_center_asIdeal_iff_ord_pos (algebraMap_mem_integers_of_mem_integralClosure k F P') hy0,
     Subalgebra.algebraMap_apply] at hy
@@ -396,7 +315,7 @@ theorem differentIdeal_completionIntegers_eq_pow
   let := (P'.restrict k F).completionIntegersExtensionAlgebra P' rfl
   have := (P'.restrict k F).isTorsionFree_completionIntegersExtension P' rfl
   rw [← map_differentIdeal_eq_differentIdeal_completionIntegers (P'.restrict k F) P' rfl]
-  refine map_integralClosureToCompletionIntegers_eq_maximalIdeal_pow P'
+  refine (P'.restrict k F).map_integralClosureToCompletionIntegers_eq_maximalIdeal_pow P' rfl
     (fun y hy hy0 ↦ ?_) ?_
   · simpa only [Subalgebra.algebraMap_apply] using
       differentExponent_le_ord_of_mem_differentIdeal k F P' hy hy0

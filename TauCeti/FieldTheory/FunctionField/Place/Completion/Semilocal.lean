@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.Flat.TorsionFree
 public import Mathlib.RingTheory.Nakayama
 public import TauCeti.FieldTheory.FunctionField.Place.Approximation
-public import TauCeti.FieldTheory.FunctionField.Place.Completion.LocalDegree
+public import TauCeti.FieldTheory.FunctionField.Place.Completion.Separable
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Fundamental
 public import TauCeti.RingTheory.NormTrace.BaseChange
 public import TauCeti.RingTheory.NormTrace.Pi
@@ -46,9 +46,9 @@ Semilocal declarations indexed by the fiber `{P' : Place k' F' // P'.restrict k 
 scoped instance bundle `PlaceCompletion` (`open scoped PlaceCompletion`), which activates
 `TauCeti.Place.completionIntegersAlgebra`, `TauCeti.Place.fiberCompletionAlgebra`,
 `TauCeti.Place.fiberCompletionIntegersAlgebra`, and their companion scalar-tower, torsion-freeness,
-locality, finiteness, and integral-closure instances on fiber places. By contrast, single-place
-completion declarations bind `completionExtensionAlgebra` and `completionIntegersExtensionAlgebra`
-locally via `letI` so they never compete with `Algebra.id`.
+locality, finiteness, integral-closure, and separability instances on fiber places. By contrast,
+single-place completion declarations bind `completionExtensionAlgebra` and
+`completionIntegersExtensionAlgebra` locally via `letI` so they never compete with `Algebra.id`.
 
 The overall algebraic interface and the integral-to-field compatibility lemmas parallel
 `TauCeti/NumberTheory/NumberField/LocalGlobal/Semilocal/Basic.lean`,
@@ -153,25 +153,26 @@ theorem coe_algebraMap_fiberCompletionIntegersAlgebra
   P.coe_algebraMap_completionIntegersExtensionAlgebra Q.1 Q.2 x
 
 /-- Scalar-tower compatibility `𝒪̂_P → 𝒪̂_Q → F̂'_Q` on a place `Q` in the fiber over `P`. -/
-theorem fiberCompletionIntegers_isScalarTower (Q : {P' : Place k' F' // P'.restrict k F = P}) :
+theorem isScalarTower_fiberCompletionIntegers (Q : {P' : Place k' F' // P'.restrict k F = P}) :
     IsScalarTower P.completionPlace.integers Q.1.completionPlace.integers Q.1.Completion :=
   P.isScalarTower_completionIntegersExtension Q.1 Q.2
 
 /-- Torsion-freeness of `𝒪̂_Q` over `𝒪̂_P` for a place `Q` in the fiber over `P`. -/
-theorem fiberCompletionIntegers_isTorsionFree (Q : {P' : Place k' F' // P'.restrict k F = P}) :
+theorem isTorsionFree_fiberCompletionIntegers (Q : {P' : Place k' F' // P'.restrict k F = P}) :
     Module.IsTorsionFree P.completionPlace.integers Q.1.completionPlace.integers :=
   P.isTorsionFree_completionIntegersExtension Q.1 Q.2
 
 /-- Locality of `𝒪̂_P →+* 𝒪̂_Q` for a place `Q` in the fiber over `P`. -/
-theorem fiberCompletionIntegers_isLocalHom (Q : {P' : Place k' F' // P'.restrict k F = P}) :
+theorem isLocalHom_algebraMap_fiberCompletionIntegers
+    (Q : {P' : Place k' F' // P'.restrict k F = P}) :
     IsLocalHom (algebraMap P.completionPlace.integers Q.1.completionPlace.integers) :=
   P.isLocalHom_algebraMap_completionIntegersExtensionAlgebra Q.1 Q.2
 
 -- Companion `Prop` instances on fiber places under `[Algebra.IsIntegral F F']`.
 scoped[PlaceCompletion] attribute [instance]
-  TauCeti.Place.fiberCompletionIntegers_isScalarTower
-  TauCeti.Place.fiberCompletionIntegers_isTorsionFree
-  TauCeti.Place.fiberCompletionIntegers_isLocalHom
+  TauCeti.Place.isScalarTower_fiberCompletionIntegers
+  TauCeti.Place.isTorsionFree_fiberCompletionIntegers
+  TauCeti.Place.isLocalHom_algebraMap_fiberCompletionIntegers
 
 end Integral
 
@@ -182,35 +183,52 @@ open scoped PlaceCompletion
 variable [FiniteDimensional F F'] {P : Place k F}
 
 /-- Finite-dimensionality of `F̂'_Q` over `F̂_P` for a place `Q` in the fiber over `P`. -/
-theorem fiberCompletion_finiteDimensional (Q : {P' : Place k' F' // P'.restrict k F = P}) :
+theorem finiteDimensional_fiberCompletion (Q : {P' : Place k' F' // P'.restrict k F = P}) :
     FiniteDimensional P.Completion Q.1.Completion :=
   P.finiteDimensional_completion Q.1 Q.2
 
 /-- Module-finiteness of `𝒪̂_Q` over `𝒪̂_P` for a place `Q` in the fiber over `P`. -/
-theorem fiberCompletionIntegers_moduleFinite (Q : {P' : Place k' F' // P'.restrict k F = P}) :
+theorem moduleFinite_fiberCompletionIntegers (Q : {P' : Place k' F' // P'.restrict k F = P}) :
     Module.Finite P.completionPlace.integers Q.1.completionPlace.integers :=
   P.moduleFinite_completionIntegers Q.1 Q.2
 
 /-- Module-freeness of `𝒪̂_Q` over `𝒪̂_P` for a place `Q` in the fiber over `P`. -/
-theorem fiberCompletionIntegers_moduleFree (Q : {P' : Place k' F' // P'.restrict k F = P}) :
+theorem moduleFree_fiberCompletionIntegers (Q : {P' : Place k' F' // P'.restrict k F = P}) :
     Module.Free P.completionPlace.integers Q.1.completionPlace.integers :=
   P.moduleFree_completionIntegers Q.1 Q.2
 
 /-- Integral-closure property of `𝒪̂_Q` over `𝒪̂_P` in `F̂'_Q` for a place `Q` in the fiber over
 `P`. -/
-theorem fiberCompletionIntegers_isIntegralClosure
+theorem isIntegralClosure_fiberCompletionIntegers
     (Q : {P' : Place k' F' // P'.restrict k F = P}) :
     IsIntegralClosure Q.1.completionPlace.integers P.completionPlace.integers Q.1.Completion :=
   P.isIntegralClosure_completionIntegers Q.1 Q.2
 
 -- Companion `Prop` instances on fiber places under `[FiniteDimensional F F']`.
 scoped[PlaceCompletion] attribute [instance]
-  TauCeti.Place.fiberCompletion_finiteDimensional
-  TauCeti.Place.fiberCompletionIntegers_moduleFinite
-  TauCeti.Place.fiberCompletionIntegers_moduleFree
-  TauCeti.Place.fiberCompletionIntegers_isIntegralClosure
+  TauCeti.Place.finiteDimensional_fiberCompletion
+  TauCeti.Place.moduleFinite_fiberCompletionIntegers
+  TauCeti.Place.moduleFree_fiberCompletionIntegers
+  TauCeti.Place.isIntegralClosure_fiberCompletionIntegers
 
 end Finite
+
+section Separable
+
+open scoped PlaceCompletion
+
+variable [FiniteDimensional F F'] [Algebra.IsSeparable F F'] {P : Place k F}
+
+/-- Separability of `F̂'_Q` over `F̂_P` for a place `Q` in the fiber over `P`. -/
+theorem isSeparable_fiberCompletion (Q : {P' : Place k' F' // P'.restrict k F = P}) :
+    Algebra.IsSeparable P.Completion Q.1.Completion :=
+  P.isSeparable_completion Q.1 Q.2
+
+-- Companion `Prop` instance on fiber places under `[FiniteDimensional F F']` and
+-- `[Algebra.IsSeparable F F']`.
+scoped[PlaceCompletion] attribute [instance] TauCeti.Place.isSeparable_fiberCompletion
+
+end Separable
 
 end FiberInstances
 
@@ -266,7 +284,7 @@ noncomputable def semilocalHom :
       (∀ Q : {P' : Place k' F' // P'.restrict k F = P}, Q.1.Completion) :=
   letI (Q : {P' : Place k' F' // P'.restrict k F = P}) :
       UniformContinuousConstSMul F (WithVal Q.1.valuation) :=
-    WithVal.uniformContinuousConstSMul_of_algebra F Q.1.valuation
+    WithVal.uniformContinuousConstSMul_of_isScalarTower F Q.1.valuation
   have (Q : {P' : Place k' F' // P'.restrict k F = P}) :
       IsScalarTower F P.Completion Q.1.Completion :=
     IsScalarTower.of_algebraMap_eq fun x ↦ by
@@ -295,95 +313,52 @@ end Maps
 
 section IntegralToField
 
-private noncomputable def completionIntegersToCompletion (P : Place k F) :
-    P.completionPlace.integers →ₐ[P.integers] P.Completion where
-  toRingHom := P.completionPlace.integers.subtype
-  commutes' r := by
-    simp only [RingHom.toMonoidHom_eq_coe, OneHom.toFun_eq_coe, MonoidHom.toOneHom_coe,
-      MonoidHom.coe_ofClass, ValuationSubring.subtype_apply,
-      P.algebraMap_integers_completion_eq_completionEmbedding, P.coe_algebraMap_completionIntegers]
-
-variable (F') in
-omit [Field k'] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [IsScalarTower k k' F']
-  [IsScalarTower k F F'] in
-private noncomputable def integralTensorToBaseChange (P : Place k F) :
-    P.completionPlace.integers ⊗[P.integers] integralClosure P.integers F' →ₐ[P.integers]
-      P.Completion ⊗[P.integers] integralClosure P.integers F' :=
-  Algebra.TensorProduct.map (completionIntegersToCompletion P)
-    (AlgHom.id P.integers (integralClosure P.integers F'))
-
-omit [Field k'] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [IsScalarTower k k' F']
-  [IsScalarTower k F F'] in
-private theorem integralTensorToBaseChange_injective (P : Place k F) :
-    Function.Injective (integralTensorToBaseChange F' P) := by
-  have : Module.IsTorsionFree P.integers (integralClosure P.integers F') :=
-    IsIntegralClosure.isTorsionFree P.integers F'
-  rw [← AlgHom.coe_toLinearMap, integralTensorToBaseChange, Algebra.TensorProduct.toLinearMap_map,
-    AlgHom.toLinearMap_id, TensorProduct.AlgebraTensorModule.map_eq, ← LinearMap.rTensor_def]
-  exact Module.Flat.rTensor_preserves_injective_linearMap _ Subtype.val_injective
-
-omit [Field k'] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [IsScalarTower k k' F']
-  [IsScalarTower k F F'] in
-private theorem isPushout_integers_integralClosure [Algebra.IsIntegral F F'] (P : Place k F) :
-    Algebra.IsPushout P.integers F (integralClosure P.integers F') F' := by
-  have := IsIntegralClosure.isLocalization P.integers F F' (integralClosure P.integers F')
-  exact (Algebra.isPushout_of_isLocalization (nonZeroDivisors P.integers) F
-    (integralClosure P.integers F') F').symm
-
-omit [Field k'] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [IsScalarTower k k' F']
-  [IsScalarTower k F F'] in
-private noncomputable def integralFieldBaseChangeEquiv [Algebra.IsIntegral F F'] (P : Place k F) :
-    P.Completion ⊗[P.integers] integralClosure P.integers F' ≃ₐ[P.Completion]
-      P.Completion ⊗[F] F' := by
-  have := isPushout_integers_integralClosure (F' := F') P
-  exact (Algebra.TensorProduct.cancelBaseChange P.integers F P.Completion P.Completion
-      (integralClosure P.integers F')).symm.trans
-    (Algebra.TensorProduct.congr (.refl : P.Completion ≃ₐ[P.Completion] P.Completion)
-      (Algebra.IsPushout.equiv P.integers F (integralClosure P.integers F') F'))
-
-omit [Field k'] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [IsScalarTower k k' F']
-  [IsScalarTower k F F'] in
-private theorem integralFieldBaseChangeEquiv_tmul [Algebra.IsIntegral F F'] (P : Place k F)
-    (a : P.Completion) (x : integralClosure P.integers F') :
-    integralFieldBaseChangeEquiv (F' := F') P (a ⊗ₜ x) = a ⊗ₜ (x : F') := by
-  have := isPushout_integers_integralClosure (F' := F') P
-  simp [integralFieldBaseChangeEquiv, Algebra.IsPushout.equiv_tmul]
-
 variable [Algebra.IsIntegral F F']
 
 variable (F') in
 omit [Field k'] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [IsScalarTower k k' F']
-  [IsScalarTower k F F'] in
+  [IsScalarTower k F F'] [Algebra.IsIntegral F F'] in
 /-- The canonical `𝒪_P`-algebra homomorphism from `𝒪̂_P ⊗[𝒪_P] 𝒪'_P` to `F̂_P ⊗[F] F'`. -/
 noncomputable def integralSemilocalToField (P : Place k F) :
     P.completionPlace.integers ⊗[P.integers] integralClosure P.integers F' →ₐ[P.integers]
       P.Completion ⊗[F] F' :=
-  let e : P.Completion ⊗[P.integers] integralClosure P.integers F' →ₐ[P.integers]
-      P.Completion ⊗[F] F' :=
-    { (integralFieldBaseChangeEquiv (F' := F') P).toRingEquiv.toRingHom with
-      commutes' := fun r ↦ by
-        rw [RingHom.toFun_eq_coe, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
-          AlgEquiv.coe_toRingEquiv, Algebra.TensorProduct.algebraMap_apply,
-          Algebra.TensorProduct.algebraMap_apply, integralFieldBaseChangeEquiv_tmul,
-          OneMemClass.coe_one] }
-  e.comp (integralTensorToBaseChange F' P)
+  TauCeti.baseChangeOfTower P.integers F P.completionPlace.integers
+    P.Completion (integralClosure P.integers F') F'
 
 omit [Field k'] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [IsScalarTower k k' F']
-  [IsScalarTower k F F'] in
+  [IsScalarTower k F F'] [Algebra.IsIntegral F F'] in
+/-- `integralSemilocalToField` is `TauCeti.baseChangeOfTower` for the local completion square
+`(𝒪_P, F, 𝒪̂_P, F̂_P, 𝒪'_P, F')`. -/
+theorem integralSemilocalToField_eq_baseChangeOfTower (P : Place k F) :
+    integralSemilocalToField F' P =
+      TauCeti.baseChangeOfTower P.integers F P.completionPlace.integers
+        P.Completion (integralClosure P.integers F') F' :=
+  (rfl)
+
+omit [Field k'] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [IsScalarTower k k' F']
+  [IsScalarTower k F F'] [Algebra.IsIntegral F F'] in
 @[simp]
 theorem integralSemilocalToField_tmul (P : Place k F) (a : P.completionPlace.integers)
     (x : integralClosure P.integers F') :
-    integralSemilocalToField F' P (a ⊗ₜ x) = (a : P.Completion) ⊗ₜ (x : F') :=
-  integralFieldBaseChangeEquiv_tmul P (a : P.Completion) x
+    integralSemilocalToField F' P (a ⊗ₜ x) = (a : P.Completion) ⊗ₜ (x : F') := by
+  simp [integralSemilocalToField]
 
 variable (F') in
 omit [Field k'] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [IsScalarTower k k' F']
   [IsScalarTower k F F'] in
 /-- The canonical map `𝒪̂_P ⊗[𝒪_P] 𝒪'_P → F̂_P ⊗[F] F'` is injective. -/
 theorem integralSemilocalToField_injective (P : Place k F) :
-    Function.Injective (integralSemilocalToField F' P) :=
-  (integralFieldBaseChangeEquiv (F' := F') P).injective.comp
-    (integralTensorToBaseChange_injective P)
+    Function.Injective (integralSemilocalToField F' P) := by
+  have : Module.IsTorsionFree P.integers (integralClosure P.integers F') :=
+    IsIntegralClosure.isTorsionFree P.integers F'
+  have : Module.IsTorsionFree P.integers F' := .trans_faithfulSMul P.integers F F'
+  have : Algebra.IsAlgebraic P.integers F' :=
+    IsFractionRing.comap_isAlgebraic_iff (K := F).mpr inferInstance
+  have : IsFractionRing (integralClosure P.integers F') F' :=
+    integralClosure.isFractionRing_of_algebraic fun _ ↦
+      (injective_iff_map_eq_zero _).mp (FaithfulSMul.algebraMap_injective P.integers F') _
+  exact TauCeti.baseChangeOfTower_injective P.integers F
+    P.completionPlace.integers P.Completion (integralClosure P.integers F') F'
 
 /-- After inclusion into the completions, `integralSemilocalHom` agrees with `semilocalHom`. -/
 theorem integralSemilocalHom_fieldCompatibility (P : Place k F)
@@ -400,7 +375,7 @@ theorem integralSemilocalHom_fieldCompatibility (P : Place k F)
       exact congrArg₂ (· + ·) (congrFun hx Q) (congrFun hy Q)
 
 omit [Field k'] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [IsScalarTower k k' F']
-  [IsScalarTower k F F'] in
+  [IsScalarTower k F F'] [Algebra.IsIntegral F F'] in
 /-- The trace of a pure integral tensor paired with an element of `F'` is the scalar extension of
 the trace pairing of `F' / F`. -/
 theorem trace_integralSemilocalToField_tmul_mul (P : Place k F)
@@ -408,12 +383,9 @@ theorem trace_integralSemilocalToField_tmul_mul (P : Place k F)
     Algebra.trace P.Completion (P.Completion ⊗[F] F')
         (integralSemilocalToField F' P (a ⊗ₜ x) * (1 ⊗ₜ d)) =
       (a : P.Completion) * P.completionEmbedding (Algebra.trace F F' ((x : F') * d)) := by
-  have ha : (a : P.Completion) ⊗ₜ[F] ((x : F') * d) =
-      (a : P.Completion) • ((1 : P.Completion) ⊗ₜ[F] ((x : F') * d)) := by
-    rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-  rw [integralSemilocalToField_tmul, Algebra.TensorProduct.tmul_mul_tmul, mul_one, ha,
-    map_smul, Algebra.trace_baseChange_tmul, smul_eq_mul,
-    algebraMap_completion_eq_completionEmbedding]
+  simpa [integralSemilocalToField] using
+    TauCeti.Algebra.trace_baseChangeOfTower_tmul_mul (R := P.integers) (K := F)
+      (A := P.Completion) a x d
 
 end IntegralToField
 

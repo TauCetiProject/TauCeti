@@ -69,13 +69,13 @@ theorem completionEmbedding_apply (x : F) :
 `UniformSpace.Completion.algebra` (`Algebra F P.Completion`). -/
 instance uniformContinuousConstSMul_self_withVal :
     UniformContinuousConstSMul F (WithVal P.valuation) :=
-  WithVal.uniformContinuousConstSMul_of_algebra F P.valuation
+  WithVal.uniformContinuousConstSMul_of_isScalarTower F P.valuation
 
 /-- Uniform continuity of `𝒪_P`-scalar multiplication on `WithVal P.valuation`, unlocking
 `UniformSpace.Completion.algebra` (`Algebra P.integers P.Completion`). -/
 instance uniformContinuousConstSMul_integers_withVal :
     UniformContinuousConstSMul P.integers (WithVal P.valuation) :=
-  WithVal.uniformContinuousConstSMul_of_algebra P.integers P.valuation
+  WithVal.uniformContinuousConstSMul_of_isScalarTower P.integers P.valuation
 
 /-- The canonical `F`-algebra map into `P.Completion` agrees with `P.completionEmbedding`. -/
 @[simp]

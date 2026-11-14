@@ -306,6 +306,37 @@ theorem integralClosureToCompletionIntegers_injective :
   RingHom.injective_codRestrict.mpr <|
     P'.completionEmbedding.toRingHom.injective.comp Subtype.val_injective
 
+/-- An ideal `I` of `𝒪'_P` whose nonzero elements have `P'`-order at least `n`, and which contains
+a nonzero element of `P'`-order `n`, generates `𝔪̂_{P'} ^ n` in `𝒪̂_{P'}`. -/
+theorem map_integralClosureToCompletionIntegers_eq_maximalIdeal_pow
+    {I : Ideal (integralClosure P.integers F')} {n : ℕ}
+    (hle : ∀ y ∈ I, y ≠ 0 → (n : ℤ) ≤ P'.ord (y : F'))
+    (hex : ∃ y ∈ I, y ≠ 0 ∧ P'.ord (y : F') = n) :
+    I.map (P.integralClosureToCompletionIntegers P' hP) =
+      IsLocalRing.maximalIdeal P'.completionPlace.integers ^ n := by
+  refine le_antisymm (Ideal.map_le_iff_le_comap.mpr fun y hy ↦ ?_) fun z hz ↦ ?_
+  · rw [Ideal.mem_comap, P'.completionPlace.mem_maximalIdeal_pow_iff_coe_mem_filtration,
+      coe_integralClosureToCompletionIntegers, P'.completionEmbedding_mem_filtration_iff]
+    rcases eq_or_ne y 0 with rfl | hy0
+    · simp
+    exact (P'.mem_filtration_iff_le_ord (by simpa using hy0)).mpr (hle y hy hy0)
+  · obtain ⟨y, hy, hy0, hord⟩ := hex
+    let yc := P.integralClosureToCompletionIntegers P' hP y
+    have hyc0 : (yc : P'.Completion) ≠ 0 := by
+      rw [coe_integralClosureToCompletionIntegers]
+      exact (map_ne_zero _).mpr (by simpa using hy0)
+    have hinv_ord : P'.completionPlace.ord (yc : P'.Completion)⁻¹ = -(n : ℤ) := by
+      rw [P'.completionPlace.ord_inv, coe_integralClosureToCompletionIntegers,
+        ord_completionEmbedding, hord]
+    have hfil : (z : P'.Completion) ∈ P'.completionPlace.filtration n :=
+      (P'.completionPlace.mem_maximalIdeal_pow_iff_coe_mem_filtration n z).mp hz
+    have hq_int : (yc : P'.Completion)⁻¹ * (z : P'.Completion) ∈ P'.completionPlace.integers :=
+      P'.completionPlace.mul_mem_integers_of_mem_filtration hinv_ord hfil
+    have hz_eq : z = ⟨(yc : P'.Completion)⁻¹ * (z : P'.Completion), hq_int⟩ * yc :=
+      Subtype.ext (by rw [MulMemClass.coe_mul, mul_comm, mul_inv_cancel_left₀ hyc0])
+    rw [hz_eq]
+    exact Ideal.mul_mem_left _ _ (Ideal.mem_map_of_mem _ hy)
+
 end IntegralClosureMap
 
 end Integers
@@ -380,10 +411,12 @@ theorem completionEmbedding_restrictConstants (P' : Place k' F') (x : F') :
     (P'.restrictConstants k).completionEmbedding x = P'.completionEmbedding x := by
   rw [completionEmbedding_apply, completionEmbedding_apply]
 
-/-- Restricting the constant field of `P'` does not change membership in `𝒪̂_{P'}`. -/
-theorem mem_completionPlace_integers_restrictConstants (P' : Place k' F') {z : P'.Completion} :
-    z ∈ (P'.restrictConstants k).completionPlace.integers ↔ z ∈ P'.completionPlace.integers := by
-  simp
+/-- Restricting the constant field of `P'` does not change the completed valuation ring
+`𝒪̂_{P'}`. -/
+@[simp]
+theorem integers_completionPlace_restrictConstants (P' : Place k' F') :
+    (P'.restrictConstants k).completionPlace.integers = P'.completionPlace.integers :=
+  SetLike.ext fun _ ↦ by simp
 
 variable [Algebra.IsIntegral F F']
 

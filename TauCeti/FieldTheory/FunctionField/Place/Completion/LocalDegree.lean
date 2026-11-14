@@ -423,7 +423,7 @@ variable [FiniteDimensional (P'.restrict k F).ResidueField P'.ResidueField]
 
 /-- A family of functions regular at `P'` whose residues form a basis of the residue extension,
 together with a uniformizer at `P'`. -/
-theorem exists_residue_basis :
+private theorem exists_residue_basis :
     ∃ (u : Fin (relativeDegree k F P') → P'.integers) (t : P'.integers),
       LinearIndependent (P'.restrict k F).ResidueField (fun i ↦ residue P'.integers (u i)) ∧
       Submodule.span (P'.restrict k F).ResidueField

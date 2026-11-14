@@ -90,6 +90,7 @@ theorem sum_trace_mul_smul_algebraMap_eq {ι : Type*} [Fintype ι] (b y : ι →
     trace_semilocalEquiv_symm_single_mul] at h'
   exact h'
 
+omit [NumberField L] in
 /-- On the image of `𝒪_v ⊗[𝒪 K] 𝒪 L`, the trace pairing with an element of the global trace dual
 takes values in `𝒪_v`. -/
 private theorem trace_integralSemilocalToField_mul_mem {d : L}
@@ -98,18 +99,18 @@ private theorem trace_integralSemilocalToField_mul_mem {d : L}
     Algebra.trace (v.adicCompletion K) (v.adicCompletion K ⊗[K] L)
         (integralSemilocalToField L v t * (1 ⊗ₜ d)) ∈
       (algebraMap (v.adicCompletionIntegers K) (v.adicCompletion K)).range := by
-  induction t using TensorProduct.inductionOn with
-  | add t u ht hu =>
-    rw [map_add, add_mul, map_add]
-    exact add_mem ht hu
-  | tmul a x =>
-    obtain ⟨r, hr⟩ := Submodule.mem_traceDual.mp hd _ (Submodule.mem_one.mpr ⟨x, rfl⟩)
-    refine ⟨a * algebraMap (𝒪 K) (v.adicCompletionIntegers K) r, ?_⟩
-    rw [trace_integralSemilocalToField_tmul_mul, mul_comm (x : L),
-      ← Algebra.traceForm_apply, ← hr]
-    simp only [map_mul, ValuationSubring.algebraMap_apply,
-      algebraMap_adicCompletionIntegers_apply, algebraMap_adicCompletion,
-      Function.comp_apply, Algebra.algebraMap_self_apply]
+  have : IsScalarTower (𝒪 K) (v.adicCompletionIntegers K) (v.adicCompletion K) :=
+    ⟨fun _ _ _ ↦ by simp only [Algebra.smul_def, map_mul]; exact mul_assoc _ _ _⟩
+  have heq : integralSemilocalToField L v t =
+      baseChangeOfTower (𝒪 K) K (v.adicCompletionIntegers K) (v.adicCompletion K) (𝒪 L) L t := by
+    induction t using TensorProduct.inductionOn with
+    | tmul a x =>
+      exact (integralSemilocalToField_tmul a x).trans
+        (baseChangeOfTower_tmul (𝒪 K) K (v.adicCompletionIntegers K)
+          (v.adicCompletion K) (𝒪 L) L a x).symm
+    | add _ _ hx hy => simp [hx, hy]
+  rw [heq]
+  exact trace_baseChangeOfTower_mul_mem hd t
 
 -- The first inclusion uses the integral semilocal decomposition to lift an element of `𝒪_w` in
 -- the `w`-component to `𝒪_v ⊗[𝒪 K] 𝒪 L`, where the global trace pairing is integral.
