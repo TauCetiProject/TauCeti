@@ -6,18 +6,25 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.MvPolynomial.Laurent.Polynomial
-public import Mathlib.LinearAlgebra.FreeModule.Basic
 public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Basic
+public import TauCeti.Algebra.Module.Torsion.Subgroup
+import Mathlib.GroupTheory.Finiteness
+import Mathlib.LinearAlgebra.FreeModule.PID
+import Mathlib.RingTheory.Finiteness.Defs
 import Mathlib.RingTheory.Polynomial.IsIntegral
 import Mathlib.RingTheory.Polynomial.ScaleRoots
+import TauCeti.Algebra.MonoidAlgebra.MapDomain
+import TauCeti.Algebra.MonoidAlgebra.Polynomial
 
 /-!
-# Integral elements of group algebras of free abelian groups
+# Integral elements of group algebras of torsion-free abelian groups
 
-Let `G` be a free abelian group and `φ : A →+* B` a ring homomorphism. An element of `B[G]` that is
-integral over `A[G]` has all its coefficients integral over `A`. For the polynomial ring this is
-`MvPolynomial.isIntegral_iff_isIntegral_coeff`; the Laurent ring `B[ℤ^K]` reduces to it, since
-after multiplication by a monomial the element and the equation it satisfies become polynomial.
+Let `G` be a torsion-free abelian group (`[Module.IsTorsionFree ℤ G]`) and `φ : A →+* B` a ring
+homomorphism. An element of `B[G]` that is integral over `A[G]` has all its coefficients integral
+over `A`. For the polynomial ring this is `MvPolynomial.isIntegral_iff_isIntegral_coeff`; the
+Laurent ring `B[ℤ^K]` reduces to it after multiplication by a common monomial denominator, and the
+general torsion-free case reduces to the finitely generated—hence free—subgroup spanned by the
+exponents of the element and its monic equation.
 
 Applied to the diagonal map `R[G] → (R[G])[G]`, `single g c ↦ single g (single g c)`, this shows
 that the integral closure of a monoid algebra in `R[G]` is graded: if `x ∈ R[G]` is integral over
@@ -119,11 +126,9 @@ end Laurent
 
 variable {G : Type*} [AddCommGroup G]
 
-/-- **Coefficients of integral elements of group algebras.** For a free abelian group `G` and a
-ring homomorphism `φ : A →+* B`, the coefficients of an element of `B[G]` that is integral over
-`A[G]` are integral over `A`. -/
-theorem isIntegralElem_coeff [Module.Free ℤ G] (φ : A →+* B) {y : AddMonoidAlgebra B G}
-    (hy : (mapRingHom G φ).IsIntegralElem y) (g : G) : φ.IsIntegralElem (y.coeff g) := by
+private theorem isIntegralElem_coeff_of_free [Module.Free ℤ G] (φ : A →+* B)
+    {y : AddMonoidAlgebra B G} (hy : (mapRingHom G φ).IsIntegralElem y) (g : G) :
+    φ.IsIntegralElem (y.coeff g) := by
   -- Transport along a basis `G ≃ (ι →₀ ℤ)` to a Laurent ring.
   let e : G ≃+ (Module.Free.ChooseBasisIndex ℤ G →₀ ℤ) :=
     (Module.Free.chooseBasis ℤ G).repr.toAddEquiv
@@ -134,6 +139,36 @@ theorem isIntegralElem_coeff [Module.Free ℤ G] (φ : A →+* B) {y : AddMonoid
   rw [hcomm] at hy'
   simpa [Finsupp.mapDomain_apply_of_injective e.injective] using
     isIntegralElem_coeff_laurentRing φ hy'.of_comp (e g)
+
+/-- **Coefficients of integral elements of group algebras.** For a torsion-free abelian group `G`
+and a ring homomorphism `φ : A →+* B`, the coefficients of an element of `B[G]` that is integral
+over `A[G]` are integral over `A`. -/
+theorem isIntegralElem_coeff [Module.IsTorsionFree ℤ G] (φ : A →+* B) {y : AddMonoidAlgebra B G}
+    (hy : (mapRingHom G φ).IsIntegralElem y) (g : G) : φ.IsIntegralElem (y.coeff g) := by
+  classical
+  obtain ⟨p, hp, hpy⟩ := hy
+  -- Restrict to the finitely generated (hence free) subgroup spanned by `g` and the supports of
+  -- `y` and the coefficients of `p`.
+  let F : Finset G :=
+    insert g (y.coeff.support ∪ p.support.biUnion fun i ↦ (p.coeff i).coeff.support)
+  let H : AddSubgroup G := AddSubgroup.closure (F : Set G)
+  obtain ⟨y₀, hy₀⟩ : y ∈ Set.range (mapDomainRingHom B H.subtype) :=
+    (mem_range_mapDomain_iff H.subtype_injective y).mpr fun a ha ↦
+      ⟨⟨a, AddSubgroup.subset_closure (Finset.mem_insert_of_mem (Finset.mem_union_left _ ha))⟩, rfl⟩
+  have hlifts : p ∈ Polynomial.lifts (mapDomainRingHom A H.subtype) :=
+    (mem_lifts_mapDomainRingHom_iff H.subtype_injective p).mpr fun i hi a ha ↦
+      ⟨⟨a, AddSubgroup.subset_closure (Finset.mem_insert_of_mem
+        (Finset.mem_union_right _ (Finset.mem_biUnion.mpr ⟨i, hi, ha⟩)))⟩, rfl⟩
+  obtain ⟨p₀, hp₀, -, hp₀_monic⟩ := lifts_and_natDegree_eq_and_monic hlifts hp
+  have hy₀_int : (mapRingHom H φ).IsIntegralElem y₀ :=
+    RingHom.IsIntegralElem.of_map (g := mapDomainRingHom B H.subtype)
+      (mapDomain_injective H.subtype_injective) ⟨p₀, hp₀_monic, by
+        rw [← mapRingHom_comp_mapDomainRingHom, ← Polynomial.eval₂_map, hp₀, hy₀, hpy]⟩
+  have hgH : g ∈ H := AddSubgroup.subset_closure (Finset.mem_insert_self g _)
+  have hcoeff : y.coeff g = y₀.coeff ⟨g, hgH⟩ := by
+    rw [← hy₀, mapDomainRingHom_apply, coeff_mapDomain]
+    exact Finsupp.mapDomain_apply_of_injective H.subtype_injective y₀.coeff ⟨g, hgH⟩
+  exact hcoeff ▸ isIntegralElem_coeff_of_free φ hy₀_int ⟨g, hgH⟩
 
 section Diagonal
 
@@ -166,11 +201,11 @@ private theorem coeff_diagonal_id (x : AddMonoidAlgebra R G) (g : G) :
       simp
     · simp [coeff_single, hg]
 
-/-- **The integral closure of a monoid algebra in the algebra of a free abelian group is
+/-- **The integral closure of a monoid algebra in the algebra of a torsion-free abelian group is
 graded.** If `x ∈ R[G]` is integral over `R[M]` along `f : M →+ G`, then so is each of its terms
 `single g (x.coeff g)`. -/
-theorem isIntegralElem_single_coeff [Module.Free ℤ G] (f : M →+ G) {x : AddMonoidAlgebra R G}
-    (hx : (mapDomainRingHom R f).IsIntegralElem x) (g : G) :
+theorem isIntegralElem_single_coeff [Module.IsTorsionFree ℤ G] (f : M →+ G)
+    {x : AddMonoidAlgebra R G} (hx : (mapDomainRingHom R f).IsIntegralElem x) (g : G) :
     (mapDomainRingHom R f).IsIntegralElem (single g (x.coeff g)) := by
   -- The diagonal map turns the grading of `R[G]` into the coefficients of `(R[G])[G]`.
   have hcomm : (diagonal (.id G)).comp (mapDomainRingHom R f) =

@@ -6,14 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MonoidAlgebra.Basic
-public import Mathlib.Algebra.Module.Torsion.Free
+public import Mathlib.Algebra.MonoidAlgebra.NoZeroDivisors
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import TauCeti.Algebra.Group.UniqueProds.TorsionFree
+public import TauCeti.Algebra.Module.Torsion.Subgroup
 import Mathlib.Algebra.MonoidAlgebra.MapDomain
-import Mathlib.Algebra.MonoidAlgebra.NoZeroDivisors
 import Mathlib.GroupTheory.Finiteness
 import Mathlib.LinearAlgebra.FreeModule.PID
+import Mathlib.RingTheory.Bialgebra.MonoidAlgebra
+import Mathlib.RingTheory.Finiteness.Defs
 import TauCeti.Algebra.MonoidAlgebra.MapDomain
+import TauCeti.Algebra.MonoidAlgebra.Polynomial
 import TauCeti.Algebra.MvPolynomial.Laurent.IntegrallyClosed
 import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 
@@ -21,9 +24,10 @@ import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 # Integral closedness of monoid and torsion-free abelian group algebras
 
 For any commutative monoid `M`, the coefficient ring `R` is a ring retract of `R[M]` along the
-scalar inclusion and the coefficient-sum augmentation. Consequently, whenever `R[M]` is an
-integrally closed domain, `R` is itself integrally closed
-(`MonoidAlgebra.isIntegrallyClosed_coeffRing` and `AddMonoidAlgebra.isIntegrallyClosed_coeffRing`).
+scalar inclusion and the bialgebra counit, and scalar inclusion sends nonzerodivisors to
+nonzerodivisors. Consequently, whenever `R[M]` is integrally closed, `R` is itself integrally closed
+(`IsIntegrallyClosed.of_monoidAlgebra` and `IsIntegrallyClosed.of_addMonoidAlgebra`), with no domain
+assumption on `R` or `R[M]`.
 
 Conversely, when `G` is a torsion-free abelian group (`[Module.IsTorsionFree ℤ G]`, which includes
 all free `ℤ`-modules of arbitrary rank) and `R` is an integrally closed domain, `R[G]` is
@@ -37,9 +41,8 @@ generated—and therefore free—subgroup of `G`. Together these give the exact 
 
 ## Main results
 
-* `MonoidAlgebra.isIntegrallyClosed_coeffRing` and
-  `AddMonoidAlgebra.isIntegrallyClosed_coeffRing`: if a commutative monoid algebra `R[M]` is an
-  integrally closed domain, then `R` is integrally closed.
+* `IsIntegrallyClosed.of_monoidAlgebra` and `IsIntegrallyClosed.of_addMonoidAlgebra`: if a
+  commutative (additive) monoid algebra `R[M]` is integrally closed, then `R` is integrally closed.
 * `AddMonoidAlgebra.isIntegrallyClosed`: the group algebra `R[G]` of a torsion-free abelian group
   `G` over an integrally closed domain `R` is integrally closed.
 * `AddMonoidAlgebra.isIntegrallyClosed_iff`: over a domain `R`, `R[G]` is integrally closed if and
@@ -53,28 +56,26 @@ generated—and therefore free—subgroup of `G`. Together these give the exact 
 
 public section
 
-namespace MonoidAlgebra
-
-/-- If a commutative monoid algebra `R[M]` is an integrally closed domain, then its coefficient
-ring `R` is integrally closed, as `R` is a ring retract of `R[M]` via the augmentation map. -/
-theorem isIntegrallyClosed_coeffRing (R M : Type*) [CommRing R] [CommMonoid M]
-    [IsDomain (MonoidAlgebra R M)] [IsIntegrallyClosed (MonoidAlgebra R M)] :
-    IsIntegrallyClosed R :=
-  let π : MonoidAlgebra R M →+* R := liftNCRingHom (.id R) 1 fun _ _ ↦ Commute.one_right _
-  IsIntegrallyClosed.of_leftInverse (i := singleOneRingHom) (π := π) fun r ↦ by simp [π]
-
-end MonoidAlgebra
+/-- If a commutative monoid algebra `R[M]` is integrally closed, then its coefficient ring `R` is
+integrally closed, as `R` is a ring retract of `R[M]` via the bialgebra counit and scalar inclusion
+carries nonzerodivisors to nonzerodivisors. -/
+@[to_additive (dont_translate := R)
+/-- If a commutative additive monoid algebra `R[M]` is integrally closed, then its coefficient ring
+`R` is integrally closed, as `R` is a ring retract of `R[M]` via the bialgebra counit and scalar
+inclusion carries nonzerodivisors to nonzerodivisors. -/]
+theorem IsIntegrallyClosed.of_monoidAlgebra (R M : Type*) [CommRing R] [CommMonoid M]
+    [IsIntegrallyClosed (MonoidAlgebra R M)] : IsIntegrallyClosed R := by
+  refine IsIntegrallyClosed.of_leftInverse_of_nonZeroDivisors_le
+    (i := algebraMap R (MonoidAlgebra R M))
+    (π := (Bialgebra.counitAlgHom R (MonoidAlgebra R M)).toRingHom)
+    (Bialgebra.counitAlgHom R (MonoidAlgebra R M)).commutes fun r hr ↦ ?_
+  rw [Submonoid.mem_comap, mem_nonZeroDivisors_iff_left]
+  intro x hx
+  rw [← Algebra.smul_def] at hx
+  ext m
+  exact mem_nonZeroDivisors_iff_left.mp hr (x.coeff m) (by simpa using congr(($hx).coeff m))
 
 namespace AddMonoidAlgebra
-
-/-- If a commutative additive monoid algebra `R[M]` is an integrally closed domain, then its
-coefficient ring `R` is integrally closed, as `R` is a ring retract of `R[M]` via the augmentation
-map. -/
-theorem isIntegrallyClosed_coeffRing (R M : Type*) [CommRing R] [AddCommMonoid M]
-    [IsDomain (AddMonoidAlgebra R M)] [IsIntegrallyClosed (AddMonoidAlgebra R M)] :
-    IsIntegrallyClosed R :=
-  let π : AddMonoidAlgebra R M →+* R := liftNCRingHom (.id R) 1 fun _ _ ↦ Commute.one_right _
-  IsIntegrallyClosed.of_leftInverse (i := singleZeroRingHom) (π := π) fun r ↦ by simp [π]
 
 private theorem isIntegrallyClosed_of_free {R G : Type*} [CommRing R] [IsDomain R]
     [IsIntegrallyClosed R] [AddCommGroup G] [Module.Free ℤ G] :
@@ -97,12 +98,6 @@ instance isIntegrallyClosed {R G : Type*} [CommRing R] [IsDomain R] [IsIntegrall
   let F : Finset G :=
     a.coeff.support ∪ b.1.coeff.support ∪ p.support.biUnion fun i ↦ (p.coeff i).coeff.support
   let H : AddSubgroup G := AddSubgroup.closure (F : Set G)
-  have hH_fg : H.FG := AddSubgroup.isAddFG_iff.mpr ⟨F, rfl⟩
-  have : AddGroup.FG H := (AddGroup.fg_iff_addSubgroup_fg H).mpr hH_fg
-  have : Module.Finite ℤ H := Module.Finite.iff_addGroup_fg.mpr this
-  have : Module.IsTorsionFree ℤ H :=
-    H.subtype_injective.moduleIsTorsionFree H.subtype fun _ _ ↦ rfl
-  have : Module.Free ℤ H := Module.free_of_finite_type_torsion_free'
   have : IsIntegrallyClosed (AddMonoidAlgebra R H) := isIntegrallyClosed_of_free
   let j : AddMonoidAlgebra R H →+* AddMonoidAlgebra R G := mapDomainRingHom R H.subtype
   have hj : Function.Injective j := mapDomain_injective H.subtype_injective
@@ -112,36 +107,28 @@ instance isIntegrallyClosed {R G : Type*} [CommRing R] [IsDomain R] [IsIntegrall
   obtain ⟨a₀, ha₀⟩ := hlift a (Finset.subset_union_left.trans Finset.subset_union_left)
   obtain ⟨b₀, hb₀⟩ := hlift b.1 (Finset.subset_union_right.trans Finset.subset_union_left)
   have hb₀_nzd : b₀ ∈ nonZeroDivisors (AddMonoidAlgebra R H) :=
-    mem_nonZeroDivisors_iff_ne_zero.mpr fun h0 ↦
-      mem_nonZeroDivisors_iff_ne_zero.mp b.2 (by rw [← hb₀, h0, map_zero])
-  have hlifts : p ∈ Polynomial.lifts j := (Polynomial.lifts_iff_coeff_lifts p).mpr fun i ↦ by
-    by_cases hi : i ∈ p.support
-    · exact hlift (p.coeff i)
+    mem_nonZeroDivisors_of_injective hj (hb₀.symm ▸ b.2)
+  have hlifts : p ∈ Polynomial.lifts j :=
+    (mem_lifts_mapDomainRingHom_iff H.subtype_injective p).mpr fun i hi g hg ↦
+      ⟨⟨g, AddSubgroup.subset_closure
         ((Finset.subset_biUnion_of_mem (fun k ↦ (p.coeff k).coeff.support) hi).trans
-          Finset.subset_union_right)
-    · exact ⟨0, by simp [Polynomial.notMem_support_iff.mp hi]⟩
+          Finset.subset_union_right hg)⟩, rfl⟩
   obtain ⟨p₀, hp₀, -, hp₀_monic⟩ := Polynomial.lifts_and_natDegree_eq_and_monic hlifts hp
-  have h_nzd :
-      nonZeroDivisors (AddMonoidAlgebra R H) ≤
-        (nonZeroDivisors (AddMonoidAlgebra R G)).comap j := fun x hx ↦
-    mem_nonZeroDivisors_iff_ne_zero.mpr
-      ((map_ne_zero_iff j hj).mpr (mem_nonZeroDivisors_iff_ne_zero.mp hx))
-  obtain ⟨f, hf_eq⟩ :
-      ∃ f : FractionRing (AddMonoidAlgebra R H) →+* FractionRing (AddMonoidAlgebra R G),
-        ∀ r, f (algebraMap _ _ r) = algebraMap _ _ (j r) :=
-    ⟨IsLocalization.map _ j h_nzd, IsLocalization.map_eq h_nzd⟩
+  have hnzd := nonZeroDivisors_le_comap_nonZeroDivisors_of_injective j hj
+  let f : FractionRing (AddMonoidAlgebra R H) →+* FractionRing (AddMonoidAlgebra R G) :=
+    IsLocalization.map _ j hnzd
   let z₀ : FractionRing (AddMonoidAlgebra R H) := IsLocalization.mk' _ a₀ ⟨b₀, hb₀_nzd⟩
   have hfz₀ : f z₀ = z := by
-    apply (IsLocalization.map_units (FractionRing (AddMonoidAlgebra R G)) b).mul_right_cancel
-    rw [← hb₀, ← hf_eq b₀, ← map_mul, IsLocalization.mk'_spec, hf_eq a₀, ha₀, hf_eq b₀, hb₀, hzb]
-  have hcomp :
-      (algebraMap (AddMonoidAlgebra R G) (FractionRing (AddMonoidAlgebra R G))).comp j =
-        f.comp (algebraMap (AddMonoidAlgebra R H) (FractionRing (AddMonoidAlgebra R H))) :=
-    RingHom.ext fun r ↦ (hf_eq r).symm
-  have hz₀_int : IsIntegral (AddMonoidAlgebra R H) z₀ := ⟨p₀, hp₀_monic, f.injective <| by
-    rw [map_zero, Polynomial.hom_eval₂, ← hcomp, ← Polynomial.eval₂_map, hp₀, hfz₀, hpz]⟩
+    simpa [z₀, f, IsLocalization.map_mk', ha₀, hb₀] using
+      (IsLocalization.eq_mk'_iff_mul_eq.mpr hzb).symm
+  have hz₀_int : IsIntegral (AddMonoidAlgebra R H) z₀ :=
+    RingHom.IsIntegralElem.of_map (g := f) f.injective ⟨p₀, hp₀_monic, by
+      dsimp only [f]
+      rw [IsLocalization.map_comp (S := FractionRing (AddMonoidAlgebra R H)) hnzd,
+        ← Polynomial.eval₂_map, hp₀, hfz₀, hpz]⟩
   obtain ⟨y₀, hy₀⟩ := IsIntegrallyClosed.isIntegral_iff.mp hz₀_int
-  exact ⟨j y₀, by rw [← hf_eq, hy₀, hfz₀]⟩
+  exact ⟨j y₀, by
+    rw [← IsLocalization.map_eq (S := FractionRing (AddMonoidAlgebra R H)) hnzd, hy₀, hfz₀]⟩
 
 /-- Over an integral domain `R`, the group algebra `R[G]` of a torsion-free abelian group `G` is
 integrally closed if and only if `R` is integrally closed. -/
@@ -149,6 +136,6 @@ integrally closed if and only if `R` is integrally closed. -/
 theorem isIntegrallyClosed_iff {R G : Type*} [CommRing R] [IsDomain R]
     [AddCommGroup G] [Module.IsTorsionFree ℤ G] :
     IsIntegrallyClosed (AddMonoidAlgebra R G) ↔ IsIntegrallyClosed R :=
-  ⟨fun _ ↦ isIntegrallyClosed_coeffRing R G, fun _ ↦ inferInstance⟩
+  ⟨fun _ ↦ .of_addMonoidAlgebra R G, fun _ ↦ inferInstance⟩
 
 end AddMonoidAlgebra

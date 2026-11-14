@@ -72,9 +72,8 @@ theorem isNormalScheme_addMonoidAlgebraIntegralModel_iff (S : AddSubmonoid G) :
 abelian group `G` is a normal scheme. -/
 theorem isNormalScheme_addMonoidAlgebraIntegralModel_of_nsmulSaturated {S : AddSubmonoid G}
     (hS : S.NSMulSaturated) :
-    IsNormalScheme (addMonoidAlgebraIntegralModel S) :=
-  (isNormalScheme_addMonoidAlgebraIntegralModel_iff S).mpr <| by
-    rw [AddSubmonoid.nsmulSaturation_eq_self hS, inf_eq_left]
-    exact AddSubgroup.subset_closure
+    IsNormalScheme (addMonoidAlgebraIntegralModel S) := by
+  rw [addMonoidAlgebraIntegralModel_def]
+  exact isNormalScheme_Spec_addMonoidAlgebra_of_nsmulSaturated ℤ hS
 
 end TauCeti.AlgebraicGeometry

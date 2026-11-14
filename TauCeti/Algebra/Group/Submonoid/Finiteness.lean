@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Group.Submonoid.GroupCompletion
 public import TauCeti.Algebra.Group.Submonoid.NSMulSaturation
+public import TauCeti.Algebra.Module.Torsion.Subgroup
 public import Mathlib.GroupTheory.Finiteness
 public import Mathlib.LinearAlgebra.FreeModule.Basic
 import Mathlib.Algebra.EuclideanDomain.Int
@@ -101,6 +102,29 @@ theorem Submonoid.FG.exists_finset_subset_forall_exists_mul {M : Type*} [CommMon
     refine Finset.prod_congr rfl fun a _ ↦ ?_
     rw [← pow_mul, ← pow_add, add_comm, Nat.div_add_mod]
 
+/-- Coordinate bound for the fundamental parallelepiped of `s`: if `n • z = ∑ a ∈ s, r a • a` with
+`0 < n` and `r a ≤ n` for all `a ∈ s`, then each coordinate of `z` in a `ℤ`-basis `b` is bounded in
+absolute value by `∑ a ∈ s, |b.repr a i|`. -/
+private theorem abs_repr_le_sum_abs_of_nsmul_eq {G ι : Type*} [AddCommGroup G]
+    (b : Module.Basis ι ℤ G) {s : Finset G} {n : ℕ} (hn : 0 < n) {r : G → ℕ}
+    (hr : ∀ a ∈ s, r a ≤ n) {z : G} (hz : n • z = ∑ a ∈ s, r a • a) (i : ι) :
+    |b.repr z i| ≤ ∑ a ∈ s, |b.repr a i| := by
+  have hn' : (0 : ℤ) < n := Nat.cast_pos.mpr hn
+  refine le_of_mul_le_mul_left ?_ hn'
+  calc
+    (n : ℤ) * |b.repr z i|
+        = |(n : ℤ) * b.repr z i| := by rw [abs_mul, abs_of_pos hn']
+    _ = |∑ a ∈ s, (r a : ℤ) * b.repr a i| := by
+        congr 1
+        simpa [map_nsmul, map_sum] using congrArg (fun f ↦ f i) (congrArg b.repr hz)
+    _ ≤ ∑ a ∈ s, |(r a : ℤ) * b.repr a i| := Finset.abs_sum_le_sum_abs _ _
+    _ = ∑ a ∈ s, (r a : ℤ) * |b.repr a i| :=
+        Finset.sum_congr rfl fun a _ ↦ by rw [abs_mul, abs_of_nonneg (Nat.cast_nonneg _)]
+    _ ≤ ∑ a ∈ s, (n : ℤ) * |b.repr a i| :=
+        Finset.sum_le_sum fun a ha ↦
+          mul_le_mul_of_nonneg_right (by exact_mod_cast hr a ha) (abs_nonneg _)
+    _ = (n : ℤ) * ∑ a ∈ s, |b.repr a i| := (Finset.mul_sum _ _ _).symm
+
 /-- **Gordan's lemma for saturation.** In a free `ℤ`-module `G` (of arbitrary rank), the
 positive-multiple saturation of any finitely generated additive submonoid `S` is finitely
 generated. -/
@@ -118,63 +142,34 @@ theorem AddSubmonoid.FG.nsmulSaturation {G : Type*} [AddCommGroup G] [Module.Fre
   let F : Finset G := box.filter (· ∈ S.nsmulSaturation)
   refine AddSubmonoid.isAddFG_iff.mpr ⟨F ∪ s, le_antisymm ?_ (fun x hx ↦ ?_)⟩
   · rw [AddSubmonoid.closure_le, Finset.coe_union]
-    refine Set.union_subset (fun z hz ↦ (Finset.mem_filter.mp hz).2) ?_
-    exact (hs ▸ AddSubmonoid.subset_closure).trans S.le_nsmulSaturation
+    exact Set.union_subset (fun _ hz ↦ (Finset.mem_filter.mp hz).2)
+      ((hs ▸ AddSubmonoid.subset_closure).trans S.le_nsmulSaturation)
   · obtain ⟨n, hn, hnx⟩ := AddSubmonoid.mem_nsmulSaturation.mp hx
-    rw [← hs, AddSubmonoid.mem_closure_finset] at hnx
-    obtain ⟨c, -, hc⟩ := hnx
-    -- Divide the coefficients `c a` by `n`: the quotient `y` lies in `S`, and the remainder `z`
-    -- lies in `S.nsmulSaturation` with coordinates bounded by `B`.
+    obtain ⟨c, -, hc⟩ := AddSubmonoid.mem_closure_finset.mp (hs ▸ hnx)
     let y : G := ∑ a ∈ s, (c a / n) • a
     let z : G := x - y
     have hnz : n • z = ∑ a ∈ s, (c a % n) • a := by
       rw [nsmul_sub, ← hc, Finset.smul_sum, sub_eq_iff_eq_add, ← Finset.sum_add_distrib]
-      refine Finset.sum_congr rfl fun a _ ↦ ?_
-      rw [smul_smul, ← add_nsmul, add_comm, Nat.div_add_mod]
-    have hz_sat : z ∈ S.nsmulSaturation := AddSubmonoid.mem_nsmulSaturation.mpr
-      ⟨n, hn, hnz ▸ hs ▸ AddSubmonoid.sum_mem _ fun a ha ↦
-        nsmul_mem (AddSubmonoid.subset_closure ha) _⟩
-    have hz_supp : (b.repr z).support ⊆ I := by
-      intro i hi
+      exact Finset.sum_congr rfl fun a _ ↦ by rw [smul_smul, ← add_nsmul, add_comm, Nat.div_add_mod]
+    have hz_bound (i : Module.Free.ChooseBasisIndex ℤ G) : |b.repr z i| ≤ B i :=
+      abs_repr_le_sum_abs_of_nsmul_eq b hn (fun a _ ↦ (Nat.mod_lt (c a) hn).le) hnz i
+    have hz_supp : (b.repr z).support ⊆ I := fun i hi ↦ by
       by_contra hiI
-      have h0 : ∀ a ∈ s, b.repr a i = 0 := fun a ha ↦
+      have hB0 : B i = 0 := Finset.sum_eq_zero fun a ha ↦ abs_eq_zero.mpr <|
         Finsupp.notMem_support_iff.mp fun hia ↦ hiI (Finset.mem_biUnion.mpr ⟨a, ha, hia⟩)
-      have hni : b.repr z i = 0 := by
-        have h : (n : ℤ) * b.repr z i = 0 := calc
-          (n : ℤ) * b.repr z i = ∑ a ∈ s, (c a % n : ℤ) * b.repr a i := by
-            simpa [map_nsmul, map_sum] using congrArg (fun f ↦ f i) (congrArg b.repr hnz)
-          _ = 0 := Finset.sum_eq_zero fun a ha ↦ by simp [h0 a ha]
-        exact (mul_eq_zero.mp h).resolve_left (Nat.cast_ne_zero.mpr hn.ne')
-      exact Finsupp.mem_support_iff.mp hi hni
-    have hz_bound (i : I) : |b.repr z i.1| ≤ B i.1 := by
-      have hn' : (0 : ℤ) < n := Nat.cast_pos.mpr hn
-      refine le_of_mul_le_mul_left ?_ hn'
-      calc
-        (n : ℤ) * |b.repr z i.1|
-            = |(n : ℤ) * b.repr z i.1| := by rw [abs_mul, abs_of_pos hn']
-        _ = |∑ a ∈ s, (c a % n : ℤ) * b.repr a i.1| := by
-            congr 1
-            have h := congrArg (fun f ↦ f i.1) (congrArg b.repr hnz)
-            simpa [map_nsmul, map_sum] using h
-        _ ≤ ∑ a ∈ s, |(c a % n : ℤ) * b.repr a i.1| := Finset.abs_sum_le_sum_abs _ _
-        _ = ∑ a ∈ s, (c a % n : ℤ) * |b.repr a i.1| := by
-            refine Finset.sum_congr rfl fun a _ ↦ ?_
-            rw [abs_mul, abs_of_nonneg (Nat.cast_nonneg _)]
-        _ ≤ ∑ a ∈ s, (n : ℤ) * |b.repr a i.1| := by
-            refine Finset.sum_le_sum fun a _ ↦ mul_le_mul_of_nonneg_right ?_ (abs_nonneg _)
-            exact_mod_cast (Nat.mod_lt (c a) hn).le
-        _ = (n : ℤ) * B i.1 := (Finset.mul_sum _ _ _).symm
-    have hz_box : z ∈ box := by
-      refine Finset.mem_image.mpr ⟨fun i ↦ b.repr z i.1, Fintype.mem_piFinset.mpr fun i ↦
-        Finset.mem_Icc.mpr (abs_le.mp (hz_bound i)), ?_⟩
-      dsimp only
-      rw [Finset.sum_coe_sort I fun i ↦ b.repr z i • b i]
-      simpa [Finsupp.linearCombination_apply] using
-        (Finsupp.sum_of_support_subset (b.repr z) hz_supp (fun i c ↦ c • b i)
-          (fun _ _ ↦ zero_smul _ _)).symm.trans (b.linearCombination_repr z)
-    have hzF : z ∈ F := Finset.mem_filter.mpr ⟨hz_box, hz_sat⟩
+      exact Finsupp.mem_support_iff.mp hi (abs_nonpos_iff.mp (hB0 ▸ hz_bound i))
+    have hz_box : z ∈ box := Finset.mem_image.mpr ⟨fun i ↦ b.repr z i.1,
+      Fintype.mem_piFinset.mpr fun i ↦ Finset.mem_Icc.mpr (abs_le.mp (hz_bound i.1)), by
+        dsimp only
+        rw [Finset.sum_coe_sort I fun i ↦ b.repr z i • b i]
+        simpa [Finsupp.linearCombination_apply] using
+          (Finsupp.sum_of_support_subset (b.repr z) hz_supp (fun i c ↦ c • b i)
+            (fun _ _ ↦ zero_smul _ _)).symm.trans (b.linearCombination_repr z)⟩
+    have hzF : z ∈ F := Finset.mem_filter.mpr ⟨hz_box, AddSubmonoid.mem_nsmulSaturation.mpr
+      ⟨n, hn, hnz ▸ hs ▸ AddSubmonoid.sum_mem _ fun _ ha ↦
+        nsmul_mem (AddSubmonoid.subset_closure ha) _⟩⟩
     have hyS : y ∈ AddSubmonoid.closure ((F ∪ s : Finset G) : Set G) :=
-      AddSubmonoid.sum_mem _ fun a ha ↦
+      AddSubmonoid.sum_mem _ fun _ ha ↦
         nsmul_mem (AddSubmonoid.subset_closure (Finset.mem_union_right _ ha)) _
     simpa [z, sub_add_cancel] using add_mem
       (AddSubmonoid.subset_closure (Finset.mem_union_left _ hzF)) hyS
@@ -186,19 +181,14 @@ theorem AddSubmonoid.FG.nsmulSaturation_inf_closure {G : Type*} [AddCommGroup G]
     (S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid).FG := by
   let L := AddSubgroup.closure (S : Set G)
   obtain ⟨s, hs⟩ := AddSubmonoid.isAddFG_iff.mp hS
-  have hsub : (s : Set G) ⊆ AddSubgroup.closure (s : Set G) := AddSubgroup.subset_closure
-  have hL_fg : L.FG := AddSubgroup.isAddFG_iff.mpr ⟨s, le_antisymm
+  have hL_eq : AddSubgroup.closure (s : Set G) = L := le_antisymm
     (AddSubgroup.closure_mono (hs ▸ AddSubmonoid.subset_closure))
-    ((AddSubgroup.closure_le (AddSubgroup.closure (s : Set G))).mpr fun x hx ↦
-      AddSubmonoid.closure_le.mpr hsub (hs ▸ hx))⟩
-  have : AddGroup.FG L := (AddGroup.fg_iff_addSubgroup_fg L).mpr hL_fg
-  have : Module.Finite ℤ L := Module.Finite.iff_addGroup_fg.mpr this
-  have : Module.IsTorsionFree ℤ L :=
-    L.subtype_injective.moduleIsTorsionFree L.subtype fun _ _ ↦ rfl
-  have : Module.Free ℤ L := Module.free_of_finite_type_torsion_free'
+    ((AddSubgroup.closure_le _).mpr
+      (hs ▸ AddSubmonoid.closure_le.mpr (AddSubgroup.subset_closure (G := G))))
+  have : IsAddFG L := hL_eq ▸ inferInstance
   have : IsAddFG S := hS
   have hS' : (AddMonoidHom.mrange S.toGroupClosure).FG := inferInstance
-  have hmrange : AddMonoidHom.mrange L.subtype = L.toAddSubmonoid := by ext; simp
-  have hsat := hS'.nsmulSaturation.map L.subtype
-  simpa [L, S.mrange_toGroupClosure, S.nsmulSaturation_comap, AddSubmonoid.map_comap_eq,
-    hmrange, inf_comm] using hsat
+  have hmrange : AddMonoidHom.mrange L.subtype = L.toAddSubmonoid :=
+    L.toAddSubmonoid.mrange_subtype
+  simpa [L, S.mrange_toGroupClosure, S.nsmulSaturation_comap, AddSubmonoid.map_comap_eq, hmrange,
+    inf_comm] using hS'.nsmulSaturation.map L.subtype

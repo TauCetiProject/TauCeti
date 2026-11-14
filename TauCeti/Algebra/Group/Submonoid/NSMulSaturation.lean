@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Subgroup.Saturated
+public import TauCeti.Algebra.Group.Submonoid.GroupCompletion
 
 /-!
 # Saturation of a submonoid by positive powers
@@ -17,7 +18,10 @@ forces `n = 0` or `x ∈ t`). Applying saturation to an already `PowSaturated` s
 
 All declarations are stated multiplicatively and translated with `@[to_additive]` to their
 additive counterparts, e.g. `Submonoid.powSaturation` becomes `AddSubmonoid.nsmulSaturation` and
-`Submonoid.mem_powSaturation` becomes `AddSubmonoid.mem_nsmulSaturation`.
+`Submonoid.mem_powSaturation` becomes `AddSubmonoid.mem_nsmulSaturation`. For an additive submonoid
+`S` of an abelian group `G`, `AddSubmonoid.saturationInfClosureToGroupClosure` embeds the saturation
+of `S` inside `AddSubgroup.closure S` into `AddSubgroup.closure S`, identifying its image with the
+saturation of `AddMonoidHom.mrange S.toGroupClosure`.
 
 ## Main results
 
@@ -36,6 +40,9 @@ additive counterparts, e.g. `Submonoid.powSaturation` becomes `AddSubmonoid.nsmu
 * `Submonoid.powSaturation_comap`: saturation commutes with preimage along a monoid homomorphism.
 * `Submonoid.powSaturated_comap_subtype_iff`: for `s ≤ t`, the pullback of `s` to `t` is
   `PowSaturated` iff `s.powSaturation ⊓ t = s`.
+* `AddSubmonoid.saturationInfClosureToGroupClosure` and
+  `AddSubmonoid.mrange_saturationInfClosureToGroupClosure`: the canonical inclusion of
+  `S.nsmulSaturation ⊓ AddSubgroup.closure S` into `AddSubgroup.closure S` and its range.
 -/
 
 public section
@@ -168,3 +175,70 @@ theorem powSaturated_comap_subtype_iff {s t : Submonoid M} (hst : s ≤ t) :
   · exact h.le ⟨mem_powSaturation.mpr ⟨n, Nat.pos_of_ne_zero hn, by simpa using hnx⟩, x.2⟩
 
 end Submonoid
+
+namespace AddSubmonoid
+
+variable {G : Type*} [AddCommGroup G] (S : AddSubmonoid G)
+
+/-- The canonical inclusion of `S.nsmulSaturation ⊓ AddSubgroup.closure S` into
+`AddSubgroup.closure S`. -/
+def saturationInfClosureToGroupClosure :
+    ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid) →+
+      ↥(AddSubgroup.closure (S : Set G)) :=
+  (S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid).subtype.codRestrict
+    (AddSubgroup.closure (S : Set G)) fun x ↦ x.2.2
+
+/-- The inclusion into `AddSubgroup.closure S` preserves the underlying element of `G`. -/
+@[simp]
+theorem coe_saturationInfClosureToGroupClosure_apply
+    (x : ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid)) :
+    (S.saturationInfClosureToGroupClosure x : G) = x.1 :=
+  (rfl)
+
+/-- The inclusion `S.saturationInfClosureToGroupClosure` is injective. -/
+theorem saturationInfClosureToGroupClosure_injective :
+    Function.Injective S.saturationInfClosureToGroupClosure :=
+  ((S.nsmulSaturation ⊓
+    (AddSubgroup.closure (S : Set G)).toAddSubmonoid).subtype.injective_codRestrict _ _).mpr
+    (subtype_injective _)
+
+/-- Restricting `S.saturationInfClosureToGroupClosure` to `S` gives `S.toGroupClosure`. -/
+@[simp]
+theorem saturationInfClosureToGroupClosure_comp_inclusion :
+    S.saturationInfClosureToGroupClosure.comp
+        (inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure)) =
+      S.toGroupClosure := by
+  ext x
+  simp
+
+/-- On an element included from `S`, `S.saturationInfClosureToGroupClosure` agrees with
+`S.toGroupClosure`. -/
+@[simp]
+theorem saturationInfClosureToGroupClosure_inclusion (a : S) :
+    S.saturationInfClosureToGroupClosure
+        (inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure) a) =
+      S.toGroupClosure a :=
+  DFunLike.congr_fun S.saturationInfClosureToGroupClosure_comp_inclusion a
+
+/-- As functions, composing `S.saturationInfClosureToGroupClosure` with the inclusion from `S` gives
+`S.toGroupClosure`. -/
+@[simp]
+theorem coe_saturationInfClosureToGroupClosure_comp_inclusion :
+    (S.saturationInfClosureToGroupClosure : _ → _) ∘
+        inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure) =
+      S.toGroupClosure :=
+  funext S.saturationInfClosureToGroupClosure_inclusion
+
+/-- Inside `AddSubgroup.closure S`, the image of `S.saturationInfClosureToGroupClosure` is the
+saturation of the image of `S.toGroupClosure`. -/
+@[simp]
+theorem mrange_saturationInfClosureToGroupClosure :
+    AddMonoidHom.mrange S.saturationInfClosureToGroupClosure =
+      (AddMonoidHom.mrange S.toGroupClosure).nsmulSaturation := by
+  refine AddSubmonoid.ext fun ⟨x, hx⟩ ↦ ?_
+  rw [S.mrange_toGroupClosure, S.nsmulSaturation_comap, mem_comap, AddMonoidHom.mem_mrange]
+  refine ⟨fun ⟨y, hy⟩ ↦ ?_, fun hxS ↦ ⟨⟨x, hxS, hx⟩, rfl⟩⟩
+  have hyx : y.1 = x := by simpa using congrArg Subtype.val hy
+  exact hyx ▸ y.2.1
+
+end AddSubmonoid

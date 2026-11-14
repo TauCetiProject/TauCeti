@@ -5,20 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Module.Torsion.Hom
 public import TauCeti.AlgebraicGeometry.MonoidAlgebra.Normal
 public import TauCeti.Geometry.Toric.Algebraic.Fan.Scheme
 public import TauCeti.Geometry.Toric.Algebraic.IntegralModel
-import Mathlib.Algebra.Module.Torsion.Pi
 
 /-!
 # Normality of toric coordinate rings, integral models, and toric schemes
 
 Every pointed cone `σ` in an integral lattice `(N, V, i)` has a saturated dual semigroup
 `dualSemigroup hi σ ≤ (N →+ ℤ)` (`TauCeti.Toric.dualSemigroup_nsmulSaturated`), and the character
-group `N →+ ℤ` is torsion-free over `ℤ`. Applying
-`AddSubmonoid.isIntegrallyClosed_addMonoidAlgebra_of_nsmulSaturated` shows that the dual-semigroup
-algebra `AddMonoidAlgebra R (dualSemigroup hi σ)` over any integrally closed domain `R` is an
-integrally closed domain, with no rationality, salience, or finite-generation hypothesis on `σ`.
+group `N →+ ℤ` is torsion-free over `ℤ` (`AddMonoidHom.instModuleIsTorsionFree`). Together with
+`TauCeti.Algebra.Group.UniqueProds.TorsionFree` and
+`AddSubmonoid.isIntegrallyClosed_addMonoidAlgebra_of_nsmulSaturated`, this shows that the
+dual-semigroup algebra `AddMonoidAlgebra R (dualSemigroup hi σ)` over any integrally closed domain
+`R` is an integrally closed domain, with no rationality, salience, or finite-generation hypothesis
+on `σ`.
 
 Specializing to `R = ℤ` and `R = ℂ` shows that:
 
@@ -32,12 +34,10 @@ Specializing to `R = ℤ` and `R = ℂ` shows that:
 
 ## Main declarations
 
-* `TauCeti.Toric.isDomain_addMonoidAlgebra_dualSemigroup` and
-  `TauCeti.Toric.isIntegrallyClosed_addMonoidAlgebra_dualSemigroup`: over an integrally closed
-  domain `R`, `AddMonoidAlgebra R (dualSemigroup hi σ)` is an integrally closed domain.
-* `TauCeti.Toric.isDomain_affineCoordinateRing` and
-  `TauCeti.Toric.isIntegrallyClosed_affineCoordinateRing`: `affineCoordinateRing hi σ` is an
-  integrally closed domain.
+* `TauCeti.Toric.isIntegrallyClosed_addMonoidAlgebra_dualSemigroup`: over an integrally closed
+  domain `R`, `AddMonoidAlgebra R (dualSemigroup hi σ)` is integrally closed.
+* `TauCeti.Toric.isIntegrallyClosed_affineCoordinateRing`: `affineCoordinateRing hi σ` is
+  integrally closed.
 * `TauCeti.Toric.isNormalScheme_addMonoidAlgebraIntegralModel_dualSemigroup`: the integral model of
   any cone's dual semigroup is a normal scheme.
 * `TauCeti.Toric.isNormalScheme_affineToricScheme`: the native affine toric scheme of any cone is
@@ -62,30 +62,13 @@ section Cone
 
 variable {N V : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V] {i : N →+ V}
 
-private theorem isTorsionFree_characterGroup : Module.IsTorsionFree ℤ (N →+ ℤ) :=
-  (DFunLike.coe_injective (F := N →+ ℤ)).moduleIsTorsionFree DFunLike.coe fun _ _ ↦ rfl
-
-/-- Over any integral domain `R`, the dual-semigroup algebra of a cone is an integral domain. -/
-instance isDomain_addMonoidAlgebra_dualSemigroup (R : Type*) [CommRing R] [IsDomain R]
-    (hi : IsIntegralLattice i) (σ : PointedCone ℝ V) :
-    IsDomain (AddMonoidAlgebra R (dualSemigroup hi σ)) :=
-  have := isTorsionFree_characterGroup (N := N)
-  inferInstance
-
 /-- Over any integrally closed domain `R`, the dual-semigroup algebra of a cone is integrally
 closed. -/
 instance isIntegrallyClosed_addMonoidAlgebra_dualSemigroup (R : Type*) [CommRing R] [IsDomain R]
     [IsIntegrallyClosed R] (hi : IsIntegralLattice i) (σ : PointedCone ℝ V) :
     IsIntegrallyClosed (AddMonoidAlgebra R (dualSemigroup hi σ)) :=
-  have := isTorsionFree_characterGroup (N := N)
   AddSubmonoid.isIntegrallyClosed_addMonoidAlgebra_of_nsmulSaturated R
     (dualSemigroup_nsmulSaturated hi σ)
-
-/-- The complex coordinate ring of the affine toric chart of any cone is an integral domain. -/
-instance isDomain_affineCoordinateRing (hi : IsIntegralLattice i) (σ : PointedCone ℝ V) :
-    IsDomain (affineCoordinateRing hi σ) :=
-  (AddMonoidAlgebra.toMultiplicativeAlgEquiv ℂ ℂ
-    (dualSemigroup hi σ)).symm.toRingEquiv.toMulEquiv.isDomain _
 
 /-- The complex coordinate ring of the affine toric chart of any cone is integrally closed. -/
 instance isIntegrallyClosed_affineCoordinateRing (hi : IsIntegralLattice i) (σ : PointedCone ℝ V) :
@@ -97,7 +80,6 @@ instance isIntegrallyClosed_affineCoordinateRing (hi : IsIntegralLattice i) (σ 
 instance isNormalScheme_addMonoidAlgebraIntegralModel_dualSemigroup
     (hi : IsIntegralLattice i) (σ : PointedCone ℝ V) :
     IsNormalScheme (addMonoidAlgebraIntegralModel (dualSemigroup hi σ)) :=
-  have := isTorsionFree_characterGroup (N := N)
   isNormalScheme_addMonoidAlgebraIntegralModel_of_nsmulSaturated
     (dualSemigroup_nsmulSaturated hi σ)
 

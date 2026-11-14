@@ -8,7 +8,8 @@ module
 public import Mathlib.Algebra.Order.Field.Rat
 public import Mathlib.Geometry.Convex.Cone.Pointed
 public import TauCeti.Algebra.Group.Submonoid.NSMulSaturation
-import Mathlib.Data.Rat.Lemmas
+import Mathlib.RingTheory.Localization.FractionRing
+import Mathlib.RingTheory.Localization.Integer
 
 /-!
 # Lattice points of cones
@@ -106,25 +107,21 @@ theorem latticePoints_hull_rat_image {Q : Type*} [AddCommMonoid Q] [Module ℚ Q
   refine le_antisymm (fun n hn ↦ ?_) (nsmulSaturation_le_latticePoints_hull_image i S)
   obtain ⟨c, hc_supp, hc₀, hc_sum⟩ := mem_hull_set.mp hn
   choose s hs_mem hs_eq using fun y : c.support ↦ hc_supp y.2
-  let D : ℕ := ∏ y : c.support, (c y.1).den
-  have hD_pos : 0 < D :=
-    Nat.pos_of_ne_zero (Finset.prod_ne_zero_iff.mpr fun y _ ↦ (c y.1).den_ne_zero)
-  let k : c.support → ℕ := fun y ↦ (c y.1).num.toNat * (D / (c y.1).den)
+  obtain ⟨⟨d, hd⟩, hmul⟩ := IsLocalization.exist_integer_multiples (Submonoid.pos ℤ) c.support c
+  have hd_pos : 0 < d := Submonoid.mem_pos.mp hd
+  choose z hz using fun y : c.support ↦ hmul y.1 y.2
+  let D : ℕ := d.toNat
+  let k (y : c.support) : ℕ := (z y).toNat
   have hk (y : c.support) : (k y : ℚ) = (D : ℚ) * c y.1 := by
-    have hdvd : (c y.1).den ∣ D :=
-      Finset.dvd_prod_of_mem (fun z : c.support ↦ (c z.1).den) (Finset.mem_univ y)
-    have hnum : ((c y.1).num.toNat : ℤ) = (c y.1).num :=
-      Int.toNat_of_nonneg (Rat.num_nonneg.mpr (hc₀ y.1))
-    have hden : ((c y.1).den : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr (c y.1).den_ne_zero
+    have hy : (z y : ℚ) = (d : ℚ) * c y.1 := by simpa [zsmul_eq_mul] using hz y
+    have hzy : 0 ≤ z y := by
+      exact_mod_cast hy.symm ▸ mul_nonneg (by exact_mod_cast hd_pos.le) (hc₀ y.1)
     calc
-      (k y : ℚ) = ((c y.1).num.toNat : ℤ) * (D / (c y.1).den : ℕ) := by
-          dsimp only [k]; push_cast; rfl
-      _ = ((c y.1).num : ℚ) * (D / (c y.1).den : ℕ) := by rw [hnum]
-      _ = (((c y.1).den * (D / (c y.1).den) : ℕ) : ℚ) * (((c y.1).num : ℚ) / (c y.1).den) := by
-          push_cast
-          field_simp [hden]
-      _ = (D : ℚ) * c y.1 := by rw [Nat.mul_div_cancel' hdvd, (c y.1).num_div_den]
-  refine AddSubmonoid.mem_nsmulSaturation.mpr ⟨D, hD_pos, ?_⟩
+      (k y : ℚ) = ((z y).toNat : ℤ) := (Int.cast_natCast _).symm
+      _ = (z y : ℚ) := by rw [Int.toNat_of_nonneg hzy]
+      _ = ((d.toNat : ℤ) : ℚ) * c y.1 := by rw [Int.toNat_of_nonneg hd_pos.le, hy]
+      _ = (D : ℚ) * c y.1 := by rw [Int.cast_natCast]
+  refine AddSubmonoid.mem_nsmulSaturation.mpr ⟨D, by lia, ?_⟩
   have hsum : i (D • n) = i (∑ y : c.support, k y • s y) := by
     rw [map_nsmul, ← Nat.cast_smul_eq_nsmul ℚ, ← hc_sum, Finsupp.sum, Finset.smul_sum,
       ← Finset.sum_coe_sort c.support (fun y ↦ (D : ℚ) • c y • y), map_sum]
