@@ -39,6 +39,8 @@ Davidson, *C*-Algebras by Example*, Theorem I.5.4 and Corollary I.5.5).
   universal `⋆`-homomorphisms and `⋆`-equivalences on C⋆-quotients, plus unital counterparts.
 * `NonUnitalStarAlgHom.isClosed_range` and `StarAlgHom.isClosed_range`: the range of any
   `⋆`-algebra homomorphism between C⋆-algebras is closed.
+* `NonUnitalStarAlgHom.norm_apply_le_norm_apply_of_ker_le`: a `⋆`-homomorphism killing the kernel
+  of another is dominated by it in norm.
 * `NonUnitalStarAlgHom.quotientKerEquivRange`, `NonUnitalStarAlgHom.quotientKerEquivOfSurjective`,
   and `NonUnitalStarAlgHom.surjective_of_denseRange` (plus `StarAlgHom` counterparts): isometric
   first `⋆`-isomorphism theorem and surjectivity from dense range.
@@ -443,6 +445,30 @@ noncomputable def quotientKerEquivOfSurjective {φ : A →⋆ₙₐ[ℂ] B} (hφ
 theorem quotientKerEquivOfSurjective_mk {φ : A →⋆ₙₐ[ℂ] B} (hφ : Function.Surjective φ) (a : A) :
     quotientKerEquivOfSurjective hφ (TwoSidedIdeal.Quotient.mk (TwoSidedIdeal.ker φ) a) = φ a :=
   φ.quotientKerHom_mk a
+
+end NonUnitalStarAlgHom
+
+namespace NonUnitalStarAlgHom
+
+variable {F G A B C : Type*} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
+  [NonUnitalCStarAlgebra C] [FunLike F A B] [NonUnitalAlgHomClass F ℂ A B] [StarHomClass F A B]
+  [FunLike G A C] [NonUnitalAlgHomClass G ℂ A C] [StarHomClass G A C]
+
+/-- If every element killed by `φ` is killed by a `⋆`-homomorphism `ψ` between C⋆-algebras, then
+`ψ` is dominated in norm by `φ`: `‖ψ a‖ ≤ ‖φ a‖`. -/
+theorem norm_apply_le_norm_apply_of_ker_le {φ : F} {ψ : G}
+    (h : TwoSidedIdeal.ker φ ≤ TwoSidedIdeal.ker ψ) (a : A) : ‖ψ a‖ ≤ ‖φ a‖ := by
+  -- `ψ` factors contractively through `A ⧸ ker φ`, which `φ` embeds isometrically
+  let φ' : A →⋆ₙₐ[ℂ] B := ofClass φ
+  let q := TwoSidedIdeal.Quotient.liftStarAlgHom (TwoSidedIdeal.ker φ') (ofClass ψ) fun b hb =>
+    (TwoSidedIdeal.mem_ker ψ).1 (h hb)
+  -- `ofClass φ` and `ofClass ψ` agree with `φ` and `ψ` definitionally
+  calc ‖ψ a‖ = ‖q (TwoSidedIdeal.Quotient.mk _ a)‖ :=
+        congrArg norm (TwoSidedIdeal.Quotient.liftStarAlgHom_mk _ (ofClass ψ) _ a).symm
+    _ ≤ ‖TwoSidedIdeal.Quotient.mk (TwoSidedIdeal.ker φ') a‖ :=
+        NonUnitalStarAlgHom.norm_apply_le q _
+    _ = ‖φ a‖ := (φ'.isometry_quotientKerHom.norm_map_of_map_zero (map_zero _) _).symm.trans
+        (congrArg norm (φ'.quotientKerHom_mk a))
 
 end NonUnitalStarAlgHom
 
