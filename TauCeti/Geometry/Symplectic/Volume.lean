@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Symplectic.Darboux.Basis
 public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Pow
 import TauCeti.Geometry.Symplectic.ContinuousAlternatingMap
 import TauCeti.LinearAlgebra.Determinant.Basic
-import TauCeti.LinearAlgebra.Prod
 import TauCeti.LinearAlgebra.Alternating.TopDegree
 import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 
@@ -120,24 +119,6 @@ private theorem wedgePow_compContinuousLinearMap_fst_add_compContinuousLinearMap
     rw [compContinuousLinearMap_fst_add_compContinuousLinearMap_snd_apply, hx, add_zero]
     exact ω₁.map_coord_zero 0 rfl
 
-omit [TopologicalSpace E] [FiniteDimensional ℝ E] [TopologicalSpace F] [FiniteDimensional ℝ F] in
-/-- The concatenation of two interleaved Darboux-ordered bases, read in the interleaved order of
-the direct sum, has block determinant on the family `(vᵢ, 0)`, `(0, wⱼ)`. -/
-private theorem det_reindex_prod_sumElim (b : Basis (Fin n × Fin 2) ℝ E)
-    (c : Basis (Fin m × Fin 2) ℝ F) (v : Fin (2 * n) → E) (w : Fin (2 * m) → F) :
-    (((b.prod c).reindex
-        ((Equiv.sumProdDistrib _ _ _).symm.trans (finSumFinEquiv.prodCongr (Equiv.refl _)))).reindex
-        (finProdFinEquiv.trans (finCongr (Nat.mul_comm (n + m) 2)))).det
-      (fun r ↦ Sum.elim (fun i ↦ (v i, 0)) (fun j ↦ (0, w j))
-        (finSumFinEquiv.symm (Fin.cast (mul_add 2 n m) r))) =
-      (b.reindex (finProdFinEquiv.trans (finCongr (Nat.mul_comm n 2)))).det v *
-        (c.reindex (finProdFinEquiv.trans (finCongr (Nat.mul_comm m 2)))).det w := by
-  rw [← Basis.prod_reindex_finProdFinEquiv b c (Nat.mul_comm n 2) (Nat.mul_comm m 2)
-    (Nat.mul_comm (n + m) 2) (mul_add 2 n m).symm, Basis.det_reindex, ← Basis.prod_det_sumElim]
-  congr 1
-  funext p
-  rcases p with i | j <;> simp
-
 /-- `wedgePow_compContinuousLinearMap_fst_add_compContinuousLinearMap_snd_apply_sumElim` on spaces
 of dimensions `2 n` and `2 m`, where Darboux bases of nondegenerate summands are available. -/
 private theorem
@@ -165,7 +146,8 @@ private theorem
   set ω₂s := TauCeti.SymplecticForm.ofContinuousAlternatingMap ω₂ h₂
   obtain ⟨b, hb⟩ := ω₁s.exists_isDarbouxBasis_of_finrank_eq (hn.trans (Nat.mul_comm 2 n))
   obtain ⟨c, hc⟩ := ω₂s.exists_isDarbouxBasis_of_finrank_eq (hm.trans (Nat.mul_comm 2 m))
-  rw [apply_eq_det_mul _ (((b.prod c).reindex _).reindex _), det_reindex_prod_sumElim,
+  rw [apply_eq_det_mul _ (((b.prod c).reindex _).reindex _), Basis.det_reindex_prod_sumElim b c
+      (Nat.mul_comm n 2) (Nat.mul_comm m 2) (Nat.mul_comm (n + m) 2) (mul_add 2 n m).symm,
     wedgePow_apply_reindex_of_isDarbouxBasis _ (fun x y ↦ ?_) (hb.prod hc),
     apply_eq_det_mul _ (b.reindex _) v, wedgePow_apply_reindex_of_isDarbouxBasis ω₁
       (TauCeti.SymplecticForm.ofContinuousAlternatingMap_apply ω₁ h₁) hb,

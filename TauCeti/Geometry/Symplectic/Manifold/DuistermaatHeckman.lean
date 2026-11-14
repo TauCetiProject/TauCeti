@@ -72,12 +72,16 @@ open scoped ContDiff Manifold
 
 variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-  [IsManifold I ∞ M] [MeasurableSpace M] [BorelSpace M] [LindelofSpace M]
+  [IsManifold I ∞ M] [MeasurableSpace M] [BorelSpace M]
   {n : ℕ} [Fact (finrank ℝ E = 2 * n)] [MeasurableSpace F]
 
 namespace TauCeti
 
 namespace SmoothTwoForm
+
+section LindelofSpace
+
+variable [LindelofSpace M]
 
 variable (σ : SmoothTwoForm I M) (n) in
 /-- The **Duistermaat–Heckman measure** `μ_* |σⁿ / n!|` of a map `μ : M → F`, typically the moment
@@ -169,12 +173,15 @@ theorem support_duistermaatHeckmanMeasure [TopologicalSpace F] [BorelSpace F]
   have := hσ.isOpenPosMeasure_liouvilleMeasure (n := n)
   exact Measure.support_map_eq_closure_range _ Measure.support_eq_univ hμ
 
+end LindelofSpace
+
 section Prod
 
 variable {E' H' N G : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
   [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
   [IsManifold J ∞ N] [MeasurableSpace N] [BorelSpace N] [SecondCountableTopology N] {m : ℕ}
   [Fact (finrank ℝ E' = 2 * m)] [Fact (finrank ℝ (E × E') = 2 * (n + m))] [MeasurableSpace G]
+  {μ : M → F}
 
 /-- **The Duistermaat–Heckman measure of a product.** For the product form `σ ⊕ τ` on `M × N`
 and measurable maps `μ` on `M` and `ν` on `N`, the Duistermaat–Heckman measure of `μ × ν` is the
@@ -197,7 +204,8 @@ namespace Homeomorph
 open TauCeti
 
 variable {H' N : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ E H'} [TopologicalSpace N]
-  [ChartedSpace H' N] [IsManifold J ∞ N] [MeasurableSpace N] [BorelSpace N] [LindelofSpace N]
+  [ChartedSpace H' N] [IsManifold J ∞ N] [MeasurableSpace N] [BorelSpace N] [LindelofSpace M]
+  [LindelofSpace N]
 
 /-- **Invariance of the Duistermaat–Heckman measure.** If a differentiable homeomorphism
 `Φ : M → N` pulls `τ` back to `σ` and `μ = ν ∘ Φ`, then `σ` and `μ` have the same

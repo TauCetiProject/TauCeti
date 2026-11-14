@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Measure.Basic
 public import Mathlib.MeasureTheory.Measure.Prod
 
-import TauCeti.MeasureTheory.Integral.Bochner.Alternating
+import TauCeti.MeasureTheory.Integral.Lebesgue.Alternating
 
 /-!
 # The measure of a product of top forms
@@ -96,8 +96,9 @@ private theorem measure_prod_of_subset (hp : k + l = p) (hφ₁ : IsSmoothForm I
     φ₂.measure_apply_of_subset ht htβ, himage]
   -- The chart measurable structure on `E × F` is supplied explicitly: elaborating it by instance
   -- search would find the product structure and force an expensive unification.
-  refine Basis.setLIntegral_ofReal_abs_apply_prod (mEF := TauCeti.extChartAtMeasurableSpaceE) hp
-    _ b₁ b₂ (hs.image_extChartAt α hsα) (ht.image_extChartAt β htβ) _
+  refine Basis.setLIntegral_ofReal_abs_apply_prod (mEF := TauCeti.extChartAtMeasurableSpaceE)
+    (finSumFinEquiv.trans (finCongr hp)) _ b₁ b₂ (hs.image_extChartAt α hsα)
+    (ht.image_extChartAt β htβ) _
     (aemeasurable_ofReal_abs_inChartAt hφ₁ b₁ hs hsα)
     (aemeasurable_ofReal_abs_inChartAt hφ₂ b₂ ht htβ) fun z hz ↦ ?_
   have hb : ((b₁.prod b₂).reindex (finSumFinEquiv.trans (finCongr hp)) : Fin p → E × F) =

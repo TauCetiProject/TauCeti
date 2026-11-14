@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.ChangeOfVar
 public import TauCeti.MeasureTheory.Measure.Glue
 public import Mathlib.MeasureTheory.Measure.OpenPos
 
-import TauCeti.MeasureTheory.Integral.Bochner.Alternating
+import TauCeti.MeasureTheory.Integral.Lebesgue.Alternating
 
 /-!
 # The measure of a top form

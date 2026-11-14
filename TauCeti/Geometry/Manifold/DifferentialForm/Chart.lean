@@ -25,8 +25,9 @@ iteration of the exterior derivative to be checked in a fixed chart, including a
 corner points. The unrestricted results are the specializations to the whole manifold.
 
 On a product `M × N`, the preferred chart is the product of the preferred charts, so the
-coefficient of a form on `M × N` on a family `(vᵢ, 0), (0, wⱼ)` differentiates the two inverse
-charts componentwise (`TauCeti.RoughForm.inChartAt_prod_apply_sumElim`).
+coefficient of a form on `M × N` differentiates the two inverse charts componentwise
+(`TauCeti.RoughForm.inChartAt_prod_apply`). On a family `(vᵢ, 0), (0, wⱼ)` the two charts act on
+the two blocks separately (`TauCeti.RoughForm.inChartAt_prod_apply_sumElim`).
 
 The transport uses Mathlib's `extDerivWithin_pullback`, localized to the chart overlap.
 
@@ -306,9 +307,29 @@ variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [Topolog
   {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N] {l p : ℕ}
 
 /-- **A form on a product in the product chart.** In the preferred chart of `M × N` at `(α, β)`,
-the product of the preferred charts at `α` and `β`, the coefficient of a form `φ` on `M × N` on the
-family `(v₁, 0), …, (vₖ, 0), (0, w₁), …, (0, wₗ)` is the value of `φ` on the family of tangent
-vectors obtained by differentiating the two inverse charts componentwise. -/
+the product of the preferred charts at `α` and `β`, the coefficient of a form `φ` on `M × N` on a
+family `u` is the value of `φ` on the family of tangent vectors obtained by differentiating the two
+inverse charts componentwise. -/
+theorem inChartAt_prod_apply [IsManifold I 1 M] [IsManifold J 1 N]
+    (φ : RoughForm (I.prod J) (M × N) F k) (α : M) (β : N) {y : E} {z : E'}
+    (hy : y ∈ (extChartAt I α).target) (hz : z ∈ (extChartAt J β).target) (u : Fin k → E × E') :
+    φ.inChartAt (α, β) (y, z) u =
+      φ ((extChartAt I α).symm y, (extChartAt J β).symm z) (fun r ↦
+        (Manifold.tangentSpaceProdEquiv ((extChartAt I α).symm y, (extChartAt J β).symm z)).symm
+          (mfderivWithin 𝓘(ℝ, E) I (extChartAt I α).symm (range I) y (u r).1,
+            mfderivWithin 𝓘(ℝ, E') J (extChartAt J β).symm (range J) z (u r).2)) := by
+  have hyz : (y, z) ∈ (extChartAt (I.prod J) (α, β)).target := by
+    rw [extChartAt_prod]
+    exact ⟨hy, hz⟩
+  rw [inChartAt_apply, mfderivWithin_extChartAt_prod_symm _ hyz, extChartAt_prod]
+  congr 1
+  funext r
+  -- `tangentSpaceProdEquiv` is the identity, and `prodMap` acts componentwise by definition.
+  exact (Manifold.tangentSpaceProdEquiv_symm_apply _ _).symm
+
+/-- `TauCeti.RoughForm.inChartAt_prod_apply` on the family
+`(v₁, 0), …, (vₖ, 0), (0, w₁), …, (0, wₗ)`: the two inverse charts differentiate the two blocks
+separately. -/
 theorem inChartAt_prod_apply_sumElim [IsManifold I 1 M] [IsManifold J 1 N]
     (φ : RoughForm (I.prod J) (M × N) F p) (hp : k + l = p) (α : M) (β : N) {y : E} {z : E'}
     (hy : y ∈ (extChartAt I α).target) (hz : z ∈ (extChartAt J β).target) (v : Fin k → E)
@@ -320,19 +341,17 @@ theorem inChartAt_prod_apply_sumElim [IsManifold I 1 M] [IsManifold J 1 N]
           (Sum.elim (fun i ↦ (mfderivWithin 𝓘(ℝ, E) I (extChartAt I α).symm (range I) y (v i), 0))
             (fun j ↦ (0, mfderivWithin 𝓘(ℝ, E') J (extChartAt J β).symm (range J) z (w j)))
             (finSumFinEquiv.symm (Fin.cast hp.symm r)))) := by
-  have hyz : (y, z) ∈ (extChartAt (I.prod J) (α, β)).target := by
-    rw [extChartAt_prod]
-    exact ⟨hy, hz⟩
-  rw [inChartAt_apply, mfderivWithin_extChartAt_prod_symm _ hyz, extChartAt_prod]
+  rw [inChartAt_prod_apply φ α β hy hz]
   congr 1
   funext r
-  -- The product derivative acts on `(vᵢ, 0)` and `(0, wⱼ)` componentwise; the first
-  -- component of the first and the second component of the second hold by unfolding `prodMap`.
+  -- The components of `(vᵢ, 0)` and `(0, wⱼ)` other than `0` are `vᵢ` and `wⱼ` by projection.
   rcases finSumFinEquiv.symm (Fin.cast hp.symm r) with i | j
-  · rw [Sum.elim_inl, Sum.elim_inl, Manifold.tangentSpaceProdEquiv_symm_apply]
-    exact Prod.ext rfl (map_zero (mfderivWithin 𝓘(ℝ, E') J (extChartAt J β).symm (range J) z))
-  · rw [Sum.elim_inr, Sum.elim_inr, Manifold.tangentSpaceProdEquiv_symm_apply]
-    exact Prod.ext (map_zero (mfderivWithin 𝓘(ℝ, E) I (extChartAt I α).symm (range I) y)) rfl
+  · rw [Sum.elim_inl, Sum.elim_inl]
+    exact congrArg _ (Prod.ext rfl
+      (map_zero (mfderivWithin 𝓘(ℝ, E') J (extChartAt J β).symm (range J) z)))
+  · rw [Sum.elim_inr, Sum.elim_inr]
+    exact congrArg _ (Prod.ext
+      (map_zero (mfderivWithin 𝓘(ℝ, E) I (extChartAt I α).symm (range I) y)) rfl)
 
 end Prod
 
