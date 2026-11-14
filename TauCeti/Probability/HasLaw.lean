@@ -48,6 +48,8 @@ Nonnegative random variables whose real coercions have a common law are identica
   null on singletons;
 * `ProbabilityTheory.HasLaw.prod_extension` — adjoining a coordinate with an s-finite measure to
   a random variable gives the pair the product measure;
+* `ProbabilityTheory.HasLaw.prod_extension₂` — adjoining two coordinates by iterating the
+  one-coordinate extension, with associativity, reordering, and independence results;
 * `AEMeasurable.exists_map_restrict_eq_smul_dirac_of_atom` — the image of a finite positive
   measurable atom under an a.e.-measurable map to a standard Borel space is a point mass;
 * `ProbabilityTheory.HasLaw.exists_measure_atom_le_measure_singleton` — a law receiving such an
@@ -172,6 +174,126 @@ theorem _root_.ProbabilityTheory.HasLaw.prod_extension {Ω α E : Type*}
   rw [hpair, ← Measure.map_prod_map_of_aemeasurable P ν hX.aemeasurable
     measurable_id.aemeasurable]
   rw [hX.map_eq, Measure.map_id]
+
+/-- Iterating `HasLaw.prod_extension` adjoins two coordinates while retaining the original
+joint law of the old tuple. The product and source are left-associated here, as dictated by
+the two successive extensions. -/
+theorem _root_.ProbabilityTheory.HasLaw.prod_extension₂_leftAssociated
+    {Ω α E F : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
+    [MeasurableSpace E] [MeasurableSpace F] {X : Ω → α} {μ : Measure α}
+    {P : Measure Ω} {ν : Measure E} {η : Measure F} [SFinite ν] [SFinite η]
+    (hX : HasLaw X μ P) :
+    HasLaw (fun z : (Ω × E) × F => ((X z.1.1, z.1.2), z.2))
+      ((μ.prod ν).prod η) ((P.prod ν).prod η) :=
+  hX.prod_extension.prod_extension
+
+/-- The two-coordinate extension, with the old tuple and the new pair right-associated.
+It is obtained by iterating the one-coordinate extension and transporting along the canonical
+product associators. -/
+theorem _root_.ProbabilityTheory.HasLaw.prod_extension₂
+    {Ω α E F : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
+    [MeasurableSpace E] [MeasurableSpace F] {X : Ω → α} {μ : Measure α}
+    {P : Measure Ω} {ν : Measure E} {η : Measure F} [SFinite ν] [SFinite η]
+    (hX : HasLaw X μ P) :
+    HasLaw (fun z : Ω × (E × F) => (X z.1, z.2))
+      (μ.prod (ν.prod η)) (P.prod (ν.prod η)) := by
+  have hNested := hX.prod_extension₂_leftAssociated (ν := ν) (η := η)
+  have hSource : HasLaw
+      (MeasurableEquiv.prodAssoc.symm : Ω × (E × F) → (Ω × E) × F)
+      ((P.prod ν).prod η) (P.prod (ν.prod η)) :=
+    (measurePreserving_prodAssoc P ν η).symm.hasLaw
+  have hTarget : HasLaw
+      (MeasurableEquiv.prodAssoc : (α × E) × F → α × (E × F))
+      (μ.prod (ν.prod η)) ((μ.prod ν).prod η) :=
+    (measurePreserving_prodAssoc μ ν η).hasLaw
+  simpa [Function.comp_def, MeasurableEquiv.prodAssoc] using
+    hTarget.fun_comp (hNested.fun_comp hSource)
+
+/-- Swapping the two new coordinates transports the two-coordinate extension to the swapped
+product law. No condition is imposed on the old law or on dependence within the old tuple. -/
+theorem _root_.MeasureTheory.measurePreserving_prodRightSwap
+    {α β γ : Type*} [MeasurableSpace α] [MeasurableSpace β] [MeasurableSpace γ]
+    (μ : Measure α) (ν : Measure β) (η : Measure γ) [SFinite ν] [SFinite η] :
+    MeasurePreserving (fun z : α × (β × γ) => (z.1, (z.2.2, z.2.1)))
+      (μ.prod (ν.prod η)) (μ.prod (η.prod ν)) := by
+  refine ⟨measurable_fst.prodMk (measurable_swap.comp measurable_snd), ?_⟩
+  have hmap : (fun z : α × (β × γ) => (z.1, (z.2.2, z.2.1))) =
+      Prod.map id Prod.swap := by
+    funext z
+    rfl
+  rw [hmap, ← Measure.map_prod_map_of_aemeasurable μ (ν.prod η)
+    measurable_id.aemeasurable measurable_swap.aemeasurable]
+  simp only [Measure.map_id, Measure.prod_swap]
+
+/-- Reordering the two added coordinates preserves the expected joint law. -/
+theorem _root_.ProbabilityTheory.HasLaw.prod_extension₂_swap
+    {Ω α E F : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
+    [MeasurableSpace E] [MeasurableSpace F] {X : Ω → α} {μ : Measure α}
+    {P : Measure Ω} {ν : Measure E} {η : Measure F} [SFinite ν] [SFinite η]
+    (hX : HasLaw X μ P) :
+    HasLaw (fun z : Ω × (F × E) => (X z.1, z.2))
+      (μ.prod (η.prod ν)) (P.prod (η.prod ν)) := by
+  have hSource := measurePreserving_prodRightSwap P η ν
+  have hTarget := measurePreserving_prodRightSwap μ ν η
+  convert hTarget.hasLaw.fun_comp
+    ((hX.prod_extension₂ (ν := ν) (η := η)).fun_comp hSource.hasLaw) using 1
+
+/-- If the added laws are probability measures, the old tuple keeps exactly its original law
+after adjoining the two independent coordinates. In particular, applying this to an old tuple
+with dependent coordinates preserves that dependence. -/
+theorem _root_.ProbabilityTheory.HasLaw.prod_extension₂_preserves_old_tuple
+    {Ω α E F : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
+    [MeasurableSpace E] [MeasurableSpace F] {X : Ω → α} {μ : Measure α}
+    {P : Measure Ω} {ν : Measure E} {η : Measure F} [SFinite ν] [SFinite η]
+    [IsProbabilityMeasure ν] [IsProbabilityMeasure η] (hX : HasLaw X μ P) :
+    HasLaw (fun z : Ω × (E × F) => X z.1) μ (P.prod (ν.prod η)) := by
+  have hFst : HasLaw Prod.fst μ (μ.prod (ν.prod η)) :=
+    measurePreserving_fst.hasLaw
+  simpa [Function.comp_def] using hFst.comp (hX.prod_extension₂ (ν := ν) (η := η))
+
+/-- An arbitrary old pair retains its full joint law when two probability coordinates are
+adjoined, so any dependence between its coordinates is unchanged. -/
+theorem _root_.ProbabilityTheory.HasLaw.prod_extension₂_preserves_old_pair
+    {Ω α β E F : Type*} [MeasurableSpace Ω] [MeasurableSpace α] [MeasurableSpace β]
+    [MeasurableSpace E] [MeasurableSpace F] {X : Ω → α} {Y : Ω → β}
+    {μ : Measure (α × β)} {P : Measure Ω} {ν : Measure E} {η : Measure F}
+    [SFinite ν] [SFinite η] [IsProbabilityMeasure ν] [IsProbabilityMeasure η]
+    (hXY : HasLaw (fun ω => (X ω, Y ω)) μ P) :
+    HasLaw (fun z : Ω × (E × F) => (X z.1, Y z.1)) μ (P.prod (ν.prod η)) :=
+  hXY.prod_extension₂_preserves_old_tuple (ν := ν) (η := η)
+
+/-- Under probability laws, the new pair is independent of the old tuple. No independence
+assumption on the coordinates encoded by `X` is needed. -/
+theorem _root_.ProbabilityTheory.HasLaw.prod_extension₂_indep
+    {Ω α E F : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
+    [MeasurableSpace E] [MeasurableSpace F] {X : Ω → α} {μ : Measure α}
+    {P : Measure Ω} {ν : Measure E} {η : Measure F} [SFinite ν] [SFinite η]
+    [IsProbabilityMeasure P] [IsProbabilityMeasure ν] [IsProbabilityMeasure η]
+    (hX : HasLaw X μ P) :
+    (fun z : Ω × (E × F) => X z.1) ⟂ᵢ[P.prod (ν.prod η)] fun z => z.2 := by
+  have hOld := hX.prod_extension₂_preserves_old_tuple (ν := ν) (η := η)
+  have hPair : HasLaw (fun z : Ω × (E × F) => z.2) (ν.prod η) (P.prod (ν.prod η)) :=
+    measurePreserving_snd.hasLaw
+  exact (indepFun_iff_hasLaw_prodMk_prod hOld hPair).2
+    (hX.prod_extension₂ (ν := ν) (η := η))
+
+/-- Adjoining a coordinate with a Dirac law is the canonical measure-preserving embedding
+`x ↦ (x, y)` of the old space; projecting back by `Prod.fst` recovers the old coordinate. -/
+theorem _root_.MeasureTheory.measurePreserving_prodMk_right_dirac
+    {α β : Type*} [MeasurableSpace α] [MeasurableSpace β] (μ : Measure α) [SFinite μ]
+    (y : β) :
+    MeasurePreserving (fun x : α => (x, y)) μ (μ.prod (Measure.dirac y)) := by
+  rw [Measure.prod_dirac]
+  exact ⟨measurable_prodMk_right, rfl⟩
+
+/-- Extending a random variable by a constant coordinate gives the product with the point law,
+without changing its source or its original law. -/
+theorem _root_.ProbabilityTheory.HasLaw.prod_extension_dirac
+    {Ω α E : Type*} [MeasurableSpace Ω] [MeasurableSpace α] [MeasurableSpace E]
+    {X : Ω → α} {μ : Measure α} {P : Measure Ω} (hX : HasLaw X μ P)
+    [SFinite μ] (y : E) :
+    HasLaw (fun ω => (X ω, y)) (μ.prod (Measure.dirac y)) P := by
+  convert (measurePreserving_prodMk_right_dirac μ y).fun_comp_hasLaw hX using 1
 
 /-- **A nonzero source singleton has no transport onto a law that is null on singletons.** This
 is the basic infeasibility of the Monge problem: no map can push such a source measure onto such
