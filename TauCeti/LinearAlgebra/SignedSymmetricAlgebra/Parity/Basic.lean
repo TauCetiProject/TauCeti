@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Supercommutativity
-public import TauCeti.RingTheory.GradedAlgebra.Coarsen
 import TauCeti.Data.ZMod.IntUnitsPower
 
 /-!
@@ -161,12 +160,8 @@ theorem generator_mul_generator_of_mem_parity {i j : ZMod 2} {x y : V}
     generator G x * generator G y = ((-1 : ℤˣ) ^ (i * j)) •
       (generator G y * generator G x) := by
   rw [InternalGrading.parity_piece] at hx hy
-  have hgen := (isHomogeneous_signedSymGenerator G).coarsenGrading
-    (Int.castAddHom (ZMod 2))
-  exact mul_eq_uzpow_smul_mul_of_mem_parityGrading (𝒜 := signedSymPiece G)
-    (fun ha hb => by simpa [Units.smul_def] using mul_eq_negOnePow_smul_mul G ha hb)
-    (by simpa only [map_zero, add_zero] using hgen.map_mem hx)
-    (by simpa only [map_zero, add_zero] using hgen.map_mem hy)
+  exact mul_eq_uzpow_smul_mul_of_mem_parityGrading G
+    (generator_mem_parityGrading G hx) (generator_mem_parityGrading G hy)
 
 private noncomputable def toParity : SignedSym G →ₐ[R] ParitySignedSym G.parity :=
   lift G (ParitySignedSym.generator G.parity) (by

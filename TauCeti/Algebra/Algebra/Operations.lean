@@ -11,7 +11,7 @@ import Mathlib.Tactic.Ring
 /-!
 # Powers of submodules of an algebra
 
-Three facts about the powers of a submodule of an algebra.
+Four facts about the powers of a submodule of an algebra.
 
 Once the powers of a submodule `M` repeat once, `M ^ (n + 1) = M ^ n`, they are constant from `n`
 on. This is `TauCeti.pow_eq_pow_of_pow_succ_eq_pow` for submodules, which Mathlib makes a monoid
@@ -22,7 +22,9 @@ ideals (`Ideal R`) of a noncommutative ring.
 To bound `span R s ^ (t + 1)` by the span of a set `W t` of words (for instance the words left
 irreducible by a rewriting system), it suffices that `s ⊆ span R (W 0)` and that each product
 `b * c` of a word `b ∈ W t` with a generator `c ∈ s` lies in `span R (W (t + 1))`; the induction on
-`t` is `Submodule.span_pow_succ_le_span_of_forall_mul_mem`.
+`t` is `Submodule.span_pow_succ_le_span_of_forall_mul_mem`. Likewise, an algebra homomorphism
+mapping `M` into `N` maps `M ^ n` into `N ^ n` (`Submodule.map_pow_le_pow`,
+`AlgHom.apply_mem_pow_of_mem_pow`).
 
 For submodules `X` and `Y` of a commutative algebra, write `V = X ⊔ Y`. A product of `i + j + 1`
 elements of `V` is a sum of products with at least `i + 1` factors from `X` or at least `j + 1`
@@ -41,6 +43,8 @@ the computation of the cohomology of the twisting sheaves on the projective line
 * `Submodule.pow_eq_pow_of_pow_succ_eq_pow`: `M ^ (n + 1) = M ^ n` propagates to all `k ≥ n`.
 * `Submodule.span_pow_succ_le_span_of_forall_mul_mem`: `span R s ^ (t + 1) ≤ span R (W t)` if
   `s ⊆ span R (W 0)` and right multiplication by `s` maps each `W t` into `span R (W (t + 1))`.
+* `Submodule.map_pow_le_pow` and `AlgHom.apply_mem_pow_of_mem_pow`: an algebra homomorphism
+  mapping `M` into `N` maps `M ^ n` into `N ^ n`.
 * `Submodule.sup_pow_add_add_one_le`: `(X ⊔ Y) ^ (i + j + 1)` is contained in
   `X ^ (i + 1) * (X ⊔ Y) ^ j ⊔ Y ^ (j + 1) * (X ⊔ Y) ^ i`.
 -/
@@ -84,6 +88,20 @@ theorem span_pow_succ_le_span_of_forall_mul_mem {s : Set A} {W : ℕ → Set A}
     rw [span_mul_span, span_le]
     rintro _ ⟨b, hb, c, hc, rfl⟩
     exact hS t b hb c hc
+
+/-- An algebra homomorphism mapping a submodule `M` into `N` maps `M ^ n` into `N ^ n`. -/
+protected theorem map_pow_le_pow {B : Type*} [Semiring B] [Algebra R B]
+    {M : Submodule R A} {N : Submodule R B} (f : A →ₐ[R] B) (hf : M.map f.toLinearMap ≤ N)
+    (n : ℕ) : (M ^ n).map f.toLinearMap ≤ N ^ n := by
+  rw [Submodule.map_pow]
+  exact pow_le_pow_left' hf n
+
+/-- Elementwise form of `Submodule.map_pow_le_pow`: if an algebra homomorphism maps `M` into `N`,
+it maps every element of `M ^ n` into `N ^ n`. -/
+theorem _root_.AlgHom.apply_mem_pow_of_mem_pow {B : Type*} [Semiring B] [Algebra R B]
+    {M : Submodule R A} {N : Submodule R B} (f : A →ₐ[R] B) (hf : M.map f.toLinearMap ≤ N)
+    {n : ℕ} {a : A} (ha : a ∈ M ^ n) : f a ∈ N ^ n := by
+  simpa only [AlgHom.toLinearMap_apply] using Submodule.map_pow_le_pow f hf n (mem_map_of_mem ha)
 
 end Algebra
 

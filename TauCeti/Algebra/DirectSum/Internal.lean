@@ -48,7 +48,9 @@ they agree on the homogeneous single-coordinate functions `Pi.single x α`,
 and `DirectSum.IsInternal.comp_equiv` reindexes one along an equivalence of the index types.
 
 `DirectSum.IsInternal.iSup_inf_eq_of_component_mem` restricts an internal decomposition to any
-submodule that contains the canonical components of each of its elements.
+submodule that contains the canonical components of each of its elements, and
+`DirectSum.mem_of_forall_ne_eq_bot` shows that when all pieces outside one degree vanish, every
+element lies in that piece.
 
 `DirectSum.coe_decompose_smul_add_of_right_mem` computes the components of a scalar
 action on a homogeneous element when the scalar and module decompositions are compatible.
@@ -328,6 +330,20 @@ theorem DirectSum.isInternal_of_lof {R ι M : Type*} [Semiring R] [DecidableEq �
     exact (hF i x).symm
   rw [DirectSum.isInternal_iff_bijective_coeLinearMap, hcoe]
   exact F.bijective
+
+/-- When all pieces of a direct-sum decomposition of submodules outside degree `i` vanish, every
+element lies in the degree-`i` piece. -/
+theorem DirectSum.mem_of_forall_ne_eq_bot {R M ι : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] [DecidableEq ι] {ℳ : ι → Submodule R M} [_root_.DirectSum.Decomposition ℳ]
+    {i : ι} (h : ∀ j, j ≠ i → ℳ j = ⊥) (x : M) : x ∈ ℳ i := by
+  have htop : ⊤ ≤ ℳ i := by
+    rw [← (_root_.DirectSum.Decomposition.isInternal ℳ).submodule_iSup_eq_top]
+    refine iSup_le fun j ↦ ?_
+    by_cases hj : j = i
+    · exact hj ▸ le_rfl
+    · rw [h j hj]
+      exact bot_le
+  exact htop Submodule.mem_top
 
 end TauCeti
 
