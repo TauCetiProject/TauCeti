@@ -9,6 +9,8 @@ public import Mathlib.Probability.HasLaw
 public import Mathlib.Probability.IdentDistrib
 public import Mathlib.Probability.ConditionalProbability
 public import Mathlib.MeasureTheory.Measure.Support
+public import Mathlib.MeasureTheory.Constructions.Pi
+public import Mathlib.MeasureTheory.Constructions.KolmogorovExtension
 public import TauCeti.MeasureTheory.Measure.Atom
 public import TauCeti.MeasureTheory.Measure.Dirac
 
@@ -48,6 +50,10 @@ Nonnegative random variables whose real coercions have a common law are identica
   null on singletons;
 * `ProbabilityTheory.HasLaw.prod_extension` — adjoining a coordinate with an s-finite measure to
   a random variable gives the pair the product measure;
+* `TauCeti.Measure.countableProductMeasure` and
+  `ProbabilityTheory.HasLaw.prod_extension_countable` — adjoining a countable family with
+  prescribed coordinate laws and their product finite marginals, together with preservation of
+  the old joint law and independence of the new family from the old variables;
 * `AEMeasurable.exists_map_restrict_eq_smul_dirac_of_atom` — the image of a finite positive
   measurable atom under an a.e.-measurable map to a standard Borel space is a point mass;
 * `ProbabilityTheory.HasLaw.exists_measure_atom_le_measure_singleton` — a law receiving such an
@@ -172,6 +178,174 @@ theorem _root_.ProbabilityTheory.HasLaw.prod_extension {Ω α E : Type*}
   rw [hpair, ← Measure.map_prod_map_of_aemeasurable P ν hX.aemeasurable
     measurable_id.aemeasurable]
   rw [hX.map_eq, Measure.map_id]
+
+/-- The finite-dimensional product laws of a family of probability measures form a projective
+family under coordinate restriction. -/
+private theorem countableProductFamily_projective {ι : Type*} {E : ι → Type*}
+    [∀ i, MeasurableSpace (E i)] (ν : ∀ i, Measure (E i))
+    [∀ i, IsProbabilityMeasure (ν i)] :
+    IsProjectiveMeasureFamily (fun I : Finset ι => Measure.pi fun i : I => ν i) := by
+  classical
+  intro I J hJI
+  let K : Finset ι := I \ J
+  have hdis : Disjoint J K := Finset.disjoint_sdiff
+  have hUnion : J ∪ K = I := Finset.union_sdiff_of_subset hJI
+  let e₁ : ((∀ j : J, E j) × ∀ k : K, E k) ≃ᵐ ∀ i : ↥(J ∪ K), E i :=
+    MeasurableEquiv.piFinsetUnion E hdis
+  let eI : ↥(J ∪ K) ≃ I :=
+    (Equiv.refl ι).subtypeEquiv (fun i => by simp [hUnion])
+  let e₂ : (∀ i : ↥(J ∪ K), E i) ≃ᵐ ∀ i : I, E i :=
+    MeasurableEquiv.piCongrLeft (fun i : I => E i) eI
+  have h₁ : MeasurePreserving e₁
+      ((Measure.pi fun j : J => ν j).prod (Measure.pi fun k : K => ν k))
+      (Measure.pi fun i : ↥(J ∪ K) => ν i) :=
+    measurePreserving_piFinsetUnion hdis ν
+  have h₂ : MeasurePreserving e₂ (Measure.pi fun i : ↥(J ∪ K) => ν i)
+      (Measure.pi fun i : I => ν i) :=
+    measurePreserving_piCongrLeft (fun i : I => ν i) eI
+  have hfst : MeasurePreserving Prod.fst
+      ((Measure.pi fun j : J => ν j).prod (Measure.pi fun k : K => ν k))
+      (Measure.pi fun j : J => ν j) := by
+    exact measurePreserving_fst
+  have hmap := hfst.comp (h₁.symm.comp h₂.symm)
+  have hfun : Prod.fst ∘ (e₁.trans e₂).symm = Finset.restrict₂ hJI := by
+    funext x j
+    let ju : ↥(J ∪ K) := ⟨j.1, Finset.mem_union.mpr (Or.inl j.2)⟩
+    change (e₁.symm (e₂.symm x)).1 j = x ⟨j.1, hJI j.2⟩
+    have h₁x :
+        (e₁.symm (e₂.symm x)).1 j = (e₂.symm x) ju := by
+      change ((Equiv.piFinsetUnion E hdis).symm (e₂.symm x)).1 j =
+        (e₂.symm x) ju
+      have hx := congrArg (fun y : (∀ i : ↥(J ∪ K), E i) => y ju)
+        ((Equiv.piFinsetUnion E hdis).apply_symm_apply (e₂.symm x))
+      rw [Equiv.piFinsetUnion_left E hdis j.2 ju.2] at hx
+      exact hx
+    have h₂x : (e₂.symm x) ju = x ⟨j.1, hJI j.2⟩ := by
+      change (Equiv.piCongrLeft (fun i : I => E i) eI).symm x ju =
+        x ⟨j.1, hJI j.2⟩
+      rw [Equiv.piCongrLeft_symm_apply]
+      congr 1
+    exact h₁x.trans h₂x
+  have hmeasure :
+      (Measure.pi fun i : I => ν i).map (Finset.restrict₂ hJI) =
+        Measure.pi fun j : J => ν j := by
+    rw [← hfun]
+    exact hmap.map_eq
+  exact hmeasure.symm
+
+/-- A countable product measure with prescribed finite-dimensional product laws. The product
+measure is constructed by Mathlib's Kolmogorov extension theorem; its finite marginals are the
+finite products of the coordinate laws. -/
+noncomputable def _root_.TauCeti.Measure.countableProductMeasure {ι : Type*} {E : ι → Type*}
+    [∀ i, MeasurableSpace (E i)] [∀ i, TopologicalSpace (E i)]
+    [∀ i, SecondCountableTopology (E i)]
+    [∀ i, TopologicalSpace.IsCompletelyPseudoMetrizableSpace (E i)] [∀ i, BorelSpace (E i)]
+    (ν : ∀ i, Measure (E i)) [∀ i, IsProbabilityMeasure (ν i)] : Measure (∀ i, E i) :=
+  MeasureTheory.projectiveLimit (fun I : Finset ι => Measure.pi fun i : I => ν i)
+    (countableProductFamily_projective ν)
+
+/-- The countable product measure is a probability measure. -/
+instance _root_.TauCeti.Measure.isProbabilityMeasure_countableProductMeasure
+    {ι : Type*} {E : ι → Type*} [∀ i, MeasurableSpace (E i)]
+    [∀ i, TopologicalSpace (E i)]
+    [∀ i, SecondCountableTopology (E i)]
+    [∀ i, TopologicalSpace.IsCompletelyPseudoMetrizableSpace (E i)] [∀ i, BorelSpace (E i)]
+    (ν : ∀ i, Measure (E i))
+    [∀ i, IsProbabilityMeasure (ν i)] :
+    IsProbabilityMeasure (TauCeti.Measure.countableProductMeasure ν) :=
+  MeasureTheory.isProbabilityMeasure_projectiveLimit (countableProductFamily_projective ν)
+
+/-- Every finite coordinate projection of the countable product measure has the expected finite
+product law. -/
+theorem _root_.TauCeti.Measure.isProjectiveLimit_countableProductMeasure
+    {ι : Type*} {E : ι → Type*} [∀ i, MeasurableSpace (E i)]
+    [∀ i, TopologicalSpace (E i)]
+    [∀ i, SecondCountableTopology (E i)]
+    [∀ i, TopologicalSpace.IsCompletelyPseudoMetrizableSpace (E i)] [∀ i, BorelSpace (E i)]
+    (ν : ∀ i, Measure (E i))
+    [∀ i, IsProbabilityMeasure (ν i)] :
+    IsProjectiveLimit (TauCeti.Measure.countableProductMeasure ν)
+      (fun I : Finset ι => Measure.pi fun i : I => ν i) :=
+  MeasureTheory.isProjectiveLimit_projectiveLimit (countableProductFamily_projective ν)
+
+/-- Any measure with the same finite marginals as the countable product is equal to it. -/
+theorem _root_.TauCeti.Measure.countableProductMeasure_unique
+    {ι : Type*} {E : ι → Type*} [∀ i, MeasurableSpace (E i)]
+    [∀ i, TopologicalSpace (E i)]
+    [∀ i, SecondCountableTopology (E i)]
+    [∀ i, TopologicalSpace.IsCompletelyPseudoMetrizableSpace (E i)] [∀ i, BorelSpace (E i)]
+    (ν : ∀ i, Measure (E i))
+    [∀ i, IsProbabilityMeasure (ν i)] {Q : Measure (∀ i, E i)}
+    (hQ : IsProjectiveLimit Q (fun I : Finset ι => Measure.pi fun i : I => ν i)) :
+    Q = TauCeti.Measure.countableProductMeasure ν :=
+  hQ.unique (TauCeti.Measure.isProjectiveLimit_countableProductMeasure ν)
+
+/-- Adjoining a countable family of independent coordinates gives the old variable and the
+entire new family their product law. The old variable may itself encode dependent coordinates. -/
+theorem _root_.ProbabilityTheory.HasLaw.prod_extension_countable
+    {Ω α ι : Type*} [MeasurableSpace Ω] [MeasurableSpace α] [Countable ι]
+    {E : ι → Type*} [∀ i, MeasurableSpace (E i)] [∀ i, TopologicalSpace (E i)]
+    [∀ i, SecondCountableTopology (E i)]
+    [∀ i, TopologicalSpace.IsCompletelyPseudoMetrizableSpace (E i)] [∀ i, BorelSpace (E i)]
+    {X : Ω → α} {μ : Measure α} {P : Measure Ω}
+    (ν : ∀ i, Measure (E i)) [∀ i, IsProbabilityMeasure (ν i)]
+    (hX : HasLaw X μ P) :
+    HasLaw (fun z : Ω × (∀ i, E i) => (X z.1, z.2))
+      (μ.prod (TauCeti.Measure.countableProductMeasure ν))
+      (P.prod (TauCeti.Measure.countableProductMeasure ν)) :=
+  hX.prod_extension
+
+/-- Adjoining the countable family does not change the law of the old random object. -/
+theorem _root_.ProbabilityTheory.HasLaw.prod_extension_countable_preserves_old_tuple
+    {Ω α ι : Type*} [MeasurableSpace Ω] [MeasurableSpace α] [Countable ι]
+    {E : ι → Type*} [∀ i, MeasurableSpace (E i)] [∀ i, TopologicalSpace (E i)]
+    [∀ i, SecondCountableTopology (E i)]
+    [∀ i, TopologicalSpace.IsCompletelyPseudoMetrizableSpace (E i)] [∀ i, BorelSpace (E i)]
+    {X : Ω → α} {μ : Measure α} {P : Measure Ω}
+    (ν : ∀ i, Measure (E i)) [∀ i, IsProbabilityMeasure (ν i)]
+    (hX : HasLaw X μ P) :
+    HasLaw (fun z : Ω × (∀ i, E i) => X z.1) μ
+      (P.prod (TauCeti.Measure.countableProductMeasure ν)) := by
+  have hfst : HasLaw Prod.fst μ (μ.prod (TauCeti.Measure.countableProductMeasure ν)) :=
+    measurePreserving_fst.hasLaw
+  simpa [Function.comp_def] using hfst.comp (hX.prod_extension_countable ν)
+
+/-- Adjoining a countable family preserves the full joint law of an old pair, including any
+dependence between its coordinates. -/
+theorem _root_.ProbabilityTheory.HasLaw.prod_extension_countable_preserves_old_pair
+    {Ω α β ι : Type*} [MeasurableSpace Ω] [MeasurableSpace α] [MeasurableSpace β]
+    [Countable ι] {E : ι → Type*} [∀ i, MeasurableSpace (E i)] [∀ i, TopologicalSpace (E i)]
+    [∀ i, SecondCountableTopology (E i)]
+    [∀ i, TopologicalSpace.IsCompletelyPseudoMetrizableSpace (E i)] [∀ i, BorelSpace (E i)]
+    {X : Ω → α} {Y : Ω → β}
+    {μ : Measure (α × β)} {P : Measure Ω} (ν : ∀ i, Measure (E i))
+    [∀ i, IsProbabilityMeasure (ν i)]
+    (hXY : HasLaw (fun ω => (X ω, Y ω)) μ P) :
+    HasLaw (fun z : Ω × (∀ i, E i) => (X z.1, Y z.1)) μ
+      (P.prod (TauCeti.Measure.countableProductMeasure ν)) :=
+  hXY.prod_extension_countable_preserves_old_tuple ν
+
+/-- Under a probability source, the entire countable product family is independent of the old
+random object. -/
+theorem _root_.ProbabilityTheory.HasLaw.prod_extension_countable_indep
+    {Ω α ι : Type*} [MeasurableSpace Ω] [MeasurableSpace α] [Countable ι]
+    {E : ι → Type*} [∀ i, MeasurableSpace (E i)] [∀ i, TopologicalSpace (E i)]
+    [∀ i, SecondCountableTopology (E i)]
+    [∀ i, TopologicalSpace.IsCompletelyPseudoMetrizableSpace (E i)] [∀ i, BorelSpace (E i)]
+    {X : Ω → α} {μ : Measure α} {P : Measure Ω} [IsProbabilityMeasure P]
+    (ν : ∀ i, Measure (E i)) [∀ i, IsProbabilityMeasure (ν i)]
+    (hX : HasLaw X μ P) :
+    (fun z : Ω × (∀ i, E i) => X z.1) ⟂ᵢ[P.prod (TauCeti.Measure.countableProductMeasure ν)]
+      fun z => z.2 := by
+  have hOld := hX.prod_extension_countable_preserves_old_tuple ν
+  have hNew : MeasurePreserving Prod.snd
+      (P.prod (TauCeti.Measure.countableProductMeasure ν))
+      (TauCeti.Measure.countableProductMeasure ν) := by
+    refine ⟨measurable_snd, ?_⟩
+    rw [Measure.map_snd_prod, measure_univ, one_smul]
+  have hNew := hNew.hasLaw
+  exact (indepFun_iff_hasLaw_prodMk_prod hOld hNew).2
+    (hX.prod_extension_countable ν)
 
 /-- **A nonzero source singleton has no transport onto a law that is null on singletons.** This
 is the basic infeasibility of the Monge problem: no map can push such a source measure onto such
