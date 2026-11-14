@@ -58,6 +58,18 @@ instance spectralSpace_pi {ι : Type*} {X : ι → Type*} [t : ∀ i, Topologica
       ((hV i hi).2.isClopen_constructibleTopology_of_isOpen (hV i hi).1)
       (fun x ↦ x i) (@continuous_apply ι X (fun i ↦ constructibleTopology (X i)) i)
 
+/-- The binary product of two spectral spaces, with its product topology, is spectral. -/
+instance spectralSpace_prod.{u, v} {X : Type u} {Y : Type v} [TopologicalSpace X]
+    [TopologicalSpace Y] [SpectralSpace X] [SpectralSpace Y] : SpectralSpace (X × Y) := by
+  let _ (b : Bool) : TopologicalSpace (Bool.rec (ULift.{u} Y) (ULift.{v} X) b) :=
+    Bool.rec inferInstance inferInstance b
+  have (b : Bool) : SpectralSpace (Bool.rec (ULift.{u} Y) (ULift.{v} X) b) :=
+    Bool.rec (Homeomorph.ulift : ULift.{u} Y ≃ₜ Y).isOpenEmbedding.spectralSpace
+      (Homeomorph.ulift : ULift.{v} X ≃ₜ X).isOpenEmbedding.spectralSpace b
+  exact ((Homeomorph.ulift.symm.prodCongr Homeomorph.ulift.symm).trans
+    (Homeomorph.piFinTwo fun i : Fin 2 ↦
+      Bool.rec (ULift.{u} Y) (ULift.{v} X) (i == 0)).symm).isOpenEmbedding.spectralSpace
+
 end TauCeti
 
 namespace TopCat

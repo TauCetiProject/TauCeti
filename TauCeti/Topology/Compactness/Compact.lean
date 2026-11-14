@@ -150,6 +150,16 @@ theorem _root_.IsCompact.finite_of_forall_isClosed {K S : Set X}
       ⟨T, hS T hT, Set.inter_eq_left.2 hT⟩
   exact (hK.of_isClosed_subset (hS S subset_rfl) hSK).finite hd
 
+/-- In a compact T₀ space, a closed subset `S` is contained in an open subset `U` as soon as every
+closed point in `S` belongs to `U`. -/
+theorem _root_.IsClosed.subset_of_forall_isClosed_singleton [CompactSpace X] [T0Space X]
+    {S U : Set X} (hS : IsClosed S) (hU : IsOpen U)
+    (h : ∀ z ∈ S, IsClosed ({z} : Set X) → z ∈ U) : S ⊆ U := by
+  intro z hzS
+  by_contra hzU
+  obtain ⟨w, ⟨hwS, hwU⟩, hwcl⟩ := (hS.sdiff hU).exists_closed_singleton ⟨z, hzS, hzU⟩
+  exact hwU (h w hwS hwcl)
+
 section TubeLemma
 
 variable {α E P : Type*} [TopologicalSpace α] [CompactSpace α] [TopologicalSpace E]

@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.Topology.Spectral.LocallySpectral
+import TauCeti.Topology.Spectral.PatchCriterion
 import Mathlib.Topology.Compactification.OnePoint.Basic
-import Mathlib.Topology.InductiveDimension.Classes
 import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
@@ -121,11 +121,8 @@ example : ∃ (f : OnePoint ℕ → ℝ) (g : ℝ → Prop),
     obtain rfl := hR U hUo hUs
     exact ⟨continuous_of_discreteTopology, fun _ _ _ ↦ (toFinite _).isCompact⟩
   refine ⟨f, g, hf, hg, fun h ↦ ?_⟩
-  -- `OnePoint ℕ` is compact, Hausdorff and totally disconnected, so its clopen subsets form a basis
-  -- of compact opens.
-  have : SpectralSpace (OnePoint ℕ) :=
-    { toPrespectralSpace := .of_isTopologicalBasis isTopologicalBasis_isClopen
-        fun _ hU ↦ hU.isClosed.isCompact }
+  -- `OnePoint ℕ` is compact, Hausdorff and zero-dimensional, hence spectral.
+  have : SpectralSpace (OnePoint ℕ) := spectralSpace_of_zeroDimensionalSpace (OnePoint ℕ)
   have : SpectralSpace Prop := spectralSpace_prop
   have hpre : g ∘ f ⁻¹' {True} = range ((↑) : ℕ → OnePoint ℕ) := by
     ext x
