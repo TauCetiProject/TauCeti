@@ -114,16 +114,12 @@ rather than on a coefficient triple. -/
 theorem splits_iff_isSquare_discr_of_natDegree_eq_two {q : F[X]} (hchar : ringChar F ≠ 2)
     (hdeg : q.natDegree = 2) : q.Splits ↔ IsSquare q.discr := by
   have : NeZero (2 : F) := ⟨Ring.two_ne_zero hchar⟩
-  have hq0 : q ≠ 0 := fun h0 => by simp [h0] at hdeg
   have hdeg2 : q.degree = 2 := by
     rw [← Nat.cast_two, degree_eq_iff_natDegree_eq_of_pos two_pos]
     exact hdeg
-  have hlc : q.coeff 2 ≠ 0 := by
-    rw [← hdeg, coeff_natDegree]
-    exact leadingCoeff_ne_zero.mpr hq0
   rw [discr_eq_discrim_of_degree_eq_two hdeg2]
   conv_lhs => rw [eq_quadratic_of_degree_le_two hdeg2.le]
-  exact splits_quadratic_iff_isSquare hlc
+  exact splits_quadratic_iff_isSquare
 
 /-- **The quadratic formula.** Away from characteristic `2`, a quadratic polynomial over a field
 has a root in that field exactly when its discriminant is a square there. -/
