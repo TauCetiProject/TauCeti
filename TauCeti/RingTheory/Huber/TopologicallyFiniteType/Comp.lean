@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Pair
 
 import TauCeti.RingTheory.Huber.OpenIdeal
+import TauCeti.RingTheory.Huber.TopologicallyFiniteType.WeightedPresentation
 import TauCeti.RingTheory.Huber.WeightedEval.Finite
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Iterate.Pair
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.OpenIdeal
@@ -37,21 +38,22 @@ the presentation of `φ` applied coefficientwise, which is again an open quotien
 This gives Wedhorn's Proposition 6.33(1): the composite of homomorphisms topologically of finite
 type over a Huber base is topologically of finite type. No Tate hypothesis is needed.
 
-The same presentation composes morphisms of Huber pairs topologically of finite type (Wedhorn,
-Definition 8.42), where the plus rings must be controlled as well: each of the three maps is a
-quotient mapping of the corresponding completed unweighted pairs. This is the composition
-statement of Wedhorn's Proposition 8.46 over a Tate base. It is what lets a chart of a morphism
-locally of finite type be refined by a rational subset of its source, since rational localisation
-of a Tate pair is topologically of finite type
-(`TauCeti.Huber.PairOfDefinition.isTopologicallyFiniteType_toCompletionLocHom`).
+The same weighted presentation composes morphisms of Huber pairs topologically of finite type
+(Wedhorn, Definition 8.42), where the plus rings must be controlled as well:
+`TauCeti.Huber.Pair.exists_isQuotientMapping_weightedCompletionHom_image_append` replaces the
+weights of the second presentation by images of finite weight sets in `A` while adding unweighted
+variables, and each step is a quotient mapping of completed weighted pairs. This gives the
+composition statement of Wedhorn's Proposition 8.46(1) over any Huber base, with no Tate or
+completeness hypothesis.
 
 ## Main results
 
 * `TauCeti.Huber.IsStrictlyTopologicallyFiniteType.comp`: strict topological finite type is
   stable under composition, over a Huber base.
 * `TauCeti.Huber.IsTopologicallyFiniteType.comp`: Wedhorn Proposition 6.33(1) for Huber rings.
-* `TauCeti.Huber.Pair.Hom.IsTopologicallyFiniteType.comp`: the composite of morphisms of Huber
-  pairs topologically of finite type is topologically of finite type, over a Tate base.
+* `TauCeti.Huber.Pair.Hom.IsTopologicallyFiniteType.comp`: Wedhorn Proposition 8.46(1), the
+  composite of morphisms of Huber pairs topologically of finite type over a Huber base is
+  topologically of finite type.
 
 ## References
 
@@ -204,45 +206,67 @@ open UniformSpace
 
 /-! ### Morphisms of Huber pairs
 
-The presentation of the composite is the one above, now as quotient mappings of Huber pairs:
-`(A⟨X, Y⟩, A⟨X, Y⟩⁺) ≅ (A⟨X⟩⟨Y⟩, A⟨X⟩⟨Y⟩⁺) ↠ (B⟨Y⟩, B⟨Y⟩⁺) ↠ (C, C⁺)`, each step controlling the
-plus rings as well as the rings.
+The presentation of the composite is the weighted one above, now as quotient mappings of Huber
+pairs: `(A⟨X, Y, Z⟩, A⟨X, Y, Z⟩⁺)^ ↠ (A⟨X⟩⟨Y, Z⟩, A⟨X⟩⟨Y, Z⟩⁺)^ ↠ (B⟨Y, Z⟩, B⟨Y, Z⟩⁺)^ ↠
+(B⟨Y⟩, B⟨Y⟩⁺)^ ↠ (C, C⁺)`, each step controlling the plus rings as well as the rings.
 -/
 
-variable {A A' B C : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
-  [CommRing A'] [TopologicalSpace A'] [IsTopologicalRing A'] [IsHuberRing A']
+variable {A B C : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
   [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B]
   [CommRing C] [TopologicalSpace C] [IsTopologicalRing C] [IsHuberRing C]
 
 /-- **The composite of morphisms of Huber pairs topologically of finite type is topologically of
-finite type**, over a Tate base: for `f : (A, A⁺) → (B, B⁺)` and `g : (B, B⁺) → (C, C⁺)`
-topologically of finite type with `A` Tate, so is `g ∘ f`. This is the composition statement of
-Wedhorn's Proposition 8.46, and the pair form of `TauCeti.Huber.IsTopologicallyFiniteType.comp`:
-the presentation of `g ∘ f` also controls the plus ring `C⁺`. No completeness is assumed. -/
-theorem Hom.IsTopologicallyFiniteType.comp [IsTateRing A] {S : Pair A} {U : Pair B} {V : Pair C}
+finite type** (Wedhorn, Proposition 8.46(1)): for `f : (A, A⁺) → (B, B⁺)` and
+`g : (B, B⁺) → (C, C⁺)` topologically of finite type over a Huber ring `A`, so is `g ∘ f`. Neither
+completeness nor a Tate hypothesis is assumed. -/
+theorem Hom.IsTopologicallyFiniteType.comp {S : Pair A} {U : Pair B} {V : Pair C}
     {f : Hom S U} {g : Hom U V} (hg : g.IsTopologicallyFiniteType)
     (hf : f.IsTopologicallyFiniteType) : (g.comp f).IsTopologicallyFiniteType := by
-  have : IsTateRing B := IsTateRing.of_continuous f.continuous_toRingHom
-  obtain ⟨k, π, hπ, rfl⟩ := hf.exists_isQuotientMapping_one_weight
-  obtain ⟨m, ρ, hρ, rfl⟩ := hg.exists_isQuotientMapping_one_weight
-  have hUW : ∀ j : Fin m, algebraMap A (restrictedMvPowerSeriesCompletion k A) ''
-      (fun _ : Fin (k + m) ↦ ({1} : Set A)) (Fin.natAdd k j) = {1} :=
-    fun _ ↦ by simp [Completion.coe_one]
-  let e := S.iterateSplitHom isWeightFamily_one_weight isWeightFamily_one_weight
-    isWeightFamily_one_weight (fun _ ↦ rfl) hUW
-  have he := S.isQuotientMapping_iterateSplitHom isWeightFamily_one_weight
-    isWeightFamily_one_weight isWeightFamily_one_weight (fun _ ↦ rfl) hUW
-  let β := π.weightedMapCompletion (isWeightFamily_one_weight (k := m))
-    isWeightFamily_one_weight (fun _ ↦ by simp)
-  have hβ : β.IsQuotientMapping := hπ.weightedMapCompletion isWeightFamily_one_weight
-    isWeightFamily_one_weight (fun _ ↦ by simp)
-    (hπ.isOpenQuotientMap.weightedMapCompletion isWeightFamily_one_weight
-      isWeightFamily_one_weight (fun _ ↦ by simp))
-  refine isTopologicallyFiniteType_iff.mpr ⟨k + m, fun _ ↦ {1}, fun _ ↦ Set.finite_singleton 1,
-    isWeightFamily_one_weight, ρ.comp (β.comp e), hρ.comp (hβ.comp he),
-    Hom.ext (RingHom.ext fun a ↦ ?_)⟩
-  -- on a constant each of the three maps acts as the corresponding structure map
-  simp [e, β, algebraMap_completion_weightedRestrictedSubring_apply]
+  classical
+  obtain ⟨k, T, hTfin, hT, π, hπ, hπf⟩ := isTopologicallyFiniteType_iff.mp hf
+  obtain ⟨m, Q, hQfin, hQ, ρ, hρ, hρg⟩ := isTopologicallyFiniteType_iff.mp hg
+  obtain ⟨G, hW, hW', n, θ, hθ, hθB⟩ :=
+    exists_isQuotientMapping_weightedCompletionHom_image_append f
+      (fun _ hJ ↦ hf.isTopologicallyFiniteType_toRingHom.isOpen_map hJ) hQ hQfin
+  let W : Fin m → Set A := fun i ↦ (G i : Set A)
+  have hWfin (i : Fin m) : (W i).Finite := (G i).finite_toSet
+  have hπA : π.toRingHom.comp (algebraMap A (Completion (weightedRestrictedSubring T hT))) =
+      f.toRingHom := by
+    rw [← Hom.toRingHom_weightedCompletionHom, ← Hom.toRingHom_comp, hπf]
+  have hWD := (hT.image_algebraMap_completion hW).append (isWeightFamily_one_weight (k := n))
+  have hWB := hW'.append (isWeightFamily_one_weight (k := n))
+  have hmap := image_append_algebraMap_weights (n := n) W π.toRingHom (RingHom.congr_fun hπA)
+  let β := π.weightedMapCompletion hWD hWB fun i ↦ (hmap i).subset
+  have hβ : β.IsQuotientMapping := hπ.weightedMapCompletion hWD hWB hmap
+    (hπ.isOpenQuotientMap.weightedMapCompletion hWD hWB hmap)
+  let Z : Fin (k + (m + n)) → Set A := Fin.append T (Fin.append W fun _ ↦ ({1} : Set A))
+  have hZ : IsWeightFamily Z := hT.append (hW.append isWeightFamily_one_weight)
+  have hTZ : ∀ i, Z (Fin.castAdd (m + n) i) = T i := fun i ↦ by simp [Z]
+  have hZW : ∀ j, algebraMap A (Completion (weightedRestrictedSubring T hT)) ''
+      Z (Fin.natAdd k j) = _ := image_algebraMap_append_append_weights T W
+  let e := S.iterateSplitHom hT hWD hZ hTZ hZW
+  have he : e.IsQuotientMapping := S.isQuotientMapping_iterateSplitHom hT hWD hZ hTZ hZW
+  refine isTopologicallyFiniteType_iff.mpr
+    ⟨k + (m + n), Z, finite_append_append_weights hTfin hWfin, hZ,
+      (ρ.comp θ).comp (β.comp e), (hρ.comp hθ).comp (hβ.comp he),
+      Hom.ext (RingHom.ext fun a ↦ ?_)⟩
+  have hθB_apply (b : B) : θ.toRingHom
+      (algebraMap B (Completion (weightedRestrictedSubring _ hWB)) b) =
+        algebraMap B (Completion (weightedRestrictedSubring Q hQ)) b := by
+    simpa only [Hom.toRingHom_comp, Hom.toRingHom_weightedCompletionHom, RingHom.comp_apply] using
+      RingHom.congr_fun (congrArg Hom.toRingHom hθB) b
+  have hρg_apply (b : B) :
+      ρ.toRingHom (algebraMap B (Completion (weightedRestrictedSubring Q hQ)) b) =
+        g.toRingHom b := by
+    simpa only [Hom.toRingHom_comp, Hom.toRingHom_weightedCompletionHom, RingHom.comp_apply] using
+      RingHom.congr_fun (congrArg Hom.toRingHom hρg) b
+  simp only [e, β, Hom.toRingHom_comp, Hom.toRingHom_weightedCompletionHom,
+    Hom.toRingHom_iterateSplitHom, Hom.toRingHom_weightedMapCompletion, RingHom.comp_apply,
+    algebraMap_completion_weightedRestrictedSubring_apply, iterateSplitHom_coe_weightedC,
+    iterateStructureHom_apply, weightedMapCompletion_coe, weightedMap_weightedC]
+  rw [← algebraMap_completion_weightedRestrictedSubring_apply, hθB_apply, hρg_apply,
+    ← algebraMap_completion_weightedRestrictedSubring_apply]
+  exact congrArg g.toRingHom (RingHom.congr_fun hπA a)
 
 end Pair
 
