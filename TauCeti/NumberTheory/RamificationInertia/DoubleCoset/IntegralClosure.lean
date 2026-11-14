@@ -181,9 +181,6 @@ theorem ramificationIdx_mul_inertiaDeg_under_smul_eq_relIndex_of_isIntegralClosu
     (A := A) (B := B) H C
   obtain ⟨_, _, _⟩ := TauCeti.IsIntegralClosure.isDedekindDomain_and_finite_and_flat_fixedField
     (A := A) (K := K) (M := M) H C
-  have : (σ • Q).IsMaximal := by
-    rw [pointwise_smul_eq_comap]
-    infer_instance
   rw [ramificationIdx_mul_inertiaDeg_under_eq_relIndex (σ • Q) H C,
     stabilizer_smul_eq_stabilizer_map_conj, MulEquiv.toMonoidHom_eq_coe,
     TauCeti.map_conj_eq_conj_smul]

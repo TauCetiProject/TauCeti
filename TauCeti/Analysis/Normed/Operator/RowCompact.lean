@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import TauCeti.Analysis.Normed.Operator.CompletelyContinuous
-public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Matrix
+public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Matrix.InputFirst
 import Mathlib.Algebra.Polynomial.Div
 
 /-!
@@ -99,6 +99,12 @@ theorem rowNorm_def (u : C₀(J, R) →L[R] C₀(I, R)) (i : I) :
     u.rowNorm i = ⨆ j, ‖u.matrixCoeff i j‖ :=
   (rfl)
 
+/-- The output-first row norm is the column supremum in input-first coordinates. Use a
+bound on the entries (automatic over Tate scalars) when using this real supremum as a bound. -/
+theorem rowNorm_eq_iSup_norm_matrixCoeffInputFirst (u : C₀(J, R) →L[R] C₀(I, R)) (i : I) :
+    u.rowNorm i = ⨆ j, ‖u.matrixCoeffInputFirst j i‖ := by
+  simp only [rowNorm_def, matrixCoeffInputFirst_apply]
+
 theorem rowNorm_nonneg (u : C₀(J, R) →L[R] C₀(I, R)) (i : I) : 0 ≤ u.rowNorm i :=
   Real.iSup_nonneg fun _ ↦ norm_nonneg _
 
@@ -123,6 +129,23 @@ theorem isRowCompact_iff {u : C₀(J, R) →L[R] C₀(I, R)} :
     u.IsRowCompact ↔
       (∃ C, ∀ i j, ‖u.matrixCoeff i j‖ ≤ C) ∧ Tendsto u.rowNorm cofinite (𝓝 0) :=
   Iff.rfl
+
+/-- Row compactness in output-first coordinates is boundedness of the input-first entries
+and decay of their column suprema. The boundedness clause makes the suprema meaningful.
+This differs from the automatic decay of each input-first row. -/
+theorem isRowCompact_iff_matrixCoeffInputFirst {u : C₀(J, R) →L[R] C₀(I, R)} :
+    u.IsRowCompact ↔ (∃ C, ∀ j i, ‖u.matrixCoeffInputFirst j i‖ ≤ C) ∧
+      Tendsto (fun i ↦ ⨆ j, ‖u.matrixCoeffInputFirst j i‖) cofinite (𝓝 0) := by
+  rw [isRowCompact_iff]
+  constructor
+  · rintro ⟨hbound, hdecay⟩
+    obtain ⟨C, hC⟩ := hbound
+    exact ⟨⟨C, fun j i ↦ by simpa only [matrixCoeffInputFirst_apply] using hC i j⟩,
+      hdecay.congr fun i ↦ u.rowNorm_eq_iSup_norm_matrixCoeffInputFirst i⟩
+  · rintro ⟨hbound, hdecay⟩
+    obtain ⟨C, hC⟩ := hbound
+    exact ⟨⟨C, fun i j ↦ by simpa only [matrixCoeffInputFirst_apply] using hC j i⟩,
+      hdecay.congr fun i ↦ (u.rowNorm_eq_iSup_norm_matrixCoeffInputFirst i).symm⟩
 
 theorem IsRowCompact.tendsto_rowNorm {u : C₀(J, R) →L[R] C₀(I, R)} (hu : u.IsRowCompact) :
     Tendsto u.rowNorm cofinite (𝓝 0) :=
@@ -172,6 +195,13 @@ theorem IsRowCompact.add {u v : C₀(J, R) →L[R] C₀(I, R)} (hu : u.IsRowComp
   rw [matrixCoeff_add, Matrix.add_apply]
   exact (norm_add_le _ _).trans
     (add_le_add (hu.norm_matrixCoeff_le_rowNorm i j) (hv.norm_matrixCoeff_le_rowNorm i j))
+
+/-- A finite sum of row-compact maps is row compact. -/
+theorem IsRowCompact.sum {ι : Type*} {s : Finset ι}
+    {f : ι → C₀(J, R) →L[R] C₀(I, R)} (hf : ∀ i ∈ s, (f i).IsRowCompact) :
+    (∑ i ∈ s, f i).IsRowCompact :=
+  Finset.sum_induction f (fun w : C₀(J, R) →L[R] C₀(I, R) ↦ w.IsRowCompact)
+    (fun _ _ ↦ IsRowCompact.add) isRowCompact_zero hf
 
 theorem IsRowCompact.neg {u : C₀(J, R) →L[R] C₀(I, R)} (hu : u.IsRowCompact) :
     (-u).IsRowCompact :=

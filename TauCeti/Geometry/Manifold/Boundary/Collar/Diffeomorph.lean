@@ -23,9 +23,8 @@ coordinate. Its underlying equivalence is the one of
 what is new is that both directions are `C^k`. Its inverse combines a boundary point and a normal
 coordinate and reads the resulting pair back through `φ`.
 
-This is the smooth local-product step in the collar-neighbourhood target of Layer 1 of the
-`GeometricTopology` roadmap. The global collar theorem still requires patching these local
-diffeomorphisms along the whole boundary.
+This is the smooth local-product step towards the collar-neighbourhood theorem. The global collar
+theorem still requires patching these local diffeomorphisms along the whole boundary.
 
 ## Main definitions
 

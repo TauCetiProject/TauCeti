@@ -178,21 +178,20 @@ def diskRelCWComplex :
       rw [diskCellMapOfCell_self, diskCellMap_apply n (diskHomeomorphClosedBall n z).2,
         Subtype.coe_eta, Homeomorph.symm_apply_apply])
 
+attribute [local instance] diskRelCWComplex
+
 /-- The disk is a finite relative CW complex over its boundary sphere. -/
 theorem finite_diskRelCWComplex :
-    letI := diskRelCWComplex n
     RelCWComplex.Finite (univ : Set (TopCat.disk.{u} n)) :=
   RelCWComplex.finite_mkFinite ..
 
 /-- The disk has exactly one cell, of dimension `n`: its `m`-cells are the proofs of `m = n`. -/
 def diskRelCWComplexCellEquiv (m : ℕ) :
-    letI := diskRelCWComplex n
     cell (univ : Set (TopCat.disk.{u} n)) m ≃ PLift (m = n) :=
   Equiv.ulift
 
 /-- The top cell of the disk. -/
 def diskRelCWComplexTopCell :
-    letI := diskRelCWComplex n
     cell (univ : Set (TopCat.disk.{u} n)) n :=
   (diskRelCWComplexCellEquiv n n).symm ⟨rfl⟩
 
@@ -200,7 +199,6 @@ def diskRelCWComplexTopCell :
 `TauCeti.diskHomeomorphClosedBall` on the closed unit ball of the sup norm. -/
 @[simp]
 theorem diskRelCWComplex_map_apply (x : closedBall (0 : Fin n → ℝ) 1) :
-    letI := diskRelCWComplex n
     map n (diskRelCWComplexTopCell n) x = (diskHomeomorphClosedBall n).symm x :=
   -- `RelCWComplex.mkFinite` takes the supplied family as its `map` field, so the characteristic
   -- map of the top cell is `diskCellMap n` by definition.
@@ -219,24 +217,21 @@ followed by the summand inclusion (`TauCeti.sigmaDiskRelCWComplex_map_apply`). -
 def sigmaDiskRelCWComplex :
     RelCWComplex (univ.sigma fun i ↦ (univ : Set (TopCat.disk.{u} (n i))))
       (univ.sigma fun i ↦ range (TopCat.diskBoundaryInclusion.{u} (n i))) :=
-  letI := fun i ↦ diskRelCWComplex (n i)
   RelCWComplex.sigma _ _
+
+attribute [local instance] sigmaDiskRelCWComplex
 
 /-- The `m`-cells of the disjoint union of the disks `TopCat.disk (n i)` are the indices `i` with
 `n i = m`. -/
 def sigmaDiskRelCWComplexCellEquiv (m : ℕ) :
-    letI := sigmaDiskRelCWComplex n
     cell (univ.sigma fun i ↦ (univ : Set (TopCat.disk.{u} (n i)))) m ≃ {i // n i = m} :=
-  letI := fun i ↦ diskRelCWComplex (n i)
   (RelCWComplex.sigmaCellEquiv _ _ m).trans
     ((Equiv.sigmaULiftPLiftEquivSubtype fun i ↦ m = n i).trans
       (Equiv.subtypeEquivRight fun _ ↦ eq_comm))
 
 /-- The cell of the disjoint union of disks given by the `i`-th disk, of dimension `n i`. -/
 def sigmaDiskRelCWComplexCell (i : ι) :
-    letI := sigmaDiskRelCWComplex n
     cell (univ.sigma fun i ↦ (univ : Set (TopCat.disk.{u} (n i)))) (n i) :=
-  letI := fun i ↦ diskRelCWComplex (n i)
   (RelCWComplex.sigmaCellEquiv _ _ (n i)).symm ⟨i, diskRelCWComplexTopCell (n i)⟩
 
 /-- Under `TauCeti.sigmaDiskRelCWComplexCellEquiv`, the cell of the `i`-th disk is the index
@@ -252,10 +247,8 @@ theorem sigmaDiskRelCWComplexCellEquiv_cell (i : ι) :
 characteristic map of that disk followed by the summand inclusion. -/
 @[simp]
 theorem sigmaDiskRelCWComplex_map_apply (i : ι) (x : closedBall (0 : Fin (n i) → ℝ) 1) :
-    letI := sigmaDiskRelCWComplex n
     map (n i) (sigmaDiskRelCWComplexCell n i) x =
       ⟨i, (diskHomeomorphClosedBall (n i)).symm x⟩ := by
-  let := fun i ↦ diskRelCWComplex.{u} (n i)
   rw [sigmaDiskRelCWComplexCell, RelCWComplex.coe_map_sigma, Function.comp_apply,
     diskRelCWComplex_map_apply]
 
@@ -263,13 +256,10 @@ variable {n} in
 /-- On its boundary sphere, the characteristic map of an `m`-cell of the disjoint union of disks
 lands on the boundary sphere of a disk of dimension `m`. -/
 theorem exists_map_sigmaDiskRelCWComplex_eq {m : ℕ}
-    (j : letI := sigmaDiskRelCWComplex n
-      cell (univ.sigma fun i ↦ (univ : Set (TopCat.disk.{u} (n i)))) m)
+    (j : cell (univ.sigma fun i ↦ (univ : Set (TopCat.disk.{u} (n i)))) m)
     {x : Fin m → ℝ} (hx : x ∈ sphere 0 1) :
-    letI := sigmaDiskRelCWComplex n
     ∃ s : Σ i, TopCat.diskBoundary.{u} (n i), n s.1 = m ∧
       map m j x = ⟨s.1, TopCat.diskBoundaryInclusion (n s.1) s.2⟩ := by
-  let := sigmaDiskRelCWComplex n
   obtain ⟨⟨i, rfl⟩, rfl⟩ : ∃ p, (sigmaDiskRelCWComplexCellEquiv n m).symm p = j :=
     ⟨_, Equiv.symm_apply_apply _ j⟩
   have hcell : (sigmaDiskRelCWComplexCellEquiv n (n i)).symm ⟨i, rfl⟩ =
@@ -341,31 +331,25 @@ theorem homotopic_sigmaDiskAttachingMap {a a' : ∀ i, C(TopCat.diskBoundary.{u}
     (sigmaDiskAttachingMap a).Homotopic (sigmaDiskAttachingMap a') :=
   (ContinuousMap.Homotopic.sigma h).comp (.refl _)
 
+attribute [local instance] relativeCWPushout
+
 /-- **Attaching cells along a family of maps.** Gluing the disjoint union of the disks
 `TopCat.disk (n i)` to a space `Y` along `TauCeti.sigmaDiskAttachingMap b` gives a relative CW
 complex over `Y` (`TauCeti.relativeCWPushout`) whose `m`-cells are the indices `i` with
 `n i = m`: one `n i`-cell is attached along each `b i`. -/
 def sigmaDiskAdjunctionSpaceCellEquiv {Y : Type u} [TopologicalSpace Y]
     (b : ∀ i, C(TopCat.diskBoundary.{u} (n i), Y)) (m : ℕ) :
-    letI := sigmaDiskRelCWComplex n
-    letI := relativeCWPushout (univ.sigma fun i ↦ (univ : Set (TopCat.disk.{u} (n i))))
-      (sigmaDiskAttachingMap b)
     cell (univ : Set (relCWAdjunctionSpace
       (univ.sigma fun i ↦ (univ : Set (TopCat.disk.{u} (n i)))) (sigmaDiskAttachingMap b))) m ≃
         {i // n i = m} :=
-  letI := sigmaDiskRelCWComplex n
   (relativeCWPushoutCellEquiv _ _ m).trans (sigmaDiskRelCWComplexCellEquiv n m)
 
 /-- The cell of `Y ∪_b ⨆ᵢ Dⁿⁱ` with index `i` is the cell of the `i`-th disk. -/
 theorem sigmaDiskAdjunctionSpaceCellEquiv_symm_mk {Y : Type u} [TopologicalSpace Y]
     (b : ∀ i, C(TopCat.diskBoundary.{u} (n i), Y)) (i : ι) :
-    letI := sigmaDiskRelCWComplex n
-    letI := relativeCWPushout (univ.sigma fun i ↦ (univ : Set (TopCat.disk.{u} (n i))))
-      (sigmaDiskAttachingMap b)
     (sigmaDiskAdjunctionSpaceCellEquiv b (n i)).symm ⟨i, rfl⟩ =
       (relativeCWPushoutCellEquiv _ (sigmaDiskAttachingMap b) (n i)).symm
         (sigmaDiskRelCWComplexCell n i) := by
-  let := sigmaDiskRelCWComplex n
   rw [Equiv.symm_apply_eq, sigmaDiskAdjunctionSpaceCellEquiv, Equiv.trans_apply,
     Equiv.apply_symm_apply, sigmaDiskRelCWComplexCellEquiv_cell]
 

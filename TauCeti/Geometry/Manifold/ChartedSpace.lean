@@ -17,7 +17,9 @@ A function `k` on a charted space is read in the preferred chart at `x` as
 representatives transform: under a change of chart, under composition with a continuous map
 between charted spaces, and how punctured neighbourhoods are carried by the inverse chart. These
 are the facts needed to read a local notion of one variable (meromorphy, orders, ...) on a
-charted space in its preferred charts and to check that it is well behaved.
+charted space in its preferred charts and to check that it is well behaved. Some global properties
+of the model space also pass to the charted space: having no isolated points, and, for a Lindelöf
+charted space, second countability.
 
 ## Main results
 
@@ -34,6 +36,8 @@ charted space in its preferred charts and to check that it is well behaved.
 * `ChartedSpace.perfectSpace`: a charted space over a space without isolated points has no
   isolated points.
 * `ChartedSpace.nontrivial`: a nonempty such charted space has two distinct points.
+* `ChartedSpace.secondCountable_of_lindelof`: a Lindelöf charted space over a second-countable
+  model space is second countable.
 -/
 
 public section
@@ -125,3 +129,11 @@ theorem ChartedSpace.nontrivial {H X : Type*} [TopologicalSpace H] [PerfectSpace
   obtain ⟨x⟩ := ‹Nonempty X›
   obtain ⟨y, hy⟩ := Filter.nonempty_of_mem (self_mem_nhdsWithin : {x}ᶜ ∈ 𝓝[≠] x)
   exact ⟨⟨y, x, hy⟩⟩
+
+/-- A Lindelöf charted space over a second-countable model space is second countable. -/
+theorem ChartedSpace.secondCountable_of_lindelof (H X : Type*) [TopologicalSpace H]
+    [SecondCountableTopology H] [TopologicalSpace X] [ChartedSpace H X] [LindelofSpace X] :
+    SecondCountableTopology X := by
+  obtain ⟨s, hsc, hsU⟩ := LindelofSpace.elim_nhds_subcover (fun x : X ↦ (chartAt H x).source)
+    fun x ↦ chart_source_mem_nhds H x
+  exact ChartedSpace.secondCountable_of_countable_cover H hsU hsc
