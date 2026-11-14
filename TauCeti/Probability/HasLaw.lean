@@ -36,14 +36,9 @@ is the topological reason why optimal transport maps onto disconnected targets a
 Adjoining a coordinate with an s-finite measure to a random variable gives the pair the product
 measure. Completing the source measure preserves every random variable's law.
 Nonnegative random variables whose real coercions have a common law are identically distributed.
-Identically distributed random variables that equal a constant almost surely at one index equal it
-almost surely at all indices simultaneously.
 
 ## Main results
 
-* `TauCeti.Probability.ae_forall_eq_of_identDistrib` — identically distributed random variables
-  that are almost surely equal to a constant at index `0` are almost surely equal to it at every
-  index simultaneously;
 * `ProbabilityTheory.HasLaw.cond` — conditioning transports a prescribed law;
 * `ProbabilityTheory.HasLaw.aemeasurable_of_ae_eq_comp` — a map almost everywhere equal to an
   a.e. measurable map composed with a random variable of the right law is a.e. measurable;
@@ -104,16 +99,6 @@ theorem _root_.ProbabilityTheory.HasLaw.identDistrib_nnreal
     (hY : HasLaw (fun ω ↦ (Y ω : ℝ)) μ Q) : IdentDistrib X Y P Q := by
   simpa only [Function.comp_def, Real.toNNReal_coe] using
     (hX.identDistrib hY).comp measurable_real_toNNReal
-
-/-- **Identically distributed random variables that are almost surely constant are almost surely
-constant simultaneously.** If a sequence of identically distributed random variables equals `c`
-almost surely at index `0`, then almost surely all of them equal `c`. -/
-theorem ae_forall_eq_of_identDistrib
-    {Ω Z : Type*} [MeasurableSpace Ω] [MeasurableSpace Z] [MeasurableSingletonClass Z]
-    {P : Measure Ω} {T : ℕ → Ω → Z}
-    (hid : ∀ n, IdentDistrib (T n) (T 0) P P) {c : Z} (h : T 0 =ᵐ[P] fun _ ↦ c) :
-    ∀ᵐ ω ∂P, ∀ n, T n ω = c :=
-  ae_all_iff.2 fun n ↦ (hid n).symm.ae_mem_snd (measurableSet_singleton c) h
 
 /-- Completing the source measure does not change a random variable's law. -/
 theorem _root_.ProbabilityTheory.HasLaw.completion (hT : HasLaw T ν μ) :
