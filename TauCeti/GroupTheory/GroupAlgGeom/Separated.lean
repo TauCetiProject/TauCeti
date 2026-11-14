@@ -27,7 +27,8 @@ over `G`, are exactly those vanishing at `p` in `K`. Hence the kernel of any `G`
 of `ker π` is irreducible, its coordinate group embedding in `K`. Likewise the radical over `H` of
 any system `S` lies in its radical over `K`, so `S` and `Rad_H(S)` have the same solutions in `K`,
 and evaluation at a solution of `S` in `K` is a `G`-homomorphism from the coordinate group
-`G_{R(S)}` to `K`.
+`G_{R(S)}` to `K`. This identifies the `G`-homomorphisms `G_{R(S)} → K` with the solutions of `S`
+in `K`.
 
 Two special cases are recorded. Every coordinate group `G_{R(S)}` is separated by `H`. The group
 `G_S = G[X] ⧸ ncl(S)` of a system is separated by `H` exactly when the radical of `S` is its
@@ -87,6 +88,8 @@ also cover systems without solutions, whose coordinate group is trivial.
   over `H` have the same solutions in `K`.
 * `TauCeti.GroupAlgGeom.CoordGroup.evalGHomOfIsSeparatedBy`: evaluation at a solution of `S` in
   such a group `K`, as a `G`-homomorphism `G_{R(S)} → K`.
+* `TauCeti.GroupAlgGeom.CoordGroup.homEquivOfIsSeparatedBy`: for `K` separated by `H`, the
+  `G`-homomorphisms `G_{R(S)} → K` correspond to the solutions of `S` in `K`.
 * `TauCeti.GroupAlgGeom.IsDiscriminatedBy.isIrreducible_V_ker`: for `K` discriminated by `H`, the
   algebraic set of that kernel is irreducible.
 * `TauCeti.GroupAlgGeom.CoordGroup.isSeparatedBy_coeff`: coordinate groups over `H` are separated
@@ -233,6 +236,48 @@ theorem CoordGroup.evalGHomOfIsSeparatedBy_genericPoint {S : Set (GX G X)}
     (h : IsSeparatedBy κ ι) {p : X → K} (hp : p ∈ V κ S) (x : X) :
     evalGHomOfIsSeparatedBy h p hp (genericPoint ι S x) = p x := by
   rw [genericPoint_apply, evalGHomOfIsSeparatedBy_mk, eval_inr_of]
+
+/-- Composing the generic point with evaluation at a solution `p` in a group separated by `H`
+gives `p`. -/
+@[simp]
+theorem CoordGroup.evalGHomOfIsSeparatedBy_comp_genericPoint {S : Set (GX G X)}
+    (h : IsSeparatedBy κ ι) {p : X → K} (hp : p ∈ V κ S) :
+    evalGHomOfIsSeparatedBy h p hp ∘ genericPoint ι S = p :=
+  funext (evalGHomOfIsSeparatedBy_genericPoint h hp)
+
+/-- The universal property of the coordinate group `G_{R(S)}` over `H` for groups `K` separated
+by `H` over `G`: `G`-homomorphisms `G_{R(S)} → K` correspond to the solutions of `S` in `K`, by
+their values at the generic point and by evaluation. -/
+def CoordGroup.homEquivOfIsSeparatedBy (h : IsSeparatedBy κ ι) (S : Set (GX G X)) :
+    GHom (coeff ι S) κ ≃ V κ S where
+  toFun φ := ⟨φ ∘ genericPoint ι S, φ.comp_mem_V (genericPoint_mem_V S)⟩
+  invFun p := evalGHomOfIsSeparatedBy h p p.2
+  left_inv φ := gHom_ext fun x => by simp [genericPoint_apply]
+  right_inv p := Subtype.ext (evalGHomOfIsSeparatedBy_comp_genericPoint h p.2)
+
+@[simp]
+theorem CoordGroup.homEquivOfIsSeparatedBy_apply_coe (h : IsSeparatedBy κ ι) {S : Set (GX G X)}
+    (φ : GHom (coeff ι S) κ) (x : X) :
+    (homEquivOfIsSeparatedBy h S φ : X → K) x = φ (genericPoint ι S x) := (rfl)
+
+@[simp]
+theorem CoordGroup.homEquivOfIsSeparatedBy_symm_apply (h : IsSeparatedBy κ ι) {S : Set (GX G X)}
+    (p : V κ S) : (homEquivOfIsSeparatedBy h S).symm p = evalGHomOfIsSeparatedBy h p p.2 := (rfl)
+
+/-- Evaluating an equation at the solution attached to a `G`-homomorphism `φ : G_{R(S)} → K` gives
+the image under `φ` of its class. -/
+@[simp]
+theorem CoordGroup.eval_homEquivOfIsSeparatedBy (h : IsSeparatedBy κ ι) {S : Set (GX G X)}
+    (φ : GHom (coeff ι S) κ) (w : GX G X) :
+    eval κ (homEquivOfIsSeparatedBy h S φ) w = φ (w : CoordGroup ι S) := by
+  rw [← eval_genericPoint, map_eval]
+  rfl
+
+/-- For `K = H` the bijection is the universal property `CoordGroup.homEquiv` of the coordinate
+group. -/
+theorem CoordGroup.homEquivOfIsSeparatedBy_self (S : Set (GX G X)) :
+    homEquivOfIsSeparatedBy (IsDiscriminatedBy.self ι).isSeparatedBy S = homEquiv ι S :=
+  Equiv.ext fun _ => Subtype.ext <| funext fun _ => by simp [genericPoint_apply]
 
 /-- If `K` is discriminated by `H` over `G`, the algebraic set over `H` of the kernel of a
 homomorphism `G[X] →* K` over `G`, surjective or not, is irreducible. -/
