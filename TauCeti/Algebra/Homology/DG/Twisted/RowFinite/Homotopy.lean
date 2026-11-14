@@ -201,21 +201,20 @@ theorem tensorHomotopy_differential (hM : IsDGRightModule hA ℳ dM)
         η.tensorHomotopy ℳ +
       η.tensorHomotopy ℳ ∘ₗ differential hM (mP.isDGLeftModule_rowFiniteTwistedDifferential hA) =
       ν₁.tensorMap - ν₀.tensorMap := by
-    refine hom_ext_of_mem (ℳ := ℳ) fun {q α} hα g ↦ ?_
-    have hdα : dM α ∈ ℳ (q + 1) := hM.isHomogeneous.map_mem hα
-    have hsub (u v : Q →₀ A) : tmul R A α (u - v) = tmul R A α u - tmul R A α v := by
-      simpa only [mk_apply] using map_sub (BalancedTensorProduct.mk R A α) u v
-    simp only [LinearMap.add_apply, LinearMap.sub_apply, LinearMap.comp_apply,
-      RowFiniteContinuationCocycle.tensorMap_tmul]
-    rw [η.tensorHomotopy_tmul_of_mem hα, map_smul, differential_tmul_of_mem hM _ hα,
-      differential_tmul_of_mem hM _ hα, map_add, map_smul, η.tensorHomotopy_tmul_of_mem hdα,
-      η.tensorHomotopy_tmul_of_mem hα, ← hsub, ← η.rowFiniteSignedMap_differential hA g,
-      tmul_add,
-      Int.negOnePow_succ]
-    -- The two terms involving `dM α` cancel, and the remaining sign appears twice.
-    simp only [Units.val_neg, Int.cast_neg, neg_smul, smul_add, smul_smul, ← Int.cast_mul,
-      ← Units.val_mul, Int.units_mul_self, Units.val_one, Int.cast_one, one_smul]
-    abel
+    refine hom_ext fun α g ↦ ?_
+    simpa only [LinearMap.add_apply, LinearMap.sub_apply, LinearMap.comp_apply,
+      RowFiniteContinuationCocycle.tensorMap_tmul, LinearMap.restrictScalars_apply,
+      tensorHomotopy] using
+      (tmul_sub_tmul_eq_add_koszulMapRight hM.isHomogeneous
+        (rowFiniteSignedMap_smul (𝒜 := 𝒜) η.h)
+        (g₁ := (Finsupp.linearCombination A ν₁.ν).restrictScalars R)
+        (g₂ := (Finsupp.linearCombination A ν₀.ν).restrictScalars R)
+        (fun g ↦ (η.rowFiniteSignedMap_differential hA g).symm)
+        (fun hm x ↦ by
+          rw [differential_tmul_of_mem hM _ hm, Units.smul_def, ← Int.cast_smul_eq_zsmul R])
+        (fun hm x ↦ by
+          rw [differential_tmul_of_mem hM _ hm, Units.smul_def, ← Int.cast_smul_eq_zsmul R])
+        α g).symm
   exact LinearMap.congr_fun key z
 
 variable (ℳ) in
