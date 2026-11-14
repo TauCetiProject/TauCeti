@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
--- `Matrix.mvPolynomialX`, the matrix of variables, `Matrix.mvPolynomialX_mapMatrix_eval`, and
--- `Matrix.eval_det_mvPolynomialX` occur in the statements and proofs below; this module also
--- supplies `MvPolynomial.eval`.
+-- `Matrix.mvPolynomialX`, the matrix of variables, and `Matrix.mvPolynomialX_mapMatrix_eval` occur
+-- in the statements and proofs below; this module also supplies `MvPolynomial.eval` and
+-- `RingHom.map_det`.
 public import Mathlib.LinearAlgebra.Matrix.MvPolynomial
 -- The `GL` notation, the coercion of an element of `GL n k` to a matrix,
 -- `Matrix.GeneralLinearGroup.det` and `Matrix.GeneralLinearGroup.det_ne_zero`.
@@ -126,10 +126,8 @@ noncomputable def rationalFunctions : Subalgebra k (GL (Fin n) k → k) where
     rintro f₁ f₂ ⟨P₁, m₁, hP₁⟩ ⟨P₂, m₂, hP₂⟩
     refine ⟨(_root_.Matrix.mvPolynomialX (Fin n) (Fin n) k).det ^ m₂ * P₁
       + (_root_.Matrix.mvPolynomialX (Fin n) (Fin n) k).det ^ m₁ * P₂, m₁ + m₂, fun g => ?_⟩
-    have hg : (_root_.Matrix.of fun i j => (g : Matrix (Fin n) (Fin n) k) i j) = g :=
-      _root_.Matrix.ext fun _ _ => _root_.Matrix.of_apply _ _ _
-    rw [map_add, map_mul, map_mul, map_pow, map_pow, _root_.Matrix.eval_det_mvPolynomialX, hg,
-      ← hP₁ g, ← hP₂ g, pow_add, Pi.add_apply]
+    rw [map_add, map_mul, map_mul, map_pow, map_pow, RingHom.map_det,
+      _root_.Matrix.mvPolynomialX_mapMatrix_eval, ← hP₁ g, ← hP₂ g, pow_add, Pi.add_apply]
     ring
   zero_mem' := ⟨0, 0, fun g => by simp⟩
   algebraMap_mem' c := ⟨C c, 0, fun g => by simp⟩
@@ -156,9 +154,7 @@ theorem polynomialFunctions_le_rationalFunctions :
 theorem det_mem_polynomialFunctions :
     (fun g : GL (Fin n) k => (g : Matrix (Fin n) (Fin n) k).det) ∈ polynomialFunctions k n :=
   mem_polynomialFunctions.mpr ⟨(_root_.Matrix.mvPolynomialX (Fin n) (Fin n) k).det, fun g => by
-    rw [_root_.Matrix.eval_det_mvPolynomialX]
-    exact congrArg _root_.Matrix.det
-      (_root_.Matrix.ext fun _ _ => (_root_.Matrix.of_apply _ _ _).symm)⟩
+    rw [RingHom.map_det, _root_.Matrix.mvPolynomialX_mapMatrix_eval]⟩
 
 /-- **Every integral determinant power is a rational function.**  For `0 ≤ m` it is even a
 polynomial function, by `TauCeti.Matrix.GeneralLinearGroup.det_mem_polynomialFunctions`. -/
@@ -174,10 +170,8 @@ theorem det_zpow_mem_rationalFunctions (m : ℤ) :
     rw [← zpow_natCast, ← zpow_natCast, ← zpow_add]
     congr 1
     omega
-  have hg : (_root_.Matrix.of fun i j => (g : Matrix (Fin n) (Fin n) k) i j) = g :=
-    _root_.Matrix.ext fun _ _ => _root_.Matrix.of_apply _ _ _
-  simpa [Units.val_pow_eq_pow_val, _root_.Matrix.eval_det_mvPolynomialX, hg] using
-    congrArg Units.val h
+  rw [map_pow, RingHom.map_det, _root_.Matrix.mvPolynomialX_mapMatrix_eval]
+  simpa [Units.val_pow_eq_pow_val] using congrArg Units.val h
 
 /-- **The entries of the inverse matrix are rational functions**: `det g` times an entry of `g⁻¹`
 is the corresponding entry of the adjugate of `g`, a polynomial in the entries of `g`. -/
@@ -206,10 +200,8 @@ theorem exists_forall_det_pow_mul_eq_of_forall_mem_rationalFunctions {ι : Type 
   refine ⟨fun i => (_root_.Matrix.mvPolynomialX (Fin n) (Fin n) k).det ^ (Finset.univ.sup m - m i)
     * P i, Finset.univ.sup m, fun i g => ?_⟩
   have hle : m i ≤ Finset.univ.sup m := Finset.le_sup (Finset.mem_univ i)
-  have hg : (_root_.Matrix.of fun i j => (g : Matrix (Fin n) (Fin n) k) i j) = g :=
-    _root_.Matrix.ext fun _ _ => _root_.Matrix.of_apply _ _ _
-  simp [_root_.Matrix.eval_det_mvPolynomialX, hg, ← hPm i g, ← mul_assoc, ← pow_add,
-    Nat.sub_add_cancel hle]
+  rw [map_mul, map_pow, RingHom.map_det, _root_.Matrix.mvPolynomialX_mapMatrix_eval]
+  simp [← hPm i g, ← mul_assoc, ← pow_add, Nat.sub_add_cancel hle]
 
 end CommRing
 
