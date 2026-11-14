@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Weyl
 public import TauCeti.Analysis.PDE.DirichletProblem
+import TauCeti.Analysis.InnerProductSpace.CauchySchwarz
 import TauCeti.Analysis.PDE.WeakLaplacian
+import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 
 /-!
@@ -41,12 +43,19 @@ bounded domain are the Dirichlet problem with boundary values in `H¹(Ω)`,
 
 * `TauCeti.PDE.UniformlyEllipticOn.mul_norm_gradient_sub_le`: the energy estimate
   `λ ‖∇(u - w)‖ ≤ ‖G‖` for the replacement relative to a general elliptic `a`.
+* `TauCeti.PDE.W1p.weaklyHarmonicOn_value_of_forall_inner_gradient_eq_zero`: a function of
+  `H¹(Ω)` whose gradient is `L²`-orthogonal to the gradients of test functions is weakly
+  harmonic, in any finite-dimensional real inner product space.
 * `TauCeti.PDE.exists_harmonicOnNhd_ae_eq_of_forall_energyFormH1_eq_zero`: a function of `H¹(Ω)`
   that solves `Δw = 0` weakly agrees almost everywhere with a harmonic function.
 * `TauCeti.PDE.W1p.exists_harmonicOnNhd_ae_eq_gradient`: so does its weak gradient, since the
   weak derivatives of a weakly harmonic function are weakly harmonic.
 * `TauCeti.PDE.exists_sub_mem_w1p0Submodule_harmonicOnNhd_ae_eq_of_subset_ball`: **harmonic
   replacement** on a bounded domain, with its harmonic representative and the energy estimate.
+* `TauCeti.PDE.exists_sub_mem_w1p0Submodule_forall_inner_gradient_eq_zero`: harmonic replacement
+  on a bounded open subset of any nontrivial finite-dimensional real inner product space, such as
+  the half-balls of `ℝ × E` on which boundary regularity is proved. It is transported from `ℝⁿ`
+  along a linear isometry.
 
 ## References
 
@@ -66,6 +75,25 @@ open scoped Distributions Gradient InnerProductSpace
 namespace TauCeti
 
 namespace PDE
+
+/-- **Sobolev functions orthogonal to the gradients of test functions are weakly harmonic.** If
+`w ∈ H¹(Ω)`, for an open `Ω` in a finite-dimensional real inner product space, satisfies
+`⟪∇w, ∇φ⟫_{L²(Ω)} = 0` for every test function `φ` on `Ω`, then the value of `w` is weakly
+harmonic on `Ω`: `∫ Δφ • w = -∫ ⟪∇φ, ∇w⟫ = 0`. -/
+theorem W1p.weaklyHarmonicOn_value_of_forall_inner_gradient_eq_zero {F : Type*}
+    [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] [MeasurableSpace F]
+    [BorelSpace F] {mu : Measure F} [mu.IsAddHaarMeasure] {Omega : Opens F}
+    {w : W1p mu Omega 2} (hw : ∀ φ : 𝓓(Omega, ℝ),
+      ⟪W1p.gradient w, W1p.gradient (W1p.ofTestFunctionₗ mu Omega 2 φ)⟫_ℝ = 0) :
+    WeaklyHarmonicOn mu Omega (W1p.value w) := by
+  refine weaklyHarmonicOn_iff.2 ⟨(W1p.hasWeakFDerivOn w).locallyIntegrableOn, fun φ => ?_⟩
+  rw [(W1p.hasWeakFDerivOn w).integral_laplacian_smul_eq_neg_integral_inner φ, neg_eq_zero]
+  simp_rw [real_inner_comm (W1p.gradient w _)]
+  rw [← φ.setIntegral_inner_gradient_eq_integral_inner_gradient _ φ.tsupport_subset, ← hw φ,
+    L2.inner_def]
+  refine integral_congr_ae ?_
+  filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) (Omega := Omega) 2 φ] with x hx
+  rw [W1p.gradient_ofTestFunctionₗ, hx]
 
 variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)}
@@ -103,11 +131,7 @@ theorem UniformlyEllipticOn.mul_norm_gradient_sub_le [DecidableEq ι]
     (gamma := 0) h ha aestronglyMeasurable_const (fun _ _ => rfl) (fun _ _ => by simp)
     (fun _ _ => le_rfl) (u - w)
   rw [henergy] at hlower
-  have hCS := (real_inner_le_norm G (W1p.gradient (u - w))).trans_eq (mul_comm _ _)
-  rcases (norm_nonneg (W1p.gradient (u - w))).eq_or_lt with hzero | hpos
-  · rw [← hzero, mul_zero]
-    exact norm_nonneg G
-  · exact le_of_mul_le_mul_right (by nlinarith) hpos
+  exact mul_norm_le_norm_of_mul_norm_sq_le_re_inner (𝕜 := ℝ) hlower
 
 /-- **Weakly harmonic Sobolev functions are harmonic.** If `w ∈ H¹(Ω)` solves `Δw = 0` weakly,
 in the sense that `∫_Ω ⟨∇w, ∇φ⟩ = 0` for every test function `φ` on `Ω`, then `w` agrees almost
@@ -186,6 +210,81 @@ theorem exists_sub_mem_w1p0Submodule_harmonicOnNhd_ae_eq_of_subset_ball {n : ℕ
     exists_harmonicOnNhd_ae_eq_of_forall_energyFormH1_eq_zero fun φ =>
       hw0 ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩, fun G hG => ?_⟩
   simpa using h1.mul_norm_gradient_sub_le aestronglyMeasurable_const hsub hw0 hG
+
+section InnerProductSpace
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+  [MeasurableSpace F] [BorelSpace F]
+
+/-- Existence of the harmonic replacement, transported from `ℝⁿ` along a linear isometry. -/
+private theorem exists_sub_mem_w1p0Submodule_forall_inner_gradient_eq_zero_aux [Nontrivial F]
+    {Omega : Opens F} (hb : Bornology.IsBounded (Omega : Set F)) (u : W1p volume Omega 2) :
+    ∃ w : W1p volume Omega 2, u - w ∈ w1p0Submodule volume Omega 2 ∧
+      ∀ v ∈ w1p0Submodule volume Omega 2, ⟪W1p.gradient w, W1p.gradient v⟫_ℝ = 0 := by
+  obtain ⟨n, hn⟩ : ∃ n, Module.finrank ℝ F = n + 1 :=
+    Nat.exists_eq_succ_of_ne_zero Module.finrank_pos.ne'
+  obtain ⟨e⟩ : Nonempty (F ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (n + 1))) :=
+    ⟨((stdOrthonormalBasis ℝ F).reindex (finCongr hn)).repr⟩
+  set V : Opens (EuclideanSpace ℝ (Fin (n + 1))) :=
+    ⟨e.symm ⁻¹' Omega, Omega.isOpen.preimage e.symm.continuous⟩
+  have hUV : (Omega : Set F) = e ⁻¹' V := by
+    ext x
+    simp [V]
+  have hVU : (V : Set (EuclideanSpace ℝ (Fin (n + 1)))) = e.symm ⁻¹' Omega := rfl
+  -- `e` maps `Ω` into a ball, since it preserves norms.
+  obtain ⟨R, hR⟩ := (Metric.isBounded_iff_subset_ball (0 : F)).1 hb
+  have hVR : (V : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ ball 0 R := fun y hy => by
+    simpa using hR hy
+  -- Precomposition with `e` undoes precomposition with `e⁻¹`.
+  have hcomp (f : W1p volume Omega 2) : W1p.compAffineIsometryEquivL e.toAffineIsometryEquiv hUV
+      (W1p.compAffineIsometryEquivL e.symm.toAffineIsometryEquiv hVU f) = f :=
+    W1p.compAffineIsometryEquivL_symm_compAffineIsometryEquivL e.symm.toAffineIsometryEquiv hVU
+      hUV f
+  obtain ⟨w, hw, hw0, -, -⟩ := exists_sub_mem_w1p0Submodule_harmonicOnNhd_ae_eq_of_subset_ball hVR
+    (W1p.compAffineIsometryEquivL e.symm.toAffineIsometryEquiv hVU u)
+  refine ⟨W1p.compAffineIsometryEquivL e.toAffineIsometryEquiv hUV w, ?_, fun v hv => ?_⟩
+  · rw [← hcomp u, ← map_sub]
+    exact W1p.compAffineIsometryEquivL_mem_w1p0Submodule _ _ hw
+  · have h : energyFormH1 (fun _ => 1) 0 0 w
+        (W1p.compAffineIsometryEquivL e.symm.toAffineIsometryEquiv hVU v) = 0 :=
+      hw0 ⟨_, W1p.compAffineIsometryEquivL_mem_w1p0Submodule e.symm.toAffineIsometryEquiv hVU hv⟩
+    rw [← hcomp v]
+    refine (W1p.inner_gradient_compAffineIsometryEquivL e.toAffineIsometryEquiv hUV w _).trans
+      (Eq.trans ?_ h)
+    rw [energyFormH1_zero_zero_eq_setIntegral, L2.inner_def]
+    congr 1
+    funext x
+    rw [matrixBilinearForm_one_apply, EuclideanSpace.inner_eq_star_dotProduct, star_trivial]
+
+/-- **Harmonic replacement in a finite-dimensional inner product space.** Let `Ω` be a bounded
+open subset of a nontrivial finite-dimensional real inner product space, and let `u ∈ H¹(Ω)`.
+There is `w ∈ H¹(Ω)` with the boundary values of `u`, `u - w ∈ H¹₀(Ω)`, solving `Δw = 0` weakly,
+`⟪∇w, ∇v⟫_{L²(Ω)} = 0` for every `v ∈ H¹₀(Ω)`, such that if `⟪∇u, ∇v⟫_{L²(Ω)} = ⟪G, ∇v⟫_{L²(Ω)}`
+for every `v ∈ H¹₀(Ω)`, for instance when `u` solves `-Δu = -div G` weakly, then
+`‖∇(u - w)‖_{L²(Ω)} ≤ ‖G‖_{L²(Ω)}`.
+
+This is `exists_sub_mem_w1p0Submodule_harmonicOnNhd_ae_eq_of_subset_ball` without coordinates:
+a linear isometry with `ℝⁿ` transports the problem there, and the replacement back. -/
+theorem exists_sub_mem_w1p0Submodule_forall_inner_gradient_eq_zero [Nontrivial F]
+    {Omega : Opens F} (hb : Bornology.IsBounded (Omega : Set F)) (u : W1p volume Omega 2) :
+    ∃ w : W1p volume Omega 2, u - w ∈ w1p0Submodule volume Omega 2 ∧
+      (∀ v ∈ w1p0Submodule volume Omega 2, ⟪W1p.gradient w, W1p.gradient v⟫_ℝ = 0) ∧
+      ∀ G : Lp F 2 (volume.restrict (Omega : Set F)),
+        (∀ v ∈ w1p0Submodule volume Omega 2,
+          ⟪W1p.gradient u, W1p.gradient v⟫_ℝ = ⟪G, W1p.gradient v⟫_ℝ) →
+        ‖W1p.gradient (u - w)‖ ≤ ‖G‖ := by
+  obtain ⟨w, huw, hw⟩ := exists_sub_mem_w1p0Submodule_forall_inner_gradient_eq_zero_aux hb u
+  refine ⟨w, huw, hw, fun G hG => ?_⟩
+  -- Test the equation for `u - w ∈ H¹₀(Ω)` against itself.
+  have hsq : ‖W1p.gradient (u - w)‖ ^ 2 = ⟪G, W1p.gradient (u - w)⟫_ℝ := by
+    rw [← real_inner_self_eq_norm_sq]
+    nth_rw 1 [W1p.gradient_sub]
+    rw [inner_sub_left, hG _ huw, hw _ huw, sub_zero]
+  have h := mul_norm_le_norm_of_mul_norm_sq_le_re_inner (𝕜 := ℝ) (c := 1) (g := G)
+    (x := W1p.gradient (u - w)) (by rw [one_mul, hsq, RCLike.re_to_real])
+  rwa [one_mul] at h
+
+end InnerProductSpace
 
 end PDE
 
