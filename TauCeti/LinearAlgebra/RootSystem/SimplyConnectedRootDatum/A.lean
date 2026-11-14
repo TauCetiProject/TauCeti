@@ -536,27 +536,17 @@ def typeASimplyConnectedBase (n : ℕ) : (typeASimplyConnectedRootDatum n).Base 
         typeAWeight n (((typeAIndexEquiv n).symm k).val.1 : ℕ) -
           typeAWeight n (((typeAIndexEquiv n).symm k).val.2 : ℕ) := rfl
     rw [image_root_typeASimpleSupport, hroot]
-    rcases le_total ((((typeAIndexEquiv n).symm k).val.1 : Fin (n + 1)) : ℕ)
-        ((((typeAIndexEquiv n).symm k).val.2 : Fin (n + 1)) : ℕ) with h | h
-    · exact Or.inl (sub_mem_closure_of_le (typeAWeight n)
-        (Nat.lt_succ_iff.mp (((typeAIndexEquiv n).symm k).val.2).isLt) h)
-    · refine Or.inr ?_
-      rw [neg_sub]
-      exact sub_mem_closure_of_le (typeAWeight n)
-        (Nat.lt_succ_iff.mp (((typeAIndexEquiv n).symm k).val.1).isLt) h
+    exact sub_mem_closure_or_neg_mem_closure (typeAWeight n)
+      (Nat.lt_succ_iff.mp (((typeAIndexEquiv n).symm k).val.1).isLt)
+      (Nat.lt_succ_iff.mp (((typeAIndexEquiv n).symm k).val.2).isLt)
   coroot_mem_or_neg_mem k := by
     have hcoroot : (typeASimplyConnectedRootDatum n).coroot k =
         typeACoweight n (((typeAIndexEquiv n).symm k).val.1 : ℕ) -
           typeACoweight n (((typeAIndexEquiv n).symm k).val.2 : ℕ) := rfl
     rw [image_coroot_typeASimpleSupport, hcoroot]
-    rcases le_total ((((typeAIndexEquiv n).symm k).val.1 : Fin (n + 1)) : ℕ)
-        ((((typeAIndexEquiv n).symm k).val.2 : Fin (n + 1)) : ℕ) with h | h
-    · exact Or.inl (sub_mem_closure_of_le (typeACoweight n)
-        (Nat.lt_succ_iff.mp (((typeAIndexEquiv n).symm k).val.2).isLt) h)
-    · refine Or.inr ?_
-      rw [neg_sub]
-      exact sub_mem_closure_of_le (typeACoweight n)
-        (Nat.lt_succ_iff.mp (((typeAIndexEquiv n).symm k).val.1).isLt) h
+    exact sub_mem_closure_or_neg_mem_closure (typeACoweight n)
+      (Nat.lt_succ_iff.mp (((typeAIndexEquiv n).symm k).val.1).isLt)
+      (Nat.lt_succ_iff.mp (((typeAIndexEquiv n).symm k).val.2).isLt)
 
 /-- Membership in the pinned base support is exactly membership among the first `n` root indices. -/
 @[simp] theorem mem_typeASimplyConnectedBase_support {k : Fin (n * (n + 1))} :
