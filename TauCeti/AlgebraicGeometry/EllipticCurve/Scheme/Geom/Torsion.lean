@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Hom.Basic
 public import TauCeti.AlgebraicGeometry.GroupScheme.Torsion.Basic
 import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
-import TauCeti.AlgebraicGeometry.IdealSheaf.Section
 import TauCeti.Data.ZMod.MonoidHomEquiv
 
 /-!
@@ -255,7 +254,6 @@ instance isClosedImmersion_torsionι_left : IsClosedImmersion (E.torsionι n).le
 subscheme `E[n]` of `E` is the inverse image along `[n]` of the ideal sheaf of the zero section. -/
 theorem ker_torsionι_left :
     (E.torsionι n).left.ker = E.zero.ker.comap (E.mulBy n).left := by
-  have := E.zero.isClosedImmersion_of_comp_eq_id E.zero_comp
   exact Scheme.IdealSheafData.ker_eq_comap_of_isPullback _ (E.isPullback_torsion n)
 
 /-- The `n`-torsion of an elliptic curve is proper over the base. -/
