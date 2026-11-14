@@ -41,6 +41,8 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
   most `n` of a `C^n` map are bounded by one constant.
 * `ContDiffOn.exists_nonneg_bound_iteratedFDeriv_of_isOpen`: the same for the derivatives of a
   map that is `C^n` on an open set, with a nonnegative constant.
+* `IsCompact.exists_norm_fderiv_le`: the derivative of a map that is `C^1` at every point of a
+  compact set is bounded on that set.
 * `HasCompactSupport.exists_bound_iteratedFDeriv_of_contDiff`: the derivatives of order at most `n`
   of a compactly supported `C^n` map are bounded by one constant.
 * `ContDiffAt.exists_ball_bound_iteratedFDeriv`: on some ball around a point where a map is
@@ -67,6 +69,7 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
 public section
 
 open Set
+open scoped NNReal
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E F G H : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -86,6 +89,15 @@ theorem ContDiffOn.exists_bound_iteratedFDerivWithin {u : E → F} {s K : Set E}
   refine ⟨A, fun i hi z hz ↦ ((Finset.single_le_sum (f := fun i ↦ ‖iteratedFDerivWithin 𝕜 i u s z‖)
     (fun _ _ ↦ norm_nonneg _) (Finset.mem_range_succ_iff.mpr hi)).trans (le_abs_self _)).trans ?_⟩
   simpa only [Real.norm_eq_abs] using hA z hz
+
+/-- The derivative of a map that is `C^n`, with `1 ≤ n`, at every point of a compact set `K` is
+bounded on `K` by a single constant. -/
+theorem IsCompact.exists_norm_fderiv_le {f : E → F} {K : Set E} {n : WithTop ℕ∞}
+    (hK : IsCompact K) (hn : 1 ≤ n) (hf : ∀ x ∈ K, ContDiffAt 𝕜 n f x) :
+    ∃ M : ℝ≥0, ∀ x ∈ K, ‖fderiv 𝕜 f x‖ ≤ M := by
+  obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn fun x hx ↦
+    ((hf x hx).fderiv_right (m := 0) (by simpa using hn)).continuousAt.continuousWithinAt
+  exact ⟨M.toNNReal, fun x hx ↦ (hM x hx).trans (Real.le_coe_toNNReal M)⟩
 
 /-- On a compact subset `K` of an open set `s`, the derivatives of order at most `n` of a map that
 is `C^n` on `s` are bounded by a single nonnegative constant. -/
