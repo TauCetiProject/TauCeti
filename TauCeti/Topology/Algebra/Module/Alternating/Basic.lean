@@ -32,6 +32,9 @@ form a complex vector space, and these operations are complex-linear or conjugat
   vanishes exactly when it vanishes on every vector.
 * `ContinuousAlternatingMap.compContinuousLinearMap_compContinuousLinearMap`: pulling back along
   `A` and then along `B` is pulling back along `A.comp B`.
+* `ContinuousAlternatingMap.map_vecCons_swap`, `ContinuousAlternatingMap.map_vecCons_neg`,
+  `ContinuousAlternatingMap.map_vecCons_vecCons_neg`: an alternating map of two vectors is
+  antisymmetric, and an alternating map changes sign when its first or second vector is negated.
 -/
 
 public section
@@ -97,6 +100,37 @@ theorem compContinuousLinearMap_compContinuousLinearMap (a : M'' [⋀^ι]→L[R]
   rfl
 
 end CompComp
+
+section Neg
+
+variable {R M N : Type*} [Ring R] [AddCommGroup M] [Module R M] [TopologicalSpace M]
+  [AddCommGroup N] [Module R N] [TopologicalSpace N]
+
+/-- A continuous alternating map of two vectors is antisymmetric. -/
+theorem map_vecCons_swap (f : M [⋀^Fin 2]→L[R] N) (x y : M) : f ![y, x] = -f ![x, y] := by
+  have h := f.toAlternatingMap.map_swap ![x, y] (i := 0) (j := 1) (by decide)
+  have he : ![x, y] ∘ Equiv.swap 0 1 = ![y, x] := by
+    funext i; fin_cases i <;> rfl
+  rwa [he] at h
+
+/-- A continuous alternating map changes sign when its first vector is negated. -/
+@[simp]
+theorem map_vecCons_neg {n : ℕ} (f : M [⋀^Fin (n + 1)]→L[R] N) (x : M) (v : Fin n → M) :
+    f (Matrix.vecCons (-x) v) = -f (Matrix.vecCons x v) := by
+  rw [← neg_one_smul R x, vecCons_smul, neg_one_smul]
+
+/-- A continuous alternating map changes sign when its second vector is negated. -/
+@[simp]
+theorem map_vecCons_vecCons_neg {n : ℕ} (f : M [⋀^Fin (n + 2)]→L[R] N) (x y : M)
+    (v : Fin n → M) :
+    f (Matrix.vecCons x (Matrix.vecCons (-y) v)) = -f (Matrix.vecCons x (Matrix.vecCons y v)) := by
+  have h (z : M) : Matrix.vecCons x (Matrix.vecCons z v) =
+      Function.update (Matrix.vecCons x (Matrix.vecCons y v)) 1 z := by
+    ext i
+    refine Fin.cases ?_ (Fin.cases ?_ fun j ↦ ?_) i <;> simp [Function.update, Fin.succ_succ_ne_one]
+  simpa [← h] using f.toAlternatingMap.map_update_neg (Matrix.vecCons x (Matrix.vecCons y v)) 1 y
+
+end Neg
 
 end ContinuousAlternatingMap
 

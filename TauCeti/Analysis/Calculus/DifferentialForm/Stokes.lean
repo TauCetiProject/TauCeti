@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.DifferentialForm.CylinderHomotopy
 import TauCeti.Analysis.Calculus.DifferentialForm.Plane
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
+import TauCeti.Topology.Algebra.Module.Alternating.Basic
 public import TauCeti.MeasureTheory.Integral.PolarCoord
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.MeasureTheory.Integral.DivergenceTheorem
@@ -216,13 +217,10 @@ theorem integral2_slice_sub_eq_sides
       ((hψ.continuous.comp (Continuous.prodMk_right z)).intervalIntegrable _ _),
       ← intervalIntegral.integral_neg]
     refine intervalIntegral.integral_congr fun c _ ↦ ?_
-    have h := (ψ (z, c)).toAlternatingMap.map_swap (v := ![(v, 0), (0, 1)]) (i := 0) (j := 1)
-      (by decide)
-    have hv : (![(v, 0), (0, 1)] ∘ Equiv.swap (0 : Fin 2) 1 : Fin 2 → (ℝ × ℝ) × ℝ) =
-        Fin.cons (0, 1) fun _ ↦ (v, 0) := by
+    have hv : (Fin.cons (0, 1) fun _ ↦ (v, 0) : Fin 2 → (ℝ × ℝ) × ℝ) = ![(0, 1), (v, 0)] := by
       funext i
       fin_cases i <;> rfl
-    exact (congrArg (ψ (z, c)) hv).symm.trans h
+    rw [hv, ContinuousAlternatingMap.map_vecCons_swap]
   -- The difference of the top and bottom faces is the integral of `dβ`.
   have hd (s t : ℝ) : extDeriv β (s, t) ![(1, 0), (0, 1)] =
       ψ ((s, t), 1) ![((1, 0), 0), ((0, 1), 0)] - ψ ((s, t), 0) ![((1, 0), 0), ((0, 1), 0)] := by
