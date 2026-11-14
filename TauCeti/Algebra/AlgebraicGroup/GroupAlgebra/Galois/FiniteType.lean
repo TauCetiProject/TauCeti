@@ -31,10 +31,8 @@ surjectivity half is the descent step used here.
 
 ## Main declarations
 
-* `TauCeti.GaloisDescent.moduleFinite_groupAlgebra_over_groupAlgebraInvariants`: the split group
-  algebra is module-finite over its invariant algebra.
-* `TauCeti.GaloisDescent.isIntegral_groupAlgebra_over_groupAlgebraInvariants`: the split group
-  algebra is integral over its invariant algebra.
+* `TauCeti.GaloisDescent.instModuleFiniteGroupAlgebraGroupAlgebraInvariants`: the split group
+  algebra is module-finite, hence integral, over its invariant algebra.
 * `TauCeti.GaloisDescent.instFiniteTypeGroupAlgebraInvariants`: the invariant algebra is finite
   type over the ground field.
 
@@ -63,7 +61,7 @@ variable [Field k] [Field L] [Algebra k L] [AddCommGroup M]
 automorphism group of `L/k` is finite. By Galois descent the invariant elements span the group
 algebra over `L`, and `L` is finite over the fixed field of its automorphism group, which lies in
 the invariant algebra. Neither `L/k` nor the exponent group needs to be finitely generated. -/
-theorem moduleFinite_groupAlgebra_over_groupAlgebraInvariants
+instance instModuleFiniteGroupAlgebraGroupAlgebraInvariants
     [Finite (L ≃ₐ[k] L)] (rho : Representation ℤ (L ≃ₐ[k] L) M) :
     Module.Finite (groupAlgebraInvariants rho)
       (MonoidAlgebra L (Multiplicative M)) := by
@@ -88,7 +86,7 @@ theorem moduleFinite_groupAlgebra_over_groupAlgebraInvariants
       exact N.add_mem (ha x) (hb x)
     | smul c a _ ha =>
       have hc : algebraMap L (MonoidAlgebra L (Multiplicative M)) c ∈ groupAlgebraInvariants rho :=
-        single_mem_groupAlgebraInvariants rho 1 c (fun _ ↦ map_zero _) fun σ ↦ c.2 σ
+        algebraMap_mem_groupAlgebraInvariants rho c fun σ ↦ c.2 σ
       have := ha (⟨_, hc⟩ * x)
       rwa [Subalgebra.coe_mul, ← Algebra.smul_def, smul_smul, mul_comm] at this
   suffices hN : N = ⊤ from ⟨Submodule.fg_def.mpr ⟨_, Set.finite_range _, hN⟩⟩
@@ -98,15 +96,6 @@ theorem moduleFinite_groupAlgebra_over_groupAlgebraInvariants
   induction t using TensorProduct.inductionOn with
   | tmul a x => simpa using hmem a x
   | add t u ht hu => simpa only [map_add] using N.add_mem ht hu
-
-/-- The split group algebra is integral over the invariant algebra when its automorphism group
-is finite. -/
-theorem isIntegral_groupAlgebra_over_groupAlgebraInvariants
-    [Finite (L ≃ₐ[k] L)] (rho : Representation ℤ (L ≃ₐ[k] L) M) :
-    Algebra.IsIntegral (groupAlgebraInvariants rho)
-      (MonoidAlgebra L (Multiplicative M)) :=
-  have := moduleFinite_groupAlgebra_over_groupAlgebraInvariants rho
-  inferInstance
 
 /-- For a finite-type field extension, the invariant algebra of the automorphism action on the
 group algebra of a finitely generated abelian group is finite type over the ground field. -/
@@ -120,9 +109,6 @@ noncomputable instance instFiniteTypeGroupAlgebraInvariants
   let _ : Group.FG (Multiplicative M) := AddGroup.fg_iff_mul_fg.mp inferInstance
   let _ : Algebra.FiniteType k (MonoidAlgebra L (Multiplicative M)) :=
     Algebra.FiniteType.trans (R := k) (S := L) inferInstance inferInstance
-  let _ : Module.Finite (groupAlgebraInvariants rho)
-      (MonoidAlgebra L (Multiplicative M)) :=
-    moduleFinite_groupAlgebra_over_groupAlgebraInvariants rho
   exact ⟨fg_of_fg_of_fg (A := k) (B := groupAlgebraInvariants rho)
     (C := MonoidAlgebra L (Multiplicative M))
       Algebra.FiniteType.out Module.Finite.fg_top (fun _ _ h ↦ Subtype.ext h)⟩

@@ -94,6 +94,14 @@ theorem mem_groupAlgebraInvariants_iff_coeff
     ext m
     simpa only [coeff_groupAlgebraAction] using hx sigma m
 
+/-- A scalar fixed by every Galois automorphism gives an invariant element of the group algebra. -/
+theorem algebraMap_mem_groupAlgebraInvariants
+    (rho : Representation ℤ (L ≃ₐ[k] L) M) (a : L) (ha : ∀ sigma : L ≃ₐ[k] L, sigma a = a) :
+    algebraMap L (MonoidAlgebra L (Multiplicative M)) a ∈ groupAlgebraInvariants rho := by
+  rw [mem_groupAlgebraInvariants_iff]
+  intro sigma
+  rw [Algebra.algebraMap_eq_smul_one, groupAlgebraAction_smul, map_one, ha sigma]
+
 /-- A monomial is invariant if its coefficient and exponent are fixed by every Galois
 automorphism. -/
 theorem single_mem_groupAlgebraInvariants
