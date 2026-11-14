@@ -47,4 +47,11 @@ theorem nondegenerate_dualProd (hM : Function.Injective (Module.Dual.eval K M)) 
   exact LinearMap.separatingLeft_iff_ker_eq_bot.mp
     ((LinearMap.separatingLeft_dualProd K M).mpr hM)
 
+/-- On any function module `ι → K`, coordinate projections separate points, so
+`QuadraticForm.dualProd K (ι → K)` is nondegenerate regardless of the characteristic of `K`. -/
+theorem nondegenerate_dualProd_pi (K ι : Type*) [CommRing K] :
+    (QuadraticForm.dualProd K (ι → K)).Nondegenerate :=
+  nondegenerate_dualProd fun _ _ hxy ↦ funext fun i ↦ by
+    simpa using LinearMap.congr_fun hxy (LinearMap.proj i)
+
 end TauCeti
