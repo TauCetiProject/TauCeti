@@ -223,6 +223,19 @@ lemma globalSectionsActionRingEquiv_symm_globalSectionsSmul (r : Γ(X, ⊤)) :
     (globalSectionsActionRingEquiv M).symm (End.of (M.globalSectionsSmul r)) = r := by
   rw [← globalSectionsActionRingEquiv_apply, RingEquiv.symm_apply_apply]
 
+variable {M} in
+/-- If the global functions on `X` form a field, every nonzero endomorphism of an invertible sheaf
+on `X` is an isomorphism. -/
+theorem isIso_of_ne_zero_of_isField (hX : IsField Γ(X, ⊤)) {φ : M ⟶ M} (hφ : φ ≠ 0) :
+    IsIso φ := by
+  let _ := hX.toField
+  have hr : (globalSectionsActionRingEquiv M).symm (End.of φ) ≠ 0 := by
+    simpa only [ne_eq, map_eq_zero_iff _ (RingEquiv.injective _), End.ext_iff,
+      End.zero_asHom] using hφ
+  have hu := (isUnit_iff_ne_zero.mpr hr).map (globalSectionsActionRingEquiv M)
+  rw [RingEquiv.apply_symm_apply] at hu
+  exact (isUnit_iff_isIso _).mp hu
+
 /-- **Automorphisms of a line bundle are global units.** For an invertible sheaf `M` on a scheme
 `X`, the action of global functions is a group isomorphism `Γ(X, 𝒪_X)ˣ ≃* Aut M`. -/
 def unitsGlobalSectionsMulEquivAut : Γ(X, ⊤)ˣ ≃* Aut M :=

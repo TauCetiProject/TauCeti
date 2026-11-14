@@ -33,6 +33,9 @@ product of `𝒪ₓ`-modules is `M ⊗ N`.
 * `TauCeti.AlgebraicGeometry.isQuasicoherent_unit` and
   `TauCeti.AlgebraicGeometry.isQuasicoherent_structureSheaf`: the structure sheaf, viewed as a
   module over itself, is quasi-coherent in monoidal-unit and explicit-unit notation.
+* `AlgebraicGeometry.Scheme.Modules.isQuasicoherent_of_isFinitePresentation` and
+  `AlgebraicGeometry.Scheme.Modules.isFiniteType_of_isFinitePresentation`: a finitely presented
+  `𝒪ₓ`-module is quasi-coherent and of finite type.
 
 -/
 
@@ -99,6 +102,22 @@ This instance also supports goals that do not use monoidal-unit notation. -/
 instance AlgebraicGeometry.isQuasicoherent_structureSheaf :
     (_root_.SheafOfModules.unit X.ringCatSheaf).IsQuasicoherent :=
   AlgebraicGeometry.isQuasicoherent_unit X
+
+-- Scheme modules need these specializations because typeclass search does not unfold
+-- `Scheme.Modules` to match the corresponding sheaf-of-modules instances.
+variable {X} in
+/-- A finitely presented scheme module is quasi-coherent. -/
+instance (priority := 100)
+    _root_.AlgebraicGeometry.Scheme.Modules.isQuasicoherent_of_isFinitePresentation
+    (M : X.Modules) [M.IsFinitePresentation] : M.IsQuasicoherent :=
+  _root_.SheafOfModules.instIsQuasicoherentOfIsFinitePresentation M
+
+variable {X} in
+/-- A finitely presented scheme module is of finite type. -/
+instance (priority := 100)
+    _root_.AlgebraicGeometry.Scheme.Modules.isFiniteType_of_isFinitePresentation
+    (M : X.Modules) [M.IsFinitePresentation] : M.IsFiniteType :=
+  _root_.SheafOfModules.instIsFiniteTypeOfIsFinitePresentation M
 
 variable {X} in
 /-- The sections over an open `U` of `𝒪ₓ`-modules, as a functor to `Γ(X, U)`-modules. It is the
