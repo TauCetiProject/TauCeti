@@ -23,6 +23,9 @@ test functions commute (`TestFunction.lineDerivOp_comm`).
 ## Main declarations
 
 * `TauCeti.HasWeakLineDerivOn.comm`: weak derivatives in two directions commute.
+* `TauCeti.HasWeakFDerivOn.integral_inner_fderiv_comm`: distributional symmetry of first weak
+  derivatives paired against directional derivatives of vector-valued test functions,
+  `∫ ⟪∂_v φ, ∂_w u⟫ = ∫ ⟪∂_w φ, ∂_v u⟫`.
 -/
 
 public section
@@ -30,7 +33,7 @@ public section
 namespace TauCeti
 
 open LineDeriv MeasureTheory TopologicalSpace
-open scoped Distributions
+open scoped Distributions InnerProductSpace
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [MeasurableSpace E] {μ : Measure E} {Ω : Opens E}
@@ -55,5 +58,22 @@ theorem HasWeakLineDerivOn.comm (h₁ : HasWeakLineDerivOn μ Ω u u₁ v)
     _ = ∫ x, lineDeriv ℝ (φ : E → ℝ) x w • u₁ x ∂μ := by
         simp only [TestFunction.lineDerivOp_apply]
     _ = -∫ x, (φ : E → ℝ) x • u₁₂ x ∂μ := h₁₂.integral_lineDeriv_smul_eq_neg_integral_smul φ
+
+/-- **Distributional symmetry of first weak derivatives.** Without assuming second weak derivatives
+of `u`, a weak Fréchet derivative `U` of `u` on `Ω` satisfies
+`∫ ⟪∂_v φ, U · w⟫ = ∫ ⟪∂_w φ, U · v⟫` for every `φ ∈ 𝓓(Ω, V)` and directions `v, w : E`: both sides
+equal `-∫ ⟪∂_v ∂_w φ, u⟫`. -/
+theorem HasWeakFDerivOn.integral_inner_fderiv_comm [OpensMeasurableSpace E]
+    {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+    {u : E → V} {U : E → E →L[ℝ] V}
+    (h : HasWeakFDerivOn μ Ω u U) (v w : E) (φ : 𝓓(Ω, V)) :
+    ∫ x, ⟪fderiv ℝ (φ : E → V) x v, U x w⟫_ℝ ∂μ =
+      ∫ x, ⟪fderiv ℝ (φ : E → V) x w, U x v⟫_ℝ ∂μ := by
+  have hw := (h.hasWeakLineDerivOn w).integral_inner_lineDeriv_eq_neg (∂_{v} φ)
+  have hv := (h.hasWeakLineDerivOn v).integral_inner_lineDeriv_eq_neg (∂_{w} φ)
+  simp_rw [TestFunction.lineDeriv_lineDerivOp_comm φ v w,
+    TestFunction.lineDerivOp_apply_eq_fderiv] at hw
+  simp_rw [TestFunction.lineDerivOp_apply_eq_fderiv] at hv
+  linarith
 
 end TauCeti

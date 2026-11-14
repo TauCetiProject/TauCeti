@@ -34,7 +34,8 @@ This file supplies restriction to arbitrary subsets (also combined with a change
 off the subset), linearity, continuous-linear composition,
 pairing of fields of continuous linear maps into product maps,
 multiplication of local `Lᵖ` functions by continuous factors (with extension by zero for factors
-supported in the domain), composition of local `Lᵖ` operator families with continuous ones,
+supported in the domain), composition and pointwise evaluation of local `Lᵖ` operator families
+(at Hölder exponents or against continuous factors),
 pairing, pointwise product maps of operator fields, decreasing the integrability exponent, and
 decreasing the derivative order. On an open set, local `Lᵖ` membership is detected on the open
 subsets with compact closure inside it.
@@ -290,6 +291,27 @@ theorem MemLpLoc.continuousOn_smul {χ : ℂ → ℝ} (hf : MemLpLoc p U f) (hχ
     MemLpLoc p U (fun z => χ z • f z) :=
   memLpLoc_iff.2 fun K hK hc =>
     (memLpLoc_iff.1 (hχ.memLpLoc (p := ⊤)) K hK hc).smul (memLpLoc_iff.1 hf K hK hc)
+
+/-- Applying a locally `Lᵖ` field of continuous linear maps to a locally `L^q` vector field gives a
+locally `Lʳ` field whenever `p⁻¹ + q⁻¹ ≤ r⁻¹`. -/
+theorem MemLpLoc.clm_apply_of_inv_add_inv_le {r : ENNReal} {A : ℂ → F →L[ℝ] G} {w : ℂ → F}
+    (hA : MemLpLoc p U A) (hw : MemLpLoc q U w) (hpqr : p⁻¹ + q⁻¹ ≤ r⁻¹) :
+    MemLpLoc r U (fun z => A z (w z)) := by
+  have hrs : r ≤ (p⁻¹ + q⁻¹)⁻¹ := by
+    rw [← inv_inv r]
+    exact ENNReal.inv_le_inv.2 hpqr
+  have : ENNReal.HolderTriple p q (p⁻¹ + q⁻¹)⁻¹ := ⟨(inv_inv _).symm⟩
+  have hmem : MemLpLoc (p⁻¹ + q⁻¹)⁻¹ U (fun z => A z (w z)) :=
+    memLpLoc_iff.2 fun K hKU hK =>
+      (ContinuousLinearMap.id ℝ (F →L[ℝ] G)).memLp_of_bilin _
+        (memLpLoc_iff.1 hA K hKU hK) (memLpLoc_iff.1 hw K hKU hK)
+  exact hmem.mono_exponent hrs
+
+/-- Applying an operator field continuous on `U` to a locally `L^q` vector field preserves local
+`L^q` membership on `U`, since the operator field is bounded on every compact subset of `U`. -/
+theorem MemLpLoc.continuousOn_clm_apply {A : ℂ → F →L[ℝ] G} {w : ℂ → F}
+    (hw : MemLpLoc q U w) (hA : ContinuousOn A U) : MemLpLoc q U (fun z => A z (w z)) :=
+  (hA.memLpLoc (p := ⊤)).clm_apply_of_inv_add_inv_le hw (by simp)
 
 /-- A locally `Lᵖ` field of continuous linear maps applied to a map continuous on `U` is locally
 `Lᵖ` on `U`, since the map is bounded on every compact subset of `U`. -/
