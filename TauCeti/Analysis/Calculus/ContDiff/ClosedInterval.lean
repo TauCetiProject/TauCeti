@@ -31,8 +31,8 @@ derivatives. No completeness assumption on the codomain is needed.
 
 `ContDiffOn.isBounded_image_deriv` bounds the derivative of a `C¹` function on a closed interval:
 it agrees with the continuous within-interval derivative away from the two endpoints.
-`TauCeti.contDiffOn_one_Icc_of_derivWithin_eq` glues `C¹` smoothness across an interior point when
-the two one-sided within-interval derivatives agree there.
+`ContDiffOn.union_Icc_of_derivWithin_eq` glues `C¹` smoothness across an interior point when the
+two one-sided within-interval derivatives agree there.
 -/
 
 public section
@@ -136,10 +136,13 @@ theorem contDiffOn_Icc_iff_exists_continuous_jet {n : ℕ} :
   · rintro ⟨J, hzero, hc, hd⟩
     exact contDiffOn_Icc_of_continuous_jet hzero hc hd
 
+end TauCeti
+
 /-- If `f` is `C¹` on `[a, c]` and `[c, b]` with matching within-interval derivatives at `c`, then
 `f` is `C¹` on `[a, b]`. When `c ≤ a` or `b ≤ c`, one of `[a, c]`, `[c, b]` already covers
 `[a, b]`. -/
-theorem contDiffOn_one_Icc_of_derivWithin_eq {c : ℝ}
+theorem ContDiffOn.union_Icc_of_derivWithin_eq {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {f : ℝ → F} {a c b : ℝ}
     (hf₁ : ContDiffOn ℝ 1 f (Icc a c)) (hf₂ : ContDiffOn ℝ 1 f (Icc c b))
     (hderiv : derivWithin f (Icc a c) c = derivWithin f (Icc c b) c) :
     ContDiffOn ℝ 1 f (Icc a b) := by
@@ -162,7 +165,7 @@ theorem contDiffOn_one_Icc_of_derivWithin_eq {c : ℝ}
   have hf : ContinuousOn f (Icc a b) :=
     Icc_union_Icc_eq_Icc hac.le hcb.le ▸
       hf₁.continuousOn.union_of_isClosed hf₂.continuousOn isClosed_Icc isClosed_Icc
-  refine contDiffOn_Icc_of_continuous_jet (n := 1)
+  refine TauCeti.contDiffOn_Icc_of_continuous_jet (n := 1)
     (J := fun j ↦ if j = 0 then f else g) (eqOn_refl _ _)
     (fun j hj ↦ by rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hj with rfl | rfl; exacts [hf, hg])
     fun j hj t ht ↦ ?_
@@ -184,8 +187,6 @@ theorem contDiffOn_one_Icc_of_derivWithin_eq {c : ℝ}
   · simpa only [g, hct.not_ge, ↓reduceIte] using
       (hf₂.differentiableOn one_ne_zero t ⟨hct.le, ht.2.le⟩).hasDerivWithinAt.hasDerivAt
         (Icc_mem_nhds hct ht.2)
-
-end TauCeti
 
 /-- The derivative of a function that is `C¹` on a closed interval has bounded image on that
 interval. At the two endpoints `deriv f` may differ from the one-sided derivative, but these

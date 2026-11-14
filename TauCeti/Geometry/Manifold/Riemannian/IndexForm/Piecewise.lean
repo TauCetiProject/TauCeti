@@ -140,12 +140,8 @@ theorem IsPiecewiseContMDiffOn.indexForm_sub_left
     (hV' : IsPiecewiseContMDiffOn I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (V' r)) a b)
     (hW : IsPiecewiseContMDiffOn I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (W r)) a b) :
     indexForm I γ (V - V') W a b = indexForm I γ V W a b - indexForm I γ V' W a b := by
-  have hneg : IsPiecewiseContMDiffOn I.tangent 1
-      (fun r ↦ TotalSpace.mk' E (γ r) ((-V') r)) a b := by
-    have h := hV'.smul_sectionAlong
-      (.of_contMDiffOn hV'.lt (contMDiffOn_const (c := (-1 : ℝ))))
-    simpa only [Pi.neg_apply, neg_one_smul] using h
-  rw [sub_eq_add_neg, hV.indexForm_add_left hneg hW, indexForm_neg_left, sub_eq_add_neg]
+  rw [sub_eq_add_neg, hV.indexForm_add_left (V' := -V') hV'.neg_sectionAlong hW,
+    indexForm_neg_left, sub_eq_add_neg]
 
 /-- The index form respects subtraction in its second slot on continuous piecewise `C¹` fields. -/
 theorem IsPiecewiseContMDiffOn.indexForm_sub_right
@@ -323,33 +319,27 @@ variable (hγ : IsPiecewiseContMDiffOn I n γ a b) (hn : 1 ≤ n)
 tangent sections along `γ` on `[a, b]`, for `1 ≤ n`. -/
 def piecewiseIndexForm :
     LinearMap.BilinForm ℝ (PiecewiseContMDiffSectionAlong (F := E) (V := TangentSpace I) hγ) :=
-  LinearMap.mk₂ ℝ (fun V W ↦ indexForm I γ V.extendZero W.extendZero a b)
+  LinearMap.mk₂ ℝ (fun V W ↦ indexForm I γ V.extendByZero W.extendByZero a b)
     (fun V₁ V₂ W ↦ by
       rw [map_add]
-      exact (V₁.isPiecewiseContMDiffOn_extendZero.of_le hn).indexForm_add_left
-        (V₂.isPiecewiseContMDiffOn_extendZero.of_le hn)
-        (W.isPiecewiseContMDiffOn_extendZero.of_le hn))
-    (fun c V W ↦ by
-      rw [map_smul]
-      exact indexForm_const_smul_left c)
+      exact (V₁.isPiecewiseContMDiffOn_extendByZero.of_le hn).indexForm_add_left
+        (V₂.isPiecewiseContMDiffOn_extendByZero.of_le hn)
+        (W.isPiecewiseContMDiffOn_extendByZero.of_le hn))
+    (fun c _ _ ↦ by rw [map_smul]; exact indexForm_const_smul_left c)
     (fun V W₁ W₂ ↦ by
       rw [map_add]
-      exact (V.isPiecewiseContMDiffOn_extendZero.of_le hn).indexForm_add_right
-        (W₁.isPiecewiseContMDiffOn_extendZero.of_le hn)
-        (W₂.isPiecewiseContMDiffOn_extendZero.of_le hn))
-    (fun c V W ↦ by
-      rw [map_smul]
-      exact indexForm_const_smul_right c)
+      exact (V.isPiecewiseContMDiffOn_extendByZero.of_le hn).indexForm_add_right
+        (W₁.isPiecewiseContMDiffOn_extendByZero.of_le hn)
+        (W₂.isPiecewiseContMDiffOn_extendByZero.of_le hn))
+    (fun c _ _ ↦ by rw [map_smul]; exact indexForm_const_smul_right c)
 
 /-- Defining formula for `piecewiseIndexForm` via canonical zero extensions. -/
-@[simp]
-theorem piecewiseIndexForm_apply
+@[simp] theorem piecewiseIndexForm_apply
     (V W : PiecewiseContMDiffSectionAlong (F := E) (V := TangentSpace I) hγ) :
-    piecewiseIndexForm hγ hn V W = indexForm I γ V.extendZero W.extendZero a b :=
-  (rfl)
+    piecewiseIndexForm hγ hn V W = indexForm I γ V.extendByZero W.extendByZero a b := (rfl)
 
 /-- `piecewiseIndexForm` equals the unbundled `indexForm` of any two extensions agreeing with the
-bundled fields on the open interval `(a, b)`. -/
+bundled fields on `(a, b)`. -/
 theorem piecewiseIndexForm_eq_indexForm_of_eqOn_Ioo
     (V W : PiecewiseContMDiffSectionAlong (F := E) (V := TangentSpace I) hγ)
     {U U' : ∀ t, TangentSpace I (γ t)}
@@ -359,41 +349,30 @@ theorem piecewiseIndexForm_eq_indexForm_of_eqOn_Ioo
   rw [piecewiseIndexForm_apply]
   refine indexForm_congr (fun _ _ ↦ rfl) (fun t ht ↦ ?_) (fun t ht ↦ ?_)
   · rw [uIoo_of_lt hγ.lt] at ht
-    exact heq_of_eq ((V.extendZero_apply_of_mem (Ioo_subset_Icc_self ht)).trans (hU t ht).symm)
+    exact heq_of_eq ((V.extendByZero_apply_of_mem (Ioo_subset_Icc_self ht)).trans (hU t ht).symm)
   · rw [uIoo_of_lt hγ.lt] at ht
-    exact heq_of_eq ((W.extendZero_apply_of_mem (Ioo_subset_Icc_self ht)).trans (hU' t ht).symm)
+    exact heq_of_eq ((W.extendByZero_apply_of_mem (Ioo_subset_Icc_self ht)).trans (hU' t ht).symm)
 
-/-- Evaluating `piecewiseIndexForm` on fields restricted from piecewise `C^n` sections recovers
-`indexForm`. -/
+/-- Evaluating `piecewiseIndexForm` on fields from piecewise `C^n` sections recovers `indexForm`. -/
 theorem piecewiseIndexForm_ofPiecewise (U U' : ∀ t, TangentSpace I (γ t))
     (hU : IsPiecewiseContMDiffOn I.tangent n (fun t ↦ TotalSpace.mk' E (γ t) (U t)) a b)
     (hU' : IsPiecewiseContMDiffOn I.tangent n (fun t ↦ TotalSpace.mk' E (γ t) (U' t)) a b) :
-    piecewiseIndexForm hγ hn (.ofPiecewise U hU) (.ofPiecewise U' hU') =
-      indexForm I γ U U' a b :=
-  piecewiseIndexForm_eq_indexForm_of_eqOn_Ioo hγ hn _ _
-    (fun t ht ↦ (PiecewiseContMDiffSectionAlong.ofPiecewise_apply U hU
-      ⟨t, Ioo_subset_Icc_self ht⟩).symm)
-    (fun t ht ↦ (PiecewiseContMDiffSectionAlong.ofPiecewise_apply U' hU'
-      ⟨t, Ioo_subset_Icc_self ht⟩).symm)
+    piecewiseIndexForm hγ hn (.ofPiecewise U hU) (.ofPiecewise U' hU') = indexForm I γ U U' a b :=
+  piecewiseIndexForm_eq_indexForm_of_eqOn_Ioo hγ hn _ _ (by simp) (by simp)
 
-/-- Evaluating `piecewiseIndexForm` on fields restricted from `C^n` sections on `[a, b]` recovers
+/-- Evaluating `piecewiseIndexForm` on fields from `C^n` sections on `[a, b]` recovers
 `indexForm`. -/
 theorem piecewiseIndexForm_ofContMDiffOn (U U' : ∀ t, TangentSpace I (γ t))
     (hU : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent n (fun t ↦ TotalSpace.mk' E (γ t) (U t)) (Icc a b))
     (hU' : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent n (fun t ↦ TotalSpace.mk' E (γ t) (U' t)) (Icc a b)) :
     piecewiseIndexForm hγ hn (.ofContMDiffOn U hU) (.ofContMDiffOn U' hU') =
       indexForm I γ U U' a b :=
-  piecewiseIndexForm_eq_indexForm_of_eqOn_Ioo hγ hn _ _
-    (fun t ht ↦ (PiecewiseContMDiffSectionAlong.ofContMDiffOn_apply U hU
-      ⟨t, Ioo_subset_Icc_self ht⟩).symm)
-    (fun t ht ↦ (PiecewiseContMDiffSectionAlong.ofContMDiffOn_apply U' hU'
-      ⟨t, Ioo_subset_Icc_self ht⟩).symm)
+  piecewiseIndexForm_eq_indexForm_of_eqOn_Ioo hγ hn _ _ (by simp) (by simp)
 
 /-- The bundled piecewise index form is symmetric in its two arguments. -/
 theorem piecewiseIndexForm_comm
     (V W : PiecewiseContMDiffSectionAlong (F := E) (V := TangentSpace I) hγ) :
-    piecewiseIndexForm hγ hn V W = piecewiseIndexForm hγ hn W V :=
-  indexForm_comm
+    piecewiseIndexForm hγ hn V W = piecewiseIndexForm hγ hn W V := indexForm_comm
 
 /-- Symmetry of `piecewiseIndexForm` as `LinearMap.BilinForm.IsSymm`. -/
 theorem isSymm_piecewiseIndexForm : (piecewiseIndexForm hγ hn).IsSymm :=
@@ -401,42 +380,31 @@ theorem isSymm_piecewiseIndexForm : (piecewiseIndexForm hγ hn).IsSymm :=
 
 /-- Lowering the differentiability order of bundled sections leaves `piecewiseIndexForm`
 unchanged. -/
-theorem piecewiseIndexForm_ofLE {m : ℕ∞ω} (hnm : n ≤ m)
-    {hγm : IsPiecewiseContMDiffOn I m γ a b}
+theorem piecewiseIndexForm_ofLE {m : ℕ∞ω} (hnm : n ≤ m) {hγm : IsPiecewiseContMDiffOn I m γ a b}
     (V W : PiecewiseContMDiffSectionAlong (F := E) (V := TangentSpace I) hγm) :
     piecewiseIndexForm (hγm.of_le hnm) hn (.ofLE hnm V) (.ofLE hnm W) =
-      piecewiseIndexForm hγm (hn.trans hnm) V W :=
-  piecewiseIndexForm_eq_indexForm_of_eqOn_Ioo (hγm.of_le hnm) hn _ _
-    (fun t ht ↦ (V.extendZero_apply_of_mem (Ioo_subset_Icc_self ht)).trans
-      (PiecewiseContMDiffSectionAlong.ofLE_apply hnm V ⟨t, Ioo_subset_Icc_self ht⟩).symm)
-    (fun t ht ↦ (W.extendZero_apply_of_mem (Ioo_subset_Icc_self ht)).trans
-      (PiecewiseContMDiffSectionAlong.ofLE_apply hnm W ⟨t, Ioo_subset_Icc_self ht⟩).symm)
+      piecewiseIndexForm hγm (hn.trans hnm) V W := by
+  simp [piecewiseIndexForm_apply]
 
 /-- Splitting `[a, b]` at an interior parameter `c` decomposes `piecewiseIndexForm` as the sum of
 the restricted index forms on `[a, c]` and `[c, b]`. -/
-theorem piecewiseIndexForm_restrict_add {c : ℝ} (hac : a < c) (hcb : c < b)
+theorem piecewiseIndexForm_add_adjacent_intervals {c : ℝ} (hac : a < c) (hcb : c < b)
     (V W : PiecewiseContMDiffSectionAlong (F := E) (V := TangentSpace I) hγ) :
     piecewiseIndexForm (hγ.mono le_rfl hac hcb.le) hn
         (.restrict le_rfl hac hcb.le V) (.restrict le_rfl hac hcb.le W) +
       piecewiseIndexForm (hγ.mono hac.le hcb le_rfl) hn
         (.restrict hac.le hcb le_rfl V) (.restrict hac.le hcb le_rfl W) =
       piecewiseIndexForm hγ hn V W := by
-  have hV1 := V.isPiecewiseContMDiffOn_extendZero.of_le hn
-  have hW1 := W.isPiecewiseContMDiffOn_extendZero.of_le hn
+  have hV1 := V.isPiecewiseContMDiffOn_extendByZero.of_le hn
+  have hW1 := W.isPiecewiseContMDiffOn_extendByZero.of_le hn
   rw [piecewiseIndexForm_eq_indexForm_of_eqOn_Ioo (hγ.mono le_rfl hac hcb.le) hn _ _
-      (fun t ht ↦ (V.extendZero_apply_of_mem ⟨ht.1.le, ht.2.le.trans hcb.le⟩).trans
-        (PiecewiseContMDiffSectionAlong.restrict_apply le_rfl hac hcb.le V
-          ⟨t, Ioo_subset_Icc_self ht⟩).symm)
-      (fun t ht ↦ (W.extendZero_apply_of_mem ⟨ht.1.le, ht.2.le.trans hcb.le⟩).trans
-        (PiecewiseContMDiffSectionAlong.restrict_apply le_rfl hac hcb.le W
-          ⟨t, Ioo_subset_Icc_self ht⟩).symm),
+      (U := V.extendByZero) (U' := W.extendByZero)
+      (fun _ ht ↦ by simp [ht.1.le, ht.2.le.trans hcb.le])
+      (fun _ ht ↦ by simp [ht.1.le, ht.2.le.trans hcb.le]),
     piecewiseIndexForm_eq_indexForm_of_eqOn_Ioo (hγ.mono hac.le hcb le_rfl) hn _ _
-      (fun t ht ↦ (V.extendZero_apply_of_mem ⟨hac.le.trans ht.1.le, ht.2.le⟩).trans
-        (PiecewiseContMDiffSectionAlong.restrict_apply hac.le hcb le_rfl V
-          ⟨t, Ioo_subset_Icc_self ht⟩).symm)
-      (fun t ht ↦ (W.extendZero_apply_of_mem ⟨hac.le.trans ht.1.le, ht.2.le⟩).trans
-        (PiecewiseContMDiffSectionAlong.restrict_apply hac.le hcb le_rfl W
-          ⟨t, Ioo_subset_Icc_self ht⟩).symm),
+      (U := V.extendByZero) (U' := W.extendByZero)
+      (fun _ ht ↦ by simp [hac.le.trans ht.1.le, ht.2.le])
+      (fun _ ht ↦ by simp [hac.le.trans ht.1.le, ht.2.le]),
     piecewiseIndexForm_apply]
   exact indexForm_add_adjacent_intervals
     ((hV1.mono le_rfl hac hcb.le).intervalIntegrable_indexFormIntegrand
@@ -444,34 +412,36 @@ theorem piecewiseIndexForm_restrict_add {c : ℝ} (hac : a < c) (hcb : c < b)
     ((hV1.mono hac.le hcb le_rfl).intervalIntegrable_indexFormIntegrand
       (hW1.mono hac.le hcb le_rfl))
 
-/-- The Riemannian index form restricted to the fixed-endpoint subspace
-`PiecewiseContMDiffSectionAlong.endpointZero`. -/
+/-- The Riemannian index form restricted to `PiecewiseContMDiffSectionAlong.endpointZero`. -/
 def endpointZeroIndexForm :
     LinearMap.BilinForm ℝ
       (PiecewiseContMDiffSectionAlong.endpointZero (F := E) (V := TangentSpace I) (hγ := hγ)) :=
-  (piecewiseIndexForm hγ hn).restrict
-    (PiecewiseContMDiffSectionAlong.endpointZero (F := E) (V := TangentSpace I) (hγ := hγ))
+  (piecewiseIndexForm hγ hn).restrict _
 
 /-- Evaluating `endpointZeroIndexForm` delegates to `piecewiseIndexForm` on the underlying
 interval sections. -/
-@[simp]
-theorem endpointZeroIndexForm_apply
-    (V W : PiecewiseContMDiffSectionAlong.endpointZero (F := E) (V := TangentSpace I)
-      (hγ := hγ)) :
-    endpointZeroIndexForm hγ hn V W = piecewiseIndexForm hγ hn V.val W.val :=
-  (rfl)
+@[simp] theorem endpointZeroIndexForm_apply
+    (V W : PiecewiseContMDiffSectionAlong.endpointZero (F := E) (V := TangentSpace I) (hγ := hγ)) :
+    endpointZeroIndexForm hγ hn V W = piecewiseIndexForm hγ hn V.val W.val := (rfl)
+
+/-- Lowering the differentiability order of fixed-endpoint sections leaves
+`endpointZeroIndexForm` unchanged. -/
+theorem endpointZeroIndexForm_ofLE {m : ℕ∞ω} (hnm : n ≤ m) {hγm : IsPiecewiseContMDiffOn I m γ a b}
+    (V W : PiecewiseContMDiffSectionAlong.endpointZero (F := E) (V := TangentSpace I) (hγ := hγm)) :
+    endpointZeroIndexForm (hγm.of_le hnm) hn (PiecewiseContMDiffSectionAlong.endpointZeroOfLE hnm V)
+      (PiecewiseContMDiffSectionAlong.endpointZeroOfLE hnm W) =
+      endpointZeroIndexForm hγm (hn.trans hnm) V W := by
+  simp [piecewiseIndexForm_ofLE hn hnm]
 
 /-- The fixed-endpoint index form is symmetric in its two arguments. -/
 theorem endpointZeroIndexForm_comm
-    (V W : PiecewiseContMDiffSectionAlong.endpointZero (F := E) (V := TangentSpace I)
-      (hγ := hγ)) :
+    (V W : PiecewiseContMDiffSectionAlong.endpointZero (F := E) (V := TangentSpace I) (hγ := hγ)) :
     endpointZeroIndexForm hγ hn V W = endpointZeroIndexForm hγ hn W V :=
   piecewiseIndexForm_comm hγ hn V.val W.val
 
 /-- Symmetry of `endpointZeroIndexForm` as `LinearMap.BilinForm.IsSymm`. -/
 theorem isSymm_endpointZeroIndexForm : (endpointZeroIndexForm hγ hn).IsSymm :=
-  (isSymm_piecewiseIndexForm hγ hn).restrict
-    (PiecewiseContMDiffSectionAlong.endpointZero (F := E) (V := TangentSpace I) (hγ := hγ))
+  (isSymm_piecewiseIndexForm hγ hn).restrict _
 
 end Bundled
 

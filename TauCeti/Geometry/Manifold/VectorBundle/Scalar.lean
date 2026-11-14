@@ -20,7 +20,9 @@ More generally, over a `𝕜`-charted base, scalar multiplication by `𝕜'`-val
 field extension `𝕜 ⊆ 𝕜'` preserves `C^n` regularity and equips `C^n` sections with compatible
 `Module 𝕜'` and `IsScalarTower 𝕜 𝕜'` instances (`ContMDiffSection.instModuleOfNormedAlgebra`);
 multiplication by a constant of `𝕜'` also preserves differentiability of sections
-(`MDifferentiableAt.const_smul_section`).
+(`MDifferentiableAt.const_smul_section`), and scaling a local `C^n` section by a `C^n` scalar map
+whose closed support maps into the section's domain produces a `C^n` section along the base map
+(`ContMDiffOn.smul_sectionAlong_of_tsupport`).
 
 For normal bundles, positive rescaling converts unit-radius fibre coordinates to a radius
 varying over the submanifold. It is the rescaling step in the variable-radius tubular
@@ -88,6 +90,31 @@ theorem ContMDiff.smul_totalSpace {a : M → 𝕜'} {g : M → TotalSpace F V}
     ContMDiff J (I.prod 𝓘(𝕜, F)) n
       (fun y => (⟨(g y).proj, a y • (g y).2⟩ : TotalSpace F V)) :=
   fun x => (ha x).smul_totalSpace (hg x)
+
+/-- Scaling a local `C^n` section on an open set `u` by a `C^n` scalar function `ψ` along a `C^n`
+base map `f` gives a `C^n` section along `f` whenever `f` maps `s ∩ tsupport ψ` into `u`. -/
+theorem ContMDiffOn.smul_sectionAlong_of_tsupport {f : M → B} {σ : ∀ b, V b} {ψ : M → 𝕜'}
+    {s : Set M} {u : Set B} (hψ : ContMDiffOn J 𝓘(𝕜, 𝕜') n ψ s)
+    (hf : ContMDiffOn J I n f s) (hu : IsOpen u) (hfu : Set.MapsTo f (s ∩ tsupport ψ) u)
+    (hσ : ContMDiffOn I (I.prod 𝓘(𝕜, F)) n (fun b ↦ TotalSpace.mk' F b (σ b)) u) :
+    ContMDiffOn J (I.prod 𝓘(𝕜, F)) n (fun y ↦ TotalSpace.mk' F (f y) (ψ y • σ (f y))) s := by
+  intro x hx
+  by_cases hxs : x ∈ tsupport ψ
+  · have hfx : f x ∈ u := hfu ⟨hx, hxs⟩
+    exact (hψ x hx).smul_totalSpace
+      (((hσ (f x) hfx).contMDiffAt (hu.mem_nhds hfx)).comp_contMDiffWithinAt x (hf x hx))
+  · let e := trivializationAt F V (f x)
+    have hfe : ∀ᶠ y in 𝓝[s] x, f y ∈ e.baseSet :=
+      (hf x hx).continuousWithinAt.preimage_mem_nhdsWithin
+        (e.open_baseSet.mem_nhds (mem_baseSet_trivializationAt F V (f x)))
+    have hψ0 : ∀ᶠ y in 𝓝[s] x, ψ y = 0 :=
+      nhdsWithin_le_nhds (notMem_tsupport_iff_eventuallyEq.mp hxs)
+    refine Bundle.contMDiffWithinAt_totalSpace_iff.mpr ⟨hf x hx,
+      (contMDiffWithinAt_const (c := (0 : F))).congr_of_eventuallyEq ?_ ?_⟩
+    · filter_upwards [hfe, hψ0] with y hy h0
+      simpa only [h0, zero_smul] using (e.linear 𝕜' hy).map_zero
+    · simpa only [image_eq_zero_of_notMem_tsupport hxs, zero_smul] using
+        (e.linear 𝕜' (mem_baseSet_trivializationAt F V (f x))).map_zero
 
 /-- Multiplying a section of a `𝕜'`-linear vector bundle by a constant of `𝕜'` preserves
 differentiability at a point, where differentiability is taken over `𝕜`. -/

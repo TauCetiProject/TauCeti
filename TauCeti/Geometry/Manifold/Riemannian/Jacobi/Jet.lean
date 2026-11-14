@@ -43,7 +43,7 @@ noncomputable section
 namespace TauCeti.Manifold
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
@@ -121,7 +121,8 @@ theorem IsJacobiFieldOn.alongCurveWithin_three_of_eq_zero
 
 /-- The radial exponential Jacobi field `t ↦ d(exp_p)_(t v) (t w)` has third covariant
 derivative `-R(w,v)v` at zero, with the native curvature sign convention. -/
-theorem alongCurveWithin_three_mfderiv_riemannianExp_zero (p : M) (v w : TangentSpace I p) :
+theorem alongCurveWithin_three_mfderiv_riemannianExp_zero [I.Boundaryless] (p : M)
+    (v w : TangentSpace I p) :
     let γ := fun t : ℝ ↦ riemannianExp I M p (t • v)
     let J := fun t ↦ mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (t • v) (t • w)
     let s := geodesicInterval I M p v
