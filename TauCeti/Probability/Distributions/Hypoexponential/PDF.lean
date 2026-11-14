@@ -46,8 +46,8 @@ the Erlang density.
 
 ## Main results
 
-* `TauCeti.Probability.hypoexponentialMeasure_eq_withDensity`: a nonempty valid hypoexponential
-  law has density `hypoexponentialPDF r`.
+* `TauCeti.Probability.hypoexponentialMeasure_eq_withDensity`: a nonempty hypoexponential law has
+  density `hypoexponentialPDF r`.
 * `TauCeti.Probability.hypoexponentialPDFReal_nonneg`: the density is nonnegative.
 * `TauCeti.Probability.integral_hypoexponentialPDFReal_eq_one`: normalization.
 * `TauCeti.Probability.hypoexponentialPDFReal_of_injective`: the distinct-rate formula.
@@ -322,9 +322,16 @@ private theorem hypoexponentialPDFReal_ae_eq_erlangExpansion (hr : ∀ i, 0 < r 
   unfold erlangExpansion poles
   rw [hx, sum_sigma]
 
-/-- A nonempty hypoexponential law with positive rates has density `hypoexponentialPDF r`. -/
-theorem hypoexponentialMeasure_eq_withDensity [Nonempty ι] (hr : ∀ i, 0 < r i) :
+/-- A nonempty hypoexponential law has density `hypoexponentialPDF r`. For invalid rates both
+sides vanish. -/
+theorem hypoexponentialMeasure_eq_withDensity [Nonempty ι] (r : ι → ℝ) :
     hypoexponentialMeasure r = volume.withDensity (hypoexponentialPDF r) := by
+  by_cases hr : ∀ i, 0 < r i
+  swap
+  · have hz : hypoexponentialPDF r = 0 := by
+      ext x
+      simp [hypoexponentialPDF, hypoexponentialPDFReal_of_not_pos hr]
+    rw [hypoexponentialMeasure_eq_zero_of_invalid hr, hz, withDensity_zero]
   have := isProbabilityMeasure_hypoexponentialMeasure hr
   rw [← Measure.withDensity_rnDeriv_eq _ _ (hypoexponentialMeasure_absolutelyContinuous r)]
   refine withDensity_congr_ae ?_
@@ -370,7 +377,7 @@ theorem lintegral_hypoexponentialPDF_eq_one [Nonempty ι] (hr : ∀ i, 0 < r i) 
     ∫⁻ x, hypoexponentialPDF r x = 1 := by
   have := isProbabilityMeasure_hypoexponentialMeasure hr
   rw [← setLIntegral_univ, ← withDensity_apply _ MeasurableSet.univ,
-    ← hypoexponentialMeasure_eq_withDensity hr, measure_univ]
+    ← hypoexponentialMeasure_eq_withDensity, measure_univ]
 
 /-- The real density of a nonempty valid hypoexponential law integrates to one. -/
 @[simp]
@@ -382,26 +389,35 @@ theorem integral_hypoexponentialPDFReal_eq_one [Nonempty ι] (hr : ∀ i, 0 < r 
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
 
-/-- A variable with a nonempty valid hypoexponential law has a Lebesgue density. -/
-theorem hasPDF_of_hasLaw_hypoexponentialMeasure [Nonempty ι] (hr : ∀ i, 0 < r i)
+/-- A variable with a nonempty hypoexponential law has a Lebesgue density. -/
+theorem hasPDF_of_hasLaw_hypoexponentialMeasure [Nonempty ι]
     (hX : HasLaw X (hypoexponentialMeasure r) P) : HasPDF X P :=
   hasPDF_of_hasLaw_withDensity (measurable_hypoexponentialPDF r).aemeasurable
-    (by rwa [hypoexponentialMeasure_eq_withDensity hr] at hX)
+    (by rwa [hypoexponentialMeasure_eq_withDensity] at hX)
 
-/-- The density of a variable with a nonempty valid hypoexponential law is
-`hypoexponentialPDF r`. -/
-theorem pdf_eq_hypoexponentialPDF_of_hasLaw_hypoexponentialMeasure [Nonempty ι]
-    (hr : ∀ i, 0 < r i) (hX : HasLaw X (hypoexponentialMeasure r) P) :
-    pdf X P =ᵐ[volume] hypoexponentialPDF r :=
-  pdf_eq_of_hasLaw_withDensity (measurable_hypoexponentialPDF r).aemeasurable
-    (by rwa [hypoexponentialMeasure_eq_withDensity hr] at hX)
-
-/-- The Radon--Nikodym derivative of a nonempty valid hypoexponential law is
-`hypoexponentialPDF r`. -/
-theorem rnDeriv_hypoexponentialMeasure [Nonempty ι] (hr : ∀ i, 0 < r i) :
+/-- The Radon--Nikodym derivative of a hypoexponential law is `hypoexponentialPDF r`. For the empty
+family the law is a point mass, singular to Lebesgue measure, and the density vanishes. For
+invalid rates both sides vanish. -/
+theorem rnDeriv_hypoexponentialMeasure (r : ι → ℝ) :
     (hypoexponentialMeasure r).rnDeriv volume =ᵐ[volume] hypoexponentialPDF r := by
-  rw [hypoexponentialMeasure_eq_withDensity hr]
-  exact Measure.rnDeriv_withDensity volume (measurable_hypoexponentialPDF r)
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · have hz : hypoexponentialPDF r = 0 := by
+      ext x
+      simp [hypoexponentialPDF]
+    rw [hypoexponentialMeasure_of_isEmpty, hz]
+    exact Measure.rnDeriv_eq_zero_of_mutuallySingular (mutuallySingular_dirac 0 volume)
+      Measure.AbsolutelyContinuous.rfl
+  · rw [hypoexponentialMeasure_eq_withDensity]
+    exact Measure.rnDeriv_withDensity volume (measurable_hypoexponentialPDF r)
+
+/-- The canonical pdf of a variable with a hypoexponential law is the named density
+`hypoexponentialPDF r`. For the empty family the law is a Dirac point mass and both sides vanish;
+this does not assert absolute continuity of that law. -/
+theorem pdf_eq_hypoexponentialPDF_of_hasLaw_hypoexponentialMeasure
+    (hX : HasLaw X (hypoexponentialMeasure r) P) :
+    pdf X P =ᵐ[volume] hypoexponentialPDF r := by
+  rw [pdf_def, hX.map_eq]
+  exact rnDeriv_hypoexponentialMeasure r
 
 end Law
 
@@ -420,12 +436,14 @@ theorem hypoexponentialPDFReal_of_injective [DecidableEq ι] (hr : ∀ i, 0 < r 
   simp [gammaPDFReal, hx.le]
   ring
 
-/-- **Equal rates.** With a common positive rate `ρ`, the density of a nonempty family away from
-zero is the Erlang density of shape `Fintype.card ι` and rate `ρ`. -/
-theorem hypoexponentialPDFReal_const [Nonempty ι] {ρ : ℝ} (hρ : 0 < ρ) (hx : x ≠ 0) :
+/-- **Equal rates.** With a common positive rate `ρ`, the density away from zero is the Erlang
+density of shape `Fintype.card ι` and rate `ρ`. For the empty family both sides vanish. -/
+theorem hypoexponentialPDFReal_const {ρ : ℝ} (hρ : 0 < ρ) (hx : x ≠ 0) :
     hypoexponentialPDFReal (fun _ : ι ↦ ρ) x = gammaPDFReal (Fintype.card ι) ρ x := by
   rcases hx.lt_or_gt with hx | hx
   · rw [hypoexponentialPDFReal_of_nonpos _ hx.le, gammaPDFReal, ite_eq_right hx.not_ge]
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · simp [gammaPDFReal, hx.le]
   have hn : 1 ≤ Fintype.card ι := Fintype.card_pos
   have hcard : #{_i : ι | ρ = ρ} = Fintype.card ι := by simp
   rw [hypoexponentialPDFReal_eq_sum_gammaPDFReal (fun _ ↦ hρ) hx, image_const univ_nonempty,
