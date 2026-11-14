@@ -57,6 +57,13 @@ theorem integrable_inner_fderiv {w : E → V} (hw : LocallyIntegrableOn w Ω μ)
   simp only [coe_lineDerivCLM, lineDeriv_eq_fderiv] at h
   exact h
 
+/-- A scalar test function multiplied by the inner product of a constant vector with a locally
+integrable field is integrable. -/
+theorem integrable_mul_inner {w : E → V} (hw : LocallyIntegrableOn w Ω μ) (α : 𝓓(Ω, ℝ)) (v : V) :
+    Integrable (fun x => (α : E → ℝ) x * ⟪v, w x⟫_ℝ) μ := by
+  simpa only [innerSL_apply_apply, inner_smul_right] using
+    (innerSL ℝ v).integrable_comp (α.integrable_smul hw)
+
 end TestFunction
 
 namespace TauCeti
