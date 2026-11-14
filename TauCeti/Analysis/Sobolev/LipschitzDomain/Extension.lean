@@ -226,6 +226,34 @@ private theorem mem_normalCylinder_of_indicator_ne_zero
   refine hs (subset_tsupport ψ fun hψy => hy ?_)
   by_cases hyS : y ∈ S <;> simp [indicator, hyS, hψy]
 
+/-- Reflection through a Lipschitz chart preserves nonnegativity when the cutoff is
+nonnegative on the source domain. -/
+theorem W1p.value_lipschitzChartExtensionL_ae_nonneg
+    (h : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzChartWith L e φ a b)
+    (hψ : ContDiff ℝ ∞ ψ) (hM : 0 ≤ M)
+    (hψM : ∀ x ∈ Ω, |ψ x| ≤ M) (hgM : ∀ x ∈ Ω, ‖∇ ψ x‖ ≤ M)
+    (hs : tsupport ψ ⊆ e ⁻¹' normalCylinder (a - 2 * L * b) b)
+    (hψ0 : ∀ x ∈ Ω, 0 ≤ ψ x) {u : W1p volume Ω p}
+    (hu : ∀ᵐ x ∂volume.restrict Ω, 0 ≤ W1p.value u x) :
+    ∀ᵐ x ∂volume,
+      0 ≤ W1p.value (W1p.lipschitzChartExtensionL h ψ hψ hM hψM hgM hs u) x := by
+  let f := ((Ω ⊓ chartCylinder e a b : Opens (WithLp 2 (ℝ × E))) : Set _).indicator
+    fun x => ψ x • W1p.value u x
+  have hf : ∀ᵐ x ∂volume, 0 ≤ f x := by
+    have hu' := (ae_restrict_iff' Ω.isOpen.measurableSet).1 hu
+    filter_upwards [hu'] with x hx
+    by_cases hxs : x ∈ (Ω ⊓ chartCylinder e a b : Opens (WithLp 2 (ℝ × E)))
+    · simpa only [f, indicator_of_mem hxs, smul_eq_mul] using
+        mul_nonneg (hψ0 x hxs.1) (hx hxs.1)
+    · simp only [f, indicator_of_notMem hxs, le_refl]
+  have hR := (e.symm.measurePreserving.comp
+    ((measurePreserving_graphReflection h.lipschitzWith.continuous).comp
+      e.measurePreserving)).quasiMeasurePreserving.ae hf
+  filter_upwards [value_lipschitzChartExtensionL_ae_aux h hψ hM hψM hgM hs u, hf, hR]
+    with x hx hx0 hxR
+  rw [hx]
+  split_ifs <;> first | exact hx0 | exact hxR | exact le_refl 0
+
 /-- **The extension is supported in the chart cylinder.** Outside the points whose chart
 coordinates lie in `normalCylinder a b`, the extension vanishes almost everywhere. -/
 theorem W1p.value_lipschitzChartExtensionL_ae_eq_zero
