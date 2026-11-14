@@ -292,7 +292,7 @@ theorem exists_generatingComposition [CompleteSpace E₁] [CompleteSpace E₂] [
     have hTd := hT'.eventually_differentiableAt h1
     rw [← hb'₀] at hSd hTd
     filter_upwards [hD'o.mem_nhds hD'mem, htarget,
-      ContDiffAt.eventually_differentiableAt hR' (by simp),
+      hR'.eventually_differentiableAt h1,
       (continuousAt_fst.prodMk hb'.continuousAt).eventually hSd,
       (hb'.continuousAt.prodMk continuousAt_snd).eventually hTd] with y' h₁ h₂ h₃ h₄ h₅
     exact ⟨h₁, h₂, h₃, h₄, h₅⟩
