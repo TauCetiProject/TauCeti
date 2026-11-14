@@ -7,9 +7,10 @@ module
 
 public import TauCeti.Topology.CWComplex.Classical.CompactSupport
 public import TauCeti.Topology.CWComplex.Classical.Normal
+public import TauCeti.Topology.CWComplex.Classical.Quotient
 public import TauCeti.Topology.CWComplex.Classical.RelativeCWComplex
 public import TauCeti.Topology.CWComplex.Classical.SubcomplexTower.Basic
-import TauCeti.Topology.CWComplex.Classical.OpenCells
+import TauCeti.Topology.CWComplex.Classical.Image
 
 /-!
 # CW structure and normality on colimits of CW subcomplex towers
@@ -18,12 +19,12 @@ Given a sequential tower `T : TauCeti.CWSubcomplexTower W newCell` of closed CW 
 embeddings, this file constructs a classical `CWComplex` structure both on any colimit cocone
 `hc : IsColimit c` of `T.diagram : ℕ ⥤ TopCat` (`TauCeti.CWSubcomplexTower.cwComplexOfIsColimit`)
 and on the canonical colimit `T.Union := colimit T.diagram`
-(`TauCeti.CWSubcomplexTower.cwComplexUnion`):
+(`TauCeti.CWSubcomplexTower.instCWComplexUnion`):
 
 * **Cell indexing and characteristic maps.** Its `n`-cells correspond to `Σ k : ℕ, newCell k n`
   (`cwComplexOfIsColimitCellEquiv`, `unionCellEquiv`), including `newCell 0 n` for `W 0`, and the
-  characteristic map of `⟨k, j⟩` is the composition of the birth-stage characteristic map in `W k`
-  with the colimit inclusion.
+  characteristic map of `⟨k, j⟩` is the pushed-forward birth-stage characteristic map along the
+  closed embedding `c.ι.app k` (`Topology.IsClosedEmbedding.relCWComplex`).
 * **Normality and Hausdorff separation.** Each stage `W k` is normal
   (`TauCeti.instNormalSpaceOfCWComplexUniv`) and singletons in the colimit are closed by the stage
   final topology (`TauCeti.CWSubcomplexTower.t1Space_of_isColimit`), so sequential-colimit normality
@@ -35,9 +36,11 @@ and on the canonical colimit `T.Union := colimit T.diagram`
   `unionStageSubcomplex`) whose `n`-cells are those born at stages `≤ k`.
 * **Final topology vs. cellwise weak topology and categorical comparison.** The stage final topology
   coincides with the cellwise weak topology coinduced by closed-ball characteristic maps
-  (`iSup_coinduced_stage_eq_iSup_coinduced_closedCell`), and reindexing cells `(k, n, j)` by
-  dimension `n` yields a categorical `TopCat.CWComplex` (`toTopCatCWComplexOfIsColimit`,
-  `toTopCatCWComplex`).
+  (`TauCeti.topologicalSpace_eq_iSup_coinduced_map_closedBall`,
+  `iSup_coinduced_ι_eq_iSup_coinduced_map_closedBall`), reindexing cells `(k, n, j)` by dimension
+  `n` yields a categorical `TopCat.CWComplex` (`toTopCatCWComplexOfIsColimit`,
+  `TopCat.toTopCatCWComplex`), and for the constant tower `const X` the union is homeomorphic to `X`
+  (`constUnionHomeomorph`).
 
 ## References
 
@@ -64,13 +67,6 @@ variable {W : ℕ → Type u}
   [∀ k, TopologicalSpace (W k)] [∀ k, T2Space (W k)] [∀ k, CWComplex (univ : Set (W k))]
   {newCell : ℕ → ℕ → Type u} (T : CWSubcomplexTower W newCell)
 
-/-- A cell's closure in its birth stage `W k` meets only finitely many open cells of `W k`. -/
-theorem finite_inter_openCell_birthStage (k n : ℕ) (j : newCell k n) :
-    {a : Σ m : ℕ, cell (univ : Set (W k)) m |
-      (closedCell (C := (univ : Set (W k))) n (T.birthCell k n j) ∩
-        openCell (C := (univ : Set (W k))) a.1 a.2).Nonempty}.Finite :=
-  finite_setOf_nonempty_inter_openCell_of_isCompact isCompact_closedCell
-
 variable {c : Cocone T.diagram}
 
 /-- On the closed unit ball, the cocone map from stage `k` sends the characteristic map of
@@ -82,40 +78,27 @@ theorem ι_stageCellEquiv_map_eq {m k : ℕ} (hmk : m ≤ k) (n : ℕ) (j : newC
       c.ι.app m (map (C := (univ : Set (W m))) n (T.birthCell m n j) x) := by
   rw [← T.diagram_map_birthCell hmk n j hx, ← ConcreteCategory.comp_apply, c.w]
 
-private def cellMap (c : Cocone T.diagram) (n : ℕ) (p : Σ k : ℕ, newCell k n) (x : Fin n → ℝ) :
-    c.pt :=
-  c.ι.app p.1 (map (C := (univ : Set (W p.1))) n (T.birthCell p.1 n p.2) x)
+@[instance_reducible]
+private def birthImageRelCWComplex (hc : IsColimit c) (k : ℕ) :
+    RelCWComplex (range (c.ι.app k)) (∅ : Set c.pt) :=
+  (T.isClosedEmbedding_ι hc k).relCWComplex image_univ (image_empty _)
 
-private lemma isEmbedding_cellMap (hc : IsColimit c) (n : ℕ) (p : Σ k : ℕ, newCell k n) :
-    IsEmbedding ((ball (0 : Fin n → ℝ) 1).domRestrict (T.cellMap c n p)) := by
-  have heq : (ball (0 : Fin n → ℝ) 1).domRestrict (T.cellMap c n p) =
-      (c.ι.app p.1 ∘ Subtype.val) ∘
-        openCellHomeomorph (C := (univ : Set (W p.1))) n (T.birthCell p.1 n p.2) := by
-    ext x
-    simp [cellMap, Function.comp_apply]
-  rw [heq]
-  exact ((T.isClosedEmbedding_ι hc p.1).isEmbedding.comp IsEmbedding.subtypeVal).comp
-    (openCellHomeomorph (C := (univ : Set (W p.1))) n (T.birthCell p.1 n p.2)).isEmbedding
+private def birthImageCell (hc : IsColimit c) (n : ℕ) (p : Σ k : ℕ, newCell k n) :
+    @cell c.pt _ _ _ (T.birthImageRelCWComplex hc p.1) n :=
+  ((T.isClosedEmbedding_ι hc p.1).relCWComplexCellEquiv image_univ (image_empty _) n).symm
+    (T.birthCell p.1 n p.2)
 
 private def cellPartialEquiv (hc : IsColimit c) (n : ℕ) (p : Σ k : ℕ, newCell k n) :
     PartialEquiv (Fin n → ℝ) c.pt :=
-  Set.InjOn.toPartialEquiv (T.cellMap c n p) (ball 0 1) fun x hx y hy h ↦
-    congrArg Subtype.val
-      ((T.isEmbedding_cellMap hc n p).injective (a₁ := ⟨x, hx⟩) (a₂ := ⟨y, hy⟩) h)
+  @RelCWComplex.map c.pt _ _ _ (T.birthImageRelCWComplex hc p.1) n (T.birthImageCell hc n p)
 
 private lemma coe_cellPartialEquiv (hc : IsColimit c) (n : ℕ) (p : Σ k : ℕ, newCell k n) :
     (T.cellPartialEquiv hc n p : (Fin n → ℝ) → c.pt) =
-      fun x ↦ c.ι.app p.1 (map (C := (univ : Set (W p.1))) n (T.birthCell p.1 n p.2) x) := rfl
-
-private lemma continuousOn_cellPartialEquiv_symm (hc : IsColimit c) (n : ℕ)
-    (p : Σ k : ℕ, newCell k n) :
-    ContinuousOn (T.cellPartialEquiv hc n p).symm (T.cellPartialEquiv hc n p).target := by
-  let e := T.cellPartialEquiv hc n p
-  have hg : Continuous (fun y : e.target ↦
-      (⟨e.symm y, e.map_target y.2⟩ : ball (0 : Fin n → ℝ) 1)) :=
-    (T.isEmbedding_cellMap hc n p).continuous_iff.2 (by
-      convert continuous_subtype_val using 1; funext y; exact e.right_inv y.2)
-  exact continuousOn_iff_continuous_domRestrict.2 (continuous_subtype_val.comp hg)
+      fun x ↦ c.ι.app p.1 (map (C := (univ : Set (W p.1))) n (T.birthCell p.1 n p.2) x) := by
+  dsimp only [cellPartialEquiv, birthImageRelCWComplex, birthImageCell]
+  rw [(T.isClosedEmbedding_ι hc p.1).coe_map_relCWComplex image_univ (image_empty _) n,
+    Equiv.apply_symm_apply]
+  rfl
 
 private lemma cellPartialEquiv_image_eq_of_le (hc : IsColimit c) {n : ℕ}
     {p : Σ m : ℕ, newCell m n} {k : ℕ} (hpk : p.1 ≤ k) {s : Set (Fin n → ℝ)}
@@ -125,6 +108,23 @@ private lemma cellPartialEquiv_image_eq_of_le (hc : IsColimit c) {n : ℕ}
   rw [T.coe_cellPartialEquiv, ← image_comp]
   exact image_congr fun _ hx ↦ (T.ι_stageCellEquiv_map_eq (c := c) hpk n p.2 (hs hx)).symm
 
+private lemma ι_map_eq_cellPartialEquiv (hc : IsColimit c) {k n : ℕ}
+    (i : cell (univ : Set (W k)) n) {x : Fin n → ℝ} (hx : x ∈ closedBall 0 1) :
+    c.ι.app k (map (C := (univ : Set (W k))) n i x) =
+      T.cellPartialEquiv hc n ((T.stageCellEquiv k n).symm i).1 x := by
+  let q := (T.stageCellEquiv k n).symm i
+  rw [T.coe_cellPartialEquiv]
+  exact (congrArg (fun j ↦ c.ι.app k (map (C := (univ : Set (W k))) n j x))
+    ((T.stageCellEquiv k n).apply_symm_apply i)).symm.trans
+    (T.ι_stageCellEquiv_map_eq (c := c) q.2 n q.1.2 hx)
+
+private lemma image_ι_image_map_eq_cellPartialEquiv (hc : IsColimit c) {k n : ℕ}
+    (i : cell (univ : Set (W k)) n) {s : Set (Fin n → ℝ)} (hs : s ⊆ closedBall 0 1) :
+    c.ι.app k '' (map (C := (univ : Set (W k))) n i '' s) =
+      T.cellPartialEquiv hc n ((T.stageCellEquiv k n).symm i).1 '' s := by
+  let q := (T.stageCellEquiv k n).symm i
+  rw [T.cellPartialEquiv_image_eq_of_le hc q.2 hs, (T.stageCellEquiv k n).apply_symm_apply i]
+
 /-- **Classical `CWComplex` structure on any colimit `c.pt` of a `CWSubcomplexTower`.**
 Its `n`-cells correspond to `Σ k : ℕ, newCell k n` (`cwComplexOfIsColimitCellEquiv`), with
 characteristic maps factoring through their birth stages
@@ -133,12 +133,14 @@ characteristic maps factoring through their birth stages
 def cwComplexOfIsColimit (hc : IsColimit c) : CWComplex (univ : Set c.pt) where
   cell n := Σ k : ℕ, newCell k n
   map n p := T.cellPartialEquiv hc n p
-  source_eq _ _ := rfl
-  continuousOn n p := by
-    rw [T.coe_cellPartialEquiv]
-    exact (c.ι.app p.1).hom.continuous.comp_continuousOn
-      (continuousOn (C := (univ : Set (W p.1))) n (T.birthCell p.1 n p.2))
-  continuousOn_symm n p := T.continuousOn_cellPartialEquiv_symm hc n p
+  source_eq n p :=
+    @RelCWComplex.source_eq c.pt _ _ _ (T.birthImageRelCWComplex hc p.1) n (T.birthImageCell hc n p)
+  continuousOn n p :=
+    @RelCWComplex.continuousOn c.pt _ _ _ (T.birthImageRelCWComplex hc p.1) n
+      (T.birthImageCell hc n p)
+  continuousOn_symm n p :=
+    @RelCWComplex.continuousOn_symm c.pt _ _ _ (T.birthImageRelCWComplex hc p.1) n
+      (T.birthImageCell hc n p)
   pairwiseDisjoint' := by
     rintro ⟨n₁, p₁⟩ - ⟨n₂, p₂⟩ - hne
     let K := max p₁.1 p₂.1
@@ -157,22 +159,20 @@ def cwComplexOfIsColimit (hc : IsColimit c) : CWComplex (univ : Set c.pt) where
         Subtype.val_injective.comp (T.stageCellEquiv p.1 m).symm.injective⟩
     refine ⟨fun m ↦ (I m).map (emb m), fun x hx ↦ ?_⟩
     obtain ⟨m, hmn, i, hiI, y, hyB, hyx⟩ := by simpa only [mem_iUnion, exists_prop] using hI hx
-    let q := (T.stageCellEquiv p.1 m).symm i
-    have hiq : T.stageCellEquiv p.1 m q = i := (T.stageCellEquiv p.1 m).apply_symm_apply i
     refine mem_iUnion₂.2 ⟨m, hmn, mem_iUnion₂.2 ⟨emb m i, Finset.mem_map_of_mem _ hiI, y, hyB, ?_⟩⟩
-    rw [T.coe_cellPartialEquiv, T.coe_cellPartialEquiv]
-    exact (T.ι_stageCellEquiv_map_eq (c := c) q.2 m q.1.2 hyB).symm.trans (by rw [hiq, hyx])
+    exact (T.ι_map_eq_cellPartialEquiv hc i hyB).symm.trans
+      (by rw [hyx, T.coe_cellPartialEquiv])
   closed' A _ hA := (TopCat.isClosed_iff_of_isColimit _ hc A).2 fun k ↦
     (CWComplex.closed (univ : Set (W k)) (c.ι.app k ⁻¹' A) (subset_univ _)).2 fun n i ↦ by
-      let q := (T.stageCellEquiv k n).symm i
-      have hiq : T.stageCellEquiv k n q = i := (T.stageCellEquiv k n).apply_symm_apply i
       have hcell : c.ι.app k '' closedCell (C := (univ : Set (W k))) n i =
-          T.cellPartialEquiv hc n q.1 '' closedBall 0 1 := by
-        rw [T.cellPartialEquiv_image_eq_of_le hc q.2 Subset.rfl, hiq]; rfl
+          T.cellPartialEquiv hc n ((T.stageCellEquiv k n).symm i).1 '' closedBall 0 1 :=
+        T.image_ι_image_map_eq_cellPartialEquiv hc i Subset.rfl
       suffices (c.ι.app k ⁻¹' A) ∩ closedCell (C := (univ : Set (W k))) n i =
-          (c.ι.app k ⁻¹' (A ∩ T.cellPartialEquiv hc n q.1 '' closedBall 0 1)) ∩
+          (c.ι.app k ⁻¹'
+            (A ∩ T.cellPartialEquiv hc n ((T.stageCellEquiv k n).symm i).1 '' closedBall 0 1)) ∩
             closedCell (C := (univ : Set (W k))) n i from
-        this ▸ ((hA n q.1).preimage (c.ι.app k).hom.continuous).inter isClosed_closedCell
+        this ▸ ((hA n ((T.stageCellEquiv k n).symm i).1).preimage
+          (c.ι.app k).hom.continuous).inter isClosed_closedCell
       rw [← hcell]; ext y
       exact ⟨fun ⟨hyA, hyC⟩ ↦ ⟨⟨hyA, mem_image_of_mem _ hyC⟩, hyC⟩,
         fun ⟨⟨hyA, _⟩, hyC⟩ ↦ ⟨hyA, hyC⟩⟩
@@ -181,11 +181,8 @@ def cwComplexOfIsColimit (hc : IsColimit c) : CWComplex (univ : Set c.pt) where
       Types.jointly_surjective_of_isColimit (isColimitOfPreserves (forget TopCat) hc) z
     obtain ⟨n, i, x, hx, rfl⟩ :=
       mem_iUnion₂.1 ((CWComplex.union (C := (univ : Set (W k)))).symm ▸ mem_univ y)
-    let q := (T.stageCellEquiv k n).symm i
-    have hiq : T.stageCellEquiv k n q = i := (T.stageCellEquiv k n).apply_symm_apply i
-    refine mem_iUnion₂.2 ⟨n, q.1, x, hx, ?_⟩
-    rw [T.coe_cellPartialEquiv]
-    exact (T.ι_stageCellEquiv_map_eq (c := c) q.2 n q.1.2 hx).symm.trans (by rw [hiq]; rfl)
+    exact mem_iUnion₂.2
+      ⟨n, ((T.stageCellEquiv k n).symm i).1, x, hx, (T.ι_map_eq_cellPartialEquiv hc i hx).symm⟩
 
 /-- Equivalence identifying the `n`-cells of `T.cwComplexOfIsColimit hc` with
 `Σ k : ℕ, newCell k n` without unfolding the CW structure. -/
@@ -199,6 +196,7 @@ private lemma map_cwComplexOfIsColimitCellEquiv_symm (hc : IsColimit c) (n : ℕ
     map (C := (univ : Set c.pt)) n ((T.cwComplexOfIsColimitCellEquiv hc n).symm p) =
       T.cellPartialEquiv hc n p := (rfl)
 
+@[simp]
 lemma map_cwComplexOfIsColimitCellEquiv_symm_apply (hc : IsColimit c) (n : ℕ)
     (p : Σ k : ℕ, newCell k n) (x : Fin n → ℝ) :
     letI := T.cwComplexOfIsColimit hc
@@ -216,6 +214,7 @@ lemma map_eq_ι_stageCellEquiv (hc : IsColimit c) (n : ℕ) (p : Σ m : ℕ, new
   (T.map_cwComplexOfIsColimitCellEquiv_symm_apply hc n p x).trans
     (T.ι_stageCellEquiv_map_eq (c := c) hpk n p.2 hx).symm
 
+@[simp]
 lemma openCell_cwComplexOfIsColimitCellEquiv_symm (hc : IsColimit c) (n : ℕ)
     (p : Σ k : ℕ, newCell k n) :
     letI := T.cwComplexOfIsColimit hc
@@ -234,6 +233,7 @@ lemma openCell_cwComplexOfIsColimitCellEquiv_symm_of_le (hc : IsColimit c) (n : 
   rw [openCell, T.map_cwComplexOfIsColimitCellEquiv_symm hc]
   exact T.cellPartialEquiv_image_eq_of_le hc hpk ball_subset_closedBall
 
+@[simp]
 lemma closedCell_cwComplexOfIsColimitCellEquiv_symm (hc : IsColimit c) (n : ℕ)
     (p : Σ k : ℕ, newCell k n) :
     letI := T.cwComplexOfIsColimit hc
@@ -253,6 +253,7 @@ lemma closedCell_cwComplexOfIsColimitCellEquiv_symm_of_le (hc : IsColimit c) (n 
   rw [closedCell, T.map_cwComplexOfIsColimitCellEquiv_symm hc]
   exact T.cellPartialEquiv_image_eq_of_le hc hpk Subset.rfl
 
+@[simp]
 lemma cellFrontier_cwComplexOfIsColimitCellEquiv_symm (hc : IsColimit c) (n : ℕ)
     (p : Σ k : ℕ, newCell k n) :
     letI := T.cwComplexOfIsColimit hc
@@ -263,30 +264,49 @@ lemma cellFrontier_cwComplexOfIsColimitCellEquiv_symm (hc : IsColimit c) (n : �
     ← image_image]
   rfl
 
-/-- Each closed-ball characteristic map into `c.pt` is a closed map, factoring through the
-Hausdorff birth stage `W k` followed by the closed embedding `c.ι.app k`. -/
-lemma isClosedMap_closedBall_map (hc : IsColimit c) (n : ℕ) :
+/-- On the closed unit ball, the cocone map from stage `k` sends the characteristic map of any
+stage cell `i` of `W k` to the characteristic map of its corresponding colimit cell. -/
+theorem ι_map_eq_map (hc : IsColimit c) (k n : ℕ) (i : cell (univ : Set (W k)) n)
+    {x : Fin n → ℝ} (hx : x ∈ closedBall 0 1) :
     letI := T.cwComplexOfIsColimit hc
-    ∀ i : cell (univ : Set c.pt) n,
-      IsClosedMap (fun x : closedBall (0 : Fin n → ℝ) 1 ↦ map (C := (univ : Set c.pt)) n i x) := by
+    c.ι.app k (map (C := (univ : Set (W k))) n i x) =
+      map (C := (univ : Set c.pt)) n
+        ((T.cwComplexOfIsColimitCellEquiv hc n).symm ((T.stageCellEquiv k n).symm i).1) x := by
   let _ := T.cwComplexOfIsColimit hc
-  intro i
-  obtain ⟨p, rfl⟩ := (T.cwComplexOfIsColimitCellEquiv hc n).symm.surjective i
-  have : CompactSpace (closedBall (0 : Fin n → ℝ) 1) :=
-    isCompact_iff_compactSpace.1 (isCompact_closedBall 0 1)
-  simp_rw [T.map_cwComplexOfIsColimitCellEquiv_symm_apply hc]
-  exact (T.isClosedEmbedding_ι hc p.1).isClosedMap.comp
-    (continuous_map_closedBall (C := (univ : Set (W p.1))) (T.birthCell p.1 n p.2)).isClosedMap
+  rw [T.map_cwComplexOfIsColimitCellEquiv_symm hc]
+  exact T.ι_map_eq_cellPartialEquiv hc i hx
 
-/-- **The colimit of a `CWSubcomplexTower` is a normal space:** each stage `W k` is normal
-(`TauCeti.instNormalSpaceOfCWComplexUniv`) and the stage inclusions are closed embeddings. -/
+/-- The image under `c.ι.app k` of an open cell `i` of `W k` is the open cell of its corresponding
+colimit cell in `c.pt`. -/
+theorem image_ι_openCell (hc : IsColimit c) (k n : ℕ) (i : cell (univ : Set (W k)) n) :
+    letI := T.cwComplexOfIsColimit hc
+    c.ι.app k '' openCell (C := (univ : Set (W k))) n i =
+      openCell (C := (univ : Set c.pt)) n
+        ((T.cwComplexOfIsColimitCellEquiv hc n).symm ((T.stageCellEquiv k n).symm i).1) := by
+  let _ := T.cwComplexOfIsColimit hc
+  rw [openCell, openCell, T.map_cwComplexOfIsColimitCellEquiv_symm hc]
+  exact T.image_ι_image_map_eq_cellPartialEquiv hc i ball_subset_closedBall
+
+/-- The image under `c.ι.app k` of a closed cell `i` of `W k` is the closed cell of its
+corresponding colimit cell in `c.pt`. -/
+theorem image_ι_closedCell (hc : IsColimit c) (k n : ℕ) (i : cell (univ : Set (W k)) n) :
+    letI := T.cwComplexOfIsColimit hc
+    c.ι.app k '' closedCell (C := (univ : Set (W k))) n i =
+      closedCell (C := (univ : Set c.pt)) n
+        ((T.cwComplexOfIsColimitCellEquiv hc n).symm ((T.stageCellEquiv k n).symm i).1) := by
+  let _ := T.cwComplexOfIsColimit hc
+  rw [closedCell, closedCell, T.map_cwComplexOfIsColimitCellEquiv_symm hc]
+  exact T.image_ι_image_map_eq_cellPartialEquiv hc i Subset.rfl
+
+/-- Any colimit of a `CWSubcomplexTower` is a normal space. -/
 theorem normalSpace_of_isColimit (hc : IsColimit c) : NormalSpace c.pt :=
   TauCeti.TopCat.normalSpace_of_isColimit (fun n ↦ T.isClosedEmbedding_diagram_map n.le_succ) hc
 
-/-- **The colimit of a `CWSubcomplexTower` is Hausdorff**, combining normality with closed
-singletons from the stage final topology. -/
-theorem t2Space_of_isColimit (hc : IsColimit c) : T2Space c.pt :=
-  haveI := T.normalSpace_of_isColimit hc; haveI := T.t1Space_of_isColimit hc; inferInstance
+/-- Any colimit of a `CWSubcomplexTower` is Hausdorff. -/
+theorem t2Space_of_isColimit (hc : IsColimit c) : T2Space c.pt := by
+  have := T.normalSpace_of_isColimit hc
+  have := T.t1Space_of_isColimit hc
+  infer_instance
 
 /-- In `c.pt`, the closure of every open cell equals its closed cell. -/
 theorem closure_openCell_eq_closedCell (hc : IsColimit c) (n : ℕ) :
@@ -297,8 +317,8 @@ theorem closure_openCell_eq_closedCell (hc : IsColimit c) (n : ℕ) :
   letI := T.cwComplexOfIsColimit hc; letI := T.t2Space_of_isColimit hc
   fun _ ↦ RelCWComplex.closure_openCell_eq_closedCell
 
-/-- Every cell's closure in `c.pt` is the image of its birth-stage closed cell in `W k`, and in
-particular lies inside its birth stage `range (c.ι.app k)`. -/
+/-- The closure of each open cell `i` in `c.pt` lies in
+`range (c.ι.app (T.cwComplexOfIsColimitCellEquiv hc n i).1)`. -/
 theorem closure_openCell_subset_range_ι (hc : IsColimit c) (n : ℕ) :
     letI := T.cwComplexOfIsColimit hc
     ∀ i : cell (univ : Set c.pt) n,
@@ -341,12 +361,10 @@ theorem cellFrontier_subset_finite_closedCell_le_stage (hc : IsColimit c) (n : �
   rw [T.cellFrontier_cwComplexOfIsColimitCellEquiv_symm hc]
   rintro _ ⟨y, hy, rfl⟩
   obtain ⟨m, hmn, a, haJ, hya⟩ := by simpa only [mem_iUnion, exists_prop] using hJ hy
-  let q := (T.stageCellEquiv p.1 m).symm a
-  have haq : T.stageCellEquiv p.1 m q = a := (T.stageCellEquiv p.1 m).apply_symm_apply a
   refine mem_iUnion₂.2 ⟨m, hmn, mem_iUnion₂.2 ⟨emb m a, Finset.mem_map_of_mem _ haJ, ?_⟩⟩
   have hemb : (emb m a : cell (univ : Set c.pt) m) =
-      (T.cwComplexOfIsColimitCellEquiv hc m).symm q.1 := rfl
-  rw [hemb, T.closedCell_cwComplexOfIsColimitCellEquiv_symm_of_le hc m q.1 q.2, haq]
+      (T.cwComplexOfIsColimitCellEquiv hc m).symm ((T.stageCellEquiv p.1 m).symm a).1 := rfl
+  rw [hemb, ← T.image_ι_closedCell hc]
   exact mem_image_of_mem _ hya
 
 /-- Every open cell of `c.pt` meeting `closure (openCell n i)` was born at a stage at most the birth
@@ -387,7 +405,7 @@ theorem stage_le_of_nonempty_closure_openCell_inter (hc : IsColimit c) {n m : �
     (T.newCellEquiv (p.1 + d) m jq).2).le_bot ⟨hy₁, hy₁_range⟩
 
 /-- A cell's closure in `c.pt` meets only finitely many open cells of `c.pt`. -/
-theorem finite_inter_openCell_of_closure_openCell (hc : IsColimit c) (n : ℕ) :
+theorem finite_setOf_nonempty_closure_openCell_inter_openCell (hc : IsColimit c) (n : ℕ) :
     letI := T.cwComplexOfIsColimit hc
     ∀ i : cell (univ : Set c.pt) n,
       {a : Σ m : ℕ, cell (univ : Set c.pt) m |
@@ -417,10 +435,10 @@ def stageSubcomplex (hc : IsColimit c) (k : ℕ) :
       · rintro ⟨y, rfl⟩
         obtain ⟨n, i, hyi⟩ := mem_iUnion₂.1
           ((CWComplex.iUnion_openCell_eq_complex (C := (univ : Set (W k)))) ▸ mem_univ y)
-        let q := (T.stageCellEquiv k n).symm i
-        have hiq : T.stageCellEquiv k n q = i := (T.stageCellEquiv k n).apply_symm_apply i
-        refine ⟨n, ⟨(T.cwComplexOfIsColimitCellEquiv hc n).symm q.1, by simp [q.2]⟩, ?_⟩
-        rw [T.openCell_cwComplexOfIsColimitCellEquiv_symm_of_le hc n q.1 q.2, hiq]
+        refine ⟨n,
+          ⟨(T.cwComplexOfIsColimitCellEquiv hc n).symm ((T.stageCellEquiv k n).symm i).1,
+            by simp [((T.stageCellEquiv k n).symm i).2]⟩, ?_⟩
+        rw [← T.image_ι_openCell hc]
         exact mem_image_of_mem _ hyi }
 
 @[simp]
@@ -449,9 +467,9 @@ theorem preimage_ι_succ_stageSubcomplex (hc : IsColimit c) (k : ℕ) :
       (T.subcomplex k : Set (W (k + 1))) := by
   have hw (x : W k) : c.ι.app (k + 1) (T.step k x) = c.ι.app k x := by
     rw [← TopCat.hom_ofHom (T.step k), ← T.diagram_map_succ, ← ConcreteCategory.comp_apply, c.w]
-  ext y
-  simp only [T.coe_stageSubcomplex hc, T.coe_subcomplex, mem_preimage, mem_range, ← hw,
-    (T.isClosedEmbedding_ι hc (k + 1)).injective.eq_iff]
+  ext (y : W (k + 1))
+  simp only [T.coe_stageSubcomplex hc, T.coe_subcomplex, diagram_obj, TopCat.coe_of, mem_preimage,
+    mem_range, ← hw, (T.isClosedEmbedding_ι hc (k + 1)).injective.eq_iff]
 
 /-- Each stage `W k` is homeomorphic via `c.ι.app k` to its subcomplex `T.stageSubcomplex hc k` in
 `c.pt`. -/
@@ -462,13 +480,14 @@ def homeomorphStageSubcomplex (hc : IsColimit c) (k : ℕ) :
   ((T.isClosedEmbedding_ι hc k).isEmbedding.toHomeomorph).trans
     (Homeomorph.setCongr (T.coe_stageSubcomplex hc k).symm)
 
+@[simp]
 lemma coe_homeomorphStageSubcomplex_apply (hc : IsColimit c) (k : ℕ) (x : W k) :
     letI := T.cwComplexOfIsColimit hc
     (T.homeomorphStageSubcomplex hc k x : c.pt) = c.ι.app k x := (rfl)
 
 /-- Closedness of a subset of `c.pt` in the stage final topology is equivalent to closedness of its
 intersection with every closed cell. -/
-theorem isClosed_iff_forall_closedCell (hc : IsColimit c) (A : Set c.pt) :
+theorem isClosed_iff_forall_isClosed_inter_closedCell (hc : IsColimit c) (A : Set c.pt) :
     letI := T.cwComplexOfIsColimit hc
     IsClosed A ↔
       ∀ (n : ℕ) (i : cell (univ : Set c.pt) n),
@@ -484,34 +503,23 @@ theorem forall_isClosed_preimage_iff_forall_isClosed_inter_closedCell (hc : IsCo
     (∀ k : ℕ, IsClosed (c.ι.app k ⁻¹' A)) ↔
       ∀ (n : ℕ) (i : cell (univ : Set c.pt) n),
         IsClosed (A ∩ closedCell (C := (univ : Set c.pt)) n i) :=
-  (TopCat.isClosed_iff_of_isColimit _ hc A).symm.trans (T.isClosed_iff_forall_closedCell hc A)
+  (TopCat.isClosed_iff_of_isColimit _ hc A).symm.trans
+    (T.isClosed_iff_forall_isClosed_inter_closedCell hc A)
 
 /-- The topology on `c.pt` equals the cellwise weak topology coinduced by all closed-ball
 characteristic maps. -/
-theorem topologicalSpace_eq_iSup_coinduced_closedCell (hc : IsColimit c) :
+theorem topologicalSpace_eq_iSup_coinduced_map_closedBall (hc : IsColimit c) :
     letI := T.cwComplexOfIsColimit hc
     c.pt.str =
       ⨆ (n : ℕ) (i : cell (univ : Set c.pt) n),
         TopologicalSpace.coinduced
           (fun x : closedBall (0 : Fin n → ℝ) 1 ↦ map (C := (univ : Set c.pt)) n i x)
-          inferInstance := by
-  let _ := T.cwComplexOfIsColimit hc
-  refine TopologicalSpace.ext_iff.2 fun U ↦ ?_
-  simp only [isOpen_iSup_iff, isOpen_coinduced, ← isClosed_compl_iff, ← preimage_compl,
-    T.isClosed_iff_forall_closedCell hc Uᶜ]
-  refine forall₂_congr fun n i ↦ ?_
-  let φ : closedBall (0 : Fin n → ℝ) 1 → c.pt := fun x ↦ map (C := (univ : Set c.pt)) n i x
-  have hrange : range φ = closedCell (C := (univ : Set c.pt)) n i := by ext; simp [φ, closedCell]
-  -- Fold `φ` inside `IsClosed (_ ⁻¹' Uᶜ)` on the right-hand side, where `φ` is a local `let`.
-  change _ ↔ IsClosed (φ ⁻¹' Uᶜ)
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · convert h.preimage (continuous_map_closedBall (C := (univ : Set c.pt)) i) using 1
-    ext x; exact ⟨fun hx ↦ ⟨hx, hrange ▸ mem_range_self x⟩, And.left⟩
-  · rw [← hrange, ← image_preimage_eq_inter_range]
-    exact T.isClosedMap_closedBall_map hc n i _ h
+          inferInstance :=
+  @TauCeti.topologicalSpace_eq_iSup_coinduced_map_closedBall c.pt c.pt.str
+    (T.t2Space_of_isColimit hc) (T.cwComplexOfIsColimit hc)
 
 /-- **Equality of the stage final topology and the cellwise weak topology on `c.pt`.** -/
-theorem iSup_coinduced_stage_eq_iSup_coinduced_closedCell (hc : IsColimit c) :
+theorem iSup_coinduced_ι_eq_iSup_coinduced_map_closedBall (hc : IsColimit c) :
     letI := T.cwComplexOfIsColimit hc
     (⨆ k : ℕ, (T.diagram.obj k).str.coinduced (c.ι.app k)) =
       ⨆ (n : ℕ) (i : cell (univ : Set c.pt) n),
@@ -519,41 +527,12 @@ theorem iSup_coinduced_stage_eq_iSup_coinduced_closedCell (hc : IsColimit c) :
           (fun x : closedBall (0 : Fin n → ℝ) 1 ↦ map (C := (univ : Set c.pt)) n i x)
           inferInstance :=
   (TopCat.coinduced_of_isColimit c hc).symm.trans
-    (T.topologicalSpace_eq_iSup_coinduced_closedCell hc)
+    (T.topologicalSpace_eq_iSup_coinduced_map_closedBall hc)
 
 /-- **Categorical `TopCat.CWComplex` structure on `c.pt`**, obtained after reindexing the tower's
 cells `(k, n, j)` by dimension `n` first (`toTopCatCWComplexOfIsColimitStageReindexEquiv`). -/
-def toTopCatCWComplexOfIsColimit (hc : IsColimit c) : TopCat.CWComplex c.pt :=
+abbrev toTopCatCWComplexOfIsColimit (hc : IsColimit c) : TopCat.CWComplex c.pt :=
   @TopCat.toTopCatCWComplex c.pt (T.t2Space_of_isColimit hc) (T.cwComplexOfIsColimit hc)
-
-@[simp]
-lemma toTopCatCWComplexOfIsColimit_obj (hc : IsColimit c) (n : ℕ) :
-    letI := T.cwComplexOfIsColimit hc; letI := T.t2Space_of_isColimit hc
-    (T.toTopCatCWComplexOfIsColimit hc).F.obj n = skeletonObj (univ : Set c.pt) n :=
-  @TopCat.toTopCatCWComplex_obj c.pt (T.t2Space_of_isColimit hc) (T.cwComplexOfIsColimit hc) n
-
-lemma toTopCatCWComplexOfIsColimit_map (hc : IsColimit c) {m n : ℕ} (f : m ⟶ n) :
-    letI := T.cwComplexOfIsColimit hc; letI := T.t2Space_of_isColimit hc
-    (T.toTopCatCWComplexOfIsColimit hc).F.map f =
-      eqToHom (T.toTopCatCWComplexOfIsColimit_obj hc m) ≫
-        (skeletonFunctor (univ : Set c.pt)).map f ≫
-          eqToHom (T.toTopCatCWComplexOfIsColimit_obj hc n).symm :=
-  @TopCat.toTopCatCWComplex_map c.pt (T.t2Space_of_isColimit hc) (T.cwComplexOfIsColimit hc) m n f
-
-lemma toTopCatCWComplexOfIsColimit_incl_app (hc : IsColimit c) (n : ℕ) :
-    letI := T.cwComplexOfIsColimit hc; letI := T.t2Space_of_isColimit hc
-    (T.toTopCatCWComplexOfIsColimit hc).incl.app n =
-      eqToHom (T.toTopCatCWComplexOfIsColimit_obj hc n) ≫
-        TopCat.ofHom (ContinuousMap.subtypeVal (skeletonLT (univ : Set c.pt) n : Set c.pt)) :=
-  @TopCat.toTopCatCWComplex_incl_app c.pt (T.t2Space_of_isColimit hc)
-    (T.cwComplexOfIsColimit hc) n
-
-lemma range_toTopCatCWComplexOfIsColimit_incl_app (hc : IsColimit c) (n : ℕ) :
-    letI := T.cwComplexOfIsColimit hc; letI := T.t2Space_of_isColimit hc
-    (range ((T.toTopCatCWComplexOfIsColimit hc).incl.app n) : Set c.pt) =
-      skeletonLT (univ : Set c.pt) n :=
-  @TopCat.range_toTopCatCWComplex_incl_app c.pt (T.t2Space_of_isColimit hc)
-    (T.cwComplexOfIsColimit hc) n
 
 /-- The `n`-cells attached at step `n` of `T.toTopCatCWComplexOfIsColimit hc` correspond to
 `Σ k : ℕ, newCell k n`. -/
@@ -561,6 +540,12 @@ def toTopCatCWComplexOfIsColimitAttachCellsEquiv (hc : IsColimit c) (n : ℕ) (h
     ((T.toTopCatCWComplexOfIsColimit hc).attachCells n hn).ι ≃ Σ k : ℕ, newCell k n :=
   (@TopCat.toTopCatCWComplexAttachCellsEquiv c.pt (T.t2Space_of_isColimit hc)
     (T.cwComplexOfIsColimit hc) n hn).trans (T.cwComplexOfIsColimitCellEquiv hc n)
+
+lemma toTopCatCWComplexOfIsColimitAttachCellsEquiv_eq (hc : IsColimit c) (n : ℕ)
+    (hn : ¬ IsMax n) :
+    T.toTopCatCWComplexOfIsColimitAttachCellsEquiv hc n hn =
+      (@TopCat.toTopCatCWComplexAttachCellsEquiv c.pt (T.t2Space_of_isColimit hc)
+        (T.cwComplexOfIsColimit hc) n hn).trans (T.cwComplexOfIsColimitCellEquiv hc n) := (rfl)
 
 /-- Dimension-indexed identification of the cells of `T.toTopCatCWComplexOfIsColimit hc` with
 `Σ (n : ℕ) (k : ℕ), newCell k n`. -/
@@ -612,7 +597,6 @@ lemma toTopCatCWComplexOfIsColimitStageReindexEquiv_symm_apply (hc : IsColimit c
         (T.toTopCatCWComplexOfIsColimitAttachCellsEquiv hc n (not_isMax n)).symm ⟨k, j⟩⟩ := by
   simp [toTopCatCWComplexOfIsColimitStageReindexEquiv]
 
-@[simp]
 lemma toTopCatCWComplexOfIsColimit_cells_ι_apply (hc : IsColimit c)
     (γ : (T.toTopCatCWComplexOfIsColimit hc).Cells) (z : TopCat.disk.{u} γ.j) :
     γ.ι z =
@@ -632,7 +616,7 @@ lemma toTopCatCWComplexOfIsColimit_cells_ι_apply (hc : IsColimit c)
 
 end IsColimit
 
-/-! ### Canonical colimit carrier `T.Union` and `cwComplexUnion` -/
+/-! ### Canonical colimit carrier `T.Union` and `instCWComplexUnion` -/
 
 section Union
 
@@ -648,11 +632,6 @@ abbrev Union : TopCat.{u} :=
 abbrev incl (k : ℕ) : TopCat.of (W k) ⟶ T.Union :=
   colimit.ι T.diagram k
 
-lemma incl_def (k : ℕ) : T.incl k = colimit.ι T.diagram k := (rfl)
-
-theorem union_hom_ext {Z : TopCat.{u}} {f g : T.Union ⟶ Z}
-    (h : ∀ k, T.incl k ≫ f = T.incl k ≫ g) : f = g := colimit.hom_ext h
-
 @[simp]
 lemma incl_step_apply (k : ℕ) (x : W k) :
     T.incl (k + 1) (T.step k x) = T.incl k x := by
@@ -664,11 +643,8 @@ theorem isClosedEmbedding_incl (k : ℕ) : IsClosedEmbedding (T.incl k) :=
 /-- **Classical `CWComplex` structure on the raw final-topology union `T.Union` of a sequential
 tower of CW subcomplexes.** Its `n`-cells correspond to `Σ k : ℕ, newCell k n`
 (`unionCellEquiv`), with characteristic maps given by `map_unionCellEquiv_symm_apply`. -/
-@[instance_reducible]
-def cwComplexUnion : CWComplex (univ : Set T.Union) :=
+instance instCWComplexUnion : CWComplex (univ : Set T.Union) :=
   T.cwComplexOfIsColimit (colimit.isColimit T.diagram)
-
-instance instCWComplexUnion : CWComplex (univ : Set T.Union) := T.cwComplexUnion
 
 lemma instCWComplexUnion_eq :
     T.instCWComplexUnion = T.cwComplexOfIsColimit (colimit.isColimit T.diagram) := (rfl)
@@ -691,11 +667,25 @@ lemma map_unionCellEquiv_symm_apply (n : ℕ) (p : Σ k : ℕ, newCell k n) (x :
       T.incl p.1 (map (C := (univ : Set (W p.1))) n (T.birthCell p.1 n p.2) x) :=
   T.map_cwComplexOfIsColimitCellEquiv_symm_apply (colimit.isColimit T.diagram) n p x
 
+/-- On the closed unit ball, the characteristic map of `p = ⟨m, j⟩` in `T.Union` agrees with the
+characteristic map of `T.stageCellEquiv k n ⟨p, hpk⟩` in any later stage `W k` (`m ≤ k`). -/
+lemma map_eq_incl_stageCellEquiv (n : ℕ) (p : Σ m : ℕ, newCell m n) {k : ℕ} (hpk : p.1 ≤ k)
+    {x : Fin n → ℝ} (hx : x ∈ closedBall 0 1) :
+    map (C := (univ : Set T.Union)) n ((T.unionCellEquiv n).symm p) x =
+      T.incl k (map (C := (univ : Set (W k))) n (T.stageCellEquiv k n ⟨p, hpk⟩) x) :=
+  T.map_eq_ι_stageCellEquiv (colimit.isColimit T.diagram) n p hpk hx
+
 @[simp]
 lemma openCell_unionCellEquiv_symm (n : ℕ) (p : Σ k : ℕ, newCell k n) :
     openCell (C := (univ : Set T.Union)) n ((T.unionCellEquiv n).symm p) =
       T.incl p.1 '' openCell (C := (univ : Set (W p.1))) n (T.birthCell p.1 n p.2) :=
   T.openCell_cwComplexOfIsColimitCellEquiv_symm (colimit.isColimit T.diagram) n p
+
+lemma openCell_unionCellEquiv_symm_of_le (n : ℕ) (p : Σ m : ℕ, newCell m n) {k : ℕ}
+    (hpk : p.1 ≤ k) :
+    openCell (C := (univ : Set T.Union)) n ((T.unionCellEquiv n).symm p) =
+      T.incl k '' openCell (C := (univ : Set (W k))) n (T.stageCellEquiv k n ⟨p, hpk⟩) :=
+  T.openCell_cwComplexOfIsColimitCellEquiv_symm_of_le (colimit.isColimit T.diagram) n p hpk
 
 @[simp]
 lemma closedCell_unionCellEquiv_symm (n : ℕ) (p : Σ k : ℕ, newCell k n) :
@@ -703,16 +693,61 @@ lemma closedCell_unionCellEquiv_symm (n : ℕ) (p : Σ k : ℕ, newCell k n) :
       T.incl p.1 '' closedCell (C := (univ : Set (W p.1))) n (T.birthCell p.1 n p.2) :=
   T.closedCell_cwComplexOfIsColimitCellEquiv_symm (colimit.isColimit T.diagram) n p
 
+lemma closedCell_unionCellEquiv_symm_of_le (n : ℕ) (p : Σ m : ℕ, newCell m n) {k : ℕ}
+    (hpk : p.1 ≤ k) :
+    closedCell (C := (univ : Set T.Union)) n ((T.unionCellEquiv n).symm p) =
+      T.incl k '' closedCell (C := (univ : Set (W k))) n (T.stageCellEquiv k n ⟨p, hpk⟩) :=
+  T.closedCell_cwComplexOfIsColimitCellEquiv_symm_of_le (colimit.isColimit T.diagram) n p hpk
+
 @[simp]
 lemma cellFrontier_unionCellEquiv_symm (n : ℕ) (p : Σ k : ℕ, newCell k n) :
     cellFrontier (C := (univ : Set T.Union)) n ((T.unionCellEquiv n).symm p) =
       T.incl p.1 '' cellFrontier (C := (univ : Set (W p.1))) n (T.birthCell p.1 n p.2) :=
   T.cellFrontier_cwComplexOfIsColimitCellEquiv_symm (colimit.isColimit T.diagram) n p
 
-lemma union_closure_openCell_subset_range_incl (n : ℕ) (i : cell (univ : Set T.Union) n) :
+theorem incl_map_eq_map (k n : ℕ) (i : cell (univ : Set (W k)) n) {x : Fin n → ℝ}
+    (hx : x ∈ closedBall 0 1) :
+    T.incl k (map (C := (univ : Set (W k))) n i x) =
+      map (C := (univ : Set T.Union)) n
+        ((T.unionCellEquiv n).symm ((T.stageCellEquiv k n).symm i).1) x :=
+  T.ι_map_eq_map (colimit.isColimit T.diagram) k n i hx
+
+theorem image_incl_openCell (k n : ℕ) (i : cell (univ : Set (W k)) n) :
+    T.incl k '' openCell (C := (univ : Set (W k))) n i =
+      openCell (C := (univ : Set T.Union)) n
+        ((T.unionCellEquiv n).symm ((T.stageCellEquiv k n).symm i).1) :=
+  T.image_ι_openCell (colimit.isColimit T.diagram) k n i
+
+theorem image_incl_closedCell (k n : ℕ) (i : cell (univ : Set (W k)) n) :
+    T.incl k '' closedCell (C := (univ : Set (W k))) n i =
+      closedCell (C := (univ : Set T.Union)) n
+        ((T.unionCellEquiv n).symm ((T.stageCellEquiv k n).symm i).1) :=
+  T.image_ι_closedCell (colimit.isColimit T.diagram) k n i
+
+lemma closure_openCell_subset_range_incl (n : ℕ) (i : cell (univ : Set T.Union) n) :
     closure (openCell (C := (univ : Set T.Union)) n i) ⊆
       range (T.incl (T.unionCellEquiv n i).1) :=
   T.closure_openCell_subset_range_ι (colimit.isColimit T.diagram) n i
+
+/-- Stage-refined closure-finiteness on `T.Union`: the cell frontier of an `n`-cell `i` in `T.Union`
+is covered by finitely many closed cells of strictly smaller dimension, all born at stages at most
+the birth stage of `i`. -/
+theorem cellFrontier_subset_finite_closedCell_unionCellEquiv_fst_le (n : ℕ)
+    (i : cell (univ : Set T.Union) n) :
+    ∃ I : ∀ m, Finset {j : cell (univ : Set T.Union) m //
+        (T.unionCellEquiv m j).1 ≤ (T.unionCellEquiv n i).1},
+      cellFrontier (C := (univ : Set T.Union)) n i ⊆
+        ⋃ (m < n) (j ∈ I m), closedCell (C := (univ : Set T.Union)) m j.1 :=
+  T.cellFrontier_subset_finite_closedCell_le_stage (colimit.isColimit T.diagram) n i
+
+/-- Every open cell of `T.Union` meeting `closure (openCell n i)` was born at a stage at most the
+birth stage of `i`. -/
+theorem unionCellEquiv_fst_le_of_nonempty_closure_openCell_inter {n m : ℕ}
+    {i : cell (univ : Set T.Union) n} {j : cell (univ : Set T.Union) m}
+    (h : (closure (openCell (C := (univ : Set T.Union)) n i) ∩
+      openCell (C := (univ : Set T.Union)) m j).Nonempty) :
+    (T.unionCellEquiv m j).1 ≤ (T.unionCellEquiv n i).1 :=
+  T.stage_le_of_nonempty_closure_openCell_inter (colimit.isColimit T.diagram) h
 
 /-- The specified `CWComplex.Subcomplex` of `T.Union` onto which stage `W k` embeds, characterized
 by `coe_unionStageSubcomplex` and `unionStageSubcomplex_I`. -/
@@ -730,6 +765,17 @@ lemma unionStageSubcomplex_I (k n : ℕ) :
       {i : cell (univ : Set T.Union) n | (T.unionCellEquiv n i).1 ≤ k} :=
   T.stageSubcomplex_I (colimit.isColimit T.diagram) k n
 
+lemma unionStageSubcomplex_mono {i j : ℕ} (hij : i ≤ j) :
+    (T.unionStageSubcomplex i : Set T.Union) ⊆ T.unionStageSubcomplex j :=
+  T.stageSubcomplex_mono (colimit.isColimit T.diagram) hij
+
+/-- Pulling `T.unionStageSubcomplex k` back along `T.incl (k + 1)` recovers the specified CW
+subcomplex `T.subcomplex k` in `W (k + 1)`. -/
+theorem preimage_incl_succ_unionStageSubcomplex (k : ℕ) :
+    T.incl (k + 1) ⁻¹' (T.unionStageSubcomplex k : Set T.Union) =
+      (T.subcomplex k : Set (W (k + 1))) :=
+  T.preimage_ι_succ_stageSubcomplex (colimit.isColimit T.diagram) k
+
 /-- Homeomorphism of `W k` onto its CW subcomplex `T.unionStageSubcomplex k` in `T.Union`. -/
 def homeomorphUnionStageSubcomplex (k : ℕ) : W k ≃ₜ T.unionStageSubcomplex k :=
   T.homeomorphStageSubcomplex (colimit.isColimit T.diagram) k
@@ -739,81 +785,113 @@ lemma coe_homeomorphUnionStageSubcomplex_apply (k : ℕ) (x : W k) :
     (T.homeomorphUnionStageSubcomplex k x : T.Union) = T.incl k x :=
   T.coe_homeomorphStageSubcomplex_apply (colimit.isColimit T.diagram) k x
 
-/-- Categorical `TopCat.CWComplex` structure on `T.Union` after reindexing cells by dimension. -/
-def toTopCatCWComplex : TopCat.CWComplex T.Union :=
-  T.toTopCatCWComplexOfIsColimit (colimit.isColimit T.diagram)
+/-- Equality of the stage final topology and the cellwise weak topology on `T.Union`. -/
+theorem iSup_coinduced_incl_eq_iSup_coinduced_map_closedBall :
+    (⨆ k : ℕ, (T.diagram.obj k).str.coinduced (T.incl k)) =
+      ⨆ (n : ℕ) (i : cell (univ : Set T.Union) n),
+        TopologicalSpace.coinduced
+          (fun x : closedBall (0 : Fin n → ℝ) 1 ↦ map (C := (univ : Set T.Union)) n i x)
+          inferInstance :=
+  T.iSup_coinduced_ι_eq_iSup_coinduced_map_closedBall (colimit.isColimit T.diagram)
 
-@[simp]
-lemma toTopCatCWComplex_obj (n : ℕ) :
-    T.toTopCatCWComplex.F.obj n = skeletonObj (univ : Set T.Union) n :=
-  T.toTopCatCWComplexOfIsColimit_obj (colimit.isColimit T.diagram) n
-
-lemma toTopCatCWComplex_map {m n : ℕ} (f : m ⟶ n) :
-    T.toTopCatCWComplex.F.map f =
-      eqToHom (T.toTopCatCWComplex_obj m) ≫ (skeletonFunctor (univ : Set T.Union)).map f ≫
-        eqToHom (T.toTopCatCWComplex_obj n).symm :=
-  T.toTopCatCWComplexOfIsColimit_map (colimit.isColimit T.diagram) f
-
-lemma toTopCatCWComplex_incl_app (n : ℕ) :
-    T.toTopCatCWComplex.incl.app n =
-      eqToHom (T.toTopCatCWComplex_obj n) ≫
-        TopCat.ofHom (ContinuousMap.subtypeVal (skeletonLT (univ : Set T.Union) n : Set T.Union)) :=
-  T.toTopCatCWComplexOfIsColimit_incl_app (colimit.isColimit T.diagram) n
-
-lemma range_toTopCatCWComplex_incl_app (n : ℕ) :
-    (range (T.toTopCatCWComplex.incl.app n) : Set T.Union) = skeletonLT (univ : Set T.Union) n :=
-  T.range_toTopCatCWComplexOfIsColimit_incl_app (colimit.isColimit T.diagram) n
-
-/-- The `n`-cells attached at step `n` of `T.toTopCatCWComplex` correspond to
+/-- The `n`-cells attached at step `n` of `T.Union.toTopCatCWComplex` correspond to
 `Σ k : ℕ, newCell k n`. -/
 def toTopCatCWComplexAttachCellsEquiv (n : ℕ) (hn : ¬ IsMax n) :
-    (T.toTopCatCWComplex.attachCells n hn).ι ≃ Σ k : ℕ, newCell k n :=
-  T.toTopCatCWComplexOfIsColimitAttachCellsEquiv (colimit.isColimit T.diagram) n hn
+    (T.Union.toTopCatCWComplex.attachCells n hn).ι ≃ Σ k : ℕ, newCell k n :=
+  (T.Union.toTopCatCWComplexAttachCellsEquiv n hn).trans (T.unionCellEquiv n)
 
-/-- Dimension-indexed identification of the cells of `T.toTopCatCWComplex` with
+lemma toTopCatCWComplexAttachCellsEquiv_eq (n : ℕ) (hn : ¬ IsMax n) :
+    T.toTopCatCWComplexAttachCellsEquiv n hn =
+      (T.Union.toTopCatCWComplexAttachCellsEquiv n hn).trans (T.unionCellEquiv n) := (rfl)
+
+/-- Dimension-indexed identification of the cells of `T.Union.toTopCatCWComplex` with
 `Σ (n : ℕ) (k : ℕ), newCell k n`. -/
-def toTopCatCWComplexCellsEquiv : T.toTopCatCWComplex.Cells ≃ Σ (n : ℕ) (k : ℕ), newCell k n :=
-  T.toTopCatCWComplexOfIsColimitCellsEquiv (colimit.isColimit T.diagram)
+def toTopCatCWComplexCellsEquiv :
+    T.Union.toTopCatCWComplex.Cells ≃ Σ (n : ℕ) (k : ℕ), newCell k n :=
+  T.Union.toTopCatCWComplexCellsEquiv.trans
+    (Equiv.sigmaCongrRight fun n ↦ T.unionCellEquiv n)
 
 @[simp]
-lemma toTopCatCWComplexCellsEquiv_apply (γ : T.toTopCatCWComplex.Cells) :
+lemma toTopCatCWComplexCellsEquiv_apply (γ : T.Union.toTopCatCWComplex.Cells) :
     T.toTopCatCWComplexCellsEquiv γ = ⟨γ.j, T.toTopCatCWComplexAttachCellsEquiv γ.j γ.hj γ.k⟩ :=
-  T.toTopCatCWComplexOfIsColimitCellsEquiv_apply (colimit.isColimit T.diagram) γ
+  congrArg (Equiv.sigmaCongrRight fun n ↦ T.unionCellEquiv n)
+    (T.Union.toTopCatCWComplexCellsEquiv_apply γ)
 
 @[simp]
 lemma toTopCatCWComplexCellsEquiv_symm_apply (n k : ℕ) (j : newCell k n) :
     T.toTopCatCWComplexCellsEquiv.symm ⟨n, k, j⟩ =
       ⟨n, not_isMax n, (T.toTopCatCWComplexAttachCellsEquiv n (not_isMax n)).symm ⟨k, j⟩⟩ :=
-  T.toTopCatCWComplexOfIsColimitCellsEquiv_symm_apply (colimit.isColimit T.diagram) n k j
+  T.Union.toTopCatCWComplexCellsEquiv_symm_apply n ((T.unionCellEquiv n).symm ⟨k, j⟩)
 
-/-- Reindexing equivalence between the cells of `T.toTopCatCWComplex` (grouped by dimension `n`)
-and the stage-ordered cells `Σ (k : ℕ) (n : ℕ), newCell k n` of the tower. -/
+/-- Reindexing equivalence between the cells of `T.Union.toTopCatCWComplex` (grouped by dimension
+`n`) and the stage-ordered cells `Σ (k : ℕ) (n : ℕ), newCell k n` of the tower. -/
 def toTopCatCWComplexStageReindexEquiv :
-    T.toTopCatCWComplex.Cells ≃ Σ (k : ℕ) (n : ℕ), newCell k n :=
-  T.toTopCatCWComplexOfIsColimitStageReindexEquiv (colimit.isColimit T.diagram)
+    T.Union.toTopCatCWComplex.Cells ≃ Σ (k : ℕ) (n : ℕ), newCell k n :=
+  T.toTopCatCWComplexCellsEquiv.trans
+    ⟨fun ⟨n, k, j⟩ ↦ ⟨k, n, j⟩, fun ⟨k, n, j⟩ ↦ ⟨n, k, j⟩,
+      fun ⟨_, _, _⟩ ↦ rfl, fun ⟨_, _, _⟩ ↦ rfl⟩
 
 @[simp]
-lemma toTopCatCWComplexStageReindexEquiv_apply (γ : T.toTopCatCWComplex.Cells) :
+lemma toTopCatCWComplexStageReindexEquiv_apply (γ : T.Union.toTopCatCWComplex.Cells) :
     T.toTopCatCWComplexStageReindexEquiv γ =
       ⟨(T.toTopCatCWComplexAttachCellsEquiv γ.j γ.hj γ.k).1, γ.j,
-        (T.toTopCatCWComplexAttachCellsEquiv γ.j γ.hj γ.k).2⟩ :=
-  T.toTopCatCWComplexOfIsColimitStageReindexEquiv_apply (colimit.isColimit T.diagram) γ
+        (T.toTopCatCWComplexAttachCellsEquiv γ.j γ.hj γ.k).2⟩ := by
+  simp [toTopCatCWComplexStageReindexEquiv]
 
 @[simp]
 lemma toTopCatCWComplexStageReindexEquiv_symm_apply (k n : ℕ) (j : newCell k n) :
     T.toTopCatCWComplexStageReindexEquiv.symm ⟨k, n, j⟩ =
-      ⟨n, not_isMax n, (T.toTopCatCWComplexAttachCellsEquiv n (not_isMax n)).symm ⟨k, j⟩⟩ :=
-  T.toTopCatCWComplexOfIsColimitStageReindexEquiv_symm_apply (colimit.isColimit T.diagram) k n j
+      ⟨n, not_isMax n, (T.toTopCatCWComplexAttachCellsEquiv n (not_isMax n)).symm ⟨k, j⟩⟩ := by
+  simp [toTopCatCWComplexStageReindexEquiv]
 
-@[simp]
-lemma toTopCatCWComplex_cells_ι_apply (γ : T.toTopCatCWComplex.Cells) (z : TopCat.disk.{u} γ.j) :
+lemma toTopCatCWComplex_cells_ι_apply (γ : T.Union.toTopCatCWComplex.Cells)
+    (z : TopCat.disk.{u} γ.j) :
     γ.ι z =
       T.incl (T.toTopCatCWComplexAttachCellsEquiv γ.j γ.hj γ.k).1
         (map (C := (univ : Set (W (T.toTopCatCWComplexAttachCellsEquiv γ.j γ.hj γ.k).1))) γ.j
           (T.birthCell (T.toTopCatCWComplexAttachCellsEquiv γ.j γ.hj γ.k).1 γ.j
             (T.toTopCatCWComplexAttachCellsEquiv γ.j γ.hj γ.k).2)
-          (diskHomeomorphClosedBall γ.j z)) :=
-  T.toTopCatCWComplexOfIsColimit_cells_ι_apply (colimit.isColimit T.diagram) γ z
+          (diskHomeomorphClosedBall γ.j z)) := by
+  refine (T.Union.toTopCatCWComplex_cells_ι_apply γ z).trans ?_
+  rw [← (T.unionCellEquiv γ.j).symm_apply_apply
+    (T.Union.toTopCatCWComplexAttachCellsEquiv γ.j γ.hj γ.k)]
+  exact T.map_unionCellEquiv_symm_apply γ.j _ _
+
+/-- The union of the constant tower `CWSubcomplexTower.const X` is homeomorphic to `X`. -/
+def constUnionHomeomorph (X : Type u) [TopologicalSpace X] [T2Space X] [CWComplex (univ : Set X)] :
+    (const X).Union ≃ₜ X :=
+  let T := const X
+  let cX : Cocone T.diagram :=
+    ⟨TopCat.of X, NatTrans.ofSequence (fun _ ↦ 𝟙 (TopCat.of X)) fun k ↦ by
+      rw [T.diagram_map_succ, const_step]
+      rfl⟩
+  let hcX : IsColimit cX :=
+    { desc := fun s ↦ s.ι.app 0
+      fac := fun s k ↦ (Category.id_comp (s.ι.app 0)).trans <| by
+        induction k with
+        | zero => rfl
+        | succ k ih =>
+          have hw := s.w (homOfLE (Nat.le_add_right k 1))
+          rw [T.diagram_map_succ, const_step, TopCat.ofHom_id] at hw
+          have hid : (𝟙 (TopCat.of X) : T.diagram.obj (k + 1) ⟶ _) ≫ s.ι.app (k + 1) =
+              s.ι.app (k + 1) := Category.id_comp _
+          exact ih.trans (hw.symm.trans hid)
+      uniq := fun s m hm ↦ (Category.id_comp m).symm.trans (hm 0) }
+  TopCat.homeoOfIso (colimit.isoColimitCocone ⟨cX, hcX⟩)
+
+@[simp]
+lemma constUnionHomeomorph_incl_apply (X : Type u) [TopologicalSpace X] [T2Space X]
+    [CWComplex (univ : Set X)] (k : ℕ) (x : X) :
+    constUnionHomeomorph X ((const X).incl k x) = x := by
+  dsimp only [constUnionHomeomorph, TopCat.homeoOfIso_apply]
+  refine (ConcreteCategory.comp_apply ((const X).incl k) _ x).symm.trans ?_
+  exact ConcreteCategory.congr_hom (colimit.isoColimitCocone_ι_hom (F := (const X).diagram) _ k) x
+
+@[simp]
+lemma constUnionHomeomorph_symm_apply (X : Type u) [TopologicalSpace X] [T2Space X]
+    [CWComplex (univ : Set X)] (x : X) :
+    (constUnionHomeomorph X).symm x = (const X).incl 0 x :=
+  (constUnionHomeomorph X).toEquiv.symm_apply_eq.2 (constUnionHomeomorph_incl_apply X 0 x).symm
 
 end Union
 

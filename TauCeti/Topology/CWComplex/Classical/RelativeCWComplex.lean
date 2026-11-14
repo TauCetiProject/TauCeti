@@ -270,22 +270,15 @@ open TauCeti
 (`toTopCatCWComplexCellsEquiv`). -/
 def toTopCatCWComplex (Y : TopCat.{w}) [T2Space Y] [Topology.CWComplex (univ : Set Y)] :
     TopCat.CWComplex Y where
-  F := skeletonFunctor (univ : Set Y)
-  isoBot :=
-    (TopCat.isoOfHomeo (Homeomorph.setCongr
-      (s := (skeletonLT (univ : Set Y) ((⊥ : ℕ) : ℕ∞) : Set Y)) (t := (∅ : Set Y))
-      (by rw [Nat.bot_eq_zero, Nat.cast_zero, skeletonLT_zero_eq_base]))).trans
+  __ := (toRelativeCWComplex (univ : Set Y)).toTransfiniteCompositionOfShape.ofArrowIso
+    (Arrow.isoMk
       { hom := TopCat.ofHom ⟨fun x ↦ x.2.elim, continuous_of_discreteTopology⟩
         inv := Limits.initial.to _
         hom_inv_id := by ext x; exact x.2.elim
         inv_hom_id := Limits.initial.hom_ext _ _ }
-  incl := (skeletonCocone (univ : Set Y)).ι ≫
-    (Functor.const ℕ).map (TopCat.isoOfHomeo (Homeomorph.Set.univ Y)).hom
-  isColimit :=
-    let eUniv : TopCat.of (univ : Set Y) ≅ Y := TopCat.isoOfHomeo (Homeomorph.Set.univ Y)
-    (isColimitSkeletonCocone (univ : Set Y)).ofIsoColimit (Cocone.ext eUniv fun _ ↦ rfl)
-  fac := Limits.initial.hom_ext _ _
-  attachCells n _ := skeletonAttachCells (univ : Set Y) n
+      (TopCat.isoOfHomeo (Homeomorph.Set.univ Y))
+      (by ext x; exact x.2.elim))
+  attachCells := (toRelativeCWComplex (univ : Set Y)).attachCells
 
 @[simp]
 lemma toTopCatCWComplex_obj (Y : TopCat.{w}) [T2Space Y] [Topology.CWComplex (univ : Set Y)]
@@ -295,19 +288,33 @@ lemma toTopCatCWComplex_map (Y : TopCat.{w}) [T2Space Y] [Topology.CWComplex (un
     {m n : ℕ} (f : m ⟶ n) :
     (Y.toTopCatCWComplex).F.map f =
       eqToHom (Y.toTopCatCWComplex_obj m) ≫ (skeletonFunctor (univ : Set Y)).map f ≫
-        eqToHom (Y.toTopCatCWComplex_obj n).symm := by ext x; rfl
+        eqToHom (Y.toTopCatCWComplex_obj n).symm :=
+  CategoryTheory.Functor.congr_hom (by simp [toTopCatCWComplex, toRelativeCWComplex]) f
 
 lemma toTopCatCWComplex_incl_app (Y : TopCat.{w}) [T2Space Y]
     [Topology.CWComplex (univ : Set Y)] (n : ℕ) :
     (Y.toTopCatCWComplex).incl.app n =
       eqToHom (Y.toTopCatCWComplex_obj n) ≫
         TopCat.ofHom (ContinuousMap.subtypeVal (skeletonLT (univ : Set Y) n : Set Y)) := by
-  ext x; rfl
+  dsimp only [toTopCatCWComplex, MorphismProperty.TransfiniteCompositionOfShape.ofArrowIso,
+    TransfiniteCompositionOfShape.ofArrowIso]
+  rw [NatTrans.comp_app, Functor.const_map_app]
+  dsimp only [toRelativeCWComplex]
+  generalize_proofs
+  rw [eqToHom_refl, Category.id_comp]
+  refine ConcreteCategory.hom_ext _ _ fun x ↦ ?_
+  simp only [ConcreteCategory.comp_apply, CategoryTheory.Arrow.isoMk_hom_right,
+    TopCat.isoOfHomeo_hom, Homeomorph.Set.univ, Equiv.Set.univ, ContinuousMap.subtypeVal]
+  exact coe_skeletonCocone_ι_app_apply (univ : Set Y) n x
 
 lemma range_toTopCatCWComplex_incl_app (Y : TopCat.{w}) [T2Space Y]
     [Topology.CWComplex (univ : Set Y)] (n : ℕ) :
-    (range ((Y.toTopCatCWComplex).incl.app n) : Set Y) = skeletonLT (univ : Set Y) n :=
-  Subtype.range_coe
+    (range ((Y.toTopCatCWComplex).incl.app n) : Set Y) = skeletonLT (univ : Set Y) n := by
+  rw [Y.toTopCatCWComplex_incl_app n, TopCat.coe_comp]
+  have hsurj : Function.Surjective (eqToHom (Y.toTopCatCWComplex_obj n)) :=
+    (TopCat.homeoOfIso (eqToIso (Y.toTopCatCWComplex_obj n))).surjective
+  rw [hsurj.range_comp]
+  simp [ContinuousMap.subtypeVal]
 
 /-- The `n`-cells attached at step `n` of `TopCat.toTopCatCWComplex Y` are the classical `n`-cells
 `cell (univ : Set Y) n`. -/
@@ -347,8 +354,20 @@ lemma toTopCatCWComplex_cells_ι_apply (Y : TopCat.{w}) [T2Space Y]
     γ.ι z =
       map (C := (univ : Set Y)) γ.j (Y.toTopCatCWComplexAttachCellsEquiv γ.j γ.hj γ.k)
         (diskHomeomorphClosedBall γ.j z) := by
-  rw [RelativeCellComplex.Cells.ι, ConcreteCategory.comp_apply]
-  exact (congrArg Subtype.val (ConcreteCategory.congr_hom (skeletonAttachCells_cell γ.k) z)).trans
-    (coe_cellDiskHom_apply γ.k z)
+  let γ' : (toRelativeCWComplex (univ : Set Y)).Cells := ⟨γ.j, γ.hj, γ.k⟩
+  have hincl : eqToHom (Y.toTopCatCWComplex_obj (Order.succ γ.j))
+      ((Y.toTopCatCWComplex.attachCells γ.j γ.hj).cell γ.k z) =
+      ((toRelativeCWComplex (univ : Set Y)).attachCells γ'.j γ'.hj).cell γ'.k z := by
+    dsimp only [toTopCatCWComplex, MorphismProperty.TransfiniteCompositionOfShape.ofArrowIso,
+      TransfiniteCompositionOfShape.ofArrowIso, toRelativeCWComplex, γ']
+    generalize_proofs
+    rw [eqToHom_refl]
+    exact ConcreteCategory.id_apply _
+  have hι : γ.ι z = (γ'.ι z : Y) := by
+    rw [RelativeCellComplex.Cells.ι, Y.toTopCatCWComplex_incl_app, ConcreteCategory.comp_apply,
+      ConcreteCategory.comp_apply, TopCat.ofHom_apply, hincl]
+    simp only [ContinuousMap.subtypeVal, ContinuousMap.coe_mk]
+    exact (coe_toRelativeCWComplex_incl_app_apply (Order.succ γ'.j) _).symm
+  exact hι.trans (coe_toRelativeCWComplex_cells_ι_apply γ' z)
 
 end TopCat

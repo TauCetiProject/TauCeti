@@ -73,6 +73,30 @@ theorem isQuotientMap_sumElim_base_map :
   · rw [inter_comm, ← Subtype.image_preimage_coe]
     exact (isClosedBase C).isClosedMap_subtype_val _ (hs.preimage continuous_inl)
 
+/-- **The topology of a Hausdorff classical CW complex on `Set.univ` is coinduced by its
+characteristic maps.** -/
+theorem topologicalSpace_eq_iSup_coinduced_map_closedBall {Y : Type*} [tY : TopologicalSpace Y]
+    [T2Space Y] [CWComplex (univ : Set Y)] :
+    tY =
+      ⨆ (n : ℕ) (i : cell (univ : Set Y) n),
+        TopologicalSpace.coinduced
+          (fun x : closedBall (0 : Fin n → ℝ) 1 ↦ map (C := (univ : Set Y)) n i x)
+          inferInstance := by
+  refine TopologicalSpace.ext_iff.2 fun U ↦ ?_
+  simp only [isOpen_iSup_iff, isOpen_coinduced, ← isClosed_compl_iff, ← preimage_compl,
+    CWComplex.closed (univ : Set Y) Uᶜ (subset_univ Uᶜ)]
+  refine forall₂_congr fun n i ↦ ?_
+  have hrange :
+      range (fun x : closedBall (0 : Fin n → ℝ) 1 ↦ map (C := (univ : Set Y)) n i x) =
+        closedCell (C := (univ : Set Y)) n i := by
+    ext; simp [closedCell]
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · convert h.preimage (continuousOn (C := (univ : Set Y)) n i).domRestrict using 1
+    ext x
+    exact ⟨fun hx ↦ ⟨hx, hrange ▸ mem_range_self x⟩, And.left⟩
+  · rw [← hrange, ← image_preimage_eq_inter_range]
+    exact (continuousOn (C := (univ : Set Y)) n i).domRestrict.isClosedMap _ h
+
 /-- A map out of a relative CW complex is continuous exactly when it is continuous on the base
 and along the characteristic map of every cell. -/
 theorem continuous_complex_iff {Y : Type*} [TopologicalSpace Y] {g : C → Y} :

@@ -9,18 +9,13 @@ public import TauCeti.Topology.CWComplex.Classical.Map
 public import TauCeti.Topology.CWComplex.Classical.SubcomplexTower.Colimit
 
 /-!
-# Cellular morphisms and examples of CW subcomplex towers
+# Cellular morphisms of CW subcomplex towers
 
 For a sequential tower `T : TauCeti.CWSubcomplexTower W newCell`, every stage map `T.step k` and
 colimit inclusion `c.ι.app k` / `T.incl k` is cellular (`isCellular_step`, `isCellular_ι`,
 `isCellular_incl`). Stagewise cellular morphisms between towers (`TauCeti.CWSubcomplexTower.Hom`)
 induce cellular maps on colimits (`Hom.isCellular_mapOfIsColimit`, `Hom.isCellular_unionMap`) whose
 skeletal restrictions commute with stage inclusions (`Hom.skeletonMap_incl_comp`).
-
-This file also provides two concrete families of towers: the constant tower `const X` on a single
-Hausdorff CW complex `X` (whose union is homeomorphic to `X` via `constUnionHomeomorph`), and the
-two-stage stabilizing tower `pair` associated to a single closed CW subcomplex embedding `W₀ → W₁`
-whose stage-`1` cells may have dimensions smaller than cells already present in `W₀`.
 -/
 
 public section
@@ -47,22 +42,19 @@ variable {W : ℕ → Type u}
 theorem isCellular_step (k : ℕ) :
     IsCellular (univ : Set (W k)) (univ : Set (W (k + 1)))
       (TopCat.ofHom ((T.step k).restrictPreimage univ)) :=
-  isCellular_of_map_eq _ _ (fun _ h ↦ h.elim) fun n i ↦
-    ⟨T.oldCellEquiv k n i, fun _ hx _ ↦ T.map_oldCell k n i hx⟩
+  isCellular_univ_of_map_eq fun n i ↦
+    ⟨T.oldCellEquiv k n i, fun _ hx ↦ T.map_oldCell k n i hx⟩
 
 /-- For any colimit cocone `c` of `T.diagram`, each stage inclusion `c.ι.app k : W k → c.pt` is
 cellular. -/
 theorem isCellular_ι {c : Cocone T.diagram} (hc : IsColimit c) (k : ℕ) :
     letI := T.cwComplexOfIsColimit hc; letI := T.t2Space_of_isColimit hc
     IsCellular (univ : Set (W k)) (univ : Set c.pt)
-      (TopCat.ofHom ((c.ι.app k).hom.restrictPreimage univ)) := by
-  let _ := T.cwComplexOfIsColimit hc; let _ := T.t2Space_of_isColimit hc
-  refine isCellular_of_map_eq _ _ (fun _ h ↦ h.elim) fun n i ↦ ?_
-  let q := (T.stageCellEquiv k n).symm i
-  have hiq : T.stageCellEquiv k n q = i := (T.stageCellEquiv k n).apply_symm_apply i
-  refine ⟨(T.cwComplexOfIsColimitCellEquiv hc n).symm q.1, fun x hx _ ↦ ?_⟩
-  exact (congrArg (fun j ↦ c.ι.app k (map (C := (univ : Set (W k))) n j x)) hiq).symm.trans
-    (T.map_eq_ι_stageCellEquiv hc n q.1 q.2 hx).symm
+      (TopCat.ofHom ((c.ι.app k).hom.restrictPreimage univ)) :=
+  letI := T.cwComplexOfIsColimit hc; letI := T.t2Space_of_isColimit hc
+  isCellular_univ_of_map_eq fun n i ↦
+    ⟨(T.cwComplexOfIsColimitCellEquiv hc n).symm ((T.stageCellEquiv k n).symm i).1,
+      fun _ hx ↦ T.ι_map_eq_map hc k n i hx⟩
 
 /-- Each stage inclusion `T.incl k : W k → T.Union` is cellular. -/
 theorem isCellular_incl (k : ℕ) :
@@ -109,48 +101,95 @@ theorem ext {φ ψ : T₁.Hom T₂} (h : ∀ k, φ.app k = ψ.app k) : φ = ψ :
 def id (T₁ : CWSubcomplexTower W₁ newCell₁) : T₁.Hom T₁ where
   app k := ContinuousMap.id (W₁ k)
   comm _ := rfl
-  isCellular_app _ _ _ hx := hx
+  isCellular_app _ := isCellular_univ_iff.2 fun _ ↦ mapsTo_id _
 
 @[simp]
 lemma id_app (T₁ : CWSubcomplexTower W₁ newCell₁) (k : ℕ) :
     (Hom.id T₁).app k = ContinuousMap.id (W₁ k) := (rfl)
 
 /-- Composition of cellular morphisms of `CWSubcomplexTower`s. -/
-def comp (φ : T₁.Hom T₂) (ψ : T₂.Hom T₃) : T₁.Hom T₃ where
+def comp (ψ : T₂.Hom T₃) (φ : T₁.Hom T₂) : T₁.Hom T₃ where
   app k := (ψ.app k).comp (φ.app k)
   comm k := by
     ext x
     exact (congrArg (ψ.app (k + 1)) (ContinuousMap.congr_fun (φ.comm k) x)).trans
       (ContinuousMap.congr_fun (ψ.comm k) (φ.app k x))
-  isCellular_app k n _ hx := ψ.isCellular_app k n (φ.isCellular_app k n hx)
+  isCellular_app k := isCellular_univ_iff.2 fun n ↦
+    (isCellular_univ_iff.1 (ψ.isCellular_app k) n).comp
+      (isCellular_univ_iff.1 (φ.isCellular_app k) n)
 
 @[simp]
-lemma comp_app (φ : T₁.Hom T₂) (ψ : T₂.Hom T₃) (k : ℕ) :
-    (φ.comp ψ).app k = (ψ.app k).comp (φ.app k) := (rfl)
+lemma comp_app (ψ : T₂.Hom T₃) (φ : T₁.Hom T₂) (k : ℕ) :
+    (ψ.comp φ).app k = (ψ.app k).comp (φ.app k) := (rfl)
+
+@[simp]
+lemma id_comp (φ : T₁.Hom T₂) : (Hom.id T₂).comp φ = φ := by
+  ext
+  rfl
+
+@[simp]
+lemma comp_id (φ : T₁.Hom T₂) : φ.comp (Hom.id T₁) = φ := by
+  ext
+  rfl
+
+@[simp]
+lemma comp_assoc {W₄ : ℕ → Type u}
+    [∀ k, TopologicalSpace (W₄ k)] [∀ k, T2Space (W₄ k)] [∀ k, CWComplex (univ : Set (W₄ k))]
+    {newCell₄ : ℕ → ℕ → Type u} {T₄ : CWSubcomplexTower W₄ newCell₄}
+    (χ : T₃.Hom T₄) (ψ : T₂.Hom T₃) (φ : T₁.Hom T₂) :
+    (χ.comp ψ).comp φ = χ.comp (ψ.comp φ) := by
+  ext
+  rfl
 
 /-- The natural transformation `T₁.diagram ⟶ T₂.diagram` induced by `φ : T₁.Hom T₂`. -/
 def natTrans (φ : T₁.Hom T₂) : T₁.diagram ⟶ T₂.diagram :=
   NatTrans.ofSequence (fun k ↦ TopCat.ofHom (φ.app k)) fun k ↦ by
-    rw [T₁.diagram_map_succ, T₂.diagram_map_succ]; ext x; exact ContinuousMap.congr_fun (φ.comm k) x
+    rw [T₁.diagram_map_succ, T₂.diagram_map_succ]
+    ext x
+    exact ContinuousMap.congr_fun (φ.comm k) x
 
 @[simp]
 lemma natTrans_app (φ : T₁.Hom T₂) (k : ℕ) : φ.natTrans.app k = TopCat.ofHom (φ.app k) := (rfl)
 
-/-- The induced continuous map `c₁.pt ⟶ c₂.pt` between any colimit cocones of `T₁` and `T₂`. -/
+@[simp]
+lemma natTrans_id : (Hom.id T₁).natTrans = 𝟙 T₁.diagram :=
+  NatTrans.ext <| funext fun _ ↦ TopCat.ofHom_id
+
+@[simp]
+lemma natTrans_comp (ψ : T₂.Hom T₃) (φ : T₁.Hom T₂) :
+    (ψ.comp φ).natTrans = φ.natTrans ≫ ψ.natTrans :=
+  NatTrans.ext <| funext fun k ↦ TopCat.ofHom_comp (φ.app k) (ψ.app k)
+
+/-- The induced morphism `c₁.pt ⟶ c₂.pt` from a colimit cocone `c₁` of `T₁.diagram` to a cocone
+`c₂` of `T₂.diagram`. -/
 def mapOfIsColimit (φ : T₁.Hom T₂) {c₁ : Cocone T₁.diagram} {c₂ : Cocone T₂.diagram}
     (hc₁ : IsColimit c₁) : c₁.pt ⟶ c₂.pt :=
-  hc₁.desc ⟨c₂.pt, φ.natTrans ≫ c₂.ι⟩
+  hc₁.map c₂ φ.natTrans
 
 @[simp, reassoc]
 lemma ι_comp_mapOfIsColimit (φ : T₁.Hom T₂) {c₁ : Cocone T₁.diagram} {c₂ : Cocone T₂.diagram}
     (hc₁ : IsColimit c₁) (k : ℕ) :
     c₁.ι.app k ≫ φ.mapOfIsColimit hc₁ = TopCat.ofHom (φ.app k) ≫ c₂.ι.app k :=
-  hc₁.fac ⟨c₂.pt, φ.natTrans ≫ c₂.ι⟩ k
+  hc₁.ι_map c₂ φ.natTrans k
 
+@[simp]
 lemma mapOfIsColimit_ι_apply (φ : T₁.Hom T₂) {c₁ : Cocone T₁.diagram} {c₂ : Cocone T₂.diagram}
     (hc₁ : IsColimit c₁) (k : ℕ) (x : W₁ k) :
-    φ.mapOfIsColimit hc₁ (c₁.ι.app k x) = c₂.ι.app k (φ.app k x) :=
+    dsimp% φ.mapOfIsColimit (c₂ := c₂) hc₁ (c₁.ι.app k x) = c₂.ι.app k (φ.app k x) :=
   ConcreteCategory.congr_hom (φ.ι_comp_mapOfIsColimit hc₁ k) x
+
+@[simp]
+lemma mapOfIsColimit_id {c₁ : Cocone T₁.diagram} (hc₁ : IsColimit c₁) :
+    (Hom.id T₁).mapOfIsColimit (c₂ := c₁) hc₁ = 𝟙 c₁.pt :=
+  hc₁.hom_ext fun k ↦ by simp
+
+@[simp, reassoc]
+lemma mapOfIsColimit_comp (ψ : T₂.Hom T₃) (φ : T₁.Hom T₂)
+    {c₁ : Cocone T₁.diagram} {c₂ : Cocone T₂.diagram} {c₃ : Cocone T₃.diagram}
+    (hc₁ : IsColimit c₁) (hc₂ : IsColimit c₂) :
+    φ.mapOfIsColimit (c₂ := c₂) hc₁ ≫ ψ.mapOfIsColimit (c₂ := c₃) hc₂ =
+      (ψ.comp φ).mapOfIsColimit (c₂ := c₃) hc₁ :=
+  hc₁.hom_ext fun k ↦ by simp [TopCat.ofHom_comp, ι_comp_mapOfIsColimit_assoc]
 
 /-- **Cellular naturality:** the map induced on colimits by a cellular tower morphism is
 cellular. -/
@@ -163,49 +202,54 @@ theorem isCellular_mapOfIsColimit (φ : T₁.Hom T₂)
       (TopCat.ofHom ((φ.mapOfIsColimit (c₂ := c₂) hc₁).hom.restrictPreimage univ)) := by
   let _ := T₁.cwComplexOfIsColimit hc₁; let _ := T₁.t2Space_of_isColimit hc₁
   let _ := T₂.cwComplexOfIsColimit hc₂; let _ := T₂.t2Space_of_isColimit hc₂
-  rintro n ⟨z, -⟩ (hz : z ∈ skeletonLT (univ : Set c₁.pt) (n : ℕ∞))
+  refine isCellular_univ_iff.2 fun n z hz ↦ ?_
   rcases RelCWComplex.mem_skeletonLT_iff.1 hz with hzEmpty | ⟨m, hmn, i, hzi⟩
   · exact hzEmpty.elim
   · obtain ⟨p, rfl⟩ := (T₁.cwComplexOfIsColimitCellEquiv hc₁ m).symm.surjective i
     rw [T₁.openCell_cwComplexOfIsColimitCellEquiv_symm hc₁] at hzi
     obtain ⟨y, hy, rfl⟩ := hzi
-    have hy_skel : (⟨y, mem_univ y⟩ : (univ : Set (W₁ p.1))) ∈
-        {x | x.1 ∈ skeletonLT (univ : Set (W₁ p.1)) (n : ℕ∞)} :=
+    have hy_skel : y ∈ skeletonLT (univ : Set (W₁ p.1)) (n : ℕ∞) :=
       RelCWComplex.mem_skeletonLT_iff.2 (Or.inr ⟨m, hmn, T₁.birthCell p.1 m p.2, hy⟩)
-    have hι_skel := T₂.isCellular_ι hc₂ p.1 n (φ.isCellular_app p.1 n hy_skel)
-    -- `Set.MapsTo` reduces subtype membership in `{y : univ | y.1 ∈ skeletonLT _ _}` to the
-    -- ambient point of `c₂.pt`.
-    change φ.mapOfIsColimit (c₂ := c₂) hc₁ (c₁.ι.app p.1 y) ∈ skeletonLT (univ : Set c₂.pt) (n : ℕ∞)
+    have hι_skel : c₂.ι.app p.1 (φ.app p.1 y) ∈ skeletonLT (univ : Set c₂.pt) (n : ℕ∞) :=
+      isCellular_univ_iff.1 (T₂.isCellular_ι hc₂ p.1) n
+        (isCellular_univ_iff.1 (φ.isCellular_app p.1) n hy_skel)
     rwa [φ.mapOfIsColimit_ι_apply hc₁]
 
 /-- The induced continuous map `T₁.Union ⟶ T₂.Union` between canonical tower unions. -/
 def unionMap (φ : T₁.Hom T₂) : T₁.Union ⟶ T₂.Union :=
-  φ.mapOfIsColimit (colimit.isColimit T₁.diagram)
+  Limits.colimMap φ.natTrans
 
 @[simp, reassoc]
 lemma incl_comp_unionMap (φ : T₁.Hom T₂) (k : ℕ) :
     T₁.incl k ≫ φ.unionMap = TopCat.ofHom (φ.app k) ≫ T₂.incl k :=
-  φ.ι_comp_mapOfIsColimit (colimit.isColimit T₁.diagram) k
+  Limits.ι_colimMap φ.natTrans k
 
 @[simp]
 lemma unionMap_incl_apply (φ : T₁.Hom T₂) (k : ℕ) (x : W₁ k) :
     φ.unionMap (T₁.incl k x) = T₂.incl k (φ.app k x) :=
-  φ.mapOfIsColimit_ι_apply (colimit.isColimit T₁.diagram) k x
+  ConcreteCategory.congr_hom (φ.incl_comp_unionMap k) x
+
+lemma unionMap_eq_mapOfIsColimit (φ : T₁.Hom T₂) :
+    φ.unionMap =
+      φ.mapOfIsColimit (c₂ := colimit.cocone T₂.diagram) (colimit.isColimit T₁.diagram) :=
+  colimit.hom_ext fun k ↦ (φ.incl_comp_unionMap k).trans
+    (φ.ι_comp_mapOfIsColimit (c₂ := colimit.cocone T₂.diagram)
+      (colimit.isColimit T₁.diagram) k).symm
 
 @[simp]
 lemma unionMap_id : (Hom.id T₁).unionMap = 𝟙 T₁.Union :=
-  T₁.union_hom_ext fun k ↦ by simp
+  colimit.hom_ext fun k ↦ by simp
 
 @[simp, reassoc]
-lemma unionMap_comp (φ : T₁.Hom T₂) (ψ : T₂.Hom T₃) :
-    (φ.comp ψ).unionMap = φ.unionMap ≫ ψ.unionMap :=
-  T₁.union_hom_ext fun k ↦ by simp [TopCat.ofHom_comp, incl_comp_unionMap_assoc]
+lemma unionMap_comp (ψ : T₂.Hom T₃) (φ : T₁.Hom T₂) :
+    (ψ.comp φ).unionMap = φ.unionMap ≫ ψ.unionMap :=
+  colimit.hom_ext fun k ↦ by simp [TopCat.ofHom_comp, incl_comp_unionMap_assoc]
 
 /-- The induced map `T₁.Union ⟶ T₂.Union` of a cellular tower morphism is cellular. -/
 theorem isCellular_unionMap (φ : T₁.Hom T₂) :
     IsCellular (univ : Set T₁.Union) (univ : Set T₂.Union)
       (TopCat.ofHom (φ.unionMap.hom.restrictPreimage univ)) := by
-  rw [T₁.instCWComplexUnion_eq, T₂.instCWComplexUnion_eq]
+  rw [T₁.instCWComplexUnion_eq, T₂.instCWComplexUnion_eq, φ.unionMap_eq_mapOfIsColimit]
   exact φ.isCellular_mapOfIsColimit (colimit.isColimit T₁.diagram) (colimit.isColimit T₂.diagram)
 
 /-- On every dimension skeleton, the induced map `φ.unionMap` restricts to a map commuting with
@@ -218,98 +262,18 @@ theorem skeletonMap_incl_comp (φ : T₁.Hom T₂) (k n : ℕ) :
       (h : f₁ = f₂) (hf₁ : IsCellular _ _ f₁) (hf₂ : IsCellular _ _ f₂) :
       skeletonMap _ _ hf₁ n = skeletonMap _ _ hf₂ n := by subst h; rfl
   rw [← skeletonMap_comp, ← skeletonMap_comp]
-  exact hcongr (by ext x; exact φ.unionMap_incl_apply k x.1) _ _
+  refine hcongr ?_ _ _
+  rw [ofHom_restrictPreimage_univ_eq, ofHom_restrictPreimage_univ_eq,
+    ofHom_restrictPreimage_univ_eq, ofHom_restrictPreimage_univ_eq]
+  refine ConcreteCategory.hom_ext _ _ fun x ↦ ?_
+  rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply,
+    TopCat.ofHom_apply, TopCat.ofHom_apply, TopCat.ofHom_apply, TopCat.ofHom_apply]
+  exact Subtype.ext (φ.unionMap_incl_apply k x.1)
 
 end Basic
 
 end Hom
 
 end CellularNaturality
-
-/-! ### Stabilizing and two-stage towers -/
-
-section Examples
-
-/-- The constant `CWSubcomplexTower` on a Hausdorff classical CW complex `X`, where stage `0` has
-all cells of `X` and stages `k + 1` attach no new cells (`PEmpty`). -/
-def const (X : Type u) [TopologicalSpace X] [T2Space X] [CWComplex (univ : Set X)] :
-    CWSubcomplexTower (fun _ ↦ X) (fun k n ↦ match k with
-      | 0 => cell (univ : Set X) n
-      | _ + 1 => PEmpty) :=
-  ofCellSum (fun _ ↦ ContinuousMap.id X) (fun _ ↦ .id) (fun _ ↦ Equiv.refl _)
-    (fun _ _ ↦ Equiv.sumEmpty _ _) (fun _ _ _ {_} _ ↦ rfl)
-
-@[simp]
-lemma const_step (X : Type u) [TopologicalSpace X] [T2Space X] [CWComplex (univ : Set X)]
-    (k : ℕ) : (const X).step k = ContinuousMap.id X :=
-  ofCellSum_step _ _ _ _ _ k
-
-/-- The union of the constant tower `CWSubcomplexTower.const X` is homeomorphic to `X`. -/
-def constUnionHomeomorph (X : Type u) [TopologicalSpace X] [T2Space X] [CWComplex (univ : Set X)] :
-    (const X).Union ≃ₜ X :=
-  let T := const X
-  let cX : Cocone T.diagram :=
-    ⟨TopCat.of X, NatTrans.ofSequence (fun _ ↦ 𝟙 (TopCat.of X)) fun k ↦ by
-      rw [T.diagram_map_succ, const_step]; rfl⟩
-  let hcX : IsColimit cX :=
-    { desc := fun s ↦ s.ι.app 0
-      fac := fun s k ↦ by
-        dsimp only [cX]; rw [NatTrans.ofSequence_app, Category.id_comp]
-        induction k with
-        | zero => rfl
-        | succ k ih =>
-          have hw := s.w (homOfLE (Nat.le_add_right k 1))
-          rw [T.diagram_map_succ, const_step, TopCat.ofHom_id, Category.id_comp] at hw
-          exact ih.trans hw.symm
-      uniq := fun s m hm ↦ by
-        simpa [cX] using hm 0 }
-  TopCat.homeoOfIso (colimit.isoColimitCocone ⟨cX, hcX⟩)
-
-/-- Stage spaces `W₀, W₁, W₁, ⋯` of a two-stage stabilizing tower. -/
-abbrev PairStage (W₀ W₁ : Type u) : ℕ → Type u
-  | 0 => W₀
-  | _ + 1 => W₁
-
-instance instTopologicalSpacePairStage {W₀ W₁ : Type u} [TopologicalSpace W₀]
-    [TopologicalSpace W₁] : ∀ k, TopologicalSpace (PairStage W₀ W₁ k)
-  | 0 => inferInstance
-  | _ + 1 => inferInstance
-
-instance instT2SpacePairStage {W₀ W₁ : Type u} [TopologicalSpace W₀] [T2Space W₀]
-    [TopologicalSpace W₁] [T2Space W₁] : ∀ k, T2Space (PairStage W₀ W₁ k)
-  | 0 => inferInstance
-  | _ + 1 => inferInstance
-
-instance instCWComplexPairStage {W₀ W₁ : Type u} [TopologicalSpace W₀] [CWComplex (univ : Set W₀)]
-    [TopologicalSpace W₁] [CWComplex (univ : Set W₁)] :
-    ∀ k, CWComplex (univ : Set (PairStage W₀ W₁ k))
-  | 0 => inferInstance
-  | _ + 1 => inferInstance
-
-/-- A two-stage-then-stabilizing `CWSubcomplexTower` built from a single closed CW subcomplex
-embedding `f : C(W₀, W₁)`: stage `0` has the cells of `W₀`, stage `1` attaches the complementary
-cells `new₁` of `W₁` (which may have **strictly smaller** dimensions than cells of `W₀`), and all
-higher stages `k + 2` stabilize at `W₁` with no further cells. -/
-def pair {W₀ W₁ : Type u}
-    [TopologicalSpace W₀] [T2Space W₀] [CWComplex (univ : Set W₀)]
-    [TopologicalSpace W₁] [T2Space W₁] [CWComplex (univ : Set W₁)]
-    {new₁ : ℕ → Type u}
-    (f : C(W₀, W₁)) (hf : IsClosedEmbedding f)
-    (cellSum : ∀ n, cell (univ : Set W₀) n ⊕ new₁ n ≃ cell (univ : Set W₁) n)
-    (hmap : ∀ n (i : cell (univ : Set W₀) n) {x : Fin n → ℝ}, x ∈ closedBall 0 1 →
-      f (map (C := (univ : Set W₀)) n i x) =
-        map (C := (univ : Set W₁)) n (cellSum n (Sum.inl i)) x) :
-    CWSubcomplexTower (PairStage W₀ W₁) (fun k n ↦ match k with
-      | 0 => cell (univ : Set W₀) n
-      | 1 => new₁ n
-      | _ + 2 => PEmpty) :=
-  ofCellSum (W := PairStage W₀ W₁)
-    (fun | 0 => f | _ + 1 => ContinuousMap.id W₁)
-    (fun | 0 => hf | _ + 1 => .id)
-    (fun _ ↦ Equiv.refl _)
-    (fun | 0, n => cellSum n | _ + 1, _ => Equiv.sumEmpty _ _)
-    (fun k n i {_} hx ↦ by cases k with | zero => exact hmap n i hx | succ _ => rfl)
-
-end Examples
 
 end TauCeti.CWSubcomplexTower
