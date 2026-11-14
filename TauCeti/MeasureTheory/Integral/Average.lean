@@ -111,6 +111,8 @@ applied to an integrable function that is almost everywhere at least `a`.
   average of `‖f x - f y‖ₑ` over pairs of points of `s` agree up to a factor `2`.
 * `TauCeti.setIntegral_norm_sub_setAverage_sq_le`: the square mean oscillation of `f` about its
   average is at most four times its square mean oscillation about any constant.
+* `TauCeti.setIntegral_sq_le_mul_setIntegral_sub_setAverage_sq_of_ae_eq_zero`: a real function
+  vanishing on a part `S` of `B` with `μ(B) ≤ M μ(S)` satisfies `∫_B w² ≤ (2 + 2M) ∫_B (w - w_B)²`.
 * `TauCeti.setIntegral_norm_sub_sq_eq_setIntegral_norm_sub_setAverage_sq_add` and
   `TauCeti.setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq`: in an inner product
   space the square mean oscillation about a constant splits orthogonally, so the average is the
@@ -704,6 +706,61 @@ theorem setIntegral_norm_sub_setAverage_sq_le (hs : μ s ≠ ⊤) (hf : Integrab
           setIntegral_const, smul_eq_mul]
         ring
     _ ≤ 4 * J := by linarith
+
+/-- A function vanishing on a part `S` of a set `B` is controlled by its oscillation on `B`: if
+`μ(B) ≤ M μ(S)` with `μ(B)` finite and `w = 0` almost everywhere on `S`, then
+
+`∫_B w² ≤ (2 + 2M) ∫_B (w - w_B)²`.
+
+Indeed `w_B² μ(S) = ∫_S (w - w_B)²`, so the mean `w_B` cannot be large. Combined with a Poincaré
+inequality on `B`, this bounds a Sobolev function vanishing on a fixed proportion of a ball by its
+gradient, with no mean subtracted. -/
+theorem setIntegral_sq_le_mul_setIntegral_sub_setAverage_sq_of_ae_eq_zero {B S : Set X}
+    (hSB : S ⊆ B) (hB : μ B ≠ ⊤) {M : ℝ} (hBS : μ B ≤ ENNReal.ofReal M * μ S) {w : X → ℝ}
+    (hw2 : MemLp w 2 (μ.restrict B)) (h0 : ∀ᵐ x ∂μ.restrict S, w x = 0) :
+    ∫ x in B, w x ^ 2 ∂μ ≤ (2 + 2 * M) * ∫ x in B, (w x - ⨍ y in B, w y ∂μ) ^ 2 ∂μ := by
+  -- For `M < 0` the set `B` is null and both sides vanish.
+  rcases lt_or_ge M 0 with hM | hM
+  · have hB0 : μ B = 0 := by
+      simpa [ENNReal.ofReal_of_nonpos hM.le] using hBS
+    simp [Measure.restrict_eq_zero.2 hB0]
+  have : IsFiniteMeasure (μ.restrict B) := isFiniteMeasure_restrict.2 hB
+  have hw : IntegrableOn (fun x ↦ w x ^ 2) B μ := hw2.integrable_sq
+  have hwi : IntegrableOn w B μ := hw2.integrable one_le_two
+  set m := ⨍ y in B, w y ∂μ
+  have hS : μ S ≠ ∞ := ne_top_of_le_ne_top hB (measure_mono hSB)
+  have hwm : IntegrableOn (fun x => (w x - m) ^ 2) B μ := by
+    have : (fun x => (w x - m) ^ 2) = fun x => w x ^ 2 + (-(2 * m) * w x + m ^ 2) := by
+      funext x
+      ring
+    rw [this]
+    exact hw.add ((hwi.const_mul (-(2 * m))).add (integrableOn_const (C := m ^ 2) hB))
+  set I := ∫ x in B, (w x - m) ^ 2 ∂μ
+  -- `∫_B w² ≤ 2 ∫_B (w - m)² + 2 m² μ(B)`.
+  have hc : IntegrableOn (fun _ => 2 * m ^ 2) B μ := integrableOn_const hB
+  have h1 : ∫ x in B, w x ^ 2 ∂μ ≤ 2 * I + 2 * m ^ 2 * μ.real B := by
+    have hsum : IntegrableOn (fun x => 2 * (w x - m) ^ 2 + 2 * m ^ 2) B μ :=
+      (hwm.const_mul 2).add hc
+    calc ∫ x in B, w x ^ 2 ∂μ ≤ ∫ x in B, (2 * (w x - m) ^ 2 + 2 * m ^ 2) ∂μ :=
+          setIntegral_mono hw hsum fun x => by nlinarith [sq_nonneg (w x - 2 * m)]
+      _ = 2 * I + 2 * m ^ 2 * μ.real B := by
+          rw [integral_add (hwm.const_mul 2) hc, integral_const_mul,
+            setIntegral_const, smul_eq_mul]
+          ring
+  -- `m² μ(S) = ∫_S (w - m)² ≤ ∫_B (w - m)²`.
+  have h2 : m ^ 2 * μ.real S ≤ I := by
+    have hS' : ∫ x in S, (w x - m) ^ 2 ∂μ = m ^ 2 * μ.real S := by
+      rw [integral_congr_ae (g := fun _ => m ^ 2) (h0.mono fun x hx => by simp [hx]),
+        setIntegral_const, smul_eq_mul, mul_comm]
+    rw [← hS']
+    exact setIntegral_mono_set hwm (Filter.Eventually.of_forall fun x => sq_nonneg _)
+      (Filter.Eventually.of_forall hSB)
+  -- `μ(B) ≤ M μ(S)`.
+  have h3 : μ.real B ≤ M * μ.real S := by
+    have := ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hS) hBS
+    rwa [ENNReal.toReal_mul, ENNReal.toReal_ofReal hM] at this
+  have hm2 : 0 ≤ m ^ 2 := sq_nonneg m
+  nlinarith [mul_le_mul_of_nonneg_left h3 hm2, mul_le_mul_of_nonneg_left h2 hM]
 
 end Subset
 

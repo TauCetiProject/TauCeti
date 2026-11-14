@@ -33,6 +33,8 @@ theorem on almost Euclidean sections of finite-dimensional normed spaces.
   covering numbers of a subset of a closed ball.
 * `TauCeti.exists_finset_isCover_of_subset_closedBall`: a subset of a closed ball of radius `r`
   has an `ε`-net consisting of at most `(1 + 2 r / ε) ^ n` of its points.
+* `TauCeti.exists_finset_subset_biUnion_ball`: a subset of a closed ball of radius `r` is covered by
+  at most `(1 + 4 r / δ) ^ n` open balls of radius `δ` centred in it.
 * `TauCeti.exists_finset_isCover_sphere`: the unit sphere has an `η`-net consisting of at most
   `(1 + 2 / η) ^ n` of its points.
 
@@ -132,6 +134,29 @@ theorem exists_finset_isCover_of_subset_closedBall (hε : ε ≠ 0) (hA : A ⊆ 
   exact card_le_of_isSeparated_of_subset_closedBall hε
     (by simpa using isSeparated_maximalSeparatedSet)
     (by simpa using maximalSeparatedSet_subset.trans hA)
+
+/-- A subset `A` of a closed ball of radius `r` in a finite-dimensional real normed space is covered
+by the open balls of radius `δ > 0` around at most `(1 + 4 r / δ) ^ dim E` points of `A`. -/
+theorem exists_finset_subset_biUnion_ball {δ : ℝ} (hδ : 0 < δ) (hA : A ⊆ closedBall x r) :
+    ∃ N : Finset E, (N : Set E) ⊆ A ∧ A ⊆ ⋃ z ∈ N, ball z δ ∧
+      (N.card : ℝ) ≤ (1 + 4 * r / δ) ^ finrank ℝ E := by
+  -- An `δ / 2`-net of `A` gives centres of the balls of radius `δ`.
+  set ε : ℝ≥0 := ⟨δ / 2, by positivity⟩
+  have hε : (ε : ℝ) = δ / 2 := rfl
+  obtain ⟨N, hNA, hNcov, hNcard⟩ := exists_finset_isCover_of_subset_closedBall
+    (by rw [← NNReal.coe_ne_zero, hε]; positivity) hA
+  refine ⟨N, hNA, fun y hy => ?_, ?_⟩
+  · obtain ⟨z, hzN, hyz⟩ := hNcov hy
+    have hyz : nndist y z ≤ ε := edist_le_coe.1 hyz
+    have : dist y z ≤ δ / 2 := by
+      rw [← coe_nndist, ← hε]
+      exact_mod_cast hyz
+    exact mem_biUnion hzN (mem_ball.2 (by linarith))
+  · have h : (1 + 2 * r / ε : ℝ) = 1 + 4 * r / δ := by
+      rw [hε]
+      field_simp
+      ring
+    rwa [h] at hNcard
 
 /-- The unit sphere of a finite-dimensional real normed space `E` has an `η`-net, for `η > 0`,
 consisting of at most `(1 + 2 / η) ^ dim E` points of the sphere. -/
