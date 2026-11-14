@@ -70,7 +70,6 @@ private theorem isSemisimplePoint_geometricFiber_of_geometricallySolvable
   let _ : Algebra.Smooth K G := hG.smooth
   let _ : IsReduced G := isReduced_of_smooth K G
   let _ : _root_.Coalgebra.IsCocomm k H := hH.isCocomm_of_geometricallySolvable hsolv
-  let _ : _root_.Coalgebra.IsCocomm K G := inferInstance
   rw [HopfAlgebra.isSemisimplePoint_iff_unipotentPart_eq_one]
   let v := HopfAlgebra.Point.unipotentPart K G K g
   have hv : HopfAlgebra.IsUnipotentPoint v := by
@@ -96,7 +95,6 @@ theorem torus_of_geometricallySolvable
   let _ : ConnectedSpace (PrimeSpectrum G) :=
     hH.geometricallyConnected.connectedSpace_algebraicClosureBaseChange
   let _ : _root_.Coalgebra.IsCocomm k H := hH.isCocomm_of_geometricallySolvable hsolv
-  let _ : _root_.Coalgebra.IsCocomm K G := inferInstance
   have hT : torusCommHopfAlgProperty K G :=
     torusCommHopfAlgProperty_of_isSemisimplePoint G
       (hH.isSemisimplePoint_geometricFiber_of_geometricallySolvable hsolv)
