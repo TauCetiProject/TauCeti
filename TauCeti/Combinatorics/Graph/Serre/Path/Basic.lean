@@ -18,7 +18,9 @@ A path in the quiver of a Serre graph is reduced when no consecutive darts cance
 condition retains the distinction between a loop and its reversed dart, and between parallel
 edges. It is the local normal-form condition used for graph path groups and Stallings graphs.
 The ordered dart list is obtained from Mathlib's `Quiver.Path.weight` in the free monoid;
-its decomposition and mapping lemmas support subgraph and based-core constructions. The paths of
+its decomposition and mapping lemmas support subgraph and based-core constructions. A morphism that
+is injective on the darts issuing from each vertex maps reduced paths to reduced paths
+(`SerreGraph.Hom.isReduced_mapPath`). The paths of
 a restriction `Γ.restrict S hS` are the paths of `Γ` whose darts lie in `S`, a path whose darts lie
 in a subgraph `Γ.subgraph A D hsrc hrev` lifts to it, with the same reducedness, and a path leaving
 a vertex set crosses its boundary along one of its darts.
@@ -155,19 +157,32 @@ theorem Path.IsReduced.of_comp_left {a b c : Γ.V} {p : Γ.Path a b} {q : Γ.Pat
     rw [Prefunctor.mapPath_cons, Path.darts_cons Δ, ih]
     simp
 
+variable {Γ} in
+/-- A morphism that is injective on the darts issuing from each vertex maps reduced paths to
+reduced paths, even when it identifies vertices or darts globally. -/
+theorem Hom.isReduced_mapPath {Δ : SerreGraph} (f : Γ.Hom Δ)
+    (hf : ∀ e e' : Γ.E, Γ.src e = Γ.src e' → f.mapE e = f.mapE e' → e = e')
+    {a b : Γ.V} (p : Γ.Path a b) (hp : Path.IsReduced Γ p) :
+    Path.IsReduced Δ (f.toPrefunctor.mapPath p) := by
+  induction p with
+  | nil => trivial
+  | cons p e ih =>
+    cases p with
+    | nil => trivial
+    | cons p d =>
+      exact ⟨ih hp.1, fun he => hp.2 (hf _ _ (by simp [e.2.1, d.2.2]) (by simpa using he))⟩
+
 /-- A morphism injective on darts preserves and reflects reduced paths. -/
 theorem Hom.isReduced_mapPath_iff {Δ : SerreGraph} (f : Γ.Hom Δ)
     (hf : Function.Injective f.mapE) {a b : Γ.V} (p : Γ.Path a b) :
     Path.IsReduced Δ (f.toPrefunctor.mapPath p) ↔ Path.IsReduced Γ p := by
+  refine ⟨fun hp => ?_, f.isReduced_mapPath (fun _ _ _ h => hf h) p⟩
   induction p with
-  | nil => simp
+  | nil => trivial
   | cons p e ih =>
     cases p with
-    | nil => simp [Path.IsReduced]
-    | cons p k =>
-      simp only [Prefunctor.mapPath_cons, Path.isReduced_cons_cons,
-        Hom.toPrefunctor_map_val, ← f.map_rev, ne_eq, hf.eq_iff] at ih ⊢
-      exact and_congr ih Iff.rfl
+    | nil => trivial
+    | cons p k => exact ⟨ih hp.1, fun he => hp.2 (by simp [he])⟩
 
 private theorem isReduced_pair_comp {a b c d : Γ.V}
     (e : Quiver.Hom a b) (f : Quiver.Hom b c) (p : Γ.Path c d) :

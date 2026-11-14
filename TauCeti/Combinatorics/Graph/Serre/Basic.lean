@@ -29,6 +29,11 @@ edges, a path never leaves its starting vertex. Such a graph is preconnected exa
 at most one vertex, and connected exactly when it has exactly one: the empty graph is
 preconnected but not connected, and two isolated vertices are not even preconnected.
 
+A morphism to a preconnected graph is surjective as soon as its source is nonempty and every dart
+issuing from a vertex of its image is the image of a dart
+(`SerreGraph.Hom.mapV_surjective_of_preconnected`,
+`SerreGraph.Hom.mapE_surjective_of_preconnected`).
+
 The simple-graph construction takes its edge set from Mathlib's darts. It provides the familiar
 loopless example while retaining the reversal structure used for general graphs.
 
@@ -363,6 +368,29 @@ theorem Hom.connected_of_surjective {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w
     (hΓ : Γ.Connected) : Δ.Connected := by
   obtain ⟨⟨x⟩, hpre⟩ := (connected_iff Γ).1 hΓ
   exact (connected_iff Δ).2 ⟨⟨f.mapV x⟩, f.preconnected_of_surjective hf hpre⟩
+
+/-- A morphism from a nonempty graph to a preconnected graph is surjective on vertices when every
+dart issuing from a vertex of its image is the image of a dart. -/
+theorem Hom.mapV_surjective_of_preconnected {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}}
+    (f : Γ.Hom Δ) [Nonempty Γ.V] (hΔ : Δ.Preconnected)
+    (hf : ∀ d : Δ.E, Δ.src d ∈ Set.range f.mapV → d ∈ Set.range f.mapE) :
+    Function.Surjective f.mapV := by
+  intro b
+  obtain ⟨a₀⟩ := ‹Nonempty Γ.V›
+  obtain ⟨p⟩ := Δ.preconnected_iff.mp hΔ (f.mapV a₀) b
+  induction p with
+  | nil => exact ⟨a₀, rfl⟩
+  | cons _ d ih =>
+    obtain ⟨e, he⟩ := hf d.1 (by rwa [d.2.1])
+    exact ⟨Γ.tgt e, by rw [← f.map_tgt, he, d.2.2]⟩
+
+/-- A morphism from a nonempty graph to a preconnected graph is surjective on darts when every
+dart issuing from a vertex of its image is the image of a dart. -/
+theorem Hom.mapE_surjective_of_preconnected {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}}
+    (f : Γ.Hom Δ) [Nonempty Γ.V] (hΔ : Δ.Preconnected)
+    (hf : ∀ d : Δ.E, Δ.src d ∈ Set.range f.mapV → d ∈ Set.range f.mapE) :
+    Function.Surjective f.mapE := fun d =>
+  hf d (f.mapV_surjective_of_preconnected hΔ hf (Δ.src d))
 
 /-- Identity morphism of a Serre graph. -/
 def Hom.id : Γ.Hom Γ where
