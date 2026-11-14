@@ -36,20 +36,21 @@ public section
 
 namespace TauCeti.ClassData
 
-variable {G : Type*} [Group G] [Fintype G] [DecidableEq G]
-variable (d : ClassData G) {F : Type*} [Field F] [Fintype F] [DecidableEq F] [FinEnum F]
-
 @[instance_reducible]
-private def centralCharacterRowOrder : LinearOrder (Fin d.numClasses → F) :=
+private def centralCharacterRowOrder {G : Type*} [Group G] (d : ClassData G) {F : Type*}
+    [FinEnum F] : LinearOrder (Fin d.numClasses → F) :=
   LinearOrder.lift' (fun row ↦ List.ofFn fun i ↦ FinEnum.equiv (row i))
     (fun _ _ h ↦ funext fun i ↦ FinEnum.equiv.injective
       (congrFun (List.ofFn_injective h) i))
 
-omit [Fintype G] [DecidableEq G] [Field F] [Fintype F] [DecidableEq F] in
-private theorem centralCharacterRowOrder_le (a b : Fin d.numClasses → F) :
+private theorem centralCharacterRowOrder_le {G : Type*} [Group G] (d : ClassData G) {F : Type*}
+    [FinEnum F] (a b : Fin d.numClasses → F) :
     @LE.le _ (d.centralCharacterRowOrder (F := F)).toLE a b ↔
       List.ofFn (fun i ↦ FinEnum.equiv (a i)) ≤
         List.ofFn (fun i ↦ FinEnum.equiv (b i)) := Iff.rfl
+
+variable {G : Type*} [Group G] [Fintype G] [DecidableEq G]
+variable (d : ClassData G) {F : Type*} [Field F] [Fintype F] [DecidableEq F] [FinEnum F]
 
 /-- The modular central-character search output, sorted lexicographically by coordinate ranks.
 Only the surviving common-eigenvalue tuples are sorted. -/
