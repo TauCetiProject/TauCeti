@@ -29,6 +29,20 @@ in the overconvergent algebra itself, evaluating the monic polynomial at `Y` by
 series is associated to such an evaluation
 (`washnitzerAlgebra.exists_associated_polynomialToOption`).
 
+## Main results
+
+* `TauCeti.Dagger.washnitzerAlgebra.existsUnique_isUnit_isMonicOfDegree_mul_eq`: unique
+  overconvergent Weierstrass preparation, as the unit-times-monic factorization above.
+* `TauCeti.Dagger.washnitzerAlgebra.exists_isUnit_isMonicOfDegree_mul_eq`: its existence half.
+* `TauCeti.Dagger.washnitzerAlgebra.eq_and_eq_of_isUnit_isMonicOfDegree_mul_eq`: its uniqueness
+  half, which needs no completeness.
+* `TauCeti.Dagger.washnitzerAlgebra.gaussNorm_eq_one_of_isUnit_isMonicOfDegree_mul_eq`: the
+  monic polynomial has unit Gauss norm.
+* `TauCeti.Dagger.washnitzerAlgebra.exists_isUnit_isMonicOfDegree_mul_polynomialToOption_eq`:
+  existence restated in the overconvergent algebra itself.
+* `TauCeti.Dagger.washnitzerAlgebra.exists_associated_polynomialToOption`: every nonzero series is
+  associated to such an evaluation after a change of variables.
+
 ## References
 
 * E. Grosse-Klönne, *Rigid analytic spaces with overconvergent structure sheaf*,
