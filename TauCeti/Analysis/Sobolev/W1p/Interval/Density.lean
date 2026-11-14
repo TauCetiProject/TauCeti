@@ -32,16 +32,16 @@ derivative is close to `g` and whose value differs from `u` by the primitive of 
 `Lᵖ(a, b)` norm at most `(b - a) ‖h - g‖_p`
 (`TauCeti.intervalIntegral.eLpNorm_primitive_le_mul_eLpNorm`).
 
-The restriction `p < ∞` cannot be dropped. The absolute value lies in `W^{1,p}(a, b)` for every
-`p`, with the sign as weak derivative, and when `a < 0 < b` the sign stays at `L^∞` distance at
-least `1` from every continuous derivative.
+The restriction `p < ∞` cannot be dropped. Every corner function `|x - t|` lies in
+`W^{1,p}(a, b)` for every `p`, with a shifted sign as weak derivative. When `a < 0 < b`, the
+sign stays at `L^∞` distance at least `1` from every continuous derivative.
 
 ## Main declarations
 
 * `TauCeti.W1p.dense_contDiff_representatives_Ioo`: for `1 ≤ p < ∞`, the elements of
   `W^{1,p}(a, b)` represented by smooth functions on `ℝ` are dense.
-* `TauCeti.W1p.exists_value_gradient_ae_eq_abs`: `|x|` is an element of `W^{1,p}(a, b)` whose
-  weak derivative is the sign of `x`.
+* `TauCeti.W1p.exists_value_gradient_ae_eq_abs_sub`: `|x - t|` is an element of `W^{1,p}(a, b)`
+  whose weak derivative is the sign of `x - t`.
 * `TauCeti.W1p.one_le_dist_of_gradient_ae_eq_sign`: for `a < 0 < b`, such an element of
   `W^{1,∞}(a, b)` is at distance at least `1` from every element with a `C¹` representative.
 * `TauCeti.W1p.not_dense_contDiff_representatives_Ioo_top`: hence smooth functions are not dense in
@@ -146,35 +146,41 @@ theorem dense_contDiff_representatives_Ioo (hp : p ≠ ⊤) :
     tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hδ
     (fun _ ↦ zero_le) fun n ↦ (hwg n).trans_le (hhg n)⟩
 
-/-- The absolute value is an element of `W^{1,p}(a, b)` for every `1 ≤ p ≤ ∞` on every bounded
-interval, and its weak derivative is the sign of `x`, normalised to `-1` at `x = 0`. -/
-theorem exists_value_gradient_ae_eq_abs (a b : ℝ) :
+/-- Every corner function `|x - t|` is an element of `W^{1,p}(a, b)` for `1 ≤ p ≤ ∞` on every
+bounded interval. Its weak derivative is the sign of `x - t`, normalised to `-1` at `x = t`. -/
+theorem exists_value_gradient_ae_eq_abs_sub (a b t : ℝ) :
     ∃ u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p,
-      W1p.value u =ᵐ[volume.restrict (Ioo a b)] (fun x ↦ |x|) ∧
-      W1p.gradient u =ᵐ[volume.restrict (Ioo a b)] fun x ↦ if 0 < x then 1 else -1 := by
-  set s : ℝ → ℝ := fun x ↦ if 0 < x then 1 else -1 with hs_def
-  have hv : MemLp (fun x : ℝ ↦ |x|) p (volume.restrict (Ioo a b)) := by
-    refine MemLp.of_bound continuous_abs.aestronglyMeasurable (max |a| |b|) ?_
+      W1p.value u =ᵐ[volume.restrict (Ioo a b)] (fun x ↦ |x - t|) ∧
+      W1p.gradient u =ᵐ[volume.restrict (Ioo a b)] fun x ↦ if t < x then 1 else -1 := by
+  set s : ℝ → ℝ := fun x ↦ if t < x then 1 else -1 with hs_def
+  have hv : MemLp (fun x : ℝ ↦ |x - t|) p (volume.restrict (Ioo a b)) := by
+    refine MemLp.of_bound
+      (continuous_abs.comp (continuous_id.sub continuous_const)).aestronglyMeasurable
+      (max |a - t| |b - t|) ?_
     filter_upwards [ae_restrict_mem measurableSet_Ioo] with x hx
     rw [Real.norm_eq_abs, abs_abs]
-    exact abs_le_max_abs_abs hx.1.le hx.2.le
+    exact abs_le_max_abs_abs (sub_le_sub_right hx.1.le t) (sub_le_sub_right hx.2.le t)
   have hg : MemLp s p (volume.restrict (Ioo a b)) := by
     refine MemLp.of_bound (Measurable.ite measurableSet_Ioi measurable_const
       measurable_const).aestronglyMeasurable 1 (Eventually.of_forall fun x ↦ ?_)
-    by_cases hx : 0 < x <;> simp [hs_def, hx]
-  -- Away from `0` the absolute value is differentiable with derivative `s x`.
+    by_cases hx : t < x <;> simp [hs_def, hx]
+  -- Away from the corner `t`, the function is differentiable with derivative `s x`.
   have hderiv : ∀ᵐ x ∂(volume : Measure ℝ), x ∈ (⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ) →
-      HasFDerivAt (fun x : ℝ ↦ |x|) (innerSL ℝ (s x)) x := by
-    filter_upwards [compl_mem_ae_iff.2 (measure_singleton (0 : ℝ))] with x hx _
-    have hx0 : x ≠ 0 := by simpa using hx
-    have hd : HasDerivAt (fun x : ℝ ↦ |x|) (s x) x := by
-      rcases lt_or_gt_of_ne hx0 with hx | hx
-      · simpa [hs_def, hx.not_gt] using hasDerivAt_abs_neg hx
-      · simpa [hs_def, hx] using hasDerivAt_abs_pos hx
+      HasFDerivAt (fun x : ℝ ↦ |x - t|) (innerSL ℝ (s x)) x := by
+    filter_upwards [compl_mem_ae_iff.2 (measure_singleton t)] with x hx _
+    have hxt : x ≠ t := by simpa using hx
+    have hd : HasDerivAt (fun x : ℝ ↦ |x - t|) (s x) x := by
+      rcases lt_or_gt_of_ne hxt with hx | hx
+      · simpa [Function.comp_def, hs_def, hx.not_gt] using
+          (hasDerivAt_abs_neg (sub_neg.2 hx)).comp x ((hasDerivAt_id x).sub_const t)
+      · simpa [Function.comp_def, hs_def, hx] using
+          (hasDerivAt_abs_pos (sub_pos.2 hx)).comp x ((hasDerivAt_id x).sub_const t)
     convert hd.hasFDerivAt using 1
     ext
     simp
-  have hL : LipschitzWith 1 fun x : ℝ ↦ |x| := lipschitzWith_one_norm (E := ℝ)
+  have hL : LipschitzWith 1 (fun x : ℝ ↦ |x - t|) := by
+    simpa only [Function.comp_def, Real.norm_eq_abs, one_mul, sub_eq_add_neg] using
+      (lipschitzWith_one_norm (E := ℝ)).comp (isometry_add_right (-t)).lipschitzWith
   have hweak := LocallyLipschitzOn.hasWeakFDerivOn hL.locallyLipschitz.locallyLipschitzOn hderiv
   refine ⟨W1p.mk (hv.toLp _) (hg.toLp _) ((hweak.congr_ae hv.coeFn_toLp.symm).congr_ae_deriv ?_),
     by simpa using hv.coeFn_toLp, by simpa using hg.coeFn_toLp⟩
@@ -182,9 +188,9 @@ theorem exists_value_gradient_ae_eq_abs (a b : ℝ) :
   rw [hx]
 
 /-- In `W^{1,∞}(a, b)` with `a < 0 < b`, an element whose weak derivative is the sign of `x`,
-such as `|x|` (`TauCeti.W1p.exists_value_gradient_ae_eq_abs`), is at distance at least `1` from
-every element represented by a `C¹` function: a continuous derivative cannot be uniformly close to
-the jump of the sign at `0`. -/
+such as `|x|` (`TauCeti.W1p.exists_value_gradient_ae_eq_abs_sub` at `t = 0`), is at distance at
+least `1` from every element represented by a `C¹` function: a continuous derivative cannot be
+uniformly close to the jump of the sign at `0`. -/
 theorem one_le_dist_of_gradient_ae_eq_sign {a b : ℝ} (ha : a < 0) (hb : 0 < b)
     {u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ ⊤}
     (hu : W1p.gradient u =ᵐ[volume.restrict (Ioo a b)] fun x ↦ if 0 < x then 1 else -1)
@@ -197,18 +203,11 @@ theorem one_le_dist_of_gradient_ae_eq_sign {a b : ℝ} (ha : a < 0) (hb : 0 < b)
     (mu := volume) (Omega := ⟨Ioo a b, isOpen_Ioo⟩) (p := ⊤) isOpen_univ hf.contDiffOn
     isCompact_Icc Ioo_subset_Icc_self (subset_univ _)
   obtain rfl : w = w' := W1p.ext_value (Lp.ext (hw.trans hw'v.symm))
-  set G := W1p.gradient u - W1p.gradient w
-  set r := ‖G‖ with hr_def
-  -- Almost everywhere, the two derivatives differ by at most `r = ‖∇u - ∇w‖_∞`.
+  set r := dist u w
+  -- Almost everywhere, the two derivatives differ by at most the Sobolev distance.
   have hG : ∀ᵐ t ∂μ, |(if 0 < t then 1 else -1) - deriv f t| ≤ r := by
-    filter_upwards [ae_le_eLpNormEssSup (f := G) (μ := μ), Lp.coeFn_sub (W1p.gradient u)
-      (W1p.gradient w), hu, hw'g] with t ht hsub hut hwt
-    rw [hsub, Pi.sub_apply, hut, hwt, gradient_eq_deriv'] at ht
-    have htop := eLpNorm_exponent_top (Lp.aestronglyMeasurable G)
-    rw [← Real.norm_eq_abs, ← toReal_eNorm, hr_def, Lp.norm_def, htop]
-    exact ENNReal.toReal_mono (htop ▸ Lp.eLpNorm_ne_top G) ht
-  have hdist : r ≤ dist u w := by
-    simpa only [dist_eq_norm, r, G, W1p.gradient_sub] using W1p.norm_gradient_le (u - w)
+    filter_upwards [W1p.ae_norm_gradient_sub_le_dist u w, hu, hw'g] with t ht hut hwt
+    simpa only [hut, hwt, gradient_eq_deriv', Real.norm_eq_abs] using ht
   by_contra! hlt
   -- Continuity of `f'` at `0` is incompatible with the jump of the sign there.
   obtain ⟨δ, hδ, hcont⟩ := Metric.continuousAt_iff.1 ((hf.continuous_deriv le_rfl).continuousAt
@@ -245,7 +244,7 @@ theorem not_dense_contDiff_representatives_Ioo_top {a b : ℝ} (ha : a < 0) (hb 
     ¬ Dense {u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ ⊤ |
       ∃ f : ℝ → ℝ, ContDiff ℝ ∞ f ∧ W1p.value u =ᵐ[volume.restrict (Ioo a b)] f} := by
   intro hd
-  obtain ⟨u, -, hu⟩ := exists_value_gradient_ae_eq_abs (p := ⊤) a b
+  obtain ⟨u, -, hu⟩ := exists_value_gradient_ae_eq_abs_sub (p := ⊤) a b 0
   obtain ⟨w, hw, f, hf, hwf⟩ := Metric.dense_iff.1 hd u 1 one_pos
   exact (one_le_dist_of_gradient_ae_eq_sign ha hb hu (hf.of_le (by exact_mod_cast le_top))
     hwf).not_gt (by simpa [dist_comm] using hw)
