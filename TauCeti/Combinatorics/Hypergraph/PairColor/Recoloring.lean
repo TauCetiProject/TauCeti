@@ -31,6 +31,11 @@ rectangles are simultaneously close to their means
 `card κ + 1 ≤ ε ^ 6 * #s` and `card κ + 1 ≤ ε ^ 6 * #t` makes the union bound over the
 `2 ^ (#s + #t)` rectangles and the palette succeed.
 
+## Main definitions
+
+* `TauCeti.PairColorSystem.recolorProduct`: recolor `s ×ˢ t` by `x` and `t ×ˢ s` by reversed colors,
+  preserving all other pair colors.
+
 ## Main results
 
 * `TauCeti.PairColorSystem.exists_recoloring_abs_pairColorDensity_sub_le`: a recoloring between
@@ -59,7 +64,7 @@ variable {κ V : Type*}
 open Classical in
 /-- Recolor the pairs from `s` to `t` by `x`, the pairs from `t` to `s` by the reversed colors,
 and keep all other colors of `S`. -/
-private noncomputable def recolorProduct (S : PairColorSystem κ V) {s t : Finset V}
+noncomputable def recolorProduct (S : PairColorSystem κ V) {s t : Finset V}
     (hst : Disjoint s t) (x : V × V → κ) : PairColorSystem κ V where
   color q :=
     if q.1 ∈ s ×ˢ t then x q.1 else if q.1.swap ∈ s ×ˢ t then S.rev (x q.1.swap) else S.color q
@@ -78,13 +83,20 @@ private noncomputable def recolorProduct (S : PairColorSystem κ V) {s t : Finse
 
 variable {S : PairColorSystem κ V} {s t : Finset V} (hst : Disjoint s t) (x : V × V → κ)
 
-private theorem colorOfPair_recolorProduct_of_mem {u v : V} (h : (u, v) ∈ s ×ˢ t) :
+/-- `recolorProduct` preserves the palette reversal of `S`. -/
+@[simp]
+theorem recolorProduct_rev : (S.recolorProduct hst x).rev = S.rev :=
+  (rfl)
+
+/-- On `s ×ˢ t`, `recolorProduct` assigns the prescribed color `x (u, v)`. -/
+theorem colorOfPair_recolorProduct_of_mem {u v : V} (h : (u, v) ∈ s ×ˢ t) :
     (S.recolorProduct hst x).colorOfPair u v = some (x (u, v)) := by
   have huv : u ≠ v := hst.forall_ne_finset (mem_product.1 h).1 (mem_product.1 h).2
   rw [colorOfPair_of_ne _ huv]
   simp [recolorProduct, h]
 
-private theorem colorOfPair_recolorProduct_of_not_mem {u v : V} (hs : u ∈ s → v ∉ t)
+/-- Outside `s ×ˢ t` and `t ×ˢ s`, `recolorProduct` keeps the colors of `S`. -/
+theorem colorOfPair_recolorProduct_of_not_mem {u v : V} (hs : u ∈ s → v ∉ t)
     (ht : u ∈ t → v ∉ s) : (S.recolorProduct hst x).colorOfPair u v = S.colorOfPair u v := by
   by_cases huv : u = v
   · simp [huv]

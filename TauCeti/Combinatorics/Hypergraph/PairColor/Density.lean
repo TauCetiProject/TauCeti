@@ -195,4 +195,18 @@ theorem pairColorDensity_comap {W : Type*} (S : PairColorSystem κ W) (f : V ↪
     PairColorSystem.colorOfPair_comap, ne_eq, f.injective.eq_iff, card_map]
   rfl
 
+/-- Renaming the palette along an equivalence renames the colors in `pairColorDensity`. -/
+@[simp]
+theorem pairColorDensity_relabel {κ' : Type*} (S : PairColorSystem κ V) (e : κ ≃ κ')
+    (c : κ') (s t : Finset V) :
+    pairColorDensity (S.relabel e) c s t = pairColorDensity S (e.symm c) s t := by
+  classical
+  have hf : {p ∈ s ×ˢ t | (S.relabel e).colorOfPair p.1 p.2 = some c} =
+      {p ∈ s ×ˢ t | S.colorOfPair p.1 p.2 = some (e.symm c)} :=
+    filter_congr fun p _ ↦ by
+      rw [PairColorSystem.colorOfPair_relabel, Option.map_eq_some_iff]
+      exact ⟨fun ⟨a, ha, hac⟩ ↦ by rwa [← hac, e.symm_apply_apply],
+        fun ha ↦ ⟨e.symm c, ha, e.apply_symm_apply c⟩⟩
+  simp only [pairColorDensity_def, hf]
+
 end TauCeti

@@ -70,7 +70,10 @@ private theorem exists_local_recoloring [Fintype κ] (hε : 0 < ε)
 
 variable (order : LinearOrder P.parts) (T : P.parts → P.parts → PairColorSystem κ V)
 
-private theorem exists_cellwise_recoloring
+/-- Glue a family `T` of local pair-color systems indexed by pairs of parts of `P` along a linear
+order `order` on `P.parts`, selecting `T (min A B) (max A B)` on `A ×ˢ B` so that all orientations
+remain coherent with `S.rev`. -/
+theorem exists_cellwise_recoloring
     (hrev : ∀ A B, (T A B).rev = S.rev) :
     ∃ R : PairColorSystem κ V, R.rev = S.rev ∧
       ∀ A B : P.parts, order.le A B → ∀ x ∈ A.1, ∀ y ∈ B.1,
