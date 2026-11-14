@@ -72,10 +72,11 @@ vacuously about the trivial character.
   are cube-root-of-unity valued**, over arbitrary commutative coefficients.
 * `TauCeti.card_monoidHom_alternatingGroup`: **`A₄` has exactly three linear characters**, with
   `TauCeti.exists_monoidHom_alternatingGroup_ne_one` the corollary that one of them is nontrivial.
-* `TauCeti.monoidHom_alternatingGroup_eq_one_or_eq_or_eq_inv`: **the linear characters of `A₄` are
-  `1`, `χ` and `χ⁻¹`** for any nontrivial `χ`.
-* `TauCeti.exists_comp_conjNormal_alternatingGroup_eq`: **the two nontrivial linear characters of
-  `A₄` form a single orbit** of the conjugation action of `Equiv.Perm α`.
+* `TauCeti.monoidHom_alternatingGroup_eq_one_or_eq_or_eq_inv`: **the linear characters of an
+  alternating group are `1`, `χ` and `χ⁻¹`** for any nontrivial `χ`.
+* `TauCeti.exists_comp_conjNormal_alternatingGroup_eq`: **the nontrivial linear characters of an
+  alternating group form a single orbit** of the conjugation action of `Equiv.Perm α`; for `A₄`
+  these are the two characters `χ` and `χ⁻¹`.
 
 ## Implementation notes
 
@@ -121,12 +122,6 @@ private theorem map_conjNormal_alternatingGroup_of_fixed {s : Perm α}
         rw [← MulAut.mul_apply, ← map_mul, inv_mul_cancel_right]
     _ = χ x := (map_conjNormal_val χ ⟨g * s⁻¹, hgs⟩ _).trans (h x)
 
-/-- The three-cycles generate the alternating group. -/
-private theorem closure_isThreeCycle_alternatingGroup :
-    Subgroup.closure {c : alternatingGroup α | (c : Perm α).IsThreeCycle} = ⊤ := by
-  rw [← closure_three_cycles_eq_alternating]
-  exact Subgroup.closure_closure_coe_preimage
-
 /-- **A linear character of the alternating group fixed by conjugation by an odd permutation is
 trivial.** Equivalently, the conjugation action of `Equiv.Perm α` on the linear characters of
 `alternatingGroup α` has only the trivial character as a fixed point. -/
@@ -134,7 +129,7 @@ theorem eq_one_of_map_conjNormal_eq_alternatingGroup {s : Perm α} (hs : s ∉ a
     (h : ∀ x : alternatingGroup α, χ (MulAut.conjNormal s x) = χ x) : χ = 1 := by
   have hall := map_conjNormal_alternatingGroup_of_fixed χ hs h
   -- Three-cycles generate the alternating group, so it suffices that `χ` kills each of them.
-  refine eq_of_eqOn_dense closure_isThreeCycle_alternatingGroup
+  refine eq_of_eqOn_dense alternatingGroup.closure_isThreeCycles_eq_top
     fun c (hc : (c : Perm α).IsThreeCycle) => ?_
   -- A three-cycle is conjugate in `Equiv.Perm α` to its inverse, so its value squares to `1`.
   obtain ⟨g, hg⟩ := isConj_iff.mp (isConj_iff_cycleType_eq.mpr (cycleType_inv (c : Perm α)).symm)
@@ -245,7 +240,7 @@ monoid**, over arbitrary commutative coefficients: the three-cycles generate the
 and have order three. -/
 @[simp]
 theorem monoidHom_alternatingGroup_pow_three (χ : alternatingGroup α →* M) : χ ^ 3 = 1 :=
-  MonoidHom.eq_of_eqOn_dense MonoidHom.closure_isThreeCycle_alternatingGroup
+  MonoidHom.eq_of_eqOn_dense alternatingGroup.closure_isThreeCycles_eq_top
     fun c (hc : (c : Perm α).IsThreeCycle) => by
       rw [MonoidHom.pow_apply, MonoidHom.one_apply, ← map_pow, ← hc.orderOf,
         Subgroup.orderOf_coe, pow_orderOf_eq_one, map_one]
@@ -325,16 +320,18 @@ theorem monoidHom_alternatingGroup_eq_one_or_eq_or_eq_inv
   have : n % 3 < 3 := n.mod_lt three_pos
   interval_cases n % 3 <;> simp [hsq]
 
-/-- **The two nontrivial linear characters of `A₄` make up a single `S₄`-orbit**: the conjugation
-action of `Equiv.Perm α` is transitive on them. -/
-theorem exists_comp_conjNormal_alternatingGroup_eq (hα : Nat.card α = 4)
+/-- **The nontrivial linear characters of an alternating group make up a single orbit** of the
+conjugation action of `Equiv.Perm α`: for `A₄` they are the two characters `χ` and `χ⁻¹`, which
+make up a single `S₄`-orbit. -/
+theorem exists_comp_conjNormal_alternatingGroup_eq
     {χ ψ : alternatingGroup α →* Mˣ} (hχ : χ ≠ 1) (hψ : ψ ≠ 1) :
     ∃ s : Perm α, χ.comp (MulAut.conjNormal s : MulAut (alternatingGroup α)) = ψ := by
   rcases monoidHom_alternatingGroup_eq_one_or_eq_or_eq_inv hχ ψ with h | rfl | rfl
   · exact absurd h hψ
   · exact ⟨1, by ext; simp⟩
-  · -- An odd permutation inverts `χ`.
-    have : Nontrivial α := Finite.one_lt_card_iff_nontrivial.mp (by omega)
+  · -- An odd permutation inverts `χ`; one exists, since `χ ≠ 1` forces `α` to be nontrivial.
+    rcases subsingleton_or_nontrivial α with hα | hα
+    · exact absurd (MonoidHom.ext fun x => by rw [Subsingleton.elim x 1, map_one, map_one]) hχ
     obtain ⟨s, hs⟩ := sign_surjective α (-1)
     have hs' : s ∉ alternatingGroup α := by
       rw [mem_alternatingGroup, hs]
