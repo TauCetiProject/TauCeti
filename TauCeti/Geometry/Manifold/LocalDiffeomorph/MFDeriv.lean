@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.MFDeriv.Defs
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
@@ -24,6 +25,9 @@ For partial diffeomorphisms `ψ`, `χ`, `φ` into normed spaces, such as charts,
 `ψ ∘ φ⁻¹` are differentiable, and their derivatives compose by the chain rule.
 
 ## Main results
+
+* `IsLocalDiffeomorphAt.finrank_eq`: a local diffeomorphism of nonzero regularity has source
+  and target model spaces of equal dimension.
 
 * `OpenPartialHomeomorph.mfderiv_symm_apply_mfderiv_apply`,
   `OpenPartialHomeomorph.mfderiv_apply_mfderiv_symm_apply`: where an open partial homeomorphism
@@ -52,6 +56,14 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
   {n : WithTop ℕ∞}
+
+/-- A local diffeomorphism of nonzero regularity has source and target model spaces of equal
+dimension. -/
+theorem IsLocalDiffeomorphAt.finrank_eq {f : M → N} {x : M}
+    (hf : IsLocalDiffeomorphAt I J n f x) (hn : n ≠ 0) :
+    Module.finrank 𝕜 E = Module.finrank 𝕜 F := by
+  simpa only [TauCeti.finrank_tangentSpace] using
+    (hf.mfderivToContinuousLinearEquiv hn).toLinearEquiv.finrank_eq
 
 namespace OpenPartialHomeomorph
 

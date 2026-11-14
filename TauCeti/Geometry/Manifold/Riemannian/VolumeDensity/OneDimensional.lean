@@ -9,7 +9,6 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.ChangeOfVariables
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 import TauCeti.Geometry.Manifold.Riemannian.ArcLength
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Null

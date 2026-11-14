@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 public import Mathlib.Analysis.InnerProductSpace.NormDet
-public import Mathlib.Geometry.Manifold.LocalDiffeomorph
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Geometry.Manifold.Polish
 import TauCeti.MeasureTheory.Covering.DisjointCover
@@ -373,6 +373,7 @@ theorem setLIntegral_riemannianVolume_image_of_subset_chart
   simp only [Function.comp_apply]
   rw [riemannianJacobian_comp_continuousLinearEquiv A c (hf _ hx), hcb]
 
+omit [MeasurableSpace M] [BorelSpace M] [LindelofSpace M] in
 private theorem aemeasurable_ofReal_riemannianJacobian_of_model
     (b : Module.Basis ι ℝ E) {f : E → M} {s : Set E} (hs : MeasurableSet s)
     (hf : ∀ x ∈ s, MDifferentiableAt 𝓘(ℝ, E) I f x) :
@@ -383,18 +384,21 @@ private theorem aemeasurable_ofReal_riemannianJacobian_of_model
     simpa using (inferInstance : IsManifold I 1 M)
   have : IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x) :=
     IsContinuousRiemannianBundle.toIsContMDiffZero
-  obtain ⟨t, ht, hcover⟩ := LindelofSpace.elim_nhds_subcover
-    (fun x : M ↦ (chartAt H x).source) fun x ↦ chart_source_mem_nhds H x
+  obtain ⟨t, ht, -, hcover⟩ :=
+    ((HereditarilyLindelofSpace.isLindelof s).image_of_continuousOn hc).elim_nhds_subcover
+      (fun x : M ↦ (chartAt H x).source) fun x _ ↦ chart_source_mem_nhds H x
   have : Countable t := ht.to_subtype
   let a := fun α : t ↦ f ⁻¹' (chartAt H α.val).source ∩ s
   have ha (α : t) : MeasurableSet (a α) := by
     dsimp only [a]
     rw [inter_comm, ← Subtype.image_preimage_coe]
     exact (MeasurableEmbedding.subtype_coe hs).measurableSet_image.mpr
-      (hc.domRestrict.measurable (chartAt H α.val).open_source.measurableSet)
+      ((chartAt H α.val).open_source.preimage hc.domRestrict).measurableSet
   have hUnion : ⋃ α, a α = s := by
-    simp only [a, ← iUnion_inter, ← preimage_iUnion, iUnion_subtype, hcover,
-      preimage_univ, univ_inter]
+    apply Subset.antisymm (iUnion_subset fun _ ↦ inter_subset_right)
+    intro x hx
+    obtain ⟨α, hα, hxα⟩ := mem_iUnion₂.mp (hcover (mem_image_of_mem f hx))
+    exact mem_iUnion.mpr ⟨⟨α, hα⟩, hxα, hx⟩
   -- On each chart piece, the coordinate derivative is a.e. measurable and the metric is continuous.
   have hfin : AEMeasurable (fun x ↦ ENNReal.ofReal
       (riemannianJacobian (I := I) (Module.finBasis ℝ E) f x)) (b.addHaar.restrict s) := by
@@ -434,6 +438,7 @@ private theorem aemeasurable_ofReal_riemannianJacobian_of_model
     rw [← ENNReal.ofReal_mul (abs_nonneg _),
       ← riemannianJacobian_changeBasis, riemannianJacobian_reindex]
 
+omit [MeasurableSpace M] [BorelSpace M] [LindelofSpace M] in
 /-- The Jacobian weight is almost everywhere measurable on a measurable carrier on which the
 map is differentiable at every point, when the source and target model have equal dimension. -/
 theorem _root_.Module.Basis.aemeasurable_ofReal_riemannianJacobian
@@ -538,44 +543,6 @@ theorem _root_.Module.Basis.map_withDensity_riemannianJacobian_of_injOn
     withDensity_apply', Measure.restrict_restrict' hs]
   exact hcov.symm
 
-/-- A `C^n` partial diffeomorphism, with `n ≠ 0`, carries the Jacobian-weighted coordinate measure
-on its source to Riemannian volume restricted to its target. -/
-theorem _root_.PartialDiffeomorph.map_withDensity_riemannianJacobian
-    {n : ℕ∞ω} (Φ : PartialDiffeomorph 𝓘(ℝ, F) I F M n) (hn : n ≠ 0)
-    (b : Module.Basis ι ℝ F) :
-    Measure.map Φ ((b.addHaar.restrict Φ.source).withDensity
-      (fun x ↦ ENNReal.ofReal (riemannianJacobian (I := I) b Φ x))) =
-      (riemannianVolume I M).restrict Φ.target := by
-  obtain hsource | ⟨x, hx⟩ := Φ.source.eq_empty_or_nonempty
-  · have htarget : Φ.target = ∅ := by
-      rw [← Φ.toPartialEquiv.image_source_eq_target, hsource, image_empty]
-    simp [hsource, htarget]
-  have hdim : Module.finrank ℝ F = Module.finrank ℝ E :=
-    (IsLocalDiffeomorphAt.mfderivToContinuousLinearEquiv
-      (Φ.isLocalDiffeomorphAt 𝓘(ℝ, F) I n hx) hn).toLinearEquiv.finrank_eq
-  simpa only [Φ.toPartialEquiv.image_source_eq_target] using
-    b.map_withDensity_riemannianJacobian_of_injOn hdim Φ.open_source.measurableSet
-      Φ.toPartialEquiv.injOn (fun _ hx ↦ Φ.mdifferentiableAt hn hx)
-
-/-- Change of variables over the target of a `C^n` partial diffeomorphism, with `n ≠ 0`, for
-arbitrary nonnegative weights. -/
-theorem _root_.PartialDiffeomorph.setLIntegral_riemannianVolume_eq
-    {n : ℕ∞ω} (Φ : PartialDiffeomorph 𝓘(ℝ, F) I F M n) (hn : n ≠ 0)
-    (b : Module.Basis ι ℝ F) (φ : M → ℝ≥0∞) :
-    ∫⁻ y in Φ.target, φ y ∂riemannianVolume I M =
-      ∫⁻ x in Φ.source, ENNReal.ofReal (riemannianJacobian (I := I) b Φ x) * φ (Φ x)
-        ∂b.addHaar := by
-  obtain hsource | ⟨x, hx⟩ := Φ.source.eq_empty_or_nonempty
-  · have htarget : Φ.target = ∅ := by
-      rw [← Φ.toPartialEquiv.image_source_eq_target, hsource, image_empty]
-    simp [hsource, htarget]
-  have hdim : Module.finrank ℝ F = Module.finrank ℝ E :=
-    (IsLocalDiffeomorphAt.mfderivToContinuousLinearEquiv
-      (Φ.isLocalDiffeomorphAt 𝓘(ℝ, F) I n hx) hn).toLinearEquiv.finrank_eq
-  simpa only [Φ.toPartialEquiv.image_source_eq_target] using
-    b.setLIntegral_riemannianVolume_image_of_injOn hdim Φ.open_source.measurableSet
-      Φ.toPartialEquiv.injOn (fun _ hx ↦ Φ.mdifferentiableAt hn hx) φ
-
 /-- The subtype restriction of an injective differentiable map pushes the Jacobian-weighted
 coordinate measure to Riemannian volume on its image. -/
 theorem _root_.Module.Basis.restrict_map_withDensity_riemannianJacobian_of_injOn
@@ -640,42 +607,6 @@ theorem _root_.Module.Basis.integrableOn_riemannianVolume_image_iff_of_injOn
   simp only [ENNReal.toReal_ofReal (riemannianJacobian_nonneg b f _), Function.comp_apply,
     IntegrableOn]
 
-/-- Bochner change of variables over the target of a `C^n` partial diffeomorphism, for `n ≠ 0`.
-No measurability or integrability assumption on the integrand is needed. -/
-theorem _root_.PartialDiffeomorph.setIntegral_riemannianVolume_eq
-    {n : ℕ∞ω} (Φ : PartialDiffeomorph 𝓘(ℝ, F) I F M n) (hn : n ≠ 0)
-    (b : Module.Basis ι ℝ F) (φ : M → G) :
-    ∫ y in Φ.target, φ y ∂riemannianVolume I M =
-      ∫ x in Φ.source, riemannianJacobian (I := I) b Φ x • φ (Φ x) ∂b.addHaar := by
-  obtain hsource | ⟨x, hx⟩ := Φ.source.eq_empty_or_nonempty
-  · have htarget : Φ.target = ∅ := by
-      rw [← Φ.toPartialEquiv.image_source_eq_target, hsource, image_empty]
-    simp [hsource, htarget]
-  have hdim : Module.finrank ℝ F = Module.finrank ℝ E :=
-    (IsLocalDiffeomorphAt.mfderivToContinuousLinearEquiv
-      (Φ.isLocalDiffeomorphAt 𝓘(ℝ, F) I n hx) hn).toLinearEquiv.finrank_eq
-  simpa only [Φ.toPartialEquiv.image_source_eq_target] using
-    b.setIntegral_riemannianVolume_image_of_injOn hdim Φ.open_source.measurableSet
-      Φ.toPartialEquiv.injOn (fun _ hx ↦ Φ.mdifferentiableAt hn hx) φ
-
-/-- Integrability on the target of a `C^n` partial diffeomorphism, for `n ≠ 0`, is equivalent
-to integrability of the Jacobian-weighted pullback on its source. -/
-theorem _root_.PartialDiffeomorph.integrableOn_riemannianVolume_iff
-    {n : ℕ∞ω} (Φ : PartialDiffeomorph 𝓘(ℝ, F) I F M n) (hn : n ≠ 0)
-    (b : Module.Basis ι ℝ F) (φ : M → G) :
-    IntegrableOn φ Φ.target (riemannianVolume I M) ↔
-      IntegrableOn (fun x ↦ riemannianJacobian (I := I) b Φ x • φ (Φ x)) Φ.source b.addHaar := by
-  obtain hsource | ⟨x, hx⟩ := Φ.source.eq_empty_or_nonempty
-  · have htarget : Φ.target = ∅ := by
-      rw [← Φ.toPartialEquiv.image_source_eq_target, hsource, image_empty]
-    simp [hsource, htarget]
-  have hdim : Module.finrank ℝ F = Module.finrank ℝ E :=
-    (IsLocalDiffeomorphAt.mfderivToContinuousLinearEquiv
-      (Φ.isLocalDiffeomorphAt 𝓘(ℝ, F) I n hx) hn).toLinearEquiv.finrank_eq
-  simpa only [Φ.toPartialEquiv.image_source_eq_target] using
-    b.integrableOn_riemannianVolume_image_iff_of_injOn hdim Φ.open_source.measurableSet
-      Φ.toPartialEquiv.injOn (fun _ hx ↦ Φ.mdifferentiableAt hn hx) φ
-
 /-- An injective local diffeomorphism on a measurable carrier pushes its Jacobian-weighted
 coordinate measure to Riemannian volume on its image. -/
 theorem _root_.IsLocalDiffeomorphOn.map_withDensity_riemannianJacobian
@@ -686,8 +617,7 @@ theorem _root_.IsLocalDiffeomorphOn.map_withDensity_riemannianJacobian
       (riemannianVolume I M).restrict (g '' s) := by
   obtain rfl | ⟨x, hx⟩ := s.eq_empty_or_nonempty
   · simp
-  have hdim : Module.finrank ℝ F = Module.finrank ℝ E :=
-    ((hg ⟨x, hx⟩).mfderivToContinuousLinearEquiv hn).toLinearEquiv.finrank_eq
+  have hdim := (hg ⟨x, hx⟩).finrank_eq hn
   exact b.map_withDensity_riemannianJacobian_of_injOn hdim hs hinj
     (fun x hx ↦ (hg ⟨x, hx⟩).mdifferentiableAt hn)
 
@@ -701,8 +631,7 @@ theorem _root_.IsLocalDiffeomorphOn.setLIntegral_riemannianVolume_image
       ∫⁻ x in s, ENNReal.ofReal (riemannianJacobian (I := I) b g x) * φ (g x) ∂b.addHaar := by
   obtain rfl | ⟨x, hx⟩ := s.eq_empty_or_nonempty
   · simp
-  have hdim : Module.finrank ℝ F = Module.finrank ℝ E :=
-    ((hg ⟨x, hx⟩).mfderivToContinuousLinearEquiv hn).toLinearEquiv.finrank_eq
+  have hdim := (hg ⟨x, hx⟩).finrank_eq hn
   exact b.setLIntegral_riemannianVolume_image_of_injOn hdim hs hinj
     (fun x hx ↦ (hg ⟨x, hx⟩).mdifferentiableAt hn) φ
 
@@ -716,8 +645,7 @@ theorem _root_.IsLocalDiffeomorphOn.setIntegral_riemannianVolume_image
       ∫ x in s, riemannianJacobian (I := I) b g x • φ (g x) ∂b.addHaar := by
   obtain rfl | ⟨x, hx⟩ := s.eq_empty_or_nonempty
   · simp
-  have hdim : Module.finrank ℝ F = Module.finrank ℝ E :=
-    ((hg ⟨x, hx⟩).mfderivToContinuousLinearEquiv hn).toLinearEquiv.finrank_eq
+  have hdim := (hg ⟨x, hx⟩).finrank_eq hn
   exact b.setIntegral_riemannianVolume_image_of_injOn hdim hs hinj
     (fun x hx ↦ (hg ⟨x, hx⟩).mdifferentiableAt hn) φ
 
@@ -731,10 +659,59 @@ theorem _root_.IsLocalDiffeomorphOn.integrableOn_riemannianVolume_image_iff
       IntegrableOn (fun x ↦ riemannianJacobian (I := I) b g x • φ (g x)) s b.addHaar := by
   obtain rfl | ⟨x, hx⟩ := s.eq_empty_or_nonempty
   · simp
-  have hdim : Module.finrank ℝ F = Module.finrank ℝ E :=
-    ((hg ⟨x, hx⟩).mfderivToContinuousLinearEquiv hn).toLinearEquiv.finrank_eq
+  have hdim := (hg ⟨x, hx⟩).finrank_eq hn
   exact b.integrableOn_riemannianVolume_image_iff_of_injOn hdim hs hinj
     (fun x hx ↦ (hg ⟨x, hx⟩).mdifferentiableAt hn) φ
+
+/-- A `C^n` partial diffeomorphism, with `n ≠ 0`, carries the Jacobian-weighted coordinate measure
+on its source to Riemannian volume restricted to its target. -/
+theorem _root_.PartialDiffeomorph.map_withDensity_riemannianJacobian
+    {n : ℕ∞ω} (Φ : PartialDiffeomorph 𝓘(ℝ, F) I F M n) (hn : n ≠ 0)
+    (b : Module.Basis ι ℝ F) :
+    Measure.map Φ ((b.addHaar.restrict Φ.source).withDensity
+      (fun x ↦ ENNReal.ofReal (riemannianJacobian (I := I) b Φ x))) =
+      (riemannianVolume I M).restrict Φ.target := by
+  simpa only [Φ.toPartialEquiv.image_source_eq_target] using
+    IsLocalDiffeomorphOn.map_withDensity_riemannianJacobian
+      (fun x ↦ Φ.isLocalDiffeomorphAt 𝓘(ℝ, F) I n x.2) hn Φ.open_source.measurableSet
+      Φ.toPartialEquiv.injOn b
+
+/-- Change of variables over the target of a `C^n` partial diffeomorphism, with `n ≠ 0`, for
+arbitrary nonnegative weights. -/
+theorem _root_.PartialDiffeomorph.setLIntegral_riemannianVolume_eq
+    {n : ℕ∞ω} (Φ : PartialDiffeomorph 𝓘(ℝ, F) I F M n) (hn : n ≠ 0)
+    (b : Module.Basis ι ℝ F) (φ : M → ℝ≥0∞) :
+    ∫⁻ y in Φ.target, φ y ∂riemannianVolume I M =
+      ∫⁻ x in Φ.source, ENNReal.ofReal (riemannianJacobian (I := I) b Φ x) * φ (Φ x)
+        ∂b.addHaar := by
+  simpa only [Φ.toPartialEquiv.image_source_eq_target] using
+    IsLocalDiffeomorphOn.setLIntegral_riemannianVolume_image
+      (fun x ↦ Φ.isLocalDiffeomorphAt 𝓘(ℝ, F) I n x.2) hn Φ.open_source.measurableSet
+      Φ.toPartialEquiv.injOn b φ
+
+/-- Bochner change of variables over the target of a `C^n` partial diffeomorphism, for `n ≠ 0`.
+No measurability or integrability assumption on the integrand is needed. -/
+theorem _root_.PartialDiffeomorph.setIntegral_riemannianVolume_eq
+    {n : ℕ∞ω} (Φ : PartialDiffeomorph 𝓘(ℝ, F) I F M n) (hn : n ≠ 0)
+    (b : Module.Basis ι ℝ F) (φ : M → G) :
+    ∫ y in Φ.target, φ y ∂riemannianVolume I M =
+      ∫ x in Φ.source, riemannianJacobian (I := I) b Φ x • φ (Φ x) ∂b.addHaar := by
+  simpa only [Φ.toPartialEquiv.image_source_eq_target] using
+    IsLocalDiffeomorphOn.setIntegral_riemannianVolume_image
+      (fun x ↦ Φ.isLocalDiffeomorphAt 𝓘(ℝ, F) I n x.2) hn Φ.open_source.measurableSet
+      Φ.toPartialEquiv.injOn b φ
+
+/-- Integrability on the target of a `C^n` partial diffeomorphism, for `n ≠ 0`, is equivalent
+to integrability of the Jacobian-weighted pullback on its source. -/
+theorem _root_.PartialDiffeomorph.integrableOn_riemannianVolume_iff
+    {n : ℕ∞ω} (Φ : PartialDiffeomorph 𝓘(ℝ, F) I F M n) (hn : n ≠ 0)
+    (b : Module.Basis ι ℝ F) (φ : M → G) :
+    IntegrableOn φ Φ.target (riemannianVolume I M) ↔
+      IntegrableOn (fun x ↦ riemannianJacobian (I := I) b Φ x • φ (Φ x)) Φ.source b.addHaar := by
+  simpa only [Φ.toPartialEquiv.image_source_eq_target] using
+    IsLocalDiffeomorphOn.integrableOn_riemannianVolume_image_iff
+      (fun x ↦ Φ.isLocalDiffeomorphAt 𝓘(ℝ, F) I n x.2) hn Φ.open_source.measurableSet
+      Φ.toPartialEquiv.injOn b φ
 
 end Chart
 
