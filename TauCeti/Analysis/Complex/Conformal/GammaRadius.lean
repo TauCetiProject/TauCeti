@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
-import Mathlib.Analysis.Complex.ExponentialBounds
 import Mathlib.NumberTheory.LSeries.Dirichlet
 import TauCeti.Analysis.SpecialFunctions.Gamma.TaylorSeries
 import TauCeti.NumberTheory.LSeries.RiemannZeta
@@ -435,9 +434,8 @@ private theorem oddZetaRadiusTerm_le {N : ℕ} (hN : 2 ≤ N) (k : ℕ) :
   have hzeta0 : 0 < (riemannZeta (2 * k + 3)).re := by
     rw [hcast]
     exact riemannZeta_re_pos_of_one_lt (by linarith)
-  have hzeta2 : (riemannZeta (2 * k + 3)).re ≤ 2 := by
-    rw [hcast]
-    exact (riemannZeta_re_lt_two (by linarith)).le
+  have hzeta2 : (riemannZeta (2 * k + 3)).re ≤ 2 :=
+    (riemannZeta_re_lt_two (by simp; linarith)).le
   have h2pow : (2 ^ (2 * k + 2) - 1 : ℝ) ≤ 2 * 2 ^ (2 * k + 1) := by
     have he : 2 * k + 2 = (2 * k + 1) + 1 := by omega
     rw [he, pow_succ']
@@ -540,13 +538,11 @@ private theorem log_gammaRadius_sub_div_bounds {N : ℕ} (hN : 2 ≤ N) :
   refine ⟨by linarith [oddZetaRadiusTerm_pos hN 0, oddZetaRadiusTerm_pos hN 1, hRpos], ?_⟩
   have ht0 : oddZetaRadiusTerm N 0 ≤ 1 / (N : ℝ) ^ 3 := by
     rw [oddZetaRadiusTerm_zero, div_le_div_iff₀ (by positivity) (by positivity)]
-    have hz3 : (riemannZeta 3).re ≤ 2 := by
-      simpa using (riemannZeta_re_lt_two (s := 3) (by norm_num)).le
+    have hz3 : (riemannZeta 3).re ≤ 2 := (riemannZeta_re_lt_two (by norm_num)).le
     nlinarith [pow_pos hN0 3]
   have ht1 : oddZetaRadiusTerm N 1 ≤ (3 / 16 : ℝ) / (N : ℝ) ^ 3 := by
     rw [oddZetaRadiusTerm_one, div_le_div_iff₀ (by positivity) (by positivity)]
-    have hz5 : (riemannZeta 5).re ≤ 2 := by
-      simpa using (riemannZeta_re_lt_two (s := 5) (by norm_num)).le
+    have hz5 : (riemannZeta 5).re ≤ 2 := (riemannZeta_re_lt_two (by norm_num)).le
     have hN5 : 4 * (N : ℝ) ^ 3 ≤ (N : ℝ) ^ 5 := by
       calc 4 * (N : ℝ) ^ 3 ≤ (N : ℝ) ^ 2 * (N : ℝ) ^ 3 :=
             mul_le_mul_of_nonneg_right (by nlinarith) (by positivity)

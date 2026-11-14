@@ -65,19 +65,6 @@ private theorem riemannZeta_nat_add_two_eq_ofReal (k : ℕ) :
     exact riemannZeta_im_eq_zero_of_one_lt (by linarith)
   exact Complex.ext rfl him
 
-private theorem norm_riemannZeta_nat_add_two_le (k : ℕ) : ‖riemannZeta (k + 2)‖ ≤ 2 := by
-  have hcast : ((k : ℂ) + 2) = (((k : ℝ) + 2 : ℝ) : ℂ) := by
-    push_cast
-    rfl
-  have hpos : 0 < (riemannZeta (k + 2)).re := by
-    rw [hcast]
-    exact riemannZeta_re_pos_of_one_lt (by linarith)
-  have hlt : (riemannZeta (k + 2)).re < 2 := by
-    rw [hcast]
-    exact TauCeti.riemannZeta_re_lt_two (by linarith)
-  rw [riemannZeta_nat_add_two_eq_ofReal, norm_real, Real.norm_eq_abs, abs_of_pos hpos]
-  exact hlt.le
-
 namespace Complex
 
 private theorem hasSum_gaussTerm_geometric {z : ℂ} (hz : ‖z‖ < 1) (n : ℕ) :
@@ -245,7 +232,7 @@ private theorem summable_logGammaSeriesTerm {z : ℂ} (hz : ‖z‖ < 1) :
   calc ‖riemannZeta (k + 2)‖ * ‖z‖ ^ (k + 2) / ‖(k : ℂ) + 2‖
       ≤ ‖riemannZeta (k + 2)‖ * ‖z‖ ^ (k + 2) := div_le_self (by positivity) hk
     _ ≤ 2 * ‖z‖ ^ (k + 2) :=
-      mul_le_mul_of_nonneg_right (norm_riemannZeta_nat_add_two_le k) (by positivity)
+      mul_le_mul_of_nonneg_right (norm_riemannZeta_lt_two (by simp)).le (by positivity)
 
 private theorem hasDerivAt_logGammaSeriesTerm (k : ℕ) (w : ℂ) :
     HasDerivAt (logGammaSeriesTerm k) ((-1) ^ k * riemannZeta (k + 2) * w ^ (k + 1)) w := by
@@ -279,7 +266,7 @@ private theorem hasDerivAt_tsum_logGammaSeriesTerm {r : ℝ} (hr0 : 0 < r) (hr1 
     (fun k y hy ↦ by
       have hyr : ‖y‖ ≤ r := le_of_lt (by simpa using hy)
       rw [norm_mul, norm_mul, norm_pow, norm_neg, norm_one, one_pow, one_mul, norm_pow]
-      exact mul_le_mul (norm_riemannZeta_nat_add_two_le k)
+      exact mul_le_mul (norm_riemannZeta_lt_two (by simp)).le
         (pow_le_pow_left₀ (norm_nonneg y) hyr (k + 1)) (by positivity) (by positivity))
     (mem_ball_self hr0) h0 hw
   have hw1 : ‖w‖ < 1 := (by simpa using hw : ‖w‖ < r).trans hr1
