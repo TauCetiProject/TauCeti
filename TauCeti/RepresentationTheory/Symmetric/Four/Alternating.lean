@@ -10,6 +10,7 @@ public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Cyclotomic.Alter
 public import TauCeti.RepresentationTheory.Induction.Clifford.Alternating.FixedConstituents
 public import TauCeti.RepresentationTheory.Induction.Clifford.Alternating.Standard
 public import TauCeti.RepresentationTheory.Symmetric.Four.Basic
+public import TauCeti.RepresentationTheory.Symmetric.Three.Eigenvector
 public import TauCeti.RingTheory.RootsOfUnity.PrimeOrder
 public import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
 public import Mathlib.RingTheory.RootsOfUnity.Basic
@@ -41,7 +42,9 @@ splits along the eigenvectors of `c`. For a cube root of unity `ζ ≠ 1` in a f
 
 `v_ζ = ∑ r, ζ⁻ʳ δ_{c^r M₀} = δ₀ + ζ² δ₁ + ζ δ₂`
 
-has coefficient sum `1 + ζ + ζ² = 0`, so lies in `E`, and `g ∈ A₄` acts on it by `ζ ^ κ(g)`.
+(`TauCeti.symmetricGroupThreeEigenvector`, the eigenvector of `c` for the eigenvalue `ζ` on the
+standard module of `S₃`) has coefficient sum `1 + ζ + ζ² = 0`, so lies in `E`, and `g ∈ A₄` acts
+on it by `ζ ^ κ(g)`.
 The vectors `v_ζ` and `v_{ζ²}` form a basis of `E`, which gives the equivalence of
 representations `Res E ≃ L_ζ ⊕ L_{ζ²}`; over `ℂ` and for `ζ = ω` this is `Res E ≃ L_ω ⊕ L_{ω²}`.
 
@@ -55,7 +58,6 @@ representation of `S₄`: `E` lies over `L_ζ` and `L_{ζ²}` through the eigenv
 ## Main definitions
 
 * `TauCeti.alternatingGroupFourLinearCharacter`: the linear character `L_ζ` of `A₄`.
-* `TauCeti.symmetricGroupFourTwoDimensionalEigenvector`: the vector `v_ζ` of `E`.
 * `TauCeti.alternatingGroupFourTwoDimensionalEquiv`: the equivalence
   `Res E ≃ L_ζ ⊕ L_{ζ²}`.
 
@@ -223,102 +225,55 @@ section Decomposition
 
 variable {k : Type*} [Field k]
 
-/-- **The eigenvector `v_ζ = δ₀ + ζ² δ₁ + ζ δ₂` of `E`** for a cube root of unity `ζ ≠ 1`: the sum
-`∑ r, ζ⁻ʳ δ_{c^r M₀}` over the orbit of the matching `M₀` under the three-cycle `c` of the
-matchings. Its coefficients sum to `1 + ζ² + ζ = 0`, so it lies in the sum-zero submodule carrying
-`E`, and `g ∈ A₄` acts on it by `L_ζ(g)`. -/
-noncomputable def symmetricGroupFourTwoDimensionalEigenvector (ζ : rootsOfUnity 3 k)
-    (hζ : ζ ≠ 1) : (augmentationSubrepresentation k (Perm (Fin 3)) (Fin 3)).toSubmodule :=
-  ⟨MonoidAlgebra.single 0 1 + MonoidAlgebra.single 1 (((ζ : kˣ) : k) ^ 2) +
-      MonoidAlgebra.single 2 ((ζ : kˣ) : k), by
-    have h := (IsPrimitiveRoot.of_pow_eq_one_of_ne_one ((mem_rootsOfUnity' 3 _).1 ζ.2)
-      (rootsOfUnity.coe_injective.ne hζ)).geom_sum_eq_zero (by norm_num)
-    rw [Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_one] at h
-    simpa [Fin.sum_univ_three, add_right_comm _ (((ζ : kˣ) : k) ^ 2)] using h⟩
-
-/-- The underlying element `δ₀ + ζ² δ₁ + ζ δ₂` of `k[Fin 3]` of the eigenvector `v_ζ`. -/
-@[simp]
-theorem coe_symmetricGroupFourTwoDimensionalEigenvector (ζ : rootsOfUnity 3 k) (hζ : ζ ≠ 1) :
-    (symmetricGroupFourTwoDimensionalEigenvector ζ hζ : MonoidAlgebra k (Fin 3)) =
-      MonoidAlgebra.single 0 1 + MonoidAlgebra.single 1 (((ζ : kˣ) : k) ^ 2) +
-        MonoidAlgebra.single 2 ((ζ : kˣ) : k) :=
-  (rfl)
-
-/-- The three-cycle `c = (0 1 2)` of the matchings acts on `v_ζ` by `ζ`. -/
-private theorem standardRepresentation_formPerm_eigenvector (ζ : rootsOfUnity 3 k)
-    (hζ : ζ ≠ 1) :
-    standardRepresentation k (Fin 3) [0, 1, 2].formPerm
-        (symmetricGroupFourTwoDimensionalEigenvector ζ hζ) =
-      ((ζ : kˣ) : k) • symmetricGroupFourTwoDimensionalEigenvector ζ hζ := by
-  have h3 : ((ζ : kˣ) : k) ^ 3 = 1 := (mem_rootsOfUnity' 3 _).1 ζ.2
-  apply Subtype.ext
-  rw [coe_standardRepresentation_apply, Submodule.coe_smul,
-    coe_symmetricGroupFourTwoDimensionalEigenvector]
-  simp only [map_add, Representation.ofMulAction_single, smul_add, MonoidAlgebra.smul_single,
-    smul_eq_mul, mul_one]
-  have h0 : ([0, 1, 2].formPerm : Perm (Fin 3)) • (0 : Fin 3) = 1 := by decide
-  have h1 : ([0, 1, 2].formPerm : Perm (Fin 3)) • (1 : Fin 3) = 2 := by decide
-  have h2 : ([0, 1, 2].formPerm : Perm (Fin 3)) • (2 : Fin 3) = 0 := by decide
-  rw [h0, h1, h2, ← pow_succ', h3, ← sq]
-  abel
-
 /-- **`A₄` acts on `v_ζ` by the linear character `L_ζ`**: `g ∈ A₄` acts on the matchings as the
-power `c ^ κ(g)` of the three-cycle `c`, which acts on `v_ζ` by `ζ`. -/
+power `c ^ κ(g)` of the three-cycle `c = (0 1 2)`, which acts on the eigenvector
+`v_ζ = δ₀ + ζ² δ₁ + ζ δ₂` (`TauCeti.symmetricGroupThreeEigenvector`) by `ζ`. -/
 theorem symmetricGroupFourTwoDimensionalRepresentation_apply_eigenvector (ζ : rootsOfUnity 3 k)
     (hζ : ζ ≠ 1) (g : alternatingGroup (Fin 4)) :
     symmetricGroupFourTwoDimensionalRepresentation k g
-        (symmetricGroupFourTwoDimensionalEigenvector ζ hζ) =
+        (symmetricGroupThreeEigenvector (rootsOfUnity.isPrimitiveRoot_of_ne_one hζ)) =
       (alternatingGroupFourLinearCharacter ζ g : k) •
-        symmetricGroupFourTwoDimensionalEigenvector ζ hζ := by
+        symmetricGroupThreeEigenvector (rootsOfUnity.isPrimitiveRoot_of_ne_one hζ) := by
+  have hc : ([0, 1, 2].formPerm : Perm (Fin 3)) = finRotate 3 := by decide
   rw [symmetricGroupFourTwoDimensionalRepresentation_apply,
     symmetricGroupFourMatchingHom_coe_eq_pow, alternatingGroupFourLinearCharacter_apply,
-    Units.val_pow_eq_pow_val, map_pow]
+    Units.val_pow_eq_pow_val, map_pow, hc]
   generalize (Multiplicative.toAdd (alternatingGroupFourZModThreeHom g)).val = n
   induction n with
   | zero => simp
   | succ n ih =>
-    rw [pow_succ, mul_apply_eq_comp, standardRepresentation_formPerm_eigenvector, map_smul, ih,
-      smul_smul, pow_succ, mul_comm]
+    rw [pow_succ, mul_apply_eq_comp,
+      standardRepresentation_finRotate_symmetricGroupThreeEigenvector, map_smul, ih, smul_smul,
+      pow_succ, mul_comm]
 
 /-- The map `(a, b) ↦ a v_ζ + b v_{ζ²}` from `L_ζ ⊕ L_{ζ²}` to `E`. -/
 private noncomputable def eigenvectorMap (ζ : rootsOfUnity 3 k) (hζ : ζ ≠ 1) :
     k × k →ₗ[k] (augmentationSubrepresentation k (Perm (Fin 3)) (Fin 3)).toSubmodule :=
-  (LinearMap.toSpanSingleton k _ (symmetricGroupFourTwoDimensionalEigenvector ζ hζ)).coprod
-    (LinearMap.toSpanSingleton k _ (symmetricGroupFourTwoDimensionalEigenvector (ζ ^ 2)
-      (rootsOfUnity.pow_ne_one_of_ne_one hζ two_ne_zero (by norm_num))))
+  (LinearMap.toSpanSingleton k _
+      (symmetricGroupThreeEigenvector (rootsOfUnity.isPrimitiveRoot_of_ne_one hζ))).coprod
+    (LinearMap.toSpanSingleton k _ (symmetricGroupThreeEigenvector
+      (rootsOfUnity.isPrimitiveRoot_of_ne_one
+        (rootsOfUnity.pow_ne_one_of_ne_one hζ two_ne_zero (by norm_num)))))
 
 private theorem eigenvectorMap_apply (ζ : rootsOfUnity 3 k) (hζ : ζ ≠ 1) (x : k × k) :
-    eigenvectorMap ζ hζ x = x.1 • symmetricGroupFourTwoDimensionalEigenvector ζ hζ +
-      x.2 • symmetricGroupFourTwoDimensionalEigenvector (ζ ^ 2)
-        (rootsOfUnity.pow_ne_one_of_ne_one hζ two_ne_zero (by norm_num)) :=
+    eigenvectorMap ζ hζ x =
+      x.1 • symmetricGroupThreeEigenvector (rootsOfUnity.isPrimitiveRoot_of_ne_one hζ) +
+        x.2 • symmetricGroupThreeEigenvector (rootsOfUnity.isPrimitiveRoot_of_ne_one
+          (rootsOfUnity.pow_ne_one_of_ne_one hζ two_ne_zero (by norm_num))) :=
   rfl
 
 private theorem eigenvectorMap_bijective (ζ : rootsOfUnity 3 k) (hζ : ζ ≠ 1) :
     Function.Bijective (eigenvectorMap ζ hζ) := by
-  have h3 : ((ζ : kˣ) : k) ^ 3 = 1 := (mem_rootsOfUnity' 3 _).1 ζ.2
-  have h1 : ((ζ : kˣ) : k) ≠ 1 := rootsOfUnity.coe_injective.ne hζ
+  have hne : ζ ≠ ζ ^ 2 := fun h =>
+    hζ (mul_left_cancel (a := ζ) (by rw [mul_one, ← sq, ← h])).symm
   have hinj : Function.Injective (eigenvectorMap ζ hζ) := by
     rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
     rintro ⟨a, b⟩ hab
-    have hc (i : Fin 3) :
-        ((eigenvectorMap ζ hζ (a, b) : MonoidAlgebra k (Fin 3))).coeff i = 0 := by
-      rw [hab, ZeroMemClass.coe_zero, MonoidAlgebra.coeff_zero, Finsupp.coe_zero, Pi.zero_apply]
-    have h0 := hc 0
-    have h1' := hc 1
-    simp only [eigenvectorMap_apply, Submodule.coe_add, Submodule.coe_smul,
-      coe_symmetricGroupFourTwoDimensionalEigenvector, MonoidAlgebra.coeff_add,
-      MonoidAlgebra.coeff_smul, MonoidAlgebra.coeff_single, Finsupp.add_apply, Finsupp.smul_apply,
-      Finsupp.single_apply, Units.val_pow_eq_pow_val, SubmonoidClass.coe_pow] at h0 h1'
-    norm_num at h0 h1'
-    have hb : b = -a := by linear_combination h0
-    subst hb
-    have hζ0 : ((ζ : kˣ) : k) ≠ 0 := Units.ne_zero _
-    have ha : a * (((ζ : kˣ) : k) * (((ζ : kˣ) : k) - 1)) = 0 := by
-      linear_combination h1' + a * ((ζ : kˣ) : k) * h3
-    have hne : ((ζ : kˣ) : k) * (((ζ : kˣ) : k) - 1) ≠ 0 :=
-      mul_ne_zero hζ0 (sub_ne_zero.2 h1)
-    have ha0 : a = 0 := (mul_eq_zero.1 ha).resolve_right hne
-    simp [ha0]
+    rw [eigenvectorMap_apply] at hab
+    obtain ⟨ha, hb⟩ := LinearIndependent.pair_iff.mp
+      (linearIndependent_symmetricGroupThreeEigenvector _ _ (rootsOfUnity.coe_injective.ne hne))
+      a b hab
+    simp [ha, hb]
   refine ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank ?_).1 hinj⟩
   simp
 
@@ -334,16 +289,19 @@ noncomputable def alternatingGroupFourTwoDimensionalEquiv (ζ : rootsOfUnity 3 k
   (Representation.Equiv.mk (LinearEquiv.ofBijective _ (eigenvectorMap_bijective ζ hζ))
     fun g => LinearMap.ext fun x => by
       simp [-symmetricGroupFourTwoDimensionalRepresentation_apply, eigenvectorMap_apply,
-        symmetricGroupFourTwoDimensionalRepresentation_apply_eigenvector, smul_smul, mul_comm]).symm
+        symmetricGroupFourTwoDimensionalRepresentation_apply_eigenvector _ hζ,
+        symmetricGroupFourTwoDimensionalRepresentation_apply_eigenvector _
+          (rootsOfUnity.pow_ne_one_of_ne_one hζ two_ne_zero (by norm_num)), smul_smul,
+        mul_comm]).symm
 
 /-- The inverse of `TauCeti.alternatingGroupFourTwoDimensionalEquiv` sends `(a, b)` to
 `a v_ζ + b v_{ζ²}`. -/
 theorem alternatingGroupFourTwoDimensionalEquiv_symm_apply (ζ : rootsOfUnity 3 k) (hζ : ζ ≠ 1)
     (x : k × k) :
     (alternatingGroupFourTwoDimensionalEquiv ζ hζ).symm x =
-      x.1 • symmetricGroupFourTwoDimensionalEigenvector ζ hζ +
-        x.2 • symmetricGroupFourTwoDimensionalEigenvector (ζ ^ 2)
-          (rootsOfUnity.pow_ne_one_of_ne_one hζ two_ne_zero (by norm_num)) :=
+      x.1 • symmetricGroupThreeEigenvector (rootsOfUnity.isPrimitiveRoot_of_ne_one hζ) +
+        x.2 • symmetricGroupThreeEigenvector (rootsOfUnity.isPrimitiveRoot_of_ne_one
+          (rootsOfUnity.pow_ne_one_of_ne_one hζ two_ne_zero (by norm_num))) :=
   (rfl)
 
 end Decomposition

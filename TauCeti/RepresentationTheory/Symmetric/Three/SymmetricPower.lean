@@ -13,6 +13,7 @@ public import TauCeti.RepresentationTheory.LinearCharacter.Basic
 public import TauCeti.RepresentationTheory.Symmetric.SignCharacter
 public import TauCeti.RepresentationTheory.Symmetric.Standard
 public import TauCeti.RepresentationTheory.SymmetricPower
+public import TauCeti.RepresentationTheory.Symmetric.Three.Eigenvector
 import TauCeti.GroupTheory.Perm.FinThree.Basic
 import TauCeti.RepresentationTheory.Intertwining
 
@@ -29,6 +30,10 @@ cube root of unity in the field `k`, for instance `ω = exp(2πi/3)` in `ℂ`
 form a basis of `V₃` in which `τ` is diagonal and `σ` is a permutation:
 
 `τ α = ω² α`, `τ β = ω β`, `σ α = β`, `σ β = α`.
+
+In terms of the eigenvectors `v_ζ = δ₀ + ζ² δ₁ + ζ δ₂` of `τ`
+(`TauCeti.symmetricGroupThreeEigenvector`, with `τ v_ζ = ζ v_ζ`), these are `α = v_{ω²}` and
+`β = ω v_ω`.
 
 On the symmetric powers this gives the monomial bases `α², αβ, β²` of `Sym² V₃` and
 `α³, α²β, αβ², β³` of `Sym³ V₃`, and the explicit equivariant isomorphisms
@@ -78,47 +83,34 @@ variable {k : Type} [Field k] {ω : k}
 
 /-! ### The eigenbasis of the standard module -/
 
-/-- **The vector `α = (1, ω, ω²)` of the standard module of `S₃`.** Its coordinates sum to zero
-because `ω` is a primitive cube root of unity. -/
+/-- **The vector `α = (1, ω, ω²)` of the standard module of `S₃`**: the eigenvector
+`v_{ω²} = δ₀ + ω⁴ δ₁ + ω² δ₂` of `τ = (0 1 2)` for the eigenvalue `ω²`. -/
 noncomputable def symmetricGroupThreeAlpha (hω : IsPrimitiveRoot ω 3) :
     (augmentationSubrepresentation k (Equiv.Perm (Fin 3)) (Fin 3)).toSubmodule :=
-  ⟨single 0 1 + ω • single 1 1 + ω ^ 2 • single 2 1, by
-    rw [toSubmodule_augmentationSubrepresentation, LinearMap.mem_ker]
-    simp only [← MonoidAlgebra.basis_apply, map_add, map_smul, Basis.sumCoords_self_apply,
-      smul_eq_mul, mul_one]
-    simpa [Finset.sum_range_succ] using hω.geom_sum_eq_zero (by norm_num)⟩
+  symmetricGroupThreeEigenvector (hω.pow_of_coprime 2 (by norm_num))
 
-/-- **The vector `β = (ω, 1, ω²)` of the standard module of `S₃`**, the image of `α` under the
+/-- **The vector `β = (ω, 1, ω²)` of the standard module of `S₃`**: the multiple `ω v_ω` of the
+eigenvector `v_ω = δ₀ + ω² δ₁ + ω δ₂` of `τ = (0 1 2)`, which is the image of `α` under the
 transposition `(0 1)`. -/
 noncomputable def symmetricGroupThreeBeta (hω : IsPrimitiveRoot ω 3) :
     (augmentationSubrepresentation k (Equiv.Perm (Fin 3)) (Fin 3)).toSubmodule :=
-  ⟨ω • single 0 1 + single 1 1 + ω ^ 2 • single 2 1, by
-    rw [toSubmodule_augmentationSubrepresentation, LinearMap.mem_ker]
-    simp only [← MonoidAlgebra.basis_apply, map_add, map_smul, Basis.sumCoords_self_apply,
-      smul_eq_mul, mul_one]
-    have h : 1 + ω + ω ^ 2 = 0 := by
-      simpa [Finset.sum_range_succ] using hω.geom_sum_eq_zero (by norm_num)
-    linear_combination h⟩
+  ω • symmetricGroupThreeEigenvector hω
 
 variable (hω : IsPrimitiveRoot ω 3)
 
 /-- The coordinates of `α`. -/
 theorem coe_symmetricGroupThreeAlpha :
     (symmetricGroupThreeAlpha hω : MonoidAlgebra k (Fin 3)) =
-      single 0 1 + ω • single 1 1 + ω ^ 2 • single 2 1 :=
-  (rfl)
+      single 0 1 + ω • single 1 1 + ω ^ 2 • single 2 1 := by
+  rw [symmetricGroupThreeAlpha, coe_symmetricGroupThreeEigenvector, ← pow_mul,
+    show ω ^ (2 * 2) = ω by rw [show 2 * 2 = 3 + 1 by rfl, pow_succ, hω.pow_eq_one, one_mul]]
 
 /-- The coordinates of `β`. -/
 theorem coe_symmetricGroupThreeBeta :
     (symmetricGroupThreeBeta hω : MonoidAlgebra k (Fin 3)) =
-      ω • single 0 1 + single 1 1 + ω ^ 2 • single 2 1 :=
-  (rfl)
-
-/-- The action of `τ = (0 1 2)` on the basis vectors of `k[Fin 3]`. -/
-private theorem finRotate_three_smul :
-    (finRotate 3) • (0 : Fin 3) = 1 ∧ (finRotate 3) • (1 : Fin 3) = 2 ∧
-      (finRotate 3) • (2 : Fin 3) = 0 := by
-  decide
+      ω • single 0 1 + single 1 1 + ω ^ 2 • single 2 1 := by
+  rw [symmetricGroupThreeBeta, Submodule.coe_smul, coe_symmetricGroupThreeEigenvector]
+  linear_combination (norm := module) hω.pow_eq_one • (single 1 1 : MonoidAlgebra k (Fin 3))
 
 /-- The action of `σ = (0 1)` on the basis vectors of `k[Fin 3]`. -/
 private theorem swap_zero_one_smul :
@@ -130,27 +122,16 @@ private theorem swap_zero_one_smul :
 @[simp]
 theorem standardRepresentation_finRotate_symmetricGroupThreeAlpha :
     standardRepresentation k (Fin 3) (finRotate 3) (symmetricGroupThreeAlpha hω) =
-      ω ^ 2 • symmetricGroupThreeAlpha hω := by
-  rw [← toRepresentation_augmentationSubrepresentation,
-    Subrepresentation.toRepresentation_apply_coe]
-  obtain ⟨h0, h1, h2⟩ := finRotate_three_smul
-  simp only [coe_symmetricGroupThreeAlpha, Submodule.coe_smul, map_add, map_smul,
-    Representation.ofMulAction_single, h0, h1, h2]
-  linear_combination (norm := module)
-    hω.pow_eq_one • (-(single 1 1 + ω • single 2 1) : MonoidAlgebra k (Fin 3))
+      ω ^ 2 • symmetricGroupThreeAlpha hω :=
+  standardRepresentation_finRotate_symmetricGroupThreeEigenvector _
 
 /-- **`τ β = ω β`.** -/
 @[simp]
 theorem standardRepresentation_finRotate_symmetricGroupThreeBeta :
     standardRepresentation k (Fin 3) (finRotate 3) (symmetricGroupThreeBeta hω) =
       ω • symmetricGroupThreeBeta hω := by
-  rw [← toRepresentation_augmentationSubrepresentation,
-    Subrepresentation.toRepresentation_apply_coe]
-  obtain ⟨h0, h1, h2⟩ := finRotate_three_smul
-  simp only [coe_symmetricGroupThreeBeta, Submodule.coe_smul, map_add, map_smul,
-    Representation.ofMulAction_single, h0, h1, h2]
-  linear_combination (norm := module)
-    hω.pow_eq_one • (-(single 2 1) : MonoidAlgebra k (Fin 3))
+  rw [symmetricGroupThreeBeta, map_smul,
+    standardRepresentation_finRotate_symmetricGroupThreeEigenvector]
 
 /-- **`σ α = β`.** -/
 @[simp]
@@ -172,26 +153,17 @@ theorem standardRepresentation_swap_symmetricGroupThreeBeta :
   simpa using (standardRepresentation k (Fin 3)).inv_self_apply (Equiv.swap 0 1)
     (symmetricGroupThreeAlpha hω)
 
-/-- The vectors `α` and `β` are linearly independent. -/
+/-- The vectors `α` and `β` are linearly independent: they are multiples of the eigenvectors
+`v_{ω²}` and `v_ω` of `τ` for the distinct eigenvalues `ω²` and `ω`. -/
 private theorem linearIndependent_symmetricGroupThreeAlpha_beta :
     LinearIndependent k ![symmetricGroupThreeAlpha hω, symmetricGroupThreeBeta hω] := by
-  rw [LinearIndependent.pair_iff]
-  intro s t hst
-  have hc : ∀ i : Fin 3, s * (symmetricGroupThreeAlpha hω : MonoidAlgebra k (Fin 3)).coeff i +
-      t * (symmetricGroupThreeBeta hω : MonoidAlgebra k (Fin 3)).coeff i = 0 := fun i => by
-    simpa using congrArg (fun v : MonoidAlgebra k (Fin 3) => v.coeff i) (Subtype.ext_iff.mp hst)
-  have h0 := hc 0
-  have h1 := hc 1
-  simp only [coe_symmetricGroupThreeAlpha, coe_symmetricGroupThreeBeta, coeff_add, coeff_smul,
-    coeff_single, Finsupp.add_apply, Finsupp.smul_apply, Finsupp.single_apply, smul_eq_mul]
-    at h0 h1
-  norm_num at h0 h1
-  have hω2 : 1 - ω ^ 2 ≠ 0 := sub_ne_zero.mpr fun h =>
-    hω.pow_ne_one_of_pos_of_lt two_ne_zero (by norm_num) h.symm
-  have hs : s * (1 - ω ^ 2) = 0 := by linear_combination h0 - ω * h1
-  have hs0 : s = 0 := (mul_eq_zero.mp hs).resolve_right hω2
-  refine ⟨hs0, ?_⟩
-  simpa [hs0] using h1
+  have hne : ω ^ 2 ≠ ω := fun h => hω.ne_one (by norm_num) <|
+    (mul_right_inj' (hω.ne_zero (by norm_num))).mp (by rw [← sq, h, mul_one])
+  have h := (linearIndependent_symmetricGroupThreeEigenvector
+    (hω.pow_of_coprime 2 (by norm_num)) hω hne).units_smul ![1, (hω.isUnit (by norm_num)).unit]
+  convert h using 1
+  ext i : 1
+  fin_cases i <;> simp [symmetricGroupThreeAlpha, symmetricGroupThreeBeta, Units.smul_def]
 
 /-- **The basis `α, β` of the standard module of `S₃`**, in which `τ = (0 1 2)` is diagonal with
 eigenvalues `ω², ω` and `σ = (0 1)` exchanges the two vectors. -/
