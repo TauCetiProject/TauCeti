@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basic
 public import TauCeti.LinearAlgebra.Determinant.Line
 import Mathlib.LinearAlgebra.PiTensorProduct.Basis
+import Mathlib.RingTheory.SimpleModule.Rank
 import TauCeti.LinearAlgebra.LinearIndependent.Fin
 
 /-!
@@ -153,43 +154,34 @@ private theorem coe_lift_detLinePiMultilinear_tprod (h : ∀ i, Even (finrank K 
     ← List.prod_ofFn, AlgHom.toLinearMap_apply, map_list_prod, List.map_ofFn,
     Function.comp_def, Subalgebra.coe_val, coe_detLineSingle_apply]
 
-/-- `PiTensorProduct.lift (detLinePiMultilinear K U h)` is bijective: it is a nonzero map between
-lines, nonzero on the tensor product of the exterior products of bases. -/
+/-- `PiTensorProduct.lift (detLinePiMultilinear K U h)` is bijective: it is a map between lines
+(`LinearMap.bijective_of_ne_zero`), nonzero on the tensor product of the exterior products of
+bases. -/
 private theorem bijective_lift_detLinePiMultilinear (h : ∀ i, Even (finrank K (U i))) :
     Function.Bijective (PiTensorProduct.lift (detLinePiMultilinear K U h)) := by
   set f := PiTensorProduct.lift (detLinePiMultilinear K U h)
   -- The source is a line: it has a basis indexed by the one-point type `Πᵢ Fin 1`.
   let b := Basis.piTensorProduct fun i ↦
     finBasisOfFinrankEq K (detLine K (U i)) (finrank_detLine K (U i))
-  have hb (t : ⨂[K] i, detLine K (U i)) : t = b.repr t default • b default := by
-    conv_lhs => rw [← b.sum_repr t]
-    simp
+  have : IsSimpleModule K (⨂[K] i, detLine K (U i)) :=
+    isSimpleModule_iff_finrank_eq_one.2 (by simp [Module.finrank_eq_card_basis b])
+  have : IsSimpleModule K (detLine K ((i : ι) → U i)) :=
+    isSimpleModule_iff_finrank_eq_one.2 (finrank_detLine K _)
   -- `f` does not vanish on the tensor product of the exterior products of bases.
-  have hne : f ≠ 0 := by
-    intro hf
-    set e := (Fintype.equivFin ι).symm
-    obtain ⟨N, v, hv, -, heq⟩ := exists_linearIndependent_prod_map_eq_ιMulti K U
-      (List.ofFn e) (List.nodup_ofFn.2 e.injective)
-    have h0 := coe_lift_detLinePiMultilinear_tprod K U h
-      (fun i ↦ exteriorPower.ιMulti K _ (Module.finBasis K (U i))) e
-    refine (exteriorPower.ιMulti_ne_zero_iff v).2 hv (Subtype.ext ?_)
-    rw [exteriorPower.ιMulti_apply_coe, ← heq, ZeroMemClass.coe_zero, List.map_ofFn]
-    calc _ = (f (⨂ₜ[K] i, exteriorPower.ιMulti K _ (Module.finBasis K (U i))) :
-          ExteriorAlgebra K ((i : ι) → U i)) := by
-          rw [h0]
-          simp [Function.comp_def, ExteriorAlgebra.map_apply_ιMulti]
-      _ = 0 := by rw [hf, LinearMap.zero_apply, ZeroMemClass.coe_zero]
-  have hsurj : Function.Surjective f := by
-    rw [← LinearMap.range_eq_top]
-    refine Submodule.eq_top_of_finrank_eq (le_antisymm (Submodule.finrank_le _) ?_)
-    rw [finrank_detLine, Submodule.one_le_finrank_iff, Ne, LinearMap.range_eq_bot]
-    exact hne
-  -- On the line spanned by `b default`, `f` is injective since it does not vanish there.
-  have hb0 : f (b default) ≠ 0 := fun h0 ↦
-    hne (b.ext fun p ↦ by rw [Subsingleton.elim p default, h0, LinearMap.zero_apply])
-  refine ⟨fun t t' htt' ↦ ?_, hsurj⟩
-  rw [hb t, hb t', map_smul, map_smul] at htt'
-  rw [hb t, hb t', smul_left_injective K hb0 htt']
+  refine LinearMap.bijective_of_ne_zero (M := ⨂[K] i, detLine K (U i))
+    (N := detLine K ((i : ι) → U i)) fun hf ↦ ?_
+  set e := (Fintype.equivFin ι).symm
+  obtain ⟨N, v, hv, -, heq⟩ := exists_linearIndependent_prod_map_eq_ιMulti K U
+    (List.ofFn e) (List.nodup_ofFn.2 e.injective)
+  have h0 := coe_lift_detLinePiMultilinear_tprod K U h
+    (fun i ↦ exteriorPower.ιMulti K _ (Module.finBasis K (U i))) e
+  refine (exteriorPower.ιMulti_ne_zero_iff v).2 hv (Subtype.ext ?_)
+  rw [exteriorPower.ιMulti_apply_coe, ← heq, ZeroMemClass.coe_zero, List.map_ofFn]
+  calc _ = (f (⨂ₜ[K] i, exteriorPower.ιMulti K _ (Module.finBasis K (U i))) :
+        ExteriorAlgebra K ((i : ι) → U i)) := by
+        rw [h0]
+        simp [Function.comp_def, ExteriorAlgebra.map_apply_ιMulti]
+    _ = 0 := by rw [hf, LinearMap.zero_apply, ZeroMemClass.coe_zero]
 
 /-- **The determinant line of a product of even-dimensional spaces.** If every `U i` has even
 dimension, the determinant line of `Πᵢ U i` is the tensor product of the determinant lines of the
