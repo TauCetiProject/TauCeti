@@ -54,12 +54,12 @@ theorem eLpNorm_mul_prod_le {f : α → 𝕜} {g : β → 𝕜}
         ≤ ∫⁻ p : α × β, ‖f p.1‖ₑ ^ 2 * ‖g p.2‖ₑ ^ 2 ∂(μ.prod ν) := by
       refine lintegral_mono fun p => ?_
       have hmul : ‖f p.1 * g p.2‖ₑ ≤ ‖f p.1‖ₑ * ‖g p.2‖ₑ := by
-        simpa only [enorm_eq_nnnorm, ← ENNReal.coe_mul, ENNReal.coe_le_coe]
-          using nnnorm_mul_le (f p.1) (g p.2)
+        simpa only [eNorm_eq_nnNorm, ← ENNReal.coe_mul, ENNReal.coe_le_coe]
+          using nnNorm_mul_le (f p.1) (g p.2)
       simpa only [mul_pow] using pow_le_pow_left' hmul 2
     _ ≤ ∫⁻ x, ∫⁻ y, ‖f x‖ₑ ^ 2 * ‖g y‖ₑ ^ 2 ∂ν ∂μ := lintegral_prod_le _
     _ = (∫⁻ x, ‖f x‖ₑ ^ 2 ∂μ) * ∫⁻ y, ‖g y‖ₑ ^ 2 ∂ν :=
-      lintegral_lintegral_mul (hf.enorm.pow_const 2) (hg.enorm.pow_const 2)
+      lintegral_lintegral_mul (hf.eNorm.pow_const 2) (hg.eNorm.pow_const 2)
 
 /-- The pointwise product `(x, y) ↦ f x * g y` of an `L²(μ)` and an `L²(ν)` function is `L²` for the
 product measure `μ ⊗ ν`. -/

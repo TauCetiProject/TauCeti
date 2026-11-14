@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Module.LinearMap.FiniteRank
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.AnalyticSubst
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Coefficients
-public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Matrix
+public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Matrix.Basic
 
 /-!
 # Weighted substitution operators on Tate algebras

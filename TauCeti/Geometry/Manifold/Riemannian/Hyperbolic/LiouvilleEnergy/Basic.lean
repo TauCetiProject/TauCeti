@@ -185,7 +185,9 @@ theorem hasDerivAt_liouvilleEnergy_add_smul {K u v : M → ℝ}
       (∫ x, 2 * v x * Real.exp (2 * u x) ∂μ) 0 := by
     have h2u : Continuous fun x ↦ 2 * u x := continuous_const.mul hu.continuous
     have h2v : Continuous fun x ↦ 2 * v x := continuous_const.mul hv.continuous
-    convert hasDerivAt_integral_exp_add_mul (μ := μ) h2u h2v 0 using 1
+    convert hasDerivAt_integral_exp_add_mul (μ := μ) (t₀ := 0)
+      (.of_forall fun s ↦ (by fun_prop : Continuous fun x ↦
+        Real.exp (2 * u x + s * (2 * v x))).integrable_of_compactSpace) using 1
     · funext t
       exact integral_congr_ae (ae_of_all _ fun x ↦ by ring_nf)
     · simp only [zero_mul, add_zero]
@@ -277,7 +279,6 @@ theorem exists_le_liouvilleEnergy_add [I.Boundaryless] {K : M → ℝ}
       ring
     rwa [hav, average_eq, smul_eq_mul, le_inv_mul_iff₀ hV] at hJ
   have hmeanS := Real.neg_mul_abs_sub_sq_div_le_mul_add_mul_exp_div (S := S) (t := ū) hV
-  have hG : 0 ≤ G := integral_nonneg fun x ↦ by positivity
   have hdiv : (∫ x, (u x - ū) ^ 2 ∂μ) / (4 * Q) ≤ G / 4 := by
     rw [div_le_iff₀ (by positivity)]
     nlinarith

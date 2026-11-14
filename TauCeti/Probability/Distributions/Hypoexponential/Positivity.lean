@@ -83,7 +83,7 @@ theorem mul_gammaPDFReal_le_hypoexponentialPDFReal [Nonempty ι]
   have hc : 0 ≤ ∏ i, r i / R := prod_nonneg fun i _ ↦
     (div_pos (hr i) ((hr (Classical.arbitrary ι)).trans_le (hR _))).le
   have hmeas := smul_gammaMeasure_le_hypoexponentialMeasure hr hR
-  rw [gammaMeasure, hypoexponentialMeasure_eq_withDensity hr,
+  rw [gammaMeasure, hypoexponentialMeasure_eq_withDensity,
     ← withDensity_smul _ (measurable_gammaPDF _ _)] at hmeas
   have hae : (fun y ↦ ENNReal.ofReal (∏ i, r i / R) *
       gammaPDF (Fintype.card ι) R y) ≤ᵐ[volume] hypoexponentialPDF r := by

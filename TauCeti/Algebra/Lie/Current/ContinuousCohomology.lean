@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.Current.ResidueCocycle
 public import TauCeti.Algebra.Lie.Current.Topology
 public import TauCeti.Algebra.Lie.Loop.Cocycle
 -- Non-public: used only inside proofs.
+import TauCeti.Algebra.Lie.Killing.Basic
 import TauCeti.Algebra.Lie.Killing.Perfect
 
 /-!
@@ -237,7 +238,7 @@ theorem residueClass_eq_zero_iff {Φ : LinearMap.BilinForm R L}
     (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) :
     residueClass R L Φ hΦ hΦs = 0 ↔ Φ = 0 := by
   have h0i : (0 : LinearMap.BilinForm R L).lieInvariant L := fun x y z ↦ by simp
-  have h0s : (0 : LinearMap.BilinForm R L).IsSymm := ⟨fun x y ↦ by simp⟩
+  have h0s : (0 : LinearMap.BilinForm R L).IsSymm := ⟨fun _ _ ↦ by simp⟩
   rw [← residueClass_zero h0i h0s, residueClass_inj]
 
 /-- The residue class of a nonzero invariant symmetric form is nonzero over every commutative
@@ -350,7 +351,7 @@ end Coefficients
 
 section Classification
 
-variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L] [FiniteDimensional K L]
+variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
   [_root_.LieAlgebra.IsKilling K L]
 
 open _root_.LieAlgebra
@@ -569,6 +570,7 @@ theorem finrank_continuousSecondCohomology_eq_one [IsAlgClosed K]
     Module.finrank K (continuousSecondCohomology K (currentAlgebra K L)
       (TrivialLieModule K (currentAlgebra K L) K)) = 1 :=
   have _i := _root_.LieModule.nontrivial_of_isIrreducible K L L
+  have _j := TauCeti.finite_of_isKilling (R := K) (L := L)
   (residueClassEquiv K (_root_.LieModule.traceForm_lieInvariant K L L)
     (LinearMap.BilinForm.isSymm_iff.mpr (_root_.LieModule.traceForm_isSymm K L L))
     (fun _ hΦ ↦ TauCeti.LieAlgebra.exists_eq_smul_killingForm hΦ)

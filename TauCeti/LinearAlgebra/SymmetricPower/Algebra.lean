@@ -51,7 +51,7 @@ universe v w
 variable (R : Type) (M : Type v) [CommSemiring R] [AddCommMonoid M] [Module R M]
 
 private noncomputable def algebraMultilinear (n : ℕ) :
-    MultilinearMap R (fun _ : Fin n ↦ M) (SymmetricAlgebra R M) :=
+    MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ M) (SymmetricAlgebra R M) :=
   (MultilinearMap.mkPiAlgebra R (Fin n) (SymmetricAlgebra R M)).compLinearMap
     (fun _ ↦ SymmetricAlgebra.ι R M)
 

@@ -61,7 +61,7 @@ itself. -/
 theorem apply_eq_or_eq_neg_of_sq_eq (σ : L ≃ₐ[F] L) {x : L} {c : R}
     (hx : x ^ 2 = algebraMap R L c) : σ x = x ∨ σ x = -x :=
   sq_eq_sq_iff_eq_or_eq_neg.mp (by
-    rw [← map_pow, hx, IsScalarTower.algebraMap_apply R F L, AlgEquiv.commutes])
+    rw [← map_pow, hx, IsScalarTower.algebraMap_apply R F L, commutes])
 
 end AlgEquiv
 
@@ -79,11 +79,11 @@ theorem exists_algEquiv_apply_eq_neg_of_sq_eq {K L : Type*} [Field K] [Field L] 
     have h2L : (2 : L) = 0 := by rw [← map_ofNat (algebraMap K L) 2, h2, map_zero]
     rw [AlgEquiv.coe_refl, id_eq]
     exact eq_neg_of_add_eq_zero_left (by rw [← two_mul, h2L, zero_mul])
-  have : Algebra.IsSeparable K L := TauCeti.Algebra.isSeparable_of_finrank_eq_two h2 hL
+  have : Algebra.IsSeparable K L := Algebra.isSeparable_of_finrank_eq_two h2 hL
   have : Algebra.IsQuadraticExtension K L := ⟨hL⟩
   obtain ⟨σ, hσ⟩ := Algebra.IsQuadraticExtension.exists_algEquiv_ne_one K L
   refine ⟨σ, (σ.apply_eq_or_eq_neg_of_sq_eq hy).resolve_left fun h ↦ hσ ?_⟩
-  apply TauCeti.IntermediateField.algEquiv_eq_one_of_adjoin_eq_top hgen
+  apply IntermediateField.algEquiv_eq_one_of_adjoin_eq_top hgen
   intro x hx
   obtain rfl := Set.mem_singleton_iff.mp hx
   exact h
@@ -166,7 +166,7 @@ theorem card_eq_four_of_exists_apply_eq_neg {F L : Type*} [CommSemiring F] [Ring
     exact False.elim
       (AlgEquiv.ne_one_of_apply_eq_neg (1 : L ≃ₐ[F] L) h2 hyz hτ₃yz rfl)
   · have hpow : τ₁ ^ 3 = 1 := by
-      simpa only [hc, Subgroup.coe_pow, Subgroup.coe_one] using
+      simpa only [hc, coe_pow, coe_one] using
         congrArg Subtype.val (pow_card_eq_one' (x := (⟨τ₁, hτ₁⟩ : H)))
     have hneg := congrArg (fun σ : L ≃ₐ[F] L => σ y) hpow
     simp only [pow_succ, pow_zero, AlgEquiv.mul_apply, AlgEquiv.one_apply, hτ₁y,

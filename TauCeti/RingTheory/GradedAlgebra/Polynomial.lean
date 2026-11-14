@@ -76,7 +76,7 @@ theorem coeff_toPolynomial (a : A) (n : ℕ) : (toPolynomial 𝒜 a).coeff n = d
   | zero => simp
   | @homogeneous i a =>
     obtain ⟨a, ha⟩ := a
-    rw [toPolynomial_of_mem ha, coeff_monomial]
+    rw [toPolynomial_of_mem ha, coeff_monomial_apply]
     split_ifs with h
     · subst h
       rw [decompose_of_mem_same 𝒜 ha]
@@ -90,7 +90,7 @@ homogeneous of degree `n`. -/
 theorem toPolynomial_eq_monomial_iff {a : A} {n : ℕ} :
     toPolynomial 𝒜 a = monomial n a ↔ a ∈ 𝒜 n := by
   refine ⟨fun h ↦ ?_, toPolynomial_of_mem⟩
-  have := congrArg (coeff · n) h
+  have := congrArg (fun p : A[X] ↦ p.coeff n) h
   simp only [coeff_toPolynomial, coeff_monomial_same] at this
   exact this ▸ SetLike.coe_mem _
 

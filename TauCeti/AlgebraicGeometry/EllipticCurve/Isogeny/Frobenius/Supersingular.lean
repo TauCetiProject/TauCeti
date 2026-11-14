@@ -182,10 +182,12 @@ theorem isSupersingular_iff_frobeniusTrace_eq_zero (hq : Nat.card F = p) (hp : 5
   have hpk : p * k ^ 2 ≤ 4 := le_of_mul_le_mul_left (by linarith [hHasse]) (by omega : (0 : ℤ) < p)
   nlinarith [sq_abs k, Int.one_le_abs hk0]
 
+omit [Finite F] in
 /-- **Over `𝔽_p` with `p ≥ 5`, a curve is supersingular exactly when it has `p + 1` points**, the
 point at infinity included (Silverman V.4.1(b)). -/
 theorem isSupersingular_iff_card_point_eq (hq : Nat.card F = p) (hp : 5 ≤ p) :
     W.IsSupersingular p ↔ Nat.card W.toAffine.Point = p + 1 := by
+  have : Finite F := Nat.finite_of_card_ne_zero (by omega)
   rw [isSupersingular_iff_frobeniusTrace_eq_zero p W hq hp, frobeniusTrace_eq_card_point, hq,
     sub_eq_zero, eq_comm]
   norm_cast
