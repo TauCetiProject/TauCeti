@@ -145,9 +145,10 @@ private theorem nonempty_singularHomology_sublevelPair_sphereHeight_iso_sigma
     (isClosed_Icc.preimage hf.contMDiff.continuous).isCompact
     (fun x hx hxab ↦ sphereHeight_eq_one_of_mem_criticalPoints v ha hx hxab) R k
 
-/-- **The band across the maximum of the height is an `n`-cell.** For `-1 < a < 1 < b`, the
-relative homology `Hₙ({h ≤ b}, {h ≤ a})` of the sublevel pair of the height on `Sⁿ` is one copy of
-the coefficients: the band contains the single critical point `v`, of index `n`. -/
+/-- **The relative homology across the maximum in degree `n` is one copy of the coefficients.**
+For `-1 < a < 1 < b`, the relative homology `Hₙ({h ≤ b}, {h ≤ a})` of the sublevel pair of the
+height on `Sⁿ` is one copy of the coefficients: the band contains the single critical point `v`,
+of index `n`. -/
 theorem nonempty_singularHomology_sublevelPair_sphereHeight_iso (v : sphere (0 : E) 1) {a b : ℝ}
     (ha : -1 < a) (ha' : a < 1) (hb : 1 < b) :
     Nonempty ((sublevelPair (sphereHeight v) (ha'.trans hb).le).singularHomology R n ≅ R) := by
