@@ -21,6 +21,9 @@ public import TauCeti.GroupTheory.TrivialIntersection
 -- group API computes the exponent of the abelianization.
 import Mathlib.GroupTheory.SpecificGroups.Alternating.Centralizer
 import Mathlib.GroupTheory.SpecificGroups.Cyclic
+-- Non-public: a cycle and an adjacent transposition generate, which gives the generators of `S₃`.
+import Mathlib.GroupTheory.Perm.Closure
+import Mathlib.GroupTheory.Perm.Fin
 
 /-!
 # The two subgroups of the symmetric group on three points
@@ -44,6 +47,10 @@ permutations.
 
 * `Equiv.Perm.fin_three_cases`: every permutation of three points is the identity, one of the
   three transpositions, or one of the two rotations.
+* `Equiv.Perm.fin_three_conj_cases`: every permutation of three points is the identity or a
+  conjugate of the transposition `(0 1)` or of the rotation `(0 1 2)`.
+* `TauCeti.closure_finRotate_three_swap_eq_top`: the transposition `(0 1)` and the rotation
+  `(0 1 2)` generate `S₃`.
 * `TauCeti.mem_stabilizer_perm_fin_three_iff`: a permutation of three points fixes `a` exactly
   when it is the identity or the transposition of the other two points.
 * `TauCeti.coe_stabilizer_perm_fin_three`: the same, as an equality of sets.
@@ -87,9 +94,24 @@ theorem fin_three_cases (ρ : Equiv.Perm (Fin 3)) :
   revert ρ
   decide
 
+/-- **The conjugacy classes of `S₃`**: every permutation of three points is the identity or a
+conjugate of the transposition `(0 1)` or of the rotation `(0 1 2) = finRotate 3`. A class
+function on `S₃` is therefore determined by its values at these three permutations. -/
+theorem fin_three_conj_cases (g : Equiv.Perm (Fin 3)) :
+    ∃ h : Equiv.Perm (Fin 3),
+      g = 1 ∨ g = h * Equiv.swap 0 1 * h⁻¹ ∨ g = h * finRotate 3 * h⁻¹ := by
+  revert g
+  decide
+
 end Equiv.Perm
 
 namespace TauCeti
+
+/-- **The transposition `(0 1)` and the cycle `(0 1 2)` generate `S₃`.** -/
+theorem closure_finRotate_three_swap_eq_top :
+    Subgroup.closure {finRotate 3, Equiv.swap (0 : Fin 3) 1} = ⊤ := by
+  simpa using Equiv.Perm.closure_cycle_adjacent_swap (σ := finRotate 3) isCycle_finRotate
+    support_finRotate 0
 
 /-- **A permutation of three points fixing `a` is the identity or the transposition of the other
 two points.** Written with `a + 1` and `a + 2` so that the statement is uniform in `a`: those are
