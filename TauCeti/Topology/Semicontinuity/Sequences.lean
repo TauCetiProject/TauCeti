@@ -5,12 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Instances.EReal.Lemmas
 public import Mathlib.Topology.Semicontinuity.Basic
 public import Mathlib.Topology.Sequences
 import Mathlib.Order.Filter.AtTopBot.CountablyGenerated
-import Mathlib.Topology.Instances.ENat
-import Mathlib.Topology.Order.IsLUB
+import TauCeti.Topology.Order.IsLUB
+import TauCeti.Topology.Semicontinuity.ENat
 
 /-!
 # Sequential lower semicontinuity
@@ -22,10 +21,11 @@ sequence `u : ℕ → X` in `s` converging to `x` and every strict lower bound `
 completeness on `β`; specialized variants (`SeqLowerSemicontinuousAt`, `SeqLowerSemicontinuousOn`,
 `SeqLowerSemicontinuous`) restrict to the ambient space or to every point of `s`.
 
-Every lower semicontinuous function is sequentially lower semicontinuous. When `β` is a linear
-order, sequential lower semicontinuity is equivalent to sequential closedness of all sublevel sets
-`f ⁻¹' Iic b` (without any countability hypothesis on `β`, via subsequence extraction), and on a
-sequential space it agrees with topological lower semicontinuity.
+Every lower semicontinuous function is sequentially lower semicontinuous. For any preordered
+codomain, sequential lower semicontinuity is equivalent to sequential closedness of all complements
+`(f ⁻¹' Ioi y)ᶜ` (without any countability hypothesis on `β`, via subsequence extraction), and on a
+sequential space it agrees with topological lower semicontinuity. When `β` is a linear order,
+`(f ⁻¹' Ioi b)ᶜ` simplifies to the sublevel set `f ⁻¹' Iic b`.
 
 When `β` is a complete linear order, sequential lower semicontinuity is equivalent to the lower
 limit inequality `f x ≤ liminf (f ∘ u) atTop` along convergent sequences; for `ℝ`-valued functions
@@ -89,6 +89,34 @@ theorem seqLowerSemicontinuousOn_iff :
 theorem seqLowerSemicontinuous_iff :
     SeqLowerSemicontinuous f ↔ ∀ x, SeqLowerSemicontinuousAt f x :=
   Iff.rfl
+
+/-- Along a sequence in `s` converging to `x`, a function sequentially lower semicontinuous within
+`s` at `x` eventually exceeds any strict lower bound `y < f x`. -/
+theorem SeqLowerSemicontinuousWithinAt.eventually_lt (hf : SeqLowerSemicontinuousWithinAt f s x)
+    {u : ℕ → X} (hu : ∀ n, u n ∈ s) (hlim : Tendsto u atTop (𝓝 x)) {y : β} (hy : y < f x) :
+    ∀ᶠ n in atTop, y < f (u n) :=
+  hf hu hlim y hy
+
+/-- Along a sequence converging to `x`, a function sequentially lower semicontinuous at `x`
+eventually exceeds any strict lower bound `y < f x`. -/
+theorem SeqLowerSemicontinuousAt.eventually_lt (hf : SeqLowerSemicontinuousAt f x)
+    {u : ℕ → X} (hlim : Tendsto u atTop (𝓝 x)) {y : β} (hy : y < f x) :
+    ∀ᶠ n in atTop, y < f (u n) :=
+  hf hlim y hy
+
+/-- Along a sequence in `s` converging to `x ∈ s`, a function sequentially lower semicontinuous on
+`s` eventually exceeds any strict lower bound `y < f x`. -/
+theorem SeqLowerSemicontinuousOn.eventually_lt (hf : SeqLowerSemicontinuousOn f s)
+    (hx : x ∈ s) {u : ℕ → X} (hu : ∀ n, u n ∈ s) (hlim : Tendsto u atTop (𝓝 x))
+    {y : β} (hy : y < f x) : ∀ᶠ n in atTop, y < f (u n) :=
+  hf x hx hu hlim y hy
+
+/-- Along a sequence converging to `x`, a sequentially lower semicontinuous function eventually
+exceeds any strict lower bound `y < f x`. -/
+theorem SeqLowerSemicontinuous.eventually_lt (hf : SeqLowerSemicontinuous f)
+    {u : ℕ → X} (hlim : Tendsto u atTop (𝓝 x)) {y : β} (hy : y < f x) :
+    ∀ᶠ n in atTop, y < f (u n) :=
+  hf x hlim y hy
 
 /-- Sequential lower semicontinuity within `univ` is sequential lower semicontinuity at a point. -/
 @[simp]
@@ -187,6 +215,55 @@ theorem seqLowerSemicontinuous_const {b : β} :
     SeqLowerSemicontinuous (fun _ : X ↦ b) :=
   fun _ ↦ seqLowerSemicontinuousAt_const
 
+/-- Precomposing a sequentially lower semicontinuous function within `s` at `g y` with a map
+continuous within `t` at `y` mapping `t` into `s` preserves sequential lower semicontinuity. -/
+theorem SeqLowerSemicontinuousWithinAt.comp {g : Y → X} {t : Set Y} {y : Y}
+    (hf : SeqLowerSemicontinuousWithinAt f s (g y)) (hg : ContinuousWithinAt g t y)
+    (hgt : MapsTo g t s) : SeqLowerSemicontinuousWithinAt (f ∘ g) t y :=
+  fun _ hu hlim ↦ hf (fun n ↦ hgt (hu n))
+    (hg.tendsto.comp (tendsto_nhdsWithin_iff.2 ⟨hlim, Eventually.of_forall hu⟩))
+
+/-- Precomposing a sequentially lower semicontinuous function at `g y` with a map continuous at `y`
+preserves sequential lower semicontinuity. -/
+theorem SeqLowerSemicontinuousAt.comp {g : Y → X} {y : Y}
+    (hf : SeqLowerSemicontinuousAt f (g y)) (hg : ContinuousAt g y) :
+    SeqLowerSemicontinuousAt (f ∘ g) y :=
+  fun _ hlim ↦ hf (hg.tendsto.comp hlim)
+
+/-- Precomposing a sequentially lower semicontinuous function on `s` with a map continuous on `t`
+mapping `t` into `s` preserves sequential lower semicontinuity. -/
+theorem SeqLowerSemicontinuousOn.comp {g : Y → X} {t : Set Y}
+    (hf : SeqLowerSemicontinuousOn f s) (hg : ContinuousOn g t) (hgt : MapsTo g t s) :
+    SeqLowerSemicontinuousOn (f ∘ g) t :=
+  fun y hy ↦ (hf (g y) (hgt hy)).comp (hg y hy) hgt
+
+/-- Precomposing a sequentially lower semicontinuous function with a continuous map preserves
+sequential lower semicontinuity. -/
+theorem SeqLowerSemicontinuous.comp {g : Y → X} (hf : SeqLowerSemicontinuous f)
+    (hg : Continuous g) : SeqLowerSemicontinuous (f ∘ g) :=
+  fun y ↦ (hf (g y)).comp hg.continuousAt
+
+/-- Precomposing a sequentially lower semicontinuous function within `s` at `g y` with a
+sequentially continuous map mapping `t` into `s` preserves sequential lower semicontinuity. -/
+theorem SeqLowerSemicontinuousWithinAt.comp_seqContinuous {g : Y → X} {t : Set Y} {y : Y}
+    (hf : SeqLowerSemicontinuousWithinAt f s (g y)) (hg : SeqContinuous g) (hgt : MapsTo g t s) :
+    SeqLowerSemicontinuousWithinAt (f ∘ g) t y :=
+  fun _ hu hlim ↦ hf (fun n ↦ hgt (hu n)) (hg hlim)
+
+/-- Precomposing a sequentially lower semicontinuous function at `g y` with a sequentially
+continuous map preserves sequential lower semicontinuity. -/
+theorem SeqLowerSemicontinuousAt.comp_seqContinuous {g : Y → X} {y : Y}
+    (hf : SeqLowerSemicontinuousAt f (g y)) (hg : SeqContinuous g) :
+    SeqLowerSemicontinuousAt (f ∘ g) y :=
+  fun _ hlim ↦ hf (hg hlim)
+
+/-- Precomposing a sequentially lower semicontinuous function on `s` with a sequentially continuous
+map mapping `t` into `s` preserves sequential lower semicontinuity. -/
+theorem SeqLowerSemicontinuousOn.comp_seqContinuous {g : Y → X} {t : Set Y}
+    (hf : SeqLowerSemicontinuousOn f s) (hg : SeqContinuous g) (hgt : MapsTo g t s) :
+    SeqLowerSemicontinuousOn (f ∘ g) t :=
+  fun y hy ↦ (hf (g y) (hgt hy)).comp_seqContinuous hg hgt
+
 /-- Precomposing a sequentially lower semicontinuous function with a sequentially continuous map
 preserves sequential lower semicontinuity. -/
 theorem SeqLowerSemicontinuous.comp_seqContinuous {g : Y → X} (hf : SeqLowerSemicontinuous f)
@@ -215,6 +292,48 @@ theorem _root_.LowerSemicontinuous.seqLowerSemicontinuous
     (hf : LowerSemicontinuous f) : SeqLowerSemicontinuous f :=
   fun x ↦ (hf.lowerSemicontinuousAt x).seqLowerSemicontinuousAt
 
+/-- Sequential lower semicontinuity is equivalent to sequential closedness of `(f ⁻¹' Ioi y)ᶜ`
+for every `y : β`. -/
+theorem seqLowerSemicontinuous_iff_isSeqClosed_compl_preimage :
+    SeqLowerSemicontinuous f ↔ ∀ y, IsSeqClosed (f ⁻¹' Ioi y)ᶜ := by
+  refine ⟨fun hf y u z hu hlim hy ↦ ?_, fun h z u hlim y hy ↦ ?_⟩
+  · obtain ⟨n, hn⟩ := (hf z hlim y hy).exists
+    exact hu n hn
+  · by_contra hnot
+    rw [not_eventually] at hnot
+    obtain ⟨φ, hφ, hφy⟩ := extraction_of_frequently_atTop hnot
+    exact h y hφy (hlim.comp hφ.tendsto_atTop) hy
+
+/-- For a sequentially lower semicontinuous function, `(f ⁻¹' Ioi y)ᶜ` is sequentially closed. -/
+theorem SeqLowerSemicontinuous.isSeqClosed_compl_preimage (hf : SeqLowerSemicontinuous f)
+    (y : β) : IsSeqClosed (f ⁻¹' Ioi y)ᶜ :=
+  seqLowerSemicontinuous_iff_isSeqClosed_compl_preimage.1 hf y
+
+/-- On a sequential space, sequential lower semicontinuity is equivalent to topological lower
+semicontinuity. -/
+theorem seqLowerSemicontinuous_iff_lowerSemicontinuous [SequentialSpace X] :
+    SeqLowerSemicontinuous f ↔ LowerSemicontinuous f := by
+  simp only [seqLowerSemicontinuous_iff_isSeqClosed_compl_preimage, isSeqClosed_iff_isClosed,
+    isClosed_compl_iff, lowerSemicontinuous_iff_isOpen_preimage]
+
+/-- On a sequential space, a sequentially lower semicontinuous function is lower semicontinuous. -/
+theorem SeqLowerSemicontinuous.lowerSemicontinuous [SequentialSpace X]
+    (hf : SeqLowerSemicontinuous f) : LowerSemicontinuous f :=
+  seqLowerSemicontinuous_iff_lowerSemicontinuous.1 hf
+
+/-- When the subtype `s` is a sequential space, sequential lower semicontinuity on `s` is
+equivalent to topological lower semicontinuity on `s`. -/
+theorem seqLowerSemicontinuousOn_iff_lowerSemicontinuousOn [SequentialSpace s] :
+    SeqLowerSemicontinuousOn f s ↔ LowerSemicontinuousOn f s := by
+  rw [← seqLowerSemicontinuous_restrict_iff, ← lowerSemicontinuous_restrict_iff,
+    seqLowerSemicontinuous_iff_lowerSemicontinuous]
+
+/-- When the subtype `s` is a sequential space, a sequentially lower semicontinuous function on `s`
+is lower semicontinuous on `s`. -/
+theorem SeqLowerSemicontinuousOn.lowerSemicontinuousOn [SequentialSpace s]
+    (hf : SeqLowerSemicontinuousOn f s) : LowerSemicontinuousOn f s :=
+  seqLowerSemicontinuousOn_iff_lowerSemicontinuousOn.1 hf
+
 end Preorder
 
 section LinearOrder
@@ -231,14 +350,7 @@ theorem _root_.SeqContinuous.seqLowerSemicontinuous [TopologicalSpace β] [Close
 closedness of all sublevels `f ⁻¹' Iic b`. -/
 theorem seqLowerSemicontinuous_iff_isSeqClosed_preimage :
     SeqLowerSemicontinuous f ↔ ∀ b, IsSeqClosed (f ⁻¹' Iic b) := by
-  refine ⟨fun hf b u z hu hlim ↦ le_of_not_gt fun hb ↦ ?_, fun h z u hlim y hy ↦ ?_⟩
-  · obtain ⟨n, hn⟩ := (hf z hlim b hb).exists
-    exact hn.not_ge (hu n)
-  · by_contra hnot
-    rw [not_eventually] at hnot
-    have hfreq : ∃ᶠ n in atTop, u n ∈ f ⁻¹' Iic y := hnot.mono fun _ hn ↦ le_of_not_gt hn
-    obtain ⟨φ, hφ, hφy⟩ := extraction_of_frequently_atTop hfreq
-    exact hy.not_ge (h y hφy (hlim.comp hφ.tendsto_atTop))
+  simp only [seqLowerSemicontinuous_iff_isSeqClosed_compl_preimage, ← preimage_compl, compl_Ioi]
 
 /-- Sublevels of a sequentially lower semicontinuous function are sequentially closed. -/
 theorem SeqLowerSemicontinuous.isSeqClosed_preimage (hf : SeqLowerSemicontinuous f) (b : β) :
@@ -271,31 +383,6 @@ theorem SeqLowerSemicontinuousOn.isSeqClosed_sublevel (hf : SeqLowerSemicontinuo
     (hs : IsSeqClosed s) (b : β) : IsSeqClosed {x ∈ s | f x ≤ b} :=
   (hs.seqLowerSemicontinuousOn_iff_isSeqClosed_sublevel.1 hf) b
 
-/-- On a sequential space, sequential lower semicontinuity is equivalent to topological lower
-semicontinuity. -/
-theorem seqLowerSemicontinuous_iff_lowerSemicontinuous [SequentialSpace X] :
-    SeqLowerSemicontinuous f ↔ LowerSemicontinuous f := by
-  rw [seqLowerSemicontinuous_iff_isSeqClosed_preimage, lowerSemicontinuous_iff_isClosed_preimage]
-  simp only [isSeqClosed_iff_isClosed]
-
-/-- On a sequential space, a sequentially lower semicontinuous function is lower semicontinuous. -/
-theorem SeqLowerSemicontinuous.lowerSemicontinuous [SequentialSpace X]
-    (hf : SeqLowerSemicontinuous f) : LowerSemicontinuous f :=
-  seqLowerSemicontinuous_iff_lowerSemicontinuous.1 hf
-
-/-- When the subtype `s` is a sequential space, sequential lower semicontinuity on `s` is
-equivalent to topological lower semicontinuity on `s`. -/
-theorem seqLowerSemicontinuousOn_iff_lowerSemicontinuousOn [SequentialSpace s] :
-    SeqLowerSemicontinuousOn f s ↔ LowerSemicontinuousOn f s := by
-  rw [← seqLowerSemicontinuous_restrict_iff, ← lowerSemicontinuous_restrict_iff,
-    seqLowerSemicontinuous_iff_lowerSemicontinuous]
-
-/-- When the subtype `s` is a sequential space, a sequentially lower semicontinuous function on `s`
-is lower semicontinuous on `s`. -/
-theorem SeqLowerSemicontinuousOn.lowerSemicontinuousOn [SequentialSpace s]
-    (hf : SeqLowerSemicontinuousOn f s) : LowerSemicontinuousOn f s :=
-  seqLowerSemicontinuousOn_iff_lowerSemicontinuousOn.1 hf
-
 end LinearOrder
 
 section Liminf
@@ -311,12 +398,9 @@ the `liminf` inequality `f x ≤ liminf (f ∘ u) atTop` along sequences in `s` 
 theorem seqLowerSemicontinuousWithinAt_iff_le_liminf :
     SeqLowerSemicontinuousWithinAt f s x ↔
       ∀ ⦃u : ℕ → X⦄, (∀ n, u n ∈ s) → Tendsto u atTop (𝓝 x) → f x ≤ liminf (f ∘ u) atTop := by
-  refine ⟨fun hf u hu hlim ↦ ?_, fun hf u hu hlim y hy ↦
-    eventually_lt_of_lt_liminf (hy.trans_le (hf hu hlim))⟩
-  by_contra! hlt
-  obtain ⟨z, hltz, y, hy, hdisj⟩ := hlt.exists_disjoint_Iio_Ioi
-  refine hltz.not_ge (le_liminf_of_le (by isBoundedDefault) ?_)
-  exact (hf hu hlim y hy).mono fun _ hn ↦ le_of_not_gt fun hzn ↦ (hdisj _ hzn _ hn).false
+  refine forall_congr' fun u ↦ imp_congr_right fun _ ↦ imp_congr_right fun _ ↦ ?_
+  rw [le_liminf_iff]
+  rfl
 
 alias ⟨SeqLowerSemicontinuousWithinAt.le_liminf, _⟩ := seqLowerSemicontinuousWithinAt_iff_le_liminf
 
@@ -362,14 +446,9 @@ theorem seqLowerSemicontinuousWithinAt_real_iff_le_liminf_ereal :
     SeqLowerSemicontinuousWithinAt f s x ↔
       ∀ ⦃u : ℕ → X⦄, (∀ n, u n ∈ s) → Tendsto u atTop (𝓝 x) →
         (f x : EReal) ≤ liminf (fun n ↦ (f (u n) : EReal)) atTop := by
-  refine ⟨fun hf u hu hlim ↦ le_of_forall_lt fun c hc ↦ ?_, fun hf u hu hlim y hy ↦ ?_⟩
-  · obtain ⟨y, hcy, hy⟩ := EReal.lt_iff_exists_real_btwn.1 hc
-    have hy' : y < f x := EReal.coe_lt_coe_iff.1 hy
-    refine hcy.trans_le (le_liminf_of_le (by isBoundedDefault) ?_)
-    exact (hf hu hlim y hy').mono fun _ hn ↦ EReal.coe_le_coe_iff.2 hn.le
-  · have hy' : (y : EReal) < liminf (fun n ↦ (f (u n) : EReal)) atTop :=
-      (EReal.coe_lt_coe_iff.2 hy).trans_le (hf hu hlim)
-    exact (eventually_lt_of_lt_liminf hy').mono fun _ hn ↦ EReal.coe_lt_coe_iff.1 hn
+  refine forall_congr' fun u ↦ imp_congr_right fun _ ↦ imp_congr_right fun _ ↦ ?_
+  rw [le_liminf_iff, EReal.forall]
+  simp
 
 alias ⟨SeqLowerSemicontinuousWithinAt.coe_ereal_le_liminf, _⟩ :=
   seqLowerSemicontinuousWithinAt_real_iff_le_liminf_ereal
@@ -456,19 +535,6 @@ theorem SeqLowerSemicontinuous.le_of_tendsto {β : Type*} [LinearOrder β]
     f x ≤ r :=
   (hf x).le_of_tendsto hlim hflim
 
-/-- Bridge between sequential lower bounds along `ℕ` and `LowerSemicontinuousAt` at `⊤ : ℕ∞`,
-allowing composition and addition lemmas to reuse Mathlib's topological proofs. -/
-private theorem lowerSemicontinuousAt_enat_top_iff {β : Type*} [Preorder β] {g : ℕ → β} {b : β} :
-    LowerSemicontinuousAt (fun z : ℕ∞ ↦ if z = ⊤ then b else g z.toNat) ⊤ ↔
-      ∀ y < b, ∀ᶠ n in atTop, y < g n := by
-  refine ⟨fun h y hy ↦ ?_, fun h y hy ↦ ?_⟩
-  · simpa using ENat.tendsto_natCast_nhds_top.eventually (h y (by simpa using hy))
-  · obtain ⟨N, hN⟩ := eventually_atTop.1 (h y hy)
-    refine eventually_of_mem (Ioi_mem_nhds (ENat.natCast_lt_top N)) fun z hz ↦ ?_
-    cases z with
-    | top => simpa using hy
-    | coe n => simpa using hN n (Nat.le_of_lt (ENat.natCast_lt_natCast.1 hz))
-
 /-- Postcomposing with a monotone function continuous at `f x` preserves sequential lower
 semicontinuity within `s` at `x`. -/
 theorem _root_.ContinuousAt.comp_seqLowerSemicontinuousWithinAt {γ δ : Type*}
@@ -478,12 +544,12 @@ theorem _root_.ContinuousAt.comp_seqLowerSemicontinuousWithinAt {γ δ : Type*}
     (hf : SeqLowerSemicontinuousWithinAt f s x) (hmono : Monotone g) :
     SeqLowerSemicontinuousWithinAt (g ∘ f) s x := by
   intro u hu hlim
-  rw [← TauCeti.lowerSemicontinuousAt_enat_top_iff]
-  have hg' : ContinuousAt g ((fun z : ℕ∞ ↦ if z = ⊤ then f x else f (u z.toNat)) ⊤) := by
-    simpa using hg
-  simpa only [Function.comp_def, apply_ite g] using
-    ContinuousAt.comp_lowerSemicontinuousAt (f := fun z : ℕ∞ ↦ if z = ⊤ then f x else f (u z.toNat))
-      hg' (TauCeti.lowerSemicontinuousAt_enat_top_iff.2 (hf hu hlim)) hmono
+  let F : ℕ∞ → γ := ENat.recTopCoe (f x) (f ∘ u)
+  have hF : LowerSemicontinuousAt F ⊤ :=
+    ENat.lowerSemicontinuousAt_top_iff.2 (hf hu hlim)
+  have hgF : ContinuousAt g (F ⊤) := hg
+  simpa only [F, ENat.recTopCoe_top, ENat.recTopCoe_natCast, Function.comp_apply] using
+    ENat.lowerSemicontinuousAt_top_iff.1 (hgF.comp_lowerSemicontinuousAt hF hmono)
 
 /-- Postcomposing with a monotone function continuous at `f x` preserves sequential lower
 semicontinuity at `x`. -/
@@ -523,14 +589,12 @@ theorem SeqLowerSemicontinuousWithinAt.add' {γ : Type*} [AddCommMonoid γ] [Lin
     (hcont : ContinuousAt (fun p : γ × γ ↦ p.1 + p.2) (f x, g x)) :
     SeqLowerSemicontinuousWithinAt (fun z ↦ f z + g z) s x := by
   intro u hu hlim
-  rw [← lowerSemicontinuousAt_enat_top_iff]
-  have hfg : (fun z : ℕ∞ ↦ if z = ⊤ then f x + g x else f (u z.toNat) + g (u z.toNat)) =
-      fun z : ℕ∞ ↦ (if z = ⊤ then f x else f (u z.toNat)) +
-        (if z = ⊤ then g x else g (u z.toNat)) := by
-    ext z; split_ifs <;> rfl
-  rw [hfg]
-  exact (lowerSemicontinuousAt_enat_top_iff.2 (hf hu hlim)).add'
-    (lowerSemicontinuousAt_enat_top_iff.2 (hg hu hlim)) hcont
+  let F : ℕ∞ → γ := ENat.recTopCoe (f x) (f ∘ u)
+  let G : ℕ∞ → γ := ENat.recTopCoe (g x) (g ∘ u)
+  have hF : LowerSemicontinuousAt F ⊤ := ENat.lowerSemicontinuousAt_top_iff.2 (hf hu hlim)
+  have hG : LowerSemicontinuousAt G ⊤ := ENat.lowerSemicontinuousAt_top_iff.2 (hg hu hlim)
+  simpa only [F, G, ENat.recTopCoe_top, ENat.recTopCoe_natCast, Function.comp_apply] using
+    ENat.lowerSemicontinuousAt_top_iff.1 (hF.add' hG hcont)
 
 /-- The sum of two sequentially lower semicontinuous functions at `x` is sequentially lower
 semicontinuous, assuming continuity of addition at `(f x, g x)`. -/
@@ -594,6 +658,19 @@ theorem SeqLowerSemicontinuous.add {γ : Type*} [AddCommMonoid γ] [LinearOrder 
 
 end AlgebraAndLimits
 
+/-- Along a sequence in `s` whose images under an equivalence `e : X ≃ Y` converge to `e x` with
+`x ∈ s` and whose values under `f` converge to `r`, sequential lower semicontinuity of `f ∘ e.symm`
+on `e '' s` gives `f x ≤ r`. -/
+theorem _root_.Equiv.le_of_seqLowerSemicontinuousOn_image {X Y β : Type*} [TopologicalSpace Y]
+    [LinearOrder β] [TopologicalSpace β] [ClosedIciTopology β] (e : X ≃ Y) {f : X → β}
+    {s : Set X} (hf : SeqLowerSemicontinuousOn (fun y ↦ f (e.symm y)) (e '' s))
+    {x : X} (hx : x ∈ s) {u : ℕ → X} {r : β} (hu : ∀ n, u n ∈ s)
+    (hlim : Tendsto (fun n ↦ e (u n)) atTop (𝓝 (e x)))
+    (hflim : Tendsto (fun n ↦ f (u n)) atTop (𝓝 r)) : f x ≤ r := by
+  simpa only [Equiv.symm_apply_apply] using
+    hf.le_of_tendsto (mem_image_of_mem e hx) (fun n ↦ mem_image_of_mem e (hu n)) hlim
+      (by simpa only [Equiv.symm_apply_apply] using hflim)
+
 section SeqCompact
 
 variable {X β : Type*} [TopologicalSpace X] {f : X → β} {s : Set X}
@@ -625,13 +702,10 @@ theorem SeqLowerSemicontinuousOn.exists_isMinOn_of_isSeqCompact_of_bddBelow
     [FirstCountableTopology β] (hne : s.Nonempty) (hs : IsSeqCompact s)
     (hf : SeqLowerSemicontinuousOn f s) (hbdd : BddBelow (f '' s)) :
     ∃ a ∈ s, IsMinOn f s a := by
-  obtain ⟨y, -, hy_lim, hy_mem⟩ := exists_seq_tendsto_sInf (hne.image f) hbdd
-  choose u hu hfu using hy_mem
+  obtain ⟨u, hu, -, hy_lim⟩ := exists_seq_forall_mem_and_tendsto_sInf hne hbdd
   obtain ⟨a, ha, φ, hφ, hlim⟩ := hs hu
   refine ⟨a, ha, fun x hx ↦ ?_⟩
-  have hflim : Tendsto (fun k ↦ f (u (φ k))) atTop (𝓝 (sInf (f '' s))) := by
-    simpa only [Function.comp_def, hfu] using hy_lim.comp hφ.tendsto_atTop
-  exact (hf.le_of_tendsto ha (fun k ↦ hu (φ k)) hlim hflim).trans
+  exact (hf.le_of_tendsto ha (fun k ↦ hu (φ k)) hlim (hy_lim.comp hφ.tendsto_atTop)).trans
     (csInf_le hbdd (mem_image_of_mem f hx))
 
 /-- On a nonempty sequentially compact set, a sequentially lower semicontinuous function into a
