@@ -14,8 +14,10 @@ import Mathlib.Geometry.Manifold.VectorBundle.Hom
 # Restricting tangent Hom fields to open products
 
 The canonical tangent-space identifications of open submanifolds preserve the native Hom-section
-regularity, at every order. The coordinate comparison uses the inherited tangent charts and
-applies to arbitrary normed models, without completeness or finite-dimensionality assumptions.
+regularity, at every order (`restrictOpenTangentSpaceHom`, `restrictOpenTangentSpaceEnd`, and
+`restrictOpenTargetTangentHom` for arbitrary source vector bundles). The coordinate comparison uses
+the inherited tangent charts and applies to arbitrary normed models, without completeness or
+finite-dimensionality assumptions.
 -/
 
 public noncomputable section
@@ -210,4 +212,114 @@ theorem contMDiff_restrictOpenTangentSpaceEnd {n : ℕ∞ω}
 
 end Endomorphism
 
+section TargetTangentHom
+
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G] {W : M → Type*}
+  [TopologicalSpace (TotalSpace G W)] [∀ x, AddCommGroup (W x)] [∀ x, Module 𝕜 (W x)]
+  [∀ x, TopologicalSpace (W x)] [FiberBundle G W] [VectorBundle 𝕜 G W]
+
+omit [IsManifold I 1 M] [IsManifold I' 1 N] in
+/-- Restrict a Hom field valued in the tangent bundle to an open submanifold `U`, landing in
+continuous linear maps from the restricted source bundle to `TangentSpace I` on `U`. -/
+def restrictOpenTargetTangentHom
+    (A : ∀ x : M, W x →L[𝕜] TangentSpace I x) (U : Opens M) (x : U) :
+    ((⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) *ᵖ W) x →L[𝕜] TangentSpace I x :=
+  (tangentSpaceOpenEquiv (I := I) x).symm.toContinuousLinearMap.comp (A x)
+
+omit [IsManifold I 1 M] [IsManifold I' 1 N] in
+@[simp]
+theorem restrictOpenTargetTangentHom_apply
+    (A : ∀ x : M, W x →L[𝕜] TangentSpace I x) (U : Opens M) (x : U)
+    (v : ((⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) *ᵖ W) x) :
+    dsimp% only [ContinuousMap.coe_mk]
+      (restrictOpenTargetTangentHom A U x v = (tangentSpaceOpenEquiv (I := I) x).symm (A x v)) :=
+  (rfl)
+
+omit [IsManifold I' 1 N] in
+/-- Near any point `x` of an open submanifold `U`, the Hom coordinates of
+`restrictOpenTargetTangentHom A U` agree with the ambient Hom coordinates of `A`. -/
+theorem eventually_inCoordinates_openTargetTangentHom_eq
+    (A : ∀ x : M, W x →L[𝕜] TangentSpace I x) (U : Opens M) (x : U) :
+    (fun y : U ↦ ContinuousLinearMap.inCoordinates G
+        ((⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) *ᵖ W) E
+        (TangentSpace I : U → Type _) x y x y (restrictOpenTargetTangentHom A U y)) =ᶠ[𝓝 x]
+      (fun y : U ↦ ContinuousLinearMap.inCoordinates G W E
+        (TangentSpace I : M → Type _) (x : M) (y : M) (x : M) (y : M) (A y)) := by
+  let ι : C(U, M) := ⟨Subtype.val, continuous_subtype_val⟩
+  filter_upwards [eventually_tangentSpaceOpenEquiv_symmL_trivializationAt_eq (I := I) x,
+    (trivializationAt E (TangentSpace I : U → Type _) x).open_baseSet.mem_nhds
+      (mem_baseSet_trivializationAt E (TangentSpace I : U → Type _) x),
+    continuousAt_subtype_val.eventually
+      ((trivializationAt E (TangentSpace I : M → Type _) (x : M)).open_baseSet.mem_nhds
+        (mem_baseSet_trivializationAt E (TangentSpace I : M → Type _) (x : M))),
+    continuousAt_subtype_val.eventually
+      ((trivializationAt G W (x : M)).open_baseSet.mem_nhds
+        (mem_baseSet_trivializationAt G W (x : M)))]
+      with y ht hyU hyM hyW
+  have hout (w : TangentSpace I (y : M)) :
+      (trivializationAt E (TangentSpace I : U → Type _) x).continuousLinearMapAt 𝕜 y
+        ((tangentSpaceOpenEquiv (I := I) y).symm w) =
+      (trivializationAt E (TangentSpace I : M → Type _) (x : M)).continuousLinearMapAt 𝕜
+        (y : M) w := by
+    let z := (trivializationAt E (TangentSpace I : M → Type _) (x : M)).continuousLinearMapAt
+      𝕜 (y : M) w
+    have hw : (tangentSpaceOpenEquiv (I := I) y).symm w =
+        (trivializationAt E (TangentSpace I : U → Type _) x).symmL 𝕜 y z := by
+      apply (tangentSpaceOpenEquiv (I := I) y).injective
+      rw [ContinuousLinearEquiv.apply_symm_apply, ht]
+      exact (Trivialization.symmL_continuousLinearMapAt
+        (trivializationAt E (TangentSpace I : M → Type _) (x : M)) hyM w).symm
+    rw [hw, Trivialization.continuousLinearMapAt_symmL _ hyU]
+  have hin (v : G) :
+      (trivializationAt G (ι *ᵖ W) x).symmL 𝕜 y v =
+        (trivializationAt G W (x : M)).symmL 𝕜 (y : M) v := by
+    have hyW' : y ∈ (trivializationAt G (ι *ᵖ W) x).baseSet := hyW
+    rw [← Trivialization.symm_continuousLinearEquivAt_eq _ hyW',
+      ← Trivialization.symm_continuousLinearEquivAt_eq _ hyW]
+    simp only [trivializationAt, FiberBundle.pullback_trivializationAt',
+      Trivialization.continuousLinearEquivAt_pullback]
+    rfl
+  ext v
+  simp only [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply,
+    ContinuousMap.coe_mk, restrictOpenTargetTangentHom_apply]
+  -- `erw` identifies the pulled-back source fibre `(ι *ᵖ W) y` with `W y`.
+  erw [hin v]
+  exact hout _
+
+omit [IsManifold I' 1 N] in
+/-- A Hom field valued in the tangent bundle is `C^n` at a point `x` of an open submanifold `U`
+exactly when its open restriction `restrictOpenTargetTangentHom A U` is `C^n` at `x`. -/
+theorem contMDiffAt_restrictOpenTargetTangentHom_iff {n : ℕ∞ω}
+    (A : ∀ x : M, W x →L[𝕜] TangentSpace I x) (U : Opens M) (x : U) :
+    ContMDiffAt I (I.prod 𝓘(𝕜, G →L[𝕜] E)) n
+      (fun y : U ↦ TotalSpace.mk' (G →L[𝕜] E)
+        (E := fun y : U ↦
+          ((⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) *ᵖ W) y →L[𝕜] TangentSpace I y)
+        y (restrictOpenTargetTangentHom A U y)) x ↔
+    ContMDiffAt I (I.prod 𝓘(𝕜, G →L[𝕜] E)) n
+      (fun z : M ↦ TotalSpace.mk' (G →L[𝕜] E)
+        (E := fun z : M ↦ W z →L[𝕜] TangentSpace I z) z (A z)) (x : M) := by
+  rw [← contMDiffAt_subtype_iff (x := x), contMDiffAt_hom_bundle, contMDiffAt_hom_bundle]
+  have heq := eventually_inCoordinates_openTargetTangentHom_eq (G := G) A U x
+  exact ⟨fun ⟨_, h⟩ ↦ ⟨contMDiff_subtype_val.contMDiffAt, h.congr_of_eventuallyEq heq.symm⟩,
+    fun ⟨_, h⟩ ↦ ⟨contMDiffAt_id, h.congr_of_eventuallyEq heq⟩⟩
+
+omit [IsManifold I' 1 N] in
+/-- Restricting a Hom section with values in the tangent bundle to an open submanifold preserves
+its exact `C^n` regularity, without finite-rank or smooth-bundle assumptions on the source. -/
+theorem contMDiff_restrictOpenTargetTangentHom {n : ℕ∞ω}
+    (A : ∀ x : M, W x →L[𝕜] TangentSpace I x) (U : Opens M)
+    (hA : ContMDiff I (I.prod 𝓘(𝕜, G →L[𝕜] E)) n
+      (fun x : M ↦ TotalSpace.mk' (G →L[𝕜] E)
+        (E := fun x : M ↦ W x →L[𝕜] TangentSpace I x) x (A x))) :
+    ContMDiff I (I.prod 𝓘(𝕜, G →L[𝕜] E)) n
+      (fun x : U ↦ TotalSpace.mk' (G →L[𝕜] E)
+        (E := fun x : U ↦
+          ((⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) *ᵖ W) x →L[𝕜] TangentSpace I x)
+        x (restrictOpenTargetTangentHom A U x)) := fun x ↦
+  (contMDiffAt_restrictOpenTargetTangentHom_iff (G := G) A U x).2 (hA (x : M))
+
+end TargetTangentHom
+
 end TauCeti.Manifold
+
