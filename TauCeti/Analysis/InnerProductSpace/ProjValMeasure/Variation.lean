@@ -59,7 +59,7 @@ private theorem polarizedComplexMeasure_variation_univ_le_of_ne_zero
     simp only [m]
     rw [measureReal_add_apply, measureReal_nnreal_smul_apply, measureReal_nnreal_smul_apply]
   have hmajor : (P.polarizedComplexMeasure ψ ξ).variation ≤ m := by
-    apply VectorMeasure.variation_le_of_forall_enorm_le
+    apply VectorMeasure.variation_le_of_forall_eNorm_le
     intro B hB
     have hbound : ‖P.polarizedComplexMeasure ψ ξ B‖ ≤ m.real B := by
       rw [hm B, ha, hb]
