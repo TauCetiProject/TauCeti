@@ -43,11 +43,14 @@ is a subcomplex.
   embeddings of CW complexes.
 * `TauCeti.cwComplexOfIsColimitCellEquiv`: its `n`-cells are those of the first stage and the new
   `n`-cells of the later stages.
+* `TauCeti.cwComplexOfIsColimitStageCellMap`: every `n`-cell of a stage `F k` maps to an `n`-cell of
+  the colimit.
 
 ## Main results
 
-* `TauCeti.coe_map_cwComplexOfIsColimitCellEquiv_symm_inl` and
-  `TauCeti.coe_map_cwComplexOfIsColimitCellEquiv_symm_inr`: the characteristic maps of the cells.
+* `TauCeti.coe_map_cwComplexOfIsColimitCellEquiv_symm_inl`,
+  `TauCeti.coe_map_cwComplexOfIsColimitCellEquiv_symm_inr`, and
+  `TauCeti.coe_map_cwComplexOfIsColimitStageCellMap`: the characteristic maps of the cells.
 * `TauCeti.hasHomotopyExtensionProperty_preimage_range_ι`: each stage has the homotopy extension
   property in the next one, inside the colimit.
 
@@ -246,6 +249,30 @@ theorem coe_map_cwComplexOfIsColimitCellEquiv_symm_inr {n : ℕ}
   obtain ⟨k, i⟩ := i
   simp [cwComplexOfIsColimitCellEquiv, Equiv.sigmaNatSucc, map_cwSubcomplexTowerUnionCellEquiv_symm,
     Equiv.sigmaCongrRight_symm, Sigma.map, newTowerCellEquiv, newCellEquiv]
+
+/-- Every `n`-cell of a stage `F k` maps to an `n`-cell of the colimit
+`TauCeti.cwComplexOfIsColimit`, preserving its characteristic map along `c.ι.app k`. -/
+def cwComplexOfIsColimitStageCellMap (k n : ℕ) (i : cell (univ : Set (F.obj k)) n) :
+    @cell c.pt _ univ ∅ (@CWComplex.instRelCWComplex _ _ _ (cwComplexOfIsColimit hF hι hc)) n :=
+  letI := fun k ↦ stageCWComplex hF hc k
+  letI := towerCWComplex hF hι hc
+  (IsClosedEmbedding.id.relCWComplexCellEquiv (image_id_iUnion_range hc) (image_empty _) n).symm
+    ((cwSubcomplexTowerUnionCellEquiv (coe_map_stageCellMap hF hι hc)
+      (isClosed_of_forall_isClosed_inter_range hc) n).symm
+      (towerOrigin (W := fun k ↦ (range (c.ι.app k) : Set c.pt)) (stageCellMap hF hc (ι := ι)) k
+        ((stageCellEquiv hF hc k n).symm i)))
+
+/-- The characteristic map of a stage cell in the colimit is its characteristic map in that stage
+followed by the colimit injection `c.ι.app k`. -/
+@[simp]
+theorem coe_map_cwComplexOfIsColimitStageCellMap {k n : ℕ} (i : cell (univ : Set (F.obj k)) n) :
+    ⇑(@map c.pt _ univ ∅ (@CWComplex.instRelCWComplex _ _ _ (cwComplexOfIsColimit hF hι hc)) n
+      (cwComplexOfIsColimitStageCellMap hF hι hc k n i)) = c.ι.app k ∘ map n i := by
+  let := fun k ↦ stageCWComplex hF hc k
+  let := towerCWComplex hF hι hc
+  rw [cwComplexOfIsColimitStageCellMap, coe_map_cwComplexOfIsColimit, Equiv.apply_symm_apply,
+    Function.id_comp, map_cwSubcomplexTowerUnionCellEquiv_symm,
+    coe_map_towerOrigin (coe_map_stageCellMap hF hι hc), coe_map_stage, Equiv.apply_symm_apply]
 
 include hF hι hc in
 /-- **The stages of a sequential colimit of CW complexes are linked by closed cofibrations.**
