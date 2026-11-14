@@ -24,7 +24,9 @@ of smooth isotopies.
 The constructions reuse Mathlib’s interval immersion and `Real.smoothTransition`.
 The preferred interval charts also expose their actual affine coordinate formulas and the
 within-range derivatives of the inclusion composed with their inverses. The derivative of the
-inclusion is invertible at every point, including both endpoints.
+inclusion is invertible at every point, including both endpoints. At interior points the projection
+`ℝ → [a, b]` is differentiable and sends the unit vector of `ℝ` to that of the interval, and the
+map `(s, t) ↦ (γ s, t)` from the plane to `M × [a, b]` has the product derivative.
 
 Both preferred charts send their endpoints to `0` (`extChartAt_Icc_bot`, `extChartAt_Icc_top`).
 -/
@@ -287,5 +289,29 @@ open Fact.Manifold in
 theorem extChartAt_Icc_top : extChartAt (𝓡∂ 1) (⊤ : Icc a b) ⊤ = 0 := by
   rw [extChartAt, Icc_chartedSpaceChartAt_of_top_le (by simp)]
   exact IccRightChart_extend_top
+
+/-- The projection of the real line onto `[a, b]` is differentiable at every interior point. -/
+theorem mdifferentiableAt_projIcc {t : ℝ} (ht : t ∈ Ioo a b) :
+    MDifferentiableAt 𝓘(ℝ) (𝓡∂ 1) (projIcc a b hab.out.le) t :=
+  ((contMDiffOn_projIcc (n := 1) t (Ioo_subset_Icc_self ht)).contMDiffAt
+    (Icc_mem_nhds ht.1 ht.2)).mdifferentiableAt one_ne_zero
+
+/-- At an interior point, the projection of the real line onto `[a, b]` sends the unit vector of
+`ℝ` to the unit vector `1` of the tangent space of the interval. -/
+theorem mfderiv_projIcc_one {t : ℝ} (ht : t ∈ Ioo a b) :
+    mfderiv 𝓘(ℝ) (𝓡∂ 1) (projIcc a b hab.out.le) t 1 = 1 := by
+  rw [← mfderivWithin_of_mem_nhds (Icc_mem_nhds ht.1 ht.2)]
+  exact mfderivWithin_projIcc_one (Ioo_subset_Icc_self ht)
+
+/-- At an interior time, the derivative of the map `(s, t) ↦ (γ s, t)` from the plane to the
+product `M × [a, b]` is the product of the derivatives of `γ` and of the projection of the real
+line onto the interval. -/
+theorem hasMFDerivAt_prodMk_projIcc {γ : ℝ → M} {s t : ℝ} (hγ : MDifferentiableAt 𝓘(ℝ) I γ s)
+    (ht : t ∈ Ioo a b) :
+    HasMFDerivAt 𝓘(ℝ, ℝ × ℝ) (I.prod (𝓡∂ 1)) (fun p ↦ (γ p.1, projIcc a b hab.out.le p.2))
+      (s, t) (((mfderiv 𝓘(ℝ) I γ s).comp (.fst ℝ ℝ ℝ)).prod
+        ((mfderiv 𝓘(ℝ) (𝓡∂ 1) (projIcc a b hab.out.le) t).comp (.snd ℝ ℝ ℝ))) := by
+  rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
+  exact hγ.hasMFDerivAt.prodMap (p := (s, t)) (mdifferentiableAt_projIcc ht).hasMFDerivAt
 
 end TauCeti
