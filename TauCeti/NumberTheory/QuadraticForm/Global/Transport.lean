@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.NumberField.InfinitePlace.Transport
 public import TauCeti.NumberTheory.NumberField.RingOfIntegers.Transport
 public import TauCeti.NumberTheory.QuadraticForm.Global.Localization
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Transport
+import TauCeti.Algebra.Ring.Hom
 import TauCeti.Analysis.Normed.Field.WithAbs
 
 /-!
@@ -45,9 +46,9 @@ along `Shrink.ringEquiv K : Shrink.{0} K ≃+* K` from `Type` to number fields i
   finite place is preserved along `e`.
 * `TauCeti.finprod_hilbertSymbol_unitAtFinitePlace_ringEquiv`: the product of the finite-place
   Hilbert symbols is preserved along `e`.
-* `TauCeti.exists_sq_sub_mul_sq_adicCompletion_iff_of_ringEquiv`,
-  `TauCeti.exists_sq_sub_mul_sq_adicCompletion_equivOfRingEquiv`,
-  `TauCeti.forall_adicCompletion_exists_sq_sub_mul_sq_iff_of_ringEquiv`: solvability of
+* `RingEquiv.exists_sq_sub_mul_sq_adicCompletion_iff_of_ringEquiv`,
+  `RingEquiv.exists_sq_sub_mul_sq_adicCompletion_equivOfRingEquiv`,
+  `RingEquiv.forall_adicCompletion_exists_sq_sub_mul_sq_iff_of_ringEquiv`: solvability of
   `a = x² - d y²` in adic completions is preserved along `e`.
 * `TauCeti.unitAtRealPlace_realEquivOfRingEquiv`,
   `TauCeti.unitAtRealPlace_realEquivOfRingEquiv_units_map`: `unitAtRealPlace` at a transported real
@@ -56,8 +57,8 @@ along `Shrink.ringEquiv K : Shrink.{0} K ≃+* K` from `Type` to number fields i
 * `TauCeti.prod_hilbertSymbol_unitAtRealPlace_ringEquiv`: the product of the real-place Hilbert
   symbols is preserved along `e`.
 * `TauCeti.exists_sq_sub_mul_sq_infinitePlaceCompletion_iff_of_apply_eq`,
-  `TauCeti.exists_sq_sub_mul_sq_infinitePlaceCompletion_equivOfRingEquiv`,
-  `TauCeti.forall_infinitePlaceCompletion_exists_sq_sub_mul_sq_iff_of_ringEquiv`: solvability of
+  `RingEquiv.exists_sq_sub_mul_sq_infinitePlaceCompletion_equivOfRingEquiv`,
+  `RingEquiv.forall_infinitePlaceCompletion_exists_sq_sub_mul_sq_iff_of_ringEquiv`: solvability of
   `a = x² - d y²` in archimedean completions is preserved along `e`.
 -/
 
@@ -67,11 +68,11 @@ noncomputable section
 
 open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum NumberField NumberField.InfinitePlace
 
-namespace TauCeti
-
 section FinitePlace
 
 variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L]
+
+namespace TauCeti
 
 /-- Extending a valuation-preserving isomorphism `e : K ≃+* L` to the adic completions intertwines
 `unitAtFinitePlace` with `Units.map e`. -/
@@ -153,6 +154,10 @@ theorem finprod_hilbertSymbol_unitAtFinitePlace_ringEquiv (e : K ≃+* L) (a b :
   rw [← finprod_comp_equiv (HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e))]
   exact finprod_congr fun v ↦ hilbertSymbol_unitAtFinitePlace_equivOfRingEquiv e v a b
 
+end TauCeti
+
+namespace RingEquiv
+
 /-- Solvability of `a = x² - d y²` in the adic completion is preserved under a ring isomorphism
 `e : K ≃+* L` of number fields carrying `v` to `w`. -/
 theorem exists_sq_sub_mul_sq_adicCompletion_iff_of_ringEquiv (e : K ≃+* L)
@@ -168,7 +173,7 @@ theorem exists_sq_sub_mul_sq_adicCompletion_iff_of_ringEquiv (e : K ≃+* L)
     simpa using valuation_ringEquivOfRingEquiv (K := K) (K' := L)
       (RingOfIntegers.mapRingEquiv e) hvw x
   rw [← adicCompletionCongr_algebraMap he a, ← adicCompletionCongr_algebraMap he d,
-    exists_eq_sq_sub_mul_sq_map_iff]
+    (adicCompletionCongr v w e he).exists_eq_sq_sub_mul_sq_map_iff]
 
 /-- Solvability of `a = x² - d y²` in the adic completion is preserved when both the finite place
 and the coefficients are transported along `e : K ≃+* L`. -/
@@ -186,7 +191,7 @@ theorem exists_sq_sub_mul_sq_adicCompletion_equivOfRingEquiv (e : K ≃+* L)
       ∃ x y : v.adicCompletion K,
         algebraMap K (v.adicCompletion K) a =
           x ^ 2 - algebraMap K (v.adicCompletion K) d * y ^ 2 :=
-  exists_sq_sub_mul_sq_adicCompletion_iff_of_ringEquiv e
+  e.exists_sq_sub_mul_sq_adicCompletion_iff_of_ringEquiv
     (asIdeal_equivOfRingEquiv (RingOfIntegers.mapRingEquiv e) v) d a
 
 /-- Solvability of `a = x² - d y²` in every finite completion is preserved under a ring isomorphism
@@ -199,13 +204,17 @@ theorem forall_adicCompletion_exists_sq_sub_mul_sq_iff_of_ringEquiv (e : K ≃+*
         algebraMap K (v.adicCompletion K) a =
           x ^ 2 - algebraMap K (v.adicCompletion K) d * y ^ 2 :=
   ((HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e)).forall_congr fun v ↦
-    (exists_sq_sub_mul_sq_adicCompletion_equivOfRingEquiv e v d a).symm).symm
+    (e.exists_sq_sub_mul_sq_adicCompletion_equivOfRingEquiv v d a).symm).symm
+
+end RingEquiv
 
 end FinitePlace
 
 section InfinitePlace
 
 variable {K L : Type*} [Field K] [Field L]
+
+namespace TauCeti
 
 /-- Evaluating `unitAtRealPlace` at a real place transported along `e : K ≃+* L` pulls the unit
 back along `e.symm`. -/
@@ -254,7 +263,12 @@ theorem exists_sq_sub_mul_sq_infinitePlaceCompletion_iff_of_apply_eq
         algebraMap K w.Completion a =
           x ^ 2 - algebraMap K w.Completion d * y ^ 2 := by
   rw [← AbsoluteValue.Completion.congr_algebraMap hw a,
-    ← AbsoluteValue.Completion.congr_algebraMap hw d, exists_eq_sq_sub_mul_sq_map_iff]
+    ← AbsoluteValue.Completion.congr_algebraMap hw d,
+    (AbsoluteValue.Completion.congr e hw).exists_eq_sq_sub_mul_sq_map_iff]
+
+end TauCeti
+
+namespace RingEquiv
 
 /-- Solvability of `a = x² - d y²` in an archimedean completion is preserved when both the infinite
 place and the coefficients are transported along `e : K ≃+* L`. -/
@@ -266,7 +280,8 @@ theorem exists_sq_sub_mul_sq_infinitePlaceCompletion_equivOfRingEquiv (e : K ≃
       ∃ x y : w.Completion,
         algebraMap K w.Completion a =
           x ^ 2 - algebraMap K w.Completion d * y ^ 2 :=
-  exists_sq_sub_mul_sq_infinitePlaceCompletion_iff_of_apply_eq (eq_equivOfRingEquiv_iff.mp rfl) d a
+  TauCeti.exists_sq_sub_mul_sq_infinitePlaceCompletion_iff_of_apply_eq
+    (eq_equivOfRingEquiv_iff.mp rfl) d a
 
 /-- Solvability of `a = x² - d y²` in every archimedean completion is preserved under a ring
 isomorphism `e : K ≃+* L` of fields. -/
@@ -279,8 +294,8 @@ theorem forall_infinitePlaceCompletion_exists_sq_sub_mul_sq_iff_of_ringEquiv (e 
         algebraMap K w.Completion a =
           x ^ 2 - algebraMap K w.Completion d * y ^ 2 :=
   ((InfinitePlace.equivOfRingEquiv e).forall_congr fun w ↦
-    (exists_sq_sub_mul_sq_infinitePlaceCompletion_equivOfRingEquiv e w d a).symm).symm
+    (e.exists_sq_sub_mul_sq_infinitePlaceCompletion_equivOfRingEquiv w d a).symm).symm
+
+end RingEquiv
 
 end InfinitePlace
-
-end TauCeti

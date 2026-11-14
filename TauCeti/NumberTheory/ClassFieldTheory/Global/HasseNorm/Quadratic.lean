@@ -12,6 +12,7 @@ import Mathlib.Algebra.QuadraticAlgebra.Basic
 import Mathlib.Algebra.Ring.Shrink
 import Mathlib.RingTheory.Finiteness.Small
 import Mathlib.Tactic.NormNum.IsSquare
+import TauCeti.Algebra.Ring.Hom
 import TauCeti.NumberTheory.ClassFieldTheory.Global.HasseNorm.Basic
 import TauCeti.NumberTheory.QuadraticForm.Global.Transport
 import TauCeti.RingTheory.Norm.Quadratic
@@ -98,9 +99,9 @@ theorem exists_sq_sub_mul_sq_iff_forall_completion {d : K}
   have hd₀ : ¬ IsSquare d₀ := fun h ↦ hd (by simpa [d₀] using h.map e)
   have hd_eq : e d₀ = d := e.apply_symm_apply d
   have ha_eq : e (a₀ : Shrink.{0} K) = (a : K) := e.apply_symm_apply a
-  rw [← ha_eq, ← hd_eq, exists_eq_sq_sub_mul_sq_map_iff e,
-    forall_adicCompletion_exists_sq_sub_mul_sq_iff_of_ringEquiv e,
-    forall_infinitePlaceCompletion_exists_sq_sub_mul_sq_iff_of_ringEquiv e]
+  rw [← ha_eq, ← hd_eq, e.exists_eq_sq_sub_mul_sq_map_iff,
+    e.forall_adicCompletion_exists_sq_sub_mul_sq_iff_of_ringEquiv,
+    e.forall_infinitePlaceCompletion_exists_sq_sub_mul_sq_iff_of_ringEquiv]
   exact exists_sq_sub_mul_sq_iff_forall_completion_zero hd₀ a₀
 
 /-- **The Hasse norm test for `ℚ(√5)`.** A nonzero rational is a value of `x² - 5y²` over `ℚ`
