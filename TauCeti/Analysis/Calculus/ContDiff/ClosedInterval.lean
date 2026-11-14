@@ -138,13 +138,13 @@ theorem contDiffOn_Icc_iff_exists_continuous_jet {n : ℕ} :
 
 end TauCeti
 
-/-- If `f` is `C¹` on `[a, c]` and `[c, b]` with matching within-interval derivatives at `c`, then
-`f` is `C¹` on `[a, b]`. When `c ≤ a` or `b ≤ c`, one of `[a, c]`, `[c, b]` already covers
-`[a, b]`. -/
+/-- If `f` is `C¹` on `[a, c]` and `[c, b]` with matching within-interval derivatives at `c` when
+`a < c < b`, then `f` is `C¹` on `[a, b]`. When `c ≤ a` or `b ≤ c`, one of `[a, c]`, `[c, b]`
+already covers `[a, b]`. -/
 theorem ContDiffOn.union_Icc_of_derivWithin_eq {F : Type*} [NormedAddCommGroup F]
     [NormedSpace ℝ F] {f : ℝ → F} {a c b : ℝ}
     (hf₁ : ContDiffOn ℝ 1 f (Icc a c)) (hf₂ : ContDiffOn ℝ 1 f (Icc c b))
-    (hderiv : derivWithin f (Icc a c) c = derivWithin f (Icc c b) c) :
+    (hderiv : a < c → c < b → derivWithin f (Icc a c) c = derivWithin f (Icc c b) c) :
     ContDiffOn ℝ 1 f (Icc a b) := by
   rcases le_or_gt c a with hca | hac
   · exact hf₂.mono (Icc_subset_Icc hca le_rfl)
@@ -158,7 +158,7 @@ theorem ContDiffOn.union_Icc_of_derivWithin_eq {F : Type*} [NormedAddCommGroup F
       dsimp only [g]
       split_ifs with htc
       · obtain rfl : t = c := le_antisymm htc ht.1
-        exact hderiv
+        exact hderiv hac hcb
       · rfl
   have hg : ContinuousOn g (Icc a b) :=
     Icc_union_Icc_eq_Icc hac.le hcb.le ▸ hg₁.union_of_isClosed hg₂ isClosed_Icc isClosed_Icc
@@ -180,7 +180,7 @@ theorem ContDiffOn.union_Icc_of_derivWithin_eq {F : Type*} [NormedAddCommGroup F
         (hf₁.differentiableOn one_ne_zero t ⟨hac.le, le_rfl⟩).hasDerivWithinAt
           |>.mono_of_mem_nhdsWithin (Icc_mem_nhdsLE hac)
     have hd₂ : HasDerivWithinAt f (g t) (Ici t) t := by
-      simpa only [g, le_rfl, ↓reduceIte, hderiv] using
+      simpa only [g, le_rfl, ↓reduceIte, hderiv hac hcb] using
         (hf₂.differentiableOn one_ne_zero t ⟨le_rfl, hcb.le⟩).hasDerivWithinAt
           |>.mono_of_mem_nhdsWithin (Icc_mem_nhdsGE hcb)
     simpa only [Iic_union_Ici, hasDerivWithinAt_univ] using hd₁.union hd₂

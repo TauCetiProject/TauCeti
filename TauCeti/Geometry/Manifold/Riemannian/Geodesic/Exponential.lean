@@ -43,8 +43,11 @@ defined for all time.
   maximal geodesic interval is the whole real line.
 * `TauCeti.Manifold.mem_geodesicInterval_iff_smul_mem_expDomain`: the maximal interval of `v` is
   the set of times `t` with `t • v` in the domain.
-* `TauCeti.Manifold.riemannianExp_smul`: `exp_p (t • v)` is the maximal geodesic at time `t`,
-  on and off its natural interval (where both sides take the junk value).
+* `TauCeti.Manifold.riemannianExp_smul`,
+  `TauCeti.Manifold.isGeodesicCurveOnFrom_riemannianExp_smul`, and
+  `TauCeti.Manifold.isGeodesicCurveOn_riemannianExp_smul_Icc`: `exp_p (t • v)` is the maximal
+  geodesic at time `t`, on and off its natural interval (where both sides take the junk value), and
+  therefore satisfies the geodesic equation on `geodesicInterval` and its closed subintervals.
 * `TauCeti.Manifold.mem_expDomain_of_norm_le_dist`: a vector with `‖v‖ ≤ dist p (exp_p v)` lies
   in the domain, since off it `exp_p v` is the junk value `p`.
 * `TauCeti.Manifold.starConvex_expDomain`: the domain is star-shaped at `0`.
@@ -195,6 +198,23 @@ theorem riemannianExp_smul [T2Space M]
   · rw [riemannianExp_of_notMem_expDomain
         (mt mem_geodesicInterval_iff_smul_mem_expDomain.mpr ht),
       maximalGeodesic_eq_of_not_mem ht]
+
+/-- The radial exponential curve `t ↦ exp_p (t • v)` is a geodesic from `p` with initial velocity
+`v` on its maximal geodesic interval. -/
+theorem isGeodesicCurveOnFrom_riemannianExp_smul [T2Space M] (p : M) (v : TangentSpace I p) :
+    IsGeodesicCurveOnFrom I (fun t : ℝ ↦ riemannianExp I M p (t • v))
+      (geodesicInterval I M p v) p v := by
+  simpa only [funext (riemannianExp_smul (I := I) (M := M) p v)] using
+    isGeodesicCurveOnFrom_maximalGeodesic (I := I) (M := M) p v
+
+/-- The radial exponential curve `t ↦ exp_p (t • v)` is a geodesic on every nondegenerate closed
+interval `[a, b]` whose endpoints lie in the maximal geodesic interval. -/
+theorem isGeodesicCurveOn_riemannianExp_smul_Icc [T2Space M]
+    {p : M} {v : TangentSpace I p} {a b : ℝ} (hab : a < b)
+    (ha : a ∈ geodesicInterval I M p v) (hb : b ∈ geodesicInterval I M p v) :
+    IsGeodesicCurveOn I (fun t : ℝ ↦ riemannianExp I M p (t • v)) (Icc a b) :=
+  (isGeodesicCurveOnFrom_riemannianExp_smul p v).isGeodesicCurveOn.mono (uniqueDiffOn_Icc hab)
+    (ordConnected_geodesicInterval.out ha hb)
 
 omit [I.Boundaryless] in
 /-- The domain of the exponential map is star-shaped at the zero vector. -/

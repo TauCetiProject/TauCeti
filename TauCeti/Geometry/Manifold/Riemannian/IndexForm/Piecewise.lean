@@ -33,15 +33,18 @@ piecewise `C¹` test fields `W`.
 ## Main definitions and results
 
 * `TauCeti.Manifold.IsPiecewiseContMDiffOn.intervalIntegrable_indexFormIntegrand`,
-  `TauCeti.Manifold.IsPiecewiseContMDiffOn.indexForm_add_left`, and right/subtraction variants:
-  integrability and bilinearity of `indexForm` on continuous piecewise `C¹` fields.
-* `TauCeti.Manifold.indexForm_eq_inner_sub_sum_jump_sub_sum_integral` and
-  `TauCeti.Manifold.indexForm_eq_inner_sub_sum_jump_of_isJacobiFieldOn`: piecewise integration by
-  parts with interior covariant-derivative jumps, and its broken-Jacobi specialization.
+  `TauCeti.Manifold.IsPiecewiseContMDiffOn.indexForm_add_left`,
+  `TauCeti.Manifold.IsPiecewiseContMDiffOn.indexForm_sum_left`, and right/subtraction/pointwise
+  variants: integrability and bilinearity of `indexForm` on continuous piecewise `C¹` fields.
+* `TauCeti.Manifold.indexForm_eq_inner_sub_inner_sub_sum_inner_sub_sum_integral` and
+  `TauCeti.Manifold.indexForm_eq_inner_sub_inner_sub_sum_inner_of_isJacobiFieldOn`: piecewise
+  integration by parts with interior covariant-derivative jumps, and its broken-Jacobi
+  specialization.
 * `TauCeti.Manifold.IsJacobiFieldOn.indexForm_eq_inner_sub_inner_of_isPiecewiseContMDiffOn` and
   `TauCeti.Manifold.IsJacobiFieldOn.indexForm_eq_zero_of_isPiecewiseContMDiffOn`: pairing an
   unbroken Jacobi field with a continuous piecewise `C¹` field.
-* `TauCeti.Manifold.piecewiseIndexForm` and `TauCeti.Manifold.endpointZeroIndexForm`: the symmetric
+* `TauCeti.Manifold.piecewiseIndexForm`, `TauCeti.Manifold.endpointZeroIndexForm`, and `@[simp]`
+  lemmas eliminating `extendByZero` on `ofPiecewise`, `ofContMDiffOn`, and `restrict`: the symmetric
   bilinear index form on `PiecewiseContMDiffSectionAlong` and on its fixed-endpoint submodule.
 
 ## References
@@ -85,6 +88,7 @@ theorem IsPiecewiseContMDiffOn.intervalIntegrable_indexFormIntegrand
 
 /-- The index form is additive in its first slot on continuous piecewise `C¹` fields, even when
 their witnessing partitions differ. -/
+@[to_fun IsPiecewiseContMDiffOn.indexForm_fun_add_left]
 theorem IsPiecewiseContMDiffOn.indexForm_add_left
     (hV : IsPiecewiseContMDiffOn I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (V r)) a b)
     (hV' : IsPiecewiseContMDiffOn I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (V' r)) a b)
@@ -127,6 +131,7 @@ theorem IsPiecewiseContMDiffOn.indexForm_add_left
     ring
 
 /-- The index form is additive in its second slot on continuous piecewise `C¹` fields. -/
+@[to_fun IsPiecewiseContMDiffOn.indexForm_fun_add_right]
 theorem IsPiecewiseContMDiffOn.indexForm_add_right
     (hV : IsPiecewiseContMDiffOn I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (V r)) a b)
     (hW : IsPiecewiseContMDiffOn I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (W r)) a b)
@@ -135,6 +140,7 @@ theorem IsPiecewiseContMDiffOn.indexForm_add_right
   rw [indexForm_comm, hW.indexForm_add_left hW' hV, indexForm_comm, indexForm_comm (V := W')]
 
 /-- The index form respects subtraction in its first slot on continuous piecewise `C¹` fields. -/
+@[to_fun IsPiecewiseContMDiffOn.indexForm_fun_sub_left]
 theorem IsPiecewiseContMDiffOn.indexForm_sub_left
     (hV : IsPiecewiseContMDiffOn I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (V r)) a b)
     (hV' : IsPiecewiseContMDiffOn I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (V' r)) a b)
@@ -144,6 +150,7 @@ theorem IsPiecewiseContMDiffOn.indexForm_sub_left
     indexForm_neg_left, sub_eq_add_neg]
 
 /-- The index form respects subtraction in its second slot on continuous piecewise `C¹` fields. -/
+@[to_fun IsPiecewiseContMDiffOn.indexForm_fun_sub_right]
 theorem IsPiecewiseContMDiffOn.indexForm_sub_right
     (hV : IsPiecewiseContMDiffOn I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (V r)) a b)
     (hW : IsPiecewiseContMDiffOn I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (W r)) a b)
@@ -151,13 +158,51 @@ theorem IsPiecewiseContMDiffOn.indexForm_sub_right
     indexForm I γ V (W - W') a b = indexForm I γ V W a b - indexForm I γ V W' a b := by
   rw [indexForm_comm, hW.indexForm_sub_left hW' hV, indexForm_comm, indexForm_comm (V := W')]
 
+/-- The index form commutes with finite sums of continuous piecewise `C¹` fields in its first
+slot. -/
+@[to_fun IsPiecewiseContMDiffOn.indexForm_fun_sum_left]
+theorem IsPiecewiseContMDiffOn.indexForm_sum_left {ι : Type*} (A : Finset ι)
+    (X : ι → ∀ r, TangentSpace I (γ r))
+    (hX : ∀ i ∈ A, IsPiecewiseContMDiffOn I.tangent 1
+      (fun r ↦ TotalSpace.mk' E (γ r) (X i r)) a b)
+    (hW : IsPiecewiseContMDiffOn I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (W r)) a b) :
+    indexForm I γ (∑ i ∈ A, X i) W a b = ∑ i ∈ A, indexForm I γ (X i) W a b := by
+  obtain ⟨k, τ, hτa, hτb, hτ, hWpieces⟩ := hW.exists_partition
+  have hγ : IsPiecewiseContMDiffOn I 1 γ a b :=
+    .of_partition τ hτa hτb hτ fun j ↦
+      (Bundle.contMDiff_proj (TangentSpace I)).comp_contMDiffOn (hWpieces j)
+  classical
+  induction A using Finset.induction_on with
+  | empty => simp [indexForm_zero_left]
+  | @insert i A hi ih =>
+    have hsum : IsPiecewiseContMDiffOn I.tangent 1
+        (fun r ↦ TotalSpace.mk' E (γ r) ((∑ j ∈ A, X j) r)) a b := by
+      simpa only [Finset.sum_apply] using
+        IsPiecewiseContMDiffOn.sum_sectionAlong A X hγ fun j hj ↦
+          hX j (Finset.mem_insert_of_mem hj)
+    rw [Finset.sum_insert hi, Finset.sum_insert hi,
+      (hX i (Finset.mem_insert_self i A)).indexForm_add_left hsum hW,
+      ih fun j hj ↦ hX j (Finset.mem_insert_of_mem hj)]
+
+/-- The index form commutes with finite sums of continuous piecewise `C¹` fields in its second
+slot. -/
+@[to_fun IsPiecewiseContMDiffOn.indexForm_fun_sum_right]
+theorem IsPiecewiseContMDiffOn.indexForm_sum_right {ι : Type*} (A : Finset ι)
+    (X : ι → ∀ r, TangentSpace I (γ r))
+    (hV : IsPiecewiseContMDiffOn I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (V r)) a b)
+    (hX : ∀ i ∈ A, IsPiecewiseContMDiffOn I.tangent 1
+      (fun r ↦ TotalSpace.mk' E (γ r) (X i r)) a b) :
+    indexForm I γ V (∑ i ∈ A, X i) a b = ∑ i ∈ A, indexForm I γ V (X i) a b := by
+  simp_rw [indexForm_comm (V := V)]
+  exact hV.indexForm_sum_left A X hX
+
 /-! ### Piecewise integration by parts and covariant-derivative jumps -/
 
 /-- **Piecewise integration by parts.** On a partition `τ₀ ≤ τ₁ ≤ ⋯ ≤ τ_{k+1}` where `V` is `C²`
 on each closed piece and `W` is `C¹` on each closed piece, the index form equals the endpoint
 boundary pairings minus the interior covariant-derivative jump pairings minus the sum of the piece
 Jacobi-operator integrals. -/
-theorem indexForm_eq_inner_sub_sum_jump_sub_sum_integral {k : ℕ} (τ : Fin (k + 2) → ℝ)
+theorem indexForm_eq_inner_sub_inner_sub_sum_inner_sub_sum_integral {k : ℕ} (τ : Fin (k + 2) → ℝ)
     (hτ : ∀ i : Fin (k + 1), τ i.castSucc ≤ τ i.succ)
     (hV : ∀ i : Fin (k + 1), ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 2
       (fun r ↦ TotalSpace.mk' E (γ r) (V r)) (Icc (τ i.castSucc) (τ i.succ)))
@@ -224,7 +269,7 @@ theorem indexForm_eq_inner_sub_sum_jump_sub_sum_integral {k : ℕ} (τ : Fin (k 
 /-- **Broken-Jacobi integration by parts.** When `V` is a Jacobi field on each piece
 `[τᵢ, τᵢ₊₁]` of a partition and `W` is `C¹` on each piece, the index form reduces to the endpoint
 boundary pairings minus the interior covariant-derivative jump pairings. -/
-theorem indexForm_eq_inner_sub_sum_jump_of_isJacobiFieldOn {k : ℕ} (τ : Fin (k + 2) → ℝ)
+theorem indexForm_eq_inner_sub_inner_sub_sum_inner_of_isJacobiFieldOn {k : ℕ} (τ : Fin (k + 2) → ℝ)
     (hτ : ∀ i : Fin (k + 1), τ i.castSucc ≤ τ i.succ)
     (hV : ∀ i : Fin (k + 1), IsJacobiFieldOn I γ V (Icc (τ i.castSucc) (τ i.succ)))
     (hW : ∀ i : Fin (k + 1), ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1
@@ -242,7 +287,8 @@ theorem indexForm_eq_inner_sub_sum_jump_of_isJacobiFieldOn {k : ℕ} (τ : Fin (
           alongCurveWithin (leviCivitaConnection I M) γ V
             (Icc (τ j.castSucc.castSucc) (τ j.castSucc.succ)) (τ j.castSucc.succ))
         (W (τ j.castSucc.succ)) := by
-  rw [indexForm_eq_inner_sub_sum_jump_sub_sum_integral τ hτ (fun i ↦ (hV i).contMDiffOn) hW]
+  rw [indexForm_eq_inner_sub_inner_sub_sum_inner_sub_sum_integral τ hτ (fun i ↦ (hV i).contMDiffOn)
+    hW]
   have hzero (i : Fin (k + 1)) :
       (∫ t in (τ i.castSucc)..(τ i.succ),
         inner ℝ (alongCurveWithin (leviCivitaConnection I M) γ
@@ -311,6 +357,68 @@ theorem IsJacobiFieldOn.indexForm_sub_inner_eq_inner_of_isPiecewiseContMDiffOn
 
 /-! ### The bilinear index form on bundled piecewise smooth sections -/
 
+/-- Eliminating `extendByZero` on `ofPiecewise` in the first slot of `indexForm`. -/
+@[simp] theorem indexForm_extendByZero_ofPiecewise_left
+    {hγ : IsPiecewiseContMDiffOn I n γ a b} (U W : ∀ t, TangentSpace I (γ t))
+    (hU : IsPiecewiseContMDiffOn I.tangent n (fun t ↦ TotalSpace.mk' E (γ t) (U t)) a b) :
+    indexForm I γ (PiecewiseContMDiffSectionAlong.ofPiecewise (hγ := hγ) U hU).extendByZero W a b =
+      indexForm I γ U W a b :=
+  indexForm_congr (fun _ _ ↦ rfl)
+    (fun t ht ↦ heq_of_eq (by rw [uIoo_of_lt hγ.lt] at ht; simp [Ioo_subset_Icc_self ht]))
+    fun _ _ ↦ HEq.rfl
+
+/-- Eliminating `extendByZero` on `ofPiecewise` in the second slot of `indexForm`. -/
+@[simp] theorem indexForm_extendByZero_ofPiecewise_right
+    {hγ : IsPiecewiseContMDiffOn I n γ a b} (V U : ∀ t, TangentSpace I (γ t))
+    (hU : IsPiecewiseContMDiffOn I.tangent n (fun t ↦ TotalSpace.mk' E (γ t) (U t)) a b) :
+    indexForm I γ V (PiecewiseContMDiffSectionAlong.ofPiecewise (hγ := hγ) U hU).extendByZero a b =
+      indexForm I γ V U a b := by
+  rw [indexForm_comm, indexForm_extendByZero_ofPiecewise_left, indexForm_comm]
+
+/-- Eliminating `extendByZero` on `ofContMDiffOn` in the first slot of `indexForm`. -/
+@[simp] theorem indexForm_extendByZero_ofContMDiffOn_left
+    {hγ : IsPiecewiseContMDiffOn I n γ a b} (U W : ∀ t, TangentSpace I (γ t))
+    (hU : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent n (fun t ↦ TotalSpace.mk' E (γ t) (U t)) (Icc a b)) :
+    indexForm I γ (PiecewiseContMDiffSectionAlong.ofContMDiffOn (hγ := hγ) U hU).extendByZero
+        W a b =
+      indexForm I γ U W a b :=
+  indexForm_congr (fun _ _ ↦ rfl)
+    (fun t ht ↦ heq_of_eq (by rw [uIoo_of_lt hγ.lt] at ht; simp [Ioo_subset_Icc_self ht]))
+    fun _ _ ↦ HEq.rfl
+
+/-- Eliminating `extendByZero` on `ofContMDiffOn` in the second slot of `indexForm`. -/
+@[simp] theorem indexForm_extendByZero_ofContMDiffOn_right
+    {hγ : IsPiecewiseContMDiffOn I n γ a b} (V U : ∀ t, TangentSpace I (γ t))
+    (hU : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent n (fun t ↦ TotalSpace.mk' E (γ t) (U t)) (Icc a b)) :
+    indexForm I γ V
+        (PiecewiseContMDiffSectionAlong.ofContMDiffOn (hγ := hγ) U hU).extendByZero a b =
+      indexForm I γ V U a b := by
+  rw [indexForm_comm, indexForm_extendByZero_ofContMDiffOn_left, indexForm_comm]
+
+/-- Eliminating `extendByZero` on `restrict` in the first slot of `indexForm` over the restricted
+subinterval. -/
+@[simp] theorem indexForm_extendByZero_restrict_left
+    {hγ : IsPiecewiseContMDiffOn I n γ a b} {c d : ℝ}
+    (hac : a ≤ c) (hcd : c < d) (hdb : d ≤ b)
+    (V : PiecewiseContMDiffSectionAlong (F := E) (V := TangentSpace I) hγ)
+    (W : ∀ t, TangentSpace I (γ t)) :
+    indexForm I γ (PiecewiseContMDiffSectionAlong.restrict hac hcd hdb V).extendByZero W c d =
+      indexForm I γ V.extendByZero W c d := by
+  refine indexForm_congr (fun _ _ ↦ rfl) (fun t ht ↦ heq_of_eq ?_) fun _ _ ↦ HEq.rfl
+  rw [uIoo_of_lt hcd] at ht
+  simp [ht.1.le, ht.2.le, hac.trans ht.1.le, ht.2.le.trans hdb]
+
+/-- Eliminating `extendByZero` on `restrict` in the second slot of `indexForm` over the restricted
+subinterval. -/
+@[simp] theorem indexForm_extendByZero_restrict_right
+    {hγ : IsPiecewiseContMDiffOn I n γ a b} {c d : ℝ}
+    (hac : a ≤ c) (hcd : c < d) (hdb : d ≤ b)
+    (V : ∀ t, TangentSpace I (γ t))
+    (W : PiecewiseContMDiffSectionAlong (F := E) (V := TangentSpace I) hγ) :
+    indexForm I γ V (PiecewiseContMDiffSectionAlong.restrict hac hcd hdb W).extendByZero c d =
+      indexForm I γ V W.extendByZero c d := by
+  rw [indexForm_comm, indexForm_extendByZero_restrict_left, indexForm_comm]
+
 section Bundled
 
 variable (hγ : IsPiecewiseContMDiffOn I n γ a b) (hn : 1 ≤ n)
@@ -357,8 +465,9 @@ theorem piecewiseIndexForm_eq_indexForm_of_eqOn_Ioo
 theorem piecewiseIndexForm_ofPiecewise (U U' : ∀ t, TangentSpace I (γ t))
     (hU : IsPiecewiseContMDiffOn I.tangent n (fun t ↦ TotalSpace.mk' E (γ t) (U t)) a b)
     (hU' : IsPiecewiseContMDiffOn I.tangent n (fun t ↦ TotalSpace.mk' E (γ t) (U' t)) a b) :
-    piecewiseIndexForm hγ hn (.ofPiecewise U hU) (.ofPiecewise U' hU') = indexForm I γ U U' a b :=
-  piecewiseIndexForm_eq_indexForm_of_eqOn_Ioo hγ hn _ _ (by simp) (by simp)
+    piecewiseIndexForm hγ hn (.ofPiecewise U hU) (.ofPiecewise U' hU') =
+      indexForm I γ U U' a b := by
+  simp
 
 /-- Evaluating `piecewiseIndexForm` on fields from `C^n` sections on `[a, b]` recovers
 `indexForm`. -/
@@ -366,8 +475,8 @@ theorem piecewiseIndexForm_ofContMDiffOn (U U' : ∀ t, TangentSpace I (γ t))
     (hU : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent n (fun t ↦ TotalSpace.mk' E (γ t) (U t)) (Icc a b))
     (hU' : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent n (fun t ↦ TotalSpace.mk' E (γ t) (U' t)) (Icc a b)) :
     piecewiseIndexForm hγ hn (.ofContMDiffOn U hU) (.ofContMDiffOn U' hU') =
-      indexForm I γ U U' a b :=
-  piecewiseIndexForm_eq_indexForm_of_eqOn_Ioo hγ hn _ _ (by simp) (by simp)
+      indexForm I γ U U' a b := by
+  simp
 
 /-- The bundled piecewise index form is symmetric in its two arguments. -/
 theorem piecewiseIndexForm_comm
@@ -397,15 +506,8 @@ theorem piecewiseIndexForm_add_adjacent_intervals {c : ℝ} (hac : a < c) (hcb :
       piecewiseIndexForm hγ hn V W := by
   have hV1 := V.isPiecewiseContMDiffOn_extendByZero.of_le hn
   have hW1 := W.isPiecewiseContMDiffOn_extendByZero.of_le hn
-  rw [piecewiseIndexForm_eq_indexForm_of_eqOn_Ioo (hγ.mono le_rfl hac hcb.le) hn _ _
-      (U := V.extendByZero) (U' := W.extendByZero)
-      (fun _ ht ↦ by simp [ht.1.le, ht.2.le.trans hcb.le])
-      (fun _ ht ↦ by simp [ht.1.le, ht.2.le.trans hcb.le]),
-    piecewiseIndexForm_eq_indexForm_of_eqOn_Ioo (hγ.mono hac.le hcb le_rfl) hn _ _
-      (U := V.extendByZero) (U' := W.extendByZero)
-      (fun _ ht ↦ by simp [hac.le.trans ht.1.le, ht.2.le])
-      (fun _ ht ↦ by simp [hac.le.trans ht.1.le, ht.2.le]),
-    piecewiseIndexForm_apply]
+  simp only [piecewiseIndexForm_apply, indexForm_extendByZero_restrict_left,
+    indexForm_extendByZero_restrict_right]
   exact indexForm_add_adjacent_intervals
     ((hV1.mono le_rfl hac hcb.le).intervalIntegrable_indexFormIntegrand
       (hW1.mono le_rfl hac hcb.le))

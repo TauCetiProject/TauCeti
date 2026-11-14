@@ -8,12 +8,14 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.IndexForm.Piecewise
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Conjugate.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.ExpKernel
+public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Smoothness
+import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
+import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Smoothness
-import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Smoothness
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Bootstrap
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Smoothness
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
-import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongCurve.PrescribedValue
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 import TauCeti.Analysis.Distribution.DuBoisReymond
 
 /-!
@@ -22,15 +24,15 @@ import TauCeti.Analysis.Distribution.DuBoisReymond
 Let `γ` be a geodesic on `[a, b]` (`a < b`). Every Jacobi field along `γ` is index-orthogonal to
 every continuous piecewise `C¹` section vanishing at `a` and `b`. Conversely, if a continuous
 piecewise `C¹` section `V` along `γ` satisfies `I(V, W) = 0` for all smooth compactly supported
-multiples of local sections `W` supported strictly inside `(a, b)`, then `V` is an unbroken `C²`
-Jacobi field on `[a, b]` (Milnor, *Morse Theory*, Theorem 14.1):
+multiples of global smooth sections `W` supported strictly inside `(a, b)`, then `V` is an unbroken
+`C²` Jacobi field on `[a, b]` (Milnor, *Morse Theory*, Theorem 14.1):
 
-1. On each `C¹` piece of `V`, testing against compactly supported smooth multiples of a chart-local
-   frame and applying the du Bois-Reymond lemma gives `D_t V` a `C¹` lift via the dual chart frame;
-   `CovariantDerivative.contMDiffOn_succ_of_alongCurveWithin` upgrades `V` to `C²` on the closed
-   piece, and integration by parts forces the Jacobi equation there.
+1. On each `C¹` piece of `V`, cutting off chart-local frame sections on compact images
+   `γ '' tsupport ψ` and applying the du Bois-Reymond lemma gives `D_t V` a `C¹` lift via the dual
+   chart frame; `CovariantDerivative.contMDiffOn_succ_of_alongCurveWithin` upgrades `V` to `C²` on
+   the closed piece, and integration by parts forces the Jacobi equation there.
 2. Broken-Jacobi integration by parts reduces `I(V, W)` to the negative sum of interior jump
-   pairings; isolating each interior vertex with `exists_contDiff_smul_section_isolating_vertex`
+   pairings; isolating each interior vertex with a smooth scalar bump and global section extension
    annihilates every jump, and `isJacobiFieldOn_Icc_of_partition` glues the pieces across `[a, b]`.
 
 Restricting to `PiecewiseContMDiffSectionAlong.endpointZero` identifies the kernel of
@@ -41,13 +43,11 @@ Restricting to `PiecewiseContMDiffSectionAlong.endpointZero` identifies the kern
 
 ## Main definitions and results
 
-* `TauCeti.Manifold.IsJacobiFieldOn.isPiecewiseContMDiffOn`: every Jacobi field on `[a, b]`
-  (`a < b`) has a piecewise `C^n` tangent-bundle lift (`n ≤ ∞`), without boundarylessness.
 * `TauCeti.Manifold.isJacobiFieldOn_Icc_of_indexForm_contDiff_smul_eq_zero`,
   `TauCeti.Manifold.isJacobiFieldOn_Icc_of_indexForm_contDiff_smul_eq_zero_of_piecewise`,
   `TauCeti.Manifold.isJacobiFieldOn_Icc_iff_forall_contMDiffOn_indexForm_eq_zero`, and
   `TauCeti.Manifold.isJacobiFieldOn_Icc_iff_forall_isPiecewiseContMDiffOn_indexForm_eq_zero`.
-* `TauCeti.Manifold.endpointJacobiEquivIndexFormKer` and
+* `TauCeti.Manifold.endpointJacobiFieldEquivEndpointZeroIndexFormKer` and
   `TauCeti.Manifold.endpointZeroIndexFormKerEquivExpKer`: linear equivalences of
   `LinearMap.ker (endpointZeroIndexForm hγ hn)` with `endpointJacobiFieldSpace` and
   `ker(d(exp_p)_{b v})`.
@@ -65,7 +65,7 @@ Restricting to `PiecewiseContMDiffSectionAlong.endpointZero` identifies the kern
 
 public section
 
-open Bundle CovariantDerivative Filter MeasureTheory Set
+open Bundle CovariantDerivative Filter Set
 open scoped ContDiff Manifold Topology
 
 noncomputable section
@@ -78,53 +78,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
 
-/-! ### Piecewise `C^n` regularity of Jacobi fields -/
-
-/-- Every Jacobi field on `[a, b]` (`a < b`) has a piecewise `C^n` tangent-bundle lift on `[a, b]`
-for every `n ≤ ∞`, without requiring `M` to be boundaryless. -/
-theorem IsJacobiFieldOn.isPiecewiseContMDiffOn {n : ℕ∞ω} [ENat.LEInfty n]
-    {γ : ℝ → M} {J : ∀ t, TangentSpace I (γ t)} {a b : ℝ} (hab : a < b)
-    (h : IsJacobiFieldOn I γ J (Icc a b)) :
-    IsPiecewiseContMDiffOn I.tangent n (fun r ↦ TotalSpace.mk' E (γ r) (J r)) a b :=
-  .of_contMDiffOn hab (h.contMDiffOn_infty.of_le ENat.LEInfty.out)
-
 /-! ### Variational bootstrap on a single piece -/
-
-/-- Restricting `indexForm` from `[a, b]` to `[u, v] ⊆ [a, b]` when `W` vanishes outside
-`(u, v)`. -/
-private lemma indexForm_subinterval_eq_of_tsupport_subset
-    {γ : ℝ → M} {V W : ∀ t, TangentSpace I (γ t)} {a u v b : ℝ}
-    (hau : a ≤ u) (huv : u < v) (hvb : v ≤ b)
-    (hV : IsPiecewiseContMDiffOn I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (V r)) a b)
-    (hW : IsPiecewiseContMDiffOn I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (W r)) a b)
-    (hW0 : ∀ t, t ∉ Ioo u v → W t = 0) :
-    indexForm I γ V W u v = indexForm I γ V W a b := by
-  have hleft : indexForm I γ V W a u = 0 := by
-    rcases eq_or_lt_of_le hau with rfl | hau'
-    · exact indexForm_same
-    · exact (indexForm_congr (fun _ _ ↦ rfl) (fun _ _ ↦ HEq.rfl) fun t ht ↦ by
-        rw [uIoo_of_lt hau'] at ht
-        exact heq_of_eq (hW0 t fun h ↦ h.1.not_ge ht.2.le)).trans indexForm_zero_right
-  have hright : indexForm I γ V W v b = 0 := by
-    rcases eq_or_lt_of_le hvb with rfl | hvb'
-    · exact indexForm_same
-    · exact (indexForm_congr (fun _ _ ↦ rfl) (fun _ _ ↦ HEq.rfl) fun t ht ↦ by
-        rw [uIoo_of_lt hvb'] at ht
-        exact heq_of_eq (hW0 t fun h ↦ h.2.not_ge ht.1.le)).trans indexForm_zero_right
-  have hi_au : IntervalIntegrable (indexFormIntegrand I γ V W) volume a u := by
-    rcases eq_or_lt_of_le hau with rfl | hau'
-    · exact IntervalIntegrable.refl
-    · exact (hV.mono le_rfl hau' (huv.le.trans hvb)).intervalIntegrable_indexFormIntegrand
-        (hW.mono le_rfl hau' (huv.le.trans hvb))
-  have hi_uv := (hV.mono hau huv hvb).intervalIntegrable_indexFormIntegrand
-    (hW.mono hau huv hvb)
-  have hi_vb : IntervalIntegrable (indexFormIntegrand I γ V W) volume v b := by
-    rcases eq_or_lt_of_le hvb with rfl | hvb'
-    · exact IntervalIntegrable.refl
-    · exact (hV.mono (hau.trans huv.le) hvb' le_rfl).intervalIntegrable_indexFormIntegrand
-        (hW.mono (hau.trans huv.le) hvb' le_rfl)
-  rw [← indexForm_add_adjacent_intervals (hi_au.trans hi_uv) hi_vb,
-    ← indexForm_add_adjacent_intervals hi_au hi_uv, hleft, hright, zero_add, add_zero]
 
 omit [FiniteDimensional ℝ E] [T2Space M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
@@ -156,14 +110,38 @@ private lemma exists_subinterval_mapsTo_baseSet
     exact ⟨by linarith [le_max_right u (t₀ - ε / 2), hr.1],
       by linarith [min_le_right v (t₀ + ε / 2), hr.2]⟩
 
-/-- For a local smooth section `Y` on an open set containing `γ '' [p, q]` (`[p, q] ⊆ [u, v]`) and
+omit [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
+/-- Cutting off a local smooth tangent section `Y` on an open neighborhood `U` of the compact set
+`γ '' tsupport ψ` (`tsupport ψ ⊆ (u, v)`) produces a global smooth section `Y'` with
+`ψ t • Y' (γ t) = ψ t • Y (γ t)` for all `t`. -/
+private lemma exists_contMDiff_section_smul_eq_of_tsupport_subset
+    {γ : ℝ → M} {u v : ℝ} (hγ : ContinuousOn γ (Icc u v))
+    {ψ : ℝ → ℝ} (hψs : tsupport ψ ⊆ Ioo u v) {U : Set M} (hU : IsOpen U)
+    (hγU : γ '' tsupport ψ ⊆ U) {Y : ∀ x, TangentSpace I x}
+    (hY : ContMDiffOn I I.tangent ∞ (fun x ↦ TotalSpace.mk' E x (Y x)) U) :
+    ∃ Y' : ∀ x, TangentSpace I x,
+      ContMDiff I I.tangent ∞ (T% Y') ∧
+      (fun t ↦ ψ t • Y' (γ t)) = fun t ↦ ψ t • Y (γ t) := by
+  have hts : IsCompact (tsupport ψ) :=
+    isCompact_Icc.of_isClosed_subset (isClosed_tsupport ψ) (hψs.trans Ioo_subset_Icc_self)
+  have hK : IsCompact (γ '' tsupport ψ) :=
+    hts.image_of_continuousOn (hγ.mono (hψs.trans Ioo_subset_Icc_self))
+  obtain ⟨σ, hσ, hσ1, -, hσU, -⟩ := hK.exists_contMDiff_one_nhds_tsupport_subset I hU hγU
+  refine ⟨σ • Y, hσ.contMDiffOn.smul_section_of_tsupport hU hσU hY, funext fun t ↦ ?_⟩
+  by_cases ht : t ∈ tsupport ψ
+  · have h1 : σ (γ t) = 1 :=
+      (eventually_nhdsSet_iff_forall.1 hσ1 (γ t) ⟨t, ht, rfl⟩).self_of_nhds
+    simp [h1]
+  · simp [image_eq_zero_of_notMem_tsupport ht]
+
+/-- For a local smooth section `Y` on a set containing `γ '' [p, q]` (`[p, q] ⊆ [u, v]`) and
 a smooth cutoff `ψ` supported in `(p, q)`, `indexForm I γ V (ψ • (Y ∘ γ)) u v` reduces to a single
 interval integral over `[p, q]`. -/
 private lemma indexForm_contDiff_smul_section_eq {γ : ℝ → M} {V : ∀ t, TangentSpace I (γ t)}
     {u p q v : ℝ} (hup : u ≤ p) (hpq : p < q) (hqv : q ≤ v)
     (hγ : ContMDiffOn 𝓘(ℝ, ℝ) I 1 γ (Icc u v))
-    (hV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (V r)) (Icc u v))
-    {U : Set M} (hU : IsOpen U) (hγU : MapsTo γ (Icc p q) U)
+    {U : Set M} (hγU : MapsTo γ (Icc p q) U)
     {Y : ∀ x, TangentSpace I x}
     (hY : ContMDiffOn I I.tangent ∞ (fun x ↦ TotalSpace.mk' E x (Y x)) U)
     {ψ : ℝ → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hψs : tsupport ψ ⊆ Ioo p q) :
@@ -176,15 +154,12 @@ private lemma indexForm_contDiff_smul_section_eq {γ : ℝ → M} {V : ∀ t, Ta
             (curveVelocityWithin I γ (Icc u v) t) (curveVelocityWithin I γ (Icc u v) t))
             (Y (γ t)))) := by
   let W : ∀ t, TangentSpace I (γ t) := fun t ↦ ψ t • Y (γ t)
-  have huv : u < v := (hup.trans_lt hpq).trans_le hqv
   have hYγ : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1
       (fun t ↦ TotalSpace.mk' E (γ t) (Y (γ t))) (Icc p q) :=
     (hY.of_le (by simp)).comp (hγ.mono (Icc_subset_Icc hup hqv)) hγU
-  have hW_uv := ((hψ.of_le (by simp)).contMDiff.contMDiffOn).smul_sectionAlong_of_tsupport hγ hU
-    (fun _ ht ↦ hγU (Ioo_subset_Icc_self (hψs ht.2))) (hY.of_le (by simp))
-  rw [← indexForm_subinterval_eq_of_tsupport_subset hup hpq hqv
-    (.of_contMDiffOn huv hV) (.of_contMDiffOn huv hW_uv)
-    (fun t ht ↦ by simp [image_eq_zero_of_notMem_tsupport fun h ↦ ht (hψs h)]),
+  rw [← indexForm_eq_of_forall_notMem_Icc_eq_zero_right hup hqv
+      (fun t ht ↦ by simp [image_eq_zero_of_notMem_tsupport fun h ↦
+        ht (Ioo_subset_Icc_self (hψs h))]),
     indexForm_eq_integral_indexFormIntegrandWithin (s := Icc u v)
       (uIoo_of_lt hpq ▸ Ioo_subset_Icc_self.trans (Icc_subset_Icc hup hqv))]
   refine intervalIntegral.integral_congr_uIoo fun t ht ↦ ?_
@@ -206,16 +181,17 @@ private lemma indexForm_contDiff_smul_section_eq {γ : ℝ → M} {V : ∀ t, Ta
   ring
 
 /-- On a chart-contained subinterval `[p, q] ⊆ [u, v]`, index-orthogonality to smooth compactly
-supported multiples of local sections upgrades each chart-local frame pairing of `D_t V` to `C¹`. -/
+supported multiples of global smooth sections upgrades each chart-local frame pairing of `D_t V`
+to `C¹`. -/
 private lemma contDiffOn_inner_chartLocalFrame_alongCurveWithin
     {γ : ℝ → M} {V : ∀ t, TangentSpace I (γ t)} {u p q v : ℝ}
     (hup : u ≤ p) (hpq : p < q) (hqv : q ≤ v)
     (hγ : IsGeodesicCurveOn I γ (Icc u v))
     (hV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (V r)) (Icc u v))
     {x₀ : M} (hγU : MapsTo γ (Icc p q) (trivializationAt E (TangentSpace I) x₀).baseSet)
-    (horth : ∀ (ψ : ℝ → ℝ) (Y : ∀ x, TangentSpace I x) (U : Set M),
-      ContDiff ℝ ∞ ψ → tsupport ψ ⊆ Ioo u v → IsOpen U → γ '' tsupport ψ ⊆ U →
-      ContMDiffOn I I.tangent ∞ (fun x ↦ TotalSpace.mk' E x (Y x)) U →
+    (horth : ∀ (ψ : ℝ → ℝ) (Y : ∀ x, TangentSpace I x),
+      ContDiff ℝ ∞ ψ → tsupport ψ ⊆ Ioo u v →
+      ContMDiff I I.tangent ∞ (T% Y) →
       indexForm I γ V (fun t ↦ ψ t • Y (γ t)) u v = 0)
     (j : Fin (Module.finrank ℝ E)) :
     ContDiffOn ℝ 1 (fun r ↦ inner ℝ (Riemannian.Tensor.chartLocalFrame (I := I) x₀ j (γ r))
@@ -255,20 +231,23 @@ private lemma contDiffOn_inner_chartLocalFrame_alongCurveWithin
   refine (hf_cont.contDiffOn_one_Icc_of_integral_deriv_smul_add_eq_zero hg_cont
     fun ψ hψ hψs ↦ ?_).congr fun r _ ↦ real_inner_comm _ _
   simp only [Pi.sub_apply, smul_eq_mul]
-  rw [← indexForm_contDiff_smul_section_eq hup hpq hqv hγ1 hV e.open_baseSet hγU hY hψ hψs]
-  exact horth ψ Y e.baseSet hψ (hψs.trans (Ioo_subset_Ioo hup hqv)) e.open_baseSet
+  rw [← indexForm_contDiff_smul_section_eq hup hpq hqv hγ1 hγU hY hψ hψs]
+  obtain ⟨Y', hY', hY'eq⟩ := exists_contMDiff_section_smul_eq_of_tsupport_subset hγ1.continuousOn
+    (hψs.trans (Ioo_subset_Ioo hup hqv)) e.open_baseSet
     ((image_mono (hψs.trans Ioo_subset_Icc_self)).trans hγU.image_subset) hY
+  rw [← hY'eq]
+  exact horth ψ Y' hψ (hψs.trans (Ioo_subset_Ioo hup hqv)) hY'
 
 /-- Regularity bootstrap on a single closed geodesic piece: if `V` has a `C¹` lift on `[u, v]`
-(`u < v`) and is index-orthogonal to all smooth compactly supported multiples of local sections
-supported in `(u, v)`, then `D_t V` has a `C¹` lift on `[u, v]`. -/
+(`u < v`) and is index-orthogonal to all smooth compactly supported multiples of global smooth
+sections supported in `(u, v)`, then `D_t V` has a `C¹` lift on `[u, v]`. -/
 private lemma contMDiffOn_alongCurveWithin_of_indexForm_contDiff_smul_eq_zero
     {γ : ℝ → M} {V : ∀ t, TangentSpace I (γ t)} {u v : ℝ} (huv : u < v)
     (hγ : IsGeodesicCurveOn I γ (Icc u v))
     (hV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (V r)) (Icc u v))
-    (horth : ∀ (ψ : ℝ → ℝ) (Y : ∀ x, TangentSpace I x) (U : Set M),
-      ContDiff ℝ ∞ ψ → tsupport ψ ⊆ Ioo u v → IsOpen U → γ '' tsupport ψ ⊆ U →
-      ContMDiffOn I I.tangent ∞ (fun x ↦ TotalSpace.mk' E x (Y x)) U →
+    (horth : ∀ (ψ : ℝ → ℝ) (Y : ∀ x, TangentSpace I x),
+      ContDiff ℝ ∞ ψ → tsupport ψ ⊆ Ioo u v →
+      ContMDiff I I.tangent ∞ (T% Y) →
       indexForm I γ V (fun t ↦ ψ t • Y (γ t)) u v = 0) :
     ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1
       (fun r ↦ TotalSpace.mk' E (γ r)
@@ -302,7 +281,7 @@ private lemma contMDiffOn_alongCurveWithin_of_indexForm_contDiff_smul_eq_zero
       (by simpa only [TangentBundle.trivializationAt_baseSet] using hγU ht₀_pq) _).2.symm
 
 /-- For a `C²` section `V` on `[u, v]` index-orthogonal to smooth compactly supported multiples of
-local sections, each chart-local frame pairing of the Jacobi residual vanishes at
+global smooth sections, each chart-local frame pairing of the Jacobi residual vanishes at
 `t₀ ∈ [p, q] ⊆ [u, v]`. -/
 private lemma inner_chartLocalFrame_jacobiResidual_eq_zero
     {γ : ℝ → M} {V : ∀ t, TangentSpace I (γ t)} {u p q v t₀ : ℝ}
@@ -317,9 +296,9 @@ private lemma inner_chartLocalFrame_jacobiResidual_eq_zero
             (curveVelocityWithin I γ (Icc u v) r) (curveVelocityWithin I γ (Icc u v) r)))
       (Icc u v))
     (hγU : MapsTo γ (Icc p q) (trivializationAt E (TangentSpace I) (γ t₀)).baseSet)
-    (horth : ∀ (ψ : ℝ → ℝ) (Y : ∀ x, TangentSpace I x) (U : Set M),
-      ContDiff ℝ ∞ ψ → tsupport ψ ⊆ Ioo u v → IsOpen U → γ '' tsupport ψ ⊆ U →
-      ContMDiffOn I I.tangent ∞ (fun x ↦ TotalSpace.mk' E x (Y x)) U →
+    (horth : ∀ (ψ : ℝ → ℝ) (Y : ∀ x, TangentSpace I x),
+      ContDiff ℝ ∞ ψ → tsupport ψ ⊆ Ioo u v →
+      ContMDiff I I.tangent ∞ (T% Y) →
       indexForm I γ V (fun t ↦ ψ t • Y (γ t)) u v = 0)
     (j : Fin (Module.finrank ℝ E)) :
     inner ℝ (Riemannian.Tensor.chartLocalFrame (I := I) (γ t₀) j (γ t₀))
@@ -328,7 +307,6 @@ private lemma inner_chartLocalFrame_jacobiResidual_eq_zero
         (leviCivitaConnection I M).curvatureTensor (γ t₀) (V t₀)
           (curveVelocityWithin I γ (Icc u v) t₀) (curveVelocityWithin I γ (Icc u v) t₀)) = 0 := by
   have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-  have huv : u < v := (hup.trans_lt hpq).trans_le hqv
   let e := trivializationAt E (TangentSpace I) (γ t₀)
   let Y := Riemannian.Tensor.chartLocalFrame (I := I) (γ t₀) j
   have hY := Riemannian.Tensor.contMDiffOn_chartLocalFrame (I := I) (n := ∞) (γ t₀) j
@@ -342,18 +320,20 @@ private lemma inner_chartLocalFrame_jacobiResidual_eq_zero
   refine hf_cont.eqOn_zero_Icc_of_integral_smul_eq_zero hpq (fun ψ hψ hψs ↦ ?_) ht₀_pq
   have hψ0 (t : ℝ) (ht : t ∉ Ioo p q) : ψ t = 0 :=
     image_eq_zero_of_notMem_tsupport fun h ↦ ht (hψs h)
-  let W : ∀ t, TangentSpace I (γ t) := fun t ↦ ψ t • Y (γ t)
-  have hW_uv := ((hψ.of_le (by simp)).contMDiff.contMDiffOn).smul_sectionAlong_of_tsupport hγ1
-    e.open_baseSet (fun _ ht ↦ hγU (Ioo_subset_Icc_self (hψs ht.2))) (hY.of_le (by simp))
-  have hI_pq : indexForm I γ V W p q = 0 :=
-    (indexForm_subinterval_eq_of_tsupport_subset hup hpq hqv
-      (.of_contMDiffOn huv (hV2.of_le one_le_two)) (.of_contMDiffOn huv hW_uv)
-      fun t ht ↦ by simp [hψ0 t ht]).trans
-      (horth ψ Y e.baseSet hψ (hψs.trans (Ioo_subset_Ioo hup hqv)) e.open_baseSet
-        ((image_mono (hψs.trans Ioo_subset_Icc_self)).trans hγU.image_subset) hY)
+  set W : ∀ t, TangentSpace I (γ t) := fun t ↦ ψ t • Y (γ t) with hW_def
+  have hW_pq : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1
+      (fun r ↦ TotalSpace.mk' E (γ r) (W r)) (Icc p q) :=
+    ((hψ.of_le (by simp)).contMDiff.contMDiffOn).smul_totalSpace hYγ
+  obtain ⟨Y', hY', hY'eq⟩ := exists_contMDiff_section_smul_eq_of_tsupport_subset hγ1.continuousOn
+    (hψs.trans (Ioo_subset_Ioo hup hqv)) e.open_baseSet
+    ((image_mono (hψs.trans Ioo_subset_Icc_self)).trans hγU.image_subset) hY
+  have hI_pq : indexForm I γ V W p q = 0 := by
+    rw [indexForm_eq_of_forall_notMem_Icc_eq_zero_right hup hqv
+      (fun t ht ↦ by simp [W, hψ0 t fun h ↦ ht (Ioo_subset_Icc_self h)]), hW_def, ← hY'eq]
+    exact horth ψ Y' hψ (hψs.trans (Ioo_subset_Ioo hup hqv)) hY'
   have hibp := indexForm_eq_inner_alongCurveWithin_sub_inner_sub_integral (s := Icc u v)
     (fun t ht ↦ hV2 t ((uIcc_of_le hpq.le ▸ ht : t ∈ Icc p q) |> Icc_subset_Icc hup hqv))
-    (uIcc_of_le hpq.le ▸ hW_uv.mono (Icc_subset_Icc hup hqv))
+    (uIcc_of_le hpq.le ▸ hW_pq)
     (uIcc_of_le hpq.le ▸ Icc_subset_Icc hup hqv)
   rw [hI_pq] at hibp
   have hibp' : ∫ t in p..q, inner ℝ (alongCurveWithin (leviCivitaConnection I M) γ
@@ -366,14 +346,14 @@ private lemma inner_chartLocalFrame_jacobiResidual_eq_zero
 
 /-- **Variational Jacobi criterion on a single `C¹` piece.** If `γ` is a geodesic on `[u, v]` and
 `V` has a `C¹` tangent-bundle lift on `[u, v]` that is index-orthogonal to all smooth compactly
-supported multiples of local sections supported in `(u, v)`, then `V` is a `C²` Jacobi field on
-`[u, v]`. -/
+supported multiples of global smooth sections supported in `(u, v)`, then `V` is a `C²` Jacobi
+field on `[u, v]`. -/
 theorem isJacobiFieldOn_Icc_of_indexForm_contDiff_smul_eq_zero
     {γ : ℝ → M} {V : ∀ t, TangentSpace I (γ t)} {u v : ℝ} (hγ : IsGeodesicCurveOn I γ (Icc u v))
     (hV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (V r)) (Icc u v))
-    (horth : ∀ (ψ : ℝ → ℝ) (Y : ∀ x, TangentSpace I x) (U : Set M),
-      ContDiff ℝ ∞ ψ → tsupport ψ ⊆ Ioo u v → IsOpen U → γ '' tsupport ψ ⊆ U →
-      ContMDiffOn I I.tangent ∞ (fun x ↦ TotalSpace.mk' E x (Y x)) U →
+    (horth : ∀ (ψ : ℝ → ℝ) (Y : ∀ x, TangentSpace I x),
+      ContDiff ℝ ∞ ψ → tsupport ψ ⊆ Ioo u v →
+      ContMDiff I I.tangent ∞ (T% Y) →
       indexForm I γ V (fun t ↦ ψ t • Y (γ t)) u v = 0) :
     IsJacobiFieldOn I γ V (Icc u v) := by
   rcases lt_trichotomy u v with huv | rfl | hvu
@@ -413,15 +393,15 @@ theorem isJacobiFieldOn_Icc_of_indexForm_contDiff_smul_eq_zero
 /-! ### Piecewise variational characterization of Jacobi fields -/
 
 /-- Vanishing of each interior covariant-derivative jump of a broken Jacobi field that is
-index-orthogonal to smooth compactly supported multiples of global sections. -/
+index-orthogonal to smooth compactly supported multiples of global smooth sections. -/
 private lemma alongCurveWithin_jump_eq_zero_of_indexForm_contDiff_smul_eq_zero
     {γ : ℝ → M} {V : ∀ t, TangentSpace I (γ t)} {a b : ℝ} {k : ℕ}
     (τ : Fin (k + 2) → ℝ) (hτa : τ 0 = a) (hτb : τ (Fin.last (k + 1)) = b)
     (hτ : ∀ i : Fin (k + 1), τ i.castSucc < τ i.succ) (hγ : IsGeodesicCurveOn I γ (Icc a b))
     (hJ_piece : ∀ i : Fin (k + 1), IsJacobiFieldOn I γ V (Icc (τ i.castSucc) (τ i.succ)))
-    (horth : ∀ (ψ : ℝ → ℝ) (Y : ∀ x, TangentSpace I x) (U : Set M),
-      ContDiff ℝ ∞ ψ → tsupport ψ ⊆ Ioo a b → IsOpen U → γ '' tsupport ψ ⊆ U →
-      ContMDiffOn I I.tangent ∞ (fun x ↦ TotalSpace.mk' E x (Y x)) U →
+    (horth : ∀ (ψ : ℝ → ℝ) (Y : ∀ x, TangentSpace I x),
+      ContDiff ℝ ∞ ψ → tsupport ψ ⊆ Ioo a b →
+      ContMDiff I I.tangent ∞ (T% Y) →
       indexForm I γ V (fun t ↦ ψ t • Y (γ t)) a b = 0) (j : Fin k) :
     alongCurveWithin (leviCivitaConnection I M) γ V
         (Icc (τ j.castSucc.castSucc) (τ j.castSucc.succ)) (τ j.castSucc.succ) =
@@ -435,19 +415,29 @@ private lemma alongCurveWithin_jump_eq_zero_of_indexForm_contDiff_smul_eq_zero
     alongCurveWithin (leviCivitaConnection I M) γ V (Icc (τ j.succ.castSucc) (τ j.succ.succ)) c -
       alongCurveWithin (leviCivitaConnection I M) γ V
         (Icc (τ j.castSucc.castSucc) (τ j.castSucc.succ)) c
-  obtain ⟨φ, X, hφ, hφ_tsupp, hX, hWc, hφ0⟩ :=
-    exists_contDiff_smul_section_isolating_vertex (I := I) (F := E) (n := ∞) τ hτ j Δ
+  obtain ⟨φ, hφ_tsupp, -, hφ, -, hφc⟩ :=
+    exists_contDiff_tsupport_subset (n := (⊤ : ℕ∞)) (Ioo_mem_nhds (hτ j.castSucc) (hτ j.succ))
+  obtain ⟨X, hX, hXc⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ Δ
+  have hφ0 (i : Fin (k + 2)) (hi : i ≠ j.castSucc.succ) : φ (τ i) = 0 :=
+    image_eq_zero_of_notMem_tsupport fun h ↦ by
+      have hlt := hφ_tsupp h
+      rcases lt_trichotomy i j.castSucc.succ with hij | rfl | hji
+      · exact hlt.1.not_ge (hmono (Fin.le_castSucc_iff.mpr hij))
+      · exact hi rfl
+      · exact hlt.2.not_ge
+          (hmono (Fin.le_iff_val_le_val.mpr (by simp [Fin.lt_def] at hji ⊢; omega)))
   let W : ∀ t, TangentSpace I (γ t) := fun t ↦ φ t • X (γ t)
   have hI0 : indexForm I γ V W (τ 0) (τ (Fin.last (k + 1))) = 0 := by
     rw [hτa, hτb]
-    exact horth φ X univ hφ (hτa ▸ hτb ▸ hφ_tsupp) isOpen_univ (subset_univ _)
-      (contMDiffOn_univ.2 hX)
+    exact horth φ X hφ
+      (hφ_tsupp.trans (Ioo_subset_Ioo (hτa ▸ hmono (Fin.zero_le _)) (hτb ▸ hmono (Fin.le_last _))))
+      hX
   have hW_τ (i : Fin (k + 1)) : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1
       (fun r ↦ TotalSpace.mk' E (γ r) (W r)) (Icc (τ i.castSucc) (τ i.succ)) :=
-    ((hφ.of_le (by simp)).contMDiff.contMDiffOn).smul_sectionAlong_of_tsupport
-      ((hγ.contMDiffOn.of_le one_le_two).mono (hsub i)) isOpen_univ (mapsTo_univ _ _)
-      ((contMDiffOn_univ.2 hX).of_le (by simp))
-  have hibp := indexForm_eq_inner_sub_sum_jump_of_isJacobiFieldOn τ (fun i ↦ (hτ i).le)
+    ((hφ.of_le (m := 1) (by simp)).contMDiff.contMDiffOn).smul_totalSpace
+      ((hX.of_le (m := 1) (by simp)).comp_contMDiffOn
+        ((hγ.contMDiffOn.of_le one_le_two).mono (hsub i)))
+  have hibp := indexForm_eq_inner_sub_inner_sub_sum_inner_of_isJacobiFieldOn τ (fun i ↦ (hτ i).le)
     hJ_piece hW_τ
   have hWj (m : Fin k) :
       inner ℝ (alongCurveWithin (leviCivitaConnection I M) γ V
@@ -456,7 +446,7 @@ private lemma alongCurveWithin_jump_eq_zero_of_indexForm_contDiff_smul_eq_zero
           (Icc (τ m.castSucc.castSucc) (τ m.castSucc.succ)) (τ m.castSucc.succ))
         (W (τ m.castSucc.succ)) = if m = j then inner ℝ Δ Δ else 0 := by
     split_ifs with hmj
-    · subst hmj; simp [W, c, Δ, hWc]
+    · subst hmj; simp [W, c, Δ, hφc, hXc]
     · simp [W, hφ0 m.castSucc.succ (by simpa using hmj)]
   have hφa : φ (τ 0) = 0 := hφ0 0 (Fin.succ_ne_zero _).symm
   have hφb : φ (τ (Fin.last (k + 1))) = 0 := hφ0 _ (by simp [Fin.ext_iff]; omega)
@@ -465,13 +455,14 @@ private lemma alongCurveWithin_jump_eq_zero_of_indexForm_contDiff_smul_eq_zero
 
 /-- **Milnor's piecewise variational Jacobi criterion.** A continuous piecewise `C¹` section `V`
 along a geodesic `γ` on `[a, b]` that is index-orthogonal to all smooth compactly supported
-multiples of local sections supported in `(a, b)` is an unbroken `C²` Jacobi field on `[a, b]`. -/
+multiples of global smooth sections supported in `(a, b)` is an unbroken `C²` Jacobi field on
+`[a, b]`. -/
 theorem isJacobiFieldOn_Icc_of_indexForm_contDiff_smul_eq_zero_of_piecewise
     {γ : ℝ → M} {V : ∀ t, TangentSpace I (γ t)} {a b : ℝ} (hγ : IsGeodesicCurveOn I γ (Icc a b))
     (hV : IsPiecewiseContMDiffOn I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (V r)) a b)
-    (horth : ∀ (ψ : ℝ → ℝ) (Y : ∀ x, TangentSpace I x) (U : Set M),
-      ContDiff ℝ ∞ ψ → tsupport ψ ⊆ Ioo a b → IsOpen U → γ '' tsupport ψ ⊆ U →
-      ContMDiffOn I I.tangent ∞ (fun x ↦ TotalSpace.mk' E x (Y x)) U →
+    (horth : ∀ (ψ : ℝ → ℝ) (Y : ∀ x, TangentSpace I x),
+      ContDiff ℝ ∞ ψ → tsupport ψ ⊆ Ioo a b →
+      ContMDiff I I.tangent ∞ (T% Y) →
       indexForm I γ V (fun t ↦ ψ t • Y (γ t)) a b = 0) :
     IsJacobiFieldOn I γ V (Icc a b) := by
   obtain ⟨k, τ, hτa, hτb, hτ, hpieces⟩ := hV.exists_partition
@@ -480,15 +471,12 @@ theorem isJacobiFieldOn_Icc_of_indexForm_contDiff_smul_eq_zero_of_piecewise
     Icc_subset_Icc (hτa ▸ hmono (Fin.zero_le _)) (hτb ▸ hmono (Fin.le_last _))
   have hJ_piece (i : Fin (k + 1)) : IsJacobiFieldOn I γ V (Icc (τ i.castSucc) (τ i.succ)) := by
     refine isJacobiFieldOn_Icc_of_indexForm_contDiff_smul_eq_zero
-      (hγ.mono (uniqueDiffOn_Icc (hτ i)) (hsub i)) (hpieces i) fun ψ Y U hψ hψs hU hγU hY ↦ ?_
-    have hW_pw := IsPiecewiseContMDiffOn.of_contMDiffOn hV.lt
-      (((hψ.of_le (by simp)).contMDiff.contMDiffOn).smul_sectionAlong_of_tsupport
-        (hγ.contMDiffOn.of_le one_le_two) hU (fun _ ht ↦ hγU ⟨_, ht.2, rfl⟩) (hY.of_le (by simp)))
-    rw [indexForm_subinterval_eq_of_tsupport_subset
-      (hτa ▸ hmono (Fin.zero_le _)) (hτ i) (hτb ▸ hmono (Fin.le_last _)) hV hW_pw
-      fun t ht ↦ by simp [image_eq_zero_of_notMem_tsupport fun h ↦ ht (hψs h)]]
-    exact horth ψ Y U hψ (hψs.trans (Ioo_subset_Ioo (hτa ▸ hmono (Fin.zero_le _))
-      (hτb ▸ hmono (Fin.le_last _)))) hU hγU hY
+      (hγ.mono (uniqueDiffOn_Icc (hτ i)) (hsub i)) (hpieces i) fun ψ Y hψ hψs hY ↦ ?_
+    have ha_le : a ≤ τ i.castSucc := hτa ▸ hmono (Fin.zero_le i.castSucc)
+    have hb_ge : τ i.succ ≤ b := hτb ▸ hmono (Fin.le_last i.succ)
+    rw [indexForm_eq_of_forall_notMem_Icc_eq_zero_right ha_le hb_ge fun t ht ↦ by
+      simp [image_eq_zero_of_notMem_tsupport fun h ↦ ht (Ioo_subset_Icc_self (hψs h))]]
+    exact horth ψ Y hψ (hψs.trans (Ioo_subset_Ioo ha_le hb_ge)) hY
   exact isJacobiFieldOn_Icc_of_partition τ hτa hτb hτ hγ hJ_piece fun j ↦
     alongCurveWithin_jump_eq_zero_of_indexForm_contDiff_smul_eq_zero τ hτa hτb hτ hγ hJ_piece
       horth j
@@ -510,9 +498,9 @@ theorem isJacobiFieldOn_Icc_iff_forall_contMDiffOn_indexForm_eq_zero
     hJ.indexForm_eq_zero_of_isPiecewiseContMDiffOn (.of_contMDiffOn hV.lt (hW.of_le hn))
       Subset.rfl hWa hWb, fun horth ↦ ?_⟩
   refine isJacobiFieldOn_Icc_of_indexForm_contDiff_smul_eq_zero_of_piecewise hγ_geo hV
-    fun ψ Y U hψ hψs hU hγU hY ↦ horth _
-      (((hψ.of_le ENat.LEInfty.out).contMDiff.contMDiffOn).smul_sectionAlong_of_tsupport hγ hU
-        (fun _ ht ↦ hγU ⟨_, ht.2, rfl⟩) (hY.of_le ENat.LEInfty.out))
+    fun ψ Y hψ hψs hY ↦ horth _
+      (((hψ.of_le ENat.LEInfty.out).contMDiff.contMDiffOn).smul_totalSpace
+        ((hY.of_le ENat.LEInfty.out).comp_contMDiffOn hγ))
       (by simp [image_eq_zero_of_notMem_tsupport fun h ↦ (hψs h).1.ne rfl])
       (by simp [image_eq_zero_of_notMem_tsupport fun h ↦ (hψs h).2.ne rfl])
 
@@ -630,7 +618,7 @@ theorem mem_ker_endpointZeroIndexForm_iff (hγ : IsPiecewiseContMDiffOn I n γ a
 /-- **Milnor's endpoint-Jacobi kernel equivalence.** For every `1 ≤ n ≤ ∞` (`[ENat.LEInfty n]`),
 embedding Jacobi fields into piecewise `C^n` sections identifies `endpointJacobiFieldSpace`
 linearly with the kernel of `endpointZeroIndexForm`. -/
-def endpointJacobiEquivIndexFormKer (hγ : IsPiecewiseContMDiffOn I n γ a b)
+def endpointJacobiFieldEquivEndpointZeroIndexFormKer (hγ : IsPiecewiseContMDiffOn I n γ a b)
     (hγ_geo : IsGeodesicCurveOn I γ (Icc a b)) (hn : 1 ≤ n) :
     endpointJacobiFieldSpace hγ_geo a b ≃ₗ[ℝ] LinearMap.ker (endpointZeroIndexForm hγ hn) := by
   refine LinearEquiv.ofBijective
@@ -652,36 +640,42 @@ def endpointJacobiEquivIndexFormKer (hγ : IsPiecewiseContMDiffOn I n γ a b)
     rw [LinearMap.codRestrict_apply, endpointJacobiToEndpointZero_apply]
     exact V.val.val.extendByZero_apply_of_mem t.property
 
-/-- Underlying fixed-endpoint section of `endpointJacobiEquivIndexFormKer`. -/
-@[simp] theorem coe_endpointJacobiEquivIndexFormKer (hγ : IsPiecewiseContMDiffOn I n γ a b)
+/-- Underlying fixed-endpoint section of `endpointJacobiFieldEquivEndpointZeroIndexFormKer`. -/
+@[simp] theorem coe_endpointJacobiFieldEquivEndpointZeroIndexFormKer
+    (hγ : IsPiecewiseContMDiffOn I n γ a b)
     (hγ_geo : IsGeodesicCurveOn I γ (Icc a b)) (hn : 1 ≤ n)
     (J : endpointJacobiFieldSpace hγ_geo a b) :
-    (endpointJacobiEquivIndexFormKer hγ hγ_geo hn J).val =
+    (endpointJacobiFieldEquivEndpointZeroIndexFormKer hγ hγ_geo hn J).val =
       endpointJacobiToEndpointZero hγ hγ_geo J := (rfl)
 
-/-- Forward evaluation of `endpointJacobiEquivIndexFormKer`. -/
-theorem endpointJacobiEquivIndexFormKer_apply (hγ : IsPiecewiseContMDiffOn I n γ a b)
+/-- Forward evaluation of `endpointJacobiFieldEquivEndpointZeroIndexFormKer`. -/
+theorem endpointJacobiFieldEquivEndpointZeroIndexFormKer_apply
+    (hγ : IsPiecewiseContMDiffOn I n γ a b)
     (hγ_geo : IsGeodesicCurveOn I γ (Icc a b)) (hn : 1 ≤ n)
     (J : endpointJacobiFieldSpace hγ_geo a b) (t : Icc a b) :
-    (endpointJacobiEquivIndexFormKer hγ hγ_geo hn J).val.val.val t = J.val.val t :=
+    (endpointJacobiFieldEquivEndpointZeroIndexFormKer hγ hγ_geo hn J).val.val.val t = J.val.val t :=
   endpointJacobiToEndpointZero_apply hγ hγ_geo J t
 
-/-- Underlying section along `γ` of `(endpointJacobiEquivIndexFormKer hγ hγ_geo hn).symm V`. -/
-@[simp] theorem coe_endpointJacobiEquivIndexFormKer_symm (hγ : IsPiecewiseContMDiffOn I n γ a b)
+/-- Underlying section along `γ` of
+`(endpointJacobiFieldEquivEndpointZeroIndexFormKer hγ hγ_geo hn).symm V`. -/
+@[simp] theorem coe_endpointJacobiFieldEquivEndpointZeroIndexFormKer_symm
+    (hγ : IsPiecewiseContMDiffOn I n γ a b)
     (hγ_geo : IsGeodesicCurveOn I γ (Icc a b)) (hn : 1 ≤ n)
     (V : LinearMap.ker (endpointZeroIndexForm hγ hn)) :
-    ((endpointJacobiEquivIndexFormKer hγ hγ_geo hn).symm V).val.val =
+    ((endpointJacobiFieldEquivEndpointZeroIndexFormKer hγ hγ_geo hn).symm V).val.val =
       V.val.val.extendByZero := by
   have h := congrArg (fun W : LinearMap.ker (endpointZeroIndexForm hγ hn) ↦ W.val.val.extendByZero)
-    ((endpointJacobiEquivIndexFormKer hγ hγ_geo hn).apply_symm_apply V)
-  rwa [coe_endpointJacobiEquivIndexFormKer, coe_endpointJacobiToEndpointZero,
+    ((endpointJacobiFieldEquivEndpointZeroIndexFormKer hγ hγ_geo hn).apply_symm_apply V)
+  rwa [coe_endpointJacobiFieldEquivEndpointZeroIndexFormKer, coe_endpointJacobiToEndpointZero,
     extendByZero_jacobiToPiecewiseSection] at h
 
-/-- Inverse evaluation of `endpointJacobiEquivIndexFormKer` on `[a, b]`. -/
-theorem endpointJacobiEquivIndexFormKer_symm_apply (hγ : IsPiecewiseContMDiffOn I n γ a b)
+/-- Inverse evaluation of `endpointJacobiFieldEquivEndpointZeroIndexFormKer` on `[a, b]`. -/
+theorem endpointJacobiFieldEquivEndpointZeroIndexFormKer_symm_apply
+    (hγ : IsPiecewiseContMDiffOn I n γ a b)
     (hγ_geo : IsGeodesicCurveOn I γ (Icc a b)) (hn : 1 ≤ n)
     (V : LinearMap.ker (endpointZeroIndexForm hγ hn)) {t : ℝ} (ht : t ∈ Icc a b) :
-    ((endpointJacobiEquivIndexFormKer hγ hγ_geo hn).symm V).val.val t = V.val.val.val ⟨t, ht⟩ := by
+    ((endpointJacobiFieldEquivEndpointZeroIndexFormKer hγ hγ_geo hn).symm V).val.val t =
+      V.val.val.val ⟨t, ht⟩ := by
   simp [ht]
 
 /-- The kernel of `endpointZeroIndexForm` along a geodesic is finite-dimensional. -/
@@ -689,7 +683,7 @@ theorem finiteDimensional_ker_endpointZeroIndexForm (hγ : IsPiecewiseContMDiffO
     (hγ_geo : IsGeodesicCurveOn I γ (Icc a b)) (hn : 1 ≤ n) :
     FiniteDimensional ℝ (LinearMap.ker (endpointZeroIndexForm hγ hn)) := by
   have := finiteDimensional_jacobiFieldSpace hγ_geo isPreconnected_Icc (left_mem_Icc.2 hγ.lt.le)
-  exact Module.Finite.equiv (endpointJacobiEquivIndexFormKer hγ hγ_geo hn)
+  exact Module.Finite.equiv (endpointJacobiFieldEquivEndpointZeroIndexFormKer hγ hγ_geo hn)
 
 /-- **Index-form nullity equals conjugate multiplicity.** For every `1 ≤ n ≤ ∞`
 (`[ENat.LEInfty n]`), `finrank (ker endpointZeroIndexForm) = conjugateMultiplicity`. -/
@@ -698,7 +692,7 @@ theorem finrank_ker_endpointZeroIndexForm (hγ : IsPiecewiseContMDiffOn I n γ a
     Module.finrank ℝ (LinearMap.ker (endpointZeroIndexForm hγ hn)) =
       conjugateMultiplicity hγ_geo isPreconnected_Icc (left_mem_Icc.2 hγ.lt.le) b := by
   rw [conjugateMultiplicity_eq_finrank]
-  exact (endpointJacobiEquivIndexFormKer hγ hγ_geo hn).symm.finrank_eq
+  exact (endpointJacobiFieldEquivEndpointZeroIndexFormKer hγ hγ_geo hn).symm.finrank_eq
 
 /-- Along a geodesic with nonzero velocity, the nullity of `endpointZeroIndexForm` is at most
 `dim M - 1`. -/
@@ -745,13 +739,6 @@ section RadialExponential
 
 variable [I.Boundaryless] {n : ℕ∞ω} [ENat.LEInfty n] {p : M} {v : TangentSpace I p} {b : ℝ}
 
-/-- Radial geodesic restriction of `t ↦ exp_p(t v)` to `[0, b]` (`0 < b ∈ geodesicInterval`). -/
-private lemma isGeodesicCurveOn_riemannianExp_Icc (h0b : 0 < b)
-    (hb : b ∈ geodesicInterval I M p v) :
-    IsGeodesicCurveOn I (fun t : ℝ ↦ riemannianExp I M p (t • v)) (Icc 0 b) :=
-  (isJacobiFieldOn_mfderiv_riemannianExp p v 0).isGeodesicCurveOn.mono (uniqueDiffOn_Icc h0b)
-    (ordConnected_geodesicInterval.out zero_mem_geodesicInterval hb)
-
 /-- Along the radial geodesic `t ↦ exp_p(t v)` on `[0, b]` (`0 < b`, `b ∈ geodesicInterval`), the
 kernel of `endpointZeroIndexForm` is linearly equivalent to `ker(d(exp_p)_{b v})`. -/
 def endpointZeroIndexFormKerEquivExpKer
@@ -760,8 +747,10 @@ def endpointZeroIndexFormKerEquivExpKer
     LinearMap.ker (endpointZeroIndexForm hγ hn) ≃ₗ[ℝ]
       LinearMap.ker (mfderiv 𝓘(ℝ, TangentSpace I p) I
         (riemannianExp I M p) (b • v)).toLinearMap :=
-  (endpointJacobiEquivIndexFormKer hγ (isGeodesicCurveOn_riemannianExp_Icc hγ.lt hb) hn).symm.trans
-    (endpointJacobiFieldEquivExpKer (isGeodesicCurveOn_riemannianExp_Icc hγ.lt hb)
+  (endpointJacobiFieldEquivEndpointZeroIndexFormKer hγ
+      (isGeodesicCurveOn_riemannianExp_smul_Icc hγ.lt zero_mem_geodesicInterval hb) hn).symm.trans
+    (endpointJacobiFieldEquivExpKer
+      (isGeodesicCurveOn_riemannianExp_smul_Icc hγ.lt zero_mem_geodesicInterval hb)
       isPreconnected_Icc (ordConnected_geodesicInterval.out zero_mem_geodesicInterval hb)
       (left_mem_Icc.2 hγ.lt.le) (right_mem_Icc.2 hγ.lt.le) hγ.lt.ne')
 
@@ -805,9 +794,9 @@ theorem nondegenerate_endpointZeroIndexForm_riemannianExp_iff
     (hb : b ∈ geodesicInterval I M p v) (hn : 1 ≤ n) :
     (endpointZeroIndexForm hγ hn).Nondegenerate ↔
       Function.Injective (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (b • v)) := by
-  rw [nondegenerate_endpointZeroIndexForm_iff hγ (isGeodesicCurveOn_riemannianExp_Icc hγ.lt hb) hn,
-    isConjugateOn_iff_not_injective_mfderiv_riemannianExp
-      (isGeodesicCurveOn_riemannianExp_Icc hγ.lt hb) isPreconnected_Icc
+  have hgeo := isGeodesicCurveOn_riemannianExp_smul_Icc hγ.lt zero_mem_geodesicInterval hb
+  rw [nondegenerate_endpointZeroIndexForm_iff hγ hgeo hn,
+    isConjugateOn_iff_not_injective_mfderiv_riemannianExp hgeo isPreconnected_Icc
       (ordConnected_geodesicInterval.out zero_mem_geodesicInterval hb)
       (left_mem_Icc.2 hγ.lt.le) (right_mem_Icc.2 hγ.lt.le) hγ.lt.ne', not_not]
 

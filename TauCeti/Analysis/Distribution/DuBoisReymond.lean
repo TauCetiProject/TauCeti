@@ -338,11 +338,9 @@ theorem _root_.ContinuousOn.eqOn_zero_Icc_of_integral_smul_eq_zero {a b : ℝ} (
   have hkey : ∀ ψ : ℝ → ℝ, ContDiff ℝ ∞ ψ → HasCompactSupport ψ → tsupport ψ ⊆ Ioo a b →
       ∫ t, ψ t • f t = 0 := by
     intro ψ hψ _ hψs
-    have hψ0 (t : ℝ) (ht : t ∉ Ioo a b) : ψ t = 0 :=
-      image_eq_zero_of_notMem_tsupport fun hm ↦ ht (hψs hm)
-    rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (s := Ioc a b) fun t ht ↦ by
-      simp [hψ0 t fun hm ↦ ht ⟨hm.1, hm.2.le⟩], ← integral_of_le hab.le]
-    exact h ψ hψ hψs
+    exact (_root_.intervalIntegral.integral_eq_integral_of_support_subset
+      ((Function.support_smul_subset_left ψ f).trans
+        ((subset_tsupport _).trans (hψs.trans Ioo_subset_Ioc_self)))).symm.trans (h ψ hψ hψs)
   have hae := isOpen_Ioo.ae_eq_zero_of_integral_contDiff_smul_eq_zero
     ((hf.mono Ioo_subset_Icc_self).locallyIntegrableOn measurableSet_Ioo) hkey
   have hIoo : EqOn f 0 (Ioo a b) := Measure.eqOn_open_of_ae_eq
@@ -372,10 +370,6 @@ theorem _root_.ContinuousOn.contDiffOn_one_Icc_of_integral_deriv_smul_add_eq_zer
   have hdb : ∀ ψ : ℝ → ℝ, ContDiff ℝ ∞ ψ → tsupport ψ ⊆ Ioo a b →
       ∫ t, deriv ψ t • (f t - G t) = 0 := by
     intro ψ hψ hψs
-    have hψ0 (t : ℝ) (ht : t ∉ Ioo a b) : ψ t = 0 :=
-      image_eq_zero_of_notMem_tsupport fun hm ↦ ht (hψs hm)
-    have hdψ0 (t : ℝ) (ht : t ∉ Ioo a b) : deriv ψ t = 0 :=
-      image_eq_zero_of_notMem_tsupport fun hm ↦ ht (hψs (tsupport_deriv_subset hm))
     have hdψ : Continuous (deriv ψ) := (contDiff_infty_iff_deriv.mp hψ).2.continuous
     have hdf : IntervalIntegrable (fun t ↦ deriv ψ t • f t) volume a b :=
       (hdψ.continuousOn.smul (uIcc_of_le hab.le ▸ hf)).intervalIntegrable
@@ -385,16 +379,19 @@ theorem _root_.ContinuousOn.contDiffOn_one_Icc_of_integral_deriv_smul_add_eq_zer
       (hψ.continuous.continuousOn.smul (uIcc_of_le hab.le ▸ hg)).intervalIntegrable
     have hibp : ∫ t in a..b, deriv ψ t • G t = -∫ t in a..b, ψ t • g t := by
       rw [TauCeti.intervalIntegral.integral_deriv_smul_primitive_eq_sub_of_le hab.le
-        (hψ.of_le (by simp)) (hg'.intervalIntegrable a b), hψ0 b (by simp), zero_smul, zero_sub]
+        (hψ.of_le (by simp)) (hg'.intervalIntegrable a b),
+        image_eq_zero_of_notMem_tsupport fun hm ↦ (hψs hm).2.ne rfl, zero_smul, zero_sub]
       congr 1
       exact _root_.intervalIntegral.integral_congr fun t ht ↦ by
         rw [hgf (uIcc_of_le hab.le ▸ ht)]
-    rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (s := Ioc a b) fun t ht ↦ by
-      simp [hdψ0 t fun hm ↦ ht ⟨hm.1, hm.2.le⟩], ← integral_of_le hab.le]
-    simp_rw [smul_sub]
-    rw [_root_.intervalIntegral.integral_sub hdf hdG, hibp, sub_neg_eq_add,
-      ← _root_.intervalIntegral.integral_add hdf hψg]
-    exact h ψ hψ hψs
+    refine Eq.trans ?_ (b := ∫ t in a..b, deriv ψ t • (f t - G t)) ?_
+    · exact (_root_.intervalIntegral.integral_eq_integral_of_support_subset
+        ((Function.support_smul_subset_left (deriv ψ) (f - G)).trans ((subset_tsupport _).trans
+          (tsupport_deriv_subset.trans (hψs.trans Ioo_subset_Ioc_self))))).symm
+    · simp_rw [smul_sub]
+      rw [_root_.intervalIntegral.integral_sub hdf hdG, hibp, sub_neg_eq_add,
+        ← _root_.intervalIntegral.integral_add hdf hψg]
+      exact h ψ hψ hψs
   obtain ⟨c, hc⟩ := ((hf.sub hG.continuous.continuousOn).mono
     Ioo_subset_Icc_self).exists_eqOn_const_Ioo_of_integral_deriv_smul_eq_zero hdb
   have hc_Icc : EqOn (fun t ↦ f t - G t) (fun _ ↦ c) (Icc a b) :=

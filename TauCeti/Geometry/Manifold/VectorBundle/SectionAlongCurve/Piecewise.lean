@@ -93,6 +93,25 @@ theorem IsPiecewiseContMDiffOn.sub_sectionAlong {U W : ∀ t, V (γ t)}
     IsPiecewiseContMDiffOn (I.prod 𝓘(ℝ, F)) n (fun t ↦ TotalSpace.mk' F (γ t) (U t - W t)) a b := by
   simpa only [sub_eq_add_neg] using hU.add_sectionAlong hW.neg_sectionAlong
 
+/-- A finite sum of piecewise `C^n` fields along a piecewise `C^n` curve is piecewise `C^n`. -/
+theorem IsPiecewiseContMDiffOn.sum_sectionAlong {ι : Type*} (A : Finset ι) (s : ι → ∀ t, V (γ t))
+    (hγ : IsPiecewiseContMDiffOn I n γ a b)
+    (hs : ∀ i ∈ A, IsPiecewiseContMDiffOn (I.prod 𝓘(ℝ, F)) n
+      (fun t ↦ TotalSpace.mk' F (γ t) (s i t)) a b) :
+    IsPiecewiseContMDiffOn (I.prod 𝓘(ℝ, F)) n
+      (fun t ↦ TotalSpace.mk' F (γ t) (∑ i ∈ A, s i t)) a b := by
+  classical
+  induction A using Finset.induction_on with
+  | empty =>
+    simp only [Finset.sum_empty]
+    obtain ⟨k, τ, hτa, hτb, hτ, hpieces⟩ := hγ.exists_partition
+    exact .of_partition τ hτa hτb hτ fun i ↦
+      (Bundle.contMDiff_zeroSection ℝ V).comp_contMDiffOn (hpieces i)
+  | @insert i A hi ih =>
+    simpa only [Finset.sum_insert hi] using
+      (hs i (Finset.mem_insert_self i A)).add_sectionAlong
+        (ih fun j hj ↦ hs j (Finset.mem_insert_of_mem hj))
+
 /-- Scaling a local `C^n` section on an open set `u` by a piecewise `C^n` scalar function `ψ` along
 `γ` gives a piecewise `C^n` section along `γ` whenever `γ` maps `Icc a b ∩ tsupport ψ` into `u`. -/
 theorem IsPiecewiseContMDiffOn.smul_sectionAlong_of_tsupport {σ : ∀ x, V x} {ψ : ℝ → ℝ} {u : Set M}

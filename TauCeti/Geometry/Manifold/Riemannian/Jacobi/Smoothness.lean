@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.PiecewisePath
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Reparametrization
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Smoothness
@@ -18,7 +19,8 @@ import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 On a smooth Riemannian manifold (with or without boundary), every `C²` Jacobi field is smooth, as
 is its covariant derivative. These statements concern the actual tangent-bundle lifts of sections
 along the geodesic. They hold within the parameter set, including the endpoints of nondegenerate
-closed intervals, and imply ordinary smoothness at interior parameters.
+closed intervals, imply ordinary smoothness at interior parameters, and give piecewise `C^n`
+regularity (`n ≤ ∞`) on nondegenerate closed intervals (`IsJacobiFieldOn.isPiecewiseContMDiffOn`).
 
 Using the boundaryless-free geodesic regularity from `Geodesic.Smoothness`, the Jacobi equation
 makes the second covariant derivative as regular as the field itself. Solving the fixed-chart
@@ -124,22 +126,32 @@ theorem IsJacobiFieldOn.contMDiffAt_infty (h : IsJacobiFieldOn I γ J s) {t : �
     ContMDiffAt 𝓘(ℝ, ℝ) I.tangent ∞ (fun r ↦ TotalSpace.mk' E (γ r) (J r)) t :=
   h.contMDiffOn_infty.contMDiffAt ht
 
+/-- Every Jacobi field on `[a, b]` (`a < b`) has a piecewise `C^n` tangent-bundle lift on `[a, b]`
+for every `n ≤ ∞`, without requiring `M` to be boundaryless. -/
+theorem IsJacobiFieldOn.isPiecewiseContMDiffOn {n : ℕ∞ω} [ENat.LEInfty n]
+    {a b : ℝ} (hab : a < b) (h : IsJacobiFieldOn I γ J (Icc a b)) :
+    IsPiecewiseContMDiffOn I.tangent n (fun r ↦ TotalSpace.mk' E (γ r) (J r)) a b :=
+  .of_contMDiffOn hab (h.contMDiffOn_infty.of_le ENat.LEInfty.out)
+
 /-- **Two-piece Jacobi gluing.** If `γ` is a geodesic on `[a, b]` and `V` is a Jacobi field on
-`[a, c]` and on `[c, b]` whose left and right covariant derivatives agree at `c`, then `V` is a
-Jacobi field on `[a, b]`. When `c ≤ a` or `b ≤ c`, one piece already covers `[a, b]`. -/
+`[a, c]` and on `[c, b]` whose left and right covariant derivatives agree at `c` when `a < c < b`,
+then `V` is a Jacobi field on `[a, b]`. When `c ≤ a` or `b ≤ c`, one piece already covers
+`[a, b]`. -/
 theorem IsJacobiFieldOn.union_Icc {V : ∀ t, TangentSpace I (γ t)} {a c b : ℝ}
     (h₁ : IsJacobiFieldOn I γ V (Icc a c)) (h₂ : IsJacobiFieldOn I γ V (Icc c b))
     (hγ : IsGeodesicCurveOn I γ (Icc a b))
-    (hD : alongCurveWithin (leviCivitaConnection I M) γ V (Icc a c) c =
-      alongCurveWithin (leviCivitaConnection I M) γ V (Icc c b) c) :
+    (hD : a < c → c < b →
+      alongCurveWithin (leviCivitaConnection I M) γ V (Icc a c) c =
+        alongCurveWithin (leviCivitaConnection I M) γ V (Icc c b) c) :
     IsJacobiFieldOn I γ V (Icc a b) := by
   rcases le_or_gt c a with hca | hac
   · exact h₂.mono hγ.uniqueDiffOn (Icc_subset_Icc hca le_rfl)
   rcases le_or_gt b c with hbc | hcb
   · exact h₁.mono hγ.uniqueDiffOn (Icc_subset_Icc le_rfl hbc)
   let cov := leviCivitaConnection I M
-  have hγ1 : ContMDiffOn 𝓘(ℝ, ℝ) I 1 γ (Icc a b) := hγ.contMDiffOn.of_le one_le_two
-  have hV1 := contMDiffOn_one_union_Icc_of_alongCurveWithin_eq cov hγ1
+  have hγ1 : ContMDiffWithinAt 𝓘(ℝ, ℝ) I 1 γ (Icc a b) c :=
+    (hγ.contMDiffOn.of_le one_le_two) c ⟨hac.le, hcb.le⟩
+  have hV1 := contMDiffOn_one_union_Icc_of_alongCurveWithin_eq cov (fun _ _ ↦ hγ1)
     (h₁.contMDiffOn.of_le one_le_two) (h₂.contMDiffOn.of_le one_le_two) hD
   have hD₁ (r : ℝ) (hr : r ∈ Icc a c) :=
     alongCurveWithin_subset_of_contMDiffOn_one cov (Icc_subset_Icc_right hcb.le)
@@ -159,11 +171,11 @@ theorem IsJacobiFieldOn.union_Icc {V : ∀ t, TangentSpace I (γ t)} {a c b : �
       (hγ.mdifferentiableOn r ⟨hac.le.trans hr.1, hr.2⟩)
   have hDV1 : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1
       (fun r ↦ TotalSpace.mk' E (γ r) (alongCurveWithin cov γ V (Icc a b) r)) (Icc a b) := by
-    refine contMDiffOn_one_union_Icc_of_alongCurveWithin_eq cov hγ1
+    refine contMDiffOn_one_union_Icc_of_alongCurveWithin_eq cov (fun _ _ ↦ hγ1)
       (h₁.contMDiffOn_alongCurveWithin.congr fun r hr ↦ congrArg (TotalSpace.mk' E (γ r))
         (hD₁ r hr).symm)
       (h₂.contMDiffOn_alongCurveWithin.congr fun r hr ↦ congrArg (TotalSpace.mk' E (γ r))
-        (hD₂ r hr).symm) ?_
+        (hD₂ r hr).symm) fun _ _ ↦ ?_
     rw [hDD₁ c ⟨hac.le, le_rfl⟩, h₁.alongCurveWithin_alongCurveWithin_eq ⟨hac.le, le_rfl⟩,
       hDD₂ c ⟨le_rfl, hcb.le⟩, h₂.alongCurveWithin_alongCurveWithin_eq ⟨le_rfl, hcb.le⟩,
       hvel₁ c ⟨hac.le, le_rfl⟩, hvel₂ c ⟨le_rfl, hcb.le⟩]
@@ -223,6 +235,6 @@ theorem isJacobiFieldOn_Icc_of_partition {V : ∀ t, TangentSpace I (γ t)}
       rw [← hleft.alongCurveWithin_subset (uniqueDiffOn_Icc hlast c ⟨hlast.le, le_rfl⟩)
         hsub ⟨hlast.le, le_rfl⟩]
       simpa only [c, Fin.succ_last, Fin.succ_castSucc] using hjump (Fin.last k)
-    exact hleft.union_Icc hright hγ hDc
+    exact hleft.union_Icc hright hγ fun _ _ ↦ hDc
 
 end TauCeti.Manifold
