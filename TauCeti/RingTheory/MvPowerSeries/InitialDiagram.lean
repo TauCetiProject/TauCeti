@@ -14,7 +14,6 @@ public import TauCeti.RingTheory.MvPowerSeries.Basic
 public import TauCeti.RingTheory.MvPowerSeries.Ideal
 import Mathlib.Data.Finsupp.PWO
 import Mathlib.Order.UpperLower.Closure
-import Mathlib.RingTheory.MvPowerSeries.Inverse
 
 /-!
 # Initial exponents and diagrams of initial exponents of multivariate power series
@@ -850,6 +849,56 @@ theorem initialDiagramVertices_span_monomial [Finite σ] [Nontrivial R] {s : Fin
     Finset.mem_coe]
 
 end InitialDiagram
+
+/-- Over a nontrivial commutative semiring, the initial diagram of the `k`-th power of the ideal of
+variables in `MvPowerSeries σ S` consists of all exponents of total degree at least `k`. -/
+theorem initialDiagram_pow_span_range_X {σ S : Type*} (m : MonomialOrder σ) [CommSemiring S]
+    [Nontrivial S] (k : ℕ) :
+    m.initialDiagram (Ideal.span (Set.range (MvPowerSeries.X (σ := σ) (R := S))) ^ k) =
+      {α : σ →₀ ℕ | k ≤ α.degree} := by
+  rw [MvPowerSeries.pow_span_range_X_eq_span_monomial, m.initialDiagram_span_monomial]
+  ext γ
+  simp only [Set.mem_iUnion, Set.mem_ofPred_eq, Set.mem_Ici, exists_prop]
+  exact ⟨fun ⟨α, hdeg, hle⟩ ↦ hdeg ▸ Finsupp.degree_mono hle,
+    fun hle ↦ let ⟨α, hle', hdeg⟩ := Finsupp.exists_le_degree_eq γ k hle; ⟨α, hdeg, hle'⟩⟩
+
+/-- Over a field `K` in finitely many variables, the initial diagram of the `k`-th power of the
+maximal ideal of `MvPowerSeries σ K` consists of all exponents of total degree at least `k`. -/
+@[simp]
+theorem initialDiagram_maximalIdeal_pow {σ K : Type*} (m : MonomialOrder σ) [Field K] [Finite σ]
+    (k : ℕ) :
+    m.initialDiagram (IsLocalRing.maximalIdeal (MvPowerSeries σ K) ^ k) =
+      {α : σ →₀ ℕ | k ≤ α.degree} := by
+  rw [MvPowerSeries.maximalIdeal_eq_span_range_X, m.initialDiagram_pow_span_range_X]
+
+/-- Under graded lexicographic order in finitely many variables over a field `K`, truncating an
+ideal `I` modulo `maximalIdeal ^ k` adds `{α | k ≤ α.degree}` to its initial diagram:
+`degLex.initialDiagram (I ⊔ 𝔪 ^ k) = degLex.initialDiagram I ∪ {α | k ≤ α.degree}`. -/
+@[simp]
+theorem initialDiagram_degLex_sup_maximalIdeal_pow {σ K : Type*} [LinearOrder σ] [Finite σ]
+    [Field K] (I : Ideal (MvPowerSeries σ K)) (k : ℕ) :
+    degLex.initialDiagram (I ⊔ IsLocalRing.maximalIdeal (MvPowerSeries σ K) ^ k) =
+      degLex.initialDiagram I ∪ {α : σ →₀ ℕ | k ≤ α.degree} := by
+  refine Set.Subset.antisymm (fun α hα ↦ ?_) (Set.union_subset
+    (degLex.initialDiagram_mono le_sup_left) ?_)
+  · by_cases hk : k ≤ α.degree
+    · exact Or.inr hk
+    · left
+      obtain ⟨h, hh, hh0, rfl⟩ := degLex.mem_initialDiagram_iff.mp hα
+      obtain ⟨f, hfI, g, hg, rfl⟩ := Submodule.mem_sup.mp hh
+      have hg_zero : ∀ γ, γ ≼[degLex] degLex.initialExp (f + g) → MvPowerSeries.coeff γ g = 0 :=
+        fun γ hγ ↦ MvPowerSeries.mem_maximalIdeal_pow_iff.mp hg γ
+          ((Finsupp.DegLex.monotone_degree hγ).trans_lt (not_le.mp hk))
+      have hf_coeff : MvPowerSeries.coeff (degLex.initialExp (f + g)) f ≠ 0 := by
+        have hne := degLex.coeff_initialExp_ne_zero hh0
+        rwa [map_add, hg_zero _ le_rfl, add_zero] at hne
+      have hf0 : f ≠ 0 := fun hf0 ↦ hf_coeff (by simp [hf0])
+      refine ⟨f, hfI, hf0, degLex.initialExp_eq_of_coeff_ne_zero_of_forall_lt hf_coeff
+        fun γ hγ ↦ ?_⟩
+      have hfg := degLex.coeff_eq_zero_of_lt_initialExp hγ
+      rwa [map_add, hg_zero γ hγ.le, add_zero] at hfg
+  · rw [← degLex.initialDiagram_maximalIdeal_pow (K := K) k]
+    exact degLex.initialDiagram_mono le_sup_right
 
 end MonomialOrder
 

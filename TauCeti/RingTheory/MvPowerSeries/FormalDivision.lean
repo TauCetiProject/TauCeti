@@ -533,6 +533,27 @@ theorem complementSubmodule_top {R : Type*} [Semiring R] :
   exact ⟨ord.eq_zero_of_mem_of_forall_mem_support_notMem_initialDiagram trivial,
     fun h ↦ by simp [h]⟩
 
+open scoped Classical in
+/-- Reading off coefficients outside `ord.initialDiagram I` identifies `ord.complementSubmodule I`
+`R`-linearly with the product `(↥(ord.initialDiagram I)ᶜ → R)`. -/
+noncomputable def complementSubmoduleEquivPi {R : Type*} [Semiring R]
+    (I : Ideal (MvPowerSeries σ R)) :
+    ord.complementSubmodule I ≃ₗ[R] (↥(ord.initialDiagram I)ᶜ → R) where
+  toFun f α := MvPowerSeries.coeff α.1 f.1
+  map_add' f g := funext fun α ↦ map_add (MvPowerSeries.coeff α.1) f.1 g.1
+  map_smul' c f := funext fun α ↦ map_smul (MvPowerSeries.coeff α.1) c f.1
+  invFun g := ⟨fun α ↦ if h : α ∉ ord.initialDiagram I then g ⟨α, h⟩ else 0,
+    fun β hβ hβD ↦ MvPowerSeries.mem_support.mp hβ (dite_eq_right fun h ↦ h hβD)⟩
+  left_inv f := Subtype.ext <| MvPowerSeries.ext fun α ↦ by
+    change (if _ : α ∉ ord.initialDiagram I then MvPowerSeries.coeff α f.1 else 0) =
+      MvPowerSeries.coeff α f.1
+    split_ifs with h
+    · symm
+      by_contra hne
+      exact ord.mem_complementSubmodule_iff.mp f.2 α (MvPowerSeries.mem_support.mpr hne) h
+    · rfl
+  right_inv g := funext fun α ↦ dite_eq_left α.2
+
 /-- Any left ideal `I` of `MvPowerSeries σ R` (restricted to `R`-scalars) is disjoint from
 `ord.complementSubmodule I`. -/
 theorem disjoint_restrictScalars_complementSubmodule {R : Type*} [Semiring R]
@@ -794,6 +815,20 @@ theorem quotientEquivComplementSubmodule_symm_apply (I : Ideal (MvPowerSeries σ
     (ord.quotientEquivComplementSubmodule I).symm f =
       Ideal.Quotient.mk I (f : MvPowerSeries σ K) := by
   simp [quotientEquivComplementSubmodule, ← Ideal.Quotient.mk_eq_mk]
+
+/-- The canonical `K`-linear isomorphism
+`(MvPowerSeries σ K ⧸ I) ≃ₗ[K] (↥(ord.initialDiagram I)ᶜ → K)` sending the residue class of `G` to
+the restriction of `coeff · (ord.normalRemainder I G)` outside `ord.initialDiagram I`. -/
+noncomputable def quotientEquivPiNotMemInitialDiagram (I : Ideal (MvPowerSeries σ K)) :
+    (MvPowerSeries σ K ⧸ I) ≃ₗ[K] (↥(ord.initialDiagram I)ᶜ → K) :=
+  (ord.quotientEquivComplementSubmodule I).trans (ord.complementSubmoduleEquivPi I)
+
+@[simp]
+theorem quotientEquivPiNotMemInitialDiagram_mk (I : Ideal (MvPowerSeries σ K))
+    (G : MvPowerSeries σ K) (α : ↥(ord.initialDiagram I)ᶜ) :
+    ord.quotientEquivPiNotMemInitialDiagram I (Ideal.Quotient.mk I G) α =
+      MvPowerSeries.coeff α.1 (ord.normalRemainder I G) := by
+  simp [quotientEquivPiNotMemInitialDiagram, complementSubmoduleEquivPi]
 
 /-- Hironaka's normalized generator of `I` at an exponent `v : σ →₀ ℕ`:
 `monomial v 1 - ord.normalRemainder I (monomial v 1)`. For `v ∈ ord.initialDiagram I`, this is the
