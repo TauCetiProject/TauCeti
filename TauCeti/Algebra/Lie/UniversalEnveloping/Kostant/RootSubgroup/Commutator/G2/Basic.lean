@@ -181,7 +181,7 @@ theorem kostantRootSubgroupPoints_mul_of_lie_eq_three_nsmul
     ← baseChangeExp_zsmul b M
       (fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM o n hv) hMz' ho]
   exact baseChangeExp_mul_baseChangeExp_of_commutator_eq_three_nsmul M hxy hxz hxw hwz hxv
-    hxz' hyz hwv hzz' hwz' hvz' hi hj (hk.smul c) (hl.smul d) _ _ hMz hMw hMv hMz' _ _
+    hxz' hyz hwv hzz' hwz' hvz' (hk.smul c) (hl.smul d) _ _ hMz hMw hMv hMz' _ _
 
 /-- The type-`G₂` Chevalley commutator relation with the four additional root-subgroup points
 written explicitly at parameters `c t u`, `d t² u`, `a t³ u`, and `b t³ u²`. -/
