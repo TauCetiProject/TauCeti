@@ -44,6 +44,7 @@ simple Weyl automorphisms.
 * `TauCeti.DynkinType.weylAut_chevalleySystem_eq_or_eq_neg`: `w_α (e_β) = ± e_{s_α β}`.
 * `TauCeti.DynkinType.weylAut_chevalleySystem`: `w_α e_β = ε e_{s_α β}` with the sign
   `ε = TauCeti.DynkinType.chevalleyWeylSign α β`.
+* `TauCeti.DynkinType.chevalleyWeylSign_reflectionPerm_self`: `η_{α,-β} = η_{α,β}`.
 * `TauCeti.DynkinType.weylAut_simpleIndex_eq`: at a simple root `αᵢ`, `w_{αᵢ}` is the Weyl
   automorphism of any `sl₂` triple `(h, eᵢ, fᵢ)` on its numbered generators, such as the basis
   triple `LieAlgebra.Basis.isSl2Triple_rootGenerator`.
@@ -156,6 +157,46 @@ theorem eq_chevalleyWeylSign_iff {α β : Fin t.numRoots} {ε : ℤˣ} :
   rw [t.weylAut_chevalleySystem ht α β, ← sub_eq_zero, ← sub_smul, ← Int.cast_smul_eq_zsmul ℚ,
     smul_eq_zero, Int.cast_eq_zero, sub_eq_zero, Units.val_inj] at h
   exact (h.resolve_right (t.isSl2Triple_chevalleySystem ht _).e_ne_zero).symm
+
+private theorem weylAut_neg_of_map_eq_neg {L : Type*} [LieRing L] [LieAlgebra ℚ L]
+    (ω : L ≃ₗ⁅ℚ⁆ L) {h₀ eα fα x y z w : L} (T : IsSl2Triple h₀ eα fα)
+    (he : ∀ u, ∃ k, ((ad ℚ L eα) ^ k) u = 0) (hf : ∀ u, ∃ k, ((ad ℚ L fα) ^ k) u = 0)
+    (hωe : ω eα = -fα) (hωf : ω fα = -eα) (hωx : ω x = -y) (hωz : ω z = -w) {ε : ℤ}
+    (hwx : weylAut T he hf x = ε • z) :
+    weylAut T he hf y = ε • w := by
+  have hcomm := (ω.toLieHom.map_weylAut T he hf hωe hωf x).symm
+  simpa only [LieEquiv.coe_toLieHom, hωx, map_neg, hwx, map_zsmul, hωz, smul_neg, neg_inj]
+    using hcomm
+
+/-- **The Weyl automorphism sign is invariant under negating the target root**:
+`η_{α,-β} = η_{α,β}`, because the Chevalley involution commutes with every Weyl automorphism and
+exchanges opposite root vectors with a common sign. -/
+@[simp]
+theorem chevalleyWeylSign_reflectionPerm_self (α β : Fin t.numRoots) :
+    t.chevalleyWeylSign ht α ((t.simplyConnectedRootDatum ht).reflectionPerm β β) =
+      t.chevalleyWeylSign ht α β := by
+  have hneg : (t.simplyConnectedRootDatum ht).reflectionPerm α
+        ((t.simplyConnectedRootDatum ht).reflectionPerm β β) =
+      (t.simplyConnectedRootDatum ht).reflectionPerm
+        ((t.simplyConnectedRootDatum ht).reflectionPerm α β)
+        ((t.simplyConnectedRootDatum ht).reflectionPerm α β) := by
+    have h := (t.simplyConnectedRootDatum ht).weylGroupToPerm_neg
+      (RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) α) β
+    simpa only [RootPairing.indexNeg_neg, RootPairing.weylGroupToPerm_ofIdx_apply] using h
+  symm
+  rw [eq_chevalleyWeylSign_iff]
+  exact weylAut_neg_of_map_eq_neg (t.chevalleyInvolution ht)
+    (t.isSl2Triple_chevalleySystem ht α)
+    (t.isNilpotent_ad_chevalleySystem ht α).exists_pow_apply_eq_zero
+    (t.isNilpotent_ad_chevalleySystem ht _).exists_pow_apply_eq_zero
+    (t.chevalleyInvolution_chevalleySystem ht α)
+    ((t.chevalleyInvolution_chevalleySystem ht _).trans
+      (congrArg (fun γ => -t.chevalleySystem ht γ)
+        ((t.simplyConnectedRootDatum ht).reflectionPerm_reflectionPerm_self α)))
+    (t.chevalleyInvolution_chevalleySystem ht β)
+    ((t.chevalleyInvolution_chevalleySystem ht _).trans
+      (congrArg (fun γ => -t.chevalleySystem ht γ) hneg.symm))
+    (t.weylAut_chevalleySystem ht α β)
 
 /-! ## The Weyl automorphisms of the simple roots -/
 

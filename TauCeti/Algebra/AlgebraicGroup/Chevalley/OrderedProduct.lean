@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Collection
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.SimplyConnected
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.OrderedProduct
@@ -13,18 +14,25 @@ import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Simp
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.WeightDegree
 
 /-!
-# Uniqueness of ordered positive-root products in the full-weight Chevalley model
+# Existence and uniqueness of ordered positive-root products in the full-weight Chevalley model
 
 Over every commutative ring, a product of distinct positive root elements in any fixed
-order determines all its parameters. The result applies to any list of positive roots,
-so also to any enumeration of all positive roots, in the existing full-weight Chevalley
-point group. It supplies uniqueness of positive-root coordinates; existence of such
-coordinates for every element of the positive subgroup is a separate collection theorem.
+order in the full-weight Chevalley point group determines all its parameters uniquely, and every
+element of the positive subgroup `(t.scChevalleyDatum ht).positivePoints A` arises from a unique
+tuple of positive-root parameters. The result holds for any duplicate-free enumeration of the
+positive roots and any commutative ring, including rings with nilpotents or bad characteristic.
 
-The proof applies `list_prod_map_kostantRootSubgroupParam_inj` to the named all-root
-Chevalley system. Its operator-faithfulness hypothesis is discharged integrally: the
-fundamental modules supply primitive simple-root steps, transported to every root by
-Weyl automorphisms. Thus no restriction on characteristic or reducedness is needed.
+Uniqueness applies `list_prod_map_kostantRootSubgroupParam_inj` to the named all-root Chevalley
+system, using the fundamental modules and Weyl automorphisms to supply primitive root steps
+integrally. Existence comes from `ChevalleyDatum.mem_positivePoints_iff_exists_prod`, yielding the
+ordered-product coordinate equivalence `scPositivePointsProdEquiv`.
+
+## Main declarations
+
+* `TauCeti.DynkinType.list_prod_map_scChevalleyDatum_rootSubgroupPoints_inj`: distinct positive
+  root factors in any order determine their parameters uniquely.
+* `TauCeti.DynkinType.scPositivePointsProdEquiv`: Steinberg's bijection between positive-root
+  parameter tuples and `(t.scChevalleyDatum ht).positivePoints A`.
 
 ## References
 
@@ -88,5 +96,89 @@ theorem list_prod_map_scChevalleyDatum_rootSubgroupPoints_inj (A : Type*) [CommR
       ChevalleyDatum.coe_rootSubgroupPoints, MulEquiv.toMonoidHom_eq_coe, D] using hmat
   · intro huv
     exact congrArg List.prod (List.map_congr_left fun γ hγ => by rw [huv γ hγ])
+
+private noncomputable def scPositivePointsProdMap (A : Type*) [CommRing A]
+    (l : List (Fin t.numRoots))
+    (hcover : ∀ γ, γ ∈ l ↔ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
+    (u : posRoots (t.rationalRootSystem ht) (t.rationalBase ht) → A) :
+    (t.scChevalleyDatum ht).positivePoints A :=
+  ⟨(l.attach.map fun x => (t.scChevalleyDatum ht).rootSubgroupPoints x.1 A
+      (Multiplicative.ofAdd (u ⟨x.1, (hcover x.1).mp x.2⟩))).prod,
+    Subgroup.list_prod_mem _ fun _ hx => by
+      obtain ⟨x, _, rfl⟩ := List.mem_map.mp hx
+      exact (t.scChevalleyDatum ht).rootSubgroupPoints_mem_positivePoints A
+        ((hcover x.1).mp x.2) _⟩
+
+private theorem scPositivePointsProdMap_bijective (A : Type*) [CommRing A]
+    (l : List (Fin t.numRoots)) (hl : l.Nodup)
+    (hcover : ∀ γ, γ ∈ l ↔ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht)) :
+    Function.Bijective (t.scPositivePointsProdMap ht A l hcover) := by
+  classical
+  let extParam (u : posRoots (t.rationalRootSystem ht) (t.rationalBase ht) → A)
+      (γ : Fin t.numRoots) : A :=
+    if h : γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) then u ⟨γ, h⟩ else 0
+  have hval (u : posRoots (t.rationalRootSystem ht) (t.rationalBase ht) → A) :
+      (t.scPositivePointsProdMap ht A l hcover u : (t.scChevalleyDatum ht).points A) =
+        (l.map fun γ => (t.scChevalleyDatum ht).rootSubgroupPoints γ A
+          (Multiplicative.ofAdd (extParam u γ))).prod := by
+    dsimp only [scPositivePointsProdMap]
+    rw [← List.attach_map_val (l := l)]
+    exact congrArg List.prod (List.map_congr_left fun x _ => by
+      simp only [extParam, (hcover x.1).mp x.2, ↓reduceDIte])
+  refine ⟨?_, ?_⟩
+  · intro u v huv
+    have hprod : (l.map fun γ => (t.scChevalleyDatum ht).rootSubgroupPoints γ A
+        (Multiplicative.ofAdd (extParam u γ))).prod =
+        (l.map fun γ => (t.scChevalleyDatum ht).rootSubgroupPoints γ A
+          (Multiplicative.ofAdd (extParam v γ))).prod := by
+      rw [← hval u, ← hval v, huv]
+    have heq := (t.list_prod_map_scChevalleyDatum_rootSubgroupPoints_inj ht A hl
+      (fun γ hγ => (hcover γ).mp hγ)).mp hprod
+    ext ⟨γ, hγ⟩
+    simpa only [extParam, hγ, ↓reduceDIte] using heq γ ((hcover γ).mpr hγ)
+  · rintro ⟨g, hg⟩
+    obtain ⟨w, rfl⟩ :=
+      ((t.scChevalleyDatum ht).mem_positivePoints_iff_exists_prod A l hl hcover g).mp hg
+    refine ⟨fun γ => (w γ.1).toAdd, Subtype.ext ?_⟩
+    dsimp only [scPositivePointsProdMap]
+    rw [← List.attach_map_val (f := fun γ => (t.scChevalleyDatum ht).rootSubgroupPoints γ A (w γ))]
+    exact congrArg List.prod (List.map_congr_left fun _ _ => by simp only [ofAdd_toAdd])
+
+/-- Steinberg's ordered positive-root product equivalence for the full-weight Chevalley datum:
+for any duplicate-free enumeration `l` of the positive roots and any commutative ring `A`,
+forming the ordered product `∏_{γ ∈ l} x_γ(u_γ)` is a bijection from positive-root parameter
+tuples onto `(t.scChevalleyDatum ht).positivePoints A`. -/
+noncomputable def scPositivePointsProdEquiv (A : Type*) [CommRing A]
+    (l : List (Fin t.numRoots)) (hl : l.Nodup)
+    (hcover : ∀ γ, γ ∈ l ↔ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht)) :
+    (posRoots (t.rationalRootSystem ht) (t.rationalBase ht) → A) ≃
+      (t.scChevalleyDatum ht).positivePoints A :=
+  Equiv.ofBijective (t.scPositivePointsProdMap ht A l hcover)
+    (t.scPositivePointsProdMap_bijective ht A l hl hcover)
+
+/-- Evaluating `scPositivePointsProdEquiv` computes the ordered positive-root product along `l`. -/
+@[simp]
+theorem coe_scPositivePointsProdEquiv_apply (A : Type*) [CommRing A]
+    (l : List (Fin t.numRoots)) (hl : l.Nodup)
+    (hcover : ∀ γ, γ ∈ l ↔ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
+    (u : posRoots (t.rationalRootSystem ht) (t.rationalBase ht) → A) :
+    (t.scPositivePointsProdEquiv ht A l hl hcover u : (t.scChevalleyDatum ht).points A) =
+      (l.attach.map fun x => (t.scChevalleyDatum ht).rootSubgroupPoints x.1 A
+        (Multiplicative.ofAdd (u ⟨x.1, (hcover x.1).mp x.2⟩))).prod :=
+  (rfl)
+
+/-- On restricted all-root parameter functions, `scPositivePointsProdEquiv` is the plain list
+product along `l`. -/
+theorem coe_scPositivePointsProdEquiv_comp_subtype (A : Type*) [CommRing A]
+    (l : List (Fin t.numRoots)) (hl : l.Nodup)
+    (hcover : ∀ γ, γ ∈ l ↔ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
+    (u : Fin t.numRoots → A) :
+    (t.scPositivePointsProdEquiv ht A l hl hcover (fun γ => u γ.1) :
+        (t.scChevalleyDatum ht).points A) =
+      (l.map fun γ => (t.scChevalleyDatum ht).rootSubgroupPoints γ A
+        (Multiplicative.ofAdd (u γ))).prod := by
+  rw [coe_scPositivePointsProdEquiv_apply,
+    List.attach_map_val (f := fun γ =>
+      (t.scChevalleyDatum ht).rootSubgroupPoints γ A (Multiplicative.ofAdd (u γ)))]
 
 end TauCeti.DynkinType

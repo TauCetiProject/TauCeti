@@ -176,6 +176,20 @@ theorem weylElement_conj_rootSubgroupPoints_simpleIndex_mem_borelSubgroup_iff
     D.rootSubgroupPoints_mem_borelSubgroup_iff_of_mem_negRoots A hneg,
     ← D.weylElement_conj_rootSubgroupPoints, conj_eq_one_iff]
 
+/-- The negative-root subgroup meets the positive Borel-type subgroup trivially over every
+commutative ring. -/
+@[simp]
+theorem negativePoints_inf_borelSubgroup_eq_bot :
+    D.negativePoints A ⊓ D.borelSubgroup A = ⊥ :=
+  D.negativePoints_inf_positivePoints_sup_range_torusPoints_eq_bot A
+
+/-- The positive Borel-type subgroup meets the negative-root subgroup trivially over every
+commutative ring. -/
+@[simp]
+theorem borelSubgroup_inf_negativePoints_eq_bot :
+    D.borelSubgroup A ⊓ D.negativePoints A = ⊥ := by
+  rw [inf_comm, D.negativePoints_inf_borelSubgroup_eq_bot A]
+
 /-- Every pinned simple Weyl representative conjugates some element of the positive Borel
 outside that Borel, for every Chevalley datum over a nontrivial commutative ring. -/
 theorem exists_weylElement_conj_notMem_borelSubgroup [Nontrivial A] (i : Fin t.rank) :

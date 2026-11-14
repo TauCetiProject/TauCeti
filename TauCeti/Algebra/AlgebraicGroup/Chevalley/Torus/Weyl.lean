@@ -103,7 +103,9 @@ private theorem torusPoints_conj_simpleWeylElement (s : Fin t.rank → Aˣ) :
   simp only [MulAut.conj_apply, D.torusPoints_conj_rootSubgroupPoints,
     D.coordinateRoot_reflectionPerm_self, torusCharacter_neg, mul_one, mul_neg]
 
-private theorem simpleWeylElement_eq_coroot_mul (s : Aˣ) :
+/-- Every simple Weyl element `n_{αᵢ}(s)` factors into the simple coroot point `h_{αᵢ}(s)`
+followed by the pinned representative `n_{αᵢ}(1)`. -/
+theorem simpleWeylElement_eq_coroot_mul (s : Aˣ) :
     D.weylElement (t.simpleIndex ht i) A s =
       D.torusPoints A (D.simpleCorootParameter i A s) *
         D.weylElement (t.simpleIndex ht i) A 1 := by
