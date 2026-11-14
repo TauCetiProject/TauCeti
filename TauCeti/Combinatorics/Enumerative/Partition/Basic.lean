@@ -24,7 +24,8 @@ number being partitioned: such a transport leaves the parts alone, and
 squares of its parts sum to at least `n` (`Nat.Partition.le_sum_sq_parts`).
 Positive-part counts determine the parts even for partitions of different numbers
 (`Nat.Partition.parts_eq_of_count_succ`); zero never occurs as a part, so filtering the
-parts by positivity keeps them all (`Nat.Partition.filter_pos_parts`). Finally,
+parts by positivity keeps them all (`Nat.Partition.filter_pos_parts`), and a partition has no parts
+only when partitioning zero (`Nat.Partition.parts_eq_zero_iff`). Finally,
 `Nat.Partition.sum_sort_parts` and `Nat.Partition.sort_parts_injective` say that the
 decreasingly sorted parts of a partition of `n` sum to `n` and determine the partition.
 -/
@@ -90,6 +91,15 @@ end Nat.Partition
 end TauCeti
 
 namespace Nat.Partition
+
+/-- A partition has no parts if and only if it is a partition of zero. -/
+@[simp]
+theorem parts_eq_zero_iff {n : ℕ} (p : n.Partition) : p.parts = 0 ↔ n = 0 :=
+  ⟨fun h => by simpa [h] using p.parts_sum.symm, fun hn => by subst hn; simp⟩
+
+/-- Every partition of a nonzero integer has at least one part. -/
+theorem parts_ne_zero {n : ℕ} (p : n.Partition) (hn : n ≠ 0) : p.parts ≠ 0 :=
+  mt p.parts_eq_zero_iff.mp hn
 
 /-- Zero has multiplicity zero in every partition. -/
 @[simp]

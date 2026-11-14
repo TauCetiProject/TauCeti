@@ -85,7 +85,7 @@ theorem etaleMass_eq (n : ℕ) :
           n - (ramificationPartition ρ.splittingSymbol).sum := by
     intro ρ
     have hdeg := sum_map_mul_eq_sum_ramificationPartition_add ρ.splittingSymbol
-      fun x hx ↦ (ρ.pos_of_mem_splittingSymbol hx).2
+      fun x hx ↦ (ρ.fst_pos_and_snd_pos_of_mem_splittingSymbol hx).2
     rw [ρ.sum_map_mul_splittingSymbol] at hdeg
     omega
   -- First group by `k = (ramificationPartition ρ.splittingSymbol).sum ∈ Finset.range (n + 1)`.
@@ -100,10 +100,8 @@ theorem etaleMass_eq (n : ℕ) :
     (Finset.univ : Finset k.Partition).filter fun π ↦ π.parts.card ≤ n - k
   let e₁ : {ρ : GaloisSet K n // (ramificationPartition ρ.splittingSymbol).sum = k} ≃
       Ξ₁ ⁻¹' {⟨k, hk⟩} :=
-    { toFun := fun ρ ↦ ⟨ρ.1, Subtype.ext ρ.2⟩
-      invFun := fun r ↦ ⟨r.1, congrArg Subtype.val r.2⟩
-      left_inv := fun _ ↦ rfl
-      right_inv := fun _ ↦ rfl }
+    (Equiv.subtypeEquivRight fun ρ ↦ by
+      rw [Set.mem_preimage, Set.mem_singleton_iff, Subtype.ext_iff]).symm
   let Ξ₂ : {ρ : GaloisSet K n // (ramificationPartition ρ.splittingSymbol).sum = k} → S :=
     fun ⟨ρ, hρ⟩ ↦ ⟨{ parts := ramificationPartition ρ.splittingSymbol
                      parts_pos := fun {t} ht ↦ Nat.pos_of_ne_zero (mem_ramificationPartition.1 ht).1
@@ -121,12 +119,13 @@ theorem etaleMass_eq (n : ℕ) :
     have hπ : π.parts.card ≤ n - k := (Finset.mem_filter.1 hπ_mem).2
     let efib : {ρ : GaloisSet K n // ramificationPartition ρ.splittingSymbol = π.parts} ≃
         Ξ₂ ⁻¹' {⟨π, hπ_mem⟩} :=
-      { toFun := fun ρ ↦
-          ⟨⟨ρ.1, by rw [ρ.2, π.parts_sum]⟩, Subtype.ext (Nat.Partition.ext ρ.2)⟩
-        invFun := fun r ↦
-          ⟨r.1.1, congrArg (fun p : S ↦ p.1.parts) r.2⟩
-        left_inv := fun _ ↦ rfl
-        right_inv := fun _ ↦ rfl }
+      (Equiv.subtypeSubtypeEquivSubtype (p := fun ρ : GaloisSet K n ↦
+          (ramificationPartition ρ.splittingSymbol).sum = k)
+        fun {ρ} (h : ramificationPartition ρ.splittingSymbol = π.parts) ↦
+          h.symm ▸ π.parts_sum).symm.trans
+        (Equiv.subtypeEquivRight fun r ↦ by
+          rw [Set.mem_preimage, Set.mem_singleton_iff, Subtype.ext_iff,
+            Nat.Partition.ext_iff]).symm
     rw [← efib.tsum_eq fun r ↦ 1 / q ^ (e₁ r.1).1.discriminantExponent]
     exact etaleMass_ramificationPartition n k π hπ
   rw [Finset.sum_congr rfl fun π _ ↦ hπ_term π,
@@ -156,14 +155,8 @@ variable (K) in
 theorem etaleMass_two :
     etaleMass K 2 = 1 + 1 / (Nat.card 𝓀[K] : ℝ≥0∞) := by
   classical
-  have h2 : ((Finset.univ : Finset (2 : ℕ).Partition).filter fun π ↦ π.parts = 0) = ∅ := by
-    rw [Finset.filter_eq_empty_iff]
-    intro π _ h0
-    have hsum := π.parts_sum
-    rw [h0, Multiset.sum_zero] at hsum
-    omega
   rw [etaleMass_eq, Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_one]
-  simp [Finset.univ_unique, h2]
+  simp [Finset.univ_unique]
 
 variable (K) in
 /-- In degree `3`, `M_3(K) = 1 + q⁻¹ + q⁻²`. -/
@@ -176,23 +169,14 @@ theorem etaleMass_three :
     ext π
     simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_singleton]
     refine ⟨fun hle ↦ ?_, fun h ↦ by simp [h]⟩
-    have hne : π.parts ≠ 0 := fun h0 ↦ by
-      have hsum := π.parts_sum
-      rw [h0, Multiset.sum_zero] at hsum
-      omega
-    obtain ⟨a, ha⟩ := Multiset.card_eq_one.1 (le_antisymm hle (Multiset.card_pos.2 hne))
+    obtain ⟨a, ha⟩ := Multiset.card_eq_one.1
+      (le_antisymm hle (Multiset.card_pos.2 (π.parts_ne_zero two_ne_zero)))
     have hak : a = 2 := by
       have hsum := π.parts_sum
       rwa [ha, Multiset.sum_singleton] at hsum
     exact Nat.Partition.ext (by simp [ha, hak])
-  have h3 : ((Finset.univ : Finset (3 : ℕ).Partition).filter fun π ↦ π.parts = 0) = ∅ := by
-    rw [Finset.filter_eq_empty_iff]
-    intro π _ h0
-    have hsum := π.parts_sum
-    rw [h0, Multiset.sum_zero] at hsum
-    omega
   rw [etaleMass_eq, Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_succ,
     Finset.sum_range_one]
-  simp [Finset.univ_unique, h2, h3]
+  simp [Finset.univ_unique, h2]
 
 end TauCeti

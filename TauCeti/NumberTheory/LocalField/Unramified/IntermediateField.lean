@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.LocalField.MassFormula.Basic
 public import TauCeti.NumberTheory.LocalField.Unramified.Factorization
 public import TauCeti.NumberTheory.LocalField.Unramified.Maximal
+import TauCeti.FieldTheory.Galois.FixedField
 
 /-!
 # The unramified part of a finite subextension
@@ -25,7 +26,9 @@ the infinite case, so residue degree can be used as a weight on isomorphism clas
 
 ## Main results
 
-* `IntermediateField.inertiaDegree_eq_of_algEquiv`: residue degree is an isomorphism invariant.
+* `IntermediateField.inertiaDegree_eq_of_algEquiv` and
+  `IntermediateField.inertiaDegree_fixedField_stabilizer_smul`: residue degree is an isomorphism
+  invariant, hence constant along Galois orbits of point stabilizers.
 * `IntermediateField.isTotallyRamified_iff_inertiaDegree_eq_one`: a subextension is totally
   ramified exactly when its residue degree is one.
 * `IntermediateField.inertiaDegree_dvd_finrank` and
@@ -115,6 +118,15 @@ theorem inertiaDegree_eq_of_algEquiv {L M : IntermediateField K (SeparableClosur
     exact TauCeti.inertiaDegree_eq_of_algEquiv K L M e
   · rw [inertiaDegree_of_not_finite hL, inertiaDegree_of_not_finite
       fun h ↦ hL (Module.Finite.equiv e.symm.toLinearEquiv)]
+
+/-- Translating a point along a Galois action preserves the residue degree of its stabilizer's
+fixed field. -/
+@[simp]
+theorem inertiaDegree_fixedField_stabilizer_smul {X : Type*}
+    [MulAction Gal(SeparableClosure K/K) X] (σ : Gal(SeparableClosure K/K)) (x : X) :
+    (fixedField (MulAction.stabilizer Gal(SeparableClosure K/K) (σ • x))).inertiaDegree =
+      (fixedField (MulAction.stabilizer Gal(SeparableClosure K/K) x)).inertiaDegree :=
+  apply_fixedField_stabilizer_smul inertiaDegree_eq_of_algEquiv σ x
 
 /-- A subextension is totally ramified exactly when its totalized residue degree is one; no
 finiteness hypothesis is needed, since an infinite subextension has residue degree zero. -/

@@ -113,6 +113,15 @@ theorem splittingSymbolAut_zero : splittingSymbolAut 0 = 1 := by
 theorem splittingSymbolAut_singleton (x : ℕ × ℕ) : splittingSymbolAut {x} = x.1 := by
   simp [splittingSymbolAut]
 
+/-- A splitting symbol consisting of `n` copies of a factor `(f, e)` has `f ^ n * n !`
+automorphisms. -/
+@[simp]
+theorem splittingSymbolAut_replicate (n : ℕ) (x : ℕ × ℕ) :
+    splittingSymbolAut (Multiset.replicate n x) = x.1 ^ n * n ! := by
+  rw [splittingSymbolAut_eq_prod_of_subset (Multiset.replicate n x) (s := {x}) fun y hy => by
+    simpa using Multiset.eq_of_mem_replicate (Multiset.mem_toFinset.1 hy)]
+  simp
+
 /-- The empty splitting symbol has the empty ramification partition. -/
 @[simp]
 theorem ramificationPartition_zero : ramificationPartition 0 = 0 := by
@@ -134,6 +143,19 @@ theorem ramificationPartition_singleton (x : ℕ × ℕ) :
   split_ifs with h
   · exact Multiset.filter_eq_nil.2 fun a ha => by rw [Multiset.eq_of_mem_replicate ha]; omega
   · exact Multiset.filter_eq_self.2 fun a ha => by rw [Multiset.eq_of_mem_replicate ha]; omega
+
+/-- The ramification partition of `n` copies of `(f, e)` is `e - 1` repeated `n * f` times, or
+empty when the factor is unramified. -/
+@[simp]
+theorem ramificationPartition_replicate (n : ℕ) (x : ℕ × ℕ) :
+    ramificationPartition (Multiset.replicate n x) =
+      if x.2 ≤ 1 then 0 else Multiset.replicate (n * x.1) (x.2 - 1) := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [Multiset.replicate_succ, ← Multiset.singleton_add, ramificationPartition_add,
+      ramificationPartition_singleton, ih, Nat.add_mul, one_mul]
+    split_ifs <;> simp [Multiset.replicate_add, add_comm]
 
 /-- The parts of the ramification partition are the `e - 1 ≠ 0` for the factors `(f, e)` of `σ`
 with `f ≠ 0`. -/
@@ -192,6 +214,12 @@ theorem splittingSymbolExponent_singleton (x : ℕ × ℕ) :
     splittingSymbolExponent {x} = x.1 * (x.2 - 1) := by
   simp [splittingSymbolExponent]
 
+/-- `n` copies of a factor `(f, e)` have exponent `n * (f * (e - 1))`. -/
+@[simp]
+theorem splittingSymbolExponent_replicate (n : ℕ) (x : ℕ × ℕ) :
+    splittingSymbolExponent (Multiset.replicate n x) = n * (x.1 * (x.2 - 1)) := by
+  simp [splittingSymbolExponent]
+
 /-- Erasing a factor `(f, e) ∈ σ` splits off `f (e - 1)` from the exponent. -/
 theorem splittingSymbolExponent_eq_add_erase {σ : Multiset (ℕ × ℕ)} {x : ℕ × ℕ} (hx : x ∈ σ) :
     splittingSymbolExponent σ =
@@ -221,22 +249,18 @@ theorem splittingSymbolAut_eq_mul_erase {σ : Multiset (ℕ × ℕ)} {x : ℕ ×
   rw [hrest, hc, pow_succ', Nat.factorial_succ]
   ring
 
-/-- The sum of the ramification partition is `∑ f (e - 1)` over the factors `(f, e)` of `σ`. -/
+/-- The sum of the ramification partition is `splittingSymbolExponent σ`, that is, `∑ f (e - 1)`
+over the factors `(f, e)` of `σ`. -/
 @[simp]
 theorem sum_ramificationPartition (σ : Multiset (ℕ × ℕ)) :
-    (ramificationPartition σ).sum = (σ.map fun x => x.1 * (x.2 - 1)).sum := by
-  rw [ramificationPartition, Multiset.filter_bind, Multiset.sum_bind]
+    (ramificationPartition σ).sum = splittingSymbolExponent σ := by
+  rw [ramificationPartition, splittingSymbolExponent_def, Multiset.filter_bind, Multiset.sum_bind]
   refine congrArg _ (Multiset.map_congr rfl fun x _ => ?_)
   by_cases h : x.2 - 1 = 0
   · rw [Multiset.filter_eq_nil.2 fun a ha => by simp [Multiset.eq_of_mem_replicate ha, h], h]
     simp
   · rw [Multiset.filter_eq_self.2 fun a ha => by simpa [Multiset.eq_of_mem_replicate ha] using h]
     simp
-
-/-- The sum of the ramification partition is `splittingSymbolExponent σ`. -/
-theorem sum_ramificationPartition_eq_splittingSymbolExponent (σ : Multiset (ℕ × ℕ)) :
-    (ramificationPartition σ).sum = splittingSymbolExponent σ :=
-  (sum_ramificationPartition σ).trans (splittingSymbolExponent_def σ).symm
 
 /-- The number of parts of the ramification partition is the total residue degree of the ramified
 factors, those with `2 ≤ e`. -/
@@ -262,8 +286,8 @@ theorem sum_map_mul_eq_sum_ramificationPartition_add (σ : Multiset (ℕ × ℕ)
     (σ.map fun x => x.1 * x.2).sum =
       (ramificationPartition σ).sum + Multiset.card (ramificationPartition σ) +
         (σ.map fun x => if x.2 = 1 then x.1 else 0).sum := by
-  rw [sum_ramificationPartition, card_ramificationPartition, ← Multiset.sum_map_add,
-    ← Multiset.sum_map_add]
+  rw [sum_ramificationPartition, splittingSymbolExponent_def, card_ramificationPartition,
+    ← Multiset.sum_map_add, ← Multiset.sum_map_add]
   refine congrArg _ (Multiset.map_congr rfl fun x hx => ?_)
   obtain ⟨e, he⟩ : ∃ e, x.2 = e + 1 := ⟨x.2 - 1, by have := hσ x hx; omega⟩
   rw [he]
