@@ -32,7 +32,7 @@ the first regularity step, which estimates the nonlinearity for the particular `
 provides this control.
 Alternatively, local square integrability of `A Φ(u) + C` gives continuity by De Giorgi's theorem,
 then a smooth representative by
-`UniformlyEllipticOn.exists_contDiffOn_ae_eq_of_forall_energyFormH1_ofTestFunction_eq`.
+`UniformlyEllipticOn.exists_contDiffOn_ae_eq_of_forall_energyFormH1_ofTestFunctionₗ_eq`.
 On relatively compact balls, density extends the test-function equation to all `H¹₀` tests,
 so the same bootstrap applies without a global integrability assumption. This is useful for
 exponential nonlinearities once exponential integrability has been established.
@@ -59,9 +59,9 @@ exactly when `W^{2,2} ⊆ C⁰`.
 
 * `TauCeti.PDE.UniformlyEllipticOn.contDiffOn_of_energyFormH1_eq`: a continuous weak solution of
   `-∂ᵢ(aⁱʲ ∂ⱼu) = A(x) Φ(u) + C(x)` in dimension at most three is smooth.
-* `TauCeti.PDE.UniformlyEllipticOn.contDiffOn_of_forall_energyFormH1_ofTestFunction_eq`: the
+* `TauCeti.PDE.UniformlyEllipticOn.contDiffOn_of_forall_energyFormH1_ofTestFunctionₗ_eq`: the
   same regularity from the equation tested only against compactly supported smooth functions.
-* `UniformlyEllipticOn.exists_contDiffOn_ae_eq_of_forall_energyFormH1_ofTestFunction_eq`:
+* `UniformlyEllipticOn.exists_contDiffOn_ae_eq_of_forall_energyFormH1_ofTestFunctionₗ_eq`:
   local square integrability of the forcing gives a smooth representative of a semilinear weak
   solution, without assuming continuity.
 
@@ -207,11 +207,12 @@ theorem UniformlyEllipticOn.contDiffOn_of_energyFormH1_eq [DecidableEq ι]
         exact ⟨Wkp.lowerOrder (j + 2) U, by rwa [← Wkp.value_succ]⟩
   exact contDiffOn_infty.2 fun j => (key j).1
 
-/-- **Semilinear regularity from test functions.** A continuous representative of a weak
-solution of `-div(a ∇u) = A Φ(u) + C` in dimension at most three is smooth when the coefficients
-and `Φ` are smooth. It suffices to test the equation against compactly supported smooth
-functions; no global integrability of the nonlinear forcing is required. -/
-theorem UniformlyEllipticOn.contDiffOn_of_forall_energyFormH1_ofTestFunction_eq [DecidableEq ι]
+/-- **Semilinear regularity from test functions.** In dimension at most three, let `a` be
+uniformly elliptic on `Ω` with smooth entries, and let `A`, `C` and `Φ` be smooth. Then a
+continuous representative of a weak solution of `-div(a ∇u) = A Φ(u) + C` is smooth. It
+suffices to test the equation against compactly supported smooth functions; no global
+integrability of the nonlinear forcing is required. -/
+theorem UniformlyEllipticOn.contDiffOn_of_forall_energyFormH1_ofTestFunctionₗ_eq [DecidableEq ι]
     (hι : Fintype.card ι < 4) {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
     (ha : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (hsmooth : ∀ i j, ContDiffOn ℝ ∞ (fun x ↦ a x i j) Omega)
@@ -249,7 +250,7 @@ let `a` be uniformly elliptic with smooth entries, and let `A`, `C` and `Φ` be 
 `u ∈ H¹(Ω)` solves `-div(a ∇u) = A Φ(u) + C` against compactly supported smooth functions and
 the nonlinear forcing is square integrable on every compact subset of `Ω`, then `u` has a
 smooth representative on `Ω`. Continuity or boundedness of `u` is not assumed. -/
-theorem UniformlyEllipticOn.exists_contDiffOn_ae_eq_of_forall_energyFormH1_ofTestFunction_eq
+theorem UniformlyEllipticOn.exists_contDiffOn_ae_eq_of_forall_energyFormH1_ofTestFunctionₗ_eq
     [DecidableEq ι] (hι : Fintype.card ι < 4)
     {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
     (ha : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
@@ -279,7 +280,7 @@ theorem UniformlyEllipticOn.exists_contDiffOn_ae_eq_of_forall_energyFormH1_ofTes
       (r := 2) le_rfl (by exact_mod_cast hι) ha hmeas hf hu
     have huw : (W1p.value u : EuclideanSpace ℝ ι → ℝ) =ᵐ[volume.restrict (Omega : Set _)] w :=
       W1p.ae_eq_preciseRepresentative u
-    refine ⟨w, ha.contDiffOn_of_forall_energyFormH1_ofTestFunction_eq hι hsmooth hA hC hΦ
+    refine ⟨w, ha.contDiffOn_of_forall_energyFormH1_ofTestFunctionₗ_eq hι hsmooth hA hC hΦ
       hw huw (fun φ ↦ (hu φ).trans ?_), huw⟩
     exact integral_congr_ae (huw.mono fun x hx ↦ by dsimp only; rw [hx])
 
