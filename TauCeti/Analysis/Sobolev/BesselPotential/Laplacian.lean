@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
+import TauCeti.Analysis.Distribution.TemperedDistribution.LaplacianResolvent
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
@@ -24,10 +25,8 @@ Let `E` be a finite-dimensional real inner product space, let `1 < p < ∞`, and
 (`TemperedDistribution.mem_realSobolevFunctions_add_two_of_sub_laplacian`). Indeed, Green's second
 identity against test functions (`ContDiffOn.integral_laplacian_smul_eq_integral_smul_laplacian`)
 identifies the distributional Laplacian of `v` with its classical Laplacian, with no decay of `v`
-or of its derivatives assumed. The Bessel potential of order two is `1 - (2π)⁻² Δ`
-(`TemperedDistribution.besselPotential_two_eq_sub_laplacian`). Substituting
-`Δv = c v - (c v - Δv)`, it maps `v ∈ H^{t,p}` into `H^{min t s, p}`, so `v` gains two derivatives
-at each step until it reaches `H^{s+2,p}`.
+or of its derivatives assumed. The distributional bootstrap
+`TemperedDistribution.memSobolev_add_two_of_neg_laplacian_add_smul` then puts `v` in `H^{s+2,p}`.
 
 The second result bootstraps this for the semilinear equation
 
@@ -45,8 +44,6 @@ away from its zeros, with `c = 1 / 4`.
 
 ## Main results
 
-* `TemperedDistribution.memSobolev_add_two_of_neg_laplacian_add_smul`: for `1 < p < ∞`, a tempered
-  distribution of some Sobolev order with `-Δ T + c T ∈ H^{s,p}` lies in `H^{s+2,p}`.
 * `TemperedDistribution.laplacian_toTemperedDistribution_apply_postcompCLM_of_ae_eq`: the
   distributional Laplacian of a `C²` function `v ∈ Lᵖ` is its classical Laplacian on compactly
   supported test functions; for real `v`,
@@ -77,44 +74,6 @@ open scoped SchwartzMap Laplacian Distributions ENNReal
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
-
-section inner
-
-variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
-
-/-- **Elliptic bootstrap on the Bessel-potential scale.** For `1 < p < ∞` and any real `c`, a
-tempered distribution `T` of some Sobolev order `t` with `-Δ T + c T ∈ H^{s,p}` lies in
-`H^{s+2,p}`. The Bessel potential of order two is `1 - (2π)⁻² Δ`, and
-`Δ T = c T - (-Δ T + c T)`, so the order of `T` gains two at each step until it reaches `s + 2`.
-For `c > 0` and `p = 2` this is one direction of
-`TemperedDistribution.memSobolev_add_two_iff_neg_laplacian_add_smul`, which needs no a priori
-order `t`. -/
-theorem memSobolev_add_two_of_neg_laplacian_add_smul {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : 1 < p)
-    (hp_top : p ≠ ∞) {c s t : ℝ} {T : 𝓢'(E, F)} (hT : MemSobolev t p T)
-    (h : MemSobolev s p (-Δ T + c • T)) : MemSobolev (s + 2) p T := by
-  have hstep {r : ℝ} (hr : MemSobolev r p T) : MemSobolev (2 + min r s) p T := by
-    have hJ : besselPotential E F 2 T = T - ((2 * Real.pi) ^ 2)⁻¹ • (c • T - (-Δ T + c • T)) := by
-      rw [besselPotential_two_eq_sub_laplacian]
-      congr 2
-      abel
-    rw [← memSobolev_besselPotential_iff, hJ]
-    have hr' := hr.mono_of_one_lt hp hp_top (min_le_left r s)
-    exact hr'.sub (((hr'.smul_of_tower c).sub
-      (h.mono_of_one_lt hp hp_top (min_le_right r s))).smul_of_tower _)
-  have hall (n : ℕ) : MemSobolev (min (s + 2) (t + 2 * n)) p T := by
-    induction n with
-    | zero => exact hT.mono_of_one_lt hp hp_top (by simp)
-    | succ n ih =>
-      refine (hstep ih).mono_of_one_lt hp hp_top ?_
-      push_cast
-      rw [← min_add_add_left, ← min_add_add_left]
-      simp only [le_min_iff, min_le_iff]
-      exact ⟨⟨Or.inl (by linarith), Or.inr (by linarith)⟩, Or.inl (by linarith)⟩
-  obtain ⟨n, hn⟩ := exists_nat_ge ((s + 2 - t) / 2)
-  have h := hall n
-  rwa [min_eq_left (by linarith)] at h
-
-end inner
 
 /-- On a compactly supported real test function `φ`, the distributional Laplacian of a `C²`
 function `v ∈ Lᵖ(μ)`, given by any almost-everywhere representative `u`, is integration against its
