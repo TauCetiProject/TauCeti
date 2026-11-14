@@ -462,14 +462,11 @@ private theorem one_add_complexGenerator_surjective (hU : U.IsUnitary) :
   simpa only [one_smul, LinearPMap.neg_apply, sub_neg_eq_add] using hx
 
 /-- **The infinitesimal generator of a unitary strongly continuous group is skew-adjoint.**
-Its Hilbert-space adjoint is its negative, by the skew-adjointness criterion
-`LinearPMap.IsFormalAdjoint.adjoint_eq_neg_of_surjective`: the generator is skew-symmetric, and the
-surjectivity of both `1 - A` and `1 + A` is supplied by the resolvents of the forward and reversed
-contraction semigroups. -/
+Its Hilbert-space adjoint is its negative. -/
 @[simp]
 theorem complexGenerator_adjoint_eq_neg (hU : U.IsUnitary) :
     (U.complexGenerator hU).adjoint = -U.complexGenerator hU :=
-  hU.complexGenerator_isFormalAdjoint_neg.adjoint_eq_neg_of_surjective
+  hU.complexGenerator_isFormalAdjoint_neg.adjoint_eq_neg_of_surjective_sub_add
     hU.one_sub_complexGenerator_surjective hU.one_add_complexGenerator_surjective
 
 end IsUnitary

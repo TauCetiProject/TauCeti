@@ -65,8 +65,10 @@ linear maps used by the semigroup development.
   the adjoint; `dense_domain_of_adjoint_eq_neg` and `isSelfAdjoint_smul_of_adjoint_eq_neg`: a
   skew-adjoint partial linear map has dense domain, and its multiple by a nonzero purely imaginary
   scalar is self-adjoint.
-* `LinearPMap.IsFormalAdjoint.adjoint_eq_neg_of_surjective`: a skew-symmetric partial linear map
-  whose shifts `1 - G` and `1 + G` are surjective is skew-adjoint.
+* `LinearPMap.IsFormalAdjoint.adjoint_eq_of_smul_sub_surjective`: a formal adjoint `B` of `A` is
+  the adjoint `A†` when the conjugate shifts `c - A` and `conj c - B` are surjective;
+  `IsFormalAdjoint.adjoint_eq_neg_of_surjective_sub_add` is the skew-symmetric case `B = -A`,
+  `c = 1`.
 
 ## Provenance
 
@@ -394,43 +396,67 @@ theorem isSelfAdjoint_smul_of_adjoint_eq_neg [CompleteSpace E] {G : E →ₗ.[�
   rw [LinearPMap.isSelfAdjoint_def, adjoint_smul G hc, hG, hconj,
     LinearPMap.smul_neg, LinearPMap.neg_smul, neg_neg]
 
+/-- **Conjugate-shift surjectivity makes the domain dense.** If `B` is a formal adjoint of `A` and
+both `x ↦ c • x - A x` and `y ↦ conj c • y - B y` are surjective, then `A` is densely defined. -/
+theorem IsFormalAdjoint.dense_domain_of_smul_sub_surjective [CompleteSpace E] {A B : E →ₗ.[𝕜] E}
+    (hAB : A.IsFormalAdjoint B) {c : 𝕜}
+    (hA : Function.Surjective fun x : A.domain => c • (x : E) - A x)
+    (hB : Function.Surjective fun y : B.domain => (starRingEnd 𝕜) c • (y : E) - B y) :
+    Dense (A.domain : Set E) := by
+  rw [Submodule.dense_iff_topologicalClosure_eq_top,
+    Submodule.topologicalClosure_eq_top_iff, Submodule.eq_bot_iff]
+  intro z hz
+  obtain ⟨y, rfl⟩ := hB z
+  obtain ⟨x, hx⟩ := hA y
+  have hx' : c • (x : E) - A x = y := hx
+  have hxz : inner 𝕜 (x : E) ((starRingEnd 𝕜) c • (y : E) - B y) = 0 :=
+    (Submodule.mem_orthogonal _ _).mp hz (x : E) x.property
+  have hyy : inner 𝕜 (y : E) y = 0 := by
+    calc inner 𝕜 (y : E) y = inner 𝕜 (c • (x : E) - A x) y := by rw [hx']
+      _ = inner 𝕜 (x : E) ((starRingEnd 𝕜) c • (y : E) - B y) := by
+        rw [inner_sub_left, inner_smul_left, inner_sub_right, inner_smul_right, hAB x y]
+      _ = 0 := hxz
+  have hy0 : y = 0 := Subtype.ext (inner_self_eq_zero.mp hyy)
+  simp [hy0]
+
+/-- **A formal adjoint with surjective conjugate shifts is the adjoint.** If `B` is a formal
+adjoint of `A` and both `x ↦ c • x - A x` and `y ↦ conj c • y - B y` are surjective, then
+`A† = B`. No separate density hypothesis on the domain of `A` is needed. -/
+theorem IsFormalAdjoint.adjoint_eq_of_smul_sub_surjective [CompleteSpace E] {A B : E →ₗ.[𝕜] E}
+    (hAB : A.IsFormalAdjoint B) {c : 𝕜}
+    (hA : Function.Surjective fun x : A.domain => c • (x : E) - A x)
+    (hB : Function.Surjective fun y : B.domain => (starRingEnd 𝕜) c • (y : E) - B y) :
+    A† = B := by
+  have hdense := hAB.dense_domain_of_smul_sub_surjective hA hB
+  have hle : B ≤ A† := hAB.le_adjoint hdense
+  refine (eq_of_le_of_domain_eq hle (le_antisymm hle.1 fun y hy => ?_)).symm
+  let ya : A†.domain := ⟨y, hy⟩
+  obtain ⟨x, hx⟩ := hB ((starRingEnd 𝕜) c • (y : E) - A† ya)
+  have hx' : (starRingEnd 𝕜) c • (x : E) - B x = (starRingEnd 𝕜) c • y - A† ya := hx
+  have hyx : y = (x : E) := by
+    refine ext_inner_left 𝕜 fun w => ?_
+    obtain ⟨v, rfl⟩ := hA w
+    have hv : inner 𝕜 (A v) y = inner 𝕜 (v : E) (A† ya) :=
+      (adjoint_isFormalAdjoint hdense).symm v ya
+    calc inner 𝕜 (c • (v : E) - A v) y
+        = inner 𝕜 (v : E) ((starRingEnd 𝕜) c • y - A† ya) := by
+          rw [inner_sub_left, inner_smul_left, inner_sub_right, inner_smul_right, hv]
+      _ = inner 𝕜 (v : E) ((starRingEnd 𝕜) c • (x : E) - B x) := by rw [hx']
+      _ = inner 𝕜 (c • (v : E) - A v) x := by
+          rw [inner_sub_left, inner_smul_left, inner_sub_right, inner_smul_right, hAB v x]
+  simpa only [hyx] using x.property
+
 /-- **A skew-symmetric map with surjective shifts `1 - G` and `1 + G` is skew-adjoint.** If `-G`
 is a formal adjoint of `G` and both `x ↦ x - G x` and `x ↦ x + G x` are surjective, then
-`G† = -G`. The domain of `G` is dense: a vector orthogonal to it is `x - G x` for some `x` in the
-domain, and skew-symmetry then forces `‖x‖ = 0`. -/
-theorem IsFormalAdjoint.adjoint_eq_neg_of_surjective [CompleteSpace E] {G : E →ₗ.[𝕜] E}
+`G† = -G`. No separate density hypothesis on the domain of `G` is needed. -/
+theorem IsFormalAdjoint.adjoint_eq_neg_of_surjective_sub_add [CompleteSpace E] {G : E →ₗ.[𝕜] E}
     (hG : G.IsFormalAdjoint (-G)) (hsub : Function.Surjective fun x : G.domain => (x : E) - G x)
-    (hadd : Function.Surjective fun x : G.domain => (x : E) + G x) : G† = -G := by
-  have hdense : Dense (G.domain : Set E) := by
-    rw [Submodule.dense_iff_topologicalClosure_eq_top,
-      Submodule.topologicalClosure_eq_top_iff, Submodule.eq_bot_iff]
-    intro z hz
-    obtain ⟨x, rfl⟩ := hsub z
-    have hxz := (Submodule.mem_orthogonal _ _).mp hz (x : E) x.property
-    have hskew : RCLike.re (inner 𝕜 (x : E) (G x)) = 0 := by
-      have h := congrArg RCLike.re (hG x x)
-      rw [neg_apply, inner_neg_right, _root_.map_neg, inner_re_symm] at h
-      linarith
-    have hx : (x : E) = 0 := by
-      rw [inner_sub_right, sub_eq_zero] at hxz
-      have h : ‖(x : E)‖ ^ 2 = 0 := by rw [← inner_self_eq_norm_sq (𝕜 := 𝕜), hxz, hskew]
-      simpa using h
-    have hx0 : x = 0 := Subtype.ext hx
-    simp [hx0]
-  have hle : -G ≤ G† := hG.le_adjoint hdense
-  refine (eq_of_le_of_domain_eq hle (le_antisymm hle.1 fun y hy => ?_)).symm
-  let ya : G†.domain := ⟨y, hy⟩
-  obtain ⟨x, hx⟩ := hadd ((y : E) - G† ya)
-  have hyx : (y : E) = (x : E) := by
-    refine ext_inner_left 𝕜 fun w => ?_
-    obtain ⟨v, rfl⟩ := hsub w
-    have hvx := hG v x
-    rw [neg_apply, inner_neg_right] at hvx
-    simp only
-    rw [inner_sub_left, (adjoint_isFormalAdjoint hdense).symm v ya, ← inner_sub_right, ← hx,
-      inner_add_right, inner_sub_left, hvx, sub_neg_eq_add]
-  rw [neg_domain]
-  simpa only [hyx] using x.property
+    (hadd : Function.Surjective fun x : G.domain => (x : E) + G x) : G† = -G :=
+  hG.adjoint_eq_of_smul_sub_surjective (c := 1) (by simpa only [one_smul] using hsub)
+    fun t => by
+      obtain ⟨x, hx⟩ := hadd t
+      exact ⟨⟨x, by rw [neg_domain]; exact x.2⟩, by simpa only [map_one, one_smul, neg_apply,
+        sub_neg_eq_add, Subtype.coe_eta] using hx⟩
 
 
 /-! ## Von Neumann's shifted-surjectivity criterion -/
@@ -469,51 +495,23 @@ theorem dense_domain_of_surjective_add_I (A : H →ₗ.[ℂ] H) (hsym : A.IsForm
   simpa using hψ.symm
 
 /-- **Von Neumann's criterion.** A symmetric partial linear map is self-adjoint if its
-shifts by `+i` and `-i` are surjective. Density follows from the first shift, so no
-independent density hypothesis is needed. -/
+shifts by `+i` and `-i` are surjective. No independent density hypothesis is needed. -/
 theorem isSelfAdjoint_of_surjective_addSub
     (A : H →ₗ.[ℂ] H) (hsym : A.IsFormalAdjoint A)
     (hplus : ∀ φ : H, ∃ ψ : A.domain, A ψ + I • (ψ : H) = φ)
     (hminus : ∀ φ : H, ∃ ψ : A.domain, A ψ - I • (ψ : H) = φ) :
     IsSelfAdjoint A := by
-  have hdense := dense_domain_of_surjective_add_I A hsym hplus
   rw [LinearPMap.isSelfAdjoint_def]
-  refine le_antisymm ?_ (hsym.le_adjoint hdense)
-  have hker : ∀ w : (A.adjoint).domain, A.adjoint w = I • (w : H) → (w : H) = 0 := by
-    intro w hw
-    obtain ⟨v, hv⟩ := hplus (w : H)
-    have hadj : ⟪A.adjoint w, (v : H)⟫_ℂ = ⟪(w : H), A v⟫_ℂ :=
-      LinearPMap.adjoint_isFormalAdjoint hdense w v
-    rw [hw, inner_smul_left, Complex.conj_I] at hadj
-    have key : ⟪(w : H), A v⟫_ℂ + I * ⟪(w : H), (v : H)⟫_ℂ =
-        ⟪(w : H), (w : H)⟫_ℂ := by
-      rw [← inner_smul_right, ← inner_add_right, hv]
-    have hww : ⟪(w : H), (w : H)⟫_ℂ = 0 := by rw [← key, ← hadj]; ring
-    exact inner_self_eq_zero.mp hww
-  apply LinearPMap.le_of_eqLocus_ge
-  intro w hw
-  set W : (A.adjoint).domain := ⟨w, hw⟩ with hWdef
-  obtain ⟨x, hx⟩ := hminus (A.adjoint W - I • (W : H))
-  have hxin : (x : H) ∈ (A.adjoint).domain := (hsym.le_adjoint hdense).1 x.2
-  have hxeq : A.adjoint (⟨(x : H), hxin⟩ : (A.adjoint).domain) = A x :=
-    ((hsym.le_adjoint hdense).2 (x := x) (y := ⟨(x : H), hxin⟩) rfl).symm
-  set W' : (A.adjoint).domain := W - ⟨(x : H), hxin⟩ with hW'def
-  have hW'val : (W' : H) = (W : H) - (x : H) := by
-    simp only [hW'def, Submodule.coe_sub]
-  have hrearr : A.adjoint W - A x = I • (W : H) - I • (x : H) := by
-    have h2 : A.adjoint W = A x - I • (x : H) + I • (W : H) := by rw [hx]; abel
-    rw [h2]; abel
-  have hAW' : A.adjoint W' = I • (W' : H) := by
-    have e1 : A.adjoint W' = A.adjoint W - A x := by
-      rw [hW'def, LinearPMap.map_sub, hxeq]
-    rw [e1, hrearr, hW'val, smul_sub]
-  have hWx : (W : H) = (x : H) := sub_eq_zero.mp (hW'val ▸ hker W' hAW')
-  have hwx : w = (x : H) := by
-    have hWcoe : (W : H) = w := by rw [hWdef]
-    rw [← hWcoe]
-    exact hWx
-  subst hwx
-  exact ⟨hw, x.2, hxeq⟩
+  refine hsym.adjoint_eq_of_smul_sub_surjective (c := -I) (fun t => ?_) (fun t => ?_)
+  · obtain ⟨ψ, hψ⟩ := hplus (-t)
+    refine ⟨ψ, ?_⟩
+    calc -I • (ψ : H) - A ψ = -(A ψ + I • (ψ : H)) := by rw [_root_.neg_smul]; abel
+      _ = t := by rw [hψ, neg_neg]
+  · obtain ⟨ψ, hψ⟩ := hminus (-t)
+    refine ⟨ψ, ?_⟩
+    calc (starRingEnd ℂ) (-I) • (ψ : H) - A ψ = -(A ψ - I • (ψ : H)) := by
+          simp only [_root_.map_neg, Complex.conj_I, neg_neg]; abel
+      _ = t := by rw [hψ, neg_neg]
 
 end VonNeumann
 
