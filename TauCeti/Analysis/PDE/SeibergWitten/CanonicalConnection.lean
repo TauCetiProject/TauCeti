@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Contraction
 public import TauCeti.Analysis.PDE.SeibergWitten.CanonicalLine
 import TauCeti.Analysis.Calculus.FDeriv.Submodule
+import TauCeti.LinearAlgebra.CliffordAlgebra.HalfSpinor
 
 /-!
 # The canonical connection and the Dirac operator on Taubes's canonical spinor
@@ -40,14 +41,15 @@ canonical covariant derivative of `u₀` is `C(i ∇ω) u₀ / 4`, controlled by
 
 The derivative `ω'` of the self-dual form `ω` is again self-dual. For a positive spinor `ψ`, a
 vector `v` and a self-dual `β`, Clifford multiplication satisfies `c(v) c₂(β) ψ = -2 c(v ⌟ β) ψ`
-(`ι_apply_bivectorExterior_apply_of_hodgeStar_eq_self`), because `c₂(β)` kills the negative spinor
-`c(v) ψ` and `⁅c₂(β), c(v)⁆ = 2 c(v ⌟ β)` (`CliffordAlgebra.bivectorExterior_lie_ι`). Summing over
-an orthonormal frame, the Dirac operator of the canonical connection is
+(`CliffordAlgebra.ι_apply_bivectorExterior_apply_of_hodgeStar_eq_self`), because `c₂(β)` kills
+the negative spinor `c(v) ψ` and `⁅c₂(β), c(v)⁆ = 2 c(v ⌟ β)`
+(`CliffordAlgebra.bivectorExterior_lie_ι`). Summing over an orthonormal frame, the Dirac operator
+of the canonical connection is
 
 `D_{A₀} u₀ = ∑ₖ c(eₖ) P_β ∇_{eₖ} u₀ = -(i / 2) c(θ) u₀`,  `θ = ∑ₖ eₖ ⌟ ∇_{eₖ} ω = -d*ω`
 
-(`sum_ι_apply_cliffordProjection_neg_apply`). For self-dual `ω` in dimension four,
-`dω = ∑ₖ eₖ ∧ ∇_{eₖ} ω` vanishes exactly when `d*ω` does
+(`sum_ι_apply_cliffordProjection_neg_apply`). For self-dual `ω` in dimension four, if
+`dω = ∑ₖ eₖ ∧ ∇_{eₖ} ω` vanishes then so does `d*ω`
 (`Orientation.sum_twoVectorContraction_eq_zero_of_hodgeStar_eq_self`), so on a symplectic manifold
 `D_{A₀} u₀ = 0` (`sum_ι_apply_cliffordProjection_neg_apply_eq_zero`,
 `sum_ι_apply_sub_inner_smul_eq_zero`). In the Dirac equation `D_A (α u₀ + β) = 0`, with
@@ -59,7 +61,8 @@ with `-D_A β`.
 The last part applies this to fields on `V` itself, with the trivial connection on `W` and a field
 `ω` of self-dual two-vectors, such as the Kähler two-vectors of a varying orthogonal complex
 structure: if `u` is a field of unit spinors with `P_α(ω) u = u` and `dω = 0` at `x`, then
-`∑ₖ c(eₖ) (∂_{eₖ} u - ⟪u, ∂_{eₖ} u⟫ u) = 0` at `x` (`sum_ι_apply_fderiv_sub_inner_smul_eq_zero`).
+`∑ₖ c(eₖ) (∂_{eₖ} u - ⟪u, ∂_{eₖ} u⟫ u) = 0` at `x`
+(`sum_ι_apply_sub_inner_smul_eq_zero_of_hasFDerivAt`).
 
 ## Main results
 
@@ -69,7 +72,7 @@ structure: if `u` is a field of unit spinors with `P_α(ω) u = u` and `dω = 0`
   canonical connection on `u₀` is `-(i / 2) c(∑ₖ eₖ ⌟ ∇_{eₖ} ω) u₀`.
 * `TauCeti.SeibergWitten.sum_ι_apply_cliffordProjection_neg_apply_eq_zero` and
   `TauCeti.SeibergWitten.sum_ι_apply_sub_inner_smul_eq_zero`: it vanishes when `dω = 0`.
-* `TauCeti.SeibergWitten.sum_ι_apply_fderiv_sub_inner_smul_eq_zero`: the same for a field of
+* `TauCeti.SeibergWitten.sum_ι_apply_sub_inner_smul_eq_zero_of_hasFDerivAt`: the same for a field of
   canonical spinors on `V`, from the derivatives of the fields.
 
 ## References
@@ -132,7 +135,7 @@ theorem sum_ι_apply_cliffordProjection_neg_apply (hQ : ∀ v, Q v = -‖v‖ ^ 
       (-Complex.I / 2) • ρ (ι Q (∑ k, twoVectorContraction (ω' k) (v k))) ψ := by
   simp only [cliffordProjection_neg_apply_eq_smul_cliffordRestriction_apply (hψ' _),
     Submodule.coe_smul, coe_cliffordRestriction_apply, map_smul,
-    ι_apply_bivectorExterior_apply_of_hodgeStar_eq_self hQ hkl (hω' _), map_sum,
+    ι_apply_bivectorExterior_apply_of_hodgeStar_eq_self o hQ hkl (hω' _), map_sum,
     LinearMap.sum_apply, Finset.smul_sum, smul_smul]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
   congr 1
@@ -217,7 +220,7 @@ self-dual two-vectors on `V` near `x`, and `u` a field of spinors on the canonic
 
 For an orthonormal frame `vₖ = eₖ` the hypothesis is `dω = 0` at `x` and the left side is the
 Dirac operator of the canonical connection, for the trivial connection on `W`, applied to `u`. -/
-theorem sum_ι_apply_fderiv_sub_inner_smul_eq_zero (hQ : ∀ v, Q v = -‖v‖ ^ 2)
+theorem sum_ι_apply_sub_inner_smul_eq_zero_of_hasFDerivAt (hQ : ∀ v, Q v = -‖v‖ ^ 2)
     (hkl : 2 + 2 = finrank ℝ V) (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
     (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2) (hω : HasFDerivAt ω ω' x)
     (hu : HasFDerivAt u u' x) (hsd : ∀ᶠ y in 𝓝 x, o.hodgeStar hkl (ω y) = ω y)
@@ -233,7 +236,7 @@ theorem sum_ι_apply_fderiv_sub_inner_smul_eq_zero (hQ : ∀ v, Q v = -‖v‖ ^
   -- The derivative of the field `ω` of self-dual two-vectors is self-dual.
   let S : Submodule ℝ (⋀[ℝ]^2 V) := LinearMap.ker ((o.hodgeStar hkl).toLinearMap - LinearMap.id)
   have hx : o.hodgeStar hkl (ω x) = ω x := mem_of_mem_nhds hsd
-  have hmem := hω.apply_mem_of_eventually_sub_mem (Submodule.closed_of_finiteDimensional S) (by
+  have hmem := hω.apply_mem_of_eventually_sub_mem (Submodule.isClosed_of_finiteDimensional S) (by
     filter_upwards [hsd] with y hy
     simp [S, hy, hx]) (v k)
   simpa [S, sub_eq_zero] using hmem

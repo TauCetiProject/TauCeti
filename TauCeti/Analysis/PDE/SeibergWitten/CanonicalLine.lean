@@ -27,9 +27,11 @@ On the `-2i`-eigenspace, Clifford multiplication turns `J` into multiplication b
 `P_α ψ = ψ` then `c(J v) ψ = i c(v) ψ`, while on the complementary eigenspace
 `c(J v) β = -i c(v) β`.
 Both are the case `β = ω` of an identity for every self-dual two-vector `β` and positive
-half-spinor `ψ`: `c(v) c₂(β) ψ = -2 c(v ⌟ β) ψ`, where `v ⌟ ω = J v`. It follows from the
-commutator `⁅c₂(β), c(v)⁆ = 2 c(v ⌟ β)` (`CliffordAlgebra.bivectorExterior_lie_ι`) and the
-vanishing of the self-dual form `β` on the negative half-spinors, where `c(v) ψ` lies. Consequently
+half-spinor `ψ`: `c(v) c₂(β) ψ = -2 c(v ⌟ β) ψ`
+(`CliffordAlgebra.ι_apply_bivectorExterior_apply_of_hodgeStar_eq_self`), where `v ⌟ ω = J v`. It
+follows from the commutator `⁅c₂(β), c(v)⁆ = 2 c(v ⌟ β)` (`CliffordAlgebra.bivectorExterior_lie_ι`)
+and the vanishing of the self-dual form `β` on the negative half-spinors, where `c(v) ψ` lies.
+Consequently
 `⟪c(v) ψ, c(w) ψ⟫ = (⟪v, w⟫ - i ⟪v, J w⟫) ‖ψ‖²`, so `v ↦ c(v) ψ` is a complex-linear map from
 `(V, J)` to the negative half-spinors, isometric up to the factor `‖ψ‖`.
 
@@ -51,8 +53,6 @@ plane vortex equations, in the convention `∂bar_a α = (∇₁ α + i ∇₂ �
 
 ## Main results
 
-* `TauCeti.SeibergWitten.ι_apply_bivectorExterior_apply_of_hodgeStar_eq_self`:
-  `c(v) c₂(β) ψ = -2 c(v ⌟ β) ψ` for a positive half-spinor `ψ` and a self-dual `β`.
 * `TauCeti.SeibergWitten.ι_apply_apply_of_cliffordProjection_apply_eq_self`: `c(J v) ψ = i c(v) ψ`
   for `P_α ψ = ψ`, and `TauCeti.SeibergWitten.ι_apply_apply_of_cliffordProjection_apply_eq_zero`:
   `c(J v) β = -i c(v) β` for `P_α β = 0`.
@@ -97,42 +97,18 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (fin
 -- The dimension `Fact` makes the oriented four-space finite-dimensional.
 attribute [local instance] finiteDimensional_of_finrank_four
 
-/-! ### Clifford multiplication by a vector after a self-dual two-form -/
-
-omit [FiniteDimensional ℂ W] in
-include hQ hkl in
-/-- **Clifford multiplication by a vector after a self-dual two-form**: on a positive half-spinor
-`ψ`, `c(v) c₂(β) ψ = -2 c(v ⌟ β) ψ` for self-dual `β`. Indeed `c(v) ψ` is a negative half-spinor,
-which the self-dual `β` annihilates, and `⁅c₂(β), c(v)⁆ = 2 c(v ⌟ β)`
-(`CliffordAlgebra.bivectorExterior_lie_ι`). -/
-theorem ι_apply_bivectorExterior_apply_of_hodgeStar_eq_self {β : ⋀[ℝ]^2 V}
-    (hβ : o.hodgeStar hkl β = β) (ψ : positiveHalfSpinors o ρ) (v : V) :
-    ρ (ι Q v) (ρ (bivectorExterior Q β) ψ) = (-2 : ℂ) • ρ (ι Q (twoVectorContraction β v)) ψ := by
-  -- `c(v) ψ` is a negative half-spinor.
-  have hneg : ρ (chirality Q o) (ρ (ι Q v) ψ) = -ρ (ι Q v) ψ := by
-    simpa using map_ι_apply_mem_eigenspace_chirality_neg o (ε := 1)
-      (by simpa using mem_positiveHalfSpinors.1 ψ.2) v
-  -- The self-dual form `β` annihilates it, for the Clifford action on `W` through `ρ`.
-  have hzero : ρ (bivectorExterior Q β) (ρ (ι Q v) ψ) = 0 :=
-    letI := Module.compHom W ρ.toRingHom
-    bivectorExterior_smul_eq_zero_of_hodgeStar_eq_self o hQ hkl hβ hneg
-  have h := congrArg (fun a ↦ ρ a ψ) (bivectorExterior_lie_ι hQ β v)
-  simp only [Ring.lie_def, map_sub, map_mul, LinearMap.sub_apply, mul_apply_eq_comp, hzero,
-    map_smul, LinearMap.smul_apply] at h
-  linear_combination (norm := module) -h
-
 /-! ### `J` acts by `±i` on the two eigenspaces -/
 
 omit [FiniteDimensional ℂ W] in
 include hQ hkl he h₀ h₂ in
 /-- On a `μ`-eigenvector `ψ ∈ W⁺` of `c₂(ω)`, Clifford multiplication intertwines `J` with the
 scalar `-μ / 2`: `2 c(J v) ψ = -μ c(v) ψ`. This is
-`ι_apply_bivectorExterior_apply_of_hodgeStar_eq_self` for the self-dual `ω`, whose contraction is
-`v ⌟ ω = J v`. -/
+`CliffordAlgebra.ι_apply_bivectorExterior_apply_of_hodgeStar_eq_self` for the self-dual `ω`, whose
+contraction is `v ⌟ ω = J v`. -/
 private theorem two_smul_ι_apply_apply_of_bivectorExterior_apply {ψ : positiveHalfSpinors o ρ}
     {μ : ℂ} (hψ : ρ (bivectorExterior Q J.kahlerForm) ψ = μ • (ψ : W)) (v : V) :
     (2 : ℂ) • ρ (ι Q (J v)) ψ = -μ • ρ (ι Q v) ψ := by
-  have h := ι_apply_bivectorExterior_apply_of_hodgeStar_eq_self hQ hkl
+  have h := ι_apply_bivectorExterior_apply_of_hodgeStar_eq_self o hQ hkl
     (AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂ hkl he) ψ v
   rw [hψ, map_smul, AlmostComplexStructure.twoVectorContraction_kahlerForm
     (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂)] at h
