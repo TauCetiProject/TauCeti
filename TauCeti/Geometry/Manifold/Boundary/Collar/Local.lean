@@ -302,6 +302,7 @@ theorem interiorCoord_apply_succ {n : ℕ} (w : EuclideanSpace ℝ (Fin (n + 1))
 
 /-- On the open half-space, `interiorEmbedding` undoes the ambient inverse coordinates, so the two
 maps are inverse to each other there. -/
+@[simp]
 theorem coe_interiorEmbedding_interiorCoord {n : ℕ} {w : EuclideanSpace ℝ (Fin (n + 1))}
     (hw : 0 < w 0) : (interiorEmbedding n (interiorCoord w)).1 = w := by
   ext i
