@@ -29,10 +29,12 @@ is natural in `M`.
   `Spec S` are `R`-linear maps `M → S`;
 * `TauCeti.AlgebraicGeometry.specSymmetricAlgebraMap`: the morphism
   `Spec (Sym_R M) ⟶ Spec (Sym_R N)` induced by a linear map `N → M`;
-* `relativeSpecSymmetricAlgebraTildeHomEquiv_comp_relativeSpecSymmetricAlgebraTildeIso_inv` and
-  `specSymmetricAlgebraHomEquiv_comp_relativeSpecSymmetricAlgebraTildeIso_hom`: the comparison
-  `Spec_{Spec R} (Sym M~) ≅ Spec (Sym_R M)` on points;
-* `relativeSpec_map_comp_relativeSpecSymmetricAlgebraTildeIso_hom`: its naturality in `M`.
+* `TauCeti.AlgebraicGeometry.relativeSpecSymmetricAlgebraTildeIsoSpec`: the comparison
+  `Spec_{Spec R} (Sym M~) ≅ Spec (Sym_R M)` as an isomorphism of schemes over `Spec R`;
+* `relativeSpecSymmetricAlgebraTildeHomEquiv_comp_relativeSpecSymmetricAlgebraTildeIsoSpec_inv` and
+  `specSymmetricAlgebraHomEquiv_comp_relativeSpecSymmetricAlgebraTildeIsoSpec_hom`: the comparison
+  on points;
+* `relativeSpec_map_comp_relativeSpecSymmetricAlgebraTildeIsoSpec_hom`: its naturality in `M`.
 
 ## References
 
@@ -198,52 +200,51 @@ noncomputable section
 
 variable {R : CommRingCat.{u}} (M : ModuleCat.{u} R)
 
+/-- The comparison `Spec_{Spec R} (Sym M~) ≅ Spec (Sym_R M)`, that is
+`relativeSpecSymmetricAlgebraTildeIso` as an isomorphism of schemes over `Spec R`, with target the
+`algSpec` object on which the point coordinates `specSymmetricAlgebraHomEquiv` are stated. -/
+def relativeSpecSymmetricAlgebraTildeIsoSpec :
+    (MorphismProperty.Over.forget _ _ (Spec R)).obj ((relativeSpec (Spec R)).obj
+        (op ((symmetricAlgebra (Spec R)).obj ((tildeEquiv (R := R)).functor.obj M)))) ≅
+      (algSpec R).obj (op (CommAlgCat.of R (SymmetricAlgebra R M))) :=
+  -- the target is the forgotten `specSymmetricAlgebraOver M` by `specSymmetricAlgebraOver_forget`
+  (MorphismProperty.Over.forget _ _ (Spec R)).mapIso (relativeSpecSymmetricAlgebraTildeIso M)
 
 /-- Under `Spec_{Spec R} (Sym M~) ≅ Spec (Sym_R M)`, a point `p` of `Spec (Sym_R M)` over `Spec S`
 becomes the point of `Spec_{Spec R} (Sym M~)` whose linear map `M → Γ(Spec S, ⊤)` is the linear
 functional `M → S` of `p` followed by `S ≅ Γ(Spec S, ⊤)`. -/
-theorem relativeSpecSymmetricAlgebraTildeHomEquiv_comp_relativeSpecSymmetricAlgebraTildeIso_inv
+theorem relativeSpecSymmetricAlgebraTildeHomEquiv_comp_relativeSpecSymmetricAlgebraTildeIsoSpec_inv
     (S : CommAlgCat.{u} R)
     (p : (algSpec R).obj (op S) ⟶
       (algSpec R).obj (op (CommAlgCat.of R (SymmetricAlgebra R M)))) (m : M) :
     relativeSpecSymmetricAlgebraTildeHomEquiv M _
-        (p ≫ (MorphismProperty.Over.forget _ _ (Spec R)).map
-          (relativeSpecSymmetricAlgebraTildeIso M).inv) m =
+        (p ≫ (relativeSpecSymmetricAlgebraTildeIsoSpec M).inv) m =
       (Scheme.ΓSpecIso (CommRingCat.of S)).inv (specSymmetricAlgebraHomEquiv M S p m) := by
   rw [relativeSpecSymmetricAlgebraTildeHomEquiv_eq_appTop, specSymmetricAlgebraHomEquiv_eq_appTop]
-  have h : (p ≫ (MorphismProperty.Over.forget _ _ (Spec R)).map
-      (relativeSpecSymmetricAlgebraTildeIso M).inv).left ≫
-        (relativeSpecSymmetricAlgebraTildeIso M).hom.left = p.left := by
-    have e := congrArg (fun f ↦ f.left) (relativeSpecSymmetricAlgebraTildeIso M).inv_hom_id
-    exact (Over.comp_left _ _ _ _ _).trans ((Category.assoc _ _ _).trans
-      ((congrArg (p.left ≫ ·) e).trans (Category.comp_id _)))
+  -- the cancellation is a term: rewriting cannot build motives across `MorphismProperty.Over`
+  have h : (p ≫ (relativeSpecSymmetricAlgebraTildeIsoSpec M).inv).left ≫
+      (relativeSpecSymmetricAlgebraTildeIso M).hom.left = p.left :=
+    (Over.comp_left _ _ _ _ _).symm.trans (congrArg Over.Hom.left
+      (((relativeSpecSymmetricAlgebraTildeIsoSpec M).comp_inv_eq (f := p)).1 rfl)).symm
   rw [h]
   exact (ConcreteCategory.congr_hom (Scheme.ΓSpecIso _).hom_inv_id _).symm
 
 /-- Under `Spec_{Spec R} (Sym M~) ≅ Spec (Sym_R M)`, a point `t` of `Spec_{Spec R} (Sym M~)` over
 `Spec S` becomes the point of `Spec (Sym_R M)` whose linear functional `M → S` is the linear map
 `M → Γ(Spec S, ⊤)` of `t` followed by `Γ(Spec S, ⊤) ≅ S`. -/
-theorem specSymmetricAlgebraHomEquiv_comp_relativeSpecSymmetricAlgebraTildeIso_hom
+theorem specSymmetricAlgebraHomEquiv_comp_relativeSpecSymmetricAlgebraTildeIsoSpec_hom
     (S : CommAlgCat.{u} R)
     (t : (algSpec R).obj (op S) ⟶ (MorphismProperty.Over.forget _ _ (Spec R)).obj
       ((relativeSpec (Spec R)).obj
         (op ((symmetricAlgebra (Spec R)).obj ((tildeEquiv (R := R)).functor.obj M))))) (m : M) :
-    specSymmetricAlgebraHomEquiv M S (t ≫ (MorphismProperty.Over.forget _ _ (Spec R)).map
-        (relativeSpecSymmetricAlgebraTildeIso M).hom) m =
+    specSymmetricAlgebraHomEquiv M S (t ≫ (relativeSpecSymmetricAlgebraTildeIsoSpec M).hom) m =
       (Scheme.ΓSpecIso (CommRingCat.of S)).hom
         (relativeSpecSymmetricAlgebraTildeHomEquiv M _ t m) := by
-  -- composites are combined as terms: rewriting cannot build motives across the
-  -- `MorphismProperty.Over` wrapper
-  have e : (t ≫ (MorphismProperty.Over.forget _ _ (Spec R)).map
-      (relativeSpecSymmetricAlgebraTildeIso M).hom) ≫
-        (MorphismProperty.Over.forget _ _ (Spec R)).map
-          (relativeSpecSymmetricAlgebraTildeIso M).inv = t :=
-    (Category.assoc _ _ _).trans ((congrArg (t ≫ ·) ((MorphismProperty.Over.forget _ _
-      (Spec R)).mapIso (relativeSpecSymmetricAlgebraTildeIso M)).hom_inv_id).trans
-        (Category.comp_id t))
-  have h := (congrArg (fun x ↦ relativeSpecSymmetricAlgebraTildeHomEquiv M _ x m) e).symm.trans
-    (relativeSpecSymmetricAlgebraTildeHomEquiv_comp_relativeSpecSymmetricAlgebraTildeIso_inv
-      M S _ m)
+  -- the cancellation is a term: rewriting cannot build motives across `MorphismProperty.Over`
+  have h := (congrArg (fun x ↦ relativeSpecSymmetricAlgebraTildeHomEquiv M _ x m)
+    (((relativeSpecSymmetricAlgebraTildeIsoSpec M).symm.comp_inv_eq (f := t)).1 rfl)).trans
+      (relativeSpecSymmetricAlgebraTildeHomEquiv_comp_relativeSpecSymmetricAlgebraTildeIsoSpec_inv
+        M S _ m)
   exact (ConcreteCategory.congr_hom (Scheme.ΓSpecIso _).inv_hom_id _).symm.trans
     (congrArg (Scheme.ΓSpecIso _).hom h.symm)
 
@@ -251,36 +252,22 @@ variable {M} {N : ModuleCat.{u} R}
 
 /-- The comparison `Spec_{Spec R} (Sym M~) ≅ Spec (Sym_R M)` is natural in `M`: it identifies the
 relative spectrum of `Sym f~` with the spectrum of `Sym_R f`, for `f : N ⟶ M`. -/
-theorem relativeSpec_map_comp_relativeSpecSymmetricAlgebraTildeIso_hom (f : N ⟶ M) :
+theorem relativeSpec_map_comp_relativeSpecSymmetricAlgebraTildeIsoSpec_hom (f : N ⟶ M) :
     (MorphismProperty.Over.forget _ _ (Spec R)).map ((relativeSpec (Spec R)).map
         ((symmetricAlgebra (Spec R)).map ((tildeEquiv (R := R)).functor.map f)).op) ≫
-      (MorphismProperty.Over.forget _ _ (Spec R)).map (relativeSpecSymmetricAlgebraTildeIso N).hom =
-    (MorphismProperty.Over.forget _ _ (Spec R)).map (relativeSpecSymmetricAlgebraTildeIso M).hom ≫
-      specSymmetricAlgebraMap f.hom := by
-  let e :=
-    (MorphismProperty.Over.forget _ _ (Spec R)).mapIso (relativeSpecSymmetricAlgebraTildeIso M)
-  refine (Iso.inv_comp_eq e).1 ?_
+      (relativeSpecSymmetricAlgebraTildeIsoSpec N).hom =
+    (relativeSpecSymmetricAlgebraTildeIsoSpec M).hom ≫ specSymmetricAlgebraMap f.hom := by
+  -- both sides are compared on the points of the identity of `Spec (Sym_R M)`
+  rw [← Iso.inv_comp_eq]
   apply (specSymmetricAlgebraHomEquiv N (CommAlgCat.of R (SymmetricAlgebra R M))).injective
-  refine LinearMap.ext fun n ↦ ?_
-  -- both sides are compared on the points of the identity of `Spec (Sym_R M)`; the composites are
-  -- combined as terms since rewriting cannot build motives across `MorphismProperty.Over`
-  have h₁ := specSymmetricAlgebraHomEquiv_comp_relativeSpecSymmetricAlgebraTildeIso_hom N
-    (CommAlgCat.of R (SymmetricAlgebra R M)) (e.inv ≫
-      (MorphismProperty.Over.forget _ _ (Spec R)).map ((relativeSpec (Spec R)).map
-        ((symmetricAlgebra (Spec R)).map ((tildeEquiv (R := R)).functor.map f)).op)) n
-  have h₂ := relativeSpecSymmetricAlgebraTildeHomEquiv_comp_relativeSpec_map f _ e.inv n
-  have h₃ := relativeSpecSymmetricAlgebraTildeHomEquiv_comp_relativeSpecSymmetricAlgebraTildeIso_inv
-    M (CommAlgCat.of R (SymmetricAlgebra R M)) (𝟙 _) (f n)
-  have h₄ := specSymmetricAlgebraHomEquiv_comp_specSymmetricAlgebraMap f.hom
-    (CommAlgCat.of R (SymmetricAlgebra R M)) (𝟙 _)
-  refine ((congrArg (fun x ↦ specSymmetricAlgebraHomEquiv N _ x n)
-    (Category.assoc _ _ _).symm).trans h₁).trans ?_
-  refine (congrArg (Scheme.ΓSpecIso _).hom (h₂.trans ((congrArg
-    (fun x ↦ relativeSpecSymmetricAlgebraTildeHomEquiv M _ x (f n))
-      (Category.id_comp _).symm).trans h₃))).trans ?_
-  refine (ConcreteCategory.congr_hom (Scheme.ΓSpecIso _).inv_hom_id _).trans ?_
-  exact (congrArg (fun g ↦ g n) ((congrArg (specSymmetricAlgebraHomEquiv N _)
-    (Category.id_comp _).symm).trans h₄)).symm
+  ext n
+  rw [← Category.assoc,
+    specSymmetricAlgebraHomEquiv_comp_relativeSpecSymmetricAlgebraTildeIsoSpec_hom,
+    relativeSpecSymmetricAlgebraTildeHomEquiv_comp_relativeSpec_map,
+    ← Category.id_comp (relativeSpecSymmetricAlgebraTildeIsoSpec M).inv,
+    relativeSpecSymmetricAlgebraTildeHomEquiv_comp_relativeSpecSymmetricAlgebraTildeIsoSpec_inv,
+    Iso.inv_hom_id_apply, ← Category.id_comp (specSymmetricAlgebraMap f.hom),
+    specSymmetricAlgebraHomEquiv_comp_specSymmetricAlgebraMap, LinearMap.comp_apply]
 
 end
 

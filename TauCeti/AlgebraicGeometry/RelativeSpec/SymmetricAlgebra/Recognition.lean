@@ -31,10 +31,10 @@ The same holds for the relative spectra `𝕍(F) = Spec_{Spec R} (Sym F)` of qua
 `𝔸¹_{Spec R}` (`modObjRelativeSpecSymmetricAlgebra`): a morphism `𝕍(F) ⟶ 𝕍(F')` over `Spec R`
 commuting with the actions of `𝔸¹_{Spec R}` is the relative spectrum of `Sym a` for a unique
 `a : F' ⟶ F` (`existsUnique_relativeSpec_map_of_isModHom`). Under the comparison
-`Spec_{Spec R} (Sym M~) ≅ Spec (Sym_R M)` (`relativeSpecSymmetricAlgebraTildeIso`), points over
+`Spec_{Spec R} (Sym M~) ≅ Spec (Sym_R M)` (`relativeSpecSymmetricAlgebraTildeIsoSpec`), points over
 `Spec S` become `R`-linear maps `M → S` (the comparison lemmas of `Points.lean`) and the action of
 `c ∈ S` becomes multiplication by `c`
-(`specSymmetricAlgebraHomEquiv_smul_comp_relativeSpecSymmetricAlgebraTildeIso_hom` in
+(`specSymmetricAlgebraHomEquiv_smul_comp_relativeSpecSymmetricAlgebraTildeIsoSpec_hom` in
 `Scalar.lean`), so this follows from the affine criterion above.
 
 The morphisms `Spec_X (Sym a)` are the underlying morphisms of the morphisms of linear schemes
@@ -186,26 +186,12 @@ theorem specSymmetricAlgebraPointsMap_app_smul_of_isModHom
         (op ((symmetricAlgebra (Spec R)).obj ((tildeEquiv (R := R)).functor.obj N)))))
     [IsModHom (𝔸(PUnit.{u + 1}; Spec R).asOver (Spec R)) g]
     (S : CommAlgCat.{u} R) (c : S) (φ : M →ₗ[R] S) :
-    (specSymmetricAlgebraPointsMap
-        ((MorphismProperty.Over.forget _ _ (Spec R)).map
-            (relativeSpecSymmetricAlgebraTildeIso M).inv ≫ g ≫
-          (MorphismProperty.Over.forget _ _ (Spec R)).map
-            (relativeSpecSymmetricAlgebraTildeIso N).hom)).app S (c • φ) =
-      c • ((specSymmetricAlgebraPointsMap
-        ((MorphismProperty.Over.forget _ _ (Spec R)).map
-            (relativeSpecSymmetricAlgebraTildeIso M).inv ≫ g ≫
-          (MorphismProperty.Over.forget _ _ (Spec R)).map
-            (relativeSpecSymmetricAlgebraTildeIso N).hom)).app S φ : N →ₗ[R] S) := by
-  -- the isomorphisms are stated with `algSpec` targets, so that all composites below share their
-  -- intermediate objects
-  let eM : (MorphismProperty.Over.forget _ _ (Spec R)).obj ((relativeSpec (Spec R)).obj
-        (op ((symmetricAlgebra (Spec R)).obj ((tildeEquiv (R := R)).functor.obj M)))) ≅
-      (algSpec R).obj (op (CommAlgCat.of R (SymmetricAlgebra R M))) :=
-    (MorphismProperty.Over.forget _ _ (Spec R)).mapIso (relativeSpecSymmetricAlgebraTildeIso M)
-  let eN : (MorphismProperty.Over.forget _ _ (Spec R)).obj ((relativeSpec (Spec R)).obj
-        (op ((symmetricAlgebra (Spec R)).obj ((tildeEquiv (R := R)).functor.obj N)))) ≅
-      (algSpec R).obj (op (CommAlgCat.of R (SymmetricAlgebra R N))) :=
-    (MorphismProperty.Over.forget _ _ (Spec R)).mapIso (relativeSpecSymmetricAlgebraTildeIso N)
+    (specSymmetricAlgebraPointsMap ((relativeSpecSymmetricAlgebraTildeIsoSpec M).inv ≫ g ≫
+        (relativeSpecSymmetricAlgebraTildeIsoSpec N).hom)).app S (c • φ) =
+      c • ((specSymmetricAlgebraPointsMap ((relativeSpecSymmetricAlgebraTildeIsoSpec M).inv ≫ g ≫
+        (relativeSpecSymmetricAlgebraTildeIsoSpec N).hom)).app S φ : N →ₗ[R] S) := by
+  let eM := relativeSpecSymmetricAlgebraTildeIsoSpec M
+  let eN := relativeSpecSymmetricAlgebraTildeIsoSpec N
   let ψ := eM.inv ≫ g ≫ eN.hom
   -- `φ` is the point `t ≫ eM.hom` and `c` the function `a` on `Spec S`, so `c • φ` is the point
   -- `(a • t) ≫ eM.hom`; then `g` commutes with `a •` because it is a module morphism
@@ -218,11 +204,10 @@ theorem specSymmetricAlgebraPointsMap_app_smul_of_isModHom
       (Iso.inv_hom_id_apply _ _)
   -- composites are combined as terms: neither `rw` nor `simp` can reassociate across the
   -- `MorphismProperty.Over` wrapper and the cartesian monoidal structure
-  have ht : t ≫ eM.hom = (specSymmetricAlgebraHomEquiv M S).symm φ :=
-    (Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) eM.inv_hom_id).trans (Category.comp_id _))
+  have ht : t ≫ eM.hom = (specSymmetricAlgebraHomEquiv M S).symm φ := (eM.comp_inv_eq.1 rfl).symm
   have hφ : (specSymmetricAlgebraHomEquiv M S).symm (c • φ) = (a • t) ≫ eM.hom :=
     (Equiv.symm_apply_eq _).2
-      ((specSymmetricAlgebraHomEquiv_smul_comp_relativeSpecSymmetricAlgebraTildeIso_hom
+      ((specSymmetricAlgebraHomEquiv_smul_comp_relativeSpecSymmetricAlgebraTildeIsoSpec_hom
         M S a t).trans
           (congrArg₂ (· • ·) ha ((congrArg _ ht).trans (Equiv.apply_symm_apply _ _)))).symm
   have hsmul : ((a • t) ≫ eM.hom) ≫ ψ = (a • (t ≫ g)) ≫ eN.hom :=
@@ -233,7 +218,7 @@ theorem specSymmetricAlgebraPointsMap_app_smul_of_isModHom
         (congrArg (fun x ↦ specSymmetricAlgebraHomEquiv N S (x ≫ ψ)) hφ).trans
           (congrArg _ hsmul)
     _ = c • specSymmetricAlgebraHomEquiv N S ((t ≫ g) ≫ eN.hom) :=
-        (specSymmetricAlgebraHomEquiv_smul_comp_relativeSpecSymmetricAlgebraTildeIso_hom
+        (specSymmetricAlgebraHomEquiv_smul_comp_relativeSpecSymmetricAlgebraTildeIsoSpec_hom
           N S a (t ≫ g)).trans (congrArg (· • _) ha)
     _ = c • ((specSymmetricAlgebraPointsMap ψ).app S φ : N →ₗ[R] S) :=
         congrArg (fun x ↦ c • specSymmetricAlgebraHomEquiv N S x)
@@ -253,16 +238,9 @@ theorem existsUnique_relativeSpec_map_tilde_of_isModHom
       ((symmetricAlgebra (Spec R)).map ((tildeEquiv (R := R)).functor.map f)).op) := by
   -- `g` becomes a morphism `ψ : Spec (Sym_R M) ⟶ Spec (Sym_R N)` commuting with scalars on points
   -- (`specSymmetricAlgebraPointsMap_app_smul_of_isModHom`), to which the affine criterion
-  -- `existsUnique_specSymmetricAlgebraMap_of_smul` applies. The isomorphisms are stated with
-  -- `algSpec` targets, so that all composites below share their intermediate objects.
-  let eM : (MorphismProperty.Over.forget _ _ (Spec R)).obj ((relativeSpec (Spec R)).obj
-        (op ((symmetricAlgebra (Spec R)).obj ((tildeEquiv (R := R)).functor.obj M)))) ≅
-      (algSpec R).obj (op (CommAlgCat.of R (SymmetricAlgebra R M))) :=
-    (MorphismProperty.Over.forget _ _ (Spec R)).mapIso (relativeSpecSymmetricAlgebraTildeIso M)
-  let eN : (MorphismProperty.Over.forget _ _ (Spec R)).obj ((relativeSpec (Spec R)).obj
-        (op ((symmetricAlgebra (Spec R)).obj ((tildeEquiv (R := R)).functor.obj N)))) ≅
-      (algSpec R).obj (op (CommAlgCat.of R (SymmetricAlgebra R N))) :=
-    (MorphismProperty.Over.forget _ _ (Spec R)).mapIso (relativeSpecSymmetricAlgebraTildeIso N)
+  -- `existsUnique_specSymmetricAlgebraMap_of_smul` applies.
+  let eM := relativeSpecSymmetricAlgebraTildeIsoSpec M
+  let eN := relativeSpecSymmetricAlgebraTildeIsoSpec N
   let ψ := eM.inv ≫ g ≫ eN.hom
   obtain ⟨f, hf, hu⟩ := existsUnique_specSymmetricAlgebraMap_of_smul ψ
     (specSymmetricAlgebraPointsMap_app_smul_of_isModHom g)
@@ -270,7 +248,7 @@ theorem existsUnique_relativeSpec_map_tilde_of_isModHom
       eM.inv ≫ (MorphismProperty.Over.forget _ _ (Spec R)).map ((relativeSpec (Spec R)).map
         ((symmetricAlgebra (Spec R)).map ((tildeEquiv (R := R)).functor.map f')).op) ≫ eN.hom =
       specSymmetricAlgebraMap f'.hom :=
-    (Iso.inv_comp_eq eM).2 (relativeSpec_map_comp_relativeSpecSymmetricAlgebraTildeIso_hom f')
+    (Iso.inv_comp_eq eM).2 (relativeSpec_map_comp_relativeSpecSymmetricAlgebraTildeIsoSpec_hom f')
   refine ⟨ModuleCat.ofHom f, ?_, fun f' hf' ↦ ModuleCat.hom_ext (hu f'.hom ?_)⟩
   · have h := (hf.trans (hm (ModuleCat.ofHom f)).symm)
     exact (cancel_epi eM.inv).1 ((cancel_mono eN.hom).1

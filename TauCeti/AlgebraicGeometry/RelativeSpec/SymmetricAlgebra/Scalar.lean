@@ -20,7 +20,7 @@ representing the scalar. This calculation connects the geometric action with the
 `Sym_R M`; it applies to arbitrary modules, not only finite free ones. Over an affine test scheme
 `Spec S`, where points of `Spec (Sym_R M)` are `R`-linear maps `M → S` (`Points.lean`), the action
 of a function on `Spec S` multiplies the linear functional by the corresponding element of `S`
-(`specSymmetricAlgebraHomEquiv_smul_comp_relativeSpecSymmetricAlgebraTildeIso_hom`).
+(`specSymmetricAlgebraHomEquiv_smul_comp_relativeSpecSymmetricAlgebraTildeIsoSpec_hom`).
 
 ## References
 
@@ -127,19 +127,17 @@ theorem relativeSpecSymmetricAlgebraTildeIso_lift_comp_smul_appTop {T : Over (Sp
 `R`-algebra `S`, a point `t` of `Spec_{Spec R} (Sym M~)` over `Spec S` and a function `a` on
 `Spec S`, the linear functional `M → S` of the scalar multiple `a • t`, for the action of the
 affine line, is the functional of `t` multiplied by the element of `S` corresponding to `a`. -/
-theorem specSymmetricAlgebraHomEquiv_smul_comp_relativeSpecSymmetricAlgebraTildeIso_hom
+theorem specSymmetricAlgebraHomEquiv_smul_comp_relativeSpecSymmetricAlgebraTildeIsoSpec_hom
     (S : CommAlgCat.{u} R) (a : (algSpec R).obj (op S) ⟶ 𝔸(PUnit.{u + 1}; Spec R).asOver (Spec R))
     (t : (algSpec R).obj (op S) ⟶ (MorphismProperty.Over.forget _ _ (Spec R)).obj
       ((relativeSpec (Spec R)).obj
         (op ((symmetricAlgebra (Spec R)).obj ((tildeEquiv (R := R)).functor.obj M))))) :
-    specSymmetricAlgebraHomEquiv M S ((a • t) ≫
-        (MorphismProperty.Over.forget _ _ (Spec R)).map
-          (relativeSpecSymmetricAlgebraTildeIso M).hom) =
+    specSymmetricAlgebraHomEquiv M S ((a • t) ≫ (relativeSpecSymmetricAlgebraTildeIsoSpec M).hom) =
       (Scheme.ΓSpecIso (CommRingCat.of S)).hom (AffineSpace.homAsOverEquiv _ a .unit) •
-        specSymmetricAlgebraHomEquiv M S (t ≫ (MorphismProperty.Over.forget _ _ (Spec R)).map
-          (relativeSpecSymmetricAlgebraTildeIso M).hom) := by
+        specSymmetricAlgebraHomEquiv M S
+          (t ≫ (relativeSpecSymmetricAlgebraTildeIsoSpec M).hom) := by
   ext m
-  simp only [specSymmetricAlgebraHomEquiv_comp_relativeSpecSymmetricAlgebraTildeIso_hom,
+  simp only [specSymmetricAlgebraHomEquiv_comp_relativeSpecSymmetricAlgebraTildeIsoSpec_hom,
     Hom.smul_def, smul_relativeSpecSymmetricAlgebra,
     relativeSpecSymmetricAlgebraTildeHomEquiv_lift_comp_smul, LinearMap.smul_apply, smul_eq_mul]
   -- the product lies in `Γ(((algSpec R).obj (op S)).left, ⊤)`, which is `Γ(Spec S, ⊤)` only after
