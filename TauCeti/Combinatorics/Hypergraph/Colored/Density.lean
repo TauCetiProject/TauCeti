@@ -11,6 +11,7 @@ public import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Data.Rat.Cast.Order
 import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Ring
 
 /-!
 # Relative color densities and their stability under edits
@@ -40,6 +41,11 @@ the number of supported edited triples `editedOn`, defined in
   of edits on a support changes density on an `ε`-fraction subsupport by at most `η / ε`.
 * `TauCeti.Colored3Graph.abs_relDensityOn_sub_le_div_of_card_sdiff_le`: removing few triples
   from a support changes the density of every color by little.
+* `TauCeti.Colored3Graph.abs_relDensityOn_sub_mul_card_le` and
+  `TauCeti.Colored3Graph.sum_abs_relDensityOn_sub_mul_card_le`: count-scaled single-color and
+  palette-summed density bounds between any two supports, independent of the palette size.
+* `TauCeti.Colored3Graph.sum_card_mul_sq_relDensityOn_sub_le`: palette-independent perturbation
+  bound for support-weighted sums of squared relative densities.
 -/
 
 public section
@@ -205,6 +211,211 @@ theorem sum_relDensityOn [Fintype κ] (H : Colored3Graph κ V)
   rw [div_eq_one_iff_eq (by exact_mod_cast h.card_pos.ne')]
   -- Every supported triple has exactly one color.
   exact_mod_cast (card_eq_sum_card_fiberwise fun _ _ => mem_univ _).symm
+
+/-- The relative densities of all colors sum to at most one on every support, including the empty
+support where they vanish. -/
+theorem sum_relDensityOn_le_one [Fintype κ] (H : Colored3Graph κ V)
+    (supp : Finset {x : Fin 3 → V // Function.Injective x}) :
+    ∑ c, H.relDensityOn c supp ≤ 1 := by
+  obtain rfl | hs := supp.eq_empty_or_nonempty
+  · simp
+  · exact (H.sum_relDensityOn hs).le
+
+section Perturbation
+
+variable [DecidableEq V]
+
+/-- Decompose the count-scaled difference of a color density between any two supports into the
+triples added to `W \ U` and those removed from `U \ W`, valid also on empty supports. -/
+private theorem relDensityOn_sub_mul_card_eq_sdiff (H : Colored3Graph κ V) (c : κ)
+    (W U : Finset {x : Fin 3 → V // Function.Injective x}) :
+    (H.relDensityOn c W - H.relDensityOn c U) * #W =
+      ((#{x ∈ W \ U | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c} : ℚ) -
+        H.relDensityOn c U * #(W \ U)) +
+      (H.relDensityOn c U * #(U \ W) -
+        #{x ∈ U \ W | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c}) := by
+  let P : {x : Fin 3 → V // Function.Injective x} → Prop :=
+    fun x ↦ H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c
+  have hW := H.relDensityOn_mul_card c W
+  have hU := H.relDensityOn_mul_card c U
+  have hcard : (#W : ℚ) + #(U \ W) = #(W \ U) + #U := by
+    have h₁ := card_sdiff_add_card_inter W U
+    have h₂ := card_sdiff_add_card_inter U W
+    rw [inter_comm U W] at h₂
+    exact_mod_cast (by omega : #W + #(U \ W) = #(W \ U) + #U)
+  have hsdiff (A B : Finset {x : Fin 3 → V // Function.Injective x}) :
+      A.filter P \ B.filter P = (A \ B).filter P := by
+    ext x
+    simp only [mem_sdiff, mem_filter]
+    tauto
+  have hcol : (#(W.filter P) : ℚ) + #((U \ W).filter P) =
+      #((W \ U).filter P) + #(U.filter P) := by
+    have h₁ := card_sdiff_add_card_inter (W.filter P) (U.filter P)
+    have h₂ := card_sdiff_add_card_inter (U.filter P) (W.filter P)
+    rw [inter_comm (U.filter P) (W.filter P), hsdiff] at h₂
+    rw [hsdiff] at h₁
+    exact_mod_cast (by omega : #(W.filter P) + #((U \ W).filter P) =
+      #((W \ U).filter P) + #(U.filter P))
+  have hmul := congrArg (H.relDensityOn c U * ·) hcard
+  dsimp only [P] at hcol
+  linarith
+
+/-- For any two supports `W` and `U`, the count-scaled density difference on `W` is bounded by
+`#(W \ U) + #(U \ W)`. Empty supports are allowed, and no containment or finite palette is
+required. -/
+theorem abs_relDensityOn_sub_mul_card_le (H : Colored3Graph κ V) (c : κ)
+    (W U : Finset {x : Fin 3 → V // Function.Injective x}) :
+    |H.relDensityOn c W - H.relDensityOn c U| * #W ≤ (#(W \ U) + #(U \ W) : ℚ) := by
+  have h₀ := H.relDensityOn_nonneg c U
+  have h₁ := H.relDensityOn_le_one c U
+  have hc₁ : (#{x ∈ W \ U | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c} : ℚ) ≤
+      #(W \ U) := mod_cast card_filter_le _ _
+  have hc₂ : (#{x ∈ U \ W | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c} : ℚ) ≤
+      #(U \ W) := mod_cast card_filter_le _ _
+  have hd₁ : H.relDensityOn c U * #(W \ U) ≤ #(W \ U) :=
+    mul_le_of_le_one_left (Nat.cast_nonneg _) h₁
+  have hd₂ : H.relDensityOn c U * #(U \ W) ≤ #(U \ W) :=
+    mul_le_of_le_one_left (Nat.cast_nonneg _) h₁
+  have hn₁ : 0 ≤ H.relDensityOn c U * #(W \ U) := mul_nonneg h₀ (Nat.cast_nonneg _)
+  have hn₂ : 0 ≤ H.relDensityOn c U * #(U \ W) := mul_nonneg h₀ (Nat.cast_nonneg _)
+  rw [← abs_of_nonneg (Nat.cast_nonneg (α := ℚ) #W), ← abs_mul,
+    H.relDensityOn_sub_mul_card_eq_sdiff c W U, abs_le]
+  constructor <;>
+    linarith [Nat.cast_nonneg (α := ℚ)
+      #{x ∈ W \ U | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c},
+      Nat.cast_nonneg (α := ℚ)
+      #{x ∈ U \ W | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c}]
+
+/-- **Total-variation support stability.** Summing the count-scaled density differences between
+`W` and `U` over all colors gives at most `2 (#(W \ U) + #(U \ W))`, with no factor depending on
+the size of the palette. -/
+theorem sum_abs_relDensityOn_sub_mul_card_le [Fintype κ] (H : Colored3Graph κ V)
+    (W U : Finset {x : Fin 3 → V // Function.Injective x}) :
+    (∑ c, |H.relDensityOn c W - H.relDensityOn c U|) * #W ≤
+      2 * (#(W \ U) + #(U \ W) : ℚ) := by
+  have hloc (c : κ) : |H.relDensityOn c W - H.relDensityOn c U| * #W ≤
+      (#{x ∈ W \ U | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c} : ℚ) +
+        H.relDensityOn c U * #(W \ U) + H.relDensityOn c U * #(U \ W) +
+        #{x ∈ U \ W | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c} := by
+    have h₀ := H.relDensityOn_nonneg c U
+    have hn₁ : 0 ≤ H.relDensityOn c U * #(W \ U) := mul_nonneg h₀ (Nat.cast_nonneg _)
+    have hn₂ : 0 ≤ H.relDensityOn c U * #(U \ W) := mul_nonneg h₀ (Nat.cast_nonneg _)
+    rw [← abs_of_nonneg (Nat.cast_nonneg (α := ℚ) #W), ← abs_mul,
+      H.relDensityOn_sub_mul_card_eq_sdiff c W U, abs_le]
+    constructor <;>
+      linarith [Nat.cast_nonneg (α := ℚ)
+        #{x ∈ W \ U | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c},
+        Nat.cast_nonneg (α := ℚ)
+        #{x ∈ U \ W | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c}]
+  have hfib (X : Finset {x : Fin 3 → V // Function.Injective x}) :
+      ∑ c : κ, (#{x ∈ X | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c} : ℚ) = #X := by
+    exact_mod_cast (card_eq_sum_card_fiberwise (s := X) fun _ _ ↦ mem_univ _).symm
+  have hd₁ : (∑ c, H.relDensityOn c U) * #(W \ U) ≤ #(W \ U) :=
+    mul_le_of_le_one_left (Nat.cast_nonneg _) (H.sum_relDensityOn_le_one U)
+  have hd₂ : (∑ c, H.relDensityOn c U) * #(U \ W) ≤ #(U \ W) :=
+    mul_le_of_le_one_left (Nat.cast_nonneg _) (H.sum_relDensityOn_le_one U)
+  have hsum := sum_le_sum fun c (_ : c ∈ univ) ↦ hloc c
+  simp only [sum_add_distrib, ← sum_mul, hfib] at hsum
+  linarith
+
+/-- Algebraic identity comparing the support-weighted squared density on `U` with that on a subset
+`I ⊆ U`, valid also when either set is empty. -/
+private theorem card_mul_sq_relDensityOn_sub_of_subset (H : Colored3Graph κ V) (c : κ)
+    {I U : Finset {x : Fin 3 → V // Function.Injective x}} (hIU : I ⊆ U) :
+    (#U : ℚ) * H.relDensityOn c U ^ 2 - #I * H.relDensityOn c I ^ 2 =
+      (H.relDensityOn c U + H.relDensityOn c I) *
+        #{x ∈ U \ I | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c} -
+      #(U \ I) * H.relDensityOn c U * H.relDensityOn c I := by
+  let P : {x : Fin 3 → V // Function.Injective x} → Prop :=
+    fun x ↦ H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c
+  set p := H.relDensityOn c U
+  set q := H.relDensityOn c I
+  let nI : ℚ := (#{x ∈ I | P x} : ℚ)
+  let nD : ℚ := (#{x ∈ U \ I | P x} : ℚ)
+  have hI : q * #I = nI := H.relDensityOn_mul_card c I
+  have hU : p * #U = nD + nI := by
+    rw [H.relDensityOn_mul_card c U]
+    have hunion : U.filter P = (U \ I).filter P ∪ I.filter P := by
+      rw [← filter_union, sdiff_union_of_subset hIU]
+    have hdisj : Disjoint ((U \ I).filter P) (I.filter P) :=
+      sdiff_disjoint.mono (filter_subset _ _) (filter_subset _ _)
+    dsimp only [nD, nI, P]
+    exact_mod_cast congrArg card hunion |>.trans (card_union_of_disjoint hdisj)
+  have hcard : (#U : ℚ) = #(U \ I) + #I := by
+    exact_mod_cast (card_sdiff_add_card_eq_card hIU).symm
+  calc (#U : ℚ) * p ^ 2 - #I * q ^ 2
+      = (p + q) * nD - #(U \ I) * p * q +
+          (p + q) * (p * #U - (nD + nI)) - (p + q) * (q * #I - nI) -
+          p * q * (#U - (#(U \ I) + #I)) := by ring
+    _ = (p + q) * nD - #(U \ I) * p * q := by rw [hU, hI, hcard]; ring
+
+/-- Shrinking a support `U` to `I ⊆ U` increases the sum over colors of `#I * d(c | I)²` beyond
+`#U * d(c | U)²` by at most `#(U \ I)`. -/
+theorem neg_card_sdiff_le_sum_card_mul_sq_relDensityOn_sub [Fintype κ] (H : Colored3Graph κ V)
+    {I U : Finset {x : Fin 3 → V // Function.Injective x}} (hIU : I ⊆ U) :
+    -(#(U \ I) : ℚ) ≤
+      ∑ c, (#U : ℚ) * H.relDensityOn c U ^ 2 - ∑ c, (#I : ℚ) * H.relDensityOn c I ^ 2 := by
+  rw [← sum_sub_distrib]
+  have hloc (c : κ) : -(#(U \ I) * H.relDensityOn c U) ≤
+      (#U : ℚ) * H.relDensityOn c U ^ 2 - #I * H.relDensityOn c I ^ 2 := by
+    rw [H.card_mul_sq_relDensityOn_sub_of_subset c hIU]
+    have h₁ : 0 ≤ (H.relDensityOn c U + H.relDensityOn c I) *
+        (#{x ∈ U \ I | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c} : ℚ) :=
+      mul_nonneg (add_nonneg (H.relDensityOn_nonneg c U) (H.relDensityOn_nonneg c I))
+        (Nat.cast_nonneg _)
+    have h₂ : #(U \ I) * H.relDensityOn c U * H.relDensityOn c I ≤ #(U \ I) * H.relDensityOn c U :=
+      mul_le_of_le_one_right (mul_nonneg (Nat.cast_nonneg _) (H.relDensityOn_nonneg c U))
+        (H.relDensityOn_le_one c I)
+    linarith
+  have hsum := sum_le_sum fun c (_ : c ∈ univ) ↦ hloc c
+  rw [sum_neg_distrib, ← mul_sum] at hsum
+  have hd : #(U \ I) * ∑ c, H.relDensityOn c U ≤ #(U \ I) :=
+    mul_le_of_le_one_right (Nat.cast_nonneg _) (H.sum_relDensityOn_le_one U)
+  linarith
+
+/-- Shrinking a support `U` to `I ⊆ U` decreases the sum over colors of `#U * d(c | U)²` by at
+most `2 #(U \ I)`, independently of the palette size. -/
+theorem sum_card_mul_sq_relDensityOn_sub_le_two_mul_card_sdiff [Fintype κ] (H : Colored3Graph κ V)
+    {I U : Finset {x : Fin 3 → V // Function.Injective x}} (hIU : I ⊆ U) :
+    ∑ c, (#U : ℚ) * H.relDensityOn c U ^ 2 - ∑ c, (#I : ℚ) * H.relDensityOn c I ^ 2 ≤
+      2 * (#(U \ I) : ℚ) := by
+  rw [← sum_sub_distrib]
+  have hloc (c : κ) : (#U : ℚ) * H.relDensityOn c U ^ 2 - #I * H.relDensityOn c I ^ 2 ≤
+      2 * (#{x ∈ U \ I | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c} : ℚ) := by
+    rw [H.card_mul_sq_relDensityOn_sub_of_subset c hIU]
+    have h₁ : (H.relDensityOn c U + H.relDensityOn c I) *
+        (#{x ∈ U \ I | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c} : ℚ) ≤
+        2 * #{x ∈ U \ I | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c} :=
+      mul_le_mul_of_nonneg_right
+        (by linarith [H.relDensityOn_le_one c U, H.relDensityOn_le_one c I]) (Nat.cast_nonneg _)
+    have h₂ : 0 ≤ #(U \ I) * H.relDensityOn c U * H.relDensityOn c I :=
+      mul_nonneg (mul_nonneg (Nat.cast_nonneg _) (H.relDensityOn_nonneg c U))
+        (H.relDensityOn_nonneg c I)
+    linarith
+  have hfib : ∑ c : κ,
+      (#{x ∈ U \ I | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c} : ℚ) = #(U \ I) := by
+    exact_mod_cast (card_eq_sum_card_fiberwise (s := U \ I) fun _ _ ↦ mem_univ _).symm
+  have hsum := sum_le_sum fun c (_ : c ∈ univ) ↦ hloc c
+  rw [← mul_sum, hfib] at hsum
+  exact hsum
+
+/-- **Squared-density support perturbation.** Between any two supports `W` and `U`, the difference
+of the support-weighted sums of squared color densities is bounded by `2 #(W \ U) + #(U \ W)`,
+with no factor depending on the size of the palette. Swapping `W` and `U` gives the corresponding
+lower bound. -/
+theorem sum_card_mul_sq_relDensityOn_sub_le [Fintype κ] (H : Colored3Graph κ V)
+    (W U : Finset {x : Fin 3 → V // Function.Injective x}) :
+    ∑ c, (#W : ℚ) * H.relDensityOn c W ^ 2 - ∑ c, (#U : ℚ) * H.relDensityOn c U ^ 2 ≤
+      2 * (#(W \ U) : ℚ) + #(U \ W) := by
+  have h₁ := H.sum_card_mul_sq_relDensityOn_sub_le_two_mul_card_sdiff
+    (inter_subset_left (s₁ := W) (s₂ := U))
+  have h₂ := H.neg_card_sdiff_le_sum_card_mul_sq_relDensityOn_sub
+    (inter_subset_right (s₁ := W) (s₂ := U))
+  rw [sdiff_inter_self_left] at h₁
+  rw [sdiff_inter_self_right] at h₂
+  linarith
+
+end Perturbation
 
 end Colored3Graph
 
