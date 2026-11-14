@@ -34,14 +34,16 @@ group, which lets `g` act as the basis element `g⁻¹`
 `TauCeti.shiftedModuleComplexHomologyEquiv` of the terms of the classical complex with `H^k(𝓕)`,
 the entry between a generator `x` of index `q + 1` and a generator `y` of index `q` therefore acts
 as `(-1)^k` times the truncation `∑ u_g g` of `m x y`, that is as `(-1)^k ∑ u_g ρ(g⁻¹)`
-(`TauCeti.TwistingCocycle.shiftedModuleComplexHomologyEquiv_indexClassicalEntry_loop`).
+(`TauCeti.IsDGRightModule.cohomologyAction_groupAlgebraToLoopChainCohomology`,
+`TauCeti.TwistingCocycle.shiftedModuleComplexHomologyEquiv_indexClassicalEntry_loop`).
 
 ## Main results
 
 * `TauCeti.TwistingCocycle.indexClassicalClass_eq_groupAlgebraToLoopChainCohomology`: the class of
   an entry of index difference one is the class of its truncation in the group ring.
 * `TauCeti.TwistingCocycle.shiftedModuleComplexHomologyEquiv_indexClassicalEntry_loop`: the entries
-  of the classical complex are the actions of the truncated entries of the cocycle on `H^k(𝓕)`.
+  of the classical complex are `(-1)^k ∑ u_g ρ(g⁻¹)` on `H^k(𝓕)`, for the truncations `∑ u_g g` of
+  the entries of the cocycle.
 * `TauCeti.TwistingCocycle.shiftedModuleComplexHomologyEquiv_indexClassicalD_π_loop`: the
   classical differential, with coefficients in the local system `H^k(𝓕)`.
 
@@ -92,25 +94,26 @@ in coefficient degree `k` with `H^k(𝓕)`, the entry between a generator `x` of
 generator `y` of index `q` is `(-1)^k` times the action on `H^k(𝓕)` of the truncation `u` of
 `m x y` in the group ring `R[π₁(B, b)]`. A basis element `g` acts as `ρ(g⁻¹)`, with `ρ` the
 representation of the fundamental group on the homology of `𝓕`
-(`IsDGRightModule.cohomologyRepresentation_apply`), so the entry is
+(`IsDGRightModule.cohomologyAction_groupAlgebraToLoopChainCohomology`), so the entry is
 `(-1)^k ∑ u_g ρ(g⁻¹)`. -/
 theorem shiftedModuleComplexHomologyEquiv_indexClassicalEntry_loop (q : ℤ)
     (x : {x : P // ind x = q + 1}) (y : {y : P // ind y = q})
     (c : (shiftedModuleComplex.{u, u, uM, uP} hM (q + 1)).homology (k - (q + 1))) :
     (shiftedModuleComplexHomologyEquiv.{u, u, uM, uP} hM q (k - q)
         ((m.indexClassicalEntry hM k q x y).hom c) : hM.Cohomology) =
-      k.negOnePow • (hM.cohomologyAction (groupAlgebraToLoopChainCohomology B b R
-        (loopChainToGroupAlgebra B b R (m.m x y)))).unop
-          (shiftedModuleComplexHomologyEquiv.{u, u, uM, uP} hM (q + 1) (k - (q + 1)) c) := by
+      k.negOnePow • Finsupp.linearCombination R (fun g ↦ hM.cohomologyRepresentation g⁻¹
+        (shiftedModuleComplexHomologyEquiv.{u, u, uM, uP} hM (q + 1) (k - (q + 1)) c))
+          (loopChainToGroupAlgebra B b R (m.m x y)).coeff := by
   rw [shiftedModuleComplexHomologyEquiv_indexClassicalEntry,
-    indexClassicalClass_eq_groupAlgebraToLoopChainCohomology]
+    indexClassicalClass_eq_groupAlgebraToLoopChainCohomology,
+    hM.cohomologyAction_groupAlgebraToLoopChainCohomology]
 
 /-- **The classical differential with local coefficients**: under the identifications
 `shiftedModuleComplexHomologyEquiv` of the terms of the classical complex in coefficient degree `k`
 with products of copies of `H^k(𝓕)`, the component at a generator `y` of index `q` of the
 differential of a family `c` indexed by the generators of index `q + 1` is `(-1)^k` times the sum
-over the generators `x` of the actions of the truncations of `m x y` in the group ring on the
-components `c x`, that is `(-1)^k ∑ₓ ∑_g u^{xy}_g ρ(g⁻¹) c x`. -/
+over the generators `x` of the actions of the truncations `∑_g u^{xy}_g g` of `m x y` in the group
+ring on the components `c x`, that is `(-1)^k ∑ₓ ∑_g u^{xy}_g ρ(g⁻¹) c x`. -/
 theorem shiftedModuleComplexHomologyEquiv_indexClassicalD_π_loop (q : ℤ)
     (y : {y : P // ind y = q})
     (c : ↑(∏ᶜ fun _ : {x : P // ind x = q + 1} ↦
@@ -118,14 +121,14 @@ theorem shiftedModuleComplexHomologyEquiv_indexClassicalD_π_loop (q : ℤ)
     (shiftedModuleComplexHomologyEquiv.{u, u, uM, uP} hM q (k - q)
         ((m.indexClassicalD hM k q ≫ Pi.π _ y).hom c) : hM.Cohomology) =
       k.negOnePow • ∑ x : {x : P // ind x = q + 1},
-        (hM.cohomologyAction (groupAlgebraToLoopChainCohomology B b R
-          (loopChainToGroupAlgebra B b R (m.m x y)))).unop
-            (shiftedModuleComplexHomologyEquiv.{u, u, uM, uP} hM (q + 1) (k - (q + 1))
-              ((Pi.π (fun _ : {x : P // ind x = q + 1} ↦
-                (shiftedModuleComplex.{u, u, uM, uP} hM (q + 1)).homology (k - (q + 1))) x).hom
-                  c)) := by
+        Finsupp.linearCombination R (fun g ↦ hM.cohomologyRepresentation g⁻¹
+          (shiftedModuleComplexHomologyEquiv.{u, u, uM, uP} hM (q + 1) (k - (q + 1))
+            ((Pi.π (fun _ : {x : P // ind x = q + 1} ↦
+              (shiftedModuleComplex.{u, u, uM, uP} hM (q + 1)).homology (k - (q + 1))) x).hom
+                c))) (loopChainToGroupAlgebra B b R (m.m x y)).coeff := by
   rw [shiftedModuleComplexHomologyEquiv_indexClassicalD_π]
-  simp only [indexClassicalClass_eq_groupAlgebraToLoopChainCohomology]
+  simp only [indexClassicalClass_eq_groupAlgebraToLoopChainCohomology,
+    hM.cohomologyAction_groupAlgebraToLoopChainCohomology]
 
 end TwistingCocycle
 

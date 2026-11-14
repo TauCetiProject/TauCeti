@@ -31,7 +31,9 @@ fundamental group acts on `H(𝓕)` as the group ring element `g⁻¹` does from
 (`TauCeti.IsDGRightModule.cohomologyRepresentation`), the convention of
 `TauCeti.DGRightModuleCat.IsConcentratedInDegreeZero.representation`, so that the inverse of the
 class of `γ` acts as the point chain of `γ`
-(`TauCeti.IsDGRightModule.cohomologyRepresentation_fundamentalGroupHom_inv_apply`).
+(`TauCeti.IsDGRightModule.cohomologyRepresentation_fundamentalGroupHom_inv_apply`). So a group ring
+element `∑ u_g g` acts as `∑ u_g ρ(g⁻¹)`, with `ρ` the representation
+(`TauCeti.IsDGRightModule.cohomologyAction_groupAlgebraToLoopChainCohomology`).
 
 The DG local system is given here unbundled, as a DG right module structure `hM` on a graded
 module `ℳ` with differential `dM`, as in `TauCeti.RankOneLocalSystem.twistedCochainComplexIso`.
@@ -109,6 +111,29 @@ theorem cohomologyRepresentation_fundamentalGroupHom_inv_apply (γ : MooreLoopSp
           (loopChain_isDGAlgebra B b R).cycles) • x := by
   rw [cohomologyRepresentation_fundamentalGroupHom_inv,
     groupAlgebraToLoopChainCohomology_of_fundamentalGroupHom, cohomologyAction_mk]
+
+/-- An `R`-algebra map from a monoid algebra to the opposite of the endomorphisms of `V` sends `u`
+to the linear combination, with the coefficients of `u`, of the images of the basis elements. -/
+private theorem unop_algHom_apply_eq_linearCombination {G V : Type*} [Monoid G]
+    [AddCommGroup V] [Module R V] (F : MonoidAlgebra R G →ₐ[R] (Module.End R V)ᵐᵒᵖ)
+    (u : MonoidAlgebra R G) (x : V) :
+    (F u).unop x =
+      Finsupp.linearCombination R (fun g ↦ (F (MonoidAlgebra.of R G g)).unop x) u.coeff := by
+  conv_lhs => rw [MonoidAlgebra.lift_unique' F, MonoidAlgebra.lift_apply]
+  simp [Finsupp.linearCombination_apply, Finsupp.sum]
+
+/-- **A group ring element acts through the representation of the fundamental group**: an element
+`u = ∑ u_g g` of `R[π₁(B, b)]` acts on `H(𝓕)` from the right as `∑ u_g ρ(g⁻¹)`, with `ρ` the
+representation `cohomologyRepresentation`. -/
+-- The right-hand side is a `Finsupp.linearCombination` rather than an explicit sum of scalar
+-- multiples: synthesizing the scalar action of `R` on `H(𝓕)` directly exceeds the instance budget.
+theorem cohomologyAction_groupAlgebraToLoopChainCohomology
+    (u : MonoidAlgebra R (FundamentalGroup B b)) (x : hM.Cohomology) :
+    (hM.cohomologyAction (groupAlgebraToLoopChainCohomology B b R u)).unop x =
+      Finsupp.linearCombination R (fun g ↦ hM.cohomologyRepresentation g⁻¹ x) u.coeff := by
+  simp_rw [cohomologyRepresentation_apply, inv_inv]
+  exact unop_algHom_apply_eq_linearCombination
+    (hM.cohomologyAction.comp (groupAlgebraToLoopChainCohomology B b R)) u x
 
 /-- The fundamental group preserves the degrees of the homology of a DG local system. -/
 theorem cohomologyRepresentation_apply_mem_cohomologyGrading (g : FundamentalGroup B b) {p : ℤ}

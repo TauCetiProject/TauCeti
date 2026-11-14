@@ -473,6 +473,7 @@ private theorem shiftedModuleComplexHomologyEquiv_homologyπ_apply (p n : ℤ)
 
 /-- The identification of `shiftedModuleComplexHomologyEquiv` sends the class of a cycle `α` of
 `shiftedModuleComplex hM p` to the class in `H(ℳ)` of its value in `ℳ`. -/
+@[simp]
 theorem shiftedModuleComplexHomologyEquiv_homologyπ (p n : ℤ)
     (α : (shiftedModuleComplex.{uR, uA, uM, uP} hM p).X n)
     (hα : ((shiftedModuleComplex.{uR, uA, uM, uP} hM p).d n (n + 1)).hom α = 0) :
