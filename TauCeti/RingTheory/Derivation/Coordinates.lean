@@ -13,6 +13,7 @@ import Mathlib.Algebra.Order.Sub.Prod
 import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Data.Nat.Factorial.BigOperators
 import TauCeti.Algebra.Algebra.NatCast
+import TauCeti.Algebra.BigOperators.Pi
 import TauCeti.RingTheory.Derivation.Basic
 import TauCeti.RingTheory.Ideal.IsAugmentation
 
@@ -120,6 +121,10 @@ theorem multiIndexDeriv_add_single [DecidableEq ι] (α : ι → ℕ) (i : ι) :
     multiIndexDeriv d hd (α + Pi.single i 1) = multiIndexDeriv d hd α * d i := by
   rw [multiIndexDeriv_add, multiIndexDeriv_single, pow_one]
 
+theorem multiIndexDeriv_add_single' [DecidableEq ι] (α : ι → ℕ) (i : ι) :
+    multiIndexDeriv d hd (α + Pi.single i 1) = d i * multiIndexDeriv d hd α := by
+  rw [add_comm, multiIndexDeriv_add, multiIndexDeriv_single, pow_one]
+
 /-- A monomial `∂^α` in derivations is a differential operator of order at most `|α|`. -/
 theorem multiIndexDeriv_mem_differentialOperators (α : ι → ℕ) :
     multiIndexDeriv d hd α ∈ differentialOperators R A A A (∑ i, α i) := by
@@ -145,11 +150,10 @@ theorem apply_multiIndexDeriv_prod_pow [DecidableEq ι] (χ : A →ₐ[R] R) {t 
     (α β : ι → ℕ) :
     χ (multiIndexDeriv d hd α (∏ j, t j ^ β j)) =
       if α = β then ((∏ j, (β j)! : ℕ) : R) else 0 := by
-  -- Induction on `|α|`: for `α = α' + eᵢ`, first apply `∂ᵢ`, which turns `t ^ β` into
-  -- `βᵢ t ^ (β - eᵢ)`, then use the claim for `α'` and `β - eᵢ`.
-  induction h : ∑ j, α j generalizing α β with
+  -- Induction on `α`: for `α + eᵢ`, first apply `∂ᵢ`, which turns `t ^ β` into
+  -- `βᵢ t ^ (β - eᵢ)`, then use the claim for `α` and `β - eᵢ`.
+  induction α using multiIndex_induction_add_single generalizing β with
   | zero =>
-    obtain rfl : α = 0 := funext fun j ↦ (sum_eq_zero_iff.1 h) j (mem_univ j)
     simp only [multiIndexDeriv_zero, one_apply_eq_self, map_prod, map_pow, ht]
     split_ifs with hβ
     · subst hβ
@@ -158,23 +162,15 @@ theorem apply_multiIndexDeriv_prod_pow [DecidableEq ι] (χ : A →ₐ[R] R) {t 
         by_contra! hc
         exact hβ (funext fun j ↦ (hc j).symm)
       exact prod_eq_zero (mem_univ j) (zero_pow hj)
-  | succ n ih =>
-    obtain ⟨i, hi⟩ : ∃ i, α i ≠ 0 := by
-      by_contra! hc
-      simp [hc] at h
+  | add_single α i ih =>
     -- Removing `eᵢ` from a multi-index is truncated subtraction, inverse to adding `eᵢ` as
     -- soon as the `i`-th entry is nonzero.
     have hle {γ : ι → ℕ} (hγ : γ i ≠ 0) : Pi.single i 1 ≤ γ := fun j ↦ by
       rcases eq_or_ne j i with rfl | hj
       · simpa [Nat.one_le_iff_ne_zero] using hγ
       · simp [hj]
-    set α' := α - Pi.single i 1
-    have hα : α = α' + Pi.single i 1 := (tsub_add_cancel_of_le (hle hi)).symm
-    have hα' : ∑ j, α' j = n := by
-      simp only [hα, Pi.add_apply, sum_add_distrib, Fintype.sum_pi_single'] at h
-      omega
-    rw [hα, multiIndexDeriv_add_single, mul_apply_eq_comp, Derivation.coeFn_coe,
-      (d i).apply_prod_pow_of_apply_eq (hdt i), map_nsmul, map_nsmul, ih α' _ hα']
+    rw [multiIndexDeriv_add_single, mul_apply_eq_comp, Derivation.coeFn_coe,
+      (d i).apply_prod_pow_of_apply_eq (hdt i), map_nsmul, map_nsmul, ih]
     by_cases hβ : β i = 0
     · rw [hβ, zero_smul, eq_comm, ite_eq_right_iff]
       intro h
@@ -280,6 +276,31 @@ theorem coordinateOperator_apply_prod_pow_sub_mem {χ : A →ₐ[R] R} {t : ι �
   exact sum_mem fun k _ ↦ by
     rw [← sum_sub_distrib]
     exact sum_mem fun α _ ↦ χ.smul_sub_smul_mem_smul_top _ _
+
+omit [IsScalarTower R A N] in
+/-- With values in `A`, a coordinate expression is the sum of the operators `f ↦ c α * ∂^α f`. -/
+theorem coordinateOperator_eq_sum_mulLeft (m : ℕ) (c : (ι → ℕ) → A) :
+    coordinateOperator d hd m c =
+      ∑ k ∈ range (m + 1), ∑ α ∈ piAntidiag univ k,
+        LinearMap.mulLeft R (c α) ∘ₗ multiIndexDeriv d hd α := by
+  ext1 f
+  simp [smul_eq_mul, mul_comm]
+
+omit [IsScalarTower R A N] in
+/-- For scalars `a k` and coefficients `c α`, the operator `f ↦ ∑_{|α| ≤ m} a |α| • ∂^α (c α * f)`,
+with the coefficients multiplied before differentiating, is a differential operator of order at
+most `m`. -/
+theorem sum_smul_multiIndexDeriv_comp_mulLeft_mem_differentialOperators (m : ℕ) (a : ℕ → R)
+    (c : (ι → ℕ) → A) :
+    ∑ k ∈ range (m + 1), ∑ α ∈ piAntidiag univ k,
+        a k • (multiIndexDeriv d hd α ∘ₗ LinearMap.mulLeft R (c α)) ∈
+      differentialOperators R A A A m := by
+  refine sum_mem fun k hk ↦ sum_mem fun α hα ↦ Submodule.smul_mem _ _ ?_
+  rw [mem_piAntidiag] at hα
+  refine differentialOperators_mono (Nat.le_of_lt_succ (mem_range.mp hk)) ?_
+  simpa [hα.1] using comp_mem_differentialOperators
+    (multiIndexDeriv_mem_differentialOperators d hd α)
+    (LinearMap.mulLeft_mem_differentialOperators_zero (c α))
 
 variable [Algebra ℚ R]
 
