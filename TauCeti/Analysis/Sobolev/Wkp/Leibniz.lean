@@ -165,7 +165,7 @@ theorem norm_iteratedGradient_one_sub_toLp_le_of_value_ae_eq_mul {u w : Wkp mu O
   have hc₁ : 0 ≤ c₁ := (norm_nonneg _).trans (hg 0)
   have hc₂ : 0 ≤ c₂ := (norm_nonneg _).trans (hh 0)
   have hD := iteratedGradient_one_ae_eq_of_value_ae_eq_mul hzeta hw
-  refine TauCeti.Lp.norm_le_add_of_ae_norm_le (by positivity) hc₂ ?_
+  refine MeasureTheory.Lp.norm_le_add_of_ae_norm_le (by positivity) hc₂ ?_
   filter_upwards [Lp.coeFn_sub (iteratedGradient 1 w) (hzu.toLp _), hD, hzu.coeFn_toLp] with
     x h1 h2 h3
   rw [h1, Pi.sub_apply, h2, h3, add_assoc, add_assoc, add_sub_cancel_left, ← add_assoc]
