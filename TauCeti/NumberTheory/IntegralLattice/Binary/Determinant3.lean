@@ -49,7 +49,7 @@ private theorem IsPosDef.exists_binaryNormForm_eq_two_two_two (hL : L.IsPosDef) 
     · rw [binaryNormForm_a, gramMatrix_apply, ← integralNorm_apply]
       exact hL.posDef_integralNorm _ (b.ne_zero 0)
   obtain ⟨γ, hγ⟩ := BinaryQuadraticForm.exists_smul_isReducedForm ⟨_, hf⟩
-  obtain ⟨b', hb'⟩ := L.exists_binaryNormForm_eq_smul b γ
+  obtain ⟨b', -, hb'⟩ := L.exists_binaryNormForm_eq_smul b γ
   have hr : IsReducedForm (L.binaryNormForm b') := by
     simpa only [hb', SubMulAction.val_smul] using hγ
   obtain ⟨hba, hac, hsign⟩ := isReducedForm_iff.mp hr
