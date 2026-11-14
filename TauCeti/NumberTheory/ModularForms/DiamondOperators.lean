@@ -64,7 +64,8 @@ Hecke pair `(Γ₁(N), Δ₁(N))` from the same source file is not ported here.
 * `diamondOp_coe_cuspForm`, `coe_mem_modFormCharSpace_iff`: the diamond operators, and hence the
   character spaces, commute with the coercion `S_k(Γ₁(N)) → M_k(Γ₁(N))`; a cusp form is a
   `χ`-form exactly when the modular form underlying it is.
-* `eq_of_mem_cuspFormCharSpace_of_ne_zero`: a nonzero cusp form determines its nebentypus.
+* `eq_of_mem_modFormCharSpace_of_ne_zero`/`eq_of_mem_cuspFormCharSpace_of_ne_zero`: a nonzero form
+  determines its nebentypus.
 * `slash_mapGL_eq_self_of_comp_of_mem_modFormCharSpace`,
   `slash_mapGL_eq_self_of_comp_of_mem_cuspFormCharSpace`: a matrix of `Γ₀(N)` whose lower-right
   entry is `1` modulo a divisor `M` acts trivially on a form whose character is pulled back from
@@ -350,6 +351,15 @@ theorem diamondOp_apply_of_mem_modFormCharSpace (k : ℤ) (χ : (ZMod N)ˣ →* 
     (hf : f ∈ modFormCharSpace k χ) :
     diamondOp k d f = (↑(χ d) : ℂ) • f :=
   (mem_modFormCharSpace_iff k χ f).mp hf d
+
+/-- **A nonzero modular form determines its nebentypus**: the character spaces of two distinct
+characters meet only in `0`, since `⟨d⟩ f = χ(d) • f = χ'(d) • f` forces `χ(d) = χ'(d)`. -/
+theorem eq_of_mem_modFormCharSpace_of_ne_zero {k : ℤ} {χ χ' : (ZMod N)ˣ →* ℂˣ}
+    {f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ modFormCharSpace k χ)
+    (hf' : f ∈ modFormCharSpace k χ') (h0 : f ≠ 0) : χ = χ' :=
+  MonoidHom.ext fun d ↦ Units.ext <| smul_left_injective ℂ h0 <|
+    (diamondOp_apply_of_mem_modFormCharSpace k χ d hf).symm.trans
+      (diamondOp_apply_of_mem_modFormCharSpace k χ' d hf')
 
 /-- **Bridge**: for a `Gamma1`-invariant modular form `f`, membership in the
 diamond-eigenspace `modFormCharSpace k χ₀` is equivalent to the classical nebentypus
