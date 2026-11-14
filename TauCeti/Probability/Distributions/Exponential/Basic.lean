@@ -18,7 +18,6 @@ import TauCeti.Probability.Distributions.Gamma.CharFun
 import TauCeti.Probability.Distributions.Relations
 import TauCeti.Probability.Independence.Lattice
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
-import Mathlib.Order.ConditionallyCompleteLattice.Finset
 
 /-!
 # Elementary theory of the exponential distribution
