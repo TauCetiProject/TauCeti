@@ -23,6 +23,7 @@ public section
 open scoped Polynomial
 
 /-- The coefficient of `tᵐ` in the polynomial exponential `exp(tX)` is `Xᵐ / m!`. -/
+@[simp↓]
 theorem Matrix.coeff_exp_X_smul_C_mapMatrix
     {ι R : Type*} [Fintype ι] [DecidableEq ι] [CommRing R] [Module ℚ R]
     {X : Matrix ι ι R} (hX : IsNilpotent X) (m : ℕ) (i j : ι) :
@@ -42,6 +43,7 @@ theorem Matrix.coeff_exp_X_smul_C_mapMatrix
     · exact smul_zero _
 
 /-- The linear coefficient of the polynomial exponential `exp(tX)` is `X`. -/
+@[simp↓ high]
 theorem Matrix.coeff_one_exp_X_smul_C_mapMatrix
     {ι R : Type*} [Fintype ι] [DecidableEq ι] [CommRing R] [Module ℚ R]
     {X : Matrix ι ι R} (hX : IsNilpotent X) (i j : ι) :
