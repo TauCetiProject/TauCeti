@@ -48,6 +48,9 @@ its graph equations `Y i - f i`. These formulas need no monomial order.
   constant coefficient of `q`.
 * `MvPolynomial.linearIndependent_of_sub_monomial_mem_pow_idealOfVars`: polynomials whose lowest
   terms are nonzero multiples of pairwise distinct monomials are linearly independent.
+* `MvPolynomial.ker_killCompl` and `MvPolynomial.quotientSpanXImageEquiv`: discarding a set of
+  variables has kernel spanned by those variables, identifying the quotient with the polynomial ring
+  in the remaining variables.
 * `MvPolynomial.ker_aeval_sumElim`: the graph equations generate the kernel of substitution
   which keeps the original variables.
 * `MvPolynomial.ker_aeval_eq_comap_graph`: the relations among a family of polynomials are
@@ -227,6 +230,88 @@ theorem ker_aeval_eq_comap_graph (f : ι → MvPolynomial σ R) :
   simp [RingHom.mem_ker, aeval_rename]
 
 end Graph
+
+section KillCompl
+
+variable {R σ τ : Type*} [CommSemiring R]
+
+/-- Discarding the variables outside the range of an injective renaming `f : τ → σ` has kernel
+spanned by those complementary variables. -/
+theorem ker_killCompl {f : τ → σ} (hf : Function.Injective f) :
+    RingHom.ker (killCompl (R := R) hf) = Ideal.span (X '' (Set.range f)ᶜ) := by
+  classical
+  have hcomp : (rename (R := R) f).comp (killCompl hf) =
+      aeval (fun i ↦ if i ∈ ((Set.range f)ᶜ)ᶜ then X (R := R) i else 0) := by
+    refine algHom_ext fun i ↦ ?_
+    by_cases hi : i ∈ Set.range f
+    · obtain ⟨j, rfl⟩ := hi
+      rw [AlgHom.comp_apply, ← rename_X (f := f) j, killCompl_rename_app hf]
+      simp
+    · have h0 : killCompl (R := R) hf (X i) = 0 :=
+        killCompl_monomial_eq_zero_of_notMem_range hf (s := Finsupp.single i 1) 1 (by simp) hi
+      rw [AlgHom.comp_apply, h0, map_zero, aeval_X]
+      simp [hi]
+  rw [span_X_image_eq_ker_aeval_ite_mem]
+  ext p
+  rw [RingHom.mem_ker, RingHom.mem_ker, ← DFunLike.congr_fun hcomp p, AlgHom.comp_apply,
+    ← map_zero (rename (R := R) f), (rename_injective f hf).eq_iff]
+
+/-- Discarding the variables in a set `s` has kernel `Ideal.span (X '' s)`. -/
+theorem ker_killCompl_subtype (s : Set σ) :
+    RingHom.ker (killCompl (R := R) (Subtype.val_injective (p := (· ∉ s)))) =
+      Ideal.span (X '' s) := by
+  rw [ker_killCompl]
+  congr 2
+  ext x
+  simp
+
+end KillCompl
+
+section QuotientSpanXImage
+
+variable (R : Type*) [CommRing R] {σ : Type*} (s : Set σ)
+
+/-- Quotienting `MvPolynomial σ R` by the ideal spanned by the variables in `s` gives the
+polynomial ring in the remaining variables `{i : σ // i ∉ s}`. -/
+noncomputable def quotientSpanXImageEquiv :
+    (MvPolynomial σ R ⧸ Ideal.span ((X : σ → MvPolynomial σ R) '' s)) ≃ₐ[R]
+      MvPolynomial {i : σ // i ∉ s} R :=
+  (Ideal.quotientEquivAlgOfEq R (ker_killCompl_subtype (R := R) s).symm).trans
+    (Ideal.quotientKerAlgEquivOfRightInverse
+      (f := killCompl (R := R) (Subtype.val_injective (p := (· ∉ s))))
+      (g := rename Subtype.val)
+      (killCompl_rename_app Subtype.val_injective))
+
+variable {R s}
+
+/-- On a representative polynomial, `quotientSpanXImageEquiv` discards the variables in `s`. -/
+theorem quotientSpanXImageEquiv_mk (p : MvPolynomial σ R) :
+    quotientSpanXImageEquiv R s (Ideal.Quotient.mk _ p) =
+      killCompl (Subtype.val_injective (p := (· ∉ s))) p :=
+  (rfl)
+
+/-- A variable outside `s` maps to the corresponding variable of the quotient polynomial ring. -/
+@[simp]
+theorem quotientSpanXImageEquiv_mk_X_of_notMem {i : σ} (hi : i ∉ s) :
+    quotientSpanXImageEquiv R s (Ideal.Quotient.mk _ (X i)) = X ⟨i, hi⟩ := by
+  let j : {k : σ // k ∉ s} := ⟨i, hi⟩
+  rw [quotientSpanXImageEquiv_mk, ← rename_X (f := Subtype.val) j]
+  exact killCompl_rename_app (Subtype.val_injective (p := (· ∉ s))) (X j)
+
+/-- The inverse of `quotientSpanXImageEquiv` embeds polynomials in the remaining variables via
+`rename Subtype.val` and projects to the quotient. -/
+theorem quotientSpanXImageEquiv_symm_apply (q : MvPolynomial {i : σ // i ∉ s} R) :
+    (quotientSpanXImageEquiv R s).symm q = Ideal.Quotient.mk _ (rename Subtype.val q) :=
+  (rfl)
+
+/-- The inverse of `quotientSpanXImageEquiv` sends each variable `X i` (`i ∉ s`) to the class of
+`X i.1`. -/
+@[simp]
+theorem quotientSpanXImageEquiv_symm_X (i : {i : σ // i ∉ s}) :
+    (quotientSpanXImageEquiv R s).symm (X i) = Ideal.Quotient.mk _ (X i.1) := by
+  simp [quotientSpanXImageEquiv_symm_apply]
+
+end QuotientSpanXImage
 
 end MvPolynomial
 

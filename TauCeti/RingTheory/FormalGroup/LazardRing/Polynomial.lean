@@ -12,6 +12,8 @@ import TauCeti.Algebra.MvPolynomial.Lift
 import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Maps
 -- Proof-only: the graded Nakayama lemma for generators.
 import TauCeti.RingTheory.GradedAlgebra.Nakayama
+-- Proof-only: `ker_constantCoeff` identifies the augmentation ideal with `idealOfVars`.
+import TauCeti.RingTheory.MvPolynomial.Ideal
 
 /-!
 # Lazard's theorem: the Lazard ring is a polynomial ring
@@ -43,6 +45,10 @@ formal group law exist over every ring surjecting onto its coefficient ring.
 ## Main results
 
 * `TauCeti.LazardRing.adjoin_range_generator`: the generators `xₙ` generate `L` as a ring.
+* `TauCeti.LazardRing.augmentation_mvPolynomialEquiv` and
+  `TauCeti.LazardRing.augmentationIdeal_eq_span_generator`: under `ℤ[x₁, x₂, …] ≃ₐ[ℤ] L`, the
+  augmentation is `constantCoeff`, `L` is a domain of characteristic zero, and the augmentation
+  ideal is spanned by the generators `xₙ`.
 * `TauCeti.LazardRing.hurewicz_injective`: the Hurewicz homomorphism `L →+* ℤ[b₁, b₂, …]` is
   injective.
 * `TauCeti.LazardRing.mvPolynomialEquiv_mem_grading_iff`: the isomorphism carries the polynomials
@@ -125,6 +131,46 @@ theorem mvPolynomialEquiv_X (n : ℕ+) : mvPolynomialEquiv (MvPolynomial.X n) = 
 theorem mvPolynomialEquiv_symm_generator (n : ℕ+) :
     mvPolynomialEquiv.symm (generator n) = MvPolynomial.X n := by
   rw [AlgEquiv.symm_apply_eq, mvPolynomialEquiv_X]
+
+instance : IsDomain LazardRing :=
+  mvPolynomialEquiv.symm.toMulEquiv.isDomain
+
+instance : CharZero LazardRing :=
+  ⟨fun m n h ↦ Nat.cast_injective (R := ℤ) (by simpa using congrArg augmentation h)⟩
+
+/-- Under `ℤ[x₁, x₂, …] ≃ₐ[ℤ] L`, the augmentation of `L` is the constant coefficient. -/
+@[simp]
+theorem augmentation_mvPolynomialEquiv (p : MvPolynomial ℕ+ ℤ) :
+    augmentation (mvPolynomialEquiv p) = MvPolynomial.constantCoeff p := by
+  induction p using MvPolynomial.induction_on with
+  | C a =>
+    rw [mvPolynomialEquiv_apply, MvPolynomial.aeval_C, MvPolynomial.constantCoeff_C]
+    simp
+  | add p q hp hq => simp [hp, hq]
+  | mul_X p n _ =>
+    rw [map_mul, mvPolynomialEquiv_X, map_mul, mem_augmentationIdeal.mp
+      (generator_mem_augmentationIdeal n), mul_zero, map_mul, MvPolynomial.constantCoeff_X,
+      mul_zero]
+
+/-- Under `L ≃ₐ[ℤ] ℤ[x₁, x₂, …]`, the constant coefficient is the augmentation. -/
+@[simp]
+theorem constantCoeff_mvPolynomialEquiv_symm (x : LazardRing) :
+    MvPolynomial.constantCoeff (mvPolynomialEquiv.symm x) = augmentation x := by
+  rw [← augmentation_mvPolynomialEquiv, AlgEquiv.apply_symm_apply]
+
+/-- The augmentation ideal of the Lazard ring is spanned by the polynomial generators `xₙ`. -/
+theorem augmentationIdeal_eq_span_generator :
+    augmentationIdeal = Ideal.span (Set.range generator) := by
+  let f : MvPolynomial ℕ+ ℤ →+* LazardRing := mvPolynomialEquiv
+  have hmap : (MvPolynomial.idealOfVars ℕ+ ℤ).map f = Ideal.span (Set.range generator) := by
+    rw [MvPolynomial.idealOfVars, Ideal.map_span, ← Set.range_comp]
+    simp [f, Function.comp_def]
+  rw [← hmap]
+  ext x
+  rw [mem_augmentationIdeal, ← constantCoeff_mvPolynomialEquiv_symm, ← RingHom.mem_ker,
+    MvPolynomial.ker_constantCoeff, Ideal.mem_map_iff_of_surjective f mvPolynomialEquiv.surjective]
+  exact ⟨fun hx ↦ ⟨mvPolynomialEquiv.symm x, hx, mvPolynomialEquiv.apply_symm_apply x⟩,
+    fun ⟨q, hq, hqx⟩ ↦ by simpa [f, ← hqx] using hq⟩
 
 /-- **The Hurewicz homomorphism of the Lazard ring is injective**: the homomorphism
 `L →+* ℤ[b₁, b₂, …]` classifying the additive formal group law transported along the strict

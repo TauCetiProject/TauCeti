@@ -59,6 +59,9 @@ domain, an element `r` not divisible by a prime `π` is regular on `R ⧸ (π ^ 
   quotienting by `I` and by `y` may be done in either order.
 * `QuotSMulTop.natCard_eq_pow_finrank`: a finite free `R`-module `M` has
   `#(M ⧸ r M) = #(R ⧸ (r)) ^ finrank R M`.
+* `Ideal.isSMulRegular_quotient_smul_top_congr` and
+  `Ideal.isSMulRegular_quotient_smul_top_iff_of_mul_sub_mem`: regularity of a scalar on `M ⧸ I • M`
+  depends only on its class modulo `I`, up to multiplication by units.
 * `Prime.isSMulRegular_quotient_span_pow`: in a domain, if the prime `π` does not divide `r`, then
   `r` is regular on `R ⧸ (π ^ m)`.
 -/
@@ -275,3 +278,35 @@ theorem Prime.isSMulRegular_quotient_span_pow {R : Type*} [CommRing R] [IsDomain
   (isSMulRegular_quotient_iff_mem_of_smul_mem _ r).2 fun x hx ↦ by
     rw [smul_eq_mul, Ideal.mem_span_singleton] at hx
     exact Ideal.mem_span_singleton.2 (hπ.pow_dvd_of_dvd_mul_left m hr hx)
+
+namespace Ideal
+
+section Ring
+
+variable {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
+
+/-- Regularity of a scalar on `M ⧸ I • M` depends only on its class modulo `I`. -/
+theorem isSMulRegular_quotient_smul_top_congr (I : Ideal R) {a b : R} (hab : a - b ∈ I) :
+    IsSMulRegular (M ⧸ (I • ⊤ : Submodule R M)) a ↔
+      IsSMulRegular (M ⧸ (I • ⊤ : Submodule R M)) b := by
+  simp only [isSMulRegular_quotient_iff_mem_of_smul_mem]
+  refine forall_congr' fun x ↦ imp_congr_left ?_
+  have hx : (a - b) • x ∈ I • (⊤ : Submodule R M) :=
+    Submodule.smul_mem_smul hab (Submodule.mem_top (x := x))
+  exact ⟨fun hax ↦ by simpa [sub_smul] using (I • (⊤ : Submodule R M)).sub_mem hax hx,
+    fun hbx ↦ by simpa [sub_smul] using (I • (⊤ : Submodule R M)).add_mem hx hbx⟩
+
+/-- Regularity of scalars on `M ⧸ I • M` is preserved when they agree modulo `I` up to unit
+factors: if `u₁` and `u₂` are units in `R` and `u₁ * a - u₂ * b ∈ I`, then `a` is regular on
+`M ⧸ I • M` if and only if `b` is. -/
+theorem isSMulRegular_quotient_smul_top_iff_of_mul_sub_mem (I : Ideal R) {a b u₁ u₂ : R}
+    (hu₁ : IsUnit u₁) (hu₂ : IsUnit u₂) (hab : u₁ * a - u₂ * b ∈ I) :
+    IsSMulRegular (M ⧸ (I • ⊤ : Submodule R M)) a ↔
+      IsSMulRegular (M ⧸ (I • ⊤ : Submodule R M)) b := by
+  rw [← (hu₁.isSMulRegular (M ⧸ (I • ⊤ : Submodule R M))).mul_iff_right,
+    I.isSMulRegular_quotient_smul_top_congr hab,
+    (hu₂.isSMulRegular (M ⧸ (I • ⊤ : Submodule R M))).mul_iff_right]
+
+end Ring
+
+end Ideal
