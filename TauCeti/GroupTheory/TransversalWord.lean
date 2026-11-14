@@ -48,9 +48,10 @@ Continuity of `γ ↦ ℓᵗ_u(γ)` for
 an open subgroup of a topological group is `TauCeti.continuous_lWord`, in
 `TauCeti/Topology/Algebra/Group/TransversalWord.lean`; nothing in this file needs a topology.
 
-In the word calculus, the transversal is a variable. Only `lWord_mem`, `transversalDiff_mem`
-and the tower identities `TauCeti.quotientEquivProdOfLE'_inv_smul_symm` and
-`TauCeti.lWord_compositeTransversal` ask that `t` actually represent each coset.
+In the word calculus, the transversal is a variable. Only `lWord_mem`,
+`TauCeti.mk_lWord_mul_mk_lWord`, `transversalDiff_mem` and the tower identities
+`TauCeti.quotientEquivProdOfLE'_inv_smul_symm` and `TauCeti.lWord_compositeTransversal` ask that
+`t` actually represent each coset.
 
 ## Implementation notes
 

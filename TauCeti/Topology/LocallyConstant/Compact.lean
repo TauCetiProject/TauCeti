@@ -15,9 +15,10 @@ uniformly over any compact set `K ⊆ X`. The neighbourhood of a parameter can t
 chosen independently of the point of `K`. This is the compactness input for uniform local
 constancy of translations on compact groups.
 
-Applied to `K` the whole of a compact space `X`, it shows that a family `F : P → C` of functions
-on `X` (any `FunLike` type `C`) is locally constant as soon as `(p, x) ↦ F p x` is
-(`IsLocallyConstant.of_uncurry`).
+Applied to `K` the whole of a compact space `X`, it shows that a family `f : P → X → A` of
+functions on `X` is locally constant as soon as `Function.uncurry f` is
+(`IsLocallyConstant.of_uncurry`); `IsLocallyConstant.of_uncurry_coe` is the same statement for a
+family of bundled functions, valued in any `FunLike` type.
 -/
 
 public section
@@ -38,13 +39,20 @@ theorem exists_isOpen_forall_mem_eq {f : X × P → A} (hf : IsLocallyConstant f
     generalized_tube_lemma hK isCompact_singleton hopen fun q hq ↦ congrArg f (Prod.ext rfl hq.2)
   exact ⟨v, hvopen, hv rfl, fun p hp x hx ↦ huv (Set.mk_mem_prod (hKu hx) hp)⟩
 
-/-- A family `F : P → C` of functions on a compact space `X` is locally constant if
-`(p, x) ↦ F p x` is locally constant on `P × X`. -/
-theorem of_uncurry [CompactSpace X] {C : Type*} [FunLike C X A] {F : P → C}
-    (hF : IsLocallyConstant (Function.uncurry fun p x ↦ F p x)) : IsLocallyConstant F := by
+/-- A family `f : P → X → A` of functions on a compact space `X` is locally constant if
+`Function.uncurry f` is locally constant on `P × X`. -/
+theorem of_uncurry [CompactSpace X] {f : P → X → A} (hf : IsLocallyConstant (Function.uncurry f)) :
+    IsLocallyConstant f := by
   refine (IsLocallyConstant.iff_exists_open _).2 fun p₀ ↦ ?_
   obtain ⟨V, hVopen, hp₀, hV⟩ :=
-    (hF.comp_continuous continuous_swap).exists_isOpen_forall_mem_eq isCompact_univ p₀
-  exact ⟨V, hVopen, hp₀, fun p hp ↦ DFunLike.ext _ _ fun x ↦ hV p hp x (Set.mem_univ x)⟩
+    (hf.comp_continuous continuous_swap).exists_isOpen_forall_mem_eq isCompact_univ p₀
+  exact ⟨V, hVopen, hp₀, fun p hp ↦ funext fun x ↦ hV p hp x (Set.mem_univ x)⟩
+
+/-- A family `F : P → C` of bundled functions on a compact space `X`, valued in any `FunLike` type
+`C`, is locally constant if `(p, x) ↦ F p x` is locally constant on `P × X`. This is
+`IsLocallyConstant.of_uncurry` for the family of coercions `p ↦ ⇑(F p)`. -/
+theorem of_uncurry_coe [CompactSpace X] {C : Type*} [FunLike C X A] {F : P → C}
+    (hF : IsLocallyConstant (Function.uncurry fun p x ↦ F p x)) : IsLocallyConstant F :=
+  desc F DFunLike.coe (of_uncurry hF) DFunLike.coe_injective
 
 end IsLocallyConstant
