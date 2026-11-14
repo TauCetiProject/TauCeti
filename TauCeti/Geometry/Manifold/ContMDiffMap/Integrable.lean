@@ -5,20 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.ContMDiffMap
 public import Mathlib.MeasureTheory.Function.LocallyIntegrable
-public import TauCeti.Geometry.Manifold.ContMDiffMap.Support
 
 /-!
-# Integrability of products of smooth functions
+# Integrability of products of `C^n` functions
 
-The product of two smooth real functions on a real normed space, one of which has compact
-support, is integrable with respect to every measure that is finite on compact sets. The same
-holds after applying to either factor a linear operator on `C^∞(E)` that does not enlarge
-supports, such as a differential operator.
+The product of two `C^n` functions on a manifold with values in a normed ring, one of which has
+compact support, is integrable with respect to every measure that is finite on compact sets. The
+same holds after applying to either factor an operator that does not enlarge supports, such as a
+differential operator.
 
 ## Main results
 
-* `ContMDiffMap.integrable_mul_of_hasCompactSupport`: the product of two smooth functions, one of
+* `ContMDiffMap.integrable_mul_of_hasCompactSupport`: the product of two `C^n` functions, one of
   which has compact support, is integrable.
 * `ContMDiffMap.integrable_apply_mul_of_tsupport_subset`,
   `ContMDiffMap.integrable_mul_apply_of_tsupport_subset`: the same after applying an operator that
@@ -32,31 +32,34 @@ open scoped ContDiff Manifold
 
 namespace ContMDiffMap
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
-  [OpensMeasurableSpace E] {μ : Measure E} [IsFiniteMeasureOnCompacts μ]
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [MeasurableSpace M]
+  [OpensMeasurableSpace M] {μ : Measure M} [IsFiniteMeasureOnCompacts μ] {n : ℕ∞ω}
+  {A : Type*} [NormedRing A] [NormedSpace 𝕜 A]
 
-/-- The product of two smooth functions, one of which has compact support, is integrable. -/
-theorem integrable_mul_of_hasCompactSupport {f g : C^∞⟮𝓘(ℝ, E), E; ℝ⟯}
+/-- The product of two `C^n` functions, one of which has compact support, is integrable. -/
+theorem integrable_mul_of_hasCompactSupport {f g : C^n⟮I, M; 𝓘(𝕜, A), A⟯}
     (hfg : HasCompactSupport f ∨ HasCompactSupport g) : Integrable (fun x ↦ f x * g x) μ :=
   (f.contMDiff.continuous.mul g.contMDiff.continuous).integrable_of_hasCompactSupport
     (hfg.elim (·.mul_right) (·.mul_left))
 
-variable {D : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; ℝ⟯}
+variable {D : C^n⟮I, M; 𝓘(𝕜, A), A⟯ → C^n⟮I, M; 𝓘(𝕜, A), A⟯}
 
 /-- If `D` does not enlarge supports, then `(D f) g` is integrable whenever `f` or `g` has compact
 support. -/
 theorem integrable_apply_mul_of_tsupport_subset (hD : ∀ f, tsupport (D f) ⊆ tsupport f)
-    {f g : C^∞⟮𝓘(ℝ, E), E; ℝ⟯} (hfg : HasCompactSupport f ∨ HasCompactSupport g) :
+    {f g : C^n⟮I, M; 𝓘(𝕜, A), A⟯} (hfg : HasCompactSupport f ∨ HasCompactSupport g) :
     Integrable (fun x ↦ D f x * g x) μ :=
   integrable_mul_of_hasCompactSupport
-    (hfg.imp (·.apply_of_tsupport_subset hD) _root_.id)
+    (hfg.imp (·.mono' ((subset_tsupport _).trans (hD f))) _root_.id)
 
 /-- If `D` does not enlarge supports, then `f (D g)` is integrable whenever `f` or `g` has compact
 support. -/
 theorem integrable_mul_apply_of_tsupport_subset (hD : ∀ f, tsupport (D f) ⊆ tsupport f)
-    {f g : C^∞⟮𝓘(ℝ, E), E; ℝ⟯} (hfg : HasCompactSupport f ∨ HasCompactSupport g) :
+    {f g : C^n⟮I, M; 𝓘(𝕜, A), A⟯} (hfg : HasCompactSupport f ∨ HasCompactSupport g) :
     Integrable (fun x ↦ f x * D g x) μ :=
   integrable_mul_of_hasCompactSupport
-    (hfg.imp _root_.id (·.apply_of_tsupport_subset hD))
+    (hfg.imp _root_.id (·.mono' ((subset_tsupport _).trans (hD g))))
 
 end ContMDiffMap

@@ -142,6 +142,26 @@ end ContMDiffSection
 
 namespace TauCeti
 
+section VectorFieldDerivation
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+
+/-- The support of the derivative of a smooth function along a smooth vector field lies in the
+support of the function. -/
+theorem tsupport_vectorFieldDerivation_apply_subset
+    (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) (f : C^∞⟮I, M; 𝕜⟯) :
+    tsupport (vectorFieldDerivation X f) ⊆ tsupport f := by
+  refine closure_minimal (fun x hx ↦ ?_) (isClosed_tsupport _)
+  by_contra h
+  have hf : (f : M → 𝕜) =ᶠ[𝓝 x] fun _ ↦ 0 := not_mem_tsupport_iff_eventuallyEq.1 h
+  simp [Function.mem_support, ContMDiffSection.vectorFieldDerivation_apply_apply, mvfderiv,
+    hf.mfderiv_eq, mfderiv_const] at hx
+
+end VectorFieldDerivation
+
 section LineDerivation
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
@@ -162,9 +182,8 @@ theorem lineDerivation_apply_apply (v : E) (f : C^∞⟮𝓘(𝕜, E), E; 𝕜�
 
 /-- The support of a directional derivative lies in the support of the function. -/
 theorem tsupport_lineDerivation_apply_subset (v : E) (f : C^∞⟮𝓘(𝕜, E), E; 𝕜⟯) :
-    tsupport (lineDerivation 𝕜 v f) ⊆ tsupport f := by
-  rw [funext (lineDerivation_apply_apply v f)]
-  exact tsupport_fderiv_apply_subset 𝕜 (f := ⇑f) v
+    tsupport (lineDerivation 𝕜 v f) ⊆ tsupport f :=
+  tsupport_vectorFieldDerivation_apply_subset _ f
 
 /-- Directional derivatives of smooth functions commute, by the symmetry of second
 derivatives. -/
