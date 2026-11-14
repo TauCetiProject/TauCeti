@@ -199,6 +199,15 @@ def genus (S : KnotCobordism K₀ K₁) : ℕ :=
 theorem genus_def (S : KnotCobordism K₀ K₁) : S.genus = surfaceGenus S.carrier :=
   (rfl)
 
+/-- The surface of a knot cobordism is Hausdorff, as it embeds in `Sⁿ × ℝ`. -/
+instance (S : KnotCobordism K₀ K₁) : T2Space S.carrier :=
+  S.isSmoothEmbedding.isEmbedding.t2Space
+
+/-- The surface of a knot cobordism is second countable, as it embeds in `Sⁿ × ℝ`. -/
+instance (S : KnotCobordism K₀ K₁) : SecondCountableTopology S.carrier :=
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
+  S.isSmoothEmbedding.isEmbedding.isInducing.secondCountableTopology
+
 /-- A knot cobordism from `K₀` to `K₁` is one between any knots with the same images. -/
 def congrRange (S : KnotCobordism K₀ K₁) (h₀ : range K₀ = range K₀')
     (h₁ : range K₁ = range K₁') : KnotCobordism K₀' K₁' where
@@ -738,7 +747,13 @@ private theorem mem_range_toFun_iff_of_width (p : sphere (0 : E) 1 × ℝ)
   have hp' : 1 - S.exists_pos_range_inter_le_snd.choose ≤ p.2 := by rw [width] at hp; linarith
   exact ⟨fun hr ↦ (h.1 ⟨hr, hp'⟩).1, fun hK ↦ (h.2 ⟨hK, hp'⟩).1⟩
 
-variable (S) in
+end Concordance
+
+section TransConcordance
+
+variable {K₂ : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)}
+  (S : KnotCobordism K₀ K₁) (C : SmoothEmbedding.Concordance K₁ K₂)
+
 /-- **Composing a knot cobordism with a concordance**: a knot cobordism `S` from `K₀` to `K₁`
 followed by a concordance `C` from `K₁` to `K₂` is a knot cobordism from `K₀` to `K₂` on the same
 surface. Up to a height `1 - c` close to `1` the surface is embedded as by `S`; above it, where `S`
@@ -747,24 +762,20 @@ interval `[1 - c, 1]`. -/
 def transConcordance : KnotCobordism K₀ K₂ :=
   transConcordanceOfWidth C (width_pos (S := S)) width_le mem_range_toFun_iff_of_width
 
-variable (S) in
 /-- The embedding of the composite of `S` and `C` is the gluing of `S` with the rescaled `C`. -/
 private theorem toFun_transConcordance :
     (S.transConcordance C).toFun = glueFun C S (width_pos (S := S)) :=
   rfl
 
-variable (S) in
 /-- Composing a knot cobordism with a concordance keeps its surface. -/
 theorem carrier_transConcordance : (S.transConcordance C).carrier = S.carrier :=
   (rfl)
 
-variable (S) in
 /-- Composing a knot cobordism with a concordance keeps its genus. -/
 @[simp]
 theorem genus_transConcordance : (S.transConcordance C).genus = S.genus :=
   (rfl)
 
-variable (S) in
 /-- **The embedded surface of the composite of `S` and `C`**: for some width `c ∈ (0, 1/2]`, it is
 the part of the surface of `S` up to height `1 - c`, together with the part of the annulus of `C`
 over the times `s > 0`, its heights `h` rescaled to `1 - c + c * h`. -/
@@ -791,7 +802,7 @@ theorem exists_range_toFun_transConcordance :
     · exact ⟨x, glueFun_of_le C width_pos hx⟩
     · exact mem_range_glueFun_of_pos C width_pos mem_range_toFun_iff_of_width z hs
 
-end Concordance
+end TransConcordance
 
 end KnotCobordism
 
