@@ -91,8 +91,8 @@ end LinearMap
 
 namespace TauCeti
 
-variable (A B : Type*) [NonUnitalNonAssocSemiring A] [Star A] [Module ℂ A]
-  [NonUnitalNonAssocSemiring B] [Star B] [Module ℂ B]
+variable (A B : Type*) [NonUnitalNonAssocSemiring A] [NonUnitalNonAssocSemiring B]
+  [Star A] [Star B] [Module ℂ A] [Module ℂ B]
 
 /-- A complex linear, adjoint-preserving map preserving squares of self-adjoint elements. -/
 structure JordanStarMap extends A →ₗ[ℂ] B where
@@ -360,6 +360,7 @@ def symm (e : JordanStarEquiv A B) : JordanStarEquiv B A where
     rw [map_mul_self_of_isSelfAdjoint e hsa, hinv, hinv]
 
 /-- The identity Jordan star equivalence. -/
+@[refl]
 def refl : JordanStarEquiv A A where
   toLinearEquiv := LinearEquiv.refl ℂ A
   map_star' _ := rfl
