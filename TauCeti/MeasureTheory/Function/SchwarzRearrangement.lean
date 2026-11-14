@@ -5,14 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.MeasureTheory.Function.EssSup
 public import Mathlib.MeasureTheory.Function.L1Space.Integrable
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Defs
-public import Mathlib.MeasureTheory.Measure.Haar.Basic
 public import Mathlib.Topology.EMetricSpace.Weak
--- Proof-only: Lebesgue measure and ball volumes for an additive Haar measure.
-import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 -- Proof-only: one- and two-function layer-cake formulas.
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 import TauCeti.MeasureTheory.Integral.LayerCake
