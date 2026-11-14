@@ -183,6 +183,18 @@ theorem morseComplex_d (n : ℕ) :
     (h.morseComplex hf).d (n + 1) n = ModuleCat.ofHom (h.morseBoundaryAt hf n) := by
   simp [morseComplex]
 
+/-- The differential of the Morse chain complex from degree `n + 1` to degree `n` applied to a
+chain is the graded Morse boundary of that chain. -/
+-- Pre-simp lemma, so that it fires before `morseComplex_d` rewrites the differential to a
+-- `ModuleCat.ofHom` whose application `simp` can no longer unfold.
+@[simp↓]
+theorem morseComplex_d_apply (n : ℕ)
+    (c : {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n + 1} →₀ ZMod 2) :
+    (h.morseComplex hf).d (n + 1) n c = h.morseBoundaryAt hf n c := by
+  rw [morseComplex_d]
+  -- The morphism `ModuleCat.ofHom g` applied to a chain is `g` applied to it, by definition.
+  rfl
+
 /-- The terms of the Morse chain complex are finite-dimensional. -/
 instance finite_morseComplex_X (n : ℕ) : Module.Finite (ZMod 2) ((h.morseComplex hf).X n) := by
   have := hf.finite_criticalPoints.to_subtype
@@ -191,6 +203,7 @@ instance finite_morseComplex_X (n : ℕ) : Module.Finite (ZMod 2) ((h.morseCompl
 
 /-- **The Morse chains count critical points.** The term of the Morse chain complex in degree `n`
 has dimension the number of critical points of index `n`. -/
+@[simp]
 theorem finrank_morseComplex_X (n : ℕ) :
     finrank (ZMod 2) ((h.morseComplex hf).X n) = (criticalCount 𝓘(ℝ, E) f n).toNat := by
   have := hf.finite_criticalPoints.to_subtype
@@ -199,7 +212,8 @@ theorem finrank_morseComplex_X (n : ℕ) :
   -- The carrier of `ModuleCat.of (ZMod 2) A` is `A` itself; rewriting it with `ModuleCat.coe_of`
   -- is blocked by the module instance depending on it.
   refine (finrank_finsupp_self (R := ZMod 2)).trans ?_
-  rw [← Nat.card_eq_fintype_card, natCard_eq_toNat_criticalCount]
+  rw [← Nat.card_eq_fintype_card,
+    natCard_criticalPoints_manifoldMorseIndex_eq_toNat_criticalCount]
 
 /-- The Morse chain complex vanishes above the dimension of `M`. -/
 theorem isZero_morseComplex_X_of_finrank_lt {n : ℕ} (hn : finrank ℝ E < n) :
@@ -257,7 +271,7 @@ theorem eulerChar_morseComplex :
     (Finset.range (finrank ℝ E + 1)) ((GradedObject.finrankSupport_subset_iff _ _).2 fun i hi ↦
       ModuleCat.finrank_eq_zero_of_isZero
         (h.isZero_morseComplex_X_of_finrank_lt hf (by simpa [Nat.lt_succ_iff] using hi)))]
-  simp [h.finrank_morseComplex_X hf]
+  simp
 
 /-- **The Euler characteristic of Morse homology**, in terms of Mathlib's homological Euler
 characteristic: it is the signed count `∑ᵢ (-1)ⁱ cᵢ` of critical points. -/
