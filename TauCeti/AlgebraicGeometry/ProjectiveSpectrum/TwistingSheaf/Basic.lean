@@ -26,6 +26,10 @@ structure sheaf `AlgebraicGeometry.Proj.structureSheaf` through the same sequenc
 the sheaf of types. The passage to a presheaf of modules via `PresheafOfModules.ofPresheaf`
 follows `AlgebraicGeometry.StructureSheaf.moduleStructurePresheaf` in Mathlib's
 `Mathlib/AlgebraicGeometry/StructureSheaf.lean` (Johan Commelin, Kim Morrison, Andrew Yang).
+Unlike for Mathlib's `Proj` structure sheaf, no comparison isomorphism is needed here: the
+presheaf of abelian groups has the sheaf of types as its underlying presheaf of types
+definitionally, so the sheaf condition is read off directly, as for `AlgebraicGeometry.tilde` in
+Mathlib's `Mathlib/AlgebraicGeometry/Modules/Tilde.lean`.
 
 The fractions `r / s` form sections `AlgebraicGeometry.Proj.twistingSheaf.const`, and the
 difference of two of them is again a fraction
@@ -227,12 +231,6 @@ def twistingPresheafInAb (n : ℤ) : (Opens (ProjectiveSpectrum.top 𝒜))ᵒᵖ
   map_id _ := rfl
   map_comp _ _ := rfl
 
-/-- The presheaf of abelian groups `𝒪(n)` has the sheaf of types `𝒪(n)` as underlying presheaf
-of types. -/
-def twistingPresheafInAbCompForget (n : ℤ) :
-    twistingPresheafInAb 𝒜 n ⋙ forget Ab ≅ (twistingSheafInType 𝒜 n).obj :=
-  Iso.refl _
-
 /-- The twisting sheaf `𝒪(n)` as a presheaf of modules over the structure sheaf of `Proj`. -/
 def twistingPresheaf (n : ℤ) : PresheafOfModules.{u} (Proj 𝒜).ringCatSheaf.obj :=
   letI (U : (Proj 𝒜).Opensᵒᵖ) :
@@ -254,8 +252,7 @@ fractions `r / s` of homogeneous elements with `deg r = deg s + n`. -/
 def twistingSheaf (n : ℤ) : (Proj 𝒜).Modules where
   val := twistingPresheaf 𝒜 n
   isSheaf := (TopCat.Presheaf.isSheaf_iff_isSheaf_comp (forget AddCommGrpCat) _).2
-    (TopCat.Presheaf.isSheaf_of_iso (twistingPresheafInAbCompForget 𝒜 n).symm
-      (twistingSheafInType 𝒜 n).2)
+    (twistingSheafInType 𝒜 n).2
 
 namespace twistingSheaf
 
