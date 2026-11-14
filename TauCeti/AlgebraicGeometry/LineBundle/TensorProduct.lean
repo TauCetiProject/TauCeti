@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.TensorProduct.Closure
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Associator
-public import TauCeti.AlgebraicGeometry.Modules.Sheaf
 public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 public import TauCeti.AlgebraicGeometry.LineBundle.Basic
 
@@ -80,27 +79,6 @@ def tensorProductObjIso (L K : InvertibleSheaf X) :
     (tensorProduct L K).obj ≅ L.obj ⊗ K.obj :=
   eqToIso (tensorProduct_obj L K) ≪≫ SheafOfModules.tensorProductIso X.sheaf L.obj K.obj ≪≫
     (L.obj.tensorUnderlyingIso K.obj).symm
-
-/-- An isomorphism of the underlying sheaves of modules of two invertible sheaves, as an
-isomorphism of invertible sheaves. -/
-def isoOfSheafIso {L K : InvertibleSheaf X}
-    (e : @Iso (SheafOfModules X.ringCatSheaf) _ L.obj K.obj) : L ≅ K :=
-  ObjectProperty.isoMk (SheafOfModules.isInvertible X)
-    (_root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso X e)
-
-@[simp]
-lemma isoOfSheafIso_hom_val {L K : InvertibleSheaf X}
-    (e : @Iso (SheafOfModules X.ringCatSheaf) _ L.obj K.obj) :
-    (isoOfSheafIso e).hom.hom.val = e.hom.val := by
-  simp only [isoOfSheafIso, ObjectProperty.isoMk, ObjectProperty.homMk,
-    _root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso_hom_val]
-
-@[simp]
-lemma isoOfSheafIso_inv_val {L K : InvertibleSheaf X}
-    (e : @Iso (SheafOfModules X.ringCatSheaf) _ L.obj K.obj) :
-    (isoOfSheafIso e).inv.hom.val = e.inv.val := by
-  simp only [isoOfSheafIso, ObjectProperty.isoMk, ObjectProperty.homMk,
-    _root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso_inv_val]
 
 /-- The sheaf isomorphism underlying transport through the first tensor factor. -/
 def tensorProductCongrLeftIso {L L' K : InvertibleSheaf X} (e : L ≅ L') :
