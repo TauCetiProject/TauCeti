@@ -27,7 +27,7 @@ the jets of actual maps (`TauCeti.jetPullback_taylorJet`), that the identity coo
 acts trivially (`TauCeti.jetPullback_id`) and the composition law (`TauCeti.jetPullback_comp`);
 the maps should be `Cᵐ` over `ℝ` or `ℂ` and analytic otherwise (`minSmoothness 𝕜 m ≤ N`). Over
 any field, it commutes with truncation of jets to lower order
-(`TauCeti.jetTruncate_jetPullback`).
+(`TauCeti.truncateJetL_jetPullback`).
 
 These are the local coordinate results from which the bundle of `m`-jets of a vector bundle is
 glued, with the coordinate changes of the bundle and the changes of charts of the base.
@@ -217,8 +217,8 @@ private theorem contDiff_jetPullback_rep (a : ∀ k : Fin (m + 1), E' [×k]→L[
 /-- The `m`-jet transformation for Taylor coefficients `a` of a varying linear fibre map
 `g : E' → F →L[𝕜] G` and `b` of a change of base coordinates `h : E' → E`: over a field of
 characteristic zero, it sends the jet of `s : E → F` at `h x` to the jet of `z ↦ g z (s (h z))`
-at `x` (`TauCeti.jetPullback_taylorJet`). It is computed on polynomial representatives centred
-at `0`. -/
+at `x` (`TauCeti.jetPullback_taylorJet`). It is computed on polynomial representatives: those of
+`a` and `b` are centred at `0`, that of the jet at `b 0 0`, and the jet is taken at `0`. -/
 def jetPullback (a : ∀ k : Fin (m + 1), E' [×k]→L[𝕜] (F →L[𝕜] G))
     (b : ∀ k : Fin (m + 1), E' [×k]→L[𝕜] E) : jetSpace 𝕜 E F m →ₗ[𝕜] jetSpace 𝕜 E' G m where
   toFun j := ⟨taylorJet 𝕜 m (fun z ↦ finiteJetPolynomial m a 0 z
@@ -366,7 +366,7 @@ theorem truncateJet_mem_jetSpace {m' : ℕ} (hm : m' ≤ m) {j : ∀ k : Fin (m 
 
 variable (𝕜 E F) in
 /-- Truncation of jets to order at most `m'`, as a continuous linear map. -/
-def jetTruncate {m' : ℕ} (hm : m' ≤ m) : jetSpace 𝕜 E F m →L[𝕜] jetSpace 𝕜 E F m' where
+def truncateJetL {m' : ℕ} (hm : m' ≤ m) : jetSpace 𝕜 E F m →L[𝕜] jetSpace 𝕜 E F m' where
   toFun j := ⟨truncateJet hm j, truncateJet_mem_jetSpace hm j.2⟩
   map_add' _ _ := (rfl)
   map_smul' _ _ := (rfl)
@@ -375,18 +375,18 @@ def jetTruncate {m' : ℕ} (hm : m' ≤ m) : jetSpace 𝕜 E F m →L[𝕜] jetS
     exact continuous_pi fun k ↦ (continuous_apply _).comp continuous_subtype_val
 
 @[simp]
-theorem coe_jetTruncate_apply {m' : ℕ} (hm : m' ≤ m) (j : jetSpace 𝕜 E F m) :
-    (jetTruncate 𝕜 E F hm j : ∀ k : Fin (m' + 1), E [×k]→L[𝕜] F) = truncateJet hm j :=
+theorem coe_truncateJetL_apply {m' : ℕ} (hm : m' ≤ m) (j : jetSpace 𝕜 E F m) :
+    (truncateJetL 𝕜 E F hm j : ∀ k : Fin (m' + 1), E [×k]→L[𝕜] F) = truncateJet hm j :=
   (rfl)
 
 @[simp]
-theorem jetTruncate_rfl : jetTruncate 𝕜 E F (le_refl m) = ContinuousLinearMap.id 𝕜 _ :=
+theorem truncateJetL_rfl : truncateJetL 𝕜 E F (le_refl m) = ContinuousLinearMap.id 𝕜 _ :=
   ContinuousLinearMap.ext fun _ ↦ (rfl)
 
 /-- Truncating twice is truncating once. -/
 @[simp]
-theorem jetTruncate_comp {m' m'' : ℕ} (hm' : m'' ≤ m') (hm : m' ≤ m) :
-    (jetTruncate 𝕜 E F hm').comp (jetTruncate 𝕜 E F hm) = jetTruncate 𝕜 E F (hm'.trans hm) :=
+theorem truncateJetL_comp {m' m'' : ℕ} (hm' : m'' ≤ m') (hm : m' ≤ m) :
+    (truncateJetL 𝕜 E F hm').comp (truncateJetL 𝕜 E F hm) = truncateJetL 𝕜 E F (hm'.trans hm) :=
   ContinuousLinearMap.ext fun _ ↦ (rfl)
 
 /-- The jet of order `m' ≤ m` of the finite Taylor polynomial of `p` at its centre only depends
@@ -397,8 +397,11 @@ theorem taylorJet_finiteJetPolynomial_truncateJet {m' : ℕ} (hm : m' ≤ m)
       taylorJet 𝕜 m' (finiteJetPolynomial m' (truncateJet hm p) c) c := by
   funext k
   ext v
-  exact (iteratedFDeriv_finiteJetPolynomial_self_apply m p c (Fin.castLE _ k) v).trans
-    (iteratedFDeriv_finiteJetPolynomial_self_apply m' (truncateJet hm p) c k v).symm
+  rw [taylorJet_apply, taylorJet_apply,
+    iteratedFDeriv_finiteJetPolynomial_self_apply_eq_sum_perm m' (truncateJet hm p)]
+  simp only [truncateJet_apply]
+  -- The order `(Fin.castLE _ k).val` is `k.val` by definition (`Fin.val_castLE` is `rfl`).
+  exact iteratedFDeriv_finiteJetPolynomial_self_apply_eq_sum_perm m p c (Fin.castLE _ k) v
 
 /-- Over a field of characteristic zero, the jet of order `m' ≤ m` of the finite Taylor
 polynomial of a jet `p` at its centre is the truncation of `p`. -/
@@ -410,15 +413,17 @@ theorem taylorJet_finiteJetPolynomial_of_le [CharZero 𝕜] {m' : ℕ} (hm : m' 
 
 /-- **Truncation commutes with the jet transformation.** Truncating a transformed `m`-jet to
 order `m'` is transforming the truncated jet with the truncated coefficients. -/
-theorem jetTruncate_jetPullback {m' : ℕ} (hm : m' ≤ m)
+theorem truncateJetL_jetPullback {m' : ℕ} (hm : m' ≤ m)
     (a : ∀ k : Fin (m + 1), E' [×k]→L[𝕜] (F →L[𝕜] G)) (b : ∀ k : Fin (m + 1), E' [×k]→L[𝕜] E)
     (j : jetSpace 𝕜 E F m) :
-    jetTruncate 𝕜 E' G hm (jetPullback a b j) =
-      jetPullback (truncateJet hm a) (truncateJet hm b) (jetTruncate 𝕜 E F hm j) := by
+    truncateJetL 𝕜 E' G hm (jetPullback a b j) =
+      jetPullback (truncateJet hm a) (truncateJet hm b) (truncateJetL 𝕜 E F hm j) := by
   refine Subtype.ext ?_
-  rw [coe_jetTruncate_apply, coe_jetPullback_apply, truncateJet_taylorJet, coe_jetPullback_apply,
-    coe_jetTruncate_apply]
-  have hb0 : truncateJet hm b 0 0 = b 0 0 := (rfl)
+  rw [coe_truncateJetL_apply, coe_jetPullback_apply, truncateJet_taylorJet, coe_jetPullback_apply,
+    coe_truncateJetL_apply]
+  have hb0 : truncateJet hm b 0 0 = b 0 0 := by
+    rw [truncateJet_apply]
+    exact congrArg (fun k ↦ b k 0) (Fin.castLE_zero _)
   rw [hb0]
   -- Both sides are jets of order `m'` of transformed polynomial representatives, whose jets of
   -- order `m'` agree.

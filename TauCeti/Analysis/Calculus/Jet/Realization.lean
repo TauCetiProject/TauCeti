@@ -172,7 +172,7 @@ theorem iteratedFDeriv_finiteJetPolynomial_eq_zero_of_le (r : ℕ)
 /-- The derivative of order `i ≤ r` of the finite Taylor polynomial at its center is the
 symmetrization of the prescribed coefficient `A i`, divided by `i!`. This needs neither symmetry
 of `A` nor characteristic zero. -/
-theorem iteratedFDeriv_finiteJetPolynomial_self_apply (r : ℕ)
+theorem iteratedFDeriv_finiteJetPolynomial_self_apply_eq_sum_perm (r : ℕ)
     (A : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) (x : E) (i : Fin (r + 1)) (v : Fin i.val → E) :
     iteratedFDeriv 𝕜 i.val (finiteJetPolynomial r A x) x v =
       ∑ σ : Equiv.Perm (Fin i.val), (i.val.factorial : 𝕜)⁻¹ • A i (fun j ↦ v (σ j)) := by
@@ -188,13 +188,8 @@ theorem iteratedFDeriv_finiteJetPolynomial_self (r : ℕ)
     (A : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) (x : E) (i : Fin (r + 1))
     (hA : ∀ (v : Fin i.val → E) (σ : Equiv.Perm (Fin i.val)), A i (v ∘ σ) = A i v) :
     iteratedFDeriv 𝕜 i.val (finiteJetPolynomial r A x) x = A i := by
-  -- Mathlib's HasFPowerSeriesOnBall.iteratedFDeriv_eq_sum accounts for permutation
-  -- multiplicities in every order, including order zero.
-  have hp := finiteJetPolynomial_hasFiniteFPowerSeriesOnBall r A x
   ext v
-  rw [hp.toHasFPowerSeriesOnBall.iteratedFDeriv_eq_sum
-    ((contDiff_finiteJetPolynomial r A x (n := ω)).contDiffOn.analyticOn)]
-  simp only [finiteJetSeries_apply, smul_apply]
+  rw [iteratedFDeriv_finiteJetPolynomial_self_apply_eq_sum_perm]
   have hsym (σ : Equiv.Perm (Fin i.val)) :
       A i (fun j ↦ v (σ j)) = A i v := hA v σ
   simp_rw [hsym]
