@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Duality.Perfect
+public import TauCeti.NumberTheory.ClassFieldTheory.Local.Duality.FiniteModule
 
 import TauCeti.Algebra.Module.ZMod.Dual
 import TauCeti.NumberTheory.ClassFieldTheory.Brauer.RootsOfUnity
@@ -25,6 +26,10 @@ The invariants of `A'` are the `G_F`-equivariant homomorphisms `A → μₙ`
 `#H²(F, A) = #Hom_{G_F}(A, μₙ)`. This is how the Euler characteristic computes `H²` from
 equivariant homomorphisms into the roots of unity.
 
+For an unbundled finite discrete `G_F`-module `M` killed by `n`, the explicit-cohomology
+version identifies the order of `ContCohomology.H2` with the order of `ContCohomology.H0` of
+`InternalHom (AbsoluteGaloisGroup F) M (KummerCoeff F n)`, again assuming `n` invertible in `F`.
+
 ## Main results
 
 * `TauCeti.ClassFieldTheory.natCard_continuousCohomology_two_eq_zero_tateDual`:
@@ -33,6 +38,8 @@ equivariant homomorphisms into the roots of unity.
   `#H⁰(F, Hom(A, μₙ)) = #Hom_{G_F}(A, μₙ)`, for every discrete `A` and every field `F`.
 * `TauCeti.ClassFieldTheory.natCard_continuousCohomology_two_eq_natCard_hom`:
   `#H²(F, A) = #Hom_{G_F}(A, μₙ)`.
+* `TauCeti.ClassFieldTheory.natCard_H2_eq_natCard_H0_internalHom`:
+  `#H²(G_F, M) = #H⁰(G_F, Hom(M, μₙ))` for an unbundled finite discrete module `M` killed by `n`.
 
 ## References
 
@@ -101,5 +108,22 @@ theorem natCard_continuousCohomology_two_eq_natCard_hom (hn : IsUnit (n : F)) (A
     Nat.card (continuousCohomology 2 A) = Nat.card (A ⟶ muNRep n F) := by
   rw [natCard_continuousCohomology_two_eq_zero_tateDual hn A,
     natCard_continuousCohomology_zero_tateDual A]
+
+/-- For `n` invertible in a nonarchimedean local field `F` and a finite discrete `G_F`-module
+`M` killed by `n`, `#H²(G_F, M) = #H⁰(G_F, Hom(M, μₙ))`, using explicit continuous cohomology. -/
+theorem natCard_H2_eq_natCard_H0_internalHom (hn : IsUnit (n : F))
+    (M : Type) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+    [DistribMulAction (AbsoluteGaloisGroup F) M] [ContinuousSMul (AbsoluteGaloisGroup F) M]
+    [Finite M] (hM : ∀ x : M, n • x = 0) :
+    Nat.card (ContCohomology.H2 (AbsoluteGaloisGroup F) M) =
+      Nat.card (ContCohomology.H0 (AbsoluteGaloisGroup F)
+        (InternalHom (AbsoluteGaloisGroup F) M (KummerCoeff F n))) := by
+  have : NeZero n := NeZero.of_neZero_natCast F (h := ⟨hn.ne_zero⟩)
+  let e₂ := (muNRepH2Equiv n F).trans (h2MuEquivZMod F hn)
+  rw [Nat.card_congr (Equiv.ofBijective _ (dualityMap2_kummerCoeff_bijective hn M hM)),
+    e₂.natCard_addMonoidHom_zmod]
+  intro x
+  apply Subtype.ext
+  exact InternalHom.nsmul_eq_zero_of_domain hM x.1
 
 end TauCeti.ClassFieldTheory

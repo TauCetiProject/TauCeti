@@ -316,8 +316,8 @@ theorem exists_mem_orientedGS_of_not_isMeagre (hS : DenseWords S) (hA : BaireMea
     (hn : ¬ IsMeagre A) : ∃ a ∈ A, ∃ b ∈ A, (a, b) ∈ orientedGS S := by
   -- `A` differs from an open set `u` by a meagre set, so `u` is nonempty.
   obtain ⟨u, hu, hAu⟩ := hA.residualEq_isOpen
-  have huA : IsMeagre (u \ A) := hAu.mono fun _ hx hxuA ↦ hxuA.2 ((iff_of_eq hx).2 hxuA.1)
-  have hAu' : IsMeagre (A \ u) := hAu.mono fun _ hx hxAu ↦ hxAu.2 ((iff_of_eq hx).1 hxAu.1)
+  have huA : IsMeagre (u \ A) := hAu.mono fun _ hx hxuA ↦ hxuA.2 (hx.2 hxuA.1)
+  have hAu' : IsMeagre (A \ u) := hAu.mono fun _ hx hxAu ↦ hxAu.2 (hx.1 hxAu.1)
   obtain ⟨x, hx⟩ : u.Nonempty :=
     nonempty_of_not_isMeagre fun h ↦ hn ((hAu'.union h).mono (subset_sdiff_union A u))
   -- By density, `u` contains the cylinder of a word `s ∈ S`.

@@ -26,7 +26,10 @@ Möbius transformation is determined by its first jet at `0` together with its v
 
 * At a finite point `z` with finite image, the derivative of `z ↦ (a z + b) / (c z + d)` is
   multiplication by `(a d - b c) / (c z + d) ^ 2`
-  (`Matrix.GeneralLinearGroup.mfderiv_smul_coe`).
+  (`Matrix.GeneralLinearGroup.mfderiv_smul_coe`). Near `z` the transformation, read in the affine
+  charts, is this rational function
+  (`Matrix.GeneralLinearGroup.writtenInExtChartAt_smul_coe_eventuallyEq`), with that derivative
+  (`Matrix.GeneralLinearGroup.hasDerivAt_writtenInExtChartAt_smul_coe`).
 * The subgroup of `PGL(2, 𝕜)` fixing `0` and `∞` is the group `𝕜ˣ` of dilations
   (`OnePoint.pglFixingZeroInftyEquiv`), and this coordinate is the first jet at `0`: an element
   fixing `0` and `∞` has derivative `a` at `0`, where `a` is its coordinate
@@ -103,29 +106,46 @@ open OnePoint
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [DecidableEq 𝕜] [ProperSpace 𝕜]
 
+/-- Near a finite point `z` that is not a pole, a Möbius transformation read in the affine charts at
+`z` and at its image is `w ↦ (a w + b) / (c w + d)`. -/
+theorem writtenInExtChartAt_smul_coe_eventuallyEq (g : GL (Fin 2) 𝕜) {z : 𝕜}
+    (hz : g 1 0 * z + g 1 1 ≠ 0) :
+    writtenInExtChartAt 𝓘(𝕜) 𝓘(𝕜) (z : OnePoint 𝕜) (fun x ↦ g • x) =ᶠ[𝓝 z]
+      fun w ↦ (g 0 0 * w + g 0 1) / (g 1 0 * w + g 1 1) := by
+  have hq : Continuous fun w : 𝕜 ↦ g 1 0 * w + g 1 1 := by fun_prop
+  have hgz : g • (z : OnePoint 𝕜) = (((g 0 0 * z + g 0 1) / (g 1 0 * z + g 1 1) : 𝕜) :
+      OnePoint 𝕜) := by
+    rw [smul_some_eq_ite, ite_eq_right_iff.2 fun h ↦ absurd h hz]
+  filter_upwards [hq.continuousAt.eventually_ne hz] with w hw
+  simp [writtenInExtChartAt, hgz, smul_some_eq_ite, hw]
+
+/-- At a finite point `z` that is not a pole, `z ↦ (a z + b) / (c z + d)`, read in the affine
+charts at `z` and at its image, has derivative `(a d - b c) / (c z + d) ^ 2`. -/
+theorem hasDerivAt_writtenInExtChartAt_smul_coe (g : GL (Fin 2) 𝕜) {z : 𝕜}
+    (hz : g 1 0 * z + g 1 1 ≠ 0) :
+    HasDerivAt (writtenInExtChartAt 𝓘(𝕜) 𝓘(𝕜) (z : OnePoint 𝕜) fun x ↦ g • x)
+      ((g : Matrix (Fin 2) (Fin 2) 𝕜).det / (g 1 0 * z + g 1 1) ^ 2) z := by
+  have hp : HasDerivAt (fun w : 𝕜 ↦ g 0 0 * w + g 0 1) (g 0 0) z := by
+    simpa using ((hasDerivAt_id z).const_mul (g 0 0)).add_const (c := g 0 1)
+  have hq' : HasDerivAt (fun w : 𝕜 ↦ g 1 0 * w + g 1 1) (g 1 0) z := by
+    simpa using ((hasDerivAt_id z).const_mul (g 1 0)).add_const (c := g 1 1)
+  refine ((hp.div hq' hz).congr_of_eventuallyEq
+    (writtenInExtChartAt_smul_coe_eventuallyEq g hz)).congr_deriv ?_
+  rw [det_fin_two]
+  ring
+
 /-- **The derivative of a Möbius transformation.** At a finite point `z` that is not a pole,
 `z ↦ (a z + b) / (c z + d)` has derivative `(a d - b c) / (c z + d) ^ 2`, read in the affine
 charts at `z` and at its image. -/
 theorem mfderiv_smul_coe (g : GL (Fin 2) 𝕜) {z : 𝕜} (hz : g 1 0 * z + g 1 1 ≠ 0) (v : 𝕜) :
     mfderiv 𝓘(𝕜) 𝓘(𝕜) (fun x : OnePoint 𝕜 ↦ g • x) z v =
       ((g : Matrix (Fin 2) (Fin 2) 𝕜).det / (g 1 0 * z + g 1 1) ^ 2 * v : 𝕜) := by
-  have hq : Continuous fun w : 𝕜 ↦ g 1 0 * w + g 1 1 := by fun_prop
-  have hgz : g • (z : OnePoint 𝕜) = (((g 0 0 * z + g 0 1) / (g 1 0 * z + g 1 1) : 𝕜) :
-      OnePoint 𝕜) := by
-    rw [smul_some_eq_ite, ite_eq_right_iff.2 fun h ↦ absurd h hz]
   refine mfderiv_apply_eq_of_hasDerivAt
-    ((contMDiff_const_smul (I := 𝓘(𝕜)) (n := ⊤) g).mdifferentiable (by simp) _) ?_ ?_ v
-    (φ := fun w ↦ (g 0 0 * w + g 0 1) / (g 1 0 * w + g 1 1))
-  · rw [hgz, chartAt_coe, chartAt_coe, affineChart_coe]
-    filter_upwards [hq.continuousAt.eventually_ne hz] with w hw
-    simp [smul_some_eq_ite, hw]
-  · rw [chartAt_coe, affineChart_coe, det_fin_two]
-    have hp : HasDerivAt (fun w : 𝕜 ↦ g 0 0 * w + g 0 1) (g 0 0) z := by
-      simpa using ((hasDerivAt_id z).const_mul (g 0 0)).add_const (c := g 0 1)
-    have hq' : HasDerivAt (fun w : 𝕜 ↦ g 1 0 * w + g 1 1) (g 1 0) z := by
-      simpa using ((hasDerivAt_id z).const_mul (g 1 0)).add_const (c := g 1 1)
-    convert HasDerivAt.div hp hq' hz using 1
-    ring
+    ((contMDiff_const_smul (I := 𝓘(𝕜)) (n := ⊤) g).mdifferentiable (by simp) _)
+    (Eventually.of_forall fun w ↦ ?_) ?_ v
+    (φ := writtenInExtChartAt 𝓘(𝕜) 𝓘(𝕜) (z : OnePoint 𝕜) fun x ↦ g • x)
+  · simp [writtenInExtChartAt]
+  · simpa using hasDerivAt_writtenInExtChartAt_smul_coe g hz
 
 end Matrix.GeneralLinearGroup
 

@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Convolution
 public import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
 public import TauCeti.Analysis.InnerProductSpace.CompleteSquare
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import TauCeti.Analysis.Fourier.Convolution
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
@@ -49,6 +50,8 @@ a heat kernel assumes `0 < t`.
 * `TauCeti.hasDerivAt_heatKernel`: the heat equation `∂ₜ K_t(x) = Δ K_t(x)` for `t > 0`.
 * `TauCeti.heatKernel_convolution_heatKernel`: the semigroup identity `K_t ⋆ K_s = K_{t+s}`.
 * `TauCeti.fourier_heatKernel`: `𝓕 K_t(ξ) = exp(-4π² t ‖ξ‖²)`.
+* `TauCeti.fourier_heatKernel_convolution`: `𝓕 (K_t ⋆ f)(ξ) = exp(-4π² t ‖ξ‖²) • 𝓕 f(ξ)` for
+  integrable `f`.
 * `TauCeti.heatKernel_convolution_eq_intervalIntegral`: on `ℝ`, the heat kernel smoothing of a
   function supported in `[a, b]` is an integral over `[a, b]` against a Gaussian.
 
@@ -216,7 +219,7 @@ theorem eLpNorm_heatKernel_le {t : ℝ} (ht : 0 < t) {q : ℝ≥0∞} (hq : 1 �
     exact_mod_cast ENNReal.toReal_mono hqt hq
   have hpow (x : E) : ‖heatKernel t x‖ₑ ^ q.toReal ≤
       ENNReal.ofReal (c ^ (q.toReal - 1)) * ENNReal.ofReal (heatKernel t x) := by
-    rw [Real.enorm_eq_ofReal (heatKernel_pos ht x).le, ENNReal.ofReal_rpow_of_nonneg
+    rw [Real.eNorm_eq_ofReal (heatKernel_pos ht x).le, ENNReal.ofReal_rpow_of_nonneg
       (heatKernel_pos ht x).le (by positivity), ← ENNReal.ofReal_mul (by positivity)]
     apply ENNReal.ofReal_le_ofReal
     calc (heatKernel t x) ^ q.toReal =
@@ -236,7 +239,7 @@ theorem eLpNorm_heatKernel_le {t : ℝ} (ht : 0 < t) {q : ℝ≥0∞} (hq : 1 �
             ← ofReal_integral_eq_lintegral_ofReal (integrable_heatKernel ht)
               (Filter.Eventually.of_forall fun x => (heatKernel_pos ht x).le),
             integral_heatKernel ht, ENNReal.ofReal_one, mul_one]
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hq0 hqt hm]
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hq0 hqt hm]
   refine (ENNReal.rpow_le_rpow hint (by positivity)).trans_eq ?_
   rw [ENNReal.ofReal_rpow_of_pos (by positivity), ← rpow_mul hc.le]
   have he : (q.toReal - 1) * (1 / q.toReal) = 1 - 1 / q.toReal := by
@@ -319,6 +322,14 @@ theorem fourier_heatKernel {t : ℝ} (ht : 0 < t) (ξ : E) :
     simp only [c, neg_div]
     rw [rpow_neg (by positivity), inv_mul_cancel₀ (by positivity)]
   rw [hpow, hexp, ← mul_assoc, ← Complex.ofReal_mul, hc, Complex.ofReal_one, one_mul]
+
+/-- **The Fourier transform of a heat convolution.** For integrable `f` and `t > 0`, the Fourier
+integral of `K_t ⋆ f` is `exp(-4π² t ‖ξ‖²) • 𝓕 f ξ`. -/
+theorem fourier_heatKernel_convolution {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
+    [CompleteSpace F] {t : ℝ} (ht : 0 < t) {f : E → F} (hf : Integrable f) (ξ : E) :
+    𝓕 (heatKernel t ⋆ f) ξ = exp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) • 𝓕 f ξ := by
+  rw [fourier_convolution_eq (integrable_heatKernel ht) hf, fourier_heatKernel ht,
+    Complex.coe_smul]
 
 /-- On `ℝ`, the heat kernel smoothing of a function supported in `[a, b]` is the Gaussian
 transform `x ↦ ∫ y in a..b, (4πt)^(-1/2) g y exp (-(x - y)² / (4t))`. -/

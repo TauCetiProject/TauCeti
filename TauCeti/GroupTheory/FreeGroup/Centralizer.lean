@@ -29,6 +29,8 @@ free basis.
   of `of a`.
 * `FreeGroup.centralizer_singleton_of`: the centralizer of a generator `of a` is the cyclic
   subgroup it generates.
+* `FreeGroup.eq_one_of_commute_of_of_commute_of`: an element commuting with two distinct generators
+  is trivial.
 * `FreeGroup.center_eq_bot_of_nontrivial`: the centre of a free group on at least two generators
   is trivial.
 * `IsFreeGroup.commute_of_commute`: in a free group, two elements commuting with a common
@@ -71,15 +73,19 @@ theorem centralizer_singleton_of (a : α) : Subgroup.centralizer {of a} = Subgro
     (fun _ hz => mem_zpowers_of_of_commute (Subgroup.mem_centralizer_singleton_iff.1 hz))
     (Subgroup.zpowers_le_centralizer_singleton _)
 
+/-- An element of a free group commuting with two distinct generators is trivial. -/
+theorem eq_one_of_commute_of_of_commute_of {a b : α} (hab : a ≠ b) {z : FreeGroup α}
+    (ha : Commute z (of a)) (hb : Commute z (of b)) : z = 1 := by
+  obtain ⟨m, rfl⟩ := Subgroup.mem_zpowers_iff.1 (mem_zpowers_of_of_commute ha)
+  obtain ⟨n, hn⟩ := Subgroup.mem_zpowers_iff.1 (mem_zpowers_of_of_commute hb)
+  rw [(eq_of_of_zpow_eq_of_zpow hab hn.symm).1, zpow_zero]
+
 /-- The centre of a free group on at least two generators is trivial. -/
 theorem center_eq_bot_of_nontrivial [Nontrivial α] : Subgroup.center (FreeGroup α) = ⊥ := by
   obtain ⟨a, b, hab⟩ := exists_pair_ne α
   refine (Subgroup.eq_bot_iff_forall _).2 fun z hz ↦ ?_
-  have hz' (c : α) : z ∈ Subgroup.zpowers (of c) :=
-    mem_zpowers_of_of_commute (Subgroup.mem_center_iff.1 hz (of c)).symm
-  obtain ⟨m, rfl⟩ := Subgroup.mem_zpowers_iff.1 (hz' a)
-  obtain ⟨n, hn⟩ := Subgroup.mem_zpowers_iff.1 (hz' b)
-  rw [(eq_of_of_zpow_eq_of_zpow hab hn.symm).1, zpow_zero]
+  exact eq_one_of_commute_of_of_commute_of hab (Subgroup.mem_center_iff.1 hz (of a)).symm
+    (Subgroup.mem_center_iff.1 hz (of b)).symm
 
 end FreeGroup
 
