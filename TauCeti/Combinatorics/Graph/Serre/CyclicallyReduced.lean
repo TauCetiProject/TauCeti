@@ -120,7 +120,7 @@ private theorem Path.IsCyclicallyReduced.exists_rotate_or_reverse {a : Γ.V} {c 
   · obtain ⟨c₁, h1, h2, h3⟩ := ((Path.isCyclicallyReduced_reverse Γ c).mpr hc).exists_rotate
       Γ (e := d) (by simpa using ⟨Γ.rev d, h, Γ.rev_rev d⟩)
     exact ⟨c₁, h1, fun h0 => by simp [h0] at h2,
-      fun e he => Or.inr ((h3 _).mpr (by simpa using ⟨e, he, rfl⟩))⟩
+      fun e he => Or.inr ((h3 _).mpr (by simpa using he))⟩
 
 /-- A reduced closed path that is not cyclically reduced ends with the reverse of its first
 dart. -/
@@ -147,7 +147,7 @@ theorem mem_cyclicDarts_iff (e : Γ.E) :
   suffices h : ∀ e ∈ Γ.cyclicDarts, Γ.rev e ∈ Γ.cyclicDarts from
     ⟨fun he => by simpa using h (Γ.rev e) he, h e⟩
   rintro e ⟨a, p, hp, he⟩
-  exact ⟨a, p.reverse, (Path.isCyclicallyReduced_reverse Γ p).mpr hp, by simpa using ⟨e, he, rfl⟩⟩
+  exact ⟨a, p.reverse, (Path.isCyclicallyReduced_reverse Γ p).mpr hp, by simpa using he⟩
 
 /-- The vertices at which a nonempty cyclically reduced closed path is based. -/
 def cyclicVertices : Set Γ.V :=
@@ -278,7 +278,7 @@ theorem mem_cyclicDarts_of_isReduced {a b : Γ.V} (ha : a ∈ Γ.cyclicVertices)
     simpa using h
   rw [← Γ.rev_mem_cyclicDarts_iff]
   rcases List.mem_append.mp
-      (hdr ▸ (by simpa using ⟨e, he, rfl⟩ : Γ.rev e ∈ Path.darts Γ q'.reverse))
+      (hdr ▸ (by simpa using he : Γ.rev e ∈ Path.darts Γ q'.reverse))
       with he' | he'
   swap
   · exact hr' _ he'

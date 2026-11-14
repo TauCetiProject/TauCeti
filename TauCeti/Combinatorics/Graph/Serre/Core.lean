@@ -188,7 +188,7 @@ theorem mem_coreDarts_src {d e : Γ.E} (he : e ∈ Γ.coreDarts (Γ.tgt d)) (hd 
   have h₁ : e ∈ Path.darts Γ (Path.reduce Γ (c.cons r)) := Path.mem_darts_reduce_cons Γ c r
     (by rwa [Path.reduce_eq_self_of_isReduced Γ c hc]) (by simpa [r] using hd)
   have h₂ := Path.mem_darts_reduce_cons Γ (Path.reduce Γ (c.cons r)).reverse r
-    (e := Γ.rev e) (by simpa using ⟨e, h₁, rfl⟩) fun h => hd' (Γ.rev_injective h)
+    (e := Γ.rev e) (by simpa using h₁) fun h => hd' (Γ.rev_injective h)
   rw [← Γ.rev_mem_coreDarts_iff, Γ.mem_coreDarts_iff]
   exact ⟨_, Path.isReduced_reduce Γ _, h₂⟩
 

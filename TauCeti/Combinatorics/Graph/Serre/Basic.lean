@@ -80,6 +80,9 @@ theorem rev_injective : Function.Injective Γ.rev := by
   intro e f h
   simpa only [Γ.rev_rev] using congrArg Γ.rev h
 
+@[simp] theorem rev_inj {e f : Γ.E} : Γ.rev e = Γ.rev f ↔ e = f :=
+  Γ.rev_injective.eq_iff
+
 /-- The geometric edges of a Serre graph: the pairs `{e, rev e}` of mutually reverse darts. -/
 def GeomEdge : Type v := Quot fun e f : Γ.E => f = Γ.rev e
 
