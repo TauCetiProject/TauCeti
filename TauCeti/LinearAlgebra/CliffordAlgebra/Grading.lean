@@ -81,7 +81,7 @@ variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
 theorem exists_algebraMap_of_mem_range_ι_pow_zero {v : CliffordAlgebra Q}
     (hv : v ∈ LinearMap.range (ι Q) ^ (0 : ZMod 2).val) :
     ∃ r : R, algebraMap R (CliffordAlgebra Q) r = v :=
-  Submodule.mem_one.mp (by simpa using hv)
+  Submodule.mem_one.mp hv
 
 /-- An element of the `(1 : ZMod 2).val`-th power of the range of `ι` is a vector. This is the
 `i = 1` half of the `range_ι_pow` hypothesis of `CliffordAlgebra.evenOdd_induction`. -/
