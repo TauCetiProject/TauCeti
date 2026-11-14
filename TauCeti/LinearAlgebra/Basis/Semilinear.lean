@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Determinant
 import Mathlib.LinearAlgebra.LinearIndependent.BaseChange
+import TauCeti.LinearAlgebra.Basis.Basic
 
 /-!
 # Transporting coordinates along a ring homomorphism
@@ -126,22 +127,6 @@ section Domain
 
 variable {ι κ R S M M' : Type*} [CommRing R] [CommRing S] [IsDomain S] {σ : R →+* S}
   [AddCommGroup M] [Module R M] [AddCommGroup M'] [Module S M']
-
-/-- A family `w` whose coordinates in the basis `b` are supported in `t` is linearly independent
-exactly when its coordinate vectors restricted to `t` are. -/
-private theorem linearIndependent_coord_restrict_iff (b : Basis ι R M) (t : Set ι) {w : κ → M}
-    (hw : ∀ k, ↑(b.repr (w k)).support ⊆ t) :
-    LinearIndependent R (fun k (i : t) ↦ b.repr (w k) i) ↔ LinearIndependent R w := by
-  have hsupp {x : M} (hx : x ∈ Submodule.span R (Set.range w)) : ↑(b.repr x).support ⊆ t :=
-    (Finsupp.mem_supported R _).1 <| (Submodule.span_le (p := (Finsupp.supported R R t).comap
-      b.repr.toLinearMap)).2 (Set.range_subset_iff.2 fun k ↦ (Finsupp.mem_supported R _).2 (hw k))
-      hx
-  refine LinearMap.linearIndependent_iff_of_injOn (LinearMap.pi fun i : t ↦ b.coord i)
-    fun x hx y hy h ↦ b.repr.injective <| Finsupp.ext fun i ↦ ?_
-  by_cases hi : i ∈ t
-  · exact congrFun h ⟨i, hi⟩
-  · rw [Finsupp.notMem_support_iff.1 fun h ↦ hi (hsupp hx h),
-      Finsupp.notMem_support_iff.1 fun h ↦ hi (hsupp hy h)]
 
 /-- Along an injective ring homomorphism `σ` into a domain, the image of a family `v` under
 `semilinearMap σ b b'` is linearly independent exactly when `v` is. -/

@@ -39,6 +39,7 @@ variable {R : Type*} [CommRing R] {ι : Type*} {s : ComplexShape ι}
 /-- Transporting bases along an isomorphism of complexes `e : C ≅ D` does not change the matrices
 of the differentials: the matrix of `D.d i j` in the bases transported from `bᵢ` and `bⱼ` is the
 matrix of `C.d i j` in the bases `bᵢ` and `bⱼ`. -/
+@[simp]
 theorem toMatrix_map_isoApp_d (bᵢ : Basis κ R (C.X i)) (bⱼ : Basis μ R (C.X j)) :
     LinearMap.toMatrix (bᵢ.map (Hom.isoApp e i).toLinearEquiv)
         (bⱼ.map (Hom.isoApp e j).toLinearEquiv) (D.d i j).hom =

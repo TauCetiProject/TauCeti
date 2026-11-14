@@ -53,9 +53,12 @@ deck transformations.
 
 If `D` is a two-periodic complex over a field `K` with bases in which the matrices of the
 differentials are the images of those of `C` under a homomorphism of fields `φ : F →+* K`, then
-`τ(D) = φ (τ(C))` (`HomologicalComplex.map_parityTorsion`); this is how the torsion of a complex
-over a ring is read in a residue field. In particular the torsion is invariant under isomorphisms
-of based complexes (`HomologicalComplex.parityTorsion_map`).
+`τ(D) = φ (τ(C))` (`HomologicalComplex.map_parityTorsion`). Thus the torsions of a based complex
+over a ring read in its residue or fraction fields can be compared along the field homomorphisms
+between them. In particular the torsion is invariant under isomorphisms of based complexes
+(`HomologicalComplex.parityTorsion_map`): if `Aᵢ` is the matrix of `eᵢ : Cᵢ → Dᵢ` in bases `c i`
+and `c' i`, then `τ(C, c) = τ(D, c') · det (A₀) · det (A₁)⁻¹`
+(`HomologicalComplex.parityTorsion_eq_mul_det_toMatrix`).
 
 Torsions of two-periodic complexes over Novikov rings, read in each field component of a total
 quotient ring, are the Floer analogues of the Reidemeister torsion of a closed manifold.
@@ -78,6 +81,8 @@ quotient ring, are the Floer analogues of the Reidemeister torsion of a closed m
   along a homomorphism of fields is the image of its torsion.
 * `HomologicalComplex.parityTorsion_map`: the torsion is invariant under isomorphisms of based
   complexes.
+* `HomologicalComplex.parityTorsion_eq_mul_det_toMatrix`: the change of the torsion under an
+  isomorphism of complexes with arbitrary bases.
 
 ## References
 
@@ -386,6 +391,7 @@ variable {D : HomologicalComplex (ModuleCat F) (ComplexShape.up (ZMod 2))} (e : 
 /-- The torsion is invariant under isomorphisms of based complexes: transporting the bases `c i`
 of `C` along an isomorphism `e : C ≅ D` gives bases of `D` for which `D` has the same torsion as
 `C`. -/
+@[simp]
 theorem parityTorsion_map :
     D.parityTorsion (fun i ↦ (c i).map (Hom.isoApp e i).toLinearEquiv) = C.parityTorsion c :=
   -- `D` with the transported bases is the scalar extension of `C` along the identity: the
@@ -393,6 +399,18 @@ theorem parityTorsion_map :
   (map_parityTorsion (RingHom.id F) (e := fun i ↦ (c i).map (Hom.isoApp e i).toLinearEquiv)
     ((toMatrix_map_isoApp_d e (c 0) (c 1)).trans (Matrix.map_id _).symm)
     ((toMatrix_map_isoApp_d e (c 1) (c 0)).trans (Matrix.map_id _).symm)).symm
+
+/-- The torsion under an isomorphism `e : C ≅ D` of complexes with bases `c i` and `c' i`: if
+`Aᵢ` is the matrix of `eᵢ : Cᵢ → Dᵢ` in the bases `c i` and `c' i`, then
+`τ(C, c) = τ(D, c') · det (A₀) · det (A₁)⁻¹`. -/
+theorem parityTorsion_eq_mul_det_toMatrix (c' : ∀ i, Basis (Fin (n i)) F (D.X i)) :
+    C.parityTorsion c = D.parityTorsion c' *
+      ((LinearMap.toMatrix (c 0) (c' 0) (e.hom.f 0).hom).det *
+        ((LinearMap.toMatrix (c 1) (c' 1) (e.hom.f 1).hom).det)⁻¹) := by
+  rw [← parityTorsion_map c e,
+    parityTorsion_eq_mul_det c' fun i ↦ (c i).map (Hom.isoApp e i).toLinearEquiv,
+    Basis.det_apply, Basis.det_apply]
+  congr 5 <;> ext k <;> simp
 
 end Iso
 

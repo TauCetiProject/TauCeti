@@ -916,6 +916,7 @@ variable {C} {D : ChainComplex (ModuleCat F) ℤ} (e : C ≅ D)
 /-- The torsion is invariant under isomorphisms of based complexes: transporting the bases `c i`
 of `C` along an isomorphism `e : C ≅ D` gives bases of `D` for which `D` has the same torsion as
 `C`. -/
+@[simp]
 theorem reidemeisterTorsion_map :
     D.reidemeisterTorsion (fun i ↦ (c i).map (Hom.isoApp e i).toLinearEquiv) =
       C.reidemeisterTorsion c := by
