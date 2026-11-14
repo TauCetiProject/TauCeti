@@ -12,6 +12,7 @@ public import TauCeti.Algebra.Lie.GeneralLinear.Radical
 public import TauCeti.Algebra.Lie.SpecialLinear.Character
 import Mathlib.LinearAlgebra.Dimension.OrzechProperty
 import Mathlib.LinearAlgebra.RootSystem.BaseExists
+import TauCeti.Algebra.Group.Submonoid.Telescoping
 import TauCeti.Algebra.Lie.Sl2.Basic
 
 /-!
@@ -64,53 +65,11 @@ namespace TauCeti
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-/-! ### Root vectors -/
-
-section CommRing
-
-variable {r : ℕ} {A : Type*} [CommRing A]
-
-/-- The diagonal Cartan subalgebra acts on the matrix unit `Eᵢⱼ` by the root `εᵢ - εⱼ`. -/
-theorem lie_specialLinearDiagonalCartan_single (h : specialLinearDiagonalCartan r A)
-    {i j : Fin (r + 1)} (hij : i ≠ j) (c : A) :
-    ⁅h, single i j hij c⁆ =
-      (specialLinearEpsilon r A i - specialLinearEpsilon r A j) h • single i j hij c := by
-  have hd : (h : Matrix (Fin (r + 1)) (Fin (r + 1)) A) ∈ diagonalCartan A (Fin (r + 1)) :=
-    mem_diagonalCartan_iff_isDiag.mpr ((mem_specialLinearDiagonalCartan_iff r A _).mp h.property)
-  rw [LieSubalgebra.coe_bracket_of_module]
-  apply Subtype.ext
-  rw [LieSubalgebra.coe_bracket, SetLike.val_smul, val_single,
-    lie_single_of_mem_diagonalCartan hd]
-  simp
-
-/-- The difference `Eᵢᵢ - Eⱼⱼ` of diagonal matrix units lies in the diagonal Cartan subalgebra. -/
-theorem singleSubSingle_mem_specialLinearDiagonalCartan (i j : Fin (r + 1)) (a : A) :
-    singleSubSingle i j a ∈ specialLinearDiagonalCartan r A := by
-  rw [← LieSubalgebra.mem_toSubmodule, specialLinearDiagonalCartan_toSubmodule]
-  exact singleSubSingle_mem_specialLinearDiagonal r A i j a
-
-end CommRing
-
 /-! ### The roots -/
 
 section Field
 
 variable {r : ℕ} {K : Type*} [Field K]
-
-/-- The weights of the adjoint action of the diagonal Cartan subalgebra are the weights of the
-vectors of `TauCeti.specialLinearRootBasis`. -/
-private theorem genWeightSpace_ne_bot_iff (χ : specialLinearDiagonalCartan r K → K) :
-    genWeightSpace (sl (Fin (r + 1)) K) χ ≠ ⊥ ↔
-      ∃ p, (specialLinearRootBasisWeight p : specialLinearDiagonalCartan r K → K) = χ :=
-  (specialLinearRootBasis r K).genWeightSpace_ne_bot_iff_of_weight_basis
-    (fun p h => lie_specialLinearDiagonalCartan_specialLinearRootBasis h p) χ
-
-/-- **The diagonal Cartan subalgebra of `sl (Fin (r + 1))` is split over every field**: the signed
-matrix units and the simple coroots are simultaneous eigenvectors spanning `sl (Fin (r + 1)) K`. -/
-instance instIsTriangularizableSpecialLinearDiagonalCartan :
-    IsTriangularizable K (specialLinearDiagonalCartan r K) (sl (Fin (r + 1)) K) :=
-  (specialLinearRootBasis r K).isTriangularizable_of_weight_basis
-    (fun p h => lie_specialLinearDiagonalCartan_specialLinearRootBasis h p)
 
 variable (r K) in
 /-- **The root `εᵢ - εⱼ`** of `sl (Fin (r + 1)) K`, for `i ≠ j`, as a weight of the diagonal Cartan
@@ -119,8 +78,10 @@ subalgebra. Its root space contains the matrix unit `Eᵢⱼ`
 def specialLinearRoot (i j : Fin (r + 1)) (hij : i ≠ j) :
     Weight K (specialLinearDiagonalCartan r K) (sl (Fin (r + 1)) K) where
   toFun := specialLinearEpsilon r K i - specialLinearEpsilon r K j
-  genWeightSpace_ne_bot' := (genWeightSpace_ne_bot_iff _).mpr
-    ⟨.inr ⟨(i, j), hij⟩, by rw [specialLinearRootBasisWeight_inr]; rfl⟩
+  genWeightSpace_ne_bot' := (genWeightSpace_specialLinear_ne_bot_iff _).mpr
+    ⟨.inr ⟨(i, j), hij⟩, by
+      rw [specialLinearRootBasisWeight_inr]
+      exact funext (LinearMap.sub_apply _ _)⟩
 
 /-- The root `εᵢ - εⱼ` evaluates as the difference of two diagonal entries. -/
 @[simp]
@@ -141,7 +102,7 @@ theorem single_mem_rootSpace_specialLinearRoot {i j : Fin (r + 1)} (hij : i ≠ 
 theorem toLinear_specialLinearRoot {i j : Fin (r + 1)} (hij : i ≠ j) :
     (specialLinearRoot r K i j hij).toLinear =
       specialLinearEpsilon r K i - specialLinearEpsilon r K j :=
-  LinearMap.ext fun _ => (rfl)
+  LinearMap.ext fun _ => by simp
 
 /-- The weight `εᵢ - εⱼ` is a root: it is nonzero, as it takes the value `2` on `Eᵢᵢ - Eⱼⱼ`. -/
 theorem specialLinearRoot_isNonZero [NeZero (2 : K)] {i j : Fin (r + 1)} (hij : i ≠ j) :
@@ -154,7 +115,8 @@ theorem specialLinearRoot_isNonZero [NeZero (2 : K)] {i j : Fin (r + 1)} (hij : 
 theorem exists_eq_specialLinearRoot
     {χ : Weight K (specialLinearDiagonalCartan r K) (sl (Fin (r + 1)) K)} (hχ : χ.IsNonZero) :
     ∃ i j, ∃ hij : i ≠ j, χ = specialLinearRoot r K i j hij := by
-  obtain ⟨p | ⟨⟨i, j⟩, hij⟩, hp⟩ := (genWeightSpace_ne_bot_iff χ).mp χ.genWeightSpace_ne_bot
+  obtain ⟨p | ⟨⟨i, j⟩, hij⟩, hp⟩ :=
+    (genWeightSpace_specialLinear_ne_bot_iff χ).mp χ.genWeightSpace_ne_bot
   · exact absurd (funext fun h => by simpa using (congrFun hp h).symm) hχ
   · refine ⟨i, j, hij, Weight.ext fun h => ?_⟩
     rw [← congrFun hp h, specialLinearRootBasisWeight_inr, specialLinearRoot_apply,
@@ -180,6 +142,27 @@ theorem coe_coroot_specialLinearRoot {i j : Fin (r + 1)} (hij : i ≠ j) :
       rw [← Weight.coe_neg, neg_specialLinearRoot]
       exact single_mem_rootSpace_specialLinearRoot hij.symm 1)).symm
 
+/-- The roots `εᵢ - εⱼ` and `εₖ - εₗ` coincide exactly when `i = k` and `j = l`: their coroots
+`Eᵢᵢ - Eⱼⱼ` and `Eₖₖ - Eₗₗ` must agree. -/
+@[simp]
+theorem specialLinearRoot_inj {i j k l : Fin (r + 1)} (hij : i ≠ j) (hkl : k ≠ l) :
+    specialLinearRoot r K i j hij = specialLinearRoot r K k l hkl ↔ i = k ∧ j = l := by
+  refine ⟨fun h => ?_, fun ⟨hik, hjl⟩ => by subst hik hjl; rfl⟩
+  have hc := congrArg (fun α => ((IsKilling.coroot α : specialLinearDiagonalCartan r K) :
+    sl (Fin (r + 1)) K)) h
+  simp only [coe_coroot_specialLinearRoot] at hc
+  have hii := congrArg (fun X : sl (Fin (r + 1)) K => (X : Matrix _ _ K) i i) hc
+  have hjj := congrArg (fun X : sl (Fin (r + 1)) K => (X : Matrix _ _ K) j j) hc
+  simp [val_singleSubSingle, Matrix.single_apply, hij, hij.symm] at hii hjj
+  by_cases hki : k = i
+  · by_cases hlj : l = j
+    · exact ⟨hki.symm, hlj.symm⟩
+    · simp [hki, hij, hlj] at hjj
+  · by_cases hli : l = i
+    · simp [hki, hli] at hii
+      norm_num at hii
+    · simp [hki, hli] at hii
+
 variable (r K) in
 /-- The root `εᵢ - εⱼ`, for `i ≠ j`, as an index of the root system of `sl (Fin (r + 1)) K`. -/
 def specialLinearRootIndex (i j : Fin (r + 1)) (hij : i ≠ j) :
@@ -195,12 +178,19 @@ theorem coe_specialLinearRootIndex {i j : Fin (r + 1)} (hij : i ≠ j) :
       specialLinearRoot r K i j hij :=
   (rfl)
 
+/-- The roots `εᵢ - εⱼ` and `εₖ - εₗ` are the same index exactly when `i = k` and `j = l`. -/
+@[simp]
+theorem specialLinearRootIndex_inj {i j k l : Fin (r + 1)} (hij : i ≠ j) (hkl : k ≠ l) :
+    specialLinearRootIndex r K i j hij = specialLinearRootIndex r K k l hkl ↔ i = k ∧ j = l := by
+  rw [Subtype.ext_iff, coe_specialLinearRootIndex, coe_specialLinearRootIndex,
+    specialLinearRoot_inj]
+
 /-- The root `εᵢ - εⱼ` of the root system, as a linear form on the diagonal Cartan subalgebra. -/
 theorem rootSystem_root_specialLinearRootIndex {i j : Fin (r + 1)} (hij : i ≠ j) :
     (IsKilling.rootSystem (specialLinearDiagonalCartan r K)).root
         (specialLinearRootIndex r K i j hij) =
-      specialLinearEpsilon r K i - specialLinearEpsilon r K j :=
-  (rfl)
+      specialLinearEpsilon r K i - specialLinearEpsilon r K j := by
+  rw [IsKilling.rootSystem_root_apply, coe_specialLinearRootIndex, toLinear_specialLinearRoot]
 
 /-- Every index of the root system of `sl (Fin (r + 1)) K` is a root `εᵢ - εⱼ`. -/
 theorem exists_eq_specialLinearRootIndex (α : (specialLinearDiagonalCartan r K).root) :
@@ -249,38 +239,14 @@ theorem specialLinearSimpleRootIndex_injective :
   simpa only [rootSystem_coroot_specialLinearSimpleRootIndex,
     (specialLinearDiagonalCartanBasis r K).injective.eq_iff] using h
 
-omit [CharZero K] in
-/-- Telescoping: for `i ≤ j`, the weight `εᵢ - εⱼ` is a sum of simple roots `εₖ - εₖ₊₁`. -/
-private theorem sub_mem_closure_of_le {i j : Fin (r + 1)} (hij : i ≤ j) :
-    specialLinearEpsilon r K i - specialLinearEpsilon r K j ∈
-      AddSubmonoid.closure (Set.range fun k : Fin r =>
-        specialLinearEpsilon r K k.castSucc - specialLinearEpsilon r K k.succ) := by
-  obtain ⟨n, hn⟩ : ∃ n, (j : ℕ) = i + n := ⟨j - i, by omega⟩
-  induction n generalizing j with
-  | zero =>
-    obtain rfl : j = i := Fin.ext (by omega)
-    rw [sub_self]
-    exact zero_mem _
-  | succ n ih =>
-    have hk : (i : ℕ) + n < r := by omega
-    have h := ih (j := ⟨i + n, by omega⟩) (Fin.mk_le_mk.mpr (by simp)) rfl
-    have hs : specialLinearEpsilon r K (⟨i + n, hk⟩ : Fin r).castSucc -
-        specialLinearEpsilon r K (⟨i + n, hk⟩ : Fin r).succ ∈
-        AddSubmonoid.closure (Set.range fun k : Fin r =>
-          specialLinearEpsilon r K k.castSucc - specialLinearEpsilon r K k.succ) :=
-      AddSubmonoid.subset_closure ⟨_, rfl⟩
-    have hj : (⟨i + n, hk⟩ : Fin r).succ = j := Fin.ext (by simp; omega)
-    rw [hj] at hs
-    simpa using add_mem h hs
-
 /-- The images of the simple roots under the root map of the root system. -/
 private theorem image_root_range_specialLinearSimpleRootIndex :
     (IsKilling.rootSystem (specialLinearDiagonalCartan r K)).root ''
         Set.range (specialLinearSimpleRootIndex r K) =
       Set.range fun k : Fin r =>
         specialLinearEpsilon r K k.castSucc - specialLinearEpsilon r K k.succ := by
-  rw [← Set.range_comp]
-  rfl
+  simp_rw [← Set.range_comp, Function.comp_def, specialLinearSimpleRootIndex_def,
+    rootSystem_root_specialLinearRootIndex]
 
 /-- Every root is a sum of simple roots or the negative of one. -/
 private theorem root_mem_or_neg_mem_closure (α : (specialLinearDiagonalCartan r K).root) :
@@ -293,9 +259,16 @@ private theorem root_mem_or_neg_mem_closure (α : (specialLinearDiagonalCartan r
   obtain ⟨i, j, hij, rfl⟩ := exists_eq_specialLinearRootIndex α
   rw [image_root_range_specialLinearSimpleRootIndex, rootSystem_root_specialLinearRootIndex,
     neg_sub]
+  have hs (a b : Fin (r + 1)) (hab : (a : ℕ) + 1 = b) :
+      specialLinearEpsilon r K a - specialLinearEpsilon r K b ∈
+        AddSubmonoid.closure (Set.range fun k : Fin r =>
+          specialLinearEpsilon r K k.castSucc - specialLinearEpsilon r K k.succ) := by
+    have ha : (a : ℕ) < r := by omega
+    obtain rfl : b = (⟨a, ha⟩ : Fin r).succ := Fin.ext (by simp; omega)
+    exact AddSubmonoid.subset_closure ⟨⟨a, ha⟩, rfl⟩
   rcases le_total i j with h | h
-  · exact .inl (sub_mem_closure_of_le h)
-  · exact .inr (sub_mem_closure_of_le h)
+  · exact .inl (sub_mem_of_consecutive_sub_mem_fin _ hs h)
+  · exact .inr (sub_mem_of_consecutive_sub_mem_fin _ hs h)
 
 /-- The simple roots are linearly independent: they span the dual of the diagonal Cartan
 subalgebra, since every root is a combination of them, and there are `r` of them. -/
@@ -327,6 +300,7 @@ noncomputable def specialLinearPositiveBase :
     linearIndepOn_root_range_specialLinearSimpleRootIndex root_mem_or_neg_mem_closure
 
 /-- The simple roots of the standard base are the `αₖ = εₖ - εₖ₊₁`. -/
+@[simp]
 theorem mem_specialLinearPositiveBase_support_iff {α : (specialLinearDiagonalCartan r K).root} :
     α ∈ (specialLinearPositiveBase r K).support ↔ ∃ k, specialLinearSimpleRootIndex r K k = α := by
   simp [specialLinearPositiveBase, RootPairing.Base.mk']
@@ -373,6 +347,7 @@ private theorem height_specialLinearRootIndex_of_lt {i j : Fin (r + 1)} (hij : i
     omega
 
 /-- **The height of the root `εᵢ - εⱼ`** relative to the standard base is `j - i`. -/
+@[simp]
 theorem height_specialLinearRootIndex {i j : Fin (r + 1)} (hij : i ≠ j) :
     (specialLinearPositiveBase r K).height (specialLinearRootIndex r K i j hij) =
       (j : ℤ) - i := by
@@ -387,6 +362,7 @@ theorem height_specialLinearRootIndex {i j : Fin (r + 1)} (hij : i ≠ j) :
 
 /-- **The root `εᵢ - εⱼ` is positive exactly when `i < j`**: the positive root vectors are the
 strictly upper triangular matrix units. -/
+@[simp]
 theorem isPos_specialLinearRootIndex_iff {i j : Fin (r + 1)} (hij : i ≠ j) :
     (specialLinearPositiveBase r K).IsPos (specialLinearRootIndex r K i j hij) ↔ i < j := by
   rw [RootPairing.Base.isPos_iff, height_specialLinearRootIndex, sub_pos, Nat.cast_lt,
