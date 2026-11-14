@@ -101,6 +101,8 @@ connected regular fibre with a torus.
 * `TauCeti.SmoothTwoForm.IsSymplectic.contMDiff_hamiltonianFlowAction_uncurry` and
   `TauCeti.SmoothTwoForm.IsSymplectic.mfderiv_hamiltonianFlowAction_apply`: the action is jointly
   smooth, and the derivative of an orbit map is spanned by the Hamiltonian vector fields.
+* `TauCeti.SmoothTwoForm.IsSymplectic.isMIntegralCurve_hamiltonianFlowAction_smul`: the orbit
+  `t ↦ (t v) • x` of a line is an integral curve of `∑ i, vᵢ X_{Fᵢ}`.
 * `TauCeti.SmoothTwoForm.IsSymplectic.mfderiv_hamiltonianFlowAction_comp` and
   `TauCeti.SmoothTwoForm.IsSymplectic.eval₂_mfderiv_hamiltonianFlowAction_comp`: the derivative of
   a map `n ↦ h n • g n`, and its pullback `(h • g)^* σ = g^* σ + ∑ᵢ dhᵢ ∧ d(Fᵢ ∘ g)`.
@@ -667,6 +669,26 @@ theorem mfderiv_hamiltonianFlowAction_apply (x : M) (v w : ι → ℝ) :
   rw [show Pi.single i (w i) = w i • Pi.single i (1 : ℝ) by
     rw [← Pi.single_smul', smul_eq_mul, mul_one], map_smul]
   exact congrArg (w i • ·) (hax i)
+
+/-- **The orbits of a line of the Hamiltonian flow action are integral curves.** For `v : ι → ℝ`,
+the curve `t ↦ (t v) • x` is an integral curve of the vector field `∑ i, vᵢ X_{Fᵢ}`. -/
+theorem isMIntegralCurve_hamiltonianFlowAction_smul (v : ι → ℝ) (x : M) :
+    IsMIntegralCurve (fun t : ℝ ↦ (hσ.hamiltonianFlowAction hF hcomm hc (t • v)).toMul x)
+      fun y ↦ ∑ i, v i • σ.hamiltonianVectorField (F · i) y := by
+  intro t
+  have ho := ((hσ.contMDiff_hamiltonianFlowAction_apply hF hcomm hc x).mdifferentiableAt
+    (n := ∞) (by simp) (x := t • v)).hasMFDerivAt
+  have hl : HasMFDerivAt 𝓘(ℝ) 𝓘(ℝ, ι → ℝ) (fun t : ℝ ↦ t • v) t
+      (ContinuousLinearMap.toSpanSingleton ℝ v) :=
+    hasMFDerivAt_iff_hasFDerivAt.2 (ContinuousLinearMap.toSpanSingleton ℝ v).hasFDerivAt
+  refine (ho.comp t hl).congr_mfderiv (ContinuousLinearMap.ext_ring ?_)
+  convert hσ.mfderiv_hamiltonianFlowAction_apply hF hcomm hc x (t • v) v using 1
+  -- The side goals mix tangent spaces of `ℝ`, `ι → ℝ` and `M` with their model spaces, so `simp`
+  -- and `rw` do not match the composition lemmas; `exact` unifies them up to definitional
+  -- unfolding of `TangentSpace`.
+  · exact (ContinuousLinearMap.comp_apply _ (ContinuousLinearMap.toSpanSingleton ℝ v) 1).trans <|
+      congrArg _ <| (ContinuousLinearMap.toSpanSingleton_apply ℝ v 1).trans (one_smul ℝ v)
+  · exact ContinuousLinearMap.smulRight_apply.trans (one_smul ℝ _)
 
 /-! ### Moving a map by the Hamiltonian flow action -/
 

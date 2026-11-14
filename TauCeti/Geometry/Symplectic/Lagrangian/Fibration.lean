@@ -37,12 +37,17 @@ back from the base generate the vertical motions:
 * consequently pulled-back functions Poisson-commute
   (`IsLagrangianFibration.poissonBracket_comp_eq_zero`): the coordinates of a chart of `B`, pulled
   back to `M`, form an involutive family with independent differentials;
-* every maximal integral curve of such a vertical field stays in one fibre, so for a proper `π` the
-  Hamiltonian vector field of every smooth pulled-back function is complete
+* every integral curve of such a vertical field stays in one fibre
+  (`IsLagrangianFibration.apply_eq_of_isMIntegralCurve_hamiltonianVectorField_comp`), and so does
+  every maximal integral curve, so for a proper `π` the Hamiltonian vector field of every smooth
+  pulled-back function is complete
   (`IsLagrangianFibration.isCompleteVectorField_hamiltonianVectorField_comp`).
 
 These vertical Hamiltonian flows generate the fibrewise action of `T*B` from which the period
-lattice `Λ ⊆ T*B` of the fibration is built; that action is not constructed here.
+lattice `Λ ⊆ T*B` of the fibration is built
+(`TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianFibration.fiberAction` and
+`TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianFibration.periodLattice`, in
+`TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Fibration`).
 
 ## References
 
@@ -160,6 +165,18 @@ theorem apply_maximalIntegralCurve_hamiltonianVectorField_comp [FiniteDimensiona
     (fun _ _ ↦ h.mdifferentiableAt _)
     (fun _ _ ↦ h.mfderiv_hamiltonianVectorField_comp_eq_zero ((hg _).mdifferentiableAt (by simp)))
     h0 ht
+
+/-- **Integral curves of vertical Hamiltonian fields stay in their fibre.** Along an integral curve
+`γ` of the Hamiltonian vector field of a pulled-back function `g ∘ π`, with `g` differentiable, the
+projection `π` is constant. -/
+theorem apply_eq_of_isMIntegralCurve_hamiltonianVectorField_comp [FiniteDimensional ℝ E]
+    [IsManifold J 1 B] {g : B → ℝ} (hg : MDifferentiable J 𝓘(ℝ) g) {γ : ℝ → M}
+    (hγ : IsMIntegralCurve γ (σ.hamiltonianVectorField (g ∘ π))) (s t : ℝ) :
+    π (γ t) = π (γ s) :=
+  (hγ.isMIntegralCurveOn Set.univ).apply_eq_of_mfderiv_apply_eq_zero isOpen_univ
+    isPreconnected_univ (fun _ _ ↦ h.mdifferentiableAt _)
+    (fun _ _ ↦ h.mfderiv_hamiltonianVectorField_comp_eq_zero (hg _)) (Set.mem_univ s)
+    (Set.mem_univ t)
 
 /-- **Vertical Hamiltonian flows of a proper Lagrangian fibration are complete.** If the projection
 `π` is proper, the Hamiltonian vector field of every `C²` pulled-back function `g ∘ π` is complete:

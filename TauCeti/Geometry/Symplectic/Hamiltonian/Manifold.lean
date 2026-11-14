@@ -330,6 +330,18 @@ theorem hamiltonianVectorField_comp {φ : ℝ → ℝ} {x : M} (hφ : Differenti
   rw [hamiltonianVectorField_def, hamiltonianVectorField_def, mvfderiv_scalar_comp hf hφ,
     map_smul]
 
+/-- **The Hamiltonian vector field of a pulled-back function only depends on the differential
+downstairs.** If `p` is differentiable at `x`, and `g` and `g'` are differentiable at `p x` with
+the same differential there, then `X_{g ∘ p}` and `X_{g' ∘ p}` agree at `x`. -/
+theorem hamiltonianVectorField_comp_eq_of_mvfderiv_eq {F H' B : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'} [TopologicalSpace B]
+    [ChartedSpace H' B] {p : M → B} {g g' : B → ℝ} {x : M} (hp : MDifferentiableAt I J p x)
+    (hg : MDifferentiableAt J 𝓘(ℝ) g (p x)) (hg' : MDifferentiableAt J 𝓘(ℝ) g' (p x))
+    (hgg' : mvfderiv J g (p x) = mvfderiv J g' (p x)) :
+    σ.hamiltonianVectorField (g ∘ p) x = σ.hamiltonianVectorField (g' ∘ p) x := by
+  rw [hamiltonianVectorField_def, hamiltonianVectorField_def, mvfderiv_comp x hg hp,
+    mvfderiv_comp x hg' hp, hgg']
+
 /-- Along the chart variation `TauCeti.Manifold.sinChartVariation` of a `C^n` curve `γ`, `n ≥ 1`,
 for `C^n` data, the integrand `σ(∂_t w - X_{H_t}(w), ∂_s w)` of the first variation of an action
 functional at `s = 0` is `φ t` times the pairing of `γ' - X_{H_t}` with the tangent vector of chart
