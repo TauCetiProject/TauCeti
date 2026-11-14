@@ -476,6 +476,16 @@ theorem add_ofIsCycle {s : α} (walk : G.Walk s s) (isCycle : walk.IsCycle) :
     (Ear.ofIsCycle walk isCycle).add = G.walkGraph walk := by
   simp
 
+/-- Two sigma-packaged ears in `G` are equal when their base graphs, ear kinds, and underlying walks
+coincide. -/
+theorem sigma_ext {p q : Σ K : Graph α β, G.Ear K} (hK : p.1 = q.1) (hkind : p.2.kind = q.2.kind)
+    (hwalk : p.2.toWalk = q.2.toWalk) : p = q := by
+  rcases p with ⟨K₁, e₁⟩
+  rcases q with ⟨K₂, e₂⟩
+  dsimp only at hK hkind hwalk
+  subst hK
+  exact congrArg (Sigma.mk K₁) (Ear.ext e₁ e₂ hkind hwalk)
+
 end Ear
 
 /-- The possible initial graphs of an ear decomposition: one actual vertex or the graph traced by
@@ -549,6 +559,22 @@ theorem edgeSet_nonempty_of_isCycle : ∀ {start : G.EarStart H}, start.IsCycle 
         (by intro h; simpa [← walk.length_edges, h] using isCycle.length_pos)
       exact ⟨e, (walk.mem_edgeSet_walkGraph e).mpr he⟩
 
+/-- Reindex an `EarStart` witness along an equality of initial multigraphs. -/
+def copy {H' : Graph α β} (s : G.EarStart H) (h : H = H') : G.EarStart H' :=
+  h ▸ s
+
+@[simp]
+theorem copy_rfl (s : G.EarStart H) : s.copy rfl = s := (rfl)
+
+@[simp]
+theorem heq_copy {H' : Graph α β} (s : G.EarStart H) (h : H = H') : HEq (s.copy h) s := by
+  subst h; rfl
+
+@[simp]
+theorem isCycle_copy {H' : Graph α β} (s : G.EarStart H) (h : H = H') :
+    (s.copy h).IsCycle ↔ s.IsCycle := by
+  subst h; rfl
+
 end EarStart
 
 /-- A finite ear decomposition in `G`, indexed by its final graph `H`.
@@ -589,6 +615,16 @@ theorem ext (d e : G.EarDecomposition H) (hlength : d.length = e.length)
   cases hstart
   cases hearAt
   rfl
+
+/-- Pointwise extensionality for `Graph.EarDecomposition` when the two decompositions do not have
+definitionally equal lengths. -/
+theorem ext_of_cast {d₁ d₂ : G.EarDecomposition H} (hlen : d₁.length = d₂.length)
+    (hgraphAfter : ∀ k : Fin (d₁.length + 1),
+      d₁.graphAfter k = d₂.graphAfter (k.cast (congrArg (· + 1) hlen)))
+    (hstart : HEq d₁.start d₂.start)
+    (hearAt : ∀ i : Fin d₁.length, d₁.earAt i = d₂.earAt (i.cast hlen)) : d₁ = d₂ :=
+  ext d₁ d₂ hlen ((Fin.heq_fun_iff (congrArg (· + 1) hlen)).mpr hgraphAfter) hstart
+    ((Fin.heq_fun_iff hlen).mpr hearAt)
 
 /-- The initial graph of a decomposition. -/
 def initial (d : G.EarDecomposition H) : Graph α β :=
@@ -792,6 +828,17 @@ theorem walkAt_copy {H' : Graph α β} (d : G.EarDecomposition H) (h : H = H')
 @[simp]
 theorem isOpen_copy {H' : Graph α β} (d : G.EarDecomposition H) (h : H = H') :
     (d.copy h).IsOpen ↔ d.IsOpen := Iff.rfl
+
+@[simp]
+theorem copy_rfl (d : G.EarDecomposition H) : d.copy rfl = d :=
+  ext_of_cast (d.length_copy rfl) (d.graphAfter_copy rfl) (d.heq_start_copy rfl)
+    (d.earAt_copy rfl)
+
+@[simp]
+theorem copy_copy {H₁ H₂ : Graph α β} (d : G.EarDecomposition H) (h₁ : H = H₁)
+    (h₂ : H₁ = H₂) : (d.copy h₁).copy h₂ = d.copy (h₁.trans h₂) := by
+  subst h₁; subst h₂
+  simp [copy_rfl]
 
 private theorem snoc_graphAfter_zero (d : G.EarDecomposition H) (ear : G.Ear H) :
     Fin.lastCases ear.add d.graphAfter (0 : Fin (d.length + 2)) = d.graphAfter 0 := by

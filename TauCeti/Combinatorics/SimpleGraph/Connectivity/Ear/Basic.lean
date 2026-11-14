@@ -421,6 +421,26 @@ theorem isEdgeConnected_two : ∀ _ : G.EarStart H, H.coe.IsEdgeConnected 2
   | .vertex _ => .of_subsingleton
   | .cycle _ hc => hc.isEdgeConnected_two_toSubgraph
 
+/-- Reindex an `EarStart` witness along an equality of initial subgraphs. -/
+def copy {H' : G.Subgraph} (s : G.EarStart H) (h : H = H') : G.EarStart H' :=
+  h ▸ s
+
+@[simp]
+theorem copy_rfl (s : G.EarStart H) : s.copy rfl = s := (rfl)
+
+@[simp]
+theorem heq_copy {H' : G.Subgraph} (s : G.EarStart H) (h : H = H') : HEq (s.copy h) s := by
+  subst h; rfl
+
+@[simp]
+theorem isCycle_copy {H' : G.Subgraph} (s : G.EarStart H) (h : H = H') :
+    (s.copy h).IsCycle ↔ s.IsCycle := by
+  subst h; rfl
+
+instance instDecidableIsCycle : (s : G.EarStart H) → Decidable s.IsCycle
+  | .vertex v => decidable_of_iff False (isCycle_vertex v).symm
+  | .cycle c hc => decidable_of_iff True (isCycle_cycle c hc).symm
+
 end EarStart
 
 /-! ### Ear decompositions -/
