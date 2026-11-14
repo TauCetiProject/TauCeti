@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.CylindricalEnd
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Orbit
-import TauCeti.Dynamics.Flow.Periodic.Basic
 
 /-!
 # Convergence of the ends of a Floer pair of pants to nondegenerate orbits
@@ -79,25 +78,6 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
   {ω : SymplecticForm V} {K : ℂ → V → ℂ →L[ℝ] ℝ} {H : Puncture → ℝ → V → ℝ} {T₀ : ℝ}
   {u : ℝ × ℝ → V} {J : ℝ × ℝ → AlmostComplexStructure V} {B : Set V} {c M : ℝ}
 
-/-- An orbit of the positive end Hamiltonian `H'_q` which, read with the time `±t` of the end,
-starts at a nondegenerate fixed point of the time-one map of `H_q`, is isolated among the
-`1`-periodic orbits of `H'_q`. -/
-private theorem exists_pos_forall_eq_of_isNondegenerateFixedPt {q : Puncture} {L : ℝ≥0}
-    (hL : LipschitzWith L (ω.timeDependentHamiltonianSuspension (H q))) {x : ℝ → V}
-    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (positiveEndHamiltonian H q t) (x t)) t)
-    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow (H q) hL 0 1) (x 0)) :
-    ∃ ε > 0, ∀ y : ℝ → V, Periodic y 1 →
-      (∀ t, HasDerivAt y (ω.hamiltonianVectorField (positiveEndHamiltonian H q t) (y t)) t) →
-      dist (y 0) (x 0) < ε → y = x := by
-  have hiso := hnd.eventually_not_isFixedPt
-  rw [timeDependentHamiltonianFlow_eq, ← zero_add (1 : ℝ)] at hiso
-  obtain ⟨ε, hε, h⟩ := exists_pos_forall_periodic_eq_of_eventually_not_isFixedPt _
-    (hasDerivAt_comp_endSign_mul hx) (s := 0) (by simpa only [mul_zero] using hiso)
-  refine ⟨ε, hε, fun y hyper hy hyx ↦ funext fun t ↦ ?_⟩
-  have hxy := congrFun (h _ (hasDerivAt_comp_endSign_mul hy) (periodic_comp_endSign_mul hyper)
-    (by simpa only [mul_zero] using hyx)) (q.endSign * t)
-  simpa only [← mul_assoc, endSign_mul_self, one_mul] using hxy
-
 /-- **The ends of a Floer pair of pants converge to nondegenerate orbits.** Let `K` be equal to
 `H_q(t) dt` beyond `T₀` on each end `q`, for `1`-periodic `C¹` Hamiltonians `H_q`, and let `u` be
 `C¹` on `S`, with image in a compact set `B`, solving the Floer equation `(du - X_K)^{0,1} = 0` on
@@ -165,9 +145,13 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_endChart_atTop_of_floer
       -- Isolation of the orbits of `H'_q` comes from nondegeneracy of the orbits of `H_q`.
       have hnd₀ := hnd _ (periodic_comp_endSign_mul hxper) (hasDerivAt_comp_endSign_mul hx)
         fun t ↦ hxB _
-      rw [mul_zero] at hnd₀
-      obtain ⟨ε, hε, h⟩ := exists_pos_forall_eq_of_isNondegenerateFixedPt hL hx hnd₀
-      exact ⟨ε, hε, fun y hyper hy _ hyx ↦ h y hyper hy (hyx 0)⟩
+      obtain ⟨ε, hε, h⟩ :=
+        ω.exists_pos_forall_eq_of_isNondegenerateFixedPt (hasDerivAt_comp_endSign_mul hx) hnd₀
+      refine ⟨ε, hε, fun y hyper hy _ hyx ↦ funext fun t ↦ ?_⟩
+      -- Time reversal on the output end preserves isolation among periodic orbits.
+      have hxy := congrFun (h _ (periodic_comp_endSign_mul hyper) (hasDerivAt_comp_endSign_mul hy)
+        (by simpa only [mul_zero] using hyx 0)) (q.endSign * t)
+      simpa only [← mul_assoc, endSign_mul_self, one_mul] using hxy
   refine ⟨fun t ↦ x (q.endSign * t), periodic_comp_endSign_mul hxper,
     hasDerivAt_comp_endSign_mul hx, ?_⟩
   -- The end loop at the height `±s` is the loop of `u ∘ φ'_q` at the height `s`, read with the
