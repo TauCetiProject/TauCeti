@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Finsupp.VectorSpace
 public import Mathlib.Algebra.Module.Projective
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Normalized
 

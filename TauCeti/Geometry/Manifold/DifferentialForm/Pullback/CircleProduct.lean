@@ -14,8 +14,9 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Product
 Let `Y` be a boundaryless manifold and `X = AddCircle p × Y`, with the unit vector field
 `∂ₛ = (1, 0)` of the circle factor. The rotations `(s, y) ↦ (s + [t], y)` of the circle factor
 move every point with velocity `∂ₛ`. `TauCeti/Geometry/Manifold/DifferentialForm/Pullback/Product`
-shows that a closed form `α` on `X` with `ι_{∂ₛ} α = 0` is pulled back from `Y`. This file treats
-forms that need not be closed, and records what the descended form of a closed form is:
+shows that a closed form `α` on `X` with `ι_{∂ₛ} α = 0` is the pullback of a closed form on `Y`,
+which is unique since pullback along `pr₂` is injective. This file treats forms that need not be
+closed:
 
 * a differentiable form `α` is invariant under every rotation `(s, y) ↦ (s + c, y)` exactly when
   its Lie derivative `L_{∂ₛ} α` vanishes
@@ -26,15 +27,7 @@ forms that need not be closed, and records what the descended form of a closed f
   (`TauCeti.mpullback_snd_mpullback_prodMk_addCircle_of_mlieDerivForm_eq_zero`, with the smooth
   version `TauCeti.SmoothForm.mpullback_snd_mpullback_prodMk_of_mlieDerivForm_eq_zero`), and a
   smooth form of positive degree is a pullback from `Y` exactly when these two conditions hold
-  (`TauCeti.SmoothForm.exists_mpullback_snd_eq_iff`);
-* a closed form `α` with `ι_{∂ₛ} α = 0` is the pullback of a unique form `β` on `Y`
-  (`TauCeti.SmoothForm.existsUnique_mpullback_snd_eq`), and `β` is closed
-  (`TauCeti.SmoothForm.isClosed_mpullback_snd_iff`).
-
-In the energy argument for the unperturbed Seiberg–Witten equations on a product `S¹ × Y` with a
-product metric, the closedness of the descended form is what makes the curvature `i F_A`, once
-`ι_{∂ₛ} F_A = 0`, define a de Rham class on `Y` whose pullback is the real first Chern class of
-the determinant line.
+  (`TauCeti.SmoothForm.exists_mpullback_snd_eq_iff`).
 
 ## Main results
 
@@ -47,9 +40,6 @@ the determinant line.
   version.
 * `TauCeti.SmoothForm.exists_mpullback_snd_eq_iff`: a smooth form is a pullback along `pr₂`
   exactly when `ι_{∂ₛ} α = 0` and `L_{∂ₛ} α = 0`.
-* `TauCeti.SmoothForm.existsUnique_mpullback_snd_eq`: a closed form with `ι_{∂ₛ} α = 0` is the
-  pullback of a unique form on `Y`, which is closed by
-  `TauCeti.SmoothForm.isClosed_mpullback_snd_iff`.
 
 ## References
 
@@ -228,22 +218,6 @@ theorem exists_mpullback_snd_eq_iff {α : SmoothForm (𝓘(ℝ).prod I) (AddCirc
       mdifferentiable_snd]
     -- `Prod.snd ∘ Prod.map (· + c) id` is `Prod.snd` by definition.
     rfl
-
-/-- **Closed forms with vanishing contraction are pulled back from `Y`.** A closed smooth form
-`α` of positive degree on `AddCircle p × Y` whose contraction with the unit field `∂ₛ = (1, 0)` of
-the circle factor vanishes is the pullback along the projection of a unique smooth form `β` on
-`Y`, and `β` is closed (`TauCeti.SmoothForm.isClosed_mpullback_snd_iff`). -/
-theorem existsUnique_mpullback_snd_eq
-    {α : SmoothForm (𝓘(ℝ).prod I) (AddCircle p × Y) F (k + 1)} (hα : α.IsClosed)
-    (hι : RoughForm.interior (I := 𝓘(ℝ).prod I) (M := AddCircle p × Y) (F := F)
-      (fun _ ↦ ((1 : ℝ), (0 : E))) α.1 = 0) :
-    ∃! β : SmoothForm I Y F (k + 1), mpullback Prod.snd contMDiff_snd β = α := by
-  have hs : ContMDiff I (𝓘(ℝ).prod I) ∞ (Prod.mk (0 : AddCircle p) : Y → AddCircle p × Y) :=
-    contMDiff_const.prodMk contMDiff_id
-  have hpull := mpullback_snd_mpullback_prodMk_of_interior_eq_zero hα hι 0
-  refine ⟨mpullback _ hs α, hpull,
-    fun β hβ ↦ mpullback_injective_of_rightInverse contMDiff_snd hs (fun _ ↦ rfl) ?_⟩
-  rw [hβ, hpull]
 
 end SmoothForm
 

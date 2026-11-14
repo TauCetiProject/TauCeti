@@ -13,7 +13,7 @@ public import Mathlib.MeasureTheory.Function.L1Space.HasFiniteIntegral
 For an a.e.-strongly measurable `f`, the lower Lebesgue integral of `‖g‖ₑ` is at most the sum of
 those of `‖g - f‖ₑ` and `‖f‖ₑ`
 (`TauCeti.MeasureTheory.lintegral_enorm_le_lintegral_enorm_sub_add`). This is the pointwise
-triangle inequality integrated with `MeasureTheory.lintegral_enorm_add_right`; applied to a
+triangle inequality integrated with `MeasureTheory.lintegral_eNorm_add_right`; applied to a
 restricted measure it gives the corresponding estimate for set integrals.
 -/
 
@@ -29,8 +29,8 @@ theorem lintegral_enorm_le_lintegral_enorm_sub_add {α E : Type*} {m : Measurabl
     {μ : Measure α} [SeminormedAddGroup E] {f : α → E} (hf : AEStronglyMeasurable f μ)
     (g : α → E) :
     ∫⁻ x, ‖g x‖ₑ ∂μ ≤ ∫⁻ x, ‖g x - f x‖ₑ ∂μ + ∫⁻ x, ‖f x‖ₑ ∂μ := by
-  rw [← lintegral_enorm_add_right _ hf]
+  rw [← lintegral_eNorm_add_right _ hf]
   refine lintegral_mono fun x ↦ ?_
-  simpa only [sub_add_cancel] using enorm_add_le (g x - f x) (f x)
+  simpa only [sub_add_cancel] using eNorm_add_le (g x - f x) (f x)
 
 end TauCeti.MeasureTheory

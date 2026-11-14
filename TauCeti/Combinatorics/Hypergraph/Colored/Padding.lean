@@ -14,11 +14,12 @@ import Mathlib.Tactic.GCongr
 /-!
 # Padding and restricting colored triple graphs
 
-A coloring extends to a larger vertex set by giving all new triples one default color.
-Extending two colorings with the same default creates no new edits. Restriction, however,
-can increase the normalized edit discrepancy: its denominator is the cube of the smaller
-host size. We prove the exact conservation law for extension and the corresponding upper
-bound for arbitrary restriction, including empty hosts.
+A coloring extends to a larger vertex set on top of a background coloring, which colors all
+new triples; the usual padding gives them one default color. Extending two colorings over the
+same background creates no new edits. Restriction, however, can increase the normalized edit
+discrepancy: its denominator is the cube of the smaller host size. We prove the exact
+conservation law for extension and the corresponding upper bound for arbitrary restriction,
+including empty hosts.
 
 In particular, an approximation on a padded host of size at most `(1 + ρ) * |V|` restricts
 to an approximation on `V` with error multiplied by at most `(1 + ρ)^3`. This accounts for
@@ -45,9 +46,10 @@ theorem ncard_color_ne_comap_le [Finite W]
     simpa only [Set.mem_ofPred, color_comap] using hs
   · exact (Set.powersetCard.map_injective 3 f).injOn
 
-/-- Extending with a common default color creates exactly the images of the original edits. -/
-theorem color_ne_extend_eq_image (H H' : Colored3Graph κ V) (f : V ↪ W) (c : κ) :
-    {s | (H.extend f c).color s ≠ (H'.extend f c).color s} =
+/-- Extending over a common background creates exactly the images of the original edits. -/
+theorem color_ne_extend_eq_image (H H' : Colored3Graph κ V) (f : V ↪ W)
+    (B : Colored3Graph κ W) :
+    {s | (H.extend f B).color s ≠ (H'.extend f B).color s} =
       Set.powersetCard.map 3 f '' {s | H.color s ≠ H'.color s} := by
   ext s
   by_cases hs : s ∈ Set.range (Set.powersetCard.map 3 f)
@@ -58,14 +60,15 @@ theorem color_ne_extend_eq_image (H H' : Colored3Graph κ V) (f : V ↪ W) (c : 
     · rintro ⟨u, hu, h⟩
       rw [← h]
       simpa using hu
-  · simp only [Set.mem_ofPred, color_extend_of_notMem_range H f c s hs,
-      color_extend_of_notMem_range H' f c s hs, ne_self_iff_false, false_iff]
+  · simp only [Set.mem_ofPred, color_extend_of_notMem_range H f B s hs,
+      color_extend_of_notMem_range H' f B s hs, ne_self_iff_false, false_iff]
     rintro ⟨t, _, ht⟩
     exact hs ⟨t, ht⟩
 
-/-- Padding two colorings by the same default preserves the unnormalized number of edits. -/
-theorem ncard_color_ne_extend (H H' : Colored3Graph κ V) (f : V ↪ W) (c : κ) :
-    {s | (H.extend f c).color s ≠ (H'.extend f c).color s}.ncard =
+/-- Extending two colorings over the same background preserves the unnormalized number of
+edits. -/
+theorem ncard_color_ne_extend (H H' : Colored3Graph κ V) (f : V ↪ W) (B : Colored3Graph κ W) :
+    {s | (H.extend f B).color s ≠ (H'.extend f B).color s}.ncard =
       {s | H.color s ≠ H'.color s}.ncard := by
   rw [color_ne_extend_eq_image]
   exact Set.ncard_image_of_injective _ (Set.powersetCard.map_injective 3 f)
@@ -95,11 +98,11 @@ theorem editDiscrepancy3_comap_le [Finite W]
   convert H.editDiscrepancy3_comap_mul_card_pow_le H' f using 1
   field_simp [hnq]
 
-/-- Extension with a common default preserves the edit count, with the host-size cubes
+/-- Extension over a common background preserves the edit count, with the host-size cubes
 accounting exactly for the change of normalization. -/
 theorem editDiscrepancy3_extend_mul_card_pow [Finite W]
-    (H H' : Colored3Graph κ V) (f : V ↪ W) (c : κ) :
-    (H.extend f c).editDiscrepancy3 (H'.extend f c) * (Nat.card W : ℚ) ^ 3 =
+    (H H' : Colored3Graph κ V) (f : V ↪ W) (B : Colored3Graph κ W) :
+    (H.extend f B).editDiscrepancy3 (H'.extend f B) * (Nat.card W : ℚ) ^ 3 =
       H.editDiscrepancy3 H' * (Nat.card V : ℚ) ^ 3 := by
   have := Finite.of_injective f f.injective
   simp only [editDiscrepancy3_mul_card_pow, ncard_color_ne_extend]

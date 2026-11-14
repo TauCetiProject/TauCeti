@@ -14,9 +14,7 @@ jobs:
   recover:
     # PRs wait in the shared pool; only exact staging placements need recovery.
     if: ${{ vars.FLEET_CI_ENABLED == 'true' && github.event.workflow_run.event == 'repository_dispatch' && startsWith(github.event.workflow_run.display_title, 'bors branch=') }}
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0
-      - namespace-features:github.run-id=${{ github.run_id }}
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
