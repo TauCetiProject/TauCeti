@@ -43,6 +43,8 @@ nonzero `ℤ_p`-module equal to `p` times itself.
 
 ## Main results
 
+* `Ideal.FG.isCompact_smul`: for a finitely generated ideal `I` and a compact submodule `P`, the
+  submodule `I • P` is compact.
 * `Submodule.le_of_le_smul_of_isCompact`: the topological Nakayama lemma, `P ≤ N ⊔ I • P` implies
   `P ≤ N` for `P` compact and `N` closed.
 * `Submodule.eq_bot_of_le_smul_of_isCompact`: a compact submodule `N` of a `T1` module with
@@ -64,6 +66,26 @@ nonzero `ℤ_p`-module equal to `p` times itself.
 public section
 
 open Filter Topology Pointwise
+
+section ContinuousAdd
+
+variable {R M : Type*} [CommSemiring R] [TopologicalSpace R] [AddCommMonoid M] [Module R M]
+  [TopologicalSpace M] [ContinuousAdd M] [ContinuousSMul R M]
+
+/-- **Action of a finitely generated ideal preserves compact submodules.** If `I` is a finitely
+generated ideal and `P` is a compact submodule, then `I • P` is compact. -/
+theorem Ideal.FG.isCompact_smul {I : Ideal R} (hI : I.FG) {P : Submodule R M}
+    (hP : IsCompact (P : Set M)) : IsCompact ((I • P : Submodule R M) : Set M) := by
+  classical
+  obtain ⟨s, rfl⟩ := hI
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert a s _ ih =>
+    rw [Finset.coe_insert, Ideal.span_insert, Submodule.sup_smul, Submodule.coe_sup,
+      Submodule.ideal_span_singleton_smul, Submodule.coe_pointwise_smul]
+    exact (hP.smul a).add ih
+
+end ContinuousAdd
 
 section CommSemiring
 
