@@ -220,9 +220,11 @@ private theorem image_ball_discCellFun {n m : ℕ} (j : cell (univ : Set B) n)
     discCellFun (E := E) j h '' ball 0 1 =
       {v : discBundle F E |
         (v : TotalSpace F E).proj ∈ openCell n j ∧ ‖(v : TotalSpace F E).2‖ < 1} := by
-  rw [show ball (0 : Fin m → ℝ) 1 = {x | (splitIso h x).1 ∈ ball 0 1 ∧ ‖(splitIso h x).2‖ < 1}
-    from Set.ext fun _ ↦ (Fin.mem_ball_iff_appendIsometryOfEq_symm h).trans
-      (and_congr_right' mem_ball_zero_iff)]
+  have hball : ball (0 : Fin m → ℝ) 1 =
+      {x | (splitIso h x).1 ∈ ball 0 1 ∧ ‖(splitIso h x).2‖ < 1} :=
+    Set.ext fun _ ↦ (Fin.mem_ball_iff_appendIsometryOfEq_symm h).trans
+      (and_congr_right' mem_ball_zero_iff)
+  rw [hball]
   exact image_discCellFun (E := E) j h ball_subset_closedBall (fun (_ : ℝ) (ht : _ < 1) ↦ ht.le)
     fun _ ↦ ContinuousLinearEquiv.norm_unitBallHomeomorph_lt_one_iff _
 
@@ -231,10 +233,11 @@ private theorem image_closedBall_discCellFun {n m : ℕ} (j : cell (univ : Set B
     (h : n + finrank ℝ F = m) :
     discCellFun (E := E) j h '' closedBall 0 1 =
       {v : discBundle F E | (v : TotalSpace F E).proj ∈ closedCell n j} := by
-  rw [show closedBall (0 : Fin m → ℝ) 1 =
-      {x | (splitIso h x).1 ∈ closedBall 0 1 ∧ ‖(splitIso h x).2‖ ≤ 1}
-    from Set.ext fun _ ↦ (Fin.mem_closedBall_iff_appendIsometryOfEq_symm h).trans
-      (and_congr_right' mem_closedBall_zero_iff),
+  have hclosedBall : closedBall (0 : Fin m → ℝ) 1 =
+      {x | (splitIso h x).1 ∈ closedBall 0 1 ∧ ‖(splitIso h x).2‖ ≤ 1} :=
+    Set.ext fun _ ↦ (Fin.mem_closedBall_iff_appendIsometryOfEq_symm h).trans
+      (and_congr_right' mem_closedBall_zero_iff)
+  rw [hclosedBall,
     image_discCellFun (E := E) j h subset_rfl (fun (_ : ℝ) (ht : _ ≤ 1) ↦ ht)
       fun _ ↦ ContinuousLinearEquiv.norm_unitBallHomeomorph_le_one_iff _]
   exact Set.ext fun v ↦ and_iff_left (mem_discBundle.1 v.2)
@@ -247,12 +250,13 @@ private theorem image_sphere_discCellFun {n m : ℕ} (j : cell (univ : Set B) n)
       {v : discBundle F E | (v : TotalSpace F E).proj ∈ cellFrontier n j} ∪
         {v : discBundle F E |
           (v : TotalSpace F E).proj ∈ closedCell n j ∧ ‖(v : TotalSpace F E).2‖ = 1} := by
-  rw [show sphere (0 : Fin m → ℝ) 1 =
+  have hsphere : sphere (0 : Fin m → ℝ) 1 =
       {x | (splitIso h x).1 ∈ sphere 0 1 ∧ ‖(splitIso h x).2‖ ≤ 1} ∪
-        {x | (splitIso h x).1 ∈ closedBall 0 1 ∧ ‖(splitIso h x).2‖ = 1}
-    from Set.ext fun _ ↦ (Fin.mem_sphere_iff_appendIsometryOfEq_symm h).trans
+        {x | (splitIso h x).1 ∈ closedBall 0 1 ∧ ‖(splitIso h x).2‖ = 1} :=
+    Set.ext fun _ ↦ (Fin.mem_sphere_iff_appendIsometryOfEq_symm h).trans
       (or_congr (and_congr_right' mem_closedBall_zero_iff)
-        (and_congr_right' mem_sphere_zero_iff_norm)), image_union,
+        (and_congr_right' mem_sphere_zero_iff_norm))
+  rw [hsphere, image_union,
     image_discCellFun (E := E) j h sphere_subset_closedBall (fun (_ : ℝ) (ht : _ ≤ 1) ↦ ht)
       fun _ ↦ ContinuousLinearEquiv.norm_unitBallHomeomorph_le_one_iff _,
     image_discCellFun (E := E) j h subset_rfl (fun (_ : ℝ) (ht : _ = 1) ↦ ht.le)
