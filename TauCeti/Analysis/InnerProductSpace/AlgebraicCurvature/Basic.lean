@@ -66,6 +66,8 @@ curvature operator satisfying `R(w, u)v = κ (⟪u, v⟫ w - ⟪w, v⟫ u)`, the
 * `TauCeti.FourTensor.IsAlgebraicCurvature`: the pair antisymmetries, pair interchange and the
   first Bianchi identity.
 * `TauCeti.FourTensor.algebraicCurvatureSubmodule`: the submodule of algebraic curvature tensors.
+* `TauCeti.FourTensor.lastSlice`: the bilinear form `(x, y) ↦ r ![u, v, x, y]` slicing the last
+  two slots of a four-tensor.
 * `TauCeti.FourTensor.ofLinearMap₄`: on a finite-dimensional space, the four-tensor of a curried
   four-linear form.
 * `TauCeti.FourTensor.coordFourTensor`: the rank-one four-tensor
@@ -240,8 +242,7 @@ theorem apply_sum_fourth {ι : Type*} (r : FourTensor V) (s : Finset ι) (a b c 
 theorem ext_vec {r q : FourTensor V} (h : ∀ u v z w, r ![u, v, z, w] = q ![u, v, z, w]) :
     r = q := by
   ext m
-  have hm : m = ![m 0, m 1, m 2, m 3] := by funext i; fin_cases i <;> rfl
-  rw [hm]
+  rw [← FinVec.etaExpand_eq m]
   exact h (m 0) (m 1) (m 2) (m 3)
 
 /-- The algebraic symmetries of a curvature four-tensor `r(u, v, z, w) = g(R(u, v)w, z)`:
@@ -396,6 +397,18 @@ private def ricciSlice (r : FourTensor V) (u v : V) : BilinForm ℝ V :=
 private theorem ricciSlice_apply (r : FourTensor V) (u v x y : V) :
     ricciSlice r u v x y = r ![x, u, y, v] :=
   (rfl)
+
+/-- The bilinear form `(x, y) ↦ r ![u, v, x, y]` slicing the last two slots of a four-tensor. -/
+def lastSlice (r : FourTensor V) (u v : V) : BilinForm ℝ V :=
+  LinearMap.mk₂ ℝ (fun x y ↦ r ![u, v, x, y])
+    (fun _ _ _ ↦ apply_add_third ..) (fun _ _ _ ↦ apply_smul_third ..)
+    (fun _ _ _ ↦ apply_add_fourth ..) (fun _ _ _ ↦ apply_smul_fourth ..)
+
+/-- Evaluation of `lastSlice r u v`. -/
+@[simp]
+theorem lastSlice_apply (r : FourTensor V) (u v x y : V) :
+    lastSlice r u v x y = r ![u, v, x, y] :=
+  LinearMap.mk₂_apply ..
 
 end NormedSpace
 
@@ -610,22 +623,6 @@ theorem planeCurvature_compContinuousLinearMap_fstL {U : Type*} [NormedAddCommGr
   rw [compContinuousLinearMap_apply_vec]
   simp
 
-/-- Expanding a bilinear form across both arguments in an orthonormal basis `b`. -/
-private theorem sum_apply_mul_inner_mul_inner {ι : Type*} [Fintype ι]
-    (b : OrthonormalBasis ι ℝ V) (B : BilinForm ℝ V) (u v : V) :
-    (∑ p, ∑ q, B (b p) (b q) * (⟪u, b p⟫_ℝ * ⟪v, b q⟫_ℝ)) = B u v := by
-  have hq (p : ι) :
-      (∑ q, B (b p) (b q) * (⟪u, b p⟫_ℝ * ⟪v, b q⟫_ℝ)) = B (b p) v * ⟪b p, u⟫_ℝ := by
-    calc (∑ q, B (b p) (b q) * (⟪u, b p⟫_ℝ * ⟪v, b q⟫_ℝ))
-        = (∑ q, B (b p) (b q) * ⟪b q, v⟫_ℝ) * ⟪b p, u⟫_ℝ := by
-          rw [Finset.sum_mul]
-          exact Finset.sum_congr rfl fun q _ ↦ by
-            rw [real_inner_comm u (b p), real_inner_comm v (b q)]
-            ring
-      _ = B (b p) v * ⟪b p, u⟫_ℝ := by rw [b.sum_apply_mul_inner]
-  simp_rw [hq]
-  exact b.sum_apply_mul_inner (B.flip v) u
-
 variable [FiniteDimensional ℝ V]
 
 /-- The Ricci contraction `Ric(u, v) = tr (x, y ↦ r(x, u, y, v))` of a four-tensor, the metric
@@ -770,9 +767,8 @@ theorem constantCurvature_compContinuousLinearMap_linearIsometry {W : Type*}
     [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W] (f : W →ₗᵢ[ℝ] V) :
     (constantCurvature V).compContinuousLinearMap (fun _ ↦ f.toContinuousLinearMap) =
       constantCurvature W := by
-  ext m
-  have hm : m = ![m 0, m 1, m 2, m 3] := by funext i; fin_cases i <;> rfl
-  rw [hm, compContinuousLinearMap_apply_vec]
+  refine ext_vec fun a b c d ↦ ?_
+  rw [compContinuousLinearMap_apply_vec]
   simp
 
 /-- The Ricci contraction of the constant-curvature tensor is `(n - 1) g`. -/
@@ -807,13 +803,15 @@ theorem sum_mul_constantCurvature_last {ι : Type*} [Fintype ι] (b : Orthonorma
     {r : FourTensor V} (hr : IsAlgebraicCurvature r) (a c x y : V) :
     (∑ p, ∑ q, r ![a, c, b p, b q] * constantCurvature V ![x, y, b p, b q]) =
       2 * r ![a, c, x, y] := by
-  let B : BilinForm ℝ V :=
-    LinearMap.mk₂ ℝ (fun u v ↦ r ![a, c, u, v])
-      (fun _ _ _ ↦ apply_add_third ..) (fun _ _ _ ↦ apply_smul_third ..)
-      (fun _ _ _ ↦ apply_add_fourth ..) (fun _ _ _ ↦ apply_smul_fourth ..)
   have heval (u v : V) :
-      (∑ p, ∑ q, r ![a, c, b p, b q] * (⟪u, b p⟫_ℝ * ⟪v, b q⟫_ℝ)) = r ![a, c, u, v] :=
-    sum_apply_mul_inner_mul_inner b B u v
+      (∑ p, ∑ q, r ![a, c, b p, b q] * (⟪u, b p⟫_ℝ * ⟪v, b q⟫_ℝ)) = r ![a, c, u, v] := by
+    calc (∑ p, ∑ q, r ![a, c, b p, b q] * (⟪u, b p⟫_ℝ * ⟪v, b q⟫_ℝ))
+        = ∑ p, ∑ q, lastSlice r a c (b p) (b q) * ⟪b p, u⟫_ℝ * ⟪b q, v⟫_ℝ :=
+          Finset.sum_congr rfl fun p _ ↦ Finset.sum_congr rfl fun q _ ↦ by
+            rw [lastSlice_apply, real_inner_comm u, real_inner_comm v]
+            ring
+      _ = r ![a, c, u, v] := by
+          rw [b.sum_apply_mul_inner_mul_inner b, lastSlice_apply]
   have hsub : (∑ p, ∑ q, r ![a, c, b p, b q] * constantCurvature V ![x, y, b p, b q]) =
       (∑ p, ∑ q, r ![a, c, b p, b q] * (⟪x, b p⟫_ℝ * ⟪y, b q⟫_ℝ)) -
         ∑ p, ∑ q, r ![a, c, b p, b q] * (⟪x, b q⟫_ℝ * ⟪y, b p⟫_ℝ) := by
@@ -835,8 +833,13 @@ theorem sum_mul_constantCurvature_even {ι : Type*} [Fintype ι] (b : Orthonorma
     rw [ricciSlice_apply, hr.antisymm_first a u, hr.antisymm_last u a c v, neg_neg]
   have heval (u v : V) :
       (∑ p, ∑ q, r ![a, b p, c, b q] * (⟪u, b p⟫_ℝ * ⟪v, b q⟫_ℝ)) = r ![a, u, c, v] := by
-    simp_rw [heven]
-    exact sum_apply_mul_inner_mul_inner b (ricciSlice r a c) u v
+    calc (∑ p, ∑ q, r ![a, b p, c, b q] * (⟪u, b p⟫_ℝ * ⟪v, b q⟫_ℝ))
+        = ∑ p, ∑ q, ricciSlice r a c (b p) (b q) * ⟪b p, u⟫_ℝ * ⟪b q, v⟫_ℝ :=
+          Finset.sum_congr rfl fun p _ ↦ Finset.sum_congr rfl fun q _ ↦ by
+            rw [heven, real_inner_comm u, real_inner_comm v]
+            ring
+      _ = r ![a, u, c, v] := by
+          rw [b.sum_apply_mul_inner_mul_inner b, ← heven]
   have hsub : (∑ p, ∑ q, r ![a, b p, c, b q] * constantCurvature V ![x, b p, y, b q]) =
       (∑ p, ∑ q, r ![a, b p, c, b q] * (⟪x, y⟫_ℝ * ⟪b p, b q⟫_ℝ)) -
         ∑ p, ∑ q, r ![a, b p, c, b q] * (⟪x, b q⟫_ℝ * ⟪b p, y⟫_ℝ) := by

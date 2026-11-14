@@ -12,6 +12,8 @@ public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Basic
 
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import TauCeti.Analysis.Calculus.Bilinear
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Adjoint
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 
 /-!
 # The reaction tensor on algebraic curvature four-tensors
@@ -188,131 +190,50 @@ private def reactionBilinearComponent {ι : Type*} [Fintype ι] (b : Orthonormal
       (mulEvalBilin (b i) (b p) (b l) (b q) (b j) (b p) (b k) (b q) +
         mulEvalBilin (b j) (b p) (b k) (b q) (b i) (b p) (b l) (b q)))
 
-/-- The bilinear form `(x, y) ↦ r(u, v, x, y)` slicing the last two slots of a four-tensor. -/
-private def lastSlice (r : FourTensor V) (u v : V) : BilinForm ℝ V :=
-  LinearMap.mk₂ ℝ (fun x y ↦ r ![u, v, x, y])
-    (fun _ _ _ ↦ apply_add_third ..) (fun _ _ _ ↦ apply_smul_third ..)
-    (fun _ _ _ ↦ apply_add_fourth ..) (fun _ _ _ ↦ apply_smul_fourth ..)
-
-@[simp]
-private theorem lastSlice_apply (r : FourTensor V) (u v x y : V) :
-    lastSlice r u v x y = r ![u, v, x, y] :=
-  (rfl)
-
-/-- The bilinear form `(x, y) ↦ r(u, x, z, y)` slicing the second and fourth slots of a
+/-- The bilinear form `(x, y) ↦ r ![u, x, z, y]` slicing the second and fourth slots of a
 four-tensor. -/
 private def evenSlice (r : FourTensor V) (u z : V) : BilinForm ℝ V :=
-  LinearMap.mk₂ ℝ (fun x y ↦ r ![u, x, z, y])
-    (fun _ _ _ ↦ apply_add_second ..) (fun _ _ _ ↦ apply_smul_second ..)
-    (fun _ _ _ ↦ apply_add_fourth ..) (fun _ _ _ ↦ apply_smul_fourth ..)
+  lastSlice (r.domDomCongr (Equiv.swap 1 2)) u z
 
 @[simp]
 private theorem evenSlice_apply (r : FourTensor V) (u z x y : V) :
-    evenSlice r u z x y = r ![u, x, z, y] :=
-  (rfl)
+    evenSlice r u z x y = r ![u, x, z, y] := by
+  rw [evenSlice, lastSlice_apply, ContinuousMultilinearMap.domDomCongr_apply]
+  congr 1
+  funext i; fin_cases i <;> rfl
 
-/-- Riesz-vector norm bound for a linear functional bounded by `C * ‖·‖`. -/
-private theorem norm_sum_apply_smul_le {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ V)
-    {θ : V →ₗ[ℝ] ℝ} {C : ℝ} (hC0 : 0 ≤ C) (hθ : ∀ z, |θ z| ≤ C * ‖z‖) :
-    ‖∑ q, θ (b q) • b q‖ ≤ C := by
-  set z := ∑ q, θ (b q) • b q
-  have hz : ‖z‖ ^ 2 = θ z := by
-    have h1 : ⟪z, z⟫_ℝ = ∑ q, θ (b q) * θ (b q) := by
-      simpa [z] using b.orthonormal.inner_sum (fun q ↦ θ (b q)) (fun q ↦ θ (b q)) Finset.univ
-    rw [← real_inner_self_eq_norm_sq, h1, map_sum]
-    simp [map_smul, smul_eq_mul]
-  have hle : ‖z‖ ^ 2 ≤ C * ‖z‖ := by
-    calc ‖z‖ ^ 2 = |θ z| := by rw [← hz, abs_of_nonneg (sq_nonneg _)]
-      _ ≤ C * ‖z‖ := hθ z
-  nlinarith [norm_nonneg z]
+private theorem abs_sum_mul_last_le {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ V)
+    (r s : FourTensor V) (u v z w : V) :
+    |∑ p, ∑ q, r ![u, v, b p, b q] * s ![z, w, b p, b q]| ≤
+      (Fintype.card ι : ℝ) * ‖r‖ * ‖s‖ * (‖u‖ * ‖v‖ * ‖z‖ * ‖w‖) := by
+  have hslice (t : FourTensor V) (a c x y : V) :
+      ‖lastSlice t a c x y‖ ≤ (‖t‖ * ‖a‖ * ‖c‖) * ‖x‖ * ‖y‖ := by
+    simpa only [lastSlice_apply, Fin.prod_univ_four, Fin.isValue, Matrix.cons_val_zero,
+      Matrix.cons_val_one, Matrix.cons_val, mul_assoc] using t.le_opNorm ![a, c, x, y]
+  have h := b.orthonormal.norm_sum_mul_bilinForm_le Finset.univ Finset.univ
+    (by positivity) (by positivity) (hslice r u v) (hslice s z w)
+  simp only [lastSlice_apply, Real.norm_eq_abs, Finset.card_univ] at h
+  exact h.trans_eq (by ring)
 
-/-- Cauchy–Schwarz bound on the double contraction of two bilinear forms over an orthonormal
-basis `b`. -/
-private theorem abs_sum_mul_bilinForm_le {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ V)
-    {F G : BilinForm ℝ V} {A B : ℝ} (hA0 : 0 ≤ A) (hB0 : 0 ≤ B)
-    (hF : ∀ p x, |F (b p) x| ≤ A * ‖x‖) (hG : ∀ p x, |G (b p) x| ≤ B * ‖x‖) :
-    |∑ p, ∑ q, F (b p) (b q) * G (b p) (b q)| ≤ (Fintype.card ι : ℝ) * (A * B) := by
-  have hp (p : ι) : |∑ q, F (b p) (b q) * G (b p) (b q)| ≤ A * B := by
-    have hxy : (∑ q, F (b p) (b q) * G (b p) (b q)) =
-        ⟪∑ q, F (b p) (b q) • b q, ∑ q, G (b p) (b q) • b q⟫_ℝ := by
-      simpa using
-        (b.orthonormal.inner_sum (fun q ↦ F (b p) (b q)) (fun q ↦ G (b p) (b q))
-          Finset.univ).symm
-    rw [hxy]
-    exact (abs_real_inner_le_norm _ _).trans
-      (mul_le_mul (norm_sum_apply_smul_le b hA0 (hF p))
-        (norm_sum_apply_smul_le b hB0 (hG p)) (norm_nonneg _) hA0)
-  calc |∑ p, ∑ q, F (b p) (b q) * G (b p) (b q)|
-      ≤ ∑ p, |∑ q, F (b p) (b q) * G (b p) (b q)| := Finset.abs_sum_le_sum_abs _ _
-    _ ≤ ∑ _p : ι, A * B := Finset.sum_le_sum fun p _ ↦ hp p
-    _ = (Fintype.card ι : ℝ) * (A * B) := by simp
+private theorem abs_sum_mul_even_le {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ V)
+    (r s : FourTensor V) (u v z w : V) :
+    |∑ p, ∑ q, r ![u, b p, z, b q] * s ![v, b p, w, b q]| ≤
+      (Fintype.card ι : ℝ) * ‖r‖ * ‖s‖ * (‖u‖ * ‖v‖ * ‖z‖ * ‖w‖) := by
+  have hslice (t : FourTensor V) (a c x y : V) :
+      ‖evenSlice t a c x y‖ ≤ (‖t‖ * ‖a‖ * ‖c‖) * ‖x‖ * ‖y‖ := by
+    have h := t.le_opNorm ![a, x, c, y]
+    simp only [Fin.prod_univ_four, Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one,
+      Matrix.cons_val] at h
+    rw [evenSlice_apply]
+    exact h.trans_eq (by ring)
+  have h := b.orthonormal.norm_sum_mul_bilinForm_le Finset.univ Finset.univ
+    (by positivity) (by positivity) (hslice r u z) (hslice s v w)
+  simp only [evenSlice_apply, Real.norm_eq_abs, Finset.card_univ] at h
+  exact h.trans_eq (by ring)
 
 section FiniteDimensional
 
 variable [FiniteDimensional ℝ V]
-
-/-- Single-slot contraction of linear functionals pulled back along a coisometry `P : W →L[ℝ] V`
-(`P ∘L P.adjoint = id`). -/
-private theorem sum_mul_linearMap_comp_of_comp_adjoint_eq_id {W : Type*}
-    [NormedAddCommGroup W] [InnerProductSpace ℝ W] [CompleteSpace W]
-    {α β : Type*} [Fintype α] [Fintype β]
-    (bW : OrthonormalBasis α ℝ W) (bV : OrthonormalBasis β ℝ V)
-    {P : W →L[ℝ] V} (hP : P ∘L P.adjoint = ContinuousLinearMap.id ℝ V)
-    (φ ψ : V →ₗ[ℝ] ℝ) :
-    (∑ a, φ (P (bW a)) * ψ (P (bW a))) = ∑ p, φ (bV p) * ψ (bV p) := by
-  have hP' (x : V) : P (P.adjoint x) = x := by
-    simpa using DFunLike.congr_fun hP x
-  have hexp (a : α) : φ (P (bW a)) = ∑ p, ⟪bW a, P.adjoint (bV p)⟫_ℝ * φ (bV p) := by
-    conv_lhs => rw [← bV.sum_repr' (P (bW a)), map_sum]
-    refine Finset.sum_congr rfl fun p _ ↦ ?_
-    rw [map_smul, smul_eq_mul, ContinuousLinearMap.adjoint_inner_right, real_inner_comm]
-  calc (∑ a, φ (P (bW a)) * ψ (P (bW a)))
-      = ∑ a, ∑ p, ⟪bW a, P.adjoint (bV p)⟫_ℝ * φ (bV p) * ψ (P (bW a)) := by
-        refine Finset.sum_congr rfl fun a _ ↦ ?_
-        rw [hexp a, Finset.sum_mul]
-    _ = ∑ p, φ (bV p) * ∑ a, ⟪bW a, P.adjoint (bV p)⟫_ℝ * ψ (P (bW a)) := by
-        rw [Finset.sum_comm]
-        refine Finset.sum_congr rfl fun p _ ↦ ?_
-        rw [Finset.mul_sum]
-        exact Finset.sum_congr rfl fun a _ ↦ by ring
-    _ = ∑ p, φ (bV p) * ψ (P (∑ a, ⟪bW a, P.adjoint (bV p)⟫_ℝ • bW a)) := by
-        refine Finset.sum_congr rfl fun p _ ↦ congrArg (φ (bV p) * ·) ?_
-        rw [map_sum, map_sum]
-        refine Finset.sum_congr rfl fun a _ ↦ ?_
-        rw [map_smul, map_smul, smul_eq_mul]
-    _ = ∑ p, φ (bV p) * ψ (bV p) := by
-        refine Finset.sum_congr rfl fun p _ ↦ ?_
-        rw [bW.sum_repr', hP']
-
-/-- Double contraction of two bilinear forms pulled back along a coisometry `P : W →L[ℝ] V`
-(`P ∘L P.adjoint = id`). -/
-private theorem sum_mul_bilinForm_comp_of_comp_adjoint_eq_id {W : Type*}
-    [NormedAddCommGroup W] [InnerProductSpace ℝ W] [CompleteSpace W]
-    {α β : Type*} [Fintype α] [Fintype β]
-    (bW : OrthonormalBasis α ℝ W) (bV : OrthonormalBasis β ℝ V)
-    {P : W →L[ℝ] V} (hP : P ∘L P.adjoint = ContinuousLinearMap.id ℝ V)
-    (F G : BilinForm ℝ V) :
-    (∑ a, ∑ b, F (P (bW a)) (P (bW b)) * G (P (bW a)) (P (bW b))) =
-      ∑ p, ∑ q, F (bV p) (bV q) * G (bV p) (bV q) := by
-  calc (∑ a, ∑ b, F (P (bW a)) (P (bW b)) * G (P (bW a)) (P (bW b)))
-      = ∑ a, ∑ q, F (P (bW a)) (bV q) * G (P (bW a)) (bV q) :=
-        Finset.sum_congr rfl fun a _ ↦
-          sum_mul_linearMap_comp_of_comp_adjoint_eq_id bW bV hP (F (P (bW a))) (G (P (bW a)))
-    _ = ∑ q, ∑ a, F.flip (bV q) (P (bW a)) * G.flip (bV q) (P (bW a)) := Finset.sum_comm
-    _ = ∑ q, ∑ p, F.flip (bV q) (bV p) * G.flip (bV q) (bV p) :=
-        Finset.sum_congr rfl fun q _ ↦
-          sum_mul_linearMap_comp_of_comp_adjoint_eq_id bW bV hP (F.flip (bV q)) (G.flip (bV q))
-    _ = ∑ p, ∑ q, F (bV p) (bV q) * G (bV p) (bV q) := Finset.sum_comm
-
-/-- Orthonormal-basis invariance of the double contraction of two bilinear forms, obtained as the
-`P = id` specialization of `sum_mul_bilinForm_comp_of_comp_adjoint_eq_id`. -/
-private theorem sum_mul_bilinForm_orthonormalBasis {α β : Type*} [Fintype α] [Fintype β]
-    (b₁ : OrthonormalBasis α ℝ V) (b₂ : OrthonormalBasis β ℝ V) (F G : BilinForm ℝ V) :
-    (∑ a, ∑ b, F (b₁ a) (b₁ b) * G (b₁ a) (b₁ b)) =
-      ∑ p, ∑ q, F (b₂ p) (b₂ q) * G (b₂ p) (b₂ q) := by
-  simpa using sum_mul_bilinForm_comp_of_comp_adjoint_eq_id b₁ b₂
-    (P := ContinuousLinearMap.id ℝ V)
-    (by rw [ContinuousLinearMap.adjoint_id, ContinuousLinearMap.id_comp]) F G
 
 /-- The bilinear form `(u, v) ↦ r(u, v, x, y)` slicing the first two slots of a four-tensor. -/
 private def firstSlice (r : FourTensor V) (x y : V) : BilinForm ℝ V :=
@@ -417,12 +338,12 @@ theorem reactionBilinear_apply_orthonormalBasis {ι : Type*} [Fintype ι]
     pairFirstFourTensor_apply, pairMixedFourTensor_apply, pairCrossFourTensor_apply,
     Finset.sum_add_distrib]
   -- Transfer each of the six double contractions from `e` to `b`.
-  have b1 := sum_mul_bilinForm_orthonormalBasis e b (lastSlice r u v) (lastSlice s z w)
-  have b2 := sum_mul_bilinForm_orthonormalBasis e b (lastSlice s u v) (lastSlice r z w)
-  have b3 := sum_mul_bilinForm_orthonormalBasis e b (evenSlice r u z) (evenSlice s v w)
-  have b4 := sum_mul_bilinForm_orthonormalBasis e b (evenSlice s u z) (evenSlice r v w)
-  have b5 := sum_mul_bilinForm_orthonormalBasis e b (evenSlice r u w) (evenSlice s v z)
-  have b6 := sum_mul_bilinForm_orthonormalBasis e b (evenSlice s u w) (evenSlice r v z)
+  have b1 := e.sum_mul_bilinForm_orthonormalBasis b (lastSlice r u v) (lastSlice s z w)
+  have b2 := e.sum_mul_bilinForm_orthonormalBasis b (lastSlice s u v) (lastSlice r z w)
+  have b3 := e.sum_mul_bilinForm_orthonormalBasis b (evenSlice r u z) (evenSlice s v w)
+  have b4 := e.sum_mul_bilinForm_orthonormalBasis b (evenSlice s u z) (evenSlice r v w)
+  have b5 := e.sum_mul_bilinForm_orthonormalBasis b (evenSlice r u w) (evenSlice s v z)
+  have b6 := e.sum_mul_bilinForm_orthonormalBasis b (evenSlice s u w) (evenSlice r v z)
   simp only [lastSlice_apply, evenSlice_apply] at b1 b2 b3 b4 b5 b6
   rw [b1, b2, b3, b4, b5, b6]
 
@@ -450,9 +371,13 @@ theorem reactionBilinear_comm (r s : FourTensor V) :
   simp only [Finset.sum_add_distrib]
   ring
 
-private theorem reactionBilinear_flip :
+/-- Operator-level symmetry of `reactionBilinear V`: flipping its two arguments leaves it
+unchanged. -/
+@[simp]
+theorem reactionBilinear_flip :
     (reactionBilinear V).flip = reactionBilinear V := by
   ext r s : 2
+  rw [ContinuousLinearMap.flip_apply]
   exact reactionBilinear_comm s r
 
 /-- Basis independence of the reaction tensor: in every orthonormal basis `b` of `V`, `Q(r)` is
@@ -634,17 +559,17 @@ theorem reactionBilinear_compContinuousLinearMap_of_comp_adjoint_eq_id {W : Type
     reactionBilinear_apply_orthonormalBasis bW, reactionBilinear_apply_orthonormalBasis bV]
   simp only [compContinuousLinearMap_apply_vec, Finset.sum_add_distrib]
   -- Transfer each of the six pulled-back double contractions from `bW` on `W` to `bV` on `V`.
-  have c1 := sum_mul_bilinForm_comp_of_comp_adjoint_eq_id bW bV hP
+  have c1 := bW.sum_mul_bilinForm_comp_of_comp_adjoint_eq_id bV hP
     (lastSlice r (P u) (P v)) (lastSlice s (P z) (P w))
-  have c2 := sum_mul_bilinForm_comp_of_comp_adjoint_eq_id bW bV hP
+  have c2 := bW.sum_mul_bilinForm_comp_of_comp_adjoint_eq_id bV hP
     (lastSlice s (P u) (P v)) (lastSlice r (P z) (P w))
-  have c3 := sum_mul_bilinForm_comp_of_comp_adjoint_eq_id bW bV hP
+  have c3 := bW.sum_mul_bilinForm_comp_of_comp_adjoint_eq_id bV hP
     (evenSlice r (P u) (P z)) (evenSlice s (P v) (P w))
-  have c4 := sum_mul_bilinForm_comp_of_comp_adjoint_eq_id bW bV hP
+  have c4 := bW.sum_mul_bilinForm_comp_of_comp_adjoint_eq_id bV hP
     (evenSlice s (P u) (P z)) (evenSlice r (P v) (P w))
-  have c5 := sum_mul_bilinForm_comp_of_comp_adjoint_eq_id bW bV hP
+  have c5 := bW.sum_mul_bilinForm_comp_of_comp_adjoint_eq_id bV hP
     (evenSlice r (P u) (P w)) (evenSlice s (P v) (P z))
-  have c6 := sum_mul_bilinForm_comp_of_comp_adjoint_eq_id bW bV hP
+  have c6 := bW.sum_mul_bilinForm_comp_of_comp_adjoint_eq_id bV hP
     (evenSlice s (P u) (P w)) (evenSlice r (P v) (P z))
   simp only [lastSlice_apply, evenSlice_apply] at c1 c2 c3 c4 c5 c6
   rw [c1, c2, c3, c4, c5, c6]
@@ -671,7 +596,7 @@ theorem reactionBilinear_compContinuousLinearMap_linearIsometryEquiv {W : Type*}
   refine reactionBilinear_compContinuousLinearMap_of_comp_adjoint_eq_id ?_ r s
   rw [e.toContinuousLinearMap_toLinearIsometry, LinearIsometryEquiv.adjoint_eq_symm]
   ext x
-  exact e.apply_symm_apply x
+  simp
 
 /-- `reactionTensor` is equivariant under linear isometric equivalences (`O(n)`-equivariance). -/
 theorem reactionTensor_compContinuousLinearMap_linearIsometryEquiv {W : Type*}
@@ -718,42 +643,27 @@ theorem norm_reactionBilinear_apply_le (r s : FourTensor V) :
     ‖reactionBilinear V r s‖ ≤ 5 * (Module.finrank ℝ V : ℝ) * ‖r‖ * ‖s‖ := by
   set b := stdOrthonormalBasis ℝ V
   refine ContinuousMultilinearMap.opNorm_le_bound (by positivity) fun m ↦ ?_
-  have hm : m = ![m 0, m 1, m 2, m 3] := by funext i; fin_cases i <;> rfl
-  conv_lhs => rw [hm]
+  conv_lhs => rw [show m = ![m 0, m 1, m 2, m 3] from (FinVec.etaExpand_eq m).symm]
   rw [Fin.prod_univ_four, reactionBilinear_apply_orthonormalBasis b, Real.norm_eq_abs]
-  -- Operator-norm bounds on each row of `lastSlice` and `evenSlice`.
-  have hlast (t : FourTensor V) (u v : V) (p : Fin (Module.finrank ℝ V)) (x : V) :
-      |lastSlice t u v (b p) x| ≤ (‖t‖ * ‖u‖ * ‖v‖) * ‖x‖ := by
-    simpa only [lastSlice_apply, Real.norm_eq_abs, Fin.prod_univ_four,
-      Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val, b.norm_eq_one,
-      mul_one, mul_assoc] using t.le_opNorm ![u, v, b p, x]
-  have heven (t : FourTensor V) (u z : V) (p : Fin (Module.finrank ℝ V)) (x : V) :
-      |evenSlice t u z (b p) x| ≤ (‖t‖ * ‖u‖ * ‖z‖) * ‖x‖ := by
-    have h := t.le_opNorm ![u, b p, z, x]
-    rw [Real.norm_eq_abs, Fin.prod_univ_four] at h
-    simpa only [evenSlice_apply, Fin.isValue, Matrix.cons_val_zero,
-      Matrix.cons_val_one, Matrix.cons_val, b.norm_eq_one, one_mul, mul_one, mul_assoc] using h
   -- Bound each of the six double contractions by `dim V * ‖r‖ * ‖s‖ * ∏ i, ‖m i‖`.
   let P : ℝ := (Module.finrank ℝ V : ℝ) * ‖r‖ * ‖s‖ * (‖m 0‖ * ‖m 1‖ * ‖m 2‖ * ‖m 3‖)
   have hcard : (Fintype.card (Fin (Module.finrank ℝ V)) : ℝ) = Module.finrank ℝ V := by simp
   have s1 : |∑ p, ∑ q, r ![m 0, m 1, b p, b q] * s ![m 2, m 3, b p, b q]| ≤ P :=
-    (abs_sum_mul_bilinForm_le b (by positivity) (by positivity)
-      (hlast r (m 0) (m 1)) (hlast s (m 2) (m 3))).trans_eq (by rw [hcard]; dsimp only [P]; ring)
+    (abs_sum_mul_last_le b r s (m 0) (m 1) (m 2) (m 3)).trans_eq (by rw [hcard])
   have s2 : |∑ p, ∑ q, s ![m 0, m 1, b p, b q] * r ![m 2, m 3, b p, b q]| ≤ P :=
-    (abs_sum_mul_bilinForm_le b (by positivity) (by positivity)
-      (hlast s (m 0) (m 1)) (hlast r (m 2) (m 3))).trans_eq (by rw [hcard]; dsimp only [P]; ring)
+    (abs_sum_mul_last_le b s r (m 0) (m 1) (m 2) (m 3)).trans_eq
+      (by rw [hcard]; dsimp only [P]; ring)
   have s3 : |∑ p, ∑ q, r ![m 0, b p, m 2, b q] * s ![m 1, b p, m 3, b q]| ≤ P :=
-    (abs_sum_mul_bilinForm_le b (by positivity) (by positivity)
-      (heven r (m 0) (m 2)) (heven s (m 1) (m 3))).trans_eq (by rw [hcard]; dsimp only [P]; ring)
+    (abs_sum_mul_even_le b r s (m 0) (m 1) (m 2) (m 3)).trans_eq (by rw [hcard])
   have s4 : |∑ p, ∑ q, s ![m 0, b p, m 2, b q] * r ![m 1, b p, m 3, b q]| ≤ P :=
-    (abs_sum_mul_bilinForm_le b (by positivity) (by positivity)
-      (heven s (m 0) (m 2)) (heven r (m 1) (m 3))).trans_eq (by rw [hcard]; dsimp only [P]; ring)
+    (abs_sum_mul_even_le b s r (m 0) (m 1) (m 2) (m 3)).trans_eq
+      (by rw [hcard]; dsimp only [P]; ring)
   have s5 : |∑ p, ∑ q, r ![m 0, b p, m 3, b q] * s ![m 1, b p, m 2, b q]| ≤ P :=
-    (abs_sum_mul_bilinForm_le b (by positivity) (by positivity)
-      (heven r (m 0) (m 3)) (heven s (m 1) (m 2))).trans_eq (by rw [hcard]; dsimp only [P]; ring)
+    (abs_sum_mul_even_le b r s (m 0) (m 1) (m 3) (m 2)).trans_eq
+      (by rw [hcard]; dsimp only [P]; ring)
   have s6 : |∑ p, ∑ q, s ![m 0, b p, m 3, b q] * r ![m 1, b p, m 2, b q]| ≤ P :=
-    (abs_sum_mul_bilinForm_le b (by positivity) (by positivity)
-      (heven s (m 0) (m 3)) (heven r (m 1) (m 2))).trans_eq (by rw [hcard]; dsimp only [P]; ring)
+    (abs_sum_mul_even_le b s r (m 0) (m 1) (m 3) (m 2)).trans_eq
+      (by rw [hcard]; dsimp only [P]; ring)
   simp only [Finset.sum_add_distrib]
   -- Combine the six bounds with the weights `2⁻¹ * (P + P) + (P + P) + (P + P) = 5 * P`.
   have tri1 (x y z : ℝ) : |x + y - z| ≤ |x| + |y| + |z| := by
@@ -923,18 +833,11 @@ Ricci-flat (`ricci r = 0`). -/
 theorem scalar_reactionTensor_eq_zero_iff {r : FourTensor V} (hr : IsAlgebraicCurvature r) :
     scalar (reactionTensor r) = 0 ↔ ricci r = 0 := by
   set b := stdOrthonormalBasis ℝ V
-  rw [scalar_reactionTensor b hr]
-  refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
-  have hsum : (∑ p, ∑ q, (ricci r (b p) (b q)) ^ 2) = 0 := by linarith
-  have hp : ∀ p, (∑ q, (ricci r (b p) (b q)) ^ 2) = 0 := fun p ↦
-    (Finset.sum_eq_zero_iff_of_nonneg fun i _ ↦ Finset.sum_nonneg fun j _ ↦ sq_nonneg _).1
-      hsum p (Finset.mem_univ p)
-  have hpq : ∀ p q, ricci r (b p) (b q) = 0 := fun p q ↦
-    sq_eq_zero_iff.1 <|
-      (Finset.sum_eq_zero_iff_of_nonneg fun j _ ↦ sq_nonneg _).1 (hp p) q (Finset.mem_univ q)
-  ext u v
-  rw [← b.sum_repr' u, ← b.sum_repr' v, map_sum]
-  simp [LinearMap.sum_apply, hpq]
+  rw [scalar_reactionTensor b hr, ← Fintype.sum_prod_type', mul_eq_zero,
+    or_iff_right two_ne_zero, Finset.sum_sq_eq_zero_iff]
+  refine ⟨fun h ↦ LinearMap.BilinForm.ext_basis b.toBasis fun p q ↦ ?_,
+    fun h _ _ ↦ by simp [h]⟩
+  simpa [OrthonormalBasis.coe_toBasis] using h (p, q) (Finset.mem_univ _)
 
 /-- Pairing an algebraic curvature tensor `r` with `constantCurvature V` under `reactionBilinear V`
 produces the Kulkarni–Nomizu product `kulkarniNomizu (ricci r) (innerₗ V)`. -/
@@ -1027,11 +930,8 @@ theorem reactionTensor_planeCurvature (u v : V) :
 `Q(planeCurvature u v) = 2 • planeCurvature u v`. -/
 theorem reactionTensor_planeCurvature_of_orthonormal {u v : V} (huv : Orthonormal ℝ ![u, v]) :
     reactionTensor (planeCurvature u v) = (2 : ℝ) • planeCurvature u v := by
-  have hu : ‖u‖ = 1 := huv.1 0
-  have hv : ‖v‖ = 1 := huv.1 1
-  have horth : ⟪u, v⟫_ℝ = 0 := huv.2 (by decide : (0 : Fin 2) ≠ 1)
-  rw [reactionTensor_planeCurvature, constantCurvature_apply_self, hu, hv, horth]
-  norm_num
+  rw [reactionTensor_planeCurvature, ← scalar_planeCurvature,
+    scalar_planeCurvature_of_orthonormal huv]
 
 end FiniteDimensional
 
