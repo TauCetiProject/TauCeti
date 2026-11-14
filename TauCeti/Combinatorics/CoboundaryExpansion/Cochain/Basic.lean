@@ -69,16 +69,14 @@ section Carrier
 
 variable {V G : Type*} [Group G] {X : TwoComplex V}
 
-instance : CoeFun (Cochain X G) (fun _ => V → V → G) :=
-  ⟨Cochain.toFun⟩
+instance : CoeFun (Cochain X G) (fun _ => V → V → G) := ⟨Cochain.toFun⟩
 
 /-- Two cochains are equal when they agree on every oriented edge of `X`. -/
 @[ext]
 theorem ext {α α' : Cochain X G} (h : ∀ u v, X.Adj u v → α u v = α' u v) : α = α' := by
   cases α with | mk f hf hnot => ?_
   cases α' with | mk f' hf' hnot' => ?_
-  congr
-  ext u v
+  congr; ext u v
   by_cases huv : X.Adj u v
   · exact h u v huv
   · rw [hnot u v huv, hnot' u v huv]
@@ -109,11 +107,7 @@ theorem ext_of_lt [LinearOrder V] {α α' : Cochain X G}
   · rw [α.apply_swap v u, α'.apply_swap v u, h v u hgt huv.symm]
 
 /-- The trivial cochain assigning `1` to every pair of vertices. -/
-instance : One (Cochain X G) where
-  one :=
-    { toFun := fun _ _ => 1
-      inv_symm := fun _ _ _ => inv_one.symm
-      apply_eq_one_of_not_adj' := fun _ _ _ => rfl }
+instance : One (Cochain X G) := ⟨⟨fun _ _ => 1, fun _ _ _ => inv_one.symm, fun _ _ _ => rfl⟩⟩
 
 instance : Inhabited (Cochain X G) := ⟨1⟩
 
@@ -130,29 +124,23 @@ whenever `G` is finite, without any finiteness assumption on `V`. -/
 instance [Finite G] : Finite (Cochain X G) := by
   classical
   let S : Finset V := X.edges.biUnion id
-  refine Finite.of_injective (fun (α : Cochain X G) (u v : S) => α u.1 v.1) ?_
-  intro α α' h
+  refine Finite.of_injective (fun (α : Cochain X G) (u v : S) => α u.1 v.1) fun α α' h => ?_
   ext u v huv
   obtain ⟨e, he, hu, hv⟩ := huv.exists_mem_edges
-  have huS : u ∈ S := mem_biUnion.mpr ⟨e, he, hu⟩
-  have hvS : v ∈ S := mem_biUnion.mpr ⟨e, he, hv⟩
-  exact congrFun (congrFun h ⟨u, huS⟩) ⟨v, hvS⟩
+  exact congrFun (congrFun h ⟨u, mem_biUnion.mpr ⟨e, he, hu⟩⟩) ⟨v, mem_biUnion.mpr ⟨e, he, hv⟩⟩
 
 /-- Build a cochain from an arbitrary function inverted by edge reversal, setting off-edge values
 to `1`. -/
 noncomputable def ofFn (X : TwoComplex V) (f : V → V → G)
     (hf : ∀ u v, X.Adj u v → f v u = (f u v)⁻¹) : Cochain X G := by
   classical
-  exact
-    { toFun := fun u v => if X.Adj u v then f u v else 1
-      inv_symm := fun u v huv => by simp [huv, huv.symm, hf u v huv]
-      apply_eq_one_of_not_adj' := fun u v huv => by simp [huv] }
+  exact { toFun := fun u v => if X.Adj u v then f u v else 1
+          inv_symm := fun u v huv => by simp [huv, huv.symm, hf u v huv]
+          apply_eq_one_of_not_adj' := fun u v huv => by simp [huv] }
 
 @[simp, grind =]
 theorem ofFn_apply_of_adj {f : V → V → G} (hf : ∀ u v, X.Adj u v → f v u = (f u v)⁻¹)
-    {u v : V} (h : X.Adj u v) : ofFn X f hf u v = f u v := by
-  classical
-  simp [ofFn, h]
+    {u v : V} (h : X.Adj u v) : ofFn X f hf u v = f u v := by classical simp [ofFn, h]
 
 @[simp, grind =]
 theorem ofFn_apply_of_not_adj {f : V → V → G} (hf : ∀ u v, X.Adj u v → f v u = (f u v)⁻¹)
@@ -169,13 +157,11 @@ noncomputable def ofLt [LinearOrder V] (X : TwoComplex V) (f : V → V → G) : 
 
 @[simp, grind =]
 theorem ofLt_apply_of_lt [LinearOrder V] (f : V → V → G) {u v : V} (h : X.Adj u v)
-    (hlt : u < v) : ofLt X f u v = f u v := by
-  simp [ofLt, h, hlt]
+    (hlt : u < v) : ofLt X f u v = f u v := by simp [ofLt, h, hlt]
 
 @[simp, grind =]
 theorem ofLt_apply_of_gt [LinearOrder V] (f : V → V → G) {u v : V} (h : X.Adj u v)
-    (hgt : v < u) : ofLt X f u v = (f v u)⁻¹ := by
-  simp [ofLt, h, asymm hgt]
+    (hgt : v < u) : ofLt X f u v = (f v u)⁻¹ := by simp [ofLt, h, asymm hgt]
 
 @[simp, grind =]
 theorem ofLt_apply_of_not_adj [LinearOrder V] (f : V → V → G) {u v : V} (h : ¬ X.Adj u v) :
@@ -190,26 +176,20 @@ noncomputable def singleEdge (X : TwoComplex V) (u₀ v₀ : V) (g : G) : Cochai
     (fun u v => if u = u₀ ∧ v = v₀ then g else if u = v₀ ∧ v = u₀ then g⁻¹ else 1)
     fun u v huv => by
       by_cases h₁ : u = u₀ ∧ v = v₀
-      · rcases h₁ with ⟨rfl, rfl⟩
-        simp [huv.ne.symm]
+      · rcases h₁ with ⟨rfl, rfl⟩; simp [huv.ne.symm]
       · by_cases h₂ : u = v₀ ∧ v = u₀
-        · rcases h₂ with ⟨rfl, rfl⟩
-          simp [huv.ne]
+        · rcases h₂ with ⟨rfl, rfl⟩; simp [huv.ne]
         · have h₁' : ¬ (v = v₀ ∧ u = u₀) := fun ⟨hv, hu⟩ => h₁ ⟨hu, hv⟩
           have h₂' : ¬ (v = u₀ ∧ u = v₀) := fun ⟨hv, hu⟩ => h₂ ⟨hu, hv⟩
           simp [h₁, h₂, h₁', h₂']
 
 @[simp, grind =]
 theorem singleEdge_apply_self {u₀ v₀ : V} (h : X.Adj u₀ v₀) (g : G) :
-    singleEdge X u₀ v₀ g u₀ v₀ = g := by
-  classical
-  simp [singleEdge, h]
+    singleEdge X u₀ v₀ g u₀ v₀ = g := by classical simp [singleEdge, h]
 
 @[simp, grind =]
 theorem singleEdge_apply_swap {u₀ v₀ : V} (h : X.Adj u₀ v₀) (g : G) :
-    singleEdge X u₀ v₀ g v₀ u₀ = g⁻¹ := by
-  classical
-  simp [singleEdge, h.symm, h.ne.symm]
+    singleEdge X u₀ v₀ g v₀ u₀ = g⁻¹ := by classical simp [singleEdge, h.symm, h.ne.symm]
 
 @[simp, grind =]
 theorem singleEdge_apply_of_ne {u₀ v₀ u v : V} (g : G)
@@ -229,18 +209,14 @@ theorem singleEdge_of_not_adj {u₀ v₀ : V} (h : ¬ X.Adj u₀ v₀) (g : G) :
 @[simp]
 theorem singleEdge_one (u₀ v₀ : V) : singleEdge X u₀ v₀ (1 : G) = 1 := by
   classical
-  ext u v huv
-  simp [singleEdge, huv]
+  ext u v huv; simp [singleEdge, huv]
 
 /-! ### Gauge action, holonomy, and coboundaries -/
 
 /-- A gauge `β : V → G` acts on cochains by `(β • α) u v = (β u)⁻¹ * α u v * β v` on edges of `X`
 and `1` off edges. -/
 noncomputable instance : SMul (V → G) (Cochain X G) where
-  smul β α :=
-    ofFn X (fun u v => (β u)⁻¹ * α u v * β v) fun u v _ => by
-      rw [α.apply_swap u v]
-      group
+  smul β α := ofFn X (fun u v => (β u)⁻¹ * α u v * β v) fun u v _ => by rw [α.apply_swap u v]; group
 
 @[simp, grind =]
 theorem smul_apply_of_adj (β : V → G) (α : Cochain X G) {u v : V} (h : X.Adj u v) :
@@ -257,33 +233,28 @@ including the diagonal. -/
 @[simp, grind =]
 theorem smul_apply_complete [Fintype V] (β : V → G) (α : Cochain (complete V) G) (u v : V) :
     (β • α) u v = (β u)⁻¹ * α u v * β v := by
-  by_cases huv : u = v
-  · subst huv
-    simp
+  rcases eq_or_ne u v with rfl | huv
+  · simp
   · exact smul_apply_of_adj β α ((adj_complete u v).mpr huv)
 
 @[simp]
 protected theorem one_smul (α : Cochain X G) : (1 : V → G) • α = α := by
-  ext u v huv
-  simp [huv]
+  ext u v huv; simp [huv]
 
 /-- Successive gauge transformations compose in reverse order: `β • (γ • α) = (γ * β) • α`. -/
 @[simp]
 theorem smul_smul_eq_mul_smul (β γ : V → G) (α : Cochain X G) :
     β • (γ • α) = (γ * β) • α := by
-  ext u v huv
-  simp [huv, mul_assoc]
+  ext u v huv; simp [huv, mul_assoc]
 
 /-- The holonomy of `α` around the oriented triple `(u, v, w)`. -/
-def holonomy (α : Cochain X G) (u v w : V) : G :=
-  α u v * α v w * α w u
+def holonomy (α : Cochain X G) (u v w : V) : G := α u v * α v w * α w u
 
 theorem holonomy_def (α : Cochain X G) (u v w : V) :
     α.holonomy u v w = α u v * α v w * α w u := (rfl)
 
 @[simp]
-theorem holonomy_one (u v w : V) : (1 : Cochain X G).holonomy u v w = 1 := by
-  simp [holonomy_def]
+theorem holonomy_one (u v w : V) : (1 : Cochain X G).holonomy u v w = 1 := by simp [holonomy_def]
 
 /-- Under a gauge `β`, the holonomy around three mutually adjacent vertices is conjugated by
 `β u`. -/
@@ -291,8 +262,7 @@ theorem holonomy_smul (β : V → G) (α : Cochain X G) {u v w : V}
     (huv : X.Adj u v) (hvw : X.Adj v w) (hwu : X.Adj w u) :
     (β • α).holonomy u v w = (β u)⁻¹ * α.holonomy u v w * β u := by
   simp only [holonomy_def, smul_apply_of_adj β α huv, smul_apply_of_adj β α hvw,
-    smul_apply_of_adj β α hwu]
-  group
+    smul_apply_of_adj β α hwu]; group
 
 /-- The holonomy of `singleEdge X u₀ v₀ g` around `(u₀, v₀, w)` for any third vertex `w` is `g`. -/
 theorem holonomy_singleEdge {u₀ v₀ w : V} (h : X.Adj u₀ v₀) (hw₁ : w ≠ u₀) (hw₂ : w ≠ v₀)
@@ -305,8 +275,7 @@ def IsCoboundary (α : Cochain X G) : Prop :=
   ∃ β : V → G, ∀ u v, X.Adj u v → α u v = β u * (β v)⁻¹
 
 theorem isCoboundary_def (α : Cochain X G) :
-    α.IsCoboundary ↔ ∃ β : V → G, ∀ u v, X.Adj u v → α u v = β u * (β v)⁻¹ :=
-  Iff.rfl
+    α.IsCoboundary ↔ ∃ β : V → G, ∀ u v, X.Adj u v → α u v = β u * (β v)⁻¹ := Iff.rfl
 
 theorem isCoboundary_iff_mem_edges [DecidableEq V] (α : Cochain X G) :
     α.IsCoboundary ↔
@@ -319,15 +288,7 @@ theorem isCoboundary_iff_exists_smul_eq_one (α : Cochain X G) :
   refine exists_congr fun β => ?_
   rw [Cochain.ext_iff]
   refine forall₂_congr fun u v => imp_congr_right fun huv => ?_
-  rw [smul_apply_of_adj β α huv, one_apply]
-  constructor
-  · intro h
-    rw [h]
-    group
-  · intro h
-    calc
-      α u v = β u * ((β u)⁻¹ * α u v * β v) * (β v)⁻¹ := by group
-      _ = β u * (β v)⁻¹ := by rw [h, mul_one]
+  rw [smul_apply_of_adj β α huv, one_apply, mul_eq_one_iff_eq_inv, inv_mul_eq_iff_eq_mul]
 
 @[simp]
 theorem isCoboundary_one : (1 : Cochain X G).IsCoboundary :=
@@ -337,20 +298,15 @@ theorem isCoboundary_one : (1 : Cochain X G).IsCoboundary :=
 theorem isCoboundary_smul_iff (β : V → G) (α : Cochain X G) :
     (β • α).IsCoboundary ↔ α.IsCoboundary := by
   simp only [isCoboundary_iff_exists_smul_eq_one]
-  constructor
-  · rintro ⟨γ, h⟩
-    exact ⟨β * γ, by rwa [← smul_smul_eq_mul_smul]⟩
-  · rintro ⟨γ, h⟩
-    refine ⟨β⁻¹ * γ, ?_⟩
-    rw [smul_smul_eq_mul_smul, ← mul_assoc, mul_inv_cancel, one_mul, h]
+  exact ⟨fun ⟨γ, h⟩ => ⟨β * γ, by rwa [← smul_smul_eq_mul_smul]⟩,
+    fun ⟨γ, h⟩ => ⟨β⁻¹ * γ, by rw [smul_smul_eq_mul_smul, ← mul_assoc, mul_inv_cancel, one_mul, h]⟩⟩
 
 /-- Every triangle holonomy of a coboundary is trivial. -/
 theorem IsCoboundary.holonomy_eq_one {α : Cochain X G} (hα : α.IsCoboundary)
     {u v w : V} (huv : X.Adj u v) (hvw : X.Adj v w) (hwu : X.Adj w u) :
     α.holonomy u v w = 1 := by
   obtain ⟨β, hβ⟩ := hα
-  rw [holonomy_def, hβ u v huv, hβ v w hvw, hβ w u hwu]
-  group
+  rw [holonomy_def, hβ u v huv, hβ v w hvw, hβ w u hwu]; group
 
 /-- A cochain with a non-identity holonomy around three mutually adjacent vertices is not a
 coboundary. -/
@@ -392,8 +348,7 @@ theorem cost_def (ℓ : GroupNorm G) (α : Cochain X G) (β : V → G) :
         ℓ ((β p.1)⁻¹ * α p.1 p.2 * β p.2) := (rfl)
 
 /-- The gauge distance from `α` to the coboundaries: the infimum of `cost` over all gauges. -/
-noncomputable def gaugeDist (ℓ : GroupNorm G) (α : Cochain X G) : ℝ :=
-  ⨅ β : V → G, α.cost ℓ β
+noncomputable def gaugeDist (ℓ : GroupNorm G) (α : Cochain X G) : ℝ := ⨅ β : V → G, α.cost ℓ β
 
 theorem gaugeDist_def (ℓ : GroupNorm G) (α : Cochain X G) :
     α.gaugeDist ℓ = ⨅ β : V → G, α.cost ℓ β := (rfl)
@@ -420,12 +375,10 @@ theorem le_gaugeDist_iff (ℓ : GroupNorm G) (α : Cochain X G) {c : ℝ} :
   le_ciInf_iff (α.bddBelow_range_cost ℓ)
 
 @[simp]
-theorem defect_one (ℓ : GroupNorm G) : (1 : Cochain X G).defect ℓ = 0 := by
-  simp [defect_def]
+theorem defect_one (ℓ : GroupNorm G) : (1 : Cochain X G).defect ℓ = 0 := by simp [defect_def]
 
 @[simp]
-theorem cost_one_one (ℓ : GroupNorm G) : (1 : Cochain X G).cost ℓ 1 = 0 := by
-  simp [cost_def]
+theorem cost_one_one (ℓ : GroupNorm G) : (1 : Cochain X G).cost ℓ 1 = 0 := by simp [cost_def]
 
 @[simp]
 theorem gaugeDist_one (ℓ : GroupNorm G) : (1 : Cochain X G).gaugeDist ℓ = 0 :=
@@ -436,13 +389,10 @@ theorem cost_eq_zero_iff (ℓ : GroupNorm G) (α : Cochain X G) (β : V → G) :
     α.cost ℓ β = 0 ↔ β • α = 1 := by
   rw [cost_def, sum_eq_zero_iff_of_nonneg (fun _ _ => apply_nonneg ℓ _)]
   simp only [mem_filter, mem_univ, true_and, map_eq_zero_iff_eq_one]
-  constructor
-  · intro h
-    refine ext_of_lt fun u v hlt huv => ?_
-    rw [smul_apply_of_adj β α huv, one_apply]
+  refine ⟨fun h => ext_of_lt fun u v hlt huv => ?_, fun h ⟨u, v⟩ ⟨_, huv⟩ => ?_⟩
+  · rw [smul_apply_of_adj β α huv, one_apply]
     exact h (u, v) ⟨hlt, (X.adj_iff_pair_mem_edges u v).mp huv⟩
-  · rintro h ⟨u, v⟩ ⟨_, huv⟩
-    have hadj : X.Adj u v := (X.adj_iff_pair_mem_edges u v).mpr huv
+  · have hadj : X.Adj u v := (X.adj_iff_pair_mem_edges u v).mpr huv
     simpa [smul_apply_of_adj β α hadj] using congrFun (congrFun (congrArg toFun h) u) v
 
 /-- Every coboundary has zero defect, even without conjugation invariance of the norm. -/
@@ -451,18 +401,15 @@ theorem IsCoboundary.defect_eq_zero {α : Cochain X G} (hα : α.IsCoboundary) (
   rw [defect_def]
   refine sum_eq_zero fun p hp => ?_
   obtain ⟨hlt₁, hlt₂, ht⟩ := (mem_filter.mp hp).2
-  have huv : X.Adj p.1 p.2.1 := X.adj_of_mem_triangle ht (by simp) (by simp) hlt₁.ne
-  have hvw : X.Adj p.2.1 p.2.2 := X.adj_of_mem_triangle ht (by simp) (by simp) hlt₂.ne
-  have hwu : X.Adj p.2.2 p.1 :=
-    X.adj_of_mem_triangle ht (by simp) (by simp) (hlt₁.trans hlt₂).ne'
-  rw [hα.holonomy_eq_one huv hvw hwu, map_one_eq_zero]
+  rw [hα.holonomy_eq_one (X.adj_of_mem_triangle ht (by simp) (by simp) hlt₁.ne)
+    (X.adj_of_mem_triangle ht (by simp) (by simp) hlt₂.ne)
+    (X.adj_of_mem_triangle ht (by simp) (by simp) (hlt₁.trans hlt₂).ne'), map_one_eq_zero]
 
 /-- Every coboundary has gauge distance zero. -/
 theorem IsCoboundary.gaugeDist_eq_zero {α : Cochain X G} (hα : α.IsCoboundary) (ℓ : GroupNorm G) :
     α.gaugeDist ℓ = 0 := by
   obtain ⟨β, hβ⟩ := (isCoboundary_iff_exists_smul_eq_one α).mp hα
-  exact le_antisymm
-    ((α.gaugeDist_le_cost ℓ β).trans_eq ((α.cost_eq_zero_iff ℓ β).mpr hβ))
+  exact le_antisymm ((α.gaugeDist_le_cost ℓ β).trans_eq ((α.cost_eq_zero_iff ℓ β).mpr hβ))
     (α.gaugeDist_nonneg ℓ)
 
 /-- Gauge equivariance of cost: `cost (β • α) γ = cost α (β * γ)`, for every group norm `ℓ`. -/
@@ -470,8 +417,8 @@ theorem cost_smul (ℓ : GroupNorm G) (α : Cochain X G) (β γ : V → G) :
     (β • α).cost ℓ γ = α.cost ℓ (β * γ) := by
   rw [cost_def, cost_def]
   refine sum_congr rfl fun p hp => ?_
-  have hadj : X.Adj p.1 p.2 := (X.adj_iff_pair_mem_edges p.1 p.2).mpr (mem_filter.mp hp).2.2
-  simp [smul_apply_of_adj β α hadj, mul_assoc]
+  simp [smul_apply_of_adj β α ((X.adj_iff_pair_mem_edges p.1 p.2).mpr (mem_filter.mp hp).2.2),
+    mul_assoc]
 
 /-- Gauge distance is invariant under the gauge action for every group norm `ℓ`. -/
 @[simp]
@@ -486,11 +433,9 @@ theorem defect_smul {ℓ : GroupNorm G} (hℓ : ℓ.toGroupSeminorm.IsConjInvari
   rw [defect_def, defect_def]
   refine sum_congr rfl fun p hp => ?_
   obtain ⟨hlt₁, hlt₂, ht⟩ := (mem_filter.mp hp).2
-  have huv : X.Adj p.1 p.2.1 := X.adj_of_mem_triangle ht (by simp) (by simp) hlt₁.ne
-  have hvw : X.Adj p.2.1 p.2.2 := X.adj_of_mem_triangle ht (by simp) (by simp) hlt₂.ne
-  have hwu : X.Adj p.2.2 p.1 :=
-    X.adj_of_mem_triangle ht (by simp) (by simp) (hlt₁.trans hlt₂).ne'
-  rw [holonomy_smul β α huv hvw hwu]
+  rw [holonomy_smul β α (X.adj_of_mem_triangle ht (by simp) (by simp) hlt₁.ne)
+    (X.adj_of_mem_triangle ht (by simp) (by simp) hlt₂.ne)
+    (X.adj_of_mem_triangle ht (by simp) (by simp) (hlt₁.trans hlt₂).ne')]
   exact hℓ.map_inv_mul_mul (α.holonomy p.1 p.2.1 p.2.2) (β p.1)
 
 /-- Multiplying a gauge on the right by a constant group element conjugates every edge term, so it
@@ -502,11 +447,9 @@ theorem cost_mul_const {ℓ : GroupNorm G} (hℓ : ℓ.toGroupSeminorm.IsConjInv
   refine sum_congr rfl fun p _ => ?_
   have h : (β p.1 * g)⁻¹ * α p.1 p.2 * (β p.2 * g) =
       g⁻¹ * ((β p.1)⁻¹ * α p.1 p.2 * β p.2) * g := by group
-  rw [h]
-  exact hℓ.map_inv_mul_mul _ g
+  rw [h]; exact hℓ.map_inv_mul_mul _ g
 
-private def orientEdge (a b : V) : V × V :=
-  if a < b then (a, b) else (b, a)
+private def orientEdge (a b : V) : V × V := if a < b then (a, b) else (b, a)
 
 /-- Under a conjugation-invariant norm, the holonomy norm around three mutually adjacent vertices
 is bounded above by the cost of any gauge `β`. -/
@@ -516,57 +459,40 @@ theorem norm_holonomy_le_cost {ℓ : GroupNorm G} (hℓ : ℓ.toGroupSeminorm.Is
     ℓ (α.holonomy u v w) ≤ α.cost ℓ β := by
   let f : V × V → ℝ := fun p => ℓ ((β p.1)⁻¹ * α p.1 p.2 * β p.2)
   let E := univ.filter (fun p : V × V => p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges)
-  have hmem : ∀ {a b : V}, X.Adj a b → orientEdge a b ∈ E := by
-    intro a b hab
+  have hmem {a b : V} (hab : X.Adj a b) : orientEdge a b ∈ E := by
     rcases lt_or_gt_of_ne hab.ne with hlt | hgt
     · simp [E, orientEdge, hlt, (X.adj_iff_pair_mem_edges a b).mp hab]
     · simp [E, orientEdge, asymm hgt, hgt, (X.adj_iff_pair_mem_edges b a).mp hab.symm]
-  have hpair : ∀ a b : V, ({(orientEdge a b).1, (orientEdge a b).2} : Finset V) = {a, b} := by
-    intro a b
+  have hpair (a b : V) : ({(orientEdge a b).1, (orientEdge a b).2} : Finset V) = {a, b} := by
     by_cases hlt : a < b <;> simp [orientEdge, hlt, pair_comm]
-  have heval : ∀ a b : V, f (orientEdge a b) = ℓ ((β a)⁻¹ * α a b * β b) := by
-    intro a b
+  have heval (a b : V) : f (orientEdge a b) = ℓ ((β a)⁻¹ * α a b * β b) := by
     by_cases hlt : a < b
     · simp [f, orientEdge, hlt]
     · simp only [f, orientEdge, hlt, ↓reduceIte]
       have hinv : ((β a)⁻¹ * α a b * β b)⁻¹ = (β b)⁻¹ * α b a * β a := by
-        rw [α.apply_swap a b]
-        group
+        rw [α.apply_swap a b]; group
       rw [← hinv, map_inv_eq_map]
-  have hne_adj : ∀ {a b c : V}, a ≠ b → a ≠ c → orientEdge a b ≠ orientEdge b c :=
-    fun hab hac h => by
-      have hp : ({_, _} : Finset V) = _ := (hpair _ _).symm.trans ((congrArg
-        (fun p : V × V => ({p.1, p.2} : Finset V)) h).trans (hpair _ _))
-      have ha : _ ∈ ({_, _} : Finset V) := hp ▸ mem_insert_self _ _
-      rcases mem_insert.mp ha with rfl | ha'
-      · exact hab rfl
-      · exact hac (mem_singleton.mp ha')
-  have hne₁₂ : orientEdge u v ≠ orientEdge v w := hne_adj huv.ne hwu.ne.symm
-  have hne₂₃ : orientEdge v w ≠ orientEdge w u := hne_adj hvw.ne huv.ne.symm
-  have hne₁₃ : orientEdge u v ≠ orientEdge w u := (hne_adj hwu.ne hvw.ne.symm).symm
+  have hne_adj {a b c : V} (hab : a ≠ b) (hac : a ≠ c) :
+      orientEdge a b ≠ orientEdge b c := fun h => by
+    have hp : ({a, b} : Finset V) = {b, c} := (hpair a b).symm.trans
+      ((congrArg (fun p : V × V => ({p.1, p.2} : Finset V)) h).trans (hpair b c))
+    have ha : a ∈ ({b, c} : Finset V) := hp ▸ mem_insert_self a {b}
+    simp [hab, hac] at ha
+  have hne₁₂ := hne_adj huv.ne hwu.ne.symm
+  have hne₂₃ := hne_adj hvw.ne huv.ne.symm
+  have hne₁₃ := (hne_adj hwu.ne hvw.ne.symm).symm
   have hsub : ({orientEdge u v, orientEdge v w, orientEdge w u} : Finset (V × V)) ⊆ E := by
     simp [insert_subset_iff, hmem huv, hmem hvw, hmem hwu]
   have hsum : f (orientEdge u v) + f (orientEdge v w) + f (orientEdge w u) ≤ α.cost ℓ β := by
-    calc
-      f (orientEdge u v) + f (orientEdge v w) + f (orientEdge w u)
-          = ∑ p ∈ {orientEdge u v, orientEdge v w, orientEdge w u}, f p := by
-            rw [sum_insert (by simp [hne₁₂, hne₁₃]), sum_pair hne₂₃, add_assoc]
-      _ ≤ ∑ p ∈ E, f p := sum_le_sum_of_subset_of_nonneg hsub fun _ _ _ => apply_nonneg ℓ _
-      _ = α.cost ℓ β := rfl
+    rw [add_assoc, ← sum_pair hne₂₃, ← sum_insert (by simp [hne₁₂, hne₁₃])]
+    exact sum_le_sum_of_subset_of_nonneg hsub fun _ _ _ => apply_nonneg ℓ _
   rw [heval u v, heval v w, heval w u] at hsum
-  refine le_trans ?_ hsum
-  calc
-    ℓ (α.holonomy u v w)
-        = ℓ ((β u)⁻¹ * α.holonomy u v w * β u) :=
-          (hℓ.map_inv_mul_mul (α.holonomy u v w) (β u)).symm
-    _ = ℓ (((β u)⁻¹ * α u v * β v) * ((β v)⁻¹ * α v w * β w) *
-          ((β w)⁻¹ * α w u * β u)) := by
-          rw [← holonomy_smul β α huv hvw hwu, holonomy_def,
-            smul_apply_of_adj β α huv, smul_apply_of_adj β α hvw, smul_apply_of_adj β α hwu]
-    _ ≤ ℓ (((β u)⁻¹ * α u v * β v) * ((β v)⁻¹ * α v w * β w)) +
-          ℓ ((β w)⁻¹ * α w u * β u) := map_mul_le_add ℓ _ _
-    _ ≤ ℓ ((β u)⁻¹ * α u v * β v) + ℓ ((β v)⁻¹ * α v w * β w) +
-          ℓ ((β w)⁻¹ * α w u * β u) := add_le_add (map_mul_le_add ℓ _ _) le_rfl
+  have hhol : (β u)⁻¹ * α.holonomy u v w * β u =
+      ((β u)⁻¹ * α u v * β v) * ((β v)⁻¹ * α v w * β w) * ((β w)⁻¹ * α w u * β u) := by
+    simp only [holonomy_def]; group
+  refine ((hℓ.map_inv_mul_mul (α.holonomy u v w) (β u)).symm.le.trans ?_).trans hsum
+  rw [hhol]
+  exact (map_mul_le_add ℓ _ _).trans (add_le_add (map_mul_le_add ℓ _ _) le_rfl)
 
 /-- Under a conjugation-invariant norm, the holonomy norm around three mutually adjacent vertices
 bounds `gaugeDist` from below. -/
@@ -619,17 +545,14 @@ theorem exists_cost_eq_gaugeDist [Finite G] (ℓ : GroupNorm G) (α : Cochain X 
 /-- For finite `G`, a cochain has gauge distance zero if and only if it is a coboundary. -/
 theorem gaugeDist_eq_zero_iff_isCoboundary [Finite G] (ℓ : GroupNorm G) (α : Cochain X G) :
     α.gaugeDist ℓ = 0 ↔ α.IsCoboundary := by
-  constructor
-  · intro h0
-    obtain ⟨β, hβ⟩ := α.exists_cost_eq_gaugeDist ℓ
-    exact (isCoboundary_iff_exists_smul_eq_one α).mpr ⟨β, (α.cost_eq_zero_iff ℓ β).mp (hβ.trans h0)⟩
-  · exact fun hα => hα.gaugeDist_eq_zero ℓ
+  refine ⟨fun h0 => ?_, fun hα => hα.gaugeDist_eq_zero ℓ⟩
+  obtain ⟨β, hβ⟩ := α.exists_cost_eq_gaugeDist ℓ
+  exact (isCoboundary_iff_exists_smul_eq_one α).mpr ⟨β, (α.cost_eq_zero_iff ℓ β).mp (hβ.trans h0)⟩
 
 /-- For finite `G`, a cochain has positive gauge distance if and only if it is not a coboundary. -/
 theorem gaugeDist_pos_iff_not_isCoboundary [Finite G] (ℓ : GroupNorm G) (α : Cochain X G) :
     0 < α.gaugeDist ℓ ↔ ¬ α.IsCoboundary := by
-  rw [← gaugeDist_eq_zero_iff_isCoboundary ℓ α]
-  exact (α.gaugeDist_nonneg ℓ).lt_iff_ne'
+  rw [← gaugeDist_eq_zero_iff_isCoboundary ℓ α]; exact (α.gaugeDist_nonneg ℓ).lt_iff_ne'
 
 /-- For finite `G`, any cochain with a non-identity holonomy around three mutually adjacent
 vertices has positive gauge distance. -/
@@ -681,8 +604,7 @@ theorem exists_not_isCoboundary_of_triangles_nonempty {V G : Type*} [Group G] [N
 1-cochain on `X` has strictly positive gauge distance. -/
 theorem exists_gaugeDist_pos_of_triangles_nonempty {V G : Type*} [Fintype V] [LinearOrder V]
     [Group G] [Finite G] [Nontrivial G] {X : TwoComplex V} (htri : X.triangles.Nonempty)
-    (ℓ : GroupNorm G) :
-    ∃ α : Cochain X G, 0 < α.gaugeDist ℓ := by
+    (ℓ : GroupNorm G) : ∃ α : Cochain X G, 0 < α.gaugeDist ℓ := by
   obtain ⟨α, hα⟩ := exists_not_isCoboundary_of_triangles_nonempty (G := G) htri
   exact ⟨α, (α.gaugeDist_pos_iff_not_isCoboundary ℓ).mpr hα⟩
 
@@ -700,30 +622,26 @@ theorem exists_gaugeDist_pos_of_triangles_nonempty_of_isConjInvariant {V G : Typ
 /-- On `complete V` with `3 ≤ Fintype.card V` and nontrivial `G`, there exists a cochain that is
 not a coboundary. -/
 theorem exists_not_isCoboundary_complete {V G : Type*} [Fintype V] [Group G] [Nontrivial G]
-    (hV : 3 ≤ Fintype.card V) :
-    ∃ α : Cochain (complete V) G, ¬ α.IsCoboundary := by
-  refine exists_not_isCoboundary_of_triangles_nonempty ?_
-  rw [← card_pos, card_triangles_complete]
-  exact Nat.choose_pos hV
+    (hV : 3 ≤ Fintype.card V) : ∃ α : Cochain (complete V) G, ¬ α.IsCoboundary :=
+  exists_not_isCoboundary_of_triangles_nonempty
+    (card_pos.mp (card_triangles_complete (V := V) ▸ Nat.choose_pos hV))
 
 /-- On `complete V` with `3 ≤ Fintype.card V` and a nontrivial finite group `G`, there exists a
 cochain at strictly positive gauge distance. -/
 theorem exists_gaugeDist_pos_complete {V G : Type*} [Fintype V] [LinearOrder V]
     [Group G] [Finite G] [Nontrivial G] (hV : 3 ≤ Fintype.card V) (ℓ : GroupNorm G) :
-    ∃ α : Cochain (complete V) G, 0 < α.gaugeDist ℓ := by
-  refine exists_gaugeDist_pos_of_triangles_nonempty ?_ ℓ
-  rw [← card_pos, card_triangles_complete]
-  exact Nat.choose_pos hV
+    ∃ α : Cochain (complete V) G, 0 < α.gaugeDist ℓ :=
+  exists_gaugeDist_pos_of_triangles_nonempty
+    (card_pos.mp (card_triangles_complete (V := V) ▸ Nat.choose_pos hV)) ℓ
 
 /-- On `complete V` with `3 ≤ Fintype.card V`, nontrivial `G`, and conjugation-invariant `ℓ`,
 there exists a cochain at strictly positive gauge distance (without requiring `G` to be finite). -/
 theorem exists_gaugeDist_pos_complete_of_isConjInvariant {V G : Type*} [Fintype V] [LinearOrder V]
     [Group G] [Nontrivial G] (hV : 3 ≤ Fintype.card V) {ℓ : GroupNorm G}
     (hℓ : ℓ.toGroupSeminorm.IsConjInvariant) :
-    ∃ α : Cochain (complete V) G, 0 < α.gaugeDist ℓ := by
-  refine exists_gaugeDist_pos_of_triangles_nonempty_of_isConjInvariant ?_ hℓ
-  rw [← card_pos, card_triangles_complete]
-  exact Nat.choose_pos hV
+    ∃ α : Cochain (complete V) G, 0 < α.gaugeDist ℓ :=
+  exists_gaugeDist_pos_of_triangles_nonempty_of_isConjInvariant
+    (card_pos.mp (card_triangles_complete (V := V) ▸ Nat.choose_pos hV)) hℓ
 
 end Existence
 

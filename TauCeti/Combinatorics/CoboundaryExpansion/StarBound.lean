@@ -66,14 +66,12 @@ variable {V G : Type*} [Group G] {X : TwoComplex V}
 
 /-- The star gauge of `α` centered at vertex `x`, sending `u` to `α u x`. Because `α x x = 1`, this
 pins `x` to `1` without requiring `DecidableEq V`. -/
-def starGauge (α : Cochain X G) (x : V) : V → G :=
-  fun u => α u x
+def starGauge (α : Cochain X G) (x : V) : V → G := fun u => α u x
 
 @[simp, grind =]
 theorem starGauge_apply (α : Cochain X G) (x u : V) : α.starGauge x u = α u x := (rfl)
 
-theorem starGauge_self (α : Cochain X G) (x : V) : α.starGauge x x = 1 :=
-  α.apply_self x
+theorem starGauge_self (α : Cochain X G) (x : V) : α.starGauge x x = 1 := α.apply_self x
 
 /-- On `complete V` under a conjugation-invariant norm, the edge cost of `α.starGauge x` on an edge
 `e` vanishes when `x ∈ e` and equals `α.triangleDefect ℓ (insert x e)` when `x ∉ e`. -/
@@ -82,23 +80,17 @@ theorem edgeCost_starGauge_complete [Fintype V] [DecidableEq V] {ℓ : GroupNorm
     (he : e ∈ (complete V).edges) :
     α.edgeCost ℓ (α.starGauge x) e = if x ∈ e then 0 else α.triangleDefect ℓ (insert x e) := by
   obtain ⟨u, v, huv, rfl⟩ := card_eq_two.mp ((mem_edges_complete e).mp he)
+  rw [α.edgeCost_of_mem_edges ℓ (α.starGauge x) he huv (by simp) (by simp)]
   by_cases hx : x ∈ ({u, v} : Finset V)
   · simp only [hx, ↓reduceIte]
-    simp only [mem_insert, mem_singleton] at hx
-    rcases hx with rfl | rfl
-    · rw [α.edgeCost_of_mem_edges ℓ (α.starGauge x) he huv (by simp) (by simp)]
-      simp [α.apply_swap x v]
-    · rw [α.edgeCost_of_mem_edges ℓ (α.starGauge x) he huv (by simp) (by simp)]
-      simp
+    rcases mem_insert.mp hx with rfl | hx'
+    · simp [α.apply_swap x v]
+    · rw [mem_singleton.mp hx']; simp
   · simp only [hx, ↓reduceIte]
-    have hxu : x ≠ u := fun h => hx (by simp [h])
-    have hxv : x ≠ v := fun h => hx (by simp [h])
     have ht : insert x ({u, v} : Finset V) ∈ (complete V).triangles := by
       rw [mem_triangles_complete, card_insert_of_notMem hx, card_pair huv]
-    rw [α.edgeCost_of_mem_edges ℓ (α.starGauge x) he huv (by simp) (by simp),
-      α.triangleDefect_of_mem_triangles hℓ ht (by simp) (by simp) (by simp) hxu hxv huv]
-    have hinv : (α u x)⁻¹ = α x u := (α.apply_swap u x).symm
-    simp [starGauge_apply, holonomy_def, hinv]
+    rw [α.triangleDefect_triple hℓ ht]
+    simp [starGauge_apply, holonomy_def, (α.apply_swap u x).symm]
 
 /-- The star identity on the complete two-complex (Beasley, Proposition 1; Chapman–Lubotzky II,
 Proposition 3.2): under a conjugation-invariant group norm, summing the costs of all star gauges
@@ -128,9 +120,8 @@ for every cochain on `complete V` and every conjugation-invariant group norm `�
 theorem card_mul_gaugeDist_le (ℓ : GroupNorm G) (hℓ : ℓ.toGroupSeminorm.IsConjInvariant)
     (α : Cochain (complete V) G) :
     (Fintype.card V : ℝ) * α.gaugeDist ℓ ≤ 3 * α.defect ℓ := by
-  calc
-    (Fintype.card V : ℝ) * α.gaugeDist ℓ
-        = ∑ _x : V, α.gaugeDist ℓ := by simp
+  calc (Fintype.card V : ℝ) * α.gaugeDist ℓ
+      = ∑ _x : V, α.gaugeDist ℓ := by simp
     _ ≤ ∑ x : V, α.cost ℓ (α.starGauge x) :=
         sum_le_sum fun x _ => α.gaugeDist_le_cost ℓ (α.starGauge x)
     _ = 3 * α.defect ℓ := α.sum_cost_starGauge hℓ

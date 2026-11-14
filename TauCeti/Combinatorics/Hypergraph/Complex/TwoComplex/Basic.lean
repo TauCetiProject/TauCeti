@@ -211,16 +211,13 @@ theorem natCast_card_triangles_complete {K : Type*} [DivisionRing K] [CharZero K
 characteristic-zero field equals `3 / (Fintype.card V - 2)`. -/
 theorem card_edges_div_card_triangles_complete {K : Type*} [Field K] [CharZero K]
     (hV : 3 ≤ Fintype.card V) :
-    ((complete V).edges.card : K) / (complete V).triangles.card =
-      3 / (Fintype.card V - 2) := by
+    ((complete V).edges.card : K) / (complete V).triangles.card = 3 / (Fintype.card V - 2) := by
   rw [natCast_card_edges_complete, natCast_card_triangles_complete]
   have hn0 : (Fintype.card V : K) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
   have hn1 : (Fintype.card V : K) - 1 ≠ 0 := by
-    rw [← Nat.cast_one, ← Nat.cast_sub (by omega)]
-    exact Nat.cast_ne_zero.mpr (by omega)
+    rw [← Nat.cast_one, ← Nat.cast_sub (by omega)]; exact Nat.cast_ne_zero.mpr (by omega)
   have hn2 : (Fintype.card V : K) - 2 ≠ 0 := by
-    rw [← Nat.cast_ofNat, ← Nat.cast_sub (by omega)]
-    exact Nat.cast_ne_zero.mpr (by omega)
+    rw [← Nat.cast_ofNat, ← Nat.cast_sub (by omega)]; exact Nat.cast_ne_zero.mpr (by omega)
   rw [div_eq_div_iff (div_ne_zero (mul_ne_zero (mul_ne_zero hn0 hn1) hn2) (by norm_num)) hn2]
   ring
 
@@ -236,8 +233,7 @@ theorem exists_vertices_of_mem_edges (X : TwoComplex V) {e : Finset V} (he : e �
   exact ⟨u, v, huv, by simp, by simp⟩
 
 /-- Every filled triangle of `X` contains three pairwise distinct vertices. -/
-theorem exists_vertices_of_mem_triangles (X : TwoComplex V) {t : Finset V}
-    (ht : t ∈ X.triangles) :
+theorem exists_vertices_of_mem_triangles (X : TwoComplex V) {t : Finset V} (ht : t ∈ X.triangles) :
     ∃ u v w, u ≠ v ∧ u ≠ w ∧ v ≠ w ∧ u ∈ t ∧ v ∈ t ∧ w ∈ t := by
   classical
   obtain ⟨u, v, w, huv, huw, hvw, rfl⟩ := card_eq_three.mp (X.triangle_card t ht)
@@ -260,45 +256,35 @@ theorem exists_increasing_of_mem_triangles [LinearOrder V] (X : TwoComplex V) {t
 
 /-- Two vertices are adjacent in `X` when they are distinct and lie in a common edge of `X`.
 Unlike `{u, v} ∈ X.edges`, this requires no `DecidableEq V` instance. -/
-def Adj (X : TwoComplex V) (u v : V) : Prop :=
-  u ≠ v ∧ ∃ e ∈ X.edges, u ∈ e ∧ v ∈ e
+def Adj (X : TwoComplex V) (u v : V) : Prop := u ≠ v ∧ ∃ e ∈ X.edges, u ∈ e ∧ v ∈ e
 
 theorem adj_iff (X : TwoComplex V) (u v : V) :
-    X.Adj u v ↔ u ≠ v ∧ ∃ e ∈ X.edges, u ∈ e ∧ v ∈ e :=
-  Iff.rfl
+    X.Adj u v ↔ u ≠ v ∧ ∃ e ∈ X.edges, u ∈ e ∧ v ∈ e := Iff.rfl
 
 @[grind .]
-theorem Adj.ne {X : TwoComplex V} {u v : V} (h : X.Adj u v) : u ≠ v :=
-  h.1
+theorem Adj.ne {X : TwoComplex V} {u v : V} (h : X.Adj u v) : u ≠ v := h.1
 
 theorem Adj.exists_mem_edges {X : TwoComplex V} {u v : V} (h : X.Adj u v) :
-    ∃ e ∈ X.edges, u ∈ e ∧ v ∈ e :=
-  h.2
+    ∃ e ∈ X.edges, u ∈ e ∧ v ∈ e := h.2
 
 @[simp, grind .]
-theorem not_adj_self (X : TwoComplex V) (u : V) : ¬ X.Adj u u :=
-  fun h => h.1 rfl
+theorem not_adj_self (X : TwoComplex V) (u : V) : ¬ X.Adj u u := fun h => h.1 rfl
 
 @[symm, grind →]
 theorem Adj.symm {X : TwoComplex V} {u v : V} (h : X.Adj u v) : X.Adj v u :=
   ⟨h.1.symm, let ⟨e, he, hu, hv⟩ := h.2; ⟨e, he, hv, hu⟩⟩
 
-theorem adj_comm (X : TwoComplex V) (u v : V) : X.Adj u v ↔ X.Adj v u :=
-  ⟨Adj.symm, Adj.symm⟩
+theorem adj_comm (X : TwoComplex V) (u v : V) : X.Adj u v ↔ X.Adj v u := ⟨Adj.symm, Adj.symm⟩
 
 /-- With decidable vertex equality, adjacency is membership of the unordered pair in `X.edges`. -/
 theorem adj_iff_pair_mem_edges [DecidableEq V] (X : TwoComplex V) (u v : V) :
     X.Adj u v ↔ ({u, v} : Finset V) ∈ X.edges := by
   constructor
   · rintro ⟨huv, e, he, hu, hv⟩
-    have hsub : ({u, v} : Finset V) ⊆ e :=
-      insert_subset_iff.mpr ⟨hu, singleton_subset_iff.mpr hv⟩
+    have hsub : ({u, v} : Finset V) ⊆ e := insert_subset_iff.mpr ⟨hu, singleton_subset_iff.mpr hv⟩
     rwa [eq_of_subset_of_card_le hsub (by rw [X.edge_card e he, card_pair huv])]
   · intro he
-    have hc := X.edge_card _ he
-    have huv : u ≠ v := by
-      rintro rfl
-      simp at hc
+    have huv : u ≠ v := fun h => by have hc := X.edge_card _ he; subst h; simp at hc
     exact ⟨huv, {u, v}, he, by simp, by simp⟩
 
 /-- Any two distinct vertices of a filled triangle are adjacent. -/
@@ -313,10 +299,9 @@ theorem adj_of_mem_triangle (X : TwoComplex V) {t : Finset V} (ht : t ∈ X.tria
 @[simp, grind =]
 theorem adj_complete [Fintype V] (u v : V) : (complete V).Adj u v ↔ u ≠ v := by
   classical
-  rw [adj_iff_pair_mem_edges, mem_edges_complete]
-  by_cases huv : u = v
-  · simp [huv]
-  · simp [card_pair huv, huv]
+  rcases eq_or_ne u v with rfl | huv
+  · simp
+  · simp [adj_iff_pair_mem_edges, mem_edges_complete, card_pair huv, huv]
 
 end Adjacency
 
