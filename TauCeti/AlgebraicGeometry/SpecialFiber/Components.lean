@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyClosed
 public import Mathlib.AlgebraicGeometry.PullbackCarrier
 public import Mathlib.RingTheory.DedekindDomain.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Basic
@@ -72,6 +73,8 @@ notation on the structure morphism.
   the special fibre lies on an irreducible component of it;
 * `AlgebraicGeometry.Scheme.Hom.biUnion_closure_eq_preimage_closedPoint`: the special fibre is
   the union of its irreducible components;
+* `AlgebraicGeometry.Scheme.Hom.nonempty_setOf_base_eq_closedPoint`: the special fibre of a
+  universally closed scheme has an irreducible component;
 * `AlgebraicGeometry.Scheme.Hom.finite_setOf_base_eq_closedPoint`: the special fibre of a
   Noetherian integral scheme has finitely many irreducible components;
 * `AlgebraicGeometry.Scheme.Hom.ord_germToFunctionField_appTop_pos_iff`: the order of the
@@ -265,6 +268,21 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.biUnion_closure_eq_preimage_closedPo
   obtain ⟨y, hy, hyx⟩ := toBase.exists_maximal_base_eq_closedPoint_specializes hR hx
   obtain ⟨hy', hcod⟩ := (toBase.maximal_base_eq_closedPoint_iff hR hη).mp hy
   exact Set.mem_biUnion (x := ⟨y, hcod⟩) hy' (specializes_iff_mem_closure.mp hyx)
+
+/-- **The special fibre has an irreducible component.** For an integral locally Noetherian scheme
+universally closed over a local ring of dimension at most one, whose generic point does not lie in
+the special fibre, some codimension-one point of `X` lies in the special fibre: the image of `X`
+is closed and contains a point of `Spec R`, hence contains the closed point. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.nonempty_setOf_base_eq_closedPoint
+    [UniversallyClosed toBase] (hη : toBase (genericPoint X) ≠ closedPoint R) :
+    {η : CodimensionOnePoint X | toBase η = closedPoint R}.Nonempty := by
+  obtain ⟨x, hx⟩ : closedPoint R ∈ Set.range toBase :=
+    (specializes_closedPoint _).mem_closed toBase.isClosedMap.isClosed_range
+      (Set.mem_range_self (genericPoint X))
+  have hx' : x ∈ toBase ⁻¹' {closedPoint R} := hx
+  rw [← toBase.biUnion_closure_eq_preimage_closedPoint hη] at hx'
+  obtain ⟨η, hη', -⟩ := Set.mem_iUnion₂.mp hx'
+  exact ⟨η, hη'⟩
 
 /-- At a codimension-one point of `X`, the order of vanishing of the pullback of a nonzero
 element `π` of the maximal ideal is positive exactly when the point lies in the special fibre.
