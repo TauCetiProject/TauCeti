@@ -159,6 +159,12 @@ instance isCrystallographic_componentPairing [P.IsCrystallographic] :
     (P.componentPairing C).IsCrystallographic where
   exists_value i j := IsValuedIn.exists_value (P := P) (S := ℤ) (i : ι) j
 
+/-- The integral pairings of the component pairing are those of the ambient pairing. -/
+@[simp]
+theorem componentPairing_pairingIn [P.IsCrystallographic] (i j : C.supp) :
+    (P.componentPairing C).pairingIn ℤ i j = P.pairingIn ℤ i j :=
+  (rfl)
+
 instance isReduced_componentPairing [P.IsReduced] : (P.componentPairing C).IsReduced where
   eq_or_eq_neg i j hij := by
     have hinj : ¬ LinearIndependent K ![P.root i, P.root j] := fun h ↦ hij <| by

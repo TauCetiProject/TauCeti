@@ -43,6 +43,8 @@ root system is irreducible exactly when its graph is connected.
   `RootPairing.coe_componentProj_reflection`: the projections commute with the reflections.
 * `RootPairing.root_mem_componentSpace_iff`: when `2 ≠ 0`, a root lies in exactly the component
   space of its own component.
+* `RootPairing.mem_closure_root_inter_supp`: a sum of roots lying in the component space of `C` is
+  a sum of the roots of `C` among them.
 * `RootPairing.componentSpace_mem_invtSubmodule`: component spaces are invariant under reflections.
 * `RootPairing.InvariantForm.apply_eq_zero_of_mem_componentSpace`: over a domain with `2 ≠ 0`,
   different component spaces are orthogonal under every invariant form.
@@ -211,6 +213,52 @@ theorem coroot_mem_corootComponentSpace_iff [NeZero (2 : R)] {i : ι} {C : P.Com
   have := root'_eq_zero_of_mem_corootComponentSpace hi h
   rw [root'_coroot_eq_pairing, pairing_same] at this
   exact two_ne_zero this
+
+/-- **A sum of roots lying in a component space only uses roots of that component**: a vector of
+the component space of `C` that is a sum of roots indexed by `s` is a sum of roots indexed by the
+elements of `s` in `C`. -/
+theorem mem_closure_root_inter_supp [P.IsRootSystem] {C : P.Component} {s : Set ι} {x : M}
+    (hx : x ∈ AddSubmonoid.closure (P.root '' s)) (hxC : x ∈ P.componentSpace C) :
+    x ∈ AddSubmonoid.closure (P.root '' (s ∩ C.supp)) := by
+  rw [← Set.inter_union_sdiff s C.supp, Set.image_union, AddSubmonoid.closure_union,
+    AddSubmonoid.mem_sup] at hx
+  obtain ⟨y, hy, z, hz, rfl⟩ := hx
+  have hyC : y ∈ P.componentSpace C := AddSubmonoid.closure_le.mpr
+    (Set.image_mono Set.inter_subset_right |>.trans subset_span) hy
+  have hzC : z ∈ P.componentSpace C := by simpa using sub_mem hxC hyC
+  suffices z = 0 by simpa [this] using hy
+  refine P.eq_zero_iff_forall_coroot'_eq_zero.mpr fun j ↦ ?_
+  by_cases hj : P.componentOf j = C
+  · have hle : AddSubmonoid.closure (P.root '' (s \ C.supp)) ≤
+        (LinearMap.ker (P.coroot' j)).toAddSubmonoid := by
+      refine AddSubmonoid.closure_le.mpr ?_
+      rintro _ ⟨k, hk, rfl⟩
+      exact (isOrthogonal_of_componentOf_ne (hj.trans_ne (Ne.symm hk.2))).2
+    exact hle hz
+  · exact coroot'_eq_zero_of_mem_componentSpace hj hzC
+
+/-- A sum of coroots lying in a coroot component space only uses coroots of that component: a
+vector of the coroot space of `C` that is a sum of coroots indexed by `s` is a sum of coroots
+indexed by the elements of `s` in `C`. -/
+theorem mem_closure_coroot_inter_supp [P.IsRootSystem] {C : P.Component} {s : Set ι} {x : N}
+    (hx : x ∈ AddSubmonoid.closure (P.coroot '' s)) (hxC : x ∈ P.corootComponentSpace C) :
+    x ∈ AddSubmonoid.closure (P.coroot '' (s ∩ C.supp)) := by
+  rw [← Set.inter_union_sdiff s C.supp, Set.image_union, AddSubmonoid.closure_union,
+    AddSubmonoid.mem_sup] at hx
+  obtain ⟨y, hy, z, hz, rfl⟩ := hx
+  have hyC : y ∈ P.corootComponentSpace C := AddSubmonoid.closure_le.mpr
+    (Set.image_mono Set.inter_subset_right |>.trans subset_span) hy
+  have hzC : z ∈ P.corootComponentSpace C := by simpa using sub_mem hxC hyC
+  suffices z = 0 by simpa [this] using hy
+  refine P.flip.eq_zero_iff_forall_coroot'_eq_zero.mpr fun j ↦ ?_
+  by_cases hj : P.componentOf j = C
+  · have hle : AddSubmonoid.closure (P.coroot '' (s \ C.supp)) ≤
+        (LinearMap.ker (P.root' j)).toAddSubmonoid := by
+      refine AddSubmonoid.closure_le.mpr ?_
+      rintro _ ⟨k, hk, rfl⟩
+      exact (isOrthogonal_of_componentOf_ne (hj.trans_ne (Ne.symm hk.2))).1
+    exact hle hz
+  · exact root'_eq_zero_of_mem_corootComponentSpace hj hzC
 
 /-- **Component spaces are invariant under every reflection.** The reflection at a root of the
 component preserves its span; the reflection at any other root fixes it pointwise. -/
