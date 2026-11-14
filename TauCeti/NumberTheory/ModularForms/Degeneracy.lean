@@ -127,7 +127,7 @@ The old subspace is spanned by the images of the `V_d`.
   file's `conjScale`, so the statement is phrased with `conjScale` and TauCeti's `Gamma0` API
   rather than porting a second conjugation; the source's `shiftJ`/`shiftJ_spec` pair is not
   ported at all, its Bézout step being TauCeti's existing `ZMod.exists_dvd_sub_val_mul`. The
-  coprime shift `exists_shift_isCoprime` is `IsCoprime.exists_sub_mul_isCoprime` in
+  coprime shift `exists_shift_isCoprime` is `IsCoprime.exists_isCoprime_sub_mul` in
   `TauCeti/Data/ZMod/Units.lean`, proved there from `ZMod.exists_isCoprime_mul_intCast_eq`, so its
   prime-product supports are not ported.
 * The descent section adapts [AINTLIB](https://github.com/CBirkbeck/AINTLIB) commit
@@ -786,8 +786,8 @@ theorem exists_eq_T_zpow_mul_conjScale_mul_T_zpow (l N : ℕ) (hlN : l ∣ N) (�
   have hdet : γ' 0 0 * γ' 1 1 - γ' 0 1 * γ' 1 0 = 1 :=
     Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one γ'
   -- move the upper-left entry, along its own column, until it is coprime to `l`
-  obtain ⟨i, hi⟩ := IsCoprime.exists_sub_mul_isCoprime (a := γ' 0 0) (c := γ' 1 0)
-    ⟨γ' 1 1, -γ' 0 1, by linear_combination hdet⟩ l
+  obtain ⟨i, hi⟩ := IsCoprime.exists_isCoprime_sub_mul (a := γ' 0 0) (c := γ' 1 0)
+    ⟨γ' 1 1, -γ' 0 1, by linear_combination hdet⟩ (Int.natCast_ne_zero.mpr hl)
   -- then clear the upper-right entry modulo `l`, which the previous step made possible
   have hunit : IsUnit ((γ' 0 0 - i * γ' 1 0 : ℤ) : ZMod l) :=
     (ZMod.isUnit_intCast_iff_isCoprime _ _).mpr (isCoprime_comm.mp hi)
