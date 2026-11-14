@@ -10,7 +10,8 @@ public import Mathlib.Analysis.Normed.Ring.Basic
 /-!
 # Elementary inequalities in seminormed rings
 
-This file records elementary consequences of the submultiplicativity of the norm, and an estimate
+This file records elementary consequences of the submultiplicativity of the norm, together with
+`TauCeti.norm_pow_succ` (`‖x ^ (n + 1)‖ = ‖x‖ ^ (n + 1)` without `NormOneClass`) and an estimate
 for `‖w - 1‖` with `‖w‖ = 1` when the norm is multiplicative.
 -/
 
@@ -77,6 +78,14 @@ theorem norm_mul_pow_le {R : Type*} [SeminormedRing R] (x y : R) (n : ℕ) :
   · simp
   · exact (norm_mul_le _ _).trans
       (mul_le_mul_of_nonneg_left (norm_pow_le' y n.succ_pos) (norm_nonneg x))
+
+/-- Multiplicativity of the norm gives `‖x ^ (n + 1)‖ = ‖x‖ ^ (n + 1)` without assuming
+`NormOneClass R`. -/
+theorem norm_pow_succ {R : Type*} [Norm R] [Monoid R] [NormMulClass R] (x : R) (n : ℕ) :
+    ‖x ^ (n + 1)‖ = ‖x‖ ^ (n + 1) := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [pow_succ x (n + 1), norm_mul, ih, ← pow_succ]
 
 /-- For a multiplicative norm with `‖1‖ = 1`, an element `w` of norm one and `r` of norm at most
 one, `‖w - 1‖ ≤ ‖(w - 1) a‖ + 2 ‖a - r‖ + 2 (1 - ‖r‖)` for every `a`. So `w - 1` is controlled by

@@ -36,6 +36,8 @@ formal multilinear series with the same coefficient norms. Through this comparis
 
 * `PowerSeries.isRestricted_of_lt_radius` and `PowerSeries.not_isRestricted_of_radius_lt`:
   `f` is restricted at every `r` with `|r| < radius f` and at no `r` with `radius f < |r|`.
+* `PowerSeries.le_radius_of_summable` and `PowerSeries.not_summable_of_radius_lt`: in any target
+  with multiplicative scalar and power norms, convergence at `x` forces `‖x‖ₑ ≤ radius f`.
 * `PowerSeries.le_radius_of_bound`: bounded weighted coefficient norms at `r` give
   `r ≤ radius f`.
 * `PowerSeries.radius_eq_top_iff`: the radius is infinite exactly for entire series; in
@@ -95,6 +97,18 @@ theorem isRestricted_of_lt_radius {r : ℝ} (h : ‖r‖ₑ < f.radius) : f.IsRe
 /-- A series is not restricted at any radius of absolute value strictly above its radius. -/
 theorem not_isRestricted_of_radius_lt {r : ℝ} (h : f.radius < ‖r‖ₑ) : ¬f.IsRestricted r :=
   fun hf ↦ (le_radius_of_isRestricted hf).not_gt h
+
+/-- Any convergence point `x` of `f` has extended norm at most `f.radius`. -/
+theorem le_radius_of_summable {A : Type*} [SeminormedRing A] [SMul R A] [NormSMulClass R A]
+    [NormMulClass A] {x : A} (h : Summable fun n ↦ coeff n f • x ^ n) :
+    ‖x‖ₑ ≤ f.radius := by
+  simpa only [eNorm_norm] using le_radius_of_isRestricted (isRestricted_norm_of_summable h)
+
+/-- `f` does not converge at any point `x` with `f.radius < ‖x‖ₑ`. -/
+theorem not_summable_of_radius_lt {A : Type*} [SeminormedRing A] [SMul R A] [NormSMulClass R A]
+    [NormMulClass A] {x : A} (h : f.radius < ‖x‖ₑ) :
+    ¬Summable fun n ↦ coeff n f • x ^ n :=
+  fun hs ↦ (le_radius_of_summable hs).not_gt h
 
 /-- If the weighted coefficient norms `‖aₙ‖ rⁿ` are bounded, the radius is at least `r`. -/
 theorem le_radius_of_bound (C : ℝ) {r : ℝ≥0} (h : ∀ n, ‖coeff n f‖ * (r : ℝ) ^ n ≤ C) :

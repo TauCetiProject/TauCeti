@@ -11,6 +11,8 @@ public import Mathlib.RingTheory.PowerSeries.Order
 public import Mathlib.RingTheory.PowerSeries.Restricted
 public import Mathlib.RingTheory.PowerSeries.Trunc
 public import TauCeti.Analysis.Asymptotics.Lemmas
+import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
+import TauCeti.Analysis.Normed.Ring.Basic
 
 /-!
 # Restricted power series and their coefficient algebra
@@ -24,6 +26,15 @@ normed ring, constant series make the restricted subring an `S`-algebra whenever
 ring is an `S`-algebra. Scalar actions are coefficientwise, and scalar towers of the coefficients
 extend to the restricted series. Over a commutative coefficient ring the polynomial inclusion is
 an algebra homomorphism; it gives the comparisons used in Weierstrass division and its quotients.
+
+In a seminormed target `A` on which `R` acts with bounded scalar multiplication, restrictedness at
+`c` forces `aₙ • bⁿ → 0` for `‖b‖ ≤ c` (`PowerSeries.IsRestricted.tendsto_smul_pow`), and hence
+summability when `A` is complete and ultrametric
+(`PowerSeries.IsRestricted.summable_coeff_smul_pow`). When the scalar and power norms on `A` are
+multiplicative, `aₙ • xⁿ → 0` is equivalent to `f.IsRestricted ‖x‖` without completeness or
+ultrametricity, so summability at `x` always forces `f.IsRestricted ‖x‖` and becomes equivalent to
+`f.IsRestricted ‖x‖` when `A` is complete and ultrametric
+(`PowerSeries.summable_coeff_smul_pow_iff_isRestricted`).
 
 ## Main results
 
@@ -52,6 +63,17 @@ an algebra homomorphism; it gives the comparisons used in Weierstrass division a
   leading coefficient from a polynomial factor to its restricted-unit cofactor.
 * `PowerSeries.order_eq_of_isUnit_X_pow_mul_finprod_eq`: in `f = u * (X ^ a * ∏ᶠ m, g m)` with a
   restricted unit `u` and constant-one polynomials `g m`, `f.order = a`.
+* `PowerSeries.summable_coeff_smul_zero_pow` and `PowerSeries.summable_coeff_coe_smul_pow`: every
+  series has summable terms at `0`, and every polynomial has summable terms everywhere.
+* `PowerSeries.IsRestricted.tendsto_smul_pow` and
+  `PowerSeries.IsRestricted.summable_coeff_smul_pow`: for `f` restricted at `r` and `‖x‖ ≤ r`, the
+  terms `coeff n f • x ^ n` tend to zero and are summable in a complete ultrametric target.
+* `PowerSeries.tendsto_coeff_smul_pow_zero_iff_isRestricted`,
+  `PowerSeries.isRestricted_norm_of_summable`,
+  `PowerSeries.summable_coeff_smul_pow_iff_isRestricted`, and
+  `PowerSeries.forall_norm_le_summable_iff_isRestricted`: term-decay, necessary restrictedness,
+  and complete ultrametric convergence characterizations in targets with multiplicative scalar and
+  power norms.
 -/
 
 public section
@@ -370,5 +392,133 @@ theorem order_eq_of_isUnit_X_pow_mul_finprod_eq {R ι : Type*} [NormedCommRing R
   calc (a : ℕ∞) = ((X : PowerSeries R) ^ a).order := (order_X_pow a).symm
     _ ≤ ((X : PowerSeries R) ^ a).order + ((u : PowerSeries R) * Q).order := self_le_add_right _ _
     _ ≤ f.order := hmul' ▸ le_order_mul _ _
+
+section ZeroAndPolynomialSummable
+
+variable {R A : Type*} [Semiring R] [Semiring A] [TopologicalSpace A]
+
+/-- Every power series converges at `0 : A`. -/
+theorem summable_coeff_smul_zero_pow [SMulZeroClass R A] (f : R⟦X⟧) :
+    Summable fun n ↦ coeff n f • (0 : A) ^ n :=
+  summable_of_ne_finset_zero (s := {0}) fun n hn ↦ by
+    rw [zero_pow (Finset.notMem_singleton.mp hn), smul_zero]
+
+/-- Every polynomial converges at every point of `A`. -/
+theorem summable_coeff_coe_smul_pow [SMulWithZero R A] (p : Polynomial R) (x : A) :
+    Summable fun n ↦ coeff n (p : R⟦X⟧) • x ^ n :=
+  summable_of_ne_finset_zero (s := Finset.range (p.natDegree + 1)) fun n hn ↦ by
+    rw [Finset.mem_range, not_lt] at hn
+    simp [Polynomial.coeff_eq_zero_of_natDegree_lt hn]
+
+end ZeroAndPolynomialSummable
+
+section Terms
+
+/-- At a point `b` with `‖b‖ ≤ c`, the terms `aₙ • bⁿ` of a series restricted at the radius `c`
+tend to zero. -/
+theorem IsRestricted.tendsto_smul_pow {R A : Type*} [NormedRing R] [SeminormedRing A]
+    [SMulZeroClass R A] [IsBoundedSMul R A] {c : ℝ} {f : R⟦X⟧} {b : A}
+    (hf : f.IsRestricted c) (hb : ‖b‖ ≤ c) :
+    Tendsto (fun n ↦ coeff n f • b ^ n) cofinite (𝓝 0) := by
+  refine squeeze_zero_norm' ?_ ((isRestricted_iff c f).mp hf)
+  -- `‖bⁿ‖ ≤ ‖b‖ⁿ` only holds for `n ≥ 1`, so the term of index `0` is set aside
+  filter_upwards [(Set.finite_singleton 0).compl_mem_cofinite] with n hn
+  exact (norm_smul_le _ _).trans <| mul_le_mul_of_nonneg_left
+    ((norm_pow_le' b (Nat.pos_of_ne_zero (Set.mem_compl_singleton_iff.mp hn))).trans
+      (pow_le_pow_left₀ (norm_nonneg b) hb n)) (norm_nonneg _)
+
+/-- For `n ≥ 1`, the norm of `coeff n f • x ^ n` is `‖coeff n f‖ * ‖x‖ ^ n`. -/
+theorem norm_coeff_smul_pow_succ {R A : Type*} [Semiring R] [Norm R] [Monoid A] [Norm A]
+    [SMul R A] [NormSMulClass R A] [NormMulClass A] (f : R⟦X⟧) (x : A) (n : ℕ) :
+    ‖coeff (n + 1) f • x ^ (n + 1)‖ = ‖coeff (n + 1) f‖ * ‖x‖ ^ (n + 1) := by
+  rw [norm_smul, TauCeti.norm_pow_succ]
+
+variable {R A : Type*} [NormedRing R] [SeminormedRing A] [SMul R A] [NormSMulClass R A]
+  [NormMulClass A] {f : R⟦X⟧} {x : A} {r : ℝ}
+
+/-- The terms `coeff n f • x ^ n` tend to zero if and only if `f` is restricted at `‖x‖`. -/
+theorem tendsto_coeff_smul_pow_zero_iff_isRestricted :
+    Tendsto (fun n ↦ coeff n f • x ^ n) atTop (𝓝 0) ↔ f.IsRestricted ‖x‖ := by
+  rw [tendsto_zero_iff_norm_tendsto_zero, ← tendsto_add_atTop_iff_nat 1, isRestricted_iff']
+  simp only [norm_coeff_smul_pow_succ]
+  exact tendsto_add_atTop_iff_nat (f := fun t ↦ ‖coeff t f‖ * ‖x‖ ^ t) 1
+
+/-- At a point `x` of norm `r`, the terms `coeff n f • x ^ n` tend to zero if and only if `f` is
+restricted at `r`. -/
+theorem tendsto_coeff_smul_pow_zero_iff_isRestricted_of_norm_eq (hr : ‖x‖ = r) :
+    Tendsto (fun n ↦ coeff n f • x ^ n) atTop (𝓝 0) ↔ f.IsRestricted r :=
+  hr ▸ tendsto_coeff_smul_pow_zero_iff_isRestricted
+
+/-- If `∑ₙ coeff n f • x ^ n` is summable, then `f` is restricted at `‖x‖`. Neither completeness
+nor an ultrametric norm is required. -/
+theorem isRestricted_norm_of_summable (h : Summable fun n ↦ coeff n f • x ^ n) :
+    f.IsRestricted ‖x‖ :=
+  tendsto_coeff_smul_pow_zero_iff_isRestricted.mp h.tendsto_atTop_zero
+
+/-- If `∑ₙ coeff n f • x ^ n` is summable at a point `x` of norm `r`, then `f` is restricted at
+`r`. -/
+theorem isRestricted_of_summable_of_norm_eq (h : Summable fun n ↦ coeff n f • x ^ n)
+    (hr : ‖x‖ = r) : f.IsRestricted r :=
+  hr ▸ isRestricted_norm_of_summable h
+
+/-- Convergence on all points of norm at most `r` implies `f.IsRestricted r` whenever `r` is
+attained by the norm of a point. -/
+theorem isRestricted_of_forall_norm_le_summable (hx : ∃ x : A, ‖x‖ = r)
+    (h : ∀ y : A, ‖y‖ ≤ r → Summable fun n ↦ coeff n f • y ^ n) : f.IsRestricted r := by
+  obtain ⟨x, rfl⟩ := hx
+  exact isRestricted_norm_of_summable (h x le_rfl)
+
+/-- Convergence throughout `Metric.closedBall 0 r` implies `f.IsRestricted r` whenever `r` is
+attained by the norm of a point. -/
+theorem isRestricted_of_forall_mem_closedBall_summable (hx : ∃ x : A, ‖x‖ = r)
+    (h : ∀ y ∈ Metric.closedBall (0 : A) r, Summable fun n ↦ coeff n f • y ^ n) :
+    f.IsRestricted r :=
+  isRestricted_of_forall_norm_le_summable hx fun y hy ↦ h y (mem_closedBall_zero_iff.mpr hy)
+
+end Terms
+
+section UltrametricSummable
+
+/-- In a complete ultrametric seminormed target with bounded scalar action, a series `f` restricted
+at `r` has summable terms `coeff n f • x ^ n` at every `x` with `‖x‖ ≤ r`. -/
+theorem IsRestricted.summable_coeff_smul_pow {R A : Type*} [NormedRing R] [SeminormedRing A]
+    [IsUltrametricDist A] [CompleteSpace A] [SMulZeroClass R A] [IsBoundedSMul R A] {f : R⟦X⟧}
+    {r : ℝ} (hf : f.IsRestricted r) {x : A} (hx : ‖x‖ ≤ r) :
+    Summable fun n ↦ coeff n f • x ^ n :=
+  NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero (hf.tendsto_smul_pow hx)
+
+variable {R A : Type*} [NormedRing R] [SeminormedRing A] [IsUltrametricDist A] [CompleteSpace A]
+  [SMul R A] [NormSMulClass R A] [NormMulClass A] {f : R⟦X⟧} {x : A} {r : ℝ}
+
+/-- **Pointwise convergence characterization.** In a complete ultrametric target with
+multiplicative scalar and power norms, `∑ₙ coeff n f • x ^ n` converges if and only if `f` is
+restricted at `‖x‖`. -/
+theorem summable_coeff_smul_pow_iff_isRestricted :
+    Summable (fun n ↦ coeff n f • x ^ n) ↔ f.IsRestricted ‖x‖ := by
+  rw [NonarchimedeanAddGroup.summable_iff_tendsto_cofinite_zero, Nat.cofinite_eq_atTop,
+    tendsto_coeff_smul_pow_zero_iff_isRestricted]
+
+/-- At a point `x` of norm `r` in a complete ultrametric target, `∑ₙ coeff n f • x ^ n` converges
+if and only if `f` is restricted at `r`. -/
+theorem summable_coeff_smul_pow_iff_isRestricted_of_norm_eq (hr : ‖x‖ = r) :
+    Summable (fun n ↦ coeff n f • x ^ n) ↔ f.IsRestricted r :=
+  hr ▸ summable_coeff_smul_pow_iff_isRestricted
+
+/-- **Closed-disc convergence characterization.** When `r` is attained by the norm of a point of
+`A`, `f` converges at every point of norm at most `r` if and only if `f.IsRestricted r`. -/
+theorem forall_norm_le_summable_iff_isRestricted (hx : ∃ x : A, ‖x‖ = r) :
+    (∀ y : A, ‖y‖ ≤ r → Summable fun n ↦ coeff n f • y ^ n) ↔ f.IsRestricted r :=
+  ⟨isRestricted_of_forall_norm_le_summable hx, fun hf y hy ↦
+    summable_coeff_smul_pow_iff_isRestricted.mpr
+      (TauCeti.PowerSeries.isRestricted_of_abs_le hf
+        ((abs_of_nonneg (norm_nonneg y)).trans_le (hy.trans (le_abs_self r))))⟩
+
+/-- When `r` is attained by the norm of a point of `A`, `f` converges throughout
+`Metric.closedBall 0 r` if and only if `f.IsRestricted r`. -/
+theorem forall_mem_closedBall_summable_iff_isRestricted (hx : ∃ x : A, ‖x‖ = r) :
+    (∀ y ∈ Metric.closedBall (0 : A) r, Summable fun n ↦ coeff n f • y ^ n) ↔ f.IsRestricted r := by
+  simpa only [mem_closedBall_zero_iff] using forall_norm_le_summable_iff_isRestricted hx
+
+end UltrametricSummable
 
 end PowerSeries

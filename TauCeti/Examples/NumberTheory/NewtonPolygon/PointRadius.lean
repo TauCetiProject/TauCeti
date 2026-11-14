@@ -60,24 +60,6 @@ theorem coeff_ceilHalfPowSeries (p : ℕ) [Fact p.Prime] (n : ℕ) :
     PowerSeries.coeff n (ceilHalfPowSeries p) = (p : ℚ_[p]) ^ ⌈(n : ℚ) / 2⌉₊ :=
   PowerSeries.coeff_mk n _
 
-private theorem ceil_div_two_eq (n : ℕ) : ⌈(n : ℚ) / 2⌉₊ = (n + 1) / 2 := by
-  rcases Nat.even_or_odd' n with ⟨k, rfl | rfl⟩
-  · have hk : ((2 * k : ℕ) : ℚ) / 2 = (k : ℚ) := by push_cast; ring
-    rw [hk, Nat.ceil_natCast]
-    omega
-  · have hceil : ⌈((2 * k + 1 : ℕ) : ℚ) / 2⌉₊ = k + 1 :=
-      (Nat.ceil_eq_iff (Nat.succ_ne_zero k)).mpr ⟨by push_cast; linarith, by push_cast; linarith⟩
-    rw [hceil]
-    omega
-
-private theorem le_two_mul_ceil_div_two (n : ℕ) : n ≤ 2 * ⌈(n : ℚ) / 2⌉₊ := by
-  rw [ceil_div_two_eq]
-  omega
-
-private theorem ceil_two_mul_div_two (k : ℕ) : ⌈((2 * k : ℕ) : ℚ) / 2⌉₊ = k := by
-  rw [ceil_div_two_eq]
-  omega
-
 variable {p : ℕ} [Fact p.Prime]
 
 private theorem norm_coeff_mul_sqrt_pow_le_one (n : ℕ) :
@@ -86,9 +68,11 @@ private theorem norm_coeff_mul_sqrt_pow_le_one (n : ℕ) :
   have hp0 : (0 : ℝ) < p := Nat.cast_pos.mpr (Fact.out : p.Prime).pos
   have hp1 : (1 : ℝ) ≤ p := Nat.one_le_cast.mpr (Fact.out : p.Prime).one_lt.le
   have hsqrt1 : 1 ≤ √(p : ℝ) := Real.one_le_sqrt.mpr hp1
+  have hnm : n ≤ 2 * m := by
+    exact_mod_cast (div_le_iff₀' (two_pos (α := ℚ))).mp (Nat.le_ceil ((n : ℚ) / 2))
   have hpow : √(p : ℝ) ^ n ≤ (p : ℝ) ^ m := by
     calc √(p : ℝ) ^ n
-        ≤ √(p : ℝ) ^ (2 * m) := pow_le_pow_right₀ hsqrt1 (le_two_mul_ceil_div_two n)
+        ≤ √(p : ℝ) ^ (2 * m) := pow_le_pow_right₀ hsqrt1 hnm
       _ = (√(p : ℝ) ^ 2) ^ m := pow_mul √(p : ℝ) 2 m
       _ = (p : ℝ) ^ m := by rw [Real.sq_sqrt hp0.le]
   calc ‖PowerSeries.coeff n (ceilHalfPowSeries p)‖ * √(p : ℝ) ^ n
@@ -100,7 +84,9 @@ private theorem norm_coeff_mul_sqrt_pow_le_one (n : ℕ) :
 private theorem norm_coeff_two_mul_mul_sqrt_pow (k : ℕ) :
     ‖PowerSeries.coeff (2 * k) (ceilHalfPowSeries p)‖ * √(p : ℝ) ^ (2 * k) = 1 := by
   have hp0 : (0 : ℝ) < p := Nat.cast_pos.mpr (Fact.out : p.Prime).pos
-  rw [coeff_ceilHalfPowSeries, ceil_two_mul_div_two, norm_pow, Padic.norm_p,
+  have hceil : ⌈((2 * k : ℕ) : ℚ) / 2⌉₊ = k := by
+    rw [Nat.cast_mul, Nat.cast_ofNat, mul_div_cancel_left₀ _ two_ne_zero, Nat.ceil_natCast]
+  rw [coeff_ceilHalfPowSeries, hceil, norm_pow, Padic.norm_p,
     pow_mul √(p : ℝ) 2 k, Real.sq_sqrt hp0.le, inv_pow]
   exact inv_mul_cancel₀ (pow_ne_zero k hp0.ne')
 
@@ -150,7 +136,9 @@ theorem newtonPolygon_ceilHalfPowSeries (n : ℕ) :
       ((0 + (1 / 2 : ℝ) * m : ℝ) : WithTop ℝ) ≤ v (PowerSeries.coeff m (ceilHalfPowSeries p)) := by
     rw [hval]
     refine WithTop.coe_le_coe.mpr ?_
-    have hm : (m : ℝ) ≤ 2 * (⌈(m : ℚ) / 2⌉₊ : ℝ) := by exact_mod_cast le_two_mul_ceil_div_two m
+    have hm : (m : ℚ) ≤ 2 * (⌈(m : ℚ) / 2⌉₊ : ℚ) :=
+      (div_le_iff₀' two_pos).mp (Nat.le_ceil ((m : ℚ) / 2))
+    have hm' : (m : ℝ) ≤ 2 * (⌈(m : ℚ) / 2⌉₊ : ℝ) := by exact_mod_cast hm
     linarith
   have hadm : IsAdmissible fun m ↦ v (PowerSeries.coeff m (ceilHalfPowSeries p)) :=
     isAdmissible_iff.mpr ⟨0, 1 / 2, hminor⟩
@@ -162,7 +150,8 @@ theorem newtonPolygon_ceilHalfPowSeries (n : ℕ) :
   have heven (k : ℕ) : (ceilHalfPowSeries p).newtonPolygon v (2 * k) = ((k : ℝ) : WithTop ℝ) := by
     refine le_antisymm ?_ ?_
     · have hle := PowerSeries.newtonPolygon_le hadm (2 * k)
-      rwa [hval, ceil_two_mul_div_two] at hle
+      rwa [hval, Nat.cast_mul, Nat.cast_ofNat, mul_div_cancel_left₀ _ two_ne_zero,
+        Nat.ceil_natCast] at hle
     · convert hlo (2 * k) using 2
       push_cast
       ring

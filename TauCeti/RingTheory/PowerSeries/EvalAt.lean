@@ -12,9 +12,10 @@ public import Mathlib.RingTheory.PowerSeries.GaussNorm
 public import Mathlib.RingTheory.PowerSeries.Restricted
 public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import TauCeti.RingTheory.PowerSeries.HasseDeriv.Basic
+public import TauCeti.RingTheory.PowerSeries.Restricted
 import Mathlib.Topology.Algebra.InfiniteSum.Module
 import TauCeti.Algebra.Polynomial.Taylor
-import TauCeti.RingTheory.PowerSeries.Restricted
+import TauCeti.RingTheory.PowerSeries.GaussNorm
 
 /-!
 # Evaluation of power series as infinite sums
@@ -39,7 +40,9 @@ In a complete ultrametric normed algebra, a series restricted at a radius `c` ca
 every `b` with `‖b‖ ≤ c`: the terms `aₙ • bⁿ` tend to zero, so they are summable, and the Cauchy
 product formula makes evaluation at `b` a ring homomorphism on the restricted series. The algebra
 need not be commutative, so this evaluates restricted series at bounded operators as well as at
-points of complete normed field extensions.
+points of complete normed field extensions. When the scalar and power norms on `A` are
+multiplicative, convergence at a single point `x` forces restrictedness at `‖x‖` and hence
+convergence to `evalAt` and the Gauss-norm bound throughout the closed disc `‖y‖ ≤ ‖x‖`.
 
 A power series `F = ∑ Fₙ Xⁿ` whose coefficients lie in a ring `A` acted on by `R`, such as a series
 of operators, is instead evaluated at a scalar `a : R`: `PowerSeries.evalScalar F a` is the
@@ -80,6 +83,11 @@ coefficient rings here may have nilpotents.
   compatibility with scalars and finite sums.
 * `PowerSeries.IsRestricted.evalAtHom`: evaluation at such `b` as a ring homomorphism on the
   restricted series.
+* `PowerSeries.norm_evalAt_le_gaussNorm_of_isRestricted`,
+  `PowerSeries.hasSum_evalAt_of_summable_of_norm_le`,
+  `PowerSeries.norm_evalAt_le_gaussNorm_of_summable_of_norm_le`, and
+  `PowerSeries.forall_norm_le_hasSum_evalAt_iff_isRestricted`: closed-disc `evalAt` convergence and
+  Gauss-norm bounds from restrictedness or convergence at a single boundary point.
 * `PowerSeries.evalAt_eq_zero_iff_of_isUnit_X_pow_mul_finprod_eq`: zeros in the closed disc of a
   series factored as `u * (X ^ a * ∏ᶠ m, g m)` with `u` a restricted unit.
 * `PowerSeries.evalScalar_monomial`, `PowerSeries.evalScalar_at_zero`,
@@ -471,20 +479,7 @@ open Filter
 open scoped Topology
 
 variable {R A : Type*} [NormedCommRing R] [NormedRing A] [Algebra R A] [IsBoundedSMul R A]
-  {c : ℝ} {f g : R⟦X⟧} {b : A}
-
-/-- At a point `b` with `‖b‖ ≤ c`, the terms `aₙ • bⁿ` of a series restricted at the radius `c`
-tend to zero. -/
-theorem IsRestricted.tendsto_smul_pow (hf : f.IsRestricted c) (hb : ‖b‖ ≤ c) :
-    Tendsto (fun n ↦ coeff n f • b ^ n) cofinite (𝓝 0) := by
-  refine squeeze_zero_norm' ?_ ((isRestricted_iff c f).mp hf)
-  -- `‖bⁿ‖ ≤ ‖b‖ⁿ` only holds for `n ≥ 1`, so the term of index `0` is set aside
-  filter_upwards [(Set.finite_singleton 0).compl_mem_cofinite] with n hn
-  exact (norm_smul_le _ _).trans <| mul_le_mul_of_nonneg_left
-    ((norm_pow_le' b (Nat.pos_of_ne_zero (Set.mem_compl_singleton_iff.mp hn))).trans
-      (pow_le_pow_left₀ (norm_nonneg b) hb n)) (norm_nonneg _)
-
-variable [IsUltrametricDist A] [CompleteSpace A]
+  [IsUltrametricDist A] [CompleteSpace A] {c : ℝ} {f g : R⟦X⟧} {b : A}
 
 /-- **Evaluation of restricted series.** In a complete ultrametric normed algebra, for a series
 `f = ∑ aₙ Xⁿ` restricted at the radius `c` and a point `b` with `‖b‖ ≤ c`, the series
@@ -492,8 +487,7 @@ variable [IsUltrametricDist A] [CompleteSpace A]
 theorem IsRestricted.hasSum_evalAt (hf : f.IsRestricted c) (hb : ‖b‖ ≤ c) :
     HasSum (fun n ↦ coeff n f • b ^ n) (f.evalAt b) := by
   rw [evalAt_def]
-  exact (NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero
-    (hf.tendsto_smul_pow hb)).hasSum
+  exact (hf.summable_coeff_smul_pow hb).hasSum
 
 /-- Evaluation at a point of norm at most `c` is additive on series restricted at `c`. -/
 theorem IsRestricted.evalAt_add (hf : f.IsRestricted c) (hg : g.IsRestricted c) (hb : ‖b‖ ≤ c) :
@@ -552,6 +546,43 @@ theorem IsRestricted.evalAtHom_apply (hb : ‖b‖ ≤ c) (f : IsRestricted.subr
   (rfl)
 
 end Restricted
+
+section UltrametricEval
+
+/-- In an ultrametric normed algebra with `‖1‖ = 1`, a series `f` restricted at `r` satisfies the
+Gauss-norm bound `‖f.evalAt b‖ ≤ gaussNorm norm r f` on the closed disc `‖b‖ ≤ r`. -/
+theorem norm_evalAt_le_gaussNorm_of_isRestricted {R A : Type*} [NormedCommRing R] [NormedRing A]
+    [Algebra R A] [IsBoundedSMul R A] [IsUltrametricDist A] [NormOneClass A] {f : R⟦X⟧} {r : ℝ}
+    (hf : f.IsRestricted r) {b : A} (hb : ‖b‖ ≤ r) :
+    ‖f.evalAt b‖ ≤ gaussNorm norm r f :=
+  norm_evalAt_le_gaussNorm (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted hf) hb
+
+variable {R A : Type*} [NormedCommRing R] [NormedRing A] [IsUltrametricDist A] [CompleteSpace A]
+  [Algebra R A] [NormSMulClass R A] [NormMulClass A] {f : R⟦X⟧} {x y : A} {r : ℝ}
+
+/-- In a complete ultrametric algebra with multiplicative scalar and power norms, convergence at a
+single point `x` gives convergence to `f.evalAt y` at every `y` in the closed disc `‖y‖ ≤ ‖x‖`. -/
+theorem hasSum_evalAt_of_summable_of_norm_le (hx : Summable fun n ↦ coeff n f • x ^ n)
+    (hy : ‖y‖ ≤ ‖x‖) : HasSum (fun n ↦ coeff n f • y ^ n) (f.evalAt y) :=
+  (isRestricted_norm_of_summable hx).hasSum_evalAt hy
+
+omit [CompleteSpace A] in
+/-- In an ultrametric algebra with `‖1‖ = 1` and multiplicative scalar and power norms,
+convergence at `x` bounds `‖f.evalAt y‖` by `gaussNorm norm ‖x‖ f` for every `y` with
+`‖y‖ ≤ ‖x‖`. -/
+theorem norm_evalAt_le_gaussNorm_of_summable_of_norm_le [NormOneClass A]
+    (hx : Summable fun n ↦ coeff n f • x ^ n) (hy : ‖y‖ ≤ ‖x‖) :
+    ‖f.evalAt y‖ ≤ gaussNorm norm ‖x‖ f :=
+  norm_evalAt_le_gaussNorm_of_isRestricted (isRestricted_norm_of_summable hx) hy
+
+/-- When `r` is attained by the norm of a point of `A`, `∑ₙ coeff n f • y ^ n` sums to `f.evalAt y`
+throughout `‖y‖ ≤ r` if and only if `f.IsRestricted r`. -/
+theorem forall_norm_le_hasSum_evalAt_iff_isRestricted (hx : ∃ x : A, ‖x‖ = r) :
+    (∀ y : A, ‖y‖ ≤ r → HasSum (fun n ↦ coeff n f • y ^ n) (f.evalAt y)) ↔ f.IsRestricted r :=
+  ⟨fun h ↦ isRestricted_of_forall_norm_le_summable hx fun y hy ↦ (h y hy).summable,
+    fun hf _ hy ↦ hf.hasSum_evalAt hy⟩
+
+end UltrametricEval
 
 /-- Suppose `f = u * (X ^ a * ∏ᶠ m, g m)` on the closed disc of radius `r`, where `u` is a unit of
 the ring of series restricted at `r` and `g` is a finitely supported family of polynomials. Then in

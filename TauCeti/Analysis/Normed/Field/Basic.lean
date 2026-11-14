@@ -38,7 +38,8 @@ A normed field whose norm takes every positive real value is densely normed
 equivalent to the positive norms being dense in `(0, ∞)`
 (`NormedField.forall_exists_lt_norm_lt_iff_Ioi_subset_closure`), so in a densely normed field the
 positive norms are dense in `(0, ∞)` (`NormedField.Ioi_subset_closure_image_norm`) and the range of
-the norm has closure `[0, ∞)` (`NormedField.closure_range_norm`).
+the norm has closure `[0, ∞)` (`NormedField.closure_range_norm`). In any nontrivially normed field,
+the supremum of all extended norms is `⊤` (`NormedField.iSup_eNorm_eq_top`).
 
 Finally, `TauCeti.norm_sub_div_le_of_dist_div_le` turns a bound on the ratio `F / w` near `c⁻¹`
 into a relative error bound for `F - w / c`.
@@ -232,6 +233,15 @@ theorem closure_range_norm (𝕜 : Type*) [DenselyNormedField 𝕜] :
   · rcases eq_or_lt_of_le (Set.mem_Ici.mp hr) with rfl | hr₀
     · exact subset_closure ⟨0, norm_zero⟩
     · exact closure_mono (Set.image_subset_range _ _) (Ioi_subset_closure_image_norm 𝕜 hr₀)
+
+/-- In a nontrivially normed field, the supremum of all extended norms is `⊤`. -/
+@[simp]
+theorem iSup_eNorm_eq_top (𝕜 : Type*) [NontriviallyNormedField 𝕜] :
+    (⨆ x : 𝕜, ‖x‖ₑ) = ⊤ := by
+  refine ENNReal.eq_top_of_forall_nnreal_le fun r ↦ ?_
+  obtain ⟨x, hx⟩ := exists_lt_norm 𝕜 r
+  exact (ENNReal.ofReal_coe_nnreal ▸ ENNReal.ofReal_le_ofReal hx.le).trans
+    (ofReal_norm x ▸ le_iSup (fun y : 𝕜 ↦ ‖y‖ₑ) x)
 
 end NormedField
 
