@@ -83,6 +83,9 @@ spaces.
   `|u(x)| ≤ C ‖u‖_{H^s}`, `2s > n`, almost everywhere.
 * `TemperedDistribution.ae_tendsto_of_tendsto_toBesselPotentialSpace`: convergence in `H^s`,
   `2s > n`, implies convergence almost everywhere.
+* `TemperedDistribution.exists_toBesselPotentialSpace_eq_tsum_and_ae_tendsto`: a series of `L²`
+  functions in `H^s`, `2s > n`, converging in `H^s` converges almost everywhere to an `L²`
+  function whose `H^s` element is its sum.
 * `TemperedDistribution.tendsto_cocompact_of_mem_realSobolevFunctions`: a continuous real
   function in `H^s`, `2s > n`, tends to zero at infinity.
 * `TemperedDistribution.MemSobolev.exists_contDiff_ae_eq`: an `L²` function in `H^s`,
@@ -248,6 +251,42 @@ theorem ae_tendsto_of_tendsto_toBesselPotentialSpace {s : ℝ} (hs : finrank ℝ
   refine tendsto_iff_norm_sub_tendsto_zero.2 <|
     squeeze_zero (fun _ => norm_nonneg _) (fun n => ?_) hlim
   simpa only [hsub n, Pi.sub_apply] using hx n
+
+/-- **Series in `H^s` converge almost everywhere, `s > n / 2`.** Let `dₙ` be `L²` functions in
+`H^s` and `aₙ` complex coefficients such that `∑ₙ aₙ dₙ` converges in `H^s`. Then its sum is the
+`H^s` element of an `L²` function `g`, and the partial sums `∑_{n < N} aₙ dₙ(x)` converge to `g(x)`
+for almost every `x`. -/
+theorem exists_toBesselPotentialSpace_eq_tsum_and_ae_tendsto {s : ℝ} (hs : finrank ℝ E < 2 * s)
+    {d : ℕ → Lp F 2 (volume : Measure E)} (hd : ∀ n, MemSobolev s 2 (d n : 𝓢'(E, F)))
+    {a : ℕ → ℂ} (ha : Summable fun n ↦ a n • (hd n).toBesselPotentialSpace) :
+    ∃ g : Lp F 2 (volume : Measure E), ∃ hg : MemSobolev s 2 (g : 𝓢'(E, F)),
+      hg.toBesselPotentialSpace = ∑' n, a n • (hd n).toBesselPotentialSpace ∧
+      ∀ᵐ x ∂volume, Tendsto (fun N ↦ ∑ n ∈ Finset.range N, a n • d n x) atTop (𝓝 (g x)) := by
+  have hs0 : 0 ≤ s := by
+    have := (finrank ℝ E).cast_nonneg (α := ℝ)
+    linarith
+  set L := ∑' n, a n • (hd n).toBesselPotentialSpace
+  -- The limit `L` is the `H^s` element of an `L²` function `g`.
+  obtain ⟨g, hLg⟩ := memSobolev_zero_iff.1 (L.memSobolev_toDistr.mono hs0)
+  have hg : MemSobolev s 2 (g : 𝓢'(E, F)) := hLg ▸ L.memSobolev_toDistr
+  have hgL : hg.toBesselPotentialSpace = L := BesselPotentialSpace.ext (by simp [hLg])
+  refine ⟨g, hg, hgL, ?_⟩
+  -- The partial sums converge to `L` in `H^s`, hence almost everywhere.
+  set S : ℕ → Lp F 2 (volume : Measure E) := fun N ↦ ∑ n ∈ Finset.range N, a n • d n
+  have hS (N : ℕ) : MemSobolev s 2 (S N : 𝓢'(E, F)) := by
+    simpa only [S, Lp.toTemperedDistribution_sum, Lp.toTemperedDistribution_smul] using
+      MemSobolev.sum fun n (_ : n ∈ Finset.range N) ↦ (hd n).smul (a n)
+  have hlim := ae_tendsto_of_tendsto_toBesselPotentialSpace hs hS hg <| by
+    simpa only [MemSobolev.toBesselPotentialSpace_toTemperedDistribution_sum_smul
+      fun n _ ↦ hd n, Finset.sum_attach _ fun n ↦ a n • (hd n).toBesselPotentialSpace, hgL] using
+      ha.hasSum.tendsto_sum_nat
+  have hpart : ∀ᵐ x ∂volume, ∀ N, S N x = ∑ n ∈ Finset.range N, a n • d n x :=
+    ae_all_iff.2 fun N ↦ by
+      filter_upwards [(Lp.coeFn_finsetSum _ _).trans <| eventuallyEq_sum fun n _ ↦
+        Lp.coeFn_smul (a n) (d n)] with x h
+      simpa [S] using h
+  filter_upwards [hlim, hpart] with x hx hSx
+  simpa only [hSx] using hx
 
 /-- **Continuous Sobolev functions vanish at infinity.** A continuous real function in `H^s`,
 `s > dim E / 2`, tends to zero at infinity: it agrees almost everywhere, hence everywhere, with

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Transcendental.Baker.Delta
 public import TauCeti.NumberTheory.Transcendental.Waldschmidt.Interpolation.Matrix
+import TauCeti.Algebra.Polynomial.Lifts
 import TauCeti.Algebra.MvPolynomial.Eval
 import TauCeti.Algebra.MvPolynomial.PDeriv
 import TauCeti.RingTheory.Subring.Basic
@@ -164,13 +165,8 @@ theorem pow_mul_waldschmidtOperatorEntry_multichoose_mem [CharZero K] {α b : Fi
     (L : K) ^ T * d ^ T * e * waldschmidtOperatorEntry α b t s F
       ((Ring.multichoose (Polynomial.X + 1 : Polynomial ℚ) k ^ l).map (algebraMap ℚ K)) ∈ A := by
   refine mul_waldschmidtOperatorEntry_mem A hF hFT hd hb (fun κ hκ ↦ ?_) he
-  obtain ⟨z, hz⟩ := pow_mul_eval_hasseDeriv_multichoose_X_add_one_pow_mem_range_intCast hL l κ t
-  have hz' : (L : K) ^ κ * algebraMap ℚ K ((Polynomial.hasseDeriv κ
-      (Ring.multichoose (Polynomial.X + 1 : Polynomial ℚ) k ^ l)).eval (t : ℚ)) = z := by
-    rw [← map_intCast (algebraMap ℚ K) z, hz, map_mul, (algebraMap ℚ K).map_pow, map_intCast]
-  rw [Polynomial.hasseDeriv_map, Polynomial.eval_map, ← map_intCast (algebraMap ℚ K) t,
-    Polynomial.eval₂_at_apply, ← Nat.sub_add_cancel hκ, pow_add, mul_assoc, hz']
-  exact mul_mem (pow_mem (intCast_mem A _) _) (intCast_mem A _)
+  exact pow_mul_eval_hasseDeriv_map_mem A
+    (pow_mul_eval_hasseDeriv_multichoose_X_add_one_pow_mem_range_intCast hL l κ t) hκ
 
 /-- **A common denominator of the interpolation matrix.** Let the rows have polynomials `F r`
 with coefficients in `A` and total degree at most `T` and exponents `|t r| ≤ T₁`, let the columns

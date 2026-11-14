@@ -352,8 +352,9 @@ private lemma peterssonInnerCosets_levelRaise_restrict_eq_zero_of_mem_cuspFormsN
         (levelRaise_mem_cuspFormsOldAt (dvd_of_eq hn) (dvd_of_eq hn) k ψ))
   have h := CuspForm.peterssonInnerCosets_restrict_restrict_eq_zero
     (gamma1Conj_le_Gamma1 (dvd_of_eq hn))
-    (gamma1Conj_eq_inf hm hlcm)
-    (fun _ hx ↦ exists_mul_gamma1Conj_eq_of_mem_Gamma1 hqK hgcd hx) hF φ
+    (gamma1Conj_eq_inf (dvd_of_eq hm) hlcm)
+    (fun _ hx ↦ exists_mul_gamma1Conj_eq_of_mem_Gamma1
+      (UniqueFactorizationMonoid.radical_dvd_self.trans hqK) hgcd hx) hF φ
   convert h using 2
   refine DFunLike.coe_injective ?_
   simp only [CuspForm.coe_restrict, CuspForm.coe_translate]
