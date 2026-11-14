@@ -187,16 +187,12 @@ def quasiPeriod : L.lattice →+ ℂ where
     simp only [Submodule.coe_add, ← add_assoc, L.weierstrassZeta_add_coe_eq_add]
     ring
 
-private lemma quasiPeriod_apply (l : L.lattice) :
-    L.quasiPeriod l = L.weierstrassZeta (L.ω₁ / 2 + l) - L.weierstrassZeta (L.ω₁ / 2) :=
-  (rfl)
-
 /-- **The value of `ζ` at a lattice point is the quasi-period**: `ζ(l) = η(l)`. The lattice
 points are the poles of `ζ`, so this is a junk value (compare `PeriodPair.weierstrassP_coe`); it
 is the constant term of the Laurent expansion of `ζ` at `l`. -/
 @[simp]
 theorem weierstrassZeta_coe (l : L.lattice) : L.weierstrassZeta l = L.quasiPeriod l := by
-  rw [quasiPeriod_apply, L.weierstrassZeta_add_coe_eq_add, add_sub_cancel_left]
+  simp [quasiPeriod, L.weierstrassZeta_add_coe_eq_add]
 
 /-- **The quasi-periodicity of `ζ`**: `ζ(z + l) = ζ(z) + η(l)` for every `z` and `l ∈ Λ`. -/
 @[simp]
