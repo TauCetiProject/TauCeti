@@ -10,6 +10,7 @@ module
 -- `Mathlib.LinearAlgebra.TensorProduct.Opposite` carries the algebra structures on `Aᵐᵒᵖ` and
 -- `(L ⊗[K] A)ᵐᵒᵖ` in the type of `baseChangeOpAlgEquiv`, and the compiler needs
 -- `Algebra.TensorProduct.opAlgEquiv`, used in its body, to be public.
+public import Mathlib.Algebra.Ring.Action.End
 public import Mathlib.LinearAlgebra.TensorProduct.Opposite
 public import Mathlib.RingTheory.TensorProduct.Basic
 -- `Tower` supplies the underlying linear scalar-extension equivalences.
@@ -48,6 +49,8 @@ with passing to the opposite algebra, and composes in stages:
   automorphisms act on a scalar extension through its scalar factor, by algebra automorphisms.
 * `TauCeti.ScalarAut.baseChangeMap_smul`: scalar extension of an algebra map is equivariant for
   scalar automorphisms.
+* `TauCeti.Algebra.TensorProduct.baseChangeSemilinearAction`: the semilinear ring-automorphism
+  action `γ • (b ⊗ d) = (γ • b) ⊗ d` of a group acting on `B` by `A`-algebra automorphisms.
 
 ## Implementation notes
 
@@ -424,6 +427,38 @@ theorem baseChangeMap_smul {B : Type*} [Semiring B] [Algebra K B] (f : A →ₐ[
     ← AlgHom.comp_apply, ← Algebra.TensorProduct.map_comp, AlgHom.id_comp, AlgHom.comp_id]
 
 end ScalarAut
+
+namespace Algebra.TensorProduct
+
+section SemilinearAction
+
+variable (A B D Γ : Type*) [CommSemiring A] [Semiring D] [Algebra A D]
+  [Group Γ]
+
+/-- The canonical semilinear action of `Γ` on `B ⊗[A] D` through the left tensor factor
+(`γ • (b ⊗ₜ d) = (γ • b) ⊗ₜ d`). -/
+noncomputable def baseChangeSemilinearAction [Semiring B] [Algebra A B]
+    [MulSemiringAction Γ B] [SMulCommClass Γ A B] : Γ →* RingAut (B ⊗[A] D) :=
+  (MulSemiringAction.toRingAut (B ≃ₐ[A] B) (B ⊗[A] D)).comp (MulSemiringAction.toAlgAut Γ A B)
+
+/-- `baseChangeSemilinearAction` acts on pure tensors via the left tensor factor. -/
+@[simp]
+theorem baseChangeSemilinearAction_tmul [Semiring B] [Algebra A B]
+    [MulSemiringAction Γ B] [SMulCommClass Γ A B] (γ : Γ) (b : B) (d : D) :
+    baseChangeSemilinearAction A B D Γ γ (b ⊗ₜ[A] d) = (γ • b) ⊗ₜ[A] d :=
+  (rfl)
+
+/-- `baseChangeSemilinearAction` is semilinear with respect to `MulSemiringAction.toAlgAut Γ A B`.
+-/
+theorem baseChangeSemilinearAction_algebraMap [CommSemiring B] [Algebra A B]
+    [MulSemiringAction Γ B] [SMulCommClass Γ A B] (γ : Γ) (b : B) :
+    baseChangeSemilinearAction A B D Γ γ (algebraMap B (B ⊗[A] D) b) =
+      algebraMap B (B ⊗[A] D) (MulSemiringAction.toAlgAut Γ A B γ b) := by
+  simp [Algebra.TensorProduct.algebraMap_apply]
+
+end SemilinearAction
+
+end Algebra.TensorProduct
 
 end TauCeti
 
