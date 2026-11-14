@@ -19,8 +19,9 @@ normalization.
 After importing `TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace`, the canonical specialization
 is obtained by taking `τ = ocneanuTrace R q z` and
 `hτ = isMarkovTrace_ocneanuTrace z`. In this case the invariant is the braid-closure invariant
-Jones constructs from the Ocneanu trace; its comparisons with the finite-colour Jimbo traces and
-with the two-variable HOMFLY polynomial are proved in `TauCeti.KnotTheory.Hecke.Jimbo` and
+Jones constructs from the Ocneanu trace; its naturality and character specializations, its
+comparisons with the finite-colour Jimbo traces, and its comparison with the two-variable HOMFLY
+polynomial are proved in `TauCeti.KnotTheory.Hecke.Ocneanu`, `TauCeti.KnotTheory.Hecke.Jimbo`, and
 `TauCeti.KnotTheory.Hecke.Homfly`. The skein relation itself needs only linearity of `τ`.
 
 ## Main results

@@ -140,6 +140,22 @@ theorem jimboWeight_sum_X_ne_zero (N : ℕ) :
   rw [hp] at ht
   exact ht isAlgebraic_one
 
+/-- The positive-rank universal quantum dimension `[N + 1]_q` in `LaurentPolynomial A` is nonzero
+over every nontrivial commutative ring `A`. -/
+theorem jimboWeight_sum_genericUnit_ne_zero (A : Type*) [CommRing A] [Nontrivial A] (N : ℕ) :
+    (∑ a : Fin (N + 1), jimboWeight (genericUnit A) a) ≠ 0 := by
+  intro h
+  have hs := jimboWeight_sum (N := N + 1) (genericUnit A)
+  have hp : (↑(genericUnit A ^ (N + 1)) : LaurentPolynomial A) = T ((N + 1 : ℕ) : ℤ) := by
+    rw [← zpow_natCast, genericUnit_zpow_val]
+  have hn : (↑((genericUnit A)⁻¹ ^ (N + 1)) : LaurentPolynomial A) = T (-((N + 1 : ℕ) : ℤ)) := by
+    have hz : ((genericUnit A)⁻¹ ^ (N + 1) : (LaurentPolynomial A)ˣ) =
+        genericUnit A ^ (-((N + 1 : ℕ) : ℤ)) := by
+      rw [zpow_neg, zpow_natCast, inv_pow]
+    rw [hz, genericUnit_zpow_val]
+  rw [h, mul_zero, hp, hn] at hs
+  exact T_sub_T_ne_zero (by omega) hs.symm
+
 /-- The unreduced unknot value is a nonzero Laurent polynomial, in every characteristic. -/
 @[simp]
 theorem homflyUnknot_ne_zero (K : Type*) [Field K] : homflyUnknot K ≠ 0 := by

@@ -38,15 +38,15 @@ Consequently:
 
 ## References
 
+* P. Freyd, D. Yetter, J. Hoste, W. B. R. Lickorish, K. Millett and A. Ocneanu, *A new polynomial
+  invariant of knots and links*, Bull. Amer. Math. Soc. 12 (1985), 239–246 (§4, pp. 244–246). Under
+  the two-eigenvalue operator convention `exp α • γ + exp (-α) • γ⁻¹ + 2 * I * sinh θ = 0` and
+  stabilization equations proved in `TauCeti.Algebra.TypeAHeckeAlgebra.Hyperbolic`, the compatible
+  skein parameters are `(exp α, +exp (-α), 2 * I * sinh θ)` with `η = (1 - tanh α * tanh θ) / 2`,
+  whereas a minus sign `-exp (-α)` on the second skein parameter gives a different two-strand unlink
+  value (`heckeTrace_hyperbolic_two_strand_unlink_ne_neg_param`).
 * V. F. R. Jones, *Hecke algebra representations of braid groups and link polynomials*, Ann. of
   Math. 126 (1987), 335–388, Section 6.
-* V. F. R. Jones, *Subfactors and Knots*, CBMS Regional Conference Series in Mathematics 80, AMS
-  (1991), p. 88. In that source's hyperbolic specialization formula, the second skein argument is
-  printed with a minus sign (`-exp (-α)`) and the parameter constraint with `tan θ`; under the
-  two-eigenvalue operator convention `exp α • γ + exp (-α) • γ⁻¹ + 2 * I * sinh θ = 0` and
-  stabilization equations proved in `TauCeti.Algebra.TypeAHeckeAlgebra.Hyperbolic`, the compatible
-  parameters are `+exp (-α)` and `η = (1 - tanh α * tanh θ) / 2`, whereas `-exp (-α)` gives a
-  different two-strand unlink value (`heckeTrace_hyperbolic_two_strand_unlink_ne_neg_param`).
 -/
 
 public noncomputable section
@@ -57,24 +57,6 @@ namespace TauCeti
 
 open InfiniteTypeAHeckeAlgebra (IsMarkovTrace)
 open LaurentPolynomial (eval₂)
-
-/-- The writhe unit `l = I * exp (-α)` translating between the rescaled hyperbolic generators
-`γ i = I * exp (-α) • T i` and the standard Hecke braid representation `σ i ↦ T i`. -/
-def hyperbolicWritheUnit (α : ℂ) : ℂˣ :=
-  Units.mk0 (I * exp (-α)) (mul_ne_zero I_ne_zero (exp_ne_zero _))
-
-/-- Coercing `hyperbolicWritheUnit α` gives `I * exp (-α)`. -/
-@[simp]
-theorem val_hyperbolicWritheUnit (α : ℂ) :
-    (hyperbolicWritheUnit α : ℂ) = I * exp (-α) :=
-  (rfl)
-
-/-- The inverse of `hyperbolicWritheUnit α` is `-I * exp α`. -/
-theorem val_inv_hyperbolicWritheUnit (α : ℂ) :
-    (↑(hyperbolicWritheUnit α)⁻¹ : ℂ) = -I * exp α := by
-  apply Units.inv_eq_of_mul_eq_one_right
-  rw [val_hyperbolicWritheUnit, mul_mul_mul_comm, ← exp_add, neg_add_cancel, exp_zero, mul_one,
-    mul_neg, I_mul_I, neg_neg]
 
 /-- Multiplying the Markov parameter `z = exp (-θ) * η - exp θ * (1 - η)` by
 `hyperbolicWritheUnit α` gives `hyperbolicStabilization α θ η`. -/

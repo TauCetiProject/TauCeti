@@ -53,6 +53,7 @@ stabilization constants, and assert nothing about positivity.
 ## Main definitions
 
 * `TauCeti.hyperbolicHeckeParam`: the Hecke parameter `q = exp (-θ)` as a unit.
+* `TauCeti.hyperbolicWritheUnit`: the writhe-rescaling unit `I * exp (-α)` of `ℂ`.
 * `TauCeti.InfiniteTypeAHeckeAlgebra.hyperbolicGen`: the rescaled generator `I * exp (-α) • T i`,
   as a unit.
 
@@ -101,6 +102,21 @@ theorem val_hyperbolicHeckeParam (θ : ℂ) : (hyperbolicHeckeParam θ : ℂ) = 
 /-- The inverse of the hyperbolic Hecke parameter is `exp θ`. -/
 theorem val_inv_hyperbolicHeckeParam (θ : ℂ) : (↑(hyperbolicHeckeParam θ)⁻¹ : ℂ) = exp θ := by
   simp [hyperbolicHeckeParam, ← exp_neg]
+
+/-- The writhe-rescaling unit `I * exp (-α)` of `ℂ`. -/
+noncomputable def hyperbolicWritheUnit (α : ℂ) : ℂˣ :=
+  Units.mk0 (I * exp (-α)) (mul_ne_zero I_ne_zero (exp_ne_zero _))
+
+/-- The underlying value of `hyperbolicWritheUnit α` is `I * exp (-α)`. -/
+@[simp]
+theorem val_hyperbolicWritheUnit (α : ℂ) : (hyperbolicWritheUnit α : ℂ) = I * exp (-α) := (rfl)
+
+/-- The inverse of `hyperbolicWritheUnit α` is `-I * exp α`. -/
+theorem val_inv_hyperbolicWritheUnit (α : ℂ) :
+    (↑(hyperbolicWritheUnit α)⁻¹ : ℂ) = -I * exp α := by
+  apply Units.inv_eq_of_mul_eq_one_right
+  rw [val_hyperbolicWritheUnit, mul_mul_mul_comm, ← exp_add, neg_add_cancel, exp_zero, mul_one,
+    mul_neg, I_mul_I, neg_neg]
 
 /-- The positive stabilization constant `I * (exp (-α - θ) * η - exp (-α + θ) * (1 - η))` of a
 Markov trace with projection parameter `η`, for the generators `γ = I * exp (-α) • T`. -/
@@ -201,7 +217,7 @@ namespace InfiniteTypeAHeckeAlgebra
 noncomputable def hyperbolicGen (α θ : ℂ) (i : ℕ) :
     (InfiniteTypeAHeckeAlgebra ℂ (hyperbolicHeckeParam θ))ˣ :=
   Units.map (algebraMap ℂ (InfiniteTypeAHeckeAlgebra ℂ (hyperbolicHeckeParam θ))).toMonoidHom
-    (Units.mk0 (I * exp (-α)) (mul_ne_zero I_ne_zero (exp_ne_zero _))) *
+    (hyperbolicWritheUnit α) *
     unitT (hyperbolicHeckeParam θ) i
 
 variable {α θ : ℂ}
@@ -220,7 +236,7 @@ theorem val_inv_hyperbolicGen (i : ℕ) :
       (-I * exp α) • (T _ i - algebraMap ℂ _ (exp (-θ) - exp θ)) := by
   apply Units.inv_eq_of_mul_eq_one_right
   have h : I * exp (-α) * (-I * exp α) = 1 := by
-    rw [mul_mul_mul_comm, ← exp_add, neg_add_cancel, exp_zero, mul_one, mul_neg, I_mul_I, neg_neg]
+    rw [← val_hyperbolicWritheUnit, ← val_inv_hyperbolicWritheUnit, Units.mul_inv]
   rw [val_hyperbolicGen, smul_mul_smul_comm, h, one_smul, ← val_hyperbolicHeckeParam θ,
     ← val_inv_hyperbolicHeckeParam θ, ← val_inv_unitT, ← val_unitT, Units.mul_inv]
 

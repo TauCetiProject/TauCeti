@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Algebra.Subalgebra.Lattice
 public import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import Mathlib.Algebra.GroupWithZero.Action.Regular
+import TauCeti.RingTheory.Localization.Defs
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -64,6 +65,11 @@ Huber namespace, alongside `TauCeti/RingTheory/Localization/DenIdeal.lean`.
   `f` carries `R` into `R'` and `T` into `T'`.
 * `IsLocalization.Away.of_dvd_of_dvd_pow`: inverting `x` also localizes away from `g` when
   `g ∣ x` and `x` divides a power of `g`.
+* `IsLocalization.Away.lift_injective_of_injective`,
+  `IsLocalization.Away.awayToAwayLeft_injective`, and
+  `IsLocalization.Away.awayToAwayRight_injective`: injectivity of `IsLocalization.Away.lift` from an
+  injective ring homomorphism and of the refinement maps `awayToAwayLeft` and `awayToAwayRight` over
+  a ring with no zero divisors.
 * `IsLocalization.Away.isSMulRegular_algebraMap`: an element whose annihilator is killed by `r`
   becomes a nonzerodivisor after inverting `r`.
 * `RingHom.map_comp_algebraMap_eq_algebraMap_comp_awayMap`: localization maps commute with away maps
@@ -498,6 +504,34 @@ theorem isSMulRegular_algebraMap {r a : A} [IsLocalization.Away r B]
   refine ⟨⟨r ^ (n + 1), n + 1, rfl⟩, ?_⟩
   have := h (r ^ n * c) (by linear_combination hn)
   linear_combination this
+
+/-- If an injective ring homomorphism `g : R →+* P` sends `x` to a unit, then its lift `S →+* P`
+out of a localization `S` of `R` away from `x` is injective. -/
+theorem lift_injective_of_injective {R S P : Type*} [CommSemiring R] (x : R) [CommSemiring S]
+    [Algebra R S] [IsLocalization.Away x S] [CommSemiring P] {g : R →+* P} (hg : IsUnit (g x))
+    (hinj : Function.Injective g) :
+    Function.Injective (IsLocalization.Away.lift (S := S) x hg) :=
+  IsLocalization.lift_injective_of_injective _ hinj
+
+/-- Over a commutative ring with no zero divisors, the canonical homomorphism `awayToAwayLeft x y`
+from a localization `S` away from `x` to a localization `P` away from `y * x` is injective whenever
+`y * x ≠ 0`. -/
+theorem awayToAwayLeft_injective {R S P : Type*} [CommRing R] [NoZeroDivisors R] (x y : R)
+    [CommRing S] [Algebra R S] [IsLocalization.Away x S] [CommRing P] [Algebra R P]
+    [IsLocalization.Away (y * x) P] (hyx : y * x ≠ 0) :
+    Function.Injective (IsLocalization.Away.awayToAwayLeft (S := S) (P := P) x y) :=
+  lift_injective_of_injective x _
+    (IsLocalization.injective P (powers_le_nonZeroDivisors_of_noZeroDivisors hyx))
+
+/-- Over a commutative ring with no zero divisors, the canonical homomorphism `awayToAwayRight x y`
+from a localization `S` away from `x` to a localization `P` away from `x * y` is injective whenever
+`x * y ≠ 0`. -/
+theorem awayToAwayRight_injective {R S P : Type*} [CommRing R] [NoZeroDivisors R] (x y : R)
+    [CommRing S] [Algebra R S] [IsLocalization.Away x S] [CommRing P] [Algebra R P]
+    [IsLocalization.Away (x * y) P] (hxy : x * y ≠ 0) :
+    Function.Injective (IsLocalization.Away.awayToAwayRight (S := S) (P := P) x y) :=
+  lift_injective_of_injective x _
+    (IsLocalization.injective P (powers_le_nonZeroDivisors_of_noZeroDivisors hxy))
 
 end IsLocalization.Away
 

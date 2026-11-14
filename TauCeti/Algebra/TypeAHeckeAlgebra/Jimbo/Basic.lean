@@ -33,7 +33,8 @@ algebra, not to be identified with its regular representation.
 
 ## Main results
 
-* `TauCeti.TypeAHeckeAlgebra.jimbo_T`: the generator `T i` acts by the Jimbo R-matrix on the
+* `TauCeti.TypeAHeckeAlgebra.jimbo_T` and `TauCeti.TypeAHeckeAlgebra.jimbo_val_inv_unitT`: the
+  generator `T i` and its inverse `(unitT i)⁻¹` act by the Jimbo R-matrix and its inverse on the
   strands `i` and `i + 1`.
 * `TauCeti.TypeAHeckeAlgebra.jimbo_braidHom`: the Jimbo representation of the braid group factors
   through the Hecke algebra.
@@ -82,5 +83,13 @@ theorem jimbo_braidHom (b : BraidGroup n) :
       KnotTheory.jimbo ι q :=
     BraidGroup.hom_ext fun i ↦ Units.ext <| by simp
   exact congrArg Units.val (DFunLike.congr_fun h b)
+
+/-- In the Jimbo representation, the inverse of the generator `T i` acts by the inverse of the
+adjacent crossing unit `jimboUnit q i`. -/
+theorem jimbo_val_inv_unitT (i : Fin (n - 1)) :
+    jimbo ι q (↑(unitT q i)⁻¹ : TypeAHeckeAlgebra R q n) =
+      (↑(KnotTheory.jimboUnit (ι := ι) q i)⁻¹ : Module.End R ((Fin n → ι) →₀ R)) := by
+  have h := jimbo_braidHom ι q ((BraidGroup.sigma i)⁻¹ : BraidGroup n)
+  simpa only [map_inv, braidHom_sigma, KnotTheory.jimbo_sigma] using h
 
 end TauCeti.TypeAHeckeAlgebra

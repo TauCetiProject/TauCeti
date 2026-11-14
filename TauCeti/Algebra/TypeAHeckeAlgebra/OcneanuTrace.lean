@@ -49,9 +49,11 @@ stages.
 * `TauCeti.TypeAHeckeAlgebra.eq_ocneanuTrace_toInfinite`: a normalized, tracial family of
   functionals on the finite Hecke algebras, compatible with the tower maps and satisfying the
   Markov rule, is the Ocneanu trace restricted to each finite algebra.
-* `TauCeti.TypeAHeckeAlgebra.algebraMap_ocneanuTrace_toInfinite` and
+* `TauCeti.InfiniteTypeAHeckeAlgebra.algebraMap_ocneanuTrace`,
+  `TauCeti.TypeAHeckeAlgebra.algebraMap_ocneanuTrace_toInfinite`, and
   `TauCeti.InfiniteTypeAHeckeAlgebra.map_ocneanuTrace_braidHom`: the Ocneanu trace commutes with
-  ring homomorphisms on every finite stage and on the universal Hecke image of every braid.
+  change of coefficients on the infinite Hecke algebra, on every finite stage, and on the universal
+  Hecke image of every braid.
 
 ## References
 
@@ -593,71 +595,32 @@ theorem eq_ocneanuTrace_toInfinite {z : R} (φ : ∀ n, TypeAHeckeAlgebra R q n 
   rw [← toInfinite_injective R q (n + 2) hyx]
   exact hy
 
-/-- **The Ocneanu trace commutes with change of coefficients** on every finite stage of the Hecke
-tower. -/
-theorem algebraMap_ocneanuTrace_toInfinite {S : Type*} [CommRing S] [Algebra R S] {q' : Sˣ}
-    (hq : algebraMap R S q = q') (z : R) (n : ℕ) (x : TypeAHeckeAlgebra R q n) :
-    algebraMap R S (ocneanuTrace R q z (toInfinite R q n x)) =
-      ocneanuTrace S q' (algebraMap R S z) (toInfinite S q' n (map n hq x)) := by
-  have hτR := isMarkovTrace_ocneanuTrace (q := q) z
-  have hτS := isMarkovTrace_ocneanuTrace (q := q') (algebraMap R S z)
-  have hmemR (m : ℕ) (y : TypeAHeckeAlgebra R q m) : toInfinite R q m y ∈ stage R q m := by
-    rw [← range_toInfinite]
-    exact ⟨y, rfl⟩
-  have hmemS (m : ℕ) (y : TypeAHeckeAlgebra S q' m) : toInfinite S q' m y ∈ stage S q' m := by
-    rw [← range_toInfinite]
-    exact ⟨y, rfl⟩
-  have hle (m : ℕ) (hm : m ≤ 1) (y : TypeAHeckeAlgebra R q m) :
-      algebraMap R S (ocneanuTrace R q z (toInfinite R q m y)) =
-        ocneanuTrace S q' (algebraMap R S z) (toInfinite S q' m (map m hq y)) := by
-    obtain ⟨r, rfl⟩ := algebraMap_surjective_of_le_one hm y
-    rw [AlgHom.commutes, hτR.map_algebraMap, AlgHom.commutes,
-      IsScalarTower.algebraMap_apply R S (TypeAHeckeAlgebra S q' m), AlgHom.commutes,
-      hτS.map_algebraMap]
-  induction n using Nat.strong_induction_on with
-  | _ n ih =>
-  obtain hn | ⟨n, rfl⟩ : n ≤ 1 ∨ ∃ m, n = m + 2 := by
-    rcases n with _ | _ | m
-    exacts [.inl (by omega), .inl le_rfl, .inr ⟨m, rfl⟩]
-  · exact hle n hn x
-  let M₁ : TypeAHeckeAlgebra R q (n + 2) →ₗ[R] S :=
-    Algebra.linearMap R S ∘ₗ ocneanuTrace R q z ∘ₗ (toInfinite R q (n + 2)).toLinearMap
-  let M₂ : TypeAHeckeAlgebra R q (n + 2) →ₗ[R] S :=
-    (ocneanuTrace S q' (algebraMap R S z)).restrictScalars R ∘ₗ
-      ((toInfinite S q' (n + 2)).restrictScalars R).toLinearMap ∘ₗ (map (n + 2) hq).toLinearMap
-  let P : Submodule R (InfiniteTypeAHeckeAlgebra R q) :=
-    (LinearMap.eqLocus M₁ M₂).map (toInfinite R q (n + 2)).toLinearMap
-  have hsub (y : InfiniteTypeAHeckeAlgebra R q) (hy : y ∈ stage R q (n + 1)) :
-      ∃ y' : TypeAHeckeAlgebra R q (n + 1), toInfinite R q (n + 1) y' = y := by
-    rw [← range_toInfinite] at hy
-    exact hy
-  have hP : Subalgebra.toSubmodule (stage R q (n + 2)) ≤ P := by
-    refine toSubmodule_stage_add_two_le_iff.2 ⟨fun y hy ↦ ?_, fun a ha b hb ↦ ?_⟩
-    · obtain ⟨y', rfl⟩ := hsub y hy
-      refine ⟨strandIncl R q (n + 1) y', LinearMap.mem_eqLocus.2 ?_, toInfinite_strandIncl y'⟩
-      simpa only [M₁, M₂, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
-        LinearMap.restrictScalars_apply, AlgHom.coe_restrictScalars', Algebra.linearMap_apply,
-        toInfinite_strandIncl, map_strandIncl] using ih (n + 1) (by omega) y'
-    · obtain ⟨a', rfl⟩ := hsub a ha
-      obtain ⟨b', rfl⟩ := hsub b hb
-      have hTR : toInfinite R q (n + 2) (T q (Fin.last n)) = InfiniteTypeAHeckeAlgebra.T q n := by
-        simp
-      have hTS : toInfinite S q' (n + 2) (T q' (Fin.last n)) =
-          InfiniteTypeAHeckeAlgebra.T q' n := by simp
-      refine ⟨strandIncl R q (n + 1) a' * T q (Fin.last n) * strandIncl R q (n + 1) b',
-        LinearMap.mem_eqLocus.2 ?_, by simp [hTR]⟩
-      simp only [M₁, M₂, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
-        LinearMap.restrictScalars_apply, AlgHom.coe_restrictScalars', Algebra.linearMap_apply,
-        map_mul, map_strandIncl, map_T, toInfinite_strandIncl, hTR, hTS]
-      rw [hτR.map_mul_T_mul (hmemR _ a') (hmemR _ b'), ← map_mul, map_mul,
-        ih (n + 1) (by omega), map_mul, map_mul, hτS.map_mul_T_mul (hmemS _ _) (hmemS _ _)]
-  obtain ⟨y, hy, hyx⟩ := hP (hmemR _ x)
-  rw [← toInfinite_injective R q (n + 2) hyx]
-  exact hy
-
 end TypeAHeckeAlgebra
 
 namespace InfiniteTypeAHeckeAlgebra
+
+/-- **The Ocneanu trace commutes with change of coefficients** on the infinite type-A Hecke
+algebra. -/
+theorem algebraMap_ocneanuTrace {R S : Type*} [CommRing R] [CommRing S] [Algebra R S] {q : Rˣ}
+    {q' : Sˣ} (hq : algebraMap R S q = q') (z : R) (x : InfiniteTypeAHeckeAlgebra R q) :
+    algebraMap R S (ocneanuTrace R q z x) =
+      ocneanuTrace S q' (algebraMap R S z) (map hq x) := by
+  have hτR := isMarkovTrace_ocneanuTrace (q := q) z
+  have hτS := isMarkovTrace_ocneanuTrace (q := q') (algebraMap R S z)
+  set M₁ : InfiniteTypeAHeckeAlgebra R q →ₗ[R] S :=
+    Algebra.linearMap R S ∘ₗ ocneanuTrace R q z
+  set M₂ : InfiniteTypeAHeckeAlgebra R q →ₗ[R] S :=
+    (ocneanuTrace S q' (algebraMap R S z)).restrictScalars R ∘ₗ (map hq).toLinearMap
+  have htop : LinearMap.eqLocus M₁ M₂ = ⊤ := by
+    refine eq_top_of_algebraMap_mem_of_mul_T_mul_mem (fun r ↦ ?_) (fun n hstage a ha b hb ↦ ?_)
+    · simp [M₁, M₂, hτR.map_algebraMap, hτS.map_algebraMap, AlgHom.commutes,
+        IsScalarTower.algebraMap_apply R S (InfiniteTypeAHeckeAlgebra S q')]
+    · have hba : M₁ (b * a) = M₂ (b * a) := hstage (Subalgebra.mul_mem _ hb ha)
+      simp only [M₁, M₂, LinearMap.mem_eqLocus, LinearMap.comp_apply, Algebra.linearMap_apply,
+        LinearMap.restrictScalars_apply, AlgHom.toLinearMap_apply, map_mul, map_T] at hba ⊢
+      rw [hτR.map_mul_T_mul ha hb, _root_.map_mul, hba,
+        hτS.map_mul_T_mul (map_mem_stage hq ha) (map_mem_stage hq hb)]
+  exact LinearMap.mem_eqLocus.mp (htop.symm ▸ Submodule.mem_top : x ∈ LinearMap.eqLocus M₁ M₂)
 
 /-- Every ring homomorphism commutes with the Ocneanu trace on the universal Hecke image of a
 braid. -/
@@ -665,12 +628,25 @@ theorem map_ocneanuTrace_braidHom {R S : Type*} [CommRing R] [CommRing S] (f : R
     (q : Rˣ) (z : R) (n : ℕ) (b : BraidGroup n) :
     f (ocneanuTrace R q z (braidHom R q n b)) =
       ocneanuTrace S (Units.map f q) (f z) (braidHom S (Units.map f q) n b) := by
-  have h := @TypeAHeckeAlgebra.algebraMap_ocneanuTrace_toInfinite R _ q S _ f.toAlgebra
-    (Units.map (f : R →* S) q) rfl z n (TypeAHeckeAlgebra.braidHom R q n b)
-  rw [@TypeAHeckeAlgebra.map_braidHom R _ q n S _ f.toAlgebra (Units.map (f : R →* S) q) rfl b,
-    TypeAHeckeAlgebra.toInfinite_braidHom, TypeAHeckeAlgebra.toInfinite_braidHom] at h
-  exact h
+  have h := @algebraMap_ocneanuTrace R S _ _ f.toAlgebra q (Units.map (f : R →* S) q) rfl z
+    (braidHom R q n b)
+  rwa [@map_braidHom R _ q S _ f.toAlgebra (Units.map (f : R →* S) q) rfl n b] at h
 
 end InfiniteTypeAHeckeAlgebra
+
+namespace TypeAHeckeAlgebra
+
+open InfiniteTypeAHeckeAlgebra
+
+/-- **The Ocneanu trace commutes with change of coefficients** on every finite stage of the Hecke
+tower. -/
+theorem algebraMap_ocneanuTrace_toInfinite {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
+    {q : Rˣ} {q' : Sˣ} (hq : algebraMap R S q = q') (z : R) (n : ℕ)
+    (x : TypeAHeckeAlgebra R q n) :
+    algebraMap R S (ocneanuTrace R q z (toInfinite R q n x)) =
+      ocneanuTrace S q' (algebraMap R S z) (toInfinite S q' n (map n hq x)) := by
+  rw [algebraMap_ocneanuTrace hq, map_toInfinite]
+
+end TypeAHeckeAlgebra
 
 end TauCeti
