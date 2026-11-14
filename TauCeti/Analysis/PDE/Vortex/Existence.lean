@@ -334,4 +334,11 @@ theorem framedVortexModuliEquiv_mk (x : framedVortexSubMulAction m) :
     framedVortexModuliEquiv m (Quotient.mk'' x) = framedVortexDivisor x :=
   (rfl)
 
+/-- The inverse moduli equivalence sends the divisor of a smooth framed vortex back to its
+framed-gauge orbit. -/
+@[simp]
+theorem framedVortexModuliEquiv_symm_framedVortexDivisor (x : framedVortexSubMulAction m) :
+    (framedVortexModuliEquiv m).symm (framedVortexDivisor x) = Quotient.mk'' x :=
+  (framedVortexModuliEquiv m).symm_apply_apply (Quotient.mk'' x)
+
 end TauCeti.Vortex

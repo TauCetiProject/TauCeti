@@ -311,25 +311,10 @@ theorem coe_mem_framedGaugeGroup_of_smul_eq
     (hx : ContDiff ℝ ∞ (x : ℂ → EuclideanSpace ℝ (Fin 4)))
     (hy : ContDiff ℝ ∞ (y : ℂ → EuclideanSpace ℝ (Fin 4)))
     {u : sobolevGaugeGroup hs} (hu : u • y = x) :
-    (u : ℂ → Circle) ∈ framedGaugeGroup := by
-  have h2 : 2 < (k : ℝ) + 1 := by linarith [(by exact_mod_cast (Fact.out : 1 < k) : (1 : ℝ) < k)]
-  have hdu : Differentiable ℝ fun z ↦ ((u : ℂ → Circle) z : ℂ) :=
-    differentiable_of_mem_sobolevGaugeGroup h2 u.2
-  have hgt : gaugeTransform u y = x := by
-    simpa only [coe_sobolevGaugeGroup_smul] using congrArg Subtype.val hu
-  have hform : gaugeForm u = fun z ↦
-      ((y : ℂ → EuclideanSpace ℝ (Fin 4)) z 0 - (x : ℂ → EuclideanSpace ℝ (Fin 4)) z 0) • reCLM +
-        ((y : ℂ → EuclideanSpace ℝ (Fin 4)) z 1 - (x : ℂ → EuclideanSpace ℝ (Fin 4)) z 1) •
-          imCLM :=
-    funext fun z ↦ (gaugeTransform_eq_iff.1 hgt z).1
-  have hxc := contDiff_euclidean.1 hx
-  have hyc := contDiff_euclidean.1 hy
-  have hω : ContDiff ℝ (⊤ : ℕ∞) (gaugeForm u) := by
-    rw [hform]
-    exact (((hyc 0).sub (hxc 0)).smul contDiff_const).add
-      (((hyc 1).sub (hxc 1)).smul contDiff_const)
-  exact mem_framedGaugeGroup_of_mem_sobolevGaugeGroup u.2
-    (by simpa using contDiff_coe_of_contDiff_gaugeForm hdu hω)
+    (u : ℂ → Circle) ∈ framedGaugeGroup :=
+  mem_framedGaugeGroup_of_mem_sobolevGaugeGroup_of_contDiff_gaugeTransform
+    (by linarith [(by exact_mod_cast (Fact.out : 1 < k) : (1 : ℝ) < k)]) u.2 hy
+    (by rwa [← coe_sobolevGaugeGroup_smul, hu])
 
 /-- **Smooth vs. Sobolev gauge equivalence on `A_m^k`.** Two smooth fields of `A_m^k`, `k ≥ 2`,
 are related by a smooth framed gauge if and only if they are related by an element of `G_(k+1)`. -/
