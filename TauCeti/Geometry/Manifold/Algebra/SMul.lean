@@ -110,9 +110,10 @@ theorem ContMDiffSMul.mdifferentiableAt_smul_const {𝕜 : Type*} [NontriviallyN
 `ψ : K → G'` into groups acting by `C^n` actions on `M` and on `N`,
 `k • (x, y) = (φ k • x, ψ k • y)`. Then the action of `K` is `C^n`. For instance, `G × G'` acting
 factorwise on `M × N`, with `φ` and `ψ` the two projections. -/
-@[to_additive /-- **Factorwise additive actions on products.** Let `K` act additively on `M × N`
-through `C^n` maps `φ : K → G` and `ψ : K → G'` into types acting additively by `C^n` actions on
-`M` and on `N`, `k +ᵥ (x, y) = (φ k +ᵥ x, ψ k +ᵥ y)`. Then the additive action of `K` is `C^n`. -/]
+@[to_additive prod_of_vadd_eq
+/-- **Factorwise additive actions on products.** Let `K` act additively on `M × N` through `C^n`
+maps `φ : K → G` and `ψ : K → G'` into types acting additively by `C^n` actions on `M` and on `N`,
+`k +ᵥ (x, y) = (φ k +ᵥ x, ψ k +ᵥ y)`. Then the additive action of `K` is `C^n`. -/]
 theorem ContMDiffSMul.prod_of_smul_eq {𝕜 : Type*} [NontriviallyNormedField 𝕜]
     {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
     {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}

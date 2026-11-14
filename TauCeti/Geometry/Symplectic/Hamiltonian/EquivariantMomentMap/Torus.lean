@@ -226,26 +226,21 @@ moment map `(x, y) ↦ (μ x, ν y)`. Here the dual of the Lie algebra of `G × 
 the product of the duals by `TauCeti.Lie.groupLieAlgebraDualProdDualEquivDual`, so that `(x, y)`
 is sent to `μ x ∘ pr₁ + ν y ∘ pr₂`, where `pr₁` and `pr₂` are the differentials at the identity of
 the projections of `G × G₂`. -/
-theorem prodMap [inst : MulAction (G × G₂) (M × N)]
+theorem prodMap [MulAction (G × G₂) (M × N)]
     [ContMDiffSMul (I.prod I₂) (I'.prod J) ∞ (G × G₂) (M × N)] {τ : SmoothTwoForm J N}
     {ν : N → Module.Dual ℝ (GroupLieAlgebra I₂ G₂)} (h : σ.HamiltonianTorusData μ)
     (h' : τ.HamiltonianTorusData ν)
     (hsmul : ∀ (g : G × G₂) (p : M × N), g • p = (g.1 • p.1, g.2 • p.2)) :
     (σ.prod τ).HamiltonianTorusData fun p ↦
-      Lie.groupLieAlgebraDualProdDualEquivDual ℝ I G I₂ G₂ (μ p.1, ν p.2) := by
-  refine ⟨h.toIsEquivariantMomentMap.prodMap h'.toIsEquivariantMomentMap hsmul, ?_⟩
-  -- Let `G × G₂` act on each factor through the corresponding projection; the given action is
-  -- then the diagonal action of `G × G₂` on `M × N`.
-  let _ : MulAction (G × G₂) M := MulAction.compHom M (MonoidHom.fst G G₂)
-  let _ : MulAction (G × G₂) N := MulAction.compHom N (MonoidHom.snd G G₂)
-  have _ : ContMDiffSMul (I.prod I₂) I' ∞ (G × G₂) M :=
-    MulAction.contMDiffSMul_compHom (I := I) (f := MonoidHom.fst G G₂) contMDiff_fst
-  have _ : ContMDiffSMul (I.prod I₂) J ∞ (G × G₂) N :=
-    MulAction.contMDiffSMul_compHom (I := I₂) (f := MonoidHom.snd G G₂) contMDiff_snd
-  -- By definition of `MulAction.compHom`, `g • x = g.1 • x` on `M` and `g • y = g.2 • y` on `N`.
-  obtain rfl : inst = Prod.mulAction := MulAction.ext (funext₂ hsmul)
-  exact ((h.comp_monoidHom (MonoidHom.fst G G₂) mdifferentiableAt_fst fun _ _ ↦ rfl).prod
-    (h'.comp_monoidHom (MonoidHom.snd G G₂) mdifferentiableAt_snd fun _ _ ↦ rfl)).mpullback_smul
+      Lie.groupLieAlgebraDualProdDualEquivDual ℝ I G I₂ G₂ (μ p.1, ν p.2) where
+  toIsEquivariantMomentMap := h.toIsEquivariantMomentMap.prodMap h'.toIsEquivariantMomentMap hsmul
+  mpullback_smul g := by
+    have hg := mpullback_prodMap_prod (ContMDiffSMul.contMDiff_const_smul (I := I) (I' := I') g.1)
+      (ContMDiffSMul.contMDiff_const_smul (I := I₂) (I' := J) g.2) σ τ
+    rw [h.mpullback_smul, h'.mpullback_smul] at hg
+    simp only [hsmul]
+    -- `Prod.map` of the two actions is by definition the factorwise action.
+    exact hg
 
 end Prod
 
