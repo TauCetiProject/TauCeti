@@ -21,6 +21,10 @@ then `u₀ ^ e₀ * ⋯ * u_k ^ e_k ≠ 1` as soon as every exponent is large en
 ## Main results
 
 * `FreeGroup.isBP`, `IsFreeGroup.isBP`: free groups have the big powers property.
+* `FreeGroup.take_toWord_pow_of_le`: the first `L` letters of the reduced word of `u ^ m` are the
+  same for every `m ≥ L`.
+* `FreeGroup.commute_of_take_toWord_pow_eq`: if the reduced words of `u ^ L` and `v ^ L` have the
+  same first `L` letters for one `L ≥ ‖u‖ ‖v‖`, then `u` and `v` commute.
 
 ## Implementation notes
 
@@ -153,6 +157,38 @@ private theorem commute_of_take_ray_eq {u u' : FreeGroup α} (hu : u ≠ 1) (hu'
     omega
   exact IsFreeGroup.commute_of_commute hq0 (Commute.self_pow u q)
     (hpow ▸ (Commute.self_pow u' p).symm)
+
+/-- The first `L` letters of the reduced word of `u ^ m` are the same for every `m ≥ L`: they are
+the first `L` letters of the attracting ray of `u`. -/
+theorem take_toWord_pow_of_le (u : FreeGroup α) {L m : ℕ} (h : L ≤ m) :
+    (u ^ m).toWord.take L = (u ^ L).toWord.take L := by
+  rcases eq_or_ne u 1 with rfl | hu
+  · simp
+  rcases Nat.eq_zero_or_pos L with rfl | hL
+  · simp
+  rw [take_toWord_pow hu h (by lia), take_toWord_pow hu le_rfl (by lia)]
+
+/-- If the reduced words of `u ^ L` and `v ^ L` have the same first `L` letters for one
+`L ≥ ‖u‖ ‖v‖`, where `‖·‖` is the word length, then `u` and `v` commute. This is a
+free-group form of the fact that two periodic words which agree on a long enough segment have
+commuting periods, applied to the attracting rays of `u` and `v`. -/
+theorem commute_of_take_toWord_pow_eq {u v : FreeGroup α} {L : ℕ}
+    (hL : u.norm * v.norm ≤ L)
+    (h : (u ^ L).toWord.take L = (v ^ L).toWord.take L) : Commute u v := by
+  rcases eq_or_ne u 1 with rfl | hu
+  · exact Commute.one_left v
+  rcases eq_or_ne v 1 with rfl | hv
+  · exact Commute.one_right u
+  -- The word length is twice the conjugator length plus the cyclically reduced length, which is
+  -- positive; so `‖u‖ ‖v‖` bounds the length the private ray lemma asks for.
+  have hp := length_reduceCyclically_toWord_pos_iff.2 hu
+  have hq := length_reduceCyclically_toWord_pos_iff.2 hv
+  have hu' := norm_pow_eq u one_pos
+  have hv' := norm_pow_eq v one_pos
+  rw [pow_one] at hu' hv'
+  have hL0 : 0 < L := by nlinarith
+  refine commute_of_take_ray_eq hu hv (hL.trans' (by nlinarith)) ?_
+  rw [← take_toWord_pow hu le_rfl hL0.ne', ← take_toWord_pow hv le_rfl hL0.ne', h]
 
 /-- The ping-pong step: if the reduced word of `g` does not begin with the length-`L` prefix of
 the ray of `u⁻¹`, then the reduced word of `u ^ e * g` begins with the length-`L` prefix of the
