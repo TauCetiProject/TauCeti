@@ -82,10 +82,8 @@ private theorem exists_curvatureTensor_coordinates (x₀ : M) :
   let A : M → E →L[ℝ] E →L[ℝ] E →L[ℝ] E := fun x ↦
     inCoordinates E (TangentSpace I) (E →L[ℝ] E →L[ℝ] E)
       (fun x ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] TangentSpace I x)
-      x₀ x x₀ x (cov.curvatureTensorCLM (V := TangentSpace I)
-        (fiberNorm := fun x ↦ inferInstanceAs (NormedAddCommGroup (TangentSpace I x))) x)
-  have hR := contMDiff_curvatureTensorCLM (F := E) (V := fun x : M ↦ TangentSpace I x)
-    (fiberNorm := fun x ↦ inferInstanceAs (NormedAddCommGroup (TangentSpace I x))) cov
+      x₀ x x₀ x (cov.curvatureTensorCLM (V := TangentSpace I) x)
+  have hR := contMDiff_curvatureTensorCLM (F := E) (V := fun x : M ↦ TangentSpace I x) cov
   refine ⟨A, ((mdifferentiableAt_hom_bundle _).1 (hR.mdifferentiableAt (by simp))).2,
     fun x hx a b c ↦ ?_⟩
   dsimp only [A]

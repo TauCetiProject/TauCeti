@@ -14,6 +14,8 @@ public import TauCeti.Analysis.Calculus.SecondDerivative
 public import TauCeti.LinearAlgebra.Complex.Finrank
 public import TauCeti.LinearAlgebra.Complex.LeviForm
 
+import TauCeti.Analysis.Calculus.ContDiff.Differentiable
+
 /-!
 # The Levi form of a real function on a complex vector space
 
@@ -150,9 +152,10 @@ theorem leviForm_apply_self (hf : ContDiffAt ℝ 2 f x) (v : V) :
 theorem re_leviForm_nonpos_of_isLocalMax (hf : ContDiffAt ℝ 2 f x)
     (hmax : IsLocalMax f x) (v : V) : (leviForm f x v v).re ≤ 0 := by
   rw [re_leviForm_apply]
+  have hnear := hf.eventually_differentiableAt (by norm_num)
   exact div_nonpos_of_nonpos_of_nonneg
-    (add_nonpos (fderiv_fderiv_self_nonpos_of_isLocalMax hf hmax v)
-      (fderiv_fderiv_self_nonpos_of_isLocalMax hf hmax (Complex.I • v))) (by norm_num)
+    (add_nonpos (fderiv_fderiv_self_nonpos_of_isLocalMax hnear hmax v)
+      (fderiv_fderiv_self_nonpos_of_isLocalMax hnear hmax (Complex.I • v))) (by norm_num)
 
 /-- The Levi form of a `C²` function is Hermitian. -/
 theorem isSymm_leviForm (hf : ContDiffAt ℝ 2 f x) : (leviForm f x).IsSymm := by

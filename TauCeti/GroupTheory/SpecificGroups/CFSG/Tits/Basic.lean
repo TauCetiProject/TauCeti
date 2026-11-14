@@ -21,7 +21,9 @@ carrier. A comparison with the pinned simply connected F4 group scheme requires 
 preserving the root subgroups and exceptional endomorphism.
 No finiteness, perfectness, or simplicity
 is assumed or proved here.
-See Carter, *Simple Groups of Lie Type*, §14.
+See Carter, *Simple Groups of Lie Type*, §14. The equations on both signs of the simple roots
+specialize `F4ShortRoot.PrimeField.specialIsogeny_rootSubgroupPoints` using the indexed numbering
+and source-root exponents.
 -/
 
 public section
@@ -53,14 +55,8 @@ theorem steinberg_eq_specialIsogeny_pow :
     d.steinberg (d.steinberg g) = d.frobenius g := by
   rw [steinberg_def, frobenius_def, F4ShortRoot.PrimeField.specialIsogeny_specialIsogeny]
 
-private theorem carrierNode_lengthPerm (i : Fin d.1.rank) :
-    finCongr d.rank_eq_four (d.toSuzukiReeIndex.lengthPerm i) =
-      Fin.revPerm (finCongr d.rank_eq_four i) := by
-  obtain rfl := d.eq_of
-  simp [toSuzukiReeIndex, SuzukiReeIndex.lengthPerm_tits, Equiv.permCongr_def,
-    lengthPermF4_apply]
-
-private theorem carrierExponent (i : Fin d.1.rank) :
+/-- The carrier's positive-root exponent agrees with the indexed source-root exponent. -/
+theorem isogenyExponent_inl_finCongr (i : Fin d.1.rank) :
     F4ShortRoot.isogenyExponent (.inl (finCongr d.rank_eq_four i)) =
       d.toSuzukiReeIndex.exponent i := by
   rw [exponent_eq]
@@ -77,8 +73,22 @@ two on short roots, matching the validated index. -/
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.toSuzukiReeIndex.exponent i)) := by
   rw [steinberg_def, simpleRootSubgroup_def,
     F4ShortRoot.PrimeField.specialIsogeny_rootSubgroupPoints, simpleRootSubgroup_def,
-    carrierNode_lengthPerm, ← carrierExponent]
+    finCongr_lengthPerm, ← isogenyExponent_inl_finCongr]
   simp only [F4ShortRoot.isogenyReverse, Sum.map_inl]
+
+/-- The Tits Steinberg map reverses negative simple roots with the indexed source-root exponent.
+The separate Tits index has the exceptional parameter `m = 0`. -/
+@[simp]
+theorem steinberg_negativeSimpleRootSubgroup (i : Fin d.1.rank)
+    (u : Multiplicative d.1.Closure) :
+    d.steinberg (d.negativeSimpleRootSubgroup i u) =
+      d.negativeSimpleRootSubgroup (d.toSuzukiReeIndex.lengthPerm i)
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.toSuzukiReeIndex.exponent i)) := by
+  rw [steinberg_def, negativeSimpleRootSubgroup_def,
+    F4ShortRoot.PrimeField.specialIsogeny_rootSubgroupPoints, negativeSimpleRootSubgroup_def,
+    finCongr_lengthPerm, ← isogenyExponent_inl_finCongr]
+  simp only [F4ShortRoot.isogenyReverse, Sum.map_inr,
+    F4ShortRoot.isogenyExponent_inr]
 
 /-- The fixed subgroup of the exceptional F4 endomorphism at the Tits index. -/
 abbrev FixedPoints : Type := ↥(fixedSubgroup d.steinberg)

@@ -66,6 +66,9 @@ deployment = "cloudflare"
 mode = "hosted"
 url = "https://fleet.taucetiproject.org"
 pr_order = ["github", "fleet"]
+# Keep a few PR builds waiting for the next fleet runner when GitHub is full.
+# This observational limit can briefly overshoot under simultaneous pickers.
+pr_queue_limit = 3
 staging_order = ["tauchonki2"]
 
 # Staging is reserved for these hosts; other membership comes from the registered runners.
@@ -103,7 +106,7 @@ zulip_topic = "Progress logs"
 
 [tools.tools]
 repo="TauCetiProject/TauCetiTools"
-ref="e478fc2279875adecd63bda947bd3cb558f4a2ed"
+ref="a94bf58e6032630c65da1a61a989bfb985ad8cd0"
 [tools.review]
 repo="TauCetiProject/TauCetiReview"
 ref="6b07b400ba129a0f2771d2d315a410f72d462244"

@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Group.Quotient
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.Normed.Operator.Banach
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
+import TauCeti.Analysis.Normed.Operator.RingOpNorm
 import TauCeti.Analysis.Normed.Operator.NormedAddGroupHom
 
 /-!
@@ -25,6 +26,9 @@ has a chosen bounded nonlinear right inverse with public bound constant two
 
 The quotient module also inherits a contractive action of a possibly noncommutative
 seminormed ring. In particular, this applies to quotients of a normed ring by left ideals.
+Over such a ring, every linear map out of a quotient of a finite free module with the maximum
+norm is bounded for the quotient norm (`LinearMap.exists_bound_of_pi_quotient`), by descending
+the coordinate bound `LinearMap.norm_pi_apply_le_sum`. The submodule need not be closed.
 
 The estimates reuse Mathlib's quotient norm and quotient lift for bounded additive homomorphisms.
 -/
@@ -143,6 +147,28 @@ instance isBoundedSMul (S : Submodule R E) : IsBoundedSMul R (E ⧸ S) :=
       exact (div_le_iff₀' hrpos).mpr (hy ▸ hbound y)
 
 end Submodule.Quotient
+
+namespace LinearMap
+
+variable {R M ι : Type*} [SeminormedRing R] [SeminormedAddCommGroup M]
+  [Module R M] [IsBoundedSMul R M] [Fintype ι]
+
+/-- A linear map out of a quotient of a finite free module is bounded for the quotient norm of
+the maximum norm. The submodule need not be closed. -/
+theorem exists_bound_of_pi_quotient {N : Submodule R (ι → R)} (f : ((ι → R) ⧸ N) →ₗ[R] M) :
+    ∃ C > 0, ∀ x, ‖f x‖ ≤ C * ‖x‖ := by
+  classical
+  set C := ∑ i, ‖(f ∘ₗ N.mkQ) (Pi.single i 1)‖ + 1
+  have hC : 0 < C := add_pos_of_nonneg_of_pos (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _) one_pos
+  have hbound (a : ι → R) : ‖f (Submodule.Quotient.mk a)‖ ≤ C * ‖a‖ :=
+    ((f ∘ₗ N.mkQ).norm_pi_apply_le_sum a).trans
+      (mul_le_mul_of_nonneg_right (le_add_of_nonneg_right zero_le_one) (norm_nonneg a))
+  refine ⟨C, hC, fun x ↦ (div_le_iff₀' hC).mp ?_⟩
+  apply QuotientAddGroup.le_norm_iff.mpr
+  intro a ha
+  exact (div_le_iff₀' hC).mpr (ha ▸ hbound a)
+
+end LinearMap
 
 public section
 

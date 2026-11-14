@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.FunctionalSpaces.BesovSpace
+public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
 import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Analysis.Normed.Lp.Reindex
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.DedekindDomain.LocallyFree.ClassGroup
 public import TauCeti.RingTheory.FractionalIdeal.Projective
+import TauCeti.RingTheory.DedekindDomain.ModuleDecomposition
 import TauCeti.RingTheory.FractionalIdeal.LinearEquiv
 
 /-!
@@ -20,8 +21,10 @@ so it descends through the quotient by principal ideals.
 If `A` is not a field, its image lies in the locally free class group: every nonzero
 integral ideal is locally free of rank one. `TauCeti.LocallyFree.ofIdealClass` is the
 resulting homomorphism. Its computation on nonzero integral ideals identifies it with
-the assignment `[I] ↦ [I] - [A]`. No classification of finite projective modules is needed
-to construct this direction of the comparison.
+the assignment `[I] ↦ [I] - [A]`. The map is surjective: a pseudo-basis expresses every
+finite projective module as a product of nonzero ideals, so its reduced class comes from the
+product of their ideal classes. This includes the zero module, represented by the empty
+product. Injectivity is the remaining direction of the ideal-class comparison.
 
 ## References
 
@@ -31,7 +34,7 @@ to construct this direction of the comparison.
 
 public section
 
-open scoped nonZeroDivisors
+open scoped nonZeroDivisors TensorProduct
 
 namespace TauCeti
 
@@ -121,6 +124,39 @@ theorem idealClassHom_mk0 (I : (Ideal A)⁰) [Module.Projective A (I : Ideal A)]
   rw [← ClassGroup.mk_mk0 (FractionRing A), idealClassHom_mk]
   exact classOf_congr (FractionalIdeal.coeIdealEquiv (I : Ideal A)) 1
 
+variable (K) in
+/-- Every reduced class of a finite projective module over a Dedekind domain comes from an
+ideal class. The reduction uses the dimension over the fraction field. -/
+theorem exists_idealClassHom_eq_classOf (M : Type u) [AddCommGroup M] [Module A M]
+    [Module.Finite A M] [Module.Projective A M] :
+    ∃ c : Additive (ClassGroup A), idealClassHom A c =
+      classOf A M (Module.finrank K (K ⊗[A] M)) := by
+  classical
+  obtain ⟨J, hJ, ⟨e⟩⟩ := Module.exists_linearEquiv_pi_ideal A K M
+  let I i : (FractionalIdeal A⁰ (FractionRing A))ˣ :=
+    Units.mk0 (J i : FractionalIdeal A⁰ (FractionRing A))
+      (FractionalIdeal.coeIdeal_ne_zero.mpr (hJ i))
+  have hP i : Module.Projective A (J i) := by
+    let : Module.Projective A (J i : FractionalIdeal A⁰ (FractionRing A)) :=
+      inferInstanceAs (Module.Projective A (I i : FractionalIdeal A⁰ (FractionRing A)))
+    exact Module.Projective.of_equiv
+      (FractionalIdeal.coeIdealEquiv (P := FractionRing A) (S := A⁰) (J i))
+  have : ∀ i, Module.Projective A (J i) := hP
+  let Q i : (finiteProjectiveModules A).FullSubcategory :=
+    ⟨ModuleCat.of A (J i), finiteProjectiveModules_iff.mpr ⟨inferInstance, hP i⟩⟩
+  have hsum := SplitK0.of_eq_sum_of_linearEquiv_pi
+    (X := ⟨ModuleCat.of A M, finiteProjectiveModules_iff.mpr ⟨inferInstance, inferInstance⟩⟩) Q e
+  refine ⟨∑ i, Additive.ofMul (ClassGroup.mk (FractionRing A) (I i)), ?_⟩
+  rw [map_sum, classOf_def, hsum]
+  simp only [idealClassHom_mk, classOf_def, Finset.sum_sub_distrib, Finset.sum_const,
+    Finset.card_univ, Fintype.card_fin, one_smul]
+  congr 1
+  apply Finset.sum_congr rfl
+  intro i _
+  exact SplitK0.of_congr (CategoryTheory.ObjectProperty.isoMk _
+    (FractionalIdeal.coeIdealEquiv (J i) :
+      (I i : FractionalIdeal A⁰ (FractionRing A)) ≃ₗ[A] J i).toModuleIso)
+
 end FiniteProjectiveModules
 
 namespace LocallyFree
@@ -153,6 +189,27 @@ theorem coe_ofIdealClass (hA : ¬IsField A) (c : Additive (ClassGroup A)) :
     (ofIdealClass A K hA c : SplitK0.{u} (finiteProjectiveModules A).FullSubcategory) =
       idealClassHom A c :=
   (rfl)
+
+/-- Every class in the locally free class group of the base Dedekind domain is the reduced
+class of an ideal. This is the surjective direction of the ideal-class comparison. -/
+theorem ofIdealClass_surjective (hA : ¬IsField A) : Function.Surjective (ofIdealClass A K hA) := by
+  have hle : classGroup A K A ≤ (idealClassHom A).range := by
+    rw [classGroup_le_iff hA]
+    intro M _ mA mΛ ht _ _ n h
+    -- At `Λ = A` the generator predicate carries two compatible `A`-actions.
+    -- Identify them before comparing the generic dimension with the reduced class.
+    have heq : mA = mΛ := Module.ext' mA mΛ fun a m ↦ by
+      have hassoc := ht.smul_assoc a (1 : A) m
+      simpa only [smul_eq_mul, mul_one, one_smul] using hassoc.symm
+    cases heq
+    have hn : Module.finrank K (K ⊗[A] M) = n := by
+      simpa only [(TensorProduct.AlgebraTensorModule.rid A K K).finrank_eq,
+        Module.finrank_self, mul_one] using h.finrank hA
+    obtain ⟨c, hc⟩ := exists_idealClassHom_eq_classOf (A := A) K M
+    exact ⟨c, hn ▸ hc⟩
+  intro x
+  obtain ⟨c, hc⟩ := hle x.property
+  exact ⟨c, Subtype.ext hc⟩
 
 end LocallyFree
 

@@ -115,6 +115,40 @@ theorem matrixMutationRight_submatrix [DecidableEq K'] {row' : K' ↪ I'} {f : I
   ext i j
   simp only [matrixMutationRight_apply, submatrix_apply, Matrix.one_apply, hg.eq_iff, h]
 
+/-- The left factor after mutation in the same direction uses the opposite sign at the
+original matrix. -/
+@[simp]
+theorem matrixMutationLeft_matrixMutation (row : K ↪ I) (B : Matrix I K ℤ)
+    (k : K) (ε : ℤ) :
+    matrixMutationLeft row (matrixMutation row B k) k ε = matrixMutationLeft row B k (-ε) := by
+  ext i j
+  simp [matrixMutationLeft_apply, matrixMutation_apply_col]
+
+/-- The right factor after mutation in the same direction uses the opposite sign at the
+original matrix. -/
+@[simp]
+theorem matrixMutationRight_matrixMutation (row : K ↪ I) (B : Matrix I K ℤ)
+    (k : K) (ε : ℤ) :
+    matrixMutationRight row (matrixMutation row B k) k ε = matrixMutationRight row B k (-ε) := by
+  ext i j
+  simp [matrixMutationRight_apply, matrixMutation_apply_row]
+
+omit [DecidableEq K] in
+/-- Negating the matrix exchanges the sign of its left mutation factor. -/
+@[simp]
+theorem matrixMutationLeft_neg :
+    matrixMutationLeft row (-B) k ε = matrixMutationLeft row B k (-ε) := by
+  ext i j
+  simp [matrixMutationLeft_apply]
+
+omit [DecidableEq I] in
+/-- Negating the matrix exchanges the sign of its right mutation factor. -/
+@[simp]
+theorem matrixMutationRight_neg :
+    matrixMutationRight row (-B) k ε = matrixMutationRight row B k (-ε) := by
+  ext i j
+  simp [matrixMutationRight_apply]
+
 section Products
 
 variable [Fintype I] [Fintype K]
