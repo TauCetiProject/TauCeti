@@ -225,6 +225,14 @@ theorem normalBundleMap_comp (hn : n ≠ 0) (hm : m ≠ 0) (hr : r ≠ 0)
 
 end Composition
 
+/-- In a square commuting near `x` whose ambient map is differentiable at `f x`, a base map with
+surjective differential at `x` is differentiable at `x`. -/
+theorem mdifferentiableAt_of_surjective_mfderiv_of_eventuallyEq
+    (hv : MDifferentiableAt J J' v (f x)) (h : v ∘ f =ᶠ[𝓝 x] g ∘ u)
+    (hsurj : Surjective (mfderiv I I' u x)) : MDifferentiableAt I I' u x :=
+  mdifferentiableAt_of_surjective_mfderiv (g.isEmbedding.isInducing.continuousAt_iff.mpr
+    ((hv.continuousAt.comp f.contMDiff.continuous.continuousAt).congr h)) hsurj
+
 /-- If the base differential is surjective, the ambient differential carries the tangent
 range onto the target tangent range. -/
 theorem map_tangentRange_mfderiv (hn : n ≠ 0) (hm : m ≠ 0)
@@ -233,8 +241,7 @@ theorem map_tangentRange_mfderiv (hn : n ≠ 0) (hm : m ≠ 0)
     (f.tangentRange x hn).map ((tangentSpaceCast J' (v (f x)) (g (u x))).toContinuousLinearMap.comp
         (mfderiv J J' v (f x))).toLinearMap =
       g.tangentRange (u x) hm := by
-  have hu := mdifferentiableAt_of_surjective_mfderiv (g.isEmbedding.isInducing.continuousAt_iff.mpr
-    ((hv.continuousAt.comp f.contMDiff.continuous.continuousAt).congr h)) hsurj
+  have hu := f.mdifferentiableAt_of_surjective_mfderiv_of_eventuallyEq g hv h hsurj
   apply le_antisymm
   · exact Submodule.map_le_iff_le_comap.mpr
       (f.tangentRange_le_comap_mfderiv g hn hm hu h)
@@ -278,10 +285,9 @@ theorem normalSpaceEquiv_toContinuousLinearMap {l : ℕ∞ω} (hn : n ≠ 0) (hm
     (hv : IsLocalDiffeomorphAt J J' l v (f x))
     (hsurj : Surjective (mfderiv I I' u x)) (hl : l ≠ 0) (h : v ∘ f =ᶠ[𝓝 x] g ∘ u) :
     (f.normalSpaceEquiv g hn hm hv hsurj hl h).toContinuousLinearMap =
-      f.normalMap g hn hm (mdifferentiableAt_of_surjective_mfderiv
-        (g.isEmbedding.isInducing.continuousAt_iff.mpr
-          (((hv.mdifferentiableAt hl).continuousAt.comp
-            f.contMDiff.continuous.continuousAt).congr h)) hsurj) h := by
+      f.normalMap g hn hm
+        (f.mdifferentiableAt_of_surjective_mfderiv_of_eventuallyEq g (hv.mdifferentiableAt hl) h
+          hsurj) h := by
   ext z
   obtain ⟨w, rfl⟩ := f.normalClass_surjective x hn z
   simp only [ContinuousLinearEquiv.coe_apply, normalSpaceEquiv,
