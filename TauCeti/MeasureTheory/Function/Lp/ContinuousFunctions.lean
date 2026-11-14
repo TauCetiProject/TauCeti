@@ -5,19 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.MeasureTheory.Function.LpSpace.ContinuousFunctions
+public import TauCeti.MeasureTheory.Function.Lp.LinftyAlgebra
 
 /-!
 # Algebraic compatibility of `ContinuousMap.toLp`
 
 On a compact topological space `α` equipped with a finite Borel measure `μ`, Mathlib's bounded
 linear map `ContinuousMap.toLp p μ 𝕜 : C(α, E) →L[𝕜] Lp E p μ` sends every continuous function to
-its `Lᵖ` equivalence class. This file records its compatibility with constants and with Hölder
-scalar multiplication (`HSMul (Lp 𝕜 p μ) (Lp E q μ) (Lp E r μ)`):
+its `Lᵖ` equivalence class. This file records its compatibility with constants, `star`, `L∞`
+multiplication, and Hölder scalar multiplication (`HSMul (Lp 𝕜 p μ) (Lp E q μ) (Lp E r μ)`):
 
 * `ContinuousMap.toLp_const`: `toLp p μ 𝕜 (const α c) = Lp.const p μ c`.
 * `ContinuousMap.toLp_one`: `toLp p μ 𝕜 1 = Lp.const p μ 1`.
+* `ContinuousMap.toLp_star`: `toLp p μ 𝕜 (star f) = star (toLp p μ 𝕜 f)`.
+* `ContinuousMap.toLp_mul`: `toLp ∞ μ 𝕜 (f * g) = toLp ∞ μ 𝕜 f * toLp ∞ μ 𝕜 g`.
 * `ContinuousMap.toLp_smul_toLp`: under `[ENNReal.HolderTriple p q r]`,
   `toLp p μ 𝕜 f • toLp q μ 𝕜 g = toLp r μ 𝕜 (f • g)`.
 -/
@@ -53,6 +55,28 @@ theorem toLp_one {p : ℝ≥0∞} [Fact (1 ≤ p)] [One E] :
   filter_upwards [coeFn_toLp (p := p) (𝕜 := 𝕜) μ (1 : C(α, E)),
     Lp.coeFn_const p μ (1 : E)] with x h1 hconst
   rw [h1, hconst, one_apply, Function.const_apply]
+
+/-- `ContinuousMap.toLp` commutes with the pointwise `star` involution. -/
+@[simp]
+theorem toLp_star {p : ℝ≥0∞} [Fact (1 ≤ p)] [StarAddMonoid E] [NormedStarGroup E]
+    (f : C(α, E)) :
+    toLp p μ 𝕜 (star f) = star (toLp p μ 𝕜 f) := by
+  apply Lp.ext
+  filter_upwards [coeFn_toLp (p := p) (𝕜 := 𝕜) μ (star f),
+    Lp.coeFn_star (toLp p μ 𝕜 f), coeFn_toLp (p := p) (𝕜 := 𝕜) μ f] with x h₁ h₂ h₃
+  rw [h₁, h₂, Pi.star_apply, h₃, star_apply]
+
+/-- At exponent `∞`, `ContinuousMap.toLp` sends pointwise products in `C(α, R)` to products in
+`Lp R ∞ μ`. -/
+@[simp]
+theorem toLp_mul {R : Type*} [NormedRing R] [Module 𝕜 R] [IsBoundedSMul 𝕜 R]
+    [SecondCountableTopologyEither α R] (f g : C(α, R)) :
+    toLp ∞ μ 𝕜 (f * g) = toLp ∞ μ 𝕜 f * toLp ∞ μ 𝕜 g := by
+  apply Lp.ext
+  filter_upwards [coeFn_toLp (p := ∞) (𝕜 := 𝕜) μ (f * g),
+    Lp.coeFn_mul (toLp ∞ μ 𝕜 f) (toLp ∞ μ 𝕜 g),
+    coeFn_toLp (p := ∞) (𝕜 := 𝕜) μ f, coeFn_toLp (p := ∞) (𝕜 := 𝕜) μ g] with x h₁ h₂ h₃ h₄
+  rw [h₁, h₂, Pi.mul_apply, h₃, h₄, mul_apply]
 
 /-- Heterogeneous scalar multiplication of `ContinuousMap.toLp` classes on a compact finite-measure
 space represents pointwise scalar multiplication `f • g : C(α, E)`. -/

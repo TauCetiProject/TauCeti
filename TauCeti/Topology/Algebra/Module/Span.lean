@@ -12,10 +12,12 @@ public import TauCeti.Topology.Algebra.Module.Submodule
 
 A generating family, regarded as a family in the closure of its span, has dense span there.
 This lets constructions on densely spanning families apply to arbitrary closed spans.
-Conversely, a densely spanning family stays densely spanning when pushed forward along a
-continuous linear map with dense range, such as the projection onto a quotient module, so that a
-quotient of a module spanned densely by a countable family is again spanned densely by one.
-No norm, separation, or completeness assumptions are needed.
+Conversely, a continuous linear map sending a generating set into a closed submodule sends the
+topological closure of its span into that submodule
+(`Continuous.apply_mem_of_mem_topologicalClosure_span`), and a densely spanning family stays densely
+spanning when pushed forward along a continuous linear map with dense range, such as the projection
+onto a quotient module, so that a quotient of a module spanned densely by a countable family is
+again spanned densely by one. No norm, separation, or completeness assumptions are needed.
 -/
 
 public section
@@ -43,6 +45,18 @@ theorem dense_span_in_topologicalClosure {R ι M : Type*} [Semiring R]
   exact closure_mono hspan.symm.subset
 
 end TauCeti
+
+/-- If a continuous linear map `f : M →ₗ[R] N` sends a generating set `s` into a closed submodule
+`p` of `N`, then it sends `(Submodule.span R s).topologicalClosure` into `p`. -/
+theorem Continuous.apply_mem_of_mem_topologicalClosure_span {R M N : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [TopologicalSpace M] [ContinuousAdd M]
+    [ContinuousConstSMul R M] [AddCommMonoid N] [Module R N] [TopologicalSpace N]
+    {f : M →ₗ[R] N} (hfc : Continuous f) {s : Set M} {p : Submodule R N}
+    (hp : IsClosed (p : Set N)) (hs : ∀ x ∈ s, f x ∈ p) {x : M}
+    (hx : x ∈ (Submodule.span R s).topologicalClosure) :
+    f x ∈ p :=
+  Submodule.topologicalClosure_minimal _ (t := p.comap f) (Submodule.span_le.mpr hs)
+    (hp.preimage hfc) hx
 
 /-- The image of a densely spanning family under a continuous linear map with dense range has
 dense span. For instance, the image of a densely spanning family in a quotient module `M ⧸ p`

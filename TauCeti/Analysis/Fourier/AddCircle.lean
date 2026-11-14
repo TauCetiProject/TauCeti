@@ -11,8 +11,10 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.Topology.Algebra.PontryaginDual
+public import TauCeti.MeasureTheory.Function.Lp.PiLp
 
 import TauCeti.Analysis.Fourier.Monomial
+import TauCeti.MeasureTheory.Integral.Bochner.Star
 
 /-!
 # The continuous characters of the circle are the Fourier monomials
@@ -85,8 +87,8 @@ becomes that the continuous representations of the circle on `ℂ` are exactly t
   essentially bounded function `a` shifts the Fourier coefficients of `a` by `m`.
 * `TauCeti.fourierCoeff_fourierLp_smul`: multiplying an `Lᵖ` function by the monomial `e_n`
   shifts its Fourier coefficients by `n`.
-* `TauCeti.fourierCoeff_star`: the Fourier coefficients of the complex conjugate of an `Lᵖ`
-  function are the conjugates of its reflected coefficients.
+* `TauCeti.fourierCoeff_star`, `MeasureTheory.Lp.fourierCoeff_star`: in a complex normed star
+  module, the Fourier coefficients of `star f` are `star` of the reflected coefficients of `f`.
 * `TauCeti.fourierCoeff_fourierLp`: the Fourier coefficients of the `Lᵖ` monomial `e_n` are `1`
   at `n` and `0` elsewhere.
 * `TauCeti.fourierCoeff_sub`: the Fourier coefficients of a difference of integrable functions.
@@ -96,6 +98,9 @@ becomes that the continuous representations of the circle on `ℂ` are exactly t
   the native `Lᵖ` pullback form `MeasureTheory.Lp.fourierCoeff_compMeasurePreserving_neg`.
 * `ContinuousLinearMap.fourierCoeff_comp`: Fourier coefficients commute with continuous linear
   maps.
+* `MeasureTheory.Integrable.fourierCoeff_piLp_apply`, `MeasureTheory.Lp.fourierCoeff_piLp_apply`:
+  the `i`-th coordinate of the `n`-th Fourier coefficient of an integrable or `Lᵖ` `PiLp`-valued
+  circle function is the `n`-th Fourier coefficient of its `i`-th coordinate.
 
 ## Tags
 
@@ -316,6 +321,26 @@ theorem _root_.ContinuousLinearMap.fourierCoeff_comp {E F : Type*} [NormedAddCom
     fourierCoeff (fun x ↦ φ (f x)) n = φ (fourierCoeff f n) := by
   simp only [fourierCoeff, ← φ.integral_comp_comm (hf.fourier_smul (-n)), map_smul]
 
+/-- The `i`-th coordinate of the `n`-th Fourier coefficient of an integrable `PiLp`-valued function
+on `AddCircle T` is the `n`-th Fourier coefficient of its `i`-th coordinate. -/
+theorem _root_.MeasureTheory.Integrable.fourierCoeff_piLp_apply {ι : Type*} [Fintype ι] {q : ℝ≥0∞}
+    [Fact (1 ≤ q)] {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace ℂ (E i)]
+    [∀ i, CompleteSpace (E i)] {f : AddCircle T → PiLp q E}
+    (hf : Integrable f (haarAddCircle (T := T))) (n : ℤ) (i : ι) :
+    fourierCoeff f n i = fourierCoeff (fun x ↦ f x i) n :=
+  ((PiLp.proj (𝕜 := ℂ) q E i).fourierCoeff_comp hf n).symm
+
+/-- The `i`-th coordinate of the `n`-th Fourier coefficient of a `PiLp`-valued `Lᵖ` function on
+`AddCircle T` (`1 ≤ p ≤ ∞`) is the `n`-th Fourier coefficient of its `i`-th coordinate under
+`MeasureTheory.Lp.piLpEquiv`. -/
+theorem _root_.MeasureTheory.Lp.fourierCoeff_piLp_apply {ι : Type*} [Fintype ι] {p : ℝ≥0∞}
+    [Fact (1 ≤ p)] {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace ℂ (E i)]
+    [∀ i, CompleteSpace (E i)] (f : Lp (PiLp p E) p (haarAddCircle (T := T))) (n : ℤ) (i : ι) :
+    fourierCoeff f n i =
+      fourierCoeff (Lp.piLpEquiv p ℂ E (haarAddCircle (T := T)) f i) n :=
+  (((Lp.memLp f).integrable Fact.out).fourierCoeff_piLp_apply n i).trans
+    (congrFun (fourierCoeff_congr_ae (Lp.coeFn_piLpEquiv_apply (𝕜 := ℂ) f i)).symm n)
+
 /-- Pulling back an `Lᵖ` function by circle reflection reverses its Fourier indices. -/
 theorem _root_.MeasureTheory.Lp.fourierCoeff_compMeasurePreserving_neg {p : ℝ≥0∞}
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
@@ -431,16 +456,24 @@ theorem fourierCoeff_smul_fourierBasis (a : Lp ℂ ∞ (haarAddCircle (T := T)))
     rw [hx, Pi.smul_apply', coe_fourierBasis, hm, hma, smul_eq_mul, mul_comm]
   rw [fourierCoeff_congr_ae hae, fourierCoeff_fourierLp_smul]
 
-/-- The Fourier coefficients of the complex conjugate of an `Lᵖ` function are the conjugates of
-its reflected coefficients. -/
+/-- In a complex normed star module with continuous `star`, the Fourier coefficients of
+`x ↦ star (f x)` are `star` of the reflected Fourier coefficients of `f`. -/
+theorem fourierCoeff_star {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    [StarAddMonoid E] [ContinuousStar E] [StarModule ℂ E] (f : AddCircle T → E) (n : ℤ) :
+    fourierCoeff (fun x ↦ star (f x)) n = star (fourierCoeff f (-n)) := by
+  rw [fourierCoeff, fourierCoeff, ← integral_star]
+  congr 1; funext x
+  rw [neg_neg, star_smul, fourier_neg, RCLike.star_def]
+
+/-- In a normed complex star module, the Fourier coefficients of `star f` are `star` of the
+reflected Fourier coefficients of `f`. -/
 @[simp]
-theorem fourierCoeff_star {p : ℝ≥0∞} (f : Lp ℂ p (haarAddCircle (T := T))) (n : ℤ) :
-    fourierCoeff (star f : Lp ℂ p (haarAddCircle (T := T))) n =
-      starRingEnd ℂ (fourierCoeff f (-n)) := by
-  rw [fourierCoeff_congr_ae (Lp.coeFn_star f), fourierCoeff, fourierCoeff, ← integral_conj]
-  congr 1
-  funext x
-  rw [neg_neg, Pi.star_apply, smul_eq_mul, smul_eq_mul, map_mul, fourier_neg, RCLike.star_def]
+theorem _root_.MeasureTheory.Lp.fourierCoeff_star {p : ℝ≥0∞} {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℂ E] [StarAddMonoid E] [NormedStarGroup E]
+    [StarModule ℂ E] (f : Lp E p (haarAddCircle (T := T))) (n : ℤ) :
+    fourierCoeff (star f : Lp E p (haarAddCircle (T := T))) n =
+      star (fourierCoeff f (-n)) :=
+  (congrFun (fourierCoeff_congr_ae (Lp.coeFn_star f)) n).trans (TauCeti.fourierCoeff_star f n)
 
 /-- The Fourier coefficients of the `Lᵖ` monomial `e_n` are those of the continuous monomial
 `e_n`: `1` at `n` and `0` elsewhere. -/

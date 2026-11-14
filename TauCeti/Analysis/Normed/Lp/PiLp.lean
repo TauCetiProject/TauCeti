@@ -23,13 +23,17 @@ Cauchy–Schwarz estimate bounds the sum of coordinate norms by `√(card ι)` t
 The coordinate spaces may be different seminormed groups, or pseudometric spaces for the
 distance comparisons.
 
-Extending a vector of `Lᵖ(ι, E)` by zero along an embedding `f : ι ↪ ι'` places its coordinate `i`
-in the slot `f i`, and the vectors so obtained are those whose coordinates outside the range of
-`f` vanish. In particular, extending a vector of `Lᵖ(Fin k, E)` by zero onto the first `k`
-coordinates of `Lᵖ(Fin n, E)`, for `k ≤ n`, places its coordinates in the slots `j < k`; the
-vectors so obtained are those whose coordinates `j ≥ k` vanish.
-The finite sum against a zero-extended vector reduces to the sum over its original coordinates.
-Over an index type with at most one element, the `Lᵖ` norm is the norm of the coordinate.
+Every finite `PiLp` vector is the sum of its coordinate `PiLp.single` vectors
+(`PiLp.univ_sum_single`), and for `p ≥ 1` coordinate placement bundles as a linear isometry
+`PiLp.singleLI` and continuous linear map `PiLp.singleCLM`. Extending a vector of `Lᵖ(ι, E)` by zero
+along an embedding `f : ι ↪ ι'` places its coordinate `i` in the slot `f i`, and the vectors so
+obtained are those whose coordinates outside the range of `f` vanish. In particular, extending a
+vector of `Lᵖ(Fin k, E)` by zero onto the first `k` coordinates of `Lᵖ(Fin n, E)`, for `k ≤ n`,
+places its coordinates in the slots `j < k`; the vectors so obtained are those whose coordinates
+`j ≥ k` vanish. The finite sum against a zero-extended vector reduces to the sum over its original
+coordinates. Over an index type with at most one element, the `Lᵖ` norm is the norm of the
+coordinate, and any linear isometry equivalence into `PiLp p F` restricts to coordinatewise
+submodules via `LinearIsometryEquiv.subspacePiLp`.
 
 ## Source
 
@@ -46,6 +50,12 @@ open scoped ENNReal
 namespace PiLp
 
 variable {ι : Type*} [Fintype ι] {p : ℝ≥0∞} {E F : ι → Type*}
+
+/-- Every finite `PiLp` vector is the sum of its coordinate `PiLp.single` vectors; compare
+`Finset.univ_sum_single`. -/
+theorem univ_sum_single [DecidableEq ι] [∀ i, AddCommGroup (E i)] (x : PiLp p E) :
+    ∑ i, single p i (x i) = x :=
+  WithLp.ofLp_injective p <| by simp [WithLp.ofLp_sum, Finset.univ_sum_single]
 
 /-- Coordinatewise domination of norms implies domination of finite `Lᵖ` norms.
 The dominating family only needs a norm: the coordinate bounds ensure its nonnegativity. -/
@@ -79,6 +89,30 @@ protected theorem norm_nonneg' [∀ i, SeminormedAddGroup (E i)] (x : PiLp p E) 
     exact Real.rpow_nonneg (Finset.sum_nonneg fun _ _ ↦ Real.rpow_nonneg (norm_nonneg _) _) _
 
 variable [∀ i, SeminormedAddCommGroup (E i)]
+
+section SingleLI
+
+variable (p E) [Fact (1 ≤ p)] [DecidableEq ι] {𝕜 : Type*} [Semiring 𝕜] [∀ i, Module 𝕜 (E i)]
+
+/-- Coordinate inclusion `v ↦ PiLp.single p i v` into `PiLp p E` as a linear isometry. -/
+noncomputable def singleLI (i : ι) : E i →ₗᵢ[𝕜] PiLp p E where
+  toLinearMap := (WithLp.linearEquiv p 𝕜 (∀ j, E j)).symm.toLinearMap ∘ₗ LinearMap.single 𝕜 E i
+  norm_map' := norm_single p E i
+
+/-- Coordinate inclusion `v ↦ PiLp.single p i v` into `PiLp p E` as a continuous linear map,
+right-inverse to `PiLp.proj p E i`. -/
+noncomputable def singleCLM (i : ι) : E i →L[𝕜] PiLp p E := (singleLI p E i).toContinuousLinearMap
+
+variable {p E}
+
+/-- `PiLp.singleLI` evaluates as `PiLp.single`. -/
+@[simp] theorem singleLI_apply (i : ι) (v : E i) : singleLI (𝕜 := 𝕜) p E i v = single p i v := (rfl)
+
+/-- `PiLp.singleCLM` evaluates as `PiLp.single`. -/
+@[simp] theorem singleCLM_apply (i : ι) (v : E i) : singleCLM (𝕜 := 𝕜) p E i v = single p i v :=
+  (rfl)
+
+end SingleLI
 
 /-- Taking coordinate norms preserves the finite `Lᵖ` norm. -/
 @[simp]
@@ -261,3 +295,47 @@ theorem sum_mul_piLpExtendByZero (f : ι ↪ ι') (x : PiLp p fun _ : ι ↦ �
       piLpExtendByZero_apply_eq_zero hb]
 
 end LinearIsometry
+
+namespace LinearIsometryEquiv
+
+variable {ι 𝕜 X : Type*} [Fintype ι] {p : ℝ≥0∞} [Fact (1 ≤ p)] [Ring 𝕜]
+  [SeminormedAddCommGroup X] [Module 𝕜 X] {F : ι → Type*} [∀ i, SeminormedAddCommGroup (F i)]
+  [∀ i, Module 𝕜 (F i)]
+
+/-- Restrict a linear isometry equivalence `e : X ≃ₗᵢ[𝕜] PiLp p F` to a submodule `M` of `X`
+characterized coordinatewise by `x ∈ M ↔ ∀ i, e x i ∈ N i`. -/
+noncomputable def subspacePiLp (e : X ≃ₗᵢ[𝕜] PiLp p F) (M : Submodule 𝕜 X)
+    (N : ∀ i, Submodule 𝕜 (F i)) (hMN : ∀ x, x ∈ M ↔ ∀ i, e x i ∈ N i) :
+    ↥M ≃ₗᵢ[𝕜] PiLp p (fun i ↦ ↥(N i)) where
+  toFun x := WithLp.toLp p fun i ↦ ⟨e x.1 i, (hMN x.1).mp x.2 i⟩
+  invFun g := ⟨e.symm (WithLp.toLp p fun i ↦ (g i : F i)),
+    (hMN _).mpr fun i ↦ by rw [e.apply_symm_apply]; exact (g i).2⟩
+  map_add' _ _ := by ext i : 2; simp [map_add]
+  map_smul' _ _ := by ext i : 2; simp
+  left_inv x := Subtype.ext <| e.symm_apply_apply x.1
+  right_inv _ := by ext i : 2; simp
+  norm_map' x := (le_antisymm (PiLp.norm_mono fun _ ↦ le_rfl)
+    (PiLp.norm_mono fun _ ↦ le_rfl)).trans ((e.norm_map x.1).trans (Submodule.norm_coe x))
+
+/-- Coordinatewise evaluation of `e.subspacePiLp M N hMN` in `F i`. -/
+@[simp] theorem coe_subspacePiLp_apply (e : X ≃ₗᵢ[𝕜] PiLp p F) (M : Submodule 𝕜 X)
+    (N : ∀ i, Submodule 𝕜 (F i)) (hMN : ∀ x, x ∈ M ↔ ∀ i, e x i ∈ N i) (x : ↥M) (i : ι) :
+    (e.subspacePiLp M N hMN x i : F i) = e x.1 i := (rfl)
+
+/-- Coordinatewise evaluation of `(e.subspacePiLp M N hMN).symm` under `e`. -/
+@[simp] theorem apply_coe_subspacePiLp_symm (e : X ≃ₗᵢ[𝕜] PiLp p F) (M : Submodule 𝕜 X)
+    (N : ∀ i, Submodule 𝕜 (F i)) (hMN : ∀ x, x ∈ M ↔ ∀ i, e x i ∈ N i)
+    (g : PiLp p (fun i ↦ ↥(N i))) (i : ι) :
+    e ((e.subspacePiLp M N hMN).symm g : X) i = (g i : F i) := by
+  rw [← e.coe_subspacePiLp_apply M N hMN, LinearIsometryEquiv.apply_symm_apply]
+
+/-- On `PiLp.single`, `(e.subspacePiLp M N hMN).symm` embeds via `e.symm`. -/
+theorem coe_subspacePiLp_symm_single [DecidableEq ι] (e : X ≃ₗᵢ[𝕜] PiLp p F) (M : Submodule 𝕜 X)
+    (N : ∀ i, Submodule 𝕜 (F i)) (hMN : ∀ x, x ∈ M ↔ ∀ i, e x i ∈ N i) (j : ι) (h : ↥(N j)) :
+    ((e.subspacePiLp M N hMN).symm (PiLp.single p j h) : X) =
+      e.symm (PiLp.single p j (h : F j)) :=
+  e.injective <| by
+    rw [e.apply_symm_apply]; ext k : 1; rw [e.apply_coe_subspacePiLp_symm M N hMN]
+    rcases eq_or_ne k j with rfl | hkj <;> simp [*]
+
+end LinearIsometryEquiv

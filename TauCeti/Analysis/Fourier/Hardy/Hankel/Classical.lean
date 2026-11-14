@@ -84,7 +84,7 @@ theorem adjoint_classicalHankel (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1
   intro i j
   rw [ContinuousLinearMap.adjoint_inner_right, ← inner_conj_symm,
     inner_hardyBasis_classicalHankel_hardyBasis, inner_hardyBasis_classicalHankel_hardyBasis,
-    Lp.fourierCoeff_compMeasurePreserving_neg, fourierCoeff_star, neg_neg]
+    Lp.fourierCoeff_compMeasurePreserving_neg, Lp.fourierCoeff_star, RCLike.star_def, neg_neg]
   congr 2
   ring
 
@@ -113,7 +113,7 @@ theorem adjoint_hankel_comp_hardyFlip_symm
         (star a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) (-(j : ℤ) - 1 - i)) := by
       rw [← inner_conj_symm, inner_negativeHardyBasis_hankel_hardyBasis]
     _ = _ := by
-      rw [fourierCoeff_star]
+      rw [Lp.fourierCoeff_star]
       simp only [starRingEnd_apply, star_star]
       congr 1
       ring
