@@ -35,9 +35,7 @@ namespace ProbabilityTheory.Kernel
 
 variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
   {κ : Kernel α α} {η : Kernel β β} [IsSFiniteKernel κ] [IsSFiniteKernel η]
-  [MeasurableSingletonClass α] [MeasurableSingletonClass β]
 
-omit [MeasurableSingletonClass α] [MeasurableSingletonClass β] in
 /-- Independent products of aperiodic kernels are aperiodic, even without irreducibility. -/
 theorem IsAperiodic.parallelComp (hκ : κ.IsAperiodic) (hη : η.IsAperiodic) :
     (κ ∥ₖ η).IsAperiodic := by
@@ -56,7 +54,6 @@ theorem IsAperiodic.parallelComp (hκ : κ.IsAperiodic) (hη : η.IsAperiodic) :
     (mem_returnLengths.mpr ⟨Nat.succ_pos (N + 1), hN (N + 2) (by omega)⟩)
   exact Nat.dvd_one.mp (by simpa using Nat.dvd_sub h₂ h₁)
 
-omit [MeasurableSingletonClass α] [MeasurableSingletonClass β] in
 /-- In an irreducible aperiodic product, any fixed pair of states has positive transition mass
 at every sufficiently large time. -/
 theorem IsAperiodic.eventually_pos_parallelComp_pow_apply_singleton
@@ -68,7 +65,6 @@ theorem IsAperiodic.eventually_pos_parallelComp_pow_apply_singleton
   rw [parallelComp_pow_apply_singleton]
   exact ENNReal.mul_pos_iff.mpr ⟨hn, hm⟩
 
-omit [MeasurableSingletonClass α] [MeasurableSingletonClass β] in
 /-- The independent product of two irreducible aperiodic kernels is irreducible with respect
 to counting measure. -/
 theorem IsAperiodic.isIrreducible_parallelComp
