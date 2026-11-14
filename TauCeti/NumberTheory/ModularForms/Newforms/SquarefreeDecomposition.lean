@@ -119,9 +119,7 @@ private theorem squarefreeDecomposition_of_insert {χ : (ZMod N)ˣ →* ℂˣ} {
   · intro n
     rw [hcoeff n]
     symm
-    refine (Finset.sum_attach_eq_of_eq_insert hql' hpf fun q' hq' ↦ if q' ∣ n then (qExpansion 1
-      (if h : q' = q then h ▸ F else F' q' (hmem hq' h) :
-        CuspForm ((Gamma1 (N * l ^ 2 / q')).map (mapGL ℝ)) k)).coeff (n / q') else 0).trans ?_
+    rw [Finset.sum_attach_eq_of_eq_insert hql' hpf]
     congr 1
     · simp
     · refine Finset.sum_congr rfl fun q' _ ↦ ?_

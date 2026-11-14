@@ -10,9 +10,10 @@ public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 /-!
 # Products over the `attach` of an inserted finset
 
-A product over the `attach` of a finset `s = insert q t`, with a factor depending on the
-membership proof, splits into the factor at `q` and the product over the `attach` of `t`
-(`Finset.prod_attach_eq_of_eq_insert`). Additively, this is `Finset.sum_attach_eq_of_eq_insert`.
+A product over `(insert a s).attach`, with a factor depending on the membership proof, splits
+into the factor at `a` and the product over `s.attach` (`Finset.prod_attach_insert`).
+`Finset.prod_attach_eq_of_eq_insert` handles a finset given equal to an insertion.
+The additive forms are `Finset.sum_attach_insert` and `Finset.sum_attach_eq_of_eq_insert`.
 -/
 
 public section
@@ -21,17 +22,27 @@ namespace Finset
 
 variable {ι M : Type*} [DecidableEq ι] [CommMonoid M]
 
+/-- A product over `(insert a s).attach` splits into the factor at `a` and the product over
+`s.attach`, for a factor depending on the membership proof. -/
+@[to_additive /-- A sum over `(insert a s).attach` splits into the term at `a` and the sum over
+`s.attach`, for a summand depending on the membership proof. -/]
+theorem prod_attach_insert {s : Finset ι} {a : ι} (ha : a ∉ s)
+    (f : {x // x ∈ insert a s} → M) :
+    ∏ x ∈ (insert a s).attach, f x = f ⟨a, mem_insert_self a s⟩ *
+      ∏ x ∈ s.attach, f ⟨x.1, mem_insert_of_mem x.2⟩ := by
+  rw [attach_insert, prod_insert (by simpa using ha), prod_image]
+  intro x _ y _ h
+  exact Subtype.ext (by simpa using congrArg Subtype.val h)
+
 /-- A product over the `attach` of a finset `s = insert q t` splits into the factor at `q` and the
 product over the `attach` of `t`, for a factor depending on the membership proof. -/
 @[to_additive /-- A sum over the `attach` of a finset `s = insert q t` splits into the term at `q`
 and the sum over the `attach` of `t`, for a summand depending on the membership proof. -/]
 theorem prod_attach_eq_of_eq_insert {s t : Finset ι} {q : ι} (hq : q ∉ t) (hs : s = insert q t)
-    (G : (x : ι) → x ∈ s → M) :
-    ∏ x ∈ s.attach, G x.1 x.2 = G q (hs ▸ mem_insert_self q t) *
-      ∏ x ∈ t.attach, G x.1 (hs ▸ mem_insert_of_mem x.2) := by
+    (f : {x // x ∈ s} → M) :
+    ∏ x ∈ s.attach, f x = f ⟨q, hs ▸ mem_insert_self q t⟩ *
+      ∏ x ∈ t.attach, f ⟨x.1, hs ▸ mem_insert_of_mem x.2⟩ := by
   subst hs
-  rw [attach_insert, prod_insert (by simpa using hq), prod_image]
-  intro x _ y _ h
-  exact Subtype.ext (by simpa using congrArg Subtype.val h)
+  exact prod_attach_insert hq f
 
 end Finset
