@@ -192,23 +192,12 @@ theorem adelicTranslate_eq_adelicTranslate_iff
     and_iff_left ((L.adelicTranslate_form g).trans (L.adelicTranslate_form h).symm),
     Submodule.eq_iff_forall_padicLocalization_eq, mem_integralSubgroup]
   refine forall_congr' fun p ↦ ?_
-  rw [padicLocalization_adelicTranslate_carrier, padicLocalization_adelicTranslate_carrier,
-    L.orthogonalCompactOpens_orthogonal, L.mem_localStabilizer_iff_localTranslate_eq,
-    RestrictedProduct.mul_apply, RestrictedProduct.inv_apply]
-  simp only [Submodule.ext_iff, mem_localTranslate_iff]
-  -- `(g_p⁻¹ h_p)⁻¹ = h_p⁻¹ g_p`; the two conditions correspond under `x ↦ g_p x`.
-  have key (x : ℚ_[p] ⊗[ℚ] V) :
-      ((↑((g p)⁻¹ * h p) : ℚ_[p] ⊗[ℚ] V ≃ₗ[ℚ_[p]] ℚ_[p] ⊗[ℚ] V)).symm x =
-        (h p : ℚ_[p] ⊗[ℚ] V ≃ₗ[ℚ_[p]] ℚ_[p] ⊗[ℚ] V).symm
-          ((g p : ℚ_[p] ⊗[ℚ] V ≃ₗ[ℚ_[p]] ℚ_[p] ⊗[ℚ] V) x) := by
-    rw [LinearEquiv.symm_apply_eq, Subgroup.coe_mul, mul_apply_eq_comp, Subgroup.coe_inv,
-      LinearEquiv.coe_inv, LinearEquiv.apply_symm_apply, LinearEquiv.symm_apply_apply]
-  simp only [key]
-  refine ⟨fun H x ↦ ?_, fun H x ↦ ?_⟩
-  · simpa only [LinearEquiv.symm_apply_apply] using
-      (H ((g p : ℚ_[p] ⊗[ℚ] V ≃ₗ[ℚ_[p]] ℚ_[p] ⊗[ℚ] V) x)).symm
-  · simpa only [LinearEquiv.apply_symm_apply] using
-      (H ((g p : ℚ_[p] ⊗[ℚ] V ≃ₗ[ℚ_[p]] ℚ_[p] ⊗[ℚ] V).symm x)).symm
+  -- Both sides say that `g_p⁻¹ h_p` carries `L_p` onto itself.
+  rw [padicLocalization_adelicTranslate_carrier, padicLocalization_adelicTranslate_carrier, eq_comm,
+    localTranslate_eq_iff, L.orthogonalCompactOpens_orthogonal, mem_localStabilizer_iff,
+    L.range_localizationToCompletion, RestrictedProduct.mul_apply, RestrictedProduct.inv_apply]
+  simp only [mem_localTranslate_iff, Subgroup.coe_mul, Subgroup.coe_inv, mul_apply_eq_comp,
+    LinearEquiv.coe_inv]
 
 /-- A translate of `L` is `L` exactly when the adele lies in `K_f(L)`. -/
 theorem adelicTranslate_eq_self_iff :
@@ -225,13 +214,11 @@ theorem adelicTranslate_finiteAdelicOrthogonalDiagonal_mul_carrier (γ : orthogo
   refine forall_congr' fun p ↦ ?_
   rw [RestrictedProduct.mul_apply, OrthogonalCompactOpens.finiteAdelicOrthogonalDiagonal_apply,
     mem_localTranslate_iff, mem_localTranslate_iff, LinearEquiv.restrictScalars_symm_apply]
-  have key : ((↑(orthogonalGroupBaseChange (A := ℚ_[p]) L.norm γ * g p) :
-      ℚ_[p] ⊗[ℚ] V ≃ₗ[ℚ_[p]] ℚ_[p] ⊗[ℚ] V)).symm (1 ⊗ₜ v) =
-        (g p : ℚ_[p] ⊗[ℚ] V ≃ₗ[ℚ_[p]] ℚ_[p] ⊗[ℚ] V).symm (1 ⊗ₜ (γ : V ≃ₗ[ℚ] V).symm v) := by
-    rw [LinearEquiv.symm_apply_eq, Subgroup.coe_mul, mul_apply_eq_comp,
-      LinearEquiv.apply_symm_apply, orthogonalGroupBaseChange_apply_tmul,
+  have hγ : (orthogonalGroupBaseChange (A := ℚ_[p]) L.norm γ :
+      ℚ_[p] ⊗[ℚ] V ≃ₗ[ℚ_[p]] ℚ_[p] ⊗[ℚ] V).symm (1 ⊗ₜ v) = 1 ⊗ₜ (γ : V ≃ₗ[ℚ] V).symm v := by
+    rw [LinearEquiv.symm_apply_eq, orthogonalGroupBaseChange_apply_tmul,
       LinearEquiv.apply_symm_apply]
-  rw [key]
+  rw [Subgroup.coe_mul, LinearEquiv.mul_eq_trans, LinearEquiv.symm_trans_apply, hγ]
 
 /-- The isometry `g • L ≅ γ g • L` given by a rational isometry `γ` of the quadratic space of
 `L`. -/
@@ -252,15 +239,15 @@ theorem adelicTranslateDiagonalIsometry_apply (γ : orthogonalGroup L.norm) (v :
 theorem sameGenus_adelicTranslate : L.SameGenus (L.adelicTranslate g) := by
   refine (sameGenus_iff_localIntegralForm_equivalent (M := L.adelicTranslate g)
     ⟨.refl L.form⟩).mpr fun p _ ↦ ?_
-  let q : Nat.Primes := ⟨p, Fact.out⟩
-  refine (localIntegralForm_equivalent_iff_exists_isometryEquiv p).mpr ?_
+  -- The components of `g` are indexed by `Nat.Primes`, so write `p` as the prime `q`.
+  obtain ⟨q, rfl⟩ : ∃ q : Nat.Primes, (q : ℕ) = p := ⟨⟨p, Fact.out⟩, rfl⟩
+  refine (localIntegralForm_equivalent_iff_exists_isometryEquiv q).mpr ?_
   rw [adelicTranslate_completedRationalForm]
-  refine ⟨(L.completedRationalForm p).isometryGroupEquivIsometryEquiv
-      ⟨g q, L.orthogonalGroup_norm_baseChange p ▸ (g q).2⟩, fun x ↦ ?_⟩
-  rw [L.range_localizationToCompletion, (L.adelicTranslate g).range_localizationToCompletion]
-  have hq := L.padicLocalization_adelicTranslate_carrier g q
-  dsimp only [q] at hq
-  rw [hq, LinearMap.BilinForm.coe_isometryGroupEquivIsometryEquiv]
+  refine ⟨(L.completedRationalForm q).isometryGroupEquivIsometryEquiv
+      ⟨g q, L.orthogonalGroup_norm_baseChange q ▸ (g q).2⟩, fun x ↦ ?_⟩
+  rw [L.range_localizationToCompletion, (L.adelicTranslate g).range_localizationToCompletion,
+    padicLocalization_adelicTranslate_carrier,
+    LinearMap.BilinForm.coe_isometryGroupEquivIsometryEquiv]
   exact apply_mem_localTranslate_iff
 
 /-- **Every lattice on the quadratic space of `L` in the genus of `L` is a translate of `L`.** -/
