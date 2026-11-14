@@ -129,12 +129,10 @@ theorem IsItoIntegral.zero : IsItoIntegral ℱ P W 0 0 where
 theorem IsItoIntegral.of_indist (hI : IsItoIntegral ℱ P W H I) (hIJ : I ≡ᵐ[P] J) :
     IsItoIntegral ℱ P W H J where
   isStronglyPredictable := hI.isStronglyPredictable
-  ae_continuous := by
-    filter_upwards [hI.ae_continuous, hIJ] with ω hc heq
-    simpa only [funext heq] using hc
+  ae_continuous := hIJ.ae_continuous hI.ae_continuous
   exists_seq_approx t := by
     obtain ⟨n, τ, a, hτ, ha, hen, hg⟩ := hI.exists_seq_approx t
-    exact ⟨n, τ, a, hτ, ha, hen, hg.congr_right (hIJ.mono fun _ hω ↦ hω t)⟩
+    exact ⟨n, τ, a, hτ, ha, hen, hg.congr_right (hIJ.ae_eq_eval t)⟩
 
 /-- Product-almost-everywhere replacement of a predictable integrand on every finite horizon
 preserves `IsItoIntegral`. -/
@@ -179,15 +177,10 @@ private theorem simpleHolding_clipTau_eq_of_le {n : ℕ} {τ : ℕ → ℝ≥0} 
   simp only [Finance.simpleHolding_def]
   refine sum_congr rfl fun i _ ↦ ?_
   by_cases h : τ i ≤ t
-  · rw [clipTau, clipTau, min_eq_left h, clipHeight, ite_eq_left h]
-    have hmem : s ∈ Ioc (τ i) (min (τ (i + 1)) t) ↔ s ∈ Ioc (τ i) (τ (i + 1)) :=
-      ⟨fun hs' ↦ ⟨hs'.1, hs'.2.trans (min_le_left _ _)⟩, fun hs' ↦ ⟨hs'.1, le_min hs'.2 hs⟩⟩
-    by_cases hs' : s ∈ Ioc (τ i) (τ (i + 1))
-    · rw [indicator_of_mem (hmem.mpr hs'), indicator_of_mem hs']
-    · rw [indicator_of_notMem (mt hmem.mp hs'), indicator_of_notMem hs']
-  · rw [clipHeight, ite_eq_right h,
-      indicator_of_notMem fun (hs' : s ∈ Ioc (τ i) (τ (i + 1))) ↦ h (hs'.1.le.trans hs)]
-    simp
+  · simp only [clipTau, clipHeight, h, min_eq_left, ↓reduceIte, indicator_apply, Set.mem_Ioc,
+      le_min_iff, and_iff_left hs]
+  · simp only [clipHeight, h, ↓reduceIte, indicator_apply, Set.mem_Ioc, Pi.zero_apply, ite_self]
+    exact (ite_eq_right fun hs' ↦ h (hs'.1.le.trans hs)).symm
 
 private theorem clipStrategy_spec {n : ℕ} {τ : ℕ → ℝ≥0} {a : ℕ → Ω → ℝ}
     (hτ : MonotoneOn τ (Iic n))
@@ -255,36 +248,26 @@ private theorem exists_diff_clipped_strategy
     Finance.exists_simpleHolding_simpleGains_eq_sum ℱ Finset.univ l u c hc
   obtain ⟨hm, hd, hsum, hen⟩ := clipStrategy_spec (W := W) hσ.monotoneOn hb t
   refine ⟨M, clipTau t σ, clipHeight t σ b, hm, hd, fun ω ↦ ?_, fun ω ↦ ?_⟩
-  · rw [hsum ω, hgain W t ω, Fintype.sum_sum_type]
-    have hsum₁ : (∑ i : Fin n₁, if l (.inl i) ≤ u (.inl i) then
-          c (.inl i) ω * (W (min (u (.inl i)) t) ω - W (min (l (.inl i)) t) ω) else 0) =
-        ∑ i ∈ range n₁, a₁ i ω * (W (min (τ₁ (i + 1)) t) ω - W (min (τ₁ i) t) ω) := by
-      rw [← Fin.sum_univ_eq_sum_range]
-      refine sum_congr rfl fun i _ ↦ ?_
-      have h1 : l (.inl i) ≤ u (.inl i) :=
-        hτ₁ (mem_Iic.mpr i.isLt.le) (mem_Iic.mpr i.isLt) i.val.le_succ
-      exact ite_eq_left h1
-    have hsum₂ : (∑ j : Fin n₂, if l (.inr j) ≤ u (.inr j) then
-          c (.inr j) ω * (W (min (u (.inr j)) t) ω - W (min (l (.inr j)) t) ω) else 0) =
-        -(∑ j ∈ range n₂, a₂ j ω * (W (min (τ₂ (j + 1)) t) ω - W (min (τ₂ j) t) ω)) := by
-      rw [← sum_neg_distrib, ← Fin.sum_univ_eq_sum_range]
-      refine sum_congr rfl fun j _ ↦ ?_
-      have h2 : l (.inr j) ≤ u (.inr j) :=
-        hτ₂ (mem_Iic.mpr j.isLt.le) (mem_Iic.mpr j.isLt) j.val.le_succ
-      rw [ite_eq_left h2]
-      dsimp only [l, u, c, Sum.elim_inr, Pi.neg_apply]
-      ring
-    rw [hsum₁, hsum₂, Finance.simpleGains_def, Finance.simpleGains_def, sub_eq_add_neg]
+  · rw [hsum ω, hgain W t ω, Fintype.sum_sum_type, Finance.simpleGains_def,
+      Finance.simpleGains_def, sub_eq_add_neg, ← sum_neg_distrib, ← Fin.sum_univ_eq_sum_range,
+      ← Fin.sum_univ_eq_sum_range]
+    exact congrArg₂ (· + ·)
+      (sum_congr rfl fun i _ ↦ ite_eq_left
+        (hτ₁ (mem_Iic.mpr i.isLt.le) (mem_Iic.mpr i.isLt) i.val.le_succ))
+      (sum_congr rfl fun j _ ↦ by
+        have h2 : l (.inr j) ≤ u (.inr j) :=
+          hτ₂ (mem_Iic.mpr j.isLt.le) (mem_Iic.mpr j.isLt) j.val.le_succ
+        rw [ite_eq_left h2]
+        exact neg_mul _ _)
   · rw [hen ω]
     refine lintegral_congr fun s ↦ ?_
     rw [hhold s ω, Fintype.sum_sum_type]
     dsimp only [l, u, c, Sum.elim_inl, Sum.elim_inr]
     rw [Fin.sum_univ_eq_sum_range (fun i ↦ (Ioc (τ₁ i) (τ₁ (i + 1))).indicator (fun _ ↦ a₁ i ω) s),
-      Fin.sum_univ_eq_sum_range (fun j ↦ (Ioc (τ₂ j) (τ₂ (j + 1))).indicator (fun _ ↦ (-a₂ j) ω) s)]
-    have hneg (j : ℕ) : (Ioc (τ₂ j) (τ₂ (j + 1))).indicator (fun _ ↦ -a₂ j ω) s =
-        -(Ioc (τ₂ j) (τ₂ (j + 1))).indicator (fun _ ↦ a₂ j ω) s := by
-      by_cases hs : s ∈ Ioc (τ₂ j) (τ₂ (j + 1)) <;> simp [hs]
-    simp only [Pi.neg_apply, hneg, sum_neg_distrib, Finance.simpleHolding_def, ← sub_eq_add_neg]
+      Fin.sum_univ_eq_sum_range
+        (fun j ↦ (Ioc (τ₂ j) (τ₂ (j + 1))).indicator (fun _ ↦ (-a₂ j) ω) s)]
+    simp only [Pi.neg_apply, indicator_neg, sum_neg_distrib, Finance.simpleHolding_def,
+      ← sub_eq_add_neg]
 
 private theorem eNorm_sub_sq_le (x y z : ℝ) :
     ‖x - y‖ₑ ^ 2 ≤ 2 * ‖x - z‖ₑ ^ 2 + 2 * ‖y - z‖ₑ ^ 2 := by
@@ -467,20 +450,11 @@ private theorem continuous_stoppedProcess {u : ℝ≥0 → Ω → ℝ} (τ : Ω 
     (hu : Continuous (fun t ↦ u t ω)) :
     Continuous (fun t ↦ stoppedProcess u τ t ω) := by
   cases hτ : τ ω with
-  | top =>
-    have heq (t : ℝ≥0) : stoppedProcess u τ t ω = u t ω :=
-      stoppedProcess_eq_of_le (by rw [hτ]; exact le_top)
-    simpa only [heq] using hu
+  | top => simpa only [stoppedProcess, hτ, le_top, min_eq_left, WithTop.untopA,
+      WithTop.untopD_coe] using hu
   | coe s =>
-    have heq (t : ℝ≥0) : stoppedProcess u τ t ω = u (min t s) ω := by
-      rcases le_total t s with hts | hst
-      · rw [stoppedProcess_eq_of_le (by rw [hτ]; exact WithTop.coe_le_coe.mpr hts), min_eq_left hts]
-      · have hm : min (t : WithTop ℝ≥0) (s : WithTop ℝ≥0) = (s : WithTop ℝ≥0) :=
-          min_eq_right (WithTop.coe_le_coe.mpr hst)
-        dsimp only [stoppedProcess]
-        rw [hτ, hm, min_eq_right hst]
-        simp only [WithTop.untopA, WithTop.untopD_coe]
-    simpa only [Function.comp_def, id_eq, heq] using hu.comp (continuous_id.min continuous_const)
+    simpa only [stoppedProcess, hτ, ← WithTop.coe_min, WithTop.untopA, WithTop.untopD_coe,
+      Function.comp_def, id_eq] using hu.comp (continuous_id.min continuous_const)
 
 private theorem tendsto_measure_le_of_isLocalizingSequence [IsFiniteMeasure P]
     {τ : ℕ → Ω → WithTop ℝ≥0} (hloc : IsLocalizingSequence ℱ τ P)
@@ -499,6 +473,28 @@ private theorem tendsto_measure_le_of_isLocalizingSequence [IsFiniteMeasure P]
   simpa only [Function.comp_def, hA_inter] using
     tendsto_measure_iInter_atTop hA_meas hA_anti ⟨0, measure_ne_top P _⟩
 
+private theorem tendsto_measure_of_ae_imp_of_lt [IsFiniteMeasure P]
+    {τ : ℕ → Ω → WithTop ℝ≥0} (hloc : IsLocalizingSequence ℱ τ P)
+    (hmono : ∀ ω, Monotone (τ · ω)) (t : ℝ≥0) {A B : ℕ → Set Ω}
+    (hB : Tendsto (fun k ↦ P (B k)) atTop (𝓝 0))
+    (himp : ∀ k, ∀ᵐ ω ∂P, (t : WithTop ℝ≥0) < τ k ω → ω ∈ A k → ω ∈ B k) :
+    Tendsto (fun k ↦ P (A k)) atTop (𝓝 0) := by
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+    (by simpa only [zero_add] using
+      hB.add (tendsto_measure_le_of_isLocalizingSequence hloc hmono t))
+    (fun _ ↦ bot_le) fun k ↦ ?_
+  have hnull : P {ω | ¬ ((t : WithTop ℝ≥0) < τ k ω → ω ∈ A k → ω ∈ B k)} = 0 :=
+    ae_iff.mp (himp k)
+  have hinc : A k ⊆ B k ∪ {ω | τ k ω ≤ (t : WithTop ℝ≥0)} ∪
+      {ω | ¬ ((t : WithTop ℝ≥0) < τ k ω → ω ∈ A k → ω ∈ B k)} := fun ω hω ↦ by
+    by_cases hle : τ k ω ≤ (t : WithTop ℝ≥0)
+    · exact Or.inl (Or.inr hle)
+    · by_cases hgood : (t : WithTop ℝ≥0) < τ k ω → ω ∈ A k → ω ∈ B k
+      · exact Or.inl (Or.inl (hgood (not_le.mp hle) hω))
+      · exact Or.inr hgood
+  exact (measure_mono hinc).trans ((measure_union_le _ _).trans
+    (by rw [hnull, add_zero]; exact measure_union_le _ _))
+
 private theorem tendsto_localized_energy_approx [IsFiniteMeasure P]
     {Hstage : ℕ → ℝ≥0 → Ω → ℝ} (hHstage_pred : ∀ k, IsStronglyPredictable ℱ (Hstage k))
     {τ : ℕ → Ω → WithTop ℝ≥0} (hloc : IsLocalizingSequence ℱ τ P)
@@ -514,43 +510,18 @@ private theorem tendsto_localized_energy_approx [IsFiniteMeasure P]
     Tendsto (fun k ↦ P {ω | ε ≤ ∫⁻ s,
       ‖Finance.simpleHolding (grid k) (n k) (a k) s ω - H s ω‖ₑ ^ 2 ∂timeMeasure t})
       atTop (𝓝 0) := by
-  have hstage_en := tendsto_meas_ge_lintegral_eNorm_sq_of_eLpNorm
-    (fun k ↦ ((Finance.isStronglyPredictable_simpleHolding (ha k)).sub
-      (hHstage_pred k)).mono ℱ.predictable_le_prod) t herr_lim hε
-  have htail := tendsto_measure_le_of_isLocalizingSequence hloc hmono t
-  have hnull : P {ω | ¬ ∀ k, (t : WithTop ℝ≥0) < τ k ω →
-      EqOn (fun s ↦ Hstage k s ω) (fun s ↦ H s ω) (Iic t)} = 0 := ae_iff.mp hstage_eq
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-    (by simpa only [zero_add] using hstage_en.add htail) (fun _ ↦ bot_le) fun k ↦ ?_
-  have hinc : {ω | ε ≤ ∫⁻ s,
-        ‖Finance.simpleHolding (grid k) (n k) (a k) s ω - H s ω‖ₑ ^ 2 ∂timeMeasure t} ⊆
-      {ω | ε ≤ ∫⁻ s,
-        ‖Finance.simpleHolding (grid k) (n k) (a k) s ω - Hstage k s ω‖ₑ ^ 2 ∂timeMeasure t} ∪
-      {ω | τ k ω ≤ (t : WithTop ℝ≥0)} ∪
-      {ω | ¬ ∀ m, (t : WithTop ℝ≥0) < τ m ω →
-        EqOn (fun s ↦ Hstage m s ω) (fun s ↦ H s ω) (Iic t)} := by
-    intro ω hω
-    by_cases hle : τ k ω ≤ (t : WithTop ℝ≥0)
-    · exact Or.inl (Or.inr hle)
-    · by_cases hgood : ∀ m, (t : WithTop ℝ≥0) < τ m ω →
-          EqOn (fun s ↦ Hstage m s ω) (fun s ↦ H s ω) (Iic t)
-      · refine Or.inl (Or.inl ?_)
-        have heq_int : (∫⁻ s,
-              ‖Finance.simpleHolding (grid k) (n k) (a k) s ω - Hstage k s ω‖ₑ ^ 2
-                ∂timeMeasure t) =
-            ∫⁻ s, ‖Finance.simpleHolding (grid k) (n k) (a k) s ω - H s ω‖ₑ ^ 2
-              ∂timeMeasure t := by
-          rw [timeMeasure_def]
-          exact setLIntegral_congr_fun measurableSet_Ioc fun s hs ↦ by
-            have hs_eq : Hstage k s ω = H s ω := hgood k (not_le.mp hle) hs.2
-            rw [hs_eq]
-        simpa only [mem_ofPred_eq, heq_int] using hω
-      · exact Or.inr hgood
-  calc
-    P _ ≤ P _ := measure_mono hinc
-    _ ≤ P _ + P _ := measure_union_le _ _
-    _ ≤ (P _ + P _) + 0 := by rw [← hnull]; exact add_le_add (measure_union_le _ _) le_rfl
-    _ = _ := add_zero _
+  refine tendsto_measure_of_ae_imp_of_lt hloc hmono t
+    (tendsto_meas_ge_lintegral_eNorm_sq_of_eLpNorm
+      (fun k ↦ ((Finance.isStronglyPredictable_simpleHolding (ha k)).sub
+        (hHstage_pred k)).mono ℱ.predictable_le_prod) t herr_lim hε)
+    fun k ↦ hstage_eq.mono fun ω hgood hlt hω ↦ ?_
+  have heq_int : (∫⁻ s, ‖Finance.simpleHolding (grid k) (n k) (a k) s ω - Hstage k s ω‖ₑ ^ 2
+        ∂timeMeasure t) =
+      ∫⁻ s, ‖Finance.simpleHolding (grid k) (n k) (a k) s ω - H s ω‖ₑ ^ 2 ∂timeMeasure t := by
+    rw [timeMeasure_def]
+    exact setLIntegral_congr_fun measurableSet_Ioc fun s hs ↦ by
+      have hs_eq : Hstage k s ω = H s ω := hgood k hlt hs.2; rw [hs_eq]
+  simpa only [mem_ofPred_eq, Pi.sub_apply, Function.uncurry_apply_pair, heq_int] using hω
 
 private theorem tendstoInMeasure_localized_simpleGains
     (hW : IsFilteredPreBrownianReal ℱ W P)
@@ -569,7 +540,6 @@ private theorem tendstoInMeasure_localized_simpleGains
         ((timeMeasure t).prod P)) atTop (𝓝 0)) :
     TendstoInMeasure P (fun k ↦ Finance.simpleGains (grid k) (n k) (a k) W t) atTop (X t) := by
   let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-  have htail := tendsto_measure_le_of_isLocalizingSequence hloc hmono t
   have hG_stage : TendstoInMeasure P
       (fun k ω ↦ Finance.simpleGains (grid k) (n k) (a k) W t ω - U k t ω)
       atTop (0 : Ω → ℝ) := by
@@ -585,28 +555,9 @@ private theorem tendstoInMeasure_localized_simpleGains
   refine tendstoInMeasure_iff_norm.mpr fun ε hε ↦ ?_
   have hG_ε := (tendstoInMeasure_iff_norm.mp hG_stage) ε hε
   simp only [Pi.zero_apply, sub_zero] at hG_ε
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-    (by simpa only [zero_add] using hG_ε.add htail) (fun _ ↦ bot_le) fun k ↦ ?_
-  have hnull_k : P {ω | stoppedProcess X (τ k) t ω ≠ U k t ω} = 0 :=
-    ae_iff.mp ((hstop k).mono fun _ hω ↦ hω t)
-  have hinc : {ω | ε ≤ ‖Finance.simpleGains (grid k) (n k) (a k) W t ω - X t ω‖} ⊆
-      {ω | ε ≤ ‖Finance.simpleGains (grid k) (n k) (a k) W t ω - U k t ω‖} ∪
-      {ω | τ k ω ≤ (t : WithTop ℝ≥0)} ∪
-      {ω | stoppedProcess X (τ k) t ω ≠ U k t ω} := by
-    intro ω hω
-    by_cases hle : τ k ω ≤ (t : WithTop ℝ≥0)
-    · exact Or.inl (Or.inr hle)
-    · by_cases heq_u : stoppedProcess X (τ k) t ω = U k t ω
-      · refine Or.inl (Or.inl ?_)
-        have hXt : X t ω = U k t ω :=
-          (stoppedProcess_eq_of_le (u := X) (not_le.mp hle).le).symm.trans heq_u
-        simpa only [mem_ofPred_eq, hXt] using hω
-      · exact Or.inr heq_u
-  calc
-    P _ ≤ P _ := measure_mono hinc
-    _ ≤ P _ + P _ := measure_union_le _ _
-    _ ≤ (P _ + P _) + 0 := by rw [← hnull_k]; exact add_le_add (measure_union_le _ _) le_rfl
-    _ = _ := add_zero _
+  exact tendsto_measure_of_ae_imp_of_lt hloc hmono t hG_ε fun k ↦
+    ((hstop k).ae_eq_eval t).mono fun ω heq_u hlt hω ↦ by
+      simpa only [mem_ofPred_eq, ← heq_u, stoppedProcess_eq_of_le (u := X) hlt.le] using hω
 
 private theorem isItoIntegral_of_localized_stages
     (hW : IsFilteredPreBrownianReal ℱ W P)
@@ -690,14 +641,14 @@ private theorem exists_patched_energyLocalizer_process
     rw [show (fun s ↦ {ω | (⊥ : WithTop ℝ≥0) < τ n ω}.indicator (X s)) = X by
       ext s ω; exact indicator_of_mem (show 0 < τ n ω from TauCeti.nnvolume.energyLocalizer_pos H
         (C := (n : ℝ≥0) + 1) (by positivity) ω) _]
-    exact (hX_stop n).symm.mono fun _ hω ↦ hω t
+    exact (hX_stop n).symm.ae_eq_eval t
   have hX_ito : IsItoIntegral ℱ P W H X :=
     hW.isItoIntegral_of_localized_stages hH.isStronglyPredictable hX_cont hloc
       (fun ω _ _ hij ↦ TauCeti.nnvolume.monotone_energyLocalizer H ω
         (add_le_add (Nat.cast_le.mpr hij) le_rfl))
       hHstage hUae hX_stop fun t ↦ hH.ae_accumulatedEnergy_lt_top.mono fun ω hfin k hlt s hs ↦ by
-        have hst : s ≤ t := hs
-        have hle : (s : WithTop ℝ≥0) ≤ τ k ω := (WithTop.coe_le_coe.mpr hst).trans hlt.le
+        have hle : (s : WithTop ℝ≥0) ≤ τ k ω :=
+          (WithTop.coe_le_coe.mpr (mem_Iic.mp hs)).trans hlt.le
         dsimp only [τ] at hle
         simpa only [ite_eq_left hle] using TauCeti.nnvolume.finiteEnergyCutoff_eqOn (hfin t) hs
   exact ⟨X, U, hX_prog, hX_cont, hX_loc, hX_ito, hUp, hUcont, hUae, hX_stop⟩
@@ -759,7 +710,7 @@ theorem itoIntegral_stoppedProcess
   have hXσ_stop (k : ℕ) :
       stoppedProcess (stoppedProcess X σ) (τ k) ≡ᵐ[P] stoppedProcess (U k) σ := by
     rw [stoppedProcess_stoppedProcess, inf_comm, ← stoppedProcess_stoppedProcess]
-    exact (hX_stop k).mono fun ω hω t ↦ by dsimp only [stoppedProcess]; exact hω _
+    exact (hX_stop k).stoppedProcess σ
   have hXσ_ito : IsItoIntegral ℱ P W
       (fun t : ℝ≥0 ↦ fun ω ↦ if (t : WithTop ℝ≥0) ≤ σ ω then H t ω else 0)
       (stoppedProcess X σ) := by
@@ -770,16 +721,12 @@ theorem itoIntegral_stoppedProcess
         (add_le_add (Nat.cast_le.mpr hij) le_rfl))
       hHstage hUσ_ae hXσ_stop fun t ↦ ?_
     filter_upwards [hH.ae_accumulatedEnergy_lt_top] with ω hfin k hlt s hs
-    have hst : s ≤ t := hs
-    have hle : (s : WithTop ℝ≥0) ≤ τ k ω := (WithTop.coe_le_coe.mpr hst).trans hlt.le
+    have hle : (s : WithTop ℝ≥0) ≤ τ k ω := (WithTop.coe_le_coe.mpr (mem_Iic.mp hs)).trans hlt.le
     have hcut : TauCeti.nnvolume.finiteEnergyCutoff H s ω = H s ω :=
       TauCeti.nnvolume.finiteEnergyCutoff_eqOn (hfin t) hs
-    dsimp only [τ] at hle
-    dsimp only
+    dsimp only [τ] at hle ⊢
     rw [ite_eq_left hle, hcut]
-  have hIX : stoppedProcess X σ ≡ᵐ[P] stoppedProcess I σ :=
-    (hW.isItoIntegral_unique hX_ito hI).mono fun ω hω t ↦ by dsimp only [stoppedProcess]; exact hω _
-  exact hXσ_ito.of_indist hIX
+  exact hXσ_ito.of_indist ((hW.isItoIntegral_unique hX_ito hI).stoppedProcess σ)
 
 /-- **Local congruence of the Brownian Itô integral.** If two `LocallyBrownianIntegrable`
 integrands agree product-almost-everywhere on `⟦0, σ⟧` over every finite horizon for a raw stopping
@@ -833,8 +780,8 @@ theorem itoIntegral_ae_eq_l2Integral
     (hH : BrownianIntegrable ℱ P H) (hI : IsItoIntegral ℱ P W H I) (t : ℝ≥0) :
     I t =ᵐ[P] hW.l2Integral t (hH.toPredictableLp t) := by
   obtain ⟨J, _, _, hJ_cont, hJ_ae⟩ := hW.exists_continuous_l2Integral hcont hH
-  have hIJ := hW.isItoIntegral_unique hI (hW.isItoIntegral_of_ae_eq_l2Integral hH hJ_cont hJ_ae)
-  exact EventuallyEq.trans (hIJ.mono fun _ hω ↦ hω t) (hJ_ae t)
+  exact ((hW.isItoIntegral_unique hI
+    (hW.isItoIntegral_of_ae_eq_l2Integral hH hJ_cont hJ_ae)).ae_eq_eval t).trans (hJ_ae t)
 
 /-- **Cross-isometry of the Brownian Itô integral** on `BrownianIntegrable` integrands. -/
 theorem itoIntegral_mul_isometry

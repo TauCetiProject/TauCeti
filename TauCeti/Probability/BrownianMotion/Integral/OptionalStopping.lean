@@ -235,18 +235,12 @@ private theorem tendsto_eLpNorm_l2Integral_ite_le_dyadicCeilTime
       ((hH.ite_le (hτ.dyadicCeilTime k)).memLp_timeMeasure T).aestronglyMeasurable)
     (hH.memLp_timeMeasure T) (.of_forall fun k ↦ .of_forall fun ⟨t, ω⟩ ↦ ?_)
     (.of_forall fun ⟨t, ω⟩ ↦ ?_)
-  · simp only [fk, fLim, ENNReal.coe_one, one_mul, Function.uncurry_apply_pair]
-    by_cases h1 : (t : WithTop ℝ≥0) ≤ TauCeti.dyadicCeilTime k (τ ω) <;>
-      by_cases h2 : (t : WithTop ℝ≥0) ≤ τ ω
-    · rw [ite_eq_left h1, ite_eq_left h2, sub_self]; simp
-    · rw [ite_eq_left h1, ite_eq_right h2, sub_zero]
-    · exact False.elim (h1 (h2.trans (TauCeti.le_dyadicCeilTime k (τ ω))))
-    · rw [ite_eq_right h1, ite_eq_right h2, sub_self]; simp
+  · dsimp only [fk, fLim, Function.uncurry_apply_pair]
+    split_ifs <;> simp
   · by_cases hle : (t : WithTop ℝ≥0) ≤ τ ω
-    · have hk (k : ℕ) : fk k (t, ω) = H t ω :=
-        ite_eq_left (hle.trans (TauCeti.le_dyadicCeilTime k (τ ω)))
-      simpa only [fk, fLim, Function.uncurry_apply_pair, hk, ite_eq_left hle] using
-        tendsto_const_nhds
+    · refine tendsto_const_nhds.congr fun k ↦ ?_
+      dsimp only [fk, fLim, Function.uncurry_apply_pair]
+      rw [ite_eq_left hle, ite_eq_left (hle.trans (TauCeti.le_dyadicCeilTime k (τ ω)))]
     · refine tendsto_const_nhds.congr' ?_
       filter_upwards [(TauCeti.tendsto_dyadicCeilTime (τ ω)).eventually
         (isOpen_Iio.mem_nhds (not_le.mp hle))] with k hk
@@ -274,28 +268,16 @@ theorem stoppedProcess_ae_eq_l2Integral
   have hrhs_lim := hW.tendsto_eLpNorm_l2Integral_ite_le_dyadicCeilTime hH hτ T
   let target : Ω → ℝ := hW.l2Integral T ((hH.ite_le hτ).toPredictableLp T)
   have hzero : eLpNorm (stoppedProcess I τ T - target) 2 P = 0 := by
-    have htri (k : ℕ) : eLpNorm (stoppedProcess I τ T - target) 2 P ≤
-        eLpNorm (stoppedProcess I (fun ω ↦ TauCeti.dyadicCeilTime k (τ ω)) T -
-          stoppedProcess I τ T) 2 P +
-        eLpNorm (fun ω ↦
-          hW.l2Integral T ((hH.ite_le (hτ.dyadicCeilTime k)).toPredictableLp T) ω -
-          target ω) 2 P := by
-      have heq_k := hW.stoppedProcess_dyadicCeilTime_ae_eq_l2Integral hH hI hτ k T
-      let step_k : Ω → ℝ := hW.l2Integral T ((hH.ite_le (hτ.dyadicCeilTime k)).toPredictableLp T)
-      have h1 : eLpNorm (stoppedProcess I τ T -
-            stoppedProcess I (fun ω ↦ TauCeti.dyadicCeilTime k (τ ω)) T) 2 P =
-          eLpNorm (stoppedProcess I (fun ω ↦ TauCeti.dyadicCeilTime k (τ ω)) T -
-            stoppedProcess I τ T) 2 P := by
-        rw [← neg_sub (stoppedProcess I _ T), eLpNorm_neg]
-      have hsplit : stoppedProcess I τ T - target =ᵐ[P]
-          (stoppedProcess I τ T - stoppedProcess I (fun ω ↦ TauCeti.dyadicCeilTime k (τ ω)) T) +
-          (step_k - target) := by
-        filter_upwards [heq_k] with ω hω
-        simp only [Pi.sub_apply, Pi.add_apply, step_k, hω]; ring
-      rw [eLpNorm_congr_ae hsplit, ← h1]
-      exact eLpNorm_add_le one_le_two
-    exact le_antisymm (ge_of_tendsto (by simpa only [zero_add] using hlhs_lim.add hrhs_lim)
-      (Eventually.of_forall htri)) bot_le
+    refine le_antisymm (ge_of_tendsto (by simpa only [zero_add] using hlhs_lim.add hrhs_lim)
+      (Eventually.of_forall fun k ↦ ?_)) bot_le
+    let step_k : Ω → ℝ := hW.l2Integral T ((hH.ite_le (hτ.dyadicCeilTime k)).toPredictableLp T)
+    have hsplit : stoppedProcess I τ T - target =ᵐ[P]
+        -(stoppedProcess I (fun ω ↦ TauCeti.dyadicCeilTime k (τ ω)) T - stoppedProcess I τ T) +
+          (step_k - target) :=
+      (hW.stoppedProcess_dyadicCeilTime_ae_eq_l2Integral hH hI hτ k T).mono fun ω hω ↦ by
+        simp only [Pi.sub_apply, Pi.add_apply, Pi.neg_apply, step_k, hω]; ring
+    rw [eLpNorm_congr_ae hsplit]
+    exact (eLpNorm_add_le one_le_two).trans (by rw [eLpNorm_neg]; exact le_rfl)
   exact ((eLpNorm_eq_zero_iff (by norm_num : (2 : ℝ≥0∞) ≠ 0)).mp hzero).mono
     fun _ hω ↦ sub_eq_zero.mp hω
 
