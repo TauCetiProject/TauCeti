@@ -23,6 +23,7 @@ in Euler–Maclaurin type estimates.
 * `Int.continuous_fract_sq_sub_fract`: `t ↦ fract t ^ 2 - fract t` is continuous.
 * `Int.hasDerivWithinAt_fract_sq_sub_fract`: its right derivative at `t` is `2 fract t - 1`.
 * `Int.abs_fract_sq_sub_fract_le`: `|fract t ^ 2 - fract t| ≤ 1 / 4`.
+* `Int.fract_sub_fract_sq_nonneg`, `Int.fract_sub_fract_sq_le`: `0 ≤ fract t - fract t ^ 2 ≤ 1 / 4`.
 -/
 
 public section
@@ -58,5 +59,13 @@ theorem abs_fract_sq_sub_fract_le (t : ℝ) : |fract t ^ 2 - fract t| ≤ 1 / 4 
   have h1 := fract_lt_one t
   rw [abs_le]
   constructor <;> nlinarith [sq_nonneg (fract t - 1 / 2)]
+
+/-- `0 ≤ fract t - fract t ^ 2`, since `fract t ∈ [0, 1)`. -/
+theorem fract_sub_fract_sq_nonneg (t : ℝ) : 0 ≤ fract t - fract t ^ 2 := by
+  nlinarith [fract_nonneg t, fract_lt_one t]
+
+/-- `fract t - fract t ^ 2 ≤ 1 / 4`, with equality at half-integers. -/
+theorem fract_sub_fract_sq_le (t : ℝ) : fract t - fract t ^ 2 ≤ 1 / 4 := by
+  nlinarith [sq_nonneg (fract t - 1 / 2)]
 
 end Int

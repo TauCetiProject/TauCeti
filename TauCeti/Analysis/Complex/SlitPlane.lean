@@ -50,7 +50,8 @@ is a principal logarithm.
 * `TauCeti.sub_mem_slitPlane_of_im_le_zero`
 * `TauCeti.ofReal_add_mem_slitPlane`, `TauCeti.ofReal_add_mem_slitPlane_of_mem_union`
 * `TauCeti.ofReal_mem_slitPlane_union_zero`, `TauCeti.mem_slitPlane_union_zero_iff`
-* `TauCeti.exists_pos_forall_mem_ball_mul_one_add_le_norm_add`
+* `TauCeti.exists_pos_forall_mem_ball_mul_one_add_le_norm_add`,
+  `TauCeti.exists_pos_forall_mem_mul_one_add_le_norm_add_of_isCompact`
 * `TauCeti.exists_pos_mul_one_add_le_norm_ofReal_add`
 * `TauCeti.exists_norm_div_ofReal_add_mul_le`, `TauCeti.continuousOn_div_ofReal_add`
 * `TauCeti.exists_norm_inv_ofReal_add_le` -- `(t + p)⁻¹ = O((1 + t)⁻¹)` for `p ∈ slitPlane`
@@ -259,6 +260,24 @@ theorem exists_pos_mul_one_add_le_norm_ofReal_add {x : ℂ} (hx : x ∈ slitPlan
   rw [add_comm (t : ℂ)]
   exact h x (Metric.mem_ball_self hc) ⟨t, ht⟩
 
+/-- On a compact subset of the slit plane, `‖z + t‖` is uniformly bounded below by a positive
+multiple of `1 + t` for all `t ≥ 0`. -/
+theorem exists_pos_forall_mem_mul_one_add_le_norm_add_of_isCompact {K : Set ℂ}
+    (hK : IsCompact K) (hsub : K ⊆ slitPlane) :
+    ∃ c > 0, ∀ z ∈ K, ∀ t : ℝ, 0 ≤ t → c * (1 + t) ≤ ‖z + (t : ℂ)‖ := by
+  choose r hr_pos hr using fun z : K ↦
+    exists_pos_forall_mem_ball_mul_one_add_le_norm_add (hsub z.2)
+  have hcov : K ⊆ ⋃ z : K, Metric.ball (z : ℂ) (r z) := fun z hz ↦
+    Set.mem_iUnion.mpr ⟨⟨z, hz⟩, Metric.mem_ball_self (hr_pos ⟨z, hz⟩)⟩
+  obtain ⟨s, hs⟩ := hK.elim_finite_subcover (fun z : K ↦ Metric.ball (z : ℂ) (r z))
+    (fun _ ↦ Metric.isOpen_ball) hcov
+  rcases s.eq_empty_or_nonempty with rfl | hne
+  · refine ⟨1, one_pos, fun z hz ↦ ?_⟩
+    exact False.elim (by simpa using hs hz)
+  · refine ⟨s.inf' hne r, (Finset.lt_inf'_iff hne).mpr fun z _ ↦ hr_pos z, fun z hz t ht ↦ ?_⟩
+    obtain ⟨w, hw, hzw⟩ := Set.mem_iUnion₂.mp (hs hz)
+    exact (mul_le_mul_of_nonneg_right (s.inf'_le r hw) (by linarith)).trans (hr w z hzw ⟨t, ht⟩)
+
 /-- For `x ∈ slitPlane ∪ {0}`, the term `x / (t + x) · t` is bounded for `t > 0`. -/
 theorem exists_norm_div_ofReal_add_mul_le {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) :
     ∃ C, 0 ≤ C ∧ ∀ t : ℝ, 0 < t → ‖x / ((t : ℂ) + x) * t‖ ≤ C := by
@@ -294,6 +313,11 @@ namespace Complex
 /-- A point off the slit plane is real. -/
 theorem im_eq_zero_of_notMem_slitPlane {z : ℂ} (hz : z ∉ slitPlane) : z.im = 0 :=
   by_contra fun h => hz (mem_slitPlane_iff.mpr (Or.inr h))
+
+/-- Complex conjugation preserves membership in the slit plane. -/
+@[simp]
+theorem conj_mem_slitPlane {z : ℂ} : (starRingEnd ℂ) z ∈ slitPlane ↔ z ∈ slitPlane := by
+  simp [mem_slitPlane_iff]
 
 /-- Scaling `z` by a real number in `[0, 1]` preserves slit-plane membership of `1 - z`. -/
 theorem one_sub_mul_ofReal_mem_slitPlane {z : ℂ} (hz : 1 - z ∈ slitPlane)
