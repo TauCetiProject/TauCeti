@@ -109,6 +109,40 @@ section NormedSpace
 variable [NormedSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
   {μ : Measure E} [μ.IsAddHaarMeasure] {Ω : Opens E} {u : E → ℝ}
 
+omit [FiniteDimensional ℝ E] [BorelSpace E] [μ.IsAddHaarMeasure] in
+/-- For `u` locally integrable on `Ω` and a test function `ψ` on `Ω`, the signed layer-cake
+integrand `(x, t) ↦ ψ x * (1_{t < u x} - 1_{t < 0})` is integrable on `Ω × ℝ`. -/
+private theorem integrable_mul_indicator_Iio_sub_indicator_Iio_zero [OpensMeasurableSpace E]
+    (hu : LocallyIntegrableOn u Ω μ) (ψ : 𝓓(Ω, ℝ)) :
+    Integrable (fun p : E × ℝ => ψ p.1 * ((Iio (u p.1)).indicator 1 p.2 - (Iio 0).indicator 1 p.2))
+      ((μ.restrict Ω).prod volume) := by
+  -- Only the values of `u` on the compact support `K` of `ψ` matter, and `u` is integrable there.
+  set K := tsupport (ψ : E → ℝ)
+  have hK : MeasurableSet K := isClosed_tsupport _ |>.measurableSet
+  have hv : AEMeasurable (K.indicator u) (μ.restrict Ω) :=
+    ((aemeasurable_indicator_iff hK).2 (hu.integrableOn_compact_subset ψ.tsupport_subset
+      ψ.hasCompactSupport.isCompact).aestronglyMeasurable.aemeasurable).mono_measure
+      Measure.restrict_le_self
+  have hlt :
+      NullMeasurableSet {p : E × ℝ | p.2 < K.indicator u p.1} ((μ.restrict Ω).prod volume) :=
+    nullMeasurableSet_lt measurable_snd.aemeasurable
+      (hv.comp_quasiMeasurePreserving Measure.quasiMeasurePreserving_fst)
+  have hm : AEStronglyMeasurable (fun p : E × ℝ => ψ p.1 *
+      ((Iio (u p.1)).indicator 1 p.2 - (Iio 0).indicator 1 p.2)) ((μ.restrict Ω).prod volume) := by
+    refine (ψ.continuous.comp continuous_fst).aestronglyMeasurable.mul
+      (((aestronglyMeasurable_const (b := (1 : ℝ))).indicator₀ hlt).sub
+        (((measurable_const (a := (1 : ℝ))).indicator (measurableSet_Iio (a := (0 : ℝ)))).comp
+          measurable_snd).aestronglyMeasurable)
+      |>.congr (.of_forall fun p => ?_)
+    by_cases hp : p.1 ∈ K
+    · simp [hp, indicator_apply]
+    · simp [image_eq_zero_of_notMem_tsupport hp]
+  rw [integrable_prod_iff hm]
+  refine ⟨.of_forall fun x =>
+    (integrable_indicator_Iio_sub_indicator_Iio_zero (u x)).const_mul (ψ x), ?_⟩
+  simp_rw [norm_mul, integral_const_mul]
+  simpa using (TestFunction.integrable_smul ψ hu).integrableOn.norm
+
 /-- **The layer-cake formula for the distributional pairing.** For `u` locally integrable on `Ω`
 and a test vector field `φ` on `Ω`, the pairing of `u` with `div φ` is the integral over all
 levels `t` of the pairings of the superlevel sets `{u > t}`:
@@ -119,37 +153,22 @@ theorem integral_divergenceCLM_mul_eq_integral_integral_indicator
       ∫ t, ∫ x, divergenceCLM φ x * {x | t < u x}.indicator 1 x ∂μ := by
   -- All pairings only see `Ω`, where `u` is a.e. measurable.
   have hrestrict (w : E → ℝ) :
-      ∫ x, divergenceCLM φ x * w x ∂μ = ∫ x in Ω, divergenceCLM φ x * w x ∂μ := by
-    have := setIntegral_smul_eq_integral_smul (μ := μ) (w := w) (divergenceCLM φ)
-    simp only [smul_eq_mul] at this
-    exact this.symm
+      ∫ x in Ω, divergenceCLM φ x * w x ∂μ = ∫ x, divergenceCLM φ x * w x ∂μ := by
+    simpa only [smul_eq_mul] using setIntegral_smul_eq_integral_smul (μ := μ) (w := w)
+      (divergenceCLM φ)
   have hu_meas : AEMeasurable u (μ.restrict Ω) := hu.aestronglyMeasurable.aemeasurable
   have hf_int : Integrable (divergenceCLM φ) (μ.restrict Ω) :=
     ((divergenceCLM φ).integrable ((locallyIntegrable_const 1).locallyIntegrableOn _)).integrableOn
   have hf0 : ∫ x in Ω, divergenceCLM φ x ∂μ = 0 := by
-    simpa using (hrestrict 1).symm.trans (by simpa using integral_divergenceCLM_eq_zero (μ := μ) φ)
+    simpa using (hrestrict 1).trans (by simpa using integral_divergenceCLM_eq_zero (μ := μ) φ)
   -- The integrand `div φ x * (1_{t < u x} - 1_{t < 0})` on `Ω × ℝ`; its integral in `t` is
   -- `div φ x * u x`.
   let G : E × ℝ → ℝ := fun p =>
     divergenceCLM φ p.1 * ((Iio (u p.1)).indicator 1 p.2 - (Iio 0).indicator 1 p.2)
-  have hGm : AEStronglyMeasurable G ((μ.restrict Ω).prod volume) := by
-    have hlt : NullMeasurableSet {p : E × ℝ | p.2 < u p.1} ((μ.restrict Ω).prod volume) :=
-      nullMeasurableSet_lt measurable_snd.aemeasurable
-        (hu_meas.comp_quasiMeasurePreserving Measure.quasiMeasurePreserving_fst)
-    refine ((divergenceCLM φ).continuous.comp continuous_fst).aestronglyMeasurable.mul
-      (((aestronglyMeasurable_const (b := (1 : ℝ))).indicator₀ hlt).sub
-        (((measurable_const (a := (1 : ℝ))).indicator (measurableSet_Iio (a := (0 : ℝ)))).comp
-          measurable_snd).aestronglyMeasurable)
-      |>.congr (.of_forall fun p => ?_)
-    simp [G, indicator_apply]
-  have hG : Integrable G ((μ.restrict Ω).prod volume) := by
-    rw [integrable_prod_iff hGm]
-    refine ⟨.of_forall fun x =>
-      (integrable_indicator_Iio_sub_indicator_Iio_zero (u x)).const_mul (divergenceCLM φ x), ?_⟩
-    simp_rw [G, norm_mul, integral_const_mul]
-    simpa using (TestFunction.integrable_smul (divergenceCLM φ) hu).integrableOn.norm
+  have hG : Integrable G ((μ.restrict Ω).prod volume) :=
+    integrable_mul_indicator_Iio_sub_indicator_Iio_zero hu (divergenceCLM φ)
   calc ∫ x, divergenceCLM φ x * u x ∂μ = ∫ x in Ω, ∫ t, G (x, t) ∂volume ∂μ := by
-        rw [hrestrict]
+        rw [← hrestrict]
         simp_rw [G, integral_const_mul, integral_indicator_Iio_sub_indicator_Iio_zero]
     _ = ∫ t, ∫ x in Ω, G (x, t) ∂μ := integral_integral_swap hG
     _ = ∫ t, ∫ x, divergenceCLM φ x * {x | t < u x}.indicator 1 x ∂μ := by
@@ -161,7 +180,7 @@ theorem integral_divergenceCLM_mul_eq_integral_integral_indicator
               (nullMeasurableSet_lt aemeasurable_const hu_meas)
           · by_cases hx : t < u x <;> simp [hx]
         simp only [G, mul_sub]
-        rw [hrestrict, integral_sub, integral_mul_const, hf0]
+        rw [← hrestrict, integral_sub, integral_mul_const, hf0]
         · simp [indicator_apply]
         · simpa [indicator_apply] using hA
         · exact hf_int.mul_const _
@@ -228,24 +247,8 @@ private theorem perimeter_le_liminf_totalVariationOn_smoothTransition_comp
     (fun n => .of_forall fun x => ?_) (by simpa using hK.measure_lt_top.ne)
     (.of_forall fun x => ?_)
   · simpa using hlim
-  · have h0 := Real.smoothTransition.nonneg (((n : ℝ) + 1) * (u x - t))
-    have h1 := Real.smoothTransition.le_one (((n : ℝ) + 1) * (u x - t))
-    have hi : {x | t < u x}.indicator (1 : E → ℝ) x ∈ Icc 0 1 := by
-      by_cases hxt : t < u x <;> simp [hxt]
-    dsimp only
-    rw [Real.eNorm_eq_ofReal_abs, ENNReal.ofReal_le_one]
-    exact abs_sub_le_iff.2 ⟨by linarith [hi.1], by linarith [hi.2]⟩
-  · refine tendsto_const_nhds.congr' ?_
-    by_cases hxt : t < u x
-    · have htop : Tendsto (fun n : ℕ => ((n : ℝ) + 1) * (u x - t)) atTop atTop :=
-        (tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds).atTop_mul_const
-          (sub_pos.2 hxt)
-      filter_upwards [htop.eventually_ge_atTop 1] with n hn
-      simp [Real.smoothTransition.one_of_one_le hn, hxt]
-    · refine .of_forall fun n => ?_
-      have hle : ((n : ℝ) + 1) * (u x - t) ≤ 0 :=
-        mul_nonpos_of_nonneg_of_nonpos (by positivity) (sub_nonpos.2 (not_lt.1 hxt))
-      simp [Real.smoothTransition.zero_of_nonpos hle, hxt]
+  · exact Real.smoothTransition.enorm_sub_indicator_le_one u t _ x
+  · exact tendsto_iff_eNorm_sub_tendsto_zero.mp (Real.smoothTransition.tendsto_indicator u t x)
 
 /-- **The coarea formula for locally Lipschitz functions.** If `u` is locally Lipschitz on `Ω`,
 in particular if it is `C¹` there, then against an additive Haar measure the perimeters of its

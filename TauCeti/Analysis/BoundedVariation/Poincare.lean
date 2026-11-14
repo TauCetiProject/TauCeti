@@ -100,6 +100,55 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] {Ω : Opens E}
   {u : E → ℝ} {S A : Set E}
 
+omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] in
+/-- The substituted integrand `(x, h) ↦ 1_U (x + h) ‖u (x + h) - u x‖` is measurable. -/
+private theorem measurable_uncurry_indicator_enorm_sub [MeasurableAdd₂ E] {U : Set E}
+    (hU : MeasurableSet U) (hum : Measurable u) :
+    Measurable (Function.uncurry fun x h : E => U.indicator (fun y => ‖u y - u x‖ₑ) (x + h)) := by
+  set F : E → E → ℝ≥0∞ := fun x h => U.indicator (fun y => ‖u y - u x‖ₑ) (x + h)
+  have hset : MeasurableSet {p : E × E | p.1 + p.2 ∈ U} :=
+    (measurable_fst.add measurable_snd) hU
+  have hg : Measurable fun p : E × E => ‖u (p.1 + p.2) - u p.1‖ₑ :=
+    ((hum.comp (measurable_fst.add measurable_snd)).sub (hum.comp measurable_fst)).eNorm
+  have hF_eq : Function.uncurry F =
+      {p : E × E | p.1 + p.2 ∈ U}.indicator fun p => ‖u (p.1 + p.2) - u p.1‖ₑ := by
+    ext ⟨x, h⟩
+    by_cases hxh : x + h ∈ U <;> simp [F, hxh]
+  rw [hF_eq]
+  exact hg.indicator hset
+
+/-- On a convex open set `Ω`, for `u` locally integrable on `Ω` and a fixed translation `h`, the
+integral over `x ∈ Ω` of `1_Ω (x + h) ‖u (x + h) - u x‖` is at most `‖h‖ |Du|(Ω)`, and it vanishes
+unless `h ∈ Ω - Ω`. -/
+private theorem setLIntegral_indicator_enorm_sub_le
+    (hconv : Convex ℝ (Ω : Set E)) (hu : LocallyIntegrableOn u Ω μ) (h : E) :
+    ∫⁻ x in (Ω : Set E), (Ω : Set E).indicator (fun y => ‖u y - u x‖ₑ) (x + h) ∂μ ≤
+      ((Ω : Set E) - Ω).indicator (fun h => ‖h‖ₑ) h * totalVariationOn μ Ω u := by
+  set U : Set E := (Ω : Set E)
+  have hU : MeasurableSet U := Ω.isOpen.measurableSet
+  set F : E → E → ℝ≥0∞ := fun x h => U.indicator (fun y => ‖u y - u x‖ₑ) (x + h)
+  by_cases hh : h ∈ U - U
+  · rw [indicator_of_mem hh]
+    let V : Opens E := Ω ⊓ Opens.comap (ContinuousMap.addRight h) Ω
+    have hV : (V : Set E) = (· + h) ⁻¹' U ∩ U := by
+      ext x
+      simp [V, U, and_comm]
+    calc ∫⁻ x in U, F x h ∂μ
+        = ∫⁻ x in U, ((· + h) ⁻¹' U).indicator (fun x => ‖u (x + h) - u x‖ₑ) x ∂μ :=
+          lintegral_congr fun x => by by_cases hxh : x + h ∈ U <;> simp [F, hxh]
+      _ = ∫⁻ x in V, ‖u (x + h) - u x‖ₑ ∂μ := by
+          rw [setLIntegral_indicator (hU.preimage (measurable_add_const h)), hV]
+      _ ≤ ‖h‖ₑ * totalVariationOn μ Ω u := by
+          refine setLIntegral_enorm_comp_add_sub_le_mul_totalVariationOn hu fun t ht x hx => ?_
+          have hx' : x ∈ (V : Set E) := hx
+          rw [hV] at hx'
+          exact hconv.add_smul_mem hx'.2 hx'.1 ht
+  · -- If `x ∈ Ω` and `x + h ∈ Ω`, then `h ∈ Ω - Ω`.
+    have hzero : EqOn (fun x => F x h) (fun _ => 0) U := fun x hx =>
+      indicator_of_notMem (fun hxh => hh ⟨x + h, hxh, x, hx, add_sub_cancel_left x h⟩) _
+    rw [setLIntegral_congr_fun hU hzero, lintegral_zero]
+    exact zero_le
+
 /-- The double-integral estimate for a measurable function, in the substituted form
 `∫_Ω ∫_Ω |u y - u x| dy dx` with `y = x + h`. -/
 private theorem setLIntegral_setLIntegral_enorm_sub_le_of_measurable
@@ -113,42 +162,10 @@ private theorem setLIntegral_setLIntegral_enorm_sub_le_of_measurable
   have hsub : ∀ x, ∫⁻ y in U, ‖u y - u x‖ₑ ∂μ = ∫⁻ h, F x h ∂μ := fun x => by
     rw [← lintegral_indicator hU]
     exact (lintegral_add_left_eq_self _ x).symm
-  have hFm : Measurable (Function.uncurry F) := by
-    have hset : MeasurableSet {p : E × E | p.1 + p.2 ∈ U} :=
-      (measurable_fst.add measurable_snd) hU
-    have hg : Measurable fun p : E × E => ‖u (p.1 + p.2) - u p.1‖ₑ :=
-      ((hum.comp (measurable_fst.add measurable_snd)).sub (hum.comp measurable_fst)).eNorm
-    have hF_eq : Function.uncurry F =
-        {p : E × E | p.1 + p.2 ∈ U}.indicator fun p => ‖u (p.1 + p.2) - u p.1‖ₑ := by
-      ext ⟨x, h⟩
-      by_cases hxh : x + h ∈ U <;> simp [F, hxh]
-    rw [hF_eq]
-    exact hg.indicator hset
-  -- For a fixed translation `h`, the inner integral is at most `‖h‖ |Du|(Ω)`, and it vanishes
-  -- unless `h ∈ Ω - Ω`.
+  have hFm : Measurable (Function.uncurry F) := measurable_uncurry_indicator_enorm_sub hU hum
   have hinner : ∀ h, ∫⁻ x in U, F x h ∂μ ≤
-      (U - U).indicator (fun h => ‖h‖ₑ) h * totalVariationOn μ Ω u := fun h => by
-    by_cases hh : h ∈ U - U
-    · rw [indicator_of_mem hh]
-      let V : Opens E := Ω ⊓ Opens.comap (ContinuousMap.addRight h) Ω
-      have hV : (V : Set E) = (· + h) ⁻¹' U ∩ U := by
-        ext x
-        simp [V, U, and_comm]
-      calc ∫⁻ x in U, F x h ∂μ
-          = ∫⁻ x in U, ((· + h) ⁻¹' U).indicator (fun x => ‖u (x + h) - u x‖ₑ) x ∂μ :=
-            lintegral_congr fun x => by by_cases hxh : x + h ∈ U <;> simp [F, hxh]
-        _ = ∫⁻ x in V, ‖u (x + h) - u x‖ₑ ∂μ := by
-            rw [setLIntegral_indicator (hU.preimage (measurable_add_const h)), hV]
-        _ ≤ ‖h‖ₑ * totalVariationOn μ Ω u := by
-            refine setLIntegral_enorm_comp_add_sub_le_mul_totalVariationOn hu fun t ht x hx => ?_
-            have hx' : x ∈ (V : Set E) := hx
-            rw [hV] at hx'
-            exact hconv.add_smul_mem hx'.2 hx'.1 ht
-    · -- If `x ∈ Ω` and `x + h ∈ Ω`, then `h ∈ Ω - Ω`.
-      have hzero : EqOn (fun x => F x h) (fun _ => 0) U := fun x hx =>
-        indicator_of_notMem (fun hxh => hh ⟨x + h, hxh, x, hx, add_sub_cancel_left x h⟩) _
-      rw [setLIntegral_congr_fun hU hzero, lintegral_zero]
-      exact zero_le
+      (U - U).indicator (fun h => ‖h‖ₑ) h * totalVariationOn μ Ω u :=
+    setLIntegral_indicator_enorm_sub_le hconv hu
   calc ∫⁻ x in U, ∫⁻ y in U, ‖u y - u x‖ₑ ∂μ ∂μ
       = ∫⁻ x in U, ∫⁻ h, F x h ∂μ ∂μ := by simp_rw [hsub]
     _ = ∫⁻ h, ∫⁻ x in U, F x h ∂μ ∂μ :=
