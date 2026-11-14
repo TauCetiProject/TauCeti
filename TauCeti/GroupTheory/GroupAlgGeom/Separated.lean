@@ -26,10 +26,15 @@ over `G`, are exactly those vanishing at `p` in `K`. Hence the kernel of any `G`
 `π : G[X] →* K` is its own radical over `H`, and if `K` is discriminated by `H`, the algebraic set
 of `ker π` is irreducible, its coordinate group embedding in `K`.
 
-Three special cases are recorded. Every coordinate group `G_{R(S)}` is separated by `H`. The group
+Two special cases are recorded. Every coordinate group `G_{R(S)}` is separated by `H`. The group
 `G_S = G[X] ⧸ ncl(S)` of a system is separated by `H` exactly when the radical of `S` is its
-normal closure. Over `F(a, b)` the group of the system `x² = 1` is not separated by `F(a, b)`,
-because the radical of `x²` is the normal closure of `x`.
+normal closure. Three systems in one variable `x` illustrate the second criterion. Over `F(a, b)`
+the group of the system `x² = 1` is not separated by `F(a, b)`, because the radical of `x²` is the
+normal closure of `x`. For injective coefficients the group of the system `x = 1` is `G` itself
+and is separated by `H`. Over `F(a, b)` the system `{a, b, x}` has no solutions; its radical and
+its normal closure are both everything, so its group is trivial and separated by `F(a, b)`,
+although the coefficients do not embed in it and it has no coefficient-preserving homomorphism to
+`F(a, b)`.
 
 Combined with the characterization of irreducible algebraic sets by discrimination, this gives a
 recognition theorem for discriminated groups: if `H` is equationally Noetherian and `X` is finite,
@@ -80,6 +85,11 @@ also cover systems without solutions, whose coordinate group is trivial.
   to one.
 * `TauCeti.GroupAlgGeom.SystemGroup.isSeparatedBy_coeff_iff`: `G_S` is separated by `H` if and
   only if `Rad_H(S) = ncl(S)`.
+* `TauCeti.GroupAlgGeom.SystemGroup.isSeparatedBy_coeff_range_inr_of_mul_inv_inl`: for injective
+  coefficients, the group of a system prescribing the value of every variable is separated by `H`.
+* `TauCeti.GroupAlgGeom.SystemGroup.isSeparatedBy_coeff_inl_of_inl_of_inr_of`: the trivial group
+  of the system `{a, b, x}` over `F(a, b)` is separated by `F(a, b)`, although it has no
+  coefficient-preserving homomorphism to it.
 * `TauCeti.GroupAlgGeom.isSeparatedBy_iff_exists_coordGroup`: a group generated over `G` by the
   images of `X` is separated by `H` if and only if it is `G`-isomorphic to a coordinate group over
   `H` in the variables `X`.
@@ -256,6 +266,32 @@ theorem SystemGroup.not_isSeparatedBy_coeff_sq :
       (.id (FreeGroup (Fin 2))) := by
   rw [SystemGroup.isSeparatedBy_coeff_iff, rad_sq.1]
   exact rad_sq.2.symm
+
+/-- For injective coefficients, the group of the system `x (g x)⁻¹`, `x ∈ X`, which prescribes
+the value `g x` of every variable, is separated by `H`. -/
+theorem SystemGroup.isSeparatedBy_coeff_range_inr_of_mul_inv_inl (hι : Function.Injective ι)
+    (g : X → G) :
+    IsSeparatedBy
+      (SystemGroup.coeff (Set.range fun x => inr (FreeGroup.of x) * (inl (g x))⁻¹)) ι :=
+  (SystemGroup.isSeparatedBy_coeff_iff _).2 (Rad_range_inr_of_mul_inv_inl hι g)
+
+/-- For injective coefficients, the group of the one-variable equation `x = 1` is separated by
+`H`. -/
+theorem SystemGroup.isSeparatedBy_coeff_singleton_inr_of [Subsingleton X]
+    (hι : Function.Injective ι) (x : X) :
+    IsSeparatedBy (SystemGroup.coeff {(inr (FreeGroup.of x) : GX G X)}) ι :=
+  (SystemGroup.isSeparatedBy_coeff_iff _).2 (Rad_singleton_inr_of hι x)
+
+/-- Over `F(a, b)`, the group of the inconsistent system `{a, b, x}` is separated by `F(a, b)`,
+although it has no coefficient-preserving homomorphism to `F(a, b)`: it is trivial, so the empty
+intersection of kernels is trivial. -/
+theorem SystemGroup.isSeparatedBy_coeff_inl_of_inl_of_inr_of :
+    IsSeparatedBy
+      (SystemGroup.coeff ({inl (FreeGroup.of 0), inl (FreeGroup.of 1), inr (FreeGroup.of ())} :
+        Set (GX (FreeGroup (Fin 2)) Unit)))
+      (.id (FreeGroup (Fin 2))) := by
+  rw [SystemGroup.isSeparatedBy_coeff_iff, Rad_inl_of_inl_of_inr_of_eq_top,
+    normalClosure_inl_of_inl_of_inr_of_eq_top]
 
 /-- A group `K` generated over `G` by the images of the variables `X` is separated by `H` if and
 only if it is `G`-isomorphic to a coordinate group over `H` in the variables `X`. -/
