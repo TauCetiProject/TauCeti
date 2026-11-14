@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Bicategory.Adjunction.Mate
+public import TauCeti.CategoryTheory.Bicategory.Adjunction.Basic
 
 /-!
 # Naturality and isomorphism preservation for mates in bicategories
@@ -19,22 +20,23 @@ and `l₂ ⊣ r₂` come from adjoint equivalences `e₁` and `e₂`.
 
 For general adjunctions a mate of an isomorphism need not be invertible, because `mateEquiv`
 whiskers by the unit of `adj₂` and the counit of `adj₁`. When `e₁ : a ≌ b` and `e₂ : c ≌ d` are
-adjoint equivalences, the inverse adjunctions `e₁.invAdj : e₁.inv ⊣ e₁.hom` and
-`e₂.invAdj : e₂.inv ⊣ e₂.hom` act by the inverse unit and inverse counit, giving
-`Equivalence.mateIsoEquiv`.
+adjoint equivalences, the inverse equivalences `e₁.symm` and `e₂.symm` supply the inverse
+adjunctions `e₁.symm.adj : e₁.inv ⊣ e₁.hom` and `e₂.symm.adj : e₂.inv ⊣ e₂.hom` acting by the
+inverse unit and inverse counit, giving `Equivalence.mateIsoEquiv`.
 
 ## Main definitions and results
 
-* `CategoryTheory.Bicategory.Adjunction.whiskerLeft_comp_mateEquiv`,
-  `CategoryTheory.Bicategory.Adjunction.whiskerRight_comp_mateEquiv_symm`: naturality of
+* `CategoryTheory.Bicategory.Adjunction.mateEquiv_whiskerRight_comp`,
+  `CategoryTheory.Bicategory.Adjunction.mateEquiv_comp_whiskerLeft`,
+  `CategoryTheory.Bicategory.Adjunction.mateEquiv_symm_whiskerLeft_comp`,
+  `CategoryTheory.Bicategory.Adjunction.mateEquiv_symm_comp_whiskerRight`,
+  `CategoryTheory.Bicategory.Adjunction.whiskerLeft_comp_mateEquiv_eq_iff`: naturality of
   `mateEquiv` and its inverse with respect to `2`-morphisms between the vertical `1`-morphisms;
 * `CategoryTheory.Bicategory.Adjunction.unit_mateEquiv`,
   `CategoryTheory.Bicategory.Adjunction.unit_mateEquiv_symm`,
   `CategoryTheory.Bicategory.Adjunction.mateEquiv_counit`,
   `CategoryTheory.Bicategory.Adjunction.mateEquiv_counit_symm`: the unit and counit pasting
   identities characterizing `mateEquiv` and its inverse;
-* `CategoryTheory.Bicategory.Equivalence.invAdj`: the inverse adjunction `e.inv ⊣ e.hom` of an
-  adjoint equivalence `e : a ≌ b`;
 * `CategoryTheory.Bicategory.Equivalence.mateIsoEquiv`: for adjoint equivalences `e₁ : a ≌ b` and
   `e₂ : c ≌ d`, the bijection `(g ≫ e₂.hom ≅ e₁.hom ≫ h) ≃ (e₁.inv ≫ g ≅ h ≫ e₂.inv)`.
 
@@ -60,53 +62,61 @@ section Naturality
 variable {a b c d : B} {l₁ : a ⟶ b} {r₁ : b ⟶ a} {l₂ : c ⟶ d} {r₂ : d ⟶ c}
   (adj₁ : l₁ ⊣ r₁) (adj₂ : l₂ ⊣ r₂)
 
-/-- Naturality of `mateEquiv` in the vertical `1`-morphisms: if `2`-morphisms `γ : g₁ ⟶ g₂` and
-`δ : h₁ ⟶ h₂` intertwine two squares between the left adjoints, they intertwine their mates between
-the right adjoints. -/
-lemma whiskerLeft_comp_mateEquiv {g₁ g₂ : a ⟶ c} {h₁ h₂ : b ⟶ d}
-    {α : g₁ ≫ l₂ ⟶ l₁ ≫ h₁} {β : g₂ ≫ l₂ ⟶ l₁ ≫ h₂} {γ : g₁ ⟶ g₂} {δ : h₁ ⟶ h₂}
-    (h : γ ▷ l₂ ≫ β = α ≫ l₁ ◁ δ) :
-    r₁ ◁ γ ≫ mateEquiv adj₁ adj₂ β = mateEquiv adj₁ adj₂ α ≫ δ ▷ r₂ := by
+/-- `mateEquiv` commutes with pre-whiskering along a `2`-morphism `γ : g₁ ⟶ g₂` between the left
+vertical `1`-morphisms. -/
+lemma mateEquiv_whiskerRight_comp {g₁ g₂ : a ⟶ c} {h : b ⟶ d}
+    (γ : g₁ ⟶ g₂) (β : g₂ ≫ l₂ ⟶ l₁ ≫ h) :
+    mateEquiv adj₁ adj₂ (γ ▷ l₂ ≫ β) = r₁ ◁ γ ≫ mateEquiv adj₁ adj₂ β := by
   simp only [mateEquiv_apply']
   calc
+    _ = 𝟙 _ ⊗≫ r₁ ◁ (g₁ ◁ adj₂.unit ≫ γ ▷ (l₂ ≫ r₂)) ⊗≫
+          r₁ ◁ β ▷ r₂ ⊗≫ adj₁.counit ▷ h ▷ r₂ ⊗≫ 𝟙 _ := by
+      bicategory
     _ = 𝟙 _ ⊗≫ r₁ ◁ (γ ▷ 𝟙 c ≫ g₂ ◁ adj₂.unit) ⊗≫
-          r₁ ◁ β ▷ r₂ ⊗≫ adj₁.counit ▷ h₂ ▷ r₂ ⊗≫ 𝟙 _ := by
-      bicategory
-    _ = 𝟙 _ ⊗≫ r₁ ◁ g₁ ◁ adj₂.unit ⊗≫
-          r₁ ◁ (γ ▷ l₂ ≫ β) ▷ r₂ ⊗≫ adj₁.counit ▷ h₂ ▷ r₂ ⊗≫ 𝟙 _ := by
-      rw [← whisker_exchange]
-      bicategory
-    _ = 𝟙 _ ⊗≫ r₁ ◁ g₁ ◁ adj₂.unit ⊗≫ r₁ ◁ α ▷ r₂ ⊗≫
-          ((r₁ ≫ l₁) ◁ δ ≫ adj₁.counit ▷ h₂) ▷ r₂ ⊗≫ 𝟙 _ := by
-      rw [h]
-      bicategory
-    _ = _ := by
+          r₁ ◁ β ▷ r₂ ⊗≫ adj₁.counit ▷ h ▷ r₂ ⊗≫ 𝟙 _ := by
       rw [whisker_exchange]
+    _ = _ := by
       bicategory
 
-/-- Naturality of `(mateEquiv adj₁ adj₂).symm` in the vertical `1`-morphisms: if `2`-morphisms
-`γ : g₁ ⟶ g₂` and `δ : h₁ ⟶ h₂` intertwine two squares between the right adjoints, they intertwine
-their inverse mates between the left adjoints. -/
-lemma whiskerRight_comp_mateEquiv_symm {g₁ g₂ : a ⟶ c} {h₁ h₂ : b ⟶ d}
-    {α : r₁ ≫ g₁ ⟶ h₁ ≫ r₂} {β : r₁ ≫ g₂ ⟶ h₂ ≫ r₂} {γ : g₁ ⟶ g₂} {δ : h₁ ⟶ h₂}
-    (h : r₁ ◁ γ ≫ β = α ≫ δ ▷ r₂) :
-    γ ▷ l₂ ≫ (mateEquiv adj₁ adj₂).symm β = (mateEquiv adj₁ adj₂).symm α ≫ l₁ ◁ δ := by
-  simp only [mateEquiv_symm_apply']
+/-- `mateEquiv` commutes with post-whiskering along a `2`-morphism `δ : h₁ ⟶ h₂` between the right
+vertical `1`-morphisms. -/
+lemma mateEquiv_comp_whiskerLeft {g : a ⟶ c} {h₁ h₂ : b ⟶ d}
+    (α : g ≫ l₂ ⟶ l₁ ≫ h₁) (δ : h₁ ⟶ h₂) :
+    mateEquiv adj₁ adj₂ (α ≫ l₁ ◁ δ) = mateEquiv adj₁ adj₂ α ≫ δ ▷ r₂ := by
+  simp only [mateEquiv_apply']
   calc
-    _ = 𝟙 _ ⊗≫ (𝟙 a ◁ γ ≫ adj₁.unit ▷ g₂) ▷ l₂ ⊗≫
-          l₁ ◁ β ▷ l₂ ⊗≫ l₁ ◁ h₂ ◁ adj₂.counit ⊗≫ 𝟙 _ := by
+    _ = 𝟙 _ ⊗≫ r₁ ◁ g ◁ adj₂.unit ⊗≫ r₁ ◁ α ▷ r₂ ⊗≫
+          ((r₁ ≫ l₁) ◁ δ ≫ adj₁.counit ▷ h₂) ▷ r₂ ⊗≫ 𝟙 _ := by
       bicategory
-    _ = 𝟙 _ ⊗≫ adj₁.unit ▷ g₁ ▷ l₂ ⊗≫
-          l₁ ◁ (r₁ ◁ γ ≫ β) ▷ l₂ ⊗≫ l₁ ◁ h₂ ◁ adj₂.counit ⊗≫ 𝟙 _ := by
-      rw [whisker_exchange]
-      bicategory
-    _ = 𝟙 _ ⊗≫ adj₁.unit ▷ g₁ ▷ l₂ ⊗≫ l₁ ◁ α ▷ l₂ ⊗≫
-          l₁ ◁ (δ ▷ (r₂ ≫ l₂) ≫ h₂ ◁ adj₂.counit) ⊗≫ 𝟙 _ := by
-      rw [h]
-      bicategory
-    _ = _ := by
+    _ = 𝟙 _ ⊗≫ r₁ ◁ g ◁ adj₂.unit ⊗≫ r₁ ◁ α ▷ r₂ ⊗≫
+          (adj₁.counit ▷ h₁ ≫ 𝟙 b ◁ δ) ▷ r₂ ⊗≫ 𝟙 _ := by
       rw [← whisker_exchange]
+    _ = _ := by
       bicategory
+
+/-- `(mateEquiv adj₁ adj₂).symm` commutes with pre-whiskering along a `2`-morphism `γ : g₁ ⟶ g₂`
+between the left vertical `1`-morphisms. -/
+lemma mateEquiv_symm_whiskerLeft_comp {g₁ g₂ : a ⟶ c} {h : b ⟶ d}
+    (γ : g₁ ⟶ g₂) (β : r₁ ≫ g₂ ⟶ h ≫ r₂) :
+    (mateEquiv adj₁ adj₂).symm (r₁ ◁ γ ≫ β) = γ ▷ l₂ ≫ (mateEquiv adj₁ adj₂).symm β := by
+  rw [Equiv.symm_apply_eq, adj₁.mateEquiv_whiskerRight_comp adj₂, Equiv.apply_symm_apply]
+
+/-- `(mateEquiv adj₁ adj₂).symm` commutes with post-whiskering along a `2`-morphism `δ : h₁ ⟶ h₂`
+between the right vertical `1`-morphisms. -/
+lemma mateEquiv_symm_comp_whiskerRight {g : a ⟶ c} {h₁ h₂ : b ⟶ d}
+    (α : r₁ ≫ g ⟶ h₁ ≫ r₂) (δ : h₁ ⟶ h₂) :
+    (mateEquiv adj₁ adj₂).symm (α ≫ δ ▷ r₂) = (mateEquiv adj₁ adj₂).symm α ≫ l₁ ◁ δ := by
+  rw [Equiv.symm_apply_eq, adj₁.mateEquiv_comp_whiskerLeft adj₂, Equiv.apply_symm_apply]
+
+/-- Naturality of `mateEquiv` in both vertical `1`-morphisms: `2`-morphisms `γ : g₁ ⟶ g₂` and
+`δ : h₁ ⟶ h₂` intertwine two squares between the left adjoints if and only if they intertwine their
+mates between the right adjoints. -/
+lemma whiskerLeft_comp_mateEquiv_eq_iff {g₁ g₂ : a ⟶ c} {h₁ h₂ : b ⟶ d}
+    {α : g₁ ≫ l₂ ⟶ l₁ ≫ h₁} {β : g₂ ≫ l₂ ⟶ l₁ ≫ h₂} {γ : g₁ ⟶ g₂} {δ : h₁ ⟶ h₂} :
+    r₁ ◁ γ ≫ mateEquiv adj₁ adj₂ β = mateEquiv adj₁ adj₂ α ≫ δ ▷ r₂ ↔
+      γ ▷ l₂ ≫ β = α ≫ l₁ ◁ δ := by
+  rw [← adj₁.mateEquiv_whiskerRight_comp adj₂, ← adj₁.mateEquiv_comp_whiskerLeft adj₂,
+    (mateEquiv adj₁ adj₂).apply_eq_iff_eq]
 
 /-- Whiskering the mate of `α : g ≫ l₂ ⟶ l₁ ≫ h` on the left by `l₁` and pasting with `adj₁.unit`
 recovers `α` whiskered on the right by `r₂` and pasted with `adj₂.unit`. -/
@@ -170,31 +180,11 @@ namespace Equivalence
 
 variable {a b c d : B} (e₁ : a ≌ b) (e₂ : c ≌ d) {g : a ⟶ c} {h : b ⟶ d}
 
-/-- The inverse adjunction `e.inv ⊣ e.hom` induced by an equivalence `e : a ≌ b` in a bicategory,
-with unit `e.counit.inv` and counit `e.unit.inv`. -/
-def invAdj (e : a ≌ b) : e.inv ⊣ e.hom where
-  unit := e.counit.inv
-  counit := e.unit.inv
-  left_triangle := by
-    have h := congrArg Iso.inv e.right_triangle
-    simpa only [rightZigzagIso_inv, Iso.trans_inv, Iso.symm_inv] using h
-  right_triangle := by
-    have h := congrArg Iso.inv e.left_triangle
-    simpa only [leftZigzagIso_inv, Iso.trans_inv, Iso.symm_inv] using h
-
-@[simp]
-lemma invAdj_unit (e : a ≌ b) : e.invAdj.unit = e.counit.inv :=
-  (rfl)
-
-@[simp]
-lemma invAdj_counit (e : a ≌ b) : e.invAdj.counit = e.unit.inv :=
-  (rfl)
-
-private lemma mateEquiv_hom_comp_invAdj_symm_inv (α : g ≫ e₂.hom ≅ e₁.hom ≫ h) :
+private lemma mateEquiv_hom_comp_symm_adj_symm_inv (α : g ≫ e₂.hom ≅ e₁.hom ≫ h) :
     mateEquiv e₁.adj e₂.adj α.hom ≫
-        (mateEquiv e₁.invAdj e₂.invAdj).symm α.inv = 𝟙 (e₁.inv ≫ g) := by
+        (mateEquiv e₁.symm.adj e₂.symm.adj).symm α.inv = 𝟙 (e₁.inv ≫ g) := by
   rw [mateEquiv_apply', mateEquiv_symm_apply']
-  simp only [adj_unit, adj_counit, invAdj_unit, invAdj_counit]
+  simp only [adj_unit, adj_counit, symm_unit, symm_counit, Iso.symm_hom]
   calc
     _ = 𝟙 _ ⊗≫ e₁.inv ◁ g ◁ e₂.unit.hom ⊗≫ e₁.inv ◁ α.hom ▷ e₂.inv ⊗≫
           (e₁.counit.hom ≫ e₁.counit.inv) ▷ h ▷ e₂.inv ⊗≫
@@ -211,11 +201,11 @@ private lemma mateEquiv_hom_comp_invAdj_symm_inv (α : g ≫ e₂.hom ≅ e₁.h
       rw [Iso.hom_inv_id]
       bicategory
 
-private lemma mateEquiv_invAdj_symm_inv_comp_hom (α : g ≫ e₂.hom ≅ e₁.hom ≫ h) :
-    (mateEquiv e₁.invAdj e₂.invAdj).symm α.inv ≫
+private lemma mateEquiv_symm_adj_symm_inv_comp_hom (α : g ≫ e₂.hom ≅ e₁.hom ≫ h) :
+    (mateEquiv e₁.symm.adj e₂.symm.adj).symm α.inv ≫
         mateEquiv e₁.adj e₂.adj α.hom = 𝟙 (h ≫ e₂.inv) := by
   rw [mateEquiv_apply', mateEquiv_symm_apply']
-  simp only [adj_unit, adj_counit, invAdj_unit, invAdj_counit]
+  simp only [adj_unit, adj_counit, symm_unit, symm_counit, Iso.symm_hom]
   calc
     _ = 𝟙 _ ⊗≫ e₁.counit.inv ▷ h ▷ e₂.inv ⊗≫ e₁.inv ◁ α.inv ▷ e₂.inv ⊗≫
           e₁.inv ◁ g ◁ (e₂.unit.inv ≫ e₂.unit.hom) ⊗≫
@@ -232,47 +222,15 @@ private lemma mateEquiv_invAdj_symm_inv_comp_hom (α : g ≫ e₂.hom ≅ e₁.h
       rw [Iso.inv_hom_id]
       bicategory
 
-private lemma mateEquiv_symm_hom_comp_invAdj_inv (β : e₁.inv ≫ g ≅ h ≫ e₂.inv) :
+private lemma mateEquiv_symm_hom_comp_symm_adj_inv (β : e₁.inv ≫ g ≅ h ≫ e₂.inv) :
     (mateEquiv e₁.adj e₂.adj).symm β.hom ≫
-        mateEquiv e₁.invAdj e₂.invAdj β.inv = 𝟙 (g ≫ e₂.hom) := by
-  rw [mateEquiv_symm_apply', mateEquiv_apply']
-  simp only [adj_unit, adj_counit, invAdj_unit, invAdj_counit]
-  calc
-    _ = 𝟙 _ ⊗≫ e₁.unit.hom ▷ g ▷ e₂.hom ⊗≫ e₁.hom ◁ β.hom ▷ e₂.hom ⊗≫
-          e₁.hom ◁ h ◁ (e₂.counit.hom ≫ e₂.counit.inv) ⊗≫
-            e₁.hom ◁ β.inv ▷ e₂.hom ⊗≫ e₁.unit.inv ▷ g ▷ e₂.hom ⊗≫ 𝟙 _ := by
-      bicategory
-    _ = 𝟙 _ ⊗≫ e₁.unit.hom ▷ g ▷ e₂.hom ⊗≫
-          e₁.hom ◁ (β.hom ≫ β.inv) ▷ e₂.hom ⊗≫ e₁.unit.inv ▷ g ▷ e₂.hom ⊗≫ 𝟙 _ := by
-      rw [Iso.hom_inv_id]
-      bicategory
-    _ = 𝟙 _ ⊗≫ (e₁.unit.hom ≫ e₁.unit.inv) ▷ g ▷ e₂.hom ⊗≫ 𝟙 _ := by
-      rw [Iso.hom_inv_id]
-      bicategory
-    _ = 𝟙 (g ≫ e₂.hom) := by
-      rw [Iso.hom_inv_id]
-      bicategory
+        mateEquiv e₁.symm.adj e₂.symm.adj β.inv = 𝟙 (g ≫ e₂.hom) :=
+  mateEquiv_symm_adj_symm_inv_comp_hom e₁.symm e₂.symm β.symm
 
-private lemma mateEquiv_invAdj_inv_comp_symm_hom (β : e₁.inv ≫ g ≅ h ≫ e₂.inv) :
-    mateEquiv e₁.invAdj e₂.invAdj β.inv ≫
-        (mateEquiv e₁.adj e₂.adj).symm β.hom = 𝟙 (e₁.hom ≫ h) := by
-  rw [mateEquiv_symm_apply', mateEquiv_apply']
-  simp only [adj_unit, adj_counit, invAdj_unit, invAdj_counit]
-  calc
-    _ = 𝟙 _ ⊗≫ e₁.hom ◁ h ◁ e₂.counit.inv ⊗≫ e₁.hom ◁ β.inv ▷ e₂.hom ⊗≫
-          (e₁.unit.inv ≫ e₁.unit.hom) ▷ g ▷ e₂.hom ⊗≫
-            e₁.hom ◁ β.hom ▷ e₂.hom ⊗≫ e₁.hom ◁ h ◁ e₂.counit.hom ⊗≫ 𝟙 _ := by
-      bicategory
-    _ = 𝟙 _ ⊗≫ e₁.hom ◁ h ◁ e₂.counit.inv ⊗≫
-          e₁.hom ◁ (β.inv ≫ β.hom) ▷ e₂.hom ⊗≫ e₁.hom ◁ h ◁ e₂.counit.hom ⊗≫ 𝟙 _ := by
-      rw [Iso.inv_hom_id]
-      bicategory
-    _ = 𝟙 _ ⊗≫ e₁.hom ◁ h ◁ (e₂.counit.inv ≫ e₂.counit.hom) ⊗≫ 𝟙 _ := by
-      rw [Iso.inv_hom_id]
-      bicategory
-    _ = 𝟙 (e₁.hom ≫ h) := by
-      rw [Iso.inv_hom_id]
-      bicategory
+private lemma mateEquiv_symm_adj_inv_comp_symm_hom (β : e₁.inv ≫ g ≅ h ≫ e₂.inv) :
+    mateEquiv e₁.symm.adj e₂.symm.adj β.inv ≫
+        (mateEquiv e₁.adj e₂.adj).symm β.hom = 𝟙 (e₁.hom ≫ h) :=
+  mateEquiv_hom_comp_symm_adj_symm_inv e₁.symm e₂.symm β.symm
 
 /-- When the horizontal `1`-morphisms of a square are adjoint equivalences `e₁ : a ≌ b` and
 `e₂ : c ≌ d`, taking mates under `e₁.adj` and `e₂.adj` preserves and reflects `2`-isomorphisms,
@@ -280,14 +238,14 @@ inducing a bijection `(g ≫ e₂.hom ≅ e₁.hom ≫ h) ≃ (e₁.inv ≫ g �
 def mateIsoEquiv : (g ≫ e₂.hom ≅ e₁.hom ≫ h) ≃ (e₁.inv ≫ g ≅ h ≫ e₂.inv) where
   toFun α :=
     { hom := mateEquiv e₁.adj e₂.adj α.hom
-      inv := (mateEquiv e₁.invAdj e₂.invAdj).symm α.inv
-      hom_inv_id := mateEquiv_hom_comp_invAdj_symm_inv e₁ e₂ α
-      inv_hom_id := mateEquiv_invAdj_symm_inv_comp_hom e₁ e₂ α }
+      inv := (mateEquiv e₁.symm.adj e₂.symm.adj).symm α.inv
+      hom_inv_id := mateEquiv_hom_comp_symm_adj_symm_inv e₁ e₂ α
+      inv_hom_id := mateEquiv_symm_adj_symm_inv_comp_hom e₁ e₂ α }
   invFun β :=
     { hom := (mateEquiv e₁.adj e₂.adj).symm β.hom
-      inv := mateEquiv e₁.invAdj e₂.invAdj β.inv
-      hom_inv_id := mateEquiv_symm_hom_comp_invAdj_inv e₁ e₂ β
-      inv_hom_id := mateEquiv_invAdj_inv_comp_symm_hom e₁ e₂ β }
+      inv := mateEquiv e₁.symm.adj e₂.symm.adj β.inv
+      hom_inv_id := mateEquiv_symm_hom_comp_symm_adj_inv e₁ e₂ β
+      inv_hom_id := mateEquiv_symm_adj_inv_comp_symm_hom e₁ e₂ β }
   left_inv _ := Iso.ext (Equiv.symm_apply_apply _ _)
   right_inv _ := Iso.ext (Equiv.apply_symm_apply _ _)
 
@@ -298,7 +256,7 @@ lemma mateIsoEquiv_apply_hom (α : g ≫ e₂.hom ≅ e₁.hom ≫ h) :
 
 @[simp]
 lemma mateIsoEquiv_apply_inv (α : g ≫ e₂.hom ≅ e₁.hom ≫ h) :
-    (e₁.mateIsoEquiv e₂ α).inv = (mateEquiv e₁.invAdj e₂.invAdj).symm α.inv :=
+    (e₁.mateIsoEquiv e₂ α).inv = (mateEquiv e₁.symm.adj e₂.symm.adj).symm α.inv :=
   (rfl)
 
 @[simp]
@@ -308,7 +266,7 @@ lemma mateIsoEquiv_symm_apply_hom (β : e₁.inv ≫ g ≅ h ≫ e₂.inv) :
 
 @[simp]
 lemma mateIsoEquiv_symm_apply_inv (β : e₁.inv ≫ g ≅ h ≫ e₂.inv) :
-    ((e₁.mateIsoEquiv e₂).symm β).inv = mateEquiv e₁.invAdj e₂.invAdj β.inv :=
+    ((e₁.mateIsoEquiv e₂).symm β).inv = mateEquiv e₁.symm.adj e₂.symm.adj β.inv :=
   (rfl)
 
 @[simp]
@@ -344,10 +302,10 @@ lemma unit_mateIsoEquiv_inv (α : g ≫ e₂.hom ≅ e₁.hom ≫ h) :
 /-- Pasting `(e₁.mateIsoEquiv e₂ α).inv` with `α.hom` and `e₁.counit.hom` recovers
 `e₂.counit.hom`. -/
 lemma mateIsoEquiv_inv_counit (α : g ≫ e₂.hom ≅ e₁.hom ≫ h) :
-    h ◁ e₂.counit.hom ≫ ((ρ_ h).hom ≫ (λ_ h).inv) =
-      ((α_ h e₂.inv e₂.hom).inv ≫ (e₁.mateIsoEquiv e₂ α).inv ▷ e₂.hom ≫
+    ((α_ h e₂.inv e₂.hom).inv ≫ (e₁.mateIsoEquiv e₂ α).inv ▷ e₂.hom ≫
         (α_ e₁.inv g e₂.hom).hom ≫ e₁.inv ◁ α.hom ≫ (α_ e₁.inv e₁.hom h).inv) ≫
-        e₁.counit.hom ▷ h := by
+        e₁.counit.hom ▷ h =
+      h ◁ e₂.counit.hom ≫ ((ρ_ h).hom ≫ (λ_ h).inv) := by
   have hc : (e₁.mateIsoEquiv e₂ α).hom ▷ e₂.hom ≫ (α_ h e₂.inv e₂.hom).hom ≫
         h ◁ e₂.counit.hom =
       (α_ e₁.inv g e₂.hom).hom ≫ e₁.inv ◁ α.hom ≫ (α_ e₁.inv e₁.hom h).inv ≫
@@ -355,17 +313,17 @@ lemma mateIsoEquiv_inv_counit (α : g ≫ e₂.hom ≅ e₁.hom ≫ h) :
     simpa only [mateIsoEquiv_apply_hom, adj_counit] using e₁.adj.mateEquiv_counit e₂.adj α.hom
   generalize e₁.mateIsoEquiv e₂ α = β at hc ⊢
   calc
-    _ = 𝟙 _ ⊗≫ (β.inv ≫ β.hom) ▷ e₂.hom ⊗≫ h ◁ e₂.counit.hom ⊗≫ 𝟙 _ := by
-      rw [Iso.inv_hom_id]
-      bicategory
-    _ = 𝟙 _ ⊗≫ β.inv ▷ e₂.hom ⊗≫
-          (β.hom ▷ e₂.hom ≫ (α_ h e₂.inv e₂.hom).hom ≫ h ◁ e₂.counit.hom) ⊗≫ 𝟙 _ := by
-      bicategory
     _ = 𝟙 _ ⊗≫ β.inv ▷ e₂.hom ⊗≫
           ((α_ e₁.inv g e₂.hom).hom ≫ e₁.inv ◁ α.hom ≫ (α_ e₁.inv e₁.hom h).inv ≫
             e₁.counit.hom ▷ h ≫ (λ_ h).hom ≫ (ρ_ h).inv) ⊗≫ 𝟙 _ := by
-      rw [hc]
+      bicategory
+    _ = 𝟙 _ ⊗≫ β.inv ▷ e₂.hom ⊗≫
+          (β.hom ▷ e₂.hom ≫ (α_ h e₂.inv e₂.hom).hom ≫ h ◁ e₂.counit.hom) ⊗≫ 𝟙 _ := by
+      rw [← hc]
+    _ = 𝟙 _ ⊗≫ (β.inv ≫ β.hom) ▷ e₂.hom ⊗≫ h ◁ e₂.counit.hom ⊗≫ 𝟙 _ := by
+      bicategory
     _ = _ := by
+      rw [Iso.inv_hom_id]
       bicategory
 
 end Equivalence

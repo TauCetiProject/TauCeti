@@ -65,16 +65,14 @@ private lemma inverseNaturality_naturality {a b : B} {f g : a ⟶ b} (ξ : f ⟶
           (Bicategory.Equivalence.mk (η.app b) (inv b) (unit b) (counit b) (h b))
           (η.naturality f)).symm).hom ≫
         inv a ◁ F.map₂ ξ := by
-  let ea : F.obj a ≌ G.obj a := ⟨η.app a, inv a, unit a, counit a, h a⟩
-  let eb : F.obj b ≌ G.obj b := ⟨η.app b, inv b, unit b, counit b, h b⟩
-  let θf := (ea.mateIsoEquiv eb (η.naturality f)).symm
-  let θg := (ea.mateIsoEquiv eb (η.naturality g)).symm
-  change G.map₂ ξ ▷ inv b ≫ θg.hom = θf.hom ≫ inv a ◁ F.map₂ ξ
+  set ea := Bicategory.Equivalence.mk (η.app a) (inv a) (unit a) (counit a) (h a)
+  set eb := Bicategory.Equivalence.mk (η.app b) (inv b) (unit b) (counit b) (h b)
+  set θf := (ea.mateIsoEquiv eb (η.naturality f)).symm
+  set θg := (ea.mateIsoEquiv eb (η.naturality g)).symm
   rw [← cancel_epi θf.inv, ← cancel_mono θg.inv]
   simp only [Category.assoc, Iso.hom_inv_id, Category.comp_id, Iso.inv_hom_id_assoc]
-  dsimp only [θf, θg]
-  simp only [Iso.symm_inv, Bicategory.Equivalence.mateIsoEquiv_apply_hom]
-  exact (ea.adj.whiskerLeft_comp_mateEquiv eb.adj (η.naturality_naturality ξ)).symm
+  simp only [θf, θg, Iso.symm_inv, Bicategory.Equivalence.mateIsoEquiv_apply_hom]
+  exact ((ea.adj.whiskerLeft_comp_mateEquiv_eq_iff eb.adj).mpr (η.naturality_naturality ξ)).symm
 
 private lemma inverseNaturality_id (a : B) :
     (((Bicategory.Equivalence.mk (η.app a) (inv a) (unit a) (counit a) (h a)).mateIsoEquiv
@@ -87,7 +85,6 @@ private lemma inverseNaturality_id (a : B) :
     θ ≪≫ whiskerLeftIso (inv a) (F.mapId a)
   let I₂ : G.map (𝟙 a) ≫ inv a ≅ inv a ≫ 𝟙 (F.obj a) :=
     whiskerRightIso (G.mapId a) (inv a) ≪≫ λ_ (inv a) ≪≫ (ρ_ (inv a)).symm
-  change I₁.hom = I₂.hom
   have h_id : (F.mapId a).inv ▷ ea.hom ≫ (η.naturality (𝟙 a)).hom =
       ((λ_ ea.hom).hom ≫ (ρ_ ea.hom).inv) ≫ ea.hom ◁ (G.mapId a).inv := by
     dsimp only [ea]
@@ -99,10 +96,11 @@ private lemma inverseNaturality_id (a : B) :
     dsimp only [I₁, I₂, θ]
     simp only [Iso.trans_inv, Iso.symm_inv, whiskerLeftIso_inv, whiskerRightIso_inv,
       Bicategory.Equivalence.mateIsoEquiv_apply_hom, Category.assoc]
-    have hv := ea.adj.whiskerLeft_comp_mateEquiv ea.adj h_id
+    have hv := (ea.adj.whiskerLeft_comp_mateEquiv_eq_iff ea.adj).mpr h_id
     rw [mateEquiv_leftUnitor_hom_rightUnitor_inv] at hv
     simpa only [ea, Category.assoc] using hv
-  rw [← cancel_epi I₁.inv, Iso.inv_hom_id, h_inv, Iso.inv_hom_id]
+  simpa only [I₁, I₂, θ, ea, Iso.trans_hom, Iso.symm_hom, whiskerLeftIso_hom, whiskerRightIso_hom,
+    Category.assoc] using (I₁.inv_eq_inv I₂).mp h_inv
 
 private lemma inverseNaturality_comp {a b c : B} (f : a ⟶ b) (g : b ⟶ c) :
     (((Bicategory.Equivalence.mk (η.app a) (inv a) (unit a) (counit a) (h a)).mateIsoEquiv
@@ -130,7 +128,6 @@ private lemma inverseNaturality_comp {a b c : B} (f : a ⟶ b) (g : b ⟶ c) :
     whiskerRightIso (G.mapComp f g) (inv c) ≪≫ α_ _ _ _ ≪≫
       whiskerLeftIso (G.map f) θg ≪≫ (α_ _ _ _).symm ≪≫
       whiskerRightIso θf (F.map g) ≪≫ α_ _ _ _
-  change I₁.hom = I₂.hom
   have h_comp : (F.mapComp f g).inv ▷ η.app c ≫ (η.naturality (f ≫ g)).hom =
       leftAdjointSquare.vcomp (η.naturality f).hom (η.naturality g).hom ≫
         η.app a ◁ (G.mapComp f g).inv := by
@@ -142,10 +139,11 @@ private lemma inverseNaturality_comp {a b c : B} (f : a ⟶ b) (g : b ⟶ c) :
     dsimp only [I₁, I₂, θfg, θf, θg]
     simp only [Iso.trans_inv, Iso.symm_inv, whiskerLeftIso_inv, whiskerRightIso_inv,
       Bicategory.Equivalence.mateIsoEquiv_apply_hom]
-    have hv := ea.adj.whiskerLeft_comp_mateEquiv ec.adj h_comp
+    have hv := (ea.adj.whiskerLeft_comp_mateEquiv_eq_iff ec.adj).mpr h_comp
     rw [mateEquiv_vcomp ea.adj eb.adj ec.adj] at hv
     simpa only [ea, eb, ec, rightAdjointSquare.vcomp, Category.assoc] using hv
-  rw [← cancel_epi I₁.inv, Iso.inv_hom_id, h_inv, Iso.inv_hom_id]
+  simpa only [I₁, I₂, θfg, θf, θg, ea, eb, ec, Iso.trans_hom, Iso.symm_hom, whiskerLeftIso_hom,
+    whiskerRightIso_hom, Category.assoc] using (I₁.inv_eq_inv I₂).mp h_inv
 
 end Helpers
 
@@ -185,10 +183,10 @@ The inverse naturality cells are the inverse mates of those of `η`. -/
   counit := isoMk counit fun {a b} f ↦ by
     simpa only [categoryStruct_comp_naturality_hom, categoryStruct_id_naturality_hom,
       Iso.symm_hom] using!
-      (Bicategory.Equivalence.mk (η.app a) (inv a) (unit a) (counit a)
+      ((Bicategory.Equivalence.mk (η.app a) (inv a) (unit a) (counit a)
         (left_triangle a)).mateIsoEquiv_inv_counit
         (Bicategory.Equivalence.mk (η.app b) (inv b) (unit b) (counit b) (left_triangle b))
-        (η.naturality f)
+        (η.naturality f)).symm
   left_triangle := by
     apply Iso.ext
     simp only [leftZigzagIso_hom, leftZigzag, bicategoricalComp, Iso.trans_hom, Iso.symm_hom]
