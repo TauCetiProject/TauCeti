@@ -7,6 +7,8 @@ module
 
 public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Measure.WithDensity
+-- Proof-only: right translation of an inner regular Haar measure scales by the modular character.
+import Mathlib.MeasureTheory.Group.ModularCharacter
 -- Proof-only: change of variables in set integrals along a measurable embedding.
 import Mathlib.MeasureTheory.Integral.Lebesgue.Map
 import TauCeti.MeasureTheory.Group.Arithmetic
@@ -27,7 +29,12 @@ be used wherever a probability law is expected, that pulling a left- or right-in
 back along a group homomorphism, in particular to a subgroup, keeps it left- or right-invariant
 without any measurability hypotheses (for subgroups as typeclass instances), and that restricting
 an inversion-invariant measure to a symmetric set, or weighting it by an even density, keeps it
-inversion-invariant.
+inversion-invariant. Finally, for an inner regular measure whose right translations are
+quasi-measure-preserving—in particular any inner regular Haar measure on a locally compact
+group—if an open set `U` lies up to a null set inside a null-measurable set `V` satisfying
+`V * s ⊆ V`, then `U * s` (such as the subgroup saturation
+`(QuotientGroup.mk : G → G ⧸ N) ⁻¹' (QuotientGroup.mk '' U) = U * N`) also lies in `V` up to a
+null set.
 
 ## Main results
 
@@ -53,6 +60,13 @@ inversion-invariant.
   `Measure.isMulRightInvariant_comap_subtype`, `Measure.isAddRightInvariant_comap_subtype`: the
   instances for the pullback of an invariant measure to a subgroup, without measurability
   hypotheses on the subgroup.
+* `IsOpen.measure_mul_sdiff_eq_zero_of_quasiMeasurePreserving`,
+  `IsOpen.measure_add_sdiff_eq_zero_of_quasiMeasurePreserving`,
+  `IsOpen.measure_mul_sdiff_eq_zero`, `IsOpen.measure_add_sdiff_eq_zero`: if an open set `U` has
+  `μ (U \ V) = 0` for a `μ`-null-measurable set `V` invariant under right multiplication (or
+  addition) by `s`, then `μ ((U * s) \ V) = 0` (or `μ ((U + s) \ V) = 0`) for any inner regular
+  measure with quasi-measure-preserving right translations, and in particular for any inner
+  regular Haar measure on a locally compact group.
 -/
 
 public section
@@ -272,3 +286,57 @@ theorem isInvInvariant_withDensity [μ.IsInvInvariant] {f : G → ℝ≥0∞} (h
 end InvolutiveInv
 
 end MeasureTheory.Measure
+
+section MulSdiff
+
+/-- On a group with continuous multiplication and measurable open sets, if `U` is open, `V` is
+`μ`-null-measurable with `V * s ⊆ V`, right multiplication by `g⁻¹` is quasi-measure-preserving for
+an inner regular measure `μ` for every `g ∈ s`, and `μ (U \ V) = 0`, then `μ ((U * s) \ V) = 0`. -/
+@[to_additive /-- On an additive group with continuous addition and measurable open sets, if `U` is
+open, `V` is `μ`-null-measurable with `V + s ⊆ V`, right addition by `-g` is
+quasi-measure-preserving for an inner regular measure `μ` for every `g ∈ s`, and `μ (U \ V) = 0`,
+then `μ ((U + s) \ V) = 0`. -/]
+theorem IsOpen.measure_mul_sdiff_eq_zero_of_quasiMeasurePreserving
+    {G : Type*} [Group G] [TopologicalSpace G] [ContinuousMul G]
+    [MeasurableSpace G] [OpensMeasurableSpace G] {μ : Measure G} [μ.InnerRegular]
+    {U V s : Set G} (hU : IsOpen U) (hV : NullMeasurableSet V μ) (hVs : V * s ⊆ V)
+    (hqmp : ∀ g ∈ s, QuasiMeasurePreserving (· * g⁻¹) μ μ) (hUV : μ (U \ V) = 0) :
+    μ ((U * s) \ V) = 0 := by
+  by_contra hne
+  obtain ⟨E, hEWV, hEm, hEae⟩ :=
+    (hU.mul_right.measurableSet.nullMeasurableSet.diff hV).exists_measurable_subset_ae_eq
+  obtain ⟨K, hKE, hK, hKpos⟩ :=
+    hEm.exists_lt_isCompact (pos_iff_ne_zero.2 ((measure_congr hEae).trans_ne hne))
+  have hKWV : K ⊆ (U * s) \ V := hKE.trans hEWV
+  have hKcov : K ⊆ ⋃ g : s, (· * (g : G)⁻¹) ⁻¹' U := fun x hx ↦ by
+    obtain ⟨u, hu, g, hg, rfl⟩ := mem_mul.1 (hKWV hx).1
+    exact mem_iUnion.2 ⟨⟨g, hg⟩, by simpa using hu⟩
+  obtain ⟨t, htK⟩ := hK.elim_finite_subcover (fun g : s ↦ (· * (g : G)⁻¹) ⁻¹' U)
+    (fun g ↦ hU.preimage (continuous_mul_const _)) hKcov
+  have hKsub : K ⊆ ⋃ g : t, (· * ((g : s) : G)⁻¹) ⁻¹' (U \ V) := fun x hx ↦ by
+    obtain ⟨g, hgt, hxgU⟩ := mem_iUnion₂.1 (htK hx)
+    exact mem_iUnion.2 ⟨⟨g, hgt⟩, hxgU,
+      fun hxgV ↦ (hKWV hx).2 (by simpa using hVs (mul_mem_mul hxgV g.2))⟩
+  have hKzero : μ K = 0 :=
+    measure_mono_null hKsub (measure_iUnion_null fun g : t ↦ (hqmp _ g.1.2).preimage_null hUV)
+  exact hKpos.ne' hKzero
+
+/-- For an inner regular Haar measure `μ` on a locally compact topological group `G`, if `U` is
+open, `V` is `μ`-null-measurable with `V * s ⊆ V`, and `μ (U \ V) = 0`, then
+`μ ((U * s) \ V) = 0`. -/
+@[to_additive /-- For an inner regular additive Haar measure `μ` on a locally compact additive
+topological group `G`, if `U` is open, `V` is `μ`-null-measurable with `V + s ⊆ V`, and
+`μ (U \ V) = 0`, then `μ ((U + s) \ V) = 0`. -/]
+theorem IsOpen.measure_mul_sdiff_eq_zero
+    {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+    [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G]
+    {μ : Measure G} [μ.IsHaarMeasure] [μ.InnerRegular]
+    {U V s : Set G} (hU : IsOpen U) (hV : NullMeasurableSet V μ) (hVs : V * s ⊆ V)
+    (hUV : μ (U \ V) = 0) :
+    μ ((U * s) \ V) = 0 :=
+  hU.measure_mul_sdiff_eq_zero_of_quasiMeasurePreserving hV hVs
+    (fun g _ ↦ ⟨(continuous_mul_const g⁻¹).measurable.aemeasurable, by
+      rw [Measure.map_right_mul_eq_modularCharacterFun_smul]
+      exact Measure.smul_absolutelyContinuous⟩) hUV
+
+end MulSdiff

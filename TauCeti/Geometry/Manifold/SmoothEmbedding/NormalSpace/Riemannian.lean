@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Representative
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
+public import Mathlib.Analysis.Normed.Group.Quotient
 public import Mathlib.Topology.VectorBundle.Riemannian
 import TauCeti.Topology.Algebra.Module.BilinearForm
 
@@ -18,6 +19,11 @@ intrinsic normal class has a unique representative orthogonal to the tangent spa
 embedded submanifold. This identifies the intrinsic normal space with the orthogonal complement
 of the embedded tangent space, as the complement representatives
 (`TauCeti.SmoothEmbedding.complementRepresentative`) of the orthogonal complement.
+
+The metric also induces a quotient norm on each normal space
+(`TauCeti.SmoothEmbedding.normalSpaceNormedAddCommGroup`), whose topology is the quotient topology.
+It is not an instance, since it depends on the metric; it serves to differentiate functions on a
+normal space.
 
 ## References
 
@@ -181,5 +187,31 @@ theorem normalRepresentative_normalClass_eq_sub_mfderiv_inverse
         inner ℝ v (d z) := hpair
     simpa only [inner_sub_left, sub_eq_zero] using hpair'.symm
   · simp only [map_sub, normalClass_mfderiv, sub_zero]
+
+omit [FiniteDimensional ℝ V] in
+/-- The quotient norm on the normal space at `x`, induced by the Riemannian norm of the ambient
+tangent space. Its topology is by definition the quotient topology of the normal space, and its
+group structure that of the normal space. It is not an instance, since it depends on the
+metric. -/
+abbrev normalSpaceNormedAddCommGroup (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
+    NormedAddCommGroup (f.NormalSpace x hn) :=
+  haveI : IsClosed (f.tangentRange x hn : Set (TangentSpace J (f x))) :=
+    f.isClosed_tangentRange x hn
+  let Q := Submodule.Quotient.normedAddCommGroup (f.tangentRange x hn)
+  -- Restate the group and the uniform structure with the quotient group and the quotient topology
+  -- of the normal space as literal fields, so that instances built on them are found for the
+  -- normed structure.
+  { Q with
+    toAddCommGroup := inferInstance
+    toUniformSpace := { Q.toUniformSpace with toTopologicalSpace := inferInstance } }
+
+omit [FiniteDimensional ℝ V] in
+/-- The normed space structure of the quotient norm `normalSpaceNormedAddCommGroup` on the normal
+space at `x`. -/
+abbrev normalSpaceNormedSpace (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
+    letI := f.normalSpaceNormedAddCommGroup x hn
+    NormedSpace ℝ (f.NormalSpace x hn) :=
+  letI := f.normalSpaceNormedAddCommGroup x hn
+  { Submodule.Quotient.normedSpace (f.tangentRange x hn) ℝ with toModule := inferInstance }
 
 end TauCeti.SmoothEmbedding

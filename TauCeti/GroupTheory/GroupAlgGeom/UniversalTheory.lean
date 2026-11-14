@@ -9,7 +9,8 @@ public import TauCeti.GroupTheory.GroupAlgGeom.Discrimination
 public import TauCeti.GroupTheory.GroupAlgGeom.Linear
 public import TauCeti.ModelTheory.Algebra.Group.Basic
 public import TauCeti.ModelTheory.Algebra.Group.ExistentialUniversal
-public import Mathlib.ModelTheory.Complexity
+import Mathlib.Data.Int.Cast.Lemmas
+import TauCeti.GroupTheory.FiniteAbelian.TorsionFree
 import TauCeti.GroupTheory.FreeGroup.Basis
 
 /-!
@@ -45,12 +46,21 @@ bases as names: a finitely generated group over such a free group `F` is discrim
 over `F` if and only if it is universally equivalent to `F` in the language with constants for a
 basis.
 
+Every nontrivial torsion-free abelian group has the universal theory of the infinite cyclic group
+`ℤ`, in the group language without coefficients. It contains `ℤ`, and universal sentences pass to
+subgroups. Conversely, each of its finitely generated subgroups is a free abelian group of finite
+rank, hence discriminated by `ℤ`, and a universal sentence holds in a group as soon as it holds
+in its finitely generated subgroups.
+
 ## Main results
 
-* `TauCeti.GroupAlgGeom.IsDiscriminatedBy.realize_of_isUniversal`: universal sentences with
+* `TauCeti.GroupAlgGeom.IsDiscriminatedBy.realize_coeff_of_isUniversal`: universal sentences with
   coefficients from `G` pass from `H` to `K`.
-* `TauCeti.GroupAlgGeom.IsDiscriminatedBy.realize_iff_of_isUniversal`: a group discriminated by
-  `G` over `G` satisfies the same universal sentences with coefficients from `G` as `G`.
+* `TauCeti.GroupAlgGeom.IsDiscriminatedBy.realize_of_isUniversal`: universal sentences without
+  coefficients pass from `H` to `K`.
+* `TauCeti.GroupAlgGeom.IsDiscriminatedBy.realize_coeff_iff_of_isUniversal`: a group
+  discriminated by `G` over `G` satisfies the same universal sentences with coefficients from
+  `G` as `G`.
 * `TauCeti.GroupAlgGeom.isDiscriminatedBy_of_forall_isUniversal`: conversely, over an
   equationally Noetherian `H`, a group finitely generated over `G` that satisfies every universal
   sentence true in `H` is discriminated by `H`.
@@ -61,11 +71,16 @@ basis.
 * `TauCeti.GroupAlgGeom.isDiscriminatedBy_id_iff_forall_realize_iff_of_freeGroupBasis` and
   `TauCeti.GroupAlgGeom.isDiscriminatedBy_freeGroup_iff_forall_realize_iff`: the same for a group
   with a countable free basis, with constants for the basis, and for `FreeGroup α`.
+* `realize_iff_multiplicative_int_of_isMulCommutative_of_isMulTorsionFree_of_isUniversal`, in
+  `TauCeti.GroupAlgGeom`: a nontrivial torsion-free abelian group has the universal theory of
+  `ℤ`.
 
 ## References
 
 * O. Kharlampovich, A. Myasnikov, *Implicit function theorem over free groups*, J. Algebra 290
   (2005), §2.3 and §2.6 (the theorem attributed to Remeslennikov).
+* C. Champetier, V. Guirardel, *Limit groups as limits of free groups*, Israel J. Math. 146
+  (2005), Theorem 5.1.
 * G. Baumslag, A. Myasnikov, V. Remeslennikov, *Algebraic geometry over groups I. Algebraic sets
   and ideal theory*, J. Algebra 219 (1999), §2.3, Theorem C2.
 * V. N. Remeslennikov, *∃-free groups*, Siberian Math. J. 30 (1989).
@@ -95,7 +110,7 @@ private theorem realize_term_comp (f : GHom ιK ιH) (c : A → G)
   let : (Language.constantsOn A).Structure H := Language.constantsOn.structure (ιH ∘ c)
   let g := MonoidHom.coeffGroupLanguageHom (f : K →* H) (ιK ∘ c) (ιH ∘ c)
     fun a => f.map_coeff (c a)
-  have hg : ⇑g = ⇑f := funext fun x => MonoidHom.coeffGroupLanguageHom_apply _ _ _ _ x
+  have hg : ⇑g = ⇑f := MonoidHom.coe_coeffGroupLanguageHom _ _ _ _
   rw [← hg]
   exact HomClass.realize_term g
 
@@ -171,7 +186,7 @@ namespace IsDiscriminatedBy
 
 /-- If `K` is discriminated by `H` over `G`, every universal sentence of the group language with
 coefficient names `A`, read through `c : A → G`, that holds in `H` also holds in `K`. -/
-theorem realize_of_isUniversal (h : IsDiscriminatedBy ιK ιH) (c : A → G)
+theorem realize_coeff_of_isUniversal (h : IsDiscriminatedBy ιK ιH) (c : A → G)
     {σ : Language.group[[A]].Sentence} (hσ : σ.IsUniversal) :
     letI : Language.group.Structure K := TauCeti.Group.structureOfGroup K
     letI : (Language.constantsOn A).Structure K := Language.constantsOn.structure (ιK ∘ c)
@@ -187,9 +202,26 @@ theorem realize_of_isUniversal (h : IsDiscriminatedBy ιK ιH) (c : A → G)
   -- A sentence has no free or bound variables, so every assignment is the default one.
   rwa [Subsingleton.elim (f ∘ default) default, Subsingleton.elim (f ∘ default) default]
 
+/-- If `K` is discriminated by `H` over `G`, every universal sentence of the group language
+without coefficients that holds in `H` also holds in `K`. -/
+theorem realize_of_isUniversal (h : IsDiscriminatedBy ιK ιH)
+    {σ : Language.group.Sentence} (hσ : σ.IsUniversal) :
+    letI : Language.group.Structure K := TauCeti.Group.structureOfGroup K
+    letI : Language.group.Structure H := TauCeti.Group.structureOfGroup H
+    H ⊨ σ → K ⊨ σ := by
+  let : Language.group.Structure K := TauCeti.Group.structureOfGroup K
+  let : Language.group.Structure H := TauCeti.Group.structureOfGroup H
+  -- Read `σ` in the group language with an empty set of coefficient names.
+  let c : Empty → G := Empty.elim
+  let : (constantsOn Empty).Structure K := constantsOn.structure (ιK ∘ c)
+  let : (constantsOn Empty).Structure H := constantsOn.structure (ιH ∘ c)
+  have := h.realize_coeff_of_isUniversal
+    (σ := (Language.group.lhomWithConstants Empty).onSentence σ) c (hσ.onBoundedFormula _)
+  rwa [LHom.realize_onSentence, LHom.realize_onSentence] at this
+
 /-- If `K` is discriminated by `G` over `G`, then `K` and `G` satisfy the same universal sentences
 of the group language with coefficient names `A`, read through `c : A → G`. -/
-theorem realize_iff_of_isUniversal (h : IsDiscriminatedBy ιK (MonoidHom.id G)) (c : A → G)
+theorem realize_coeff_iff_of_isUniversal (h : IsDiscriminatedBy ιK (MonoidHom.id G)) (c : A → G)
     {σ : Language.group[[A]].Sentence} (hσ : σ.IsUniversal) :
     letI : Language.group.Structure K := TauCeti.Group.structureOfGroup K
     letI : (Language.constantsOn A).Structure K := Language.constantsOn.structure (ιK ∘ c)
@@ -198,8 +230,8 @@ theorem realize_iff_of_isUniversal (h : IsDiscriminatedBy ιK (MonoidHom.id G)) 
     K ⊨ σ ↔ G ⊨ σ :=
   -- The coefficient map `ιK` is injective, so `G` is discriminated by `K` through `ιK` itself.
   ⟨((IsDiscriminatedBy.self ιK).of_injective (⟨ιK, fun _ => rfl⟩ : GHom (.id G) ιK)
-    (h.injective_of_injective Function.injective_id)).realize_of_isUniversal c hσ,
-    h.realize_of_isUniversal c hσ⟩
+    (h.injective_of_injective Function.injective_id)).realize_coeff_of_isUniversal c hσ,
+    h.realize_coeff_of_isUniversal c hσ⟩
 
 end IsDiscriminatedBy
 
@@ -259,7 +291,7 @@ theorem isDiscriminatedBy_iff_forall_isUniversal [Finite X] (hH : IsEquationally
       letI : Language.group.Structure H := TauCeti.Group.structureOfGroup H
       letI : (Language.constantsOn A).Structure H := Language.constantsOn.structure (ιH ∘ c)
       ∀ σ : Language.group[[A]].Sentence, σ.IsUniversal → H ⊨ σ → K ⊨ σ :=
-  ⟨fun h _ hσ => h.realize_of_isUniversal c hσ,
+  ⟨fun h _ hσ => h.realize_coeff_of_isUniversal c hσ,
     isDiscriminatedBy_of_forall_isUniversal hH π hπ hc⟩
 
 /-- **Universal equivalence with the coefficient group.** Over a group `G` that is equationally
@@ -275,7 +307,7 @@ theorem isDiscriminatedBy_id_iff_forall_realize_iff [Finite X]
       letI : Language.group.Structure G := TauCeti.Group.structureOfGroup G
       letI : (Language.constantsOn A).Structure G := Language.constantsOn.structure c
       ∀ σ : Language.group[[A]].Sentence, σ.IsUniversal → (K ⊨ σ ↔ G ⊨ σ) :=
-  ⟨fun h _ hσ => h.realize_iff_of_isUniversal c hσ,
+  ⟨fun h _ hσ => h.realize_coeff_iff_of_isUniversal c hσ,
     fun h => isDiscriminatedBy_of_forall_isUniversal hG π hπ hc fun σ hσ => (h σ hσ).2⟩
 
 /-- **Remeslennikov's theorem.** Let `F` be a group with a countable free basis `b : α → F`, such
@@ -309,5 +341,28 @@ theorem isDiscriminatedBy_freeGroup_iff_forall_realize_iff [Countable α]
         Language.constantsOn.structure FreeGroup.of
       ∀ σ : Language.group[[α]].Sentence, σ.IsUniversal → (K ⊨ σ ↔ FreeGroup α ⊨ σ) :=
   isDiscriminatedBy_id_iff_forall_realize_iff_of_freeGroupBasis (.ofFreeGroup α) π hπ
+
+section TorsionFree
+
+attribute [local instance] TauCeti.Group.structureOfGroup
+
+/-- A nontrivial torsion-free abelian group has the universal theory of the infinite cyclic group
+`ℤ`. -/
+theorem realize_iff_multiplicative_int_of_isMulCommutative_of_isMulTorsionFree_of_isUniversal
+    [IsMulCommutative G] [IsMulTorsionFree G] [Nontrivial G] {σ : Language.group.Sentence}
+    (hσ : σ.IsUniversal) : G ⊨ σ ↔ Multiplicative ℤ ⊨ σ := by
+  classical
+  refine ⟨fun hG => ?_, fun hZ => group.realize_of_isUniversal_of_forall_closure hσ fun S => ?_⟩
+  · -- `ℤ` embeds into `G` through the powers of a nontrivial element.
+    obtain ⟨g, hg⟩ := exists_ne (1 : G)
+    exact (zpowersHom G g).realize_of_isUniversal_of_injective
+      (fun a b h => by simpa [hg] using h) hσ hG
+  · -- A finitely generated subgroup is isomorphic to some `ℤᵏ`, which is discriminated by `ℤ`.
+    obtain ⟨k, -, ⟨e⟩⟩ := Subgroup.exists_mulEquiv_closure_of_pairwise_commute
+      (s := S) fun a _ b _ _ => mul_comm' a b
+    exact (e.realize_sentence_iff σ).2
+      ((isDiscriminatedBy_multiplicative_pi_int (Fin k)).realize_of_isUniversal hσ hZ)
+
+end TorsionFree
 
 end TauCeti.GroupAlgGeom

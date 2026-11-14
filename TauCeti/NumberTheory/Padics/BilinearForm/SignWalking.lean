@@ -15,7 +15,7 @@ import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.NumberTheory.Padics.BilinearForm.BinaryDiagonal
 import TauCeti.NumberTheory.Padics.BilinearForm.MixedSignWalking.Basic
 import TauCeti.NumberTheory.Padics.BilinearForm.MixedSignWalking.EvenLower
-import TauCeti.NumberTheory.Padics.BilinearForm.Oddity
+import TauCeti.NumberTheory.Padics.BilinearForm.Oddity.Basic
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
 import TauCeti.NumberTheory.Padics.SerreSigns -- for `TauCeti.isUnit_five_padicInt`
@@ -54,9 +54,11 @@ nonzero constituent of type II. These blocks are exchanged by
 `LinearMap.BilinForm.IsJordanSplitting.exists_isJordanSplitting_of_span_eq`, which keeps their
 orthogonal complements in the two constituents.
 
-The move between two adjacent constituents of type I on a Jordan splitting is not proved here.
-Its underlying isometry of explicit binary forms, such as `⟨1, 2⟩ ≅ ⟨3, 6⟩`, is covered by
-`TauCeti.equivalent_toBilin'_diagonal_two_pow_mul_iff`.
+The move between two adjacent constituents of type I is `⟨a, 2 b⟩ ≅ ⟨a + 2 b, 2 a b (a + 2 b)⟩`,
+for instance `⟨1, 2⟩ ≅ ⟨3, 6⟩`. It multiplies both determinants by `3` or by `-1` up to squares,
+rather than by `5`, and is accordingly a sign walk
+(`LinearMap.BilinForm.IsJordanSplitting.exists_signWalk_succ_of_odd_of_odd`) or oddity fusion
+(`LinearMap.BilinForm.IsJordanSplitting.exists_oddityFusion_succ`).
 
 The isometry invariants of a dyadic Jordan splitting, such as the determinant conditions of
 `LinearMap.BilinForm.IsJordanSplitting.exists_sq_mul_det_toMatrix_eq_of_equivalent` and the

@@ -398,7 +398,7 @@ theorem cuspIntegral_mul_sub_pow [Γ.IsArithmetic] [CuspFormClass F Γ k] (f : F
     simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, hc, sub_eq_add_neg, add_pow,
       Finset.mul_sum]
     exact Finset.sum_congr rfl fun j _ ↦ by ring
-  rw [hsum, cuspIntegral_sum _ hg hint]
+  rw [hsum, cuspIntegral_sum _ hint]
   exact Finset.sum_congr rfl fun j _ ↦ cuspIntegral_smul _ _ _ _
 
 end CommSemiring

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Integral.PrekopaLeindler
+public import TauCeti.MeasureTheory.Integral.PrekopaLeindler.Basic
 public import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
 import Mathlib.MeasureTheory.Measure.Real
 import TauCeti.Analysis.SpecialFunctions.Pow.Real

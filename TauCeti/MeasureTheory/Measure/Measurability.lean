@@ -91,15 +91,21 @@ theorem measurable_sum_smul_dirac {β ι α : Type*} [MeasurableSpace β] [Measu
   simp only [Measure.sum_apply _ hs, _root_.smul_apply, smul_eq_mul, Measure.dirac_apply' _ hs]
   exact Measurable.tsum fun i => (hf i).mul_const _
 
+/-- Summing a countable family of measures is measurable for the Giry measurable structure. -/
+@[fun_prop]
+theorem measurable_measure_sum {ι α : Type*} [Countable ι] [MeasurableSpace α] :
+    Measurable (Measure.sum : (ι → Measure α) → Measure α) := by
+  refine Measure.measurable_measure.2 fun s hs => ?_
+  simp only [Measure.sum_apply _ hs]
+  exact Measurable.tsum fun i => (Measure.measurable_coe hs).comp (measurable_pi_apply i)
+
 /-- The counting measure of a countable tuple is measurable in the tuple. Repeated entries
 contribute separate Dirac occurrences. -/
 @[fun_prop]
 theorem measurable_sum_dirac {ι α : Type*} [Countable ι] [MeasurableSpace α] :
-    Measurable fun x : ι → α => Measure.sum fun i => Measure.dirac (x i) := by
-  refine Measure.measurable_measure.2 fun s hs => ?_
-  simp only [Measure.sum_apply _ hs]
-  exact Measurable.tsum fun i => (Measure.measurable_coe hs).comp
-    (Measure.measurable_dirac.comp (measurable_pi_apply i))
+    Measurable fun x : ι → α => Measure.sum fun i => Measure.dirac (x i) :=
+  measurable_measure_sum.comp
+    (Measurable.of_eval fun i => Measure.measurable_dirac.comp (measurable_pi_apply i))
 
 /-- Pushing a probability measure forward along a fixed measurable map is measurable for the Giry
 structure that `ProbabilityMeasure` inherits as a subtype of `Measure`. -/

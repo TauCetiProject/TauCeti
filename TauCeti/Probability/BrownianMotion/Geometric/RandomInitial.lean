@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.BrownianMotion.Geometric.Basic
+public import TauCeti.Probability.Martingale.Local.InitialMultiplier
 import Mathlib.Probability.Independence.Integration
 
 /-!
@@ -25,6 +26,8 @@ orders, with Mathlib's convention for real powers at zero.
 
 The exponentially normalized absolute powers are true martingales. Consequently
 the same growth factor gives conditional absolute moments between any two dates.
+Without any initial moment assumption, the discounted process is a native local
+martingale (`locally_martingale_discounted_geometricBrownianMotion_random_initial`).
 These statements concern the explicit exponential process; they do not assert
 that it solves a stochastic differential equation.
 
@@ -57,6 +60,20 @@ namespace IsFilteredPreBrownianReal
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
   {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → ℝ} {ξ : Ω → ℝ}
+
+/-- Discounting a random-initial-value GBM at its drift gives a native local martingale.
+The initial value may be signed or zero and need not have any finite moment; zero volatility
+is also allowed. This asserts locality, not the true-martingale pricing condition. -/
+theorem locally_martingale_discounted_geometricBrownianMotion_random_initial
+    (hW : IsFilteredPreBrownianReal ℱ W P) (hξ : Measurable[ℱ 0] ξ) (μ σ : ℝ) :
+    Locally (fun Y ↦ Martingale Y ℱ P) ℱ (fun (t : ℝ≥0) ω ↦
+      exp (-(μ * t)) * geometricBrownianMotion (ξ ω) μ σ W t ω) P := by
+  have h := (Locally.of_prop (hW.martingale_exponentialMartingale σ)).martingale_smul_initial
+    hξ.stronglyMeasurable
+  convert h using 1
+  ext t ω
+  rw [geometricBrownianMotion_eq_mul_exponentialMartingale, smul_eq_mul, exp_neg]
+  field_simp
 
 /-- Initial absolute powers are independent of Brownian exponential martingales.
 This is the factorization used for random-initial-value moments. -/
@@ -143,12 +160,7 @@ theorem martingale_exp_neg_mul_abs_rpow_geometricBrownianMotion_random_initial
       (hξ.mono (ℱ.mono (zero_le (a := t))) le_rfl)).stronglyMeasurable
   have hint : ∀ t, Integrable (fun ω ↦ |ξ ω| ^ q * exponentialMartingale (q * σ) W t ω) P :=
     fun t ↦ hW.integrable_initial_abs_rpow_mul_exponentialMartingale hξ hξq (q * σ) t
-  refine ⟨fun t ↦ (hmeas t).mul
-    ((hW.martingale_exponentialMartingale (q * σ)).stronglyMeasurable t), fun s t hst ↦ ?_⟩
-  exact (condExp_mul_of_stronglyMeasurable_left (hmeas s) (hint t)
-    (hW.integrable_exponentialMartingale (q * σ) t)).trans
-      ((Filter.EventuallyEq.refl _ _).mul
-        ((hW.martingale_exponentialMartingale (q * σ)).condExp_ae_eq hst))
+  exact (hW.martingale_exponentialMartingale (q * σ)).smul_of_stronglyMeasurable hmeas hint
 
 /-- Conditional absolute moments have the usual GBM growth factor even with a
 random initial value, assuming only its corresponding absolute moment. -/

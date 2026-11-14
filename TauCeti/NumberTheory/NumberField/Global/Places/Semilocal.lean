@@ -33,7 +33,7 @@ In particular, a complex place above a real place contributes dimension two, rat
 * J. Neukirch, *Algebraic Number Theory*, Chapter II, Proposition (8.3).
 
 The completion algebra structures and local degrees are Mathlib's
-`NumberField.LiesOver.completionMap` and `NumberField.InfinitePlace.inertiaDeg`.
+`AbsoluteValue.Completion.map` and `NumberField.InfinitePlace.inertiaDeg`.
 The argument parallels `TauCeti.semilocalEquiv`, the finite-place decomposition.
 -/
 
@@ -41,7 +41,8 @@ public section
 noncomputable section
 
 open NumberField NumberField.InfinitePlace Module
-open scoped TensorProduct NumberField.LiesOver
+open scoped TensorProduct
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 namespace TauCeti.GlobalNumberFields
 

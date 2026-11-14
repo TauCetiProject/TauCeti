@@ -258,8 +258,10 @@ theorem meromorphicAt {f : ℂ → ℂ} {S : Finset ℂ} {U : Set ℂ} (decomp :
 meromorphic at each `s ∈ S`, the canonical Laurent data assembles into a
 `PolarPartDecomposition f S U`: the orders are the canonical polar orders — so they are
 evaluable by callers, in particular `1` at simple poles — and the analytic remainder is
-`f` minus the total polar part, extended across the poles by its limits. -/
-noncomputable def ofMeromorphic {f : ℂ → ℂ} {S : Finset ℂ} {U : Set ℂ} (hU : IsOpen U)
+`f` minus the total polar part, extended across the poles by its limits. The set `U` is arbitrary:
+meromorphy supplies the local extension at the listed singularities, and away from them only
+within-set differentiability is needed. -/
+noncomputable def ofMeromorphic {f : ℂ → ℂ} {S : Finset ℂ} {U : Set ℂ}
     (hf : DifferentiableOn ℂ f (U \ (↑S : Set ℂ))) (hMero : ∀ s ∈ S, MeromorphicAt f s) :
     PolarPartDecomposition f S U where
   order s := meromorphicPolarOrderAt f s
@@ -282,48 +284,54 @@ noncomputable def ofMeromorphic {f : ℂ → ℂ} {S : Finset ℂ} {U : Set ℂ}
     intro z hzU
     by_cases hzS : z ∈ (↑S : Set ℂ)
     · exact (remainder_differentiableAt_mem hMero hzS).differentiableWithinAt
-    · have h_diff : DifferentiableAt ℂ
-          (fun w => f w - meromorphicPolarPartTotal hMero w) z := by
-        refine ((hf z ⟨hzU, hzS⟩).differentiableAt ?_).sub ?_
-        · exact (hU.sdiff S.finite_toSet.isClosed).mem_nhds ⟨hzU, hzS⟩
-        · refine DifferentiableAt.fun_sum fun s' _ => ?_
-          exact (meromorphicPolarPartAt_analyticAt_of_ne (hMero s'.1 s'.2)
-            (fun h => hzS (by rw [h]; exact Finset.mem_coe.mpr s'.2))).differentiableAt
-      exact (h_diff.congr_of_eventuallyEq
-        (remainder_eventuallyEq_off hMero hzS)).differentiableWithinAt
+    · have havoid : (↑S : Set ℂ)ᶜ ∈ 𝓝 z :=
+        S.finite_toSet.isClosed.isOpen_compl.mem_nhds hzS
+      have hfU : DifferentiableWithinAt ℂ f U z :=
+        (hf z ⟨hzU, hzS⟩).mono_of_mem_nhdsWithin (by
+          filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds havoid]
+            with w hw hwS using ⟨hw, hwS⟩)
+      have h_diff : DifferentiableWithinAt ℂ
+          (fun w => f w - meromorphicPolarPartTotal hMero w) U z := by
+        refine hfU.sub (DifferentiableAt.differentiableWithinAt ?_)
+        refine DifferentiableAt.fun_sum fun s' _ => ?_
+        exact (meromorphicPolarPartAt_analyticAt_of_ne (hMero s'.1 s'.2)
+          (fun h => hzS (by rw [h]; exact Finset.mem_coe.mpr s'.2))).differentiableAt
+      exact h_diff.congr_of_eventuallyEq
+        ((remainder_eventuallyEq_off hMero hzS).filter_mono nhdsWithin_le_nhds)
+        (remainder_eventuallyEq_off hMero hzS).eq_of_nhds
   f_eq z hz := by
     rw [ite_eq_right hz.2]
     unfold meromorphicPolarPartTotal
     ring
 
-variable {f : ℂ → ℂ} {S : Finset ℂ} {U : Set ℂ} {hU : IsOpen U}
+variable {f : ℂ → ℂ} {S : Finset ℂ} {U : Set ℂ}
   {hf : DifferentiableOn ℂ f (U \ (↑S : Set ℂ))} {hMero : ∀ s ∈ S, MeromorphicAt f s}
 
 /-- The constructed order is the canonical polar order — evaluable by callers, in particular
 `1` at simple poles (`meromorphicPolarOrderAt_eq_one`). -/
 @[simp] theorem ofMeromorphic_order (s : S) :
-    (ofMeromorphic hU hf hMero).order s = meromorphicPolarOrderAt f s := by
+    (ofMeromorphic hf hMero).order s = meromorphicPolarOrderAt f s := by
   unfold ofMeromorphic
   rfl
 
 /-- The constructed coefficients are the canonical Laurent coefficients, along the index
 identification `ofMeromorphic_order`. -/
-@[simp] theorem ofMeromorphic_coeff (s : S) (k : Fin ((ofMeromorphic hU hf hMero).order s)) :
-    (ofMeromorphic hU hf hMero).coeff s k =
+@[simp] theorem ofMeromorphic_coeff (s : S) (k : Fin ((ofMeromorphic hf hMero).order s)) :
+    (ofMeromorphic hf hMero).coeff s k =
       meromorphicPolarCoeffAt (hMero s s.2) (Fin.cast (ofMeromorphic_order s) k) := by
   unfold ofMeromorphic
   rfl
 
 /-- The constructed polar part is the canonical polar part. -/
 @[simp] theorem ofMeromorphic_polarPart (s : S) (z : ℂ) :
-    (ofMeromorphic hU hf hMero).polarPart s z = meromorphicPolarPartAt (hMero s s.2) z := by
+    (ofMeromorphic hf hMero).polarPart s z = meromorphicPolarPartAt (hMero s s.2) z := by
   unfold ofMeromorphic
   rfl
 
 /-- Off the singular set, the constructed analytic remainder is `f` minus the total polar
 part. -/
 theorem ofMeromorphic_analyticRemainder {z : ℂ} (hz : z ∉ (↑S : Set ℂ)) :
-    (ofMeromorphic hU hf hMero).analyticRemainder z =
+    (ofMeromorphic hf hMero).analyticRemainder z =
       f z - meromorphicPolarPartTotal hMero z := by
   unfold ofMeromorphic
   exact ite_eq_right hz

@@ -22,15 +22,27 @@ proper power in `E'`; since `E'` is again fully residually free, `g u` has a roo
 a proper power with the same centralizer, and `E'(g u, ℤⁿ)` is the admissible extension
 `E'(r, ℤⁿ)` (`TauCeti.LimitGroup.CentralizerExt.congr`).
 
+Transport composes embeddings in ICE groups: if `K` embeds over `F` in the top `E` of a chain over
+`F`, a chain over `K` is transported along `K ↪ E` and appended to the chain over `F`, so an
+embedding of `L` in the top of a chain over `K` gives one in the top of a chain over `F`. The top
+of the chain over `K` is not itself the top of the new chain; it only embeds in it. When `K` is
+the top `E` of the chain over `F`, no transport is needed and the composition is the
+concatenation `G(U₀, T₀)(U₂, T₂) = G(U₀ ∪ U₂, T₀ ∪ T₂)` at the end of the proof of Theorem 4 of
+Kharlampovich–Myasnikov's *Irreducible affine varieties over a free group. I*.
+
 ## Main results
 
 * `TauCeti.LimitGroup.ICE.exists_embedding_of_injective`: transport of a chain of extensions of
   centralizers along an embedding of the base in a fully residually free group.
+* `TauCeti.LimitGroup.ICE.exists_embedding_comp`: over a fully residually free `F`, if `K` embeds
+  in an ICE group over `F` and `L` embeds in an ICE group over `K`, then `L` embeds in an ICE group
+  over `F`, compatibly with the coefficients.
 
 ## References
 
 * O. Kharlampovich, A. Myasnikov, *Irreducible affine varieties over a free group. I:
-  Irreducibility of quadratic equations and Nullstellensatz*, J. Algebra 200 (1998), §0.
+  Irreducibility of quadratic equations and Nullstellensatz*, J. Algebra 200 (1998), §0,
+  Definition 5, and §6, proof of Theorem 4.
 * O. Kharlampovich, A. Myasnikov, *Implicit function theorem over free groups*, J. Algebra 290
   (2005), §2.5.
 -/
@@ -73,6 +85,40 @@ theorem exists_embedding_of_injective (hE : IsFullyResiduallyFree E) {f : G →*
     ext x
     simpa using DFunLike.congr_fun hgj x
 
+/-- **Composition of embeddings in iterated extensions of centralizers.** Let `F` be fully
+residually free. If `K` embeds over `F` in an ICE group `E` over `F` (by `f` with `f ∘ κ = j`), and
+`L` embeds over `K` in an ICE group `E'` over `K` (by `g` with `g ∘ l = j'`), then there are an ICE
+group `E''` over `F`, with coefficient inclusion `j''`, and an embedding `h` of `L` in `E''` with
+`h ∘ l ∘ κ = j''`.
+
+The group `K` itself need not be an ICE group over `F`, and `κ`, `l` need not be the coefficient
+inclusions of chains. -/
+theorem exists_embedding_comp {F E : Type u} {K E' : Type v} {L : Type*} [Group F] [Group K]
+    [Group L] [Group E] [Group E'] (hF : IsFullyResiduallyFree F) {κ : F →* K} {l : K →* L}
+    {j : F →* E} (c : ICE F E j) (f : GroupAlgGeom.GHom κ j) (hf : Function.Injective f)
+    {j' : K →* E'} (c' : ICE K E' j') (g : GroupAlgGeom.GHom l j') (hg : Function.Injective g) :
+    ∃ (E'' : Type u) (_ : Group E'') (j'' : F →* E'') (_ : ICE F E'' j'')
+      (h : GroupAlgGeom.GHom (l.comp κ) j''), Function.Injective h := by
+  -- `E` is fully residually free, so the chain `c'` over `K` can be transported along `f`.
+  obtain ⟨E'', _, j'', d, g', hg', hgj⟩ :=
+    exists_embedding_of_injective (c.isFullyResiduallyFree hF) (f := f) hf c'
+  exact ⟨E'', _, j''.comp j, c.append d,
+    ⟨g'.comp g, fun x => by simpa using DFunLike.congr_fun hgj (κ x)⟩, hg'.comp hg⟩
+
 end ICE
+
+/-! ### Over the free group of rank two -/
+
+/-- `ICE.exists_embedding_comp` with both chains nonempty and a non-surjective middle embedding:
+over `F = F(a, b)`, with `K = F` embedded in `E = F(a, ℤ)` and `L = F(b, ℤ)` an ICE group over `K`,
+it gives an embedding of `F(b, ℤ)` over `F` in an ICE group over `F`. -/
+example : ∃ (E : Type) (_ : Group E) (j : FreeGroup (Fin 2) →* E) (_ : ICE (FreeGroup (Fin 2)) E j)
+    (h : GroupAlgGeom.GHom ((CentralizerExt.of : FreeGroup (Fin 2) →*
+      CentralizerExt (FreeGroup.of (1 : Fin 2)) 1).comp (.id _)) j), Function.Injective h :=
+  ICE.exists_embedding_comp isFullyResiduallyFree_of_isFreeGroup
+    (.single (isAdmissibleCentralizerStep_freeGroup_of (0 : Fin 2) one_pos))
+    ⟨CentralizerExt.of, fun _ => rfl⟩ CentralizerExt.of_injective
+    (.single (isAdmissibleCentralizerStep_freeGroup_of (1 : Fin 2) one_pos))
+    (.id _) (by simpa using Function.injective_id)
 
 end TauCeti.LimitGroup

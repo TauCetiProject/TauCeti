@@ -191,7 +191,7 @@ theorem cuspOrbit_conj : (D.conj h).cuspOrbit = cuspOrbitConjEquiv h D.cuspOrbit
 /-- Transport of a cusp datum by conjugation by `1` is the identity. -/
 @[simp]
 theorem conj_one (h : ConjAct.toConjAct (1 : PSL(2, ℝ)) • Γ = Γ) : D.conj h = D :=
-  CuspDatum.ext (by simp) (by simp)
+  CuspDatum.ext (by simp)
 
 /-- Transporting a cusp datum by conjugation by `g` and then by `g'` is transporting it by
 conjugation by `g' * g`. -/
@@ -200,7 +200,7 @@ theorem conj_conj {Γ'' : Subgroup PSL(2, ℝ)} {g' : PSL(2, ℝ)}
     (h' : ConjAct.toConjAct g' • Γ' = Γ'') :
     (D.conj h).conj h' =
       D.conj (by rw [map_mul, mul_smul, h, h'] : ConjAct.toConjAct (g' * g) • Γ = Γ'') :=
-  CuspDatum.ext (by simp [mul_smul]) (by simp [mul_assoc])
+  CuspDatum.ext (by simp [mul_assoc])
 
 end CuspDatum
 
