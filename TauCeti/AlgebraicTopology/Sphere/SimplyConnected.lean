@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Normed.Module.Connected
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import TauCeti.AlgebraicTopology.Sphere.Puncture
+public import TauCeti.Analysis.Quaternion.Basic
 import Mathlib.Analysis.Convex.Combination
 
 /-!
@@ -52,6 +53,8 @@ Rank two is genuinely the boundary: the circle is not simply connected.
 * `TauCeti.simplyConnectedSpace_sphere_euclideanSpace`: the case of `Sⁿ` for `2 ≤ n`.
 * `TauCeti.simplyConnectedSpace_sphere_euclideanSpace_complex`: the case of the unit sphere
   `S²ᵏ⁺¹` of `ℂᵏ⁺¹` for `1 ≤ k`.
+* `TauCeti.simplyConnectedSpace_sphere_piLp_quaternion`: the case of the unit sphere
+  `S⁴ᵐ⁻¹` of `ℍᵐ` for `1 ≤ m`.
 
 ## References
 
@@ -451,6 +454,17 @@ theorem simplyConnectedSpace_sphere_euclideanSpace_complex {k : ℕ} (hk : 1 ≤
   refine simplyConnectedSpace_sphere ?_ 0 zero_le_one
   rw [← Module.finrank_eq_rank, finrank_real_of_complex, finrank_euclideanSpace_fin,
     Nat.ofNat_lt_cast]
+  omega
+
+open scoped ENNReal Quaternion in
+/-- **The unit sphere `S⁴ᵐ⁻¹` of `ℍᵐ` is simply connected** for every nonempty finite index type
+`ι` (`m = Fintype.card ι ≥ 1`). -/
+theorem simplyConnectedSpace_sphere_piLp_quaternion {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    {ι : Type*} [Fintype ι] [Nonempty ι] :
+    SimplyConnectedSpace (sphere (0 : PiLp p fun _ : ι ↦ ℍ) 1) := by
+  refine simplyConnectedSpace_sphere ?_ 0 zero_le_one
+  rw [← Module.finrank_eq_rank, finrank_piLp_quaternion, Nat.ofNat_lt_cast]
+  have := Fintype.card_pos (α := ι)
   omega
 
 end TauCeti
