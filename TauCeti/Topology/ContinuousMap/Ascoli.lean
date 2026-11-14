@@ -11,16 +11,19 @@ public import Mathlib.Algebra.Ring.Periodic
 public import Mathlib.Topology.MetricSpace.Pseudo.Real
 public import Mathlib.Topology.MetricSpace.Thickening
 public import Mathlib.Topology.EMetricSpace.Lipschitz
+public import Mathlib.Topology.MetricSpace.Holder
 public import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
 public import Mathlib.Topology.UniformSpace.UniformConvergenceTopology
 public import Mathlib.Topology.UnitInterval
 
 import Mathlib.Topology.ContinuousMap.Bounded.ArzelaAscoli
+import Mathlib.Topology.ContinuousMap.SecondCountableSpace
 import Mathlib.Topology.MetricSpace.IsometricSMul
 import Mathlib.Topology.MetricSpace.Lipschitz
 import Mathlib.Topology.MetricSpace.UniformConvergence
 import Mathlib.Topology.UniformSpace.Completion
 import TauCeti.Algebra.Order.Floor.Ring
+import TauCeti.Topology.MetricSpace.Holder
 import TauCeti.Topology.UniformSpace.Ascoli
 import Mathlib.Topology.MetricSpace.UniformConvergence
 
@@ -49,6 +52,10 @@ and adds companion statements used for compactness and finite approximation of f
   common modulus of continuity on `[0, 1]`, has a subsequence converging uniformly on `ℝ`. In
   particular the `1`-periodic `L`-Lipschitz loops in a compact set form a compact subset of
   `ℝ →ᵤ M`.
+* A sequence of maps equicontinuous on an open subset `U` of a second-countable locally compact
+  space, with values at each point in a common compact set, has a subsequence converging locally
+  uniformly on `U`. In particular this applies to maps that are Hölder on each compact subset of
+  `U` with a common constant, and the limit inherits those Hölder bounds.
 * A sequence of maps on `ℝ × ℝ` that are uniformly Lipschitz with values in a compact set on
   exhausting bands `[-Rₙ, Rₙ] × ℝ` has a subsequence converging locally uniformly on the plane.
   In particular, so do the translates `(s, t) ↦ u(s + σₙ, t)`, `σₙ → ∞`, of a Lipschitz map on a
@@ -80,6 +87,10 @@ endpoints `eₙ` stay at distance at least `1` from each other
   loops with a common modulus of continuity.
 * `TauCeti.isCompact_setOf_periodic_lipschitzWith`: the `1`-periodic `L`-Lipschitz loops in a
   compact set are compact for uniform convergence on `ℝ`.
+* `TauCeti.exists_subseq_tendstoLocallyUniformlyOn_of_equicontinuousOn`: Arzelà–Ascoli on an open
+  set, giving locally uniform convergence of a subsequence.
+* `TauCeti.exists_subseq_tendstoLocallyUniformlyOn_of_holderOnWith`: Arzelà–Ascoli for families
+  with a common Hölder bound on each compact subset of an open set.
 * `TauCeti.exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith`: Arzelà–Ascoli for maps that
   are uniformly Lipschitz with values in a compact set on exhausting bands of the plane.
 * `TauCeti.exists_subseq_tendstoLocallyUniformly_comp_add`: translates `u(s + σₙ, t)`, `σₙ → ∞`,
@@ -357,6 +368,65 @@ theorem exists_subseq_tendstoLocallyUniformly_comp_add {M : Type*} [PseudoMetric
     (fun n ↦ by simpa using hL.comp ((hadd n).lipschitzOnWith) (hmaps n))
     fun n ↦ huK.comp (hmaps n)
   exact ⟨fun n ↦ φ n + N, fun m n hmn ↦ Nat.add_lt_add_right (hφ hmn) N, g, htr⟩
+
+/-- **Arzelà–Ascoli on an open set.** Let `U` be an open subset of a second-countable locally
+compact space, and let `u n` be maps into a pseudometric space that are equicontinuous on `U`,
+with the values at each point of `U` lying in a common compact set. Then a subsequence of the
+`u n` converges locally uniformly on `U` to a map that is continuous on `U`. -/
+theorem exists_subseq_tendstoLocallyUniformlyOn_of_equicontinuousOn {M : Type*}
+    [LocallyCompactSpace X] [SecondCountableTopology X] [PseudoMetricSpace M] {U : Set X}
+    (hU : IsOpen U) {u : ℕ → X → M} (hequi : EquicontinuousOn u U)
+    (hpt : ∀ x ∈ U, ∃ Q, IsCompact Q ∧ ∀ n, u n x ∈ Q) :
+    ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ v : X → M, ContinuousOn v U ∧
+      TendstoLocallyUniformlyOn (fun n ↦ u (φ n)) v atTop U := by
+  classical
+  have := hU.locallyCompactSpace
+  set G : ℕ → C(U, M) := fun n ↦ ⟨U.domRestrict (u n), (hequi.continuousOn n).domRestrict⟩
+  obtain ⟨g, -, φ, hφ, hlim⟩ :=
+    (ArzelaAscoli.isCompact_closure_range_of_equicontinuous (f := G)
+      ((equicontinuous_restrict_iff _).2 hequi) fun x ↦ hpt x x.2).tendsto_subseq
+      fun n ↦ subset_closure (mem_range_self n)
+  -- Extend the limit off `U` by the first map of the sequence.
+  set v : X → M := fun z ↦ if hz : z ∈ U then g ⟨z, hz⟩ else u 0 z
+  have hvg : U.domRestrict v = g := funext fun z ↦ by simp [v, z.2]
+  have hconv : TendstoLocallyUniformlyOn (fun n ↦ u (φ n)) v atTop U := by
+    rw [tendstoLocallyUniformlyOn_iff_tendstoLocallyUniformly_comp_coe]
+    have h := ContinuousMap.tendsto_iff_tendstoLocallyUniformly.1 hlim
+    rwa [← hvg] at h
+  refine ⟨φ, hφ, v, ?_, hconv⟩
+  rw [continuousOn_iff_continuous_domRestrict, hvg]
+  exact g.continuous
+
+/-- **Arzelà–Ascoli for locally Hölder families.** Let `U` be an open subset of a second-countable
+locally compact pseudometric space, let `r > 0`, and let `u n` be maps into a pseudometric space
+that are Hölder continuous of exponent `r` on each compact subset of `U` with a constant
+independent of `n`, with the values at each point of `U` lying in a common compact set. Then a
+subsequence of the `u n` converges locally uniformly on `U` to a map that is continuous on `U`,
+and the limit satisfies every Hölder bound on a subset of `U` shared by all the `u n`. -/
+theorem exists_subseq_tendstoLocallyUniformlyOn_of_holderOnWith {Z M : Type*}
+    [PseudoMetricSpace Z] [LocallyCompactSpace Z] [SecondCountableTopology Z]
+    [PseudoMetricSpace M] {U : Set Z} (hU : IsOpen U) {r : ℝ≥0} (hr : 0 < r) {u : ℕ → Z → M}
+    (hholder : ∀ K ⊆ U, IsCompact K → ∃ C : ℝ≥0, ∀ n, HolderOnWith C r (u n) K)
+    (hpt : ∀ x ∈ U, ∃ Q, IsCompact Q ∧ ∀ n, u n x ∈ Q) :
+    ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ v : Z → M, ContinuousOn v U ∧
+      TendstoLocallyUniformlyOn (fun n ↦ u (φ n)) v atTop U ∧
+      ∀ K ⊆ U, ∀ C : ℝ≥0, (∀ n, HolderOnWith C r (u n) K) → HolderOnWith C r v K := by
+  -- Near each point of `U` the maps share a Hölder bound on a compact neighbourhood.
+  have hequi : EquicontinuousOn u U := fun x hx ↦ by
+    obtain ⟨K, hK, hxK, hKU⟩ := exists_compact_subset hU hx
+    obtain ⟨C, hC⟩ := hholder K hKU hK
+    refine (Metric.equicontinuousAt_of_continuity_modulus (fun y ↦ C * dist x y ^ (r : ℝ)) ?_ _
+      ?_).equicontinuousWithinAt U
+    · have hcont : Continuous fun y ↦ (C : ℝ) * dist x y ^ (r : ℝ) :=
+        ((continuous_const.dist continuous_id).rpow_const fun _ ↦ Or.inr r.coe_nonneg).const_mul _
+      simpa [Real.zero_rpow (NNReal.coe_pos.2 hr).ne'] using hcont.tendsto x
+    · filter_upwards [mem_interior_iff_mem_nhds.1 hxK] with y hy n
+      exact (hC n).dist_le (interior_subset hxK) hy
+  obtain ⟨φ, hφ, v, hv, hconv⟩ :=
+    exists_subseq_tendstoLocallyUniformlyOn_of_equicontinuousOn hU hequi hpt
+  -- A common Hölder bound passes to the pointwise limit.
+  exact ⟨φ, hφ, v, hv, hconv, fun K hKU C hC ↦ HolderOnWith.of_tendsto
+    (fun x hx ↦ hconv.tendsto_at (hKU hx)) (Eventually.of_forall fun n ↦ hC (φ n))⟩
 
 section Lipschitz
 
