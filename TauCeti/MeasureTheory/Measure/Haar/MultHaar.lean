@@ -29,10 +29,13 @@ radial coordinate is split off a multiplicative Haar measure, as in the decompos
 `dy / y = d*x × dt / t` of the archimedean parameters of a number field.
 
 Integrating against `dt / t` is integrating `t⁻¹ f(t)` over `(0, ∞)`
-(`TauCeti.integral_multHaar_eq_setIntegral`, `TauCeti.integrable_multHaar_iff`). In particular the
-Mellin transform `mellin f s = ∫_0^∞ t^(s-1) f(t) dt` is the integral of `t^s f(t)` against
-`dt / t` (`TauCeti.integral_multHaar_cpow_smul`), and Mathlib's `MellinConvergent` is the
-integrability of `t^s f(t)` against `dt / t` (`TauCeti.integrable_multHaar_cpow_smul_iff`).
+(`TauCeti.lintegral_multHaar_eq_setLIntegral`, `TauCeti.integral_multHaar_eq_setIntegral`,
+`TauCeti.integrable_multHaar_iff`), and a right-continuous function on `(0, ∞)` has
+`dt / t`-essential supremum equal to its pointwise supremum (`TauCeti.essSup_multHaar_eq_iSup_Ioi`).
+In particular the Mellin transform `mellin f s = ∫_0^∞ t^(s-1) f(t) dt` is the integral of
+`t^s f(t)` against `dt / t` (`TauCeti.integral_multHaar_cpow_smul`), and Mathlib's
+`MellinConvergent` is the integrability of `t^s f(t)` against `dt / t`
+(`TauCeti.integrable_multHaar_cpow_smul_iff`).
 
 For `b > 1` the geometric intervals `[c b ^ (μ j), c b ^ (μ j + |μ|))`, `j ∈ ℕ`, are pairwise
 disjoint, each of `dt / t`-measure `|μ| log b`. Integrating over them compares a sequence with a
@@ -45,7 +48,7 @@ This is how dyadic sums are bounded by integrals against `dt / t`.
 public section
 
 open MeasureTheory Measure Set
-open scoped ENNReal
+open scoped ENNReal Topology
 
 namespace TauCeti
 
@@ -276,6 +279,39 @@ end GeometricIntervals
 /-! ### Integrals against `dt / t` -/
 
 section Integral
+
+/-- The lower integral against `dt / t` is the lower integral of `t⁻¹ * f t` over `(0, ∞)`. -/
+theorem lintegral_multHaar_eq_setLIntegral (f : ℝ → ℝ≥0∞) :
+    ∫⁻ t, f t ∂multHaar = ∫⁻ t in Ioi 0, ENNReal.ofReal t⁻¹ * f t := by
+  rw [multHaar_def, lintegral_withDensity_eq_lintegral_mul_non_measurable _
+    measurable_inv.ennreal_ofReal (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top)]
+  rfl
+
+/-- On any measurable set `s`, the lower integral against `dt / t` is the lower integral of
+`t⁻¹ * f t` over `s ∩ (0, ∞)`. -/
+theorem setLIntegral_multHaar_eq_setLIntegral {s : Set ℝ} (hs : MeasurableSet s)
+    (f : ℝ → ℝ≥0∞) :
+    ∫⁻ t in s, f t ∂multHaar = ∫⁻ t in s ∩ Ioi 0, ENNReal.ofReal t⁻¹ * f t := by
+  rw [← lintegral_indicator hs, lintegral_multHaar_eq_setLIntegral,
+    ← Measure.restrict_restrict hs, ← lintegral_indicator hs]
+  exact setLIntegral_congr_fun measurableSet_Ioi fun t _ ↦
+    (indicator_mul_right s (fun u ↦ ENNReal.ofReal u⁻¹) f).symm
+
+/-- A function with values in `ℝ≥0∞` that is right continuous on `(0, ∞)` has essential supremum
+with respect to `dt / t` equal to its pointwise supremum on `(0, ∞)`. -/
+theorem essSup_multHaar_eq_iSup_Ioi {f : ℝ → ℝ≥0∞}
+    (hf : ∀ t > 0, ContinuousWithinAt f (Ici t) t) :
+    essSup f multHaar = ⨆ t > 0, f t := by
+  refine le_antisymm
+    (essSup_le_of_ae_le _ (ae_pos_multHaar.mono fun t ht ↦ le_iSup₂_of_le t ht le_rfl))
+    (iSup₂_le fun t ht ↦ ?_)
+  by_contra! hlt
+  obtain ⟨u, htu, hu⟩ := mem_nhdsGE_iff_exists_Ico_subset.1
+    ((hf t ht).eventually (IsOpen.mem_nhds isOpen_Ioi hlt))
+  have hpos : 0 < multHaar (Ico t u) := by
+    rw [multHaar_Ico ht htu.le, ENNReal.ofReal_pos, sub_pos]
+    exact Real.log_lt_log ht htu
+  exact hpos.ne' (measure_mono_null hu (meas_essSup_lt (f := f)))
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
