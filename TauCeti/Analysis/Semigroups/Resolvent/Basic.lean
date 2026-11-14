@@ -80,7 +80,7 @@ private lemma StronglyContinuousSemigroup.aestronglyMeasurable_pow_mul_resolvent
       (volume.restrict (Set.Ioi 0)) := by
   apply ContinuousOn.aestronglyMeasurable _ measurableSet_Ioi
   exact (by fun_prop : Continuous (fun t : ℝ ↦ t ^ n * Real.exp (-(lambda * t)))).continuousOn.smul
-    ((hb.realOperator_continuousOn_Ici x).mono Set.Ioi_subset_Ici_self)
+    (hb.continuous_realOperator_apply x).continuousOn
 
 /-- The polynomially weighted Laplace-transform integrand `t^n e^{-λt} S(t) x` is integrable
 on `(0, ∞)` for `ω < λ`. -/
@@ -110,8 +110,8 @@ lemma StronglyContinuousSemigroup.integrableOn_resolvent_integrand
 `(ω, M)`, for `λ > ω`. A pointwise `X`-valued Bochner integral (so it is well-defined for
 the merely strongly continuous `t ↦ S t`), with built-in norm bound `‖R λ‖ ≤ M/(λ-ω)`.
 
-Completeness is an explicit binder: no step of the construction uses it, but on an incomplete
-space the Bochner integral is the junk value `0`. -/
+Completeness is assumed even though no step of the construction uses it, because on an incomplete
+space the Bochner integral takes the junk value `0`. -/
 noncomputable def StronglyContinuousSemigroup.resolvent [_hX : CompleteSpace X]
     (S : StronglyContinuousSemigroup X) {ω M : ℝ} (hb : S.HasGrowthBound ω M)
     (lambda : ℝ) (hlam : ω < lambda) : X →L[ℝ] X :=
