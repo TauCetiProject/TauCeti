@@ -214,6 +214,25 @@ variable (M : AddSubgroup V)
 variable (hM : ∀ u ∈ kostantForm e h, ∀ m ∈ M, ρ u m ∈ M)
 variable {n : ℕ}
 
+/-- Restricting the unit tangent vector of `𝔾ₐ` over `R` along the base-change isomorphism
+`R ⊗[ℤ] O(𝔾ₐ) ≅ O(𝔾ₐ)` of the additive group returns the unit tangent vector of `𝔾ₐ` over `ℤ`. -/
+private theorem gaTangentLinearEquiv_tangentBaseChangeLieEquiv_symm_derivationComp
+    (R : Type*) [CommRing R] :
+    AdditiveGroup.gaTangentLinearEquiv
+      ((tangentBaseChangeLieEquiv (R := ℤ) (K := R)
+        (H := AdditiveGroup.coordinateHopfAlgebra ℤ)).symm
+          (derivationComp (B := R) (AdditiveGroup.coordinateHopfAlgebraBaseChangeIso ℤ R).hom.hom
+            ((AdditiveGroup.gaTangentLinearEquiv (R := R) (B := R)).symm 1))) = 1 := by
+  rw [AdditiveGroup.gaTangentLinearEquiv_apply,
+    tangentBaseChangeLieEquiv_symm_apply, AlgEquiv.apply_symm_apply,
+    algEquivSelf_derivationComp_apply]
+  simp only [BialgHom.coe_toAlgHom]
+  -- the tensor product `R ⊗[ℤ] SymmetricAlgebra ℤ ℤ` is written through the bundled carrier of
+  -- `𝔾ₐ` in the evaluation lemma, so only a non-reducible unfolding matches the pattern
+  erw [AdditiveGroup.coordinateHopfAlgebraBaseChangeIso_hom_hom_tmul_ι ℤ R 1 1]
+  rw [map_one (algebraMap ℤ R), one_smul, ← AdditiveGroup.gaTangentLinearEquiv_apply,
+    LinearEquiv.apply_symm_apply]
+
 /-- The differential of a base-changed Kostant root subgroup is the additive tangent parameter
 times the integral root-operator matrix, over every commutative base ring and value algebra. -/
 theorem tangentMatrix_derivationComp_kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap
@@ -244,22 +263,7 @@ theorem tangentMatrix_derivationComp_kostantRootSubgroupGeneralLinearBaseChangeC
     GeneralLinear.tangentMatrix_derivationComp_transportedBaseChange,
     tangentMatrix_derivationComp_kostantRootSubgroupCoordinateMap]
   simp only [algebraMap_int_eq, Int.coe_castRingHom]
-  suffices hparam : AdditiveGroup.gaTangentLinearEquiv
-      ((tangentBaseChangeLieEquiv (R := ℤ) (K := R)
-        (H := AdditiveGroup.coordinateHopfAlgebra ℤ)).symm
-          (derivationComp (B := R) (AdditiveGroup.coordinateHopfAlgebraBaseChangeIso ℤ R).hom.hom
-            ((AdditiveGroup.gaTangentLinearEquiv (R := R) (B := R)).symm 1))) = 1 by
-    rw [hparam, one_smul]
-  rw [AdditiveGroup.gaTangentLinearEquiv_apply,
-    tangentBaseChangeLieEquiv_symm_apply, AlgEquiv.apply_symm_apply,
-    algEquivSelf_derivationComp_apply]
-  -- The categorical additive base-change isomorphism is the symmetric-algebra equivalence.
-  change (Bialgebra.CounitAlgebra.algEquivSelf R (AdditiveGroup.coordinateHopfAlgebra R) R)
-    (((AdditiveGroup.gaTangentLinearEquiv (R := R) (B := R)).symm 1)
-      (AdditiveGroup.gaScalarTensorBialgEquiv
-        ((1 : R) ⊗ₜ[ℤ] SymmetricAlgebra.ι ℤ ℤ 1))) = _
-  rw [AdditiveGroup.gaScalarTensorBialgEquiv_tmul_ι, map_one (algebraMap ℤ R), one_smul,
-    ← AdditiveGroup.gaTangentLinearEquiv_apply, LinearEquiv.apply_symm_apply]
+  rw [gaTangentLinearEquiv_tangentBaseChangeLieEquiv_symm_derivationComp, one_smul]
 
 end BaseChange
 
