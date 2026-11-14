@@ -61,7 +61,7 @@ theorem componentAdjacencyGraph_mono {s R₁ R₂ : Set X} (hR : R₁ ⊆ R₂) 
   exact ⟨hcd, x, hR hx, hc, hd⟩
 
 /-- Components are adjacent or already equal when their closures share a regular point. -/
-theorem adj_or_eq_componentAdjacencyGraph_of_mem_closure {s R : Set X}
+theorem componentAdjacencyGraph_adj_or_eq_of_mem_closure {s R : Set X}
     {c d : ConnectedComponents s} {x : X} (hx : x ∈ R)
     (hc : x ∈ closure c.carrierIn) (hd : x ∈ closure d.carrierIn) :
     (componentAdjacencyGraph s R).Adj c d ∨ c = d := by
@@ -74,12 +74,12 @@ theorem reachable_componentAdjacencyGraph_of_mem_closure {s R : Set X}
     {c d : ConnectedComponents s} {x : X} (hx : x ∈ R)
     (hc : x ∈ closure c.carrierIn) (hd : x ∈ closure d.carrierIn) :
     (componentAdjacencyGraph s R).Reachable c d :=
-  (adj_or_eq_componentAdjacencyGraph_of_mem_closure hx hc hd).elim
+  (componentAdjacencyGraph_adj_or_eq_of_mem_closure hx hc hd).elim
     SimpleGraph.Adj.reachable (· ▸ .rfl)
 
 /-- If a curve stays in `s` on `[a, t)` and `(t, b]`, with its value at `t` in `R`, then its
 endpoint components are adjacent in `componentAdjacencyGraph s R` or equal. -/
-theorem adj_or_eq_componentAdjacencyGraph_of_Ico_of_Ioc {s R : Set X} {f : ℝ → X}
+theorem componentAdjacencyGraph_adj_or_eq_of_Ico_of_Ioc {s R : Set X} {f : ℝ → X}
     {a b t : ℝ} (hf : ContinuousOn f (Icc a b)) (hat : a < t) (htb : t < b)
     (hsa : ∀ u ∈ Ico a t, f u ∈ s) (hsb : ∀ u ∈ Ioc t b, f u ∈ s) (ht : f t ∈ R) :
     (componentAdjacencyGraph s R).Adj
@@ -98,7 +98,7 @@ theorem adj_or_eq_componentAdjacencyGraph_of_Ico_of_Ioc {s R : Set X} {f : ℝ �
       (hf.mono (fun u hu => ⟨hat.le.trans hu.1.le, hu.2⟩)) ⟨htb, le_rfl⟩
       (by rw [closure_Ioc htb.ne]; exact ⟨le_rfl, htb.le⟩)
       hft.continuousWithinAt hsb
-  exact adj_or_eq_componentAdjacencyGraph_of_mem_closure ht
+  exact componentAdjacencyGraph_adj_or_eq_of_mem_closure ht
     (by rwa [ConnectedComponents.carrierIn_mk])
     (by rwa [ConnectedComponents.carrierIn_mk])
 
@@ -110,7 +110,7 @@ theorem reachable_componentAdjacencyGraph_of_Ico_of_Ioc {s R : Set X} {f : ℝ �
     (componentAdjacencyGraph s R).Reachable
       (ConnectedComponents.mk (⟨f a, hsa a ⟨le_rfl, hat⟩⟩ : s))
       (ConnectedComponents.mk ⟨f b, hsb b ⟨htb, le_rfl⟩⟩) :=
-  (adj_or_eq_componentAdjacencyGraph_of_Ico_of_Ioc hf hat htb hsa hsb ht).elim
+  (componentAdjacencyGraph_adj_or_eq_of_Ico_of_Ioc hf hat htb hsa hsb ht).elim
     SimpleGraph.Adj.reachable (· ▸ .rfl)
 
 /-- A continuous curve with only finitely many exceptional parameters gives

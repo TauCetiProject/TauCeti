@@ -192,7 +192,7 @@ theorem isPreconnected_carrierIn (c : ConnectedComponents s) : IsPreconnected c.
 theorem isConnected_carrierIn (c : ConnectedComponents s) : IsConnected c.carrierIn :=
   ⟨carrierIn_nonempty c, isPreconnected_carrierIn c⟩
 
-/-- A component's ambient carrier is the connected component of any of its points. -/
+/-- A component's ambient carrier is the connected component in `s` of any of its points. -/
 theorem carrierIn_eq_connectedComponentIn {c : ConnectedComponents s} {x : X}
     (hx : x ∈ c.carrierIn) : c.carrierIn = connectedComponentIn s x := by
   obtain ⟨hx, rfl⟩ := mem_carrierIn_iff.mp hx
@@ -287,8 +287,8 @@ theorem IsPreconnected.connectedComponents_mk_eq {s A : Set X} (hA : IsPreconnec
   ConnectedComponents.mk_eq_mk_iff_mem_connectedComponentIn.mpr
     (hA.subset_connectedComponentIn hy hAs hx)
 
-/-- A preconnected subset lies in the ambient carrier of any component containing one of
-its points. -/
+/-- A preconnected subset of `s` lies in the ambient carrier of any component of `s` containing
+one of its points. -/
 theorem IsPreconnected.subset_carrierIn {s A : Set X} (hA : IsPreconnected A)
     (hAs : A ⊆ s) {z : X} (hz : z ∈ A) {c : ConnectedComponents s}
     (hzc : z ∈ c.carrierIn) : A ⊆ c.carrierIn := by

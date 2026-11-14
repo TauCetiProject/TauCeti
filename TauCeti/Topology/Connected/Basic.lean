@@ -29,8 +29,9 @@ chooses one of its points.
 An open set is not preconnected exactly when it is the union of two disjoint nonempty open sets
 (`IsOpen.not_isPreconnected_iff`), as for clopen sets in Mathlib.
 
-For `f` mapping a preconnected set `s` into `u`, a limiting value along `s` lies in the closure
-of the connected component of `f x` in `u` (`IsPreconnected.mem_closure_connectedComponentIn`).
+For `f` continuously mapping a preconnected set `s` into `u`, with `x ∈ s` and
+`t ∈ closure s` at which `f` is continuous within `s`, `f t` lies in the closure of
+`connectedComponentIn u (f x)` (`IsPreconnected.mem_closure_connectedComponentIn`).
 
 A continuous injection on a compact set into a Hausdorff space is a closed embedding of that set,
 so preconnectedness of the image is equivalent to preconnectedness of the set
@@ -59,8 +60,9 @@ open Filter Function Set Topology
 
 variable {α ι : Type*} [TopologicalSpace α]
 
-/-- If `f` maps a preconnected set `s` into `u`, a limiting value along `s` lies in the closure
-of the connected component in `u` containing the image of any point of `s`. -/
+/-- If `f` continuously maps a preconnected set `s` into `u` and is continuous within `s`
+at `t ∈ closure s`, then `f t` lies in the closure of `connectedComponentIn u (f x)` for any
+`x ∈ s`. -/
 theorem IsPreconnected.mem_closure_connectedComponentIn {β : Type*} [TopologicalSpace β]
     {s : Set α} {u : Set β} {f : α → β} (hs : IsPreconnected s) (hf : ContinuousOn f s)
     {x t : α} (hx : x ∈ s) (ht : t ∈ closure s) (hft : ContinuousWithinAt f s t)
