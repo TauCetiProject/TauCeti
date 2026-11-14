@@ -61,13 +61,12 @@ centres that divides it in the ratio of the two radii, at distance `r * dist c �
 
 ## The intended consumer
 
-Layer **L5** of `TauCetiRoadmap/ConformalMapping/README.md`, Carathéodory's boundary
-correspondence, cuts a disc `ball c r` in the plane by the circle `sphere ζ ρ` about a point `ζ`
-of its boundary — the *circular crosscut* of
+Carathéodory's boundary correspondence cuts a disc `ball c r` in the plane by the circle
+`sphere ζ ρ` about a point `ζ` of its boundary — the *circular crosscut* of
 `TauCeti/Analysis/Complex/Conformal/Crosscut/Basic.lean` — and reads the boundary behaviour of a
-conformal map along the near side. There `dist ζ c = r`, so
-the overlap condition `dist c ζ < r + ρ` holds for every `ρ > 0`, and the frontier bound is what
-the maximum modulus principle is applied against. None of that is used here.
+conformal map along the near side. There `dist ζ c = r`, so the overlap condition
+`dist c ζ < r + ρ` holds for every `ρ > 0`, and the frontier bound is what the maximum modulus
+principle is applied against. None of that is used here.
 
 ## Main results
 
@@ -78,6 +77,8 @@ the maximum modulus principle is applied against. None of that is used here.
 * `TauCeti.nonempty_ball_inter_ball` — two balls that overlap meet, and
   `TauCeti.nonempty_ball_inter_sphere` — a sphere about a boundary point of a ball, of radius below
   the diameter of the ball, meets it.
+  The converse `TauCeti.pos_and_lt_two_mul_of_mem_ball_inter_sphere`: if that sphere meets the ball
+  at all, the radius is in that range (in any pseudo-metric space).
 * `TauCeti.isConnected_ball_inter_ball` — the near side is connected.
 * `TauCeti.connectedComponentIn_ball_diff_sphere_eq_ball_inter_ball` — the near side is a connected
   component of the cut ball.
@@ -109,6 +110,22 @@ theorem frontier_ball_inter_ball_subset :
   (frontier_inter_subset _ _).trans <| union_subset_union
     (inter_subset_inter frontier_ball_subset_sphere closure_ball_subset_closedBall)
     (inter_subset_inter closure_ball_subset_closedBall frontier_ball_subset_sphere)
+
+/-- **A point of a circular cut pins the radius.** If `ζ` lies on the sphere `sphere x r` and some
+point `z` lies in `ball x r ∩ sphere ζ ρ`, then `0 < ρ` and `ρ < 2 * r`: the sphere about a
+boundary point of a ball meets the ball only in that range of radii. This is the converse of
+`TauCeti.nonempty_ball_inter_sphere`, and it needs only the triangle inequality. -/
+theorem pos_and_lt_two_mul_of_mem_ball_inter_sphere {ζ z : X} (hζ : dist ζ x = r)
+    (hz : z ∈ ball x r ∩ sphere ζ ρ) : 0 < ρ ∧ ρ < 2 * r := by
+  have h1 : dist z x < r := mem_ball.mp hz.1
+  have h2 : dist z ζ = ρ := mem_sphere.mp hz.2
+  refine ⟨lt_of_le_of_ne (h2 ▸ dist_nonneg) fun h0 => ?_, ?_⟩
+  · have := dist_triangle ζ z x
+    rw [dist_comm ζ z, h2, ← h0, hζ] at this
+    linarith
+  · calc ρ = dist z ζ := h2.symm
+      _ ≤ dist z x + dist x ζ := dist_triangle _ _ _
+      _ < 2 * r := by rw [dist_comm x ζ, hζ]; linarith
 
 end PseudoMetric
 

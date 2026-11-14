@@ -8,6 +8,7 @@ module
 public import TauCeti.Data.Finset.SuccessPositions
 public import TauCeti.Probability.Distributions.NegativeHypergeometric.Cdf
 public import TauCeti.Probability.Distributions.Hypergeometric.Sampling
+public import TauCeti.Probability.Distributions.Uniform.Permutation
 
 /-!
 # Negative hypergeometric stopping counts from uniform success positions
@@ -22,6 +23,11 @@ cumulative identity `negativeHypergeometricMeasure_real_Iic_eq_hypergeometric_ta
 stopping after at most `k` failures means observing at least `r` successes in the
 first `k + r` positions. It provides the stopping-count part of sampling without
 replacement, independently of how a uniformly random success-position set is generated.
+
+The labelled-population form draws the labels `Fin N` in a uniformly random order and marks
+an arbitrary set `s` of success labels. By `Finset.map_preimage_uniformOn_perm`, the positions
+of the success labels form a uniform `#s`-subset, so the failures drawn before the `r`th success
+have the negative hypergeometric law with `#s` successes, for every `r ≤ #s`.
 
 ## References
 
@@ -54,7 +60,7 @@ theorem map_failuresBeforeSuccess_uniformOn_powersetCard {N K r : ℕ}
   rw [← measureReal_def, ← measureReal_def,
     map_measureReal_apply_of_aemeasurable
       (Finset.aemeasurable_uniformOn_finset _ _) measurableSet_Iic,
-    negativeHypergeometricMeasure_real_Iic_eq_hypergeometric_tail hr hK]
+    negativeHypergeometricMeasure_real_Iic_eq_hypergeometric_tail]
   have hcount : μ.map (fun s ↦ #(s ∩ range (k + r))) =
       hypergeometricMeasure N K (min N (k + r)) := by
     rw [hypergeometricMeasure_comm N K]
@@ -83,6 +89,32 @@ theorem map_failuresBeforeSuccess_uniformOn_powersetCard {N K r : ℕ}
 
 end TauCeti.Probability
 
+namespace Finset
+
+open TauCeti.Probability
+
+variable {N r : ℕ}
+    [MeasurableSpace (Equiv.Perm (Fin N))] [MeasurableSingletonClass (Equiv.Perm (Fin N))]
+
+/-- Draw the labels `Fin N` in a uniformly random order, the `i`th draw being `σ i`, and call
+the labels in `s` successes. The number of failures drawn before the `r`th success has the
+negative hypergeometric law with `#s` successes. This includes `r = 0` and `N = 0`. -/
+theorem map_failuresBeforeSuccess_preimage_uniformOn_perm (s : Finset (Fin N)) (hr : r ≤ #s) :
+    (uniformOn (Set.univ : Set (Equiv.Perm (Fin N)))).map (fun σ : Equiv.Perm (Fin N) ↦
+        ((s.preimage σ σ.injective.injOn).map Fin.valEmbedding).failuresBeforeSuccess r) =
+      negativeHypergeometricMeasure N #s r := by
+  have hsN : #s ≤ N := by simpa using s.card_le_univ
+  have h := congrArg (fun μ ↦ (μ.map (Finset.map Fin.valEmbedding)).map
+    (fun t : Finset ℕ ↦ t.failuresBeforeSuccess r)) s.map_preimage_uniformOn_perm
+  rw [Set.powersetCard.coe_finset, Fin.valEmbedding.map_finsetMap_uniformOn_powersetCard,
+    Fin.map_valEmbedding_univ, Nat.Iio_eq_range,
+    map_failuresBeforeSuccess_uniformOn_powersetCard hr hsN,
+    Measure.map_map (measurable_of_countable _) (measurable_of_countable _),
+    Measure.map_map (measurable_of_countable _) (measurable_of_countable _)] at h
+  exact h
+
+end Finset
+
 namespace ProbabilityTheory.HasLaw
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
@@ -101,5 +133,19 @@ theorem failuresBeforeSuccess_negativeHypergeometricMeasure
     ⟨Finset.aemeasurable_uniformOn_finset _ _,
       TauCeti.Probability.map_failuresBeforeSuccess_uniformOn_powersetCard hr hK⟩
   exact hstop.fun_comp hS
+
+/-- A uniformly random drawing order of the labels `Fin N` gives a negative hypergeometric
+count of failures before the `r`th success label, on any underlying probability space. -/
+theorem failuresBeforeSuccess_preimage_negativeHypergeometricMeasure
+    [MeasurableSpace (Equiv.Perm (Fin N))] [MeasurableSingletonClass (Equiv.Perm (Fin N))]
+    {σ : Ω → Equiv.Perm (Fin N)} (hσ : HasLaw σ (uniformOn univ) P) (s : Finset (Fin N))
+    (hr : r ≤ #s) :
+    HasLaw (fun ω ↦ ((s.preimage (σ ω) (σ ω).injective.injOn).map
+        Fin.valEmbedding).failuresBeforeSuccess r)
+      (TauCeti.Probability.negativeHypergeometricMeasure N #s r) P := by
+  rw [← s.map_failuresBeforeSuccess_preimage_uniformOn_perm hr]
+  exact (hasLaw_map (measurable_of_countable (fun τ : Equiv.Perm (Fin N) ↦
+    ((s.preimage τ τ.injective.injOn).map Fin.valEmbedding).failuresBeforeSuccess r)
+      ).aemeasurable).comp hσ
 
 end ProbabilityTheory.HasLaw

@@ -28,6 +28,7 @@ integrability hypotheses on `Ω`.
   extension `v₀ ∈ H¹₀(Ω)`.
 * `TauCeti.PDE.energyFormH1_extendByZeroL`: `a(u₀, v₀) = a(u, v)` for `u, v ∈ H¹₀(U)` with zero
   extensions `u₀, v₀ ∈ H¹₀(Ω)`.
+* `TauCeti.PDE.isCoercive_energyFormH1L0_of_domain_le`: coercivity passes to smaller domains.
 * `TauCeti.PDE.energyFormH1_restrictL_nonpos`: weak subsolutions restrict to weak subsolutions.
 * `TauCeti.PDE.energyFormH1_restrictL_nonneg`: weak supersolutions restrict to weak
   supersolutions.
@@ -124,6 +125,20 @@ theorem energyFormH1_extendByZeroL (a : EuclideanSpace ℝ ι → Matrix ι ι �
   have h := energyFormH1_restrictL a b c hU (W1p0.extendByZeroL hU u : W1p mu Omega 2) v
   rw [W1p0.restrictL_extendByZeroL] at h
   exact h.symm
+
+/-- **Coercivity passes to smaller domains.** Zero extension preserves both the Sobolev norm
+and the energy, so the same coercivity constant works on every smaller open set. -/
+theorem isCoercive_energyFormH1L0_of_domain_le {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ}
+    (hU : U ≤ Omega)
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) :
+    IsCoercive (energyFormH1L0
+      (hcoeff.mono_measure (Measure.restrict_mono (SetLike.coe_subset_coe.mpr hU) le_rfl))) := by
+  obtain ⟨C, hC, hbound⟩ := hcoercive
+  refine ⟨C, hC, fun u ↦ ?_⟩
+  simpa only [W1p0.norm_extendByZeroL, energyFormH1L0_apply, energyFormH1_extendByZeroL]
+    using hbound (W1p0.extendByZeroL hU u)
 
 /-- **Weak subsolutions restrict to weak subsolutions.** If `u ∈ H¹(Ω)` satisfies `a(u, v) ≤ 0`
 for every nonnegative `v ∈ H¹₀(Ω)`, then for every open `U ⊆ Ω` its restriction `u|_U` satisfies
@@ -426,11 +441,7 @@ theorem forall_energyFormH1_restrictL_top_eq_setIntegral [DecidableEq ι] {v : W
       (∫ x, ⟪W1p.gradient v x, ∇ φ x⟫_ℝ ∂mu) + ∫ x, G x * φ x ∂mu = 0) :
     ∀ w : W1p0 mu Omega 2, energyFormH1 (fun _ => 1) 0 0 (W1p.restrictL le_top v)
       (w : W1p mu Omega 2) = ∫ x in Omega, F x * W1p.value (w : W1p mu Omega 2) x ∂mu := by
-  have hcoeff : MemLp (fun x => energyIntegrand ((fun _ => (1 : Matrix ι ι ℝ)) x)
-      ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x)
-      ((0 : EuclideanSpace ℝ ι → ℝ) x)) ⊤ (mu.restrict Omega) := by
-    simpa using memLp_top_const (μ := mu.restrict (Omega : Set (EuclideanSpace ℝ ι)))
-      (energyIntegrand (1 : Matrix ι ι ℝ) 0 0)
+  have hcoeff := memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega) 1
   intro w
   refine ((forall_energyFormH1_eq_setIntegral_iff_forall_testFunction hcoeff (hF.toLp F)
     (W1p.restrictL le_top v)).2 (fun φ => ?_) w).trans (integral_congr_ae ?_)

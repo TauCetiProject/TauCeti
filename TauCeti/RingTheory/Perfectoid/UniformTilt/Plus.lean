@@ -42,6 +42,8 @@ one; for `I = (p)` the target is Mathlib's `PreTilt B⁺ p = Perfection (ModP B�
 * `TauCeti.Perfectoid.uniformTilt.mem_plusSubring_iff_coeff_zero`: `x ∈ B♭⁺` iff `x⁽⁰⁾ ∈ B⁺`.
 * `TauCeti.Perfectoid.uniformTilt.coeff_add_sub_mem_span`: `(x + y)⁽ⁿ⁾ - x⁽ⁿ⁾ - y⁽ⁿ⁾ ∈ p B⁺` on
   `B♭⁺`.
+* `TauCeti.Perfectoid.uniformTilt.map_mem_plusSubring`: `g♭` carries `B♭⁺` into `C♭⁺` when `g`
+  carries `B⁺` into `C⁺`.
 * `TauCeti.Perfectoid.uniformTilt.plusSharp_add_sub_mem`: `(x + y)♯ - x♯ - y♯ ∈ p B⁺`.
 * `TauCeti.Perfectoid.uniformTilt.coeff_plusEquiv`: `plusEquiv` reduces every coordinate modulo `I`.
 * `TauCeti.Perfectoid.uniformTilt.coeff_zero_plusEquiv_symm`: the zeroth coordinate of the inverse
@@ -154,6 +156,23 @@ theorem plusSubring_le_powerBoundedSubring [NonarchimedeanAddGroup (uniformTilt 
     (h : IsRingOfIntegralElements Bplus) :
     plusSubring p h ≤ powerBoundedSubring (uniformTilt p B) :=
   fun _ hx ↦ mem_powerBoundedSubring.mpr ((isBounded_plusSubring h).isPowerBounded_of_mem hx)
+
+section Map
+
+variable {C : Type*} [CommRing C] [UniformSpace C] [IsUniformAddGroup C] [IsTopologicalRing C]
+  [IsTateRing C] [CompleteSpace C] [T2Space C] [IsUniform C]
+  [Fact (IsTopologicallyNilpotent (p : C))] {Cplus : Subring C}
+
+/-- The tilt `g♭` of a continuous ring homomorphism `g` carrying `B⁺` into `C⁺` carries the
+integral tilt `B♭⁺` into `C♭⁺`. -/
+theorem map_mem_plusSubring {hB : IsRingOfIntegralElements Bplus}
+    {hC : IsRingOfIntegralElements Cplus} (g : B →+* C) (hg : Continuous g)
+    (hgplus : ∀ x ∈ Bplus, g x ∈ Cplus) {x : uniformTilt p B} (hx : x ∈ plusSubring p hB) :
+    map g hg x ∈ plusSubring p hC := by
+  rw [mem_plusSubring_iff_coeff_zero, coeff_map]
+  exact hgplus _ (mem_plusSubring_iff_coeff_zero.mp hx)
+
+end Map
 
 variable (p) in
 /-- The *sharp map* `x ↦ x♯ = x⁽⁰⁾` of the integral tilt, as a multiplicative map `B♭⁺ → B⁺`. It

@@ -18,9 +18,9 @@ elementary-2 quotient of cardinality `2 ^ rank`: squaring is doubling, and `A / 
 
 This is the free building block complementing the finite cyclic one of
 `TauCeti.Algebra.Group.ElementaryTwoQuotient.Cyclic`: through a product decomposition of a
-finitely generated abelian group, the two together compute its number of square classes. The
-multiquadratic roadmap consumes this file through Dirichlet's unit theorem, whose free part
-`Fin (rank) → ℤ` contributes `2 ^ rank` square classes of units.
+finitely generated abelian group, the two together compute its number of square classes. For the
+unit group of a number field, Dirichlet's unit theorem gives a free part `Fin (rank) → ℤ`, which
+contributes `2 ^ rank` square classes of units.
 
 The counting itself is Mathlib's `ModN.natCard_eq` (`|A/nA| = n ^ rank` for a free finite-rank
 `ℤ`-module); this file transports it along the identification of `Additive (Multiplicative A)`
@@ -63,6 +63,15 @@ private theorem map_range_lsmul_two_additiveMultiplicative :
     exact (natCast_zsmul (Multiplicative.toAdd (Additive.toMul x)) 2).symm
   rw [hcomp, LinearMap.range_comp, LinearEquiv.range, Submodule.map_top]
 
+/-- The elementary-2 quotient of `Multiplicative A` is `𝔽₂`-linearly equivalent to `A / 2A`,
+by transporting along the identification of `Additive (Multiplicative A)` with `A`. Kept private
+to the file. -/
+private theorem nonempty_linearEquiv_modN :
+    Nonempty (ElementaryTwoQuotient (Multiplicative A) ≃ₗ[ZMod 2] ModN A 2) :=
+  let e := (Submodule.Quotient.equiv _ _ (AddEquiv.additiveMultiplicative A).toIntLinearEquiv
+    (map_range_lsmul_two_additiveMultiplicative A)).toAddEquiv
+  ⟨{ e with map_smul' := ZMod.map_smul e.toAddMonoidHom }⟩
+
 variable [Module.Free ℤ A] [Module.Finite ℤ A]
 
 /-- **A finite-rank free abelian group has `2 ^ rank` square classes.** For a free `ℤ`-module `A`
@@ -74,9 +83,7 @@ theorem card_elementaryTwoQuotient_multiplicative :
   calc
     Nat.card (ElementaryTwoQuotient (Multiplicative A))
         = Nat.card (ModN A 2) :=
-          Nat.card_congr (Submodule.Quotient.equiv _ _
-            (AddEquiv.additiveMultiplicative A).toIntLinearEquiv
-            (map_range_lsmul_two_additiveMultiplicative A)).toEquiv
+          Nat.card_congr (nonempty_linearEquiv_modN A).some.toEquiv
     _ = 2 ^ Module.finrank ℤ A := ModN.natCard_eq A 2
 
 /-- The elementary-2 quotient of a finite-rank free abelian group is finite. The group is
@@ -86,10 +93,12 @@ divisibility lemmas. -/
 instance : Finite (ElementaryTwoQuotient (Multiplicative A)) :=
   Nat.finite_of_card_ne_zero (by simp [card_elementaryTwoQuotient_multiplicative])
 
-/-- The 2-rank of a finite-rank free abelian group is its rank:
-`twoRank (Multiplicative A) = finrank ℤ A`. -/
-theorem twoRank_multiplicative : twoRank (Multiplicative A) = Module.finrank ℤ A :=
-  twoRank_eq_of_card_elementaryTwoQuotient_eq_two_pow _
-    (card_elementaryTwoQuotient_multiplicative A)
+omit [Module.Finite ℤ A] in
+/-- The 2-rank of a free abelian group is its rank: `twoRank (Multiplicative A) = finrank ℤ A`.
+For a free group of infinite rank both sides are `0` by the convention of `Module.finrank`. -/
+theorem twoRank_multiplicative : twoRank (Multiplicative A) = Module.finrank ℤ A := by
+  rw [twoRank_def, (nonempty_linearEquiv_modN A).some.finrank_eq,
+    Module.finrank_eq_nat_card_basis (ModN.basis (n := 2) (Module.Free.chooseBasis ℤ A)),
+    Module.finrank_eq_nat_card_basis (Module.Free.chooseBasis ℤ A)]
 
 end TauCeti
