@@ -13,10 +13,14 @@ public import Mathlib.Analysis.Calculus.ContDiff.Comp
 
 The `m`-th coefficient of `q.taylorComp p` is a finite sum, over the ordered partitions of `m`,
 of continuous multilinear expressions in the coefficients of `q` and `p` of order at most `m`.
-So it depends continuously on these finitely many coefficients. Combined with Mathlib's Faà di
+So it depends only on these finitely many coefficients
+(`FormalMultilinearSeries.taylorComp_congr`), and continuously so. Combined with Mathlib's Faà di
 Bruno formula `iteratedFDerivWithin_comp`, this says that the `m`-th derivative of a composite
 `g ∘ f` depends continuously on the derivatives of `g` and of `f` of order at most `m`, which is
-how continuity of composition in `C^n` topologies is proved.
+how continuity of composition in `C^n` topologies is proved. In particular, if `g` is `Cᵐ` at
+`f x` and `f` is `Cᵐ` at `x`, the derivatives of `g ∘ f` at `x` of order at most `m` are
+determined by those of `g` at `f x` and of `f` at `x` (`TauCeti.iteratedFDeriv_comp_congr`): the
+jets of order `m` of a composite depend only on the jets of order `m` of its factors.
 
 The same expansion bounds the norm of the `m`-th coefficient
 (`FormalMultilinearSeries.norm_taylorComp_le`): if the coefficients of `p` of orders `1` through
@@ -50,6 +54,32 @@ theorem Filter.Tendsto.taylorComp {α : Type*} {l : Filter α}
   have hP : Tendsto (fun a i ↦ p a (c.partSize i)) l (𝓝 fun i ↦ p₀ (c.partSize i)) :=
     tendsto_pi_nhds.2 fun i ↦ hp _ (c.partSize_pos i) (c.partSize_le i)
   exact (continuous_eval.tendsto _).comp (hB.prodMk_nhds hP)
+
+/-- The `m`-th coefficient of the Taylor composition `q.taylorComp p` depends only on the
+coefficients of `q` of order at most `m` and of `p` of orders `1` through `m`. -/
+theorem FormalMultilinearSeries.taylorComp_congr {q₁ q₂ : FormalMultilinearSeries 𝕜 F G}
+    {p₁ p₂ : FormalMultilinearSeries 𝕜 E F} {m : ℕ} (hq : ∀ k ≤ m, q₁ k = q₂ k)
+    (hp : ∀ k, 1 ≤ k → k ≤ m → p₁ k = p₂ k) :
+    q₁.taylorComp p₁ m = q₂.taylorComp p₂ m := by
+  refine Finset.sum_congr rfl fun c _ ↦ ?_
+  simp only [FormalMultilinearSeries.compAlongOrderedFinpartition, hq c.length c.length_le,
+    hp _ (c.partSize_pos _) (c.partSize_le _)]
+
+namespace TauCeti
+
+/-- **Jets of composites.** If `gᵢ` is `Cᵐ` at `fᵢ xᵢ` and `fᵢ` is `Cᵐ` at `xᵢ`, then the `m`-th
+derivative of `gᵢ ∘ fᵢ` at `xᵢ` depends only on the derivatives of `gᵢ` at `fᵢ xᵢ` of order at
+most `m` and on those of `fᵢ` at `xᵢ` of orders `1` through `m`. -/
+theorem iteratedFDeriv_comp_congr {g₁ g₂ : F → G} {f₁ f₂ : E → F} {x₁ x₂ : E} {m : ℕ}
+    (hg₁ : ContDiffAt 𝕜 m g₁ (f₁ x₁)) (hg₂ : ContDiffAt 𝕜 m g₂ (f₂ x₂))
+    (hf₁ : ContDiffAt 𝕜 m f₁ x₁) (hf₂ : ContDiffAt 𝕜 m f₂ x₂)
+    (hg : ∀ k ≤ m, iteratedFDeriv 𝕜 k g₁ (f₁ x₁) = iteratedFDeriv 𝕜 k g₂ (f₂ x₂))
+    (hf : ∀ k, 1 ≤ k → k ≤ m → iteratedFDeriv 𝕜 k f₁ x₁ = iteratedFDeriv 𝕜 k f₂ x₂) :
+    iteratedFDeriv 𝕜 m (g₁ ∘ f₁) x₁ = iteratedFDeriv 𝕜 m (g₂ ∘ f₂) x₂ := by
+  rw [iteratedFDeriv_comp hg₁ hf₁ le_rfl, iteratedFDeriv_comp hg₂ hf₂ le_rfl]
+  exact FormalMultilinearSeries.taylorComp_congr hg hf
+
+end TauCeti
 
 /-- **A norm bound for the Faà di Bruno composition.** If the coefficients of `p` of orders `1`
 through `m` have norm at most `B`, then the `m`-th coefficient of `q.taylorComp p` has norm at
