@@ -75,14 +75,15 @@ theorem mgradient_height (x : UpperHalfSpace E) :
   intro v
   rw [inner_def, mvfderiv_height_apply, ContinuousLinearEquiv.apply_symm_apply, inner_smul_left,
     WithLp.prod_inner_apply]
-  simp
+  simp only [conj_trivial, WithLp.ofLp_fst, inner_zero_left, WithLp.ofLp_snd, RCLike.inner_apply,
+    mul_one, zero_add]
   field_simp [(height_pos x).ne']
 
 /-- The gradient of the height function has hyperbolic length equal to the height. -/
 theorem norm_mgradient_height (x : UpperHalfSpace E) :
     ‖mgradient J height x‖ = height x := by
   rw [mgradient_height, norm_def, ContinuousLinearEquiv.apply_symm_apply, norm_smul]
-  simp
+  simp only [norm_pow, Real.norm_eq_abs, sq_abs, WithLp.norm_toLp_snd, norm_one, mul_one]
   field_simp [(height_pos x).ne']
 
 omit [FiniteDimensional ℝ E] in
@@ -156,6 +157,7 @@ private theorem norm_mgradient_height_euclidean (x : UpperHalfSpace E) :
     norm_tangentSpace_vectorSpace).trans h1
 
 /-- The hyperbolic Laplacian of the height function is `Δ t = (1 - dim E) t`. -/
+@[simp]
 theorem laplaceBeltrami_height (x : UpperHalfSpace E) :
     laplaceBeltrami J height x = (1 - Module.finrank ℝ E) * height x := by
   have hpos : ∀ y : UpperHalfSpace E, 0 < (height y ^ 2)⁻¹ :=
@@ -184,6 +186,7 @@ theorem laplaceBeltrami_height (x : UpperHalfSpace E) :
   ring
 
 /-- The hyperbolic Laplacian of a power of the height: `Δ t^β = β (β - dim E) t^β`. -/
+@[simp]
 theorem laplaceBeltrami_height_rpow (β : ℝ) (x : UpperHalfSpace E) :
     laplaceBeltrami J (fun y ↦ height y ^ β) x =
       β * (β - Module.finrank ℝ E) * height x ^ β := by

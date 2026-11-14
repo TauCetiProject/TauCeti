@@ -201,6 +201,7 @@ theorem mvfderiv_height_apply (x : UpperHalfSpace E)
     (v : TangentSpace 𝓘(ℝ, WithLp 2 (E × ℝ)) x) :
     mvfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) height x v =
       (tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) x v).snd := by
+  -- By definition `height x = (coe x).snd`, which is `WithLp.sndL 2 ℝ E ℝ (coe x)`.
   rw [show height = WithLp.sndL 2 ℝ E ℝ ∘ coe from rfl,
     mvfderiv_comp_apply x (WithLp.sndL 2 ℝ E ℝ).differentiableAt.mdifferentiableAt
       ((contMDiff_coe x).mdifferentiableAt (by simp)) v, mvfderiv_eq_fderiv,
