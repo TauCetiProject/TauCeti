@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Comp
+public import Mathlib.Analysis.Calculus.FDeriv.Const
 public import Mathlib.LinearAlgebra.Quotient.Basic
 
 /-!
@@ -103,26 +104,24 @@ theorem normalFDerivMap_surjective (u : U → V) (Φ : V → W) (x : U)
   exact ⟨Submodule.Quotient.mk v, rfl⟩
 
 /-- A target map with injective differential induces an injection of normal quotients, when
-the curve and the target map are differentiable. -/
+the curve is differentiable. -/
 theorem normalFDerivMap_injective (u : U → V) (Φ : V → W) (x : U)
-    (hu : DifferentiableAt 𝕜 u x) (hΦ : DifferentiableAt 𝕜 Φ (u x))
-    (h : Function.Injective (fderiv 𝕜 Φ (u x))) :
+    (hu : DifferentiableAt 𝕜 u x) (h : Function.Injective (fderiv 𝕜 Φ (u x))) :
     Function.Injective (normalFDerivMap 𝕜 u Φ x) := by
   refine (injective_iff_map_eq_zero _).2 ?_
   rintro ⟨w⟩ hw
   rw [Submodule.Quotient.quot_mk_eq_mk, normalFDerivMap_mk,
     Submodule.Quotient.mk_eq_zero] at hw
   obtain ⟨a, ha⟩ := hw
-  rw [fderiv_comp x hΦ hu] at ha
+  rw [fderiv_comp x (differentiableAt_of_fderiv_injective h) hu] at ha
   rw [Submodule.Quotient.quot_mk_eq_mk, Submodule.Quotient.mk_eq_zero]
   exact ⟨a, h ha⟩
 
 /-- A target map with bijective differential induces a bijection of normal quotients, when
-the curve and the target map are differentiable. -/
+the curve is differentiable. -/
 theorem normalFDerivMap_bijective (u : U → V) (Φ : V → W) (x : U)
-    (hu : DifferentiableAt 𝕜 u x) (hΦ : DifferentiableAt 𝕜 Φ (u x))
-    (h : Function.Bijective (fderiv 𝕜 Φ (u x))) :
+    (hu : DifferentiableAt 𝕜 u x) (h : Function.Bijective (fderiv 𝕜 Φ (u x))) :
     Function.Bijective (normalFDerivMap 𝕜 u Φ x) :=
-  ⟨normalFDerivMap_injective u Φ x hu hΦ h.1, normalFDerivMap_surjective u Φ x h.2⟩
+  ⟨normalFDerivMap_injective u Φ x hu h.1, normalFDerivMap_surjective u Φ x h.2⟩
 
 end TauCeti
