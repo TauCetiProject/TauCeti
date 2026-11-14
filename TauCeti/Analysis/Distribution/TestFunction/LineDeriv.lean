@@ -35,8 +35,8 @@ a weak derivative be tested against `g φ` when `g` is only smooth inside `Ω`.
   the iterates of the ordinary derivative.
 * `TestFunction.lineDeriv_eq_fderiv`: the classical directional derivative of a test function is
   its Fréchet derivative in that direction.
-* `TestFunction.lineDerivCLM_postcompCLM`: directional derivatives commute with postcomposition
-  by a continuous linear map.
+* `TestFunction.lineDerivCLM_postcompCLM` and `TestFunction.lineDerivOp_postcompCLM`: directional
+  derivatives commute with postcomposition by a continuous linear map.
 * `TestFunction.lineDerivOp_comm` and `TestFunction.lineDeriv_lineDerivOp_comm`: directional
   derivatives of test functions commute.
 * `TestFunction.lineDerivOp_laplacianCLM`: the Laplacian of test functions commutes with
@@ -133,6 +133,16 @@ theorem lineDerivCLM_postcompCLM {𝕜 : Type*} [NontriviallyNormedField 𝕜] [
     rw [ContinuousLinearMap.coe_restrictScalars'] at hL
     rw [hL, ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars']
   · simp
+
+/-- The directional derivative `∂_{v}` on smooth test functions commutes with postcomposition by a
+continuous linear map. -/
+@[simp]
+theorem lineDerivOp_postcompCLM {𝕜 : Type*} [NontriviallyNormedField 𝕜] [Algebra ℝ 𝕜]
+    [NormedSpace 𝕜 F] [IsScalarTower ℝ 𝕜 F] {F' : Type*} [NormedAddCommGroup F']
+    [NormedSpace ℝ F'] [NormedSpace 𝕜 F'] [IsScalarTower ℝ 𝕜 F'] (L : F →L[𝕜] F') (v : E)
+    (φ : 𝓓(Ω, F)) :
+    ∂_{v} (postcompCLM L φ) = postcompCLM L (∂_{v} φ) :=
+  lineDerivCLM_postcompCLM L v φ
 
 /-- Iterated directional derivatives of a test function agree with its iterated Fréchet
 derivatives evaluated in those directions. -/

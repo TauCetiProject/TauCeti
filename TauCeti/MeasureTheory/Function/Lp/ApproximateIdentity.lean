@@ -61,9 +61,10 @@ integrability or compact support assumption on the function.
   convolutions converge in `L¹`, written with lower Lebesgue integrals.
 * `TauCeti.tendsto_setLIntegral_enorm_normed_convolution_sub`: for a locally integrable function
   these convolutions converge in `L¹(K)` on every compact set `K`.
-* `ContinuousLinearMap.tendsto_setLIntegral_enorm_bilin_normedBump_sub`: mollifying both factors
-  of a bilinear product of `Lᵖ` and `Lᵠ` functions converges in `L¹(W)` to the product of the
-  limits.
+* `ContinuousLinearMap.tendsto_setLIntegral_enorm_bilin_normedBump_sub` and
+  `ContinuousLinearMap.tendsto_setLIntegral_enorm_bilin_normedBump_left_sub`: mollifying both
+  factors or the left factor of a bilinear product of `Lᵖ` and `Lᵠ` functions converges in `L¹(W)`
+  to the product of the limits.
 
 ## References
 
@@ -295,6 +296,26 @@ theorem _root_.ContinuousLinearMap.tendsto_setLIntegral_enorm_bilin_normedBump_s
     (tendsto_normedBumpLp (mu := mu) hq hφ (hV.toLp V))
     (fun i => normedBumpLp_ae_eq_convolution hp (φ i) hU)
     hUae (fun i => normedBumpLp_ae_eq_convolution hq (φ i) hV) hVae
+
+/-- Mollifying the left factor of a bilinear product by a shrinking normalized bump while keeping
+the right factor fixed converges in `L¹(W)` to the product of their limits. -/
+theorem _root_.ContinuousLinearMap.tendsto_setLIntegral_enorm_bilin_normedBump_left_sub
+    (B : F →L[ℝ] G →L[ℝ] H)
+    {p q r : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] [Fact (1 ≤ r)]
+    [ENNReal.HolderTriple p q r] (hp : p ≠ ⊤) [CompleteSpace F]
+    {U : E → F} {V : E → G} (hU : MemLp U p mu) (hV : MemLp V q mu)
+    {I : Type*} {l : Filter I} {φ : I → ContDiffBump (0 : E)}
+    (hφ : Tendsto (fun i => (φ i).rOut) l (𝓝 0))
+    {W : Set E} (hWmu : mu W < ⊤) {f : E → F} {g : E → G}
+    (hUae : hU.toLp U =ᵐ[mu.restrict W] f) (hVae : hV.toLp V =ᵐ[mu.restrict W] g) :
+    Tendsto (fun i => ∫⁻ x in W,
+      ‖B (((φ i).normed mu ⋆[ContinuousLinearMap.lsmul ℝ ℝ, mu] U) x) (V x) -
+        B (f x) (g x)‖ₑ ∂mu)
+      l (𝓝 0) :=
+  tendsto_setLIntegral_enorm_bilin_sub (r := r) B hWmu
+    (tendsto_normedBumpLp (mu := mu) hp hφ (hU.toLp U)) tendsto_const_nhds
+    (fun i => normedBumpLp_ae_eq_convolution hp (φ i) hU)
+    hUae (fun _ => hV.coeFn_toLp) hVae
 
 end Bilinear
 

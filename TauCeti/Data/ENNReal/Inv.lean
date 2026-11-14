@@ -39,6 +39,10 @@ is at most `2 b`.
 * `ENNReal.ofReal_pow_div_natCast_div_mul_ofReal_natCast_mul`: the cancellation
   `ofReal (d ^ n / n) / m * ofReal (n * a) = ofReal (a * d ^ n / m.toReal)` for `m` finite and
   nonzero.
+* `ENNReal.one_lt_of_inv_add_inv_le_one`: `p⁻¹ + q⁻¹ ≤ 1` with `p ≠ ∞` implies `1 < q`.
+* `ENNReal.inv_add_inv_self_lt_one`: `2 < p` implies `p⁻¹ + p⁻¹ < 1`.
+* `ENNReal.exists_nnreal_two_lt_and_le_and_inv_add_inv_lt_one`: truncates `2 < p ≤ ∞` above a
+  finite `r ≤ p` while preserving `p₀⁻¹ + q⁻¹ < 1`.
 -/
 
 public section
@@ -165,5 +169,45 @@ theorem ofReal_pow_div_natCast_div_mul_ofReal_natCast_mul {n : ℕ} {d a : ℝ} 
   rw [← ENNReal.ofReal_div_of_pos hmpos, ← ENNReal.ofReal_mul (by positivity)]
   congr 1
   field_simp
+
+/-- If `p⁻¹ + q⁻¹ ≤ 1` with `p ≠ ∞`, then `1 < q` since `p⁻¹ > 0` forces `q⁻¹ < 1`. -/
+theorem one_lt_of_inv_add_inv_le_one {p q : ℝ≥0∞} (hp : p ≠ ∞) (hpq : p⁻¹ + q⁻¹ ≤ 1) :
+    1 < q := by
+  have hp_pos : (0 : ℝ≥0∞) < p⁻¹ := ENNReal.inv_pos.2 hp
+  have hq_ne_top : q⁻¹ ≠ ∞ := ne_top_of_le_ne_top one_ne_top (le_add_self.trans hpq)
+  refine ENNReal.inv_lt_one.1 ?_
+  calc q⁻¹ = 0 + q⁻¹ := (zero_add _).symm
+    _ < p⁻¹ + q⁻¹ := ENNReal.add_lt_add_right hq_ne_top hp_pos
+    _ ≤ 1 := hpq
+
+/-- For `2 < p` in `ℝ≥0∞`, the self-sum of reciprocals satisfies `p⁻¹ + p⁻¹ < 1`. -/
+theorem inv_add_inv_self_lt_one {p : ℝ≥0∞} (hp : 2 < p) : p⁻¹ + p⁻¹ < 1 := by
+  have hp2 : p⁻¹ < 2⁻¹ := ENNReal.inv_lt_inv.2 hp
+  calc p⁻¹ + p⁻¹ < 2⁻¹ + 2⁻¹ := ENNReal.add_lt_add hp2 hp2
+    _ = 1 := ENNReal.inv_two_add_inv_two
+
+/-- Given `2 < p`, a finite `r ≤ p`, and `p⁻¹ + q⁻¹ < 1` in `ℝ≥0∞` (allowing `p = ∞` and `q = ∞`),
+there exists a finite exponent `p₀ : ℝ≥0` with `2 < p₀`, `r ≤ p₀`, `(p₀ : ℝ≥0∞) ≤ p`, and
+`(p₀ : ℝ≥0∞)⁻¹ + q⁻¹ < 1`. -/
+theorem exists_nnreal_two_lt_and_le_and_inv_add_inv_lt_one {p q r : ℝ≥0∞} (hp : 2 < p)
+    (hr_top : r ≠ ∞) (hrp : r ≤ p) (hpq : p⁻¹ + q⁻¹ < 1) :
+    ∃ p₀ : ℝ≥0, 2 < p₀ ∧ r ≤ p₀ ∧ (p₀ : ℝ≥0∞) ≤ p ∧ (p₀ : ℝ≥0∞)⁻¹ + q⁻¹ < 1 := by
+  rcases ne_or_eq p ∞ with hp_top | rfl
+  · refine ⟨p.toNNReal, ?_, ?_, (coe_toNNReal hp_top).le, ?_⟩
+    · exact_mod_cast hp.trans_eq (coe_toNNReal hp_top).symm
+    · rwa [coe_toNNReal hp_top]
+    · rwa [coe_toNNReal hp_top]
+  · have hq_lt : q⁻¹ < 1 := by simpa using hpq
+    obtain ⟨n, hn⟩ := exists_inv_nat_lt (tsub_pos_of_lt hq_lt).ne'
+    let p₀ : ℝ≥0 := max 3 (max r.toNNReal n)
+    refine ⟨p₀, (by norm_num : (2 : ℝ≥0) < 3).trans_le (le_max_left _ _), ?_, le_top, ?_⟩
+    · exact (coe_toNNReal hr_top).symm.trans_le
+        (ENNReal.coe_le_coe.2 ((le_max_left _ _).trans (le_max_right _ _)))
+    · have hnp : (n : ℝ≥0∞) ≤ p₀ := by
+        exact_mod_cast (le_max_right r.toNNReal n).trans (le_max_right 3 _)
+      have hp₀_lt : (p₀ : ℝ≥0∞)⁻¹ < 1 - q⁻¹ := (ENNReal.inv_le_inv.2 hnp).trans_lt hn
+      calc (p₀ : ℝ≥0∞)⁻¹ + q⁻¹ < 1 - q⁻¹ + q⁻¹ :=
+            ENNReal.add_lt_add_right (lt_of_lt_of_le hq_lt le_rfl).ne_top hp₀_lt
+        _ = 1 := tsub_add_cancel_of_le hq_lt.le
 
 end ENNReal
