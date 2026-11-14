@@ -412,18 +412,6 @@ end Domain
 equation and a change of variables. -/
 private abbrev UnivRing := ChangeRing (MvPolynomial Coeff ℤ)
 
-private theorem injective_algebraMap_univRing :
-    Function.Injective (algebraMap (MvPolynomial (Fin 4) (MvPolynomial Coeff ℤ)) UnivRing) :=
-  IsLocalization.injective _
-    (powers_le_nonZeroDivisors_of_noZeroDivisors (MvPolynomial.X_ne_zero (0 : Fin 4)))
-
-private theorem isDomain_univRing : IsDomain UnivRing :=
-  IsLocalization.isDomain_localization
-    (powers_le_nonZeroDivisors_of_noZeroDivisors (MvPolynomial.X_ne_zero (0 : Fin 4)))
-
-private theorem charZero_univRing : CharZero UnivRing :=
-  charZero_of_injective_algebraMap injective_algebraMap_univRing
-
 /-- Every pair of a Weierstrass equation and a change of variables is a specialization of the
 universal pair over `UnivRing`. -/
 private theorem exists_map_universal (C : VariableChange R) (W : WeierstrassCurve R) :
@@ -441,8 +429,6 @@ theorem subst_formalCoordinate_formalInvariantDifferentialDenom
     subst (C.formalCoordinate W).toPowerSeries W.formalInvariantDifferentialDenom =
       PowerSeries.C (C.u : R) * d⁄dX (C.formalCoordinate W).toPowerSeries *
         (C • W).formalInvariantDifferentialDenom := by
-  have := isDomain_univRing
-  have := charZero_univRing
   obtain ⟨k, hW, hC⟩ := exists_map_universal C W
   have h := congrArg (PowerSeries.map k)
     (subst_formalCoordinate_formalInvariantDifferentialDenom_of_isDomain two_ne_zero
@@ -515,8 +501,6 @@ theorem formalGroup_smul (C : VariableChange R) (W : WeierstrassCurve R) :
     formalGroup (C • W) = (C.formalCoordinate W)⁻¹ • formalGroup W := by
   -- prove it for the universal pair after embedding `UnivRing` in its fraction field, a
   -- `ℚ`-algebra, and specialize
-  have := isDomain_univRing
-  have := charZero_univRing
   have hι := IsFractionRing.injective UnivRing (FractionRing UnivRing)
   have : CharZero (FractionRing UnivRing) := charZero_of_injective_algebraMap hι
   obtain ⟨k, hW, hC⟩ := exists_map_universal C W
