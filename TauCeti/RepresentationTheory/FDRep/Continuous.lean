@@ -38,6 +38,8 @@ continuous representations, is built in
   representations.
 * `TauCeti.ContFDRep.ofContRepresentation`: a representation on a finite-dimensional normed space,
   in any universe, continuous for the operator norm, as an object of `ContFDRep k G`.
+* `TauCeti.ContFDRep.ofContRepresentationIso`: an equivariant linear equivalence of carriers as an
+  isomorphism of the corresponding objects of `ContFDRep k G`.
 
 ## Main statements
 
@@ -48,13 +50,15 @@ continuous representations, is built in
 * `ContRepresentation.isContinuous_ofShrink_iff_continuous`: over a complete nontrivially normed
   field, a continuous representation on a finite-dimensional normed space has continuous matrix
   coefficients exactly when `G → (V →L[k] V)` is continuous.
+* `TauCeti.ContFDRep.isZero_ofContRepresentation`: a representation on a zero space is a zero
+  object of `ContFDRep k G`.
 -/
 
 public section
 
 open CategoryTheory CategoryTheory.Limits MonoidalCategory
 
-universe u v w
+universe u v w w'
 
 namespace FDRep
 
@@ -216,5 +220,39 @@ theorem ContFDRep.ofContRepresentation_obj {𝕜 : Type u} [NontriviallyNormedFi
     [FiniteDimensional 𝕜 V] (π : ContRepresentation 𝕜 G V) (hπ : Continuous π) :
     (ContFDRep.ofContRepresentation π hπ).obj = FDRep.ofShrink π.toRepresentation :=
   (rfl)
+
+section Iso
+
+variable {𝕜 : Type u} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  {V : Type w} [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
+  {V' : Type w'} [NormedAddCommGroup V'] [NormedSpace 𝕜 V'] [FiniteDimensional 𝕜 V']
+
+/-- **Equivalent representations give isomorphic objects.** An equivariant linear equivalence
+`e : V ≃ₗ[𝕜] V'` between the carriers of two continuous representations, in any universes, is an
+isomorphism between the corresponding objects of `ContFDRep 𝕜 G`. No continuity of `e` is
+assumed: it is automatic between finite-dimensional spaces. -/
+noncomputable def ContFDRep.ofContRepresentationIso {π : ContRepresentation 𝕜 G V}
+    {π' : ContRepresentation 𝕜 G V'} (e : V ≃ₗ[𝕜] V') (he : ∀ g v, e (π g v) = π' g (e v))
+    (hπ : Continuous π) (hπ' : Continuous π') :
+    ContFDRep.ofContRepresentation π hπ ≅ ContFDRep.ofContRepresentation π' hπ' :=
+  let E := ((FDRep.ofShrinkEquiv π.toRepresentation).trans
+    (Representation.Equiv.mk (σ := π'.toRepresentation) e fun g ↦ LinearMap.ext (he g))).trans
+      (FDRep.ofShrinkEquiv π'.toRepresentation).symm
+  ObjectProperty.isoMk _ <| E.toLinearEquiv.toFDRepIso fun g x ↦
+    Representation.IntertwiningMap.isIntertwining _ _ E.toIntertwiningMap g x
+
+/-- A continuous representation on a zero space is a zero object of `ContFDRep 𝕜 G`. -/
+theorem ContFDRep.isZero_ofContRepresentation [Subsingleton V] (π : ContRepresentation 𝕜 G V)
+    (hπ : Continuous π) : IsZero (ContFDRep.ofContRepresentation π hπ) := by
+  refine IsZero.of_full_of_faithful_of_isZero (FDRep.isContinuous 𝕜 G).ι _ ?_
+  have : Subsingleton
+      ((FDRep.isContinuous 𝕜 G).ι.obj (ContFDRep.ofContRepresentation π hπ)).V.obj :=
+    (FDRep.ofShrinkEquiv π.toRepresentation).toLinearEquiv.toEquiv.subsingleton
+  rw [IsZero.iff_id_eq_zero]
+  ext x
+  rw [Subsingleton.elim x 0]
+  simp
+
+end Iso
 
 end TauCeti
