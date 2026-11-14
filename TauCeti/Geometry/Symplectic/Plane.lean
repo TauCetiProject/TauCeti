@@ -47,7 +47,7 @@ bracket.
 * `TauCeti.SymplecticForm.lie_eq_zero_of_lie_lie_eq_zero`: if `A² ≠ 0`, then `ad A` has no Jordan
   block of size two at the eigenvalue `0`.
 * `TauCeti.SymplecticForm.engel_le_lieSpan_singleton`: if `A² ≠ 0`, the Engel subalgebra of `A`
-  is the line spanned by `A`.
+  is contained in the line spanned by `A`.
 * `TauCeti.SymplecticForm.not_isCartanSubalgebra_lieSpan_singleton`: if `A² = 0`, the line spanned
   by `A` is not a Cartan subalgebra.
 -/
@@ -176,7 +176,7 @@ theorem lie_eq_zero_of_lie_lie_eq_zero (hV : finrank ℝ V = 2)
   rw [ht, ht0, zero_smul]
 
 /-- In dimension two, if `A ∈ sp(V, ω)` squares to a nonzero homothety, then its Engel subalgebra
-is the line spanned by `A`. -/
+is contained in the line spanned by `A`. -/
 theorem engel_le_lieSpan_singleton (hV : finrank ℝ V = 2)
     {A : skewAdjointLieSubalgebra ω.toBilinForm} {c : ℝ} (hc : c ≠ 0)
     (hA : (A : Module.End ℝ V) * A = c • 1) :
