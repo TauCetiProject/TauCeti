@@ -38,6 +38,11 @@ sequence in `ℓᵖ`, `1 ≤ p`, form a sequence in `ℓᵖ` of norm at most `(1
 (`lp.exists_forall_hasSum_pow_smul_add_and_norm_le`): they are an absolutely convergent series of
 shifts. Such sums arise when each dyadic piece interacts with all the pieces of higher index, with
 geometrically decaying weights.
+
+When `e : ι ≃ ι'` is a bijection between index types (possibly in different universes), composing
+with `e` preserves `ℓᵖ` membership (`Memℓp.comp_equiv`, `memℓp_comp_equiv_iff`) and the `ℓᵖ` norm
+(`lp.norm_eq_of_forall_eq_comp_equiv`), inducing the linear isometric equivalence
+`LinearIsometryEquiv.lpCongrLeft` between `ℓᵖ(ι, G)` and `ℓᵖ(ι', G)`.
 -/
 
 public section
@@ -228,3 +233,109 @@ theorem lp.exists_forall_hasSum_pow_smul_add_and_norm_le [Fact (1 ≤ p)] [Norme
     simpa [lp.coeFnAddMonoidHom_apply, lp.coeFn_smul, hT] using h
   · calc ‖∑' d, r ^ d • T d‖ ≤ ∑' d, ‖f‖ * r ^ d := tsum_of_norm_bounded hgeom.hasSum hbound
       _ = (1 - r)⁻¹ * ‖f‖ := by rw [tsum_mul_left, tsum_geometric_of_lt_one hr0 hr1, mul_comm]
+
+section Equiv
+
+/-- Composing a sequence in `ℓᵖ` with an equivalence of index types (possibly in different
+universes) preserves membership in `ℓᵖ`. -/
+theorem Memℓp.comp_equiv {α : Type*} {β : Type*} {H : Type*} [NormedAddCommGroup H] {q : ℝ≥0∞}
+    {f : β → H} (hf : Memℓp f q) (e : α ≃ β) : Memℓp (f ∘ e) q := by
+  rcases q.trichotomy with rfl | rfl | hq
+  · exact memℓp_zero (hf.finite_dsupport.preimage e.injective.injOn)
+  · have hrange : Set.range (fun i ↦ ‖(f ∘ e) i‖) = Set.range (fun j ↦ ‖f j‖) :=
+      EquivLike.range_comp (fun j ↦ ‖f j‖) e
+    exact memℓp_infty (hrange ▸ hf.bddAbove)
+  · exact memℓp_gen (e.summable_iff.2 (hf.summable hq))
+
+/-- Composing with an equivalence of index types preserves `ℓᵖ` membership in both directions. -/
+@[simp]
+theorem memℓp_comp_equiv_iff {α : Type*} {β : Type*} {H : Type*} [NormedAddCommGroup H]
+    {q : ℝ≥0∞} {f : β → H} (e : α ≃ β) : Memℓp (f ∘ e) q ↔ Memℓp f q :=
+  ⟨fun h ↦ by simpa [Function.comp_def] using h.comp_equiv e.symm, fun h ↦ h.comp_equiv e⟩
+
+private theorem norm_le_of_forall_eq_comp_equiv {α : Type*} {β : Type*} {H : Type*}
+    [NormedAddCommGroup H] {q : ℝ≥0∞} (hq : q ≠ 0) {f : lp (fun _ : β ↦ H) q}
+    {g : lp (fun _ : α ↦ H) q} (e : α ≃ β) (h : ∀ i, g i = f (e i)) : ‖g‖ ≤ ‖f‖ := by
+  rcases q.trichotomy with rfl | rfl | hq'
+  · exact absurd rfl hq
+  · exact lp.norm_le_of_forall_le (lp.norm_nonneg' f) fun i ↦
+      (h i).symm ▸ lp.norm_apply_le_norm hq f (e i)
+  · refine lp.norm_le_of_forall_sum_le hq' (lp.norm_nonneg' f) fun t ↦ ?_
+    calc ∑ i ∈ t, ‖g i‖ ^ q.toReal
+        = ∑ i ∈ t, ‖f (e i)‖ ^ q.toReal := Finset.sum_congr rfl fun i _ ↦ by rw [h i]
+      _ = ∑ j ∈ t.map e.toEmbedding, ‖f j‖ ^ q.toReal :=
+          (Finset.sum_map t e.toEmbedding fun j ↦ ‖f j‖ ^ q.toReal).symm
+      _ ≤ ‖f‖ ^ q.toReal := lp.sum_rpow_le_norm_rpow hq' f _
+
+/-- Reindexing a sequence in `ℓᵖ` (`p ≠ 0`) along an equivalence preserves the `ℓᵖ` norm. -/
+theorem lp.norm_eq_of_forall_eq_comp_equiv {α : Type*} {β : Type*} {H : Type*}
+    [NormedAddCommGroup H] {q : ℝ≥0∞} (hq : q ≠ 0) {f : lp (fun _ : β ↦ H) q}
+    {g : lp (fun _ : α ↦ H) q} (e : α ≃ β) (h : ∀ i, g i = f (e i)) : ‖g‖ = ‖f‖ :=
+  le_antisymm (norm_le_of_forall_eq_comp_equiv hq e h)
+    (norm_le_of_forall_eq_comp_equiv hq e.symm fun j ↦ by simp [h (e.symm j)])
+
+namespace LinearIsometryEquiv
+
+variable (q : ℝ≥0∞) (𝕜 : Type*) (H : Type*) [NormedRing 𝕜] [NormedAddCommGroup H]
+  [Module 𝕜 H] [IsBoundedSMul 𝕜 H] [Fact (1 ≤ q)]
+  {α : Type*} {β : Type*} {γ : Type*}
+
+/-- An equivalence of index types (possibly in different universes) induces a linear isometric
+equivalence between the `ℓᵖ` spaces `lp (fun _ : α ↦ H) q` and `lp (fun _ : β ↦ H) q`.
+
+This is the `lp` counterpart of `LinearIsometryEquiv.piLpCongrLeft`. -/
+def lpCongrLeft (e : α ≃ β) : lp (fun _ : α ↦ H) q ≃ₗᵢ[𝕜] lp (fun _ : β ↦ H) q where
+  toFun v := ⟨v ∘ e.symm, (lp.memℓp v).comp_equiv e.symm⟩
+  invFun w := ⟨w ∘ e, (lp.memℓp w).comp_equiv e⟩
+  map_add' _ _ := lp.ext rfl
+  map_smul' _ _ := lp.ext rfl
+  left_inv v := lp.ext (funext fun i ↦ by simp)
+  right_inv w := lp.ext (funext fun j ↦ by simp)
+  norm_map' v := lp.norm_eq_of_forall_eq_comp_equiv (zero_lt_one.trans_le Fact.out).ne'
+    e.symm fun _ ↦ rfl
+
+variable {q 𝕜 H}
+
+/-- Evaluating `LinearIsometryEquiv.lpCongrLeft` at an index `j` reads `v` at `e.symm j`. -/
+@[simp]
+theorem lpCongrLeft_apply (e : α ≃ β) (v : lp (fun _ : α ↦ H) q) (j : β) :
+    lpCongrLeft q 𝕜 H e v j = v (e.symm j) :=
+  (rfl)
+
+/-- Function-coercion form of `LinearIsometryEquiv.lpCongrLeft_apply`. -/
+theorem coeFn_lpCongrLeft (e : α ≃ β) (v : lp (fun _ : α ↦ H) q) :
+    ⇑(lpCongrLeft q 𝕜 H e v) = v ∘ e.symm :=
+  (rfl)
+
+/-- The inverse of `LinearIsometryEquiv.lpCongrLeft` is induced by the inverse equivalence. -/
+@[simp]
+theorem lpCongrLeft_symm (e : α ≃ β) :
+    (lpCongrLeft q 𝕜 H e).symm = lpCongrLeft q 𝕜 H e.symm := by
+  ext v i
+  rfl
+
+/-- Reindexing along the identity equivalence is the identity linear isometric equivalence. -/
+@[simp]
+theorem lpCongrLeft_refl :
+    lpCongrLeft q 𝕜 H (Equiv.refl α) = LinearIsometryEquiv.refl 𝕜 (lp (fun _ : α ↦ H) q) := by
+  ext v i
+  rfl
+
+/-- Reindexing along a composition of equivalences is the composition of the reindexing linear
+isometric equivalences. -/
+@[simp]
+theorem lpCongrLeft_trans (e₁ : α ≃ β) (e₂ : β ≃ γ) :
+    (lpCongrLeft q 𝕜 H e₁).trans (lpCongrLeft q 𝕜 H e₂) = lpCongrLeft q 𝕜 H (e₁.trans e₂) := by
+  ext v k
+  rfl
+
+/-- `LinearIsometryEquiv.lpCongrLeft` transports single-coordinate vectors along `e`. -/
+@[simp high]
+theorem lpCongrLeft_single [DecidableEq α] [DecidableEq β] (e : α ≃ β) (i : α) (v : H) :
+    lpCongrLeft q 𝕜 H e (lp.single q i v) = lp.single q (e i) v := by
+  ext j
+  simp [lp.single_apply, Pi.single_apply, e.symm_apply_eq]
+
+end LinearIsometryEquiv
+
+end Equiv
