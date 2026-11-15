@@ -7,9 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Topology
 public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.Topology
-public import TauCeti.Algebra.AlgebraicGroup.Trivial
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.Basic
-public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.LocallyCompact
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Place
 public import TauCeti.Topology.Algebra.PointTopology.Prod
 public import TauCeti.Topology.Algebra.PointTopology.Separation
@@ -20,17 +18,21 @@ public import TauCeti.Topology.Algebra.PointTopology.Separation
 Let `R` be a Dedekind domain with fraction field `K`, and let `H` be the coordinate bialgebra (or
 Hopf algebra) of `G = Spec H` over `K`. Evaluating `A ↦ WithConv (H →ₐ[K] A)` on
 `NumberField.AdeleRing R K`, `IsDedekindDomain.FiniteAdeleRing R K`,
-`NumberField.InfiniteAdeleRing K`, `v.adicCompletion K`, and `w.Completion` defines the global
-adelic, finite-adelic, infinite, and local point spaces of `G` with the evaluation point topology
-(Conrad 2012, Proposition 2.1 and §3), requiring no embedding `G ↪ GL_n` and no integral model.
+`NumberField.InfiniteAdeleRing K`, `v.adicCompletion K`, and `w.Completion` defines the
+`𝔸[R, K]`-valued, finite-adelic, infinite-adelic, and local point spaces of `G` with the evaluation
+point topology (Conrad 2012, Proposition 2.1 and §3), requiring no embedding `G ↪ GL_n` and no
+integral model. Here `AdelicPoints R K H` is `G(𝔸[R, K]) = G(K_∞ × 𝔸ᶠ[R, K])`: when `K` is a number
+field and `R = 𝓞 K`, this is the global adelic group `G(𝔸_K)`, whereas for function fields
+`InfinitePlace K` is empty so it collapses to `G(𝔸ᶠ[R, K])`, and for proper localizations of `𝓞 K`
+the inverted finite places are omitted.
 
 ## Main declarations
 
 * `TauCeti.AdelicPoints`, `TauCeti.FiniteAdelicPoints`, `TauCeti.InfinitePoints`,
-  `TauCeti.LocalPoints`, `TauCeti.InfiniteLocalPoints`: global and local point spaces.
+  `TauCeti.LocalPoints`, `TauCeti.InfiniteLocalPoints`: adelic and local point spaces.
 * `TauCeti.InfinitePoints.piContinuousMulEquiv`, `TauCeti.AdelicPoints.splittingContinuousMulEquiv`:
-  `G(K∞) ≃ₜ* ∏_{w ∣ ∞} G(K_w)` and `G(𝔸) ≃ₜ* G(K∞) × G(𝔸ᶠ)`, with closed factor inclusions
-  `infiniteEmbed` and `finiteEmbed`.
+  `G(K_∞) ≃ₜ* ∏_{w ∣ ∞} G(K_w)` and `G(𝔸[R, K]) ≃ₜ* G(K_∞) × G(𝔸ᶠ[R, K])`, with closed factor
+  inclusions `infiniteEmbed` and `finiteEmbed`.
 * Diagonal homomorphisms `diagonal` and place projections, with sharp injectivity criteria and
   concrete identifications `gaContinuousMulEquiv` and `gmContinuousMulEquiv` for `𝔾ₐ` and `𝔾ₘ`.
 
@@ -62,12 +64,13 @@ abbrev LocalPoints {R : Type*} (K H : Type*) [CommRing R] [IsDedekindDomain R] [
     [Algebra R K] [IsFractionRing R K] [Semiring H] [Algebra K H] (v : HeightOneSpectrum R) :=
   WithConv (H →ₐ[K] v.adicCompletion K)
 
-/-- Finite-adelic points `G(𝔸ᶠ)` of `Spec H`, valued in `FiniteAdeleRing R K`. -/
+/-- Finite-adelic points `G(𝔸ᶠ[R, K])` of `Spec H`, valued in `FiniteAdeleRing R K`. -/
 abbrev FiniteAdelicPoints (R K H : Type*) [CommRing R] [IsDedekindDomain R] [Field K]
     [Algebra R K] [IsFractionRing R K] [Semiring H] [Algebra K H] :=
   WithConv (H →ₐ[K] FiniteAdeleRing R K)
 
-/-- Global adelic points `G(𝔸)` of `Spec H`, valued in `NumberField.AdeleRing R K`. -/
+/-- Points `G(𝔸[R, K])` of `Spec H` valued in `NumberField.AdeleRing R K = K_∞ × 𝔸ᶠ[R, K]` (the
+global adelic points `G(𝔸_K)` when `K` is a number field and `R = 𝓞 K`). -/
 abbrev AdelicPoints (R K H : Type*) [CommRing R] [IsDedekindDomain R] [Field K]
     [Algebra R K] [IsFractionRing R K] [Semiring H] [Algebra K H] :=
   WithConv (H →ₐ[K] NumberField.AdeleRing R K)
@@ -108,7 +111,7 @@ noncomputable def localProjection (w : NumberField.InfinitePlace K) :
     InfinitePoints K H →* InfiniteLocalPoints K H w :=
   AlgHom.mapValue (Pi.evalAlgHom K (fun w : NumberField.InfinitePlace K ↦ w.Completion) w)
 
-/-- Product decomposition `G(K∞) ≃ₜ* ∏_{w ∣ ∞} G(K_w)` of archimedean adelic points. -/
+/-- Product decomposition `G(K_∞) ≃ₜ* ∏_{w ∣ ∞} G(K_w)` of archimedean adelic points. -/
 noncomputable def piContinuousMulEquiv :
     InfinitePoints K H ≃ₜ* ∀ w : NumberField.InfinitePlace K, InfiniteLocalPoints K H w :=
   piPointsContinuousMulEquiv K H (fun w : NumberField.InfinitePlace K ↦ w.Completion)
@@ -121,8 +124,10 @@ theorem diagonal_apply_ofConv (g : WithConv (H →ₐ[K] K)) (h : H) :
     (diagonal K H g).ofConv h = algebraMap K (NumberField.InfiniteAdeleRing K) (g.ofConv h) := by
   simp [diagonal]
 
-/-- Over a number field, the diagonal map into `InfinitePoints K H` is injective. -/
-theorem diagonal_injective [NumberField K] : Function.Injective (diagonal K H) :=
+/-- Whenever `InfiniteAdeleRing K` is nontrivial (in particular over any number field), the
+diagonal map into `InfinitePoints K H` is injective. -/
+theorem diagonal_injective [Nontrivial (NumberField.InfiniteAdeleRing K)] :
+    Function.Injective (diagonal K H) :=
   AlgHom.mapValue_injective (algebraMap K (NumberField.InfiniteAdeleRing K)).injective
 
 /-- Evaluating `localProjection` at `w` reads the `w`-coordinate of an infinite-adelic point. -/
@@ -130,7 +135,8 @@ theorem diagonal_injective [NumberField K] : Function.Injective (diagonal K H) :
 theorem localProjection_apply_ofConv (w : NumberField.InfinitePlace K)
     (x : InfinitePoints K H) (h : H) :
     (localProjection K H w x).ofConv h = x.ofConv h w := by
-  simp only [localProjection, AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply]; rfl
+  rw [localProjection, AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply]
+  exact Pi.evalAlgHom_apply _ _ w (x.ofConv h)
 
 /-- Projection from infinite-adelic points to an archimedean place is continuous. -/
 @[continuity, fun_prop]
@@ -149,7 +155,17 @@ theorem localProjection_diagonal (w : NumberField.InfinitePlace K) (g : WithConv
 @[simp]
 theorem piContinuousMulEquiv_apply (x : InfinitePoints K H) (w : NumberField.InfinitePlace K) :
     piContinuousMulEquiv K H x w = localProjection K H w x := by
-  delta piContinuousMulEquiv localProjection; exact piPointsContinuousMulEquiv_apply x w
+  rw [piContinuousMulEquiv, localProjection]
+  exact piPointsContinuousMulEquiv_apply x w
+
+/-- Evaluating `(piContinuousMulEquiv K H).symm f` on `h : H` at `w` gives `(f w).ofConv h`. -/
+@[simp]
+theorem piContinuousMulEquiv_symm_apply_ofConv
+    (f : ∀ w : NumberField.InfinitePlace K, InfiniteLocalPoints K H w) (h : H)
+    (w : NumberField.InfinitePlace K) :
+    ((piContinuousMulEquiv K H).symm f).ofConv h w = (f w).ofConv h := by
+  rw [piContinuousMulEquiv]
+  exact piPointsContinuousMulEquiv_symm_apply_ofConv f h w
 
 end InfinitePoints
 
@@ -185,15 +201,11 @@ variable (R K H : Type*) [CommRing R] [IsDedekindDomain R] [Field K] [Algebra R 
   [IsFractionRing R K] [Semiring H] [Algebra K H]
 
 /-- When `R` is a field, `HeightOneSpectrum R` is empty and `FiniteAdelicPoints R K H` is a
-subsingleton, showing `¬ IsField R` in `FiniteAdelicPoints.diagonal_injective` is sharp. -/
-theorem subsingleton_of_isField (hR : IsField R) : Subsingleton (FiniteAdelicPoints R K H) := by
-  have hempty : IsEmpty (HeightOneSpectrum R) := ⟨fun v ↦ by
-    obtain ⟨x, hxv, hx0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot v.ne_bot
-    obtain ⟨y, hy⟩ := hR.mul_inv_cancel hx0
-    exact v.isPrime.ne_top (v.asIdeal.eq_top_iff_one.mpr (hy ▸ v.asIdeal.mul_mem_right y hxv))⟩
-  have : Subsingleton (FiniteAdeleRing R K) :=
-    ⟨fun a b ↦ FiniteAdeleRing.ext K fun v ↦ hempty.elim v⟩
-  exact ⟨fun _ _ ↦ WithConv.ext <| AlgHom.ext fun _ ↦ Subsingleton.elim _ _⟩
+subsingleton, showing `¬ IsField R` in `FiniteAdelicPoints.diagonal_injective_of_not_isField` is
+sharp. -/
+theorem subsingleton_of_isField (hR : IsField R) : Subsingleton (FiniteAdelicPoints R K H) :=
+  have := FiniteAdeleRing.subsingleton_of_isField K hR
+  ⟨fun _ _ ↦ WithConv.ext <| AlgHom.ext fun _ ↦ Subsingleton.elim _ _⟩
 
 end Semiring
 
@@ -236,20 +248,17 @@ theorem localProjection_diagonal (v : HeightOneSpectrum R) (g : WithConv (H →�
   simp only [localProjection, diagonal, LocalPoints.diagonal, ← MonoidHom.comp_apply,
     ← AlgHom.mapValue_comp, Algebra.comp_ofId]
 
-/-- When `HeightOneSpectrum R` is nonempty, `FiniteAdelicPoints.diagonal` is injective. -/
-theorem diagonal_injective_of_nonempty [Nonempty (HeightOneSpectrum R)] :
-    Function.Injective (diagonal R K H) := by
-  obtain ⟨v⟩ := ‹Nonempty (HeightOneSpectrum R)›
-  exact Function.Injective.of_comp (f := localProjection R K H v) fun x y hxy ↦
-    LocalPoints.diagonal_injective v (by simpa using hxy)
+/-- Whenever `FiniteAdeleRing R K` is nontrivial (in particular when `HeightOneSpectrum R` is
+nonempty), `FiniteAdelicPoints.diagonal` is injective. -/
+theorem diagonal_injective [Nontrivial (FiniteAdeleRing R K)] :
+    Function.Injective (diagonal R K H) :=
+  AlgHom.mapValue_injective (algebraMap K (FiniteAdeleRing R K)).injective
 
 /-- When `R` is not a field, the diagonal map into `FiniteAdelicPoints R K H` is injective. -/
-theorem diagonal_injective (hR : ¬ IsField R) : Function.Injective (diagonal R K H) := by
-  have : Nontrivial R := ⟨⟨(0 : R), 1, fun h ↦ zero_ne_one
-    ((map_zero (algebraMap R K)).symm.trans ((congrArg (algebraMap R K) h).trans (map_one _)))⟩⟩
-  obtain ⟨m⟩ := (inferInstance : Nonempty (MaximalSpectrum R))
-  have : Nonempty (HeightOneSpectrum R) := ⟨(HeightOneSpectrum.equivMaximalSpectrum hR).symm m⟩
-  exact diagonal_injective_of_nonempty
+theorem diagonal_injective_of_not_isField (hR : ¬ IsField R) :
+    Function.Injective (diagonal R K H) :=
+  have := HeightOneSpectrum.nonempty_of_not_isField hR
+  diagonal_injective
 
 /-- Finite-adelic points of `𝔾ₐ` are isomorphic as a topological group to
 `Multiplicative (FiniteAdeleRing R K)`. -/
@@ -258,12 +267,38 @@ noncomputable def gaContinuousMulEquiv (R K : Type*) [CommRing R] [IsDedekindDom
     FiniteAdelicPoints R K (SymmetricAlgebra K K) ≃ₜ* Multiplicative (FiniteAdeleRing R K) :=
   AdditiveGroup.gaPointsContinuousMulEquiv K (FiniteAdeleRing R K)
 
+/-- The forward map of `FiniteAdelicPoints.gaContinuousMulEquiv` is `gaPointsMulEquiv`. -/
+@[simp]
+theorem gaContinuousMulEquiv_apply (x : FiniteAdelicPoints R K (SymmetricAlgebra K K)) :
+    gaContinuousMulEquiv R K x = AdditiveGroup.gaPointsMulEquiv x :=
+  AdditiveGroup.gaPointsContinuousMulEquiv_apply x
+
+/-- The inverse map of `FiniteAdelicPoints.gaContinuousMulEquiv` is `gaPointsMulEquiv.symm`. -/
+@[simp]
+theorem gaContinuousMulEquiv_symm_apply (a : Multiplicative (FiniteAdeleRing R K)) :
+    (gaContinuousMulEquiv R K).symm a = (AdditiveGroup.gaPointsMulEquiv (R := K)).symm a :=
+  AdditiveGroup.gaPointsContinuousMulEquiv_symm_apply a
+
 /-- Finite-adelic points of `𝔾ₘ` are isomorphic as a topological group to
 `(FiniteAdeleRing R K)ˣ`. -/
 noncomputable def gmContinuousMulEquiv (R K : Type*) [CommRing R] [IsDedekindDomain R]
     [Field K] [Algebra R K] [IsFractionRing R K] :
     FiniteAdelicPoints R K K[T;T⁻¹] ≃ₜ* (FiniteAdeleRing R K)ˣ :=
   MultiplicativeGroup.pointsContinuousMulEquiv K (FiniteAdeleRing R K)
+
+/-- The forward map of `FiniteAdelicPoints.gmContinuousMulEquiv` is
+`MultiplicativeGroup.pointsMulEquiv`. -/
+@[simp]
+theorem gmContinuousMulEquiv_apply (x : FiniteAdelicPoints R K K[T;T⁻¹]) :
+    gmContinuousMulEquiv R K x = MultiplicativeGroup.pointsMulEquiv x :=
+  MultiplicativeGroup.pointsContinuousMulEquiv_apply x
+
+/-- The inverse map of `FiniteAdelicPoints.gmContinuousMulEquiv` is
+`MultiplicativeGroup.pointsMulEquiv.symm`. -/
+@[simp]
+theorem gmContinuousMulEquiv_symm_apply (u : (FiniteAdeleRing R K)ˣ) :
+    (gmContinuousMulEquiv R K).symm u = (MultiplicativeGroup.pointsMulEquiv (R := K)).symm u :=
+  MultiplicativeGroup.pointsContinuousMulEquiv_symm_apply u
 
 end FiniteAdelicPoints
 
@@ -272,29 +307,29 @@ namespace AdelicPoints
 variable (R K H : Type*) [CommRing R] [IsDedekindDomain R] [Field K] [Algebra R K]
   [IsFractionRing R K] [Semiring H] [Bialgebra K H]
 
-/-- Diagonal homomorphism from `K`-rational points of `H` to global adelic points. -/
+/-- Diagonal homomorphism from `K`-rational points of `H` into `AdelicPoints R K H`. -/
 noncomputable def diagonal : WithConv (H →ₐ[K] K) →* AdelicPoints R K H :=
   AlgHom.mapValue (Algebra.ofId K (NumberField.AdeleRing R K))
 
-/-- Projection from global adelic points to infinite-adelic points. -/
+/-- Projection from `AdelicPoints R K H` onto `InfinitePoints K H`. -/
 noncomputable def infiniteProjection : AdelicPoints R K H →* InfinitePoints K H :=
   AlgHom.mapValue (AlgHom.fst K (NumberField.InfiniteAdeleRing K) (FiniteAdeleRing R K))
 
-/-- Projection from global adelic points to finite-adelic points. -/
+/-- Projection from `AdelicPoints R K H` onto `FiniteAdelicPoints R K H`. -/
 noncomputable def finiteProjection : AdelicPoints R K H →* FiniteAdelicPoints R K H :=
   AlgHom.mapValue (AlgHom.snd K (NumberField.InfiniteAdeleRing K) (FiniteAdeleRing R K))
 
-/-- Projection from global adelic points to `v`-adic points at a finite place `v`. -/
+/-- Projection from `AdelicPoints R K H` to `v`-adic points at a finite place `v`. -/
 noncomputable def localProjection (v : HeightOneSpectrum R) :
     AdelicPoints R K H →* LocalPoints K H v :=
   (FiniteAdelicPoints.localProjection R K H v).comp (finiteProjection R K H)
 
-/-- Projection from global adelic points to `w`-adic points at an infinite place `w`. -/
+/-- Projection from `AdelicPoints R K H` to `w`-adic points at an infinite place `w`. -/
 noncomputable def infiniteLocalProjection (w : NumberField.InfinitePlace K) :
     AdelicPoints R K H →* InfiniteLocalPoints K H w :=
   (InfinitePoints.localProjection K H w).comp (infiniteProjection R K H)
 
-/-- Infinite-finite splitting `G(𝔸) ≃ₜ* G(K∞) × G(𝔸ᶠ)` of adelic points. -/
+/-- Infinite-finite splitting `G(𝔸[R, K]) ≃ₜ* G(K_∞) × G(𝔸ᶠ[R, K])` of `AdelicPoints R K H`. -/
 noncomputable def splittingContinuousMulEquiv :
     AdelicPoints R K H ≃ₜ* InfinitePoints K H × FiniteAdelicPoints R K H :=
   prodPointsContinuousMulEquiv K H (NumberField.InfiniteAdeleRing K) (FiniteAdeleRing R K)
@@ -315,15 +350,17 @@ theorem diagonal_apply_ofConv (g : WithConv (H →ₐ[K] K)) (h : H) :
     (diagonal R K H g).ofConv h = algebraMap K (NumberField.AdeleRing R K) (g.ofConv h) := by
   simp [diagonal]
 
-/-- Over a number field, the diagonal map into `AdelicPoints R K H` is injective. -/
-theorem diagonal_injective [NumberField K] : Function.Injective (diagonal R K H) :=
-  AlgHom.mapValue_injective (NumberField.AdeleRing.algebraMap_injective R K)
+/-- Whenever `AdeleRing R K` is nontrivial (in particular over any number field, or whenever `R` is
+not a field), the diagonal map into `AdelicPoints R K H` is injective. -/
+theorem diagonal_injective [Nontrivial (NumberField.AdeleRing R K)] :
+    Function.Injective (diagonal R K H) :=
+  AlgHom.mapValue_injective (algebraMap K (NumberField.AdeleRing R K)).injective
 
 /-- Whenever `R` is not a field, the diagonal map into `AdelicPoints R K H` is injective. -/
 theorem diagonal_injective_of_not_isField (hR : ¬ IsField R) :
-    Function.Injective (diagonal R K H) := fun _ _ h ↦
-  FiniteAdelicPoints.diagonal_injective (H := H) hR <|
-    WithConv.ext <| AlgHom.ext fun x ↦ by simpa using congrArg (fun p ↦ (p.ofConv x).2) h
+    Function.Injective (diagonal R K H) :=
+  have := HeightOneSpectrum.nonempty_of_not_isField hR
+  diagonal_injective
 
 /-- `infiniteProjection` is continuous. -/
 @[continuity, fun_prop]
@@ -351,7 +388,7 @@ theorem continuous_infiniteLocalProjection (w : NumberField.InfinitePlace K) :
 @[simp]
 theorem splittingContinuousMulEquiv_fst (x : AdelicPoints R K H) :
     (splittingContinuousMulEquiv R K H x).1 = infiniteProjection R K H x := by
-  delta splittingContinuousMulEquiv infiniteProjection
+  rw [splittingContinuousMulEquiv, infiniteProjection]
   exact (congrArg Prod.fst (prodPointsContinuousMulEquiv_apply x)).trans
     (AlgHom.prodPointsMulEquiv_apply_fst x)
 
@@ -359,9 +396,19 @@ theorem splittingContinuousMulEquiv_fst (x : AdelicPoints R K H) :
 @[simp]
 theorem splittingContinuousMulEquiv_snd (x : AdelicPoints R K H) :
     (splittingContinuousMulEquiv R K H x).2 = finiteProjection R K H x := by
-  delta splittingContinuousMulEquiv finiteProjection
+  rw [splittingContinuousMulEquiv, finiteProjection]
   exact (congrArg Prod.snd (prodPointsContinuousMulEquiv_apply x)).trans
     (AlgHom.prodPointsMulEquiv_apply_snd x)
+
+/-- Evaluating `(splittingContinuousMulEquiv R K H).symm p` at `h : H` pairs its infinite and
+finite factor evaluations. -/
+@[simp]
+theorem splittingContinuousMulEquiv_symm_apply_ofConv
+    (p : InfinitePoints K H × FiniteAdelicPoints R K H) (h : H) :
+    ((splittingContinuousMulEquiv R K H).symm p).ofConv h = (p.1.ofConv h, p.2.ofConv h) := by
+  rw [splittingContinuousMulEquiv]
+  exact (congrArg (fun q ↦ q.ofConv h) (prodPointsContinuousMulEquiv_symm_apply p)).trans
+    (AlgHom.prodPointsMulEquiv_symm_apply_ofConv p h)
 
 /-- Projecting a diagonal adelic point onto the infinite factor gives `InfinitePoints.diagonal`. -/
 @[simp]
@@ -437,7 +484,8 @@ theorem finiteProjection_finiteEmbed (x : FiniteAdelicPoints R K H) :
   simpa only [← splittingContinuousMulEquiv_snd] using
     congrArg Prod.snd (splittingContinuousMulEquiv_finiteEmbed x)
 
-/-- Every adelic point factors as `infiniteEmbed (infiniteProjection x) * finiteEmbed (...)`. -/
+/-- Every point of `AdelicPoints R K H` factors as
+`infiniteEmbed (infiniteProjection x) * finiteEmbed (finiteProjection x)`. -/
 theorem infiniteEmbed_mul_finiteEmbed (x : AdelicPoints R K H) :
     infiniteEmbed R K H (infiniteProjection R K H x) *
         finiteEmbed R K H (finiteProjection R K H x) = x := by
@@ -463,19 +511,45 @@ theorem isClosedEmbedding_finiteEmbed : IsClosedEmbedding (finiteEmbed R K H) :=
   Function.LeftInverse.isClosedEmbedding finiteProjection_finiteEmbed
     continuous_finiteProjection continuous_finiteEmbed
 
-/-- Adelic points of `𝔾ₐ` are isomorphic as a topological group to
+/-- `𝔸[R, K]`-valued points of `𝔾ₐ` are isomorphic as a topological group to
 `Multiplicative (AdeleRing R K)`. -/
 noncomputable def gaContinuousMulEquiv (R K : Type*) [CommRing R] [IsDedekindDomain R]
     [Field K] [Algebra R K] [IsFractionRing R K] :
     AdelicPoints R K (SymmetricAlgebra K K) ≃ₜ* Multiplicative (NumberField.AdeleRing R K) :=
   AdditiveGroup.gaPointsContinuousMulEquiv K (NumberField.AdeleRing R K)
 
-/-- Adelic points of `𝔾ₘ` are isomorphic as a topological group to `IdeleGroup R K`
+/-- The forward map of `AdelicPoints.gaContinuousMulEquiv` is `gaPointsMulEquiv`. -/
+@[simp]
+theorem gaContinuousMulEquiv_apply (x : AdelicPoints R K (SymmetricAlgebra K K)) :
+    gaContinuousMulEquiv R K x = AdditiveGroup.gaPointsMulEquiv x :=
+  AdditiveGroup.gaPointsContinuousMulEquiv_apply x
+
+/-- The inverse map of `AdelicPoints.gaContinuousMulEquiv` is `gaPointsMulEquiv.symm`. -/
+@[simp]
+theorem gaContinuousMulEquiv_symm_apply (a : Multiplicative (NumberField.AdeleRing R K)) :
+    (gaContinuousMulEquiv R K).symm a = (AdditiveGroup.gaPointsMulEquiv (R := K)).symm a :=
+  AdditiveGroup.gaPointsContinuousMulEquiv_symm_apply a
+
+/-- `𝔸[R, K]`-valued points of `𝔾ₘ` are isomorphic as a topological group to `IdeleGroup R K`
 (Conrad 2012, Example 3.1). -/
 noncomputable def gmContinuousMulEquiv (R K : Type*) [CommRing R] [IsDedekindDomain R]
     [Field K] [Algebra R K] [IsFractionRing R K] :
     AdelicPoints R K K[T;T⁻¹] ≃ₜ* NumberField.IdeleGroup R K :=
   MultiplicativeGroup.pointsContinuousMulEquiv K (NumberField.AdeleRing R K)
+
+/-- The forward map of `AdelicPoints.gmContinuousMulEquiv` is
+`MultiplicativeGroup.pointsMulEquiv`. -/
+@[simp]
+theorem gmContinuousMulEquiv_apply (x : AdelicPoints R K K[T;T⁻¹]) :
+    gmContinuousMulEquiv R K x = MultiplicativeGroup.pointsMulEquiv x :=
+  MultiplicativeGroup.pointsContinuousMulEquiv_apply x
+
+/-- The inverse map of `AdelicPoints.gmContinuousMulEquiv` is
+`MultiplicativeGroup.pointsMulEquiv.symm`. -/
+@[simp]
+theorem gmContinuousMulEquiv_symm_apply (u : NumberField.IdeleGroup R K) :
+    (gmContinuousMulEquiv R K).symm u = (MultiplicativeGroup.pointsMulEquiv (R := K)).symm u :=
+  MultiplicativeGroup.pointsContinuousMulEquiv_symm_apply u
 
 end AdelicPoints
 

@@ -11,7 +11,7 @@ public import TauCeti.Topology.Algebra.RestrictedProduct.Congr.Basic
 public import TauCeti.Topology.Algebra.RestrictedProduct.TopologicalSpace
 
 /-!
-# Restricted-product presentation of finite and full adelic points
+# Restricted-product presentation of finite-adelic and `𝔸[R, K]`-valued points
 
 For an integral model `M : IntegralModel R K H S` of `G = Spec H` over a finite set `S` of finite
 places of `(R, K)`, this file proves the **Weil–Grothendieck restricted-product comparison**
@@ -20,8 +20,10 @@ places of `(R, K)`, this file proves the **Weil–Grothendieck restricted-produc
   RestrictedProductGroup M.level`, mapping `M.sAdelicPoints S Set.Subset.rfl` onto
   `integralSubgroup M.level`;
 * `M.adelicPointsContinuousMulEquiv hS : AdelicPoints R K H ≃ₜ*
-  RestrictedProductGroupWithFactor (InfinitePoints K H) M.level`;
-* `restrictedProductCongr_comp_finiteAdelicPointsContinuousMulEquiv`: model independence via
+  RestrictedProductGroupWithFactor (InfinitePoints K H) M.level`, identifying `G(𝔸[R, K])` with
+  `G(K_∞) × Πʳ v, [G(K_v), M.level v]` (and hence global adelic points `G(𝔸_K)` when `K` is a
+  number field and `R = 𝓞 K`);
+* `restrictedProductCongr_finiteAdelicPointsContinuousMulEquiv`: model independence via
   `restrictedProductCongr`.
 
 Forward continuity uses the exhaustion of `FiniteAdelicPoints R K H` by the open `T`-integral
@@ -43,11 +45,11 @@ open scoped RestrictedProduct
 
 namespace TauCeti.IntegralModel
 
-universe u v
+universe u v uH
 
 variable {R : Type u} [CommRing R] [IsDedekindDomain R]
   {K : Type v} [Field K] [Algebra R K] [IsFractionRing R K]
-  {H : Type v} [CommRing H] [HopfAlgebra K H] {S : Set (HeightOneSpectrum R)}
+  {H : Type uH} [CommRing H] [HopfAlgebra K H] {S : Set (HeightOneSpectrum R)}
 
 /-- For `T ⊇ S`, `M.sAdelicPoints T hST` is the subgroup of `FiniteAdelicPoints R K H` arising
 from `(FiniteAdeleRing.sIntegralAdeles R K T)`-valued points of `M.coordinate`. -/
@@ -116,7 +118,8 @@ theorem comap_diagonal_sAdelicPoints (M : IntegralModel R K H S) (T : Set (Heigh
     (M.sAdelicPoints T hST).comap (FiniteAdelicPoints.diagonal R K H) = M.globalPoints T hST := by
   ext g; simp [mem_sAdelicPoints_iff, mem_globalPoints_iff]
 
-/-- Exhaustion of `G(𝔸_f)` by open `T`-integral subgroups for finite `T ⊇ S` when `S` is finite. -/
+/-- Exhaustion of `G(𝔸ᶠ[R, K])` by open `T`-integral subgroups for finite `T ⊇ S` when `S` is
+finite. -/
 theorem exists_finite_mem_sAdelicPoints (M : IntegralModel R K H S) (hS : S.Finite)
     (x : FiniteAdelicPoints R K H) :
     ∃ (T : Set (HeightOneSpectrum R)) (hST : S ⊆ T), T.Finite ∧ x ∈ M.sAdelicPoints T hST := by
@@ -201,11 +204,10 @@ private noncomputable def ofRestrictedProduct (M : IntegralModel R K H S) (hS : 
         -- Unfold `M.evalRestrictedProductAdele hS (algebraMap K H k) y v` to `(y v).ofConv _`.
         change (y v).ofConv (algebraMap K H k) = algebraMap K (FiniteAdeleRing R K) k v
         rw [(y v).ofConv.commutes, FiniteAdeleRing.algebraMap_apply,
-          HeightOneSpectrum.algebraMap_adicCompletion, Function.comp_apply,
-          Algebra.algebraMap_self_apply] }
+          v.algebraMap_adicCompletion_eq_coe] }
 
-/-- Restricted-product presentation `G(𝔸_f) ≃ₜ* RestrictedProductGroup M.level` for finite `S`
-(Conrad 2012, Theorem 3.4). -/
+/-- Restricted-product presentation `G(𝔸ᶠ[R, K]) ≃ₜ* RestrictedProductGroup M.level` for finite
+`S` (Conrad 2012, Theorem 3.4). -/
 noncomputable def finiteAdelicPointsContinuousMulEquiv (M : IntegralModel R K H S)
     (hS : S.Finite) : FiniteAdelicPoints R K H ≃ₜ* RestrictedProductGroup M.level where
   toFun := M.toRestrictedProductMonoidHom hS
@@ -267,8 +269,10 @@ theorem map_sAdelicPoints_self (M : IntegralModel R K H S) (hS : S.Finite) :
         ((M.finiteAdelicPointsContinuousMulEquiv hS).symm y) = y v := by ext h; simp
     rwa [hproj]
 
-/-- Full adelic restricted-product presentation `G(𝔸) ≃ₜ* G(K_∞) × Πʳ v, [G(K_v), M.level v]`
-(Conrad 2012, Theorem 3.6). -/
+/-- Restricted-product presentation `G(𝔸[R, K]) ≃ₜ* G(K_∞) × Πʳ v, [G(K_v), M.level v]` of
+`AdelicPoints R K H` (giving the global adelic isomorphism
+`G(𝔸_K) ≃ₜ* G(K_∞) × Πʳ v, [G(K_v), M.level v]` when `K` is a number field and `R = 𝓞 K`;
+Conrad 2012, Theorem 3.6). -/
 noncomputable def adelicPointsContinuousMulEquiv (M : IntegralModel R K H S) (hS : S.Finite) :
     AdelicPoints R K H ≃ₜ* RestrictedProductGroupWithFactor (InfinitePoints K H) M.level :=
   (AdelicPoints.splittingContinuousMulEquiv R K H).trans
@@ -295,10 +299,19 @@ theorem adelicPointsContinuousMulEquiv_snd (M : IntegralModel R K H S) (hS : S.F
   congrArg (M.finiteAdelicPointsContinuousMulEquiv hS)
     (AdelicPoints.splittingContinuousMulEquiv_snd x)
 
+/-- Inverse of `M.adelicPointsContinuousMulEquiv hS`, assembling an infinite-adelic point and a
+finite-place restricted-product element via `splittingContinuousMulEquiv.symm`. -/
+@[simp]
+theorem adelicPointsContinuousMulEquiv_symm_apply (M : IntegralModel R K H S) (hS : S.Finite)
+    (p : RestrictedProductGroupWithFactor (InfinitePoints K H) M.level) :
+    (M.adelicPointsContinuousMulEquiv hS).symm p =
+      (AdelicPoints.splittingContinuousMulEquiv R K H).symm
+        (p.1, (M.finiteAdelicPointsContinuousMulEquiv hS).symm p.2) := (rfl)
+
 /-- Model independence of the restricted-product presentation via `restrictedProductCongr`
 (Conrad 2012, Proposition 3.3 and Theorem 3.4). -/
 @[simp]
-theorem restrictedProductCongr_comp_finiteAdelicPointsContinuousMulEquiv
+theorem restrictedProductCongr_finiteAdelicPointsContinuousMulEquiv
     {S₁ S₂ : Set (HeightOneSpectrum R)} (M₁ : IntegralModel R K H S₁) (M₂ : IntegralModel R K H S₂)
     (hS₁ : S₁.Finite) (hS₂ : S₂.Finite) (x : FiniteAdelicPoints R K H) :
     restrictedProductCongr M₁.level M₂.level (level_eventuallyEq M₁ M₂ hS₁ hS₂)

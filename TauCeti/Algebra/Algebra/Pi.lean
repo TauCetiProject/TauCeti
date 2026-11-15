@@ -75,6 +75,7 @@ coordinates of `C ⊗[R] D ≅ (ι → R) ⊗[R] (κ → R) ≅ (κ → ι → R
   algebras give separating characters of `C ⊗[R] D`.
 * `TauCeti.AlgHom.pi_id_bijective_of_finrank_le_card`: a finite-dimensional algebra over a field
   with at least as many characters as its dimension is the algebra of functions on its characters.
+* `AlgHom.piEquiv`: algebra homomorphisms into `∀ i, R i` as families of factor homomorphisms.
 -/
 
 public section
@@ -236,6 +237,34 @@ theorem sigmaEquivPi_apply {R ι : Type*} [CommSemiring R] [_root_.Finite ι]
     (i : ι) (φ : A i →ₐ[R] B) :
     sigmaEquivPi A B ⟨i, φ⟩ = φ.comp (Pi.evalAlgHom R A i) :=
   (rfl)
+
+/-- Algebra homomorphisms from `A` into `∀ i, R i` correspond to families of homomorphisms into
+the factors. -/
+def piEquiv {k A ι : Type*} {R : ι → Type*} [CommSemiring k] [Semiring A] [Algebra k A]
+    [∀ i, Semiring (R i)] [∀ i, Algebra k (R i)] :
+    (A →ₐ[k] ∀ i, R i) ≃ ∀ i, A →ₐ[k] R i where
+  toFun x i := (Pi.evalAlgHom k R i).comp x
+  invFun := AlgHom.pi
+  left_inv x := by ext a i; rfl
+  right_inv f := by ext i a; rfl
+
+/-- Evaluating `AlgHom.piEquiv` at index `i` postcomposes with the `i`-th projection. -/
+@[simp]
+theorem piEquiv_apply {k A ι : Type*} {R : ι → Type*} [CommSemiring k] [Semiring A] [Algebra k A]
+    [∀ i, Semiring (R i)] [∀ i, Algebra k (R i)] (x : A →ₐ[k] ∀ i, R i) (i : ι) :
+    AlgHom.piEquiv x i = (Pi.evalAlgHom k R i).comp x := (rfl)
+
+/-- Evaluating `AlgHom.piEquiv x i` on `a : A` reads off the `i`-th coordinate of `x a`. -/
+theorem piEquiv_apply_apply {k A ι : Type*} {R : ι → Type*} [CommSemiring k] [Semiring A]
+    [Algebra k A] [∀ i, Semiring (R i)] [∀ i, Algebra k (R i)]
+    (x : A →ₐ[k] ∀ i, R i) (i : ι) (a : A) :
+    AlgHom.piEquiv x i a = x a i := (rfl)
+
+/-- The inverse of `AlgHom.piEquiv` is `AlgHom.pi`. -/
+@[simp]
+theorem piEquiv_symm_apply {k A ι : Type*} {R : ι → Type*} [CommSemiring k] [Semiring A]
+    [Algebra k A] [∀ i, Semiring (R i)] [∀ i, Algebra k (R i)] (f : ∀ i, A →ₐ[k] R i) :
+    AlgHom.piEquiv.symm f = AlgHom.pi f := (rfl)
 
 end AlgHom
 

@@ -187,6 +187,14 @@ lemma _root_.BialgHom.mapValue_mapDomain (φ : H₁ →ₐc[R] H₂) (χ : A →
   rw [MonoidHom.comp_apply, MonoidHom.comp_apply, mapDomain_apply, AlgHom.mapValue_apply,
     mapDomain_apply, AlgHom.mapValue_apply, toConv_ofConv, toConv_ofConv, AlgHom.comp_assoc]
 
+/-- `AlgHom.prodPointsMulEquiv` commutes with pre-composition along a bialgebra homomorphism. -/
+theorem _root_.AlgHom.prodPointsMulEquiv_mapDomain (φ : H₁ →ₐc[R] H₂)
+    (x : WithConv (H₂ →ₐ[R] A × B)) :
+    _root_.AlgHom.prodPointsMulEquiv (mapDomain φ x) =
+      (mapDomain φ (_root_.AlgHom.prodPointsMulEquiv x).1,
+        mapDomain φ (_root_.AlgHom.prodPointsMulEquiv x).2) := by
+  ext <;> simp
+
 end BialgebraMapValue
 
 section Hopf

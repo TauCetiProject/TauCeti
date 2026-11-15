@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.DedekindDomain.FiniteAdeleRing
 public import Mathlib.RingTheory.DedekindDomain.SInteger
 public import Mathlib.Topology.Algebra.Algebra
+public import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
 public import TauCeti.Topology.Algebra.RestrictedProduct.TopologicalSpace
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Approximation
 import TauCeti.RingTheory.DedekindDomain.SInteger.Basic
@@ -551,6 +552,18 @@ theorem quotientEquivQuotientIntegralAdeles_mk (x : K) :
   simp only [quotientEquivQuotientIntegralAdeles, LinearEquiv.trans_apply,
     Submodule.quotEquivOfEq_mk]
   exact LinearMap.quotKerEquivOfSurjective_apply_mk _ _ x
+
+variable (K) in
+/-- When `R` is a field, `HeightOneSpectrum R` is empty and `FiniteAdeleRing R K` is a
+subsingleton. -/
+theorem subsingleton_of_isField (hR : IsField R) : Subsingleton (FiniteAdeleRing R K) :=
+  ⟨fun _ _ ↦ FiniteAdeleRing.ext K fun v ↦ (HeightOneSpectrum.isEmpty_of_isField hR).elim v⟩
+
+/-- When `HeightOneSpectrum R` is nonempty, `FiniteAdeleRing R K` is nontrivial. -/
+instance instNontrivial [Nonempty (HeightOneSpectrum R)] : Nontrivial (FiniteAdeleRing R K) :=
+  let ⟨v⟩ := ‹Nonempty (HeightOneSpectrum R)›
+  ⟨⟨0, 1, fun h ↦ zero_ne_one (α := v.adicCompletion K) <| by
+    simpa only [zero_apply, one_apply] using congrArg (fun a : FiniteAdeleRing R K ↦ a v) h⟩⟩
 
 end FiniteAdeleRing
 

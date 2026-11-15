@@ -42,7 +42,8 @@ noncomputable def gaPointsContinuousMulEquiv :
   toMulEquiv := gaPointsMulEquiv
   continuous_toFun :=
     (continuous_ofAdd.comp (continuous_eval_ofConv (ι R R 1))).congr fun F ↦ by
-      rw [MulEquiv.toFun_eq_coe, ← ofAdd_toAdd (gaPointsMulEquiv F), toAdd_gaPointsMulEquiv]; rfl
+      rw [Function.comp_apply, MulEquiv.toFun_eq_coe, ← ofAdd_toAdd (gaPointsMulEquiv F),
+        toAdd_gaPointsMulEquiv]
   continuous_invFun := continuous_withConv_iff.2 fun s ↦ by
     -- Induct on `SymmetricAlgebra R R`; on `ι R R r`, the inverse evaluates to `r • toAdd x`.
     induction s using SymmetricAlgebra.induction with

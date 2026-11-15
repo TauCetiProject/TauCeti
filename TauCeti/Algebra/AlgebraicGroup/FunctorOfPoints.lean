@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Pi
+public import Mathlib.Algebra.Algebra.Prod
 public import Mathlib.RingTheory.HopfAlgebra.Convolution
 
 /-!
@@ -47,6 +49,8 @@ the inverse.
   homomorphisms, `AlgHom.mapValue_id`, `AlgHom.mapValue_comp` recording its
   functoriality in the value algebra and `AlgHom.mapValue_injective` recording that it loses no
   information when `φ` does not.
+* `AlgHom.prodPointsMulEquiv`, `AlgHom.piPointsMulEquiv`: convolution points valued in `A × B` or
+  `∀ i, A i` split multiplicatively into factor points.
 * `WithConv.mapValue_algebraOfId`: mapping a base-valued point through an algebra-valued point
   gives the corresponding constant point.
 
@@ -222,6 +226,91 @@ lemma _root_.WithConv.mapValue_algebraOfId (x : WithConv (H₁ →ₐ[R] A))
   simpa [Algebra.comp_ofId] using h.symm
 
 end BialgebraConstantPoint
+
+section BialgebraProd
+
+variable [Semiring H] [_root_.Bialgebra R H] [CommSemiring A] [Algebra R A]
+variable {B C : Type*} [CommSemiring B] [Algebra R B] [CommSemiring C] [Algebra R C]
+
+/-- Convolution points of a bialgebra `H` valued in `A × B` split multiplicatively into `A`-valued
+and `B`-valued points via the coordinate projections. -/
+noncomputable def prodPointsMulEquiv :
+    WithConv (H →ₐ[R] A × B) ≃* WithConv (H →ₐ[R] A) × WithConv (H →ₐ[R] B) where
+  toFun x := (mapValue (AlgHom.fst R A B) x, mapValue (AlgHom.snd R A B) x)
+  invFun p := toConv (p.1.ofConv.prod p.2.ofConv)
+  left_inv x := WithConv.ext <| by ext h <;> simp
+  right_inv p := by ext h <;> simp
+  map_mul' := ((mapValue (H := H) (AlgHom.fst R A B)).prod
+    (mapValue (H := H) (AlgHom.snd R A B))).map_mul
+
+/-- The first component of `prodPointsMulEquiv` is induced by `AlgHom.fst`. -/
+@[simp]
+theorem prodPointsMulEquiv_apply_fst (x : WithConv (H →ₐ[R] A × B)) :
+    (prodPointsMulEquiv x).1 = mapValue (AlgHom.fst R A B) x := (rfl)
+
+/-- The second component of `prodPointsMulEquiv` is induced by `AlgHom.snd`. -/
+@[simp]
+theorem prodPointsMulEquiv_apply_snd (x : WithConv (H →ₐ[R] A × B)) :
+    (prodPointsMulEquiv x).2 = mapValue (AlgHom.snd R A B) x := (rfl)
+
+/-- The inverse of `prodPointsMulEquiv` assembles two factor points via `AlgHom.prod`. -/
+@[simp]
+theorem ofConv_prodPointsMulEquiv_symm (p : WithConv (H →ₐ[R] A) × WithConv (H →ₐ[R] B)) :
+    ((prodPointsMulEquiv (R := R) (H := H) (A := A) (B := B)).symm p).ofConv =
+      p.1.ofConv.prod p.2.ofConv := (rfl)
+
+/-- Evaluating `prodPointsMulEquiv.symm p` at `h : H` pairs the two factor evaluations. -/
+theorem prodPointsMulEquiv_symm_apply_ofConv
+    (p : WithConv (H →ₐ[R] A) × WithConv (H →ₐ[R] B)) (h : H) :
+    ((prodPointsMulEquiv (R := R) (H := H) (A := A) (B := B)).symm p).ofConv h =
+      (p.1.ofConv h, p.2.ofConv h) := (rfl)
+
+/-- Projecting `prodPointsMulEquiv.symm p` onto the first factor recovers `p.1`. -/
+theorem mapValue_fst_prodPointsMulEquiv_symm (p : WithConv (H →ₐ[R] A) × WithConv (H →ₐ[R] B)) :
+    mapValue (AlgHom.fst R A B) (prodPointsMulEquiv.symm p) = p.1 := by
+  simpa only [prodPointsMulEquiv_apply_fst] using
+    congrArg Prod.fst (prodPointsMulEquiv.apply_symm_apply p)
+
+/-- Projecting `prodPointsMulEquiv.symm p` onto the second factor recovers `p.2`. -/
+theorem mapValue_snd_prodPointsMulEquiv_symm (p : WithConv (H →ₐ[R] A) × WithConv (H →ₐ[R] B)) :
+    mapValue (AlgHom.snd R A B) (prodPointsMulEquiv.symm p) = p.2 := by
+  simpa only [prodPointsMulEquiv_apply_snd] using
+    congrArg Prod.snd (prodPointsMulEquiv.apply_symm_apply p)
+
+/-- `prodPointsMulEquiv` sends `mapValue (φ.prod ψ) x` to `(mapValue φ x, mapValue ψ x)`. -/
+theorem prodPointsMulEquiv_mapValue_prod (φ : C →ₐ[R] A) (ψ : C →ₐ[R] B)
+    (x : WithConv (H →ₐ[R] C)) :
+    prodPointsMulEquiv (mapValue (φ.prod ψ) x) = (mapValue φ x, mapValue ψ x) := by
+  ext <;> simp
+
+end BialgebraProd
+
+section BialgebraPi
+
+variable {ι : Type*} {P : ι → Type*} [Semiring H] [_root_.Bialgebra R H]
+  [∀ i, CommSemiring (P i)] [∀ i, Algebra R (P i)]
+
+/-- Convolution points of a bialgebra `H` valued in `∀ i, P i` split multiplicatively into families
+of `P i`-valued convolution points via `Pi.evalAlgHom`. -/
+noncomputable def piPointsMulEquiv :
+    WithConv (H →ₐ[R] ∀ i, P i) ≃* ∀ i, WithConv (H →ₐ[R] P i) where
+  toFun x i := mapValue (Pi.evalAlgHom R P i) x
+  invFun f := toConv (AlgHom.pi fun i ↦ (f i).ofConv)
+  left_inv x := WithConv.ext <| by ext h i; simp
+  right_inv f := by ext i h; simp
+  map_mul' x y := funext fun i ↦ (mapValue (Pi.evalAlgHom R P i)).map_mul x y
+
+/-- At index `i`, `piPointsMulEquiv` applies `AlgHom.mapValue (Pi.evalAlgHom R P i)`. -/
+@[simp]
+theorem piPointsMulEquiv_apply (x : WithConv (H →ₐ[R] ∀ i, P i)) (i : ι) :
+    piPointsMulEquiv x i = mapValue (Pi.evalAlgHom R P i) x := (rfl)
+
+/-- Evaluating `piPointsMulEquiv.symm f` at `h : H` and `i : ι` gives `(f i).ofConv h`. -/
+@[simp]
+theorem piPointsMulEquiv_symm_apply_ofConv (f : ∀ i, WithConv (H →ₐ[R] P i)) (h : H) (i : ι) :
+    ((piPointsMulEquiv (R := R) (H := H) (P := P)).symm f).ofConv h i = (f i).ofConv h := (rfl)
+
+end BialgebraPi
 
 section CommHopf
 
