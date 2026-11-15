@@ -357,12 +357,7 @@ theorem pointsMulEquiv_comp_pointConjugationAlgHom_symm
         (AlgHom.mapValue (H := coordinateHopfAlgebra R n) (Algebra.ofId R A) g)) =
       Matrix.GeneralLinearGroup.map (algebraMap R A) s⁻¹ := by
     rw [pointsMulEquiv_mapValue, MulEquiv.apply_symm_apply, map_inv, map_inv, map_inv,
-      AlgHom.toRingHom_eq_coe, Algebra.toRingHom_ofId]
-    congr 1
-    ext i j
-    rw [Matrix.SpecialLinearGroup.coe_GL_coe_matrix,
-      Matrix.SpecialLinearGroup.map_apply_coe, Matrix.GeneralLinearGroup.map_apply]
-    rfl
+      AlgHom.toRingHom_eq_coe, Algebra.toRingHom_ofId, Matrix.SpecialLinearGroup.toGL_map]
   calc
     _ = Matrix.GeneralLinearGroup.map (algebraMap R A) s⁻¹ *
         Matrix.SpecialLinearGroup.toGL (pointsMulEquiv (R := R) (A := A) n (toConv φ)) *
