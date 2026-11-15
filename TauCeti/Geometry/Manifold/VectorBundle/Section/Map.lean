@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
 import Mathlib.Algebra.Module.Submodule.Equiv
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 /-!
 # Transport of supported smooth bundle sections
@@ -22,6 +23,9 @@ section-space topology. In particular, they provide support-preserving transport
 when a bundle is replaced by a smoothly isomorphic bundle. Smoothness is stated on total
 spaces; no norms on individual fibres, finite-rank assumption, compactness of the base,
 or choice of frames is needed. Transport commutes with smooth scalar localization.
+
+On a real `C^n` vector bundle every fibre vector is the value of a global `C^n` section, so a
+bundle map is determined by its action on sections (`ContMDiffSection.mapLinearMap_inj`).
 -/
 
 public section
@@ -285,5 +289,32 @@ theorem coe_mapCompactlySupportedEquiv_symm (s : compactlySupported I G n W) :
       (mapEquiv e he he').symm s.val := (rfl)
 
 end Equivalence
+
+end ContMDiffSection
+
+namespace ContMDiffSection
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+  [T2Space M] [IsManifold I ∞ M]
+  {F G : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup G] [NormedSpace ℝ G]
+  {n : ℕ∞ω} {V W : M → Type*}
+  [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
+  [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle ℝ F V]
+  [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, TopologicalSpace (W x)]
+  [TopologicalSpace (TotalSpace G W)] [FiberBundle G W] [VectorBundle ℝ G W]
+
+/-- On a real `C^n` vector bundle, `n ≤ ∞`, a bundle map is determined by its action on `C^n`
+sections, since every fibre vector is the value of a `C^n` section. -/
+theorem mapLinearMap_inj [ENat.LEInfty n] [ContMDiffVectorBundle n F V I]
+    {ϕ ψ : ∀ x, V x →ₗ[ℝ] W x}
+    {hϕ : ContMDiff (I.prod 𝓘(ℝ, F)) (I.prod 𝓘(ℝ, G)) n
+      (fun p : TotalSpace F V ↦ (⟨p.proj, ϕ p.proj p.2⟩ : TotalSpace G W))}
+    {hψ : ContMDiff (I.prod 𝓘(ℝ, F)) (I.prod 𝓘(ℝ, G)) n
+      (fun p : TotalSpace F V ↦ (⟨p.proj, ψ p.proj p.2⟩ : TotalSpace G W))} :
+    mapLinearMap ϕ hϕ = mapLinearMap ψ hψ ↔ ϕ = ψ := by
+  refine ⟨fun h ↦ funext fun x ↦ LinearMap.ext fun v ↦ ?_, fun h ↦ by subst h; rfl⟩
+  obtain ⟨s, rfl⟩ := evalLinearMap_surjective (I := I) (F := F) (V := V) n x v
+  simpa using DFunLike.congr_fun (LinearMap.congr_fun h s) x
 
 end ContMDiffSection

@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 import Mathlib.Geometry.Manifold.BumpFunction
-import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import Mathlib.Geometry.Manifold.VectorBundle.Hom
 
 /-!
@@ -26,6 +26,8 @@ local frame.
 
 * `CovariantDerivative.contMDiff_apply`: applying a `C^n` covariant derivative
   to a `C^(n + 1)` section along a `C^n` vector field produces a `C^n` section.
+* `CovariantDerivative.alongVectorField`: the covariant derivative of smooth sections along a
+  smooth vector field, as a linear map of smooth sections.
 * `ContMDiffCovariantDerivativeOn.mono_of_isOpen`: on a smooth real manifold, a covariant
   derivative which is `C^n` on a set is `C^n` on each open subset where it is a covariant
   derivative.
@@ -62,6 +64,23 @@ theorem contMDiff_apply
     CMDiff n (T% (fun x ↦ cov σ x (X x))) :=
   (contMDiffOn_univ.mp
     (ContMDiffCovariantDerivative.contMDiff.contMDiff hσ.contMDiffOn)).clm_bundle_apply hX
+
+/-- The covariant derivative `∇_X σ = (x ↦ ∇σ x (X x))` of smooth sections along a smooth vector
+field `X`, for a smooth covariant derivative `∇`, as a linear map of smooth sections. -/
+def alongVectorField (cov : CovariantDerivative I F V) [ContMDiffCovariantDerivative cov ∞]
+    (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) : Cₛ^∞⟮I; F, V⟯ →ₗ[𝕜] Cₛ^∞⟮I; F, V⟯ where
+  toFun σ := ⟨fun x ↦ cov σ x (X x), cov.contMDiff_apply X.contMDiff σ.contMDiff⟩
+  map_add' σ τ := ContMDiffSection.ext fun x ↦ by
+    simp [cov.isCovariantDerivativeOnUniv.add (σ.mdifferentiableAt (x := x))
+      (τ.mdifferentiableAt (x := x))]
+  map_smul' c σ := ContMDiffSection.ext fun x ↦ by
+    simp [cov.isCovariantDerivativeOnUniv.smul_const c (σ.mdifferentiableAt (x := x))]
+
+@[simp]
+theorem alongVectorField_apply (cov : CovariantDerivative I F V)
+    [ContMDiffCovariantDerivative cov ∞] (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯)
+    (σ : Cₛ^∞⟮I; F, V⟯) (x : M) : cov.alongVectorField X σ x = cov σ x (X x) :=
+  (rfl)
 
 section Real
 
