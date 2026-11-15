@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Filtration
-public import Mathlib.Topology.Algebra.Valued.WithVal
+public import TauCeti.Topology.Algebra.Valued.WithVal
 public import Mathlib.RingTheory.AdicCompletion.Noetherian
 
 /-!
@@ -23,6 +23,13 @@ The inclusion identifies every finite interval of the order filtration with the 
 interval in the completion. In particular, completion does not change the residue field. These
 identifications allow local calculations with finitely many coefficients to pass between the
 field and its completion. No finiteness or perfectness of the residue field is assumed.
+
+Restricting the constant field of `P` via `TauCeti.Place.restrictScalars` induces a canonical
+topological ring isomorphism `TauCeti.Place.completionRestrictScalarsRingEquiv` preserving the
+completed valuation and valuation ring. In the `PlaceCompletionExtension` scope (following
+`AdicCompletionExtension` in `TauCeti/NumberTheory/NumberField/LocalGlobal/Completion.lean`),
+`P.Completion` and `P.completionPlace.integers` also carry their low-priority canonical `F`- and
+`P.integers`-algebra structures and scalar towers.
 
 The underlying complete field and extension of the valuation are Mathlib's
 `Valuation.Completion` and `Valued.valuedCompletion`.
@@ -304,5 +311,156 @@ theorem residueFieldEquivCompletion_symm_residue_completionIntegersEmbedding (x 
 theorem degree_completionPlace : P.completionPlace.degree = P.degree := by
   simp only [degree_eq_finrank]
   exact P.residueFieldEquivCompletion.toLinearEquiv.finrank_eq.symm
+
+section RestrictScalars
+
+variable (k₀ : Type*) [Field k₀] [Algebra k₀ k] [Algebra k₀ F] [IsScalarTower k₀ k F]
+
+/-- Restricting the constant field of `P` from `k` to `k₀` induces a canonical topological ring
+isomorphism `(P.restrictScalars k₀).Completion ≃+* P.Completion` extending the identity on `F`. -/
+noncomputable def completionRestrictScalarsRingEquiv :
+    (P.restrictScalars k₀).Completion ≃+* P.Completion :=
+  Valuation.Completion.congr (RingEquiv.refl F) fun _ ↦ by simp
+
+variable {k₀}
+
+/-- `completionRestrictScalarsRingEquiv` commutes with the canonical completion embeddings of
+`F`. -/
+@[simp]
+theorem completionRestrictScalarsRingEquiv_completionEmbedding (x : F) :
+    P.completionRestrictScalarsRingEquiv k₀ ((P.restrictScalars k₀).completionEmbedding x) =
+      P.completionEmbedding x := by
+  rw [completionRestrictScalarsRingEquiv, completionEmbedding_apply, completionEmbedding_apply]
+  exact Valuation.Completion.congr_coe (σ := RingEquiv.refl F) _ x
+
+/-- The inverse of `completionRestrictScalarsRingEquiv` commutes with the canonical completion
+embeddings of `F`. -/
+@[simp]
+theorem completionRestrictScalarsRingEquiv_symm_completionEmbedding (x : F) :
+    (P.completionRestrictScalarsRingEquiv k₀).symm (P.completionEmbedding x) =
+      (P.restrictScalars k₀).completionEmbedding x := by
+  rw [RingEquiv.symm_apply_eq, completionRestrictScalarsRingEquiv_completionEmbedding]
+
+/-- `completionRestrictScalarsRingEquiv` is continuous. -/
+theorem continuous_completionRestrictScalarsRingEquiv :
+    Continuous (P.completionRestrictScalarsRingEquiv k₀) :=
+  Valuation.Completion.continuous_congr _
+
+/-- `completionRestrictScalarsRingEquiv` preserves the completed valuation. -/
+@[simp]
+theorem valuation_completionRestrictScalarsRingEquiv
+    (z : (P.restrictScalars k₀).Completion) :
+    Valued.v (P.completionRestrictScalarsRingEquiv k₀ z) = Valued.v z :=
+  Valuation.Completion.valued_congr (P.restrictScalars k₀).valuation_surjective _ z
+
+/-- The inverse of `completionRestrictScalarsRingEquiv` preserves the completed valuation. -/
+@[simp]
+theorem valuation_completionRestrictScalarsRingEquiv_symm (z : P.Completion) :
+    Valued.v ((P.completionRestrictScalarsRingEquiv k₀).symm z) = Valued.v z := by
+  simpa using (P.valuation_completionRestrictScalarsRingEquiv
+    ((P.completionRestrictScalarsRingEquiv k₀).symm z)).symm
+
+/-- `completionRestrictScalarsRingEquiv` identifies the completed valuation rings. -/
+theorem completionRestrictScalarsRingEquiv_mem_integers_iff
+    {z : (P.restrictScalars k₀).Completion} :
+    P.completionRestrictScalarsRingEquiv k₀ z ∈ P.completionPlace.integers ↔
+      z ∈ (P.restrictScalars k₀).completionPlace.integers := by
+  simp only [mem_integers_iff, completionPlace_valuation,
+    valuation_completionRestrictScalarsRingEquiv]
+
+/-- The inverse of `completionRestrictScalarsRingEquiv` identifies the completed valuation
+rings. -/
+theorem completionRestrictScalarsRingEquiv_symm_mem_integers_iff {z : P.Completion} :
+    (P.completionRestrictScalarsRingEquiv k₀).symm z ∈
+        (P.restrictScalars k₀).completionPlace.integers ↔
+      z ∈ P.completionPlace.integers := by
+  rw [← P.completionRestrictScalarsRingEquiv_mem_integers_iff (k₀ := k₀),
+    RingEquiv.apply_symm_apply]
+
+end RestrictScalars
+
+noncomputable section PlaceCompletionExtension
+
+/-- The canonical `F`-algebra structure on `P.Completion`, whose scalar action agrees
+definitionally with `UniformSpace.Completion.instSMul`. Installed at low priority in the
+`PlaceCompletionExtension` scope so that for `F = k` it never competes with
+`P.instAlgebraCompletion`. -/
+@[expose, instance_reducible]
+def completionFieldAlgebra : Algebra F P.Completion :=
+  letI := WithVal.uniformContinuousConstSMul (S := F) P.valuation
+  UniformSpace.Completion.algebra (WithVal P.valuation) F
+
+scoped[PlaceCompletionExtension] attribute [instance 10]
+  TauCeti.Place.completionFieldAlgebra
+
+/-- The canonical `P.integers`-algebra structure on `P.Completion`, whose scalar action agrees
+definitionally with `UniformSpace.Completion.instSMul`. -/
+@[expose, instance_reducible]
+def completionIntegersToCompletionAlgebra : Algebra P.integers P.Completion :=
+  letI := WithVal.uniformContinuousConstSMul (S := P.integers) P.valuation
+  UniformSpace.Completion.algebra (WithVal P.valuation) P.integers
+
+scoped[PlaceCompletionExtension] attribute [instance 100]
+  TauCeti.Place.completionIntegersToCompletionAlgebra
+
+/-- The canonical `P.integers`-algebra structure on `P.completionPlace.integers` given by
+`P.completionIntegersEmbedding`, compatible with `completionIntegersToCompletionAlgebra`. -/
+@[expose, instance_reducible]
+def completionIntegersAlgebra : Algebra P.integers P.completionPlace.integers :=
+  P.completionIntegersEmbedding.toRingHom.toAlgebra
+
+scoped[PlaceCompletionExtension] attribute [instance 10]
+  TauCeti.Place.completionIntegersAlgebra
+
+open scoped PlaceCompletionExtension in
+@[simp]
+theorem algebraMap_completionFieldAlgebra (x : F) :
+    algebraMap F P.Completion x = P.completionEmbedding x :=
+  (P.completionEmbedding_apply x).symm
+
+open scoped PlaceCompletionExtension in
+@[simp]
+theorem algebraMap_completionIntegersToCompletionAlgebra (x : P.integers) :
+    algebraMap P.integers P.Completion x = P.completionEmbedding x :=
+  (P.completionEmbedding_apply (x : F)).symm
+
+open scoped PlaceCompletionExtension in
+@[simp]
+theorem algebraMap_completionIntegersAlgebra (x : P.integers) :
+    algebraMap P.integers P.completionPlace.integers x = P.completionIntegersEmbedding x :=
+  rfl
+
+open scoped PlaceCompletionExtension in
+theorem isScalarTower_integers_completionFieldAlgebra :
+    IsScalarTower P.integers F P.Completion :=
+  .of_algebraMap_eq fun _ ↦ rfl
+
+scoped[PlaceCompletionExtension] attribute [instance]
+  TauCeti.Place.isScalarTower_integers_completionFieldAlgebra
+
+open scoped PlaceCompletionExtension in
+theorem isScalarTower_completionIntegersAlgebra :
+    IsScalarTower P.integers P.completionPlace.integers P.Completion :=
+  .of_algebraMap_eq fun r ↦
+    (P.completionEmbedding_apply (r : F)).symm.trans (P.completionIntegersEmbedding_apply r).symm
+
+scoped[PlaceCompletionExtension] attribute [instance]
+  TauCeti.Place.isScalarTower_completionIntegersAlgebra
+
+open scoped PlaceCompletionExtension in
+/-- The completed valuation ring `P.completionPlace.integers` is torsion-free over `P.integers`. -/
+theorem isTorsionFree_completionIntegersAlgebra :
+    Module.IsTorsionFree P.integers P.completionPlace.integers := by
+  rw [Module.isTorsionFree_iff_algebraMap_injective]
+  intro x y h
+  apply Subtype.ext
+  apply (algebraMap F P.Completion).injective
+  simpa only [algebraMap_completionFieldAlgebra, algebraMap_completionIntegersAlgebra,
+    completionIntegersEmbedding_apply] using congrArg Subtype.val h
+
+scoped[PlaceCompletionExtension] attribute [instance]
+  TauCeti.Place.isTorsionFree_completionIntegersAlgebra
+
+end PlaceCompletionExtension
 
 end TauCeti.Place

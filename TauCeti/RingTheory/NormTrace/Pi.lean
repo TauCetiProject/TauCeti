@@ -103,4 +103,26 @@ theorem Algebra.trace_pi (x : ∀ i, L i) :
 
 end Trace
 
+section TraceSingle
+
+variable {ι : Type*} [Finite ι] [DecidableEq ι] {S : Type*} [CommRing S] [Algebra K S]
+  {L : ι → Type*} [∀ i, CommRing (L i)] [∀ i, Algebra K (L i)]
+  [∀ i, Module.Free K (L i)] [∀ i, Module.Finite K (L i)]
+
+/-- Under an algebra isomorphism `e : S ≃ₐ[K] ∀ j, L j` to a finite product, the trace pairing of
+an element supported in a single component `i` with any `s : S` reduces to the trace pairing in
+`L i`. -/
+theorem Algebra.trace_symm_single_mul_of_algEquiv (e : S ≃ₐ[K] ∀ j, L j) (i : ι) (z : L i)
+    (s : S) :
+    Algebra.trace K S (e.symm (Pi.single i z) * s) = Algebra.trace K (L i) (z * e s i) := by
+  let := Fintype.ofFinite ι
+  rw [← Algebra.trace_eq_of_algEquiv e, map_mul, AlgEquiv.apply_symm_apply, Algebra.trace_pi,
+    Finset.sum_eq_single i]
+  · simp
+  · intro j _ hj
+    simp [Pi.single_eq_of_ne hj]
+  · simp
+
+end TraceSingle
+
 end TauCeti

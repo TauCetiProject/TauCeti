@@ -519,22 +519,15 @@ theorem isIntegralClosure_completionIntegers :
         P'.Completion)
 
 /-- Restricting the completed place of `P'` to `P.Completion` recovers `P.completionPlace`. -/
-theorem restrict_completionPlace :
+@[simp]
+theorem restrict_completionPlace [alg : Algebra k P'.Completion]
+    [@IsScalarTower k k' P'.Completion _ (P'.instAlgebraCompletion).toSMul alg.toSMul]
+    [@IsScalarTower k P.Completion P'.Completion
+      (P.instAlgebraCompletion).toSMul (P.completionExtensionAlgebra P' hP).toSMul alg.toSMul] :
     letI := P.completionExtensionAlgebra P' hP
-    letI := completionAlgebraBase (k := k) P'
-    letI := isScalarTower_completionAlgebraBase (k := k) P'
-    letI := P.isScalarTower_completionAlgebraBase_completionExtension P' hP
     letI := isIntegral_completion P P' hP
     P'.completionPlace.restrict k P.Completion = P.completionPlace := by
   let _ := P.completionExtensionAlgebra P' hP
-  let _ := completionAlgebraBase (k := k) P'
-  have : @IsScalarTower k k' P'.Completion _
-      (P'.instAlgebraCompletion).toSMul (completionAlgebraBase (k := k) P').toSMul :=
-    isScalarTower_completionAlgebraBase (k := k) P'
-  have : @IsScalarTower k P.Completion P'.Completion
-      (P.instAlgebraCompletion).toSMul (P.completionExtensionAlgebra P' hP).toSMul
-      (completionAlgebraBase (k := k) P').toSMul :=
-    P.isScalarTower_completionAlgebraBase_completionExtension P' hP
   have : Algebra.IsIntegral P.Completion P'.Completion := isIntegral_completion P P' hP
   refine (restrict_eq_iff_integers_le k P.Completion P'.completionPlace
     P.completionPlace).mpr fun x hx ↦ ?_
@@ -543,25 +536,17 @@ theorem restrict_completionPlace :
 
 /-- Completion preserves `Place.relativeDegree`, including any inseparable factor of the residue
 extension. -/
-theorem relativeDegree_completionPlace :
+@[simp]
+theorem relativeDegree_completionPlace [alg : Algebra k P'.Completion]
+    [@IsScalarTower k k' P'.Completion _ (P'.instAlgebraCompletion).toSMul alg.toSMul]
+    [@IsScalarTower k P.Completion P'.Completion
+      (P.instAlgebraCompletion).toSMul (P.completionExtensionAlgebra P' hP).toSMul alg.toSMul] :
     letI := P.completionExtensionAlgebra P' hP
-    letI := completionAlgebraBase (k := k) P'
-    letI := isScalarTower_completionAlgebraBase (k := k) P'
-    letI := P.isScalarTower_completionAlgebraBase_completionExtension P' hP
     letI := isIntegral_completion P P' hP
     relativeDegree k P.Completion P'.completionPlace = relativeDegree k F P' := by
   subst hP
   let _ := (P'.restrict k F).completionExtensionAlgebra P' rfl
   let _ := (P'.restrict k F).completionIntegersExtensionAlgebra P' rfl
-  let _ := completionAlgebraBase (k := k) P'
-  have : @IsScalarTower k k' P'.Completion _
-      (P'.instAlgebraCompletion).toSMul (completionAlgebraBase (k := k) P').toSMul :=
-    isScalarTower_completionAlgebraBase (k := k) P'
-  have : @IsScalarTower k (P'.restrict k F).Completion P'.Completion
-      ((P'.restrict k F).instAlgebraCompletion).toSMul
-      ((P'.restrict k F).completionExtensionAlgebra P' rfl).toSMul
-      (completionAlgebraBase (k := k) P').toSMul :=
-    (P'.restrict k F).isScalarTower_completionAlgebraBase_completionExtension P' rfl
   have : Algebra.IsIntegral (P'.restrict k F).Completion P'.Completion :=
     isIntegral_completion (P'.restrict k F) P' rfl
   have hres := restrict_completionPlace (P'.restrict k F) P' rfl

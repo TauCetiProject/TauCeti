@@ -35,6 +35,9 @@ noncommutative algebras.
   form of `B` evaluated at `x`.
 * `TauCeti.Algebra.charpoly_lmul_eq_norm`: for a finite free `K`-algebra `B`, the characteristic
   polynomial of multiplication by `x ∈ T ⊗[K] B` over `T` is the norm of `X - x` over `T[X]`.
+* `TauCeti.Algebra.trace_tmul_mul_smul`, `TauCeti.Algebra.sum_trace_tmul_mul_smul_eq`,
+  `TauCeti.Algebra.trace_map_tmul_mul`: trace pairings and `K`-linear trace-dual expansions
+  commute with scalar extension to `A ⊗[K] B` and integral-to-field base-change maps.
 * `TauCeti.Algebra.trace_baseChange_tmul_of_isScalarTower`: for a tower `R → S → T` and an
   `R`-algebra `C` with `S ⊗[R] C` free over `S`, the trace of `1 ⊗ c` in `T ⊗[R] C` is the
   image of its trace in `S ⊗[R] C`.
@@ -186,6 +189,43 @@ theorem Algebra.trace_baseChange_tmul (x : B) :
     rw [Algebra.trace_eq_zero_of_not_exists_basis K fun ⟨_, ⟨b⟩⟩ ↦ hfin (.of_basis b),
       Algebra.trace_eq_zero_of_not_exists_basis A fun ⟨_, ⟨b⟩⟩ ↦ hfin' (.of_basis b)]
     simp
+
+/-- Trace pairing and scalar multiplication commute with scalar extension on pure tensors. -/
+theorem Algebra.trace_tmul_mul_smul (a : A) (x b y : B) :
+    Algebra.trace A (A ⊗[K] B) ((a ⊗ₜ[K] x) * (1 ⊗ₜ[K] b)) • ((1 : A) ⊗ₜ[K] y) =
+      a ⊗ₜ[K] (Algebra.trace K B (x * b) • y) := by
+  have ha : a ⊗ₜ[K] (x * b) = a • ((1 : A) ⊗ₜ[K] (x * b)) := by
+    rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
+  rw [Algebra.TensorProduct.tmul_mul_tmul, mul_one, ha, map_smul, Algebra.trace_baseChange_tmul]
+  simp only [smul_eq_mul, TensorProduct.smul_tmul', mul_one, mul_comm a,
+    ← Algebra.smul_def, TensorProduct.smul_tmul]
+
+/-- A `K`-linear trace-dual expansion on `B` extends to `A ⊗[K] B`. -/
+theorem Algebra.sum_trace_tmul_mul_smul_eq {ι : Type*} [Fintype ι] (b y : ι → B)
+    (h : ∀ x : B, ∑ i, Algebra.trace K B (x * b i) • y i = x) (ξ : A ⊗[K] B) :
+    ∑ i, Algebra.trace A (A ⊗[K] B) (ξ * (1 ⊗ₜ[K] b i)) • ((1 : A) ⊗ₜ[K] y i) = ξ := by
+  induction ξ using TensorProduct.inductionOn with
+  | add ξ η hξ hη =>
+    conv_rhs => rw [← hξ, ← hη]
+    simp only [add_mul, map_add, add_smul, Finset.sum_add_distrib]
+  | tmul a x =>
+    conv_rhs => rw [← h x, TensorProduct.tmul_sum]
+    exact Finset.sum_congr rfl fun i _ ↦ Algebra.trace_tmul_mul_smul a x (b i) (y i)
+
+/-- For a map `toField : R' ⊗[R] S → A ⊗[K] B` sending `a ⊗ x` to `a ⊗ x`, the trace pairing of
+`toField (a ⊗ x)` with `1 ⊗ d` is a scalar multiple of the base-changed trace of `x · d`. -/
+theorem Algebra.trace_map_tmul_mul {R R' S F : Type*} [CommRing R] [CommRing R'] [CommRing S]
+    [Algebra R R'] [Algebra R' A] [Algebra R S] [Algebra S B]
+    [FunLike F (R' ⊗[R] S) (A ⊗[K] B)] (toField : F)
+    (ht : ∀ (a : R') (x : S), toField (a ⊗ₜ[R] x) = algebraMap R' A a ⊗ₜ[K] algebraMap S B x)
+    (a : R') (x : S) (d : B) :
+    Algebra.trace A (A ⊗[K] B) (toField (a ⊗ₜ[R] x) * (1 ⊗ₜ[K] d)) =
+      algebraMap R' A a * algebraMap K A (Algebra.trace K B (algebraMap S B x * d)) := by
+  have ha : algebraMap R' A a ⊗ₜ[K] (algebraMap S B x * d) =
+      algebraMap R' A a • ((1 : A) ⊗ₜ[K] (algebraMap S B x * d)) := by
+    rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
+  rw [ht, Algebra.TensorProduct.tmul_mul_tmul, mul_one, ha, map_smul,
+    Algebra.trace_baseChange_tmul, smul_eq_mul]
 
 end Trace
 

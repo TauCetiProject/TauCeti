@@ -15,6 +15,7 @@ import Mathlib.RingTheory.Etale.Field
 import Mathlib.RingTheory.Flat.TorsionFree
 import Mathlib.RingTheory.Localization.BaseChange
 import TauCeti.LinearAlgebra.Span.Basic
+import TauCeti.RingTheory.Localization.Separable
 import TauCeti.RingTheory.NormTrace.BaseChange
 
 /-!
@@ -45,10 +46,11 @@ families of vectors:
 
 Second, in the `PlaceCompletionExtension` scope, `P.Completion` and `P.completionPlace.integers`
 carry their canonical `F`- and `P.integers`-algebra structures alongside the fibre extension
-algebras on `w.1.Completion` and `w.1.completionPlace.integers`. For a finite separable extension
-`F' / F` with `k' / k` integral, combining the spanning and dimension results above with the
-identification of `integralClosure P.integers F'` as the intersection of the valuation rings above
-`P` (`TauCeti.Place.isIntegral_iff_forall_restrict_eq_mem_integers_of_isSeparable`) upgrades the
+algebras on `w.1.Completion` and `w.1.completionPlace.integers`. For a finite extension `F' / F`
+with `k' / k` integral — assuming either `F' / F` separable or `F / k` an algebraic function field
+— combining the spanning and dimension results above with the identification of
+`integralClosure P.integers F'` as the intersection of the valuation rings above `P`
+(`TauCeti.Place.isIntegral_iff_forall_restrict_eq_mem_integers_of_finiteDimensional`) upgrades the
 diagonal maps to the bundled field and integral **semilocal decompositions**
 
 ```text
@@ -66,13 +68,14 @@ fields.
 
 ## Main definitions
 
-* `TauCeti.Place.completionSemilocalHom` and `TauCeti.Place.completionSemilocalEquiv`: the
-  semilocal `P.Completion`-algebra isomorphism
-  `P.Completion ⊗[F] F' ≃ₐ[P.Completion] ∏_{w ∣ P} w.1.Completion`.
-* `TauCeti.Place.integralClosureToCompletionIntegers`: the canonical injective ring homomorphism
-  `integralClosure P.integers F' →+* P'.completionPlace.integers` for `P'` lying over `P`.
-* `TauCeti.Place.completionIntegersSemilocalHom` and
-  `TauCeti.Place.completionIntegersSemilocalEquiv`: the integral semilocal isomorphism
+* `TauCeti.Place.completionSemilocalHom`, `TauCeti.Place.completionSemilocalEquiv`, and
+  `TauCeti.Place.completionSemilocalEquivOfIsFunctionField`: the semilocal `P.Completion`-algebra
+  homomorphism and isomorphisms `P.Completion ⊗[F] F' ≃ₐ[P.Completion] ∏_{w ∣ P} w.1.Completion`
+  (when `k' / k` is integral and either `F' / F` is finite separable or `F / k` is a function
+  field).
+* `TauCeti.Place.completionIntegersSemilocalHom`, `TauCeti.Place.completionIntegersSemilocalEquiv`,
+  and `TauCeti.Place.completionIntegersSemilocalEquivOfIsFunctionField`: the integral semilocal
+  homomorphism and isomorphisms
   `P.completionPlace.integers ⊗[P.integers] integralClosure P.integers F'
   ≃ₐ[P.completionPlace.integers] ∏_{w ∣ P} w.1.completionPlace.integers`.
 * `TauCeti.Place.completionIntegersSemilocalToField`: the canonical injective map from the
@@ -86,7 +89,8 @@ fields.
   `TauCeti.Place.span_completionEmbedding_pi_eq_top`: `F'`, and so any family spanning `F'` over
   `F`, spans `∏_{P' ∣ P} F̂'_{P'}` over `F̂_P`.
 * `TauCeti.Place.finsum_finrank_completion_eq_finrank` and
-  `TauCeti.Place.finsum_finrank_completion_eq_finrank_of_isSeparable`: the local degrees above
+  `TauCeti.Place.finsum_finrank_completion_eq_finrank_of_isSeparable`: for `F' / F` finite and
+  `k' / k` integral (with `F / k` a function field or `F' / F` separable), the local degrees above
   `P` add up to `[F' : F]`.
 * `TauCeti.Place.linearIndependent_completionEmbedding_pi_iff` and
   `TauCeti.Place.linearIndependent_completionEmbedding_pi_iff_of_isSeparable`: a family of `F'`
@@ -95,17 +99,26 @@ fields.
 * `TauCeti.Place.completionEmbedding_trace` and
   `TauCeti.Place.completionEmbedding_trace_of_isSeparable`: **the trace formula**
   `Tr_{F'/F} x = ∑_{P' ∣ P} Tr_{F̂'_{P'}/F̂_P} x`.
-* `TauCeti.Place.isIntegral_iff_forall_restrict_eq_mem_integers_of_isSeparable`: an element of a
-  finite separable extension `F' / F` is integral over `P.integers` if and only if it belongs to
-  `P'.integers` for every place `P'` above `P`, with no function-field hypothesis.
-* `TauCeti.Place.norm_eq_finprod_norm_completionSemilocalEquiv`,
+* `TauCeti.Place.completionEmbedding_norm`,
   `TauCeti.Place.completionEmbedding_norm_of_isSeparable`,
+  `TauCeti.Place.norm_eq_finprod_norm_completionSemilocalEquiv`,
   `TauCeti.Place.trace_eq_finsum_trace_completionSemilocalEquiv`, and
-  `TauCeti.Place.trace_completionSemilocalEquiv_symm_single_mul`: componentwise norm and trace
-  identities across `completionSemilocalEquiv`.
+  `TauCeti.Place.trace_completionSemilocalEquiv_symm_single_mul`: local-global norm product
+  formulas and componentwise norm/trace identities across the semilocal decomposition.
 * `TauCeti.Place.isSeparable_completion` and
   `TauCeti.Place.isSeparable_fractionRing_completionIntegers`: completion preserves separability
-  of the field extension, with no assumption on the constant fields or residue fields.
+  of a finite separable field extension, with no assumption on the constant fields or residue
+  fields.
+
+## Implementation notes
+
+The `PlaceCompletionExtension` scope is modeled on `AdicCompletionExtension` in
+`TauCeti/NumberTheory/NumberField/LocalGlobal/Completion.lean`. Both the family-level and bundled
+semilocal decompositions and norm/trace formulas closely adapt the number-field development in
+`TauCeti/NumberTheory/NumberField/LocalGlobal/Semilocal/` (`TauCeti.semilocalEquiv`,
+`TauCeti.integralSemilocalEquiv`, `TauCeti.algebraMap_trace_eq_sum_trace`, and
+`TauCeti.trace_semilocalEquiv_symm_single_mul`), replacing density of `L` in `∏_{w ∣ v} L_w` with
+weak approximation and Nakayama's lemma over the completed valuation ring.
 
 ## References
 
@@ -452,95 +465,10 @@ end FamilySemilocal
 
 noncomputable section BundledSemilocal
 
-section Instances
-
-variable {k F : Type*} [Field k] [Field F] [Algebra k F]
-
-/-- Constant scalar multiplication by any `F`-algebra base `S` on `WithVal P.valuation` is
-uniformly continuous, since it acts by ring multiplication in `WithVal P.valuation`. -/
-instance uniformContinuousConstSMul_withVal {S : Type*} [CommSemiring S] [Algebra S F]
-    (P : Place k F) : UniformContinuousConstSMul S (WithVal P.valuation) := ⟨fun _ ↦ by
-  simp_rw [WithVal.smul_right_def, Algebra.smul_def]
-  exact (Ring.uniformContinuousConstSMul (WithVal P.valuation)).uniformContinuous_const_smul _⟩
-
-/-- The canonical `F`-algebra structure on `P.Completion`, whose scalar action agrees
-definitionally with `UniformSpace.Completion.instSMul`. Installed at low priority in the
-`PlaceCompletionExtension` scope so that for `F = k` it never competes with
-`P.instAlgebraCompletion`. -/
-@[instance_reducible]
-def completionFieldAlgebra (P : Place k F) : Algebra F P.Completion :=
-  UniformSpace.Completion.algebra (WithVal P.valuation) F
-
-scoped[PlaceCompletionExtension] attribute [instance 10]
-  TauCeti.Place.completionFieldAlgebra
-
-/-- The canonical `P.integers`-algebra structure on `P.Completion`, whose scalar action agrees
-definitionally with `UniformSpace.Completion.instSMul`. -/
-@[instance_reducible]
-def completionIntegersToCompletionAlgebra (P : Place k F) :
-    Algebra P.integers P.Completion :=
-  UniformSpace.Completion.algebra (WithVal P.valuation) P.integers
-
-scoped[PlaceCompletionExtension] attribute [instance 100]
-  TauCeti.Place.completionIntegersToCompletionAlgebra
-
-/-- The canonical `P.integers`-algebra structure on `P.completionPlace.integers` given by
-`P.completionIntegersEmbedding`, compatible with `completionIntegersToCompletionAlgebra`. -/
-@[instance_reducible]
-def completionIntegersAlgebra (P : Place k F) :
-    Algebra P.integers P.completionPlace.integers :=
-  P.completionIntegersEmbedding.toRingHom.toAlgebra
-
-scoped[PlaceCompletionExtension] attribute [instance 10]
-  TauCeti.Place.completionIntegersAlgebra
-
-open scoped PlaceCompletionExtension in
-@[simp]
-theorem algebraMap_completionFieldAlgebra (P : Place k F) (x : F) :
-    algebraMap F P.Completion x = P.completionEmbedding x :=
-  (P.completionEmbedding_apply x).symm
-
-open scoped PlaceCompletionExtension in
-@[simp]
-theorem algebraMap_completionIntegersAlgebra (P : Place k F) (x : P.integers) :
-    algebraMap P.integers P.completionPlace.integers x = P.completionIntegersEmbedding x :=
-  (rfl)
-
-open scoped PlaceCompletionExtension in
-theorem isScalarTower_integers_completionFieldAlgebra (P : Place k F) :
-    IsScalarTower P.integers F P.Completion :=
-  .of_algebraMap_eq fun _ ↦ rfl
-
-scoped[PlaceCompletionExtension] attribute [instance]
-  TauCeti.Place.isScalarTower_integers_completionFieldAlgebra
-
-open scoped PlaceCompletionExtension in
-theorem isScalarTower_completionIntegersAlgebra (P : Place k F) :
-    IsScalarTower P.integers P.completionPlace.integers P.Completion :=
-  .of_algebraMap_eq fun r ↦
-    (P.completionEmbedding_apply (r : F)).symm.trans (P.completionIntegersEmbedding_apply r).symm
-
-scoped[PlaceCompletionExtension] attribute [instance]
-  TauCeti.Place.isScalarTower_completionIntegersAlgebra
-
-open scoped PlaceCompletionExtension in
-/-- The completed valuation ring `P.completionPlace.integers` is torsion-free over `P.integers`. -/
-theorem isTorsionFree_completionIntegersAlgebra (P : Place k F) :
-    Module.IsTorsionFree P.integers P.completionPlace.integers := by
-  rw [Module.isTorsionFree_iff_algebraMap_injective]
-  intro x y h
-  apply Subtype.ext
-  apply (algebraMap F P.Completion).injective
-  simpa only [algebraMap_completionFieldAlgebra, algebraMap_completionIntegersAlgebra,
-    completionIntegersEmbedding_apply] using congrArg Subtype.val h
-
-scoped[PlaceCompletionExtension] attribute [instance]
-  TauCeti.Place.isTorsionFree_completionIntegersAlgebra
-
 section FibreInstances
 
-variable {k' F' : Type*} [Field k'] [Field F']
-  [Algebra k k'] [Algebra k' F'] [Algebra k F'] [Algebra F F']
+variable {k k' F F' : Type*} [Field k] [Field k'] [Field F] [Field F']
+  [Algebra k F] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [Algebra F F']
   [IsScalarTower k k' F'] [IsScalarTower k F F'] [Algebra.IsIntegral F F']
   {P : Place k F} (w : {Q' : Place k' F' // Q'.restrict k F = P})
 
@@ -618,54 +546,9 @@ scoped[PlaceCompletionExtension] attribute [instance]
 
 end FibreInstances
 
-end Instances
-
 open scoped PlaceCompletionExtension
 
 attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
-
-section IntegralClosureIntersection
-
-variable {k k' F F' : Type*} [Field k] [Field k'] [Field F] [Field F']
-  [Algebra k F] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [Algebra F F']
-  [IsScalarTower k k' F'] [IsScalarTower k F F']
-  [FiniteDimensional F F'] [Algebra.IsSeparable F F'] [Algebra.IsIntegral k k']
-
-/-- **The integral closure of `P.integers` in a finite separable extension is the intersection of
-the valuation rings above `P`.** Unlike
-`TauCeti.Place.isIntegral_iff_forall_restrict_eq_mem_integers`, no `IsFunctionField` hypothesis is
-required: `integralClosure P.integers F'` is a Dedekind domain with fraction field `F'`, and every
-height-one prime of it contracts to the maximal ideal of `P.integers` and therefore comes from a
-place of `F' / k'` lying over `P`. -/
-theorem isIntegral_iff_forall_restrict_eq_mem_integers_of_isSeparable (P : Place k F) {x : F'} :
-    IsIntegral P.integers x ↔ ∀ P' : Place k' F', P'.restrict k F = P → x ∈ P'.integers := by
-  refine ⟨fun hx P' hP' ↦ P'.mem_integers_of_isIntegral (fun a ↦ ?_) hx, fun h ↦ ?_⟩
-  · subst hP'
-    exact (mem_integers_restrict_iff k F P' (a : F)).mp a.2
-  have hR : ∀ r : P.integers, algebraMap P.integers F r ∈ P.integers := fun r ↦ r.2
-  have : IsScalarTower k P.integers F' := .of_algebraMap_eq fun c ↦ by
-    rw [IsScalarTower.algebraMap_apply P.integers F F',
-      ← IsScalarTower.algebraMap_apply k P.integers F, ← IsScalarTower.algebraMap_apply k F F']
-  have hk' : ∀ c : k', algebraMap k' F' c ∈ integralClosure P.integers F' := fun c ↦
-    (IsIntegral.algebraMap (Algebra.IsIntegral.isIntegral (R := k) c)).tower_top
-  let _ : Algebra k' (integralClosure P.integers F') :=
-    ((algebraMap k' F').codRestrict (integralClosure P.integers F') hk').toAlgebra
-  have : IsScalarTower k' (integralClosure P.integers F') F' := .of_algebraMap_eq fun _ ↦ rfl
-  have hpmax : (P.center hR).asIdeal = maximalIdeal P.integers :=
-    IsLocalRing.eq_maximalIdeal (P.center hR).isMaximal
-  obtain ⟨y, hy⟩ := HeightOneSpectrum.mem_integers_of_valuation_le_one
-    (R := integralClosure P.integers F') F' x fun 𝔓 ↦ by
-      have : 𝔓.asIdeal.IsMaximal := 𝔓.isMaximal
-      have hunder : 𝔓.asIdeal.under P.integers = (P.center hR).asIdeal :=
-        (IsLocalRing.eq_maximalIdeal (Ideal.IsMaximal.under P.integers 𝔓.asIdeal)).trans
-          hpmax.symm
-      have : 𝔓.asIdeal.LiesOver (P.center hR).asIdeal := ⟨hunder.symm⟩
-      have hres : (ofPrime k' F' 𝔓).restrict k F = P :=
-        (restrict_ofPrime k F (P.center hR) 𝔓).trans (ofPrime_center k F P hR)
-      simpa only [mem_integers_iff, valuation_ofPrime] using h (ofPrime k' F' 𝔓) hres
-  exact hy ▸ y.2
-
-end IntegralClosureIntersection
 
 section ToField
 
@@ -695,12 +578,12 @@ theorem completionIntegersSemilocalToField_tmul (a : P.completionPlace.integers)
     completionIntegersSemilocalToField F' P (a ⊗ₜ x) = (a : P.Completion) ⊗ₜ[F] (x : F') := by
   simp [completionIntegersSemilocalToField]
 
-/-- The canonical map from the integral tensor product to the field tensor product is injective:
-`F` is the fraction field of `P.integers`, so tensoring over `F` agrees with tensoring over
-`P.integers`, and both `P.Completion` and `F'` are torsion-free hence flat over the Dedekind domain
-`P.integers`. -/
+/-- The canonical map from the integral tensor product to the field tensor product is injective. -/
 theorem completionIntegersSemilocalToField_injective :
     Function.Injective (completionIntegersSemilocalToField F' P) := by
+  -- `F` is the fraction field of `P.integers`, so tensoring over `F` agrees with tensoring over
+  -- `P.integers`, and both `P.Completion` and `F'` are torsion-free hence flat over the Dedekind
+  -- domain `P.integers`.
   have := IsLocalization.tensorProduct_compatibleSMul P.integers⁰ F P.Completion F'
   let e : (P.Completion ⊗[F] F') →ₗ[P.integers] (P.Completion ⊗[P.integers] F') :=
     TensorProduct.mapOfCompatibleSMul P.integers F P.integers P.Completion F'
@@ -723,11 +606,11 @@ theorem trace_completionIntegersSemilocalToField_tmul_mul
     Algebra.trace P.Completion (P.Completion ⊗[F] F')
         (completionIntegersSemilocalToField F' P (a ⊗ₜ x) * (1 ⊗ₜ d)) =
       (a : P.Completion) * P.completionEmbedding (Algebra.trace F F' ((x : F') * d)) := by
-  have ha : (a : P.Completion) ⊗ₜ[F] ((x : F') * d) =
-      (a : P.Completion) • ((1 : P.Completion) ⊗ₜ[F] ((x : F') * d)) := by
-    rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-  rw [completionIntegersSemilocalToField_tmul, Algebra.TensorProduct.tmul_mul_tmul, mul_one, ha,
-    map_smul, Algebra.trace_baseChange_tmul, smul_eq_mul, algebraMap_completionFieldAlgebra]
+  simpa only [ValuationSubring.algebraMap_apply, Subalgebra.algebraMap_apply,
+    algebraMap_completionFieldAlgebra] using
+    Algebra.trace_map_tmul_mul (K := F) (A := P.Completion) (B := F')
+      (completionIntegersSemilocalToField F' P)
+      (fun b y ↦ completionIntegersSemilocalToField_tmul b y) a x d
 
 end ToField
 
@@ -749,6 +632,7 @@ def completionSemilocalHom :
     P.Completion ⊗[F] F' →ₐ[P.Completion]
       ((w : {Q' : Place k' F' // Q'.restrict k F = P}) → w.1.Completion) :=
   letI (w : {Q' : Place k' F' // Q'.restrict k F = P}) : Algebra F w.1.Completion :=
+    letI := WithVal.uniformContinuousConstSMul (S := F) w.1.valuation
     UniformSpace.Completion.algebra (WithVal w.1.valuation) F
   letI (w : {Q' : Place k' F' // Q'.restrict k F = P}) :
       IsScalarTower F F' w.1.Completion :=
@@ -774,43 +658,6 @@ theorem completionSemilocalHom_tmul (a : P.Completion) (x : F')
       P.completionExtension w.1 w.2 a * w.1.completionEmbedding x := by
   simp [completionSemilocalHom, algebraMap_completionExtensionAlgebra_subtype]
 
-variable {k' F'} in
-/-- An element of `integralClosure P.integers F'` is regular at every place `P'` lying over `P`. -/
-private theorem coe_mem_integers_of_restrict_eq (P' : Place k' F') (hP : P'.restrict k F = P)
-    (x : integralClosure P.integers F') :
-    algebraMap (integralClosure P.integers F') F' x ∈ P'.integers :=
-  P'.mem_integers_of_isIntegral (R := P.integers)
-    (fun a ↦ (mem_integers_restrict_iff k F P' (a : F)).mp (hP.symm ▸ a.2))
-    x.2
-
-variable {k' F'} in
-/-- The canonical embedding of `integralClosure P.integers F'` into the completed valuation ring
-at a place `P'` lying over `P`. -/
-def integralClosureToCompletionIntegers (P' : Place k' F') (hP : P'.restrict k F = P) :
-    integralClosure P.integers F' →+* P'.completionPlace.integers :=
-  P'.completionIntegersEmbedding.toRingHom.comp
-    ((algebraMap (integralClosure P.integers F') F').codRestrict P'.integers
-      fun x ↦ P.coe_mem_integers_of_restrict_eq P' hP x)
-
-variable {k' F' P} in
-@[simp]
-theorem coe_integralClosureToCompletionIntegers (P' : Place k' F') (hP : P'.restrict k F = P)
-    (x : integralClosure P.integers F') :
-    (P.integralClosureToCompletionIntegers P' hP x : P'.Completion) =
-      P'.completionEmbedding (x : F') :=
-  (P'.completionIntegersEmbedding_apply _).trans
-    (congrArg P'.completionEmbedding (RingHom.codRestrict_apply _ _ _ x))
-
-variable {k' F'} in
-/-- The embedding `integralClosure P.integers F' →+* P'.completionPlace.integers` is injective. -/
-theorem integralClosureToCompletionIntegers_injective (P' : Place k' F')
-    (hP : P'.restrict k F = P) :
-    Function.Injective (P.integralClosureToCompletionIntegers P' hP) := fun x y h ↦ by
-  apply Subtype.ext
-  apply (algebraMap F' P'.Completion).injective
-  simpa only [algebraMap_completionFieldAlgebra, coe_integralClosureToCompletionIntegers]
-    using congrArg Subtype.val h
-
 /-- The canonical integral semilocal map from
 `P.completionPlace.integers ⊗[P.integers] integralClosure P.integers F'` to
 `∏_{w ∣ P} w.1.completionPlace.integers`. -/
@@ -829,16 +676,11 @@ def completionIntegersSemilocalHom :
     (AlgHom.pi fun w ↦
       { P.integralClosureToCompletionIntegers w.1 w.2 with
         commutes' := fun r ↦ by
-          change P.integralClosureToCompletionIntegers w.1 w.2
-              (algebraMap P.integers (integralClosure P.integers F') r) =
-            algebraMap P.completionPlace.integers w.1.completionPlace.integers
-              (algebraMap P.integers P.completionPlace.integers r)
-          apply Subtype.ext
-          rw [coe_integralClosureToCompletionIntegers,
+          rw [RingHom.toFun_eq_coe, IsScalarTower.algebraMap_apply P.integers
+              P.completionPlace.integers w.1.completionPlace.integers,
             algebraMap_completionIntegersExtensionAlgebra_subtype,
-            algebraMap_completionIntegersAlgebra, coe_completionIntegersExtension,
-            completionIntegersEmbedding_apply, completionExtension_completionEmbedding]
-          rfl })
+            algebraMap_completionIntegersAlgebra]
+          exact P.integralClosureToCompletionIntegers_algebraMap w.1 w.2 r })
     fun _ _ ↦ .all _ _
 
 variable {k' F' P} in
@@ -868,12 +710,12 @@ theorem completionIntegersSemilocalHom_fieldCompatibility
 
 end Maps
 
-section SurjectiveField
+section Surjective
 
 variable [FiniteDimensional F F']
 
-/-- **The field semilocal map is surjective** for any finite extension `F' / F`, by
-`TauCeti.Place.span_completion_pi_eq_top`. -/
+/-- **The field semilocal map is surjective** for any finite extension `F' / F`: every family of
+elements in the completions above `P` lies in the image of `P.Completion ⊗[F] F'`. -/
 theorem completionSemilocalHom_surjective :
     Function.Surjective (completionSemilocalHom k' F' P) := by
   rw [← AlgHom.coe_toLinearMap, ← LinearMap.range_eq_top, eq_top_iff,
@@ -881,50 +723,227 @@ theorem completionSemilocalHom_surjective :
   rintro _ ⟨y, rfl⟩
   exact ⟨1 ⊗ₜ y, funext fun w ↦ by simp⟩
 
-end SurjectiveField
+/-- **The integral semilocal map is surjective** for any finite extension `F' / F` over an
+integral constant extension `k' / k` (requiring neither separability of `F' / F` nor a
+function-field hypothesis). -/
+theorem completionIntegersSemilocalHom_surjective [Algebra.IsIntegral k k'] :
+    Function.Surjective (completionIntegersSemilocalHom k' F' P) := by
+  -- Functions regular above `P` span the product of completed valuation rings over `𝒪̂_P`, and
+  -- every such function belongs to `integralClosure P.integers F'`.
+  rw [← AlgHom.coe_toLinearMap, ← LinearMap.range_eq_top, eq_top_iff,
+    ← span_completionIntegers_pi_eq_top k' F' P, Submodule.span_le]
+  rintro _ ⟨y, rfl⟩
+  have hy : IsIntegral P.integers y.1 :=
+    (isIntegral_iff_forall_restrict_eq_mem_integers_of_finiteDimensional (k' := k') P).mpr
+      fun P' hP' ↦ y.2 ⟨P', hP'⟩
+  refine ⟨1 ⊗ₜ ⟨y.1, hy⟩, funext fun w ↦ Subtype.ext ?_⟩
+  simp
+
+end Surjective
+
+section BijectiveHelpers
+
+variable [FiniteDimensional F F']
+
+private theorem completionSemilocalHom_injective_of_finsum
+    (hdeg : ∑ᶠ w : {Q' : Place k' F' // Q'.restrict k F = P},
+      finrank P.Completion w.1.Completion = finrank F F') :
+    Function.Injective (completionSemilocalHom k' F' P) := by
+  -- Domain and codomain have the same finite dimension over `P.Completion`, and the map is
+  -- surjective.
+  have := Fintype.ofFinite {Q' : Place k' F' // Q'.restrict k F = P}
+  have hdim : finrank P.Completion (P.Completion ⊗[F] F') =
+      finrank P.Completion ((w : {Q' : Place k' F' // Q'.restrict k F = P}) → w.1.Completion) := by
+    rw [Module.finrank_pi_fintype, Module.finrank_baseChange, ← hdeg, finsum_eq_sum_of_fintype]
+  exact (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim
+    (f := (completionSemilocalHom k' F' P).toLinearMap)).mpr
+    (completionSemilocalHom_surjective k' F' P)
+
+private theorem completionIntegersSemilocalHom_injective_of_fieldInjective
+    (hinj : Function.Injective (completionSemilocalHom k' F' P)) :
+    Function.Injective (completionIntegersSemilocalHom k' F' P) := fun x y hxy ↦ by
+  -- The integral tensor product embeds into the field tensor product, where
+  -- `completionSemilocalHom` is injective.
+  apply completionIntegersSemilocalToField_injective F' P
+  apply hinj
+  rw [completionIntegersSemilocalHom_fieldCompatibility,
+    completionIntegersSemilocalHom_fieldCompatibility, hxy]
+
+private theorem norm_eq_finprod_norm_of_algEquiv
+    (e : P.Completion ⊗[F] F' ≃ₐ[P.Completion]
+      ((w : {Q' : Place k' F' // Q'.restrict k F = P}) → w.1.Completion))
+    (ξ : P.Completion ⊗[F] F') :
+    Algebra.norm P.Completion ξ =
+      ∏ᶠ w : {Q' : Place k' F' // Q'.restrict k F = P},
+        Algebra.norm P.Completion (e ξ w) := by
+  have := Fintype.ofFinite {Q' : Place k' F' // Q'.restrict k F = P}
+  rw [finprod_eq_prod_of_fintype, ← Algebra.norm_eq_of_algEquiv e]
+  exact Algebra.norm_pi _
+
+private theorem completionEmbedding_norm_of_algEquiv
+    (e : P.Completion ⊗[F] F' ≃ₐ[P.Completion]
+      ((w : {Q' : Place k' F' // Q'.restrict k F = P}) → w.1.Completion))
+    (he : ∀ (x : F') (w : {Q' : Place k' F' // Q'.restrict k F = P}),
+      e (1 ⊗ₜ x) w = w.1.completionEmbedding x)
+    (x : F') :
+    P.completionEmbedding (Algebra.norm F x) =
+      ∏ᶠ w : {Q' : Place k' F' // Q'.restrict k F = P},
+        Algebra.norm P.Completion (w.1.completionEmbedding x) := by
+  rw [← algebraMap_completionFieldAlgebra,
+    ← Algebra.norm_baseChange_tmul (A := P.Completion) (B := F') x,
+    norm_eq_finprod_norm_of_algEquiv k' F' P e]
+  exact finprod_congr fun w ↦ by rw [he]
+
+end BijectiveHelpers
+
+section EquivFunctionField
+
+variable [FiniteDimensional F F'] [Algebra.IsIntegral k k']
+
+/-- **The field semilocal map is injective** for an algebraic function field `F / k` and a finite
+extension `F' / F` whose constant extension `k' / k` is integral, with no separability
+hypothesis. For `F' / F` separable without assuming `IsFunctionField k F`, see
+`TauCeti.Place.completionSemilocalHom_injective_of_isSeparable`. -/
+theorem completionSemilocalHom_injective (hF : IsFunctionField k F) :
+    Function.Injective (completionSemilocalHom k' F' P) :=
+  completionSemilocalHom_injective_of_finsum k' F' P
+    (finsum_finrank_completion_eq_finrank k' F' P hF)
+
+/-- **The field semilocal map is bijective** for an algebraic function field `F / k` and a finite
+extension `F' / F` whose constant extension `k' / k` is integral. -/
+theorem completionSemilocalHom_bijective (hF : IsFunctionField k F) :
+    Function.Bijective (completionSemilocalHom k' F' P) :=
+  ⟨completionSemilocalHom_injective k' F' P hF, completionSemilocalHom_surjective k' F' P⟩
+
+/-- **The semilocal decomposition at a place of an algebraic function field**, with no separability
+hypothesis on the finite extension `F' / F` (over an integral constant extension `k' / k`). -/
+def completionSemilocalEquivOfIsFunctionField (hF : IsFunctionField k F) :
+    P.Completion ⊗[F] F' ≃ₐ[P.Completion]
+      ((w : {Q' : Place k' F' // Q'.restrict k F = P}) → w.1.Completion) :=
+  AlgEquiv.ofBijective (completionSemilocalHom k' F' P)
+    (completionSemilocalHom_bijective k' F' P hF)
+
+theorem coe_completionSemilocalEquivOfIsFunctionField (hF : IsFunctionField k F) :
+    ⇑(completionSemilocalEquivOfIsFunctionField k' F' P hF) = completionSemilocalHom k' F' P := by
+  rw [completionSemilocalEquivOfIsFunctionField, AlgEquiv.coe_ofBijective]
+
+variable {k' F' P} in
+/-- `completionSemilocalEquivOfIsFunctionField` on a pure tensor. -/
+@[simp]
+theorem completionSemilocalEquivOfIsFunctionField_tmul (hF : IsFunctionField k F)
+    (a : P.Completion) (x : F') (w : {Q' : Place k' F' // Q'.restrict k F = P}) :
+    completionSemilocalEquivOfIsFunctionField k' F' P hF (a ⊗ₜ x) w =
+      P.completionExtension w.1 w.2 a * w.1.completionEmbedding x := by
+  rw [completionSemilocalEquivOfIsFunctionField, AlgEquiv.ofBijective_apply]
+  exact completionSemilocalHom_tmul a x w
+
+/-- The inverse of `completionSemilocalEquivOfIsFunctionField` sends a diagonal field element to
+`1 ⊗ x`. -/
+@[simp]
+theorem completionSemilocalEquivOfIsFunctionField_symm_completionEmbedding
+    (hF : IsFunctionField k F) (x : F') :
+    (completionSemilocalEquivOfIsFunctionField k' F' P hF).symm
+      (fun w : {Q' : Place k' F' // Q'.restrict k F = P} ↦ w.1.completionEmbedding x) =
+        1 ⊗ₜ[F] x := by
+  apply (completionSemilocalEquivOfIsFunctionField k' F' P hF).symm_apply_eq.mpr
+  funext w
+  simp
+
+/-- **The integral semilocal map is injective** for an algebraic function field `F / k` and a
+finite extension `F' / F` whose constant extension `k' / k` is integral, with no separability
+hypothesis. For `F' / F` separable without assuming `IsFunctionField k F`, see
+`TauCeti.Place.completionIntegersSemilocalHom_injective_of_isSeparable`. -/
+theorem completionIntegersSemilocalHom_injective (hF : IsFunctionField k F) :
+    Function.Injective (completionIntegersSemilocalHom k' F' P) :=
+  completionIntegersSemilocalHom_injective_of_fieldInjective k' F' P
+    (completionSemilocalHom_injective k' F' P hF)
+
+/-- **The integral semilocal map is bijective** for an algebraic function field `F / k` and a
+finite extension `F' / F` whose constant extension `k' / k` is integral. -/
+theorem completionIntegersSemilocalHom_bijective (hF : IsFunctionField k F) :
+    Function.Bijective (completionIntegersSemilocalHom k' F' P) :=
+  ⟨completionIntegersSemilocalHom_injective k' F' P hF,
+    completionIntegersSemilocalHom_surjective k' F' P⟩
+
+/-- **The integral semilocal decomposition at a place of an algebraic function field**, with no
+separability hypothesis on the finite extension `F' / F` (over an integral constant extension
+`k' / k`). -/
+def completionIntegersSemilocalEquivOfIsFunctionField (hF : IsFunctionField k F) :
+    P.completionPlace.integers ⊗[P.integers] integralClosure P.integers F'
+      ≃ₐ[P.completionPlace.integers]
+        ((w : {Q' : Place k' F' // Q'.restrict k F = P}) → w.1.completionPlace.integers) :=
+  AlgEquiv.ofBijective (completionIntegersSemilocalHom k' F' P)
+    (completionIntegersSemilocalHom_bijective k' F' P hF)
+
+theorem coe_completionIntegersSemilocalEquivOfIsFunctionField (hF : IsFunctionField k F) :
+    ⇑(completionIntegersSemilocalEquivOfIsFunctionField k' F' P hF) =
+      completionIntegersSemilocalHom k' F' P := by
+  rw [completionIntegersSemilocalEquivOfIsFunctionField, AlgEquiv.coe_ofBijective]
+
+variable {k' F' P} in
+/-- `completionIntegersSemilocalEquivOfIsFunctionField` on a pure tensor. -/
+@[simp]
+theorem completionIntegersSemilocalEquivOfIsFunctionField_tmul (hF : IsFunctionField k F)
+    (a : P.completionPlace.integers) (x : integralClosure P.integers F')
+    (w : {Q' : Place k' F' // Q'.restrict k F = P}) :
+    completionIntegersSemilocalEquivOfIsFunctionField k' F' P hF (a ⊗ₜ x) w =
+      P.completionIntegersExtension w.1 w.2 a *
+        P.integralClosureToCompletionIntegers w.1 w.2 x := by
+  rw [completionIntegersSemilocalEquivOfIsFunctionField, AlgEquiv.ofBijective_apply]
+  exact completionIntegersSemilocalHom_tmul a x w
+
+/-- The inverse of `completionIntegersSemilocalEquivOfIsFunctionField` sends a diagonal integral
+element to `1 ⊗ x`. -/
+@[simp]
+theorem completionIntegersSemilocalEquivOfIsFunctionField_symm_integralClosureToCompletionIntegers
+    (hF : IsFunctionField k F) (x : integralClosure P.integers F') :
+    (completionIntegersSemilocalEquivOfIsFunctionField k' F' P hF).symm
+      (fun w : {Q' : Place k' F' // Q'.restrict k F = P} ↦
+        P.integralClosureToCompletionIntegers w.1 w.2 x) = 1 ⊗ₜ[P.integers] x := by
+  apply (completionIntegersSemilocalEquivOfIsFunctionField k' F' P hF).symm_apply_eq.mpr
+  funext w
+  simp
+
+/-- **Global norm equals the product of local norms** above `P` for an algebraic function field
+`F / k` and a finite extension `F' / F` whose constant extension `k' / k` is integral, with no
+separability hypothesis. For `F' / F` separable without assuming `IsFunctionField k F`, see
+`TauCeti.Place.completionEmbedding_norm_of_isSeparable`. -/
+theorem completionEmbedding_norm (hF : IsFunctionField k F) (x : F') :
+    P.completionEmbedding (Algebra.norm F x) =
+      ∏ᶠ w : {Q' : Place k' F' // Q'.restrict k F = P},
+        Algebra.norm P.Completion (w.1.completionEmbedding x) :=
+  completionEmbedding_norm_of_algEquiv k' F' P
+    (completionSemilocalEquivOfIsFunctionField k' F' P hF) (fun y w ↦ by simp) x
+
+end EquivFunctionField
 
 section Equiv
 
 variable [FiniteDimensional F F'] [Algebra.IsSeparable F F'] [Algebra.IsIntegral k k']
 
-/-- **The integral semilocal map is surjective**: by
-`TauCeti.Place.span_completionIntegers_pi_eq_top` the functions regular above `P` span the product
-of completed valuation rings, and by
-`TauCeti.Place.isIntegral_iff_forall_restrict_eq_mem_integers_of_isSeparable` each such function
-belongs to `integralClosure P.integers F'`. -/
-theorem completionIntegersSemilocalHom_surjective :
-    Function.Surjective (completionIntegersSemilocalHom k' F' P) := by
-  rw [← AlgHom.coe_toLinearMap, ← LinearMap.range_eq_top, eq_top_iff,
-    ← span_completionIntegers_pi_eq_top k' F' P, Submodule.span_le]
-  rintro _ ⟨y, rfl⟩
-  have hy : IsIntegral P.integers y.1 :=
-    (isIntegral_iff_forall_restrict_eq_mem_integers_of_isSeparable (k' := k') P).mpr
-      fun P' hP' ↦ y.2 ⟨P', hP'⟩
-  refine ⟨1 ⊗ₜ ⟨y.1, hy⟩, funext fun w ↦ Subtype.ext ?_⟩
-  simp
+/-- **The field semilocal map is injective** for a finite separable extension `F' / F` whose
+constant extension `k' / k` is integral. For an algebraic function field `F / k`, separability is
+not needed (`TauCeti.Place.completionSemilocalHom_injective`). -/
+theorem completionSemilocalHom_injective_of_isSeparable :
+    Function.Injective (completionSemilocalHom k' F' P) :=
+  completionSemilocalHom_injective_of_finsum k' F' P
+    (finsum_finrank_completion_eq_finrank_of_isSeparable k' F' P)
 
-/-- **The field semilocal map is injective**: domain and codomain have the same finite dimension
-over `P.Completion` by `TauCeti.Place.finsum_finrank_completion_eq_finrank_of_isSeparable`, and the
-map is surjective. -/
-theorem completionSemilocalHom_injective :
-    Function.Injective (completionSemilocalHom k' F' P) := by
-  have := Fintype.ofFinite {Q' : Place k' F' // Q'.restrict k F = P}
-  have hdim : finrank P.Completion (P.Completion ⊗[F] F') =
-      finrank P.Completion ((w : {Q' : Place k' F' // Q'.restrict k F = P}) → w.1.Completion) := by
-    rw [Module.finrank_pi_fintype, Module.finrank_baseChange,
-      ← finsum_finrank_completion_eq_finrank_of_isSeparable k' F' P, finsum_eq_sum_of_fintype]
-  exact (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim
-    (f := (completionSemilocalHom k' F' P).toLinearMap)).mpr
-    (completionSemilocalHom_surjective k' F' P)
+/-- **The field semilocal map is bijective** for a finite separable extension `F' / F` whose
+constant extension `k' / k` is integral. -/
+theorem completionSemilocalHom_bijective_of_isSeparable :
+    Function.Bijective (completionSemilocalHom k' F' P) :=
+  ⟨completionSemilocalHom_injective_of_isSeparable k' F' P,
+    completionSemilocalHom_surjective k' F' P⟩
 
 /-- **The semilocal decomposition at a place**: `P.Completion ⊗[F] F' ≃ₐ[P.Completion]
-∏_{w ∣ P} w.1.Completion`. -/
+∏_{w ∣ P} w.1.Completion` for a finite separable extension `F' / F` over an integral constant
+extension `k' / k`. -/
 def completionSemilocalEquiv :
     P.Completion ⊗[F] F' ≃ₐ[P.Completion]
       ((w : {Q' : Place k' F' // Q'.restrict k F = P}) → w.1.Completion) :=
   AlgEquiv.ofBijective (completionSemilocalHom k' F' P)
-    (show Function.Bijective (completionSemilocalHom k' F' P) from
-      ⟨completionSemilocalHom_injective k' F' P, completionSemilocalHom_surjective k' F' P⟩)
+    (completionSemilocalHom_bijective_of_isSeparable k' F' P)
 
 theorem coe_completionSemilocalEquiv :
     ⇑(completionSemilocalEquiv k' F' P) = completionSemilocalHom k' F' P := by
@@ -940,27 +959,41 @@ theorem completionSemilocalEquiv_tmul (a : P.Completion) (x : F')
   rw [completionSemilocalEquiv, AlgEquiv.ofBijective_apply]
   exact completionSemilocalHom_tmul a x w
 
-/-- The integral semilocal map is injective, since it embeds into the field semilocal equivalence
-by `TauCeti.Place.completionIntegersSemilocalToField_injective`. -/
-theorem completionIntegersSemilocalHom_injective :
-    Function.Injective (completionIntegersSemilocalHom k' F' P) := by
-  intro x y hxy
-  apply completionIntegersSemilocalToField_injective F' P
-  apply completionSemilocalHom_injective k' F' P
-  rw [completionIntegersSemilocalHom_fieldCompatibility,
-    completionIntegersSemilocalHom_fieldCompatibility, hxy]
+/-- The inverse semilocal equivalence sends a diagonal field element to `1 ⊗ x`. -/
+@[simp]
+theorem completionSemilocalEquiv_symm_completionEmbedding (x : F') :
+    (completionSemilocalEquiv k' F' P).symm
+      (fun w : {Q' : Place k' F' // Q'.restrict k F = P} ↦ w.1.completionEmbedding x) =
+        1 ⊗ₜ[F] x := by
+  apply (completionSemilocalEquiv k' F' P).symm_apply_eq.mpr
+  funext w
+  simp
+
+/-- **The integral semilocal map is injective** for a finite separable extension `F' / F` whose
+constant extension `k' / k` is integral. For an algebraic function field `F / k`, separability is
+not needed (`TauCeti.Place.completionIntegersSemilocalHom_injective`). -/
+theorem completionIntegersSemilocalHom_injective_of_isSeparable :
+    Function.Injective (completionIntegersSemilocalHom k' F' P) :=
+  completionIntegersSemilocalHom_injective_of_fieldInjective k' F' P
+    (completionSemilocalHom_injective_of_isSeparable k' F' P)
+
+/-- **The integral semilocal map is bijective** for a finite separable extension `F' / F` whose
+constant extension `k' / k` is integral. -/
+theorem completionIntegersSemilocalHom_bijective_of_isSeparable :
+    Function.Bijective (completionIntegersSemilocalHom k' F' P) :=
+  ⟨completionIntegersSemilocalHom_injective_of_isSeparable k' F' P,
+    completionIntegersSemilocalHom_surjective k' F' P⟩
 
 /-- **The integral semilocal decomposition at a place**:
 `P.completionPlace.integers ⊗[P.integers] integralClosure P.integers F'
-≃ₐ[P.completionPlace.integers] ∏_{w ∣ P} w.1.completionPlace.integers`. -/
+≃ₐ[P.completionPlace.integers] ∏_{w ∣ P} w.1.completionPlace.integers` for a finite separable
+extension `F' / F` over an integral constant extension `k' / k`. -/
 def completionIntegersSemilocalEquiv :
     P.completionPlace.integers ⊗[P.integers] integralClosure P.integers F'
       ≃ₐ[P.completionPlace.integers]
         ((w : {Q' : Place k' F' // Q'.restrict k F = P}) → w.1.completionPlace.integers) :=
   AlgEquiv.ofBijective (completionIntegersSemilocalHom k' F' P)
-    (show Function.Bijective (completionIntegersSemilocalHom k' F' P) from
-      ⟨completionIntegersSemilocalHom_injective k' F' P,
-        completionIntegersSemilocalHom_surjective k' F' P⟩)
+    (completionIntegersSemilocalHom_bijective_of_isSeparable k' F' P)
 
 theorem coe_completionIntegersSemilocalEquiv :
     ⇑(completionIntegersSemilocalEquiv k' F' P) = completionIntegersSemilocalHom k' F' P := by
@@ -977,6 +1010,17 @@ theorem completionIntegersSemilocalEquiv_tmul (a : P.completionPlace.integers)
         P.integralClosureToCompletionIntegers w.1 w.2 x := by
   rw [completionIntegersSemilocalEquiv, AlgEquiv.ofBijective_apply]
   exact completionIntegersSemilocalHom_tmul a x w
+
+/-- The inverse integral semilocal equivalence sends a diagonal integral element to `1 ⊗ x`. -/
+@[simp]
+theorem completionIntegersSemilocalEquiv_symm_integralClosureToCompletionIntegers
+    (x : integralClosure P.integers F') :
+    (completionIntegersSemilocalEquiv k' F' P).symm
+      (fun w : {Q' : Place k' F' // Q'.restrict k F = P} ↦
+        P.integralClosureToCompletionIntegers w.1 w.2 x) = 1 ⊗ₜ[P.integers] x := by
+  apply (completionIntegersSemilocalEquiv k' F' P).symm_apply_eq.mpr
+  funext w
+  simp
 
 variable {k' F' P} in
 /-- After inclusion into the completions, the integral semilocal equivalence agrees with the field
@@ -995,21 +1039,18 @@ semilocal components. -/
 theorem norm_eq_finprod_norm_completionSemilocalEquiv (ξ : P.Completion ⊗[F] F') :
     Algebra.norm P.Completion ξ =
       ∏ᶠ w : {Q' : Place k' F' // Q'.restrict k F = P},
-        Algebra.norm P.Completion (completionSemilocalEquiv k' F' P ξ w) := by
-  have := Fintype.ofFinite {Q' : Place k' F' // Q'.restrict k F = P}
-  rw [finprod_eq_prod_of_fintype, ← Algebra.norm_eq_of_algEquiv (completionSemilocalEquiv k' F' P)]
-  exact Algebra.norm_pi _
+        Algebra.norm P.Completion (completionSemilocalEquiv k' F' P ξ w) :=
+  norm_eq_finprod_norm_of_algEquiv k' F' P (completionSemilocalEquiv k' F' P) ξ
 
 /-- **Global norm equals the product of local norms** above `P` for a finite separable extension
-`F' / F` whose constant field extension `k' / k` is integral. -/
+`F' / F` whose constant field extension `k' / k` is integral. For an algebraic function field
+`F / k`, separability is not needed (`TauCeti.Place.completionEmbedding_norm`). -/
 theorem completionEmbedding_norm_of_isSeparable (x : F') :
     P.completionEmbedding (Algebra.norm F x) =
       ∏ᶠ w : {Q' : Place k' F' // Q'.restrict k F = P},
-        Algebra.norm P.Completion (w.1.completionEmbedding x) := by
-  rw [← algebraMap_completionFieldAlgebra,
-    ← Algebra.norm_baseChange_tmul (A := P.Completion) (B := F') x,
-    norm_eq_finprod_norm_completionSemilocalEquiv k' F' P]
-  exact finprod_congr fun w ↦ by simp
+        Algebra.norm P.Completion (w.1.completionEmbedding x) :=
+  completionEmbedding_norm_of_algEquiv k' F' P
+    (completionSemilocalEquiv k' F' P) (fun y w ↦ by simp) x
 
 /-- The trace of `P.Completion ⊗[F] F'` over `P.Completion` is the sum of the traces of its
 semilocal components. -/
@@ -1029,14 +1070,8 @@ theorem trace_completionSemilocalEquiv_symm_single_mul
     Algebra.trace P.Completion (P.Completion ⊗[F] F')
         ((completionSemilocalEquiv k' F' P).symm (Pi.single w z) * (1 ⊗ₜ x)) =
       Algebra.trace P.Completion w.1.Completion (z * w.1.completionEmbedding x) := by
-  classical
-  have := Fintype.ofFinite {Q' : Place k' F' // Q'.restrict k F = P}
-  rw [trace_eq_finsum_trace_completionSemilocalEquiv k' F' P, finsum_eq_sum_of_fintype,
-    Finset.sum_eq_single w]
-  · simp
-  · intro w' _ hw'
-    simp [Pi.single_eq_of_ne hw']
-  · simp
+  simpa using Algebra.trace_symm_single_mul_of_algEquiv
+    (completionSemilocalEquiv k' F' P) w z (1 ⊗ₜ x)
 
 variable {k' F' P} in
 /-- Each completed factor in the semilocal decomposition of a finite separable extension is
@@ -1070,19 +1105,23 @@ variable {k k' F F' : Type*} [Field k] [Field k'] [Field F] [Field F']
 
 /-- **Completion preserves separability of the field extension.** If `F' / F` is finite and
 separable and `P'` lies over `P`, then `P'.Completion` is separable over `P.Completion` — with no
-integrality hypothesis on `k' / k` and no separability hypothesis on the residue extension.
-
-Restricting constants of `P'` to `k` via `TauCeti.Place.restrictScalars` places `P'.Completion` as
-a factor of the formally étale `P.Completion`-algebra
-`P.Completion ⊗[F] F' ≃ ∏_{w ∣ P} w.Completion`. -/
+integrality hypothesis on `k' / k` and no separability hypothesis on the residue extension. -/
 theorem isSeparable_completion :
     letI := P.completionExtensionAlgebra P' hP
-    Algebra.IsSeparable P.Completion P'.Completion :=
-  Eq.mp
-    (congrArg (@Algebra.IsSeparable P.Completion P'.Completion _ _)
-      (P.completionExtensionAlgebra_restrictScalars P' hP))
-    (isSeparable_completion_subtype (k' := k) (F' := F') (P := P)
-      ⟨P'.restrictScalars k, (P'.restrict_restrictScalars (k := k) (F := F)).trans hP⟩)
+    Algebra.IsSeparable P.Completion P'.Completion := by
+  -- Restricting constants of `P'` to `k` via `TauCeti.Place.restrictScalars` places
+  -- `(P'.restrictScalars k).Completion` as a factor of the formally étale `P.Completion`-algebra
+  -- `P.Completion ⊗[F] F'`, and `completionExtensionRestrictScalarsEquiv` transports separability
+  -- to `P'.Completion`.
+  let P₀' : Place k F' := P'.restrictScalars k
+  have hP₀ : P₀'.restrict k F = P := (P'.restrict_restrictScalars (k := k) (F := F)).trans hP
+  let _ := P.completionExtensionAlgebra P' hP
+  let _ := P.completionExtensionAlgebra P₀' hP₀
+  have : Algebra.IsSeparable P.Completion P₀'.Completion :=
+    isSeparable_completion_subtype ⟨P₀', hP₀⟩
+  let e := P.completionExtensionRestrictScalarsEquiv P' hP
+  exact Algebra.IsSeparable.of_equiv_equiv (.refl P.Completion) e.toRingEquiv
+    (RingHom.ext fun z ↦ (e.commutes z).symm)
 
 attribute [local instance] FractionRing.liftAlgebra FractionRing.isScalarTower_liftAlgebra in
 /-- Separability of `P'.Completion / P.Completion`, transported to the canonical fraction fields
@@ -1097,15 +1136,8 @@ theorem isSeparable_fractionRing_completionIntegers :
   have : Algebra.IsSeparable P.Completion P'.Completion := isSeparable_completion P P' hP
   have : IsScalarTower P.completionPlace.integers P'.completionPlace.integers P'.Completion :=
     P.isScalarTower_completionIntegersExtensionAlgebra P' hP
-  refine Algebra.IsSeparable.of_equiv_equiv
-    (FractionRing.algEquiv P.completionPlace.integers P.Completion).symm.toRingEquiv
-    (FractionRing.algEquiv P'.completionPlace.integers P'.Completion).symm.toRingEquiv ?_
-  apply IsLocalization.ringHom_ext P.completionPlace.integers⁰
-  ext a
-  simp only [RingHom.coe_comp, Function.comp_apply, RingHom.coe_coe,
-    AlgEquiv.coe_toRingEquiv, AlgEquiv.commutes, ← IsScalarTower.algebraMap_apply]
-  rw [IsScalarTower.algebraMap_apply P.completionPlace.integers P'.completionPlace.integers
-    P'.Completion, AlgEquiv.commutes, ← IsScalarTower.algebraMap_apply]
+  exact IsFractionRing.isSeparable_fractionRing P.completionPlace.integers
+    P'.completionPlace.integers P.Completion P'.Completion
 
 end SeparableCompletion
 

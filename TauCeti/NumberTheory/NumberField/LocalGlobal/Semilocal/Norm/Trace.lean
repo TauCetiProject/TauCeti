@@ -58,12 +58,9 @@ theorem trace_integralSemilocalToField_tmul_mul
     Algebra.trace (v.adicCompletion K) (v.adicCompletion K ⊗[K] L)
         (integralSemilocalToField L v (a ⊗ₜ x) * (1 ⊗ₜ d)) =
       (a : v.adicCompletion K) *
-        algebraMap K (v.adicCompletion K) (Algebra.trace K L ((x : L) * d)) := by
-  have ha : (a : v.adicCompletion K) ⊗ₜ[K] ((x : L) * d) =
-      (a : v.adicCompletion K) • ((1 : v.adicCompletion K) ⊗ₜ[K] ((x : L) * d)) := by
-    rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-  rw [integralSemilocalToField_tmul, Algebra.TensorProduct.tmul_mul_tmul, mul_one, ha,
-    map_smul, Algebra.trace_baseChange_tmul, smul_eq_mul]
+        algebraMap K (v.adicCompletion K) (Algebra.trace K L ((x : L) * d)) :=
+  Algebra.trace_map_tmul_mul (integralSemilocalToField L v)
+    (fun a x ↦ integralSemilocalToField_tmul a x) a x d
 
 attribute [local instance] Fintype.ofFinite in
 /-- The norm of the local étale algebra is the product of the norms of its semilocal components. -/
@@ -108,7 +105,6 @@ components of the semilocal decomposition. -/
   exact Algebra.trace_pi _
 
 open scoped Classical in
-attribute [local instance] Fintype.ofFinite in
 /-- An element of `L_w`, placed in the `w`-component of `K_v ⊗[K] L`, has the same trace pairing
 with a global element as in `L_w`. -/
 theorem trace_semilocalEquiv_symm_single_mul
@@ -119,13 +115,9 @@ theorem trace_semilocalEquiv_symm_single_mul
           {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) z) * (1 ⊗ₜ x)) =
       Algebra.trace (v.adicCompletion K) (w.adicCompletion L)
         (z * algebraMap L (w.adicCompletion L) x) := by
-  classical
-  rw [trace_eq_sum_trace_semilocalEquiv, Finset.sum_eq_single
-    (⟨w, inferInstance⟩ : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal})]
-  · simp [semilocalEquiv_tmul]
-  · intro w' _ hw'
-    simp [Pi.single_eq_of_ne hw']
-  · simp
+  simpa [semilocalEquiv_tmul] using Algebra.trace_symm_single_mul_of_algEquiv
+    (semilocalEquiv L v) (⟨w, inferInstance⟩ :
+      {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) z (1 ⊗ₜ x)
 
 attribute [local instance] Fintype.ofFinite in
 /-- The trace of a number-field element is the sum of its traces in the completions above `v`. -/
