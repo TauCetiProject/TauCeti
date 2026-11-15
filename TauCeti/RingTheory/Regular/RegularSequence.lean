@@ -193,34 +193,34 @@ end FractionRing
 
 section Localization
 
-variable {R : Type u} [CommRing R]
+variable {R : Type u} [CommRing R] {Ra Rb Rab : Type*} [CommRing Ra] [CommRing Rb] [CommRing Rab]
+  [Algebra R Ra] [Algebra R Rb] [Algebra R Rab]
 
 /-- **Gluing across a weakly regular sequence.** If `a, b` is a weakly `R`-regular sequence, an
 element of `R_a` and an element of `R_b` with the same image in `R_{ab}` come from a unique element
-of `R`. This is the elementwise form of the algebraic Hartogs principle for the open subset
+of `R`. Here `R_a`, `R_b` and `R_{ab}` are any localizations of `R` away from `a`, `b` and `ab`.
+This is the elementwise form of the algebraic Hartogs principle for the open subset
 `D(a) ∪ D(b)` of `Spec R`. -/
 theorem RingTheory.Sequence.IsWeaklyRegular.existsUnique_algebraMap_eq {a b : R}
-    (h : IsWeaklyRegular R [a, b]) (x : Localization.Away a) (y : Localization.Away b)
-    (hxy : IsLocalization.Away.awayToAwayRight a b (P := Localization.Away (a * b)) x =
+    [IsLocalization.Away a Ra] [IsLocalization.Away b Rb] [IsLocalization.Away (a * b) Rab]
+    (h : IsWeaklyRegular R [a, b]) (x : Ra) (y : Rb)
+    (hxy : IsLocalization.Away.awayToAwayRight a b (P := Rab) x =
       IsLocalization.Away.awayToAwayLeft b a y) :
-    ∃! r : R, algebraMap R _ r = x ∧ algebraMap R _ r = y := by
+    ∃! r : R, algebraMap R Ra r = x ∧ algebraMap R Rb r = y := by
   have ha : IsSMulRegular R a := ((isWeaklyRegular_cons_iff R a [b]).1 h).1
   refine existsUnique_of_exists_of_unique ?_ fun r s hr hs ↦ ?_
   · -- Write `x = r₁ / aⁿ` and `y = r₂ / bᵐ`.
     obtain ⟨n, r₁, hx⟩ := IsLocalization.Away.surj a x
     obtain ⟨m, r₂, hy⟩ := IsLocalization.Away.surj b y
     -- In `R_{ab}`, `bᵐ r₁ = aⁿ r₂`, so `(ab)ᵏ bᵐ r₁ = (ab)ᵏ aⁿ r₂` in `R` for some `k`.
-    have hab : algebraMap R (Localization.Away (a * b)) (b ^ m * r₁) =
-        algebraMap R (Localization.Away (a * b)) (a ^ n * r₂) := by
-      have hx' := congrArg
-        (IsLocalization.Away.awayToAwayRight a b (P := Localization.Away (a * b))) hx
-      have hy' := congrArg
-        (IsLocalization.Away.awayToAwayLeft b a (P := Localization.Away (a * b))) hy
+    have hab : algebraMap R Rab (b ^ m * r₁) = algebraMap R Rab (a ^ n * r₂) := by
+      have hx' := congrArg (IsLocalization.Away.awayToAwayRight a b (P := Rab)) hx
+      have hy' := congrArg (IsLocalization.Away.awayToAwayLeft b a (P := Rab)) hy
       simp only [map_mul, map_pow, IsLocalization.Away.awayToAwayRight_eq,
         IsLocalization.Away.awayToAwayLeft_eq] at hx' hy'
       rw [map_mul, map_mul, map_pow, map_pow, ← hx', ← hy', hxy]
       ring
-    obtain ⟨⟨_, k, rfl⟩, hk⟩ := IsLocalization.exists_of_eq (M := .powers (a * b)) hab
+    obtain ⟨⟨_, k, rfl⟩, hk⟩ := IsLocalization.exists_of_eq (M := .powers (a * b)) (S := Rab) hab
     -- Cancelling `aᵏ` gives `bᵏ⁺ᵐ r₁ = aⁿ bᵏ r₂`.
     have hk' : a ^ n * (b ^ k * r₂) = b ^ (k + m) * r₁ :=
       (ha.pow k) (by simp only [smul_eq_mul, mul_pow] at hk ⊢; rw [pow_add]; linear_combination -hk)
@@ -230,7 +230,7 @@ theorem RingTheory.Sequence.IsWeaklyRegular.existsUnique_algebraMap_eq {a b : R}
         (b ^ k * r₂) hk')
     refine ⟨c, ?_, ?_⟩
     · -- `x aⁿ = aⁿ c` and `aⁿ` is a unit in `R_a`.
-      refine ((IsLocalization.Away.algebraMap_isUnit (S := Localization.Away a) a).pow
+      refine ((IsLocalization.Away.algebraMap_isUnit (S := Ra) a).pow
         n).mul_left_injective ?_
       dsimp only
       rw [hx, smul_eq_mul, map_mul, map_pow, mul_comm]
@@ -238,15 +238,16 @@ theorem RingTheory.Sequence.IsWeaklyRegular.existsUnique_algebraMap_eq {a b : R}
       rw [smul_eq_mul, pow_add] at hk'
       have hc : b ^ k * (b ^ m * c) = b ^ k * r₂ :=
         (ha.pow n) (by simp only [smul_eq_mul]; linear_combination -hk')
-      have hu := IsLocalization.Away.algebraMap_isUnit (S := Localization.Away b) b
+      have hu := IsLocalization.Away.algebraMap_isUnit (S := Rb) b
       refine (hu.pow k).mul_right_injective ((hu.pow m).mul_left_injective ?_)
-      have := congrArg (algebraMap R (Localization.Away b)) hc
+      have := congrArg (algebraMap R Rb) hc
       simp only [map_mul, map_pow] at this
       dsimp only
       rw [mul_assoc _ y, hy, ← this]
       ring
   · -- Two elements with the same image in `R_a` differ by an `a`-power torsion element.
-    obtain ⟨⟨_, k, rfl⟩, hk⟩ := IsLocalization.exists_of_eq (M := .powers a) (hr.1.trans hs.1.symm)
+    obtain ⟨⟨_, k, rfl⟩, hk⟩ :=
+      IsLocalization.exists_of_eq (M := .powers a) (S := Ra) (hr.1.trans hs.1.symm)
     exact (ha.pow k) hk
 
 end Localization
