@@ -574,10 +574,15 @@ theorem sectionValue_gaugeTransform (u : ℂ → Circle)
     sectionValue (gaugeTransform u x) z = (u z : ℂ) * sectionValue x z := by
   apply Complex.ext <;> simp [sectionValue_apply, gaugeTransform] <;> ring
 
+/-- Gauge transformations preserve the modulus `|α|` of the section. -/
+theorem norm_sectionValue_gaugeTransform (u : ℂ → Circle) (x : ℂ → EuclideanSpace ℝ (Fin 4))
+    (z : ℂ) : ‖sectionValue (gaugeTransform u x) z‖ = ‖sectionValue x z‖ := by
+  rw [sectionValue_gaugeTransform, norm_mul, Circle.norm_coe, one_mul]
+
 /-- Smooth framed gauges preserve the modulus `|α|` of the section. -/
-theorem norm_sectionValue_smul (u : framedGaugeGroup) (x : ℂ → EuclideanSpace ℝ (Fin 4))
-    (z : ℂ) : ‖sectionValue (u • x) z‖ = ‖sectionValue x z‖ := by
-  rw [framedGaugeGroup_smul, sectionValue_gaugeTransform, norm_mul, Circle.norm_coe, one_mul]
+theorem norm_sectionValue_framedGaugeGroup_smul (u : framedGaugeGroup)
+    (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) : ‖sectionValue (u • x) z‖ = ‖sectionValue x z‖ :=
+  norm_sectionValue_gaugeTransform u.val x z
 
 /-- **A gauge relates two fields exactly when it matches their connections and sections.** The
 logarithmic derivative `Im (u⁻¹ du)` is the connection difference

@@ -137,9 +137,7 @@ theorem le_one_div_two_add_setIntegral_sq_div_add_of_neg_le_laplacian {w : E →
     (hwc : ContinuousOn w (closedBall x₀ R)) (hΔ : ∀ x ∈ ball x₀ R, -K ≤ Δ w x) :
     w x₀ ≤ 1 / 2 + (∫ x in ball x₀ R, w x ^ 2 ∂μ) / (2 * μ.real (ball x₀ R)) +
       K * R ^ 2 / (2 * (Module.finrank ℝ E + 2)) := by
-  have hV : 0 < μ.real (ball x₀ R) := by
-    rw [measureReal_def]
-    exact ENNReal.toReal_pos (measure_ball_pos μ x₀ hR).ne' measure_ball_lt_top.ne
+  have hV : 0 < μ.real (ball x₀ R) := Metric.measureReal_ball_pos μ x₀ hR
   have hmv := mul_le_setIntegral_ball_add_of_neg_le_laplacian (μ := μ) hw hwc hΔ
   have hwint : IntegrableOn w (ball x₀ R) μ :=
     (hwc.integrableOn_compact (isCompact_closedBall _ _)).mono_set ball_subset_closedBall
@@ -171,9 +169,6 @@ theorem le_one_div_two_add_integral_sq_div_add_of_neg_le_laplacian {v : E → �
   have h := le_one_div_two_add_setIntegral_sq_div_add_of_neg_le_laplacian (μ := μ) (x₀ := x₀)
     one_pos hv.contDiffOn hv.continuous.continuousOn fun x _ ↦ hL x
   rw [Measure.addHaar_real_ball_center, one_pow, mul_one] at h
-  have hV : 0 < μ.real (ball (0 : E) 1) := by
-    rw [measureReal_def]
-    exact ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne' measure_ball_lt_top.ne
   have hset : ∫ x in ball x₀ 1, v x ^ 2 ∂μ ≤ ∫ x, v x ^ 2 ∂μ :=
     setIntegral_le_integral hv2 (.of_forall fun x ↦ sq_nonneg _)
   have := div_le_div_of_nonneg_right hset (by positivity : 0 ≤ 2 * μ.real (ball (0 : E) 1))

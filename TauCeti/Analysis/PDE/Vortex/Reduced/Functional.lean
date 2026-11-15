@@ -68,7 +68,8 @@ The constants depend on `P` only through a radius `R` outside which `‖P‖ ≥
 the square integral of the linear coefficient. The uniform statements
 `TauCeti.Vortex.exists_forall_le_two_mul_sobolevReducedFunctional_add` and
 `TauCeti.Vortex.exists_forall_norm_le_of_sobolevReducedFunctional_le` give one constant for all
-polynomials sharing `R` and `K`, such as the polynomials with roots in a fixed disc.
+polynomials sharing `R` and `K`, such as the monic polynomials of a fixed positive degree with
+roots in a fixed disc.
 
 For compactly supported `C¹` functions these specialize to
 `TauCeti.Vortex.exists_le_two_mul_reducedFunctional_add`,
@@ -480,7 +481,7 @@ theorem exists_le_two_mul_sobolevReducedFunctional_add (hm : 0 < P.natDegree) :
       ((‖W1p.gradient u‖ ^ 2 / 2 + (∫ z, ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
         (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z)) / 16 : ℝ) : EReal) ≤
         2 * sobolevReducedFunctional P u + C := by
-  obtain ⟨R, hR⟩ := Polynomial.exists_forall_one_le_norm_eval hm
+  obtain ⟨R, hR⟩ := Polynomial.exists_forall_le_norm_eval hm 1
   obtain ⟨C, hC⟩ := exists_forall_le_two_mul_sobolevReducedFunctional_add R
     (∫ z, (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
       (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) ^ 2)
@@ -545,7 +546,7 @@ level `t`, the elements `u ∈ H¹(ℂ)` with `I(u) ≤ t` are bounded in `H¹(�
 `TauCeti.Vortex.sobolevReducedFunctional P`. -/
 theorem exists_norm_le_of_sobolevReducedFunctional_le (hm : 0 < P.natDegree) (t : ℝ) :
     ∃ C : ℝ, ∀ u : W1p (volume : Measure ℂ) ⊤ 2, sobolevReducedFunctional P u ≤ t → ‖u‖ ≤ C := by
-  obtain ⟨R, hR⟩ := Polynomial.exists_forall_one_le_norm_eval hm
+  obtain ⟨R, hR⟩ := Polynomial.exists_forall_le_norm_eval hm 1
   obtain ⟨C, hC⟩ := exists_forall_norm_le_of_sobolevReducedFunctional_le R
     (∫ z, (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
       (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) ^ 2) t

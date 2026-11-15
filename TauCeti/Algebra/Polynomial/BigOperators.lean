@@ -24,7 +24,8 @@ This file also groups products of linear factors according to their constant ter
 that a sum `∑ j ∈ range N, C (c j) * X ^ (N - j)` has no constant term, and computes the degree
 of geometric sums of mixed powers of equal-degree monic polynomials.
 
-A finite product of powers `(X - a i) ^ m i` of linear factors is monic of degree `∑ i, m i`.
+A finite product of powers `(X - a i) ^ m i` of linear factors is monic of degree `∑ i, m i`,
+and the product `∏_{a ∈ D} (X - a)` over a multiset `D` evaluates at `z` to `∏_{a ∈ D} (z - a)`.
 
 It also records that the image of a finite product of polynomials under a ring homomorphism into a
 ring without zero divisors has degree the sum of the factors' degrees when each factor's image is
@@ -85,6 +86,12 @@ theorem natDegree_prod_X_sub_C_pow [Nontrivial R] (s : Finset ι) (a : ι → R)
     (∏ i ∈ s, (X - C (a i)) ^ m i).natDegree = ∑ i ∈ s, m i := by
   rw [natDegree_prod_of_monic _ _ fun i _ ↦ (monic_X_sub_C (a i)).pow (m i)]
   simp [(monic_X_sub_C _).natDegree_pow]
+
+/-- Evaluating `∏_{a ∈ D} (X - a)` at `z` gives `∏_{a ∈ D} (z - a)`. -/
+@[simp]
+theorem eval_multiset_prod_X_sub_C (D : Multiset R) (z : R) :
+    ((D.map fun a ↦ X - C a).prod).eval z = (D.map fun a ↦ z - a).prod := by
+  simp [eval_multiset_prod, Multiset.map_map]
 
 end ProdXSubCPow
 
