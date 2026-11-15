@@ -41,13 +41,6 @@ For each continuous finite-dimensional representation `σ`, the dimension of the
 * `TauCeti.contRepRingMultiplicity σ`: the additive map `R(G) → ℤ` sending `[X]` to the dimension
   of `σ ⟶ X`.
 
-## Main statements
-
-* `TauCeti.ContFDRep.of_ofContRepresentation_eq_of_equiv`: equivalent continuous representations
-  have the same class.
-* `TauCeti.repRingCharacter_contRepRingToRepRing_of_ofContRepresentation`: the character of the
-  class of a continuous representation is its character.
-
 ## References
 
 * G. Segal, *Equivariant K-theory*, Publ. Math. IHÉS 34 (1968), §2, for the representation ring
@@ -146,29 +139,5 @@ theorem contRepRingMultiplicity_of (σ X : ContFDRep k G) :
   SplitK0.lift_of _ X
 
 end Multiplicity
-
-section ContRepresentation
-
-variable {𝕜 : Type u} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] {V W : Type*}
-  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V] [NormedAddCommGroup W]
-  [NormedSpace 𝕜 W] [FiniteDimensional 𝕜 W] {π : ContRepresentation 𝕜 G V}
-  {ρ : ContRepresentation 𝕜 G W}
-
-/-- Equivalent continuous representations have the same class in the representation ring. -/
-theorem ContFDRep.of_ofContRepresentation_eq_of_equiv (hπ : Continuous π) (hρ : Continuous ρ)
-    (e : π.Equiv ρ) :
-    (SplitK0.of (ContFDRep.ofContRepresentation π hπ) : contRepRing 𝕜 G) =
-      SplitK0.of (ContFDRep.ofContRepresentation ρ hρ) :=
-  SplitK0.of_congr (ContFDRep.ofContRepresentationIso hπ hρ e)
-
-/-- The character of the class of a continuous representation is its character. -/
-theorem repRingCharacter_contRepRingToRepRing_of_ofContRepresentation (hπ : Continuous π) :
-    repRingCharacter 𝕜 G
-        (contRepRingToRepRing 𝕜 G (SplitK0.of (ContFDRep.ofContRepresentation π hπ))) =
-      π.toRepresentation.character := by
-  ext g
-  simp
-
-end ContRepresentation
 
 end TauCeti

@@ -40,7 +40,8 @@ continuous representations, is built in
   representations.
 * `TauCeti.ContFDRep.ofContRepresentation`: a representation on a finite-dimensional normed space,
   in any universe, continuous for the operator norm, as an object of `ContFDRep k G`.
-* `TauCeti.ContFDRep.ofContRepresentationIso`: equivalent representations give isomorphic objects.
+* `TauCeti.ContFDRep.ofContRepresentationIso`: an equivariant linear equivalence of carriers as an
+  isomorphism of the corresponding objects of `ContFDRep k G`.
 
 ## Main statements
 
@@ -52,7 +53,7 @@ continuous representations, is built in
   field, a continuous representation on a finite-dimensional normed space has continuous matrix
   coefficients exactly when `G → (V →L[k] V)` is continuous.
 * `TauCeti.ContFDRep.isZero_ofContRepresentation`: a representation on a zero space is a zero
-  object.
+  object of `ContFDRep k G`.
 * `TauCeti.ContFDRep.finrank_hom_ofContRepresentation`: the morphisms between the objects of two
   continuous representations are their continuous intertwiners, so the two spaces have the same
   dimension.
@@ -62,7 +63,7 @@ public section
 
 open CategoryTheory CategoryTheory.Limits MonoidalCategory
 
-universe u v w
+universe u v w w'
 
 namespace FDRep
 
@@ -225,6 +226,39 @@ theorem ContFDRep.ofContRepresentation_obj {𝕜 : Type u} [NontriviallyNormedFi
     (ContFDRep.ofContRepresentation π hπ).obj = FDRep.ofShrink π.toRepresentation :=
   (rfl)
 
+section Iso
+
+variable {𝕜 : Type u} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  {V : Type w} [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
+  {V' : Type w'} [NormedAddCommGroup V'] [NormedSpace 𝕜 V'] [FiniteDimensional 𝕜 V']
+
+/-- **Equivalent representations give isomorphic objects.** An equivariant linear equivalence
+`e : V ≃ₗ[𝕜] V'` between the carriers of two continuous representations, in any universes, is an
+isomorphism between the corresponding objects of `ContFDRep 𝕜 G`. No continuity of `e` is
+assumed: it is automatic between finite-dimensional spaces. -/
+noncomputable def ContFDRep.ofContRepresentationIso {π : ContRepresentation 𝕜 G V}
+    {π' : ContRepresentation 𝕜 G V'} (e : V ≃ₗ[𝕜] V') (he : ∀ g v, e (π g v) = π' g (e v))
+    (hπ : Continuous π) (hπ' : Continuous π') :
+    ContFDRep.ofContRepresentation π hπ ≅ ContFDRep.ofContRepresentation π' hπ' :=
+  let E := ((FDRep.ofShrinkEquiv π.toRepresentation).trans
+    (Representation.Equiv.mk (σ := π'.toRepresentation) e fun g ↦ LinearMap.ext (he g))).trans
+      (FDRep.ofShrinkEquiv π'.toRepresentation).symm
+  ObjectProperty.isoMk _ <| E.toLinearEquiv.toFDRepIso fun g x ↦
+    Representation.IntertwiningMap.isIntertwining _ _ E.toIntertwiningMap g x
+
+/-- A continuous representation on a zero space is a zero object of `ContFDRep 𝕜 G`. -/
+theorem ContFDRep.isZero_ofContRepresentation [Subsingleton V] (π : ContRepresentation 𝕜 G V)
+    (hπ : Continuous π) : IsZero (ContFDRep.ofContRepresentation π hπ) := by
+  refine IsZero.of_full_of_faithful_of_isZero (FDRep.isContinuous 𝕜 G).ι _ ?_
+  rw [ObjectProperty.ι_obj, ContFDRep.ofContRepresentation_obj, IsZero.iff_id_eq_zero]
+  have : Subsingleton (FDRep.ofShrink π.toRepresentation) :=
+    (FDRep.ofShrinkEquiv π.toRepresentation).toLinearEquiv.toEquiv.subsingleton
+  ext x
+  rw [Subsingleton.elim x 0]
+  simp
+
+end Iso
+
 variable {k : Type u} [Field k] [TopologicalSpace k] in
 /-- The morphisms of `ContFDRep k G` form a finite-dimensional space. -/
 instance (X Y : ContFDRep k G) : FiniteDimensional k (X ⟶ Y) :=
@@ -234,42 +268,10 @@ namespace ContFDRep
 
 open ContRepresentation
 
-variable {𝕜 : Type u} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] {V W : Type*}
-  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V] [NormedAddCommGroup W]
-  [NormedSpace 𝕜 W] [FiniteDimensional 𝕜 W] {π : ContRepresentation 𝕜 G V}
-  {ρ : ContRepresentation 𝕜 G W}
-
-/-- **Equivalent continuous representations give isomorphic objects** of `ContFDRep 𝕜 G`. -/
-noncomputable def ofContRepresentationIso (hπ : Continuous π) (hρ : Continuous ρ)
-    (e : π.Equiv ρ) : ofContRepresentation π hπ ≅ ofContRepresentation ρ hρ :=
-  ObjectProperty.isoMk _ <| eqToIso (ofContRepresentation_obj π hπ) ≪≫
-    LinearEquiv.toFDRepIso
-      ((FDRep.ofShrinkEquiv π.toRepresentation).toLinearEquiv ≪≫ₗ
-        e.toContinuousLinearEquiv.toLinearEquiv ≪≫ₗ
-        (FDRep.ofShrinkEquiv ρ.toRepresentation).toLinearEquiv.symm) (fun g x ↦ by
-      set e₁ := (FDRep.ofShrinkEquiv π.toRepresentation).toLinearEquiv
-      set e₂ := (FDRep.ofShrinkEquiv ρ.toRepresentation).toLinearEquiv
-      have h₁ : e₁ ((FDRep.ofShrink π.toRepresentation).ρ g x) = π g (e₁ x) :=
-        Representation.IntertwiningMap.isIntertwining _ _
-          (FDRep.ofShrinkEquiv π.toRepresentation).toIntertwiningMap g x
-      have h₂ : ∀ y, e₂ ((FDRep.ofShrink ρ.toRepresentation).ρ g y) = ρ g (e₂ y) :=
-        Representation.IntertwiningMap.isIntertwining _ _
-          (FDRep.ofShrinkEquiv ρ.toRepresentation).toIntertwiningMap g
-      apply e₂.injective
-      simp only [LinearEquiv.trans_apply, h₁, h₂, LinearEquiv.apply_symm_apply]
-      exact DFunLike.congr_fun (e.isIntertwining g) _) ≪≫
-    eqToIso (ofContRepresentation_obj ρ hρ).symm
-
-/-- A continuous representation on a zero space is a zero object of `ContFDRep 𝕜 G`. -/
-theorem isZero_ofContRepresentation [Subsingleton V] (hπ : Continuous π) :
-    IsZero (ofContRepresentation π hπ) := by
-  have : Subsingleton (ofContRepresentation π hπ).obj := by
-    rw [ofContRepresentation_obj]
-    exact (FDRep.ofShrinkEquiv π.toRepresentation).toLinearEquiv.toEquiv.subsingleton
-  refine (IsZero.iff_id_eq_zero _).2 ?_
-  apply (ObjectProperty.ι _).map_injective
-  ext x
-  exact Subsingleton.elim (α := (ofContRepresentation π hπ).obj) _ _
+variable {𝕜 : Type u} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  {V : Type w} [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
+  {W : Type w'} [NormedAddCommGroup W] [NormedSpace 𝕜 W] [FiniteDimensional 𝕜 W]
+  {π : ContRepresentation 𝕜 G V} {ρ : ContRepresentation 𝕜 G W}
 
 /-- **Morphisms between continuous representations are their continuous intertwiners.** The
 morphisms between the objects of `ContFDRep 𝕜 G` given by two continuous representations on

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.ThricePuncturedSphere.CylindricalEnds
+import TauCeti.Analysis.Complex.HorizontalStrip
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
@@ -26,13 +27,14 @@ Each end lift `cylindricalEndLift q` of the thrice-punctured sphere is a scaled 
 coordinate `ζ_q(w) = -log ((w - c_q) / b_q) / (2π)` satisfies `cylindricalEndLift q (ζ_q w) = w`
 for `w ≠ c_q` (`Puncture.cylindricalEndLift_endCoord`), and recovers a cylinder point `z` up to
 an integer multiple of `i` (`Puncture.exists_endCoord_cylindricalEndLift`), so the end lift is
-injective on every strip `t₀ ≤ Im z < t₀ + 1` (`Puncture.injOn_cylindricalEndLift`). Its real part
-is the longitudinal coordinate `s`, a smooth function away from `c_q`
-(`Puncture.contDiffAt_re_endCoord`). Its imaginary part is the angular coordinate `t`, with values
-in `[-1/2, 1/2)` (`Puncture.im_endCoord_mem_Ico`); it jumps by `1` across a ray, so only
-period-one functions of it are smooth (`Puncture.contMDiffAt_comp_im_endCoord`). The angular
-one-form `dt` of the end is `v ↦ Im (v / (-2π (w - c_q)))` (`Puncture.endAngularForm`), and it
-pulls back to `dt` along the end lift (`Puncture.endAngularForm_cylindricalEndLift`).
+injective on every strip `t₀ ≤ Im z < t₀ + 1` (`Puncture.injOn_cylindricalEndLift`, an instance
+of `TauCeti.Complex.injOn_of_exists_eq_add_intCast_mul_I`). Its real part is the longitudinal
+coordinate `s`, a smooth function away from `c_q` (`Puncture.contDiffAt_re_endCoord`). Its
+imaginary part is the angular coordinate `t`, with values in `[-1/2, 1/2)`
+(`Puncture.im_endCoord_mem_Ico`); it jumps by `1` across a ray, so only period-one functions
+of it are smooth (`Puncture.contMDiffAt_comp_im_endCoord`). The angular one-form `dt` of the end
+is `v ↦ Im (v / (-2π (w - c_q)))` (`Puncture.endAngularForm`), and it pulls back to `dt`
+along the end lift (`Puncture.endAngularForm_cylindricalEndLift`).
 The closed annulus `2 exp (2πr) ≤ ‖w‖ ≤ 2 exp (2πR)` is the image of the part `-R ≤ s ≤ -r`,
 `t ∈ [-1/2, 1/2)` of the end at `∞` (`Puncture.exists_cylindricalEndLift_inf_eq`).
 
@@ -47,10 +49,11 @@ longitudinal coordinates by `R` cuts out the truncation `S_R` of the thrice-punc
 (`TauCeti.ThricePuncturedSphere.truncation`), a compact set
 (`TauCeti.ThricePuncturedSphere.isCompact_truncation`) inside `S`
 (`TauCeti.ThricePuncturedSphere.truncation_subset`) over which integrals of data on `S` are
-taken. Bounding them by separate heights `R q` gives the truncation at these heights
-(`TauCeti.ThricePuncturedSphere.truncationAt`), also compact
-(`TauCeti.ThricePuncturedSphere.isCompact_truncationAt`); with a smaller height on one end it is
-`S_R` cut short along a circle of that end
+taken; an open set on which all three are at most `R` already lies in `S_R`
+(`TauCeti.ThricePuncturedSphere.subset_truncation_of_isOpen`). Bounding them by separate heights
+`R q` gives the truncation at these heights (`TauCeti.ThricePuncturedSphere.truncationAt`), also
+compact (`TauCeti.ThricePuncturedSphere.isCompact_truncationAt`); with a smaller height on one end
+it is `S_R` cut short along a circle of that end
 (`TauCeti.ThricePuncturedSphere.truncation_inter_eq_truncationAt`). In the real coordinates
 `ℝ × ℝ ≃ ℂ` the longitudinal coordinates are measurable
 (`Puncture.measurable_re_endCoord`), and so are the truncation and its parts `±s ≤ c` on an end
@@ -97,6 +100,11 @@ theorem endSign_eq_one_or_eq_neg_one (q : Puncture) : q.endSign = 1 ∨ q.endSig
 /-- The sign of an end squares to one. -/
 @[simp] theorem endSign_mul_self (q : Puncture) : q.endSign * q.endSign = 1 := by
   cases q <;> simp
+
+/-- Multiplying twice by the sign of an end is the identity. -/
+@[simp] theorem endSign_mul_endSign_mul (q : Puncture) (x : ℝ) :
+    q.endSign * (q.endSign * x) = x := by
+  rw [← mul_assoc, endSign_mul_self, one_mul]
 
 /-- The sign of an end is its own inverse. -/
 @[simp] theorem inv_endSign (q : Puncture) : q.endSign⁻¹ = q.endSign := by
@@ -429,25 +437,11 @@ theorem exists_cylindricalEndLift_inf_eq {r R : ℝ} {w : ℂ}
 /-- An end lift is injective on every horizontal strip `t₀ ≤ Im z < t₀ + 1` of height one: two
 points with the same image differ by an integer multiple of `i`. -/
 theorem injOn_cylindricalEndLift (q : Puncture) (t₀ : ℝ) :
-    InjOn q.cylindricalEndLift {z | z.im ∈ Ico t₀ (t₀ + 1)} := by
-  intro a ha b hb hab
-  replace ha : t₀ ≤ a.im ∧ a.im < t₀ + 1 := ha
-  replace hb : t₀ ≤ b.im ∧ b.im < t₀ + 1 := hb
-  obtain ⟨k, hk⟩ := q.exists_endCoord_cylindricalEndLift a
-  obtain ⟨l, hl⟩ := q.exists_endCoord_cylindricalEndLift b
-  rw [hab, hl] at hk
-  -- The real parts agree, and the imaginary parts differ by the integer `l - k`.
-  have hre := congrArg Complex.re hk
-  have him := congrArg Complex.im hk
-  simp only [Complex.add_re, Complex.add_im, Complex.mul_re, Complex.mul_im,
-    Complex.intCast_re, Complex.intCast_im, Complex.I_re, Complex.I_im] at hre him
-  have hlt : |((l - k : ℤ) : ℝ)| < 1 := by
-    rw [abs_lt]
-    push_cast
-    constructor <;> linarith
-  rw [← Int.cast_abs, ← Int.cast_one, Int.cast_lt, Int.abs_lt_one_iff, sub_eq_zero] at hlt
-  subst hlt
-  exact Complex.ext (by linarith) (by linarith)
+    InjOn q.cylindricalEndLift {z | z.im ∈ Ico t₀ (t₀ + 1)} :=
+  TauCeti.Complex.injOn_of_exists_eq_add_intCast_mul_I
+    (fun z _ ↦ q.exists_endCoord_cylindricalEndLift z) fun _ ha _ hb ↦ by
+      simp only [mem_ofPred_eq, mem_Ico] at ha hb
+      exact ⟨by linarith, by linarith⟩
 
 /-- The longitudinal coordinate is smooth away from the center of the end. -/
 theorem contDiffAt_re_endCoord (q : Puncture) {w : ℂ} (hw : w ≠ q.endCenter)
@@ -834,6 +828,14 @@ theorem eventually_notMem_truncation {c : ℂ} (hc : c = 0 ∨ c = 1) (R₀ : �
       (notMem_truncation_of_eq_zero_or_eq_one hc _))
   filter_upwards [hR, hw] with p hpR hpw h
   exact hpw (truncation_mono hpR.le h)
+
+/-- An open set on which the signed longitudinal coordinate `±s` of every end is at most `R` lies
+in the truncation `S_R`: it avoids the poles `0` and `1`, near which some `±s` exceeds `R`. -/
+theorem subset_truncation_of_isOpen {U : Set ℂ} (hU : IsOpen U) {R : ℝ}
+    (h : ∀ w ∈ U, ∀ q : Puncture, q.endSign * (q.endCoord w).re ≤ R) : U ⊆ truncation R :=
+  (((dense_compl_singleton (0 : ℂ)).sdiff_singleton 1).open_subset_closure_inter hU).trans <|
+    closure_minimal (fun w ⟨hwU, hw₀, hw₁⟩ ↦ mem_truncation.2 ⟨hw₀, hw₁, h w hwU⟩)
+      (isCompact_truncation R).isClosed
 
 /-- The truncations exhaust the thrice-punctured sphere `S = ℂ ∖ {0, 1}`. -/
 theorem iUnion_truncation : ⋃ R, truncation R = {w : ℂ | w ≠ 0 ∧ w ≠ 1} := by
