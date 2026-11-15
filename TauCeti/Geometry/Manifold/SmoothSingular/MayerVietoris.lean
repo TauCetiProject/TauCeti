@@ -38,8 +38,6 @@ regularity, separation, or finite-dimensionality hypotheses are required here.
 
 ## Main definitions and results
 
-* `TauCeti.smoothSingularSubcomplex_preimage_subtypeVal`: a singular simplex of an open set `U` is
-  smooth if and only if its image in `M` is smooth.
 * `TauCeti.smallSmoothSingularSubcomplex` and `TauCeti.toSmallSmoothSingularSubcomplex`: the
   subcomplex of smooth singular simplices subordinate to a family of subsets, and the map into it
   from an open subset contained in a member of the family.
@@ -75,66 +73,26 @@ section Subcomplex
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} {M : Type u} [TopologicalSpace M] [ChartedSpace H M]
 
-/-- A singular simplex of an open subset `U` of `M` is smooth in `U` if and only if its image in
-`M` is smooth. -/
-@[simp]
-theorem smoothSingularSubcomplex_preimage_subtypeVal (U : Opens M) :
-    (smoothSingularSubcomplex I M).preimage
-        (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal (U : Set M)))) =
-      smoothSingularSubcomplex I U := by
-  refine le_antisymm (fun k σ hσ ↦ ?_)
-    (smoothSingularSubcomplex_le_preimage (contMDiff_subtype_val (I := I)))
-  rw [SSet.Subcomplex.preimage_obj, Set.mem_preimage, mem_smoothSingularSubcomplex_iff,
-    TopCat.toSSetObjEquiv_toSSet_map_app, ConcreteCategory.hom_ofHom, ContinuousMap.coe_comp] at hσ
-  rw [mem_smoothSingularSubcomplex_iff, ← ContMDiffOnSubset.subtypeVal_comp_iff]
-  exact hσ
+private lemma continuousMap_mk_subtypeVal (U : Opens M)
+    (h : Continuous (Subtype.val : U → M)) :
+    (⟨Subtype.val, h⟩ : C(U, M)) = ContinuousMap.subtypeVal (U : Set M) := by
+  ext
+  simp [ContinuousMap.subtypeVal]
 
-/-- An injective smooth map induces a monomorphism of smooth singular subcomplexes. -/
-theorem mono_smoothSingularSubcomplexMap_of_injective
-    {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
-    {J : ModelWithCorners ℝ E' H'} {N : Type u} [TopologicalSpace N] [ChartedSpace H' N]
-    {φ : M → N} (hφ : ContMDiff I J ∞ φ) (hinj : Function.Injective φ) :
-    Mono (smoothSingularSubcomplexMap φ hφ) := by
-  have : Mono (TopCat.ofHom ⟨φ, hφ.continuous⟩ : TopCat.of M ⟶ TopCat.of N) :=
-    (TopCat.mono_iff_injective _).2 hinj
-  exact mono_of_mono_fac (smoothSingularSubcomplexMap_ι hφ)
+private lemma continuousMap_mk_inclusion {U V : Opens M} (hUV : U ≤ V)
+    (h : Continuous (Opens.inclusion hUV)) :
+    (⟨Opens.inclusion hUV, h⟩ : C(U, V)) =
+      ContinuousMap.inclusion (SetLike.coe_subset_coe.2 hUV) := by
+  ext
+  simp [ContinuousMap.inclusion, Opens.inclusion]
 
-/-- The inclusion of an open subset into `M` induces a monomorphism of smooth singular
-subcomplexes. -/
-instance mono_smoothSingularSubcomplexMap_subtypeVal (U : Opens M) :
-    Mono (smoothSingularSubcomplexMap (Subtype.val : U → M) (contMDiff_subtype_val (I := I))) :=
-  mono_smoothSingularSubcomplexMap_of_injective (contMDiff_subtype_val (I := I))
-    Subtype.val_injective
-
-/-- The inclusion between open subsets `U ≤ V` induces a monomorphism of smooth singular
-subcomplexes. -/
-instance mono_smoothSingularSubcomplexMap_inclusion {U V : Opens M} (h : U ≤ V) :
-    Mono (smoothSingularSubcomplexMap (Opens.inclusion h) (contMDiff_inclusion (I := I) h)) :=
-  mono_smoothSingularSubcomplexMap_of_injective (contMDiff_inclusion (I := I) h)
-    fun _ _ heq ↦ Subtype.ext (congrArg (Subtype.val : V → M) heq)
-
-/-- Viewed inside the singular simplicial set of `M`, the range of the smooth singular subcomplex
-of an open subset `U` is the intersection of the smooth singular subcomplex of `M` with the range
-of the singular simplicial set of `U`. -/
-theorem range_smoothSingularSubcomplex_ι_comp_subtypeVal (U : Opens M) :
-    SSet.Subcomplex.range
-      ((smoothSingularSubcomplex I U).ι ≫
-        TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal (U : Set M)))) =
-    smoothSingularSubcomplex I M ⊓
-      SSet.Subcomplex.range
-        (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal (U : Set M)))) := by
-  ext n σ
-  simp only [Subfunctor.min_obj, Subfunctor.range_obj, Set.mem_inter_iff, NatTrans.comp_app,
-    ConcreteCategory.comp_apply, Subfunctor.ι_app, TypeCat.ofHom_apply, Set.mem_range]
-  constructor
-  · rintro ⟨τ, rfl⟩
-    exact ⟨smoothSingularSubcomplex_le_preimage (contMDiff_subtype_val (I := I)) n τ.2,
-      ⟨τ.1, rfl⟩⟩
-  · rintro ⟨hσ, ⟨τ, rfl⟩⟩
-    have hτ : τ ∈ (smoothSingularSubcomplex I U).obj n := by
-      rw [← smoothSingularSubcomplex_preimage_subtypeVal (I := I) U]
-      exact hσ
-    exact ⟨⟨τ, hτ⟩, rfl⟩
+private lemma map_inclusion_comp_subtypeVal {U V : Opens M} (hUV : U ≤ V)
+    (h : Continuous (Opens.inclusion hUV)) :
+    TopCat.toSSet.map (TopCat.ofHom ⟨Opens.inclusion hUV, h⟩) ≫
+        TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal (V : Set M))) =
+      TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal (U : Set M))) := by
+  rw [← Functor.map_comp, continuousMap_mk_inclusion hUV h, ← TopCat.ofHom_comp,
+    ContinuousMap.subtypeVal_comp_inclusion]
 
 variable (I) in
 /-- The subcomplex of smooth singular simplices of `M` whose image lies in some member of the
@@ -177,8 +135,8 @@ theorem toSmallSmoothSingularSubcomplex_homOfLE_left {ι : Type*} (S : ι → Se
     toSmallSmoothSingularSubcomplex I S h ≫ homOfLE inf_le_left =
       smoothSingularSubcomplexMap (Subtype.val : V → M) (contMDiff_subtype_val (I := I)) := by
   rw [← cancel_mono (smoothSingularSubcomplex I M).ι, Category.assoc, homOfLE_ι,
-    toSmallSmoothSingularSubcomplex_ι, smoothSingularSubcomplexMap_ι]
-  rfl
+    toSmallSmoothSingularSubcomplex_ι, smoothSingularSubcomplexMap_ι,
+    continuousMap_mk_subtypeVal]
 
 /-- Composing `toSmallSmoothSingularSubcomplex` with the inclusion into singular small simplices
 intertwines the smooth-to-singular inclusions of `V` and of the small subcomplex. -/
@@ -239,27 +197,19 @@ theorem isPushout_smoothSingularSubcomplex_inter_smallSmoothSingularSubcomplex (
     TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal (U : Set M)))
   let gV := (smoothSingularSubcomplex I V).ι ≫
     TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal (V : Set M)))
-  have : Mono (TopCat.ofHom (ContinuousMap.subtypeVal ((U ⊓ V : Opens M) : Set M)) :
-      TopCat.of ↥(U ⊓ V) ⟶ TopCat.of M) := (TopCat.mono_iff_injective _).2 Subtype.val_injective
-  have : Mono (TopCat.ofHom (ContinuousMap.subtypeVal (U : Set M)) :
-      TopCat.of U ⟶ TopCat.of M) := (TopCat.mono_iff_injective _).2 Subtype.val_injective
-  have : Mono (TopCat.ofHom (ContinuousMap.subtypeVal (V : Set M)) :
-      TopCat.of V ⟶ TopCat.of M) := (TopCat.mono_iff_injective _).2 Subtype.val_injective
   refine (bicartSq_range_smoothSingularSubcomplex (I := I) U V).isPushout.of_iso'
     (asIso (SSet.Subcomplex.toRange gI)) (asIso (SSet.Subcomplex.toRange gU))
     (asIso (SSet.Subcomplex.toRange gV)) (Iso.refl _) ?_ ?_ ?_ ?_
-  · rw [← cancel_mono (SSet.Subcomplex.range gU).ι, Category.assoc, homOfLE_ι, asIso_hom, toRange_ι,
-      Category.assoc, asIso_hom, toRange_ι, smoothSingularSubcomplexMap_ι_assoc, ← Functor.map_comp]
-    rfl
-  · rw [← cancel_mono (SSet.Subcomplex.range gV).ι, Category.assoc, homOfLE_ι, asIso_hom, toRange_ι,
-      Category.assoc, asIso_hom, toRange_ι, smoothSingularSubcomplexMap_ι_assoc, ← Functor.map_comp]
-    rfl
-  · rw [← cancel_mono (smallSmoothSingularSubcomplex I ![(U : Set M), (V : Set M)]).ι,
-      Category.assoc, homOfLE_ι, asIso_hom, toRange_ι, Category.assoc, Iso.refl_hom,
-      Category.id_comp, toSmallSmoothSingularSubcomplex_ι]
-  · rw [← cancel_mono (smallSmoothSingularSubcomplex I ![(U : Set M), (V : Set M)]).ι,
-      Category.assoc, homOfLE_ι, asIso_hom, toRange_ι, Category.assoc, Iso.refl_hom,
-      Category.id_comp, toSmallSmoothSingularSubcomplex_ι]
+  · rw [← cancel_mono (SSet.Subcomplex.range gU).ι]
+    simp only [asIso_hom, Category.assoc, homOfLE_ι, SSet.Subcomplex.toRange_ι,
+      smoothSingularSubcomplexMap_ι_assoc, map_inclusion_comp_subtypeVal, gI, gU]
+  · rw [← cancel_mono (SSet.Subcomplex.range gV).ι]
+    simp only [asIso_hom, Category.assoc, homOfLE_ι, SSet.Subcomplex.toRange_ι,
+      smoothSingularSubcomplexMap_ι_assoc, map_inclusion_comp_subtypeVal, gI, gV]
+  · rw [← cancel_mono (smallSmoothSingularSubcomplex I ![(U : Set M), (V : Set M)]).ι]
+    simp [gU]
+  · rw [← cancel_mono (smallSmoothSingularSubcomplex I ![(U : Set M), (V : Set M)]).ι]
+    simp [gV]
 
 /-- The inclusions of `U ⊓ V` into `U` and `V` and of `U` and `V` into `M` form a commutative
 square of smooth singular subcomplexes. -/
@@ -272,8 +222,9 @@ theorem commSq_smoothSingularSubcomplexMap_inter (I : ModelWithCorners ℝ E H) 
       (smoothSingularSubcomplexMap (Subtype.val : U → M) (contMDiff_subtype_val (I := I)))
       (smoothSingularSubcomplexMap (Subtype.val : V → M) (contMDiff_subtype_val (I := I))) where
   w := by
-    rw [← smoothSingularSubcomplexMap_comp, ← smoothSingularSubcomplexMap_comp]
-    rfl
+    rw [← cancel_mono (smoothSingularSubcomplex I M).ι]
+    simp only [Category.assoc, smoothSingularSubcomplexMap_ι, smoothSingularSubcomplexMap_ι_assoc,
+      continuousMap_mk_subtypeVal, map_inclusion_comp_subtypeVal]
 
 end Subcomplex
 
@@ -290,14 +241,27 @@ private lemma union_eq_univ_of_sup_eq_top (hUV : U ⊔ V = ⊤) :
     (U : Set M) ∪ (V : Set M) = Set.univ := by
   rw [← Opens.coe_sup, hUV, Opens.coe_top]
 
+private def smoothCoverHomologyIso (hUV : U ⊔ V = ⊤) (n : ℕ) :
+    (smallSmoothSingularSubcomplex I ![(U : Set M), (V : Set M)] : SSet).homology R n ≅
+      (smoothSingularSubcomplex I M : SSet).homology R n :=
+  subcomplexSmallHomologyIso R (smoothSingularSubcomplex I M) ![(U : Set M), (V : Set M)]
+    (U.isOpen.vecCons V.isOpen)
+    (((U : Set M).iUnion_vecCons_pair (V : Set M)).trans (union_eq_univ_of_sup_eq_top hUV)) n
+
+@[simp]
+private lemma smoothCoverHomologyIso_hom (hUV : U ⊔ V = ⊤) (n : ℕ) :
+    (smoothCoverHomologyIso I R hUV n).hom =
+      SSet.homologyMap
+        (homOfLE (inf_le_left : smallSmoothSingularSubcomplex I ![(U : Set M), (V : Set M)] ≤
+          smoothSingularSubcomplex I M)) R n :=
+  subcomplexSmallHomologyIso_hom R (smoothSingularSubcomplex I M) _ _ _ n
+
 /-- The Mayer–Vietoris connecting morphism `Hₙ^∞(M) ⟶ Hₘ^∞(U ⊓ V)`, `m + 1 = n`, in smooth
 singular homology for an open cover `U ⊔ V = ⊤` of `M`. -/
 def smoothMayerVietorisδ (hUV : U ⊔ V = ⊤) (n m : ℕ) (h : m + 1 = n := by lia) :
     (smoothSingularSubcomplex I M : SSet).homology R n ⟶
       (smoothSingularSubcomplex I ↥(U ⊓ V) : SSet).homology R m :=
-  (subcomplexSmallHomologyIso R (smoothSingularSubcomplex I M) ![(U : Set M), (V : Set M)]
-    (U.isOpen.vecCons V.isOpen)
-    (((U : Set M).iUnion_vecCons_pair (V : Set M)).trans (union_eq_univ_of_sup_eq_top hUV)) n).inv ≫
+  (smoothCoverHomologyIso I R hUV n).inv ≫
     SSet.mayerVietorisδ R
       (isPushout_smoothSingularSubcomplex_inter_smallSmoothSingularSubcomplex I U V) n m h
 
@@ -312,11 +276,7 @@ theorem homologyMap_homOfLE_comp_smoothMayerVietorisδ (hUV : U ⊔ V = ⊤) (n 
       smoothMayerVietorisδ I R hUV n m h =
       SSet.mayerVietorisδ R
         (isPushout_smoothSingularSubcomplex_inter_smallSmoothSingularSubcomplex I U V) n m h := by
-  rw [smoothMayerVietorisδ, SSet.homologyMap,
-    ← subcomplexSmallHomologyIso_hom R (smoothSingularSubcomplex I M) ![(U : Set M), (V : Set M)]
-      (U.isOpen.vecCons V.isOpen)
-      (((U : Set M).iUnion_vecCons_pair (V : Set M)).trans (union_eq_univ_of_sup_eq_top hUV)) n,
-    Iso.hom_inv_id_assoc]
+  rw [smoothMayerVietorisδ, ← smoothCoverHomologyIso_hom I R hUV n, Iso.hom_inv_id_assoc]
 
 /-- The inclusion of smooth singular chains into singular chains intertwines the smooth and
 singular Mayer–Vietoris connecting morphisms. -/
@@ -327,20 +287,21 @@ theorem smoothMayerVietorisδ_ι (hUV : U ⊔ V = ⊤) (n m : ℕ) (h : m + 1 = 
       SSet.homologyMap (smoothSingularSubcomplex I M).ι R n ≫
         TopCat.mayerVietorisδ R U.isOpen V.isOpen
           (by rw [← Opens.coe_sup, hUV, Opens.coe_top]) n m h := by
-  let isoS := subcomplexSmallHomologyIso R (smoothSingularSubcomplex I M)
-    ![(U : Set M), (V : Set M)] (U.isOpen.vecCons V.isOpen)
-    (((U : Set M).iUnion_vecCons_pair (V : Set M)).trans (union_eq_univ_of_sup_eq_top hUV)) n
-  rw [← cancel_epi isoS.hom]
-  have hiso : isoS.hom = SSet.homologyMap
-      (homOfLE (inf_le_left : smallSmoothSingularSubcomplex I ![(U : Set M), (V : Set M)] ≤
-        smoothSingularSubcomplex I M)) R n :=
-    subcomplexSmallHomologyIso_hom R (smoothSingularSubcomplex I M) _ _ _ n
-  rw [hiso, homologyMap_homOfLE_comp_smoothMayerVietorisδ_assoc I R hUV n m h,
-    ← SSet.homologyMap_comp_assoc, homOfLE_ι,
-    ← homOfLE_ι (inf_le_right :
-      smallSmoothSingularSubcomplex I ![(U : Set M), (V : Set M)] ≤ _),
-    SSet.homologyMap_comp_assoc,
-    TopCat.homologyMap_ι_comp_mayerVietorisδ R U.isOpen V.isOpen _ n m h]
+  have hcomm :
+      SSet.homologyMap
+          (homOfLE (inf_le_left : smallSmoothSingularSubcomplex I ![(U : Set M), (V : Set M)] ≤
+            smoothSingularSubcomplex I M)) R n ≫
+        SSet.homologyMap (smoothSingularSubcomplex I M).ι R n =
+      SSet.homologyMap
+          (homOfLE (inf_le_right : smallSmoothSingularSubcomplex I ![(U : Set M), (V : Set M)] ≤
+            _)) R n ≫
+        SSet.homologyMap ((TopCat.of M).smallSingularSubcomplex ![(U : Set M), (V : Set M)]).ι
+          R n := by
+    simp [← SSet.homologyMap_comp]
+  rw [← cancel_epi (smoothCoverHomologyIso I R hUV n).hom]
+  simp only [smoothCoverHomologyIso_hom, homologyMap_homOfLE_comp_smoothMayerVietorisδ_assoc,
+    reassoc_of% hcomm]
+  rw [TopCat.homologyMap_ι_comp_mayerVietorisδ _ _ _ _ n m h]
   exact SSet.mayerVietorisδ_naturality R _ _ _ _
     (isPushout_smoothSingularSubcomplex_inter_smallSmoothSingularSubcomplex I U V)
     (TopCat.isPushout_toSSet_inter_smallSingularSubcomplex (X := TopCat.of M)
@@ -349,13 +310,12 @@ theorem smoothMayerVietorisδ_ι (hUV : U ⊔ V = ⊤) (n m : ℕ) (h : m + 1 = 
     (toSmallSmoothSingularSubcomplex_homOfLE_right _ _)
     (toSmallSmoothSingularSubcomplex_homOfLE_right _ _) n m h
 
-private lemma smoothMayerVietorisFromBiprod_comp_homologyMap (n : ℕ) :
+private lemma smoothMayerVietorisFromBiprod_comp_homologyMap
+    (hU : (U : Set M) ⊆ ![(U : Set M), (V : Set M)] 0)
+    (hV : (V : Set M) ⊆ ![(U : Set M), (V : Set M)] 1) (n : ℕ) :
     SSet.mayerVietorisFromBiprod R
-        (toSmallSmoothSingularSubcomplex I ![(U : Set M), (V : Set M)] (i := 0)
-          (Matrix.cons_val_zero (U : Set M) ![(V : Set M)]).superset)
-        (toSmallSmoothSingularSubcomplex I ![(U : Set M), (V : Set M)] (i := 1)
-          ((Matrix.cons_val_one (U : Set M) ![(V : Set M)]).trans
-            (Matrix.cons_val_zero (V : Set M) ![])).superset) n ≫
+        (toSmallSmoothSingularSubcomplex I ![(U : Set M), (V : Set M)] hU)
+        (toSmallSmoothSingularSubcomplex I ![(U : Set M), (V : Set M)] hV) n ≫
       SSet.homologyMap
         (homOfLE (inf_le_left : smallSmoothSingularSubcomplex I ![(U : Set M), (V : Set M)] ≤
           smoothSingularSubcomplex I M)) R n =
@@ -384,7 +344,8 @@ theorem smoothMayerVietorisFromBiprod_δ (hUV : U ⊔ V = ⊤) (n m : ℕ) (h : 
         (smoothSingularSubcomplexMap (Subtype.val : U → M) (contMDiff_subtype_val (I := I)))
         (smoothSingularSubcomplexMap (Subtype.val : V → M) (contMDiff_subtype_val (I := I))) n ≫
       smoothMayerVietorisδ I R hUV n m h = 0 := by
-  rw [← smoothMayerVietorisFromBiprod_comp_homologyMap, Category.assoc,
+  rw [← smoothMayerVietorisFromBiprod_comp_homologyMap I R
+      (by simp) (by simp), Category.assoc,
     homologyMap_homOfLE_comp_smoothMayerVietorisδ I R hUV n m h,
     SSet.mayerVietorisFromBiprod_δ R _ n m h]
 
@@ -393,14 +354,9 @@ theorem smoothMayerVietoris_exact₁ (hUV : U ⊔ V = ⊤) (n m : ℕ) (h : m + 
     (ShortComplex.mk _ _ (smoothMayerVietorisδ_toBiprod I R hUV n m h)).Exact := by
   refine (ShortComplex.exact_iff_of_iso ?_).1 (SSet.mayerVietoris_exact₁ R
     (isPushout_smoothSingularSubcomplex_inter_smallSmoothSingularSubcomplex I U V) n m h)
-  refine ShortComplex.isoMk
-    (subcomplexSmallHomologyIso R (smoothSingularSubcomplex I M) ![(U : Set M), (V : Set M)]
-      (U.isOpen.vecCons V.isOpen)
-      (((U : Set M).iUnion_vecCons_pair (V : Set M)).trans (union_eq_univ_of_sup_eq_top hUV)) n)
-    (Iso.refl _) (Iso.refl _) ?_ (by simp only [Iso.refl_hom, Category.id_comp, Category.comp_id])
-  dsimp only
-  rw [Iso.refl_hom, Category.comp_id, subcomplexSmallHomologyIso_hom,
-    homologyMap_homOfLE_comp_smoothMayerVietorisδ I R hUV n m h]
+  refine ShortComplex.isoMk (smoothCoverHomologyIso I R hUV n) (Iso.refl _) (Iso.refl _) ?_
+    (by simp)
+  simp
 
 /-- **Exactness of the smooth Mayer–Vietoris sequence at `Hₙ^∞(U) ⊞ Hₙ^∞(V)`.** -/
 theorem smoothMayerVietoris_exact₂ (hUV : U ⊔ V = ⊤) (n : ℕ) :
@@ -408,31 +364,18 @@ theorem smoothMayerVietoris_exact₂ (hUV : U ⊔ V = ⊤) (n : ℕ) :
       (commSq_smoothSingularSubcomplexMap_inter I U V) n)).Exact := by
   refine (ShortComplex.exact_iff_of_iso ?_).1 (SSet.mayerVietoris_exact₂ R
     (isPushout_smoothSingularSubcomplex_inter_smallSmoothSingularSubcomplex I U V) n)
-  refine ShortComplex.isoMk (Iso.refl _) (Iso.refl _)
-    (subcomplexSmallHomologyIso R (smoothSingularSubcomplex I M) ![(U : Set M), (V : Set M)]
-      (U.isOpen.vecCons V.isOpen)
-      (((U : Set M).iUnion_vecCons_pair (V : Set M)).trans (union_eq_univ_of_sup_eq_top hUV)) n)
-    (by simp only [Iso.refl_hom, Category.id_comp, Category.comp_id]) ?_
-  dsimp only
-  rw [subcomplexSmallHomologyIso_hom, Iso.refl_hom, Category.id_comp,
-    smoothMayerVietorisFromBiprod_comp_homologyMap]
+  refine ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (smoothCoverHomologyIso I R hUV n)
+    (by simp) ?_
+  simp [smoothMayerVietorisFromBiprod_comp_homologyMap]
 
 /-- **Exactness of the smooth Mayer–Vietoris sequence at `Hₙ^∞(M)`.** -/
 theorem smoothMayerVietoris_exact₃ (hUV : U ⊔ V = ⊤) (n m : ℕ) (h : m + 1 = n := by lia) :
     (ShortComplex.mk _ _ (smoothMayerVietorisFromBiprod_δ I R hUV n m h)).Exact := by
   refine (ShortComplex.exact_iff_of_iso ?_).1 (SSet.mayerVietoris_exact₃ R
     (isPushout_smoothSingularSubcomplex_inter_smallSmoothSingularSubcomplex I U V) n m h)
-  refine ShortComplex.isoMk (Iso.refl _)
-    (subcomplexSmallHomologyIso R (smoothSingularSubcomplex I M) ![(U : Set M), (V : Set M)]
-      (U.isOpen.vecCons V.isOpen)
-      (((U : Set M).iUnion_vecCons_pair (V : Set M)).trans (union_eq_univ_of_sup_eq_top hUV)) n)
-    (Iso.refl _) ?_ ?_
-  · dsimp only
-    rw [subcomplexSmallHomologyIso_hom, Iso.refl_hom, Category.id_comp,
-      smoothMayerVietorisFromBiprod_comp_homologyMap]
-  · dsimp only
-    rw [Iso.refl_hom, Category.comp_id, subcomplexSmallHomologyIso_hom,
-      homologyMap_homOfLE_comp_smoothMayerVietorisδ I R hUV n m h]
+  refine ShortComplex.isoMk (Iso.refl _) (smoothCoverHomologyIso I R hUV n) (Iso.refl _) ?_ ?_
+  · simp [smoothMayerVietorisFromBiprod_comp_homologyMap]
+  · simp
 
 end MayerVietoris
 
@@ -462,13 +405,11 @@ theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contMDiff_inv
     { hom := smoothSingularSubcomplexMap f hf
       inv := smoothSingularSubcomplexMap g hg
       hom_inv_id := by
-        rw [← cancel_mono (smoothSingularSubcomplex I M).ι, Category.assoc, Category.id_comp,
-          smoothSingularSubcomplexMap_ι, smoothSingularSubcomplexMap_ι_assoc, ← Functor.map_comp,
-          hgf_top, CategoryTheory.Functor.map_id, Category.comp_id]
+        rw [← cancel_mono (smoothSingularSubcomplex I M).ι]
+        simp [← Functor.map_comp, hgf_top]
       inv_hom_id := by
-        rw [← cancel_mono (smoothSingularSubcomplex J N).ι, Category.assoc, Category.id_comp,
-          smoothSingularSubcomplexMap_ι, smoothSingularSubcomplexMap_ι_assoc, ← Functor.map_comp,
-          hfg_top, CategoryTheory.Functor.map_id, Category.comp_id] }
+        rw [← cancel_mono (smoothSingularSubcomplex J N).ι]
+        simp [← Functor.map_comp, hfg_top] }
   let eT : TopCat.of M ≅ TopCat.of N :=
     ⟨TopCat.ofHom ⟨f, hf.continuous⟩, TopCat.ofHom ⟨g, hg.continuous⟩, hgf_top, hfg_top⟩
   refine quasiIso_of_arrow_mk_iso
@@ -506,13 +447,13 @@ theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_sup_eq_top
   have ht : smoothSingularSubcomplexMap (Opens.inclusion (inf_le_left : U ⊓ V ≤ U))
         (contMDiff_inclusion (I := I) _) ≫ (smoothSingularSubcomplex I U).ι =
       (smoothSingularSubcomplex I ↥(U ⊓ V)).ι ≫ TopCat.toSSet.map (TopCat.ofHom
-        (ContinuousMap.inclusion (Set.inter_subset_left (t := (V : Set M))))) :=
-    smoothSingularSubcomplexMap_ι _
+        (ContinuousMap.inclusion (Set.inter_subset_left (t := (V : Set M))))) := by
+    rw [smoothSingularSubcomplexMap_ι, continuousMap_mk_inclusion]
   have hl : smoothSingularSubcomplexMap (Opens.inclusion (inf_le_right : U ⊓ V ≤ V))
         (contMDiff_inclusion (I := I) _) ≫ (smoothSingularSubcomplex I V).ι =
       (smoothSingularSubcomplex I ↥(U ⊓ V)).ι ≫ TopCat.toSSet.map (TopCat.ofHom
-        (ContinuousMap.inclusion (Set.inter_subset_right (s := (U : Set M))))) :=
-    smoothSingularSubcomplexMap_ι _
+        (ContinuousMap.inclusion (Set.inter_subset_right (s := (U : Set M))))) := by
+    rw [smoothSingularSubcomplexMap_ι, continuousMap_mk_inclusion]
   let ψ := SSet.mayerVietorisShortComplexMap R sqS sqT ht hl
     (toSmallSmoothSingularSubcomplex_homOfLE_right _ _)
     (toSmallSmoothSingularSubcomplex_homOfLE_right _ _)
@@ -555,7 +496,7 @@ theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_sup (U V : Opens M)
   let V' : Opens ↥(U ⊔ V) := ⟨Subtype.val ⁻¹' (V : Set M), V.isOpen.preimage continuous_subtype_val⟩
   have hUV' : U' ⊔ V' = ⊤ := by
     ext ⟨x, hx⟩
-    exact ⟨fun _ ↦ trivial, fun _ ↦ hx⟩
+    simpa [U', V', Opens.mem_sup] using Opens.mem_sup.1 hx
   have liftQuasiIso {W : Opens M} {W' : Opens ↥(U ⊔ V)} (hW : W ≤ U ⊔ V)
       (hWW' : ∀ x : ↥(U ⊔ V), x ∈ W' ↔ x.1 ∈ W)
       (hQ : QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I W).ι R)) :

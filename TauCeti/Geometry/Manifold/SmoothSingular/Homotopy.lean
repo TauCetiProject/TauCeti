@@ -54,6 +54,8 @@ comparison of smooth with continuous singular homology by a Mayer–Vietoris ind
 
 ## Main definitions and results
 
+* `TauCeti.topCatHomotopyOfContMDiff`: the `TopCat.Homotopy` on `[0, 1] × M` restricted from a
+  `C^n` map `F : ℝ × M → N`.
 * `TauCeti.smoothSingularSubcomplexHomotopy`: a smooth homotopy induces a simplicial homotopy of
   the maps of smooth singular subcomplexes, restricting the homotopy of singular simplicial sets.
 * `TauCeti.smoothSingularChainHomotopy`: the induced chain homotopy of smooth singular chains.
@@ -176,6 +178,27 @@ theorem homologyMap_smoothSingularSubcomplexMap_eq [CategoryWithHomology C] (n :
   (smoothSingularSubcomplexHomotopy hf hg H hF hFH).congr_homologyMap R n
 
 omit hf hg in
+/-- A `C^n` map `F : ℝ × M → N` with `F (0, ·) = f` and `F (1, ·) = g` restricts to `[0, 1] × M`
+as a `TopCat.Homotopy` between the morphisms induced by `f` and `g`. -/
+def topCatHomotopyOfContMDiff {k : ℕ∞ω} (hf : ContMDiff I J k f) (hg : ContMDiff I J k g)
+    (hF : ContMDiff (𝓘(ℝ).prod I) J k F)
+    (h₀ : ∀ x, F (0, x) = f x) (h₁ : ∀ x, F (1, x) = g x) :
+    TopCat.Homotopy (TopCat.ofHom ⟨f, hf.continuous⟩) (TopCat.ofHom ⟨g, hg.continuous⟩) where
+  toFun p := F (p.1, p.2)
+  continuous_toFun := hF.continuous.comp (continuous_subtype_val.prodMap continuous_id)
+  map_zero_left := h₀
+  map_one_left := h₁
+
+omit hf hg in
+/-- Evaluating `topCatHomotopyOfContMDiff` on `[0, 1] × M` applies the ambient map `F`. -/
+@[simp]
+theorem topCatHomotopyOfContMDiff_apply {k : ℕ∞ω} (hf : ContMDiff I J k f)
+    (hg : ContMDiff I J k g) (hF : ContMDiff (𝓘(ℝ).prod I) J k F)
+    (h₀ : ∀ x, F (0, x) = f x) (h₁ : ∀ x, F (1, x) = g x) (p : unitInterval × M) :
+    topCatHomotopyOfContMDiff hf hg hF h₀ h₁ p = F (p.1, p.2) := by
+  rfl
+
+omit hf hg in
 /-- Smooth maps `f` and `g` joined by a smooth map `F : ℝ × M → N`, with `F (0, ·) = f` and
 `F (1, ·) = g`, induce the same map on smooth singular homology. -/
 theorem homologyMap_smoothSingularSubcomplexMap_eq_of_contMDiff [CategoryWithHomology C]
@@ -184,10 +207,8 @@ theorem homologyMap_smoothSingularSubcomplexMap_eq_of_contMDiff [CategoryWithHom
     SSet.homologyMap (smoothSingularSubcomplexMap f hf) R n =
       SSet.homologyMap (smoothSingularSubcomplexMap g hg) R n :=
   homologyMap_smoothSingularSubcomplexMap_eq hf hg
-    { toFun := fun p ↦ F (p.1, p.2)
-      continuous_toFun := hF.continuous.comp (continuous_subtype_val.prodMap continuous_id)
-      map_zero_left := h₀
-      map_one_left := h₁ } hF (fun _ ↦ rfl) R n
+    (topCatHomotopyOfContMDiff hf hg hF h₀ h₁) hF
+    (fun p ↦ (topCatHomotopyOfContMDiff_apply hf hg hF h₀ h₁ p).symm) R n
 
 /-! ### Smoothly contractible manifolds -/
 
@@ -201,24 +222,14 @@ theorem isZero_homology_smoothSingularSubcomplex_of_contMDiff [CategoryWithHomol
     IsZero ((smoothSingularSubcomplex I M : SSet).homology R n) := by
   let pt : TopCat.{u} := TopCat.of PUnit
   -- The constant map factors through the singular simplicial set of a point.
-  let a : TopCat.of M ⟶ pt := TopCat.ofHom (ContinuousMap.const M PUnit.unit)
-  let b : pt ⟶ TopCat.of M := TopCat.ofHom (ContinuousMap.const pt c)
-  have hab : a ≫ b = TopCat.ofHom ⟨fun _ ↦ c, continuous_const⟩ := by
-    ext
-    rfl
   let p : (smoothSingularSubcomplex I M : SSet) ⟶ TopCat.toSSet.obj pt :=
-    (smoothSingularSubcomplex I M).ι ≫ TopCat.toSSet.map a
+    (smoothSingularSubcomplex I M).ι ≫
+      TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.const M PUnit.unit))
   let s : TopCat.toSSet.obj pt ⟶ (smoothSingularSubcomplex I M : SSet) :=
-    SSet.Subcomplex.lift (TopCat.toSSet.map b) (by
-      rintro k _ ⟨σ, rfl⟩
-      rw [mem_smoothSingularSubcomplex_iff]
-      exact contMDiffOnSubset_const I ∞ c)
-  have hs : s ≫ (smoothSingularSubcomplex I M).ι = TopCat.toSSet.map b :=
-    SSet.Subcomplex.lift_ι _ _
+    constToSmoothSingularSubcomplex I pt c
   have hps : smoothSingularSubcomplexMap (fun _ ↦ c) (contMDiff_const : ContMDiff I I ∞ _) =
       p ≫ s := by
-    rw [← cancel_mono (smoothSingularSubcomplex I M).ι, smoothSingularSubcomplexMap_ι,
-      Category.assoc, hs, Category.assoc, ← Functor.map_comp, hab]
+    simp [p, s]
   have hpt : IsZero ((TopCat.toSSet.obj pt).homology R n) :=
     AlgebraicTopology.isZero_singularHomologyFunctor_of_totallyDisconnectedSpace C n R pt hn
   have hid : SSet.homologyMap (smoothSingularSubcomplexMap id (contMDiff_id (I := I))) R n =

@@ -9,6 +9,8 @@ public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 
+import TauCeti.Geometry.Manifold.ContMDiff.Subtype
+
 /-!
 # Smooth curves joining points of a manifold
 
@@ -18,7 +20,9 @@ curve `γ : ℝ → M` which is constant on `(-∞, 0]` and on `[1, ∞)`
 boundary or corners are included. Points close to `x` are joined to `x` by such curves staying in
 any prescribed neighbourhood of `x` (`TauCeti.eventually_exists_contMDiff_curve`): in the chart
 at `x`, follow the segment to the chart point of `y`, reparametrized by `Real.smoothTransition`.
-Mathlib's `range I` is convex, so the segment stays in the model range.
+Mathlib's `range I` is convex, so the segment stays in the model range. More generally, any open
+subset of `(extChartAt I x).source` whose chart image is star-convex admits a global `C^n`
+contraction (`TauCeti.exists_contMDiff_contraction_of_starConvex_image_extChartAt`).
 
 Curves which are constant near their endpoints can be concatenated smoothly
 (`TauCeti.curveConcat`, `ContMDiff.curveConcat`). The concatenation runs through `γ₁` on
@@ -35,6 +39,8 @@ smooth loop vanishes is exact, with primitive the integral along smooth curves f
   junction point is `C^n`.
 * `TauCeti.eventually_exists_contMDiff_curve`: nearby points are joined by short `C^n` curves.
 * `TauCeti.exists_contMDiff_curve`: a preconnected `C^n` manifold is `C^n`-path connected.
+* `TauCeti.exists_contMDiff_contraction_of_starConvex_image_extChartAt`: an open subset of an
+  extended chart source with star-convex chart image admits a `C^n` contraction.
 -/
 
 public section
@@ -177,5 +183,52 @@ theorem exists_contMDiff_curve [IsManifold I n M] [PreconnectedSpace M] (x y : M
   · refine ⟨curveConcat γ₁ γ₂, ContMDiff.curveConcat hγ₁ hγ₂ h₁' h₂, fun t ht ↦ ?_, fun t ht ↦ ?_⟩
     · rw [curveConcat_of_le (by linarith), h₁ _ (by linarith)]
     · rw [curveConcat_of_lt (by linarith), h₂' _ (by linarith)]
+
+/-- **Smooth contraction of an open chart domain with star-convex chart image.** Let `U` be an open
+subset of `M` contained in `(extChartAt I x).source` whose image under `extChartAt I x` is
+star-convex with respect to `extChartAt I x c` for `c : U`. Reparametrizing straight-line
+interpolation towards `extChartAt I x c` in chart coordinates by `Real.smoothTransition` produces a
+`C^n` map `F : ℝ × U → U` with `F (0, z) = z` and `F (1, z) = c`. -/
+theorem exists_contMDiff_contraction_of_starConvex_image_extChartAt [IsManifold I n M]
+    {x : M} {U : TopologicalSpace.Opens M} (hU : (U : Set M) ⊆ (extChartAt I x).source) (c : U)
+    (hc : StarConvex ℝ (extChartAt I x c) (extChartAt I x '' (U : Set M))) :
+    ∃ F : ℝ × U → U, ContMDiff (𝓘(ℝ).prod I) I n F ∧
+      (∀ z, F (0, z) = z) ∧ (∀ z, F (1, z) = c) := by
+  let φ : U → E := fun y ↦ extChartAt I x y.1
+  have hφ : ContMDiff I 𝓘(ℝ, E) n φ :=
+    (contMDiffOn_extChartAt (I := I) (x := x) (n := n)).comp_contMDiff contMDiff_subtype_val
+      fun y ↦ (extChartAt_source I x) ▸ hU y.2
+  let G : ℝ × U → E := fun p ↦ φ c + (1 - Real.smoothTransition p.1) • (φ p.2 - φ c)
+  have hG_im (p : ℝ × U) : G p ∈ extChartAt I x '' (U : Set M) :=
+    hc.add_smul_sub_mem ⟨p.2.1, p.2.2, rfl⟩
+      (by linarith [Real.smoothTransition.le_one p.1])
+      (by linarith [Real.smoothTransition.nonneg p.1])
+  have hG_tgt (p : ℝ × U) : G p ∈ (extChartAt I x).target := by
+    obtain ⟨w, hwU, hw⟩ := hG_im p
+    exact hw ▸ (extChartAt I x).map_source (hU hwU)
+  have hF_U (p : ℝ × U) : (extChartAt I x).symm (G p) ∈ U := by
+    obtain ⟨w, hwU, hw⟩ := hG_im p
+    have heq : (extChartAt I x).symm (G p) = w := by
+      rw [← hw]
+      exact (extChartAt I x).left_inv (hU hwU)
+    exact heq ▸ hwU
+  have hlin : ContDiff ℝ n (fun q : ℝ × E ↦ φ c + (1 - Real.smoothTransition q.1) • (q.2 - φ c)) :=
+    contDiff_const.add ((contDiff_const.sub
+      (Real.smoothTransition.contDiff.comp contDiff_fst)).smul (contDiff_snd.sub contDiff_const))
+  have hG : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ, E) n G :=
+    hlin.comp_contMDiff (contMDiff_fst.prodMk_space (hφ.comp contMDiff_snd))
+  refine ⟨fun p ↦ ⟨(extChartAt I x).symm (G p), hF_U p⟩, ?_, ?_, ?_⟩
+  · rw [← ContMDiff.subtypeVal_comp_iff]
+    exact (contMDiffOn_extChartAt_symm (I := I) (n := n) x).comp_contMDiff hG hG_tgt
+  · intro z
+    refine Subtype.ext ?_
+    dsimp only [G, φ]
+    rw [Real.smoothTransition.zero, sub_zero, one_smul, add_sub_cancel]
+    exact (extChartAt I x).left_inv (hU z.2)
+  · intro z
+    refine Subtype.ext ?_
+    dsimp only [G, φ]
+    rw [Real.smoothTransition.one, sub_self, zero_smul, add_zero]
+    exact (extChartAt I x).left_inv (hU c.2)
 
 end TauCeti

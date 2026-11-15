@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.AB
-public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.Algebra.Homology.DerivedCategory.KProjective
 public import TauCeti.AlgebraicTopology.Cohomology.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
@@ -14,6 +12,8 @@ public import TauCeti.Geometry.Manifold.SmoothSingular.Additivity
 public import TauCeti.Geometry.Manifold.SmoothSingular.Homotopy
 public import TauCeti.Geometry.Manifold.SmoothSingular.MayerVietoris
 
+import TauCeti.Geometry.Manifold.ContMDiff.Curve
+import TauCeti.Geometry.Manifold.Topology
 import TauCeti.Topology.MayerVietoris
 
 /-!
@@ -38,10 +38,10 @@ two stages of Mayer–Vietoris induction (`TauCeti.mayerVietoris_induction`):
    chain homotopy equivalence `TauCeti.smoothSingularChainHomotopyEquivOfContMDiff` between smooth
    and continuous singular chains in all degrees simultaneously.
 2. **Extended chart domains.** For each `x : M`, the open subsets of `(extChartAt I x).source`
-   whose image under `extChartAt I x` is convex in `E` form an intersection-stable basis: `range I`
-   is convex in `E`, so intersecting Euclidean balls with `range I` produces convex neighbourhoods
-   inside `(extChartAt I x).target`. Every nonempty member of this basis is smoothly contractible
-   via straight-line interpolation in chart coordinates reparametrized by `Real.smoothTransition`.
+   whose image under `extChartAt I x` is convex in `E` form an intersection-stable basis
+   (`ModelWithCorners.isBasis_convex_image_extChartAt`). Every nonempty member of this basis is
+   smoothly contractible via straight-line interpolation in chart coordinates reparametrized by
+   `Real.smoothTransition` (`TauCeti.exists_contMDiff_contraction_of_starConvex_image_extChartAt`).
    Mayer–Vietoris induction on `(extChartAt I x).source`, combining the binary-union step from
    `TauCeti.Geometry.Manifold.SmoothSingular.MayerVietoris` and the countable disjoint-union step
    from `TauCeti.Geometry.Manifold.SmoothSingular.Additivity`, proves the quasi-isomorphism on all
@@ -60,10 +60,9 @@ to a chosen chain homotopy (`TauCeti.smoothSingularChainHomotopyEquivInvNaturali
 
 ## Main definitions and results
 
-* `TauCeti.isIso_smoothSingularSubcomplex_ι_of_subsingleton` and
-  `TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_subsingleton`: on a subsingleton
-  charted space (including the empty space and a point), the inclusion of smooth singular simplices
-  is an isomorphism.
+* `TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_subsingleton`: on a subsingleton
+  charted space (including the empty space and a point), the inclusion of smooth singular chains
+  into singular chains is a quasi-isomorphism.
 * `TauCeti.smoothSingularChainHomotopyEquivOfContMDiff` and
   `TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contMDiff`: explicit chain
   homotopy equivalence and quasi-isomorphism for smoothly contractible charted spaces.
@@ -107,18 +106,6 @@ section Contractible
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} {M : Type u} [TopologicalSpace M] [ChartedSpace H M]
 
-/-- On a subsingleton charted space (in particular on the empty space or on a point), every
-singular simplex is constant and hence smooth, so the inclusion of the smooth singular subcomplex
-into the singular simplicial set is an isomorphism. -/
-instance isIso_smoothSingularSubcomplex_ι_of_subsingleton [Subsingleton M] :
-    IsIso (smoothSingularSubcomplex I M).ι := by
-  rw [← Subfunctor.eq_top_iff_isIso, eq_top_iff]
-  rintro ⟨k⟩ σ -
-  induction k using SimplexCategory.rec with | _ n => ?_
-  obtain ⟨t⟩ : Nonempty (Convexity.StdSimplex ℝ (Fin (n + 1))) := inferInstance
-  rw [mem_smoothSingularSubcomplex_iff]
-  convert contMDiffOnSubset_const I ∞ ((TopCat.of M).toSSetObjEquiv _ σ t) using 1
-
 /-- On a subsingleton charted space, the inclusion of smooth singular chains into singular chains
 is a quasi-isomorphism. -/
 instance quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_subsingleton [Subsingleton M]
@@ -127,76 +114,42 @@ instance quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_subsingleton [S
     QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R) :=
   inferInstance
 
-private def constSmoothSubcomplexLift (c : M) :
-    TopCat.toSSet.obj (TopCat.of PUnit.{u + 1}) ⟶ (smoothSingularSubcomplex I M : SSet) :=
-  SSet.Subcomplex.lift
-    (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.const PUnit.{u + 1} c))) (by
-      rintro k _ ⟨σ, rfl⟩
-      rw [mem_smoothSingularSubcomplex_iff]
-      exact contMDiffOnSubset_const I ∞ c)
-
-private lemma constSmoothSubcomplexLift_ι (c : M) :
-    constSmoothSubcomplexLift (I := I) c ≫ (smoothSingularSubcomplex I M).ι =
-      TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.const PUnit.{u + 1} c)) :=
-  SSet.Subcomplex.lift_ι _ _
-
-private def constSmoothSubcomplexRetract (c : M) :
-    TopCat.toSSet.obj (TopCat.of M) ⟶ (smoothSingularSubcomplex I M : SSet) :=
-  TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.const M PUnit.unit)) ≫
-    constSmoothSubcomplexLift (I := I) c
-
-private lemma constSmoothSubcomplexRetract_ι (c : M) :
-    constSmoothSubcomplexRetract (I := I) c ≫ (smoothSingularSubcomplex I M).ι =
-      TopCat.toSSet.map
-        (TopCat.ofHom ⟨fun _ ↦ c, (contMDiff_const : ContMDiff I I ∞ _).continuous⟩) := by
-  rw [constSmoothSubcomplexRetract, Category.assoc, constSmoothSubcomplexLift_ι,
-    ← Functor.map_comp]
-  rfl
-
-private def contMDiffHomotopyToConst {F : ℝ × M → M} (hF : ContMDiff (𝓘(ℝ).prod I) I ∞ F)
-    (c : M) (h₀ : ∀ x, F (0, x) = x) (h₁ : ∀ x, F (1, x) = c) :
-    TopCat.Homotopy
-      (TopCat.ofHom ⟨id, (contMDiff_id (I := I) (n := ∞)).continuous⟩)
-      (TopCat.ofHom ⟨fun _ ↦ c, (contMDiff_const : ContMDiff I I ∞ _).continuous⟩) where
-  toFun p := F (p.1, p.2)
-  continuous_toFun := hF.continuous.comp (continuous_subtype_val.prodMap continuous_id)
-  map_zero_left := h₀
-  map_one_left := h₁
-
-private def homotopy_ι_comp_constSmoothSubcomplexRetract
+private def homotopy_ι_comp_constToSmoothSingularSubcomplex
     {C : Type v} [Category.{w} C] [Preadditive C] [HasCoproducts.{u} C] (R : C)
     {F : ℝ × M → M} (hF : ContMDiff (𝓘(ℝ).prod I) I ∞ F) (c : M)
     (h₀ : ∀ x, F (0, x) = x) (h₁ : ∀ x, F (1, x) = c) :
     Homotopy
       (SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R ≫
-        SSet.chainComplexMap (constSmoothSubcomplexRetract (I := I) c) R)
+        SSet.chainComplexMap (constToSmoothSingularSubcomplex I (TopCat.of M) c) R)
       (𝟙 _) := by
-  have hcomp : (smoothSingularSubcomplex I M).ι ≫ constSmoothSubcomplexRetract (I := I) c =
-      smoothSingularSubcomplexMap (fun _ ↦ c) (contMDiff_const : ContMDiff I I ∞ _) := by
-    rw [← cancel_mono (smoothSingularSubcomplex I M).ι, Category.assoc,
-      constSmoothSubcomplexRetract_ι, smoothSingularSubcomplexMap_ι]
   refine (Homotopy.ofEq ?_).trans
     (((smoothSingularChainHomotopy (contMDiff_id (I := I))
-      (contMDiff_const : ContMDiff I I ∞ _) (contMDiffHomotopyToConst hF c h₀ h₁)
-      hF (fun _ ↦ rfl) R).symm).trans (Homotopy.ofEq ?_))
-  · rw [← Functor.map_comp, hcomp]
+      (contMDiff_const : ContMDiff I I ∞ _)
+      (topCatHomotopyOfContMDiff (contMDiff_id (I := I)) contMDiff_const hF h₀ h₁)
+      hF (fun p ↦ (topCatHomotopyOfContMDiff_apply _ _ _ _ _ p).symm) R).symm).trans
+      (Homotopy.ofEq ?_))
+  · rw [← Functor.map_comp, ι_comp_constToSmoothSingularSubcomplex]
   · rw [smoothSingularSubcomplexMap_id]
     exact ((SSet.chainComplexFunctor C).obj R).map_id _
 
-private def homotopy_constSmoothSubcomplexRetract_comp_ι
+private def homotopy_constToSmoothSingularSubcomplex_comp_ι
     {C : Type v} [Category.{w} C] [Preadditive C] [HasCoproducts.{u} C] (R : C)
     {F : ℝ × M → M} (hF : ContMDiff (𝓘(ℝ).prod I) I ∞ F) (c : M)
     (h₀ : ∀ x, F (0, x) = x) (h₁ : ∀ x, F (1, x) = c) :
     Homotopy
-      (SSet.chainComplexMap (constSmoothSubcomplexRetract (I := I) c) R ≫
+      (SSet.chainComplexMap (constToSmoothSingularSubcomplex I (TopCat.of M) c) R ≫
         SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R)
       (𝟙 _) := by
   refine (Homotopy.ofEq ?_).trans
-    ((((contMDiffHomotopyToConst hF c h₀ h₁).toSSet.chainComplexMap R).symm).trans
+    ((((topCatHomotopyOfContMDiff (contMDiff_id (I := I))
+      (contMDiff_const : ContMDiff I I ∞ _) hF h₀ h₁).toSSet.chainComplexMap R).symm).trans
       (Homotopy.ofEq ?_))
-  · rw [← Functor.map_comp, constSmoothSubcomplexRetract_ι]
+  · rw [← Functor.map_comp, constToSmoothSingularSubcomplex_ι]
+    exact congrArg (fun f ↦ SSet.chainComplexMap (TopCat.toSSet.map f) R) (by ext; simp)
   · have hid : (TopCat.ofHom ⟨id, (contMDiff_id (I := I) (n := ∞)).continuous⟩ :
-        TopCat.of M ⟶ TopCat.of M) = 𝟙 (TopCat.of M) := by ext; rfl
+        TopCat.of M ⟶ TopCat.of M) = 𝟙 (TopCat.of M) := by
+      ext
+      simp
     rw [hid, CategoryTheory.Functor.map_id]
     exact ((SSet.chainComplexFunctor C).obj R).map_id _
 
@@ -211,9 +164,9 @@ def smoothSingularChainHomotopyEquivOfContMDiff
     HomotopyEquiv ((smoothSingularSubcomplex I M : SSet).chainComplex R)
       ((TopCat.toSSet.obj (TopCat.of M)).chainComplex R) where
   hom := SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R
-  inv := SSet.chainComplexMap (constSmoothSubcomplexRetract (I := I) c) R
-  homotopyHomInvId := homotopy_ι_comp_constSmoothSubcomplexRetract R hF c h₀ h₁
-  homotopyInvHomId := homotopy_constSmoothSubcomplexRetract_comp_ι R hF c h₀ h₁
+  inv := SSet.chainComplexMap (constToSmoothSingularSubcomplex I (TopCat.of M) c) R
+  homotopyHomInvId := homotopy_ι_comp_constToSmoothSingularSubcomplex R hF c h₀ h₁
+  homotopyInvHomId := homotopy_constToSmoothSingularSubcomplex_comp_ι R hF c h₀ h₁
 
 /-- The forward map of `smoothSingularChainHomotopyEquivOfContMDiff` is the chain map induced by the
 inclusion of smooth singular simplices. -/
@@ -250,9 +203,6 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   {C : Type v} [Category.{w} C] [Abelian C] [HasCoproducts.{u} C]
   [HasExactColimitsOfShape (Discrete ℕ) C]
 
-private abbrev extChartAtOpens (I : ModelWithCorners ℝ E H) (x : M) : Opens M :=
-  ⟨(extChartAt I x).source, isOpen_extChartAt_source x⟩
-
 omit [FiniteDimensional ℝ E] [T2Space M] [SigmaCompactSpace M] [IsManifold I ∞ M] in
 private lemma quasiIso_iSup_nat {X : Type u} [TopologicalSpace X] [ChartedSpace H X]
     (R : C) (s : ℕ → Opens X) (hs : ∀ i j, i ≠ j → Disjoint (s i) (s j))
@@ -270,147 +220,80 @@ private lemma quasiIso_iSup_nat {X : Type u} [TopologicalSpace X] [ChartedSpace 
     (fun i j hij ↦ hs i.down j.down fun hd ↦ hij (ULift.ext hd))
     (fun i ↦ h i.down)
 
-omit [FiniteDimensional ℝ E] [T2Space M] [SigmaCompactSpace M]
+omit [FiniteDimensional ℝ E] [T2Space M] [SigmaCompactSpace M] [IsManifold I ∞ M]
     [HasExactColimitsOfShape (Discrete ℕ) C] in
-private lemma exists_contMDiff_contraction_of_convex_image_extChartAt (x : M)
-    {V : Opens (extChartAtOpens I x)} (c : V)
-    (hV : Convex ℝ ((fun y : extChartAtOpens I x ↦ extChartAt I x y.1) '' (V : Set _))) :
-    ∃ F : ℝ × V → V, ContMDiff (𝓘(ℝ).prod I) I ∞ F ∧
-      (∀ z, F (0, z) = z) ∧ (∀ z, F (1, z) = c) := by
-  let φ : extChartAtOpens I x → E := fun y ↦ extChartAt I x y.1
-  have hφ : ContMDiff I 𝓘(ℝ, E) ∞ φ :=
-    (contMDiffOn_extChartAt (I := I) (x := x) (n := ∞)).comp_contMDiff
-      (contMDiff_subtype_val (I := I) (U := extChartAtOpens I x))
-      fun y ↦ (extChartAt_source I x) ▸ y.2
-  let G : ℝ × V → E := fun p ↦ φ c.1 + (1 - Real.smoothTransition p.1) • (φ p.2.1 - φ c.1)
-  have hG_im (p : ℝ × V) : G p ∈ φ '' (V : Set _) :=
-    (hV.starConvex ⟨c.1, c.2, rfl⟩).add_smul_sub_mem ⟨p.2.1, p.2.2, rfl⟩
-      (by linarith [Real.smoothTransition.le_one p.1])
-      (by linarith [Real.smoothTransition.nonneg p.1])
-  have hG_tgt (p : ℝ × V) : G p ∈ (extChartAt I x).target := by
-    obtain ⟨w, -, hw⟩ := hG_im p
-    exact hw ▸ (extChartAt I x).map_source w.2
-  have hF_V (p : ℝ × V) : (⟨(extChartAt I x).symm (G p),
-      (extChartAt I x).map_target (hG_tgt p)⟩ : extChartAtOpens I x) ∈ V := by
-    obtain ⟨w, hwV, hw⟩ := hG_im p
-    have heq : (⟨(extChartAt I x).symm (G p),
-        (extChartAt I x).map_target (hG_tgt p)⟩ : extChartAtOpens I x) = w :=
-      Subtype.ext (by dsimp only; rw [← hw]; exact (extChartAt I x).left_inv w.2)
-    exact heq.symm ▸ hwV
-  have hG : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ, E) ∞ G := by
-    have hψ : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) ∞ fun p : ℝ × V ↦ Real.smoothTransition p.1 :=
-      Real.smoothTransition.contDiff.contMDiff.comp contMDiff_fst
-    have hz : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ, E) ∞ fun p : ℝ × V ↦ φ p.2.1 :=
-      hφ.comp ((contMDiff_subtype_val (I := I) (U := V)).comp contMDiff_snd)
-    exact ContMDiff.add contMDiff_const
-      (ContMDiff.smul (ContMDiff.sub contMDiff_const hψ) (hz.sub contMDiff_const))
-  refine ⟨fun p ↦ ⟨⟨_, (extChartAt I x).map_target (hG_tgt p)⟩, hF_V p⟩, ?_, ?_, ?_⟩
-  · rw [← ContMDiff.subtypeVal_comp_iff, ← ContMDiff.subtypeVal_comp_iff]
-    exact (contMDiffOn_extChartAt_symm (I := I) (n := ∞) x).comp_contMDiff hG hG_tgt
-  · intro z
-    refine Subtype.ext (Subtype.ext ?_)
-    dsimp only [G, φ]
-    rw [Real.smoothTransition.zero, sub_zero, one_smul, add_sub_cancel]
-    exact (extChartAt I x).left_inv z.1.2
-  · intro z
-    refine Subtype.ext (Subtype.ext ?_)
-    dsimp only [G, φ]
-    rw [Real.smoothTransition.one, sub_self, zero_smul, add_zero]
-    exact (extChartAt I x).left_inv c.1.2
-
-omit [FiniteDimensional ℝ E] [T2Space M] [SigmaCompactSpace M]
-    [HasExactColimitsOfShape (Discrete ℕ) C] in
-private lemma quasiIso_of_convex_image_extChartAt (R : C) (x : M)
-    {V : Opens (extChartAtOpens I x)}
-    (hV : Convex ℝ ((fun y : extChartAtOpens I x ↦ extChartAt I x y.1) '' (V : Set _))) :
-    QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I V).ι R) := by
-  rcases (V : Set (extChartAtOpens I x)).eq_empty_or_nonempty with hempty | ⟨c₀, hc₀⟩
-  · have : IsEmpty V :=
-      ⟨fun z ↦ by have hz : z.1 ∈ (V : Set (extChartAtOpens I x)) := z.2; rwa [hempty] at hz⟩
-    infer_instance
-  · obtain ⟨F, hF, h₀, h₁⟩ :=
-      exists_contMDiff_contraction_of_convex_image_extChartAt x ⟨c₀, hc₀⟩ hV
-    exact quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contMDiff R hF ⟨c₀, hc₀⟩ h₀ h₁
-
-omit [FiniteDimensional ℝ E] [T2Space M] [SigmaCompactSpace M] in
-private lemma isBasis_convex_image_extChartAt (x : M) :
-    Opens.IsBasis {V : Opens (extChartAtOpens I x) |
-      Convex ℝ ((fun y : extChartAtOpens I x ↦ extChartAt I x y.1) '' (V : Set _))} := by
-  let φ : extChartAtOpens I x → E := fun y ↦ extChartAt I x y.1
-  have hφ : Continuous φ :=
-    ((contMDiffOn_extChartAt (I := I) (x := x) (n := ∞)).comp_contMDiff
-      (contMDiff_subtype_val (I := I) (U := extChartAtOpens I x))
-      fun y ↦ (extChartAt_source I x) ▸ y.2).continuous
-  refine Opens.isBasis_iff_nbhd.2 fun {U y} hy ↦ ?_
-  have hUM : IsOpen (Subtype.val '' (U : Set (extChartAtOpens I x))) :=
-    (extChartAtOpens I x).isOpen.isOpenMap_subtype_val _ U.isOpen
-  have hpre : (extChartAt I x).symm ⁻¹' (Subtype.val '' (U : Set (extChartAtOpens I x))) ∈
-      𝓝 (φ y) :=
-    (continuousAt_extChartAt_symm' y.2).preimage_mem_nhds
-      (hUM.mem_nhds ⟨y, hy, ((extChartAt I x).left_inv y.2).symm⟩)
-  obtain ⟨r, hr_pos, hr⟩ := Metric.mem_nhdsWithin_iff.1
-    (Filter.inter_mem (extChartAt_target_mem_nhdsWithin' y.2) (nhdsWithin_le_nhds hpre))
-  let V : Opens (extChartAtOpens I x) := ⟨φ ⁻¹' Metric.ball (φ y) r, Metric.isOpen_ball.preimage hφ⟩
-  have hV_im : φ '' (V : Set _) = Metric.ball (φ y) r ∩ Set.range I := by
-    refine Set.Subset.antisymm ?_ ?_
-    · rintro _ ⟨z, hz, rfl⟩
-      exact ⟨hz, extChartAt_target_subset_range x ((extChartAt I x).map_source z.2)⟩
-    · rintro v hv
-      have hv_tgt : v ∈ (extChartAt I x).target := (hr hv).1
-      have hφ_symm : φ ⟨(extChartAt I x).symm v, (extChartAt I x).map_target hv_tgt⟩ = v :=
-        (extChartAt I x).right_inv hv_tgt
-      exact ⟨⟨(extChartAt I x).symm v, (extChartAt I x).map_target hv_tgt⟩,
-        Set.mem_preimage.2 (hφ_symm.symm ▸ hv.1), hφ_symm⟩
-  refine ⟨V, ?_, Metric.mem_ball_self hr_pos, fun z hz ↦ ?_⟩
-  · rw [Set.mem_ofPred_eq]
-    dsimp only [φ] at hV_im
-    rw [hV_im]
-    exact (convex_ball (φ y) r).inter I.convex_range
-  · have hz_mem := (hr ⟨hz, extChartAt_target_subset_range x ((extChartAt I x).map_source z.2)⟩).2
-    rw [Set.mem_preimage, (extChartAt I x).left_inv z.2] at hz_mem
-    obtain ⟨w, hwU, hw⟩ := hz_mem
-    exact Subtype.ext hw ▸ hwU
-
-private lemma quasiIso_of_subset_extChartAt_source (R : C) (x : M) {U : Opens M}
-    (hU : (U : Set M) ⊆ (extChartAt I x).source) :
-    QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I U).ι R) := by
-  have : LocallyCompactSpace H := I.locallyCompactSpace
-  have : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace H M
-  have : SecondCountableTopology H := I.secondCountableTopology
-  have : SecondCountableTopology M := ChartedSpace.secondCountable_of_sigmaCompact H M
-  have : LocallyCompactSpace (extChartAtOpens I x) :=
-    (extChartAtOpens I x).isOpen.locallyCompactSpace
-  let φ : extChartAtOpens I x → E := fun y ↦ extChartAt I x y.1
-  have hφ_inj : Function.Injective φ :=
-    fun y₁ y₂ h ↦ Subtype.ext ((extChartAt I x).injOn y₁.2 y₂.2 h)
-  have hW : ∀ V : Opens (extChartAtOpens I x),
-      QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I V).ι R) :=
-    mayerVietoris_induction
-      (fun V ↦ QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I V).ι R))
-      {V | Convex ℝ (φ '' (V : Set _))}
-      (isBasis_convex_image_extChartAt x)
-      (fun V₁ h₁ V₂ h₂ ↦ by
-        rw [Set.mem_ofPred_eq, Opens.coe_inf, Set.image_inter hφ_inj]
-        exact h₁.inter h₂)
-      (by
-        have : IsEmpty ↥(⊥ : Opens (extChartAtOpens I x)) := Subtype.isEmpty_false
-        infer_instance)
-      (fun V hV ↦ quasiIso_of_convex_image_extChartAt R x hV)
-      (fun V₁ V₂ ↦ quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_sup R V₁ V₂)
-      (fun s hs h ↦ quasiIso_iSup_nat R s hs h)
-  let U' : Opens (extChartAtOpens I x) :=
-    ⟨Subtype.val ⁻¹' (U : Set M), U.isOpen.preimage continuous_subtype_val⟩
-  let f : U → U' := fun z ↦ ⟨⟨z.1, hU z.2⟩, z.2⟩
-  let g : U' → U := fun z ↦ ⟨z.1.1, z.2⟩
+private lemma quasiIso_iff_of_opens_subset {S U : Opens M} (hU : (U : Set M) ⊆ (S : Set M))
+    {V : Opens S} (hUV : ∀ y : S, y ∈ V ↔ y.1 ∈ U) (R : C) :
+    QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I V).ι R) ↔
+      QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I U).ι R) := by
+  let f : U → V := fun z ↦ ⟨⟨z.1, hU z.2⟩, (hUV _).2 z.2⟩
+  let g : V → U := fun z ↦ ⟨z.1.1, (hUV z.1).1 z.2⟩
   have hf : ContMDiff I I ∞ f := by
     rw [← ContMDiff.subtypeVal_comp_iff, ← ContMDiff.subtypeVal_comp_iff]
     exact contMDiff_subtype_val (I := I) (U := U)
   have hg : ContMDiff I I ∞ g := by
     rw [← ContMDiff.subtypeVal_comp_iff]
-    exact (contMDiff_subtype_val (I := I) (U := extChartAtOpens I x)).comp
-      (contMDiff_subtype_val (I := I) (U := U'))
-  exact quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contMDiff_inv R hf hg
-    (fun _ ↦ rfl) (fun _ ↦ rfl) (hW U')
+    exact (contMDiff_subtype_val (I := I) (U := S)).comp
+      (contMDiff_subtype_val (I := I) (U := V))
+  exact ⟨quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contMDiff_inv R hf hg
+      (fun _ ↦ rfl) (fun _ ↦ rfl),
+    quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contMDiff_inv R hg hf
+      (fun _ ↦ rfl) (fun _ ↦ rfl)⟩
+
+omit [FiniteDimensional ℝ E] [T2Space M] [SigmaCompactSpace M]
+    [HasExactColimitsOfShape (Discrete ℕ) C] in
+private lemma quasiIso_of_convex_image_extChartAt (R : C) (x : M)
+    {V : Opens (I.extChartAtOpens x)}
+    (hV : Convex ℝ ((fun y : I.extChartAtOpens x ↦ extChartAt I x y.1) '' (V : Set _))) :
+    QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I V).ι R) := by
+  rcases (V : Set (I.extChartAtOpens x)).eq_empty_or_nonempty with hempty | ⟨c₀, hc₀⟩
+  · have : IsEmpty V :=
+      ⟨fun z ↦ by have hz : z.1 ∈ (V : Set (I.extChartAtOpens x)) := z.2; rwa [hempty] at hz⟩
+    infer_instance
+  · let W : Opens M :=
+      ⟨Subtype.val '' (V : Set (I.extChartAtOpens x)),
+        (I.extChartAtOpens x).isOpen.isOpenMap_subtype_val _ V.isOpen⟩
+    have hW_sub : (W : Set M) ⊆ (extChartAt I x).source := by
+      rintro _ ⟨y, -, rfl⟩
+      exact y.2
+    have hWV : ∀ y : I.extChartAtOpens x, y ∈ V ↔ y.1 ∈ W := fun y ↦
+      ⟨fun hy ↦ ⟨y, hy, rfl⟩, fun ⟨z, hz, hzy⟩ ↦ Subtype.ext hzy ▸ hz⟩
+    have hW_im : extChartAt I x '' (W : Set M) =
+        (fun y : I.extChartAtOpens x ↦ extChartAt I x y.1) '' (V : Set _) := by
+      rw [Opens.coe_mk, Set.image_image]
+    let cW : W := ⟨c₀.1, c₀, hc₀, rfl⟩
+    obtain ⟨F, hF, h₀, h₁⟩ := exists_contMDiff_contraction_of_starConvex_image_extChartAt
+      (n := ⊤) hW_sub cW ((hW_im.symm ▸ hV).starConvex (Set.mem_image_of_mem _ cW.2))
+    exact (quasiIso_iff_of_opens_subset hW_sub hWV R).2
+      (quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contMDiff R hF cW h₀ h₁)
+
+omit [FiniteDimensional ℝ E] [SigmaCompactSpace M] in
+private lemma quasiIso_of_subset_extChartAt_source [LocallyCompactSpace M]
+    [SecondCountableTopology M] (R : C) (x : M) {U : Opens M}
+    (hU : (U : Set M) ⊆ (extChartAt I x).source) :
+    QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I U).ι R) := by
+  have : LocallyCompactSpace (I.extChartAtOpens x) :=
+    (I.extChartAtOpens x).isOpen.locallyCompactSpace
+  have hφ_inj : Function.Injective (fun y : I.extChartAtOpens x ↦ extChartAt I x y.1) :=
+    fun y₁ y₂ h ↦ Subtype.ext ((extChartAt I x).injOn y₁.2 y₂.2 h)
+  have hW : ∀ V : Opens (I.extChartAtOpens x),
+      QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I V).ι R) :=
+    mayerVietoris_induction
+      (fun V ↦ QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I V).ι R))
+      {V | Convex ℝ ((fun y : I.extChartAtOpens x ↦ extChartAt I x y.1) '' (V : Set _))}
+      (I.isBasis_convex_image_extChartAt x)
+      (fun V₁ h₁ V₂ h₂ ↦ by
+        rw [Set.mem_ofPred_eq, Opens.coe_inf, Set.image_inter hφ_inj]
+        exact h₁.inter h₂)
+      (by
+        have : IsEmpty ↥(⊥ : Opens (I.extChartAtOpens x)) := Subtype.isEmpty_false
+        infer_instance)
+      (fun V hV ↦ quasiIso_of_convex_image_extChartAt R x hV)
+      (fun V₁ V₂ ↦ quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_sup R V₁ V₂)
+      (fun s hs h ↦ quasiIso_iSup_nat R s hs h)
+  let U' : Opens (I.extChartAtOpens x) :=
+    ⟨Subtype.val ⁻¹' (U : Set M), U.isOpen.preimage continuous_subtype_val⟩
+  exact (quasiIso_iff_of_opens_subset hU (V := U') (fun _ ↦ Iff.rfl) R).1 (hW U')
 
 /-- **The smoothing theorem on open subsets.** For any open subset `U` of a Hausdorff `σ`-compact
 smooth manifold `M` modelled on a finite-dimensional real model with corners `I`, the inclusion of
@@ -425,7 +308,7 @@ theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_opens (R : C) (U : 
     (fun V ↦ QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I V).ι R))
     {V : Opens M | ∃ x : M, (V : Set M) ⊆ (extChartAt I x).source}
     (Opens.isBasis_iff_nbhd.2 fun {W x} hx ↦
-      ⟨W ⊓ extChartAtOpens I x, ⟨x, Set.inter_subset_right⟩,
+      ⟨W ⊓ I.extChartAtOpens x, ⟨x, Set.inter_subset_right⟩,
         ⟨hx, mem_extChartAt_source x⟩, inf_le_left⟩)
     (by
       rintro V₁ ⟨x, hx⟩ V₂ -

@@ -13,7 +13,8 @@ public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.Basic
 # Local topology of real manifolds
 
 The convex model range makes charted spaces locally path-connected; nonempty preconnected
-charted spaces are therefore path-connected. Extended charts also provide simply connected
+charted spaces are therefore path-connected. Extended charts also provide convex-image open
+neighbourhood bases (`ModelWithCorners.isBasis_convex_image_extChartAt`) and simply connected
 neighbourhoods, so real manifolds are semilocally simply connected.
 -/
 
@@ -99,5 +100,53 @@ theorem semilocallySimplyConnectedSpace (I : ModelWithCorners 𝕜 E H) (M : Typ
       exact hzc
     exact ⟨ce z, ⟨hzc', ce.left_inv hzsource⟩⟩
   exact ⟨d, hd_nhds, hd_sc⟩
+
+/-- The source `(extChartAt I x).source` of the extended chart at `x`, bundled as an open subset of
+`M`. -/
+abbrev extChartAtOpens (I : ModelWithCorners 𝕜 E H) {M : Type*}
+    [TopologicalSpace M] [ChartedSpace H M] (x : M) : TopologicalSpace.Opens M :=
+  ⟨(extChartAt I x).source, isOpen_extChartAt_source x⟩
+
+/-- For any point `x` of a charted space `M` modelled on a model with corners `I`, the open subsets
+of `(extChartAt I x).source` whose image under `extChartAt I x` is convex over `ℝ` form a basis for
+the topology of `(extChartAt I x).source`. -/
+theorem isBasis_convex_image_extChartAt (I : ModelWithCorners 𝕜 E H) {M : Type*}
+    [TopologicalSpace M] [ChartedSpace H M] (x : M) :
+    TopologicalSpace.Opens.IsBasis
+      {V : TopologicalSpace.Opens (I.extChartAtOpens x) |
+        Convex ℝ ((fun y : I.extChartAtOpens x ↦ extChartAt I x y.1) '' (V : Set _))} := by
+  let φ : I.extChartAtOpens x → E := fun y ↦ extChartAt I x y.1
+  have hφ : Continuous φ :=
+    (continuousOn_extChartAt (I := I) x).comp_continuous continuous_subtype_val fun y ↦ y.2
+  refine TopologicalSpace.Opens.isBasis_iff_nbhd.2 fun {U y} hy ↦ ?_
+  have hUM : IsOpen (Subtype.val '' (U : Set (I.extChartAtOpens x))) :=
+    (I.extChartAtOpens x).isOpen.isOpenMap_subtype_val _ U.isOpen
+  have hpre : (extChartAt I x).symm ⁻¹' (Subtype.val '' (U : Set (I.extChartAtOpens x))) ∈
+      𝓝 (φ y) :=
+    (continuousAt_extChartAt_symm' y.2).preimage_mem_nhds
+      (hUM.mem_nhds ⟨y, hy, ((extChartAt I x).left_inv y.2).symm⟩)
+  obtain ⟨r, hr_pos, hr⟩ := Metric.mem_nhdsWithin_iff.1
+    (Filter.inter_mem (extChartAt_target_mem_nhdsWithin' y.2) (nhdsWithin_le_nhds hpre))
+  let V : TopologicalSpace.Opens (I.extChartAtOpens x) :=
+    ⟨φ ⁻¹' Metric.ball (φ y) r, Metric.isOpen_ball.preimage hφ⟩
+  have hV_im : φ '' (V : Set _) = Metric.ball (φ y) r ∩ Set.range I := by
+    refine Set.Subset.antisymm ?_ ?_
+    · rintro _ ⟨z, hz, rfl⟩
+      exact ⟨hz, extChartAt_target_subset_range x ((extChartAt I x).map_source z.2)⟩
+    · rintro v hv
+      have hv_tgt : v ∈ (extChartAt I x).target := (hr hv).1
+      have hφ_symm : φ ⟨(extChartAt I x).symm v, (extChartAt I x).map_target hv_tgt⟩ = v :=
+        (extChartAt I x).right_inv hv_tgt
+      exact ⟨⟨(extChartAt I x).symm v, (extChartAt I x).map_target hv_tgt⟩,
+        Set.mem_preimage.2 (hφ_symm.symm ▸ hv.1), hφ_symm⟩
+  refine ⟨V, ?_, Metric.mem_ball_self hr_pos, fun z hz ↦ ?_⟩
+  · rw [Set.mem_ofPred_eq]
+    dsimp only [φ] at hV_im
+    rw [hV_im]
+    exact (convex_ball (φ y) r).inter I.convex_range
+  · have hz_mem := (hr ⟨hz, extChartAt_target_subset_range x ((extChartAt I x).map_source z.2)⟩).2
+    rw [Set.mem_preimage, (extChartAt I x).left_inv z.2] at hz_mem
+    obtain ⟨w, hwU, hw⟩ := hz_mem
+    exact Subtype.ext hw ▸ hwU
 
 end ModelWithCorners
