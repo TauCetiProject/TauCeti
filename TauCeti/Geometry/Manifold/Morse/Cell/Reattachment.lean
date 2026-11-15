@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Cell.Comparison
-public import TauCeti.Topology.CWComplex.Abstract.FiberwiseCellAttachment
+public import TauCeti.Topology.CWComplex.Abstract.FiberwiseCell.Attachment
 public import TauCeti.Topology.Homotopy.Homotopic.Rel
 
 /-!

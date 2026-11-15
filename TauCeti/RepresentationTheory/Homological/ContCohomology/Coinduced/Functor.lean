@@ -228,13 +228,9 @@ theorem coindFunctor_map_apply {A B : SmoothDiscreteTopRep.{u, v, w} R U}
 
 private noncomputable def coindCounitApp (A : SmoothDiscreteTopRep.{u, v, max v w} R U) :
     (coindFunctor.{u, v, max v w} R G U ⋙ smoothDiscreteResFunctor R G U).obj A ⟶ (𝟭 _).obj A :=
-  ObjectProperty.homMk
-    (eqToHom (congrArg (fun X : SmoothDiscreteTopRep.{u, v, max v w} R U ↦ X.obj)
-        ((congrArg (smoothDiscreteResFunctor R G U).obj (coindFunctor_obj R G U A)).trans
-          (smoothDiscreteResFunctor_obj R G U (coindTopRep R G U A)))) ≫
-      TopRep.ofHom (coindCounit R G U A))
+  ObjectProperty.homMk (TopRep.ofHom (coindCounit R G U A))
 
--- The explicit universes in `coindCounitApp.{u, v, w}` and `coindCounitNatTrans.{u, v, w}` below
+-- The explicit universes in `coindCounitApp.{u, v, w}` below
 -- fix `w`, which the arguments determine only through `max v w`. Without them, elaborating these
 -- statements compares types in which `w` is still unsolved, and each comparison unfolds
 -- `smoothDiscreteResFunctor`.
@@ -244,8 +240,7 @@ private theorem coindCounitApp_naturality {A B : SmoothDiscreteTopRep.{u, v, max
         coindCounitApp.{u, v, w} R G U B =
       coindCounitApp.{u, v, w} R G U A ≫ (𝟭 (SmoothDiscreteTopRep.{u, v, max v w} R U)).map f := by
   ext a
-  -- Both composites send `a` to `f (a 1)` by definition: the transports in `coindCounitApp` are
-  -- identities, and the counit evaluates at `1`.
+  -- Both composites send `a` to `f (a 1)` by definition: the counit evaluates at `1`.
   rfl
 
 /-- Evaluation at `1`, natural in the smooth discrete coefficient representation. -/
@@ -256,13 +251,6 @@ noncomputable def coindCounitNatTrans :
   -- `(… :)` elaborates the lemma before unifying it with the field's type; propagating that type
   -- into it first is about ten times slower.
   naturality _ _ f := (coindCounitApp_naturality R G U f :)
-
-private theorem coindCounitNatTrans_app_hom_impl (A : SmoothDiscreteTopRep.{u, v, max v w} R U) :
-    ((coindCounitNatTrans.{u, v, w} R G U).app A).hom =
-      eqToHom (congrArg (fun X : SmoothDiscreteTopRep.{u, v, max v w} R U ↦ X.obj)
-        ((congrArg (smoothDiscreteResFunctor R G U).obj (coindFunctor_obj R G U A)).trans
-          (smoothDiscreteResFunctor_obj R G U (coindTopRep R G U A)))) ≫
-        TopRep.ofHom (coindCounit R G U A) := rfl
 
 -- A pre-lemma (`simp↓`): otherwise `Functor.comp_obj` and `Functor.id_obj` rewrite the implicit
 -- source and target of the component first, and the left-hand side no longer matches. `dsimp%` does
@@ -278,8 +266,9 @@ theorem coindCounitNatTrans_app_apply (A : SmoothDiscreteTopRep.{u, v, max v w} 
           ((congrArg (smoothDiscreteResFunctor R G U).obj (coindFunctor_obj R G U A)).trans
             (smoothDiscreteResFunctor_obj R G U (coindTopRep R G U A))).symm)).hom) f =
       f 1 := by
-  rw [← TopRep.hom_comp, coindCounitNatTrans_app_hom_impl, eqToHom_trans_assoc, eqToHom_refl,
-    Category.id_comp, TopRep.hom_ofHom, coindCounit_apply]
+  -- The object equations in the `eqToHom` transport hold by definition in this module, so the
+  -- transport reduces to the identity and the claim is the evaluation formula `coindCounit_apply`.
+  exact coindCounit_apply R G U A f
 
 end Bundled
 

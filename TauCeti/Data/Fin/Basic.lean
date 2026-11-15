@@ -68,6 +68,7 @@ range, so the value is a `dite` rather than a plain application.
   interacts with the cyclic successor and predecessor.
 * `Fin.castSucc_last_add_one`: adding one to the penultimate index gives the last index.
 * `Fin.zero_sub_one_eq_last`: subtracting one from `0` gives the last index.
+* `Fin.succ_sub_one_eq_castSucc`: subtracting one from `i.succ` gives `i.castSucc`.
 * `Fin.eq_castSucc_last_or_eq_last`: an index `≥ n` of `Fin (n + 2)` is the penultimate or the
   last one.
 * `Fin.exists_succ_succ_eq`: the indices `> 1` of `Fin (n + 2)` are the double successors.
@@ -543,6 +544,11 @@ theorem castSucc_sub_one_of_ne_zero {n : ℕ} {i : Fin (n + 1)} (hi : i ≠ 0) :
 /-- Subtracting one from `0` gives the last index. -/
 theorem zero_sub_one_eq_last {n : ℕ} : (0 : Fin (n + 1)) - 1 = last n :=
   (eq_sub_of_add_eq (last_add_one n)).symm
+
+/-- Subtracting one from a successor gives the corresponding `Fin.castSucc`. -/
+@[simp]
+theorem succ_sub_one_eq_castSucc {n : ℕ} (i : Fin n) : i.succ - 1 = castSucc i :=
+  (eq_sub_of_add_eq coeSucc_eq_succ).symm
 
 /-- The last index of `Fin (n + 1)` is not `0` when `n ≠ 0`. -/
 theorem last_ne_zero {n : ℕ} (hn : n ≠ 0) : last n ≠ (0 : Fin (n + 1)) :=
