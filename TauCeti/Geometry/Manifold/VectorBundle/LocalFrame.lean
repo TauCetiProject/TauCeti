@@ -59,6 +59,8 @@ trivialization.
 * `TauCeti.Manifold.contMDiffOn_hom_of_localFrame`: a section of the bundle of continuous linear
   maps, possibly along a base map, is `C^n` once its evaluations on a local frame of the source
   bundle are.
+* `Bundle.Trivialization.span_range_localFrame_map`: the image of a local frame under a linear
+  map spans the range of that map at every point of the base set.
 * `Bundle.Trivialization.exists_contMDiff_eventuallyEq_localFrame`: near a point of its base set,
   the local frame of a trivialization agrees with a family of globally smooth sections.
 * `Bundle.Trivialization.contMDiff_mul_localFrameCoeff`: the local-frame coefficients of a `C^n`
@@ -135,6 +137,16 @@ theorem trace_eq_sum_localFrameCoeff [Fintype ι] (hx : x ∈ e.baseSet) (B : V 
   rwa [FiberBundle.extend_apply_self, eq_comm] at h
 
 end
+
+/-- Over the base set of a trivialization, the image of its local frame under a linear map
+spans the range of that map. No regularity or injectivity of the map is required. -/
+theorem _root_.Bundle.Trivialization.span_range_localFrame_map
+    (e : Trivialization F (TotalSpace.proj : TotalSpace F V → M)) [MemTrivializationAtlas e]
+    (b : Basis ι 𝕜 F) {W : Type*} [AddCommGroup W] [Module 𝕜 W]
+    (A : V x →ₗ[𝕜] W) (hx : x ∈ e.baseSet) :
+    Submodule.span 𝕜 (Set.range (fun i ↦ A (e.localFrame b i x))) = A.range := by
+  simp_rw [e.localFrame_apply_of_mem_baseSet b hx]
+  rw [Set.range_comp', ← Submodule.map_span, (e.basisAt b hx).span_eq, Submodule.map_top]
 
 /-- The continuous inverse of a trivialization transports a model-fibre basis vector to the
 corresponding local-frame vector. -/

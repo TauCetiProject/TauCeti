@@ -14,6 +14,8 @@ import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.Convex.SubgradientImage
 
+import TauCeti.Analysis.Calculus.ContDiff.Differentiable
+
 /-!
 # The upper contact set and its gradient image
 
@@ -200,7 +202,7 @@ theorem fderiv_fderiv_self_nonpos_of_mem_upperContactSet (hΩ : IsOpen Ω)
   have hmax : IsLocalMax (fun x => u x - innerSL ℝ p x) y := by
     simpa only [innerSL_apply_apply] using isLocalMax_sub_inner_of_forall_le hyΩ' hp
   have h := fderiv_fderiv_self_nonpos_of_isLocalMax
-    (hu'.sub (innerSL ℝ p).contDiff.contDiffAt) hmax w
+    ((hu'.sub (innerSL ℝ p).contDiff.contDiffAt).eventually_differentiableAt (by norm_num)) hmax w
   rwa [fderiv_fderiv_sub_clm (g := u) ?_ (innerSL ℝ p)] at h
   filter_upwards [hyΩ'] with z hz
   exact (hu.contDiffAt (hΩ.mem_nhds hz)).differentiableAt two_ne_zero

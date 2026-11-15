@@ -5,10 +5,8 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.LinearAlgebra.FiniteBilinearModule.Orthogonal.Graph
-public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Operations
+import TauCeti.LinearAlgebra.FiniteBilinearModule.Orthogonal.Graph
 public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Dual
-import Mathlib.LinearAlgebra.Isomorphisms
 
 /-!
 # Gluing lattices with opposite discriminant forms
