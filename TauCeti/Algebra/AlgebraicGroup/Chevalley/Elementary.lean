@@ -62,6 +62,13 @@ theorem rootSubgroupPoints_mem_elementarySubgroup (γ : Fin t.numRoots) (u : Mul
     D.rootSubgroupPoints γ A u ∈ D.elementarySubgroup A :=
   Subgroup.subset_closure (Set.mem_iUnion.2 ⟨γ, u, rfl⟩)
 
+/-- Every Weyl element `n_γ(u)` lies in the elementary subgroup over any commutative ring. -/
+theorem weylElement_mem_elementarySubgroup (γ : Fin t.numRoots) (u : Aˣ) :
+    D.weylElement γ A u ∈ D.elementarySubgroup A :=
+  (Subgroup.closure_le _).mpr
+    (by rintro _ (⟨v, rfl⟩ | ⟨v, rfl⟩) <;> exact D.rootSubgroupPoints_mem_elementarySubgroup A _ v)
+    (D.weylElement_mem_closure_rootPair γ A u)
+
 /-- To contain the elementary subgroup it suffices to contain every root subgroup. -/
 theorem elementarySubgroup_le_iff (H : Subgroup (D.points A)) :
     D.elementarySubgroup A ≤ H ↔ ∀ γ u, D.rootSubgroupPoints γ A u ∈ H := by

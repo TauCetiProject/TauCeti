@@ -94,12 +94,9 @@ theorem weylElement_mem_normalizer_positivePoints_diff_singleton
     D.weylElement (t.simpleIndex ht i) A s ∈
       Subgroup.normalizer (⨆ γ ∈
         posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {t.simpleIndex ht i},
-        (D.rootSubgroupPoints γ A).range : Subgroup (D.points A)) := by
-  apply D.closure_simpleRootPair_le_normalizer_positivePoints_diff_singleton A i
-  rw [D.weylElement_def]
-  exact mul_mem (mul_mem (Subgroup.subset_closure (Or.inl ⟨_, rfl⟩))
-    (Subgroup.subset_closure (Or.inr ⟨_, rfl⟩)))
-    (Subgroup.subset_closure (Or.inl ⟨_, rfl⟩))
+        (D.rootSubgroupPoints γ A).range : Subgroup (D.points A)) :=
+  D.closure_simpleRootPair_le_normalizer_positivePoints_diff_singleton A i
+    (D.weylElement_mem_closure_rootPair _ A s)
 
 /-- The punctured positive subgroup `U⁽ⁱ⁾` is contained in `D.positivePoints A`. -/
 theorem positivePoints_diff_singleton_le_positivePoints (i : Fin t.rank) :
@@ -141,12 +138,9 @@ theorem mem_positivePoints_iff_exists_mul_rootSubgroupPoints
         exact (le_sup_right : (D.rootSubgroupPoints (t.simpleIndex ht i) A).range ≤ _) ⟨u, rfl⟩
       · exact (le_sup_left : U ≤ _) ((le_iSup₂
           (f := fun γ _ => (D.rootSubgroupPoints γ A).range) γ ⟨hγ, heq⟩) ⟨u, rfl⟩)
-    · apply sup_le
-      · refine iSup₂_le fun γ hγ => ?_
-        rintro _ ⟨u, rfl⟩
-        exact D.rootSubgroupPoints_mem_positivePoints A hγ.1 u
-      · rintro _ ⟨u, rfl⟩
-        exact D.rootSubgroupPoints_mem_positivePoints A hpos u
+    · apply sup_le (D.positivePoints_diff_singleton_le_positivePoints A i)
+      rintro _ ⟨u, rfl⟩
+      exact D.rootSubgroupPoints_mem_positivePoints A hpos u
   rw [hwhole, Subgroup.mem_sup_of_right_le_normalizer_left hnorm]
   constructor
   · rintro ⟨v, hv, _, ⟨u, rfl⟩, h⟩

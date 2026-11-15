@@ -7,18 +7,17 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Borel
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Root
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Weight.Blocks
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.WeightDegree
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Blocks
+import TauCeti.LinearAlgebra.Matrix.Diagonal
 import TauCeti.LinearAlgebra.RootSystem.Inversions.StrongExchange
 
 /-!
-# Weight-block unitriangularity and the Borel--Weyl intersection
+# The Borel--Weyl intersection of a Chevalley datum
 
-The positive and negative point subgroups of a Chevalley datum act on its weight basis by block
-upper and block lower unitriangular matrices for the weight-space ranking
-`orderedWeightBlock (t.weightDegree ht) D.weight`, over every commutative ring. Over a field `K`,
-combining this block unitriangularity with the root action of the Weyl subgroup proves that the
-Borel-type subgroup meets the Weyl subgroup in the actual character-lattice torus:
+Over any field `K`, combining the weight-block unitriangularity of `D.positivePoints K`
+(`TauCeti.DynkinType.ChevalleyDatum.coe_apply_eq_one_apply_of_mem_positivePoints_of_weight_eq`)
+with the root action of the Weyl subgroup proves that the Borel-type subgroup meets the Weyl
+subgroup in the actual character-lattice torus:
 
 ```text
 B(K) ∩ N(K) = T(K).
@@ -29,14 +28,11 @@ inverts some positive root and would conjugate a nonidentity positive root eleme
 root element inside `B(K)`. Writing `g = u * t` with `u ∈ U(K)` and `t ∈ T(K)` reduces to showing
 that `u ∈ U(K) ∩ N(K)` with trivial Weyl projection is `1`. Extending scalars to the algebraic
 closure separates distinct weight blocks via torus characters, so commutation with the represented
-weight torus forces `u` to be block diagonal, while `U(K)` is block unitriangular.
+weight torus (`TauCeti.apply_eq_zero_of_commute_diagonal`) forces `u` to be block diagonal, while
+`U(K)` acts as the identity on each weight block.
 
 ## Main results
 
-* `TauCeti.DynkinType.ChevalleyDatum.blockUnitriangular_positivePoints` and
-  `TauCeti.DynkinType.ChevalleyDatum.blockUnitriangular_toDual_negativePoints`: elements of
-  `D.positivePoints A` and `D.negativePoints A` are block upper and block lower unitriangular on
-  distinct weight blocks over every commutative ring `A`.
 * `TauCeti.DynkinType.ChevalleyDatum.weylProjection_eq_one_of_mem_borelSubgroup`: a Weyl lift in
   `D.borelSubgroup K` projects to `1` in the Weyl group.
 * `TauCeti.DynkinType.ChevalleyDatum.eq_one_of_mem_positivePoints_of_weylProjection_eq_one`: a
@@ -59,94 +55,6 @@ namespace TauCeti.DynkinType.ChevalleyDatum
 universe v
 
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
-
-section BlockUnitriangular
-
-variable (A : Type v) [CommRing A]
-
--- Match tensor products to the `ℤ`-algebra instance stored by `CommAlgCat` objects.
-attribute [local instance high] Algebra.toModule
-
-/-- Every positive root element acts on the weight basis by a block upper unitriangular matrix for
-the decreasing weight-degree block ranking. -/
-theorem blockUnitriangular_rootSubgroupPoints_of_mem_posRoots {γ : Fin t.numRoots}
-    (hγ : γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht)) (u : Multiplicative A) :
-    (((D.rootSubgroupPoints γ A u : Matrix.GeneralLinearGroup (Fin D.dim) A) :
-        Matrix (Fin D.dim) (Fin D.dim) A)).BlockUnitriangular
-      (orderedWeightBlock (t.weightDegree ht) D.weight) := by
-  rw [D.coe_rootSubgroupPoints,
-    ← kostantRootSubgroupParam_chevalleySystem D.representation D.lattice
-      D.representation_mem_lattice D.isNilpotent_representation_rootGenerator,
-    basisMatrix_kostantRootSubgroupParam]
-  exact blockUnitriangular_kostantRootSubgroupMatrix
-    (t.chevalleySystem ht) (t.lieBasis ht).h D.representation D.lattice
-    (kostantForm_chevalleySystem_smul_mem D.representation D.lattice
-      D.representation_mem_lattice D.isNilpotent_representation_rootGenerator)
-    D.basis D.weight (t.weightDegree ht) γ
-    (isNilpotent_apply_ι_chevalleySystem D.representation
-      D.isNilpotent_representation_rootGenerator γ)
-    D.isCartanWeightVector_basis (t.lie_lieBasis_h_chevalleySystem ht γ)
-    (t.weightDegree_root_pos ht hγ) _
-
-/-- Every negative root element acts on the weight basis by a block lower unitriangular matrix for
-the decreasing weight-degree block ranking. -/
-theorem blockUnitriangular_toDual_rootSubgroupPoints_of_mem_negRoots {γ : Fin t.numRoots}
-    (hγ : γ ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht)) (u : Multiplicative A) :
-    (((D.rootSubgroupPoints γ A u : Matrix.GeneralLinearGroup (Fin D.dim) A) :
-        Matrix (Fin D.dim) (Fin D.dim) A)).BlockUnitriangular
-      (OrderDual.toDual ∘ orderedWeightBlock (t.weightDegree ht) D.weight) := by
-  rw [D.coe_rootSubgroupPoints,
-    ← kostantRootSubgroupParam_chevalleySystem D.representation D.lattice
-      D.representation_mem_lattice D.isNilpotent_representation_rootGenerator,
-    basisMatrix_kostantRootSubgroupParam]
-  exact blockUnitriangular_toDual_kostantRootSubgroupMatrix
-    (t.chevalleySystem ht) (t.lieBasis ht).h D.representation D.lattice
-    (kostantForm_chevalleySystem_smul_mem D.representation D.lattice
-      D.representation_mem_lattice D.isNilpotent_representation_rootGenerator)
-    D.basis D.weight (t.weightDegree ht) γ
-    (isNilpotent_apply_ι_chevalleySystem D.representation
-      D.isNilpotent_representation_rootGenerator γ)
-    D.isCartanWeightVector_basis (t.lie_lieBasis_h_chevalleySystem ht γ)
-    (t.weightDegree_root_neg ht hγ) _
-
-/-- Every element of `D.positivePoints A` acts by a block upper unitriangular matrix on the
-distinct weight blocks of the datum, over any commutative ring `A`. -/
-theorem blockUnitriangular_positivePoints {g : D.points A} (hg : g ∈ D.positivePoints A) :
-    (((g : Matrix.GeneralLinearGroup (Fin D.dim) A) :
-        Matrix (Fin D.dim) (Fin D.dim) A)).BlockUnitriangular
-      (orderedWeightBlock (t.weightDegree ht) D.weight) := by
-  rw [D.positivePoints_eq_closure] at hg
-  induction hg using Subgroup.closure_induction with
-  | mem x hx =>
-    obtain ⟨γ, hγ, u, rfl⟩ := hx
-    exact D.blockUnitriangular_rootSubgroupPoints_of_mem_posRoots A hγ u
-  | one => exact Matrix.blockUnitriangular_one
-  | mul _ _ _ _ hx hy => exact hx.mul hy
-  | inv x _ hx =>
-    rw [Subgroup.coe_inv, Matrix.coe_units_inv]
-    exact hx.inv
-
-/-- Every element of `D.negativePoints A` acts by a block lower unitriangular matrix on the
-distinct weight blocks of the datum, over any commutative ring `A`. -/
-theorem blockUnitriangular_toDual_negativePoints {g : D.points A} (hg : g ∈ D.negativePoints A) :
-    (((g : Matrix.GeneralLinearGroup (Fin D.dim) A) :
-        Matrix (Fin D.dim) (Fin D.dim) A)).BlockUnitriangular
-      (OrderDual.toDual ∘ orderedWeightBlock (t.weightDegree ht) D.weight) := by
-  rw [D.negativePoints_eq_closure] at hg
-  induction hg using Subgroup.closure_induction with
-  | mem x hx =>
-    obtain ⟨γ, hγ, u, rfl⟩ := hx
-    exact D.blockUnitriangular_toDual_rootSubgroupPoints_of_mem_negRoots A hγ u
-  | one => exact Matrix.blockUnitriangular_one
-  | mul _ _ _ _ hx hy => exact hx.mul hy
-  | inv x _ hx =>
-    rw [Subgroup.coe_inv, Matrix.coe_units_inv]
-    exact hx.inv
-
-end BlockUnitriangular
-
-section Field
-
 variable (K : Type v) [Field K]
 
 /-- A Weyl-subgroup element lying in the Borel-type subgroup has trivial Weyl projection. -/
@@ -186,36 +94,29 @@ theorem weylProjection_eq_one_of_mem_borelSubgroup {g : D.weylSubgroup K}
 theorem eq_one_of_mem_positivePoints_of_weylProjection_eq_one {g : D.weylSubgroup K}
     (hgpos : (g : D.points K) ∈ D.positivePoints K) (hproj : D.weylProjection K g = 1) :
     g = 1 := by
-  have hblk := D.blockUnitriangular_positivePoints K hgpos
   have hmat : (((g : D.points K) : Matrix.GeneralLinearGroup (Fin D.dim) K) :
       Matrix (Fin D.dim) (Fin D.dim) K) = 1 := by
     ext r c
     by_cases hw : D.weight r = D.weight c
-    · exact hblk.apply_of_eq ((orderedWeightBlock_eq_iff (t.weightDegree ht) D.weight).mpr hw)
+    · exact D.coe_apply_eq_one_apply_of_mem_positivePoints_of_weight_eq K hgpos hw
     · obtain ⟨s, hs⟩ := exists_torusCharacter_ne (K := AlgebraicClosure K) hw
       let φ := algebraMap K (AlgebraicClosure K)
       let gBar := Matrix.GeneralLinearGroup.map φ
         ((g : D.points K) : Matrix.GeneralLinearGroup (Fin D.dim) K)
-      have hcomm : gBar * diagGL (fun j => torusCharacter s (D.weight j)) =
-          diagGL (fun j => torusCharacter s (D.weight j)) * gBar :=
-        mul_inv_eq_iff_eq_mul.mp <| by
+      have hcomm : Commute
+          (Matrix.diagonal fun j => (torusCharacter s (D.weight j) : AlgebraicClosure K))
+          (gBar : Matrix (Fin D.dim) (Fin D.dim) (AlgebraicClosure K)) := by
+        have hgl := mul_inv_eq_iff_eq_mul.mp <| by
           simpa only [gBar, φ, map_one, MulAut.one_apply] using
             (D.weylProjection_eq_iff K g 1).mp hproj s
-      have hentry := congrArg
-        (fun u : Matrix.GeneralLinearGroup (Fin D.dim) (AlgebraicClosure K) =>
-          (u : Matrix (Fin D.dim) (Fin D.dim) (AlgebraicClosure K)) r c) hcomm
-      simp only [Units.val_mul, diagGL_coe, Matrix.mul_diagonal, Matrix.diagonal_mul,
-        gBar, Matrix.GeneralLinearGroup.map_apply] at hentry
-      have hzero : φ (((g : D.points K) : Matrix.GeneralLinearGroup (Fin D.dim) K) r c) *
-          ((torusCharacter s (D.weight c) : AlgebraicClosure K) -
-            (torusCharacter s (D.weight r) : AlgebraicClosure K)) = 0 := by
-        linear_combination hentry
-      have hne : (torusCharacter s (D.weight c) : AlgebraicClosure K) -
-          (torusCharacter s (D.weight r) : AlgebraicClosure K) ≠ 0 :=
-        sub_ne_zero.mpr (Units.val_inj.not.mpr hs.symm)
+        simpa only [Commute, SemiconjBy, Units.val_mul, diagGL_coe] using
+          (congrArg Units.val hgl).symm
+      have hbar : (gBar : Matrix (Fin D.dim) (Fin D.dim) (AlgebraicClosure K)) r c = 0 :=
+        TauCeti.apply_eq_zero_of_commute_diagonal hcomm (Units.val_inj.not.mpr hs)
       have hrc : (((g : D.points K) : Matrix.GeneralLinearGroup (Fin D.dim) K) :
           Matrix (Fin D.dim) (Fin D.dim) K) r c = 0 :=
-        (map_eq_zero_iff φ φ.injective).mp ((mul_eq_zero.mp hzero).resolve_right hne)
+        (map_eq_zero_iff φ φ.injective).mp
+          (by simpa only [gBar, Matrix.GeneralLinearGroup.map_apply] using hbar)
       rw [hrc, Matrix.one_apply_ne (fun heq => hw (congrArg D.weight heq))]
   exact Subtype.ext (Subtype.ext (Units.ext hmat))
 
@@ -247,7 +148,5 @@ theorem borelSubgroup_inf_weylSubgroup_eq_range_torusPoints :
 theorem weylSubgroup_inf_borelSubgroup_eq_range_torusPoints :
     D.weylSubgroup K ⊓ D.borelSubgroup K = (D.torusPoints K).range := by
   rw [inf_comm, D.borelSubgroup_inf_weylSubgroup_eq_range_torusPoints]
-
-end Field
 
 end TauCeti.DynkinType.ChevalleyDatum

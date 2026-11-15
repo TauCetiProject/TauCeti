@@ -278,6 +278,13 @@ theorem simpleIndex_mem_posRoots (i : Fin t.rank) :
     (RootPairing.Base.isPos_of_mem_support (simpleIndex_mem_support i))
 
 variable {t ht} in
+/-- A simple root is positive with respect to the pinned integral base. -/
+theorem isPos_simplyConnectedBase_simpleIndex (i : Fin t.rank) :
+    (t.simplyConnectedBase ht).IsPos (t.simpleIndex ht i) :=
+  (t.simplyConnectedBase ht).isPos_of_mem_support
+    (by rw [← support_rationalBase]; exact simpleIndex_mem_support i)
+
+variable {t ht} in
 /-- The positive roots split into the roots other than a chosen simple root and that root. -/
 theorem posRoots_eq_diff_union_simpleIndex (i : Fin t.rank) :
     posRoots (t.rationalRootSystem ht) (t.rationalBase ht) =

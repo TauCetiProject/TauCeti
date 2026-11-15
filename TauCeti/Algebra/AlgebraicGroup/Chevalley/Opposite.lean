@@ -191,18 +191,6 @@ theorem negativeSubgroup_inf_positiveSubgroup_sup_range_kostantTorusPoints_eq_bo
     (fun _ hγ => neg_pos.mpr (t.weightDegree_root_neg ht hγ))
     (fun _ hγ => neg_neg_of_pos (t.weightDegree_root_pos ht hγ)) A
 
-/-- The positive point subgroup is the supremum of all positive root subgroups. -/
-theorem positivePoints_eq_iSup (A : Type v) [CommRing A] :
-    D.positivePoints A =
-      ⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht),
-        (D.rootSubgroupPoints γ A).range := by
-  apply le_antisymm
-  · exact D.positivePoints_le_iff.mpr fun γ hγ u =>
-      le_iSup₂ (f := fun γ _ => (D.rootSubgroupPoints γ A).range) γ hγ ⟨u, rfl⟩
-  · refine iSup₂_le fun γ hγ => ?_
-    rintro _ ⟨u, rfl⟩
-    exact D.rootSubgroupPoints_mem_positivePoints A hγ u
-
 /-- The negative subgroup inside the group of datum points, obtained by writing its lattice
 operators in the datum's weight basis. -/
 noncomputable def negativePoints (A : Type v) [CommRing A] : Subgroup (D.points A) :=
@@ -291,62 +279,45 @@ private theorem map_range_torusPoints_subtype (A : Type v) [CommRing A] :
   simp only [Subgroup.mem_map, MonoidHom.mem_range, Subgroup.coe_subtype, exists_exists_eq_and,
     D.coe_torusPoints, basisMatrix_kostantTorusPoints]
 
-/-- In `D.points A`, the positive point subgroup meets the join of the negative point subgroup
-and the actual torus trivially, over every commutative ring. -/
-@[simp]
-theorem positivePoints_inf_negativePoints_sup_range_torusPoints_eq_bot
-    (A : Type v) [CommRing A] :
-    D.positivePoints A ⊓ (D.negativePoints A ⊔ (D.torusPoints A).range) = ⊥ := by
+private theorem inf_sup_range_torusPoints_eq_bot_of_map_subtype {A : Type v} [CommRing A]
+    {P Q : Subgroup (D.points A)}
+    {X Y : Subgroup (LinearMap.GeneralLinearGroup A (A ⊗[ℤ] D.lattice))}
+    (hP : P.map (D.points A).subtype =
+      X.map (Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMulEquiv))
+    (hQ : Q.map (D.points A).subtype =
+      Y.map (Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMulEquiv))
+    (hbot : X ⊓
+      (Y ⊔ (kostantTorusPoints D.lattice D.basis D.coordinateWeight (CommAlgCat.of ℤ A)).range) =
+      ⊥) :
+    P ⊓ (Q ⊔ (D.torusPoints A).range) = ⊥ := by
   let m : LinearMap.GeneralLinearGroup A (A ⊗[ℤ] D.lattice) →*
       Matrix.GeneralLinearGroup (Fin D.dim) A :=
     Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMulEquiv
   have hm : Function.Injective m :=
     Units.map_injective (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).injective
-  rw [eq_bot_iff]
-  rintro g ⟨hgpos, hgneg⟩
-  obtain ⟨u, hu, hut⟩ := D.mem_positivePoints_iff.mp hgpos
-  have hmem : g.val ∈ (D.negativeSubgroup (CommAlgCat.of ℤ A) ⊔
-      (kostantTorusPoints D.lattice D.basis D.coordinateWeight (CommAlgCat.of ℤ A)).range).map m :=
-    by
-      dsimp only [m]
-      rw [Subgroup.map_sup, ← D.map_negativePoints_subtype,
-        ← D.map_range_torusPoints_subtype, ← Subgroup.map_sup]
-      exact Subgroup.mem_map_of_mem _ hgneg
-  obtain ⟨v, hv, hvt⟩ := hmem
-  have huv : u = v := hm (hut.trans hvt.symm)
-  have hubot : u ∈ (⊥ : Subgroup _) := by
-    rw [← D.positiveSubgroup_inf_negativeSubgroup_sup_range_kostantTorusPoints_eq_bot A]
-    exact ⟨hu, huv ▸ hv⟩
-  apply Subtype.ext
-  exact hut.symm.trans ((congrArg m (Subgroup.mem_bot.mp hubot)).trans m.map_one)
+  apply Subgroup.map_injective (D.points A).subtype_injective
+  rw [Subgroup.map_bot, Subgroup.map_inf_eq _ _ _ (D.points A).subtype_injective,
+    Subgroup.map_sup, hP, hQ, D.map_range_torusPoints_subtype,
+    ← Subgroup.map_sup, ← Subgroup.map_inf_eq _ _ _ hm, hbot, Subgroup.map_bot]
+
+/-- In `D.points A`, the positive point subgroup meets the join of the negative point subgroup
+and the actual torus trivially, over every commutative ring. -/
+@[simp]
+theorem positivePoints_inf_negativePoints_sup_range_torusPoints_eq_bot
+    (A : Type v) [CommRing A] :
+    D.positivePoints A ⊓ (D.negativePoints A ⊔ (D.torusPoints A).range) = ⊥ :=
+  D.inf_sup_range_torusPoints_eq_bot_of_map_subtype
+    (D.map_positivePoints_subtype A) (D.map_negativePoints_subtype A)
+    (D.positiveSubgroup_inf_negativeSubgroup_sup_range_kostantTorusPoints_eq_bot A)
 
 /-- In `D.points A`, the negative point subgroup meets the join of the positive point subgroup
 and the actual torus trivially, over every commutative ring. -/
 @[simp]
 theorem negativePoints_inf_positivePoints_sup_range_torusPoints_eq_bot
     (A : Type v) [CommRing A] :
-    D.negativePoints A ⊓ (D.positivePoints A ⊔ (D.torusPoints A).range) = ⊥ := by
-  let m : LinearMap.GeneralLinearGroup A (A ⊗[ℤ] D.lattice) →*
-      Matrix.GeneralLinearGroup (Fin D.dim) A :=
-    Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMulEquiv
-  have hm : Function.Injective m :=
-    Units.map_injective (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).injective
-  rw [eq_bot_iff]
-  rintro g ⟨hgneg, hgpos⟩
-  obtain ⟨u, hu, hut⟩ := D.mem_negativePoints_iff.mp hgneg
-  have hmem : g.val ∈ (D.positiveSubgroup (CommAlgCat.of ℤ A) ⊔
-      (kostantTorusPoints D.lattice D.basis D.coordinateWeight (CommAlgCat.of ℤ A)).range).map m :=
-    by
-      dsimp only [m]
-      rw [Subgroup.map_sup, ← D.map_positivePoints_subtype,
-        ← D.map_range_torusPoints_subtype, ← Subgroup.map_sup]
-      exact Subgroup.mem_map_of_mem _ hgpos
-  obtain ⟨v, hv, hvt⟩ := hmem
-  have huv : u = v := hm (hut.trans hvt.symm)
-  have hubot : u ∈ (⊥ : Subgroup _) := by
-    rw [← D.negativeSubgroup_inf_positiveSubgroup_sup_range_kostantTorusPoints_eq_bot A]
-    exact ⟨hu, huv ▸ hv⟩
-  apply Subtype.ext
-  exact hut.symm.trans ((congrArg m (Subgroup.mem_bot.mp hubot)).trans m.map_one)
+    D.negativePoints A ⊓ (D.positivePoints A ⊔ (D.torusPoints A).range) = ⊥ :=
+  D.inf_sup_range_torusPoints_eq_bot_of_map_subtype
+    (D.map_negativePoints_subtype A) (D.map_positivePoints_subtype A)
+    (D.negativeSubgroup_inf_positiveSubgroup_sup_range_kostantTorusPoints_eq_bot A)
 
 end TauCeti.DynkinType.ChevalleyDatum

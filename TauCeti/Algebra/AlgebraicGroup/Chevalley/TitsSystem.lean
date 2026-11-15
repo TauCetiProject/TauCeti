@@ -39,8 +39,6 @@ times a `-αᵢ`-root element, which `w⁻¹` conjugates to the positive root `-
 
 ## Main results
 
-* `TauCeti.DynkinType.ChevalleyDatum.weylElement_mem_elementarySubgroup`: every Weyl element
-  `n_γ(u)` lies in `D.elementarySubgroup A` over any commutative ring.
 * `TauCeti.DynkinType.ChevalleyDatum.doubleCoset_weylElement_mul_subset`: the Tits multiplication
   inclusion `B nᵢ B * B w B ⊆ B (nᵢ w) B ∪ B w B` in `D.points K`.
 
@@ -60,23 +58,6 @@ namespace TauCeti.DynkinType.ChevalleyDatum
 universe v
 
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
-
-section Ring
-
-variable (A : Type v) [CommRing A]
-
-/-- Every Weyl element `n_γ(u)` lies in the elementary subgroup over any commutative ring. -/
-theorem weylElement_mem_elementarySubgroup (γ : Fin t.numRoots) (u : Aˣ) :
-    D.weylElement γ A u ∈ D.elementarySubgroup A := by
-  rw [D.weylElement_def]
-  exact mul_mem (mul_mem (D.rootSubgroupPoints_mem_elementarySubgroup A _ _)
-    (D.rootSubgroupPoints_mem_elementarySubgroup A _ _))
-    (D.rootSubgroupPoints_mem_elementarySubgroup A _ _)
-
-end Ring
-
-section Field
-
 variable (K : Type v) [Field K]
 
 private theorem inv_conj_rootSubgroupPoints_mem_borelSubgroup (w : D.weylSubgroup K)
@@ -112,8 +93,7 @@ private theorem weylElement_mul_rootSubgroupPoints_mul_mem_of_mem_inversions (i 
     let b := t.simplyConnectedBase ht
     let α := t.simpleIndex ht i
     let u : Kˣ := Units.mk0 a ha
-    have hαpos : b.IsPos α := b.isPos_of_mem_support
-      (by rw [← support_rationalBase]; exact t.simpleIndex_mem_support i)
+    have hαpos : b.IsPos α := isPos_simplyConnectedBase_simpleIndex i
     have hnot : α ∉ inversions P b
         ((D.weylProjection K w)⁻¹ * RootPairing.weylGroup.ofIdx P α) := fun hmem =>
       ((mem_inversions_mul_ofIdx_iff_not_mem P (D.weylProjection K w)⁻¹ b hαpos).mp hmem) hinv
@@ -128,11 +108,9 @@ private theorem weylElement_mul_rootSubgroupPoints_mul_mem_of_mem_inversions (i 
     have hleft : D.rootSubgroupPoints α K (ofAdd (-((u⁻¹ : Kˣ) : K))) *
         D.simpleCorootPoints i K (-u⁻¹) ∈ D.borelSubgroup K := by
       refine mul_mem (D.positivePoints_le_borelSubgroup K
-        (D.rootSubgroupPoints_mem_positivePoints K ?_ _)) ?_
-      · rw [t.posRoots_rationalRootSystem ht, mem_posRoots]
-        exact hαpos
-      · rw [D.simpleCorootPoints_eq_torusPoints]
-        exact D.range_torusPoints_le_borelSubgroup K ⟨_, rfl⟩
+        (D.rootSubgroupPoints_mem_positivePoints K (simpleIndex_mem_posRoots i) _)) ?_
+      rw [D.simpleCorootPoints_eq_torusPoints]
+      exact D.range_torusPoints_le_borelSubgroup K ⟨_, rfl⟩
     have hright : (w : D.points K)⁻¹ *
         (n * D.rootSubgroupPoints α K (ofAdd (-((u⁻¹ : Kˣ) : K))) * n⁻¹) *
         (w : D.points K) ∈ D.borelSubgroup K := by
@@ -163,16 +141,13 @@ private theorem weylElement_mul_rootSubgroupPoints_mul_mem (i : Fin t.rank)
       inversions (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)
         (D.weylProjection K w)⁻¹
   · exact D.weylElement_mul_rootSubgroupPoints_mul_mem_of_mem_inversions K i w hinv a
-  · have hαpos : (t.simplyConnectedBase ht).IsPos (t.simpleIndex ht i) :=
-      (t.simplyConnectedBase ht).isPos_of_mem_support
-        (by rw [← support_rationalBase]; exact t.simpleIndex_mem_support i)
-    have himgPos :
+  · have himgPos :
         (t.simplyConnectedRootDatum ht).weylGroupToPerm (D.weylProjection K w)⁻¹
           (t.simpleIndex ht i) ∈
           posRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
       rw [t.posRoots_rationalRootSystem ht, mem_posRoots]
       by_contra hneg
-      exact hinv ((mem_inversions _ _ _ _).mpr ⟨hαpos, hneg⟩)
+      exact hinv ((mem_inversions _ _ _ _).mpr ⟨isPos_simplyConnectedBase_simpleIndex i, hneg⟩)
     refine Or.inl (DoubleCoset.mem_doubleCoset.mpr
       ⟨1, one_mem _, _, D.inv_conj_rootSubgroupPoints_mem_borelSubgroup K w himgPos a, ?_⟩)
     group
@@ -245,16 +220,15 @@ theorem mem_doubleCoset_subgroupOf_borelSubgroup_iff
 `D.extendedElementarySubgroup K`. -/
 noncomputable def extendedWeylElement (i : Fin t.rank) :
     (D.weylSubgroup K).subgroupOf (D.extendedElementarySubgroup K) :=
-  ⟨⟨D.weylElement (t.simpleIndex ht i) K 1,
-      D.weylSubgroup_le_extendedElementarySubgroup K (D.weylElement_mem_weylSubgroup K i)⟩,
-    D.weylElement_mem_weylSubgroup K i⟩
+  (Subgroup.subgroupOfEquivOfLe (D.weylSubgroup_le_extendedElementarySubgroup K)).symm
+    (D.simpleWeylLift K i)
 
 /-- Coercing `D.extendedWeylElement K i` to `D.points K` recovers the pinned simple Weyl element. -/
 @[simp]
 theorem coe_extendedWeylElement (i : Fin t.rank) :
     (((D.extendedWeylElement K i : D.extendedElementarySubgroup K) : D.points K)) =
-      D.weylElement (t.simpleIndex ht i) K 1 := by
-  rfl
+      D.weylElement (t.simpleIndex ht i) K 1 :=
+  D.coe_simpleWeylLift K i
 
 private instance normal_subgroupOf_borelSubgroup_subgroupOf_weylSubgroup :
     (((D.borelSubgroup K).subgroupOf (D.extendedElementarySubgroup K)).subgroupOf
@@ -309,8 +283,7 @@ private theorem closure_range_extendedWeylElement :
           (D.range_torusPoints_le_borelSubgroup K ⟨s, rfl⟩)))
       rw [h1]
       exact one_mem _
-    · refine ⟨⟨D.weylElement (t.simpleIndex ht i) K 1, D.weylElement_mem_weylSubgroup K i⟩,
-        Subgroup.subset_closure ⟨i, rfl⟩, rfl⟩
+    · exact ⟨D.simpleWeylLift K i, Subgroup.subset_closure ⟨i, rfl⟩, D.coe_simpleWeylLift K i⟩
   refine eq_top_iff.mpr fun q _ => ?_
   obtain ⟨n, rfl⟩ := QuotientGroup.mk_surjective q
   obtain ⟨m, hm, heq⟩ := hle (e n).2
@@ -341,7 +314,8 @@ noncomputable def titsSystem : TauCeti.TitsSystem (D.extendedElementarySubgroup 
     rintro _ ⟨i, rfl⟩
     refine ⟨D.extendedWeylElement K i, rfl, fun w z hz => ?_⟩
     obtain ⟨z₁, hz₁, z₂, hz₂, rfl⟩ := Set.mem_mul.mp hz
-    rw [D.mem_doubleCoset_subgroupOf_borelSubgroup_iff K] at hz₁ hz₂
+    rw [D.mem_doubleCoset_subgroupOf_borelSubgroup_iff K, D.coe_extendedWeylElement] at hz₁
+    rw [D.mem_doubleCoset_subgroupOf_borelSubgroup_iff K] at hz₂
     have hprod := D.doubleCoset_weylElement_mul_subset K i
       ⟨(w : D.extendedElementarySubgroup K), Subgroup.mem_subgroupOf.mp w.2⟩
       (Set.mul_mem_mul hz₁ hz₂)
@@ -350,8 +324,10 @@ noncomputable def titsSystem : TauCeti.TitsSystem (D.extendedElementarySubgroup 
   exists_conj_not_mem := by
     rintro _ ⟨i, rfl⟩
     obtain ⟨b, hb⟩ := D.exists_weylElement_conj_notMem_borelSubgroup K i
-    exact ⟨D.extendedWeylElement K i, rfl,
-      ⟨⟨b.val, D.borelSubgroup_le_extendedElementarySubgroup K b.2⟩, b.2⟩, hb⟩
+    refine ⟨D.extendedWeylElement K i, rfl,
+      ⟨⟨b.val, D.borelSubgroup_le_extendedElementarySubgroup K b.2⟩, b.2⟩, ?_⟩
+    simpa only [Subgroup.mem_subgroupOf, Subgroup.coe_mul, Subgroup.coe_inv,
+      D.coe_extendedWeylElement] using hb
 
 /-- The distinguished subgroup `B` of `D.titsSystem K` is the restriction of `D.borelSubgroup K`. -/
 @[simp]
@@ -380,6 +356,14 @@ theorem coe_titsSystemSubgroupNEquiv (n : (D.titsSystem K).subgroupN) :
       ((n : D.extendedElementarySubgroup K) : D.points K) := by
   rfl
 
+/-- `(D.titsSystemSubgroupNEquiv K).symm` preserves the underlying point in `D.points K`. -/
+@[simp]
+theorem coe_titsSystemSubgroupNEquiv_symm (n : D.weylSubgroup K) :
+    ((((D.titsSystemSubgroupNEquiv K).symm n : (D.titsSystem K).subgroupN) :
+        D.extendedElementarySubgroup K) : D.points K) =
+      (n : D.points K) := by
+  rfl
+
 /-- The `i`-th simple reflection in `(D.titsSystem K).WeylGroup`. -/
 noncomputable def titsSystemSimple (i : Fin t.rank) : (D.titsSystem K).WeylGroup :=
   QuotientGroup.mk (D.extendedWeylElement K i)
@@ -390,12 +374,10 @@ theorem titsSystem_simple :
     (D.titsSystem K).simple = Set.range (D.titsSystemSimple K) := by
   rfl
 
-/-- Transporting the `i`-th pinned simple Weyl element into `(D.titsSystem K).WeylGroup` gives
+/-- Transporting `D.simpleWeylLift K i` into `(D.titsSystem K).WeylGroup` gives
 `D.titsSystemSimple K i`. -/
-theorem titsSystemSubgroupNEquiv_symm_weylElement (i : Fin t.rank) :
-    QuotientGroup.mk
-        ((D.titsSystemSubgroupNEquiv K).symm
-          ⟨D.weylElement (t.simpleIndex ht i) K 1, D.weylElement_mem_weylSubgroup K i⟩) =
+theorem titsSystemSubgroupNEquiv_symm_simpleWeylLift (i : Fin t.rank) :
+    QuotientGroup.mk ((D.titsSystemSubgroupNEquiv K).symm (D.simpleWeylLift K i)) =
       D.titsSystemSimple K i := by
   rfl
 
@@ -469,9 +451,13 @@ theorem elementaryToExtendedWeylGroupEquiv_mk (n : (D.elementaryTitsSystem K).su
       QuotientGroup.mk
         ((D.titsSystemSubgroupNEquiv K).symm
           (D.elementaryTitsSystemSubgroupNToWeylSubgroup K n)) := by
-  unfold elementaryTitsSystem elementaryToExtendedWeylGroupEquiv at *
-  rw [TitsSystem.comapWeylGroupMulEquiv_mk]
-  congr 1
+  refine ((D.titsSystem K).comapWeylGroupMulEquiv_mk
+    (Subgroup.inclusion (D.elementarySubgroup_le_extendedElementarySubgroup K))
+    (D.exists_elementary_mul_mem_titsSystem_inf K) n).trans ?_
+  apply congrArg QuotientGroup.mk
+  apply Subtype.ext
+  apply Subtype.ext
+  simp
 
 /-- The simple reflections of `D.elementaryTitsSystem K` are the preimage of those of
 `D.titsSystem K` under `D.elementaryToExtendedWeylGroupEquiv K`. -/
@@ -491,7 +477,5 @@ theorem elementaryTitsSystem_bruhatCell (w : (D.elementaryTitsSystem K).WeylGrou
   (D.titsSystem K).comap_bruhatCell
     (Subgroup.inclusion (D.elementarySubgroup_le_extendedElementarySubgroup K))
     (D.exists_elementary_mul_mem_titsSystem_inf K) w
-
-end Field
 
 end TauCeti.DynkinType.ChevalleyDatum

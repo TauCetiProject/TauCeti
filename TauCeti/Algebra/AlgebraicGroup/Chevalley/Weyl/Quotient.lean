@@ -129,7 +129,7 @@ noncomputable def weylSubgroupQuotientEquiv :
 @[simp]
 theorem weylSubgroupQuotientEquiv_mk (g : D.weylSubgroup K) :
     D.weylSubgroupQuotientEquiv K (QuotientGroup.mk g) = D.weylProjection K g := by
-  rfl
+  simp [weylSubgroupQuotientEquiv, QuotientGroup.quotientKerEquivOfSurjective]
 
 private noncomputable def titsWeylProjection :
     (D.titsSystem K).subgroupN →* (t.simplyConnectedRootDatum ht).weylGroup :=
@@ -164,7 +164,8 @@ noncomputable def titsSystemWeylGroupEquiv :
 theorem titsSystemWeylGroupEquiv_mk (n : (D.titsSystem K).subgroupN) :
     D.titsSystemWeylGroupEquiv K (QuotientGroup.mk n) =
       D.weylProjection K (D.titsSystemSubgroupNEquiv K n) := by
-  rfl
+  simp [titsSystemWeylGroupEquiv, QuotientGroup.quotientKerEquivOfSurjective]
+  simp [titsWeylProjection]
 
 /-- `D.titsSystemWeylGroupEquiv K` maps the `i`-th Tits simple reflection to the `i`-th simple
 reflection of the root datum. -/
@@ -172,9 +173,8 @@ reflection of the root datum. -/
 theorem titsSystemWeylGroupEquiv_titsSystemSimple (i : Fin t.rank) :
     D.titsSystemWeylGroupEquiv K (D.titsSystemSimple K i) =
       RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i) := by
-  rw [← D.titsSystemSubgroupNEquiv_symm_weylElement K i, D.titsSystemWeylGroupEquiv_mk,
-    MulEquiv.apply_symm_apply]
-  exact D.weylProjection_weylElement K i
+  rw [← D.titsSystemSubgroupNEquiv_symm_simpleWeylLift K i, D.titsSystemWeylGroupEquiv_mk,
+    MulEquiv.apply_symm_apply, D.weylProjection_simpleWeylLift]
 
 /-- `D.titsSystemWeylGroupEquiv K` carries the simple reflections of `D.titsSystem K` onto the
 pinned simple reflections of the root datum. -/
