@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Homotopy.Equiv
+public import TauCeti.Topology.Constructions.Basic
 
 /-!
 # Fibre homotopy equivalences
@@ -27,6 +28,8 @@ equivalence restricts to a homotopy equivalence of the fibres over each point
 * `TauCeti.FiberHomotopyEquiv.ofHomeomorph`: a homeomorphism over `B` as a fibre homotopy
   equivalence.
 * `TauCeti.FiberHomotopyEquiv.compBase`: postcomposing the base projections with `b : C(B, B')`.
+* `TauCeti.FiberHomotopyEquiv.pullback`: base change along `f : C(A, B)` to a fibre homotopy
+  equivalence over `A`.
 * `TauCeti.FiberHomotopyEquiv.fiber`: the homotopy equivalence of the fibres over a point.
 * `TauCeti.FiberHomotopyEquiv.toHomotopyEquiv`: the underlying homotopy equivalence of the total
   spaces.
@@ -86,6 +89,19 @@ theorem fiberMap_comp {p : C(E, B)} {q : C(E', B)} {r : C(E'', B)} (f : C(E, E')
 
 theorem fiberMap_id {p : C(E, B)} (b : B) :
     fiberMap (.id E) (ContinuousMap.comp_id p) b = .id _ :=
+  (rfl)
+
+/-- The map of fibres `p⁻¹(b) → q⁻¹(g b)` induced by a commutative square `q ∘ f = g ∘ p`. -/
+def sqFiberMap {B' : Type*} [TopologicalSpace B'] {p : C(E, B)} {q : C(E', B')}
+    (f : C(E, E')) (g : C(B, B')) (h : q.comp f = g.comp p) (b : B) :
+    C(p ⁻¹' {b}, q ⁻¹' {g b}) :=
+  ⟨fun e ↦ ⟨f e.1, (ContinuousMap.congr_fun h e.1).trans (congrArg g e.2)⟩,
+    (f.continuous.comp continuous_subtype_val).subtype_mk _⟩
+
+@[simp]
+theorem coe_sqFiberMap {B' : Type*} [TopologicalSpace B'] {p : C(E, B)} {q : C(E', B')}
+    (f : C(E, E')) (g : C(B, B')) (h : q.comp f = g.comp p) (b : B) (e : p ⁻¹' {b}) :
+    (sqFiberMap f g h b e : E') = f e.1 :=
   (rfl)
 
 theorem apply_homotopyWith {p : C(E, B)} {f₀ f₁ : C(E, E)}
@@ -281,6 +297,60 @@ theorem compBase_toFun {B' : Type*} [TopologicalSpace B'] {p : C(E, B)} {q : C(E
 theorem compBase_invFun {B' : Type*} [TopologicalSpace B'] {p : C(E, B)} {q : C(E', B)}
     (b : C(B, B')) (Φ : FiberHomotopyEquiv p q) :
     (Φ.compBase b).invFun = Φ.invFun :=
+  (rfl)
+
+private theorem homotopicWith_pullback {A : Type*} [TopologicalSpace A] {p : C(E, B)}
+    {q : C(E', B)} (f : C(A, B)) (Φ : FiberHomotopyEquiv p q) :
+    ((⟨fun x : (⇑f).Pullback ⇑q ↦
+        ⟨(x.1.1, Φ.invFun x.1.2), x.2.trans (ContinuousMap.congr_fun Φ.comp_invFun x.1.2).symm⟩,
+        (continuous_subtype_val.fst.prodMk
+          (Φ.invFun.continuous.comp continuous_subtype_val.snd)).subtype_mk _⟩ :
+        C((⇑f).Pullback ⇑q, (⇑f).Pullback ⇑p)).comp
+      ⟨fun x : (⇑f).Pullback ⇑p ↦
+        ⟨(x.1.1, Φ.toFun x.1.2), x.2.trans (ContinuousMap.congr_fun Φ.comp_toFun x.1.2).symm⟩,
+        (continuous_subtype_val.fst.prodMk
+          (Φ.toFun.continuous.comp continuous_subtype_val.snd)).subtype_mk _⟩).HomotopicWith
+      (.id _)
+      fun h ↦ (ContinuousMap.pullbackFst (⇑f) (⇑p)).comp h =
+        ContinuousMap.pullbackFst (⇑f) (⇑p) :=
+  Φ.left_inv.map fun H ↦
+    { toFun y := ⟨(y.2.1.1, H (y.1, y.2.1.2)),
+        y.2.2.trans (apply_homotopyWith H y.1 y.2.1.2).symm⟩
+      continuous_toFun := (continuous_snd.subtype_val.fst.prodMk
+        (H.continuous.comp (continuous_fst.prodMk continuous_snd.subtype_val.snd))).subtype_mk _
+      map_zero_left x := Subtype.ext (Prod.ext rfl (H.apply_zero x.1.2))
+      map_one_left x := Subtype.ext (Prod.ext rfl (H.apply_one x.1.2))
+      prop' _ := ContinuousMap.ext fun _ ↦ by simp [Function.Pullback.fst] }
+
+/-- Base change along `f : C(A, B)` carries a fibre homotopy equivalence over `B` to one over
+`A`. -/
+def pullback {A : Type*} [TopologicalSpace A] {p : C(E, B)} {q : C(E', B)}
+    (f : C(A, B)) (Φ : FiberHomotopyEquiv p q) :
+    FiberHomotopyEquiv (ContinuousMap.pullbackFst (⇑f) (⇑p))
+      (ContinuousMap.pullbackFst (⇑f) (⇑q)) where
+  toFun := ⟨fun x ↦ ⟨(x.1.1, Φ.toFun x.1.2),
+      x.2.trans (ContinuousMap.congr_fun Φ.comp_toFun x.1.2).symm⟩,
+    (continuous_subtype_val.fst.prodMk
+      (Φ.toFun.continuous.comp continuous_subtype_val.snd)).subtype_mk _⟩
+  invFun := ⟨fun x ↦ ⟨(x.1.1, Φ.invFun x.1.2),
+      x.2.trans (ContinuousMap.congr_fun Φ.comp_invFun x.1.2).symm⟩,
+    (continuous_subtype_val.fst.prodMk
+      (Φ.invFun.continuous.comp continuous_subtype_val.snd)).subtype_mk _⟩
+  comp_toFun := ContinuousMap.ext fun _ ↦ by simp [Function.Pullback.fst]
+  comp_invFun := ContinuousMap.ext fun _ ↦ by simp [Function.Pullback.fst]
+  left_inv := homotopicWith_pullback f Φ
+  right_inv := homotopicWith_pullback f Φ.symm
+
+@[simp]
+theorem coe_pullback_toFun_apply {A : Type*} [TopologicalSpace A] {p : C(E, B)} {q : C(E', B)}
+    (f : C(A, B)) (Φ : FiberHomotopyEquiv p q) (x : (⇑f).Pullback ⇑p) :
+    ((Φ.pullback f).toFun x).1 = (x.1.1, Φ.toFun x.1.2) :=
+  (rfl)
+
+@[simp]
+theorem coe_pullback_invFun_apply {A : Type*} [TopologicalSpace A] {p : C(E, B)} {q : C(E', B)}
+    (f : C(A, B)) (Φ : FiberHomotopyEquiv p q) (x : (⇑f).Pullback ⇑q) :
+    ((Φ.pullback f).invFun x).1 = (x.1.1, Φ.invFun x.1.2) :=
   (rfl)
 
 end FiberHomotopyEquiv
