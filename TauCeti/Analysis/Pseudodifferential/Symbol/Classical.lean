@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 public import Mathlib.LinearAlgebra.Isomorphisms
 public import TauCeti.Analysis.Pseudodifferential.Elliptic
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Homogeneous
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Map
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Pseudodifferential.Symbol.HighFrequency
 
@@ -79,6 +80,9 @@ and proves:
   orders `m` and `m - 1`, and their homogeneous terms are the derivatives of those of `a`. These
   are the factors `∂_ξ^α a` and `∂_x^α b` of the terms of the composition expansion
   `∑_α (1 / α!) ∂_ξ^α a D_x^α b`;
+* `TauCeti.ClassicalSymbol.map`: the image `(x, ξ) ↦ Φ (a(x, ξ))` under a continuous real-linear
+  map `Φ` of the coefficient spaces, such as the pointwise adjoint, is classical of the same order,
+  with the images of the homogeneous terms of `a` as its terms;
 * `TauCeti.ClassicalSymbol.IsElliptic`: ellipticity, the invertibility of the principal symbol at
   every nonzero frequency; its pointwise inverse is the homogeneous symbol
   `TauCeti.HomogeneousSymbol.inverse` of degree `-m`. By
@@ -1008,6 +1012,54 @@ theorem principal_frequencyDeriv (j : Fin n) (a : ClassicalSymbol n V W m) :
   HomogeneousSymbol.ext_of_ne_zero fun x ξ hξ => by simp [hξ]
 
 end Deriv
+
+/-! ### Images under maps of the coefficient spaces -/
+
+section Map
+
+variable {V' W' : Type*} [NormedAddCommGroup V'] [NormedSpace ℂ V'] [NormedAddCommGroup W']
+  [NormedSpace ℂ W'] (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W'))
+
+/-- The image `(x, ξ) ↦ Φ (a(x, ξ))` of a classical symbol under a continuous real-linear map `Φ`
+of the coefficient spaces, such as the pointwise adjoint `T ↦ T†` between Hilbert spaces: a
+classical symbol of the same order, whose homogeneous terms are the images `Φ ∘ a_{m-j}` of those
+of `a`. -/
+def map (a : ClassicalSymbol n V W m) : ClassicalSymbol n V' W' m where
+  toSymbol := a.toSymbol.map Φ
+  term j := (a.term j).map Φ
+  exists_remainder' := ⟨default, fun N => ⟨(a.remainder default N).map Φ, fun p => by
+    simp [map_sum, map_smul]⟩⟩
+
+variable (a : ClassicalSymbol n V W m)
+
+@[simp]
+theorem toSymbol_map : (a.map Φ).toSymbol = a.toSymbol.map Φ :=
+  (rfl)
+
+@[simp]
+theorem term_map (j : ℕ) : (a.map Φ).term j = (a.term j).map Φ :=
+  (rfl)
+
+/-- The principal symbol of the image of a classical symbol is the image of its principal
+symbol. -/
+@[simp]
+theorem principal_map : (a.map Φ).principal = a.principal.map Φ := by
+  ext1
+  funext z
+  simp
+
+/-- Spatial derivatives commute with the image under a continuous linear map. -/
+@[simp]
+theorem spatialDeriv_map (j : Fin n) : spatialDeriv j (a.map Φ) = (spatialDeriv j a).map Φ :=
+  ext (Symbol.spatialDeriv_map Φ a.toSymbol j)
+
+/-- Frequency derivatives commute with the image under a continuous linear map. -/
+@[simp]
+theorem frequencyDeriv_map (j : Fin n) :
+    frequencyDeriv j (a.map Φ) = (frequencyDeriv j a).map Φ :=
+  ext (Symbol.frequencyDeriv_map Φ a.toSymbol j)
+
+end Map
 
 /-! ### Elliptic classical symbols -/
 

@@ -65,6 +65,9 @@ The file develops:
   (`HomogeneousSymbol.exists_norm_iteratedFDeriv_sub_smul_coefficient_le`);
 * on an inner product space, the symbol `HomogeneousSymbol.normRpow`, which is `‖ξ‖ ^ m` times
   the identity and is homogeneous of every real degree `m`.
+* the image `HomogeneousSymbol.map Φ a`, `(x, ξ) ↦ Φ (a (x, ξ))`, under a continuous real-linear
+  map `Φ` of the coefficient spaces, of the same degree; it commutes with the spatial and frequency
+  derivatives (`HomogeneousSymbol.spatialDeriv_map`, `HomogeneousSymbol.frequencyDeriv_map`).
 * between Hilbert spaces, the pointwise adjoint `HomogeneousSymbol.adjoint`,
   `(x, ξ) ↦ a (x, ξ)†`, of the same degree; it reverses composition
   (`HomogeneousSymbol.adjoint_comp`).
@@ -994,6 +997,64 @@ theorem normRpow_comp_normRpow (m m' : ℝ) :
 
 end HomogeneousSymbol
 
+/-! ### Images under maps of the coefficient spaces -/
+
+namespace HomogeneousSymbol
+
+variable {X E : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup E]
+  [NormedSpace ℝ E] {V W V' W' : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
+  [NormedAddCommGroup W] [NormedSpace ℂ W] [NormedAddCommGroup V'] [NormedSpace ℂ V']
+  [NormedAddCommGroup W'] [NormedSpace ℂ W'] {m m' : ℝ}
+  (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W'))
+
+/-- The image `(x, ξ) ↦ Φ (a (x, ξ))` of a homogeneous symbol under a continuous real-linear map
+`Φ` of the coefficient spaces, such as the pointwise adjoint `T ↦ T†` between Hilbert spaces.
+Since positive homogeneity only involves real scalars, it is a homogeneous symbol of the same
+degree. -/
+noncomputable def map (a : HomogeneousSymbol X E V W m) : HomogeneousSymbol X E V' W' m where
+  coefficient := Φ ∘ a.coefficient
+  zero_covector x := by simp
+  contDiffOn_coefficient := Φ.contDiff.comp_contDiffOn a.contDiffOn_coefficient
+  homogeneous x ξ t ht := by
+    rw [Function.comp_apply, a.homogeneous x ξ t ht, map_smul, Function.comp_apply]
+
+@[simp]
+theorem coefficient_map (a : HomogeneousSymbol X E V W m) (p : X × E) :
+    (a.map Φ).coefficient p = Φ (a.coefficient p) :=
+  (rfl)
+
+@[simp]
+theorem map_castDegree (h : m = m') (a : HomogeneousSymbol X E V W m) :
+    (a.castDegree h).map Φ = (a.map Φ).castDegree h :=
+  (rfl)
+
+/-- Away from the zero frequency, the derivative of `Φ ∘ a` is `Φ` applied to the derivative
+of `a`. -/
+private theorem fderiv_coefficient_map (a : HomogeneousSymbol X E V W m) {p : X × E}
+    (hp : p.2 ≠ 0) (q : X × E) :
+    fderiv ℝ (a.map Φ).coefficient p q = Φ (fderiv ℝ a.coefficient p q) := by
+  rw [show (a.map Φ).coefficient = Φ ∘ a.coefficient from funext (coefficient_map Φ a),
+    fderiv_comp p Φ.differentiableAt (a.differentiableAt_coefficient hp), Φ.fderiv,
+    ContinuousLinearMap.comp_apply]
+
+/-- Spatial derivatives commute with the image under a continuous linear map. -/
+@[simp]
+theorem spatialDeriv_map (a : HomogeneousSymbol X E V W m) (v : X) :
+    (a.map Φ).spatialDeriv v = (a.spatialDeriv v).map Φ :=
+  ext_of_ne_zero fun x ξ hξ ↦ by
+    simp only [coefficient_spatialDeriv_eq_fderiv _ _, coefficient_map,
+      fderiv_coefficient_map Φ a (p := (x, ξ)) hξ]
+
+/-- Frequency derivatives commute with the image under a continuous linear map. -/
+@[simp]
+theorem frequencyDeriv_map (a : HomogeneousSymbol X E V W m) (w : E) :
+    (a.map Φ).frequencyDeriv w = (a.frequencyDeriv w).map Φ :=
+  ext_of_ne_zero fun x ξ hξ ↦ by
+    simp only [coefficient_frequencyDeriv_eq_fderiv _ _ hξ, coefficient_map,
+      fderiv_coefficient_map Φ a (p := (x, ξ)) hξ]
+
+end HomogeneousSymbol
+
 /-! ### Pointwise adjoints -/
 
 namespace HomogeneousSymbol
@@ -1018,6 +1079,11 @@ noncomputable def adjoint (a : HomogeneousSymbol X E V W m) : HomogeneousSymbol 
 theorem coefficient_adjoint (a : HomogeneousSymbol X E V W m) (p : X × E) :
     a.adjoint.coefficient p = ContinuousLinearMap.adjoint (a.coefficient p) :=
   ContinuousLinearMap.adjointRealCLM_apply _
+
+/-- The pointwise adjoint is the image under the real-linear adjoint map `T ↦ T†`. -/
+theorem map_adjointRealCLM (a : HomogeneousSymbol X E V W m) :
+    a.map ContinuousLinearMap.adjointRealCLM = a.adjoint :=
+  (rfl)
 
 @[simp]
 theorem adjoint_adjoint (a : HomogeneousSymbol X E V W m) : a.adjoint.adjoint = a := by
@@ -1045,6 +1111,18 @@ theorem adjoint_sub (a b : HomogeneousSymbol X E V W m) :
 theorem adjoint_castDegree (h : m = m') (a : HomogeneousSymbol X E V W m) :
     (a.castDegree h).adjoint = a.adjoint.castDegree h :=
   (rfl)
+
+/-- Spatial derivatives commute with the pointwise adjoint. -/
+@[simp]
+theorem spatialDeriv_adjoint (a : HomogeneousSymbol X E V W m) (v : X) :
+    a.adjoint.spatialDeriv v = (a.spatialDeriv v).adjoint := by
+  rw [← map_adjointRealCLM, spatialDeriv_map, map_adjointRealCLM]
+
+/-- Frequency derivatives commute with the pointwise adjoint. -/
+@[simp]
+theorem frequencyDeriv_adjoint (a : HomogeneousSymbol X E V W m) (w : E) :
+    a.adjoint.frequencyDeriv w = (a.frequencyDeriv w).adjoint := by
+  rw [← map_adjointRealCLM, frequencyDeriv_map, map_adjointRealCLM]
 
 /-- The adjoint of a composition is the composition of the adjoints in the reverse order, up to
 transport of the degree. -/
