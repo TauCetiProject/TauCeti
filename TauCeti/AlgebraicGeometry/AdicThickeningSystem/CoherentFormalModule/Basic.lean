@@ -74,6 +74,9 @@ scheme reduce to affine opens, where it is described by finite modules over the 
 * `AlgebraicGeometry.Scheme.formalCompletion.isIso_iff_of_isOpenCover`: a morphism of coherent
   formal modules on `X/V(I)` is an isomorphism if and only if its restrictions to the formal
   completions of the members of an open cover of `X` are.
+* `AlgebraicGeometry.Scheme.formalCompletion.completionFunctor_bot_faithful`,
+  `AlgebraicGeometry.Scheme.formalCompletion.completionFunctor_bot_full`: along `V(⊥) = X`, the
+  completion functor is full and faithful.
 
 ## References
 
@@ -514,5 +517,48 @@ theorem isIso_iff_of_isOpenCover {ι : Type*} {U : ι → X.Opens}
   CoherentFormalModule.isIso_iff_of_isOpenCover_opensRange _ (fun n ↦ by
     simp only [opensRange_map_app, Scheme.Opens.opensRange_ι]
     exact hU.comap (toScheme X I n).base.hom) φ
+
+private lemma faithful_modules_pullback_of_isIso {Y Z : Scheme.{u}} (g : Y ⟶ Z) [IsIso g] :
+    (Modules.pullback g).Faithful :=
+  have e : Modules.pullback g ⋙ Modules.pullback (inv g) ≅ 𝟭 Z.Modules :=
+    Modules.pullbackComp (inv g) g ≪≫
+      Modules.pullbackCongr (IsIso.inv_hom_id g) ≪≫
+      Modules.pullbackId Z
+  Functor.Faithful.of_comp_iso e
+
+/-- Along `V(⊥) = X`, every level `V(⊥ ^ (n + 1)) ⟶ X` is an isomorphism, so the completion functor
+is faithful. -/
+instance completionFunctor_bot_faithful : (completionFunctor X ⊥).Faithful where
+  map_injective {M N} φ ψ h := by
+    have := faithful_modules_pullback_of_isIso (toScheme X ⊥ 0)
+    exact ObjectProperty.hom_ext _
+      ((Modules.pullback (toScheme X ⊥ 0)).map_injective (congrArg (·.app 0) h))
+
+/-- Along `V(⊥) = X`, every level `V(⊥ ^ (n + 1)) ⟶ X` is an isomorphism, so the completion functor
+is full. -/
+instance completionFunctor_bot_full : (completionFunctor X ⊥).Full where
+  map_surjective {M N} f := by
+    have := faithful_modules_pullback_of_isIso (inv (toScheme X ⊥ 0))
+    have e₀ : Modules.pullback (toScheme X ⊥ 0) ⋙ Modules.pullback (inv (toScheme X ⊥ 0)) ≅
+        𝟭 X.Modules :=
+      Modules.pullbackComp (inv (toScheme X ⊥ 0)) (toScheme X ⊥ 0) ≪≫
+        Modules.pullbackCongr (IsIso.inv_hom_id (toScheme X ⊥ 0)) ≪≫
+        Modules.pullbackId X
+    have := Functor.Full.of_comp_faithful_iso e₀
+    obtain ⟨ψ, hψ⟩ := (Modules.pullback (toScheme X ⊥ 0)).map_surjective (f.app 0)
+    refine ⟨ObjectProperty.homMk ψ, CoherentFormalModule.hom_ext fun n ↦ ?_⟩
+    induction n with
+    | zero => exact hψ
+    | succ n ih =>
+      have : IsIso ((X.formalCompletion ⊥).ι n) := by
+        have hcomp : IsIso ((X.formalCompletion ⊥).ι n ≫ toScheme X ⊥ (n + 1)) := by
+          rw [ι_toScheme]
+          infer_instance
+        exact IsIso.of_isIso_comp_right ((X.formalCompletion ⊥).ι n) (toScheme X ⊥ (n + 1))
+      have := faithful_modules_pullback_of_isIso ((X.formalCompletion ⊥).ι n)
+      apply (Modules.pullback ((X.formalCompletion ⊥).ι n)).map_injective
+      rw [← cancel_mono (((completionFunctor X ⊥).obj N).transitionIso n).hom]
+      exact (((completionFunctor X ⊥).map (ObjectProperty.homMk ψ)).naturality n).trans
+        ((congrArg (_ ≫ ·) ih).trans (f.naturality n).symm)
 
 end AlgebraicGeometry.Scheme.formalCompletion
