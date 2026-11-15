@@ -186,45 +186,26 @@ theorem isometryEquiv_image_iff {e : X ≃ᵢ Y} :
     CountablyRectifiable k (e '' s) ↔ CountablyRectifiable k s :=
   isometry_image_iff e.isometry
 
-/-- Every singleton is countably `k`-rectifiable, as the image of a constant patch. -/
+/-- Every singleton is countably `k`-rectifiable. -/
 @[simp]
 theorem singleton (x : X) : CountablyRectifiable k ({x} : Set X) := by
   simpa only [range_const] using
     of_lipschitzWith (A := univ) (f := fun _ ↦ x) (K := 0) (LipschitzWith.const' x)
 
 /-- Countable rectifiability is monotone in the dimension: every countably `m`-rectifiable set is
-countably `k`-rectifiable for every `k ≥ m`, by precomposing each patch with the surjective
-`1`-Lipschitz coordinate restriction `ℝᵏ → ℝᵐ`. -/
+countably `k`-rectifiable for every `k ≥ m`. -/
 theorem mono_dim {m : ℕ} (hs : CountablyRectifiable m s) (hmk : m ≤ k) :
     CountablyRectifiable k s := by
   classical
   obtain ⟨A, f, hf, hcover⟩ := hs
   choose K hK using hf
-  let π : EuclideanSpace ℝ (Fin k) → EuclideanSpace ℝ (Fin m) :=
-    fun x ↦ WithLp.toLp 2 (fun j ↦ x.ofLp (Fin.castLE hmk j))
-  have hπ_lip : LipschitzWith 1 π := fun x y ↦ by
-    rw [ENNReal.coe_one, one_mul, PiLp.edist_eq_of_L2, PiLp.edist_eq_of_L2]
-    refine ENNReal.rpow_le_rpow ?_ (by positivity)
-    simpa only [Finset.sum_map, Fin.castLEEmb_apply] using
-      Finset.sum_le_univ_sum_of_nonneg (s := Finset.univ.map (Fin.castLEEmb hmk))
-        (f := fun i : Fin k ↦ edist (x i) (y i) ^ 2) (fun _ ↦ zero_le)
-  have hπ_surj : Function.Surjective π := fun z ↦ by
-    refine ⟨WithLp.toLp 2 (fun i : Fin k ↦ if hi : (i : ℕ) < m then z.ofLp ⟨i, hi⟩ else 0), ?_⟩
-    ext j
-    simp [π, j.is_lt]
-  let B (i : ℕ) : Set (EuclideanSpace ℝ (Fin k)) := π ⁻¹' A i
-  let g (i : ℕ) : B i → X := fun x ↦ f i ⟨π x, x.2⟩
+  let ι := LinearIsometry.piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb hmk)
+  let e (i : ℕ) := (ι.isometry.comp (isometry_subtype_coe (s := A i))).isometryEquivOnRange
+  let B (i : ℕ) : Set (EuclideanSpace ℝ (Fin k)) := range fun x : A i ↦ ι x
+  let g (i : ℕ) : B i → X := f i ∘ (e i).symm
   refine ⟨B, g, fun i ↦ ⟨K i, ?_⟩, ?_⟩
-  · have hsub : LipschitzWith 1 (fun x : B i ↦ (⟨π x, x.2⟩ : A i)) := by
-      simpa only [mul_one, Function.comp_def] using
-        (hπ_lip.comp (LipschitzWith.subtype_val (B i))).subtype_mk fun x ↦ x.2
-    simpa only [mul_one, Function.comp_def, g] using (hK i).comp hsub
-  · have hrange (i : ℕ) : range (g i) = range (f i) := by
-      ext y
-      refine ⟨by rintro ⟨x, rfl⟩; exact ⟨⟨π x, x.2⟩, rfl⟩, ?_⟩
-      rintro ⟨u, rfl⟩
-      obtain ⟨x, hx⟩ := hπ_surj u
-      exact ⟨⟨x, by simp [B, hx]⟩, by simp [g, hx]⟩
+  · simpa only [mul_one] using (hK i).comp (e i).symm.isometry.lipschitzWith
+  · have hrange (i : ℕ) : range (g i) = range (f i) := (e i).symm.surjective.range_comp (f i)
     simp_rw [hrange]
     rw [Measure.euclideanHausdorffMeasure_eq_zero_iff] at hcover ⊢
     exact nonpos_iff_eq_zero.1

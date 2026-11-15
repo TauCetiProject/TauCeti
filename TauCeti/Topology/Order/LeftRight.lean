@@ -16,7 +16,9 @@ time `t ≤ T` only if it already exceeds `a` at `T`, at some point of a given d
 `T`, or at some point below `T` isolated on the right. So the supremum of `g` over `(-∞, T]` is
 its supremum over `{T} ∪ ((D ∪ C) ∩ (-∞, T])`, where `C` is the set of points isolated on the
 right. In a second countable space `D` may be taken countable and `C` is countable, so this
-replaces a supremum over uncountably many times by a countable one.
+replaces a supremum over uncountably many times by a countable one. Likewise, for a function into
+a regular space that is eventually right-continuous along `𝓝[>] a`, convergence along `𝓝[>] a` is
+equivalent to convergence along `𝓝[(D ∪ C) ∩ (a, ∞)] a`.
 
 ## Main declarations
 
@@ -24,6 +26,9 @@ replaces a supremum over uncountably many times by a countable one.
   by a value above `a` at `T` or at a point of `(D ∪ C) ∩ (-∞, T]`.
 * `TopologicalSpace.exists_countable_subset_Iic_exists_mem_lt`: in a second countable space,
   one countable set of times `≤ T` serves for every function right-continuous before `T`.
+* `Dense.tendsto_nhdsGT_iff`: for `g` eventually right-continuous along `𝓝[>] a` into a regular
+  space, convergence to `c` along `𝓝[>] a` is equivalent to convergence along
+  `𝓝[(D ∪ C) ∩ Ioi a] a`.
 * `TauCeti.le_of_forall_rat_add_le`: a function right-continuous at `t + h` that does not
   increase along rational increments from `t` does not increase along the real increment `h`.
 -/
@@ -66,6 +71,48 @@ theorem TopologicalSpace.exists_countable_subset_Iic_exists_mem_lt [SecondCounta
     ((hDc.union countable_setOfPred_covBy_right).mono inter_subset_left).insert T,
     insert_subset_iff.2 ⟨le_rfl, inter_subset_right⟩,
     fun _ hg _ htT _ ha ↦ hD.exists_mem_insert_inter_Iic_lt hg htT ha⟩
+
+section RegularSpace
+
+open Filter
+open scoped Topology
+
+/-- If `g : ι → E` into a regular space is eventually right-continuous along `𝓝[>] a` and `D` is
+dense in `ι`, then `g` tends to `c` along `𝓝[>] a` if and only if it tends to `c` along
+`𝓝[(D ∪ C) ∩ Ioi a] a`, where `C = {x | ∃ y, x ⋖ y}` is the set of points isolated on the
+right. -/
+theorem Dense.tendsto_nhdsGT_iff {E : Type*} [TopologicalSpace E] [RegularSpace E]
+    {D : Set ι} (hD : Dense D) {a : ι} {g : ι → E} {c : E}
+    (hg : ∀ᶠ r in 𝓝[>] a, ContinuousWithinAt g (Ioi r) r) :
+    Tendsto g (𝓝[>] a) (𝓝 c) ↔
+      Tendsto g (𝓝[(D ∪ {x | ∃ y, x ⋖ y}) ∩ Ioi a] a) (𝓝 c) := by
+  refine ⟨fun h ↦ h.mono_left (nhdsWithin_mono a inter_subset_right), fun h ↦ ?_⟩
+  obtain hbot | hne := eq_or_neBot (𝓝[>] a)
+  · simp [hbot]
+  obtain ⟨b₀, hb₀⟩ := Filter.nonempty_of_mem (self_mem_nhdsWithin (a := a) (s := Ioi a))
+  obtain ⟨b, hb, hrc⟩ := (mem_nhdsGT_iff_exists_Ioo_subset' hb₀).1 hg
+  refine (closed_nhds_basis c).tendsto_right_iff.2 ?_
+  rintro V ⟨hVc, hVclosed⟩
+  obtain ⟨W, hW, hWV⟩ := mem_nhdsWithin_iff_exists_mem_nhds_inter.1 (h hVc)
+  obtain ⟨u, hu, huW⟩ := (mem_nhdsGT_iff_exists_Ioo_subset' hb).1 (mem_nhdsWithin_of_mem_nhds hW)
+  set m : ι := min u b
+  refine mem_of_superset (Ioo_mem_nhdsGT (lt_min hu hb)) fun r hr ↦ ?_
+  by_contra hrV
+  have hr_rc : ContinuousWithinAt g (Ioi r) r :=
+    hrc ⟨hr.1, hr.2.trans_le (min_le_right u b)⟩
+  obtain ⟨v, hv, hvV⟩ := (mem_nhdsGT_iff_exists_Ioo_subset' hr.2).1
+    (hr_rc.preimage_mem_nhdsWithin (hVclosed.isOpen_compl.mem_nhds hrV))
+  by_cases hne_Ioo : (Ioo r (min v m)).Nonempty
+  · obtain ⟨d, hd, hdD⟩ := hD.inter_open_nonempty _ isOpen_Ioo hne_Ioo
+    have hd_u : d ∈ Ioo a u :=
+      ⟨hr.1.trans hd.1, (hd.2.trans_le (min_le_right v m)).trans_le (min_le_left u b)⟩
+    exact hvV ⟨hd.1, hd.2.trans_le (min_le_left v m)⟩ (hWV ⟨huW hd_u, Or.inl hdD, hd_u.1⟩)
+  · have hcov : r ⋖ min v m :=
+      covBy_iff_Ioo_eq.2 ⟨lt_min hv hr.2, not_nonempty_iff_eq_empty.1 hne_Ioo⟩
+    have hr_u : r ∈ Ioo a u := ⟨hr.1, hr.2.trans_le (min_le_left u b)⟩
+    exact hrV (hWV ⟨huW hr_u, Or.inr ⟨_, hcov⟩, hr.1⟩)
+
+end RegularSpace
 
 section Rational
 

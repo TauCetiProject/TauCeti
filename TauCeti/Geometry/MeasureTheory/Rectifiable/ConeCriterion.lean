@@ -9,7 +9,7 @@ public import TauCeti.Geometry.MeasureTheory.Rectifiable.Basic
 public import Mathlib.Analysis.InnerProductSpace.Basic
 import TauCeti.Geometry.MeasureTheory.Rectifiable.Subspace
 import Mathlib.Analysis.InnerProductSpace.PiL2
-import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
 # The geometric cone criterion for countable rectifiability
@@ -66,8 +66,7 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
 /-- **Single-cone rectifiability.** If `P` is a finite-dimensional subspace of a real inner product
 space `V`, `θ < 1`, and `infDist (y - x) P ≤ θ ‖y - x‖` for all `x, y ∈ s`, then `s` is countably
-`(dim P)`-rectifiable: orthogonal projection onto `P` is antilipschitz on `s`, so `s` is a Lipschitz
-image of a subset of `P`. -/
+`(dim P)`-rectifiable. -/
 theorem of_forall_infDist_sub_le {s : Set V} (P : Submodule ℝ V) [FiniteDimensional ℝ P]
     {θ : ℝ} (hθ : θ < 1)
     (hs : ∀ x ∈ s, ∀ y ∈ s, infDist (y - x) (P : Set V) ≤ θ * ‖y - x‖) :
@@ -77,13 +76,11 @@ theorem of_forall_infDist_sub_le {s : Set V} (P : Submodule ℝ V) [FiniteDimens
   · exact empty
   set θ' : ℝ := max θ 0
   have hθ'1 : 0 < 1 - θ' := sub_pos.2 (max_lt hθ zero_lt_one)
-  let c : ℝ≥0 := ⟨1 - θ', hθ'1.le⟩
+  let c : ℝ≥0 := Real.toNNReal (1 - θ')
   let f : s → P := s.domRestrict P.orthogonalProjectionOnto
   have hanti : AntilipschitzWith c⁻¹ f := by
     refine AntilipschitzWith.of_le_mul_dist fun x y ↦ ?_
-    rw [NNReal.coe_inv, ← div_eq_inv_mul]
-    change dist x y ≤ dist (f x) (f y) / (1 - θ')
-    rw [le_div_iff₀' hθ'1]
+    rw [NNReal.coe_inv, Real.coe_toNNReal _ hθ'1.le, ← div_eq_inv_mul, le_div_iff₀' hθ'1]
     have hdist : ‖(y : V) - x - P.starProjection ((y : V) - x)‖ ≤ θ' * ‖(y : V) - x‖ := by
       rw [← dist_eq_norm, P.dist_starProjection_eq_infDist]
       exact (hs x x.2 y y.2).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _))
@@ -109,26 +106,6 @@ theorem of_forall_infDist_sub_le {s : Set V} (P : Submodule ℝ V) [FiniteDimens
   rw [← himg]
   exact (of_finiteDimensional (range f)).image hlip
 
-omit [MeasurableSpace V] [BorelSpace V] in
-/-- Perturbing a subspace `P₁` to `P₂` within `ε` in projection operator norm increases the relative
-distance of a vector `w` to the subspace by at most `ε`. -/
-private theorem infDist_le_of_opNorm_starProjection_sub_le
-    {P₁ P₂ : Submodule ℝ V} [P₁.HasOrthogonalProjection] [P₂.HasOrthogonalProjection]
-    {w : V} {θ₀ ε : ℝ} (hw : infDist w (P₁ : Set V) ≤ θ₀ * ‖w‖)
-    (hdiff : ‖P₁.starProjection - P₂.starProjection‖ ≤ ε) :
-    infDist w (P₂ : Set V) ≤ (θ₀ + ε) * ‖w‖ := by
-  have hw' : ‖w - P₁.starProjection w‖ ≤ θ₀ * ‖w‖ := by
-    rwa [← dist_eq_norm, P₁.dist_starProjection_eq_infDist]
-  have hvec : ‖P₁.starProjection w - P₂.starProjection w‖ ≤ ε * ‖w‖ := by
-    simpa only [sub_apply] using (P₁.starProjection - P₂.starProjection).le_of_opNorm_le hdiff w
-  rw [← P₂.dist_starProjection_eq_infDist, dist_eq_norm]
-  calc ‖w - P₂.starProjection w‖
-      ≤ ‖w - P₁.starProjection w‖ + ‖P₁.starProjection w - P₂.starProjection w‖ := by
-        simpa only [sub_add_sub_cancel] using
-          norm_add_le (w - P₁.starProjection w) (P₁.starProjection w - P₂.starProjection w)
-    _ ≤ θ₀ * ‖w‖ + ε * ‖w‖ := add_le_add hw' hvec
-    _ = (θ₀ + ε) * ‖w‖ := (add_mul θ₀ ε ‖w‖).symm
-
 /-- On a stratum where every point `x ∈ T` has a `d`-dimensional subspace `P x`, radius at least
 `r₀ > 0`, and cone constant at most `θ₀ < 1`, the set `T` is countably `d`-rectifiable. -/
 private theorem of_stratum [SecondCountableTopology V] {d : ℕ} {T : Set V}
@@ -142,6 +119,8 @@ private theorem of_stratum [SecondCountableTopology V] {d : ℕ} {T : Set V}
     (stdOrthonormalBasis ℝ (P x)).reindex (finCongr (hdim x))
   let u (x : T) : Fin d → V := fun i ↦ b x i
   let Φ : (Fin d → V) → (V →L[ℝ] V) := fun v ↦ ∑ i : Fin d, InnerProductSpace.rankOne ℝ (v i) (v i)
+  have hΦu (x : T) : (P x).starProjection = Φ (u x) := by
+    simp only [Φ, u, (b x).starProjection_eq_sum_rankOne]
   have hΦ : Continuous Φ := continuous_finsetSum _ fun i _ ↦
     ((InnerProductSpace.rankOne ℝ).continuous.comp (continuous_apply i)).clm_apply
       (continuous_apply i)
@@ -173,13 +152,17 @@ private theorem of_stratum [SecondCountableTopology V] {d : ℕ} {T : Set V}
   obtain ⟨hpT, hpu⟩ := hp.1
   have hpq : dist q p < r₀ := (dist_triangle_right q p z.1).trans_lt
     ((add_lt_add hq.2 hp.2).trans_eq (add_halves r₀))
-  have hdiff : ‖(P ⟨p, hpT⟩).starProjection - (P (x₀ v)).starProjection‖ ≤ ε := by
-    rw [(b ⟨p, hpT⟩).starProjection_eq_sum_rankOne, (b (x₀ v)).starProjection_eq_sum_rankOne]
-    change ‖Φ (u ⟨p, hpT⟩) - Φ (u (x₀ v))‖ ≤ ε
-    rw [hx₀ v, ← dist_eq_norm]
+  have hdiff : ‖(P (x₀ v)).starProjection - (P ⟨p, hpT⟩).starProjection‖ ≤ ε := by
+    rw [hΦu, hΦu, hx₀ v, ← dist_eq_norm, dist_comm]
     exact (mem_ball.1 hpu).le
-  exact infDist_le_of_opNorm_starProjection_sub_le
-    (by simpa only [dist_eq_norm] using hcone ⟨p, hpT⟩ q hq.1.1 hpq) hdiff
+  calc infDist (q - p) (P (x₀ v) : Set V)
+      ≤ infDist (q - p) (P ⟨p, hpT⟩ : Set V) +
+          ‖(P (x₀ v)).starProjection - (P ⟨p, hpT⟩).starProjection‖ * ‖q - p‖ :=
+        (P (x₀ v)).infDist_le_add_norm_starProjection_sub_mul (P ⟨p, hpT⟩) (q - p)
+    _ ≤ θ₀ * ‖q - p‖ + ε * ‖q - p‖ :=
+        add_le_add (by simpa only [dist_eq_norm] using hcone ⟨p, hpT⟩ q hq.1.1 hpq)
+          (mul_le_mul_of_nonneg_right hdiff (norm_nonneg _))
+    _ = (θ₀ + ε) * ‖q - p‖ := (add_mul θ₀ ε _).symm
 
 /-- **The geometric cone criterion for countable rectifiability.** Let `V` be a second-countable
 real inner product space and `s ⊆ V`. If for every `x ∈ s` there exist a subspace `P` of dimension
@@ -205,7 +188,8 @@ theorem of_forall_exists_submodule_infDist_sub_le [SecondCountableTopology V] {k
     refine ⟨⟨finrank ℝ (P ⟨x, hx⟩), Nat.lt_succ_of_le (hPdim ⟨x, hx⟩)⟩, m, l, hx, rfl, hm.le, ?_⟩
     have hl' : 1 / ((l : ℝ) + 2) < 1 - θ ⟨x, hx⟩ :=
       lt_of_le_of_lt (one_div_le_one_div_of_le (by positivity) (by linarith)) hl
-    linarith [show θ₀ l = 1 - 1 / ((l : ℝ) + 2) from rfl]
+    simp only [θ₀]
+    linarith
   rw [hs_eq]
   refine CountablyRectifiable.iUnion fun d ↦ CountablyRectifiable.iUnion fun m ↦
     CountablyRectifiable.iUnion fun l ↦ ?_
@@ -231,28 +215,18 @@ theorem of_forall_exists_abs_inner_sub_le [FiniteDimensional ℝ V] {s : Set V}
   refine of_forall_exists_submodule_infDist_sub_le fun x hx ↦ ?_
   obtain ⟨ν, hν, θ, hθ, r, hr, hcone⟩ := h x hx
   let P : Submodule ℝ V := (ℝ ∙ ν)ᗮ
-  have hdim : finrank ℝ P = finrank ℝ V - 1 := by
-    have hsum := Submodule.finrank_add_finrank_orthogonal (ℝ ∙ ν)
-    rw [finrank_span_singleton hν] at hsum
-    exact Nat.eq_sub_of_add_eq' hsum
+  have hdim : finrank ℝ P = finrank ℝ V - 1 :=
+    Submodule.finrank_orthogonal_span_singleton_eq_finrank_sub_one hν
   refine ⟨P, inferInstance, hdim.le, θ, hθ, r, hr, fun y hy hyr ↦ ?_⟩
   have hν_pos : 0 < ‖ν‖ := norm_pos_iff.2 hν
-  set u : V := ‖ν‖⁻¹ • ν
-  have hp_mem : (y - x) - ⟪y - x, u⟫ • u ∈ P := by
-    rw [Submodule.mem_orthogonal_singleton_iff_inner_left]
-    simp only [u, inner_sub_left, inner_smul_left, inner_smul_right, real_inner_self_eq_norm_sq,
-      RCLike.conj_to_real]
+  have hdist : infDist (y - x) (P : Set V) = |⟪y - x, ν⟫| / ‖ν‖ := by
+    rw [← (ℝ ∙ ν).norm_starProjection_eq_infDist (y - x),
+      Submodule.starProjection_singleton ℝ (y - x), norm_smul, norm_div, RCLike.norm_ofReal,
+      abs_of_pos (pow_pos hν_pos 2), Real.norm_eq_abs, real_inner_comm]
     have hne : ‖ν‖ ≠ 0 := hν_pos.ne'
     field_simp
-    ring
-  have hdist : infDist (y - x) (P : Set V) ≤ |⟪y - x, ν⟫| / ‖ν‖ := by
-    refine (infDist_le_dist_of_mem hp_mem).trans ?_
-    rw [dist_eq_norm, sub_sub_cancel, norm_smul, Real.norm_eq_abs]
-    simp only [u, inner_smul_right, norm_smul, Real.norm_eq_abs, abs_mul, abs_inv, abs_norm]
-    have hne : ‖ν‖ ≠ 0 := hν_pos.ne'
-    exact le_of_eq (by field_simp)
-  rw [dist_eq_norm]
-  exact hdist.trans ((div_le_iff₀ hν_pos).2 (hcone y hy hyr))
+  rw [hdist, dist_eq_norm]
+  exact (div_le_iff₀ hν_pos).2 (hcone y hy hyr)
 
 end CountablyRectifiable
 

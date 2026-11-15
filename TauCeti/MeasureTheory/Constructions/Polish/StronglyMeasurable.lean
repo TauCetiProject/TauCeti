@@ -7,19 +7,20 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.Polish.StronglyMeasurable
 public import Mathlib.Topology.Order.Basic
-import Mathlib.Topology.Order.LeftRightNhds
+import TauCeti.Topology.Order.LeftRight
 
 /-!
 # Strong measurability of right-hand limits of eventually right-continuous families
 
 Mathlib's `MeasureTheory.StronglyMeasurable.measurableSet_exists_tendsto` and
 `MeasureTheory.StronglyMeasurable.limUnder` apply to limits along filters on a countable index type.
-For an uncountable parameter `r > a` in a second-countable, densely ordered linear order `ι` (such
-as `ℝ`), the right-hand limit `lim_{r → a⁺} f r x` need not be measurable from individual strong
-measurability of `f r` alone. When `f r` is eventually strongly measurable as `r → a⁺` and each
-trajectory `r ↦ f r x` is eventually right-continuous as `r → a⁺` (with a threshold that may depend
-on `x`), convergence and the limit along `𝓝[>] a` coincide with those along a single countable dense
-subset near `a⁺`, reducing both results to the countable-index case.
+For an uncountable parameter `r > a` in a second-countable linear order `ι` with the order topology
+(such as `ℝ`), the right-hand limit `lim_{r → a⁺} f r x` need not be measurable from individual
+strong measurability of `f r` alone. When `f r` is eventually strongly measurable as `r → a⁺` and
+each trajectory `r ↦ f r x` is eventually right-continuous as `r → a⁺` (with a threshold that may
+depend on `x`), convergence and the limit along `𝓝[>] a` coincide with those along a single
+countable subset near `a⁺` (`Dense.tendsto_nhdsGT_iff`), reducing both results to the
+countable-index case.
 
 ## Main statements
 
@@ -37,41 +38,8 @@ open scoped Topology
 
 namespace MeasureTheory.StronglyMeasurable
 
-section Helper
-
-variable {ι E : Type*} [LinearOrder ι] [TopologicalSpace ι] [OrderTopology ι] [DenselyOrdered ι]
-
-/-- If `g : ι → E` into a regular space is right-continuous on `Ioo a b` (`a < b`) and `D` is dense
-in `ι`, convergence of `g` along `𝓝[>] a` is equivalent to convergence along `D ∩ Ioo a r₀` for any
-`r₀ > a`. -/
-private theorem tendsto_nhdsGT_iff_comap [TopologicalSpace E] [RegularSpace E]
-    {D : Set ι} (hD : Dense D) {a r₀ b : ι} (hr₀ : a < r₀) (hb : a < b) {g : ι → E}
-    (hrc : ∀ r ∈ Ioo a b, ContinuousWithinAt g (Ioi r) r) (c : E) :
-    Tendsto g (𝓝[>] a) (𝓝 c) ↔
-      Tendsto (fun s : (D ∩ Ioo a r₀ : Set ι) ↦ g s.1) (comap Subtype.val (𝓝[>] a)) (𝓝 c) := by
-  refine ⟨fun h ↦ h.comp tendsto_comap, fun h ↦ (closed_nhds_basis c).tendsto_right_iff.2 ?_⟩
-  rintro V ⟨hVc, hVclosed⟩
-  obtain ⟨W, hW, hWV⟩ := mem_comap.1 (h hVc)
-  obtain ⟨u, hu, huW⟩ := (mem_nhdsGT_iff_exists_Ioo_subset' hb).1 hW
-  set m : ι := min (min u b) r₀
-  have hm : a < m := lt_min (lt_min hu hb) hr₀
-  refine mem_of_superset (Ioo_mem_nhdsGT hm) fun r hr ↦ ?_
-  by_contra hrV
-  have hr_rc : ContinuousWithinAt g (Ioi r) r :=
-    hrc r ⟨hr.1, hr.2.trans_le ((min_le_left _ _).trans (min_le_right u b))⟩
-  obtain ⟨v, hv, hvV⟩ := (mem_nhdsGT_iff_exists_Ioo_subset' hr.2).1
-    (hr_rc.preimage_mem_nhdsWithin (hVclosed.isOpen_compl.mem_nhds hrV))
-  obtain ⟨d, hd, hdD⟩ := hD.inter_open_nonempty _ isOpen_Ioo (nonempty_Ioo.2 (lt_min hv hr.2))
-  have hd_m : d < m := hd.2.trans_le (min_le_right v m)
-  have hd_u : d ∈ Ioo a u :=
-    ⟨hr.1.trans hd.1, hd_m.trans_le ((min_le_left _ _).trans (min_le_left u b))⟩
-  have hd_r₀ : d ∈ Ioo a r₀ := ⟨hr.1.trans hd.1, hd_m.trans_le (min_le_right _ r₀)⟩
-  exact hvV ⟨hd.1, hd.2.trans_le (min_le_left v m)⟩ (hWV (a := ⟨d, hdD, hd_r₀⟩) (huW hd_u))
-
-end Helper
-
 variable {ι X E : Type*} [LinearOrder ι] [TopologicalSpace ι] [OrderTopology ι]
-  [DenselyOrdered ι] [SecondCountableTopology ι] [MeasurableSpace X] [TopologicalSpace E]
+  [SecondCountableTopology ι] [MeasurableSpace X] [TopologicalSpace E]
   {a : ι} {f : ι → X → E}
 
 /-- If `f r : X → E` into a completely pseudo-metrizable space is eventually strongly measurable as
@@ -91,13 +59,21 @@ theorem measurableSet_exists_tendsto_nhdsGT [IsCompletelyPseudoMetrizableSpace E
   obtain ⟨b₀, hb₀⟩ := Filter.nonempty_of_mem (self_mem_nhdsWithin (a := a) (s := Ioi a))
   obtain ⟨r₀, hr₀, hfr₀⟩ := (mem_nhdsGT_iff_exists_Ioo_subset' hb₀).1 hf
   obtain ⟨D, hDc, hD⟩ := exists_countable_dense ι
-  let S : Set ι := D ∩ Ioo a r₀
-  have : Countable S := (hDc.mono inter_subset_left).to_subtype
+  let S : Set ι := (D ∪ {x | ∃ y, x ⋖ y}) ∩ Ioo a r₀
+  have : Countable S :=
+    ((hDc.union countable_setOfPred_covBy_right).mono inter_subset_left).to_subtype
+  have hS_eq : S = (D ∪ {x | ∃ y, x ⋖ y}) ∩ Ioi a ∩ Iio r₀ := by
+    ext; simp [S, Ioo, and_assoc]
+  have hmap : map (Subtype.val : S → ι) (comap Subtype.val (𝓝 a)) =
+      𝓝[(D ∪ {x | ∃ y, x ⋖ y}) ∩ Ioi a] a := by
+    rw [Filter.map_comap, Subtype.range_coe, ← nhdsWithin, hS_eq,
+      nhdsWithin_inter_of_mem' (nhdsWithin_le_nhds (Iio_mem_nhds hr₀))]
   convert StronglyMeasurable.measurableSet_exists_tendsto
-    (l := comap (Subtype.val : S → ι) (𝓝[>] a)) (fun s : S ↦ hfr₀ s.2.2) using 1
+    (l := comap (Subtype.val : S → ι) (𝓝 a)) (fun s : S ↦ hfr₀ s.2.2) using 1
   ext x
-  obtain ⟨b, hb, hrcx⟩ := (mem_nhdsGT_iff_exists_Ioo_subset' hb₀).1 (hrc x)
-  exact exists_congr (tendsto_nhdsGT_iff_comap hD hr₀ hb hrcx)
+  refine exists_congr fun c ↦ ?_
+  rw [hD.tendsto_nhdsGT_iff (hrc x), ← hmap, tendsto_map'_iff]
+  rfl
 
 /-- If `f r : X → E` into a nonempty completely metrizable space is eventually strongly measurable
 as `r → a⁺`, and for each `x` the trajectory `r ↦ f r x` is eventually right-continuous as `r → a⁺`,
@@ -112,18 +88,28 @@ protected theorem limUnder_nhdsGT [Nonempty E] [IsCompletelyMetrizableSpace E]
   obtain ⟨b₀, hb₀⟩ := Filter.nonempty_of_mem (self_mem_nhdsWithin (a := a) (s := Ioi a))
   obtain ⟨r₀, hr₀, hfr₀⟩ := (mem_nhdsGT_iff_exists_Ioo_subset' hb₀).1 hf
   obtain ⟨D, hDc, hD⟩ := exists_countable_dense ι
-  let S : Set ι := D ∩ Ioo a r₀
-  have : Countable S := (hDc.mono inter_subset_left).to_subtype
-  let l : Filter S := comap Subtype.val (𝓝[>] a)
+  let S : Set ι := (D ∪ {x | ∃ y, x ⋖ y}) ∩ Ioo a r₀
+  have : Countable S :=
+    ((hDc.union countable_setOfPred_covBy_right).mono inter_subset_left).to_subtype
+  let l : Filter S := comap Subtype.val (𝓝 a)
+  have hS_eq : S = (D ∪ {x | ∃ y, x ⋖ y}) ∩ Ioi a ∩ Iio r₀ := by
+    ext; simp [S, Ioo, and_assoc]
+  have hmap : map (Subtype.val : S → ι) l = 𝓝[(D ∪ {x | ∃ y, x ⋖ y}) ∩ Ioi a] a := by
+    rw [Filter.map_comap, Subtype.range_coe, ← nhdsWithin, hS_eq,
+      nhdsWithin_inter_of_mem' (nhdsWithin_le_nhds (Iio_mem_nhds hr₀))]
   have hl_ne : l.NeBot := comap_neBot fun t ht ↦ by
-    obtain ⟨u, hu, hsub⟩ := (mem_nhdsGT_iff_exists_Ioo_subset' hr₀).1 ht
-    obtain ⟨d, hd, hdD⟩ := hD.inter_open_nonempty _ isOpen_Ioo (nonempty_Ioo.2 (lt_min hu hr₀))
-    exact ⟨⟨d, hdD, hd.1, hd.2.trans_le (min_le_right u r₀)⟩,
+    obtain ⟨u, hu, hsub⟩ :=
+      (mem_nhdsGT_iff_exists_Ioo_subset' hr₀).1 (mem_nhdsWithin_of_mem_nhds ht)
+    obtain ⟨d, hd, hdD⟩ := hD.inter_open_nonempty _ isOpen_Ioo
+      (Filter.nonempty_of_mem (Ioo_mem_nhdsGT (lt_min hu hr₀)))
+    exact ⟨⟨d, Or.inl hdD, hd.1, hd.2.trans_le (min_le_right u r₀)⟩,
       hsub ⟨hd.1, hd.2.trans_le (min_le_left u r₀)⟩⟩
   convert StronglyMeasurable.limUnder (l := l) (fun s : S ↦ hfr₀ s.2.2) using 1
   ext x
-  obtain ⟨b, hb, hrcx⟩ := (mem_nhdsGT_iff_exists_Ioo_subset' hb₀).1 (hrc x)
-  have hiff := tendsto_nhdsGT_iff_comap hD hr₀ hb hrcx
+  have hiff (c : E) : Tendsto (f · x) (𝓝[>] a) (𝓝 c) ↔
+      Tendsto (fun s : S ↦ f s.1 x) l (𝓝 c) := by
+    rw [hD.tendsto_nhdsGT_iff (hrc x), ← hmap, tendsto_map'_iff]
+    rfl
   by_cases hconv : ∃ c, Tendsto (f · x) (𝓝[>] a) (𝓝 c)
   · obtain ⟨c, hc⟩ := hconv
     rw [hc.limUnder_eq, ((hiff c).1 hc).limUnder_eq]
