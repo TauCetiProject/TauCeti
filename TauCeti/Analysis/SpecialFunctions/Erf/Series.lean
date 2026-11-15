@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.SpecialFunctions.Erf.Basic
 public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Tricomi
 import Mathlib.Analysis.Real.Pi.Bounds
-import Mathlib.Analysis.SpecialFunctions.Gamma.BohrMollerup
 
 /-!
 # Power series of the error function and the half-Gamma series
@@ -310,41 +309,8 @@ theorem tsum_pow_add_two_mul_div_Gamma_div_two_add_one_le (x : ℝ) (L : ℕ) :
           exact (tsum_pow_div_Gamma_div_two_add_one_lt_two_mul_exp |x|).le
     _ = 2 * x ^ (2 * L) / L ! * rexp (x ^ 2) := by rw [sq_abs]; ring
 
-/-- One half-step in the reciprocal Gamma denominator of the half-Gamma series costs at most a
-factor `2 / √π` (attained at `k = 0`). -/
-private theorem inv_Gamma_add_one_div_two_add_one_le (k : ℕ) :
-    (Real.Gamma (((k : ℝ) + 1) / 2 + 1))⁻¹ ≤ 2 / √π * (Real.Gamma ((k : ℝ) / 2 + 1))⁻¹ := by
-  have hsqrt : √π < 2 := (Real.sqrt_lt' zero_lt_two).mpr (by linarith [Real.pi_lt_four])
-  have h1le : (1 : ℝ) ≤ 2 / √π := (one_le_div (by positivity)).mpr hsqrt.le
-  match k with
-  | 0 =>
-    have harg : (((0 : ℕ) : ℝ) + 1) / 2 + 1 = 1 / 2 + 1 := by norm_num
-    rw [harg, Real.Gamma_add_one (by norm_num), Real.Gamma_one_half_eq]
-    simp [div_eq_mul_inv, mul_comm]
-  | 1 =>
-    have harg1 : (((1 : ℕ) : ℝ) + 1) / 2 + 1 = 2 := by norm_num
-    have harg0 : ((1 : ℕ) : ℝ) / 2 + 1 = 1 / 2 + 1 := by norm_num
-    have hinv : ((1 / 2 : ℝ) * √π)⁻¹ = 2 / √π := by field_simp
-    rw [harg1, Real.Gamma_two, inv_one, harg0, Real.Gamma_add_one (by norm_num),
-      Real.Gamma_one_half_eq, hinv]
-    simpa using mul_le_mul h1le h1le zero_le_one (by positivity)
-  | k + 2 =>
-    have ha : (2 : ℝ) ≤ ((k + 2 : ℕ) : ℝ) / 2 + 1 := by
-      push_cast; linarith [Nat.cast_nonneg (α := ℝ) k]
-    have hab : ((k + 2 : ℕ) : ℝ) / 2 + 1 ≤ (((k + 2 : ℕ) : ℝ) + 1) / 2 + 1 := by linarith
-    have hG : Real.Gamma (((k + 2 : ℕ) : ℝ) / 2 + 1) ≤
-        Real.Gamma ((((k + 2 : ℕ) : ℝ) + 1) / 2 + 1) :=
-      Real.Gamma_strictMonoOn_Ici.monotoneOn ha (ha.trans hab) hab
-    have hpos : 0 < Real.Gamma (((k + 2 : ℕ) : ℝ) / 2 + 1) :=
-      Real.Gamma_pos_of_pos (by positivity)
-    calc (Real.Gamma ((((k + 2 : ℕ) : ℝ) + 1) / 2 + 1))⁻¹
-        ≤ 1 * (Real.Gamma (((k + 2 : ℕ) : ℝ) / 2 + 1))⁻¹ := by
-          simpa using inv_anti₀ hpos hG
-      _ ≤ 2 / √π * (Real.Gamma (((k + 2 : ℕ) : ℝ) / 2 + 1))⁻¹ := by gcongr
-
 /-- For every `x : ℝ` and arbitrary shift `M : ℕ` (both even and odd), the `M`-shifted tail of the
-half-Gamma series is bounded by `4 / √π * |x|^M / (M / 2)! * exp(x²)`, combining exact `O(|x|^M)`
-vanishing at `x = 0` with factorial decay in `M` and Gaussian growth at infinity. -/
+half-Gamma series is bounded by `4 / √π * |x|^M / (M / 2)! * exp(x²)`. -/
 theorem tsum_pow_add_div_Gamma_div_two_add_one_le (x : ℝ) (M : ℕ) :
     (∑' k : ℕ, x ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1)) ≤
       4 / √π * |x| ^ M / (M / 2)! * rexp (x ^ 2) := by

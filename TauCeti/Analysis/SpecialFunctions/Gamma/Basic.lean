@@ -10,6 +10,8 @@ public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Analysis.Asymptotics.Lemmas
+import Mathlib.Analysis.Real.Pi.Bounds
+import Mathlib.Analysis.SpecialFunctions.Gamma.BohrMollerup
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 
 /-!
@@ -57,6 +59,8 @@ summability and moment arguments for discrete laws with Beta-function masses.
 * `Real.inv_Gamma_add_natCast_le` — `(Γ(s + k))⁻¹ ≤ (Γ s)⁻¹ / k!` for `1 ≤ s`, the real
   specialization giving factorial decay of the reciprocal Gamma function along natural-number
   shifts on `[1, ∞)`.
+* `Real.inv_Gamma_add_one_div_two_add_one_le` — `(Γ((k + 1) / 2 + 1))⁻¹ ≤ 2 / √π * (Γ(k / 2 + 1))⁻¹`
+  for every `k : ℕ`, with equality at `k = 0`.
 * `Complex.ascPochhammer_eval_div_Gamma_add_natCast`,
   `Real.ascPochhammer_eval_div_Gamma_add_natCast` —
   `(s)ₙ / Γ(s + n) = (Γ s)⁻¹` for every `s` and `n : ℕ`, including at the nonpositive-integer poles
@@ -265,10 +269,9 @@ theorem norm_inv_Gamma_add_natCast_le {s : ℂ} (hs : 1 ≤ s.re) (k : ℕ) :
       _ = ‖(Gamma (s + k))⁻¹‖ * k ! := by rw [hrec]; ring
       _ ≤ ‖(Gamma s)⁻¹‖ := (le_div_iff₀ (by positivity)).1 ih
 
-/-- Iterating `one_div_Gamma_eq_self_mul_one_div_Gamma_add_one` expresses the reciprocal Gamma
-function at `s` as `(s)ₙ / Γ(s + n)` for every `s : ℂ` and `n : ℕ`, without pole exclusions: at
-`s = −k`, both sides vanish (`(−k)ₙ = 0` for `k < n`, while `Γ(s + n) = Γ(−(k − n)) = 0` for
-`n ≤ k`). -/
+/-- For every `s : ℂ` and `n : ℕ`, `(s)ₙ / Γ(s + n) = (Γ s)⁻¹`, including at the
+nonpositive-integer poles `s = −k` of `Complex.Gamma` (where both sides vanish under the
+`Γ(−m) = 0` convention: `(−k)ₙ = 0` for `k < n` and `Γ(s + n) = 0` for `n ≤ k`). -/
 theorem ascPochhammer_eval_div_Gamma_add_natCast (s : ℂ) (n : ℕ) :
     (ascPochhammer ℂ n).eval s / Gamma (s + n) = (Gamma s)⁻¹ := by
   rw [div_eq_mul_inv]
@@ -294,9 +297,38 @@ theorem inv_Gamma_add_natCast_le {s : ℝ} (hs : 1 ≤ s) (k : ℕ) :
   have hcast : (s : ℂ) + k = ((s + k : ℝ) : ℂ) := by push_cast; ring
   rwa [hcast, hnorm (s + k) (by positivity), hnorm s (by positivity)] at h
 
+/-- For every `k : ℕ`, `(Γ((k + 1) / 2 + 1))⁻¹ ≤ 2 / √π * (Γ(k / 2 + 1))⁻¹`, with equality at
+`k = 0`. -/
+theorem inv_Gamma_add_one_div_two_add_one_le (k : ℕ) :
+    (Gamma (((k : ℝ) + 1) / 2 + 1))⁻¹ ≤ 2 / √π * (Gamma ((k : ℝ) / 2 + 1))⁻¹ := by
+  have hsqrt : √π < 2 := (sqrt_lt' zero_lt_two).mpr (by linarith [pi_lt_four])
+  have h1le : (1 : ℝ) ≤ 2 / √π := (one_le_div (by positivity)).mpr hsqrt.le
+  match k with
+  | 0 =>
+    have harg : (((0 : ℕ) : ℝ) + 1) / 2 + 1 = 1 / 2 + 1 := by norm_num
+    rw [harg, Gamma_add_one (by norm_num), Gamma_one_half_eq]
+    simp [div_eq_mul_inv, mul_comm]
+  | 1 =>
+    have harg1 : (((1 : ℕ) : ℝ) + 1) / 2 + 1 = 2 := by norm_num
+    have harg0 : ((1 : ℕ) : ℝ) / 2 + 1 = 1 / 2 + 1 := by norm_num
+    have hinv : ((1 / 2 : ℝ) * √π)⁻¹ = 2 / √π := by field_simp
+    rw [harg1, Gamma_two, inv_one, harg0, Gamma_add_one (by norm_num), Gamma_one_half_eq, hinv]
+    simpa using mul_le_mul h1le h1le zero_le_one (by positivity)
+  | k + 2 =>
+    have ha : (2 : ℝ) ≤ ((k + 2 : ℕ) : ℝ) / 2 + 1 := by
+      push_cast; linarith [Nat.cast_nonneg (α := ℝ) k]
+    have hab : ((k + 2 : ℕ) : ℝ) / 2 + 1 ≤ (((k + 2 : ℕ) : ℝ) + 1) / 2 + 1 := by linarith
+    have hG : Gamma (((k + 2 : ℕ) : ℝ) / 2 + 1) ≤ Gamma ((((k + 2 : ℕ) : ℝ) + 1) / 2 + 1) :=
+      Gamma_strictMonoOn_Ici.monotoneOn ha (ha.trans hab) hab
+    have hpos : 0 < Gamma (((k + 2 : ℕ) : ℝ) / 2 + 1) := Gamma_pos_of_pos (by positivity)
+    calc (Gamma ((((k + 2 : ℕ) : ℝ) + 1) / 2 + 1))⁻¹
+        ≤ 1 * (Gamma (((k + 2 : ℕ) : ℝ) / 2 + 1))⁻¹ := by
+          simpa using inv_anti₀ hpos hG
+      _ ≤ 2 / √π * (Gamma (((k + 2 : ℕ) : ℝ) / 2 + 1))⁻¹ := by gcongr
+
 /-- Real specialization of `Complex.ascPochhammer_eval_div_Gamma_add_natCast`:
 `(x)ₙ / Γ(x + n) = (Γ x)⁻¹` for every `x : ℝ` and `n : ℕ`, including at the nonpositive-integer
-poles of `Real.Gamma`. -/
+poles of `Real.Gamma` (where both sides vanish). -/
 theorem ascPochhammer_eval_div_Gamma_add_natCast (x : ℝ) (n : ℕ) :
     (ascPochhammer ℝ n).eval x / Gamma (x + n) = (Gamma x)⁻¹ := by
   rw [← Complex.ofReal_inj]
