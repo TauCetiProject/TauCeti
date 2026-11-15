@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 public import Mathlib.Topology.MetricSpace.Pseudo.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
-import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ContDiff
+import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.Analysis.Normed.Operator.Basic
 
@@ -61,8 +61,6 @@ estimates, since such a field need not be `C¹`-linearizable.
 * `TauCeti.tendstoUniformlyOn_comp_comp_symm` and
   `TauCeti.tendstoUniformlyOn_fderiv_comp_comp_symm`: the values and the first derivatives, in the
   `C⁰` and `C¹` forms.
-* `TauCeti.exists_contDiffAt_graph_of_isInvertible`: a transverse disc is locally a graph over the
-  unstable factor.
 * `TauCeti.exists_graph_tendstoUniformlyOn_iteratedFDeriv`: **the λ-lemma**.
 
 ## References
@@ -168,27 +166,6 @@ theorem tendstoUniformlyOn_fderiv_comp_comp_symm
   intro ε hε
   filter_upwards [h ε hε] with t ht v hv
   simpa [dist_zero_left, norm_iteratedFDeriv_one] using ht v hv
-
-/-- **A transverse disc is a graph over the unstable factor.** Let `z ↦ (a z, b z)` be a disc,
-`C^n` at `z₀` with `n ≥ 1`, whose second component `b` has invertible derivative at `z₀`. Then
-there is a map `g`, `C^n` at `b z₀`, with `g (b z₀) = a z₀` whose graph near `b z₀` is covered
-by the part of the disc over any prescribed neighbourhood `U` of `z₀`: every `w` near `b z₀` is
-`b z` for some `z ∈ U` with `a z = g w`.
-
-The map `g` is `a ∘ b⁻¹` for the local inverse of `b` given by the inverse function theorem. -/
-theorem exists_contDiffAt_graph_of_isInvertible [CompleteSpace F] {a : F → Eₛ} {b : F → Eᵤ}
-    {b' : F →L[ℝ] Eᵤ} {z₀ : F} (ha : ContDiffAt ℝ n a z₀) (hb : ContDiffAt ℝ n b z₀)
-    (hb' : HasFDerivAt b b' z₀) (hb'i : b'.IsInvertible) (hn : n ≠ 0) {U : Set F}
-    (hU : U ∈ 𝓝 z₀) :
-    ∃ g : Eᵤ → Eₛ, ContDiffAt ℝ n g (b z₀) ∧ g (b z₀) = a z₀ ∧
-      ∀ᶠ w in 𝓝 (b z₀), ∃ z ∈ U, a z = g w ∧ b z = w := by
-  obtain ⟨e, rfl⟩ := hb'i
-  have hσ₀ := hb.localInverse_apply_image hb' hn
-  have hσ := hb.to_localInverse hb' hn
-  refine ⟨a ∘ hb.localInverse hb' hn, (hσ₀ ▸ ha).comp _ hσ, by simp [hσ₀], ?_⟩
-  filter_upwards [(hb.hasStrictFDerivAt hb' hn).eventually_right_inverse,
-    hσ.continuousAt.preimage_mem_nhds (hσ₀ ▸ hU)] with w hw hwU
-  exact ⟨_, hwU, rfl, hw⟩
 
 /-- **The λ-lemma for linear hyperbolic maps.** Let `‖S t‖ → 0` and `‖(T t)⁻¹‖ → 0` along `l`,
 and let `z ↦ (a z, b z)` be a disc, `C^n` at `z₀` with `n ≥ 1`, through the point `(a z₀, 0)` of

@@ -205,14 +205,9 @@ theorem tendsto_apply_of_eventually_norm_le {ι : Type*} {l : Filter ι}
 about `0` into any prescribed neighbourhood of `0`. -/
 theorem eventually_mapsTo_ball_of_tendsto_opNorm {ι : Type*} {l : Filter ι} {T : ι → X →L[𝕜] Y}
     (hT : Tendsto (fun i ↦ ‖T i‖) l (𝓝 0)) {V : Set Y} (hV : V ∈ 𝓝 0) (R : ℝ) :
-    ∀ᶠ i in l, Set.MapsTo (T i) (Metric.ball 0 R) V := by
-  obtain ⟨ρ, hρ, hρV⟩ := Metric.mem_nhds_iff.1 hV
-  have hR : Tendsto (fun i ↦ ‖T i‖ * R) l (𝓝 0) := by simpa using hT.mul_const R
-  filter_upwards [hR.eventually (gt_mem_nhds hρ)] with i hi x hx
-  refine hρV (mem_ball_zero_iff.2 ?_)
-  calc ‖T i x‖ ≤ ‖T i‖ * ‖x‖ := (T i).le_opNorm x
-    _ ≤ ‖T i‖ * R := by gcongr; exact (mem_ball_zero_iff.1 hx).le
-    _ < ρ := hi
+    ∀ᶠ i in l, Set.MapsTo (T i) (Metric.ball 0 R) V :=
+  (tendsto_zero_iff_norm_tendsto_zero.mpr hT).eventually
+    (eventually_nhds_zero_mapsTo (NormedSpace.isVonNBounded_ball 𝕜 X R) hV)
 
 /-- The a priori estimate attached to a left inverse modulo an error term: since
 `x = S (T x) - (S ∘ T - 1) x`, the norm of `x` is controlled by `‖T x‖` and the error
