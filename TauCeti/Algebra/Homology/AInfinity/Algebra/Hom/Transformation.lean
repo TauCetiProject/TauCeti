@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.Algebra.Homology.HomologicalComplex
-public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Homotopy
+public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Homotopy.Basic
 
 /-!
 # The complex of reduced transformations between A-infinity morphisms
@@ -24,7 +24,9 @@ reduced bar constructions: linear maps `D : Tᶜ(sA) ⟶ Tᶜ(sB)` raising the s
 `Δ ∘ D = (D ⊗ G) ∘ Δ + (F ⊗ D) ∘ (τ ⊗ 1) ∘ Δ`,
 
 with `τ` the letterwise Koszul twist of parameter `p` of `Tᶜ(sA)`.  Such a map is determined by its
-suspended Taylor components `π ∘ D`, the components `Dₙ` for `n ≥ 1`.  The differential of a
+suspended Taylor components `π ∘ D`, the components `Dₙ` for `n ≥ 1`, and conversely every
+degree-`p` map `Tᶜ(sA) ⟶ B` expands to a reduced transformation via
+`AInfinityHom.reducedTransformationCochains.ofTaylor`.  The differential of a
 reduced transformation is its graded commutator with the bar differentials,
 
 `δD = b_B ∘ D - (-1)^p D ∘ b_A`,
@@ -45,24 +47,29 @@ reduced transformation of degree zero, and a homotopy from `f` to `g` in the sen
 which has no nullary component, is exactly a reduced transformation of degree `-1` whose
 differential is `F - G`; so `f` and `g` are homotopic exactly when `F - G` is a coboundary in this
 complex.  Composing with an `A∞` morphism on either side maps reduced transformations to reduced
-transformations and commutes with the differential, extending the composition of homotopies with
-morphisms.
+transformations and commutes with the differential, inducing chain maps of complexes
+`AInfinityHom.reducedTransformationComplexCompRight` and
+`AInfinityHom.reducedTransformationComplexCompLeft`.
 
 ## Main definitions
 
 * `TauCeti.AInfinityHom.reducedTransformationCochains`: the reduced transformations of degree `p`
   from `f` to `g`, the `(F, G)`-coderivations of degree `p` between reduced bar constructions.
-* `TauCeti.AInfinityHom.reducedTransformationCochains.taylor`: the suspended Taylor components of
-  a reduced transformation.
+* `TauCeti.AInfinityHom.reducedTransformationCochains.taylor` and
+  `TauCeti.AInfinityHom.reducedTransformationCochains.ofTaylor`: the suspended Taylor components of
+  a reduced transformation and its reconstruction from them.
 * `TauCeti.AInfinityHom.reducedTransformationDifferential`: the graded commutator with the bar
   differentials.
 * `TauCeti.AInfinityHom.reducedTransformationComplex`: the complex of reduced transformations from
   `f` to `g`.
-* `TauCeti.AInfinityHom.reducedTransformationCochains.compRight` and
-  `TauCeti.AInfinityHom.reducedTransformationCochains.compLeft`: composition of reduced
-  transformations with an `A∞` morphism after or before them.
-* `TauCeti.AInfinityHom.Homotopy.equivCochains`: homotopies from `f` to `g` are the reduced
-  transformations of degree `-1` bounding `F - G`.
+* `TauCeti.AInfinityHom.reducedTransformationCochains.compRight`,
+  `TauCeti.AInfinityHom.reducedTransformationCochains.compLeft`,
+  `TauCeti.AInfinityHom.reducedTransformationComplexCompRight`, and
+  `TauCeti.AInfinityHom.reducedTransformationComplexCompLeft`: composition of reduced
+  transformations and their complexes with an `A∞` morphism after or before them.
+* `TauCeti.AInfinityHom.Homotopy.equivCochains` and `TauCeti.AInfinityHom.Homotopy.ofTaylor`:
+  homotopies from `f` to `g` as reduced transformations of degree `-1` bounding `F - G`, and
+  construction of a homotopy from its suspended Taylor components.
 
 ## Main results
 
@@ -183,6 +190,20 @@ theorem taylor_add (D D' : reducedTransformationCochains f g p) :
     taylor (D + D') = taylor D + taylor D' :=
   LinearMap.comp_add _ _ _
 
+/-- The Taylor components of the negation of a transformation are the negations of its Taylor
+components. -/
+@[simp]
+theorem taylor_neg (D : reducedTransformationCochains f g p) :
+    taylor (-D) = -taylor D :=
+  LinearMap.comp_neg _ _
+
+/-- The Taylor components of a difference of transformations are the differences of their Taylor
+components. -/
+@[simp]
+theorem taylor_sub (D D' : reducedTransformationCochains f g p) :
+    taylor (D - D') = taylor D - taylor D' :=
+  LinearMap.comp_sub _ _ _
+
 /-- The Taylor components of a scalar multiple of a transformation are the scalar multiples of
 its Taylor components. -/
 @[simp]
@@ -209,6 +230,76 @@ theorem taylor_injective :
 @[ext]
 theorem ext {D D' : reducedTransformationCochains f g p} (e : taylor D = taylor D') : D = D' :=
   taylor_injective e
+
+/-- Reconstructs a reduced transformation of degree `p` from its suspended Taylor components: a
+linear map `h : Tᶜ(sA) →ₗ[R] B` of suspended degree `p`. -/
+noncomputable def ofTaylor (h : ReducedTensorWords R A →ₗ[R] B)
+    (hh : LinearMap.IsHomogeneous h (ReducedTensorWords.gradedPiece (AA.grading.shift 1))
+      (BB.grading.shift 1).piece p) :
+    reducedTransformationCochains f g p :=
+  ⟨ReducedTensorWords.gradedCoderivAlong (AA.grading.shift 1) p f.barMap g.barMap h,
+    ReducedTensorWords.isGradedCoderivationAlong_gradedCoderivAlong (AA.grading.shift 1) p
+      f.isCoalgHom_barMap g.isCoalgHom_barMap h,
+    ReducedTensorWords.isHomogeneous_gradedCoderivAlong f.isHomogeneous_barMap
+      g.isHomogeneous_barMap hh⟩
+
+/-- The underlying map of bar constructions of `ofTaylor h hh` is `gradedCoderivAlong`. -/
+@[simp]
+theorem coe_ofTaylor (h : ReducedTensorWords R A →ₗ[R] B)
+    (hh : LinearMap.IsHomogeneous h (ReducedTensorWords.gradedPiece (AA.grading.shift 1))
+      (BB.grading.shift 1).piece p) :
+    ((ofTaylor (f := f) (g := g) h hh : reducedTransformationCochains f g p) :
+        ReducedTensorWords R A →ₗ[R] ReducedTensorWords R B) =
+      ReducedTensorWords.gradedCoderivAlong (AA.grading.shift 1) p f.barMap g.barMap h :=
+  (rfl)
+
+/-- The Taylor components of `ofTaylor h hh` are `h`. -/
+@[simp]
+theorem taylor_ofTaylor (h : ReducedTensorWords R A →ₗ[R] B)
+    (hh : LinearMap.IsHomogeneous h (ReducedTensorWords.gradedPiece (AA.grading.shift 1))
+      (BB.grading.shift 1).piece p) :
+    taylor (ofTaylor (f := f) (g := g) h hh) = h :=
+  ReducedTensorWords.letter_comp_gradedCoderivAlong (AA.grading.shift 1) p f.barMap g.barMap h
+
+/-- Every reduced transformation is reconstructed from its own Taylor components. -/
+@[simp]
+theorem ofTaylor_taylor (D : reducedTransformationCochains f g p) :
+    ofTaylor (taylor D) (isHomogeneous_taylor D) = D :=
+  ext (taylor_ofTaylor _ _)
+
+/-- Every reduced transformation preserves the conilpotence filtration. -/
+theorem mem_filtration (D : reducedTransformationCochains f g p) {n : ℕ}
+    {z : ReducedTensorWords R A} (hz : z ∈ ReducedTensorWords.filtration R A n) :
+    (D : ReducedTensorWords R A →ₗ[R] ReducedTensorWords R B) z ∈
+      ReducedTensorWords.filtration R B n :=
+  (isGradedCoderivationAlong D).mem_filtration f.isCoalgHom_barMap g.isCoalgHom_barMap hz
+
+/-- Two reduced transformations whose Taylor components agree up to filtration level `n` agree on
+the words of length at most `n`. -/
+theorem apply_eq_of_mem_filtration {D D' : reducedTransformationCochains f g p} {n : ℕ}
+    (hl : ∀ w ∈ ReducedTensorWords.filtration R A n, taylor D w = taylor D' w)
+    {z : ReducedTensorWords R A} (hz : z ∈ ReducedTensorWords.filtration R A n) :
+    (D : ReducedTensorWords R A →ₗ[R] ReducedTensorWords R B) z =
+      (D' : ReducedTensorWords R A →ₗ[R] ReducedTensorWords R B) z :=
+  (isGradedCoderivationAlong D).apply_eq_of_mem_filtration (isGradedCoderivationAlong D') hl hz
+
+/-- A reduced transformation whose Taylor components vanish up to filtration level `n` vanishes on
+the words of length at most `n`. -/
+theorem apply_eq_zero_of_mem_filtration {D : reducedTransformationCochains f g p} {n : ℕ}
+    (hl : ∀ w ∈ ReducedTensorWords.filtration R A n, taylor D w = 0)
+    {z : ReducedTensorWords R A} (hz : z ∈ ReducedTensorWords.filtration R A n) :
+    (D : ReducedTensorWords R A →ₗ[R] ReducedTensorWords R B) z = 0 :=
+  (isGradedCoderivationAlong D).apply_eq_zero_of_mem_filtration hl hz
+
+/-- A reduced transformation that vanishes up to filtration level `n` sends every word of length at
+most `n + 1` to the single letter given by its Taylor component. -/
+theorem apply_eq_ofLetter_of_mem_filtration_succ {D : reducedTransformationCochains f g p} {n : ℕ}
+    (h₀ : ∀ u ∈ ReducedTensorWords.filtration R A n,
+      (D : ReducedTensorWords R A →ₗ[R] ReducedTensorWords R B) u = 0)
+    {z : ReducedTensorWords R A} (hz : z ∈ ReducedTensorWords.filtration R A (n + 1)) :
+    (D : ReducedTensorWords R A →ₗ[R] ReducedTensorWords R B) z =
+      ReducedTensorWords.ofLetter R B (taylor D z) :=
+  (isGradedCoderivationAlong D).apply_eq_ofLetter_of_mem_filtration_succ h₀ hz
 
 end reducedTransformationCochains
 
@@ -348,6 +439,35 @@ theorem reducedTransformationComplex_d (p : ℤ) :
       ModuleCat.ofHom (reducedTransformationDifferential f g p) := by
   apply CochainComplex.of_d
 
+/-- A degree-`p` cochain in `reducedTransformationComplex f g` is a cocycle if and only if its
+`reducedTransformationDifferential` vanishes. -/
+theorem mem_ker_reducedTransformationComplex_d_iff {f g : AInfinityHom AA BB} {p : ℤ}
+    (D : (reducedTransformationComplex f g).X p) :
+    D ∈ LinearMap.ker ((reducedTransformationComplex f g).d p (p + 1)).hom ↔
+      reducedTransformationDifferential f g p D = 0 := by
+  rw [LinearMap.mem_ker, reducedTransformationComplex_d]
+  rfl
+
+/-- Evaluating the differential of `reducedTransformationComplex f g` on `D` equals `E` if and
+only if their underlying linear maps on `ReducedTensorWords` agree. -/
+theorem reducedTransformationComplex_d_hom_eq_iff {f g : AInfinityHom AA BB} {p : ℤ}
+    (D : (reducedTransformationComplex f g).X p)
+    (E : (reducedTransformationComplex f g).X (p + 1)) :
+    ((reducedTransformationComplex f g).d p (p + 1)).hom D = E ↔
+      (reducedTransformationDifferential f g p D :
+        ReducedTensorWords R A →ₗ[R] ReducedTensorWords R B) = E.1 := by
+  rw [reducedTransformationComplex_d]
+  exact Subtype.ext_iff
+
+/-- Subtraction in `(reducedTransformationComplex f g).X p` acts pointwise on the underlying
+linear map. -/
+@[simp]
+theorem coe_reducedTransformationComplex_X_sub {f g : AInfinityHom AA BB} {p : ℤ}
+    (D E : (reducedTransformationComplex f g).X p) :
+    ((D - E : (reducedTransformationComplex f g).X p).1 :
+      ReducedTensorWords R A →ₗ[R] ReducedTensorWords R B) = D.1 - E.1 :=
+  (rfl)
+
 /-! ### Morphisms and homotopies -/
 
 /-- The difference of the bar maps of two `A∞` morphisms is a transformation of degree zero
@@ -411,6 +531,59 @@ theorem barHomotopy_equivCochains_symm (H : {H : reducedTransformationCochains f
       ((H : reducedTransformationCochains f g (-1)) :
         ReducedTensorWords R A →ₗ[R] ReducedTensorWords R B) :=
   (rfl)
+
+/-- Constructs a homotopy from `f` to `g` from its suspended Taylor components `h` of degree `-1`,
+given the suspended component equation on single letters. -/
+noncomputable def ofTaylor (h : ReducedTensorWords R A →ₗ[R] B)
+    (hh : LinearMap.IsHomogeneous h (ReducedTensorWords.gradedPiece (AA.grading.shift 1))
+      (BB.grading.shift 1).piece (-1))
+    (e : f.taylor - g.taylor =
+      BB.taylor ∘ₗ
+        ReducedTensorWords.gradedCoderivAlong (AA.grading.shift 1) 1 f.barMap g.barMap h +
+        h ∘ₗ AA.barDifferential) :
+    Homotopy f g :=
+  ofCoderivation
+    (ReducedTensorWords.gradedCoderivAlong (AA.grading.shift 1) 1 f.barMap g.barMap h)
+    (ReducedTensorWords.isGradedCoderivationAlong_gradedCoderivAlong (AA.grading.shift 1) 1
+      f.isCoalgHom_barMap g.isCoalgHom_barMap h)
+    (ReducedTensorWords.isHomogeneous_gradedCoderivAlong f.isHomogeneous_barMap
+      g.isHomogeneous_barMap hh)
+    (by rwa [ReducedTensorWords.letter_comp_gradedCoderivAlong])
+
+/-- The bar homotopy of `Homotopy.ofTaylor h hh e` is `gradedCoderivAlong` of `h`. -/
+@[simp]
+theorem barHomotopy_ofTaylor (h : ReducedTensorWords R A →ₗ[R] B) (hh e) :
+    (ofTaylor (f := f) (g := g) h hh e).barHomotopy =
+      ReducedTensorWords.gradedCoderivAlong (AA.grading.shift 1) 1 f.barMap g.barMap h := by
+  rw [ofTaylor, barHomotopy_ofCoderivation]
+
+/-- The Taylor components of `Homotopy.ofTaylor h hh e` are `h`. -/
+@[simp]
+theorem taylor_ofTaylor (h : ReducedTensorWords R A →ₗ[R] B) (hh e) :
+    (ofTaylor (f := f) (g := g) h hh e).taylor = h := by
+  rw [ofTaylor, taylor_ofCoderivation, ReducedTensorWords.letter_comp_gradedCoderivAlong]
+
+/-- Transports a homotopy along equalities of its source and target morphisms. -/
+protected def cast {f' g' : AInfinityHom AA BB} (hf : f = f') (hg : g = g')
+    (h : Homotopy f g) : Homotopy f' g' :=
+  hf ▸ hg ▸ h
+
+/-- Transporting a homotopy along morphism equalities preserves its bar homotopy. -/
+@[simp]
+theorem barHomotopy_cast {f' g' : AInfinityHom AA BB} (hf : f = f') (hg : g = g')
+    (h : Homotopy f g) : (h.cast hf hg).barHomotopy = h.barHomotopy := by
+  subst hf hg
+  rfl
+
+/-- Equal `A∞` morphisms are homotopic via the zero homotopy. -/
+def ofEq (e : f = g) : Homotopy f g :=
+  (refl f).cast rfl e
+
+/-- The homotopy witnessing an equality of `A∞` morphisms has zero bar homotopy. -/
+@[simp]
+theorem barHomotopy_ofEq (e : f = g) : (ofEq e).barHomotopy = 0 := by
+  subst e
+  rw [ofEq, barHomotopy_cast, barHomotopy_refl]
 
 end Homotopy
 
@@ -496,6 +669,78 @@ theorem reducedTransformationDifferential_compLeft (k : AInfinityHom CC AA) {p :
   simp only [coe_reducedTransformationDifferential, reducedTransformationCochains.coe_compLeft,
     LinearMap.sub_comp, LinearMap.smul_comp, LinearMap.comp_assoc,
     k.barDifferential_comp_barMap]
+
+section ComplexComp
+
+universe u
+
+variable {A' B' C' : Type u}
+  [AddCommGroup A'] [Module R A']
+  [AddCommGroup B'] [Module R B']
+  [AddCommGroup C'] [Module R C']
+  {AA' : AInfinityAlgebra R A'} {BB' : AInfinityAlgebra R B'} {CC' : AInfinityAlgebra R C'}
+
+/-- Postcomposing reduced transformations with an `A∞` morphism `k` defines a chain map of
+complexes of reduced transformations, when the carrier modules share a universe. -/
+noncomputable def reducedTransformationComplexCompRight (f g : AInfinityHom AA' BB')
+    (k : AInfinityHom BB' CC') :
+    reducedTransformationComplex f g ⟶ reducedTransformationComplex (k.comp f) (k.comp g) where
+  f p := ModuleCat.ofHom (reducedTransformationCochains.compRight k p)
+  comm' := by
+    rintro p _ (rfl : p + 1 = _)
+    rw [reducedTransformationComplex_d, reducedTransformationComplex_d]
+    exact ModuleCat.hom_ext (LinearMap.ext fun D ↦ reducedTransformationDifferential_compRight k D)
+
+/-- In degree `p`, `reducedTransformationComplexCompRight f g k` is induced by
+`reducedTransformationCochains.compRight k p`. -/
+@[simp]
+theorem reducedTransformationComplexCompRight_f (f g : AInfinityHom AA' BB')
+    (k : AInfinityHom BB' CC') (p : ℤ) :
+    (reducedTransformationComplexCompRight f g k).f p =
+      (ModuleCat.ofHom (reducedTransformationCochains.compRight k p) :
+        ModuleCat.of R _ ⟶ ModuleCat.of R _) :=
+  (rfl)
+
+/-- Evaluating `reducedTransformationComplexCompRight f g k` in degree `p` applies
+`reducedTransformationCochains.compRight k p`. -/
+theorem coe_reducedTransformationComplexCompRight_f_hom_apply (f g : AInfinityHom AA' BB')
+    (k : AInfinityHom BB' CC') (p : ℤ) (D : (reducedTransformationComplex f g).X p) :
+    (((reducedTransformationComplexCompRight f g k).f p).hom D).1 =
+      (reducedTransformationCochains.compRight k p D :
+        ReducedTensorWords R A' →ₗ[R] ReducedTensorWords R C') :=
+  (rfl)
+
+/-- Precomposing reduced transformations with an `A∞` morphism `k` defines a chain map of
+complexes of reduced transformations, when the carrier modules share a universe. -/
+noncomputable def reducedTransformationComplexCompLeft (f g : AInfinityHom AA' BB')
+    (k : AInfinityHom CC' AA') :
+    reducedTransformationComplex f g ⟶ reducedTransformationComplex (f.comp k) (g.comp k) where
+  f p := ModuleCat.ofHom (reducedTransformationCochains.compLeft k p)
+  comm' := by
+    rintro p _ (rfl : p + 1 = _)
+    rw [reducedTransformationComplex_d, reducedTransformationComplex_d]
+    exact ModuleCat.hom_ext (LinearMap.ext fun D ↦ reducedTransformationDifferential_compLeft k D)
+
+/-- In degree `p`, `reducedTransformationComplexCompLeft f g k` is induced by
+`reducedTransformationCochains.compLeft k p`. -/
+@[simp]
+theorem reducedTransformationComplexCompLeft_f (f g : AInfinityHom AA' BB')
+    (k : AInfinityHom CC' AA') (p : ℤ) :
+    (reducedTransformationComplexCompLeft f g k).f p =
+      (ModuleCat.ofHom (reducedTransformationCochains.compLeft k p) :
+        ModuleCat.of R _ ⟶ ModuleCat.of R _) :=
+  (rfl)
+
+/-- Evaluating `reducedTransformationComplexCompLeft f g k` in degree `p` applies
+`reducedTransformationCochains.compLeft k p`. -/
+theorem coe_reducedTransformationComplexCompLeft_f_hom_apply (f g : AInfinityHom AA' BB')
+    (k : AInfinityHom CC' AA') (p : ℤ) (D : (reducedTransformationComplex f g).X p) :
+    (((reducedTransformationComplexCompLeft f g k).f p).hom D).1 =
+      (reducedTransformationCochains.compLeft k p D :
+        ReducedTensorWords R C' →ₗ[R] ReducedTensorWords R B') :=
+  (rfl)
+
+end ComplexComp
 
 namespace Homotopy
 
