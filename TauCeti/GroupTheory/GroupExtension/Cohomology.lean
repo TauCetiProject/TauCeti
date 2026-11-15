@@ -64,6 +64,8 @@ of `G`, equivalently the central extensions of `G` by `kˣ` up to equivalence.
   for the coboundaries, equivalently for the factor sets whose extension splits.
 * `TauCeti.FactorSet.nsmul_cohomologyClass_eq_zero_iff`: `n` kills a factor-set class exactly
   when the pointwise `n`-th power of the factor set is a multiplicative coboundary.
+* `TauCeti.FactorSet.natCard_nsmul_cohomologyClass_eq_zero`: the cardinality of `M` kills the
+  class of every factor set valued in `M`.
 * `TauCeti.FactorSet.exists_rescale_pow_eq_one`: with a surjective `n`-th power map for
   nonzero `n`, a class killed by `n` admits a normalized rescaling by an action-aware
   coboundary whose values have `n`-th power one. For `n = 0`, no divisibility is needed.
@@ -161,6 +163,13 @@ theorem nsmul_cohomologyClass_eq_zero_iff (n : ℕ) :
   rw [hcoe]
   exact ⟨fun h ↦ isMulCoboundary₂_of_mem_coboundaries₂ _ h,
     fun h ↦ (coboundariesOfIsMulCoboundary₂ h).2⟩
+
+/-- The cardinality of the coefficient group kills the cohomology class of any factor set. When
+`M` is infinite, `Nat.card M = 0` and the statement holds trivially. -/
+@[simp]
+theorem natCard_nsmul_cohomologyClass_eq_zero : Nat.card M • α.cohomologyClass = 0 :=
+  (α.nsmul_cohomologyClass_eq_zero_iff (Nat.card M)).2
+    ⟨fun _ ↦ 1, fun _ _ ↦ by simp [pow_card_eq_one']⟩
 
 end Class
 

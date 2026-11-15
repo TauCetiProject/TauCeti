@@ -36,6 +36,9 @@ centre gives the `Γ.withCenter` readings.
   centre already lies inside `Γ`.
 * `Subgroup.relIndex_sup_of_le_normalizer`: if `H` normalises `N`, the relative index of `H` in
   `H ⊔ N` is that in `N`.
+* `Subgroup.le_of_coprime_index_card_of_le_normalizer`, `Subgroup.le_of_coprime_index_card`: a
+  subgroup whose index is prime to the cardinality of a subgroup it normalises (in particular, a
+  normal subgroup) contains that subgroup.
 * `Subgroup.finiteIndex_of_index_coprime`: an index prime to some `p ≠ 1` is finite.
 * `Subgroup.relIndex_sup_eq_two`, `Subgroup.index_eq_two_mul_index_sup`: `Γ` has relative index
   `2` in `Γ ⊔ N`, and the index of `Γ` is twice the index of `Γ ⊔ N`, for an `N` normalised by `Γ`
@@ -368,6 +371,29 @@ theorem relIndex_sup_of_le_normalizer {H N : Subgroup G} (hH : H ≤ normalizer 
       Quotient.sound' ?_⟩
     rw [QuotientGroup.leftRel_apply, mem_subgroupOf]
     simpa [mul_assoc] using hh
+
+/-- **A subgroup whose index is prime to the cardinality of a subgroup it normalises contains that
+subgroup.** Neither `G`, `H`, nor `N` need be finite: when `N` is infinite (`Nat.card N = 0`),
+coprimality forces `H.index = 1` and hence `H = ⊤`; when `H` has infinite index (`H.index = 0`),
+coprimality forces `Nat.card N = 1` and hence `N = ⊥`. -/
+@[to_additive TauCeti.le_of_coprime_index_card_of_le_normalizer
+  /-- An additive subgroup whose index is prime to the cardinality of a subgroup it normalises
+  contains that subgroup. -/]
+theorem le_of_coprime_index_card_of_le_normalizer {H N : Subgroup G} (hH : H ≤ normalizer N)
+    (hcop : Nat.Coprime H.index (Nat.card N)) : N ≤ H := by
+  rw [← relIndex_eq_one]
+  exact Nat.eq_one_of_dvd_coprimes hcop
+    (relIndex_sup_of_le_normalizer hH ▸ relIndex_dvd_index_of_le le_sup_left)
+    (relIndex_dvd_card H N)
+
+/-- **A subgroup whose index is prime to the cardinality of a normal subgroup contains that normal
+subgroup.** Neither `G`, `H`, nor `N` need be finite. -/
+@[to_additive TauCeti.le_of_coprime_index_card
+  /-- An additive subgroup whose index is prime to the cardinality of a normal subgroup contains
+  that normal subgroup. -/]
+theorem le_of_coprime_index_card {H N : Subgroup G} [N.Normal]
+    (hcop : Nat.Coprime H.index (Nat.card N)) : N ≤ H :=
+  le_of_coprime_index_card_of_le_normalizer le_normalizer_of_normal hcop
 
 /-- **A two-element subgroup normalised by `Γ` and not already inside it has relative index
 `2`.** If every element of `N` is `1` or `a`, and `a ∉ Γ`, then `Γ ⊔ N` splits into the two

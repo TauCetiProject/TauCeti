@@ -58,6 +58,10 @@ restrictions.
   multiplication by `[G : S]`.
 * `TauCeti.groupCohomology.index_nsmul_eq_zero_of_map_eq_zero`: a class whose restriction to `S`
   vanishes is killed by `[G : S]`.
+* `TauCeti.groupCohomology.map_subtype_injective_of_bijective_nsmul`,
+  `TauCeti.groupCohomology.map_subtype_injective_of_coprime_index_card`: restriction to `S` is
+  injective in every degree when multiplication by `[G : S]` is bijective on the coefficients, in
+  particular when `[G : S]` is prime to the cardinality of the coefficients.
 * `groupCohomology.natCard_nsmul_eq_zero`: positive-degree cohomology of a finite group is killed
   by the order of the group.
 * `groupCohomology.subsingleton_of_isUnit_natCard`: positive-degree cohomology of a finite group
@@ -180,6 +184,52 @@ the index of `S`. -/
 theorem index_nsmul_eq_zero_of_map_eq_zero {A : Rep.{u} k G} {n : ℕ} {x : groupCohomology A n}
     (h : map S.subtype (𝟙 (res S.subtype A)) n x = 0) : S.index • x = 0 := by
   rw [← map_subtype_id_comp_corestriction_apply S A n x, h, map_zero]
+
+omit [S.FiniteIndex] in
+/-- **Restriction to a subgroup is injective on cohomology when multiplication by the index is
+bijective on the coefficients**, in every degree `n`. Neither `G`, `[G : S]`, nor `A` need be
+finite: when `S` has infinite index (`S.index = 0`), bijectivity of multiplication by `0` forces
+`A` and hence `Hⁿ(G, A)` to be trivial. -/
+theorem map_subtype_injective_of_bijective_nsmul (A : Rep.{u} k G)
+    (hA : Function.Bijective fun a : A ↦ S.index • a) (n : ℕ) :
+    Function.Injective (map S.subtype (𝟙 (res S.subtype A)) n) := by
+  classical
+  have hcoe : ⇑((S.index : k) • (LinearMap.id : A.V →ₗ[k] A.V)) = fun a : A ↦ S.index • a := by
+    ext a
+    simp [Nat.cast_smul_eq_nsmul]
+  let e : A.V ≃ₗ[k] A.V := LinearEquiv.ofBijective ((S.index : k) • LinearMap.id) (hcoe ▸ hA)
+  let eA : A ≅ A := Rep.mkIso (Representation.Equiv.mk e fun g ↦ by ext x; simp [e])
+  have heA : eA.hom = S.index • 𝟙 A := by
+    rw [← Nat.cast_smul_eq_nsmul k]
+    ext x
+    simp [eA, e, Rep.smul_hom]
+  have hIsoA : IsIso (S.index • 𝟙 A) := heA ▸ eA.isIso_hom
+  have hFmap : (HomologicalComplex.homologyFunctor _ _ n).map
+      ((cochainsFunctor k G).map (S.index • 𝟙 A)) = S.index • 𝟙 (groupCohomology A n) := by
+    rw [CategoryTheory.Functor.map_nsmul, CategoryTheory.Functor.map_nsmul,
+      CategoryTheory.Functor.map_id]
+    exact congrArg (S.index • ·) (CategoryTheory.Functor.map_id _ _)
+  have hIsoH : IsIso (S.index • 𝟙 (groupCohomology A n)) :=
+    hFmap ▸ inferInstanceAs (IsIso ((HomologicalComplex.homologyFunctor _ _ n).map
+      ((cochainsFunctor k G).map (S.index • 𝟙 A))))
+  have hfunH : ⇑(ConcreteCategory.hom (S.index • 𝟙 (groupCohomology A n))) =
+      fun x : groupCohomology A n ↦ S.index • x := by
+    ext x
+    simp
+  have hinjH : Function.Injective fun x : groupCohomology A n ↦ S.index • x :=
+    hfunH ▸ (ConcreteCategory.bijective_of_isIso (S.index • 𝟙 (groupCohomology A n))).1
+  refine (injective_iff_map_eq_zero _).2 fun x hx ↦ hinjH ?_
+  by_cases hS : S.FiniteIndex
+  · simpa using index_nsmul_eq_zero_of_map_eq_zero S hx
+  · simp [Subgroup.not_finiteIndex_iff.mp hS]
+
+omit [S.FiniteIndex] in
+/-- **Restriction to a subgroup whose index is prime to the cardinality of the coefficients is
+injective on cohomology**, in every degree `n`. Neither `G`, `[G : S]`, nor `A` need be finite. -/
+theorem map_subtype_injective_of_coprime_index_card (A : Rep.{u} k G)
+    (hcop : Nat.Coprime S.index (Nat.card A)) (n : ℕ) :
+    Function.Injective (map S.subtype (𝟙 (res S.subtype A)) n) :=
+  map_subtype_injective_of_bijective_nsmul S A hcop.symm.nsmul_right_bijective n
 
 /-- Corestriction from a finite-index subgroup commutes with the connecting maps of
 any short exact sequence of representations, in every ordinary cohomological degree. -/
