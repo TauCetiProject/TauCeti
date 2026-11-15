@@ -96,6 +96,12 @@ theorem hasLocalPotentials_iUnion_iff {ι : Sort*} {u : ι → Set E}
     HasLocalPotentials (⋃ i, u i) φ ↔ ∀ i, HasLocalPotentials (u i) φ :=
   ⟨fun h i ↦ h.mono (hu i) (subset_iUnion u i), hasLocalPotentials_iUnion⟩
 
+/-- Potentials on two domains give potentials on their union. -/
+theorem HasLocalPotentials.union (hs : HasLocalPotentials s φ) (ht : HasLocalPotentials t φ) :
+    HasLocalPotentials (s ∪ t) φ := by
+  rw [union_eq_iUnion]
+  exact hasLocalPotentials_iUnion (Bool.rec ht hs)
+
 /-- A field with local `C¹` potentials is continuous on its domain. -/
 theorem HasLocalPotentials.continuousOn (hφ : HasLocalPotentials s φ) : ContinuousOn φ s := by
   intro x hx
