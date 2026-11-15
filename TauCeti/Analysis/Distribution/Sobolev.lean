@@ -38,6 +38,8 @@ the Bessel potential to the Laplacian, with the factor `2π` from Mathlib's Four
 * `TemperedDistribution.besselPotential_two_eq_sub_laplacian`: the Bessel potential of order `2`
   is `1 - (2π)⁻² Δ`.
 * `TemperedDistribution.MemSobolev.sum`: `H^{s,p}` is closed under finite sums.
+* `BesselPotentialSpace.toDistr_sum`: the tempered distribution of a finite sum in `H^{s,p}` is
+  the sum of the tempered distributions of the summands.
 * `TemperedDistribution.MemSobolev.smul_of_tower`: `H^{s,p}` is closed under scalar
   multiplication by scalars acting through `ℂ`, such as real numbers.
 * `TemperedDistribution.MemSobolev.toBesselPotentialSpace_add`,
@@ -129,6 +131,15 @@ theorem besselPotential_two_eq_sub_laplacian (f : 𝓢'(E, F)) :
 
 variable [CompleteSpace F]
 
+/-- The tempered distribution of a finite sum of elements of `H^{s,p}` is the sum of the tempered
+distributions of the summands. -/
+@[simp]
+theorem _root_.BesselPotentialSpace.toDistr_sum {ι : Type*} (t : Finset ι) {s : ℝ} {p : ENNReal}
+    [Fact (1 ≤ p)] (f : ι → BesselPotentialSpace E F s p) :
+    (∑ i ∈ t, f i).toDistr = ∑ i ∈ t, (f i).toDistr :=
+  map_sum (⟨⟨BesselPotentialSpace.toDistr, BesselPotentialSpace.toDistr_zero⟩,
+    BesselPotentialSpace.toDistr_add⟩ : BesselPotentialSpace E F s p →+ 𝓢'(E, F)) f t
+
 /-- A finite sum of tempered distributions in `H^{s,p}` lies in `H^{s,p}`. -/
 theorem MemSobolev.sum {ι : Type*} {t : Finset ι} {s : ℝ} {p : ENNReal} [Fact (1 ≤ p)]
     {g : ι → 𝓢'(E, F)} (hg : ∀ i ∈ t, MemSobolev s p (g i)) : MemSobolev s p (∑ i ∈ t, g i) :=
@@ -185,14 +196,9 @@ theorem MemSobolev.toBesselPotentialSpace_sum {ι : Type*} {t : Finset ι} {s : 
     (h : MemSobolev s p (∑ i ∈ t, g i)) :
     h.toBesselPotentialSpace = ∑ i ∈ t.attach, (hg i i.2).toBesselPotentialSpace :=
   BesselPotentialSpace.ext <| by
-    rw [MemSobolev.toBesselPotentialSpace_toDistr, ← Finset.sum_attach t g]
-    clear h
-    generalize t.attach = u
-    induction u using Finset.cons_induction with
-    | empty => simp
-    | cons i t hi ih =>
-      rw [Finset.sum_cons, Finset.sum_cons, BesselPotentialSpace.toDistr_add, ← ih,
-        MemSobolev.toBesselPotentialSpace_toDistr]
+    rw [MemSobolev.toBesselPotentialSpace_toDistr, ← Finset.sum_attach t g,
+      BesselPotentialSpace.toDistr_sum]
+    simp only [MemSobolev.toBesselPotentialSpace_toDistr]
 
 /-- The element of `H^{s,p}` defined by a finite linear combination of `Lᵠ` functions in
 `H^{s,p}` is the same linear combination of the elements defined by these functions. -/

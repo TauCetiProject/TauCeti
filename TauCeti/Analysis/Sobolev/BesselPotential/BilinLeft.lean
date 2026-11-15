@@ -10,6 +10,8 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Besov
 public import TauCeti.Analysis.Sobolev.BesselPotential.Extension
 public import TauCeti.Analysis.Sobolev.BesselPotential.Postcomp
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
+import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
+import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
@@ -19,8 +21,9 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 
 Let `g : E → G` be a function of temperate growth with values in a finite-dimensional complex
 normed space whose derivatives of order at most `N` are bounded, for a natural number `N > |s|`,
-and let `B : F →L[ℂ] G →L[ℂ] K` be a continuous bilinear map. Mathlib's
-`SchwartzMap.bilinLeftCLM B hg` is the operator `u ↦ (x ↦ B (u x) (g x))` on Schwartz functions.
+and let `B : F →L[ℂ] G →L[ℂ] K` be a continuous bilinear map, where `F` is a complex Banach
+space and `K` is a complex Hilbert space. Mathlib's `SchwartzMap.bilinLeftCLM B hg` is the
+operator `u ↦ (x ↦ B (u x) (g x))` on Schwartz functions.
 This file shows that it extends to a bounded operator `H^s(E, F) → H^s(E, K)` on the
 Bessel-potential spaces `H^s = H^{s,2}`, for every real `s`, including negative orders, with
 operator norm at most `C ‖B‖ M` when the derivatives of `g` of order at most `N` are bounded by
@@ -28,9 +31,11 @@ operator norm at most `C ‖B‖ M` when the derivatives of `g` of order at most
 
 The main instance is multiplication by a smooth matrix-valued function: for
 `A : E → (F →L[ℂ] G')` with bounded derivatives, the map `u ↦ (x ↦ A x (u x))` is
-`SchwartzMap.bilinLeftCLM (ContinuousLinearMap.apply ℂ G') hA`. Such multiplications are the
-changes of frame of Sobolev spaces of sections of vector bundles, and the bounded Jacobian factors
-of changes of coordinates. Scalar multiplication `u ↦ g u` by `g : E → ℂ` is the case
+`SchwartzMap.bilinLeftCLM (ContinuousLinearMap.apply ℂ G') hA`. This is covered when `F` is
+complete, `G'` is a complex Hilbert space and `F →L[ℂ] G'` is finite-dimensional, for example
+when `F` and `G'` are both finite-dimensional. Such multiplications are the changes of frame of
+Sobolev spaces of sections of vector bundles, and the bounded Jacobian factors of changes of
+coordinates. Scalar multiplication `u ↦ g u` by `g : E → ℂ` is the case
 `B = (ContinuousLinearMap.lsmul ℂ ℂ).flip`, which is how Mathlib defines
 `SchwartzMap.smulLeftCLM`. The multiplier need not decay, unlike the Schwartz multipliers of
 `BesselPotentialSpace.smulLeftCLM`, and the order `s` is any real number, unlike the
@@ -43,19 +48,18 @@ Bessel-potential space `H^{s,2}` contain the same tempered distributions with eq
 Besov space, with a bound uniform in `p` and `q`
 (`TauCeti.BesovSpace.exists_toDistr_eq_smulLeftCLM_and_norm_le`). Writing
 `g = ∑ₖ gₖ bₖ` in a basis `bₖ` of `G` gives
-`B (u x) (g x) = ∑ₖ gₖ x • B (u x) bₖ`, a finite sum of scalar multiplications applied after the
-pointwise maps `B.flip bₖ`, which act on `H^s` with norm at most `‖B‖ ‖bₖ‖`
-(`BesselPotentialSpace.norm_postcomp_le`).
+`B (u x) (g x) = ∑ₖ gₖ x • B (u x) bₖ` (`SchwartzMap.bilinLeftCLM_eq_sum_smulLeftCLM`), a finite
+sum of scalar multiplications applied after the pointwise maps `B.flip bₖ`, which act on `H^s`
+with norm at most `‖B‖ ‖bₖ‖` (`BesselPotentialSpace.norm_postcomp_le`).
 
 ## Main declarations
 
-* `SchwartzMap.bilinLeftCLM_eq_sum_smulLeftCLM`: the expansion of `x ↦ B (u x) (g x)` in a basis
-  of `G` as a finite sum of scalar multiplications.
 * `BesselPotentialSpace.exists_toDistr_eq_smulLeftCLM_and_norm_le`: multiplication by a scalar
   function `g` with derivatives of order at most `N > |s|` bounded by `M` maps `H^s(E, H)` into
   itself, with norm at most `C M`, for a complex Hilbert space `H`.
-* `BesselPotentialSpace.bilinLeftCLM`: the bounded operator `H^s(E, F) → H^s(E, K)` extending
-  `SchwartzMap.bilinLeftCLM B hg`, characterised on Schwartz functions by
+* `BesselPotentialSpace.bilinLeftCLM`: for a complex Banach space `F` and a complex Hilbert space
+  `K`, the bounded operator `H^s(E, F) → H^s(E, K)` extending `SchwartzMap.bilinLeftCLM B hg`,
+  characterised on Schwartz functions by
   `BesselPotentialSpace.bilinLeftCLM_toBesselPotentialSpaceCLM`.
 * `BesselPotentialSpace.exists_norm_bilinLeftCLM_le`: its operator norm is at most `C ‖B‖ M`.
 * `SchwartzMap.hasSobolevExtension_bilinLeftCLM`: `SchwartzMap.bilinLeftCLM B hg` extends to a
@@ -78,27 +82,6 @@ open scoped ENNReal SchwartzMap BesselPotentialSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
-
-namespace SchwartzMap
-
-/-- **Expansion of a bilinear multiplier in a basis.** If `gₖ` are the coordinates of `g` in a
-basis `bₖ` of `G`, then `B (u x) (g x) = ∑ₖ gₖ x • (B.flip bₖ) (u x)`: the operator
-`u ↦ (x ↦ B (u x) (g x))` is a finite sum of scalar multiplications by the `gₖ` after the pointwise
-maps `B.flip bₖ`. -/
-theorem bilinLeftCLM_eq_sum_smulLeftCLM {D F G K ι : Type*} [NormedAddCommGroup D]
-    [NormedSpace ℝ D] [NormedAddCommGroup F] [NormedSpace ℂ F] [NormedAddCommGroup G]
-    [NormedSpace ℂ G] [NormedAddCommGroup K] [NormedSpace ℂ K] [Fintype ι]
-    (b : Module.Basis ι ℂ G) (B : F →L[ℂ] G →L[ℂ] K) {g : D → G} (hg : g.HasTemperateGrowth)
-    (u : 𝓢(D, F)) :
-    bilinLeftCLM B hg u =
-      ∑ k, smulLeftCLM K (fun x ↦ b.repr (g x) k) (u.postcompCLM (B.flip (b k))) := by
-  ext x
-  have hx : B (u x) (g x) = ∑ k, b.repr (g x) k • B (u x) (b k) := by
-    conv_lhs => rw [← b.sum_repr (g x)]
-    simp only [map_sum, map_smul]
-  simp [smulLeftCLM_apply_apply (hg.repr b _), hx]
-
-end SchwartzMap
 
 namespace BesselPotentialSpace
 
@@ -156,12 +139,7 @@ private theorem toBesselPotentialSpaceCLM_bilinLeftCLM_eq_sum {s : ℝ} {ι : Ty
       (postcomp E s 2 (B.flip (b k)) (SchwartzMap.toBesselPotentialSpaceCLM s 2 u)).toDistr) :
     SchwartzMap.toBesselPotentialSpaceCLM s 2 (SchwartzMap.bilinLeftCLM B hg u) = ∑ k, v k := by
   refine ext ?_
-  have hsum (t : Finset ι) : (∑ k ∈ t, v k).toDistr = ∑ k ∈ t, (v k).toDistr := by
-    classical
-    induction t using Finset.induction_on with
-    | empty => simp
-    | insert k t hk ih => simp [Finset.sum_insert hk, ih]
-  rw [hsum, SchwartzMap.toDistr_toBesselPotentialSpaceCLM,
+  rw [toDistr_sum, SchwartzMap.toDistr_toBesselPotentialSpaceCLM,
     SchwartzMap.bilinLeftCLM_eq_sum_smulLeftCLM b B hg, map_sum]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
   rw [hv, ← SchwartzMap.toBesselPotentialSpaceCLM_postcompCLM,
@@ -176,23 +154,20 @@ private theorem exists_norm_toBesselPotentialSpaceCLM_bilinLeftCLM_le (s : ℝ) 
         C * ‖B‖ * M * ‖SchwartzMap.toBesselPotentialSpaceCLM s 2 u‖ := by
   let b := Module.finBasis ℂ G
   -- The coordinate functionals `c k` of the basis `b`.
-  let c (k : Fin (Module.finrank ℂ G)) : G →L[ℂ] ℂ :=
-    (ContinuousLinearMap.proj k).comp (b.equivFunL : G →L[ℂ] Fin (Module.finrank ℂ G) → ℂ)
+  let c (k : Fin (Module.finrank ℂ G)) : G →L[ℂ] ℂ := LinearMap.toContinuousLinearMap (b.coord k)
   obtain ⟨C₀, hC₀, hmul⟩ := exists_toDistr_eq_smulLeftCLM_and_norm_le (E := E) (H := K) hN
   refine ⟨C₀ * ∑ k, ‖c k‖ * ‖b k‖, mul_nonneg hC₀ (Finset.sum_nonneg fun _ _ ↦ by positivity),
     fun B g hg M hgM u ↦ ?_⟩
   have hM := (nonneg_and_norm_le_of_norm_iteratedFDeriv_le hgM).1
   -- The coordinates `gₖ = c k ∘ g` of `g` have bounded derivatives.
-  have hc (k : Fin (Module.finrank ℂ G)) :
-      (fun x ↦ b.repr (g x) k) = (c k).restrictScalars ℝ ∘ g := by
-    funext x
-    simp [c]
   have hgkM (k : Fin (Module.finrank ℂ G)) :
       ∀ n ≤ N, ∀ x, ‖iteratedFDeriv ℝ n (fun x ↦ b.repr (g x) k) x‖ ≤ ‖c k‖ * M :=
     fun n hn x ↦ by
       have h := ((c k).restrictScalars ℝ).norm_iteratedFDeriv_comp_left (x := x) (n := n)
         (hg.1.contDiffAt) (mod_cast le_top)
-      rw [ContinuousLinearMap.norm_restrictScalars, ← hc k] at h
+      simp only [ContinuousLinearMap.norm_restrictScalars, Function.comp_def,
+        ContinuousLinearMap.coe_restrictScalars', c, LinearMap.coe_toContinuousLinearMap',
+        Module.Basis.coord_apply] at h
       exact h.trans (by gcongr; exact hgM n hn x)
   set U := SchwartzMap.toBesselPotentialSpaceCLM s 2 u
   choose v hv hvn using fun k ↦ hmul (hg.repr b k) (hgkM k) (postcomp E s 2 (B.flip (b k)) U)

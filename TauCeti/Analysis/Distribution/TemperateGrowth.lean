@@ -117,12 +117,9 @@ theorem repr {𝕜 ι : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ
     [Finite ι] [NormedSpace 𝕜 F] [IsScalarTower ℝ 𝕜 F]
     (hf : f.HasTemperateGrowth) (b : Module.Basis ι 𝕜 F) (i : ι) :
     (fun x ↦ b.repr (f x) i).HasTemperateGrowth := by
-  have h : (fun x ↦ b.repr (f x) i) =
-      ((ContinuousLinearMap.proj i).comp (b.equivFunL : F →L[𝕜] ι → 𝕜)).restrictScalars ℝ ∘ f := by
-    funext x
-    simp
-  rw [h]
-  exact (ContinuousLinearMap.hasTemperateGrowth _).comp hf
+  have := b.finiteDimensional_of_finite
+  simpa [Function.comp_def] using
+    ((LinearMap.toContinuousLinearMap (b.coord i)).restrictScalars ℝ).hasTemperateGrowth.comp hf
 
 /-- A finite product of functions of temperate growth has temperate growth. -/
 theorem prod {ι R : Type*} [NormedCommRing R] [NormedAlgebra ℝ R] {f : ι → E → R}
