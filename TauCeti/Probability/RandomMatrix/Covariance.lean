@@ -26,17 +26,16 @@ cyclic edge across `Fin k₁ ⊕ Fin k₂`. By
 `TauCeti.card_image_union_le_add_div_two_of_shared_edge_of_no_singleton_edge`, such a pair visits
 at most `(k₁ + k₂) / 2` vertices in total, hence there are at most
 `n^((k₁ + k₂) / 2) * ((k₁ + k₂) / 2)^(k₁ + k₂)` surviving pairs. Under a uniform `(k₁ + k₂)`-th
-absolute moment bound `B` on a probability space, each surviving pair contributes at most
-`2 * (√n)⁻^(k₁ + k₂) * B`, yielding an `O(n⁻²)` bound for normalized two-trace covariances and for
-the mean-square fluctuations of normalized Wigner traces of every order.
+absolute moment bound `B`, each surviving pair contributes at most
+`2 * (√n)⁻¹ ^ (k₁ + k₂) * B`, yielding an `O(n⁻²)` bound for normalized two-trace covariances and
+for the mean-square fluctuations of normalized Wigner traces of every order.
 
 ## Main results
 
 * `TauCeti.integral_trace_pow_mul_trace_pow_sub_wignerMatrix`: the connected singleton-free
   two-trace expansion for `E[tr(Hₙ ^ k₁) tr(Hₙ ^ k₂)] - E[tr(Hₙ ^ k₁)] E[tr(Hₙ ^ k₂)]`.
-* `TauCeti.memLp_two_trace_pow_wignerMatrix`: `tr(Hₙ ^ k)` lies in `L²` under `L^(2k)` entries.
 * `TauCeti.norm_inv_mul_inv_mul_integral_trace_pow_mul_sub_wignerMatrix_le` and
-  `TauCeti.norm_integral_centered_trace_pow_mul_wignerMatrix_le`: quantitative `O(n⁻²)` bounds on
+  `TauCeti.norm_integral_inv_mul_trace_pow_wignerMatrix_sub_mul_le`: quantitative `O(n⁻²)` bounds on
   normalized two-trace covariances for all `k₁, k₂, n : ℕ`.
 * `TauCeti.integral_norm_inv_mul_trace_pow_wignerMatrix_sub_sq_le` and
   `TauCeti.tendsto_integral_norm_inv_mul_trace_pow_wignerMatrix_sub_sq`: `O(n⁻²)` mean-square
@@ -53,7 +52,7 @@ the mean-square fluctuations of normalized Wigner traces of every order.
 public section
 
 open MeasureTheory ProbabilityTheory Matrix Finset Filter
-open scoped Topology ENNReal
+open scoped Topology
 
 namespace TauCeti
 
@@ -118,14 +117,13 @@ private theorem integral_prod_mul_prod_sub_eq_zero_of_not_connected
       fun i j hij ↦ hshare ⟨i, j, hij⟩)
 
 /-- **Connected two-trace expansion of Wigner moments.** For independent centered entries in
-`L^(k₁ + k₂)` on a finite measure space, with `k₁ ≠ 0` and `k₂ ≠ 0`, subtracting the product of
-expected traces from the expected product of traces restricts the double walk sum to pairs
-`(w₁, w₂)` that share at least one unordered cyclic edge and have no singleton unordered cyclic
-edge across `Fin k₁ ⊕ Fin k₂`. -/
-theorem integral_trace_pow_mul_trace_pow_sub_wignerMatrix [IsFiniteMeasure P]
+`L^(k₁ + k₂)`, subtracting the product of expected traces from the expected product of traces
+restricts the double walk sum to pairs `(w₁, w₂)` that share at least one unordered cyclic edge
+and have no singleton unordered cyclic edge across `Fin k₁ ⊕ Fin k₂`. -/
+theorem integral_trace_pow_mul_trace_pow_sub_wignerMatrix
     (hindep : iIndepFun (fun k : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) k) P)
     (hξzero : ∀ ij, ∫ ω, ξ ij ω ∂P = 0) (hηzero : ∀ i, ∫ ω, η i ω ∂P = 0)
-    {k₁ k₂ : ℕ} (hk₁ : k₁ ≠ 0) (hk₂ : k₂ ≠ 0)
+    {k₁ k₂ : ℕ}
     (hξp : ∀ ij, MemLp (ξ ij) (k₁ + k₂ : ℕ) P)
     (hηp : ∀ i, MemLp (η i) (k₁ + k₂ : ℕ) P) (n : ℕ) :
     (∫ ω, (wignerMatrix ξ η n ω ^ k₁).trace * (wignerMatrix ξ η n ω ^ k₂).trace ∂P) -
@@ -142,6 +140,11 @@ theorem integral_trace_pow_mul_trace_pow_sub_wignerMatrix [IsFiniteMeasure P]
             (∏ j, wignerMatrix ξ η n ω (p.2 j) (p.2 (finRotate k₂ j))) ∂P) -
           (∫ ω, ∏ i, wignerMatrix ξ η n ω (p.1 i) (p.1 (finRotate k₁ i)) ∂P) *
             ∫ ω, ∏ j, wignerMatrix ξ η n ω (p.2 j) (p.2 (finRotate k₂ j)) ∂P) := by
+  have := hindep.isProbabilityMeasure
+  rcases eq_or_ne k₁ 0 with rfl | hk₁
+  · simp [integral_const_mul]
+  rcases eq_or_ne k₂ 0 with rfl | hk₂
+  · simp [integral_mul_const]
   have hξ₁ (ij : StrictUpper) : MemLp (ξ ij) k₁ P :=
     (hξp ij).mono_exponent (by exact_mod_cast Nat.le_add_right k₁ k₂)
   have hη₁ (i : ℕ) : MemLp (η i) k₁ P :=
@@ -253,26 +256,6 @@ theorem norm_integral_prod_wignerMatrix_apply_mul_integral_prod_le [IsProbabilit
         exact hmom x
       _ = (Real.sqrt n)⁻¹ ^ K * B := by simp [hcard, hK_ne]
 
-/-- If the entries of the Wigner array lie in `L^(2k)` on a finite measure space, the trace of
-`Hₙ ^ k` lies in `L²` for every `k` and `n`, without independence or centering. -/
-theorem memLp_two_trace_pow_wignerMatrix [IsFiniteMeasure P] {k : ℕ}
-    (hξp : ∀ ij, MemLp (ξ ij) (2 * k : ℕ) P) (hηp : ∀ i, MemLp (η i) (2 * k : ℕ) P) (n : ℕ) :
-    MemLp (fun ω ↦ (wignerMatrix ξ η n ω ^ k).trace) 2 P := by
-  rcases eq_or_ne k 0 with rfl | hk
-  · simp [memLp_const]
-  · simp_rw [trace_pow_eq_sum_prod _ hk]
-    refine memLp_finsetSum univ fun w _ ↦ ?_
-    have hk0 : (k : ℝ≥0∞) ≠ 0 := Nat.cast_ne_zero.mpr hk
-    have h := MemLp.fun_prod (s := (univ : Finset (Fin k)))
-      (p := fun _ ↦ ((2 * k : ℕ) : ℝ≥0∞))
-      fun t _ ↦ memLp_wignerMatrix_apply hξp hηp (w t) (w (finRotate k t))
-    have hexp : (∑ _t : Fin k, ((2 * k : ℕ) : ℝ≥0∞)⁻¹)⁻¹ = 2 := by
-      simp only [sum_const, card_univ, Fintype.card_fin, nsmul_eq_mul, Nat.cast_mul,
-        Nat.cast_ofNat]
-      rw [ENNReal.mul_inv (Or.inl two_ne_zero) (Or.inl ENNReal.ofNat_ne_top), mul_comm 2⁻¹,
-        ← mul_assoc, ENNReal.mul_inv_cancel hk0 (ENNReal.natCast_ne_top k), one_mul, inv_inv]
-    rwa [hexp] at h
-
 private theorem norm_integral_prod_mul_prod_sub_wignerMatrix_le [IsProbabilityMeasure P]
     {k₁ k₂ n : ℕ} {B : ℝ}
     (hξp : ∀ ij, MemLp (ξ ij) (k₁ + k₂ : ℕ) P)
@@ -302,12 +285,11 @@ private theorem norm_integral_prod_mul_prod_sub_wignerMatrix_le [IsProbabilityMe
       p.1 (fun i ↦ p.1 (finRotate k₁ i)) p.2 (fun j ↦ p.2 (finRotate k₂ j))
   exact (norm_sub_le _ _).trans (by linarith)
 
-/-- **Normalized two-trace covariance bound (uncentered difference form).** On a probability space,
-under independent centered entries in `L^(k₁ + k₂)` with `(k₁ + k₂)`-th absolute moments bounded by
-`B`, the covariance of the normalized traces `(n : ℂ)⁻¹ * tr(Hₙ ^ k₁)` and
-`(n : ℂ)⁻¹ * tr(Hₙ ^ k₂)` has norm at most `2 * ((k₁ + k₂) / 2)^(k₁ + k₂) * B / n²` for all
-`k₁, k₂, n : ℕ`. -/
-theorem norm_inv_mul_inv_mul_integral_trace_pow_mul_sub_wignerMatrix_le [IsProbabilityMeasure P]
+/-- **Normalized two-trace covariance bound (uncentered difference form).** Under independent
+centered entries in `L^(k₁ + k₂)` with `(k₁ + k₂)`-th absolute moments bounded by `B`, the
+covariance of the normalized traces `(n : ℂ)⁻¹ * tr(Hₙ ^ k₁)` and `(n : ℂ)⁻¹ * tr(Hₙ ^ k₂)` has
+norm at most `2 * ((k₁ + k₂) / 2)^(k₁ + k₂) * B / n²` for all `k₁, k₂, n : ℕ`. -/
+theorem norm_inv_mul_inv_mul_integral_trace_pow_mul_sub_wignerMatrix_le
     (hindep : iIndepFun (fun k : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) k) P)
     (hξzero : ∀ ij, ∫ ω, ξ ij ω ∂P = 0) (hηzero : ∀ i, ∫ ω, η i ω ∂P = 0)
     {k₁ k₂ n : ℕ} {B : ℝ}
@@ -320,16 +302,10 @@ theorem norm_inv_mul_inv_mul_integral_trace_pow_mul_sub_wignerMatrix_le [IsProba
           (∫ ω, (wignerMatrix ξ η n ω ^ k₁).trace ∂P) *
             ∫ ω, (wignerMatrix ξ η n ω ^ k₂).trace ∂P)‖ ≤
       2 * ((((k₁ + k₂) / 2 : ℕ) : ℝ) ^ (k₁ + k₂)) * B / (n : ℝ) ^ 2 := by
+  have := hindep.isProbabilityMeasure
   have hB : 0 ≤ B := (integral_nonneg fun ω ↦ pow_nonneg (norm_nonneg (η 0 ω)) _).trans (hη 0)
   rcases eq_or_ne n 0 with rfl | hn
   · simp
-  rcases eq_or_ne k₁ 0 with rfl | hk₁
-  · simp only [pow_zero, trace_one, Fintype.card_fin, integral_const_mul, integral_const,
-      probReal_univ, one_smul, sub_self, mul_zero, norm_zero]; positivity
-  rcases eq_or_ne k₂ 0 with rfl | hk₂
-  · simp only [pow_zero, trace_one, Fintype.card_fin, integral_mul_const, integral_const,
-      probReal_univ, one_smul, sub_self, mul_zero, norm_zero]; positivity
-  have : NeZero n := ⟨hn⟩
   have hpow : (n : ℝ) ^ ((k₁ + k₂) / 2) * (Real.sqrt n)⁻¹ ^ (k₁ + k₂) ≤ 1 := by
     have hinv : (Real.sqrt n)⁻¹ ≤ 1 :=
       inv_le_one_of_one_le₀ (Real.one_le_sqrt.mpr (by exact_mod_cast Nat.pos_of_ne_zero hn))
@@ -348,7 +324,7 @@ theorem norm_inv_mul_inv_mul_integral_trace_pow_mul_sub_wignerMatrix_le [IsProba
           (fun j ↦ s(p.2 j, p.2 (finRotate k₂ j))) t}
   have hcard : #S ≤ n ^ ((k₁ + k₂) / 2) * ((k₁ + k₂) / 2) ^ (k₁ + k₂) := by
     simpa [S] using card_filter_shared_edge_and_no_singleton_edge_le (β := Fin n) k₁ k₂
-  rw [integral_trace_pow_mul_trace_pow_sub_wignerMatrix hindep hξzero hηzero hk₁ hk₂ hξp hηp n,
+  rw [integral_trace_pow_mul_trace_pow_sub_wignerMatrix hindep hξzero hηzero hξp hηp n,
     norm_mul, norm_mul, norm_inv, Complex.norm_natCast]
   calc
     (n : ℝ)⁻¹ * (n : ℝ)⁻¹ * ‖∑ p ∈ S, _‖
@@ -364,15 +340,6 @@ theorem norm_inv_mul_inv_mul_integral_trace_pow_mul_sub_wignerMatrix_le [IsProba
         push_cast; have : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn; field_simp
     _ ≤ 2 * ((((k₁ + k₂) / 2 : ℕ) : ℝ) ^ (k₁ + k₂)) * B / (n : ℝ) ^ 2 :=
         mul_le_of_le_one_right (by positivity) hpow
-
-private theorem integrable_trace_pow_wignerMatrix [IsFiniteMeasure P] {k : ℕ}
-    (hξp : ∀ ij, MemLp (ξ ij) k P) (hηp : ∀ i, MemLp (η i) k P) (n : ℕ) :
-    Integrable (fun ω ↦ (wignerMatrix ξ η n ω ^ k).trace) P := by
-  rcases eq_or_ne k 0 with rfl | hk
-  · simp
-  · simp_rw [trace_pow_eq_sum_prod _ hk]
-    exact integrable_finsetSum _ fun w _ ↦ integrable_prod_wignerMatrix_apply
-      (by simpa using hξp) (by simpa using hηp) _ _
 
 private theorem integrable_trace_pow_mul_trace_pow_wignerMatrix [IsFiniteMeasure P] {k₁ k₂ : ℕ}
     (hξp : ∀ ij, MemLp (ξ ij) (k₁ + k₂ : ℕ) P) (hηp : ∀ i, MemLp (η i) (k₁ + k₂ : ℕ) P) (n : ℕ) :
@@ -399,11 +366,11 @@ private theorem integrable_trace_pow_mul_trace_pow_wignerMatrix [IsFiniteMeasure
     (Sum.elim p.1 p.2) (Sum.elim (p.1 ∘ finRotate k₁) (p.2 ∘ finRotate k₂))
   simpa only [Fintype.prod_sum_type, Sum.elim_inl, Sum.elim_inr, Function.comp_apply] using h
 
-/-- **Centered normalized two-trace covariance bound.** On a probability space, under independent
-centered entries in `L^(k₁ + k₂)` with `(k₁ + k₂)`-th absolute moments bounded by `B`, the expected
-product of centered normalized traces of `Hₙ ^ k₁` and `Hₙ ^ k₂` has norm at most
+/-- **Centered normalized two-trace covariance bound.** Under independent centered entries in
+`L^(k₁ + k₂)` with `(k₁ + k₂)`-th absolute moments bounded by `B`, the expected product of centered
+normalized traces of `Hₙ ^ k₁` and `Hₙ ^ k₂` has norm at most
 `2 * ((k₁ + k₂) / 2)^(k₁ + k₂) * B / n²` for all `k₁, k₂, n : ℕ`. -/
-theorem norm_integral_centered_trace_pow_mul_wignerMatrix_le [IsProbabilityMeasure P]
+theorem norm_integral_inv_mul_trace_pow_wignerMatrix_sub_mul_le
     (hindep : iIndepFun (fun k : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) k) P)
     (hξzero : ∀ ij, ∫ ω, ξ ij ω ∂P = 0) (hηzero : ∀ i, ∫ ω, η i ω ∂P = 0)
     {k₁ k₂ n : ℕ} {B : ℝ}
@@ -416,6 +383,7 @@ theorem norm_integral_centered_trace_pow_mul_wignerMatrix_le [IsProbabilityMeasu
         ((n : ℂ)⁻¹ * (wignerMatrix ξ η n ω ^ k₂).trace -
           ∫ ω', (n : ℂ)⁻¹ * (wignerMatrix ξ η n ω' ^ k₂).trace ∂P)) ∂P‖ ≤
       2 * ((((k₁ + k₂) / 2 : ℕ) : ℝ) ^ (k₁ + k₂)) * B / (n : ℝ) ^ 2 := by
+  have := hindep.isProbabilityMeasure
   set X₁ : Ω → ℂ := fun ω ↦ (n : ℂ)⁻¹ * (wignerMatrix ξ η n ω ^ k₁).trace
   set X₂ : Ω → ℂ := fun ω ↦ (n : ℂ)⁻¹ * (wignerMatrix ξ η n ω ^ k₂).trace
   have hint₁ : Integrable X₁ P :=
@@ -456,11 +424,10 @@ theorem norm_integral_centered_trace_pow_mul_wignerMatrix_le [IsProbabilityMeasu
   exact norm_inv_mul_inv_mul_integral_trace_pow_mul_sub_wignerMatrix_le
     hindep hξzero hηzero hξp hηp hξ hη
 
-/-- **Mean-square concentration of normalized Wigner traces.** On a probability space, under
-independent centered entries in `L^(2k)` with `2k`-th absolute moments bounded by `B`, the
-mean-square deviation of the normalized `k`-th trace of `Hₙ` is at most `2 * k^(2k) * B / n²` for
-every `k` and `n`. -/
-theorem integral_norm_inv_mul_trace_pow_wignerMatrix_sub_sq_le [IsProbabilityMeasure P]
+/-- **Mean-square concentration of normalized Wigner traces.** Under independent centered entries
+in `L^(2k)` with `2k`-th absolute moments bounded by `B`, the mean-square deviation of the
+normalized `k`-th trace of `Hₙ` is at most `2 * k^(2k) * B / n²` for every `k` and `n`. -/
+theorem integral_norm_inv_mul_trace_pow_wignerMatrix_sub_sq_le
     (hindep : iIndepFun (fun k : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) k) P)
     (hξzero : ∀ ij, ∫ ω, ξ ij ω ∂P = 0) (hηzero : ∀ i, ∫ ω, η i ω ∂P = 0)
     {k n : ℕ} {B : ℝ}
@@ -495,7 +462,7 @@ theorem integral_norm_inv_mul_trace_pow_wignerMatrix_sub_sq_le [IsProbabilityMea
     exact abs_of_nonneg (integral_nonneg fun ω ↦ sq_nonneg _)
   have h2k : k + k = 2 * k := (two_mul k).symm
   have hdiv : (k + k) / 2 = k := by omega
-  have hcov := norm_integral_centered_trace_pow_mul_wignerMatrix_le
+  have hcov := norm_integral_inv_mul_trace_pow_wignerMatrix_sub_mul_le
     hindep hξzero hηzero (k₁ := k) (k₂ := k) (n := n)
     (by simpa only [h2k] using hξp) (by simpa only [h2k] using hηp)
     (by simpa only [h2k] using hξ) (by simpa only [h2k] using hη)
@@ -504,11 +471,11 @@ theorem integral_norm_inv_mul_trace_pow_wignerMatrix_sub_sq_le [IsProbabilityMea
   exact hcov
 
 /-- The mean-square fluctuation of the normalized `k`-th trace of a Wigner matrix tends to zero as
-`n → ∞` under uniformly bounded `2k`-th absolute moments, including for triangular arrays on
-varying probability spaces. -/
+`n → ∞` under independent centered entries in `L^(2k)` with uniformly bounded `2k`-th absolute
+moments, including for triangular arrays on varying probability spaces. -/
 theorem tendsto_integral_norm_inv_mul_trace_pow_wignerMatrix_sub_sq
     {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω n)]
-    {P : (n : ℕ) → Measure (Ω n)} [∀ n, IsProbabilityMeasure (P n)]
+    {P : (n : ℕ) → Measure (Ω n)}
     {ξ : (n : ℕ) → StrictUpper → Ω n → ℂ} {η : (n : ℕ) → ℕ → Ω n → ℝ} {k : ℕ} {B : ℝ}
     (hindep : ∀ n, iIndepFun (fun idx : StrictUpper ⊕ ℕ ↦
       Sum.elim (ξ n) (fun i ω ↦ (η n i ω : ℂ)) idx) (P n))

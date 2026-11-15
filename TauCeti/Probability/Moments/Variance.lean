@@ -13,6 +13,7 @@ public import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 public import TauCeti.MeasureTheory.Function.Lp.Norm
 public import TauCeti.MeasureTheory.Integral.Lebesgue.SetOfEqZero
 public import TauCeti.Probability.Moments.Mixture
+import TauCeti.MeasureTheory.OuterMeasure.BorelCantelli
 
 /-!
 # The mean squared distance between two independent copies and nonzero-variance bounds
@@ -35,7 +36,8 @@ The file also records the elementary bound of the mean of a real function by the
 its second moment (the nonnegativity of its variance), together with two consequences of nonzero
 variance `Var[X; μ] ≠ 0`: strict positivity of the expectation of an `ℝ≥0`-valued random variable
 on a finite measure space, and nondegeneracy `μ {ω | X ω = 0} < 1` of a real-valued random
-variable on a probability space.
+variable on a probability space, as well as Chebyshev convergence in probability from vanishing
+variances and Borel--Cantelli almost-sure convergence to the mean from summable variances.
 
 ## Main statements
 
@@ -54,6 +56,10 @@ variable on a probability space.
 * `TauCeti.Probability.variance_weighted_coordinate_sum` and
   `TauCeti.Probability.measure_weighted_coordinate_sum_sub_mean_ge`: variance and Chebyshev
   bounds for weighted sums of pairwise independent variables.
+* `TauCeti.Probability.tendsto_measure_abs_sub_integral_ge_of_tendsto_variance`: vanishing
+  variances imply convergence in measure to the mean, including on varying finite measure spaces.
+* `TauCeti.Probability.ae_tendsto_sub_integral_of_summable_variance`: summable variances imply
+  almost-everywhere convergence to the mean on a finite measure space.
 * `TauCeti.integral_coe_pos_of_variance_ne_zero`: on a finite measure space, an `ℝ≥0`-valued
   random variable with nonzero variance has strictly positive expectation.
 * `TauCeti.measure_setOf_eq_zero_lt_one_of_variance_ne_zero`: on a probability space, a
@@ -266,6 +272,33 @@ theorem measure_weighted_coordinate_sum_sub_mean_ge
   have h := meas_ge_le_variance_div_sq hmem hε
   rw [variance_weighted_coordinate_sum a hX hindep] at h
   exact h
+
+/-- **Chebyshev convergence in measure from vanishing variances.** If square-integrable real-valued
+functions on possibly varying finite measure spaces have variances tending to zero along a filter,
+then their deviations from their expectations converge to zero in measure. -/
+theorem tendsto_measure_abs_sub_integral_ge_of_tendsto_variance {ι : Type*} {l : Filter ι}
+    {Ω : ι → Type*} [∀ i, MeasurableSpace (Ω i)]
+    {P : (i : ι) → Measure (Ω i)} [∀ i, IsFiniteMeasure (P i)]
+    {X : (i : ι) → Ω i → ℝ} (hX : ∀ i, MemLp (X i) 2 (P i))
+    (hvar : Tendsto (fun i ↦ Var[X i; P i]) l (𝓝 0)) {ε : ℝ} (hε : 0 < ε) :
+    Tendsto (fun i ↦ P i {ω | ε ≤ |X i ω - ∫ ω', X i ω' ∂P i|}) l (𝓝 0) := by
+  have hreal : Tendsto (fun i ↦ Var[X i; P i] / ε ^ 2) l (𝓝 0) := by
+    simpa only [zero_div] using hvar.div_const (ε ^ 2)
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+    (by simpa only [ENNReal.ofReal_zero] using ENNReal.tendsto_ofReal hreal)
+    (fun _ ↦ bot_le) (fun i ↦ meas_ge_le_variance_div_sq (hX i) hε)
+
+/-- **Borel--Cantelli almost-everywhere convergence from summable variances.** On a finite measure
+space, if a sequence of square-integrable real-valued functions has summable variances, then its
+fluctuations around its expectations converge almost everywhere to zero. -/
+theorem ae_tendsto_sub_integral_of_summable_variance {Ω : Type*} [MeasurableSpace Ω]
+    {P : Measure Ω} [IsFiniteMeasure P] {X : ℕ → Ω → ℝ}
+    (hX : ∀ n, MemLp (X n) 2 P) (hvar : Summable fun n ↦ Var[X n; P]) :
+    ∀ᵐ ω ∂P, Tendsto (fun n ↦ X n ω - ∫ ω', X n ω' ∂P) atTop (𝓝 0) := by
+  refine TauCeti.MeasureTheory.ae_tendsto_of_tsum_dist_ge_ne_top (g := 0) fun ε hε ↦ ?_
+  refine ne_top_of_le_ne_top (hvar.div_const (ε ^ 2)).tsum_ofReal_ne_top
+    (tsum_le_tsum fun n ↦ ?_)
+  simpa only [Pi.zero_apply, Real.dist_eq, sub_zero] using meas_ge_le_variance_div_sq (hX n) hε
 
 variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β] {ν : Measure α} {π : Measure β}
   [SFinite ν] [IsProbabilityMeasure π] {F : α × β → ℝ}

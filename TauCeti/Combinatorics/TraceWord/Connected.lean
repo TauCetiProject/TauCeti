@@ -19,7 +19,7 @@ unordered cyclic edge and traverses each unordered cyclic edge at least twice ac
 
 This file bounds the combined vertex set and cardinality of such connected singleton-free pairs
 `(w₁, w₂)` of lengths `k₁` and `k₂`: their union visits at most `(k₁ + k₂) / 2` vertices, so over a
-nonempty finite alphabet `β` there are at most
+finite alphabet `β` there are at most
 `|β| ^ ((k₁ + k₂) / 2) * ((k₁ + k₂) / 2) ^ (k₁ + k₂)` such pairs. For `n × n` Wigner matrices with
 `n⁻¹/²`-scaled entries, the factor `n ^ ((k₁ + k₂) / 2)` is absorbed by the entry scaling
 `((√n)⁻¹) ^ (k₁ + k₂)`, leaving `O(n⁻²)` after the two `n⁻¹` trace normalizations.
@@ -32,7 +32,7 @@ nonempty finite alphabet `β` there are at most
 * `TauCeti.card_image_union_le_add_div_two_of_shared_edge_of_no_singleton_edge`: if two cyclic
   words of lengths `k₁` and `k₂` share an unordered cyclic edge and have no singleton unordered
   edge across `Fin k₁ ⊕ Fin k₂`, their union visits at most `(k₁ + k₂) / 2` vertices.
-* `TauCeti.card_filter_shared_edge_and_no_singleton_edge_le`: over a nonempty alphabet `β`, at
+* `TauCeti.card_filter_shared_edge_and_no_singleton_edge_le`: over a finite alphabet `β`, at
   most `|β|^((k₁ + k₂) / 2) * ((k₁ + k₂) / 2)^(k₁ + k₂)` word pairs share an unordered cyclic
   edge and have no singleton unordered edge across the pair.
 
@@ -274,10 +274,10 @@ theorem card_image_union_le_add_div_two_of_shared_edge_of_no_singleton_edge {k�
         two_le_card_sum_edge_fiber_of_no_singleton_edge w₁ w₂ h e (mem_of_mem_erase he)
   omega
 
-/-- Over a nonempty finite alphabet `β`, at most `|β|^((k₁ + k₂) / 2) * ((k₁ + k₂) / 2)^(k₁ + k₂)`
+/-- Over a finite alphabet `β`, at most `|β|^((k₁ + k₂) / 2) * ((k₁ + k₂) / 2)^(k₁ + k₂)`
 pairs of cyclic words of lengths `k₁` and `k₂` share an unordered cyclic edge and have no
 singleton unordered cyclic edge across `Fin k₁ ⊕ Fin k₂`. -/
-theorem card_filter_shared_edge_and_no_singleton_edge_le {β : Type*} [Fintype β] [Nonempty β]
+theorem card_filter_shared_edge_and_no_singleton_edge_le {β : Type*} [Fintype β]
     [DecidableEq β] (k₁ k₂ : ℕ) :
     #{p : (Fin k₁ → β) × (Fin k₂ → β) |
         (∃ i j, s(p.1 i, p.1 (finRotate k₁ i)) = s(p.2 j, p.2 (finRotate k₂ j))) ∧
@@ -287,13 +287,19 @@ theorem card_filter_shared_edge_and_no_singleton_edge_le {β : Type*} [Fintype �
             Sum.elim (fun i ↦ s(p.1 i, p.1 (finRotate k₁ i)))
               (fun j ↦ s(p.2 j, p.2 (finRotate k₂ j))) t} ≤
       Fintype.card β ^ ((k₁ + k₂) / 2) * ((k₁ + k₂) / 2) ^ (k₁ + k₂) := by
-  have hbound : #{p : (Fin k₁ → β) × (Fin k₂ → β) | #(univ.image p.1 ∪ univ.image p.2) ≤
-      (k₁ + k₂) / 2} ≤ Fintype.card β ^ ((k₁ + k₂) / 2) * ((k₁ + k₂) / 2) ^ (k₁ + k₂) := by
-    simpa using
-      card_filter_card_image_union_le (ι₁ := Fin k₁) (ι₂ := Fin k₂) (β := β) ((k₁ + k₂) / 2)
-  refine (card_le_card fun p hp ↦ ?_).trans hbound
-  obtain ⟨-, hshare, hno⟩ := mem_filter.mp hp
-  exact mem_filter.mpr ⟨mem_univ _,
-    card_image_union_le_add_div_two_of_shared_edge_of_no_singleton_edge p.1 p.2 hshare hno⟩
+  cases isEmpty_or_nonempty β with
+  | inl hempty =>
+    rw [Finset.card_eq_zero.mpr (Finset.filter_eq_empty_iff.mpr fun p _ ⟨⟨i, _, _⟩, _⟩ ↦
+      isEmptyElim (p.1 i))]
+    exact Nat.zero_le _
+  | inr hne =>
+    have hbound : #{p : (Fin k₁ → β) × (Fin k₂ → β) | #(univ.image p.1 ∪ univ.image p.2) ≤
+        (k₁ + k₂) / 2} ≤ Fintype.card β ^ ((k₁ + k₂) / 2) * ((k₁ + k₂) / 2) ^ (k₁ + k₂) := by
+      simpa using
+        card_filter_card_image_union_le (ι₁ := Fin k₁) (ι₂ := Fin k₂) (β := β) ((k₁ + k₂) / 2)
+    refine (card_le_card fun p hp ↦ ?_).trans hbound
+    obtain ⟨-, hshare, hno⟩ := mem_filter.mp hp
+    exact mem_filter.mpr ⟨mem_univ _,
+      card_image_union_le_add_div_two_of_shared_edge_of_no_singleton_edge p.1 p.2 hshare hno⟩
 
 end TauCeti
