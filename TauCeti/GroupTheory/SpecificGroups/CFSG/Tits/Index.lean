@@ -128,6 +128,14 @@ half-Frobenius. -/
 abbrev toSuzukiReeIndex (d : TitsLieIndex) : SuzukiReeIndex :=
   ⟨d.1, LieTypeIndex.usesHalfFrobenius_of_isTits d.2⟩
 
+/-- The indexed length permutation reverses the short-root carrier's four nodes. -/
+theorem finCongr_lengthPerm (d : TitsLieIndex) (i : Fin d.1.rank) :
+    finCongr d.rank_eq_four (d.toSuzukiReeIndex.lengthPerm i) =
+      Fin.revPerm (finCongr d.rank_eq_four i) := by
+  obtain rfl := d.eq_of
+  simp [toSuzukiReeIndex, SuzukiReeIndex.lengthPerm_tits, Equiv.permCongr_def,
+    lengthPermF4_apply]
+
 /-- **The exponents of the exceptional isogeny on the four numbered simple root subgroups**: the
 first power at the two long simple roots, Bourbaki nodes `1` and `2`, and the second power at the
 two short ones. This is the `F₄` specialization of
