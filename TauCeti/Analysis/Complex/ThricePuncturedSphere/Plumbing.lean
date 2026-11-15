@@ -138,6 +138,13 @@ theorem plumbingFactor_eq_mul_ofReal (q : Puncture) (L : ℝ) :
   push_cast
   ring_nf
 
+/-- The plumbing factor of the input end at `0` is the positive real number `e^{-2πL} / 4`. -/
+theorem plumbingFactor_zero (L : ℝ) :
+    zero.plumbingFactor L = ((Real.exp (-(2 * π * L)) / 4 : ℝ) : ℂ) := by
+  rw [plumbingFactor_eq_mul_ofReal, endScale_zero]
+  push_cast
+  ring
+
 /-- The plumbing scale depends smoothly on the real neck length. -/
 theorem contDiff_plumbingFactor (q : Puncture) {n : WithTop ℕ∞} :
     ContDiff ℝ n (fun l : ℝ => q.plumbingFactor l) := by
