@@ -20,22 +20,24 @@ morphisms of the free braided monoidal category on `S`, the presented braided mo
 An interpretation of `S` into an arbitrary (not necessarily strict) braided monoidal category `D`
 descends to a strong braided functor out of `S.PresentedBraided R` if and only if its extension
 `FreeBraided.lift fo fc` identifies all pairs related by `R` (`PresentedBraided.lift` and
-`PresentedBraided.factors_iff`). Two strong braided functors out of `S.PresentedBraided R` agreeing
-up to isomorphism on the generating objects, compatibly with the coupons, are isomorphic by a
-unique monoidal natural isomorphism (`PresentedBraided.monoidalNatIso` and
-`PresentedBraided.natTrans_ext`). Finally, a braided substitution `σ : BraidedSubstitution S T`
-descends to a strong braided functor `PresentedBraided.mapSubst` between braided presentations
-whenever it carries each defining equation of `R` to an equation holding in `T.PresentedBraided R'`.
+`PresentedBraided.exists_braided_quotientFunctor_comp_iso_lift_iff`). Two strong braided functors
+out of `S.PresentedBraided R` agreeing up to isomorphism on the generating objects, compatibly with
+the coupons, are isomorphic by a unique monoidal natural isomorphism extending those objectwise
+isomorphisms (`PresentedBraided.monoidalNatIso` and `PresentedBraided.natTrans_ext`). Finally, a
+braided substitution `σ : BraidedSubstitution S T` descends to a strong braided functor
+`PresentedBraided.mapSubst` between braided presentations whenever it carries each defining equation
+of `R` to an equation holding in `T.PresentedBraided R'`.
 
 ## Main definitions and results
 
 * `TauCeti.TensorSignature.PresentedBraided S R` and `PresentedBraided.quotientFunctor R`: the
   braided monoidal category presented by `S` and `R`, and the strict braided quotient functor from
   `S.FreeBraided`.
-* `PresentedBraided.lift` and `PresentedBraided.factors_iff`: universal property for strong braided
-  functors into arbitrary braided monoidal targets.
+* `PresentedBraided.lift` and `PresentedBraided.exists_braided_quotientFunctor_comp_iso_lift_iff`:
+  universal property for strong braided functors into arbitrary braided monoidal targets.
 * `PresentedBraided.natTrans_ext` and `PresentedBraided.monoidalNatIso`: uniqueness of strong
-  braided functors out of `S.PresentedBraided R` up to unique monoidal natural isomorphism.
+  braided functors out of `S.PresentedBraided R` up to a unique monoidal natural isomorphism
+  extending given isomorphisms on the generating objects.
 * `PresentedBraided.mapSubst`: descent of a `BraidedSubstitution` to a strong braided functor
   between presented braided monoidal categories.
 
@@ -118,11 +120,94 @@ theorem lift_obj (X : S.FreeBraided) :
     (lift fo fc h).obj ((quotientFunctor R).obj X) = (FreeBraided.lift fo fc).obj X :=
   (rfl)
 
+/-- `lift fo fc h` preserves tensor products of objects strictly. -/
+@[simp]
+theorem lift_obj_tensor (X Y : S.PresentedBraided R) :
+    (lift fo fc h).obj (X ⊗ Y) = (lift fo fc h).obj X ⊗ (lift fo fc h).obj Y := rfl
+
+/-- `lift fo fc h` preserves the tensor unit strictly. -/
+@[simp]
+theorem lift_obj_tensorUnit : (lift fo fc h).obj (𝟙_ (S.PresentedBraided R)) = 𝟙_ D := rfl
+
 /-- On quotient morphisms, `lift fo fc h` agrees with `FreeBraided.lift fo fc`. -/
 @[simp]
 theorem lift_map {X Y : S.FreeBraided} (f : X ⟶ Y) :
     (lift fo fc h).map ((quotientFunctor R).map f) = (FreeBraided.lift fo fc).map f :=
   (rfl)
+
+/-- `lift fo fc h` preserves left whiskering strictly. -/
+@[simp]
+theorem lift_map_whiskerLeft (X : S.PresentedBraided R) {Y₁ Y₂ : S.PresentedBraided R}
+    (f : Y₁ ⟶ Y₂) :
+    (lift fo fc h).map (X ◁ f) = (lift fo fc h).obj X ◁ (lift fo fc h).map f := by
+  obtain ⟨f, rfl⟩ := (quotientFunctor R).map_surjective f
+  exact FreeBraided.lift_map_whiskerLeft fo fc X.as f
+
+/-- `lift fo fc h` preserves right whiskering strictly. -/
+@[simp]
+theorem lift_map_whiskerRight {X₁ X₂ : S.PresentedBraided R} (f : X₁ ⟶ X₂)
+    (Y : S.PresentedBraided R) :
+    (lift fo fc h).map (f ▷ Y) = (lift fo fc h).map f ▷ (lift fo fc h).obj Y := by
+  obtain ⟨f, rfl⟩ := (quotientFunctor R).map_surjective f
+  exact FreeBraided.lift_map_whiskerRight fo fc f Y.as
+
+/-- `lift fo fc h` preserves tensor products of morphisms strictly. -/
+@[simp]
+theorem lift_map_tensorHom {X₁ Y₁ X₂ Y₂ : S.PresentedBraided R} (f : X₁ ⟶ Y₁) (g : X₂ ⟶ Y₂) :
+    (lift fo fc h).map (f ⊗ₘ g) = (lift fo fc h).map f ⊗ₘ (lift fo fc h).map g := by
+  obtain ⟨f, rfl⟩ := (quotientFunctor R).map_surjective f
+  obtain ⟨g, rfl⟩ := (quotientFunctor R).map_surjective g
+  exact (congrArg (lift fo fc h).map (CategoryTheory.Quotient.map_tensorHom_map f g)).trans
+    (FreeBraided.lift_map_tensorHom fo fc f g)
+
+/-- `lift fo fc h` sends the forward associator to the forward associator of `D`. -/
+@[simp]
+theorem lift_map_associator_hom (X Y Z : S.PresentedBraided R) :
+    (lift fo fc h).map (α_ X Y Z).hom =
+      (α_ ((lift fo fc h).obj X) ((lift fo fc h).obj Y) ((lift fo fc h).obj Z)).hom :=
+  FreeBraided.lift_map_associator_hom fo fc X.as Y.as Z.as
+
+/-- `lift fo fc h` sends the inverse associator to the inverse associator of `D`. -/
+@[simp]
+theorem lift_map_associator_inv (X Y Z : S.PresentedBraided R) :
+    (lift fo fc h).map (α_ X Y Z).inv =
+      (α_ ((lift fo fc h).obj X) ((lift fo fc h).obj Y) ((lift fo fc h).obj Z)).inv :=
+  FreeBraided.lift_map_associator_inv fo fc X.as Y.as Z.as
+
+/- The unitor lemmas and `lift_map_braiding_hom` are not `@[simp]`, matching `FreeBraided.lift`. -/
+
+/-- `lift fo fc h` sends the forward left unitor to the forward left unitor of `D`. -/
+theorem lift_map_leftUnitor_hom (X : S.PresentedBraided R) :
+    (lift fo fc h).map (λ_ X).hom = (λ_ ((lift fo fc h).obj X)).hom :=
+  FreeBraided.lift_map_leftUnitor_hom fo fc X.as
+
+/-- `lift fo fc h` sends the inverse left unitor to the inverse left unitor of `D`. -/
+theorem lift_map_leftUnitor_inv (X : S.PresentedBraided R) :
+    (lift fo fc h).map (λ_ X).inv = (λ_ ((lift fo fc h).obj X)).inv :=
+  FreeBraided.lift_map_leftUnitor_inv fo fc X.as
+
+/-- `lift fo fc h` sends the forward right unitor to the forward right unitor of `D`. -/
+theorem lift_map_rightUnitor_hom (X : S.PresentedBraided R) :
+    (lift fo fc h).map (ρ_ X).hom = (ρ_ ((lift fo fc h).obj X)).hom :=
+  FreeBraided.lift_map_rightUnitor_hom fo fc X.as
+
+/-- `lift fo fc h` sends the inverse right unitor to the inverse right unitor of `D`. -/
+theorem lift_map_rightUnitor_inv (X : S.PresentedBraided R) :
+    (lift fo fc h).map (ρ_ X).inv = (ρ_ ((lift fo fc h).obj X)).inv :=
+  FreeBraided.lift_map_rightUnitor_inv fo fc X.as
+
+/-- `lift fo fc h` sends the forward braiding to the forward braiding of `D`. -/
+theorem lift_map_braiding_hom (X Y : S.PresentedBraided R) :
+    (lift fo fc h).map (β_ X Y).hom =
+      (β_ ((lift fo fc h).obj X) ((lift fo fc h).obj Y)).hom :=
+  FreeBraided.lift_map_braiding_hom fo fc X.as Y.as
+
+/-- `lift fo fc h` sends the inverse braiding to the inverse braiding of `D`. -/
+@[simp]
+theorem lift_map_braiding_inv (X Y : S.PresentedBraided R) :
+    (lift fo fc h).map (β_ X Y).inv =
+      (β_ ((lift fo fc h).obj X) ((lift fo fc h).obj Y)).inv :=
+  FreeBraided.lift_map_braiding_inv fo fc X.as Y.as
 
 /-- The unit morphism of `lift fo fc h` is the identity. -/
 @[simp]
@@ -144,10 +229,17 @@ theorem lift_μ (X Y : S.PresentedBraided R) : Functor.LaxMonoidal.μ (lift fo f
 theorem lift_δ (X Y : S.PresentedBraided R) : Functor.OplaxMonoidal.δ (lift fo fc h) X Y = 𝟙 _ :=
   (CategoryTheory.Quotient.lift_δ _ _ X.as Y.as).trans (FreeBraided.lift_δ fo fc X.as Y.as)
 
+end Lift
+
 /-- An interpretation `(fo, fc)` into `D` factors through `quotientFunctor R` as a strong braided
 functor up to monoidal natural isomorphism if and only if `FreeBraided.lift fo fc` identifies every
 pair of morphisms related by `R`. -/
-theorem factors_iff :
+theorem exists_braided_quotientFunctor_comp_iso_lift_iff (R : HomRel S.FreeBraided)
+    {D : Type u'} [Category.{v'} D] [MonoidalCategory D] [BraidedCategory D]
+    (fo : S.Obj → D)
+    (fc : ∀ g : S.Coupon,
+      FreeMonoidalCategory.projectObj fo (S.src g) ⟶
+        FreeMonoidalCategory.projectObj fo (S.tgt g)) :
     (∃ (G : S.PresentedBraided R ⥤ D) (_ : G.Braided)
       (e : quotientFunctor R ⋙ G ≅ FreeBraided.lift fo fc), NatTrans.IsMonoidal e.hom) ↔
       ∀ ⦃X Y : S.FreeBraided⦄ ⦃f g : X ⟶ Y⦄, R f g →
@@ -161,8 +253,6 @@ theorem factors_iff :
       CategoryTheory.Quotient.lift.isLift _ (FreeBraided.lift fo fc) _,
       inferInstanceAs (NatTrans.IsMonoidal
         (CategoryTheory.Quotient.lift.isLift _ (FreeBraided.lift fo fc) _).hom)⟩
-
-end Lift
 
 section Uniqueness
 
@@ -189,30 +279,30 @@ the generating objects, compatibly with every coupon via `FreeBraided.wordIso`, 
 monoidal natural isomorphism extending `e`. -/
 noncomputable def monoidalNatIso
     (he : ∀ g, F.map ((quotientFunctor R).map (FreeBraided.coupon g)) ≫
-        (FreeBraided.wordIso (quotientFunctor R ⋙ F) (quotientFunctor R ⋙ G) e (S.tgt g)).hom =
-      (FreeBraided.wordIso (quotientFunctor R ⋙ F) (quotientFunctor R ⋙ G) e (S.src g)).hom ≫
+        (FreeBraided.wordIso (quotientFunctor R ⋙ F) (quotientFunctor R ⋙ G) e ⟨S.tgt g⟩).hom =
+      (FreeBraided.wordIso (quotientFunctor R ⋙ F) (quotientFunctor R ⋙ G) e ⟨S.src g⟩).hom ≫
         G.map ((quotientFunctor R).map (FreeBraided.coupon g))) :
     F ≅ G :=
   CategoryTheory.Quotient.natIsoLift _ (FreeBraided.monoidalNatIso he)
 
 variable {F G e}
   (he : ∀ g, F.map ((quotientFunctor R).map (FreeBraided.coupon g)) ≫
-      (FreeBraided.wordIso (quotientFunctor R ⋙ F) (quotientFunctor R ⋙ G) e (S.tgt g)).hom =
-    (FreeBraided.wordIso (quotientFunctor R ⋙ F) (quotientFunctor R ⋙ G) e (S.src g)).hom ≫
+      (FreeBraided.wordIso (quotientFunctor R ⋙ F) (quotientFunctor R ⋙ G) e ⟨S.tgt g⟩).hom =
+    (FreeBraided.wordIso (quotientFunctor R ⋙ F) (quotientFunctor R ⋙ G) e ⟨S.src g⟩).hom ≫
       G.map ((quotientFunctor R).map (FreeBraided.coupon g)))
 
 /-- Component of `(monoidalNatIso F G e he).hom` at a quotient object. -/
 @[simp]
 theorem monoidalNatIso_hom_app (X : S.FreeBraided) :
     (monoidalNatIso F G e he).hom.app ((quotientFunctor R).obj X) =
-      (FreeBraided.wordIso (quotientFunctor R ⋙ F) (quotientFunctor R ⋙ G) e X.as).hom :=
+      (FreeBraided.wordIso (quotientFunctor R ⋙ F) (quotientFunctor R ⋙ G) e X).hom :=
   FreeBraided.monoidalNatIso_hom_app he X
 
 /-- Component of `(monoidalNatIso F G e he).inv` at a quotient object. -/
 @[simp]
 theorem monoidalNatIso_inv_app (X : S.FreeBraided) :
     (monoidalNatIso F G e he).inv.app ((quotientFunctor R).obj X) =
-      (FreeBraided.wordIso (quotientFunctor R ⋙ F) (quotientFunctor R ⋙ G) e X.as).inv :=
+      (FreeBraided.wordIso (quotientFunctor R ⋙ F) (quotientFunctor R ⋙ G) e X).inv :=
   FreeBraided.monoidalNatIso_inv_app he X
 
 /-- At a generating object `of a`, `(monoidalNatIso F G e he).hom` equals `(e a).hom`. -/
@@ -267,33 +357,147 @@ theorem mapSubst_obj (X : S.FreeBraided) :
     (mapSubst σ h).obj ((quotientFunctor R).obj X) = (quotientFunctor R').obj (σ.toFunctor.obj X) :=
   (rfl)
 
+/-- `mapSubst σ h` preserves tensor products of objects strictly. -/
+@[simp]
+theorem mapSubst_obj_tensor (X Y : S.PresentedBraided R) :
+    (mapSubst σ h).obj (X ⊗ Y) = (mapSubst σ h).obj X ⊗ (mapSubst σ h).obj Y := rfl
+
+/-- `mapSubst σ h` preserves the tensor unit strictly. -/
+@[simp]
+theorem mapSubst_obj_tensorUnit :
+    (mapSubst σ h).obj (𝟙_ (S.PresentedBraided R)) = 𝟙_ (T.PresentedBraided R') := rfl
+
 /-- On quotient morphisms, `mapSubst σ h` applies `σ.toFunctor` followed by `quotientFunctor R'`. -/
 @[simp]
 theorem mapSubst_map {X Y : S.FreeBraided} (f : X ⟶ Y) :
     (mapSubst σ h).map ((quotientFunctor R).map f) = (quotientFunctor R').map (σ.toFunctor.map f) :=
   (rfl)
 
+/-- `mapSubst σ h` preserves left whiskering strictly. -/
+@[simp]
+theorem mapSubst_map_whiskerLeft (X : S.PresentedBraided R) {Y₁ Y₂ : S.PresentedBraided R}
+    (f : Y₁ ⟶ Y₂) :
+    (mapSubst σ h).map (X ◁ f) = (mapSubst σ h).obj X ◁ (mapSubst σ h).map f := by
+  obtain ⟨f, rfl⟩ := (quotientFunctor R).map_surjective f
+  exact (congrArg (quotientFunctor R').map (σ.toFunctor_map_whiskerLeft X.as f)).trans
+    (CategoryTheory.Quotient.whiskerLeft_map _ _).symm
+
+/-- `mapSubst σ h` preserves right whiskering strictly. -/
+@[simp]
+theorem mapSubst_map_whiskerRight {X₁ X₂ : S.PresentedBraided R} (f : X₁ ⟶ X₂)
+    (Y : S.PresentedBraided R) :
+    (mapSubst σ h).map (f ▷ Y) = (mapSubst σ h).map f ▷ (mapSubst σ h).obj Y := by
+  obtain ⟨f, rfl⟩ := (quotientFunctor R).map_surjective f
+  exact (congrArg (quotientFunctor R').map (σ.toFunctor_map_whiskerRight f Y.as)).trans
+    (CategoryTheory.Quotient.map_whiskerRight _ _).symm
+
+/-- `mapSubst σ h` preserves tensor products of morphisms strictly. -/
+@[simp]
+theorem mapSubst_map_tensorHom {X₁ Y₁ X₂ Y₂ : S.PresentedBraided R} (f : X₁ ⟶ Y₁) (g : X₂ ⟶ Y₂) :
+    (mapSubst σ h).map (f ⊗ₘ g) = (mapSubst σ h).map f ⊗ₘ (mapSubst σ h).map g := by
+  obtain ⟨f, rfl⟩ := (quotientFunctor R).map_surjective f
+  obtain ⟨g, rfl⟩ := (quotientFunctor R).map_surjective g
+  exact (congrArg (mapSubst σ h).map (CategoryTheory.Quotient.map_tensorHom_map f g)).trans
+    ((congrArg (quotientFunctor R').map (σ.toFunctor_map_tensorHom f g)).trans
+      (CategoryTheory.Quotient.map_tensorHom_map _ _).symm)
+
+/-- `mapSubst σ h` sends the forward associator to the forward associator of
+`T.PresentedBraided R'`. -/
+@[simp]
+theorem mapSubst_map_associator_hom (X Y Z : S.PresentedBraided R) :
+    (mapSubst σ h).map (α_ X Y Z).hom =
+      (α_ ((mapSubst σ h).obj X) ((mapSubst σ h).obj Y) ((mapSubst σ h).obj Z)).hom :=
+  (congrArg (quotientFunctor R').map (σ.toFunctor_map_associator_hom X.as Y.as Z.as)).trans
+    (CategoryTheory.Quotient.associator_hom_obj _ _ _).symm
+
+/-- `mapSubst σ h` sends the inverse associator to the inverse associator of
+`T.PresentedBraided R'`. -/
+@[simp]
+theorem mapSubst_map_associator_inv (X Y Z : S.PresentedBraided R) :
+    (mapSubst σ h).map (α_ X Y Z).inv =
+      (α_ ((mapSubst σ h).obj X) ((mapSubst σ h).obj Y) ((mapSubst σ h).obj Z)).inv :=
+  (congrArg (quotientFunctor R').map (σ.toFunctor_map_associator_inv X.as Y.as Z.as)).trans
+    (CategoryTheory.Quotient.associator_inv_obj _ _ _).symm
+
+/- The unitor lemmas and `mapSubst_map_braiding_hom` are not `@[simp]`, matching
+`FreeBraided.lift`. -/
+
+/-- `mapSubst σ h` sends the forward left unitor to the forward left unitor of
+`T.PresentedBraided R'`. -/
+theorem mapSubst_map_leftUnitor_hom (X : S.PresentedBraided R) :
+    (mapSubst σ h).map (λ_ X).hom = (λ_ ((mapSubst σ h).obj X)).hom :=
+  (congrArg (quotientFunctor R').map (σ.toFunctor_map_leftUnitor_hom X.as)).trans
+    (CategoryTheory.Quotient.leftUnitor_hom_obj _).symm
+
+/-- `mapSubst σ h` sends the inverse left unitor to the inverse left unitor of
+`T.PresentedBraided R'`. -/
+theorem mapSubst_map_leftUnitor_inv (X : S.PresentedBraided R) :
+    (mapSubst σ h).map (λ_ X).inv = (λ_ ((mapSubst σ h).obj X)).inv :=
+  (congrArg (quotientFunctor R').map (σ.toFunctor_map_leftUnitor_inv X.as)).trans
+    (CategoryTheory.Quotient.leftUnitor_inv_obj _).symm
+
+/-- `mapSubst σ h` sends the forward right unitor to the forward right unitor of
+`T.PresentedBraided R'`. -/
+theorem mapSubst_map_rightUnitor_hom (X : S.PresentedBraided R) :
+    (mapSubst σ h).map (ρ_ X).hom = (ρ_ ((mapSubst σ h).obj X)).hom :=
+  (congrArg (quotientFunctor R').map (σ.toFunctor_map_rightUnitor_hom X.as)).trans
+    (CategoryTheory.Quotient.rightUnitor_hom_obj _).symm
+
+/-- `mapSubst σ h` sends the inverse right unitor to the inverse right unitor of
+`T.PresentedBraided R'`. -/
+theorem mapSubst_map_rightUnitor_inv (X : S.PresentedBraided R) :
+    (mapSubst σ h).map (ρ_ X).inv = (ρ_ ((mapSubst σ h).obj X)).inv :=
+  (congrArg (quotientFunctor R').map (σ.toFunctor_map_rightUnitor_inv X.as)).trans
+    (CategoryTheory.Quotient.rightUnitor_inv_obj _).symm
+
+/-- `mapSubst σ h` sends the forward braiding to the forward braiding of `T.PresentedBraided R'`. -/
+theorem mapSubst_map_braiding_hom (X Y : S.PresentedBraided R) :
+    (mapSubst σ h).map (β_ X Y).hom =
+      (β_ ((mapSubst σ h).obj X) ((mapSubst σ h).obj Y)).hom :=
+  (congrArg (quotientFunctor R').map (σ.toFunctor_map_braiding_hom X.as Y.as)).trans
+    (CategoryTheory.Quotient.braiding_hom _ _ _).symm
+
+/-- `mapSubst σ h` sends the inverse braiding to the inverse braiding of `T.PresentedBraided R'`. -/
+@[simp]
+theorem mapSubst_map_braiding_inv (X Y : S.PresentedBraided R) :
+    (mapSubst σ h).map (β_ X Y).inv =
+      (β_ ((mapSubst σ h).obj X) ((mapSubst σ h).obj Y)).inv :=
+  (congrArg (quotientFunctor R').map (σ.toFunctor_map_braiding_inv X.as Y.as)).trans
+    (CategoryTheory.Quotient.braiding_inv _ _ _).symm
+
 /-- The unit morphism of `mapSubst σ h` is the identity. -/
 @[simp]
 theorem mapSubst_ε : Functor.LaxMonoidal.ε (mapSubst σ h) = 𝟙 _ :=
-  (CategoryTheory.Quotient.lift_ε _ _).trans (by simp; rfl)
+  (CategoryTheory.Quotient.lift_ε _ _).trans <| by
+    simp only [Functor.LaxMonoidal.comp_ε, CategoryTheory.Quotient.functor_ε,
+      BraidedSubstitution.toFunctor_ε, Category.id_comp]
+    exact (quotientFunctor R').map_id _
 
 /-- The counit morphism of `mapSubst σ h` is the identity. -/
 @[simp]
 theorem mapSubst_η : Functor.OplaxMonoidal.η (mapSubst σ h) = 𝟙 _ :=
-  (CategoryTheory.Quotient.lift_η _ _).trans (by simp; rfl)
+  (CategoryTheory.Quotient.lift_η _ _).trans <| by
+    simp only [Functor.OplaxMonoidal.comp_η, CategoryTheory.Quotient.functor_η,
+      BraidedSubstitution.toFunctor_η, Category.comp_id]
+    exact (quotientFunctor R').map_id _
 
 /-- The tensorator of `mapSubst σ h` is the identity. -/
 @[simp]
 theorem mapSubst_μ (X Y : S.PresentedBraided R) :
     Functor.LaxMonoidal.μ (mapSubst σ h) X Y = 𝟙 _ :=
-  (CategoryTheory.Quotient.lift_μ _ _ X.as Y.as).trans (by simp; rfl)
+  (CategoryTheory.Quotient.lift_μ _ _ X.as Y.as).trans <| by
+    simp only [Functor.LaxMonoidal.comp_μ, CategoryTheory.Quotient.functor_μ,
+      BraidedSubstitution.toFunctor_μ]
+    exact (Category.id_comp _).trans ((quotientFunctor R').map_id _)
 
 /-- The inverse tensorator of `mapSubst σ h` is the identity. -/
 @[simp]
 theorem mapSubst_δ (X Y : S.PresentedBraided R) :
     Functor.OplaxMonoidal.δ (mapSubst σ h) X Y = 𝟙 _ :=
-  (CategoryTheory.Quotient.lift_δ _ _ X.as Y.as).trans (by simp; rfl)
+  (CategoryTheory.Quotient.lift_δ _ _ X.as Y.as).trans <| by
+    simp only [Functor.OplaxMonoidal.comp_δ, CategoryTheory.Quotient.functor_δ,
+      BraidedSubstitution.toFunctor_δ, Category.comp_id]
+    exact (quotientFunctor R').map_id _
 
 end Substitution
 

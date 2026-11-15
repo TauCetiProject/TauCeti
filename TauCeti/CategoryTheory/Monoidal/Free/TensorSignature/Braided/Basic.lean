@@ -37,11 +37,9 @@ and the axioms of `CategoryTheory.BraidedCategory`
   `S.FreeBraided` agreeing up to isomorphism on the generating objects, compatibly with the
   coupons, are isomorphic by a unique monoidal natural isomorphism extending those objectwise
   isomorphisms.
-* `FreeBraided.wordWeight` and `FreeBraided.exponentSum`: additive object weights and the induced
-  weighted crossing-and-coupon invariant on morphisms, showing in particular that double crossings
-  `(β_ (of a) (of b)).hom ≫ (β_ (of b) (of a)).hom` have exponent sum `2` and are distinct from
-  the identity on coupon-free signatures (`FreeBraided.braiding_comp_braiding_ne_id`), and that
-  endomorphism coupons are distinct from identities (`FreeBraided.coupon_ne_eqToHom`).
+
+Additive word weights, crossing-and-coupon exponent sums, and non-symmetry witnesses are developed
+in `TauCeti.CategoryTheory.Monoidal.Free.TensorSignature.Braided.ExponentSum`.
 
 ## References
 
@@ -72,10 +70,20 @@ namespace FreeBraided
 
 variable {S}
 
--- Exposed so that `(of a).as` reduces to `.of a` in dependent endpoint types (such as
--- `wordIso_of`), matching `FreeMonoidal.of`.
+-- Exposed so that `(of a).as` reduces to `.of a` in downstream `rfl` lemmas (such as
+-- `BraidedSubstitution.toFunctor_obj_of`), matching `FreeMonoidal.of`.
 /-- The object of the free braided monoidal category given by a single generating object. -/
 @[expose] def of (a : S.Obj) : S.FreeBraided := ⟨.of a⟩
+
+/-- Wrapping a generating object word `FreeMonoidalCategory.of a` gives `of a`. -/
+@[simp]
+theorem mk_of (a : S.Obj) :
+    (⟨FreeMonoidalCategory.of (C := no_index S.Obj) a⟩ : S.FreeBraided) = of a := rfl
+
+/-- Distinct generating objects produce distinct objects of `S.FreeBraided`. -/
+@[simp]
+theorem of_inj {a b : S.Obj} : of a = of b ↔ a = b :=
+  ⟨fun h ↦ by cases h; rfl, congrArg of⟩
 
 /-- Formal composites, tensor products and whiskerings of identities, associators, unitors,
 braidings and their inverses, and coupons. The morphisms of `S.FreeBraided` are the quotient of
@@ -223,6 +231,20 @@ instance : MonoidalCategory S.FreeBraided where
     exact Quotient.sound (ρ_naturality _)
   pentagon _ _ _ _ := Quotient.sound pentagon
   triangle _ _ := Quotient.sound triangle
+
+-- `no_index S.Obj` ensures `simp` also matches concrete `abbrev` signatures whose `Obj` reduces,
+-- and `rfl` (without parentheses) lets `dsimp` apply these rules inside dependent arguments such
+-- as `FreeBraided.wordIso`.
+/-- Wrapping the tensor unit word of `FreeMonoidalCategory S.Obj` gives `𝟙_ S.FreeBraided`. -/
+@[simp]
+theorem mk_tensorUnit :
+    (⟨𝟙_ (FreeMonoidalCategory (no_index S.Obj))⟩ : S.FreeBraided) = 𝟙_ S.FreeBraided := rfl
+
+/-- Wrapping a formal tensor product of words gives the tensor product in `S.FreeBraided`. -/
+@[simp]
+theorem mk_tensor (X Y : FreeMonoidalCategory S.Obj) :
+    (⟨MonoidalCategoryStruct.tensorObj (C := FreeMonoidalCategory (no_index S.Obj)) X Y⟩ :
+      S.FreeBraided) = ⟨X⟩ ⊗ ⟨Y⟩ := rfl
 
 /-- The braiding on `S.FreeBraided`, given by the equivalence classes of `Hom.β_hom` and
 `Hom.β_inv`. -/
@@ -620,51 +642,55 @@ theorem natTrans_ext {F G : S.FreeBraided ⥤ D} [F.Monoidal] [G.LaxMonoidal] {�
 variable (F G : S.FreeBraided ⥤ D) [F.Monoidal] [G.Monoidal]
   (e : ∀ a, F.obj (of a) ≅ G.obj (of a))
 
-/-- The isomorphism between the images of a tensor word under two strong monoidal functors out of
-the free braided monoidal category, induced by isomorphisms `e` at the generating objects together
-with the tensorators and unit comparisons of the two functors. -/
-def wordIso : ∀ X : FreeMonoidalCategory S.Obj, F.obj ⟨X⟩ ≅ G.obj ⟨X⟩
+/-- Auxiliary recursion defining `FreeBraided.wordIso` on the underlying tensor word. -/
+private def wordIsoAux : ∀ X : FreeMonoidalCategory S.Obj, F.obj ⟨X⟩ ≅ G.obj ⟨X⟩
   | .of a => e a
   | .unit => (Functor.Monoidal.εIso F).symm ≪≫ Functor.Monoidal.εIso G
   | .tensor X Y =>
-    (Functor.Monoidal.μIso F ⟨X⟩ ⟨Y⟩).symm ≪≫ (wordIso X ⊗ᵢ wordIso Y) ≪≫
+    (Functor.Monoidal.μIso F ⟨X⟩ ⟨Y⟩).symm ≪≫ (wordIsoAux X ⊗ᵢ wordIsoAux Y) ≪≫
       Functor.Monoidal.μIso G ⟨X⟩ ⟨Y⟩
+
+/-- The isomorphism between the images of an object under two strong monoidal functors out of
+the free braided monoidal category, induced by isomorphisms `e` at the generating objects together
+with the tensorators and unit comparisons of the two functors. -/
+def wordIso (X : S.FreeBraided) : F.obj X ≅ G.obj X :=
+  wordIsoAux F G e X.as
 
 /-- On a generating object `of a`, `wordIso F G e` is `e a`. -/
 @[simp]
-theorem wordIso_of (a : S.Obj) : wordIso F G e (of a).as = e a := (rfl)
+theorem wordIso_of (a : S.Obj) : wordIso F G e (of a) = e a := (rfl)
 
 /-- On the tensor unit, the forward morphism of `wordIso F G e` is `η F ≫ ε G`. -/
 @[simp]
 theorem wordIso_tensorUnit_hom :
-    (wordIso F G e (𝟙_ S.FreeBraided).as).hom = η F ≫ ε G := (rfl)
+    (wordIso F G e (𝟙_ S.FreeBraided)).hom = η F ≫ ε G := (rfl)
 
 /-- On the tensor unit, the inverse morphism of `wordIso F G e` is `η G ≫ ε F`. -/
 @[simp]
 theorem wordIso_tensorUnit_inv :
-    (wordIso F G e (𝟙_ S.FreeBraided).as).inv = η G ≫ ε F := (rfl)
+    (wordIso F G e (𝟙_ S.FreeBraided)).inv = η G ≫ ε F := (rfl)
 
 /-- On a tensor product, the forward morphism of `wordIso F G e` conjugates the tensor product of
 components by `δ F` and `μ G`. -/
 @[simp]
 theorem wordIso_tensor_hom (X Y : S.FreeBraided) :
-    (wordIso F G e (X ⊗ Y).as).hom =
-      δ F X Y ≫ ((wordIso F G e X.as).hom ⊗ₘ (wordIso F G e Y.as).hom) ≫ μ G X Y := (rfl)
+    (wordIso F G e (X ⊗ Y)).hom =
+      δ F X Y ≫ ((wordIso F G e X).hom ⊗ₘ (wordIso F G e Y).hom) ≫ μ G X Y := (rfl)
 
 /-- On a tensor product, the inverse morphism of `wordIso F G e` conjugates the tensor product of
 inverse components by `δ G` and `μ F`. -/
 @[simp]
 theorem wordIso_tensor_inv (X Y : S.FreeBraided) :
-    (wordIso F G e (X ⊗ Y).as).inv =
-      δ G X Y ≫ ((wordIso F G e X.as).inv ⊗ₘ (wordIso F G e Y.as).inv) ≫ μ F X Y :=
+    (wordIso F G e (X ⊗ Y)).inv =
+      δ G X Y ≫ ((wordIso F G e X).inv ⊗ₘ (wordIso F G e Y).inv) ≫ μ F X Y :=
   Category.assoc _ _ _
 
 /-- If `wordIso` commutes with the forward morphism of an isomorphism in `S.FreeBraided`, it also
 commutes with its inverse. -/
 private theorem map_iso_inv_comp_wordIso_hom {F G : S.FreeBraided ⥤ D} [F.Monoidal] [G.Monoidal]
     {e : ∀ a, F.obj (of a) ≅ G.obj (of a)} {X Y : S.FreeBraided} (i : X ≅ Y)
-    (hi : F.map i.hom ≫ (wordIso F G e Y.as).hom = (wordIso F G e X.as).hom ≫ G.map i.hom) :
-    F.map i.inv ≫ (wordIso F G e X.as).hom = (wordIso F G e Y.as).hom ≫ G.map i.inv := by
+    (hi : F.map i.hom ≫ (wordIso F G e Y).hom = (wordIso F G e X).hom ≫ G.map i.hom) :
+    F.map i.inv ≫ (wordIso F G e X).hom = (wordIso F G e Y).hom ≫ G.map i.inv := by
   rw [← cancel_epi (F.map i.hom), ← Functor.map_comp_assoc, i.hom_inv_id, Functor.map_id,
     Category.id_comp, reassoc_of% hi, ← Functor.map_comp, i.hom_inv_id, Functor.map_id,
     Category.comp_id]
@@ -683,38 +709,38 @@ attribute [local simp] whiskerLeft_comp_tensorHom whiskerLeft_comp_tensorHom_ass
   tensorHom_comp_whiskerLeft_assoc tensorHom_comp_whiskerRight tensorHom_comp_whiskerRight_assoc
 
 private theorem map_α_hom_comp_wordIso_hom (X Y Z : S.FreeBraided) :
-    F.map (α_ X Y Z).hom ≫ (wordIso F G e (X ⊗ (Y ⊗ Z)).as).hom =
-      (wordIso F G e ((X ⊗ Y) ⊗ Z).as).hom ≫ G.map (α_ X Y Z).hom := by
+    F.map (α_ X Y Z).hom ≫ (wordIso F G e (X ⊗ (Y ⊗ Z))).hom =
+      (wordIso F G e ((X ⊗ Y) ⊗ Z)).hom ≫ G.map (α_ X Y Z).hom := by
   rw [← cancel_epi (μ F X Y ▷ F.obj Z ≫ μ F (X ⊗ Y) Z),
     ← cancel_mono (δ G X (Y ⊗ Z) ≫ G.obj X ◁ δ G Y Z)]
   simp [← Functor.OplaxMonoidal.associativity]
 
 private theorem map_l_hom_comp_wordIso_hom (X : S.FreeBraided) :
-    F.map (λ_ X).hom ≫ (wordIso F G e X.as).hom =
-      (wordIso F G e (𝟙_ _ ⊗ X).as).hom ≫ G.map (λ_ X).hom := by
+    F.map (λ_ X).hom ≫ (wordIso F G e X).hom =
+      (wordIso F G e (𝟙_ _ ⊗ X)).hom ≫ G.map (λ_ X).hom := by
   rw [← cancel_epi (ε F ▷ F.obj X ≫ μ F (𝟙_ _) X)]
   simp
   simp [tensorHom_def']
 
 private theorem map_ρ_hom_comp_wordIso_hom (X : S.FreeBraided) :
-    F.map (ρ_ X).hom ≫ (wordIso F G e X.as).hom =
-      (wordIso F G e (X ⊗ 𝟙_ _).as).hom ≫ G.map (ρ_ X).hom := by
+    F.map (ρ_ X).hom ≫ (wordIso F G e X).hom =
+      (wordIso F G e (X ⊗ 𝟙_ _)).hom ≫ G.map (ρ_ X).hom := by
   rw [← cancel_epi (F.obj X ◁ ε F ≫ μ F X (𝟙_ _))]
   simp
   simp [MonoidalCategory.tensorHom_def]
 
 private theorem map_β_hom_comp_wordIso_hom (X Y : S.FreeBraided) :
-    F.map (β_ X Y).hom ≫ (wordIso F G e (Y ⊗ X).as).hom =
-      (wordIso F G e (X ⊗ Y).as).hom ≫ G.map (β_ X Y).hom := by
+    F.map (β_ X Y).hom ≫ (wordIso F G e (Y ⊗ X)).hom =
+      (wordIso F G e (X ⊗ Y)).hom ≫ G.map (β_ X Y).hom := by
   simp [BraidedCategory.braiding_naturality_assoc]
 
 /-- The isomorphisms `wordIso F G e` between two strong braided functors out of `S.FreeBraided` are
 natural as soon as they are natural with respect to the coupons. -/
 theorem map_comp_wordIso_hom
-    (he : ∀ g, F.map (coupon g) ≫ (wordIso F G e (S.tgt g)).hom =
-      (wordIso F G e (S.src g)).hom ≫ G.map (coupon g))
+    (he : ∀ g, F.map (coupon g) ≫ (wordIso F G e ⟨S.tgt g⟩).hom =
+      (wordIso F G e ⟨S.src g⟩).hom ≫ G.map (coupon g))
     {X Y : S.FreeBraided} (f : X ⟶ Y) :
-    F.map f ≫ (wordIso F G e Y.as).hom = (wordIso F G e X.as).hom ≫ G.map f := by
+    F.map f ≫ (wordIso F G e Y).hom = (wordIso F G e X).hom ≫ G.map f := by
   induction f using Hom.inductionOn with
   | id X => simp
   | α_hom X Y Z => exact map_α_hom_comp_wordIso_hom X Y Z
@@ -741,23 +767,23 @@ theorem map_comp_wordIso_hom
 isomorphisms `e` on the generating objects, compatibly with every coupon, are isomorphic by a
 monoidal natural isomorphism extending `e`. -/
 def monoidalNatIso
-    (he : ∀ g, F.map (coupon g) ≫ (wordIso F G e (S.tgt g)).hom =
-      (wordIso F G e (S.src g)).hom ≫ G.map (coupon g)) :
+    (he : ∀ g, F.map (coupon g) ≫ (wordIso F G e ⟨S.tgt g⟩).hom =
+      (wordIso F G e ⟨S.src g⟩).hom ≫ G.map (coupon g)) :
     F ≅ G :=
-  NatIso.ofComponents (fun X ↦ wordIso F G e X.as) fun f ↦ map_comp_wordIso_hom he f
+  NatIso.ofComponents (wordIso F G e) fun f ↦ map_comp_wordIso_hom he f
 
-variable (he : ∀ g, F.map (coupon g) ≫ (wordIso F G e (S.tgt g)).hom =
-  (wordIso F G e (S.src g)).hom ≫ G.map (coupon g))
+variable (he : ∀ g, F.map (coupon g) ≫ (wordIso F G e ⟨S.tgt g⟩).hom =
+  (wordIso F G e ⟨S.src g⟩).hom ≫ G.map (coupon g))
 
-/-- The forward component of `monoidalNatIso he` at `X` is `(wordIso F G e X.as).hom`. -/
+/-- The forward component of `monoidalNatIso he` at `X` is `(wordIso F G e X).hom`. -/
 @[simp]
 theorem monoidalNatIso_hom_app (X : S.FreeBraided) :
-    (monoidalNatIso he).hom.app X = (wordIso F G e X.as).hom := (rfl)
+    (monoidalNatIso he).hom.app X = (wordIso F G e X).hom := (rfl)
 
-/-- The inverse component of `monoidalNatIso he` at `X` is `(wordIso F G e X.as).inv`. -/
+/-- The inverse component of `monoidalNatIso he` at `X` is `(wordIso F G e X).inv`. -/
 @[simp]
 theorem monoidalNatIso_inv_app (X : S.FreeBraided) :
-    (monoidalNatIso he).inv.app X = (wordIso F G e X.as).inv := (rfl)
+    (monoidalNatIso he).inv.app X = (wordIso F G e X).inv := (rfl)
 
 /-- At a generating object `of a`, the forward component of `monoidalNatIso he` is `(e a).hom`. -/
 theorem monoidalNatIso_hom_app_of (a : S.Obj) :
@@ -776,260 +802,6 @@ instance : NatTrans.IsMonoidal (monoidalNatIso he).hom where
       monoidalNatIso_hom_app, monoidalNatIso_hom_app]
 
 end Uniqueness
-
-section ExponentSum
-
-private def wordWeightAux (w : S.Obj → ℤ) : FreeMonoidalCategory S.Obj → ℤ
-  | .of a => w a
-  | .unit => 0
-  | .tensor X Y => wordWeightAux w X + wordWeightAux w Y
-
-/-- Additive weight of a formal tensor word in `S.FreeBraided` induced by an integer weight `w` on
-the generating objects: the unit has weight `0` and tensor products add weights. For `w = 1`, this
-is the strand count of the boundary word. -/
-def wordWeight (w : S.Obj → ℤ) (X : S.FreeBraided) : ℤ :=
-  wordWeightAux w X.as
-
-/-- The weight of a generating object `of a` is `w a`. -/
-@[simp]
-theorem wordWeight_of (w : S.Obj → ℤ) (a : S.Obj) : wordWeight w (of a) = w a := (rfl)
-
-/-- The weight of the tensor unit is `0`. -/
-@[simp]
-theorem wordWeight_tensorUnit (w : S.Obj → ℤ) : wordWeight w (𝟙_ S.FreeBraided) = 0 := (rfl)
-
-/-- The weight of a tensor product is the sum of the weights of the factors. -/
-@[simp]
-theorem wordWeight_tensor (w : S.Obj → ℤ) (X Y : S.FreeBraided) :
-    wordWeight w (X ⊗ Y) = wordWeight w X + wordWeight w Y := (rfl)
-
-/-- Under the zero object weight, every formal tensor word has weight `0`. -/
-@[simp]
-theorem wordWeight_zero (X : S.FreeBraided) : wordWeight (fun _ ↦ 0) X = 0 := by
-  rcases X with ⟨X⟩
-  induction X with
-  | of => rfl
-  | unit => rfl
-  | tensor X Y hX hY => exact (wordWeight_tensor _ ⟨X⟩ ⟨Y⟩).trans (by rw [hX, hY]; rfl)
-
-private theorem Hom.wordWeight_eq {w : S.Obj → ℤ}
-    (hw : ∀ g : S.Coupon, wordWeight w ⟨S.src g⟩ = wordWeight w ⟨S.tgt g⟩) :
-    ∀ {X Y : FreeMonoidalCategory S.Obj}, Hom X Y → wordWeight w ⟨X⟩ = wordWeight w ⟨Y⟩
-  | _, _, .id _ => rfl
-  | _, _, .α_hom _ _ _ => by simp only [wordWeight, wordWeightAux]; omega
-  | _, _, .α_inv _ _ _ => by simp only [wordWeight, wordWeightAux]; omega
-  | _, _, .l_hom _ => by simp only [wordWeight, wordWeightAux]; omega
-  | _, _, .l_inv _ => by simp only [wordWeight, wordWeightAux]; omega
-  | _, _, .ρ_hom _ => by simp only [wordWeight, wordWeightAux]; omega
-  | _, _, .ρ_inv _ => by simp only [wordWeight, wordWeightAux]; omega
-  | _, _, .β_hom _ _ => by simp only [wordWeight, wordWeightAux]; omega
-  | _, _, .β_inv _ _ => by simp only [wordWeight, wordWeightAux]; omega
-  | _, _, .coupon g => hw g
-  | _, _, .comp f g => (f.wordWeight_eq hw).trans (g.wordWeight_eq hw)
-  | _, _, .whiskerLeft X f => by
-    have hf := f.wordWeight_eq hw
-    simp only [wordWeight, wordWeightAux] at hf ⊢
-    omega
-  | _, _, .whiskerRight f Y => by
-    have hf := f.wordWeight_eq hw
-    simp only [wordWeight, wordWeightAux] at hf ⊢
-    omega
-  | _, _, .tensor f g => by
-    have hf := f.wordWeight_eq hw
-    have hg := g.wordWeight_eq hw
-    simp only [wordWeight, wordWeightAux] at hf hg ⊢
-    omega
-
-/-- When every coupon preserves `wordWeight w`, every morphism of `S.FreeBraided` preserves
-`wordWeight w`. In particular, on a coupon-free signature there are no morphisms between words of
-different strand counts. -/
-theorem wordWeight_eq_of_hom {w : S.Obj → ℤ}
-    (hw : ∀ g : S.Coupon, wordWeight w ⟨S.src g⟩ = wordWeight w ⟨S.tgt g⟩)
-    {X Y : S.FreeBraided} (f : X ⟶ Y) :
-    wordWeight w X = wordWeight w Y := by
-  induction f using Quotient.inductionOn with | _ f
-  exact f.wordWeight_eq hw
-
-private def exponentSumAux (w : S.Obj → ℤ) (fc : S.Coupon → ℤ) :
-    ∀ {X Y : FreeMonoidalCategory S.Obj}, Hom X Y → ℤ
-  | _, _, .id _ => 0
-  | _, _, .α_hom _ _ _ => 0
-  | _, _, .α_inv _ _ _ => 0
-  | _, _, .l_hom _ => 0
-  | _, _, .l_inv _ => 0
-  | _, _, .ρ_hom _ => 0
-  | _, _, .ρ_inv _ => 0
-  | _, _, .β_hom X Y => wordWeight w ⟨X⟩ * wordWeight w ⟨Y⟩
-  | _, _, .β_inv X Y => -(wordWeight w ⟨X⟩ * wordWeight w ⟨Y⟩)
-  | _, _, .coupon g => fc g
-  | _, _, .comp f g => exponentSumAux w fc f + exponentSumAux w fc g
-  | _, _, .whiskerLeft _ f => exponentSumAux w fc f
-  | _, _, .whiskerRight f _ => exponentSumAux w fc f
-  | _, _, .tensor f g => exponentSumAux w fc f + exponentSumAux w fc g
-
-private theorem exponentSumAux_sound {w : S.Obj → ℤ} (fc : S.Coupon → ℤ)
-    (hw : ∀ g : S.Coupon, wordWeight w ⟨S.src g⟩ = wordWeight w ⟨S.tgt g⟩)
-    {X Y : FreeMonoidalCategory S.Obj} {f g : Hom X Y} (h : HomEquiv f g) :
-    exponentSumAux w fc f = exponentSumAux w fc g := by
-  induction h with
-  | refl => rfl
-  | symm _ _ _ ih => exact ih.symm
-  | trans _ _ ih₁ ih₂ => exact ih₁.trans ih₂
-  | comp _ _ ih₁ ih₂ => simp only [exponentSumAux, ih₁, ih₂]
-  | whiskerLeft _ _ _ _ ih => exact ih
-  | whiskerRight _ _ _ _ ih => exact ih
-  | tensor _ _ ih₁ ih₂ => simp only [exponentSumAux, ih₁, ih₂]
-  | tensorHom_def | whiskerLeft_id | id_whiskerRight | pentagon | triangle => rfl
-  | comp_id | id_comp | assoc | id_tensorHom_id | tensorHom_comp_tensorHom
-  | α_hom_inv | α_inv_hom | ρ_hom_inv | ρ_inv_hom | l_hom_inv | l_inv_hom
-  | associator_naturality | ρ_naturality | l_naturality | β_hom_inv | β_inv_hom =>
-    simp only [exponentSumAux]
-    omega
-  | braiding_naturality_right _ f =>
-    simp only [exponentSumAux, f.wordWeight_eq hw]
-    omega
-  | braiding_naturality_left f _ =>
-    simp only [exponentSumAux, f.wordWeight_eq hw]
-    omega
-  | hexagon_forward =>
-    simp only [exponentSumAux, wordWeight, wordWeightAux]
-    rw [Int.mul_add]
-    omega
-  | hexagon_reverse =>
-    simp only [exponentSumAux, wordWeight, wordWeightAux]
-    rw [Int.add_mul]
-    omega
-
-/-- Weighted crossing-and-coupon exponent sum of a morphism in `S.FreeBraided`. When every coupon
-preserves `wordWeight w`, each positive braiding `(β_ X Y).hom` contributes
-`wordWeight w X * wordWeight w Y`, its inverse contributes the negation, each coupon `g`
-contributes `fc g`, and identities, associators and unitors contribute `0`. -/
-def exponentSum (w : S.Obj → ℤ) (fc : S.Coupon → ℤ)
-    (hw : ∀ g : S.Coupon, wordWeight w ⟨S.src g⟩ = wordWeight w ⟨S.tgt g⟩)
-    {X Y : S.FreeBraided} (f : X ⟶ Y) : ℤ :=
-  Quotient.lift (exponentSumAux w fc) (fun _ _ h ↦ exponentSumAux_sound fc hw h) f
-
-section ExponentSumLemmas
-
-variable (w : S.Obj → ℤ) (fc : S.Coupon → ℤ)
-  (hw : ∀ g : S.Coupon, wordWeight w ⟨S.src g⟩ = wordWeight w ⟨S.tgt g⟩)
-
-/-- Identity morphisms have exponent sum `0`. -/
-@[simp]
-theorem exponentSum_id (X : S.FreeBraided) : exponentSum w fc hw (𝟙 X) = 0 := (rfl)
-
-/-- Exponent sum is additive under composition. -/
-@[simp]
-theorem exponentSum_comp {X Y Z : S.FreeBraided} (f : X ⟶ Y) (g : Y ⟶ Z) :
-    exponentSum w fc hw (f ≫ g) = exponentSum w fc hw f + exponentSum w fc hw g := by
-  induction f using Quotient.inductionOn
-  induction g using Quotient.inductionOn
-  rfl
-
-/-- Left whiskering preserves the exponent sum. -/
-@[simp]
-theorem exponentSum_whiskerLeft (X : S.FreeBraided) {Y Z : S.FreeBraided} (f : Y ⟶ Z) :
-    exponentSum w fc hw (X ◁ f) = exponentSum w fc hw f := by
-  induction f using Quotient.inductionOn
-  rfl
-
-/-- Right whiskering preserves the exponent sum. -/
-@[simp]
-theorem exponentSum_whiskerRight {X Y : S.FreeBraided} (f : X ⟶ Y) (Z : S.FreeBraided) :
-    exponentSum w fc hw (f ▷ Z) = exponentSum w fc hw f := by
-  induction f using Quotient.inductionOn
-  rfl
-
-/-- Exponent sum is additive under tensor products of morphisms. -/
-@[simp]
-theorem exponentSum_tensorHom {W X Y Z : S.FreeBraided} (f : W ⟶ X) (g : Y ⟶ Z) :
-    exponentSum w fc hw (f ⊗ₘ g) = exponentSum w fc hw f + exponentSum w fc hw g := by
-  induction f using Quotient.inductionOn
-  induction g using Quotient.inductionOn
-  rfl
-
-/-- Forward associators have exponent sum `0`. -/
-@[simp]
-theorem exponentSum_associator_hom (X Y Z : S.FreeBraided) :
-    exponentSum w fc hw (α_ X Y Z).hom = 0 := (rfl)
-
-/-- Inverse associators have exponent sum `0`. -/
-@[simp]
-theorem exponentSum_associator_inv (X Y Z : S.FreeBraided) :
-    exponentSum w fc hw (α_ X Y Z).inv = 0 := (rfl)
-
-/-- Forward left unitors have exponent sum `0`. -/
-@[simp]
-theorem exponentSum_leftUnitor_hom (X : S.FreeBraided) :
-    exponentSum w fc hw (λ_ X).hom = 0 := (rfl)
-
-/-- Inverse left unitors have exponent sum `0`. -/
-@[simp]
-theorem exponentSum_leftUnitor_inv (X : S.FreeBraided) :
-    exponentSum w fc hw (λ_ X).inv = 0 := (rfl)
-
-/-- Forward right unitors have exponent sum `0`. -/
-@[simp]
-theorem exponentSum_rightUnitor_hom (X : S.FreeBraided) :
-    exponentSum w fc hw (ρ_ X).hom = 0 := (rfl)
-
-/-- Inverse right unitors have exponent sum `0`. -/
-@[simp]
-theorem exponentSum_rightUnitor_inv (X : S.FreeBraided) :
-    exponentSum w fc hw (ρ_ X).inv = 0 := (rfl)
-
-/-- A positive braiding `(β_ X Y).hom` has exponent sum `wordWeight w X * wordWeight w Y`. -/
-@[simp]
-theorem exponentSum_braiding_hom (X Y : S.FreeBraided) :
-    exponentSum w fc hw (β_ X Y).hom = wordWeight w X * wordWeight w Y := (rfl)
-
-/-- An inverse braiding `(β_ X Y).inv` has exponent sum `-(wordWeight w X * wordWeight w Y)`. -/
-@[simp]
-theorem exponentSum_braiding_inv (X Y : S.FreeBraided) :
-    exponentSum w fc hw (β_ X Y).inv = -(wordWeight w X * wordWeight w Y) := (rfl)
-
-/-- A coupon `g` has exponent sum `fc g`. -/
-@[simp]
-theorem exponentSum_coupon (g : S.Coupon) :
-    exponentSum w fc hw (coupon g) = fc g := (rfl)
-
-/-- `eqToHom` morphisms have exponent sum `0`. -/
-@[simp]
-theorem exponentSum_eqToHom {X Y : S.FreeBraided} (h : X = Y) :
-    exponentSum w fc hw (eqToHom h) = 0 := by
-  cases h
-  simp
-
-end ExponentSumLemmas
-
-/-- On a coupon-free tensor signature, a self-crossing `(β_ (of a) (of a)).hom` has exponent sum
-`1` and is therefore distinct from the identity. -/
-theorem braiding_hom_ne_id [IsEmpty S.Coupon] (a : S.Obj) :
-    (β_ (of a) (of a)).hom ≠ 𝟙 (of a ⊗ of a) := by
-  intro h
-  have hexp := congrArg (exponentSum (fun _ ↦ 1) (fun g ↦ isEmptyElim g) (fun g ↦ isEmptyElim g)) h
-  simp at hexp
-
-/-- On a coupon-free tensor signature, the double crossing
-`(β_ (of a) (of b)).hom ≫ (β_ (of b) (of a)).hom` has exponent sum `2` and is therefore distinct
-from the identity: `S.FreeBraided` does not satisfy the symmetry equation. -/
-theorem braiding_comp_braiding_ne_id [IsEmpty S.Coupon] (a b : S.Obj) :
-    (β_ (of a) (of b)).hom ≫ (β_ (of b) (of a)).hom ≠ 𝟙 (of a ⊗ of b) := by
-  intro h
-  have hexp := congrArg (exponentSum (fun _ ↦ 1) (fun g ↦ isEmptyElim g) (fun g ↦ isEmptyElim g)) h
-  simp at hexp
-
-/-- Every endomorphism coupon in `S.FreeBraided` is distinct from the identity morphism on its
-boundary word. -/
-theorem coupon_ne_eqToHom (g : S.Coupon) (h : S.src g = S.tgt g) :
-    coupon g ≠ eqToHom (congrArg FreeBraided.mk h) := by
-  classical
-  intro hEq
-  have hexp := congrArg
-    (exponentSum (fun _ ↦ 0) (fun c ↦ if c = g then 1 else 0) (fun _ ↦ by simp)) hEq
-  simp at hexp
-
-end ExponentSum
 
 end FreeBraided
 
