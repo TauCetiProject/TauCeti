@@ -14,33 +14,17 @@ public import TauCeti.Topology.CategoryTheory.Groupoid.Basic
 
 Let `Φ : C ⥤ D` be a functor into a smooth groupoid `D` whose source and target are local
 diffeomorphisms, with `Φ.obj` a local diffeomorphism and `Φ.toPrefunctor.mapTotal` smooth.
-When `Φ` is essentially surjective, every object of `D` is connected by an arrow to an object in
-the image of `Φ`, so `Φ` pulls invariant forms back injectively
-(`CategoryTheory.Functor.invariantFormsPullback_injective`); this step needs neither fullness of
-`Φ` nor invertibility of arrows.
+When `Φ` is essentially surjective, `Φ` pulls invariant forms back injectively
+(`CategoryTheory.Functor.invariantFormsPullback_injective`); this needs neither fullness of `Φ` nor
+invertibility of arrows.
 
 When `D` is also a topological groupoid, `Φ` is full and essentially surjective, and the source of
 `C` is a local diffeomorphism, pullback along `Φ` is a linear equivalence on invariant forms
-(`CategoryTheory.Functor.invariantFormsEquiv`). Near each object `y` of `D`, a local inverse of
-the target of `D` followed by a local inverse of `Φ.obj` lifts objects smoothly to `C`. Any two
-such lifts are joined near `y` by a continuous family of arrows of `D`, which lifts through an
-arrow of `C` by fullness and the local-diffeomorphism property of the source maps; invariance on
-`C` then identifies the two local pullbacks. Consequently the descended form is smooth, pulls back
-to the given invariant form on `C`, and is invariant on `D`.
-
-The equivalence commutes with the exterior derivative and with wedge products, and depends only on
-the smooth natural-transformation class of `Φ`. The object and arrow models may have corners,
-coefficients may take values in any normed space, and ineffective isotropy arrows are retained
-throughout.
-
-## Main definitions and results
-
-* `CategoryTheory.Functor.invariantFormsPullback_injective`: pullback of invariant forms along an
-  essentially surjective functor with locally diffeomorphic object map and target map is injective.
-* `CategoryTheory.Functor.invariantFormsPullback_surjective`: pullback of invariant forms along a
-  full, essentially surjective étale refinement is surjective.
-* `CategoryTheory.Functor.invariantFormsEquiv`: the resulting linear equivalence of invariant
-  forms, with exterior-derivative and wedge compatibility.
+(`CategoryTheory.Functor.invariantFormsEquiv`). Local inverses of `D`'s target and `Φ.obj` lift
+objects smoothly to `C`, and any two local lifts are joined near a point by a smooth family of
+arrows in `C` via fullness and the local-diffeomorphism property of source maps. The equivalence
+commutes with the exterior derivative and wedge products, and depends only on the smooth
+natural-transformation class of `Φ`.
 
 ## References
 
@@ -55,80 +39,20 @@ open scoped Manifold ContDiff
 
 namespace CategoryTheory.Functor
 
-section Injective
-
-variable {E H A K E' H' A' K' C D : Type*}
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  [NormedAddCommGroup A] [NormedSpace ℝ A] [TopologicalSpace K]
-  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
-  [NormedAddCommGroup A'] [NormedSpace ℝ A'] [TopologicalSpace K']
-  [Category C] [Category D] [TopologicalSpace C] [TopologicalSpace D]
-  [TopologicalSpace (Quiver.Total C)] [TopologicalSpace (Quiver.Total D)]
-  [ChartedSpace H C] [ChartedSpace K (Quiver.Total C)]
-  [ChartedSpace H' D] [ChartedSpace K' (Quiver.Total D)]
-  {I : ModelWithCorners ℝ E H} {J : ModelWithCorners ℝ A K}
-  {I' : ModelWithCorners ℝ E' H'} {J' : ModelWithCorners ℝ A' K'}
-  [IsManifold I ∞ C] [IsManifold J ∞ (Quiver.Total C)]
-  [IsManifold I' ∞ D] [IsManifold J' ∞ (Quiver.Total D)]
-  {hs : ContMDiff J I ∞ (Quiver.Total.left : Quiver.Total C → C)}
-  {ht : ContMDiff J I ∞ (Quiver.Total.right : Quiver.Total C → C)}
-  {hs' : ContMDiff J' I' ∞ (Quiver.Total.left : Quiver.Total D → D)}
-  {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {k : ℕ}
-
 open TauCeti
 
-/-- Pullback of invariant forms along an essentially surjective functor is injective whenever the
-object map and the target map of the codomain are smooth local diffeomorphisms. -/
-theorem invariantFormsPullback_injective (Φ : C ⥤ D) [Φ.EssSurj]
-    (hΦ : IsLocalDiffeomorph I I' ∞ Φ.obj)
-    (hΦ₁ : ContMDiff J J' ∞ Φ.toPrefunctor.mapTotal)
-    (ht' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.right : Quiver.Total D → D)) :
-    Function.Injective
-      (Φ.toPrefunctor.invariantFormsPullback (hs := hs) (ht := ht) (hs' := hs')
-        (ht' := ht'.contMDiff) (V := V) (k := k) hΦ.contMDiff hΦ₁) := by
-  rw [injective_iff_map_eq_zero]
-  intro φ hφ
-  refine Subtype.ext <| Subtype.ext <| funext fun y ↦ ?_
-  let x := Φ.objPreimage y
-  let a : Quiver.Total D := ⟨Φ.obj x, y, (Φ.objObjPreimageIso y).hom⟩
-  have hΦx : mpullback (F := V) (k := k) I I' Φ.obj φ.1.1 x = 0 := by
-    have h0 := congrArg Subtype.val hφ
-    rw [Prefunctor.coe_invariantFormsPullback, Submodule.coe_zero] at h0
-    have h0x := congrArg (fun η : SmoothForm I C V k ↦ η.1 x) h0
-    rw [SmoothForm.coe_mpullback, Submodule.coe_zero, Pi.zero_apply] at h0x
-    exact h0x
-  have hleft : (φ.1.1 : RoughForm I' D V k) a.left = 0 :=
-    ((hΦ x).mpullback_apply_eq_zero_iff (by simp)).mp hΦx
-  have hinv := congrArg (fun η : SmoothForm J' (Quiver.Total D) V k ↦ η.1 a)
-    (TauCeti.Quiver.mem_invariantForms_iff.mp φ.2)
-  simp only [SmoothForm.coe_mpullback] at hinv
-  have hright : mpullback (F := V) (k := k) J' I' Quiver.Total.right φ.1.1 a = 0 :=
-    hinv.symm.trans (mpullback_apply_eq_zero hleft)
-  exact ((ht' a).mpullback_apply_eq_zero_iff (by simp)).mp hright
-
-end Injective
-
-section LocalLifts
-
-open TauCeti
-
-/-- If two continuous maps into a space on which `f` is a local diffeomorphism agree at `y₀` and
-have equal compositions with `f` near `y₀`, then they agree near `y₀`. -/
-private theorem eventuallyEq_of_isLocalDiffeomorph {M N P : Type*} [TopologicalSpace M]
-    {EM HM EN HN : Type*} [NormedAddCommGroup EM] [NormedSpace ℝ EM] [TopologicalSpace HM]
+private theorem eventuallyEq_of_isLocalDiffeomorph {M N P EM HM EN HN : Type*} [TopologicalSpace M]
+    [NormedAddCommGroup EM] [NormedSpace ℝ EM] [TopologicalSpace HM]
     [NormedAddCommGroup EN] [NormedSpace ℝ EN] [TopologicalSpace HN]
     [TopologicalSpace N] [TopologicalSpace P] [ChartedSpace HM N] [ChartedSpace HN P]
     {IM : ModelWithCorners ℝ EM HM} {IN : ModelWithCorners ℝ EN HN}
     {f : N → P} (hf : IsLocalDiffeomorph IM IN ∞ f) {g₁ g₂ : M → N} {y₀ : M}
     (hg₁ : ContinuousAt g₁ y₀) (hg₂ : ContinuousAt g₂ y₀)
-    (h0 : g₁ y₀ = g₂ y₀) (hf12 : ∀ᶠ z in 𝓝 y₀, f (g₁ z) = f (g₂ z)) :
-    g₁ =ᶠ[𝓝 y₀] g₂ := by
-  have ht₁ : ∀ᶠ z in 𝓝 y₀, g₁ z ∈ (hf (g₁ y₀)).localInverse.target :=
-    hg₁.preimage_mem_nhds ((hf (g₁ y₀)).localInverse.open_target.mem_nhds
-      (hf (g₁ y₀)).localInverse_mem_target)
-  have ht₂ : ∀ᶠ z in 𝓝 y₀, g₂ z ∈ (hf (g₁ y₀)).localInverse.target :=
-    hg₂.preimage_mem_nhds ((hf (g₁ y₀)).localInverse.open_target.mem_nhds
-      (h0 ▸ (hf (g₁ y₀)).localInverse_mem_target))
+    (h0 : g₁ y₀ = g₂ y₀) (hf12 : ∀ᶠ z in 𝓝 y₀, f (g₁ z) = f (g₂ z)) : g₁ =ᶠ[𝓝 y₀] g₂ := by
+  have ht₁ := hg₁.preimage_mem_nhds ((hf (g₁ y₀)).localInverse.open_target.mem_nhds
+    (hf (g₁ y₀)).localInverse_mem_target)
+  have ht₂ := hg₂.preimage_mem_nhds ((hf (g₁ y₀)).localInverse.open_target.mem_nhds
+    (h0 ▸ (hf (g₁ y₀)).localInverse_mem_target))
   filter_upwards [ht₁, ht₂, hf12] with z hz₁ hz₂ hfz
   rw [← (hf (g₁ y₀)).localInverse_left_inv hz₁, hfz, (hf (g₁ y₀)).localInverse_left_inv hz₂]
 
@@ -137,29 +61,62 @@ variable {E H A K E' H' A' K' C D : Type*}
   [NormedAddCommGroup A] [NormedSpace ℝ A] [TopologicalSpace K]
   [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
   [NormedAddCommGroup A'] [NormedSpace ℝ A'] [TopologicalSpace K']
-  [Category C] [Category D]
-  [TopologicalSpace C] [TopologicalSpace D]
+  [Category C] [Category D] [TopologicalSpace C] [TopologicalSpace D]
   [TopologicalSpace (Quiver.Total D)]
   [ChartedSpace H C] [ChartedSpace H' D] [ChartedSpace K' (Quiver.Total D)]
   {I : ModelWithCorners ℝ E H} {J : ModelWithCorners ℝ A K}
   {I' : ModelWithCorners ℝ E' H'} {J' : ModelWithCorners ℝ A' K'}
 
-/-- A smooth local object lift `ℓ : D → C` near `y₀` together with a continuous family of arrows
-`τ z` from `Φ.obj (ℓ z)` to `z`. -/
-private structure IsLocalLiftAt (Φ : C ⥤ D) (y₀ : D) (ℓ : D → C)
-    (τ : D → Quiver.Total D) : Prop where
+section Injective
+
+variable [TopologicalSpace (Quiver.Total C)] [ChartedSpace K (Quiver.Total C)]
+  [IsManifold I ∞ C] [IsManifold J ∞ (Quiver.Total C)]
+  [IsManifold I' ∞ D] [IsManifold J' ∞ (Quiver.Total D)]
+  {hs : ContMDiff J I ∞ (Quiver.Total.left : Quiver.Total C → C)}
+  {ht : ContMDiff J I ∞ (Quiver.Total.right : Quiver.Total C → C)}
+  {hs' : ContMDiff J' I' ∞ (Quiver.Total.left : Quiver.Total D → D)}
+  {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {k : ℕ}
+
+/-- Pullback of invariant forms along an essentially surjective functor is injective whenever the
+object map and the target map of the codomain are smooth local diffeomorphisms. -/
+theorem invariantFormsPullback_injective (Φ : C ⥤ D) [Φ.EssSurj]
+    (hΦ : IsLocalDiffeomorph I I' ∞ Φ.obj) (hΦ₁ : ContMDiff J J' ∞ Φ.toPrefunctor.mapTotal)
+    (ht' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.right : Quiver.Total D → D)) :
+    Function.Injective (Φ.toPrefunctor.invariantFormsPullback (hs := hs) (ht := ht) (hs' := hs')
+      (ht' := ht'.contMDiff) (V := V) (k := k) hΦ.contMDiff hΦ₁) := by
+  rw [injective_iff_map_eq_zero]
+  intro φ hφ
+  refine Subtype.ext <| Subtype.ext <| funext fun y ↦ ?_
+  let a : Quiver.Total D := ⟨Φ.obj (Φ.objPreimage y), y, (Φ.objObjPreimageIso y).hom⟩
+  have hΦx : mpullback (F := V) (k := k) I I' Φ.obj φ.1.1 (Φ.objPreimage y) = 0 := by
+    have h0 := congrArg Subtype.val hφ
+    rw [Prefunctor.coe_invariantFormsPullback, Submodule.coe_zero] at h0
+    have h0x := congrArg (fun η : SmoothForm I C V k ↦ η.1 (Φ.objPreimage y)) h0
+    rwa [SmoothForm.coe_mpullback, Submodule.coe_zero, Pi.zero_apply] at h0x
+  have hleft : (φ.1.1 : RoughForm I' D V k) a.left = 0 :=
+    ((hΦ (Φ.objPreimage y)).mpullback_apply_eq_zero_iff (by simp)).mp hΦx
+  have hinv := congrArg (fun η : SmoothForm J' (Quiver.Total D) V k ↦ η.1 a)
+    (TauCeti.Quiver.mem_invariantForms_iff.mp φ.2)
+  simp only [SmoothForm.coe_mpullback] at hinv
+  exact ((ht' a).mpullback_apply_eq_zero_iff (by simp)).mp
+    (hinv.symm.trans (mpullback_apply_eq_zero hleft))
+
+end Injective
+
+section LocalLifts
+
+private structure IsLocalLiftAt (Φ : C ⥤ D) (y₀ : D) (ℓ : D → C) (τ : D → Quiver.Total D) :
+    Prop where
   contMDiffAt : ContMDiffAt I' I ∞ ℓ y₀
   continuousAt : ContinuousAt τ y₀
   eventually_left : ∀ᶠ z in 𝓝 y₀, (τ z).left = Φ.obj (ℓ z)
   eventually_right : ∀ᶠ z in 𝓝 y₀, (τ z).right = z
 
-/-- Chosen open-set local lift through an arrow `a : Φ.obj x ⟶ y₀`. -/
 private def arrowLocalLift (Φ : C ⥤ D)
     (ht' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.right : Quiver.Total D → D))
     (hΦ : IsLocalDiffeomorph I I' ∞ Φ.obj) (x : C) (a : Quiver.Total D) : D → C :=
   (hΦ x).localInverse ∘ Quiver.Total.left ∘ (ht' a).localInverse
 
-/-- The open neighbourhood on which `arrowLocalLift` is a valid local smooth lift. -/
 private def arrowLocalLiftOpen (Φ : C ⥤ D)
     (ht' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.right : Quiver.Total D → D))
     (hΦ : IsLocalDiffeomorph I I' ∞ Φ.obj) (x : C) (a : Quiver.Total D) : Set D :=
@@ -189,72 +146,49 @@ private theorem isLocalLiftAt_arrowLocalLift (Φ : C ⥤ D)
     (ht' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.right : Quiver.Total D → D))
     (hΦ : IsLocalDiffeomorph I I' ∞ Φ.obj) (x : C) (a : Quiver.Total D)
     {y : D} (hy : y ∈ arrowLocalLiftOpen Φ ht' hΦ x a) :
-    IsLocalLiftAt (I := I) (I' := I') Φ y (arrowLocalLift Φ ht' hΦ x a)
-      (ht' a).localInverse := by
+    IsLocalLiftAt (I := I) (I' := I') Φ y (arrowLocalLift Φ ht' hΦ x a) (ht' a).localInverse := by
   have hopen := isOpen_arrowLocalLiftOpen Φ hs' ht' hΦ x a
   have hτ : ContMDiffAt I' J' ∞ (ht' a).localInverse y :=
-    (ht' a).contMDiffOn_localInverse.contMDiffAt
-      ((ht' a).localInverse_open_source.mem_nhds hy.1)
+    (ht' a).contMDiffOn_localInverse.contMDiffAt ((ht' a).localInverse_open_source.mem_nhds hy.1)
   have hℓ : ContMDiffAt I' I ∞ (arrowLocalLift Φ ht' hΦ x a) y :=
     ((hΦ x).contMDiffOn_localInverse.contMDiffAt
-      ((hΦ x).localInverse_open_source.mem_nhds hy.2)).comp y
-      (hs'.contMDiff.contMDiffAt.comp y hτ)
-  refine ⟨hℓ, hτ.continuousAt, ?_, ?_⟩
-  · filter_upwards [hopen.mem_nhds hy] with z hz
-    exact ((hΦ x).localInverse_right_inv hz.2).symm
-  · filter_upwards [hopen.mem_nhds hy] with z hz
-    exact (ht' a).localInverse_right_inv hz.1
+      ((hΦ x).localInverse_open_source.mem_nhds hy.2)).comp y (hs'.contMDiff.contMDiffAt.comp y hτ)
+  exact ⟨hℓ, hτ.continuousAt,
+    eventually_of_mem (hopen.mem_nhds hy) fun _ hz ↦ ((hΦ x).localInverse_right_inv hz.2).symm,
+    eventually_of_mem (hopen.mem_nhds hy) fun _ hz ↦ (ht' a).localInverse_right_inv hz.1⟩
 
 end LocalLifts
 
 section Descent
 
-variable {E H A K E' H' A' K' C D : Type*}
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  [NormedAddCommGroup A] [NormedSpace ℝ A] [TopologicalSpace K]
-  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
-  [NormedAddCommGroup A'] [NormedSpace ℝ A'] [TopologicalSpace K']
-  [Category C] [Category D] [IsGroupoid D]
-  [TopologicalSpace C] [TopologicalSpace D]
-  [TopologicalSpace (Quiver.Total C)] [TopologicalSpace (Quiver.Total D)]
-  [TauCeti.IsTopologicalGroupoid D]
-  [ChartedSpace H C] [ChartedSpace K (Quiver.Total C)]
-  [ChartedSpace H' D] [ChartedSpace K' (Quiver.Total D)]
-  {I : ModelWithCorners ℝ E H} {J : ModelWithCorners ℝ A K}
-  {I' : ModelWithCorners ℝ E' H'} {J' : ModelWithCorners ℝ A' K'}
+variable [IsGroupoid D] [TopologicalSpace (Quiver.Total C)] [TauCeti.IsTopologicalGroupoid D]
+  [ChartedSpace K (Quiver.Total C)]
   {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {k : ℕ}
 
-open TauCeti
-
-/-- Two local lifts at `y₀` connect near `y₀` by a smooth family of arrows in `C`. -/
 private theorem exists_smooth_connecting_arrow (Φ : C ⥤ D) [Φ.Full]
     (hs : IsLocalDiffeomorph J I ∞ (Quiver.Total.left : Quiver.Total C → C))
     (ht : ContMDiff J I ∞ (Quiver.Total.right : Quiver.Total C → C))
     (hs' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.left : Quiver.Total D → D))
-    (hΦ : IsLocalDiffeomorph I I' ∞ Φ.obj)
-    (hΦ₁ : ContMDiff J J' ∞ Φ.toPrefunctor.mapTotal)
+    (hΦ : IsLocalDiffeomorph I I' ∞ Φ.obj) (hΦ₁ : ContMDiff J J' ∞ Φ.toPrefunctor.mapTotal)
     {y₀ : D} {ℓ₁ ℓ₂ : D → C} {τ₁ τ₂ : D → Quiver.Total D}
     (h₁ : IsLocalLiftAt (I := I) (I' := I') Φ y₀ ℓ₁ τ₁)
     (h₂ : IsLocalLiftAt (I := I) (I' := I') Φ y₀ ℓ₂ τ₂) :
     ∃ σ : D → Quiver.Total C, ContMDiffAt I' J ∞ σ y₀ ∧
       (Quiver.Total.left ∘ σ =ᶠ[𝓝 y₀] ℓ₁) ∧ (Quiver.Total.right ∘ σ =ᶠ[𝓝 y₀] ℓ₂) := by
   obtain ⟨U, hUsub, hUo, hy₀U⟩ := mem_nhds_iff.mp
-    (h₁.eventually_left.and (h₂.eventually_left.and
-      (h₁.eventually_right.and h₂.eventually_right)))
-  have hcompU (z : U) : (τ₁ z).right =
-      (⟨(τ₂ z).right, (τ₂ z).left, CategoryTheory.inv (τ₂ z).hom⟩ : Quiver.Total D).left :=
-    (hUsub z.2).2.2.1.trans (hUsub z.2).2.2.2.symm
+    (h₁.eventually_left.and (h₂.eventually_left.and (h₁.eventually_right.and h₂.eventually_right)))
   let pairU : U → {p : Quiver.Total D × Quiver.Total D // p.1.right = p.2.left} := fun z ↦
-    ⟨(τ₁ z, ⟨(τ₂ z).right, (τ₂ z).left, CategoryTheory.inv (τ₂ z).hom⟩), hcompU z⟩
+    ⟨(τ₁ z, ⟨(τ₂ z).right, (τ₂ z).left, CategoryTheory.inv (τ₂ z).hom⟩),
+      (hUsub z.2).2.2.1.trans (hUsub z.2).2.2.2.symm⟩
   let δU : U → Quiver.Total D := fun z ↦ (pairU z).1.1.comp (pairU z).1.2 (pairU z).2
-  have hpairU : ContinuousAt pairU ⟨y₀, hy₀U⟩ := by
+  let y₀' : U := ⟨y₀, hy₀U⟩
+  have hpairU : ContinuousAt pairU y₀' := by
     rw [ContinuousAt, tendsto_subtype_rng]
     exact (h₁.continuousAt.comp continuous_subtype_val.continuousAt).prodMk
       (IsTopologicalGroupoid.continuous_inverse.continuousAt.comp
         (h₂.continuousAt.comp continuous_subtype_val.continuousAt))
-  have hδU_cont : ContinuousAt δU ⟨y₀, hy₀U⟩ :=
+  have hδU_cont : ContinuousAt δU y₀' :=
     IsTopologicalGroupoid.continuous_comp.continuousAt.comp hpairU
-  let y₀' : U := ⟨y₀, hy₀U⟩
   have hδl : (δU y₀').left = Φ.obj (ℓ₁ y₀) := (Quiver.Total.comp_left _ _ _).trans (hUsub hy₀U).1
   have hδr : (δU y₀').right = Φ.obj (ℓ₂ y₀) :=
     (Quiver.Total.comp_right _ _ _).trans (hUsub hy₀U).2.1
@@ -266,8 +200,7 @@ private theorem exists_smooth_connecting_arrow (Φ : C ⥤ D) [Φ.Full]
   have hσ0 : σ y₀ = b₀ := (hs b₀).localInverse_left_inv (hs b₀).localInverse_mem_target
   have hmap0 : Φ.toPrefunctor.mapTotal (σ y₀) = δU y₀' := by
     rw [hσ0]
-    change ⟨Φ.obj (ℓ₁ y₀), Φ.obj (ℓ₂ y₀),
-      Φ.map (Φ.preimage (Quiver.homOfEq (δU y₀').hom hδl hδr))⟩ = δU y₀'
+    change ⟨_, _, Φ.map (Φ.preimage (Quiver.homOfEq (δU y₀').hom hδl hδr))⟩ = δU y₀'
     rw [Φ.map_preimage, Quiver.Total.mk_homOfEq]
   have hmapU : (fun z : U ↦ Φ.toPrefunctor.mapTotal (σ z)) =ᶠ[𝓝 y₀'] δU :=
     eventuallyEq_of_isLocalDiffeomorph hs'
@@ -275,10 +208,9 @@ private theorem exists_smooth_connecting_arrow (Φ : C ⥤ D) [Φ.Full]
         (hΦ₁.contMDiffAt.comp y₀ hσ).continuousAt continuous_subtype_val.continuousAt)
       hδU_cont hmap0 ((hσ_left.comp_tendsto continuous_subtype_val.continuousAt.tendsto).mono
         fun z hz ↦ by
-          dsimp only [Function.comp_apply] at hz
-          change Φ.obj (σ z).left = (δU z).left
-          rw [hz, Quiver.Total.comp_left]
-          exact ((hUsub z.2).1).symm)
+          change Φ.obj ((Quiver.Total.left ∘ σ) z) = (δU z).left
+          change (Quiver.Total.left ∘ σ) z = ℓ₁ z at hz
+          rw [hz, Quiver.Total.comp_left, (hUsub z.2).1])
   have hΦright : ∀ᶠ z in 𝓝 y₀, Φ.obj (σ z).right = Φ.obj (ℓ₂ z) := by
     have hU' : ∀ᶠ z : U in 𝓝 y₀', Φ.obj (σ z).right = Φ.obj (ℓ₂ z) :=
       hmapU.mono fun z hz ↦ (congrArg Quiver.Total.right hz).trans
@@ -287,11 +219,10 @@ private theorem exists_smooth_connecting_arrow (Φ : C ⥤ D) [Φ.Full]
     filter_upwards [hVy₀, hUo.mem_nhds hy₀U] with z hzV hzU using
       hVsub (show (⟨z, hzU⟩ : U) ∈ Subtype.val ⁻¹' V' from hzV)
   exact ⟨σ, hσ, hσ_left, eventuallyEq_of_isLocalDiffeomorph hΦ
-    ((ht.contMDiffAt.comp y₀ hσ).continuousAt) h₂.contMDiffAt.continuousAt
+    (ht.contMDiffAt.comp y₀ hσ).continuousAt h₂.contMDiffAt.continuousAt
     (congrArg Quiver.Total.right hσ0) hΦright⟩
 
 omit [TopologicalSpace (Quiver.Total C)] in
-/-- Transporting `arrowLocalLift` along `(ht' a).localInverse` yields a local lift at `a.right`. -/
 private theorem isLocalLiftAt_comp_target_localInverse (Φ : C ⥤ D)
     (hs' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.left : Quiver.Total D → D))
     (ht' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.right : Quiver.Total D → D))
@@ -302,14 +233,14 @@ private theorem isLocalLiftAt_comp_target_localInverse (Φ : C ⥤ D)
   classical
   have hmem₁ : a.left ∈ arrowLocalLiftOpen Φ ht' hΦ x₁ a₁ :=
     ha₁r ▸ mem_arrowLocalLiftOpen Φ ht' hΦ x₁ a₁ ha₁
-  have hopen₁ := isOpen_arrowLocalLiftOpen Φ hs' ht' hΦ x₁ a₁
   have hlift₁ := isLocalLiftAt_arrowLocalLift (I := I) (I' := I') Φ hs' ht' hΦ x₁ a₁ hmem₁
   have hta_eq : ((ht' a).localInverse a.right).left = a.left := by
     rw [(ht' a).localInverse_left_inv (ht' a).localInverse_mem_target]
   have hsub : ContMDiffAt I' I' ∞ (Quiver.Total.left ∘ (ht' a).localInverse) a.right :=
     hs'.contMDiff.contMDiffAt.comp a.right (ht' a).contMDiffAt_localInverse
   obtain ⟨W, hWsub, hWo, haW⟩ := mem_nhds_iff.mp
-    ((hsub.continuousAt.tendsto.eventually (hta_eq ▸ hopen₁.mem_nhds hmem₁)).and
+    ((hsub.continuousAt.tendsto.eventually
+      (hta_eq ▸ (isOpen_arrowLocalLiftOpen Φ hs' ht' hΦ x₁ a₁).mem_nhds hmem₁)).and
       ((ht' a).localInverse_open_source.mem_nhds (ht' a).localInverse_mem_source))
   let pairW : W → {p : Quiver.Total D × Quiver.Total D // p.1.right = p.2.left} := fun w ↦
     ⟨((ht' a₁).localInverse ((ht' a).localInverse w).left, (ht' a).localInverse w),
@@ -324,19 +255,16 @@ private theorem isLocalLiftAt_comp_target_localInverse (Φ : C ⥤ D)
     have hta_w : ContinuousAt (fun w : W ↦ (ht' a).localInverse w) ⟨a.right, haW⟩ :=
       ContinuousAt.comp (g := (ht' a).localInverse) (f := (Subtype.val : W → D))
         (ht' a).contMDiffAt_localInverse.continuousAt continuous_subtype_val.continuousAt
-    have hleft_w : ContinuousAt (fun w : W ↦ ((ht' a).localInverse w).left) ⟨a.right, haW⟩ :=
-      hs'.contMDiff.continuous.continuousAt.comp hta_w
     have hta₁_at : ContinuousAt (ht' a₁).localInverse ((ht' a).localInverse a.right).left :=
       (ht' a₁).contMDiffOn_localInverse.continuousOn.continuousAt
         (hta_eq.symm ▸ (ht' a₁).localInverse_open_source.mem_nhds hmem₁.1)
     have hpairW : ContinuousAt pairW ⟨a.right, haW⟩ := by
       rw [ContinuousAt, tendsto_subtype_rng]
       exact (ContinuousAt.comp (f := fun w : W ↦ ((ht' a).localInverse w).left)
-        hta₁_at hleft_w).prodMk hta_w
+        hta₁_at (hs'.contMDiff.continuous.continuousAt.comp hta_w)).prodMk hta_w
     exact IsTopologicalGroupoid.continuous_comp.continuousAt.comp hpairW
-  have hτW_cont : ContinuousAt τW a.right :=
-    hWo.isOpenEmbedding_subtypeVal.continuousAt_iff.mp hτW_sub
-  refine ⟨τW, (hta_eq.symm ▸ hlift₁.contMDiffAt).comp a.right hsub, hτW_cont, ?_, ?_⟩
+  refine ⟨τW, (hta_eq.symm ▸ hlift₁.contMDiffAt).comp a.right hsub,
+    hWo.isOpenEmbedding_subtypeVal.continuousAt_iff.mp hτW_sub, ?_, ?_⟩
   · filter_upwards [hWo.mem_nhds haW] with z hz
     simp only [τW, hz, ↓reduceDIte, pairW, Quiver.Total.comp_left]
     exact ((hΦ x₁).localInverse_right_inv (hWsub hz).1.2).symm
@@ -346,31 +274,30 @@ private theorem isLocalLiftAt_comp_target_localInverse (Φ : C ⥤ D)
 
 variable [IsManifold I ∞ C] [IsManifold J ∞ (Quiver.Total C)]
 
-/-- Any two local smooth lifts at `y₀` pull an invariant form on `C` back to the same value at
-`y₀`. -/
-private theorem mpullback_apply_eq_of_isLocalLiftAt (Φ : C ⥤ D) [Φ.Full]
-    (hs : IsLocalDiffeomorph J I ∞ (Quiver.Total.left : Quiver.Total C → C))
-    (ht : ContMDiff J I ∞ (Quiver.Total.right : Quiver.Total C → C))
+section PrivateDescent
+
+variable {Φ : C ⥤ D} (hs : IsLocalDiffeomorph J I ∞ (Quiver.Total.left : Quiver.Total C → C))
+  {ht : ContMDiff J I ∞ (Quiver.Total.right : Quiver.Total C → C)}
+  {hs' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.left : Quiver.Total D → D)}
+  {ht' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.right : Quiver.Total D → D)}
+  {hΦ : IsLocalDiffeomorph I I' ∞ Φ.obj} {hΦ₁ : ContMDiff J J' ∞ Φ.toPrefunctor.mapTotal}
+
+private theorem mpullback_apply_eq_of_isLocalLiftAt [Φ.Full]
     (hs' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.left : Quiver.Total D → D))
-    (hΦ : IsLocalDiffeomorph I I' ∞ Φ.obj)
-    (hΦ₁ : ContMDiff J J' ∞ Φ.toPrefunctor.mapTotal)
+    (hΦ : IsLocalDiffeomorph I I' ∞ Φ.obj) (hΦ₁ : ContMDiff J J' ∞ Φ.toPrefunctor.mapTotal)
     {α : SmoothForm I C V k} (hα : α ∈ TauCeti.Quiver.invariantForms I J hs.contMDiff ht V k)
     {y₀ : D} {ℓ₁ ℓ₂ : D → C} {τ₁ τ₂ : D → Quiver.Total D}
     (h₁ : IsLocalLiftAt (I := I) (I' := I') Φ y₀ ℓ₁ τ₁)
     (h₂ : IsLocalLiftAt (I := I) (I' := I') Φ y₀ ℓ₂ τ₂) :
-    mpullback (F := V) (k := k) I' I ℓ₁ α.1 y₀ =
-      mpullback (F := V) (k := k) I' I ℓ₂ α.1 y₀ := by
-  obtain ⟨σ, hσ, hleft, hright⟩ :=
-    exists_smooth_connecting_arrow Φ hs ht hs' hΦ hΦ₁ h₁ h₂
+    mpullback (F := V) (k := k) I' I ℓ₁ α.1 y₀ = mpullback (F := V) (k := k) I' I ℓ₂ α.1 y₀ := by
+  obtain ⟨σ, hσ, hleft, hright⟩ := exists_smooth_connecting_arrow Φ hs ht hs' hΦ hΦ₁ h₁ h₂
   have hσd : MDifferentiableAt I' J σ y₀ := hσ.mdifferentiableAt (by simp)
   have hinv := congrArg (fun η : SmoothForm J (Quiver.Total C) V k ↦
-    mpullback (F := V) (k := k) I' J σ η.1 y₀)
-      (TauCeti.Quiver.mem_invariantForms_iff.mp hα)
+    mpullback (F := V) (k := k) I' J σ η.1 y₀) (TauCeti.Quiver.mem_invariantForms_iff.mp hα)
   simp only [SmoothForm.coe_mpullback] at hinv
   rw [← hleft.mpullback_eq, mpullback_comp_at hσd (hs.mdifferentiable (by simp) (σ y₀)), hinv,
     ← mpullback_comp_at hσd (ht.contMDiffAt.mdifferentiableAt (by simp)), hright.mpullback_eq]
 
-/-- Pointwise descended rough form on `D` obtained from an invariant form on `C`. -/
 private def descendedRoughForm (Φ : C ⥤ D) [Φ.EssSurj]
     (ht' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.right : Quiver.Total D → D))
     (hΦ : IsLocalDiffeomorph I I' ∞ Φ.obj) (α : RoughForm I C V k) : RoughForm I' D V k :=
@@ -378,36 +305,22 @@ private def descendedRoughForm (Φ : C ⥤ D) [Φ.EssSurj]
     (arrowLocalLift Φ ht' hΦ (Φ.objPreimage y)
       ⟨Φ.obj (Φ.objPreimage y), y, (Φ.objObjPreimageIso y).hom⟩) α y
 
-/-- Near `a.right`, `descendedRoughForm` agrees pointwise with pullback along `arrowLocalLift`. -/
-private theorem eventually_descendedRoughForm_eq (Φ : C ⥤ D) [Φ.Full] [Φ.EssSurj]
-    (hs : IsLocalDiffeomorph J I ∞ (Quiver.Total.left : Quiver.Total C → C))
-    (ht : ContMDiff J I ∞ (Quiver.Total.right : Quiver.Total C → C))
-    (hs' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.left : Quiver.Total D → D))
-    (ht' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.right : Quiver.Total D → D))
-    (hΦ : IsLocalDiffeomorph I I' ∞ Φ.obj)
-    (hΦ₁ : ContMDiff J J' ∞ Φ.toPrefunctor.mapTotal)
+include hs' hΦ₁
+
+private theorem eventually_descendedRoughForm_eq [Φ.Full] [Φ.EssSurj]
     {α : SmoothForm I C V k} (hα : α ∈ TauCeti.Quiver.invariantForms I J hs.contMDiff ht V k)
     (x : C) (a : Quiver.Total D) (ha : a.left = Φ.obj x) :
-    ∀ᶠ z in 𝓝 a.right,
-      descendedRoughForm Φ ht' hΦ α.1 z =
-        mpullback (F := V) (k := k) I' I (arrowLocalLift Φ ht' hΦ x a) α.1 z :=
+    ∀ᶠ z in 𝓝 a.right, descendedRoughForm Φ ht' hΦ α.1 z =
+      mpullback (F := V) (k := k) I' I (arrowLocalLift Φ ht' hΦ x a) α.1 z :=
   eventually_of_mem ((isOpen_arrowLocalLiftOpen Φ hs' ht' hΦ x a).mem_nhds
     (mem_arrowLocalLiftOpen Φ ht' hΦ x a ha)) fun y hy ↦
-    mpullback_apply_eq_of_isLocalLiftAt Φ hs ht hs' hΦ hΦ₁ hα
+    mpullback_apply_eq_of_isLocalLiftAt hs hs' hΦ hΦ₁ hα
       (isLocalLiftAt_arrowLocalLift Φ hs' ht' hΦ (Φ.objPreimage y)
         ⟨Φ.obj (Φ.objPreimage y), y, (Φ.objObjPreimageIso y).hom⟩
         (mem_arrowLocalLiftOpen Φ ht' hΦ (Φ.objPreimage y) _ rfl))
       (isLocalLiftAt_arrowLocalLift Φ hs' ht' hΦ x a hy)
 
-/-- The descended rough form of an invariant smooth form on `C` is smooth on `D`. -/
-private theorem isSmoothForm_descendedRoughForm [IsManifold I' ∞ D]
-    (Φ : C ⥤ D) [Φ.Full] [Φ.EssSurj]
-    (hs : IsLocalDiffeomorph J I ∞ (Quiver.Total.left : Quiver.Total C → C))
-    (ht : ContMDiff J I ∞ (Quiver.Total.right : Quiver.Total C → C))
-    (hs' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.left : Quiver.Total D → D))
-    (ht' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.right : Quiver.Total D → D))
-    (hΦ : IsLocalDiffeomorph I I' ∞ Φ.obj)
-    (hΦ₁ : ContMDiff J J' ∞ Φ.toPrefunctor.mapTotal)
+private theorem isSmoothForm_descendedRoughForm [IsManifold I' ∞ D] [Φ.Full] [Φ.EssSurj]
     {α : SmoothForm I C V k} (hα : α ∈ TauCeti.Quiver.invariantForms I J hs.contMDiff ht V k) :
     IsSmoothForm I' ∞ (descendedRoughForm Φ ht' hΦ α.1) := by
   rw [isSmoothForm_def]
@@ -416,25 +329,18 @@ private theorem isSmoothForm_descendedRoughForm [IsManifold I' ∞ D]
   let a : Quiver.Total D := ⟨Φ.obj x, y, (Φ.objObjPreimageIso y).hom⟩
   have hℓ := (isLocalLiftAt_arrowLocalLift (I := I) (I' := I') Φ hs' ht' hΦ x a
     (mem_arrowLocalLiftOpen Φ ht' hΦ x a rfl)).contMDiffAt
-  have hev := eventually_descendedRoughForm_eq Φ hs ht hs' ht' hΦ hΦ₁ hα x a rfl
   exact ((α.contMDiff (arrowLocalLift Φ ht' hΦ x a y)).mpullback_form hℓ
     (by simp)).congr_of_eventuallyEq
-    (hev.mono fun z hz ↦ by dsimp only; rw [hz])
+    ((eventually_descendedRoughForm_eq (hs' := hs') (ht' := ht') (hΦ := hΦ) (hΦ₁ := hΦ₁)
+      hs hα x a rfl).mono fun z hz ↦ by dsimp only; rw [hz])
 
-/-- Pulling `descendedRoughForm` back along `Φ.obj` recovers the original form on `C`. -/
-private theorem mpullback_descendedRoughForm (Φ : C ⥤ D) [Φ.Full] [Φ.EssSurj]
-    (hs : IsLocalDiffeomorph J I ∞ (Quiver.Total.left : Quiver.Total C → C))
-    (ht : ContMDiff J I ∞ (Quiver.Total.right : Quiver.Total C → C))
-    (hs' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.left : Quiver.Total D → D))
-    (ht' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.right : Quiver.Total D → D))
-    (hΦ : IsLocalDiffeomorph I I' ∞ Φ.obj)
-    (hΦ₁ : ContMDiff J J' ∞ Φ.toPrefunctor.mapTotal)
+private theorem mpullback_descendedRoughForm [Φ.Full] [Φ.EssSurj]
     {α : SmoothForm I C V k} (hα : α ∈ TauCeti.Quiver.invariantForms I J hs.contMDiff ht V k) :
     mpullback (F := V) (k := k) I I' Φ.obj (descendedRoughForm Φ ht' hΦ α.1) = α.1 := by
   funext x
   have hpt : descendedRoughForm Φ ht' hΦ α.1 (Φ.obj x) =
       mpullback (F := V) (k := k) I' I (hΦ x).localInverse α.1 (Φ.obj x) :=
-    mpullback_apply_eq_of_isLocalLiftAt Φ hs ht hs' hΦ hΦ₁ hα
+    mpullback_apply_eq_of_isLocalLiftAt hs hs' hΦ hΦ₁ hα
       (isLocalLiftAt_arrowLocalLift Φ hs' ht' hΦ (Φ.objPreimage (Φ.obj x))
         ⟨Φ.obj (Φ.objPreimage (Φ.obj x)), Φ.obj x, (Φ.objObjPreimageIso (Φ.obj x)).hom⟩
         (mem_arrowLocalLiftOpen Φ ht' hΦ (Φ.objPreimage (Φ.obj x)) _ rfl))
@@ -443,20 +349,12 @@ private theorem mpullback_descendedRoughForm (Φ : C ⥤ D) [Φ.Full] [Φ.EssSur
   have heq : mpullback (F := V) (k := k) I I' Φ.obj (descendedRoughForm Φ ht' hΦ α.1) x =
       mpullback (F := V) (k := k) I I' Φ.obj
         (mpullback (F := V) (k := k) I' I (hΦ x).localInverse α.1) x := by
-    ext v
-    rw [mpullback_apply, hpt, ← mpullback_apply]
+    ext v; rw [mpullback_apply, hpt, ← mpullback_apply]
   rw [heq, ← mpullback_comp_at (hΦ.mdifferentiable (by simp) x)
       ((hΦ x).mdifferentiableAt_localInverse (by simp)),
     (hΦ x).localInverse_eventuallyEq_left.mpullback_eq, mpullback_id]
 
-/-- Pullbacks of `descendedRoughForm` along the source and target of `D` agree. -/
-private theorem mpullback_left_eq_right_descendedRoughForm (Φ : C ⥤ D) [Φ.Full] [Φ.EssSurj]
-    (hs : IsLocalDiffeomorph J I ∞ (Quiver.Total.left : Quiver.Total C → C))
-    (ht : ContMDiff J I ∞ (Quiver.Total.right : Quiver.Total C → C))
-    (hs' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.left : Quiver.Total D → D))
-    (ht' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.right : Quiver.Total D → D))
-    (hΦ : IsLocalDiffeomorph I I' ∞ Φ.obj)
-    (hΦ₁ : ContMDiff J J' ∞ Φ.toPrefunctor.mapTotal)
+private theorem mpullback_left_eq_right_descendedRoughForm [Φ.Full] [Φ.EssSurj]
     {α : SmoothForm I C V k} (hα : α ∈ TauCeti.Quiver.invariantForms I J hs.contMDiff ht V k) :
     mpullback (F := V) (k := k) J' I' Quiver.Total.left (descendedRoughForm Φ ht' hΦ α.1) =
       mpullback (F := V) (k := k) J' I' Quiver.Total.right (descendedRoughForm Φ ht' hΦ α.1) := by
@@ -471,8 +369,7 @@ private theorem mpullback_left_eq_right_descendedRoughForm (Φ : C ⥤ D) [Φ.Fu
           (descendedRoughForm Φ ht' hΦ α.1) a =
         mpullback (F := V) (k := k) J' I' Quiver.Total.left
           (mpullback (F := V) (k := k) I' I (arrowLocalLift Φ ht' hΦ x₁ a₁) α.1) a := by
-      ext v
-      rw [mpullback_apply, descendedRoughForm, ← mpullback_apply]
+      ext v; rw [mpullback_apply, descendedRoughForm, ← mpullback_apply]
     rw [hpt_l, ← mpullback_comp_at (hs'.mdifferentiable (by simp) a)
       ((isLocalLiftAt_arrowLocalLift Φ hs' ht' hΦ x₁ a₁
         (mem_arrowLocalLiftOpen Φ ht' hΦ x₁ a₁ rfl)).contMDiffAt.mdifferentiableAt (by simp))]
@@ -481,7 +378,7 @@ private theorem mpullback_left_eq_right_descendedRoughForm (Φ : C ⥤ D) [Φ.Fu
   have hcomp_eq : descendedRoughForm Φ ht' hΦ α.1 a.right =
       mpullback (F := V) (k := k) I' I
         (arrowLocalLift Φ ht' hΦ x₁ a₁ ∘ Quiver.Total.left ∘ (ht' a).localInverse) α.1 a.right :=
-    mpullback_apply_eq_of_isLocalLiftAt Φ hs ht hs' hΦ hΦ₁ hα
+    mpullback_apply_eq_of_isLocalLiftAt hs hs' hΦ hΦ₁ hα
       (isLocalLiftAt_arrowLocalLift Φ hs' ht' hΦ (Φ.objPreimage a.right)
         ⟨Φ.obj (Φ.objPreimage a.right), a.right, (Φ.objObjPreimageIso a.right).hom⟩
         (mem_arrowLocalLiftOpen Φ ht' hΦ (Φ.objPreimage a.right) _ rfl)) hlift₂
@@ -490,8 +387,7 @@ private theorem mpullback_left_eq_right_descendedRoughForm (Φ : C ⥤ D) [Φ.Fu
       mpullback (F := V) (k := k) J' I' Quiver.Total.right
         (mpullback (F := V) (k := k) I' I
           (arrowLocalLift Φ ht' hΦ x₁ a₁ ∘ Quiver.Total.left ∘ (ht' a).localInverse) α.1) a := by
-    ext v
-    rw [mpullback_apply, hcomp_eq, ← mpullback_apply]
+    ext v; rw [mpullback_apply, hcomp_eq, ← mpullback_apply]
   have hev_a : (arrowLocalLift Φ ht' hΦ x₁ a₁ ∘ Quiver.Total.left ∘ (ht' a).localInverse) ∘
       Quiver.Total.right =ᶠ[𝓝 a] arrowLocalLift Φ ht' hΦ x₁ a₁ ∘ Quiver.Total.left := by
     filter_upwards [(ht' a).localInverse.open_target.mem_nhds
@@ -499,6 +395,8 @@ private theorem mpullback_left_eq_right_descendedRoughForm (Φ : C ⥤ D) [Φ.Fu
     simp only [Function.comp_apply, (ht' a).localInverse_left_inv hb]
   rw [hl, hr, ← mpullback_comp_at (ht'.mdifferentiable (by simp) a)
     (hlift₂.contMDiffAt.mdifferentiableAt (by simp)), hev_a.mpullback_eq]
+
+end PrivateDescent
 
 variable [IsManifold I' ∞ D] [IsManifold J' ∞ (Quiver.Total D)]
 
@@ -509,23 +407,19 @@ theorem invariantFormsPullback_surjective (Φ : C ⥤ D) [Φ.Full] [Φ.EssSurj]
     (ht : ContMDiff J I ∞ (Quiver.Total.right : Quiver.Total C → C))
     (hs' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.left : Quiver.Total D → D))
     (ht' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.right : Quiver.Total D → D))
-    (hΦ : IsLocalDiffeomorph I I' ∞ Φ.obj)
-    (hΦ₁ : ContMDiff J J' ∞ Φ.toPrefunctor.mapTotal) :
-    Function.Surjective
-      (Φ.toPrefunctor.invariantFormsPullback (hs := hs.contMDiff) (ht := ht)
-        (hs' := hs'.contMDiff) (ht' := ht'.contMDiff) (V := V) (k := k) hΦ.contMDiff hΦ₁) := by
+    (hΦ : IsLocalDiffeomorph I I' ∞ Φ.obj) (hΦ₁ : ContMDiff J J' ∞ Φ.toPrefunctor.mapTotal) :
+    Function.Surjective (Φ.toPrefunctor.invariantFormsPullback (hs := hs.contMDiff) (ht := ht)
+      (hs' := hs'.contMDiff) (ht' := ht'.contMDiff) (V := V) (k := k) hΦ.contMDiff hΦ₁) := by
   intro α
-  let β : SmoothForm I' D V k :=
-    ⟨descendedRoughForm Φ ht' hΦ (α.1.1 : RoughForm I C V k),
-      (isSmoothForm_descendedRoughForm Φ hs ht hs' ht' hΦ hΦ₁ α.2).mem_smoothBundleForms⟩
-  have hβ : β ∈ TauCeti.Quiver.invariantForms I' J' hs'.contMDiff ht'.contMDiff V k := by
-    rw [TauCeti.Quiver.mem_invariantForms_iff]
-    apply Subtype.ext
+  refine ⟨⟨⟨descendedRoughForm Φ ht' hΦ α.1.1,
+    (isSmoothForm_descendedRoughForm (hs' := hs') (ht' := ht') (hΦ := hΦ) (hΦ₁ := hΦ₁)
+      hs α.2).mem_smoothBundleForms⟩, ?_⟩, Subtype.ext (Subtype.ext ?_)⟩
+  · rw [TauCeti.Quiver.mem_invariantForms_iff]; apply Subtype.ext
     rw [SmoothForm.coe_mpullback, SmoothForm.coe_mpullback]
-    exact mpullback_left_eq_right_descendedRoughForm Φ hs ht hs' ht' hΦ hΦ₁ α.2
-  refine ⟨⟨β, hβ⟩, Subtype.ext (Subtype.ext ?_)⟩
-  rw [Prefunctor.coe_invariantFormsPullback, SmoothForm.coe_mpullback]
-  exact mpullback_descendedRoughForm Φ hs ht hs' ht' hΦ hΦ₁ α.2
+    exact mpullback_left_eq_right_descendedRoughForm (hs' := hs') (ht' := ht')
+      (hΦ := hΦ) (hΦ₁ := hΦ₁) hs α.2
+  · rw [Prefunctor.coe_invariantFormsPullback, SmoothForm.coe_mpullback]
+    exact mpullback_descendedRoughForm (hs' := hs') (ht' := ht') (hΦ := hΦ) (hΦ₁ := hΦ₁) hs α.2
 
 /-- **Étale-refinement descent of invariant forms.** Pullback along a full, essentially surjective
 functor with locally diffeomorphic object map, between smooth presentations where the source of `C`
@@ -536,12 +430,10 @@ def invariantFormsEquiv (Φ : C ⥤ D) [Φ.Full] [Φ.EssSurj]
     (ht : ContMDiff J I ∞ (Quiver.Total.right : Quiver.Total C → C))
     (hs' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.left : Quiver.Total D → D))
     (ht' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.right : Quiver.Total D → D))
-    (hΦ : IsLocalDiffeomorph I I' ∞ Φ.obj)
-    (hΦ₁ : ContMDiff J J' ∞ Φ.toPrefunctor.mapTotal) :
+    (hΦ : IsLocalDiffeomorph I I' ∞ Φ.obj) (hΦ₁ : ContMDiff J J' ∞ Φ.toPrefunctor.mapTotal) :
     TauCeti.Quiver.invariantForms I' J' hs'.contMDiff ht'.contMDiff V k ≃ₗ[ℝ]
       TauCeti.Quiver.invariantForms I J hs.contMDiff ht V k :=
-  LinearEquiv.ofBijective
-    (Φ.toPrefunctor.invariantFormsPullback hΦ.contMDiff hΦ₁)
+  LinearEquiv.ofBijective (Φ.toPrefunctor.invariantFormsPullback hΦ.contMDiff hΦ₁)
     ⟨Φ.invariantFormsPullback_injective hΦ hΦ₁ ht',
       Φ.invariantFormsPullback_surjective hs ht hs' ht' hΦ hΦ₁⟩
 
@@ -552,8 +444,7 @@ theorem invariantFormsEquiv_apply (Φ : C ⥤ D) [Φ.Full] [Φ.EssSurj]
     (ht : ContMDiff J I ∞ (Quiver.Total.right : Quiver.Total C → C))
     (hs' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.left : Quiver.Total D → D))
     (ht' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.right : Quiver.Total D → D))
-    (hΦ : IsLocalDiffeomorph I I' ∞ Φ.obj)
-    (hΦ₁ : ContMDiff J J' ∞ Φ.toPrefunctor.mapTotal)
+    (hΦ : IsLocalDiffeomorph I I' ∞ Φ.obj) (hΦ₁ : ContMDiff J J' ∞ Φ.toPrefunctor.mapTotal)
     (φ : TauCeti.Quiver.invariantForms I' J' hs'.contMDiff ht'.contMDiff V k) :
     Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁ φ =
       Φ.toPrefunctor.invariantFormsPullback hΦ.contMDiff hΦ₁ φ := (rfl)
@@ -565,8 +456,7 @@ theorem mpullback_invariantFormsEquiv_symm (Φ : C ⥤ D) [Φ.Full] [Φ.EssSurj]
     (ht : ContMDiff J I ∞ (Quiver.Total.right : Quiver.Total C → C))
     (hs' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.left : Quiver.Total D → D))
     (ht' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.right : Quiver.Total D → D))
-    (hΦ : IsLocalDiffeomorph I I' ∞ Φ.obj)
-    (hΦ₁ : ContMDiff J J' ∞ Φ.toPrefunctor.mapTotal)
+    (hΦ : IsLocalDiffeomorph I I' ∞ Φ.obj) (hΦ₁ : ContMDiff J J' ∞ Φ.toPrefunctor.mapTotal)
     (α : TauCeti.Quiver.invariantForms I J hs.contMDiff ht V k) :
     SmoothForm.mpullback Φ.obj hΦ.contMDiff
       ((Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm α).1 = α.1 := by
@@ -579,8 +469,7 @@ theorem invariantFormsEquiv_symm_mextDerivₗ (Φ : C ⥤ D) [Φ.Full] [Φ.EssSu
     (ht : ContMDiff J I ∞ (Quiver.Total.right : Quiver.Total C → C))
     (hs' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.left : Quiver.Total D → D))
     (ht' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.right : Quiver.Total D → D))
-    (hΦ : IsLocalDiffeomorph I I' ∞ Φ.obj)
-    (hΦ₁ : ContMDiff J J' ∞ Φ.toPrefunctor.mapTotal)
+    (hΦ : IsLocalDiffeomorph I I' ∞ Φ.obj) (hΦ₁ : ContMDiff J J' ∞ Φ.toPrefunctor.mapTotal)
     (α : TauCeti.Quiver.invariantForms I J hs.contMDiff ht V k) :
     (Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm
         (TauCeti.Quiver.invariantForms.mextDerivₗ I J hs.contMDiff ht V k α) =
@@ -592,38 +481,29 @@ theorem invariantFormsEquiv_symm_mextDerivₗ (Φ : C ⥤ D) [Φ.Full] [Φ.EssSu
 
 /-- Descent of invariant forms along an étale refinement commutes with paired wedge products. -/
 theorem invariantFormsEquiv_symm_wedgeWith {V₁ V₂ V₃ : Type*}
-    [NormedAddCommGroup V₁] [NormedSpace ℝ V₁]
-    [NormedAddCommGroup V₂] [NormedSpace ℝ V₂]
-    [NormedAddCommGroup V₃] [NormedSpace ℝ V₃]
-    (μ : V₁ →L[ℝ] V₂ →L[ℝ] V₃) {l : ℕ}
+    [NormedAddCommGroup V₁] [NormedSpace ℝ V₁] [NormedAddCommGroup V₂] [NormedSpace ℝ V₂]
+    [NormedAddCommGroup V₃] [NormedSpace ℝ V₃] (μ : V₁ →L[ℝ] V₂ →L[ℝ] V₃) {l : ℕ}
     (Φ : C ⥤ D) [Φ.Full] [Φ.EssSurj]
     (hs : IsLocalDiffeomorph J I ∞ (Quiver.Total.left : Quiver.Total C → C))
     (ht : ContMDiff J I ∞ (Quiver.Total.right : Quiver.Total C → C))
     (hs' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.left : Quiver.Total D → D))
     (ht' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.right : Quiver.Total D → D))
-    (hΦ : IsLocalDiffeomorph I I' ∞ Φ.obj)
-    (hΦ₁ : ContMDiff J J' ∞ Φ.toPrefunctor.mapTotal)
+    (hΦ : IsLocalDiffeomorph I I' ∞ Φ.obj) (hΦ₁ : ContMDiff J J' ∞ Φ.toPrefunctor.mapTotal)
     (α : TauCeti.Quiver.invariantForms I J hs.contMDiff ht V₁ k)
     (β : TauCeti.Quiver.invariantForms I J hs.contMDiff ht V₂ l) :
     (((Φ.invariantFormsEquiv (V := V₃) (k := k + l) hs ht hs' ht' hΦ hΦ₁).symm
         ⟨SmoothForm.wedgeWith μ α.1 β.1,
           TauCeti.Quiver.wedgeWith_mem_invariantForms μ α.2 β.2⟩).1 :
         SmoothForm I' D V₃ (k + l)) =
-      SmoothForm.wedgeWith μ
-        ((Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm α).1
+      SmoothForm.wedgeWith μ ((Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm α).1
         ((Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm β).1 := by
-  have heq :
-      (Φ.invariantFormsEquiv (V := V₃) (k := k + l) hs ht hs' ht' hΦ hΦ₁).symm
-          ⟨SmoothForm.wedgeWith μ α.1 β.1,
-            TauCeti.Quiver.wedgeWith_mem_invariantForms μ α.2 β.2⟩ =
-        ⟨SmoothForm.wedgeWith μ
-          ((Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm α).1
-          ((Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm β).1,
-          TauCeti.Quiver.wedgeWith_mem_invariantForms μ
-            ((Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm α).2
-            ((Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm β).2⟩ := by
-    rw [LinearEquiv.symm_apply_eq]
-    apply Subtype.ext
+  let e₁ := (Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm α
+  let e₂ := (Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm β
+  have heq : (Φ.invariantFormsEquiv (V := V₃) (k := k + l) hs ht hs' ht' hΦ hΦ₁).symm
+      ⟨SmoothForm.wedgeWith μ α.1 β.1, TauCeti.Quiver.wedgeWith_mem_invariantForms μ α.2 β.2⟩ =
+      ⟨SmoothForm.wedgeWith μ e₁.1 e₂.1,
+        TauCeti.Quiver.wedgeWith_mem_invariantForms μ e₁.2 e₂.2⟩ := by
+    rw [LinearEquiv.symm_apply_eq]; apply Subtype.ext
     rw [invariantFormsEquiv_apply, Prefunctor.coe_invariantFormsPullback]
     change α.1.wedgeWith μ β.1 = SmoothForm.mpullback Φ.obj hΦ.contMDiff _
     rw [SmoothForm.mpullback_wedgeWith, mpullback_invariantFormsEquiv_symm,
@@ -632,22 +512,18 @@ theorem invariantFormsEquiv_symm_wedgeWith {V₁ V₂ V₃ : Type*}
 
 /-- Descent of real-valued invariant forms along an étale refinement commutes with wedge
 products. -/
-theorem invariantFormsEquiv_symm_wedge {l : ℕ}
-    (Φ : C ⥤ D) [Φ.Full] [Φ.EssSurj]
+theorem invariantFormsEquiv_symm_wedge {l : ℕ} (Φ : C ⥤ D) [Φ.Full] [Φ.EssSurj]
     (hs : IsLocalDiffeomorph J I ∞ (Quiver.Total.left : Quiver.Total C → C))
     (ht : ContMDiff J I ∞ (Quiver.Total.right : Quiver.Total C → C))
     (hs' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.left : Quiver.Total D → D))
     (ht' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.right : Quiver.Total D → D))
-    (hΦ : IsLocalDiffeomorph I I' ∞ Φ.obj)
-    (hΦ₁ : ContMDiff J J' ∞ Φ.toPrefunctor.mapTotal)
+    (hΦ : IsLocalDiffeomorph I I' ∞ Φ.obj) (hΦ₁ : ContMDiff J J' ∞ Φ.toPrefunctor.mapTotal)
     (α : TauCeti.Quiver.invariantForms I J hs.contMDiff ht ℝ k)
     (β : TauCeti.Quiver.invariantForms I J hs.contMDiff ht ℝ l) :
     (((Φ.invariantFormsEquiv (V := ℝ) (k := k + l) hs ht hs' ht' hΦ hΦ₁).symm
-        ⟨SmoothForm.wedge α.1 β.1,
-          TauCeti.Quiver.wedge_mem_invariantForms α.2 β.2⟩).1 :
+        ⟨SmoothForm.wedge α.1 β.1, TauCeti.Quiver.wedge_mem_invariantForms α.2 β.2⟩).1 :
         SmoothForm I' D ℝ (k + l)) =
-      SmoothForm.wedge
-        ((Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm α).1
+      SmoothForm.wedge ((Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm α).1
         ((Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm β).1 := by
   simp only [SmoothForm.wedge_def]
   exact Φ.invariantFormsEquiv_symm_wedgeWith _ hs ht hs' ht' hΦ hΦ₁ α β

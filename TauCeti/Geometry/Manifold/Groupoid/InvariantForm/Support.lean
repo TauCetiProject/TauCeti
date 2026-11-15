@@ -13,43 +13,22 @@ public import TauCeti.Topology.CategoryTheory.Functor.IsomorphismClasses
 # Coarse topological support of differential forms on presentations
 
 For a rough differential form `φ` on the object manifold of a category `C`, its *coarse topological
-support* `TauCeti.RoughForm.coarseTSupport φ` is the closure in the coarse space
-`Quotient (isIsomorphicSetoid C)` of the image of the object-level topological support of `φ`.
-Exterior differentiation, scalar multiplication, and wedge products with arbitrary forms do not
-enlarge coarse support, and continuous object maps pull coarse supports back into preimages.
-
-On a smooth groupoid whose source map is a local diffeomorphism and whose target map is smooth, the
-object-level support of an invariant form is saturated under isomorphism, so its image in the
-coarse space is already closed (`TauCeti.Quiver.coarseTSupport_eq_image_tsupport`) and pulls back
-to the exact object-level support (`TauCeti.Quiver.preimage_coarseTSupport_eq_tsupport`). Along a
-functor into such a groupoid whose object map is a local diffeomorphism, the coarse support of the
-pullback of an invariant form is the exact preimage of its coarse support along the induced coarse
-map (`CategoryTheory.Functor.coarseTSupport_mpullback_eq_preimage`).
+support* `TauCeti.RoughForm.coarseTSupport φ` is the closure in `Quotient (isIsomorphicSetoid C)`
+of the image of the object-level topological support of `φ`. On a smooth groupoid whose source map
+is a local diffeomorphism and whose target map is smooth, the object-level support of an invariant
+form is saturated under isomorphism, so its coarse image is already closed
+(`TauCeti.Quiver.coarseTSupport_eq_image_tsupport`) and pulls back to the exact object-level
+support (`TauCeti.Quiver.preimage_coarseTSupport_eq_tsupport`).
 
 Invariant forms with compact coarse support form a submodule
-`TauCeti.Quiver.compactlySupportedInvariantForms` preserved by the exterior derivative and by wedge
-products on either side with arbitrary invariant forms. When the coarse space is compact, every
-invariant form has compact coarse support. Smooth functors whose induced coarse map is proper pull
+`TauCeti.Quiver.compactlySupportedInvariantForms` closed under exterior differentiation and wedge
+products on either side with arbitrary invariant forms. Smooth functors with proper coarse map pull
 compact-coarse-support invariant forms back contravariantly
-(`CategoryTheory.Functor.compactlySupportedInvariantFormsPullback`), whereas general smooth
-functors do not: a smooth functor from a presentation with noncompact coarse space to one with
-compact coarse space pulls nonzero constant `0`-forms back to invariant forms with noncompact
-coarse support
+(`CategoryTheory.Functor.compactlySupportedInvariantFormsPullback`), whereas without properness
+pullback can fail
 (`TauCeti.Quiver.exists_mpullback_notMem_compactlySupportedInvariantForms_of_not_compactSpace`).
-Finally, any full, essentially surjective étale refinement reflecting isomorphisms induces a coarse
-homeomorphism and therefore a linear equivalence on compact-coarse-support invariant forms
+Full, essentially surjective étale refinements reflecting isomorphisms induce a linear equivalence
 (`CategoryTheory.Functor.compactlySupportedInvariantFormsEquiv`).
-
-## Main definitions
-
-* `TauCeti.RoughForm.coarseTSupport`, `TauCeti.SmoothForm.coarseTSupport`: coarse topological
-  support in `Quotient (isIsomorphicSetoid C)`.
-* `TauCeti.Quiver.compactlySupportedInvariantForms`: submodule of invariant smooth forms with
-  compact coarse support, together with `compactlySupportedInvariantForms.mextDerivₗ`.
-* `CategoryTheory.Functor.compactlySupportedInvariantFormsPullback`: contravariant pullback along
-  smooth functors with proper coarse map.
-* `CategoryTheory.Functor.compactlySupportedInvariantFormsEquiv`: linear equivalence on
-  compact-coarse-support invariant forms induced by an étale refinement.
 
 ## References
 
@@ -66,17 +45,17 @@ namespace TauCeti
 
 namespace RoughForm
 
+variable {E H C : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [Category C] [TopologicalSpace C] [ChartedSpace H C]
+
 section Basic
 
-variable {E H C F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [Category C] [TopologicalSpace C] [ChartedSpace H C]
-  [AddCommGroup F] [Module ℝ F] [TopologicalSpace F] {k : ℕ}
+variable {F : Type*} [AddCommGroup F] [Module ℝ F] [TopologicalSpace F] {k : ℕ}
 
 /-- The coarse topological support of a rough differential form on the objects of `C`: the closure
 in `Quotient (isIsomorphicSetoid C)` of the image of its object-level topological support. -/
 def coarseTSupport (φ : RoughForm I C F k) : Set (Quotient (isIsomorphicSetoid C)) :=
-  closure (Quotient.mk (isIsomorphicSetoid C) ''
-    _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) φ)
+  closure (Quotient.mk (isIsomorphicSetoid C) '' _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) φ)
 
 /-- The coarse topological support is closed in the coarse quotient. -/
 theorem isClosed_coarseTSupport (φ : RoughForm I C F k) : IsClosed φ.coarseTSupport :=
@@ -97,18 +76,13 @@ theorem coarseTSupport_zero : (0 : RoughForm I C F k).coarseTSupport = ∅ := by
 
 /-- The coarse topological support of a rough form is empty if and only if the form is zero. -/
 @[simp]
-theorem coarseTSupport_eq_empty_iff {φ : RoughForm I C F k} :
-    φ.coarseTSupport = ∅ ↔ φ = 0 := by
+theorem coarseTSupport_eq_empty_iff {φ : RoughForm I C F k} : φ.coarseTSupport = ∅ ↔ φ = 0 := by
   rw [coarseTSupport, closure_empty_iff, Set.image_eq_empty]
-  constructor
-  · intro h
-    funext x
-    by_contra hx
-    exact Set.eq_empty_iff_forall_notMem.mp h x
-      (subset_tsupport (α := E [⋀^Fin k]→L[ℝ] F) φ hx)
-  · rintro rfl
-    change _root_.tsupport (0 : C → E [⋀^Fin k]→L[ℝ] F) = ∅
-    simp
+  refine ⟨fun h ↦ funext fun x ↦ by_contra fun hx ↦ Set.eq_empty_iff_forall_notMem.mp h x
+    (subset_tsupport (α := E [⋀^Fin k]→L[ℝ] F) φ hx), ?_⟩
+  rintro rfl
+  change _root_.tsupport (0 : C → E [⋀^Fin k]→L[ℝ] F) = ∅
+  simp
 
 omit [Category C] in
 /-- Addition of rough forms does not enlarge topological support beyond the union of supports. -/
@@ -119,25 +93,17 @@ theorem tsupport_add_subset [ContinuousAdd F] (φ ψ : RoughForm I C F k) :
   refine closure_minimal (fun x hx ↦ ?_)
     ((_root_.isClosed_tsupport (α := E [⋀^Fin k]→L[ℝ] F) φ).union
       (_root_.isClosed_tsupport (α := E [⋀^Fin k]→L[ℝ] F) ψ))
-  by_contra hnot
-  rw [Set.mem_union, not_or] at hnot
-  apply hx
-  have hφ : φ x = 0 := by
-    by_contra h
-    exact hnot.1 (subset_tsupport (α := E [⋀^Fin k]→L[ℝ] F) φ h)
-  have hψ : ψ x = 0 := by
-    by_contra h
-    exact hnot.2 (subset_tsupport (α := E [⋀^Fin k]→L[ℝ] F) ψ h)
-  change φ x + ψ x = 0
-  rw [hφ, hψ, add_zero]
+  by_contra hnot; rw [Set.mem_union, not_or] at hnot; apply hx
+  have hφ : φ x = 0 := by by_contra h; exact hnot.1 (subset_tsupport (α := E [⋀^Fin k]→L[ℝ] F) φ h)
+  have hψ : ψ x = 0 := by by_contra h; exact hnot.2 (subset_tsupport (α := E [⋀^Fin k]→L[ℝ] F) ψ h)
+  change φ x + ψ x = 0; rw [hφ, hψ, add_zero]
 
 /-- Coarse topological support of a sum is contained in the union of the coarse supports. -/
 theorem coarseTSupport_add_subset [ContinuousAdd F] (φ ψ : RoughForm I C F k) :
-    (φ + ψ).coarseTSupport ⊆ φ.coarseTSupport ∪ ψ.coarseTSupport := by
-  refine closure_minimal ?_ ((isClosed_coarseTSupport φ).union (isClosed_coarseTSupport ψ))
-  refine (Set.image_mono (tsupport_add_subset φ ψ)).trans ?_
-  rw [Set.image_union]
-  exact Set.union_subset_union subset_closure subset_closure
+    (φ + ψ).coarseTSupport ⊆ φ.coarseTSupport ∪ ψ.coarseTSupport :=
+  closure_minimal ((Set.image_mono (tsupport_add_subset φ ψ)).trans <| by
+      rw [Set.image_union]; exact Set.union_subset_union subset_closure subset_closure)
+    ((isClosed_coarseTSupport φ).union (isClosed_coarseTSupport ψ))
 
 /-- Scalar multiplication does not enlarge coarse topological support. -/
 theorem coarseTSupport_smul_subset [ContinuousConstSMul ℝ F] (c : ℝ) (φ : RoughForm I C F k) :
@@ -153,19 +119,16 @@ end Basic
 
 section DifferentialAndWedge
 
-variable {E H C : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [Category C] [TopologicalSpace C] [ChartedSpace H C] {k l : ℕ}
+variable {k l : ℕ}
 
 /-- Exterior differentiation does not enlarge coarse topological support. -/
 theorem coarseTSupport_mextDeriv_subset {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-    (φ : RoughForm I C V k) :
-    (TauCeti.mextDeriv φ).coarseTSupport ⊆ φ.coarseTSupport :=
+    (φ : RoughForm I C V k) : (TauCeti.mextDeriv φ).coarseTSupport ⊆ φ.coarseTSupport :=
   closure_mono (Set.image_mono (tsupport_mextDeriv_subset φ))
 
 /-- Paired wedge product is supported in the coarse support of its left factor. -/
 theorem coarseTSupport_wedgeWith_subset_left {V₁ V₂ V₃ : Type*}
-    [NormedAddCommGroup V₁] [NormedSpace ℝ V₁]
-    [NormedAddCommGroup V₂] [NormedSpace ℝ V₂]
+    [NormedAddCommGroup V₁] [NormedSpace ℝ V₁] [NormedAddCommGroup V₂] [NormedSpace ℝ V₂]
     [NormedAddCommGroup V₃] [NormedSpace ℝ V₃]
     (μ : V₁ →L[ℝ] V₂ →L[ℝ] V₃) (φ : RoughForm I C V₁ k) (ψ : RoughForm I C V₂ l) :
     (φ.wedgeWith μ ψ).coarseTSupport ⊆ φ.coarseTSupport :=
@@ -173,8 +136,7 @@ theorem coarseTSupport_wedgeWith_subset_left {V₁ V₂ V₃ : Type*}
 
 /-- Paired wedge product is supported in the coarse support of its right factor. -/
 theorem coarseTSupport_wedgeWith_subset_right {V₁ V₂ V₃ : Type*}
-    [NormedAddCommGroup V₁] [NormedSpace ℝ V₁]
-    [NormedAddCommGroup V₂] [NormedSpace ℝ V₂]
+    [NormedAddCommGroup V₁] [NormedSpace ℝ V₁] [NormedAddCommGroup V₂] [NormedSpace ℝ V₂]
     [NormedAddCommGroup V₃] [NormedSpace ℝ V₃]
     (μ : V₁ →L[ℝ] V₂ →L[ℝ] V₃) (φ : RoughForm I C V₁ k) (ψ : RoughForm I C V₂ l) :
     (φ.wedgeWith μ ψ).coarseTSupport ⊆ ψ.coarseTSupport :=
@@ -205,23 +167,23 @@ theorem coarseTSupport_zero : (0 : SmoothForm I C V k).coarseTSupport = ∅ :=
 
 /-- A smooth form has empty coarse topological support if and only if it is zero. -/
 @[simp]
-theorem coarseTSupport_eq_empty_iff {φ : SmoothForm I C V k} :
-    φ.coarseTSupport = ∅ ↔ φ = 0 := by
+theorem coarseTSupport_eq_empty_iff {φ : SmoothForm I C V k} : φ.coarseTSupport = ∅ ↔ φ = 0 := by
   rw [coarseTSupport_eq, RoughForm.coarseTSupport_eq_empty_iff, Submodule.coe_eq_zero]
 
 end SmoothForm
 
 namespace Quiver
 
+variable {E H A K C : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  [NormedAddCommGroup A] [NormedSpace ℝ A] [TopologicalSpace K]
+  [Category C] [TopologicalSpace C] [TopologicalSpace (_root_.Quiver.Total C)]
+  [ChartedSpace H C] [ChartedSpace K (_root_.Quiver.Total C)]
+  (I : ModelWithCorners ℝ E H) (J : ModelWithCorners ℝ A K)
+  [IsManifold I ∞ C] [IsManifold J ∞ (_root_.Quiver.Total C)]
+
 section EtaleSaturation
 
-variable {E H A K C V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  [NormedAddCommGroup A] [NormedSpace ℝ A] [TopologicalSpace K]
-  [Category C] [IsGroupoid C] [TopologicalSpace C] [TopologicalSpace (_root_.Quiver.Total C)]
-  [ChartedSpace H C] [ChartedSpace K (_root_.Quiver.Total C)]
-  {I : ModelWithCorners ℝ E H} {J : ModelWithCorners ℝ A K}
-  [IsManifold I ∞ C] [IsManifold J ∞ (_root_.Quiver.Total C)]
-  [NormedAddCommGroup V] [NormedSpace ℝ V] {k : ℕ}
+variable {I J} [IsGroupoid C] {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {k : ℕ}
 
 /-- On a groupoid whose source is a smooth local diffeomorphism and whose target is smooth, the
 object-level topological support of an invariant form is saturated under isomorphism. -/
@@ -230,35 +192,30 @@ theorem preimage_image_tsupport_eq
     {ht : ContMDiff J I ∞ (_root_.Quiver.Total.right : _root_.Quiver.Total C → C)}
     {φ : SmoothForm I C V k} (hφ : φ ∈ invariantForms I J hs.contMDiff ht V k) :
     Quotient.mk (isIsomorphicSetoid C) ⁻¹'
-        (Quotient.mk (isIsomorphicSetoid C) ''
-          _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] V) φ.1) =
+        (Quotient.mk (isIsomorphicSetoid C) '' _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] V) φ.1) =
       _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] V) φ.1 := by
   let := Groupoid.ofIsGroupoid (C := C)
   refine Set.Subset.antisymm ?_ (Set.subset_preimage_image _ _)
   rintro y ⟨x, hx, hxy⟩
   obtain ⟨f⟩ := TauCeti.isomorphismClassesMk_eq_iff.mp hxy
-  let a : _root_.Quiver.Total C := ⟨x, y, f⟩
-  have ha_left : a ∈ _root_.Quiver.Total.left ⁻¹'
-      _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] V) φ.1 := hx
+  have ha : (⟨x, y, f⟩ : _root_.Quiver.Total C) ∈
+      _root_.Quiver.Total.left ⁻¹' _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] V) φ.1 := hx
   rw [← RoughForm.tsupport_mpullback_eq_preimage (F := V) (k := k) φ.1 hs.contMDiff.continuous
-    hs.isOpenMap (hs.isInvertible_mfderiv (by simp))] at ha_left
+    hs.isOpenMap (hs.isInvertible_mfderiv (by simp))] at ha
   have hinv := congrArg Subtype.val (mem_invariantForms_iff.mp hφ)
   rw [SmoothForm.coe_mpullback, SmoothForm.coe_mpullback] at hinv
-  rw [hinv] at ha_left
-  exact RoughForm.tsupport_mpullback_subset_preimage (F := V) (k := k) ht.continuous φ.1 ha_left
+  exact RoughForm.tsupport_mpullback_subset_preimage (F := V) (k := k) ht.continuous φ.1 (hinv ▸ ha)
 
 /-- On a groupoid whose source is a smooth local diffeomorphism and whose target is smooth, the
-image in the coarse quotient of the topological support of an invariant form is already closed, so
-no outer closure is needed. -/
+image in the coarse quotient of the topological support of an invariant form is already closed. -/
 theorem coarseTSupport_eq_image_tsupport
     (hs : IsLocalDiffeomorph J I ∞ (_root_.Quiver.Total.left : _root_.Quiver.Total C → C))
     {ht : ContMDiff J I ∞ (_root_.Quiver.Total.right : _root_.Quiver.Total C → C)}
     {φ : SmoothForm I C V k} (hφ : φ ∈ invariantForms I J hs.contMDiff ht V k) :
     φ.coarseTSupport =
-      Quotient.mk (isIsomorphicSetoid C) ''
-        _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] V) φ.1 := by
-  apply IsClosed.closure_eq
-  apply (isQuotientMap_quotient_mk' (X := C) (s := isIsomorphicSetoid C)).isClosed_preimage.mp
+      Quotient.mk (isIsomorphicSetoid C) '' _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] V) φ.1 := by
+  refine IsClosed.closure_eq ((isQuotientMap_quotient_mk' (X := C)
+    (s := isIsomorphicSetoid C)).isClosed_preimage.mp ?_)
   change IsClosed (Quotient.mk (isIsomorphicSetoid C) ⁻¹' _)
   rw [preimage_image_tsupport_eq hs hφ]
   exact _root_.isClosed_tsupport (α := E [⋀^Fin k]→L[ℝ] V) φ.1
@@ -277,13 +234,7 @@ end EtaleSaturation
 
 section Submodule
 
-variable {E H A K C : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  [NormedAddCommGroup A] [NormedSpace ℝ A] [TopologicalSpace K]
-  [Category C] [TopologicalSpace C] [TopologicalSpace (_root_.Quiver.Total C)]
-  [ChartedSpace H C] [ChartedSpace K (_root_.Quiver.Total C)]
-  (I : ModelWithCorners ℝ E H) (J : ModelWithCorners ℝ A K)
-  [IsManifold I ∞ C] [IsManifold J ∞ (_root_.Quiver.Total C)]
-  (hs : ContMDiff J I ∞ (_root_.Quiver.Total.left : _root_.Quiver.Total C → C))
+variable (hs : ContMDiff J I ∞ (_root_.Quiver.Total.left : _root_.Quiver.Total C → C))
   (ht : ContMDiff J I ∞ (_root_.Quiver.Total.right : _root_.Quiver.Total C → C))
   (V : Type*) [NormedAddCommGroup V] [NormedSpace ℝ V] (k : ℕ)
 
@@ -292,27 +243,23 @@ variable {E H A K C : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topolog
 def compactlySupportedInvariantForms : Submodule ℝ (SmoothForm I C V k) where
   carrier := {φ | φ ∈ invariantForms I J hs ht V k ∧ IsCompact φ.coarseTSupport}
   zero_mem' := ⟨zero_mem _, by rw [SmoothForm.coarseTSupport_zero]; exact isCompact_empty⟩
-  add_mem' hφ hψ := ⟨add_mem hφ.1 hψ.1,
-    (hφ.2.union hψ.2).of_isClosed_subset (RoughForm.isClosed_coarseTSupport _)
-      (RoughForm.coarseTSupport_add_subset (F := V) _ _)⟩
-  smul_mem' c φ hφ := ⟨Submodule.smul_mem _ c hφ.1,
-    hφ.2.of_isClosed_subset (RoughForm.isClosed_coarseTSupport _)
-      (RoughForm.coarseTSupport_smul_subset (F := V) c _)⟩
+  add_mem' hφ hψ := ⟨add_mem hφ.1 hψ.1, (hφ.2.union hψ.2).of_isClosed_subset
+    (RoughForm.isClosed_coarseTSupport _) (RoughForm.coarseTSupport_add_subset (F := V) _ _)⟩
+  smul_mem' c φ hφ := ⟨Submodule.smul_mem _ c hφ.1, hφ.2.of_isClosed_subset
+    (RoughForm.isClosed_coarseTSupport _) (RoughForm.coarseTSupport_smul_subset (F := V) c _)⟩
 
 variable {I J hs ht V k}
 
-/-- Membership in `compactlySupportedInvariantForms` means invariance together with compact coarse
+/-- Membership in `compactlySupportedInvariantForms` means invariance with compact coarse
 support. -/
 @[simp]
 theorem mem_compactlySupportedInvariantForms_iff {φ : SmoothForm I C V k} :
     φ ∈ compactlySupportedInvariantForms I J hs ht V k ↔
-      φ ∈ invariantForms I J hs ht V k ∧ IsCompact φ.coarseTSupport :=
-  Iff.rfl
+      φ ∈ invariantForms I J hs ht V k ∧ IsCompact φ.coarseTSupport := Iff.rfl
 
 /-- Every compact-coarse-support invariant form is an invariant form. -/
 theorem compactlySupportedInvariantForms_le_invariantForms :
-    compactlySupportedInvariantForms I J hs ht V k ≤ invariantForms I J hs ht V k :=
-  fun _ h ↦ h.1
+    compactlySupportedInvariantForms I J hs ht V k ≤ invariantForms I J hs ht V k := fun _ h ↦ h.1
 
 /-- When the coarse space is compact, every invariant form has compact coarse support. -/
 @[simp]
@@ -345,7 +292,7 @@ exterior derivative. -/
 theorem compactlySupportedInvariantForms.coe_mextDerivₗ
     (φ : compactlySupportedInvariantForms I J hs ht V k) :
     (compactlySupportedInvariantForms.mextDerivₗ I J hs ht V k φ :
-        SmoothForm I C V (k + 1)) = TauCeti.mextDerivₗ I k φ := (rfl)
+      SmoothForm I C V (k + 1)) = TauCeti.mextDerivₗ I k φ := (rfl)
 
 variable (I J hs ht V k) in
 /-- Exterior differentiation on compact-coarse-support invariant forms squares to zero. -/
@@ -353,17 +300,14 @@ variable (I J hs ht V k) in
 theorem compactlySupportedInvariantForms.mextDerivₗ_comp_mextDerivₗ :
     (compactlySupportedInvariantForms.mextDerivₗ I J hs ht V (k + 1)).comp
       (compactlySupportedInvariantForms.mextDerivₗ I J hs ht V k) = 0 := by
-  ext φ : 1
-  exact Subtype.ext (LinearMap.congr_fun (TauCeti.mextDerivₗ_comp_mextDerivₗ I k) φ.1)
+  ext φ : 1; exact Subtype.ext (LinearMap.congr_fun (TauCeti.mextDerivₗ_comp_mextDerivₗ I k) φ.1)
 
 omit [NormedAddCommGroup V] [NormedSpace ℝ V] in
 /-- Paired wedge product of a compact-coarse-support invariant form on the left with any invariant
 form on the right has compact coarse support. -/
 theorem wedgeWith_mem_compactlySupportedInvariantForms_left {V₁ V₂ V₃ : Type*}
-    [NormedAddCommGroup V₁] [NormedSpace ℝ V₁]
-    [NormedAddCommGroup V₂] [NormedSpace ℝ V₂]
-    [NormedAddCommGroup V₃] [NormedSpace ℝ V₃]
-    (μ : V₁ →L[ℝ] V₂ →L[ℝ] V₃) {l : ℕ}
+    [NormedAddCommGroup V₁] [NormedSpace ℝ V₁] [NormedAddCommGroup V₂] [NormedSpace ℝ V₂]
+    [NormedAddCommGroup V₃] [NormedSpace ℝ V₃] (μ : V₁ →L[ℝ] V₂ →L[ℝ] V₃) {l : ℕ}
     {φ : SmoothForm I C V₁ k} {η : SmoothForm I C V₂ l}
     (hφ : φ ∈ compactlySupportedInvariantForms I J hs ht V₁ k)
     (hη : η ∈ invariantForms I J hs ht V₂ l) :
@@ -377,10 +321,8 @@ omit [NormedAddCommGroup V] [NormedSpace ℝ V] in
 /-- Paired wedge product of any invariant form on the left with a compact-coarse-support invariant
 form on the right has compact coarse support. -/
 theorem wedgeWith_mem_compactlySupportedInvariantForms_right {V₁ V₂ V₃ : Type*}
-    [NormedAddCommGroup V₁] [NormedSpace ℝ V₁]
-    [NormedAddCommGroup V₂] [NormedSpace ℝ V₂]
-    [NormedAddCommGroup V₃] [NormedSpace ℝ V₃]
-    (μ : V₁ →L[ℝ] V₂ →L[ℝ] V₃) {l : ℕ}
+    [NormedAddCommGroup V₁] [NormedSpace ℝ V₁] [NormedAddCommGroup V₂] [NormedSpace ℝ V₂]
+    [NormedAddCommGroup V₃] [NormedSpace ℝ V₃] (μ : V₁ →L[ℝ] V₂ →L[ℝ] V₃) {l : ℕ}
     {φ : SmoothForm I C V₁ k} {η : SmoothForm I C V₂ l}
     (hφ : φ ∈ invariantForms I J hs ht V₁ k)
     (hη : η ∈ compactlySupportedInvariantForms I J hs ht V₂ l) :
@@ -397,9 +339,8 @@ theorem wedge_mem_compactlySupportedInvariantForms_left {l : ℕ}
     {φ : SmoothForm I C ℝ k} {η : SmoothForm I C ℝ l}
     (hφ : φ ∈ compactlySupportedInvariantForms I J hs ht ℝ k)
     (hη : η ∈ invariantForms I J hs ht ℝ l) :
-    SmoothForm.wedge φ η ∈ compactlySupportedInvariantForms I J hs ht ℝ (k + l) := by
-  rw [SmoothForm.wedge_def]
-  exact wedgeWith_mem_compactlySupportedInvariantForms_left _ hφ hη
+    SmoothForm.wedge φ η ∈ compactlySupportedInvariantForms I J hs ht ℝ (k + l) :=
+  SmoothForm.wedge_def φ η ▸ wedgeWith_mem_compactlySupportedInvariantForms_left _ hφ hη
 
 omit [NormedAddCommGroup V] [NormedSpace ℝ V] in
 /-- Wedge product of any real-valued invariant form on the left with a compact-coarse-support
@@ -408,9 +349,8 @@ theorem wedge_mem_compactlySupportedInvariantForms_right {l : ℕ}
     {φ : SmoothForm I C ℝ k} {η : SmoothForm I C ℝ l}
     (hφ : φ ∈ invariantForms I J hs ht ℝ k)
     (hη : η ∈ compactlySupportedInvariantForms I J hs ht ℝ l) :
-    SmoothForm.wedge φ η ∈ compactlySupportedInvariantForms I J hs ht ℝ (k + l) := by
-  rw [SmoothForm.wedge_def]
-  exact wedgeWith_mem_compactlySupportedInvariantForms_right _ hφ hη
+    SmoothForm.wedge φ η ∈ compactlySupportedInvariantForms I J hs ht ℝ (k + l) :=
+  SmoothForm.wedge_def φ η ▸ wedgeWith_mem_compactlySupportedInvariantForms_right _ hφ hη
 
 end Submodule
 
@@ -418,20 +358,20 @@ end Quiver
 
 end TauCeti
 
-namespace CategoryTheory.Functor
+section Functoriality
 
 universe v u
-
-section CoarseSupport
 
 variable {E H E' H' : Type*}
   [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
-  {C D : Type u} [Category.{v} C] [Category.{v} D]
-  [TopologicalSpace C] [TopologicalSpace D]
+  {C D : Type u} [Category.{v} C] [Category.{v} D] [TopologicalSpace C] [TopologicalSpace D]
   [ChartedSpace H C] [ChartedSpace H' D]
-  {I : ModelWithCorners ℝ E H} {I' : ModelWithCorners ℝ E' H'}
-  {k : ℕ}
+  {I : ModelWithCorners ℝ E H} {I' : ModelWithCorners ℝ E' H'} {k : ℕ}
+
+namespace CategoryTheory.Functor
+
+section CoarseSupport
 
 open TauCeti
 
@@ -441,8 +381,6 @@ theorem coarseTSupport_mpullback_subset_preimage {F : Type*} [AddCommGroup F] [M
     [TopologicalSpace F] (Φ : C ⥤ D) (hΦ : Continuous Φ.obj) (φ : RoughForm I' D F k) :
     (mpullback (F := F) (k := k) I I' Φ.obj φ).coarseTSupport ⊆
       isomorphismClasses.map Φ.toCatHom ⁻¹' φ.coarseTSupport := by
-  set πF : Quotient (isIsomorphicSetoid C) → Quotient (isIsomorphicSetoid D) :=
-    ⇑(isomorphismClasses.map Φ.toCatHom)
   refine closure_minimal ?_
     ((RoughForm.isClosed_coarseTSupport φ).preimage (Φ.continuous_isomorphismClasses_map hΦ))
   rintro _ ⟨x, hx, rfl⟩
@@ -465,44 +403,39 @@ theorem coarseTSupport_mpullback_eq_preimage {A' K' : Type*}
       isomorphismClasses.map Φ.toCatHom ⁻¹' φ.coarseTSupport := by
   rw [SmoothForm.coarseTSupport_eq, SmoothForm.coe_mpullback]
   refine (Φ.coarseTSupport_mpullback_subset_preimage (I := I) (F := V)
-    hΦ.contMDiff.continuous φ.1).antisymm
-    ?_
-  intro q hq
+    hΦ.contMDiff.continuous φ.1).antisymm fun q hq ↦ ?_
   induction q using Quotient.inductionOn with
   | h x =>
     have hΦx : Φ.obj x ∈ _root_.tsupport (α := E' [⋀^Fin k]→L[ℝ] V) φ.1 := by
-      rw [← TauCeti.Quiver.preimage_coarseTSupport_eq_tsupport hs' hφ]
-      exact hq
-    have hx : x ∈ _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] V)
-        (mpullback (F := V) (k := k) I I' Φ.obj φ.1) := by
-      rw [RoughForm.tsupport_mpullback_eq_preimage (F := V) (k := k) φ.1 hΦ.contMDiff.continuous
-        hΦ.isOpenMap (hΦ.isInvertible_mfderiv (by simp))]
-      exact hΦx
-    exact subset_closure ⟨x, hx, rfl⟩
+      rwa [← TauCeti.Quiver.preimage_coarseTSupport_eq_tsupport hs' hφ]
+    refine subset_closure ⟨x, ?_, rfl⟩
+    rwa [RoughForm.tsupport_mpullback_eq_preimage (F := V) (k := k) φ.1 hΦ.contMDiff.continuous
+      hΦ.isOpenMap (hΦ.isInvertible_mfderiv (by simp))]
 
 end CoarseSupport
 
-section ProperPullback
+end CategoryTheory.Functor
 
-variable {E H A K E' H' A' K' : Type*}
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+section SmoothPresentations
+
+variable {A K A' K' : Type*}
   [NormedAddCommGroup A] [NormedSpace ℝ A] [TopologicalSpace K]
-  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
   [NormedAddCommGroup A'] [NormedSpace ℝ A'] [TopologicalSpace K']
-  {C D : Type u} [Category.{v} C] [Category.{v} D]
-  [TopologicalSpace C] [TopologicalSpace D]
   [TopologicalSpace (Quiver.Total C)] [TopologicalSpace (Quiver.Total D)]
-  [ChartedSpace H C] [ChartedSpace K (Quiver.Total C)]
-  [ChartedSpace H' D] [ChartedSpace K' (Quiver.Total D)]
-  {I : ModelWithCorners ℝ E H} {J : ModelWithCorners ℝ A K}
-  {I' : ModelWithCorners ℝ E' H'} {J' : ModelWithCorners ℝ A' K'}
+  [ChartedSpace K (Quiver.Total C)] [ChartedSpace K' (Quiver.Total D)]
+  {J : ModelWithCorners ℝ A K} {J' : ModelWithCorners ℝ A' K'}
   [IsManifold I ∞ C] [IsManifold J ∞ (Quiver.Total C)]
   [IsManifold I' ∞ D] [IsManifold J' ∞ (Quiver.Total D)]
-  {hs : ContMDiff J I ∞ (Quiver.Total.left : Quiver.Total C → C)}
+  {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+
+namespace CategoryTheory.Functor
+
+section ProperPullback
+
+variable {hs : ContMDiff J I ∞ (Quiver.Total.left : Quiver.Total C → C)}
   {ht : ContMDiff J I ∞ (Quiver.Total.right : Quiver.Total C → C)}
   {hs' : ContMDiff J' I' ∞ (Quiver.Total.left : Quiver.Total D → D)}
   {ht' : ContMDiff J' I' ∞ (Quiver.Total.right : Quiver.Total D → D)}
-  {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {k : ℕ}
 
 open TauCeti
 
@@ -552,7 +485,7 @@ theorem coe_compactlySupportedInvariantFormsPullback (Φ : C ⥤ D)
       (Y := Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map Φ.toCatHom))
     (φ : TauCeti.Quiver.compactlySupportedInvariantForms I' J' hs' ht' V k) :
     (Φ.compactlySupportedInvariantFormsPullback (hs := hs) (ht := ht) hΦ hΦ₁ hp φ :
-        SmoothForm I C V k) = SmoothForm.mpullback Φ.obj hΦ φ := (rfl)
+      SmoothForm I C V k) = SmoothForm.mpullback Φ.obj hΦ φ := (rfl)
 
 /-- Pullback of compact-coarse-support invariant forms commutes with exterior differentiation. -/
 theorem mextDerivₗ_compactlySupportedInvariantFormsPullback (Φ : C ⥤ D)
@@ -573,9 +506,7 @@ theorem compactlySupportedInvariantFormsPullback_id :
         (V := V) (k := k) contMDiff_id contMDiff_id (by
           change IsProperMap (X := Quotient (isIsomorphicSetoid C))
             (Y := Quotient (isIsomorphicSetoid C)) (isomorphismClasses.map (𝟙 (Cat.of C)))
-          rw [isomorphismClasses.map_id]
-          exact isProperMap_id) =
-      LinearMap.id :=
+          rw [isomorphismClasses.map_id]; exact isProperMap_id) = LinearMap.id :=
   LinearMap.ext fun φ ↦ Subtype.ext (LinearMap.congr_fun SmoothForm.mpullback_id φ.1)
 
 /-- Pullback on compact-coarse-support invariant forms reverses composition of smooth functors with
@@ -598,13 +529,11 @@ theorem compactlySupportedInvariantFormsPullback_comp {E'' H'' A'' K'' : Type*}
       (Y := Quotient (isIsomorphicSetoid B)) (isomorphismClasses.map Ψ.toCatHom)) :
     (Φ ⋙ Ψ).compactlySupportedInvariantFormsPullback (hs := hs) (ht := ht)
         (hs' := hs'') (ht' := ht'') (V := V) (k := k) (hΨ.comp hΦ)
-        (Prefunctor.mapTotal_comp Φ.toPrefunctor Ψ.toPrefunctor ▸ hΨ₁.comp hΦ₁)
-        (by
+        (Prefunctor.mapTotal_comp Φ.toPrefunctor Ψ.toPrefunctor ▸ hΨ₁.comp hΦ₁) (by
           change IsProperMap (X := Quotient (isIsomorphicSetoid C))
             (Y := Quotient (isIsomorphicSetoid B))
             (isomorphismClasses.map (Φ.toCatHom ≫ Ψ.toCatHom))
-          rw [isomorphismClasses.map_comp]
-          exact hpΨ.comp hpΦ) =
+          rw [isomorphismClasses.map_comp]; exact hpΨ.comp hpΦ) =
       (Φ.compactlySupportedInvariantFormsPullback (hs' := hs') (ht' := ht') hΦ hΦ₁ hpΦ).comp
         (Ψ.compactlySupportedInvariantFormsPullback hΨ hΨ₁ hpΨ) :=
   LinearMap.ext fun φ ↦ Subtype.ext (SmoothForm.mpullback_mpullback _ _ hΦ hΨ φ.1).symm
@@ -613,22 +542,7 @@ end ProperPullback
 
 section EtaleEquiv
 
-variable {E H A K E' H' A' K' : Type*}
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  [NormedAddCommGroup A] [NormedSpace ℝ A] [TopologicalSpace K]
-  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
-  [NormedAddCommGroup A'] [NormedSpace ℝ A'] [TopologicalSpace K']
-  {C D : Type u} [Category.{v} C] [Category.{v} D] [IsGroupoid D]
-  [TopologicalSpace C] [TopologicalSpace D]
-  [TopologicalSpace (Quiver.Total C)] [TopologicalSpace (Quiver.Total D)]
-  [TauCeti.IsTopologicalGroupoid D]
-  [ChartedSpace H C] [ChartedSpace K (Quiver.Total C)]
-  [ChartedSpace H' D] [ChartedSpace K' (Quiver.Total D)]
-  {I : ModelWithCorners ℝ E H} {J : ModelWithCorners ℝ A K}
-  {I' : ModelWithCorners ℝ E' H'} {J' : ModelWithCorners ℝ A' K'}
-  [IsManifold I ∞ C] [IsManifold J ∞ (Quiver.Total C)]
-  [IsManifold I' ∞ D] [IsManifold J' ∞ (Quiver.Total D)]
-  {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {k : ℕ}
+variable [IsGroupoid D] [TauCeti.IsTopologicalGroupoid D]
 
 open TauCeti
 
@@ -639,8 +553,7 @@ theorem coarseTSupport_invariantFormsEquiv_symm (Φ : C ⥤ D) [Φ.Full] [Φ.Ess
     (ht : ContMDiff J I ∞ (Quiver.Total.right : Quiver.Total C → C))
     (hs' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.left : Quiver.Total D → D))
     (ht' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.right : Quiver.Total D → D))
-    (hΦ : IsLocalDiffeomorph I I' ∞ Φ.obj)
-    (hΦ₁ : ContMDiff J J' ∞ Φ.toPrefunctor.mapTotal)
+    (hΦ : IsLocalDiffeomorph I I' ∞ Φ.obj) (hΦ₁ : ContMDiff J J' ∞ Φ.toPrefunctor.mapTotal)
     (α : TauCeti.Quiver.invariantForms I J hs.contMDiff ht V k) :
     ((Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm α).1.coarseTSupport =
       isomorphismClasses.map Φ.toCatHom '' α.1.coarseTSupport := by
@@ -648,21 +561,17 @@ theorem coarseTSupport_invariantFormsEquiv_symm (Φ : C ⥤ D) [Φ.Full] [Φ.Ess
   have hpre : isomorphismClasses.map Φ.toCatHom ⁻¹' β.1.coarseTSupport = α.1.coarseTSupport := by
     rw [← Φ.coarseTSupport_mpullback_eq_preimage hs' hΦ β.2,
       Φ.mpullback_invariantFormsEquiv_symm hs ht hs' ht' hΦ hΦ₁ α]
-  rw [← hpre]
-  exact (Φ.isomorphismClasses_map_surjective.image_preimage _).symm
+  exact hpre ▸ (Φ.isomorphismClasses_map_surjective.image_preimage _).symm
 
 /-- **Étale-refinement descent of compact-coarse-support invariant forms.** A full, essentially
 surjective étale refinement reflecting isomorphisms induces a coarse homeomorphism and therefore a
-linear equivalence on invariant forms with compact coarse support, with no separate properness
-assumption. -/
-def compactlySupportedInvariantFormsEquiv (Φ : C ⥤ D) [Φ.Full] [Φ.EssSurj]
-    [Φ.ReflectsIsomorphisms]
+linear equivalence on invariant forms with compact coarse support. -/
+def compactlySupportedInvariantFormsEquiv (Φ : C ⥤ D) [Φ.Full] [Φ.EssSurj] [Φ.ReflectsIsomorphisms]
     (hs : IsLocalDiffeomorph J I ∞ (Quiver.Total.left : Quiver.Total C → C))
     (ht : ContMDiff J I ∞ (Quiver.Total.right : Quiver.Total C → C))
     (hs' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.left : Quiver.Total D → D))
     (ht' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.right : Quiver.Total D → D))
-    (hΦ : IsLocalDiffeomorph I I' ∞ Φ.obj)
-    (hΦ₁ : ContMDiff J J' ∞ Φ.toPrefunctor.mapTotal) :
+    (hΦ : IsLocalDiffeomorph I I' ∞ Φ.obj) (hΦ₁ : ContMDiff J J' ∞ Φ.toPrefunctor.mapTotal) :
     TauCeti.Quiver.compactlySupportedInvariantForms I' J' hs'.contMDiff ht'.contMDiff V k ≃ₗ[ℝ]
       TauCeti.Quiver.compactlySupportedInvariantForms I J hs.contMDiff ht V k :=
   LinearEquiv.ofBijective
@@ -671,26 +580,22 @@ def compactlySupportedInvariantFormsEquiv (Φ : C ⥤ D) [Φ.Full] [Φ.EssSurj]
         hs'.contMDiff.continuous ht'.isOpenMap ▸
         (Φ.isomorphismClassesHomeomorphOfEssSurj hΦ.contMDiff.continuous hΦ.isOpenMap
           hs'.contMDiff.continuous ht'.isOpenMap).isProperMap))
-    ⟨by
-      intro φ ψ h
-      apply Subtype.ext
-      have hpull : Φ.toPrefunctor.invariantFormsPullback (hs := hs.contMDiff) (ht := ht)
+    ⟨fun φ ψ h ↦ by
+        have hpull : Φ.toPrefunctor.invariantFormsPullback (hs := hs.contMDiff) (ht := ht)
             hΦ.contMDiff hΦ₁ ⟨φ.1, φ.2.1⟩ =
           Φ.toPrefunctor.invariantFormsPullback hΦ.contMDiff hΦ₁ ⟨ψ.1, ψ.2.1⟩ := by
-        apply Subtype.ext
-        rw [Prefunctor.coe_invariantFormsPullback, Prefunctor.coe_invariantFormsPullback]
-        exact congrArg Subtype.val h
-      exact congrArg (Subtype.val :
+          apply Subtype.ext
+          rw [Prefunctor.coe_invariantFormsPullback, Prefunctor.coe_invariantFormsPullback]
+          exact congrArg Subtype.val h
+        exact Subtype.ext (congrArg (Subtype.val :
           TauCeti.Quiver.invariantForms I' J' hs'.contMDiff ht'.contMDiff V k →
-            SmoothForm I' D V k)
-        (Φ.invariantFormsPullback_injective hΦ hΦ₁ ht' hpull), by
-      intro α
-      let β := (Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm ⟨α.1, α.2.1⟩
-      have hβc : IsCompact β.1.coarseTSupport := by
+            SmoothForm I' D V k) (Φ.invariantFormsPullback_injective hΦ hΦ₁ ht' hpull)),
+      fun α ↦ by
+        let β := (Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm ⟨α.1, α.2.1⟩
+        refine ⟨⟨β.1, β.2, ?_⟩,
+          Subtype.ext (Φ.mpullback_invariantFormsEquiv_symm hs ht hs' ht' hΦ hΦ₁ ⟨α.1, α.2.1⟩)⟩
         rw [Φ.coarseTSupport_invariantFormsEquiv_symm hs ht hs' ht' hΦ hΦ₁ ⟨α.1, α.2.1⟩]
-        exact α.2.2.image (Φ.continuous_isomorphismClasses_map hΦ.contMDiff.continuous)
-      refine ⟨⟨β.1, β.2, hβc⟩, Subtype.ext ?_⟩
-      exact Φ.mpullback_invariantFormsEquiv_symm hs ht hs' ht' hΦ hΦ₁ ⟨α.1, α.2.1⟩⟩
+        exact α.2.2.image (Φ.continuous_isomorphismClasses_map hΦ.contMDiff.continuous)⟩
 
 /-- Applying `compactlySupportedInvariantFormsEquiv` computes object-level smooth pullback. -/
 @[simp]
@@ -700,8 +605,7 @@ theorem coe_compactlySupportedInvariantFormsEquiv_apply (Φ : C ⥤ D) [Φ.Full]
     (ht : ContMDiff J I ∞ (Quiver.Total.right : Quiver.Total C → C))
     (hs' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.left : Quiver.Total D → D))
     (ht' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.right : Quiver.Total D → D))
-    (hΦ : IsLocalDiffeomorph I I' ∞ Φ.obj)
-    (hΦ₁ : ContMDiff J J' ∞ Φ.toPrefunctor.mapTotal)
+    (hΦ : IsLocalDiffeomorph I I' ∞ Φ.obj) (hΦ₁ : ContMDiff J J' ∞ Φ.toPrefunctor.mapTotal)
     (φ : TauCeti.Quiver.compactlySupportedInvariantForms I' J' hs'.contMDiff ht'.contMDiff V k) :
     (Φ.compactlySupportedInvariantFormsEquiv hs ht hs' ht' hΦ hΦ₁ φ : SmoothForm I C V k) =
       SmoothForm.mpullback Φ.obj hΦ.contMDiff φ := (rfl)
@@ -713,24 +617,21 @@ theorem compactlySupportedInvariantFormsEquiv_symm_mextDerivₗ (Φ : C ⥤ D) [
     (ht : ContMDiff J I ∞ (Quiver.Total.right : Quiver.Total C → C))
     (hs' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.left : Quiver.Total D → D))
     (ht' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.right : Quiver.Total D → D))
-    (hΦ : IsLocalDiffeomorph I I' ∞ Φ.obj)
-    (hΦ₁ : ContMDiff J J' ∞ Φ.toPrefunctor.mapTotal)
+    (hΦ : IsLocalDiffeomorph I I' ∞ Φ.obj) (hΦ₁ : ContMDiff J J' ∞ Φ.toPrefunctor.mapTotal)
     (α : TauCeti.Quiver.compactlySupportedInvariantForms I J hs.contMDiff ht V k) :
     (Φ.compactlySupportedInvariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm
         (TauCeti.Quiver.compactlySupportedInvariantForms.mextDerivₗ I J hs.contMDiff ht V k α) =
       TauCeti.Quiver.compactlySupportedInvariantForms.mextDerivₗ
         I' J' hs'.contMDiff ht'.contMDiff V k
         ((Φ.compactlySupportedInvariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm α) := by
-  rw [LinearEquiv.symm_apply_eq]
-  apply Subtype.ext
+  refine (LinearEquiv.symm_apply_eq _).mpr <| Subtype.ext ?_
   rw [coe_compactlySupportedInvariantFormsEquiv_apply,
     TauCeti.Quiver.compactlySupportedInvariantForms.coe_mextDerivₗ,
     TauCeti.Quiver.compactlySupportedInvariantForms.coe_mextDerivₗ,
     ← SmoothForm.mextDerivₗ_mpullback]
   exact congrArg (TauCeti.mextDerivₗ I k) (by
-    simpa only [coe_compactlySupportedInvariantFormsEquiv_apply] using
-      congrArg Subtype.val
-        ((Φ.compactlySupportedInvariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).apply_symm_apply α).symm)
+    simpa only [coe_compactlySupportedInvariantFormsEquiv_apply] using congrArg Subtype.val
+      ((Φ.compactlySupportedInvariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).apply_symm_apply α).symm)
 
 end EtaleEquiv
 
@@ -738,30 +639,11 @@ end CategoryTheory.Functor
 
 namespace CategoryTheory.NatTrans
 
-universe v u
-
-variable {E H A K E' H' A' K' : Type*}
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  [NormedAddCommGroup A] [NormedSpace ℝ A] [TopologicalSpace K]
-  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
-  [NormedAddCommGroup A'] [NormedSpace ℝ A'] [TopologicalSpace K']
-  {C D : Type u} [Category.{v} C] [Category.{v} D]
-  [TopologicalSpace C] [TopologicalSpace D]
-  [TopologicalSpace (Quiver.Total C)] [TopologicalSpace (Quiver.Total D)]
-  [ChartedSpace H C] [ChartedSpace K (Quiver.Total C)]
-  [ChartedSpace H' D] [ChartedSpace K' (Quiver.Total D)]
-  {I : ModelWithCorners ℝ E H} {J : ModelWithCorners ℝ A K}
-  {I' : ModelWithCorners ℝ E' H'} {J' : ModelWithCorners ℝ A' K'}
-  [IsManifold I ∞ C] [IsManifold J ∞ (Quiver.Total C)]
-  [IsManifold I' ∞ D] [IsManifold J' ∞ (Quiver.Total D)]
-  {hs : ContMDiff J I ∞ (Quiver.Total.left : Quiver.Total C → C)}
+variable {hs : ContMDiff J I ∞ (Quiver.Total.left : Quiver.Total C → C)}
   {ht : ContMDiff J I ∞ (Quiver.Total.right : Quiver.Total C → C)}
   {hs' : ContMDiff J' I' ∞ (Quiver.Total.left : Quiver.Total D → D)}
   {ht' : ContMDiff J' I' ∞ (Quiver.Total.right : Quiver.Total D → D)}
-  {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {k : ℕ}
   {Φ Ψ : C ⥤ D}
-
-open TauCeti
 
 /-- Smoothly naturally related functors with proper coarse maps induce equal pullbacks on
 compact-coarse-support invariant forms. -/
@@ -776,15 +658,16 @@ theorem compactlySupportedInvariantFormsPullback_eq (η : Φ ⟶ Ψ)
     (hη : ContMDiff I J' ∞ fun x ↦ (⟨Φ.obj x, Ψ.obj x, η.app x⟩ : Quiver.Total D)) :
     Φ.compactlySupportedInvariantFormsPullback (hs := hs) (ht := ht) (hs' := hs') (ht' := ht')
         (V := V) (k := k) hΦ hΦ₁ hpΦ =
-      Ψ.compactlySupportedInvariantFormsPullback hΨ hΨ₁ hpΨ := by
-  refine LinearMap.ext fun φ ↦ ?_
-  exact Subtype.ext (η.mpullback_eq_of_mem_invariantForms hΦ hΨ hη φ.2.1)
+      Ψ.compactlySupportedInvariantFormsPullback hΨ hΨ₁ hpΨ :=
+  LinearMap.ext fun φ ↦ Subtype.ext (η.mpullback_eq_of_mem_invariantForms hΦ hΨ hη φ.2.1)
 
 end CategoryTheory.NatTrans
 
-namespace TauCeti
+end SmoothPresentations
 
-section NonProperCounterexample
+end Functoriality
+
+namespace TauCeti
 
 /-- If the coarse space of `C` is noncompact while the coarse space of `D` is compact, then for any
 nontrivial coefficient space `V` and any smooth functor `Φ : C ⥤ D`, some compact-coarse-support
@@ -821,27 +704,19 @@ theorem Quiver.exists_mpullback_notMem_compactlySupportedInvariantForms_of_not_c
     SmoothForm.coe_ofFunction ⟨fun _ ↦ v, contMDiff_const⟩
   have hφ_inv : φ ∈ Quiver.invariantForms I' J' hs' ht' V 0 := by
     rw [Quiver.mem_invariantForms_iff]
-    apply Subtype.ext
+    refine Subtype.ext ?_
     rw [SmoothForm.coe_mpullback, SmoothForm.coe_mpullback, hφ_coe,
       mpullback_ofFunction, mpullback_ofFunction]
     rfl
-  have hφ_cs : φ ∈ Quiver.compactlySupportedInvariantForms I' J' hs' ht' V 0 := by
-    rwa [Quiver.compactlySupportedInvariantForms_eq_invariantForms]
-  refine ⟨φ, hφ_cs, fun hmem ↦ hnc ⟨?_⟩⟩
-  have huniv : (SmoothForm.mpullback Φ.obj hΦ φ).coarseTSupport = Set.univ := by
-    refine Set.eq_univ_iff_forall.mpr fun q ↦ ?_
-    induction q using Quotient.inductionOn with
-    | h x =>
-      refine subset_closure ⟨x, subset_tsupport (α := E [⋀^Fin 0]→L[ℝ] V) _ ?_, rfl⟩
-      intro h0
-      have hpull_x : ((SmoothForm.mpullback Φ.obj hΦ φ).1 x : E [⋀^Fin 0]→L[ℝ] V) 0 = v := by
-        rw [SmoothForm.coe_mpullback, hφ_coe, mpullback_ofFunction]
-        exact RoughForm.ofFunction_apply (I := I) (fun _ ↦ v) x 0
-      have hv0 : ((SmoothForm.mpullback Φ.obj hΦ φ).1 x : E [⋀^Fin 0]→L[ℝ] V) 0 = 0 :=
-        congrArg (fun L : E [⋀^Fin 0]→L[ℝ] V ↦ L 0) h0
-      exact hv (hpull_x.symm.trans hv0)
+  refine ⟨φ, by rwa [Quiver.compactlySupportedInvariantForms_eq_invariantForms],
+    fun hmem ↦ hnc ⟨?_⟩⟩
+  have huniv : (SmoothForm.mpullback Φ.obj hΦ φ).coarseTSupport = Set.univ :=
+    Set.eq_univ_iff_forall.mpr <| Quotient.ind fun x ↦
+      subset_closure ⟨x, subset_tsupport (α := E [⋀^Fin 0]→L[ℝ] V) _ fun h0 ↦ hv <| by
+        have hp : ((SmoothForm.mpullback Φ.obj hΦ φ).1 x : E [⋀^Fin 0]→L[ℝ] V) 0 = v := by
+          rw [SmoothForm.coe_mpullback, hφ_coe, mpullback_ofFunction]
+          exact RoughForm.ofFunction_apply (I := I) (fun _ ↦ v) x 0
+        exact hp.symm.trans (congrArg (· 0) h0), rfl⟩
   exact huniv ▸ hmem.2
-
-end NonProperCounterexample
 
 end TauCeti
