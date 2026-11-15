@@ -8,11 +8,14 @@ module
 public import Mathlib.RingTheory.Polynomial.Cyclotomic.Basic
 public import Mathlib.RingTheory.RootsOfUnity.Complex
 import Mathlib.RingTheory.Polynomial.Cyclotomic.Roots
+import TauCeti.RingTheory.RootsOfUnity.NthRoots
 
 /-!
-# The complex roots of a cyclotomic polynomial
+# Complex root multisets of cyclotomic and related polynomials
 
-The complex roots of `Φ_h` are the `exp (2πi e / h)` for `e < h` coprime to `h`, and are simple.
+The complex roots of `Φ_h` are `exp (2πi e / h)` for `e < h` coprime to `h`, and are simple. The
+complex root multisets of `1 + X + ⋯ + X ^ (n - 1)` and `X ^ n + 1` are likewise given in
+exponential form from a primitive complex root of unity.
 -/
 
 public section
@@ -41,6 +44,63 @@ theorem nodup_roots_cyclotomic_complex (h : ℕ) : (cyclotomic h ℂ).roots.Nodu
   · simp
   have : NeZero (h : ℂ) := ⟨Nat.cast_ne_zero.2 hh⟩
   exact roots_cyclotomic_nodup
+
+/-- **The complex root multiset of `Φ_h`** consists of `exp (2πi e / h)` for `e < h` coprime to `h`,
+each once. -/
+theorem roots_cyclotomic_complex (h : ℕ) :
+    (cyclotomic h ℂ).roots =
+      (((List.range h).filter (Nat.Coprime · h) : Multiset ℕ)).map
+        fun e : ℕ => Complex.exp (2 * Real.pi * Complex.I * (e / h)) := by
+  rcases eq_or_ne h 0 with rfl | hh
+  · simp
+  have hζ := Complex.isPrimitiveRoot_exp h hh
+  have hnd : ((((List.range h).filter (Nat.Coprime · h) : Multiset ℕ)).map
+      fun e : ℕ => Complex.exp (2 * Real.pi * Complex.I * (e / h))).Nodup := by
+    rw [Multiset.map_coe, Multiset.coe_nodup]
+    refine ((List.nodup_range.filter _).map_on ?_)
+    intro a ha b hb hab
+    rw [List.mem_filter, List.mem_range] at ha hb
+    have hpow : ∀ k : ℕ, Complex.exp (2 * Real.pi * Complex.I * (k / h)) =
+        Complex.exp (2 * Real.pi * Complex.I / h) ^ k := fun k => by
+      rw [← Complex.exp_nat_mul]
+      congr 1
+      ring
+    rw [hpow a, hpow b] at hab
+    exact hζ.pow_inj ha.1 hb.1 hab
+  refine (Multiset.Nodup.ext (nodup_roots_cyclotomic_complex h) hnd).2 fun ζ => ?_
+  rw [mem_roots_cyclotomic_complex_iff, Multiset.mem_map]
+  simp
+
+/-- **The complex root multiset of `1 + X + ⋯ + X ^ (n - 1)`** consists of `exp (2πi (e + 1) / n)`
+for `e = 0, …, n - 2`, each once. -/
+theorem roots_geom_sum_complex (n : ℕ) :
+    (∑ i ∈ Finset.range n, (X : ℂ[X]) ^ i).roots =
+      (Multiset.range (n - 1)).map
+        fun e : ℕ => Complex.exp (2 * Real.pi * Complex.I * ((e + 1 : ℕ) / n)) := by
+  obtain rfl | hn := eq_or_ne n 0
+  · simp
+  rw [(Complex.isPrimitiveRoot_exp n hn).roots_geom_sum]
+  refine Multiset.map_congr rfl fun e _ => ?_
+  rw [← Complex.exp_nat_mul]
+  congr 1
+  push_cast
+  ring
+
+/-- **The complex root multiset of `X ^ n + 1`** consists of `exp (2πi (2k + 1) / (2n))` for
+`k = 0, …, n - 1`, each once. -/
+theorem roots_X_pow_add_one_complex (n : ℕ) :
+    (X ^ n + 1 : ℂ[X]).roots =
+      (Multiset.range n).map
+        fun k : ℕ => Complex.exp (2 * Real.pi * Complex.I * ((2 * k + 1 : ℕ) / (2 * n : ℕ))) := by
+  obtain rfl | hn := eq_or_ne n 0
+  · rw [pow_zero, ← C_1, ← map_add, roots_C]
+    simp
+  rw [(Complex.isPrimitiveRoot_exp (2 * n) (by positivity)).roots_X_pow_add_one]
+  refine Multiset.map_congr rfl fun k _ => ?_
+  rw [← Complex.exp_nat_mul]
+  congr 1
+  push_cast
+  ring
 
 end Polynomial
 
