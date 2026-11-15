@@ -19,8 +19,11 @@ orientation. They form a real vector space under pointwise operations.
 Evaluation on a basis is a linear equivalence with ℝ. Its inverse sends a scalar `c`
 to `v ↦ |b.det v| * c`. The evaluation and change-of-basis formulas include dimension
 zero. In particular, a density vanishes on dependent tuples in positive dimension,
-and a density is determined by its value on any one basis. This is the linear fibre
-used for orientation-free integration and density-valued test sections.
+and a density is determined by its value on any one basis. Densities pull back along
+linear endomorphisms (`TauCeti.Density.compLinearMap`, scaling by `|det|`) and linear
+equivalences (`TauCeti.Density.compLinearEquiv`), and every top-degree alternating form
+determines an orientation-free nonnegative density `AlternatingMap.absDensity`. This is
+the linear fibre used for orientation-free integration and density-valued test sections.
 
 The construction adapts Li Xuanji’s implementation in Tau Ceti PR #22145.
 
@@ -200,14 +203,19 @@ theorem apply_eq_zero_of_not_linearIndependent (μ : Density V m)
 def compLinearMap (μ : Density V m) (f : V →ₗ[ℝ] V) : Density V m where
   toFun v := μ (f ∘ v)
   map_comp T v := by
-    -- Reassociate function composition so `μ.comp_apply` sees `f.comp T`.
-    change μ ((f.comp T) ∘ v) = |LinearMap.det T| * μ (f ∘ v)
-    rw [μ.comp_apply, LinearMap.det_comp, abs_mul, μ.comp_apply]
+    rw [← Function.comp_assoc, ← LinearMap.coe_comp, μ.comp_apply, LinearMap.det_comp, abs_mul,
+      μ.comp_apply]
     ring
 
 @[simp]
 theorem compLinearMap_apply (μ : Density V m) (f : V →ₗ[ℝ] V) (v : Fin m → V) :
     μ.compLinearMap f v = μ (f ∘ v) := (rfl)
+
+/-- Pulling back a density along a linear endomorphism scales it by `|det f|`. -/
+theorem compLinearMap_eq_abs_det_smul (μ : Density V m) (f : V →ₗ[ℝ] V) :
+    μ.compLinearMap f = |LinearMap.det f| • μ := by
+  ext v
+  exact μ.comp_apply f v
 
 @[simp]
 theorem compLinearMap_id (μ : Density V m) : μ.compLinearMap LinearMap.id = μ := by
@@ -221,26 +229,33 @@ theorem compLinearMap_comp (μ : Density V m) (f g : V →ₗ[ℝ] V) :
   rfl
 
 @[simp]
-theorem compLinearMap_zero_left (f : V →ₗ[ℝ] V) :
+theorem zero_compLinearMap (f : V →ₗ[ℝ] V) :
     (0 : Density V m).compLinearMap f = 0 := by
   ext v
   rfl
 
 @[simp]
-theorem compLinearMap_add_left (μ ν : Density V m) (f : V →ₗ[ℝ] V) :
+theorem add_compLinearMap (μ ν : Density V m) (f : V →ₗ[ℝ] V) :
     (μ + ν).compLinearMap f = μ.compLinearMap f + ν.compLinearMap f := by
   ext v
   rfl
 
 @[simp]
-theorem compLinearMap_smul_left (c : ℝ) (μ : Density V m) (f : V →ₗ[ℝ] V) :
+theorem smul_compLinearMap {R : Type*} [SMul R ℝ] [SMulCommClass R ℝ ℝ]
+    (c : R) (μ : Density V m) (f : V →ₗ[ℝ] V) :
     (c • μ).compLinearMap f = c • μ.compLinearMap f := by
   ext v
   rfl
 
 @[simp]
-theorem compLinearMap_neg_left (μ : Density V m) (f : V →ₗ[ℝ] V) :
+theorem neg_compLinearMap (μ : Density V m) (f : V →ₗ[ℝ] V) :
     (-μ).compLinearMap f = -μ.compLinearMap f := by
+  ext v
+  rfl
+
+@[simp]
+theorem sub_compLinearMap (μ ν : Density V m) (f : V →ₗ[ℝ] V) :
+    (μ - ν).compLinearMap f = μ.compLinearMap f - ν.compLinearMap f := by
   ext v
   rfl
 
@@ -249,12 +264,10 @@ def compLinearEquiv {W : Type*} [AddCommGroup W] [Module ℝ W]
     (μ : Density V m) (e : W ≃ₗ[ℝ] V) : Density W m where
   toFun w := μ (e ∘ w)
   map_comp T w := by
-    have hconj : (e : W →ₗ[ℝ] V) ∘ (T ∘ w) =
+    have hconj : e ∘ (T ∘ w) =
         (((e : W →ₗ[ℝ] V) ∘ₗ T ∘ₗ (e.symm : V →ₗ[ℝ] W)) : V →ₗ[ℝ] V) ∘ (e ∘ w) := by
       ext i
       simp
-    -- Coerce `e` to a linear map so `hconj` rewrites into an endomorphism of `V`.
-    change μ ((e : W →ₗ[ℝ] V) ∘ (T ∘ w)) = |LinearMap.det T| * μ (e ∘ w)
     rw [hconj, μ.comp_apply, LinearMap.det_conj]
 
 @[simp]
@@ -273,6 +286,60 @@ theorem compLinearEquiv_trans {U W : Type*} [AddCommGroup U] [Module ℝ U]
     [AddCommGroup W] [Module ℝ W] (μ : Density V m) (e₁ : U ≃ₗ[ℝ] W) (e₂ : W ≃ₗ[ℝ] V) :
     μ.compLinearEquiv (e₁.trans e₂) = (μ.compLinearEquiv e₂).compLinearEquiv e₁ := by
   ext u
+  rfl
+
+@[simp]
+theorem compLinearEquiv_compLinearEquiv_symm {W : Type*} [AddCommGroup W] [Module ℝ W]
+    (μ : Density V m) (e : W ≃ₗ[ℝ] V) :
+    (μ.compLinearEquiv e).compLinearEquiv e.symm = μ := by
+  ext v
+  simp [Function.comp_def]
+
+@[simp]
+theorem compLinearEquiv_symm_compLinearEquiv {W : Type*} [AddCommGroup W] [Module ℝ W]
+    (μ : Density W m) (e : W ≃ₗ[ℝ] V) :
+    (μ.compLinearEquiv e.symm).compLinearEquiv e = μ := by
+  ext w
+  simp [Function.comp_def]
+
+/-- Pulling back along an automorphism of `V` agrees with `compLinearMap`. -/
+theorem compLinearEquiv_eq_compLinearMap (μ : Density V m) (e : V ≃ₗ[ℝ] V) :
+    μ.compLinearEquiv e = μ.compLinearMap e.toLinearMap := by
+  ext v
+  rfl
+
+@[simp]
+theorem zero_compLinearEquiv {W : Type*} [AddCommGroup W] [Module ℝ W] (e : W ≃ₗ[ℝ] V) :
+    (0 : Density V m).compLinearEquiv e = 0 := by
+  ext w
+  rfl
+
+@[simp]
+theorem add_compLinearEquiv {W : Type*} [AddCommGroup W] [Module ℝ W]
+    (μ ν : Density V m) (e : W ≃ₗ[ℝ] V) :
+    (μ + ν).compLinearEquiv e = μ.compLinearEquiv e + ν.compLinearEquiv e := by
+  ext w
+  rfl
+
+@[simp]
+theorem smul_compLinearEquiv {R W : Type*} [SMul R ℝ] [SMulCommClass R ℝ ℝ]
+    [AddCommGroup W] [Module ℝ W] (c : R) (μ : Density V m) (e : W ≃ₗ[ℝ] V) :
+    (c • μ).compLinearEquiv e = c • μ.compLinearEquiv e := by
+  ext w
+  rfl
+
+@[simp]
+theorem neg_compLinearEquiv {W : Type*} [AddCommGroup W] [Module ℝ W]
+    (μ : Density V m) (e : W ≃ₗ[ℝ] V) :
+    (-μ).compLinearEquiv e = -μ.compLinearEquiv e := by
+  ext w
+  rfl
+
+@[simp]
+theorem sub_compLinearEquiv {W : Type*} [AddCommGroup W] [Module ℝ W]
+    (μ ν : Density V m) (e : W ≃ₗ[ℝ] V) :
+    (μ - ν).compLinearEquiv e = μ.compLinearEquiv e - ν.compLinearEquiv e := by
+  ext w
   rfl
 
 end TauCeti.Density
@@ -320,6 +387,7 @@ theorem absDensity_neg (φ : V [⋀^Fin m]→ₗ[ℝ] ℝ) : (-φ).absDensity = 
   simp
 
 /-- Scaling an alternating form scales its absolute density by `|c|`. -/
+@[simp]
 theorem absDensity_smul (c : ℝ) (φ : V [⋀^Fin m]→ₗ[ℝ] ℝ) :
     (c • φ).absDensity = |c| • φ.absDensity := by
   ext v

@@ -12,15 +12,15 @@ public import TauCeti.MeasureTheory.Integral.Bochner.Density
 public import Mathlib.Geometry.Manifold.Instances.Icc
 public import Mathlib.Order.Disjointed
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Positivity
-import Mathlib.Analysis.Normed.Module.FiniteDimension
 
 /-!
 # Orientation-free integration of rough densities on manifolds
 
 A rough density `μ : RoughDensity I M k` is integrable (`TauCeti.IntegrableDensity`) when its
-topological support is compact, the model space `E` has dimension `k`, and in every preferred
-extended chart and every model basis `b` the coordinate coefficient `y ↦ μ.inChartAt α y b` is
-integrable on `(extChartAt I α).target` against `b.addHaar`.
+topological support is compact, the model space `E` is finite-dimensional of dimension `k`
+(admitting a `Fin k`-basis), and in every preferred extended chart and every model basis `b` the
+coordinate coefficient `y ↦ μ.inChartAt α y b` is integrable on `(extChartAt I α).target` against
+`b.addHaar`.
 
 To integrate an integrable rough density (`TauCeti.integralDensity`), a finite open chart cover of
 `tsupport μ` is disjointed into Borel coordinate pieces and summed against `b.addHaar`. Because
@@ -56,8 +56,7 @@ without orientation lifts or sign cocycles.
 
 ## References
 
-* John M. Lee, *Introduction to Smooth Manifolds*, second edition, Chapter 16, Densities
-  (especially Theorem 16.38 and Proposition 16.40).
+* John M. Lee, *Introduction to Smooth Manifolds*, second edition, Chapter 16, Densities.
 -/
 
 public section
@@ -75,18 +74,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-! ### Intrinsic integrability of rough densities -/
 
-/-- Disjointing a family of open subsets along a locally finite order with bottom produces
-chart-measurable pieces. -/
-theorem isChartMeasurable_disjointed [MeasurableSpace E] [OpensMeasurableSpace E]
-    {ι : Type*} [Preorder ι] [LocallyFiniteOrderBot ι] {u : ι → Set M}
-    (hu : ∀ i, IsOpen (u i)) (i : ι) :
-    IsChartMeasurable I (disjointed u i) := by
-  rw [disjointed_apply]
-  have ho : IsOpen ((Finset.Iio i).sup u) := by
-    rw [Finset.sup_set_eq_biUnion]
-    exact isOpen_biUnion fun j _ ↦ hu j
-  exact (hu i).isChartMeasurable.diff ho.isChartMeasurable
-
 /-- A rough density is integrable when it has compact topological support, `E` admits a basis of
 cardinality `k`, and its coordinate expression on `(extChartAt I α).target` is integrable in every
 preferred chart and every model basis against the normalized additive Haar measure. -/
@@ -97,6 +84,16 @@ def IntegrableDensity (μ : RoughDensity I M k) : Prop := by
     Nonempty (Module.Basis (Fin k) ℝ E) ∧
     ∀ (b : Module.Basis (Fin k) ℝ E) (α : M),
       IntegrableOn (fun y ↦ μ.inChartAt α y b) (extChartAt I α).target b.addHaar
+
+/-- Integrable rough densities have compact topological support. -/
+theorem IntegrableDensity.isCompact {μ : RoughDensity I M k} (hi : IntegrableDensity μ) :
+    IsCompact (_root_.tsupport (α := Density E k) μ) :=
+  hi.1
+
+/-- An integrable rough density witnesses a basis of cardinality `k` for the model space `E`. -/
+theorem IntegrableDensity.nonempty_basis {μ : RoughDensity I M k} (hi : IntegrableDensity μ) :
+    Nonempty (Module.Basis (Fin k) ℝ E) :=
+  hi.2.1
 
 private structure DensityChartCover (s : Set M) where
   n : ℕ
@@ -138,8 +135,10 @@ section WithMeasure
 variable [MeasurableSpace E] [BorelSpace E]
 
 private theorem DensityChartCover.isChartMeasurable_piece {s : Set M}
-    (c : DensityChartCover (I := I) s) (i : Fin c.n) : IsChartMeasurable I (c.piece i) :=
-  isChartMeasurable_disjointed c.isOpen_domain i
+    (c : DensityChartCover (I := I) s) (i : Fin c.n) : IsChartMeasurable I (c.piece i) := by
+  rw [DensityChartCover.piece, disjointed_apply, Finset.sup_set_eq_biUnion]
+  exact (c.isOpen_domain i).isChartMeasurable.diff
+    (isOpen_biUnion fun j _ ↦ c.isOpen_domain j).isChartMeasurable
 
 private theorem DensityChartCover.measurableSet_image_piece {s : Set M}
     (c : DensityChartCover (I := I) s) (i : Fin c.n) :
@@ -156,6 +155,13 @@ theorem integrableDensity_iff (μ : RoughDensity I M k) :
   have hm : ‹MeasurableSpace E› = borel E := BorelSpace.measurable_eq
   cases hm
   rfl
+
+/-- The coordinate expression of an integrable rough density is integrable on every preferred chart
+target against any model basis's normalized additive Haar measure. -/
+theorem IntegrableDensity.integrableOn_inChartAt {μ : RoughDensity I M k} (hi : IntegrableDensity μ)
+    (b : Module.Basis (Fin k) ℝ E) (α : M) :
+    IntegrableOn (fun y ↦ μ.inChartAt α y b) (extChartAt I α).target b.addHaar :=
+  ((integrableDensity_iff μ).mp hi).2.2 b α
 
 /-- Integrability of a compactly supported rough density can be checked on any open chart cover in
 a single model basis. -/
@@ -208,7 +214,7 @@ theorem RoughDensity.integrableDensity_iff_of_tsupport_subset_chart [IsManifold 
     (hs : _root_.tsupport (α := Density E k) μ ⊆ (chartAt H α).source) :
     IntegrableDensity μ ↔
       IntegrableOn (fun y ↦ μ.inChartAt α y b) (extChartAt I α).target b.addHaar := by
-  refine ⟨fun h ↦ ((integrableDensity_iff μ).mp h).2.2 b α, fun hi ↦ ?_⟩
+  refine ⟨fun h ↦ h.integrableOn_inChartAt b α, fun hi ↦ ?_⟩
   refine μ.integrableDensity_of_open_cover hc b (fun _ : Unit ↦ α)
     (fun _ ↦ (chartAt H α).source) (fun _ ↦ (chartAt H α).open_source) (fun _ ↦ Subset.rfl)
     (fun x hx ↦ mem_iUnion.mpr ⟨(), hs hx⟩) fun _ ↦ ?_
@@ -235,11 +241,6 @@ theorem RoughDensity.integrableDensity_of_continuousOn_inChartAt [IsManifold I 1
   have hcb : ContinuousOn (fun y ↦ μ.inChartAt (β i) y b) (B i) :=
     ((Density.continuous_eval b).comp_continuousOn (hcont (β i))).mono (hu i).2.2.2.1
   exact (hcb.integrableOn_compact (hu i).2.2.1).mono_set (hu i).2.2.2.2
-
-/-- Integrable rough densities have compact topological support. -/
-theorem IntegrableDensity.isCompact {μ : RoughDensity I M k} (hi : IntegrableDensity μ) :
-    IsCompact (_root_.tsupport (α := Density E k) μ) :=
-  hi.1
 
 /-- Multiplication by a nonzero constant preserves density integrability. -/
 theorem integrableDensity_smul_iff (c : ℝ) (μ : RoughDensity I M k) (hc : c ≠ 0) :
@@ -276,7 +277,7 @@ theorem IntegrableDensity.smul {μ : RoughDensity I M k} (hμ : IntegrableDensit
     IntegrableDensity (c • μ) := by
   by_cases hc : c = 0
   · subst c
-    obtain ⟨b⟩ := hμ.2.1
+    obtain ⟨b⟩ := hμ.nonempty_basis
     simpa only [zero_smul] using IntegrableDensity.zero (I := I) (M := M) b
   · exact (integrableDensity_smul_iff c μ hc).mpr hμ
 
@@ -338,8 +339,6 @@ private theorem densityCoverIntegral_add {s : Set M} (b : Module.Basis (Fin k) �
     (c : DensityChartCover (I := I) s) :
     densityCoverIntegral b (μ + ν) c =
       densityCoverIntegral b μ c + densityCoverIntegral b ν c := by
-  have hiμ := (integrableDensity_iff μ).mp hμ
-  have hiν := (integrableDensity_iff ν).mp hν
   have heq (i : Fin c.n) :
       (∫ y in (extChartAt I (c.center i)) '' c.piece i,
         (μ + ν).inChartAt (c.center i) y b ∂b.addHaar) =
@@ -351,8 +350,8 @@ private theorem densityCoverIntegral_add {s : Set M} (b : Module.Basis (Fin k) �
       (image_mono (c.piece_subset i)).trans
         (extChartAt I (c.center i)).image_source_eq_target.subset
     simp only [RoughDensity.inChartAt_add, Pi.add_apply, Density.add_apply]
-    exact integral_add ((hiμ.2.2 b (c.center i)).mono_set hsub)
-      ((hiν.2.2 b (c.center i)).mono_set hsub)
+    exact integral_add ((hμ.integrableOn_inChartAt b (c.center i)).mono_set hsub)
+      ((hν.integrableOn_inChartAt b (c.center i)).mono_set hsub)
   simp only [densityCoverIntegral, heq, Finset.sum_add_distrib]
 
 private theorem densityCoverIntegral_choose_eq [ProperSpace E] (b : Module.Basis (Fin k) ℝ E)
@@ -378,7 +377,7 @@ private theorem integral_density_piece_refine (μ : RoughDensity I M k) (hi : In
     ((c.pairwise_disjoint hij).mono inter_subset_right inter_subset_right).image e.injOn
       (inter_subset_left.trans hus) (inter_subset_left.trans hus)
   have hfu : IntegrableOn f (e '' u) b.addHaar :=
-    (((integrableDensity_iff μ).mp hi).2.2 b α).mono_set
+    (hi.integrableOn_inChartAt b α).mono_set
       ((image_mono hus).trans e.image_source_eq_target.subset)
   have hz : ∀ y ∈ e '' u \ ⋃ i, v i, f y = 0 := by
     rintro _ ⟨⟨x, hx, rfl⟩, hn⟩
@@ -474,10 +473,10 @@ def integralDensity (μ : RoughDensity I M k) : ℝ := by
   letI : MeasurableSpace E := borel E
   letI : BorelSpace E := ⟨rfl⟩
   exact if hi : IntegrableDensity μ then
-    let b := Classical.choice hi.2.1
+    let b := Classical.choice hi.nonempty_basis
     haveI : FiniteDimensional ℝ E := Module.Finite.of_basis b
     densityCoverIntegral b μ
-      (chooseDensityChartCover (_root_.tsupport (α := Density E k) μ) hi.1)
+      (chooseDensityChartCover (_root_.tsupport (α := Density E k) μ) hi.isCompact)
   else 0
 
 /-- A nonintegrable rough density has total integral `0`. -/
@@ -502,7 +501,7 @@ private theorem integralDensity_eq_chooseCover [MeasurableSpace E] [BorelSpace E
   let : MeasurableSpace E := borel E
   have : FiniteDimensional ℝ E := Module.Finite.of_basis b
   rw [integralDensity, dite_eq_left hi]
-  exact densityCoverIntegral_basis_eq (Classical.choice hi.2.1) b μ _
+  exact densityCoverIntegral_basis_eq (Classical.choice hi.nonempty_basis) b μ _
 
 private theorem integralDensity_eq_coverIntegral [MeasurableSpace E] [BorelSpace E]
     [IsManifold I 1 M] (μ : RoughDensity I M k) (hi : IntegrableDensity μ)
@@ -607,7 +606,7 @@ theorem integralDensity_zero : integralDensity (0 : RoughDensity I M k) = 0 := b
   let : MeasurableSpace E := borel E
   let : BorelSpace E := ⟨rfl⟩
   by_cases hi : IntegrableDensity (0 : RoughDensity I M k)
-  · obtain ⟨b⟩ := hi.2.1
+  · obtain ⟨b⟩ := hi.nonempty_basis
     have : FiniteDimensional ℝ E := Module.Finite.of_basis b
     rw [integralDensity_eq_chooseCover _ hi b, densityCoverIntegral_zero]
   · exact integralDensity_eq_zero_of_not_integrable _ hi
@@ -624,7 +623,7 @@ theorem integralDensity_smul (c : ℝ) (μ : RoughDensity I M k) :
   let : BorelSpace E := ⟨rfl⟩
   by_cases hi : IntegrableDensity μ
   · have hi' : IntegrableDensity (c • μ) := (integrableDensity_smul_iff c μ hc).mpr hi
-    obtain ⟨b⟩ := hi.2.1
+    obtain ⟨b⟩ := hi.nonempty_basis
     have : FiniteDimensional ℝ E := Module.Finite.of_basis b
     rw [integralDensity_eq_chooseCover _ hi' b, integralDensity_eq_chooseCover _ hi b,
       densityCoverIntegral_smul]
@@ -648,7 +647,7 @@ theorem integralDensity_add_of_integrable [IsManifold I 1 M] {μ ν : RoughDensi
     integralDensity (μ + ν) = integralDensity μ + integralDensity ν := by
   let : MeasurableSpace E := borel E
   let : BorelSpace E := ⟨rfl⟩
-  obtain ⟨b⟩ := hμ.2.1
+  obtain ⟨b⟩ := hμ.nonempty_basis
   have : FiniteDimensional ℝ E := Module.Finite.of_basis b
   let c := chooseDensityChartCover (I := I)
     (_root_.tsupport (α := Density E k) μ ∪ _root_.tsupport (α := Density E k) ν)
@@ -675,7 +674,7 @@ theorem integralDensity_sum [IsManifold I 1 M] {ι : Type*}
   induction s using Finset.induction_on with
   | empty => simp
   | @insert i s hi ih =>
-    obtain ⟨b⟩ := (hμ i (Finset.mem_insert_self i s)).2.1
+    obtain ⟨b⟩ := (hμ i (Finset.mem_insert_self i s)).nonempty_basis
     rw [Finset.sum_insert hi, Finset.sum_insert hi,
       integralDensity_add_of_integrable (hμ i (Finset.mem_insert_self i s))
         (IntegrableDensity.sum b μ s fun j hj ↦ hμ j (Finset.mem_insert_of_mem hj)),
@@ -698,7 +697,7 @@ theorem integralDensity_nonneg {μ : RoughDensity I M k}
   let : MeasurableSpace E := borel E
   let : BorelSpace E := ⟨rfl⟩
   by_cases hi : IntegrableDensity μ
-  · obtain ⟨b⟩ := hi.2.1
+  · obtain ⟨b⟩ := hi.nonempty_basis
     have : FiniteDimensional ℝ E := Module.Finite.of_basis b
     rw [integralDensity_eq_chooseCover μ hi b]
     exact Finset.sum_nonneg fun i _ ↦ integral_nonneg fun y ↦ nonneg_inChartAt hμ _ y b
@@ -721,10 +720,10 @@ theorem abs_integralDensity_le_of_integrable [IsManifold I 1 M] {μ ν : RoughDe
   rw [← integralDensity_neg]
   exact integralDensity_mono_of_integrable hν.neg hμ fun x v ↦ (abs_le.mp (h x v)).1
 
-/-- **Positivity of density integration** (Lee, Proposition 16.40): a compactly supported rough
-density with continuous coordinate expressions on chart targets, everywhere nonnegative and strictly
-positive on at least one tangent tuple, has strictly positive integral. Applies in every dimension
-(including `k = 0`) and on manifolds with boundary or corners. -/
+/-- **Positivity of density integration**: a compactly supported rough density with continuous
+coordinate expressions on chart targets, everywhere nonnegative and strictly positive on at least
+one tangent tuple, has strictly positive integral. Applies in every dimension (including `k = 0`)
+and on manifolds with boundary or corners. -/
 theorem integralDensity_pos [IsManifold I 1 M] {μ : RoughDensity I M k}
     (hc : IsCompact (_root_.tsupport (α := Density E k) μ))
     (b : Module.Basis (Fin k) ℝ E)
@@ -766,7 +765,7 @@ theorem integralDensity_pos [IsManifold I 1 M] {μ : RoughDensity I M k}
   have hg₀ : 0 < μ.inChartAt x₀ (extChartAt I x₀ x₀) b := by
     rwa [RoughDensity.inChartAt_extChartAt_self]
   exact setIntegral_pos_of_nonneg_of_pos_at_extChartAt_target (μ := b.addHaar) x₀
-    (fun y ↦ nonneg_inChartAt hnn x₀ y b) (((integrableDensity_iff μ).mp hi).2.2 b x₀)
+    (fun y ↦ nonneg_inChartAt hnn x₀ y b) (hi.integrableOn_inChartAt b x₀)
     ((Density.continuous_eval b).comp_continuousOn (hcont x₀)) hy₀ hg₀
 
 /-! ### Continuous and smooth sections of `DensityBundle` -/

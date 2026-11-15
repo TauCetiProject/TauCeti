@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Density.Basic
-public import TauCeti.LinearAlgebra.Density.Topology
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Chart.Basic
 public import TauCeti.Geometry.Manifold.ExtChartAt
-import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 
 /-!
 # Coordinate expressions and chart changes for rough densities
@@ -150,7 +148,8 @@ theorem inChartAt_add (μ ν : RoughDensity I M k) (x₀ : M) :
   rfl
 
 @[simp]
-theorem inChartAt_smul (c : ℝ) (μ : RoughDensity I M k) (x₀ : M) :
+theorem inChartAt_smul {R : Type*} [SMul R ℝ] [SMulCommClass R ℝ ℝ]
+    (c : R) (μ : RoughDensity I M k) (x₀ : M) :
     (c • μ).inChartAt x₀ = c • μ.inChartAt x₀ := by
   funext z
   ext v
@@ -344,6 +343,23 @@ theorem inChartAt_apply_eq_abs_det_mul [IsManifold I 1 M] (μ : RoughDensity I M
 
 /-! ### Change-of-variables invariance on chart overlaps -/
 
+private theorem inChartAt_changeChart_eq [IsManifold I 1 M] (μ : RoughDensity I M k)
+    (v : Fin k → E) (α β : M) {s : Set M}
+    (hsub : s ⊆ (extChartAt I α).source ∩ (extChartAt I β).source) :
+    EqOn (fun y ↦ μ.inChartAt α y v)
+      (fun y ↦
+        |(fderivWithin ℝ (extChartAt I β ∘ (extChartAt I α).symm) (range I) y).toLinearMap.det| •
+          μ.inChartAt β (((extChartAt I α).symm.trans (extChartAt I β)) y) v)
+      ((extChartAt I α) '' s) := by
+  rintro _ ⟨x, hx, rfl⟩
+  have hβ : (extChartAt I α).symm (extChartAt I α x) ∈ (extChartAt I β).source := by
+    rw [(extChartAt I α).left_inv (hsub hx).1]
+    exact (hsub hx).2
+  have hc := μ.inChartAt_apply_eq_abs_det_mul ((extChartAt I α).map_source (hsub hx).1) hβ v
+  rw [(extChartAt I α).left_inv (hsub hx).1] at hc
+  simpa only [PartialEquiv.trans_apply, (extChartAt I α).left_inv (hsub hx).1, smul_eq_mul]
+    using hc
+
 section OverlapMeasure
 
 variable [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E] [IsManifold I 1 M]
@@ -357,19 +373,11 @@ theorem setIntegral_inChartAt_changeChart (μ : RoughDensity I M k) (v : Fin k �
     (ν : Measure E) [ν.IsAddHaarMeasure] :
     (∫ y in (extChartAt I α) '' s, μ.inChartAt α y v ∂ν) =
       ∫ y in (extChartAt I β) '' s, μ.inChartAt β y v ∂ν := by
-  have himage := TauCeti.extChartAt_coordChange_image α β hsub
-  have hinj := TauCeti.injOn_extChartAt_coordChange α β hsub
-  have hderiv := TauCeti.hasFDerivWithinAt_extChartAt_coordChange α β hsub
-  rw [← himage, integral_image_eq_integral_abs_det_fderiv_smul ν hs hderiv hinj]
-  refine setIntegral_congr_fun hs ?_
-  rintro _ ⟨x, hx, rfl⟩
-  have hβ : (extChartAt I α).symm (extChartAt I α x) ∈ (extChartAt I β).source := by
-    rw [(extChartAt I α).left_inv (hsub hx).1]
-    exact (hsub hx).2
-  have hc := μ.inChartAt_apply_eq_abs_det_mul ((extChartAt I α).map_source (hsub hx).1) hβ v
-  rw [(extChartAt I α).left_inv (hsub hx).1] at hc
-  simpa only [PartialEquiv.trans_apply, (extChartAt I α).left_inv (hsub hx).1, smul_eq_mul]
-    using hc
+  rw [← TauCeti.extChartAt_coordChange_image α β hsub,
+    integral_image_eq_integral_abs_det_fderiv_smul ν hs
+      (TauCeti.hasFDerivWithinAt_extChartAt_coordChange α β hsub)
+      (TauCeti.injOn_extChartAt_coordChange α β hsub)]
+  exact setIntegral_congr_fun hs (μ.inChartAt_changeChart_eq v α β hsub)
 
 /-- Set integrability of a rough density's coordinate expression against any additive Haar measure
 is invariant under a chart change on overlaps. -/
@@ -379,19 +387,11 @@ theorem integrableOn_inChartAt_changeChart (μ : RoughDensity I M k) (v : Fin k 
     (ν : Measure E) [ν.IsAddHaarMeasure] :
     IntegrableOn (fun y ↦ μ.inChartAt α y v) ((extChartAt I α) '' s) ν ↔
       IntegrableOn (fun y ↦ μ.inChartAt β y v) ((extChartAt I β) '' s) ν := by
-  have himage := TauCeti.extChartAt_coordChange_image α β hsub
-  have hinj := TauCeti.injOn_extChartAt_coordChange α β hsub
-  have hderiv := TauCeti.hasFDerivWithinAt_extChartAt_coordChange α β hsub
-  rw [← himage, integrableOn_image_iff_integrableOn_abs_det_fderiv_smul ν hs hderiv hinj]
-  refine (integrableOn_congr_fun ?_ hs).symm
-  rintro _ ⟨x, hx, rfl⟩
-  have hβ : (extChartAt I α).symm (extChartAt I α x) ∈ (extChartAt I β).source := by
-    rw [(extChartAt I α).left_inv (hsub hx).1]
-    exact (hsub hx).2
-  have hc := μ.inChartAt_apply_eq_abs_det_mul ((extChartAt I α).map_source (hsub hx).1) hβ v
-  rw [(extChartAt I α).left_inv (hsub hx).1] at hc
-  simpa only [PartialEquiv.trans_apply, (extChartAt I α).left_inv (hsub hx).1, smul_eq_mul]
-    using hc.symm
+  rw [← TauCeti.extChartAt_coordChange_image α β hsub,
+    integrableOn_image_iff_integrableOn_abs_det_fderiv_smul ν hs
+      (TauCeti.hasFDerivWithinAt_extChartAt_coordChange α β hsub)
+      (TauCeti.injOn_extChartAt_coordChange α β hsub)]
+  exact integrableOn_congr_fun (μ.inChartAt_changeChart_eq v α β hsub) hs
 
 end OverlapMeasure
 
@@ -476,14 +476,13 @@ theorem toDensity_inChartAt_apply (l : Manifold.OrientationLift I M (Fin k))
         ((l.signAt α x : ℝ) * (D.toLinearMap.det * φ x b)) := by ring
 
 omit [FiniteDimensional ℝ E] [IsManifold I 1 M] in
-/-- In any preferred chart, evaluating the coordinate expression of `φ.absDensity` on a basis `b`
-gives the absolute value of the unsigned chart coefficient of `φ` on the chart target. -/
+/-- In any preferred chart, the coordinate expression of `φ.absDensity` at any point and tuple is
+the absolute value of the coordinate expression of `φ`. -/
+@[simp]
 theorem absDensity_inChartAt_apply [Fact (Module.finrank ℝ E = k)] (φ : RoughForm I M ℝ k)
-    (b : Module.Basis (Fin k) ℝ E) (α : M) {y : E} (hy : y ∈ (extChartAt I α).target) :
-    (φ.absDensity.inChartAt α y) b = |φ.signedInChartAt b α (fun _ ↦ 1) y| := by
-  rw [RoughDensity.inChartAt_apply, RoughForm.absDensity_apply,
-    RoughForm.signedInChartAt_apply, dite_eq_left hy, Units.val_one, Int.cast_one, one_mul,
-    RoughForm.inChartAt_apply]
+    (α : M) (y : E) (v : Fin k → E) :
+    φ.absDensity.inChartAt α y v = |φ.inChartAt α y v| := by
+  rw [RoughDensity.inChartAt_apply, RoughForm.absDensity_apply, RoughForm.inChartAt_apply]
 
 end Support
 

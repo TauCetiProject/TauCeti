@@ -30,8 +30,7 @@ nonnegative on positively oriented tangent bases
 
 ## References
 
-* John M. Lee, *Introduction to Smooth Manifolds*, second edition, Chapter 16, Densities
-  (Proposition 16.41).
+* John M. Lee, *Introduction to Smooth Manifolds*, second edition, Chapter 16, Densities.
 -/
 
 public section
@@ -83,10 +82,10 @@ theorem integrableDensity_toDensity_iff (o : Manifold.Orientation I M (Fin k))
     integrableOn_iff_integrable_of_support_subset (φ.support_signedInChartAt_subset_target b α _),
     φ.integrable_signedInChartAt_iff_unsigned b α _ hσ b.addHaar]
 
-/-- **Oriented top-form integration as density integration** (Lee, Proposition 16.41): on any
-oriented `C¹` manifold (possibly non-Hausdorff and possibly with boundary or corners), the oriented
-integral of any rough top form `φ` equals the orientation-free density integral of
-`φ.toDensity o`. Holds unconditionally, including when `φ` is not integrable. -/
+/-- **Oriented top-form integration as density integration**: on any oriented `C¹` manifold
+(possibly non-Hausdorff and possibly with boundary or corners), the oriented integral of any rough
+top form `φ` equals the orientation-free density integral of `φ.toDensity o`. Holds
+unconditionally, including when `φ` is not integrable. -/
 theorem integralTopForm_eq_integralDensity (o : Manifold.Orientation I M (Fin k))
     (φ : RoughForm I M ℝ k) :
     integralTopForm o φ = integralDensity (φ.toDensity o) := by
@@ -107,9 +106,12 @@ theorem integralTopForm_eq_integralDensity (o : Manifold.Orientation I M (Fin k)
         (fun i ↦ (hu i).2.1) hcover']
     refine Finset.sum_congr rfl fun i _ ↦ ?_
     rw [← integral_const_mul]
+    have hcm : IsChartMeasurable I (disjointed u i) := by
+      rw [disjointed_apply, Finset.sup_set_eq_biUnion]
+      exact (hu i).1.isChartMeasurable.diff
+        (isOpen_biUnion fun j _ ↦ (hu j).1).isChartMeasurable
     have hm : MeasurableSet ((extChartAt I (α i)) '' disjointed u i) :=
-      (isChartMeasurable_disjointed (fun j ↦ (hu j).1) i).image_extChartAt (α i)
-        ((disjointed_subset u i).trans (hu i).2.1)
+      hcm.image_extChartAt (α i) ((disjointed_subset u i).trans (hu i).2.1)
     have hsub : (extChartAt I (α i)) '' disjointed u i ⊆ (extChartAt I (α i)).target :=
       (image_mono ((disjointed_subset u i).trans (hu i).2.1)).trans
         (extChartAt I (α i)).image_source_eq_target.subset
@@ -140,8 +142,9 @@ theorem IntegrableTopForm.integrableDensity_absDensity {φ : RoughForm I M ℝ k
   have hnorm : IntegrableOn (fun y ↦ |φ.signedInChartAt b α (fun _ ↦ 1) y|)
       (extChartAt I α).target b.addHaar := by
     simpa only [Real.norm_eq_abs] using (hi.2.2 b α).norm.integrableOn
-  exact hnorm.congr_fun (fun y hy ↦ (RoughForm.absDensity_inChartAt_apply φ b α hy).symm)
-    (measurableSet_extChartAt_target α)
+  refine hnorm.congr_fun (fun y hy ↦ ?_) (measurableSet_extChartAt_target α)
+  dsimp only
+  rw [RoughForm.signedInChartAt_one, Set.indicator_of_mem hy, RoughForm.absDensity_inChartAt_apply]
 
 /-- The integral of `φ.absDensity` is always nonnegative. -/
 theorem integralDensity_absDensity_nonneg (φ : RoughForm I M ℝ k) :
@@ -170,24 +173,6 @@ theorem abs_integralTopForm_le_integralDensity [IsManifold I 1 M]
         rw [RoughForm.abs_toDensity_apply, RoughForm.absDensity_apply]
   · rw [integralTopForm_eq_zero_of_not_integrable o φ hi, abs_zero]
     exact integralDensity_absDensity_nonneg φ
-
-/-- On an oriented manifold of positive dimension, a top form that is nonnegative on every
-positively oriented tangent basis satisfies `φ.toDensity o = φ.absDensity`. -/
-theorem RoughForm.toDensity_eq_absDensity [IsManifold I 1 M] [NeZero k]
-    (o : Manifold.Orientation I M (Fin k)) {φ : RoughForm I M ℝ k}
-    (hφ : ∀ x (c : Module.Basis (Fin k) ℝ (TangentSpace I x)),
-      c.orientation = o.orientationAt x → 0 ≤ φ x c) :
-    φ.toDensity o = φ.absDensity := by
-  funext x
-  have hfin : Module.finrank ℝ (TangentSpace I x) = k :=
-    (TauCeti.finrank_tangentSpace (I := I) x).trans Fact.out
-  let c : Module.Basis (Fin k) ℝ (TangentSpace I x) :=
-    (Module.finBasisOfFinrankEq ℝ (TangentSpace I x) hfin).adjustToOrientation (o.orientationAt x)
-  have hc : c.orientation = o.orientationAt x :=
-    Module.Basis.orientation_adjustToOrientation _ _
-  apply c.density_ext
-  rw [RoughForm.toDensity_apply_of_orientation_eq φ hc, RoughForm.absDensity_apply,
-    abs_of_nonneg (hφ x c hc)]
 
 /-- On an oriented manifold of positive dimension, the oriented integral of a top form that is
 nonnegative on positively oriented tangent bases equals the orientation-free integral of

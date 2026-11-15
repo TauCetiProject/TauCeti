@@ -18,8 +18,10 @@ the density line bundle `TauCeti.DensityBundle`. On an oriented manifold, a top 
 determines the rough density `φ.toDensity o`. At each point it agrees with `φ` on positively
 oriented bases of the tangent space and with `-φ` on negatively oriented ones. It is additive
 and homogeneous in `φ`, negated by reversing the orientation, and determines `φ` once the
-orientation is fixed. This is the comparison through which oriented integration of top forms
-becomes a special case of the orientation-free integration of densities.
+orientation is fixed. Without choosing an orientation, every rough top form also determines the
+nonnegative absolute density `φ.absDensity` (`x ↦ v ↦ |φ x v|`), which agrees with `φ.toDensity o`
+when `φ` is nonnegative on positively oriented bases. This is the comparison through which oriented
+integration of top forms becomes a special case of the orientation-free integration of densities.
 
 ## References
 
@@ -178,10 +180,9 @@ theorem toDensity_injective (o : Manifold.Orientation I M (Fin m)) :
 /-- Taking the absolute value of `φ.toDensity o` at any point and tuple gives `|φ x v|`. -/
 @[simp]
 theorem abs_toDensity_apply (φ : RoughForm I M ℝ m) (o : Manifold.Orientation I M (Fin m))
-    (x : M) (v : Fin m → TangentSpace I x) : |φ.toDensity o x v| = |φ x v| := by
+    (x : M) (v : Fin m → TangentSpace I x) : |φ.toDensity o x v| = |φ x v| :=
   have := o.fact_finrank_tangentSpace x
-  exact (AlternatingMap.abs_toDensity_apply (φ x).toAlternatingMap (o.orientationAt x) v).trans
-    (AlternatingMap.absDensity_apply _ _)
+  AlternatingMap.abs_toDensity_apply (φ x).toAlternatingMap (o.orientationAt x) v
 
 section AbsDensity
 
@@ -229,6 +230,7 @@ theorem absDensity_fun_smul (f : M → ℝ) (φ : RoughForm I M ℝ m) :
   simp [abs_mul]
 
 /-- Constant scalar multiplication of a rough top form scales `absDensity` by `|c|`. -/
+@[simp]
 theorem absDensity_smul (c : ℝ) (φ : RoughForm I M ℝ m) :
     (c • φ).absDensity = |c| • φ.absDensity :=
   absDensity_fun_smul (fun _ ↦ c) φ
@@ -244,6 +246,17 @@ theorem absDensity_apply_eq_zero_iff (φ : RoughForm I M ℝ m) (x : M) :
     ContinuousAlternatingMap.toAlternatingMap_injective.eq_iff]
 
 end AbsDensity
+
+/-- On an oriented manifold of positive dimension, a top form that is nonnegative on every
+positively oriented tangent basis satisfies `φ.toDensity o = φ.absDensity`. -/
+theorem toDensity_eq_absDensity [Fact (Module.finrank ℝ E = m)] [NeZero m]
+    {φ : RoughForm I M ℝ m} (o : Manifold.Orientation I M (Fin m))
+    (hφ : ∀ x (c : Module.Basis (Fin m) ℝ (TangentSpace I x)),
+      c.orientation = o.orientationAt x → 0 ≤ φ x c) :
+    φ.toDensity o = φ.absDensity := by
+  funext x
+  have := o.fact_finrank_tangentSpace x
+  exact AlternatingMap.toDensity_eq_absDensity (φ x).toAlternatingMap (o.orientationAt x) (hφ x)
 
 end RoughForm
 

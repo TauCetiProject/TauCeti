@@ -148,14 +148,32 @@ theorem toDensity_eq_zero_iff (φ : V [⋀^Fin m]→ₗ[ℝ] ℝ) (o : Orientati
 /-- Taking the absolute value of `φ.toDensity o` on any tuple recovers `|φ v|`. -/
 @[simp]
 theorem abs_toDensity_apply (φ : V [⋀^Fin m]→ₗ[ℝ] ℝ) (o : Orientation ℝ V (Fin m))
-    (v : Fin m → V) : |φ.toDensity o v| = φ.absDensity v := by
+    (v : Fin m → V) : |φ.toDensity o v| = |φ v| := by
   rw [(φ.toDensity o).apply_eq_abs_det_mul (refBasis V m), toDensity_apply_basis, abs_mul,
-    abs_mul, absDensity_apply]
+    abs_mul]
   have hs : |(o.signBasis (refBasis V m) : ℝ)| = 1 := by
     rcases Int.units_eq_one_or (o.signBasis (refBasis V m)) with h | h <;> rw [h] <;> simp
   have hdet := DFunLike.congr_fun (φ.eq_smul_basis_det (refBasis V m)) v
   simp only [smul_apply, smul_eq_mul] at hdet
   rw [hs, one_mul, abs_abs, hdet, abs_mul, mul_comm]
+
+/-- If a top form is nonnegative on a positively oriented basis, its oriented density agrees with
+its absolute density. -/
+theorem toDensity_eq_absDensity_of_nonneg (φ : V [⋀^Fin m]→ₗ[ℝ] ℝ)
+    {o : Orientation ℝ V (Fin m)} {b : Basis (Fin m) ℝ V} (hb : b.orientation = o)
+    (hφ : 0 ≤ φ b) : φ.toDensity o = φ.absDensity := by
+  apply b.density_ext
+  rw [toDensity_apply_of_orientation_eq φ hb, absDensity_apply, abs_of_nonneg hφ]
+
+/-- In positive dimension, if a top form is nonnegative on every positively oriented basis, its
+oriented density agrees with its absolute density. -/
+theorem toDensity_eq_absDensity [NeZero m] (φ : V [⋀^Fin m]→ₗ[ℝ] ℝ)
+    (o : Orientation ℝ V (Fin m))
+    (hφ : ∀ b : Basis (Fin m) ℝ V, b.orientation = o → 0 ≤ φ b) :
+    φ.toDensity o = φ.absDensity := by
+  let b := (refBasis V m).adjustToOrientation o
+  have hb : b.orientation = o := Basis.orientation_adjustToOrientation _ _
+  exact φ.toDensity_eq_absDensity_of_nonneg hb (hφ b hb)
 
 end AlternatingMap
 
