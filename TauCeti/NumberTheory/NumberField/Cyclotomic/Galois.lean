@@ -21,6 +21,8 @@ this file shows that it is the reduction of `galEquivZMod` modulo `m`.
 
 * `IsPrimitiveRoot.autToPow_eq_unitsMap_galEquivZMod`: the cyclotomic character of a primitive
   `m`-th root of unity in the `n`-th cyclotomic field is `galEquivZMod` reduced modulo `m`.
+* `AlgEquiv.galEquivZMod_restrictNormal`: an automorphism of a larger field acting on the `n`-th
+  roots of unity through `u` restricts to `galEquivZMod.symm u`.
 -/
 
 public section
@@ -42,3 +44,18 @@ theorem IsPrimitiveRoot.autToPow_eq_unitsMap_galEquivZMod {m : ℕ} [NeZero m] {
   rw [(hζ.isOfFinOrder (NeZero.ne m)).pow_eq_pow_iff_modEq, ← hζ.eq_orderOf,
     ← ZMod.natCast_eq_natCast_iff, ZMod.natCast_zmod_val] at hexp
   exact Units.ext (hexp.trans (ZMod.natCast_val _))
+
+/-- **Restricting to the `n`-th cyclotomic field.** If an automorphism `τ` of an extension `L` of
+`K` raises every `n`-th root of unity of `L` to the power `u`, then `galEquivZMod` sends its
+restriction to `K` to `u`. -/
+theorem AlgEquiv.galEquivZMod_restrictNormal {L : Type*} [Field L] [Algebra ℚ L] [Algebra K L]
+    [IsScalarTower ℚ K L] [Normal ℚ K] (τ : L ≃ₐ[ℚ] L) (u : (ZMod n)ˣ)
+    (hτ : ∀ z : L, z ^ n = 1 → τ z = z ^ (u : ZMod n).val) :
+    galEquivZMod n K (τ.restrictNormal K) = u := by
+  have hζ := IsCyclotomicExtension.zeta_spec n ℚ K
+  have h := congrArg (algebraMap K L)
+    (galEquivZMod_apply_of_pow_eq n K (τ.restrictNormal K) hζ.pow_eq_one)
+  rw [map_pow, AlgEquiv.restrictNormal_commutes,
+    hτ _ (by rw [← map_pow, hζ.pow_eq_one, map_one])] at h
+  have hζL := hζ.map_of_injective (algebraMap K L).injective
+  exact Units.ext (ZMod.val_injective _ (hζL.pow_inj (ZMod.val_lt _) (ZMod.val_lt _) h).symm)

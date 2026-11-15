@@ -1,0 +1,404 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.InnerProductSpace.Positive
+public import TauCeti.Analysis.Normed.Operator.Extend
+public import TauCeti.Analysis.InnerProductSpace.PartialIsometry
+
+/-!
+# Factoring a bounded operator through another one
+
+Let `A : E →L[𝕜] G` and `T : E →L[𝕜] F` be bounded operators with a common source, where
+`G` is an inner product space and `F` is a Banach space. Suppose `‖T x‖ ≤ C * ‖A x‖` for every
+`x` and some nonnegative `C`, and the closure of the range of `A` admits an orthogonal projection,
+as it does when `G` is complete. Then the rule `A x ↦ T x` is well defined and bounded on the
+range of `A`. It extends by continuity to the closure `K` of that range, and by zero on `Kᗮ`.
+The canonical factor `T.factorThru A : G →L[𝕜] F` satisfies `T.factorThru A ∘L A = T` and
+`‖T.factorThru A‖ ≤ C`. It is the unique bounded operator `V` with `V ∘L A = T` that vanishes on
+`(range A)ᗮ`. This is the elementary direction of Douglas's factorization lemma.
+
+When `‖T x‖ = ‖A x‖` for every `x`, the factor is isometric on `K` and is a contraction. When
+`F` and `G` are complete inner product spaces, the adjoint carries `T` back to `A`:
+`(T.factorThru A)† ∘L T = A`. The norm equality follows from equal Gram operators `A† A = T† T`
+when `E` is also a complete inner product space. Applied to a self-adjoint square root `A` of
+`T† T`, this is the Gram-contraction factorization of `T`. Applied to the modulus `A = |T|`, the
+factor is the polar partial isometry of `T`.
+
+For complete inner product spaces in this isometric case, the factor is a partial isometry with
+initial space the closure of the range of `A` and final space the closure of the range of `T`;
+its initial and final projections are the orthogonal projections onto these spaces. When `A` is
+a normal endomorphism, for instance self-adjoint, the initial space is `(ker T)ᗮ`. When `A` has
+dense range the factor is an isometry. Independently of the isometric case, the factor is `T A⁻¹`
+when `A` is invertible, for a normal endomorphism `A`, any `V` with `V ∘L A = T` vanishing on
+`ker T` equals the factor, and for an endomorphism `A` with `‖T x‖ ≤ ‖A x‖` the factor `U`
+satisfies `‖T - U‖ ≤ ‖A - 1‖`.
+
+## Main declarations
+
+* `ContinuousLinearMap.factorThru`: the canonical factor of `T` through `A`.
+* `ContinuousLinearMap.factorThru_comp`: `T.factorThru A ∘L A = T` under a norm bound.
+* `ContinuousLinearMap.factorThru_compLeftInverse_apply`: the factor of `f.compLeftInverse g`
+  through the inclusion of the range of `g` sends `g x` to `f x`.
+* `ContinuousLinearMap.eq_factorThru`: uniqueness of the factor vanishing on `(range A)ᗮ`.
+* `ContinuousLinearMap.adjoint_factorThru_comp`: `(T.factorThru A)† ∘L T = A` when
+  `‖T x‖ = ‖A x‖` for every `x`.
+* `ContinuousLinearMap.isPartialIsometry_factorThru`: the factor is a partial isometry when
+  `‖T x‖ = ‖A x‖` for every `x`.
+* `ContinuousLinearMap.adjoint_factorThru_comp_factorThru`,
+  `ContinuousLinearMap.factorThru_comp_adjoint_factorThru`: its initial and final projections.
+* `ContinuousLinearMap.ker_factorThru`, `ContinuousLinearMap.range_factorThru`: its kernel is
+  `(range A)ᗮ` and its range is the closure of the range of `T`.
+* `ContinuousLinearMap.ker_factorThru_of_isStarNormal`: for normal `A`, its kernel is `ker T`.
+* `ContinuousLinearMap.factorThru_eq_comp_inverse`: for invertible `A`, the factor is `T A⁻¹`.
+* `ContinuousLinearMap.norm_sub_factorThru_le`: `‖T - T.factorThru A‖ ≤ ‖A - 1‖`.
+* `ContinuousLinearMap.adjoint_comp_self_eq_adjoint_comp_self_iff`: equal Gram operators are
+  equivalent to equal pointwise norms.
+* `ContinuousLinearMap.exists_contraction_of_gram_eq`: equal Gram operators `A† A = T† T` give a
+  contraction `W` with contractive adjoint, `W ∘L A = T`, and `W† ∘L T = A`.
+
+## References
+
+* J. B. Conway, *A Course in Functional Analysis*, 2nd ed., Springer (1990), the treatment of
+  partial isometries and the polar decomposition.
+
+* R. G. Douglas, *On majorization, factorization, and range inclusion of operators on Hilbert
+  space*, Proc. Amer. Math. Soc. **17** (1966), 413–415.
+-/
+
+public section
+
+noncomputable section
+
+open scoped InnerProduct
+
+namespace ContinuousLinearMap
+
+section Factor
+
+variable {𝕜 E F G : Type*} [RCLike 𝕜]
+  [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
+  [NormedAddCommGroup G] [InnerProductSpace 𝕜 G]
+
+/-- The operator `A`, with codomain restricted to the closure of its range. -/
+private def toClosureRange (A : E →L[𝕜] G) : E →ₗ[𝕜] A.range.topologicalClosure :=
+  (A : E →ₗ[𝕜] G).codRestrict _ fun x ↦ A.range.le_topologicalClosure ⟨x, rfl⟩
+
+private theorem coe_toClosureRange_apply (A : E →L[𝕜] G) (x : E) :
+    (toClosureRange A x : G) = A x :=
+  rfl
+
+private theorem denseRange_toClosureRange (A : E →L[𝕜] G) : DenseRange (toClosureRange A) := by
+  have hdense := (denseRange_inclusion_iff (subset_closure : (A.range : Set G) ⊆ _)).2 le_rfl
+  refine hdense.mono ?_
+  rintro _ ⟨⟨_, x, rfl⟩, rfl⟩
+  exact ⟨x, rfl⟩
+
+private theorem orthogonalProjectionOnto_apply_apply (A : E →L[𝕜] G)
+    [A.range.topologicalClosure.HasOrthogonalProjection] (x : E) :
+    A.range.topologicalClosure.orthogonalProjectionOnto (A x) = toClosureRange A x :=
+  Submodule.orthogonalProjectionOnto_mem_subspace_eq_self (toClosureRange A x)
+
+/-- The canonical factor of `T` through `A`. On the closure of the range of `A` it is the
+continuous extension of the rule `A x ↦ T x`, and it vanishes on the orthogonal complement of
+that range. It satisfies `T.factorThru A ∘L A = T` whenever `‖T x‖ ≤ C * ‖A x‖` for some `C`
+and every `x` (`factorThru_comp`); without such a bound its value is unspecified. -/
+def factorThru (T : E →L[𝕜] F) (A : E →L[𝕜] G)
+    [A.range.topologicalClosure.HasOrthogonalProjection] : G →L[𝕜] F :=
+  (T : E →ₗ[𝕜] F).extendOfNorm (toClosureRange A) ∘L
+    A.range.topologicalClosure.orthogonalProjectionOnto
+
+variable {T : E →L[𝕜] F} {A : E →L[𝕜] G}
+  [A.range.topologicalClosure.HasOrthogonalProjection]
+
+private theorem factorThru_apply_eq (y : G) :
+    T.factorThru A y = (T : E →ₗ[𝕜] F).extendOfNorm (toClosureRange A)
+      (A.range.topologicalClosure.orthogonalProjectionOnto y) :=
+  rfl
+
+/-- Under a norm bound, the factor sends `A x` to `T x`. -/
+@[simp]
+theorem factorThru_apply_apply (h : ∃ C, ∀ x, ‖T x‖ ≤ C * ‖A x‖) (x : E) :
+    T.factorThru A (A x) = T x := by
+  rw [factorThru_apply_eq, orthogonalProjectionOnto_apply_apply]
+  exact LinearMap.extendOfNorm_eq (denseRange_toClosureRange A) h x
+
+/-- Under a norm bound `‖T x‖ ≤ C * ‖A x‖`, the operator `T` factors through `A`. -/
+theorem factorThru_comp (h : ∃ C, ∀ x, ‖T x‖ ≤ C * ‖A x‖) : T.factorThru A ∘L A = T := by
+  ext x
+  exact factorThru_apply_apply h x
+
+/-- Under a bound `‖f x‖ ≤ C * ‖g x‖` for linear maps on a space without topology, the factor of
+`f.compLeftInverse g` through the inclusion of the range of `g` sends `g x` to `f x`. -/
+theorem factorThru_compLeftInverse_apply {Φ : Type*} [AddCommGroup Φ] [Module 𝕜 Φ]
+    {f : Φ →ₗ[𝕜] F} {g : Φ →ₗ[𝕜] G}
+    [(LinearMap.range g).subtypeL.range.topologicalClosure.HasOrthogonalProjection]
+    (h : ∃ C, ∀ x, ‖f x‖ ≤ C * ‖g x‖) (x : Φ) :
+    (f.compLeftInverse g).factorThru (LinearMap.range g).subtypeL (g x) = f x := by
+  obtain ⟨C, hC⟩ := h
+  have := factorThru_apply_apply (T := f.compLeftInverse g) (A := (LinearMap.range g).subtypeL)
+    ⟨C, LinearMap.norm_compLeftInverse_apply_le hC⟩ ⟨g x, LinearMap.mem_range_self g x⟩
+  rwa [LinearMap.compLeftInverse_apply_of_bdd _ _ ⟨C, hC⟩ x _ rfl] at this
+
+/-- The factor vanishes on the orthogonal complement of the range of `A`. -/
+@[simp]
+theorem factorThru_apply_of_mem_orthogonal {y : G} (hy : y ∈ A.rangeᗮ) :
+    T.factorThru A y = 0 := by
+  rw [factorThru_apply_eq, Submodule.orthogonalProjectionOnto_eq_zero_iff.2
+    (by rwa [Submodule.orthogonal_closure]), map_zero]
+
+/-- A bound `‖T x‖ ≤ C * ‖A x‖` bounds the norm of the factor by `C`. -/
+theorem norm_factorThru_le {C : ℝ} (hC : 0 ≤ C) (h : ∀ x, ‖T x‖ ≤ C * ‖A x‖) :
+    ‖T.factorThru A‖ ≤ C := by
+  calc ‖T.factorThru A‖
+      ≤ ‖(T : E →ₗ[𝕜] F).extendOfNorm (toClosureRange A)‖ *
+          ‖A.range.topologicalClosure.orthogonalProjectionOnto‖ := opNorm_comp_le _ _
+    _ ≤ C * 1 := by
+      gcongr
+      · exact LinearMap.opNorm_extendOfNorm_le (denseRange_toClosureRange A) hC h
+      · exact Submodule.orthogonalProjectionOnto_norm_le _
+    _ = C := mul_one C
+
+/-- A bounded operator `V` with `V ∘L A = T` that vanishes on the orthogonal complement of the
+range of `A` is the canonical factor of `T` through `A`. -/
+theorem eq_factorThru {V : G →L[𝕜] F} (hV : V ∘L A = T) (hV₀ : ∀ y ∈ A.rangeᗮ, V y = 0) :
+    V = T.factorThru A := by
+  have hbound : ∃ C, ∀ x, ‖T x‖ ≤ C * ‖A x‖ := ⟨‖V‖, fun x ↦ by
+    simpa only [← hV, comp_apply] using V.le_opNorm (A x)⟩
+  -- The two operators agree on the range of `A`, hence on its closure `K`, and both vanish
+  -- on `Kᗮ = (range A)ᗮ`; these two subspaces span `G`.
+  have hrange : Set.EqOn V (T.factorThru A) (A.range : Set G) := by
+    rintro _ ⟨x, rfl⟩
+    rw [coe_coe, factorThru_apply_apply hbound, ← hV, comp_apply]
+  have hclosure := hrange.closure V.continuous (T.factorThru A).continuous
+  ext y
+  obtain ⟨u, hu, v, hv, rfl⟩ := A.range.topologicalClosure.exists_add_mem_mem_orthogonal y
+  rw [Submodule.orthogonal_closure] at hv
+  rw [map_add, map_add, hclosure (by rwa [← Submodule.topologicalClosure_coe]), hV₀ v hv,
+    factorThru_apply_of_mem_orthogonal hv]
+
+/-- If `‖T x‖ = ‖A x‖` for every `x`, the factor is isometric on the closure of the range
+of `A`. -/
+theorem norm_factorThru_apply (h : ∀ x, ‖T x‖ = ‖A x‖) {y : G}
+    (hy : y ∈ A.range.topologicalClosure) : ‖T.factorThru A y‖ = ‖y‖ := by
+  have hbound : ∃ C, ∀ x, ‖T x‖ ≤ C * ‖A x‖ := ⟨1, fun x ↦ by rw [one_mul, h x]⟩
+  rw [← SetLike.mem_coe, Submodule.topologicalClosure_coe] at hy
+  refine closure_minimal ?_ (isClosed_eq (T.factorThru A).continuous.norm continuous_norm) hy
+  rintro _ ⟨x, rfl⟩
+  rw [Set.mem_ofPred_eq, coe_coe, factorThru_apply_apply hbound, h x]
+
+/-- If `‖T x‖ = ‖A x‖` for every `x`, the kernel of the factor of `T` through `A` is the
+orthogonal complement of the range of `A`. -/
+theorem ker_factorThru (h : ∀ x, ‖T x‖ = ‖A x‖) : (T.factorThru A).ker = A.rangeᗮ := by
+  refine le_antisymm (fun y hy ↦ ?_) fun y hy ↦ factorThru_apply_of_mem_orthogonal hy
+  -- Split `y = u + v` with `u` in the closure of the range of `A` and `v ∈ (range A)ᗮ`; the
+  -- factor kills `v` and is isometric on `u`, so `u = 0`.
+  obtain ⟨u, hu, v, hv, rfl⟩ := A.range.topologicalClosure.exists_add_mem_mem_orthogonal y
+  rw [Submodule.orthogonal_closure] at hv
+  rw [LinearMap.mem_ker, coe_coe, map_add, factorThru_apply_of_mem_orthogonal hv, add_zero,
+    ← norm_eq_zero, norm_factorThru_apply h hu, norm_eq_zero] at hy
+  rwa [hy, zero_add]
+
+/-- If `‖T x‖ = ‖A x‖` for every `x`, the initial space of the factor of `T` through `A` is the
+closure of the range of `A`. -/
+theorem orthogonal_ker_factorThru (h : ∀ x, ‖T x‖ = ‖A x‖) :
+    (T.factorThru A).kerᗮ = A.range.topologicalClosure := by
+  rw [ker_factorThru h, ← Submodule.orthogonal_closure A.range, Submodule.orthogonal_orthogonal]
+
+/-- If `‖T x‖ = ‖A x‖` for every `x` and `A` has dense range, the factor of `T` through `A`
+preserves norms. -/
+theorem norm_factorThru_apply_of_denseRange (h : ∀ x, ‖T x‖ = ‖A x‖) (hA : DenseRange A)
+    (y : G) : ‖T.factorThru A y‖ = ‖y‖ := by
+  refine norm_factorThru_apply h ?_
+  rw [← SetLike.mem_coe, Submodule.topologicalClosure_coe]
+  exact hA.closure_range ▸ Set.mem_univ y
+
+end Factor
+
+section CompleteRange
+
+variable {𝕜 E F G : Type*} [RCLike 𝕜]
+  [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
+  [NormedAddCommGroup G] [InnerProductSpace 𝕜 G]
+  {T : E →L[𝕜] F} {A : E →L[𝕜] G} [CompleteSpace A.range.topologicalClosure]
+
+/-- If `‖T x‖ = ‖A x‖` for every `x` and the closure of the range of `A` is complete,
+the range of the factor of `T` through `A` is the closure of the range of `T`. -/
+theorem range_factorThru (h : ∀ x, ‖T x‖ = ‖A x‖) :
+    (T.factorThru A).range = T.range.topologicalClosure := by
+  let V := (T : E →ₗ[𝕜] F).extendOfIsometry (denseRange_toClosureRange A) h
+  have hfactor : (T.factorThru A).toLinearMap = V.toLinearMap.comp
+      A.range.topologicalClosure.orthogonalProjectionOnto.toLinearMap := by
+    ext y
+    exact (factorThru_apply_eq y).trans
+      (LinearMap.extendOfIsometry_apply (T : E →ₗ[𝕜] F)
+        (denseRange_toClosureRange A) h _).symm
+  have hrange : (T.factorThru A).range = V.toLinearMap.range := by
+    rw [hfactor]
+    exact LinearMap.range_comp_of_range_eq_top _
+      (LinearMap.range_eq_top_of_surjective _ fun x ↦
+        ⟨x, Submodule.orthogonalProjectionOnto_mem_subspace_eq_self x⟩)
+  rw [hrange]
+  refine le_antisymm ?_ ?_
+  · -- The extension maps the dense range of `toClosureRange A` into the range of `T`.
+    intro y hy
+    rw [← SetLike.mem_coe, Submodule.topologicalClosure_coe]
+    refine (closure_mono ?_)
+      (V.continuous.range_subset_closure_image_dense (denseRange_toClosureRange A) hy)
+    rintro _ ⟨_, ⟨x, rfl⟩, rfl⟩
+    exact ⟨x, (LinearMap.extendOfIsometry_eq (T : E →ₗ[𝕜] F)
+      (denseRange_toClosureRange A) h x).symm⟩
+  · -- Its range is closed because the range closure of `A` is complete.
+    refine Submodule.topologicalClosure_minimal _ ?_ V.isometry.isClosedEmbedding.isClosed_range
+    rintro _ ⟨x, rfl⟩
+    exact ⟨toClosureRange A x, LinearMap.extendOfIsometry_eq (T : E →ₗ[𝕜] F)
+      (denseRange_toClosureRange A) h x⟩
+
+end CompleteRange
+
+section Adjoint
+
+variable {𝕜 E F G : Type*} [RCLike 𝕜]
+  [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+  [NormedAddCommGroup G] [InnerProductSpace 𝕜 G] [CompleteSpace G]
+  {T : E →L[𝕜] F} {A : E →L[𝕜] G}
+
+/-- If `‖T x‖ = ‖A x‖` for every `x`, the adjoint of the factor of `T` through `A` carries `T`
+back to `A`. -/
+theorem adjoint_factorThru_comp (h : ∀ x, ‖T x‖ = ‖A x‖) : (T.factorThru A)† ∘L T = A := by
+  -- The extension of `A x ↦ T x` from the range of `A` to its closure is a linear isometry.
+  let V := (T : E →ₗ[𝕜] F).extendOfIsometry (denseRange_toClosureRange A) h
+  have hV (k) : (T : E →ₗ[𝕜] F).extendOfNorm (toClosureRange A) k = V k :=
+    (LinearMap.extendOfIsometry_apply (T : E →ₗ[𝕜] F) (denseRange_toClosureRange A) h k).symm
+  have hTx (x : E) : T x = V (toClosureRange A x) :=
+    (LinearMap.extendOfIsometry_eq (T : E →ₗ[𝕜] F) (denseRange_toClosureRange A) h x).symm
+  ext x
+  refine ext_inner_right 𝕜 fun y ↦ ?_
+  rw [comp_apply, adjoint_inner_left, factorThru_apply_eq, hV, hTx, LinearIsometry.inner_map_map,
+    Submodule.inner_orthogonalProjectionOnto_eq_of_mem_left, coe_toClosureRange_apply]
+
+/-- If `‖T x‖ = ‖A x‖` for every `x`, the factor of `T` through `A` is a partial isometry. -/
+theorem isPartialIsometry_factorThru (h : ∀ x, ‖T x‖ = ‖A x‖) :
+    (T.factorThru A).IsPartialIsometry :=
+  isPartialIsometry_iff_norm_map.2 fun _ hy ↦
+    norm_factorThru_apply h (orthogonal_ker_factorThru h ▸ hy)
+
+/-- If `‖T x‖ = ‖A x‖` for every `x`, the initial projection of the factor of `T` through `A` is
+the orthogonal projection onto the closure of the range of `A`. -/
+theorem adjoint_factorThru_comp_factorThru (h : ∀ x, ‖T x‖ = ‖A x‖) :
+    (T.factorThru A)† ∘L T.factorThru A = A.range.topologicalClosure.starProjection := by
+  simpa only [orthogonal_ker_factorThru h] using
+    (isPartialIsometry_factorThru h).adjoint_comp_self_eq_starProjection
+
+/-- If `‖T x‖ = ‖A x‖` for every `x`, the final projection of the factor of `T` through `A` is
+the orthogonal projection onto the closure of the range of `T`. -/
+theorem factorThru_comp_adjoint_factorThru (h : ∀ x, ‖T x‖ = ‖A x‖) :
+    T.factorThru A ∘L (T.factorThru A)† = T.range.topologicalClosure.starProjection := by
+  have hK : (T.factorThru A).range.topologicalClosure = T.range.topologicalClosure := by
+    rw [range_factorThru h]
+    exact T.range.isClosed_topologicalClosure.submodule_topologicalClosure_eq
+  simpa only [hK] using (isPartialIsometry_factorThru h).comp_adjoint_eq_starProjection
+
+end Adjoint
+
+section Endomorphism
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+
+section Normed
+
+variable [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
+  {T : E →L[𝕜] F} {A : E →L[𝕜] E}
+
+/-- If `A` is invertible, the factor of `T` through `A` is `T A⁻¹`. -/
+theorem factorThru_eq_comp_inverse (hA : IsUnit A) : T.factorThru A = T ∘L Ring.inverse A := by
+  have hT : T.factorThru A ∘L A = T := factorThru_comp ⟨‖T ∘L Ring.inverse A‖, fun x ↦ by
+    simpa only [← comp_apply, comp_assoc, ← mul_def, Ring.inverse_mul_cancel A hA, one_def,
+      comp_id] using (T ∘L Ring.inverse A).le_opNorm (A x)⟩
+  rw [← hT, comp_assoc, ← mul_def, Ring.mul_inverse_cancel A hA, one_def, comp_id, hT]
+
+/-- If `‖T x‖ ≤ ‖A x‖` for every `x`, the factor `U` of `T` through `A` satisfies
+`‖T - U‖ ≤ ‖A - 1‖`. -/
+theorem norm_sub_factorThru_le (h : ∀ x, ‖T x‖ ≤ ‖A x‖) : ‖T - T.factorThru A‖ ≤ ‖A - 1‖ := by
+  have hU : ‖T.factorThru A‖ ≤ 1 :=
+    norm_factorThru_le zero_le_one fun x ↦ by rw [one_mul]; exact h x
+  have hT : T.factorThru A ∘L A = T := factorThru_comp ⟨1, fun x ↦ by rw [one_mul]; exact h x⟩
+  calc ‖T - T.factorThru A‖
+      = ‖T.factorThru A ∘L (A - 1)‖ := by rw [comp_sub, hT, one_def, comp_id]
+    _ ≤ ‖T.factorThru A‖ * ‖A - 1‖ := opNorm_comp_le _ _
+    _ ≤ 1 * ‖A - 1‖ := by gcongr
+    _ = ‖A - 1‖ := one_mul _
+
+/-- If `‖T x‖ = ‖A x‖` for every `x` and `A` is normal, for instance self-adjoint, the factor of
+`T` through `A` has the same kernel as `T`. Its initial space is therefore `(ker T)ᗮ`. -/
+theorem ker_factorThru_of_isStarNormal (h : ∀ x, ‖T x‖ = ‖A x‖) (hA : IsStarNormal A) :
+    (T.factorThru A).ker = T.ker := by
+  rw [ker_factorThru h, IsStarNormal.orthogonal_range hA]
+  ext x
+  rw [LinearMap.mem_ker, LinearMap.mem_ker, coe_coe, coe_coe, ← norm_eq_zero, ← h x, norm_eq_zero]
+
+/-- If `A` is normal, for instance self-adjoint, a bounded operator `V` with `V ∘L A = T` that
+vanishes on `ker T` is the canonical factor of `T` through `A`. -/
+theorem eq_factorThru_of_isStarNormal (hA : IsStarNormal A)
+    {V : E →L[𝕜] F} (hV : V ∘L A = T) (hV₀ : ∀ y ∈ T.ker, V y = 0) : V = T.factorThru A :=
+  eq_factorThru hV fun y hy ↦ hV₀ y <| by
+    rw [IsStarNormal.orthogonal_range hA, LinearMap.mem_ker, coe_coe] at hy
+    rw [LinearMap.mem_ker, coe_coe, ← hV, comp_apply, hy, map_zero]
+
+end Normed
+
+variable [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+  {T : E →L[𝕜] F} {A : E →L[𝕜] E}
+
+/-- If `‖T x‖ = ‖A x‖` for every `x` and `A` is normal, for instance self-adjoint, the initial
+projection of the factor of `T` through `A` is the orthogonal projection onto `(ker T)ᗮ`. -/
+theorem adjoint_factorThru_comp_factorThru_of_isStarNormal (h : ∀ x, ‖T x‖ = ‖A x‖)
+    (hA : IsStarNormal A) :
+    (T.factorThru A)† ∘L T.factorThru A = T.kerᗮ.starProjection := by
+  simpa only [ker_factorThru_of_isStarNormal h hA] using
+    (isPartialIsometry_factorThru h).adjoint_comp_self_eq_starProjection
+
+end Endomorphism
+
+section Gram
+
+variable {𝕜 E F G : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+  [NormedAddCommGroup G] [InnerProductSpace 𝕜 G] [CompleteSpace G]
+
+/-- Two bounded operators with a common source have equal Gram operators exactly when they have
+equal pointwise norms. -/
+theorem adjoint_comp_self_eq_adjoint_comp_self_iff {T : E →L[𝕜] F} {A : E →L[𝕜] G} :
+    A† ∘L A = T† ∘L T ↔ ∀ x, ‖A x‖ = ‖T x‖ := by
+  -- The proof follows Mathlib's `ContinuousLinearMap.isStarNormal_iff_norm_eq_adjoint`.
+  have hsymm : ((A† ∘L A - T† ∘L T : E →L[𝕜] E) : E →ₗ[𝕜] E).IsSymmetric :=
+    (isPositive_adjoint_comp_self A).isSymmetric.sub (isPositive_adjoint_comp_self T).isSymmetric
+  rw [← sub_eq_zero, ← coe_inj, toLinearMap_zero, ← hsymm.inner_map_self_eq_zero]
+  simp_rw [coe_coe, sub_apply, inner_sub_left, comp_apply, adjoint_inner_left,
+    inner_self_eq_norm_sq_to_K, sub_eq_zero, ← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)]
+  norm_cast
+
+/-- **Gram-contraction factorization.** If `A† A = T† T`, then `T` factors as `W ∘L A` through
+a contraction `W` with contractive adjoint, and `W†` carries `T` back to `A`. In particular this
+applies to a self-adjoint `A : E →L[𝕜] E` with `A ∘L A = T† ∘L T`. -/
+theorem exists_contraction_of_gram_eq {T : E →L[𝕜] F} {A : E →L[𝕜] G}
+    (h : A† ∘L A = T† ∘L T) :
+    ∃ W : G →L[𝕜] F, ‖W‖ ≤ 1 ∧ ‖W†‖ ≤ 1 ∧ W ∘L A = T ∧ W† ∘L T = A := by
+  have hnorm (x : E) : ‖T x‖ = ‖A x‖ := (adjoint_comp_self_eq_adjoint_comp_self_iff.1 h x).symm
+  have hle : ‖T.factorThru A‖ ≤ 1 :=
+    norm_factorThru_le zero_le_one fun x ↦ by rw [one_mul, hnorm x]
+  refine ⟨T.factorThru A, hle, by rwa [LinearIsometryEquiv.norm_map], ?_,
+    adjoint_factorThru_comp hnorm⟩
+  exact factorThru_comp ⟨1, fun x ↦ by rw [one_mul, hnorm x]⟩
+
+end Gram
+
+end ContinuousLinearMap

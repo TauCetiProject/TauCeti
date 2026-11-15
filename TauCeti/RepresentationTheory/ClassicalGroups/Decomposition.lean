@@ -8,7 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Tensor.Square
 public import TauCeti.RepresentationTheory.ClassicalGroups.ExteriorPower
 public import TauCeti.RepresentationTheory.ClassicalGroups.SymmetricPower
-public import TauCeti.RepresentationTheory.ClassicalGroups.TensorPower
+public import TauCeti.RepresentationTheory.ClassicalGroups.TensorPower.Basic
 
 /-!
 # The first decomposition of the standard representation
@@ -25,8 +25,6 @@ corresponding character identity, which remains valid even when the decompositio
 
 ## References
 
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md),
-  Layer 1, “The first decomposition”.
 * W. Fulton and J. Harris, *Representation Theory: A First Course*, Lecture 6.
 -/
 

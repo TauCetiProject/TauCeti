@@ -33,9 +33,6 @@ soundness bridge proves that the embedded table satisfies `TauCeti.IsCharacterTa
   cyclotomic certificate identifies the embedded output as the character table up to row order.
 * `TauCeti.ClassData.IsCyclotomicCharacterTableSpec.sum_characterDegree_eq_sum_degree`: the supplied
   degree vector sums to the sum of the character degrees of the group.
-
-This is the exact-checker step in Layer 6, “The assembled solver”, of the
-[character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md).
 -/
 
 public section

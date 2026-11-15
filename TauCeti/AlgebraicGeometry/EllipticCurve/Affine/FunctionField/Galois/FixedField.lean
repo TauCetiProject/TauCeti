@@ -51,7 +51,7 @@ theorem functionFieldGaloisAction_algebraMap_ratFunc (σ : K ≃ₐ[F] K) (z : R
       functionFieldGaloisAction_algebraMap_coordinateRing, coordinateRingGaloisAction_of]
     rfl
   induction z using RatFunc.induction_on with
-  | f p q hq =>
+  | f p q _ =>
     rw [RatFunc.coe_mapRingHom_eq_coe_map, RatFunc.map_apply_div]
     simp only [map_div₀, ← IsScalarTower.algebraMap_apply, hpoly, Polynomial.coe_mapRingHom]
 
@@ -74,7 +74,7 @@ theorem functionFieldGaloisAction_basis_repr (σ : K ≃ₐ[F] K)
           (Polynomial.map_injective _ σ.injective)) (b.repr z j) • b j := by
     conv_lhs => rw [← b.sum_repr z, map_sum]
     apply Finset.sum_congr rfl
-    intro j hj
+    intro j _
     simp only [Algebra.smul_def, map_mul, functionFieldGaloisAction_algebraMap_ratFunc, hfixed]
   have hrepr := congrArg (fun u ↦ b.repr u i) hexp
   fin_cases i <;> simpa [Module.Basis.repr_self] using hrepr

@@ -17,8 +17,14 @@ separately, as `MonoidHom.coprod` and composition with `MonoidHom.inl` and `Mono
 together with the fact that they are mutually inverse; this file packages them as the
 corresponding equivalence.
 
+For a homomorphism `f : M × N →* P` into a group, the triangular map
+`(m, n) ↦ (m, f (m, n))` is surjective exactly when its second component on `{1} × N` is
+surjective. The additive version gives the same criterion for additive homomorphisms, without
+any scalar or topological assumptions.
+
 The file also records the value and the inverse of a product `MulEquiv.prodCongr` of two
-multiplicative isomorphisms, which Mathlib states only for the underlying `Equiv.prodCongr`, and
+multiplicative isomorphisms, which Mathlib states only for the underlying `Equiv.prodCongr`, the
+fact that a product of automorphisms of order dividing `m` has order dividing `m`, and
 recognizes a commutative monoid with projections and inclusions satisfying the biproduct
 identities as the product of the two factors.
 
@@ -29,13 +35,22 @@ identities as the product of the two factors.
 * `MulEquiv.ofProdCoprod`: the multiplicative equivalence `P ≃* A × B` determined by
   projections `P →* A`, `P →* B` and inclusions `A →* P`, `B →* P` satisfying the biproduct
   identities.
+
+## Main results
+
+* `MonoidHom.surjective_fst_prod_iff`: the triangular map `(m, n) ↦ (m, f (m, n))` is surjective
+  if and only if `f.comp (MonoidHom.inr M N)` is.
 * `MulEquiv.prodCongr_apply`, `MulEquiv.prodCongr_symm`: the product of two isomorphisms acts
   componentwise, and its inverse is the product of the inverses.
+* `MulEquiv.iterate_prodCongr_eq_id`: the product of two automorphisms of order dividing `m` has
+  order dividing `m`.
 -/
 
 public section
 
 namespace MonoidHom
+
+section CoprodEquiv
 
 variable {M N P : Type*} [MulOneClass M] [MulOneClass N] [CommMonoid P]
 
@@ -63,6 +78,25 @@ product restricts it along the two inclusions. -/]
 theorem coprodEquiv_symm_apply (f : M × N →* P) :
     coprodEquiv.symm f = (f.comp (inl M N), f.comp (inr M N)) := (rfl)
 
+end CoprodEquiv
+
+variable {M N P : Type*} [MulOneClass M] [MulOneClass N] [Group P]
+
+/-- The triangular map `(m, n) ↦ (m, f (m, n))` is surjective if and only if the restriction
+of `f` to `{1} × N` is surjective. Neither factor of the domain needs inverses. -/
+@[to_additive (attr := simp) surjective_fst_prod_iff
+/-- The triangular map `(m, n) ↦ (m, f (m, n))` is surjective
+if and only if the restriction of `f` to `{0} × N` is surjective. Neither factor of the domain
+needs additive inverses. -/]
+theorem surjective_fst_prod_iff (f : M × N →* P) :
+    Function.Surjective ((fst M N).prod f) ↔ Function.Surjective (f.comp (inr M N)) := by
+  refine ⟨fun h p ↦ ?_, fun h ⟨m, p⟩ ↦ ?_⟩
+  · obtain ⟨⟨m, n⟩, hmn⟩ := h (1, p)
+    obtain ⟨rfl, rfl⟩ : m = 1 ∧ f (m, n) = p := by simpa using hmn
+    exact ⟨n, by simp⟩
+  · obtain ⟨n, hn⟩ := h ((f (m, 1))⁻¹ * p)
+    exact ⟨(m, n), by simpa [eq_inv_mul_iff_mul_eq, ← map_mul] using hn⟩
+
 end MonoidHom
 
 namespace MulEquiv
@@ -80,6 +114,14 @@ theorem prodCongr_apply (f : M ≃* M') (g : N ≃* N') (x : M × N) :
 /-- The inverse of a product of two additive isomorphisms is the product of the inverses. -/]
 theorem prodCongr_symm (f : M ≃* M') (g : N ≃* N') :
     (f.prodCongr g).symm = f.symm.prodCongr g.symm := (rfl)
+
+/-- If the automorphisms `f` and `g` have order dividing `m`, so does their product `f × g`. -/
+@[to_additive iterate_prodCongr_eq_id
+/-- If the additive automorphisms `f` and `g` have order dividing `m`, so does their product
+`f × g`. -/]
+theorem iterate_prodCongr_eq_id {f : M ≃* M} {g : N ≃* N} {m : ℕ} (hf : (⇑f)^[m] = id)
+    (hg : (⇑g)^[m] = id) : (⇑(f.prodCongr g))^[m] = id :=
+  (Prod.map_iterate f g m).trans (by rw [hf, hg, Prod.map_id])
 
 section ofProdCoprod
 

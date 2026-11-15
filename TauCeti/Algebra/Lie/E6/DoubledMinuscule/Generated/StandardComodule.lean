@@ -50,6 +50,10 @@ noncomputable def generatedWeightTorusCoordinateMap :
       (DiagonalizableGroup.coordinateRing R (SplitTorus.characterGroup (Fin 6))).obj :=
   generatedCoordinateLift R (.inr ())
 
+/-- The generated weight-torus morphism is the torus member of the numbered generator lifts. -/
+theorem generatedWeightTorusCoordinateMap_def :
+    generatedWeightTorusCoordinateMap R = generatedCoordinateLift R (.inr ()) := (rfl)
+
 /-- The generated subgroup's weight torus recovers the ambient doubled minuscule weight torus. -/
 @[reassoc (attr := simp)]
 theorem generatedCoordinateMap_comp_generatedWeightTorusCoordinateMap :
@@ -66,7 +70,7 @@ theorem pointToGeneralLinear_mapDomain_generatedCoordinateLift_inl_eq_rootSubgro
     (i : Fin 6 ⊕ Fin 6) (B : CommAlgCat.{v} R)
     (q : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) B) :
     GeneralLinear.pointToGeneralLinear 54
-        (AlgHom.mapDomain (generatedCoordinateMap R).hom
+        (BialgHom.mapDomain (generatedCoordinateMap R).hom
           (no_index (toConv (q.ofConv.comp (generatedCoordinateLift R (.inl i)).hom.toAlgHom)))) =
       (rootSubgroupPoints i B (AdditiveGroup.gaPointsMulEquiv q) :
         Matrix.GeneralLinearGroup (Fin 54) B) := by
@@ -84,22 +88,25 @@ theorem pointToGeneralLinear_mapDomain_generatedCoordinateLift_inl_eq_rootSubgro
     rw [generatedCoordinateMap_comp_generatedCoordinateLift, generatorCoordinateMap_inl]
     exact (mkQuotient_comp_kostantRootSubgroupToralBaseChangePresentationCoordinateMap
       _ _ _ _ _ _ _ _ _ i).symm
-  have hpoint : AlgHom.mapDomain (generatedCoordinateMap R).hom
+  have hpoint : BialgHom.mapDomain (generatedCoordinateMap R).hom
       (toConv (q.ofConv.comp (generatedCoordinateLift R (.inl i)).hom.toAlgHom)) =
       CommHopfAlgCat.quotientPointsHom
         (GeneralLinear.coordinateHopfAlgebra R 54) _ B
         (toConv (q.ofConv.comp f.hom.toAlgHom)) := by
     apply WithConv.ext
     ext x
+    erw [BialgHom.mapDomain_apply_apply, CommHopfAlgCat.quotientPointsHom_apply_apply]
     exact congrArg (fun g ↦ q.ofConv (g.hom x)) hcomp
   have h := pointsMulEquiv_kostantRootSubgroupToralBaseChangeCoordinateMap
     (TauCeti.serreRootGenerator (CartanMatrix.E 6)ᵀ)
     (TauCeti.serreH ℚ (CartanMatrix.E 6)ᵀ) rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator matrixBasis
-    matrixWeight R definingIdeal_def i B q
+    matrixWeight R i B q
   -- The point functor's component uses the indexed presentation of the same points.
-  erw [CommHopfAlgCat.mapPointsFunctor_app_apply] at h
+  erw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
+    CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at h
   rw [hpoint, ← GeneralLinear.pointsMulEquiv_apply, coe_rootSubgroupPoints]
+  erw [CommHopfAlgCat.quotientPointsHom_apply]
   exact h
 
 /-- The standard right comodule of the generated doubled minuscule subgroup on `R⁵⁴`. -/

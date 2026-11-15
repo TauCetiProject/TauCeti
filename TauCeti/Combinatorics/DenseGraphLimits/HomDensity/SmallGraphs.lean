@@ -13,32 +13,25 @@ import TauCeti.MeasureTheory.Constructions.Pi
 /-!
 # Homomorphism densities of the smallest graphs
 
-The two homomorphism densities that the rest of the theory quotes by name:
+The edge and triangle densities have the familiar integral formulas:
 
 ```text
 t(K₂, W) = ∫∫ W(x, y)                              the edge density
 t(K₃, W) = ∫∫∫ W(x, y) W(x, z) W(y, z)             the triangle density
 ```
 
-Each is given twice: once as an integral against a product measure, and once in the iterated form
-above.  The two are related by `integral_prod`, which needs the integrand to be integrable, so those
-integrability lemmas are part of the public interface rather than hidden inside a proof.  They are
-proved for an arbitrary graph by transporting `integrable_homDensity_integrand` along the same
-equivalence that transports the density, so no measurability or boundedness argument is repeated.
+Each is given as both a product-measure integral and an iterated integral. The four-cycle density
+is an integral over `(Ω × Ω) × (Ω × Ω)`, with opposite vertices paired. This pairing makes its
+integrand a product of two paths between the vertices of the first pair.
 
-**The transport is separated from the graph.**  `homDensity` integrates over the function space
-`Fin n → Ω`, and moving to `Ω × ⋯ × Ω` is independent of which graph is being counted.  That step is
-therefore proved once, for an arbitrary graph, as `homDensity_fin_two`, `homDensity_fin_three`, and
-`homDensity_fin_four`;
-each concrete value below is then just its edge set (computed by `decide`) substituted into the
-general statement.  A further entry in this catalogue — a single edge on three vertices, a path, the
-empty graph — costs only that substitution.
+The graph-independent transports `homDensity_fin_two`, `homDensity_fin_three`, and
+`homDensity_fin_four` express densities as integrals over these product spaces. The corresponding
+integrability lemmas allow Fubini's theorem to turn them into iterated integrals.
 
-**Where the transports come from.**  For two vertices it is Mathlib's `MeasurableEquiv.finTwoArrow`
-with `measurePreserving_finTwoArrow`; for three vertices it is `finThreeArrow` with
-`measurePreserving_finThreeArrow`, from `TauCeti.MeasureTheory.Constructions.Pi`.  The four-vertex
-transport composes `finFourArrow` with a reordering of the coordinates, pairing them
-as `((x 0, x 2), (x 1, x 3))` for the four-cycle formulas.
+The coordinate equivalences are Mathlib's `MeasurableEquiv.finTwoArrow`, together with
+`TauCeti.finThreeArrow` and `TauCeti.finFourArrowPairPair` from
+`TauCeti.MeasureTheory.Constructions.Pi`. The paired four-coordinate equivalence reads a vertex
+assignment as `((x 0, x 2), (x 1, x 3))`.
 
 ## Main results
 
@@ -57,10 +50,6 @@ as `((x 0, x 2), (x 1, x 3))` for the four-cycle formulas.
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 1 — the explicit small-graph
-  integrals, and the Layer 1 acceptance criteria "a one-edge graph" and "triangle density".
-  Disjoint-union multiplicativity, finite-graph compatibility, and the counting lemmas are separate
-  targets and are not built here.
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), §7.2.
 -/
 
@@ -82,16 +71,11 @@ set into it. -/
 theorem homDensity_fin_two (F : SimpleGraph (Fin 2)) [DecidableRel F.Adj] (W : Graphon Ω μ) :
     homDensity F W
       = ∫ p : Ω × Ω, ∏ e ∈ F.edgeFinset, edgeFactor W ![p.1, p.2] e ∂(μ.prod μ) := by
-  have key : ∀ x : Fin 2 → Ω,
-      ∏ e ∈ F.edgeFinset, edgeFactor W x e = ∏ e ∈ F.edgeFinset, edgeFactor W ![x 0, x 1] e := by
-    intro x
-    have hx : ![x 0, x 1] = x := FinVec.etaExpand_eq x
-    rw [hx]
-  rw [homDensity_def, ← (measurePreserving_finTwoArrow μ).integral_comp
-    MeasurableEquiv.finTwoArrow.measurableEmbedding
-    (fun p : Ω × Ω => ∏ e ∈ F.edgeFinset, edgeFactor W ![p.1, p.2] e)]
-  simp only [MeasurableEquiv.finTwoArrow_apply]
-  exact integral_congr_ae (ae_of_all _ fun x => key x)
+  rw [homDensity_def]
+  simpa only [MeasurableEquiv.finTwoArrow_symm_apply, Matrix.empty_eq finZeroElim,
+    Matrix.Fin.cons_vecEmpty, Matrix.Fin.cons_vecCons] using
+    ((measurePreserving_finTwoArrow μ).symm.integral_comp'
+      (fun x : Fin 2 → Ω => ∏ e ∈ F.edgeFinset, edgeFactor W x e)).symm
 
 /-- **The three-vertex transport.**  For any graph on `Fin 3`, the homomorphism density is an
 integral over `Ω × Ω × Ω`. -/
@@ -99,101 +83,28 @@ theorem homDensity_fin_three (F : SimpleGraph (Fin 3)) [DecidableRel F.Adj] (W :
     homDensity F W
       = ∫ p : Ω × Ω × Ω, ∏ e ∈ F.edgeFinset, edgeFactor W ![p.1, p.2.1, p.2.2] e
           ∂(μ.prod (μ.prod μ)) := by
-  have key : ∀ x : Fin 3 → Ω,
-      ∏ e ∈ F.edgeFinset, edgeFactor W x e
-        = ∏ e ∈ F.edgeFinset, edgeFactor W ![x 0, x 1, x 2] e := by
-    intro x
-    have hx : ![x 0, x 1, x 2] = x := FinVec.etaExpand_eq x
-    rw [hx]
-  rw [homDensity_def, ← (measurePreserving_finThreeArrow μ).integral_comp
-    finThreeArrow.measurableEmbedding
-    (fun p : Ω × Ω × Ω => ∏ e ∈ F.edgeFinset, edgeFactor W ![p.1, p.2.1, p.2.2] e)]
-  simp only [finThreeArrow_apply]
-  exact integral_congr_ae (ae_of_all _ fun x => key x)
+  rw [homDensity_def]
+  simpa only [finThreeArrow_symm_apply] using
+    ((measurePreserving_finThreeArrow μ).symm.integral_comp'
+      (fun x : Fin 3 → Ω => ∏ e ∈ F.edgeFinset, edgeFactor W x e)).symm
 
-/-- **Transported integrability, two vertices.**  For any graph on `Fin 2`, the transported
-integrand is integrable — obtained from `integrable_homDensity_integrand` along the same
-equivalence that transports the density, so no measurability or bound is re-argued. -/
+/-- For any graph on `Fin 2`, its edge-factor product is integrable on `Ω × Ω`. -/
 theorem integrable_prod_edgeFactor_fin_two (F : SimpleGraph (Fin 2)) [DecidableRel F.Adj]
     (W : Graphon Ω μ) :
     Integrable (fun p : Ω × Ω => ∏ e ∈ F.edgeFinset, edgeFactor W ![p.1, p.2] e) (μ.prod μ) := by
-  refine ((measurePreserving_finTwoArrow μ).integrable_comp_emb
-    MeasurableEquiv.finTwoArrow.measurableEmbedding).mp ?_
-  refine (integrable_homDensity_integrand F W).congr (ae_of_all _ fun x => ?_)
-  simp only [Function.comp_apply, MeasurableEquiv.finTwoArrow_apply]
-  have hx : ![x 0, x 1] = x := FinVec.etaExpand_eq x
-  rw [hx]
+  simpa only [Function.comp_def, MeasurableEquiv.finTwoArrow_symm_apply,
+    Matrix.empty_eq finZeroElim, Matrix.Fin.cons_vecEmpty, Matrix.Fin.cons_vecCons] using
+    (measurePreserving_finTwoArrow μ).symm.integrable_comp_of_integrable
+      (integrable_homDensity_integrand F W)
 
-/-- **Transported integrability, three vertices.** -/
+/-- For any graph on `Fin 3`, its edge-factor product is integrable on `Ω × Ω × Ω`. -/
 theorem integrable_prod_edgeFactor_fin_three (F : SimpleGraph (Fin 3)) [DecidableRel F.Adj]
     (W : Graphon Ω μ) :
     Integrable (fun p : Ω × Ω × Ω => ∏ e ∈ F.edgeFinset, edgeFactor W ![p.1, p.2.1, p.2.2] e)
       (μ.prod (μ.prod μ)) := by
-  refine ((measurePreserving_finThreeArrow μ).integrable_comp_emb
-    finThreeArrow.measurableEmbedding).mp ?_
-  refine (integrable_homDensity_integrand F W).congr (ae_of_all _ fun x => ?_)
-  simp only [Function.comp_apply, finThreeArrow_apply]
-  have hx : ![x 0, x 1, x 2] = x := FinVec.etaExpand_eq x
-  rw [hx]
-
-private def middleSwap (Ω : Type*) [MeasurableSpace Ω] :
-    (Ω × Ω × Ω) ≃ᵐ Ω × Ω × Ω :=
-  ((MeasurableEquiv.prodAssoc : ((Ω × Ω) × Ω) ≃ᵐ Ω × Ω × Ω).symm.trans
-    ((MeasurableEquiv.prodComm : (Ω × Ω) ≃ᵐ Ω × Ω).prodCongr
-      (MeasurableEquiv.refl Ω))).trans
-    (MeasurableEquiv.prodAssoc : ((Ω × Ω) × Ω) ≃ᵐ Ω × Ω × Ω)
-
-private def reorderFour (Ω : Type*) [MeasurableSpace Ω] :
-    (Ω × Ω × Ω × Ω) ≃ᵐ Ω × Ω × Ω × Ω :=
-  (MeasurableEquiv.refl Ω).prodCongr (middleSwap Ω)
-
-private def finFourArrowPairPair (Ω : Type*) [MeasurableSpace Ω] :
-    (Fin 4 → Ω) ≃ᵐ (Ω × Ω) × (Ω × Ω) :=
-  (finFourArrow (β := Ω)).trans (reorderFour Ω) |>.trans
-    ((MeasurableEquiv.prodAssoc : ((Ω × Ω) × (Ω × Ω)) ≃ᵐ Ω × Ω × (Ω × Ω)).symm)
-
-private theorem middleSwap_apply (p : Ω × Ω × Ω) :
-    middleSwap Ω p = (p.2.1, p.1, p.2.2) := by
-  rfl
-
-/-- The reordering behind the four-cycle transport sends `(a, b, c, d)` to `((a, c), (b, d))`. -/
-private theorem prodAssoc_symm_reorderFour_apply (p : Ω × Ω × Ω × Ω) :
-    (MeasurableEquiv.prodAssoc : ((Ω × Ω) × (Ω × Ω)) ≃ᵐ Ω × Ω × (Ω × Ω)).symm (reorderFour Ω p) =
-      ((p.1, p.2.2.1), (p.2.1, p.2.2.2)) := (rfl)
-
-@[simp]
-private theorem finFourArrowPairPair_apply (x : Fin 4 → Ω) :
-    finFourArrowPairPair Ω x = ((x 0, x 2), (x 1, x 3)) := by
-  rw [finFourArrowPairPair, MeasurableEquiv.trans_apply, MeasurableEquiv.trans_apply,
-    finFourArrow_apply, prodAssoc_symm_reorderFour_apply]
-
-private theorem measurePreserving_middleSwap (μ : Measure Ω) [SigmaFinite μ] :
-    MeasurePreserving (middleSwap Ω) (μ.prod (μ.prod μ)) (μ.prod (μ.prod μ)) := by
-  have hAssoc : MeasurePreserving
-      (MeasurableEquiv.prodAssoc : ((Ω × Ω) × Ω) ≃ᵐ Ω × Ω × Ω)
-      ((μ.prod μ).prod μ) (μ.prod (μ.prod μ)) :=
-    measurePreserving_prodAssoc μ μ μ
-  have hSwap : MeasurePreserving (MeasurableEquiv.prodComm : (Ω × Ω) ≃ᵐ Ω × Ω)
-      (μ.prod μ) (μ.prod μ) := Measure.measurePreserving_swap
-  convert hAssoc.comp ((hSwap.prod (MeasurePreserving.id μ)).comp hAssoc.symm) using 1
-  funext p
-  exact middleSwap_apply p
-
-private theorem measurePreserving_finFourArrowPairPair (μ : Measure Ω) [SigmaFinite μ] :
-    MeasurePreserving (finFourArrowPairPair Ω) (Measure.pi fun _ : Fin 4 => μ)
-      ((μ.prod μ).prod (μ.prod μ)) := by
-  have hright := measurePreserving_finFourArrow μ
-  have hswap : MeasurePreserving (reorderFour Ω)
-      (μ.prod (μ.prod (μ.prod μ))) (μ.prod (μ.prod (μ.prod μ))) :=
-    (MeasurePreserving.id μ).prod (measurePreserving_middleSwap μ)
-  have hassoc : MeasurePreserving
-      ((MeasurableEquiv.prodAssoc : ((Ω × Ω) × (Ω × Ω)) ≃ᵐ Ω × Ω × (Ω × Ω)).symm)
-      (μ.prod (μ.prod (μ.prod μ))) ((μ.prod μ).prod (μ.prod μ)) :=
-    (measurePreserving_prodAssoc μ μ (μ.prod μ)).symm
-  convert hassoc.comp (hswap.comp hright) using 1
-  funext x
-  rw [finFourArrowPairPair_apply, Function.comp_apply, Function.comp_apply,
-    finFourArrow_apply, prodAssoc_symm_reorderFour_apply]
+  simpa only [Function.comp_def, finThreeArrow_symm_apply] using
+    (measurePreserving_finThreeArrow μ).symm.integrable_comp_of_integrable
+      (integrable_homDensity_integrand F W)
 
 /-- **The four-vertex transport.**  For any graph on `Fin 4`, the homomorphism density is an
 integral over two copies of `Ω × Ω`, with the coordinates paired for the four-cycle formulas. -/
@@ -203,18 +114,10 @@ theorem homDensity_fin_four (F : SimpleGraph (Fin 4)) [DecidableRel F.Adj] (W : 
         ∏ e ∈ F.edgeFinset,
           edgeFactor W ![p.1.1, p.2.1, p.1.2, p.2.2] e
           ∂((μ.prod μ).prod (μ.prod μ)) := by
-  have key : ∀ x : Fin 4 → Ω,
-      (∏ e ∈ F.edgeFinset, edgeFactor W x e) =
-        ∏ e ∈ F.edgeFinset, edgeFactor W ![x 0, x 1, x 2, x 3] e := by
-    intro x
-    have hx : ![x 0, x 1, x 2, x 3] = x := FinVec.etaExpand_eq x
-    rw [hx]
-  rw [homDensity_def, ← (measurePreserving_finFourArrowPairPair μ).integral_comp
-    (finFourArrowPairPair Ω).measurableEmbedding
-    (fun p : (Ω × Ω) × (Ω × Ω) =>
-      ∏ e ∈ F.edgeFinset, edgeFactor W ![p.1.1, p.2.1, p.1.2, p.2.2] e)]
-  simp only [finFourArrowPairPair_apply]
-  exact integral_congr_ae (ae_of_all _ fun x => key x)
+  rw [homDensity_def]
+  simpa only [finFourArrowPairPair_symm_apply] using
+    ((measurePreserving_finFourArrowPairPair μ).symm.integral_comp'
+      (fun x : Fin 4 → Ω => ∏ e ∈ F.edgeFinset, edgeFactor W x e)).symm
 
 /-- **Transported integrability, four vertices.**  For any graph on `Fin 4`, the transported
 integrand is integrable on the paired product space. -/
@@ -223,12 +126,9 @@ theorem integrable_prod_edgeFactor_fin_four (F : SimpleGraph (Fin 4)) [Decidable
     Integrable (fun p : (Ω × Ω) × (Ω × Ω) =>
       ∏ e ∈ F.edgeFinset, edgeFactor W ![p.1.1, p.2.1, p.1.2, p.2.2] e)
       ((μ.prod μ).prod (μ.prod μ)) := by
-  refine ((measurePreserving_finFourArrowPairPair μ).integrable_comp_emb
-    (finFourArrowPairPair Ω).measurableEmbedding).mp ?_
-  refine (integrable_homDensity_integrand F W).congr (ae_of_all _ fun x => ?_)
-  simp only [Function.comp_apply, finFourArrowPairPair_apply]
-  have hx : ![x 0, x 1, x 2, x 3] = x := FinVec.etaExpand_eq x
-  rw [hx]
+  simpa only [Function.comp_def, finFourArrowPairPair_symm_apply] using
+    (measurePreserving_finFourArrowPairPair μ).symm.integrable_comp_of_integrable
+      (integrable_homDensity_integrand F W)
 
 private theorem prod_edgeFactor_cycleGraph_four (W : Graphon Ω μ)
     (p : (Ω × Ω) × (Ω × Ω)) :
@@ -282,14 +182,13 @@ private theorem prod_edgeFactor_top_fin_three (W : Graphon Ω μ) (p : Ω × Ω 
     Matrix.cons_val_two, Matrix.tail_cons]
   ring
 
-/-- The edge integrand is integrable, by transport from `integrable_prod_edgeFactor_fin_two`. -/
+/-- The edge integrand is integrable on `Ω × Ω`. -/
 theorem integrable_edge_integrand (W : Graphon Ω μ) :
     Integrable (fun p : Ω × Ω => W p.1 p.2) (μ.prod μ) :=
   (integrable_prod_edgeFactor_fin_two ⊤ W).congr
     (ae_of_all _ fun p => prod_edgeFactor_top_fin_two W p)
 
-/-- The triangle integrand is integrable, by transport from
-`integrable_prod_edgeFactor_fin_three`. -/
+/-- The triangle integrand is integrable on `Ω × Ω × Ω`. -/
 theorem integrable_triangle_integrand (W : Graphon Ω μ) :
     Integrable (fun p : Ω × Ω × Ω => W p.1 p.2.1 * W p.1 p.2.2 * W p.2.1 p.2.2)
       (μ.prod (μ.prod μ)) :=

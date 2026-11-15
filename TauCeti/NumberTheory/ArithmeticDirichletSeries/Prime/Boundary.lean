@@ -174,7 +174,7 @@ theorem primeNumberTheoremTransfer (B : PrimeBoundaryRemainder K S δ) :
       (fun x ↦ primeCount K S x - δ * Real.logIntegral x) =o[atTop]
         (fun x : ℝ ↦ x / Real.log x) := by
   have hψ := primePsi_asymptotic_of_boundary B
-  have hθ := primeTheta_asymptotic_of_primePsi (standardPrimePowerRemoval K S) hψ
+  have hθ := primeTheta_asymptotic_of_primePsi hψ
   exact ⟨hψ, hθ, primeCount_sub_mul_logIntegral_isLittleO hθ⟩
 
 /-- **Prime counting by comparison with a Dirichlet series.** Let `c` be coefficients whose
@@ -198,7 +198,7 @@ theorem primeCount_sub_mul_logIntegral_isLittleO_of_LSeriesSummable_sub {c : ℕ
   exact (primeNumberTheoremTransfer <| .ofFunctions
     (LSeries fun n ↦ (primeVonMangoldtCoeff K S n : ℂ)) (fun s ↦ G s + LSeries d s)
     (fun s hs ↦ (hcd ▸ (hcs s hs).add (hds s hs)).LSeriesHasSum)
-    (hG.add ((TauCeti.LSeries.continuousOn_LSeries hd).mono fun s hs ↦ by simpa using hs))
+    (hG.add (hd.continuousOn_LSeries.mono fun s hs ↦ by simpa using hs))
     fun s hs ↦ by rw [hGc hs, hcd, LSeries_add (hcs s hs) (hds s hs), sub_add_eq_add_sub]).2.2
 
 /-- **The conditional prime ideal theorem.**  Boundary data for all prime ideals with residue one

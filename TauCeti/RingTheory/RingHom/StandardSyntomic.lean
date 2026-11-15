@@ -16,13 +16,17 @@ public import Mathlib.RingTheory.RingHom.FinitePresentation
 # Standard syntomic ring homomorphisms
 
 This file expresses standard syntomic algebras as a property of ring homomorphisms.
-Localization on either side and arbitrary base change preserve the relative dimension.
+Localization on either side and arbitrary base change preserve the relative dimension, and
+relative dimensions add under composition.
 Consequently the property of being locally standard syntomic is local on both source and
 base, giving the affine input for syntomic morphisms of schemes. Standard smooth ring maps
 are standard syntomic with the same relative dimension.
 
 Use `TauCeti.IsStandardSyntomicOfRelativeDimension n f` for the ring-map predicate;
 given a proof `hf`, its consequences are available as `hf.flat` and `hf.finitePresentation`.
+Locally standard syntomic ring maps are also flat and finitely presented
+(`TauCeti.flat_of_locally_isStandardSyntomicOfRelativeDimension`,
+`TauCeti.finitePresentation_of_locally_isStandardSyntomicOfRelativeDimension`).
 The theorem `TauCeti.isStandardSyntomicOfRelativeDimension_iff n f` relates an arbitrary
 ring map to its induced algebra structure. With `hf` as above, both conversions use the
 public bridge:
@@ -108,6 +112,20 @@ theorem IsStandardSyntomicOfRelativeDimension.finitePresentation {f : R →+* S}
   exact Algebra.IsStandardSyntomicOfRelativeDimension.finitePresentation
     (h := (isStandardSyntomicOfRelativeDimension_iff n f).mp hf)
 
+/-- Standard syntomic ring maps compose, with addition of their relative dimensions. -/
+theorem IsStandardSyntomicOfRelativeDimension.comp {m : ℕ} {T : Type*} [CommRing T]
+    {g : S →+* T} {f : R →+* S} (hg : IsStandardSyntomicOfRelativeDimension n g)
+    (hf : IsStandardSyntomicOfRelativeDimension m f) :
+    IsStandardSyntomicOfRelativeDimension (n + m) (g.comp f) := by
+  let := f.toAlgebra
+  let := g.toAlgebra
+  let := (g.comp f).toAlgebra
+  have : IsScalarTower R S T := .of_algebraMap_eq' rfl
+  have : Algebra.IsStandardSyntomicOfRelativeDimension m R S := hf
+  have : Algebra.IsStandardSyntomicOfRelativeDimension n S T := hg
+  rw [isStandardSyntomicOfRelativeDimension_iff, add_comm]
+  exact Algebra.IsStandardSyntomicOfRelativeDimension.trans (R := R) (S := S) (T := T)
+
 /-- Localizing either side of a standard syntomic map preserves its relative dimension. -/
 theorem isStandardSyntomicOfRelativeDimension_stableUnderCompositionWithLocalizationAway
     (n : ℕ) : RingHom.StableUnderCompositionWithLocalizationAway
@@ -149,5 +167,24 @@ theorem locally_isStandardSyntomicOfRelativeDimension_propertyIsLocal (n : ℕ) 
   RingHom.locally_propertyIsLocal
     (isStandardSyntomicOfRelativeDimension_isStableUnderBaseChange n).localizationPreserves.away
     (isStandardSyntomicOfRelativeDimension_stableUnderCompositionWithLocalizationAway n)
+
+section Locally
+
+variable {R S : Type u} [CommRing R] [CommRing S] {f : R →+* S}
+
+/-- Locally standard syntomic ring maps are flat. -/
+theorem flat_of_locally_isStandardSyntomicOfRelativeDimension
+    (hf : RingHom.Locally (IsStandardSyntomicOfRelativeDimension n) f) : f.Flat :=
+  (RingHom.locally_iff_of_localizationSpanTarget RingHom.Flat.respectsIso
+    RingHom.Flat.ofLocalizationSpanTarget f).mp <| RingHom.locally_of_locally (·.flat) hf
+
+/-- Locally standard syntomic ring maps are finitely presented. -/
+theorem finitePresentation_of_locally_isStandardSyntomicOfRelativeDimension
+    (hf : RingHom.Locally (IsStandardSyntomicOfRelativeDimension n) f) : f.FinitePresentation :=
+  (RingHom.locally_iff_of_localizationSpanTarget RingHom.finitePresentation_respectsIso
+    RingHom.finitePresentation_ofLocalizationSpanTarget f).mp <|
+      RingHom.locally_of_locally (·.finitePresentation) hf
+
+end Locally
 
 end TauCeti

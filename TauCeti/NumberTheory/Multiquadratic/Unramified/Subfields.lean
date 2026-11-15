@@ -61,12 +61,11 @@ In the namespace `TauCeti.Multiquadratic`:
 
 ## Provenance
 
-Independently reconstructed. The multiquadratic roadmap designates
+Independently reconstructed. The multiquadratic square-class machinery migrated from
 [kim-em/erdos-unit-distance](https://github.com/kim-em/erdos-unit-distance) (the formalization of
-L. Alpöge's disproof of the uniform-constant Erdős unit-distance conjecture) as the migration
-source for its Layer-0 square-class machinery — `sqrtTower`, `mem_sup_adjoin_sq`,
-`squareClass_of_sqrt_mem`, `sqrtTower_finrank`, `exists_transversal_family` and
-`units_sq_index_le` — and none of that is used here: this file is inertia theory over the Galois
+L. Alpöge's disproof of the uniform-constant Erdős unit-distance conjecture) — `sqrtTower`,
+`mem_sup_adjoin_sq`, `squareClass_of_sqrt_mem`, `sqrtTower_finrank`, `exists_transversal_family`
+and `units_sq_index_le` — is not used here: this file is inertia theory over the Galois
 group of `M / ℚ`, resting on Mathlib's `Ideal.inertia` and on
 `TauCeti/NumberTheory/NumberField/Inertia.lean`.
 -/
@@ -162,10 +161,7 @@ theorem notMem_ramifiedPrimes_adjoin_mul {x y : M} {a b : ℚ}
       NumberField.ramifiedPrimes_rat] at hpx
     exact hpx
   intro σ hσ
-  -- The inertia criterion uses the carrier-set fixing subgroup; expose its definitionally equal
-  -- intermediate-field wrapper so that the adjoin API applies.
-  change σ ∈ (adjoin ℚ {algebraMap ℚ M r * (x * y)}).fixingSubgroup
-  rw [IntermediateField.fixingSubgroup_adjoin_simple, MulAction.mem_stabilizer_iff,
+  rw [TauCeti.IntermediateField.fixingSubgroup_coe_adjoin_simple, MulAction.mem_stabilizer_iff,
     AlgEquiv.smul_def]
   by_cases hσF : σ ∈ fixingSubgroup (M ≃ₐ[ℚ] M) ((adjoin ℚ {y} : IntermediateField ℚ M) : Set M)
   · rw [Subgroup.disjoint_def.mp hdisj hσ hσF]
@@ -183,10 +179,7 @@ theorem notMem_ramifiedPrimes_adjoin_mul {x y : M} {a b : ℚ}
   have hσy : σ y = -y :=
     (AlgEquiv.apply_eq_or_eq_neg_of_sq_eq σ hy).resolve_left fun hfix =>
     hσF (by
-      -- Convert the carrier-set fixing subgroup to the definitionally equal intermediate-field
-      -- wrapper before applying the adjoin API.
-      change σ ∈ (adjoin ℚ {y}).fixingSubgroup
-      rw [IntermediateField.fixingSubgroup_adjoin_simple, MulAction.mem_stabilizer_iff,
+      rw [TauCeti.IntermediateField.fixingSubgroup_coe_adjoin_simple, MulAction.mem_stabilizer_iff,
         AlgEquiv.smul_def]
       exact hfix)
   rw [map_mul, map_mul, AlgEquiv.commutes, hσx, hσy, neg_mul_neg]

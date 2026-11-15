@@ -14,6 +14,7 @@ public import Mathlib.Tactic.Abel
 public import Mathlib.Tactic.LinearCombination
 public import Mathlib.Tactic.Ring
 public import TauCeti.Algebra.Ring.Prod
+public import TauCeti.Data.ZMod.Two
 
 /-!
 # The group algebra of the cyclic group of order two
@@ -97,8 +98,7 @@ theorem eq_single_one_add_single_ofAdd_one (x : MonoidAlgebra R (Multiplicative 
     x = single 1 (x.coeff 1) +
       single (Multiplicative.ofAdd 1) (x.coeff (Multiplicative.ofAdd 1)) := by
   ext g
-  have hg : g = 1 ∨ g = Multiplicative.ofAdd 1 := by revert g; decide
-  rcases hg with rfl | rfl <;>
+  rcases g.eq_one_or_eq_ofAdd_one with rfl | rfl <;>
     simp [coeff_add, coeff_single, one_ne_ofAdd_one, one_ne_ofAdd_one.symm]
 
 /-- The product of two elements of `R[C₂]` written as `a + bσ`: since `σ² = 1`,

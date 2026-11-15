@@ -34,6 +34,8 @@ keeps matrices upper-triangular, so it permutes the `⟨T⟩`-orbits that meet `
 
 * `TauCeti.TraceFormulaMatrixModule.coeff_upperTriangularSum`: `Tₙ^∞` is the indicator function
   of `ℳₙ^∞`.
+* `TauCeti.TraceFormulaMatrixModule.upperTriangularSum_eq_sum_reps`: `Tₙ^∞` as a sum over the
+  matrices of `FixedDetMatrices.reps n`.
 * `TauCeti.TraceFormulaMatrixModule.upperTriangularSum_zero`: `T₀^∞ = 0`.
 * `TauCeti.TraceFormulaMatrixModule.mapDomain_coeff_upperTriangularSum_apply`: for `n ≠ 0`,
   every `SL(2, ℤ)`-orbit sum of `Tₙ^∞` is `1`.
@@ -68,12 +70,30 @@ upper-triangular representatives `ℳₙ^∞` of `Γ \ ℳₙ`. -/
 noncomputable def upperTriangularSum (n : ℤ) : k[TraceFormulaMatrixModule n] :=
   ∑ x ∈ (upperTriangularReps n).toFinite.toFinset, single x 1
 
+variable (k n) in
+/-- Definition of `Tₙ^∞`: the formal sum of the elements of `ℳₙ^∞`. -/
+theorem upperTriangularSum_def :
+    upperTriangularSum k n = ∑ x ∈ (upperTriangularReps n).toFinite.toFinset, single x 1 := by
+  rw [upperTriangularSum]
+
 /-- The coefficients of `Tₙ^∞` are the indicator function of `ℳₙ^∞`. -/
 @[simp]
 theorem coeff_upperTriangularSum (x : TraceFormulaMatrixModule n) :
     (upperTriangularSum k n).coeff x = (upperTriangularReps n).indicator 1 x := by
   classical
   simp [upperTriangularSum, Finsupp.single_apply, Set.indicator_apply]
+
+variable (k n) in
+/-- `Tₙ^∞` is the sum of the classes of the matrices `(a b; 0 d)` of `FixedDetMatrices.reps n`. -/
+theorem upperTriangularSum_eq_sum_reps :
+    upperTriangularSum k n = ∑ A : FixedDetMatrices.reps n, single (mk A.1) 1 := by
+  classical
+  rw [upperTriangularSum, ← Finset.sum_image (s := Finset.univ) (f := fun x ↦ single x (1 : k))
+    (g := fun A : FixedDetMatrices.reps n ↦ mk A.1)
+    fun A _ B _ h ↦ Subtype.ext (mk_injOn_reps A.2 B.2 h)]
+  congr 1
+  ext x
+  simp [mem_upperTriangularReps]
 
 /-- `T₀^∞ = 0`. -/
 @[simp]
@@ -153,7 +173,7 @@ theorem one_sub_ofMulAction_op_upperTriangularSum_mem [CommRing k] (g : PSL(2, �
   rcases eq_or_ne n 0 with rfl | hn
   · simp
   -- `Tₙ^∞` and `Tₙ^∞ · g` have the same orbit sums, all equal to `1`
-  simp only [coinvariantsKer_ofMulAction_eq_ker, LinearMap.sub_apply, Module.End.one_apply,
+  simp only [coinvariantsKer_ofMulAction_eq_ker, LinearMap.sub_apply, one_apply_eq_self,
     LinearMap.sub_mem_ker_iff]
   ext q
   simp [hn]

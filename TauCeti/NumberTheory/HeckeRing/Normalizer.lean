@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.DoubleCoset.Normalizer
-public import TauCeti.NumberTheory.HeckeRing.Multiplication
+public import TauCeti.NumberTheory.HeckeRing.Associativity
 
 import Mathlib.Tactic.Group
 
@@ -51,6 +51,8 @@ For `Γ₁(N) ⊴ Γ₀(N)` it is the diamond direction of the `Γ₁(N)` Hecke 
   product, with the normalizing factor on either side.
 * `HeckeCosetModule.commute_single_of_mem_normalizer`: consequently a commutation question in
   the Hecke ring is discharged by the single coset identity `Γ(xy)Γ = Γ(yx)Γ`.
+* `HeckeCosetModule.unitOfMemNormalizer`: when `x ∈ Δ` normalizes `Γ` and `x⁻¹ ∈ Δ`, the basis
+  elements `[ΓxΓ]` and `[Γx⁻¹Γ]` form a two-sided unit of `𝕋 Δ Γ R`.
 
 ## References
 
@@ -261,6 +263,38 @@ theorem commute_single_of_mem_normalizer [IsHeckeTriple Δ Γ Γ] (R : Type*) [S
     Commute (single R (HeckeCoset.mk Γ Γ x) 1) (single R (HeckeCoset.mk Γ Γ y) 1) := by
   rw [Commute, SemiconjBy, single_mul_single_of_mem_normalizer R hx,
     single_mul_single_of_mem_normalizer_right R hx, hxy]
+
+section Units
+
+open scoped HeckeCosetModule
+
+/-- **A normalizing element invertible in `Δ` gives a unit of the Hecke ring.** When `x ∈ Δ`
+normalizes `Γ` and `x⁻¹ ∈ Δ`, `[ΓxΓ]` and `[Γx⁻¹Γ]` are two-sided inverses in `𝕋 Δ Γ R`. -/
+noncomputable def unitOfMemNormalizer [IsHeckeTriple Δ Γ Γ] (R : Type*) [Semiring R] {x : G}
+    (hx : x ∈ Δ) (hxi : x⁻¹ ∈ Δ) (hnorm : x ∈ Subgroup.normalizer (Γ : Set G)) : (𝕋 Δ Γ R)ˣ where
+  val := single R (HeckeCoset.mk Γ Γ ⟨x, hx⟩) 1
+  inv := single R (HeckeCoset.mk Γ Γ ⟨x⁻¹, hxi⟩) 1
+  val_inv := by
+    rw [single_mul_single_of_mem_normalizer R hnorm, one_def R, HeckeCoset.one_def]
+    exact congrArg (single R · 1) (HeckeCoset.mk_congr_val (by simp))
+  inv_val := by
+    rw [single_mul_single_of_mem_normalizer_right R hnorm, one_def R, HeckeCoset.one_def]
+    exact congrArg (single R · 1) (HeckeCoset.mk_congr_val (by simp))
+
+/-- The underlying Hecke-ring element of `unitOfMemNormalizer` is the basis element `[ΓxΓ]`. -/
+@[simp]
+theorem val_unitOfMemNormalizer [IsHeckeTriple Δ Γ Γ] (R : Type*) [Semiring R]
+    {x : G} (hx : x ∈ Δ) (hxi : x⁻¹ ∈ Δ) (hnorm : x ∈ Subgroup.normalizer (Γ : Set G)) :
+    (unitOfMemNormalizer R hx hxi hnorm : 𝕋 Δ Γ R) = single R (HeckeCoset.mk Γ Γ ⟨x, hx⟩) 1 := (rfl)
+
+/-- The inverse of `unitOfMemNormalizer` has underlying element the basis element `[Γx⁻¹Γ]`. -/
+@[simp]
+theorem val_inv_unitOfMemNormalizer [IsHeckeTriple Δ Γ Γ] (R : Type*) [Semiring R]
+    {x : G} (hx : x ∈ Δ) (hxi : x⁻¹ ∈ Δ) (hnorm : x ∈ Subgroup.normalizer (Γ : Set G)) :
+    (↑(unitOfMemNormalizer R hx hxi hnorm)⁻¹ : 𝕋 Δ Γ R) =
+      single R (HeckeCoset.mk Γ Γ ⟨x⁻¹, hxi⟩) 1 := (rfl)
+
+end Units
 
 end HeckeCosetModule
 

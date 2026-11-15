@@ -8,7 +8,9 @@ module
 public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.LinearAlgebra.Finsupp.SumProd
-public import TauCeti.Algebra.Module.Submodule.Ker
+public import TauCeti.Algebra.Homology.ModuleCat.Basic
+public import TauCeti.LinearAlgebra.LinearMap.Ker
+public import TauCeti.LinearAlgebra.Quotient.Prod
 
 /-!
 # The homology of a square-zero linear endomorphism
@@ -33,6 +35,8 @@ elements of `M`, on which such structure is defined. The image is represented in
 * `LinearMap.homologyIso`: for `d ∘ d = 0`, Mathlib's homology of the short complex with both maps
   `d` is `d.homology hd`.
 * `LinearMap.homologyMap`: the map on homology induced by a chain map `f` with `f ∘ d = e ∘ f`.
+* `LinearEquiv.homologyEquiv`: the equivalence of homologies induced by a linear equivalence `f`
+  with `f ∘ d = e ∘ f`.
 * `LinearMap.mappingCone`: the mapping cone `(m, n) ↦ (-d m, f m + e n)` of such a chain map.
 * `LinearMap.sumMappingCone`: the mapping cone of a map between free modules `ι →₀ S` and
   `κ →₀ S`, as an endomorphism of the free module `(ι ⊕ κ) →₀ S`.
@@ -52,6 +56,8 @@ elements of `M`, on which such structure is defined. The image is represented in
 * `HomologicalComplex.quasiIso_iff_bijective_homologyMap`: a morphism of complexes of modules of
   shape `ComplexShape.refl Unit`, that is, of modules with a square-zero endomorphism, is a
   quasi-isomorphism exactly when it induces a bijection on `ker d ⧸ im d`.
+* `HomologicalComplex.moduleCatHomologyIso`: the categorical homology of a one-object complex is
+  the concrete homology of its differential, preserving its selected module structures.
 -/
 
 public section
@@ -122,6 +128,25 @@ noncomputable def homologyIso (hd : d ∘ₗ d = 0) :
     (d.shortComplex hd).homology ≅ ModuleCat.of S (d.homology hd) :=
   (d.shortComplex hd).moduleCatHomologyIso ≪≫
     (Submodule.quotEquivOfEq _ _ (d.range_moduleCatToCycles_eq_boundariesInKer hd)).toModuleIso
+
+/-- The inverse comparison sends the quotient class of a cycle to its categorical class. -/
+theorem homologyIso_inv_homologyπ (hd : d ∘ₗ d = 0) (z : ker d) :
+    (d.homologyIso hd).inv (d.homologyπ hd z) =
+      (d.shortComplex hd).homologyπ ((d.shortComplex hd).moduleCatCyclesIso.inv z) := by
+  let e := Submodule.quotEquivOfEq _ _
+    (d.range_moduleCatToCycles_eq_boundariesInKer hd)
+  have he : e.symm (Submodule.Quotient.mk z) = Submodule.Quotient.mk z := by
+    apply e.injective
+    simp only [LinearEquiv.apply_symm_apply, e, Submodule.quotEquivOfEq_mk]
+  -- Separate the inverse categorical homology comparison from the boundary-submodule change.
+  change (d.shortComplex hd).moduleCatHomologyIso.inv
+      (e.toModuleIso.inv (Submodule.Quotient.mk z)) = _
+  rw [LinearEquiv.toModuleIso_inv]
+  -- Normalize the bundled module-map application to the quotient equivalence's own carrier.
+  change (d.shortComplex hd).moduleCatHomologyIso.inv
+      (e.symm (Submodule.Quotient.mk z)) = _
+  rw [he]
+  exact (congrArg (fun f => f z) (d.shortComplex hd).moduleCatCyclesIso_inv_π).symm
 
 section Map
 
@@ -252,6 +277,50 @@ theorem homologyMap_injective_iff (f : M →ₗ[S] N) (hd : d ∘ₗ d = 0) (he 
     exact h m m.2 hc
 
 end Map
+
+section Product
+
+variable {N : Type*} [AddCommGroup N] [Module S N] (e : N →ₗ[S] N)
+
+/-- Homology of a product differential is the product of the two homologies. -/
+noncomputable def homologyProdEquiv (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0) :
+    (d.prodMap e).homology (by rw [prodMap_comp, hd, he]; ext <;> simp) ≃ₗ[S]
+      d.homology hd × e.homology he := by
+  let E : ker (d.prodMap e) ≃ₗ[S] ker d × ker e :=
+    (LinearEquiv.ofEq _ _ (ker_prodMap d e)).trans ((ker d).prodEquiv (ker e))
+  refine (Submodule.Quotient.equiv (d.prodMap e).boundariesInKer
+    (d.boundariesInKer.prod e.boundariesInKer) E ?_).trans
+      (Submodule.quotientProdEquiv _ _)
+  ext z
+  rw [Submodule.mem_map]
+  constructor
+  · rintro ⟨w, hw, rfl⟩
+    obtain ⟨v, hv⟩ := (mem_boundariesInKer _).mp hw
+    exact ⟨⟨v.1, congrArg Prod.fst hv⟩, ⟨v.2, congrArg Prod.snd hv⟩⟩
+  · rintro ⟨⟨u, hu⟩, ⟨v, hv⟩⟩
+    refine ⟨E.symm z, ?_, E.apply_symm_apply z⟩
+    exact ⟨(u, v), Prod.ext hu hv⟩
+
+/-- The product-homology equivalence sends a cycle class to its two component classes. -/
+@[simp]
+theorem homologyProdEquiv_mk (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
+    (z : ker (d.prodMap e)) :
+    d.homologyProdEquiv e hd he (Submodule.Quotient.mk z) =
+      (Submodule.Quotient.mk ⟨z.1.1, congrArg Prod.fst (mem_ker.mp z.2)⟩,
+        Submodule.Quotient.mk ⟨z.1.2, congrArg Prod.snd (mem_ker.mp z.2)⟩) := by
+  simp [homologyProdEquiv, Submodule.Quotient.equiv_apply, Submodule.mapQ_apply]
+
+/-- The inverse product-homology equivalence sends two cycle classes to their product class. -/
+@[simp]
+theorem homologyProdEquiv_symm_mk (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
+    (x : ker d) (y : ker e) :
+    (d.homologyProdEquiv e hd he).symm (Submodule.Quotient.mk x, Submodule.Quotient.mk y) =
+      Submodule.Quotient.mk
+        ⟨((x : M), (y : N)), mem_ker.mpr (Prod.ext (mem_ker.mp x.2) (mem_ker.mp y.2))⟩ := by
+  apply (d.homologyProdEquiv e hd he).injective
+  simp only [LinearEquiv.apply_symm_apply, homologyProdEquiv_mk]
+
+end Product
 
 end Ring
 
@@ -412,6 +481,34 @@ end SumMappingCone
 
 end LinearMap
 
+namespace LinearEquiv
+
+variable {S M M' : Type*} [Ring S] [AddCommGroup M] [Module S M] [AddCommGroup M'] [Module S M']
+  {d : M →ₗ[S] M} {e : M' →ₗ[S] M'}
+
+/-- A linear equivalence `f` with `f ∘ d = e ∘ f` induces an equivalence of the homologies of the
+square-zero endomorphisms `d` and `e`. -/
+noncomputable def homologyEquiv (f : M ≃ₗ[S] M') (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
+    (hf : f.toLinearMap ∘ₗ d = e ∘ₗ f.toLinearMap) : d.homology hd ≃ₗ[S] e.homology he :=
+  have hf' : f.symm.toLinearMap ∘ₗ e = d ∘ₗ f.symm.toLinearMap := by
+    ext m'
+    apply f.injective
+    simpa using (congr($hf (f.symm m'))).symm
+  LinearEquiv.ofLinearMap (LinearMap.homologyMap f.toLinearMap hd he hf)
+    (LinearMap.homologyMap f.symm.toLinearMap he hd hf')
+    (by ext z; simp) (by ext z; simp)
+
+/-- The equivalence of homologies sends the class of a cycle `z` to the class of `f z`. -/
+@[simp]
+theorem homologyEquiv_mk (f : M ≃ₗ[S] M') (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
+    (hf : f.toLinearMap ∘ₗ d = e ∘ₗ f.toLinearMap) (z : LinearMap.ker d) :
+    f.homologyEquiv hd he hf (Submodule.Quotient.mk z) =
+      Submodule.Quotient.mk
+        ⟨f z, LinearMap.map_mem_ker_of_comp_eq (d := d) (e := e) f.toLinearMap hf z.2⟩ :=
+  LinearMap.homologyMap_mk f.toLinearMap hd he hf z
+
+end LinearEquiv
+
 /-! ### Quasi-isomorphisms of one-object complexes -/
 
 namespace HomologicalComplex
@@ -423,6 +520,43 @@ variable (K) in
 linear map. -/
 theorem hom_d_comp_hom_d : (K.d () ()).hom ∘ₗ (K.d () ()).hom = 0 := by
   rw [← ModuleCat.hom_comp, K.d_comp_d, ModuleCat.hom_zero]
+
+variable (K) in
+/-- The homology of a one-object complex of modules is the kernel of its differential modulo
+its image, with the module structures selected by the complex. -/
+noncomputable def moduleCatHomologyIso :
+    K.homology () ≅ ModuleCat.of S ((K.d () ()).hom.homology K.hom_d_comp_hom_d) :=
+  K.homologyIsoSc' () () () rfl rfl ≪≫ (K.d () ()).hom.homologyIso K.hom_d_comp_hom_d
+
+variable (K) in
+/-- The inverse concrete comparison sends a quotient class to the canonical categorical class. -/
+theorem moduleCatHomologyIso_inv_homologyπ (z : LinearMap.ker (K.d () ()).hom) :
+    K.moduleCatHomologyIso.inv ((K.d () ()).hom.homologyπ K.hom_d_comp_hom_d z) =
+      K.moduleCatKerHomologyClass (rfl : (ComplexShape.refl Unit).next () = ()) z := by
+  -- Expose the linear-map comparison factor so its public inverse-class equation applies.
+  change (K.homologyIsoSc' () () () rfl rfl).inv
+      (((K.d () ()).hom.homologyIso K.hom_d_comp_hom_d).inv
+        ((K.d () ()).hom.homologyπ K.hom_d_comp_hom_d z)) = _
+  rw [LinearMap.homologyIso_inv_homologyπ]
+  rw [homologyIsoSc'_eq_refl]
+  let y : K.cycles () := (K.sc ()).moduleCatCyclesIso.inv z
+  have hy : K.moduleCatCyclesToKer () () y = z := by
+    apply Subtype.ext
+    rw [K.coe_moduleCatCyclesToKer]
+    exact (K.sc ()).moduleCatCyclesIso_inv_iCycles_apply z
+  have h := K.moduleCatKerHomologyClass_moduleCatCyclesToKer
+    (rfl : (ComplexShape.refl Unit).next () = ()) y
+  rw [hy] at h
+  exact h.symm
+
+variable (K) in
+/-- The concrete comparison sends the canonical categorical class to its quotient class. -/
+theorem moduleCatHomologyIso_hom_moduleCatKerHomologyClass
+    (z : LinearMap.ker (K.d () ()).hom) :
+    K.moduleCatHomologyIso.hom
+        (K.moduleCatKerHomologyClass (rfl : (ComplexShape.refl Unit).next () = ()) z) =
+      (K.d () ()).hom.homologyπ K.hom_d_comp_hom_d z := by
+  rw [← K.moduleCatHomologyIso_inv_homologyπ, Iso.inv_hom_id_apply]
 
 /-- The unique component of a morphism of complexes of shape `ComplexShape.refl Unit` is a chain
 map in the sense of `LinearMap.homologyMap`. -/

@@ -40,7 +40,7 @@ variable {R : Type uR} [CommRing R]
 homogeneous degree-zero map between compatible contractions. -/
 theorem reducedTensorWordsHomotopy_naturality
     (c : LinearSpecialContraction dM dN) (c' : LinearSpecialContraction dM' dN')
-    {G : InternalGrading R M} {G' : InternalGrading R M'}
+    {G : InternalGrading R M ℤ} {G' : InternalGrading R M' ℤ}
     (f : M →ₗ[R] M') (g : N →ₗ[R] N')
     (hf : LinearMap.IsHomogeneous f G.piece G'.piece 0)
     (hi : f ∘ₗ c.incl = c'.incl ∘ₗ g)
@@ -49,7 +49,7 @@ theorem reducedTensorWordsHomotopy_naturality
     ReducedTensorWords.map (R := R) f ∘ₗ c.reducedTensorWordsHomotopy G =
       c'.reducedTensorWordsHomotopy G' ∘ₗ ReducedTensorWords.map (R := R) f := by
   have hτ : f ∘ₗ G.koszulTwist 1 = G'.koszulTwist 1 ∘ₗ f := by
-    simpa using (hf.koszulTwist_comp 1).symm
+    simpa using (hf.koszulTwist_comp_eq_smul 1).symm
   simp only [LinearMap.ext_iff, LinearMap.comp_apply] at hi hp hh hτ
   refine ReducedTensorWords.linearMap_ext R M fun n x ↦ ?_
   simp only [LinearMap.comp_apply, reducedTensorWordsHomotopy_of_tprod,

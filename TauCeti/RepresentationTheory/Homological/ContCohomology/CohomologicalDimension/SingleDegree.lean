@@ -18,7 +18,7 @@ holds as soon as the single degree `n + 1` vanishes for every such `M`. Dimensio
 the induction step: `Hⁱ⁺¹(G, M) ≅ Hⁱ(G, Coind_1^G M ⧸ M)` for `i ≥ 1`
 (`TauCeti.ContCohomology.dimensionShiftIso`), and the shifted module `Coind_1^G M ⧸ M` is again a
 discrete `p`-primary torsion module
-(`TauCeti.ContCohomology.isPPrimaryTorsion_coindQuotient`), so vanishing in degree `i` for
+(`TauCeti.ContCohomology.isAddPGroup_coindQuotient`), so vanishing in degree `i` for
 every module of the class gives vanishing in degree `i + 1` for every module of the class. The
 shifted module need not be finite even when `M` is, which is why the statement quantifies over all
 discrete `p`-primary torsion modules; the single-degree test on the finite modules then follows
@@ -65,14 +65,14 @@ degree `n + 1` upward, one degree at a time. -/
 theorem cohomologicalDimensionLE_iff_forall_subsingleton_succ (n : ℕ) :
     CohomologicalDimensionLE.{u} p G n ↔
       ∀ (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-        [DistribMulAction G M] [ContinuousSMul G M], IsPPrimaryTorsion p M →
+        [DistribMulAction G M] [ContinuousSMul G M], IsAddPGroup p M →
         Subsingleton (continuousCohomology (n + 1) (ofDiscreteModule ℤ G M)) := by
   refine ⟨fun h M _ _ _ _ _ hM ↦ cohomologicalDimensionLE_iff.mp h M hM (n + 1) n.lt_succ_self,
     fun h ↦ ?_⟩
   -- vanishing in degree `i` for every module of the class, by induction on `i ≥ n + 1`
   suffices H : ∀ i, n + 1 ≤ i →
       ∀ (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-        [DistribMulAction G M] [ContinuousSMul G M], IsPPrimaryTorsion p M →
+        [DistribMulAction G M] [ContinuousSMul G M], IsAddPGroup p M →
         Subsingleton (continuousCohomology i (ofDiscreteModule ℤ G M)) from
     cohomologicalDimensionLE_iff.mpr fun M _ _ _ _ _ hM i hi ↦ H i hi M hM
   intro i hi
@@ -80,7 +80,7 @@ theorem cohomologicalDimensionLE_iff_forall_subsingleton_succ (n : ℕ) :
   | base => exact h
   | succ i hi ih =>
     intro M _ _ _ _ _ hM
-    have := ih (CoindQuotient G ⊥ M) (isPPrimaryTorsion_coindQuotient G ⊥ M hM)
+    have := ih (CoindQuotient G ⊥ M) (isAddPGroup_coindQuotient G ⊥ M hM)
     exact (dimensionShiftIso G M i (by omega)).toContinuousLinearEquiv.toEquiv.subsingleton
 
 /-- **The finite single-degree test.** For a compact group `G` and `p ≠ 0`, the predicate
@@ -89,7 +89,7 @@ discrete `p`-primary `G`-module `M`. -/
 theorem cohomologicalDimensionLE_iff_forall_finite_subsingleton_succ (hp : p ≠ 0) (n : ℕ) :
     CohomologicalDimensionLE.{u} p G n ↔
       ∀ (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-        [DistribMulAction G M] [ContinuousSMul G M] [Finite M], IsPPrimaryTorsion p M →
+        [DistribMulAction G M] [ContinuousSMul G M] [Finite M], IsAddPGroup p M →
         Subsingleton (continuousCohomology (n + 1) (ofDiscreteModule ℤ G M)) := by
   rw [cohomologicalDimensionLE_iff_forall_subsingleton_succ]
   exact ⟨fun h M _ _ _ _ _ _ hM ↦ h M hM, fun h M _ _ _ _ _ hM ↦
@@ -102,7 +102,7 @@ when `Hⁿ⁺¹(G, M)` vanishes for every discrete `p`-primary torsion `G`-modul
 theorem cohomologicalDimensionAt_le_iff_forall_subsingleton_succ (n : ℕ) :
     cohomologicalDimensionAt.{u} p G ≤ n ↔
       ∀ (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-        [DistribMulAction G M] [ContinuousSMul G M], IsPPrimaryTorsion p M →
+        [DistribMulAction G M] [ContinuousSMul G M], IsAddPGroup p M →
         Subsingleton (continuousCohomology (n + 1) (ofDiscreteModule ℤ G M)) := by
   rw [cohomologicalDimensionAt_le_iff, cohomologicalDimensionLE_iff_forall_subsingleton_succ]
 
@@ -112,7 +112,7 @@ and `p ≠ 0`, `cd_p G ≤ n` exactly when `Hⁿ⁺¹(G, M)` vanishes for every 
 theorem cohomologicalDimensionAt_le_iff_forall_finite_subsingleton_succ (hp : p ≠ 0) (n : ℕ) :
     cohomologicalDimensionAt.{u} p G ≤ n ↔
       ∀ (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-        [DistribMulAction G M] [ContinuousSMul G M] [Finite M], IsPPrimaryTorsion p M →
+        [DistribMulAction G M] [ContinuousSMul G M] [Finite M], IsAddPGroup p M →
         Subsingleton (continuousCohomology (n + 1) (ofDiscreteModule ℤ G M)) := by
   rw [cohomologicalDimensionAt_le_iff,
     cohomologicalDimensionLE_iff_forall_finite_subsingleton_succ hp]

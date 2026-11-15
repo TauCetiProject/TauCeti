@@ -115,7 +115,7 @@ theorem maximalIdeal_mem_minimalPrimes_of_maximal {a : Γ(X, ⊤)} {x : X}
     (germ_mem_maximalIdeal_of_mem_zeroLocus hx.prop)⟩, ?_⟩
   rintro q ⟨hq, hαq⟩ -
   -- The prime `q` is a point `p` of `Spec 𝒪_{X, x}`, whose image `y` is a generization of `x`.
-  set p : Spec (X.presheaf.stalk x) := ⟨q, hq⟩ with hp_def
+  set p : Spec (X.presheaf.stalk x) := ⟨q, hq⟩ with _
   have hyx : X.fromSpecStalk x p ⤳ x :=
     ((IsLocalRing.specializes_closedPoint p).map (X.fromSpecStalk x).continuous).trans
       (specializes_of_eq Scheme.fromSpecStalk_closedPoint)
@@ -168,7 +168,7 @@ theorem exists_maximal_mem_zeroLocus_specializes {a : Γ(X, ⊤)} {x : X}
     (hx : x ∈ X.zeroLocus {a}) :
     ∃ y, Maximal (· ∈ X.zeroLocus {a}) y ∧ y ⤳ x := by
   -- Among the generizations of `x` inside the zero locus, one of least coheight is maximal.
-  set S : Set ℕ∞ := coheight '' {y : X | y ∈ X.zeroLocus {a} ∧ y ⤳ x} with hS
+  set S : Set ℕ∞ := coheight '' {y : X | y ∈ X.zeroLocus {a} ∧ y ⤳ x} with _
   have hSne : S.Nonempty := ⟨coheight x, x, ⟨hx, specializes_refl x⟩, rfl⟩
   obtain ⟨_, ⟨y, ⟨hyZ, hyx⟩, rfl⟩, hy⟩ := (wellFounded_lt (α := ℕ∞)).has_min S hSne
   refine ⟨y, ⟨hyZ, fun z hzZ (hzy : z ⤳ y) ↦ ?_⟩, hyx⟩

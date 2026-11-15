@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Projective.Point
+public import Mathlib.LinearAlgebra.Unimodular
 public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.ValuationIntegrality
+-- Proof-only: over a local ring, a unimodular vector has a unit coordinate.
+import TauCeti.LinearAlgebra.Unimodular
 
 /-!
 # Reduction of points modulo a valuation
@@ -38,8 +41,11 @@ to `(0 : 1 : 0)`. That this agrees with reducing *any* primitive representative 
 
 ## Main results
 
-* `WeierstrassCurve.Affine.Point.reduction_some_eq_mk`: the reduction of a point is the reduction
-  of any primitive integral representative of it.
+* `WeierstrassCurve.Affine.Point.exists_isUnimodular_toProjective_point_eq`: every point has a
+  primitive integral representative solving the equation of the integral model.
+* `WeierstrassCurve.Affine.Point.reduction_some_eq_mk` and
+  `WeierstrassCurve.Affine.Point.reduction_eq_mk`: the reduction of a point is the reduction of any
+  primitive integral representative of it.
 * `WeierstrassCurve.Affine.Point.equation_of_reduction_eq`: every representative of the reduction
   lies on the reduced curve.
 * `WeierstrassCurve.Affine.Point.reduction_eq_zero_iff`: a point reduces to `(0 : 1 : 0)` exactly
@@ -91,65 +97,161 @@ theorem reduction_some_of_one_lt {x y : F} (h : W.Nonsingular x y) (hx : 1 < v x
     reduction v (some x y h) = ⟦![0, 1, 0]⟧ := by
   simp [reduction, hx.not_ge]
 
+/-- The integral case of `reduction_some_eq_mk`: when `x` is integral, so is `y`, `Z` must be the
+unit, and `(X : Y : Z) = Z • (x : y : 1)`. -/
+private lemma reduction_some_eq_mk_of_valuation_le_one {x y : F} (h : W.Nonsingular x y)
+    {X Y Z : v.valuationSubring} (hX : (X : F) = x * Z) (hY : (Y : F) = y * Z)
+    (hu : IsUnit X ∨ IsUnit Y ∨ IsUnit Z) (hx : v x ≤ 1) :
+    reduction v (some x y h) = ⟦![residue _ X, residue _ Y, residue _ Z]⟧ := by
+  have hy := valuation_y_le_one_of_valuation_x_le_one v h.left hx
+  set a : v.valuationSubring := ⟨x, (v.mem_valuationSubring_iff x).mpr hx⟩
+  set b : v.valuationSubring := ⟨y, (v.mem_valuationSubring_iff y).mpr hy⟩
+  have hXa : X = a * Z := Subtype.ext hX
+  have hYb : Y = b * Z := Subtype.ext hY
+  have hZ : IsUnit Z := by
+    rcases hu with hX' | hY' | hZ'
+    · exact isUnit_of_mul_isUnit_right (hXa ▸ hX')
+    · exact isUnit_of_mul_isUnit_right (hYb ▸ hY')
+    · exact hZ'
+  rw [reduction_some_of_valuation_le_one v h hx, hXa, hYb, map_mul, map_mul,
+    ← Projective.smul_eq _ (hZ.map (residue v.valuationSubring))]
+  congr 1
+  ext i
+  fin_cases i <;> simp [mul_comm, a, b]
+
+/-- The pole case of `reduction_some_eq_mk`: when `x` has a pole, `X` and `Z` lie in the maximal
+ideal, `Y` is the unit, and `(X : Y : Z)` reduces to `res Y • (0 : 1 : 0)`. -/
+private lemma reduction_some_eq_mk_of_one_lt {x y : F} (h : W.Nonsingular x y)
+    {X Y Z : v.valuationSubring} (hX : (X : F) = x * Z) (hY : (Y : F) = y * Z)
+    (hu : IsUnit X ∨ IsUnit Y ∨ IsUnit Z) (hx : 1 < v x) :
+    reduction v (some x y h) = ⟦![residue _ X, residue _ Y, residue _ Z]⟧ := by
+  have hint := Valuation.valuationSubring.integers v
+  have hle := hint.map_le_one
+  rw [reduction_some_of_one_lt v h hx]
+  have hxy := valuation_x_lt_valuation_y v h.left hx
+  have hY1 : v (Y : F) ≤ 1 := hle Y
+  have hZ1 : v (Z : F) < 1 := by
+    by_contra hZ
+    rw [not_lt] at hZ
+    rw [hY, map_mul] at hY1
+    exact absurd hY1 (not_le.mpr (lt_of_lt_of_le (hx.trans hxy) (le_mul_of_one_le_right' hZ)))
+  have hX1 : v (X : F) < 1 := by
+    rw [hX, map_mul]
+    rcases eq_or_ne (v (Z : F)) 0 with h0 | h0
+    · rw [h0, mul_zero]; exact zero_lt_one
+    · refine lt_of_lt_of_le ?_ hY1
+      rw [hY, map_mul]
+      exact mul_lt_mul_of_pos_right hxy (zero_lt_iff.mpr h0)
+  have hYu : IsUnit Y := by
+    rcases hu with hX' | hY' | hZ'
+    · exact absurd (hint.isUnit_iff_valuation_eq_one.mp hX') hX1.ne
+    · exact hY'
+    · exact absurd (hint.isUnit_iff_valuation_eq_one.mp hZ') hZ1.ne
+  rw [(residue_eq_zero_iff _).mpr ((Valuation.mem_maximalIdeal_iff (v := v)).mpr hX1),
+    (residue_eq_zero_iff _).mpr ((Valuation.mem_maximalIdeal_iff (v := v)).mpr hZ1),
+    ← Projective.smul_eq _ (hYu.map (residue v.valuationSubring))]
+  congr 1
+  ext i
+  fin_cases i <;> simp
+
 /-- **Reduction is computed by any primitive representative.** If `(X : Y : Z)`, with coordinates
 in the valuation ring and at least one of them a unit, represents the affine point `(x, y)`, then
 the point reduces to `(res X : res Y : res Z)`. -/
 theorem reduction_some_eq_mk {x y : F} (h : W.Nonsingular x y) {X Y Z : v.valuationSubring}
     (hX : (X : F) = x * Z) (hY : (Y : F) = y * Z) (hu : IsUnit X ∨ IsUnit Y ∨ IsUnit Z) :
     reduction v (some x y h) = ⟦![residue _ X, residue _ Y, residue _ Z]⟧ := by
-  have hle : ∀ a : v.valuationSubring, v a ≤ 1 := fun a ↦ (v.mem_valuationSubring_iff _).mp a.2
-  have isUnit_iff : ∀ {a : v.valuationSubring}, IsUnit a ↔ v a = 1 :=
-    (Valuation.valuationSubring.integers v).isUnit_iff_valuation_eq_one
   rcases le_or_gt (v x) 1 with hx | hx
-  · -- `x` and `y` are integral, so `Z` must be the unit and `(X : Y : Z) = Z • (x : y : 1)`.
+  · exact reduction_some_eq_mk_of_valuation_le_one v h hX hY hu hx
+  · exact reduction_some_eq_mk_of_one_lt v h hX hY hu hx
+
+/-- **Every point has a primitive integral representative.** A point of `W(F)` is the class of a
+solution of the projective equation of the integral model whose coordinates lie in the valuation
+ring and generate the unit ideal. -/
+theorem exists_isUnimodular_toProjective_point_eq (P : W.Point) :
+    ∃ X : Fin 3 → v.valuationSubring,
+      (integralModel v.valuationSubring W).toProjective.Equation X ∧
+        Module.IsUnimodular v.valuationSubring X ∧
+          P.toProjective.point = ⟦algebraMap v.valuationSubring F ∘ X⟧ := by
+  -- the equation of the integral model at an integral triple is the equation of `W`
+  have heq (X : Fin 3 → v.valuationSubring) :
+      (integralModel v.valuationSubring W).toProjective.Equation X ↔
+        W.toProjective.Equation (algebraMap v.valuationSubring F ∘ X) := by
+    rw [← (integralModel v.valuationSubring W).toProjective.map_equation
+      (IsFractionRing.injective v.valuationSubring F)]
+    exact Iff.of_eq (congrArg (fun W' : WeierstrassCurve F ↦ W'.toProjective.Equation _)
+      (baseChange_integralModel_eq v.valuationSubring W))
+  rcases P with _ | ⟨x, y, h⟩
+  · refine ⟨![0, 1, 0], Projective.equation_zero, IsUnit.isUnimodular_pi (i := 1) (by simp), ?_⟩
+    simp [toProjective, ← zero_def, Projective.Point.fromAffine_zero, Projective.Point.zero_point,
+      Projective.comp_fin3]
+  rcases le_or_gt (v x) 1 with hx | hx
+  · -- an integral affine point is the class of `(x : y : 1)`
     have hy := valuation_y_le_one_of_valuation_x_le_one v h.left hx
-    set a : v.valuationSubring := ⟨x, (v.mem_valuationSubring_iff x).mpr hx⟩
-    set b : v.valuationSubring := ⟨y, (v.mem_valuationSubring_iff y).mpr hy⟩
-    have hXa : X = a * Z := Subtype.ext hX
-    have hYb : Y = b * Z := Subtype.ext hY
-    have hZ : IsUnit Z := by
-      by_contra hZ
-      have hZ1 : v Z < 1 := lt_of_le_of_ne (hle Z) (isUnit_iff.not.mp hZ)
-      have hlt : ∀ c : v.valuationSubring, v (c * Z : v.valuationSubring) < 1 := fun c ↦ by
-        rw [Subring.coe_mul, map_mul]
-        exact lt_of_le_of_lt (mul_le_of_le_one_left' (hle c)) hZ1
-      rcases hu with hX' | hY' | hZ'
-      · exact (hlt a).ne (hXa ▸ isUnit_iff.mp hX')
-      · exact (hlt b).ne (hYb ▸ isUnit_iff.mp hY')
-      · exact hZ hZ'
-    rw [reduction_some_of_valuation_le_one v h hx, hXa, hYb, map_mul, map_mul,
-      ← Projective.smul_eq _ (hZ.map (residue v.valuationSubring))]
-    congr 1
-    ext i
-    fin_cases i <;> simp [mul_comm, a, b]
-  · -- `x` has a pole, so `X` and `Z` lie in the maximal ideal, `Y` is the unit, and
-    -- `(X : Y : Z)` reduces to `res Y • (0 : 1 : 0)`.
-    rw [reduction_some_of_one_lt v h hx]
+    set X : Fin 3 → v.valuationSubring := ![⟨x, (v.mem_valuationSubring_iff x).mpr hx⟩,
+      ⟨y, (v.mem_valuationSubring_iff y).mpr hy⟩, 1]
+    have hι : algebraMap v.valuationSubring F ∘ X = ![x, y, 1] := by
+      simp [X, Projective.comp_fin3]
+    refine ⟨X, (heq X).mpr ?_, IsUnit.isUnimodular_pi (i := 2) (by simp [X]), ?_⟩
+    · rw [hι, Projective.equation_some]
+      exact h.left
+    · simp only [hι, toProjective, Projective.Point.fromAffine_some, Projective.Point.mk_point]
+  · -- otherwise `y` has a larger pole than `x`, and the point is the class of `(x/y : 1 : 1/y)`
     have hxy := valuation_x_lt_valuation_y v h.left hx
-    have hY1 : v (Y : F) ≤ 1 := hle Y
-    have hZ1 : v (Z : F) < 1 := by
-      by_contra hZ
-      rw [not_lt] at hZ
-      rw [hY, map_mul] at hY1
-      exact absurd hY1 (not_le.mpr (lt_of_lt_of_le (hx.trans hxy) (le_mul_of_one_le_right' hZ)))
-    have hX1 : v (X : F) < 1 := by
-      rw [hX, map_mul]
-      rcases eq_or_ne (v (Z : F)) 0 with h0 | h0
-      · rw [h0, mul_zero]; exact zero_lt_one
-      · refine lt_of_lt_of_le ?_ hY1
-        rw [hY, map_mul]
-        exact mul_lt_mul_of_pos_right hxy (zero_lt_iff.mpr h0)
-    have hYu : IsUnit Y := by
-      rcases hu with hX' | hY' | hZ'
-      · exact absurd (isUnit_iff.mp hX') hX1.ne
-      · exact hY'
-      · exact absurd (isUnit_iff.mp hZ') hZ1.ne
-    rw [(residue_eq_zero_iff _).mpr ((Valuation.mem_maximalIdeal_iff (v := v)).mpr hX1),
-      (residue_eq_zero_iff _).mpr ((Valuation.mem_maximalIdeal_iff (v := v)).mpr hZ1),
-      ← Projective.smul_eq _ (hYu.map (residue v.valuationSubring))]
+    have hy : y ≠ 0 := by
+      rintro rfl
+      exact absurd (v.map_zero ▸ hxy) (not_lt_of_ge zero_le)
+    have hxy' : v (x / y) ≤ 1 := by
+      rw [map_div₀]
+      exact div_le_one_of_le₀ hxy.le zero_le
+    have hy' : v (1 / y) ≤ 1 := by
+      rw [map_div₀, map_one]
+      exact div_le_one_of_le₀ (hx.trans hxy).le zero_le
+    set X : Fin 3 → v.valuationSubring := ![⟨x / y, (v.mem_valuationSubring_iff _).mpr hxy'⟩, 1,
+      ⟨1 / y, (v.mem_valuationSubring_iff _).mpr hy'⟩]
+    have hι : algebraMap v.valuationSubring F ∘ X = y⁻¹ • ![x, y, 1] := by
+      ext i
+      fin_cases i <;> simp [X, div_eq_inv_mul, hy]
+    have hu : IsUnit y⁻¹ := isUnit_iff_ne_zero.mpr (inv_ne_zero hy)
+    refine ⟨X, (heq X).mpr ?_, IsUnit.isUnimodular_pi (i := 1) (by simp [X]), ?_⟩
+    · rw [hι, Projective.equation_smul _ hu, Projective.equation_some]
+      exact h.left
+    · simp only [hι, Projective.smul_eq _ hu, toProjective, Projective.Point.fromAffine_some,
+        Projective.Point.mk_point]
+
+/-- **Reduction is computed by any primitive representative of any point.** If the class of a
+vector `X` with coordinates in the valuation ring generating the unit ideal is the point `P`, then
+`P` reduces to the class of the residues of the coordinates of `X`. -/
+theorem reduction_eq_mk {P : W.Point} {X : Fin 3 → v.valuationSubring}
+    (hX : Module.IsUnimodular v.valuationSubring X)
+    (hP : P.toProjective.point = ⟦algebraMap v.valuationSubring F ∘ X⟧) :
+    reduction v P = ⟦residue v.valuationSubring ∘ X⟧ := by
+  obtain ⟨i, hi⟩ := TauCeti.Module.isUnimodular_iff_exists_isUnit.mp hX
+  rcases P with _ | ⟨x, y, h⟩
+  · -- `X` is a multiple of `(0, 1, 0)`, whose middle coordinate is then the unit
+    simp only [toProjective, ← zero_def, Projective.Point.fromAffine_zero,
+      Projective.Point.zero_point] at hP
+    obtain ⟨u, hu⟩ := Quotient.exact hP.symm
+    have hX₀ : X 0 = 0 := Subtype.ext (by simpa using (congrFun hu 0).symm)
+    have hX₂ : X 2 = 0 := Subtype.ext (by simpa using (congrFun hu 2).symm)
+    have hX₁ : IsUnit (X 1) := by
+      fin_cases i
+      · exact absurd (hX₀ ▸ hi) not_isUnit_zero
+      · exact hi
+      · exact absurd (hX₂ ▸ hi) not_isUnit_zero
+    have hres : residue v.valuationSubring ∘ X = residue v.valuationSubring (X 1) • ![0, 1, 0] := by
+      ext j
+      fin_cases j <;> simp [hX₀, hX₂]
+    rw [← zero_def, reduction_zero, hres, Projective.smul_eq _ (hX₁.map _)]
+  · -- `X` is a multiple `u • (x : y : 1)`, so `X 2 = u`
+    obtain ⟨u, hu⟩ := Quotient.exact hP.symm
+    have hXj (j : Fin 3) : (X j : F) = u * ![x, y, 1] j := by
+      simpa [Units.smul_def] using (congrFun hu j).symm
+    rw [reduction_some_eq_mk v h (X := X 0) (Y := X 1) (Z := X 2)
+      (by rw [hXj, hXj]; simp [mul_comm]) (by rw [hXj, hXj]; simp [mul_comm])
+      (by fin_cases i <;> simp_all)]
     congr 1
-    ext i
-    fin_cases i <;> simp
+    ext j
+    fin_cases j <;> rfl
 
 /-- **The kernel of reduction.** A point reduces to `(0 : 1 : 0)` exactly when it is the point at
 infinity or its `x`-coordinate has a pole; these points form `E₁(F)`. -/
@@ -204,8 +306,7 @@ theorem reduction_neg (P : W.Point) :
         (valuation_y_le_one_of_valuation_x_le_one v h.left hx)⟩ -
           M.a₁ * ⟨x, (v.mem_valuationSubring_iff x).mpr hx⟩ - M.a₃
       have hc : ((c : v.valuationSubring) : F) = W.negY x y * 1 := by
-        simp [c, Affine.negY, ← integralModel_a₁_eq v.valuationSubring W,
-          ← integralModel_a₃_eq v.valuationSubring W, M]
+        simp [c, Affine.negY, M]
       rw [reduction_some_eq_mk v _ (X := ⟨x, (v.mem_valuationSubring_iff x).mpr hx⟩) (Y := c)
         (Z := 1) (by simp) hc (Or.inr (Or.inr isUnit_one)),
         reduction_some_of_valuation_le_one v h hx, Projective.negMap_eq]

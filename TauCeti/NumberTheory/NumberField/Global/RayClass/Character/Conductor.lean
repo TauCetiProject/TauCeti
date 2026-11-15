@@ -32,6 +32,8 @@ normalization in which ray class L-functions are studied.
   induced from a divisor `𝔫` of its modulus exactly when its conductor divides `𝔫`.
 * `TauCeti.GlobalNumberFields.RayClassCharacter.conductor_induced`: inducing a character to a
   larger modulus does not change its conductor.
+* `TauCeti.GlobalNumberFields.RayClassCharacter.conductor_eq_of_induced_eq`: two characters that
+  induce the same character of a common multiple of their moduli have the same conductor.
 * `TauCeti.GlobalNumberFields.RayClassCharacter.isPrimitive_iff_conductor_eq`: a ray class
   character is primitive exactly when its conductor is its modulus.
 * `TauCeti.GlobalNumberFields.RayClassCharacter.induced_primitiveCharacter` and
@@ -110,6 +112,13 @@ theorem induced_primitiveCharacter (η : RayClassCharacter 𝔪) :
 theorem conductor_induced (h : 𝔪 ∣ 𝔫) (η : RayClassCharacter 𝔪) :
     (η.induced h).conductor = η.conductor := by
   simp only [conductor, HeckeCharacter.ofRayClassCharacter_induced]
+
+/-- Two ray class characters, possibly of different moduli, that induce the same character of a
+common multiple of their moduli have the same conductor. -/
+theorem conductor_eq_of_induced_eq {𝔐 : Modulus K} (h : 𝔪 ∣ 𝔐) (h' : 𝔫 ∣ 𝔐)
+    {η : RayClassCharacter 𝔪} {η' : RayClassCharacter 𝔫} (hη : η.induced h = η'.induced h') :
+    η.conductor = η'.conductor := by
+  rw [← conductor_induced h, hη, conductor_induced]
 
 /-- **A ray class character is primitive exactly when its conductor is its modulus.** -/
 theorem isPrimitive_iff_conductor_eq (η : RayClassCharacter 𝔪) :

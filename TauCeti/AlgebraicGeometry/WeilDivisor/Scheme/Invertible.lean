@@ -90,21 +90,21 @@ theorem mem_sections_zero_iff {U : X.Opens} (hU : ∀ y ∈ U, coheight y ≤ 1)
     refine ⟨a, (Scheme.rationalFunctionsEquiv U).injective ?_⟩
     rw [Scheme.rationalFunctionsEquiv_toRationalFunctions_app, ha]
   · rintro ⟨a, rfl⟩
-    exact toRationalFunctions_app_mem_sections WeilDivisor.isEffective_zero U a
+    exact toRationalFunctions_app_mem_sections le_rfl U a
 
 /-- **The sheaf of the zero divisor is the structure sheaf.** The canonical factorization of
 `𝒪_X ⟶ 𝒦_X` through `𝒪_X(0)` is an isomorphism: it is injective because `𝒪_X ⟶ 𝒦_X` is, and
 surjective because a rational function without poles is regular. -/
 theorem isIso_unitToSheaf_zero (hX : ∀ y : X, coheight y ≤ 1) :
-    IsIso (unitToSheaf (D := (0 : SchemeWeilDivisor X)) WeilDivisor.isEffective_zero) := by
-  apply isIso_unitToSheaf WeilDivisor.isEffective_zero
+    IsIso (unitToSheaf (D := (0 : SchemeWeilDivisor X)) le_rfl) := by
+  apply isIso_unitToSheaf le_rfl
   intro U t ht
   exact (mem_sections_zero_iff (fun y _ ↦ hX y) t).mp ht
 
 /-- The isomorphism `𝒪_X ≅ 𝒪_X(0)` given by `SchemeWeilDivisor.isIso_unitToSheaf_zero`. -/
 def unitIsoSheafZero (hX : ∀ y : X, coheight y ≤ 1) :
     @Iso X.Modules _ (SheafOfModules.unit X.ringCatSheaf) (sheaf (0 : SchemeWeilDivisor X)) :=
-  @asIso _ _ _ _ (unitToSheaf (D := (0 : SchemeWeilDivisor X)) WeilDivisor.isEffective_zero)
+  @asIso _ _ _ _ (unitToSheaf (D := (0 : SchemeWeilDivisor X)) le_rfl)
     (isIso_unitToSheaf_zero hX)
 
 /-- The forward map of `SchemeWeilDivisor.unitIsoSheafZero` is the canonical factorization of
@@ -112,7 +112,7 @@ def unitIsoSheafZero (hX : ∀ y : X, coheight y ≤ 1) :
 @[simp]
 lemma unitIsoSheafZero_hom (hX : ∀ y : X, coheight y ≤ 1) :
     (unitIsoSheafZero hX).hom =
-      unitToSheaf (D := (0 : SchemeWeilDivisor X)) WeilDivisor.isEffective_zero :=
+      unitToSheaf (D := (0 : SchemeWeilDivisor X)) le_rfl :=
   (rfl)
 
 /-- The inverse of `SchemeWeilDivisor.unitIsoSheafZero`, included into `𝒦_X`, is the

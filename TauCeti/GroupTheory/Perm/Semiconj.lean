@@ -55,7 +55,7 @@ theorem setOf_sameCycle_and_eq (h : Semiconj f σ τ) (x : α) :
     {y | σ.SameCycle x y ∧ f y = f x} = {y | (σ ^ minimalPeriod τ (f x)).SameCycle x y} := by
   have hσ : ∀ i : ℤ, f ((σ ^ i) x) = (τ ^ i) (f x) := fun i ↦ by
     have hinv : Semiconj f ⇑(σ⁻¹) ⇑(τ⁻¹) := fun y ↦ by
-      rw [Perm.eq_inv_iff_eq, ← h, ← Perm.mul_apply, mul_inv_cancel, Perm.one_apply]
+      rw [Perm.eq_inv_iff_eq, ← h, ← Equiv.Perm.mul_apply, mul_inv_cancel, Equiv.Perm.one_apply]
     rcases i with i | i
     · rw [Int.ofNat_eq_natCast, zpow_natCast, zpow_natCast, coe_pow, coe_pow]
       exact h.iterate_right i x
@@ -68,9 +68,9 @@ theorem setOf_sameCycle_and_eq (h : Semiconj f σ τ) (x : α) :
   constructor
   · rintro ⟨⟨i, rfl⟩, hfy⟩
     obtain ⟨j, rfl⟩ := (hk i).1 (by rw [← hσ, hfy])
-    exact ⟨j, by rw [← zpow_natCast, ← zpow_mul]⟩
+    exact ⟨j, by rw [← zpow_natCast, ← _root_.zpow_mul]⟩
   · rintro ⟨j, rfl⟩
-    rw [← zpow_natCast, ← zpow_mul]
+    rw [← zpow_natCast, ← _root_.zpow_mul]
     refine ⟨⟨_, rfl⟩, ?_⟩
     rw [hσ]
     exact (hk _).2 (dvd_mul_right _ _)
@@ -85,14 +85,10 @@ theorem ncard_sameCycle_and_eq_mul_minimalPeriod [Finite α] (h : Semiconj f σ 
   have := Fintype.ofFinite α
   set k := minimalPeriod τ (f x)
   have hσx : IsPeriodicPt σ (orderOf σ) x := by
-    rw [IsPeriodicPt, IsFixedPt, ← coe_pow, pow_orderOf_eq_one, one_apply]
+    rw [IsPeriodicPt, IsFixedPt, ← coe_pow, pow_orderOf_eq_one, Equiv.Perm.one_apply]
   have hk : 0 < k := (hσx.map h).minimalPeriod_pos (orderOf_pos σ)
-  have hcard : {y | (σ ^ k).SameCycle x y}.ncard = minimalPeriod (σ ^ k) x := by
-    simp_rw [sameCycle_iff_mem_orbit_zpowers, Set.ofPred_mem_eq, ← Nat.card_coe_set_eq,
-      Nat.card_eq_fintype_card]
-    exact (minimalPeriod_eq_card (a := σ ^ k) (b := x)).symm
-  rw [h.setOf_sameCycle_and_eq, hcard, coe_pow, minimalPeriod_iterate_eq_div_gcd hk.ne',
-    Nat.gcd_eq_right (h.minimalPeriod_dvd x)]
+  rw [h.setOf_sameCycle_and_eq, ncard_setOf_sameCycle, coe_pow,
+    minimalPeriod_iterate_eq_div_gcd hk.ne', Nat.gcd_eq_right (h.minimalPeriod_dvd x)]
   exact Nat.div_mul_cancel (h.minimalPeriod_dvd x)
 
 end Function.Semiconj

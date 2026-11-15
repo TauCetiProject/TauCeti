@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.MoebiusAction
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Basic
+public import TauCeti.NumberTheory.BinaryQuadraticForm.Reflection
+import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 
 /-!
 # The root of a positive definite binary quadratic form
@@ -40,6 +42,8 @@ lies in the `SL(2, ℤ)`-orbit of `i`, `6` when it lies in that of `ρ`, and `2`
 * `TauCeti.BinaryQuadraticForm.normSq_root`: `|root f|² = c / a`.
 * `TauCeti.BinaryQuadraticForm.stabilizer_root`: the stabiliser of `root f` in `SL(2, ℤ)` is
   the stabiliser of `f`.
+* `TauCeti.BinaryQuadraticForm.root_of_eq_reflected`: the root of the reflected form
+  `a x² - b x y + c y²` is the reflection `-conj τ` of the root `τ` of `a x² + b x y + c y²`.
 
 ## References
 
@@ -131,6 +135,16 @@ theorem stabilizer_root (f : posDef D) :
     MulAction.stabilizer SL(2, ℤ) (root f) = MulAction.stabilizer SL(2, ℤ) f := by
   ext γ
   simp only [MulAction.mem_stabilizer_iff, ← root_smul, root_injective.eq_iff]
+
+/-- The root of the reflected form `a x² - b x y + c y²` is the reflection `J • τ = -conj τ` of
+the root `τ` of `a x² + b x y + c y²`. -/
+theorem root_of_eq_reflected {f g : posDef D} (hg : g.1 = f.1.reflected) :
+    root g = J • root f := by
+  refine UpperHalfPlane.ext_re_im ?_ ?_
+  · rw [re_root, J_smul_re, re_root, hg, reflected_a, reflected_b]
+    push_cast
+    ring
+  · rw [im_root, J_smul_im, im_root, hg, reflected_a]
 
 end BinaryQuadraticForm
 

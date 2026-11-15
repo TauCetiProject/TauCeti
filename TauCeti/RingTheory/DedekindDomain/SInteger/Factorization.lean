@@ -29,10 +29,10 @@ because they need `FractionalIdeal.count`, and `Spectrum.lean` does not otherwis
 factorization layer — a consumer of the valuation transfer alone should not pay for it.
 
 Both are adapted from Michael Stoll's elliptic-curves formalisation
-(`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/SIntegers.lean` at the
-roadmap's §Provenance pin `66889eada51a`, Apache 2.0, by Michael Stoll). Following this
-repository's convention for adapted material, the upstream authorship is credited here rather than
-in the copyright header. Stoll's unprefixed names are given the `integer` prefix that
+(`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/SIntegers.lean` at
+commit `66889eada51a`, Apache 2.0, by Michael Stoll). Following this repository's convention for
+adapted material, the upstream authorship is credited here rather than in the copyright header.
+Stoll's unprefixed names are given the `integer` prefix that
 `TauCeti/RingTheory/DedekindDomain/SInteger/` already uses.
 -/
 
@@ -58,7 +58,7 @@ lemma integer_count_coeIdeal_map {v : HeightOneSpectrum R} (hv : v ∉ S) {J : I
   · rw [Ideal.map_bot]
     simp only [coeIdeal_bot, count_zero]
   have hmJ := Ideal.map_ne_bot_of_ne_bot (S := S.integer K) hJ
-  rw [count_coe K _ hmJ, count_coe K v hJ, Nat.cast_inj]
+  rw [count_coeIdeal K _ hmJ, count_coeIdeal K v hJ, Nat.cast_inj]
   -- the two multiplicities dominate the same `k`, and `le_count_associates_iff_le_pow` turns each
   -- side into
   -- containment of a prime power, which `integer_map_le_map_pow_iff` transfers
@@ -86,7 +86,7 @@ lemma integer_count_spanSingleton {v : HeightOneSpectrum R} (hv : v ∉ S) {x : 
     intro r
     rw [hcoe r, integer_count_coeIdeal_map K S hv, coeIdeal_span_singleton]
   rcases eq_or_ne x 0 with rfl | hx
-  · simp only [spanSingleton_zero, count_zero]
+  · simp only [map_zero (spanSingleton _), count_zero]
   obtain ⟨a, b, hb, rfl⟩ := IsFractionRing.div_surjective (A := R) x
   have hb0 : algebraMap R K b ≠ 0 :=
     (map_ne_zero_iff _ (IsFractionRing.injective R K)).mpr (nonZeroDivisors.ne_zero hb)

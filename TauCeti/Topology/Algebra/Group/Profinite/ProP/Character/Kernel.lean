@@ -113,7 +113,7 @@ theorem ker_eq_topologicalClosure_normalClosure_of_not_isOfFinOrder {S : Set G} 
         (Subgroup.normalClosure S).topologicalClosure) := by rw [hHN, inf_top_eq]
     _ = χ.ker ⊓ (Subgroup.closure {a}).topologicalClosure ⊔
         (Subgroup.normalClosure S).topologicalClosure :=
-      (Subgroup.inf_sup_assoc_of_le Subgroup.le_normalizer_of_normal hN).symm
+      (Subgroup.inf_sup_assoc_of_le (Subgroup.mul_normal _ _) hN).symm
     _ = (Subgroup.normalClosure S).topologicalClosure := by
       rw [inf_comm, hG.topologicalClosure_closure_singleton_inf_ker_eq_bot χ hker ha, bot_sup_eq]
 

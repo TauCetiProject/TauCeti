@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Torsion
-import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 
 /-!
@@ -15,8 +15,12 @@ import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 This file names the pointwise torsion-free condition for a covariant derivative on the tangent
 bundle.  When the bundled torsion tensor is available, `isTorsionFree_iff_torsion_eq_zero`
 identifies this condition with its vanishing. The condition is available without finite
-dimensionality or completeness, and supplies the torsion hypothesis for curvature identities
-such as the first Bianchi identity.
+dimensionality or completeness, shows that vector fields whose covariant derivatives vanish at a
+point have vanishing Lie bracket there (`IsTorsionFree.mlieBracket_eq_zero_of_cov_eq_zero`), and
+supplies the torsion hypothesis for curvature identities such as the first Bianchi identity.
+`isTorsionFree_addOneForm` shows that adding a symmetric endomorphism-valued one-form to a
+torsion-free connection keeps it torsion-free, as used for the conformally changed Levi-Civita
+connection.
 -/
 
 public section
@@ -47,6 +51,29 @@ theorem isTorsionFree_iff
       MDiffAt (T% X) x → MDiffAt (T% Y) x →
         cov Y x (X x) - cov X x (Y x) = mlieBracket I X Y x := Iff.rfl
 
+/-- Adding a symmetric endomorphism-valued one-form to a torsion-free covariant derivative on the
+tangent bundle keeps it torsion-free. -/
+theorem isTorsionFree_addOneForm
+    {cov : _root_.CovariantDerivative I E (TangentSpace I : M → Type _)} (ht : cov.IsTorsionFree)
+    {A : Π x : M, TangentSpace I x →L[𝕜] TangentSpace I x →L[𝕜] TangentSpace I x}
+    (hA : ∀ (x : M) (v w : TangentSpace I x), A x v w = A x w v) :
+    (cov.addOneForm A).IsTorsionFree := by
+  intro X Y x hX hY
+  simp only [addOneForm, add_apply]
+  rw [← ht hX hY, hA x (Y x)]
+  abel
+
+/-- For a torsion-free connection, two differentiable vector fields whose covariant derivatives
+vanish at `x` have vanishing Lie bracket at `x`. -/
+theorem IsTorsionFree.mlieBracket_eq_zero_of_cov_eq_zero
+    {cov : _root_.CovariantDerivative I E (TangentSpace I : M → Type _)} (ht : cov.IsTorsionFree)
+    {X Y : Π y : M, TangentSpace I y} {x : M}
+    (hX : MDiffAt (T% X) x) (hY : MDiffAt (T% Y) x)
+    (hX0 : cov X x = 0) (hY0 : cov Y x = 0) :
+    mlieBracket I X Y x = 0 := by
+  rw [← (isTorsionFree_iff cov).mp ht hX hY, hY0, hX0]
+  simp
+
 section TorsionFree
 
 variable [CompleteSpace E]
@@ -70,16 +97,8 @@ theorem covariantDerivative_mlieBracket_apply_eq_sub_of_torsion_free
     funext y
     exact ((isTorsionFree_iff cov).mp ht
       (hY.mdifferentiable (by simp) y) (hZ.mdifferentiable (by simp) y)).symm
-  have hb : CMDiff ∞ (T% (mlieBracket I Y Z)) := by
-    rw [heq]
-    exact hYZ.sub_section hZY
-  have ha : (fun y ↦ cov Z y (Y y)) =
-      mlieBracket I Y Z + fun y ↦ cov Y y (Z y) := by
-    rw [heq, sub_add_cancel]
-  have hd := congrArg (fun s ↦ cov s x u) ha
-  rw [cov.isCovariantDerivativeOn.add (hb.mdifferentiable (by simp) x)
-    (hZY.mdifferentiable (by simp) x)] at hd
-  exact eq_sub_of_add_eq hd.symm
+  rw [heq, cov.isCovariantDerivativeOnUniv.sub (hYZ.mdifferentiable (by simp) x)
+    (hZY.mdifferentiable (by simp) x), sub_apply]
 
 end TorsionFree
 

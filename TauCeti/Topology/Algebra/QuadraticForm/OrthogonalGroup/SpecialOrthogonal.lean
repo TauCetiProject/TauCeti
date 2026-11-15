@@ -114,11 +114,11 @@ end Domain
 section Field
 
 variable {K V : Type*} [Field K] [TopologicalSpace K] [IsTopologicalRing K] [T2Space K]
-  [Invertible (2 : K)] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+  [AddCommGroup V] [Module K V] [FiniteDimensional K V]
   (Q : QuadraticForm K V)
 
 /-- The special orthogonal group of a finite-dimensional quadratic space over a Hausdorff
-topological field in which `2` is invertible is closed in the linear automorphism group. -/
+topological field is closed in the linear automorphism group. -/
 theorem isClosed_specialOrthogonalGroup :
     IsClosed (specialOrthogonalGroup Q : Set (V ≃ₗ[K] V)) := by
   have h : (specialOrthogonalGroup Q : Set (V ≃ₗ[K] V)) =
@@ -131,7 +131,7 @@ theorem isClosed_specialOrthogonalGroup :
     (Units.continuous_val.comp continuous_linearEquiv_det)
 
 /-- The special orthogonal group of a finite-dimensional quadratic space over a Hausdorff locally
-compact topological field in which `2` is invertible is locally compact. -/
+compact topological field is locally compact. -/
 instance instLocallyCompactSpaceSpecialOrthogonalGroup [LocallyCompactSpace K] :
     LocallyCompactSpace (specialOrthogonalGroup Q) :=
   (isClosed_specialOrthogonalGroup Q).locallyCompactSpace

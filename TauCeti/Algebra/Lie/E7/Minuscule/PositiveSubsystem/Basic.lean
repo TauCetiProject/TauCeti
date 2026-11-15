@@ -38,6 +38,8 @@ be proved.
 
 * `TauCeti.E7Minuscule.positiveRootWeight_strict`: positive simple roots strictly raise the
   explicit ordering of minuscule weights.
+* `TauCeti.E7Minuscule.isUpperTriangular_rootSubgroupPoints_inl`: positive simple-root
+  matrices are upper triangular in that ordering.
 * `TauCeti.E7Minuscule.isSolvable_points_positiveSubsystem`: every algebra-valued point group of
   the positive subsystem is solvable.
 
@@ -63,7 +65,7 @@ open scoped CategoryTheory.MonObj TensorProduct
 attribute [local instance 100] LieRing.ofAssociativeRing
 attribute [local instance high] Algebra.toModule
 
-local notation "CM" => CartanMatrix.E 7
+local notation "CM" => weightTable.cartanMatrix
 local notation "rootGen" => TauCeti.serreRootGenerator CM
 local notation "cartanGen" => TauCeti.serreH ℚ CM
 local notation "rootWeight" => DynkinType.E7.rootGeneratorWeight DynkinType.valid_E7
@@ -86,6 +88,7 @@ theorem inr_not_mem_positiveSimpleRoots (i : Fin 7) : Sum.inr i ∉ positiveSimp
 /-- The character of a positive numbered root generator is the corresponding Cartan row. -/
 private theorem rootWeight7_inl (i : Fin 7) : rootWeight7 (.inl i) = CM i := by
   ext j
+  rw [weightTable_cartanMatrix]
   simpa only [DynkinType.rank_E7, DynkinType.cartanMatrix_E7] using
     (DynkinType.rootGeneratorWeight_inl (t := DynkinType.E7)
       (ht := DynkinType.valid_E7) i j)
@@ -101,7 +104,9 @@ theorem positiveRootWeight_strict (k : Fin 7 ⊕ Fin 7) (hk : k ∈ positiveSimp
   have hcoord := congrFun hrs i
   have hr := e7MinusculeWeight_apply_eq_neg_one_or_eq_zero_or_eq_one r i
   have hs := e7MinusculeWeight_apply_eq_neg_one_or_eq_zero_or_eq_one s i
-  have hdiag : CM i i = 2 := CartanMatrix.E_diag 7 i
+  have hdiag : CM i i = 2 := by
+    rw [weightTable_cartanMatrix]
+    exact CartanMatrix.E_diag 7 i
   simp only [Pi.add_apply, nsmul_eq_mul, Pi.mul_apply, Pi.natCast_apply, hdiag] at hcoord
   have hm_one : m = 1 := by
     rcases hr with hr | hr | hr <;> rcases hs with hs | hs | hs <;> omega
@@ -117,6 +122,19 @@ theorem positiveRootWeight_strict (k : Fin 7 ⊕ Fin 7) (hk : k ∈ positiveSimp
     exact hrs.trans hreflection.symm
   rw [hr_reflection]
   exact (e7MinusculeReflection_lt_iff i s).2 hs_neg
+
+/-- Every positive simple-root point is upper triangular in the ordered minuscule basis. -/
+theorem isUpperTriangular_rootSubgroupPoints_inl (i : Fin 7) (A : Type v) [CommRing A]
+    (u : Multiplicative A) :
+    ((rootSubgroupPoints (.inl i) A u : Matrix.GeneralLinearGroup (Fin 56) A) :
+      Matrix (Fin 56) (Fin 56) A).IsUpperTriangular := by
+  rw [coe_rootSubgroupPoints]
+  exact (isUpperUnitriangular_kostantRootSubgroupMatrix rootGen cartanGen rep
+    lattice.toAddSubgroup rep_kostantForm_mem_lattice latticeBasis e7MinusculeWeight (.inl i)
+    (isNilpotent_rep_serreRootGenerator (.inl i)) isCartanWeightVector_latticeBasis
+    (lie_cartanGenerator_rootGenerator (.inl i))
+    (positiveRootWeight_strict (.inl i) (inl_mem_positiveSimpleRoots i))
+    ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm u)).isUpperTriangular
 
 /-! ## The positive subsystem and its generators -/
 
@@ -278,7 +296,6 @@ instance isClosedImmersion_positiveRootSubgroup (i : Fin 7) :
     rw [positiveRootSubgroup_comp_positiveSubsystemInclusion]
     infer_instance
   simp only [Grp.comp', Mon.comp_hom', Over.comp_left] at hcomp
-  have _ := hcomp
   exact IsClosedImmersion.of_comp
     (f := (positiveRootSubgroup i).hom.hom.left)
     (g := positiveSubsystemInclusion.hom.hom.left)
@@ -319,7 +336,6 @@ instance isClosedImmersion_positiveWeightTorus :
     rw [positiveWeightTorus_comp_positiveSubsystemInclusion]
     infer_instance
   simp only [Grp.comp', Mon.comp_hom', Over.comp_left] at hcomp
-  have _ := hcomp
   exact IsClosedImmersion.of_comp
     (f := positiveWeightTorus.hom.hom.left)
     (g := positiveSubsystemInclusion.hom.hom.left)

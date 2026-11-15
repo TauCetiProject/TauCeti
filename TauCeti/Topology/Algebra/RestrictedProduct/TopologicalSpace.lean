@@ -14,7 +14,11 @@ General facts about the restricted-product topology, which Mathlib defines as th
 topology over the principal stages `Πʳ i, [R i, A i]_[𝓟 S]`. A set is open if and only if its
 preimage in every principal stage is open: this is the `Prop`-valued form of Mathlib's universal
 property `RestrictedProduct.continuous_dom`. Inserting a single factor is continuous, the analogue
-of `continuous_mulSingle` for `Pi` types.
+of `continuous_mulSingle` (and, additively, `continuous_single`) for `Pi` types, and for Hausdorff
+factors it is a closed embedding. Over the cofinite filter, evaluation at an index is an open map.
+On a subspace lying in the reference sets at every index of some `T` with `𝓕 ≤ 𝓟 T` (over the
+cofinite filter: outside finitely many indices), the restricted-product topology agrees with the
+product topology.
 
 The restricted-product topology is finer than the topology induced from the full product
 `Π i, R i`, and in general strictly finer. The clearest instance is a family of discrete spaces
@@ -51,6 +55,47 @@ theorem isOpen_restrictedProduct_iff {s : Set (Πʳ i, [R i, A i]_[𝓕])} :
   simp only [isOpen_iff_continuous_mem]
   exact RestrictedProduct.continuous_dom
 
+/-- Evaluation at any index is an open map from a restricted product over the cofinite filter to
+that factor. -/
+theorem isOpenMap_restrictedProduct_eval (i : ι) :
+    IsOpenMap (fun x : Πʳ j, [R j, A j] ↦ x i) := by
+  classical
+  refine IsOpenMap.of_sections fun x ↦ ?_
+  -- `Function.update x i y` lies in the principal stage of the cofinite set where `x` is in the
+  -- reference sets, with `i` removed.
+  set T : Set ι := {j | x j ∈ A j} \ {i}
+  have hT : (cofinite : Filter ι) ≤ 𝓟 T :=
+    le_principal_iff.2 (sdiff_mem x.2 (Set.finite_singleton i).compl_mem_cofinite)
+  let g : R i → Πʳ j, [R j, A j]_[𝓟 T] := fun y ↦
+    ⟨Function.update x i y, eventually_principal.2 fun j hj ↦ by
+      rw [Function.update_of_ne hj.2]
+      exact hj.1⟩
+  have hg : Continuous g := RestrictedProduct.continuous_rng_of_principal.2
+    (continuous_const.update i continuous_id)
+  refine ⟨RestrictedProduct.inclusion R A hT ∘ g,
+    ((RestrictedProduct.continuous_inclusion hT).comp hg).continuousAt, ?_, fun y ↦ ?_⟩
+  · ext j
+    exact congrFun (Function.update_eq_self i (⇑x)) j
+  · exact Function.update_self i y (⇑x)
+
+/-- **On a principal stage, the restricted-product topology is the product topology.**
+If `𝓕 ≤ 𝓟 T` and an embedding `f` into the restricted product `Πʳ i, [R i, A i]_[𝓕]` lands in the
+reference sets at every index of `T`, then reading off all coordinates of `f` is an embedding into
+the full product `Π i, R i`. Over the cofinite filter, `T` is the complement of a finite set. -/
+theorem isEmbedding_restrictedProduct_coe_comp {X : Type w} [TopologicalSpace X] {T : Set ι}
+    (hT : 𝓕 ≤ 𝓟 T) {f : X → Πʳ i, [R i, A i]_[𝓕]} (hf : IsEmbedding f)
+    (hmem : ∀ x, ∀ i ∈ T, f x i ∈ A i) :
+    IsEmbedding fun x ↦ ⇑(f x) := by
+  -- `f` factors through the principal stage `Πʳ i, [R i, A i]_[𝓟 T]`
+  let g : X → Πʳ i, [R i, A i]_[𝓟 T] := fun x ↦ ⟨f x, eventually_principal.mpr (hmem x)⟩
+  -- `RestrictedProduct.inclusion` composed with `g` is `f` by definition
+  have hg : IsEmbedding g := by
+    refine ⟨((RestrictedProduct.isEmbedding_inclusion_principal hT).isInducing.of_comp_iff).mp
+      hf.isInducing, fun x y hxy ↦ hf.injective ?_⟩
+    ext i
+    exact RestrictedProduct.ext_iff.mp hxy i
+  exact RestrictedProduct.isEmbedding_coe_of_principal.comp hg
+
 section
 
 variable {S : ι → Type w} {G : ι → Type v} [∀ i, SetLike (S i) (G i)] (B : ∀ i, S i)
@@ -58,7 +103,8 @@ variable [DecidableEq ι] [∀ i, One (G i)] [∀ i, OneMemClass (S i) (G i)]
 variable [∀ i, TopologicalSpace (G i)]
 
 /-- Inserting a single factor into a restricted product is continuous. -/
-@[continuity, fun_prop]
+@[to_additive (attr := continuity, fun_prop)
+  /-- Inserting a single factor into a restricted product is continuous. -/]
 theorem continuous_restrictedProduct_mulSingle (i : ι) :
     Continuous (RestrictedProduct.mulSingle B i) := by
   have h : (cofinite : Filter ι) ≤ 𝓟 {i}ᶜ :=
@@ -70,6 +116,17 @@ theorem continuous_restrictedProduct_mulSingle (i : ι) :
   have hf : Continuous f :=
     RestrictedProduct.continuous_rng_of_principal.2 (continuous_mulSingle i)
   exact (RestrictedProduct.continuous_inclusion h).comp hf
+
+/-- The map `RestrictedProduct.mulSingle B i`, which inserts a factor at `i` and takes value `1`
+elsewhere, is a closed embedding when all factors are Hausdorff. -/
+@[to_additive
+  /-- The map `RestrictedProduct.single B i`, which inserts a factor at `i` and takes value `0`
+  elsewhere, is a closed embedding when all factors are Hausdorff. -/]
+theorem isClosedEmbedding_restrictedProduct_mulSingle [∀ i, T2Space (G i)] (i : ι) :
+    IsClosedEmbedding (RestrictedProduct.mulSingle B i) :=
+  Function.LeftInverse.isClosedEmbedding (f := fun x : Πʳ j, [G j, B j] ↦ x i)
+    (RestrictedProduct.mulSingle_eq_same B i) (RestrictedProduct.continuous_eval i)
+    (continuous_restrictedProduct_mulSingle B i)
 
 end
 

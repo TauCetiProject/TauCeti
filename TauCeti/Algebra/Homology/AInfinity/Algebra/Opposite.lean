@@ -192,7 +192,7 @@ variable {R : Type uR} {A : Type uA} [CommRing R] [AddCommGroup A] [Module R A]
 /-- The operations of the opposite, assembled from their values on homogeneous pieces: on inputs
 of degrees `d` the arity-`n` operation is `(-1) ^ opExp n d` times `m n` on the reversed inputs. -/
 private noncomputable def opOperation (𝒜 : AInfinityAlgebra R A) (n : ℕ) :
-    MultilinearMap R (fun _ : Fin n ↦ A) A :=
+    MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) A :=
   InternalGrading.multilinearFromPieces (fun _ : Fin n ↦ 𝒜.grading) fun d ↦
     negOnePowCast R (AInfinity.opExp n fun i ↦ if h : i < n then d ⟨i, h⟩ else 0) •
       ((𝒜.m n).domDomCongr Fin.revPerm).compLinearMap
@@ -228,7 +228,7 @@ private theorem evalNat_opOperation (𝒜 : AInfinityAlgebra R A) (n : ℕ) (d :
 /-- The opposite operation of arity zero vanishes, since the original one does. -/
 private theorem opOperation_zero (𝒜 : AInfinityAlgebra R A) : opOperation 𝒜 0 = 0 := by
   apply InternalGrading.multilinearMap_ext (fun _ : Fin 0 ↦ 𝒜.grading)
-  intro d x hx
+  intro d x _
   rw [opOperation_apply 𝒜 (fun _ ↦ 0) x fun i ↦ i.elim0, m_zero]
   simp
 
@@ -265,7 +265,7 @@ private theorem stasheffTerm_opOperation (𝒜 : AInfinityAlgebra R A) (d : ℕ 
       ← Fin.sum_univ_eq_sum_range (fun j ↦ d (p + (s - 1 - j))) s]
     exact h
   rw [AInfinity.stasheffTerm_def, AInfinity.stasheffTerm_def, hin,
-    evalNat_replaceBlock_smul _ _ _ (by omega : p < p + 1 + t),
+    MultilinearMap.evalNat_replaceBlock_smul _ _ _ (by omega : p < p + 1 + t),
     evalNat_opOperation 𝒜 (p + 1 + t) (AInfinity.replaceDeg d p s) _ fun i hi ↦
       AInfinity.replaceBlock_mem_replaceDeg_of_mem_blockDeg 𝒜.grading.piece
         (n := p + s + t) hx hv (by omega) (by omega)]
@@ -297,7 +297,7 @@ private theorem stasheffTerm_opOperation (𝒜 : AInfinityAlgebra R A) (d : ℕ 
 /-- The opposite operations satisfy every Stasheff identity on homogeneous inputs: the arity-`n`
 Stasheff sum of the opposite is the opposite sign of the word times the Stasheff sum of the
 original operations on the reversed word. -/
-private theorem stasheffSum_opOperation (𝒜 : AInfinityAlgebra R A) (n : ℕ) (hn : 0 < n)
+private theorem stasheffSum_opOperation (𝒜 : AInfinityAlgebra R A) (n : ℕ)
     (d : ℕ → ℤ) (x : ℕ → A) (hx : ∀ i < n, x i ∈ 𝒜.grading.piece (d i)) :
     AInfinity.stasheffSum (opOperation 𝒜) d x n = 0 := by
   have hrefl := AInfinity.sum_stasheff_reflect n fun a b c ↦
@@ -314,7 +314,7 @@ private theorem stasheffSum_opOperation (𝒜 : AInfinityAlgebra R A) (n : ℕ) 
     rw [Finset.mem_Icc] at hs
     have harity : p + s + (n - p - s) = n := by omega
     rw [stasheffTerm_opOperation 𝒜 d x hs.1 (by rwa [harity]), harity]
-  rw [h, 𝒜.stasheff n hn _ _ fun i hi ↦ hx _ (by omega), smul_zero]
+  rw [h, 𝒜.stasheff n _ _ fun i hi ↦ hx _ (by omega), smul_zero]
 
 /-- The **opposite** of an `A∞` algebra: the same graded module, with the operations
 
@@ -325,7 +325,7 @@ on homogeneous inputs of degrees `d`, where `AInfinity.opExp n d` is the Koszul 
 noncomputable def op (𝒜 : AInfinityAlgebra R A) : AInfinityAlgebra R A :=
   ofStasheff 𝒜.grading (opOperation 𝒜) (opOperation_zero 𝒜) (isHomogeneous_opOperation 𝒜)
     (AInfinity.suspensionTaylor 𝒜.grading (opOperation 𝒜))
-    (AInfinity.isSuspension_suspensionTaylor _ _) (stasheffSum_opOperation 𝒜)
+    (AInfinity.isSuspension_suspensionTaylor _ _) (fun n _ ↦ stasheffSum_opOperation 𝒜 n)
 
 /-- The opposite has the same grading. -/
 @[simp]
@@ -435,7 +435,7 @@ theorem StrictUnit.op {𝒜 : AInfinityAlgebra R A} {e : A} (h : 𝒜.StrictUnit
       · subst hj
         simpa [deg] using h.degree_zero
       · simpa [deg, hj] using hy ⟨j, hj⟩
-    have hx : x = fun j ↦ if hj : j ≠ i then x j else e := by
+    have hx : x = fun j ↦ if _ : j ≠ i then x j else e := by
       funext j
       by_cases hj : j = i
       · simp [hj, hi]
@@ -451,10 +451,10 @@ namespace IsDGAlgebra
 -- The decomposition of a graded algebra on `G.piece` is the one of its `GradedAlgebra` structure,
 -- under which `IsDGAlgebra.toIsNonUnitalDGAlgebra` is stated; disable the competing instance
 -- attached to the internal grading `G`.
-attribute [-instance] InternalGrading.instDecompositionIntSubmodulePiece
+attribute [-instance] InternalGrading.instDecompositionSubmodulePiece
 
 variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A]
-  {G : InternalGrading R A} [GradedAlgebra G.piece] {d : A →ₗ[R] A}
+  {G : InternalGrading R A ℤ} [GradedAlgebra G.piece] {d : A →ₗ[R] A}
 
 /-- **The opposite of the `A∞` algebra of a DG algebra is the `A∞` algebra of its graded
 opposite.**  The passage `GradedOpposite.op` to the Koszul-signed graded opposite is a strict

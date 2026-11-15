@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Principal.Basic
 public import TauCeti.RingTheory.DedekindDomain.Factorization
 public import Mathlib.RingTheory.ClassGroup.Basic
-public import Mathlib.RingTheory.DedekindDomain.AdicValuation
+public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Completion
 public import Mathlib.RingTheory.DedekindDomain.Factorization
 import Mathlib.RingTheory.DedekindDomain.FiniteAdeleRing
 import Mathlib.RingTheory.DedekindDomain.SelmerGroup
@@ -17,12 +17,12 @@ import Mathlib.RingTheory.DedekindDomain.SelmerGroup
 # The order system of a Dedekind domain
 
 The abstract `OrderSystem` of `TauCeti.AlgebraicGeometry.WeilDivisor.Principal.Basic` packages the
-order-of-vanishing data needed to build principal divisors and the divisor class group. This
-file supplies the roadmap's intended *concrete* instance of that data: a Dedekind domain `R`
-with fraction field `K`. Its height-one spectrum `HeightOneSpectrum R` is the set of
-codimension-one points of `Spec R` (an affine model of a curve, or the ring of integers of a
-number field), and the `v`-adic valuation gives each point an order-of-vanishing homomorphism
-on the multiplicative group `Kˣ` of nonzero rational functions.
+order-of-vanishing data needed to build principal divisors and the divisor class group. This file
+supplies a *concrete* instance of that data: a Dedekind domain `R` with fraction field `K`. Its
+height-one spectrum `HeightOneSpectrum R` is the set of codimension-one points of `Spec R` (an
+affine model of a curve, or the ring of integers of a number field), and the `v`-adic valuation
+gives each point an order-of-vanishing homomorphism on the multiplicative group `Kˣ` of nonzero
+rational functions.
 
 Concretely we build:
 
@@ -38,16 +38,9 @@ Concretely we build:
 * the sanity check that the principal divisor of a nonzero *integral* element is effective
   (an element of `R` has no poles).
 
-The roadmap explicitly anticipates this instantiation: "Instantiate `G` with `Additive Kˣ`
-for the multiplicative group of a function field `K`: then `ord x` is the order of vanishing
-`ord_x(f)`". This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A ("Divisors on
-a curve: Weil divisors `⊕_x ℤ`", "principal divisors", "`Cl(X)`"), grounding the abstract
-order-system API in Mathlib's Dedekind-domain adic valuations.
-
-We do *not* claim the weighted-degree-zero property here: for a general Dedekind domain (e.g.
-`ℤ`) there is no product formula, so a principal divisor need not have degree zero. That holds
-only for proper curves over a field (and number fields with the archimedean places included),
-and is later geometric input.
+We do *not* claim the weighted-degree-zero property here: for a general Dedekind domain (e.g. `ℤ`)
+there is no product formula, so a principal divisor need not have degree zero. That holds only for
+proper curves over a field (and number fields with the archimedean places included).
 
 This reuses Mathlib's `IsDedekindDomain.HeightOneSpectrum.valuationOfNeZero` (the multiplicative
 `v`-adic valuation `Kˣ →* Multiplicative ℤ`, whose multiplicativity `adicOrd` inherits), and
@@ -216,9 +209,9 @@ lemma coeff_principalDivisor_pos_iff_valuation_lt_one (u : Additive Kˣ) (v : He
 no poles, only zeros. The element is presented as any unit `u : Kˣ` whose value is
 `algebraMap R K r`. This is the divisor-of-functions sanity check that rules out a vacuous
 order system. -/
-lemma isEffective_principalDivisor_of_integral {r : R} {u : Kˣ} (hu : (u : K) = algebraMap R K r) :
-    IsEffective ((OrderSystem.ofDedekindDomain R K).principalDivisor (Additive.ofMul u)) := by
-  rw [isEffective_iff]
+lemma principalDivisor_nonneg_of_integral {r : R} {u : Kˣ} (hu : (u : K) = algebraMap R K r) :
+    0 ≤ (OrderSystem.ofDedekindDomain R K).principalDivisor (Additive.ofMul u) := by
+  rw [nonneg_iff]
   intro v
   rw [OrderSystem.coeff_principalDivisor, OrderSystem.ofDedekindDomain_ord, adicOrd_nonneg_iff]
   simp only [toMul_ofMul, hu]
@@ -246,7 +239,7 @@ lemma mem_support_principalDivisor_of_integral_iff_mem_asIdeal {r : R} {u : Kˣ}
   · intro hv
     rw [← coeff_principalDivisor_pos_iff_mem hu v]
     exact lt_of_le_of_ne
-      ((isEffective_iff _).mp (isEffective_principalDivisor_of_integral hu) v) (Ne.symm hv)
+      (coeff_nonneg (principalDivisor_nonneg_of_integral hu) v) (Ne.symm hv)
   · intro hv
     exact ne_of_gt ((coeff_principalDivisor_pos_iff_mem hu v).mpr hv)
 

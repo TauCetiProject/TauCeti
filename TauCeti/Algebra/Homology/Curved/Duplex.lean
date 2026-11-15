@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Linear.LinearFunctor
 public import TauCeti.CategoryTheory.Preadditive.MorphismIdeal.Equivalence
 
 /-!

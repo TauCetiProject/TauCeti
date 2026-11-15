@@ -11,26 +11,21 @@ public import TauCeti.AlgebraicGeometry.WeilDivisor.PicZeroQuotient
 /-!
 # Abel-Jacobi sums through the weighted-degree-zero quotient
 
-This file connects two existing Layer A models in the Jacobian roadmap.  The file
-`WeilDivisor.AbelJacobiSum` defines the formal Abel-Jacobi sum of a divisor as an element of
-the abstract `Pic⁰`, while `WeilDivisor.PicZeroQuotient` identifies `Pic⁰` with
-weighted-degree-zero divisors modulo principal divisors of weighted degree zero.  Here we record
-the corresponding quotient representative:
+This file connects two models of `Pic⁰`. The file `WeilDivisor.AbelJacobi.Sum.Basic` defines the
+formal Abel-Jacobi sum of a divisor as an element of the abstract `Pic⁰`, while
+`WeilDivisor.PicZeroQuotient` identifies `Pic⁰` with weighted-degree-zero divisors modulo principal
+divisors of weighted degree zero. Here we record the corresponding quotient representative:
 
 `D ↦ [D - weightedDegree w D • x₀]` in
 `(weighted-degree-zero divisors) / (principal divisors)`.
 
-Under the quotient equivalence, this representative maps to the existing Abel-Jacobi divisor
-class.  For point divisors this recovers the point Abel-Jacobi class.  This is the quotient-level
-form of the Abel map `D ↦ 𝒪_X(D - d·x₀)` used later for symmetric powers in the construction of
-the Jacobian, with the ordinary degree formula recovered from the constant-weight-one
+Under the quotient equivalence, this representative maps to the Abel-Jacobi divisor class. For point
+divisors this recovers the point Abel-Jacobi class. This is the quotient-level form of the Abel map
+`D ↦ 𝒪_X(D - d·x₀)`, with the ordinary degree formula recovered from the constant-weight-one
 specialization.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, specifically the "`Pic⁰ X =
-ker deg` (as an abstract group)" item and the Layer D/F Abel-map prerequisite
-`D ↦ 𝒪_X(D - d·x₀)`.  No external mathematics is vendored; the proofs reuse Tau Ceti's existing
-`weightedAbelJacobiDivisorClass` and quotient equivalence
-`weightedDegreeZeroQuotientEquivPicZero`.
+No external mathematics is vendored; the proofs reuse Tau Ceti's `weightedAbelJacobiDivisorClass`
+and quotient equivalence `weightedDegreeZeroQuotientEquivPicZero`.
 -/
 
 public section
@@ -52,23 +47,8 @@ noncomputable section
 /-- The quotient class of the degree-corrected representative
 `D - weightedDegree(D) • [x₀]`. -/
 def weightedAbelJacobiQuotientClass (w : X → ℤ) {x₀ : X} (hx₀ : w x₀ = 1) :
-    WeilDivisor X →+
-      weightedDegreeZeroSubgroup w ⧸ S.principalSubgroupOfWeightedDegreeZero w where
-  toFun D := QuotientAddGroup.mk (weightedAbelJacobiDegreeZeroDivisor w hx₀ D)
-  map_zero' := by
-    apply (QuotientAddGroup.eq_zero_iff _).mpr
-    rw [mem_principalSubgroupOfWeightedDegreeZero, coe_weightedAbelJacobiDegreeZeroDivisor]
-    simp
-  map_add' D E := by
-    have hdiv :
-        weightedAbelJacobiDegreeZeroDivisor w hx₀ (D + E) =
-          weightedAbelJacobiDegreeZeroDivisor w hx₀ D +
-            weightedAbelJacobiDegreeZeroDivisor w hx₀ E := by
-      ext x
-      simp [map_add, add_zsmul, sub_eq_add_neg, add_assoc, add_left_comm, add_comm]
-    -- `QuotientAddGroup.mk` is the underlying homomorphism `QuotientAddGroup.mk'`, so its
-    -- additivity is `map_add`; rewrite `mk` to `mk'` to apply it explicitly.
-    simp only [hdiv, ← QuotientAddGroup.mk'_apply, map_add]
+    WeilDivisor X →+ weightedDegreeZeroSubgroup w ⧸ S.principalSubgroupOfWeightedDegreeZero w :=
+  (QuotientAddGroup.mk' _).comp (weightedAbelJacobiDegreeZeroDivisor w hx₀)
 
 private lemma weightedAbelJacobiQuotientClass_mk_def (w : X → ℤ) {x₀ : X} (hx₀ : w x₀ = 1)
     (D : WeilDivisor X) :
@@ -139,7 +119,7 @@ lemma weightedAbelJacobiQuotientClass_eq_sum (w : X → ℤ) {x₀ : X} (hx₀ :
       rw [S.weightedAbelJacobiQuotientClass_add w hx₀, Finsupp.sum_add_index, hD, hE]
       · intro x
         simp
-      · intro x a b
+      · intro x _ b
         simp [add_zsmul]
 
 /-- The base-point divisor represents zero in the degree-zero quotient. -/

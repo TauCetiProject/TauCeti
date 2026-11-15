@@ -30,7 +30,7 @@ public section
 
 namespace TauCeti.GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G) {x z : GridState n}
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n) {x z : GridState n}
 
 /-- Counted pentagon--rectangle terms with a common terminal side whose recuts stay in the
 same coefficient sum. -/
@@ -84,13 +84,8 @@ private theorem pentagonTerminalSource_underlying
       D.val.toRectangleDecomposition.first.IsEmpty ∧
         D.val.toRectangleDecomposition.second.IsEmpty := by
   obtain ⟨hcommon, hcol, hp, hr⟩ := G.pentagonTerminalSource_data C D.val D.property
-  refine ⟨?_, ?_, ?_⟩
-  · exact D.val.hasOneCommonSide_of_terminal_overlap hcommon hcol
-  · simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-      GridPentagonRectangleDecomposition.toRectangleDecomposition_first_toGridRectangle] using hp
-  · simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-      GridPentagonRectangleDecomposition.toRectangleDecomposition_middle,
-      GridPentagonRectangleDecomposition.toRectangleDecomposition_second_toGridRectangle] using hr
+  exact ⟨D.val.hasOneCommonSide_of_terminal_overlap hcommon hcol,
+    D.val.underlying_first_isEmpty hp, D.val.underlying_second_isEmpty hr⟩
 
 private theorem pentagonTerminalPartner_injective :
     Function.Injective (G.pentagonTerminalPartner C (x := x) (z := z)) := by
@@ -98,12 +93,11 @@ private theorem pentagonTerminalPartner_injective :
   have hD := G.pentagonTerminalPartner_isRecut C D
   have hF := G.pentagonTerminalPartner_isRecut C F
   rw [← h] at hF
-  obtain ⟨honeD, hpD, hrD⟩ := G.pentagonTerminalSource_underlying C D
-  obtain ⟨honeF, hpF, hrF⟩ := G.pentagonTerminalSource_underlying C F
-  have hbackD := hD.symm honeD hpD hrD
-  have hbackF := hF.symm honeF hpF hrF
+  obtain ⟨_, hpD, hrD⟩ := G.pentagonTerminalSource_underlying C D
+  obtain ⟨_, hpF, hrF⟩ := G.pentagonTerminalSource_underlying C F
+  have hbackD := hD.symm hpD hrD
+  have hbackF := hF.symm hpF hrF
   have hone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hbackD
-    (D.val.toRectangleDecomposition.target_ne_source_of_hasOneCommonSide honeD)
   apply Subtype.ext
   apply GridPentagonRectangleDecomposition.toRectangleDecomposition_injective
   exact (GridRectangleDecomposition.existsUnique_isRecut _ hone
@@ -152,11 +146,9 @@ theorem mem_pentagonTerminalSelfPairs
   · rintro ⟨D, rfl⟩
     exact ⟨D.val, D.property, G.pentagonTerminalPartner_isRecut C D⟩
   · rintro ⟨D, hD, hrecut⟩
-    obtain ⟨hone, hp, hr⟩ := G.pentagonTerminalSource_underlying C ⟨D, hD⟩
     refine ⟨⟨D, hD⟩, ?_⟩
-    apply GridPentagonRectangleDecomposition.toRectangleDecomposition_injective
-    exact (D.toRectangleDecomposition.existsUnique_isRecut hone hp hr).unique
-      (G.pentagonTerminalPartner_isRecut C ⟨D, hD⟩) hrecut
+    unfold pentagonTerminalPartner
+    exact D.recutTerminal_eq_of_isRecut _ _ _ _ hrecut
 
 /-- Every terminal self-pair term is counted in the pentagon--rectangle coefficient sum. -/
 theorem pentagonTerminalSelfPairs_subset_pentagonRectangleDecompositions :

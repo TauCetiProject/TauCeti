@@ -17,15 +17,14 @@ factored torus morphism into that closure is itself a closed immersion. It there
 split torus as a closed subgroup scheme of the assembled carrier, rather than only as a morphism
 to it.
 
-The proof compares the two existing constructions of the diagonal weight representation: the
-coordinate-map construction used by the toral closure and the comodule construction whose
-closed-immersion criterion is already available. Since the inclusion of the toral closure in
-`GL_n` is a closed immersion, closedness descends from their composite to the factored torus.
+The proof compares two constructions of the diagonal weight representation: the coordinate-map
+construction used by the toral closure and the comodule construction, which has a closed-immersion
+criterion. Since the inclusion of the toral closure in `GL_n` is a closed immersion, closedness
+descends from their composite to the factored torus.
 
-For Chevalley weight data this supplies the closed embedding needed toward constructing the torus
-component of a pinning on the assembled carrier. Identifying it as a maximal torus and constructing
-the compatible Borel remain part of Layer 9 of the ReductiveGroups roadmap, on the path to the
-ambient groups required by milestone L0 of the CFSGStatement roadmap.
+For Chevalley weight data this gives the closed embedding of the torus that a pinning on the
+assembled carrier requires; identifying it as a maximal torus and constructing the compatible Borel
+subgroup are not treated here.
 
 ## Main declarations
 
@@ -82,16 +81,10 @@ private theorem weightTorusCoordinateMap_eq_diagonalCoordinateMap [Fintype κ] :
     let p : WithConv (H →ₐ[ℤ] H) := toConv (AlgHom.id ℤ H)
     have hmap := GeneralLinear.mapPointsFunctor_weightTorusCoordinateMap_app wt
       (CommAlgCat.of ℤ H) p
-    have hweight (y : Fin n) :
-        (DiagonalizableGroup.charOfPoint p.ofConv
-          (SplitTorus.weightCharacter (wt y)) : H) =
-          MonoidAlgebra.single (SplitTorus.weightCharacter (wt y)) 1 := by
-      have hp : p.ofConv = AlgHom.id ℤ H := WithConv.ofConv_toConv _
-      rw [DiagonalizableGroup.charOfPoint_apply_coe, hp, AlgHom.id_apply]
     have hleft := congrArg (fun q =>
         ((GeneralLinear.pointsMulEquiv n q : Matrix.GeneralLinearGroup (Fin n) H) :
           Matrix (Fin n) (Fin n) H) i j) hmap
-    rw [CommHopfAlgCat.mapPointsFunctor_app_apply,
+    rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
       GeneralLinear.pointsMulEquiv_diagonalTorusPoints] at hleft
     rw [GeneralLinear.pointsMulEquiv_apply,
       GeneralLinear.pointToGeneralLinear_apply] at hleft
@@ -109,17 +102,7 @@ private theorem weightTorusCoordinateMap_eq_diagonalCoordinateMap [Fintype κ] :
     rw [DiagonalizableGroup.diagonalCoordinateMap_X]
     rcases eq_or_ne i j with rfl | hij
     · simp only [diagGL_apply, ↓reduceIte] at hleft
-      have hcoord :
-          (GeneralLinear.diagonalTorusCoordinates
-              (SplitTorus.pointsMulEquiv
-                (DiagonalizableGroup.pointsMap (GeneralLinear.weightCharacterMap wt) p)) i : H) =
-            MonoidAlgebra.single (SplitTorus.weightCharacter (wt i)) 1 := by
-        have hcoordUnits :=
-          GeneralLinear.diagonalTorusCoordinates_pointsMap_weightCharacterMap wt
-            (CommAlgCat.of ℤ H) p i
-        rw [← SplitTorus.charOfPoint_weightCharacter] at hcoordUnits
-        exact (congrArg Units.val hcoordUnits).trans (hweight i)
-      rw [hcoord] at hleft
+      rw [GeneralLinear.diagonalTorusCoordinates_pointsMap_weightCharacterMap_id wt i] at hleft
       simpa using hleft
     · simp only [diagGL_apply, hij, ↓reduceIte] at hleft
       simpa [Matrix.diagonal_apply_ne _ hij] using hleft

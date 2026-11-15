@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.MatrixModule
 
-import TauCeti.LinearAlgebra.Matrix.SmithNormalForm
+import TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Int
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Equivalence
 
 /-!

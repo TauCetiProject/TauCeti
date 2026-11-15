@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Comodule.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Representation.Differential
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Antipode
 public import TauCeti.Algebra.Coalgebra.Comodule.Evaluation
 
 /-!
@@ -20,6 +22,10 @@ The underlying action-level results hold at semiring generality in
 `TauCeti.Algebra.Coalgebra.Comodule.Evaluation`; the corollaries here use the dictionary's current
 commutative-ring and commutative-Hopf-algebra interface.
 
+Infinitesimally, a tangent vector at the identity acts on the dual comodule by the negative
+transpose of its action on the comodule (`TauCeti.Comodule.differential_dual_apply`): the
+differential of inversion at the identity is `-1`.
+
 ## Main declarations
 
 * `TauCeti.HopfAlgebra.PointRepresentation.ofComodule_dual_action_evaluation_tmul`: evaluation of
@@ -28,6 +34,7 @@ commutative-ring and commutative-Hopf-algebra interface.
   fixed-object dictionary.
 * `TauCeti.HopfAlgebra.PointRepresentation.ofComodule_dual_action_evaluation_invariant`:
   same-point invariance of evaluation.
+* `TauCeti.Comodule.differential_dual_apply`: the differentiated dual representation.
 
 ## References
 
@@ -100,3 +107,31 @@ theorem ofComodule_dual_action_evaluation_invariant
 end
 
 end TauCeti.HopfAlgebra.PointRepresentation
+
+namespace TauCeti.Comodule
+
+variable {R H M : Type*} [CommRing R] [CommRing H] [HopfAlgebra R H]
+variable [AddCommGroup M] [Module R M] [Comodule R H M] [Module.Finite R M] [Module.Projective R M]
+
+attribute [local instance] dual
+
+/-- **The differentiated contragredient representation.** A tangent vector at the identity acts
+on the dual comodule by the negative transpose of its action on the comodule:
+`(d • φ) m = -φ (d • m)`. -/
+theorem differential_dual_apply (d : Derivation R H (Bialgebra.CounitAlgebra R H R))
+    (φ : Module.Dual R M) (m : M) :
+    differential (R := R) (H := H) (M := Module.Dual R M) d φ m =
+      -φ (differential (R := R) (H := H) d m) := by
+  let δ := (Bialgebra.CounitAlgebra.algEquivSelf R H R).toLinearMap ∘ₗ d.toLinearMap
+  -- Contracting the coefficient factor commutes with evaluating the dual factor at `m`.
+  have key (t : Module.Dual R M ⊗[R] H) :
+      LinearMap.tensorComponent δ t m = δ (dualTensorHom R M H t m) := by
+    induction t using TensorProduct.inductionOn with
+    | tmul ψ h => simp [dualTensorHom_apply, mul_comm]
+    | add t t' ht ht' => simp only [map_add, LinearMap.add_apply, ht, ht']
+  rw [differential_apply, key, dual_coact, dualTensorHom_dualCoact_apply,
+    ← Derivation.apply_matrixCoefficient]
+  simp only [δ, LinearMap.comp_apply, Derivation.coeFn_coe, AlgEquiv.toLinearMap_apply,
+    Derivation.apply_antipode, map_neg]
+
+end TauCeti.Comodule

@@ -31,8 +31,7 @@ reverse-martingale convergence or the unsuffixed summit.
 * `deFinetti_RyllNardzewski_equivalence_viaL2` — contractability is equivalent to the conjunction
   of exchangeability and conditional i.i.d.-ness.
 
-These route wrappers are the final target of Layer 3 of
-`TauCetiRoadmap/Exchangeability/README.md`. They are not adapted from the legacy theorem wrappers in
+These route wrappers are not adapted from the legacy theorem wrappers in
 `cameronfreer/exchangeability`: those wrappers conclude only the mixture identity, whereas the
 results here package Tau Ceti's stronger joint-law disintegration.
 
@@ -60,7 +59,7 @@ variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
 valued in a nonempty standard Borel space is conditionally i.i.d.
 
 The directing measure witnessing the conclusion is
-`directingProbabilityMeasure μ X`; its stronger witness-level statement is
+`tailConditionalProbabilityMeasure μ X`; its stronger witness-level statement is
 `Contractable.conditionallyIIDWith_directingProbabilityMeasure`. -/
 theorem conditionallyIID_of_contractable_viaL2 [StandardBorelSpace α] [Nonempty α]
     {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α} (hX : Contractable μ X)

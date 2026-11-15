@@ -11,23 +11,25 @@ public import Mathlib.Basic.Countable.Defs
 /-!
 # The units of a countable monoid are countable
 
-Mathlib has `Finite αˣ` for a finite monoid (`Mathlib/Algebra/GroupWithZero/Units/Fintype.lean`)
-but no countable analogue, so `Countable Mˣ` does not resolve even when `M` is countable. Both
-follow the same way, from `Units.val` being injective.
+Mathlib provides `Finite αˣ` for a finite monoid
+(`Mathlib/Algebra/GroupWithZero/Units/Fintype.lean`) but no countable analogue, so `Countable Mˣ`
+does not synthesize even when `M` is countable. This file supplies it, together with the additive
+version for `AddUnits`.
 
 ## Main results
 
 * `Units.instCountable`: `Mˣ` is countable whenever `M` is.
+* `AddUnits.instCountable`: `AddUnits M` is countable whenever `M` is.
 -/
 
 public section
 
 variable {M : Type*} [Monoid M]
 
-/-- The units of a countable monoid form a countable type, since `Units.val` is injective.
+/-- The units of a countable monoid form a countable type.
 
-This is the countable analogue of Mathlib's `Finite αˣ`, and is proved the same way. Without it
-`Countable Mˣ` fails to synthesize, which in turn blocks `Countable (GL n R)` for a countable
-ring `R` — `GL n R` is by definition `(Matrix n n R)ˣ`. -/
+This is the countable analogue of Mathlib's `Finite αˣ`. Since `GL n R` is by definition
+`(Matrix n n R)ˣ`, it gives `Countable (GL n R)` whenever the matrix ring is countable. -/
+@[to_additive /-- The additive units of a countable additive monoid form a countable type. -/]
 instance Units.instCountable [Countable M] : Countable Mˣ :=
-  Function.Injective.countable Units.val_injective
+  Units.val_injective.countable

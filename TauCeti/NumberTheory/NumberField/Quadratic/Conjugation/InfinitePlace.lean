@@ -25,8 +25,8 @@ principal ideal `(z)` has a totally positive generator.
 This is the archimedean input to the *narrow* ambiguous class number formula: it is what replaces
 the total-complexity hypothesis of the ordinary Hilbert-90 descent
 (`NumberField.exists_map_ringOfIntegersQuadraticConj_eq_self_of_sq_eq_one`), where the sign of the
-norm had to be controlled instead. Layer 3 of the multiquadratic roadmap needs the narrow class
-group for real quadratic fields, where the ordinary descent fails.
+norm had to be controlled instead. Genus theory needs the narrow class group for real quadratic
+fields, where the ordinary descent fails.
 
 ## Main results
 
@@ -86,7 +86,7 @@ theorem isTotallyPositive_or_isTotallyPositive_neg_of_isTotallyPositive_div_quad
     IsTotallyPositive z ∨ IsTotallyPositive (-z) := by
   by_cases hsome : ∃ w : InfinitePlace K, w.IsReal
   · obtain ⟨w₀, hw₀⟩ := hsome
-    set φ₀ := embedding_of_isReal hw₀ with hφ₀
+    set φ₀ := embedding_of_isReal hw₀
     -- At the chosen place the values of `z` and `σ z` have the same, nonzero, sign.
     have hsame : 0 < φ₀ z * φ₀ (quadraticConj hmin hgen z) := by
       have hdiv := isTotallyPositive_iff.mp h w₀ hw₀

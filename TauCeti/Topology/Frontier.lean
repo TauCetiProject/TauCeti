@@ -6,14 +6,23 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Connected.Basic
+public import Mathlib.Topology.Instances.Real.Lemmas
 
 /-!
 # Elementary frontier lemmas
 
 Facts about `frontier` that carry no structure of their own: straddling, splitting a domain in
-two, clinging to it from inside, the frontier of an image, and the frontier of a finite union.
+two, clinging to it from inside, and the frontier of an image.
 Each is the topological core of a step that a boundary argument would otherwise carry out inside
 a concrete space. The list is open-ended; nothing below depends on how many entries it has.
+
+Also recorded here is the sublevel-set lemma `TauCeti.exists_isOpen_subset_pos_forall_frontier_le`:
+if `u` and `w` are continuous on the closure of an open set `Ω`, `w` lies below `u` on the frontier
+of `Ω` and above it at a point of `Ω`, then `Ω ∩ {u < w}` is an open subset of `Ω` whose closure
+lies in `Ω` and on whose frontier `w ≤ u`. Its variant
+`TauCeti.le_of_mem_frontier_inter_preimage_Ioi` needs no strict inequality and no continuity on the
+closure: if `f` is continuous on an open set `U` and `f ≤ a` on `frontier U`, then `f ≤ a` on the
+frontier of the superlevel set `U ∩ {a < f}`.
 
 ## A connected set that straddles a set meets its frontier
 
@@ -67,6 +76,15 @@ meeting of two frontiers. The first is the one an argument about limits of point
 the second is the one a diameter estimate consumes, `frontier` being where the estimates of a
 domain-splitting argument live.
 
+## A local defining function takes its boundary value on the frontier
+
+If, on an open set `U`, a set `D` is the superlevel set `{a ≤ f}` of a function `f` with values in
+a linear order with closed order topology, then `f x = a` at every frontier point `x ∈ U` of `D`
+at which `f` is continuous (`TauCeti.eq_of_mem_frontier_of_mem_iff_le`). Where `a < f x`,
+continuity puts a whole neighbourhood of `x` in `D`, so `x` is interior to `D`; where `f x < a`, it
+puts a whole neighbourhood of `x` outside `D`, so `x` is not adherent to `D`. Neither `D` nor `f`
+needs any further hypothesis: `D` need not be closed, and `f` need only be continuous at `x`.
+
 ## Consumers
 
 The straddling, splitting and clinging lemmas serve Carathéodory's boundary correspondence for
@@ -77,25 +95,30 @@ wide as the set itself. The second is the splitting step of
 circular crosscut of a domain and `u` is the crosscut arc. The third is what lets
 `TauCeti/Analysis/Complex/Conformal/ClusterSet.lean` identify the boundary piece that one side of
 such a crosscut cuts off, whose description as a union of cluster sets is naturally a statement
-about a closure. The image and finite-union lemmas are used quite differently, for a partial
-homeomorphism of a real coordinate space and for the frontier of a finite union of unit translates
-of a lattice region. Nothing here is specific to any of those uses; no lemma mentions a metric,
+about a closure. The image lemma is used quite differently, for a partial homeomorphism of a real
+coordinate space. Nothing here is specific to any of those uses; no lemma mentions a metric,
 let alone a holomorphic map.
 
 ## Main results
 
 * `IsPreconnected.inter_frontier_nonempty` — a preconnected set meeting both a set and its
   complement meets the frontier of that set.
+* `IsPreconnected.subset_of_disjoint_frontier` — a preconnected set that meets a set and misses its
+  frontier lies in that set.
 * `TauCeti.frontier_image_subset_image_union_frontier_image` — for a set split into two sides with
   disjoint open images plus a remainder, the frontier of the image of the side lying in that set
   lies on the image of the remainder and on the frontier of the image of the whole.
 * `TauCeti.frontier_inter_closure_eq_frontier_inter_frontier` — the frontier of a set meets the
   closure of a subset exactly where it meets that subset's frontier.
-* `TauCeti.frontier_image_subset_of_closure_subset` — for an open injective map whose image
-  closure adds at most a set `t`, the frontier of an image lies on the image of the frontier,
-  together with `t`.
-* `TauCeti.frontier_iUnion_subset` — the frontier of a union over a finite index type lies in the
-  union of the frontiers.
+* `TauCeti.frontier_image_subset_of_closure_subset` — for an open map whose image closure adds at
+  most a set `t`, the frontier of an image lies on the image of the frontier, together with `t`.
+* `TauCeti.le_of_mem_frontier_inter_preimage_Ioi` — a function continuous on an open set and at most
+  `a` on its frontier is at most `a` on the frontier of its superlevel set `{a < f}` in that set.
+* `TauCeti.eq_of_mem_frontier_of_mem_iff_le` — a function whose superlevel set `{a ≤ f}` agrees
+  with a set on an open set takes the value `a` at the frontier points of the set in that open
+  set where it is continuous.
+* `TauCeti.nonneg_of_forall_abs_le_frontier` — a bound for the absolute value of a function on the
+  frontier of a nonempty compact set in a preconnected noncompact space is nonnegative.
 -/
 
 public section
@@ -108,25 +131,54 @@ section Straddle
 
 variable {X : Type*} [TopologicalSpace X] {S V : Set X}
 
+/-- **A preconnected set missing the frontier lies in the interior or in the exterior.** If `S` is
+preconnected and disjoint from `frontier V`, then `S ⊆ interior V` or `S ⊆ (closure V)ᶜ`. -/
+theorem _root_.IsPreconnected.subset_interior_or_subset_compl_closure (hS : IsPreconnected S)
+    (h : Disjoint S (frontier V)) : S ⊆ interior V ∨ S ⊆ (closure V)ᶜ := by
+  have hsub : S ⊆ interior V ∪ interior Vᶜ := by
+    rw [← compl_frontier_eq_union_interior]
+    exact fun x hx hxf => h.le_bot ⟨hx, hxf⟩
+  rw [interior_compl] at hsub
+  exact hS.subset_or_subset isOpen_interior isClosed_closure.isOpen_compl
+    (disjoint_compl_right.mono_left (interior_subset.trans subset_closure)) hsub
+
 /-- **A preconnected set that meets both a set and its complement meets its frontier.** If `S` is
 preconnected and contains a point of `V` and a point outside `V`, then `S` meets `frontier V`.
 
-Nothing is assumed about `V`; the argument is that `(frontier V)ᶜ` is the union of the two disjoint
-open sets `interior V` and `interior Vᶜ`, so a preconnected set missing the frontier is confined to
-one of them and therefore cannot straddle `V`. -/
+Nothing is assumed about `V`; a preconnected set missing the frontier is confined to the interior
+or to the exterior of `V` and therefore cannot straddle `V`. -/
 theorem _root_.IsPreconnected.inter_frontier_nonempty (hS : IsPreconnected S)
     (h₁ : (S ∩ V).Nonempty) (h₂ : (S \ V).Nonempty) : (S ∩ frontier V).Nonempty := by
   by_contra hcon
-  have hsub : S ⊆ interior V ∪ interior Vᶜ := by
-    rw [← compl_frontier_eq_union_interior]
-    exact fun x hx hxf => hcon ⟨x, hx, hxf⟩
-  have hdisj : Disjoint (interior V) (interior Vᶜ) :=
-    disjoint_compl_right.mono interior_subset interior_subset
-  rcases hS.subset_or_subset isOpen_interior isOpen_interior hdisj hsub with h | h
+  rcases hS.subset_interior_or_subset_compl_closure
+    (Set.disjoint_iff_inter_eq_empty.mpr (Set.not_nonempty_iff_eq_empty.mp hcon)) with h | h
   · obtain ⟨x, hxS, hxV⟩ := h₂
     exact hxV (interior_subset (h hxS))
   · obtain ⟨x, hxS, hxV⟩ := h₁
-    exact interior_subset (h hxS) hxV
+    exact h hxS (subset_closure hxV)
+
+/-- A preconnected set that meets `V` and misses its frontier lies in `V`: otherwise it would
+straddle `V` and so meet `frontier V`. -/
+theorem _root_.IsPreconnected.subset_of_disjoint_frontier (hS : IsPreconnected S)
+    (hdisj : Disjoint S (frontier V)) (hmeet : (S ∩ V).Nonempty) : S ⊆ V := by
+  by_contra h
+  obtain ⟨p, hpS, hpf⟩ := hS.inter_frontier_nonempty hmeet (Set.not_subset.mp h)
+  exact hdisj.le_bot ⟨hpS, hpf⟩
+
+/-- **The connected component of a point in the complement of a set `F` stays inside any set
+containing the point whose frontier lies in `F`.** Otherwise the component, being preconnected,
+would meet both the set and its complement, hence its frontier, which lies in `F`. No hypothesis
+places the point outside `F`: for a point of `F` the component is empty. -/
+theorem connectedComponentIn_subset_of_frontier_subset {F : Set X} {x₀ : X} (hs : x₀ ∈ V)
+    (hfr : frontier V ⊆ F) : connectedComponentIn Fᶜ x₀ ⊆ V := by
+  by_contra h
+  have hout := nonempty_of_not_subset h
+  -- the component is nonempty, so `x₀` lies outside `F` and hence in its own component
+  have hx₀ := mem_connectedComponentIn (connectedComponentIn_nonempty_iff.mp
+    (hout.mono sdiff_subset))
+  obtain ⟨p, hpC, hpf⟩ :=
+    isPreconnected_connectedComponentIn.inter_frontier_nonempty ⟨x₀, hx₀, hs⟩ hout
+  exact connectedComponentIn_subset _ _ hpC (hfr hpf)
 
 end Straddle
 
@@ -165,8 +217,7 @@ theorem frontier_image_subset_image_union_frontier_image (hfs : IsOpen (f '' s))
   rcases hpΩ with hpin | hpfr
   · obtain ⟨w, hw, rfl⟩ := hpin
     rcases hcov hw with (hws | hwt) | hwu
-    · exact absurd ⟨mem_image_of_mem f hws, hp⟩
-        (eq_empty_iff_forall_notMem.mp hfs.inter_frontier_eq (f w))
+    · exact (hfs.inter_frontier_eq.subset ⟨mem_image_of_mem f hws, hp⟩).elim
     · obtain ⟨q, hqt, hqs⟩ := mem_closure_iff.mp hp.1 _ hft (mem_image_of_mem f hwt)
       exact absurd hqs (disjoint_right.mp hst hqt)
     · exact Or.inl (mem_image_of_mem f hwu)
@@ -200,13 +251,13 @@ theorem frontier_inter_closure_eq_frontier_inter_frontier (hAV : A ⊆ V) :
 
 end Inside
 
-section OpenInjectiveImage
+section OpenImage
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {f : X → Y} {s : Set X}
   {t : Set Y}
 
 /-- **The frontier of an image lies on the image of the frontier, plus whatever the closure adds.**
-For an open injective `f` whose image closure satisfies `closure (f '' s) ⊆ f '' closure s ∪ t`,
+For an open map `f` whose image closure satisfies `closure (f '' s) ⊆ f '' closure s ∪ t`,
 
 > `frontier (f '' s) ⊆ f '' frontier s ∪ t`.
 
@@ -216,35 +267,105 @@ as `f` sends a divergent sequence somewhere convergent. A consumer supplies `t` 
 closure hypothesis, typically from a compactness statement about the image; it is often a single
 point, but nothing in the argument needs that.
 
-Openness and injectivity are both used, and neither can be dropped: openness keeps the image of
-the interior inside the interior of the image, and injectivity is what turns a difference of
-images into the image of a difference. -/
-theorem frontier_image_subset_of_closure_subset (hf : IsOpenMap f) (hfi : Function.Injective f)
+Openness is what the argument uses: it keeps the image of the interior inside the interior of
+the image, and it cannot be dropped, as the inclusion of `[0, 1]` into `ℝ` with `s = univ` and
+`t = ∅` shows. No injectivity is needed, since a difference of images always lies in the image of
+the difference. -/
+theorem frontier_image_subset_of_closure_subset (hf : IsOpenMap f)
     (hcl : closure (f '' s) ⊆ f '' closure s ∪ t) :
     frontier (f '' s) ⊆ f '' frontier s ∪ t := by
   refine (Set.sdiff_subset_sdiff hcl (hf.image_interior_subset s)).trans ?_
-  rw [Set.union_sdiff_distrib, ← Set.image_sdiff hfi]
-  exact Set.union_subset_union_right _ Set.sdiff_subset
+  rw [Set.union_sdiff_distrib]
+  exact Set.union_subset_union (Set.subset_image_sdiff f _ _) Set.sdiff_subset
 
-end OpenInjectiveImage
+end OpenImage
 
-section FiniteUnion
+section SublevelBetween
 
-variable {X : Type*} [TopologicalSpace X]
+variable {X : Type*} [TopologicalSpace X] {Ω : Set X} {u : X → ℝ}
 
-/-- **The frontier of a finite union lies in the union of the frontiers.** Finiteness is
-essential, not a convenience of the proof: for an infinite union the inclusion fails — the
-rationals are a countable union of singletons, each its own frontier, yet their union has
-frontier all of `ℝ`. -/
-theorem frontier_iUnion_subset {ι : Type*} [Finite ι] (A : ι → Set X) :
-    frontier (⋃ i, A i) ⊆ ⋃ i, frontier (A i) := by
-  intro x hx
-  -- Finiteness enters through `closure_iUnion_of_finite`: a point adherent to the whole union
-  -- is already adherent to one of the pieces.
-  obtain ⟨i, hi⟩ := Set.mem_iUnion.1 (closure_iUnion_of_finite A ▸ hx.1)
-  -- The interior, by contrast, only grows with the union, so `x` misses `interior (A i)` too.
-  exact Set.mem_iUnion.2 ⟨i, hi, fun hmem ↦ hx.2 (interior_mono (Set.subset_iUnion A i) hmem)⟩
+/-- Let `u` and `w` be continuous on the closure of an open set `Ω` with `w < u` on its frontier,
+and `u x₀ < w x₀` at some `x₀ ∈ Ω`. Then `G = Ω ∩ {u < w}` is an open subset of `Ω` containing `x₀`,
+and the closure of `G` lies in `Ω` and `w ≤ u` on the frontier of `G`. -/
+theorem exists_isOpen_subset_pos_forall_frontier_le (hΩo : IsOpen Ω) {w : X → ℝ}
+    (huc : ContinuousOn u (closure Ω)) (hwc : ContinuousOn w (closure Ω))
+    (hfrw : ∀ y ∈ frontier Ω, w y < u y) {x₀ : X} (hx₀ : x₀ ∈ Ω) (hlt : u x₀ < w x₀) :
+    ∃ G, IsOpen G ∧ G ⊆ Ω ∧ closure G ⊆ Ω ∧ x₀ ∈ G ∧ (∀ y ∈ G, 0 < w y - u y) ∧
+      ∀ y ∈ frontier G, w y ≤ u y := by
+  set G := Ω ∩ (fun y => w y - u y) ⁻¹' Ioi 0
+  have hGo : IsOpen G := ((hwc.sub huc).mono subset_closure).isOpen_inter_preimage hΩo isOpen_Ioi
+  have hGc : closure G ⊆ Ω := by
+    have hT : closure G ⊆ closure Ω ∩ (fun y => w y - u y) ⁻¹' Ici 0 :=
+      closure_minimal (fun y hy => ⟨subset_closure hy.1, le_of_lt hy.2⟩)
+        ((hwc.sub huc).preimage_isClosed_of_isClosed isClosed_closure isClosed_Ici)
+    intro y hy
+    obtain ⟨hy₁, hy₂⟩ := hT hy
+    by_contra hyΩ
+    have := hfrw y (by rw [hΩo.frontier_eq]; exact ⟨hy₁, hyΩ⟩)
+    simp only [mem_preimage, mem_Ici] at hy₂
+    linarith
+  refine ⟨G, hGo, inter_subset_left, hGc, ⟨hx₀, sub_pos.2 hlt⟩, fun y hy => hy.2,
+    fun y hy => ?_⟩
+  rw [hGo.frontier_eq] at hy
+  have : ¬0 < w y - u y := fun h => hy.2 ⟨hGc hy.1, h⟩
+  linarith [not_lt.1 this]
 
-end FiniteUnion
+end SublevelBetween
+
+section SuperlevelSet
+
+variable {X α : Type*} [TopologicalSpace X] [LinearOrder α] [TopologicalSpace α]
+  [ClosedIicTopology α] {U : Set X} {f : X → α} {a : α} {x : X}
+
+/-- **A function at most `a` on the frontier of an open set is at most `a` on the frontier of its
+superlevel set there.** If `f` is continuous on an open set `U` and `f ≤ a` on `frontier U`, then
+`f ≤ a` on the frontier of `U ∩ {a < f}`. -/
+theorem le_of_mem_frontier_inter_preimage_Ioi (hU : IsOpen U) (hf : ContinuousOn f U)
+    (hfr : ∀ y ∈ frontier U, f y ≤ a) (hx : x ∈ frontier (U ∩ f ⁻¹' Ioi a)) : f x ≤ a := by
+  -- The superlevel set is open, so a point of its frontier is not in it: either the point lies
+  -- in `U`, and then `f ≤ a` there, or it lies on `frontier U`.
+  rw [(hf.isOpen_inter_preimage hU isOpen_Ioi).frontier_eq] at hx
+  by_cases hxU : x ∈ U
+  · exact not_lt.1 fun h ↦ hx.2 ⟨hxU, h⟩
+  · exact hfr x (hU.frontier_eq ▸ ⟨closure_mono inter_subset_left hx.1, hxU⟩)
+
+end SuperlevelSet
+
+section DefiningFunction
+
+open Filter Topology
+
+variable {X α : Type*} [TopologicalSpace X] [LinearOrder α] [TopologicalSpace α]
+  [OrderClosedTopology α] {D U : Set X} {f : X → α} {a : α} {x : X}
+
+/-- **A local defining function takes its boundary value on the frontier.** If, on an open set
+`U`, the set `D` is the superlevel set `{a ≤ f}` of a function `f` with values in a linear order
+with closed order topology, then `f x = a` at every point `x ∈ U` of `frontier D` at which `f` is
+continuous. -/
+theorem eq_of_mem_frontier_of_mem_iff_le (hU : IsOpen U) (hD : ∀ y ∈ U, y ∈ D ↔ a ≤ f y)
+    (hxU : x ∈ U) (hf : ContinuousAt f x) (hx : x ∈ frontier D) : f x = a := by
+  refine le_antisymm (not_lt.1 fun h ↦ hx.2 (mem_interior_iff_mem_nhds.2 ?_)) (not_lt.1 fun h ↦ ?_)
+  · filter_upwards [hU.mem_nhds hxU, hf (isOpen_Ioi.mem_nhds h)] with y hyU hy
+    exact (hD y hyU).2 (le_of_lt hy)
+  · have hDc : Dᶜ ∈ 𝓝 x := by
+      filter_upwards [hU.mem_nhds hxU, hf (isOpen_Iio.mem_nhds h)] with y hyU hy hyD
+      exact not_le.2 hy ((hD y hyU).1 hyD)
+    obtain ⟨y, hyD, hy⟩ := mem_closure_iff_nhds.1 hx.1 _ hDc
+    exact hyD hy
+
+end DefiningFunction
+
+section Bound
+
+variable {X : Type*} [TopologicalSpace X] [PreconnectedSpace X] [NoncompactSpace X]
+
+/-- A nonempty compact set `K` in a preconnected noncompact space has a nonempty frontier, so a
+bound `M` for the absolute value of a function on `frontier K` is nonnegative. -/
+theorem nonneg_of_forall_abs_le_frontier {K : Set X} (hK : IsCompact K) (hne : K.Nonempty)
+    {f : X → ℝ} {M : ℝ} (hbdry : ∀ ⦃x⦄, x ∈ frontier K → |f x| ≤ M) : 0 ≤ M := by
+  obtain ⟨y, hy⟩ := nonempty_frontier_iff.2 ⟨hne, hK.ne_univ⟩
+  exact (abs_nonneg _).trans (hbdry hy)
+
+end Bound
 
 end TauCeti

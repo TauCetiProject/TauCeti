@@ -167,8 +167,8 @@ private theorem val_equivIrreducibleComponents (R : Type*) [CommRing R] (q : min
       zeroLocus q.val := by
   unfold minimalPrimes.equivIrreducibleComponents
   have h_eq : (fun s ↦ s ∈ irreducibleComponents (PrimeSpectrum R)) =
-      (fun s ↦ Maximal (fun x ↦ IsClosed x ∧ IsIrreducible x) s) :=
-    irreducibleComponents_eq_maximals_closed (PrimeSpectrum R)
+      (fun s ↦ Maximal (fun x ↦ IsClosed x ∧ IsIrreducible x) s) := funext fun s ↦ by
+    rw [irreducibleComponents_eq_maximals_closed, Set.mem_ofPred_eq]
   have h_cast := val_mpr_orderIso (α := minimalPrimes R) (Y := Set (PrimeSpectrum R))
     (P := fun s ↦ Maximal (fun x ↦ IsClosed x ∧ IsIrreducible x) s)
     (Q := fun s ↦ s ∈ irreducibleComponents (PrimeSpectrum R))
@@ -370,7 +370,7 @@ private lemma irreducibleSpace_of_connected_of_open_components {α : Type*} [Top
     have hSU : x ∈ ⋃₀ irreducibleComponents α := by
       rw [sUnion_irreducibleComponents]
       exact mem_univ x
-    obtain ⟨c, hc_in, hx⟩ := hSU
+    obtain ⟨c, hc_in, _⟩ := hSU
     exact ⟨⟨c, hc_in⟩⟩
   obtain ⟨c⟩ := hNonempty
   have hcClopen : IsClopen (c : Set α) :=

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.GradedAlgebra.Homogeneous.Ideal
+public import TauCeti.Algebra.DirectSum.Internal
 public import TauCeti.RingTheory.GradedAlgebra.Quotient
 
 /-!
@@ -19,7 +20,8 @@ The graded pieces are submodules of the quotient itself. Homogeneity lets the ad
 projections descend to the quotient, where they recover each coordinate of a finite sum. Thus the
 pieces form an internal direct sum, giving `TauCeti.GradedAlgebra.gradedAlgebraQuotientPiece`.
 This structure is a definition rather than a global instance: callers choose the grading locally
-with `letI`.
+with `letI`. For an ideal bundled as a `HomogeneousIdeal`, homogeneity is part of the data, and
+the induced grading `HomogeneousIdeal.quotientGrading` is a global instance.
 
 The construction follows Antoine Chambert-Loir's
 [Mathlib PR #36501](https://github.com/leanprover-community/mathlib4/pull/36501): the degree-`i`
@@ -34,9 +36,9 @@ Assem--Simson--Skowroński,
 
 public section
 
-namespace TauCeti.GradedAlgebra
-
 open scoped DirectSum
+
+namespace TauCeti.GradedAlgebra
 
 variable {ι R A : Type*} [DecidableEq ι] [AddMonoid ι] [CommSemiring R] [Ring A] [Algebra R A]
   (𝒜 : ι → Submodule R A) [GradedAlgebra 𝒜] (I : Ideal A) [I.IsTwoSided]
@@ -78,6 +80,32 @@ theorem isInternal_quotientPiece (hI : I.IsHomogeneous 𝒜) :
   · exact (LinearMap.range_eq_top).mp (DirectSum.range_coeLinearMap.trans
       (iSup_quotientPiece_eq_top 𝒜 I (DirectSum.Decomposition.isInternal 𝒜).submodule_iSup_eq_top))
 
+/-- A surjective algebra map with homogeneous kernel descends the internal grading to the
+images of the graded pieces. -/
+theorem isInternal_map {B : Type*} [Semiring B] [Algebra R B] (f : A →ₐ[R] B)
+    (hf : Function.Surjective f) (hker : (RingHom.ker f).IsHomogeneous 𝒜) :
+    DirectSum.IsInternal (fun i => (𝒜 i).map f.toLinearMap) := by
+  let I := RingHom.ker f
+  let e := Ideal.quotientKerAlgEquivOfSurjective hf
+  have hcomp : e.toLinearEquiv.toLinearMap ∘ₗ (Ideal.Quotient.mkₐ R I).toLinearMap =
+      f.toLinearMap := by
+    ext x
+    -- The linear-map wrappers evaluate to the algebra equivalence and quotient map.
+    exact Ideal.quotientKerAlgEquivOfSurjective_mk hf x
+  have hp : (fun i => (quotientPiece 𝒜 I i).map e.toLinearEquiv.toLinearMap) =
+      fun i => (𝒜 i).map f.toLinearMap := by
+    funext i
+    rw [quotientPiece_def, ← Submodule.map_comp, hcomp]
+  rw [← hp]
+  let : DirectSum.Decomposition (quotientPiece 𝒜 I) :=
+    (isInternal_quotientPiece 𝒜 I hker).chooseDecomposition
+  -- Transport via the inverse equivalence, using the existing restriction theorem.
+  refine TauCeti.DirectSum.isInternal_comap (quotientPiece 𝒜 I) _
+    e.symm.toLinearMap e.symm.injective (fun i x => ?_) (fun i x => ?_)
+  · exact Submodule.mem_map_equiv (quotientPiece 𝒜 I i)
+  · rw [LinearMap.range_eq_top.mpr e.symm.surjective]
+    trivial
+
 /-- The images of the graded pieces are independent modulo a homogeneous ideal. -/
 theorem iSupIndep_quotientPiece (hI : I.IsHomogeneous 𝒜) : iSupIndep (quotientPiece 𝒜 I) :=
   (isInternal_quotientPiece 𝒜 I hI).submodule_iSupIndep
@@ -90,3 +118,19 @@ noncomputable def gradedAlgebraQuotientPiece (hI : I.IsHomogeneous 𝒜) :
   DirectSum.IsInternal.gradedAlgebra (isInternal_quotientPiece 𝒜 I hI)
 
 end TauCeti.GradedAlgebra
+
+namespace HomogeneousIdeal
+
+variable {ι R A : Type*} [DecidableEq ι] [AddMonoid ι] [CommSemiring R] [CommRing A] [Algebra R A]
+  {𝒜 : ι → Submodule R A} [GradedAlgebra 𝒜]
+
+/-- The grading of the quotient `A ⧸ I` by a homogeneous ideal `I`: its degree-`i` piece is the
+image of `𝒜 i` under the quotient map. -/
+noncomputable abbrev quotientGrading (I : HomogeneousIdeal 𝒜) : ι → Submodule R (A ⧸ I.toIdeal) :=
+  TauCeti.GradedAlgebra.quotientPiece 𝒜 I.toIdeal
+
+/-- The quotient by a homogeneous ideal is graded by the images of the graded pieces. -/
+noncomputable instance (I : HomogeneousIdeal 𝒜) : GradedAlgebra I.quotientGrading :=
+  TauCeti.GradedAlgebra.gradedAlgebraQuotientPiece 𝒜 I.toIdeal I.isHomogeneous
+
+end HomogeneousIdeal

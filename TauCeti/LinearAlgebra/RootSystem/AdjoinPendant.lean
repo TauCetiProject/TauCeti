@@ -6,14 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Matrix.Basic
-import Mathlib.Tactic.NormNum
 
 /-!
 # Adjoining a pendant vertex to a matrix
 
-This file defines the matrix obtained by adjoining one further vertex, joined by a single edge to a
-chosen vertex of an integer matrix. The construction is independent of finite type and is used to
-assemble Cartan matrices of diagrams with a pendant vertex.
+This file defines the matrix obtained from a square matrix over an additive group with one by
+adjoining one further index: the new diagonal entry is `2`, the two new entries in the row and
+column of a chosen index `i` are `-1`, and the other new entries are `0`. For an integer Cartan
+matrix (or one over a ring of characteristic zero) this adjoins a pendant vertex, joined by a
+single edge to the vertex `i` of the diagram. The construction is independent of finite type and is
+used to assemble Cartan matrices of diagrams with a pendant vertex.
 
 ## Main definitions
 
@@ -33,12 +35,14 @@ open scoped Matrix
 
 namespace TauCeti
 
-variable {α : Type*} [DecidableEq α] {M : Matrix α α ℤ} {i : α}
+variable {α R : Type*} [DecidableEq α] [AddGroupWithOne R] {M : Matrix α α R} {i : α}
 
-/-- **Adjoining a pendant vertex.** The diagram of `TauCeti.adjoinPendant M i` is the diagram of
-`M` together with one further vertex, written `none`, joined to the vertex `i` by a single edge and
-to nothing else. -/
-def adjoinPendant (M : Matrix α α ℤ) (i : α) : Matrix (Option α) (Option α) ℤ :=
+/-- **Adjoining a pendant vertex.** `TauCeti.adjoinPendant M i` extends `M` by one further index,
+written `none`, with diagonal entry `2`, entries `-1` against `i` in both directions, and entries
+`0` against every other index. For an integer Cartan matrix (or one over a ring of characteristic
+zero) its diagram is the diagram of `M` together with one further vertex joined to the vertex `i`
+by a single edge and to nothing else. -/
+def adjoinPendant (M : Matrix α α R) (i : α) : Matrix (Option α) (Option α) R :=
   Matrix.of fun v w ↦
     match v, w with
     | none, none => 2
@@ -50,11 +54,11 @@ def adjoinPendant (M : Matrix α α ℤ) (i : α) : Matrix (Option α) (Option �
 -- parenthesised form keeps these equations out of the exported definitional-equality check.
 @[simp] lemma adjoinPendant_none_none : adjoinPendant M i none none = 2 := (rfl)
 
-/-- The pendant vertex is joined to `i` alone. -/
+/-- The row of the new index is `-1` at `i` and `0` at every other index of `M`. -/
 @[simp] lemma adjoinPendant_none_some (j : α) :
     adjoinPendant M i none (some j) = if j = i then -1 else 0 := (rfl)
 
-/-- The pendant vertex is joined to `i` alone. -/
+/-- The column of the new index is `-1` at `i` and `0` at every other index of `M`. -/
 @[simp] lemma adjoinPendant_some_none (j : α) :
     adjoinPendant M i (some j) none = if j = i then -1 else 0 := (rfl)
 
@@ -66,26 +70,31 @@ def adjoinPendant (M : Matrix α α ℤ) (i : α) : Matrix (Option α) (Option �
 @[simp] lemma adjoinPendant_submatrix_some :
     (adjoinPendant M i).submatrix some some = M := (rfl)
 
-/-- The pendant edge is a single edge, so transposition leaves it alone and reverses only the
-edges of `M`. -/
+/-- The entries adjoined against `i` are symmetric, so transposing `TauCeti.adjoinPendant M i`
+transposes only `M`. -/
 @[simp] lemma adjoinPendant_transpose : (adjoinPendant M i)ᵀ = adjoinPendant Mᵀ i := by
-  ext v w
-  rcases v with _ | v <;> rcases w with _ | w <;> rfl
+  ext (_ | v) (_ | w) <;> simp
 
 /-- Adjoining a pendant vertex keeps the diagonal entries equal to `2`, as a generalized Cartan
 matrix needs them. -/
 lemma adjoinPendant_diag (hM : ∀ j, M j j = 2) (v : Option α) : adjoinPendant M i v v = 2 := by
-  cases v with
-  | none => exact adjoinPendant_none_none
-  | some j => rw [adjoinPendant_some_some]; exact hM j
+  cases v <;> simp [hM]
 
 /-- Adjoining a pendant vertex keeps the off-diagonal entries nonpositive. -/
-lemma adjoinPendant_apply_le_zero_of_ne (hM : ∀ j k, j ≠ k → M j k ≤ 0) {v w : Option α}
-    (hvw : v ≠ w) : adjoinPendant M i v w ≤ 0 := by
+lemma adjoinPendant_apply_le_zero_of_ne [Preorder R] [AddLeftMono R] [ZeroLEOneClass R]
+    (hM : ∀ j k, j ≠ k → M j k ≤ 0) {v w : Option α} (hvw : v ≠ w) :
+    adjoinPendant M i v w ≤ 0 := by
   rcases v with _ | v <;> rcases w with _ | w
   · exact absurd rfl hvw
-  · rw [adjoinPendant_none_some]; split_ifs <;> norm_num
-  · rw [adjoinPendant_some_none]; split_ifs <;> norm_num
-  · rw [adjoinPendant_some_some]; exact hM v w fun h ↦ hvw (congrArg some h)
+  · rw [adjoinPendant_none_some]
+    split_ifs
+    · exact neg_nonpos.mpr zero_le_one
+    · exact le_rfl
+  · rw [adjoinPendant_some_none]
+    split_ifs
+    · exact neg_nonpos.mpr zero_le_one
+    · exact le_rfl
+  · rw [adjoinPendant_some_some]
+    exact hM v w fun h ↦ hvw (congrArg some h)
 
 end TauCeti

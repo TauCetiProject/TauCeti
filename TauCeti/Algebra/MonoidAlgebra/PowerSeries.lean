@@ -37,9 +37,10 @@ product `C × ℤ_p` becomes a power-series ring over `ℤ_p[C]`.
   `A⟦X⟧[M] →ₐ[R] A[M]⟦X⟧`, with `coeff_coeff_toPowerSeries` and `toPowerSeries_injective`.
 * `MonoidAlgebra.powerSeriesAlgEquiv R A M`: the isomorphism `A⟦X⟧[M] ≃ₐ[R] A[M]⟦X⟧`
   for finite `M`.
-* `MonoidAlgebra.map_singleOneRingHom_dvd_iff`: for finite `M`, a power series with coefficients
-  in `A` divides `ψ ∈ A[M]⟦X⟧` exactly when it divides, in `A⟦X⟧`, the coefficient at every
-  `m ∈ M` of the element of `A⟦X⟧[M]` corresponding to `ψ`.
+* `MonoidAlgebra.map_singleOneRingHom_dvd_toPowerSeries_iff`: a power series with coefficients in
+  `A` divides the image of `x ∈ A⟦X⟧[M]` exactly when it divides, in `A⟦X⟧`, the coefficient of
+  `x` at every `m ∈ M`; `MonoidAlgebra.map_singleOneRingHom_dvd_iff` is the finite-`M` form for an
+  arbitrary `ψ ∈ A[M]⟦X⟧`.
 -/
 
 public section
@@ -56,10 +57,8 @@ every monomial `single m 1` read as a constant power series. -/
 private theorem commute_mapAlgHom_singleOneAlgHom_C_single (φ : PowerSeries A) (m : M) :
     Commute (PowerSeries.mapAlgHom (singleOneAlgHom : A →ₐ[R] MonoidAlgebra A M) φ)
       (PowerSeries.C (single m (1 : A))) := by
-  refine PowerSeries.ext fun n ↦ ?_
-  simp only [PowerSeries.mapAlgHom_apply, PowerSeries.coeff_mul_C, PowerSeries.coeff_C_mul,
-    PowerSeries.coeff_map, AlgHom.coe_toRingHom, singleOneAlgHom_apply, single_mul_single, one_mul,
-    mul_one]
+  ext n : 1
+  simp [PowerSeries.mapAlgHom_apply, PowerSeries.coeff_mul_C, PowerSeries.coeff_C_mul]
 
 /-- The `R`-algebra homomorphism `A⟦X⟧[M] →ₐ[R] A[M]⟦X⟧` collecting the coefficients of `Xⁿ`:
 the coefficient at `m` of the coefficient of `Xⁿ` of the image of `x` is the coefficient of `Xⁿ`
@@ -73,14 +72,13 @@ noncomputable def toPowerSeries :
     (commute_mapAlgHom_singleOneAlgHom_C_single R A M)
 
 /-- On the monomial `φ · m`, the map to power series over `A[M]` is the power series `φ` with
-coefficients placed at `1`, times the constant `m`. -/
+coefficients placed at `1` (along `singleOneRingHom`), times the constant `m`. -/
 theorem toPowerSeries_single (m : M) (φ : PowerSeries A) :
     toPowerSeries R A M (single m φ) =
-      PowerSeries.mapAlgHom (singleOneAlgHom : A →ₐ[R] MonoidAlgebra A M) φ *
+      PowerSeries.map (singleOneRingHom : A →+* MonoidAlgebra A M) φ *
         PowerSeries.C (single m (1 : A)) := by
-  simp only [toPowerSeries, coe_liftNCAlgHom, liftNC_single, RingHom.toMonoidHom_eq_coe,
-    MonoidHom.coe_comp, MonoidHom.coe_ofClass, Function.comp_apply, of_apply,
-    AddMonoidHom.coe_ofClass]
+  ext n m'
+  simp [toPowerSeries, PowerSeries.mapAlgHom_apply, PowerSeries.coeff_mul_C]
 
 /-- The characteristic property of `toPowerSeries`: the coefficient at `m` of the coefficient of
 `Xⁿ` of the image is the coefficient of `Xⁿ` of the coefficient at `m`. -/
@@ -92,42 +90,56 @@ theorem coeff_coeff_toPowerSeries (x : MonoidAlgebra (PowerSeries A) M) (n : ℕ
   | zero => simp
   | add x y hx hy => simp [hx, hy]
   | single m' φ =>
-    rw [toPowerSeries_single, PowerSeries.coeff_mul_C, PowerSeries.mapAlgHom_apply,
-      PowerSeries.coeff_map, AlgHom.coe_toRingHom, singleOneAlgHom_apply, single_mul_single,
-      one_mul]
-    simp only [coeff_single, Finsupp.single_apply]
-    split_ifs <;> simp
+    by_cases h : m' = m <;>
+      simp [h, toPowerSeries_single, PowerSeries.coeff_mul_C, single_mul_single, coeff_single]
 
 /-- The map to power series over `A[M]` sends the constant monomial `a · m` to the constant power
 series `a · m`. -/
 @[simp]
 theorem toPowerSeries_single_C (m : M) (a : A) :
     toPowerSeries R A M (single m (PowerSeries.C a)) = PowerSeries.C (single m a) := by
-  rw [toPowerSeries_single, PowerSeries.mapAlgHom_apply, PowerSeries.map_C, AlgHom.coe_toRingHom,
-    singleOneAlgHom_apply, ← map_mul, single_mul_single, one_mul, mul_one]
+  simp [toPowerSeries_single, ← map_mul, single_mul_single]
 
 /-- The map to power series over `A[M]` sends `X`, placed at `1 ∈ M`, to `X`. -/
 @[simp]
 theorem toPowerSeries_single_one_X :
     toPowerSeries R A M (single 1 PowerSeries.X) = PowerSeries.X := by
-  rw [toPowerSeries_single, PowerSeries.mapAlgHom_apply, PowerSeries.map_X, ← MonoidAlgebra.one_def,
-    map_one, mul_one]
+  simp [toPowerSeries_single, ← one_def]
 
 /-- The map to power series over `A[M]` sends the power series `φ`, placed at `1 ∈ M`, to `φ` with
 its coefficients read in `A[M]` along `singleOneRingHom`. -/
 theorem toPowerSeries_single_one (φ : PowerSeries A) :
     toPowerSeries R A M (single 1 φ) =
       PowerSeries.map (singleOneRingHom : A →+* MonoidAlgebra A M) φ := by
-  rw [toPowerSeries_single R A M, ← MonoidAlgebra.one_def, map_one, mul_one,
-    PowerSeries.mapAlgHom_apply]
-  -- `singleOneAlgHom` is `singleOneRingHom` with the `R`-algebra structure recorded.
-  congr 1
+  rw [toPowerSeries_single, ← one_def, map_one, mul_one]
 
 /-- The map `A⟦X⟧[M] → A[M]⟦X⟧` is injective, for every monoid `M`: it determines all the
 coefficients of its argument (`coeff_coeff_toPowerSeries`). -/
 theorem toPowerSeries_injective : Function.Injective (toPowerSeries R A M) := fun x y h ↦ by
-  refine MonoidAlgebra.coeff_injective (Finsupp.ext fun m ↦ PowerSeries.ext fun n ↦ ?_)
+  ext m n
   rw [← coeff_coeff_toPowerSeries R A M x, ← coeff_coeff_toPowerSeries R A M y, h]
+
+/-- **Divisibility by a power series with coefficients in `A`.** For `φ ∈ A⟦X⟧` and
+`x ∈ A⟦X⟧[M]`, with `M` any monoid, `φ` read in `A[M]⟦X⟧` divides the image of `x` exactly when
+`φ` divides, in `A⟦X⟧`, the coefficient of `x` at every `m ∈ M`. -/
+theorem map_singleOneRingHom_dvd_toPowerSeries_iff (φ : PowerSeries A)
+    (x : MonoidAlgebra (PowerSeries A) M) :
+    PowerSeries.map (singleOneRingHom : A →+* MonoidAlgebra A M) φ ∣ toPowerSeries R A M x ↔
+      ∀ m, φ ∣ x.coeff m := by
+  constructor
+  · -- The coefficient at `m` of `φ * ψ` is `φ` times the series of the coefficients of `ψ` at `m`.
+    rintro ⟨ψ, hψ⟩ m
+    refine ⟨PowerSeries.mk fun j ↦ (PowerSeries.coeff j ψ).coeff m, PowerSeries.ext fun n ↦ ?_⟩
+    rw [← coeff_coeff_toPowerSeries R A M, hψ]
+    simp [PowerSeries.coeff_mul, coeff_single_one_mul]
+  · -- `x` is the sum of its monomials `single m (x.coeff m)`, each a multiple of `single 1 φ`.
+    intro h
+    rw [← toPowerSeries_single_one R A M]
+    refine map_dvd _ ?_
+    rw [← sum_coeff_single x]
+    refine Finset.dvd_sum fun m _ ↦ ?_
+    obtain ⟨q, hq⟩ := h m
+    exact ⟨single m q, by rw [hq, single_mul_single, one_mul]⟩
 
 /-- The map `A⟦X⟧[M] → A[M]⟦X⟧` is surjective when `M` is finite: a power series over `A[M]` is
 the image of the monoid algebra element whose coefficient at `m` is the power series of the
@@ -173,24 +185,15 @@ theorem powerSeriesAlgEquiv_symm_X :
     (powerSeriesAlgEquiv R A M).symm PowerSeries.X = single 1 PowerSeries.X :=
   (powerSeriesAlgEquiv R A M).symm_apply_eq.mpr (toPowerSeries_single_one_X R A M).symm
 
-/-- **Divisibility by a power series with coefficients in `A`.** For `φ ∈ A⟦X⟧` and
-`ψ ∈ A[M]⟦X⟧`, with `M` finite, `φ` read in `A[M]⟦X⟧` divides `ψ` exactly when it divides, in
-`A⟦X⟧`, the coefficient at every `m ∈ M` of the element of `A⟦X⟧[M]` corresponding to `ψ`: the
-multiples of `φ` are the elements all of whose `M`-coefficients are multiples of `φ`. -/
+/-- For `φ ∈ A⟦X⟧` and `ψ ∈ A[M]⟦X⟧`, with `M` finite, `φ` read in `A[M]⟦X⟧` divides `ψ` exactly
+when it divides, in `A⟦X⟧`, the coefficient at every `m ∈ M` of the element of `A⟦X⟧[M]`
+corresponding to `ψ`: the multiples of `φ` are the elements all of whose `M`-coefficients are
+multiples of `φ`. This is `map_singleOneRingHom_dvd_toPowerSeries_iff` read through
+`powerSeriesAlgEquiv`. -/
 theorem map_singleOneRingHom_dvd_iff (φ : PowerSeries A) (ψ : PowerSeries (MonoidAlgebra A M)) :
     PowerSeries.map (singleOneRingHom : A →+* MonoidAlgebra A M) φ ∣ ψ ↔
       ∀ m, φ ∣ ((powerSeriesAlgEquiv R A M).symm ψ).coeff m := by
-  constructor
-  · rintro ⟨q, rfl⟩ m
-    rw [map_mul, ← toPowerSeries_single_one R A M, ← coe_powerSeriesAlgEquiv R A M,
-      AlgEquiv.symm_apply_apply, coeff_single_one_mul]
-    exact dvd_mul_right _ _
-  · intro h
-    choose q hq using h
-    refine ⟨powerSeriesAlgEquiv R A M (ofCoeff (Finsupp.equivFunOnFinite.symm q)), ?_⟩
-    rw [← toPowerSeries_single_one R A M, ← coe_powerSeriesAlgEquiv R A M, ← map_mul]
-    refine (powerSeriesAlgEquiv R A M).symm_apply_eq.mp (coeff_injective
-      (Finsupp.ext fun m ↦ ?_))
-    rw [hq, coeff_single_one_mul, coeff_ofCoeff, Finsupp.coe_equivFunOnFinite_symm]
+  rw [← map_singleOneRingHom_dvd_toPowerSeries_iff R, ← coe_powerSeriesAlgEquiv,
+    AlgEquiv.apply_symm_apply]
 
 end MonoidAlgebra

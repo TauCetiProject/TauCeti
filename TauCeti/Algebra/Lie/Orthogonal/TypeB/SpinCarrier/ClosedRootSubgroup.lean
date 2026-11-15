@@ -122,7 +122,7 @@ private theorem rep_rootGenerator_sq_apply_latticeBasis
     ((polarization n).typeBSpinRep_simpleRootGenerator_sq
       (polarizationBasis n) (remainderOne n)
       (TauCeti.splitOddForm_remainderOne ℚ (n + 1)) k)
-  simpa only [rep, pow_two, Module.End.mul_apply, LinearMap.zero_apply] using h
+  simpa only [rep, pow_two, mul_apply_eq_comp, LinearMap.zero_apply] using h
 
 /-! ## Closed root-subgroup morphisms -/
 
@@ -163,7 +163,7 @@ instance isClosedImmersion_rootSubgroup (k : Fin (n + 1) ⊕ Fin (n + 1)) :
 /-- Every numbered root-subgroup map into the type-`Bₙ₊₁` spin carrier is a monomorphism. -/
 theorem mono_rootSubgroup (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     Mono (rootSubgroup n k) :=
-  mono_of_isClosedImmersion_underlying (rootSubgroup n k)
+  Grp.mono_of_mono_left (rootSubgroup n k)
 
 /-- A numbered type-`Bₙ₊₁` spin root subgroup, bundled as a closed subgroup scheme. -/
 noncomputable def rootSubgroupClosedSubgroup

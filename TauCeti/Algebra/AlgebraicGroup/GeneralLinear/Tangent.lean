@@ -7,8 +7,11 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Determinant
-public import TauCeti.Algebra.AlgebraicGroup.Tangent.FiniteType
-public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Smooth
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.SmoothConnected
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.BaseChange
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Coordinate.BaseChange
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.InvariantDerivation
 
 /-!
 # The tangent Lie algebra of the general linear group
@@ -27,12 +30,20 @@ and surjectivity without choosing a presentation of derivations on the determina
 
 * `TauCeti.GeneralLinear.tangentMatrix`: evaluate a tangent derivation on the generic entries.
 * `TauCeti.GeneralLinear.trace_tangentMatrix`: the derivative of the determinant is matrix trace.
+* `TauCeti.GeneralLinear.iterate_leftInvariantDerivation_genericMatrix`: the left-invariant vector
+  field of a tangent vector acts on the generic matrix `x` by `Dᵐ x = x Xᵐ`.
 * `TauCeti.GeneralLinear.tangentLinearEquivMatrix`: the tangent space of `GLₙ` is linearly
   equivalent to `n × n` matrices.
 * `TauCeti.GeneralLinear.cotangentDualMatrixEquiv`: the cotangent-dual Lie algebra of `GLₙ`
   identified with matrices.
 * `TauCeti.GeneralLinear.tangentLieEquivMatrix`: the same equivalence as an equivalence of Lie
   algebras, carrying the tangent bracket to the matrix commutator.
+
+Scalar extension preserves the matrix description of the tangent Lie algebra.
+`tangentBaseChangeLieEquiv_symm_derivationComp` identifies this matrix comparison with
+restriction along the canonical coordinate-algebra base-change isomorphism, and
+`cotangentDualBaseChangeEquiv` gives the induced comparison on cotangent duals.
+These comparisons follow `SpecialLinear.Tangent.BaseChange`.
 
 ## References
 
@@ -372,7 +383,48 @@ theorem tangentLieEquivMatrix_apply (d : Derivation R (H (R := R) n)
   change tangentMatrix n d = tangentMatrix n d
   rfl
 
-variable {k : Type u} [Field k] {n : ℕ}
+section InvariantDerivation
+
+variable (d : Derivation R (coordinateHopfAlgebra R n)
+  (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R n) R))
+
+/-- **The invariant vector field of a tangent vector to `GLₙ` is right multiplication by its
+matrix** on the generic matrix: `D x_ij = ∑ₖ x_ik X_kj`. -/
+theorem leftInvariantDerivation_genericMatrix (i j : Fin n) :
+    Bialgebra.leftInvariantDerivation d (genericMatrix R n i j) =
+      ∑ k, tangentMatrix n d k j • genericMatrix R n i k := by
+  simp only [genericMatrix_apply, Bialgebra.leftInvariantDerivation_apply,
+    coordinateHopfAlgebra_comul_X, map_sum, LinearMap.tensorComponent_tmul, LinearMap.comp_apply,
+    AlgEquiv.toLinearMap_apply, Derivation.coeFn_coe, tangentMatrix_apply]
+
+/-- Iterating the invariant vector field of a tangent vector to `GLₙ` multiplies the generic
+matrix on the right by the powers of its matrix: `Dᵐ x_ij = ∑ₖ x_ik (Xᵐ)_kj`. -/
+theorem iterate_leftInvariantDerivation_genericMatrix (m : ℕ) (i j : Fin n) :
+    (Bialgebra.leftInvariantDerivation d)^[m] (genericMatrix R n i j) =
+      ∑ k, (tangentMatrix n d ^ m) k j • genericMatrix R n i k := by
+  induction m generalizing j with
+  | zero => simp [Matrix.one_apply]
+  | succ m ih =>
+    rw [Function.iterate_succ_apply', ih, map_sum]
+    simp only [Derivation.map_smul, leftInvariantDerivation_genericMatrix, Finset.smul_sum,
+      smul_smul]
+    rw [Finset.sum_comm]
+    refine Finset.sum_congr rfl fun l _ => ?_
+    rw [← Finset.sum_smul, pow_succ', Matrix.mul_apply]
+    simp only [mul_comm]
+
+/-- The counit of the iterated invariant vector field on a generic entry is the corresponding
+entry of the power of the tangent matrix. -/
+theorem counit_iterate_leftInvariantDerivation_genericMatrix (m : ℕ) (i j : Fin n) :
+    Coalgebra.counit (R := R)
+        ((Bialgebra.leftInvariantDerivation d)^[m] (genericMatrix R n i j)) =
+      (tangentMatrix n d ^ m) i j := by
+  rw [iterate_leftInvariantDerivation_genericMatrix, map_sum]
+  simp [coordinateHopfAlgebra_counit_X]
+
+end InvariantDerivation
+
+variable {k : Type u} [CommRing k] {n : ℕ}
 
 /-- The cotangent-dual Lie algebra of `GL_n` identified linearly with `n × n` matrices. -/
 def cotangentDualMatrixEquiv :
@@ -394,11 +446,21 @@ theorem cotangentDualMatrixEquiv_apply
   simp only [cotangentDualMatrixEquiv, LinearEquiv.trans_apply,
     tangentLinearEquivMatrix_apply]
 
+/-- The cotangent-dual matrix equivalence carries the Lie bracket of `GLₙ` to the matrix
+commutator. -/
+theorem cotangentDualMatrixEquiv_lie
+    (x y : Module.Dual k (Bialgebra.CotangentSpace k (coordinateHopfAlgebra k n))) :
+    cotangentDualMatrixEquiv ⁅x, y⁆ =
+      cotangentDualMatrixEquiv x * cotangentDualMatrixEquiv y -
+        cotangentDualMatrixEquiv y * cotangentDualMatrixEquiv x := by
+  simp only [cotangentDualMatrixEquiv_apply, ← Derivation.cotangentDualLieEquiv_apply,
+    LieEquiv.map_lie, tangentMatrix_lie, LieRing.of_associative_ring_bracket]
+
 /-- Scalar extension of a cotangent-dual tangent vector applies the scalar map entrywise to its
 matrix.  This is the compatibility that lets computations on coefficient-valued derivations be
 read back in the fixed cotangent-dual Lie algebra. -/
 theorem tangentMatrix_tangentScalarExtensionEquiv_one_tmul
-    {A : Type u} [CommRing A] [Algebra k A]
+    {A : Type*} [CommRing A] [Algebra k A]
     (x : Module.Dual k (Bialgebra.CotangentSpace k (coordinateHopfAlgebra k n))) :
     tangentMatrix n
         (Derivation.tangentScalarExtensionEquiv
@@ -422,7 +484,7 @@ theorem tangentMatrix_tangentScalarExtensionEquiv_one_tmul
 
 /-- The matrix form of scalar extension on a pure tensor. -/
 theorem tangentMatrix_tangentScalarExtensionEquiv_tmul
-    {A : Type u} [CommRing A] [Algebra k A] (a : A)
+    {A : Type*} [CommRing A] [Algebra k A] (a : A)
     (x : Module.Dual k (Bialgebra.CotangentSpace k (coordinateHopfAlgebra k n))) :
     tangentMatrix n
         (Derivation.tangentScalarExtensionEquiv
@@ -434,6 +496,145 @@ theorem tangentMatrix_tangentScalarExtensionEquiv_tmul
   rw [map_smul, map_smul, tangentMatrix_tangentScalarExtensionEquiv_one_tmul]
 
 end
+
+noncomputable section BaseChange
+
+open CategoryTheory
+
+universe v
+
+variable (R : Type u) (K : Type v) [CommRing R] [CommRing K] [Algebra R K]
+variable (n : ℕ)
+
+/-- Coefficient-valued tangent vectors to `GLₙ` identify with tangent vectors over the
+coefficient ring, preserving their matrices and Lie brackets. -/
+def tangentCoefficientLieEquiv :
+    Derivation R (coordinateHopfAlgebra R n)
+        (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R n) K) ≃ₗ⁅K⁆
+      Derivation K (coordinateHopfAlgebra K n)
+        (Bialgebra.CounitAlgebra K (coordinateHopfAlgebra K n) K) :=
+  (tangentLieEquivMatrix (R := R) (B := K) n).trans
+    (tangentLieEquivMatrix (R := K) (B := K) n).symm
+
+/-- The tangent comparison preserves the matrix of a derivation. -/
+@[simp]
+theorem tangentMatrix_tangentCoefficientLieEquiv
+    (d : Derivation R (coordinateHopfAlgebra R n)
+      (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R n) K)) :
+    tangentMatrix n (tangentCoefficientLieEquiv R K n d) = tangentMatrix n d := by
+  rw [← tangentLieEquivMatrix_apply, tangentCoefficientLieEquiv, LieEquiv.trans_apply,
+    LieEquiv.apply_symm_apply, tangentLieEquivMatrix_apply]
+
+/-- The inverse tangent comparison preserves the matrix of a derivation. -/
+@[simp]
+theorem tangentMatrix_tangentCoefficientLieEquiv_symm
+    (d : Derivation K (coordinateHopfAlgebra K n)
+      (Bialgebra.CounitAlgebra K (coordinateHopfAlgebra K n) K)) :
+    tangentMatrix n ((tangentCoefficientLieEquiv R K n).symm d) = tangentMatrix n d := by
+  exact (tangentMatrix_tangentCoefficientLieEquiv R K n
+    ((tangentCoefficientLieEquiv R K n).symm d)).symm.trans
+      (congrArg (tangentMatrix n) ((tangentCoefficientLieEquiv R K n).apply_symm_apply d))
+
+/-- Scalar extension of the general-linear cotangent dual, using the coefficient-valued
+matrix description of tangent derivations. -/
+def cotangentDualBaseChangeEquiv :
+    K ⊗[R] Module.Dual R (Bialgebra.CotangentSpace R (coordinateHopfAlgebra R n)) ≃ₗ[K]
+      Module.Dual K (Bialgebra.CotangentSpace K (coordinateHopfAlgebra K n)) :=
+  (Derivation.tangentScalarExtensionEquiv
+    (R := R) (A := coordinateHopfAlgebra R n) (B := K)).trans
+      ((tangentCoefficientLieEquiv R K n).toLinearEquiv.trans
+        (Derivation.cotangentLinearEquiv (R := K)
+          (A := coordinateHopfAlgebra K n) (B := K)).symm)
+
+/-- Cotangent duality identifies scalar extension with the coefficient tangent comparison. -/
+@[simp]
+theorem cotangentLinearEquiv_cotangentDualBaseChangeEquiv
+    (x : K ⊗[R]
+      Module.Dual R (Bialgebra.CotangentSpace R (coordinateHopfAlgebra R n))) :
+    Derivation.cotangentLinearEquiv (R := K)
+        (A := coordinateHopfAlgebra K n) (B := K) (cotangentDualBaseChangeEquiv R K n x) =
+      tangentCoefficientLieEquiv R K n
+        (Derivation.tangentScalarExtensionEquiv
+          (R := R) (A := coordinateHopfAlgebra R n) (B := K) x) := by
+  simp only [cotangentDualBaseChangeEquiv, LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply,
+    LieEquiv.coe_toLinearEquiv]
+
+/-- On pure tensors, cotangent-dual scalar extension applies the coefficient map
+entrywise to the tangent matrix and multiplies by the tensor coefficient. -/
+@[simp]
+theorem cotangentDualMatrixEquiv_cotangentDualBaseChangeEquiv_tmul (c : K)
+    (x : Module.Dual R (Bialgebra.CotangentSpace R (coordinateHopfAlgebra R n))) :
+    cotangentDualMatrixEquiv (cotangentDualBaseChangeEquiv R K n (c ⊗ₜ[R] x)) =
+      c • (cotangentDualMatrixEquiv x).map (algebraMap R K) := by
+  rw [cotangentDualMatrixEquiv_apply, cotangentLinearEquiv_cotangentDualBaseChangeEquiv,
+    tangentMatrix_tangentCoefficientLieEquiv, tangentMatrix_tangentScalarExtensionEquiv_tmul]
+
+variable (R : Type u) (K : Type max u v) [CommRing R] [CommRing K] [Algebra R K]
+  (n : ℕ)
+
+/-- Restriction along the canonical coordinate base-change isomorphism recovers the
+matrix-preserving tangent comparison. Thus the comparison is geometric base change. -/
+theorem tangentBaseChangeLieEquiv_symm_derivationComp
+    (d : Derivation K (coordinateHopfAlgebra K n)
+      (Bialgebra.CounitAlgebra K (coordinateHopfAlgebra K n) K)) :
+    (tangentBaseChangeLieEquiv (R := R) (K := K)
+      (H := coordinateHopfAlgebra R n)).symm
+        (derivationComp (B := K) (coordinateHopfAlgebraBaseChangeIso R K n).hom.hom d) =
+      (tangentCoefficientLieEquiv R K n).symm d := by
+  apply (tangentLieEquivMatrix (R := R) (B := K) n).injective
+  simp only [LieEquiv.coe_toLieHom]
+  erw [tangentLieEquivMatrix_apply, tangentLieEquivMatrix_apply,
+    tangentMatrix_tangentCoefficientLieEquiv_symm]
+  ext i j
+  rw [tangentMatrix_apply, tangentMatrix_apply, tangentBaseChangeLieEquiv_symm_apply,
+    AlgEquiv.apply_symm_apply, algEquivSelf_derivationComp_apply]
+  -- The bundled Hopf morphism and the coordinate formula use different coercions.
+  erw [coordinateHopfAlgebraBaseChangeIso_hom_apply.{u, v}]
+  simp only [MvPolynomial.map_X, one_smul]
+
+/-- The forward matrix-preserving tangent comparison intertwines extension of derivations
+with the canonical coordinate base-change isomorphism. -/
+theorem derivationComp_tangentCoefficientLieEquiv
+    (d : Derivation R (coordinateHopfAlgebra R n)
+      (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R n) K)) :
+    derivationComp (B := K) (coordinateHopfAlgebraBaseChangeIso R K n).hom.hom
+        (tangentCoefficientLieEquiv R K n d) =
+      tangentBaseChangeLieEquiv (R := R) (K := K) (H := coordinateHopfAlgebra R n) d := by
+  apply (tangentBaseChangeLieEquiv (R := R) (K := K)
+    (H := coordinateHopfAlgebra R n)).symm.injective
+  simp only [LieEquiv.coe_toLieHom]
+  rw [tangentBaseChangeLieEquiv_symm_derivationComp, LieEquiv.symm_apply_apply,
+    LieEquiv.symm_apply_apply]
+
+/-- The differential of a transported matrix-valued morphism is computed by restricting its
+source tangent vector to the original coordinate algebra. This transports matrix differential
+calculations through arbitrary scalar extension, without a flatness assumption. -/
+theorem tangentMatrix_derivationComp_transportedBaseChange
+    {H : CommHopfAlgCat.{u} R} {H' : CommHopfAlgCat.{max u v} K}
+    (f : coordinateHopfAlgebra R n ⟶ H)
+    (e : CommHopfAlgCat.baseChange (K := K) H ≅ H')
+    (d : Derivation K H' (Bialgebra.CounitAlgebra K H' K)) :
+    tangentMatrix n (derivationComp (B := K)
+      ((coordinateHopfAlgebraBaseChangeIso R K n).inv ≫
+        CommHopfAlgCat.baseChangeMap (K := K) f ≫ e.hom).hom d) =
+    tangentMatrix n (derivationComp (B := K) f.hom
+      ((tangentBaseChangeLieEquiv (R := R) (K := K) (H := H)).symm
+        (derivationComp (B := K) e.hom.hom d))) := by
+  ext i j
+  simp only [tangentMatrix_apply, algEquivSelf_derivationComp_apply,
+    tangentBaseChangeLieEquiv_symm_apply, AlgEquiv.apply_symm_apply,
+    _root_.CommHopfAlgCat.hom_comp]
+  -- Categorical morphisms and bundled bialgebra morphisms have different function coercions.
+  change (Bialgebra.CounitAlgebra.algEquivSelf K H' K)
+    (d (e.hom ((CommHopfAlgCat.baseChangeMap (K := K) f).hom
+      ((coordinateHopfAlgebraBaseChangeIso R K n).inv
+        (coordinateHopfAlgebraAlgEquiv K n
+          (coordinateRingMap K n (MvPolynomial.X (i, j)))))))) = _
+  rw [coordinateHopfAlgebraBaseChangeIso_inv_X,
+    CommHopfAlgCat.baseChangeMap_apply_tmul]
+  rfl
+
+end BaseChange
 
 end GeneralLinear
 

@@ -49,15 +49,15 @@ of the ambient space, rather than only on homogeneous vectors where `i^{p-q}` ma
 * `TauCeti.Hodge.HodgeStructure.Hom.commutes_weilOperator`: morphisms commute with `C`.
 * `TauCeti.Hodge.tate_weilOperator`: the Weil operator of `ℤ(m)` is the identity.
 
-This supplies the Weil operator targeted in Layer L1 of
-`TauCetiRoadmap/HodgeStructures/README.md`. The sign conventions are those of Voisin, *Hodge
-Theory and Complex Algebraic Geometry I*, §7.1.2, and Peters–Steenbrink, *Mixed Hodge
-Structures*, §2.
+The sign conventions are those of Voisin, *Hodge Theory and Complex Algebraic Geometry I*,
+§7.1.2, and Peters–Steenbrink, *Mixed Hodge Structures*, §2.
 -/
 
 public section
 
 namespace TauCeti.Hodge
+
+open IsBaseChange
 
 universe u v
 
@@ -102,7 +102,7 @@ by `i^{2p-n}`. -/
 theorem weilOperator_unique (hs : HodgeStructureOn W ω n) (f : W →ₗ[ℂ] W)
     (hf : ∀ p : ℤ, ∀ x ∈ hs.piece p, f x = Complex.I ^ (2 * p - n) • x) :
     f = hs.weilOperator :=
-  hs.linearMap_ext_of_piece fun p x hx ↦ by
+  hs.addHom_ext_of_piece fun p x hx ↦ by
     rw [hf p x hx, hs.weilOperator_apply_of_mem hx]
 
 /-- The Weil operator preserves every Hodge component. -/
@@ -151,7 +151,7 @@ theorem proj_weilOperator (hs : HodgeStructureOn W ω n) (p : ℤ) (x : W) :
     hs.proj p (hs.weilOperator x) = Complex.I ^ (2 * p - n) • hs.proj p x := by
   refine hs.piece_induction_on (motive := fun y ↦
     hs.proj p (hs.weilOperator y) = Complex.I ^ (2 * p - n) • hs.proj p y) x
-    (fun q y hy ↦ ?_) (by simp) fun y z hy hz ↦ by simp only [map_add, hy, hz, smul_add]
+    (fun q y hy ↦ ?_) fun y z hy hz ↦ by simp only [map_add, hy, hz, smul_add]
   rw [hs.weilOperator_apply_of_mem hy, map_smul]
   rcases eq_or_ne q p with rfl | hqp
   · rfl
@@ -177,7 +177,7 @@ theorem eigenspace_weilOperator (hs : HodgeStructureOn W ω n) (μ : ℂ) :
 /-- **The Weil operator squares to the weight sign:** `C ∘ C = (-1)^n`. -/
 theorem weilOperator_comp_weilOperator (hs : HodgeStructureOn W ω n) :
     hs.weilOperator ∘ₗ hs.weilOperator = ((-1 : ℂ) ^ n) • LinearMap.id :=
-  hs.linearMap_ext_of_piece fun p x hx ↦ by
+  hs.addHom_ext_of_piece fun p x hx ↦ by
     rw [LinearMap.comp_apply, hs.weilOperator_apply_of_mem hx, map_smul,
       hs.weilOperator_apply_of_mem hx, smul_smul, I_zpow_mul_self,
       negOne_zpow_two_mul_sub, LinearMap.smul_apply, LinearMap.id_apply]
@@ -264,7 +264,7 @@ theorem conj_weilOperator (hs : HodgeStructureOn W ω n) (x : W) :
     ω.toEquiv (hs.weilOperator x) = hs.weilOperator (ω.toEquiv x) := by
   refine hs.piece_induction_on
     (motive := fun w ↦ ω.toEquiv (hs.weilOperator w) = hs.weilOperator (ω.toEquiv w)) x
-    (fun p y hy ↦ ?_) (by simp) fun y z hy hz ↦ by simp [map_add, hy, hz]
+    (fun p y hy ↦ ?_) fun y z hy hz ↦ by simp [map_add, hy, hz]
   have hconj : ω.toEquiv y ∈ hs.piece (n - p) := by
     rw [← hs.conj_piece p]
     exact ⟨y, hy, rfl⟩
@@ -397,10 +397,10 @@ variable {Q : LinearMap.BilinForm ℤ V}
 zero unless their degrees add up to the weight, and on a pair of components that do, the two
 scalars `i^(2p-n)` and `i^(2p'-n)` by which the Weil operator acts are inverse to each other. -/
 theorem isOrthogonal_weilOperator (h : IsPolarization hℂ hs Q) :
-    (integralFormBaseChange hℂ Q).IsOrthogonal hs.weilOperator := by
-  have key : ((integralFormBaseChange hℂ Q) ∘ₗ hs.weilOperator).compl₂ hs.weilOperator =
-      integralFormBaseChange hℂ Q := by
-    refine hs.linearMap_ext_of_piece fun p x hx ↦ hs.linearMap_ext_of_piece fun p' y hy ↦ ?_
+    (bilinForm hℂ Q).IsOrthogonal hs.weilOperator := by
+  have key : ((bilinForm hℂ Q) ∘ₗ hs.weilOperator).compl₂ hs.weilOperator =
+      bilinForm hℂ Q := by
+    refine hs.addHom_ext_of_piece fun p x hx ↦ hs.addHom_ext_of_piece fun p' y hy ↦ ?_
     simp only [LinearMap.compl₂_apply, LinearMap.comp_apply]
     by_cases hpp : p + p' = n
     · rw [hs.weilOperator_apply_of_mem hx, hs.weilOperator_apply_of_mem hy]
@@ -445,7 +445,7 @@ theorem commutes_weilOperator (f : Hom source target) (x : W₁) :
     f (source.weilOperator x) = target.weilOperator (f x) := by
   refine source.piece_induction_on
     (motive := fun w ↦ f (source.weilOperator w) = target.weilOperator (f w)) x
-    (fun p y hy ↦ ?_) (by simp) fun y z hy hz ↦ by simp [map_add, hy, hz]
+    (fun p y hy ↦ ?_) fun y z hy hz ↦ by simp [map_add, hy, hz]
   rw [source.weilOperator_apply_of_mem hy, map_smul,
     target.weilOperator_apply_of_mem (f.map_mem_piece p hy)]
 

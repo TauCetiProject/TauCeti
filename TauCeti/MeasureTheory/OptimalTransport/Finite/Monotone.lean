@@ -98,7 +98,7 @@ theorem IsMonotone.sum_le_le_eq_min {A : TransportMatrix μ ν} (hA : A.IsMonoto
   classical
   have h := Finsupp.sum_indicator_prod_eq_inf
     (Finsupp.equivFunOnFinite.symm A.toRealFun) A.toRealFun_nonneg
-    hA.isChain_support (isLowerSet_Iic i) (isLowerSet_Iic j)
+    hA.isChain_support (IsLowerSet.Iic i) (IsLowerSet.Iic j)
   rw [← Finsupp.sum_mapDomain_index
     (h := fun a (r : ℝ) ↦ (Set.Iic i).indicator (fun _ ↦ r) a)
     (by simp) (by simp [Set.indicator_add]),
@@ -166,7 +166,7 @@ theorem exists_isMonotone_forall_cost_le (c : ι × κ → ℝ) (μ : PMF ι) (�
   by_contra hj
   have hj : j₁ < j₂ := lt_of_not_ge hj
   -- Uncrossing preserves the optimal cost but strictly decreases the negative product score.
-  obtain ⟨B, δ, hδ0, hδ, hB, hcost, hle, -⟩ :=
+  obtain ⟨B, δ, _, hδ, hB, _, hle, -⟩ :=
     A.exists_uncross_cost_le c hi.ne hj.ne (hc hi hj)
   have hδpos : 0 < δ := by
     rw [hδ]

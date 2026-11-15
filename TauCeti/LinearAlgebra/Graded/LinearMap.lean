@@ -160,6 +160,21 @@ theorem mem_homogeneousSubmodule [Semiring S] [Module S N] [SMulCommClass R S N]
 
 end Scalars
 
+section Reindex
+
+variable {R : Type uR} {ι : Type uι} {M : Type uM} {N : Type uN} {σM : Type*} {σN : Type*}
+  [Semiring R] [AddCommMonoid ι] [AddCommMonoid M] [AddCommMonoid N]
+  [Module R M] [Module R N] [SetLike σM M] [SetLike σN N]
+
+/-- Translating the indices of both gradings by the same amount preserves homogeneity. -/
+theorem IsHomogeneous.reindex {f : M →ₗ[R] N} {𝒜 : ι → σM} {ℬ : ι → σN} {q : ι}
+    (hf : IsHomogeneous f 𝒜 ℬ q) (p : ι) :
+    IsHomogeneous f (fun n ↦ 𝒜 (n + p)) (fun n ↦ ℬ (n + p)) q := fun n _ hx ↦ by
+  have h := hf.map_mem hx
+  rwa [add_right_comm] at h
+
+end Reindex
+
 end LinearMap
 
 end TauCeti

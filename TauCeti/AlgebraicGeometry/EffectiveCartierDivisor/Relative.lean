@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Basic
 public import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
 public import TauCeti.RingTheory.Flat.QuotientRegular
+import TauCeti.Algebra.Regular.SMul
 
 /-!
 # Relative effective Cartier divisors
@@ -42,6 +43,9 @@ the pulled-back divisor on the open subscheme `Spec (Γ(X, U) ⊗[Γ(S, W)] Γ(T
   effective Cartier over every base.
 * `Scheme.IdealSheafData.isRelativeEffectiveCartier_iff_isEffectiveCartier`: over the spectrum of
   a field, every effective Cartier divisor is relative effective Cartier.
+* `Scheme.IdealSheafData.IsRelativeEffectiveCartier.isEffectiveCartier_comap_of_field`: the
+  restriction of a relative effective Cartier divisor to any field-valued fibre is effective
+  Cartier.
 
 ## References
 
@@ -88,6 +92,24 @@ theorem IsRelativeEffectiveCartier.comap_iff (I : X.IdealSheafData) (f : X ⟶ S
   constructor
   · exact IsRelativeEffectiveCartier.isEffectiveCartier
   · exact fun h ↦ ⟨h, flat_comap_subschemeι_comp_snd I f g⟩
+
+/-- A local equation `a` of a divisor with flat closed subscheme stays a nonzerodivisor in the
+base change `B ⊗[Γ(S, W)] Γ(X, U)` along any `Γ(S, W)`-algebra `B`, because `Γ(X, U) ⧸ (a)` is
+flat over `Γ(S, W)`. -/
+private theorem isSMulRegular_one_tmul_of_flat_appLE (I : X.IdealSheafData) (f : X ⟶ S)
+    [Flat (I.subschemeι ≫ f)] {W : S.Opens} (hW : IsAffineOpen W) (U : X.affineOpens)
+    (hUW : U.1 ≤ f ⁻¹ᵁ W) {a : Γ(X, U)} (ha : IsSMulRegular Γ(X, U) a)
+    (hUa : I.ideal U = Ideal.span {a}) (B : Type u) [CommRing B] [Algebra Γ(S, W) B] :
+    letI : Algebra Γ(S, W) Γ(X, U) := (f.appLE W U hUW).hom.toAlgebra
+    IsSMulRegular (B ⊗[Γ(S, W)] Γ(X, U)) ((1 : B) ⊗ₜ[Γ(S, W)] a) := by
+  let _ : Algebra Γ(S, W) Γ(X, U) := (f.appLE W U hUW).hom.toAlgebra
+  have hflat := I.flat_appLE_comp_ofHom_quotient_mk f hW U hUW
+  rw [hUa] at hflat
+  have : Module.Flat Γ(S, W) (Γ(X, U) ⧸ Ideal.span {a}) := by
+    rw [← RingHom.flat_algebraMap_iff, IsScalarTower.algebraMap_eq Γ(S, W) Γ(X, U),
+      Ideal.Quotient.algebraMap_eq]
+    exact hflat
+  exact Module.Flat.isSMulRegular_one_tmul_of_quotient_span_singleton (R := Γ(S, W)) ha B
 
 /-- **Relative effective Cartier divisors are stable under arbitrary base change.** If `I` is a
 relative effective Cartier divisor on `X` over `S`, then for every morphism `g : T ⟶ S` its
@@ -139,18 +161,10 @@ theorem IsRelativeEffectiveCartier.comap {I : X.IdealSheafData}
       rw [← Scheme.Hom.comp_apply, Iso.hom_inv_id_assoc]⟩
   · -- The equation `a` stays a nonzerodivisor after base change, since `Γ(X, U) ⧸ (a)` is flat
     -- over `Γ(S, W)`.
-    have hflat := I.flat_appLE_comp_ofHom_quotient_mk f hW U hUW
-    rw [hUa] at hflat
-    have : Module.Flat Γ(S, W) (Γ(X, U) ⧸ Ideal.span {a}) := by
-      rw [← RingHom.flat_algebraMap_iff, IsScalarTower.algebraMap_eq Γ(S, W) Γ(X, U),
-        Ideal.Quotient.algebraMap_eq]
-      exact hflat
-    have hreg := Module.Flat.isSMulRegular_one_tmul_of_quotient_span_singleton
-      (R := Γ(S, W)) ha Γ(T, V)
+    have hreg := isSMulRegular_one_tmul_of_flat_appLE I f hW U hUW ha hUa Γ(T, V)
     let t := (Algebra.TensorProduct.comm Γ(S, W) Γ(T, V) Γ(X, U)).toRingEquiv.trans
       (Scheme.ΓSpecIso (.of (Γ(X, U) ⊗[Γ(S, W)] Γ(T, V)))).symm.commRingCatIsoToRingEquiv
-    exact (Equiv.isSMulRegular_congr (e := t.toEquiv) (r := (1 : Γ(T, V)) ⊗ₜ a)
-      fun b ↦ t.map_mul _ b).mp hreg
+    exact (TauCeti.isSMulRegular_map_iff t _).mpr hreg
   · have hφ : ((pullbackSpecIso Γ(S, W) Γ(X, U) Γ(T, V)).inv ≫ m) ≫ pullback.fst f g =
         Spec.map (CommRingCat.ofHom Algebra.TensorProduct.includeLeftRingHom) ≫ hU.fromSpec := by
       simp [m]
@@ -200,5 +214,16 @@ theorem isRelativeEffectiveCartier_iff_isEffectiveCartier [Subsingleton S] [IsIn
     I.IsRelativeEffectiveCartier f ↔ I.IsEffectiveCartier := by
   rw [isRelativeEffectiveCartier_iff]
   exact ⟨And.left, fun h ↦ ⟨h, inferInstance⟩⟩
+
+/-- **Relative effective Cartier divisors restrict to field-valued fibres.** If `I` is a relative
+effective Cartier divisor on `X` over `S` and `g : Spec K ⟶ S` is any morphism from a field, then
+the pullback of `I` to `X ×_S Spec K` is an effective Cartier divisor. In particular this holds
+for every geometric fibre, and it remains true after any extension of its residue field. -/
+theorem IsRelativeEffectiveCartier.isEffectiveCartier_comap_of_field
+    {I : X.IdealSheafData} {f : X ⟶ S} (hI : I.IsRelativeEffectiveCartier f)
+    {K : Type u} [Field K] (g : Spec (CommRingCat.of K) ⟶ S) :
+    (I.comap (pullback.fst f g)).IsEffectiveCartier := by
+  exact (isRelativeEffectiveCartier_iff_isEffectiveCartier
+    (I := I.comap (pullback.fst f g)) (f := pullback.snd f g)).mp (hI.comap g)
 
 end AlgebraicGeometry.Scheme.IdealSheafData

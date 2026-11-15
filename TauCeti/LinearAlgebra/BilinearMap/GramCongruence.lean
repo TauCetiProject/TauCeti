@@ -29,10 +29,12 @@ argument. This gives the involution-transpose formula for a sesquilinear form.
   `LinearMap.toMatrix₂Aux` accepts, since the equality is definitional.
 * `LinearMap.toMatrix₂Aux_mul_map_basis_toMatrixₛₗ`: the change-of-basis law for a
   sesquilinear map into a commutative semiring, with each coordinate matrix transformed by the
-  ring homomorphism governing the corresponding argument.
+  ring homomorphism governing the corresponding argument. The new families need not be bases.
 * `LinearMap.toMatrix₂Aux_mul_map_basis_toMatrix`: the change-of-basis law, oriented as Mathlib's
   is, with the change-of-basis matrices pushed into the codomain. The codomain need only be a
-  possibly noncommutative semiring.
+  possibly noncommutative semiring, and the new families need not be bases.
+* `LinearMap.toMatrix₂Aux_compl₁₂`: the matrix of such a map composed with linear maps on both
+  sides, with the matrices of the linear maps pushed into the codomain.
 * `LinearMap.det_toMatrix₂Aux_eq_det_toMatrix₂Aux`: for a map on a single `ℤ`-module, the signed
   determinant of the matrix is independent of the basis, and of its index type. An integral
   change-of-basis matrix has determinant `±1`, so the congruence above multiplies the determinant
@@ -91,15 +93,15 @@ semilinear for `σ₁` and `σ₂`, respectively, then their coordinate matrices
 change-of-basis formula after applying those ring homomorphisms entrywise.
 
 For a Laurent-sesquilinear pairing, `σ₁` is the involution `q ↦ q⁻¹` and `σ₂` is the
-identity, so the first factor is the involution-transpose of the change-of-basis matrix. -/
+identity, so the first factor is the involution-transpose of the change-of-basis matrix.
+The new families `c₁` and `c₂` need not be bases. -/
 @[simp]
 theorem toMatrix₂Aux_mul_map_basis_toMatrixₛₗ [Fintype ι₁] [Fintype ι₂]
     (B : M₁ →ₛₗ[σ₁] M₂ →ₛₗ[σ₂] S) (b₁ : Module.Basis ι₁ R₁ M₁)
-    (b₂ : Module.Basis ι₂ R₂ M₂) (c₁ : Module.Basis ι₁' R₁ M₁)
-    (c₂ : Module.Basis ι₂' R₂ M₂) :
+    (b₂ : Module.Basis ι₂ R₂ M₂) (c₁ : ι₁' → M₁) (c₂ : ι₂' → M₂) :
     ((b₁.toMatrix c₁).map σ₁)ᵀ * toMatrix₂Aux S (b₁ : ι₁ → M₁) (b₂ : ι₂ → M₂) B *
         ((b₂.toMatrix c₂).map σ₂) =
-      toMatrix₂Aux S (c₁ : ι₁' → M₁) (c₂ : ι₂' → M₂) B := by
+      toMatrix₂Aux S c₁ c₂ B := by
   ext i j
   simp only [toMatrix₂Aux_apply, Matrix.mul_apply, Matrix.transpose_apply, Matrix.map_apply,
     Module.Basis.toMatrix_apply, Finset.sum_mul]
@@ -109,7 +111,7 @@ theorem toMatrix₂Aux_mul_map_basis_toMatrixₛₗ [Fintype ι₁] [Fintype ι�
   refine Finset.sum_congr rfl fun k _ ↦ ?_
   rw [Finsupp.sum_fintype _ _ fun _ ↦ by simp]
   exact Finset.sum_congr rfl fun l _ ↦ by
-    simp [smul_eq_mul, mul_assoc, mul_comm, mul_left_comm]
+    simp [mul_comm, mul_left_comm]
 
 end SesquilinearBasisChange
 
@@ -121,14 +123,14 @@ variable {R S M₁ M₂ ι₁ ι₂ ι₁' ι₂' : Type*} [CommSemiring R] [Add
 /-- **The change-of-basis law for the matrix of a bilinear map valued outside the scalars.** The
 change-of-basis matrices enter through `algebraMap R S`, since the matrix of `B` has entries in
 `S`. Compare `LinearMap.toMatrix₂_mul_basis_toMatrix`, which is the case `S = R`. The codomain
-need not be commutative: the images of `algebraMap` are central, which is all the proof uses. -/
+need not be commutative: the images of `algebraMap` are central, which is all the proof uses.
+The new families `c₁` and `c₂` need not be bases. -/
 @[simp]
 theorem toMatrix₂Aux_mul_map_basis_toMatrix [Fintype ι₁] [Fintype ι₂] (B : M₁ →ₗ[R] M₂ →ₗ[R] S)
-    (b₁ : Module.Basis ι₁ R M₁) (b₂ : Module.Basis ι₂ R M₂) (c₁ : Module.Basis ι₁' R M₁)
-    (c₂ : Module.Basis ι₂' R M₂) :
+    (b₁ : Module.Basis ι₁ R M₁) (b₂ : Module.Basis ι₂ R M₂) (c₁ : ι₁' → M₁) (c₂ : ι₂' → M₂) :
     ((b₁.toMatrix c₁).map (algebraMap R S))ᵀ * toMatrix₂Aux R (b₁ : ι₁ → M₁) (b₂ : ι₂ → M₂) B *
         ((b₂.toMatrix c₂).map (algebraMap R S)) =
-      toMatrix₂Aux R (c₁ : ι₁' → M₁) (c₂ : ι₂' → M₂) B := by
+      toMatrix₂Aux R c₁ c₂ B := by
   ext i j
   simp only [toMatrix₂Aux_apply, Matrix.mul_apply, Matrix.transpose_apply, Matrix.map_apply,
     Module.Basis.toMatrix_apply, Finset.sum_mul]
@@ -144,11 +146,29 @@ theorem toMatrix₂Aux_mul_map_basis_toMatrix [Fintype ι₁] [Fintype ι₂] (B
   simp only [Algebra.smul_def]
   rw [mul_assoc, ← Algebra.commutes]
 
+variable {M₁' M₂' : Type*} [AddCommMonoid M₁'] [Module R M₁'] [AddCommMonoid M₂'] [Module R M₂']
+
+/-- **The matrix of a bilinear map valued outside the scalars, composed with linear maps on both
+sides.** The matrices of the linear maps enter through `algebraMap R S`. Compare
+`LinearMap.toMatrix₂_compl₁₂`, which is the case `S = R`. -/
+theorem toMatrix₂Aux_compl₁₂ [Fintype ι₁] [Fintype ι₂] [Fintype ι₁'] [DecidableEq ι₁']
+    [Fintype ι₂'] [DecidableEq ι₂'] (B : M₁ →ₗ[R] M₂ →ₗ[R] S) (b₁ : Module.Basis ι₁ R M₁)
+    (b₂ : Module.Basis ι₂ R M₂) (b₁' : Module.Basis ι₁' R M₁') (b₂' : Module.Basis ι₂' R M₂')
+    (l : M₁' →ₗ[R] M₁) (r : M₂' →ₗ[R] M₂) :
+    toMatrix₂Aux R (b₁' : ι₁' → M₁') (b₂' : ι₂' → M₂') (B.compl₁₂ l r) =
+      ((toMatrix b₁' b₁ l).map (algebraMap R S))ᵀ * toMatrix₂Aux R (b₁ : ι₁ → M₁) (b₂ : ι₂ → M₂) B *
+        (toMatrix b₂' b₂ r).map (algebraMap R S) := by
+  -- the matrix of `l` in `b₁'`, `b₁` is the matrix of the family `l ∘ b₁'` in `b₁`, and similarly
+  -- for `r`, so this is the change-of-basis law for the families `l ∘ b₁'` and `r ∘ b₂'`
+  rw [toMatrix_eq_basisToMatrix, toMatrix_eq_basisToMatrix, toMatrix₂Aux_mul_map_basis_toMatrix]
+  ext
+  simp
+
 end BasisChange
 
 section Determinant
 
-variable {S M ι ι' : Type*} [CommRing S] [AddCommGroup M] [Module ℤ M]
+variable {S M ι ι' : Type*} [CommRing S] [AddCommGroup M]
 
 /-- **Over `ℤ`, the determinant of the matrix is basis-independent**, and independent of the index
 type too. An integral change-of-basis matrix has determinant `±1`, so the congruence of
@@ -160,11 +180,10 @@ theorem det_toMatrix₂Aux_eq_det_toMatrix₂Aux [Fintype ι] [DecidableEq ι] [
       (toMatrix₂Aux ℤ (b : ι → M) (b : ι → M) B).det := by
   -- Transport `b` along `b.indexEquiv b'` so both bases share one index type; reindexing only
   -- permutes the matrix, which leaves its determinant alone.
-  set c := b.reindex (b.indexEquiv b') with hc
+  let c := b.reindex (b.indexEquiv b')
   have hcb : (toMatrix₂Aux ℤ (c : ι' → M) (c : ι' → M) B).det =
       (toMatrix₂Aux ℤ (b : ι → M) (b : ι → M) B).det := by
-    rw [hc]
-    simp [Module.Basis.coe_reindex, Matrix.det_submatrix_equiv_self]
+    simp [c, Module.Basis.coe_reindex]
   have hcast : ((c.toMatrix b').map (algebraMap ℤ S)).det = ((c.toMatrix b').det : S) := by
     simp [algebraMap_int_eq, ← Int.cast_det]
   have hu : IsUnit ((c.toMatrix b').det) := by

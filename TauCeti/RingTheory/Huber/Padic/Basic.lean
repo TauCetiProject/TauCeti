@@ -8,15 +8,15 @@ module
 public import Mathlib.NumberTheory.Padics.ProperSpace
 public import Mathlib.Topology.Algebra.Ring.Compact
 public import TauCeti.RingTheory.Huber.Adic
-public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
+public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 
 /-!
 # The p-adic integers are a Huber ring, and not a Tate ring
 
 `ℤ_[p]` with its norm topology is a Huber ring, with `(ℤ_[p], (p))` as a pair of definition, and
-it is not a Tate ring. It is the roadmap's Layer-0 example after the discrete case, and the first
-to separate `TauCeti.Huber.IsHuberRing` from `TauCeti.Huber.IsTateRing`: the topology is adic for
-the proper ideal `(p)`, so no unit is topologically nilpotent.
+it is not a Tate ring. After the discrete case it is the simplest example, and it separates
+`TauCeti.Huber.IsHuberRing` from `TauCeti.Huber.IsTateRing`: the topology is adic for the proper
+ideal `(p)`, so no unit is topologically nilpotent.
 
 ## Main results
 
@@ -39,8 +39,9 @@ maximal ideal.
 
 ## Scope
 
-Only `ℤ_[p]` is treated here. The roadmap's remaining Layer-0 examples — `ℚ_[p]` and `F⸨t⸩` are
-Tate, and `ℚ_p⟨T₁,…,Tₙ⟩` is complete and strongly noetherian — are not proved in this file.
+Only `ℤ_[p]` is treated here. That `ℚ_[p]` is a Tate ring is in
+`TauCeti.RingTheory.Huber.Padic.Field`, and that the Tate algebra `ℚ_p⟨T₁,…,Tₙ⟩` is a complete
+strongly noetherian Tate ring is in `TauCeti.RingTheory.Huber.Padic.TateAlgebra`.
 
 ## References
 

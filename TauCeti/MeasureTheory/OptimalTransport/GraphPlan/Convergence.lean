@@ -103,14 +103,15 @@ theorem tendstoInMeasure_of_tendsto_map_prodMk_self (hT : ∀ n, AEMeasurable (T
   intro δ hδ
   have hδ2 : 0 < δ / 2 := ENNReal.half_pos hδ.ne'
   obtain ⟨F, -, hF, hFμ, hFcont⟩ := hT₀.exists_isClosed_measure_sdiff_lt_continuousOn
-    MeasurableSet.univ (measure_ne_top _ _) hδ2.ne'
+    nullMeasurableSet_univ (measure_ne_top _ _) hδ2.ne'
   rw [← compl_eq_univ_sdiff] at hFμ
   set C : Set (X × Y) := F ×ˢ univ ∩ {z | ε ≤ edist z.2 (T₀ z.1)} with hC
   have hCclosed : IsClosed C := by
     refine ContinuousOn.preimage_isClosed_of_isClosed (t := Ici ε) ?_ (hF.prod isClosed_univ)
       isClosed_Ici
     exact continuous_edist.comp_continuousOn
-      (continuous_snd.continuousOn.prodMk (hFcont.comp continuous_fst.continuousOn fun z hz ↦ hz.1))
+      (continuous_snd.continuousOn.prodMk (hFcont.comp continuous_fst.continuousOn
+        fun _ hz ↦ (Set.mem_prod.1 hz).1))
   have hCmeas : MeasurableSet C := hCclosed.measurableSet
   have hlim : ((μ.map fun x ↦ (x, T₀ x) : ProbabilityMeasure (X × Y)) : Measure (X × Y)) C = 0 := by
     have hempty : {x | (x, T₀ x) ∈ C} = ∅ := by ext x; simp [hC, hε.ne']

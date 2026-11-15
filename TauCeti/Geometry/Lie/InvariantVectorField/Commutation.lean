@@ -18,9 +18,6 @@ This file proves that left- and right-invariant differentiation commute. The pro
 symmetry for a smooth scalar function evaluated on two multiplied exponential lines, then uses
 the tangent-vector/point-derivation equivalence to identify the vector-field bracket.
 
-This supplies a prerequisite for Deliverable A, Layer 1 of
-`TauCetiRoadmap/RepresentationTheory/LieGroups/README.md`.
-
 ## Main results
 
 * `contDiff_comp_mulInvariantExp_mul_mulInvariantExp`: a vector-valued function on two exponential
@@ -34,11 +31,6 @@ This supplies a prerequisite for Deliverable A, Layer 1 of
   vector-field bracket vanishes everywhere.
 * `mlieBracket_mulInvariantVectorField_mulRightInvariantVectorField`: the same vanishing result
   with the bracket arguments reversed.
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 1, "The infinitesimal adjoint".
 -/
 
 public section
@@ -55,7 +47,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
   [LieGroup I ∞ G]
 
-attribute [local instance] LieGroup.minSmoothnessThree
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 attribute [local instance] ContMDiffMul.boundarylessManifold
 
 section Complete
@@ -68,11 +60,11 @@ group element is smooth in both parameters. -/
 theorem contDiff_comp_mulInvariantExp_mul_mulInvariantExp
     {f : G → F'} (hf : ContMDiff I 𝓘(ℝ, F') ∞ f) (g : G)
     (X Y : GroupLieAlgebra I G) :
-    let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+    let _ : T2Space G := I.t2Space_of_lieGroup ∞
     ContDiff ℝ ∞ (fun p : ℝ × ℝ =>
       f (mulInvariantExp (I := I) (G := G) (p.1 • X) * g *
         mulInvariantExp (I := I) (G := G) (p.2 • Y))) := by
-  let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
   dsimp only
   exact (hf.comp (contMDiff_mulInvariantExp_smul_mul_mul_mulInvariantExp_smul g X Y)).contDiff
 
@@ -81,14 +73,14 @@ theorem contDiff_comp_mulInvariantExp_mul_mulInvariantExp
 theorem spatialFDeriv_mulInvariantExp_mul_mulInvariantExp
     (f : C^∞⟮I, G; 𝓘(ℝ, F'), F'⟯) (g : G)
     (X Y : GroupLieAlgebra I G) (s : ℝ) :
-    let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
-    spatialFDeriv (fun p : ℝ × ℝ =>
+    let _ : T2Space G := I.t2Space_of_lieGroup ∞
+    spatialFDeriv (𝕜 := ℝ) (fun p : ℝ × ℝ =>
       f (mulInvariantExp (I := I) (G := G) (p.1 • X) * g *
         mulInvariantExp (I := I) (G := G) (p.2 • Y))) 0 s 1 =
       mvfderiv I f (mulInvariantExp (I := I) (G := G) (s • X) * g)
         (mulInvariantVectorField Y
           (mulInvariantExp (I := I) (G := G) (s • X) * g)) := by
-  let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
   dsimp only
   let F : ℝ × ℝ → F' := fun p =>
     f (mulInvariantExp (I := I) (G := G) (p.1 • X) * g *
@@ -115,14 +107,14 @@ theorem spatialFDeriv_mulInvariantExp_mul_mulInvariantExp
 theorem timeFDeriv_mulInvariantExp_mul_mulInvariantExp
     (f : C^∞⟮I, G; 𝓘(ℝ, F'), F'⟯) (g : G)
     (X Y : GroupLieAlgebra I G) (t : ℝ) :
-    let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+    let _ : T2Space G := I.t2Space_of_lieGroup ∞
     timeFDeriv (fun p : ℝ × ℝ =>
       f (mulInvariantExp (I := I) (G := G) (p.1 • X) * g *
         mulInvariantExp (I := I) (G := G) (p.2 • Y))) 0 t =
       mvfderiv I f (g * mulInvariantExp (I := I) (G := G) (t • Y))
         (mulRightInvariantVectorField X
           (g * mulInvariantExp (I := I) (G := G) (t • Y))) := by
-  let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
   dsimp only
   let F : ℝ × ℝ → F' := fun p =>
     f (mulInvariantExp (I := I) (G := G) (p.1 • X) * g *
@@ -156,7 +148,7 @@ theorem mvfderiv_mulRightInvariantVectorField_mulInvariantVectorField_commute
         (mulRightInvariantVectorField X g) =
       mvfderiv I (rightInvariantDerivative X f) g
         (mulInvariantVectorField Y g) := by
-  let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
   let γX : ℝ → G := fun t => mulInvariantExp (I := I) (G := G) (t • X)
   let γY : ℝ → G := fun t => mulInvariantExp (I := I) (G := G) (t • Y)
   let F : ℝ × ℝ → ℝ := fun p => f (γX p.1 * g * γY p.2)
@@ -166,7 +158,7 @@ theorem mvfderiv_mulRightInvariantVectorField_mulInvariantVectorField_commute
     (contDiff_comp_mulInvariantExp_mul_mulInvariantExp f.contMDiff g X Y).of_le
       (by simp)
   -- Identify the two partial derivatives with the invariant directional derivatives.
-  have hspaceFun : (fun s => spatialFDeriv F 0 s 1) =
+  have hspaceFun : (fun s => spatialFDeriv (𝕜 := ℝ) F 0 s 1) =
       fun s => LYf (γX s * g) := by
     funext s
     simpa only [LYf, tangentToLeftInvariantDerivation_apply] using
@@ -199,12 +191,12 @@ variable [FiniteDimensional ℝ E]
 theorem mlieBracket_mulRightInvariantVectorField_mulInvariantVectorField
     (X Y : GroupLieAlgebra I G) :
     mlieBracket I (mulRightInvariantVectorField X) (mulInvariantVectorField Y) = 0 := by
-  let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
   funext g
   apply tangentToPointDerivation_injective (I := I) g
   rw [Pi.zero_apply, map_zero]
   ext f
-  rw [Derivation.zero_apply]
+  rw [_root_.zero_apply]
   -- The pointed smooth-map argument is a different bundle from `ContMDiffMap`, so the public
   -- `tangentToPointDerivation_apply` lemma does not rewrite this coercion directly.
   change mvfderiv I f g

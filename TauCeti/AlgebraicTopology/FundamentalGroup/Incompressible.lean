@@ -73,7 +73,7 @@ theorem comp {T : Type*} [TopologicalSpace T] {g : C(M, T)}
   have hcomp (γ : FundamentalGroup S s) :
       FundamentalGroup.map (g.comp f) s γ =
         FundamentalGroup.map g (f s) (FundamentalGroup.map f s γ) := by
-    exact FundamentalGroupoid.map_comp_map g f γ
+    exact CategoryTheory.End.ext (FundamentalGroupoid.map_comp_map g f γ.asHom)
   rw [hcomp γ₁, hcomp γ₂] at hγ
   exact hγ
 

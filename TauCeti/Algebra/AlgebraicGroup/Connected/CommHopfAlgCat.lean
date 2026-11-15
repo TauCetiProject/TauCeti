@@ -9,6 +9,7 @@ public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Basic
 public import TauCeti.RingTheory.Idempotents.Connected.Spectrum
 import Mathlib.RingTheory.Flat.Basic
+import TauCeti.RingTheory.Spectrum.Prime.Topology
 
 /-!
 # Geometric connectedness of commutative Hopf algebras
@@ -33,9 +34,6 @@ can impose it without introducing a separate bundled category of connected objec
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), §2.a.
-
-This is the geometric-connectedness prerequisite for Layer 3, "Identity component and component
-group", of the ReductiveGroups roadmap.
 -/
 
 public section
@@ -74,7 +72,7 @@ theorem geometricallyConnectedCommHopfAlgProperty_iff
 
 /-- A geometrically connected commutative Hopf algebra has connected prime spectrum. -/
 theorem geometricallyConnectedCommHopfAlgProperty.connectedSpace
-    (k : Type u) [Field k] (H : CommHopfAlgCat.{v} k)
+    {k : Type u} [Field k] {H : CommHopfAlgCat.{v} k}
     (h : geometricallyConnectedCommHopfAlgProperty k H) :
     ConnectedSpace (PrimeSpectrum (H : Type v)) :=
   (PrimeSpectrum.homeomorphOfRingEquiv
@@ -89,7 +87,7 @@ theorem geometricallyConnectedCommHopfAlgProperty.connectedSpace_algebraicClosur
     ConnectedSpace (PrimeSpectrum (AlgebraicClosure k ⊗[k] (H : Type v))) :=
   let e := Algebra.TensorProduct.comm k (AlgebraicClosure k) (H : Type v)
   have _ := h (AlgebraicClosure k)
-  connectedSpace_primeSpectrum_of_injective e.toRingHom e.injective
+  e.toRingHom.connectedSpace_primeSpectrum_of_injective e.injective
 
 /-- Geometric connectedness is invariant under isomorphisms of commutative Hopf algebras. -/
 instance (k : Type u) [Field k] :
@@ -129,7 +127,7 @@ theorem geometricallyConnectedCommHopfAlgProperty.of_injective
     geometricallyConnectedCommHopfAlgProperty k H := by
   intro K _ _
   have := h K
-  exact connectedSpace_primeSpectrum_of_injective
+  exact RingHom.connectedSpace_primeSpectrum_of_injective
     (Algebra.TensorProduct.map f (AlgHom.id k K)).toRingHom
     (Module.Flat.rTensor_preserves_injective_linearMap f.toLinearMap hf)
 

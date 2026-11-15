@@ -5,24 +5,24 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Ring.Defs
 public import Mathlib.Combinatorics.Quiver.Path
+public import Mathlib.Logic.Function.Iterate
 
 /-!
 # Alternating vertex functions
 
-A function from the vertices of a quiver to a monoid with distributive negation *alternates*
-when it is negated by every arrow,
-`c j = -c i` for all `a : i ⟶ j`. This file records what such a function does along a path: it is
-multiplied by `(-1)ⁿ` over a path of length `n`, so it is unchanged along a path of even length and
-negated along one of odd length.
+A function `c` from the vertices of a quiver to a type with negation *alternates* when it is
+negated by every arrow, `c j = -c i` for all `a : i ⟶ j`. This file records what such a function
+does along a path: over a path of length `n` it is negated `n` times. When negation is involutive,
+`Function.Involutive.iterate_even` and `Function.Involutive.iterate_odd` then show that `c` is
+unchanged along a path of even length and negated along one of odd length.
 
 In particular, a closed walk of odd length forces an alternating function to satisfy
 `c a = -c a`. When the values lie in a ring, this gives `2 * c a = 0`.
 
 ## Main results
 
-* `TauCeti.eq_neg_one_pow_mul_of_path`: an alternating vertex function changes by `(-1)ⁿ` along a
+* `TauCeti.eq_iterate_neg_of_path`: an alternating vertex function is negated `n` times along a
   path of length `n`.
 -/
 
@@ -32,15 +32,14 @@ namespace TauCeti
 
 universe u v
 
-variable {V : Type u} [Quiver.{v} V] (k : Type*) [Monoid k] [HasDistribNeg k]
+variable {V : Type u} [Quiver.{v} V] {k : Type*} [Neg k]
 
-/-- **A sign-changing vertex function changes by `(-1)ⁿ` along a path.** If `c` negates along
-every arrow of a quiver, then it is multiplied by `(-1)ⁿ` along every path of length `n`. -/
-theorem eq_neg_one_pow_mul_of_path {c : V → k} (hc : ∀ ⦃i j : V⦄, (i ⟶ j) → c j = -c i)
-    {a b : V} (p : Quiver.Path a b) : c b = (-1) ^ p.length * c a := by
+/-- **A sign-changing vertex function is negated once per arrow of a path.** If `c` negates along
+every arrow of a quiver, then along every path of length `n` it is negated `n` times. -/
+theorem eq_iterate_neg_of_path {c : V → k} (hc : ∀ ⦃i j : V⦄, (i ⟶ j) → c j = -c i)
+    {a b : V} (p : Quiver.Path a b) : c b = Neg.neg^[p.length] (c a) := by
   induction p with
-  | nil => simp
-  | cons p e ih =>
-    simp [hc e, ih, pow_succ]
+  | nil => rfl
+  | cons p e ih => rw [hc e, ih, Quiver.Path.length_cons, Function.iterate_succ_apply']
 
 end TauCeti

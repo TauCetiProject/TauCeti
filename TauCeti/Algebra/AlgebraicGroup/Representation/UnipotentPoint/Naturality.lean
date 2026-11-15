@@ -40,9 +40,8 @@ uses flatness to make the comparison map injective.
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, §2.4.
 
-This supplies value-field naturality for the geometric unipotence criterion in Layer 5,
-"Unipotent groups", of the ReductiveGroups roadmap. It is needed to compare geometric points
-across algebraic closures and field extensions.
+This supplies value-field naturality for the geometric unipotence criterion. It is needed to compare
+geometric points across algebraic closures and field extensions.
 -/
 
 public section
@@ -80,7 +79,7 @@ private theorem rTensor_iterate_endOfPoint_sub_one (g : H →ₐ[R] A) (φ : A �
   induction n generalizing z with
   | zero => simp
   | succ n ih =>
-      rw [pow_succ, pow_succ, Module.End.mul_apply, Module.End.mul_apply, ih, hcomm]
+      rw [pow_succ, pow_succ, mul_apply_eq_comp, mul_apply_eq_comp, ih, hcomm]
 
 /-- Nilpotence of a point action after subtracting the identity is preserved by postcomposition
 with a morphism of value algebras. -/
@@ -124,6 +123,22 @@ theorem isNilpotent_endOfPoint_comp_iff_of_injective [Module.Flat R V]
     rw [rTensor_iterate_endOfPoint_sub_one (V := V) g φ, hn]
     simp
   · exact fun hg ↦ isNilpotent_endOfPoint_comp g φ hg
+
+/-- Nilpotence of a point action after subtracting the identity restricts along a comodule
+morphism whose scalar extension to the value algebra is injective. -/
+theorem isNilpotent_endOfPoint_sub_one_of_injective {W : Type*} [AddCommGroup W] [Module R W]
+    [Comodule R H W] (f : Hom R H V W) (g : H →ₐ[R] A)
+    (hf : Function.Injective (f.toLinearMap.baseChange A))
+    (hg : IsNilpotent (endOfPoint W g - 1)) :
+    IsNilpotent (endOfPoint V g - 1) := by
+  obtain ⟨n, hn⟩ := hg
+  have hnat : f.toLinearMap.baseChange A ∘ₗ (endOfPoint V g - 1) =
+      (endOfPoint W g - 1) ∘ₗ f.toLinearMap.baseChange A := by
+    rw [LinearMap.comp_sub, LinearMap.sub_comp, baseChange_comp_endOfPoint]
+    simp only [Module.End.one_eq_id, LinearMap.comp_id, LinearMap.id_comp]
+  have hpow := (Module.End.commute_pow_left_of_commute hnat.symm n).symm
+  refine ⟨n, LinearMap.ext fun x ↦ hf ?_⟩
+  simpa [hn] using congr($hpow x)
 
 end Comodule
 

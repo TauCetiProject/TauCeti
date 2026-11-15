@@ -12,10 +12,9 @@ import TauCeti.Topology.Algebra.GroupAction.Discrete
 /-!
 # Pairings with a coinduced module
 
-Let `U` be an open subgroup of a topological group `G` and let
-`μ : M →+ N →+ P` be a `G`-equivariant biadditive pairing of `G`-modules, where `P` is discrete
-with continuous `U`-action. Pairing an element of `M` with every value of a coinduced function
-gives a natural pairing
+Let `U` be an open subgroup of a topological group `G`, let `M` be an additive monoid with a
+`G`-action, and let `N` and `P` be additive `U`-modules. A `U`-equivariant biadditive pairing
+`μ : M →+ N →+ P`, with `P` discrete and its `U`-action continuous, gives a natural pairing
 
 ```text
 M × Coind_U^G N → Coind_U^G P,
@@ -24,8 +23,9 @@ M × Coind_U^G N → Coind_U^G P,
 
 The translate `g • m` is forced by equivariance. The resulting function is `U`-equivariant, hence
 locally constant because `U` is open and the stabilizers of `P` are open; no topology on `M` or
-`N` is needed, so the construction applies to an arbitrary topological representation `M`.
-Evaluation at `1` recovers `μ`, and the coinduced pairing commutes with the trace:
+`N` is needed. Neither `N` nor `P` needs an action of all of `G` for this construction.
+Evaluation at `1` recovers `μ`. When the actions on `N` and `P` extend to `G` and `μ` is
+`G`-equivariant, the coinduced pairing also commutes with the trace for finite-index `U`:
 
 ```text
 ev (m ⋆ f) = μ m (ev f),      tr (m ⋆ f) = μ m (tr f).
@@ -74,27 +74,27 @@ universe u v w x
 
 section Pairing
 
-variable {G : Type u} [Group G] [TopologicalSpace G] [ContinuousMul G]
-  (U : Subgroup G) (hU : IsOpen (U : Set G))
-  {M N P : Type u}
-  [AddCommGroup M] [DistribMulAction G M]
-  [AddCommGroup N] [DistribMulAction G N]
-  [AddCommGroup P] [TopologicalSpace P] [DiscreteTopology P] [DistribMulAction G P]
+variable {G : Type u} [Group G] [TopologicalSpace G] (U : Subgroup G)
+  {M : Type v} {N : Type w} {P : Type x} [AddCommGroup N] [DistribMulAction U N]
+
+/-- The `U`-equivariance of `g ↦ μ (g • m) (f g)`, the defining law of a coinduced function. -/
+private theorem pairing_apply_mul [AddZero M] [SemigroupAction G M] [AddCommMonoid P] [SMul U P]
+    (μ : M →+ N →+ P)
+    (hμ : ∀ (u : U) (m : M) (n : N), μ ((u : G) • m) (u • n) = u • μ m n)
+    (m : M) (f : DiscreteCoind G U N) (u : U) (g : G) :
+    μ (((u : G) * g) • m) (f ((u : G) * g)) = u • μ (g • m) (f g) := by
+  rw [f.apply_mul, mul_smul, hμ]
+
+variable [SeparatelyContinuousMul G] (hU : IsOpen (U : Set G))
+  [AddMonoid M] [DistribMulAction G M]
+  [AddCommGroup P] [TopologicalSpace P] [DiscreteTopology P] [DistribMulAction U P]
   [ContinuousSMul U P]
   (μ : M →+ N →+ P)
-  (hμ : ∀ (g : G) (m : M) (n : N), μ (g • m) (g • n) = g • μ m n)
+  (hμ : ∀ (u : U) (m : M) (n : N), μ ((u : G) • m) (u • n) = u • μ m n)
 
-omit [ContinuousMul G] [TopologicalSpace P] [DiscreteTopology P] [ContinuousSMul U P] in
-include hμ in
-/-- The `U`-equivariance of `g ↦ μ (g • m) (f g)`, the defining law of a coinduced function. -/
-private theorem pairing_apply_mul (m : M) (f : DiscreteCoind G U N) (u : U) (g : G) :
-    μ (((u : G) * g) • m) (f ((u : G) * g)) = u • μ (g • m) (f g) := by
-  rw [f.apply_mul]
-  simpa only [mul_smul, Subgroup.smul_def] using hμ (u : G) (g • m) (f g)
-
-/-- Pairing an element of a `G`-module with a coinduced function, pointwise after
-translating the first argument:
-`pairing μ m f g = μ (g • m) (f g)`. -/
+/-- Pairing an element of an additive `G`-monoid with a coinduced function, using a
+`U`-equivariant biadditive pairing after translating the first argument:
+`pairing U hU μ hμ m f g = μ (g • m) (f g)`. -/
 def pairing : M →+ DiscreteCoind G U N →+ DiscreteCoind G U P where
   toFun m :=
     { toFun := fun f => mk G U P (fun g => μ (g • m) (f g))
@@ -121,19 +121,31 @@ theorem eval_pairing (m : M) (f : DiscreteCoind G U N) :
     eval G U P (pairing U hU μ hμ m f) = μ m (eval G U N f) := by
   simp
 
-variable [U.FiniteIndex]
+end Pairing
+
+section Trace
+
+variable {G : Type u} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
+  (U : Subgroup G) (hU : IsOpen (U : Set G)) [U.FiniteIndex]
+  {M : Type v} {N : Type w} {P : Type x}
+  [AddMonoid M] [DistribMulAction G M]
+  [AddCommGroup N] [DistribMulAction G N]
+  [AddCommGroup P] [TopologicalSpace P] [DiscreteTopology P] [DistribMulAction G P]
+  [ContinuousSMul U P]
+  (μ : M →+ N →+ P)
+  (hμ : ∀ (g : G) (m : M) (n : N), μ (g • m) (g • n) = g • μ m n)
 
 /-- The coinduced trace commutes with the pairing:
 `tr (g ↦ μ (g • m) (f g)) = μ m (tr f)`. This is the coefficient identity behind the
 projection formula in cohomology. -/
 theorem trace_pairing (m : M) (f : DiscreteCoind G U N) :
-    trace G U P (pairing U hU μ hμ m f) = μ m (trace G U N f) := by
+    trace G U P (pairing U hU μ (fun u => hμ u) m f) = μ m (trace G U N f) := by
   simp only [trace_apply, pairing_apply, map_sum]
   apply Finset.sum_congr rfl
   intro x _
   rw [← hμ x.out (x.out⁻¹ • m) (f x.out⁻¹), smul_inv_smul]
 
-end Pairing
+end Trace
 
 section Pointwise
 
@@ -145,13 +157,6 @@ variable {G : Type u} [Group G] [TopologicalSpace G] (U : Subgroup G)
   (μ : A →+ B →+ C)
   (hμ : ∀ (u : U) (a : A) (b : B), μ (u • a) (u • b) = u • μ a b)
 
-include hμ in
-/-- The `U`-equivariance of `g ↦ μ (f g) (f' g)`, the defining law of a coinduced function. -/
-private theorem pointwisePairing_apply_mul (f : DiscreteCoind G U A) (f' : DiscreteCoind G U B)
-    (u : U) (g : G) :
-    μ (f ((u : G) * g)) (f' ((u : G) * g)) = u • μ (f g) (f' g) := by
-  rw [f.apply_mul, f'.apply_mul, hμ]
-
 /-- **The pointwise pairing of two coinduced modules**: a `U`-equivariant biadditive pairing
 `μ : A →+ B →+ C` of `U`-modules pairs coinduced functions value by value,
 `pointwisePairing U μ hμ f f' g = μ (f g) (f' g)`. -/
@@ -159,7 +164,7 @@ def pointwisePairing : DiscreteCoind G U A →+ DiscreteCoind G U B →+ Discret
   toFun f :=
     { toFun := fun f' => mk G U C (fun g => μ (f g) (f' g))
         (f.isLocallyConstant.comp₂ f'.isLocallyConstant fun a b => μ a b)
-        (pointwisePairing_apply_mul U μ hμ f f')
+        (fun u g => by rw [f.apply_mul, f'.apply_mul, hμ])
       map_zero' := ext fun g => by simp
       map_add' := fun f₁ f₂ => ext fun g => by simp }
   map_zero' := AddMonoidHom.ext fun f' => ext fun g => by simp
@@ -170,7 +175,7 @@ theorem pointwisePairing_apply (f : DiscreteCoind G U A) (f' : DiscreteCoind G U
     pointwisePairing U μ hμ f f' g = μ (f g) (f' g) := (rfl)
 
 /-- The pointwise pairing of coinduced modules is `G`-equivariant. -/
-theorem pointwisePairing_smul [ContinuousMul G] (g : G) (f : DiscreteCoind G U A)
+theorem pointwisePairing_smul [SeparatelyContinuousMul G] (g : G) (f : DiscreteCoind G U A)
     (f' : DiscreteCoind G U B) :
     pointwisePairing U μ hμ (g • f) (g • f') = g • pointwisePairing U μ hμ f f' :=
   ext fun x => by simp only [pointwisePairing_apply, coe_smul]

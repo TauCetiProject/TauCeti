@@ -8,6 +8,8 @@ module
 public import Mathlib.RepresentationTheory.Character
 public import TauCeti.RepresentationTheory.Induction.Projection
 public import TauCeti.RepresentationTheory.Induction.Transitivity
+public import TauCeti.RepresentationTheory.Rep.OfMulAction
+import TauCeti.RepresentationTheory.Invariants
 
 /-!
 # The permutation representation as an induced representation
@@ -20,6 +22,11 @@ More generally, for subgroups `D ≤ C ≤ G`, inducing the permutation represen
 `C ⧸ (D ⊓ C)` gives the permutation representation of `G` on `G ⧸ D`: a permutation
 representation on cosets can be induced in stages.
 
+Combined with Mathlib's induction-restriction adjunction (`Rep.indResHomEquiv`), the first
+identification is Frobenius reciprocity for permutation representations: a morphism
+`k[G ⧸ H] ⟶ Y` is determined by the image of the identity coset, which can be any `H`-invariant
+vector of `Y`.
+
 Feeding the first identification into the projection formula of
 `TauCeti/RepresentationTheory/Induction/Projection.lean` gives the classical description of
 inducing a restricted representation, `Ind_H^G (Res_H^G Y) ≅ k[G ⧸ H] ⊗ Y`.
@@ -30,6 +37,8 @@ inducing a restricted representation, `Ind_H^G (Res_H^G Y) ≅ k[G ⧸ H] ⊗ Y`
 * `TauCeti.indTrivialIso`: the same statement in `Rep k G`.
 * `TauCeti.indOfMulActionQuotientEquiv`: for `D ≤ C`, the equivalence of representations
   `Ind_C^G k[C ⧸ (D ⊓ C)] ≃ k[G ⧸ D]`.
+* `TauCeti.quotientHomEquivInvariants`: morphisms `k[G ⧸ H] ⟶ Y` correspond to the
+  `H`-invariant vectors of `Y`, by evaluation at the identity coset.
 * `TauCeti.indResProjection`: the corollary `Ind_H^G (Res_H^G Y) ≅ k[G ⧸ H] ⊗ Y` of the projection
   formula `TauCeti.indProjection`.
 
@@ -328,6 +337,54 @@ theorem indOfMulActionQuotientEquiv_symm_apply_single (x : G) (r : k) :
 
 end InducedQuotient
 
+section HomEquivInvariants
+
+variable (k : Type u) [CommRing k] {G : Type u} [Group G] (H : Subgroup G) (Y : Rep k G)
+
+/-- **Frobenius reciprocity for a permutation representation.** Morphisms from the permutation
+representation `k[G ⧸ H]` to a `G`-representation `Y` correspond to the `H`-invariant vectors of
+`Y`: a morphism corresponds to its value at the identity coset
+(`TauCeti.coe_quotientHomEquivInvariants_apply`), and an invariant vector `y` to the morphism
+sending the coset `⟦x⟧` to `Y.ρ x y` (`TauCeti.quotientHomEquivInvariants_symm_apply_single`).
+
+It is the composite of `TauCeti.indTrivialIso`, the induction-restriction adjunction
+`Rep.indResHomEquiv` for `H ≤ G`, and `Rep.trivialHomEquivInvariants`. -/
+noncomputable def quotientHomEquivInvariants :
+    (Rep.ofMulAction k G (G ⧸ H) ⟶ Y) ≃ₗ[k] (Rep.res H.subtype Y).ρ.invariants :=
+  (Linear.homCongr k (indTrivialIso k H) (Iso.refl Y)).symm ≪≫ₗ
+    Rep.indResHomEquiv H.subtype _ Y ≪≫ₗ Rep.trivialHomEquivInvariants _
+
+/-- `TauCeti.quotientHomEquivInvariants` evaluates a morphism at the identity coset. -/
+@[simp]
+theorem coe_quotientHomEquivInvariants_apply (f : Rep.ofMulAction k G (G ⧸ H) ⟶ Y) :
+    (quotientHomEquivInvariants k H Y f : Y) =
+      f.hom (MonoidAlgebra.single (QuotientGroup.mk 1 : G ⧸ H) 1) := by
+  have h := indTrivialIso_hom_hom_apply_mk k H 1 1
+  rw [inv_one] at h
+  rw [quotientHomEquivInvariants, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
+    Rep.coe_trivialHomEquivInvariants_apply]
+  -- Keep `h` unevaluated: `simp` unfolds `Representation.IndV.mk` in both `h` and the goal.
+  simpa [Linear.homCongr_symm_apply, -indTrivialIso_hom_hom_apply_mk] using congrArg f.hom h
+
+/-- The morphism `k[G ⧸ H] ⟶ Y` attached to an `H`-invariant vector `y` sends the coset `⟦x⟧` to
+`Y.ρ x y`. -/
+@[simp]
+theorem quotientHomEquivInvariants_symm_apply_single (y : (Rep.res H.subtype Y).ρ.invariants)
+    (x : G) (r : k) :
+    (dsimp% only ((quotientHomEquivInvariants k H Y).symm y).hom
+        (MonoidAlgebra.single (QuotientGroup.mk x : G ⧸ H) r)) = r • Y.ρ x y := by
+  set f := (quotientHomEquivInvariants k H Y).symm y
+  have hf : f.hom (MonoidAlgebra.single (QuotientGroup.mk 1 : G ⧸ H) 1) = y := by
+    rw [← coe_quotientHomEquivInvariants_apply, LinearEquiv.apply_symm_apply]
+  have hx : MonoidAlgebra.single (QuotientGroup.mk x : G ⧸ H) r =
+      r • Representation.ofMulAction k G (G ⧸ H) x
+        (MonoidAlgebra.single (QuotientGroup.mk 1 : G ⧸ H) 1) := by
+    simp [Representation.ofMulAction_single]
+  rw [hx, map_smul]
+  exact congrArg (r • ·) ((Rep.hom_comm_apply f x _).trans (congrArg (Y.ρ x) hf))
+
+end HomEquivInvariants
+
 section Projection
 
 variable {k : Type u} {G : Type u} [CommRing k] [Group G] {H : Subgroup G} (Y : Rep k G)
@@ -386,5 +443,27 @@ theorem char_ind_trivial [Finite (G ⧸ H)] (g : G) :
   rw [Representation.char_iso (indTrivialEquiv k H), char_ofMulAction]
 
 end Character
+
+section Index
+
+variable (k : Type u) [CommRing k] [StrongRankCondition k] {G : Type v} [Group G]
+  (H K : Subgroup G)
+
+/-- **Equivalently induced trivial representations force equal indices.** The coset space `G ⧸ H`
+has cardinality `H.index`, so this is
+`TauCeti.natCard_eq_of_nonempty_equiv_ofMulAction` on the coset spaces, read through
+`Subgroup.index = Nat.card (G ⧸ ·)`. It is the one numerical condition on `H` and `K` that is
+visible without any character computation, and so holds over every coefficient ring with the
+strong rank condition. -/
+theorem index_eq_of_nonempty_equiv_ind_trivial
+    (h : Nonempty (((Representation.trivial k H k).ind H.subtype).Equiv
+      ((Representation.trivial k K k).ind K.subtype))) :
+    H.index = K.index := by
+  rw [Subgroup.index_eq_card, Subgroup.index_eq_card]
+  refine natCard_eq_of_nonempty_equiv_ofMulAction (G := G) (X := G ⧸ H) (Y := G ⧸ K) k ?_
+  obtain ⟨φ⟩ := h
+  exact ⟨((indTrivialEquiv k H).symm.trans φ).trans (indTrivialEquiv k K)⟩
+
+end Index
 
 end TauCeti

@@ -38,10 +38,8 @@ the base is disconnected.
 
 ## References
 
-This is the connected/transitive restriction in Stage 2, item 8 of
-`TauCetiRoadmap/UniversalCovers/README.md`. It uses Mathlib's local-homeomorphism charts and Tau
-Ceti's existing monodromy transitivity and full-faithfulness results. No Mathlib proof is
-vendored.
+This file uses Mathlib's local-homeomorphism charts and Tau Ceti's existing monodromy
+transitivity and full-faithfulness results. No Mathlib proof is vendored.
 -/
 
 public section
@@ -137,7 +135,8 @@ theorem monodromy_isFiberwisePretransitive [LocallyPathConnectedSpace X]
   let _ : LocallyPathConnectedSpace (p : TopCat) :=
     p.isCoveringMap_proj.isLocalHomeomorph.locallyPathConnectedSpace
   let _ : PathConnectedSpace (p : TopCat) := PathConnectedSpace.of_locallyPathConnectedSpace
-  exact IsCoveringMap.exists_monodromy_eq p.isCoveringMap_proj e e'
+  obtain ⟨γ, hγ⟩ := IsCoveringMap.exists_monodromy_eq p.isCoveringMap_proj e e'
+  exact ⟨γ.asHom, hγ⟩
 
 /-- The fundamental group at `x₀` acts pretransitively on the fibre of a connected covering space
 over `x₀`; the fibre may be empty, when the base is disconnected.

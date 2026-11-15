@@ -64,7 +64,7 @@ theorem existsUnique_geometricCharacterMap_eq
     apply _root_.GroupLike.val_injective
     rw [CommHopfAlgCat.val_geometricCharacterMap, CommHopfAlgCat.hom_baseChangeMap]
     simp only [g, _root_.CommHopfAlgCat.hom_ofHom, BialgHom.map_galoisDescend]
-    exact (GroupLike.val_map F x).symm.trans (congrArg (fun q ↦ (q x).val) hF)
+    exact (BialgHom.val_mapGroupLike F x).symm.trans (congrArg (fun q ↦ (q x).val) hF)
   exact ⟨g, hg, fun g' hg' ↦ hH.geometricCharacterMap_injective (hg'.trans hg.symm)⟩
 
 /-- Every morphism of geometric-character representations out of a multiplicative-type

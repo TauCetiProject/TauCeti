@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Closed
+public import Mathlib.Topology.Covering.Basic
 import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
+import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Kernel
+import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Covering
 
 /-!
 # The real Spin projection on closed unit-group carriers
@@ -25,8 +28,18 @@ definite, so its Spin action surjects onto the special orthogonal group. Consequ
 closed carriers are given their Lie-group structures, automatic smoothness makes this map available
 to the Lie functor without changing either carrier.
 
+The carrier homomorphism is a covering map in every dimension. In dimension zero both carriers
+are points and the covering is trivial (one sheet); its kernel consists of the unit `1` only. In
+positive dimension it is again the Spin double cover: its kernel consists of the units `1` and
+`-1`, and the covering is the compact real Spin covering
+`CliffordAlgebra.isCoveringMap_realCliffordSpinProjectionZero`, transported along the
+homeomorphisms of `Spin(n)` and `SO(n)` with the unit-group carriers that serve as frame structure
+groups.
+
 ## Main results
 
+* `TauCeti.CliffordAlgebra.realCliffordSpecialOrthogonalContinuousMulEquivRange` identifies the
+  coordinate special orthogonal group `SO(n)` with its range in `GL(n, ℝ)` as a topological group.
 * `TauCeti.CliffordAlgebra.realCliffordSpinContinuousMulEquivUnitsRange` identifies the usual
   compact real Spin group with the source range carrier as a topological group.
 * `TauCeti.CliffordAlgebra.realCliffordSpinToSpecialOrthogonalRange` is the continuous
@@ -36,6 +49,11 @@ to the Lie functor without changing either carrier.
   specializes the formula to the canonical representative of a Spin element.
 * `TauCeti.CliffordAlgebra.realCliffordSpinToSpecialOrthogonalRange_surjective` proves that the
   carrier homomorphism is onto.
+* `TauCeti.CliffordAlgebra.realCliffordSpinToSpecialOrthogonalRange_eq_one_iff` characterizes the
+  kernel as the Spin-carrier points equal to the unit `1` or `-1` (`{1, -1}` in positive dimension,
+  `{1}` in dimension zero).
+* `TauCeti.CliffordAlgebra.isCoveringMap_realCliffordSpinToSpecialOrthogonalRange` proves that it
+  is a covering map.
 
 ## References
 
@@ -103,6 +121,53 @@ theorem realCliffordSpinContinuousMulEquivUnitsRange_symm_apply
   rw [← realCliffordSpinContinuousMulEquivUnitsRange_apply]
   exact (realCliffordSpinContinuousMulEquivUnitsRange n).symm_apply_apply x
 
+/-- The inclusion of the coordinate special orthogonal group `SO(n)` into `GL(n, ℝ)`, indexed by
+`Fin n`, is a topological embedding. -/
+theorem isEmbedding_realCliffordSpecialOrthogonalToGeneralLinear (n : ℕ) :
+    Topology.IsEmbedding (QuadraticMap.specialOrthogonalToGeneralLinear
+      (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)) := by
+  -- `realCliffordForm n 0` lives on `Fin (n + 0) → ℝ`, which is `Fin n → ℝ` by definition. The
+  -- coordinate topology on `SO(n)` is induced along the inclusion built with `Classical.decEq`,
+  -- whereas this inclusion uses the canonical decidable equality on `Fin n`; `convert` identifies
+  -- the two instances because decidable equality is subsingleton.
+  convert QuadraticMap.isEmbedding_specialOrthogonalToGeneralLinear (realCliffordForm n 0)
+
+private def realCliffordSpecialOrthogonalToGeneralLinearContinuousMonoidHom (n : ℕ) :
+    QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0) →ₜ*
+      Matrix.GeneralLinearGroup (Fin n) ℝ :=
+  ⟨QuadraticMap.specialOrthogonalToGeneralLinear
+      (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0),
+    (isEmbedding_realCliffordSpecialOrthogonalToGeneralLinear n).continuous⟩
+
+/-- The coordinate special orthogonal group `SO(n)` is topologically isomorphic to its range in
+`GL(n, ℝ)`. -/
+noncomputable def realCliffordSpecialOrthogonalContinuousMulEquivRange (n : ℕ) :
+    QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0) ≃ₜ*
+      MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear
+        (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)) :=
+  (realCliffordSpecialOrthogonalToGeneralLinearContinuousMonoidHom n).equivRangeOfIsEmbedding
+    (isEmbedding_realCliffordSpecialOrthogonalToGeneralLinear n)
+
+/-- The topological equivalence with the range sends an element of `SO(n)` to its matrix. -/
+@[simp]
+theorem realCliffordSpecialOrthogonalContinuousMulEquivRange_apply (n : ℕ)
+    (g : QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0)) :
+    realCliffordSpecialOrthogonalContinuousMulEquivRange n g =
+      ⟨QuadraticMap.specialOrthogonalToGeneralLinear
+        (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0) g, ⟨g, rfl⟩⟩ := by
+  rw [realCliffordSpecialOrthogonalContinuousMulEquivRange]
+  exact ContinuousMonoidHom.equivRangeOfIsEmbedding_apply _ _ g
+
+/-- The inverse topological equivalence sends the matrix of an element of `SO(n)` back to it. -/
+@[simp]
+theorem realCliffordSpecialOrthogonalContinuousMulEquivRange_symm_apply (n : ℕ)
+    (g : QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0)) :
+    (realCliffordSpecialOrthogonalContinuousMulEquivRange n).symm
+        ⟨QuadraticMap.specialOrthogonalToGeneralLinear
+          (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0) g, ⟨g, rfl⟩⟩ = g := by
+  rw [← realCliffordSpecialOrthogonalContinuousMulEquivRange_apply]
+  exact (realCliffordSpecialOrthogonalContinuousMulEquivRange n).symm_apply_apply g
+
 /-- The compact real Spin projection as a continuous homomorphism between the two closed range
 carriers in the Clifford and matrix unit groups. -/
 noncomputable def realCliffordSpinToSpecialOrthogonalRange (n : ℕ) :
@@ -117,30 +182,9 @@ noncomputable def realCliffordSpinToSpecialOrthogonalRange (n : ℕ) :
         (realCliffordSpinContinuousMulEquivUnitsRange n).symm.toMonoidHom)
   continuous_toFun := by
     apply continuous_induced_rng.mpr
-    have hprojection : Continuous
-        ((QuadraticMap.specialOrthogonalToGeneralLinear
-          (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)).comp
-            (spinToSpecialOrthogonal (realCliffordForm n 0))) := by
-      classical
-      have h := (QuadraticMap.isEmbedding_specialOrthogonalToGeneralLinear
-          (realCliffordForm n 0)).continuous.comp
-        (continuous_spinToSpecialOrthogonal_pi (realCliffordForm n 0))
-      -- The continuity theorem is elaborated with `Classical.decEq`, whereas this concrete
-      -- `Fin`-indexed target uses its canonical decidable-equality instance. The two resulting
-      -- coordinate inclusions are propositionally equal because decidable equality is subsingleton.
-      have hdec : Classical.decEq (Fin n) = instDecidableEqFin n := Subsingleton.elim _ _
-      change Continuous (fun x ↦
-        @QuadraticMap.specialOrthogonalToGeneralLinear ℝ inferInstance (Fin n) inferInstance
-          (Classical.decEq (Fin n)) ℝ inferInstance inferInstance (realCliffordForm n 0)
-          (spinToSpecialOrthogonal (realCliffordForm n 0) x)) at h
-      rw [hdec] at h
-      change Continuous (fun x ↦
-        @QuadraticMap.specialOrthogonalToGeneralLinear ℝ inferInstance (Fin n) inferInstance
-          (instDecidableEqFin n) ℝ inferInstance inferInstance (realCliffordForm n 0)
-          (spinToSpecialOrthogonal (realCliffordForm n 0) x))
-      exact h
-    exact hprojection.comp
-      (realCliffordSpinContinuousMulEquivUnitsRange n).symm.continuous
+    exact ((isEmbedding_realCliffordSpecialOrthogonalToGeneralLinear n).continuous.comp
+      (continuous_spinToSpecialOrthogonal_pi (realCliffordForm n 0))).comp
+        (realCliffordSpinContinuousMulEquivUnitsRange n).symm.continuous
 
 /-- The carrier homomorphism applies the usual Spin projection to the source representative
 selected by the inverse range equivalence. -/
@@ -179,6 +223,58 @@ theorem realCliffordSpinToSpecialOrthogonalRange_surjective (n : ℕ) :
     (realCliffordForm n 0) (posDef_realCliffordForm_zero n) y
   exact ⟨⟨spinGroup.toUnits x, ⟨x, rfl⟩⟩,
     realCliffordSpinToSpecialOrthogonalRange_apply_toUnits n x⟩
+
+/-- A point of the Spin carrier lies over the identity exactly when it is the unit `1` or the
+unit `-1`. -/
+theorem realCliffordSpinToSpecialOrthogonalRange_eq_one_iff (n : ℕ)
+    (x : MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm n 0))) :
+    realCliffordSpinToSpecialOrthogonalRange n x = 1 ↔
+      (x : (CliffordAlgebra (realCliffordForm n 0))ˣ) = 1 ∨
+        (x : (CliffordAlgebra (realCliffordForm n 0))ˣ) = -1 := by
+  obtain rfl | hn := n.eq_zero_or_pos
+  · -- In dimension zero the Spin group is trivial.
+    -- `realCliffordForm 0 0` lives on `Fin (0 + 0) → ℝ`, which is `Fin 0 → ℝ` by definition.
+    have : Subsingleton (Fin (0 + 0) → ℝ) := inferInstanceAs (Subsingleton (Fin 0 → ℝ))
+    have hX : Subsingleton (MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm 0 0))) :=
+      (Set.subsingleton_coe _).mpr (MonoidHom.subsingleton_coe_range _)
+    obtain rfl : x = 1 := Subsingleton.elim _ _
+    simp
+  have : NeZero n := ⟨hn.ne'⟩
+  obtain ⟨_, y, rfl⟩ := x
+  -- `realCliffordForm n 0` lives on `Fin (n + 0) → ℝ`, which is `Fin n → ℝ` by definition.
+  have : Nontrivial (Fin (n + 0) → ℝ) := inferInstanceAs (Nontrivial (Fin n → ℝ))
+  rw [realCliffordSpinToSpecialOrthogonalRange_apply_toUnits, Subtype.ext_iff,
+    OneMemClass.coe_one,
+    map_eq_one_iff _ (QuadraticMap.specialOrthogonalToGeneralLinear_injective _),
+    ← MonoidHom.mem_ker,
+    mem_ker_spinToSpecialOrthogonal_iff _ (nondegenerate_realCliffordForm n 0)]
+  simp only [Subtype.ext_iff (a1 := y), Units.ext_iff, spinGroup.val_toUnits_apply,
+    spinGroup.coe_negOne, OneMemClass.coe_one, Units.val_one, Units.val_neg]
+
+/-- The projection between the closed real Spin and special-orthogonal carriers is a covering
+map. -/
+theorem isCoveringMap_realCliffordSpinToSpecialOrthogonalRange (n : ℕ) :
+    IsCoveringMap (realCliffordSpinToSpecialOrthogonalRange n) := by
+  obtain rfl | hn := n.eq_zero_or_pos
+  · -- In dimension zero both carriers are points.
+    -- `realCliffordForm 0 0` lives on `Fin (0 + 0) → ℝ`, which is `Fin 0 → ℝ` by definition.
+    have : Subsingleton (Fin (0 + 0) → ℝ) := inferInstanceAs (Subsingleton (Fin 0 → ℝ))
+    have hX : Subsingleton (MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm 0 0))) :=
+      (Set.subsingleton_coe _).mpr (MonoidHom.subsingleton_coe_range _)
+    have : Subsingleton (MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear
+        (realCliffordForm 0 0))) :=
+      (realCliffordSpinToSpecialOrthogonalRange_surjective 0).subsingleton
+    exact .of_discreteTopology _
+  have : NeZero n := ⟨hn.ne'⟩
+  have h : ⇑(realCliffordSpinToSpecialOrthogonalRange n) =
+      realCliffordSpecialOrthogonalContinuousMulEquivRange n ∘ realCliffordSpinProjectionZero n ∘
+        (realCliffordSpinContinuousMulEquivUnitsRange n).symm := by
+    funext x
+    simp [realCliffordSpinProjectionZero_apply]
+  rw [h]
+  exact ((isCoveringMap_realCliffordSpinProjectionZero n).homeomorph_comp
+    (realCliffordSpecialOrthogonalContinuousMulEquivRange n).toHomeomorph).comp_homeomorph
+      (realCliffordSpinContinuousMulEquivUnitsRange n).symm.toHomeomorph
 
 end
 

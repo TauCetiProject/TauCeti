@@ -17,15 +17,13 @@ public section
 
 namespace TauCeti
 
-open Complex UpperHalfPlane Set
+open UpperHalfPlane Set
 
 /-- An affine image of a function that is injective on the upper half-plane has a nonzero
 linear coefficient. -/
-theorem ne_zero_of_injOn_const_mul_add {f : ℂ → ℂ} {A B : ℂ}
-    (h : InjOn (fun z => A * f z + B) upperHalfPlaneSet) : A ≠ 0 := by
-  intro hA
-  have hne : Complex.I = 2 * Complex.I := h (by simp [upperHalfPlaneSet])
-    (by simp [upperHalfPlaneSet]) (by simp [hA])
-  norm_num at hne
+theorem ne_zero_of_injOn_const_mul_add {R : Type*} [MulZeroClass R] [Add R] {f : ℂ → R}
+    {A B : R} (h : InjOn (fun z => A * f z + B) upperHalfPlaneSet) : A ≠ 0 := by
+  rintro rfl
+  simpa using h (x₁ := Complex.I) (x₂ := 2 * Complex.I) (by simp) (by simp) (by simp)
 
 end TauCeti

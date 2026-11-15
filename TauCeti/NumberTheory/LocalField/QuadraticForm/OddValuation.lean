@@ -63,7 +63,7 @@ valuation zero with `(a, b)_K = -1`, namely the unramified class. -/
 theorem exists_hilbertSymbol_eq_neg_one_of_odd (h2 : (2 : K) ≠ 0) {a : Kˣ}
     (ha : Odd (normalizedValuation K a).toAdd) :
     ∃ b : Kˣ, (normalizedValuation K b).toAdd = 0 ∧ hilbertSymbol a b = -1 := by
-  obtain ⟨Δ, -, hΔ0, hΔ⟩ := exists_unramified_class h2
+  obtain ⟨Δ, -, hΔ0, -, hΔ⟩ := exists_unramified_class h2
   exact ⟨Δ, hΔ0, hilbertSymbol_eq_neg_one_of_unramified_class_of_odd h2 hΔ ha⟩
 
 end TauCeti

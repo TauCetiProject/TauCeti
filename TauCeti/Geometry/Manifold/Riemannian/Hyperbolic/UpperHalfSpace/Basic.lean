@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Convex.Contractible
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Action
-public import TauCeti.Geometry.Manifold.Riemannian.Restriction
+public import TauCeti.Geometry.Manifold.Riemannian.Restriction.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Conformal
 
 /-!
@@ -30,9 +30,9 @@ For `0 < c`, a linear isometry `A` of `E` and `b ∈ E`, the similarity
 height `t` by the same factor `c`, so it is a Riemannian isometry. These similarities act
 transitively, so the upper half-space model is a homogeneous Riemannian manifold.
 
-Only analyticity of the metric and homogeneity are established here: the constant curvature `-1`
-and the completeness of this metric are not proved, so it is not (yet) shown to be a
-`TauCeti.HyperbolicMetric`.
+Analyticity of the metric and homogeneity are established here. The module
+`UpperHalfSpace.Curvature` proves constant curvature `-1`, and `UpperHalfSpace.Metric` combines
+this with completeness to construct a `TauCeti.HyperbolicMetric`.
 
 ## Main definitions
 
@@ -48,7 +48,7 @@ and the completeness of this metric are not proved, so it is not (yet) shown to 
 * `TauCeti.UpperHalfSpace.inner_def`: the inner product of tangent vectors at `x` is their
   Euclidean inner product divided by `height x ^ 2` (`TauCeti.UpperHalfSpace.riemannianMetric_inner`
   is the same formula for the bundled metric `riemannianMetric`);
-  `TauCeti.UpperHalfSpace.norm_def` and `TauCeti.UpperHalfSpace.enorm_def` are the corresponding
+  `TauCeti.UpperHalfSpace.norm_def` and `TauCeti.UpperHalfSpace.eNorm_def` are the corresponding
   norm forms.
 * `TauCeti.UpperHalfSpace.contMDiff_coe_comp_iff`: a map into the upper half-space is `C^n` iff
   its composite with the inclusion into `E × ℝ` is.
@@ -143,6 +143,11 @@ theorem snd_coe (x : UpperHalfSpace E) : (x : WithLp 2 (E × ℝ)).snd = height 
 theorem height_pos (x : UpperHalfSpace E) : 0 < height x :=
   (show upperHalfSpaceOpens E from x).2
 
+/-- A point of the upper half-space is not a point `(a, 0)` of its boundary hyperplane. -/
+theorem coe_ne_toLp (x : UpperHalfSpace E) (a : E) :
+    (x : WithLp 2 (E × ℝ)) ≠ WithLp.toLp 2 (a, 0) := fun h ↦
+  (height_pos x).ne' (by simpa [← snd_coe] using congrArg WithLp.snd h)
+
 @[simp]
 theorem mk_coe (x : UpperHalfSpace E) :
     mk (x : WithLp 2 (E × ℝ)) (by rw [snd_coe]; exact height_pos x) = x :=
@@ -158,6 +163,12 @@ theorem ext_fst_height {x y : UpperHalfSpace E}
     (hfst : (x : WithLp 2 (E × ℝ)).fst = (y : WithLp 2 (E × ℝ)).fst)
     (hheight : height x = height y) : x = y :=
   ext ((WithLp.ext_iff 2).2 (Prod.ext hfst hheight))
+
+/-- Every chart of the upper half-space is its inclusion in the model space. -/
+@[simp]
+theorem chartAt_apply (x y : UpperHalfSpace E) :
+    chartAt (WithLp 2 (E × ℝ)) x y = (y : WithLp 2 (E × ℝ)) :=
+  (rfl)
 
 section NormedSpace
 
@@ -201,12 +212,11 @@ theorem contMDiff_coe_comp_iff
   TauCeti.ContMDiff.subtypeVal_comp_iff (upperHalfSpaceOpens E)
     (f : M → upperHalfSpaceOpens E)
 
-/-- If a differentiable self-map `f` of the upper half-space is the restriction of a map `A` of
-`E × ℝ` with derivative `L` at `x`, then the differential of `f` at `x` is `L`. -/
+/-- If a self-map `f` of the upper half-space is the restriction of a map `A` of `E × ℝ` with
+derivative `L` at `x`, then the differential of `f` at `x` is `L`. -/
 theorem tangentSpaceCastModel_mfderiv_apply {f : UpperHalfSpace E → UpperHalfSpace E}
     {A : WithLp 2 (E × ℝ) → WithLp 2 (E × ℝ)} {L : WithLp 2 (E × ℝ) →L[ℝ] WithLp 2 (E × ℝ)}
     {x : UpperHalfSpace E}
-    (hf : MDifferentiableAt 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) f x)
     (hA : HasFDerivAt A L (x : WithLp 2 (E × ℝ))) (hcomp : coe ∘ f = A ∘ coe)
     (v : TangentSpace 𝓘(ℝ, WithLp 2 (E × ℝ)) x) :
     tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) (f x)
@@ -215,8 +225,8 @@ theorem tangentSpaceCastModel_mfderiv_apply {f : UpperHalfSpace E → UpperHalfS
   -- Read the base point of `hA` as a point of the open subset, as in the general lemma.
   have hA' : HasFDerivAt A L (show upperHalfSpaceOpens E from x).1 := hA
   have h := TauCeti.Manifold.tangentSpaceOpenEquiv_mfderiv_apply
-    (U := upperHalfSpaceOpens E) (V := upperHalfSpaceOpens E) (f := f) hf
-    hA'.differentiableAt.mdifferentiableAt hcomp v
+    (I := 𝓘(ℝ, WithLp 2 (E × ℝ))) (I' := 𝓘(ℝ, WithLp 2 (E × ℝ)))
+    (U := upperHalfSpaceOpens E) (V := upperHalfSpaceOpens E) (f := f) hcomp v
   rw [hA'.hasMFDerivAt.mfderiv] at h
   -- Both the open-subset identification and `tangentSpaceCastModel` are the identity of the model.
   have e₁ := TauCeti.Manifold.tangentSpaceOpenEquiv_apply (I := 𝓘(ℝ, WithLp 2 (E × ℝ)))
@@ -299,8 +309,7 @@ private theorem tangentSpaceCastModel_mfderiv_similarityMap (c : ℝ) (hc : 0 < 
         WithLp 2 (E × ℝ) →L[ℝ] WithLp 2 (E × ℝ))) (x : WithLp 2 (E × ℝ)) :=
     ((LinearIsometryEquiv.withLpProdCongr 2 A
       (.refl ℝ ℝ)).toContinuousLinearEquiv.hasFDerivAt.const_smul c).add_const _
-  exact tangentSpaceCastModel_mfderiv_apply
-    ((contMDiff_similarityMap (n := 1) c hc A b x).mdifferentiableAt one_ne_zero) hA (rfl) v
+  exact tangentSpaceCastModel_mfderiv_apply hA (rfl) v
 
 end NormedSpace
 
@@ -390,7 +399,7 @@ theorem norm_def (x : UpperHalfSpace E) (v : TangentSpace 𝓘(ℝ, WithLp 2 (E 
 /-- The extended norm of a tangent vector at a point of the upper half-space is its Euclidean
 extended norm divided by the height. -/
 @[simp]
-theorem enorm_def (x : UpperHalfSpace E) (v : TangentSpace 𝓘(ℝ, WithLp 2 (E × ℝ)) x) :
+theorem eNorm_def (x : UpperHalfSpace E) (v : TangentSpace 𝓘(ℝ, WithLp 2 (E × ℝ)) x) :
     ‖v‖ₑ = ‖tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) x v‖ₑ / ENNReal.ofReal (height x) := by
   rw [← ofReal_norm, ← ofReal_norm, norm_def,
     ENNReal.ofReal_div_of_pos (height_pos x)]

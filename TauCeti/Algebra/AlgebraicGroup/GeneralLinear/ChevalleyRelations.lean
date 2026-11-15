@@ -30,10 +30,9 @@ The product `cd` is multiplication in the value algebra, not the convolution pro
 `TauCeti.AdditiveGroup.gaPointParamMul` packages this distinction and is natural in the value
 algebra.
 
-This file supplies the commutator-relations part of the pinned Chevalley--Demazure interface from
-Layer 9 of the ReductiveGroups roadmap for the worked example `GLₙ` over an arbitrary commutative
-base ring. The pinning equations and the general Chevalley--Demazure construction are not covered
-here.
+This file supplies, for the worked example `GLₙ` over an arbitrary commutative base ring, the
+commutator relations required of a pinned Chevalley--Demazure group scheme. The pinning equations
+and the general Chevalley--Demazure construction are not covered here.
 
 ## Main declarations
 

@@ -33,9 +33,7 @@ element lies in the range of `pinToOrthogonal`.
 
 ## References
 
-This advances Layer 2's "The double cover" target in
-`TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md`. See H. B. Lawson and
-M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §2.
+See H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §2.
 -/
 
 public section
@@ -109,7 +107,7 @@ theorem pinToOrthogonal_surjective
     [FiniteDimensional K V] (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) :
     Function.Surjective (pinToOrthogonal Q) :=
   pinToOrthogonal_surjective_of_isSquare Q hQ fun v _ ↦
-    IsSepClosed.exists_eq_mul_self (-⅟(Q v))
+    IsSepClosed.isSquare (-⅟(Q v))
 
 end IsSepClosed
 end CliffordAlgebra

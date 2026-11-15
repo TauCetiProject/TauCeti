@@ -5,6 +5,7 @@ Authors: Chris Birkbeck
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.SpvOfIdeal.Basic
 public import TauCeti.RingTheory.Valuation.CofinalIdeal.Restrict
 
@@ -20,8 +21,8 @@ points.
 
 Wedhorn's retraction has two properties beyond being this map: it **lands in** `Spv (A, I)`, and
 it **fixes** that subspace pointwise. **Both are proved here**, so the map is also offered with
-the codomain the roadmap asks for — `restrictToIdealCodRestrict` — and that form is a retraction
-in the literal sense, `restrictToIdealCodRestrict_coe` saying it moves no point of the subspace.
+codomain `Spv (A, I)` — `restrictToIdealCodRestrict` — and that form is a retraction in the
+literal sense, `restrictToIdealCodRestrict_coe` saying it moves no point of the subspace.
 The declarations keep the name `restrictToIdeal` rather than `retract` because that is what they
 compute; the retraction property is the content of the two theorems, not of the name.
 
@@ -29,8 +30,8 @@ compute; the retraction property is the content of the two theorems, not of the 
 
 * `TauCeti.ValuationSpectrum.restrictToIdeal` : the restriction, at the level of points of
   `Spv A`.
-* `TauCeti.ValuationSpectrum.restrictToIdealCodRestrict` : the same map with the roadmap's
-  codomain, `Spv A → Spv (A, I)`, obtained by corestricting along the landing theorem below. This
+* `TauCeti.ValuationSpectrum.restrictToIdealCodRestrict` : the same map with codomain the
+  subspace, `Spv A → Spv (A, I)`, obtained by corestricting along the landing theorem below. This
   is the canonical form for a consumer, who then holds a point of the subspace rather than a
   point of `Spv A` together with a membership proof.
 
@@ -50,6 +51,9 @@ compute; the retraction property is the content of the two theorems, not of the 
   `Spv (A, I)` pointwise — a point of the subspace has `cΓ_v(I) = ⊤`, so nothing is discarded.
 * `TauCeti.ValuationSpectrum.restrictToIdealCodRestrict_coe` : the retraction law itself, that
   `r_I` composed with the inclusion of the subspace is the identity.
+* `TauCeti.ValuationSpectrum.IsContinuous.restrictToIdeal` and
+  `TauCeti.ValuationSpectrum.restrictToIdeal_mem_spa` : the restriction of a continuous point is
+  continuous, so the restriction maps `Spa (A, A⁺)` into itself.
 
 ## References
 
@@ -94,7 +98,7 @@ theorem vle_restrictToIdeal (v : Spv A) (I : Ideal A)
   exact or_congr_right (and_congr_right fun _ ↦ valuation_le_iff v a b)
 
 /-- **Wedhorn §7.1.2: the restriction lands in `Spv (A, I)`.** This is the substantive half of
-the roadmap's `r_I : Spv A → Spv (A, I)`: the point `restrictToIdeal v I` really does satisfy the
+the retraction `r_I : Spv A → Spv (A, I)`: the point `restrictToIdeal v I` really does satisfy the
 condition cutting out the subspace.
 
 The mathematics is valuation-level and lives there, as
@@ -107,7 +111,7 @@ theorem restrictToIdeal_mem_spvOfIdeal (v : Spv A) (I : Ideal A)
   rw [restrictToIdeal_def, mem_spvOfIdeal_ofValuation]
   exact Valuation.characteristicSubgroupOfIdeal_restrictToIdeal_eq_top _ I hfg
 
-/-- **The roadmap's `r_I : Spv A → Spv (A, I)`**, with the codomain the roadmap asks for. This is
+/-- **The retraction `r_I : Spv A → Spv (A, I)`**, with codomain the subspace. This is
 `restrictToIdeal` corestricted along the landing theorem, so a consumer receives a point of the
 subspace rather than an `Spv A`-point plus a membership proof to carry around. It is a genuine
 retraction: `restrictToIdealCodRestrict_coe` below says it fixes the subspace pointwise. -/
@@ -158,5 +162,24 @@ theorem restrictToIdealCodRestrict_coe (I : Ideal A)
     (hfg : ∃ J : Ideal A, J.FG ∧ I.radical = J.radical) (v : (spvOfIdeal I hfg : Set (Spv A))) :
     restrictToIdealCodRestrict I hfg (v : Spv A) = v :=
   Subtype.ext (restrictToIdeal_eq_self_of_mem_spvOfIdeal _ I hfg v.2)
+
+/-- **The restriction of a continuous point is continuous.** This is the valuation-level
+`Valuation.IsContinuous.restrictToIdeal`, read on the canonical valuation of the point. -/
+theorem IsContinuous.restrictToIdeal [TopologicalSpace A] {v : Spv A} (hv : v.IsContinuous)
+    (I : Ideal A) (hfg : ∃ J : Ideal A, J.FG ∧ I.radical = J.radical) :
+    (restrictToIdeal v I hfg).IsContinuous := by
+  rw [restrictToIdeal_def, isContinuous_ofValuation_iff]
+  exact ((isContinuous_def v).mp hv).restrictToIdeal I hfg
+
+/-- **The restriction maps `Spa (A, A⁺)` into itself.** It preserves continuity, and it keeps the
+value `1` while it can only lower other values, so `v(a) ≤ 1` on `A⁺` survives. -/
+theorem restrictToIdeal_mem_spa [TopologicalSpace A] {Aplus : Subring A} {v : Spv A}
+    (hv : v ∈ spa Aplus) (I : Ideal A) (hfg : ∃ J : Ideal A, J.FG ∧ I.radical = J.radical) :
+    restrictToIdeal v I hfg ∈ spa Aplus := by
+  rw [mem_spa_iff] at hv ⊢
+  have h1 : 1 ≤ v.valuation.restrictToIdeal I hfg 1 :=
+    one_le_restrictToIdeal _ I hfg (map_one _).symm.le
+  refine ⟨hv.1.restrictToIdeal I hfg, fun a ha ↦ (vle_restrictToIdeal v I hfg a 1).mpr
+    (Or.inr ⟨(zero_lt_one.trans_le h1).ne', hv.2 a ha⟩)⟩
 
 end TauCeti.ValuationSpectrum

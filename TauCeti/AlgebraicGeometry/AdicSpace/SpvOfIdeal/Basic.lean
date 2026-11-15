@@ -53,6 +53,10 @@ Lemma 7.4.
 
 * `mem_spvOfIdeal_iff_forall_cofinalValue_or_characteristicSubgroup_eq_top` : **Lemma 7.4**
   at the `Spv` level — the criterion in the form a consumer can actually check.
+* `TauCeti.ValuationSpectrum.mem_spvOfIdeal_top_iff` : `Spv (A, A)` consists of the points with
+  full characteristic group.
+* `TauCeti.ValuationSpectrum.mem_range_trivialSection_of_mem_spvOfIdeal_top` : a point of
+  `Spv (A, A)` whose values are all at most `1` is a trivial valuation.
 * `TauCeti.ValuationSpectrum.mem_spvOfIdeal_iff` : membership unfolded through the canonical
   valuation, and `TauCeti.ValuationSpectrum.mem_spvOfIdeal_ofValuation` : membership tested on
   an arbitrary representative, which is what makes the definition usable.
@@ -107,5 +111,37 @@ theorem mem_spvOfIdeal_iff_forall_cofinalValue_or_characteristicSubgroup_eq_top 
     v ∈ spvOfIdeal I hfg ↔
       (∀ a ∈ I, CofinalValue v.valuation a) ∨ characteristicSubgroup v.valuation = ⊤ :=
   characteristicSubgroupOfIdeal_eq_top_iff hfg
+
+/-- **The points of `Spv (A, A)`** are those whose characteristic subgroup is the whole value
+group. The cofinal alternative of Lemma 7.4 cannot hold for the unit ideal, as `v(1) = 1` is not
+cofinal. -/
+theorem mem_spvOfIdeal_top_iff {hfg : ∃ J : Ideal A, J.FG ∧ (⊤ : Ideal A).radical = J.radical}
+    {v : Spv A} : v ∈ spvOfIdeal ⊤ hfg ↔ characteristicSubgroup v.valuation = ⊤ :=
+  mem_spvOfIdeal_iff_forall_cofinalValue_or_characteristicSubgroup_eq_top.trans
+    (or_iff_right fun h ↦
+      not_cofinalValueFor_one _ ⊤ (cofinalValueFor_top_iff.mpr (h 1 Submodule.mem_top)))
+
+/-- A point of `Spv(A, A)` whose values are all at most `1` is trivial. Its characteristic group
+is everything, so each nonzero value lies between `g⁻¹` and `g` for an attained value `1 ≤ g`;
+since `g ≤ 1` as well, `g = 1` and the value is `1`. -/
+theorem mem_range_trivialSection_of_mem_spvOfIdeal_top {v : Spv A}
+    {hfg : ∃ J : Ideal A, J.FG ∧ (⊤ : Ideal A).radical = J.radical} (hv : v ∈ spvOfIdeal ⊤ hfg)
+    (h1 : ∀ a : A, v.toValuativeRel.vle a 1) : v ∈ Set.range trivialSection := by
+  have hfull := Valuation.hasFullCharacteristicGroup_iff_characteristicSubgroup_eq_top.mpr
+    (mem_spvOfIdeal_top_iff.mp hv)
+  refine (mem_range_trivialSection_iff v).mpr fun a ↦ ?_
+  simp only [← valuation_le_iff, map_zero, map_one] at h1 ⊢
+  rcases eq_or_ne (v.valuation a) 0 with h0 | h0
+  · exact Or.inl h0.le
+  refine Or.inr ⟨?_, h1 a⟩
+  have hpos : 0 < v.valuation.restrict a := zero_lt_iff.mpr fun h ↦
+    h0 (v.valuation.restrict_eq_zero_iff.mp h)
+  obtain ⟨b, hinv, hle⟩ := Valuation.hasFullCharacteristicGroup_iff.mp hfull _ hpos
+  have hb : v.valuation.restrict b ≤ 1 := by
+    simpa using v.valuation.restrict_le_iff.mpr ((h1 b).trans_eq (map_one v.valuation).symm)
+  have ha : v.valuation.restrict 1 ≤ v.valuation.restrict a := by
+    rw [map_one]
+    exact ((one_le_inv₀ (hpos.trans_le hle)).mpr hb).trans hinv
+  simpa using v.valuation.restrict_le_iff.mp ha
 
 end TauCeti.ValuationSpectrum

@@ -12,7 +12,7 @@ import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import all TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.UpperHalfSpace.Basic
-import all TauCeti.Geometry.Manifold.VectorBundle.Tangent
+import all TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # The Levi-Civita connection in the upper half-space
@@ -49,8 +49,14 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 local notation "P" => WithLp 2 (E × ℝ)
 local notation "J" => 𝓘(ℝ, P)
 
-private def constantField (v : P) (x : UpperHalfSpace E) : TangentSpace J x :=
+/-- The vector field with constant value `v` in the inherited upper-half-space coordinates. -/
+def constantField (v : P) (x : UpperHalfSpace E) : TangentSpace J x :=
   (tangentSpaceCastModel J x).symm v
+
+omit [FiniteDimensional ℝ E] in
+/-- The value of a constant coordinate vector field. -/
+@[simp] theorem constantField_apply (v : P) (x : UpperHalfSpace E) :
+    constantField v x = (tangentSpaceCastModel J x).symm v := (rfl)
 
 omit [FiniteDimensional ℝ E] in
 private theorem mpullback_const (v : P) :
@@ -66,22 +72,32 @@ private theorem mpullback_const (v : P) :
   rw [mpullback_apply, hcoe, ContinuousLinearMap.inverse_equiv]
   rfl
 
-private theorem mdifferentiableAt_constantField (v : P) (x : UpperHalfSpace E) :
-    MDifferentiableAt J ((J).prod J)
-      (fun y => (⟨y, constantField v y⟩ : TangentBundle J (UpperHalfSpace E))) x := by
+omit [FiniteDimensional ℝ E] in
+/-- Constant coordinate fields are smooth as sections of the tangent bundle. -/
+theorem contMDiff_constantField [CompleteSpace E] (v : P) : ContMDiff J ((J).prod J) ∞
+    (fun y => (⟨y, constantField v y⟩ : TangentBundle J (UpperHalfSpace E))) := by
   rw [← mpullback_const]
-  exact ((contMDiffAt_vectorSpace_iff_contDiffAt (n := 1)).2
-    (contDiffAt_const (c := v))).mdifferentiableAt one_ne_zero |>.mpullback_vectorField
-      (contMDiff_coe.of_le (show (2 : ℕ∞ω) ≤ ω from le_top) x)
-      (by
+  exact ((contMDiff_vectorSpace_iff_contDiff (n := ∞)).2
+    (contDiff_const (c := v))).mpullback_vectorField
+      (contMDiff_coe.of_le (show (∞ : ℕ∞ω) ≤ ω from le_top))
+      (fun x => by
         have hcoe : mfderiv J J (coe : UpperHalfSpace E → P) x =
             ((tangentSpaceCastModel J x).trans
               (NormedSpace.fromTangentSpace (coe x)).symm).toContinuousLinearMap :=
           TauCeti.Manifold.mfderiv_subtype_val (I := J) (show upperHalfSpaceOpens E from x)
         rw [hcoe]
-        exact ContinuousLinearMap.isInvertible_equiv) le_rfl
+        exact ContinuousLinearMap.isInvertible_equiv) (by simp)
 
-private theorem mlieBracket_constantField (u v : P) (x : UpperHalfSpace E) :
+omit [FiniteDimensional ℝ E] in
+private theorem mdifferentiableAt_constantField [CompleteSpace E] (v : P)
+    (x : UpperHalfSpace E) :
+    MDifferentiableAt J ((J).prod J)
+      (fun y => (⟨y, constantField v y⟩ : TangentBundle J (UpperHalfSpace E))) x :=
+  (contMDiff_constantField v x).mdifferentiableAt (by simp)
+
+omit [FiniteDimensional ℝ E] in
+/-- Constant coordinate fields commute. -/
+@[simp] theorem mlieBracket_constantField [CompleteSpace E] (u v : P) (x : UpperHalfSpace E) :
     mlieBracket J (constantField u) (constantField v) x = 0 := by
   rw [← mpullback_const, ← mpullback_const]
   have h := mpullback_mlieBracket (I := J) (I' := J) (f := coe)
@@ -92,7 +108,7 @@ private theorem mlieBracket_constantField (u v : P) (x : UpperHalfSpace E) :
       contDiffAt_const).mdifferentiableAt one_ne_zero)
     (contMDiff_coe.of_le (show (2 : ℕ∞ω) ≤ ω from le_top) x) (by simp)
   rw [← h]
-  simp only [mpullback, TauCeti.mlieBracket_const_model_space, map_zero]
+  simp only [mpullback, mlieBracket_const_model_space, map_zero]
 
 omit [FiniteDimensional ℝ E] in
 private theorem mvfderiv_inner_constantField (u v w : P) (x : UpperHalfSpace E) :
@@ -127,13 +143,10 @@ private theorem mvfderiv_inner_constantField (u v w : P) (x : UpperHalfSpace E) 
 The tangent-space identifications read the result in the Euclidean model. -/
 @[simp] theorem leviCivitaConnection_const_apply (x : UpperHalfSpace E) (u v : P) :
     tangentSpaceCastModel J x
-      (leviCivitaConnection J (UpperHalfSpace E)
-        (fun y => (tangentSpaceCastModel J y).symm v) x
+      (leviCivitaConnection J (UpperHalfSpace E) (constantField v) x
         ((tangentSpaceCastModel J x).symm u)) =
       (height x)⁻¹ • (inner ℝ u v • WithLp.toLp 2 (0, 1) - u.snd • v - v.snd • u) := by
-  -- Name the dependent coordinate fields so the Koszul expression remains well typed.
-  change tangentSpaceCastModel J x
-    (leviCivitaConnection J (UpperHalfSpace E) (constantField v) x (constantField u x)) = _
+  rw [← constantField_apply u x]
   apply ext_inner_right ℝ
   intro w
   have h := two_inner_leviCivitaConnection_eq_koszul (I := J) (M := UpperHalfSpace E)
@@ -215,8 +228,8 @@ value and the second input `u` is the direction of differentiation. -/
   have hc := TauCeti.Manifold.covariantDerivative_eq_add_christoffelForm b
     (cov.isCovariantDerivativeOn (s := e.baseSet)) hx (mdifferentiableAt_constantField v x)
   rw [frameCovariantDerivative_constantField b x v, zero_add] at hc
-  have hmap := TauCeti.Manifold.christoffelMap_apply b
-    (cov.isCovariantDerivativeOn (s := e.baseSet)) hx v u
+  have hmap := TauCeti.Manifold.christoffelMap_apply (x := x) b
+    (cov.isCovariantDerivativeOn (s := e.baseSet)) v u
   have he (a : P) : e.symmL ℝ x a = constantField a x := by
     exact (eventually_symmL_eq_constantField x).self_of_nhds a
   rw [he v, he u, ← hc] at hmap

@@ -49,10 +49,6 @@ succeeds on the resulting exact certificate.
 
 ## References
 
-This closes the `D₄ = DihedralGroup 4` part of “Rational tables (first executable milestone)” in
-Layer 6 of the
-[character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md).
-
 * J. D. Dixon, *High speed computation of group characters*, Numerische Mathematik 10 (1967),
   446--450.
 * G. Schneider, *Dixon's character table algorithm revisited*, J. Symbolic Comput. 9 (1990),
@@ -134,8 +130,7 @@ theorem dihedralGroupFour_centralCharacterSearch :
       (dihedralClassData 4).rowsOfMap
         (fun x : ℤ => (x : ZMod dihedralGroupFourDixonPrimeData.p))
         dihedralGroupFourCentralCharacterTable :=
-  (dihedralClassData 4).centralCharacterSearch_eq_rowsOfMap_of_isGoodDixonPrime
-    dihedralGroupFourDixonPrimeData.isGoodDixonPrime
+  (dihedralClassData 4).centralCharacterSearch_eq_rowsOfMap
     (fun x : ℤ => (x : ZMod dihedralGroupFourDixonPrimeData.p))
     dihedralGroupFourCentralCharacterTable
     (by intro i; fin_cases i <;> decide)

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.ExponentialSlope
+public import TauCeti.Analysis.SpecialFunctions.Exp.Limits
 public import TauCeti.LinearAlgebra.LinearPMap.Shift
 public import TauCeti.Analysis.Semigroups.ExponentialShift
 public import TauCeti.Analysis.Semigroups.Generator.Basic
@@ -52,7 +52,7 @@ private theorem tendsto_expShift_genQuot (S : StronglyContinuousSemigroup X) (om
   have hconst : Tendsto (fun _ : ℝ => x) (nhdsWithin 0 (Set.Ioi 0)) (nhds x) :=
     tendsto_const_nhds
   have hshift := (hexp.smul hgen).add
-    ((tendsto_exp_mul_sub_one_div (-omega)).smul hconst)
+    (((Real.tendsto_exp_mul_sub_one_div (-omega)).mono_left (nhdsGT_le_nhdsNE 0)).smul hconst)
   have hshift' : Tendsto
       (fun t : ℝ => Real.exp (-(omega * t)) •
           ((1 / t) • (S.realOperator t x - x)) +

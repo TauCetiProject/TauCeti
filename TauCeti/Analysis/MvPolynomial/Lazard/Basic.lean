@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPolynomial.Lazard.Uniform
-public import TauCeti.Analysis.Analytic.ConstantOrder
+public import TauCeti.Analysis.Analytic.ConstantOrder.Basic
 import Mathlib.Analysis.Analytic.Polynomial
 
 /-!

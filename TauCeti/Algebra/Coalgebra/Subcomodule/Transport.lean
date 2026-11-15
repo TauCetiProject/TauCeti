@@ -15,9 +15,6 @@ Mutually inverse comodule morphisms identify the corresponding subcomodule latti
 images. In particular, transporting a comodule structure along a linear equivalence preserves
 its subcomodules and their underlying submodules.
 
-This is Layer 1 infrastructure for the reductive-groups roadmap: changing the carrier of a
-comodule must preserve its invariant subspaces.
-
 ## Main declarations
 
 * `TauCeti.Subcomodule.mapOrderIso`: the order isomorphism induced by mutually inverse comodule
@@ -96,8 +93,14 @@ def transportOrderIso (e : M ≃ₗ[R] N) :
     Subcomodule R C M ≃o Subcomodule R C N := by
   letI : Comodule R C N := Comodule.Transport e
   exact mapOrderIso (Comodule.transportToHom e) (Comodule.transportInvHom e)
-    (Comodule.Hom.ext fun m => e.symm_apply_apply m)
-    (Comodule.Hom.ext fun n => e.apply_symm_apply n)
+    (by
+      ext m
+      simp only [Comodule.Hom.comp_apply, Comodule.Hom.id_apply, Comodule.transportToHom_apply,
+        Comodule.transportInvHom_apply, LinearEquiv.symm_apply_apply])
+    (by
+      ext n
+      simp only [Comodule.Hom.comp_apply, Comodule.Hom.id_apply, Comodule.transportToHom_apply,
+        Comodule.transportInvHom_apply, LinearEquiv.apply_symm_apply])
 
 /-- The forward transport correspondence is image under the transport equivalence. -/
 @[simp]

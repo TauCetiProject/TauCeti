@@ -74,7 +74,7 @@ private theorem valuation_completionAdicRingEquiv (v : Valuation F ℤᵐ⁰)
     (hv : v = p.valuation F) (y : v.Completion) :
     Valued.v (completionAdicRingEquiv F p v hv y) = Valued.v y := by
   subst v
-  exact HeightOneSpectrum.adicCompletion.valued_ofCompletion F p y
+  exact HeightOneSpectrum.adicCompletion.valued_ofCompletion_apply F p y
 
 /-- The completion of a place with the affine model's valuation is its adic completion,
 over the constants. The equality transports the dependent completion structures. -/

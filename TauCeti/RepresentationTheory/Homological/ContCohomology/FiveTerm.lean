@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Conjugation
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Conjugation.Restriction
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Inflation.Basic
 
 /-!
@@ -79,17 +79,6 @@ theorem exists_smul_conj_sub_eq_d0_of_mem_H1ConjInvariants {c : Z1 N M}
   refine ⟨m, fun n => ?_⟩
   rw [d0_apply, hm n, Pi.sub_apply, cocyclesMap1_apply, DistribSMul.toAddMonoidHom_apply]
 
-omit [IsTopologicalGroup G] [ContinuousSMul G M] [N.Normal] in
-/-- Conjugating the restriction of a continuous `1`-cocycle changes it by the coboundary of its
-value at the conjugating element. This is the representative-level identity behind
-`explicitRes1_mem_conjInvariants`. -/
-theorem smul_inverseConjugation_apply_sub_eq_d0 (c : Z1 G M) (g : G) (n : N) :
-    g • (c : G → M) (g⁻¹ * (n : G) * g) - (c : G → M) (n : G) =
-      d0 N M ((c : G → M) g) n := by
-  rw [groupCohomology.smul_apply_inv_mul_mul_of_isCocycle₁ (mem_Z1_iff.1 c.2).2 g (n : G),
-    d0_apply, Subgroup.smul_def]
-  abel
-
 /-- Restriction of a first cohomology class to a normal subgroup is invariant under conjugation.
 
 On a cocycle representative `c`, conjugation changes the restricted cocycle by the coboundary
@@ -100,13 +89,10 @@ theorem explicitRes1_mem_conjInvariants (x : H1 G M) :
   intro g
   induction x using QuotientAddGroup.induction_on with
   | _ c =>
-      rw [explicitRes1_mk, explicitConj1_apply_eq_smul, smul_mk, H1pi_eq_iff]
-      refine mem_B1_iff.2 ⟨(c : G → M) g, fun n => ?_⟩
-      simp only [Pi.sub_apply, cocyclesMap1_apply, ContinuousMonoidHom.subgroupSubtype_apply,
-        AddMonoidHom.id_apply, DistribSMul.toAddMonoidHom_apply,
-        Subgroup.inverseConjugationHom_apply]
-      simpa only [d0_apply] using
-        (smul_inverseConjugation_apply_sub_eq_d0 G M N c g n).symm
+    rw [explicitRes1_mk, explicitConj1_apply_eq_smul, smul_mk]
+    simpa only [explicitRes1_mk, explicitMap1_mk] using
+      explicitMap1_explicitRes1_of_conj G M N N g (N.inverseConjugationHom g)
+        (by simp) (DistribSMul.toAddMonoidHom M g) (fun _ => rfl) (c : H1 G M)
 
 /-- Restriction in degree one, with codomain restricted to the conjugation-invariant subgroup.
 This is the third arrow in the inflation-restriction-transgression five-term sequence. -/

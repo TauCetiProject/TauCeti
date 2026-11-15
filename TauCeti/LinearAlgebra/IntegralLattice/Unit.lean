@@ -59,6 +59,12 @@ with the dot-product form and identity Gram matrix. -/
 noncomputable def unitLattice : IntegralLattice (ι → ℚ) :=
   ofGramMatrix (Pi.basisFun ℚ ι) 1 Matrix.isSymm_one
 
+/-- The standard unit lattice is the integral span of the coordinate basis. -/
+theorem unitLattice_carrier_eq_span_basisFun :
+    (unitLattice ι).carrier = Submodule.span ℤ (Set.range (Pi.basisFun ℚ ι)) := by
+  classical
+  exact ofGramMatrix_carrier _ _ _
+
 /-- A vector belongs to the standard unit lattice exactly when all its coordinates are integers. -/
 @[simp]
 theorem mem_unitLattice_carrier_iff (x : ι → ℚ) :
@@ -93,6 +99,11 @@ noncomputable def unitLatticeBasis : Basis ι ℤ (unitLattice ι) :=
 theorem coe_unitLatticeBasis_apply (i : ι) :
     (unitLatticeBasis ι i : ι → ℚ) = Pi.basisFun ℚ ι i :=
   ofGramMatrix.coe_basis _ _ _ i
+
+/-- The coordinate vector `eᵢ` lies in the standard unit lattice. -/
+theorem single_one_mem_unitLattice_carrier [DecidableEq ι] (i : ι) :
+    Pi.single i (1 : ℚ) ∈ (unitLattice ι).carrier :=
+  (mem_unitLattice_carrier_iff ι _).2 fun j ↦ ⟨(Pi.single i 1 : ι → ℤ) j, by simp [Pi.single_apply]⟩
 
 /-- The Gram matrix of the standard integral basis is the identity matrix. -/
 @[simp]

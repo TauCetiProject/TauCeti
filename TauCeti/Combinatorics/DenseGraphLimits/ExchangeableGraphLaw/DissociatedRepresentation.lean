@@ -101,7 +101,7 @@ theorem isDissociated_mixtureExchangeableLaw_iff (P : ProbabilityMeasure (Grapho
     have hW : (id : GraphonSpace Ω μ → GraphonSpace Ω μ) =ᵐ[(P : Measure (GraphonSpace Ω μ))]
         fun _ => SeparationQuotient.mk W := by
       filter_upwards [hall] with y hy
-      refine (graphonSpace_ext_iff_homDensity y _).2 fun k F _ => ?_
+      refine (graphonSpace_ext_homDensity y _).2 fun k F _ => ?_
       -- `convert` reconciles the given decidability instance with the classical one in `hall`
       convert (hy k F).trans (hx k F).symm
     refine ⟨W, ProbabilityMeasure.toMeasure_injective ?_⟩

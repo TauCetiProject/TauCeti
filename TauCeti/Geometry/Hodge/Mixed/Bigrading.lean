@@ -107,7 +107,7 @@ theorem IsHodgeBigrading.prod
     IsHodgeBigrading (IsBaseChange.prodMap ιℚ ι'ℚ hℚ h'ℚ)
       (IsBaseChange.prodMap ιℂ ι'ℂ hℂ h'ℂ) (fun k ↦ (W k).prod (W' k))
       (fun p ↦ (F p).prod (F' p)) (fun pq ↦ (I pq).prod (I' pq)) where
-  iSupIndep := TauCeti.iSupIndep.prod h.iSupIndep h'.iSupIndep
+  iSupIndep := h.iSupIndep.prod h'.iSupIndep
   rationalToComplexSubmodule_eq_iSup k := by
     simp only [rationalToComplexSubmodule_prod hℚ hℂ h'ℚ h'ℂ, TauCeti.iSup_prod_submodule,
       h.rationalToComplexSubmodule_eq_iSup, h'.rationalToComplexSubmodule_eq_iSup]
@@ -163,7 +163,7 @@ theorem F_inf_rationalToComplexSubmodule_eq_iSup (h : IsHodgeBigrading hℚ hℂ
     F p ⊓ rationalToComplexSubmodule hℚ hℂ (WQ k) =
       ⨆ (pq : ℤ × ℤ) (_ : p ≤ pq.1 ∧ pq.1 + pq.2 ≤ k), I pq := by
   rw [h.F_eq_iSup p, h.rationalToComplexSubmodule_eq_iSup k]
-  exact TauCeti.iSupIndep.iSup₂_inf_iSup₂_eq_iSup₂_and h.iSupIndep _ _
+  exact iSupIndep.iSup₂_inf_iSup₂_eq_iSup₂_and h.iSupIndep _ _
 
 /-- Inside `W_k`, the conjugate of the Hodge step `F^r` is spanned, modulo `W_{k-1}`, by pieces
 whose second index is at least `r`. -/
@@ -215,7 +215,7 @@ theorem isCompl_complexGradedF (h : IsHodgeBigrading hℚ hℂ WQ F I) (k p : �
       exact biSup_mono fun _ ↦ Or.inl
     refine (inf_le_inf hA hB).trans ?_
     simp only [hW]
-    rw [TauCeti.iSupIndep.iSup₂_inf_iSup₂_eq_iSup₂_and h.iSupIndep,
+    rw [iSupIndep.iSup₂_inf_iSup₂_eq_iSup₂_and h.iSupIndep,
       h.rationalToComplexSubmodule_eq_iSup]
     exact biSup_mono fun _ ↦ by omega
   · -- Every piece of total degree at most `k` lies in `W_{k-1}` or in one of the two images.
@@ -316,17 +316,19 @@ theorem ofIsHodgeBigrading_deligneSplittingFamily (mhs : MixedHodgeStructure h�
 
 /-- **A pair of bounded filtrations is a mixed Hodge structure exactly when it admits a Hodge
 bigrading.** Precisely: the purity axiom holds for a bounded increasing rational weight filtration
-and a bounded decreasing Hodge filtration if and only if the two filtrations have a Hodge
-bigrading. -/
+and a decreasing Hodge filtration that is the whole space at some step if and only if the two
+filtrations have a Hodge bigrading. That the Hodge filtration is zero at some step follows from the
+purity axiom. -/
 theorem exists_isHodgeBigrading_iff (hWQ : Monotone WQ) (hW_top : ∃ k, WQ k = ⊤)
-    (hW_bot : ∃ k, WQ k = ⊥) (hF_anti : Antitone F) (hF_top : ∃ p, F p = ⊤)
-    (hF_bot : ∃ p, F p = ⊥) :
+    (hW_bot : ∃ k, WQ k = ⊥) (hF_anti : Antitone F) (hF_top : ∃ p, F p = ⊤) :
     (∃ I, IsHodgeBigrading hℚ hℂ WQ F I) ↔
       ∀ k, ∃ hs : HodgeStructure (isBaseChange_ratTensorMap ℂ (weightGradedRat WQ k)) k,
         hs.F = gradedF hℚ hℂ WQ hWQ F k :=
   ⟨fun ⟨_, h⟩ ↦ h.exists_hodgeStructure_F_eq_gradedF hF_top, fun hpure ↦
     ⟨_, isHodgeBigrading_deligneSplittingFamily ⟨WQ, hWQ, hW_top, hW_bot, F, hF_anti, hF_top,
-      hF_bot, hpure⟩⟩⟩
+      exists_eq_bot_of_forall_gradedF_eq_bot hℚ hℂ WQ hWQ F hF_anti hW_top hW_bot fun k ↦
+        let ⟨hs, hsF⟩ := hpure k
+        hsF ▸ hs.F_bot, hpure⟩⟩⟩
 
 end MixedHodgeStructure
 

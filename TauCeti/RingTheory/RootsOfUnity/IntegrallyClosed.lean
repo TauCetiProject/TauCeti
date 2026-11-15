@@ -12,8 +12,8 @@ public import Mathlib.RingTheory.RootsOfUnity.Basic
 # Roots of unity do not leave an integrally closed subring
 
 If `R` is integrally closed in `A`, then `R` and `A` have the same `n`-th roots of unity for every
-`n ≠ 0`: an `n`-th root of unity `x` of `A` satisfies `x ^ n = 1`, so it is integral over `R` and
-therefore comes from `R`, and its inverse `x ^ (n - 1)` comes from `R` as well.
+`n ≠ 0`: an `n`-th root of unity `x` of `A` is a root of the monic polynomial `X ^ n - 1`, so it is
+integral over `R` and therefore comes from `R`.
 
 The typical use is `R` a valuation ring and `A` its fraction field, where it says that all roots of
 unity of the field are already units of the valuation ring.
@@ -34,8 +34,7 @@ variable (R A : Type*) [CommRing R] [CommRing A] [Algebra R A] [IsIntegrallyClos
 variable (n : ℕ) [NeZero n]
 
 /-- If `R` is integrally closed in `A` and `n ≠ 0`, restricting the inclusion `R → A` to `n`-th
-roots of unity is a bijection: it is injective because `R → A` is, and surjective because an
-`n`-th root of unity of `A` is integral over `R`, hence comes from `R`. -/
+roots of unity is a bijection `μ_n(R) → μ_n(A)`. -/
 theorem restrictRootsOfUnity_bijective :
     Function.Bijective (restrictRootsOfUnity (algebraMap R A) n) := by
   have hinj : Function.Injective (algebraMap R A) := IsIntegralClosure.algebraMap_injective R R A
@@ -44,8 +43,7 @@ theorem restrictRootsOfUnity_bijective :
   obtain ⟨y, hy⟩ := IsIntegrallyClosedIn.exists_algebraMap_eq_of_isIntegral_pow
     (R := R) (A := A) (NeZero.pos n) (hξ ▸ isIntegral_one)
   have hyn : y ^ n = 1 := hinj (by rw [map_pow, hy, hξ, map_one])
-  refine ⟨⟨(IsUnit.of_pow_eq_one hyn (NeZero.ne n)).unit, (mem_rootsOfUnity' n _).2 (by simpa)⟩, ?_⟩
-  exact Subtype.ext (Units.ext (by simpa using hy))
+  exact ⟨rootsOfUnity.mkOfPowEq y hyn, by ext; simpa using hy⟩
 
 /-- If `R` is integrally closed in `A`, the inclusion `R → A` identifies the `n`-th roots of unity
 of `R` with those of `A`. -/
@@ -56,5 +54,11 @@ noncomputable def rootsOfUnityMulEquiv : rootsOfUnity n R ≃* rootsOfUnity n A 
 @[simp] theorem coe_rootsOfUnityMulEquiv (x : rootsOfUnity n R) :
     ((rootsOfUnityMulEquiv R A n x : Aˣ) : A) = algebraMap R A ((x : Rˣ) : R) := by
   simp [rootsOfUnityMulEquiv]
+
+/-- The inverse of `rootsOfUnityMulEquiv`, read in `A`: the root of unity of `R` that an `n`-th
+root of unity `x` of `A` comes from maps back to `x`. -/
+@[simp] theorem algebraMap_rootsOfUnityMulEquiv_symm_apply (x : rootsOfUnity n A) :
+    algebraMap R A (((rootsOfUnityMulEquiv R A n).symm x : Rˣ) : R) = ((x : Aˣ) : A) := by
+  rw [← coe_rootsOfUnityMulEquiv, MulEquiv.apply_symm_apply]
 
 end TauCeti

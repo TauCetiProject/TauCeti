@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Index
-public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations
+public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic
 
 /-!
 # Numbered data for the Suzuki--Ree isogenies
@@ -25,9 +25,9 @@ already fixed by the root-systems development, without introducing a second tabl
 and `F₄`.
 
 The permutation selector has only the four half-Frobenius branches: Suzuki and Ree `G₂` use the
-rank-two node swap, while Ree `F₄` and Tits use diagram reversal. Milestone L2 must reduce every
-branch to the corresponding pinned permutation when selecting the upstream special isogeny, so the
-four branch equations are simp lemmas rather than the selector body being exposed.
+rank-two node swap, while Ree `F₄` and Tits use diagram reversal. Selecting the upstream special
+isogeny reduces every branch to the corresponding pinned permutation, so the four branch equations
+are simp lemmas rather than the selector body being exposed.
 
 ## Main definitions and results
 
@@ -49,11 +49,11 @@ four branch equations are simp lemmas rather than the selector body being expose
   `TauCeti.SuzukiReeIndex.exponent_eq_one_iff` and
   `TauCeti.SuzukiReeIndex.exponent_eq_characteristic_iff` compute and characterize the two
   exponents, and `TauCeti.SuzukiReeIndex.exponent_mul_exponent_lengthPerm` multiplies the two
-  exponents of a length-exchanged pair to the characteristic.
-The permutation, the exponents, and their branch equations are the Suzuki--Ree numbered-data part
-of milestone I0 in `TauCetiRoadmap/CFSGStatement/README.md`. The exponent convention follows Carter,
-*Simple Groups of Lie Type*. The permutations and numbering follow Bourbaki, *Lie Groups and Lie
-Algebras, Chapters 4--6*, plates II, VIII, and IX, as fixed by the CFSG and root-systems roadmaps.
+  exponents of a length-exchanged pair to the characteristic. By
+  `TauCeti.SuzukiReeIndex.neg_one_pow_exponent`, raising `-1` to an exponent fixes it in the
+  defining exponential characteristic.
+The exponent convention follows Carter, *Simple Groups of Lie Type*. The permutations and numbering
+follow Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, plates II, VIII, and IX.
 -/
 
 public section
@@ -152,26 +152,26 @@ theorem isLongSimpleRoot_lengthPerm (e : SuzukiReeIndex) (i : Fin e.1.rank) :
       ¬e.1.dynkinType.IsLongSimpleRoot i := by
   simp only [ValidLieTypeIndex.dynkinType, ValidLieTypeIndex.rank] at i ⊢
   obtain ⟨⟨d, hvalid⟩, hhalf⟩ := e
-  cases d <;> try simp at hhalf
+  cases d <;> simp at hhalf
   case suzuki =>
     convert isLongSimpleRoot_reindexPerm (LieTypeIndex.dynkinType_suzuki _)
       lengthPermRankTwo isLongSimpleRoot_lengthPermRankTwo_iff_not_isLongSimpleRoot_B2 i using 1
-    all_goals simp only [lengthPerm_suzuki]
+    simp only [lengthPerm_suzuki]
     rfl
   case reeG2 =>
     convert isLongSimpleRoot_reindexPerm (LieTypeIndex.dynkinType_reeG2 _)
       lengthPermRankTwo isLongSimpleRoot_lengthPermRankTwo_iff_not_isLongSimpleRoot_G2 i using 1
-    all_goals simp only [lengthPerm_reeG2]
+    simp only [lengthPerm_reeG2]
     rfl
   case reeF4 =>
     convert isLongSimpleRoot_reindexPerm (LieTypeIndex.dynkinType_reeF4 _)
       lengthPermF4 isLongSimpleRoot_lengthPermF4_iff_not_isLongSimpleRoot_F4 i using 1
-    all_goals simp only [lengthPerm_reeF4]
+    simp only [lengthPerm_reeF4]
     rfl
   case tits =>
     convert isLongSimpleRoot_reindexPerm LieTypeIndex.dynkinType_tits lengthPermF4
       isLongSimpleRoot_lengthPermF4_iff_not_isLongSimpleRoot_F4 i using 1
-    all_goals simp only [lengthPerm_tits]
+    simp only [lengthPerm_tits]
     rfl
 
 /-- The exponent attached to a numbered simple root subgroup by the exceptional isogeny: `1` on a
@@ -232,6 +232,15 @@ theorem exponent_eq_one_or_eq_characteristic (e : SuzukiReeIndex) (i : Fin e.1.r
   · exact Or.inl (exponent_of_isLongSimpleRoot e i hi)
   · exact Or.inr (exponent_of_not_isLongSimpleRoot e i hi)
 
+/-- The parameter exponent of the exceptional isogeny is odd as a power map: `-1` is raised to
+itself. At a long node the exponent is `1`, and at a short one it is the characteristic. -/
+theorem neg_one_pow_exponent (e : SuzukiReeIndex) {A : Type*} [CommRing A]
+    [ExpChar A e.1.characteristic] (i : Fin e.1.rank) : (-1 : A) ^ e.exponent i = -1 := by
+  by_cases hi : e.1.dynkinType.IsLongSimpleRoot i
+  · rw [exponent_of_isLongSimpleRoot e i hi, pow_one]
+  · rw [exponent_of_not_isLongSimpleRoot e i hi]
+    exact neg_one_pow_expChar A e.1.characteristic
+
 /-! ### The length permutation is an involution transposing the Cartan matrix -/
 
 -- As for `isLongSimpleRoot_reindexPerm`, transporting a property of a pinned permutation together
@@ -259,7 +268,7 @@ theorem lengthPerm_lengthPerm (e : SuzukiReeIndex) (i : Fin e.1.rank) :
     e.lengthPerm (e.lengthPerm i) = i := by
   simp only [ValidLieTypeIndex.rank] at i ⊢
   obtain ⟨⟨d, hvalid⟩, hhalf⟩ := e
-  cases d <;> try simp at hhalf
+  cases d <;> simp at hhalf
   case suzuki =>
     rw [lengthPerm_suzuki]
     exact involutive_reindexPerm (LieTypeIndex.dynkinType_suzuki _) lengthPermRankTwo
@@ -291,7 +300,7 @@ theorem cartanMatrix_lengthPerm (e : SuzukiReeIndex) (i j : Fin e.1.rank) :
       e.1.dynkinType.cartanMatrix j i := by
   simp only [ValidLieTypeIndex.dynkinType, ValidLieTypeIndex.rank] at i j ⊢
   obtain ⟨⟨d, hvalid⟩, hhalf⟩ := e
-  cases d <;> try simp at hhalf
+  cases d <;> simp at hhalf
   case suzuki =>
     rw [lengthPerm_suzuki]
     exact cartanMatrix_reindexPerm (LieTypeIndex.dynkinType_suzuki _) lengthPermRankTwo

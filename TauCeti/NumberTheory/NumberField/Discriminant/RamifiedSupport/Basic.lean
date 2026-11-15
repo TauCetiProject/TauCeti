@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Discriminant.Ramification
+import TauCeti.RingTheory.DedekindDomain.PrimesAbove
 
 /-!
 # The ramified support of an extension of number fields
@@ -33,6 +34,8 @@ automatic.
   support of `K / K` is empty.
 * `TauCeti.NumberField.isUnramifiedAway_ramifiedSupport`: primes outside the ramified support are
   unramified throughout the extension.
+* `TauCeti.NumberField.exists_liesOver_isUnramifiedAt_of_notMem_finset`: a place outside a finite
+  set containing the ramified support has an unramified place above it.
 
 ## References
 
@@ -70,7 +73,7 @@ theorem mem_ramifiedSupport_iff_exists {v : HeightOneSpectrum (𝓞 K)} :
     v ∈ ramifiedSupport K L ↔
       ∃ P : (v.asIdeal).primesOver (𝓞 L), 1 < (P : Ideal (𝓞 L)).ramificationIdx (𝓞 K) := by
   rw [mem_ramifiedSupport]
-  exact dvd_relDiscr_iff_exists_one_lt_ramificationIdx v.ne_bot
+  exact dvd_relDiscr_iff_exists_one_lt_ramificationIdx
 
 variable (K) in
 /-- **Nothing ramifies in the identity extension**: the ramified support of `K / K` is empty. -/
@@ -96,7 +99,19 @@ theorem isUnramifiedAway_ramifiedSupport :
   intro v hv Q _ _
   by_contra hQ
   apply hv
-  rw [mem_ramifiedSupport, TauCeti.dvd_relDiscr_iff_exists_not_isUnramifiedAt v.ne_bot]
+  rw [mem_ramifiedSupport, TauCeti.dvd_relDiscr_iff_exists_not_isUnramifiedAt]
   exact ⟨⟨Q, inferInstance, inferInstance⟩, hQ⟩
+
+/-- If the places outside a finite set `S` containing the ramified support of `L/K` are
+unramified, then every place of `K` outside `S` has an unramified place of `L` above it. -/
+theorem exists_liesOver_isUnramifiedAt_of_notMem_finset
+    (S : Finset (HeightOneSpectrum (𝓞 K))) (hS : ramifiedSupport K L ⊆ S)
+    (v : HeightOneSpectrum (𝓞 K)) (hv : v ∉ (S : Set _)) :
+    ∃ w : HeightOneSpectrum (𝓞 L), w.asIdeal.LiesOver v.asIdeal ∧
+      Algebra.IsUnramifiedAt (𝓞 K) w.asIdeal := by
+  obtain ⟨w, hw⟩ := HeightOneSpectrum.under_surjective (𝓞 K) (𝓞 L) v
+  have : w.asIdeal.LiesOver v.asIdeal := hw ▸ inferInstance
+  exact ⟨w, inferInstance, isUnramifiedAway_ramifiedSupport v (fun hram ↦ hv (hS hram))
+    w.asIdeal⟩
 
 end TauCeti.NumberField

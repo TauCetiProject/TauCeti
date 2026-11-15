@@ -60,7 +60,7 @@ private theorem pointInCounitAlgebra_universalDiagonalTorus :
   rw [Derivation.pointInCounitAlgebra_apply,
     Bialgebra.CounitAlgebra.pointsMulEquiv_symm_apply,
     Bialgebra.CounitAlgebra.algEquivSelf_symm_apply, diagonalTorusPoints_apply,
-    CommHopfAlgCat.mapPointsFunctor_app_apply_apply]
+    CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply]
   rw [AlgHom.id_apply]
   -- The remaining coercion is the algebra-hom component of the categorical morphism.
   rfl

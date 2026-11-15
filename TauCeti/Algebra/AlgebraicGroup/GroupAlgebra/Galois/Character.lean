@@ -24,7 +24,7 @@ intertwines the scalar-factor action with `rho`. In particular this comparison a
 to the character lattices of tori obtained by Galois descent, without needing finite
 generation or torsion-freeness for the comparison itself.
 
-The construction composes `GroupLike.mapEquiv` for the Hopf splitting with
+The construction composes `BialgEquiv.mapGroupLike` for the Hopf splitting with
 `MonoidAlgebra.groupLikeEquiv` for the split group algebra.
 
 ## References
@@ -46,7 +46,7 @@ variable (rho : Representation ℤ (L ≃ₐ[k] L) M)
 The character indexed by `m` is the inverse image of `X^m` under the Hopf splitting. -/
 noncomputable def groupAlgebraInvariantsCharacterEquiv :
     GroupLike L (L ⊗[k] groupAlgebraInvariants rho) ≃* Multiplicative M :=
-  (TauCeti.GroupLike.mapEquiv (groupAlgebraInvariantsBaseChangeBialgEquiv rho)).trans
+  (groupAlgebraInvariantsBaseChangeBialgEquiv rho).mapGroupLike.trans
     (TauCeti.MonoidAlgebra.groupLikeEquiv (R := L))
 
 /-- A character corresponds to `m` precisely when the splitting sends it to `X^m`. -/
@@ -56,7 +56,7 @@ theorem groupAlgebraInvariantsCharacterEquiv_apply_eq_iff
     groupAlgebraInvariantsCharacterEquiv rho x = m ↔
       groupAlgebraInvariantsBaseChangeBialgEquiv rho x.val = MonoidAlgebra.single m 1 := by
   simp only [groupAlgebraInvariantsCharacterEquiv, MulEquiv.trans_apply,
-    TauCeti.MonoidAlgebra.groupLikeEquiv_apply_eq_iff, TauCeti.GroupLike.val_mapEquiv]
+    TauCeti.MonoidAlgebra.groupLikeEquiv_apply_eq_iff, BialgEquiv.val_mapGroupLike]
 
 /-- The value of the character indexed by `m` is the inverse splitting of its monomial. -/
 @[simp]

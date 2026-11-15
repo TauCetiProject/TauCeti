@@ -23,7 +23,7 @@ The point is that the **estimate** needs no decay of `f` beyond boundedness, whe
 `ML` estimate `‖∫‖ ≤ (πR) · M_R` would need `M_R = o(1/R)` even to stay bounded. Concluding that
 the arc contribution actually **vanishes** is a further step, and does require `M_R → 0` — that
 is the hypothesis of `tendsto_integral_semicircle_exp_mul_nhds_zero`. The gain comes from
-`|e^{iaz}| = e^{-aR\sin θ}` on the arc together with `TauCeti.integral_exp_neg_mul_sin_le`,
+`|e^{iaz}| = e^{-aR\sin θ}` on the arc together with `TauCeti.integral_exp_neg_mul_sin_lt`,
 whose `1/(aR)` cancels the arc length `πR`.
 
 The estimate is sharp enough for the standard application: `f z = z⁻¹` has `M_R = 1/R → 0`, so
@@ -104,7 +104,7 @@ theorem norm_integral_semicircle_exp_mul_le {E : Type*} [NormedAddCommGroup E] [
     _ = M * R * ∫ θ in (0 : ℝ)..π, Real.exp (-(a * R) * Real.sin θ) :=
         intervalIntegral.integral_const_mul _ _
     _ ≤ M * R * (π / (a * R)) :=
-        mul_le_mul_of_nonneg_left (TauCeti.integral_exp_neg_mul_sin_le (a * R) (by positivity))
+        mul_le_mul_of_nonneg_left (TauCeti.integral_exp_neg_mul_sin_lt (a * R) (by positivity)).le
           (mul_nonneg hM0 hR.le)
     _ = π * M / a := by field_simp
 

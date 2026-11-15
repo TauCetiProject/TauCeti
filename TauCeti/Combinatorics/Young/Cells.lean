@@ -16,8 +16,8 @@ public import Mathlib.Order.Monotone.Defs
 A finite set `D : Finset (ι × κ)` of **cells** has its rows indexed by `ι` and its columns indexed
 by `κ`. This file counts the cells of `D` one row at a time (`TauCeti.CellDiagram.rowLen`), imposes
 closure in the row direction (`TauCeti.CellDiagram.IsRowLowerSet`: with every cell, `D` contains the
-cells directly above it), and builds the set of cells lying under a prescribed tuple of row lengths
-(`TauCeti.CellDiagram.ofRowLens`).
+cells above it in its column), and builds the set of cells lying under a prescribed tuple of row
+lengths (`TauCeti.CellDiagram.ofRowLens`).
 
 ## Main definitions
 
@@ -31,7 +31,8 @@ cells directly above it), and builds the set of cells lying under a prescribed t
   row lengths are closed in the row direction.
 * `TauCeti.CellDiagram.rowLen_ofRowLens` and `TauCeti.CellDiagram.card_ofRowLens`: the rows of
   those cells have lengths `min (a i) m`, and there are `∑ i, min (a i) m` cells in all. When
-  `∀ i, a i ≤ m`, the corresponding `of_le` corollaries give the prescribed row lengths and total.
+  the rows fit in `m` columns, the corresponding `of_le` corollaries give the prescribed row
+  lengths and total.
 
 ## Implementation notes
 
@@ -67,29 +68,18 @@ theorem rowLen_eq_card_filter (D : Finset (ι × κ)) (i : ι) :
 /-- The cells of `D` in row `i`, counted by their column index. -/
 theorem rowLen_eq_card_filter_mem [Fintype κ] [DecidableEq κ] (D : Finset (ι × κ)) (i : ι) :
     rowLen D i = (Finset.univ.filter fun c : κ => (i, c) ∈ D).card := by
-  have hinj : Function.Injective fun c : κ => ((i, c) : ι × κ) := fun c d h => congrArg Prod.snd h
-  rw [rowLen_eq_card_filter, ← Finset.card_image_of_injective
-    (Finset.univ.filter fun c : κ => (i, c) ∈ D) hinj]
-  refine congrArg Finset.card (Finset.ext ?_)
-  rintro ⟨x, c⟩
-  simp only [Finset.mem_image, Finset.mem_filter, Finset.mem_univ, true_and, Prod.mk.injEq]
-  constructor
-  · rintro ⟨hmem, hx⟩
-    subst hx
-    exact ⟨c, hmem, rfl, rfl⟩
-  · rintro ⟨d, hd, hx, hc⟩
-    subst hx
-    subst hc
-    exact ⟨hd, rfl⟩
+  rw [rowLen_eq_card_filter]
+  refine Finset.card_nbij' Prod.snd (Prod.mk i) ?_ ?_ ?_ ?_ <;>
+    intro p hp <;> grind
 
 end RowLen
 
 /-! ### Closure in the row direction -/
 
-/-- A set of cells is a **row lower set** when with every cell it contains all the cells directly
-above it: if `(j, c)` is a cell and `i < j`, then `(i, c)` is a cell. In other words `D` is a lower
-set in its row index. This is one of the two conditions on the shape of a Young diagram, the one in
-the row direction; closure in the column direction is not imposed. -/
+/-- A set of cells is a **row lower set** when with every cell it contains all the cells above it
+in its column: if `(j, c)` is a cell and `i < j`, then `(i, c)` is a cell. In other words `D` is a
+lower set in its row index. This is one of the two conditions on the shape of a Young diagram, the
+one in the row direction; closure in the column direction is not imposed. -/
 def IsRowLowerSet [LT ι] (D : Finset (ι × κ)) : Prop :=
   ∀ p ∈ D, ∀ i : ι, i < p.1 → (i, p.2) ∈ D
 
@@ -133,9 +123,9 @@ theorem rowLen_ofRowLens (a : ι → ℕ) (m : ℕ) (i : ι) :
 
 /-- The rows of the cells under `a` have the lengths `a` prescribes when there are enough columns
 to hold them. -/
-theorem rowLen_ofRowLens_of_le {a : ι → ℕ} {m : ℕ} (hm : ∀ i, a i ≤ m) (i : ι) :
+theorem rowLen_ofRowLens_of_le {a : ι → ℕ} {m : ℕ} {i : ι} (hi : a i ≤ m) :
     rowLen (ofRowLens a m) i = a i := by
-  simp [hm i]
+  simp [hi]
 
 omit [DecidableEq ι] in
 /-- The number of cells under `a` is the sum of the row lengths truncated to width `m`. -/
@@ -143,10 +133,8 @@ omit [DecidableEq ι] in
 theorem card_ofRowLens (a : ι → ℕ) (m : ℕ) :
     (ofRowLens a m).card = ∑ i, min (a i) m := by
   classical
-  rw [Finset.card_eq_sum_card_fiberwise (f := fun p : ι × Fin m => p.1) (t := Finset.univ)
-    fun _ _ => Finset.mem_univ _]
-  exact Finset.sum_congr rfl fun i _ =>
-    (rowLen_eq_card_filter (ofRowLens a m) i).symm.trans (rowLen_ofRowLens a m i)
+  simp only [← rowLen_ofRowLens, rowLen_eq_card_filter]
+  exact Finset.card_eq_sum_card_fiberwise fun _ _ => Finset.mem_univ _
 
 omit [DecidableEq ι] in
 /-- The cells under `a` are one for each unit of each row length when there are enough columns to

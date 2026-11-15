@@ -18,11 +18,10 @@ The process-level predicate `Contractable μ X` remains the main stochastic-proc
 `ContractableLaw` names the equivalent path-space viewpoint needed by the de Finetti
 factorization and path-space dynamics.
 
-This is the contractability analogue of `ExchangeableLaw`. It realizes the Exchangeability
-roadmap's Layer 0 request for the characterization of contractability by strictly increasing
-maps `ℕ → ℕ`, with finite-dimensional marginal consequences. The process-level ↔ path-law
-bridges live in `TauCeti.Probability.Exchangeability.PathSpace.Law.Bridge`, which imports this
-file and `Contractability`; no Mathlib infrastructure is vendored.
+This is the contractability analogue of `ExchangeableLaw`. It characterizes contractability by
+strictly increasing maps `ℕ → ℕ`, with finite-dimensional marginal consequences. The
+process-level ↔ path-law bridges live in `TauCeti.Probability.Exchangeability.PathSpace.Law.Bridge`,
+which imports this file and `Contractability`; no Mathlib infrastructure is vendored.
 -/
 
 public section
@@ -91,7 +90,7 @@ theorem ContractableLaw.map_prefixProj_of_strictMono {ρ : Measure (ℕ → α)}
   obtain ⟨φ, hφ, hφ_eq⟩ := hk.exists_strictMono_nat_extending_fin
   have hmap := congrArg (fun ν : Measure (ℕ → α) => ν.map (prefixProj α n))
     (hρ.map_reindex hφ)
-  rw [map_reindex_prefixProj] at hmap
+  rw [MeasureTheory.Measure.map_reindex_prefixProj] at hmap
   have hidx :
       (fun x : ℕ → α => fun i : Fin n => x (φ i.val)) =
         fun x : ℕ → α => fun i : Fin n => x (k i) := by
@@ -117,7 +116,7 @@ theorem contractableLaw_iff_forall_map_prefixProj_of_strictMono {ρ : Measure (�
       infer_instance
     refine measure_eq_of_prefixProj_map_eq ?_
     intro n
-    rw [map_reindex_prefixProj]
+    rw [MeasureTheory.Measure.map_reindex_prefixProj]
     exact hρ n (fun i : Fin n => φ i.val) (hφ.comp Fin.val_strictMono)
 
 /-- A contractable path law is preserved by the one-sided shift. -/

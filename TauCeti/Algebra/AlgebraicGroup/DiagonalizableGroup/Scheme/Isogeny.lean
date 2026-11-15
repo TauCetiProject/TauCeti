@@ -39,8 +39,8 @@ variable (R : Type u) [CommRing R] {G H : FGCommGrpCat.{u}} (φ : G ⟶ H)
 /-- An injective homomorphism of finitely generated character groups with finite cokernel
 induces a central isogeny of diagonalizable group schemes over any commutative ring. -/
 theorem isCentralIsogeny_groupSchemeMap_of_injective_of_finite_quotient
-    (hφ : Function.Injective (FGCommGrpCat.toMonoidHom φ))
-    [Finite (H ⧸ (FGCommGrpCat.toMonoidHom φ).range)] :
+    (hφ : Function.Injective φ.hom.hom)
+    [Finite (H ⧸ φ.hom.hom.range)] :
     GroupScheme.IsCentralIsogeny (groupSchemeMap R φ) := by
   rw [groupSchemeMap_def]
   simp only [GroupScheme.IsCentralIsogeny,
@@ -48,21 +48,21 @@ theorem isCentralIsogeny_groupSchemeMap_of_injective_of_finite_quotient
     (GroupScheme.centralIsogenies R).cancel_right_of_respectsIso]
   apply (CommHopfAlgCat.isCentralIsogeny_iff_isCentralIsogeny_hopfSpec_map _).mp
   exact isCentralIsogeny_mapDomainBialgHom_of_injective_of_finite_quotient R
-    (FGCommGrpCat.toMonoidHom φ) hφ
+    φ.hom.hom hφ
 
 /-- A morphism of diagonalizable group schemes over a nonzero commutative ring is a
 central isogeny exactly when its character map is injective with finite cokernel. -/
 @[simp]
 theorem isCentralIsogeny_groupSchemeMap_iff [Nontrivial R] :
     GroupScheme.IsCentralIsogeny (groupSchemeMap R φ) ↔
-      Function.Injective (FGCommGrpCat.toMonoidHom φ) ∧
-        Finite (H ⧸ (FGCommGrpCat.toMonoidHom φ).range) := by
+      Function.Injective φ.hom.hom ∧
+        Finite (H ⧸ φ.hom.hom.range) := by
   rw [groupSchemeMap_def]
   simp only [GroupScheme.IsCentralIsogeny,
     (GroupScheme.centralIsogenies R).cancel_left_of_respectsIso,
     (GroupScheme.centralIsogenies R).cancel_right_of_respectsIso]
   exact (CommHopfAlgCat.isCentralIsogeny_iff_isCentralIsogeny_hopfSpec_map
     (coordinateMap R φ).hom).symm.trans
-      (isCentralIsogeny_mapDomainBialgHom_iff R (FGCommGrpCat.toMonoidHom φ))
+      (isCentralIsogeny_mapDomainBialgHom_iff R φ.hom.hom)
 
 end TauCeti.DiagonalizableGroup

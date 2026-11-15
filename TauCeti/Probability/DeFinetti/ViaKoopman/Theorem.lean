@@ -31,12 +31,12 @@ statement follows at once; `ConditionallyIIDWith.of_pathLaw` carries it to an ar
 
 ## How this route differs from `L²`
 
-The two routes are independent at the import level and stay that way: nothing here reaches
-`DeFinetti/ViaL2`. The mathematical difference is in what the block comparison rests on. The `L²`
-route compares two selections *distributionally*, as an a.e. identity of conditional expectations
-given the tail. This route uses actual invariance of the test event under the shift, and
-`invariants_shift_lt_pathTail` shows those σ-algebras genuinely differ — strictly, already over
-`Bool`. They are deliberately not unified into one σ-algebra-parametric theorem.
+The two routes are independent at the import level: nothing here reaches `DeFinetti/ViaL2`. The
+mathematical difference is in what the block comparison rests on. The `L²` route compares two
+selections *distributionally*, as an a.e. identity of conditional expectations given the tail. This
+route uses actual invariance of the test event under the shift, and `invariants_shift_lt_pathTail`
+shows those σ-algebras genuinely differ — strictly, already over `Bool`. They are deliberately not
+unified into one σ-algebra-parametric theorem.
 
 Both routes are finite-measure statements: these wrappers and `deFinetti_viaL2` alike ask only for
 `[IsFiniteMeasure μ]`. Nothing in the Koopman chain needs more: the mean ergodic input and the
@@ -50,8 +50,6 @@ from this repository's own block transport, decoupling and factorization.
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/Exchangeability/README.md`, **Layer 5** (Koopman operators and
-  invariant σ-algebras), whose milestone is `deFinetti_viaKoopman`.
 * O. Kallenberg, *Probabilistic Symmetries and Invariance Principles*, Springer, 2005, Chapter 1.
 -/
 
@@ -83,11 +81,14 @@ theorem ContractableLaw.conditionallyIIDWith_invariantConditionalProbabilityMeas
     (measurable_invariants_invariantConditionalProbabilityMeasure hS) hB
 
 /-- **A contractable process is conditionally i.i.d.**, via the Koopman route. -/
-theorem conditionallyIID_of_contractable_viaKoopman [StandardBorelSpace α] [Nonempty α]
+theorem conditionallyIID_of_contractable_viaKoopman [StandardBorelSpace α]
     {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α}
     (hX : Contractable μ X) (hX_meas : ∀ n, Measurable (X n)) :
     ConditionallyIID μ X := by
   have hXae : ∀ i, AEMeasurable (X i) μ := fun i => (hX_meas i).aemeasurable
+  rcases isEmpty_or_nonempty Ω with hΩ | ⟨⟨ω⟩⟩
+  · exact .of_isEmpty
+  have : Nonempty α := ⟨X 0 ω⟩
   -- Supplied for instance resolution below, not referenced by name.
   have : IsFiniteMeasure (pathLaw μ X) := by
     rw [pathLaw_def]
@@ -95,9 +96,9 @@ theorem conditionallyIID_of_contractable_viaKoopman [StandardBorelSpace α] [Non
   exact ConditionallyIID.of_directing (ConditionallyIIDWith.of_pathLaw hX_meas
     ((hX.contractableLaw_pathLaw hXae).conditionallyIIDWith_invariantConditionalProbabilityMeasure))
 
-/-- **de Finetti's theorem via Koopman operators.** An exchangeable process on a nonempty standard
-Borel state space is conditionally i.i.d. -/
-theorem deFinetti_viaKoopman [StandardBorelSpace α] [Nonempty α]
+/-- **de Finetti's theorem via Koopman operators.** An exchangeable process on a standard Borel
+state space is conditionally i.i.d. -/
+theorem deFinetti_viaKoopman [StandardBorelSpace α]
     {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α}
     (hX_meas : ∀ n, Measurable (X n)) (hX : Exchangeable μ X) :
     ConditionallyIID μ X :=

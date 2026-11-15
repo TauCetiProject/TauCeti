@@ -248,7 +248,7 @@ private theorem map_res_cup (N₂ : Rep k H) (p q r : ℤ) (h : p + q = r)
   rcases le_or_gt 0 q with hq | hq
   · induction q, hq using Int.leInduction generalizing N₂ r with
     | base => exact map_res_cup_zero_right e N₁ N₂ h x y
-    | succ q hq ih =>
+    | succ q _ ih =>
       obtain rfl : r = p + q + 1 := by omega
       exact map_res_cup_add_one e N₁ N₂ rfl x (ih (dimensionShiftUp N₂) _ rfl) y
   · obtain ⟨n, rfl⟩ := Int.eq_negSucc_of_lt_zero hq
