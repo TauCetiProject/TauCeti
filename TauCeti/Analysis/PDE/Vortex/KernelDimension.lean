@@ -28,10 +28,11 @@ kernel of the gauge-fixed operator `L_x = d₀* ⊕ d₁` (`TauCeti.Vortex.gauge
 real-linearly isomorphic through its principal parts to `D → ℂ`
 (`TauCeti.Vortex.principalPartEquiv`) when `x` is smooth, and hence has exact real dimension
 `2 |D|` (`TauCeti.Vortex.finrank_gaugeFixedKernel_eq_two_mul_card`), and `2m` at a smooth field
-with the degree-`m` end framing `α(z) (z / |z|)⁻ᵐ → 1` (`TauCeti.Vortex.finrank_gaugeFixedKernel`).
-Only the holomorphicity rows of the vortex equation are used for the upper bound and the general
-smooth isomorphism; finite-regularity results in degrees zero and one and the translation lower
-bound are also given.
+with the degree-`m` end framing `α(z) (z / |z|)⁻ᵐ → 1`
+(`TauCeti.Vortex.finrank_gaugeFixedKernel_eq_two_mul`), the real dimension of the divisor space
+`Sym^m ℂ`. Only the holomorphicity rows of the vortex equation are used for the upper bound and the
+general smooth isomorphism; finite-regularity results in degrees zero and one and the translation
+lower bound are also given.
 
 The upper bound holds already for `C²` fields: every real vector space of `C²` square-integrable
 solutions `y` of `L_x y = 0` is finite dimensional
@@ -80,8 +81,9 @@ When the coordinates of `x` also have bounded derivatives through order `3` — 
 `A_m^k` (`k ≥ 2`) by `TauCeti.Vortex.mem_framedFieldSpace_of_equation_eq_zero` — elliptic
 regularity identifies the classical kernel with the distributional `L²` kernel
 `TauCeti.Vortex.weakGaugeFixedKernel` (`TauCeti.Vortex.gaugeFixedKernelEquivWeak`), giving real
-dimension `2m` for the weak kernel as well (`TauCeti.Vortex.finrank_weakGaugeFixedKernel`,
-`TauCeti.Vortex.finrank_weakGaugeFixedKernel_of_equation_eq_zero`).
+dimension `2m` for the weak kernel as well
+(`TauCeti.Vortex.finrank_weakGaugeFixedKernel_eq_two_mul`,
+`TauCeti.Vortex.finrank_weakGaugeFixedKernel_eq_two_mul_of_equation_eq_zero`).
 
 ## Main results
 
@@ -106,13 +108,14 @@ dimension `2m` for the weak kernel as well (`TauCeti.Vortex.finrank_weakGaugeFix
   equivalence `gaugeFixedKernel x ≃ₗ[ℝ] (Multiset.ToType D → ℂ)` realized by smooth variations.
 * `TauCeti.Vortex.contDiff_of_mem_gaugeFixedKernel`: every `y ∈ gaugeFixedKernel x` is smooth.
 * `TauCeti.Vortex.finrank_gaugeFixedKernel_eq_two_mul_card`,
-  `TauCeti.Vortex.finrank_gaugeFixedKernel` and
-  `TauCeti.Vortex.finrank_gaugeFixedKernel_of_mem_framedVortexSubMulAction`: exact dimension `2 |D|`
-  and `2m` for `gaugeFixedKernel x`.
+  `TauCeti.Vortex.finrank_gaugeFixedKernel_eq_two_mul` and
+  `TauCeti.Vortex.finrank_gaugeFixedKernel_eq_two_mul_of_mem_framedVortexSubMulAction`: exact
+  dimension `2 |D|` and `2m` for `gaugeFixedKernel x`.
 * `TauCeti.Vortex.finiteDimensional_weakGaugeFixedKernel`,
-  `TauCeti.Vortex.finrank_weakGaugeFixedKernel` and
-  `TauCeti.Vortex.finrank_weakGaugeFixedKernel_of_equation_eq_zero`: finite dimensionality and
-  exact dimension `2m` for the distributional `L²` kernel `weakGaugeFixedKernel`.
+  `TauCeti.Vortex.finrank_weakGaugeFixedKernel_eq_two_mul` and
+  `TauCeti.Vortex.finrank_weakGaugeFixedKernel_eq_two_mul_of_equation_eq_zero`: finite
+  dimensionality and exact dimension `2m` for the distributional `L²` kernel
+  `weakGaugeFixedKernel`.
 
 ## References
 
@@ -494,12 +497,9 @@ private theorem exists_triangular_principalPart (hx : ContDiff ℝ ∞ x)
   obtain ⟨Q, hQ, hQz, hαQ, hQdiv⟩ := exists_differentiable_sectionValue_eq_exp_mul_pow_mul hx hhol
     hD hν hνeq (Nat.zero_lt_of_lt hj)
   -- Local smooth factorization at `z` for single-pole kernel existence.
-  obtain ⟨n, v, hv, hv₀, hvf⟩ := exists_contDiffAt_sectionValue_eq_pow_mul (k := ⊤) le_top
+  obtain ⟨v, hv, -, hvf⟩ := exists_contDiffAt_sectionValue_eq_pow_mul_of_order (k := ⊤) le_top
     (hi 0) (hi 1) ((hi 2).differentiable (by simp)) ((hi 3).differentiable (by simp))
-    hhol hD.exists_ne_zero z
-  obtain ⟨v', hv', hv'₀, hvf'⟩ := isZeroMultiplicity_iff.1 hD z
-  obtain rfl : n = D.count z := eq_of_eventually_sub_pow_mul_eq hv.continuousAt hv₀ hv' hv'₀
-    (by filter_upwards [hvf, hvf'] with w hw hw'; rw [← hw, ← hw'])
+    hhol (isZeroMultiplicity_iff.1 hD z)
   set r := D.count z - 1 - j
   set c : ℂ := d / ((j.factorial : ℂ) * Q z)
   obtain ⟨y, hy, hyL, hker, ξ, hξ, hyξ⟩ :=
@@ -698,9 +698,10 @@ theorem finrank_gaugeFixedKernel_eq_two_mul_card (hx : ContDiff ℝ ∞ x)
 
 /-- **The kernel of `L_x` at a smooth degree-`m` framed field has exact real dimension `2m`.** Let
 `x` be a smooth field satisfying the holomorphicity rows `∂bar_a α = 0`, whose section has the
-degree-`m` end framing `α(z) (z / |z|)⁻ᵐ → 1`. Then `gaugeFixedKernel x` has real dimension `2m`,
-the real dimension of the divisor space `Sym^m ℂ`. -/
-theorem finrank_gaugeFixedKernel {m : ℕ} (hx : ContDiff ℝ ∞ x)
+degree-`m` end framing `α(z) (z / |z|)⁻ᵐ → 1`, in particular at a smooth framed degree-`m` vortex.
+Then `gaugeFixedKernel x` has real dimension `2m`, the real dimension of the divisor space
+`Sym^m ℂ`. -/
+theorem finrank_gaugeFixedKernel_eq_two_mul {m : ℕ} (hx : ContDiff ℝ ∞ x)
     (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0)
     (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1)) :
     Module.finrank ℝ (gaugeFixedKernel x) = 2 * m := by
@@ -712,11 +713,11 @@ theorem finrank_gaugeFixedKernel {m : ℕ} (hx : ContDiff ℝ ∞ x)
 
 /-- At any smooth framed degree-`m` vortex (`framedVortexSubMulAction m`), the kernel of `L_x` has
 real dimension `2m`. -/
-theorem finrank_gaugeFixedKernel_of_mem_framedVortexSubMulAction {m : ℕ}
+theorem finrank_gaugeFixedKernel_eq_two_mul_of_mem_framedVortexSubMulAction {m : ℕ}
     (hx : x ∈ framedVortexSubMulAction m) :
     Module.finrank ℝ (gaugeFixedKernel x) = 2 * m := by
   obtain ⟨hxc, hsol, hframe⟩ := mem_framedVortexSubMulAction.1 hx
-  exact finrank_gaugeFixedKernel hxc (fun w ↦ by simp [hsol w]) hframe
+  exact finrank_gaugeFixedKernel_eq_two_mul hxc (fun w ↦ by simp [hsol w]) hframe
 
 end ExactDimension
 
@@ -748,21 +749,21 @@ theorem finrank_weakGaugeFixedKernel_eq_two_mul_card (hx : ContDiff ℝ ∞ x)
     (finrank_gaugeFixedKernel_eq_two_mul_card hx hhol hlim hD)
 
 /-- **The distributional `L²` kernel of `L_x` at a framed field has exact real dimension `2m`.** -/
-theorem finrank_weakGaugeFixedKernel {m : ℕ} (hx : ContDiff ℝ ∞ x)
+theorem finrank_weakGaugeFixedKernel_eq_two_mul {m : ℕ} (hx : ContDiff ℝ ∞ x)
     (hbound : ∀ i, ∀ n ≤ 3, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
     (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0)
     (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1)) :
     Module.finrank ℝ (weakGaugeFixedKernel hx.continuous) = 2 * m :=
   (gaugeFixedKernelEquivWeak hx hbound).symm.finrank_eq.trans
-    (finrank_gaugeFixedKernel hx hhol hframe)
+    (finrank_gaugeFixedKernel_eq_two_mul hx hhol hframe)
 
 /-- For a continuous field lying in every affine Sobolev space `A_m^j` and satisfying the
 holomorphicity rows, `gaugeFixedKernel x` has real dimension `2m`. -/
-theorem finrank_gaugeFixedKernel_of_forall_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)} {m : ℕ}
-    (hx : ∀ j : ℕ, x ∈ framedFieldSpace f m j) (hcont : Continuous x)
-    (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0) :
+theorem finrank_gaugeFixedKernel_eq_two_mul_of_forall_mem_framedFieldSpace
+    {f : ContDiffBump (0 : ℝ)} {m : ℕ} (hx : ∀ j : ℕ, x ∈ framedFieldSpace f m j)
+    (hcont : Continuous x) (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0) :
     Module.finrank ℝ (gaugeFixedKernel x) = 2 * m :=
-  finrank_gaugeFixedKernel (contDiff_of_forall_mem_framedFieldSpace hcont hx) hhol
+  finrank_gaugeFixedKernel_eq_two_mul (contDiff_of_forall_mem_framedFieldSpace hcont hx) hhol
     (tendsto_sectionValue_mul_inv_pow (s := 2) one_lt_two (hx 2) hcont)
 
 /-- For a continuous field lying in every affine Sobolev space `A_m^j` and satisfying the
@@ -779,11 +780,11 @@ theorem finiteDimensional_weakGaugeFixedKernel_of_forall_mem_framedFieldSpace
 /-- For a continuous field lying in every affine Sobolev space `A_m^j` and satisfying the
 holomorphicity rows, the distributional `L²` kernel `weakGaugeFixedKernel hcont` has real dimension
 `2m`. -/
-theorem finrank_weakGaugeFixedKernel_of_forall_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)}
-    {m : ℕ} (hx : ∀ j : ℕ, x ∈ framedFieldSpace f m j) (hcont : Continuous x)
-    (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0) :
+theorem finrank_weakGaugeFixedKernel_eq_two_mul_of_forall_mem_framedFieldSpace
+    {f : ContDiffBump (0 : ℝ)} {m : ℕ} (hx : ∀ j : ℕ, x ∈ framedFieldSpace f m j)
+    (hcont : Continuous x) (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0) :
     Module.finrank ℝ (weakGaugeFixedKernel hcont) = 2 * m :=
-  finrank_weakGaugeFixedKernel (contDiff_of_forall_mem_framedFieldSpace hcont hx)
+  finrank_weakGaugeFixedKernel_eq_two_mul (contDiff_of_forall_mem_framedFieldSpace hcont hx)
     (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace hcont i n (hx (n + 2)))
     hhol (tendsto_sectionValue_mul_inv_pow (s := 2) one_lt_two (hx 2) hcont)
 
@@ -791,32 +792,33 @@ theorem finrank_weakGaugeFixedKernel_of_forall_mem_framedFieldSpace {f : ContDif
 solution of the plane vortex equation in the Coulomb slice `d₀*_(x₀) (x - x₀) = 0` through a `C¹`
 base field `x₀` lying in every `A_m^j` (such as `referenceField f m`). Then `gaugeFixedKernel x` has
 real dimension `2m`. -/
-theorem finrank_gaugeFixedKernel_of_equation_eq_zero {f : ContDiffBump (0 : ℝ)} {m k : ℕ}
+theorem finrank_gaugeFixedKernel_eq_two_mul_of_equation_eq_zero {f : ContDiffBump (0 : ℝ)} {m k : ℕ}
     (hk : 1 < k) {x₀ : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hx₀ : ∀ j : ℕ, x₀ ∈ framedFieldSpace f m j) (hx₀c : ContDiff ℝ 1 x₀)
     (hx : x ∈ framedFieldSpace f m k) (hxc : ContDiff ℝ 1 x)
     (heq : ∀ z, equation x z = 0) (hgauge : ∀ z, gaugeAdjoint x₀ (x - x₀) z = 0) :
     Module.finrank ℝ (gaugeFixedKernel x) = 2 * m :=
-  finrank_gaugeFixedKernel_of_forall_mem_framedFieldSpace
+  finrank_gaugeFixedKernel_eq_two_mul_of_forall_mem_framedFieldSpace
     (mem_framedFieldSpace_of_equation_eq_zero hk hx₀ hx₀c hx hxc heq hgauge) hxc.continuous
     fun w ↦ by simp [heq w]
 
 /-- **Distributional `L²` kernel dimension at a Coulomb-slice Sobolev vortex.** Under the hypotheses
-of `TauCeti.Vortex.finrank_gaugeFixedKernel_of_equation_eq_zero`, the distributional `L²` kernel
-`weakGaugeFixedKernel hxc.continuous` has real dimension `2m` (and is finite dimensional by
+of `TauCeti.Vortex.finrank_gaugeFixedKernel_eq_two_mul_of_equation_eq_zero`, the distributional `L²`
+kernel `weakGaugeFixedKernel hxc.continuous` has real dimension `2m` (and is finite dimensional by
 `TauCeti.Vortex.finiteDimensional_weakGaugeFixedKernel_of_equation_eq_zero`). -/
-theorem finrank_weakGaugeFixedKernel_of_equation_eq_zero {f : ContDiffBump (0 : ℝ)} {m k : ℕ}
-    (hk : 1 < k) {x₀ : ℂ → EuclideanSpace ℝ (Fin 4)}
+theorem finrank_weakGaugeFixedKernel_eq_two_mul_of_equation_eq_zero {f : ContDiffBump (0 : ℝ)}
+    {m k : ℕ} (hk : 1 < k) {x₀ : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hx₀ : ∀ j : ℕ, x₀ ∈ framedFieldSpace f m j) (hx₀c : ContDiff ℝ 1 x₀)
     (hx : x ∈ framedFieldSpace f m k) (hxc : ContDiff ℝ 1 x)
     (heq : ∀ z, equation x z = 0) (hgauge : ∀ z, gaugeAdjoint x₀ (x - x₀) z = 0) :
     Module.finrank ℝ (weakGaugeFixedKernel hxc.continuous) = 2 * m :=
-  finrank_weakGaugeFixedKernel_of_forall_mem_framedFieldSpace
+  finrank_weakGaugeFixedKernel_eq_two_mul_of_forall_mem_framedFieldSpace
     (mem_framedFieldSpace_of_equation_eq_zero hk hx₀ hx₀c hx hxc heq hgauge) hxc.continuous
     fun w ↦ by simp [heq w]
 
-/-- Under the hypotheses of `TauCeti.Vortex.finrank_weakGaugeFixedKernel_of_equation_eq_zero`, the
-distributional `L²` kernel `weakGaugeFixedKernel hxc.continuous` is finite dimensional. -/
+/-- Under the hypotheses of
+`TauCeti.Vortex.finrank_weakGaugeFixedKernel_eq_two_mul_of_equation_eq_zero`, the distributional
+`L²` kernel `weakGaugeFixedKernel hxc.continuous` is finite dimensional. -/
 theorem finiteDimensional_weakGaugeFixedKernel_of_equation_eq_zero {f : ContDiffBump (0 : ℝ)}
     {m k : ℕ} (hk : 1 < k) {x₀ : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hx₀ : ∀ j : ℕ, x₀ ∈ framedFieldSpace f m j) (hx₀c : ContDiff ℝ 1 x₀)
