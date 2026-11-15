@@ -19,8 +19,10 @@ independent parameter variations of `K` and `J`. Domain dependence of the coeffi
 allowed; the derivative is at a fixed domain point. Along a line `J + q Y` of endomorphism fields
 the derivative is `Y(u)(∂t u - X_Kt)` (`hasDerivAt_floerOperator_add_smul`).
 
-`floerLinearization` is the map-direction operator with coefficients fixed. Conjugated by an
-exponential weight `e^{δ s}` it becomes `floerLinearization - δ` (`floerLinearization_exp_smul`).
+`floerLinearization` is the map-direction operator with coefficients fixed. Its value at a point
+depends only on the direction near that point (`floerLinearization_congr_of_eventuallyEq`).
+Conjugated by an exponential weight `e^{δ s}` it becomes `floerLinearization - δ`
+(`floerLinearization_exp_smul`).
 For `C¹` coefficients `J` and `C²` Hamiltonians it is continuous wherever the map and the direction
 are `C¹` (`continuousAt_floerLinearization`), so its `L²` norms over compact sets are finite.
 It is `∂s ξ + J(z, u z) ∂t ξ` plus a zeroth-order term `floerLinearizationCoeff`
@@ -156,6 +158,13 @@ theorem floerLinearization_zero (ω : SymplecticForm V)
     (u : ℝ × ℝ → V) (z : ℝ × ℝ) :
     ω.floerLinearization J Ks Kt u 0 z = 0 := by
   simp [floerLinearization_def]
+
+/-- The linearization at `z` only depends on the direction near `z`. -/
+theorem floerLinearization_congr_of_eventuallyEq (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V)
+    {ξ η : ℝ × ℝ → V} {z : ℝ × ℝ} (h : ξ =ᶠ[nhds z] η) :
+    ω.floerLinearization J Ks Kt u ξ z = ω.floerLinearization J Ks Kt u η z := by
+  simp only [floerLinearization_def, h.fderiv_eq, h.eq_of_nhds]
 
 /-- **Conjugating the linearization by an exponential weight.** On maps of the form
 `e^{-δ s} ξ`, the linearized Floer operator acts as `e^{-δ s} (D - δ) ξ`: the weight only
