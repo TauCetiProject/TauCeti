@@ -90,12 +90,19 @@ weight.
   a point whose coordinates of nonzero weight vanish.
 * `MvPolynomial.IsWeightedHomogeneous.eq_zero_of_eval₂_ne_zero`: the block form, a nonzero value
   at a point with zero block `b` forces degree zero in block `b`.
+* `MvPolynomial.IsWeightedHomogeneous.exists_nsmul_eq_of_eval₂_ne_zero`,
+  `MvPolynomial.IsWeightedHomogeneous.exists_nsmul_eq_of_aeval_single_ne_zero`: a nonzero value
+  when only coordinate `j` can contribute forces the weight to be a multiple of `w j`.
+* `MvPolynomial.IsWeightedHomogeneous.coeff_single_eq_eval`: the coefficient of `X_j ^ k` in a
+  polynomial of weight `k • w j` is its value at `Pi.single j 1`.
 * `MvPolynomial.IsWeightedHomogeneous.eval₂_congr`: the value of a polynomial of weight zero only
   depends on the coordinates of weight zero.
 * `MvPolynomial.eval₂_congr_of_block_isWeightedHomogeneous_zero`: the block form, replacing all
   blocks of degree zero simultaneously preserves the value.
 * `MvPolynomial.iInf_support_weight_mul`: without zero divisors, the least `ℝ≥0∞`-weight of a
   monomial of a product is the sum of the least weights for the factors.
+* `MvPolynomial.IsWeightedHomogeneous.exists_of_mul`: without zero divisors, the factors of a
+  nonzero weighted homogeneous product are weighted homogeneous.
 * `MvPolynomial.IsWeightedHomogeneous.weightedHomogeneousComponent_mul_right`: the weighted
   homogeneous components of a product with a weighted homogeneous factor.
 * `MvPolynomial.exists_finsupp_sum_mul_eq_weightedHomogeneousComponent`: a weighted homogeneous
@@ -274,6 +281,57 @@ theorem IsWeightedHomogeneous.eq_zero_of_eval₂_ne_zero {ι κ : Type*} [Decida
   obtain rfl : i = b := by simpa using hp
   exact hg l
 
+/-- If `φ` is weighted homogeneous of weight `m` and does not vanish at a point where every
+coordinate outside `j` of nonzero weight vanishes, then `m` is a natural-number multiple of
+`w j`. -/
+theorem IsWeightedHomogeneous.exists_nsmul_eq_of_eval₂_ne_zero
+    {m : M} (hφ : φ.IsWeightedHomogeneous w m) (f : R →+* S) {g : σ → S} (j : σ)
+    (hg : ∀ i, i ≠ j → w i ≠ 0 → g i = 0) (h : eval₂ f g φ ≠ 0) :
+    ∃ k : ℕ, k • w j = m := by
+  classical
+  obtain ⟨c, hc, hcg⟩ : ∃ c, φ.coeff c ≠ 0 ∧ ∀ i ∈ c.support, g i ≠ 0 := by
+    contrapose! h
+    exact eval₂Hom_eq_zero f g φ h
+  refine ⟨c j, ?_⟩
+  rw [← hφ hc, Finsupp.weight_apply, Finsupp.sum]
+  refine (Finset.sum_eq_single (f := fun a ↦ c a • w a) j (fun i hi hij ↦ ?_) fun hj ↦ ?_).symm
+  · by_cases hw : w i = 0
+    · rw [hw, smul_zero]
+    · exact False.elim (hcg i hi (hg i hij hw))
+  · rw [Finsupp.notMem_support_iff.mp hj, zero_smul]
+
+/-- If a weighted homogeneous polynomial of weight `m` does not vanish at `Pi.single j a`, then
+`m` is a natural-number multiple of `w j`. -/
+theorem IsWeightedHomogeneous.exists_nsmul_eq_of_aeval_single_ne_zero [Algebra R S]
+    [DecidableEq σ] {m : M} (hφ : φ.IsWeightedHomogeneous w m) {j : σ} {a : S}
+    (h : MvPolynomial.aeval (Pi.single j a) φ ≠ 0) : ∃ k : ℕ, k • w j = m :=
+  hφ.exists_nsmul_eq_of_eval₂_ne_zero (g := Pi.single j a) (algebraMap R S) j
+    (fun _ hij _ ↦ by simp [hij]) (by rwa [← aeval_def])
+
+/-- The coefficient of `X_j ^ k` in a polynomial weighted homogeneous of weight `k • w j` is its
+value at `Pi.single j 1`, provided no other natural-number multiple of `w j` equals `k • w j`. -/
+theorem IsWeightedHomogeneous.coeff_single_eq_eval [DecidableEq σ] {j : σ} {k : ℕ}
+    (hφ : φ.IsWeightedHomogeneous w (k • w j)) (hw : ∀ n : ℕ, n • w j = k • w j → n = k) :
+    φ.coeff (Finsupp.single j k) = eval (Pi.single j 1) φ := by
+  conv_rhs => rw [φ.as_sum]
+  rw [map_sum, Finset.sum_eq_single (Finsupp.single j k)]
+  · simp [eval_monomial]
+  · intro s hs hne
+    obtain ⟨i, hij, hi⟩ : ∃ i, i ≠ j ∧ s i ≠ 0 := by
+      by_contra! hall
+      have hs' : s = Finsupp.single j (s j) := Finsupp.ext fun i ↦ by
+        by_cases hi : i = j
+        · simp [hi]
+        · simp [hi, hall i hi]
+      have hdeg := hφ (mem_support_iff.mp hs)
+      rw [hs', Finsupp.weight_apply, Finsupp.sum_single_index (zero_smul ℕ (w j))] at hdeg
+      exact hne (hs'.trans (by rw [hw (s j) hdeg]))
+    rw [eval_monomial, Finsupp.prod,
+      Finset.prod_eq_zero (Finsupp.mem_support_iff.mpr hi)
+        (by rw [Pi.single_eq_of_ne hij, zero_pow hi]), mul_zero]
+  · intro h
+    simp [notMem_support_iff.mp h]
+
 variable [PartialOrder M] [CanonicallyOrderedAdd M]
 
 /-- Only variables of weight zero occur in a weighted homogeneous polynomial of weight zero, for
@@ -442,6 +500,85 @@ theorem iInf_support_weight_mul (w : σ → ℝ≥0∞) (P Q : MvPolynomial σ R
       (iInf₂_le _ (mem_support_iff.mpr (right_ne_zero_of_mul hne)))
 
 end SupportWeight
+
+section MulFactor
+
+variable [NoZeroDivisors R] {M : Type*} [AddCommMonoid M] {w : σ → M}
+
+private theorem weight_add_eq_of_mul_isWeightedHomogeneous {p q : MvPolynomial σ R} {a b n : M}
+    (h : (p * q).IsWeightedHomogeneous w n)
+    (ha : weightedHomogeneousComponent w a p ≠ 0)
+    (hb : weightedHomogeneousComponent w b q ≠ 0)
+    (huniq : ∀ d₁ ∈ p.support, ∀ d₂ ∈ q.support,
+      Finsupp.weight w d₁ + Finsupp.weight w d₂ = a + b →
+        Finsupp.weight w d₁ = a ∧ Finsupp.weight w d₂ = b) :
+    a + b = n := by
+  classical
+  set p₀ := weightedHomogeneousComponent w a p
+  set q₀ := weightedHomogeneousComponent w b q
+  obtain ⟨g, hg⟩ := exists_coeff_ne_zero (mul_ne_zero ha hb)
+  have hwg : Finsupp.weight w g = a + b :=
+    ((weightedHomogeneousComponent_isWeightedHomogeneous a p).mul
+      (weightedHomogeneousComponent_isWeightedHomogeneous b q)) hg
+  have hcoeff : (p₀ * q₀).coeff g = (p * q).coeff g := by
+    rw [coeff_mul, coeff_mul]
+    refine Finset.sum_congr rfl fun x hx ↦ ?_
+    simp only [p₀, q₀, coeff_weightedHomogeneousComponent]
+    by_cases h0 : p.coeff x.1 * q.coeff x.2 = 0
+    · split_ifs <;> simp [h0]
+    obtain ⟨e₁, e₂⟩ := huniq x.1 (mem_support_iff.mpr (left_ne_zero_of_mul h0))
+      x.2 (mem_support_iff.mpr (right_ne_zero_of_mul h0))
+      (by rw [← map_add, Finset.mem_antidiagonal.mp hx, hwg])
+    simp [e₁, e₂]
+  exact hwg.symm.trans (h (hcoeff ▸ hg))
+
+variable [LinearOrder M] [IsOrderedCancelAddMonoid M]
+
+/-- Without zero divisors, both factors of a nonzero weighted homogeneous product are weighted
+homogeneous, for linearly ordered cancellative weights. -/
+theorem IsWeightedHomogeneous.exists_of_mul {p q : MvPolynomial σ R} {n : M}
+    (h : (p * q).IsWeightedHomogeneous w n) (hpq : p * q ≠ 0) :
+    ∃ a b : M, p.IsWeightedHomogeneous w a ∧ q.IsWeightedHomogeneous w b ∧ a + b = n := by
+  classical
+  have hp : p ≠ 0 := left_ne_zero_of_mul hpq
+  have hq : q ≠ 0 := right_ne_zero_of_mul hpq
+  obtain ⟨d₁, hd₁, hmin_p⟩ := p.support.exists_min_image (Finsupp.weight w)
+    (support_nonempty.mpr hp)
+  obtain ⟨e₁, he₁, hmin_q⟩ := q.support.exists_min_image (Finsupp.weight w)
+    (support_nonempty.mpr hq)
+  obtain ⟨d₂, hd₂, hmax_p⟩ := p.support.exists_max_image (Finsupp.weight w)
+    (support_nonempty.mpr hp)
+  obtain ⟨e₂, he₂, hmax_q⟩ := q.support.exists_max_image (Finsupp.weight w)
+    (support_nonempty.mpr hq)
+  have hcomp_ne {r : MvPolynomial σ R} {d : σ →₀ ℕ} (hd : d ∈ r.support) :
+      weightedHomogeneousComponent w (Finsupp.weight w d) r ≠ 0 :=
+    ne_zero_iff.mpr ⟨d, by simpa [coeff_weightedHomogeneousComponent] using hd⟩
+  have hmin_sum : Finsupp.weight w d₁ + Finsupp.weight w e₁ = n :=
+    weight_add_eq_of_mul_isWeightedHomogeneous h (hcomp_ne hd₁) (hcomp_ne he₁)
+      fun x hx y hy hsum ↦
+        ⟨((add_le_add_iff_right (Finsupp.weight w e₁)).mp
+            ((add_le_add le_rfl (hmin_q y hy)).trans_eq hsum)).antisymm (hmin_p x hx),
+          ((add_le_add_iff_left (Finsupp.weight w d₁)).mp
+            ((add_le_add (hmin_p x hx) le_rfl).trans_eq hsum)).antisymm (hmin_q y hy)⟩
+  have hmax_sum : Finsupp.weight w d₂ + Finsupp.weight w e₂ = n :=
+    weight_add_eq_of_mul_isWeightedHomogeneous h (hcomp_ne hd₂) (hcomp_ne he₂)
+      fun x hx y hy hsum ↦
+        ⟨(hmax_p x hx).antisymm ((add_le_add_iff_right (Finsupp.weight w e₂)).mp
+            (hsum.symm.trans_le (add_le_add le_rfl (hmax_q y hy)))),
+          (hmax_q y hy).antisymm ((add_le_add_iff_left (Finsupp.weight w d₂)).mp
+            (hsum.symm.trans_le (add_le_add (hmax_p x hx) le_rfl)))⟩
+  have hp_eq : Finsupp.weight w d₁ = Finsupp.weight w d₂ :=
+    (hmin_p d₂ hd₂).antisymm <| (add_le_add_iff_right (Finsupp.weight w e₂)).mp
+      (by rw [hmax_sum, ← hmin_sum]; exact add_le_add le_rfl (hmin_q e₂ he₂))
+  have hq_eq : Finsupp.weight w e₁ = Finsupp.weight w e₂ :=
+    add_left_cancel (hmin_sum.trans (hmax_sum.symm.trans (by rw [hp_eq])))
+  refine ⟨Finsupp.weight w d₂, Finsupp.weight w e₂, fun x hx ↦ ?_, fun y hy ↦ ?_, hmax_sum⟩
+  · exact (hmax_p x (mem_support_iff.mpr hx)).antisymm
+      (hp_eq ▸ hmin_p x (mem_support_iff.mpr hx))
+  · exact (hmax_q y (mem_support_iff.mpr hy)).antisymm
+      (hq_eq ▸ hmin_q y (mem_support_iff.mpr hy))
+
+end MulFactor
 
 section Component
 
