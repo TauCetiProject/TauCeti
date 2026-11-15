@@ -379,7 +379,8 @@ theorem HasCompactSpatialSupport.hasFDerivAt_fourier_slice (ha : a.HasCompactSpa
       (∫ y, (𝐞 (-⟪y, η⟫) : ℂ) • fderiv ℝ (fun ξ ↦ a.coefficient (y, ξ)) ξ₀) ξ₀ := by
   obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp ha
   simpa only [Real.fourier_eq, Circle.smul_def] using
-    hasFDerivAt_integral_fourierChar_smul (a.contDiff_coefficient.of_le (by simp)) hK hKa η ξ₀
+    hasFDerivAt_integral_fourierChar_smul (ξ₀ := ξ₀) (a.contDiff_coefficient.of_le (by simp)) hK
+      (.of_forall fun ξ y hy ↦ hKa y hy ξ) η
 
 /-- The coordinate derivative `∂_{ξ_j} â(η, ξ)` is the Fourier transform of the position slice of
 the frequency derivative `∂_{ξ_j} a`. -/
@@ -389,7 +390,8 @@ theorem HasCompactSpatialSupport.coordinateDeriv_fourier_slice (ha : a.HasCompac
       𝓕 (fun y ↦ (Symbol.frequencyDeriv j a).coefficient (y, ξ)) η := by
   obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp ha
   rw [coordinateDeriv_cons, coordinateDeriv_nil, (ha.hasFDerivAt_fourier_slice η ξ).fderiv,
-    integral_fourierChar_smul_fderiv_apply (a.contDiff_coefficient.of_le (by simp)) hK hKa η ξ,
+    integral_fourierChar_smul_fderiv_apply (ξ := ξ) (a.contDiff_coefficient.of_le (by simp)) hK
+      (.of_forall fun ξ y hy ↦ hKa y hy ξ) η,
     Real.fourier_eq]
   simp only [Circle.smul_def, coefficient_frequencyDeriv, coordinateDeriv_cons,
     coordinateDeriv_nil]

@@ -24,9 +24,11 @@ Its quantization is the oscillatory integral
 `Op(a) u (x) = (2π)⁻ⁿ ∫∫ exp(i ⟪x - y, ξ⟫) a(x, y, ξ) u(y) dy dξ`. A symbol `b(x, ξ)` is an
 amplitude independent of `y`, and `b(y, ξ)` is the amplitude of its right quantization; the
 composition, adjoint and coordinate change formulas of the pseudodifferential calculus produce
-amplitudes depending on both positions. Amplitudes with compact support in the input position
-reduce to left symbols (`TauCeti.Amplitude.leftSymbol`, in
-`TauCeti.Analysis.Pseudodifferential.Amplitude.LeftSymbol`).
+amplitudes depending on both positions. Amplitudes whose support in the input position is compact
+locally uniformly in the output position (*proper input support*) reduce to left symbols
+(`TauCeti.Amplitude.leftSymbol`, in `TauCeti.Analysis.Pseudodifferential.Amplitude.LeftSymbol`).
+This class contains the amplitudes with compact support in the input position, and the amplitudes
+`ρ(x - y) b(x, ξ)` with `ρ` compactly supported, which cut a quantization off near the diagonal.
 
 ## Main declarations
 
@@ -40,13 +42,13 @@ reduce to left symbols (`TauCeti.Amplitude.leftSymbol`, in
   diagonal, a symbol of order `m`, with the Leibniz rules `TauCeti.Amplitude.spatialDeriv_diagonal`
   and `TauCeti.Amplitude.frequencyDeriv_diagonal`.
 * `TauCeti.Amplitude.ofRight`: the amplitude `b(y, ξ)` of the right quantization of a symbol `b`.
-* `TauCeti.Amplitude.HasCompactInputSupport`: the amplitude vanishes for input positions outside a
-  compact set; then its estimates hold uniformly in `y`
-  (`TauCeti.Amplitude.HasCompactInputSupport.exists_bound`).
-* `TauCeti.Amplitude.HasCompactInputSupport.exists_norm_fourier_slice_le`: rapid decay
+* `TauCeti.Amplitude.HasProperInputSupport`: for output positions in a compact set, the amplitude
+  vanishes for input positions outside a compact set; then its estimates hold uniformly in `y`
+  for `x` in a compact set (`TauCeti.Amplitude.HasProperInputSupport.exists_bound`).
+* `TauCeti.Amplitude.HasProperInputSupport.exists_norm_fourier_slice_le`: rapid decay
   `‖â(x, θ, ξ)‖ ≤ C ⟨ξ⟩^m ⟨θ⟩^(-r)` of the Fourier transform `â(x, θ, ξ)` of the input slice
   `y ↦ a(x, y, ξ)`, uniformly for `x` in a compact set, and
-  `TauCeti.Amplitude.HasCompactInputSupport.fourier_spatialDerivSnd_slice`, the Fourier transform
+  `TauCeti.Amplitude.HasProperInputSupport.fourier_spatialDerivSnd_slice`, the Fourier transform
   of `∂_{y_j} a`.
 * `TauCeti.quantizeAmplitudeValue`: the quantization of an amplitude on a Schwartz function, with
   `TauCeti.quantizeAmplitudeValue_eq_smul_oscillatoryIntegral` identifying it with the oscillatory
@@ -364,98 +366,129 @@ private theorem coordinateDeriv_slice_snd (a : Amplitude n V W m) (γ : List (Fi
     iteratedFDerivAlong_comp_of_hasFDerivAt hφ a.contDiff_coefficient _ (by simp)]
   simp [amplitudeDirections_def, Function.comp_def]
 
-/-! ### Compact input support -/
+/-! ### Proper input support -/
 
-/-- An amplitude has **compact input support** if it vanishes, for every output position and
-every frequency, at all input positions `y` outside a fixed compact set. Its quantization is then
-an absolutely convergent iterated integral, and it reduces to a left symbol
-(`TauCeti.Amplitude.leftSymbol`). -/
-def HasCompactInputSupport (a : Amplitude n V W m) : Prop :=
-  ∃ L : Set (CoordinateSpace n), IsCompact L ∧ ∀ x, ∀ y ∉ L, ∀ ξ, a.coefficient (x, y, ξ) = 0
+/-- An amplitude has **proper input support** if for every compact set `K` of output positions
+there is a compact set `L` of input positions such that `a(x, y, ξ) = 0` for all `x ∈ K`, `y ∉ L`
+and all frequencies `ξ`: the projection `(x, y) ↦ x` is proper on the support of `a`. Its
+quantization at each output position is then an absolutely convergent iterated integral, and it
+reduces to a left symbol (`TauCeti.Amplitude.leftSymbol`).
 
-theorem hasCompactInputSupport_iff {a : Amplitude n V W m} :
-    a.HasCompactInputSupport ↔
-      ∃ L : Set (CoordinateSpace n), IsCompact L ∧ ∀ x, ∀ y ∉ L, ∀ ξ, a.coefficient (x, y, ξ) = 0 :=
+Amplitudes vanishing at all input positions outside one compact set have proper input support,
+such as the amplitude `b(y, ξ)` of the right quantization of a symbol with compact spatial support
+(`TauCeti.Symbol.HasCompactSpatialSupport.hasProperInputSupport_ofRight`). So do the amplitudes
+`ρ(x - y) b(x, ξ)` with `ρ` compactly supported, which do not vanish outside any compact set of
+input positions when `b` has no compact spatial support. -/
+def HasProperInputSupport (a : Amplitude n V W m) : Prop :=
+  ∀ K : Set (CoordinateSpace n), IsCompact K → ∃ L : Set (CoordinateSpace n), IsCompact L ∧
+    ∀ x ∈ K, ∀ y ∉ L, ∀ ξ, a.coefficient (x, y, ξ) = 0
+
+theorem hasProperInputSupport_iff {a : Amplitude n V W m} :
+    a.HasProperInputSupport ↔
+      ∀ K : Set (CoordinateSpace n), IsCompact K → ∃ L : Set (CoordinateSpace n), IsCompact L ∧
+        ∀ x ∈ K, ∀ y ∉ L, ∀ ξ, a.coefficient (x, y, ξ) = 0 :=
   Iff.rfl
 
-/-- Outside a closed set of input positions on which an amplitude vanishes, all its derivatives
-vanish. -/
+/-- An amplitude vanishing at all input positions outside a fixed compact set has proper input
+support. -/
+theorem hasProperInputSupport_of_isCompact {a : Amplitude n V W m} {L : Set (CoordinateSpace n)}
+    (hL : IsCompact L) (hLa : ∀ x, ∀ y ∉ L, ∀ ξ, a.coefficient (x, y, ξ) = 0) :
+    a.HasProperInputSupport :=
+  fun _ _ ↦ ⟨L, hL, fun x _ y hy ξ ↦ hLa x y hy ξ⟩
+
+/-- At output positions in the interior of a set `K` and input positions outside a closed set `L`,
+such that the amplitude vanishes on `K × Lᶜ`, all its derivatives vanish. -/
 private theorem iteratedFDerivAlong_eq_zero_of_notMem {a : Amplitude n V W m}
-    {L : Set (CoordinateSpace n)} (hL : IsClosed L)
-    (hLa : ∀ x, ∀ y ∉ L, ∀ ξ, a.coefficient (x, y, ξ) = 0)
+    {K L : Set (CoordinateSpace n)} (hL : IsClosed L)
+    (hLa : ∀ x ∈ K, ∀ y ∉ L, ∀ ξ, a.coefficient (x, y, ξ) = 0)
     (vs : List (CoordinateSpace n × CoordinateSpace n × CoordinateSpace n))
-    {x y ξ : CoordinateSpace n} (hy : y ∉ L) :
+    {x y ξ : CoordinateSpace n} (hx : x ∈ interior K) (hy : y ∉ L) :
     iteratedFDerivAlong ℝ vs a.coefficient (x, y, ξ) = 0 := by
   refine iteratedFDerivAlong_eq_zero_of_eventuallyEq_zero ?_ vs
-  have hU : IsOpen {p : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n | p.2.1 ∉ L} :=
-    hL.isOpen_compl.preimage (continuous_fst.comp continuous_snd)
-  filter_upwards [hU.mem_nhds hy] with p hp
-  exact hLa p.1 p.2.1 hp p.2.2
+  have hU : IsOpen {p : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n |
+      p.1 ∈ interior K ∧ p.2.1 ∉ L} :=
+    (isOpen_interior.preimage continuous_fst).inter
+      (hL.isOpen_compl.preimage (continuous_fst.comp continuous_snd))
+  filter_upwards [hU.mem_nhds ⟨hx, hy⟩] with p hp
+  exact hLa p.1 (interior_subset hp.1) p.2.1 hp.2 p.2.2
 
-private theorem HasCompactInputSupport.exists_iteratedFDerivAlong_singleton_eq_zero
-    {a : Amplitude n V W m}
-    (ha : a.HasCompactInputSupport) (d : CoordinateSpace n × CoordinateSpace n ×
-      CoordinateSpace n) :
-    ∃ L : Set (CoordinateSpace n), IsCompact L ∧ ∀ x, ∀ y ∉ L, ∀ ξ,
-      iteratedFDerivAlong ℝ [d] a.coefficient (x, y, ξ) = 0 := by
-  obtain ⟨L, hL, hLa⟩ := ha
-  exact ⟨L, hL, fun x y hy ξ ↦ iteratedFDerivAlong_eq_zero_of_notMem hL.isClosed hLa _ hy⟩
+/-- Derivatives of an amplitude with proper input support have proper input support: for `x` in a
+compact set `K`, enlarge `K` to a compact neighbourhood. -/
+private theorem HasProperInputSupport.exists_iteratedFDerivAlong_eq_zero
+    {a : Amplitude n V W m} (ha : a.HasProperInputSupport) {K : Set (CoordinateSpace n)}
+    (hK : IsCompact K) :
+    ∃ L : Set (CoordinateSpace n), IsCompact L ∧ ∀ x ∈ K, ∀ y ∉ L, ∀ ξ,
+      ∀ vs : List (CoordinateSpace n × CoordinateSpace n × CoordinateSpace n),
+        iteratedFDerivAlong ℝ vs a.coefficient (x, y, ξ) = 0 := by
+  obtain ⟨K', hK', hKK'⟩ := exists_compact_superset hK
+  obtain ⟨L, hL, hLa⟩ := ha K' hK'
+  exact ⟨L, hL, fun x hx y hy ξ vs ↦
+    iteratedFDerivAlong_eq_zero_of_notMem hL.isClosed hLa vs (hKK' hx) hy⟩
 
-theorem HasCompactInputSupport.spatialDerivFst {a : Amplitude n V W m}
-    (ha : a.HasCompactInputSupport) (j : Fin n) : (spatialDerivFst j a).HasCompactInputSupport :=
-  ha.exists_iteratedFDerivAlong_singleton_eq_zero _
+private theorem HasProperInputSupport.iteratedFDerivAlong_singleton
+    {a : Amplitude n V W m} (ha : a.HasProperInputSupport)
+    (d : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n) :
+    ∀ K : Set (CoordinateSpace n), IsCompact K → ∃ L : Set (CoordinateSpace n), IsCompact L ∧
+      ∀ x ∈ K, ∀ y ∉ L, ∀ ξ, iteratedFDerivAlong ℝ [d] a.coefficient (x, y, ξ) = 0 := by
+  intro K hK
+  obtain ⟨L, hL, hLa⟩ := ha.exists_iteratedFDerivAlong_eq_zero hK
+  exact ⟨L, hL, fun x hx y hy ξ ↦ hLa x hx y hy ξ [d]⟩
 
-theorem HasCompactInputSupport.spatialDerivSnd {a : Amplitude n V W m}
-    (ha : a.HasCompactInputSupport) (j : Fin n) : (spatialDerivSnd j a).HasCompactInputSupport :=
-  ha.exists_iteratedFDerivAlong_singleton_eq_zero _
+theorem HasProperInputSupport.spatialDerivFst {a : Amplitude n V W m}
+    (ha : a.HasProperInputSupport) (j : Fin n) : (spatialDerivFst j a).HasProperInputSupport :=
+  ha.iteratedFDerivAlong_singleton _
 
-theorem HasCompactInputSupport.frequencyDeriv {a : Amplitude n V W m}
-    (ha : a.HasCompactInputSupport) (j : Fin n) : (frequencyDeriv j a).HasCompactInputSupport :=
-  ha.exists_iteratedFDerivAlong_singleton_eq_zero _
+theorem HasProperInputSupport.spatialDerivSnd {a : Amplitude n V W m}
+    (ha : a.HasProperInputSupport) (j : Fin n) : (spatialDerivSnd j a).HasProperInputSupport :=
+  ha.iteratedFDerivAlong_singleton _
 
-/-- The input-position slices of an amplitude with compact input support are compactly
+theorem HasProperInputSupport.frequencyDeriv {a : Amplitude n V W m}
+    (ha : a.HasProperInputSupport) (j : Fin n) : (frequencyDeriv j a).HasProperInputSupport :=
+  ha.iteratedFDerivAlong_singleton _
+
+/-- The input-position slices of an amplitude with proper input support are compactly
 supported. -/
-theorem HasCompactInputSupport.hasCompactSupport_slice {a : Amplitude n V W m}
-    (ha : a.HasCompactInputSupport) (x ξ : CoordinateSpace n) :
+theorem HasProperInputSupport.hasCompactSupport_slice {a : Amplitude n V W m}
+    (ha : a.HasProperInputSupport) (x ξ : CoordinateSpace n) :
     HasCompactSupport fun y ↦ a.coefficient (x, y, ξ) := by
-  obtain ⟨L, hL, hLa⟩ := ha
-  exact HasCompactSupport.intro hL fun y hy ↦ hLa x y hy ξ
+  obtain ⟨L, hL, hLa⟩ := ha {x} isCompact_singleton
+  exact HasCompactSupport.intro hL fun y hy ↦ hLa x rfl y hy ξ
 
-/-- The amplitude of the right quantization of a symbol with compact spatial support has compact
+/-- The amplitude of the right quantization of a symbol with compact spatial support has proper
 input support. -/
-theorem _root_.TauCeti.Symbol.HasCompactSpatialSupport.hasCompactInputSupport_ofRight
+theorem _root_.TauCeti.Symbol.HasCompactSpatialSupport.hasProperInputSupport_ofRight
     {b : Symbol n V W m} (hb : b.HasCompactSpatialSupport) :
-    (ofRight b).HasCompactInputSupport := by
+    (ofRight b).HasProperInputSupport := by
   obtain ⟨L, hL, hLb⟩ := Symbol.hasCompactSpatialSupport_iff.mp hb
-  exact ⟨L, hL, fun _ y hy ξ ↦ hLb y hy ξ⟩
+  exact hasProperInputSupport_of_isCompact hL fun _ y hy ξ ↦ hLb y hy ξ
 
-/-- For an amplitude with compact input support, the estimates hold for all input positions,
+/-- For an amplitude with proper input support, the estimates hold for all input positions,
 uniformly for output positions in a compact set. -/
-theorem HasCompactInputSupport.exists_bound {a : Amplitude n V W m}
-    (ha : a.HasCompactInputSupport) {K : Set (CoordinateSpace n)} (hK : IsCompact K)
+theorem HasProperInputSupport.exists_bound {a : Amplitude n V W m}
+    (ha : a.HasProperInputSupport) {K : Set (CoordinateSpace n)} (hK : IsCompact K)
     (α γ β : List (Fin n)) :
     ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ y ξ,
       ‖iteratedFDerivAlong ℝ (amplitudeDirections α γ β) a.coefficient (x, y, ξ)‖ ≤
         C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
-  obtain ⟨L, hL, hLa⟩ := ha
+  obtain ⟨L, hL, hLa⟩ := ha.exists_iteratedFDerivAlong_eq_zero hK
   obtain ⟨C, hC0, hC⟩ := a.exists_bound (K ×ˢ L) (hK.prod hL) α γ β
   refine ⟨C, hC0, fun x hx y ξ ↦ ?_⟩
   by_cases hy : y ∈ L
   · exact hC x y ⟨hx, hy⟩ ξ
-  · rw [iteratedFDerivAlong_eq_zero_of_notMem hL.isClosed hLa _ hy, norm_zero]
+  · rw [hLa x hx y hy ξ, norm_zero]
     positivity
 
 /-! ### The Fourier transform in the input position -/
 
-/-- The `L¹` norms of the derivatives of the input-position slices of an amplitude with compact
+/-- The `L¹` norms of the derivatives of the input-position slices of an amplitude with proper
 input support grow at most like `⟨ξ⟩ ^ m`, uniformly for output positions in a compact set. -/
-private theorem HasCompactInputSupport.exists_integral_norm_iteratedFDeriv_slice_le
-    {a : Amplitude n V W m} (ha : a.HasCompactInputSupport) {K : Set (CoordinateSpace n)}
+private theorem HasProperInputSupport.exists_integral_norm_iteratedFDeriv_slice_le
+    {a : Amplitude n V W m} (ha : a.HasProperInputSupport) {K : Set (CoordinateSpace n)}
     (hK : IsCompact K) (k : ℕ) :
     ∃ B, 0 ≤ B ∧ ∀ x ∈ K, ∀ ξ,
       ∫ y, ‖iteratedFDeriv ℝ k (fun y ↦ a.coefficient (x, y, ξ)) y‖ ≤
         B * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
-  obtain ⟨L, hL, hLa⟩ := id ha
+  obtain ⟨L, hL, hLa⟩ := ha K hK
   choose C hC0 hC using fun r : Fin k → Fin n ↦ ha.exists_bound hK [] (List.ofFn r) []
   set D := ∑ r, C r
   have hD : 0 ≤ D := Finset.sum_nonneg fun r _ ↦ hC0 r
@@ -475,7 +508,7 @@ private theorem HasCompactInputSupport.exists_integral_norm_iteratedFDeriv_slice
     · rw [Set.indicator_of_notMem hy, norm_le_zero_iff]
       exact image_eq_zero_of_notMem_tsupport fun hmem ↦ hy <|
         (closure_minimal (s := Function.support fun y ↦ a.coefficient (x, y, ξ))
-          (fun y hy' ↦ by_contra fun h ↦ Function.mem_support.1 hy' (hLa x y h ξ)) hL.isClosed)
+          (fun y hy' ↦ by_contra fun h ↦ Function.mem_support.1 hy' (hLa x hx y h ξ)) hL.isClosed)
           (tsupport_iteratedFDeriv_subset k hmem)
   calc ∫ y, ‖iteratedFDeriv ℝ k (fun y ↦ a.coefficient (x, y, ξ)) y‖
       ≤ ∫ y, L.indicator (fun _ ↦ D * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) y :=
@@ -487,11 +520,11 @@ private theorem HasCompactInputSupport.exists_integral_norm_iteratedFDeriv_slice
         ring
 
 /-- **Rapid decay of the Fourier transform in the input position.** For an amplitude `a` of order
-`m` with compact input support and every `r`, the Fourier transform `â(x, θ, ξ)` of the input
+`m` with proper input support and every `r`, the Fourier transform `â(x, θ, ξ)` of the input
 slice `y ↦ a(x, y, ξ)` satisfies `‖â(x, θ, ξ)‖ ≤ C ⟨ξ⟩ ^ m ⟨θ⟩ ^ (-r)`, uniformly for output
 positions `x` in a compact set. -/
-theorem HasCompactInputSupport.exists_norm_fourier_slice_le {a : Amplitude n V W m}
-    (ha : a.HasCompactInputSupport) {K : Set (CoordinateSpace n)} (hK : IsCompact K) (r : ℝ) :
+theorem HasProperInputSupport.exists_norm_fourier_slice_le {a : Amplitude n V W m}
+    (ha : a.HasProperInputSupport) {K : Set (CoordinateSpace n)} (hK : IsCompact K) (r : ℝ) :
     ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ θ ξ,
       ‖𝓕 (fun y ↦ a.coefficient (x, y, ξ)) θ‖ ≤
         C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖θ‖ ^ 2) ^ (-r / 2) := by
@@ -533,22 +566,31 @@ theorem HasCompactInputSupport.exists_norm_fourier_slice_le {a : Amplitude n V W
     _ = _ := by ring
 
 
-/-- The Fourier transform `â(x, θ, ξ)` of the input slices of an amplitude with compact input
+/-- The Fourier transform `â(x, θ, ξ)` of the input slices of an amplitude with proper input
 support is jointly continuous in the dual variable `θ`, the output position `x` and the
 frequency `ξ`. -/
-theorem HasCompactInputSupport.continuous_fourier_slice {a : Amplitude n V W m}
-    (ha : a.HasCompactInputSupport) :
+theorem HasProperInputSupport.continuous_fourier_slice {a : Amplitude n V W m}
+    (ha : a.HasProperInputSupport) :
     Continuous fun q : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n ↦
       𝓕 (fun y ↦ a.coefficient (q.2.1, y, q.2.2)) q.1 := by
-  obtain ⟨L, hL, hLa⟩ := ha
-  simpa only [Real.fourier_eq, Circle.smul_def] using continuous_integral_fourierChar_smul
+  refine continuous_iff_continuousAt.2 fun q₀ ↦ ?_
+  -- Near `q₀`, the output position lies in the closed unit ball around `q₀.2.1`, over which
+  -- the input slices vanish outside one compact set.
+  obtain ⟨L, hL, hLa⟩ := ha _ (isCompact_closedBall q₀.2.1 1)
+  have h := continuousOn_integral_fourierChar_smul
     (g := fun r : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n ↦
       a.coefficient (r.2.1, r.1, r.2.2))
-    (a.contDiff_coefficient.continuous.comp (by fun_prop)) hL fun y hy q ↦ hLa q.1 y hy q.2
+    (a.contDiff_coefficient.continuous.comp (by fun_prop)) hL
+    (s := {q | q.1 ∈ Metric.closedBall q₀.2.1 1}) fun q hq y hy ↦ hLa q.1 hq y hy q.2
+  simp only [Set.univ_prod] at h
+  refine (h.continuousAt ?_).congr (.of_forall fun q ↦ ?_)
+  · exact (continuous_fst.comp continuous_snd).continuousAt.preimage_mem_nhds
+      (Metric.closedBall_mem_nhds _ one_pos)
+  · simp [Real.fourier_eq, Circle.smul_def]
 
 /-- The Fourier transform of the input slices of `∂_{y_j} a` is `2πi θⱼ â(x, θ, ξ)`. -/
-theorem HasCompactInputSupport.fourier_spatialDerivSnd_slice {a : Amplitude n V W m}
-    (ha : a.HasCompactInputSupport) (j : Fin n) (θ x ξ : CoordinateSpace n) :
+theorem HasProperInputSupport.fourier_spatialDerivSnd_slice {a : Amplitude n V W m}
+    (ha : a.HasProperInputSupport) (j : Fin n) (θ x ξ : CoordinateSpace n) :
     𝓕 (fun y ↦ (Amplitude.spatialDerivSnd j a).coefficient (x, y, ξ)) θ =
       ((2 * π * Complex.I * θ j : ℂ)) • 𝓕 (fun y ↦ a.coefficient (x, y, ξ)) θ := by
   set f := fun y ↦ a.coefficient (x, y, ξ)
