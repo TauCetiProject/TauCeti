@@ -53,7 +53,7 @@ open scoped ContDiff Manifold
 
 namespace TauCeti
 
-variable {E P : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+variable {E P : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup P] [NormedSpace ℝ P]
 
 section Chart
