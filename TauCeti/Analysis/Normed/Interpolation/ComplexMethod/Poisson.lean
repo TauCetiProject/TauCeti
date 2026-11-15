@@ -23,14 +23,13 @@ bounds on `[X₀, X₁]_θ` without completeness, density of the intersection, o
 
 ## Main results
 
-* `TauCeti.CompatibleCouple.IsStripFunction.exists_smul_of_differentiableOn`:
-  bounded holomorphic scalar multiplier lemma for admissible strip functions.
 * `TauCeti.CompatibleCouple.ComplexMethodSpace.norm_le_exp_integral_stripPoissonKernel`:
   Calderón's log-convexity bound for `[X₀, X₁]_θ`.
 * `TauCeti.CompatibleCouple.ComplexMethodSpace.norm_le_rpow_integral_stripPoissonMeasure`,
   `norm_le_norm_fst_rpow_mul_rpow_integral_stripPoissonMeasure`,
   `norm_le_rpow_integral_stripPoissonMeasure_mul_norm_snd_rpow`, and
-  `norm_le_integral_stripPoissonKernel`: `(L^{p₀}, L^{p₁})`, mixed, and `L¹` strip Poisson bounds.
+  `norm_le_rpow_integral_stripPoissonKernel`: `(L^{p₀}, L^{p₁})`, mixed, and `L¹` strip Poisson
+  bounds.
 
 ## References
 
@@ -49,192 +48,17 @@ open scoped ENNReal Topology ZeroAtInfty
 
 namespace TauCeti
 
-/-! ### Gluing strip boundary data onto the unit circle -/
-
-private def unitDiscToExpStrip (θ : ℝ) (w : ℂ) : ℂ :=
-  (exp (I * π * θ) - w * exp (-I * π * θ)) / (1 - w)
-
-private theorem sub_exp_neg_I_pi_ne_zero {θ : ℝ} (hθ : θ ∈ Ioo 0 1) {w : ℂ} (hw : 0 ≤ w.im) :
-    w - exp (-I * π * θ) ≠ 0 := fun h ↦ by
-  have him := congrArg Complex.im (sub_eq_zero.1 h)
-  have hθ' : (exp (-I * π * θ)).im = -Real.sin (π * θ) := by
-    have : -I * ↑π * ↑θ = ((-(π * θ) : ℝ) : ℂ) * I := by push_cast; ring
-    rw [this, exp_ofReal_mul_I, Real.sin_neg]; simp [-ofReal_cos, -ofReal_sin]
-  linarith [Real.sin_pos_of_pos_of_lt_pi (mul_pos pi_pos hθ.1) (by nlinarith [pi_pos, hθ.2])]
-
-private theorem exp_I_pi_sub_exp_neg_I_pi_ne_zero {θ : ℝ} (hθ : θ ∈ Ioo 0 1) :
-    exp (I * π * θ) - exp (-I * π * θ) ≠ 0 :=
-  sub_exp_neg_I_pi_ne_zero hθ <| by
-    have : I * ↑π * ↑θ = ((π * θ : ℝ) : ℂ) * I := by push_cast; ring
-    rw [this, exp_ofReal_mul_I]
-    simpa [-ofReal_cos, -ofReal_sin] using
-      (Real.sin_pos_of_pos_of_lt_pi (mul_pos pi_pos hθ.1) (by nlinarith [pi_pos, hθ.2])).le
-
-private theorem cayley_ofReal {θ : ℝ} (hθ : θ ∈ Ioo 0 1) (r : ℝ) :
-    ((r : ℂ) - exp (I * π * θ)) / ((r : ℂ) - exp (-I * π * θ)) ≠ 1 ∧
-      (unitDiscToExpStrip θ (((r : ℂ) - exp (I * π * θ)) / ((r : ℂ) - exp (-I * π * θ)))).re =
-        r := by
-  have hden : (r : ℂ) - exp (-I * π * θ) ≠ 0 := sub_exp_neg_I_pi_ne_zero hθ (by simp)
-  have hne1 : ((r : ℂ) - exp (I * π * θ)) / ((r : ℂ) - exp (-I * π * θ)) ≠ 1 := by
-    rw [ne_eq, div_eq_one_iff_eq hden, sub_right_inj]
-    exact fun h ↦ exp_I_pi_sub_exp_neg_I_pi_ne_zero hθ (sub_eq_zero.2 h)
-  refine ⟨hne1, ?_⟩
-  have heq : unitDiscToExpStrip θ (((r : ℂ) - exp (I * π * θ)) / ((r : ℂ) - exp (-I * π * θ))) =
-      (r : ℂ) := by
-    rw [unitDiscToExpStrip]; set ζ := exp (I * π * θ); set ζ' := exp (-I * π * θ)
-    rw [div_eq_iff (sub_ne_zero.2 hne1.symm)]; field_simp [hden]; ring
-  rw [heq, ofReal_re]
-
-private theorem abs_re_unitDiscToExpStrip_of_mem_sphere (θ : ℝ) {w : ℂ}
-    (hw : w ∈ sphere 0 1) (hw1 : w ≠ 1) :
-    |(unitDiscToExpStrip θ w).re| = ‖unitDiscToExpStrip θ w‖ := by
-  have hww : w * star w = 1 := by
-    rw [RCLike.star_def, mul_conj, normSq_eq_norm_sq, mem_sphere_zero_iff_norm.1 hw,
-      one_pow, ofReal_one]
-  have h1w : 1 - w ≠ 0 := sub_ne_zero.2 hw1.symm
-  have h1sw : 1 - star w ≠ 0 := fun h ↦ h1w (by simpa using congrArg star h)
-  have hζ : star (exp (I * π * θ)) = exp (-I * π * θ) := by
-    rw [RCLike.star_def, ← exp_conj]; congr 1; simp
-  have hζ' : star (exp (-I * π * θ)) = exp (I * π * θ) := by rw [← hζ, star_involutive]
-  have hself : star (unitDiscToExpStrip θ w) = unitDiscToExpStrip θ w := by
-    rw [unitDiscToExpStrip, star_div₀, star_sub, star_mul, star_sub, star_one, hζ, hζ',
-      div_eq_div_iff h1sw h1w]
-    linear_combination (exp (I * ↑π * ↑θ) - exp (-I * ↑π * ↑θ)) * hww
-  have him : (unitDiscToExpStrip θ w).im = 0 := by
-    have := congrArg Complex.im hself; simp only [RCLike.star_def, conj_im] at this; linarith
-  rw [← Complex.re_add_im (unitDiscToExpStrip θ w), him]; simp
-
-private def glueBoundary (θ c₀ : ℝ) (u₀ u₁ : ℝ → ℝ) (w : ℂ) : ℝ :=
-  let x := (unitDiscToExpStrip θ w).re
-  if w = 1 ∨ x = 0 then c₀
-  else if 0 < x then u₀ (-Real.log x / π)
-  else u₁ (-Real.log (-x) / π)
-
-private theorem glueBoundary_stripToUnitDisc_mul_I {θ c₀ : ℝ} (hθ : θ ∈ Ioo 0 1)
-    (u₀ u₁ : ℝ → ℝ) (t : ℝ) :
-    glueBoundary θ c₀ u₀ u₁ (stripToUnitDisc θ (t * I)) = u₀ t := by
-  have harg : exp (I * ↑π * (↑t * I)) = (Real.exp (-π * t) : ℂ) := by
-    have : I * ↑π * (↑t * I) = ((-π * t : ℝ) : ℂ) := by
-      push_cast; linear_combination (π * t : ℂ) * I_mul_I
-    rw [this, ofReal_exp]
-  obtain ⟨hne1, hx⟩ := cayley_ofReal hθ (Real.exp (-π * t))
-  have hpos : 0 < Real.exp (-π * t) := Real.exp_pos _
-  rw [stripToUnitDisc_def, harg]
-  simp only [glueBoundary, hx, hne1, hpos.ne', or_self, ↓reduceIte, hpos, Real.log_exp]
-  congr 1; field_simp [pi_pos.ne']
-
-private theorem glueBoundary_stripToUnitDisc_one_add_mul_I {θ c₀ : ℝ} (hθ : θ ∈ Ioo 0 1)
-    (u₀ u₁ : ℝ → ℝ) (t : ℝ) :
-    glueBoundary θ c₀ u₀ u₁ (stripToUnitDisc θ (1 + t * I)) = u₁ t := by
-  have harg : exp (I * ↑π * (1 + ↑t * I)) = ((-Real.exp (-π * t) : ℝ) : ℂ) := by
-    have : I * ↑π * (1 + ↑t * I) = ((-π * t : ℝ) : ℂ) + ↑π * I := by
-      push_cast; linear_combination (π * t : ℂ) * I_mul_I
-    rw [this, Complex.exp_add, exp_pi_mul_I, ofReal_neg, ofReal_exp, mul_neg_one]
-  obtain ⟨hne1, hx⟩ := cayley_ofReal hθ (-Real.exp (-π * t))
-  have hneg : -Real.exp (-π * t) < 0 := neg_lt_zero.2 (Real.exp_pos _)
-  rw [stripToUnitDisc_def, harg]
-  simp only [glueBoundary, hx, hne1, hneg.ne, or_self, ↓reduceIte, not_lt.2 hneg.le, neg_neg,
-    Real.log_exp]
-  congr 1; field_simp [pi_pos.ne']
-
-private theorem glueBoundary_eq_const_of_abs_log {θ c₀ T : ℝ} {u₀ u₁ : ℝ → ℝ}
-    (hT : ∀ t, T ≤ |t| → u₀ t = c₀ ∧ u₁ t = c₀) {w : ℂ}
-    (hlog : w = 1 ∨ (unitDiscToExpStrip θ w).re = 0 ∨
-      π * T ≤ |Real.log (|(unitDiscToExpStrip θ w).re|)|) :
-    glueBoundary θ c₀ u₀ u₁ w = c₀ := by
-  dsimp only [glueBoundary]
-  rcases hlog with hw | hx | hbig
-  · simp [hw]
-  · simp [hx]
-  · split_ifs with h0 hpos
-    · rfl
-    · rw [abs_of_pos hpos] at hbig
-      exact (hT _ (by rw [abs_div, abs_neg, abs_of_pos pi_pos, le_div_iff₀ pi_pos]; linarith)).1
-    · rw [abs_of_neg (lt_of_le_of_ne (not_lt.1 hpos) (not_or.1 h0).2)] at hbig
-      exact (hT _ (by rw [abs_div, abs_neg, abs_of_pos pi_pos, le_div_iff₀ pi_pos]; linarith)).2
-
-private theorem continuousWithinAt_glueBoundary_one {θ c₀ T : ℝ} (hθ : θ ∈ Ioo 0 1)
-    {u₀ u₁ : ℝ → ℝ} (hT : ∀ t, T ≤ |t| → u₀ t = c₀ ∧ u₁ t = c₀) :
-    ContinuousWithinAt (glueBoundary θ c₀ u₀ u₁) (sphere 0 1) 1 := by
-  have hpos : 0 < ‖exp (I * π * θ) - (1 : ℂ) * exp (-I * π * θ)‖ := by
-    simpa using norm_pos_iff.2 (exp_I_pi_sub_exp_neg_I_pi_ne_zero hθ)
-  have hfn : Continuous fun w : ℂ ↦ ‖exp (I * π * θ) - w * exp (-I * π * θ)‖ := by fun_prop
-  have hfd : Continuous fun w : ℂ ↦ ‖(1 : ℂ) - w‖ := by fun_prop
-  have hnum_ev := (hfn.tendsto 1).eventually_const_lt (half_lt_self hpos)
-  have hden_ev := (hfd.tendsto 1).eventually_lt_const
-    (by simp only [sub_self, norm_zero]; exact div_pos (half_pos hpos) (Real.exp_pos (π * T)))
-  refine (continuousWithinAt_const (b := c₀)).congr_of_eventuallyEq ?_ (by simp [glueBoundary])
-  filter_upwards [self_mem_nhdsWithin, eventually_nhdsWithin_of_eventually_nhds hnum_ev,
-    eventually_nhdsWithin_of_eventually_nhds hden_ev] with w hw hnum hden
-  refine glueBoundary_eq_const_of_abs_log hT ?_
-  by_cases hw1 : w = 1
-  · exact Or.inl hw1
-  have hgt : Real.exp (π * T) < |(unitDiscToExpStrip θ w).re| := by
-    rw [abs_re_unitDiscToExpStrip_of_mem_sphere θ hw hw1, unitDiscToExpStrip, norm_div,
-      lt_div_iff₀ (norm_pos_iff.2 (sub_ne_zero.2 (Ne.symm hw1)))]
-    linarith [(lt_div_iff₀ (Real.exp_pos (π * T))).1 hden]
-  exact Or.inr <| Or.inr <|
-    (Real.log_exp (π * T) ▸ Real.log_le_log (Real.exp_pos _) hgt.le).trans (le_abs_self _)
-
-private theorem continuousOn_glueBoundary {θ c₀ : ℝ} (hθ : θ ∈ Ioo 0 1) {u₀ u₁ : ℝ → ℝ}
-    (hu₀c : Continuous u₀) (hu₁c : Continuous u₁)
-    (hu₀ : ∀ᶠ t in cocompact ℝ, u₀ t = c₀) (hu₁ : ∀ᶠ t in cocompact ℝ, u₁ t = c₀) :
-    ContinuousOn (glueBoundary θ c₀ u₀ u₁) (sphere 0 1) := by
-  obtain ⟨K, hKc, hK⟩ := Filter.mem_cocompact.1 (hu₀.and hu₁)
-  obtain ⟨T₀, hT₀⟩ := hKc.isBounded.subset_closedBall 0
-  set T := max T₀ 0 + 1
-  have hT : ∀ t, T ≤ |t| → u₀ t = c₀ ∧ u₁ t = c₀ := fun t ht ↦
-    hK fun htK ↦ by
-      have hle : |t| ≤ T₀ := by simpa [Real.norm_eq_abs] using mem_closedBall_zero_iff.1 (hT₀ htK)
-      linarith [le_max_left T₀ 0]
-  intro w₀ _
-  by_cases hw₀1 : w₀ = 1
-  · exact hw₀1 ▸ continuousWithinAt_glueBoundary_one hθ hT
-  have hcx : ContinuousAt (fun w ↦ (unitDiscToExpStrip θ w).re) w₀ := by
-    unfold unitDiscToExpStrip
-    exact Complex.continuous_re.continuousAt.comp
-      ((continuousAt_const.sub (continuousAt_id.mul continuousAt_const)).div
-        (continuousAt_const.sub continuousAt_id) (sub_ne_zero.2 (Ne.symm hw₀1)))
-  rcases lt_trichotomy ((unitDiscToExpStrip θ w₀).re) 0 with hneg | hzero | hpos
-  · have hlx := (Real.continuousAt_log (neg_pos.2 hneg).ne').comp
-      (f := fun w ↦ -(unitDiscToExpStrip θ w).re) hcx.neg
-    refine ((hu₁c.continuousAt.comp (f := fun w ↦ -Real.log (-(unitDiscToExpStrip θ w).re) / π)
-      (hlx.neg.div_const π)).congr_of_eventuallyEq ?_).continuousWithinAt
-    filter_upwards [eventually_ne_nhds hw₀1, hcx.eventually_lt_const hneg] with w hw1 hlt
-    simp [glueBoundary, hw1, hlt.ne, not_lt.2 hlt.le]
-  · refine (continuousWithinAt_const (b := c₀)).congr_of_eventuallyEq ?_
-      (by simp [glueBoundary, hzero])
-    have hev : ∀ᶠ w in 𝓝 w₀, |(unitDiscToExpStrip θ w).re| < Real.exp (-π * T) :=
-      (continuous_abs.continuousAt.comp hcx).eventually_lt_const (by simp [hzero, Real.exp_pos])
-    filter_upwards [eventually_nhdsWithin_of_eventually_nhds hev] with w hw
-    refine glueBoundary_eq_const_of_abs_log hT ?_
-    by_cases hx : (unitDiscToExpStrip θ w).re = 0
-    · exact Or.inr (Or.inl hx)
-    have hlog := Real.log_exp (-π * T) ▸ Real.log_le_log (abs_pos.2 hx) hw.le
-    exact Or.inr <| Or.inr <| (le_neg.2 (by linarith)).trans (neg_le_abs _)
-  · have hlx := (Real.continuousAt_log hpos.ne').comp
-      (f := fun w ↦ (unitDiscToExpStrip θ w).re) hcx
-    refine ((hu₀c.continuousAt.comp (f := fun w ↦ -Real.log ((unitDiscToExpStrip θ w).re) / π)
-      (hlx.neg.div_const π)).congr_of_eventuallyEq ?_).continuousWithinAt
-    filter_upwards [eventually_ne_nhds hw₀1, hcx.eventually_const_lt hpos] with w hw1 hgt
-    simp [glueBoundary, hw1, hgt.ne', hgt]
-
-/-! ### Bounded holomorphic multipliers and Jensen inequalities -/
+/-! ### Regularized Jensen inequalities for `C₀(ℝ, X)` traces -/
 
 private theorem integrable_log_max_of_zeroAtInfty {X : Type*} [NormedAddCommGroup X]
     {μ : Measure ℝ} [IsFiniteMeasure μ] (f : C₀(ℝ, X)) {ε : ℝ} (hε : 0 < ε) :
-    Integrable (fun t ↦ Real.log (max ‖f t‖ ε)) μ := by
-  have hmax_pos (t : ℝ) : 0 < max ‖f t‖ ε := lt_max_of_lt_right hε
-  refine Integrable.of_bound
+    Integrable (fun t ↦ Real.log (max ‖f t‖ ε)) μ :=
+  Integrable.of_mem_Icc (Real.log ε) (Real.log (max ‖f‖ ε))
     (((continuous_norm.comp f.continuous).max continuous_const).log
-      fun t ↦ (hmax_pos t).ne').aestronglyMeasurable
-    (|Real.log ε| + |Real.log (max ‖f‖ ε)|) (Eventually.of_forall fun t ↦ ?_)
-  have h₁ := Real.log_le_log hε (le_max_right ‖f t‖ ε)
-  have h₂ := Real.log_le_log (hmax_pos t)
-    (max_le_max_right ε (ZeroAtInftyContinuousMap.norm_coe_le_norm f t))
-  rw [Real.norm_eq_abs]
-  exact abs_le.2 ⟨by linarith [neg_abs_le (Real.log ε), abs_nonneg (Real.log (max ‖f‖ ε))],
-    by linarith [abs_nonneg (Real.log ε), le_abs_self (Real.log (max ‖f‖ ε))]⟩
+      fun _ ↦ (lt_max_of_lt_right hε).ne').aemeasurable
+    (Eventually.of_forall fun t ↦ ⟨Real.log_le_log hε (le_max_right _ _),
+      Real.log_le_log (lt_max_of_lt_right hε)
+        (max_le_max_right ε (ZeroAtInftyContinuousMap.norm_coe_le_norm f t))⟩)
 
 private theorem exp_mul_integral_log_max_le {X : Type*} [NormedAddCommGroup X]
     {μ : Measure ℝ} [IsProbabilityMeasure μ] (f : C₀(ℝ, X)) {α p ε : ℝ}
@@ -248,9 +72,9 @@ private theorem exp_mul_integral_log_max_le {X : Type*} [NormedAddCommGroup X]
     ext t; simp only [Function.comp_apply, w, Real.rpow_def_of_pos (hmax_pos t), mul_comm p]
   have hbnd {g : ℝ → ℝ} (hg : Continuous g) {M : ℝ} (h0 : ∀ t, 0 ≤ g t) (hM : ∀ t, g t ≤ M) :
       Integrable (fun t ↦ g t ^ p) μ :=
-    Integrable.of_bound (hg.rpow_const fun _ ↦ Or.inr hp.le).aestronglyMeasurable (M ^ p)
-      (Eventually.of_forall fun t ↦ (Real.norm_of_nonneg (Real.rpow_nonneg (h0 t) _)).trans_le
-        (Real.rpow_le_rpow (h0 t) (hM t) hp.le))
+    Integrable.of_mem_Icc 0 (M ^ p) (hg.rpow_const fun _ ↦ Or.inr hp.le).aemeasurable
+      (Eventually.of_forall fun t ↦
+        ⟨Real.rpow_nonneg (h0 t) _, Real.rpow_le_rpow (h0 t) (hM t) hp.le⟩)
   have hexp_int : Integrable (Real.exp ∘ w) μ := hexp_eq ▸ hbnd
     ((continuous_norm.comp f.continuous).max continuous_const) (fun t ↦ (hmax_pos t).le)
     fun t ↦ max_le_max_right ε (ZeroAtInftyContinuousMap.norm_coe_le_norm f t)
@@ -285,35 +109,7 @@ private theorem exp_mul_integral_log_max_le_norm {X : Type*} [NormedAddCommGroup
   rw [Real.rpow_def_of_pos (lt_max_of_lt_right hε), mul_comm _ α]
   exact Real.exp_le_exp.2 (mul_le_mul_of_nonneg_left hle hα)
 
-private def smulBoundaryTrace {X : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X]
-    (f : C₀(ℝ, X)) {φ : ℝ → ℂ} (hφ : Continuous φ) {K : ℝ} (hK : ∀ t, ‖φ t‖ ≤ K) : C₀(ℝ, X) :=
-  ⟨⟨fun t ↦ φ t • f t, hφ.smul f.continuous⟩,
-    squeeze_zero_norm
-      (fun t ↦ (norm_smul _ _).trans_le (mul_le_mul_of_nonneg_right (hK t) (norm_nonneg _)))
-      (by simpa using (tendsto_norm_zero.comp (zero_at_infty f)).const_mul K)⟩
-
-/-- Multiplying an admissible strip function by a bounded function `c` differentiable on the
-closed strip produces an admissible strip function with traces `(t ↦ c (t * I) • g.1 t,
-t ↦ c (1 + t * I) • g.2 t)`. -/
-theorem CompatibleCouple.IsStripFunction.exists_smul_of_differentiableOn
-    {X₀ X₁ V : Type*} [NormedAddCommGroup X₀] [NormedSpace ℂ X₀]
-    [NormedAddCommGroup X₁] [NormedSpace ℂ X₁]
-    [AddCommGroup V] [Module ℂ V] [TopologicalSpace V] [ContinuousAdd V] [T1Space V]
-    {C : CompatibleCouple ℂ X₀ X₁ V} {F : ℂ → C.SumSpace} {g : C₀(ℝ, X₀) × C₀(ℝ, X₁)}
-    (hF : C.IsStripFunction F g) {c : ℂ → ℂ} {K : ℝ}
-    (hc : DifferentiableOn ℂ c (verticalClosedStrip 0 1))
-    (hK : ∀ z ∈ verticalClosedStrip 0 1, ‖c z‖ ≤ K) :
-    ∃ g' : C₀(ℝ, X₀) × C₀(ℝ, X₁), C.IsStripFunction (fun z ↦ c z • F z) g' ∧
-      (∀ t, g'.1 t = c (t * I) • g.1 t) ∧ ∀ t, g'.2 t = c (1 + t * I) • g.2 t :=
-  have hc0 : Continuous fun t : ℝ ↦ c (t * I) :=
-    hc.continuousOn.comp_continuous (by fun_prop) fun _ ↦ by simp [mem_verticalClosedStrip_iff]
-  have hc1 : Continuous fun t : ℝ ↦ c (1 + t * I) :=
-    hc.continuousOn.comp_continuous (by fun_prop) fun _ ↦ by simp [mem_verticalClosedStrip_iff]
-  ⟨(smulBoundaryTrace g.1 hc0 fun _ ↦ hK _ (by simp [mem_verticalClosedStrip_iff]),
-    smulBoundaryTrace g.2 hc1 fun _ ↦ hK _ (by simp [mem_verticalClosedStrip_iff])),
-    hF.smul ⟨hc.mono (verticalStrip_subset_verticalClosedStrip 0 1),
-      hc.continuousOn.mono (closure_verticalStrip_subset 0 1)⟩
-      (fun _ hz ↦ hK _ hz) (fun _ ↦ rfl) (fun _ ↦ rfl), fun _ ↦ rfl, fun _ ↦ rfl⟩
+/-! ### Herglotz–Riesz multipliers and Calderón's log-convexity inequality -/
 
 namespace CompatibleCouple.ComplexMethodSpace
 
@@ -325,7 +121,7 @@ variable {X₀ X₁ V : Type*}
 private theorem exists_herglotz_multiplier {θ δ : ℝ} (hθ : θ ∈ Ioo 0 1) (hδ : 0 < δ)
     {ψ : ℂ → ℝ} (hψ : ContinuousOn ψ (sphere 0 1)) :
     ∃ (r : ℝ) (c : ℂ → ℂ) (K : ℝ), r ∈ Ioo 0 1 ∧
-      DifferentiableOn ℂ c (verticalClosedStrip 0 1) ∧
+      DiffContOnCl ℂ c (verticalStrip 0 1) ∧
       (∀ z ∈ verticalClosedStrip 0 1, ‖c z‖ ≤ K) ∧
       c θ = 1 ∧
       (∀ ζ ∈ sphere 0 |1|, |ψ ζ - planarPoissonIntegral ψ 0 1 ((r : ℂ) * ζ)| < δ) ∧
@@ -347,7 +143,7 @@ private theorem exists_herglotz_multiplier {θ δ : ℝ} (hθ : θ ∈ Ioo 0 1) 
       have hζ1 : ‖ζ‖ = 1 := by simpa using hζ
       simp [poissonKernel_def, hζ1]
   obtain ⟨r, hr_dist, hr_mem⟩ := ((Metric.tendstoUniformlyOn_iff.1
-    (tendstoUniformlyOn_planarPoissonIntegral_mul one_ne_zero hψ') δ hδ).and
+    (tendstoUniformlyOn_planarPoissonIntegral_smul one_ne_zero hψ') δ hδ).and
     (Ioo_mem_nhdsLT zero_lt_one)).exists
   let c : ℂ → ℂ := fun z ↦ exp (H 0 - H ((r : ℂ) * stripToUnitDisc θ z))
   have hc_ball {z : ℂ} (hz : z ∈ verticalClosedStrip 0 1) :
@@ -365,7 +161,10 @@ private theorem exists_herglotz_multiplier {θ δ : ℝ} (hθ : θ ∈ Ioo 0 1) 
   obtain ⟨K, hK⟩ := (isCompact_closedBall (0 : ℂ) r).exists_bound_of_continuousOn
     (continuous_exp.comp_continuousOn (continuousOn_const.sub
       ((differentiableOn_circleAverage_herglotzRieszKernel_smul hψic).continuousOn.mono hcb_sub)))
-  refine ⟨r, c, K, hr_mem, hc_diff, fun _ hz ↦ hK _ (hc_ball hz), by simp [c],
+  refine ⟨r, c, K, hr_mem,
+    ⟨hc_diff.mono (verticalStrip_subset_verticalClosedStrip 0 1),
+      hc_diff.continuousOn.mono (closure_verticalStrip_subset 0 1)⟩,
+    fun _ hz ↦ hK _ (hc_ball hz), by simp [c],
     fun ζ hζ ↦ by simpa [Real.dist_eq, Complex.real_smul] using hr_dist ζ hζ, fun z hz ↦ ?_⟩
   rw [Complex.norm_exp, sub_re, hH0, hH_re (closedBall_subset_ball hr_mem.2 (hc_ball hz))]
 
@@ -377,7 +176,7 @@ private theorem norm_le_exp_circleAverage_add {θ ε δ : ℝ} (hθ : θ ∈ Ioo
     (hψ₁ : ∀ t, Real.log (max ‖g.2 t‖ ε) ≤ ψ (stripToUnitDisc θ (1 + t * I))) :
     ‖u‖ ≤ Real.exp (circleAverage ψ 0 1 + δ) := by
   obtain ⟨r, c, K, _, hc_diff, hK, hcθ, hr_dist, hc_norm⟩ := exists_herglotz_multiplier hθ hδ hψ
-  obtain ⟨g', hsmul, hg'₀, hg'₁⟩ := hF.exists_smul_of_differentiableOn hc_diff hK
+  obtain ⟨g', hsmul, hg'₀, hg'₁⟩ := hF.exists_smul_of_diffContOnCl hc_diff hK
   have hpt {x a p : ℝ} (hx : 0 ≤ x) (hd : |a - p| < δ) (hlog : Real.log (max x ε) ≤ a) :
       Real.exp (circleAverage ψ 0 1 - p) * x ≤ Real.exp (circleAverage ψ 0 1 + δ) :=
     (mul_le_mul (b := Real.exp (circleAverage ψ 0 1 + δ - Real.log (max x ε)))
@@ -395,14 +194,15 @@ private theorem norm_le_exp_circleAverage_add {θ ε δ : ℝ} (hθ : θ ∈ Ioo
     exact hpt (norm_nonneg _)
       (hr_dist _ (by simpa using stripToUnitDisc_one_add_mul_I_mem_sphere hθ t)) (hψ₁ t)
 
-private theorem continuous_and_eventually_log_max {X : Type*} [NormedAddCommGroup X]
+private theorem continuous_and_tendsto_log_max {X : Type*} [NormedAddCommGroup X]
     (f : C₀(ℝ, X)) {ε : ℝ} (hε : 0 < ε) :
     Continuous (fun t ↦ Real.log (max ‖f t‖ ε)) ∧
-      ∀ᶠ t in cocompact ℝ, Real.log (max ‖f t‖ ε) = Real.log ε :=
+      Tendsto (fun t ↦ Real.log (max ‖f t‖ ε)) (cocompact ℝ) (𝓝 (Real.log ε)) :=
   ⟨((continuous_norm.comp f.continuous).max continuous_const).log
     fun _ ↦ (lt_max_of_lt_right hε).ne',
-    ((tendsto_norm_zero.comp (zero_at_infty f)).eventually_lt_const hε).mono fun _ ht ↦ by
-      simp only [Function.comp_apply] at ht; rw [max_eq_right ht.le]⟩
+    (Real.continuousAt_log hε.ne').tendsto.comp
+      (by simpa [max_eq_right hε.le] using
+        (tendsto_norm_zero.comp (zero_at_infty f)).max (tendsto_const_nhds (x := ε)))⟩
 
 /-- **Calderón's log-convexity inequality (Bergh–Löfström, Lemma 4.3.2).**
 For `0 < θ < 1`, `ε > 0`, and any admissible strip function `F` with boundary traces `g` and
@@ -413,28 +213,24 @@ theorem norm_le_exp_integral_stripPoissonKernel {θ ε : ℝ} (hθ : θ ∈ Ioo 
     (hF : C.IsStripFunction F g) (hu : toSum u = F θ) :
     ‖u‖ ≤ Real.exp ((∫ t, stripPoissonKernel₀ θ t * Real.log (max ‖g.1 t‖ ε)) +
       ∫ t, stripPoissonKernel₁ θ t * Real.log (max ‖g.2 t‖ ε)) := by
-  let u₀ : ℝ → ℝ := fun t ↦ Real.log (max ‖g.1 t‖ ε)
-  let u₁ : ℝ → ℝ := fun t ↦ Real.log (max ‖g.2 t‖ ε)
-  let ψ := glueBoundary θ (Real.log ε) u₀ u₁
-  have hl₀ := continuous_and_eventually_log_max g.1 hε
-  have hl₁ := continuous_and_eventually_log_max g.2 hε
-  have hψ : ContinuousOn ψ (sphere 0 1) :=
-    continuousOn_glueBoundary hθ hl₀.1 hl₁.1 hl₀.2 hl₁.2
+  have hl₀ := continuous_and_tendsto_log_max g.1 hε
+  have hl₁ := continuous_and_tendsto_log_max g.2 hε
+  obtain ⟨ψ, hψ, hψ₀, hψ₁⟩ := exists_continuousOn_sphere_comp_stripToUnitDisc hθ
+    hl₀.1 hl₁.1 (hl₀.2.mono_left atBot_le_cocompact) (hl₁.2.mono_left atBot_le_cocompact)
+    (hl₀.2.mono_left atTop_le_cocompact) (hl₁.2.mono_left atTop_le_cocompact)
   have hψi : CircleIntegrable ψ 0 1 :=
     (by simpa using hψ : ContinuousOn ψ (sphere 0 |1|)).circleIntegrable'
   have hca : circleAverage ψ 0 1 =
-      (∫ t, stripPoissonKernel₀ θ t * u₀ t) + ∫ t, stripPoissonKernel₁ θ t * u₁ t := by
+      (∫ t, stripPoissonKernel₀ θ t * Real.log (max ‖g.1 t‖ ε)) +
+        ∫ t, stripPoissonKernel₁ θ t * Real.log (max ‖g.2 t‖ ε) := by
     rw [circleAverage_eq_stripPoissonKernel hθ hψi]
-    simp_rw [ψ, smul_eq_mul, glueBoundary_stripToUnitDisc_mul_I hθ u₀ u₁,
-      glueBoundary_stripToUnitDisc_one_add_mul_I hθ u₀ u₁]
+    simp_rw [smul_eq_mul, hψ₀, hψ₁]
   rw [← hca]
   have hcont : Continuous (fun δ : ℝ ↦ Real.exp (circleAverage ψ 0 1 + δ)) := by fun_prop
-  refine ge_of_tendsto
+  exact ge_of_tendsto
     (by simpa using (hcont.tendsto 0).mono_left (nhdsWithin_le_nhds (s := Ioi 0)))
     (eventually_nhdsWithin_of_forall fun δ hδ ↦
-      norm_le_exp_circleAverage_add hθ hε hδ hF hu hψ
-        (fun t ↦ (glueBoundary_stripToUnitDisc_mul_I hθ u₀ u₁ t).ge)
-        (fun t ↦ (glueBoundary_stripToUnitDisc_one_add_mul_I hθ u₀ u₁ t).ge))
+      norm_le_exp_circleAverage_add hθ hε hδ hF hu hψ (fun t ↦ (hψ₀ t).ge) (fun t ↦ (hψ₁ t).ge))
 
 /-- Calderón's log-convexity inequality applied to `mk θ g`. -/
 theorem norm_mk_le_exp_integral_stripPoissonKernel {θ ε : ℝ} (hθ : θ ∈ Ioo 0 1) (hε : 0 < ε)
@@ -517,7 +313,7 @@ theorem norm_le_rpow_integral_stripPoissonMeasure_mul_norm_snd_rpow {θ p₀ : �
     (fun _ ↦ exp_mul_integral_log_max_le_norm g.2 hθ.1.le)
 
 /-- **`L¹` strip Poisson bound (Calderón–Hirschman).** -/
-theorem norm_le_integral_stripPoissonKernel {θ : ℝ} (hθ : θ ∈ Ioo 0 1)
+theorem norm_le_rpow_integral_stripPoissonKernel {θ : ℝ} (hθ : θ ∈ Ioo 0 1)
     {u : C.ComplexMethodSpace θ} {F : ℂ → C.SumSpace} {g : C₀(ℝ, X₀) × C₀(ℝ, X₁)}
     (hF : C.IsStripFunction F g) (hu : toSum u = F θ) :
     ‖u‖ ≤ ((1 - θ)⁻¹ * ∫ t, stripPoissonKernel₀ θ t * ‖g.1 t‖) ^ (1 - θ) *

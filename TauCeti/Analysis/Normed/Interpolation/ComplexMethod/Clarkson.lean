@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.OfNorm
 public import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.PiLp
 public import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.Symmetry
+import Mathlib.Algebra.Order.Interval.Set.Group
 import Mathlib.Analysis.MeanInequalitiesPow
 
 /-!
@@ -82,17 +83,17 @@ private theorem norm_clarksonPairCLM_two_two_le {X : Type*}
 private theorem inv_ofReal_two_div_two_sub {θ : ℝ} (hθ : θ ∈ Ioo 0 1) :
     (ENNReal.ofReal (2 / (2 - θ)))⁻¹ =
       ENNReal.ofReal (1 - θ) * (1 : ℝ≥0∞)⁻¹ + ENNReal.ofReal θ * (2 : ℝ≥0∞)⁻¹ := by
-  rw [← ENNReal.ofReal_inv_of_pos (div_pos zero_lt_two (by linarith [hθ.2])), inv_one, mul_one,
-    ← ENNReal.ofReal_ofNat 2, ← ENNReal.ofReal_inv_of_pos zero_lt_two, ← ENNReal.ofReal_mul hθ.1.le,
-    ← ENNReal.ofReal_add (sub_nonneg.2 hθ.2.le) (mul_nonneg hθ.1.le (inv_nonneg.2 zero_le_two))]
-  congr 1; rw [inv_div]; ring
+  have h : (2 / (2 - θ))⁻¹ = 1 - θ + θ * 2⁻¹ := by rw [inv_div]; ring
+  rw [← ENNReal.ofReal_inv_of_pos (div_pos zero_lt_two (by linarith [hθ.2])), h,
+    ENNReal.ofReal_add (sub_nonneg.2 hθ.2.le) (by linarith [hθ.1]), ENNReal.ofReal_mul hθ.1.le]
+  simp [ENNReal.ofReal_inv_of_pos]
 
 private theorem inv_ofReal_two_div {θ : ℝ} (hθ : θ ∈ Ioo 0 1) :
     (ENNReal.ofReal (2 / θ))⁻¹ =
       ENNReal.ofReal (1 - θ) * (∞ : ℝ≥0∞)⁻¹ + ENNReal.ofReal θ * (2 : ℝ≥0∞)⁻¹ := by
-  rw [← ENNReal.ofReal_inv_of_pos (div_pos zero_lt_two hθ.1), ENNReal.inv_top, mul_zero, zero_add,
-    ← ENNReal.ofReal_ofNat 2, ← ENNReal.ofReal_inv_of_pos zero_lt_two, ← ENNReal.ofReal_mul hθ.1.le]
-  congr 1; field_simp
+  have h : (2 / θ)⁻¹ = θ * 2⁻¹ := by field_simp
+  rw [← ENNReal.ofReal_inv_of_pos (div_pos zero_lt_two hθ.1), h, ENNReal.ofReal_mul hθ.1.le]
+  simp [ENNReal.ofReal_inv_of_pos]
 
 section Couple
 
@@ -130,19 +131,8 @@ private theorem piLpCoord_map_clarksonPair {θ : ℝ} {C : CompatibleCouple ℂ 
     rw [← hu, sumSpaceEmbed_toSum_piLpCoord θ (fun _ : Fin 2 ↦ C) 0]; simp [← hx]
   have hv' : C.sumSpaceEmbed (toSum v) = C.embed₀ (x₀ 1) + C.embed₁ (x₁ 1) := by
     rw [← hv, sumSpaceEmbed_toSum_piLpCoord θ (fun _ : Fin 2 ↦ C) 1]; simp [← hx]
-  let L := (piLp 1 2 fun _ : Fin 2 ↦ C).sumLift
-    ((piLp ∞ 2 fun _ : Fin 2 ↦ C).fstToSum.comp (clarksonPairCLM 1 ∞ X₀))
-    ((piLp ∞ 2 fun _ : Fin 2 ↦ C).sndToSum.comp (clarksonPairCLM 2 2 X₁)) (clarksonPair_compat C)
-  have hmap : toSum (map θ (clarksonPairCLM 1 ∞ X₀) (clarksonPairCLM 2 2 X₁)
-      (clarksonPair_compat C) w) =
-      (piLp ∞ 2 fun _ : Fin 2 ↦ C).fstToSum (clarksonPairCLM 1 ∞ X₀ x₀) +
-        (piLp ∞ 2 fun _ : Fin 2 ↦ C).sndToSum (clarksonPairCLM 2 2 X₁ x₁) :=
-    (toSum_map _ _ (clarksonPair_compat C) w).trans <| (congrArg L hx.symm).trans <|
-      (map_add L _ _).trans <| congr_arg₂ (· + ·)
-        ((piLp 1 2 fun _ : Fin 2 ↦ C).sumLift_fstToSum _ _ _ x₀)
-        ((piLp 1 2 fun _ : Fin 2 ↦ C).sumLift_sndToSum _ _ _ x₁)
   apply ComplexMethodSpace.ext; apply C.sumSpaceEmbed_injective
-  rw [sumSpaceEmbed_toSum_piLpCoord θ (fun _ : Fin 2 ↦ C) i, hmap]
+  rw [sumSpaceEmbed_toSum_piLpCoord θ (fun _ : Fin 2 ↦ C) i, toSum_map_of_eq_add _ _ _ hx]
   split_ifs with hi <;> simp [hi, clarksonPairCLM_apply, hu', hv'] <;> abel
 
 /-! ### Boas–Kosaki–McCarthy–Clarkson inequalities on `[X₀, X₁]_θ` -/
@@ -204,7 +194,7 @@ theorem norm_add_rpow_add_norm_sub_rpow_le_left [InnerProductSpaceable X₀]
     ‖u + v‖ ^ (2 / (1 - θ)) + ‖u - v‖ ^ (2 / (1 - θ)) ≤
       2 * (‖u‖ ^ (2 / (1 + θ)) + ‖v‖ ^ (2 / (1 + θ))) ^ ((1 + θ) / (1 - θ)) := by
   have h := norm_add_rpow_add_norm_sub_rpow_le_right
-    ⟨sub_pos.2 hθ.2, sub_lt_self 1 hθ.1⟩ (swap C θ u) (swap C θ v)
+    (sub_mem_Ioo_zero_iff_right.2 hθ) (swap C θ u) (swap C θ v)
   rwa [← map_add, ← map_sub, (swap C θ).norm_map, (swap C θ).norm_map, (swap C θ).norm_map,
     (swap C θ).norm_map, (by ring : 2 - (1 - θ) = 1 + θ)] at h
 

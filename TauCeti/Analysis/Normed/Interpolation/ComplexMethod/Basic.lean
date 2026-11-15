@@ -29,7 +29,8 @@ admissible functions through their boundary traces:
 
 * `CompatibleCouple.IsStripFunction F g`: `F` is admissible with boundary traces `g = (g₀, g₁)`.
   It satisfies the three-lines bound `‖F z‖ ≤ ‖g₀‖ ^ (1 - re z) * ‖g₁‖ ^ re z`
-  (`CompatibleCouple.IsStripFunction.norm_le_rpow_mul_rpow`);
+  (`CompatibleCouple.IsStripFunction.norm_le_rpow_mul_rpow`) and is closed under bounded scalar
+  multipliers (`CompatibleCouple.IsStripFunction.exists_smul_of_diffContOnCl`);
 * `CompatibleCouple.stripTraces`: the submodule of `C₀(ℝ, X₀) × C₀(ℝ, X₁)` of the boundary
   traces of admissible functions, normed by `max ‖g₀‖ ‖g₁‖`. It is closed when `X₀` and `X₁` are
   complete (`CompatibleCouple.isClosed_stripTraces`), hence then a Banach space;
@@ -78,8 +79,8 @@ admissible functions through their boundary traces:
 * `ComplexMethodSpace.mapEquiv`: isomorphisms of the endpoints that, as do their inverses, agree on
   the intersections induce an isomorphism of the complex interpolation spaces, isometric when the
   endpoint isomorphisms are (`ComplexMethodSpace.norm_mapEquiv`).
-* `ComplexMethodSpace.norm_refl`: for the couple `(X, X)`, the complex method gives back the norm
-  of `X`.
+* `ComplexMethodSpace.norm_refl` and `ComplexMethodSpace.reflEquiv`: for the couple `(X, X)` and
+  `0 ≤ θ ≤ 1`, the complex method is isometrically isomorphic to `X`.
 
 ## References
 
@@ -183,6 +184,39 @@ theorem smul (hF : C.IsStripFunction F g) {c : ℂ → ℂ} (hc : DiffContOnCl �
       (mul_le_mul hKz (hM z hz) (norm_nonneg _) ((norm_nonneg _).trans hKz))
   apply_mul_I t := by simp [hF.apply_mul_I, hg'₀]
   apply_one_add_mul_I t := by simp [hF.apply_one_add_mul_I, hg'₁]
+
+/-- Multiplying an admissible function by a scalar function `c`, holomorphic on the open strip,
+continuous up to its boundary, and bounded on the closed strip, gives an admissible function with
+boundary traces `(t ↦ c (t * I) • g₀ t, t ↦ c (1 + t * I) • g₁ t)`. -/
+theorem exists_smul_of_diffContOnCl (hF : C.IsStripFunction F g) {c : ℂ → ℂ}
+    (hc : DiffContOnCl ℂ c (verticalStrip 0 1))
+    {K : ℝ} (hK : ∀ z ∈ verticalClosedStrip 0 1, ‖c z‖ ≤ K) :
+    ∃ g' : C₀(ℝ, X₀) × C₀(ℝ, X₁), C.IsStripFunction (fun z => c z • F z) g' ∧
+      (∀ t, g'.1 t = c (t * I) • g.1 t) ∧ ∀ t, g'.2 t = c (1 + t * I) • g.2 t := by
+  have hcl : closure (verticalStrip 0 1) = verticalClosedStrip 0 1 := by
+    rw [verticalStrip, closure_preimage_re, closure_Ioo zero_ne_one]; rfl
+  have hcc : ContinuousOn c (verticalClosedStrip 0 1) := hcl ▸ hc.continuousOn
+  have hc0 : Continuous fun t : ℝ => c (t * I) :=
+    hcc.comp_continuous (by fun_prop) fun _ => by simp [mem_verticalClosedStrip_iff]
+  have hc1 : Continuous fun t : ℝ => c (1 + t * I) :=
+    hcc.comp_continuous (by fun_prop) fun _ => by simp [mem_verticalClosedStrip_iff]
+  let G₀ := ZeroAtInftyContinuousMap.compLeftFamily
+    (fun t : ℝ => c (t * I) • ContinuousLinearMap.id ℂ X₀)
+    (fun x => by simpa using hc0.fun_smul continuous_const)
+    ⟨K, fun t x => by
+      rw [smul_apply, ContinuousLinearMap.id_apply, norm_smul]
+      exact mul_le_mul_of_nonneg_right
+        (hK (t * I) (by simp [mem_verticalClosedStrip_iff])) (norm_nonneg x)⟩
+  let G₁ := ZeroAtInftyContinuousMap.compLeftFamily
+    (fun t : ℝ => c (1 + t * I) • ContinuousLinearMap.id ℂ X₁)
+    (fun x => by simpa using hc1.fun_smul continuous_const)
+    ⟨K, fun t x => by
+      rw [smul_apply, ContinuousLinearMap.id_apply, norm_smul]
+      exact mul_le_mul_of_nonneg_right
+        (hK (1 + t * I) (by simp [mem_verticalClosedStrip_iff])) (norm_nonneg x)⟩
+  exact ⟨(G₀ g.1, G₁ g.2),
+    hF.smul hc hK (fun t => by simp [G₀]) (fun t => by simp [G₁]),
+    fun t => by simp [G₀], fun t => by simp [G₁]⟩
 
 theorem sub (hF : C.IsStripFunction F g) (hG : C.IsStripFunction G h) :
     C.IsStripFunction (F - G) (g - h) := by
@@ -695,6 +729,35 @@ theorem norm_refl {X : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X] {θ : �
       _ = ‖toSum u‖ := by simp [x, norm_refl_sumSpaceEmbed]
   · simp [eq_zero_of_notMem hθ u]
 
+/-- For `0 ≤ θ ≤ 1`, `[X, X]_θ ≃ₗᵢ[ℂ] X` via evaluation in the ambient space. -/
+def reflEquiv {X : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X] {θ : ℝ} (hθ : θ ∈ Icc 0 1) :
+    (refl ℂ X).ComplexMethodSpace θ ≃ₗᵢ[ℂ] X where
+  toFun u := (refl ℂ X).sumSpaceEmbed (toSum u)
+  invFun x := ofInter θ ⟨(x, x), by simp⟩
+  left_inv u := by ext; simp [toSum_ofInter hθ]
+  right_inv x := by simp [toSum_ofInter hθ]
+  map_add' u v := by simp
+  map_smul' c u := by simp
+  norm_map' u := (norm_refl_sumSpaceEmbed (toSum u)).trans (norm_refl u).symm
+
+/-- Applying `reflEquiv` evaluates `toSum u` in `X`. -/
+@[simp]
+theorem reflEquiv_apply {X : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X] {θ : ℝ}
+    (hθ : θ ∈ Icc 0 1) (u : (refl ℂ X).ComplexMethodSpace θ) :
+    reflEquiv hθ u = (refl ℂ X).sumSpaceEmbed (toSum u) := (rfl)
+
+/-- The inverse of `reflEquiv` sends `x : X` to the class of `(x, x) ∈ (refl ℂ X).inter`. -/
+@[simp]
+theorem reflEquiv_symm_apply {X : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X] {θ : ℝ}
+    (hθ : θ ∈ Icc 0 1) (x : X) :
+    (reflEquiv hθ).symm x = ofInter θ ⟨(x, x), by simp⟩ := (rfl)
+
+/-- In `(refl ℂ X).SumSpace`, `(reflEquiv hθ).symm x` lies over `fstToSum x`. -/
+theorem toSum_reflEquiv_symm {X : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X] {θ : ℝ}
+    (hθ : θ ∈ Icc 0 1) (x : X) :
+    toSum ((reflEquiv hθ).symm x) = (refl ℂ X).fstToSum x := by
+  simp [reflEquiv_symm_apply, toSum_ofInter hθ]
+
 end ComplexMethodSpace
 
 end Inter
@@ -1128,6 +1191,16 @@ theorem toSum_map (u : C.ComplexMethodSpace θ) :
     toSum (map θ T₀ T₁ h u) = C.sumLift (D.fstToSum.comp T₀) (D.sndToSum.comp T₁) h (toSum u) := by
   obtain ⟨g, rfl⟩ := mk_surjective u
   rw [map_mk, toSum_mk, toSum_mk, stripEval_stripTracesMap]
+
+/-- If `toSum u` decomposes as `x₀ + x₁` in `C.SumSpace`, then `map θ T₀ T₁ h u` decomposes as
+`T₀ x₀ + T₁ x₁` in `D.SumSpace`. -/
+theorem toSum_map_of_eq_add {u : C.ComplexMethodSpace θ} {x₀ : X₀} {x₁ : X₁}
+    (hx : C.fstToSum x₀ + C.sndToSum x₁ = toSum u) :
+    toSum (map θ T₀ T₁ h u) = D.fstToSum (T₀ x₀) + D.sndToSum (T₁ x₁) :=
+  (toSum_map T₀ T₁ h u).trans <|
+    (congrArg (C.sumLift (D.fstToSum.comp T₀) (D.sndToSum.comp T₁) h) hx.symm).trans <|
+      (map_add _ _ _).trans <|
+        congr_arg₂ (· + ·) (C.sumLift_fstToSum _ _ h x₀) (C.sumLift_sndToSum _ _ h x₁)
 
 /-- The identity maps of the endpoints induce the identity of `[X₀, X₁]_θ`. -/
 theorem map_id
