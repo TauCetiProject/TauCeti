@@ -24,11 +24,11 @@ reachability hypothesis; in particular, if `G` is a locally finite tree possessi
 degree occurs nowhere else in `G`, every automorphism fixes that vertex and every automorphism orbit
 is an independent set.
 
-On the path graph `SimpleGraph.pathGraph n`, no vertex is distinguished when `2 ≤ n`, and its
-automorphism group consists of the identity and the reversal `TauCeti.pathGraphRevIso n`. Under
-reversal, every orbit on an odd path graph is still an independent set, whereas on an even path
-graph `pathGraph (2 * n)` (`1 ≤ n`) the adjacent middle pair `{n - 1, n}` is the unique orbit
-containing an edge.
+On the path graph `SimpleGraph.pathGraph n`, no vertex has unique degree once `n = 2` or `4 ≤ n`;
+its automorphism group consists of the identity and the reversal `TauCeti.pathGraphRevIso n` (which
+fixes the central vertex when `n` is odd). Under reversal, every orbit on an odd path graph is still
+an independent set, whereas on an even path graph `pathGraph (2 * n)` (`1 ≤ n`) the adjacent middle
+pair `{n - 1, n}` is the unique orbit containing an edge.
 
 ## Main results
 
@@ -42,11 +42,11 @@ containing an edge.
   `SimpleGraph.IsTree.not_adj_of_sameCycle_of_degree_unique`: a vertex of unique degree is fixed by
   every automorphism, making every automorphism orbit on a locally finite tree independent.
 * `SimpleGraph.Iso.eq_refl_of_pathGraph_apply_zero` and
-  `SimpleGraph.pathGraph_iso_eq_refl_or_rev`: every automorphism of `pathGraph n` is either
+  `SimpleGraph.Iso.eq_refl_or_eq_pathGraphRevIso`: every automorphism of `pathGraph n` is either
   `Iso.refl` or `TauCeti.pathGraphRevIso n`.
 * `SimpleGraph.pathGraph_adj_rev_iff`,
   `SimpleGraph.not_pathGraph_adj_of_sameCycle_revPerm_of_odd`, and
-  `SimpleGraph.pathGraph_even_adj_of_sameCycle_revPerm_iff`: adjacency along reversal orbits in odd
+  `SimpleGraph.sameCycle_revPerm_and_pathGraph_even_adj_iff`: adjacency along reversal orbits in odd
   and even path graphs.
 
 ## References
@@ -101,7 +101,8 @@ theorem IsAcyclic.not_adj_of_sameCycle_of_apply_eq (hG : G.IsAcyclic) {f : G ≃
     (hcyc : Equiv.Perm.SameCycle f.toEquiv u v) : ¬ G.Adj u v :=
   hG.isBipartite.not_adj_of_sameCycle_of_apply_eq hc hreach hcyc
 
-/-- **An automorphism of a tree fixing a vertex has pairwise non-adjacent orbits.** -/
+/-- **An automorphism of a tree fixing a vertex has no edge inside any orbit** (every orbit of `f`
+is an independent set). -/
 theorem IsTree.not_adj_of_sameCycle_of_apply_eq (hG : G.IsTree) {f : G ≃g G}
     {c u v : V} (hc : f c = c) (hcyc : Equiv.Perm.SameCycle f.toEquiv u v) : ¬ G.Adj u v :=
   hG.isBipartite.not_adj_of_sameCycle_of_apply_eq hc (hG.connected c u) hcyc
@@ -140,16 +141,14 @@ theorem Iso.eq_refl_of_pathGraph_apply_zero {n : ℕ} (f : pathGraph n ≃g path
         rw [ih k (Nat.lt_succ_self k) hk', pathGraph_adj] at hmap
         rcases hmap with hstep | hback
         · exact Fin.ext hstep.symm
-        · rcases k with _ | j
-          · change (f ⟨0 + 1, hk⟩ : ℕ) + 1 = 0 at hback
-            omega
-          · change (f ⟨j + 1 + 1, hk⟩ : ℕ) + 1 = j + 1 at hback
-            have hj : j < n := by omega
+        · simp only at hback
+          rcases k with _ | j
+          · omega
+          · have hj : j < n := by omega
             have heq : f ⟨j + 1 + 1, hk⟩ = f ⟨j, hj⟩ := by
               rw [ih j (by omega) hj]
-              exact Fin.ext (by change (f ⟨j + 1 + 1, hk⟩ : ℕ) = j; omega)
-            have hinj := congrArg Fin.val (f.injective heq)
-            change j + 1 + 1 = j at hinj
+              exact Fin.ext (by simp only; omega)
+            have hinj := Fin.mk.inj (f.injective heq)
             omega
   exact RelIso.ext fun ⟨k, hk⟩ ↦ hfix k hk
 
@@ -157,13 +156,13 @@ theorem Iso.eq_refl_of_pathGraph_apply_zero {n : ℕ} (f : pathGraph n ≃g path
 `TauCeti.pathGraphRevIso n`.** An interior vertex has two distinct neighbours in `pathGraph n`
 whereas `0` has at most one, so `f` sends `0` either to `0` or to `n - 1`, and composing with
 reversal reduces the second case to the first. -/
-theorem pathGraph_iso_eq_refl_or_rev {n : ℕ} (f : pathGraph n ≃g pathGraph n) :
+theorem Iso.eq_refl_or_eq_pathGraphRevIso {n : ℕ} (f : pathGraph n ≃g pathGraph n) :
     f = Iso.refl ∨ f = TauCeti.pathGraphRevIso n := by
   rcases le_or_gt n 1 with hn | hn
   · have : Subsingleton (Fin n) := Fin.subsingleton_iff_le_one.mpr hn
     exact Or.inl (RelIso.ext fun i ↦ Subsingleton.elim _ _)
   · have h0lt : 0 < n := by omega
-    let x := f ⟨0, h0lt⟩
+    set x := f ⟨0, h0lt⟩ with hx
     -- Vertex `0` cannot map to an interior vertex `x` (`0 < x` and `x + 1 < n`), because `0` has
     -- only vertex `1` as a neighbour while `x` has both `x - 1` and `x + 1`.
     have h_end : (x : ℕ) = 0 ∨ (x : ℕ) = n - 1 := by
@@ -171,20 +170,19 @@ theorem pathGraph_iso_eq_refl_or_rev {n : ℕ} (f : pathGraph n ≃g pathGraph n
       push Not at hmid
       have hx_pos : 0 < (x : ℕ) := by omega
       have hx_lt : (x : ℕ) + 1 < n := by have := x.isLt; omega
-      let u : Fin n := ⟨(x : ℕ) - 1, by omega⟩
-      let w : Fin n := ⟨(x : ℕ) + 1, hx_lt⟩
+      set u : Fin n := ⟨(x : ℕ) - 1, by omega⟩
+      set w : Fin n := ⟨(x : ℕ) + 1, hx_lt⟩
       have hu_adj : (pathGraph n).Adj ⟨0, h0lt⟩ (f.symm u) := by
         have : (pathGraph n).Adj x u :=
-          pathGraph_adj.mpr (Or.inr (by change (x : ℕ) - 1 + 1 = x; omega))
-        simpa [x] using f.symm.map_adj_iff.mpr this
+          pathGraph_adj.mpr (Or.inr (by simp only [u]; omega))
+        simpa [hx] using f.symm.map_adj_iff.mpr this
       have hw_adj : (pathGraph n).Adj ⟨0, h0lt⟩ (f.symm w) := by
         have : (pathGraph n).Adj x w := pathGraph_adj.mpr (Or.inl rfl)
-        simpa [x] using f.symm.map_adj_iff.mpr this
+        simpa [hx] using f.symm.map_adj_iff.mpr this
       rw [pathGraph_adj] at hu_adj hw_adj
       simp only at hu_adj hw_adj
       have huw : f.symm u = f.symm w := Fin.ext (by omega)
-      have := congrArg Fin.val (f.symm.injective huw)
-      change (x : ℕ) - 1 = (x : ℕ) + 1 at this
+      have := Fin.mk.inj (f.symm.injective huw)
       omega
     rcases h_end with hx0 | hxn
     · exact Or.inl (f.eq_refl_of_pathGraph_apply_zero h0lt (Fin.ext hx0))
@@ -192,8 +190,7 @@ theorem pathGraph_iso_eq_refl_or_rev {n : ℕ} (f : pathGraph n ≃g pathGraph n
       let g : pathGraph n ≃g pathGraph n := f.trans (TauCeti.pathGraphRevIso n)
       have hg0 : g ⟨0, h0lt⟩ = ⟨0, h0lt⟩ := by
         apply Fin.ext
-        simp only [g, RelIso.trans_apply, TauCeti.pathGraphRevIso_apply, Fin.val_rev]
-        change n - ((x : ℕ) + 1) = 0
+        simp only [g, RelIso.trans_apply, TauCeti.pathGraphRevIso_apply, Fin.val_rev, ← hx]
         omega
       have hg := g.eq_refl_of_pathGraph_apply_zero h0lt hg0
       refine RelIso.ext fun i ↦ ?_
@@ -210,61 +207,50 @@ theorem pathGraph_adj_rev_iff {n : ℕ} (i : Fin n) :
   have := i.isLt
   omega
 
-/-- Two indices of `Fin n` lie in the same cycle of `Fin.revPerm` exactly when they are equal or
-reversals of one another. -/
-private theorem sameCycle_revPerm_iff {n : ℕ} {i j : Fin n} :
-    Fin.revPerm.SameCycle i j ↔ j = i ∨ j = i.rev := by
-  refine ⟨fun h ↦ ?_, ?_⟩
-  · have hinv : ∀ z : Fin n, (Fin.revPerm z = i ∨ Fin.revPerm z = i.rev) =
-        (z = i ∨ z = i.rev) := fun z ↦ propext <| by
-      simp only [Fin.revPerm_apply, Fin.rev_eq_iff, Fin.rev_rev, or_comm]
-    exact Eq.mp (h.apply_eq_of_apply_eq (f := fun z ↦ z = i ∨ z = i.rev) hinv) (Or.inl rfl)
-  · rintro (rfl | rfl)
-    · exact Equiv.Perm.SameCycle.refl _ _
-    · exact ⟨1, by simp⟩
-
 /-- **On an odd path graph, every orbit of the reversal permutation is an independent set.** -/
 theorem not_pathGraph_adj_of_sameCycle_revPerm_of_odd {n : ℕ} (hn : Odd n) {i j : Fin n}
     (h : Fin.revPerm.SameCycle i j) : ¬ (pathGraph n).Adj i j := by
-  rcases sameCycle_revPerm_iff.mp h with rfl | rfl
-  · exact (pathGraph n).loopless.irrefl j
-  · rw [pathGraph_adj_rev_iff]
+  have hrev : Function.Involutive (Fin.revPerm : Equiv.Perm (Fin n)) := Fin.rev_involutive
+  rcases (hrev.sameCycle_iff i j).mp h with rfl | rfl
+  · exact (pathGraph n).loopless.irrefl i
+  · rw [adj_comm, Fin.revPerm_apply, pathGraph_adj_rev_iff]
     obtain ⟨k, rfl⟩ := hn
     omega
 
 /-- **On an even path graph `pathGraph (2 * n)` (`1 ≤ n`), the middle pair `{n - 1, n}` is the
 unique reversal orbit containing an edge.** -/
-theorem pathGraph_even_adj_of_sameCycle_revPerm_iff {n : ℕ} (hn : 1 ≤ n)
+theorem sameCycle_revPerm_and_pathGraph_even_adj_iff {n : ℕ} (hn : 1 ≤ n)
     {i j : Fin (2 * n)} :
     Fin.revPerm.SameCycle i j ∧ (pathGraph (2 * n)).Adj i j ↔
       (i = ⟨n - 1, by omega⟩ ∧ j = ⟨n, by omega⟩) ∨
         (i = ⟨n, by omega⟩ ∧ j = ⟨n - 1, by omega⟩) := by
+  have hrev : Function.Involutive (Fin.revPerm : Equiv.Perm (Fin (2 * n))) := Fin.rev_involutive
   constructor
   · rintro ⟨hcyc, hadj⟩
-    rcases sameCycle_revPerm_iff.mp hcyc with rfl | rfl
-    · exact absurd hadj ((pathGraph (2 * n)).loopless.irrefl j)
-    · rw [pathGraph_adj_rev_iff] at hadj
+    rcases (hrev.sameCycle_iff i j).mp hcyc with rfl | rfl
+    · exact absurd hadj ((pathGraph (2 * n)).loopless.irrefl i)
+    · rw [adj_comm, Fin.revPerm_apply, pathGraph_adj_rev_iff] at hadj
       rcases hadj with hleft | hright
-      · left
-        have hi : (i : ℕ) = n - 1 := by omega
-        refine ⟨Fin.ext hi, Fin.ext ?_⟩
-        simp only [Fin.val_rev, hi]
-        omega
       · right
-        have hi : (i : ℕ) = n := by omega
-        refine ⟨Fin.ext hi, Fin.ext ?_⟩
-        simp only [Fin.val_rev, hi]
+        have hj : (j : ℕ) = n - 1 := by omega
+        refine ⟨Fin.ext ?_, Fin.ext hj⟩
+        simp only [Fin.revPerm_apply, Fin.val_rev, hj]
+        omega
+      · left
+        have hj : (j : ℕ) = n := by omega
+        refine ⟨Fin.ext ?_, Fin.ext hj⟩
+        simp only [Fin.revPerm_apply, Fin.val_rev, hj]
         omega
   · rintro (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)
-    · refine ⟨sameCycle_revPerm_iff.mpr (Or.inr ?_),
-        pathGraph_adj.mpr (Or.inl (by change (n - 1) + 1 = n; omega))⟩
+    · refine ⟨(hrev.sameCycle_iff _ _).mpr (Or.inr ?_),
+        pathGraph_adj.mpr (Or.inl (by simp only; omega))⟩
       ext
-      simp only [Fin.val_rev]
+      simp only [Fin.revPerm_apply, Fin.val_rev]
       omega
-    · refine ⟨sameCycle_revPerm_iff.mpr (Or.inr ?_),
-        pathGraph_adj.mpr (Or.inr (by change (n - 1) + 1 = n; omega))⟩
+    · refine ⟨(hrev.sameCycle_iff _ _).mpr (Or.inr ?_),
+        pathGraph_adj.mpr (Or.inr (by simp only; omega))⟩
       ext
-      simp only [Fin.val_rev]
+      simp only [Fin.revPerm_apply, Fin.val_rev]
       omega
 
 end SimpleGraph

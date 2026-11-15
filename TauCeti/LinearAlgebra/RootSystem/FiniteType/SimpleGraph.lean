@@ -151,19 +151,13 @@ theorem _root_.TauCeti.DynkinType.exists_isSimplyLaced_diagramGraph_iso (t : Dyn
   | B n =>
     refine ⟨.A n, by simp, fun h => by have := DynkinType.valid_B.mp h; simp; omega, ?_⟩
     simpa only [DynkinType.rank_B, DynkinType.cartanMatrix_B, DynkinType.rank_A,
-      DynkinType.cartanMatrix_A] using hpath (G := diagramGraph (CartanMatrix.B n)) <| by
-      ext i j
-      rw [diagramGraph_adj, pathGraph_adj]
-      simp [CartanMatrix.B, Fin.ext_iff]
-      omega
+      DynkinType.cartanMatrix_A] using
+      hpath (G := diagramGraph (CartanMatrix.B n)) (DynkinType.diagramGraph_cartanMatrix_B n)
   | C n =>
     refine ⟨.A n, by simp, fun h => by have := DynkinType.valid_C.mp h; simp; omega, ?_⟩
     simpa only [DynkinType.rank_C, DynkinType.cartanMatrix_C, DynkinType.rank_A,
-      DynkinType.cartanMatrix_A] using hpath (G := diagramGraph (CartanMatrix.C n)) <| by
-      ext i j
-      rw [diagramGraph_adj, pathGraph_adj]
-      simp [CartanMatrix.C, Fin.ext_iff]
-      omega
+      DynkinType.cartanMatrix_A] using
+      hpath (G := diagramGraph (CartanMatrix.C n)) (DynkinType.diagramGraph_cartanMatrix_C n)
   | F4 =>
     refine ⟨.A 4, by simp, fun _ => by simp, ?_⟩
     simpa only [DynkinType.rank_F4, DynkinType.cartanMatrix_F4, DynkinType.rank_A,

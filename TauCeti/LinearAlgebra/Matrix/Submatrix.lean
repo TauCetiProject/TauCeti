@@ -28,7 +28,9 @@ For the Cartan matrix of a Dynkin diagram these permutations are the diagram sym
 
 ## Main definitions
 
-* `TauCeti.matrixSymmetryGroup`: the group of permutations preserving a given square matrix.
+* `TauCeti.matrixSymmetryGroup`: the group of permutations preserving a given square matrix, with
+  `TauCeti.permCongr_mem_matrixSymmetryGroup_iff` transporting membership along a simultaneous
+  relabelling of rows and columns.
 -/
 
 public section
@@ -69,6 +71,21 @@ def matrixSymmetryGroup (M : Matrix B B α) : Subgroup (Equiv.Perm B) where
 
 theorem mem_matrixSymmetryGroup_iff : σ ∈ matrixSymmetryGroup M ↔ M.submatrix σ σ = M :=
   Iff.rfl
+
+/-- Under a simultaneous relabelling `e` of rows and columns (`∀ i j, M i j = M' (e i) (e j)`),
+`e.permCongr σ` preserves `M'` if and only if `σ` preserves `M`. -/
+theorem permCongr_mem_matrixSymmetryGroup_iff {B C α : Type*} {M : Matrix B B α}
+    {M' : Matrix C C α} (e : B ≃ C) (he : ∀ i j, M i j = M' (e i) (e j))
+    {σ : Equiv.Perm B} :
+    e.permCongr σ ∈ matrixSymmetryGroup M' ↔ σ ∈ matrixSymmetryGroup M := by
+  simp only [mem_matrixSymmetryGroup_iff, ← Matrix.ext_iff, Matrix.submatrix_apply,
+    Equiv.permCongr_apply]
+  refine ⟨fun h i j ↦ ?_, fun h i j ↦ ?_⟩
+  · have hij := h (e i) (e j)
+    simpa only [Equiv.symm_apply_apply, ← he] using hij
+  · have hij := h (e.symm i) (e.symm j)
+    rw [← he (σ (e.symm i)) (σ (e.symm j)), hij, he, Equiv.apply_symm_apply,
+      Equiv.apply_symm_apply]
 
 end TauCeti
 

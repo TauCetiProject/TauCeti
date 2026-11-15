@@ -34,10 +34,14 @@ the root-system case is irreducibility, which Mathlib packages as
 
 ## Main results
 
-* `TauCeti.diagramGraph_submatrix`: the diagram of a principal submatrix is the pullback of the
-  diagram along the reindexing.
-* `TauCeti.DynkinType.diagramGraph_cartanMatrix_A`: the type `Aₙ` diagram is the path graph on
-  `n` nodes.
+* `TauCeti.diagramGraph_submatrix` and `TauCeti.diagramGraph_transpose`: the diagram of a principal
+  submatrix is the pullback of the diagram along the reindexing, and transposing a matrix preserves
+  its diagram.
+* `TauCeti.DynkinType.diagramGraph_cartanMatrix_A`,
+  `TauCeti.DynkinType.diagramGraph_cartanMatrix_B`, and
+  `TauCeti.DynkinType.diagramGraph_cartanMatrix_C`: the diagrams of types `Aₙ`, `Bₙ`, and `Cₙ` are
+  the path graph on `n` nodes, with `TauCeti.DynkinType.cartanMatrix_A_ne_zero_iff_pathGraph_adj`
+  characterizing off-diagonal nonvanishing in `Aₙ` as `pathGraph` adjacency.
 * `TauCeti.IsFiniteType.isAcyclic_diagramGraph`: **the diagram of a finite-type matrix is a
   forest**. The affine diagrams `Ãₙ` for `n ≥ 2`, the ones whose diagrams are cycles, are excluded
   here in one theorem.
@@ -98,6 +102,14 @@ theorem diagramGraph_submatrix {C : Type*} {f : C → B} (hf : Function.Injectiv
   rw [diagramGraph_adj, SimpleGraph.comap_adj, diagramGraph_adj, Matrix.submatrix_apply,
     Matrix.submatrix_apply, hf.ne_iff]
 
+/-- Transposing a matrix does not change its unoriented diagram. -/
+@[simp]
+theorem diagramGraph_transpose (A : Matrix B B ℤ) :
+    diagramGraph A.transpose = diagramGraph A := by
+  ext i j
+  simp only [diagramGraph_adj, Matrix.transpose_apply]
+  tauto
+
 namespace DynkinType
 
 /-- **The diagram of type `Aₙ` is the path graph**: in Bourbaki's numbering, the nodes `i` and `j`
@@ -110,6 +122,31 @@ theorem diagramGraph_cartanMatrix_A (n : ℕ) :
   rw [diagramGraph_adj, _root_.SimpleGraph.pathGraph_adj]
   simp [CartanMatrix.A, Fin.ext_iff]
   omega
+
+/-- **The diagram of type `Bₙ` is the path graph** on `n` nodes. -/
+@[simp]
+theorem diagramGraph_cartanMatrix_B (n : ℕ) :
+    (diagramGraph (CartanMatrix.B n) : _root_.SimpleGraph (Fin n)) =
+      _root_.SimpleGraph.pathGraph n := by
+  ext i j
+  rw [diagramGraph_adj, _root_.SimpleGraph.pathGraph_adj]
+  simp [CartanMatrix.B, Fin.ext_iff]
+  omega
+
+/-- **The diagram of type `Cₙ` is the path graph** on `n` nodes. -/
+@[simp]
+theorem diagramGraph_cartanMatrix_C (n : ℕ) :
+    (diagramGraph (CartanMatrix.C n) : _root_.SimpleGraph (Fin n)) =
+      _root_.SimpleGraph.pathGraph n := by
+  rw [← CartanMatrix.B_transpose, diagramGraph_transpose, diagramGraph_cartanMatrix_B]
+
+/-- Distinct nodes of `Aₙ` have a nonzero Cartan entry if and only if they are adjacent in
+`SimpleGraph.pathGraph n`. -/
+theorem cartanMatrix_A_ne_zero_iff_pathGraph_adj {n : ℕ} {i j : Fin n} (hne : i ≠ j) :
+    (DynkinType.A n).cartanMatrix i j ≠ 0 ↔ (_root_.SimpleGraph.pathGraph n).Adj i j := by
+  rw [← diagramGraph_cartanMatrix_A n, diagramGraph_adj, cartanMatrix_A]
+  have hsymm := (CartanMatrix.A_isSymm n).apply i j
+  exact ⟨fun h ↦ ⟨hne, h, fun hji ↦ h (hsymm.symm.trans hji)⟩, fun h ↦ h.2.1⟩
 
 end DynkinType
 

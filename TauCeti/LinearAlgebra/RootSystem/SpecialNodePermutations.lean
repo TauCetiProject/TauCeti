@@ -71,6 +71,9 @@ that construction, stated against the pinned Bourbaki numbering of
   `TauCeti.DynkinType.IsSpecialNodePerm.sq_eq_one`: it is then unique, and an involution.
 * `TauCeti.DynkinType.exists_prime_rootLength_mul_rootLength`: the two squared lengths it exchanges
   multiply to a prime, which is `2` or `3`.
+* `TauCeti.DynkinType.diagramSymmetry_F4_eq_bot` and
+  `TauCeti.DynkinType.diagramSymmetry_G2_eq_bot`: the `F₄` and `G₂` diagrams have trivial diagram
+  symmetry groups.
 * `TauCeti.DynkinType.IsSpecialNodePerm.submatrix_cartanMatrix_ne`: it is never a graph
   automorphism.
 
@@ -294,6 +297,18 @@ theorem eq_one_of_cartanMatrix_F4 {ρ : Equiv.Perm (Fin 4)}
   simp only [Equiv.Perm.one_apply]
   fin_cases i
   exacts [hρ₀, hρ₁, hρ₂, hρ₃]
+
+/-- **The Dynkin diagram of `F₄` has no nontrivial symmetry.** -/
+@[simp]
+theorem diagramSymmetry_F4_eq_bot : F4.diagramSymmetry = ⊥ :=
+  (Subgroup.eq_bot_iff_forall _).mpr fun _ hσ ↦
+    eq_one_of_cartanMatrix_F4 (mem_diagramSymmetry_iff.mp hσ)
+
+/-- **The Dynkin diagram of `G₂` has no nontrivial symmetry.** -/
+@[simp]
+theorem diagramSymmetry_G2_eq_bot : G2.diagramSymmetry = ⊥ :=
+  (Subgroup.eq_bot_iff_forall _).mpr fun _ hσ ↦
+    eq_one_of_cartanMatrix_G2 (mem_diagramSymmetry_iff.mp hσ)
 
 /-- **A valid Dynkin type has at most one special node permutation.** Thus its numbered-node
 permutation, and hence its root-subgroup indexing datum, is canonical whenever it exists. -/

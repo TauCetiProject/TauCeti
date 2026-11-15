@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.Perm.Cycle.Basic
 public import Mathlib.GroupTheory.SemidirectProduct
 public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
+public import TauCeti.LinearAlgebra.Matrix.Submatrix
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Chamber
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Transport
+import TauCeti.LinearAlgebra.RootSystem.HomInvariance
 import TauCeti.LinearAlgebra.RootSystem.Isomorphism
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Automorphism
 
@@ -45,6 +48,8 @@ preserving the Cartan matrix extends uniquely to a based automorphism
 
 * `RootPairing.Base.basedAut`: the automorphisms of a root pairing carrying the simple roots of a
   base onto themselves.
+* `RootPairing.Base.supportPerm`: the permutation of `b.support` induced by an automorphism carrying
+  simple roots to simple roots.
 * `RootPairing.Base.conjWeylGroup`: the action of the based automorphisms on the Weyl group by
   conjugation, `δ • w = δ w δ⁻¹` (`RootPairing.Base.coe_conjWeylGroup_apply`).
 * `RootPairing.Base.semidirectProductMulEquiv`: the multiplicative equivalence
@@ -55,6 +60,10 @@ preserving the Cartan matrix extends uniquely to a based automorphism
 * `RootPairing.Base.mem_basedAut_iff`, `RootPairing.Base.mem_basedAut_iff_forall_mem_support`
   and `RootPairing.Base.mem_basedAut_iff_map_eq`: an automorphism is based exactly when it carries
   the simple roots onto, or into, themselves, and exactly when it fixes the base.
+* `RootPairing.Base.supportPerm_mem_matrixSymmetryGroup` and
+  `RootPairing.Base.basedAut_eq_bot_of_matrixSymmetryGroup_eq_bot`: `b.supportPerm` preserves
+  `b.cartanMatrix`, so `b.basedAut = ⊥` for a root system whose Cartan matrix has trivial symmetry
+  group.
 * `RootPairing.Base.mem_basedAut_iff_image_posRoots`: an automorphism is based exactly when it
   carries the positive roots onto themselves.
 * `RootPairing.Base.mem_basedAut_iff_smul_openDominantChamber`: over a linearly ordered
@@ -123,6 +132,100 @@ theorem mem_basedAut_iff_forall_mem_support :
   refine ⟨fun h i hi ↦ ?_, fun h ↦ mem_basedAut_iff_map_eq.mpr (map_eq_of_forall_mem_support h)⟩
   rw [← Finset.mem_coe, ← mem_basedAut_iff.mp h]
   exact Set.mem_image_of_mem _ hi
+
+/-- An automorphism carrying `b.support` into itself carries `b.support` onto itself, so membership
+in `b.support` is preserved in both directions. -/
+theorem indexEquiv_mem_support_iff (b : P.Base) {σ : P.Aut}
+    (hσ : ∀ i ∈ b.support, σ.indexEquiv i ∈ b.support) (i : ι) :
+    σ.indexEquiv i ∈ b.support ↔ i ∈ b.support := by
+  conv_lhs => rw [← b.map_eq_of_forall_mem_support hσ]
+  rw [b.mem_support_map_iff, _root_.Equiv.symm_apply_apply]
+
+/-- **The permutation of `b.support` induced by an automorphism carrying simple roots to simple
+roots.** -/
+def supportPerm (b : P.Base) {σ : P.Aut}
+    (hσ : ∀ i ∈ b.support, σ.indexEquiv i ∈ b.support) : _root_.Equiv.Perm b.support :=
+  _root_.Equiv.Perm.subtypePerm σ.indexEquiv (b.indexEquiv_mem_support_iff hσ)
+
+/-- Coercing `b.supportPerm hσ i` to `ι` evaluates `σ.indexEquiv i`. -/
+@[simp]
+theorem coe_supportPerm_apply (b : P.Base) {σ : P.Aut}
+    (hσ : ∀ i ∈ b.support, σ.indexEquiv i ∈ b.support) (i : b.support) :
+    ((b.supportPerm hσ i : b.support) : ι) = σ.indexEquiv i :=
+  (rfl)
+
+/-- Coercing `(b.supportPerm hσ).symm i` to `ι` evaluates `σ.indexEquiv.symm i`. -/
+@[simp]
+theorem coe_supportPerm_symm_apply (b : P.Base) {σ : P.Aut}
+    (hσ : ∀ i ∈ b.support, σ.indexEquiv i ∈ b.support) (i : b.support) :
+    (((b.supportPerm hσ).symm i : b.support) : ι) = σ.indexEquiv.symm i :=
+  (rfl)
+
+/-- The identity automorphism induces the identity permutation of `b.support`. -/
+@[simp]
+theorem supportPerm_one (b : P.Base)
+    (h : ∀ i ∈ b.support, (1 : P.Aut).indexEquiv i ∈ b.support) :
+    b.supportPerm h = 1 :=
+  _root_.Equiv.ext fun _ ↦ Subtype.ext rfl
+
+/-- `RootPairing.Base.supportPerm` respects multiplication of automorphisms. -/
+theorem supportPerm_mul (b : P.Base) {σ τ : P.Aut}
+    (hσ : ∀ i ∈ b.support, σ.indexEquiv i ∈ b.support)
+    (hτ : ∀ i ∈ b.support, τ.indexEquiv i ∈ b.support)
+    (hστ : ∀ i ∈ b.support, (σ * τ).indexEquiv i ∈ b.support) :
+    b.supportPerm hστ = b.supportPerm hσ * b.supportPerm hτ :=
+  _root_.Equiv.ext fun _ ↦ Subtype.ext rfl
+
+/-- `RootPairing.Base.supportPerm` respects inversion of automorphisms. -/
+theorem supportPerm_inv (b : P.Base) {σ : P.Aut}
+    (hσ : ∀ i ∈ b.support, σ.indexEquiv i ∈ b.support)
+    (hσ_inv : ∀ i ∈ b.support, σ⁻¹.indexEquiv i ∈ b.support) :
+    b.supportPerm hσ_inv = (b.supportPerm hσ)⁻¹ :=
+  _root_.Equiv.ext fun _ ↦ Subtype.ext rfl
+
+/-- `RootPairing.Base.supportPerm` respects natural powers of automorphisms. -/
+theorem supportPerm_pow (b : P.Base) {σ : P.Aut}
+    (hσ : ∀ i ∈ b.support, σ.indexEquiv i ∈ b.support) (n : ℕ)
+    (hσn : ∀ i ∈ b.support, (σ ^ n).indexEquiv i ∈ b.support) :
+    b.supportPerm hσn = b.supportPerm hσ ^ n := by
+  refine _root_.Equiv.ext fun i ↦ Subtype.ext ?_
+  rw [coe_supportPerm_apply, ← Equiv.indexHom_apply P, map_pow, Equiv.indexHom_apply]
+  clear hσn
+  induction n with
+  | zero => rfl
+  | succ k ih =>
+    rw [pow_succ', _root_.Equiv.Perm.mul_apply, pow_succ', _root_.Equiv.Perm.mul_apply,
+      coe_supportPerm_apply, ih]
+
+/-- Two simple roots lie in the same cycle of `b.supportPerm hσ` exactly when their ambient indices
+lie in the same cycle of `σ.indexEquiv`. -/
+@[simp]
+theorem sameCycle_supportPerm_iff_sameCycle (b : P.Base) {σ : P.Aut}
+    (hσ : ∀ i ∈ b.support, σ.indexEquiv i ∈ b.support) (i j : b.support) :
+    (b.supportPerm hσ).SameCycle i j ↔
+      _root_.Equiv.Perm.SameCycle σ.indexEquiv (i : ι) (j : ι) :=
+  _root_.Equiv.Perm.sameCycle_subtypePerm
+
+/-- **The permutation of simple roots induced by a based automorphism preserves the Cartan
+matrix.** -/
+theorem supportPerm_mem_matrixSymmetryGroup [CharZero R] [P.IsCrystallographic] (b : P.Base)
+    {σ : P.Aut} (hσ : ∀ i ∈ b.support, σ.indexEquiv i ∈ b.support) :
+    b.supportPerm hσ ∈ matrixSymmetryGroup b.cartanMatrix := by
+  refine mem_matrixSymmetryGroup_iff.mpr (Matrix.ext fun i j ↦ ?_)
+  simp only [Matrix.submatrix_apply, cartanMatrix, cartanMatrixIn_def, coe_supportPerm_apply]
+  exact σ.toHom.pairingIn_indexEquiv ℤ (i : ι) (j : ι)
+
+/-- If the Cartan matrix of `b` has no nontrivial symmetry, then `b.basedAut` is trivial. -/
+theorem basedAut_eq_bot_of_matrixSymmetryGroup_eq_bot [CharZero R] [P.IsRootSystem]
+    [P.IsCrystallographic] (b : P.Base) (hb : matrixSymmetryGroup b.cartanMatrix = ⊥) :
+    b.basedAut = ⊥ := by
+  refine (Subgroup.eq_bot_iff_forall _).mpr fun σ hσ ↦ ?_
+  have hσ' := mem_basedAut_iff_forall_mem_support.mp hσ
+  have hperm : b.supportPerm hσ' = 1 :=
+    Subgroup.mem_bot.mp (hb.le (b.supportPerm_mem_matrixSymmetryGroup hσ'))
+  refine b.eq_one_of_forall_indexEquiv_eq fun i hi ↦ ?_
+  have hi' := _root_.Equiv.ext_iff.mp hperm ⟨i, hi⟩
+  simpa only [coe_supportPerm_apply, _root_.Equiv.Perm.coe_one, id_eq, Subtype.ext_iff] using hi'
 
 /-- A based automorphism carries the positive roots onto themselves. -/
 theorem image_posRoots_of_mem_basedAut [CharZero R] (h : g ∈ b.basedAut) :

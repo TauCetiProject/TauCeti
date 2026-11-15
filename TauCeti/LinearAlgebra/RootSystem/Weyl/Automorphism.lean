@@ -99,16 +99,10 @@ theorem HasCartanType.weylGroup_eq_top [P.IsRootSystem] {b : P.Base} {t : Dynkin
   obtain ⟨e, he⟩ := (hasCartanType_iff b t).mp h
   refine b.weylGroup_eq_top_of_matrixSymmetryGroup_eq_bot
     ((Subgroup.eq_bot_iff_forall _).mpr fun σ hσ ↦ ?_)
-  -- Transport `σ` along the labelling of the simple roots by the nodes of `t`.
-  have hτ : e.symm.trans (σ.trans e) ∈ t.diagramSymmetry :=
-    DynkinType.mem_diagramSymmetry_iff.mpr fun i j ↦ by
-      have hij := congrFun₂ (mem_matrixSymmetryGroup_iff.mp hσ) (e.symm i) (e.symm j)
-      rw [Matrix.submatrix_apply, he, he, Equiv.apply_symm_apply, Equiv.apply_symm_apply] at hij
-      simpa only [Equiv.trans_apply] using hij
-  ext i
-  have hi := Equiv.ext_iff.mp (Subgroup.mem_bot.mp (ht.le hτ)) (e i)
-  simp only [Equiv.trans_apply, Equiv.symm_apply_apply, Equiv.Perm.coe_one, id_eq] at hi
-  simp [e.injective hi]
+  have hτ : e.permCongr σ ∈ t.diagramSymmetry :=
+    DynkinType.mem_diagramSymmetry_iff_submatrix.mpr <|
+      mem_matrixSymmetryGroup_iff.mp <| (permCongr_mem_matrixSymmetryGroup_iff e he).mpr hσ
+  exact (MulEquiv.map_eq_one_iff e.permCongrHom).mp (Subgroup.mem_bot.mp (ht.le hτ))
 
 /-- **Every automorphism of a root system of type `E₈` lies in its Weyl group.** -/
 theorem weylGroup_eq_top_of_hasCartanType_E8 [P.IsRootSystem] {b : P.Base}

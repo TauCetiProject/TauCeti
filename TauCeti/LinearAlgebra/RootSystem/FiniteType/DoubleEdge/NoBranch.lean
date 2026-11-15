@@ -55,14 +55,6 @@ namespace IsFiniteType
 variable {B : Type*} [DecidableEq B] {A : Matrix B B ℤ}
 
 omit [DecidableEq B] in
-/-- Transposing a matrix does not change its unoriented diagram. -/
-private lemma diagramGraph_transpose (A : Matrix B B ℤ) :
-    diagramGraph A.transpose = diagramGraph A := by
-  ext i j
-  simp only [diagramGraph_adj, Matrix.transpose_apply]
-  tauto
-
-omit [DecidableEq B] in
 /-- Along an edge of a finite-type diagram, the corresponding Cartan entry is at most `-1`. -/
 private lemma apply_le_neg_one_of_adj (h : IsFiniteType A) {i j : B}
     (hij : (diagramGraph A).Adj i j) : A i j ≤ -1 := by
