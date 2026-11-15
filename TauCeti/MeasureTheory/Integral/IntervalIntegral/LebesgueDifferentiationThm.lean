@@ -26,6 +26,9 @@ bounds a distance from above, as for the metric derivative of a curve.
 * `TauCeti.ae_tendsto_setLIntegral_uIoc_div`: the one-dimensional Lebesgue differentiation theorem
   for an extended nonnegative density which is almost everywhere measurable with finite lower
   integral on an interval.
+* `TauCeti.ae_tendsto_inv_mul_measureReal_Ioc_of_mutuallySingular`: a locally finite measure on
+  the line that is singular with respect to Lebesgue measure has right difference quotients
+  `ρ (t, t + δ] / δ` tending to zero at almost every `t`.
 -/
 
 public section
@@ -70,5 +73,26 @@ theorem ae_tendsto_setLIntegral_uIoc_div {f : ℝ → ℝ≥0∞} {a b : ℝ}
   · filter_upwards [Ioo_mem_nhdsGT hmem.2] with s hs
     rw [Function.comp_apply, hg_eq hmem.1.le hs.2.le, Real.volume_Icc, uIoc_of_le hs.1.le,
       edist_dist, Real.dist_eq, abs_of_pos (sub_pos.2 hs.1)]
+
+/-- A locally finite measure on `ℝ` that is singular with respect to Lebesgue measure has right
+difference quotients `ρ (t, t + δ] / δ` tending to zero at almost every `t`. -/
+theorem ae_tendsto_inv_mul_measureReal_Ioc_of_mutuallySingular {ρ : Measure ℝ}
+    [IsLocallyFiniteMeasure ρ] (hρ : ρ ⟂ₘ volume) :
+    ∀ᵐ t, Tendsto (fun δ : ℝ ↦ δ⁻¹ * ρ.real (Ioc t (t + δ))) (𝓝[>] 0) (𝓝 0) := by
+  set v := IsUnifLocDoublingMeasure.vitaliFamily (volume : Measure ℝ) 1
+  filter_upwards [v.ae_eventually_measure_zero_of_singular hρ] with t ht
+  have hshift : Tendsto (fun δ : ℝ ↦ t + δ) (𝓝[>] 0) (𝓝[>] t) :=
+    tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
+      (((continuous_const_add t).tendsto' 0 t (add_zero t)).mono_left nhdsWithin_le_nhds)
+      (eventually_nhdsWithin_of_forall fun δ (hδ : 0 < δ) ↦ lt_add_of_pos_right t hδ)
+  refine squeeze_zero' (eventually_nhdsWithin_of_forall fun δ (hδ : 0 < δ) ↦ by positivity)
+    (eventually_nhdsWithin_of_forall fun δ (hδ : 0 < δ) ↦ ?_)
+    ((ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp
+      (ht.comp ((Real.tendsto_Icc_vitaliFamily_right t).comp hshift)))
+  calc δ⁻¹ * ρ.real (Ioc t (t + δ)) ≤ δ⁻¹ * ρ.real (Icc t (t + δ)) := by
+        gcongr
+        exacts [measure_Icc_lt_top.ne, Ioc_subset_Icc_self]
+    _ = (ρ (Icc t (t + δ)) / volume (Icc t (t + δ))).toReal := by
+        simp [ENNReal.toReal_div, measureReal_def, hδ.le, inv_mul_eq_div]
 
 end TauCeti

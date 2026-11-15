@@ -453,6 +453,19 @@ theorem stationaryCylinderOperator_eq_add_asymptoticOperator (hξ : Differentiab
     exact (hasDerivAt_slice_right hξ).deriv
   rw [stationaryCylinderOperator_def, asymptoticOperator_def, hξt]
 
+/-- The stationary cylinder operator at `z` depends only on the germ of the map at `z`. -/
+theorem _root_.Filter.EventuallyEq.stationaryCylinderOperator_eq {ξ₁ ξ₂ : ℝ × ℝ → V}
+    (h : ξ₁ =ᶠ[𝓝 z] ξ₂) :
+    stationaryCylinderOperator J S ξ₁ z = stationaryCylinderOperator J S ξ₂ z := by
+  rw [stationaryCylinderOperator_def, stationaryCylinderOperator_def, h.fderiv_eq, h.eq_of_nhds]
+
+/-- The stationary cylinder operator vanishes off the topological support of the map. -/
+theorem stationaryCylinderOperator_of_notMem_tsupport (hz : z ∉ tsupport ξ) :
+    stationaryCylinderOperator J S ξ z = 0 := by
+  rw [stationaryCylinderOperator_def, image_eq_zero_of_notMem_tsupport hz,
+    fderiv_of_notMem_tsupport ℝ hz]
+  simp
+
 variable [FiniteDimensional ℝ V] {ω : SymplecticForm V}
 
 /-- **Shifting the stationary cylinder operator by a weight.** Replacing `S_t` by `S_t - δ J_t`
@@ -701,13 +714,14 @@ theorem tendsto_integral_slicePairing (hSc : Continuous S)
 
 /-- **Decaying solutions of the stationary cylinder equation vanish.** Let each `J_t` be
 `ω`-compatible and depend continuously on `t`, and let each `S_t` be infinitesimally
-symplectic. A `C²` solution `ξ` of `D ξ = ∂s ξ + J_t (∂t ξ - S_t ξ) = 0` of period one in `t`,
-which tends to zero together with `∂t ξ` as `|s| → ∞`, uniformly in `t`, is identically zero.
-No nondegeneracy of the orbit is needed for this injectivity statement. -/
+symplectic. A `C²` map `ξ` of period one in `t` with `D ξ = ∂s ξ + J_t (∂t ξ - S_t ξ) = 0` on
+`ℝ × (0, 1)`, which tends to zero together with `∂t ξ` as `|s| → ∞`, uniformly in `t`, is
+identically zero. No nondegeneracy of the orbit is needed for this injectivity statement. -/
 theorem eq_zero_of_stationaryCylinderOperator_eq_zero (hJ : ∀ t, ω.Compatible (J t))
     (hJc : Continuous fun p : ℝ × V ↦ J p.1 p.2)
     (hS : ∀ t v w, ω (S t v) w + ω v (S t w) = 0) (hSc : Continuous S) (hξ : ContDiff ℝ 2 ξ)
-    (hper : ∀ s t, ξ (s, t + 1) = ξ (s, t)) (hD : ∀ z, stationaryCylinderOperator J S ξ z = 0)
+    (hper : ∀ s t, ξ (s, t + 1) = ξ (s, t))
+    (hD : EqOn (stationaryCylinderOperator J S ξ) 0 (univ ×ˢ Ioo 0 1))
     (hdecay : Tendsto (fun z ↦ (ξ z, fderiv ℝ ξ z stdComplexLineImag))
       (comap Prod.fst (cocompact ℝ)) (𝓝 0)) :
     ξ = 0 := by
@@ -730,7 +744,14 @@ theorem eq_zero_of_stationaryCylinderOperator_eq_zero (hJ : ∀ t, ω.Compatible
   have hid {a b : ℝ} (hab : a ≤ b) : ∫ z in Icc a b ×ˢ Icc 0 1, f z = Φ a - Φ b := by
     have h := setIntegral_associatedBilinForm_stationaryCylinderOperator
       (fun t ↦ (hJ t).invariant) hJc hS hSc hξ hper hab
-    simp only [hD, map_zero, integral_zero] at h
+    have hD0 : ∫ z in Icc a b ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2)
+        (stationaryCylinderOperator J S ξ z) (stationaryCylinderOperator J S ξ z) = 0 := by
+      have hs : Icc a b ×ˢ Ioo (0 : ℝ) 1 =ᵐ[volume] Icc a b ×ˢ Icc 0 1 :=
+        Measure.set_prod_ae_eq Filter.EventuallyEqSet.rfl Ioo_ae_eq_Icc
+      rw [← setIntegral_congr_set hs]
+      exact setIntegral_eq_zero_of_forall_eq_zero fun z hz ↦ by
+        rw [hD ⟨mem_univ _, hz.2⟩, Pi.zero_apply, map_zero]
+    rw [hD0] at h
     simp only [f, Φ]
     linarith
   have hanti {a b : ℝ} (hab : a ≤ b) : Φ b ≤ Φ a := by

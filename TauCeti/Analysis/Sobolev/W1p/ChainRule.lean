@@ -496,7 +496,7 @@ omit [FiniteDimensional ℝ E] in
 theorem W1p.integrable_norm_gradient_div_value_sq {u : W1p mu Omega 2} (hε : 0 < ε)
     (hu : ∀ᵐ x ∂mu.restrict Omega, ε ≤ W1p.value u x) :
     Integrable (fun x => (‖W1p.gradient u x‖ / W1p.value u x) ^ 2) (mu.restrict Omega) := by
-  refine ((W1p.integrable_norm_gradient_sq u).const_mul (ε ^ 2)⁻¹).mono' ?_ ?_
+  refine ((Lp.memLp (W1p.gradient u)).norm.integrable_sq.const_mul (ε ^ 2)⁻¹).mono' ?_ ?_
   · exact (((Lp.aestronglyMeasurable (W1p.gradient u)).aemeasurable.norm.div
       (Lp.aestronglyMeasurable (W1p.value u)).aemeasurable).pow_const 2).aestronglyMeasurable
   · filter_upwards [hu] with x hx
