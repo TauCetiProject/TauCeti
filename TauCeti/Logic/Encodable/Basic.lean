@@ -15,12 +15,18 @@ respect this: decoding a number in a decidable subtype and forgetting the proof 
 the ambient type and keeping the result when it satisfies the predicate. This file records such
 identities `(decode n).map f = (decode n).filter p`, for an embedding `f : α → β` whose image is
 cut out by a Boolean test `p` on `β`: for `Subtype.val` and `Fin.val`, and for the sum of two
-embeddings with this property. `Encodable.map_listMap_decode` extends them to lists.
+embeddings with this property. `Encodable.map_listMap_decode` extends them to lists. In
+particular, an element of `Fin k` has the same code as its value (`Encodable.encode_fin`).
 -/
 
 public section
 
 namespace Encodable
+
+/-- An element of `Fin k` is coded by its value. -/
+@[simp]
+theorem encode_fin {k : ℕ} (i : Fin k) : encode i = i := by
+  simp [encode_ofEquiv, Subtype.encode_eq]
 
 /-- Decoding in a decidable subtype and forgetting the proof is decoding in the ambient type and
 keeping the elements satisfying the predicate. -/

@@ -13,9 +13,10 @@ public import Mathlib.Logic.Equiv.List
 The code of a list over an encodable type depends only on the codes of its entries: it is the
 code of the list of natural numbers obtained by encoding each entry, so mapping the entries along
 a function that preserves their codes preserves the code of the list. Conversely, reading the code
-of a list as a list of natural numbers returns the codes of its entries. Decoding lists along an
-embedding of the entries keeps exactly the lists all of whose entries lie in its image
-(`Encodable.map_listMap_decode`).
+of a list as a list of natural numbers returns the codes of its entries. If decoding along a map
+`f` of the entries is decoding in the target and keeping the elements that pass a test `p`, then
+decoding lists along `List.map f` is decoding lists in the target and keeping those all of whose
+entries pass `p` (`Encodable.map_listMap_decode`).
 -/
 
 public section

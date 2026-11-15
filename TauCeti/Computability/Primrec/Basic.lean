@@ -12,7 +12,9 @@ public import Mathlib.Computability.Primrec.Basic
 
 Applying primitive-recursive maps to the two components of a pair (`Prod.map`) or to the two
 summands of a sum (`Sum.map`) is primitive recursive, for the standard encodings of products and
-sums. Renaming the letters of words along a primitive-recursive map is an instance.
+sums. Renaming the letters of words along a primitive-recursive map is an instance. Case analysis
+on a sum along maps depending primitive recursively on a parameter (`Sum.elim`) is primitive
+recursive, jointly in the parameter and the element of the sum.
 -/
 
 public section
@@ -30,5 +32,11 @@ theorem prodMap {f : α → γ} {g : β → δ} (hf : Primrec f) (hg : Primrec g
 theorem sumMap {f : α → γ} {g : β → δ} (hf : Primrec f) (hg : Primrec g) :
     Primrec (Sum.map f g) :=
   sumCasesOn .id (sumInl.comp (hf.comp snd)).to₂ (sumInr.comp (hg.comp snd)).to₂
+
+/-- Case analysis on a sum along maps depending primitive recursively on a parameter is primitive
+recursive, jointly in the parameter and the element of the sum. -/
+theorem sumElim {σ : Type*} [Primcodable σ] {f : α → β → σ} {g : α → γ → σ} (hf : Primrec₂ f)
+    (hg : Primrec₂ g) : Primrec₂ fun a (x : β ⊕ γ) => Sum.elim (f a) (g a) x :=
+  sumCasesOn snd (hf.comp (fst.comp fst) snd).to₂ (hg.comp (fst.comp fst) snd).to₂
 
 end Primrec

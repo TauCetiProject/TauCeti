@@ -30,7 +30,10 @@ recursive on these letters.
   `Encodable` instance for dependent pairs, only the proof that they are primitive recursive is
   new.
 * `FirstOrder.Language.Term.primrec_sigma_iff`: a function into terms with slots is primitive
-  recursive exactly when its number of slots and its term with slots read as numbers are.
+  recursive exactly when its number of slots and its term with slots read as numbers are. Forming
+  `⟨k, t⟩` (`FirstOrder.Language.Term.primrec_sigma_mk`) and its two projections
+  (`FirstOrder.Language.Term.primrec_sigma_fst`,
+  `FirstOrder.Language.Term.primrec_relabel_sigma_val`) are primitive recursive.
 * `FirstOrder.Language.Term.primrec₂_liftAt_sigma`,
   `FirstOrder.Language.Term.primrec₂_relabel_castLE_sigma`,
   `FirstOrder.Language.Term.primrec₂_relabel_relabelAux_sigma`,
@@ -38,6 +41,10 @@ recursive on these letters.
   number of slots (as in `BoundedFormula.castLE`), relabelling free variables into free variables
   and new slots (as in `BoundedFormula.relabel`) and substituting terms for free variables (as in
   `BoundedFormula.subst`) are primitive recursive.
+* `FirstOrder.Language.Term.relabel_val_liftAt`,
+  `FirstOrder.Language.Term.relabel_val_relabelAux`, `FirstOrder.Language.Term.relabel_val_subst`:
+  reading slots as numbers turns these operations into relabellings and substitutions of terms
+  over `α ⊕ ℕ`.
 
 ## Implementation notes
 
@@ -68,7 +75,7 @@ variable {L : Language.{u, v}} {α : Type w}
 /-! ### Spellings and slots read as numbers -/
 
 /-- Reading slots as numbers after `Term.liftAt n' m` raises the numbers `≥ m` by `n'`. -/
-private theorem relabel_val_liftAt {k : ℕ} (n' m : ℕ) (t : L.Term (α ⊕ Fin k)) :
+theorem relabel_val_liftAt {k : ℕ} (n' m : ℕ) (t : L.Term (α ⊕ Fin k)) :
     (t.liftAt n' m).relabel (Sum.map id Fin.val) =
       (t.relabel (Sum.map id Fin.val)).relabel
         (Sum.map id fun i => if i < m then i else i + n') := by
@@ -76,13 +83,13 @@ private theorem relabel_val_liftAt {k : ℕ} (n' m : ℕ) (t : L.Term (α ⊕ Fi
   congr 1
   funext x
   rcases x with a | i
-  · rfl
+  · simp
   · simp only [Function.comp_apply, Sum.map_inr]
     split_ifs <;> simp
 
 /-- Reading slots as numbers after `BoundedFormula.relabelAux g k` sends a free variable to the
 number of the slot that `g` assigns to it, and the slot `j` to `n + j`. -/
-private theorem relabel_val_relabelAux {β : Type*} {n k : ℕ} (g : α → β ⊕ Fin n)
+theorem relabel_val_relabelAux {β : Type*} {n k : ℕ} (g : α → β ⊕ Fin n)
     (t : L.Term (α ⊕ Fin k)) :
     (t.relabel (BoundedFormula.relabelAux g k)).relabel (Sum.map id Fin.val) =
       (t.relabel (Sum.map id Fin.val)).relabel
@@ -95,7 +102,7 @@ private theorem relabel_val_relabelAux {β : Type*} {n k : ℕ} (g : α → β �
   · simp [BoundedFormula.relabelAux]
 
 /-- Reading slots as numbers commutes with the substitution of `BoundedFormula.subst`. -/
-private theorem relabel_val_subst {β : Type*} {k : ℕ} (f : α → L.Term β)
+theorem relabel_val_subst {β : Type*} {k : ℕ} (f : α → L.Term β)
     (t : L.Term (α ⊕ Fin k)) :
     (t.subst (Sum.elim (Term.relabel Sum.inl ∘ f) (var ∘ Sum.inr))).relabel
         (Sum.map id Fin.val) =
@@ -116,7 +123,7 @@ theorem encode_sigma (t : Σ k, L.Term (α ⊕ Fin k)) :
     encode t = encode (t.1, t.2.relabel (Sum.map id Fin.val)) := by
   obtain ⟨k, t⟩ := t
   -- A slot `i : Fin k` is coded by its value, so reading slots as numbers keeps all codes.
-  rw [encode_sigma_val, encode_prod_val, encode_relabel fun x => by rcases x with a | i <;> rfl]
+  rw [encode_sigma_val, encode_prod_val, encode_relabel fun x => by rcases x with a | i <;> simp]
 
 /-- The test that every slot letter of a letter of a term over `α ⊕ ℕ` is below `k`. -/
 private def slotLT (k : ℕ) : (α ⊕ ℕ) ⊕ (Σ i, L.Functions i) → Bool :=
@@ -155,8 +162,8 @@ private theorem encode_decode_sigma (c : ℕ) :
           (Prod.mk c.unpair.1)) := by
   rw [← map_relabel_decode, decode_sigma_val, decode_nat, Option.bind_some]
   cases decode (α := L.Term (α ⊕ Fin c.unpair.1)) c.unpair.2 with
-  | none => rfl
-  | some t => exact congrArg Nat.succ (encode_sigma ⟨_, t⟩)
+  | none => simp
+  | some t => simpa using encode_sigma ⟨_, t⟩
 
 end Encodable
 
@@ -166,10 +173,7 @@ variable [Primcodable α] [Primcodable (Σ i, L.Functions i)]
 
 private theorem primrec₂_slotLT :
     Primrec₂ (slotLT : ℕ → (α ⊕ ℕ) ⊕ (Σ i, L.Functions i) → Bool) :=
-  (Primrec.sumCasesOn .snd
-    (Primrec.sumCasesOn .snd (.const true)
-      (Primrec.nat_lt.decide.comp .snd (Primrec.fst.comp (Primrec.fst.comp .fst))).to₂).to₂
-    (.const true)).of_eq fun p => by rcases p with ⟨k, (a | i) | F⟩ <;> rfl
+  .sumElim (.sumElim (.const true) Primrec.nat_lt.decide.swap) (.const true)
 
 variable [L.PrimrecFunctionArity]
 
@@ -215,6 +219,12 @@ theorem primrec_sigma_iff {β : Type*} [Primcodable β] {f : β → Σ k, L.Term
     fun h => Primrec.encode_iff.1 <|
       (Primrec.encode.comp h).of_eq fun b => (encode_sigma (f b)).symm⟩
 
+/-- Forming the term with `k` bound-variable slots from a term over `α ⊕ Fin k` is primitive
+recursive. -/
+theorem primrec_sigma_mk (k : ℕ) :
+    Primrec fun t : L.Term (α ⊕ Fin k) => (⟨k, t⟩ : Σ n, L.Term (α ⊕ Fin n)) :=
+  primrec_sigma_iff.2 <| (Primrec.const k).pair (primrec_relabel (.sumMap .id .fin_val))
+
 /-- The number of bound-variable slots is primitive recursive. -/
 theorem primrec_sigma_fst : Primrec (Sigma.fst : (Σ k, L.Term (α ⊕ Fin k)) → ℕ) :=
   Primrec.fst.comp (primrec_sigma_iff.1 .id)
@@ -231,19 +241,20 @@ theorem primrec₂_liftAt_sigma :
       (⟨t.1 + p.1, t.2.liftAt p.1 p.2⟩ : Σ k, L.Term (α ⊕ Fin k)) := by
   have hlift : Primrec₂ fun (p : ℕ × ℕ) (x : α ⊕ ℕ) =>
       Sum.map id (fun i => if i < p.2 then i else i + p.1) x :=
-    (Primrec.sumCasesOn .snd (Primrec.sumInl.comp .snd).to₂
-      (Primrec.sumInr.comp (Primrec.ite
-        (Primrec.nat_lt.comp .snd (Primrec.snd.comp (Primrec.fst.comp .fst))) .snd
-        (Primrec.nat_add.comp .snd (Primrec.fst.comp (Primrec.fst.comp .fst))))).to₂).to₂.of_eq
-      fun _ x => by rcases x with a | i <;> rfl
+    (Primrec.sumElim (Primrec.sumInl.comp .snd).to₂ (Primrec.sumInr.comp (Primrec.ite
+      (Primrec.nat_lt.comp .snd (Primrec.snd.comp .fst)) .snd
+      (Primrec.nat_add.comp .snd (Primrec.fst.comp .fst)))).to₂).of_eq
+      fun _ x => by rcases x with a | i <;> simp
   refine primrec_sigma_iff.2 <| (Primrec.pair
     (Primrec.nat_add.comp (primrec_sigma_fst.comp .snd) (Primrec.fst.comp .fst))
     ((primrec₂_relabel hlift).comp .fst (primrec_relabel_sigma_val.comp .snd))).of_eq
     fun p => ?_
   rw [relabel_val_liftAt]
 
-/-- Enlarging the number of bound-variable slots to `n`, as `BoundedFormula.castLE` does on the
-terms of a formula, is primitive recursive; terms with more than `n` slots are left unchanged. -/
+/-- Enlarging the number of bound-variable slots of a term to `n` along `Fin.castLE` is primitive
+recursive, jointly in `n` and the term; terms with more than `n` slots are left unchanged. This is
+what `BoundedFormula.castLE` does to the terms of a formula, with `n + r` in place of `n` for a
+term under `r` quantifiers. -/
 theorem primrec₂_relabel_castLE_sigma :
     Primrec₂ fun (n : ℕ) (t : Σ k, L.Term (α ⊕ Fin k)) =>
       (if h : t.1 ≤ n then ⟨n, t.2.relabel (Sum.map id (Fin.castLE h))⟩ else t :
@@ -255,10 +266,10 @@ theorem primrec₂_relabel_castLE_sigma :
   obtain ⟨n, k, t⟩ := p
   dsimp only
   by_cases h : k ≤ n
-  · rw [dite_eq_left_of_eq_true (eq_true h), relabel_relabel, Sum.map_comp_map]
-    simp only [Prod.mk.injEq, max_eq_left h, true_and]
-    rfl
-  · rw [dite_eq_right_of_eq_false (eq_false h), max_eq_right (Nat.le_of_not_le h)]
+  · rw [dite_eq_left h]
+    simp [h, show Fin.val ∘ Fin.castLE h = Fin.val from funext (Fin.val_castLE h)]
+  · rw [dite_eq_right h]
+    simp [Nat.le_of_not_le h]
 
 /-- Relabelling the free variables of a term into free variables and `n` new bound-variable
 slots, as `BoundedFormula.relabel` does on the terms of a formula, is primitive recursive,
@@ -268,12 +279,10 @@ theorem primrec₂_relabel_relabelAux_sigma {γ β : Type*} [Primcodable γ] [Pr
     Primrec₂ fun c (t : Σ k, L.Term (α ⊕ Fin k)) =>
       (⟨n + t.1, t.2.relabel (BoundedFormula.relabelAux (g c) t.1)⟩ :
         Σ k, L.Term (β ⊕ Fin k)) := by
-  have hval : Primrec (Sum.map id Fin.val : β ⊕ Fin n → β ⊕ ℕ) := .sumMap .id .fin_val
   have hmap : Primrec₂ fun (c : γ) (x : α ⊕ ℕ) =>
       Sum.elim (Sum.map id Fin.val ∘ g c) (fun j => Sum.inr (n + j)) x :=
-    (Primrec.sumCasesOn .snd (hval.comp (hg.comp (Primrec.fst.comp .fst) .snd)).to₂
-      (Primrec.sumInr.comp (Primrec.nat_add.comp (.const n) .snd)).to₂).to₂.of_eq fun _ x => by
-      rcases x with a | j <;> rfl
+    .sumElim ((Primrec.sumMap .id .fin_val).comp₂ hg)
+      (Primrec.sumInr.comp (Primrec.nat_add.comp (.const n) .snd)).to₂
   refine primrec_sigma_iff.2 <| (Primrec.pair
     (Primrec.nat_add.comp (.const n) (primrec_sigma_fst.comp .snd))
     ((primrec₂_relabel hmap).comp .fst (primrec_relabel_sigma_val.comp .snd))).of_eq
@@ -288,14 +297,10 @@ theorem primrec₂_subst_sigma {γ β : Type*} [Primcodable γ] [Primcodable β]
     Primrec₂ fun c (t : Σ k, L.Term (α ⊕ Fin k)) =>
       (⟨t.1, t.2.subst (Sum.elim (Term.relabel Sum.inl ∘ f c) (var ∘ Sum.inr))⟩ :
         Σ k, L.Term (β ⊕ Fin k)) := by
-  have hinl : Primrec₂ fun (c : γ) (a : α) => (f c a).relabel (Sum.inl : β → β ⊕ ℕ) :=
-    (primrec₂_relabel (g := fun (_ : Unit) => (Sum.inl : β → β ⊕ ℕ))
-      (Primrec.sumInl.comp .snd)).comp (.const ()) hf
   have hσ : Primrec₂ fun (c : γ) (x : α ⊕ ℕ) =>
       Sum.elim (Term.relabel Sum.inl ∘ f c) (var ∘ Sum.inr) x :=
-    (Primrec.sumCasesOn .snd (hinl.comp (Primrec.fst.comp .fst) .snd).to₂
-      (primrec_var.comp (Primrec.sumInr.comp .snd)).to₂).to₂.of_eq fun _ x => by
-      rcases x with a | j <;> rfl
+    .sumElim ((primrec_relabel (β := β ⊕ ℕ) .sumInl).comp₂ hf)
+      (primrec_var.comp (Primrec.sumInr.comp .snd)).to₂
   refine primrec_sigma_iff.2 <| (Primrec.pair (primrec_sigma_fst.comp .snd)
     ((primrec₂_subst hσ).comp .fst (primrec_relabel_sigma_val.comp .snd))).of_eq fun p => ?_
   rw [relabel_val_subst]
