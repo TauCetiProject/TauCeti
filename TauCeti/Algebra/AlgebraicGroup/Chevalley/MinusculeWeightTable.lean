@@ -122,7 +122,7 @@ private theorem pinnedRep_root (k : Fin t.rank ⊕ Fin t.rank) :
     exact Matrix.toLin'_apply _ _
 
 /-- Each coordinate vector is a weight vector for the pinned action, with its table weight. -/
-theorem pinnedRep_weight (a : α) :
+theorem isCartanWeightVector_pinnedRep_single (a : α) :
     UniversalEnvelopingAlgebra.IsCartanWeightVector (t.lieBasis ht).h
       (T.pinnedRep ht hT) (T.weight a) (Pi.single a 1) := by
   apply (UniversalEnvelopingAlgebra.isCartanWeightVector_iff _ _).mpr
@@ -147,7 +147,8 @@ private theorem pinnedRep_cartan_single (x : t.cartanSubalgebra ht) (a : α) :
         simp only [f, Submodule.subtype_apply, b, coe_cartanBasis]
   rw [hexp]
   simp only [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply,
-    (UniversalEnvelopingAlgebra.isCartanWeightVector_iff _ _).mp (T.pinnedRep_weight ht hT a),
+    (UniversalEnvelopingAlgebra.isCartanWeightVector_iff _ _).mp
+      (T.isCartanWeightVector_pinnedRep_single ht hT a),
     Finset.sum_apply, Pi.smul_apply, Pi.single_eq_same, smul_eq_mul, mul_one, b]
 
 /-- Spanning weights detect every Cartan coordinate, so the pinned Cartan action is faithful. -/
@@ -200,7 +201,8 @@ theorem pinnedRep_mem_lattice
       (t.lieBasis ht).h) (v : α → ℚ) (hv : v ∈ coordinateLattice α) :
     T.pinnedRep ht hT u v ∈ coordinateLattice α := by
   apply UniversalEnvelopingAlgebra.kostantForm_apply_mem_coordinateLattice
-    _ _ (T.pinnedRep ht hT) (wt := T.weight) _ _ (T.pinnedRep_weight ht hT) hu hv
+    _ _ (T.pinnedRep ht hT) (wt := T.weight) _ _
+      (T.isCartanWeightVector_pinnedRep_single ht hT) hu hv
   · intro k
     rw [pinnedRep_root]
     exact T.rep_serreRootGenerator_pow_two _
@@ -226,7 +228,7 @@ The equivalence `e` specifies the numbering of its weight basis. -/
   weight := T.weight ∘ e.symm
   isCartanWeightVector_basis a := by
     rw [Module.Basis.reindex_apply, coe_coordinateLatticeBasis, Pi.basisFun_apply]
-    exact T.pinnedRep_weight ht hT _
+    exact T.isCartanWeightVector_pinnedRep_single ht hT _
   weightLatticeBasis := (Pi.basisFun ℤ (Fin t.rank)).map
     (LinearEquiv.ofTop _ (by simpa only [EquivLike.range_comp] using hspan)).symm
 
