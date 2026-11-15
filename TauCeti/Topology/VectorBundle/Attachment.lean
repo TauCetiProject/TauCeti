@@ -115,8 +115,8 @@ private lemma mem_thickening_iff (hφ : IsClosedEmbedding φ)
   rintro ⟨w, hw, hwv⟩
   exact hφ.injective hwv ▸ hw
 
-/-- The complement of the thickening is the image of the closed disc bundle of radius `1/2`, so the
-thickening is open. -/
+/-- The complement of the thickening is the image of the closed set of vectors of gauge at most
+`1/2`, so the thickening is open. -/
 private lemma isOpen_thickening (hρ : Continuous ρ) (hφ : IsClosedEmbedding φ)
     (hφX : ∀ v : gaugeDiscBundle ρ, φ v ∈ X → (v : TotalSpace F E) ∈ gaugeSphereBundle ρ)
     (hcover : X ∪ range φ = univ) : IsOpen (thickening (X := X) φ) := by
@@ -150,30 +150,32 @@ private lemma collarScale_le_three (t : I) (x : ℝ) : collarScale t x ≤ 3 := 
   nlinarith [t.2.1, t.2.2]
 
 private lemma collarScale_one (t : I) : collarScale t 1 = 1 := by
-  rw [collarScale, div_one, min_eq_right (by norm_num)]
-  ring
+  norm_num [collarScale]
 
 /-- On a nonnegative real number, the radial push multiplies by the collar scale. -/
 private lemma radialPush_eq_collarScale_mul (t : I) {x : ℝ} (hx : 0 ≤ x) :
     radialPush (2⁻¹ : ℝ) t x = collarScale t x * x := by
   rw [radialPush_eq_smul, smul_eq_mul, Real.norm_of_nonneg hx, collarScale]
 
+/-- The radial push keeps nonnegative real numbers nonnegative. -/
+private lemma radialPush_nonneg (t : I) {x : ℝ} (hx : 0 ≤ x) : 0 ≤ radialPush (2⁻¹ : ℝ) t x := by
+  rw [radialPush_eq_collarScale_mul t hx]
+  exact mul_nonneg (collarScale_nonneg t hx) hx
+
 /-- The radial push stays in `[x, 1]` from a point `x` of `[0, 1]`. -/
 private lemma le_radialPush_le_one (t : I) {x : ℝ} (hx : 0 ≤ x) (hx1 : x ≤ 1) :
     x ≤ radialPush (2⁻¹ : ℝ) t x ∧ radialPush (2⁻¹ : ℝ) t x ≤ 1 := by
   have hx1' : ‖x‖ ≤ 1 := by rwa [Real.norm_of_nonneg hx]
   have h := norm_le_norm_radialPush (r := 2⁻¹) (by norm_num) (by norm_num) t hx1'
-  rw [Real.norm_of_nonneg hx, Real.norm_of_nonneg (by
-    rw [radialPush_eq_collarScale_mul t hx]; exact mul_nonneg (collarScale_nonneg t hx) hx)] at h
+  rw [Real.norm_of_nonneg hx, Real.norm_of_nonneg (radialPush_nonneg t hx)] at h
   exact ⟨h, (Real.le_norm_self _).trans (norm_radialPush_le_one (r := 2⁻¹) t hx1')⟩
 
 /-- At time one, the radial push sends `[1/2, ∞)` to `1`. -/
 private lemma radialPush_one_eq_one {x : ℝ} (hx : 2⁻¹ ≤ x) : radialPush (2⁻¹ : ℝ) 1 x = 1 := by
   have hx0 : 0 ≤ x := le_trans (by norm_num) hx
-  rw [← norm_radialPush_one (r := 2⁻¹) (y := x) (by norm_num)
-      (by rw [Real.norm_of_nonneg hx0]; exact hx),
-    Real.norm_of_nonneg (by
-      rw [radialPush_eq_collarScale_mul 1 hx0]; exact mul_nonneg (collarScale_nonneg 1 hx0) hx0)]
+  have h := norm_radialPush_one (r := 2⁻¹) (y := x) (by norm_num)
+    (by rwa [Real.norm_of_nonneg hx0])
+  rwa [Real.norm_of_nonneg (radialPush_nonneg 1 hx0)] at h
 
 variable [TopologicalSpace B] [NormedAddCommGroup F] [NormedSpace ℝ F] [∀ b, AddCommGroup (E b)]
   [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
@@ -234,7 +236,7 @@ private lemma discCollar_of_mem_gaugeSphereBundle (t : I) {v : gaugeDiscBundle �
 /-- At time zero the collar deformation is the identity. -/
 private lemma discCollar_zero (v : gaugeDiscBundle ρ) : discCollar hρ (0, v) = v := by
   apply Subtype.ext
-  rw [coe_discCollar, collarScale, Set.Icc.coe_zero, sub_zero, zero_mul, add_zero, one_smul]
+  simp [coe_discCollar, collarScale]
 
 /-- The collar deformation of the disc bundle as a homotopy from the identity. -/
 private def discCollarHomotopy :
@@ -249,7 +251,7 @@ private lemma discCollarHomotopy_apply (p : I × gaugeDiscBundle ρ) :
 
 /-- The collar deformation of the disc bundle, transported to its image in `Z` and extended by the
 identity of `X`: the gluing of the projection `I × X → Z` and `φ ∘ discCollar` along the closed
-embeddings of `I × X` and `I × D(E)` into `I × Z`. -/
+embeddings of `I × X` and `I × D_ρ(E)` into `I × Z`. -/
 private def attachCollar (hφ : IsClosedEmbedding φ) (hX : IsClosed X)
     (hφX : ∀ v : gaugeDiscBundle ρ, φ v ∈ X → (v : TotalSpace F E) ∈ gaugeSphereBundle ρ)
     (hcover : X ∪ range φ = univ) : C(I × Z, Z) :=
@@ -352,7 +354,7 @@ private def subsetToThickening :
       TopPair.ofSubset (X := TopCat.of Z) (thickening (X := X) φ) :=
   TopPair.ofSubsetMap (𝟙 _) fun _ hz ↦ Or.inl hz
 
-/-- The map `(D(E), D½) ⟶ (Z, N)` induced by the attachment. -/
+/-- The map `(D_ρ(E), D½) ⟶ (Z, N)` induced by the attachment. -/
 private def outerCollarToThickening :
     TopPair.ofSubset (X := TopCat.of (gaugeDiscBundle ρ)) (outerCollar ρ) ⟶
       TopPair.ofSubset (X := TopCat.of Z) (thickening (X := X) φ) :=
@@ -378,8 +380,8 @@ private abbrev discSpherePairIso :
   TopPair.ofSubsetPreimageValIso (X := TopCat.of (TotalSpace F E))
     (gaugeSphereBundle_subset_gaugeDiscBundle ρ)
 
-/-- The comparison square: `(D(E), S(E)) ⟶ (Z, X) ⟶ (Z, N)` agrees with
-`(D(E), S(E)) ⟶ (D(E), D½) ⟶ (Z, N)`. -/
+/-- The comparison square: `(D_ρ(E), S_ρ(E)) ⟶ (Z, X) ⟶ (Z, N)` agrees with
+`(D_ρ(E), S_ρ(E)) ⟶ (D_ρ(E), D½) ⟶ (Z, N)`. -/
 private lemma comp_subsetToThickening_eq
     {f : gaugeDiscSpherePair ρ ⟶ TopPair.ofSubset (X := TopCat.of Z) X}
     (hfφ : TopPair.Hom.fst f = TopCat.ofHom φ) :
@@ -390,7 +392,7 @@ private lemma comp_subsetToThickening_eq
     TopCat.ext fun x ↦ TopPair.ofSubsetPreimageValIso_inv_fst_apply x
   rw [TopPair.Hom.fst_comp, TopPair.Hom.fst_comp, TopPair.Hom.fst_comp, hfφ, hinv,
     fst_outerCollarToThickening, fst_subsetToThickening, fst_sphereToOuterCollar]
-  -- The identities are those of `TopCat.of Z` and `TopCat.of D(E)`, which `Category.comp_id` does
+  -- The identities are those of `TopCat.of Z` and `TopCat.of D_ρ(E)`, which `Category.comp_id` does
   -- not recognise through the ambient spaces of the pairs; both sides unfold to `TopCat.ofHom φ`.
   rfl
 

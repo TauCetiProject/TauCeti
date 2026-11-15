@@ -93,6 +93,18 @@ theorem mem_gaugeSphereBundle {ρ : TotalSpace F E → ℝ} {v : TotalSpace F E}
     v ∈ gaugeSphereBundle ρ ↔ ρ v = 1 :=
   Iff.rfl
 
+/-- The disc bundle of the square root of a function `q` is `{q ≤ 1}`. -/
+theorem gaugeDiscBundle_sqrt (q : TotalSpace F E → ℝ) :
+    gaugeDiscBundle (fun v ↦ √(q v)) = {v | q v ≤ 1} := by
+  ext v
+  exact Real.sqrt_le_one
+
+/-- The sphere bundle of the square root of a function `q` is `{q = 1}`. -/
+theorem gaugeSphereBundle_sqrt (q : TotalSpace F E → ℝ) :
+    gaugeSphereBundle (fun v ↦ √(q v)) = {v | q v = 1} := by
+  ext v
+  exact Real.sqrt_eq_one
+
 /-- The sphere bundle of a gauge lies in its disc bundle. -/
 theorem gaugeSphereBundle_subset_gaugeDiscBundle (ρ : TotalSpace F E → ℝ) :
     gaugeSphereBundle ρ ⊆ gaugeDiscBundle ρ :=
@@ -109,6 +121,16 @@ def discBundle : Set (TotalSpace F E) :=
 sphere bundle of the fibre norm. -/
 def sphereBundle : Set (TotalSpace F E) :=
   gaugeSphereBundle fun v : TotalSpace F E ↦ ‖v.2‖
+
+variable {F E} in
+/-- The unit disc bundle is the disc bundle of the fibre norm. -/
+theorem discBundle_def : discBundle F E = gaugeDiscBundle fun v : TotalSpace F E ↦ ‖v.2‖ :=
+  (rfl)
+
+variable {F E} in
+/-- The unit sphere bundle is the sphere bundle of the fibre norm. -/
+theorem sphereBundle_def : sphereBundle F E = gaugeSphereBundle fun v : TotalSpace F E ↦ ‖v.2‖ :=
+  (rfl)
 
 variable {F E} in
 @[simp]
@@ -152,7 +174,8 @@ include hρ
 /-- A fibre gauge vanishes on the zero section. -/
 theorem eq_zero_of_snd_eq_zero {v : TotalSpace F E} (hv : v.2 = 0) : ρ v = 0 := by
   have h := hρ.smul_of_nonneg le_rfl v
-  rwa [zero_smul, zero_mul, ← hv] at h
+  rw [zero_smul, zero_mul, ← hv, TotalSpace.mk', TotalSpace.eta] at h
+  exact h
 
 /-- A fibre gauge is nonnegative. -/
 theorem nonneg (v : TotalSpace F E) : 0 ≤ ρ v := by
@@ -195,7 +218,8 @@ theorem gaugeDiscSpherePairMap_snd_apply (v : gaugeSphereBundle ρ) :
 /-- The square root of a continuous function `q` on the total space which is positively homogeneous
 of degree two on each fibre and positive off the zero section is a fibre gauge. For instance `q`
 may be `v ↦ Q_b(v, v)` for a continuous family of positive definite quadratic forms `Q_b` on the
-fibres; the disc bundle of `√q` is then `{q ≤ 1}` (`Real.sqrt_le_one`). -/
+fibres. The disc and sphere bundles of `√q` are `{q ≤ 1}` and `{q = 1}`
+(`TauCeti.gaugeDiscBundle_sqrt`, `TauCeti.gaugeSphereBundle_sqrt`). -/
 theorem isFiberGauge_sqrt {q : TotalSpace F E → ℝ} (hq : Continuous q)
     (hsmul : ∀ {t : ℝ}, 0 ≤ t → ∀ v : TotalSpace F E,
       q (TotalSpace.mk' F v.proj (t • v.2)) = t ^ 2 * q v)
