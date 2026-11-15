@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Differential
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Elliptic
 import TauCeti.Analysis.Distribution.TemperedDistribution.Cutoff
+import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 import TauCeti.Analysis.Pseudodifferential.EllipticRegularity
 
@@ -44,14 +45,9 @@ The distribution `T` is only assumed to be a distribution: it has some finite So
 `x₀`, and no a priori regularity is required. The statements are on open subsets of
 `ℝⁿ = CoordinateSpace n`, where the symbol calculus lives.
 
-Two facts about classical symbols of differential operators are proved on the way:
-
-* `TauCeti.ClassicalSymbol.isElliptic_ofDifferentialSymbol_smul_id_iff`: a scalar differential
-  operator is elliptic as a classical symbol exactly when its principal symbol with coefficients
-  frozen at each position vanishes at no `ξ ≠ 0`;
-* `TauCeti.ClassicalSymbol.IsElliptic.exists_isEllipticAbove_of_forall_exists_mem`: an elliptic
-  classical symbol whose dependence on the position only takes the values it takes on a compact
-  set is elliptic above some radius, uniformly in the position.
+On the way, `TauCeti.ClassicalSymbol.isElliptic_ofDifferentialSymbol_smul_id_iff` shows that a
+scalar differential operator is elliptic as a classical symbol exactly when its principal symbol
+with coefficients frozen at each position vanishes at no `ξ ≠ 0`.
 
 ## The argument
 
@@ -73,7 +69,8 @@ small ball around `x₀`.
   `θ` equal to `1` near `x₀`. Ellipticity is open in the coefficients
   (`TauCeti.exists_pos_forall_constCoeffPrincipalSymbol_ne_zero`), so for a small enough ball the
   principal symbol of `p` vanishes at no `(x, ξ)` with `ξ ≠ 0`; since the coefficients of `p` only
-  take the values they take on a compact set, `p` is elliptic above some radius.
+  take the values they take on a compact set, `p` is elliptic above some radius
+  (`TauCeti.ClassicalSymbol.IsElliptic.exists_isUniformlyEllipticAbove_of_forall_exists_mem`).
 * Interior regularity then gives `φ u = φ T ∈ H^(s + N)`.
 
 ## References
@@ -130,45 +127,11 @@ theorem isElliptic_ofDifferentialSymbol_smul_id_iff {d : ι → CoordinateSpace 
       (mul_ne_zero (pow_ne_zero _ Complex.I_ne_zero) h)]
     exact hid
 
-/-- **Ellipticity above a radius.** An elliptic classical symbol whose full symbol takes, at every
-position, the values it takes at some position of a fixed compact set `K` is elliptic above some
-radius `R`, with the bound `‖a(x, ξ)⁻¹‖ ≤ C ⟨ξ⟩^(-m)` uniform in the position. This is the case for
-a differential operator whose coefficients are constant outside `K`. -/
-theorem IsElliptic.exists_isEllipticAbove_of_forall_exists_mem {V W : Type*}
-    [NormedAddCommGroup V] [NormedSpace ℂ V] [CompleteSpace V] [NormedAddCommGroup W]
-    [NormedSpace ℂ W] {r : ℝ} {a : ClassicalSymbol n V W r} (ha : a.IsElliptic)
-    {K : Set (CoordinateSpace n)} (hK : IsCompact K)
-    (h : ∀ x, ∃ y ∈ K, ∀ ξ, a.toSymbol.coefficient (x, ξ) = a.toSymbol.coefficient (y, ξ)) :
-    ∃ R, a.toSymbol.IsEllipticAbove R := by
-  obtain ⟨R, C, hRC⟩ := ha.exists_isInvertible_and_norm_inverse_le hK
-  refine ⟨R, Symbol.isEllipticAbove_iff.2 fun _ _ ↦ ⟨C, fun x _ ξ hξ ↦ ?_⟩⟩
-  obtain ⟨y, hy, hxy⟩ := h x
-  rw [hxy ξ]
-  exact hRC y hy ξ hξ
-
 end TauCeti.ClassicalSymbol
 
 namespace Distribution
 
 variable {n : ℕ} {Ω : Opens (CoordinateSpace n)}
-
-/-- A smooth bump function around `x₀`, as a complex test function on `Ω`. -/
-private def bumpTestFunction {x₀ : CoordinateSpace n} (b : ContDiffBump x₀)
-    (hb : closedBall x₀ b.rOut ⊆ Ω) : 𝓓(Ω, ℂ) where
-  toFun x := (b x : ℂ)
-  contDiff' := ofRealCLM.contDiff.comp b.contDiff
-  hasCompactSupport' := b.hasCompactSupport.comp_left ofReal_zero
-  tsupport_subset' := (tsupport_comp_subset ofReal_zero _).trans (b.tsupport_eq.trans_subset hb)
-
-private theorem bumpTestFunction_apply {x₀ : CoordinateSpace n} (b : ContDiffBump x₀)
-    (hb : closedBall x₀ b.rOut ⊆ Ω) (x : CoordinateSpace n) :
-    bumpTestFunction b hb x = (b x : ℂ) :=
-  rfl
-
-private theorem tsupport_bumpTestFunction_subset {x₀ : CoordinateSpace n} (b : ContDiffBump x₀)
-    (hb : closedBall x₀ b.rOut ⊆ Ω) :
-    tsupport (bumpTestFunction b hb) ⊆ closedBall x₀ b.rOut :=
-  (tsupport_comp_subset ofReal_zero _).trans b.tsupport_eq.subset
 
 /-- Interpolating between the coefficients `c i g i` and their values at `x₀` with a weight
 `θ x ∈ [0, 1]` moves them by at most `ε` times the size of the operator, when the coefficients are
@@ -239,7 +202,7 @@ private theorem exists_isEllipticAbove_eventually_coefficient_eq {ι : Type*} {t
           (θ.support_eq ▸ hx : x ∈ ball x₀ (ρ / 2))) i hi).le).trans_lt hεA) ξ hξ
   -- Outside `closedBall x₀ (ρ / 2)` the symbol of `p` is its symbol at `x₀`.
   have hθx₀ : θ x₀ = 1 := θ.one_of_mem_closedBall (mem_closedBall_self (by positivity))
-  obtain ⟨R, hR⟩ := hpell.exists_isEllipticAbove_of_forall_exists_mem
+  obtain ⟨R, hR⟩ := hpell.exists_isUniformlyEllipticAbove_of_forall_exists_mem
     (isCompact_closedBall x₀ (ρ / 2)) fun x ↦ by
       by_cases hx : x ∈ closedBall x₀ (ρ / 2)
       · exact ⟨x, hx, fun _ ↦ rfl⟩
@@ -248,7 +211,7 @@ private theorem exists_isEllipticAbove_eventually_coefficient_eq {ι : Type*} {t
         simp only [p, ClassicalSymbol.coefficient_toSymbol_ofDifferentialSymbol,
           differentialSymbol_def]
         exact Finset.sum_congr rfl fun i _ ↦ by simp [d, hθx, hθx₀]
-  refine ⟨p.toSymbol, R, hR, ?_⟩
+  refine ⟨p.toSymbol, R, hR.isEllipticAbove, ?_⟩
   -- Near `x₀` the bump is `1`, and the frozen coefficients are the original ones.
   filter_upwards [Metric.ball_mem_nhds x₀ (by positivity : 0 < ρ / 3)] with x hx ξ
   have hθx : θ x = 1 := θ.one_of_mem_closedBall (ball_subset_closedBall hx)
@@ -291,7 +254,7 @@ private theorem exists_toDistr_quantizeSobolev_eq_cutoffTempered (T : 𝓓'(Ω, 
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   have hψi : EqOn (ψ : CoordinateSpace n → ℂ) 1 (tsupport (χg i)) :=
     hψ.mono ((TestFunction.tsupport_smulLeftCLM_subset _ _).trans inter_subset_right)
-  have hβi : β i = c i • (χg i : CoordinateSpace n → ℂ) := rfl
+  have hβi : β i = c i • (χg i : CoordinateSpace n → ℂ) := funext fun x ↦ by simp [β]
   rw [cutoffTempered_smul, cutoffTempered_smulLeftCLM,
     ← smulLeftCLM_iteratedLineDerivOp_cutoffTempered T hψi, hβi,
     TemperedDistribution.smulLeftCLM_smul
@@ -310,55 +273,54 @@ theorem IsLocallySobolevAt.of_sum_smul_smulLeftCLM_iteratedLineDerivOp {T : 𝓓
     T.IsLocallySobolevAt (s + N) x₀ := by
   obtain ⟨U, hU, hPU⟩ := hP.exists_nhds_forall_memSobolev_cutoffTempered
   obtain ⟨p, R, hp, hpP⟩ := exists_isEllipticAbove_eventually_coefficient_eq hg hk hell
-  -- A radius `r` such that `closedBall x₀ (3 r)` lies in `Ω` and in `U`, and on which `p` is the
-  -- symbol of `P`.
+  -- A radius `ρ` such that `ball x₀ ρ` lies in `Ω` and in `U`, and on which `p` is the symbol of
+  -- `P`.
   have hΩ : ∀ᶠ x in 𝓝 x₀, x ∈ Ω := Ω.isOpen.mem_nhds hP.mem
   have hU' : ∀ᶠ x in 𝓝 x₀, x ∈ U := hU
   obtain ⟨ρ, hρ, hρG⟩ := Metric.eventually_nhds_iff_ball.1 (hΩ.and (hU'.and hpP))
-  have hball : closedBall x₀ (ρ / 2) ⊆ ball x₀ ρ := closedBall_subset_ball (by linarith)
-  -- The cutoffs: `φ` around `x₀`, `χ = 1` near `tsupport φ` and `ψ = 1` near `tsupport χ`.
-  let b₁ : ContDiffBump x₀ := ⟨ρ / 8, ρ / 6, by positivity, by linarith⟩
-  let b₂ : ContDiffBump x₀ := ⟨ρ / 5, ρ / 4, by positivity, by linarith⟩
-  let b₃ : ContDiffBump x₀ := ⟨ρ / 3, ρ / 2, by positivity, by linarith⟩
-  have hsub (b : ContDiffBump x₀) (hb : b.rOut ≤ ρ / 2) : closedBall x₀ b.rOut ⊆ Ω :=
-    fun x hx ↦ (hρG x (hball (closedBall_subset_closedBall hb hx))).1
-  set φ := bumpTestFunction b₁ (hsub b₁ (by simp only [b₁]; linarith))
-  set χ := bumpTestFunction b₂ (hsub b₂ (by simp only [b₂]; linarith))
-  set ψ := bumpTestFunction b₃ (hsub b₃ le_rfl)
-  have hφ : tsupport φ ⊆ closedBall x₀ (ρ / 6) := tsupport_bumpTestFunction_subset b₁ _
-  have hχ : tsupport χ ⊆ closedBall x₀ (ρ / 4) := tsupport_bumpTestFunction_subset b₂ _
-  have hψ : EqOn (ψ : CoordinateSpace n → ℂ) 1 (closedBall x₀ (ρ / 3)) := fun x hx ↦ by
-    simp [ψ, bumpTestFunction_apply, b₃.one_of_mem_closedBall hx]
-  have hψχ : EqOn (ψ : CoordinateSpace n → ℂ) 1 (tsupport χ) :=
-    hψ.mono (hχ.trans (closedBall_subset_closedBall (by linarith)))
-  obtain ⟨a, ha, haP, hOp⟩ := exists_toDistr_quantizeSobolev_eq_cutoffTempered T c hg m hk hψχ
+  have hρΩ : ball x₀ ρ ⊆ Ω := fun x hx ↦ (hρG x hx).1
+  -- Real cutoffs in `ball x₀ ρ`: `φ'` around `x₀`, `χ' = 1` near `tsupport φ'` and `ψ' = 1` near
+  -- `tsupport χ'`, and their complex versions `φ`, `χ` and `ψ`.
+  obtain ⟨φ', -, hφ1, hφ⟩ := TestFunction.exists_cutoff_tsupport_subset (n := ⊤)
+    (isCompact_singleton (x := x₀))
+    isOpen_ball (singleton_subset_iff.2 (mem_ball_self hρ)) hρΩ
+  obtain ⟨χ', -, hχ1, hχ⟩ :=
+    TestFunction.exists_cutoff_tsupport_subset (n := ⊤) φ'.hasCompactSupport isOpen_ball hφ hρΩ
+  obtain ⟨ψ', -, hψ1, -⟩ :=
+    TestFunction.exists_cutoff_tsupport_subset (n := ⊤) χ'.hasCompactSupport isOpen_ball hχ hρΩ
+  let φ : 𝓓(Ω, ℂ) := TestFunction.postcompCLM (𝕜 := ℝ) ofRealCLM φ'
+  let χ : 𝓓(Ω, ℂ) := TestFunction.postcompCLM (𝕜 := ℝ) ofRealCLM χ'
+  let ψ : 𝓓(Ω, ℂ) := TestFunction.postcompCLM (𝕜 := ℝ) ofRealCLM ψ'
+  have hts (θ : 𝓓(Ω, ℝ)) :
+      tsupport (TestFunction.postcompCLM (𝕜 := ℝ) ofRealCLM θ) ⊆ tsupport θ :=
+    tsupport_comp_subset (g := ofRealCLM) (by simp) θ
+  have hφχ : tsupport φ' ⊆ tsupport χ' := fun x hx ↦
+    subset_tsupport _ (by simp [hχ1.self_of_nhdsSet x hx])
+  have hψ : EqOn (ψ : CoordinateSpace n → ℂ) 1 (tsupport χ') := fun x hx ↦ by
+    simp [ψ, hψ1.self_of_nhdsSet x hx]
+  obtain ⟨a, ha, haP, hOp⟩ :=
+    exists_toDistr_quantizeSobolev_eq_cutoffTempered T c hg m hk (hψ.mono (hts χ'))
   -- Near `tsupport φ`, `χ = 1` and `a` agrees with `p`.
   have hap : ∀ᶠ x in 𝓝ˢ (tsupport φ), ∀ ξ, a.coefficient (x, ξ) = p.coefficient (x, ξ) := by
-    refine Filter.mem_of_superset (isOpen_ball.mem_nhdsSet.2
-      (hφ.trans (closedBall_subset_ball (by linarith : ρ / 6 < ρ / 5)))) fun x hx ξ ↦ ?_
-    have hχx : χ x = 1 := by
-      simp [χ, bumpTestFunction_apply, b₂.one_of_mem_closedBall (ball_subset_closedBall hx)]
-    rw [haP, (hρG x (ball_subset_ball (by linarith) hx)).2.2 ξ]
-    simp only [differentialSymbol_def, hχx, mul_one]
+    filter_upwards [nhdsSet_mono (hts φ') (hχ1.and (isOpen_ball.mem_nhdsSet.2 hφ))]
+      with x ⟨hχx, hx⟩ ξ
+    rw [haP, (hρG x hx).2.2 ξ]
+    simp [differentialSymbol_def, hχx]
   -- The cut-off distribution `u = ψ T` lies in some `H^t₀`, and `Op(a) u = χ P T` lies in `H^s`.
   obtain ⟨t₀, ht₀⟩ := T.exists_memSobolev_cutoffTempered ψ
   have hmem : (a.quantizeSobolev ha t₀ ht₀.toBesselPotentialSpace).toDistr.MemSobolev
       (s + N - N) 2 := by
     rw [hOp t₀ _ ht₀.toBesselPotentialSpace_toDistr, add_sub_cancel_right]
-    exact hPU χ (hχ.trans fun x hx ↦ (hρG x (hball (closedBall_subset_closedBall
-      (by linarith) hx))).2.1)
+    exact hPU χ ((hts χ').trans (hχ.trans fun x hx ↦ (hρG x hx).2.1))
   -- Interior elliptic regularity: `φ u ∈ H^(s + N)`, and `φ u = φ T`.
   have hreg := hp.memSobolev_smulLeftCLM ha (φ := φ.hasCompactSupport.toSchwartzMap φ.contDiff)
     φ.hasCompactSupport hap hmem
-  have hφψ := smulLeftCLM_iteratedLineDerivOp_cutoffTempered T (φ := φ) (ψ := ψ)
-    (hψ.mono (hφ.trans (closedBall_subset_closedBall (by linarith)))) Fin.elim0
-  rw [iteratedLineDerivOp_fin_zero, iteratedLineDerivOp_fin_zero] at hφψ
+  have hφψ := smulLeftCLM_cutoffTempered_of_eqOn_one T (hψ.mono ((hts φ').trans hφχ))
   rw [BesselPotentialSpace.toDistr_smulLeftCLM,
     TemperedDistribution.MemSobolev.toBesselPotentialSpace_toDistr,
     funext (HasCompactSupport.toSchwartzMap_toFun φ.hasCompactSupport φ.contDiff), hφψ] at hreg
   exact isLocallySobolevAt_iff_exists_memSobolev_cutoffTempered.2
-    ⟨φ, by simp [φ, bumpTestFunction_apply, b₁.one_of_mem_closedBall
-      (mem_closedBall_self (by positivity))], hreg⟩
+    ⟨φ, by simp [φ, hφ1.self_of_nhdsSet x₀ rfl], hreg⟩
 
 /-- **Elliptic operators shift local Sobolev regularity by exactly their order.** At a point where
 the differential operator `P = ∑ i ∈ t, c i g i ∂^(m i)` of order at most `N` is elliptic, `P T` is

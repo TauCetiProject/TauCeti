@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 public import Mathlib.LinearAlgebra.Isomorphisms
 public import TauCeti.Analysis.Pseudodifferential.Elliptic
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Elliptic
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Homogeneous
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Pseudodifferential.Symbol.HighFrequency
@@ -86,7 +87,11 @@ and proves:
   source space is elliptic exactly when, on every compact set of positions, its full symbol
   `a(x, ξ)` is invertible at all large frequencies with `‖a(x, ξ)⁻¹‖ ≤ C ⟨ξ⟩^(-m)`. This bound is
   what the derivative estimates of the inverse symbol, and the parametrix built from it, start
-  from. The radius beyond which `a(x, ξ)` is invertible depends on the compact set in general.
+  from. The radius beyond which `a(x, ξ)` is invertible depends on the compact set in general;
+  when the full symbol only takes the values it takes on a compact set of positions, as for a
+  differential operator whose coefficients are constant outside it, the symbol is uniformly
+  elliptic above some radius
+  (`TauCeti.ClassicalSymbol.IsElliptic.exists_isUniformlyEllipticAbove_of_forall_exists_mem`).
   Ellipticity does not see terms of order `m - 1`
   (`TauCeti.ClassicalSymbol.isElliptic_add_iff`), and the inverse of the principal symbol is the
   unique homogeneous symbol of degree `-m` inverting it at every nonzero frequency
@@ -1136,6 +1141,21 @@ theorem IsElliptic.exists_isInvertible_and_norm_inverse_le {a : ClassicalSymbol 
   exact isInvertible_and_norm_inverse_le_of_norm_sub_le
     (isElliptic_iff.1 ha x ξ (norm_pos_iff.1 (by linarith))) (by positivity) (le_max_right _ _) hξ
     hM (hC₁ x hx ξ h2)
+
+/-- **Uniform ellipticity above a radius.** An elliptic classical symbol whose full symbol takes, at
+every position, the values it takes at some position of a fixed compact set `K` is uniformly
+elliptic above some radius `R`: `‖a(x, ξ)⁻¹‖ ≤ C ⟨ξ⟩^(-m)` with one constant `C` for all positions.
+This is the case for a differential operator whose coefficients are constant outside `K`. -/
+theorem IsElliptic.exists_isUniformlyEllipticAbove_of_forall_exists_mem
+    {a : ClassicalSymbol n V W m} (ha : a.IsElliptic) {K : Set (CoordinateSpace n)}
+    (hK : IsCompact K)
+    (h : ∀ x, ∃ y ∈ K, ∀ ξ, a.toSymbol.coefficient (x, ξ) = a.toSymbol.coefficient (y, ξ)) :
+    ∃ R, a.toSymbol.IsUniformlyEllipticAbove R := by
+  obtain ⟨R, C, hRC⟩ := ha.exists_isInvertible_and_norm_inverse_le hK
+  refine ⟨R, Symbol.isUniformlyEllipticAbove_iff.2 ⟨C, fun x ξ hξ ↦ ?_⟩⟩
+  obtain ⟨y, hy, hxy⟩ := h x
+  rw [hxy ξ]
+  exact hRC y hy ξ hξ
 
 /-- **Ellipticity from invertibility at large frequencies.** If at every position `x` the full
 symbol `a(x, ξ)` is invertible at all frequencies of norm at least some `R`, with

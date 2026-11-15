@@ -44,6 +44,8 @@ only depends on the cutoff near the support of `T`.
 * `Distribution.smulLeftCLM_iteratedLineDerivOp_cutoffTempered`: if `ψ = 1` on the support of `φ`,
   then `φ ∂^m (ψ T) = φ ∂^m T`. This is how a differential operator applied to the tempered
   distribution `ψ T` is compared with the cut-off of the differential operator applied to `T`.
+* `Distribution.smulLeftCLM_cutoffTempered_of_eqOn_one`: if `ψ = 1` on the support of `φ`, then
+  `φ (ψ T) = φ T`.
 
 ## References
 
@@ -231,6 +233,14 @@ theorem smulLeftCLM_iteratedLineDerivOp_cutoffTempered (T : 𝓓'(Ω, ℂ)) {φ 
       (TestFunction.tsupport_iteratedLineDerivOp_subset χ _).trans
         (by simpa [χ] using tsupport_mul_subset_left (f := (φ : E → ℂ)) (g := fun x ↦ f x)) hxD
     rw [image_eq_zero_of_notMem_tsupport hD0, mul_zero]
+
+/-- **Localizing a cut-off distribution.** If `ψ = 1` on the support of `φ`, then multiplying the
+tempered distribution `ψ T` by `φ` gives the cut-off `φ T`. -/
+theorem smulLeftCLM_cutoffTempered_of_eqOn_one (T : 𝓓'(Ω, ℂ)) {φ ψ : 𝓓(Ω, ℂ)}
+    (h : EqOn (ψ : E → ℂ) 1 (tsupport φ)) :
+    TemperedDistribution.smulLeftCLM ℂ φ (T.cutoffTempered ψ) = T.cutoffTempered φ := by
+  simpa only [iteratedLineDerivOp_fin_zero] using
+    smulLeftCLM_iteratedLineDerivOp_cutoffTempered T h Fin.elim0
 
 end Cutoff
 
