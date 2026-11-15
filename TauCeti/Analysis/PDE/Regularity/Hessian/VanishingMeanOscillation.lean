@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Matrix.Contraction
 public import TauCeti.Analysis.PDE.Regularity.Hessian.MeanOscillation
 public import TauCeti.MeasureTheory.Function.BoundedMeanOscillation
 import TauCeti.Analysis.PDE.Ellipticity.Average
+import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.Bochner.Set
@@ -685,20 +686,14 @@ theorem exists_eLpNorm_iteratedGradient_le_of_sum_mul_inner_eq_of_vmoModulus_le 
     refine key.trans_eq ?_
     simp only [K₁, K₂, K₃, c₃, t']
     ring
-  have hhalf : 2⁻¹ * I + 2⁻¹ * I ≤ 2⁻¹ * I + K₂ * J := by
-    rw [← add_mul, ENNReal.inv_two_add_inv_two, one_mul]
-    refine hsplit.trans ?_
-    calc K₁ * ENNReal.ofReal (decayConst n lam Lam / κ ^ 2 * 2 ^ (n + 1)) ^ (q / 2) * I +
-          K₂ * J + K₃ * ENNReal.ofReal (c₃ γ) ^ (q / 2) * I
-        ≤ 2⁻¹ / 2 * I + K₂ * J + 2⁻¹ / 2 * I := by gcongr
-      _ = 2⁻¹ * I + K₂ * J := by
-        rw [add_right_comm, ← add_mul, ENNReal.add_halves]
-  calc I = 2 * (2⁻¹ * I) := by
-        rw [← mul_assoc, ENNReal.mul_inv_cancel two_ne_zero ENNReal.ofNat_ne_top, one_mul]
-    _ ≤ 2 * (K₂ * J) := by
-        gcongr 2 * ?_
-        exact ENNReal.le_of_add_le_add_left (a := 2⁻¹ * I) (ENNReal.mul_ne_top (by simp) hI) hhalf
-    _ = 2 * K₂ * J := (mul_assoc _ _ _).symm
+  refine (ENNReal.le_mul_two_of_le_add_div_two hI ?_).trans_eq (mul_comm _ _ |>.trans
+    (mul_assoc _ _ _).symm)
+  refine hsplit.trans ?_
+  calc K₁ * ENNReal.ofReal (decayConst n lam Lam / κ ^ 2 * 2 ^ (n + 1)) ^ (q / 2) * I +
+        K₂ * J + K₃ * ENNReal.ofReal (c₃ γ) ^ (q / 2) * I
+      ≤ 2⁻¹ / 2 * I + K₂ * J + 2⁻¹ / 2 * I := by gcongr
+    _ = K₂ * J + I / 2 := by
+      rw [add_right_comm, ← add_mul, ENNReal.add_halves, add_comm, ENNReal.div_eq_inv_mul]
 
 end PDE
 

@@ -172,10 +172,9 @@ enough to be absorbed. -/
 theorem eventually_mul_ofReal_rpow_lt {α : Type*} {l : Filter α} {g : α → ℝ}
     (hg : Filter.Tendsto g l (𝓝 0)) {K : ℝ≥0∞} (hK : K ≠ ∞) {e : ℝ} (he : 0 < e) {ε : ℝ≥0∞}
     (hε : 0 < ε) : ∀ᶠ x in l, K * ENNReal.ofReal (g x) ^ e < ε := by
-  have h := ENNReal.Tendsto.const_mul
-    (((ENNReal.continuous_rpow_const (y := e)).tendsto _).comp (ENNReal.tendsto_ofReal hg))
-    (Or.inr hK)
-  rw [ENNReal.ofReal_zero, ENNReal.zero_rpow_of_pos he, mul_zero] at h
-  exact h.eventually (gt_mem_nhds hε)
+  have hg' := ENNReal.tendsto_ofReal hg
+  rw [ENNReal.ofReal_zero] at hg'
+  exact ((ENNReal.tendsto_const_mul_rpow_nhds_zero_of_pos hK he).comp hg').eventually
+    (gt_mem_nhds hε)
 
 end TauCeti
