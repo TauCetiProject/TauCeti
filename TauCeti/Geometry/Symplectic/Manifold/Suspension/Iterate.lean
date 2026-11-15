@@ -42,11 +42,11 @@ No nondegeneracy of `σ` and no compactness of `M` are needed for the area formu
   fiber forms of `φ` back to those of `φ ^ k`, and `Ω` back to `ds ∧ k dt + σ_v`.
 * `TauCeti.SmoothMappingTorus.isSymplectic_smul_wedge_timeForm_add_fiberForm_iff`: for `k ≠ 0`,
   the form `ds ∧ k dt + σ_v` on `X_(φ^k)` is symplectic exactly when `σ` is.
-* `SmoothMappingTorus.integralTopForm_mpullback_prodMap_iterateMap_orbitTorus_suspensionForm`:
+* `SmoothMappingTorus.integralTopForm_mpullback_prodMap_iterateMap_comp_orbitTorus_suspensionForm`:
   the `Ω`-area of the image of an orbit torus of `φ ^ k` with period `d` is `k * d`.
   The underlying pullback of `Ω` is
   `SmoothMappingTorus.mpullback_prodMap_iterateMap_comp_orbitTorus_suspensionForm`.
-* `SmoothMappingTorus.integralTopForm_mpullback_prodMap_iterateMap_orbitTorus_fiberForm`:
+* `SmoothMappingTorus.integralTopForm_mpullback_prodMap_iterateMap_comp_orbitTorus_fiberForm`:
   its `σ_v`-area is zero.
 
 ## References
@@ -84,11 +84,8 @@ theorem mpullback_prodMap_iterateMap_mpullback_snd_fiberForm {F : Type*} [Normed
       SmoothForm.mpullback (I := 𝓘(ℝ).prod (𝓘(ℝ).prod I))
         (Prod.snd : UnitAddCircle × SmoothMappingTorus (φ ^ k) → SmoothMappingTorus (φ ^ k))
         contMDiff_snd (fiberForm (φ ^ k) τ (SmoothForm.mpullback_zpow_eq_self hτ k)) := by
-  rw [← mpullback_iterateMap_fiberForm φ k τ hτ, SmoothForm.mpullback_mpullback,
-    SmoothForm.mpullback_mpullback]
-  -- `Prod.snd ∘ Prod.map id (iterateMap φ k)` is `iterateMap φ k ∘ Prod.snd` by definition; the
-  -- smoothness proofs carried by `mpullback` agree by proof irrelevance.
-  rfl
+  rw [SmoothForm.mpullback_prodMap_mpullback_snd contMDiff_id (contMDiff_iterateMap φ k),
+    mpullback_iterateMap_fiberForm]
 
 /-- The map `(s, y) ↦ (s, iterateMap φ k y)` from `(ℝ / ℤ) × Y_(φ^k)` to `(ℝ / ℤ) × Y_φ` pulls the
 form `Ω = ds ∧ dt + σ_v` back to `ds ∧ k dt + σ_v`. The time form of `Y_φ` pulls back to `k` times
@@ -102,16 +99,11 @@ theorem mpullback_prodMap_iterateMap_suspensionForm :
         SmoothForm.mpullback Prod.snd contMDiff_snd
           (fiberForm (φ ^ k) σ (SmoothForm.mpullback_zpow_eq_self hσ k)) := by
   have hm := contMDiff_iterateMap φ k
-  have hsnd : Prod.snd ∘ Prod.map (id : UnitAddCircle → UnitAddCircle) (iterateMap φ k) =
-      iterateMap φ k ∘ Prod.snd :=
-    rfl
-  -- `Prod.fst ∘ Prod.map id (iterateMap φ k)` is `Prod.fst` by definition; the smoothness proofs
-  -- carried by `mpullback` agree by proof irrelevance.
   have hds : SmoothForm.mpullback (Prod.map id (iterateMap φ k)) (contMDiff_id.prodMap hm)
       (SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm 1)) =
         SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm 1) := by
-    rw [SmoothForm.mpullback_mpullback]
-    rfl
+    rw [SmoothForm.mpullback_prodMap_mpullback_fst contMDiff_id hm, SmoothForm.mpullback_id,
+      LinearMap.id_apply]
   have hdt : SmoothForm.mpullback (Prod.map id (iterateMap φ k)) (contMDiff_id.prodMap hm)
       (SmoothForm.mpullback (I := 𝓘(ℝ).prod (𝓘(ℝ).prod I))
         (Prod.snd : UnitAddCircle × SmoothMappingTorus φ → SmoothMappingTorus φ) contMDiff_snd
@@ -119,12 +111,8 @@ theorem mpullback_prodMap_iterateMap_suspensionForm :
         (k : ℝ) • SmoothForm.mpullback (I := 𝓘(ℝ).prod (𝓘(ℝ).prod I))
           (Prod.snd : UnitAddCircle × SmoothMappingTorus (φ ^ k) → SmoothMappingTorus (φ ^ k))
           contMDiff_snd (timeForm (φ ^ k)) := by
-    calc _ = SmoothForm.mpullback (I := 𝓘(ℝ).prod (𝓘(ℝ).prod I))
-          (Prod.snd : UnitAddCircle × SmoothMappingTorus (φ ^ k) → SmoothMappingTorus (φ ^ k))
-          contMDiff_snd (SmoothForm.mpullback (iterateMap φ k) hm (timeForm φ)) := by
-          rw [SmoothForm.mpullback_mpullback, SmoothForm.mpullback_mpullback]
-          simp only [hsnd]
-      _ = _ := by rw [mpullback_iterateMap_timeForm, map_smul]
+    rw [SmoothForm.mpullback_prodMap_mpullback_snd contMDiff_id hm, mpullback_iterateMap_timeForm,
+      map_smul]
   -- `rw [map_add]` is slow here: the wedge `ds ∧ dt` has degree `1 + 1`, while `Ω` has degree `2`.
   refine (congrArg _ suspensionForm_def).trans ((map_add _ _ _).trans (congrArg₂ (· + ·) ?_
     (mpullback_prodMap_iterateMap_mpullback_snd_fiberForm φ k σ hσ)))
@@ -134,8 +122,7 @@ theorem mpullback_prodMap_iterateMap_suspensionForm :
 
 /-- For a nonzero integer `k`, the form `ds ∧ k dt + σ_v` on `(ℝ / ℤ) × Y_(φ^k)` is symplectic
 exactly when `σ` is. It is the pullback of the suspension form `Ω` of `φ` along the surjective
-local diffeomorphism `(s, y) ↦ (s, iterateMap φ k y)`, which is therefore a symplectic covering
-onto `((ℝ / ℤ) × Y_φ, Ω)`. -/
+local diffeomorphism `(s, y) ↦ (s, iterateMap φ k y)`. -/
 theorem isSymplectic_smul_wedge_timeForm_add_fiberForm_iff (hk : k ≠ 0) :
     ((k : ℝ) • SmoothForm.wedge
           (SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm 1))
@@ -175,7 +162,7 @@ point `x` of positive period `d` for `φ ^ k`, the image of the orbit torus of `
 under `(s, y) ↦ (s, iterateMap φ k y)` has `Ω`-area `k * d`. It is the orbit torus of `φ` through
 `x`, of period `k.natAbs * d`, reparametrized by `[t] ↦ [k t]`, which reverses orientation exactly
 when `k` is negative. -/
-theorem integralTopForm_mpullback_prodMap_iterateMap_orbitTorus_suspensionForm :
+theorem integralTopForm_mpullback_prodMap_iterateMap_comp_orbitTorus_suspensionForm :
     integralTopForm ((AddCircle.orientation (1 : ℝ)).prod (AddCircle.orientation (d : ℝ)))
       (SmoothForm.mpullback (Prod.map id (iterateMap φ k) ∘ orbitTorus (φ ^ k) hx)
         ((contMDiff_id.prodMap (contMDiff_iterateMap φ k)).comp (contMDiff_orbitTorus hx))
@@ -185,7 +172,7 @@ theorem integralTopForm_mpullback_prodMap_iterateMap_orbitTorus_suspensionForm :
 
 /-- The fiber form `σ_v` of `φ` has zero area on the image of an orbit torus of `φ ^ k` under
 `(s, y) ↦ (s, iterateMap φ k y)`, for every orientation of the parameter torus. -/
-theorem integralTopForm_mpullback_prodMap_iterateMap_orbitTorus_fiberForm
+theorem integralTopForm_mpullback_prodMap_iterateMap_comp_orbitTorus_fiberForm
     (o : Manifold.Orientation (𝓘(ℝ).prod 𝓘(ℝ)) (UnitAddCircle × AddCircle (d : ℝ)) (Fin 2)) :
     integralTopForm o
       (SmoothForm.mpullback (Prod.map id (iterateMap φ k) ∘ orbitTorus (φ ^ k) hx)

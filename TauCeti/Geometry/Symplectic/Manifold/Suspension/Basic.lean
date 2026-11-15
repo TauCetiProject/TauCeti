@@ -318,35 +318,14 @@ theorem mpullback_prodMap_map_suspensionForm {E' : Type*} [NormedAddCommGroup E'
         (contMDiff_id.prodMap (contMDiff_map φ ψ g h hg)) (suspensionForm ψ τ hτ) =
       suspensionForm φ σ hσ := by
   have hm : ContMDiff (𝓘(ℝ).prod I) (𝓘(ℝ).prod J) ∞ (map φ ψ g h) := contMDiff_map φ ψ g h hg
-  have hfst : Prod.fst ∘ Prod.map id (map φ ψ g h) =
-      (Prod.fst : UnitAddCircle × SmoothMappingTorus φ → _) :=
-    rfl
-  have hsnd : Prod.snd ∘ Prod.map (id : UnitAddCircle → UnitAddCircle) (map φ ψ g h) =
-      map φ ψ g h ∘ Prod.snd :=
-    rfl
-  -- Pulling back along `Prod.map id (map φ ψ g h)` fixes the forms pulled back from the circle
-  -- factor, and pulls back along `map φ ψ g h` the forms pulled back from the mapping torus factor.
-  have hcircle : SmoothForm.mpullback (Prod.map id (map φ ψ g h)) (contMDiff_id.prodMap hm)
-      (SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm 1)) =
-        SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm 1) := by
-    rw [← LinearMap.comp_apply, ← SmoothForm.mpullback_comp]
-    simp only [hfst]
-  have htorus {k : ℕ} (β : SmoothForm (𝓘(ℝ).prod J) (SmoothMappingTorus ψ) ℝ k) :
-      SmoothForm.mpullback (Prod.map id (map φ ψ g h)) (contMDiff_id.prodMap hm)
-          (SmoothForm.mpullback (I := 𝓘(ℝ).prod (𝓘(ℝ).prod J))
-            (Prod.snd : UnitAddCircle × SmoothMappingTorus ψ → SmoothMappingTorus ψ)
-            contMDiff_snd β) =
-        SmoothForm.mpullback (I := 𝓘(ℝ).prod (𝓘(ℝ).prod I))
-          (Prod.snd : UnitAddCircle × SmoothMappingTorus φ → SmoothMappingTorus φ) contMDiff_snd
-          (SmoothForm.mpullback (map φ ψ g h) hm β) := by
-    rw [← LinearMap.comp_apply, ← SmoothForm.mpullback_comp, ← LinearMap.comp_apply,
-      ← SmoothForm.mpullback_comp]
-    simp only [hsnd]
-  rw [suspensionForm_def, suspensionForm_def, map_add, htorus, mpullback_map_fiberForm h hg hτ hgτ]
+  rw [suspensionForm_def, suspensionForm_def, map_add,
+    SmoothForm.mpullback_prodMap_mpullback_snd contMDiff_id hm, mpullback_map_fiberForm h hg hτ hgτ]
   -- The wedge `ds ∧ dt` has degree `1 + 1`, which `rw` does not match with the degree `2` of `Ω`.
   refine congrArg (· + _) ((SmoothForm.mpullback_wedge (k := 1) (l := 1)
     (Prod.map id (map φ ψ g h)) (contMDiff_id.prodMap hm) _ _).trans ?_)
-  rw [hcircle, htorus, mpullback_map_timeForm φ ψ h hg]
+  rw [SmoothForm.mpullback_prodMap_mpullback_fst contMDiff_id hm, SmoothForm.mpullback_id,
+    LinearMap.id_apply, SmoothForm.mpullback_prodMap_mpullback_snd contMDiff_id hm,
+    mpullback_map_timeForm φ ψ h hg]
 
 /-! ### Orbit tori -/
 
