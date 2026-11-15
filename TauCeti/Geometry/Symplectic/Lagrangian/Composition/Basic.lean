@@ -110,8 +110,8 @@ private theorem snd_eq_zero_of_isIsotropic_range {x₁ : M₁} {y y' : M₂} {x�
       (LinearMap.range B).map (LinearMap.fst ℝ _ _) = ⊤) {u : X} {w : Y}
     (hu : (A u).1 = 0) (hw : (B w).2 = 0) (huw : (A u).2 = (B w).1) : (A u).2 = 0 := by
   subst hy
-  exact hA.eq_zero_of_map_snd_sup_map_fst_eq_top hB htr ⟨u, Prod.ext hu rfl⟩
-    ⟨w, Prod.ext huw.symm hw⟩
+  exact (Submodule.eq_bot_iff _).mp (hA.relCompExcess_eq_bot_of_map_snd_sup_map_fst_eq_top hB htr)
+    _ (Submodule.mem_relCompExcess.mpr ⟨⟨u, Prod.ext hu rfl⟩, ⟨w, Prod.ext huw.symm hw⟩⟩)
 
 variable {EL₁ HL₁ L₁ EL₂ HL₂ L₂ EC HC C : Type*}
   [NormedAddCommGroup EL₁] [NormedSpace ℝ EL₁] [TopologicalSpace HL₁]

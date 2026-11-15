@@ -96,13 +96,6 @@ private theorem toReal_prod_pow (P : ProbabilityMeasure α) {k : ℕ} (B : Fin k
   rw [← ProbabilityMeasure.ennreal_coeFn_eq_coeFn_toMeasure, ← ENNReal.coe_pow,
     ENNReal.coe_toReal, NNReal.coe_pow]
 
-/-- The mixture has the same total mass as the mixing measure, since every infinite product of
-probability measures is itself a probability measure. -/
-private theorem bind_infinitePi_univ (π : Measure (ProbabilityMeasure α)) :
-    (π.bind fun P => Measure.infinitePi fun _ : ℕ => (P : Measure α)) Set.univ = π Set.univ := by
-  rw [Measure.bind_apply MeasurableSet.univ measurable_infinitePi_const.aemeasurable]
-  simp
-
 /-- **The evaluation family lands in the unit box.** The pushforward of any measure on
 `ProbabilityMeasure α` along `P ↦ (P (B 0), …, P (B (k-1)))` gives measure zero to the complement
 of `[0, 1] ^ k`. -/
@@ -149,7 +142,7 @@ theorem Measure.ext_of_bind_infinitePi_eq [IsFiniteMeasure π₁]
     π₁ = π₂ := by
   have : IsFiniteMeasure π₂ := by
     constructor
-    rw [← bind_infinitePi_univ π₂, ← h, bind_infinitePi_univ π₁]
+    rw [← π₂.bind_infinitePi_univ (ι := ℕ), ← h, π₁.bind_infinitePi_univ]
     exact measure_lt_top π₁ _
   refine TauCeti.MeasureTheory.Measure.ext_of_forall_map_probabilityMeasure_eval_eq
     fun k B hB => ?_
