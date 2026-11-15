@@ -118,28 +118,26 @@ by the arithmetic Frobenius, for the point topologies. -/
 noncomputable def rationalPointsContinuousMulEquiv :
     WithConv (H →ₐ[E] E) ≃ₜ*
       fixedSubgroup (G := WithConv (H →ₐ[E] Breve E))
-        (mapValue (frobenius E : Breve E →ₐ[E] Breve E)) where
-  toMulEquiv :=
-    (MonoidHom.ofInjective (mapValue_injective (algebraMap E (Breve E)).injective)).trans
-      (MulEquiv.subgroupCongr (range_mapValue_ofId E H))
-  continuous_toFun :=
-    (continuous_mapValue (isClosedEmbedding_algebraMap E).continuous).subtype_mk _
-  continuous_invFun := by
-    refine (isEmbedding_mapValue (H₁ := H) (ψ := Algebra.ofId E (Breve E))
-      (isClosedEmbedding_algebraMap E).isEmbedding)
-      |>.isInducing.continuous_iff.2 <| continuous_subtype_val.congr fun y ↦ ?_
-    -- The inverse is `(MonoidHom.ofInjective _).symm` after `(MulEquiv.subgroupCongr _).symm`,
-    -- and the latter does not change the underlying point.
-    exact (MonoidHom.apply_ofInjective_symm (mapValue_injective (algebraMap E (Breve E)).injective)
-      ((MulEquiv.subgroupCongr (range_mapValue_ofId E H)).symm y)).symm
+        (mapValue (frobenius E : Breve E →ₐ[E] Breve E)) :=
+  let e := (MonoidHom.ofInjective (mapValue_injective (algebraMap E (Breve E)).injective)).trans
+    (MulEquiv.subgroupCongr (range_mapValue_ofId E H))
+  ContinuousMulEquiv.mk'
+    (e.toEquiv.toHomeomorphOfIsInducing
+      ((isEmbedding_mapValue (H₁ := H) (ψ := Algebra.ofId E (Breve E))
+        (isClosedEmbedding_algebraMap E).isEmbedding).isInducing.codRestrict
+        fun x ↦ (range_mapValue_ofId E H) ▸ ⟨x, rfl⟩))
+    e.map_mul
 
 /-- The isomorphism `rationalPointsContinuousMulEquiv` is the inclusion of `G(E)` into
 `G(Breve E)`. -/
 @[simp]
 theorem coe_rationalPointsContinuousMulEquiv (x : WithConv (H →ₐ[E] E)) :
     (rationalPointsContinuousMulEquiv E H x : WithConv (H →ₐ[E] Breve E)) =
-      mapValue (Algebra.ofId E (Breve E)) x :=
-  (rfl)
+      mapValue (Algebra.ofId E (Breve E)) x := by
+  simp only [rationalPointsContinuousMulEquiv, ContinuousMulEquiv.coe_mk',
+    Equiv.toHomeomorphOfIsInducing_apply, MulEquiv.toEquiv_eq_coe, MulEquiv.coe_toEquiv,
+    MulEquiv.coe_trans, Function.comp_apply, MulEquiv.subgroupCongr_apply,
+    MonoidHom.ofInjective_apply]
 
 /-- The inverse of `rationalPointsContinuousMulEquiv` sends a Frobenius-fixed point of
 `G(Breve E)` to the point of `G(E)` whose values map to its values in `Breve E`. -/
