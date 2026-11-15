@@ -8,33 +8,30 @@ module
 public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Subgraph
 public import TauCeti.Combinatorics.Graph.Connectivity.Bridge.OfSimpleGraph
 public import TauCeti.Combinatorics.Graph.Connectivity.Isomorphism
-public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Trace
+public import TauCeti.Combinatorics.Graph.Connectivity.Walk.OfSimpleGraph
 public import TauCeti.Combinatorics.Graph.Subgraph
 
 /-!
 # Walks and connectivity of simple-graph subgraphs viewed as multigraphs
 
 This file extends the order isomorphism `SimpleGraph.subgraphOfSimpleGraphOrderIso` between
-`H.Subgraph` and subgraphs of `Graph.ofSimpleGraph H` to walk-traced subgraphs, subgraph walks, and
-connectivity invariants.
+`H.Subgraph` and subgraphs of `Graph.ofSimpleGraph H` to subgraph walks and connectivity invariants.
 
-Converting a simple-graph walk `p : H.Walk x y` to `Graph.ofSimpleGraph H` identifies Mathlib's
-traced subgraph `p.toSubgraph` with the multigraph traced graph `walkGraph`. For an arbitrary
-subgraph `S : H.Subgraph` and base vertex `x ∈ S.verts`, edge-labelled walks in `S.toGraph`
-correspond bijectively to ambient walks `p : H.Walk x y` satisfying `p.toSubgraph ≤ S`, and the
-canonical isomorphism `S.ofSimpleGraphCoeIso` identifies connectedness, acyclicity/forests, and edge
-and vertex connectivity of `S.toGraph` with those of `S` and `S.coe`.
+For an arbitrary subgraph `S : H.Subgraph` and base vertex `x ∈ S.verts`, edge-labelled walks in
+`S.toGraph` correspond bijectively to ambient walks `p : H.Walk x y` satisfying `p.toSubgraph ≤ S`,
+and the canonical isomorphism `S.ofSimpleGraphCoeIso` identifies connectedness, acyclicity/forests,
+and edge and vertex connectivity of `S.toGraph` with those of `S` and `S.coe`.
 
 ## Main declarations
 
-* `SimpleGraph.Walk.toGraph_toSubgraph`: `p.toSubgraph.toGraph` equals the multigraph `walkGraph` of
-  `p.toGraph`.
 * `SimpleGraph.Subgraph.walkToGraphEquiv`: equivalence between
   `{p : H.Walk x y // p.toSubgraph ≤ S}` and `S.toGraph.Walk x y` when `x ∈ S.verts`.
 * `SimpleGraph.Subgraph.connected_toGraph_iff`, `SimpleGraph.Subgraph.isForest_toGraph_iff`,
   `SimpleGraph.Subgraph.isEdgeConnected_toGraph_iff`,
   `SimpleGraph.Subgraph.isVertexConnected_toGraph_iff`: transport of connectivity invariants between
   `S.toGraph` and `S` / `S.coe`.
+* `SimpleGraph.Preconnected.finite_of_finite_edgeSet`: a preconnected simple graph with finitely
+  many edges has a finite vertex type.
 -/
 
 public section
@@ -43,23 +40,6 @@ open Set
 open scoped Graph Sym2
 
 universe u
-
-namespace SimpleGraph.Walk
-
-variable {α : Type u} {H : SimpleGraph α} {x y : α}
-
-/-- Converting a walk's traced `Subgraph` to a multigraph agrees with taking `walkGraph` of the
-converted walk in `Graph.ofSimpleGraph H`. -/
-@[simp]
-theorem toGraph_toSubgraph (p : H.Walk x y) :
-    p.toSubgraph.toGraph = (Graph.ofSimpleGraph H).walkGraph p.toGraph := by
-  refine Graph.ext (by simp) fun e a b ↦ ?_
-  simp only [Subgraph.toGraph_isLink, adj_toSubgraph_iff_mem_edges, Graph.Walk.walkGraph_isLink,
-    Graph.ofSimpleGraph_isLink, edges_toGraph]
-  exact ⟨fun ⟨he, hmem⟩ ↦ ⟨⟨he, he ▸ p.edges_subset_edgeSet hmem⟩, he ▸ hmem⟩,
-    fun ⟨⟨he, _⟩, hmem⟩ ↦ ⟨he, he ▸ hmem⟩⟩
-
-end SimpleGraph.Walk
 
 namespace Graph.Walk
 
@@ -74,11 +54,6 @@ theorem walkGraph_le_ofSimpleGraph (p : (Graph.ofSimpleGraph H).Walk x y) :
 theorem toGraph_toSubgraph_toSimpleGraph (p : (Graph.ofSimpleGraph H).Walk x y) :
     p.toSimpleGraph.toSubgraph.toGraph = (Graph.ofSimpleGraph H).walkGraph p := by
   rw [SimpleGraph.Walk.toGraph_toSubgraph, toGraph_toSimpleGraph]
-
-@[simp] theorem toSimpleGraphSubgraph_walkGraph (p : (Graph.ofSimpleGraph H).Walk x y)
-    (hp : (Graph.ofSimpleGraph H).walkGraph p ≤ Graph.ofSimpleGraph H) :
-    hp.toSimpleGraphSubgraph = p.toSimpleGraph.toSubgraph :=
-  SimpleGraph.Subgraph.toGraph_injective (by simp)
 
 end Graph.Walk
 
@@ -117,7 +92,7 @@ walk in `H` whose `toSubgraph` is contained in `S`. -/
 theorem toSubgraph_toSimpleGraph_mapLe_le {x y : α} (hx : x ∈ S.verts)
     (p : S.toGraph.Walk x y) :
     (p.mapLe S.toGraph_le_ofSimpleGraph).toSimpleGraph.toSubgraph ≤ S := by
-  rw [← toGraph_le_toGraph_iff, Graph.Walk.toGraph_toSubgraph_toSimpleGraph,
+  rw [← toGraph_le_toGraph, Graph.Walk.toGraph_toSubgraph_toSimpleGraph,
     Graph.Walk.walkGraph_mapLe]
   exact p.walkGraph_le (S.vertexSet_toGraph.symm ▸ hx)
 
