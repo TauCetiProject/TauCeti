@@ -136,6 +136,13 @@ theorem twist_boundary (hw : ∀ ⦃x y : G⦄, Joined x y → w x = w y) (n : �
     simp only [LinearMap.comp_apply, boundary_ofCube, twist_ofCube, map_smul, map_sum, map_sub,
       hface, Finset.smul_sum, smul_sub, smul_comm (w (c 0))]
 
+variable (w) in
+/-- **Twisting is natural**: push-forward along `f` intertwines the twist by `w ∘ f` with the
+twist by `w`. -/
+theorem map_comp_twist {H : Type*} [TopologicalSpace H] (f : C(G, H)) (w : H → R) (n : ℕ) :
+    map R f n ∘ₗ twist (w ∘ f) n = twist w n ∘ₗ map R f n :=
+  linearMap_ext fun c ↦ by simp [map_ofCube]
+
 end NormalizedCubicalChain
 
 section Monoid
