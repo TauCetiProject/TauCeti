@@ -26,8 +26,12 @@ integrable function whose norm is almost everywhere at least one is finite
 
 For absolute moments, a real function in `Lᵖ` of positive real order has an integrable `p`-th
 power (`MeasureTheory.MemLp.integrable_rpow`), and when the function is almost everywhere
-nonnegative its extended `p`-th moment agrees with `ENNReal.ofReal` of its Bochner `p`-th moment
-(`MeasureTheory.MemLp.lintegral_ofReal_rpow_eq_ofReal_integral`). Membership of the identity in
+nonnegative both its extended `p`-th moment and the `p`-th power of its `eLpNorm` agree with
+`ENNReal.ofReal` of its Bochner `p`-th moment
+(`MeasureTheory.MemLp.lintegral_ofReal_rpow_eq_ofReal_integral`,
+`MeasureTheory.MemLp.eLpNorm_rpow_eq_ofReal_integral`), converting `eLpNorm` bounds between almost
+everywhere nonnegative functions into Bochner `p`-th moment inequalities
+(`MeasureTheory.integral_rpow_le_mul_integral_rpow_of_eLpNorm_le`). Membership of the identity in
 `Lᵖ` gives integrability of its norm power even on a seminormed group, and on the real line
 positive-order `Lᵖ` membership is equivalent to integrability of the corresponding absolute power.
 
@@ -112,16 +116,52 @@ theorem MemLp.integrable_rpow {X : Type*} [MeasurableSpace X] {μ : Measure X} {
 
 /-- For a positive real order `p` and an almost everywhere nonnegative `g` in `Lᵖ`, the lower
 integral of `ENNReal.ofReal (g y) ^ p` equals `ENNReal.ofReal` of the Bochner `p`-th moment. -/
-theorem MemLp.lintegral_ofReal_rpow_eq_ofReal_integral {X : Type*} [MeasurableSpace X]
+theorem MemLp.lintegral_ofReal_rpow_eq_ofReal_integral {X : Type*} {_ : MeasurableSpace X}
     {μ : Measure X} {g : X → ℝ} {p : ℝ} (hg : MemLp g (ENNReal.ofReal p) μ) (hp : 0 < p)
     (hnn : 0 ≤ᵐ[μ] g) :
     ∫⁻ y, ENNReal.ofReal (g y) ^ p ∂μ = ENNReal.ofReal (∫ y, g y ^ p ∂μ) := by
+  let _ : MeasurableSpace X := ‹_›
   rw [ofReal_integral_eq_lintegral_ofReal (hg.integrable_rpow hp)
     (hnn.mono fun _ h => Real.rpow_nonneg h _)]
   refine lintegral_congr_ae ?_
   filter_upwards [hnn] with y hy
   rw [Pi.zero_apply] at hy
   exact ENNReal.ofReal_rpow_of_nonneg hy hp.le
+
+/-- For a positive real order `p` and an almost everywhere nonnegative `g` in `Lᵖ`, the `p`-th
+power of its `eLpNorm` equals `ENNReal.ofReal` of its Bochner `p`-th moment. -/
+theorem MemLp.eLpNorm_rpow_eq_ofReal_integral {X : Type*} {_ : MeasurableSpace X}
+    {μ : Measure X} {g : X → ℝ} {p : ℝ} (hg : MemLp g (ENNReal.ofReal p) μ) (hp : 0 < p)
+    (hnn : 0 ≤ᵐ[μ] g) :
+    eLpNorm g (ENNReal.ofReal p) μ ^ p = ENNReal.ofReal (∫ y, g y ^ p ∂μ) := by
+  rw [eLpNorm_eq_eLpNorm' (ENNReal.ofReal_pos.2 hp).ne' ENNReal.ofReal_ne_top
+      hg.aestronglyMeasurable,
+    ENNReal.toReal_ofReal hp.le, ← lintegral_rpow_eNorm_eq_rpow_eLpNorm' hp,
+    ← hg.lintegral_ofReal_rpow_eq_ofReal_integral hp hnn]
+  refine lintegral_congr_ae ?_
+  filter_upwards [hnn] with y hy
+  rw [Pi.zero_apply] at hy
+  rw [Real.eNorm_eq_ofReal hy]
+
+/-- For a positive real order `p`, an `eLpNorm` bound between almost everywhere nonnegative
+real-valued functions with `v ∈ Lᵖ` yields the corresponding Bochner `p`-th moment inequality; no
+separate `MemLp` or measurability hypothesis on `u` is needed. -/
+theorem integral_rpow_le_mul_integral_rpow_of_eLpNorm_le {X Y : Type*}
+    {_ : MeasurableSpace X} {_ : MeasurableSpace Y} {μ : Measure X} {ν : Measure Y}
+    {u : X → ℝ} {v : Y → ℝ} {p c : ℝ} (hp : 0 < p) (hc : 0 ≤ c)
+    (hu_nn : 0 ≤ᵐ[μ] u) (hv_nn : 0 ≤ᵐ[ν] v) (hv : MemLp v (ENNReal.ofReal p) ν)
+    (hle : eLpNorm u (ENNReal.ofReal p) μ ≤
+      ENNReal.ofReal c * eLpNorm v (ENNReal.ofReal p) ν) :
+    ∫ x, u x ^ p ∂μ ≤ c ^ p * ∫ y, v y ^ p ∂ν := by
+  have hu : MemLp u (ENNReal.ofReal p) μ :=
+    hle.trans_lt (ENNReal.mul_lt_top ENNReal.ofReal_lt_top hv.eLpNorm_lt_top)
+  have hpow := ENNReal.rpow_le_rpow hle hp.le
+  rw [ENNReal.mul_rpow_of_nonneg _ _ hp.le, ENNReal.ofReal_rpow_of_nonneg hc hp.le,
+    hu.eLpNorm_rpow_eq_ofReal_integral hp hu_nn, hv.eLpNorm_rpow_eq_ofReal_integral hp hv_nn,
+    ← ENNReal.ofReal_mul (Real.rpow_nonneg hc p)] at hpow
+  exact (ENNReal.ofReal_le_ofReal_iff
+    (mul_nonneg (Real.rpow_nonneg hc p)
+      (integral_nonneg_of_ae (hv_nn.mono fun _ h ↦ Real.rpow_nonneg h _)))).1 hpow
 
 /-- An integrable function times a multiplier bounded on a set containing its support is
 integrable. -/

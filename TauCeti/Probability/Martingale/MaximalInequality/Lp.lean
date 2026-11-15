@@ -92,39 +92,6 @@ namespace MeasureTheory.Submartingale
 
 variable {Ω ι : Type*} {m0 : MeasurableSpace Ω} {μ : Measure Ω}
 
-/-- Converts an `eLpNorm` bound at positive real order `p` between almost everywhere nonnegative
-`Lᵖ` functions into the corresponding Bochner `p`-th moment inequality. -/
-private lemma integral_rpow_le_mul_integral_rpow_of_eLpNorm_le
-    {u v : Ω → ℝ} {p c : ℝ} (hp : 0 < p) (hc : 0 ≤ c)
-    (hu_nn : 0 ≤ᵐ[μ] u) (hv_nn : 0 ≤ᵐ[μ] v)
-    (hu : MemLp u (ENNReal.ofReal p) μ) (hv : MemLp v (ENNReal.ofReal p) μ)
-    (hle : eLpNorm u (ENNReal.ofReal p) μ ≤
-      ENNReal.ofReal c * eLpNorm v (ENNReal.ofReal p) μ) :
-    ∫ ω, u ω ^ p ∂μ ≤ c ^ p * ∫ ω, v ω ^ p ∂μ := by
-  have hp_ne0 : ENNReal.ofReal p ≠ 0 := (ENNReal.ofReal_pos.2 hp).ne'
-  have heq_u := lintegral_rpow_enorm_eq_eLpNorm_rpow hp_ne0 ENNReal.ofReal_ne_top
-    hu.aestronglyMeasurable
-  have heq_v := lintegral_rpow_enorm_eq_eLpNorm_rpow hp_ne0 ENNReal.ofReal_ne_top
-    hv.aestronglyMeasurable
-  rw [ENNReal.toReal_ofReal hp.le] at heq_u heq_v
-  have hpow := ENNReal.rpow_le_rpow hle hp.le
-  rw [ENNReal.mul_rpow_of_nonneg _ _ hp.le, ENNReal.ofReal_rpow_of_nonneg hc hp.le,
-    ← heq_u, ← heq_v] at hpow
-  have hlhs : ∫⁻ ω, ‖u ω‖ₑ ^ p ∂μ = ENNReal.ofReal (∫ ω, u ω ^ p ∂μ) := by
-    refine (lintegral_congr_ae ?_).trans (hu.lintegral_ofReal_rpow_eq_ofReal_integral hp hu_nn)
-    filter_upwards [hu_nn] with ω hω
-    rw [Pi.zero_apply] at hω
-    rw [Real.eNorm_eq_ofReal hω]
-  have hrhs : ∫⁻ ω, ‖v ω‖ₑ ^ p ∂μ = ENNReal.ofReal (∫ ω, v ω ^ p ∂μ) := by
-    refine (lintegral_congr_ae ?_).trans (hv.lintegral_ofReal_rpow_eq_ofReal_integral hp hv_nn)
-    filter_upwards [hv_nn] with ω hω
-    rw [Pi.zero_apply] at hω
-    rw [Real.eNorm_eq_ofReal hω]
-  rw [hlhs, hrhs, ← ENNReal.ofReal_mul (Real.rpow_nonneg hc p)] at hpow
-  exact (ENNReal.ofReal_le_ofReal_iff
-    (mul_nonneg (Real.rpow_nonneg hc p)
-      (integral_nonneg_of_ae (hv_nn.mono fun _ h ↦ Real.rpow_nonneg h _)))).1 hpow
-
 /-! ### Event-refined `Lᵖ` maximal inequalities (`1 ≤ p < ∞`) -/
 
 section EventRefinedLp
@@ -378,25 +345,6 @@ section DiscreteTimeLp
 variable [LinearOrder ι] [LocallyFiniteOrderBot ι] [IsFiniteMeasure μ]
   {ℱ : Filtration ι m0} {f : ι → Ω → ℝ}
 
-omit [IsFiniteMeasure μ] in
-/-- Terminal nonnegativity `0 ≤ᵐ[μ] f n` suffices to identify `partialSups f n` with
-`partialSups (f⁺) n` almost everywhere, since `0 ≤ f n ω ≤ partialSups f n ω`. -/
-private lemma partialSups_ae_eq_posPart {n : ι} (hposn : 0 ≤ᵐ[μ] f n) :
-    partialSups f n =ᵐ[μ] partialSups (f⁺) n := by
-  filter_upwards [hposn] with ω hω
-  rw [Pi.zero_apply] at hω
-  refine le_antisymm ?_ ?_
-  · rw [Pi.partialSups_apply, partialSups_apply]
-    refine Finset.sup'_le _ _ fun k hk ↦ ?_
-    refine (le_max_left _ 0).trans ?_
-    simpa only [Pi.posPart_apply, posPart_def] using
-      le_partialSups_of_le (f⁺) (Finset.mem_Iic.1 hk) ω
-  · rw [Pi.partialSups_apply, partialSups_apply]
-    refine Finset.sup'_le _ _ fun k hk ↦ ?_
-    simp only [Pi.posPart_apply, posPart_def]
-    exact max_le (le_partialSups_of_le f (Finset.mem_Iic.1 hk) ω)
-      (hω.trans (le_partialSups f n ω))
-
 /-- **Doob's discrete-time `Lᵖ` maximal inequality (positive-part form).** No `MemLp` assumption is
 needed. -/
 theorem eLpNorm_partialSups_posPart_le
@@ -431,7 +379,7 @@ theorem eLpNorm_partialSups_le
     (hf : Submartingale f ℱ μ) {n : ι} (hposn : 0 ≤ᵐ[μ] f n)
     {p : ℝ≥0∞} (hp : 1 < p) (hp_top : p ≠ ∞) :
     eLpNorm (partialSups f n) p μ ≤ p / (p - 1) * eLpNorm (f n) p μ := by
-  rw [eLpNorm_congr_ae (partialSups_ae_eq_posPart hposn),
+  rw [eLpNorm_congr_ae hposn.partialSups_posPart_eq.symm,
     eLpNorm_congr_ae hposn.posPart_eq.symm]
   exact hf.eLpNorm_partialSups_posPart_le n hp hp_top
 
@@ -446,12 +394,9 @@ theorem integral_rpow_partialSups_posPart_le
     rwa [← ENNReal.ofReal_one, ENNReal.ofReal_lt_ofReal_iff hp0]
   have hbound := hf.eLpNorm_partialSups_posPart_le n hp_enn ENNReal.ofReal_ne_top
   rw [← ENNReal.ofReal_div_sub_one hp] at hbound
-  have hLp (k : ι) (hk : k ≤ n) : MemLp ((f⁺) k) (ENNReal.ofReal p) μ :=
-    hf.pos.memLp_of_le hk (Eventually.of_forall fun _ ↦ posPart_nonneg _) hp_enn.le hn
   exact integral_rpow_le_mul_integral_rpow_of_eLpNorm_le hp0 (div_pos hp0 (sub_pos.2 hp)).le
     (Eventually.of_forall fun ω ↦ (posPart_nonneg (f n ω)).trans (le_partialSups (f⁺) n ω))
-    (Eventually.of_forall fun _ ↦ posPart_nonneg _)
-    (MemLp.partialSups hLp) hn hbound
+    (Eventually.of_forall fun _ ↦ posPart_nonneg _) hn hbound
 
 /-- **Doob's discrete-time `Lᵖ` maximal inequality (Bochner moment form).** Directly generalizes
 `MeasureTheory.Submartingale.integral_sq_partialSups_le` from `p = 2` (constant `4`) to all
@@ -461,7 +406,7 @@ theorem integral_rpow_partialSups_le
     (hf : Submartingale f ℱ μ) {n : ι} (hposn : 0 ≤ᵐ[μ] f n)
     {p : ℝ} (hp : 1 < p) (hn : MemLp (f n) (ENNReal.ofReal p) μ) :
     ∫ ω, (partialSups f n ω) ^ p ∂μ ≤ (p / (p - 1)) ^ p * ∫ ω, (f n ω) ^ p ∂μ := by
-  rw [integral_congr_ae ((partialSups_ae_eq_posPart hposn).mono fun _ h ↦ congrArg (· ^ p) h),
+  rw [integral_congr_ae (hposn.partialSups_posPart_eq.symm.mono fun _ h ↦ congrArg (· ^ p) h),
     integral_congr_ae (hposn.posPart_eq.symm.mono fun _ h ↦ congrArg (· ^ p) h)]
   exact hf.integral_rpow_partialSups_posPart_le n hp hn.posPart
 
@@ -579,15 +524,13 @@ theorem integral_toReal_iSup_ofReal_rpow_le_mul_integral_posPart_rpow
   have hp0 : 0 < p := zero_lt_one.trans hp
   have hp_enn : 1 < ENNReal.ofReal p := by
     rwa [← ENNReal.ofReal_one, ENNReal.ofReal_lt_ofReal_iff hp0]
-  have hM := hf.memLp_toReal_iSup_ofReal_posPart hcont hp_enn ENNReal.ofReal_ne_top hT
   have hbound : eLpNorm (fun ω ↦ (⨆ t ≤ T, ENNReal.ofReal (f t ω)).toReal) (ENNReal.ofReal p) μ ≤
       ENNReal.ofReal (p / (p - 1)) * eLpNorm ((f⁺) T) (ENNReal.ofReal p) μ := by
     rw [eLpNorm_toReal_iSup_ofReal_eq hf hcont, ENNReal.ofReal_div_sub_one hp]
     exact hf.eLpNorm_iSup_ofReal_le_mul_eLpNorm_posPart hcont hp_enn ENNReal.ofReal_ne_top
   exact integral_rpow_le_mul_integral_rpow_of_eLpNorm_le hp0 (div_pos hp0 (sub_pos.2 hp)).le
     (Eventually.of_forall fun _ ↦ ENNReal.toReal_nonneg)
-    (Eventually.of_forall fun _ ↦ posPart_nonneg _)
-    hM hT hbound
+    (Eventually.of_forall fun _ ↦ posPart_nonneg _) hT hbound
 
 /-- **Doob's continuous-time `Lᵖ` maximal inequality (Bochner moment form).** Requires
 nonnegativity and `MemLp` only at the terminal time `T`. -/
