@@ -40,7 +40,7 @@ squared graph norm `‖x‖² + ‖A x‖²`. For any function `f : ℝ → 𝕜
 eigenbasis is orthogonal to the vectors of another eigenbasis with different eigenvalues. By
 `IsSelfAdjoint.exists_hilbertBasis_forall_apply_eq_smul_of_hasCompactResolvent`, a self-adjoint
 operator with compact resolvent, such as the Dirac operator of a spectral triple, has such an
-eigenbasis, and this calculus defines its absolute value, sign, heat operators and powers.
+eigenbasis, so `f(A)` makes sense for `f = |·|`, `sign`, `exp (-t ·)` and powers.
 
 No measurability of `f` is needed: `b.diagonalPMap (f ∘ λ)` acts coordinatewise in the eigenbasis,
 so `f` only enters through its values `f (λ i)` at the eigenvalues.
@@ -149,7 +149,7 @@ theorem repr_diagonalPMap_apply (x : (b.diagonalPMap c).domain) (i : ι) :
     b.repr (b.diagonalPMap c x) i = c i * ⟪b i, (x : E)⟫_𝕜 := by
   rw [diagonalPMap_apply_eq_repr_symm, LinearIsometryEquiv.apply_symm_apply]
 
-/-- The coordinates of `b.diagonalPMap c x` in the Hilbert basis `b` are `c i * ⟪b i, x⟫`. -/
+/-- Pairing `b.diagonalPMap c x` with the basis vector `b i` gives `c i * ⟪b i, x⟫`. -/
 @[simp]
 theorem inner_diagonalPMap_apply (x : (b.diagonalPMap c).domain) (i : ι) :
     ⟪b i, b.diagonalPMap c x⟫_𝕜 = c i * ⟪b i, (x : E)⟫_𝕜 := by
