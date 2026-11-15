@@ -60,16 +60,25 @@ namespace TauCeti.Probability
 sub-Gaussian about its means, has uniformly bounded means. No measurability or integrability of
 the envelope is required. -/
 theorem exists_forall_abs_integral_le_of_hasSubgaussianMGF {ι Ω : Type*}
-    [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ] {f : Ω → ℝ}
+    [MeasurableSpace Ω] {μ : Measure Ω} {f : Ω → ℝ}
     {g : ι → Ω → ℝ} {c : ℝ≥0} (hgf : ∀ n, ∀ᵐ x ∂μ, |g n x| ≤ f x)
     (hsub : ∀ n, HasSubgaussianMGF (fun x ↦ g n x - ∫ y, g n y ∂μ) c μ) :
     ∃ B, ∀ n, |∫ y, g n y ∂μ| ≤ B := by
+  cases isEmpty_or_nonempty ι
+  · exact ⟨0, fun n ↦ isEmptyElim n⟩
+  by_cases hμ : μ = 0
+  · subst μ
+    exact ⟨0, by simp⟩
+  obtain ⟨n₀⟩ := ‹Nonempty ι›
+  have hi : Integrable (fun _ : Ω ↦ (1 : ℝ)) μ := by
+    simpa using (hsub n₀).integrable_exp_mul 0
+  have : IsFiniteMeasure μ := (integrable_const_iff_isFiniteMeasure one_ne_zero).1 hi
   -- Some sublevel set of the envelope has positive outer measure.
   obtain ⟨N, hN⟩ : ∃ N : ℕ, μ {x | f x ≤ N} ≠ 0 := by
     by_contra! H
     have hU : (⋃ N : ℕ, {x | f x ≤ N}) = Set.univ :=
       Set.eq_univ_of_forall fun x ↦ Set.mem_iUnion.2 (exists_nat_ge (f x))
-    simpa [hU] using measure_iUnion_null_iff.2 H
+    exact hμ (Measure.measure_univ_eq_zero.1 (by simpa [hU] using measure_iUnion_null_iff.2 H))
   have hp : 0 < μ.real {x | f x ≤ N} := ENNReal.toReal_pos hN (measure_ne_top _ _)
   refine ⟨N + 2 * exp (c / 2) / μ.real {x | f x ≤ N}, fun n ↦ ?_⟩
   set m := ∫ y, g n y ∂μ

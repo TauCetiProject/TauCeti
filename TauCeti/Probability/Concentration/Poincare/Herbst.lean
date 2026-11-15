@@ -209,15 +209,14 @@ section Lipschitz
 
 variable [FiniteDimensional ℝ E] {C : ℝ} {f : E → ℝ}
 
-/-- **Herbst's argument.** Under the logarithmic Sobolev inequality with nonnegative constant `C`,
-every `K`-Lipschitz function `f` is sub-Gaussian about its mean with variance proxy `C K²`:
-`∫ exp (t (f - ∫ f dμ)) dμ ≤ exp (C K² t² / 2)` for every `t`, and each of these exponential
-moments is finite. -/
+/-- **Herbst's argument.** Under the logarithmic Sobolev inequality with real constant `C`,
+every `K`-Lipschitz function `f` is sub-Gaussian about its mean with variance proxy
+`max C 0 * K²`: `∫ exp (t (f - ∫ f dμ)) dμ ≤ exp (max C 0 * K² t² / 2)` for every `t`,
+and each of these exponential moments is finite. -/
 theorem LogSobolevInequality.hasSubgaussianMGF_of_lipschitzWith (h : LogSobolevInequality μ C)
-    (hC : 0 ≤ C) (hf : LipschitzWith K f) :
+    (hf : LipschitzWith K f) :
     HasSubgaussianMGF (fun x ↦ f x - ∫ y, f y ∂μ) (C.toNNReal * K ^ 2) μ := by
-  lift C to ℝ≥0 using hC
-  simp only [Real.toNNReal_coe]
+  replace h : LogSobolevInequality μ C.toNNReal := h.mono C.le_coe_toNNReal
   obtain ⟨g, hgs, hgn, hglip, hgf, hlim⟩ := hf.exists_seq_contDiff_lipschitzWith_tendsto
   have hgK (n : ℕ) (x : E) : ‖fderiv ℝ (g n) x‖ ≤ K :=
     norm_fderiv_le_of_lipschitz ℝ (hglip n)
@@ -227,7 +226,7 @@ theorem LogSobolevInequality.hasSubgaussianMGF_of_lipschitzWith (h : LogSobolevI
   -- Fatou's lemma gives every exponential moment of `f`.
   have hexp (t : ℝ) : Integrable (fun x ↦ exp (t * f x)) μ := by
     refine TauCeti.integrable_of_tendsto_of_integral_le
-      (D := exp (|t| * B + C * K ^ 2 * t ^ 2 / 2))
+      (D := exp (|t| * B + C.toNNReal * K ^ 2 * t ^ 2 / 2))
       (.of_forall fun n ↦ integrable_exp_mul_of_mem_Icc (hgs n).continuous.aemeasurable
         (.of_forall fun x ↦ abs_le.1 (hgn n x)))
       (.of_forall fun _ ↦ .of_forall fun _ ↦ (exp_pos _).le)
@@ -256,29 +255,28 @@ theorem LogSobolevInequality.hasSubgaussianMGF_of_lipschitzWith (h : LogSobolevI
       (.of_forall fun n ↦ (hsub n).integrable_exp_mul t) (.of_forall (hpos t)) (hcent t)
       (.of_forall fun n ↦ (hsub n).mgf_le t)⟩
 
-/-- Under a logarithmic Sobolev inequality with nonnegative constant, every real exponential
-moment of a Lipschitz function is integrable. -/
+/-- Under a logarithmic Sobolev inequality, every real exponential moment of a Lipschitz
+function is integrable. -/
 theorem LogSobolevInequality.integrable_exp_mul_of_lipschitzWith
-    (h : LogSobolevInequality μ C) (hC : 0 ≤ C) (hf : LipschitzWith K f) (t : ℝ) :
+    (h : LogSobolevInequality μ C) (hf : LipschitzWith K f) (t : ℝ) :
     Integrable (fun x ↦ exp (t * f x)) μ := by
-  have hi := (h.hasSubgaussianMGF_of_lipschitzWith hC hf).integrable_exp_mul t
+  have hi := (h.hasSubgaussianMGF_of_lipschitzWith hf).integrable_exp_mul t
   refine (hi.mul_const (exp (t * ∫ y, f y ∂μ))).congr (.of_forall fun x ↦ ?_)
   simp only [← exp_add, mul_sub, sub_add_cancel]
 
-/-- Under a logarithmic Sobolev inequality with nonnegative constant, every Lipschitz function
-is integrable. -/
+/-- Under a logarithmic Sobolev inequality, every Lipschitz function is integrable. -/
 theorem LogSobolevInequality.integrable_of_lipschitzWith (h : LogSobolevInequality μ C)
-    (hC : 0 ≤ C) (hf : LipschitzWith K f) : Integrable f μ :=
-  ((h.hasSubgaussianMGF_of_lipschitzWith hC hf).integrable.add
+    (hf : LipschitzWith K f) : Integrable f μ :=
+  ((h.hasSubgaussianMGF_of_lipschitzWith hf).integrable.add
     (integrable_const (∫ y, f y ∂μ))).congr
       (.of_forall fun x ↦ sub_add_cancel (f x) (∫ y, f y ∂μ))
 
-/-- Under a logarithmic Sobolev inequality with nonnegative constant, every Lipschitz function
-belongs to `Lᵖ` for every finite nonnegative exponent `p`. -/
+/-- Under a logarithmic Sobolev inequality, every Lipschitz function belongs to `Lᵖ` for every
+finite nonnegative exponent `p`. -/
 theorem LogSobolevInequality.memLp_of_lipschitzWith (h : LogSobolevInequality μ C)
-    (hC : 0 ≤ C) (hf : LipschitzWith K f) (p : ℝ≥0) : MemLp f p μ := by
+    (hf : LipschitzWith K f) (p : ℝ≥0) : MemLp f p μ := by
   exact MemLp.ae_eq (.of_forall fun x ↦ sub_add_cancel (f x) (∫ y, f y ∂μ)) <|
-    ((h.hasSubgaussianMGF_of_lipschitzWith hC hf).memLp p).add
+    ((h.hasSubgaussianMGF_of_lipschitzWith hf).memLp p).add
       (memLp_const (∫ y, f y ∂μ))
 
 /-- **Gaussian concentration of Lipschitz functions** under a logarithmic Sobolev inequality with
@@ -288,7 +286,7 @@ theorem LogSobolevInequality.measureReal_abs_sub_integral_ge_le_of_lipschitzWith
     (h : LogSobolevInequality μ C) (hC : 0 ≤ C) (hf : LipschitzWith K f) {t : ℝ} (ht : 0 ≤ t) :
     μ.real {x | t ≤ |f x - ∫ y, f y ∂μ|} ≤ 2 * exp (-t ^ 2 / (2 * (C * (K : ℝ) ^ 2))) := by
   simpa only [NNReal.coe_mul, NNReal.coe_pow, Real.coe_toNNReal C hC] using
-    (h.hasSubgaussianMGF_of_lipschitzWith hC hf).measureReal_abs_ge_le ht
+    (h.hasSubgaussianMGF_of_lipschitzWith hf).measureReal_abs_ge_le ht
 
 end Lipschitz
 
