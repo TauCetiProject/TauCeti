@@ -115,7 +115,7 @@ private lemma eq_of_bot_orbitRel {x y : X}
   exact hsmul.symm
 
 /-- Quotienting a group action by the trivial subgroup gives back the original space. -/
-noncomputable def MulAction.orbitRelQuotientBotEquiv :
+def MulAction.orbitRelQuotientBotEquiv :
     MulAction.orbitRel.Quotient (⊥ : Subgroup G) X ≃ X :=
   { toFun := Quotient.lift (fun x : X => x) fun _ _ h => eq_of_bot_orbitRel h
     invFun := Quotient.mk''
@@ -456,7 +456,7 @@ lemma MulAction.normalizerOrbitRelQuotientEquiv_symm_apply (H : Subgroup G)
   by simp [MulAction.normalizerOrbitRelQuotientEquiv]
 
 /-- The normalizer action on the orbit quotient as a permutation representation. -/
-noncomputable def MulAction.normalizerOrbitRelQuotientPermHom (H : Subgroup G) :
+def MulAction.normalizerOrbitRelQuotientPermHom (H : Subgroup G) :
     Subgroup.normalizer (H : Set G) →*
       Equiv.Perm (MulAction.orbitRel.Quotient H X) where
   toFun := MulAction.normalizerOrbitRelQuotientEquiv H
@@ -498,7 +498,7 @@ lemma MulAction.normalizerOrbitRelQuotientPermHom_eq_one_of_mem
   exact Quotient.sound' ⟨⟨(g : G), hg⟩, rfl⟩
 
 /-- The action of the normalizer on an orbit quotient descends to `N(H) / H`. -/
-noncomputable def MulAction.normalizerQuotientOrbitRelQuotientPermHom (H : Subgroup G) :
+def MulAction.normalizerQuotientOrbitRelQuotientPermHom (H : Subgroup G) :
     Subgroup.normalizerQuotient H →*
       Equiv.Perm (MulAction.orbitRel.Quotient H X) :=
   Subgroup.normalizerQuotientLift H (MulAction.normalizerOrbitRelQuotientPermHom (X := X) H)
@@ -516,7 +516,7 @@ lemma MulAction.normalizerQuotientOrbitRelQuotientPermHom_mk_apply (H : Subgroup
 
 /-- The normalizer quotient `N(H) / H` acts on the quotient by `H`-orbits. -/
 @[implicit_reducible]
-noncomputable def MulAction.normalizerQuotientOrbitRelQuotientMulAction (H : Subgroup G) :
+def MulAction.normalizerQuotientOrbitRelQuotientMulAction (H : Subgroup G) :
     MulAction (Subgroup.normalizerQuotient H) (MulAction.orbitRel.Quotient H X) :=
   MulAction.compHom (MulAction.orbitRel.Quotient H X)
     (MulAction.normalizerQuotientOrbitRelQuotientPermHom (X := X) H)
@@ -870,12 +870,16 @@ theorem MulAction.eq_orbitRelQuotientLift_iff {φ : MulAction.orbitRel.Quotient 
   (Quotient.mk_surjective.injective_comp_right.eq_iff' MulAction.orbitRelQuotientLift_comp_mk).symm
 
 /-- Postcomposing the descent of `f` with a map `h` gives the descent of `h ∘ f`. -/
+@[to_additive AddAction.comp_orbitRelQuotientLift
+  /-- Postcomposing the descent of `f` with a map `h` gives the descent of `h ∘ f`. -/]
 theorem MulAction.comp_orbitRelQuotientLift (h : Y → Z) :
     h ∘ MulAction.orbitRelQuotientLift f hf =
       MulAction.orbitRelQuotientLift (h ∘ f) fun g x ↦ congrArg h (hf g x) :=
   MulAction.eq_orbitRelQuotientLift_iff.2 (rfl)
 
 /-- The descent of a pair of invariant maps is the pair of their descents. -/
+@[to_additive AddAction.orbitRelQuotientLift_prodMk
+  /-- The descent of a pair of invariant maps is the pair of their descents. -/]
 theorem MulAction.orbitRelQuotientLift_prodMk {f' : X → Z}
     (hf' : ∀ (g : G) (x : X), f' (g • x) = f' x) :
     MulAction.orbitRelQuotientLift (fun x ↦ (f x, f' x))
@@ -999,9 +1003,9 @@ variable {G X : Type*} [Group G] [MulAction G X] {H Y : Type*} [Group H] [MulAct
 /-- **The map of orbit spaces induced by an equivariant map.** A map `φ : X → Y` carrying the
 `G`-action to the `H`-action along `σ : G → H` sends `G`-orbits into `H`-orbits, so it descends to
 a map of orbit spaces. -/
-@[to_additive /-- **The map of additive orbit spaces induced by an equivariant map.** A map
-`φ : X → Y` carrying the additive `G`-action to the `H`-action along `σ : G → H` sends `G`-orbits
-into `H`-orbits, so it descends to a map of orbit spaces. -/]
+@[to_additive /-- **The map of orbit spaces induced by an equivariant map.** A map `φ : X → Y`
+carrying the `G`-action to the `H`-action along `σ : G → H` sends `G`-orbits into `H`-orbits, so it
+descends to a map of orbit spaces. -/]
 def orbitRelQuotientMap (φ : X →ₑ[σ] Y) :
     MulAction.orbitRel.Quotient G X → MulAction.orbitRel.Quotient H Y :=
   MulAction.orbitRelQuotientLift (fun x ↦ Quotient.mk (MulAction.orbitRel H Y) (φ x))
@@ -1028,8 +1032,8 @@ theorem orbitRelQuotientMap_comp_mk (φ : X →ₑ[σ] Y) :
 
 /-- An injective equivariant map induces an injection of orbit spaces if the map of acting
 groups is surjective. -/
-@[to_additive /-- An injective equivariant map induces an injection of additive orbit spaces if the
-map of acting groups is surjective. -/]
+@[to_additive /-- An injective equivariant map induces an injection of orbit spaces if the map of
+acting groups is surjective. -/]
 theorem orbitRelQuotientMap_injective (φ : X →ₑ[σ] Y) (hφ : Function.Injective φ)
     (hσ : Function.Surjective σ) : Function.Injective φ.orbitRelQuotientMap := by
   rintro ⟨x⟩ ⟨y⟩ h
@@ -1038,7 +1042,7 @@ theorem orbitRelQuotientMap_injective (φ : X →ₑ[σ] Y) (hφ : Function.Inje
   exact Quotient.sound (MulAction.orbitRel_apply.2 ⟨g, hφ (by rwa [map_smulₛₗ])⟩)
 
 /-- The image of the induced map consists of the orbits meeting the image upstairs. -/
-@[to_additive /-- The image of the induced map consists of the additive orbits meeting the image
+@[to_additive /-- The image of the induced map consists of the orbits meeting the image
 upstairs. -/]
 theorem range_orbitRelQuotientMap (φ : X →ₑ[σ] Y) :
     Set.range φ.orbitRelQuotientMap =
@@ -1046,8 +1050,7 @@ theorem range_orbitRelQuotientMap (φ : X →ₑ[σ] Y) :
   rw [← Quotient.mk_surjective.range_comp, orbitRelQuotientMap_comp_mk, Set.range_comp]
 
 /-- The identity map induces the identity of the orbit space. -/
-@[to_additive (attr := simp) /-- The identity map induces the identity of the additive orbit
-space. -/]
+@[to_additive (attr := simp) /-- The identity map induces the identity of the orbit space. -/]
 theorem orbitRelQuotientMap_id :
     orbitRelQuotientMap (MulActionHom.id G (X := X)) = id := by
   ext q
@@ -1055,8 +1058,8 @@ theorem orbitRelQuotientMap_id :
   | h x => rfl
 
 /-- The map induced by a composite of equivariant maps is the composite of the induced maps. -/
-@[to_additive /-- The map induced by a composite of additive equivariant maps is the composite of
-the induced maps. -/]
+@[to_additive /-- The map induced by a composite of equivariant maps is the composite of the
+induced maps. -/]
 theorem orbitRelQuotientMap_comp {K Z : Type*} [Group K] [MulAction K Z] {τ : H → K}
     {χ : G → K} [CompTriple σ τ χ] (ψ : Y →ₑ[τ] Z) (φ : X →ₑ[σ] Y) :
     orbitRelQuotientMap (ψ.comp φ) = orbitRelQuotientMap ψ ∘ orbitRelQuotientMap φ := by
@@ -1067,9 +1070,9 @@ theorem orbitRelQuotientMap_comp {K Z : Type*} [Group K] [MulAction K Z] {τ : H
 /-- **Naturality of descent.** For a `σ`-equivariant map `φ : X → Y` and an `H`-invariant map
 `f : Y → Z`, the descent of the `G`-invariant map `f ∘ φ` factors through the map of orbit spaces
 induced by `φ`. -/
-@[to_additive /-- **Naturality of descent.** For an additive `σ`-equivariant map `φ : X → Y` and an
+@[to_additive /-- **Naturality of descent.** For a `σ`-equivariant map `φ : X → Y` and an
 `H`-invariant map `f : Y → Z`, the descent of the `G`-invariant map `f ∘ φ` factors through the map
-of additive orbit spaces induced by `φ`. -/]
+of orbit spaces induced by `φ`. -/]
 theorem orbitRelQuotientLift_comp_orbitRelQuotientMap {Z : Type*} (φ : X →ₑ[σ] Y)
     {f : Y → Z} (hf : ∀ (h : H) (y : Y), f (h • y) = f y) :
     MulAction.orbitRelQuotientLift f hf ∘ orbitRelQuotientMap φ =
@@ -1089,11 +1092,15 @@ variable {G X : Type*} [Group G] [MulAction G X] {H : Subgroup G} (S : SubMulAct
 
 /-- **The orbit map of an invariant subset.** For a subgroup `H` of `G` and an `H`-invariant
 subset `S` of `X`, the map sending the `H`-orbit of a point of `S` to its `G`-orbit in `X`. -/
+@[to_additive /-- **The orbit map of an invariant subset.** For a subgroup `H` of `G` and an
+`H`-invariant subset `S` of `X`, the map sending the `H`-orbit of a point of `S` to its `G`-orbit
+in `X`. -/]
 def orbitRelQuotientMap : orbitRel.Quotient H S → orbitRel.Quotient G X :=
   MulActionHom.orbitRelQuotientMap (σ := H.subtype) ⟨Subtype.val, fun _ _ ↦ rfl⟩
 
 /-- The orbit map of an invariant subset sends the `H`-orbit of `s` to the `G`-orbit of `s`. -/
-@[simp]
+@[to_additive (attr := simp) /-- The orbit map of an invariant subset sends the `H`-orbit of `s`
+to the `G`-orbit of `s`. -/]
 theorem orbitRelQuotientMap_mk (s : S) :
     S.orbitRelQuotientMap (Quotient.mk (orbitRel H S) s) =
       Quotient.mk (orbitRel G X) (s : X) :=
@@ -1101,12 +1108,16 @@ theorem orbitRelQuotientMap_mk (s : S) :
 
 /-- The orbit map of an invariant subset composed with the orbit projection of `S` is the orbit
 projection of `X` restricted to `S`. -/
+@[to_additive (attr := simp) /-- The orbit map of an invariant subset composed with the orbit
+projection of `S` is the orbit projection of `X` restricted to `S`. -/]
 theorem orbitRelQuotientMap_comp_mk :
     S.orbitRelQuotientMap ∘ Quotient.mk (orbitRel H S) =
       Quotient.mk (orbitRel G X) ∘ Subtype.val :=
   (rfl)
 
 /-- The image of the orbit map of an invariant subset consists of the orbits meeting it. -/
+@[to_additive /-- The image of the orbit map of an invariant subset consists of the orbits meeting
+it. -/]
 theorem range_orbitRelQuotientMap :
     Set.range S.orbitRelQuotientMap = Quotient.mk (orbitRel G X) '' (S : Set X) := by
   rw [← Quotient.mk_surjective.range_comp, orbitRelQuotientMap_comp_mk, Set.range_comp,
@@ -1114,6 +1125,9 @@ theorem range_orbitRelQuotientMap :
 
 /-- **Orbit maps of slices are injective.** If every element of `G` carrying a point of `S` into
 `S` lies in `H`, then two points of `S` in the same `G`-orbit lie in the same `H`-orbit. -/
+@[to_additive /-- **Orbit maps of slices are injective.** If every element of `G` carrying a point
+of `S` into `S` lies in `H`, then two points of `S` in the same `G`-orbit lie in the same
+`H`-orbit. -/]
 theorem orbitRelQuotientMap_injective
     (hS : ∀ (g : G) (y : X), y ∈ S → g • y ∈ S → g ∈ H) :
     Function.Injective S.orbitRelQuotientMap := by

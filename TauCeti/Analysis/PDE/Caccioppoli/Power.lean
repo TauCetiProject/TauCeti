@@ -108,7 +108,8 @@ private theorem integrable_sq_mul_rpow_mul_norm_gradient_sq {u : W1p mu Omega 2}
     {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : Continuous ψ) {M : ℝ} (hψM : ∀ x, |ψ x| ≤ M) :
     Integrable (fun x => ψ x ^ 2 * (W1p.value u x ^ (p - 2) * ‖W1p.gradient u x‖ ^ 2))
       (mu.restrict Omega) := by
-  refine ((W1p.integrable_norm_gradient_sq u).const_mul (M ^ 2 * ε ^ (p - 2))).mono' ?_ ?_
+  refine ((Lp.memLp (W1p.gradient u)).norm.integrable_sq.const_mul
+    (M ^ 2 * ε ^ (p - 2))).mono' ?_ ?_
   · exact (hψ.pow 2).aestronglyMeasurable.mul
       (((Lp.aestronglyMeasurable (W1p.value u)).aemeasurable.pow_const _).mul
         ((Lp.aestronglyMeasurable (W1p.gradient u)).aemeasurable.norm.pow_const 2)
