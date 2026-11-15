@@ -365,12 +365,13 @@ expressions in the charts and trivializations of the first atlas are in the loca
 and these determine an element for the second. -/
 theorem transfersTo_of_le_one (hk : k ≤ 1) (A A' : FiniteBundleAtlas ℂ M F V) :
     TransfersTo A A' volume p k := fun w s hs ↦
-  exists_ae_eq_coord_of_memWkpLoc_trivialization_comp_chart_symm hk A.chart
+  exists_ae_eq_coord_of_memWkpLoc_trivialization_comp_chart_symm A.chart
     (fun _ ↦ IsManifold.chart_mem_maximalAtlas _) A.triv (fun i ↦ A.image i)
     (fun i ↦ (A.image i).isOpen)
     (fun x ↦ let ⟨i, hi⟩ := A.exists_mem_dom x
       ⟨i, A.dom_subset_chart_source i hi, A.dom_subset_baseSet i hi, A.mem_image.2 ⟨_, hi, rfl⟩⟩)
-    fun i ↦ by simpa only [funext (A.coord_def i s)] using memWkpLoc_coord w hs i
+    (fun i ↦ by simpa only [funext (A.coord_def i s)] using memWkpLoc_coord w hs i)
+    (Or.inl hk) one_ne_zero (by exact_mod_cast hk)
 
 /-- **Equivalence of norms at orders at most one over surfaces.** The norms of `W^{k,p}(V)`,
 `k ≤ 1`, for two finite bundle atlases are equivalent: there is a positive constant `C` bounding
