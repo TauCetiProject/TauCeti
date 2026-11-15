@@ -77,9 +77,13 @@ theorem finrank_eq_one_of_two_mul_add_eq_zero {u v : K} {z : L} (hsep : IsSepara
     norm_num
   obtain ⟨g, hg⟩ := minpoly.dvd K z hψz
   have hg0 : aeval z g = 0 := by
-    have h : aeval z (derivative (minpoly K z)) * aeval z g = 0 := by
-      simpa [hderiv, derivative_mul, minpoly.aeval] using
-        (congrArg (aeval z) (congrArg derivative hg)).symm
+    -- Differentiate `ψ = minpoly · g` and evaluate at `z`, where `minpoly` vanishes.
+    have h : aeval z (derivative (minpoly K z)) * aeval z g = 0 :=
+      calc aeval z (derivative (minpoly K z)) * aeval z g
+          = aeval z (derivative (minpoly K z * g)) := by
+            rw [derivative_mul, map_add, map_mul, map_mul, minpoly.aeval, zero_mul, add_zero]
+        _ = aeval z (derivative ψ) := by rw [hg]
+        _ = 0 := hderiv
     exact (mul_eq_zero.mp h).resolve_left (hsep.aeval_derivative_ne_zero (minpoly.aeval K z))
   have hmg : minpoly K z ∣ g := minpoly.dvd K z hg0
   have hdeg : (minpoly K z * minpoly K z).natDegree ≤ 2 := by
