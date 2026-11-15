@@ -58,7 +58,7 @@ private theorem mul_sum_Ico_norm_le {E : Type*} [SeminormedAddCommGroup E]
 
 /-- If `1 < c`, `c * ‖u m‖ ≤ ‖u (m + 1)‖` eventually, and `0 < ‖u m‖` frequently, then `‖u n‖ → +∞`
 as `n → ∞`. -/
-theorem tendsto_norm_atTop_of_mul_norm_le {E : Type*} [SeminormedAddCommGroup E]
+theorem tendsto_norm_atTop_of_mul_norm_le {E : Type*} [Norm E]
     {u : ℕ → E} {c : ℝ} (hc : 1 < c)
     (hstep : ∀ᶠ m in atTop, c * ‖u m‖ ≤ ‖u (m + 1)‖)
     (hne : ∃ᶠ m in atTop, 0 < ‖u m‖) :
@@ -121,21 +121,21 @@ end TauCeti
 namespace Asymptotics.IsLittleO
 
 /-- If `u =o[atTop] fun m ↦ u (m + 1)`, then eventually `3 * ‖u m‖ ≤ ‖u (m + 1)‖`. -/
-private theorem eventually_three_mul_norm_le {E : Type*} [SeminormedAddCommGroup E]
+private theorem eventually_three_mul_norm_le {E : Type*} [Norm E]
     {u : ℕ → E} (hu : u =o[atTop] fun m ↦ u (m + 1)) :
     ∀ᶠ m in atTop, 3 * ‖u m‖ ≤ ‖u (m + 1)‖ := by
   filter_upwards [hu.def (by positivity : (0 : ℝ) < 1 / 3)] with m hm
   linarith
 
 /-- If `u =o[atTop] fun m ↦ u (m + 1)` and `0 < ‖u m‖` frequently, then `‖u n‖ → ∞`. -/
-theorem tendsto_norm_atTop_of_succ {E : Type*} [SeminormedAddCommGroup E]
+theorem tendsto_norm_atTop_of_succ {E : Type*} [Norm E]
     {u : ℕ → E} (hu : u =o[atTop] fun m ↦ u (m + 1))
     (hne : ∃ᶠ m in atTop, 0 < ‖u m‖) :
     Tendsto (fun n ↦ ‖u n‖) atTop atTop :=
   TauCeti.tendsto_norm_atTop_of_mul_norm_le (by norm_num) hu.eventually_three_mul_norm_le hne
 
 /-- If `u =o[atTop] fun m ↦ u (m + 1)` and `0 < ‖u m‖` frequently, then `0 < ‖u m‖` eventually. -/
-theorem eventually_norm_pos_of_succ {E : Type*} [SeminormedAddCommGroup E]
+theorem eventually_norm_pos_of_succ {E : Type*} [Norm E]
     {u : ℕ → E} (hu : u =o[atTop] fun m ↦ u (m + 1))
     (hne : ∃ᶠ m in atTop, 0 < ‖u m‖) :
     ∀ᶠ m in atTop, 0 < ‖u m‖ :=

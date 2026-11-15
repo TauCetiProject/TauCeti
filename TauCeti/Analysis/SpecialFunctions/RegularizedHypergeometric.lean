@@ -34,6 +34,7 @@ Because `1 / Γ` vanishes at the poles of `Γ`, none of these statements needs a
   function `𝐌(1, b, z) = ∑ zⁿ / Γ(b + n)`.
 * `Complex.regularizedHGFunCoeff_singleton` — the coefficients `(a)ₙ / (n! Γ(b + n))` of Kummer's
   function `𝐌(a, b, z) = ∑ (a)ₙ zⁿ / (n! Γ(b + n))`.
+* `Complex.regularizedHGFun_singleton_zero_left` — `𝐌(0, b, z) = (Γ b)⁻¹`.
 * `Complex.hasSum_regularizedHGFun_zero_singleton_ofReal_re` — the real series of `₀F₁` at real
   arguments.
 * `Complex.continuous_regularizedHGFun_zero_singleton_ofReal_re` — joint continuity in `(b, y)`.
@@ -119,6 +120,21 @@ theorem regularizedHGFunCoeff_one_singleton (b : ℂ) (n : ℕ) :
 theorem regularizedHGFunCoeff_singleton (a b : ℂ) (n : ℕ) :
     regularizedHGFunCoeff {a} {b} n = (ascPochhammer ℂ n).eval a / (n ! * Gamma (b + n)) := by
   simp [regularizedHGFunCoeff]
+
+/-- At `a = 0`, Kummer's regularized function reduces to the constant `𝐌(0, b, z) = (Γ b)⁻¹`
+(directly from the series [DLMF 13.2.4](https://dlmf.nist.gov/13.2#E4), since `(0)ₙ = 0` for
+`n ≥ 1`), including at `b ∈ -ℕ` where both sides vanish. -/
+@[simp]
+theorem regularizedHGFun_singleton_zero_left (b z : ℂ) :
+    regularizedHGFun {0} {b} z = (Gamma b)⁻¹ := by
+  have h : HasSum (fun n : ℕ ↦ regularizedHGFunCoeff {0} {b} (n + 1) * z ^ (n + 1))
+      (regularizedHGFun {0} {b} z - (Gamma b)⁻¹) := by
+    simpa [one_div] using
+      (hasSum_nat_add_iff' 1).mpr (hasSum_regularizedHGFun (a := {0}) (b := {b}) (by simp) z)
+  have hzero : HasSum (fun n : ℕ ↦ regularizedHGFunCoeff {0} {b} (n + 1) * z ^ (n + 1)) 0 := by
+    convert hasSum_zero (α := ℂ) (β := ℕ) with n
+    simp
+  linear_combination h.unique hzero
 
 /-- The complex-valued `₀F₁` series at real parameters and arguments sums to its regularized
 hypergeometric value. -/

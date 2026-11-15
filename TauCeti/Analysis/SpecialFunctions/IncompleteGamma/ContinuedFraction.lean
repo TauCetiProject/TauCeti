@@ -14,9 +14,10 @@ import TauCeti.Analysis.SpecialFunctions.Hypergeometric.KummerLimit
 /-!
 # The continued fraction for the lower incomplete Gamma function (DLMF 8.9.1)
 
-In the classical continued-fraction expansion (DLMF 8.9.1) of the lower incomplete Gamma function,
-dividing the first two levels by `a` removes the removable singularity at `a = 0` and yields the
-formal generalized continued fraction
+Multiplying `z^{-a} e^z γ(a, z)` in the classical continued-fraction expansion (DLMF 8.9.1) of the
+lower incomplete Gamma function by `a` gives `a / (a - a z / (a + 1 + ⋯))`, introducing a `0 / 0`
+factor at `a = 0` across the first fraction bar; dividing that bar (`a₁`, `b₁`, `a₂`) by `a`
+removes it and yields the normalized formal generalized continued fraction
 $$
   \cfrac{1}{1 - \cfrac{z}{a + 1 + \cfrac{z}{a + 2 - \cfrac{(a + 1)z}{a + 3 +
         \cfrac{2z}{a + 4 - \cdots}}}}}
@@ -42,21 +43,23 @@ $$
   f(m) = (-1)^{\lceil m / 2 \rceil}\,\Gamma(a + 1)\,z^{m - 1}\,d_m\,
     \mathbf{M}\bigl(\lceil m / 2 \rceil, a + m, z\bigr) \quad (m \ge 1),
 $$
-where `d_{2k} = (a + 1)_{k - 1} (k - 1)!` and `d_{2k + 1} = (a + 1)_{k - 1} k!`, identify its
-initial ratio `-(f(1) / f(0))` with `Γ(a + 1) e^z γ*(a, z)`, and combine the Kummer contiguous
-relations with the large-parameter limit `Γ(2k + c) 𝐌(k, 2k + c, z) → e^{z / 2}` to show that
-consecutive reduction-of-order summands `(-1)^m (∏_{j=1}^m a_j) / (f(m) f(m + 1))` have ratio
-`O(1 / m) → 0`, so their partial sums diverge in norm for every starting index `N`.
+where `d_m = tricomiContFracScale a m` has `d₁ = 1`, `d_{2k} = (a + 1)_{k - 1} (k - 1)!` (`k ≥ 1`),
+and `d_{2k + 1} = (a + 1)_{k - 1} k!` (`k ≥ 1`), identify its initial ratio `-(f(1) / f(0))` with
+`Γ(a + 1) e^z γ*(a, z)`, and combine the Kummer contiguous relations with the large-parameter limit
+`Γ(2k + c) 𝐌(k, 2k + c, z) → e^{z / 2}` to show that consecutive reduction-of-order summands
+`(-1)^m (∏_{j=1}^m a_j) / (f(m) f(m + 1))` have ratio `O(1 / m) → 0`, so their partial sums diverge
+in norm for every starting index `N`.
 
 ## Main definitions
 
-* `Complex.tricomiContFracPartNum a z n`, `Complex.tricomiContFracPartDen a n` — the partial
-  numerators `aₙ` and partial denominators `bₙ` of DLMF 8.9.1 (`1`-indexed).
-* `Complex.tricomiContFrac a z` — the generalized continued fraction (`GenContFract ℂ`) with head
-  `0` and stream `n ↦ ⟨a_{n + 1}, b_{n + 1}⟩`.
+* `Complex.tricomiContFracPartNum a z n`, `Complex.tricomiContFracPartDen a n` — the `1`-indexed
+  partial numerators `aₙ` and partial denominators `bₙ` of the normalized continued fraction
+  `Complex.tricomiContFrac a z`.
+* `Complex.tricomiContFrac a z` — the normalized generalized continued fraction (`GenContFract ℂ`)
+  with head `0` and stream `n ↦ ⟨a_{n + 1}, b_{n + 1}⟩`.
 * `Complex.tricomiContFracScale a n` — the scaling factors `dₙ`.
 * `Complex.tricomiContFracSolution a z` — the explicit Kummer sequence solving the three-term
-  recurrence of `tricomiContFrac a z`.
+  recurrence of `tricomiContFrac a z` for `a ∉ {-1, -2, …}` (and unconditionally for `n ≥ 2`).
 
 ## Main results
 
@@ -68,13 +71,15 @@ consecutive reduction-of-order summands `(-1)^m (∏_{j=1}^m a_j) / (f(m) f(m + 
   exact evaluation `(tricomiContFrac a 0).convs (k + 1) = 1` and convergence at `z = 0` for
   `a ∉ {-1, -2, …}`.
 * `Complex.prod_Icc_tricomiContFracPartNum`:
-  `∏_{j=1}^m a_j = (-1)^{⌊m/2⌋} z^{m - 1} d_m`.
+  `∏_{j=1}^m a_j = (-1)^{⌊m/2⌋} z^{m - 1} d_m` for `m ≥ 1` (and `1` at `m = 0`, via truncated
+  subtraction on `ℕ`).
 * `Complex.tricomiContFracSolution_add_one`: the three-term recurrence
   `f(n + 1) = b_n f(n) + a_n f(n - 1)` for `n ≥ 1` and `a ∉ {-1, -2, …}` (and unconditionally for
   `n ≥ 2` in `Complex.tricomiContFracSolution_add_one_of_two_le`).
 * `Complex.eventually_tricomiContFracSolution_ne_zero`: `f(n) ≠ 0` eventually for `z ≠ 0` and
   `a ∉ {-1, -2, …}`.
-* `Complex.tendsto_norm_sum_tricomiContFrac_reductionOfOrder`: the reduction-of-order partial sums
+* `Complex.tendsto_norm_sum_Ico_tricomiContFracPartNum_div_tricomiContFracSolution_atTop`:
+  for `z ≠ 0` and `a ∉ {-1, -2, …}`, the reduction-of-order partial sums
   `‖∑_{m = N}^{n - 1} (-1)^m (∏_{j=1}^m a_j) / (f(m) f(m + 1))‖` tend to `+∞` as `n → ∞`.
 
 ## References
@@ -98,8 +103,9 @@ namespace Complex
 
 /-! ### Partial numerators, partial denominators, and the continued fraction -/
 
-/-- The `1`-indexed partial numerators of the continued fraction for
-`Γ(a + 1) e^z γ*(a, z)` (DLMF 8.9.1, divided by `a` at the top two levels): `a₀ = 0`, `a₁ = 1`,
+/-- The `1`-indexed partial numerators of the normalized continued fraction
+`Complex.tricomiContFrac a z` for `Γ(a + 1) e^z γ*(a, z)` (obtained from `a · z^{-a} e^z γ(a, z)`
+in DLMF 8.9.1 by dividing the first fraction bar `a₁`, `b₁`, `a₂` by `a`): `a₀ = 0`, `a₁ = 1`,
 `a₂ = -z`, `a_{2k} = -(a + k - 1) z` for `k ≥ 2`, and `a_{2k + 1} = k z` for `k ≥ 1`. -/
 def tricomiContFracPartNum (a z : ℂ) (n : ℕ) : ℂ :=
   if n = 0 then 0
@@ -158,8 +164,8 @@ theorem tricomiContFracPartNum_zero_right_of_two_le (a : ℂ) {n : ℕ} (hn : 2 
   · subst h2; simp
   · by_cases he : Even n <;> simp [tricomiContFracPartNum_def, h0, h1, h2, he]
 
-/-- The `1`-indexed partial denominators of DLMF 8.9.1: `b₀ = 0`, `b₁ = 1`, and `b_n = a + n - 1`
-for `n ≥ 2`. -/
+/-- The `1`-indexed partial denominators of the normalized continued fraction
+`Complex.tricomiContFrac a z`: `b₀ = 0`, `b₁ = 1`, and `b_n = a + n - 1` for `n ≥ 2`. -/
 def tricomiContFracPartDen (a : ℂ) (n : ℕ) : ℂ :=
   if n = 0 then 0 else if n = 1 then 1 else a + n - 1
 
@@ -184,9 +190,9 @@ theorem tricomiContFracPartDen_of_two_le (a : ℂ) {n : ℕ} (hn : 2 ≤ n) :
   have h1 : n ≠ 1 := by omega
   simp [tricomiContFracPartDen_def, h0, h1]
 
-/-- The generalized continued fraction (DLMF 8.9.1) for `Γ(a + 1) e^z γ*(a, z)`, with zero head
-term and `(n + 1)`-th pair `⟨tricomiContFracPartNum a z (n + 1), tricomiContFracPartDen a (n + 1)⟩`
-at stream index `n`. -/
+/-- The normalized generalized continued fraction (rescaled from DLMF 8.9.1) for
+`Γ(a + 1) e^z γ*(a, z)`, with zero head term and `(n + 1)`-th pair
+`⟨tricomiContFracPartNum a z (n + 1), tricomiContFracPartDen a (n + 1)⟩` at stream index `n`. -/
 def tricomiContFrac (a z : ℂ) : GenContFract ℂ :=
   ⟨0, Stream'.Seq.ofStream fun n ↦
     ⟨tricomiContFracPartNum a z (n + 1), tricomiContFracPartDen a (n + 1)⟩⟩
@@ -327,7 +333,7 @@ theorem tricomiContFrac_zero_right_convs_succ {a : ℂ} (ha : ∀ k : ℕ, a ≠
     tricomiContFrac_zero_right_dens_succ, div_self (ascPochhammer_eval_add_one_ne_zero ha k)]
 
 /-- At `z = 0` and `a ∉ {-1, -2, …}`, the convergents of `tricomiContFrac a 0` are eventually
-constant at `1 = Γ(a + 1) e^0 γ*(a, 0)` and therefore converge to DLMF 8.9.1's value. -/
+constant at `1 = Γ(a + 1) e^0 γ*(a, 0)`, the normalized value at `z = 0`. -/
 theorem tendsto_tricomiContFrac_zero_right_convs {a : ℂ} (ha : ∀ k : ℕ, a ≠ -(k + 1 : ℂ)) :
     Tendsto (tricomiContFrac a 0).convs atTop
       (𝓝 (Gamma (a + 1) * cexp 0 * tricomiIncompleteGamma a 0)) := by
@@ -343,8 +349,9 @@ theorem tendsto_tricomiContFrac_zero_right_convs {a : ℂ} (ha : ∀ k : ℕ, a 
 /-! ### Scaling factors and partial-numerator products -/
 
 /-- The scaling factors `dₙ` in the explicit Kummer solution `Complex.tricomiContFracSolution`
-of the three-term recurrence of DLMF 8.9.1: `d₁ = 1`, `d_{2k} = (a + 1)_{k - 1} (k - 1)!` for
-`k ≥ 1`, and `d_{2k + 1} = (a + 1)_{k - 1} k!` for `k ≥ 1`. -/
+of the three-term recurrence of `Complex.tricomiContFrac`: `d₀ = d₁ = 1`,
+`d_{2k} = (a + 1)_{k - 1} (k - 1)!` for `k ≥ 1`, and `d_{2k + 1} = (a + 1)_{k - 1} k!` for
+`k ≥ 1`. -/
 def tricomiContFracScale (a : ℂ) (n : ℕ) : ℂ :=
   (ascPochhammer ℂ ((n - 2) / 2)).eval (a + 1) * (((n - 1) / 2)! : ℂ)
 
@@ -352,6 +359,11 @@ def tricomiContFracScale (a : ℂ) (n : ℕ) : ℂ :=
 theorem tricomiContFracScale_def (a : ℂ) (n : ℕ) :
     tricomiContFracScale a n =
       (ascPochhammer ℂ ((n - 2) / 2)).eval (a + 1) * (((n - 1) / 2)! : ℂ) := (rfl)
+
+/-- `tricomiContFracScale a 0 = 1`. -/
+@[simp]
+theorem tricomiContFracScale_zero (a : ℂ) : tricomiContFracScale a 0 = 1 := by
+  simp [tricomiContFracScale_def]
 
 /-- `tricomiContFracScale a 1 = 1`. -/
 @[simp]
@@ -368,15 +380,17 @@ theorem tricomiContFracScale_two (a : ℂ) : tricomiContFracScale a 2 = 1 := by
 theorem tricomiContFracScale_three (a : ℂ) : tricomiContFracScale a 3 = 1 := by
   simp [tricomiContFracScale_def]
 
-/-- At even index `2k` (`k ≥ 1`), `d_{2k} = (a + 1)_{k - 1} (k - 1)!`. -/
-theorem tricomiContFracScale_two_mul (a : ℂ) {k : ℕ} (hk : 1 ≤ k) :
+/-- At even index `2k`, `d_{2k} = (a + 1)_{k - 1} (k - 1)!` (`k ≥ 1`), with `d₀ = 1` at `k = 0` via
+truncated subtraction on `ℕ`. -/
+theorem tricomiContFracScale_two_mul (a : ℂ) (k : ℕ) :
     tricomiContFracScale a (2 * k) =
       (ascPochhammer ℂ (k - 1)).eval (a + 1) * ((k - 1)! : ℂ) := by
   have h1 : (2 * k - 2) / 2 = k - 1 := by omega
   have h2 : (2 * k - 1) / 2 = k - 1 := by omega
   rw [tricomiContFracScale_def, h1, h2]
 
-/-- At odd index `2k + 1`, `d_{2k + 1} = (a + 1)_{k - 1} k!`. -/
+/-- At odd index `2k + 1`, `d_{2k + 1} = (a + 1)_{k - 1} k!` (`k ≥ 1`), with `d₁ = 1` at `k = 0`
+via truncated subtraction on `ℕ`. -/
 theorem tricomiContFracScale_two_mul_add_one (a : ℂ) (k : ℕ) :
     tricomiContFracScale a (2 * k + 1) =
       (ascPochhammer ℂ (k - 1)).eval (a + 1) * (k ! : ℂ) := by
@@ -388,7 +402,7 @@ theorem tricomiContFracScale_two_mul_add_one (a : ℂ) (k : ℕ) :
 theorem tricomiContFracScale_two_mul_add_one_eq_mul (a : ℂ) {k : ℕ} (hk : 1 ≤ k) :
     tricomiContFracScale a (2 * k + 1) = k * tricomiContFracScale a (2 * k) := by
   obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le' hk
-  rw [tricomiContFracScale_two_mul_add_one, tricomiContFracScale_two_mul a hk, Nat.add_sub_cancel,
+  rw [tricomiContFracScale_two_mul_add_one, tricomiContFracScale_two_mul, Nat.add_sub_cancel,
     Nat.factorial_succ, Nat.cast_mul]
   push_cast
   ring
@@ -400,7 +414,7 @@ private theorem two_mul_succ_sub_one (k : ℕ) : 2 * (k + 1) - 1 = 2 * k + 1 := 
 theorem tricomiContFracScale_two_mul_succ_eq_mul (a : ℂ) {k : ℕ} (hk : 1 ≤ k) :
     tricomiContFracScale a (2 * (k + 1)) = (a + k) * tricomiContFracScale a (2 * k + 1) := by
   obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le' hk
-  rw [tricomiContFracScale_two_mul a (by omega), tricomiContFracScale_two_mul_add_one,
+  rw [tricomiContFracScale_two_mul, tricomiContFracScale_two_mul_add_one,
     Nat.add_sub_cancel, Nat.add_sub_cancel, ascPochhammer_succ_eval]
   push_cast
   ring
@@ -435,24 +449,26 @@ theorem prod_Icc_tricomiContFracPartNum_ne_zero {a z : ℂ}
   Finset.prod_ne_zero_iff.mpr fun _ hj ↦
     tricomiContFracPartNum_ne_zero ha hz (Finset.mem_Icc.mp hj).1
 
-/-- Closed form for the product of the first `m` partial numerators (`m ≥ 1`):
-`∏_{j = 1}^m a_j = (-1)^{⌊m / 2⌋} z^{m - 1} d_m`. -/
-theorem prod_Icc_tricomiContFracPartNum (a z : ℂ) {m : ℕ} (hm : 1 ≤ m) :
+/-- Closed form for the product of the first `m` partial numerators:
+`∏_{j = 1}^m a_j = (-1)^{⌊m / 2⌋} z^{m - 1} d_m` for `m ≥ 1` (and `1` at `m = 0`, via truncated
+subtraction on `ℕ`). -/
+theorem prod_Icc_tricomiContFracPartNum (a z : ℂ) (m : ℕ) :
     ∏ j ∈ Icc 1 m, tricomiContFracPartNum a z j =
       (-1) ^ (m / 2) * z ^ (m - 1) * tricomiContFracScale a m := by
-  induction m, hm using Nat.le_induction with
-  | base => simp
-  | succ m hm ih =>
+  induction m with
+  | zero => simp
+  | succ m ih =>
     rw [prod_Icc_succ_top (Nat.le_add_left 1 m), ih, Nat.add_sub_cancel]
     rcases m.even_or_odd' with ⟨k, rfl | rfl⟩
-    · have hk : 1 ≤ k := by omega
-      have hd1 : 2 * k / 2 = k := by omega
-      have hd2 : (2 * k + 1) / 2 = k := by omega
-      have hzpow : z ^ (2 * k) = z ^ (2 * k - 1) * z := by
-        rw [← pow_succ]; congr 1; omega
-      rw [tricomiContFracPartNum_two_mul_add_one a z hk,
-        tricomiContFracScale_two_mul_add_one_eq_mul a hk, hd1, hd2, hzpow]
-      ring
+    · rcases eq_or_lt_of_le (Nat.zero_le k) with rfl | hk
+      · simp
+      · have hd1 : 2 * k / 2 = k := by omega
+        have hd2 : (2 * k + 1) / 2 = k := by omega
+        have hzpow : z ^ (2 * k) = z ^ (2 * k - 1) * z := by
+          rw [← pow_succ]; congr 1; omega
+        rw [tricomiContFracPartNum_two_mul_add_one a z hk,
+          tricomiContFracScale_two_mul_add_one_eq_mul a hk, hd1, hd2, hzpow]
+        ring
     · rcases eq_or_lt_of_le (Nat.zero_le k) with rfl | hk
       · simp
       · have h2k : 2 * k + 1 + 1 = 2 * (k + 1) := by omega
@@ -466,8 +482,10 @@ theorem prod_Icc_tricomiContFracPartNum (a z : ℂ) {m : ℕ} (hm : 1 ≤ m) :
 
 /-! ### Explicit Kummer solution and the three-term recurrence -/
 
-/-- The explicit Kummer sequence solving the three-term recurrence of `tricomiContFrac a z`:
-`f(0) = 1` and `f(m) = (-1)^{⌈m / 2⌉} Γ(a + 1) z^{m - 1} d_m 𝐌(⌈m / 2⌉, a + m, z)` for `m ≥ 1`. -/
+/-- The explicit Kummer sequence solving the three-term recurrence of `tricomiContFrac a z` for
+`a ∉ {-1, -2, …}` (and unconditionally for `n ≥ 2`): `f(0) = 1` and
+`f(m) = (-1)^{⌈m / 2⌉} Γ(a + 1) z^{m - 1} d_m 𝐌(⌈m / 2⌉, a + m, z)` for `m ≥ 1`, where
+`d_m = tricomiContFracScale a m`. -/
 def tricomiContFracSolution (a z : ℂ) : ℕ → ℂ
   | 0 => 1
   | m + 1 => (-1) ^ ((m + 2) / 2) * Gamma (a + 1) * z ^ m * tricomiContFracScale a (m + 1) *
@@ -592,7 +610,7 @@ private theorem tricomiContFracSolution_eq_prefactor_mul (a z : ℂ) {m : ℕ} (
       tricomiPrefactor a z m *
         regularizedHGFun {(((m + 1) / 2 : ℕ) : ℂ)} {a + (m : ℕ)} z := by
   obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hm
-  rw [tricomiContFracSolution_succ_def, tricomiPrefactor, prod_Icc_tricomiContFracPartNum a z hm,
+  rw [tricomiContFracSolution_succ_def, tricomiPrefactor, prod_Icc_tricomiContFracPartNum,
     neg_one_pow_succ_div_two, Nat.add_sub_cancel]
   ring
 
@@ -942,13 +960,13 @@ private theorem isLittleO_reductionTerm_succ {a z : ℂ}
     · exact hK₁ k (by omega)
     · exact hK₂ k (by omega)
 
-/-- **Reduction-of-order divergence for DLMF 8.9.1**: for `a ∉ {-1, -2, …}`, `z ≠ 0`, and every
-starting index `N`, the norms of the partial sums
+/-- **Reduction-of-order divergence for `tricomiContFrac`**: for `a ∉ {-1, -2, …}`, `z ≠ 0`, and
+every starting index `N`, the norms of the partial sums
 `∑_{m = N}^{n - 1} (-1)^m (∏_{j=1}^m a_j) / (f(m) f(m + 1))` tend to `+∞` as `n → ∞`. This is the
 reduction-of-order divergence condition for `tricomiContFracSolution a z` (which characterizes
 minimality via Pincherle's theorem). -/
-theorem tendsto_norm_sum_tricomiContFrac_reductionOfOrder {a z : ℂ}
-    (ha : ∀ k : ℕ, a ≠ -(k + 1 : ℂ)) (hz : z ≠ 0) (N : ℕ) :
+theorem tendsto_norm_sum_Ico_tricomiContFracPartNum_div_tricomiContFracSolution_atTop
+    {a z : ℂ} (ha : ∀ k : ℕ, a ≠ -(k + 1 : ℂ)) (hz : z ≠ 0) (N : ℕ) :
     Tendsto (fun n ↦ ‖∑ m ∈ Ico N n,
       (-1) ^ m * (∏ j ∈ Icc 1 m, tricomiContFracPartNum a z j) /
         (tricomiContFracSolution a z m * tricomiContFracSolution a z (m + 1))‖)
