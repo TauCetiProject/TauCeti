@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Flow.InvariantSet
 import TauCeti.Dynamics.Flow.Lyapunov
 import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
+import TauCeti.Topology.OmegaLimit
 
 /-!
 # Trajectories of a continuation field in the slab
@@ -266,22 +267,6 @@ private theorem finite_setOf_mem_criticalPoints_of_snd_eq_zero_or_one
   · exact .inl ⟨by rwa [h] at hw, h⟩
   · exact .inr ⟨by rwa [h] at hw, h⟩
 
-/-- A cluster point at `+∞` of a curve along which a continuous function `g` increases has a value
-of `g` at least that at any point of the curve. -/
-private theorem le_of_mapClusterPt_atTop {X : Type*} [TopologicalSpace X] {c : ℝ → X} {g : X → ℝ}
-    (hg : Continuous g) (hc : Monotone (g ∘ c)) {w : X} (hw : MapClusterPt w atTop c) (t₀ : ℝ) :
-    g (c t₀) ≤ g w :=
-  (isClosed_le continuous_const hg).mem_of_mapClusterPt hw <|
-    (eventually_ge_atTop t₀).mono fun _ ht ↦ hc ht
-
-/-- A cluster point at `-∞` of a curve along which a continuous function `g` increases has a value
-of `g` at most that at any point of the curve. -/
-private theorem le_of_mapClusterPt_atBot {X : Type*} [TopologicalSpace X] {c : ℝ → X} {g : X → ℝ}
-    (hg : Continuous g) (hc : Monotone (g ∘ c)) {w : X} (hw : MapClusterPt w atBot c) (t₀ : ℝ) :
-    g w ≤ g (c t₀) :=
-  (isClosed_le hg continuous_const).mem_of_mapClusterPt hw <|
-    (eventually_le_atBot t₀).mono fun _ ht ↦ hc ht
-
 section Ends
 
 variable [T2Space M] [IsManifold I 1 M] [I.Boundaryless] [CompactSpace M]
@@ -462,9 +447,9 @@ theorem exists_tendsto_maximalIntegralCurve_atTop_of_continuationPotential_of_sn
           hlt hw).1 hc
       -- The time component increases, so it stays above `z.2 > 0` in forward time.
       have hle : z.2 ≤ w.2 := by
-        simpa only [maximalIntegralCurve_zero] using le_of_mapClusterPt_atTop continuous_snd
-          (strictMono_snd_maximalIntegralCurve_of_intervalBase hv hV hδ hf₀ hf₁ hlt hz).monotone
-          hcl 0
+        simpa only [maximalIntegralCurve_zero] using
+          hcl.ge_of_monotone_comp_atTop continuous_snd.continuousAt
+            (strictMono_snd_maximalIntegralCurve_of_intervalBase hv hV hδ hf₀ hf₁ hlt hz).monotone 0
       have h : w.2 = 1 := h01.resolve_left fun h ↦ by linarith [hz.1]
       exact ⟨by rwa [h] at hw1, h⟩
   exact ⟨q, hq, hlim⟩
@@ -497,9 +482,9 @@ theorem exists_tendsto_maximalIntegralCurve_atBot_of_continuationPotential_of_sn
           hlt hw).1 hc
       -- The time component increases, so it stays below `z.2 < 1` in backward time.
       have hle : w.2 ≤ z.2 := by
-        simpa only [maximalIntegralCurve_zero] using le_of_mapClusterPt_atBot continuous_snd
-          (strictMono_snd_maximalIntegralCurve_of_intervalBase hv hV hδ hf₀ hf₁ hlt hz).monotone
-          hcl 0
+        simpa only [maximalIntegralCurve_zero] using
+          hcl.le_of_monotone_comp_atBot continuous_snd.continuousAt
+            (strictMono_snd_maximalIntegralCurve_of_intervalBase hv hV hδ hf₀ hf₁ hlt hz).monotone 0
       have h : w.2 = 0 := h01.resolve_right fun h ↦ by linarith [hz.2]
       exact ⟨by rwa [h] at hw0, h⟩
   exact ⟨p, hp, hlim⟩

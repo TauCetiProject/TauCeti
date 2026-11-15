@@ -51,6 +51,9 @@ locus, to be a single point.
 * `TauCeti.exists_tendsto_atTop_of_setOf_mapClusterPt_subset_of_isTotallyDisconnected` — such a
   curve whose ω-limit set lies in a totally disconnected set converges to a point of that set.
 * `TauCeti.exists_tendsto_atTop_of_setOf_mapClusterPt_subset` — the case of a finite set.
+* `MapClusterPt.ge_of_monotone_comp_atTop` and `MapClusterPt.le_of_monotone_comp_atBot` — a
+  function increasing along a curve is at least its values along the curve at an ω-limit point,
+  and at most these values at an α-limit point.
 * `Flow.mapClusterPt_atTop_flow` — the ω-limit set of an orbit of a flow of `ℝ` is invariant
   under the flow.
 
@@ -127,6 +130,33 @@ theorem exists_tendsto_atTop_of_setOf_mapClusterPt_subset [T2Space X] (hK : IsCo
     hC.isDiscrete.isTotallyDisconnected hsub
 
 end TauCeti
+
+namespace MapClusterPt
+
+open Filter Set
+
+variable {ι X β : Type*} [Preorder ι] [TopologicalSpace X] [TopologicalSpace β] [Preorder β]
+  {c : ι → X} {g : X → β} {w : X}
+
+/-- **A function increasing along a curve is at least its values along the curve at an ω-limit
+point.** If `g ∘ c` is monotone and `g` is continuous at a cluster point `w` of `c` at `+∞`, then
+`g (c i) ≤ g w` for every `i`. This is `Monotone.ge_of_tendsto` for a cluster point instead of a
+limit. -/
+theorem ge_of_monotone_comp_atTop [ClosedIciTopology β] (hw : MapClusterPt w atTop c)
+    (hg : ContinuousAt g w) (hc : Monotone (g ∘ c)) (i : ι) : g (c i) ≤ g w :=
+  (isClosed_Ici (a := g (c i))).mem_of_mapClusterPt (hw.continuousAt_comp hg) <|
+    (eventually_ge_atTop i).mono fun _ hj ↦ hc hj
+
+/-- **A function increasing along a curve is at most its values along the curve at an α-limit
+point.** If `g ∘ c` is monotone and `g` is continuous at a cluster point `w` of `c` at `-∞`, then
+`g w ≤ g (c i)` for every `i`. This is `Monotone.le_of_tendsto` for a cluster point instead of a
+limit. -/
+theorem le_of_monotone_comp_atBot [ClosedIicTopology β] (hw : MapClusterPt w atBot c)
+    (hg : ContinuousAt g w) (hc : Monotone (g ∘ c)) (i : ι) : g w ≤ g (c i) :=
+  (isClosed_Iic (a := g (c i))).mem_of_mapClusterPt (hw.continuousAt_comp hg) <|
+    (eventually_le_atBot i).mono fun _ hj ↦ hc hj
+
+end MapClusterPt
 
 namespace Flow
 
