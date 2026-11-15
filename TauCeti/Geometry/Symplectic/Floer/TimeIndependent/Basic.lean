@@ -8,7 +8,9 @@ module
 public import TauCeti.Analysis.Calculus.Morse.FlowExistence
 public import TauCeti.Dynamics.Flow.Stable
 public import TauCeti.Geometry.Symplectic.Floer.Energy
+public import TauCeti.Geometry.Symplectic.Floer.Linearization
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Standard
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 
 /-!
 # Time-independent Floer solutions are gradient lines
@@ -44,6 +46,11 @@ is the passage from the perturbed equation to holomorphic strips between the two
   `J`-invariant form, exactly when `γ'` is the gradient of `H` for `g = ω(·, J ·)`.
 * `TauCeti.SymplecticForm.floerEnergyDensity_comp_fst`: the energy density of a time-independent
   map is `dH(γ(s)) γ'(s)`.
+* `TauCeti.SymplecticForm.floerLinearization_const_eq_zero_iff`: for a constant structure `J`, a
+  section `ξ` is in the kernel of the linearized operator of `K = H dt` along any map `u` exactly
+  when `∂s ξ = -J ∂t ξ + J dX_H(u) ξ`.
+* `TauCeti.SymplecticForm.floerLinearization_comp_fst_eq_zero_iff`: a time-independent section
+  `(s, t) ↦ ζ(s)` is in that kernel exactly when `ζ' = J dX_H(u) ζ`.
 * `TauCeti.isComplexLinearMap_perturbedFDeriv_comp_fst_iff_hasDerivAt`: in the cotangent model,
   a time-independent map solves the Floer equation exactly when `γ' = (∇h(q), 0)`.
 * `TauCeti.floerEnergyDensity_comp_fst_eq_norm_gradient_sq`: in the cotangent model, the energy
@@ -135,6 +142,39 @@ theorem floerEnergyDensity_comp_fst (hγ : DifferentiableAt ℝ γ z.1) :
   calc ω (deriv γ z.1) (-ω.hamiltonianVectorField H (γ z.1))
       = -ω (deriv γ z.1) (ω.hamiltonianVectorField H (γ z.1)) := map_neg (ω.toBilinForm _) _
     _ = fderiv ℝ H (γ z.1) (deriv γ z.1) := by rw [ω.neg_eq, apply_hamiltonianVectorField]
+
+/-- The linearized Floer operator of `K = H dt` with the constant structure `J`, along any map `u`,
+is `∂s ξ + J ∂t ξ - J dX_H(u) ξ`. -/
+private theorem floerLinearization_const_apply (u ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
+    ω.floerLinearization (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+        (fun _ ↦ H) u ξ z =
+      fderiv ℝ ξ z (1, 0) + J (fderiv ℝ ξ z (0, 1)) -
+        J (fderiv ℝ (ω.hamiltonianVectorField H) (u z) (ξ z)) := by
+  simp [floerLinearization_def, hamiltonianVectorField_const, stdComplexLineReal_eq,
+    stdComplexLineImag_eq, map_sub, add_sub_assoc]
+
+/-- **The kernel of the linearized operator for a constant structure.** Along any map `u`, a
+section `ξ` is in the kernel at `z` of the linearized Floer operator of `K = H dt` with the
+constant structure `J` exactly when it solves `∂s ξ = -J ∂t ξ + J dX_H(u) ξ` at `z`. -/
+theorem floerLinearization_const_eq_zero_iff {u ξ : ℝ × ℝ → V} :
+    ω.floerLinearization (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+        (fun _ ↦ H) u ξ z = 0 ↔
+      fderiv ℝ ξ z (1, 0) =
+        -J (fderiv ℝ ξ z (0, 1)) + J (fderiv ℝ (ω.hamiltonianVectorField H) (u z) (ξ z)) := by
+  rw [floerLinearization_const_apply]
+  constructor <;> intro h <;> linear_combination (norm := module) h
+
+/-- **Time-independent sections in the kernel.** Along any map `u`, the section `(s, t) ↦ ζ(s)` is
+in the kernel of the linearized Floer operator of `K = H dt` at `z` exactly when
+`ζ'(s) = J dX_H(u(z)) ζ(s)`, where `s = z.1`. This is the linearized counterpart of
+`TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_fst_iff`. -/
+theorem floerLinearization_comp_fst_eq_zero_iff {u : ℝ × ℝ → V} {ζ : ℝ → V} :
+    ω.floerLinearization (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+        (fun _ ↦ H) u (fun w ↦ ζ w.1) z = 0 ↔
+      deriv ζ z.1 = J (fderiv ℝ (ω.hamiltonianVectorField H) (u z) (ζ z.1)) := by
+  rw [floerLinearization_const_eq_zero_iff]
+  simp only [fderiv_comp_fst, ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_fst',
+    map_zero, neg_zero, zero_add, fderiv_apply_one_eq_deriv]
 
 end SymplecticForm
 

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.Morse.Linearization
 public import TauCeti.Geometry.Symplectic.Floer.Linearization
 public import TauCeti.Geometry.Symplectic.Floer.TimeIndependent.Basic
 import Mathlib.Analysis.InnerProductSpace.Calculus
@@ -63,10 +64,11 @@ so `∂t ξ` is again a kernel element, and its slices have mean zero. Hence eve
 element `ξ` of period one in `t` with bounded `∂t ξ` is independent of `t`
 (`TauCeti.SymplecticForm.eq_comp_fst_of_floerLinearization_eq_zero`). A time-independent section
 `(s, t) ↦ ζ(s)` is in the kernel exactly when `ζ' = J dX_H(γ) ζ`
-(`TauCeti.SymplecticForm.floerLinearization_comp_fst_eq_zero_iff`), and since `J X_H = ∇H`
-(`TauCeti.SymplecticForm.apply_hamiltonianVectorField_eq_gradient`) this is the linearized
-gradient equation `ζ' = d(∇H)(γ) ζ`. So the kernel of `D_u` along a gradient line `γ` of a small
-Hamiltonian consists of the solutions of the linearized gradient equation along `γ`
+(`TauCeti.SymplecticForm.floerLinearization_comp_fst_eq_zero_iff`), and since `J dX_H` is the
+Hessian operator `d(∇H)` of `H`
+(`TauCeti.SymplecticForm.apply_fderiv_hamiltonianVectorField_eq_hessianOperator`) this is the
+linearized gradient equation `ζ' = d(∇H)(γ) ζ`. So the kernel of `D_u` along a gradient line `γ`
+of a small Hamiltonian consists of the solutions of the linearized gradient equation along `γ`
 (`TauCeti.SymplecticForm.forall_floerLinearization_eq_zero_iff`), which describe the kernel of the
 linearized Morse operator `ζ ↦ ζ' - d(∇H)(γ) ζ` of the trajectory `γ`.
 
@@ -138,19 +140,21 @@ private theorem fderiv_imag_apply_real (hH : ContDiff ℝ 2 H) (hu : ContDiff �
   rw [h.fderiv]
   simp
 
-/-- **The equation of `∂s ξ`.** If `ξ` solves `∂s ξ = -J ∂t ξ + J dX_H(u) ξ`, then `η = ∂s ξ`
-solves `∂s η = -J ∂t η + J (d²X_H(u)(∂s u) ξ) + J dX_H(u) η`. -/
-private theorem fderiv_real_apply_real (hH : ContDiff ℝ 3 H) (hu : Differentiable ℝ u)
+/-- **The equation of a directional derivative of `ξ`.** If `ξ` solves
+`∂s ξ = -J ∂t ξ + J dX_H(u) ξ`, then for every direction `e` the derivative `η = ∂_e ξ` solves
+`∂s η = -J ∂t η + J (d²X_H(u)(∂_e u) ξ) + J dX_H(u) η`. -/
+private theorem fderiv_fderiv_apply_real_eq (hH : ContDiff ℝ 3 H) (hu : Differentiable ℝ u)
     {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 2 ξ)
     (hξeq : ∀ z, fderiv ℝ ξ z (1, 0) =
       -J (fderiv ℝ ξ z (0, 1)) + J (fderiv ℝ (ω.hamiltonianVectorField H) (u z) (ξ z)))
-    (z : ℝ × ℝ) :
-    fderiv ℝ (fun y ↦ fderiv ℝ ξ y (1, 0)) z (1, 0) =
-      -J (fderiv ℝ (fun y ↦ fderiv ℝ ξ y (1, 0)) z (0, 1)) +
-        J (fderiv ℝ (fderiv ℝ (ω.hamiltonianVectorField H)) (u z) (fderiv ℝ u z (1, 0)) (ξ z)) +
-        J (fderiv ℝ (ω.hamiltonianVectorField H) (u z) (fderiv ℝ ξ z (1, 0))) := by
-  rw [fderiv_fderiv_apply_comm hξ.contDiffAt
-    (by norm_num [minSmoothness_of_isRCLikeNormedField]) (1, 0) (0, 1)]
+    (e z : ℝ × ℝ) :
+    fderiv ℝ (fun y ↦ fderiv ℝ ξ y e) z (1, 0) =
+      -J (fderiv ℝ (fun y ↦ fderiv ℝ ξ y e) z (0, 1)) +
+        J (fderiv ℝ (fderiv ℝ (ω.hamiltonianVectorField H)) (u z) (fderiv ℝ u z e) (ξ z)) +
+        J (fderiv ℝ (ω.hamiltonianVectorField H) (u z) (fderiv ℝ ξ z e)) := by
+  have hn : minSmoothness ℝ 2 ≤ 2 := by norm_num [minSmoothness_of_isRCLikeNormedField]
+  rw [fderiv_fderiv_apply_comm hξ.contDiffAt hn e (1, 0),
+    fderiv_fderiv_apply_comm hξ.contDiffAt hn e (0, 1)]
   conv_lhs => rw [funext hξeq]
   set dX := fderiv ℝ (ω.hamiltonianVectorField H)
   have hdξ : DifferentiableAt ℝ (fun y ↦ fderiv ℝ ξ y (0, 1)) z :=
@@ -288,7 +292,7 @@ private theorem inner_fderiv_real_real_add_norm_sq_eq (hg : ∀ v w, ω v (J w) 
   have hdJξ : HasFDerivAt (fun y ↦ J (ξ y)) (_ : ℝ × ℝ →L[ℝ] V) z :=
     hasFDerivAt_apply hdξ.hasFDerivAt
   rw [fderiv_inner_apply ℝ hdJξ.differentiableAt (hη.differentiable one_ne_zero z),
-    hdJξ.fderiv, fderiv_real_apply_real hH hu hξ hξeq z]
+    hdJξ.fderiv, fderiv_fderiv_apply_real_eq hH hu hξ hξeq (1, 0) z]
   have hsym : ⟪J (fderiv ℝ (ω.hamiltonianVectorField H) (u z) (ξ z)), η z⟫ =
       ⟪ξ z, J (fderiv ℝ (ω.hamiltonianVectorField H) (u z) (η z))⟫ := by
     have h := (ω.invariant_of_apply_apply_eq_inner hg)
@@ -424,10 +428,8 @@ theorem eq_comp_fst_of_isComplexLinearMap_perturbedFDeriv (hg : ∀ v w, ω v (J
     (integral_fderiv_apply_zero_one_eq_zero hu1 hper)
     (fderiv_imag_apply_real (hH.of_le (by norm_num)) (hu.of_le (by norm_num)) hfl) hB
   -- So every slice `t ↦ u(s, t)` has vanishing derivative.
-  funext ⟨s, t⟩
-  have hd (t : ℝ) : HasDerivAt (fun t ↦ u (s, t)) 0 t := by
-    simpa [ξ, hzero (s, t)] using hasDerivAt_slice_right (hu1.differentiable one_ne_zero (s, t))
-  exact is_const_of_deriv_eq_zero (fun t ↦ (hd t).differentiableAt) (fun t ↦ (hd t).deriv) t 0
+  exact funext fun z ↦
+    apply_eq_apply_zero_of_fderiv_snd_eq_zero (hu1.differentiable one_ne_zero) hzero z.1 z.2
 
 /-- **Floer cylinders of a small autonomous Hamiltonian are gradient lines.** Under the hypotheses
 of `TauCeti.SymplecticForm.eq_comp_fst_of_isComplexLinearMap_perturbedFDeriv`, the curve
@@ -462,26 +464,6 @@ section Linearization
 
 variable {a c M B : ℝ} {γ : ℝ → V} {ξ : ℝ × ℝ → V}
 
-/-- The linearized Floer operator of `K = H dt` with the constant structure `J`, along any map `u`,
-is `∂s ξ + J ∂t ξ - J dX_H(u) ξ`. -/
-private theorem floerLinearization_const_apply (u ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
-    ω.floerLinearization (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
-        (fun _ ↦ H) u ξ z =
-      fderiv ℝ ξ z (1, 0) + J (fderiv ℝ ξ z (0, 1)) -
-        J (fderiv ℝ (ω.hamiltonianVectorField H) (u z) (ξ z)) := by
-  simp [floerLinearization_def, hamiltonianVectorField_const, stdComplexLineReal_eq,
-    stdComplexLineImag_eq, map_sub, add_sub_assoc]
-
-/-- A section is in the kernel of the linearized operator exactly when it solves
-`∂s ξ = -J ∂t ξ + J dX_H(u) ξ`. -/
-private theorem floerLinearization_const_eq_zero_iff {u ξ : ℝ × ℝ → V} {z : ℝ × ℝ} :
-    ω.floerLinearization (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
-        (fun _ ↦ H) u ξ z = 0 ↔
-      fderiv ℝ ξ z (1, 0) =
-        -J (fderiv ℝ ξ z (0, 1)) + J (fderiv ℝ (ω.hamiltonianVectorField H) (u z) (ξ z)) := by
-  rw [floerLinearization_const_apply]
-  constructor <;> intro h <;> linear_combination (norm := module) h
-
 /-- **Bounded kernel elements with mean-zero slices vanish.** Let the inner product of `V` be the
 metric `ω(·, J ·)` of a constant compatible almost complex structure `J`, let `H` be a `C³`
 autonomous Hamiltonian with `‖dX_H‖ ≤ a < 2π` and `‖d²X_H‖ ≤ c`, and let `u` be a `C¹` map with
@@ -499,56 +481,6 @@ theorem eq_zero_of_floerLinearization_eq_zero (hg : ∀ v w, ω v (J w) = ⟪v, 
     (hB : ∀ z, ‖ξ z‖ ≤ B) : ξ = 0 :=
   funext <| eq_zero_of_fderiv_apply_real_eq hg hH ha hc ha2π hcM hu hM hξ hper hmean
     (fun z ↦ floerLinearization_const_eq_zero_iff.1 (hD z)) hB
-
-/-- **The equation of `∂t ξ` along a time-independent map.** If `ξ` solves
-`∂s ξ = -J ∂t ξ + J dX_H(γ(s)) ξ`, then so does `∂t ξ`, because the coefficient does not
-depend on `t`. -/
-private theorem fderiv_imag_apply_real_of_comp_fst (hH : ContDiff ℝ 3 H)
-    (hγ : Differentiable ℝ γ) (hξ : ContDiff ℝ 2 ξ)
-    (hξeq : ∀ z, fderiv ℝ ξ z (1, 0) =
-      -J (fderiv ℝ ξ z (0, 1)) + J (fderiv ℝ (ω.hamiltonianVectorField H) (γ z.1) (ξ z)))
-    (z : ℝ × ℝ) :
-    fderiv ℝ (fun y ↦ fderiv ℝ ξ y (0, 1)) z (1, 0) =
-      -J (fderiv ℝ (fun y ↦ fderiv ℝ ξ y (0, 1)) z (0, 1)) +
-        J (fderiv ℝ (ω.hamiltonianVectorField H) (γ z.1) (fderiv ℝ ξ z (0, 1))) := by
-  rw [fderiv_fderiv_apply_comm hξ.contDiffAt
-    (by norm_num [minSmoothness_of_isRCLikeNormedField]), funext hξeq]
-  set dX := fderiv ℝ (ω.hamiltonianVectorField H)
-  have hdξ : DifferentiableAt ℝ (fun y ↦ fderiv ℝ ξ y (0, 1)) z :=
-    ((hξ.fderiv_right (m := 1) (by norm_num)).clm_apply contDiff_const).differentiable
-      one_ne_zero z
-  have hdX : DifferentiableAt ℝ dX (γ z.1) :=
-    ((ω.contDiff_hamiltonianVectorField (n := 2) hH).fderiv_right (m := 1)
-      (by norm_num)).differentiable one_ne_zero _
-  have h : HasFDerivAt (fun y : ℝ × ℝ ↦ -J (fderiv ℝ ξ y (0, 1)) + J (dX (γ y.1) (ξ y)))
-      (_ : ℝ × ℝ →L[ℝ] V) z :=
-    (hasFDerivAt_apply hdξ.hasFDerivAt).neg.add (hasFDerivAt_apply
-      ((hdX.hasFDerivAt.comp z ((hγ z.1).hasFDerivAt.comp z hasFDerivAt_fst)).clm_apply
-        ((hξ.differentiable (by norm_num)) z).hasFDerivAt))
-  rw [h.fderiv]
-  simp [dX]
-
-/-- **Time-independent sections in the kernel.** Along any map `u`, the section `(s, t) ↦ ζ(s)` is
-in the kernel of the linearized Floer operator of `K = H dt` at `z` exactly when
-`ζ'(s) = J dX_H(u(z)) ζ(s)`, where `s = z.1`. -/
-theorem floerLinearization_comp_fst_eq_zero_iff {u : ℝ × ℝ → V} {ζ : ℝ → V} {z : ℝ × ℝ} :
-    ω.floerLinearization (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
-        (fun _ ↦ H) u (fun w ↦ ζ w.1) z = 0 ↔
-      deriv ζ z.1 = J (fderiv ℝ (ω.hamiltonianVectorField H) (u z) (ζ z.1)) := by
-  rw [floerLinearization_const_eq_zero_iff]
-  by_cases hζ : DifferentiableAt ℝ ζ z.1
-  · have h : HasFDerivAt (fun w : ℝ × ℝ ↦ ζ w.1)
-        ((fderiv ℝ ζ z.1).comp (ContinuousLinearMap.fst ℝ ℝ ℝ)) z :=
-      hζ.hasFDerivAt.comp z hasFDerivAt_fst
-    simp only [h.fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_fst', map_zero,
-      neg_zero, zero_add, fderiv_apply_one_eq_deriv]
-  · -- Otherwise both derivatives vanish, and both sides say `J dX_H(u(z)) ζ(s) = 0`.
-    have h : ¬DifferentiableAt ℝ (fun w : ℝ × ℝ ↦ ζ w.1) z := fun h ↦ by
-      have hs : DifferentiableAt ℝ (fun s : ℝ ↦ (s, z.2)) z.1 :=
-        differentiableAt_id.prodMk (differentiableAt_const _)
-      have hc := h.comp z.1 hs
-      exact hζ hc
-    simp [fderiv_zero_of_not_differentiableAt h, deriv_zero_of_not_differentiableAt hζ]
 
 /-- **Kernel elements along a time-independent map are time-independent.** Let the inner product
 of `V` be the metric `ω(·, J ·)` of a constant compatible almost complex structure `J`, and let `H`
@@ -568,52 +500,32 @@ theorem eq_comp_fst_of_floerLinearization_eq_zero (hg : ∀ v w, ω v (J w) = �
     (hB : ∀ z, ‖fderiv ℝ ξ z (0, 1)‖ ≤ B) :
     ξ = fun z ↦ ξ (z.1, 0) := by
   have hξ1 : ContDiff ℝ 1 ξ := hξ.of_le (by norm_num)
-  have hγd : Differentiable ℝ γ := hγ.differentiable one_ne_zero
+  have hu : ContDiff ℝ 1 fun w : ℝ × ℝ ↦ γ w.1 := hγ.comp contDiff_fst
   -- The map `u(s, t) = γ(s)` has `‖du‖ ≤ ‖γ'‖ ≤ M`.
-  have huM (z : ℝ × ℝ) : ‖fderiv ℝ (fun w : ℝ × ℝ ↦ γ w.1) z‖ ≤ M := by
-    have h : HasFDerivAt (fun w : ℝ × ℝ ↦ γ w.1)
-        ((fderiv ℝ γ z.1).comp (ContinuousLinearMap.fst ℝ ℝ ℝ)) z :=
-      (hγd z.1).hasFDerivAt.comp z hasFDerivAt_fst
-    rw [h.fderiv]
-    calc _ ≤ ‖fderiv ℝ γ z.1‖ * ‖ContinuousLinearMap.fst ℝ ℝ ℝ‖ :=
-          ContinuousLinearMap.opNorm_comp_le _ _
-      _ ≤ ‖fderiv ℝ γ z.1‖ * 1 := by
-          gcongr
-          exact ContinuousLinearMap.norm_fst_le ℝ ℝ ℝ
-      _ ≤ M := by
-          rw [mul_one, ← norm_deriv_eq_norm_fderiv]
-          exact hM _
-  -- `ζ = ∂t ξ` is a bounded kernel element with mean-zero slices.
+  have huM (z : ℝ × ℝ) : ‖fderiv ℝ (fun w : ℝ × ℝ ↦ γ w.1) z‖ ≤ M :=
+    (norm_fderiv_comp_fst_le γ z).trans (norm_deriv_eq_norm_fderiv (f := γ) ▸ hM z.1)
+  -- `ζ = ∂t ξ` is a bounded kernel element with mean-zero slices, since `∂t u = 0`.
   set ζ : ℝ × ℝ → V := fun y ↦ fderiv ℝ ξ y (0, 1)
   have hζ : ContDiff ℝ 2 ζ := (hξ.fderiv_right (m := 2) (by norm_num)).clm_apply contDiff_const
   have hζper (s t : ℝ) : ζ (s, t + 1) = ζ (s, t) := by
     simp only [ζ, fderiv_add_snd_of_periodic_snd hper]
-  have hzero := eq_zero_of_floerLinearization_eq_zero hg hH ha hc ha2π hcM
-    (hγ.comp contDiff_fst) huM hζ hζper (integral_fderiv_apply_zero_one_eq_zero hξ1 hper)
-    (fun z ↦ floerLinearization_const_eq_zero_iff.2 <| fderiv_imag_apply_real_of_comp_fst hH hγd
-      (hξ.of_le (by norm_num)) (fun z ↦ floerLinearization_const_eq_zero_iff.1 (hD z)) z) hB
+  have hζeq (z : ℝ × ℝ) := fderiv_fderiv_apply_real_eq hH (hu.differentiable one_ne_zero)
+    (hξ.of_le (by norm_num)) (fun z ↦ floerLinearization_const_eq_zero_iff.1 (hD z)) (0, 1) z
+  simp only [fderiv_comp_fst, ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_fst',
+    map_zero, zero_apply, add_zero] at hζeq
+  have hzero := eq_zero_of_floerLinearization_eq_zero hg hH ha hc ha2π hcM hu huM hζ hζper
+    (integral_fderiv_apply_zero_one_eq_zero hξ1 hper)
+    (fun z ↦ floerLinearization_const_eq_zero_iff.2 (hζeq z)) hB
   -- So every slice `t ↦ ξ(s, t)` has vanishing derivative.
-  funext ⟨s, t⟩
-  have hd (t : ℝ) : HasDerivAt (fun t ↦ ξ (s, t)) 0 t := by
-    simpa [ζ, congrFun hzero (s, t)] using
-      hasDerivAt_slice_right (hξ1.differentiable one_ne_zero (s, t))
-  exact is_const_of_deriv_eq_zero (fun t ↦ (hd t).differentiableAt) (fun t ↦ (hd t).deriv) t 0
-
-/-- The linearization of the gradient `∇H = J X_H` is `J dX_H`. -/
-private theorem fderiv_gradient_apply (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (hH : ContDiff ℝ 2 H)
-    (x v : V) :
-    fderiv ℝ (∇ H) x v = J (fderiv ℝ (ω.hamiltonianVectorField H) x v) := by
-  have hX : DifferentiableAt ℝ (ω.hamiltonianVectorField H) x :=
-    (ω.contDiff_hamiltonianVectorField (n := 1) hH).differentiable one_ne_zero x
-  rw [← funext (apply_hamiltonianVectorField_eq_gradient hg H),
-    (hasFDerivAt_apply hX.hasFDerivAt).fderiv]
-  simp
+  exact funext fun z ↦ apply_eq_apply_zero_of_fderiv_snd_eq_zero (hξ1.differentiable one_ne_zero)
+    (congrFun hzero) z.1 z.2
 
 /-- **The kernel of the linearized operator along a gradient line.** Under the hypotheses of
 `TauCeti.SymplecticForm.eq_comp_fst_of_floerLinearization_eq_zero`, a `C³` section `ξ` of period
 one in `t` with bounded `∂t ξ` is in the kernel of the linearized Floer operator of `K = H dt`
 along `u(s, t) = γ(s)` exactly when it does not depend on `t` and `ζ(s) = ξ(s, 0)` solves the
-linearized gradient equation `ζ' = d(∇H)(γ) ζ` along `γ`. -/
+linearized gradient equation `ζ' = d(∇H)(γ) ζ` along `γ`, written with the Hessian operator
+`TauCeti.hessianOperator H = d(∇H)`. -/
 theorem forall_floerLinearization_eq_zero_iff (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
     (hH : ContDiff ℝ 3 H) (ha : ∀ x, ‖fderiv ℝ (ω.hamiltonianVectorField H) x‖ ≤ a)
     (hc : ∀ x, ‖fderiv ℝ (fderiv ℝ (ω.hamiltonianVectorField H)) x‖ ≤ c)
@@ -624,7 +536,7 @@ theorem forall_floerLinearization_eq_zero_iff (hg : ∀ v w, ω v (J w) = ⟪v, 
     (∀ z, ω.floerLinearization (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap)
       (fun _ _ ↦ 0) (fun _ ↦ H) (fun w ↦ γ w.1) ξ z = 0) ↔
       ξ = (fun z ↦ ξ (z.1, 0)) ∧
-        ∀ s, HasDerivAt (fun s ↦ ξ (s, 0)) (fderiv ℝ (∇ H) (γ s) (ξ (s, 0))) s := by
+        ∀ s, HasDerivAt (fun s ↦ ξ (s, 0)) (hessianOperator H (γ s) (ξ (s, 0))) s := by
   have hζd : Differentiable ℝ fun s ↦ ξ (s, 0) :=
     (hξ.differentiable (by norm_num)).comp (differentiable_id.prodMk (differentiable_const 0))
   constructor
@@ -636,12 +548,12 @@ theorem forall_floerLinearization_eq_zero_iff (hg : ∀ v w, ω v (J w) = ⟪v, 
     rw [hmain] at h
     have hζ := (floerLinearization_comp_fst_eq_zero_iff (ζ := fun s ↦ ξ (s, 0))
       (z := (s, 0))).1 h
-    rw [← fderiv_gradient_apply hg (hH.of_le (by norm_num))] at hζ
+    rw [apply_fderiv_hamiltonianVectorField_eq_hessianOperator hg] at hζ
     exact (hζd s).hasDerivAt.congr_deriv hζ
   · rintro ⟨hmain, hζ⟩ z
     rw [hmain]
     refine (floerLinearization_comp_fst_eq_zero_iff (ζ := fun s ↦ ξ (s, 0))).2 ?_
-    rw [← fderiv_gradient_apply hg (hH.of_le (by norm_num))]
+    rw [apply_fderiv_hamiltonianVectorField_eq_hessianOperator hg]
     exact (hζ z.1).deriv
 
 end Linearization

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.Gradient.Basic
+public import TauCeti.Analysis.Calculus.Morse.Linearization
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
@@ -29,7 +30,9 @@ gradient of `f` for `g` are related by
 `g(J X_f, v) = g(v, J X_f) = σ(v, J J X_f) = σ(X_f, v) = df(v)`. Only the relation at the single
 point `x` is used, and neither closedness of `σ` nor smoothness of `J` is needed. On a symplectic
 vector space `(V, ω)` whose inner product is `ω(·, J ·)` the same identity reads `J X_H = ∇H`
-(`TauCeti.SymplecticForm.apply_hamiltonianVectorField_eq_gradient`).
+(`TauCeti.SymplecticForm.apply_hamiltonianVectorField_eq_gradient`), and its derivative reads
+`J dX_H = d(∇H)`, the Hessian operator of `H`
+(`TauCeti.SymplecticForm.apply_fderiv_hamiltonianVectorField_eq_hessianOperator`).
 
 This is the identity behind the comparison of Floer theory for a small autonomous Hamiltonian with
 Morse theory: the Floer equation `∂_s u + J (∂_t u - X_H(u)) = 0` for maps independent of `t`
@@ -59,6 +62,16 @@ theorem apply_hamiltonianVectorField_eq_gradient (hg : ∀ v w, ω v (J w) = ⟪
   ext_inner_right ℝ fun w ↦ by
     rw [inner_apply_left_eq_of_apply_apply_eq_inner hg, apply_hamiltonianVectorField,
       inner_gradient_left]
+
+/-- **`J dX_H` is the Hessian of `H` on a vector space.** If the inner product of `V` is the
+metric `ω(·, J ·)`, then `J dX_H(x)` is the Hessian operator `d(∇H)(x)` of `H` at `x`. No
+regularity is needed: both sides use Mathlib's totalized derivatives. -/
+theorem apply_fderiv_hamiltonianVectorField_eq_hessianOperator (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
+    (H : V → ℝ) (x v : V) :
+    J (fderiv ℝ (ω.hamiltonianVectorField H) x v) = hessianOperator H x v := by
+  rw [← fderiv_gradient, ← funext (apply_hamiltonianVectorField_eq_gradient hg H)]
+  exact congrArg (· v)
+    (J.linearEquiv.toContinuousLinearEquiv.comp_fderiv (f := ω.hamiltonianVectorField H)).symm
 
 end TauCeti.SymplecticForm
 

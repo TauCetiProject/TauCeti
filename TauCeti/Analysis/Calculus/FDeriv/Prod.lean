@@ -34,8 +34,8 @@ result is the canonical linear graph shear.
 For a function of a scalar first variable, the partial derivatives along the coordinate lines
 `s ↦ (s, b)` and `t ↦ (a, t)` are its derivative applied to `(1, 0)` and `(0, 1)`. The same holds
 one order higher for the first derivative, and more generally along any line `r ↦ p + r • q`.
-A function whose partial derivative in the first variable vanishes everywhere is constant along
-every horizontal line.
+A function whose partial derivative in the first (second) variable vanishes everywhere is constant
+along every horizontal (vertical) line.
 
 The product `η (t) * u (t, x)` of a function of time and a function of time and space has the
 expected derivative, with a norm bound in terms of bounds on the factors and their derivatives
@@ -52,6 +52,8 @@ expected derivative, with a norm bound in terms of bounds on the factors and the
 * `TauCeti.hasDerivAt_fderiv_apply_line`: the derivative of a first derivative along a line.
 * `TauCeti.apply_eq_apply_zero_of_fderiv_fst_eq_zero`: a function with vanishing partial
   derivative in its real first variable is constant along horizontal lines.
+* `TauCeti.apply_eq_apply_zero_of_fderiv_snd_eq_zero`: a function with vanishing partial
+  derivative in its real second variable is constant along vertical lines.
 * `TauCeti.eq_zero_of_fderiv_fst_eq_zero_of_tendsto`: such a function which decays as `s → +∞`
   along each horizontal line vanishes.
 * `TauCeti.fderiv_comp_fst_add_comp_snd`: the same for the totalized derivative.
@@ -63,6 +65,8 @@ expected derivative, with a norm bound in terms of bounds on the factors and the
   of a function on a product are the restrictions of its derivative.
 * `TauCeti.fderiv_comp_snd_apply_mk_zero`: a function of the second variable alone has zero
   derivative along the first factor.
+* `TauCeti.fderiv_comp_fst`, `TauCeti.norm_fderiv_comp_fst_le`: the derivative of a function of
+  the first variable alone, and its norm bound.
 * `HasDerivAt.hasFDerivAt_comp_snd`: a function `p ↦ x p.2` of a scalar second variable alone has
   derivative `(σ, τ) ↦ τ • x'`.
 * `TauCeti.fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right`: the derivative of a function
@@ -168,6 +172,29 @@ theorem fderiv_comp_snd_apply_mk_zero (f : F → G) (z : E × F) (v : E) :
       have h' : DifferentiableAt 𝕜 (fun w : E × F ↦ f w.2) (z.1, z.2) := h
       exact hf (h'.comp z.2 (hasFDerivAt_prodMk_right (𝕜 := 𝕜) z.1 z.2).differentiableAt)
     simp [fderiv_zero_of_not_differentiableAt hf']
+
+/-- A function of the first variable alone has derivative `Df ∘ fst`. No differentiability is
+needed: otherwise both sides are zero. -/
+theorem fderiv_comp_fst (f : E → G) (z : E × F) :
+    fderiv 𝕜 (fun w : E × F ↦ f w.1) z = (fderiv 𝕜 f z.1).comp (ContinuousLinearMap.fst 𝕜 E F) := by
+  by_cases hf : DifferentiableAt 𝕜 f z.1
+  · exact (hf.hasFDerivAt.comp z hasFDerivAt_fst).fderiv
+  · have hf' : ¬DifferentiableAt 𝕜 (fun w : E × F ↦ f w.1) z := by
+      intro h
+      have h' : DifferentiableAt 𝕜 (fun w : E × F ↦ f w.1) (z.1, z.2) := h
+      have hl : DifferentiableAt 𝕜 (fun x : E ↦ (x, z.2)) z.1 :=
+        differentiableAt_id.prodMk (differentiableAt_const z.2)
+      have hc := h'.comp z.1 hl
+      exact hf hc
+    simp [fderiv_zero_of_not_differentiableAt hf, fderiv_zero_of_not_differentiableAt hf']
+
+/-- The derivative of a function of the first variable alone has norm at most that of the
+function. -/
+theorem norm_fderiv_comp_fst_le (f : E → G) (z : E × F) :
+    ‖fderiv 𝕜 (fun w : E × F ↦ f w.1) z‖ ≤ ‖fderiv 𝕜 f z.1‖ := by
+  rw [fderiv_comp_fst]
+  exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
+    (mul_le_of_le_one_right (norm_nonneg _) (ContinuousLinearMap.norm_fst_le 𝕜 E F))
 
 /-- A function `p ↦ x p.2` of a scalar second variable alone, where `x` has derivative `x'` at
 `z.2`, has derivative `(σ, τ) ↦ τ • x'` at `z`. -/
@@ -369,6 +396,16 @@ theorem apply_eq_apply_zero_of_fderiv_fst_eq_zero {F G : Type*} [NormedAddCommGr
   have hl (s : ℝ) : HasDerivAt (fun s ↦ u (s, b)) 0 s := by
     simpa [h] using hasDerivAt_slice_left (hu (s, b))
   exact is_const_of_deriv_eq_zero (fun s ↦ (hl s).differentiableAt) (fun s ↦ (hl s).deriv) s 0
+
+/-- A differentiable function on `E × ℝ` whose partial derivative in the second variable vanishes
+everywhere is constant along every vertical line. -/
+theorem apply_eq_apply_zero_of_fderiv_snd_eq_zero {E G : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [NormedAddCommGroup G] [NormedSpace ℝ G] {u : E × ℝ → G}
+    (hu : Differentiable ℝ u) (h : ∀ z, fderiv ℝ u z (0, 1) = 0) (a : E) (t : ℝ) :
+    u (a, t) = u (a, 0) := by
+  have hl (t : ℝ) : HasDerivAt (fun t ↦ u (a, t)) 0 t := by
+    simpa [h] using hasDerivAt_slice_right (hu (a, t))
+  exact is_const_of_deriv_eq_zero (fun t ↦ (hl t).differentiableAt) (fun t ↦ (hl t).deriv) t 0
 
 section FstClmApplySnd
 
