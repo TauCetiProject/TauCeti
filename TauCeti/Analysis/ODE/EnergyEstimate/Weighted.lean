@@ -92,8 +92,7 @@ private theorem squareIntegrableSolutions_sub_smul_id_and_neg_adjoint (hA : Cont
   set C : ℝ → E →L[ℝ] E := fun s ↦ -ContinuousLinearMap.adjoint (A s)
   set C' : ℝ → E →L[ℝ] E := fun s ↦ -ContinuousLinearMap.adjoint (A s) + w' s • I
   have hB : Continuous B := hA.sub (hw'.smul continuous_const)
-  have hC : Continuous C :=
-    ((ContinuousLinearMap.adjoint : (E →L[ℝ] E) ≃ₗᵢ⋆[ℝ] (E →L[ℝ] E)).continuous.comp hA).neg
+  have hC : Continuous C := WeakDerivStep.continuous_neg_adjoint hA
   have hC' : Continuous C' := hC.add (hw'.smul continuous_const)
   have hBbot : Tendsto B atBot (𝓝 (Aminus - δminus • I)) := hbot.sub (hw'bot.smul_const I)
   have hBtop : Tendsto B atTop (𝓝 (Aplus - δplus • I)) := htop.sub (hw'top.smul_const I)
@@ -111,11 +110,7 @@ private theorem squareIntegrableSolutions_sub_smul_id_and_neg_adjoint (hA : Cont
   obtain ⟨BL, hBL⟩ : ∃ BL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)),
       BL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] B :=
     ⟨_, MemLp.coeFn_toLp (memLp_top_of_bound hB.aestronglyMeasurable MB (.of_forall hMB))⟩
-  obtain ⟨AL', hAL'⟩ := WeakDerivStep.exists_ae_eq_adjoint AL hAL
   obtain ⟨BL', hBL'⟩ := WeakDerivStep.exists_ae_eq_adjoint BL hBL
-  have hnegAL' : -AL' =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] C := by
-    filter_upwards [Lp.coeFn_neg AL', hAL'] with s hs hs'
-    rw [hs, Pi.neg_apply, hs']
   have hnegBL' : -BL' =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] C' := by
     filter_upwards [Lp.coeFn_neg BL', hBL'] with s hs hs'
     rw [hs, Pi.neg_apply, hs']
@@ -128,13 +123,14 @@ private theorem squareIntegrableSolutions_sub_smul_id_and_neg_adjoint (hA : Cont
     (fun t ht ↦ by convert hminus t ht using 1; module)
     (fun t ht ↦ by convert hplus t ht using 1; module)
   -- Each index is the dimension of the kernel minus that of the formal adjoint's kernel.
-  have i₁ := WeakDerivStep.index_trajectoryOperator_of_hasLyapunovForm hA hAm hAp hbot htop AL AL'
-    hAL hAL'
+  have i₁ : (WeakDerivStep.trajectoryOperator (p := 2) AL).index =
+      (Module.finrank ℝ (squareIntegrableSolutions A) : ℤ) -
+        Module.finrank ℝ (squareIntegrableSolutions C) :=
+    WeakDerivStep.index_trajectoryOperator_eq_finrank_sub_finrank_of_hasLyapunovForm hA hAm hAp
+      hbot htop AL hAL
   have i₂ := WeakDerivStep.index_trajectoryOperator_of_hasLyapunovForm hB hBm hBp hBbot hBtop BL
     BL' hBL hBL'
-  have k₁ := WeakDerivStep.finrank_ker_trajectoryOperator hA AL hAL
   have k₂ := WeakDerivStep.finrank_ker_trajectoryOperator hB BL hBL
-  have k₃ := WeakDerivStep.finrank_ker_trajectoryOperator hC (-AL') hnegAL'
   have k₄ := WeakDerivStep.finrank_ker_trajectoryOperator hC' (-BL') hnegBL'
   -- Weighting gives one inclusion for the kernels and the opposite one for the cokernels.
   have h₁ : squareIntegrableSolutions B ≤ squareIntegrableSolutions A :=
