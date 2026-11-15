@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicTopology.Cohomology.Cup.Pullback
 public import TauCeti.Topology.VectorBundle.EulerClass
 public import Mathlib.Tactic.CategoryTheory.Monoidal.Basic
+import TauCeti.AlgebraicTopology.Cohomology.ProdThomPair.Isomorphism
+import TauCeti.Topology.VectorBundle.Thom.Class
 
 /-!
 # The Thom map of a vector bundle
@@ -41,6 +43,15 @@ pulled back along the constant map at `b`
 `TauCeti.thomPairProj`, defined with the other Thom-pair maps in
 `TauCeti.Topology.VectorBundle.EulerClass`.
 
+Over a trivializing set the Thom map of a Thom class is bijective when the fibre has dimension at
+least `2`. If `W` lies in the base set of a linear trivialization `e`, then `e` identifies the pair
+`(E|_W, E₀|_W)` with the Thom pair of the product bundle `W × F` (`Trivialization.thomPairOverIso`)
+and carries the restriction of a Thom class to a class restricting to a generator on every fibre,
+so the product case `TauCeti.bijective_pullbackCup_prodThomPair` applies
+(`TauCeti.IsThomClass.bijective_pullbackCupRestrict_of_subset_baseSet`). These are the sets from
+which the Mayer–Vietoris step starts. For a bundle trivialized over its whole base this is the
+Thom isomorphism itself (`TauCeti.IsThomClass.bijective_thomMap_of_baseSet_eq_univ`).
+
 ## Main definitions and results
 
 * `TauCeti.thomMap`: the Thom map `a ↦ π^*a ⌣ u`, bilinear in `u` and `a`.
@@ -48,6 +59,10 @@ pulled back along the constant map at `b`
 * `TauCeti.thomMap_naturality`, `TauCeti.thomMap_pullback`: naturality.
 * `TauCeti.thomMap_singularCup`: linearity over the cohomology of the base.
 * `TauCeti.singularCohomologyMap_fiberThomPairMap_thomMap`: the restriction to a fibre.
+* `TauCeti.IsThomClass.bijective_pullbackCupRestrict_of_subset_baseSet`: the Thom isomorphism over
+  a subset of the base set of a linear trivialization, in fibre dimension at least `2`.
+* `TauCeti.IsThomClass.bijective_thomMap_of_baseSet_eq_univ`: the Thom isomorphism for a bundle
+  with a linear trivialization over its whole base, in fibre dimension at least `2`.
 
 ## References
 
@@ -60,7 +75,7 @@ public section
 
 noncomputable section
 
-open Bundle CategoryTheory MonoidalCategory
+open Bundle CategoryTheory MonoidalCategory Module
 
 universe w
 
@@ -166,5 +181,108 @@ theorem thomMap_singularCup {n p q r m s : ℕ} (h : p + n = m) (hqp : q + p = r
         (TopCat.singularCohomologyMap (thomPairProj F E) q a) (thomMap F E M n p m h u b) := by
   rw [thomMap_apply, thomMap_apply, ← TopCat.singularCup_naturality]
   exact TopPair.singularCup_assoc K (thomPair F E) (by monoidal) (by monoidal) hqp hrn h hqm _ _ _
+
+end TauCeti
+
+/-! ### The Thom isomorphism over a trivializing set -/
+
+namespace TauCeti
+
+variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {E : B → Type w} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
+  [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
+  {K : Type w} [CommRing K] (M : ModuleCat.{w} K)
+
+/-- Over a subset `W` of the base set of a linear trivialization `e`, the restriction of a Thom
+class `u` to `(E|_W, E₀|_W)`, read on the product bundle `W × F` through `e`, restricts on the fibre
+over each point of `W` to a generator: it is the restriction of `u` to the fibre pair
+`(E_b, E_b ∖ {0})`, read through the isomorphism of fibre pairs given by `e` at `b`. -/
+private theorem span_singularCohomologyMap_prodThomPairFiberMap_thomPairOverIso_inv
+    {u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K)
+      (finrank ℝ F)}
+    (hu : IsThomClass F E u) (e : Trivialization F (π F E)) [e.IsLinear ℝ] {W : Set B}
+    (hW : W ⊆ e.baseSet) (b : W) :
+    Submodule.span K {TopPair.singularCohomologyMap (prodThomPairFiberMap F b) (finrank ℝ F) <|
+      TopPair.singularCohomologyMap (e.thomPairOverIso ℝ hW).inv (finrank ℝ F) <|
+        TopPair.singularCohomologyMap (TopCat.restrictPreimagePairMap
+          (X := TopCat.of (TotalSpace F E)) (π F E) (zeroSectionCompl F E) W) (finrank ℝ F) u} =
+      ⊤ := by
+  set ψ := (e.continuousLinearEquivAt ℝ b.1 (hW b.2)).complZeroPairIso
+  have hfib : prodThomPairFiberMap F b ≫ (e.thomPairOverIso ℝ hW).inv =
+      ψ.inv ≫ fiberThomPairOverMap F E b.2 := by
+    rw [Iso.comp_inv_eq, Category.assoc, e.fiberThomPairOverMap_comp_thomPairOverIso_hom ℝ hW b.2,
+      Iso.inv_hom_id_assoc]
+  have hψ : Function.Surjective (TopPair.singularCohomologyMap (R := ModuleCat.of K K) (k := K)
+      (M := ModuleCat.of K K) ψ.inv (finrank ℝ F)).hom := fun y ↦
+    ⟨TopPair.singularCohomologyMap ψ.hom _ y, by
+      rw [← TopPair.singularCohomologyMap_comp_apply, ψ.inv_hom_id,
+        TopPair.singularCohomologyMap_id, ConcreteCategory.id_apply]⟩
+  have hb := congrArg (Submodule.map (TopPair.singularCohomologyMap ψ.inv _).hom)
+    ((isThomClass_iff.1 hu).2 b.1)
+  rw [Submodule.map_span, Set.image_singleton, Submodule.map_top,
+    LinearMap.range_eq_top.2 hψ] at hb
+  rw [← TopPair.singularCohomologyMap_comp_apply, hfib, TopPair.singularCohomologyMap_comp_apply,
+    ← TopPair.singularCohomologyMap_comp_apply (fiberThomPairOverMap F E b.2),
+    fiberThomPairOverMap_comp_restrictPreimagePairMap]
+  exact hb
+
+/-- **The Thom isomorphism over a trivializing set.** Let `E` be a real vector bundle whose model
+fibre `F` has dimension `r ≥ 2`, let `u ∈ Hʳ(E, E₀; K)` be a Thom class, and let `W` be contained
+in the base set of a linear trivialization `e`. Then for every `K`-module `M` and every degree `p`,
+the Thom map of the restriction of `u` to the Thom pair `(E|_W, E₀|_W)` of the restriction of the
+bundle to `W`, `Hᵖ(W; M) ⟶ Hᵖ⁺ʳ(E|_W, E₀|_W; M)`, `a ↦ π^*a ⌣ u|`
+(`TopCat.pullbackCupRestrict`), is bijective. These are the sets over which the Mayer–Vietoris
+step `TopCat.bijective_pullbackCupRestrict_union` starts. -/
+theorem IsThomClass.bijective_pullbackCupRestrict_of_subset_baseSet
+    {u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K)
+      (finrank ℝ F)}
+    (hu : IsThomClass F E u) (hF : 2 ≤ finrank ℝ F) (e : Trivialization F (π F E))
+    [e.IsLinear ℝ] {W : Set B} (hW : W ⊆ e.baseSet) {p m : ℕ} (h : p + finrank ℝ F = m) :
+    Function.Bijective (TopCat.pullbackCupRestrict (thomPairProj F E) (zeroSectionCompl F E) M W
+      _ p m h u) := by
+  -- The trivialization identifies `(E|_W, E₀|_W)` with `(W × F, W × (F ∖ {0}))` over `W`.
+  set φ := e.thomPairOverIso ℝ hW
+  set g : (thomPairOver F E W).fst ⟶ TopCat.of W := TopCat.ofHom
+    ((⟨π F E, FiberBundle.continuous_proj F E⟩ : C(TotalSpace F E, B)).restrictPreimage W)
+  have hg : TopPair.Hom.fst φ.hom ≫ prodThomPairProj W F = g ≫ 𝟙 _ :=
+    TopCat.ext fun v ↦ (prodThomPairProj_apply F _).trans
+      (congrArg Prod.fst (e.thomPairOverIso_hom_fst_apply ℝ hW v))
+  set uW := TopPair.singularCohomologyMap (TopCat.restrictPreimagePairMap
+    (X := TopCat.of (TotalSpace F E)) (π F E) (zeroSectionCompl F E) W) _ u
+  have hφ : TopPair.singularCohomologyMap φ.hom _ (TopPair.singularCohomologyMap φ.inv _ uW) =
+      uW := by
+    rw [← TopPair.singularCohomologyMap_comp_apply, φ.hom_inv_id,
+      TopPair.singularCohomologyMap_id, ConcreteCategory.id_apply]
+  -- So the Thom map over `W` is that of the product bundle, bijective by the product case.
+  have key := (TopPair.bijective_pullbackCup_iff_of_isIso φ.hom (𝟙 _) hg h
+    (TopPair.singularCohomologyMap φ.inv _ uW)).2
+    (bijective_pullbackCup_prodThomPair M hF _
+      (span_singularCohomologyMap_prodThomPairFiberMap_thomPairOverIso_inv hu e hW) h)
+  rw [hφ] at key
+  -- The pair over `W` built from the projection `thomPairProj F E` is `thomPairOver F E W`, once
+  -- the projection is unfolded by `thomPairProj_def`; it occurs in the type of that pair, so it is
+  -- first replaced by a variable.
+  suffices ∀ π' : TopCat.of (TotalSpace F E) ⟶ TopCat.of B, π' = thomPairProj F E →
+      Function.Bijective (TopCat.pullbackCupRestrict π' (zeroSectionCompl F E) M W _ p m h u) from
+    this _ rfl
+  intro π' hπ'
+  rw [TopCat.pullbackCupRestrict_apply]
+  rw [thomPairProj_def] at hπ'
+  subst hπ'
+  exact key
+
+/-- **The Thom isomorphism for a trivializable bundle.** For a real vector bundle `E` with a linear
+trivialization over its whole base, whose model fibre `F` has dimension `r ≥ 2`, the Thom map
+`Hᵖ(B; M) ⟶ Hᵖ⁺ʳ(E, E₀; M)`, `a ↦ π^*a ⌣ u`, of every Thom class `u` is bijective, for every
+`K`-module `M` and every degree `p`. -/
+theorem IsThomClass.bijective_thomMap_of_baseSet_eq_univ
+    {u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K)
+      (finrank ℝ F)}
+    (hu : IsThomClass F E u) (hF : 2 ≤ finrank ℝ F) (e : Trivialization F (π F E))
+    [e.IsLinear ℝ] (he : e.baseSet = Set.univ) {p m : ℕ} (h : p + finrank ℝ F = m) :
+    Function.Bijective (thomMap F E M _ p m h u) := by
+  rw [thomMap_def]
+  exact (TopCat.bijective_pullbackCupRestrict_univ_iff _ _ M h u).1
+    (hu.bijective_pullbackCupRestrict_of_subset_baseSet M hF e he.ge h)
 
 end TauCeti

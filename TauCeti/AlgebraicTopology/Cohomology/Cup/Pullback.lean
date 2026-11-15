@@ -19,10 +19,11 @@ with coefficients in a commutative ring `K`. This file defines the map
 (`TopPair.pullbackCup`), the pull-back along `g` followed by the cup product of absolute and
 relative cohomology (`TopPair.singularCup`), for any `K`-module of coefficients `M`, and proves that
 it is natural in maps of pairs (`TopPair.pullbackCup_naturality`). It sends the unit `1 ∈ H⁰(Z; K)`
-to `u` (`TopPair.pullbackCup_one`), and its bijectivity is invariant under isomorphisms
-(`TopPair.bijective_pullbackCup_iff_of_isIso`). For the Thom pair `(E, E₀)` of a vector bundle and
-its projection, it is the Thom map `TauCeti.thomMap`, which the Thom isomorphism asserts to be
-bijective when `u` is a Thom class.
+to `u` (`TopPair.pullbackCup_one`), the map of a class `g^*c ⌣ v` is that of `v` composed with the
+cup product with `c` (`TopPair.pullbackCup_pullbackCup`), and its bijectivity is invariant under
+isomorphisms (`TopPair.bijective_pullbackCup_iff_of_isIso`). For the Thom pair `(E, E₀)` of a vector
+bundle and its projection, it is the Thom map `TauCeti.thomMap`, which the Thom isomorphism asserts
+to be bijective when `u` is a Thom class.
 
 For a map `π : X ⟶ Y`, a subset `Z ⊆ X` and a subset `S ⊆ Y`, restricting `u ∈ Hⁿ(X, Z)` to the pair
 `(π⁻¹ S, π⁻¹ S ∩ Z)` and `π` to `π⁻¹ S ⟶ S` gives the map over `S` (`TopCat.pullbackCupRestrict`).
@@ -36,6 +37,7 @@ restriction of the bundle to `S`.
 * `TopPair.pullbackCup`: the map `a ↦ g^*a ⌣ u`, bilinear in `u` and `a`.
 * `TopPair.pullbackCup_naturality`: its naturality in maps of pairs.
 * `TopPair.pullbackCup_one`: `1 ↦ u`.
+* `TopPair.pullbackCup_pullbackCup`: the map of `g^*c ⌣ v` is that of `v` after `a ↦ a ⌣ c`.
 * `TopPair.bijective_pullbackCup_iff_of_isIso`: invariance of bijectivity under isomorphisms.
 * `TopCat.pullbackCupRestrict`: the map over a subset of the base.
 * `TopCat.pullbackCupRestrict_naturality`: its naturality in the subset.
@@ -105,6 +107,24 @@ theorem pullbackCup_one (P : TopPair.{w}) {Z : TopCat.{w}} (g : P.fst ⟶ Z) {n 
     (TopCat.singularCohomologyMap_homologyπ_constSingularCocycle g K
       (𝟙 (ModuleCat.of K K)))).trans ?_
   exact P.singularCup_constSingularCocycle_left K (η := 𝟙 _) (by monoidal) (by monoidal) h u
+
+/-- **`a ↦ g^*a ⌣ u` for a product of classes**: the map of the class `g^*c ⌣ v` sends `a` to the
+map of `v` at `a ⌣ c`, that is `g^*a ⌣ (g^*c ⌣ v) = g^*(a ⌣ c) ⌣ v`. -/
+theorem pullbackCup_pullbackCup (P : TopPair.{w}) {Z : TopCat.{w}} (g : P.fst ⟶ Z) {p q n r s m : ℕ}
+    (hpq : p + q = n) (hqr : q + r = s) (h : p + s = m) (h' : n + r = m)
+    (v : P.singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) r)
+    (c : Z.singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) q)
+    (a : Z.singularCohomology (ModuleCat.of K K) K M p) :
+    P.pullbackCup M g s p m h (P.pullbackCup (ModuleCat.of K K) g r q s hqr v c) a =
+      P.pullbackCup M g r n m h' v
+        (Z.singularCup K (λ_ (𝟙_ (ModuleCat.{w} K))).inv (ρ_ M).hom p q n hpq a c) := by
+  rw [pullbackCup_apply, pullbackCup_apply, pullbackCup_apply, ← TopCat.singularCup_naturality,
+    TopPair.singularCup_assoc K _ (u₁₂ := (λ_ (𝟙_ (ModuleCat.{w} K))).inv)
+      (u := (λ_ (𝟙_ (ModuleCat.{w} K))).inv) (u₂₃ := (λ_ (𝟙_ (ModuleCat.{w} K))).inv)
+      (u' := (λ_ (𝟙_ (ModuleCat.{w} K))).inv) (μ₁₂ := (ρ_ M).hom) (μ := (ρ_ M).hom)
+      (μ₂₃ := (ρ_ (ModuleCat.of K K)).hom) (μ' := (ρ_ M).hom) (by monoidal) (by monoidal)
+      hpq h' hqr h]
+  rfl
 
 /-- Bijectivity of `a ↦ g^*a ⌣ u` is invariant under isomorphisms `φ : P ⟶ P'` of pairs and
 `f : Z ⟶ Z'` of targets with `φ ≫ g' = g ≫ f` on the ambient spaces. -/
