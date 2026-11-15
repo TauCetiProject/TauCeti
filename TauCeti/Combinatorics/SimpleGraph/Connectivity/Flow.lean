@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Connectivity.Flow
+public import TauCeti.Combinatorics.Graph.Connectivity.Flow.Basic
 
 /-!
 # Undirected flows on simple graphs

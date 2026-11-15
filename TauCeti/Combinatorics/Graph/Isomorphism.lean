@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Combinatorics.Graph.Basic
 public import Mathlib.Data.Set.Card
+public import TauCeti.Combinatorics.Graph.EdgeEnds
 
 /-!
 # Isomorphisms of multigraphs
@@ -313,6 +314,23 @@ theorem mapEdgeSet_singleton (f : Iso G H) (e : G.edgeSet) :
       he' (h ▸ (f.edgeEquiv e).2)
     exact iff_of_false hleft hright
 
+/-- Transporting the ambient image of a set of actual vertices gives the ambient image of its image
+under the vertex equivalence. -/
+theorem mapVertexSet_image_val (f : Iso G H) (S : Set G.vertexSet) :
+    f.mapVertexSet (Subtype.val '' S) = Subtype.val '' (f.vertexEquiv '' S) := by
+  ext y
+  by_cases hy : y ∈ V(H)
+  · let y' : H.vertexSet := ⟨y, hy⟩
+    have hy' : (y' : α') = y := rfl
+    rw [← hy', f.mem_mapVertexSet_iff, Subtype.val_injective.mem_set_image,
+      Subtype.val_injective.mem_set_image, f.vertexEquiv.image_eq_preimage_symm, mem_preimage]
+  · have hleft : y ∉ f.mapVertexSet (Subtype.val '' S) := fun h ↦
+      hy (f.mapVertexSet_subset_vertexSet _ h)
+    have hright : y ∉ Subtype.val '' (f.vertexEquiv '' S) := by
+      rintro ⟨y', -, rfl⟩
+      exact hy y'.2
+    exact iff_of_false hleft hright
+
 /-- Vertex-set transport is monotone. -/
 theorem mapVertexSet_mono (f : Iso G H) {S T : Set α} (hST : S ⊆ T) :
     f.mapVertexSet S ⊆ f.mapVertexSet T := by
@@ -352,6 +370,14 @@ theorem map_isLink (f : Iso G H) {e : β} {x y : α} (he : G.IsLink e x y) :
     H.IsLink (f.edgeEquiv ⟨e, he.edge_mem⟩) (f.vertexEquiv ⟨x, he.left_mem⟩)
       (f.vertexEquiv ⟨y, he.right_mem⟩) :=
   (f.map_isLink_iff ⟨e, he.edge_mem⟩ ⟨x, he.left_mem⟩ ⟨y, he.right_mem⟩).2 he
+
+/-- A graph isomorphism maps the ends of an actual edge to the ends of the corresponding edge. -/
+@[simp]
+theorem edgeEnds_edgeEquiv (f : Iso G H) (e : G.edgeSet) :
+    H.edgeEnds (f.edgeEquiv e) = (G.edgeEnds e).map f.vertexEquiv := by
+  induction hp : G.edgeEnds e using Sym2.ind with
+  | _ x y =>
+    rw [Sym2.map_mk, edgeEnds_eq_iff_isLink, f.map_isLink_iff, ← edgeEnds_eq_iff_isLink, hp]
 
 /-- A graph isomorphism preserves and reflects incidence between actual edges and vertices. -/
 @[simp]
