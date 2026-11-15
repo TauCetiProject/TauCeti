@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Dagger.Basic
+public import Mathlib.Algebra.Star.StarAlgHom
+public import Mathlib.CategoryTheory.Linear.LinearFunctor
 public import Mathlib.CategoryTheory.NatIso
 
 /-!
@@ -14,13 +16,15 @@ public import Mathlib.CategoryTheory.NatIso
 Preserving a chosen dagger is a property of a native functor. Natural transformations between
 dagger-preserving functors admit a pointwise dagger, and pointwise unitary transformations
 give natural isomorphisms. These constructions require no additive or analytic structure.
+A linear dagger-preserving functor restricts to unital star algebra homomorphisms between
+endomorphism algebras.
 -/
 
 public section
 
 open CategoryTheory TauCeti
 
-universe v₁ v₂ v₃ u₁ u₂ u₃
+universe w v₁ v₂ v₃ u₁ u₂ u₃
 
 namespace CategoryTheory.Functor
 
@@ -61,6 +65,39 @@ theorem map_isUnitary (F : C ⥤ D) [F.PreservesDagger] {X Y : C} {f : X ⟶ Y}
     {X Y : C} (f : X ⟶ Y) : IsUnitary (F.map f) ↔ IsUnitary f := by
   simp only [isUnitary_iff, ← map_dagger, ← Functor.map_comp, ← Functor.map_id,
     F.map_injective.eq_iff]
+
+section Linear
+
+variable {R : Type w} [CommSemiring R]
+variable {C : Type u₁} [Category.{v₁} C] [Preadditive C] [CategoryTheory.Linear R C]
+  [DaggerCategory C]
+variable {D : Type u₂} [Category.{v₂} D] [Preadditive D] [CategoryTheory.Linear R D]
+  [DaggerCategory D]
+variable (F : C ⥤ D) [F.Additive] [F.Linear R] [F.PreservesDagger]
+
+variable (R) in
+/-- A linear dagger-preserving functor as a unital star algebra homomorphism between
+endomorphism algebras. -/
+def mapEndStarAlgHom (X : C) : End X →⋆ₐ[R] End (F.obj X) where
+  toFun a := .of (F.map a.asHom)
+  map_one' := by ext; simp
+  map_mul' a b := by ext; simp
+  map_zero' := by ext; simp
+  map_add' a b := by ext; simp
+  commutes' r := by ext; simp [Algebra.algebraMap_eq_smul_one, Functor.map_smul]
+  map_star' a := by ext; simp
+
+/-- The star algebra homomorphism of a functor applies the functor to the underlying arrow. -/
+@[simp] theorem mapEndStarAlgHom_apply (X : C) (a : End X) :
+    F.mapEndStarAlgHom R X a = .of (F.map a.asHom) := (rfl)
+
+/-- A faithful functor gives injective maps of endomorphism algebras. -/
+theorem mapEndStarAlgHom_injective [F.Faithful] (X : C) :
+    Function.Injective (F.mapEndStarAlgHom R X) := fun a b h => by
+  ext
+  exact F.map_injective (congrArg End.asHom h)
+
+end Linear
 
 end CategoryTheory.Functor
 
