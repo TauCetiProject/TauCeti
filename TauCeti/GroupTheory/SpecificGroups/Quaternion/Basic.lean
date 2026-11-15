@@ -384,11 +384,12 @@ theorem center_quaternionGroup_eq_zpowers {n : ℕ} (hn : n ≠ 1) :
       nth_rw 1 [h0]
       rw [neg_add_cancel, QuaternionGroup.a_zero]
     rcases eq_zero_or_neZero n with rfl | _
-    · rw [sq, QuaternionGroup.a_mul_a, QuaternionGroup.one_def, QuaternionGroup.a.injEq] at hsq
-      let j : ℤ := i
-      have hj : j + j = 0 := hsq
-      have hi : i = 0 := show j = 0 by omega
-      rw [hi, QuaternionGroup.a_zero]
+    · obtain ⟨k, rfl⟩ := ZMod.intCast_surjective i
+      rw [sq, QuaternionGroup.a_mul_a, QuaternionGroup.one_def, QuaternionGroup.a.injEq,
+        ← Int.cast_add, ZMod.intCast_zmod_eq_zero_iff_dvd, Nat.mul_zero, Int.natCast_zero,
+        zero_dvd_iff] at hsq
+      have hk : k = 0 := by omega
+      rw [hk, Int.cast_zero, QuaternionGroup.a_zero]
       exact one_mem _
     · rcases sq_eq_one_quaternionGroup_iff.mp hsq with hai | hai
       · rw [hai]

@@ -38,7 +38,7 @@ coordinate types. Generation is reused from
   at least four elements.
 * `Matrix.SpecialLinearGroup.commutator_eq_top_of_three_le_card`: perfectness on at least three
   coordinates over every field.
-* `Matrix.SpecialLinearGroup.index_ne_two`: absence of index-two subgroups over a field of
+* `Subgroup.index_specialLinearGroup_ne_two`: absence of index-two subgroups over a field of
   characteristic other than `2`.
 
 ## References
@@ -129,9 +129,15 @@ theorem commutator_eq_top_of_three_le_card (h : 3 ≤ Fintype.card ι) :
   rw [TransvectionStruct.toSpecialLinearGroup_mk]
   exact transvection_mem_commutator_of_ne hij hki.symm hkj c
 
+end Matrix.SpecialLinearGroup
+
+namespace Subgroup
+
+open Matrix Matrix.SpecialLinearGroup in
 /-- Over a field of characteristic other than `2`, `SL(ι, F)` has no subgroup of index `2` (in
 every finite rank, including `SL₂(𝔽₃)` where the group is solvable rather than perfect). -/
-theorem index_ne_two [NeZero (2 : F)] (H : Subgroup (SpecialLinearGroup ι F)) :
+theorem index_specialLinearGroup_ne_two {F ι : Type*} [Field F] [Fintype ι] [DecidableEq ι]
+    [NeZero (2 : F)] (H : Subgroup (Matrix.SpecialLinearGroup ι F)) :
     H.index ≠ 2 := by
   -- Every transvection is the square of the half-parameter transvection, hence lies in `H`.
   intro hH
@@ -146,4 +152,4 @@ theorem index_ne_two [NeZero (2 : F)] (H : Subgroup (SpecialLinearGroup ι F)) :
   rw [htop, Subgroup.index_top] at hH
   omega
 
-end Matrix.SpecialLinearGroup
+end Subgroup

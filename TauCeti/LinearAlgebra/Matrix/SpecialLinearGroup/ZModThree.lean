@@ -95,7 +95,7 @@ theorem not_exists_subgroup_sl2_zmod_three_card_twelve :
   rintro ⟨H, hH⟩
   have hmul := H.card_mul_index
   rw [hH, natCard_sl2_zmod_three] at hmul
-  exact Matrix.SpecialLinearGroup.index_ne_two H (by omega)
+  exact H.index_specialLinearGroup_ne_two (by omega)
 
 /-! ## Explicit generators and the quaternion subgroup -/
 
@@ -266,9 +266,11 @@ theorem index_sl2ZModThreeQuaternionSubgroup :
 
 /-- `TauCeti.sl2ZModThreeQuaternionSubgroup` is a `2`-group. -/
 theorem isPGroup_sl2ZModThreeQuaternionSubgroup :
-    IsPGroup 2 sl2ZModThreeQuaternionSubgroup :=
-  IsPGroup.of_card (show Nat.card sl2ZModThreeQuaternionSubgroup = 2 ^ 3 by
-    rw [natCard_sl2ZModThreeQuaternionSubgroup]; rfl)
+    IsPGroup 2 sl2ZModThreeQuaternionSubgroup := by
+  have hcard : Nat.card sl2ZModThreeQuaternionSubgroup = 2 ^ 3 := by
+    rw [natCard_sl2ZModThreeQuaternionSubgroup]
+    decide
+  exact IsPGroup.of_card hcard
 
 /-- `TauCeti.sl2ZModThreeQuaternionSubgroup` is not commutative. -/
 theorem not_isMulCommutative_sl2ZModThreeQuaternionSubgroup :
@@ -372,15 +374,19 @@ private theorem coset_sl2ZModThreeQuaternionSubgroup_mul_mem {x y : SL(2, ZMod 3
     have hconj : sl2ZModThreeT⁻¹ * x * sl2ZModThreeT ∈ sl2ZModThreeQuaternionSubgroup := by
       simpa [inv_inv] using
         sl2ZModThreeQuaternionSubgroup_normal.conj_mem x hx sl2ZModThreeT⁻¹
-    have hmul := mul_mem hconj hy1
-    rwa [show (sl2ZModThreeT⁻¹ * x * sl2ZModThreeT) * (sl2ZModThreeT⁻¹ * y) =
-      sl2ZModThreeT⁻¹ * (x * y) by group] at hmul
+    have hreassoc :
+        (sl2ZModThreeT⁻¹ * x * sl2ZModThreeT) * (sl2ZModThreeT⁻¹ * y) =
+          sl2ZModThreeT⁻¹ * (x * y) := by
+      group
+    simpa only [hreassoc] using mul_mem hconj hy1
   · refine Or.inr (Or.inr ?_)
     have hconj : sl2ZModThreeT * x * sl2ZModThreeT⁻¹ ∈ sl2ZModThreeQuaternionSubgroup :=
       sl2ZModThreeQuaternionSubgroup_normal.conj_mem x hx sl2ZModThreeT
-    have hmul := mul_mem hconj hy2
-    rwa [show (sl2ZModThreeT * x * sl2ZModThreeT⁻¹) * (sl2ZModThreeT * y) =
-      sl2ZModThreeT * (x * y) by group] at hmul
+    have hreassoc :
+        (sl2ZModThreeT * x * sl2ZModThreeT⁻¹) * (sl2ZModThreeT * y) =
+          sl2ZModThreeT * (x * y) := by
+      group
+    simpa only [hreassoc] using mul_mem hconj hy2
 
 private theorem coset_sl2ZModThreeQuaternionSubgroup (g : SL(2, ZMod 3)) :
     g ∈ sl2ZModThreeQuaternionSubgroup ∨
@@ -420,15 +426,19 @@ theorem conj_ne_and_ne_neg_of_notMem_sl2ZModThreeQuaternionSubgroup {g q : SL(2,
   · exact absurd hgQ hg
   · set h := sl2ZModThreeT⁻¹ * g
     have hg_eq : g = sl2ZModThreeT * h := by simp [h]
-    rw [hg_eq, show (sl2ZModThreeT * h) * q * (sl2ZModThreeT * h)⁻¹ =
-      sl2ZModThreeT * (h * q * h⁻¹) * sl2ZModThreeT⁻¹ by group]
+    have hconj_eq : g * q * g⁻¹ = sl2ZModThreeT * (h * q * h⁻¹) * sl2ZModThreeT⁻¹ := by
+      rw [hg_eq]
+      group
+    rw [hconj_eq]
     rcases conj_eq_or_eq_neg_of_mem_quaternionSubgroup hTg hq with hh | hh <;> rw [hh] <;>
       (rcases mem_quaternionSubgroup_cases hq hq1 hqneg with
         rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
   · set h := sl2ZModThreeT * g
     have hg_eq : g = sl2ZModThreeT⁻¹ * h := by simp [h]
-    rw [hg_eq, show (sl2ZModThreeT⁻¹ * h) * q * (sl2ZModThreeT⁻¹ * h)⁻¹ =
-      sl2ZModThreeT⁻¹ * (h * q * h⁻¹) * sl2ZModThreeT by group]
+    have hconj_eq : g * q * g⁻¹ = sl2ZModThreeT⁻¹ * (h * q * h⁻¹) * sl2ZModThreeT := by
+      rw [hg_eq]
+      group
+    rw [hconj_eq]
     rcases conj_eq_or_eq_neg_of_mem_quaternionSubgroup hTinvg hq with hh | hh <;> rw [hh] <;>
       (rcases mem_quaternionSubgroup_cases hq hq1 hqneg with
         rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
