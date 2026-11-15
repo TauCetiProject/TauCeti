@@ -8,7 +8,6 @@ module
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Assembly.LieType
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.BasicProperties.TwistedA.Basic
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.Perfect
-import TauCeti.FieldTheory.Finite.PowAddSelf
 import TauCeti.FieldTheory.Finite.QuadraticNorm
 
 /-!
@@ -17,8 +16,8 @@ import TauCeti.FieldTheory.Finite.QuadraticNorm
 For a valid graph-twisted type-`A` index `²A_r(q)` (`2 ≤ r`, with `3 ≤ q` when `r = 2`),
 `TauCeti.TypeALieIndex.specialUnitaryEquivFixedPoints` identifies the Steinberg fixed points with
 `SU_{r+1}(q) = fixedSubgroup ((ofTwistedA r q hv).1.galoisFieldTwistedFrobenius r)`. Combining
-surjectivity of trace and norm over `𝔽_{q²}` with
-`TauCeti.commutator_specialIsometryGroup_typeAGraphConjugator` and
+trace surjectivity and the `|𝔽_q| ≥ 3` witness over `𝔽_{q²}` with
+`TauCeti.commutator_specialIsometryGroup_typeAGraphConjugator_eq_top` and
 `TauCeti.isSimpleGroup_quotient_center_typeAGraphConjugator` proves that `SU_{r+1}(q)` is perfect
 and that the candidate group of `²A_r(q)` is isomorphic to `PSU_{r+1}(q)` and simple.
 
@@ -50,39 +49,9 @@ section FiniteUnitary
 
 variable (d : ValidLieTypeIndex)
 
-private theorem natCard_extensionGaloisField_two_eq_pow_sq :
-    Nat.card (GaloisField d.characteristic (d.fieldExponent * 2)) =
-      (d.characteristic ^ d.fieldExponent) ^ 2 := by
-  rw [GaloisField.card _ _ (Nat.mul_ne_zero d.fieldExponent_pos.ne' two_ne_zero), pow_mul]
-
 private theorem natCard_extensionGaloisField_two_eq_fieldOrder_sq :
     Nat.card (GaloisField d.characteristic (d.fieldExponent * 2)) = d.fieldOrder ^ 2 := by
-  rw [d.natCard_extensionGaloisField_two_eq_pow_sq, ← d.fieldOrder_eq_characteristic_pow]
-
-private theorem exists_add_iterateFrobenius_eq_of_eq
-    {s : GaloisField d.characteristic (d.fieldExponent * 2)}
-    (hs : iterateFrobenius _ d.characteristic d.fieldExponent s = s) :
-    ∃ t, t + iterateFrobenius _ d.characteristic d.fieldExponent t = s := by
-  rw [iterateFrobenius_def] at hs
-  obtain ⟨t, ht⟩ := FiniteField.exists_pow_add_self_eq d.natCard_extensionGaloisField_two_eq_pow_sq
-    hs
-  exact ⟨t, by rwa [iterateFrobenius_def, add_comm]⟩
-
-private theorem exists_ne_zero_add_iterateFrobenius_eq_zero :
-    ∃ a ≠ (0 : GaloisField d.characteristic (d.fieldExponent * 2)),
-      a + iterateFrobenius _ d.characteristic d.fieldExponent a = 0 := by
-  obtain ⟨a, ha0, ha⟩ := FiniteField.exists_ne_zero_add_neg_one_pow_mul_pow_eq_zero
-    d.natCard_extensionGaloisField_two_eq_pow_sq 0
-  exact ⟨a, ha0, by simpa [iterateFrobenius_def] using ha⟩
-
-private theorem exists_iterateFrobenius_mul_self_eq_of_eq
-    {s : GaloisField d.characteristic (d.fieldExponent * 2)}
-    (hs : iterateFrobenius _ d.characteristic d.fieldExponent s = s) :
-    ∃ b, iterateFrobenius _ d.characteristic d.fieldExponent b * b = s := by
-  rw [coe_iterateFrobenius_galoisField] at hs
-  obtain ⟨b, hb⟩ := FiniteField.exists_pow_mul_self_eq
-    d.natCard_extensionGaloisField_two_eq_fieldOrder_sq hs
-  exact ⟨b, by simpa [coe_iterateFrobenius_galoisField] using hb⟩
+  rw [d.natCard_galoisField, ← d.fieldOrder_eq_characteristic_pow]
 
 private theorem rank_ne_two_or_exists_iterateFrobenius_fixed {r : ℕ}
     (hq : r = 2 → 3 ≤ d.fieldOrder) :
@@ -100,11 +69,12 @@ theorem commutator_galoisFieldTwistedFrobenius_eq_top {r : ℕ} (hr : 2 ≤ r)
     (hq : r = 2 → 3 ≤ d.fieldOrder) :
     commutator (fixedSubgroup (d.galoisFieldTwistedFrobenius r)) = ⊤ := by
   rw [d.fixedSubgroup_galoisFieldTwistedFrobenius_eq_specialIsometryGroup]
-  exact commutator_specialIsometryGroup_typeAGraphConjugator
+  exact commutator_specialIsometryGroup_typeAGraphConjugator_eq_top
     d.involutive_iterateFrobenius_galoisField
-    (fun _ ↦ d.exists_add_iterateFrobenius_eq_of_eq)
-    d.exists_ne_zero_add_iterateFrobenius_eq_zero hr
-    (fun _ _ ↦ d.exists_iterateFrobenius_mul_self_eq_of_eq)
+    (fun s hs ↦ by
+      simpa using d.exists_add_neg_one_pow_mul_iterateFrobenius_eq (r := 0) (s := s)
+        (by simpa using hs))
+    (d.exists_ne_zero_add_neg_one_pow_mul_iterateFrobenius_eq_zero (r := r)) hr
     (d.rank_ne_two_or_exists_iterateFrobenius_fixed hq)
 
 /-- **Simplicity of `PSU_{r+1}(q)`** in its graph-twisted Frobenius model, for `2 ≤ r` and
@@ -116,9 +86,10 @@ theorem isSimpleGroup_quotient_center_galoisFieldTwistedFrobenius {r : ℕ} (hr 
   rw [d.fixedSubgroup_galoisFieldTwistedFrobenius_eq_specialIsometryGroup]
   exact isSimpleGroup_quotient_center_typeAGraphConjugator
     d.involutive_iterateFrobenius_galoisField
-    (fun _ ↦ d.exists_add_iterateFrobenius_eq_of_eq)
-    d.exists_ne_zero_add_iterateFrobenius_eq_zero hr
-    (fun _ _ ↦ d.exists_iterateFrobenius_mul_self_eq_of_eq)
+    (fun s hs ↦ by
+      simpa using d.exists_add_neg_one_pow_mul_iterateFrobenius_eq (r := 0) (s := s)
+        (by simpa using hs))
+    (d.exists_ne_zero_add_neg_one_pow_mul_iterateFrobenius_eq_zero (r := r)) hr
     (d.rank_ne_two_or_exists_iterateFrobenius_fixed hq)
 
 end FiniteUnitary
