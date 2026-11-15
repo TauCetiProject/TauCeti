@@ -95,7 +95,6 @@ theorem mem_residual_setOf_forall_mem_criticalPoints_isManifoldNondegenerateCrit
   have hm : ((k - 1 : ℕ) : WithTop ℕ∞) + 1 ≤ k := by
     have : k - 1 + 1 = k := by omega
     exact_mod_cast this.le
-  have hm1 : (1 : WithTop ℕ∞) + 1 ≤ k := by exact_mod_cast hk
   -- Pull the universal differential back along `Φ (x, l) = (x, f + T l)`.
   let Φ : M × Λ → M × C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯ := fun z ↦ (z.1, f + T z.2)
   have hΦ (z : M × Λ) : HasMFDerivAt (𝓘(ℝ, E).prod 𝓘(ℝ, Λ))
@@ -116,22 +115,24 @@ theorem mem_residual_setOf_forall_mem_criticalPoints_isManifoldNondegenerateCrit
     have : IsManifold 𝓘(ℝ, E) 2 M := .of_le (n := k) (by exact_mod_cast hk)
     filter_upwards [h] with l hl
     rw [← isRegularSectionParameter_universalDifferential_iff
-      (show (2 : WithTop ℕ∞) ≤ k by exact_mod_cast hk), isRegularSectionParameter_iff]
-    rw [isRegularSectionParameter_iff] at hl
-    exact hl
+      (show (2 : WithTop ℕ∞) ≤ k by exact_mod_cast hk)]
+    simpa only [isRegularSectionParameter_iff, Φ, Function.comp_apply] using hl
   · -- The total linearization is onto, already on the parameter directions.
-    have hs : MDifferentiableAt (𝓘(ℝ, E).prod 𝓘(ℝ, C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯)) 𝓘(ℝ, E →L[ℝ] ℝ)
-        (fun w ↦ (trivializationAt (E →L[ℝ] ℝ) (fun y : M ↦ TangentSpace 𝓘(ℝ, E) y →L[ℝ] ℝ)
-          (Φ z).1 ⟨w.1, universalDifferential 𝓘(ℝ, E) w⟩).2) (Φ z) :=
-      ((contMDiffAt_totalSpace_iff.1 ((contMDiff_universalDifferential k hK hm1) (Φ z))).2
-        ).mdifferentiableAt one_ne_zero
-    rw [sectionLinearization_comp (hΦ z).mdifferentiableAt hs, (hΦ z).mfderiv]
+    rw [sectionLinearization_comp (hΦ z).mdifferentiableAt
+      (mdifferentiableAt_trivializationAt_universalDifferential k hK hk (Φ z)), (hΦ z).mfderiv]
     intro ξ
     obtain ⟨l, hl⟩ := hT z.1 ξ
-    refine ⟨((0 : E), l),
-      (sectionLinearization_universalDifferential_apply k hK hk (Φ z) ((0 : E), T l)).trans ?_⟩
-    exact (congrArg (· + _) (map_zero (criticalHessian 𝓘(ℝ, E) (Φ z).2 (Φ z).1))).trans
-      ((zero_add _).trans hl)
+    refine ⟨((0 : E), l), ?_⟩
+    -- On `(0, T l)` the linearization of the universal differential is `d(T l)`. The zero
+    -- point direction is a vector of `E`, so `map_zero` is stated at that type.
+    have hH : criticalHessian 𝓘(ℝ, E) (Φ z).2 (Φ z).1 (0 : E) = 0 := map_zero _
+    have h0 := sectionLinearization_universalDifferential_apply k hK hk (Φ z) ((0 : E), T l)
+    dsimp only at h0
+    rw [hH, zero_add] at h0
+    -- The derivative of `Φ` sends `(0, l)` to `(0, T l)` by unfolding `comp` and `prod`. The
+    -- tangent spaces of the products are `E × Λ` and `E × C^k(M, ℝ)` only by definition, so
+    -- `rw` and `simp` cannot rewrite the goal, and the unfolding is left to `exact`.
+    exact h0.trans hl
   · -- The linearization in the point maps `T_x M` to its dual, so it has index zero.
     rw [index_sectionLinearization_of_finiteDimensional,
       ContinuousLinearMap.dual_finrank_eq (𝕜 := ℝ) (E := E), sub_self]
