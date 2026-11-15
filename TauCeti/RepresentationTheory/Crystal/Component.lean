@@ -213,6 +213,49 @@ def component (C : c.graph.ConnectedComponent) : NormalCrystal P b C :=
 theorem component_eq_restrict (C : c.graph.ConnectedComponent) :
     c.component C = c.restrict C.supp fun _ _ h hx => C.mem_supp_of_adj_mem_supp hx h := (rfl)
 
+section
+
+variable {c} {C : c.graph.ConnectedComponent} {i : b.support}
+
+@[simp]
+theorem component_wt (x : C) : (c.component C).wt x = c.wt x.1 := (rfl)
+
+@[simp]
+theorem component_ε (x : C) : (c.component C).ε i x = c.ε i x.1 := (rfl)
+
+@[simp]
+theorem component_φ (x : C) : (c.component C).φ i x = c.φ i x.1 := (rfl)
+
+@[simp]
+theorem component_e_eq_some_iff {x y : C} :
+    (c.component C).e i x = some y ↔ c.e i x.1 = some y.1 :=
+  restrict_e_eq_some_iff
+
+@[simp]
+theorem component_f_eq_some_iff {x y : C} :
+    (c.component C).f i x = some y ↔ c.f i x.1 = some y.1 :=
+  restrict_f_eq_some_iff
+
+@[simp]
+theorem unattach_component_e (x : C) : ((c.component C).e i x).unattach = c.e i x.1 :=
+  unattach_restrict_e x
+
+@[simp]
+theorem unattach_component_f (x : C) : ((c.component C).f i x).unattach = c.f i x.1 :=
+  unattach_restrict_f x
+
+@[simp]
+theorem unattach_component_eIter (n : ℕ) (x : C) :
+    ((c.component C).eIter i n x).unattach = c.eIter i n x.1 :=
+  unattach_restrict_eIter n x
+
+@[simp]
+theorem unattach_component_fIter (n : ℕ) (x : C) :
+    ((c.component C).fIter i n x).unattach = c.fIter i n x.1 :=
+  unattach_restrict_fIter n x
+
+end
+
 /-- The crystal graph of a component is the induced graph on that component. -/
 theorem component_graph (C : c.graph.ConnectedComponent) :
     (c.component C).graph = C.toSimpleGraph :=

@@ -154,22 +154,6 @@ theorem raiseIter_map_natCast_smul_eq_some_iff (hx : f x = 2) {n : ℕ} (hn : 0 
   rw [raiseIter_map_natCast_smul hx hn, Option.map_eq_some_iff]
   simp [(map_smul_id_injective (V := V) (Nat.cast_pos.mpr hn).ne').eq_iff]
 
-/-- Lowering along a constant word `List.replicate n i` is `lowerIter (F i) (x i) n`. -/
-@[simp]
-theorem lowerWord_replicate (F : ι → Dual 𝕜 V) (x : ι → V) (n : ℕ) (i : ι) (p : PLPath 𝕜 V) :
-    lowerWord F x (List.replicate n i) p = lowerIter (F i) (x i) n p := by
-  induction n generalizing p with
-  | zero => simp
-  | succ n ih => simp only [List.replicate_succ, lowerWord_cons, lowerIter_succ, ih]
-
-/-- Raising along a constant word `List.replicate n i` is `raiseIter (F i) (x i) n`. -/
-@[simp]
-theorem raiseWord_replicate (F : ι → Dual 𝕜 V) (x : ι → V) (n : ℕ) (i : ι) (p : PLPath 𝕜 V) :
-    raiseWord F x (List.replicate n i) p = raiseIter (F i) (x i) n p := by
-  induction n generalizing p with
-  | zero => simp
-  | succ n ih => simp only [List.replicate_succ, raiseWord_cons, raiseIter_succ, ih]
-
 /-- Lowering along a word commutes with positive-integer dilation upon repeating each letter `n`
 times. -/
 theorem lowerWord_flatMap_replicate_map_natCast_smul {F : ι → Dual 𝕜 V} {x : ι → V}
@@ -227,28 +211,6 @@ variable {ι X Y 𝕜 V : Type*} [AddCommGroup X] [AddCommGroup Y]
   [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [AddCommGroup V] [Module 𝕜 V]
   {f : X →+ V} {F : b.support → Dual 𝕜 V}
 
-theorem reflTransGen_rootStep_of_raiseIter_eq_some {i : b.support} {n : ℕ} {π π' : PLPath 𝕜 V}
-    (h : raiseIter (F i) (f (P.root i)) n π = some π') :
-    ReflTransGen (RootStep b f F) π π' := by
-  induction n generalizing π with
-  | zero =>
-    simp only [raiseIter_zero, Option.some.injEq] at h
-    exact h ▸ .refl
-  | succ n ih =>
-    obtain ⟨ρ, hρ, h⟩ := Option.bind_eq_some_iff.mp (raiseIter_succ n π ▸ h)
-    exact .head (.of_raise_eq_some hρ) (ih h)
-
-theorem reflTransGen_rootStep_of_lowerIter_eq_some {i : b.support} {n : ℕ} {π π' : PLPath 𝕜 V}
-    (h : lowerIter (F i) (f (P.root i)) n π = some π') :
-    ReflTransGen (RootStep b f F) π π' := by
-  induction n generalizing π with
-  | zero =>
-    simp only [lowerIter_zero, Option.some.injEq] at h
-    exact h ▸ .refl
-  | succ n ih =>
-    obtain ⟨ρ, hρ, h⟩ := Option.bind_eq_some_iff.mp (lowerIter_succ n π ▸ h)
-    exact .head (.of_lower_eq_some hρ) (ih h)
-
 /-- Dilation by any natural number `n` (including `n = 0`, which sends both paths to `1`) preserves
 finite sequences of simple-root raising and lowering steps. -/
 theorem reflTransGen_rootStep_map_natCast_smul
@@ -268,6 +230,38 @@ theorem reflTransGen_rootStep_map_natCast_smul
     · exact ih.trans <| reflTransGen_rootStep_of_lowerIter_eq_some <| by
         rw [lowerIter_map_natCast_smul (hx i) hn, hstep, Option.map_some]
 
+private theorem normalCrystalOn_wt_of_val_eq_map_natCast_smul {S T : Set (PLPath 𝕜 V)}
+    (hf : Function.Injective f)
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
+    (hS : IsCrystalSet b f F S) (hT : IsCrystalSet b f F T)
+    {n : ℕ} {π : S} {π' : T} (hπ' : π'.1 = π.1.map ((n : 𝕜) • LinearMap.id)) :
+    (normalCrystalOn hf hF hT).wt π' = n • (normalCrystalOn hf hF hS).wt π :=
+  hf <| by
+    rw [apply_normalCrystalOn_wt, hπ', map_nsmul, apply_normalCrystalOn_wt, endpoint_map,
+      LinearMap.smul_apply, LinearMap.id_apply, Nat.cast_smul_eq_nsmul]
+
+private theorem normalCrystalOn_ε_of_val_eq_map_natCast_smul {S T : Set (PLPath 𝕜 V)}
+    (hf : Function.Injective f)
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
+    (hS : IsCrystalSet b f F S) (hT : IsCrystalSet b f F T)
+    (i : b.support) {n : ℕ} {π : S} {π' : T}
+    (hπ' : π'.1 = π.1.map ((n : 𝕜) • LinearMap.id)) :
+    (normalCrystalOn hf hF hT).ε i π' = n * (normalCrystalOn hf hF hS).ε i π :=
+  Nat.cast_injective (R := 𝕜) <| by
+    rw [cast_normalCrystalOn_ε, hπ', Nat.cast_mul, cast_normalCrystalOn_ε,
+      minHeight_map_smul (Nat.cast_nonneg n), mul_neg]
+
+private theorem unattach_normalCrystalOn_eIter_of_val_eq_map_natCast_smul {S T : Set (PLPath 𝕜 V)}
+    (hf : Function.Injective f)
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
+    (hS : IsCrystalSet b f F S) (hT : IsCrystalSet b f F T)
+    (i : b.support) {n : ℕ} (hn : 0 < n) {π : S} {π' : T}
+    (hπ' : π'.1 = π.1.map ((n : 𝕜) • LinearMap.id)) :
+    ((normalCrystalOn hf hF hT).eIter i n π').unattach =
+      (((normalCrystalOn hf hF hS).e i π).unattach).map (·.map ((n : 𝕜) • LinearMap.id)) := by
+  rw [unattach_normalCrystalOn_eIter, hπ', unattach_normalCrystalOn_e,
+    raiseIter_map_natCast_smul (apply_root_eq_two hF i) hn]
+
 /-- Positive-integer dilation between crystal-admissible sets of paths assembles into a similarity
 morphism of normal crystals. -/
 noncomputable def dilationSimilarityHom {S T : Set (PLPath 𝕜 V)} (hf : Function.Injective f)
@@ -276,17 +270,11 @@ noncomputable def dilationSimilarityHom {S T : Set (PLPath 𝕜 V)} (hf : Functi
     {n : ℕ} (hn : 0 < n) (hST : ∀ ⦃π⦄, π ∈ S → π.map ((n : 𝕜) • LinearMap.id) ∈ T) :
     NormalCrystal.SimilarityHom n (normalCrystalOn hf hF hS) (normalCrystalOn hf hF hT) where
   toFun π := ⟨π.1.map ((n : 𝕜) • LinearMap.id), hST π.2⟩
-  wt_toFun π := hf <| by
-    rw [apply_normalCrystalOn_wt, map_nsmul, apply_normalCrystalOn_wt, endpoint_map,
-      LinearMap.smul_apply, LinearMap.id_apply, Nat.cast_smul_eq_nsmul]
-  ε_toFun i π := Nat.cast_injective (R := 𝕜) <| by
-    rw [cast_normalCrystalOn_ε, Nat.cast_mul, cast_normalCrystalOn_ε,
-      minHeight_map_smul (Nat.cast_nonneg n), mul_neg]
-  eIter_toFun i π := Option.unattach_inj.mp <| by
-    rw [Option.unattach_map,
-      Option.map_subtype (g := fun p ↦ p.map ((n : 𝕜) • LinearMap.id)) (fun _ _ ↦ rfl),
-      unattach_normalCrystalOn_eIter, unattach_normalCrystalOn_e,
-      raiseIter_map_natCast_smul (apply_root_eq_two hF i) hn]
+  wt_toFun _ := normalCrystalOn_wt_of_val_eq_map_natCast_smul hf hF hS hT rfl
+  ε_toFun i _ := normalCrystalOn_ε_of_val_eq_map_natCast_smul hf hF hS hT i rfl
+  eIter_toFun i _ := Option.unattach_inj.mp <| by
+    simpa only [Option.unattach_map, Option.map_unattach] using
+      unattach_normalCrystalOn_eIter_of_val_eq_map_natCast_smul hf hF hS hT i hn rfl
 
 @[simp]
 theorem dilationSimilarityHom_apply {S T : Set (PLPath 𝕜 V)} (hf : Function.Injective f)
@@ -351,32 +339,21 @@ noncomputable def componentDilationSimilarityHom (hf : Function.Injective f)
     NormalCrystal.SimilarityHom n
       (normalCrystalComponent hf hF x) (normalCrystalComponent hf hF x') where
   toFun y :=
-    ⟨⟨y.1.1.map ((n : 𝕜) • LinearMap.id),
-        x'.2.of_reflTransGen_rootStep
-          (reflTransGen_rootStep_of_mem_connectedComponentMk_map_natCast_smul hf hF hx' y.2)⟩,
-      (mem_supp_connectedComponentMk_normalCrystalOn_iff x' _).mpr
-        (reflTransGen_rootStep_of_mem_connectedComponentMk_map_natCast_smul hf hF hx' y.2)⟩
-  wt_toFun y := hf <| by
-    dsimp only [normalCrystalComponent, normalCrystal]
-    rw [NormalCrystal.component_eq_restrict, NormalCrystal.component_eq_restrict,
-      NormalCrystal.restrict_wt, NormalCrystal.restrict_wt,
-      apply_normalCrystalOn_wt, map_nsmul, apply_normalCrystalOn_wt,
-      endpoint_map, LinearMap.smul_apply, LinearMap.id_apply, Nat.cast_smul_eq_nsmul]
-  ε_toFun i y := Nat.cast_injective (R := 𝕜) <| by
-    dsimp only [normalCrystalComponent, normalCrystal]
-    rw [NormalCrystal.component_eq_restrict, NormalCrystal.component_eq_restrict,
-      NormalCrystal.restrict_ε, NormalCrystal.restrict_ε,
-      cast_normalCrystalOn_ε, Nat.cast_mul, cast_normalCrystalOn_ε,
-      minHeight_map_smul (Nat.cast_nonneg n), mul_neg]
+    have hwalk := reflTransGen_rootStep_of_mem_connectedComponentMk_map_natCast_smul hf hF hx' y.2
+    ⟨⟨y.1.1.map ((n : 𝕜) • LinearMap.id), x'.2.of_reflTransGen_rootStep hwalk⟩,
+      (mem_supp_connectedComponentMk_normalCrystalOn_iff x' _).mpr hwalk⟩
+  wt_toFun _ := by
+    rw [NormalCrystal.component_wt, NormalCrystal.component_wt]
+    exact normalCrystalOn_wt_of_val_eq_map_natCast_smul hf hF _ _ rfl
+  ε_toFun i _ := by
+    rw [NormalCrystal.component_ε, NormalCrystal.component_ε]
+    exact normalCrystalOn_ε_of_val_eq_map_natCast_smul hf hF _ _ i rfl
   eIter_toFun i y := Option.unattach_inj.mp <| Option.unattach_inj.mp <| by
-    dsimp only [normalCrystalComponent, normalCrystal]
-    rw [Option.unattach_map, Option.unattach_map,
-      Option.map_subtype (g := fun u ↦ u.1.map ((n : 𝕜) • LinearMap.id)) (fun _ _ ↦ rfl),
-      Option.map_subtype (g := fun p ↦ p.map ((n : 𝕜) • LinearMap.id)) (fun _ _ ↦ rfl),
-      NormalCrystal.component_eq_restrict, NormalCrystal.component_eq_restrict,
-      NormalCrystal.unattach_restrict_eIter, NormalCrystal.unattach_restrict_e,
-      unattach_normalCrystalOn_eIter, unattach_normalCrystalOn_e,
-      raiseIter_map_natCast_smul (apply_root_eq_two hF i) hn]
+    rw [NormalCrystal.unattach_component_eIter,
+      unattach_normalCrystalOn_eIter_of_val_eq_map_natCast_smul hf hF
+        isCrystalSet_setOf_isIntegralPath _ i hn (π := y.1) rfl,
+      ← NormalCrystal.unattach_component_e]
+    simp only [Option.unattach_map, Option.map_unattach]
 
 @[simp]
 theorem componentDilationSimilarityHom_apply (hf : Function.Injective f)

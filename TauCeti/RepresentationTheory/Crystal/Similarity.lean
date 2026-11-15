@@ -323,14 +323,11 @@ theorem apply_mem_mapConnectedComponent (ψ : SimilarityHom n c d)
 def componentHom (ψ : SimilarityHom n c d) (C : c.graph.ConnectedComponent) :
     SimilarityHom n (c.component C) (d.component (ψ.mapConnectedComponent C)) where
   toFun y := ⟨ψ y.1, ψ.apply_mem_mapConnectedComponent y.2⟩
-  wt_toFun y := by
-    rw [component_eq_restrict, component_eq_restrict, restrict_wt, restrict_wt, ψ.wt_apply]
-  ε_toFun j y := by
-    rw [component_eq_restrict, component_eq_restrict, restrict_ε, restrict_ε, ψ.ε_apply]
+  wt_toFun y := by simp
+  ε_toFun j y := by simp
   eIter_toFun j y := Option.unattach_inj.mp <| by
-    rw [Option.unattach_map, Option.map_subtype (g := ψ) (fun _ _ ↦ rfl),
-      component_eq_restrict, component_eq_restrict,
-      unattach_restrict_eIter, unattach_restrict_e, ψ.eIter_self]
+    rw [Option.unattach_map, ← Option.map_unattach (g := ψ)]
+    simp
 
 @[simp]
 theorem componentHom_apply (ψ : SimilarityHom n c d) (C : c.graph.ConnectedComponent) (y : C) :

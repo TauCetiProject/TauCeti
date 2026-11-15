@@ -11,8 +11,8 @@ public import Mathlib.Data.Option.Basic
 # Basic lemmas on `Option`
 
 * `Option.unattach_bind`: forgetting subtype membership commutes with `Option.bind`.
-* `Option.unattach_inj`, `Option.unattach_map`: injectivity of `Option.unattach` and compatibility
-  with `Option.map`.
+* `Option.unattach_inj`, `Option.unattach_map`, `Option.map_unattach`: injectivity of
+  `Option.unattach` and compatibility with `Option.map`.
 -/
 
 public section
@@ -37,6 +37,11 @@ theorem unattach_inj {α : Type*} {p : α → Prop} {o₁ o₂ : Option {x // p 
 theorem unattach_map {α β : Type*} {q : β → Prop} (o : Option α)
     (g : α → β) (hg : ∀ x, q (g x)) :
     (o.map fun x ↦ (⟨g x, hg x⟩ : {y // q y})).unattach = o.map g := by
+  cases o <;> rfl
+
+/-- Mapping after `Option.unattach` composes with `Subtype.val`. -/
+theorem map_unattach {α β : Type*} {p : α → Prop} (o : Option {x // p x}) (g : α → β) :
+    o.unattach.map g = o.map fun x ↦ g x.1 := by
   cases o <;> rfl
 
 end Option
