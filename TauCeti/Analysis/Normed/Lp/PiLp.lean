@@ -31,6 +31,11 @@ vectors so obtained are those whose coordinates `j ≥ k` vanish.
 The finite sum against a zero-extended vector reduces to the sum over its original coordinates.
 Over an index type with at most one element, the `Lᵖ` norm is the norm of the coordinate.
 
+For a family of operators `T i : E i →L[𝕜] F i`, the block-diagonal operator
+`PiLp.piMap p T : PiLp p E →L[𝕜] PiLp p F` acts coordinatewise; it is
+`ContinuousLinearMap.piMap T` transported along `PiLp.continuousLinearEquiv`. For `p = 2` and
+Hilbert spaces this is the orthogonal direct sum of the `T i` on a finite Hilbert sum.
+
 ## Source
 
 The coordinate-norm estimate is adapted from
@@ -261,3 +266,43 @@ theorem sum_mul_piLpExtendByZero (f : ι ↪ ι') (x : PiLp p fun _ : ι ↦ �
       piLpExtendByZero_apply_eq_zero hb]
 
 end LinearIsometry
+
+namespace PiLp
+
+variable {𝕜 ι : Type*} {E F G : ι → Type*} (p : ℝ≥0∞) [Semiring 𝕜]
+variable [∀ i, AddCommGroup (E i)] [∀ i, TopologicalSpace (E i)] [∀ i, Module 𝕜 (E i)]
+variable [∀ i, AddCommGroup (F i)] [∀ i, TopologicalSpace (F i)] [∀ i, Module 𝕜 (F i)]
+variable [∀ i, AddCommGroup (G i)] [∀ i, TopologicalSpace (G i)] [∀ i, Module 𝕜 (G i)]
+
+/-- The block-diagonal operator `x ↦ (T i (x i))ᵢ` between the `Lᵖ` products of two families of
+topological modules. For `p = 2` and Hilbert spaces this is the orthogonal direct sum of the
+operators `T i` on finite Hilbert sums. -/
+noncomputable def piMap (T : ∀ i, E i →L[𝕜] F i) : PiLp p E →L[𝕜] PiLp p F :=
+  ((PiLp.continuousLinearEquiv p 𝕜 F).symm : (∀ i, F i) →L[𝕜] PiLp p F) ∘L
+    ContinuousLinearMap.piMap T ∘L (PiLp.continuousLinearEquiv p 𝕜 E : PiLp p E →L[𝕜] ∀ i, E i)
+
+@[simp]
+theorem piMap_apply (T : ∀ i, E i →L[𝕜] F i) (x : PiLp p E) (i : ι) :
+    piMap p T x i = T i (x i) :=
+  (rfl)
+
+/-- Under the identification `PiLp.continuousLinearEquiv` of `Lᵖ` products with plain products,
+the block-diagonal operator `PiLp.piMap p T` is `ContinuousLinearMap.piMap T`. -/
+theorem continuousLinearEquiv_comp_piMap (T : ∀ i, E i →L[𝕜] F i) :
+    (PiLp.continuousLinearEquiv p 𝕜 F : PiLp p F →L[𝕜] ∀ i, F i) ∘L piMap p T =
+      ContinuousLinearMap.piMap T ∘L
+        (PiLp.continuousLinearEquiv p 𝕜 E : PiLp p E →L[𝕜] ∀ i, E i) :=
+  (rfl)
+
+/-- The block-diagonal operator with identity blocks is the identity. -/
+@[simp]
+theorem piMap_id : piMap p (fun i ↦ ContinuousLinearMap.id 𝕜 (E i)) = .id 𝕜 (PiLp p E) :=
+  (rfl)
+
+/-- Block-diagonal operators compose blockwise. -/
+@[simp]
+theorem piMap_comp (S : ∀ i, F i →L[𝕜] G i) (T : ∀ i, E i →L[𝕜] F i) :
+    piMap p (fun i ↦ S i ∘L T i) = piMap p S ∘L piMap p T :=
+  (rfl)
+
+end PiLp

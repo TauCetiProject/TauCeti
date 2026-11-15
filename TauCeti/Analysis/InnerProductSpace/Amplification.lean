@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import TauCeti.Analysis.Normed.Lp.PiLp
 
 /-!
 # Amplification of operators to a finite Hilbert sum
@@ -14,10 +15,11 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 For a Hilbert space `H` over `ℝ` or `ℂ` and a finite index type `ι`, an operator `s` on `H`
 acts diagonally on the Hilbert sum `PiLp 2 (fun _ : ι => H)` of copies of `H`, as
 `s ⊕ ⋯ ⊕ s`. This diagonal amplification is a star algebra homomorphism,
-`PiLp.diagStarAlgHom`. Conversely, every operator `T` on the Hilbert sum has matrix entries
-`ContinuousLinearMap.piLpEntry T i j : H →L[𝕜] H`, and `T` acts through them
-(`ContinuousLinearMap.apply_eq_sum_piLpEntry`). The amplification of `s` has `s` on the diagonal
-and `0` off it (`ContinuousLinearMap.piLpEntry_diagStarAlgHom`).
+`PiLp.diagStarAlgHom`, whose value at `s` is the block-diagonal operator `PiLp.piMap 2` with
+every block `s` (`PiLp.diagStarAlgHom_eq_piMap`). Conversely, every operator `T` on the Hilbert
+sum has matrix entries `ContinuousLinearMap.piLpEntry T i j : H →L[𝕜] H`, and `T` acts through
+them (`ContinuousLinearMap.apply_eq_sum_piLpEntry`). The amplification of `s` has `s` on the
+diagonal and `0` off it (`ContinuousLinearMap.piLpEntry_diagStarAlgHom`).
 
 Amplification turns statements about finitely many vectors of `H` into statements about a single
 vector of the Hilbert sum; this is how the von Neumann density theorem passes from one vector to
@@ -86,6 +88,12 @@ noncomputable def diagStarAlgHom :
 theorem diagStarAlgHom_apply (s : H →L[𝕜] H) (w : PiLp 2 (fun _ : ι => H)) (i : ι) :
     diagStarAlgHom 𝕜 H ι s w i = s (w i) :=
   (rfl)
+
+/-- The diagonal amplification of `s` is the block-diagonal operator with every block `s`. -/
+theorem diagStarAlgHom_eq_piMap (s : H →L[𝕜] H) :
+    diagStarAlgHom 𝕜 H ι s = piMap 2 fun _ : ι => s := by
+  ext
+  simp
 
 @[simp]
 theorem diagStarAlgHom_apply_single [DecidableEq ι] (s : H →L[𝕜] H) (j : ι) (h : H) :

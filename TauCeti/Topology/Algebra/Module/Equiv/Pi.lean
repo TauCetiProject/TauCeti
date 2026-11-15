@@ -25,6 +25,12 @@ into its restrictions to `S` and to `T`, `ContinuousLinearEquiv.sumPiEquivProdPi
 `TauCeti.piSigmaConstContinuousLinearEquiv` regroups a family of tuples along a bijection of its
 sigma index. Its underlying homeomorphism is `TauCeti.piSigmaConstHomeomorph`, which is linear
 coordinatewise, so coordinate calculations can use both the homeomorphism and the linear API.
+
+Two naturality lemmas relate `ContinuousLinearMap.piMap` to regrouping:
+`ContinuousLinearMap.consEquivL_symm_comp_piMap` splits a product operator over `Fin (n + 1)`
+into the binary product of its first factor with the product of the remaining ones, and
+`ContinuousLinearMap.piCongrLeft_symm_comp_piMap` reindexes a product operator along an
+equivalence of index types.
 -/
 
 public section
@@ -76,6 +82,48 @@ to `T`. -/
 end SumPi
 
 end ContinuousLinearEquiv
+
+namespace ContinuousLinearMap
+
+variable {R : Type*} [Semiring R]
+
+section Fin
+
+variable {n : ℕ} {E F : Fin (n + 1) → Type*}
+variable [∀ i, AddCommMonoid (E i)] [∀ i, TopologicalSpace (E i)] [∀ i, Module R (E i)]
+variable [∀ i, AddCommMonoid (F i)] [∀ i, TopologicalSpace (F i)] [∀ i, Module R (F i)]
+
+/-- Splitting off the first coordinate turns a product over `Fin (n + 1)` into the binary product
+of its first factor with the product of the remaining ones. -/
+theorem consEquivL_symm_comp_piMap (T : ∀ i, E i →L[R] F i) :
+    ((Fin.consEquivL R F).symm : (∀ i, F i) →L[R] F 0 × ∀ i : Fin n, F i.succ) ∘L piMap T =
+      ((T 0).prodMap (piMap fun i : Fin n ↦ T i.succ)) ∘L
+        ((Fin.consEquivL R E).symm : (∀ i, E i) →L[R] E 0 × ∀ i : Fin n, E i.succ) := by
+  ext x <;> simp [Fin.tail]
+
+end Fin
+
+section Reindex
+
+variable {ι ι' : Type*} {E F : ι → Type*}
+variable [∀ i, AddCommMonoid (E i)] [∀ i, TopologicalSpace (E i)] [∀ i, Module R (E i)]
+variable [∀ i, AddCommMonoid (F i)] [∀ i, TopologicalSpace (F i)] [∀ i, Module R (F i)]
+
+/-- Reindexing a product operator along `e : ι' ≃ ι` gives the product of the reindexed family.
+
+Mathlib has no evaluation lemmas for `ContinuousLinearEquiv.piCongrLeft`; its inverse is
+`Equiv.piCongrLeft'`, which reads the coordinate `i'` at `e i'` by definition, so both sides
+agree definitionally. -/
+theorem piCongrLeft_symm_comp_piMap (e : ι' ≃ ι) (T : ∀ i, E i →L[R] F i) :
+    ((ContinuousLinearEquiv.piCongrLeft R F e).symm : (∀ i, F i) →L[R] ∀ i', F (e i')) ∘L
+        piMap T =
+      piMap (fun i' ↦ T (e i')) ∘L
+        ((ContinuousLinearEquiv.piCongrLeft R E e).symm : (∀ i, E i) →L[R] ∀ i', E (e i')) :=
+  (rfl)
+
+end Reindex
+
+end ContinuousLinearMap
 
 namespace TauCeti
 
