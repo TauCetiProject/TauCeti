@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
-public import TauCeti.Analysis.SpecialFunctions.Beta
+public import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 public import Mathlib.NumberTheory.Harmonic.Defs
 import Mathlib.MeasureTheory.Constructions.HaarToSphere
 import Mathlib.MeasureTheory.Function.L2Space
