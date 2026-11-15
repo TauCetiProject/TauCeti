@@ -19,15 +19,13 @@ changes the edge set by symmetric difference with a cut.
 
 The cut-minimality convention follows D. N. Kozlov, *The first Cheeger constant of a
 simplex*, arXiv:1610.07136v2, Section 2. The characterizations here isolate isomorphism
-invariance and the finite edge-count and vertex-count identities, independently of any cochain
+invariance and the finite edge-count and vertex-count criteria, independently of any cochain
 or coefficient group.
 
 ## Main definitions and results
 
 * `SimpleGraph.IsCutMinimal`: every cut `(S, Sᶜ)` contains at most as many edges as non-edges.
 * `SimpleGraph.Iso.isCutMinimal_iff`: cut-minimality is invariant under graph isomorphism.
-* `SimpleGraph.card_edgeFinset_top_between`: for disjoint `S` and `T`, the complete-graph
-  restriction between `S` and `T` has `S.toFinset.card * T.toFinset.card` edges.
 * `SimpleGraph.isCutMinimal_iff_two_mul_card_between_le`: finite cut-minimality in terms of
   vertex counts, `2 * (G.between S Sᶜ).edgeFinset.card ≤ S.toFinset.card * Sᶜ.toFinset.card`.
 * `SimpleGraph.isCutMinimal_iff_card_le_card_symmDiff`: switching any cut does not decrease the
@@ -77,40 +75,6 @@ theorem Iso.isCutMinimal_iff {W : Type*} {G : SimpleGraph V} {H : SimpleGraph W}
   ⟨isCutMinimal_of_iso f, isCutMinimal_of_iso f.symm⟩
 
 variable [Fintype V] [DecidableEq V]
-
-/-- The edge finset of `G.between S T` is the intersection of `G.edgeFinset` with the edges of the
-complete graph between `S` and `T`. -/
-theorem edgeFinset_between (G : SimpleGraph V) [DecidableRel G.Adj] (S T : Set V)
-    [DecidablePred (· ∈ S)] [DecidablePred (· ∈ T)] :
-    (G.between S T).edgeFinset = G.edgeFinset ∩ ((⊤ : SimpleGraph V).between S T).edgeFinset := by
-  rw [edgeFinset_inj.mpr (between_eq_inf_top_between G S T), edgeFinset_inf]
-
-/-- For disjoint vertex sets `S` and `T`, the complete-graph restriction between `S` and `T` has
-`S.toFinset.card * T.toFinset.card` edges. -/
-theorem card_edgeFinset_top_between {S T : Set V} [DecidablePred (· ∈ S)] [DecidablePred (· ∈ T)]
-    (hST : Disjoint S T) :
-    ((⊤ : SimpleGraph V).between S T).edgeFinset.card = S.toFinset.card * T.toFinset.card := by
-  rw [← Finset.card_product]
-  symm
-  refine Finset.card_bij (fun (p : V × V) _ ↦ s(p.1, p.2)) ?_ ?_ ?_
-  · rintro ⟨u, v⟩ hp
-    rw [Finset.mem_product, Set.mem_toFinset, Set.mem_toFinset] at hp
-    rw [mem_edgeFinset, mem_edgeSet, between_adj, top_adj]
-    exact ⟨hST.ne_of_mem hp.1 hp.2, Or.inl hp⟩
-  · rintro ⟨u₁, v₁⟩ hp₁ ⟨u₂, v₂⟩ hp₂ h
-    rw [Finset.mem_product, Set.mem_toFinset, Set.mem_toFinset] at hp₁ hp₂
-    rcases Sym2.eq_iff.mp h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
-    · rfl
-    · exact False.elim (Set.disjoint_left.mp hST hp₁.1 hp₂.2)
-  · intro e he
-    induction e using Sym2.ind with
-    | _ u v =>
-      rw [mem_edgeFinset, mem_edgeSet, between_adj, top_adj] at he
-      rcases he.2 with ⟨hu, hv⟩ | ⟨hu, hv⟩
-      · exact ⟨(u, v), Finset.mem_product.mpr ⟨Set.mem_toFinset.mpr hu, Set.mem_toFinset.mpr hv⟩,
-          rfl⟩
-      · exact ⟨(v, u), Finset.mem_product.mpr ⟨Set.mem_toFinset.mpr hv, Set.mem_toFinset.mpr hu⟩,
-          Sym2.eq_swap⟩
 
 /-- The defining cut inequality for cut-minimality, using decidable edge finsets. -/
 theorem isCutMinimal_iff (G : SimpleGraph V) [DecidableRel G.Adj] :

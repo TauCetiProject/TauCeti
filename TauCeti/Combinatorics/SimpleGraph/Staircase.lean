@@ -153,11 +153,14 @@ theorem cliqueFree_staircase (c t : ℕ) : (staircase c t).CliqueFree 3 :=
 private def blockEquiv (c t : ℕ) : Fin t × Fin c ≃ Fin (c * t) :=
   finProdFinEquiv.trans (finCongr (mul_comm t c))
 
+private theorem val_blockEquiv (c t : ℕ) (p : Fin t × Fin c) :
+    (blockEquiv c t p : ℕ) = p.2 + c * p.1 := by
+  simp [blockEquiv]
+
 private theorem blockEquiv_div (c t : ℕ) (p : Fin t × Fin c) :
     (blockEquiv c t p : ℕ) / c = p.1 := by
   have hc : 0 < c := Nat.pos_of_ne_zero fun h ↦ by subst h; exact Fin.elim0 p.2
-  change ((p.2 : ℕ) + c * (p.1 : ℕ)) / c = p.1
-  rw [Nat.add_mul_div_left _ _ hc, Nat.div_eq_of_lt p.2.isLt, zero_add]
+  rw [val_blockEquiv, Nat.add_mul_div_left _ _ hc, Nat.div_eq_of_lt p.2.isLt, zero_add]
 
 private theorem blockEquiv_symm_fst (c t : ℕ) (i : Fin (c * t)) :
     (((blockEquiv c t).symm i).1 : ℕ) = (i : ℕ) / c := by
@@ -250,38 +253,7 @@ private theorem staircase_endpoint_bound {U V Q c : ℤ} {t : ℕ} (hc : 0 ≤ c
       4 * (Q + U * (if sv then c else -c) +
         (if su then c else -c) * (if sv then c else -c)) ≤
       (2 * ((t : ℤ) + 1) ^ 2 + 2 * ((t : ℤ) + 1) + 1) * c ^ 2 := by
-  have hcU₁ : -(t : ℤ) * c ^ 2 ≤ c * U := by
-    have := mul_le_mul_of_nonneg_left hU₁ hc
-    linarith [show c * (-(t : ℤ) * c) = -(t : ℤ) * c ^ 2 by ring]
-  have hcU₂ : c * U ≤ (t : ℤ) * c ^ 2 := by
-    have := mul_le_mul_of_nonneg_left hU₂ hc
-    linarith [show c * ((t : ℤ) * c) = (t : ℤ) * c ^ 2 by ring]
-  have hcV₁ : -(t : ℤ) * c ^ 2 ≤ c * V := by
-    have := mul_le_mul_of_nonneg_left hV₁ hc
-    linarith [show c * (-(t : ℤ) * c) = -(t : ℤ) * c ^ 2 by ring]
-  have hcV₂ : c * V ≤ (t : ℤ) * c ^ 2 := by
-    have := mul_le_mul_of_nonneg_left hV₂ hc
-    linarith [show c * ((t : ℤ) * c) = (t : ℤ) * c ^ 2 by ring]
-  have hc2 : 0 ≤ c ^ 2 := sq_nonneg c
-  have hM : (2 * ((t : ℤ) + 1) ^ 2 + 2 * ((t : ℤ) + 1) + 1) * c ^ 2 =
-      (2 * (t : ℤ) ^ 2 + 2 * (t : ℤ) + 1) * c ^ 2 + 4 * (t : ℤ) * c ^ 2 + 4 * c ^ 2 := by ring
-  cases su <;> cases sv <;> cases sw <;> simp only [Bool.false_eq_true, ↓reduceIte]
-  · linarith [hM, show (U + -c + V + -c + -c) ^ 2 - 4 * (Q + U * -c + -c * -c) =
-      ((U + V - c) ^ 2 - 4 * Q) - 4 * (c * V) + 4 * c ^ 2 by ring]
-  · linarith [hM, show (U + -c + V + -c + c) ^ 2 - 4 * (Q + U * -c + -c * -c) =
-      ((U + V - c) ^ 2 - 4 * Q) + 4 * (c * U) - 4 * c ^ 2 by ring]
-  · linarith [hM, show (U + -c + V + c + -c) ^ 2 - 4 * (Q + U * c + -c * c) =
-      ((U + V - c) ^ 2 - 4 * Q) - 4 * (c * U) + 4 * c ^ 2 by ring]
-  · linarith [hM, show (U + -c + V + c + c) ^ 2 - 4 * (Q + U * c + -c * c) =
-      ((U + V + c) ^ 2 - 4 * Q) - 4 * (c * U) + 4 * c ^ 2 by ring]
-  · linarith [hM, show (U + c + V + -c + -c) ^ 2 - 4 * (Q + U * -c + c * -c) =
-      ((U + V - c) ^ 2 - 4 * Q) + 4 * (c * U) + 4 * c ^ 2 by ring]
-  · linarith [hM, show (U + c + V + -c + c) ^ 2 - 4 * (Q + U * -c + c * -c) =
-      ((U + V + c) ^ 2 - 4 * Q) + 4 * (c * U) + 4 * c ^ 2 by ring]
-  · linarith [hM, show (U + c + V + c + -c) ^ 2 - 4 * (Q + U * c + c * c) =
-      ((U + V + c) ^ 2 - 4 * Q) - 4 * (c * U) - 4 * c ^ 2 by ring]
-  · linarith [hM, show (U + c + V + c + c) ^ 2 - 4 * (Q + U * c + c * c) =
-      ((U + V + c) ^ 2 - 4 * Q) + 4 * (c * V) + 4 * c ^ 2 by ring]
+  cases su <;> cases sv <;> cases sw <;> simp only [Bool.false_eq_true, ↓reduceIte] <;> nlinarith
 
 private theorem staircase_step_bound {U V Q c ut v0 w : ℤ} {t : ℕ} (hc : 0 ≤ c)
     (hU₁ : -(t : ℤ) * c ≤ U) (hU₂ : U ≤ (t : ℤ) * c)
@@ -291,14 +263,11 @@ private theorem staircase_step_bound {U V Q c ut v0 w : ℤ} {t : ℕ} (hc : 0 �
     (hut : -c ≤ ut ∧ ut ≤ c) (hv0 : -c ≤ v0 ∧ v0 ≤ c) (hw : -c ≤ w ∧ w ≤ c) :
     (U + ut + V + v0 + w) ^ 2 - 4 * (Q + U * v0 + ut * v0) ≤
       (2 * ((t : ℤ) + 1) ^ 2 + 2 * ((t : ℤ) + 1) + 1) * c ^ 2 := by
+  -- A monic quadratic `x ^ 2 + b * x + d` on `[-c, c]` is bounded by its values at `±c`.
   have hquad {b d x M : ℤ} (hx₁ : -c ≤ x) (hx₂ : x ≤ c)
       (h₁ : c ^ 2 - b * c + d ≤ M) (h₂ : c ^ 2 + b * c + d ≤ M) :
       x ^ 2 + b * x + d ≤ M := by
-    have hsq : x ^ 2 ≤ c ^ 2 := by nlinarith
-    rcases le_or_gt 0 b with hb | hb
-    · linarith [mul_le_mul_of_nonneg_left hx₂ hb]
-    · linarith [mul_le_mul_of_nonneg_left (show -x ≤ c by omega) (show 0 ≤ -b by omega),
-        show (-b) * (-x) = b * x by ring, show (-b) * c = -(b * c) by ring]
+    rcases le_or_gt 0 b with hb | hb <;> nlinarith
   have h1 (su sv : Bool) :
       (U + (if su then c else -c) + V + (if sv then c else -c) + w) ^ 2 -
         4 * (Q + U * (if sv then c else -c) +
@@ -306,9 +275,12 @@ private theorem staircase_step_bound {U V Q c ut v0 w : ℤ} {t : ℕ} (hc : 0 �
         (2 * ((t : ℤ) + 1) ^ 2 + 2 * ((t : ℤ) + 1) + 1) * c ^ 2 := by
     set ut' : ℤ := if su then c else -c
     set v0' : ℤ := if sv then c else -c
-    rw [show (U + ut' + V + v0' + w) ^ 2 - 4 * (Q + U * v0' + ut' * v0') =
-      w ^ 2 + 2 * (U + ut' + V + v0') * w +
-        ((U + ut' + V + v0') ^ 2 - 4 * (Q + U * v0' + ut' * v0')) by ring]
+    -- Collect terms as a monic quadratic in `w` to reduce to the endpoints `w = ±c`.
+    have hquad_w :
+        (U + ut' + V + v0' + w) ^ 2 - 4 * (Q + U * v0' + ut' * v0') =
+          w ^ 2 + 2 * (U + ut' + V + v0') * w +
+            ((U + ut' + V + v0') ^ 2 - 4 * (Q + U * v0' + ut' * v0')) := by ring
+    rw [hquad_w]
     refine hquad hw.1 hw.2 ?_ ?_
     · convert staircase_endpoint_bound hc hU₁ hU₂ hV₁ hV₂ hpos hneg su sv false using 1
       simp only [ut', v0', Bool.false_eq_true, ↓reduceIte]; ring
@@ -319,15 +291,21 @@ private theorem staircase_step_bound {U V Q c ut v0 w : ℤ} {t : ℕ} (hc : 0 �
         4 * (Q + U * v0 + (if su then c else -c) * v0) ≤
         (2 * ((t : ℤ) + 1) ^ 2 + 2 * ((t : ℤ) + 1) + 1) * c ^ 2 := by
     set ut' : ℤ := if su then c else -c
-    rw [show (U + ut' + V + v0 + w) ^ 2 - 4 * (Q + U * v0 + ut' * v0) =
-      v0 ^ 2 + (2 * (U + ut' + V + w) - 4 * (U + ut')) * v0 +
-        ((U + ut' + V + w) ^ 2 - 4 * Q) by ring]
+    -- Collect terms as a monic quadratic in `v0` to reduce to the endpoints `v0 = ±c`.
+    have hquad_v0 :
+        (U + ut' + V + v0 + w) ^ 2 - 4 * (Q + U * v0 + ut' * v0) =
+          v0 ^ 2 + (2 * (U + ut' + V + w) - 4 * (U + ut')) * v0 +
+            ((U + ut' + V + w) ^ 2 - 4 * Q) := by ring
+    rw [hquad_v0]
     refine hquad hv0.1 hv0.2 ?_ ?_
     · convert h1 su false using 1; simp only [ut', Bool.false_eq_true, ↓reduceIte]; ring
     · convert h1 su true using 1; simp only [ut', ↓reduceIte]; ring
-  rw [show (U + ut + V + v0 + w) ^ 2 - 4 * (Q + U * v0 + ut * v0) =
-    ut ^ 2 + (2 * (U + V + v0 + w) - 4 * v0) * ut +
-      ((U + V + v0 + w) ^ 2 - 4 * (Q + U * v0)) by ring]
+  -- Collect terms as a monic quadratic in `ut` to reduce to the endpoints `ut = ±c`.
+  have hquad_ut :
+      (U + ut + V + v0 + w) ^ 2 - 4 * (Q + U * v0 + ut * v0) =
+        ut ^ 2 + (2 * (U + V + v0 + w) - 4 * v0) * ut +
+          ((U + V + v0 + w) ^ 2 - 4 * (Q + U * v0)) := by ring
+  rw [hquad_ut]
   refine hquad hut.1 hut.2 ?_ ?_
   · convert h2 false using 1; simp only [Bool.false_eq_true, ↓reduceIte]; ring
   · convert h2 true using 1; simp only [↓reduceIte]; ring
@@ -493,16 +471,7 @@ private theorem card_toFinset_staircase {c t : ℕ}
         {v : Fin (c * t) ⊕ Fin (c * t) ⊕ Fin c // v ∈ S} ≃
           {i : Fin (c * t) // .inl i ∈ S} ⊕
             ({j : Fin (c * t) // .inr (.inl j) ∈ S} ⊕ {k : Fin c // .inr (.inr k) ∈ S}) :=
-      { toFun := fun ⟨v, hv⟩ ↦ match v with
-          | .inl i => .inl ⟨i, hv⟩
-          | .inr (.inl j) => .inr (.inl ⟨j, hv⟩)
-          | .inr (.inr k) => .inr (.inr ⟨k, hv⟩)
-        invFun := fun
-          | .inl ⟨i, hv⟩ => ⟨.inl i, hv⟩
-          | .inr (.inl ⟨j, hv⟩) => ⟨.inr (.inl j), hv⟩
-          | .inr (.inr ⟨k, hv⟩) => ⟨.inr (.inr k), hv⟩
-        left_inv := by rintro ⟨_ | _ | _, _⟩ <;> rfl
-        right_inv := by rintro (⟨_, _⟩ | ⟨_, _⟩ | ⟨_, _⟩) <;> rfl }
+      Equiv.subtypeSum.trans (Equiv.sumCongr (Equiv.refl _) Equiv.subtypeSum)
     rw [Fintype.card_congr eqv, Fintype.card_sum, Fintype.card_sum, Fintype.card_subtype,
       Fintype.card_subtype, Fintype.card_subtype]
   have hblock (P : Fin (c * t) → Prop) [DecidablePred P] :
@@ -552,9 +521,14 @@ private theorem eight_mul_sum_blocks_eq {c t : ℕ} {x y : ℕ → ℕ}
     exact_mod_cast h2sum_nat
   rw [hterm]
   simp only [sum_sub_distrib, sum_const, card_range, nsmul_eq_mul, ← mul_sum, ← sum_mul]
-  linarith [show (∑ a ∈ range t, ((t - a : ℕ) : ℤ)) * (4 * (c : ℤ) ^ 2) =
-    2 * (2 * ∑ a ∈ range t, ((t - a : ℕ) : ℤ)) * (c : ℤ) ^ 2 by ring,
-    congrArg (fun q : ℤ ↦ 2 * q * (c : ℤ) ^ 2) h2sum]
+  -- Evaluate the constant `4 * c ^ 2` summand over the `∑_{a < t} (t - a)` block pairs.
+  have hlead :
+      (∑ a ∈ range t, ((t - a : ℕ) : ℤ)) * (4 * (c : ℤ) ^ 2) =
+        2 * (t : ℤ) * ((t : ℤ) + 1) * (c : ℤ) ^ 2 := by
+    calc (∑ a ∈ range t, ((t - a : ℕ) : ℤ)) * (4 * (c : ℤ) ^ 2)
+      _ = 2 * (2 * ∑ a ∈ range t, ((t - a : ℕ) : ℤ)) * (c : ℤ) ^ 2 := by ring
+      _ = 2 * (t : ℤ) * ((t : ℤ) + 1) * (c : ℤ) ^ 2 := by rw [h2sum]; ring
+  rw [hlead]
 
 private theorem two_mul_sum_blocks_le {c t : ℕ} {x y : ℕ → ℕ} {z m₁ m₂ : ℕ}
     (hx : ∀ a, x a ≤ c) (hy : ∀ b, y b ≤ c) (hz : z ≤ c)
@@ -579,8 +553,8 @@ private theorem two_mul_sum_blocks_le {c t : ℕ} {x y : ℕ → ℕ} {z m₁ m�
       simp [v, sum_sub_distrib, ← mul_sum]
     have hm₁_z : (m₁ : ℤ) = ∑ a ∈ range t, (x a : ℤ) + ∑ b ∈ range t, (y b : ℤ) + z := by
       exact_mod_cast hm₁
-    have hm₂_z : (m₂ : ℤ) = (c : ℤ) * (2 * (t : ℤ) + 1) - (m₁ : ℤ) := by
-      linarith [show (m₁ : ℤ) + (m₂ : ℤ) = (c : ℤ) * (2 * (t : ℤ) + 1) from by exact_mod_cast hm₂]
+    have hm_sum : (m₁ : ℤ) + (m₂ : ℤ) = (c : ℤ) * (2 * (t : ℤ) + 1) := by exact_mod_cast hm₂
+    have hm₂_z : (m₂ : ℤ) = (c : ℤ) * (2 * (t : ℤ) + 1) - (m₁ : ℤ) := by linarith [hm_sum]
     rw [hm₂_z, hm₁_z, hsum_u, hsum_v]
     dsimp only [w]
     ring
@@ -589,9 +563,11 @@ private theorem two_mul_sum_blocks_le {c t : ℕ} {x y : ℕ → ℕ} {z m₁ m�
         (m₁ * m₂ : ℤ) := by
     dsimp only [u, v] at hpoly
     push_cast at hcut_int ⊢
-    linarith [show (2 * (t : ℤ) + 1) ^ 2 * (c : ℤ) ^ 2 -
-        2 * (t : ℤ) * ((t : ℤ) + 1) * (c : ℤ) ^ 2 =
-        (2 * (t : ℤ) ^ 2 + 2 * (t : ℤ) + 1) * (c : ℤ) ^ 2 by ring]
+    -- Match the leading `c ^ 2` terms of `4 * (m₁ * m₂)` and `8 * cut` with the bound in `hpoly`.
+    have hcoeff :
+        (2 * (t : ℤ) + 1) ^ 2 * (c : ℤ) ^ 2 - 2 * (t : ℤ) * ((t : ℤ) + 1) * (c : ℤ) ^ 2 =
+          (2 * (t : ℤ) ^ 2 + 2 * (t : ℤ) + 1) * (c : ℤ) ^ 2 := by ring
+    linarith [hcoeff]
   exact Nat.cast_le.mp hineq
 
 /-- **Kozlov's staircase cut-minimality theorem**: for all `c t : ℕ`, `staircase c t` is

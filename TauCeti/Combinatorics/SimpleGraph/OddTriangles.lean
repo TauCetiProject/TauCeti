@@ -17,10 +17,10 @@ support of a binary `1`-cochain on the complete `2`-complex on `V`, `G.oddTriang
 set of triangles with non-trivial coboundary.
 
 In a triangle-free graph (`G.CliqueFree 3`), no `3`-element vertex subset spans three edges, so
-`G.oddTriangleFinset` consists of the `3`-element subsets spanning a single edge. Double-counting
-pairs of a dart and a vertex adjacent to neither endpoint yields the degree-square identity
-`#G.oddTriangleFinset + ∑ v, G.degree v ^ 2 = Fintype.card V * #G.edgeFinset`, following
-D. N. Kozlov, *The first Cheeger constant of a simplex*, arXiv:1610.07136v2, equation (2.5), p. 5.
+`G.oddTriangleFinset` consists of the `3`-element subsets spanning a single edge, and its
+cardinality satisfies the degree-square identity
+`#G.oddTriangleFinset + ∑ v, G.degree v ^ 2 = Fintype.card V * #G.edgeFinset`
+(D. N. Kozlov, *The first Cheeger constant of a simplex*, arXiv:1610.07136v2, equation (2.5), p. 5).
 
 ## Main definitions and results
 
@@ -105,11 +105,10 @@ theorem Iso.map_oddTriangleFinset (f : G ≃g H) :
     obtain ⟨x, rfl⟩ := f.surjective w
     simp
   ext t
-  simp only [oddTriangleFinset, mem_map, mem_filter, mem_powersetCard, subset_univ, true_and]
+  simp only [oddTriangleFinset, mem_map, mem_filter, mem_powersetCard, subset_univ, true_and,
+    RelEmbedding.coe_toEmbedding, mapEmbedding_apply]
   constructor
   · rintro ⟨s, ⟨hs3, hodd⟩, rfl⟩
-    change #(s.map f.toEquiv.toEmbedding) = 3 ∧
-      Odd #{e ∈ H.edgeFinset | e.toFinset ⊆ s.map f.toEquiv.toEmbedding}
     rwa [card_map, and_iff_right hs3, hcard]
   · rintro ⟨ht3, hodd⟩
     have htsub : t ∈ ((univ : Finset V).map f.toEquiv.toEmbedding).powersetCard 3 := by
@@ -118,9 +117,8 @@ theorem Iso.map_oddTriangleFinset (f : G ≃g H) :
     rw [powersetCard_map, mem_map] at htsub
     obtain ⟨s, hs, rfl⟩ := htsub
     rw [mem_powersetCard] at hs
-    change Odd #{e ∈ H.edgeFinset | e.toFinset ⊆ s.map f.toEquiv.toEmbedding} at hodd
-    rw [hcard] at hodd
-    exact ⟨s, ⟨hs.2, hodd⟩, rfl⟩
+    rw [RelEmbedding.coe_toEmbedding, mapEmbedding_apply, hcard] at hodd
+    exact ⟨s, ⟨hs.2, hodd⟩, by rw [RelEmbedding.coe_toEmbedding, mapEmbedding_apply]⟩
 
 /-- Isomorphic finite graphs have the same number of odd triangles. -/
 theorem Iso.card_oddTriangleFinset_eq (f : G ≃g H) :
@@ -167,7 +165,8 @@ theorem mem_oddTriangleFinset_iff_of_cliqueFree (hG : G.CliqueFree 3) {s : Finse
   have hle3 : #{e ∈ G.edgeFinset | e.toFinset ⊆ ({a, b, c} : Finset V)} ≤ 3 :=
     (card_le_card hsub).trans hcard_pairs
   obtain ⟨k, hk⟩ := hodd
-  rcases Nat.eq_or_lt_of_le (show k ≤ 1 by omega) with rfl | hk0
+  have hk1 : k ≤ 1 := by omega
+  rcases Nat.eq_or_lt_of_le hk1 with rfl | hk0
   · exfalso
     have heq := eq_of_subset_of_card_le hsub (hk ▸ hcard_pairs)
     have mem_of (e : Sym2 V) (he : e ∈ ({s(a, b), s(a, c), s(b, c)} : Finset (Sym2 V))) :
