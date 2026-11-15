@@ -260,10 +260,12 @@ theorem IsSpectralWindow.eventually_spectralRank_sub_eq {r r' : ℝ} (hr : IsSpe
     · rw [frontier_Ico hlt]
       simp [hr.notMem_spectrum, hr'.notMem_spectrum]
     · simp
+  have := hr'.finiteDimensional_range (s := Ico r r')
+    fun x hx ↦ ⟨by linarith [hr'.pos, hr.pos, hx.1], hx.2⟩
   filter_upwards [hr'.eventually hA hsa, (tendsto_nhdsWithin_iff.2 ⟨hA, hsa⟩).eventually
     (hr.isSelfAdjoint.eventually_rank_range_cfc_indicator_eq hd)] with i hi hrank
   rw [hsplit hi, hsplit hr', spectralRank_def (A i) (Ico r r'), spectralRank_def T (Ico r r'),
-    finrank, finrank, hrank]
+    Module.finrank_eq_of_rank_eq (hrank.trans (Module.finrank_eq_rank ..).symm)]
   push_cast
   ring
 
