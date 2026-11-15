@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.IsomorphismClasses
+public import TauCeti.Topology.CategoryTheory.IsomorphismClasses
 public import Mathlib.Topology.Homeomorph.Lemmas
 public import Mathlib.Topology.Constructions
 
@@ -19,6 +20,16 @@ object map is quotient induces a homeomorphism
 `CategoryTheory.Functor.isomorphismClassesHomeomorph`. This covers fully faithful functors and
 full functors out of groupoids. In particular this applies to fully faithful refinements with
 open surjective object map.
+
+When the target is a groupoid with continuous source and open target, an open object map already
+induces an open map on isomorphism classes
+(`CategoryTheory.Functor.isOpenMap_isomorphismClasses_map`), even if the functor is not surjective
+on objects. Adding fullness and reflection of isomorphisms gives an open embedding
+(`CategoryTheory.Functor.isOpenEmbedding_isomorphismClasses_map`), while essential surjectivity
+gives an open quotient map
+(`CategoryTheory.Functor.isOpenQuotientMap_isomorphismClasses_map_of_essSurj`) and a coarse
+homeomorphism (`CategoryTheory.Functor.isomorphismClassesHomeomorphOfEssSurj`) without requiring
+surjectivity on objects.
 A full functor reflecting isomorphisms whose object map is continuous and closed, with range
 closed under isomorphisms, induces a closed embedding
 (`CategoryTheory.Functor.isClosedEmbedding_isomorphismClasses_map`).
@@ -158,5 +169,98 @@ theorem isomorphismClassesHomeomorph_eq_of_iso (F : C ⥤ D) (G : C ⥤ D)
   ext q
   simp only [coe_isomorphismClassesHomeomorph]
   exact ConcreteCategory.congr_hom (F.isomorphismClasses_map_eq_of_iso e) q
+
+section OpenTarget
+
+variable [IsGroupoid D] [TopologicalSpace (Quiver.Total D)]
+
+/-- When the target groupoid has continuous source and open target, a functor with open object map
+induces an open map on isomorphism classes, without requiring surjectivity on objects. -/
+theorem isOpenMap_isomorphismClasses_map (F : C ⥤ D) (hFo : IsOpenMap F.obj)
+    (hs : Continuous (Quiver.Total.left : Quiver.Total D → D))
+    (ht : IsOpenMap (Quiver.Total.right : Quiver.Total D → D)) :
+    IsOpenMap (X := Quotient (isIsomorphicSetoid C))
+      (Y := Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map F.toCatHom) := by
+  let := Groupoid.ofIsGroupoid (C := D)
+  set φ : Quotient (isIsomorphicSetoid C) → Quotient (isIsomorphicSetoid D) :=
+    ⇑(isomorphismClasses.map F.toCatHom)
+  have hcomp : φ ∘ Quotient.mk (isIsomorphicSetoid C) =
+      Quotient.mk (isIsomorphicSetoid D) ∘ F.obj := F.isomorphismClasses_map_comp_mk
+  intro U hU
+  rw [← (Quotient.mk_surjective (s := isIsomorphicSetoid C)).image_preimage U,
+    ← Set.image_comp, hcomp, Set.image_comp]
+  exact (TauCeti.isOpenQuotientMap_isomorphismClassesMk hs ht).isOpenMap _
+    (hFo _ (hU.preimage continuous_quotient_mk'))
+
+/-- A full functor reflecting isomorphisms into a groupoid with continuous source and open target,
+whose object map is continuous and open, induces an open embedding on isomorphism classes. -/
+theorem isOpenEmbedding_isomorphismClasses_map (F : C ⥤ D) [F.Full] [F.ReflectsIsomorphisms]
+    (hF : Continuous F.obj) (hFo : IsOpenMap F.obj)
+    (hs : Continuous (Quiver.Total.left : Quiver.Total D → D))
+    (ht : IsOpenMap (Quiver.Total.right : Quiver.Total D → D)) :
+    IsOpenEmbedding (X := Quotient (isIsomorphicSetoid C))
+      (Y := Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map F.toCatHom) :=
+  .of_continuous_injective_isOpenMap (F.continuous_isomorphismClasses_map hF)
+    F.isomorphismClasses_map_injective (F.isOpenMap_isomorphismClasses_map hFo hs ht)
+
+/-- An essentially surjective functor with continuous open object map into a groupoid with
+continuous source and open target induces an open quotient map on isomorphism classes. -/
+theorem isOpenQuotientMap_isomorphismClasses_map_of_essSurj (F : C ⥤ D) [F.EssSurj]
+    (hF : Continuous F.obj) (hFo : IsOpenMap F.obj)
+    (hs : Continuous (Quiver.Total.left : Quiver.Total D → D))
+    (ht : IsOpenMap (Quiver.Total.right : Quiver.Total D → D)) :
+    IsOpenQuotientMap (X := Quotient (isIsomorphicSetoid C))
+      (Y := Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map F.toCatHom) :=
+  ⟨F.isomorphismClasses_map_surjective, F.continuous_isomorphismClasses_map hF,
+    F.isOpenMap_isomorphismClasses_map hFo hs ht⟩
+
+/-- An essentially surjective full functor reflecting isomorphisms, with continuous open object map
+into a groupoid with continuous source and open target, induces a coarse homeomorphism without
+requiring surjectivity on objects. -/
+def isomorphismClassesHomeomorphOfEssSurj (F : C ⥤ D) [F.Full] [F.EssSurj]
+    [F.ReflectsIsomorphisms] (hF : Continuous F.obj) (hFo : IsOpenMap F.obj)
+    (hs : Continuous (Quiver.Total.left : Quiver.Total D → D))
+    (ht : IsOpenMap (Quiver.Total.right : Quiver.Total D → D)) :
+    Quotient (isIsomorphicSetoid C) ≃ₜ Quotient (isIsomorphicSetoid D) :=
+  (isHomeomorph_iff_isQuotientMap_injective
+    (X := Quotient (isIsomorphicSetoid C)) (Y := Quotient (isIsomorphicSetoid D))).2
+    ⟨(F.isOpenQuotientMap_isomorphismClasses_map_of_essSurj hF hFo hs ht).isQuotientMap,
+      F.isomorphismClasses_map_injective⟩ |>.homeomorph _
+
+/-- The coarse homeomorphism of an essentially surjective open refinement has Mathlib's map on
+isomorphism classes as its underlying function. -/
+@[simp]
+theorem coe_isomorphismClassesHomeomorphOfEssSurj (F : C ⥤ D) [F.Full] [F.EssSurj]
+    [F.ReflectsIsomorphisms] (hF : Continuous F.obj) (hFo : IsOpenMap F.obj)
+    (hs : Continuous (Quiver.Total.left : Quiver.Total D → D))
+    (ht : IsOpenMap (Quiver.Total.right : Quiver.Total D → D)) :
+    ⇑(F.isomorphismClassesHomeomorphOfEssSurj hF hFo hs ht) =
+      (isomorphismClasses.map F.toCatHom :
+        Quotient (isIsomorphicSetoid C) → Quotient (isIsomorphicSetoid D)) := (rfl)
+
+/-- The coarse homeomorphism of an essentially surjective open refinement sends an object's class
+to the class of its image. -/
+@[simp]
+theorem isomorphismClassesHomeomorphOfEssSurj_apply_mk (F : C ⥤ D) [F.Full] [F.EssSurj]
+    [F.ReflectsIsomorphisms] (hF : Continuous F.obj) (hFo : IsOpenMap F.obj)
+    (hs : Continuous (Quiver.Total.left : Quiver.Total D → D))
+    (ht : IsOpenMap (Quiver.Total.right : Quiver.Total D → D)) (x : C) :
+    F.isomorphismClassesHomeomorphOfEssSurj hF hFo hs ht (Quotient.mk _ x) =
+      Quotient.mk _ (F.obj x) := by
+  simp only [coe_isomorphismClassesHomeomorphOfEssSurj, isomorphismClasses_map_mk]
+
+/-- The inverse coarse homeomorphism of an essentially surjective open refinement sends the class
+of an image object back to its class. -/
+@[simp]
+theorem isomorphismClassesHomeomorphOfEssSurj_symm_apply_mk (F : C ⥤ D) [F.Full] [F.EssSurj]
+    [F.ReflectsIsomorphisms] (hF : Continuous F.obj) (hFo : IsOpenMap F.obj)
+    (hs : Continuous (Quiver.Total.left : Quiver.Total D → D))
+    (ht : IsOpenMap (Quiver.Total.right : Quiver.Total D → D)) (x : C) :
+    (F.isomorphismClassesHomeomorphOfEssSurj hF hFo hs ht).symm (Quotient.mk _ (F.obj x)) =
+      Quotient.mk _ x := by
+  simpa only [isomorphismClassesHomeomorphOfEssSurj_apply_mk] using
+    (F.isomorphismClassesHomeomorphOfEssSurj hF hFo hs ht).symm_apply_apply (Quotient.mk _ x)
+
+end OpenTarget
 
 end CategoryTheory.Functor
