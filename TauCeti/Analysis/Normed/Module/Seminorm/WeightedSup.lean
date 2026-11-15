@@ -32,25 +32,30 @@ variable {𝕜 E F ι : Type*} [NormedField 𝕜] [AddCommGroup E] [Module 𝕜 
   [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
   (L : ι → E →ₗ[𝕜] F) (w : ι → ℝ) (hw : ∀ i, 0 < w i) (hL : ∀ a, ∃ C, ∀ i, ‖L i a‖ ≤ C * w i)
 
+/-- The coefficient `(w i)⁻¹` of the seminorm `a ↦ ‖L i a‖ / w i`, as a nonnegative real. -/
+private def invWeight (i : ι) : ℝ≥0 := ⟨(w i)⁻¹, inv_nonneg.2 (hw i).le⟩
+
+private theorem coe_invWeight (i : ι) : (invWeight w hw i : ℝ) = (w i)⁻¹ :=
+  NNReal.coe_mk _ _
+
 /-- The best constant `C ≥ 0` in the estimates `‖L i a‖ ≤ C * w i` for all `i`, for linear maps
 `L i` and positive weights `w i`: the supremum of the seminorms `a ↦ ‖L i a‖ / w i`. When every
 `a` satisfies some such estimate, it is the supremum of `‖L i a‖ / w i`
 (`Seminorm.weightedSup_apply`). -/
 def weightedSup : Seminorm 𝕜 E :=
-  ⨆ i, (show ℝ≥0 from ⟨(w i)⁻¹, inv_nonneg.2 (hw i).le⟩) • (normSeminorm 𝕜 F).comp (L i)
+  ⨆ i, invWeight w hw i • (normSeminorm 𝕜 F).comp (L i)
 
 /-- The seminorms `a ↦ ‖L i a‖ / w i` whose supremum is `weightedSup L w hw`. -/
 private theorem smul_comp_normSeminorm_apply (i : ι) (a : E) :
-    ((show ℝ≥0 from ⟨(w i)⁻¹, inv_nonneg.2 (hw i).le⟩) • (normSeminorm 𝕜 F).comp (L i)) a =
+    (invWeight w hw i • (normSeminorm 𝕜 F).comp (L i)) a =
       ‖L i a‖ / w i := by
-  rw [smul_apply, comp_apply, coe_normSeminorm, NNReal.smul_def, smul_eq_mul, div_eq_inv_mul]
-  rfl
+  rw [smul_apply, comp_apply, coe_normSeminorm, NNReal.smul_def, smul_eq_mul, coe_invWeight,
+    div_eq_inv_mul]
 
 /-- The seminorms `a ↦ ‖L i a‖ / w i` are bounded above exactly when every `a` satisfies an
 estimate `‖L i a‖ ≤ C * w i` for all `i`. -/
 private theorem bddAbove_range_smul_comp_normSeminorm_iff :
-    BddAbove (Set.range fun i =>
-      (show ℝ≥0 from ⟨(w i)⁻¹, inv_nonneg.2 (hw i).le⟩) • (normSeminorm 𝕜 F).comp (L i)) ↔
+    BddAbove (Set.range fun i => invWeight w hw i • (normSeminorm 𝕜 F).comp (L i)) ↔
       ∀ a, ∃ C, ∀ i, ‖L i a‖ ≤ C * w i := by
   simp_rw [Seminorm.bddAbove_range_iff, smul_comp_normSeminorm_apply L w hw, bddAbove_def,
     Set.forall_mem_range, div_le_iff₀ (hw _)]
@@ -68,16 +73,22 @@ theorem norm_le_weightedSup (a : E) (i : ι) : ‖L i a‖ ≤ weightedSup L w h
   obtain ⟨C, hC⟩ := hL a
   exact le_ciSup ⟨C, Set.forall_mem_range.2 fun j => (div_le_iff₀ (hw j)).2 (hC j)⟩ i
 
+/-- Without an estimate `‖L i a‖ ≤ C * w i` for every `a`, the supremum `weightedSup L w hw` is
+the junk value `⊥`. Mathlib has no API for unbounded suprema of seminorms, so this unfolds the
+definition of `Seminorm.instSupSet`. -/
+private theorem weightedSup_eq_bot (h : ¬∀ a, ∃ C, ∀ i, ‖L i a‖ ≤ C * w i) :
+    weightedSup L w hw = ⊥ := by
+  have hb := Seminorm.bddAbove_iff.not.1
+    ((bddAbove_range_smul_comp_normSeminorm_iff L w hw).not.2 h)
+  simp only [weightedSup, iSup, sSup, hb, dite_false]
+
 /-- A constant `C ≥ 0` in the estimates `‖L i a‖ ≤ C * w i` bounds `weightedSup L w hw a`. -/
 theorem weightedSup_le {a : E} {C : ℝ} (hC : 0 ≤ C) (h : ∀ i, ‖L i a‖ ≤ C * w i) :
     weightedSup L w hw a ≤ C := by
   by_cases hL : ∀ b, ∃ C, ∀ i, ‖L i b‖ ≤ C * w i
   · rw [weightedSup_apply L w hw hL]
     exact Real.iSup_le (fun i => (div_le_iff₀ (hw i)).2 (h i)) hC
-  -- Without estimates for every `b`, the supremum of the seminorms is the junk value `⊥`.
-  have hb := Seminorm.bddAbove_iff.not.1
-    ((bddAbove_range_smul_comp_normSeminorm_iff L w hw).not.2 hL)
-  simp only [weightedSup, iSup, sSup, hb, dite_false]
+  rw [weightedSup_eq_bot L w hw hL, coe_bot, Pi.zero_apply]
   exact hC
 
 include hL in
