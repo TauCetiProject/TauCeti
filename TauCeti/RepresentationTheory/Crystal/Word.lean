@@ -12,8 +12,9 @@ public import TauCeti.RepresentationTheory.Crystal.Basic
 
 A word of simple roots acts by successive partial raising or lowering operators, read from
 left to right. Reversing the word and exchanging raising with lowering gives its partial
-inverse. These operations describe generation from a highest element without choosing a
-reduced Weyl-group expression.
+inverse, constant-letter words agree with `eIter`/`fIter`, and strict crystal morphisms
+intertwine both word actions. These operations describe generation from a highest element
+without choosing a reduced Weyl-group expression.
 
 ## References
 
@@ -121,5 +122,51 @@ theorem eWord_eq_some_iff_of_highest {x y : B} (hx : ∀ i, c.e i x = none)
   cases w with
   | nil => simp
   | cons i w => simp [eWord_cons, hx]
+
+/-- Raising along `n` copies of `i` is the `n`-fold iterated raising operator `eIter i n`. -/
+@[simp]
+theorem eWord_replicate (n : ℕ) (i : b.support) (x : B) :
+    c.eWord (List.replicate n i) x = c.eIter i n x := by
+  induction n generalizing x with
+  | zero => simp
+  | succ n ih =>
+    rw [List.replicate_succ, eWord_cons, eIter_succ]
+    cases c.e i x <;> simp [ih]
+
+/-- Lowering along `n` copies of `i` is the `n`-fold iterated lowering operator `fIter i n`. -/
+@[simp]
+theorem fWord_replicate (n : ℕ) (i : b.support) (x : B) :
+    c.fWord (List.replicate n i) x = c.fIter i n x := by
+  induction n generalizing x with
+  | zero => simp
+  | succ n ih =>
+    rw [List.replicate_succ, fWord_cons, fIter_succ]
+    cases c.f i x <;> simp [ih]
+
+namespace StrictHom
+
+variable {c} {B' : Type*} {d : NormalCrystal P b B'} (ψ : StrictHom c d)
+
+/-- Strict crystal morphisms intertwine raising words. -/
+@[simp]
+theorem eWord_apply (w : List b.support) (x : B) :
+    d.eWord w (ψ x) = (c.eWord w x).map ψ := by
+  induction w generalizing x with
+  | nil => simp
+  | cons i w ih =>
+    rw [eWord_cons, eWord_cons, ψ.e_apply]
+    cases c.e i x <;> simp [ih]
+
+/-- Strict crystal morphisms intertwine lowering words. -/
+@[simp]
+theorem fWord_apply (w : List b.support) (x : B) :
+    d.fWord w (ψ x) = (c.fWord w x).map ψ := by
+  induction w generalizing x with
+  | nil => simp
+  | cons i w ih =>
+    rw [fWord_cons, fWord_cons, ψ.f_apply]
+    cases c.f i x <;> simp [ih]
+
+end StrictHom
 
 end TauCeti.NormalCrystal
