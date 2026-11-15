@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Distribution.TestFunction
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import TauCeti.Topology.Algebra.Support
-import TauCeti.Analysis.Calculus.ParametricIntegral
+import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
 import TauCeti.MeasureTheory.Constructions.UnitInterval
 
 /-!
