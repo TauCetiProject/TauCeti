@@ -18,8 +18,8 @@ only on the isomorphism class (`Scheme.Modules.range_nonvanishingLocus_eq_of_iso
 nonvanishing loci of the sections of such an `L` over an open `U` are still exactly the basic open
 sets `X_r` of the regular functions `r` on `U`. When the global functions on `X` form a field, as
 on an integral scheme universally closed over a field
-(`AlgebraicGeometry.isField_of_universallyClosed`), a global section of `L` is therefore either
-zero, vanishing everywhere, or a unit, vanishing nowhere.
+(`AlgebraicGeometry.isField_of_universallyClosed`), a global section of `L` therefore vanishes
+either everywhere or nowhere: its nonvanishing locus is `⊥` or `⊤`.
 
 These facts feed the characterization of ampleness of the trivial class by quasi-affineness
 (`TauCeti.AlgebraicGeometry.LineBundleClass.isAmple_one_iff`) and the positivity of the degree of

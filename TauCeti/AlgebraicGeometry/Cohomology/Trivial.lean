@@ -98,7 +98,7 @@ theorem finiteDimensional_cohomology_zero_trivial_of_universallyClosed (k : Type
     FiniteDimensional k (Cohomology (InvertibleSheaf.trivial X).obj 0) := by
   let : Algebra k Γ(X, ⊤) := ((X.baseRingToStructurePresheaf k).app (.op ⊤)).hom.toAlgebra
   have : Module.Finite k Γ(X, ⊤) := by
-    change ((X.baseRingToStructurePresheaf k).app (.op ⊤)).hom.Finite
+    rw [← RingHom.finite_algebraMap, RingHom.algebraMap_toAlgebra]
     have h : baseRingToGlobalSections k X =
         (X ↘ Spec (.of k)).appTop.hom.comp (Scheme.ΓSpecIso (.of k)).inv.hom :=
       RingHom.ext (baseRingToGlobalSections_apply k X)
