@@ -110,7 +110,9 @@ theorem toRoughForm_zero : (0 : OneForm X).toRoughForm = 0 :=
 theorem toRoughForm_ofReal_smul (ψ : X → ℝ) (ω : OneForm X) :
     toRoughForm (fun x ↦ (ψ x : ℂ) • ω x) = fun x ↦ ψ x • ω.toRoughForm x := by
   ext x v
-  exact Complex.real_smul
+  rw [toRoughForm_apply, ContinuousAlternatingMap.smul_apply, toRoughForm_apply]
+  -- Both sides are `ψ x` times `ω x (v 0)`: on the left through `ℂ`, on the right through `ℝ`.
+  exact (smul_apply (ω x) (ψ x : ℂ) (v 0)).trans (Complex.coe_smul _ _)
 
 /-- **`ω = f dz` in a chart.** In the preferred chart at `x₀`, the real form of `ω` is its
 coefficient in that chart times the complex `1`-form `dz`. -/
