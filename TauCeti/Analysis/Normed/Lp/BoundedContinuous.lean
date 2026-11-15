@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Lp.LpEquiv
 public import TauCeti.Analysis.Normed.Lp.Dual
 public import TauCeti.Analysis.Normed.Lp.LeftTranslation
+public import TauCeti.Analysis.Normed.Lp.PiLp
 
 /-!
 # Bounded continuous functions in `ℓ∞` and their pairing with `ℓ¹`
@@ -33,9 +34,11 @@ identity
 When `α` carries the discrete topology, `BoundedContinuousFunction.lpOneDualEquiv 𝕜 α` upgrades
 `toLpOneDual` to a linear isometric equivalence
 `(α →ᵇ 𝕜) ≃ₗᵢ[𝕜] StrongDual 𝕜 (lp (fun _ : α ↦ 𝕜) 1)` whose inverse sends `Λ` to the bounded
-function `x ↦ Λ (lp.single 1 x 1)`. More generally, for a finite index type `ι`,
-`BoundedContinuousFunction.piLpOneDualEquiv 𝕜 ι α` identifies `PiLp ∞ (fun _ : ι ↦ α →ᵇ 𝕜)`
-isometrically with the continuous dual of the sum-norm product
+function `x ↦ Λ (lp.single 1 x 1)`. More generally, for a finite index type `ι`, composing
+coordinatewise via `LinearIsometry.piLpCongrRight` and `LinearIsometryEquiv.piLpCongrRight` with
+`PiLp.oneDualEquiv` yields `BoundedContinuousFunction.toPiLpOneDual` on arbitrary spaces and, on
+discrete spaces, `BoundedContinuousFunction.piLpOneDualEquiv 𝕜 ι α` identifying
+`PiLp ∞ (fun _ : ι ↦ α →ᵇ 𝕜)` isometrically with the continuous dual of the sum-norm product
 `PiLp 1 (fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1)`.
 
 ## Main definitions
@@ -104,7 +107,8 @@ theorem toLpInfty_apply (f : α →ᵇ E) (x : α) : toLpInfty 𝕜 f x = f x :=
 
 /-- `toLpInfty` sends the constant function `1` to `1` in `ℓ∞`. -/
 @[simp]
-theorem toLpInfty_one : toLpInfty ℝ (1 : α →ᵇ ℝ) = 1 :=
+theorem toLpInfty_one {R : Type*} [NormedRing R] [NormOneClass R] [Module 𝕜 R]
+    [IsBoundedSMul 𝕜 R] : toLpInfty 𝕜 (1 : α →ᵇ R) = 1 :=
   lp.ext rfl
 
 /-- Under a continuous group action on `α`, `toLpInfty` intertwines precomposition by `g⁻¹ • ·`
@@ -149,6 +153,11 @@ def toLpOneDual : (α →ᵇ 𝕜) →ₗᵢ[𝕜] StrongDual 𝕜 (lp (fun _ : 
 
 variable {𝕜 α}
 
+theorem toLpOneDual_def :
+    toLpOneDual 𝕜 α =
+      (lp.dualEquiv 𝕜 α ∞ 1 ENNReal.one_ne_top).toLinearIsometry.comp (toLpInfty 𝕜) :=
+  (rfl)
+
 /-- `toLpOneDual` acts on `p ∈ ℓ¹(α, 𝕜)` by the series `∑' x, f x * p x`. -/
 theorem toLpOneDual_apply (f : α →ᵇ 𝕜) (p : lp (fun _ : α ↦ 𝕜) 1) :
     toLpOneDual 𝕜 α f p = ∑' x, f x * p x :=
@@ -158,7 +167,7 @@ theorem toLpOneDual_apply (f : α →ᵇ 𝕜) (p : lp (fun _ : α ↦ 𝕜) 1) 
 @[simp]
 theorem toLpOneDual_apply_single [DecidableEq α] (f : α →ᵇ 𝕜) (x : α) (z : 𝕜) :
     toLpOneDual 𝕜 α f (lp.single 1 x z) = f x * z := by
-  simp [toLpOneDual]
+  simp [toLpOneDual_def]
 
 /-- Against `p.toLp 1` for a finitely supported function `p : α →₀ 𝕜`, `toLpOneDual` computes the
 finite sum `p.sum fun x z ↦ f x * z`. -/
@@ -192,11 +201,8 @@ theorem toLpOneDual_mono_stdSimplex {f g : α →ᵇ ℝ} (h : f ≤ g) (w : Std
 distribution `w`. -/
 theorem le_toLpOneDual_stdSimplex {f : α →ᵇ ℝ} {c : ℝ} (hc : ∀ x, c ≤ f x) (w : StdSimplex ℝ α) :
     c ≤ toLpOneDual ℝ α f (w.toLp 1) := by
-  calc c = c * 1 := (mul_one c).symm
-    _ = toLpOneDual ℝ α (const α c) (w.toLp 1) := by
-      rw [toLpOneDual_apply_stdSimplex, ← w.total, Finsupp.sum, Finset.mul_sum]
-      exact Finset.sum_congr rfl fun _ _ ↦ mul_comm _ _
-    _ ≤ toLpOneDual ℝ α f (w.toLp 1) := toLpOneDual_mono_stdSimplex hc w
+  simpa [map_smul] using
+    toLpOneDual_mono_stdSimplex (f := c • (1 : α →ᵇ ℝ)) (fun x ↦ by simpa using hc x) w
 
 /-- **Adjointness of left translation.** Pairing `f` against `L_g p` equals pairing `x ↦ f (g • x)`
 against `p`. -/
@@ -219,78 +225,35 @@ theorem toLpOneDual_leftTranslation_sub {G : Type*} [Group G] [MulAction G α]
 
 variable (𝕜 ι α)
 
-/-- Underlying linear map of `BoundedContinuousFunction.toPiLpOneDual`. -/
-private def toPiLpOneDualLinearMap :
-    PiLp ∞ (fun _ : ι ↦ α →ᵇ 𝕜) →ₗ[𝕜]
-      StrongDual 𝕜 (PiLp 1 fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1) where
-  toFun f := ∑ i, (toLpOneDual 𝕜 α (f i)).comp (PiLp.proj 1 (fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1) i)
-  map_add' _ _ := by
-    ext v
-    simp [Finset.sum_add_distrib]
-  map_smul' _ _ := by
-    ext v
-    simp [Finset.mul_sum]
-
-variable {𝕜 ι α}
-
-private theorem toPiLpOneDualLinearMap_apply_single [DecidableEq ι]
-    (f : PiLp ∞ (fun _ : ι ↦ α →ᵇ 𝕜)) (i : ι) (u : lp (fun _ : α ↦ 𝕜) 1) :
-    toPiLpOneDualLinearMap 𝕜 ι α f (PiLp.single 1 i u) = toLpOneDual 𝕜 α (f i) u := by
-  simp only [toPiLpOneDualLinearMap, LinearMap.coe_mk, AddHom.coe_mk, sum_apply,
-    ContinuousLinearMap.comp_apply, PiLp.proj_apply]
-  rw [Finset.sum_eq_single i]
-  · simp
-  · intro j _ hji
-    simp [hji]
-  · intro hi
-    exact absurd (Finset.mem_univ i) hi
-
-variable (𝕜 ι α)
-
 /-- For a finite index type `ι`, the isometric pairing of supremum-normed families
 `PiLp ∞ (fun _ : ι ↦ α →ᵇ 𝕜)` with the sum-normed product
 `PiLp 1 (fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1)`, sending `f` to `v ↦ ∑ i, ⟨f i, v i⟩`. -/
 def toPiLpOneDual :
     PiLp ∞ (fun _ : ι ↦ α →ᵇ 𝕜) →ₗᵢ[𝕜]
-      StrongDual 𝕜 (PiLp 1 fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1) where
-  __ := toPiLpOneDualLinearMap 𝕜 ι α
-  norm_map' f := by
-    classical
-    refine le_antisymm ?_ ?_
-    · refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg f) fun v ↦ ?_
-      simp only [toPiLpOneDualLinearMap, LinearMap.coe_mk, AddHom.coe_mk, sum_apply,
-        ContinuousLinearMap.comp_apply, PiLp.proj_apply]
-      calc ‖∑ i, toLpOneDual 𝕜 α (f i) (v i)‖
-          ≤ ∑ i, ‖toLpOneDual 𝕜 α (f i) (v i)‖ := norm_sum_le _ _
-        _ ≤ ∑ i, ‖toLpOneDual 𝕜 α (f i)‖ * ‖v i‖ :=
-          Finset.sum_le_sum fun i _ ↦ (toLpOneDual 𝕜 α (f i)).le_opNorm (v i)
-        _ = ∑ i, ‖f i‖ * ‖v i‖ := by simp only [LinearIsometry.norm_map]
-        _ ≤ ∑ i, ‖f‖ * ‖v i‖ :=
-          Finset.sum_le_sum fun i _ ↦
-            mul_le_mul_of_nonneg_right (PiLp.norm_apply_le f i) (norm_nonneg _)
-        _ = ‖f‖ * ‖v‖ := by rw [← Finset.mul_sum, PiLp.norm_eq_of_L1]
-    · rw [PiLp.norm_eq_ciSup]
-      refine Real.iSup_le (fun i ↦ ?_) (norm_nonneg (toPiLpOneDualLinearMap 𝕜 ι α f))
-      rw [← (toLpOneDual 𝕜 α).norm_map (f i)]
-      refine ContinuousLinearMap.opNorm_le_bound _
-        (norm_nonneg (toPiLpOneDualLinearMap 𝕜 ι α f)) fun u ↦ ?_
-      rw [← toPiLpOneDualLinearMap_apply_single f i u]
-      simpa using (toPiLpOneDualLinearMap 𝕜 ι α f).le_opNorm (PiLp.single 1 i u)
+      StrongDual 𝕜 (PiLp 1 fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1) :=
+  (PiLp.oneDualEquiv 𝕜 (fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1)).toLinearIsometry.comp
+    (LinearIsometry.piLpCongrRight ∞ fun _ : ι ↦ toLpOneDual 𝕜 α)
 
 variable {𝕜 ι α}
+
+theorem toPiLpOneDual_def :
+    toPiLpOneDual 𝕜 ι α =
+      (PiLp.oneDualEquiv 𝕜 (fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1)).toLinearIsometry.comp
+        (LinearIsometry.piLpCongrRight ∞ fun _ : ι ↦ toLpOneDual 𝕜 α) :=
+  (rfl)
 
 /-- `toPiLpOneDual` acts by summing the coordinate pairings `⟨f i, v i⟩`. -/
 theorem toPiLpOneDual_apply (f : PiLp ∞ (fun _ : ι ↦ α →ᵇ 𝕜))
     (v : PiLp 1 fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1) :
     toPiLpOneDual 𝕜 ι α f v = ∑ i, toLpOneDual 𝕜 α (f i) (v i) := by
-  simp [toPiLpOneDual, toPiLpOneDualLinearMap]
+  simp [toPiLpOneDual_def, PiLp.oneDualEquiv_apply]
 
 /-- On a single-factor vector `PiLp.single 1 i u`, `toPiLpOneDual` evaluates `f i` against `u`. -/
 @[simp]
 theorem toPiLpOneDual_apply_single [DecidableEq ι] (f : PiLp ∞ (fun _ : ι ↦ α →ᵇ 𝕜))
     (i : ι) (u : lp (fun _ : α ↦ 𝕜) 1) :
-    toPiLpOneDual 𝕜 ι α f (PiLp.single 1 i u) = toLpOneDual 𝕜 α (f i) u :=
-  toPiLpOneDualLinearMap_apply_single f i u
+    toPiLpOneDual 𝕜 ι α f (PiLp.single 1 i u) = toLpOneDual 𝕜 α (f i) u := by
+  simp [toPiLpOneDual_def]
 
 end LpOneDual
 
@@ -306,26 +269,57 @@ def lpOneDualEquiv : (α →ᵇ 𝕜) ≃ₗᵢ[𝕜] StrongDual 𝕜 (lp (fun _
 
 variable {𝕜 α}
 
+theorem lpOneDualEquiv_def :
+    lpOneDualEquiv 𝕜 α = (lpBCFₗᵢ 𝕜 𝕜).symm.trans (lp.dualEquiv 𝕜 α ∞ 1 ENNReal.one_ne_top) :=
+  (rfl)
+
 @[simp]
 theorem lpOneDualEquiv_toLinearIsometry :
     (lpOneDualEquiv 𝕜 α).toLinearIsometry = toLpOneDual 𝕜 α :=
-  LinearIsometry.ext fun _ ↦ ContinuousLinearMap.ext fun _ ↦ rfl
+  LinearIsometry.ext fun f ↦ by
+    have h : (lpBCFₗᵢ 𝕜 𝕜).symm f = toLpInfty 𝕜 f := lp.ext rfl
+    simp [lpOneDualEquiv_def, toLpOneDual_def, h]
 
 @[simp]
 theorem coe_lpOneDualEquiv :
     ⇑(lpOneDualEquiv 𝕜 α) = toLpOneDual 𝕜 α :=
-  (rfl)
+  congrArg DFunLike.coe lpOneDualEquiv_toLinearIsometry
 
 theorem lpOneDualEquiv_apply (f : α →ᵇ 𝕜) (p : lp (fun _ : α ↦ 𝕜) 1) :
-    lpOneDualEquiv 𝕜 α f p = ∑' x, f x * p x :=
-  toLpOneDual_apply f p
+    lpOneDualEquiv 𝕜 α f p = ∑' x, f x * p x := by
+  rw [coe_lpOneDualEquiv, toLpOneDual_apply]
+
+@[simp]
+theorem toLpOneDual_lpOneDualEquiv_symm (Λ : StrongDual 𝕜 (lp (fun _ : α ↦ 𝕜) 1)) :
+    toLpOneDual 𝕜 α ((lpOneDualEquiv 𝕜 α).symm Λ) = Λ := by
+  rw [← coe_lpOneDualEquiv]
+  exact (lpOneDualEquiv 𝕜 α).apply_symm_apply Λ
+
+@[simp]
+theorem lpOneDualEquiv_symm_toLpOneDual (f : α →ᵇ 𝕜) :
+    (lpOneDualEquiv 𝕜 α).symm (toLpOneDual 𝕜 α f) = f := by
+  rw [← coe_lpOneDualEquiv]
+  exact (lpOneDualEquiv 𝕜 α).symm_apply_apply f
+
+/-- Under `toLpInfty`, `(lpOneDualEquiv 𝕜 α).symm Λ` corresponds to
+`(lp.dualEquiv 𝕜 α ∞ 1 ENNReal.one_ne_top).symm Λ`. -/
+theorem toLpInfty_lpOneDualEquiv_symm (Λ : StrongDual 𝕜 (lp (fun _ : α ↦ 𝕜) 1)) :
+    toLpInfty 𝕜 ((lpOneDualEquiv 𝕜 α).symm Λ) =
+      (lp.dualEquiv 𝕜 α ∞ 1 ENNReal.one_ne_top).symm Λ := by
+  simp [lpOneDualEquiv_def]
+
+/-- `(lpOneDualEquiv 𝕜 α).symm` factors through `lp.dualEquiv` and `lpBCFₗᵢ`. -/
+theorem lpOneDualEquiv_symm_eq_lpBCFₗᵢ (Λ : StrongDual 𝕜 (lp (fun _ : α ↦ 𝕜) 1)) :
+    (lpOneDualEquiv 𝕜 α).symm Λ =
+      lpBCFₗᵢ 𝕜 𝕜 ((lp.dualEquiv 𝕜 α ∞ 1 ENNReal.one_ne_top).symm Λ) := by
+  simp [lpOneDualEquiv_def]
 
 /-- On a discrete space, the bounded function corresponding to a continuous linear functional `Λ` on
 `ℓ¹(α, 𝕜)` takes `x` to `Λ (lp.single 1 x 1)`. -/
 @[simp]
 theorem lpOneDualEquiv_symm_apply [DecidableEq α] (Λ : StrongDual 𝕜 (lp (fun _ : α ↦ 𝕜) 1))
     (x : α) : (lpOneDualEquiv 𝕜 α).symm Λ x = Λ (lp.single 1 x 1) := by
-  simp [lpOneDualEquiv, coe_lpBCFₗᵢ]
+  simp [lpOneDualEquiv_symm_eq_lpBCFₗᵢ, coe_lpBCFₗᵢ]
 
 /-- Every value of `(lpOneDualEquiv 𝕜 α).symm Λ` has norm at most `‖Λ‖`. -/
 theorem norm_lpOneDualEquiv_symm_apply_le (Λ : StrongDual 𝕜 (lp (fun _ : α ↦ 𝕜) 1)) (x : α) :
@@ -341,33 +335,28 @@ product `PiLp 1 (fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1)` via `f ↦ (v ↦ �
 def piLpOneDualEquiv :
     PiLp ∞ (fun _ : ι ↦ α →ᵇ 𝕜) ≃ₗᵢ[𝕜]
       StrongDual 𝕜 (PiLp 1 fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1) :=
-  LinearIsometryEquiv.ofSurjective (toPiLpOneDual 𝕜 ι α) fun Λ ↦ by
-    classical
-    let ιMap (i : ι) : lp (fun _ : α ↦ 𝕜) 1 →L[𝕜] PiLp 1 (fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1) :=
-      (PiLp.continuousLinearEquiv 1 𝕜
-        (fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1)).symm.toContinuousLinearMap.comp
-        (ContinuousLinearMap.single 𝕜 (fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1) i)
-    refine ⟨WithLp.toLp ∞ fun i ↦ (lpOneDualEquiv 𝕜 α).symm (Λ.comp (ιMap i)),
-      ContinuousLinearMap.ext fun v ↦ ?_⟩
-    have hv : ∑ i, PiLp.single 1 i (v i) = v := by
-      ext j
-      simp [Finset.sum_apply, Pi.single_apply]
-    conv_rhs => rw [← hv, map_sum]
-    rw [toPiLpOneDual_apply]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    simp [ιMap, ← coe_lpOneDualEquiv]
+  (LinearIsometryEquiv.piLpCongrRight ∞ fun _ : ι ↦ lpOneDualEquiv 𝕜 α).trans
+    (PiLp.oneDualEquiv 𝕜 fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1)
 
 variable {𝕜 ι α}
 
-@[simp]
-theorem coe_piLpOneDualEquiv :
-    ⇑(piLpOneDualEquiv 𝕜 ι α) = toPiLpOneDual 𝕜 ι α :=
-  LinearIsometryEquiv.coe_ofSurjective _ _
+theorem piLpOneDualEquiv_def :
+    piLpOneDualEquiv 𝕜 ι α =
+      (LinearIsometryEquiv.piLpCongrRight ∞ fun _ : ι ↦ lpOneDualEquiv 𝕜 α).trans
+        (PiLp.oneDualEquiv 𝕜 fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1) :=
+  (rfl)
 
 @[simp]
 theorem piLpOneDualEquiv_toLinearIsometry :
     (piLpOneDualEquiv 𝕜 ι α).toLinearIsometry = toPiLpOneDual 𝕜 ι α :=
-  LinearIsometry.ext fun f ↦ congrFun coe_piLpOneDualEquiv f
+  LinearIsometry.ext fun f ↦ by
+    rw [piLpOneDualEquiv_def, toPiLpOneDual_def]
+    exact congrArg (PiLp.oneDualEquiv 𝕜 _) (PiLp.ext fun i ↦ by simp)
+
+@[simp]
+theorem coe_piLpOneDualEquiv :
+    ⇑(piLpOneDualEquiv 𝕜 ι α) = toPiLpOneDual 𝕜 ι α :=
+  congrArg DFunLike.coe piLpOneDualEquiv_toLinearIsometry
 
 /-- `piLpOneDualEquiv` acts by summing the coordinate pairings `⟨f i, v i⟩`. -/
 theorem piLpOneDualEquiv_apply (f : PiLp ∞ (fun _ : ι ↦ α →ᵇ 𝕜))
@@ -375,17 +364,46 @@ theorem piLpOneDualEquiv_apply (f : PiLp ∞ (fun _ : ι ↦ α →ᵇ 𝕜))
     piLpOneDualEquiv 𝕜 ι α f v = ∑ i, toLpOneDual 𝕜 α (f i) (v i) := by
   rw [coe_piLpOneDualEquiv, toPiLpOneDual_apply]
 
+@[simp]
+theorem toPiLpOneDual_piLpOneDualEquiv_symm
+    (Λ : StrongDual 𝕜 (PiLp 1 fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1)) :
+    toPiLpOneDual 𝕜 ι α ((piLpOneDualEquiv 𝕜 ι α).symm Λ) = Λ := by
+  rw [← coe_piLpOneDualEquiv]
+  exact (piLpOneDualEquiv 𝕜 ι α).apply_symm_apply Λ
+
+@[simp]
+theorem piLpOneDualEquiv_symm_toPiLpOneDual (f : PiLp ∞ (fun _ : ι ↦ α →ᵇ 𝕜)) :
+    (piLpOneDualEquiv 𝕜 ι α).symm (toPiLpOneDual 𝕜 ι α f) = f := by
+  rw [← coe_piLpOneDualEquiv]
+  exact (piLpOneDualEquiv 𝕜 ι α).symm_apply_apply f
+
+/-- The `i`-th coordinate of `(piLpOneDualEquiv 𝕜 ι α).symm Λ` is obtained by applying
+`(lpOneDualEquiv 𝕜 α).symm` to the `i`-th coordinate functional of `(PiLp.oneDualEquiv …).symm Λ`.
+-/
+theorem piLpOneDualEquiv_symm_apply_eq_lpOneDualEquiv_symm
+    (Λ : StrongDual 𝕜 (PiLp 1 fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1)) (i : ι) :
+    (piLpOneDualEquiv 𝕜 ι α).symm Λ i =
+      (lpOneDualEquiv 𝕜 α).symm
+        ((PiLp.oneDualEquiv 𝕜 fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1).symm Λ i) := by
+  simp [piLpOneDualEquiv_def]
+
+/-- Pairing the `i`-th coordinate bounded function of `(piLpOneDualEquiv 𝕜 ι α).symm Λ` against
+`u` gives `Λ (PiLp.single 1 i u)`. -/
+@[simp]
+theorem toLpOneDual_piLpOneDualEquiv_symm_apply [DecidableEq ι]
+    (Λ : StrongDual 𝕜 (PiLp 1 fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1)) (i : ι)
+    (u : lp (fun _ : α ↦ 𝕜) 1) :
+    toLpOneDual 𝕜 α ((piLpOneDualEquiv 𝕜 ι α).symm Λ i) u = Λ (PiLp.single 1 i u) := by
+  rw [← toPiLpOneDual_apply_single, toPiLpOneDual_piLpOneDualEquiv_symm]
+
 /-- The `i`-th coordinate bounded function of `(piLpOneDualEquiv 𝕜 ι α).symm Λ` evaluates at `x`
 to `Λ (PiLp.single 1 i (lp.single 1 x 1))`. -/
 @[simp]
 theorem piLpOneDualEquiv_symm_apply [DecidableEq ι] [DecidableEq α]
     (Λ : StrongDual 𝕜 (PiLp 1 fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1)) (i : ι) (x : α) :
     (piLpOneDualEquiv 𝕜 ι α).symm Λ i x = Λ (PiLp.single 1 i (lp.single 1 x 1)) := by
-  have h := congrArg (fun φ : StrongDual 𝕜 (PiLp 1 fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1) ↦
-      φ (PiLp.single 1 i (lp.single 1 x 1)))
-    ((piLpOneDualEquiv 𝕜 ι α).apply_symm_apply Λ)
-  simpa only [coe_piLpOneDualEquiv, toPiLpOneDual_apply_single, toLpOneDual_apply_single,
-    mul_one] using h
+  have h := toLpOneDual_piLpOneDualEquiv_symm_apply Λ i (lp.single 1 x 1)
+  rwa [toLpOneDual_apply_single, mul_one] at h
 
 /-- Each coordinate bounded function of `(piLpOneDualEquiv 𝕜 ι α).symm Λ` has norm at most `‖Λ‖`. -/
 theorem norm_piLpOneDualEquiv_symm_apply_le

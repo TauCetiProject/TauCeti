@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Combination
-public import Mathlib.Analysis.Normed.Lp.lpSpace
 public import Mathlib.Geometry.Convex.ConvexSpace.Module
+public import TauCeti.Analysis.Normed.Lp.Reindex
 import TauCeti.Analysis.Normed.Lp.Basic
 
 /-!
@@ -16,8 +16,10 @@ import TauCeti.Analysis.Normed.Lp.Basic
 Every finitely supported function `f : ι →₀ E` into a normed group lies in `ℓᵖ(ι, E)` at every
 exponent `0 ≤ p ≤ ∞`. Bundling this inclusion as an additive homomorphism `Finsupp.toLp p` (and a
 linear map `Finsupp.toLpLinearMap p 𝕜` over a normed ring) identifies coordinate vectors
-`Finsupp.single i a` with `lp.single p i a` and expresses the `ℓᵖ` norm of `f.toLp p` for finite
-positive `p` as a finite sum over `f.support`; at `p = 1` its norm is `f.sum fun _ a ↦ ‖a‖`.
+`Finsupp.single i a` with `lp.single p i a`, characterizes its range as the finitely supported
+sequences (`Finsupp.mem_range_toLp_iff`), intertwines `lpCongrLeft` with `Finsupp.mapDomain`, and
+expresses the `ℓᵖ` norm of `f.toLp p` for finite positive `p` as a finite sum over `f.support`; at
+`p = 1` its norm is `f.sum fun _ a ↦ ‖a‖`.
 
 Specializing to Mathlib's finitely supported probability distributions `Convexity.StdSimplex ℝ X`
 gives the inclusion `Convexity.StdSimplex.toLp p : StdSimplex ℝ X → lp (fun _ : X ↦ ℝ) p`. Its
@@ -34,6 +36,7 @@ masses `lp.single p x 1`.
 
 ## Main results
 
+* `Finsupp.mem_range_toLp_iff`: `g ∈ Set.range (Finsupp.toLp p) ↔ (⇑g).HasFiniteSupport`.
 * `Finsupp.norm_toLp_one`: `‖f.toLp 1‖ = f.sum fun _ a ↦ ‖a‖`.
 * `Convexity.StdSimplex.norm_toLp_one`: `‖w.toLp 1‖ = 1`.
 * `Convexity.StdSimplex.mem_range_toLp_iff`: `f ∈ Set.range (StdSimplex.toLp p)` if and only if `f`
@@ -60,8 +63,7 @@ variable {ι 𝕜 E : Type*} [NormedAddCommGroup E]
 
 /-- Every finitely supported function into a normed group lies in `ℓᵖ` for every exponent `p`. -/
 theorem memℓp (f : ι →₀ E) (p : ℝ≥0∞) : Memℓp (⇑f) p :=
-  Function.HasFiniteSupport.memℓp
-    (f.support.finite_toSet.subset fun _ hx ↦ mem_support_iff.mpr hx) p
+  f.hasFiniteSupport.memℓp p
 
 /-- The inclusion of finitely supported functions `ι →₀ E` into `lp (fun _ : ι ↦ E) p`, as an
 additive monoid homomorphism. -/
@@ -130,8 +132,23 @@ theorem toLp_eq_sum_single [DecidableEq ι] (p : ℝ≥0∞) (f : ι →₀ E) :
   simp [Finsupp.sum, map_sum]
 
 /-- The underlying function of `f.toLp p` has finite support. -/
-theorem hasFiniteSupport_toLp (p : ℝ≥0∞) (f : ι →₀ E) : (⇑(f.toLp p)).HasFiniteSupport :=
-  f.support.finite_toSet.subset fun _ hx ↦ mem_support_iff.mpr hx
+theorem hasFiniteSupport_toLp (p : ℝ≥0∞) (f : ι →₀ E) : (⇑(f.toLp p)).HasFiniteSupport := by
+  rw [coeFn_toLp]
+  exact f.hasFiniteSupport
+
+/-- Rebuilding a finitely supported `ℓᵖ` sequence via `Finsupp.ofSupportFinite` and `Finsupp.toLp`
+recovers the original sequence. -/
+@[simp]
+theorem toLp_ofSupportFinite {p : ℝ≥0∞} (g : lp (fun _ : ι ↦ E) p)
+    (hg : (⇑g).HasFiniteSupport) : (ofSupportFinite (⇑g) hg).toLp p = g :=
+  lp.ext rfl
+
+/-- An element of `lp (fun _ : ι ↦ E) p` lies in the range of `Finsupp.toLp p` if and only if its
+underlying function has finite support. -/
+theorem mem_range_toLp_iff {p : ℝ≥0∞} {g : lp (fun _ : ι ↦ E) p} :
+    g ∈ Set.range (toLp p : (ι →₀ E) →+ lp (fun _ : ι ↦ E) p) ↔ (⇑g).HasFiniteSupport :=
+  ⟨by rintro ⟨f, rfl⟩; exact f.hasFiniteSupport_toLp p,
+    fun hg ↦ ⟨ofSupportFinite (⇑g) hg, toLp_ofSupportFinite g hg⟩⟩
 
 /-- The coordinates of `f.toLp p` have `HasSum` equal to `f.sum fun _ a ↦ a`. -/
 theorem hasSum_toLp (p : ℝ≥0∞) (f : ι →₀ E) :
@@ -160,6 +177,21 @@ theorem norm_toLp {p : ℝ≥0∞} (hp : 0 < p.toReal) (f : ι →₀ E) :
 @[simp]
 theorem norm_toLp_one (f : ι →₀ E) : ‖f.toLp 1‖ = f.sum fun _ a ↦ ‖a‖ := by
   simpa using norm_toLp (p := 1) (by simp) f
+
+@[simp]
+theorem _root_.AddEquiv.lpCongrLeft_toLp_finsupp {β : Type*} {p : ℝ≥0∞} (e : ι ≃ β)
+    (f : ι →₀ E) : AddEquiv.lpCongrLeft p E e (f.toLp p) = (f.mapDomain e).toLp p := by
+  ext b
+  rw [AddEquiv.lpCongrLeft_apply, coeFn_toLp, coeFn_toLp, ← equivMapDomain_eq_mapDomain,
+    equivMapDomain_apply]
+
+@[simp]
+theorem _root_.LinearIsometryEquiv.lpCongrLeft_toLp_finsupp {β : Type*} {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] (e : ι ≃ β) (f : ι →₀ E) :
+    LinearIsometryEquiv.lpCongrLeft p 𝕜 E e (f.toLp p) = (f.mapDomain e).toLp p := by
+  ext b
+  rw [LinearIsometryEquiv.lpCongrLeft_apply, ← AddEquiv.lpCongrLeft_apply,
+    AddEquiv.lpCongrLeft_toLp_finsupp]
 
 end Finsupp
 
@@ -265,7 +297,7 @@ theorem mem_range_toLp_iff {p : ℝ≥0∞} {f : lp (fun _ : X ↦ ℝ) p} :
           rw [Finsupp.sum]
           refine (tsum_eq_sum fun x hx ↦ ?_).symm.trans hsum
           exact Finsupp.notMem_support_iff.mp hx }
-    exact ⟨w, lp.ext rfl⟩
+    exact ⟨w, Finsupp.toLp_ofSupportFinite f hfin⟩
 
 /-- The image of `StdSimplex ℝ X` in `lp (fun _ : X ↦ ℝ) p` is convex. -/
 theorem convex_range_toLp (p : ℝ≥0∞) :

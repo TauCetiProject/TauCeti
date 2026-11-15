@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Lp.PiLp
+public import Mathlib.Analysis.Normed.Operator.NormedSpace
 
 /-!
 # Comparisons of finite product norms and distances
@@ -30,6 +31,12 @@ coordinates of `Lᵖ(Fin n, E)`, for `k ≤ n`, places its coordinates in the sl
 vectors so obtained are those whose coordinates `j ≥ k` vanish.
 The finite sum against a zero-extended vector reduces to the sum over its original coordinates.
 Over an index type with at most one element, the `Lᵖ` norm is the norm of the coordinate.
+
+A family of coordinatewise linear isometries induces a linear isometry between finite `Lᵖ`
+products (`LinearIsometry.piLpCongrRight`), the non-surjective counterpart of
+`LinearIsometryEquiv.piLpCongrRight`. Finally, over any nontrivially normed field `𝕜`, summing
+coordinate evaluations identifies `PiLp ∞ (fun i ↦ StrongDual 𝕜 (E i))` isometrically with the
+continuous dual of `PiLp 1 E` (`PiLp.oneDualEquiv`).
 
 ## Source
 
@@ -197,7 +204,175 @@ end PseudoMetricSpace
 
 end PiLp
 
+namespace PiLp
+
+section OneDual
+
+variable (𝕜 : Type*) {ι : Type*} [Fintype ι] [NontriviallyNormedField 𝕜]
+  (E : ι → Type*) [∀ i, SeminormedAddCommGroup (E i)] [∀ i, NormedSpace 𝕜 (E i)]
+
+/-- For a finite index type `ι`, the supremum-normed product
+`PiLp ∞ (fun i ↦ StrongDual 𝕜 (E i))` is isometrically isomorphic to the continuous dual of the
+sum-normed product `PiLp 1 E` via `φ ↦ (v ↦ ∑ i, φ i (v i))`. -/
+noncomputable def oneDualEquiv :
+    PiLp ∞ (fun i ↦ StrongDual 𝕜 (E i)) ≃ₗᵢ[𝕜] StrongDual 𝕜 (PiLp 1 E) where
+  toFun φ := ∑ i, (φ i).comp
+    ((ContinuousLinearMap.proj i).comp (PiLp.continuousLinearEquiv 1 𝕜 E).toContinuousLinearMap)
+  invFun :=
+    letI := Classical.decEq ι
+    fun Λ ↦ WithLp.toLp ∞ fun i ↦ Λ.comp
+      ((PiLp.continuousLinearEquiv 1 𝕜 E).symm.toContinuousLinearMap.comp
+        (ContinuousLinearMap.single 𝕜 E i))
+  map_add' _ _ := by
+    ext v
+    simp [Finset.sum_add_distrib]
+  map_smul' _ _ := by
+    ext v
+    simp [Finset.mul_sum]
+  left_inv φ := by
+    classical
+    ext i u
+    simp only [ContinuousLinearMap.comp_apply, sum_apply,
+      ContinuousLinearMap.proj_apply, ContinuousLinearMap.single_apply]
+    rw [Finset.sum_eq_single i]
+    · simp
+    · intro j _ hji
+      simp [hji]
+    · intro hi
+      exact absurd (Finset.mem_univ i) hi
+  right_inv Λ := by
+    classical
+    ext v
+    have hv : ∑ i, PiLp.single 1 i (v i) = v := by
+      ext j
+      simp [Finset.sum_apply]
+    conv_rhs => rw [← hv, map_sum]
+    simp
+  norm_map' φ := by
+    classical
+    let Φ : StrongDual 𝕜 (PiLp 1 E) := ∑ i, (φ i).comp
+      ((ContinuousLinearMap.proj i).comp (PiLp.continuousLinearEquiv 1 𝕜 E).toContinuousLinearMap)
+    have hΦ_single (i : ι) (u : E i) : Φ (PiLp.single 1 i u) = φ i u := by
+      simp only [Φ, sum_apply, ContinuousLinearMap.comp_apply,
+        ContinuousLinearMap.proj_apply]
+      rw [Finset.sum_eq_single i]
+      · simp
+      · intro j _ hji
+        simp [hji]
+      · intro hi
+        exact absurd (Finset.mem_univ i) hi
+    refine le_antisymm ?_ ?_
+    · refine ContinuousLinearMap.opNorm_le_bound Φ (norm_nonneg φ) fun v ↦ ?_
+      simp only [Φ, sum_apply, ContinuousLinearMap.comp_apply,
+        ContinuousLinearMap.proj_apply]
+      calc ‖∑ i, φ i (v i)‖
+          ≤ ∑ i, ‖φ i (v i)‖ := norm_sum_le _ _
+        _ ≤ ∑ i, ‖φ i‖ * ‖v i‖ := Finset.sum_le_sum fun i _ ↦ (φ i).le_opNorm (v i)
+        _ ≤ ∑ i, ‖φ‖ * ‖v i‖ :=
+          Finset.sum_le_sum fun i _ ↦
+            mul_le_mul_of_nonneg_right (PiLp.norm_apply_le φ i) (norm_nonneg _)
+        _ = ‖φ‖ * ‖v‖ := by rw [← Finset.mul_sum, PiLp.norm_eq_of_L1]
+    · rw [PiLp.norm_eq_ciSup]
+      refine Real.iSup_le (fun i ↦ ?_) (norm_nonneg Φ)
+      refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg Φ) fun u ↦ ?_
+      rw [← hΦ_single i u]
+      simpa using Φ.le_opNorm (PiLp.single 1 i u)
+
+variable {𝕜 E}
+
+/-- `PiLp.oneDualEquiv` acts by summing the coordinate evaluations `φ i (v i)`. -/
+theorem oneDualEquiv_apply (φ : PiLp ∞ (fun i ↦ StrongDual 𝕜 (E i))) (v : PiLp 1 E) :
+    oneDualEquiv 𝕜 E φ v = ∑ i, φ i (v i) := by
+  simp [oneDualEquiv]
+
+/-- On a single-coordinate vector `PiLp.single 1 i u`, `PiLp.oneDualEquiv φ` evaluates `φ i` at
+`u`. -/
+@[simp]
+theorem oneDualEquiv_apply_single [DecidableEq ι] (φ : PiLp ∞ (fun i ↦ StrongDual 𝕜 (E i)))
+    (i : ι) (u : E i) :
+    oneDualEquiv 𝕜 E φ (PiLp.single 1 i u) = φ i u := by
+  rw [oneDualEquiv_apply, Finset.sum_eq_single i]
+  · simp
+  · intro j _ hji
+    simp [hji]
+  · intro hi
+    exact absurd (Finset.mem_univ i) hi
+
+/-- The `i`-th coordinate functional of `(PiLp.oneDualEquiv 𝕜 E).symm Λ` evaluates at `u` to
+`Λ (PiLp.single 1 i u)`. -/
+@[simp]
+theorem oneDualEquiv_symm_apply [DecidableEq ι] (Λ : StrongDual 𝕜 (PiLp 1 E)) (i : ι) (u : E i) :
+    (oneDualEquiv 𝕜 E).symm Λ i u = Λ (PiLp.single 1 i u) := by
+  have h := congrArg (fun ψ : StrongDual 𝕜 (PiLp 1 E) ↦ ψ (PiLp.single 1 i u))
+    ((oneDualEquiv 𝕜 E).apply_symm_apply Λ)
+  simpa only [oneDualEquiv_apply_single] using h
+
+/-- Each coordinate functional of `(PiLp.oneDualEquiv 𝕜 E).symm Λ` has norm at most `‖Λ‖`. -/
+theorem norm_oneDualEquiv_symm_apply_le (Λ : StrongDual 𝕜 (PiLp 1 E)) (i : ι) :
+    ‖(oneDualEquiv 𝕜 E).symm Λ i‖ ≤ ‖Λ‖ :=
+  (PiLp.norm_apply_le ((oneDualEquiv 𝕜 E).symm Λ) i).trans_eq
+    ((oneDualEquiv 𝕜 E).symm.norm_map Λ)
+
+end OneDual
+
+end PiLp
+
 namespace LinearIsometry
+
+section piLpCongrRight
+
+variable (p : ℝ≥0∞) [Fact (1 ≤ p)] {𝕜 : Type*} [Semiring 𝕜] {ι : Type*} [Fintype ι]
+  {α β γ : ι → Type*} [∀ i, SeminormedAddCommGroup (α i)] [∀ i, SeminormedAddCommGroup (β i)]
+  [∀ i, SeminormedAddCommGroup (γ i)] [∀ i, Module 𝕜 (α i)] [∀ i, Module 𝕜 (β i)]
+  [∀ i, Module 𝕜 (γ i)]
+
+/-- A family of coordinatewise linear isometries induces a linear isometry between finite `Lᵖ`
+products. This is the `LinearIsometry` counterpart of `LinearIsometryEquiv.piLpCongrRight`. -/
+protected noncomputable def piLpCongrRight (f : ∀ i, α i →ₗᵢ[𝕜] β i) :
+    PiLp p α →ₗᵢ[𝕜] PiLp p β where
+  toLinearMap :=
+    (WithLp.linearEquiv p 𝕜 (∀ i, β i)).symm.toLinearMap.comp
+      ((LinearMap.pi fun i ↦ (f i).toLinearMap.comp (LinearMap.proj i)).comp
+        (WithLp.linearEquiv p 𝕜 (∀ i, α i)).toLinearMap)
+  norm_map' _ :=
+    le_antisymm (PiLp.norm_mono fun i ↦ by simp) (PiLp.norm_mono fun i ↦ by simp)
+
+variable {p}
+
+@[simp]
+theorem piLpCongrRight_apply (f : ∀ i, α i →ₗᵢ[𝕜] β i) (x : PiLp p α) (i : ι) :
+    LinearIsometry.piLpCongrRight p f x i = f i (x i) :=
+  (rfl)
+
+theorem piLpCongrRight_eq_toLp (f : ∀ i, α i →ₗᵢ[𝕜] β i) (x : PiLp p α) :
+    LinearIsometry.piLpCongrRight p f x = WithLp.toLp p fun i ↦ f i (x i) :=
+  (rfl)
+
+@[simp]
+theorem piLpCongrRight_id :
+    LinearIsometry.piLpCongrRight p (fun i ↦ (LinearIsometry.id : α i →ₗᵢ[𝕜] α i)) =
+      LinearIsometry.id :=
+  LinearIsometry.ext fun x ↦ PiLp.ext fun i ↦ by simp
+
+theorem piLpCongrRight_comp (g : ∀ i, β i →ₗᵢ[𝕜] γ i) (f : ∀ i, α i →ₗᵢ[𝕜] β i) :
+    LinearIsometry.piLpCongrRight p (fun i ↦ (g i).comp (f i)) =
+      (LinearIsometry.piLpCongrRight p g).comp (LinearIsometry.piLpCongrRight p f) :=
+  LinearIsometry.ext fun x ↦ PiLp.ext fun i ↦ by simp
+
+@[simp]
+theorem piLpCongrRight_single [DecidableEq ι] (f : ∀ i, α i →ₗᵢ[𝕜] β i) (i : ι) (v : α i) :
+    LinearIsometry.piLpCongrRight p f (PiLp.single p i v) = PiLp.single p i (f i v) := by
+  ext j
+  rw [piLpCongrRight_apply]
+  exact Pi.apply_single (f ·) (fun _ ↦ map_zero _) i v j
+
+@[simp]
+theorem _root_.LinearIsometryEquiv.piLpCongrRight_toLinearIsometry (e : ∀ i, α i ≃ₗᵢ[𝕜] β i) :
+    (LinearIsometryEquiv.piLpCongrRight p e).toLinearIsometry =
+      LinearIsometry.piLpCongrRight p fun i ↦ (e i).toLinearIsometry :=
+  LinearIsometry.ext fun x ↦ PiLp.ext fun i ↦ by simp
+
+end piLpCongrRight
 
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {𝕜 E : Type*} [Semiring 𝕜] [SeminormedAddCommGroup E]
   [Module 𝕜 E] {ι ι' : Type*} [Fintype ι] [Fintype ι'] {k n : ℕ}

@@ -118,7 +118,7 @@ theorem norm_leftTranslationSubPiLp_eq_sum_tsum (K : Finset G) (p : lp (fun _ : 
     ‖leftTranslationSubPiLp X K p‖ = ∑ g ∈ K, ∑' x, |p (g⁻¹ • x) - p x| := by
   rw [norm_leftTranslationSubPiLp]
   refine Finset.sum_congr rfl fun g _ ↦ ?_
-  simpa only [Real.norm_eq_abs] using lp.norm_leftTranslation_sub_one g p
+  simpa only [Real.norm_eq_abs] using lp.norm_leftTranslation_sub_eq_tsum g p
 
 /-- The translation-difference vectors `leftTranslationSubPiLp X K (w.toLp 1)` for
 `w : StdSimplex ℝ X` form a convex set in `PiLp 1 (fun _ : K ↦ lp (fun _ : X ↦ ℝ) 1)`. -/

@@ -15,10 +15,13 @@ import TauCeti.Algebra.BigOperators.Intervals
 Let `f : ι → G` be a sequence in `ℓᵖ` and let `g : ι' → ι` be injective on a set `s ⊆ ι'`. The
 sequence `s.indicator (f ∘ g)`, which reads `f` along `g` on `s` and vanishes off `s`, takes each
 value of `f` at most once, so it again lies in `ℓᵖ`, with no larger norm
-(`Memℓp.indicator_comp`, `lp.norm_le_of_forall_eq_indicator_comp`). Shifts of a sequence indexed
-by `ℕ` are the basic examples: `j ↦ f (j + d)` and, on `{j | d ≤ j}`, `j ↦ f (j - d)`. In
-particular a sequence indexed by `ℕ` lies in `ℓᵖ` exactly when its tail `j ↦ f (j + d)` does
-(`TauCeti.memℓp_nat_add_iff`).
+(`Memℓp.indicator_comp`, `lp.norm_le_of_forall_eq_indicator_comp`). When `e : α ≃ β` is a
+bijection, precomposing with `e` preserves both `Memℓp` (`Equiv.memℓp_comp_iff`) and the `ℓᵖ` norm,
+giving an additive equivalence `AddEquiv.lpCongrLeft` at every exponent and, for `1 ≤ p`, a linear
+isometric equivalence `LinearIsometryEquiv.lpCongrLeft` (the `lp` counterpart of
+`LinearIsometryEquiv.piLpCongrLeft`). Shifts of a sequence indexed by `ℕ` are the basic injective
+examples: `j ↦ f (j + d)` and, on `{j | d ≤ j}`, `j ↦ f (j - d)`. In particular a sequence indexed
+by `ℕ` lies in `ℓᵖ` exactly when its tail `j ↦ f (j + d)` does (`TauCeti.memℓp_nat_add_iff`).
 
 Consequently the **window sums** `j ↦ ∑_{j - L ≤ k < j + L} f k` of a sequence indexed by `ℕ`,
 a sum of `2 L` shifts, lie in `ℓᵖ`, and for `1 ≤ p` their norm is at most `2 L ‖f‖`
@@ -228,3 +231,152 @@ theorem lp.exists_forall_hasSum_pow_smul_add_and_norm_le [Fact (1 ≤ p)] [Norme
     simpa [lp.coeFnAddMonoidHom_apply, lp.coeFn_smul, hT] using h
   · calc ‖∑' d, r ^ d • T d‖ ≤ ∑' d, ‖f‖ * r ^ d := tsum_of_norm_bounded hgeom.hasSum hbound
       _ = (1 - r)⁻¹ * ‖f‖ := by rw [tsum_mul_left, tsum_geometric_of_lt_one hr0 hr1, mul_comm]
+
+noncomputable section CongrLeft
+
+variable {α β γ : Type*}
+
+/-- Precomposing with a bijection preserves membership in `ℓᵖ` at every exponent. -/
+theorem Equiv.memℓp_comp_iff {E : Type*} [NormedAddCommGroup E] {p : ℝ≥0∞} (e : α ≃ β)
+    {f : β → E} : Memℓp (f ∘ e) p ↔ Memℓp f p := by
+  rcases p.trichotomy with rfl | rfl | hp
+  · simp only [memℓp_zero_iff]
+    refine ⟨fun h ↦ ?_, fun h ↦ h.preimage e.injective.injOn⟩
+    simpa [Set.preimage_preimage] using h.preimage e.symm.injective.injOn
+  · rw [memℓp_infty_iff, memℓp_infty_iff, ← e.surjective.range_comp (fun b ↦ ‖f b‖)]
+    rfl
+  · simp only [memℓp_gen_iff hp]
+    exact e.summable_iff (f := fun b ↦ ‖f b‖ ^ p.toReal)
+
+/-- An equivalence of index types `e : α ≃ β` induces an additive equivalence
+`lp (fun _ : α ↦ E) p ≃+ lp (fun _ : β ↦ E) p` sending `f` to `f ∘ e.symm`. -/
+def AddEquiv.lpCongrLeft (p : ℝ≥0∞) (E : Type*) [NormedAddCommGroup E] (e : α ≃ β) :
+    lp (fun _ : α ↦ E) p ≃+ lp (fun _ : β ↦ E) p where
+  toFun f := ⟨f ∘ e.symm, e.symm.memℓp_comp_iff.2 (lp.memℓp f)⟩
+  invFun f := ⟨f ∘ e, e.memℓp_comp_iff.2 (lp.memℓp f)⟩
+  left_inv f := lp.ext <| funext fun a ↦ by simp
+  right_inv f := lp.ext <| funext fun b ↦ by simp
+  map_add' _ _ := lp.ext rfl
+
+@[simp]
+theorem AddEquiv.lpCongrLeft_apply {p : ℝ≥0∞} {E : Type*} [NormedAddCommGroup E] (e : α ≃ β)
+    (f : lp (fun _ : α ↦ E) p) (b : β) : AddEquiv.lpCongrLeft p E e f b = f (e.symm b) :=
+  (rfl)
+
+@[simp]
+theorem AddEquiv.lpCongrLeft_refl {p : ℝ≥0∞} {E : Type*} [NormedAddCommGroup E] :
+    AddEquiv.lpCongrLeft p E (Equiv.refl α) = AddEquiv.refl (lp (fun _ : α ↦ E) p) :=
+  AddEquiv.ext fun _ ↦ lp.ext rfl
+
+@[simp]
+theorem AddEquiv.lpCongrLeft_symm {p : ℝ≥0∞} {E : Type*} [NormedAddCommGroup E] (e : α ≃ β) :
+    (AddEquiv.lpCongrLeft p E e).symm = AddEquiv.lpCongrLeft p E e.symm :=
+  AddEquiv.ext fun _ ↦ lp.ext rfl
+
+theorem AddEquiv.lpCongrLeft_trans {p : ℝ≥0∞} {E : Type*} [NormedAddCommGroup E] (e₁ : α ≃ β)
+    (e₂ : β ≃ γ) :
+    AddEquiv.lpCongrLeft p E (e₁.trans e₂) =
+      (AddEquiv.lpCongrLeft p E e₁).trans (AddEquiv.lpCongrLeft p E e₂) :=
+  AddEquiv.ext fun _ ↦ lp.ext rfl
+
+@[simp]
+theorem AddEquiv.lpCongrLeft_single {p : ℝ≥0∞} {E : Type*} [NormedAddCommGroup E] [DecidableEq α]
+    [DecidableEq β] (e : α ≃ β) (a : α) (v : E) :
+    AddEquiv.lpCongrLeft p E e (lp.single p a v) = lp.single p (e a) v := by
+  ext b
+  simp [lp.single_apply, Pi.single_apply, Equiv.symm_apply_eq]
+
+@[simp]
+theorem AddEquiv.lpCongrLeft_one {R : Type*} [NormedRing R] [NormOneClass R] (e : α ≃ β) :
+    AddEquiv.lpCongrLeft ∞ R e (1 : lp (fun _ : α ↦ R) ∞) = 1 :=
+  lp.ext rfl
+
+theorem AddEquiv.tsum_lpCongrLeft {p : ℝ≥0∞} {E : Type*} [NormedAddCommGroup E] (e : α ≃ β)
+    (f : lp (fun _ : α ↦ E) p) :
+    ∑' b, AddEquiv.lpCongrLeft p E e f b = ∑' a, f a :=
+  e.symm.tsum_eq f
+
+/-- Reindexing `lp` along an equivalence preserves the `ℓᵖ` norm for every `0 ≤ p ≤ ∞`. -/
+@[simp]
+theorem AddEquiv.norm_lpCongrLeft {p : ℝ≥0∞} {E : Type*} [NormedAddCommGroup E] (e : α ≃ β)
+    (f : lp (fun _ : α ↦ E) p) : ‖AddEquiv.lpCongrLeft p E e f‖ = ‖f‖ := by
+  rcases p.trichotomy with rfl | rfl | hp
+  · simp only [lp.norm_eq_card_dsupport]
+    refine congrArg Nat.cast (Finset.card_bij (fun b _ ↦ e.symm b) ?_ ?_ ?_)
+    · intro b hb
+      simpa using hb
+    · intro b₁ _ b₂ _ h
+      exact e.symm.injective h
+    · intro a ha
+      exact ⟨e a, by simpa using ha, e.symm_apply_apply a⟩
+  · simp only [lp.norm_eq_ciSup, lpCongrLeft_apply]
+    exact e.symm.iSup_congr fun _ ↦ rfl
+  · simp only [lp.norm_eq_tsum_rpow hp, lpCongrLeft_apply]
+    congr 1
+    exact e.symm.tsum_eq fun a ↦ ‖f a‖ ^ p.toReal
+
+section LinearIsometryEquiv
+
+variable (p : ℝ≥0∞) [Fact (1 ≤ p)] (𝕜 E : Type*) [NormedRing 𝕜] [NormedAddCommGroup E]
+  [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
+
+/-- An equivalence of index types `e : α ≃ β` induces a linear isometric equivalence
+`lp (fun _ : α ↦ E) p ≃ₗᵢ[𝕜] lp (fun _ : β ↦ E) p` sending `f` to `f ∘ e.symm`. -/
+def LinearIsometryEquiv.lpCongrLeft (e : α ≃ β) :
+    lp (fun _ : α ↦ E) p ≃ₗᵢ[𝕜] lp (fun _ : β ↦ E) p where
+  __ := AddEquiv.lpCongrLeft p E e
+  map_smul' _ _ := lp.ext rfl
+  norm_map' := AddEquiv.norm_lpCongrLeft e
+
+variable {p 𝕜 E}
+
+@[simp]
+theorem LinearIsometryEquiv.lpCongrLeft_toAddEquiv (e : α ≃ β) :
+    (LinearIsometryEquiv.lpCongrLeft p 𝕜 E e).toLinearEquiv.toAddEquiv =
+      AddEquiv.lpCongrLeft p E e :=
+  AddEquiv.ext fun _ ↦ lp.ext rfl
+
+@[simp]
+theorem LinearIsometryEquiv.lpCongrLeft_apply (e : α ≃ β) (f : lp (fun _ : α ↦ E) p) (b : β) :
+    LinearIsometryEquiv.lpCongrLeft p 𝕜 E e f b = f (e.symm b) :=
+  (rfl)
+
+@[simp]
+theorem LinearIsometryEquiv.lpCongrLeft_refl :
+    LinearIsometryEquiv.lpCongrLeft p 𝕜 E (Equiv.refl α) =
+      LinearIsometryEquiv.refl 𝕜 (lp (fun _ : α ↦ E) p) :=
+  LinearIsometryEquiv.ext fun _ ↦ lp.ext rfl
+
+@[simp]
+theorem LinearIsometryEquiv.lpCongrLeft_symm (e : α ≃ β) :
+    (LinearIsometryEquiv.lpCongrLeft p 𝕜 E e).symm =
+      LinearIsometryEquiv.lpCongrLeft p 𝕜 E e.symm :=
+  LinearIsometryEquiv.ext fun _ ↦ lp.ext rfl
+
+theorem LinearIsometryEquiv.lpCongrLeft_trans (e₁ : α ≃ β) (e₂ : β ≃ γ) :
+    LinearIsometryEquiv.lpCongrLeft p 𝕜 E (e₁.trans e₂) =
+      (LinearIsometryEquiv.lpCongrLeft p 𝕜 E e₁).trans
+        (LinearIsometryEquiv.lpCongrLeft p 𝕜 E e₂) :=
+  LinearIsometryEquiv.ext fun _ ↦ lp.ext rfl
+
+@[simp]
+theorem LinearIsometryEquiv.lpCongrLeft_single [DecidableEq α] [DecidableEq β] (e : α ≃ β)
+    (a : α) (v : E) :
+    LinearIsometryEquiv.lpCongrLeft p 𝕜 E e (lp.single p a v) = lp.single p (e a) v := by
+  ext b
+  rw [lpCongrLeft_apply, ← AddEquiv.lpCongrLeft_apply, AddEquiv.lpCongrLeft_single]
+
+@[simp]
+theorem LinearIsometryEquiv.lpCongrLeft_one {R : Type*} [NormedRing R] [NormOneClass R]
+    [Module 𝕜 R] [IsBoundedSMul 𝕜 R] (e : α ≃ β) :
+    LinearIsometryEquiv.lpCongrLeft ∞ 𝕜 R e (1 : lp (fun _ : α ↦ R) ∞) = 1 := by
+  ext b
+  rw [lpCongrLeft_apply, ← AddEquiv.lpCongrLeft_apply, AddEquiv.lpCongrLeft_one]
+
+theorem LinearIsometryEquiv.tsum_lpCongrLeft (e : α ≃ β) (f : lp (fun _ : α ↦ E) p) :
+    ∑' b, LinearIsometryEquiv.lpCongrLeft p 𝕜 E e f b = ∑' a, f a :=
+  e.symm.tsum_eq f
+
+end LinearIsometryEquiv
+
+end CongrLeft
