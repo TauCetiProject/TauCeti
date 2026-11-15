@@ -116,6 +116,17 @@ lemma localHomologyRestriction_comp {S T W : Set M} (h₁ : S ⊆ T) (h₂ : T �
   exact congrArg (TopPair.singularHomologyMap · R k)
     (TopPair.ofSubsetMap_comp (𝟙 (TopCat.of M)) (𝟙 (TopCat.of M)) _ _ _).symm
 
+/-- Restricting the quotient map `Hₖ(M; R) ⟶ Hₖ(M, M ∖ T; R)` along `S ⊆ T` gives the quotient map
+`Hₖ(M; R) ⟶ Hₖ(M, M ∖ S; R)`. -/
+@[reassoc (attr := simp), elementwise (attr := simp)]
+lemma singularHomologyπ_localHomologyRestriction {S T : Set M} (h : S ⊆ T) (k : ℕ) :
+    (TopPair.ofSubset (Tᶜ : Set (TopCat.of M))).singularHomologyπ R k ≫
+        localHomologyRestriction R h k =
+      (TopPair.ofSubset (Sᶜ : Set (TopCat.of M))).singularHomologyπ R k := by
+  rw [localHomologyRestriction_def]
+  exact TopPair.singularHomologyπ_comp_singularHomologyMap_ofSubsetMap_id R
+    (compl_subset_compl.2 h) k
+
 /-- **Local homology along the empty set vanishes**: `Hₖ(M, M) = 0`. -/
 theorem isZero_localHomology_empty (k : ℕ) : IsZero (localHomology R (∅ : Set M) k) := by
   rw [IsZero.iff_id_eq_zero, ← TopPair.singularHomologyMap_id]

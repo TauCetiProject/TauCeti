@@ -42,8 +42,7 @@ section Homotopic
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TotallyDisconnectedSpace Y]
 
-/-- Two homotopic continuous maps into a totally disconnected space are equal: evaluating a homotopy
-at `x` traces a path from `f x` to `g x`, and paths in a totally disconnected space are constant. -/
+/-- Two homotopic continuous maps into a totally disconnected space are equal. -/
 theorem Homotopic.eq_of_totallyDisconnectedSpace {f g : C(X, Y)} (h : f.Homotopic g) : f = g := by
   ext x
   exact Joined.eq_of_totallyDisconnectedSpace ⟨h.some.evalAt x⟩
@@ -62,9 +61,8 @@ namespace HomotopyEquiv
 variable {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
   [TotallyDisconnectedSpace X] [TotallyDisconnectedSpace Y] [TotallyDisconnectedSpace Z]
 
-/-- A homotopy equivalence between totally disconnected spaces is already a homeomorphism: paths in
-totally disconnected spaces are constant, so the homotopy inverses are genuine inverses. -/
-@[expose]
+/-- A homotopy equivalence `e : X ≃ₕ Y` between totally disconnected spaces as a homeomorphism
+`X ≃ₜ Y` with the same underlying forward and inverse maps. -/
 def toHomeomorphOfTotallyDisconnectedSpace (e : X ≃ₕ Y) : X ≃ₜ Y where
   toFun := e
   invFun := e.symm
@@ -79,8 +77,13 @@ theorem coe_toHomeomorphOfTotallyDisconnectedSpace (e : X ≃ₕ Y) :
   (rfl)
 
 @[simp]
+theorem coe_toHomeomorphOfTotallyDisconnectedSpace_symm (e : X ≃ₕ Y) :
+    ⇑e.toHomeomorphOfTotallyDisconnectedSpace.symm = ⇑e.symm :=
+  (rfl)
+
+@[simp]
 theorem symm_toHomeomorphOfTotallyDisconnectedSpace (e : X ≃ₕ Y) :
-    e.toHomeomorphOfTotallyDisconnectedSpace.symm = e.symm.toHomeomorphOfTotallyDisconnectedSpace :=
+    e.symm.toHomeomorphOfTotallyDisconnectedSpace = e.toHomeomorphOfTotallyDisconnectedSpace.symm :=
   (rfl)
 
 @[simp]
@@ -116,7 +119,6 @@ theorem toHomotopyEquiv_toHomeomorphOfTotallyDisconnectedSpace (h : X ≃ₜ Y) 
 variable (X Y) in
 /-- For totally disconnected spaces `X` and `Y`, homeomorphisms `X ≃ₜ Y` are in canonical bijection
 with homotopy equivalences `X ≃ₕ Y`. -/
-@[expose]
 def equivHomotopyEquivOfTotallyDisconnectedSpace : (X ≃ₜ Y) ≃ (X ≃ₕ Y) where
   toFun := Homeomorph.toHomotopyEquiv
   invFun := ContinuousMap.HomotopyEquiv.toHomeomorphOfTotallyDisconnectedSpace
