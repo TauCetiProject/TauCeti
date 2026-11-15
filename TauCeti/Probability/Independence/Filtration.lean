@@ -5,10 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Measure.HasOuterApproxClosed
 public import Mathlib.Probability.Independence.Process.HasIndepIncrements.Basic
 public import Mathlib.Probability.Process.Adapted
+import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import Mathlib.Probability.Independence.BoundedContinuousFunction
+import Mathlib.Probability.Independence.Integration
 import TauCeti.MeasureTheory.Group.Arithmetic
 import TauCeti.Probability.Independence.Sup
+import TauCeti.Probability.Process.Filtration.RightCont
 
 /-!
 # Increments independent of the past
@@ -28,6 +33,11 @@ file derives the consequences that do not depend on the law of the increments.
   `MeasureTheory.Adapted.indep_comap_shift_sub`: increments independent of the past make the whole
   future increment process `(X t - X s)_{t ≥ s}`, and on a canonically ordered additive index type
   the shifted process `t ↦ X (s + t) - X s`, independent of `ℱ s`.
+* `MeasureTheory.Adapted.indep_comap_sub_Ioi_rightCont`,
+  `MeasureTheory.Adapted.indep_comap_sub_Ici_rightCont`, and
+  `MeasureTheory.Adapted.indep_comap_shift_sub_rightCont`: almost-sure right continuity at a single
+  time `s` passes future-increment independence from `ℱ` to the right-continuous slice
+  `ℱ.rightCont s`.
 -/
 
 public section
@@ -142,7 +152,7 @@ theorem indep_comap_sub_Ici (hX : Adapted ℱ X)
 /-- On a canonically ordered additive index type, if the increments of an adapted process are
 independent of the past, then the shifted increment process `t ↦ X (s + t) - X s` is
 independent of `ℱ s`. -/
-theorem indep_comap_shift_sub [AddCommMonoid ι] [CanonicallyOrderedAdd ι] (hX : Adapted ℱ X)
+theorem indep_comap_shift_sub [Add ι] [CanonicallyOrderedAdd ι] (hX : Adapted ℱ X)
     (hindep : ∀ ⦃s t : ι⦄, s ≤ t → Indep (.comap (X t - X s) inferInstance) (ℱ s) μ) (s : ι) :
     Indep (.comap (fun ω t ↦ X (s + t) ω - X s ω) inferInstance) (ℱ s) μ := by
   refine indep_of_indep_of_le_left (hX.indep_comap_sub_Ici hindep s) ?_
@@ -151,5 +161,114 @@ theorem indep_comap_shift_sub [AddCommMonoid ι] [CanonicallyOrderedAdd ι] (hX 
         fun ω (u : Set.Ici s) ↦ X u ω - X s ω := rfl
   rw [hcomp, ← MeasurableSpace.comap_comp]
   exact MeasurableSpace.comap_mono (Measurable.of_eval fun t ↦ measurable_pi_apply _).comap_le
+
+section RightCont
+
+open Filter Set
+open scoped Topology _root_.BoundedContinuousFunction ENNReal
+
+private lemma indep_rightCont_pi_sub_of_lt (hX : Adapted ℱ X)
+    (hindep : ∀ ⦃s t : ι⦄, s ≤ t → Indep (.comap (X t - X s) inferInstance) (ℱ s) μ)
+    {s u : ι} (hsu : s < u) (I : Finset (Ioi s)) (hu : ∀ t ∈ I, u ≤ (t : ι)) :
+    Indep (.comap (fun ω (t : I) ↦ X (t : ι) ω - X u ω) inferInstance) (ℱ.rightCont s) μ := by
+  classical
+  have hJ := hX.indep_biSup_comap_sub hindep (I.image Subtype.val) (s := u)
+    (by simpa using fun t ht ↦ hu t ht)
+  refine indep_of_indep_of_le_right (indep_of_indep_of_le_left hJ ?_)
+    (ℱ.rightCont_le_of_lt hsu)
+  rw [MeasurableSpace.comap_process_pi]
+  exact iSup_le fun t ↦
+    le_iSup₂_of_le (t : ι) (Finset.mem_image_of_mem Subtype.val t.2) le_rfl
+
+variable [TopologicalSpace ι] [OrderTopology ι] [DenselyOrdered ι] [FirstCountableTopology ι]
+  [TopologicalSpace E] [BorelSpace E] [HasOuterApproxClosed E] [ContinuousSub E]
+
+/-- If an adapted process on a densely ordered first-countable time index into a Borel additive
+group with outer closed approximation and continuous subtraction has increments independent of the
+past and is almost surely right-continuous at `s`, then the strict future increment process
+`(X t - X s)_{t > s}` is independent of `ℱ.rightCont s`. -/
+theorem indep_comap_sub_Ioi_rightCont (hX : Adapted ℱ X)
+    (hindep : ∀ ⦃s t : ι⦄, s ≤ t → Indep (.comap (X t - X s) inferInstance) (ℱ s) μ) {s : ι}
+    (hcont : ∀ᵐ ω ∂μ, ContinuousWithinAt (X · ω) (Ioi s) s) :
+    Indep (.comap (fun ω (t : Ioi s) ↦ X t ω - X s ω) inferInstance) (ℱ.rightCont s) μ := by
+  rcases eq_zero_or_isProbabilityMeasure μ with rfl | hμ
+  · simp [Indep_iff]
+  refine (indep_comap_process_of_prod_bcf (ℱ.rightCont.le s)
+    (fun _ ↦ (hX.measurable.sub hX.measurable).aemeasurable) fun A hA I f ↦ ?_).symm
+  rcases I.eq_empty_or_nonempty with rfl | hne
+  · simp [integral_const, smul_eq_mul, mul_comm]
+  have hg : Measurable fun z : I → E ↦ ∏ t : I, f t (z t) :=
+    Finset.measurable_prod _ fun t _ ↦ (f t).continuous.measurable.comp (measurable_pi_apply t)
+  obtain ⟨u, -, hu, hlim⟩ := exists_seq_strictAnti_tendsto' (I.min' hne).2
+  have hu' : Tendsto u atTop (𝓝[>] s) :=
+    tendsto_nhdsWithin_iff.2 ⟨hlim, Eventually.of_forall fun n ↦ (hu n).1⟩
+  have hUn (n : ℕ) : Measurable fun ω (t : I) ↦ X (t : ι) ω - X (u n) ω :=
+    measurable_pi_iff.2 fun _ ↦ hX.measurable.sub hX.measurable
+  have hmeas (n : ℕ) :
+      AEStronglyMeasurable (fun ω ↦ ∏ t : I, f t (X (t : ι) ω - X (u n) ω)) μ :=
+    (hg.comp (hUn n)).aestronglyMeasurable
+  have hbound (n : ℕ) :
+      ∀ᵐ ω ∂μ, ‖∏ t : I, f t (X (t : ι) ω - X (u n) ω)‖ ≤ ∏ t : I, ‖f t‖ :=
+    Eventually.of_forall fun ω ↦ by
+      rw [norm_prod]
+      gcongr with t
+      exact (f t).norm_coe_le_norm _
+  have hconv : ∀ᵐ ω ∂μ, Tendsto (fun n ↦ ∏ t : I, f t (X (t : ι) ω - X (u n) ω))
+      atTop (𝓝 (∏ t : I, f t (X (t : ι) ω - X s ω))) :=
+    hcont.mono fun ω hω ↦ tendsto_finsetProd _ fun t _ ↦
+      (f t).continuous.continuousAt.tendsto.comp (tendsto_const_nhds.sub (hω.tendsto.comp hu'))
+  have hall := tendsto_integral_of_dominated_convergence (fun _ ↦ ∏ t : I, ‖f t‖)
+    hmeas (integrable_const _) hbound hconv
+  have hset := tendsto_integral_of_dominated_convergence (μ := μ.restrict A)
+    (fun _ ↦ ∏ t : I, ‖f t‖) (fun n ↦ (hmeas n).restrict) (integrable_const _)
+    (fun n ↦ ae_restrict_of_ae (hbound n)) (ae_restrict_of_ae hconv)
+  have heq (n : ℕ) : ∫ ω in A, (∏ t : I, f t (X (t : ι) ω - X (u n) ω)) ∂μ =
+      μ.real A * ∫ ω, (∏ t : I, f t (X (t : ι) ω - X (u n) ω)) ∂μ :=
+    (indep_rightCont_pi_sub_of_lt hX hindep (hu n).1 I fun t ht ↦
+      (hu n).2.le.trans (I.min'_le t ht)).symm.setIntegral_eq_mul
+      (ℱ.rightCont.le s) (hUn n).aemeasurable hA hg.aestronglyMeasurable
+  exact tendsto_nhds_unique hset ((tendsto_const_nhds.mul hall).congr fun n ↦ (heq n).symm)
+
+/-- If an adapted process on a densely ordered first-countable time index into a Borel additive
+group with outer closed approximation and continuous subtraction has increments independent of the
+past and is almost surely right-continuous at `s`, then the future increment process
+`(X t - X s)_{t ≥ s}` is independent of `ℱ.rightCont s`. -/
+theorem indep_comap_sub_Ici_rightCont (hX : Adapted ℱ X)
+    (hindep : ∀ ⦃s t : ι⦄, s ≤ t → Indep (.comap (X t - X s) inferInstance) (ℱ s) μ) {s : ι}
+    (hcont : ∀ᵐ ω ∂μ, ContinuousWithinAt (X · ω) (Ioi s) s) :
+    Indep (.comap (fun ω (t : Ici s) ↦ X t ω - X s ω) inferInstance) (ℱ.rightCont s) μ := by
+  classical
+  refine indep_of_indep_of_le_left (hX.indep_comap_sub_Ioi_rightCont hindep hcont) ?_
+  have hcomp : (fun ω (t : Ici s) ↦ X t ω - X s ω) =
+      (fun (f : Ioi s → E) (t : Ici s) ↦
+        if ht : s < (t : ι) then f ⟨t, ht⟩ else 0) ∘
+        fun ω (u : Ioi s) ↦ X u ω - X s ω := by
+    ext ω ⟨t, ht⟩
+    dsimp only [Function.comp_apply]
+    split_ifs with hlt
+    · rfl
+    · simp [le_antisymm (not_lt.1 hlt) ht]
+  rw [hcomp, ← MeasurableSpace.comap_comp]
+  refine MeasurableSpace.comap_mono (Measurable.of_eval fun t ↦ ?_).comap_le
+  by_cases ht : s < (t : ι)
+  · simpa [ht] using measurable_pi_apply (⟨t, ht⟩ : Ioi s)
+  · simp [ht]
+
+/-- On a densely ordered first-countable canonically ordered additive index type, if an adapted
+process into a Borel additive group with outer closed approximation and continuous subtraction has
+increments independent of the past and is almost surely right-continuous at `s`, then the shifted
+increment process `t ↦ X (s + t) - X s` is independent of `ℱ.rightCont s`. -/
+theorem indep_comap_shift_sub_rightCont [Add ι] [CanonicallyOrderedAdd ι] (hX : Adapted ℱ X)
+    (hindep : ∀ ⦃s t : ι⦄, s ≤ t → Indep (.comap (X t - X s) inferInstance) (ℱ s) μ) {s : ι}
+    (hcont : ∀ᵐ ω ∂μ, ContinuousWithinAt (X · ω) (Ioi s) s) :
+    Indep (.comap (fun ω t ↦ X (s + t) ω - X s ω) inferInstance) (ℱ.rightCont s) μ := by
+  refine indep_of_indep_of_le_left (hX.indep_comap_sub_Ici_rightCont hindep hcont) ?_
+  have hcomp : (fun ω t ↦ X (s + t) ω - X s ω) =
+      (fun (f : Ici s → E) t ↦ f ⟨s + t, le_self_add⟩) ∘
+        fun ω (u : Ici s) ↦ X u ω - X s ω := rfl
+  rw [hcomp, ← MeasurableSpace.comap_comp]
+  exact MeasurableSpace.comap_mono (Measurable.of_eval fun t ↦ measurable_pi_apply _).comap_le
+
+end RightCont
 
 end MeasureTheory.Adapted

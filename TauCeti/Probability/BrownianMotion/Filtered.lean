@@ -8,6 +8,7 @@ module
 public import Mathlib.Probability.BrownianMotion.Basic
 public import Mathlib.Probability.Process.Adapted
 public import TauCeti.Probability.Process.Filtration.Comp
+import Mathlib.Probability.Process.FiniteDimensionalLaws
 import TauCeti.Probability.Independence.Filtration
 import TauCeti.Probability.Distributions.Gaussian.Moments
 import TauCeti.Probability.Distributions.Gaussian.PolynomialMemLp
@@ -30,10 +31,11 @@ produce a new Brownian motion.
 
 * `TauCeti.Probability.IsFilteredPreBrownianReal`: a pre-Brownian motion relative to a
   filtration.
-* `TauCeti.Probability.IsFilteredPreBrownianReal.indep_shift` and
-  `TauCeti.Probability.IsFilteredPreBrownianReal.shift`: deterministic time shifts have full
-  future increment path independent of `ℱ s` and remain filtered pre-Brownian relative to
-  `ℱ.comp (monotone_id.const_add s)`.
+* `TauCeti.Probability.IsFilteredPreBrownianReal.hasLaw_shift`,
+  `TauCeti.Probability.IsFilteredPreBrownianReal.indep_shift`, and
+  `TauCeti.Probability.IsFilteredPreBrownianReal.shift`: deterministic time shifts share the full
+  path-space law of `W`, have full future increment path independent of `ℱ s`, and remain filtered
+  pre-Brownian relative to `ℱ.comp (monotone_id.const_add s)`.
 * `ProbabilityTheory.IsPreBrownianReal.isFilteredPreBrownianReal_natural`: the natural
   filtration.
 * `ProbabilityTheory.IsPreBrownianReal.hasLaw_sub_of_le`: for `s ≤ t`, the increment
@@ -92,6 +94,20 @@ theorem indepFun_eval_of_measurable_zero {P : Measure Ω} {ℱ : Filtration ℝ�
   refine h.congr ?_ Filter.EventuallyEq.rfl
   filter_upwards [hW.eval_zero_ae_eq_zero] with ω hω
   simp [hω]
+
+/-- Every deterministic shifted increment path `t ↦ W (s + t) ω - W s ω` has the same full
+path-space law `P.map W` as `W`. -/
+theorem hasLaw_shift {P : Measure Ω} {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → ℝ}
+    (hW : IsFilteredPreBrownianReal ℱ W P) (s : ℝ≥0) :
+    HasLaw (fun ω t ↦ W (s + t) ω - W s ω) (P.map (fun ω t ↦ W t ω)) P := by
+  have := (hW.hasLaw_eval 0).isProbabilityMeasure
+  have hshift_ae : AEMeasurable (fun ω t ↦ W (s + t) ω - W s ω) P :=
+    (measurable_pi_iff.2 fun t ↦
+      (hW.adapted.measurable (i := s + t)).sub (hW.adapted.measurable (i := s))).aemeasurable
+  have hW_ae : AEMeasurable (fun ω t ↦ W t ω) P :=
+    (measurable_pi_iff.2 fun _ ↦ hW.adapted.measurable).aemeasurable
+  refine ⟨hshift_ae, (map_eq_iff_forall_finset_map_restrict_eq hshift_ae hW_ae).2 fun I ↦ ?_⟩
+  exact ((hW.toIsPreBrownianReal.shift s).hasLaw I).map_eq.trans (hW.hasLaw I).map_eq.symm
 
 /-- At a deterministic time `s`, the entire shifted increment process `t ↦ W (s + t) - W s`
 is independent of `ℱ s`. -/

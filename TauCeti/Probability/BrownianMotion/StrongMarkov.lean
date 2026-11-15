@@ -10,10 +10,8 @@ public import Mathlib.Probability.Process.Stopping
 public import Mathlib.Topology.Order.Cadlag
 public import TauCeti.Probability.BrownianMotion.UsualFiltration
 import TauCeti.Probability.HasLaw
-import TauCeti.Probability.Independence.Basic
 import TauCeti.Probability.Independence.Stopping
 import TauCeti.Probability.Process.StoppedValue
-import TauCeti.Probability.Process.StoppingApproximation
 
 /-!
 # The strong Markov property of Brownian motion
@@ -37,29 +35,29 @@ right-continuous hull `ℱ.rightCont` (including open-set hitting times) via
 
 ## Main declarations
 
-* `TauCeti.Probability.IsFilteredPreBrownianReal.hasLaw_restrict_shift_of_countable_range`,
-  `TauCeti.Probability.IsFilteredPreBrownianReal.isPreBrownianReal_shift_of_countable_range`, and
-  `TauCeti.Probability.IsFilteredPreBrownianReal.indep_shift_of_countable_range`: restart at
+* `IsFilteredPreBrownianReal.hasLaw_restrict_stoppedValue_shift_of_countable_range`,
+  `IsFilteredPreBrownianReal.isPreBrownianReal_stoppedValue_shift_of_countable_range`, and
+  `IsFilteredPreBrownianReal.indep_stoppedValue_shift_of_countable_range`: restart at
   countable-range stopping times without path regularity.
-* `TauCeti.Probability.IsFilteredPreBrownianReal.hasLaw_restrict_shift` and
-  `TauCeti.Probability.IsFilteredPreBrownianReal.hasLaw_restrict_shift_rightCont`: restricted
-  full-path laws on `A ∩ {τ ≠ ⊤}` for `ℱ`- and `ℱ.rightCont`-stopping times.
-* `TauCeti.Probability.IsFilteredPreBrownianReal.isPreBrownianReal_cond_shift`,
-  `TauCeti.Probability.IsFilteredPreBrownianReal.isBrownianReal_cond_shift`,
-  `TauCeti.Probability.IsFilteredPreBrownianReal.isPreBrownianReal_cond_shift_rightCont`, and
-  `TauCeti.Probability.IsFilteredPreBrownianReal.isBrownianReal_cond_shift_rightCont`: conditional
+* `IsFilteredPreBrownianReal.hasLaw_restrict_stoppedValue_shift` and
+  `IsFilteredPreBrownianReal.hasLaw_restrict_stoppedValue_shift_rightCont`: restricted full-path
+  laws on `A ∩ {τ ≠ ⊤}` for `ℱ`- and `ℱ.rightCont`-stopping times.
+* `IsFilteredPreBrownianReal.isPreBrownianReal_cond_stoppedValue_shift`,
+  `IsFilteredPreBrownianReal.isBrownianReal_cond_stoppedValue_shift`,
+  `IsFilteredPreBrownianReal.isPreBrownianReal_cond_stoppedValue_shift_rightCont`, and
+  `IsFilteredPreBrownianReal.isBrownianReal_cond_stoppedValue_shift_rightCont`: conditional
   pre-Brownian and Brownian motion on positive-probability events `A ∩ {τ ≠ ⊤}`.
-* `TauCeti.Probability.IsFilteredPreBrownianReal.isPreBrownianReal_shift_stoppingTime`,
-  `TauCeti.Probability.IsFilteredPreBrownianReal.isBrownianReal_shift_stoppingTime`,
-  `TauCeti.Probability.IsFilteredPreBrownianReal.indep_shift_stoppingTime`,
-  `TauCeti.Probability.IsFilteredPreBrownianReal.isPreBrownianReal_shift_stoppingTime_rightCont`,
-  `TauCeti.Probability.IsFilteredPreBrownianReal.isBrownianReal_shift_stoppingTime_rightCont`, and
-  `TauCeti.Probability.IsFilteredPreBrownianReal.indep_shift_stoppingTime_rightCont`: the strong
-  Markov restart laws and independence on `ℱ` and on `ℱ.rightCont`.
-* `ProbabilityTheory.IsBrownianReal.shift_stoppingTime_natural`,
-  `ProbabilityTheory.IsBrownianReal.indep_shift_stoppingTime_natural`,
-  `ProbabilityTheory.IsBrownianReal.shift_stoppingTime_rightCont_natural`, and
-  `ProbabilityTheory.IsBrownianReal.indep_shift_stoppingTime_rightCont_natural`: specializations to
+* `IsFilteredPreBrownianReal.isPreBrownianReal_stoppedValue_shift`,
+  `IsFilteredPreBrownianReal.isBrownianReal_stoppedValue_shift`,
+  `IsFilteredPreBrownianReal.indep_stoppedValue_shift`,
+  `IsFilteredPreBrownianReal.isPreBrownianReal_stoppedValue_shift_rightCont`,
+  `IsFilteredPreBrownianReal.isBrownianReal_stoppedValue_shift_rightCont`, and
+  `IsFilteredPreBrownianReal.indep_stoppedValue_shift_rightCont`: the strong Markov restart laws
+  and independence on `ℱ` and on `ℱ.rightCont`.
+* `ProbabilityTheory.IsBrownianReal.stoppedValue_shift_natural`,
+  `ProbabilityTheory.IsBrownianReal.indep_stoppedValue_shift_natural`,
+  `ProbabilityTheory.IsBrownianReal.stoppedValue_shift_rightCont_natural`, and
+  `ProbabilityTheory.IsBrownianReal.indep_stoppedValue_shift_rightCont_natural`: specializations to
   the natural filtration of a Brownian motion and its right-continuous hull.
 
 ## References
@@ -79,69 +77,47 @@ namespace TauCeti.Probability.IsFilteredPreBrownianReal
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
   {ℱ : Filtration ℝ≥0 mΩ} {B : ℝ≥0 → Ω → ℝ} {τ : Ω → WithTop ℝ≥0}
 
+private lemma hasLaw_finset_restrict_of_hasLaw_smul_map {μ : Measure Ω}
+    {Y : ℝ≥0 → Ω → ℝ} {c : ℝ≥0∞} (hB : IsFilteredPreBrownianReal ℱ B P)
+    (h : HasLaw (fun ω t ↦ Y t ω) (c • P.map (fun ω t ↦ B t ω)) μ) (I : Finset ℝ≥0) :
+    HasLaw (fun ω ↦ I.restrict (Y · ω)) (c • BrownianReal.projectiveFamily I) μ := by
+  have hcomp := (hasLaw_map I.measurable_restrict.aemeasurable).comp h
+  have hB_meas : Measurable (fun ω t ↦ B t ω) := measurable_pi_iff.2 fun _ ↦ hB.adapted.measurable
+  rwa [Measure.map_smul _ I.measurable_restrict.aemeasurable,
+    Measure.map_map I.measurable_restrict hB_meas, Function.comp_def, Function.comp_def,
+    (hB.hasLaw I).map_eq] at hcomp
+
 /-! ### Countable-range stopping times -/
 
 /-- At a countable-range stopping time `τ`, on `A ∩ {τ ≠ ⊤}` for any `A ∈ hτ.measurableSpace`,
-each finite-dimensional marginal of the restarted increment process has the Brownian projective
-law scaled by `P (A ∩ {τ ≠ ⊤})`. No path continuity is required. -/
-theorem hasLaw_restrict_finset_shift_of_countable_range (hB : IsFilteredPreBrownianReal ℱ B P)
-    (hτ : IsStoppingTime ℱ τ) (hc : (range τ).Countable) {A : Set Ω}
-    (hA : MeasurableSet[hτ.measurableSpace] A) (I : Finset ℝ≥0) :
-    HasLaw
-      (fun ω ↦ I.restrict (fun t ↦ stoppedValue B (fun ω' ↦ τ ω' + t) ω - stoppedValue B τ ω))
-      (P (A ∩ {ω | τ ω ≠ ⊤}) • BrownianReal.projectiveFamily I)
-      (P.restrict (A ∩ {ω | τ ω ≠ ⊤})) := by
-  let U : ℝ≥0 → Ω → (I → ℝ) := fun s ω i ↦ B (s + i.val) ω - B s ω
-  have hm (s : ℝ≥0) : Measurable (U s) :=
-    Measurable.of_eval fun i ↦
-      (hB.adapted.measurable (i := s + i.val)).sub (hB.adapted.measurable (i := s))
-  have hlaw (s : ℝ≥0) : HasLaw (U s) (BrownianReal.projectiveFamily I) P :=
-    (hB.toIsPreBrownianReal.shift s).hasLaw I
-  have hind (s : ℝ≥0) : Indep (.comap (U s) inferInstance) (ℱ s) P := by
-    refine indep_of_indep_of_le_left (hB.indep_shift s) ?_
-    have hcomp : U s = I.restrict ∘ fun ω t ↦ B (s + t) ω - B s ω := rfl
-    rw [hcomp, ← MeasurableSpace.comap_comp]
-    exact MeasurableSpace.comap_mono I.measurable_restrict.comap_le
-  have hA'_meas : MeasurableSet (A ∩ {ω | τ ω ≠ ⊤}) :=
-    (hτ.measurableSpace_le _ hA).inter hτ.measurableSet_eq_top.compl
-  refine (hτ.hasLaw_restrict_stoppedValue_of_countable_range hc hm hlaw hind hA).congr ?_
-  filter_upwards [ae_restrict_of_forall_mem hA'_meas fun _ hω ↦ hω.2] with ω hω
-  ext i
-  dsimp only [Finset.restrict_def, U]
-  exact stoppedValue_add_const_sub_stoppedValue (u := B) (τ := τ) i.val hω
-
-/-- At a countable-range stopping time `τ`, on `A ∩ {τ ≠ ⊤}` for any `A ∈ hτ.measurableSpace`,
 the entire restarted increment path has law `P (A ∩ {τ ≠ ⊤}) • P.map B`. -/
-theorem hasLaw_restrict_shift_of_countable_range (hB : IsFilteredPreBrownianReal ℱ B P)
+theorem hasLaw_restrict_stoppedValue_shift_of_countable_range (hB : IsFilteredPreBrownianReal ℱ B P)
     (hτ : IsStoppingTime ℱ τ) (hc : (range τ).Countable) {A : Set Ω}
     (hA : MeasurableSet[hτ.measurableSpace] A) :
     HasLaw (fun ω (t : ℝ≥0) ↦ stoppedValue B (fun ω' ↦ τ ω' + t) ω - stoppedValue B τ ω)
       (P (A ∩ {ω | τ ω ≠ ⊤}) • P.map (fun ω t ↦ B t ω))
-      (P.restrict (A ∩ {ω | τ ω ≠ ⊤})) := by
-  have := (hB.hasLaw_eval 0).isProbabilityMeasure
-  have hA'_meas : MeasurableSet (A ∩ {ω | τ ω ≠ ⊤}) :=
-    (hτ.measurableSpace_le _ hA).inter hτ.measurableSet_eq_top.compl
-  have hstop_meas :
-      Measurable (stoppedValue (fun s ω (t : ℝ≥0) ↦ B (s + t) ω - B s ω) τ) :=
-    hτ.measurable_stoppedValue_of_countable_range hc fun s ↦
-      measurable_pi_iff.2 fun t ↦
-        (hB.adapted.measurable (i := s + t)).sub (hB.adapted.measurable (i := s))
-  have hX_ae :
-      AEMeasurable (fun ω (t : ℝ≥0) ↦ stoppedValue B (fun ω' ↦ τ ω' + t) ω - stoppedValue B τ ω)
-        (P.restrict (A ∩ {ω | τ ω ≠ ⊤})) := by
-    refine hstop_meas.aemeasurable.congr ?_
-    filter_upwards [ae_restrict_of_forall_mem hA'_meas fun _ hω ↦ hω.2] with ω hω
-    funext t
-    exact (stoppedValue_add_const_sub_stoppedValue (u := B) (τ := τ) t hω).symm
-  have hB_ae : AEMeasurable (fun ω t ↦ B t ω) P :=
-    (measurable_pi_iff.2 fun _ ↦ hB.adapted.measurable).aemeasurable
-  exact HasLaw.smul_map_of_forall_finset_restrict hX_ae hB_ae
-    (hB.hasLaw_restrict_finset_shift_of_countable_range hτ hc hA) hB.hasLaw
+      (P.restrict (A ∩ {ω | τ ω ≠ ⊤})) :=
+  hτ.hasLaw_restrict_stoppedValue_add_const_sub_stoppedValue_of_countable_range hc hB.hasLaw_shift
+    hB.indep_shift hA
+
+/-- At a countable-range stopping time `τ`, on `A ∩ {τ ≠ ⊤}` for any `A ∈ hτ.measurableSpace`,
+each finite-dimensional marginal of the restarted increment process has the Brownian projective
+law scaled by `P (A ∩ {τ ≠ ⊤})`. No path continuity is required. -/
+theorem hasLaw_restrict_finset_restrict_stoppedValue_shift_of_countable_range
+    (hB : IsFilteredPreBrownianReal ℱ B P) (hτ : IsStoppingTime ℱ τ) (hc : (range τ).Countable)
+    {A : Set Ω} (hA : MeasurableSet[hτ.measurableSpace] A) (I : Finset ℝ≥0) :
+    HasLaw
+      (fun ω ↦ I.restrict (fun t ↦ stoppedValue B (fun ω' ↦ τ ω' + t) ω - stoppedValue B τ ω))
+      (P (A ∩ {ω | τ ω ≠ ⊤}) • BrownianReal.projectiveFamily I)
+      (P.restrict (A ∩ {ω | τ ω ≠ ⊤})) :=
+  hasLaw_finset_restrict_of_hasLaw_smul_map hB
+    (hB.hasLaw_restrict_stoppedValue_shift_of_countable_range hτ hc hA) I
 
 /-- At an almost-surely finite stopping time with countable range, the restarted increment
 process of a filtered pre-Brownian motion is pre-Brownian. -/
-theorem isPreBrownianReal_shift_of_countable_range (hB : IsFilteredPreBrownianReal ℱ B P)
-    (hτ : IsStoppingTime ℱ τ) (hc : (range τ).Countable) (hfin : ∀ᵐ ω ∂P, τ ω ≠ ⊤) :
+theorem isPreBrownianReal_stoppedValue_shift_of_countable_range
+    (hB : IsFilteredPreBrownianReal ℱ B P) (hτ : IsStoppingTime ℱ τ) (hc : (range τ).Countable)
+    (hfin : ∀ᵐ ω ∂P, τ ω ≠ ⊤) :
     IsPreBrownianReal (fun t ω ↦ stoppedValue B (fun ω' ↦ τ ω' + t) ω - stoppedValue B τ ω) P := by
   have := (hB.hasLaw_eval 0).isProbabilityMeasure
   refine ⟨fun I ↦ ?_⟩
@@ -150,85 +126,60 @@ theorem isPreBrownianReal_shift_of_countable_range (hB : IsFilteredPreBrownianRe
         (fun ω ↦ I.restrict (fun t ↦ stoppedValue B (fun ω' ↦ τ ω' + t) ω - stoppedValue B τ ω))
         (P {ω | τ ω ≠ ⊤} • BrownianReal.projectiveFamily I)
         (P.restrict {ω | τ ω ≠ ⊤}) := by
-    simpa using hB.hasLaw_restrict_finset_shift_of_countable_range hτ hc .univ I
+    simpa using
+      hB.hasLaw_restrict_finset_restrict_stoppedValue_shift_of_countable_range hτ hc .univ I
   exact hrest.of_restrict_of_ae_mem hfin
 
 /-- At an almost-surely finite stopping time with countable range, the entire restarted increment
 path of a filtered pre-Brownian motion is independent of `hτ.measurableSpace`. -/
-theorem indep_shift_of_countable_range (hB : IsFilteredPreBrownianReal ℱ B P)
+theorem indep_stoppedValue_shift_of_countable_range (hB : IsFilteredPreBrownianReal ℱ B P)
     (hτ : IsStoppingTime ℱ τ) (hc : (range τ).Countable) (hfin : ∀ᵐ ω ∂P, τ ω ≠ ⊤) :
     Indep
       (.comap (fun ω (t : ℝ≥0) ↦ stoppedValue B (fun ω' ↦ τ ω' + t) ω - stoppedValue B τ ω)
         inferInstance)
       hτ.measurableSpace P := by
   have := (hB.hasLaw_eval 0).isProbabilityMeasure
-  exact indep_comap_of_forall_hasLaw_restrict_inter (F := {ω | τ ω ≠ ⊤}) hτ.measurableSpace_le hfin
-    fun _ hA ↦ hB.hasLaw_restrict_shift_of_countable_range hτ hc hA
+  exact hτ.indep_stoppedValue_add_const_sub_stoppedValue_of_countable_range hc hfin hB.hasLaw_shift
+    hB.indep_shift
 
 /-! ### General stopping times on an arbitrary filtration -/
-
-/-- At an arbitrary stopping time `τ` of `ℱ`, if `B` has almost surely right-continuous paths,
-then on `A ∩ {τ ≠ ⊤}` for any `A ∈ hτ.measurableSpace` each finite-dimensional marginal of the
-restarted increment process has the Brownian projective law scaled by `P (A ∩ {τ ≠ ⊤})`. -/
-theorem hasLaw_restrict_finset_shift (hB : IsFilteredPreBrownianReal ℱ B P)
-    (hrc : ∀ᵐ ω ∂P, IsRightContinuous (B · ω)) (hτ : IsStoppingTime ℱ τ) {A : Set Ω}
-    (hA : MeasurableSet[hτ.measurableSpace] A) (I : Finset ℝ≥0) :
-    HasLaw
-      (fun ω ↦ I.restrict (fun t ↦ stoppedValue B (fun ω' ↦ τ ω' + t) ω - stoppedValue B τ ω))
-      (P (A ∩ {ω | τ ω ≠ ⊤}) • BrownianReal.projectiveFamily I)
-      (P.restrict (A ∩ {ω | τ ω ≠ ⊤})) := by
-  have := (hB.hasLaw_eval 0).isProbabilityMeasure
-  let U : ℝ≥0 → Ω → (I → ℝ) := fun s ω i ↦ B (s + i.val) ω - B s ω
-  have hm (s : ℝ≥0) : Measurable (U s) :=
-    Measurable.of_eval fun i ↦
-      (hB.adapted.measurable (i := s + i.val)).sub (hB.adapted.measurable (i := s))
-  have hU_rc : ∀ᵐ ω ∂P, IsRightContinuous (fun s ↦ U s ω) := by
-    filter_upwards [hrc] with ω hω s
-    refine continuousWithinAt_pi.2 fun i ↦ ?_
-    have hshift : ContinuousWithinAt (fun u : ℝ≥0 ↦ B (u + i.val) ω) (Ioi s) s :=
-      (hω (s + i.val)).comp (f := fun u : ℝ≥0 ↦ u + i.val) (by fun_prop)
-        (fun u (hu : s < u) ↦ add_lt_add_of_lt_of_le hu le_rfl)
-    exact hshift.sub (hω s)
-  have hlaw (s : ℝ≥0) : HasLaw (U s) (BrownianReal.projectiveFamily I) P :=
-    (hB.toIsPreBrownianReal.shift s).hasLaw I
-  have hind (s : ℝ≥0) : Indep (.comap (U s) inferInstance) (ℱ s) P := by
-    refine indep_of_indep_of_le_left (hB.indep_shift s) ?_
-    have hcomp : U s = I.restrict ∘ fun ω t ↦ B (s + t) ω - B s ω := rfl
-    rw [hcomp, ← MeasurableSpace.comap_comp]
-    exact MeasurableSpace.comap_mono I.measurable_restrict.comap_le
-  have hA'_meas : MeasurableSet (A ∩ {ω | τ ω ≠ ⊤}) :=
-    (hτ.measurableSpace_le _ hA).inter hτ.measurableSet_eq_top.compl
-  refine (hτ.hasLaw_restrict_stoppedValue hm hU_rc hlaw hind hA).congr ?_
-  filter_upwards [ae_restrict_of_forall_mem hA'_meas fun _ hω ↦ hω.2] with ω hω
-  ext i
-  dsimp only [Finset.restrict_def, U]
-  exact stoppedValue_add_const_sub_stoppedValue (u := B) (τ := τ) i.val hω
 
 /-- **Restricted path-space strong Markov law.** At an arbitrary stopping time `τ` of `ℱ`, if `B`
 has almost surely right-continuous paths, then on `A ∩ {τ ≠ ⊤}` for any `A ∈ hτ.measurableSpace`
 the restarted increment path has law `P (A ∩ {τ ≠ ⊤}) • P.map B`. -/
-theorem hasLaw_restrict_shift (hB : IsFilteredPreBrownianReal ℱ B P)
+theorem hasLaw_restrict_stoppedValue_shift (hB : IsFilteredPreBrownianReal ℱ B P)
     (hrc : ∀ᵐ ω ∂P, IsRightContinuous (B · ω)) (hτ : IsStoppingTime ℱ τ) {A : Set Ω}
     (hA : MeasurableSet[hτ.measurableSpace] A) :
     HasLaw (fun ω (t : ℝ≥0) ↦ stoppedValue B (fun ω' ↦ τ ω' + t) ω - stoppedValue B τ ω)
       (P (A ∩ {ω | τ ω ≠ ⊤}) • P.map (fun ω t ↦ B t ω))
       (P.restrict (A ∩ {ω | τ ω ≠ ⊤})) := by
   have := (hB.hasLaw_eval 0).isProbabilityMeasure
-  exact HasLaw.smul_map_of_forall_finset_restrict
-    (hτ.aemeasurable_stoppedValue_add_const_sub (fun _ ↦ hB.adapted.measurable) hrc).restrict
-    (measurable_pi_iff.2 fun _ ↦ hB.adapted.measurable).aemeasurable
-    (hB.hasLaw_restrict_finset_shift hrc hτ hA) hB.hasLaw
+  exact hτ.hasLaw_restrict_stoppedValue_add_const_sub_stoppedValue hrc hB.hasLaw_shift
+    hB.indep_shift hA
 
-/-- Joint event factorization at a possibly infinite stopping time `τ` of `ℱ`: for
-`A ∈ hτ.measurableSpace` and any measurable path event `S`, the probability of `A ∩ {τ ≠ ⊤}` and
-the restarted path lying in `S` factors as `P (A ∩ {τ ≠ ⊤}) * P (B ∈ S)`. -/
-theorem measure_inter_preimage_shift (hB : IsFilteredPreBrownianReal ℱ B P)
+/-- At an arbitrary stopping time `τ` of `ℱ`, if `B` has almost surely right-continuous paths,
+then on `A ∩ {τ ≠ ⊤}` for any `A ∈ hτ.measurableSpace` each finite-dimensional marginal of the
+restarted increment process has the Brownian projective law scaled by `P (A ∩ {τ ≠ ⊤})`. -/
+theorem hasLaw_restrict_finset_restrict_stoppedValue_shift (hB : IsFilteredPreBrownianReal ℱ B P)
+    (hrc : ∀ᵐ ω ∂P, IsRightContinuous (B · ω)) (hτ : IsStoppingTime ℱ τ) {A : Set Ω}
+    (hA : MeasurableSet[hτ.measurableSpace] A) (I : Finset ℝ≥0) :
+    HasLaw
+      (fun ω ↦ I.restrict (fun t ↦ stoppedValue B (fun ω' ↦ τ ω' + t) ω - stoppedValue B τ ω))
+      (P (A ∩ {ω | τ ω ≠ ⊤}) • BrownianReal.projectiveFamily I)
+      (P.restrict (A ∩ {ω | τ ω ≠ ⊤})) :=
+  hasLaw_finset_restrict_of_hasLaw_smul_map hB (hB.hasLaw_restrict_stoppedValue_shift hrc hτ hA) I
+
+/-- Joint event factorization at a possibly infinite stopping time `τ` of `ℱ` when `B` has almost
+surely right-continuous paths: for `A ∈ hτ.measurableSpace` and any measurable path event `S`, the
+probability of `A ∩ {τ ≠ ⊤}` and the restarted path lying in `S` factors as
+`P (A ∩ {τ ≠ ⊤}) * P (B ∈ S)`. -/
+theorem measure_inter_preimage_stoppedValue_shift (hB : IsFilteredPreBrownianReal ℱ B P)
     (hrc : ∀ᵐ ω ∂P, IsRightContinuous (B · ω)) (hτ : IsStoppingTime ℱ τ) {A : Set Ω}
     (hA : MeasurableSet[hτ.measurableSpace] A) {S : Set (ℝ≥0 → ℝ)} (hS : MeasurableSet S) :
     P (A ∩ {ω | τ ω ≠ ⊤} ∩
         (fun ω (t : ℝ≥0) ↦ stoppedValue B (fun ω' ↦ τ ω' + t) ω - stoppedValue B τ ω) ⁻¹' S) =
       P (A ∩ {ω | τ ω ≠ ⊤}) * P ((fun ω t ↦ B t ω) ⁻¹' S) := by
-  have hlaw := hB.hasLaw_restrict_shift hrc hτ hA
+  have hlaw := hB.hasLaw_restrict_stoppedValue_shift hrc hτ hA
   have hA'_meas : MeasurableSet (A ∩ {ω | τ ω ≠ ⊤}) :=
     (hτ.measurableSpace_le _ hA).inter hτ.measurableSet_eq_top.compl
   have hB_meas : Measurable (fun ω t ↦ B t ω) := measurable_pi_iff.2 fun _ ↦ hB.adapted.measurable
@@ -236,34 +187,37 @@ theorem measure_inter_preimage_shift (hB : IsFilteredPreBrownianReal ℱ B P)
     ← Measure.map_apply_of_aemeasurable hlaw.aemeasurable hS, hlaw.map_eq, smul_apply, smul_eq_mul,
     Measure.map_apply hB_meas hS]
 
-/-- Conditioning on any positive-probability event `A ∩ {τ ≠ ⊤}` with `A ∈ hτ.measurableSpace`
-makes the restarted increment process pre-Brownian. -/
-theorem isPreBrownianReal_cond_shift (hB : IsFilteredPreBrownianReal ℱ B P)
+/-- When `B` has almost surely right-continuous paths, conditioning on any positive-probability
+event `A ∩ {τ ≠ ⊤}` with `A ∈ hτ.measurableSpace` makes the restarted increment process
+pre-Brownian. -/
+theorem isPreBrownianReal_cond_stoppedValue_shift (hB : IsFilteredPreBrownianReal ℱ B P)
     (hrc : ∀ᵐ ω ∂P, IsRightContinuous (B · ω)) (hτ : IsStoppingTime ℱ τ) {A : Set Ω}
     (hA : MeasurableSet[hτ.measurableSpace] A) (hpos : P (A ∩ {ω | τ ω ≠ ⊤}) ≠ 0) :
     IsPreBrownianReal (fun t ω ↦ stoppedValue B (fun ω' ↦ τ ω' + t) ω - stoppedValue B τ ω)
       (ProbabilityTheory.cond P (A ∩ {ω | τ ω ≠ ⊤})) := by
   have := (hB.hasLaw_eval 0).isProbabilityMeasure
   exact ⟨fun I ↦
-    (hB.hasLaw_restrict_finset_shift hrc hτ hA I).cond_of_restrict hpos (measure_ne_top P _)⟩
+    (hB.hasLaw_restrict_finset_restrict_stoppedValue_shift hrc hτ hA I).cond_of_restrict hpos
+      (measure_ne_top P _)⟩
 
-/-- **Conditional strong Markov restart.** Conditioning on any positive-probability event
-`A ∩ {τ ≠ ⊤}` with `A ∈ hτ.measurableSpace` makes the restarted increment process a Brownian
-motion. -/
-theorem isBrownianReal_cond_shift (hB : IsFilteredPreBrownianReal ℱ B P)
+/-- **Conditional strong Markov restart.** When `B` has almost surely continuous paths, conditioning
+on any positive-probability event `A ∩ {τ ≠ ⊤}` with `A ∈ hτ.measurableSpace` makes the restarted
+increment process a Brownian motion. -/
+theorem isBrownianReal_cond_stoppedValue_shift (hB : IsFilteredPreBrownianReal ℱ B P)
     (hcont : ∀ᵐ ω ∂P, Continuous (B · ω)) (hτ : IsStoppingTime ℱ τ) {A : Set Ω}
     (hA : MeasurableSet[hτ.measurableSpace] A) (hpos : P (A ∩ {ω | τ ω ≠ ⊤}) ≠ 0) :
     IsBrownianReal (fun t ω ↦ stoppedValue B (fun ω' ↦ τ ω' + t) ω - stoppedValue B τ ω)
       (ProbabilityTheory.cond P (A ∩ {ω | τ ω ≠ ⊤})) where
   toIsPreBrownianReal :=
-    hB.isPreBrownianReal_cond_shift (hcont.mono fun _ hω ↦ hω.isRightContinuous) hτ hA hpos
+    hB.isPreBrownianReal_cond_stoppedValue_shift (hcont.mono fun _ hω ↦ hω.isRightContinuous) hτ hA
+      hpos
   cont :=
     (hcont.mono fun _ hω ↦ continuous_stoppedValue_add_const_sub_stoppedValue τ hω).filter_mono
       cond_absolutelyContinuous.ae_le
 
 /-- At an almost-surely finite stopping time of `ℱ`, the restarted increment process of an
 almost-surely right-continuous filtered pre-Brownian motion is pre-Brownian. -/
-theorem isPreBrownianReal_shift_stoppingTime (hB : IsFilteredPreBrownianReal ℱ B P)
+theorem isPreBrownianReal_stoppedValue_shift (hB : IsFilteredPreBrownianReal ℱ B P)
     (hrc : ∀ᵐ ω ∂P, IsRightContinuous (B · ω)) (hτ : IsStoppingTime ℱ τ)
     (hfin : ∀ᵐ ω ∂P, τ ω ≠ ⊤) :
     IsPreBrownianReal (fun t ω ↦ stoppedValue B (fun ω' ↦ τ ω' + t) ω - stoppedValue B τ ω) P := by
@@ -274,14 +228,14 @@ theorem isPreBrownianReal_shift_stoppingTime (hB : IsFilteredPreBrownianReal ℱ
         (fun ω ↦ I.restrict (fun t ↦ stoppedValue B (fun ω' ↦ τ ω' + t) ω - stoppedValue B τ ω))
         (P {ω | τ ω ≠ ⊤} • BrownianReal.projectiveFamily I)
         (P.restrict {ω | τ ω ≠ ⊤}) := by
-    simpa using hB.hasLaw_restrict_finset_shift hrc hτ .univ I
+    simpa using hB.hasLaw_restrict_finset_restrict_stoppedValue_shift hrc hτ .univ I
   exact hrest.of_restrict_of_ae_mem hfin
 
 /-- **Strong Markov property (independence).** At an almost-surely finite stopping time `τ` of `ℱ`,
 the entire restarted increment path of an almost-surely right-continuous filtered pre-Brownian
 motion is independent of `hτ.measurableSpace`. See
-`IsFilteredPreBrownianReal.isBrownianReal_shift_stoppingTime` for the Brownian law. -/
-theorem indep_shift_stoppingTime (hB : IsFilteredPreBrownianReal ℱ B P)
+`IsFilteredPreBrownianReal.isBrownianReal_stoppedValue_shift` for the Brownian law. -/
+theorem indep_stoppedValue_shift (hB : IsFilteredPreBrownianReal ℱ B P)
     (hrc : ∀ᵐ ω ∂P, IsRightContinuous (B · ω)) (hτ : IsStoppingTime ℱ τ)
     (hfin : ∀ᵐ ω ∂P, τ ω ≠ ⊤) :
     Indep
@@ -289,113 +243,121 @@ theorem indep_shift_stoppingTime (hB : IsFilteredPreBrownianReal ℱ B P)
         inferInstance)
       hτ.measurableSpace P := by
   have := (hB.hasLaw_eval 0).isProbabilityMeasure
-  exact indep_comap_of_forall_hasLaw_restrict_inter (F := {ω | τ ω ≠ ⊤}) hτ.measurableSpace_le hfin
-    fun _ hA ↦ hB.hasLaw_restrict_shift hrc hτ hA
+  exact hτ.indep_stoppedValue_add_const_sub_stoppedValue hfin hrc hB.hasLaw_shift hB.indep_shift
 
-/-- At an almost-surely finite stopping time `τ` of `ℱ`, any random variable measurable with
-respect to `hτ.measurableSpace` is independent of the entire restarted increment path. -/
-theorem indepFun_shift_stoppingTime {E : Type*} [MeasurableSpace E]
+/-- For an almost-surely right-continuous filtered pre-Brownian motion `B` and an almost-surely
+finite stopping time `τ` of `ℱ`, any random variable measurable with respect to
+`hτ.measurableSpace` is independent of the entire restarted increment path. -/
+theorem indepFun_stoppedValue_shift {E : Type*} [MeasurableSpace E]
     (hB : IsFilteredPreBrownianReal ℱ B P) (hrc : ∀ᵐ ω ∂P, IsRightContinuous (B · ω))
     (hτ : IsStoppingTime ℱ τ) (hfin : ∀ᵐ ω ∂P, τ ω ≠ ⊤) {Y : Ω → E}
     (hY : Measurable[hτ.measurableSpace] Y) :
     IndepFun
       (fun ω (t : ℝ≥0) ↦ stoppedValue B (fun ω' ↦ τ ω' + t) ω - stoppedValue B τ ω) Y P :=
   (IndepFun_iff_Indep _ _ _).2
-    (indep_of_indep_of_le_right (hB.indep_shift_stoppingTime hrc hτ hfin) hY.comap_le)
+    (indep_of_indep_of_le_right (hB.indep_stoppedValue_shift hrc hτ hfin) hY.comap_le)
 
 /-- **Strong Markov property (Brownian law).** At an almost-surely finite stopping time `τ` of `ℱ`,
 the restarted increment process of an almost-surely continuous filtered pre-Brownian motion is a
-Brownian motion. See `IsFilteredPreBrownianReal.indep_shift_stoppingTime` for independence from
+Brownian motion. See `IsFilteredPreBrownianReal.indep_stoppedValue_shift` for independence from
 `hτ.measurableSpace`. -/
-theorem isBrownianReal_shift_stoppingTime (hB : IsFilteredPreBrownianReal ℱ B P)
+theorem isBrownianReal_stoppedValue_shift (hB : IsFilteredPreBrownianReal ℱ B P)
     (hcont : ∀ᵐ ω ∂P, Continuous (B · ω)) (hτ : IsStoppingTime ℱ τ)
     (hfin : ∀ᵐ ω ∂P, τ ω ≠ ⊤) :
     IsBrownianReal (fun t ω ↦ stoppedValue B (fun ω' ↦ τ ω' + t) ω - stoppedValue B τ ω) P where
   toIsPreBrownianReal :=
-    hB.isPreBrownianReal_shift_stoppingTime (hcont.mono fun _ hω ↦ hω.isRightContinuous) hτ hfin
+    hB.isPreBrownianReal_stoppedValue_shift (hcont.mono fun _ hω ↦ hω.isRightContinuous) hτ hfin
   cont := hcont.mono fun _ hω ↦ continuous_stoppedValue_add_const_sub_stoppedValue τ hω
 
 /-! ### Stopping times of the right-continuous filtration `ℱ.rightCont` -/
 
 /-- Restricted path-space strong Markov law at a stopping time `τ` of the right-continuous
-filtration `ℱ.rightCont`. -/
-theorem hasLaw_restrict_shift_rightCont (hB : IsFilteredPreBrownianReal ℱ B P)
+filtration `ℱ.rightCont` when `B` has almost surely right-continuous paths. -/
+theorem hasLaw_restrict_stoppedValue_shift_rightCont (hB : IsFilteredPreBrownianReal ℱ B P)
     (hrc : ∀ᵐ ω ∂P, IsRightContinuous (B · ω)) (hτ : IsStoppingTime ℱ.rightCont τ) {A : Set Ω}
     (hA : MeasurableSet[hτ.measurableSpace] A) :
     HasLaw (fun ω (t : ℝ≥0) ↦ stoppedValue B (fun ω' ↦ τ ω' + t) ω - stoppedValue B τ ω)
       (P (A ∩ {ω | τ ω ≠ ⊤}) • P.map (fun ω t ↦ B t ω))
       (P.restrict (A ∩ {ω | τ ω ≠ ⊤})) :=
-  (hB.rightCont fun s ↦ hrc.mono fun _ hω ↦ hω s).hasLaw_restrict_shift hrc hτ hA
+  (hB.rightCont fun s ↦ hrc.mono fun _ hω ↦ hω s).hasLaw_restrict_stoppedValue_shift hrc hτ hA
 
-/-- Joint event factorization at a stopping time `τ` of `ℱ.rightCont`. -/
-theorem measure_inter_preimage_shift_rightCont (hB : IsFilteredPreBrownianReal ℱ B P)
+/-- Joint event factorization at a stopping time `τ` of `ℱ.rightCont` when `B` has almost surely
+right-continuous paths. -/
+theorem measure_inter_preimage_stoppedValue_shift_rightCont (hB : IsFilteredPreBrownianReal ℱ B P)
     (hrc : ∀ᵐ ω ∂P, IsRightContinuous (B · ω)) (hτ : IsStoppingTime ℱ.rightCont τ) {A : Set Ω}
     (hA : MeasurableSet[hτ.measurableSpace] A) {S : Set (ℝ≥0 → ℝ)} (hS : MeasurableSet S) :
     P (A ∩ {ω | τ ω ≠ ⊤} ∩
         (fun ω (t : ℝ≥0) ↦ stoppedValue B (fun ω' ↦ τ ω' + t) ω - stoppedValue B τ ω) ⁻¹' S) =
       P (A ∩ {ω | τ ω ≠ ⊤}) * P ((fun ω t ↦ B t ω) ⁻¹' S) :=
-  (hB.rightCont fun s ↦ hrc.mono fun _ hω ↦ hω s).measure_inter_preimage_shift hrc hτ hA hS
+  (hB.rightCont fun s ↦ hrc.mono fun _ hω ↦ hω s).measure_inter_preimage_stoppedValue_shift hrc hτ
+    hA hS
 
-/-- Conditioning on any positive-probability event `A ∩ {τ ≠ ⊤}` with `A ∈ hτ.measurableSpace` for
-an `ℱ.rightCont`-stopping time `τ` makes the restarted increment process pre-Brownian. -/
-theorem isPreBrownianReal_cond_shift_rightCont (hB : IsFilteredPreBrownianReal ℱ B P)
+/-- When `B` has almost surely right-continuous paths, conditioning on any positive-probability
+event `A ∩ {τ ≠ ⊤}` with `A ∈ hτ.measurableSpace` for an `ℱ.rightCont`-stopping time `τ` makes the
+restarted increment process pre-Brownian. -/
+theorem isPreBrownianReal_cond_stoppedValue_shift_rightCont (hB : IsFilteredPreBrownianReal ℱ B P)
     (hrc : ∀ᵐ ω ∂P, IsRightContinuous (B · ω)) (hτ : IsStoppingTime ℱ.rightCont τ) {A : Set Ω}
     (hA : MeasurableSet[hτ.measurableSpace] A) (hpos : P (A ∩ {ω | τ ω ≠ ⊤}) ≠ 0) :
     IsPreBrownianReal (fun t ω ↦ stoppedValue B (fun ω' ↦ τ ω' + t) ω - stoppedValue B τ ω)
       (ProbabilityTheory.cond P (A ∩ {ω | τ ω ≠ ⊤})) :=
-  (hB.rightCont fun s ↦ hrc.mono fun _ hω ↦ hω s).isPreBrownianReal_cond_shift hrc hτ hA hpos
+  (hB.rightCont fun s ↦ hrc.mono fun _ hω ↦ hω s).isPreBrownianReal_cond_stoppedValue_shift hrc hτ
+    hA hpos
 
-/-- Conditioning on any positive-probability event `A ∩ {τ ≠ ⊤}` with `A ∈ hτ.measurableSpace` for
-an `ℱ.rightCont`-stopping time `τ` makes the restarted increment process a Brownian motion. -/
-theorem isBrownianReal_cond_shift_rightCont (hB : IsFilteredPreBrownianReal ℱ B P)
+/-- When `B` has almost surely continuous paths, conditioning on any positive-probability event
+`A ∩ {τ ≠ ⊤}` with `A ∈ hτ.measurableSpace` for an `ℱ.rightCont`-stopping time `τ` makes the
+restarted increment process a Brownian motion. -/
+theorem isBrownianReal_cond_stoppedValue_shift_rightCont (hB : IsFilteredPreBrownianReal ℱ B P)
     (hcont : ∀ᵐ ω ∂P, Continuous (B · ω)) (hτ : IsStoppingTime ℱ.rightCont τ) {A : Set Ω}
     (hA : MeasurableSet[hτ.measurableSpace] A) (hpos : P (A ∩ {ω | τ ω ≠ ⊤}) ≠ 0) :
     IsBrownianReal (fun t ω ↦ stoppedValue B (fun ω' ↦ τ ω' + t) ω - stoppedValue B τ ω)
       (ProbabilityTheory.cond P (A ∩ {ω | τ ω ≠ ⊤})) :=
-  (hB.rightCont fun _ ↦ hcont.mono fun _ hω ↦ hω.continuousWithinAt).isBrownianReal_cond_shift
-    hcont hτ hA hpos
+  (hB.rightCont fun _ ↦
+    hcont.mono fun _ hω ↦ hω.continuousWithinAt).isBrownianReal_cond_stoppedValue_shift hcont hτ hA
+    hpos
 
 /-- At an almost-surely finite stopping time of `ℱ.rightCont`, the restarted increment process of
 an almost-surely right-continuous filtered pre-Brownian motion is pre-Brownian. -/
-theorem isPreBrownianReal_shift_stoppingTime_rightCont (hB : IsFilteredPreBrownianReal ℱ B P)
+theorem isPreBrownianReal_stoppedValue_shift_rightCont (hB : IsFilteredPreBrownianReal ℱ B P)
     (hrc : ∀ᵐ ω ∂P, IsRightContinuous (B · ω)) (hτ : IsStoppingTime ℱ.rightCont τ)
     (hfin : ∀ᵐ ω ∂P, τ ω ≠ ⊤) :
     IsPreBrownianReal (fun t ω ↦ stoppedValue B (fun ω' ↦ τ ω' + t) ω - stoppedValue B τ ω) P :=
-  (hB.rightCont fun s ↦ hrc.mono fun _ hω ↦ hω s).isPreBrownianReal_shift_stoppingTime hrc hτ hfin
+  (hB.rightCont fun s ↦ hrc.mono fun _ hω ↦ hω s).isPreBrownianReal_stoppedValue_shift hrc hτ hfin
 
 /-- **Strong Markov property on `ℱ.rightCont` (independence).** At an almost-surely finite stopping
-time of `ℱ.rightCont`, the entire restarted increment path is independent of `hτ.measurableSpace`.
-See `IsFilteredPreBrownianReal.isBrownianReal_shift_stoppingTime_rightCont` for the Brownian law. -/
-theorem indep_shift_stoppingTime_rightCont (hB : IsFilteredPreBrownianReal ℱ B P)
+time of `ℱ.rightCont`, the entire restarted increment path of an almost-surely right-continuous
+filtered pre-Brownian motion is independent of `hτ.measurableSpace`. See
+`IsFilteredPreBrownianReal.isBrownianReal_stoppedValue_shift_rightCont` for the Brownian law. -/
+theorem indep_stoppedValue_shift_rightCont (hB : IsFilteredPreBrownianReal ℱ B P)
     (hrc : ∀ᵐ ω ∂P, IsRightContinuous (B · ω)) (hτ : IsStoppingTime ℱ.rightCont τ)
     (hfin : ∀ᵐ ω ∂P, τ ω ≠ ⊤) :
     Indep
       (.comap (fun ω (t : ℝ≥0) ↦ stoppedValue B (fun ω' ↦ τ ω' + t) ω - stoppedValue B τ ω)
         inferInstance)
       hτ.measurableSpace P :=
-  (hB.rightCont fun s ↦ hrc.mono fun _ hω ↦ hω s).indep_shift_stoppingTime hrc hτ hfin
+  (hB.rightCont fun s ↦ hrc.mono fun _ hω ↦ hω s).indep_stoppedValue_shift hrc hτ hfin
 
-/-- At an almost-surely finite stopping time `τ` of `ℱ.rightCont`, any random variable measurable
-with respect to `hτ.measurableSpace` is independent of the entire restarted increment path. -/
-theorem indepFun_shift_stoppingTime_rightCont {E : Type*} [MeasurableSpace E]
+/-- For an almost-surely right-continuous filtered pre-Brownian motion `B` and an almost-surely
+finite stopping time `τ` of `ℱ.rightCont`, any random variable measurable with respect to
+`hτ.measurableSpace` is independent of the entire restarted increment path. -/
+theorem indepFun_stoppedValue_shift_rightCont {E : Type*} [MeasurableSpace E]
     (hB : IsFilteredPreBrownianReal ℱ B P) (hrc : ∀ᵐ ω ∂P, IsRightContinuous (B · ω))
     (hτ : IsStoppingTime ℱ.rightCont τ) (hfin : ∀ᵐ ω ∂P, τ ω ≠ ⊤) {Y : Ω → E}
     (hY : Measurable[hτ.measurableSpace] Y) :
     IndepFun
       (fun ω (t : ℝ≥0) ↦ stoppedValue B (fun ω' ↦ τ ω' + t) ω - stoppedValue B τ ω) Y P :=
-  (hB.rightCont fun s ↦ hrc.mono fun _ hω ↦ hω s).indepFun_shift_stoppingTime hrc hτ hfin hY
+  (hB.rightCont fun s ↦ hrc.mono fun _ hω ↦ hω s).indepFun_stoppedValue_shift hrc hτ hfin hY
 
 /-- **Strong Markov property on `ℱ.rightCont` (Brownian law).** At an almost-surely finite stopping
 time of `ℱ.rightCont`, the restarted increment process of an almost-surely continuous filtered
 pre-Brownian motion is a Brownian motion. See
-`IsFilteredPreBrownianReal.indep_shift_stoppingTime_rightCont` for independence from
+`IsFilteredPreBrownianReal.indep_stoppedValue_shift_rightCont` for independence from
 `hτ.measurableSpace`. -/
-theorem isBrownianReal_shift_stoppingTime_rightCont (hB : IsFilteredPreBrownianReal ℱ B P)
+theorem isBrownianReal_stoppedValue_shift_rightCont (hB : IsFilteredPreBrownianReal ℱ B P)
     (hcont : ∀ᵐ ω ∂P, Continuous (B · ω)) (hτ : IsStoppingTime ℱ.rightCont τ)
     (hfin : ∀ᵐ ω ∂P, τ ω ≠ ⊤) :
     IsBrownianReal (fun t ω ↦ stoppedValue B (fun ω' ↦ τ ω' + t) ω - stoppedValue B τ ω) P :=
   (hB.rightCont fun _ ↦
-    hcont.mono fun _ hω ↦ hω.continuousWithinAt).isBrownianReal_shift_stoppingTime hcont hτ hfin
+    hcont.mono fun _ hω ↦ hω.continuousWithinAt).isBrownianReal_stoppedValue_shift hcont hτ hfin
 
 end TauCeti.Probability.IsFilteredPreBrownianReal
 
@@ -409,52 +371,52 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {B : ℝ≥0 �
 /-- **Strong Markov property on the natural filtration (Brownian law).** For a Brownian motion `B`
 with strongly measurable coordinates and an almost-surely finite stopping time `τ` of its natural
 filtration, the restarted increment process is a Brownian motion. See
-`IsBrownianReal.indep_shift_stoppingTime_natural` for independence from `hτ.measurableSpace`. -/
-theorem shift_stoppingTime_natural (hB : IsBrownianReal B P)
+`IsBrownianReal.indep_stoppedValue_shift_natural` for independence from `hτ.measurableSpace`. -/
+theorem stoppedValue_shift_natural (hB : IsBrownianReal B P)
     (hmeas : ∀ t, StronglyMeasurable (B t))
     (hτ : IsStoppingTime (Filtration.natural B hmeas) τ) (hfin : ∀ᵐ ω ∂P, τ ω ≠ ⊤) :
     IsBrownianReal (fun t ω ↦ stoppedValue B (fun ω' ↦ τ ω' + t) ω - stoppedValue B τ ω) P :=
-  (hB.isFilteredPreBrownianReal_natural hmeas).isBrownianReal_shift_stoppingTime hB.cont hτ hfin
+  (hB.isFilteredPreBrownianReal_natural hmeas).isBrownianReal_stoppedValue_shift hB.cont hτ hfin
 
 /-- **Strong Markov property on the natural filtration (independence).** For a Brownian motion `B`
 with strongly measurable coordinates and an almost-surely finite stopping time `τ` of its natural
 filtration, the entire restarted increment path is independent of `hτ.measurableSpace`. See
-`IsBrownianReal.shift_stoppingTime_natural` for the Brownian law. -/
-theorem indep_shift_stoppingTime_natural (hB : IsBrownianReal B P)
+`IsBrownianReal.stoppedValue_shift_natural` for the Brownian law. -/
+theorem indep_stoppedValue_shift_natural (hB : IsBrownianReal B P)
     (hmeas : ∀ t, StronglyMeasurable (B t))
     (hτ : IsStoppingTime (Filtration.natural B hmeas) τ) (hfin : ∀ᵐ ω ∂P, τ ω ≠ ⊤) :
     Indep
       (.comap (fun ω (t : ℝ≥0) ↦ stoppedValue B (fun ω' ↦ τ ω' + t) ω - stoppedValue B τ ω)
         inferInstance)
       hτ.measurableSpace P :=
-  (hB.isFilteredPreBrownianReal_natural hmeas).indep_shift_stoppingTime
+  (hB.isFilteredPreBrownianReal_natural hmeas).indep_stoppedValue_shift
     (hB.cont.mono fun _ hω ↦ hω.isRightContinuous) hτ hfin
 
 /-- **Strong Markov property on the right-continuous natural filtration (Brownian law).** For a
 Brownian motion `B` with strongly measurable coordinates and an almost-surely finite stopping time
 `τ` of `(Filtration.natural B hmeas).rightCont`, the restarted increment process is a Brownian
-motion. See `IsBrownianReal.indep_shift_stoppingTime_rightCont_natural` for independence from
+motion. See `IsBrownianReal.indep_stoppedValue_shift_rightCont_natural` for independence from
 `hτ.measurableSpace`. -/
-theorem shift_stoppingTime_rightCont_natural (hB : IsBrownianReal B P)
+theorem stoppedValue_shift_rightCont_natural (hB : IsBrownianReal B P)
     (hmeas : ∀ t, StronglyMeasurable (B t))
     (hτ : IsStoppingTime (Filtration.natural B hmeas).rightCont τ) (hfin : ∀ᵐ ω ∂P, τ ω ≠ ⊤) :
     IsBrownianReal (fun t ω ↦ stoppedValue B (fun ω' ↦ τ ω' + t) ω - stoppedValue B τ ω) P :=
-  (hB.isFilteredPreBrownianReal_natural hmeas).isBrownianReal_shift_stoppingTime_rightCont hB.cont
+  (hB.isFilteredPreBrownianReal_natural hmeas).isBrownianReal_stoppedValue_shift_rightCont hB.cont
     hτ hfin
 
 /-- **Strong Markov property on the right-continuous natural filtration (independence).** For a
 Brownian motion `B` with strongly measurable coordinates and an almost-surely finite stopping time
 `τ` of `(Filtration.natural B hmeas).rightCont`, the entire restarted increment path is independent
-of `hτ.measurableSpace`. See `IsBrownianReal.shift_stoppingTime_rightCont_natural` for the Brownian
+of `hτ.measurableSpace`. See `IsBrownianReal.stoppedValue_shift_rightCont_natural` for the Brownian
 law. -/
-theorem indep_shift_stoppingTime_rightCont_natural (hB : IsBrownianReal B P)
+theorem indep_stoppedValue_shift_rightCont_natural (hB : IsBrownianReal B P)
     (hmeas : ∀ t, StronglyMeasurable (B t))
     (hτ : IsStoppingTime (Filtration.natural B hmeas).rightCont τ) (hfin : ∀ᵐ ω ∂P, τ ω ≠ ⊤) :
     Indep
       (.comap (fun ω (t : ℝ≥0) ↦ stoppedValue B (fun ω' ↦ τ ω' + t) ω - stoppedValue B τ ω)
         inferInstance)
       hτ.measurableSpace P :=
-  (hB.isFilteredPreBrownianReal_natural hmeas).indep_shift_stoppingTime_rightCont
+  (hB.isFilteredPreBrownianReal_natural hmeas).indep_stoppedValue_shift_rightCont
     (hB.cont.mono fun _ hω ↦ hω.isRightContinuous) hτ hfin
 
 end ProbabilityTheory.IsBrownianReal

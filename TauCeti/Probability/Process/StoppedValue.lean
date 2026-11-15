@@ -31,8 +31,9 @@ These are the measurability facts needed to state the strong Markov property of 
 in an arbitrary measurable space.
 
 Even for uncountable time, a random time with countable range and measurable level sets—in
-particular any countable-range stopping time—makes the stopped value of a coordinatewise measurable
-process measurable in the ambient σ-algebra
+particular any countable-range stopping time, whose infinite level set belongs to the stopping
+σ-algebra by `MeasureTheory.IsStoppingTime.measurableSet_eq_top_of_countable_range`—makes the
+stopped value of a coordinatewise measurable process measurable in the ambient σ-algebra
 (`MeasureTheory.IsStoppingTime.measurable_stoppedValue_of_countable_range`), and permits strongly
 measurable gluing for adapted processes without any topology on time and without a separability
 assumption or any algebraic structure on the values. Capping such a time at each deterministic
@@ -50,6 +51,26 @@ public section
 open Filter
 
 namespace MeasureTheory
+
+/-- At a stopping time `τ` with countable range over a partial order, the infinite level set
+`{ω | τ ω = ⊤}` is measurable with respect to the stopping σ-algebra `hτ.measurableSpace`. -/
+theorem IsStoppingTime.measurableSet_eq_top_of_countable_range {Ω ι : Type*} [PartialOrder ι]
+    {m : MeasurableSpace Ω} {ℱ : Filtration ι m} {τ : Ω → WithTop ι} (hτ : IsStoppingTime ℱ τ)
+    (hc : (Set.range τ).Countable) :
+    MeasurableSet[hτ.measurableSpace] {ω | τ ω = ⊤} := by
+  have hR : {i : ι | (i : WithTop ι) ∈ Set.range τ}.Countable :=
+    hc.preimage WithTop.coe_injective
+  have hmeas (i : ι) : MeasurableSet[hτ.measurableSpace] {ω | τ ω = i} := by
+    rw [← Set.univ_inter {ω | τ ω = i}, hτ.measurableSet_inter_eq_iff, Set.univ_inter]
+    exact hτ.measurableSet_eq_of_countable_range hc i
+  have htop : {ω | τ ω = ⊤} =
+      (⋃ i ∈ {i : ι | (i : WithTop ι) ∈ Set.range τ}, {ω | τ ω = i})ᶜ := by
+    ext ω
+    cases h : τ ω with
+    | top => simp [h]
+    | coe i => simpa [h] using (⟨ω, h⟩ : ∃ y, τ y = (i : WithTop ι))
+  rw [htop]
+  exact (MeasurableSet.biUnion hR fun i _ ↦ hmeas i).compl
 
 variable {Ω ι β : Type*} [Nonempty ι] {m : MeasurableSpace Ω} {u : ι → Ω → β}
   {τ : Ω → WithTop ι}
@@ -151,22 +172,10 @@ theorem IsStoppingTime.measurable_stoppedValue_of_countable_range [PartialOrder 
     {ℱ : Filtration ι m} (hτ : IsStoppingTime ℱ τ) (hc : (Set.range τ).Countable)
     (hu : ∀ i, Measurable (u i)) :
     Measurable (stoppedValue u τ) := by
-  have hR : {i : ι | (i : WithTop ι) ∈ Set.range τ}.Countable :=
-    hc.preimage WithTop.coe_injective
-  have heq (i : ι) : MeasurableSet {ω | τ ω = i} :=
-    ℱ.le i _ (hτ.measurableSet_eq_of_countable_range hc i)
-  refine measurable_stoppedValue_of_countable_range_of_measurableSet_eq hu hc fun v hv => ?_
+  refine measurable_stoppedValue_of_countable_range_of_measurableSet_eq hu hc fun v _ ↦ ?_
   cases v with
-  | coe i => exact heq i
-  | top =>
-    have htop : {ω | τ ω = ⊤} =
-        (⋃ i ∈ {i : ι | (i : WithTop ι) ∈ Set.range τ}, {ω | τ ω = i})ᶜ := by
-      ext ω
-      cases h : τ ω with
-      | top => simp [h]
-      | coe i => simpa [h] using (⟨ω, h⟩ : ∃ y, τ y = (i : WithTop ι))
-    rw [htop]
-    exact (MeasurableSet.biUnion hR fun i _ => heq i).compl
+  | top => exact hτ.measurableSpace_le _ (hτ.measurableSet_eq_top_of_countable_range hc)
+  | coe i => exact ℱ.le i _ (hτ.measurableSet_eq_of_countable_range hc i)
 
 section CountableTime
 
@@ -226,23 +235,14 @@ theorem StronglyAdapted.stronglyMeasurable_stoppedValue_of_countable_range
   have hmeas (i : ι) : MeasurableSet[hτ.measurableSpace] {ω | τ ω = i} := by
     rw [← Set.univ_inter {ω | τ ω = i}, hτ.measurableSet_inter_eq_iff, Set.univ_inter]
     exact hτ.measurableSet_eq_of_countable_range hc i
-  let R : Set ι := {i | (i : WithTop ι) ∈ Set.range τ}
-  have hR : R.Countable := hc.preimage WithTop.coe_injective
   let s : Set.range τ → Set Ω := fun v ↦ {ω | τ ω = v.val}
   have hs : IndexedPartition s := IndexedPartition.mk' s
     (fun v w hvw ↦ Set.disjoint_left.2 fun ω hv hw ↦
       hvw (Subtype.ext (hv.symm.trans hw)))
     (fun v ↦ by obtain ⟨ω, hω⟩ := v.property; exact ⟨ω, hω⟩)
     (fun ω ↦ ⟨⟨τ ω, ⟨ω, rfl⟩⟩, rfl⟩)
-  have htop : MeasurableSet[hτ.measurableSpace] {ω | τ ω = ⊤} := by
-    have : {ω | τ ω = ⊤} = (⋃ i ∈ R, {ω | τ ω = i})ᶜ := by
-      ext ω
-      cases h : τ ω with
-      | top => simp [h]
-      | coe i =>
-        simpa [h, R] using (⟨ω, h⟩ : ∃ y, τ y = (i : WithTop ι))
-    rw [this]
-    exact (MeasurableSet.biUnion hR fun i _ ↦ hmeas i).compl
+  have htop : MeasurableSet[hτ.measurableSpace] {ω | τ ω = ⊤} :=
+    hτ.measurableSet_eq_top_of_countable_range hc
   have hind (v : Set.range τ) :
       StronglyMeasurable[hτ.measurableSpace] ((s v).indicator (X v.val.untopA)) := by
     obtain ⟨v, hv⟩ := v

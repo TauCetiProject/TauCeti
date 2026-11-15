@@ -72,9 +72,8 @@ Nonnegative random variables whose real coercions have a common law are identica
 * `ProbabilityTheory.HasLaw.measure_eq_zero_or_measure_eq_zero_of_continuousOn` — a map
   continuous on a preconnected such carrier has a law that does not charge both of two disjoint
   closed sets carrying it;
-* `ProbabilityTheory.hasLaw_pi_iff_forall_finset_restrict` and
-  `ProbabilityTheory.HasLaw.smul_map_of_forall_finset_restrict` — finite-dimensional marginal
-  characterizations of path-space laws on finite measure spaces;
+* `ProbabilityTheory.hasLaw_pi_iff_forall_finset_restrict` — finite-dimensional marginal
+  characterization of path-space laws on finite measure spaces;
 * `ProbabilityTheory.HasLaw.of_ae_tendsto` and
   `ProbabilityTheory.HasLaw.of_ae_tendsto_metrizable` — almost-sure limits along countably
   generated nontrivial filters preserve a common law on a finite measure space.
@@ -304,8 +303,6 @@ end Topology
 
 section Projective
 
-open scoped ENNReal
-
 /-- For an almost-everywhere measurable sample-path map on a finite measure space, having path law
 `ρ` is equivalent to every finite-dimensional restriction `I.restrict (X · ω)` having law
 `ρ.map I.restrict`. Finiteness of `ρ` need not be assumed separately. -/
@@ -320,26 +317,6 @@ theorem _root_.ProbabilityTheory.hasLaw_pi_iff_forall_finset_restrict
   have hlim : IsProjectiveLimit (μ.map (fun ω t ↦ X t ω)) (fun I ↦ ρ.map I.restrict) :=
     fun I ↦ (isProjectiveLimit_map hX I).trans (h I).map_eq
   exact ⟨hX, hlim.unique fun _ ↦ rfl⟩
-
-/-- If an almost-everywhere measurable process `X` on a finite measure space has finite-dimensional
-laws `c • ν I` for every `I : Finset T`, where `ν` is the finite-dimensional law family of an
-almost-everywhere measurable process `Y` under `P`, then the full path of `X` has law
-`c • P.map (fun ω t ↦ Y t ω)`. -/
-theorem _root_.ProbabilityTheory.HasLaw.smul_map_of_forall_finset_restrict
-    {T Ω₁ Ω₂ : Type*} {𝓧 : T → Type*} [MeasurableSpace Ω₁] [MeasurableSpace Ω₂]
-    [∀ t, MeasurableSpace (𝓧 t)] {μ : Measure Ω₁} [IsFiniteMeasure μ] {P : Measure Ω₂}
-    {X : (t : T) → Ω₁ → 𝓧 t} {Y : (t : T) → Ω₂ → 𝓧 t}
-    {ν : ∀ I : Finset T, Measure (∀ i : I, 𝓧 i)} {c : ℝ≥0∞}
-    (hX_ae : AEMeasurable (fun ω t ↦ X t ω) μ) (hY_ae : AEMeasurable (fun ω t ↦ Y t ω) P)
-    (hX : ∀ I : Finset T, HasLaw (fun ω ↦ I.restrict (X · ω)) (c • ν I) μ)
-    (hY : ∀ I : Finset T, HasLaw (fun ω ↦ I.restrict (Y · ω)) (ν I) P) :
-    HasLaw (fun ω t ↦ X t ω) (c • P.map (fun ω t ↦ Y t ω)) μ := by
-  refine (hasLaw_pi_iff_forall_finset_restrict hX_ae).2 fun I ↦ ?_
-  have hmap :
-      (c • P.map (fun ω t ↦ Y t ω)).map I.restrict = c • ν I :=
-    (Measure.map_smul _ (Finset.measurable_restrict I).aemeasurable).trans
-      (congrArg (c • ·) ((isProjectiveLimit_map hY_ae I).trans (hY I).map_eq))
-  simpa only [hmap] using hX I
 
 end Projective
 
