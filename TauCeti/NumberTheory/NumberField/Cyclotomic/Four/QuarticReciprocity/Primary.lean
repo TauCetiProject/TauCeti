@@ -47,6 +47,12 @@ in two stages:
 * `TauCeti.IsPrimaryGaussian.coe_quartic_reciprocity_add_mul`: the coordinate form
   `(π₂ / π₁)_4 = (π₁ / π₂)_4 · (-1) ^ (((a - 1) / 2) * ((c - 1) / 2))` for primary `π₁ = a + b i`
   and `π₂ = c + d i`.
+* `TauCeti.IsPrimaryGaussian.quartic_reciprocity_of_absNorm_modEq_one`,
+  `TauCeti.IsPrimaryGaussian.quartic_reciprocity_of_absNorm_modEq_five`: symmetry in `𝓞 K` when
+  one ideal norm is `1 (mod 8)` and negation when both ideal norms are `5 (mod 8)`.
+* `TauCeti.IsPrimaryGaussian.quartic_reciprocity_eq_neg_iff`,
+  `TauCeti.IsPrimaryGaussian.quartic_reciprocity_eq_iff`: exact modulo-`8` ideal-norm criteria for
+  coprime primary elements.
 
 ## References
 
@@ -415,12 +421,97 @@ theorem IsPrimaryGaussian.coe_quartic_reciprocity_add_mul {ζ : K} {hζ : IsPrim
   exact zpow_eq_zpow_of_modEq (n := 2) (by norm_num)
     (by simpa [mul_comm] using hπ₁.norm_sub_one_div_four.mul hπ₂.norm_sub_one_div_four)
 
+/-- If the primary element `π₁` has ideal norm `N(π₁ 𝓞 K) ≡ 1 (mod 8)`, then quartic reciprocity
+with any primary element `π₂` has trivial sign: `(π₂ / π₁)_4 = (π₁ / π₂)_4`. -/
+theorem IsPrimaryGaussian.quartic_reciprocity_of_absNorm_modEq_one {π₁ π₂ : 𝓞 K}
+    (hπ₁ : IsPrimaryGaussian π₁) (hπ₂ : IsPrimaryGaussian π₂)
+    (hN : absNorm (span {π₁}) ≡ 1 [MOD 8]) :
+    powerResidueSymbolIdeal (span {π₁}) 4 (Ideal.Quotient.mk _ π₂) =
+      powerResidueSymbolIdeal (span {π₂}) 4 (Ideal.Quotient.mk _ π₁) := by
+  have heven : Even (((absNorm (span {π₂}) - 1) / 4) * ((absNorm (span {π₁}) - 1) / 4)) := by
+    refine Even.mul_left ⟨(absNorm (span {π₁}) - 1) / 8, ?_⟩ _
+    simp only [Nat.ModEq] at hN
+    omega
+  rw [hπ₁.quartic_reciprocity hπ₂, heven.neg_one_pow, mul_one]
+
+/-- If the primary elements `π₁` and `π₂` both have ideal norm congruent to `5` modulo `8`, then
+`(π₂ / π₁)_4 = -(π₁ / π₂)_4`. -/
+theorem IsPrimaryGaussian.quartic_reciprocity_of_absNorm_modEq_five {π₁ π₂ : 𝓞 K}
+    (hπ₁ : IsPrimaryGaussian π₁) (hπ₂ : IsPrimaryGaussian π₂)
+    (hN₁ : absNorm (span {π₁}) ≡ 5 [MOD 8]) (hN₂ : absNorm (span {π₂}) ≡ 5 [MOD 8]) :
+    powerResidueSymbolIdeal (span {π₁}) 4 (Ideal.Quotient.mk _ π₂) =
+      -powerResidueSymbolIdeal (span {π₂}) 4 (Ideal.Quotient.mk _ π₁) := by
+  have hodd : Odd (((absNorm (span {π₂}) - 1) / 4) * ((absNorm (span {π₁}) - 1) / 4)) := by
+    refine Odd.mul ⟨(absNorm (span {π₂}) - 5) / 8, ?_⟩ ⟨(absNorm (span {π₁}) - 5) / 8, ?_⟩ <;>
+      (simp only [Nat.ModEq] at hN₁ hN₂; omega)
+  rw [hπ₁.quartic_reciprocity hπ₂, hodd.neg_one_pow, mul_neg_one]
+
+/-- For coprime primary elements `π₁` and `π₂` of `𝓞 K = ℤ[i]`, `(π₂ / π₁)_4 = -(π₁ / π₂)_4` if and
+only if `N(π₁ 𝓞 K) ≡ 5 (mod 8)` and `N(π₂ 𝓞 K) ≡ 5 (mod 8)`. -/
+theorem IsPrimaryGaussian.quartic_reciprocity_eq_neg_iff {π₁ π₂ : 𝓞 K}
+    (hπ₁ : IsPrimaryGaussian π₁) (hπ₂ : IsPrimaryGaussian π₂) (hcop : IsCoprime π₁ π₂) :
+    powerResidueSymbolIdeal (span {π₁}) 4 (Ideal.Quotient.mk _ π₂) =
+        -powerResidueSymbolIdeal (span {π₂}) 4 (Ideal.Quotient.mk _ π₁) ↔
+      absNorm (span {π₁}) ≡ 5 [MOD 8] ∧ absNorm (span {π₂}) ≡ 5 [MOD 8] := by
+  refine ⟨fun h ↦ ?_, fun ⟨h₁, h₂⟩ ↦ hπ₁.quartic_reciprocity_of_absNorm_modEq_five hπ₂ h₁ h₂⟩
+  have hs0 : powerResidueSymbolIdeal (span {π₂}) 4 (Ideal.Quotient.mk _ π₁) ≠ 0 := fun h0 ↦
+    powerResidueSymbolIdeal_mk_eq_zero_iff.mp h0 ((isCoprime_span_singleton_iff _ _).mpr hcop)
+  rw [hπ₁.quartic_reciprocity hπ₂] at h
+  have hsgn : (-1 : 𝓞 K) ^ (((absNorm (span {π₂}) - 1) / 4) *
+      ((absNorm (span {π₁}) - 1) / 4)) = -1 :=
+    mul_left_cancel₀ hs0 (by linear_combination h)
+  have hodd : Odd (((absNorm (span {π₂}) - 1) / 4) * ((absNorm (span {π₁}) - 1) / 4)) := by
+    by_contra he
+    rw [(Nat.not_odd_iff_even.mp he).neg_one_pow] at hsgn
+    exact absurd hsgn (by norm_num)
+  obtain ⟨hodd₂, hodd₁⟩ := Nat.odd_mul.mp hodd
+  have h₁ := hπ₁.absNorm_span_singleton_modEq_one_or_five
+  have h₂ := hπ₂.absNorm_span_singleton_modEq_one_or_five
+  simp only [Nat.ModEq] at h₁ h₂ ⊢
+  rw [Nat.odd_iff] at hodd₁ hodd₂
+  exact ⟨by omega, by omega⟩
+
+/-- For coprime primary elements `π₁` and `π₂` of `𝓞 K = ℤ[i]`, `(π₂ / π₁)_4 = (π₁ / π₂)_4` if and
+only if `N(π₁ 𝓞 K) ≡ 1 (mod 8)` or `N(π₂ 𝓞 K) ≡ 1 (mod 8)`. -/
+theorem IsPrimaryGaussian.quartic_reciprocity_eq_iff {π₁ π₂ : 𝓞 K}
+    (hπ₁ : IsPrimaryGaussian π₁) (hπ₂ : IsPrimaryGaussian π₂) (hcop : IsCoprime π₁ π₂) :
+    powerResidueSymbolIdeal (span {π₁}) 4 (Ideal.Quotient.mk _ π₂) =
+        powerResidueSymbolIdeal (span {π₂}) 4 (Ideal.Quotient.mk _ π₁) ↔
+      absNorm (span {π₁}) ≡ 1 [MOD 8] ∨ absNorm (span {π₂}) ≡ 1 [MOD 8] := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.elim (hπ₁.quartic_reciprocity_of_absNorm_modEq_one hπ₂)
+    fun h₂ ↦ (hπ₂.quartic_reciprocity_of_absNorm_modEq_one hπ₁ h₂).symm⟩
+  by_contra! hne
+  have h₁ := hπ₁.absNorm_span_singleton_modEq_one_or_five
+  have h₂ := hπ₂.absNorm_span_singleton_modEq_one_or_five
+  have hneg := (hπ₁.quartic_reciprocity_eq_neg_iff hπ₂ hcop).mpr
+    (by simp only [Nat.ModEq] at h₁ h₂ hne ⊢; exact ⟨by omega, by omega⟩)
+  rw [h] at hneg
+  have h2 : (2 : 𝓞 K) * powerResidueSymbolIdeal (span {π₂}) 4 (Ideal.Quotient.mk _ π₁) = 0 := by
+    linear_combination hneg
+  have h0 : powerResidueSymbolIdeal (span {π₂}) 4 (Ideal.Quotient.mk _ π₁) = 0 :=
+    (mul_eq_zero.mp h2).resolve_left (by norm_num)
+  exact powerResidueSymbolIdeal_mk_eq_zero_iff.mp h0 ((isCoprime_span_singleton_iff _ _).mpr hcop)
+
 /-! ### Examples -/
 
 section Examples
 
 variable {ζ : K} (hζ : IsPrimitiveRoot ζ 4)
 include hζ
+
+/- Directly in `𝓞 K`, for `π₁ = -1 + 2i` (`N = 5 ≡ 5 (mod 8)`) and `π₂ = 3 + 2i`
+(`N = 13 ≡ 5 (mod 8)`), quartic reciprocity negates the symbol: `(π₂ / π₁)_4 = -(π₁ / π₂)_4`. -/
+example :
+    let π₁ : 𝓞 K := ((-1 : ℤ) : 𝓞 K) + ((2 : ℤ) : 𝓞 K) * hζ.toInteger
+    let π₂ : 𝓞 K := ((3 : ℤ) : 𝓞 K) + ((2 : ℤ) : 𝓞 K) * hζ.toInteger
+    powerResidueSymbolIdeal (span {π₁}) 4 (Ideal.Quotient.mk _ π₂) =
+      -powerResidueSymbolIdeal (span {π₂}) 4 (Ideal.Quotient.mk _ π₁) := by
+  intro π₁ π₂
+  have hπ₁ : IsPrimaryGaussian π₁ := by rw [hζ.isPrimaryGaussian_add_mul_iff]; decide
+  have hπ₂ : IsPrimaryGaussian π₂ := by rw [hζ.isPrimaryGaussian_add_mul_iff]; decide
+  exact hπ₁.quartic_reciprocity_of_absNorm_modEq_five hπ₂
+    (hπ₁.absNorm_span_singleton_add_mul_modEq_five_iff.mpr (by decide))
+    (hπ₂.absNorm_span_singleton_add_mul_modEq_five_iff.mpr (by decide))
 
 /- For `π₁ = -1 + 2i` (norm `5 ≡ 5 (mod 8)`) and `π₂ = 3 + 2i` (norm `13 ≡ 5 (mod 8)`), the
 reciprocity sign is `-1`, so `(π₂ / π₁)_4 = -(π₁ / π₂)_4`. -/

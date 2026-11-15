@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.LegendreSymbol.ZModChar
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.GaussSum
 import TauCeti.NumberTheory.GaussSum.Basic
 import TauCeti.NumberTheory.LegendreSymbol.Complex
+import TauCeti.NumberTheory.LegendreSymbol.ZModChar
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.SupplementaryLaws
 import TauCeti.NumberTheory.NumberField.PrimeIdeal
 import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
@@ -38,8 +40,9 @@ Multiplicativity in both arguments extends this to any primary `π` and odd rati
 (`TauCeti.IsPrimaryGaussian.coe_quartic_reciprocity_intCast_of_odd`, and in coordinates
 `TauCeti.IsPrimaryGaussian.coe_quartic_reciprocity_intCast_add_mul_of_odd`), and in particular
 gives `(a / π)_4 = (π / a)_4` for `a ≡ 1 (mod 4)`
-(`TauCeti.IsPrimaryGaussian.quartic_reciprocity_intCast`) and
-`(((-1) ^ ((q - 1) / 2) * q) / π)_4 = (π / q)_4` for any odd `q : ℕ`
+(`TauCeti.IsPrimaryGaussian.quartic_reciprocity_intCast`), `((m χ₄(m)) / π)_4 = (π / m)_4` in
+`𝓞 K` for any odd `m : ℤ` (`TauCeti.IsPrimaryGaussian.quartic_reciprocity_intCast_mul_χ₄_of_odd`),
+and `(((-1) ^ ((q - 1) / 2) * q) / π)_4 = (π / q)_4` for any odd `q : ℕ`
 (`TauCeti.IsPrimaryGaussian.quartic_reciprocity_natCast_of_odd`). The general law of biquadratic
 reciprocity between arbitrary primary elements is deduced in
 `TauCeti.NumberTheory.NumberField.Cyclotomic.Four.QuarticReciprocity.Primary`.
@@ -52,6 +55,8 @@ reciprocity between arbitrary primary elements is deduced in
   rational integer `m`, with exponent `((m - 1) / 2) * ((c - 1) / 2)` when `π = c + d i`.
 * `TauCeti.IsPrimaryGaussian.quartic_reciprocity_intCast`: `(a / π)_4 = (π / a)_4` for primary `π`
   and a rational integer `a ≡ 1 (mod 4)`.
+* `TauCeti.IsPrimaryGaussian.quartic_reciprocity_intCast_mul_χ₄_of_odd`:
+  `((m χ₄(m)) / π)_4 = (π / m)_4` in `𝓞 K` for primary `π` and an odd rational integer `m`.
 * `TauCeti.IsPrimaryGaussian.quartic_reciprocity_natCast_of_odd`:
   `(((-1) ^ ((q - 1) / 2) * q) / π)_4 = (π / q)_4` for primary `π` and an odd natural number `q`.
 
@@ -490,6 +495,23 @@ theorem IsPrimaryGaussian.quartic_reciprocity_intCast {π : 𝓞 K} (hπ : IsPri
   simp only [← RingOfIntegers.coe_eq_algebraMap]
   rw [hπ.coe_quartic_reciprocity_intCast_of_odd hodd, heven.neg_one_zpow, mul_one]
 
+/-- **Quartic reciprocity in `𝓞 K` between a primary element and an odd rational integer.** If
+`K = ℚ(i)`, `π` is primary in `𝓞 K = ℤ[i]`, and `m` is an odd rational integer (possibly negative
+or composite), then `((m χ₄(m)) / π)_4 = (π / m)_4` at the principal ideals `π 𝓞 K` and `m 𝓞 K`.
+If `m` and `π` are not coprime, both sides vanish. -/
+theorem IsPrimaryGaussian.quartic_reciprocity_intCast_mul_χ₄_of_odd {π : 𝓞 K}
+    (hπ : IsPrimaryGaussian π) {m : ℤ} (hm : Odd m) :
+    powerResidueSymbolIdeal (span {π}) 4 (Ideal.Quotient.mk _ ((m : 𝓞 K) * ZMod.χ₄ m)) =
+      powerResidueSymbolIdeal (span {(m : 𝓞 K)}) 4 (Ideal.Quotient.mk _ π) := by
+  have hm1 : m * ZMod.χ₄ m ≡ 1 [ZMOD 4] := ZMod.int_mul_χ₄_modEq_one hm
+  have hu : IsUnit (ZMod.χ₄ m : 𝓞 K) := by
+    refine RingOfIntegers.isUnit_intCast.mpr (Int.isUnit_iff.mpr ?_)
+    rcases (show m % 4 = 1 ∨ m % 4 = 3 by have := Int.odd_iff.mp hm; omega) with h1 | h3
+    · exact Or.inl (ZMod.χ₄_int_one_mod_four h1)
+    · exact Or.inr (ZMod.χ₄_int_three_mod_four h3)
+  rw [← Int.cast_mul, hπ.quartic_reciprocity_intCast hm1, Int.cast_mul,
+    ← span_singleton_mul_span_singleton, span_singleton_eq_top.mpr hu, mul_top]
+
 /-- **Quartic reciprocity between a primary element and an odd natural number.** Let `K = ℚ(i)`,
 so that `𝓞 K = ℤ[i]`, let `π` be a primary element of `𝓞 K`, and let `q` be an odd natural number.
 Then `(((-1) ^ ((q - 1) / 2) * q) / π)_4 = (π / q)_4`, the symbols being taken at the principal
@@ -568,6 +590,17 @@ example :
   intro π
   have hπ : IsPrimaryGaussian π := by rw [hζ.isPrimaryGaussian_add_mul_iff]; decide
   exact hπ.quartic_reciprocity_intCast (by decide)
+
+/- For the negative odd integer `m = -5` (`χ₄(-5) = -1`), `((-5 · χ₄(-5)) / (3 + 2i))_4 =
+((3 + 2i) / (-5))_4`. -/
+example :
+    let π : 𝓞 K := ((3 : ℤ) : 𝓞 K) + ((2 : ℤ) : 𝓞 K) * hζ.toInteger
+    powerResidueSymbolIdeal (span {π}) 4
+        (Ideal.Quotient.mk _ (((-5 : ℤ) : 𝓞 K) * ZMod.χ₄ (-5 : ℤ))) =
+      powerResidueSymbolIdeal (span {((-5 : ℤ) : 𝓞 K)}) 4 (Ideal.Quotient.mk _ π) := by
+  intro π
+  have hπ : IsPrimaryGaussian π := by rw [hζ.isPrimaryGaussian_add_mul_iff]; decide
+  exact hπ.quartic_reciprocity_intCast_mul_χ₄_of_odd (by decide)
 
 end Examples
 
