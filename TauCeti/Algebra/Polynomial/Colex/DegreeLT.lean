@@ -100,10 +100,8 @@ instance ordConnected_degreeLT (n : ℕ) : (degreeLT R n : Set (Colex R[X])).Ord
   simp only [SetLike.mem_coe, mem_degreeLT] at ha hb ⊢
   by_contra! hxn
   -- `x` has larger degree than `a` and `b`, so its leading coefficient decides both comparisons.
-  have hax : a < x := hx.1.lt_of_ne (by rintro rfl; exact (ha.trans_le hxn).false)
-  have hxb : x < b := hx.2.lt_of_ne (by rintro rfl; exact (hb.trans_le hxn).false)
-  exact ((lt_iff_of_degree_lt (ha.trans_le hxn)).1 hax).not_gt
-    ((lt_iff_of_degree_gt (hb.trans_le hxn)).1 hxb)
+  exact ((le_iff_of_degree_lt (ha.trans_le hxn)).1 hx.1).not_gt
+    ((le_iff_of_degree_gt (hb.trans_le hxn)).1 hx.2)
 
 /-- Reversing the coefficients turns the colexicographic order into the lexicographic one. -/
 private theorem degreeLTEquivAux_lt_iff {n : ℕ} {p q : degreeLT R n} :

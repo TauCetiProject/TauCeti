@@ -79,7 +79,7 @@ instance nonUnitalCommRing [NonUnitalCommRing R] : NonUnitalCommRing (Colex R) :
 
 instance commRing [CommRing R] : CommRing (Colex R) := inferInstanceAs <| CommRing R
 
-instance isDomain [Ring R] [IsDomain R] : IsDomain (Colex R) := inferInstanceAs <| IsDomain R
+instance isDomain [Semiring R] [IsDomain R] : IsDomain (Colex R) := inferInstanceAs <| IsDomain R
 
 end Colex
 
