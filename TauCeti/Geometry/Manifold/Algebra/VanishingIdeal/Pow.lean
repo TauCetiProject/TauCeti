@@ -204,26 +204,10 @@ theorem differentialOperators_apply_eq_of_eventuallyEq {m : ℕ}
     (hD : D ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m) {x : M}
     {f g : C^∞⟮I, M; ℝ⟯} (hfg : (f : M → ℝ) =ᶠ[𝓝 x] g) :
     D f x = D g x := by
-  -- Take a bump function `χ` at `x` supported where `f = g`. Then `1 - χ` vanishes at `x` and
-  -- `(1 - χ) * (f - g) = f - g`, so `f - g = (1 - χ) ^ (m + 1) * (f - g)` lies in `I_x ^ (m + 1)`.
-  obtain ⟨χ, -, hχ⟩ := (SmoothBumpFunction.nhds_basis_tsupport (I := I) x).mem_iff.mp hfg
-  let φ : C^∞⟮I, M; ℝ⟯ := ⟨χ, χ.contMDiff⟩
-  have hφ : 1 - φ ∈ smoothVanishingIdeal I x := by
-    rw [mem_smoothVanishingIdeal_iff, ContMDiffMap.coe_sub, ContMDiffMap.coe_one,
-      ContMDiffMap.coeFn_mk, Pi.sub_apply, Pi.one_apply, χ.eq_one, sub_self]
-  have hφfg : (1 - φ) * (f - g) = f - g := by
-    ext y
-    rw [ContMDiffMap.coe_mul, ContMDiffMap.coe_sub, ContMDiffMap.coe_one, ContMDiffMap.coeFn_mk,
-      ContMDiffMap.coe_sub, Pi.mul_apply, Pi.sub_apply, Pi.sub_apply, Pi.one_apply]
-    by_cases hy : χ y = 0
-    · rw [hy, sub_zero, one_mul]
-    · rw [show f y = g y from hχ (subset_tsupport _ hy), sub_self, mul_zero]
-  have hpow : ∀ n : ℕ, (1 - φ) ^ n * (f - g) = f - g := fun n ↦ by
-    induction n with
-    | zero => rw [pow_zero, one_mul]
-    | succ n ih => rw [pow_succ, mul_assoc, hφfg, ih]
-  have hmem : f - g ∈ smoothVanishingIdeal I x ^ (m + 1) :=
-    hpow (m + 1) ▸ Ideal.mul_mem_right _ _ (Ideal.pow_mem_pow hφ _)
+  have hmem : f - g ∈ smoothVanishingIdeal I x ^ (m + 1) := by
+    refine mem_smoothVanishingIdeal_pow_of_eventuallyEq_zero ?_ (m + 1)
+    filter_upwards [hfg] with y hy
+    rw [ContMDiffMap.coe_sub, Pi.sub_apply, hy, sub_self, Pi.zero_apply]
   have h := apply_mem_smul_top_of_mem_pow_smul_top hD (smoothVanishingIdeal I x)
     (x := f - g) (by simpa using hmem)
   rw [smul_eq_mul, Ideal.mul_top, map_sub, mem_smoothVanishingIdeal_iff, ContMDiffMap.coe_sub,
