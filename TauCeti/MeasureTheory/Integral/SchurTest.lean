@@ -206,23 +206,23 @@ theorem eLpNorm_lintegral_mul_le [SFinite μ] [SFinite ν] {k : α → β → �
   · simp only [eLpNorm_exponent_top hmeas.aestronglyMeasurable,
       eLpNorm_exponent_top hg.aestronglyMeasurable, ENNReal.toReal_top, inv_zero, sub_zero,
       ENNReal.rpow_one, ENNReal.rpow_zero, mul_one]
-    refine eLpNormEssSup_le_of_ae_enorm_bound ?_
+    refine eLpNormEssSup_le_of_ae_eNorm_bound ?_
     filter_upwards [hA, Measure.ae_ae_of_ae_prod hk.ae_eq_mk] with x hx hx'
     have hkx : AEMeasurable (k x) ν :=
       (hk.measurable_mk.comp measurable_prodMk_left).aemeasurable.congr (hx'.mono fun _ ↦ Eq.symm)
     calc ‖(∫⁻ y, k x y * g y ∂ν : ℝ≥0∞)‖ₑ ≤ ∫⁻ y, k x y * eLpNormEssSup g ν ∂ν := by
-          rw [enorm_eq_self]
+          rw [eNorm_eq_self]
           refine lintegral_mono_ae ?_
           filter_upwards [ae_le_eLpNormEssSup (f := g) (μ := ν)] with y hy
           gcongr
-          simpa only [enorm_eq_self] using hy
+          simpa only [eNorm_eq_self] using hy
       _ = (∫⁻ y, k x y ∂ν) * eLpNormEssSup g ν := lintegral_mul_const'' _ hkx
       _ ≤ A * eLpNormEssSup g ν := by gcongr
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
   have hr : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp_top hp
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp_top hmeas.aestronglyMeasurable,
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp_top hg.aestronglyMeasurable]
-  simp only [enorm_eq_self]
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top hmeas.aestronglyMeasurable,
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top hg.aestronglyMeasurable]
+  simp only [eNorm_eq_self]
   calc (∫⁻ x, (∫⁻ y, k x y * g y ∂ν) ^ p.toReal ∂μ) ^ (1 / p.toReal)
       ≤ (A ^ (p.toReal - 1) * B * ∫⁻ y, g y ^ p.toReal ∂ν) ^ (1 / p.toReal) := by
         gcongr

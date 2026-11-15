@@ -393,11 +393,11 @@ theorem eq_zero_of_coord_pow_mul_eq {m k k' j' : ℕ} (hk' : j' + m + 2 = k')
   have h₁ : dehomogenize R 0 (coord R 1) = X := dehomogenize_coord_rev R 0
   have hD := congrArg (dehomogenize R 0) h
   simp only [map_mul, map_pow, map_sub, dehomogenize_coord_self, one_pow, one_mul, h₁] at hD
-  refine (dehomogenize_eq_zero_iff R 0 hc).mp (Polynomial.ext fun i ↦ ?_)
+  refine (dehomogenize_eq_zero_iff R 0 hc).mp (AddMonoidAlgebra.ext <| Finsupp.ext fun i ↦ ?_)
   rw [coeff_zero]
   rcases lt_or_ge m i with hi | hi
   · exact coeff_eq_zero_of_natDegree_lt ((natDegree_dehomogenize_le R 0 hc).trans_lt hi)
-  have hcoeff := congrArg (fun p ↦ coeff p (i + k')) hD
+  have hcoeff := congrArg (fun p : R[X] ↦ p.coeff (i + k')) hD
   simp only [coeff_X_pow_mul, mul_sub, ← mul_assoc, ← pow_add, coeff_sub] at hcoeff
   rw [hcoeff, coeff_X_pow_mul', ite_eq_right (by omega), coeff_X_pow_mul', zero_sub, neg_eq_zero]
   split_ifs

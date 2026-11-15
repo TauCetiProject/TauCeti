@@ -81,8 +81,6 @@ torus maps lies in the base change of the integral toral carrier; equality is no
 
 This is the base-change compatibility of the explicit Chevalley--Demazure construction; see
 R. W. Carter, *Simple Groups of Lie Type*, §4.4, and B. Conrad, *Reductive Group Schemes*, §1.
-It advances Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`. The resulting carrier over the
-prime field and its algebraic closure is consumed by milestone L0 of the CFSGStatement roadmap.
 
 The formal inputs are Tau Ceti's own coordinate base-change isomorphisms
 `GeneralLinear.coordinateHopfAlgebraBaseChangeIso`,

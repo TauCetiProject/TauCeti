@@ -38,9 +38,12 @@ and `TauCeti.Analysis.SpecialFunctions.Gaussian.Basic`.
 ## Main declarations
 
 * `SchwartzMap.gaussian`: the Gaussian `x ↦ exp (-b ‖x‖²)`, `0 < b.re`, as a Schwartz function.
-* `SchwartzMap.gaussian_apply`, `SchwartzMap.coe_gaussian`: its values.
+* `SchwartzMap.gaussian_apply`, `SchwartzMap.coe_gaussian`, `SchwartzMap.coe_gaussian_ofReal`:
+  its values.
 * `SchwartzMap.fourierInv_gaussian`: its inverse Fourier transform
   `(π / b)^(n/2) exp (-π² ‖x‖² / b)`, where `n` is the dimension.
+* `Function.hasTemperateGrowth_exp_neg_mul_norm_sq`: the real Gaussian `x ↦ exp (-c ‖x‖²)`,
+  `0 ≤ c`, has temperate growth, so it is a Fourier multiplier symbol on tempered distributions.
 -/
 
 public section
@@ -115,6 +118,15 @@ theorem coe_gaussian {b : ℂ} (hb : 0 < b.re) :
     ((gaussian hb : 𝓢(V, ℂ)) : V → ℂ) = fun x ↦ cexp (-b * ‖x‖ ^ 2) :=
   funext (gaussian_apply hb)
 
+/-- At a real parameter `c`, the Schwartz Gaussian is the real Gaussian `x ↦ exp (-c ‖x‖²)`,
+viewed as a complex function. -/
+theorem coe_gaussian_ofReal {c : ℝ} (hb : 0 < (c : ℂ).re) :
+    ((gaussian hb : 𝓢(V, ℂ)) : V → ℂ) = fun x ↦ ((Real.exp (-(c * ‖x‖ ^ 2)) : ℝ) : ℂ) := by
+  funext x
+  rw [gaussian_apply, Complex.ofReal_exp]
+  push_cast
+  ring_nf
+
 /-- The inverse Fourier transform of the Schwartz Gaussian `exp (-b ‖ξ‖²)`, `0 < b.re`, on a
 real inner product space of dimension `n` is the Gaussian `(π / b)^(n/2) exp (-π² ‖x‖² / b)`. -/
 theorem fourierInv_gaussian [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V] {b : ℂ}
@@ -125,3 +137,18 @@ theorem fourierInv_gaussian [FiniteDimensional ℝ V] [MeasurableSpace V] [Borel
     fourier_gaussian_innerProductSpace hb, norm_neg]
 
 end SchwartzMap
+
+/-- The real Gaussian `x ↦ exp (-c ‖x‖²)`, `0 ≤ c`, has temperate growth: for `c > 0` it is the
+real part of the Schwartz function `SchwartzMap.gaussian`, and for `c = 0` it is constant.
+Composed with `Complex.ofReal`, this is the symbol of the heat semigroup as a Fourier
+multiplier. -/
+theorem Function.hasTemperateGrowth_exp_neg_mul_norm_sq {V : Type*}
+    [NormedAddCommGroup V] [InnerProductSpace ℝ V] {c : ℝ} (hc : 0 ≤ c) :
+    (fun x : V ↦ Real.exp (-(c * ‖x‖ ^ 2))).HasTemperateGrowth := by
+  rcases hc.eq_or_lt with rfl | hc
+  · simp
+  · have hb : 0 < (c : ℂ).re := by simpa using hc
+    have h := Complex.hasTemperateGrowth_re.comp
+      (SchwartzMap.gaussian (V := V) hb).hasTemperateGrowth
+    rw [SchwartzMap.coe_gaussian_ofReal] at h
+    exact h

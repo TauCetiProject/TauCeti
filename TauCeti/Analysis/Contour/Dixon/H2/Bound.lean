@@ -34,7 +34,7 @@ only interval-integrable.
 
 The decay of `dixonH2` (hence of Dixon's glued function, which agrees with it far out) is the input
 to the Liouville step of Dixon's proof of the homology form of Cauchy's theorem
-(`homologyCauchyTheorem`, `TauCetiRoadmap/ContourIntegration/Suggested.lean`).
+(`homologyCauchyTheorem`).
 
 ## Provenance
 

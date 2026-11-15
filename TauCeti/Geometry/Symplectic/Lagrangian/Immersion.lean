@@ -102,13 +102,10 @@ theorem isLagrangianImmersion_comp_subtype_val_iff (U : Opens N) :
   constructor
   · intro h
     exact ⟨hi.mp h.isImmersion,
-      (hσ.isIsotropicMap_comp_subtype_val_iff U (fun x hx ↦
-        (hi.mp h.isImmersion x hx).contMDiffAt.mdifferentiableAt (by simp))).mp
-          h.isIsotropicMap,
+      (hσ.isIsotropicMap_comp_subtype_val_iff U).mp h.isIsotropicMap,
       h.two_mul_finrank⟩
   · rintro ⟨himm, hiso, hdim⟩
-    exact ⟨hi.mpr himm, (hσ.isIsotropicMap_comp_subtype_val_iff U (fun x hx ↦
-      (himm x hx).contMDiffAt.mdifferentiableAt (by simp))).mpr hiso, hdim⟩
+    exact ⟨hi.mpr himm, (hσ.isIsotropicMap_comp_subtype_val_iff U).mpr hiso, hdim⟩
 
 /-- A Lagrangian immersion restricts to every open subset of its source. -/
 theorem IsLagrangianImmersion.comp_subtype_val (h : hσ.IsLagrangianImmersion J f)
@@ -128,8 +125,7 @@ theorem isLagrangianImmersion_iff_of_isOpenCover {ι : Type*} {U : ι → Opens 
   refine ⟨fun h i ↦ h.comp_subtype_val (U i), fun h ↦ ?_⟩
   have himm := (TauCeti.isImmersion_iff_of_isOpenCover hU).mpr fun i ↦ (h i).isImmersion
   refine ⟨himm, ?_, hdim⟩
-  exact (hσ.isIsotropicMap_iff_of_isOpenCover
-    (himm.contMDiff.mdifferentiable (by simp)) hU).mpr fun i ↦ (h i).isIsotropicMap
+  exact (hσ.isIsotropicMap_iff_of_isOpenCover hU).mpr fun i ↦ (h i).isIsotropicMap
 
 end Source
 
@@ -148,11 +144,9 @@ theorem isLagrangianImmersion_subtype_val_comp_iff :
   constructor
   · intro h
     have hg := hi.mp h.isImmersion
-    exact ⟨hg, (hσ.isIsotropicMap_subtype_val_comp_iff
-      (hg.contMDiff.mdifferentiable (by simp))).mp h.isIsotropicMap, h.two_mul_finrank⟩
+    exact ⟨hg, hσ.isIsotropicMap_subtype_val_comp_iff.mp h.isIsotropicMap, h.two_mul_finrank⟩
   · intro h
-    exact ⟨hi.mpr h.isImmersion, (hσ.isIsotropicMap_subtype_val_comp_iff
-      (h.isImmersion.contMDiff.mdifferentiable (by simp))).mpr h.isIsotropicMap,
+    exact ⟨hi.mpr h.isImmersion, hσ.isIsotropicMap_subtype_val_comp_iff.mpr h.isIsotropicMap,
       h.two_mul_finrank⟩
 
 end Target

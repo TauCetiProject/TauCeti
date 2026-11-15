@@ -10,9 +10,12 @@ public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.MeasureTheory.Function.L2Space
 import TauCeti.Analysis.Distribution.TestFunction.Basic
+import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.MeasureTheory.Function.Lp.Dilation
 
 /-!
 # Sobolev wave front sets
@@ -55,13 +58,19 @@ its `H^s` wave front set is the whole punctured fibre over the point, since the 
 * `Distribution.sobolevWaveFrontSet_delta_eq_empty`, `Distribution.sobolevWaveFrontSet_delta`:
   the point mass at `x₀ ∈ Ω` has empty `H^s` wave front set for `s < -d / 2` and `H^s` wave front
   set `{x₀} × (E \ {0})` for `s ≥ -d / 2`.
+* `Distribution.sobolevWaveFrontSet_compCLMOfContinuousLinearEquiv`: the `H^s` wave front set is
+  invariant under linear changes of coordinates, with covectors transforming by the transpose. The
+  substitution `ζ = (e⁻¹)ᵀ η` in the square integrability on a cone changes the weight
+  `(1 + ‖η‖ ^ 2) ^ (s / 2)` by a bounded factor, since `η` and `(e⁻¹)ᵀ η` have comparable norms
+  (`TauCeti.one_add_norm_sq_rpow_le_of_norm_le_mul`).
 
 ## References
 
 * L. Hörmander, *Lectures on Nonlinear Hyperbolic Differential Equations*, Springer, 1997,
   §11.1 (the `H^s` wave front set).
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators I*, §8.1 (the wave front
-  set).
+  set) and §8.2, Theorem 8.2.4 (the wave front set of a pullback, here along a linear change of
+  coordinates).
 -/
 
 public section
@@ -329,5 +338,91 @@ theorem sobolevWaveFrontSet_delta {s : ℝ} (hs : -2 * s ≤ finrank ℝ E) {x�
   simp only [norm_weight_smul_localFourier_delta, mul_pow,
     Real.rpow_div_two_sq (by positivity : (0 : ℝ) ≤ 1 + ‖η‖ ^ 2),
     show -(-2 * s) / 2 = s by ring, inv_mul_cancel_left₀ hφ2]
+
+/-! ### Linear changes of coordinates -/
+
+section LinearEquiv
+
+open scoped InnerProduct
+
+variable {V : Opens E}
+
+/-- If `T` is microlocally `H^s` at `(e x, (e⁻¹)ᵀ ξ)`, then its pullback along `e` is microlocally
+`H^s` at `(x, ξ)`. Here `e` identifies `V` with `Ω`. -/
+theorem IsMicrolocallySobolevAt.compCLMOfContinuousLinearEquiv {s : ℝ} {T : 𝓓'(Ω, ℂ)} {x ξ : E}
+    (e : E ≃L[ℝ] E) (hVO : MapsTo e V Ω) (hOV : MapsTo e.symm Ω V)
+    (h : T.IsMicrolocallySobolevAt s (e x) (((e.symm : E →L[ℝ] E)†) ξ)) :
+    (compCLMOfContinuousLinearEquiv e hVO T).IsMicrolocallySobolevAt s x ξ := by
+  obtain ⟨φ, hφ, Γ, hΓ, hξ, hcone, hL⟩ := h
+  -- The frequencies change by `A = (e⁻¹)ᵀ`, a linear isomorphism with inverse `eᵀ`.
+  set A : E →L[ℝ] E := (e.symm : E →L[ℝ] E)†
+  have hinv : ∀ η, ((e : E →L[ℝ] E)†) (A η) = η := fun η ↦ by
+    simpa using e.symm.adjoint_symm_adjoint_apply η
+  set L : E ≃L[ℝ] E := e.symm.adjointEquiv
+  have hLA : (L : E → E) = A := funext e.symm.adjointEquiv_apply
+  refine ⟨e.symm.transportTestFunction hOV φ, by simpa using hφ, A ⁻¹' Γ,
+    hΓ.preimage A.continuous, hξ, fun t ht η hη ↦ ?_, ?_⟩
+  · simpa only [mem_preimage, map_smul] using hcone t ht (A η) hη
+  -- Change variables `ζ = A η` in the square integrability of `T` on `Γ`.
+  have hmem : MemLp (fun η ↦ (1 + ‖A η‖ ^ 2) ^ (s / 2) • T.localFourier φ (A η)) 2
+      (volume.restrict (A ⁻¹' Γ)) := by
+    rw [← hLA, ← Function.comp_def (fun ζ ↦ (1 + ‖ζ‖ ^ 2) ^ (s / 2) • T.localFourier φ ζ) L,
+      memLp_iff, Measure.eLpNorm_comp_continuousLinearEquiv_restrict_preimage]
+    exact ENNReal.mul_lt_top
+      (ENNReal.rpow_lt_top_of_nonneg ENNReal.toReal_nonneg ENNReal.ofReal_ne_top) hL
+  -- The weights at `η` and at `A η` are comparable, since `‖η‖ ≤ ‖e‖ ‖A η‖`.
+  set c : ℝ := max 1 (max ‖(e : E →L[ℝ] E)‖ ‖A‖)
+  have hc : 1 ≤ c := le_max_left _ _
+  have hweight : ∀ η, (1 + ‖η‖ ^ 2) ^ (s / 2) ≤ c ^ |s| * (1 + ‖A η‖ ^ 2) ^ (s / 2) := fun η ↦ by
+    refine TauCeti.one_add_norm_sq_rpow_le_of_norm_le_mul hc s ?_ ?_
+    · calc ‖η‖ = ‖((e : E →L[ℝ] E)†) (A η)‖ := by rw [hinv]
+        _ ≤ ‖(e : E →L[ℝ] E)†‖ * ‖A η‖ := ContinuousLinearMap.le_opNorm _ _
+        _ = ‖(e : E →L[ℝ] E)‖ * ‖A η‖ := by rw [LinearIsometryEquiv.norm_map]
+        _ ≤ c * ‖A η‖ := by gcongr; exact (le_max_left _ _).trans (le_max_right _ _)
+    · calc ‖A η‖ ≤ ‖A‖ * ‖η‖ := A.le_opNorm η
+        _ ≤ c * ‖η‖ := by gcongr; exact (le_max_right _ _).trans (le_max_right _ _)
+  refine hmem.of_le_mul (c := |LinearMap.det (e : E →ₗ[ℝ] E)|⁻¹ * c ^ |s|)
+    (aestronglyMeasurable_weight_smul_localFourier _ _ _ _) (.of_forall fun η ↦ ?_)
+  rw [localFourier_compCLMOfContinuousLinearEquiv,
+    ContinuousLinearEquiv.transportTestFunction_transportTestFunction_symm, norm_smul, norm_smul,
+    norm_mul, Complex.norm_real, Real.norm_of_nonneg (by positivity),
+    Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity), mul_left_comm,
+    mul_assoc]
+  refine mul_le_mul_of_nonneg_left ?_ (by positivity)
+  rw [← mul_assoc]
+  exact mul_le_mul_of_nonneg_right (hweight η) (norm_nonneg _)
+
+/-- **Microlocal `H^s` regularity under a linear change of coordinates.** When `e` identifies `V`
+with `Ω`, the pullback `e^* T` is microlocally `H^s` at `(x, ξ)` exactly when `T` is microlocally
+`H^s` at `(e x, (e⁻¹)ᵀ ξ)`. -/
+theorem isMicrolocallySobolevAt_compCLMOfContinuousLinearEquiv_iff {s : ℝ} {T : 𝓓'(Ω, ℂ)}
+    {x ξ : E} (e : E ≃L[ℝ] E) (hVO : MapsTo e V Ω) (hOV : MapsTo e.symm Ω V) :
+    (compCLMOfContinuousLinearEquiv e hVO T).IsMicrolocallySobolevAt s x ξ ↔
+      T.IsMicrolocallySobolevAt s (e x) (((e.symm : E →L[ℝ] E)†) ξ) := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.compCLMOfContinuousLinearEquiv e hVO hOV⟩
+  -- Pull `e^* T` back along `e⁻¹`, which gives back `T`.
+  have h' : (compCLMOfContinuousLinearEquiv e hVO T).IsMicrolocallySobolevAt s (e.symm (e x))
+      (((e.symm.symm : E →L[ℝ] E)†) (((e.symm : E →L[ℝ] E)†) ξ)) := by
+    simpa only [ContinuousLinearEquiv.adjoint_symm_adjoint_apply,
+      ContinuousLinearEquiv.symm_apply_apply] using h
+  simpa using h'.compCLMOfContinuousLinearEquiv e.symm hOV (by simpa using hVO)
+
+/-- **The `H^s` wave front set under a linear change of coordinates.** When `e` identifies `V`
+with `Ω`, the `H^s` wave front set of the pullback `e^* T` consists of the `(x, ξ)` with
+`(e x, (e⁻¹)ᵀ ξ)` in the `H^s` wave front set of `T`: positions move by `e⁻¹` and covectors by the
+transpose `eᵀ`, as for the wave front set
+(`Distribution.waveFrontSet_compCLMOfContinuousLinearEquiv`). -/
+theorem sobolevWaveFrontSet_compCLMOfContinuousLinearEquiv (s : ℝ) (e : E ≃L[ℝ] E)
+    (hVO : MapsTo e V Ω) (hOV : MapsTo e.symm Ω V) (T : 𝓓'(Ω, ℂ)) :
+    (compCLMOfContinuousLinearEquiv e hVO T).sobolevWaveFrontSet s =
+      Prod.map e ((e.symm : E →L[ℝ] E)†) ⁻¹' T.sobolevWaveFrontSet s := by
+  ext ⟨x, ξ⟩
+  have hx : x ∈ V ↔ e x ∈ Ω := ⟨fun h ↦ hVO h, fun h ↦ by simpa using hOV h⟩
+  have hξ : ξ ≠ 0 ↔ ((e.symm : E →L[ℝ] E)†) ξ ≠ 0 :=
+    (map_ne_zero_iff _ e.symm.adjoint_bijective.injective).symm
+  simp only [mem_sobolevWaveFrontSet_iff, mem_preimage, Prod.map_apply, hx, hξ,
+    isMicrolocallySobolevAt_compCLMOfContinuousLinearEquiv_iff e hVO hOV]
+
+end LinearEquiv
 
 end Distribution

@@ -29,7 +29,9 @@ Universal coefficients then gives the same vanishing for relative cohomology wit
 chain coefficients.
 
 This is the below-rank vanishing used in constructing Thom classes from local fibre
-generators.
+generators. In the degree of the rank the same colimit presentation shows that the fibre pairs
+`(E_b, E_b ∖ {0})` generate the homology of the Thom pair: a morphism out of it is determined by
+its composites with the fibre inclusions (`TauCeti.singularHomology_thomPair_hom_ext`).
 
 For an arbitrary trivializing open cover, compatible top-degree classes glue uniquely over the
 union (`TauCeti.existsUnique_singularCohomology_thomPairOver_iUnion`). Compact subsets of both
@@ -54,6 +56,8 @@ bundle provides (`TauCeti.VectorBundleOrientation.exists_isThomClass`).
 
 * `TauCeti.isZero_singularHomology_thomPair`, `TauCeti.isZero_singularCohomology_thomPair`: the
   relative (co)homology of the Thom pair vanishes below the rank.
+* `TauCeti.singularHomology_thomPair_hom_ext`: morphisms out of the top-degree homology of the Thom
+  pair are determined on the fibres.
 * `TauCeti.existsUnique_singularCohomology_thomPairOver_iUnion`: compatible top-degree classes
   over an arbitrary trivializing open cover glue uniquely over its union.
 * `TauCeti.existsUnique_singularCohomology_thomPair_of_iUnion_eq_univ`,
@@ -184,6 +188,24 @@ def isColimitMapCoconeSingularHomologyThomPairFiniteTrivializingUnion
           ⟨p.1, hs (mem_image_of_mem _ hp), p.2⟩
         rw [hfst s] at h
         exact h⟩⟩)
+
+/-- Each leg of the homology cocone of finite trivializing unions is, up to the identifications
+`TopPair.singularHomologyFunctor_obj`, the map induced by the restriction from the union to the
+whole Thom pair. -/
+@[reassoc]
+theorem singularHomologyFunctor_mapCocone_thomPairFiniteTrivializingUnionCocone_ι_app
+    {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C] [CategoryWithHomology C]
+    (R : C) (n : ℕ) (s : Finset B) :
+    ((TopPair.singularHomologyFunctor R n).mapCocone
+        (thomPairFiniteTrivializingUnionCocone (F := F) (E := E))).ι.app s ≫
+        eqToHom (by simp : ((TopPair.singularHomologyFunctor R n).mapCocone
+          (thomPairFiniteTrivializingUnionCocone (F := F) (E := E))).pt =
+            (thomPair F E).singularHomology R n) =
+      eqToHom (by simp) ≫
+        TopPair.singularHomologyMap (thomPairOverMap F E
+          (subset_univ (⋃ b ∈ s, (trivializationAt F E b).baseSet)) ≫
+            (thomPairOverUnivIso F E).hom) R n := by
+  simp [TopPair.singularHomologyMap_comp]
 
 end DirectedUnion
 
@@ -424,6 +446,34 @@ theorem isZero_singularHomology_thomPair
         isZero_singularHomology_thomPairOver_biUnion R s
           (fun b _ ↦ (trivializationAt F E b).open_baseSet)
           (fun b _ ↦ ⟨trivializationAt F E b, inferInstance, subset_rfl⟩) hn)
+
+/-- **Morphisms out of the top-degree homology of the Thom pair are determined on the fibres**:
+two morphisms out of `Hᵣ(E, E₀)`, `r = dim F`, which agree after the inclusion of the fibre pair
+`(E_b, E_b ∖ {0})` over every point `b`, are equal. Equivalently, the images of the fibre pairs
+generate `Hᵣ(E, E₀)`. The base is arbitrary; the coefficients lie in an abelian category with exact
+filtered colimits. -/
+theorem singularHomology_thomPair_hom_ext
+    {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C]
+    [HasFilteredColimitsOfSize.{w, w} C] [AB5OfSize.{w, w} C] {R T : C}
+    {g g' : (thomPair F E).singularHomology R (finrank ℝ F) ⟶ T}
+    (h : ∀ b, TopPair.singularHomologyMap (fiberThomPairMap F E b) R _ ≫ g =
+      TopPair.singularHomologyMap (fiberThomPairMap F E b) R _ ≫ g') : g = g' := by
+  -- The homology of the Thom pair is the colimit of its homology over finite unions of
+  -- trivializing sets, over each of which `g` and `g'` are determined on the fibres.
+  refine (cancel_epi (eqToHom (by simp : ((TopPair.singularHomologyFunctor R _).mapCocone
+    (thomPairFiniteTrivializingUnionCocone (F := F) (E := E))).pt =
+      (thomPair F E).singularHomology R (finrank ℝ F)))).1
+    ((isColimitMapCoconeSingularHomologyThomPairFiniteTrivializingUnion
+      (F := F) (E := E) R (finrank ℝ F)).hom_ext fun s ↦ ?_)
+  rw [singularHomologyFunctor_mapCocone_thomPairFiniteTrivializingUnionCocone_ι_app_assoc,
+    singularHomologyFunctor_mapCocone_thomPairFiniteTrivializingUnionCocone_ι_app_assoc,
+    cancel_epi]
+  exact singularHomology_thomPairOver_biUnion_hom_ext s
+    (fun b _ ↦ (trivializationAt F E b).open_baseSet)
+    (fun b _ ↦ ⟨trivializationAt F E b, inferInstance, subset_rfl⟩) fun b _ ↦ by
+      simp only [← TopPair.singularHomologyMap_comp_assoc,
+        fiberThomPairOverMap_comp_thomPairOverMap_assoc,
+        fiberThomPairOverMap_comp_thomPairOverUnivIso_hom, h]
 
 /-- The relative cohomology of a real vector bundle modulo its nonzero vectors vanishes
 below the rank, over an arbitrary base and with projective chain coefficients. -/

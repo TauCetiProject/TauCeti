@@ -56,9 +56,10 @@ All in the namespace `TauCeti.PDCode`:
 
 ## References
 
-* M. Khovanov, *A categorification of the Jones polynomial*, Duke Math. J. 101 (2000), §3.
+* M. Khovanov, *A categorification of the Jones polynomial*, Duke Math. J. 101 (2000),
+  §§3.2, 4.2.
 * D. Bar-Natan, *On Khovanov's categorification of the Jones polynomial*,
-  Algebr. Geom. Topol. 2 (2002), §2.2.
+  Algebr. Geom. Topol. 2 (2002), §§3.1-3.2.
 -/
 
 public section
@@ -158,8 +159,8 @@ theorem cubeState_eq_of_covBy {S T : Finset (Fin n)} (h : S ⋖ T) {a : Fin n} (
   obtain rfl : a = b := (mem_insert.mp haT).resolve_right haS
   simp [cubeState, hj]
 
-/-- Along an edge `S ⋖ T` of the cube, the states of `S` and `T` differ at the added crossing
-`a ∈ T \ S`. -/
+/-- If `a ∉ S` and `a ∈ T`, the states of `S` and `T` differ at `a` (in particular, along an edge
+`S ⋖ T` of the cube, at its added crossing). -/
 theorem cubeState_ne_of_notMem_of_mem {S T : Finset (Fin n)} {a : Fin n} (haS : a ∉ S)
     (haT : a ∈ T) : cubeState S a ≠ cubeState T a := by
   simp [cubeState, haS, haT]

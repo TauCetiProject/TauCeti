@@ -31,9 +31,10 @@ of handles and of handle attachments.
 * Attaching any family of handles to a space `X` along any map `φ` gives a space `P` containing
   `X` as a closed subspace (`TauCeti.TopCat.isClosedEmbedding_of_isPushout_handles`), and `P` is
   Hausdorff when `X` is (`TauCeti.TopCat.t2Space_of_isPushout_handles`). No finiteness of the
-  family and no condition on `φ` are needed. The attaching regions are closed in the compact
-  Hausdorff handles, and each has a neighbourhood `‖x‖ > 1 / 2` retracting onto it radially, so its
-  inclusion extends disjoint open sets
+  family and no condition on `φ` are needed, and the second factor `𝔻 (l i)` of each handle may be
+  replaced by any space `Y i`, regular and Hausdorff for the second statement. The attaching
+  regions are closed in the handles, and each has a neighbourhood `‖x‖ > 1 / 2` retracting onto it
+  radially, so its inclusion extends disjoint open sets
   (`TauCeti.TopCat.extendsDisjointOpens_diskBoundaryInclusion_prodMap`); the attachment is then
   Hausdorff by the argument for cell attachments (`HomotopicalAlgebra.AttachCells.t2Space`).
 
@@ -116,33 +117,34 @@ end Homeomorph
 
 section Attachment
 
-variable {ι : Type u} {k l : ι → ℕ} {X P : TopCat.{u}}
-  {φ : ∐ (fun i ↦ TopCat.of (TopCat.diskBoundary.{u} (k i) × TopCat.disk.{u} (l i))) ⟶ X}
-  {j : X ⟶ P} {χ : ∐ (fun i ↦ TopCat.of (TopCat.disk.{u} (k i) × TopCat.disk.{u} (l i))) ⟶ P}
+variable {ι : Type u} {k : ι → ℕ} {Y : ι → TopCat.{u}} {X P : TopCat.{u}}
+  {φ : ∐ (fun i ↦ TopCat.of (TopCat.diskBoundary.{u} (k i) × Y i)) ⟶ X}
+  {j : X ⟶ P} {χ : ∐ (fun i ↦ TopCat.of (TopCat.disk.{u} (k i) × Y i)) ⟶ P}
 
-/-- Attaching handles `𝔻 (k i) × 𝔻 (l i)` to a space `X` along their attaching regions
-`∂𝔻 (k i) × 𝔻 (l i)`, by any map `φ`, gives a space `P` containing `X` as a closed subspace: in a
+/-- Attaching handles `𝔻 (k i) × Y i` to a space `X` along their attaching regions
+`∂𝔻 (k i) × Y i`, by any map `φ`, gives a space `P` containing `X` as a closed subspace: in a
 pushout square in `TopCat` of `φ` and the inclusion of the attaching regions, the map `j : X ⟶ P`
-is a closed embedding. -/
+is a closed embedding. In Morse theory `Y i` is the disk `𝔻 (l i)`. -/
 theorem isClosedEmbedding_of_isPushout_handles
     (sq : IsPushout φ (Limits.Sigma.map fun i ↦ TopCat.ofHom
-      ((TopCat.diskBoundaryInclusion (k i)).hom.prodMap (ContinuousMap.id _))) j χ) :
+      ((TopCat.diskBoundaryInclusion (k i)).hom.prodMap (ContinuousMap.id (Y i)))) j χ) :
     IsClosedEmbedding j :=
   isClosedEmbedding_of_isPushout sq <| isClosedEmbedding_sigmaMap _ fun i ↦
     (isClosedEmbedding_diskBoundaryInclusion (k i)).prodMap IsClosedEmbedding.id
 
-/-- Attaching handles `𝔻 (k i) × 𝔻 (l i)` to a Hausdorff space `X` along their attaching regions
-`∂𝔻 (k i) × 𝔻 (l i)`, by any map `φ`, gives a Hausdorff space: in a pushout square in `TopCat` of
-`φ` and the inclusion of the attaching regions, the corner `P` is Hausdorff. -/
-theorem t2Space_of_isPushout_handles [T2Space X]
+/-- Attaching handles `𝔻 (k i) × Y i` to a Hausdorff space `X` along their attaching regions
+`∂𝔻 (k i) × Y i`, by any map `φ`, gives a Hausdorff space when each `Y i` is regular and
+Hausdorff, for instance the disk `𝔻 (l i)` of Morse theory: in a pushout square in `TopCat` of `φ`
+and the inclusion of the attaching regions, the corner `P` is Hausdorff. -/
+theorem t2Space_of_isPushout_handles [T2Space X] [∀ i, T2Space (Y i)] [∀ i, RegularSpace (Y i)]
     (sq : IsPushout φ (Limits.Sigma.map fun i ↦ TopCat.ofHom
-      ((TopCat.diskBoundaryInclusion (k i)).hom.prodMap (ContinuousMap.id _))) j χ) :
+      ((TopCat.diskBoundaryInclusion (k i)).hom.prodMap (ContinuousMap.id (Y i)))) j χ) :
     T2Space P :=
   -- The square presents `P` as `X` with cells attached along closed embeddings which extend
-  -- disjoint open sets, into compact Hausdorff handles.
+  -- disjoint open sets, into regular Hausdorff handles.
   HomotopicalAlgebra.AttachCells.t2Space
     (g := fun i ↦ TopCat.ofHom
-      ((TopCat.diskBoundaryInclusion (k i)).hom.prodMap (ContinuousMap.id (TopCat.disk (l i)))))
+      ((TopCat.diskBoundaryInclusion (k i)).hom.prodMap (ContinuousMap.id (Y i))))
     { ι := ι
       π := id
       cofan₁ := Cofan.mk _ (Sigma.ι _)

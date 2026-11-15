@@ -96,10 +96,9 @@ theorem ramificationIdx_restrict_sup_of_isGalois (E₁ E₂ : IntermediateField 
   -- The wild inertia group `G₁` is normal in `G₀`, with cyclic quotient.
   let N := (ramificationGroup F Q 1).subgroupOf (ramificationGroup F Q 0)
   have : IsCyclic (ramificationGroup F Q 0 ⧸ N) := isCyclic_quotient_ramificationGroup_one F Q
-  -- Its order is a power of the residue characteristic `p`, which divides neither `[G₀ : G₁]` nor
-  -- the index of the subgroup fixing `E₁`; in characteristic zero `G₁` is trivial.
-  have hcop : (Nat.card N).Coprime N.index ∧
-      (Nat.card N).Coprime (E₁.fixingSubgroup.comap ι).index := by
+  -- Its order is a power of the residue characteristic `p`, which does not divide the index of the
+  -- subgroup fixing `E₁`; in characteristic zero `G₁` is trivial.
+  have hcop : (Nat.card N).Coprime (E₁.fixingSubgroup.comap ι).index := by
     obtain ⟨p, hp⟩ := CharP.exists Q.ResidueField
     rcases CharP.char_is_prime_or_zero Q.ResidueField p with hprime | rfl
     · have : Fact p.Prime := ⟨hprime⟩
@@ -110,9 +109,7 @@ theorem ramificationIdx_restrict_sup_of_isGalois (E₁ E₂ : IntermediateField 
         rw [map_natCast, map_zero]
         exact (CharP.cast_eq_zero_iff Q.ResidueField p _).mpr hdvd
       rw [show Nat.card N = p ^ n from hn]
-      exact ⟨((Nat.Prime.coprime_iff_not_dvd hprime).mpr
-        (not_dvd_index_ramificationGroup_one F Q p)).pow_left n,
-        ((Nat.Prime.coprime_iff_not_dvd hprime).mpr hdvd).pow_left n⟩
+      exact ((Nat.Prime.coprime_iff_not_dvd hprime).mpr hdvd).pow_left n
     · have : CharZero Q.ResidueField := CharP.charP_zero_iff_charZero _ |>.mp hp
       have : Finite (ramificationGroup F Q 1) := Finite.of_injective _
         (Subtype.val_injective.comp
@@ -122,7 +119,7 @@ theorem ramificationIdx_restrict_sup_of_isGalois (E₁ E₂ : IntermediateField 
         rw [ramificationGroup_one_eq_bot F Q]
         exact disjoint_bot_left
       simp [hN]
-  exact Subgroup.index_inf_eq_lcm_of_isCyclic_quotient N hcop.1 hcop.2 _
+  exact Subgroup.index_inf_eq_lcm_of_isCyclic_quotient N hcop _
 
 end Galois
 

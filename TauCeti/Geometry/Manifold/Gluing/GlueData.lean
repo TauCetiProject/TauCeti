@@ -52,7 +52,7 @@ not copied into a new structure. Empty pieces need no special treatment.
   tested on the pieces.
 * `TopCat.GlueData.IsCompatible.isLocalDiffeomorph_iff`: local diffeomorphisms out of the glued
   space are detected on the pieces.
-* `TopCat.GlueData.IsCompatible.maximalAtlas_chartedSpace_eq`: uniqueness of the glued manifold
+* `TopCat.GlueData.maximalAtlas_chartedSpace_eq`: uniqueness of the glued manifold
   structure.
 
 ## References
@@ -236,15 +236,17 @@ theorem IsCompatible.isLocalDiffeomorph_iff (h : D.IsCompatible I n) {E' : Type*
   TauCeti.isLocalDiffeomorph_iff_chartedSpaceOfIsOpenEmbedding D.ι_isOpenEmbedding
     D.ι_jointly_surjective fun _ _ _ _ ↦ h.exists_contMDiffAt_transition
 
+variable (D) in
+omit [∀ ij, ChartedSpace H (D.V ij)] in
 /-- **Uniqueness of the glued manifold structure.** A `C^n` manifold structure on the glued space
 for which every canonical map is a `C^n` local diffeomorphism has the same maximal atlas as
 `D.chartedSpace H`. -/
-theorem IsCompatible.maximalAtlas_chartedSpace_eq (h : D.IsCompatible I n)
+theorem maximalAtlas_chartedSpace_eq
     {c : ChartedSpace H D.toGlueData.glued} (hc : letI := c; IsManifold I n D.toGlueData.glued)
     (hιc : ∀ i, letI := c; IsLocalDiffeomorph I I n (D.toGlueData.ι i)) :
     (letI := D.chartedSpace H; maximalAtlas I n D.toGlueData.glued) =
       (letI := c; maximalAtlas I n D.toGlueData.glued) :=
   TauCeti.maximalAtlas_chartedSpaceOfIsOpenEmbedding_eq D.ι_isOpenEmbedding
-    D.ι_jointly_surjective (fun _ _ _ _ ↦ h.exists_contMDiffAt_transition) hc hιc
+    D.ι_jointly_surjective hc hιc
 
 end TopCat.GlueData

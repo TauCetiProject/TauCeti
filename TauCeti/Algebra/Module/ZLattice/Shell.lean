@@ -83,6 +83,7 @@ public section
 
 open Filter Asymptotics Metric Module MeasureTheory
 open scoped RealInnerProductSpace
+open scoped Pointwise
 
 namespace ZLattice
 

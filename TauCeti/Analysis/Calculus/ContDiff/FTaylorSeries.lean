@@ -25,7 +25,7 @@ Over a real or complex normed field, locally uniform limits of the coefficients 
 derivative series are again Taylor derivative series, provided the underlying functions converge
 pointwise. This is the derivative-compatibility step in completeness of smooth function spaces.
 The limit argument uses Mathlib's `hasFDerivAt_of_tendstoLocallyUniformlyOn`.
-`TauCeti.exists_smooth_of_locallyUniform_jet_limits` specializes this to canonical iterated
+`IsOpen.exists_smooth_of_locallyUniform_jet_limits` specializes this to canonical iterated
 derivatives on an open set, recovering a smooth limit with those derivatives.
 
 Taylor series with matching coefficients glue across two closed sets on their union.
@@ -114,7 +114,7 @@ theorem HasFTaylorSeriesUpTo.of_tendstoLocallyUniformly [IsRCLikeNormedField �
       (fun m hm ↦ (hq m hm).tendstoLocallyUniformlyOn) (fun x _ ↦ hf x))
 
 
-namespace TauCeti
+namespace IsOpen
 
 /-- Locally uniform limits of all derivatives of smooth maps are the derivatives of one
 smooth limit on an open set. The index filter is arbitrary and the target need not be complete. -/
@@ -142,7 +142,7 @@ theorem exists_smooth_of_locallyUniform_jet_limits [IsRCLikeNormedField 𝕜]
   exact (iteratedFDerivWithin_of_isOpen m hΩ hx).symm.trans
     (hT.eq_iteratedFDerivWithin_of_uniqueDiffOn (by simp) hΩ.uniqueDiffOn hx).symm
 
-end TauCeti
+end IsOpen
 
 noncomputable section
 

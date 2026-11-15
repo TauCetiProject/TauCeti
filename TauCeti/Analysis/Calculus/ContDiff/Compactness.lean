@@ -25,7 +25,7 @@ compactness. No geometric atlas, curvature estimate or geometric limit is constr
 
 ## Main results
 
-* `TauCeti.exists_strictMono_tendstoUniformlyOn_iteratedFDeriv`: simultaneous convergence
+* `IsOpen.exists_strictMono_tendstoUniformlyOn_iteratedFDeriv`: simultaneous convergence
   of every derivative to those of one smooth limit on every compact subset.
 
 ## References
@@ -41,7 +41,9 @@ public section
 open Filter Set Metric
 open scoped ContDiff Topology
 
-namespace TauCeti
+namespace IsOpen
+
+open TauCeti
 
 variable {X E : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
   [FiniteDimensional ℝ X] [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -165,4 +167,4 @@ theorem exists_strictMono_tendstoUniformlyOn_iteratedFDeriv [FiniteDimensional �
   have hconv := (tendstoLocallyUniformlyOn_iff_forall_isCompact hΩ).mp (hjets m) K hKΩ hK
   exact hconv.congr_right (fun x hx ↦ (heq m (hKΩ hx)).symm)
 
-end TauCeti
+end IsOpen

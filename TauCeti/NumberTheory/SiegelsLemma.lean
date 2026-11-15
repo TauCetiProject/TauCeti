@@ -122,7 +122,7 @@ theorem ker_mulVecLin_geomRecurrence [CommRing R] (b : R) (m : ℕ) :
 
 /-- The sup norm of the matrix of `b xᵢ = xᵢ₊₁` is `max ‖b‖ 1`, as soon as there is an
 equation. -/
-theorem norm_geomRecurrence [NormedRing R] [NormOneClass R] (b : R) {m : ℕ} (hm : 0 < m) :
+theorem norm_geomRecurrence [SeminormedRing R] [NormOneClass R] (b : R) {m : ℕ} (hm : 0 < m) :
     ‖geomRecurrence b m‖ = max ‖b‖ 1 := by
   refine le_antisymm ((_root_.Matrix.norm_le_iff (by positivity)).2 fun i j ↦ ?_) ?_
   · rw [geomRecurrence_apply]

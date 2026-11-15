@@ -114,7 +114,7 @@ theorem integral_norm_sub_inv_closedBall_le_add {w c : ℂ} {r R : ℝ} (hr : 0 
         apply setIntegral_mono_set
           (by simpa only [IntegrableOn, norm_inv, norm_sub_rev] using hi.norm)
           (Eventually.of_forall fun _ ↦ inv_nonneg.mpr (norm_nonneg _))
-        exact hsub.eventuallyLE
+        exact hsub.eventuallySubset
     _ = 2 * Real.pi * (r + R) := integral_norm_sub_inv_closedBall (add_nonneg hr hR) w
 
 /-- A pole in a disk of radius `R` contributes at most `4πR` to its inverse-distance integral. -/
@@ -141,7 +141,7 @@ theorem setLIntegral_enorm_sub_inv_le (s : Set ℂ) (z : ℂ) :
       ((Complex.locallyIntegrable_sub_inv z).integrableOn_isCompact
         (isCompact_closedBall z 1)).neg.congr_fun
           (fun w _ ↦ by rw [Pi.neg_apply, ← inv_neg, neg_sub]) measurableSet_closedBall
-    rw [← ofReal_integral_norm_eq_lintegral_enorm hi]
+    rw [← ofReal_integral_norm_eq_lintegral_eNorm hi]
     simp_rw [norm_inv]
     rw [integral_norm_sub_inv_closedBall zero_le_one, mul_one]
   calc ∫⁻ w in s, ‖(w - z)⁻¹‖ₑ
