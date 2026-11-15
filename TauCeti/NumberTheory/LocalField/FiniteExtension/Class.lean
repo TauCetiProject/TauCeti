@@ -91,42 +91,26 @@ computed in the canonical spectral-norm local-field structure on any representat
 def inertiaDegree (c : FiniteExtensionClass K) : ℕ :=
   c.lift
     (fun L _ _ _ ↦
-      letI : ValuativeRel L := algebraicExtensionValuativeRel K L
-      letI : TopologicalSpace L := algebraicExtensionNormedFieldTopology K L
-      haveI : IsNonarchimedeanLocalField L := finiteExtension_isNonarchimedeanLocalField K L
-      haveI : ValuativeExtension K L := algebraicExtension_valuativeExtension K L
+      letI := algebraicExtensionValuativeRel K L
+      letI := algebraicExtensionNormedFieldTopology K L
+      haveI := finiteExtension_isNonarchimedeanLocalField K L
+      haveI := algebraicExtension_valuativeExtension K L
       TauCeti.inertiaDegree K L)
     fun L₁ L₂ _ _ _ _ _ _ e ↦ by
-      let : ValuativeRel L₁ := algebraicExtensionValuativeRel K L₁
-      let : TopologicalSpace L₁ := algebraicExtensionNormedFieldTopology K L₁
-      have : IsNonarchimedeanLocalField L₁ := finiteExtension_isNonarchimedeanLocalField K L₁
-      have : ValuativeExtension K L₁ := algebraicExtension_valuativeExtension K L₁
-      let : ValuativeRel L₂ := algebraicExtensionValuativeRel K L₂
-      let : TopologicalSpace L₂ := algebraicExtensionNormedFieldTopology K L₂
-      have : IsNonarchimedeanLocalField L₂ := finiteExtension_isNonarchimedeanLocalField K L₂
-      have : ValuativeExtension K L₂ := algebraicExtension_valuativeExtension K L₂
+      let := algebraicExtensionValuativeRel K L₁
+      let := algebraicExtensionNormedFieldTopology K L₁
+      have := finiteExtension_isNonarchimedeanLocalField K L₁
+      have := algebraicExtension_valuativeExtension K L₁
+      let := algebraicExtensionValuativeRel K L₂
+      let := algebraicExtensionNormedFieldTopology K L₂
+      have := finiteExtension_isNonarchimedeanLocalField K L₂
+      have := algebraicExtension_valuativeExtension K L₂
       exact TauCeti.inertiaDegree_eq_of_algEquiv K L₁ L₂ e
 
-/-- The ramification index `e(c)` of a finite extension class `c` of a nonarchimedean local field
-`K`, computed in the canonical spectral-norm local-field structure on any representative. -/
+/-- The ramification index `e(c) = [L : K] / f(c)` of a finite extension class `c` of a
+nonarchimedean local field `K`. -/
 def ramificationIndex (c : FiniteExtensionClass K) : ℕ :=
-  c.lift
-    (fun L _ _ _ ↦
-      letI : ValuativeRel L := algebraicExtensionValuativeRel K L
-      letI : TopologicalSpace L := algebraicExtensionNormedFieldTopology K L
-      haveI : IsNonarchimedeanLocalField L := finiteExtension_isNonarchimedeanLocalField K L
-      haveI : ValuativeExtension K L := algebraicExtension_valuativeExtension K L
-      TauCeti.ramificationIndex K L)
-    fun L₁ L₂ _ _ _ _ _ _ e ↦ by
-      let : ValuativeRel L₁ := algebraicExtensionValuativeRel K L₁
-      let : TopologicalSpace L₁ := algebraicExtensionNormedFieldTopology K L₁
-      have : IsNonarchimedeanLocalField L₁ := finiteExtension_isNonarchimedeanLocalField K L₁
-      have : ValuativeExtension K L₁ := algebraicExtension_valuativeExtension K L₁
-      let : ValuativeRel L₂ := algebraicExtensionValuativeRel K L₂
-      let : TopologicalSpace L₂ := algebraicExtensionNormedFieldTopology K L₂
-      have : IsNonarchimedeanLocalField L₂ := finiteExtension_isNonarchimedeanLocalField K L₂
-      have : ValuativeExtension K L₂ := algebraicExtension_valuativeExtension K L₂
-      exact TauCeti.ramificationIndex_eq_of_algEquiv K L₁ L₂ e
+  c.finrank / c.inertiaDegree
 
 /-- The residue degree of `mk K L` agrees with `TauCeti.inertiaDegree K L` for any compatible
 local-field extension `L/K`. -/
@@ -137,10 +121,10 @@ theorem inertiaDegree_mk (L : Type v) [Field L] [ValuativeRel L] [TopologicalSpa
   obtain ⟨M, _, _, _, hM⟩ := exists_mk (mk K L)
   obtain ⟨e⟩ := (mk_eq_mk_iff L M).1 hM
   rw [hM, inertiaDegree, lift_mk]
-  let : ValuativeRel M := algebraicExtensionValuativeRel K M
-  let : TopologicalSpace M := algebraicExtensionNormedFieldTopology K M
-  have : IsNonarchimedeanLocalField M := finiteExtension_isNonarchimedeanLocalField K M
-  have : ValuativeExtension K M := algebraicExtension_valuativeExtension K M
+  let := algebraicExtensionValuativeRel K M
+  let := algebraicExtensionNormedFieldTopology K M
+  have := finiteExtension_isNonarchimedeanLocalField K M
+  have := algebraicExtension_valuativeExtension K M
   exact TauCeti.inertiaDegree_eq_of_algEquiv K M L e.symm
 
 /-- The ramification index of `mk K L` agrees with `TauCeti.ramificationIndex K L` for any
@@ -149,20 +133,14 @@ compatible local-field extension `L/K`. -/
 theorem ramificationIndex_mk (L : Type v) [Field L] [ValuativeRel L] [TopologicalSpace L]
     [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] [Module.Finite K L] :
     (mk K L).ramificationIndex = TauCeti.ramificationIndex K L := by
-  obtain ⟨M, _, _, _, hM⟩ := exists_mk (mk K L)
-  obtain ⟨e⟩ := (mk_eq_mk_iff L M).1 hM
-  rw [hM, ramificationIndex, lift_mk]
-  let : ValuativeRel M := algebraicExtensionValuativeRel K M
-  let : TopologicalSpace M := algebraicExtensionNormedFieldTopology K M
-  have : IsNonarchimedeanLocalField M := finiteExtension_isNonarchimedeanLocalField K M
-  have : ValuativeExtension K M := algebraicExtension_valuativeExtension K M
-  exact TauCeti.ramificationIndex_eq_of_algEquiv K M L e.symm
+  rw [ramificationIndex, finrank_mk, inertiaDegree_mk,
+    ← TauCeti.ramificationIndex_mul_inertiaDegree K L,
+    Nat.mul_div_cancel _ TauCeti.inertiaDegree_pos]
 
 /-- Every finite extension class of a local field has positive residue degree. -/
 theorem inertiaDegree_pos (c : FiniteExtensionClass K) : 0 < c.inertiaDegree := by
   induction c using induction_on_localField with | h L =>
-  rw [inertiaDegree_mk]
-  exact TauCeti.inertiaDegree_pos
+  rw [inertiaDegree_mk]; exact TauCeti.inertiaDegree_pos
 
 /-- The residue degree of a finite extension class of a local field is nonzero. -/
 theorem inertiaDegree_ne_zero (c : FiniteExtensionClass K) : c.inertiaDegree ≠ 0 :=
@@ -171,8 +149,7 @@ theorem inertiaDegree_ne_zero (c : FiniteExtensionClass K) : c.inertiaDegree ≠
 /-- Every finite extension class of a local field has positive ramification index. -/
 theorem ramificationIndex_pos (c : FiniteExtensionClass K) : 0 < c.ramificationIndex := by
   induction c using induction_on_localField with | h L =>
-  rw [ramificationIndex_mk]
-  exact TauCeti.ramificationIndex_pos
+  rw [ramificationIndex_mk]; exact TauCeti.ramificationIndex_pos
 
 /-- The ramification index of a finite extension class of a local field is nonzero. -/
 theorem ramificationIndex_ne_zero (c : FiniteExtensionClass K) : c.ramificationIndex ≠ 0 :=
@@ -186,14 +163,12 @@ theorem ramificationIndex_mul_inertiaDegree (c : FiniteExtensionClass K) :
     TauCeti.ramificationIndex_mul_inertiaDegree]
 
 /-- The residue degree of a finite extension class divides its degree. -/
-theorem inertiaDegree_dvd_finrank (c : FiniteExtensionClass K) :
-    c.inertiaDegree ∣ c.finrank :=
+theorem inertiaDegree_dvd_finrank (c : FiniteExtensionClass K) : c.inertiaDegree ∣ c.finrank :=
   ⟨c.ramificationIndex, by rw [mul_comm, c.ramificationIndex_mul_inertiaDegree]⟩
 
 /-- The ramification index of a finite extension class divides its degree. -/
 theorem ramificationIndex_dvd_finrank (c : FiniteExtensionClass K) :
-    c.ramificationIndex ∣ c.finrank :=
-  ⟨c.inertiaDegree, c.ramificationIndex_mul_inertiaDegree.symm⟩
+    c.ramificationIndex ∣ c.finrank := ⟨c.inertiaDegree, c.ramificationIndex_mul_inertiaDegree.symm⟩
 
 /-- The trivial extension class `self K` has residue degree `1`. -/
 @[simp]
@@ -212,11 +187,10 @@ def IsUnramified (c : FiniteExtensionClass K) : Prop :=
 
 /-- A finite extension class is unramified if and only if its ramification index is `1`. -/
 theorem isUnramified_iff_ramificationIndex_eq_one {c : FiniteExtensionClass K} :
-    c.IsUnramified ↔ c.ramificationIndex = 1 :=
-  (Iff.rfl)
+    c.IsUnramified ↔ c.ramificationIndex = 1 := (Iff.rfl)
 
-/-- `mk K L` is unramified if and only if the compatible local-field extension `L/K` is unramified.
--/
+/-- `mk K L` is unramified if and only if the compatible local-field extension `L/K` is
+unramified. -/
 @[simp]
 theorem isUnramified_mk_iff (L : Type v) [Field L] [ValuativeRel L] [TopologicalSpace L]
     [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] [Module.Finite K L] :
@@ -234,8 +208,7 @@ theorem isUnramified_iff_inertiaDegree_eq_finrank {c : FiniteExtensionClass K} :
 
 /-- The trivial extension class `self K` is unramified. -/
 @[simp]
-theorem isUnramified_self : (self K).IsUnramified := by
-  rw [isUnramified_iff_ramificationIndex_eq_one, ramificationIndex_self]
+theorem isUnramified_self : (self K).IsUnramified := ramificationIndex_self
 
 /-- Every unramified finite extension class of a nonarchimedean local field is separable. -/
 theorem IsUnramified.isSeparable {c : FiniteExtensionClass K} (hc : c.IsUnramified) :
@@ -252,8 +225,7 @@ def IsTotallyRamified (c : FiniteExtensionClass K) : Prop :=
 
 /-- A finite extension class is totally ramified if and only if its residue degree is `1`. -/
 theorem isTotallyRamified_iff_inertiaDegree_eq_one {c : FiniteExtensionClass K} :
-    c.IsTotallyRamified ↔ c.inertiaDegree = 1 :=
-  (Iff.rfl)
+    c.IsTotallyRamified ↔ c.inertiaDegree = 1 := (Iff.rfl)
 
 /-- `mk K L` is totally ramified if and only if the compatible local-field extension `L/K` is
 totally ramified. -/
@@ -274,8 +246,7 @@ theorem isTotallyRamified_iff_ramificationIndex_eq_finrank {c : FiniteExtensionC
 
 /-- The trivial extension class `self K` is totally ramified. -/
 @[simp]
-theorem isTotallyRamified_self : (self K).IsTotallyRamified := by
-  rw [isTotallyRamified_iff_inertiaDegree_eq_one, inertiaDegree_self]
+theorem isTotallyRamified_self : (self K).IsTotallyRamified := inertiaDegree_self
 
 end Invariants
 
@@ -295,10 +266,9 @@ private theorem induction_on_localField_tower {motive : FiniteExtensionClass F �
     (h : ∀ (L : Type v) [Field L] [ValuativeRel L] [TopologicalSpace L]
       [IsNonarchimedeanLocalField L] [Algebra K L] [Algebra F L] [IsScalarTower K F L]
       [ValuativeExtension F L] [ValuativeExtension K L] [Module.Finite F L] [Module.Finite K L],
-      motive (mk F L)) :
-    motive c := by
+      motive (mk F L)) : motive c := by
   induction c using induction_on_localField with | h L =>
-  let : Algebra K L := RingHom.toAlgebra ((algebraMap F L).comp (algebraMap K F))
+  let := RingHom.toAlgebra ((algebraMap F L).comp (algebraMap K F))
   have : IsScalarTower K F L := IsScalarTower.of_algebraMap_eq' rfl
   have : Module.Finite K L := Module.Finite.trans F L
   have : ValuativeExtension K L :=
@@ -310,21 +280,19 @@ private theorem induction_on_localField_tower {motive : FiniteExtensionClass F �
 /-- **Multiplicativity of the residue degree under restriction of scalars.** -/
 @[simp]
 theorem inertiaDegree_restrictScalars (c : FiniteExtensionClass F) :
-    (c.restrictScalars K).inertiaDegree = TauCeti.inertiaDegree K F * c.inertiaDegree := by
-  refine induction_on_localField_tower K c fun L ↦ ?_
-  intros
-  rw [restrictScalars_mk (F := F) K L, inertiaDegree_mk, inertiaDegree_mk,
-    TauCeti.inertiaDegree_tower (K := K) (L := F) L]
+    (c.restrictScalars K).inertiaDegree = TauCeti.inertiaDegree K F * c.inertiaDegree :=
+  induction_on_localField_tower K c fun L _ _ _ _ _ _ _ _ _ _ _ ↦ by
+    rw [restrictScalars_mk (F := F) K L, inertiaDegree_mk, inertiaDegree_mk,
+      TauCeti.inertiaDegree_tower (K := K) (L := F) L]
 
 /-- **Multiplicativity of the ramification index under restriction of scalars.** -/
 @[simp]
 theorem ramificationIndex_restrictScalars (c : FiniteExtensionClass F) :
     (c.restrictScalars K).ramificationIndex =
-      TauCeti.ramificationIndex K F * c.ramificationIndex := by
-  refine induction_on_localField_tower K c fun L ↦ ?_
-  intros
-  rw [restrictScalars_mk (F := F) K L, ramificationIndex_mk, ramificationIndex_mk,
-    TauCeti.ramificationIndex_tower (K := K) (L := F) L]
+      TauCeti.ramificationIndex K F * c.ramificationIndex :=
+  induction_on_localField_tower K c fun L _ _ _ _ _ _ _ _ _ _ _ ↦ by
+    rw [restrictScalars_mk (F := F) K L, ramificationIndex_mk, ramificationIndex_mk,
+      TauCeti.ramificationIndex_tower (K := K) (L := F) L]
 
 /-- **Tower law for unramified finite extension classes.** `c.restrictScalars K` is unramified over
 `K` if and only if both `F/K` and `c` are unramified. -/
@@ -346,60 +314,41 @@ end RestrictScalars
 
 section Transport
 
+variable {F₁ : Type u} {F₂ : Type v}
+  [Field F₁] [ValuativeRel F₁] [TopologicalSpace F₁] [IsNonarchimedeanLocalField F₁]
+  [Field F₂] [ValuativeRel F₂] [TopologicalSpace F₂] [IsNonarchimedeanLocalField F₂]
+  (e : F₁ ≃+* F₂) (he : ∀ a b : F₁, e a ≤ᵥ e b ↔ a ≤ᵥ b) (c : FiniteExtensionClass F₁)
+
+include he
+
 /-- Transport of structure along a valuation-preserving ring isomorphism preserves the residue
 degree of finite extension classes. -/
-theorem inertiaDegree_mapEquiv_of_vle_iff {F₁ : Type u} {F₂ : Type v}
-    [Field F₁] [ValuativeRel F₁] [TopologicalSpace F₁] [IsNonarchimedeanLocalField F₁]
-    [Field F₂] [ValuativeRel F₂] [TopologicalSpace F₂] [IsNonarchimedeanLocalField F₂]
-    (e : F₁ ≃+* F₂) (he : ∀ a b : F₁, e a ≤ᵥ e b ↔ a ≤ᵥ b)
-    (c : FiniteExtensionClass F₁) :
+theorem inertiaDegree_mapEquiv_of_vle_iff :
     (mapEquiv e c).inertiaDegree = c.inertiaDegree := by
+  generalize hc : mapEquiv e c = c₂
   induction c using induction_on_localField with | h L₁ =>
-  obtain ⟨L₂, _, _, _, hL₂⟩ := exists_mk (mapEquiv e (mk F₁ L₁))
-  let : ValuativeRel L₂ := algebraicExtensionValuativeRel F₂ L₂
-  let : TopologicalSpace L₂ := algebraicExtensionNormedFieldTopology F₂ L₂
-  have : IsNonarchimedeanLocalField L₂ := finiteExtension_isNonarchimedeanLocalField F₂ L₂
-  have : ValuativeExtension F₂ L₂ := algebraicExtension_valuativeExtension F₂ L₂
-  obtain ⟨φ, hφ⟩ := (mapEquiv_mk_eq_mk_iff e).1 hL₂
-  rw [hL₂, inertiaDegree_mk, inertiaDegree_mk]
+  induction c₂ using induction_on_localField with | h L₂ =>
+  obtain ⟨φ, hφ⟩ := (mapEquiv_mk_eq_mk_iff e).1 hc
+  rw [inertiaDegree_mk, inertiaDegree_mk]
   exact (TauCeti.inertiaDegree_eq_of_vle_iff e he φ hφ).symm
 
 /-- Transport of structure along a valuation-preserving ring isomorphism preserves the ramification
 index of finite extension classes. -/
-theorem ramificationIndex_mapEquiv_of_vle_iff {F₁ : Type u} {F₂ : Type v}
-    [Field F₁] [ValuativeRel F₁] [TopologicalSpace F₁] [IsNonarchimedeanLocalField F₁]
-    [Field F₂] [ValuativeRel F₂] [TopologicalSpace F₂] [IsNonarchimedeanLocalField F₂]
-    (e : F₁ ≃+* F₂) (he : ∀ a b : F₁, e a ≤ᵥ e b ↔ a ≤ᵥ b)
-    (c : FiniteExtensionClass F₁) :
+theorem ramificationIndex_mapEquiv_of_vle_iff :
     (mapEquiv e c).ramificationIndex = c.ramificationIndex := by
-  induction c using induction_on_localField with | h L₁ =>
-  obtain ⟨L₂, _, _, _, hL₂⟩ := exists_mk (mapEquiv e (mk F₁ L₁))
-  let : ValuativeRel L₂ := algebraicExtensionValuativeRel F₂ L₂
-  let : TopologicalSpace L₂ := algebraicExtensionNormedFieldTopology F₂ L₂
-  have : IsNonarchimedeanLocalField L₂ := finiteExtension_isNonarchimedeanLocalField F₂ L₂
-  have : ValuativeExtension F₂ L₂ := algebraicExtension_valuativeExtension F₂ L₂
-  obtain ⟨φ, hφ⟩ := (mapEquiv_mk_eq_mk_iff e).1 hL₂
-  rw [hL₂, ramificationIndex_mk, ramificationIndex_mk]
-  exact (TauCeti.ramificationIndex_eq_of_vle_iff e he φ hφ).symm
+  rw [ramificationIndex, ramificationIndex, finrank_mapEquiv,
+    inertiaDegree_mapEquiv_of_vle_iff e he]
 
 /-- Transport of structure along a valuation-preserving ring isomorphism preserves and reflects
 unramifiedness. -/
-theorem isUnramified_mapEquiv_iff_of_vle_iff {F₁ : Type u} {F₂ : Type v}
-    [Field F₁] [ValuativeRel F₁] [TopologicalSpace F₁] [IsNonarchimedeanLocalField F₁]
-    [Field F₂] [ValuativeRel F₂] [TopologicalSpace F₂] [IsNonarchimedeanLocalField F₂]
-    (e : F₁ ≃+* F₂) (he : ∀ a b : F₁, e a ≤ᵥ e b ↔ a ≤ᵥ b)
-    (c : FiniteExtensionClass F₁) :
+theorem isUnramified_mapEquiv_iff_of_vle_iff :
     (mapEquiv e c).IsUnramified ↔ c.IsUnramified := by
   rw [isUnramified_iff_ramificationIndex_eq_one, isUnramified_iff_ramificationIndex_eq_one,
     ramificationIndex_mapEquiv_of_vle_iff e he]
 
 /-- Transport of structure along a valuation-preserving ring isomorphism preserves and reflects
 total ramification. -/
-theorem isTotallyRamified_mapEquiv_iff_of_vle_iff {F₁ : Type u} {F₂ : Type v}
-    [Field F₁] [ValuativeRel F₁] [TopologicalSpace F₁] [IsNonarchimedeanLocalField F₁]
-    [Field F₂] [ValuativeRel F₂] [TopologicalSpace F₂] [IsNonarchimedeanLocalField F₂]
-    (e : F₁ ≃+* F₂) (he : ∀ a b : F₁, e a ≤ᵥ e b ↔ a ≤ᵥ b)
-    (c : FiniteExtensionClass F₁) :
+theorem isTotallyRamified_mapEquiv_iff_of_vle_iff :
     (mapEquiv e c).IsTotallyRamified ↔ c.IsTotallyRamified := by
   rw [isTotallyRamified_iff_inertiaDegree_eq_one, isTotallyRamified_iff_inertiaDegree_eq_one,
     inertiaDegree_mapEquiv_of_vle_iff e he]
@@ -425,9 +374,7 @@ theorem inertiaDegree_smul (τ : F ≃ₐ[K] F) (c : FiniteExtensionClass F) :
 @[simp]
 theorem ramificationIndex_smul (τ : F ≃ₐ[K] F) (c : FiniteExtensionClass F) :
     (τ • c).ramificationIndex = c.ramificationIndex := by
-  have := finite_of_valuativeExtension K F
-  exact ramificationIndex_mapEquiv_of_vle_iff (τ : F ≃+* F)
-    (fun _ _ ↦ (τ.toAlgHom : F →ₐ[K] F).valuativeExtension.vle_iff_vle) c
+  rw [ramificationIndex, ramificationIndex, finrank_smul, inertiaDegree_smul]
 
 /-- The transport-of-structure action of `F ≃ₐ[K] F` preserves and reflects unramifiedness. -/
 @[simp]

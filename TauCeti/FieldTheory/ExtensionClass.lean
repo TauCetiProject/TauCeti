@@ -181,10 +181,8 @@ theorem finrank_mk (L : Type v) [Field L] [Algebra K L] [Module.Finite K L] :
   rw [hM, finrank, lift_mk, e.toLinearEquiv.finrank_eq]
 
 /-- Every finite extension class has positive degree. -/
-theorem finrank_pos (c : FiniteExtensionClass K) : 0 < c.finrank := by
-  induction c using induction_on with | h L =>
-  rw [finrank_mk]
-  exact Module.finrank_pos
+theorem finrank_pos (c : FiniteExtensionClass K) : 0 < c.finrank :=
+  c.induction_on fun L _ _ _ ↦ by rw [finrank_mk]; exact Module.finrank_pos
 
 /-- The degree of a finite extension class is nonzero. -/
 @[simp]
@@ -225,8 +223,7 @@ theorem isSeparable_mk_iff (L : Type v) [Field L] [Algebra K L] [Module.Finite K
 /-- The trivial extension class `self K` is separable. -/
 @[simp]
 theorem isSeparable_self : (self K).IsSeparable := by
-  rw [self, isSeparable_mk_iff]
-  infer_instance
+  rw [self, isSeparable_mk_iff]; infer_instance
 
 /-- The cardinality `#Aut_K(L)` of the `K`-automorphism group of a representative `L` of `c`. -/
 def natCardAut (c : FiniteExtensionClass K) : ℕ :=
@@ -243,10 +240,8 @@ theorem natCardAut_mk (L : Type v) [Field L] [Algebra K L] [Module.Finite K L] :
   exact Nat.card_congr (AlgEquiv.autCongr e.symm).toEquiv
 
 /-- Every finite extension class has positive automorphism count. -/
-theorem natCardAut_pos (c : FiniteExtensionClass K) : 0 < c.natCardAut := by
-  induction c using induction_on with | h L =>
-  rw [natCardAut_mk]
-  exact Nat.card_pos
+theorem natCardAut_pos (c : FiniteExtensionClass K) : 0 < c.natCardAut :=
+  c.induction_on fun L _ _ _ ↦ by rw [natCardAut_mk]; exact Nat.card_pos
 
 /-- The automorphism count of a finite extension class is nonzero. -/
 @[simp]
@@ -264,6 +259,18 @@ section RestrictScalars
 
 variable (K : Type u) {F : Type v} [Field K] [Field F] [Algebra K F] [Module.Finite K F]
 
+/-- Equip a representative `L/F` of `c` with the induced `K/F/L` scalar-tower instances. -/
+@[elab_as_elim]
+private theorem induction_on_tower {motive : FiniteExtensionClass F → Prop}
+    (c : FiniteExtensionClass F)
+    (h : ∀ (L : Type v) [Field L] [Algebra K L] [Algebra F L] [IsScalarTower K F L]
+      [Module.Finite F L] [Module.Finite K L], motive (mk F L)) : motive c := by
+  induction c using induction_on with | h L =>
+  let : Algebra K L := RingHom.toAlgebra ((algebraMap F L).comp (algebraMap K F))
+  have : IsScalarTower K F L := IsScalarTower.of_algebraMap_eq' rfl
+  have : Module.Finite K L := Module.Finite.trans F L
+  exact h L
+
 /-- Restriction of scalars on finite extension classes: viewing a finite extension `L/F` as a
 finite extension `L/K`. -/
 def restrictScalars (c : FiniteExtensionClass F) : FiniteExtensionClass K :=
@@ -275,10 +282,10 @@ def restrictScalars (c : FiniteExtensionClass F) : FiniteExtensionClass K :=
       mk K L)
     fun L₁ L₂ _ _ _ _ _ _ e ↦ by
       let : Algebra K L₁ := RingHom.toAlgebra ((algebraMap F L₁).comp (algebraMap K F))
-      have : IsScalarTower K F L₁ := IsScalarTower.of_algebraMap_eq' rfl
-      have : Module.Finite K L₁ := Module.Finite.trans F L₁
       let : Algebra K L₂ := RingHom.toAlgebra ((algebraMap F L₂).comp (algebraMap K F))
+      have : IsScalarTower K F L₁ := IsScalarTower.of_algebraMap_eq' rfl
       have : IsScalarTower K F L₂ := IsScalarTower.of_algebraMap_eq' rfl
+      have : Module.Finite K L₁ := Module.Finite.trans F L₁
       have : Module.Finite K L₂ := Module.Finite.trans F L₂
       exact (mk_eq_mk_iff L₁ L₂).2 ⟨e.restrictScalars K⟩
 
@@ -303,54 +310,51 @@ theorem restrictScalars_self : (self F).restrictScalars K = mk K F :=
 /-- **Multiplicativity of degree under restriction of scalars.** -/
 @[simp]
 theorem finrank_restrictScalars (c : FiniteExtensionClass F) :
-    (c.restrictScalars K).finrank = Module.finrank K F * c.finrank := by
-  induction c using induction_on with | h L =>
-  let : Algebra K L := RingHom.toAlgebra ((algebraMap F L).comp (algebraMap K F))
-  have : IsScalarTower K F L := IsScalarTower.of_algebraMap_eq' rfl
-  have : Module.Finite K L := Module.Finite.trans F L
-  rw [restrictScalars_mk (F := F) K L, finrank_mk, finrank_mk, Module.finrank_mul_finrank K F L]
+    (c.restrictScalars K).finrank = Module.finrank K F * c.finrank :=
+  induction_on_tower K c fun L _ _ _ _ _ _ ↦ by
+    rw [restrictScalars_mk (F := F) K L, finrank_mk, finrank_mk, Module.finrank_mul_finrank K F L]
 
 /-- **Tower law for separability of finite extension classes.** `c.restrictScalars K` is separable
 over `K` if and only if both `F/K` and `c` are separable. -/
 theorem isSeparable_restrictScalars_iff (c : FiniteExtensionClass F) :
-    (c.restrictScalars K).IsSeparable ↔ Algebra.IsSeparable K F ∧ c.IsSeparable := by
-  induction c using induction_on with | h L =>
-  let : Algebra K L := RingHom.toAlgebra ((algebraMap F L).comp (algebraMap K F))
-  have : IsScalarTower K F L := IsScalarTower.of_algebraMap_eq' rfl
-  have : Module.Finite K L := Module.Finite.trans F L
-  rw [restrictScalars_mk (F := F) K L, isSeparable_mk_iff, isSeparable_mk_iff]
-  exact ⟨fun _ ↦ ⟨Algebra.isSeparable_tower_bot_of_isSeparable K F L,
-      Algebra.isSeparable_tower_top_of_isSeparable K F L⟩,
-    fun ⟨_, _⟩ ↦ Algebra.IsSeparable.trans K F L⟩
+    (c.restrictScalars K).IsSeparable ↔ Algebra.IsSeparable K F ∧ c.IsSeparable :=
+  induction_on_tower K c fun L _ _ _ _ _ _ ↦ by
+    rw [restrictScalars_mk (F := F) K L, isSeparable_mk_iff, isSeparable_mk_iff]
+    exact ⟨fun _ ↦ ⟨Algebra.isSeparable_tower_bot_of_isSeparable K F L,
+        Algebra.isSeparable_tower_top_of_isSeparable K F L⟩,
+      fun ⟨_, _⟩ ↦ Algebra.IsSeparable.trans K F L⟩
 
 end RestrictScalars
 
 section Transport
 
+variable {F₁ : Type u} {F₂ : Type v} [Field F₁] [Field F₂]
+
+private theorem finite_compHom {L : Type*} [Field L] [Algebra F₁ L] [Module.Finite F₁ L]
+    (e : F₁ ≃+* F₂) :
+    letI : Algebra F₂ L := Algebra.compHom L e.symm.toRingHom
+    Module.Finite F₂ L :=
+  letI : Algebra F₂ L := Algebra.compHom L e.symm.toRingHom
+  Module.Finite.of_equiv_equiv e (RingEquiv.refl L)
+    (RingHom.ext fun _ ↦ by simp [Algebra.compHom_algebraMap_apply])
+
 /-- Auxiliary pushforward of finite extension classes along a ring isomorphism `e : F₁ ≃+* F₂`. -/
-private def mapAux {F₁ : Type u} {F₂ : Type v} [Field F₁] [Field F₂] (e : F₁ ≃+* F₂)
-    (c : FiniteExtensionClass F₁) : FiniteExtensionClass F₂ :=
+private def mapAux (e : F₁ ≃+* F₂) (c : FiniteExtensionClass F₁) : FiniteExtensionClass F₂ :=
   c.lift
     (fun L _ _ _ ↦
       letI : Algebra F₂ L := Algebra.compHom L e.symm.toRingHom
-      haveI : Module.Finite F₂ L :=
-        Module.Finite.of_equiv_equiv e (RingEquiv.refl L) (RingHom.ext fun a ↦ by
-          simp [Algebra.compHom_algebraMap_apply])
+      haveI : Module.Finite F₂ L := finite_compHom e
       mk F₂ L)
     fun L₁ L₂ _ _ _ _ _ _ eL ↦ by
       let : Algebra F₂ L₁ := Algebra.compHom L₁ e.symm.toRingHom
-      have : Module.Finite F₂ L₁ :=
-        Module.Finite.of_equiv_equiv e (RingEquiv.refl L₁) (RingHom.ext fun a ↦ by
-          simp [Algebra.compHom_algebraMap_apply])
       let : Algebra F₂ L₂ := Algebra.compHom L₂ e.symm.toRingHom
-      have : Module.Finite F₂ L₂ :=
-        Module.Finite.of_equiv_equiv e (RingEquiv.refl L₂) (RingHom.ext fun a ↦ by
-          simp [Algebra.compHom_algebraMap_apply])
+      have : Module.Finite F₂ L₁ := finite_compHom e
+      have : Module.Finite F₂ L₂ := finite_compHom e
       exact (mk_eq_mk_iff L₁ L₂).2
         ⟨AlgEquiv.ofRingEquiv (f := eL.toRingEquiv) fun b ↦ eL.commutes (e.symm b)⟩
 
-private theorem mapAux_mk_eq_mk_iff {F₁ : Type u} {F₂ : Type v} [Field F₁] [Field F₂]
-    (e : F₁ ≃+* F₂) {L₁ L₂ : Type*} [Field L₁] [Algebra F₁ L₁] [Module.Finite F₁ L₁]
+private theorem mapAux_mk_eq_mk_iff (e : F₁ ≃+* F₂)
+    {L₁ L₂ : Type*} [Field L₁] [Algebra F₁ L₁] [Module.Finite F₁ L₁]
     [Field L₂] [Algebra F₂ L₂] [Module.Finite F₂ L₂] :
     mapAux e (mk F₁ L₁) = mk F₂ L₂ ↔
       ∃ φ : L₁ ≃+* L₂, ∀ a : F₁, φ (algebraMap F₁ L₁ a) = algebraMap F₂ L₂ (e a) := by
@@ -358,9 +362,7 @@ private theorem mapAux_mk_eq_mk_iff {F₁ : Type u} {F₂ : Type v} [Field F₁]
   obtain ⟨α⟩ := (mk_eq_mk_iff L₁ M₁).1 hM₁
   rw [hM₁, mapAux, lift_mk]
   let : Algebra F₂ M₁ := Algebra.compHom M₁ e.symm.toRingHom
-  have : Module.Finite F₂ M₁ :=
-    Module.Finite.of_equiv_equiv e (RingEquiv.refl M₁) (RingHom.ext fun a ↦ by
-      simp [Algebra.compHom_algebraMap_apply])
+  have : Module.Finite F₂ M₁ := finite_compHom e
   rw [mk_eq_mk_iff]
   constructor
   · rintro ⟨β⟩
@@ -377,8 +379,7 @@ private theorem mapAux_refl {F : Type u} [Field F] (c : FiniteExtensionClass F) 
   induction c using induction_on with | h L =>
   exact (mapAux_mk_eq_mk_iff (RingEquiv.refl F)).2 ⟨RingEquiv.refl L, fun _ ↦ rfl⟩
 
-private theorem mapAux_trans {F₁ : Type u} {F₂ : Type v} {F₃ : Type w}
-    [Field F₁] [Field F₂] [Field F₃] (e₁ : F₁ ≃+* F₂) (e₂ : F₂ ≃+* F₃)
+private theorem mapAux_trans {F₃ : Type w} [Field F₃] (e₁ : F₁ ≃+* F₂) (e₂ : F₂ ≃+* F₃)
     (c : FiniteExtensionClass F₁) :
     mapAux (e₁.trans e₂) c = mapAux e₂ (mapAux e₁ c) := by
   induction c using induction_on with | h L₁ =>
@@ -392,8 +393,7 @@ private theorem mapAux_trans {F₁ : Type u} {F₂ : Type v} {F₃ : Type w}
 /-- **Transport of structure on finite extension classes.** A ring isomorphism `e : F₁ ≃+* F₂` of
 base fields induces a bijection between their finite extension classes, sending `[L₁]` to the
 `F₂`-class of `L₁` with `F₂` acting through `e⁻¹`. -/
-def mapEquiv {F₁ : Type u} {F₂ : Type v} [Field F₁] [Field F₂] (e : F₁ ≃+* F₂) :
-    FiniteExtensionClass F₁ ≃ FiniteExtensionClass F₂ where
+def mapEquiv (e : F₁ ≃+* F₂) : FiniteExtensionClass F₁ ≃ FiniteExtensionClass F₂ where
   toFun := mapAux e
   invFun := mapAux e.symm
   left_inv c := by rw [← mapAux_trans, e.self_trans_symm, mapAux_refl]
@@ -401,7 +401,7 @@ def mapEquiv {F₁ : Type u} {F₂ : Type v} [Field F₁] [Field F₂] (e : F₁
 
 /-- **Characterization of `mapEquiv` on classes.** `mapEquiv e (mk F₁ L₁) = mk F₂ L₂` if and only
 if there is a ring isomorphism `L₁ ≃+* L₂` intertwining `algebraMap` with `e`. -/
-theorem mapEquiv_mk_eq_mk_iff {F₁ : Type u} {F₂ : Type v} [Field F₁] [Field F₂] (e : F₁ ≃+* F₂)
+theorem mapEquiv_mk_eq_mk_iff (e : F₁ ≃+* F₂)
     {L₁ L₂ : Type*} [Field L₁] [Algebra F₁ L₁] [Module.Finite F₁ L₁]
     [Field L₂] [Algebra F₂ L₂] [Module.Finite F₂ L₂] :
     mapEquiv e (mk F₁ L₁) = mk F₂ L₂ ↔
@@ -416,26 +416,21 @@ theorem mapEquiv_refl {F : Type u} [Field F] :
 
 /-- The inverse of `mapEquiv e` is `mapEquiv e.symm`. -/
 @[simp]
-theorem mapEquiv_symm {F₁ : Type u} {F₂ : Type v} [Field F₁] [Field F₂] (e : F₁ ≃+* F₂) :
-    (mapEquiv e).symm = mapEquiv e.symm :=
-  (rfl)
+theorem mapEquiv_symm (e : F₁ ≃+* F₂) : (mapEquiv e).symm = mapEquiv e.symm := (rfl)
 
 /-- Transport of finite extension classes is functorial under composition of ring equivalences. -/
-theorem mapEquiv_trans {F₁ : Type u} {F₂ : Type v} {F₃ : Type w}
-    [Field F₁] [Field F₂] [Field F₃] (e₁ : F₁ ≃+* F₂) (e₂ : F₂ ≃+* F₃) :
+theorem mapEquiv_trans {F₃ : Type w} [Field F₃] (e₁ : F₁ ≃+* F₂) (e₂ : F₂ ≃+* F₃) :
     mapEquiv (e₁.trans e₂) = (mapEquiv e₁).trans (mapEquiv e₂) :=
   Equiv.ext (mapAux_trans e₁ e₂)
 
 /-- Transport along `e : F₁ ≃+* F₂` sends the trivial class `self F₁` to `self F₂`. -/
 @[simp]
-theorem mapEquiv_self {F₁ : Type u} {F₂ : Type v} [Field F₁] [Field F₂] (e : F₁ ≃+* F₂) :
-    mapEquiv e (self F₁) = self F₂ :=
-  (mapEquiv_mk_eq_mk_iff e).2 ⟨e, fun a ↦ by simp⟩
+theorem mapEquiv_self (e : F₁ ≃+* F₂) : mapEquiv e (self F₁) = self F₂ :=
+  (mapEquiv_mk_eq_mk_iff e).2 ⟨e, fun _ ↦ by simp⟩
 
 /-- Transport of structure along a ring equivalence preserves extension degree. -/
 @[simp]
-theorem finrank_mapEquiv {F₁ : Type u} {F₂ : Type v} [Field F₁] [Field F₂] (e : F₁ ≃+* F₂)
-    (c : FiniteExtensionClass F₁) :
+theorem finrank_mapEquiv (e : F₁ ≃+* F₂) (c : FiniteExtensionClass F₁) :
     (mapEquiv e c).finrank = c.finrank := by
   induction c using induction_on with | h L₁ =>
   obtain ⟨L₂, _, _, _, hL₂⟩ := exists_mk (mapEquiv e (mk F₁ L₁))
@@ -445,8 +440,7 @@ theorem finrank_mapEquiv {F₁ : Type u} {F₂ : Type v} [Field F₁] [Field F�
 
 /-- Transport of structure along a ring equivalence preserves and reflects separability. -/
 @[simp]
-theorem isSeparable_mapEquiv_iff {F₁ : Type u} {F₂ : Type v} [Field F₁] [Field F₂] (e : F₁ ≃+* F₂)
-    (c : FiniteExtensionClass F₁) :
+theorem isSeparable_mapEquiv_iff (e : F₁ ≃+* F₂) (c : FiniteExtensionClass F₁) :
     (mapEquiv e c).IsSeparable ↔ c.IsSeparable := by
   induction c using induction_on with | h L₁ =>
   obtain ⟨L₂, _, _, _, hL₂⟩ := exists_mk (mapEquiv e (mk F₁ L₁))
@@ -456,8 +450,7 @@ theorem isSeparable_mapEquiv_iff {F₁ : Type u} {F₂ : Type v} [Field F₁] [F
 
 /-- Transport of structure along a ring equivalence preserves the automorphism count. -/
 @[simp]
-theorem natCardAut_mapEquiv {F₁ : Type u} {F₂ : Type v} [Field F₁] [Field F₂] (e : F₁ ≃+* F₂)
-    (c : FiniteExtensionClass F₁) :
+theorem natCardAut_mapEquiv (e : F₁ ≃+* F₂) (c : FiniteExtensionClass F₁) :
     (mapEquiv e c).natCardAut = c.natCardAut := by
   induction c using induction_on with | h L₁ =>
   obtain ⟨L₂, _, _, _, hL₂⟩ := exists_mk (mapEquiv e (mk F₁ L₁))
@@ -475,41 +468,32 @@ variable {R : Type*} {F : Type u} [CommSemiring R] [Field F] [Algebra R F]
 `mapEquiv (τ : F ≃+* F) [L]`, the `F`-isomorphism class of `L` with `F` acting through `τ⁻¹`. -/
 instance instMulActionAlgEquiv : MulAction (F ≃ₐ[R] F) (FiniteExtensionClass F) where
   smul τ c := mapEquiv (τ : F ≃+* F) c
-  one_smul c := by
-    dsimp only [HSMul.hSMul]
-    rw [AlgEquiv.toRingEquiv_one, mapEquiv_refl, Equiv.refl_apply]
+  one_smul c := by dsimp only [HSMul.hSMul]; rw [AlgEquiv.toRingEquiv_one, mapEquiv_refl]; rfl
   mul_smul τ₁ τ₂ c := by
-    dsimp only [HSMul.hSMul]
-    rw [AlgEquiv.toRingEquiv_mul, mapEquiv_trans, Equiv.trans_apply]
+    dsimp only [HSMul.hSMul]; rw [AlgEquiv.toRingEquiv_mul, mapEquiv_trans]; rfl
 
-/-- The action of `τ : F ≃ₐ[R] F` on `FiniteExtensionClass F` is given by `mapEquiv (τ : F ≃+* F)`.
--/
+/-- The action of `τ : F ≃ₐ[R] F` on `FiniteExtensionClass F` is `mapEquiv (τ : F ≃+* F)`. -/
 theorem smul_def (τ : F ≃ₐ[R] F) (c : FiniteExtensionClass F) :
-    τ • c = mapEquiv (τ : F ≃+* F) c :=
-  (rfl)
+    τ • c = mapEquiv (τ : F ≃+* F) c := (rfl)
 
 /-- Every `R`-algebra automorphism of `F` fixes the trivial class `self F`. -/
 @[simp]
-theorem smul_self (τ : F ≃ₐ[R] F) : τ • self F = self F :=
-  mapEquiv_self _
+theorem smul_self (τ : F ≃ₐ[R] F) : τ • self F = self F := mapEquiv_self _
 
 /-- The action of `F ≃ₐ[R] F` preserves extension degree. -/
 @[simp]
 theorem finrank_smul (τ : F ≃ₐ[R] F) (c : FiniteExtensionClass F) :
-    (τ • c).finrank = c.finrank :=
-  finrank_mapEquiv _ c
+    (τ • c).finrank = c.finrank := finrank_mapEquiv _ c
 
 /-- The action of `F ≃ₐ[R] F` preserves and reflects separability. -/
 @[simp]
 theorem isSeparable_smul_iff (τ : F ≃ₐ[R] F) (c : FiniteExtensionClass F) :
-    (τ • c).IsSeparable ↔ c.IsSeparable :=
-  isSeparable_mapEquiv_iff _ c
+    (τ • c).IsSeparable ↔ c.IsSeparable := isSeparable_mapEquiv_iff _ c
 
 /-- The action of `F ≃ₐ[R] F` preserves the automorphism count. -/
 @[simp]
 theorem natCardAut_smul (τ : F ≃ₐ[R] F) (c : FiniteExtensionClass F) :
-    (τ • c).natCardAut = c.natCardAut :=
-  natCardAut_mapEquiv _ c
+    (τ • c).natCardAut = c.natCardAut := natCardAut_mapEquiv _ c
 
 /-- Over an `R`-algebra `F`, `τ • mk F L₁ = mk F L₂` if and only if there is an `R`-algebra
 isomorphism `L₁ ≃ₐ[R] L₂` intertwining the `F`-actions via `τ`. -/
@@ -542,16 +526,12 @@ variable {K : Type u} {F : Type v} [Field K] [Field F] [Algebra K F]
 @[simp]
 theorem restrictScalars_smul [Module.Finite K F] (τ : F ≃ₐ[K] F) (c : FiniteExtensionClass F) :
     (τ • c).restrictScalars K = c.restrictScalars K := by
-  induction c using induction_on with | h L₁ =>
-  obtain ⟨L₂, _, _, _, hL₂⟩ := exists_mk (τ • mk F L₁)
-  let : Algebra K L₁ := RingHom.toAlgebra ((algebraMap F L₁).comp (algebraMap K F))
-  have : IsScalarTower K F L₁ := IsScalarTower.of_algebraMap_eq' rfl
-  have : Module.Finite K L₁ := Module.Finite.trans F L₁
-  let : Algebra K L₂ := RingHom.toAlgebra ((algebraMap F L₂).comp (algebraMap K F))
-  have : IsScalarTower K F L₂ := IsScalarTower.of_algebraMap_eq' rfl
-  have : Module.Finite K L₂ := Module.Finite.trans F L₂
-  obtain ⟨e, -⟩ := (smul_mk_eq_mk_iff τ).1 hL₂
-  rw [hL₂, restrictScalars_mk (F := F) K L₂, restrictScalars_mk (F := F) K L₁]
+  generalize hc : τ • c = c'
+  revert hc
+  refine induction_on_tower K c fun L₁ _ _ _ _ _ _ ↦
+    induction_on_tower K c' fun L₂ _ _ _ _ _ _ hc ↦ ?_
+  obtain ⟨e, -⟩ := (smul_mk_eq_mk_iff τ).1 hc
+  rw [restrictScalars_mk (F := F) K L₂, restrictScalars_mk (F := F) K L₁]
   exact (mk_eq_mk_iff L₂ L₁).2 ⟨e.symm⟩
 
 /-- **Orbit characterization of `restrictScalars` over a normal intermediate field.** When `F/K` is
@@ -559,21 +539,15 @@ finite and normal, two finite extension classes of `F` induce the same `K`-exten
 only if they lie in the same `(F ≃ₐ[K] F)`-orbit. -/
 theorem restrictScalars_eq_restrictScalars_iff [Module.Finite K F] [Normal K F]
     (c₁ c₂ : FiniteExtensionClass F) :
-    c₁.restrictScalars K = c₂.restrictScalars K ↔ ∃ τ : F ≃ₐ[K] F, τ • c₁ = c₂ := by
-  refine ⟨fun h ↦ ?_, fun ⟨τ, hτ⟩ ↦ by rw [← hτ, restrictScalars_smul]⟩
-  induction c₁ using induction_on with | h L₁ =>
-  induction c₂ using induction_on with | h L₂ =>
-  let : Algebra K L₁ := RingHom.toAlgebra ((algebraMap F L₁).comp (algebraMap K F))
-  have : IsScalarTower K F L₁ := IsScalarTower.of_algebraMap_eq' rfl
-  have : Module.Finite K L₁ := Module.Finite.trans F L₁
-  let : Algebra K L₂ := RingHom.toAlgebra ((algebraMap F L₂).comp (algebraMap K F))
-  have : IsScalarTower K F L₂ := IsScalarTower.of_algebraMap_eq' rfl
-  have : Module.Finite K L₂ := Module.Finite.trans F L₂
-  rw [restrictScalars_mk (F := F) K L₁, restrictScalars_mk (F := F) K L₂, mk_eq_mk_iff] at h
-  obtain ⟨φ⟩ := h
-  obtain ⟨τ, hτ⟩ := AlgHom.exists_comp_eq_of_normal (IsScalarTower.toAlgHom K F L₂)
-    (φ.toAlgHom.comp (IsScalarTower.toAlgHom K F L₁))
-  exact ⟨τ, (smul_mk_eq_mk_iff τ).2 ⟨φ, fun a ↦ (AlgHom.congr_fun hτ a).symm⟩⟩
+    c₁.restrictScalars K = c₂.restrictScalars K ↔ ∃ τ : F ≃ₐ[K] F, τ • c₁ = c₂ :=
+  induction_on_tower K c₁ fun L₁ _ _ _ _ _ _ ↦
+    induction_on_tower K c₂ fun L₂ _ _ _ _ _ _ ↦ by
+      refine ⟨fun h ↦ ?_, fun ⟨τ, hτ⟩ ↦ by rw [← hτ, restrictScalars_smul]⟩
+      rw [restrictScalars_mk (F := F) K L₁, restrictScalars_mk (F := F) K L₂, mk_eq_mk_iff] at h
+      obtain ⟨φ⟩ := h
+      obtain ⟨τ, hτ⟩ := AlgHom.exists_comp_eq_of_normal (IsScalarTower.toAlgHom K F L₂)
+        (φ.toAlgHom.comp (IsScalarTower.toAlgHom K F L₁))
+      exact ⟨τ, (smul_mk_eq_mk_iff τ).2 ⟨φ, fun a ↦ (AlgHom.congr_fun hτ a).symm⟩⟩
 
 /-- **Image of restriction to a normal intermediate field.** When `F/K` is normal and `L/F` is
 finite, the image of `AlgEquiv.restrictNormalHom F : (L ≃ₐ[K] L) →* (F ≃ₐ[K] F)` is the stabilizer
@@ -614,13 +588,10 @@ of `c` in `F ≃ₐ[K] F`. -/
 theorem natCardAut_restrictScalars [Module.Finite K F] [Normal K F]
     (c : FiniteExtensionClass F) :
     (c.restrictScalars K).natCardAut =
-      c.natCardAut * Nat.card (MulAction.stabilizer (F ≃ₐ[K] F) c) := by
-  induction c using induction_on with | h L =>
-  let : Algebra K L := RingHom.toAlgebra ((algebraMap F L).comp (algebraMap K F))
-  have : IsScalarTower K F L := IsScalarTower.of_algebraMap_eq' rfl
-  have : Module.Finite K L := Module.Finite.trans F L
-  rw [restrictScalars_mk (F := F) K L, natCardAut_mk, natCardAut_mk,
-    natCard_algEquiv_eq_mul_natCard_stabilizer_mk K F L]
+      c.natCardAut * Nat.card (MulAction.stabilizer (F ≃ₐ[K] F) c) :=
+  induction_on_tower K c fun L _ _ _ _ _ _ ↦ by
+    rw [restrictScalars_mk (F := F) K L, natCardAut_mk, natCardAut_mk,
+      natCard_algEquiv_eq_mul_natCard_stabilizer_mk K F L]
 
 end NormalTower
 
