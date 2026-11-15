@@ -298,18 +298,22 @@ theorem rhombusSlack_def (f : Vertex n → R) (a b c d : Vertex n) :
 @[simp] theorem rhombusSlack_zero (a b c d : Vertex n) :
     rhombusSlack (0 : Vertex n → R) a b c d = 0 := by simp [rhombusSlack]
 
-theorem rhombusSlack_add (f g : Vertex n → R) (a b c d : Vertex n) :
+@[simp] theorem rhombusSlack_add (f g : Vertex n → R) (a b c d : Vertex n) :
     rhombusSlack (f + g) a b c d = rhombusSlack f a b c d + rhombusSlack g a b c d := by
   simp only [rhombusSlack, Pi.add_apply]; abel
 
-theorem rhombusSlack_sub (f g : Vertex n → R) (a b c d : Vertex n) :
+@[simp] theorem rhombusSlack_sub (f g : Vertex n → R) (a b c d : Vertex n) :
     rhombusSlack (f - g) a b c d = rhombusSlack f a b c d - rhombusSlack g a b c d := by
   simp only [rhombusSlack, Pi.sub_apply]; abel
 
-theorem rhombusSlack_smul {S : Type*} [DistribSMul S R]
+@[simp] theorem rhombusSlack_smul {S : Type*} [DistribSMul S R]
     (c : S) (f : Vertex n → R) (a b c' d : Vertex n) :
     rhombusSlack (c • f) a b c' d = c • rhombusSlack f a b c' d := by
   simp [rhombusSlack, smul_sub, smul_add]
+
+@[simp] theorem rhombusSlack_neg (f : Vertex n → R) (a b c d : Vertex n) :
+    rhombusSlack (-f) a b c d = -rhombusSlack f a b c d := by
+  simp only [rhombusSlack_def, Pi.neg_apply]; abel
 
 @[simp] theorem rhombusSlack_const (c : R) (a b c' d : Vertex n) :
     rhombusSlack (fun _ => c) a b c' d = 0 := sub_self (c + c)
@@ -322,7 +326,7 @@ corners share the same midpoint in barycentric coordinates. -/
   exact sub_eq_zero.mpr (barycentricLinear_add_eq_of_isRhombus c₀ α β γ hr)
 
 /-- Adding a barycentric-affine function leaves all unit-rhombus slacks unchanged. -/
-@[simp] theorem rhombusSlack_add_barycentricLinear (f : Vertex n → R) (c₀ α β γ : R)
+theorem rhombusSlack_add_barycentricLinear (f : Vertex n → R) (c₀ α β γ : R)
     {a b c d : Vertex n} (hr : IsRhombus a b c d) :
     rhombusSlack (f + barycentricLinear c₀ α β γ) a b c d = rhombusSlack f a b c d := by
   rw [rhombusSlack_add, rhombusSlack_barycentricLinear c₀ α β γ hr, add_zero]
@@ -375,6 +379,27 @@ theorem coe_ofRhombusConcave (f : Vertex n → R) (hf : IsRhombusConcave f) :
 
 @[simp] theorem ofRhombusConcave_coe (h : Hive n R) : ofRhombusConcave h h.isRhombusConcave = h :=
   by ext p; simp
+
+/-- Normalization removes an additive constant on the right. -/
+@[simp] theorem ofRhombusConcave_add_const (f : Vertex n → R) (k : R)
+    (hf : IsRhombusConcave (fun p => f p + k)) :
+    ofRhombusConcave (fun p => f p + k) hf =
+      ofRhombusConcave f ((isRhombusConcave_add_const_iff f k).mp hf) := by
+  ext p; simp only [ofRhombusConcave_apply]; abel
+
+/-- Normalization removes an additive constant on the left. -/
+@[simp] theorem ofRhombusConcave_const_add (k : R) (f : Vertex n → R)
+    (hf : IsRhombusConcave (fun p => k + f p)) :
+    ofRhombusConcave (fun p => k + f p) hf =
+      ofRhombusConcave f ((isRhombusConcave_const_add_iff k f).mp hf) := by
+  ext p; simp only [ofRhombusConcave_apply]; abel
+
+/-- Normalization removes a subtracted constant. -/
+@[simp] theorem ofRhombusConcave_sub_const (f : Vertex n → R) (k : R)
+    (hf : IsRhombusConcave (fun p => f p - k)) :
+    ofRhombusConcave (fun p => f p - k) hf =
+      ofRhombusConcave f ((isRhombusConcave_sub_const_iff f k).mp hf) := by
+  ext p; simp only [ofRhombusConcave_apply]; abel
 
 /-- Two unnormalized hives normalize to the same `Hive` iff they differ by an additive constant. -/
 theorem ofRhombusConcave_eq_iff {f₁ f₂ : Vertex n → R}
@@ -499,6 +524,22 @@ theorem coe_affine (β γ : R) :
   simp only [affine_apply, add_apply, nsmul_add]
   abel
 
+/-- Natural scaling of an affine hive scales its slopes. -/
+@[simp] theorem nsmul_affine [IsOrderedAddMonoid R] (k : ℕ) (β γ : R) :
+    k • affine n β γ = affine n (k • β) (k • γ) := by
+  ext p; simp only [nsmul_apply, affine_apply, smul_add, smul_comm k]
+
+/-- Nonnegative scaling of an affine hive scales its slopes. -/
+@[simp] theorem smul_nonneg_affine {S : Type*} [Semiring S] [PartialOrder S]
+    [Module S R] [PosSMulMono S R] (c : Nonneg S) (β γ : R) :
+    c • affine n β γ = affine n (c.1 • β) (c.1 • γ) := by
+  ext p; simp only [smul_nonneg_apply, affine_apply, smul_add, smul_comm c.1]
+
+/-- Pushforward of an affine hive applies the map to its slopes. -/
+@[simp] theorem map_affine {S : Type*} [AddCommMonoid S] [Preorder S]
+    (φ : R →+o S) (β γ : R) : (affine n β γ).map φ = affine n (φ β) (φ γ) := by
+  ext p; simp
+
 end Algebra
 
 section Restriction
@@ -510,7 +551,20 @@ variable {n : ℕ} {R : Type*} [AddCommGroup R] [Preorder R]
   simpa [barycentricLinear, rhombusSlack, affine_apply] using
     rhombusSlack_barycentricLinear (n := n) (0 : R) 0 β γ hr
 
+/-- Rhombus slacks commute with pushforward along an ordered additive map. -/
+@[simp] theorem rhombusSlack_map {S : Type*} [AddCommGroup S] [Preorder S]
+    (φ : R →+o S) (h : Hive n R) (a b c d : Vertex n) :
+    rhombusSlack (h.map φ) a b c d = φ (rhombusSlack h a b c d) := by
+  simp [rhombusSlack_def, map_sub]
+
 variable [IsOrderedAddMonoid R]
+
+/-- Normalization commutes with nonnegative scaling. -/
+@[simp] theorem ofRhombusConcave_smul_nonneg {S : Type*} [Semiring S] [PartialOrder S]
+    [Module S R] [PosSMulMono S R] (c : Nonneg S) (f : Vertex n → R)
+    (hf : IsRhombusConcave f) :
+    ofRhombusConcave (c • f) (hf.smul_of_nonneg c.2) = c • ofRhombusConcave f hf := by
+  ext p; simp [smul_sub]
 
 /-- Normalization removes the constant and the common barycentric slope. -/
 @[simp] theorem ofRhombusConcave_barycentricLinear (c₀ α β γ : R) :
@@ -550,6 +604,22 @@ theorem coe_subtriangle {m k : ℕ} (h : Hive (m + k) R) (p : Vertex m) :
     (h₁ + h₂).subtriangle p = h₁.subtriangle p + h₂.subtriangle p := by
   ext q; simp only [subtriangle_apply, add_apply]; abel
 
+/-- Restriction commutes with natural scaling. -/
+@[simp] theorem subtriangle_nsmul {m k : ℕ} (a : ℕ) (h : Hive (m + k) R) (p : Vertex m) :
+    (a • h).subtriangle p = a • h.subtriangle p := by ext q; simp [smul_sub]
+
+/-- Restriction commutes with nonnegative scaling. -/
+@[simp] theorem subtriangle_smul_nonneg {S : Type*} [Semiring S] [PartialOrder S]
+    [Module S R] [PosSMulMono S R] {m k : ℕ} (c : Nonneg S) (h : Hive (m + k) R)
+    (p : Vertex m) : (c • h).subtriangle p = c • h.subtriangle p := by
+  ext q; simp [smul_sub]
+
+/-- Restriction commutes with pushforward along an ordered additive map. -/
+@[simp] theorem map_subtriangle {S : Type*} [AddCommGroup S] [Preorder S]
+    [IsOrderedAddMonoid S] (φ : R →+o S) {m k : ℕ} (h : Hive (m + k) R) (p : Vertex m) :
+    (h.subtriangle p).map φ = (h.map φ).subtriangle p := by
+  ext q; simp [map_sub]
+
 /-- Restriction preserves the slopes of an affine hive. -/
 @[simp] theorem subtriangle_affine {m k : ℕ} (u v : R) (p : Vertex m) :
     (affine (m + k) u v).subtriangle p = affine k u v := by
@@ -588,6 +658,25 @@ def ofInt (R : Type*) [Ring R] [PartialOrder R] [IsOrderedRing R] {n : ℕ} :
 
 @[simp] theorem ofInt_apply {R : Type*} [Ring R] [PartialOrder R] [IsOrderedRing R]
     (h : IntegerHive n) (p : Vertex n) : ofInt R h p = (h p : R) := (rfl)
+
+/-- The labelling underlying the integer-hive embedding. -/
+theorem coe_ofInt {R : Type*} [Ring R] [PartialOrder R] [IsOrderedRing R]
+    (h : IntegerHive n) : ⇑(ofInt R h) = fun p => (h p : R) := (rfl)
+
+/-- Rhombus slacks commute with the integer-hive embedding. -/
+@[simp] theorem rhombusSlack_ofInt {R : Type*} [Ring R] [PartialOrder R] [IsOrderedRing R]
+    (h : IntegerHive n) (a b c d : Vertex n) :
+    rhombusSlack (ofInt R h) a b c d = (rhombusSlack (R := ℤ) h a b c d : R) := by
+  simp [rhombusSlack_def]
+
+/-- The integer-hive embedding preserves affine hives. -/
+@[simp] theorem ofInt_affine {R : Type*} [Ring R] [PartialOrder R] [IsOrderedRing R]
+    (β γ : ℤ) : ofInt R (affine n β γ) = affine n (β : R) (γ : R) := by ext p; simp
+
+/-- The integer-hive embedding commutes with restriction. -/
+@[simp] theorem ofInt_subtriangle {R : Type*} [Ring R] [PartialOrder R] [IsOrderedRing R]
+    {m k : ℕ} (h : IntegerHive (m + k)) (p : Vertex m) :
+    ofInt R (h.subtriangle p) = (ofInt R h).subtriangle p := by ext q; simp
 
 /-- Canonical additive monoid embedding of integer hives into real hives. -/
 abbrev toReal {n : ℕ} : IntegerHive n →+ RealHive n := ofInt ℝ
@@ -843,8 +932,9 @@ theorem boundary_apply (h : Hive n R) (s : Fin 3) (i : Fin n) :
     (c • h).boundary = c.1 • h.boundary := by ext s i; simp [boundary_apply, smul_sub]
 
 @[simp] theorem boundary_map {S : Type*} [AddCommGroup S] [Preorder S]
-    (φ : R →+o S) (h : Hive n R) (s : Fin 3) (i : Fin n) :
-    (h.map φ).boundary s i = φ (h.boundary s i) := by simp [boundary_apply, map_sub]
+    (φ : R →+o S) (h : Hive n R) :
+    (h.map φ).boundary = fun s i => φ (h.boundary s i) := by
+  ext s i; simp [boundary_apply, map_sub]
 
 @[simp] theorem boundary_affine (β γ : R) :
     (affine n β γ).boundary = ![fun _ => β, fun _ => γ - β, fun _ => -γ] := by
@@ -958,9 +1048,9 @@ theorem boundary_antitone [IsOrderedAddMonoid R] (h : Hive n R) (s : Fin 3) :
 
 end HiveBoundary
 
-@[simp] theorem boundary_ofInt [Ring R] [PartialOrder R] [IsOrderedRing R] (h : IntegerHive n)
-    (s : Fin 3) (i : Fin n) : (ofInt R h).boundary s i = (h.boundary s i : R) := by
-  simp [boundary_apply]
+@[simp] theorem boundary_ofInt [Ring R] [PartialOrder R] [IsOrderedRing R] (h : IntegerHive n) :
+    (ofInt R h).boundary = fun s i => (h.boundary s i : R) := by
+  ext s i; simp [boundary_apply]
 
 /-- Side `s` of an integer hive packaged as a `TauCeti.DominantWeight`. -/
 def boundaryWeight (h : IntegerHive n) (s : Fin 3) : DominantWeight n :=
@@ -969,8 +1059,41 @@ def boundaryWeight (h : IntegerHive n) (s : Fin 3) : DominantWeight n :=
 @[simp] theorem coe_boundaryWeight (h : IntegerHive n) (s : Fin 3) :
     (h.boundaryWeight s : Fin n → ℤ) = h.boundary s := (rfl)
 
+/-- The zero hive has zero weight on every side. -/
+@[simp] theorem boundaryWeight_zero (s : Fin 3) : (0 : IntegerHive n).boundaryWeight s = 0 := by
+  ext i; simp [coe_boundaryWeight]
+
+/-- Side weights are additive in the hive. -/
+@[simp] theorem boundaryWeight_add (h g : IntegerHive n) (s : Fin 3) :
+    (h + g).boundaryWeight s = h.boundaryWeight s + g.boundaryWeight s := by
+  ext i; simp [coe_boundaryWeight]
+
+/-- Side weights commute with natural scaling. -/
+@[simp] theorem boundaryWeight_nsmul (k : ℕ) (h : IntegerHive n) (s : Fin 3) :
+    (k • h).boundaryWeight s = k • h.boundaryWeight s := by
+  ext i; simp [coe_boundaryWeight]
+
 /-- The cyclic boundary `(λ, μ, γ*)` counting the multiplicity of `V_γ` in `V_λ ⊗ V_μ`. -/
 def productBoundary (lam μ γ : DominantWeight n) : Fin 3 → Fin n → ℤ := ![lam.1, μ.1, γ.dual.1]
+
+theorem productBoundary_def (lam μ γ : DominantWeight n) :
+    productBoundary lam μ γ = ![lam.1, μ.1, γ.dual.1] := (rfl)
+
+/-- Zero weights give the zero cyclic boundary. -/
+@[simp] theorem productBoundary_zero_zero_zero :
+    productBoundary (0 : DominantWeight n) 0 0 = 0 := by
+  ext s i; fin_cases s <;> simp [productBoundary_def]
+
+/-- Cyclic product boundaries are additive in their three weights. -/
+@[simp] theorem productBoundary_add (lam μ γ lam' μ' γ' : DominantWeight n) :
+    productBoundary (lam + lam') (μ + μ') (γ + γ') =
+      productBoundary lam μ γ + productBoundary lam' μ' γ' := by
+  ext s i; fin_cases s <;> simp [productBoundary_def]
+
+/-- Cyclic product boundaries commute with simultaneous natural scaling. -/
+@[simp] theorem productBoundary_nsmul (k : ℕ) (lam μ γ : DominantWeight n) :
+    productBoundary (k • lam) (k • μ) (k • γ) = k • productBoundary lam μ γ := by
+  ext s i; fin_cases s <;> simp [productBoundary_def]
 
 @[simp] theorem productBoundary_zero (lam μ γ : DominantWeight n) :
     productBoundary lam μ γ 0 = lam.1 := (rfl)
@@ -1002,6 +1125,14 @@ def reflect (h : Hive n R) : Hive n R :=
 theorem coe_reflect (h : Hive n R) : ⇑h.reflect = fun p => h p.reflect := (rfl)
 
 @[simp] theorem reflect_apply (h : Hive n R) (p : Vertex n) : h.reflect p = h p.reflect := (rfl)
+
+/-- Reflection commutes with pushforward along an ordered additive map. -/
+@[simp] theorem map_reflect {S : Type*} [AddCommMonoid S] [Preorder S]
+    (φ : R →+o S) (h : Hive n R) : h.reflect.map φ = (h.map φ).reflect := by ext p; simp
+
+/-- Reflection commutes with the integer-hive embedding. -/
+@[simp] theorem ofInt_reflect {R : Type*} [Ring R] [PartialOrder R] [IsOrderedRing R]
+    (h : IntegerHive n) : ofInt R h.reflect = (ofInt R h).reflect := by ext p; simp
 
 @[simp] theorem reflect_zero : (0 : Hive n R).reflect = 0 := by ext p; simp
 
@@ -1040,6 +1171,15 @@ theorem coe_rotate [IsOrderedAddMonoid R] (h : Hive n R) :
 
 @[simp] theorem rotate_apply [IsOrderedAddMonoid R] (h : Hive n R) (p : Vertex n) :
     h.rotate p = h p.rotate - h (Vertex.cornerA n).rotate := (rfl)
+
+/-- Rotation commutes with pushforward along an ordered additive map. -/
+@[simp] theorem map_rotate [IsOrderedAddMonoid R] {S : Type*} [AddCommGroup S] [Preorder S]
+    [IsOrderedAddMonoid S] (φ : R →+o S) (h : Hive n R) :
+    h.rotate.map φ = (h.map φ).rotate := by ext p; simp [map_sub]
+
+/-- Rotation commutes with the integer-hive embedding. -/
+@[simp] theorem ofInt_rotate {R : Type*} [Ring R] [PartialOrder R] [IsOrderedRing R]
+    (h : IntegerHive n) : ofInt R h.rotate = (ofInt R h).rotate := by ext p; simp
 
 @[simp] theorem rotate_zero [IsOrderedAddMonoid R] : (0 : Hive n R).rotate = 0 := by
   ext p; simp
@@ -1085,8 +1225,8 @@ theorem rotate_injective [IsOrderedAddMonoid R] :
 
 /-- Rotating a hive cyclically shifts its boundary sides: `h.rotate.boundary s = h.boundary (s+1)`.
 -/
-@[simp] theorem boundary_rotate [IsOrderedAddMonoid R] (h : Hive n R) (s : Fin 3) :
-    h.rotate.boundary s = h.boundary (s + 1) := by
+@[simp] theorem boundary_rotate [IsOrderedAddMonoid R] (h : Hive n R) :
+    h.rotate.boundary = fun s => h.boundary (s + 1) := by
   simp only [rotate, boundary_ofRhombusConcave, boundaryLinear_rotate, boundaryLinear_coe]
 
 @[simp] theorem boundaryWeight_rotate (h : IntegerHive n) (s : Fin 3) :
@@ -1105,8 +1245,8 @@ theorem reflect_rotate_reflect_rotate [IsOrderedAddMonoid R] (h : Hive n R) :
 
 /-- Reflecting a hive reverses the side order (`0 ↔ 2`, fixing `1`) and dualizes each side weight.
 -/
-@[simp] theorem boundary_reflect (h : Hive n R) (s : Fin 3) (i : Fin n) :
-    h.reflect.boundary s i = -h.boundary s.rev i.rev := by
+@[simp] theorem boundary_reflect (h : Hive n R) :
+    h.reflect.boundary = fun s i => -h.boundary s.rev i.rev := by
   rw [boundary_def, coe_reflect, boundaryLinear_reflect, boundaryLinear_coe]
 
 @[simp] theorem boundaryWeight_reflect (h : IntegerHive n) (s : Fin 3) :

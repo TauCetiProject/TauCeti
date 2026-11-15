@@ -522,7 +522,7 @@ instance uniqueFixedIntegerHiveZero (n : ℕ) :
     hiveCount (fun s => B (s + 1)) = hiveCount B :=
   Fintype.card_congr
     { toFun := fun h => ⟨h.1.rotate.rotate, by
-        ext s i; rw [boundary_rotate, boundary_rotate, h.2]; dsimp only
+        rw [boundary_rotate, boundary_rotate, h.2]; ext s i; dsimp only
         rw [show s + 1 + 1 + 1 = s by fin_cases s <;> decide]⟩
       invFun := fun h => ⟨h.1.rotate, by ext s i; simp [h.2]⟩
       left_inv := fun _ => by ext p; simp
