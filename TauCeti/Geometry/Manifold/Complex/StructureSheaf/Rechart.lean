@@ -5,17 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Basic
+public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Germ
 
 /-!
 # Holomorphic stalks under biholomorphisms
 
-A biholomorphism induces a ring equivalence on holomorphic stalks by pullback. This allows
-local equations and their ideal-theoretic properties to be transported between coordinates.
+A biholomorphism `e : X ≃ₘ^ω⟮I, J⟯ Y` induces a contravariant ring equivalence
+`Diffeomorph.holomorphicStalkEquiv` on holomorphic stalks by pullback. It acts on function germs by
+precomposition with `e`, preserves base-point evaluation, and is functorial with respect to
+`Diffeomorph.refl`, `Diffeomorph.trans`, and `Diffeomorph.symm`. This allows local equations and
+their ideal-theoretic properties to be transported between coordinates.
 -/
 
 public noncomputable section
 
+open Filter Topology
 open scoped ContDiff Manifold
 
 namespace Diffeomorph
@@ -90,5 +94,81 @@ theorem holomorphicStalkEquiv_symm_apply (e : X ≃ₘ^ω⟮I, J⟯ Y) (x : X)
   apply (e.holomorphicStalkEquiv x).injective
   rw [RingEquiv.apply_symm_apply, holomorphicStalkEquiv_apply]
   exact (stalkPrecomp_symm_rightInverse e x s).symm
+
+/-- Pulling a holomorphic germ back along a biholomorphism `e` composes its function germ with
+`e`. -/
+theorem toFilterGerm_holomorphicStalkEquiv (e : X ≃ₘ^ω⟮I, J⟯ Y) (x : X)
+    (s : (holomorphicStructureSheaf J Y).presheaf.stalk (e x)) :
+    toFilterGerm I X x (𝓝 x) le_rfl (e.holomorphicStalkEquiv x s) =
+      (toFilterGerm J Y (e x) (𝓝 (e x)) le_rfl s).compTendsto e (e.continuous.tendsto x) :=
+  toFilterGerm_stalkPrecomp e e.contMDiff x s
+
+/-- If `s` is represented near `e x` by `f`, then `e.holomorphicStalkEquiv x s` is represented near
+`x` by `f ∘ e`. -/
+theorem toFilterGerm_holomorphicStalkEquiv_of_eq (e : X ≃ₘ^ω⟮I, J⟯ Y) {x : X}
+    {s : (holomorphicStructureSheaf J Y).presheaf.stalk (e x)} {f : Y → ℂ}
+    (hs : toFilterGerm J Y (e x) (𝓝 (e x)) le_rfl s = f) :
+    toFilterGerm I X x (𝓝 x) le_rfl (e.holomorphicStalkEquiv x s) = f ∘ e := by
+  rw [toFilterGerm_holomorphicStalkEquiv, hs, Germ.coe_compTendsto]
+
+/-- Pulling a holomorphic germ back along a biholomorphism preserves its value at the base point. -/
+theorem eval_holomorphicStalkEquiv (e : X ≃ₘ^ω⟮I, J⟯ Y) (x : X)
+    (s : (holomorphicStructureSheaf J Y).presheaf.stalk (e x)) :
+    eval I X x (e.holomorphicStalkEquiv x s) = eval J Y (e x) s :=
+  eval_stalkPrecomp I X e e.contMDiff x s
+
+/-- The inverse stalk equivalence preserves the value of a holomorphic germ at the base point. -/
+theorem eval_holomorphicStalkEquiv_symm (e : X ≃ₘ^ω⟮I, J⟯ Y) (x : X)
+    (s : (holomorphicStructureSheaf I X).presheaf.stalk x) :
+    eval J Y (e x) ((e.holomorphicStalkEquiv x).symm s) = eval I X x s := by
+  rw [← e.eval_holomorphicStalkEquiv x, RingEquiv.apply_symm_apply]
+
+/-- The identity biholomorphism induces the identity equivalence on holomorphic stalks. -/
+@[simp]
+theorem holomorphicStalkEquiv_refl (x : X) :
+    (Diffeomorph.refl I X ω).holomorphicStalkEquiv x = RingEquiv.refl _ := by
+  ext s
+  exact RingHom.congr_fun (stalkPrecomp_id I X x) s
+
+/-- The inverse of `e.holomorphicStalkEquiv x` is `e.symm.holomorphicStalkEquiv (e x)` after
+transporting the source stalk along `x = e.symm (e x)`. -/
+theorem holomorphicStalkEquiv_symm (e : X ≃ₘ^ω⟮I, J⟯ Y) (x : X) :
+    (e.holomorphicStalkEquiv x).symm =
+      (RingEquiv.cast (R := fun z ↦ (holomorphicStructureSheaf I X).presheaf.stalk z)
+        (e.symm_apply_apply x).symm).trans (e.symm.holomorphicStalkEquiv (e x)) := by
+  ext s
+  apply (e.holomorphicStalkEquiv x).injective
+  obtain ⟨f, -, hfs⟩ := exists_toFilterGerm_eq x s
+  apply toFilterGerm_nhds_injective x
+  rw [RingEquiv.apply_symm_apply, RingEquiv.trans_apply,
+    e.toFilterGerm_holomorphicStalkEquiv_of_eq
+      (e.symm.toFilterGerm_holomorphicStalkEquiv_of_eq
+        (toFilterGerm_ringEquivCast _ (hfs _ le_rfl))),
+    hfs _ le_rfl, Germ.coe_eq]
+  exact Eventually.of_forall fun z ↦ congrArg f (e.symm_apply_apply z).symm
+
+/-- If `s` is represented near `x` by `f`, then `(e.holomorphicStalkEquiv x).symm s` is represented
+near `e x` by `f ∘ e.symm`. -/
+theorem toFilterGerm_holomorphicStalkEquiv_symm_of_eq (e : X ≃ₘ^ω⟮I, J⟯ Y) {x : X}
+    {s : (holomorphicStructureSheaf I X).presheaf.stalk x} {f : X → ℂ}
+    (hs : toFilterGerm I X x (𝓝 x) le_rfl s = f) :
+    toFilterGerm J Y (e x) (𝓝 (e x)) le_rfl ((e.holomorphicStalkEquiv x).symm s) =
+      f ∘ e.symm := by
+  rw [holomorphicStalkEquiv_symm, RingEquiv.trans_apply,
+    e.symm.toFilterGerm_holomorphicStalkEquiv_of_eq
+      (toFilterGerm_ringEquivCast (e.symm_apply_apply x).symm hs)]
+
+variable {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℂ E'']
+  {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners ℂ E'' H''}
+  {Z : Type} [TopologicalSpace Z] [ChartedSpace H'' Z]
+
+/-- Pulling holomorphic germs back along `e₁.trans e₂` is pulling back along `e₂` and then along
+`e₁`. -/
+@[simp]
+theorem holomorphicStalkEquiv_trans (e₁ : X ≃ₘ^ω⟮I, J⟯ Y) (e₂ : Y ≃ₘ^ω⟮J, K⟯ Z) (x : X) :
+    (e₁.trans e₂).holomorphicStalkEquiv x =
+      (e₂.holomorphicStalkEquiv (e₁ x)).trans (e₁.holomorphicStalkEquiv x) := by
+  ext s
+  exact stalkPrecomp_comp I X e₂ e₂.contMDiff e₁ e₁.contMDiff x s
 
 end Diffeomorph

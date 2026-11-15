@@ -9,6 +9,8 @@ public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Hyperplane
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.StalkPullback
 public import Mathlib.RingTheory.KrullDimension.NonZeroDivisors
 import Mathlib.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Rechart
+import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
 
 /-!
 # A lower bound for the dimension of holomorphic local rings
@@ -47,8 +49,9 @@ variable {E F : Type} [NormedAddCommGroup E] [NormedSpace ℂ E]
 stalks. No finite-dimensionality assumption is required for this comparison. -/
 theorem ringKrullDim_holomorphicStalk (e : E ≃L[ℂ] F) (a : E) :
     ringKrullDim ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk a) =
-      ringKrullDim ((holomorphicStructureSheaf 𝓘(ℂ, F) F).presheaf.stalk (e a)) :=
-  (ringKrullDim_eq_of_ringEquiv (e.holomorphicStalkEquiv a)).symm
+      ringKrullDim ((holomorphicStructureSheaf 𝓘(ℂ, F) F).presheaf.stalk (e a)) := by
+  rw [← e.coe_toContDiffDiffeomorph ω]
+  exact (ringKrullDim_eq_of_ringEquiv ((e.toContDiffDiffeomorph ω).holomorphicStalkEquiv a)).symm
 
 end ContinuousLinearEquiv
 

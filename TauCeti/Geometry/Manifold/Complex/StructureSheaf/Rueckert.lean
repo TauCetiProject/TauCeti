@@ -5,13 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.StalkPullback
+public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Rechart
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Weierstrass
 public import TauCeti.RingTheory.Polynomial.Rueckert
 
 import TauCeti.Analysis.Analytic.Uniqueness
 import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Domain
+import TauCeti.Geometry.Manifold.Complex.StructureSheaf.StalkPullback
+import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
 import TauCeti.RingTheory.Polynomial.Distinguished
 
 /-!
@@ -29,11 +31,11 @@ namely the polynomials over `𝒪_{E, x₀}` distinguished at the maximal ideal 
   (`evalVertical_dvd_iff_of_isDistinguishedAt`) and represents every germ modulo a Weierstrass
   polynomial by a polynomial over the base stalk
   (`existsUnique_weierstrassDivision_of_isDistinguishedAt`);
-* for every nonzero germ `f` at `(x₀, w₀)`, some continuous linear automorphism `L` of `E × ℂ`
-  makes the centered pullback `L.holomorphicStalkCenteredEquiv (x₀, w₀) f` regular in the last
-  variable (`exists_map_residue_verticalPowerSeries_holomorphicStalkCenteredEquiv_ne_zero`), and
-  Weierstrass preparation (`existsUnique_weierstrassPreparation`) then writes that pullback as a
-  unit multiple of a Weierstrass polynomial.
+* for every nonzero germ `f` at `(x₀, w₀)`, a centered linear coordinate change gives a
+  biholomorphism of `E × ℂ` fixing `(x₀, w₀)` whose pullback makes `f` regular in the last variable
+  (`exists_map_residue_verticalPowerSeries_holomorphicStalkEquiv_ne_zero`), and Weierstrass
+  preparation (`existsUnique_weierstrassPreparation`) then writes that pullback as a unit multiple
+  of a Weierstrass polynomial.
 
 As an immediate consequence before inducting on dimension, a Weierstrass polynomial generates a
 prime ideal (or is a prime element) in `𝒪_{E × ℂ, (x₀, w₀)}` if and only if it does so in
@@ -44,9 +46,9 @@ any point of a finite-dimensional complex manifold without boundary.
 
 ## Main results
 
-* `exists_map_residue_verticalPowerSeries_holomorphicStalkCenteredEquiv_ne_zero`: every nonzero
-  holomorphic germ on `E × ℂ` becomes regular in the last variable after a centered linear
-  automorphism fixing the base point (without assuming `E` is finite-dimensional).
+* `exists_map_residue_verticalPowerSeries_holomorphicStalkEquiv_ne_zero`: every nonzero holomorphic
+  germ on `E × ℂ` becomes regular in the last variable after a biholomorphism of `E × ℂ` fixing the
+  base point (without assuming `E` is finite-dimensional).
 * `isRueckert_evalVertical`: `evalVertical x₀ w₀` satisfies `RingHom.IsRueckert` for the
   polynomials distinguished at `𝔪_{x₀}`.
 * `isPrime_span_evalVertical_iff_of_isDistinguishedAt`,
@@ -74,20 +76,33 @@ section ModelSpace
 variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
 /-- Every nonzero holomorphic germ at `(x₀, w₀) : E × ℂ` becomes regular in the last variable
-after pulling back along a centered linear automorphism `(x, w) ↦ (x₀, w₀) + L ((x, w) - (x₀, w₀))`
-fixing `(x₀, w₀)` (without assuming `E` is finite-dimensional). -/
-theorem exists_map_residue_verticalPowerSeries_holomorphicStalkCenteredEquiv_ne_zero
+after pulling back along a biholomorphism of `E × ℂ` fixing `(x₀, w₀)` (without assuming `E` is
+finite-dimensional). -/
+theorem exists_map_residue_verticalPowerSeries_holomorphicStalkEquiv_ne_zero
     {x₀ : E} {w₀ : ℂ}
     {f : (holomorphicStructureSheaf 𝓘(ℂ, E × ℂ) (E × ℂ)).presheaf.stalk (x₀, w₀)}
     (hf : f ≠ 0) :
-    ∃ L : (E × ℂ) ≃L[ℂ] E × ℂ,
-      (verticalPowerSeries x₀ w₀ (L.holomorphicStalkCenteredEquiv (x₀, w₀) f)).map
+    ∃ (e : (E × ℂ) ≃ₘ^ω⟮𝓘(ℂ, E × ℂ), 𝓘(ℂ, E × ℂ)⟯ (E × ℂ)) (he : e (x₀, w₀) = (x₀, w₀)),
+      (verticalPowerSeries x₀ w₀
+        (e.holomorphicStalkEquiv (x₀, w₀)
+          (RingEquiv.cast (R := fun z ↦
+            (holomorphicStructureSheaf 𝓘(ℂ, E × ℂ) (E × ℂ)).presheaf.stalk z)
+            he.symm f))).map
         (IsLocalRing.residue ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)) ≠ 0 := by
   obtain ⟨F, hF, hfF⟩ := exists_analyticAt_toFilterGerm_eq (x₀, w₀) f
   have hF0 : ¬F =ᶠ[𝓝 (x₀, w₀)] 0 := (eq_zero_iff_of_toFilterGerm_eq (hfF _ le_rfl)).not.1 hf
   obtain ⟨L, hord⟩ := hF.exists_continuousLinearEquiv_analyticOrderAt_add_sub_ne_top hF0
-  exact ⟨L, (map_residue_verticalPowerSeries_ne_zero_iff
-    (L.toFilterGerm_holomorphicStalkCenteredEquiv_of_eq (hfF _ le_rfl))).2 hord⟩
+  let e := (Diffeomorph.addLeft ℂ ω (x₀, w₀)).symm.trans
+    ((L.toContDiffDiffeomorph ω).trans (Diffeomorph.addLeft ℂ ω (x₀, w₀)))
+  have he : e (x₀, w₀) = (x₀, w₀) := by simp [e]
+  refine ⟨e, he, (map_residue_verticalPowerSeries_ne_zero_iff
+    (e.toFilterGerm_holomorphicStalkEquiv_of_eq
+      (toFilterGerm_ringEquivCast he.symm (hfF _ le_rfl)))).2 ?_⟩
+  have he_apply (t : ℂ) : e (x₀, t) = (x₀, w₀) + L ((x₀, t) - (x₀, w₀)) := by
+    simp [e, sub_eq_neg_add]
+  rw [Function.comp_def]
+  simp only [he_apply]
+  exact hord
 
 section FiniteDimensional
 
@@ -109,11 +124,14 @@ theorem isRueckert_evalVertical (x₀ : E) (w₀ : ℂ) :
     obtain ⟨⟨q, r⟩, ⟨_, hb⟩, _⟩ := existsUnique_weierstrassDivision_of_isDistinguishedAt hw b
     exact ⟨r, q, by linear_combination hb⟩
   exists_mul_eq {b} hb := by
-    obtain ⟨L, hL⟩ :=
-      exists_map_residue_verticalPowerSeries_holomorphicStalkCenteredEquiv_ne_zero hb
-    obtain ⟨⟨P, u⟩, ⟨hP, hu, hfac⟩, _⟩ := existsUnique_weierstrassPreparation hL
-    refine ⟨L.holomorphicStalkCenteredEquiv (x₀, w₀), hu.unit⁻¹, P, hP, ?_⟩
-    rw [hfac, mul_comm (evalVertical x₀ w₀ P) u, ← mul_assoc, IsUnit.val_inv_mul, one_mul]
+    obtain ⟨e, he, hb'⟩ :=
+      exists_map_residue_verticalPowerSeries_holomorphicStalkEquiv_ne_zero hb
+    obtain ⟨⟨P, u⟩, ⟨hP, hu, hfac⟩, _⟩ := existsUnique_weierstrassPreparation hb'
+    refine ⟨(RingEquiv.cast (R := fun z ↦
+        (holomorphicStructureSheaf 𝓘(ℂ, E × ℂ) (E × ℂ)).presheaf.stalk z) he.symm).trans
+      (e.holomorphicStalkEquiv (x₀, w₀)), hu.unit⁻¹, P, hP, ?_⟩
+    rw [RingEquiv.trans_apply, hfac, mul_comm (evalVertical x₀ w₀ P) u, ← mul_assoc,
+      IsUnit.val_inv_mul, one_mul]
 
 /-- For a distinguished polynomial `P` over `𝒪_{E, x₀}`, the principal ideal
 `Ideal.span {evalVertical x₀ w₀ P}` in `𝒪_{E × ℂ, (x₀, w₀)}` is prime if and only if
@@ -160,8 +178,8 @@ theorem stalk_induction {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
     | zero => exact fun y ↦ hequiv (evalEquiv 𝓘(ℂ, Fin 0 → ℂ) (Fin 0 → ℂ) y).symm hℂ
     | succ n ih =>
       intro y
-      let e : (Fin (n + 1) → ℂ) ≃L[ℂ] (Fin n → ℂ) × ℂ :=
-        ContinuousLinearEquiv.ofFinrankEq (by simp)
+      let e := (ContinuousLinearEquiv.ofFinrankEq (𝕜 := ℂ)
+        (E := Fin (n + 1) → ℂ) (F := (Fin n → ℂ) × ℂ) (by simp)).toContDiffDiffeomorph ω
       exact hequiv (e.holomorphicStalkEquiv y)
         (hrueckert (isRueckert_evalVertical (e y).1 (e y).2) (ih (e y).1))
   let e : E ≃L[ℂ] (Fin (Module.finrank ℂ E) → ℂ) :=
