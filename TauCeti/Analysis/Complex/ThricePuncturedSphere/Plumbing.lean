@@ -59,15 +59,20 @@ maps on the plumbed sphere is computed.
   inclusion of the first piece.
 * `TauCeti.ThricePuncturedSphere.Puncture.plumbingMap_image_inter`: the two pieces overlap
   exactly in the image of the neck `-L < Re z < 0`.
-* `TauCeti.ThricePuncturedSphere.Puncture.aedisjoint_truncation_image`: in real coordinates, the
-  truncation `S_{L/2}` of `S` and its image under the plumbing map meet only in the null circle
-  `s_q = L/2`.
+* `TauCeti.ThricePuncturedSphere.Puncture.aedisjoint_truncation_inter_image`: in real coordinates,
+  the part `s_q ≤ L/2` of the truncation `S_R` of `S` and the image under the plumbing map of the
+  part `-s_∞ ≤ L/2` of the truncation `S_R` of `S'` meet only in the null circle `s_q = L/2`.
 
 * `TauCeti.ThricePuncturedSphere.Puncture.contDiff_plumbingMap`,
   `TauCeti.ThricePuncturedSphere.Puncture.contDiff_realChart_plumbingMap`: the plumbing map is
   smooth, also in the real coordinates.
 * `TauCeti.ThricePuncturedSphere.Puncture.mem_plumbedTruncation_iff`: membership in the
-  truncation `Σ_R`.
+  truncation `Σ_R`; `TauCeti.ThricePuncturedSphere.Puncture.plumbedTruncation_div_two`: for
+  `R = L/2` it is `S_{L/2} ∪ ψ_{q,L}(S_{L/2})`.
+* `TauCeti.ThricePuncturedSphere.Puncture.mem_plumbedSphere_of_endSign_mul_re_endCoord_le`,
+  `Puncture.plumbingMap_mem_plumbedSphere_of_endSign_mul_re_endCoord_le`:
+  the part `s_q ≤ L/2` of `S` and the image of the part `-s_∞ ≤ L/2` of `S'` lie in the
+  four-punctured sphere.
 * `TauCeti.ThricePuncturedSphere.Puncture.plumbedTruncation_subset`,
   `TauCeti.ThricePuncturedSphere.Puncture.isCompact_plumbedTruncation`: the truncation `Σ_R` is a
   compact subset of the four-punctured sphere.
@@ -467,14 +472,20 @@ theorem preimage_image_plumbingMap (q : Puncture) (L : ℝ) (A : Set ℂ) :
   · rintro ⟨w, hw, rfl⟩
     exact ⟨_, hw, by rw [realChart_apply, ContinuousLinearEquiv.symm_apply_apply]⟩
 
+/-- A point of the receiving thrice-punctured sphere inside the circle `s_q = L/2` lies in the
+plumbed four-punctured sphere. -/
+theorem mem_plumbedSphere_of_endSign_mul_re_endCoord_le (hq : q ≠ inf) (hL : 0 < L) {w : ℂ}
+    (hw : w ≠ 0 ∧ w ≠ 1) (hwL : q.endSign * (q.endCoord w).re ≤ L / 2) :
+    (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ q.plumbingMap L 1 := by
+  refine ⟨hw, fun h ↦ ?_⟩
+  rw [h, endSign_eq_one hq, one_mul, re_endCoord_plumbingMap q L one_ne_zero] at hwL
+  linarith [re_endCoord_inf_one_pos]
+
 /-- The receiving truncation `S_{L/2}` lies in the plumbed four-punctured sphere. -/
 theorem mem_plumbedSphere_of_mem_truncation (hq : q ≠ inf) (hL : 4 < L) {w : ℂ}
-    (hw : w ∈ truncation (L / 2)) : (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ q.plumbingMap L 1 := by
-  rw [mem_truncation] at hw
-  refine ⟨⟨hw.1, hw.2.1⟩, fun h ↦ ?_⟩
-  have h₁ := hw.2.2 q
-  rw [h, endSign_eq_one hq, one_mul, re_endCoord_plumbingMap q L one_ne_zero] at h₁
-  linarith [re_endCoord_inf_one_pos]
+    (hw : w ∈ truncation (L / 2)) : (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ q.plumbingMap L 1 :=
+  mem_plumbedSphere_of_endSign_mul_re_endCoord_le hq (by linarith)
+    ⟨(mem_truncation.1 hw).1, (mem_truncation.1 hw).2.1⟩ ((mem_truncation.1 hw).2.2 q)
 
 /-- The plumbing map carries the inserted truncation `S_{L/2}` into the part `s_q ≥ L/2` of the
 end `q` of the plumbed four-punctured sphere. -/
@@ -486,36 +497,54 @@ theorem le_re_endCoord_plumbingMap {w : ℂ}
   rw [re_endCoord_plumbingMap q L hw.1]
   linarith
 
+/-- The plumbing map carries a point of the inserted thrice-punctured sphere outside the circle
+`s_∞ = -L/2` into the plumbed four-punctured sphere. -/
+theorem plumbingMap_mem_plumbedSphere_of_endSign_mul_re_endCoord_le (hq : q ≠ inf) (hL : 0 < L)
+    {w : ℂ} (hw : w ≠ 0 ∧ w ≠ 1) (hwL : inf.endSign * (inf.endCoord w).re ≤ L / 2) :
+    (q.plumbingMap L w ≠ 0 ∧ q.plumbingMap L w ≠ 1) ∧ q.plumbingMap L w ≠ q.plumbingMap L 1 := by
+  refine ⟨q.ne_zero_and_ne_one_of_endSign_mul_re_endCoord_pos ?_,
+    fun h ↦ hw.2 (q.plumbingMap_injective L h)⟩
+  rw [endSign_eq_one hq, one_mul, re_endCoord_plumbingMap q L hw.1]
+  rw [endSign_inf, neg_one_mul] at hwL
+  linarith
+
 /-- The plumbing map carries the inserted truncation `S_{L/2}` into the plumbed four-punctured
 sphere. -/
 theorem plumbingMap_mem_plumbedSphere_of_mem_truncation (hq : q ≠ inf) (hL : 4 < L)
     {w : ℂ} (hw : w ∈ truncation (L / 2)) :
-    (q.plumbingMap L w ≠ 0 ∧ q.plumbingMap L w ≠ 1) ∧ q.plumbingMap L w ≠ q.plumbingMap L 1 := by
-  refine ⟨q.ne_zero_and_ne_one_of_endSign_mul_re_endCoord_pos ?_,
-    fun h ↦ (mem_truncation.1 hw).2.1 (q.plumbingMap_injective L h)⟩
-  rw [endSign_eq_one hq, one_mul]
-  linarith [le_re_endCoord_plumbingMap (q := q) hw]
+    (q.plumbingMap L w ≠ 0 ∧ q.plumbingMap L w ≠ 1) ∧ q.plumbingMap L w ≠ q.plumbingMap L 1 :=
+  plumbingMap_mem_plumbedSphere_of_endSign_mul_re_endCoord_le hq (by linarith)
+    ⟨(mem_truncation.1 hw).1, (mem_truncation.1 hw).2.1⟩ ((mem_truncation.1 hw).2.2 inf)
 
-/-- The receiving and inserted truncations meet only on the circle `s_q = L/2`, a null set. -/
-theorem aedisjoint_truncation_image (hq : q ≠ inf) :
-    AEDisjoint volume (Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2))
-      (realChart (q.plumbingMap L) '' (Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2))) := by
+/-- The two pieces of the truncated plumbed sphere meet only on the circle `s_q = L/2`, a null
+set: the part `±s_q ≤ L/2` of the receiving truncation `S_R` and the image under the plumbing map of
+the part `±s_∞ ≤ L/2` of the inserted one. -/
+theorem aedisjoint_truncation_inter_image (hq : q ≠ inf) (R : ℝ) :
+    AEDisjoint volume (Complex.equivRealProdCLM.symm ⁻¹' truncation R ∩
+        {z | q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ L / 2})
+      (realChart (q.plumbingMap L) '' (Complex.equivRealProdCLM.symm ⁻¹' truncation R ∩
+        {z | inf.endSign * (inf.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ L / 2})) := by
   set C := Metric.sphere q.endCenter (‖q.endScale‖ * Real.exp (-(π * L)))
-  have hsub : Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2) ∩
-      realChart (q.plumbingMap L) '' (Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2)) ⊆
+  have hsub : (Complex.equivRealProdCLM.symm ⁻¹' truncation R ∩
+        {z | q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ L / 2}) ∩
+      realChart (q.plumbingMap L) '' (Complex.equivRealProdCLM.symm ⁻¹' truncation R ∩
+        {z | inf.endSign * (inf.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ L / 2}) ⊆
       Complex.equivRealProdCLM.symm ⁻¹' C := by
-    rintro z ⟨hz, w, hw, rfl⟩
-    simp only [mem_preimage, realChart_apply, ContinuousLinearEquiv.symm_apply_apply] at hz ⊢
+    rintro z ⟨⟨hz, hzq⟩, w, ⟨hw, hwi⟩, rfl⟩
+    simp only [mem_preimage, mem_ofPred_eq, realChart_apply,
+      ContinuousLinearEquiv.symm_apply_apply] at hz hzq hwi ⊢
     set p := q.plumbingMap L (Complex.equivRealProdCLM.symm w)
-    have h₁ := le_re_endCoord_plumbingMap (q := q) hw
-    have h₂ := (mem_truncation.1 hz).2.2 q
-    rw [endSign_eq_one hq, one_mul] at h₂
+    have h₁ : L / 2 ≤ (q.endCoord p).re := by
+      rw [re_endCoord_plumbingMap q L (mem_truncation.1 hw).1]
+      rw [endSign_inf, neg_one_mul] at hwi
+      linarith
+    rw [endSign_eq_one hq, one_mul] at hzq
     have hpos : 0 < ‖(p - q.endCenter) / q.endScale‖ :=
       norm_pos_iff.2 (div_ne_zero (sub_ne_zero.2
         (ne_endCenter ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩ q))
         q.endScale_ne_zero)
     have hlog : Real.log ‖(p - q.endCenter) / q.endScale‖ = -(π * L) := by
-      have heq := le_antisymm h₂ h₁
+      have heq := le_antisymm hzq h₁
       rw [re_endCoord] at heq
       field_simp at heq
       linarith
@@ -620,6 +649,23 @@ theorem preimage_plumbedTruncation {q : Puncture} (hq : q ≠ inf) (L R : ℝ) :
     · exact Or.inl h
     · refine Or.inr ⟨Complex.equivRealProdCLM.symm w, hw, ?_⟩
       rw [equivRealProdCLM_symm_realChart]
+
+/-- At `R = L/2` the truncated plumbed sphere is the union of the truncation `S_{L/2}` of the
+receiving sphere and the image under the plumbing map of the truncation `S_{L/2}` of the inserted
+one: on `S_{L/2}` the longitudinal coordinates are already at most `L/2`. -/
+theorem plumbedTruncation_div_two {q : Puncture} (hq : q ≠ inf) (L : ℝ) :
+    q.plumbedTruncation L (L / 2) = truncation (L / 2) ∪ q.plumbingMap L '' truncation (L / 2) := by
+  rw [plumbedTruncation_def]
+  congr 1
+  · refine inter_eq_left.2 fun w hw ↦ ?_
+    have h := (mem_truncation.1 hw).2.2 q
+    rw [endSign_eq_one hq, one_mul] at h
+    simpa only [mem_ofPred_eq] using h
+  · refine congrArg _ (inter_eq_left.2 fun w hw ↦ ?_)
+    have h := (mem_truncation.1 hw).2.2 inf
+    rw [endSign_inf, neg_one_mul] at h
+    simp only [mem_ofPred_eq]
+    linarith
 
 /-- The truncation `Σ_R` of the plumbed sphere is compact in the real coordinates. -/
 theorem isCompact_preimage_plumbedTruncation (q : Puncture) (L R : ℝ) :

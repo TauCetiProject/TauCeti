@@ -30,7 +30,8 @@ These predicates concern actual functions; almost-everywhere changes do not affe
 They impose no global integrability condition on the possibly unbounded domain.
 Global `Lᵖ` membership on a set implies local membership there (`MeasureTheory.MemLp.memLpLoc`).
 
-This file supplies restriction to arbitrary subsets, linearity, continuous-linear composition,
+This file supplies restriction to arbitrary subsets (also combined with a change of the function
+off the subset), linearity, continuous-linear composition,
 pairing of fields of continuous linear maps into product maps,
 multiplication of local `Lᵖ` functions by continuous factors (with extension by zero for factors
 supported in the domain), composition of local `Lᵖ` operator families with continuous ones,
@@ -105,6 +106,12 @@ theorem MemLpLoc.congr_ae (hf : MemLpLoc p U f)
     (hfg : f =ᵐ[volume.restrict U] g) : MemLpLoc p U g := by
   intro K hK hc
   exact (hf K hK hc).ae_eq (ae_mono (Measure.restrict_mono_set volume hK) hfg)
+
+/-- Restricting to a subset preserves local `Lᵖ` membership of any function agreeing with the
+original one on that subset. -/
+theorem MemLpLoc.congr_mono (hf : MemLpLoc p U f) (hgf : Set.EqOn g f V) (hVU : V ⊆ U) :
+    MemLpLoc p V g := fun K hK hc => (hf K (hK.trans hVU) hc).ae_eq <| by
+  filter_upwards [ae_restrict_mem hc.measurableSet] with z hz using (hgf (hK hz)).symm
 
 /-- The zero function belongs to every local `Lᵖ` class. -/
 @[simp]
@@ -387,10 +394,21 @@ theorem MemWkpLoc.congr_ae (hf : MemWkpLoc p U k f)
     exact ⟨hp.congr_ae hfg, D,
       hD.congr_ae (ae_mono (Measure.restrict_mono_set volume interior_subset) hfg), hk⟩
 
-/-- On a measurable set, the local Sobolev class only depends on the values on that set. -/
-theorem MemWkpLoc.congr_fun (hf : MemWkpLoc p U k f) (hfg : Set.EqOn f g U)
-    (hU : MeasurableSet U) : MemWkpLoc p U k g :=
-  hf.congr_ae ((ae_restrict_mem hU).mono hfg)
+/-- Restricting to a subset preserves the local Sobolev class of any function agreeing with the
+original one on that subset. -/
+theorem MemWkpLoc.congr_mono (hf : MemWkpLoc p U k f) (hgf : Set.EqOn g f V) (hVU : V ⊆ U) :
+    MemWkpLoc p V k g := by
+  cases k with
+  | zero => exact MemLpLoc.congr_mono hf hgf hVU
+  | succ k =>
+    obtain ⟨-, D, hD, hk⟩ := hf.mono hVU
+    exact ⟨hf.memLpLoc.congr_mono hgf hVU, D, hD.congr_ae <| by
+      filter_upwards [ae_restrict_mem isOpen_interior.measurableSet] with z hz using
+        (hgf (interior_subset hz)).symm, hk⟩
+
+/-- The local Sobolev class only depends on the values on the set. -/
+theorem MemWkpLoc.congr (hf : MemWkpLoc p U k f) (hgf : Set.EqOn g f U) : MemWkpLoc p U k g :=
+  hf.congr_mono hgf subset_rfl
 
 /-- Every weak derivative of a member of `MemWkpLoc p Ω (k + 1)` is in `MemWkpLoc p Ω k`, not only
 the one supplied by the definition: weak derivatives are unique almost everywhere. -/

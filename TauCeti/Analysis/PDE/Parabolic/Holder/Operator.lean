@@ -294,6 +294,34 @@ theorem norm_euclideanZerothOrderCoeff_le
   (ContinuousLinearMap.norm_lsmul_compHolder₂_const_le _ _).trans
     (mul_le_of_le_one_right (norm_nonneg _) ContinuousLinearMap.norm_id_le)
 
+/-- The second-order coefficient field is linear in the scalar coefficients. -/
+@[simp]
+theorem euclideanSecondOrderCoeff_sub
+    (a a' : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) :
+    euclideanSecondOrderCoeff (a - a') =
+      euclideanSecondOrderCoeff a - euclideanSecondOrderCoeff a' :=
+  HolderSpace.ext fun p ↦ ContinuousLinearMap.ext fun H ↦ by
+    simp [HolderSpace.sub_apply, sub_mul, Finset.sum_sub_distrib]
+
+/-- The first-order coefficient field is linear in the scalar coefficients. -/
+@[simp]
+theorem euclideanFirstOrderCoeff_sub
+    (b b' : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) :
+    euclideanFirstOrderCoeff (b - b') =
+      euclideanFirstOrderCoeff b - euclideanFirstOrderCoeff b' :=
+  HolderSpace.ext fun p ↦ ContinuousLinearMap.ext fun v ↦ by
+    simp [HolderSpace.sub_apply, sub_mul, Finset.sum_sub_distrib]
+
+omit [DecidableEq ι] in
+/-- The zeroth-order coefficient field is linear in the scalar coefficient. -/
+@[simp]
+theorem euclideanZerothOrderCoeff_sub
+    (c c' : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) :
+    euclideanZerothOrderCoeff (c - c') =
+      euclideanZerothOrderCoeff c - euclideanZerothOrderCoeff c' :=
+  HolderSpace.ext fun p ↦ ContinuousLinearMap.ext fun y ↦ by
+    simp [HolderSpace.sub_apply, sub_mul]
+
 /-- The parabolic operator `P u = ∂ₜu - aⁱʲ ∂ᵢ∂ⱼu - bⁱ ∂ᵢu - c u` on `ℝⁿ = EuclideanSpace ℝ ι`
 with scalar coefficients `aⁱʲ`, `bⁱ`, `c` in `C_b^{α,α/2}`, as a continuous linear map from
 `C_b^{2+α,1+α/2}` to `C_b^{α,α/2}`. -/
@@ -364,20 +392,9 @@ theorem norm_euclideanParabolicOperatorL_sub_le
     (c c' : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) :
     ‖euclideanParabolicOperatorL (ht := ht) hα a b c - euclideanParabolicOperatorL hα a' b' c'‖ ≤
       ∑ i, ∑ j, ‖a i j - a' i j‖ + 24 * (∑ i, ‖b i - b' i‖ + ‖c - c'‖) := by
-  have hA : euclideanSecondOrderCoeff a - euclideanSecondOrderCoeff a' =
-      euclideanSecondOrderCoeff (a - a') := by
-    ext p H
-    simp [sub_mul, Finset.sum_sub_distrib]
-  have hB : euclideanFirstOrderCoeff b - euclideanFirstOrderCoeff b' =
-      euclideanFirstOrderCoeff (b - b') := by
-    ext p v
-    simp [sub_mul, Finset.sum_sub_distrib]
-  have hC : euclideanZerothOrderCoeff c - euclideanZerothOrderCoeff c' =
-      euclideanZerothOrderCoeff (c - c') := by
-    ext p
-    simp
   refine (norm_parabolicOperatorL_sub_le hα).trans ?_
-  rw [hA, hB, hC]
+  rw [← euclideanSecondOrderCoeff_sub, ← euclideanFirstOrderCoeff_sub,
+    ← euclideanZerothOrderCoeff_sub]
   gcongr
   · exact norm_euclideanSecondOrderCoeff_le _
   · exact norm_euclideanFirstOrderCoeff_le _
