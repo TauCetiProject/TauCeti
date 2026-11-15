@@ -652,8 +652,7 @@ theorem smul_openCell_cellPreimage (g : G)
     g • openCell n c = openCell n (g • c) := by
   let := cwComplexPreimage C hG.isCoveringMap
   let := cellPreimageMulAction C hG n
-  change (g • ·) '' (map n c '' ball 0 1) = map n (g • c) '' ball 0 1
-  rw [← image_comp]
+  rw [openCell, openCell, ← image_smul, image_image]
   exact image_congr fun x _ ↦ (map_smul_cellPreimage C hG g c x).symm
 
 open scoped Pointwise in

@@ -23,18 +23,20 @@ representation `Rep.trivial k G k`:
 
 1. **Lifted CW structure from the base** (`TauCeti.cellularResolutionOfIsAspherical`): if `B` is a
    Hausdorff CW complex, its lifted CW structure `TauCeti.cwComplexPreimage` on `p ⁻¹' univ` has
-   characteristic maps strictly preserved by `G` (`TauCeti.smul_openCell_cellPreimage` and
+   characteristic maps strictly preserved by `G` (`TauCeti.map_smul_cellPreimage`, so it also
+   permutes open cells freely by `TauCeti.smul_openCell_cellPreimage` and
    `TauCeti.eq_one_of_smul_openCell_cellPreimage`), and its cellular chains form a projective
    resolution free over `k[G]` on the cells of `B` (`TauCeti.cellularChainRepIsoFree`).
 2. **Free cellular action on the total space**
-   (`TauCeti.freeActionCellularResolutionOfIsAspherical`): if `E` itself is a Hausdorff CW complex
-   on which `G` acts freely by open-cell-permuting translations (so `B` inherits the quotient CW
-   structure `IsQuotientCoveringMap.cwComplexQuotient`), its cellular chains form a projective
-   resolution (`TauCeti.cellActionResolution`) free over `k[G]` on the cell orbits
-   (`TauCeti.cellActionChainRepIsoFreeOfOrbits`) and on chosen lifts of the cells of `B`
-   (`TauCeti.quotientCellularChainRepIsoFree`), without requiring translations to preserve chosen
-   characteristic maps strictly (compare `TauCeti.universalGSpaceCellularResolution` for the
-   ordered simplicial CW structure on Milnor's join).
+   (`IsQuotientCoveringMap.cellActionResolutionOfIsAspherical`): if `E` itself is a Hausdorff CW
+   complex on which `G` acts freely by open-cell-permuting translations (so `B` inherits the
+   quotient CW structure `IsQuotientCoveringMap.cwComplexQuotient`), its cellular chains form a
+   projective resolution (`TauCeti.cellActionResolution`) free over `k[G]` on the cell orbits
+   (`TauCeti.cellActionChainRepIsoFreeOfOrbits`) and, when `B : Type w`, on chosen lifts of the
+   cells of `B` (`IsQuotientCoveringMap.cellActionChainRepIsoFree`), without requiring translations
+   to preserve chosen characteristic maps strictly (for a concrete total-space CW structure, compare
+   `TauCeti.universalGSpaceCellularResolution` on Milnor's join, where
+   `TauCeti.smul_map_universalGSpace` happens to preserve characteristic maps strictly).
 
 In both cases the left `G`-action on chains is induced directly by the given left action of `G` on
 `E`; no inversion through `Gᵐᵒᵖ` intervenes.
@@ -43,7 +45,7 @@ In both cases the left `G`-action on chains is induced directly by the given lef
 
 * `TauCeti.cellularResolutionOfIsAspherical`: projective resolution of `Rep.trivial k G k` from the
   lifted CW structure on a simply connected quotient covering of an aspherical CW complex `B`.
-* `TauCeti.freeActionCellularResolutionOfIsAspherical`: projective resolution of
+* `IsQuotientCoveringMap.cellActionResolutionOfIsAspherical`: projective resolution of
   `Rep.trivial k G k` from a free cellular `G`-CW structure on the total space `E` of a simply
   connected quotient covering of an aspherical space `B`.
 
@@ -120,35 +122,36 @@ variable {E : Type w} {B : Type*} [TopologicalSpace E] [T2Space E] [CWComplex (u
 is a quotient covering map for a free open-cell-permuting action of `G` on a simply connected
 Hausdorff CW complex `E`, and `B` is aspherical at `b = p e`, then the cellular chains of
 `univ : Set E` form a projective resolution of `Rep.trivial k G k`. In degree `n` they are free over
-`k[G]` on the `G`-orbits of `n`-cells of `E` (`TauCeti.cellActionChainRepIsoFreeOfOrbits`), and on
-chosen lifts of the `n`-cells of the orbit CW complex `B`
-(`TauCeti.quotientCellularChainRepIsoFree`). -/
-def freeActionCellularResolutionOfIsAspherical : ProjectiveResolution (Rep.trivial k G k) :=
+`k[G]` on the `G`-orbits of `n`-cells of `E` (`TauCeti.cellActionChainRepIsoFreeOfOrbits`), and when
+`B : Type w` on chosen lifts of the `n`-cells of the orbit CW complex `B`
+(`IsQuotientCoveringMap.cellActionChainRepIsoFree`). -/
+def _root_.IsQuotientCoveringMap.cellActionResolutionOfIsAspherical :
+    ProjectiveResolution (Rep.trivial k G k) :=
   haveI := hG.toContinuousConstSMul
   haveI := hG.isCoveringMap.contractibleSpace_univ_of_isAspherical he hb
   cellActionResolution (univ : Set E) hcell hfree k
 
-/-- The underlying chain complex of `TauCeti.freeActionCellularResolutionOfIsAspherical` is
+/-- The underlying chain complex of `IsQuotientCoveringMap.cellActionResolutionOfIsAspherical` is
 `TauCeti.cellActionChainComplexRep`. -/
 @[simp]
-theorem freeActionCellularResolutionOfIsAspherical_complex :
+theorem _root_.IsQuotientCoveringMap.cellActionResolutionOfIsAspherical_complex :
     haveI := hG.toContinuousConstSMul
-    (freeActionCellularResolutionOfIsAspherical hG hcell hfree he hb k).complex =
+    (hG.cellActionResolutionOfIsAspherical hcell hfree he hb k).complex =
       cellActionChainComplexRep (univ : Set E) hcell k :=
   haveI := hG.toContinuousConstSMul
   haveI := hG.isCoveringMap.contractibleSpace_univ_of_isAspherical he hb
   cellActionResolution_complex ..
 
 -- Under `module`, the public statement cannot unfold the unexposed body of
--- `TauCeti.freeActionCellularResolutionOfIsAspherical`, so it transports along
--- `freeActionCellularResolutionOfIsAspherical_complex`.
-/-- The augmentation of `TauCeti.freeActionCellularResolutionOfIsAspherical` is
+-- `IsQuotientCoveringMap.cellActionResolutionOfIsAspherical`, so it transports along
+-- `cellActionResolutionOfIsAspherical_complex`.
+/-- The augmentation of `IsQuotientCoveringMap.cellActionResolutionOfIsAspherical` is
 `TauCeti.cellActionChainComplexRepAugmentation`. -/
 @[simp]
-theorem freeActionCellularResolutionOfIsAspherical_π :
+theorem _root_.IsQuotientCoveringMap.cellActionResolutionOfIsAspherical_π :
     haveI := hG.toContinuousConstSMul
-    (freeActionCellularResolutionOfIsAspherical hG hcell hfree he hb k).π =
-      eqToHom (freeActionCellularResolutionOfIsAspherical_complex hG hcell hfree he hb k) ≫
+    (hG.cellActionResolutionOfIsAspherical hcell hfree he hb k).π =
+      eqToHom (hG.cellActionResolutionOfIsAspherical_complex hcell hfree he hb k) ≫
         cellActionChainComplexRepAugmentation (univ : Set E) hcell k :=
   haveI := hG.toContinuousConstSMul
   haveI := hG.isCoveringMap.contractibleSpace_univ_of_isAspherical he hb

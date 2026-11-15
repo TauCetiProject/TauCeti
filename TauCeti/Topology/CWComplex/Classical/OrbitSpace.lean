@@ -427,9 +427,15 @@ theorem _root_.IsQuotientCoveringMap.isCellular_restrictPreimage :
       (TopCat.ofHom ⟨(univ : Set B).restrictPreimage p, hp.continuous.restrictPreimage⟩) := by
   let := hp.cwComplexQuotient hcell hfree
   have := hp.t2Space_of_cwComplex hcell hfree
-  rintro n ⟨x, -⟩ (hx : x ∈ (skeletonLT (univ : Set E) (n : ℕ∞) : Set E))
-  change p x ∈ (skeletonLT (univ : Set B) (n : ℕ∞) : Set B)
-  rw [← hp.image_skeletonLT hcell hfree n]
+  rintro n ⟨x, hxE⟩ hx
+  rw [mem_ofPred_eq, ← SetLike.mem_coe] at hx ⊢
+  -- `(univ : Set B).restrictPreimage p` has domain `↥(p ⁻¹' univ)`, which agrees with
+  -- `↥(univ : Set E)` only by unfolding `p ⁻¹' univ = univ`, so `rw`/`simp` cannot match
+  -- `Set.restrictPreimage_coe`.
+  have hval : ((TopCat.ofHom ⟨(univ : Set B).restrictPreimage p,
+      hp.continuous.restrictPreimage⟩ : TopCat.of (univ : Set E) ⟶ TopCat.of (univ : Set B))
+      ⟨x, hxE⟩).1 = p x := rfl
+  rw [hval, ← hp.image_skeletonLT hcell hfree n]
   exact mem_image_of_mem p hx
 
 end Quotient
