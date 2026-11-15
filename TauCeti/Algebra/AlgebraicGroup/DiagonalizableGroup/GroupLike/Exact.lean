@@ -43,26 +43,24 @@ variable [Module.IsTorsionFree k Q] [Module.IsTorsionFree k G] [Module.IsTorsion
 /-- A sequence of diagonalizable affine groups is short exact exactly when the first
 intrinsic character map is injective, the second is surjective, and image equals kernel. -/
 @[simp]
-theorem isShortExact_iff_groupLikeMap
+theorem isShortExact_iff_mapGroupLike
     (hQ : Submodule.span k (Set.range (_root_.GroupLike.val (R := k) (A := Q))) = ⊤)
     (hG : Submodule.span k (Set.range (_root_.GroupLike.val (R := k) (A := G))) = ⊤)
     (hN : Submodule.span k (Set.range (_root_.GroupLike.val (R := k) (A := N))) = ⊤)
     (p : Q ⟶ G) (i : G ⟶ N) :
     CommHopfAlgCat.IsShortExact p i ↔
-      Function.Injective (TauCeti.GroupLike.map p.hom) ∧
-        Function.Surjective (TauCeti.GroupLike.map i.hom) ∧
-          (TauCeti.GroupLike.map p.hom).range = (TauCeti.GroupLike.map i.hom).ker := by
+      Function.Injective p.hom.mapGroupLike ∧
+        Function.Surjective i.hom.mapGroupLike ∧
+          p.hom.mapGroupLike.range = i.hom.mapGroupLike.ker := by
   let eQ := CommHopfAlgCat.evaluationIso hQ
   let eG := CommHopfAlgCat.evaluationIso hG
   let eN := CommHopfAlgCat.evaluationIso hN
   have hp : eQ.hom ≫ p ≫ eG.inv =
-      CommHopfAlgCat.ofHom (MonoidAlgebra.mapDomainBialgHom k
-        (TauCeti.GroupLike.map p.hom)) := by
+      CommHopfAlgCat.ofHom (MonoidAlgebra.mapDomainBialgHom k p.hom.mapGroupLike) := by
     simpa only [eQ, eG, Category.assoc, Iso.hom_inv_id, Category.comp_id] using
       congrArg (fun f ↦ f ≫ eG.inv) (CommHopfAlgCat.evaluationIso_naturality hQ hG p)
   have hi : eG.hom ≫ i ≫ eN.inv =
-      CommHopfAlgCat.ofHom (MonoidAlgebra.mapDomainBialgHom k
-        (TauCeti.GroupLike.map i.hom)) := by
+      CommHopfAlgCat.ofHom (MonoidAlgebra.mapDomainBialgHom k i.hom.mapGroupLike) := by
     simpa only [eG, eN, Category.assoc, Iso.hom_inv_id, Category.comp_id] using
       congrArg (fun f ↦ f ≫ eN.inv) (CommHopfAlgCat.evaluationIso_naturality hG hN i)
   have hiff := CommHopfAlgCat.isShortExact_iso_iff (p := p) (i := i)
