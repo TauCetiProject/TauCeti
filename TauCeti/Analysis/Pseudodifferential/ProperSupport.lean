@@ -264,7 +264,7 @@ theorem isSmoothing_kernelCutoff_sub [CompleteSpace W] (hχ : (χ : CoordinateSp
   set N := ⌈m - m'⌉₊
   set t : ℝ := m - ((N + 1 : ℕ) + β.length)
   choose A hA0 hA using fun r : Fin (N + 1) → Fin n ↦ a.exists_bound K hK α (List.ofFn r ++ β)
-  refine ⟨(∑ r, A r) * 2 ^ (|t| / 2) / N ! *
+  refine ⟨(∑ r, A r) * 2 ^ (|t| / 2) / (N + 1)! *
     ∫ η, (1 + ‖(2 * π) • η‖ ^ 2) ^ ((|t| + (N + 1)) / 2) * ‖𝓕 χ η‖,
     mul_nonneg (div_nonneg (mul_nonneg (Finset.sum_nonneg fun r _ ↦ hA0 r) (by positivity))
       (by positivity)) (integral_nonneg fun _ ↦ by positivity), fun x hx ξ ↦ ?_⟩

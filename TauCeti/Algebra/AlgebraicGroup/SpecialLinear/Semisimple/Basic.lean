@@ -69,7 +69,7 @@ theorem eq_augmentation_of_isNormal_of_isSolvable
     let _ : NeZero (m + 1) := ⟨Nat.succ_ne_zero m⟩
     let _ : IsReduced H := isReduced_of_smooth k H
     let _ : ConnectedSpace (PrimeSpectrum H) :=
-      geometricallyConnectedCommHopfAlgProperty.connectedSpace k H
+      geometricallyConnectedCommHopfAlgProperty.connectedSpace
         (geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k (m + 1))
     -- Determinant one confines the scalars to `(m + 1)`-th roots of unity.
     exact HopfIdeal.eq_augmentation_of_isFaithful_of_isNormal_of_isSolvable_of_pow_eq_one
