@@ -69,20 +69,21 @@ variable {G : Type} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [Compa
 `Γ` of a finite normal layer, in the Tate group of degree `2`: the image of `χ`, as a class in
 `H¹(Γ, ℚ/ℤ)` for the trivial action, under the connecting map of `0 → ℤ → ℚ → ℚ/ℤ → 0`. This is
 `TauCeti.TateCohomology.characterConnectingClass` for the finite group `Γ`. -/
-def characterConnectingClass (χ : Additive (Abelianization L.Gal) →+ AddCircle (1 : ℚ)) :
+def characterConnectingClass (χ : Additive (Group.Abelianization L.Gal) →+ AddCircle (1 : ℚ)) :
     L.TrivialTateH 2 :=
   TateCohomology.characterConnectingClass L.Gal χ
 
 /-- The connecting class of a character of a layer is the connecting class of the character of
 its Galois group. -/
-theorem characterConnectingClass_def (χ : Additive (Abelianization L.Gal) →+ AddCircle (1 : ℚ)) :
+theorem characterConnectingClass_def (χ : Additive (Group.Abelianization L.Gal) →+ AddCircle (1 :
+    ℚ)) :
     L.characterConnectingClass χ = TateCohomology.characterConnectingClass L.Gal χ :=
   (rfl)
 
 /-- The connecting class is additive in the character. -/
 @[simp]
 theorem characterConnectingClass_add
-    (χ₁ χ₂ : Additive (Abelianization L.Gal) →+ AddCircle (1 : ℚ)) :
+    (χ₁ χ₂ : Additive (Group.Abelianization L.Gal) →+ AddCircle (1 : ℚ)) :
     L.characterConnectingClass (χ₁ + χ₂) =
       L.characterConnectingClass χ₁ + L.characterConnectingClass χ₂ := by
   simp only [characterConnectingClass_def, map_add]
@@ -94,14 +95,15 @@ theorem characterConnectingClass_zero : L.characterConnectingClass 0 = 0 := by
 
 /-- The connecting class of the negated character is the negated class. -/
 @[simp]
-theorem characterConnectingClass_neg (χ : Additive (Abelianization L.Gal) →+ AddCircle (1 : ℚ)) :
+theorem characterConnectingClass_neg (χ : Additive (Group.Abelianization L.Gal) →+ AddCircle (1 :
+    ℚ)) :
     L.characterConnectingClass (-χ) = -L.characterConnectingClass χ := by
   simp only [characterConnectingClass_def, map_neg]
 
 /-- The connecting class of a difference of characters is the difference of their classes. -/
 @[simp]
 theorem characterConnectingClass_sub
-    (χ₁ χ₂ : Additive (Abelianization L.Gal) →+ AddCircle (1 : ℚ)) :
+    (χ₁ χ₂ : Additive (Group.Abelianization L.Gal) →+ AddCircle (1 : ℚ)) :
     L.characterConnectingClass (χ₁ - χ₂) =
       L.characterConnectingClass χ₁ - L.characterConnectingClass χ₂ := by
   simp only [characterConnectingClass_def, map_sub]
@@ -117,7 +119,7 @@ coefficient representation with `A^V`, and positive Tate cohomology is then iden
 ordinary group cohomology. -/
 def artinCharacterCup :
     F.level L.ground →+
-      (Additive (Abelianization L.Gal) →+ AddCircle (1 : ℚ)) →+ L.H F 2 where
+      (Additive (Group.Abelianization L.Gal) →+ AddCircle (1 : ℚ)) →+ L.H F 2 where
   toFun a :=
     { toFun := fun χ =>
         (L.tateHIsoH F 2).hom <|
@@ -132,7 +134,7 @@ def artinCharacterCup :
 /-- The Artin character cup evaluates as the Tate cup product of `a₀` with `δχ`, transported
 through the right unitor and the comparison between positive Tate and ordinary cohomology. -/
 theorem artinCharacterCup_apply (a : F.level L.ground)
-    (χ : Additive (Abelianization L.Gal) →+ AddCircle (1 : ℚ)) :
+    (χ : Additive (Group.Abelianization L.Gal) →+ AddCircle (1 : ℚ)) :
     L.artinCharacterCup F a χ =
       (L.tateHIsoH F 2).hom
         ((tateCohomologyFunctor 2).map (ρ_ (L.rep F)).hom
@@ -144,7 +146,7 @@ theorem artinCharacterCup_apply (a : F.level L.ground)
 cup `a₀ ∪ δχ` is the image of `δχ` under the map of coefficients `ℤ → A^V`, `n ↦ n • x`, written
 as `n ↦ n ⊗ x ↦ x ⊗ n ↦ n • x`. -/
 theorem artinCharacterCup_groundLevelEquiv (x : (L.rep F).ρ.invariants)
-    (χ : Additive (Abelianization L.Gal) →+ AddCircle (1 : ℚ)) :
+    (χ : Additive (Group.Abelianization L.Gal) →+ AddCircle (1 : ℚ)) :
     L.artinCharacterCup F (L.groundLevelEquiv F x) χ =
       (L.tateHIsoH F 2).hom ((tateCohomologyFunctor 2).map
         (Rep.tensorInvariant (Rep.trivial ℤ L.Gal ℤ) x ≫ (β_ _ (L.rep F)).hom ≫
@@ -158,17 +160,17 @@ module of the layer and a character `χ` of its abelianized Galois group, the cl
 the character formula, for the ground-level element `a` corresponding to `x`, is the class of the
 carry cocycle `(g, h) ↦ ⌊χ'(g) + χ'(h)⌋ • x`. -/
 theorem artinCharacterCup_groundLevelEquiv_eq_H2π (x : (L.rep F).ρ.invariants)
-    (χ : Additive (Abelianization L.Gal) →+ AddCircle (1 : ℚ)) :
+    (χ : Additive (Group.Abelianization L.Gal) →+ AddCircle (1 : ℚ)) :
     L.artinCharacterCup F (L.groundLevelEquiv F x) χ =
       groupCohomology.H2π (L.rep F) (TauCeti.groupCohomology.characterCarryCocycles₂
-        (χ.comp Abelianization.of.toAdditive) (L.rep F) x) := by
+        (χ.comp Group.Abelianization.of.toAdditive) (L.rep F) x) := by
   rw [artinCharacterCup_apply, zeroTateClass_groundLevelEquiv, characterConnectingClass_def,
     TateCohomology.cup_characterConnectingClass_eq_H2π, ← Iso.app_inv, ← tateHIsoH_def]
   exact (L.tateHIsoH F 2).inv_hom_id_apply _
 
 /-- The Artin character cup vanishes on the norm subgroup. -/
 theorem artinCharacterCup_eq_zero_of_mem_normSubgroup (a : F.level L.ground)
-    (χ : Additive (Abelianization L.Gal) →+ AddCircle (1 : ℚ))
+    (χ : Additive (Group.Abelianization L.Gal) →+ AddCircle (1 : ℚ))
     (ha : a ∈ L.normSubgroup F) :
     L.artinCharacterCup F a χ = 0 := by
   rw [← L.zeroTateClass_eq_zero_iff F a] at ha
@@ -185,16 +187,16 @@ variable (V : OpenNormalSubgroup G)
 character `χ` of the abelianized Galois group of the layer `V ◁ G` through the projection
 `G → G ⧸ V`, then the carry of `χ` at the images of `g, h ∈ G` is the carry of `ψ` at `g, h`. -/
 theorem characterCarry_galOfOpenNormalEquiv_symm
-    (χ : Additive (Abelianization (ofOpenNormal V).Gal) →+ AddCircle (1 : ℚ))
+    (χ : Additive (Group.Abelianization (ofOpenNormal V).Gal) →+ AddCircle (1 : ℚ))
     (ψ : Additive G →+ AddCircle (1 : ℚ))
     (hχψ : ∀ g : G, ψ (.ofMul g) =
-      χ (.ofMul (Abelianization.of ((galOfOpenNormalEquiv V).symm (g : G ⧸ V.toSubgroup)))))
+      χ (.ofMul (Group.Abelianization.of ((galOfOpenNormalEquiv V).symm (g : G ⧸ V.toSubgroup)))))
     (g h : G) :
-    ContCohomology.characterCarry (χ.comp Abelianization.of.toAdditive)
+    ContCohomology.characterCarry (χ.comp Group.Abelianization.of.toAdditive)
         ((galOfOpenNormalEquiv V).symm (g : G ⧸ V.toSubgroup))
         ((galOfOpenNormalEquiv V).symm (h : G ⧸ V.toSubgroup)) =
       ContCohomology.characterCarry ψ g h := by
-  have hψ' : ψ = (χ.comp Abelianization.of.toAdditive).comp (MonoidHom.toAdditive
+  have hψ' : ψ = (χ.comp Group.Abelianization.of.toAdditive).comp (MonoidHom.toAdditive
       ((galOfOpenNormalEquiv V).symm.toMonoidHom.comp (QuotientGroup.mk' V.toSubgroup))) :=
     AddMonoidHom.ext fun g ↦ hχψ g.toMul
   simp only [hψ', ContCohomology.characterCarry_comp, MonoidHom.comp_apply,

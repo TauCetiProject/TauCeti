@@ -276,9 +276,9 @@ def subTransposeEqEquiv (hQ : Qᵀ = -Q) (hQd : ∀ i, Q i i = 0) :
     ext i j
     have hji : Q j i = -Q i j := by simpa using congrFun (congrFun hQ i) j
     rcases lt_trichotomy i j with h | rfl | h
-    · simp [h, h.not_gt, hji, Sym2.eq_swap]
+    · simp [h, h.not_gt, hji, Sym2.eq_swap, Function.swap]
     · simp [hQd]
-    · simp [h, h.not_gt, Sym2.eq_swap]⟩
+    · simp [h, h.not_gt, Sym2.eq_swap, Function.swap]⟩
   left_inv S := by
     ext i j
     have hS : S.1 i j - S.1 j i = Q i j := by simpa using congrFun (congrFun S.2 i) j

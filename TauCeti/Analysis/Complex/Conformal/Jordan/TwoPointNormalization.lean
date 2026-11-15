@@ -143,7 +143,7 @@ theorem eqOn_upperHalfPlaneSet_of_tendsto_of_bijOn_of_isJordanCurve_insert_infty
   obtain ⟨hFd, hFU⟩ := differentiableOn_and_bijOn_inv_sub_comp_const_sub_inv hq hf hfU c
   obtain ⟨hGd, hGU⟩ := differentiableOn_and_bijOn_inv_sub_comp_const_sub_inv hq hg hgU c
   have hFG := eqOn_upperHalfPlaneSet_of_tendsto_of_bijOn (isBounded_image_inv_sub hq)
-    (isJordanCurve_frontier_image_inv_sub hUo hq hUJ) hFd hGd hFU hGU (h0 h₁) (h0 h₂)
+    (isJordanCurve_frontier_image_inv_sub hq hUJ) hFd hGd hFU hGU (h0 h₁) (h0 h₂)
     (fun h => h₁₂ (sub_right_injective (inv_injective h)))
     (tendsto_inv_sub_comp_const_sub_inv_zero hfinf c)
     (tendsto_inv_sub_comp_const_sub_inv hq hfU.mapsTo h₁ hf₁)
@@ -172,7 +172,7 @@ theorem eq_of_tendsto_of_bijOn_upperHalfPlaneSet_of_isJordanCurve_insert_infty
   have hyc : y ≠ c := ((le_max_right x y).trans_lt (lt_add_one _)).ne
   obtain ⟨hGd, hGU⟩ := differentiableOn_and_bijOn_inv_sub_comp_const_sub_inv hq hg hgU c
   have h := eq_of_tendsto_of_bijOn_upperHalfPlaneSet (isBounded_image_inv_sub hq)
-    (isJordanCurve_frontier_image_inv_sub hUo hq hUJ) hGd hGU
+    (isJordanCurve_frontier_image_inv_sub hq hUJ) hGd hGU
     (tendsto_inv_sub_comp_const_sub_inv hq hgU.mapsTo hxc hx)
     (tendsto_inv_sub_comp_const_sub_inv hq hgU.mapsTo hyc hy)
   exact sub_right_injective (inv_injective h)

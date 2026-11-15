@@ -248,7 +248,7 @@ theorem outerSMulCommClass (S T : Type*) [Semiring S] [Semiring T]
 section Grading
 
 variable [Module k A] {𝒜 : ℤ → Submodule k A} [DirectSum.Decomposition 𝒜]
-  (G : InternalGrading k M) (H : InternalGrading k N)
+  (G : InternalGrading k M ℤ) (H : InternalGrading k N ℤ)
   [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece G.piece]
   [SetLike.GradedSMul 𝒜 H.piece]
 

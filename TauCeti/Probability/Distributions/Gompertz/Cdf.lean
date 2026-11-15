@@ -46,7 +46,6 @@ theorem cdf_gompertzMeasure_eq (hη : 0 < η) (hb : 0 < b) (x : ℝ) :
     have heq : (fun e : ℝ => log (1 + e / η) / b) ⁻¹' Iic x =ᵐ[expMeasure 1]
         Iic (η * (exp (b * x) - 1)) := by
       filter_upwards [ae_pos_expMeasure 1] with e he
-      apply propext
       simp only [mem_preimage, mem_Iic]
       rw [div_le_iff₀' hb, log_le_iff_le_exp (by positivity : 0 < 1 + e / η),
         ← le_sub_iff_add_le', div_le_iff₀' hη]

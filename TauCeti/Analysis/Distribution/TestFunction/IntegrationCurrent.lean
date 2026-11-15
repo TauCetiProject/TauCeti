@@ -183,11 +183,8 @@ theorem integrationCurrent_positiveOrientation_apply [Subsingleton E] (Ω : Open
     (ω : 𝓓^{n}(Ω, E [⋀^Fin 0]→L[ℝ] ℝ)) :
     (positiveOrientation : Orientation ℝ E (Fin 0)).integrationCurrent Ω ω = ω 0 ![] := by
   let b : Basis (Fin 0) ℝ E := Basis.empty E
-  have hfun : (fun x ↦ ω x b) = fun _ ↦ ω 0 ![] := by
-    ext x
-    rw [Subsingleton.elim x 0, Subsingleton.elim (⇑b) ![]]
-  rw [integrationCurrent_apply _ Ω b (Basis.orientation_isEmpty b)]
-  simp [hfun, measureReal_def, b.addHaar_univ_of_isEmpty]
+  rw [integrationCurrent_apply _ Ω b (Basis.orientation_isEmpty b), b.addHaar_eq_dirac,
+    integral_dirac, Matrix.empty_eq b]
 
 section Pullback
 

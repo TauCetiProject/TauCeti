@@ -151,7 +151,7 @@ theorem decompose_mem_augmentationIdeal (ε : 𝒜.Augmentation) (x : ε.augment
 /-- The internal grading on the reduced augmentation ideal obtained by intersecting it with each
 homogeneous piece of the original algebra. -/
 noncomputable def reducedGrading (ε : 𝒜.Augmentation) :
-    InternalGrading R ε.augmentationIdeal :=
+    InternalGrading R ε.augmentationIdeal ℤ :=
   𝒜.grading.submodule ε.augmentationIdeal fun p x hx ↦
     ε.decompose_mem_augmentationIdeal ⟨x, hx⟩ p
 
@@ -182,7 +182,7 @@ theorem m_mem_augmentationIdeal (ε : 𝒜.Augmentation) (n : ℕ)
 
 /-- The arity-`n` operation restricted to the reduced augmentation ideal. -/
 noncomputable def reducedOperation (ε : 𝒜.Augmentation) (n : ℕ) :
-    MultilinearMap R (fun _ : Fin n ↦ ε.augmentationIdeal) ε.augmentationIdeal :=
+    MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ ε.augmentationIdeal) ε.augmentationIdeal :=
   ((𝒜.m n).compLinearMap fun _ ↦ ε.augmentationIdeal.subtype).codRestrict
     ε.augmentationIdeal (ε.m_mem_augmentationIdeal n)
 

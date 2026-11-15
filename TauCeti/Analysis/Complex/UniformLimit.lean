@@ -10,6 +10,8 @@ public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Topology.UniformSpace.UniformConvergence
 import Mathlib.Analysis.Calculus.UniformLimitsDeriv
 import Mathlib.Analysis.Complex.Schwarz
+import Mathlib.Analysis.Normed.Group.FunctionSeries
+import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.Analysis.Normed.Group.Basic
 
 /-!
@@ -28,6 +30,10 @@ functions form a closed subspace of the bounded continuous functions.
   `‖fderiv ℂ f c‖ ≤ 2 * M / r`.
 * `TendstoUniformlyOn.differentiableOn`: a uniform limit of holomorphic maps on an open set is
   holomorphic.
+* `TauCeti.exists_differentiableOn_eqOn_add_tsum`: the telescoping step in exhaustion proofs of
+  the `\bar∂`-lemma. Local solutions `h k` on growing balls whose consecutive differences are
+  holomorphic, corrected by entire approximations `P k` of these differences, converge to a
+  function that is `h m` plus a holomorphic function on the `m`-th ball.
 
 ## References
 
@@ -101,3 +107,38 @@ theorem TendstoUniformlyOn.differentiableOn [CompleteSpace E] {l : Filter ι} [l
       (hn.1.differentiableAt (hU.mem_nhds hn.2)).hasFDerivAt)
     (eventually_of_mem (hU.mem_nhds hx) fun y hy => hf.tendsto_at hy)).differentiableAt
     |>.differentiableWithinAt
+
+namespace TauCeti
+
+/-- **Telescoping step.** If consecutive differences `h (k + 1) - h k` are holomorphic on the
+growing balls `ball c (r k)` of a complex normed space and are approximated within `2⁻ᵏ` on
+`closedBall c (r k)` by entire functions `P k`, then on `ball c (r m)` the corrected limit
+`h 0 + ∑' k, (h (k + 1) - h k - P k)` is `h m` plus a holomorphic function. -/
+theorem exists_differentiableOn_eqOn_add_tsum [CompleteSpace E] {h P : ℕ → V → E} {c : V}
+    {r : ℕ → ℝ} (hr : Monotone r) (hP : ∀ k, Differentiable ℂ (P k))
+    (hdiff : ∀ k, DifferentiableOn ℂ (h (k + 1) - h k) (ball c (r k)))
+    (hP_lt : ∀ k, ∀ z ∈ closedBall c (r k), ‖(h (k + 1) - h k) z - P k z‖ < (1 / 2 : ℝ) ^ k)
+    (m : ℕ) : ∃ K : V → E, DifferentiableOn ℂ K (ball c (r m)) ∧
+      EqOn (fun z ↦ h 0 z + ∑' k, (h (k + 1) - h k - P k) z) (h m + K) (ball c (r m)) := by
+  set e : ℕ → V → E := fun k ↦ h (k + 1) - h k - P k
+  have he_le {k : ℕ} (hmk : m ≤ k) {z : V} (hz : z ∈ ball c (r m)) :
+      ‖e k z‖ ≤ (1 / 2 : ℝ) ^ k :=
+    (hP_lt k z (closedBall_subset_closedBall (hr hmk) (ball_subset_closedBall hz))).le
+  have hsumm : Summable fun k ↦ (1 / 2 : ℝ) ^ (k + m) :=
+    (summable_nat_add_iff m).2 summable_geometric_two
+  refine ⟨fun z ↦ ∑' k, e (k + m) z - ∑ k ∈ Finset.range m, P k z, ?_, fun z hz ↦ ?_⟩
+  · refine DifferentiableOn.sub ?_ (DifferentiableOn.fun_sum fun k _ ↦ (hP k).differentiableOn)
+    refine (tendstoUniformlyOn_tsum hsumm fun k z hz ↦ he_le (Nat.le_add_left m k) hz)
+      |>.differentiableOn (Eventually.of_forall fun s ↦ DifferentiableOn.fun_sum fun k _ ↦ ?_)
+      isOpen_ball
+    exact ((hdiff (k + m)).sub (hP (k + m)).differentiableOn).mono
+      (ball_subset_ball (hr (Nat.le_add_left m k)))
+  · have hs : Summable fun k ↦ e k z := (summable_nat_add_iff m).1 <|
+      .of_norm_bounded hsumm fun k ↦ he_le (Nat.le_add_left m k) hz
+    have htel : ∑ k ∈ Finset.range m, e k z = h m z - h 0 z - ∑ k ∈ Finset.range m, P k z := by
+      simp only [e, Pi.sub_apply, Finset.sum_sub_distrib, Finset.sum_range_sub fun k ↦ h k z]
+    simp only [Pi.add_apply]
+    rw [← hs.sum_add_tsum_nat_add m, htel]
+    abel
+
+end TauCeti
