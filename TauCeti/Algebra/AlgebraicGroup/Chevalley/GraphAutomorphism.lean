@@ -35,6 +35,14 @@ None of these statements uses generation of the points by root subgroups. Compos
 Frobenius map, `γ_σ` gives the Steinberg endomorphisms of the ordinary and graph-twisted finite
 groups of Lie type.
 
+The construction specializes the generic numbered-symmetry automorphism
+`TauCeti.UniversalEnvelopingAlgebra.kostantNumberedSymmetryPoints` along
+`TauCeti.DynkinType.chevalleyGroup_eq_kostantToralPointsSubgroup`. The root-subgroup, composition
+and order laws are transported from the full-weight toral action
+`TauCeti.DynkinType.scToralDiagramAutPoints`, in particular from
+`TauCeti.DynkinType.scToralDiagramAutPoints_chevalleyToralRootSubgroupPoints`, and the character
+pullback comes from `TauCeti.DynkinType.isCharacterMap_scChevalleyDatum_of_rootSubgroupPoints`.
+
 ## Main definitions
 
 * `TauCeti.DynkinType.chevalleyGraphAut`: the graph automorphism of `G_sc(t)(A)`.
@@ -49,9 +57,10 @@ groups of Lie type.
 * `TauCeti.DynkinType.isCharacterMap_chevalleyGraphAut`: the character pullback.
 * `TauCeti.DynkinType.chevalleyGraphAut_mul` and
   `TauCeti.DynkinType.chevalleyGraphAut_pow_eq_one`: composition and order relations.
-* `TauCeti.DynkinType.comp_chevalleyGraphAut` and
-  `TauCeti.DynkinType.chevalleyGraphAut_comp_frobenius`: naturality in the value ring, and
-  commutation with Frobenius.
+* `TauCeti.DynkinType.map_comp_chevalleyGraphAut` and
+  `TauCeti.DynkinType.chevalleyGraphAut_comp_frobenius`, with their pointwise forms
+  `TauCeti.DynkinType.map_chevalleyGraphAut` and `TauCeti.DynkinType.chevalleyGraphAut_frobenius`:
+  naturality in the value ring, and commutation with Frobenius.
 
 ## References
 
@@ -82,16 +91,7 @@ def chevalleyGraphAut (hσ : σ ∈ t.diagramSymmetry) (A : Type v) [CommRing A]
     (t.scModuleDiagramEquiv ht hσ) (fun _ => t.scModuleDiagramEquiv_mem_scLattice_iff ht hσ)
     A (t.chevalleyGroup ht A) (by
       rw [chevalleyGroup_eq_kostantToralPointsSubgroup]
-      exact map_kostantToralPointsSubgroup_conj_numberedSymmetryMatrix
-        (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
-        (representation ℚ (t.lieAlgebra ht) (t.scModule ht)) (t.scLattice ht).toAddSubgroup
-        (t.kostantForm_apply_mem_scLattice ht)
-        (t.isNilpotent_representation_scModule_rootGenerator ht)
-        (t.scWeightBasis ht) (t.scWeight ht) (diagramRootGeneratorPerm σ)
-        (t.scModuleDiagramEquiv ht hσ) (fun _ => t.scModuleDiagramEquiv_mem_scLattice_iff ht hσ)
-        (t.scModuleDiagramEquiv_representation_rootGenerator ht hσ)
-        (diagramRootGeneratorPerm σ).surjective σ
-        (fun _ _ hxy => t.scWeight_apply_eq_of_repr_scModuleDiagramEquiv_ne_zero ht hσ hxy) A)
+      exact t.map_kostantToralPointsSubgroup_conj_scModuleDiagramEquiv ht hσ A)
 
 /-- On matrices, the graph automorphism is conjugation by the lattice symmetry matrix. -/
 @[simp]
@@ -128,24 +128,21 @@ theorem coe_chevalleyGraphAut_symm (hσ : σ ∈ t.diagramSymmetry) (A : Type v)
 `σ α` is the image of `α` under the diagram symmetry and `ε = ±1` is the sign by which the
 diagram automorphism of the Lie algebra carries the Chevalley root vector at `α` to the one at
 `σ α`. -/
-@[simp]
+@[simp low]
 theorem chevalleyGraphAut_rootSubgroupPoints (hσ : σ ∈ t.diagramSymmetry) (α : Fin t.numRoots)
     (A : Type v) [CommRing A] (u : A) :
     t.chevalleyGraphAut ht hσ A
         ((t.scChevalleyDatum ht).rootSubgroupPoints α A (Multiplicative.ofAdd u)) =
       (t.scChevalleyDatum ht).rootSubgroupPoints (t.diagramRootPerm ht hσ α) A
         (Multiplicative.ofAdd (((t.chevalleyDiagramSign ht hσ α : ℤ) : A) * u)) := by
-  apply Subtype.ext
+  -- Both sides are the matrices of the full-weight toral statement.
   have h := congrArg Subtype.val
     (t.scToralDiagramAutPoints_chevalleyToralRootSubgroupPoints ht hσ α A u)
+  simp only [coe_scToralDiagramAutPoints, coe_chevalleyToralRootSubgroupPoints] at h
+  apply Subtype.ext
   refine (t.coe_chevalleyGraphAut ht hσ A _).trans ?_
-  refine (congrArg
-    (fun x : Matrix.GeneralLinearGroup (Fin (t.scWeightBasisCard ht)) A => _ * x * _)
-    (((t.scChevalleyDatum ht).coe_rootSubgroupPoints α A _).trans
-      (coe_chevalleyToralRootSubgroupPoints _ _ _ _ _ (t.scWeight ht) α A _).symm)).trans ?_
-  refine ((coe_scToralDiagramAutPoints ht hσ A _).symm.trans h).trans ?_
-  exact (coe_chevalleyToralRootSubgroupPoints _ _ _ _ _ _ _ A _).trans
-    ((t.scChevalleyDatum ht).coe_rootSubgroupPoints _ A _).symm
+  rw [ChevalleyDatum.coe_rootSubgroupPoints, ChevalleyDatum.coe_rootSubgroupPoints]
+  exact h
 
 /-- **The graph automorphism on a positive simple root subgroup**:
 `γ_σ (x_{αᵢ}(u)) = x_{α_{σ i}}(u)`. -/
@@ -204,14 +201,7 @@ theorem chevalleyGraphAut_torusPoints (hσ : σ ∈ t.diagramSymmetry) (A : Type
     t.chevalleyGraphAut ht hσ A ((t.scChevalleyDatum ht).torusPoints A s) =
       (t.scChevalleyDatum ht).torusPoints A (fun j => s (σ⁻¹ j)) := by
   refine ((t.isCharacterMap_chevalleyGraphAut ht hσ A).map_apply s).trans ?_
-  apply congrArg ((t.scChevalleyDatum ht).torusPoints A)
-  funext j
-  have hsingle : LinearMap.funLeft ℤ ℤ σ (Pi.single j 1) =
-      (Pi.single (σ.symm j) 1 : Fin t.rank → ℤ) :=
-    Pi.single_comp_equiv σ j 1
-  simp only [torusPointMap_apply, diagramAut_inv_weightMap, LinearEquiv.coe_coe,
-    LinearEquiv.funCongrLeft_apply, hsingle, torusCharacter_single, zpow_one,
-    Equiv.Perm.inv_def]
+  simp only [diagramAut_inv_weightMap, torusPointMap_funCongrLeft, Equiv.Perm.inv_def]
 
 /-! ### Composition and order -/
 
@@ -229,9 +219,10 @@ private theorem coe_chevalleyGraphAut_eq (hσ : σ ∈ t.diagramSymmetry) (A : T
 /-- The identity diagram symmetry acts trivially. -/
 @[simp]
 theorem chevalleyGraphAut_one (A : Type v) [CommRing A] :
-    t.chevalleyGraphAut ht t.diagramSymmetry.one_mem A = 1 :=
-  MulEquiv.ext fun g => Subtype.ext <| (t.coe_chevalleyGraphAut_eq ht _ A g).trans <|
-    congrArg Subtype.val (DFunLike.congr_fun (t.scToralDiagramAutPoints_one ht A) _)
+    t.chevalleyGraphAut ht t.diagramSymmetry.one_mem A = 1 := by
+  refine MulEquiv.ext fun g => Subtype.ext ?_
+  refine (t.coe_chevalleyGraphAut_eq ht _ A g).trans ?_
+  simp only [scToralDiagramAutPoints_one, MulAut.one_apply]
 
 /-- **Composition of diagram symmetries is composition of graph automorphisms**:
 `γ_{στ} = γ_σ γ_τ`. -/
@@ -239,13 +230,16 @@ theorem chevalleyGraphAut_one (A : Type v) [CommRing A] :
 theorem chevalleyGraphAut_mul (hσ : σ ∈ t.diagramSymmetry) (hτ : τ ∈ t.diagramSymmetry)
     (A : Type v) [CommRing A] :
     t.chevalleyGraphAut ht (t.diagramSymmetry.mul_mem hσ hτ) A =
-      t.chevalleyGraphAut ht hσ A * t.chevalleyGraphAut ht hτ A :=
-  MulEquiv.ext fun g => Subtype.ext <| (t.coe_chevalleyGraphAut_eq ht _ A g).trans <|
-    (congrArg Subtype.val (DFunLike.congr_fun (t.scToralDiagramAutPoints_mul ht hσ hτ A) _)).trans
-      ((t.coe_chevalleyGraphAut_eq ht hσ A _).trans
-        (congrArg (fun x => (t.scToralDiagramAutPoints ht hσ A x :
-          Matrix.GeneralLinearGroup (Fin (t.scWeightBasisCard ht)) A))
-          (Subtype.ext (t.coe_chevalleyGraphAut_eq ht hτ A g)))).symm
+      t.chevalleyGraphAut ht hσ A * t.chevalleyGraphAut ht hτ A := by
+  refine MulEquiv.ext fun g => Subtype.ext ?_
+  simp only [MulAut.mul_apply, coe_chevalleyGraphAut,
+    t.scModuleDiagramEquiv_mul ht hσ hτ, ← LinearEquiv.mul_eq_trans,
+    kostantNumberedSymmetryMatrix_mul (t.scLattice ht).toAddSubgroup (t.scWeightBasis ht)
+      (t.scModuleDiagramEquiv ht hσ)
+      (fun _ => t.scModuleDiagramEquiv_mem_scLattice_iff ht hσ)
+      (t.scModuleDiagramEquiv ht hτ)
+      (fun _ => t.scModuleDiagramEquiv_mem_scLattice_iff ht hτ)]
+  group
 
 /-- **The diagram symmetry group acts on the points of `G_sc(t)`** through its graph
 automorphisms. -/
@@ -270,6 +264,7 @@ theorem chevalleyGraphAut_inv (hσ : σ ∈ t.diagramSymmetry) (A : Type v) [Com
 
 /-- **Every order relation of a diagram symmetry holds for its graph automorphism.** In
 particular the order of `γ_σ` divides the order of `σ`. -/
+@[simp]
 theorem chevalleyGraphAut_pow_eq_one (hσ : σ ∈ t.diagramSymmetry) (A : Type v) [CommRing A]
     {m : ℕ} (hm : σ ^ m = 1) : t.chevalleyGraphAut ht hσ A ^ m = 1 :=
   (map_pow (t.chevalleyGraphAutHom ht A) ⟨σ, hσ⟩ m).symm.trans
@@ -280,7 +275,7 @@ theorem chevalleyGraphAut_pow_eq_one (hσ : σ ∈ t.diagramSymmetry) (A : Type 
 
 /-- **The graph automorphism is natural in the value ring**: it commutes with the map of points
 induced by any ring homomorphism. -/
-theorem comp_chevalleyGraphAut (hσ : σ ∈ t.diagramSymmetry) {A : Type v} {B : Type v'}
+theorem map_comp_chevalleyGraphAut (hσ : σ ∈ t.diagramSymmetry) {A : Type v} {B : Type v'}
     [CommRing A] [CommRing B] (f : A →+* B) :
     (((t.scChevalleyDatum ht).pointsPresentation A).map
         ((t.scChevalleyDatum ht).pointsPresentation B) f).comp
@@ -291,13 +286,32 @@ theorem comp_chevalleyGraphAut (hσ : σ ∈ t.diagramSymmetry) {A : Type v} {B 
   comp_kostantNumberedSymmetryPoints _ _ _ _ _ _ _ _ f _
     (GeneralLinear.IntegralPointsPresentation.coe_map _ _ f)
 
+/-- **The graph automorphism is natural in the value ring**, pointwise:
+`f (γ_σ g) = γ_σ (f g)` for the map of points induced by a ring homomorphism `f`. -/
+theorem map_chevalleyGraphAut (hσ : σ ∈ t.diagramSymmetry) {A : Type v} {B : Type v'}
+    [CommRing A] [CommRing B] (f : A →+* B) (g : t.chevalleyGroup ht A) :
+    ((t.scChevalleyDatum ht).pointsPresentation A).map
+        ((t.scChevalleyDatum ht).pointsPresentation B) f (t.chevalleyGraphAut ht hσ A g) =
+      t.chevalleyGraphAut ht hσ B
+        (((t.scChevalleyDatum ht).pointsPresentation A).map
+          ((t.scChevalleyDatum ht).pointsPresentation B) f g) :=
+  DFunLike.congr_fun (t.map_comp_chevalleyGraphAut ht hσ f) g
+
 /-- **The graph automorphism commutes with Frobenius.** -/
 theorem chevalleyGraphAut_comp_frobenius (hσ : σ ∈ t.diagramSymmetry) (p k : ℕ) (A : Type v)
     [CommRing A] [ExpChar A p] :
     (t.chevalleyGraphAut ht hσ A).toMonoidHom.comp ((t.scChevalleyDatum ht).frobenius p k A) =
       ((t.scChevalleyDatum ht).frobenius p k A).comp (t.chevalleyGraphAut ht hσ A).toMonoidHom := by
   rw [ChevalleyDatum.frobenius_def]
-  exact (t.comp_chevalleyGraphAut ht hσ (iterateFrobenius A p k)).symm
+  exact (t.map_comp_chevalleyGraphAut ht hσ (iterateFrobenius A p k)).symm
+
+/-- **The graph automorphism commutes with Frobenius**, pointwise:
+`γ_σ (Frob g) = Frob (γ_σ g)`. -/
+theorem chevalleyGraphAut_frobenius (hσ : σ ∈ t.diagramSymmetry) (p k : ℕ) (A : Type v)
+    [CommRing A] [ExpChar A p] (g : t.chevalleyGroup ht A) :
+    t.chevalleyGraphAut ht hσ A ((t.scChevalleyDatum ht).frobenius p k A g) =
+      (t.scChevalleyDatum ht).frobenius p k A (t.chevalleyGraphAut ht hσ A g) :=
+  DFunLike.congr_fun (t.chevalleyGraphAut_comp_frobenius ht hσ p k A) g
 
 end
 

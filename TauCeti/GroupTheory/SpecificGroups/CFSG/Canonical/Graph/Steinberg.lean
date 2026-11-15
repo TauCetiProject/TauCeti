@@ -186,13 +186,8 @@ theorem scSteinberg_pow_twistOrder :
         d.diagramPerm_mem_diagramSymmetry)
       (fun _ => d.1.dynkinType.scModuleDiagramEquiv_mem_scLattice_iff
         d.1.dynkinType_valid d.diagramPerm_mem_diagramSymmetry) A _
-      (map_kostantToralPointsSubgroup_conj_numberedSymmetryMatrix
-        _ _ _ _ _ _ _ _ (DynkinType.diagramRootGeneratorPerm d.diagramPerm) _ _
-        (d.1.dynkinType.scModuleDiagramEquiv_representation_rootGenerator
-          d.1.dynkinType_valid d.diagramPerm_mem_diagramSymmetry)
-        (DynkinType.diagramRootGeneratorPerm d.diagramPerm).surjective d.diagramPerm
-        (fun _ _ hxy => d.1.dynkinType.scWeight_apply_eq_of_repr_scModuleDiagramEquiv_ne_zero
-          d.1.dynkinType_valid d.diagramPerm_mem_diagramSymmetry hxy) A) = γ := rfl
+      (d.1.dynkinType.map_kostantToralPointsSubgroup_conj_scModuleDiagramEquiv
+        d.1.dynkinType_valid d.diagramPerm_mem_diagramSymmetry A) = γ := rfl
   dsimp only [scSteinberg]
   simp only [kostantToralSteinberg_pow, hsym, hp]
   exact one_mul _
