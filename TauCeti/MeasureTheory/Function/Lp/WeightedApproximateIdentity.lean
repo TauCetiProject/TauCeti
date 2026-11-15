@@ -42,16 +42,35 @@ open scoped ENNReal
 
 namespace MeasureTheory
 
-variable {E F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
+variable {𝕜 E F : Type*} [NormedAddCommGroup F]
+
+/-- An essentially bounded function agrees almost everywhere with a strongly measurable function
+bounded everywhere by `max C 0`. -/
+private theorem exists_stronglyMeasurable_ae_eq_norm_le {α : Type*} [MeasurableSpace α]
+    {ν : Measure α} {f : α → F} (hf : AEStronglyMeasurable f ν) {C : ℝ}
+    (hC : ∀ᵐ x ∂ν, ‖f x‖ ≤ C) :
+    ∃ f₀ : α → F, StronglyMeasurable f₀ ∧ f =ᵐ[ν] f₀ ∧ ∀ x, ‖f₀ x‖ ≤ max C 0 := by
+  set g := hf.mk f
+  refine ⟨{x | ‖g x‖ ≤ C}.indicator g, hf.stronglyMeasurable_mk.indicator
+    (measurableSet_le hf.stronglyMeasurable_mk.norm.measurable measurable_const), ?_, fun x ↦ ?_⟩
+  · filter_upwards [hf.ae_eq_mk, hC] with x hx hxC
+    rw [hx]
+    exact (indicator_of_mem (show x ∈ {x | ‖g x‖ ≤ C} by simpa [g, ← hx] using hxC) g).symm
+  · by_cases hx : ‖g x‖ ≤ C
+    · rw [indicator_of_mem hx g]
+      exact hx.trans (le_max_left _ _)
+    · rw [indicator_of_notMem hx g, norm_zero]
+      exact le_max_right _ _
 
 section Translation
 
-variable [NormedAddCommGroup E] [MeasurableSpace E] [BorelSpace E] {μ : Measure E}
-  [μ.IsAddRightInvariant] [IsLocallyFiniteMeasure μ] [μ.InnerRegularCompactLTTop]
+variable [NormedField 𝕜] [NormedSpace 𝕜 F] [NormedAddCommGroup E] [MeasurableSpace E]
+  [BorelSpace E] {μ : Measure E} [μ.IsAddRightInvariant] [IsLocallyFiniteMeasure μ]
+  [μ.InnerRegularCompactLTTop]
 
 /-- **Weighted continuity of translation for bounded functions.** If `w` is integrable and `f` is
 essentially bounded, then `∫ |w(x)| ‖f(x + h) - f(x)‖ dx → 0` as `h → 0`. -/
-theorem tendsto_lintegral_eNorm_mul_eNorm_comp_add_sub {w : E → ℂ} (hw : Integrable w μ)
+theorem tendsto_lintegral_eNorm_mul_eNorm_comp_add_sub {w : E → 𝕜} (hw : Integrable w μ)
     {f : E → F} (hf : AEStronglyMeasurable f μ) {C : ℝ} (hC : ∀ᵐ x ∂μ, ‖f x‖ ≤ C) :
     Tendsto (fun h : E ↦ ∫⁻ x, ‖w x‖ₑ * ‖f (x + h) - f x‖ₑ ∂μ) (𝓝 0) (𝓝 0) := by
   have hwf : Integrable (w • f) μ := hw.smul_bdd C hf hC
@@ -103,8 +122,54 @@ end Translation
 
 section ApproximateIdentity
 
-variable [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E]
-  [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
+variable [RCLike 𝕜] [NormedSpace ℝ F] [NormedSpace 𝕜 F] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
+
+/-- **The Tonelli bound for an approximate identity.** Let `K` be integrable with `∫ K = 1`, and let
+`w₀` and `f₀` be strongly measurable with `f₀` bounded. Then the weighted distance of the average
+`∫ K(s) f₀(x - c s) ds` from `f₀` is at most `∫ |K(s)| Φ(-c s) ds`, where
+`Φ(h) = ∫ |w₀(x)| ‖f₀(x + h) - f₀(x)‖ dx`. -/
+private theorem lintegral_eNorm_mul_eNorm_integral_smul_comp_sub_smul_sub_le [CompleteSpace F]
+    {K : E → 𝕜} (hK : Integrable K μ) (hK1 : ∫ s, K s ∂μ = 1) {w₀ : E → 𝕜}
+    (hw₀m : StronglyMeasurable w₀) {f₀ : E → F} (hf₀m : StronglyMeasurable f₀) {C : ℝ}
+    (hf₀C : ∀ x, ‖f₀ x‖ ≤ C) (c : ℝ) :
+    ∫⁻ x, ‖w₀ x‖ₑ * ‖(∫ s, K s • f₀ (x - c • s) ∂μ) - f₀ x‖ₑ ∂μ ≤
+      ∫⁻ s, ‖K s‖ₑ * ∫⁻ x, ‖w₀ x‖ₑ * ‖f₀ (x + -(c • s)) - f₀ x‖ₑ ∂μ ∂μ := by
+  -- Since `∫ K = 1`, the difference is `∫ K(s) (f₀(x - c s) - f₀(x)) ds`.
+  have hdiff : ∀ x, (∫ s, K s • f₀ (x - c • s) ∂μ) - f₀ x =
+      ∫ s, K s • (f₀ (x - c • s) - f₀ x) ∂μ := fun x ↦ by
+    have hint : Integrable (fun s ↦ K s • f₀ (x - c • s)) μ :=
+      hK.smul_bdd C ((hf₀m.comp_measurable
+        (measurable_const.sub (measurable_const_smul c))).aestronglyMeasurable)
+        (Eventually.of_forall fun s ↦ hf₀C _)
+    simp_rw [smul_sub]
+    rw [integral_sub hint (hK.smul_const _), integral_smul_const, hK1, one_smul]
+  have hmeas2 : AEMeasurable (Function.uncurry fun x s ↦
+      ‖w₀ x‖ₑ * (‖K s‖ₑ * ‖f₀ (x - c • s) - f₀ x‖ₑ)) (μ.prod μ) :=
+    (hw₀m.comp_measurable measurable_fst).eNorm.aemeasurable.mul
+      ((hK.aestronglyMeasurable.eNorm.comp_snd).mul
+        ((hf₀m.comp_measurable (measurable_fst.sub (measurable_snd.const_smul c))).sub
+          (hf₀m.comp_measurable measurable_fst)).eNorm.aemeasurable)
+  calc ∫⁻ x, ‖w₀ x‖ₑ * ‖(∫ s, K s • f₀ (x - c • s) ∂μ) - f₀ x‖ₑ ∂μ
+      = ∫⁻ x, ‖w₀ x‖ₑ * ‖∫ s, K s • (f₀ (x - c • s) - f₀ x) ∂μ‖ₑ ∂μ :=
+        lintegral_congr fun x ↦ by rw [hdiff]
+    _ ≤ ∫⁻ x, ‖w₀ x‖ₑ * ∫⁻ s, ‖K s‖ₑ * ‖f₀ (x - c • s) - f₀ x‖ₑ ∂μ ∂μ := by
+        refine lintegral_mono fun x ↦ ?_
+        gcongr
+        exact (eNorm_integral_le_lintegral_eNorm _).trans_eq (by simp_rw [eNorm_smul])
+    _ = ∫⁻ x, ∫⁻ s, ‖w₀ x‖ₑ * (‖K s‖ₑ * ‖f₀ (x - c • s) - f₀ x‖ₑ) ∂μ ∂μ := by
+        refine lintegral_congr fun x ↦ (lintegral_const_mul'' _ ?_).symm
+        exact hK.aestronglyMeasurable.eNorm.mul
+          ((hf₀m.comp_measurable (measurable_const.sub (measurable_const_smul c))).sub
+            stronglyMeasurable_const).eNorm.aemeasurable
+    _ = ∫⁻ s, ∫⁻ x, ‖w₀ x‖ₑ * (‖K s‖ₑ * ‖f₀ (x - c • s) - f₀ x‖ₑ) ∂μ ∂μ :=
+        lintegral_lintegral_swap hmeas2
+    _ = ∫⁻ s, ‖K s‖ₑ * ∫⁻ x, ‖w₀ x‖ₑ * ‖f₀ (x + -(c • s)) - f₀ x‖ₑ ∂μ ∂μ := by
+        refine lintegral_congr fun s ↦ ?_
+        rw [← lintegral_const_mul' _ _ eNorm_ne_top]
+        refine lintegral_congr fun x ↦ ?_
+        rw [← sub_eq_add_neg]
+        ring
 
 /-- **Weighted convergence of an approximate identity on bounded functions.** Let `K` be
 integrable with `∫ K = 1`, let `w` be integrable and let `f` be essentially bounded. Then the
@@ -112,27 +177,13 @@ averages `∫ K(s) f(x - c s) ds` of `f` against the dilates of `K` satisfy
 
 `∫ |w(x)| ‖∫ K(s) f(x - c s) ds - f(x)‖ dx → 0` as `c → 0`, `c ≠ 0`. -/
 theorem tendsto_lintegral_eNorm_mul_eNorm_integral_smul_comp_sub_smul_sub [CompleteSpace F]
-    {K : E → ℂ} (hK : Integrable K μ) (hK1 : ∫ s, K s ∂μ = 1) {w : E → ℂ} (hw : Integrable w μ)
+    {K : E → 𝕜} (hK : Integrable K μ) (hK1 : ∫ s, K s ∂μ = 1) {w : E → 𝕜} (hw : Integrable w μ)
     {f : E → F} (hf : AEStronglyMeasurable f μ) {C : ℝ} (hC : ∀ᵐ x ∂μ, ‖f x‖ ≤ C) :
     Tendsto (fun c : ℝ ↦ ∫⁻ x, ‖w x‖ₑ * ‖(∫ s, K s • f (x - c • s) ∂μ) - f x‖ₑ ∂μ)
       (𝓝[≠] 0) (𝓝 0) := by
   -- Replace `f` by a strongly measurable modification bounded everywhere, and `w` by a strongly
   -- measurable modification.
-  set g := hf.mk f
-  set f₀ : E → F := {x | ‖g x‖ ≤ C}.indicator g
-  have hf₀m : StronglyMeasurable f₀ :=
-    hf.stronglyMeasurable_mk.indicator (measurableSet_le hf.stronglyMeasurable_mk.norm.measurable
-      measurable_const)
-  have hff₀ : f =ᵐ[μ] f₀ := by
-    filter_upwards [hf.ae_eq_mk, hC] with x hx hxC
-    rw [hx]
-    exact (indicator_of_mem (show x ∈ {x | ‖g x‖ ≤ C} by simpa [g, ← hx] using hxC) g).symm
-  have hf₀C : ∀ x, ‖f₀ x‖ ≤ max C 0 := fun x ↦ by
-    by_cases hx : ‖g x‖ ≤ C
-    · rw [show f₀ x = g x from indicator_of_mem hx g]
-      exact hx.trans (le_max_left _ _)
-    · rw [show f₀ x = 0 from indicator_of_notMem hx g, norm_zero]
-      exact le_max_right _ _
+  obtain ⟨f₀, hf₀m, hff₀, hf₀C⟩ := exists_stronglyMeasurable_ae_eq_norm_le hf hC
   set w₀ := hw.aestronglyMeasurable.mk w
   have hw₀m : StronglyMeasurable w₀ := hw.aestronglyMeasurable.stronglyMeasurable_mk
   have hww₀ : w =ᵐ[μ] w₀ := hw.aestronglyMeasurable.ae_eq_mk
@@ -187,43 +238,13 @@ theorem tendsto_lintegral_eNorm_mul_eNorm_integral_smul_comp_sub_smul_sub [Compl
       filter_upwards [(hqmp x).ae_eq_comp hff₀] with s hs
       simp only [Function.comp_apply] at hs
       rw [hs]
-  -- Since `∫ K = 1`, the difference is `∫ K(s) (f₀(x - c s) - f₀(x)) ds`.
-  have hdiff : ∀ x, (∫ s, K s • f₀ (x - c • s) ∂μ) - f₀ x =
-      ∫ s, K s • (f₀ (x - c • s) - f₀ x) ∂μ := fun x ↦ by
-    have hint : Integrable (fun s ↦ K s • f₀ (x - c • s)) μ :=
-      hK.smul_bdd C' ((hf₀m.comp_measurable
-        (measurable_const.sub (measurable_const_smul c))).aestronglyMeasurable)
-        (Eventually.of_forall fun s ↦ hf₀C _)
-    simp_rw [smul_sub]
-    rw [integral_sub hint (hK.smul_const _), integral_smul_const, hK1, one_smul]
-  have hmeas2 : AEMeasurable (Function.uncurry fun x s ↦
-      ‖w₀ x‖ₑ * (‖K s‖ₑ * ‖f₀ (x - c • s) - f₀ x‖ₑ)) (μ.prod μ) :=
-    (hw₀m.comp_measurable measurable_fst).eNorm.aemeasurable.mul
-      ((hK.aestronglyMeasurable.eNorm.comp_snd).mul
-        ((hf₀m.comp_measurable (measurable_fst.sub (measurable_snd.const_smul c))).sub
-          (hf₀m.comp_measurable measurable_fst)).eNorm.aemeasurable)
   calc ∫⁻ x, ‖w x‖ₑ * ‖(∫ s, K s • f (x - c • s) ∂μ) - f x‖ₑ ∂μ
-      = ∫⁻ x, ‖w₀ x‖ₑ * ‖∫ s, K s • (f₀ (x - c • s) - f₀ x) ∂μ‖ₑ ∂μ := by
+      = ∫⁻ x, ‖w₀ x‖ₑ * ‖(∫ s, K s • f₀ (x - c • s) ∂μ) - f₀ x‖ₑ ∂μ := by
         refine lintegral_congr_ae ?_
         filter_upwards [hww₀, hff₀] with x hx hxf
-        rw [hx, havg, hxf, hdiff]
-    _ ≤ ∫⁻ x, ‖w₀ x‖ₑ * ∫⁻ s, ‖K s‖ₑ * ‖f₀ (x - c • s) - f₀ x‖ₑ ∂μ ∂μ := by
-        refine lintegral_mono fun x ↦ ?_
-        gcongr
-        exact (eNorm_integral_le_lintegral_eNorm _).trans_eq (by simp_rw [eNorm_smul])
-    _ = ∫⁻ x, ∫⁻ s, ‖w₀ x‖ₑ * (‖K s‖ₑ * ‖f₀ (x - c • s) - f₀ x‖ₑ) ∂μ ∂μ := by
-        refine lintegral_congr fun x ↦ (lintegral_const_mul'' _ ?_).symm
-        exact hK.aestronglyMeasurable.eNorm.mul
-          ((hf₀m.comp_measurable (measurable_const.sub (measurable_const_smul c))).sub
-            stronglyMeasurable_const).eNorm.aemeasurable
-    _ = ∫⁻ s, ∫⁻ x, ‖w₀ x‖ₑ * (‖K s‖ₑ * ‖f₀ (x - c • s) - f₀ x‖ₑ) ∂μ ∂μ :=
-        lintegral_lintegral_swap hmeas2
-    _ = ∫⁻ s, ‖K s‖ₑ * Φ (-(c • s)) ∂μ := by
-        refine lintegral_congr fun s ↦ ?_
-        rw [← lintegral_const_mul' _ _ eNorm_ne_top]
-        refine lintegral_congr fun x ↦ ?_
-        rw [← sub_eq_add_neg]
-        ring
+        rw [hx, havg, hxf]
+    _ ≤ ∫⁻ s, ‖K s‖ₑ * Φ (-(c • s)) ∂μ :=
+        lintegral_eNorm_mul_eNorm_integral_smul_comp_sub_smul_sub_le hK hK1 hw₀m hf₀m hf₀C c
 
 end ApproximateIdentity
 

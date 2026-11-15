@@ -47,6 +47,8 @@ partial sums of the Fourier multipliers `𝓕⁻ (ψⱼ • 𝓕 f)` are the low
 * `ContDiffBump.hasSum_littlewoodPaleyPiece`: the pieces sum to `m` away from the origin.
 * `ContDiffBump.inhomogeneousLittlewoodPaleySchwartz`: the piece `ψⱼ` of the inhomogeneous
   partition, as a complex Schwartz function.
+* `ContDiffBump.lowPassSchwartz`: the low-pass symbol `φ (2^{-j} ·)`, as a complex Schwartz
+  function.
 * `ContDiffBump.exists_norm_iteratedFDeriv_littlewoodPaleyPiece_le`: the scale-invariant
   derivative bounds for the pieces of a symbol satisfying Mihlin's condition.
 * `SchwartzMap.exists_eqOn_annulus_of_contDiffOn`: a symbol smooth away from the origin agrees
@@ -236,6 +238,25 @@ theorem inhomogeneousLittlewoodPaleySchwartz_apply (j : ℕ) (ξ : E) :
 theorem coe_inhomogeneousLittlewoodPaleySchwartz (j : ℕ) :
     ⇑(φ.inhomogeneousLittlewoodPaleySchwartz j) =
       fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) :=
+  (rfl)
+
+/-- The low-pass symbol `φ (2^{-j} ·)`, equal to one on the ball of radius `2^j φ.rIn`, as a
+complex Schwartz function: it is smooth and compactly supported. -/
+noncomputable def lowPassSchwartz (j : ℕ) : 𝓢(E, ℂ) :=
+  HasCompactSupport.toSchwartzMap (f := fun ξ ↦ (φ (((2 : ℝ) ^ j)⁻¹ • ξ) : ℂ))
+    ((φ.hasCompactSupport.comp_smul (inv_ne_zero (pow_ne_zero j two_ne_zero))).comp_left
+      Complex.ofReal_zero)
+    (Complex.ofRealCLM.contDiff.comp (φ.contDiff.comp (contDiff_const_smul _)))
+
+/-- The values of the Schwartz function `φ (2^{-j} ·)`. -/
+@[simp]
+theorem lowPassSchwartz_apply (j : ℕ) (ξ : E) :
+    φ.lowPassSchwartz j ξ = (φ (((2 : ℝ) ^ j)⁻¹ • ξ) : ℂ) :=
+  (rfl)
+
+/-- The Schwartz function `φ (2^{-j} ·)`, as a function. -/
+theorem coe_lowPassSchwartz (j : ℕ) :
+    ⇑(φ.lowPassSchwartz j) = fun ξ ↦ (φ (((2 : ℝ) ^ j)⁻¹ • ξ) : ℂ) :=
   (rfl)
 
 end FiniteDimensional

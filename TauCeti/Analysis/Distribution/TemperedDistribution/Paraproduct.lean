@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.Holder
 public import TauCeti.Analysis.Distribution.TemperedDistribution.LittlewoodPaley
+import TauCeti.Algebra.BigOperators.Finset.RangeGap
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.MeasureTheory.Function.Holder
 import TauCeti.MeasureTheory.Function.Lp.Norm
@@ -107,6 +108,25 @@ private theorem eNorm_integral_smul_sub_integral_smul_le (ψ : 𝓢(E, ℂ))
         gcongr
     _ = ‖b‖ₑ * (‖ψ x‖ₑ * ‖a x - f x‖ₑ) + ‖f‖ₑ * (‖ψ x‖ₑ * ‖b x - g x‖ₑ) := by ring
 
+/-- `S_{j+1}` averages against the dilates of `𝓕⁻ φ` by `2^{-j} → 0`, so it converges to the
+identity in `L¹` against the weight `ψ`: if `u ∈ L^∞` and `Sⱼ u = cⱼ ∈ L^∞`, then
+`∫ |ψ| ‖c_{j+1} - u‖ → 0`. -/
+private theorem tendsto_lintegral_eNorm_mul_eNorm_sub_of_littlewoodPaleyLowPass_eq (ψ : 𝓢(E, ℂ))
+    (u : Lp F ∞ (volume : Measure E)) {c : ℕ → Lp F ∞ (volume : Measure E)}
+    (hc : ∀ j, littlewoodPaleyLowPass F φ j (u : 𝓢'(E, F)) = c j) :
+    Tendsto (fun j ↦ ∫⁻ x, ‖ψ x‖ₑ * ‖c (j + 1) x - u x‖ₑ) atTop (𝓝 0) := by
+  have hdil : Tendsto (fun j : ℕ ↦ ((2 : ℝ) ^ j)⁻¹) atTop (𝓝[≠] 0) :=
+    tendsto_nhdsWithin_iff.2 ⟨tendsto_inv_atTop_zero.comp
+      (tendsto_pow_atTop_atTop_of_one_lt one_lt_two),
+      Eventually.of_forall fun j ↦ inv_ne_zero (pow_ne_zero j two_ne_zero)⟩
+  refine ((tendsto_lintegral_eNorm_mul_eNorm_integral_smul_comp_sub_smul_sub
+    φ.integrable_fourierInv φ.integral_fourierInv ψ.integrable (Lp.aestronglyMeasurable u)
+    (Lp.ae_norm_le_norm_top u)).comp hdil).congr fun j ↦ ?_
+  refine lintegral_congr_ae <|
+    (ae_eq_integral_of_littlewoodPaleyLowPass_succ_eq φ j (hc (j + 1))).mono fun x hx ↦ ?_
+  dsimp only [Function.comp_apply] at hx ⊢
+  rw [hx]
+
 /-- **The products of the low-frequency truncations converge to the product.** Let `f, g ∈ L^∞`,
 and let `aⱼ, bⱼ ∈ L^∞` be their low-frequency truncations, `Sⱼ f = aⱼ` and `Sⱼ g = bⱼ`. Then
 `aⱼ · bⱼ → f · g` in the tempered distributions. -/
@@ -121,71 +141,24 @@ theorem tendsto_toTemperedDistribution_smul_of_littlewoodPaleyLowPass_eq
   set C := ∫ x, ‖𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) x‖
   have hbC : ∀ j, ‖b j‖ₑ ≤ ENNReal.ofReal (C * ‖g‖) := fun j ↦ by
     obtain ⟨g', hg', hg'C⟩ := exists_littlewoodPaleyLowPass_eq_and_norm_le φ j g
-    have : b j = g' := LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot <| by
-      simpa only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply, hb] using hg'
-    rw [this, ← ofReal_norm]
+    rw [Lp.toTemperedDistribution_injective (by rw [← hb, hg'] : (b j : 𝓢'(E, F)) = g'),
+      ← ofReal_norm]
     exact ENNReal.ofReal_le_ofReal hg'C
-  -- `S_{j+1}` averages against the dilates of `𝓕⁻ φ` by `2^{-j} → 0`, so it converges to the
-  -- identity in `L¹` against the weight `ψ`.
-  have hc : Tendsto (fun j : ℕ ↦ ((2 : ℝ) ^ j)⁻¹) atTop (𝓝[≠] 0) :=
-    tendsto_nhdsWithin_iff.2 ⟨tendsto_inv_atTop_zero.comp
-      (tendsto_pow_atTop_atTop_of_one_lt one_lt_two),
-      Eventually.of_forall fun j ↦ inv_ne_zero (pow_ne_zero j two_ne_zero)⟩
   refine PointwiseConvergenceCLM.tendsto_iff_forall_tendsto.2 fun ψ ↦ ?_
   simp only [Lp.toTemperedDistribution_apply]
   rw [← tendsto_add_atTop_iff_nat 1, tendsto_iff_edist_tendsto_0]
-  have hf := (tendsto_lintegral_eNorm_mul_eNorm_integral_smul_comp_sub_smul_sub
-    φ.integrable_fourierInv φ.integral_fourierInv ψ.integrable (Lp.aestronglyMeasurable f)
-    (Lp.ae_norm_le_norm_top f)).comp hc
-  have hg := (tendsto_lintegral_eNorm_mul_eNorm_integral_smul_comp_sub_smul_sub
-    φ.integrable_fourierInv φ.integral_fourierInv ψ.integrable (Lp.aestronglyMeasurable g)
-    (Lp.ae_norm_le_norm_top g)).comp hc
-  have hlim := (ENNReal.Tendsto.const_mul (a := ENNReal.ofReal (C * ‖g‖)) hf
-    (Or.inr ENNReal.ofReal_ne_top)).add
-    (ENNReal.Tendsto.const_mul (a := ‖f‖ₑ) hg (Or.inr eNorm_ne_top))
+  have hlim := (ENNReal.Tendsto.const_mul (a := ENNReal.ofReal (C * ‖g‖))
+    (tendsto_lintegral_eNorm_mul_eNorm_sub_of_littlewoodPaleyLowPass_eq φ ψ f ha)
+    (Or.inr ENNReal.ofReal_ne_top)).add (ENNReal.Tendsto.const_mul (a := ‖f‖ₑ)
+      (tendsto_lintegral_eNorm_mul_eNorm_sub_of_littlewoodPaleyLowPass_eq φ ψ g hb)
+      (Or.inr eNorm_ne_top))
   simp only [mul_zero, add_zero] at hlim
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim (fun _ ↦ bot_le)
     fun j ↦ ?_
-  have hIa : ∫⁻ x, ‖ψ x‖ₑ * ‖(∫ s, 𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) s • f (x - ((2 : ℝ) ^ j)⁻¹ • s)) -
-      f x‖ₑ = ∫⁻ x, ‖ψ x‖ₑ * ‖a (j + 1) x - f x‖ₑ :=
-    lintegral_congr_ae <| (ae_eq_integral_of_littlewoodPaleyLowPass_succ_eq φ j (ha (j + 1))).mono
-      fun x hx ↦ by dsimp only at hx ⊢; rw [hx]
-  have hIg : ∫⁻ x, ‖ψ x‖ₑ * ‖(∫ s, 𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) s • g (x - ((2 : ℝ) ^ j)⁻¹ • s)) -
-      g x‖ₑ = ∫⁻ x, ‖ψ x‖ₑ * ‖b (j + 1) x - g x‖ₑ :=
-    lintegral_congr_ae <| (ae_eq_integral_of_littlewoodPaleyLowPass_succ_eq φ j (hb (j + 1))).mono
-      fun x hx ↦ by dsimp only at hx ⊢; rw [hx]
-  dsimp only [Function.comp_apply]
-  rw [hIa, hIg, eDist_eq_eNorm_sub]
+  rw [eDist_eq_eNorm_sub]
   refine (eNorm_integral_smul_sub_integral_smul_le ψ _ f _ g).trans ?_
   gcongr
   exact hbC _
-
-omit [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E]
-  [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F] in
-/-- The pairs `(k, j)` with `k, j < N` are partitioned into those with `k ≤ j - 2`, those with
-`j ≤ k - 2` and those with `|j - k| ≤ 1`. -/
-private theorem sum_range_sum_range_eq {M : Type*} [AddCommMonoid M] (N : ℕ) (c : ℕ → ℕ → M) :
-    ∑ k ∈ range N, ∑ j ∈ range N, c k j =
-      ∑ j ∈ range N, ∑ k ∈ range (j - 1), c k j + ∑ k ∈ range N, ∑ j ∈ range (k - 1), c k j +
-        ∑ j ∈ range N, ∑ k ∈ (range N).filter (fun k ↦ j ≤ k + 1 ∧ k ≤ j + 1), c k j := by
-  have hsplit : ∀ j ∈ range N, ∑ k ∈ range N, c k j =
-      ∑ k ∈ range (j - 1), c k j + ∑ k ∈ (range N).filter (fun k ↦ j + 2 ≤ k), c k j +
-        ∑ k ∈ (range N).filter (fun k ↦ j ≤ k + 1 ∧ k ≤ j + 1), c k j := fun j hj ↦ by
-    rw [Finset.mem_range] at hj
-    rw [← sum_filter_add_sum_filter_not (range N) (fun k ↦ k + 2 ≤ j),
-      ← sum_filter_add_sum_filter_not ((range N).filter fun k ↦ ¬k + 2 ≤ j) (fun k ↦ j + 2 ≤ k),
-      add_assoc]
-    congr 1
-    · congr 1
-      ext k
-      simp only [Finset.mem_filter, Finset.mem_range]
-      omega
-    · congr 1 <;> congr 1 <;> ext k <;> simp only [Finset.mem_filter, Finset.mem_range] <;> omega
-  rw [sum_comm, sum_congr rfl hsplit, sum_add_distrib, sum_add_distrib]
-  congr 2
-  refine sum_comm' fun j k ↦ ?_
-  simp only [Finset.mem_range, Finset.mem_filter]
-  omega
 
 /-- The truncation `S_N u` is represented by the sum of representatives of the blocks `Δₖ u`,
 `k < N`. -/
@@ -211,14 +184,14 @@ theorem tendsto_toTemperedDistribution_paraproduct_add_paraproduct_add_resonant
     (hy : ∀ j, littlewoodPaleyBlock F φ j (g : 𝓢'(E, F)) = y j) :
     Tendsto (fun N ↦ (((∑ j ∈ range N, (∑ k ∈ range (j - 1), x k) • y j) +
         (∑ k ∈ range N, x k • ∑ j ∈ range (k - 1), y j) +
-        ∑ j ∈ range N, ∑ k ∈ (range N).filter (fun k ↦ j ≤ k + 1 ∧ k ≤ j + 1), x k • y j :
+        ∑ k ∈ range N, x k • ∑ j ∈ (range N).filter (fun j ↦ j ≤ k + 1 ∧ k ≤ j + 1), y j :
           Lp F ∞ (volume : Measure E)) : 𝓢'(E, F))) atTop
       (𝓝 ((f • g : Lp F ∞ (volume : Measure E)) : 𝓢'(E, F))) := by
   refine (tendsto_toTemperedDistribution_smul_of_littlewoodPaleyLowPass_eq φ f g
     (littlewoodPaleyLowPass_eq_sum φ f hx) (littlewoodPaleyLowPass_eq_sum φ g hy)).congr
     fun N ↦ ?_
   congr 1
-  rw [Lp.sum_smul, sum_congr rfl fun k _ ↦ Lp.smul_sum _ _ _, sum_range_sum_range_eq,
-    sum_congr rfl fun j _ ↦ Lp.sum_smul _ _ _, sum_congr rfl fun k _ ↦ Lp.smul_sum _ _ _]
+  rw [Lp.sum_smul, sum_congr rfl fun k _ ↦ Lp.smul_sum _ _ _, sum_range_sum_range_split_gap 1]
+  simp only [Lp.sum_smul, Lp.smul_sum]
 
 end TemperedDistribution
