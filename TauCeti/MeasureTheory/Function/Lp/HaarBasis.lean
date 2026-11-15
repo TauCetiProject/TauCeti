@@ -87,13 +87,13 @@ theorem haarFun_eq_zero {n : ℕ} (hn : 0 < n) {x : I} (hx : x ∉ dyadicCell n)
 /-- For `0 < n`, the Haar function `hₙ` is `1` on the dyadic cell numbered `2 * n`. -/
 theorem haarFun_eq_one {n : ℕ} (hn : 0 < n) {x : I} (hx : x ∈ dyadicCell (2 * n)) :
     haarFun n x = 1 := by
-  have h1 : x ∉ dyadicCell (2 * n + 1) := Set.disjoint_left.1 (disjoint_dyadicCell_two_mul hn) hx
+  have h1 : x ∉ dyadicCell (2 * n + 1) := Set.disjoint_left.1 disjoint_dyadicCell_two_mul hx
   simp [haarFun_of_ne_zero hn.ne', hx, h1]
 
 /-- For `0 < n`, the Haar function `hₙ` is `-1` on the dyadic cell numbered `2 * n + 1`. -/
 theorem haarFun_eq_neg_one {n : ℕ} (hn : 0 < n) {x : I} (hx : x ∈ dyadicCell (2 * n + 1)) :
     haarFun n x = -1 := by
-  have h0 : x ∉ dyadicCell (2 * n) := Set.disjoint_right.1 (disjoint_dyadicCell_two_mul hn) hx
+  have h0 : x ∉ dyadicCell (2 * n) := Set.disjoint_right.1 disjoint_dyadicCell_two_mul hx
   simp [haarFun_of_ne_zero hn.ne', hx, h0]
 
 /-- The Haar functions take values in `{-1, 0, 1}`. -/
@@ -138,7 +138,7 @@ numbered `n` of that σ-algebra, with integral zero there. -/
 theorem condExp_haarFun {n : ℕ} (hn : 0 < n) :
     volume[haarFun n | dyadicFiltration n] =ᵐ[volume] 0 := by
   have hmem : n ∈ Set.Ico n (2 * n) := ⟨le_rfl, by omega⟩
-  rw [dyadicFiltration_eq_comap_dyadicAtom hn]
+  rw [dyadicFiltration_eq_comap_dyadicAtom]
   refine (ae_eq_condExp_of_forall_setIntegral_fiber_eq (measurable_dyadicAtom n)
     ((memLp_haarFun 1 n).integrable le_rfl) (integrable_zero _ _ _) aestronglyMeasurable_zero
     fun j => ?_).symm
@@ -299,7 +299,7 @@ theorem dyadicProj_eq_sum {N : ℕ} (hN : 0 < N) (f : Lp ℝ p (volume : Measure
       (⨍ y in dyadicCell n, f y) • (dyadicCell n).indicator fun _ => (1 : ℝ) :=
     (Lp.coeFn_smul _ _).trans (indicatorConstLp_coeFn.const_smul _)
   filter_upwards [dyadicProj_ae_eq hN.ne' f,
-    condExp_dyadicFiltration_ae_eq hN ((Lp.memLp f).integrable Fact.out),
+    condExp_dyadicFiltration_ae_eq N ((Lp.memLp f).integrable Fact.out),
     Lp.coeFn_finsetSum (Finset.Ico N (2 * N)) fun n => (⨍ y in dyadicCell n, f y) •
       indicatorConstLp p (measurableSet_dyadicCell n) (measure_ne_top _ _) (1 : ℝ),
     ae_all_iff.2 hv] with x h1 h2 h3 h4
