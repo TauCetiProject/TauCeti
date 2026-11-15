@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.Kronecker
 public import Mathlib.RingTheory.TensorProduct.Basic
 public import TauCeti.Algebra.CharP.Two
 public import TauCeti.Algebra.Homology.DG.Twisted.Continuation
-public import TauCeti.LinearAlgebra.Matrix.Kronecker.Basic
 
 /-!
 # Ungraded differential algebras and modules, and matrices over them

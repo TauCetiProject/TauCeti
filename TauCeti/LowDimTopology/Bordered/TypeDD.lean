@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LowDimTopology.Bordered.TypeD
+import TauCeti.LinearAlgebra.Matrix.Kronecker.Basic
 
 /-!
 # Type `DD` structures and exterior tensor products of type `D` structures
