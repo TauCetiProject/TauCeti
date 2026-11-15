@@ -18,6 +18,8 @@ reducedness assumption is needed: dimension measures the whole kernel scheme.
 
 public section
 
+open _root_.CommHopfAlgCat
+
 open CategoryTheory
 
 namespace TauCeti.CommHopfAlgCat.IsIsogeny
