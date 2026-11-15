@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.Functor
-public import TauCeti.Geometry.Manifold.Algebra.Prod
 public import Mathlib.Algebra.Lie.Prod
 
 /-!

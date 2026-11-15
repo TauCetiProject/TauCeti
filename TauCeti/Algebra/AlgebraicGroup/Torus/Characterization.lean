@@ -103,9 +103,7 @@ theorem iff_multiplicativeType_and_geometricallyConnected_and_geometricallyReduc
     -- transfer to it without an intervening isomorphism.
     let _ : ConnectedSpace
         (PrimeSpectrum (MonoidAlgebra (AlgebraicClosure k) G)) :=
-      hconnected'.connectedSpace (AlgebraicClosure k)
-        (_root_.CommHopfAlgCat.of (AlgebraicClosure k)
-          (MonoidAlgebra (AlgebraicClosure k) G))
+      hconnected'.connectedSpace
     let _ : IsReduced (MonoidAlgebra (AlgebraicClosure k) G) := hreduced'.isReduced
     let _ : IsMulTorsionFree G :=
       isMulTorsionFree_of_isReduced_monoidAlgebra_of_connectedSpace

@@ -5,98 +5,35 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Algebra.Monoid
+public import Mathlib.Geometry.Manifold.Algebra.SMul
+public import TauCeti.Algebra.GroupAction.Prod
 
 /-!
-# Product constructions for smooth monoid morphisms
+# Smooth independent product actions
 
-Factor inclusions and universal product pairings for bundled smooth multiplicative and additive
-monoid morphisms, complementing `ContMDiffMonoidMorphism.fst` and `ContMDiffMonoidMorphism.snd`.
+The independent product of actions by `C^n` maps acts by `C^n` maps on the product manifold.
+Use `open scoped TauCeti.IndependentProd` for the coordinatewise action and its smoothness
+instance. The action uses the original manifold structures and the product model with corners.
 -/
 
 public section
 
-open Manifold
-open scoped ContDiff Manifold
+open scoped Manifold ContDiff TauCeti.IndependentProd
 
-namespace ContMDiffMonoidMorphism
+namespace TauCeti.IndependentProd
 
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n : ℕ∞ω}
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
-  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Monoid G]
-  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
-  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
-  {G' : Type*} [TopologicalSpace G'] [ChartedSpace H' G'] [Monoid G']
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {H H' : Type*} [TopologicalSpace H] [TopologicalSpace H']
+  {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 F H'}
+  {M N G K : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [TopologicalSpace N] [ChartedSpace H' N] [SMul G M] [SMul K N] {n : ℕ∞ω}
 
-/-- The inclusion of the first factor into a product as a smooth monoid morphism. -/
-@[to_additive
-  /-- The inclusion of the first summand into a product as a smooth additive monoid morphism. -/]
-def inl : ContMDiffMonoidMorphism I (I.prod I') n G (G × G') where
-  toMonoidHom := MonoidHom.inl G G'
-  contMDiff_toFun := contMDiff_id.prodMk contMDiff_const
+/-- Independent products of `C^n` action maps are `C^n`. -/
+@[to_additive /-- Independent products of `C^n` additive action maps are `C^n`. -/]
+scoped instance contMDiffConstSMul [ContMDiffConstSMul I n G M] [ContMDiffConstSMul J n K N] :
+    ContMDiffConstSMul (I.prod J) n (G × K) (M × N) where
+  contMDiff_const_smul g := (contMDiff_const_smul g.1).prodMap (contMDiff_const_smul g.2)
 
-@[to_additive (attr := simp)]
-theorem inl_apply (x : G) : inl (I := I) (I' := I') (n := n) (G' := G') x = (x, 1) := (rfl)
-
-@[to_additive (attr := simp)]
-theorem fst_comp_inl :
-    (fst (I := I) (I' := I') (n := n) (G := G) (G' := G')).comp inl = id :=
-  DFunLike.coe_injective <| funext fun x ↦ by simp
-
-@[to_additive (attr := simp)]
-theorem snd_comp_inl :
-    (snd (I := I) (I' := I') (n := n) (G := G) (G' := G')).comp inl = 1 :=
-  DFunLike.coe_injective <| funext fun x ↦ by simp; rfl
-
-/-- The inclusion of the second factor into a product as a smooth monoid morphism. -/
-@[to_additive
-  /-- The inclusion of the second summand into a product as a smooth additive monoid morphism. -/]
-def inr : ContMDiffMonoidMorphism I' (I.prod I') n G' (G × G') where
-  toMonoidHom := MonoidHom.inr G G'
-  contMDiff_toFun := contMDiff_const.prodMk contMDiff_id
-
-@[to_additive (attr := simp)]
-theorem inr_apply (y : G') : inr (I := I) (I' := I') (n := n) (G := G) y = (1, y) := (rfl)
-
-@[to_additive (attr := simp)]
-theorem fst_comp_inr :
-    (fst (I := I) (I' := I') (n := n) (G := G) (G' := G')).comp inr = 1 :=
-  DFunLike.coe_injective <| funext fun x ↦ by simp; rfl
-
-@[to_additive (attr := simp)]
-theorem snd_comp_inr :
-    (snd (I := I) (I' := I') (n := n) (G := G) (G' := G')).comp inr = id :=
-  DFunLike.coe_injective <| funext fun x ↦ by simp
-
-section Prod
-
-variable {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
-  {H'' : Type*} [TopologicalSpace H''] {I'' : ModelWithCorners 𝕜 E'' H''}
-  {G'' : Type*} [TopologicalSpace G''] [ChartedSpace H'' G''] [Monoid G'']
-
-/-- Pairing two smooth monoid morphisms into a product. -/
-@[to_additive /-- Pairing two smooth additive monoid morphisms into a product. -/]
-def prod (φ : ContMDiffMonoidMorphism I'' I n G'' G)
-    (ψ : ContMDiffMonoidMorphism I'' I' n G'' G') :
-    ContMDiffMonoidMorphism I'' (I.prod I') n G'' (G × G') where
-  toMonoidHom := φ.toMonoidHom.prod ψ.toMonoidHom
-  contMDiff_toFun := φ.contMDiff_toFun.prodMk ψ.contMDiff_toFun
-
-@[to_additive (attr := simp)]
-theorem prod_apply (φ : ContMDiffMonoidMorphism I'' I n G'' G)
-    (ψ : ContMDiffMonoidMorphism I'' I' n G'' G') (x : G'') : φ.prod ψ x = (φ x, ψ x) := (rfl)
-
-@[to_additive (attr := simp)]
-theorem fst_comp_prod (φ : ContMDiffMonoidMorphism I'' I n G'' G)
-    (ψ : ContMDiffMonoidMorphism I'' I' n G'' G') : fst.comp (φ.prod ψ) = φ :=
-  DFunLike.coe_injective <| funext fun x ↦ by simp
-
-@[to_additive (attr := simp)]
-theorem snd_comp_prod (φ : ContMDiffMonoidMorphism I'' I n G'' G)
-    (ψ : ContMDiffMonoidMorphism I'' I' n G'' G') : snd.comp (φ.prod ψ) = ψ :=
-  DFunLike.coe_injective <| funext fun x ↦ by simp
-
-end Prod
-
-end ContMDiffMonoidMorphism
+end TauCeti.IndependentProd

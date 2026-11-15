@@ -10,9 +10,9 @@ public import TauCeti.Geometry.Manifold.Algebra.SMul
 /-!
 # Smooth monoid morphisms
 
-Identity, composition, product projections, and their laws for bundled smooth multiplicative and
-additive monoid morphisms. It also propagates the regularity of multiplicative and additive maps
-from a group at any one point to the whole group.
+Identity, composition, product projections, factor inclusions, universal product pairings, and their
+laws for bundled smooth multiplicative and additive monoid morphisms. It also propagates the
+regularity of multiplicative and additive maps from a group at any one point to the whole group.
 
 The projections `ContMDiffMonoidMorphism.fst` and `ContMDiffMonoidMorphism.snd` have coercion
 formulas `ContMDiffMonoidMorphism.coe_fst` and `ContMDiffMonoidMorphism.coe_snd`. The corresponding
@@ -116,6 +116,76 @@ theorem comp_assoc
     (χ.comp ψ).comp φ = χ.comp (ψ.comp φ) := by
   apply DFunLike.coe_injective
   rfl
+
+/-- The inclusion of the first factor into a product as a smooth monoid morphism. -/
+@[to_additive
+  /-- The inclusion of the first summand into a product as a smooth additive monoid morphism. -/]
+def inl : ContMDiffMonoidMorphism I (I.prod I') n G (G × G') where
+  toMonoidHom := MonoidHom.inl G G'
+  contMDiff_toFun := contMDiff_id.prodMk contMDiff_const
+
+@[to_additive (attr := simp)]
+theorem inl_apply (x : G) : inl (I := I) (I' := I') (n := n) (G' := G') x = (x, 1) := (rfl)
+
+@[to_additive (attr := simp)]
+theorem fst_comp_inl :
+    (fst (I := I) (I' := I') (n := n) (G := G) (G' := G')).comp inl = id :=
+  DFunLike.coe_injective <| funext fun x ↦ by simp
+
+@[to_additive (attr := simp)]
+theorem snd_comp_inl :
+    (snd (I := I) (I' := I') (n := n) (G := G) (G' := G')).comp inl = 1 :=
+  DFunLike.coe_injective <| funext fun x ↦ by simp; rfl
+
+/-- The inclusion of the second factor into a product as a smooth monoid morphism. -/
+@[to_additive
+  /-- The inclusion of the second summand into a product as a smooth additive monoid morphism. -/]
+def inr : ContMDiffMonoidMorphism I' (I.prod I') n G' (G × G') where
+  toMonoidHom := MonoidHom.inr G G'
+  contMDiff_toFun := contMDiff_const.prodMk contMDiff_id
+
+@[to_additive (attr := simp)]
+theorem inr_apply (y : G') : inr (I := I) (I' := I') (n := n) (G := G) y = (1, y) := (rfl)
+
+@[to_additive (attr := simp)]
+theorem fst_comp_inr :
+    (fst (I := I) (I' := I') (n := n) (G := G) (G' := G')).comp inr = 1 :=
+  DFunLike.coe_injective <| funext fun x ↦ by simp; rfl
+
+@[to_additive (attr := simp)]
+theorem snd_comp_inr :
+    (snd (I := I) (I' := I') (n := n) (G := G) (G' := G')).comp inr = id :=
+  DFunLike.coe_injective <| funext fun x ↦ by simp
+
+section Prod
+
+variable {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
+  {H'' : Type*} [TopologicalSpace H''] {I'' : ModelWithCorners 𝕜 E'' H''}
+  {G'' : Type*} [TopologicalSpace G''] [ChartedSpace H'' G''] [Monoid G'']
+
+/-- Pairing two smooth monoid morphisms into a product. -/
+@[to_additive /-- Pairing two smooth additive monoid morphisms into a product. -/]
+def prod (φ : ContMDiffMonoidMorphism I'' I n G'' G)
+    (ψ : ContMDiffMonoidMorphism I'' I' n G'' G') :
+    ContMDiffMonoidMorphism I'' (I.prod I') n G'' (G × G') where
+  toMonoidHom := φ.toMonoidHom.prod ψ.toMonoidHom
+  contMDiff_toFun := φ.contMDiff_toFun.prodMk ψ.contMDiff_toFun
+
+@[to_additive (attr := simp)]
+theorem prod_apply (φ : ContMDiffMonoidMorphism I'' I n G'' G)
+    (ψ : ContMDiffMonoidMorphism I'' I' n G'' G') (x : G'') : φ.prod ψ x = (φ x, ψ x) := (rfl)
+
+@[to_additive (attr := simp)]
+theorem fst_comp_prod (φ : ContMDiffMonoidMorphism I'' I n G'' G)
+    (ψ : ContMDiffMonoidMorphism I'' I' n G'' G') : fst.comp (φ.prod ψ) = φ :=
+  DFunLike.coe_injective <| funext fun x ↦ by simp
+
+@[to_additive (attr := simp)]
+theorem snd_comp_prod (φ : ContMDiffMonoidMorphism I'' I n G'' G)
+    (ψ : ContMDiffMonoidMorphism I'' I' n G'' G') : snd.comp (φ.prod ψ) = ψ :=
+  DFunLike.coe_injective <| funext fun x ↦ by simp
+
+end Prod
 
 end ContMDiffMonoidMorphism
 
