@@ -24,7 +24,9 @@ each geometric edge; orientations pull back along morphisms of Serre graphs.
 
 For a reversal-closed set `S` of darts, the subgraph `Γ.restrict S hS` keeps every vertex of `Γ`
 and the darts in `S`. More generally, a set `A` of vertices together with a reversal-closed set
-`D` of darts starting in `A` forms the subgraph `Γ.subgraph A D hsrc hrev`.
+`D` of darts starting in `A` forms the subgraph `Γ.subgraph A D hsrc hrev`. For a set `C` of
+vertices, `Γ.inducedDarts C` is the set of darts with both endpoints in `C`: the darts of the
+subgraph induced on `C`.
 
 In a graph all of whose darts are loops, such as the graph `noEdge V` with the vertices `V` and no
 edges, a path never leaves its starting vertex. Such a graph is preconnected exactly when it has
@@ -78,9 +80,8 @@ theorem tgt_def (e : Γ.E) : Γ.tgt e = Γ.src (Γ.rev e) := (rfl)
 @[simp] theorem tgt_rev (e : Γ.E) : Γ.tgt (Γ.rev e) = Γ.src e := by
   simp only [tgt, Γ.rev_rev]
 
-theorem rev_injective : Function.Injective Γ.rev := by
-  intro e f h
-  simpa only [Γ.rev_rev] using congrArg Γ.rev h
+theorem rev_injective : Function.Injective Γ.rev :=
+  Function.Involutive.injective Γ.rev_rev
 
 /-- The geometric edges of a Serre graph: the pairs `{e, rev e}` of mutually reverse darts. -/
 def GeomEdge : Type v := Quot fun e f : Γ.E => f = Γ.rev e
@@ -556,6 +557,33 @@ theorem subgraphInclusion_mapE_injective :
   Subtype.val_injective
 
 end Subgraph
+
+section InducedDarts
+
+/-- The darts induced by a set of vertices: those with both endpoints in the set. They are the
+darts of the subgraph induced on the set. -/
+def inducedDarts (C : Set Γ.V) : Set Γ.E :=
+  {e | Γ.src e ∈ C ∧ Γ.tgt e ∈ C}
+
+variable {Γ}
+
+@[simp] theorem mem_inducedDarts_iff {C : Set Γ.V} {e : Γ.E} :
+    e ∈ Γ.inducedDarts C ↔ Γ.src e ∈ C ∧ Γ.tgt e ∈ C := Iff.rfl
+
+theorem rev_mem_inducedDarts_iff {C : Set Γ.V} {e : Γ.E} :
+    Γ.rev e ∈ Γ.inducedDarts C ↔ e ∈ Γ.inducedDarts C := by
+  rw [mem_inducedDarts_iff, mem_inducedDarts_iff, src_rev, tgt_rev, and_comm]
+
+theorem inducedDarts_mono {C D : Set Γ.V} (h : C ⊆ D) : Γ.inducedDarts C ⊆ Γ.inducedDarts D :=
+  fun _ he => ⟨h he.1, h he.2⟩
+
+@[simp] theorem inducedDarts_empty : Γ.inducedDarts ∅ = ∅ :=
+  Set.eq_empty_of_forall_notMem fun _ he => he.1
+
+@[simp] theorem inducedDarts_univ : Γ.inducedDarts Set.univ = Set.univ :=
+  Set.eq_univ_of_forall fun _ => ⟨trivial, trivial⟩
+
+end InducedDarts
 
 /-- The rose on a type of petals. Each petal is a loop with two distinct darts. -/
 @[expose] def rose (α : Type w) : SerreGraph.{0, w} where
