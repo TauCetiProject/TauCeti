@@ -11,15 +11,18 @@ import TauCeti.Analysis.Asymptotics.Lemmas
 /-!
 # Directional derivative estimates for scalar multiplication
 
-Multiplying a map by a real scalar function separates its derivative into a principal part and
-an error involving the derivative of the scalar function. The estimate below bounds the sum of
-the squared derivative norms in two arbitrary directions, as used in cutoff energy estimates.
-It requires differentiability only at the point where the estimate is evaluated.
+Multiplying a map by a scalar function separates its derivative into a principal part and an
+error involving the derivative of the scalar function. For a real scalar function, the estimate
+below bounds the sum of the squared derivative norms in two arbitrary directions, as used in
+cutoff energy estimates. It requires differentiability only at the point where the estimate is
+evaluated.
 
 A product `c • f` of two factors that vanish at a point and are Lipschitz near it, in the sense
 of the difference estimate satisfied by strictly differentiable maps, is strictly differentiable
 there with derivative zero. Neither factor needs to be differentiable: this applies, for
-instance, to a norm, which is Lipschitz but need not be differentiable.
+instance, to a norm, which is Lipschitz but need not be differentiable. As in Mathlib's Leibniz
+rule `fderiv_smul`, the scalar factor may take values in a normed ring acting on the codomain,
+not only in the base field.
 
 ## Main results
 
@@ -34,16 +37,23 @@ public section
 
 namespace TauCeti
 
-variable {E V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [NormedAddCommGroup V] [NormedSpace ℝ V]
+section Leibniz
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E F : Type*} [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] {𝕜' : Type*} [NormedRing 𝕜']
+  [NormedAlgebra 𝕜 𝕜'] [Module 𝕜' F] [IsBoundedSMul 𝕜' F] [IsScalarTower 𝕜 𝕜' F]
 
 /-- **The Leibniz rule for the directional derivative of a scalar multiple.** The derivative of
-`χ • u` at `z` in the direction `e` is `χ z` times that of `u`, plus that of `χ` times `u z`. -/
-theorem fderiv_smul_apply {u : E → V} {χ : E → ℝ} {z : E} (hχ : DifferentiableAt ℝ χ z)
-    (hu : DifferentiableAt ℝ u z) (e : E) :
-    fderiv ℝ (χ • u) z e = χ z • fderiv ℝ u z e + fderiv ℝ χ z e • u z := by
-  simpa only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, add_comm] using
-    congrArg (fun L : E →L[ℝ] V => L e) (fderiv_smul hχ hu)
+`c • f` at `x` in the direction `e` is `c x` times that of `f`, plus that of `c` times `f x`. -/
+theorem fderiv_smul_apply {c : E → 𝕜'} {f : E → F} {x : E} (hc : DifferentiableAt 𝕜 c x)
+    (hf : DifferentiableAt 𝕜 f x) (e : E) :
+    fderiv 𝕜 (c • f) x e = c x • fderiv 𝕜 f x e + fderiv 𝕜 c x e • f x := by
+  simp [fderiv_smul hc hf]
+
+end Leibniz
+
+variable {E V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup V] [NormedSpace ℝ V]
 
 /-- The squared derivative energy in two directions, weighted by a real scalar function, is
 bounded by the energy of the scalar multiple and the scalar derivative error. No compact support
@@ -53,13 +63,12 @@ theorem cutoff_sq_mul_norm_fderiv_sq_le {u : E → V} {χ : E → ℝ} {z : E}
     χ z ^ 2 * (‖fderiv ℝ u z e₁‖ ^ 2 + ‖fderiv ℝ u z e₂‖ ^ 2) ≤
       2 * (‖fderiv ℝ (χ • u) z e₁‖ ^ 2 + ‖fderiv ℝ (χ • u) z e₂‖ ^ 2) +
       2 * (fderiv ℝ χ z e₁ ^ 2 + fderiv ℝ χ z e₂ ^ 2) * ‖u z‖ ^ 2 := by
-  have hderiv (e : E) : fderiv ℝ (χ • u) z e =
-      χ z • fderiv ℝ u z e + fderiv ℝ χ z e • u z := fderiv_smul_apply hχ hu e
   have hdir (e : E) :
       χ z ^ 2 * ‖fderiv ℝ u z e‖ ^ 2 ≤
         2 * ‖fderiv ℝ (χ • u) z e‖ ^ 2 + 2 * fderiv ℝ χ z e ^ 2 * ‖u z‖ ^ 2 := by
     have heq : χ z • fderiv ℝ u z e =
-        fderiv ℝ (χ • u) z e - fderiv ℝ χ z e • u z := by rw [hderiv]; abel
+        fderiv ℝ (χ • u) z e - fderiv ℝ χ z e • u z := by
+      rw [fderiv_smul_apply hχ hu, add_sub_cancel_right]
     have hnorm := norm_sub_le (fderiv ℝ (χ • u) z e) (fderiv ℝ χ z e • u z)
     rw [← heq, norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs] at hnorm
     have hsq := mul_self_le_mul_self (by positivity) hnorm
@@ -72,12 +81,14 @@ section Strict
 open Asymptotics Filter Topology
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E F : Type*} [NormedAddCommGroup E]
-  [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] {R : Type*} [NormedRing R]
+  [Module R F] [IsBoundedSMul R F]
 
 /-- A product `c • f` of two factors that vanish at `x` and satisfy the difference estimate of a
 strictly differentiable map near `x` is strictly differentiable at `x`, with derivative zero.
-Neither factor needs to be differentiable. -/
-theorem hasStrictFDerivAt_smul_of_isBigO_sub {c : E → 𝕜} {f : E → F} {x : E}
+Neither factor needs to be differentiable, and the scalar factor `c` may take values in any normed
+ring acting boundedly on the codomain of `f`. -/
+theorem hasStrictFDerivAt_smul_of_isBigO_sub {c : E → R} {f : E → F} {x : E}
     (hc : (fun p : E × E ↦ c p.1 - c p.2) =O[𝓝 (x, x)] fun p ↦ p.1 - p.2)
     (hf : (fun p : E × E ↦ f p.1 - f p.2) =O[𝓝 (x, x)] fun p ↦ p.1 - p.2)
     (hcx : c x = 0) (hfx : f x = 0) :

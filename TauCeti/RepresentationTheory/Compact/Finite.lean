@@ -180,7 +180,6 @@ namespace TauCeti
 section LeftInvariant
 
 variable {G : Type*} [Group G] [Finite G] [MeasurableSpace G] [MeasurableSingletonClass G]
-  [MeasurableMul G]
 
 /-- **A left-invariant probability measure on a finite group is the normalized counting measure.**
 
@@ -448,10 +447,11 @@ variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [Fintype G] [TopologicalSpac
 
 /-- Completeness of `V` is not an extra hypothesis: a finite-dimensional normed space over an
 `RCLike` field is already complete. As in
-`TauCeti/RepresentationTheory/Compact/Invariants.lean`, Mathlib keeps `FiniteDimensional.complete`
+`TauCeti/RepresentationTheory/Compact/Invariants.lean`, Mathlib keeps
+`FiniteDimensional.completeSpace`
 out of the global instance set, so it is installed here as a local instance. -/
 local instance instCompleteSpaceFinite : CompleteSpace V :=
-  FiniteDimensional.complete 𝕜 V
+  FiniteDimensional.completeSpace 𝕜 V
 
 /- **The finite-group counting identity** `|G|⁻¹ ∑ g, χ_π g = dim V^G`, the specialization of
 `ContRepresentation.integral_character_eq_finrank_invariants` to a finite discrete group, and the
@@ -491,8 +491,7 @@ section SchurSelf
 
 variable {𝕜 G V : Type*} [RCLike 𝕜] [IsAlgClosed 𝕜] [Group G] [Fintype G] [TopologicalSpace G]
   [DiscreteTopology G]
-  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [NormedSpace ℝ V] [SMulCommClass ℝ 𝕜 V]
-  [FiniteDimensional 𝕜 V]
+  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [FiniteDimensional 𝕜 V]
 
 /-- **The first Schur orthogonality relation for a finite group.** For a unitary irreducible
 representation of dimension `d`,
@@ -509,12 +508,15 @@ theorem schur_orthogonality_self_sum (π : ContRepresentation 𝕜 G V)
     (v₁ w₁ v₂ w₂ : V) :
     (Nat.card G : 𝕜)⁻¹ * ∑ g, (starRingEnd 𝕜) ⟪π g v₁, w₁⟫_𝕜 * ⟪π g v₂, w₂⟫_𝕜 =
       (Module.finrank 𝕜 V : 𝕜)⁻¹ * ((starRingEnd 𝕜) ⟪v₁, v₂⟫_𝕜 * ⟪w₁, w₂⟫_𝕜) := by
+  let _ : NormedSpace ℝ V := NormedSpace.restrictScalars ℝ 𝕜 V
+  have _ : SMulCommClass ℝ 𝕜 V := inferInstance
   let _ : MeasurableSpace G := borel G
   have _ : BorelSpace G := ⟨rfl⟩
   rw [← inner_matrixCoeffLp_eq_inv_mul_sum π continuous_of_discreteTopology π
       continuous_of_discreteTopology,
     π.schur_orthogonality_self continuous_of_discreteTopology hunitary hirr]
 
+omit [FiniteDimensional 𝕜 V] in
 /-- **The first Schur orthogonality relation for a finite group, in an orthonormal basis.** If
 `πᵢⱼ(g) = ⟪π g eⱼ, eᵢ⟫`, then `|G|⁻¹ ∑ g, conj (πᵢⱼ g) * πₖₗ g = d⁻¹ δⱼₗ δᵢₖ`.
 
@@ -527,6 +529,9 @@ theorem schur_orthogonality_basis_sum (π : ContRepresentation 𝕜 G V)
     {d : ℕ} (e : OrthonormalBasis (Fin d) 𝕜 V) (i j k l : Fin d) :
     (Nat.card G : 𝕜)⁻¹ * ∑ g, (starRingEnd 𝕜) ⟪π g (e j), e i⟫_𝕜 * ⟪π g (e l), e k⟫_𝕜 =
       (d : 𝕜)⁻¹ * ((if j = l then (1 : 𝕜) else 0) * (if i = k then (1 : 𝕜) else 0)) := by
+  have _ : FiniteDimensional 𝕜 V := Module.Finite.of_basis e.toBasis
+  let _ : NormedSpace ℝ V := NormedSpace.restrictScalars ℝ 𝕜 V
+  have _ : SMulCommClass ℝ 𝕜 V := inferInstance
   let _ : MeasurableSpace G := borel G
   have _ : BorelSpace G := ⟨rfl⟩
   rw [← inner_matrixCoeffLp_eq_inv_mul_sum π continuous_of_discreteTopology π
@@ -540,8 +545,7 @@ section SchurDistinct
 variable {𝕜 G V W : Type*} [RCLike 𝕜] [Group G] [Fintype G] [TopologicalSpace G]
   [DiscreteTopology G]
   [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [FiniteDimensional 𝕜 V]
-  [NormedAddCommGroup W] [InnerProductSpace 𝕜 W] [NormedSpace ℝ W] [SMulCommClass ℝ 𝕜 W]
-  [CompleteSpace W]
+  [NormedAddCommGroup W] [InnerProductSpace 𝕜 W] [CompleteSpace W]
 
 omit [FiniteDimensional 𝕜 V] in
 /-- **Schur orthogonality for a finite group and a vanishing intertwiner space.** If the only
@@ -556,6 +560,8 @@ theorem schur_orthogonality_distinct_sum (π : ContRepresentation 𝕜 G V)
     (hdistinct : ∀ f : ContIntertwiningMap π ρ, f.toContinuousLinearMap = 0)
     (v w : V) (v' w' : W) :
     (Nat.card G : 𝕜)⁻¹ * ∑ g, (starRingEnd 𝕜) ⟪π g v, w⟫_𝕜 * ⟪ρ g v', w'⟫_𝕜 = 0 := by
+  let _ : NormedSpace ℝ W := NormedSpace.restrictScalars ℝ 𝕜 W
+  have _ : SMulCommClass ℝ 𝕜 W := inferInstance
   let _ : MeasurableSpace G := borel G
   have _ : BorelSpace G := ⟨rfl⟩
   rw [← inner_matrixCoeffLp_eq_inv_mul_sum π continuous_of_discreteTopology ρ
@@ -574,6 +580,8 @@ theorem schur_orthogonality_sum (π : ContRepresentation 𝕜 G V)
     (hirrρ : Representation.IsIrreducible ρ.toRepresentation)
     (hne : IsEmpty (_root_.ContRepresentation.Equiv π ρ)) (v w : V) (v' w' : W) :
     (Nat.card G : 𝕜)⁻¹ * ∑ g, (starRingEnd 𝕜) ⟪π g v, w⟫_𝕜 * ⟪ρ g v', w'⟫_𝕜 = 0 := by
+  let _ : NormedSpace ℝ W := NormedSpace.restrictScalars ℝ 𝕜 W
+  have _ : SMulCommClass ℝ 𝕜 W := inferInstance
   let _ : MeasurableSpace G := borel G
   have _ : BorelSpace G := ⟨rfl⟩
   rw [← inner_matrixCoeffLp_eq_inv_mul_sum π continuous_of_discreteTopology ρ

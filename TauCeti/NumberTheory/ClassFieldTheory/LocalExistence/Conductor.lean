@@ -73,7 +73,7 @@ theorem conductorExponent_localClassField_le_iff [CharZero K] (N : LocalNormSubg
 prime to the residue characteristic `p` is at most `n` exactly when `U(K,n) ⊆ N`. This holds in
 every characteristic. -/
 theorem conductorExponent_localClassFieldPrimeToResidueCharacteristic_le_iff
-    (p : ℕ) [Fact p.Prime] [CharP 𝓀[K] p] (N : LocalNormSubgroupsPrimeTo K p) {n : ℕ} :
+    (p : ℕ) [CharP 𝓀[K] p] (N : LocalNormSubgroupsPrimeTo K p) {n : ℕ} :
     conductorExponent K (classField K (localClassFieldPrimeToResidueCharacteristic p N).1.1) ≤
         n ↔
       unitFiltration K n ≤ N.1.1.toSubgroup := by

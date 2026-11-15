@@ -29,6 +29,7 @@ in the slot `f i`, and the vectors so obtained are those whose coordinates outsi
 coordinates of `Lᵖ(Fin n, E)`, for `k ≤ n`, places its coordinates in the slots `j < k`; the
 vectors so obtained are those whose coordinates `j ≥ k` vanish.
 The finite sum against a zero-extended vector reduces to the sum over its original coordinates.
+Over an index type with at most one element, the `Lᵖ` norm is the norm of the coordinate.
 
 ## Source
 
@@ -103,19 +104,38 @@ theorem norm_toLp_comp_equiv {E : Type*} [SeminormedAddCommGroup E] {κ : Type*}
   · simp only [norm_eq_sum hp]
     exact congrArg (· ^ _) (Fintype.sum_equiv e _ _ fun _ ↦ rfl)
 
+/-- Over an index type with at most one element, a vector of `Lᵖ`, `p ≥ 1`, has the norm of
+each of its coordinates. -/
+theorem norm_apply_eq_norm [Fact (1 ≤ p)] [Subsingleton ι] (x : PiLp p E) (i : ι) :
+    ‖x i‖ = ‖x‖ := by
+  classical
+  have hx : PiLp.single p i (x i) = x :=
+    PiLp.ext fun j ↦ by obtain rfl := Subsingleton.elim i j; simp
+  rw [← hx, norm_single, hx]
+
 section Constant
 
 variable [Fact (1 ≤ p)] {E F : Type*} [SeminormedAddCommGroup E] [SeminormedAddCommGroup F]
 
 /-- Applying a map with `‖g v‖ ≤ C * ‖v‖` to each member of a finite family multiplies its
 `Lᵖ` norm by at most `C`. -/
-theorem norm_toLp_comp_le {g : E → F} {C : ℝ} (hC : 0 ≤ C) (hg : ∀ v, ‖g v‖ ≤ C * ‖v‖)
+theorem norm_toLp_comp_le {g : E → F} {C : ℝ} (hg : ∀ v, ‖g v‖ ≤ C * ‖v‖)
     (x : ι → E) : ‖WithLp.toLp p (fun i ↦ g (x i))‖ ≤ C * ‖WithLp.toLp p x‖ := by
-  calc
-    ‖WithLp.toLp p (fun i ↦ g (x i))‖ ≤ ‖C • WithLp.toLp p (fun i ↦ ‖x i‖)‖ :=
-      norm_mono fun i ↦ by simpa [abs_of_nonneg hC] using hg (x i)
-    _ = C * ‖WithLp.toLp p x‖ := by
-      rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg hC, norm_norm (WithLp.toLp p x)]
+  by_cases hC : 0 ≤ C
+  · calc
+      ‖WithLp.toLp p (fun i ↦ g (x i))‖ ≤ ‖C • WithLp.toLp p (fun i ↦ ‖x i‖)‖ :=
+        norm_mono fun i ↦ by simpa [abs_of_nonneg hC] using hg (x i)
+      _ = C * ‖WithLp.toLp p x‖ := by
+        rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg hC, norm_norm (WithLp.toLp p x)]
+  · -- A negative constant forces every norm to vanish.
+    have hv (v : E) : ‖v‖ = 0 :=
+      le_antisymm (by nlinarith [norm_nonneg (g v), norm_nonneg v, hg v]) (norm_nonneg v)
+    have hx : ‖WithLp.toLp p x‖ = 0 := le_antisymm
+      (by simpa using norm_mono (y := (0 : PiLp p fun _ : ι ↦ E)) fun i ↦ by simp [hv])
+      (norm_nonneg _)
+    rw [hx, mul_zero]
+    simpa using norm_mono (y := (0 : PiLp p fun _ : ι ↦ F))
+      fun i ↦ by simpa [hv] using hg (x i)
 
 /-- A finite family of multiples of one vector has `Lᵖ` norm equal to the `Lᵖ` norm of the
 coefficients times the norm of the vector. -/

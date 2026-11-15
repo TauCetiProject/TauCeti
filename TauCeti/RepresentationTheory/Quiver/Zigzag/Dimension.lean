@@ -143,7 +143,11 @@ noncomputable instance instFreeZigzagAlgebra : Module.Free k (zigzagAlgebra k G)
 noncomputable instance instFiniteZigzagAlgebra : Module.Finite k (zigzagAlgebra k G) :=
   Module.Finite.equiv (zigzagAlgebraPiAlgEquiv k G).symm.toLinearEquiv
 
-variable [Nontrivial k] [Fintype V] [DecidableRel G.Adj]
+end FiniteGraph
+
+section Dimension
+
+variable [CommRing k] [Nontrivial k] [Fintype V] [DecidableRel G.Adj]
 
 /-- **Dimension of the public zigzag algebra.**  For every finite simple graph, including graphs
 with isolated vertices, `dim Z(G) = 2|V| + 2|E|`.  Every vertex contributes an idempotent and a
@@ -164,6 +168,6 @@ theorem finrank_zigzagAlgebra_A1 :
   rw [finrank_zigzagAlgebra]
   simp
 
-end FiniteGraph
+end Dimension
 
 end TauCeti

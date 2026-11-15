@@ -43,6 +43,8 @@ with that property to one that extends homotopies with values in a space in any 
 * `TauCeti.HasHomotopyExtensionProperty.image` and
   `TauCeti.HasHomotopyExtensionProperty.image_of_isClosed`: transport of the property along a
   homeomorphism, inside one universe and, for a closed subset, across universes.
+* `TauCeti.HasHomotopyExtensionProperty.image_of_isEmbedding`: cofibrations compose, the image of
+  a subset with the property under an embedding whose image has the property has it too.
 * `TauCeti.HasHomotopyExtensionProperty.homotopicRel_of_retracing`: a homotopy followed by a
   homotopy which retraces it at the points of a subset with the homotopy extension property can
   be replaced by a homotopy relative to that subset.
@@ -125,61 +127,6 @@ theorem HasHomotopyExtensionProperty.exists_extension (h : HasHomotopyExtensionP
     ∃ G : C(I × X, Y), (∀ x, G (0, x) = f x) ∧ ∀ (t : I) (a : A), G (t, a) = H (t, a) :=
   h f H hH
 
-section Glue
-
-variable {Y : Type v} [TopologicalSpace Y] [DecidablePred (· ∈ A)] {r : C(I × X, I × X)}
-  {f : C(X, Y)} {H : C(I × A, Y)}
-
-/-- The candidate solution of the homotopy extension problem `(f, H)` built from a retraction `r`
-of the cylinder onto `cylinderExtensionDomain A`: where `r` lands over `A` read off the homotopy
-`H`, and elsewhere read off `f`, which is what the value at time `0` is forced to be. -/
-private def glueAlongRetraction (r : C(I × X, I × X)) (f : C(X, Y)) (H : C(I × A, Y))
-    (p : I × X) : Y :=
-  if h : (r p).2 ∈ A then H ((r p).1, ⟨(r p).2, h⟩) else f (r p).2
-
-private lemma glueAlongRetraction_of_mem {p : I × X} (h : (r p).2 ∈ A) :
-    glueAlongRetraction r f H p = H ((r p).1, ⟨(r p).2, h⟩) := dite_eq_left h
-
-private lemma glueAlongRetraction_of_notMem {p : I × X} (h : (r p).2 ∉ A) :
-    glueAlongRetraction r f H p = f (r p).2 := dite_eq_right h
-
-private lemma domRestrict_glueAlongRetraction_mem :
-    Set.domRestrict {p : I × X | (r p).2 ∈ A} (glueAlongRetraction r f H) =
-      fun p : {p : I × X | (r p).2 ∈ A} => H ((r p.1).1, ⟨(r p.1).2, p.2⟩) := by
-  refine funext fun p => ?_
-  have hp : (r p.1).2 ∈ A := p.2
-  rw [Set.domRestrict_apply, glueAlongRetraction_of_mem hp]
-
-private lemma domRestrict_glueAlongRetraction_zero (hH : ∀ a : A, H (0, a) = f a) :
-    Set.domRestrict {p : I × X | (r p).1 = 0} (glueAlongRetraction r f H) =
-      fun p : {p : I × X | (r p).1 = 0} => f (r p.1).2 := by
-  refine funext fun p => ?_
-  have hp : (r p.1).1 = 0 := p.2
-  rw [Set.domRestrict_apply]
-  by_cases h : (r p.1).2 ∈ A
-  · rw [glueAlongRetraction_of_mem h, hp]
-    exact hH ⟨_, h⟩
-  · rw [glueAlongRetraction_of_notMem h]
-
-private lemma continuous_glueAlongRetraction (hA : IsClosed A)
-    (hr : ∀ p, r p ∈ cylinderExtensionDomain A) (hH : ∀ a : A, H (0, a) = f a) :
-    Continuous (glueAlongRetraction r f H) := by
-  -- The two closed sets where the two branches are used cover the cylinder, so it suffices to
-  -- see that each branch is continuous on its own set.
-  have hcover : {p : I × X | (r p).2 ∈ A} ∪ {p : I × X | (r p).1 = 0} = univ := by
-    ext p
-    simpa [or_comm] using hr p
-  rw [← continuousOn_univ, ← hcover]
-  refine ContinuousOn.union_of_isClosed ?_ ?_ (hA.preimage r.continuous.snd)
-    ((isClosed_singleton (x := (0 : I))).preimage r.continuous.fst)
-  · rw [continuousOn_iff_continuous_domRestrict, domRestrict_glueAlongRetraction_mem]
-    exact H.continuous.comp (((r.continuous.comp continuous_subtype_val).fst).prodMk
-      (((r.continuous.comp continuous_subtype_val).snd).subtype_mk _))
-  · rw [continuousOn_iff_continuous_domRestrict, domRestrict_glueAlongRetraction_zero hH]
-    exact f.continuous.comp ((r.continuous.comp continuous_subtype_val).snd)
-
-end Glue
-
 /-- A retraction of the cylinder `I × X` onto `{0} × X ∪ I × A` solves every homotopy extension
 problem for a closed subset `A ⊆ X`, with values in a space in any universe. -/
 theorem exists_homotopy_extension_of_retraction {Y : Type v} [TopologicalSpace Y]
@@ -188,16 +135,31 @@ theorem exists_homotopy_extension_of_retraction {Y : Type v} [TopologicalSpace Y
     (f : C(X, Y)) (H : C(I × A, Y)) (hH : ∀ a : A, H (0, a) = f a) :
     ∃ G : C(I × X, Y), (∀ x, G (0, x) = f x) ∧ ∀ (t : I) (a : A), G (t, a) = H (t, a) := by
   classical
-  refine ⟨⟨glueAlongRetraction r f H, continuous_glueAlongRetraction hA hr hH⟩,
-    fun x => ?_, fun t a => ?_⟩
-  · simp only [ContinuousMap.coe_mk, glueAlongRetraction,
-      hr' _ (zero_mem_cylinderExtensionDomain x)]
-    split_ifs with h
-    · exact hH ⟨x, h⟩
-    · rfl
-  · simp only [ContinuousMap.coe_mk, glueAlongRetraction,
-      hr' _ (mem_cylinderExtensionDomain_of_mem a.2)]
-    rw [dite_eq_left a.2]
+  -- Where `r` lands over `A`, read off the homotopy `H`; elsewhere `r` lands at time `0`, so read
+  -- off `f`.
+  let g : I × X → Y := fun p => if h : (r p).2 ∈ A then H ((r p).1, ⟨(r p).2, h⟩) else f (r p).2
+  have hg : Continuous g := by
+    -- The two closed sets where the two branches are used cover the cylinder, so it suffices to
+    -- see that `g` is continuous on each of them.
+    have hcover : {p : I × X | (r p).2 ∈ A} ∪ {p : I × X | (r p).1 = 0} = univ := by
+      ext p
+      simpa [or_comm] using hr p
+    rw [← continuousOn_univ, ← hcover]
+    refine ContinuousOn.union_of_isClosed ?_ ?_ (hA.preimage (by fun_prop))
+      ((isClosed_singleton (x := (0 : I))).preimage (by fun_prop))
+    · refine continuousOn_iff_continuous_domRestrict.2 <| (H.continuous.comp
+        (f := fun p : {p : I × X | (r p).2 ∈ A} => ((r p).1, (⟨(r p).2, p.2⟩ : A)))
+        (by fun_prop)).congr fun p => ?_
+      have hp : (r p).2 ∈ A := p.2
+      simp [g, hp]
+    · refine (f.continuous.comp r.continuous.snd).continuousOn.congr fun p hp => ?_
+      have hp : (r p).1 = 0 := hp
+      by_cases h : (r p).2 ∈ A
+      · simpa [g, h, hp] using hH ⟨_, h⟩
+      · exact dite_eq_right h
+  refine ⟨⟨g, hg⟩, fun x => ?_, fun t a => ?_⟩
+  · by_cases h : x ∈ A <;> simp [g, hr' _ (zero_mem_cylinderExtensionDomain x), h, hH]
+  · simp [g, hr' _ (mem_cylinderExtensionDomain_of_mem a.2)]
 
 /-- A closed subset onto whose cylinder extension domain the cylinder retracts has the homotopy
 extension property. -/
@@ -278,18 +240,15 @@ theorem HasHomotopyExtensionProperty.exists_homotopy_of_restrict (hA : IsClosed 
 inclusion of such a subset is a closed cofibration. -/
 theorem HasHomotopyExtensionProperty.isClosed [T2Space X] (h : HasHomotopyExtensionProperty A) :
     IsClosed A := by
+  -- `A` is the set of points `x` at which the retraction fixes `(1, x)`, which is closed because
+  -- `X` is Hausdorff.
   obtain ⟨r, hr, hr'⟩ := h.exists_retraction
-  have hleft : Function.LeftInverse
-      (fun p : I × X => (⟨r p, hr p⟩ : cylinderExtensionDomain A)) Subtype.val :=
-    fun q => Subtype.ext (hr' q q.2)
-  have hcl : IsClosed (cylinderExtensionDomain A) := by
-    rw [← Subtype.range_coe (s := cylinderExtensionDomain A)]
-    exact hleft.isClosed_range (r.continuous.subtype_mk _) continuous_subtype_val
-  have hone : (1 : I) ≠ 0 := fun h => one_ne_zero (congrArg Subtype.val h)
-  have hpre : A = (fun x : X => ((1 : I), x)) ⁻¹' cylinderExtensionDomain A := by
+  have hA : A = {x : X | r (1, x) = (1, x)} := by
     ext x
-    simp [hone]
-  exact hpre ▸ hcl.preimage (by fun_prop)
+    refine ⟨fun hx => hr' _ (mem_cylinderExtensionDomain_of_mem hx), fun hx => ?_⟩
+    rw [mem_ofPred_eq] at hx
+    simpa [hx] using hr (1, x)
+  exact hA ▸ isClosed_eq (by fun_prop) (by fun_prop)
 
 /-- The homotopy extension property transports along a homeomorphism onto a space in the same
 universe, with no hypothesis on `A`: a homotopy extension problem for `e '' A` is carried back
@@ -329,6 +288,27 @@ theorem HasHomotopyExtensionProperty.image_of_isClosed {X' : Type u'} [Topologic
       · exact Or.inl h0
       · exact Or.inr (by rw [← hae, e.symm_apply_apply]; exact ha)
     simp [hr' _ hq']
+
+/-- **Cofibrations compose.** If `j : X → X'` is an embedding whose image has the homotopy
+extension property in `X'`, and `A` has the homotopy extension property in `X`, then the image
+`j '' A` has the homotopy extension property in `X'`: a homotopy on `j '' A` is extended first over
+`X`, then from the image of `j` over `X'`. -/
+theorem HasHomotopyExtensionProperty.image_of_isEmbedding {X' : Type u} [TopologicalSpace X']
+    (h : HasHomotopyExtensionProperty A) {j : X → X'} (hj : Topology.IsEmbedding j)
+    (hj' : HasHomotopyExtensionProperty (range j)) :
+    HasHomotopyExtensionProperty (j '' A) := by
+  intro Y _ f H hH
+  obtain ⟨G, hG₀, hG⟩ := h (f.comp ⟨j, hj.continuous⟩)
+    (H.comp ⟨fun q ↦ (q.1, ⟨j q.2, mem_image_of_mem j q.2.2⟩), by fun_prop⟩)
+    fun a ↦ hH ⟨j a, mem_image_of_mem j a.2⟩
+  obtain ⟨G', hG'₀, hG'⟩ := hj' f
+    (G.comp ⟨fun q ↦ (q.1, hj.toHomeomorph.symm q.2), by fun_prop⟩) fun y ↦ by
+      obtain ⟨_, x, rfl⟩ := y
+      simp [hG₀]
+  refine ⟨G', hG'₀, fun t b ↦ ?_⟩
+  obtain ⟨_, a, ha, rfl⟩ := b
+  rw [hG' t ⟨j a, mem_range_self a⟩]
+  simp [hG t ⟨a, ha⟩]
 
 /-- The tent map `t ↦ min (2 t) (2 - 2 t)` on the unit interval, which rises from `0` to `1` on
 `[0, 1/2]` and falls back to `0` on `[1/2, 1]`. -/

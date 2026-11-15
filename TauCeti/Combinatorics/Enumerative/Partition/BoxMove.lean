@@ -120,7 +120,6 @@ theorem StrictlyDominates.exists_isBoxMove {μ ν : n.Partition} (h : μ.Strictl
       (a := Prod.fst) (b := Prod.fst)
       (by rw [← Multiset.sum_eq_sum_toEnumFinset, ← Multiset.sum_eq_sum_toEnumFinset,
         μ.parts_sum, ν.parts_sum])
-      (fun k => by simpa only [hmin] using hle k)
       (by simpa only [hmin] using hlt)
   simp only [← hmin] at hint
   -- The two chosen parts `x.1 = a` and `y.1 = b + 1` of `ν`.

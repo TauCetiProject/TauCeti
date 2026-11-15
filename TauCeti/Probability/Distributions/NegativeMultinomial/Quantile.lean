@@ -62,17 +62,16 @@ theorem quantile_map_cast_eval_negativeMultinomialMeasure {r p₀ : ℝ} (hr : 0
         (Nat.cast : ℕ → ℝ)).quantile u := by
   rw [map_cast_eval_negativeMultinomialMeasure, map_eval_negativeMultinomialMeasure hr hp₀ hp i]
 
-/-- For positive shape, a natural number is the lower quantile of a negative-multinomial
+/-- For nonnegative shape, a natural number is the lower quantile of a negative-multinomial
 coordinate exactly when it is the least index whose incomplete-Beta cumulative mass reaches the
 level. -/
 theorem quantile_map_cast_eval_negativeMultinomialMeasure_eq_iff {r p₀ u : ℝ}
-    (hr : 0 < r) (hp₀ : 0 < p₀) {p : ι → ℝ≥0}
+    (hr : 0 ≤ r) (hp₀ : 0 < p₀) {p : ι → ℝ≥0}
     (hp : p₀ + ∑ i, (p i : ℝ) = 1) (i : ι) (hu : u ∈ Ioo 0 1) (k : ℕ) :
     ((negativeMultinomialMeasure r p₀ p).map (fun x ↦ (x i : ℝ))).quantile u = k ↔
       IsLeast {j : ℕ | u ≤ regularizedIncompleteBeta r (j + 1) (p₀ / (p₀ + p i))} k := by
-  rw [quantile_map_cast_eval_negativeMultinomialMeasure hr.le hp₀ hp i,
-    quantile_map_cast_negativeBinomialMeasure_eq_iff hr (by positivity)
-      (div_le_one_of_le₀ (le_add_of_nonneg_right (p i).coe_nonneg) (by positivity)) hu]
+  rw [quantile_map_cast_eval_negativeMultinomialMeasure hr hp₀ hp i,
+    quantile_map_cast_negativeBinomialMeasure_eq_iff hr (by positivity) hu]
 
 /-- The real-cast quantile of the total negative-multinomial count is the quantile of its
 negative-binomial marginal. This includes empty category types and shape zero. -/
@@ -83,19 +82,17 @@ theorem quantile_map_cast_sum_negativeMultinomialMeasure {r p₀ : ℝ} (hr : 0 
       ((negativeBinomialMeasure r p₀).map (Nat.cast : ℕ → ℝ)).quantile u := by
   rw [map_cast_sum_negativeMultinomialMeasure, map_sum_negativeMultinomialMeasure hr hp₀ hp]
 
-/-- For positive shape, a natural number is the lower quantile of the total negative-multinomial
+/-- For nonnegative shape, a natural number is the lower quantile of the total negative-multinomial
 count exactly when it is the least index whose incomplete-Beta cumulative mass reaches the level.
 -/
 theorem quantile_map_cast_sum_negativeMultinomialMeasure_eq_iff {r p₀ u : ℝ}
-    (hr : 0 < r) (hp₀ : 0 < p₀) {p : ι → ℝ≥0}
+    (hr : 0 ≤ r) (hp₀ : 0 < p₀) {p : ι → ℝ≥0}
     (hp : p₀ + ∑ i, (p i : ℝ) = 1) (hu : u ∈ Ioo 0 1) (k : ℕ) :
     ((negativeMultinomialMeasure r p₀ p).map (fun x ↦ ((∑ i, x i : ℕ) : ℝ))).quantile u =
         k ↔
       IsLeast {j : ℕ | u ≤ regularizedIncompleteBeta r (j + 1) p₀} k := by
-  have hp₀_le_one : p₀ ≤ 1 :=
-    hp ▸ le_add_of_nonneg_right (Finset.sum_nonneg fun i _ ↦ (p i).coe_nonneg)
-  rw [quantile_map_cast_sum_negativeMultinomialMeasure hr.le hp₀ hp,
-    quantile_map_cast_negativeBinomialMeasure_eq_iff hr hp₀ hp₀_le_one hu]
+  rw [quantile_map_cast_sum_negativeMultinomialMeasure hr hp₀ hp,
+    quantile_map_cast_negativeBinomialMeasure_eq_iff hr hp₀ hu]
 
 /-- Every valid real-cast coordinate has lower support endpoint zero. -/
 theorem tendsto_quantile_map_cast_eval_negativeMultinomialMeasure_nhdsGT_zero

@@ -25,7 +25,8 @@ the construction below is the Frenkel--Kac construction of the corresponding sim
 algebra over `ℤ`; no comparison with other constructions of that Lie algebra is made here. Its
 carrier `ShellLieAlgebra B` is `Q × (Φ →₀ ℤ)`: a Cartan vector `H_h` for each
 `h : Q` (`ShellLieAlgebra.cartan`) and a root vector `x_a` for each `a ∈ Φ`
-(`ShellLieAlgebra.root`), which together give an integral basis (`ShellLieAlgebra.basis`). The
+(`ShellLieAlgebra.root`). The Cartan vectors `H_(αᵢ)` of the coordinate vectors `αᵢ = Pi.single i 1`
+together with the root vectors `x_a` give an integral basis (`ShellLieAlgebra.basis`). The
 bracket (`ShellLieAlgebra.bracketBilin`) is the bilinear map with
 `⁅H_h, H_k⁆ = 0`, `⁅H_h, x_a⁆ = ⟪h, a⟫ x_a`, and on root vectors
 (`ShellLieAlgebra.rootBracket`)
@@ -589,7 +590,7 @@ private theorem jacobi_root_root_root_of_ne (hB : B.PosDef) (hdiag : ∀ i, Even
         (c : I → ℤ) ⬝ᵥ B *ᵥ a = -1 ∨ (a : I → ℤ) ⬝ᵥ B *ᵥ b = -1 ∧ (b : I → ℤ) ⬝ᵥ B *ᵥ c = 0 ∧
         (c : I → ℤ) ⬝ᵥ B *ᵥ a = -1 ∨ (a : I → ℤ) ⬝ᵥ B *ᵥ b = -1 ∧
         (b : I → ℤ) ⬝ᵥ B *ᵥ c = -1 ∧ (c : I → ℤ) ⬝ᵥ B *ᵥ a = 0) with
-      ⟨h1, h2, h3⟩ | ⟨h1, h2, h3⟩ | ⟨h1, h2, h3⟩
+      ⟨h1, h2, h3⟩ | ⟨h1, h2, h3⟩ | ⟨h1, h2, _⟩
     · rw [ite_eq_left (hmbc.2 h2), ite_eq_left (hmca.2 h3), ite_eq_right (by rw [hmab]; omega),
         (TauCeti.negOnePow_mul_negOnePow_of_even (a := sca) (b := sbc + sba)
           (c := sbc + (sab + sac) + 1)

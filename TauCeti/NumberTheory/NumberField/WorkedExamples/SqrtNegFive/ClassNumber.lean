@@ -196,9 +196,7 @@ theorem irreducible_two : Irreducible (2 : QuadraticAlgebra ℤ (-5) 0) := by
       rw [← map_mul, ← hxy, norm_eq_re_sq_add_five_mul_im_sq]
       simp
     have hx := norm_nonneg_of_discr_nonpos (by norm_num [discr_def]) x
-    have hy := norm_nonneg_of_discr_nonpos (by norm_num [discr_def]) y
     have hx2 := norm_neg_five_ne_two x
-    have hy2 := norm_neg_five_ne_two y
     have hle : x.norm ≤ 4 := Int.le_of_dvd (by norm_num) ⟨y.norm, h4.symm⟩
     have h1 : x.norm ∣ 2 ∨ y.norm ∣ 2 := by
       interval_cases x.norm

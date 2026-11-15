@@ -658,7 +658,6 @@ theorem existsUnique_weierstrassDivision_of_isDistinguishedAt {x₀ : E} {w₀ :
     TauCeti.Polynomial.monicOfCoeff_coeff hP.monic rfl
   have hc0_germ : ∀ i : Fin d, eval 𝓘(ℂ, E) E x₀ (c i) = 0 :=
     (isDistinguishedAt_monicOfCoeff_iff c).1 (hP_eq.symm ▸ hP)
-  let C : Fin d → E → ℂ := fun i ↦ Classical.choose (exists_analyticAt_toFilterGerm_eq x₀ (c i))
   have hC_spec := fun i : Fin d ↦ Classical.choose_spec (exists_analyticAt_toFilterGerm_eq x₀ (c i))
   obtain ⟨G, hG_an, hgG⟩ := exists_analyticAt_toFilterGerm_eq (x₀, w₀) g
   obtain ⟨Q, R, hQ_an, hR_an, hdiv⟩ := hG_an.exists_weierstrassDivision_monicOfCoeff
@@ -1011,8 +1010,8 @@ theorem eventuallyEq_of_weierstrassDivision {x₀ : E} {w₀ : ℂ} {d : ℕ} {c
   refine ⟨Germ.coe_eq.1 ?_, fun i ↦ Germ.coe_eq.1 ?_⟩
   · rw [← hv _ le_rfl, ← hv' _ le_rfl, hvv']
   · have hai : a i = a' i := by
-      simpa [Polynomial.finsetSum_coeff, Polynomial.coeff_monomial, Fin.val_eq_val] using
-        congrArg (fun P ↦ P.coeff (i : ℕ)) haa'
+      simpa [Polynomial.finsetSum_coeff, Polynomial.coeff_monomial, Finsupp.single_apply,
+        Fin.val_eq_val] using congrArg (fun P ↦ P.coeff (i : ℕ)) haa'
     rw [← ha i _ le_rfl, ← ha' i _ le_rfl, hai]
 
 end TauCeti

@@ -50,7 +50,7 @@ theorem closure_classGroupMk_image_absNorm_le_eq_top {B : ℝ}
   have hI0 := nonZeroDivisors.coe_ne_zero I
   refine ClassGroup.mk0_mem_closure_of_count_eq K 1 fun v hv ↦ ?_
   rw [Units.val_one, map_one, FractionalIdeal.count_one,
-    FractionalIdeal.count_coe K v hI0, Nat.cast_eq_zero]
+    FractionalIdeal.count_coeIdeal K v hI0, Nat.cast_eq_zero]
   by_contra hc
   have hd : v.asIdeal ∣ (I : Ideal (𝓞 K)) :=
     (Associates.count_ne_zero_iff_dvd hI0 v.irreducible).mp hc

@@ -54,10 +54,7 @@ to the inclusion, puts it back into the continuous cocycles.
 
 The maps and their normalization are those of
 `TauCeti/RepresentationTheory/Homological/ContCohomology/LowDegree.lean`,
-`ExplicitFunctoriality.lean` and `ShortExact.lean`. This implements the eight exactness nodes of
-the long exact sequence milestone of Layer 5 of the human-authored roadmap at
-`TauCetiRoadmap/ProfiniteCohomology/README.md`, whose `Suggested.lean` fixes the eight names
-above.
+`ExplicitFunctoriality.lean` and `ShortExact.lean`.
 
 ## References
 

@@ -194,8 +194,8 @@ private theorem totalVariationOn_smoothTransition_comp (hu : LocallyLipschitzOn 
   refine setLIntegral_congr_fun_ae Ω.isOpen.measurableSet ?_
   filter_upwards [hu.ae_differentiableAt_of_mem (μ := μ) Ω.isOpen] with x hx hxΩ
   rw [((hx hxΩ).hasFDerivAt.sub_const t).const_mul c |>.smoothTransition |>.fderiv, smul_smul,
-    mul_comm, enorm_smul,
-    Real.enorm_of_nonneg (mul_nonneg hc Real.smoothTransition.monotone.deriv_nonneg)]
+    mul_comm, eNorm_smul,
+    Real.eNorm_of_nonneg (mul_nonneg hc Real.smoothTransition.monotone.deriv_nonneg)]
 
 /-- The indicator of `{u > t}` is the pointwise limit of the smoothed superlevel functions
 `ψ ((n + 1) (u - t))`, so by lower semicontinuity their variations bound the perimeter of
@@ -224,7 +224,7 @@ private theorem perimeter_le_liminf_totalVariationOn_smoothTransition_comp
   have hlim := tendsto_lintegral_of_dominated_convergence' (μ := μ.restrict K) (f := 0)
     (F := fun n x => ‖Real.smoothTransition (((n : ℝ) + 1) * (u x - t)) -
       {x | t < u x}.indicator 1 x‖ₑ) (fun _ => 1)
-    (fun n => ((((hv n).continuousOn.mono hKΩ).aemeasurable hKm).sub hind_meas).enorm)
+    (fun n => ((((hv n).continuousOn.mono hKΩ).aemeasurable hKm).sub hind_meas).eNorm)
     (fun n => .of_forall fun x => ?_) (by simpa using hK.measure_lt_top.ne)
     (.of_forall fun x => ?_)
   · simpa using hlim
@@ -233,7 +233,7 @@ private theorem perimeter_le_liminf_totalVariationOn_smoothTransition_comp
     have hi : {x | t < u x}.indicator (1 : E → ℝ) x ∈ Icc 0 1 := by
       by_cases hxt : t < u x <;> simp [hxt]
     dsimp only
-    rw [Real.enorm_eq_ofReal_abs, ENNReal.ofReal_le_one]
+    rw [Real.eNorm_eq_ofReal_abs, ENNReal.ofReal_le_one]
     exact abs_sub_le_iff.2 ⟨by linarith [hi.1], by linarith [hi.2]⟩
   · refine tendsto_const_nhds.congr' ?_
     by_cases hxt : t < u x
@@ -272,11 +272,11 @@ theorem _root_.LocallyLipschitzOn.lintegral_perimeter_eq_setLIntegral_enorm_fder
       (Real.smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl
     exact (ENNReal.measurable_ofReal.comp_aemeasurable ((hψ'.measurable.comp_aemeasurable
       ((hu2.sub measurable_fst.aemeasurable).const_mul _)).const_mul _)).mul
-      ((measurable_fderiv ℝ u).enorm.comp measurable_snd).aemeasurable
+      ((measurable_fderiv ℝ u).eNorm.comp measurable_snd).aemeasurable
   have hint (n : ℕ) : ∫⁻ t, ∫⁻ x in Ω, F n t x ∂μ = ∫⁻ x in Ω, ‖fderiv ℝ u x‖ₑ ∂μ := by
     rw [lintegral_lintegral_swap (hF n)]
     refine lintegral_congr fun x => ?_
-    rw [lintegral_mul_const' _ _ enorm_ne_top,
+    rw [lintegral_mul_const' _ _ eNorm_ne_top,
       Real.smoothTransition.lintegral_ofReal_mul_deriv _ (by positivity), one_mul]
   -- Lower semicontinuity, then Fatou's lemma and Tonelli's theorem.
   calc ∫⁻ t, perimeter μ Ω {x | t < u x}
@@ -472,8 +472,7 @@ theorem measurable_variationMeasure_indicator_setOf_lt [IsLocallyFiniteMeasure �
   -- Apply the generating π-system criterion along the finite-measure traces of `V j`.
   refine Measurable.measure_of_isPiSystem_of_iUnion BorelSpace.measurable_eq
     isPiSystem_isOpen (B := fun j ↦ (↑) ⁻¹' (V j : Set E))
-    (fun j ↦ (V j).isOpen.preimage continuous_subtype_val)
-    (fun i j hij ↦ preimage_mono (hVmono hij)) hcover (fun t j ↦ ?_)
+    (fun j ↦ (V j).isOpen.preimage continuous_subtype_val) hcover (fun t j ↦ ?_)
     (fun W hW ↦ hopen' hW)
   have hK : IsCompact (((↑) : Ω → E) ⁻¹' closure (V j : Set E)) := by
     rw [Subtype.isCompact_iff, image_preimage_eq_of_subset (by simpa using hVΩ j)]

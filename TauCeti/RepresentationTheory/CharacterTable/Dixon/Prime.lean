@@ -8,9 +8,9 @@ module
 public import Mathlib.NumberTheory.PrimesCongruentOne
 public import Mathlib.RepresentationTheory.Maschke
 public import TauCeti.Data.ZMod.ValMinAbs
+public import TauCeti.FieldTheory.Finite.RootsOfUnity
 public import TauCeti.RepresentationTheory.CharacterTable.Values
 public import TauCeti.RingTheory.ZMod.PrimitiveRoot
-public import TauCeti.RingTheory.ZMod.Torsion
 
 /-!
 # Good Dixon primes
@@ -133,11 +133,13 @@ theorem of_lt [Finite G] (hprime : p.Prime) (hdvd : Monoid.exponent G ∣ p - 1)
 /-! #### The exponent condition -/
 
 /-- **`ZMod p` contains a primitive root of unity of order the exponent of `G`.** This is the
-exponent condition at work: the exponent divides `p - 1`, and `ZMod p` has the roots of unity of
-every order dividing `p - 1`, by `TauCeti.ZMod.exists_isPrimitiveRoot_of_dvd_sub_one`. -/
+exponent condition at work: the exponent divides `p - 1`, and the field `ZMod p` with `p` elements
+has the roots of unity of every order dividing `p - 1`, by
+`TauCeti.exists_isPrimitiveRoot_of_dvd_natCard_sub_one`. -/
 theorem exists_isPrimitiveRoot (hp : IsGoodDixonPrime G p) :
     ∃ ζ : ZMod p, IsPrimitiveRoot ζ (Monoid.exponent G) :=
-  ZMod.exists_isPrimitiveRoot_of_dvd_sub_one hp.prime hp.exponent_dvd
+  have := hp.fact_prime
+  exists_isPrimitiveRoot_of_dvd_natCard_sub_one (by simpa using hp.exponent_dvd)
 
 /-! #### The order condition: Maschke -/
 

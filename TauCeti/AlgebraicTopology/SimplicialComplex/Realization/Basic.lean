@@ -27,8 +27,8 @@ standard coordinate vectors are affinely independent and that their convex hulls
 common faces. The polyhedron carries the weak topology: the final topology for the inclusions of
 all its closed simplices. This avoids a finiteness or local-finiteness hypothesis on `K`.
 
-This is the first item of layer 11 of the geometric-topology roadmap: the polyhedron `|K|` of an
-abstract simplicial complex. It is the object used in the subsequent definition of a triangulation.
+The resulting space is the polyhedron `|K|` of the abstract simplicial complex `K`. It is the
+space used in the definition of a triangulation (`TauCeti.IsTriangulable`).
 
 ## Main definitions
 

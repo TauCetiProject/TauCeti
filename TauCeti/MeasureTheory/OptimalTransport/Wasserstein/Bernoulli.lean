@@ -24,13 +24,13 @@ namespace TauCeti
 
 /-- A Bernoulli law has finite moments at every exponent, including infinity. -/
 theorem hasFiniteMoment_bernoulliMeasure {X : Type*} [PseudoMetricSpace X]
-    [MeasurableSpace X] [OpensMeasurableSpace X] [MeasurableSingletonClass X]
+    [MeasurableSpace X] [OpensMeasurableSpace X]
     (p : ℝ≥0∞) (x y : X) (t : unitInterval) :
     HasFiniteMoment p (bernoulliMeasure x y t) := by
-  classical
-  apply hasFiniteMoment_of_ae_mem_finset (s := {x, y}) x
-  apply mem_ae_iff.mpr
-  simp [bernoulliMeasure_def]
+  rw [bernoulliMeasure]
+  exact HasFiniteMoment.add_measure (ν := _ • Measure.dirac y)
+    ((hasFiniteMoment_dirac p x).smul_measure ENNReal.coe_ne_top)
+    ((hasFiniteMoment_dirac p y).smul_measure ENNReal.coe_ne_top)
 
 /-- Changing the parameter of a Bernoulli law moves only the difference in mass between
 its two atoms, giving this `W₁` bound. -/
@@ -76,7 +76,7 @@ theorem wassersteinEDist_one_bernoulliMeasure_le {X : Type*} [MeasurableSpace X]
   rw [hs, ht]
   refine (wassersteinEDist_add_smul_dirac_le hd 1 commonMass movedMass x).trans_eq ?_
   have hmeas : Measurable fun z ↦ edist z x := hd.comp (measurable_id.prodMk measurable_const)
-  rw [eLpNorm_one_eq_lintegral_enorm hmeas.aestronglyMeasurable]
+  rw [eLpNorm_one_eq_lintegral_eNorm hmeas.aestronglyMeasurable]
   simp [movedMass, lintegral_smul_measure, lintegral_dirac' y hmeas, edist_comm y x]
 
 end TauCeti

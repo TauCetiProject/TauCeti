@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
+import Mathlib.Algebra.Ring.Hom.InjSurj
 
 /-!
 # Non-zero-divisors of multivariate power series
@@ -21,6 +22,8 @@ series, such as Tate algebras, then inherit `IsDomain` from Mathlib's subring in
 
 * `MvPowerSeries.X_sub_X_mem_nonZeroDivisors`: for `i ≠ j`, the difference `X i - X j` is a
   non-zero-divisor of `MvPowerSeries σ R` over an arbitrary commutative ring.
+* `MvPowerSeries.isDomain_of_isDomain`: a semiring whose power series ring is a domain is
+  a domain.
 
 ## Implementation notes
 
@@ -42,6 +45,12 @@ variable {σ R : Type*}
 /-- Power series in any set of variables over a domain form a domain. -/
 instance [Ring R] [IsDomain R] : IsDomain (MvPowerSeries σ R) :=
   NoZeroDivisors.to_isDomain _
+
+variable (σ) in
+/-- A semiring `R` is a domain as soon as its power series ring is: the constant-coefficient
+embedding `C` is injective. This is the converse of the `IsDomain (MvPowerSeries σ R)` instance. -/
+theorem isDomain_of_isDomain [Semiring R] [IsDomain (MvPowerSeries σ R)] : IsDomain R :=
+  Function.Injective.isDomain (C (σ := σ) (R := R)) C_injective
 
 variable [CommRing R]
 

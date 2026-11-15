@@ -193,7 +193,7 @@ private lemma alt_bdry_single_of_injective {b : Fin (n + 2) → ι} (hb : Functi
     exact fun i _ ⟨hi, h⟩ ↦ hi.ne (hb h)
   have h := neg_one_pow_card_univ_inversions_comp_succAbove (R := ℤ) b k
   rw [hE, pow_zero, mul_one, pow_add] at h
-  rw [map_zsmul, alt_single_of_injective hb', Tuple.comp_succAbove_comp_sort hb k, smul_smul,
+  rw [map_zsmul, alt_single_of_injective hb', Tuple.comp_succAbove_comp_sort k, smul_smul,
     smul_smul]
   congr 1
   have hL : ((-1 : ℤ) ^ #{i | b i < b k}) ^ 2 = 1 := by rw [← pow_mul, mul_comm, pow_mul]; simp
@@ -238,7 +238,7 @@ private lemma alt_bdry_single_of_not_injective {b : Fin (n + 2) → ι}
     by_cases hp : Function.Injective (b ∘ p.succAbove)
     · have hq := Fin.injective_comp_succAbove_of_eq h hp
       rw [alt_single_of_injective hp, alt_single_of_injective hq,
-        Tuple.comp_sort_eq_comp_sort_of_range_eq hq hp
+        Tuple.comp_sort_eq_comp_sort_of_range_eq hq
           ((Fin.range_comp_succAbove_of_eq hpq.symm h.symm).trans
             (Fin.range_comp_succAbove_of_eq hpq h).symm), smul_smul, smul_smul, ← add_smul,
         neg_one_pow_mul_neg_one_pow_card_inversions_add hlt h hq, zero_smul]

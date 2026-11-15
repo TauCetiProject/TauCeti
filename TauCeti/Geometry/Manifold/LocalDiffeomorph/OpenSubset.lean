@@ -26,7 +26,8 @@ about diffeomorphisms be applied to a partial diffeomorphism on its domain.
 The file also records that the inclusion of an open subset, with the charts Mathlib restricts to
 it, is a local diffeomorphism. Structures defined through charts, such as orientations, can then
 be compared on an open subset and on the ambient manifold. An open subset equal to the whole
-manifold is diffeomorphic to it through its inclusion. A partial diffeomorphism out of an open
+manifold is diffeomorphic to it through its inclusion, and a diffeomorphism mapping an open subset
+onto another restricts to a diffeomorphism between them. A partial diffeomorphism out of an open
 subset can be carried, near any point of its source, to the ambient manifold.
 
 ## Main declarations
@@ -37,6 +38,8 @@ subset can be carried, near any point of its source, to the ambient manifold.
 * `PartialDiffeomorph.toDiffeomorphSourceTarget`: a partial diffeomorphism as a diffeomorphism
   between its open source and its open target.
 * `Diffeomorph.ofTop`: an open subset equal to `⊤` is diffeomorphic to the ambient manifold.
+* `Diffeomorph.subtype`: a diffeomorphism restricts to a diffeomorphism between open subsets that
+  it maps onto each other.
 * `TauCeti.isLocalDiffeomorph_subtype_val`: the inclusion of an open subset is a `C^n` local
   diffeomorphism.
 * `PartialDiffeomorph.exists_ambient_of_opens`: a partial diffeomorphism out of an open subset
@@ -198,6 +201,37 @@ theorem coe_ofTop {U : TopologicalSpace.Opens M} {hU : U = ⊤} :
 theorem coe_ofTop_symm_apply {U : TopologicalSpace.Opens M} {hU : U = ⊤} (x : M) :
     ((ofTop (I := I) (n := n) U hU).symm x : M) = x :=
   (rfl)
+
+section Subtype
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {G : Type*} [TopologicalSpace G]
+  {J : ModelWithCorners 𝕜 F G} {N : Type*} [TopologicalSpace N] [ChartedSpace G N]
+  {U : TopologicalSpace.Opens M} {V : TopologicalSpace.Opens N}
+
+/-- A diffeomorphism `g : M ≃ₘ N` restricts to a diffeomorphism between open subsets `U` and `V`
+that it maps onto each other, each carrying the charts Mathlib restricts to it. This is the smooth
+form of Mathlib's `Homeomorph.subtype`. -/
+def subtype (g : M ≃ₘ^n⟮I, J⟯ N) (h_iff : ∀ x, x ∈ U ↔ g x ∈ V) : U ≃ₘ^n⟮I, J⟯ V where
+  toEquiv := g.toEquiv.subtypeEquiv h_iff
+  contMDiff_toFun := (TauCeti.ContMDiff.subtypeVal_comp_iff _ _).1
+    (g.contMDiff.comp contMDiff_subtype_val)
+  contMDiff_invFun := (TauCeti.ContMDiff.subtypeVal_comp_iff _ _).1
+    (g.symm.contMDiff.comp contMDiff_subtype_val)
+
+/-- The restriction `Diffeomorph.subtype` evaluates as the diffeomorphism. -/
+@[simp]
+theorem subtype_apply_coe (g : M ≃ₘ^n⟮I, J⟯ N) (h_iff : ∀ x, x ∈ U ↔ g x ∈ V) (x : U) :
+    (g.subtype h_iff x : N) = g x :=
+  (rfl)
+
+/-- The inverse of the restriction `Diffeomorph.subtype` evaluates as the inverse
+diffeomorphism. -/
+@[simp]
+theorem subtype_symm_apply_coe (g : M ≃ₘ^n⟮I, J⟯ N) (h_iff : ∀ x, x ∈ U ↔ g x ∈ V) (y : V) :
+    ((g.subtype h_iff).symm y : M) = g.symm y :=
+  (rfl)
+
+end Subtype
 
 end Diffeomorph
 

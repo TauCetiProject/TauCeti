@@ -11,7 +11,7 @@ public import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
 public import TauCeti.AlgebraicTopology.Homotopy.CellAttachment
 public import TauCeti.Topology.CWComplex.Abstract.Trans
 public import TauCeti.Topology.CWComplex.Classical.CWType
-public import TauCeti.Topology.Homotopy.HomotopyGroup.WeakHomotopyEquivalence
+public import TauCeti.Topology.Homotopy.HomotopyGroup.ConnectedMap.Basic
 
 /-!
 # Killing the homotopy groups of a space from a given dimension on
@@ -26,7 +26,9 @@ dimension `k + 1` along every generalized loop of dimension `k` at the image of 
 * the inclusion `X ⟶ killHomotopyGroups n X x` induces a bijection on `πₖ` for `k < n`
   (`TauCeti.bijective_homotopyGroupMap_killHomotopyGroupsIncl`);
 * `πₖ` of `killHomotopyGroups n X x` at the image of `x` vanishes for `k ≥ n`
-  (`TauCeti.subsingleton_homotopyGroup_killHomotopyGroups`).
+  (`TauCeti.subsingleton_homotopyGroup_killHomotopyGroups`);
+* so the inclusion is surjective on every homotopy group
+  (`TauCeti.surjective_homotopyGroupMap_killHomotopyGroupsIncl`).
 
 For `n = 2` and a path-connected `X` this makes `killHomotopyGroups 2 X x` an Eilenberg--Mac Lane
 space of type `K(π₁(X, x), 1)` containing `X`
@@ -98,6 +100,8 @@ such a map from `X`.
   the colimit is a `K(π₁(X, x), 1)`.
 * `TauCeti.isEilenbergMacLaneSpace_killHomotopyGroups`: for an `(n - 1)`-connected `X`, the space
   `killHomotopyGroups (n + 1) X x` is a `K(πₙ(X, x), n)`.
+* `TauCeti.isNConnected_killHomotopyGroupsIncl`: for a path-connected `X`, the inclusion is an
+  `n`-connected map.
 * `TauCeti.isWeakHomotopyEquivalence_killHomotopyGroupsIncl`: if the homotopy groups of a
   path-connected `X` already vanish from dimension `n` on, the inclusion is a weak homotopy
   equivalence.
@@ -300,6 +304,19 @@ theorem subsingleton_homotopyGroup_killHomotopyGroups [T2Space X] {k : ℕ} (hk 
   rw [← colimit_ι_killingStage_basepoint n X x (k + 2)]
   exact Function.Surjective.subsingleton (α := π_ k (killingStage n X x (k + 2)).1 _) hsurj
 
+/-- The inclusion `X ⟶ killHomotopyGroups n X x` of a Hausdorff space `X` is surjective on every
+homotopy group at `x`: it is bijective in dimensions below `n`, and the homotopy groups of the
+target vanish from dimension `n` on. -/
+theorem surjective_homotopyGroupMap_killHomotopyGroupsIncl [T2Space X] {N : Type v} [Finite N] :
+    Function.Surjective
+      (HomotopyGroup.map (N := N) (x := x) (killHomotopyGroupsIncl n X x).hom rfl) := by
+  rcases lt_or_ge (Nat.card N) n with hN | hN
+  · exact (bijective_homotopyGroupMap_killHomotopyGroupsIncl n X x hN).2
+  · have := subsingleton_homotopyGroup_killHomotopyGroups n X x hN
+    have := (HomotopyGroup.congrEquiv (X := killHomotopyGroups n X x)
+      (x := killHomotopyGroupsIncl n X x x) (Finite.equivFin N)).subsingleton
+    exact fun _ ↦ ⟨⟦GenLoop.const⟧, Subsingleton.elim _ _⟩
+
 /-- `TauCeti.killHomotopyGroups n X x` is path-connected when `X` is Hausdorff and path-connected:
 attaching cells of positive dimension creates no new path components. -/
 instance instPathConnectedSpaceKillHomotopyGroups [T2Space X] [PathConnectedSpace X] :
@@ -377,6 +394,25 @@ theorem isEilenbergMacLaneSpaceOne_killHomotopyGroups [T2Space X] [PathConnected
   isEilenbergMacLaneSpace_one_iff.1 <|
     (isEilenbergMacLaneSpace_killHomotopyGroups 1 X x fun _ hk0 hk ↦ absurd hk (by omega))
       |>.of_mulEquiv HomotopyGroup.pi1MulEquivFundamentalGroup
+
+/-- **The inclusion into `TauCeti.killHomotopyGroups n X x` is `n`-connected.** For a Hausdorff,
+path-connected space `X`, the inclusion `X ⟶ killHomotopyGroups n X x` induces a bijection on `πₖ`
+for `k < n` and a surjection for `k ≤ n`, at every point of `X`: below dimension `n` the homotopy
+groups are unchanged, and in dimension `n` the target group is trivial. -/
+theorem isNConnected_killHomotopyGroupsIncl [T2Space X] [PathConnectedSpace X] :
+    (killHomotopyGroupsIncl n X x).hom.IsNConnected n := by
+  refine ⟨fun y ↦ ⟨x, PathConnectedSpace.joined _ y⟩, fun k hk y ↦ ?_, fun k hk y ↦ ?_⟩
+  · -- Move the base point from `x`, where the map is bijective, to `y`.
+    exact ((killHomotopyGroupsIncl n X x).hom.injective_map_iff_of_path
+      (PathConnectedSpace.somePath x y)).1
+      (bijective_homotopyGroupMap_killHomotopyGroupsIncl n X x (by simpa using hk)).1
+  · refine ((killHomotopyGroupsIncl n X x).hom.surjective_map_iff_of_path
+      (PathConnectedSpace.somePath x y)).1 ?_
+    rcases hk.lt_or_eq with hk | hk
+    · exact (bijective_homotopyGroupMap_killHomotopyGroupsIncl n X x (by simpa using hk)).2
+    · -- In dimension `n` the target group is trivial.
+      have := subsingleton_homotopyGroup_killHomotopyGroups n X x hk.ge
+      exact fun _ ↦ ⟨⟦GenLoop.const⟧, Subsingleton.elim _ _⟩
 
 /-- **Killing homotopy groups which already vanish changes nothing up to weak homotopy
 equivalence.** If the homotopy groups `πₖ(X, x)` of a Hausdorff, path-connected space `X` vanish

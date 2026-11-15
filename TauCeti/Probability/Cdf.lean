@@ -126,6 +126,18 @@ theorem cdf_zero (x : ℝ) : cdf (0 : Measure ℝ) x = if 0 ≤ x then 1 else 0 
     simp only [toRatCDF, hnot, ↓reduceIte, defaultRatCDF, ← not_lt, ite_not, Rat.cast_lt_zero]
   exact hstep.trans (hdirac x)
 
+/-- The cdf of the zero measure is continuous away from zero. -/
+theorem continuousOn_cdf_zero : ContinuousOn (cdf (0 : Measure ℝ)) {0}ᶜ := by
+  intro x hx
+  have h : ∀ᶠ y in 𝓝 x, (0 ≤ y ↔ 0 ≤ x) := by
+    rcases lt_or_gt_of_ne hx with h | h
+    · filter_upwards [Iio_mem_nhds h] with y hy using iff_of_false (not_le.2 hy) (not_le.2 h)
+    · filter_upwards [Ioi_mem_nhds h] with y hy using iff_of_true hy.le h.le
+  refine ContinuousAt.continuousWithinAt
+    ((continuousAt_const (y := cdf (0 : Measure ℝ) x)).congr ?_)
+  filter_upwards [h] with y hy
+  simp only [cdf_zero, hy]
+
 end ProbabilityTheory
 
 namespace MeasureTheory.Measure
@@ -165,6 +177,28 @@ distribution function tends to `1` at `+∞`. -/
 theorem nonempty_setOf_le_cdf (μ : Measure ℝ) {t : ℝ} (ht : t < 1) :
     {x : ℝ | t ≤ cdf μ x}.Nonempty :=
   ((tendsto_cdf_atTop μ).eventually (eventually_gt_nhds ht)).exists.imp fun _ h ↦ h.le
+
+/-- Above the level `0` the points whose cumulative mass reaches the level are bounded below,
+because the cumulative distribution function tends to `0` at `-∞`. -/
+theorem bddBelow_setOf_le_cdf (μ : Measure ℝ) {t : ℝ} (ht : 0 < t) :
+    BddBelow {x : ℝ | t ≤ cdf μ x} := by
+  obtain ⟨a, ha⟩ :=
+    eventually_atBot.mp ((tendsto_cdf_atBot μ).eventually (eventually_lt_nhds ht))
+  refine ⟨a, fun x hx ↦ ?_⟩
+  by_contra hxa
+  exact absurd (ha x (not_le.mp hxa).le) (not_lt.mpr hx)
+
+/-- Below the level `1` some point has cumulative mass strictly above the level, because the
+cumulative distribution function tends to `1` at `+∞`. -/
+theorem nonempty_setOf_lt_cdf (μ : Measure ℝ) {t : ℝ} (ht : t < 1) :
+    {x : ℝ | t < cdf μ x}.Nonempty :=
+  ((tendsto_cdf_atTop μ).eventually (eventually_gt_nhds ht)).exists
+
+/-- Above the level `0` the points whose cumulative mass strictly exceeds the level are bounded
+below, because the cumulative distribution function tends to `0` at `-∞`. -/
+theorem bddBelow_setOf_lt_cdf (μ : Measure ℝ) {t : ℝ} (ht : 0 < t) :
+    BddBelow {x : ℝ | t < cdf μ x} :=
+  (bddBelow_setOf_le_cdf μ ht).mono (ofPred_subset_ofPred.2 fun _ ↦ le_of_lt)
 
 /-- The upper tail of a probability measure on the reals is one minus its cumulative distribution
 function. -/

@@ -275,10 +275,44 @@ theorem peterssonInner_sum_slash_left_adjugate_biUnion (k : ℤ) {ι : Type*} (s
     (hint : ∀ i ∈ s,
       IntegrableOn (fun τ ↦ petersson k (f ∣[k] α i) h τ) S (volume : Measure ℍ))
     (hd : Set.Pairwise (↑s) (AEDisjoint (volume : Measure ℍ) on fun i ↦ α i • S))
-    (hm : ∀ i ∈ s, NullMeasurableSet (α i • S) (volume : Measure ℍ))
-    (hfi : IntegrableOn (fun τ ↦ petersson k f h' τ) (⋃ i ∈ s, α i • S) (volume : Measure ℍ)) :
+    (hm : ∀ i ∈ s, NullMeasurableSet (α i • S) (volume : Measure ℍ)) :
     peterssonInner k S (∑ i ∈ s, f ∣[k] α i) h =
       peterssonInner k (⋃ i ∈ s, α i • S) f h' := by
+  -- integrability on each translate `αᵢ • S` follows from `hint` by the change of variables
+  have hfi : IntegrableOn (fun τ ↦ petersson k f h' τ) (⋃ i ∈ s, α i • S)
+      (volume : Measure ℍ) := by
+    refine integrableOn_finset_iUnion.mpr fun i hi ↦ ?_
+    have hh : h = (h ∣[k] (α i)⁻¹) ∣[k] α i := by
+      rw [← SlashAction.slash_mul, inv_mul_cancel, SlashAction.slash_one]
+    have hpt : ∀ τ, petersson k (f ∣[k] α i) h τ =
+        (((α i : Matrix (Fin 2) (Fin 2) ℝ).det : ℝ) : ℂ) ^ (k - 2) *
+          petersson k f (h ∣[k] (α i)⁻¹) (α i • τ) := fun τ ↦ by
+      conv_lhs => rw [hh]
+      rw [petersson_slash, σ_eq_refl_of_det_pos (hα i hi)]
+      simp [abs_of_pos (hα i hi)]
+    have hd : (((α i : Matrix (Fin 2) (Fin 2) ℝ).det : ℝ) : ℂ) ^ (k - 2) ≠ 0 :=
+      zpow_ne_zero _ (Complex.ofReal_ne_zero.mpr (hα i hi).ne')
+    have hS : IntegrableOn (fun τ ↦ petersson k f (h ∣[k] (α i)⁻¹) τ) (α i • S)
+        (volume : Measure ℍ) := by
+      rw [← Set.image_smul, (measurePreserving_smul (α i) volume).integrableOn_image
+        (measurableEmbedding_const_smul (α i))]
+      have hfun : ((fun τ ↦ petersson k f (h ∣[k] (α i)⁻¹) τ) ∘ (α i • ·)) = fun τ ↦
+          ((((α i : Matrix (Fin 2) (Fin 2) ℝ).det : ℝ) : ℂ) ^ (k - 2))⁻¹ *
+            petersson k (f ∣[k] α i) h τ := funext fun τ ↦ by
+        simp only [Function.comp_apply, hpt, ← mul_assoc, inv_mul_cancel₀ hd, one_mul]
+      rw [hfun]
+      exact (hint i hi).const_mul _
+    have hh' : h' = (((α i : Matrix (Fin 2) (Fin 2) ℝ).det : ℝ) : ℂ) ^ (k - 2) •
+        (h ∣[k] (α i)⁻¹) := by
+      rw [← hadj i hi, ModularForm.slash_adjugate]
+    have hfun' : (fun τ ↦ petersson k f h' τ) = fun τ ↦
+        (((α i : Matrix (Fin 2) (Fin 2) ℝ).det : ℝ) : ℂ) ^ (k - 2) *
+          petersson k f (h ∣[k] (α i)⁻¹) τ := funext fun τ ↦ by
+      rw [hh']
+      simp only [petersson, Pi.smul_apply, smul_eq_mul]
+      ring
+    rw [hfun']
+    exact hS.const_mul _
   rw [peterssonInner_sum_slash_left_adjugate k s α hα S f h hint, peterssonInner_def,
     TauCeti.MeasureTheory.integral_biUnion_finset₀ s hd hm hfi]
   exact Finset.sum_congr rfl fun i hi ↦ by rw [peterssonInner_def, hadj i hi]
@@ -297,13 +331,16 @@ theorem peterssonInner_sum_slash_right_adjugate_biUnion (k : ℤ) {ι : Type*} (
     (hint : ∀ i ∈ s,
       IntegrableOn (fun τ ↦ petersson k f (h ∣[k] α i) τ) S (volume : Measure ℍ))
     (hd : Set.Pairwise (↑s) (AEDisjoint (volume : Measure ℍ) on fun i ↦ α i • S))
-    (hm : ∀ i ∈ s, NullMeasurableSet (α i • S) (volume : Measure ℍ))
-    (hfi : IntegrableOn (fun τ ↦ petersson k f' h τ) (⋃ i ∈ s, α i • S) (volume : Measure ℍ)) :
+    (hm : ∀ i ∈ s, NullMeasurableSet (α i • S) (volume : Measure ℍ)) :
     peterssonInner k S f (∑ i ∈ s, h ∣[k] α i) =
       peterssonInner k (⋃ i ∈ s, α i • S) f' h := by
-  rw [peterssonInner_sum_slash_right_adjugate k s α hα S f h hint, peterssonInner_def,
-    TauCeti.MeasureTheory.integral_biUnion_finset₀ s hd hm hfi]
-  exact Finset.sum_congr rfl fun i hi ↦ by rw [peterssonInner_def, hadj i hi]
+  have hint' : ∀ i ∈ s,
+      IntegrableOn (fun τ ↦ petersson k (h ∣[k] α i) f τ) S (volume : Measure ℍ) := fun i hi ↦ by
+    have h : IntegrableOn (fun τ ↦ (starRingEnd ℂ) (petersson k f (h ∣[k] α i) τ)) S
+        (volume : Measure ℍ) := (Complex.conjCLE : ℂ →L[ℝ] ℂ).integrable_comp (hint i hi)
+    simpa only [← petersson_symm] using h
+  rw [← peterssonInner_conj_symm k S f, ← peterssonInner_conj_symm k _ f' h,
+    peterssonInner_sum_slash_left_adjugate_biUnion k s α hα S h f f' hadj hint' hd hm]
 
 /-! ### Slashing by an element of `SL(2, ℤ)` -/
 

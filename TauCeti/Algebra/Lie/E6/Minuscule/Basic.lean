@@ -24,9 +24,8 @@ Identifying this presentation with the split semisimple Lie algebra of type `Eâ‚
 interpreting these matrices as a representation of that algebra, remains downstream.
 
 This is the representation-theoretic input for the full-weight type-`Eâ‚†` Chevalley--Demazure
-carrier required by Layer 9 of the ReductiveGroups roadmap. The weights span the full character
-lattice by `TauCeti.DynkinType.span_range_e6MinusculeWeight_eq_top`; constructing the associated
-Kostant carrier and its group scheme remains downstream.
+carrier. The weights span the full character lattice by
+`TauCeti.DynkinType.span_range_e6MinusculeWeight_eq_top`.
 
 ## Main declarations
 

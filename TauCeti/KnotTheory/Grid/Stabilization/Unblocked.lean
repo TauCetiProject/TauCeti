@@ -145,6 +145,22 @@ theorem mem_unblockedRectangles_stabilizeX_insertPoint {x y : GridState n}
       toGridRectangle_bottom, toGridRectangle_top] using hc
   exact Finset.disjoint_left.mp h.2 hcov ((G.mem_XSet _).mpr rfl)
 
+variable {s} in
+/-- Transporting along the insertion of the centre `c = (s.succ, (G.X s).succ)` identifies the
+fully blocked rectangles of `G` with those of the stabilization between states containing `c`. -/
+theorem mem_fullyBlockedRectangles_stabilizeX_insertPoint {x y : GridState n}
+    (r : GridRectangleBetween x y) :
+    r.insertPoint s.succ (G.X s).succ ∈
+        (G.stabilizeX s.castSucc (G.X s).castSucc s).fullyBlockedRectangles
+          (x.insertPoint s.succ (G.X s).succ) (y.insertPoint s.succ (G.X s).succ) ↔
+      r ∈ G.fullyBlockedRectangles x y := by
+  rw [fullyBlockedRectangles_eq_filter, fullyBlockedRectangles_eq_filter, Finset.mem_filter,
+    Finset.mem_filter, G.mem_unblockedRectangles_stabilizeX_insertPoint]
+  refine and_congr_right fun hr => ?_
+  rw [G.OColumns_stabilizeX_insertPoint fun h => Finset.disjoint_left.mp
+    (G.disjoint_XSet_of_mem_unblockedRectangles hr) h ((G.mem_XSet _).mpr rfl),
+    Finset.map_eq_empty]
+
 /-- **The `I` coefficient block of the stabilized complex.** Between grid states containing the
 centre `c = (s.succ, (G.X s).succ)` of the new block, the matrix coefficients of the unblocked
 differential of the stabilization are those of `G`, with the variable of each column renamed to

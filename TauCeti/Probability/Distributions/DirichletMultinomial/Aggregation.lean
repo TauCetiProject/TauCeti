@@ -66,9 +66,6 @@ theorem map_funOnFinite_map_dirichletMultinomialMeasure [Nonempty ι] [Nonempty 
   have hq : Measurable q := (StdSimplex.measurable_extendWeights _).comp (by fun_prop)
   have hkernelq : Measurable (fun x ↦ multinomialMeasure n (q x)) :=
     measurable_multinomialMeasure.comp (measurable_const.prodMk hq)
-  have hpos (j : κ) : 0 < ∑ i with f i = j, a i := by
-    obtain ⟨i, hi⟩ := hf j
-    exact Finset.sum_pos (fun k _ ↦ ha k) ⟨i, by simp [hi]⟩
   have hweights : ∀ᵐ x ∂dirichletMeasure a, ∀ i, ((p x).weights i : ℝ) = x i :=
     ae_extendWeights_dirichletMeasure (StdSimplex.single (Classical.arbitrary ι))
   have hqweights : ∀ᵐ x ∂dirichletMeasure (fun j ↦ ∑ i with f i = j, a i),

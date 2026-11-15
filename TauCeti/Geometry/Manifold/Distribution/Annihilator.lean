@@ -167,9 +167,11 @@ theorem IsContMDiffDistribution.exists_local_annihilator_apply_ne_zero
         congrArg (fun f : (Fin k → 𝕜) →L[𝕜] 𝕜 ↦ f (Pi.single i 1)) hzero
     exact hzeroi
 
+omit [FiniteDimensional 𝕜 E] in
 /-- A `C^n` hyperplane distribution is locally the kernel of a nowhere-zero `C^n` covector
 field. The covector is a section of the usual hom bundle; its regularity and nonvanishing
-are asserted only on the open neighborhood, not outside it. -/
+are asserted only on the open neighborhood, not outside it.
+Finite-dimensionality of `E` follows from the rank condition `k + 1 = finrank 𝕜 E`. -/
 theorem IsContMDiffDistribution.exists_local_annihilator
     (hD : IsContMDiffDistribution I n k D) (hk : k + 1 = finrank 𝕜 E) (x : M) :
     ∃ (U : Set M) (α : Π y : M, TangentSpace I y →L[𝕜] 𝕜),
@@ -177,6 +179,7 @@ theorem IsContMDiffDistribution.exists_local_annihilator
       ContMDiffOn I (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) n
         (fun y ↦ TotalSpace.mk' (E →L[𝕜] 𝕜) y (α y)) U ∧
       ∀ y ∈ U, α y ≠ 0 ∧ LinearMap.ker (α y).toLinearMap = D y := by
+  have : FiniteDimensional 𝕜 E := Module.finite_of_finrank_pos (by omega)
   -- A hyperplane is a proper subspace, so some tangent vector lies outside it.
   obtain ⟨u, -, hu⟩ := IsConcreteLE.exists_of_lt
     (Submodule.lt_top_of_finrank_lt_finrank (s := D x)
@@ -222,6 +225,7 @@ theorem IsContMDiffDistribution.exists_roughForm_apply_ne_zero
   · rw [RoughForm.mem_ker, hαa]
     exact (haD y hy).2 hv
 
+omit [FiniteDimensional ℝ E] in
 /-- **A hyperplane field is locally the kernel of a one-form.** Every point of a `C^n` distribution
 `D` of rank `k` with `k + 1 = dim E` has an open neighbourhood `U` on which `D` is the kernel of a
 one-form `α` of class `C^n` on `U` which vanishes nowhere on `U`. No coorientation is assumed: the
@@ -232,6 +236,7 @@ theorem IsContMDiffDistribution.exists_roughForm_ker_eq
       ContMDiffOn I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ)) n
         (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) U ∧
       ∀ y ∈ U, α y ≠ 0 ∧ α.ker y = D y := by
+  have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (by omega)
   obtain ⟨u, -, hu⟩ := IsConcreteLE.exists_of_lt
     (Submodule.lt_top_of_finrank_lt_finrank (s := D x)
       (by rw [hD.finrank_eq x, finrank_tangentSpace]; omega))

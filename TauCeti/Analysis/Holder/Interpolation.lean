@@ -355,7 +355,6 @@ theorem norm_le_of_hasFDerivWithinAt_of_closedBall_subset {s : Set E} {g : E →
   rw [hgw] at h2
   rw [Real.rpow_add' hε.le (by positivity), Real.rpow_one, div_add' _ _ _ hε.ne', le_div_iff₀ hε]
   rw [Real.rpow_add' hε.le (by positivity), Real.rpow_two, sq] at h2
-  have hre : (H : ℝ) * (ε * ε ^ (α : ℝ)) * ε = H * (ε * ε * ε ^ (α : ℝ)) := by ring
   linarith
 
 /-- **Interpolation of the second derivative on a ball.** If `g` has derivative `g'` within `s`,
@@ -389,7 +388,6 @@ theorem norm_le_of_hasFDerivWithinAt_of_closedBall_two_mul_subset {s : Set E} {g
   have hxx := h1 x (by simp [hε.le])
   rw [Real.rpow_add' hε.le (by positivity), Real.rpow_one] at hD hxw hxx
   rw [div_add' _ _ _ (by positivity), le_div_iff₀ (by positivity)]
-  have hεα : 0 ≤ (H : ℝ) * ε ^ (α : ℝ) := by positivity
   have key : ε * ‖g'' x v‖ ≤ 2 * (M / ε) + 3 * (H * (ε * ε ^ (α : ℝ))) := by linarith
   have key' : ε * (ε * ‖g'' x v‖) ≤ ε * (2 * (M / ε) + 3 * (H * (ε * ε ^ (α : ℝ)))) :=
     mul_le_mul_of_nonneg_left key hε.le
@@ -497,9 +495,9 @@ theorem norm_iteratedFDeriv_succ_le_of_norm_iteratedFDeriv_le {f : E → F} {k :
     ‖iteratedFDeriv ℝ (k + 1) f x‖ ≤ 2 * M₀ / ε + M₂ * ε := by
   have hM₂0 : 0 ≤ M₂ := (norm_nonneg _).trans (hM₂ x)
   have hlip : LipschitzWith M₂.toNNReal (iteratedFDeriv ℝ (k + 1) f) := by
-    refine lipschitzWith_of_nnnorm_fderiv_le
+    refine lipschitzWith_of_nnNorm_fderiv_le
       (hf.differentiable_iteratedFDeriv (by norm_cast; omega)) fun y => ?_
-    rw [← NNReal.coe_le_coe, coe_nnnorm, norm_fderiv_iteratedFDeriv, Real.coe_toNNReal _ hM₂0]
+    rw [← NNReal.coe_le_coe, coe_nnNorm, norm_fderiv_iteratedFDeriv, Real.coe_toNNReal _ hM₂0]
     exact hM₂ y
   have h := (holderWith_one.2 hlip).norm_iteratedFDeriv_succ_le_of_norm_le
     (hf.differentiable_iteratedFDeriv (by norm_cast; omega)) hM₀ hε x

@@ -7,8 +7,8 @@ module
 
 public import Mathlib.RepresentationTheory.Stabilizer
 public import TauCeti.Algebra.Lie.Coadjoint
-public import TauCeti.Algebra.Lie.Heisenberg
-public import TauCeti.GroupTheory.SpecificGroups.Heisenberg
+public import TauCeti.Algebra.Lie.Heisenberg.Basic
+public import TauCeti.GroupTheory.SpecificGroups.Heisenberg.Basic
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.LinearCombination
 
@@ -63,7 +63,7 @@ Kirillov–Kostant–Souriau form `ω_ν([ξ], [η]) = ν ⁅ξ, η⁆` of `Modu
 on the orbit tangent vectors (`Module.Dual.apply_heisenbergZ_mul_kksForm`). So when `r` is a unit
 (over a field, when `r ≠ 0`) the form is `ω = dp ∧ dq / r`.
 
-Finally, the trace pairing `⟨M, A⟩ = tr (M A)` of `TauCeti/Algebra/Lie/Heisenberg.lean`
+Finally, the trace pairing `⟨M, A⟩ = tr (M A)` of `TauCeti/Algebra/Lie/Heisenberg/Basic.lean`
 identifies the dual of the Heisenberg Lie algebra with the strictly lower triangular matrices
 (`TauCeti.heisenbergDualEquiv`); it only sees the strictly lower triangular part of `M`
 (`TauCeti.ker_heisenbergTracePairing`). This pairing is equivariant

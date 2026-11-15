@@ -54,7 +54,7 @@ private noncomputable def residueCocone : Cocone D where
         (AlgEquiv.ofBijective (IsScalarTower.toAlgHom R (R ⧸ I)
           (D.obj j ⧸ I.map (algebraMap R (D.obj j)))) (by
             simpa only [IsScalarTower.coe_toAlgHom'] using hD j)).symm.toAlgHom.comp
-          (Ideal.Quotient.mkₐ R _)
+          (Quotient.mkₐ R _)
       naturality j k f := by
         apply CommAlgCat.hom_ext
         exact algHom_ext_of_surjective_algebraMap_quotient I (D.obj j) (hD j).2
@@ -67,24 +67,24 @@ private noncomputable def colimitToResidue : ↑(colimit D) →ₐ[R] R ⧸ I :=
 /-- Descend the colimit residue map through the extended ideal. -/
 private noncomputable def quotientToResidue :
     (↑(colimit D) ⧸ I.map (algebraMap R ↑(colimit D))) →ₐ[R] R ⧸ I :=
-  Ideal.Quotient.liftₐ _ (colimitToResidue I D hD) (by
+  Quotient.liftₐ _ (colimitToResidue I D hD) (by
     intro a ha
-    apply (Ideal.map_le_iff_le_comap.mpr ?_ : I.map (algebraMap R ↑(colimit D)) ≤
+    apply (map_le_iff_le_comap.mpr ?_ : I.map (algebraMap R ↑(colimit D)) ≤
       RingHom.ker (colimitToResidue I D hD).toRingHom) ha
     intro r hr
-    simpa using (Ideal.Quotient.eq_zero_iff_mem.mpr hr))
+    simpa using (Quotient.eq_zero_iff_mem.mpr hr))
 
 @[simp]
 private theorem quotientToResidue_mk (a : ↑(colimit D)) :
-    quotientToResidue I D hD (Ideal.Quotient.mk _ a) = colimitToResidue I D hD a :=
+    quotientToResidue I D hD (Quotient.mk _ a) = colimitToResidue I D hD a :=
   (rfl)
 
 private theorem quotientToResidue_leftInverse :
     Function.LeftInverse (quotientToResidue I D hD)
       (algebraMap (R ⧸ I) (↑(colimit D) ⧸ I.map (algebraMap R ↑(colimit D)))) := by
   intro r
-  obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective r
-  rw [Ideal.Quotient.algebraMap_quotient_map_quotient, Ideal.Quotient.mk_algebraMap]
+  obtain ⟨r, rfl⟩ := Quotient.mk_surjective r
+  rw [Quotient.algebraMap_quotient_map_quotient, Quotient.mk_algebraMap]
   exact (quotientToResidue I D hD).commutes r
 
 /-- Colimits preserve the property that the canonical residue-algebra map is bijective. -/
@@ -92,20 +92,20 @@ theorem bijective_algebraMap_quotient_colimit : Function.Bijective
     (algebraMap (R ⧸ I) (↑(colimit D) ⧸ I.map (algebraMap R ↑(colimit D)))) := by
   have he : (IsScalarTower.toAlgHom R (R ⧸ I)
       (↑(colimit D) ⧸ I.map (algebraMap R ↑(colimit D)))).comp (colimitToResidue I D hD) =
-      Ideal.Quotient.mkₐ R _ := by
+      Quotient.mkₐ R _ := by
     have he' : CommAlgCat.ofHom ((IsScalarTower.toAlgHom R (R ⧸ I)
         (↑(colimit D) ⧸ I.map (algebraMap R ↑(colimit D)))).comp (colimitToResidue I D hD)) =
-        CommAlgCat.ofHom (Ideal.Quotient.mkₐ R (I.map (algebraMap R ↑(colimit D)))) := by
+        CommAlgCat.ofHom (Quotient.mkₐ R (I.map (algebraMap R ↑(colimit D)))) := by
       apply colimit.hom_ext
       intro j
       apply CommAlgCat.hom_ext
       exact algHom_ext_of_surjective_algebraMap_quotient I (D.obj j) (hD j).2 (by
         intro r hr
-        exact Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_map_of_mem _ hr)) _ _
+        exact Quotient.eq_zero_iff_mem.mpr (mem_map_of_mem _ hr)) _ _
     exact congrArg CommAlgCat.Hom.hom he'
   refine ⟨(quotientToResidue_leftInverse I D hD).injective, ?_⟩
   intro a
-  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective a
+  obtain ⟨a, rfl⟩ := Quotient.mk_surjective a
   exact ⟨colimitToResidue I D hD a, congrArg (fun f ↦ f a) he⟩
 
 /-- The canonical residue-algebra equivalence for a colimit of algebras with residue ring
@@ -128,8 +128,8 @@ theorem quotientColimitEquiv_toAlgHom :
 /-- The colimit residue equivalence is the structure map on representatives. -/
 @[simp]
 theorem quotientColimitEquiv_mk (r : R) :
-    quotientColimitEquiv I D hD (Ideal.Quotient.mk I r) =
-      Ideal.Quotient.mk (I.map (algebraMap R ↑(colimit D))) (algebraMap R ↑(colimit D) r) :=
+    quotientColimitEquiv I D hD (Quotient.mk I r) =
+      Quotient.mk (I.map (algebraMap R ↑(colimit D))) (algebraMap R ↑(colimit D) r) :=
   (rfl)
 
 /-- The inverse colimit residue equivalence agrees with the inverse residue equivalence at
@@ -137,19 +137,19 @@ each stage. -/
 @[simp]
 theorem quotientColimitEquiv_symm_mk_ι (j : J) (b : D.obj j) :
     (quotientColimitEquiv I D hD).symm
-        (Ideal.Quotient.mk _ ((colimit.ι D j).hom b)) =
+        (Quotient.mk _ ((colimit.ι D j).hom b)) =
       (AlgEquiv.ofBijective (IsScalarTower.toAlgHom R (R ⧸ I)
         (D.obj j ⧸ I.map (algebraMap R (D.obj j)))) (by
           simpa only [IsScalarTower.coe_toAlgHom'] using hD j)).symm
-        (Ideal.Quotient.mk _ b) := by
+        (Quotient.mk _ b) := by
   have hleft : Function.LeftInverse (quotientToResidue I D hD)
       (quotientColimitEquiv I D hD) := quotientToResidue_leftInverse I D hD
   have hinv : (quotientColimitEquiv I D hD).symm
-      (Ideal.Quotient.mk _ ((colimit.ι D j).hom b)) =
+      (Quotient.mk _ ((colimit.ι D j).hom b)) =
       colimitToResidue I D hD ((colimit.ι D j).hom b) := by
     simpa only [AlgEquiv.apply_symm_apply, quotientToResidue_mk] using
       (hleft ((quotientColimitEquiv I D hD).symm
-        (Ideal.Quotient.mk _ ((colimit.ι D j).hom b)))).symm
+        (Quotient.mk _ ((colimit.ι D j).hom b)))).symm
   rw [hinv]
   exact congrArg (fun f ↦ f.hom b) (colimit.ι_desc (residueCocone I D hD) j)
 

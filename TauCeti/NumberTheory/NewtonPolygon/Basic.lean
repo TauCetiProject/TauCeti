@@ -297,7 +297,8 @@ theorem newtonPolygon_neg : (-f).newtonPolygon v = f.newtonPolygon v := by
 /-- Multiplying by a scalar translates the Newton polygon by the valuation of the scalar. -/
 theorem newtonPolygon_smul (c : R) :
     (c • f).newtonPolygon v = fun n => v c + f.newtonPolygon v n := by
-  simp only [newtonPolygon_def, coeff_smul, smul_eq_mul, AddValuation.map_mul]
+  simp only [newtonPolygon_def, AddMonoidAlgebra.coeff_smul_apply, smul_eq_mul,
+    AddValuation.map_mul]
   exact lowerConvexEnvelope_const_add _ _
 
 /-- Multiplying by a constant translates the Newton polygon by the valuation of the

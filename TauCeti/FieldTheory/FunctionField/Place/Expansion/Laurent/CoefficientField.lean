@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Expansion.CoefficientField
 public import TauCeti.FieldTheory.FunctionField.Place.Expansion.Laurent.Basic
+import TauCeti.RingTheory.PowerSeries.Trunc
 
 /-!
 # Laurent expansions over the residue field, and residues at places with separable residue field
@@ -256,6 +257,14 @@ theorem mem_filtration_iff_le_order_powerSeriesExpansionResidueField (n : ℕ) (
   rw [powerSeriesExpansionResidueField_apply,
     ← mem_filtration_iff_le_order_completionIntegersEquivPowerSeriesResidueField,
     completionIntegersEmbedding_apply, completionEmbedding_mem_filtration_iff]
+
+/-- A function regular at `P` vanishes to order at least `n` exactly when its power-series
+expansion has vanishing `n`-truncation. -/
+theorem trunc_powerSeriesExpansionResidueField_eq_zero_iff (n : ℕ) (x : P.integers) :
+    PowerSeries.trunc n (P.powerSeriesExpansionResidueField ht x) = 0 ↔
+      (x : F) ∈ P.filtration n := by
+  rw [PowerSeries.trunc_eq_zero_iff_le_order,
+    mem_filtration_iff_le_order_powerSeriesExpansionResidueField]
 
 /-- The chosen uniformizer expands as the power-series variable. -/
 @[simp]

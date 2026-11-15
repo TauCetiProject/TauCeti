@@ -54,13 +54,13 @@ universe u v
 variable {k H : Type u} {K : Type v} [Field k] [CommRing H] [_root_.HopfAlgebra k H]
   [Algebra.FiniteType k H] [CommRing K] [Algebra k K]
 
-/-- **A unipotent point in characteristic `p` has `p`-power order.** Over a commutative value
-ring of characteristic `p`, some power `p ^ n` kills a unipotent point of an affine group of finite
-type. -/
-theorem exists_pow_char_pow_eq_one (p : ℕ) [Fact p.Prime] [CharP K p]
+/-- **A unipotent point in characteristic `p` is killed by a power of `p`.** Over a commutative
+value ring of characteristic `p`, some power `p ^ n` kills a unipotent point of an affine group of
+finite type. For `p > 0` this says the point has `p`-power order; for `p = 0` the conclusion is the
+tautology `g ^ 0 = 1`, and no order statement follows. -/
+theorem exists_pow_char_pow_eq_one (p : ℕ) [CharP K p]
     {g : WithConv (H →ₐ[k] K)} (hg : IsUnipotentPoint g) :
     ∃ n : ℕ, g ^ p ^ n = 1 := by
-  have hprime : p.Prime := Fact.out
   obtain ⟨M, d, b, hb⟩ := Comodule.exists_isClosedImmersion_coordinateGroupSchemeHom (k := k)
     (H := H)
   let _ : AddCommGroup M := Module.addCommMonoidToAddCommGroup k
@@ -69,19 +69,18 @@ theorem exists_pow_char_pow_eq_one (p : ℕ) [Fact p.Prime] [CharP K p]
     (Comodule.isFaithful_iff_isClosedImmersion_coordinateGroupSchemeHom b).mpr hb
   obtain ⟨n, hn⟩ := (isUnipotentPoint_iff_forall_isNilpotent_endOfPoint_sub_one g).mp hg
     (FGComoduleCat.of (R := k) (C := H) M)
-  refine ⟨n, Comodule.pointsAction_injective_of_isFaithful hfaithful ?_⟩
-  apply LinearEquiv.toLinearMap_injective
-  rw [map_pow, map_one, ← LinearEquiv.automorphismGroup.toLinearMapMonoidHom_apply, map_pow,
-    LinearEquiv.automorphismGroup.toLinearMapMonoidHom_apply, Comodule.pointsAction_toLinearMap]
-  -- Write the action as `1 + N` with `N` nilpotent and expand by the Frobenius binomial formula.
+  -- Write the action as `1 + N` with `N` nilpotent; as `p = 0` in the endomorphisms, a power of
+  -- `p` kills it.
   set N := Comodule.endOfPoint M g.ofConv - 1
-  obtain ⟨r, hr⟩ := (Commute.one_left N).exists_add_pow_prime_pow_eq hprime n
   have hp : (p : Module.End K (K ⊗[k] M)) = 0 := by
     rw [← map_natCast (algebraMap K (Module.End K (K ⊗[k] M))), CharP.cast_eq_zero, map_zero]
-  have hN : N ^ p ^ n = 0 :=
-    pow_eq_zero_of_le (Nat.lt_pow_self hprime.one_lt).le hn
-  rw [show Comodule.endOfPoint M g.ofConv = 1 + N from
-    (add_sub_cancel (1 : Module.End K (K ⊗[k] M)) _).symm, hr, hp, hN]
+  obtain ⟨n', hn'⟩ := exists_one_add_pow_eq_one_of_natCast_eq_zero hp ⟨n, hn⟩
+  refine ⟨n', Comodule.pointsAction_injective_of_isFaithful hfaithful ?_⟩
+  apply LinearEquiv.toLinearMap_injective
+  rw [map_pow, map_one, ← LinearEquiv.automorphismGroup.toLinearMapMonoidHom_apply, map_pow,
+    LinearEquiv.automorphismGroup.toLinearMapMonoidHom_apply, Comodule.pointsAction_toLinearMap,
+    show Comodule.endOfPoint M g.ofConv = 1 + N from
+      (add_sub_cancel (1 : Module.End K (K ⊗[k] M)) _).symm, hn']
   simp [Module.End.one_eq_id]
 
 end TauCeti.HopfAlgebra.IsUnipotentPoint

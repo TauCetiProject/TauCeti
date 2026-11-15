@@ -52,7 +52,9 @@ Suppose that the discs `‖w - c i‖ < ‖a i‖ / 2` are pairwise disjoint and
   data to be pairwise disjoint and to lie in the disc `‖w‖ ≤ 2 exp (2π)`.
 
 The pair-of-pants datum itself is the case of the inputs `0` and `1` with scales `1` and `-1`
-(`TauCeti.Floer.puncturedSpherePerturbation_eq_pairOfPantsPerturbation`).
+(`TauCeti.Floer.puncturedSpherePerturbation_eq_pairOfPantsPerturbation`), and with one input
+switched off it is the case of the single input end of the other input
+(`TauCeti.Floer.pairOfPantsPerturbation_update_zero_eq_puncturedSpherePerturbation`).
 
 ## References
 
@@ -112,6 +114,40 @@ theorem inputEndPerturbation_eq_zero_of_le_norm_sub {w : ℂ}
       ContinuousLinearMap.zero_comp]
     rw [norm_div, le_div_iff₀ (norm_pos_iff.2 ha)]
     linarith
+
+/-- At its center `c`, where the end coordinate takes the junk longitudinal value `0` (from
+`Complex.log 0 = 0`), the input end datum is `0`. -/
+@[simp]
+theorem inputEndPerturbation_self (c a : ℂ) (H : ℝ → M → ℝ) (x : M) :
+    inputEndPerturbation c a H c x = 0 := by
+  have h : (zero.endCoord 0).re = 0 := by simpa using re_endCoord_endCenter zero
+  ext v
+  simp [inputEndPerturbation_apply, positivePlanePerturbation_def, h,
+    smoothTransition.zero_of_nonpos]
+
+/-- The input end datum of the zero Hamiltonian vanishes. -/
+@[simp]
+theorem inputEndPerturbation_zero (c a : ℂ) (w : ℂ) (x : M) :
+    inputEndPerturbation c a (0 : ℝ → M → ℝ) w x = 0 := by
+  ext v
+  simp [inputEndPerturbation_apply, positivePlanePerturbation_def]
+
+/-- **Pushing an input end forward along an affine map.** The pushforward
+`v ↦ K((w - c₀) / f)(v / f)` of the datum of the input end with center `c` and scale `a` along
+`w ↦ c₀ + f w` is the datum of the input end with center `c₀ + f c` and scale `f a`. -/
+theorem inputEndPerturbation_sub_div_comp (c₀ f c a : ℂ) (H : ℝ → M → ℝ) (w : ℂ) (x : M) :
+    (inputEndPerturbation c a H ((w - c₀) / f) x).comp (ContinuousLinearMap.mul ℝ ℂ f⁻¹) =
+      inputEndPerturbation (c₀ + f * c) (f * a) H w x := by
+  ext v
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp [inputEndPerturbation_apply]
+  rcases eq_or_ne a 0 with rfl | ha
+  · simp [inputEndPerturbation_apply]
+  have hw : ((w - c₀) / f - c) / a = (w - (c₀ + f * c)) / (f * a) := by
+    field_simp
+    ring
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.mul_apply',
+    inputEndPerturbation_apply, hw, mul_inv, mul_assoc, mul_left_comm a⁻¹]
 
 /-- **The input end datum on its end.** The pullback of the datum along its end lift
 `z ↦ c + a φ₀(z)` is the continuation datum `β(s - 1) H(t) dt`. -/
@@ -173,6 +209,18 @@ theorem puncturedSpherePerturbation_eq_pairOfPantsPerturbation (H : Puncture →
     Puncture.sum_univ]
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
   rw [h₀, h₁, negativePlanePerturbation_def, endSign_inf, neg_one_mul]
+
+/-- **A pair of pants with one input switched off has one input end.** With the Hamiltonian of the
+input `q` set to zero, the pair-of-pants datum is the datum of the single input end of the other
+input `r`, with center `c_r` and scale `2 b_r`, and of the output Hamiltonian. -/
+theorem pairOfPantsPerturbation_update_zero_eq_puncturedSpherePerturbation {q r : Puncture}
+    (hq : q ≠ inf) (hrq : r ≠ q) (hr : r ≠ inf) (H : Puncture → ℝ → M → ℝ) :
+    pairOfPantsPerturbation (update H q 0) =
+      puncturedSpherePerturbation ![r.endCenter] ![2 * r.endScale] ![H r] (H inf) := by
+  funext w x
+  rw [← puncturedSpherePerturbation_eq_pairOfPantsPerturbation, puncturedSpherePerturbation_def,
+    puncturedSpherePerturbation_def, Fin.sum_univ_two, Fin.sum_univ_one]
+  cases q <;> cases r <;> simp_all
 
 /-- **Off the input ends the datum is the output datum.** At a point outside the supports
 `‖w - c i‖ < ‖a i‖ exp (-2π) / 2` of all the input end data, the datum is the negative plane

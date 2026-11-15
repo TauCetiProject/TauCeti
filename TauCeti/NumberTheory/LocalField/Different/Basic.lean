@@ -130,8 +130,7 @@ attribute [local instance] Ideal.Quotient.field in
 theorem ramificationIndex_le_differentExponent_iff :
     ramificationIndex K L ≤ differentExponent K L ↔ IsWildlyRamified K L := by
   rw [isWildlyRamified_iff, ramificationIndex_eq_ramificationIdx, differentExponent_def,
-    ramificationIdx_le_multiplicity_differentIdeal_iff 𝒪[K]
-      (IsDiscreteValuationRing.not_a_field 𝒪[K])]
+    ramificationIdx_le_multiplicity_differentIdeal_iff 𝒪[K] (p := 𝓂[K]) 𝓂[L]]
   -- `𝓀[K]` is by definition the quotient `𝒪[K] ⧸ 𝓂[K]` of the Dedekind-domain statement, so that
   -- quotient is finite and has the characteristic of `𝓀[K]`. Finite residue fields are perfect,
   -- so the residue extension is separable.
@@ -147,8 +146,7 @@ tamely ramified. -/
 theorem differentExponent_eq_ramificationIndex_sub_one_iff :
     differentExponent K L = ramificationIndex K L - 1 ↔ IsTamelyRamified K L := by
   rw [isTamelyRamified_iff, ramificationIndex_eq_ramificationIdx, differentExponent_def,
-    multiplicity_differentIdeal_eq_ramificationIdx_sub_one_iff 𝒪[K]
-      (IsDiscreteValuationRing.not_a_field 𝒪[K])]
+    multiplicity_differentIdeal_eq_ramificationIdx_sub_one_iff 𝒪[K] (p := 𝓂[K]) 𝓂[L]]
   -- As in the wild case, the finite residue extension is separable.
   have : Finite (𝒪[K] ⧸ 𝓂[K]) := inferInstanceAs (Finite 𝓀[K])
   have : Algebra.IsSeparable (𝒪[K] ⧸ 𝓂[K]) (𝒪[L] ⧸ 𝓂[L]) := inferInstance

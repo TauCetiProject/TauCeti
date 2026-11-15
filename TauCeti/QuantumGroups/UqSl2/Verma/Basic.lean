@@ -193,23 +193,16 @@ theorem vec_mem_weightSpace (j : ℕ) :
 theorem e_smul_vec_succ (j : ℕ) :
     e q • vec q μ (j + 1) =
       (quantumInteger q (j + 1) * (q⁻¹ ^ j * μ - q ^ j * μ⁻¹) / (q - q⁻¹)) • vec q μ j := by
-  rcases eq_or_ne (q - q⁻¹) 0 with hq | hq
-  · -- At `q = ±1` the generators `E` and `F` commute, and both sides vanish.
-    have hc : Commute (e q) (f q) := by
-      have h := e_mul_f_sub_f_mul_e (q := q)
-      rwa [hq, inv_zero, zero_smul, sub_eq_zero] at h
-    rw [vec_eq_f_pow_smul, ← mul_smul, (hc.pow_right _).eq, mul_smul, e_smul_vec_zero, smul_zero,
-      hq, div_zero, zero_smul]
-  · have hX : (q⁻¹ ^ j • k q - q ^ j • kInv q) • vec q μ 0 =
-        (q⁻¹ ^ j * μ - q ^ j * μ⁻¹) • vec q μ 0 := by
-      rw [sub_smul, smul_assoc, smul_assoc, k_smul_vec_zero, kInv_smul_vec_zero, smul_smul,
-        smul_smul, sub_smul]
-    rw [vec_eq_f_pow_smul, ← mul_smul, e_mul_f_pow hq, add_smul, mul_smul, e_smul_vec_zero,
-      smul_zero, zero_add, Nat.add_sub_cancel, smul_assoc, mul_smul (f q ^ j), hX,
-      smul_comm (f q ^ j), ← vec_eq_f_pow_smul, smul_smul]
-    congr 1
-    push_cast
-    ring
+  have hX : (q⁻¹ ^ j • k q - q ^ j • kInv q) • vec q μ 0 =
+      (q⁻¹ ^ j * μ - q ^ j * μ⁻¹) • vec q μ 0 := by
+    rw [sub_smul, smul_assoc, smul_assoc, k_smul_vec_zero, kInv_smul_vec_zero, smul_smul,
+      smul_smul, sub_smul]
+  rw [vec_eq_f_pow_smul, ← mul_smul, e_mul_f_pow, add_smul, mul_smul, e_smul_vec_zero,
+    smul_zero, zero_add, Nat.add_sub_cancel, smul_assoc, mul_smul (f q ^ j), hX,
+    smul_comm (f q ^ j), ← vec_eq_f_pow_smul, smul_smul]
+  congr 1
+  push_cast
+  ring
 
 /-! ### Spanning -/
 

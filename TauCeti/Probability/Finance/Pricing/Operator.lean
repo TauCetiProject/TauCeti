@@ -77,8 +77,13 @@ variable {α : ℝ≥0} {t₀ t₁ : ℝ} {ht : t₀ < t₁}
 -- These shortcuts keep instance search shallow for the nested coefficient spaces.
 private local instance : NormedAddCommGroup (ℝ →L[ℝ] ℝ) := inferInstance
 private local instance : NormedSpace ℝ (ℝ →L[ℝ] ℝ) := inferInstance
-private local instance : NormedAddCommGroup (ℝ →L[ℝ] ℝ →L[ℝ] ℝ) := inferInstance
-private local instance : NormedSpace ℝ (ℝ →L[ℝ] ℝ →L[ℝ] ℝ) := inferInstance
+/-- A local shortcut for the norm on Hessians on the line. Without it, instance search for the
+operator norm on `(ℝ →L[ℝ] ℝ →L[ℝ] ℝ) →L[ℝ] ℝ`, the coefficient space of the second-order term,
+fails, for the reason explained in `TauCeti.Analysis.PDE.Parabolic.Holder.Operator`. It is not
+private, so that public statements may mention that coefficient space. -/
+local instance : NormedAddCommGroup (ℝ →L[ℝ] ℝ →L[ℝ] ℝ) := inferInstance
+/-- A local shortcut for scalar operations on Hessians on the line, needed for the same reason. -/
+local instance : NormedSpace ℝ (ℝ →L[ℝ] ℝ →L[ℝ] ℝ) := inferInstance
 private local instance : NormedAddCommGroup ((ℝ →L[ℝ] ℝ) →L[ℝ] ℝ) := inferInstance
 private local instance : NormedSpace ℝ ((ℝ →L[ℝ] ℝ) →L[ℝ] ℝ) := inferInstance
 private local instance : NormedAddCommGroup ((ℝ →L[ℝ] ℝ →L[ℝ] ℝ) →L[ℝ] ℝ) := inferInstance
@@ -127,6 +132,15 @@ def weightedLogSpotPricingOperatorL :
   backwardParabolicOperatorL (F := ℝ) hα
     ((lsmul ℝ ℝ).compHolder₂ a (HolderSpace.const ((apply ℝ ℝ 1).comp (apply ℝ _ 1))))
     (weightedLogSpotFirstOrderCoeff hα a r) (weightedLogSpotZerothOrderCoeff hα r)
+
+/-- The weighted operator is the backward operator with the second-order coefficient `a`
+and the weighted first- and zeroth-order coefficients. -/
+theorem weightedLogSpotPricingOperatorL_def :
+    weightedLogSpotPricingOperatorL (ht := ht) hα a r =
+      backwardParabolicOperatorL (F := ℝ) hα
+        ((lsmul ℝ ℝ).compHolder₂ a (HolderSpace.const ((apply ℝ ℝ 1).comp (apply ℝ _ 1))))
+        (weightedLogSpotFirstOrderCoeff hα a r) (weightedLogSpotZerothOrderCoeff hα r) :=
+  (rfl)
 
 /-- Evaluation of the bounded operator in terms of its derivative fields. -/
 @[simp]
@@ -182,7 +196,6 @@ theorem weightedLogSpotPricingOperatorL_eq_spot
     (v : ParabolicC2HolderSpace α ℝ ℝ ht) {C : ℝ → ℝ → ℝ}
     (hC : ∀ y (s : Icc t₀ t₁), C (exp y) s = (1 + exp y) * v (slabMk y s))
     (x : ℝ) (t : Icc t₀ t₁) (σ : ℝ) (ha : a (slabMk x t) = σ ^ 2 / 2)
-    (hCs : ∀ᶠ s in 𝓝 (exp x), DifferentiableAt ℝ (fun s ↦ C s t) s)
     (hCss : DifferentiableAt ℝ (deriv fun s ↦ C s t) (exp x))
     (hCt : DifferentiableAt ℝ (C (exp x)) t) :
     weightedLogSpotPricingOperatorL hα a r v (slabMk x t) =
@@ -207,7 +220,7 @@ theorem weightedLogSpotPricingOperatorL_eq_spot
       (iteratedFDeriv_apply_eq_iteratedDeriv_mul_prod (𝕜 := ℝ) (n := 2)
         (f := fun y ↦ C (exp y) t) (x := x) (m := fun _ ↦ 1))
   rw [hs, htime, ha, hsecond, fderiv_apply_one_eq_deriv, ← hC x t] at hw
-  have hpde := pde_comp_exp σ (r (slabMk x t)) hCs hCss
+  have hpde := pde_comp_exp σ (r (slabMk x t)) hCss
   apply (eq_div_iff (by positivity : 1 + exp x ≠ 0)).2
   linear_combination hw + hpde
 
@@ -304,7 +317,7 @@ theorem le_exp_mul_mul_add_mul_of_le_weightedLogSpotPricingOperatorL (ha : ∀ p
     (fun τ _ y ↦ (u.contDiff_spatialSlice _).contDiffAt)
     (fun τ _ y ↦ contDiffAt_const)
     (fun τ h y ↦ (u.hasDerivAt_timeSlice_const_sub y h).differentiableAt)
-    (fun τ _ y ↦ (hbar τ).differentiableAt)
+    (fun τ _ _ ↦ (hbar τ).differentiableAt)
     -- The reversed operator of `u` is `-P u ≤ K`, which the barrier's operator dominates.
     (fun τ h y ↦ by
       rw [reverse_operator_eq hα u h y, (hbar τ).deriv]

@@ -149,7 +149,7 @@ theorem integral_sq_le_mul_sq_integral_norm_fderiv (hE : finrank ℝ E = 2) {f :
   have hl : ∫⁻ x, ‖f x‖ₑ ^ (2 : ℝ) ∂μ = ENNReal.ofReal (∫ x, f x ^ 2 ∂μ) := by
     rw [ofReal_integral_eq_lintegral_ofReal hint (Eventually.of_forall fun x ↦ sq_nonneg _)]
     refine lintegral_congr fun x ↦ ?_
-    rw [Real.enorm_eq_ofReal_abs, ENNReal.ofReal_rpow_of_nonneg (abs_nonneg _) (by norm_num),
+    rw [Real.eNorm_eq_ofReal_abs, ENNReal.ofReal_rpow_of_nonneg (abs_nonneg _) (by norm_num),
       Real.rpow_two, sq_abs]
   have hr : ∫⁻ x, ‖fderiv ℝ f x‖ₑ ∂μ = ENNReal.ofReal (∫ x, ‖fderiv ℝ f x‖ ∂μ) := by
     rw [ofReal_integral_eq_lintegral_ofReal hintd (Eventually.of_forall fun x ↦ norm_nonneg _)]
@@ -196,8 +196,6 @@ private theorem integral_modularRoot_pow_three_sq_le (hE : finrank ℝ E = 2) {w
     (hrc.abs.memLp_of_hasCompactSupport (μ := μ) habs)
     (hdc.norm.memLp_of_hasCompactSupport hds.norm)
   simp only [sq_abs] at hCS
-  have hI0 : 0 ≤ ∫ x, ‖fderiv ℝ (fun x ↦ modularRoot (w x) ^ 3) x‖ ∂μ :=
-    integral_nonneg fun x ↦ norm_nonneg _
   calc ∫ x, (modularRoot (w x) ^ 3) ^ 2 ∂μ
       ≤ G * (∫ x, ‖fderiv ℝ (fun x ↦ modularRoot (w x) ^ 3) x‖ ∂μ) ^ 2 :=
         integral_sq_le_mul_sq_integral_norm_fderiv μ hE hf3 hf3s
@@ -279,8 +277,6 @@ private theorem le_two_mul_add_sq_mul_of_le_mul_add {W k Q Z S : ℝ} (hk : 0 �
       _ = k ^ 2 * Z ^ 2 := by ring
       _ ≤ k ^ 2 * (S * W) := by gcongr
   have h2 : W * W ≤ W * (2 * k * Q + k ^ 2 * S) := by
-    have e : W * (2 * k * Q + k ^ 2 * S) - W * W =
-        k ^ 2 * (S * W) - (W - k * Q) ^ 2 + (k * Q) ^ 2 := by ring
     linarith [sq_nonneg (k * Q)]
   exact le_of_mul_le_mul_left h2 (hkQ.trans_lt h)
 
@@ -379,28 +375,13 @@ theorem W1p.exists_norm_value_sq_le_of_finrank_eq_two (hE : finrank ℝ E = 2) :
     exact isClosed_le (hval.norm.pow 2) (by fun_prop)
   · intro φ
     set U := W1p.ofTestFunctionₗ μ ⊤ 2 φ
-    have hv : (W1p.value U : E → ℝ) =ᵐ[μ] φ := by
-      simpa only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ] using
-        W1p.value_ofTestFunctionₗ_ae (mu := μ) (Omega := ⊤) (p := 2) φ
-    have hg : (W1p.gradient U : E → E) =ᵐ[μ] _root_.gradient (φ : E → ℝ) := by
-      rw [show W1p.gradient U = gradientTestFunctionLp 2 φ from W1p.gradient_ofTestFunctionₗ φ]
-      have := gradientTestFunctionLp_apply_ae (mu := μ) (Omega := ⊤) 2 φ
-      simp only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ] at this
-      exact this
-    have hvalue : ‖W1p.value U‖ ^ 2 = ∫ x, (φ x) ^ 2 ∂μ := by
-      rw [← W1p.integral_value_sq_eq_norm_value_sq]
-      simp only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ]
-      exact integral_congr_ae (hv.mono fun x hx ↦ by simp only [hx])
+    have hv : (W1p.value U : E → ℝ) =ᵐ[μ] φ := W1p.value_ofTestFunctionₗ_top_ae φ
     have hgrad : ‖W1p.gradient U‖ = √(∫ x, ‖fderiv ℝ φ x‖ ^ 2 ∂μ) := by
-      rw [← Real.sqrt_sq (norm_nonneg (W1p.gradient U)),
-        ← W1p.integral_norm_gradient_sq_eq_norm_gradient_sq]
-      simp only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ]
-      congr 1
-      exact integral_congr_ae (hg.mono fun x hx ↦ by simp only [hx, norm_gradient_eq_norm_fderiv])
+      rw [← W1p.norm_gradient_ofTestFunctionₗ_top_sq, Real.sqrt_sq (norm_nonneg _)]
     have hmod : ∫ x in sᶜ, (√(1 + W1p.value U x ^ 2) - 1) ∂μ =
         ∫ x in sᶜ, (√(1 + φ x ^ 2) - 1) ∂μ :=
       integral_congr_ae (ae_restrict_of_ae (hv.mono fun x hx ↦ by simp only [hx]))
-    rw [hvalue, hgrad, hmod]
+    rw [W1p.norm_value_ofTestFunctionₗ_top_sq, hgrad, hmod]
     exact h φ (φ.contDiff.of_le (by exact_mod_cast le_top)) φ.hasCompactSupport s hs hμs
 
 end Sobolev

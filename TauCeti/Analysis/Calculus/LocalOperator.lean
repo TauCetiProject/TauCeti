@@ -196,7 +196,7 @@ theorem exists_norm_apply_le_of_tsupport_subset [CompleteSpace F]
         (∀ i ≤ r, ∀ z, ‖iteratedFDeriv ℝ i φ z‖ ≤ M) → ∀ y ∈ U, ‖P φ y‖ ≤ C * M := by
   obtain ⟨ρ₀, hρ₀, hρ₀U⟩ := Metric.isOpen_iff.mp hU x₀ hx₀
   by_contra! H
-  choose! ψ ρ' hρ'0 hρ'le hψs hψb y hy hyU hyP using fun ρ (hρ : 0 < ρ) (hρρ₀ : ρ ≤ ρ₀) ↦
+  choose! ψ ρ' hρ'0 hρ'le hψs hψb y hy _ hyP using fun ρ (hρ : 0 < ρ) (hρρ₀ : ρ ≤ ρ₀) ↦
     exists_tsupport_subset_annulus P hloc hρ (H ρ hρ ((ball_subset_ball hρρ₀).trans hρ₀U))
   -- The radii `s k ≤ ρ₀ / 2ᵏ` of nested annuli, with a counterexample `ψ (s k) k` in the `k`-th.
   let s : ℕ → ℝ := fun k ↦ Nat.rec ρ₀ (fun k ρ ↦ ρ' ρ k) k

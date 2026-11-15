@@ -115,7 +115,7 @@ theorem contDiff_of_homogeneous [FiniteDimensional ℝ E] {k : ℕ}
     intro x
     by_cases hx : x = 0
     · subst x
-      obtain ⟨C, hC, hbound⟩ := exists_norm_le_mul_rpow_of_homogeneous hf.continuousOn hhom
+      obtain ⟨C, _, hbound⟩ := exists_norm_le_mul_rpow_of_homogeneous hf.continuousOn hhom
       have hn : ContinuousAt (fun x : E ↦ ‖x‖ ^ p) 0 :=
         continuousAt_id.norm.rpow_const (Or.inr hp.le)
       rw [ContinuousAt, h0]

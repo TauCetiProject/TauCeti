@@ -301,7 +301,6 @@ theorem isVertexStrong_iff_exists_paths [Finite V] :
     · exact ⟨Fin.elim0, fun i ↦ i.elim0, fun i ↦ i.elim0, fun i ↦ i.elim0⟩
     -- Delete the arrows from `s` to `t`, find `m` paths, and add the arrow `e`.
     set F : Set (Σ x y, Q x y) := {a | a.1 = s ∧ a.2.1 = t}
-    have hadj : IsEmpty (WithoutHom F s t) := ⟨fun e' ↦ e'.2 ⟨rfl, rfl⟩⟩
     obtain ⟨P, hP, hdisj⟩ := (forall_reachableAvoiding_iff_exists_paths m).1
       fun X hs ht hX ↦ h.reachableAvoiding_withoutHom hst hs ht hX
     obtain ⟨R, hinj, hR, hdisjR, -⟩ :=

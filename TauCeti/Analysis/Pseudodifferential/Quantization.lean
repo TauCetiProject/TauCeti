@@ -15,6 +15,7 @@ import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
 import TauCeti.Analysis.Distribution.TemperateGrowth
+import TauCeti.Analysis.Fourier.FourierCharDeriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 
 /-!
@@ -442,15 +443,6 @@ private lemma norm_integrandFDeriv_le {x : E} {C C' : ℝ}
 omit [MeasurableSpace E] [BorelSpace E] in
 private lemma continuous_integrandFDeriv (ha : ContDiff ℝ 1 a) (f : 𝓢(E, V)) (x : E) :
     Continuous (integrandFDeriv a f x) := by
-  have hD : Continuous fun ζ : E ↦ fderiv ℝ (fun y ↦ a (y, (2 * π) • ζ)) x :=
-    (ContDiff.fderiv (f := fun (ζ : E) (y : E) ↦ a (y, (2 * π) • ζ))
-      (ha.comp (contDiff_snd.prodMk (contDiff_fst.const_smul _))) contDiff_const
-      (n := 0) (by simp)).continuous
-  have he : Continuous fun ζ : E ↦ (𝐞 ⟪ζ, x⟫ : ℂ) :=
-    continuous_subtype_val.comp
-      (Real.continuous_fourierChar.comp (continuous_id.inner continuous_const))
-  have ha' : Continuous fun ζ : E ↦ a (x, (2 * π) • ζ) :=
-    ha.continuous.comp (continuous_const.prodMk (continuous_const_smul _))
   refine continuous_clm_apply.2 fun h ↦ ?_
   simp only [integrandFDeriv_apply, Circle.smul_def]
   fun_prop
@@ -539,15 +531,6 @@ section Weight
 variable {a : E × E → V →L[ℂ] W} {x : E} {C C' m m' : ℝ}
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The line derivative in the direction `v` of the phase `ζ ↦ 𝐞 ⟪ζ, x⟫` is
-`2πi ⟪v, x⟫ 𝐞 ⟪ζ, x⟫`. This is Mathlib's derivative of `ζ ↦ 𝐞 (-L x ζ)` with `L = -innerSL ℝ`. -/
-private lemma hasLineDerivAt_fourierChar_inner (x v ζ : E) :
-    HasLineDerivAt ℝ (fun ζ ↦ (𝐞 ⟪ζ, x⟫ : ℂ)) ((2 * π * Complex.I * ⟪v, x⟫) * 𝐞 ⟪ζ, x⟫) ζ v := by
-  convert (hasFDerivAt_fourierChar_neg_bilinear_right (-innerSL ℝ) x ζ).hasLineDerivAt v
-    using 1 <;> simp [innerSL_apply_apply ℝ, real_inner_comm x]
-  ring
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- The line derivative in the direction `v` of the frequency-side integrand
 `ζ ↦ a(x, 2πζ) (f ζ)`. -/
 private lemma hasLineDerivAt_apply (ha : ContDiff ℝ 1 fun ξ ↦ a (x, ξ)) (f : 𝓢(E, V)) (v ζ : E) :
@@ -594,7 +577,7 @@ private lemma integral_by_parts_quantizeSchwartzValue (ha : ContDiff ℝ 1 fun �
     (((hint₁.smul (2 * π)).add hint₂).congr (ae_of_all _ fun ζ ↦ by
       simp [Circle.smul_def, smul_add, smul_comm (2 * π)]))
     (hint.congr (ae_of_all _ fun ζ ↦ by simp [Circle.smul_def]))
-    (fun ζ _ ↦ hasLineDerivAt_fourierChar_inner x v ζ)
+    (fun ζ _ ↦ Real.hasLineDerivAt_fourierChar_inner x v ζ)
     (fun ζ _ ↦ hasLineDerivAt_apply ha (𝓕 u) v ζ)
   have h₁ : ∫ ζ, ContinuousLinearMap.lsmul ℝ ℂ (𝐞 ⟪ζ, x⟫ : ℂ)
       ((2 * π) • a' (x, (2 * π) • ζ) (𝓕 u ζ) + a (x, (2 * π) • ζ) (∂_{v} (𝓕 u) ζ)) =
@@ -917,6 +900,16 @@ theorem quantizeSchwartzValue_sum_right {ι : Type*} (a : Symbol n V W m) (s : F
     rw [Finset.sum_insert hi, Finset.sum_insert hi, quantizeSchwartzValue_add_right
       (a.continuous_coefficient_slice x).aestronglyMeasurable hC, ih]
 
+/-- The quantization is additive in the symbol, also for symbols of different orders. -/
+theorem quantizeSchwartzValue_coefficient_add {m' : ℝ} (b : Symbol n V W m) (c : Symbol n V W m')
+    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
+    quantizeSchwartzValue (b.coefficient + c.coefficient) u x =
+      quantizeSchwartzValue b.coefficient u x + quantizeSchwartzValue c.coefficient u x := by
+  obtain ⟨C, -, hC⟩ := b.exists_bound_coefficient_slice x
+  obtain ⟨C', -, hC'⟩ := c.exists_bound_coefficient_slice x
+  exact quantizeSchwartzValue_add_left (b.continuous_coefficient_slice x).aestronglyMeasurable hC
+    (c.continuous_coefficient_slice x).aestronglyMeasurable hC' u
+
 /-- The quantization is additive over finite sums of symbols. -/
 theorem quantizeSchwartzValue_sum_left {ι : Type*} (s : Finset ι) (a : ι → Symbol n V W m)
     (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
@@ -926,11 +919,8 @@ theorem quantizeSchwartzValue_sum_left {ι : Type*} (s : Finset ι) (a : ι → 
   induction s using Finset.induction_on with
   | empty => simp
   | insert i s hi ih =>
-    obtain ⟨C, -, hC⟩ := (a i).exists_bound_coefficient_slice x
-    obtain ⟨C', -, hC'⟩ := (∑ i ∈ s, a i).exists_bound_coefficient_slice x
     rw [Finset.sum_insert hi, Finset.sum_insert hi, coefficient_add,
-      quantizeSchwartzValue_add_left ((a i).continuous_coefficient_slice x).aestronglyMeasurable
-        hC ((∑ i ∈ s, a i).continuous_coefficient_slice x).aestronglyMeasurable hC', ih]
+      quantizeSchwartzValue_coefficient_add, ih]
 
 /-- **Multiplication by a coordinate of the displacement.** Multiplying the input by
 `(x - y)_j` and evaluating the quantization at `x` replaces the symbol by `i ∂_{ξ_j} a`. -/

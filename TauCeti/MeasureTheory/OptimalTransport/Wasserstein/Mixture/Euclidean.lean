@@ -53,8 +53,7 @@ theorem wassersteinEDist_two_smul_add_smul_sq_lt {μ ν₀ ν₁ : Measure E} [I
     (h₁ : wassersteinEDist 2 μ ν₁ ≠ ∞) (hne : ν₀ ≠ ν₁) :
     wassersteinEDist 2 μ (a • ν₀ + b • ν₁) ^ 2
       < a * wassersteinEDist 2 μ ν₀ ^ 2 + b * wassersteinEDist 2 μ ν₁ ^ 2 := by
-  have hle := wassersteinEDist_smul_add_smul_rpow_le measurable_edist two_ne_zero
-    ENNReal.ofNat_ne_top hab μ ν₀ ν₁
+  have hle := wassersteinEDist_smul_add_smul_rpow_le (p := 2) measurable_edist hab μ ν₀ ν₁
   have hlt := wassersteinEDist_smul_add_smul_rpow_lt two_ne_zero ENNReal.ofNat_ne_top hab ha hb
     (μ := μ) (fun π hπ ↦ ?_) hne
   · simpa only [ENNReal.toReal_ofNat, ENNReal.rpow_ofNat] using hlt

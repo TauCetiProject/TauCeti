@@ -187,8 +187,6 @@ private theorem rpow_neg_le_zpow_neg (hS : ∀ p ∈ S, p.Prime) {C : ℝ} (hC :
     have hbound : ∀ q ∈ S, (padicValRat q ((-x / y : ℚˣ) : ℚ)).natAbs ≤ N := by
       intro q hq
       have : Fact q.Prime := ⟨hS q hq⟩
-      have h₁ := padicValRat.eq_zero_of_add_eq_one_of_pos (p := q) hxy
-      have h₂ := padicValRat.eq_of_add_eq_one_of_neg (p := q) hxy
       have h₃ := padicValRat.eq_zero_of_add_eq_one_of_pos (p := q) ((add_comm _ _).trans hxy)
       have h₄ := padicValRat.eq_of_add_eq_one_of_neg (p := q) ((add_comm _ _).trans hxy)
       have := hNx q hq

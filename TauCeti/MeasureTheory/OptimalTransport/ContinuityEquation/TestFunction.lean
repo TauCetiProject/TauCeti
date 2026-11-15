@@ -154,7 +154,7 @@ theorem integral_integral_fderiv_eq_zero_of_hasCompactSupport (h : IsContinuityE
   · -- Mollification does not increase the bound on the derivative.
     have hw : ‖((1 : ℝ), w)‖ ≤ 1 + ‖w‖ := norm_prod_le_iff.2 ⟨by simp, by simp⟩
     have hLip : LipschitzWith ⟨C, hC0⟩ φ :=
-      lipschitzWith_of_nnnorm_fderiv_le (hφ.differentiable one_ne_zero) fun p ↦
+      lipschitzWith_of_nnNorm_fderiv_le (hφ.differentiable one_ne_zero) fun p ↦
         NNReal.coe_le_coe.1 (hC p)
     exact (hLip.norm_fderiv_normed_convolution_apply_le (β n) q (1, w)).trans
       (mul_le_mul_of_nonneg_left hw hC0)
@@ -171,7 +171,6 @@ theorem integral_integral_fderiv_eq_zero_of_norm_fderiv_le (h : IsContinuityEqua
     ∫ t in Ioo a b, ∫ x, fderiv ℝ φ (t, x) (1, v t x) ∂μ t = 0 := by
   rcases le_or_gt b a with hba | hab
   · simp [Ioo_eq_empty_of_le hba]
-  have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC 0)
   have hφd : Differentiable ℝ φ := hφ.differentiable one_ne_zero
   have hzero {q : ℝ × E} (hq : q.1 ∉ Ioo a b) : φ q = 0 :=
     image_eq_zero_of_notMem_tsupport fun h ↦ hq (hφs h).1
@@ -183,7 +182,6 @@ theorem integral_integral_fderiv_eq_zero_of_norm_fderiv_le (h : IsContinuityEqua
   have hχrOut : χ.rOut = 2 := rfl
   have hDχ : Continuous (fderiv ℝ χ) := (χ.contDiff (n := 1)).continuous_fderiv one_ne_zero
   obtain ⟨D, hD⟩ := hDχ.bounded_above_of_compact_support (χ.hasCompactSupport.fderiv ℝ)
-  have hD0 : 0 ≤ D := (norm_nonneg _).trans (hD 0)
   let s (n : ℕ) : ℝ := ((n : ℝ) + 1)⁻¹
   have hs : Tendsto s atTop (𝓝 0) := tendsto_one_div_add_atTop_nhds_zero_nat.congr fun n ↦ one_div _
   have hs0 (n : ℕ) : 0 < s n := by positivity

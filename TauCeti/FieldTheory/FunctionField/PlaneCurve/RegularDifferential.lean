@@ -106,7 +106,6 @@ theorem finrank_span_pow_mul_pow_eq_genus {x y : F} {n : ℕ}
     norm_num at h2 hc
     simp [hc, h2]
   · zify [hn2] at hc
-    have hA : ((n : ℤ) - 2) * (n - 2 + 1) = (n - 1) * (n - 2) := by ring
     zify
     linarith
 

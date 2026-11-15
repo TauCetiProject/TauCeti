@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Algebra.Spectrum
 
 /-!
-# Elements of spectral radius zero
+# Elements of spectral radius zero, and closed sets avoiding the spectrum
 
 The spectral radius of an element vanishes exactly when its quasispectrum, or in a unital
 algebra its spectrum, is contained in `{0}`. In a complex Banach algebra these are the
@@ -17,6 +17,10 @@ norm only on the scalars, and no completeness.
 
 For the same reason a nonunital algebra homomorphism, with no continuity assumption, does not
 increase spectral radii: it can only shrink quasispectra.
+
+Finally, in a complete normed algebra a closed set avoiding the spectrum of an element also avoids
+the spectra of all nearby elements (`spectrum.eventually_disjoint_of_isClosed`), a consequence of
+the upper hemicontinuity of the spectrum.
 -/
 
 public section
@@ -48,3 +52,13 @@ theorem NonUnitalAlgHom.spectralRadius_apply_le {F 𝕜 A B : Type*} [NormedFiel
     [NonUnitalAlgHomClass F 𝕜 A B] (φ : F) (a : A) :
     spectralRadius 𝕜 (φ a) ≤ spectralRadius 𝕜 a :=
   biSup_mono fun _ hk ↦ NonUnitalAlgHom.quasispectrum_apply_subset φ a hk
+
+open Topology in
+/-- If a closed set avoids the spectrum of an element of a complete normed algebra, it avoids the
+spectra of all nearby elements: the spectrum is upper hemicontinuous. -/
+theorem spectrum.eventually_disjoint_of_isClosed {𝕜 A : Type*} [NormedField 𝕜] [ProperSpace 𝕜]
+    [NormedRing A] [NormedAlgebra 𝕜 A] [CompleteSpace A] {F : Set 𝕜} (hF : IsClosed F) {a : A}
+    (h : Disjoint F (spectrum 𝕜 a)) : ∀ᶠ b in 𝓝 a, Disjoint F (spectrum 𝕜 b) := by
+  have hmem : Fᶜ ∈ 𝓝ˢ (spectrum 𝕜 a) := hF.isOpen_compl.mem_nhdsSet.2 h.subset_compl_left
+  filter_upwards [(upperHemicontinuous_spectrum 𝕜 A).upperHemicontinuousAt a _ hmem] with b hb
+  exact Set.subset_compl_iff_disjoint_left.mp (subset_of_mem_nhdsSet hb)

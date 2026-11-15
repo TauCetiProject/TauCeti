@@ -12,6 +12,8 @@ public import Mathlib.Analysis.Normed.Module.MultipliableUniformlyOn
 public import TauCeti.Algebra.Ring.Parity
 public import TauCeti.Analysis.Normed.Ring.InfiniteProd
 public import TauCeti.Analysis.Normed.Ring.Basic
+import Mathlib.Analysis.Normed.Field.Instances
+import Mathlib.Analysis.Normed.Module.Completion
 import TauCeti.Topology.Algebra.InfiniteSum.NatInt
 
 /-!
@@ -214,12 +216,31 @@ theorem tprod_one_sub_pow_mul_inv_eq {q : 𝕜} (hq : ‖q‖ < 1) (hq₀ : q �
   rw [tprod_eq_zero_mul' (f := fun n ↦ 1 - q ^ n * w⁻¹) (multipliable_one_sub_pow_mul hq w⁻¹)]
   simp
 
-/-- If the factors `1 - qⁿ⁺¹ w` are nonzero, so is `∏_{n ≥ 1} (1 - qⁿ w)`. -/
+omit [CompleteSpace 𝕜] in
+/-- If the factors `1 - qⁿ⁺¹ w` are nonzero, so is `∏_{n ≥ 1} (1 - qⁿ w)`. If the product is not
+multipliable, it is `1` by convention. -/
 theorem tprod_one_sub_pow_mul_ne_zero {q : 𝕜} (hq : ‖q‖ < 1) {w : 𝕜}
     (h : ∀ n : ℕ, 1 - q ^ (n + 1) * w ≠ 0) : ∏' n : ℕ, (1 - q ^ (n + 1) * w) ≠ 0 := by
-  simp_rw [sub_eq_add_neg] at h ⊢
-  exact tprod_one_add_ne_zero_of_summable h (by simpa using summable_norm_pow_succ_mul hq w)
+  by_cases hm : Multipliable fun n : ℕ ↦ 1 - q ^ (n + 1) * w
+  swap
+  · rw [tprod_eq_one_of_not_multipliable hm]
+    exact one_ne_zero
+  intro h0
+  -- transport the product along the isometric embedding of `𝕜` into its completion
+  let ι : 𝕜 →+* UniformSpace.Completion 𝕜 := UniformSpace.Completion.coeRingHom
+  have hι : Continuous ι := UniformSpace.Completion.continuous_coe 𝕜
+  have hmap := (hm.hasProd.map ι hι).tprod_eq
+  rw [Function.comp_def, h0, map_zero] at hmap
+  refine tprod_one_add_ne_zero_of_summable
+    (f := fun n : ℕ ↦ -(ι q ^ (n + 1) * ι w)) (fun n ↦ ?_) ?_ ?_
+  · rw [← sub_eq_add_neg, ← map_pow, ← map_mul, ← map_one ι, ← map_sub]
+    exact (map_ne_zero ι).2 (h n)
+  · have hnorm : ∀ x : 𝕜, ‖ι x‖ = ‖x‖ := UniformSpace.Completion.norm_coe
+    simpa only [norm_neg, ← map_pow, ← map_mul, hnorm] using summable_norm_pow_succ_mul hq w
+  · convert hmap using 3 with n
+    simp [ι, sub_eq_add_neg]
 
+omit [CompleteSpace 𝕜] in
 /-- For `‖q‖ < 1` the Euler function `∏_{n ≥ 1} (1 - qⁿ)` is nonzero. -/
 theorem tprod_one_sub_pow_ne_zero {q : 𝕜} (hq : ‖q‖ < 1) : ∏' n : ℕ, (1 - q ^ (n + 1)) ≠ 0 := by
   refine (tprod_congr fun n ↦ by rw [mul_one]).symm.trans_ne
@@ -246,29 +267,65 @@ theorem qTheta_eq_mul_tprod_mul_tprod {q : 𝕜} (hq : ‖q‖ < 1) (w : 𝕜) :
       ((∏' n : ℕ, (1 - q ^ (n + 1) * w)) * ∏' n : ℕ, (1 - q ^ (n + 1) * w⁻¹)) := by
   rw [qTheta_def, (multipliable_one_sub_pow_mul hq _).tprod_mul (multipliable_one_sub_pow_mul hq _)]
 
+omit [CompleteSpace 𝕜] in
 /-- For `‖q‖ < 1` the theta product is bounded by
 `‖θ_q(w)‖ ≤ ‖1 - w‖ exp (‖q‖ (‖w‖ + ‖w‖⁻¹) / (1 - ‖q‖))`. -/
 theorem norm_qTheta_le {q : 𝕜} (hq : ‖q‖ < 1) (w : 𝕜) :
     ‖qTheta q w‖ ≤ ‖1 - w‖ * Real.exp (‖q‖ * (‖w‖ + ‖w‖⁻¹) / (1 - ‖q‖)) := by
-  rw [qTheta_def, (multipliable_one_sub_pow_mul hq w).tprod_mul
-    (multipliable_one_sub_pow_mul hq w⁻¹), norm_mul, norm_mul, mul_add, add_div, Real.exp_add,
-    ← norm_inv]
-  exact mul_le_mul_of_nonneg_left (mul_le_mul (norm_tprod_one_sub_pow_mul_le hq w)
-    (norm_tprod_one_sub_pow_mul_le hq w⁻¹) (norm_nonneg _) (Real.exp_pos _).le) (norm_nonneg _)
+  rw [qTheta_def, norm_mul]
+  refine mul_le_mul_of_nonneg_left ?_ (norm_nonneg _)
+  by_cases hm : Multipliable fun n : ℕ ↦ (1 - q ^ (n + 1) * w) * (1 - q ^ (n + 1) * w⁻¹)
+  swap
+  · rw [tprod_eq_one_of_not_multipliable hm, norm_one]
+    exact Real.one_le_exp (div_nonneg (by positivity) (sub_nonneg.2 hq.le))
+  -- transport the product along the isometric embedding of `𝕜` into its completion
+  let ι : 𝕜 →+* UniformSpace.Completion 𝕜 := UniformSpace.Completion.coeRingHom
+  have hι : Continuous ι := UniformSpace.Completion.continuous_coe 𝕜
+  have hnorm : ∀ x : 𝕜, ‖ι x‖ = ‖x‖ := UniformSpace.Completion.norm_coe
+  have hq' : ‖ι q‖ < 1 := by rwa [hnorm]
+  have hmap := (hm.hasProd.map ι hι).tprod_eq
+  simp only [Function.comp_def, map_mul, map_sub, map_one, map_pow, map_inv₀] at hmap
+  rw [← hnorm, ← hmap,
+    (multipliable_one_sub_pow_mul hq' _).tprod_mul (multipliable_one_sub_pow_mul hq' _),
+    norm_mul, mul_add, add_div, Real.exp_add]
+  have hw := norm_tprod_one_sub_pow_mul_le hq' (ι w)
+  have hw' := norm_tprod_one_sub_pow_mul_le hq' (ι w)⁻¹
+  simp only [norm_inv, hnorm] at hw hw' ⊢
+  exact mul_le_mul hw hw' (norm_nonneg _) (Real.exp_pos _).le
 
+omit [CompleteSpace 𝕜] in
 /-- For `‖q‖ < 1` the theta product `θ_q(w)` is nonzero when `w` is not an integral power of
-`q`. -/
+`q`. If the defining product is not multipliable, it is `1` by convention. -/
 theorem qTheta_ne_zero {q : 𝕜} (hq : ‖q‖ < 1) {w : 𝕜} (hw : ∀ k : ℤ, w ≠ q ^ k) :
     qTheta q w ≠ 0 := by
-  rw [qTheta_def,
-    (multipliable_one_sub_pow_mul hq _).tprod_mul (multipliable_one_sub_pow_mul hq _)]
-  refine mul_ne_zero (sub_ne_zero.mpr fun h ↦ hw 0 (by simp [← h])) (mul_ne_zero ?_ ?_)
-  · refine tprod_one_sub_pow_mul_ne_zero hq fun n h ↦ hw (-(n + 1 : ℕ)) ?_
+  rw [qTheta_def]
+  refine mul_ne_zero (sub_ne_zero.mpr fun h ↦ hw 0 (by simp [← h])) ?_
+  by_cases hm : Multipliable fun n : ℕ ↦ (1 - q ^ (n + 1) * w) * (1 - q ^ (n + 1) * w⁻¹)
+  swap
+  · rw [tprod_eq_one_of_not_multipliable hm]
+    exact one_ne_zero
+  have h₁ : ∀ n : ℕ, 1 - q ^ (n + 1) * w ≠ 0 := fun n h ↦ hw (-(n + 1 : ℕ)) (by
     rw [zpow_neg, zpow_natCast]
-    exact eq_inv_of_mul_eq_one_right (sub_eq_zero.mp h).symm
-  · refine tprod_one_sub_pow_mul_ne_zero hq fun n h ↦ hw (n + 1 : ℕ) ?_
+    exact eq_inv_of_mul_eq_one_right (sub_eq_zero.mp h).symm)
+  have h₂ : ∀ n : ℕ, 1 - q ^ (n + 1) * w⁻¹ ≠ 0 := fun n h ↦ hw (n + 1 : ℕ) (by
     rw [zpow_natCast, ← inv_inj]
-    exact eq_inv_of_mul_eq_one_right (sub_eq_zero.mp h).symm
+    exact eq_inv_of_mul_eq_one_right (sub_eq_zero.mp h).symm)
+  intro h0
+  -- transport the product along the isometric embedding of `𝕜` into its completion
+  let ι : 𝕜 →+* UniformSpace.Completion 𝕜 := UniformSpace.Completion.coeRingHom
+  have hι : Continuous ι := UniformSpace.Completion.continuous_coe 𝕜
+  have hq' : ‖ι q‖ < 1 := by
+    have hnorm : ∀ x : 𝕜, ‖ι x‖ = ‖x‖ := UniformSpace.Completion.norm_coe
+    rwa [hnorm]
+  have hmap := (hm.hasProd.map ι hι).tprod_eq
+  rw [Function.comp_def, h0, map_zero] at hmap
+  simp only [map_mul, map_sub, map_one, map_pow, map_inv₀] at hmap
+  rw [(multipliable_one_sub_pow_mul hq' _).tprod_mul (multipliable_one_sub_pow_mul hq' _)] at hmap
+  rcases mul_eq_zero.1 hmap with h | h
+  · refine tprod_one_sub_pow_mul_ne_zero hq' (fun n ↦ ?_) h
+    simpa only [map_mul, map_sub, map_one, map_pow] using (map_ne_zero ι).2 (h₁ n)
+  · refine tprod_one_sub_pow_mul_ne_zero hq' (fun n ↦ ?_) h
+    simpa only [map_mul, map_sub, map_one, map_pow, map_inv₀] using (map_ne_zero ι).2 (h₂ n)
 
 /-- **Quasi-periodicity of the theta product**: `θ_q(q w) = -w⁻¹ θ_q(w)` for `0 < ‖q‖ < 1` and
 `w ≠ 0`. -/

@@ -43,15 +43,15 @@ variable [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
 /-- The cokernel of a Fredholm operator is linearly equivalent to its kernel if the operator and
 its adjoint have the same kernel. -/
 noncomputable def IsFredholm.cokerEquivKerOfKerAdjointEq {T : E →L[𝕜] E}
-    (hT : ContinuousLinearMap.IsFredholm T) (hker : (ContinuousLinearMap.adjoint T).ker = T.ker) :
+    (hT : IsFredholm T) (hker : (ContinuousLinearMap.adjoint T).ker = T.ker) :
     (E ⧸ LinearMap.range (T : E →ₗ[𝕜] E)) ≃ₗ[𝕜]
       LinearMap.ker (T : E →ₗ[𝕜] E) :=
-  (ContinuousLinearMap.cokerEquivKerAdjoint T hT.isClosed_range).toLinearEquiv.trans
+  (cokerEquivKerAdjoint T hT.isClosed_range).toLinearEquiv.trans
     (LinearEquiv.ofEq _ _ hker)
 
 /-- The cokernel of a self-adjoint Fredholm operator is linearly equivalent to its kernel. -/
 noncomputable def IsFredholm.cokerEquivKer {T : E →L[𝕜] E}
-    (hT : ContinuousLinearMap.IsFredholm T) (hself : IsSelfAdjoint T) :
+    (hT : IsFredholm T) (hself : IsSelfAdjoint T) :
     (E ⧸ LinearMap.range (T : E →ₗ[𝕜] E)) ≃ₗ[𝕜]
       LinearMap.ker (T : E →ₗ[𝕜] E) :=
   hT.cokerEquivKerOfKerAdjointEq <| by rw [hself.adjoint_eq]
@@ -59,27 +59,27 @@ noncomputable def IsFredholm.cokerEquivKer {T : E →L[𝕜] E}
 
 /-- A Fredholm operator has index zero if it and its adjoint have the same kernel. -/
 theorem index_eq_zero_of_ker_adjoint_eq {T : E →L[𝕜] E}
-    (hT : ContinuousLinearMap.IsFredholm T)
-    (hker : (ContinuousLinearMap.adjoint T).ker = T.ker) :
-    ContinuousLinearMap.index T = 0 := by
-  rw [ContinuousLinearMap.index_eq_finrank_sub,
+    (hT : IsFredholm T)
+    (hker : (adjoint T).ker = T.ker) :
+    index T = 0 := by
+  rw [index_eq_finrank_sub,
     ← LinearEquiv.finrank_eq (hT.cokerEquivKerOfKerAdjointEq hker)]
   omega
 
 /-- A self-adjoint Fredholm operator on a Hilbert space has Fredholm index zero. -/
 @[simp]
 theorem index_eq_zero_of_isSelfAdjoint {T : E →L[𝕜] E}
-    (hT : ContinuousLinearMap.IsFredholm T)
-    (hself : IsSelfAdjoint T) : ContinuousLinearMap.index T = 0 :=
-  ContinuousLinearMap.index_eq_zero_of_ker_adjoint_eq hT <| by rw [hself.adjoint_eq]
+    (hT : IsFredholm T)
+    (hself : IsSelfAdjoint T) : index T = 0 :=
+  index_eq_zero_of_ker_adjoint_eq hT <| by rw [hself.adjoint_eq]
 
 /-- A symmetric Fredholm operator on a Hilbert space has Fredholm index zero. -/
 @[simp]
 theorem index_eq_zero_of_isSymmetric {T : E →L[𝕜] E}
-    (hT : ContinuousLinearMap.IsFredholm T)
-    (hsymm : T.IsSymmetric) : ContinuousLinearMap.index T = 0 :=
-  ContinuousLinearMap.index_eq_zero_of_isSelfAdjoint hT
-    (ContinuousLinearMap.isSelfAdjoint_iff_isSymmetric.mpr hsymm)
+    (hT : IsFredholm T)
+    (hsymm : T.IsSymmetric) : index T = 0 :=
+  index_eq_zero_of_isSelfAdjoint hT
+    (isSelfAdjoint_iff_isSymmetric.mpr hsymm)
 
 
 end ContinuousLinearMap

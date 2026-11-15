@@ -9,18 +9,20 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 public import TauCeti.Analysis.SpecificLimits.WeightedGeometric
 
 /-!
-# Taylor series bounds for `-log (1 - ·)`
+# Taylor series bounds for `-log (1 - ·)` and `log (1 + ·)`
 
 Mathlib's `Complex.hasSum_taylorSeries_neg_log'` expands `-log (1 - z)` as `∑' e, z ^ (e+1)/(e+1)`
 for a single `z` of modulus less than one.  This file first sums that over a family `r : ι → ℂ`: the
 double family indexed by `ι × ℕ` is summable, so the sum may be regrouped fibrewise and the
 prime-power-style sum over pairs equals the sum of local logarithms.
 
-Both hypotheses are needed.  `∀ i, ‖r i‖ < 1` alone does not suffice: the fibre at `i` sums to
-`‖r i‖ / (1 - ‖r i‖)`, which is dominated by `‖r i‖` only when `‖r i‖` is bounded away from `1`,
-and summability of `r` is what supplies that uniformity.  The double-family summability is not
-proved here: it is `TauCeti.summable_mul_norm_pow_succ`, stated for a seminormed additive group and
-an arbitrary real weight, and this file uses it at weight `1`.
+For the summability of the double family both hypotheses are needed.  `∀ i, ‖r i‖ < 1` alone does
+not suffice: the fibre at `i` sums to `‖r i‖ / (1 - ‖r i‖)`, which is dominated by `‖r i‖` only
+when `‖r i‖` is bounded away from `1`, and summability of `r` is what supplies that uniformity.
+The identity for the sum, by contrast, needs only `∀ i, ‖r i‖ < 1`: if `r` is not summable, then
+neither side is summable and both are `0`.  The double-family summability is not proved here: it
+is `TauCeti.summable_mul_norm_pow_succ`, stated for a seminormed additive group and an arbitrary
+real weight, and this file uses it at weight `1`.
 
 The file also gives an explicit truncation error for a single `z`: the `n`-th partial sum
 `∑ j ∈ Icc 1 n, z ^ j / j` differs from `log (1 - z)⁻¹` by at most
@@ -30,17 +32,28 @@ The file also gives an explicit truncation error for a single `z`: the `n`-th pa
 factor `1 - w / p` is nonzero.  These are the estimates used to compare an Euler factor
 `(1 - w / p)⁻¹` with the prime-power partial sums of its logarithm.
 
+Finally, Mathlib's `Complex.hasSum_taylorSeries_log` has a vanishing constant term; dropping it
+re-indexes the Taylor series of `log (1 + z)` from `0`, the form a power series without constant
+term takes.
+
 ## Main results
 
 * `Complex.summable_taylorSeries_neg_log`: for a summable `r : ι → ℂ` with every `‖r i‖ < 1`, the
   family `(i, e) ↦ r i ^ (e + 1) / (e + 1)` is summable over `ι × ℕ`.
-* `Complex.tsum_taylorSeries_neg_log`: its sum over `ι × ℕ` is `∑' i, -log (1 - r i)`.
+* `Complex.summable_of_summable_neg_log_one_sub`: if every `r i ≠ 1` and `-log (1 - r i)` is
+  summable, then `r` is summable (the converse of Mathlib's `Summable.clog_one_sub`).
+* `Complex.tsum_taylorSeries_neg_log`: for every `r` with `‖r i‖ < 1`, the sum over `ι × ℕ` is
+  `∑' i, -log (1 - r i)` (both sides are `0` when `r` is not summable).
 * `Complex.norm_log_one_sub_inv_sub_sum_Icc_le`: the truncation error of the same Taylor series
   for a single `z`, with its `n`-th partial sum `∑ j ∈ Icc 1 n, z ^ j / j`.
 * `Complex.norm_log_one_sub_div_inv_sub_sum_Icc_le`: the same truncation error at `z = w / p`,
   for `‖w‖ ≤ 1` and a natural number `p ≥ 2`, bounded by `2 / p ^ (n + 1)`.
 * `Complex.one_sub_div_natCast_ne_zero`: for `‖w‖ ≤ 1` and a natural number `p > 1`, the factor
   `1 - w / p` is nonzero.
+* `Complex.hasSum_taylorSeries_log'`: `log (1 + z) = ∑ₙ (-1) ^ n z ^ (n + 1) / (n + 1)` for
+  `‖z‖ < 1`.
+* `Complex.norm_neg_one_pow_div_add_one`: the coefficients of that series have norm
+  `(n + 1)⁻¹`.
 -/
 
 public section
@@ -74,15 +87,52 @@ theorem summable_taylorSeries_neg_log {ι : Type*} {r : ι → ℂ} (hr : Summab
   exact_mod_cast Nat.succ_le_succ (Nat.zero_le e)
 
 
-/-- **The double sum is the sum of the local logarithms.**  For a summable `r : ι → ℂ` with every
-`‖r i‖ < 1`, summing the Taylor series of `-log (1 - r i)` over `ι × ℕ` gives `∑' i, -log (1 - r i)`
-— the fibrewise regrouping that `summable_taylorSeries_neg_log` licenses. -/
-theorem tsum_taylorSeries_neg_log {ι : Type*} {r : ι → ℂ} (hr : Summable r)
-    (h1 : ∀ i, ‖r i‖ < 1) :
+/-- **Summability of `-log (1 - rᵢ)` forces summability of `r`**, the converse of Mathlib's
+`Summable.clog_one_sub`, for `rᵢ ≠ 1`: once the logarithm is small, `‖rᵢ‖ ≤ 2 ‖log (1 - rᵢ)‖`. -/
+theorem summable_of_summable_neg_log_one_sub {ι : Type*} {r : ι → ℂ} (h1 : ∀ i, r i ≠ 1)
+    (hg : Summable fun i ↦ -Complex.log (1 - r i)) : Summable r := by
+  refine Summable.of_norm_bounded_eventually (hg.norm.mul_left 2) ?_
+  have hlim := tendsto_zero_iff_norm_tendsto_zero.1 hg.tendsto_cofinite_zero
+  filter_upwards [hlim.eventually_le_const one_pos] with i hi
+  have hne : 1 - r i ≠ 0 := sub_ne_zero.2 (h1 i).symm
+  have h2 := Complex.norm_exp_sub_one_le (x := Complex.log (1 - r i)) (by simpa using hi)
+  rw [Complex.exp_log hne, show 1 - r i - 1 = -r i by ring, norm_neg] at h2
+  simpa using h2
+
+/-- **The double sum is the sum of the local logarithms.**  For `r : ι → ℂ` with every
+`‖r i‖ < 1`, summing the Taylor series of `-log (1 - r i)` over `ι × ℕ` gives
+`∑' i, -log (1 - r i)`, the fibrewise regrouping that `summable_taylorSeries_neg_log` licenses.
+If `r` is not summable, neither sum is summable and both are the junk value `0`. -/
+theorem tsum_taylorSeries_neg_log {ι : Type*} {r : ι → ℂ} (h1 : ∀ i, ‖r i‖ < 1) :
     ∑' ie : ι × ℕ, r ie.1 ^ (ie.2 + 1) / ((ie.2 : ℂ) + 1) = ∑' i, -Complex.log (1 - r i) := by
   have hfib : ∀ i, HasSum (fun e : ℕ ↦ r i ^ (e + 1) / ((e : ℂ) + 1))
       (-Complex.log (1 - r i)) := fun i ↦ hasSum_taylorSeries_neg_log' (h1 i)
-  exact ((summable_taylorSeries_neg_log hr h1).hasSum.prod_fiberwise hfib).tsum_eq.symm
+  by_cases hg : Summable fun i ↦ -Complex.log (1 - r i)
+  · -- Summability of the logarithms forces summability of `r`.
+    have hr := summable_of_summable_neg_log_one_sub (fun i h ↦ (h1 i).ne (by simp [h])) hg
+    exact ((summable_taylorSeries_neg_log hr h1).hasSum.prod_fiberwise hfib).tsum_eq.symm
+  · rw [tsum_eq_zero_of_not_summable hg]
+    refine tsum_eq_zero_of_not_summable fun hS ↦ hg ?_
+    exact (hS.hasSum.prod_fiberwise hfib).summable
+
+/-- The Taylor series of `log (1 + z)` without its vanishing constant term:
+`log (1 + z) = ∑ₙ (-1) ^ n z ^ (n + 1) / (n + 1)` for `‖z‖ < 1`. -/
+theorem hasSum_taylorSeries_log' {z : ℂ} (hz : ‖z‖ < 1) :
+    HasSum (fun n : ℕ ↦ (-1) ^ n / (n + 1) * z ^ (n + 1)) (log (1 + z)) := by
+  have h := (hasSum_nat_add_iff' 1).2 (hasSum_taylorSeries_log hz)
+  simp only [Finset.range_one, Finset.sum_singleton, pow_zero, CharP.cast_eq_zero, div_zero,
+    sub_zero] at h
+  convert h using 1
+  ext n
+  push_cast
+  ring
+
+/-- The coefficients of the Taylor series of `log (1 + z)` have norm
+`‖(-1) ^ n / (n + 1)‖ = (n + 1)⁻¹`. -/
+theorem norm_neg_one_pow_div_add_one (n : ℕ) :
+    ‖((-1) ^ n / (n + 1) : ℂ)‖ = ((n : ℝ) + 1)⁻¹ := by
+  rw [norm_div, norm_pow, norm_neg, norm_one, one_pow, one_div, ← Nat.cast_add_one,
+    Complex.norm_natCast, Nat.cast_add_one]
 
 /-- **The truncation error of the Taylor series of `log (1 - z)⁻¹`.** For `‖z‖ < 1`, the partial
 sum `∑ j ∈ Icc 1 n, z ^ j / j` approximates `log (1 - z)⁻¹ = -log (1 - z)` to within

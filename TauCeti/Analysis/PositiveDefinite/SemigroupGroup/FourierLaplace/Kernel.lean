@@ -127,14 +127,7 @@ theorem representsLaplaceFourier_swapCompProd
       (bochnerMeasure fun a => F (0, a)).withDensity (Kernel.laplaceTransform κ t)
       = bochnerMeasure fun a => F (t, a)) :
     RepresentsLaplaceFourier ((bochnerMeasure fun a => F (0, a)).swapCompProd κ) F := by
-  let μ₀ := bochnerMeasure fun a => F (0, a)
-  have hsnd : (μ₀.swapCompProd κ).snd = μ₀ := by
-    rw [← spatialSlice_zero, spatialSlice_swapCompProd, hκ 0]
-  have hfin : IsFiniteMeasure (μ₀.swapCompProd κ) := by
-    refine ⟨?_⟩
-    rw [← Measure.snd_univ, hsnd]
-    exact measure_lt_top _ _
-  exact representsLaplaceFourier_of_forall_spatialSlice_eq hfin hFpd hFcont
+  exact representsLaplaceFourier_of_forall_spatialSlice_eq hFpd hFcont
     fun t => by rw [spatialSlice_swapCompProd, hκ t]
 
 /-- **The same criterion, phrased with Radon--Nikodym derivatives.** A bounded continuous

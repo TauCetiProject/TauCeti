@@ -40,12 +40,10 @@ an embedding that is locally bicollared. The embedding hypothesis cannot be drop
 figure-eight immersion of a line into the plane is locally bicollared and is not an embedding,
 since bicollars only see the domain locally.
 
-This is the codimension-one collaring bullet of layer 2 of the geometric-topology roadmap
-(`TauCetiRoadmap/GeometricTopology/README.md`). What remains of that bullet is its global sphere
-conclusion: a locally flat `(n-1)`-sphere in `Sⁿ` is bicollared. That conclusion needs a genuinely
-global collaring argument and is not proved here. Positive-codimension normal bundles, the
-companion notion, are flagged by the roadmap as a dependency to be taken from elsewhere rather
-than built in this layer.
+The global statement for spheres, Brown's theorem that a locally flat `(n-1)`-sphere in `Sⁿ` is
+bicollared, needs a genuinely global collaring argument and is not proved here; it is stated in
+`TauCeti.Geometry.Manifold.LocallyFlat.Sphere`. Positive-codimension normal bundles, the
+companion notion, are not treated here.
 
 ## Main definitions
 
@@ -195,6 +193,20 @@ theorem apply_mem_closure_image (h : IsBicollar f b) {s : Set ℝ} (hs : (0 : �
   refine image_closure_subset_closure_image h.isOpenEmbedding.continuous ⟨(x, 0), ?_, rfl⟩
   rw [closure_prod_eq, closure_univ]
   exact ⟨mem_univ _, hs⟩
+
+/-- The slice of a bicollar through a point `x` of the domain, at a preconnected set `s` of
+nonzero depths, misses the collared image and so lies in a single connected component of its
+complement. -/
+theorem image_singleton_prod_subset_connectedComponentIn (h : IsBicollar f b) (x : N)
+    {s : Set ℝ} (hs : IsPreconnected s) (h0 : (0 : ℝ) ∉ s) {t : ℝ} (ht : t ∈ s) :
+    b '' ({x} ×ˢ s) ⊆ connectedComponentIn (range f)ᶜ (b (x, t)) := by
+  refine ((isPreconnected_singleton.prod hs).image b
+    h.isOpenEmbedding.continuous.continuousOn).subset_connectedComponentIn
+    (mem_image_of_mem b ⟨rfl, ht⟩) ?_
+  rintro _ ⟨⟨y, r⟩, ⟨-, hr⟩, rfl⟩ hmem
+  have : (y, r) ∈ b ⁻¹' range f := hmem
+  rw [h.preimage_range] at this
+  exact h0 (this.2 ▸ hr)
 
 /-- A bicollar restricts to a bicollar over any open subset of the domain. -/
 theorem restrict (h : IsBicollar f b) {U : Set N} (hU : IsOpen U) :

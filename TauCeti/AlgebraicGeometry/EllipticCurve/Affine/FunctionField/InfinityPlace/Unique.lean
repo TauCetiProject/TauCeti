@@ -85,15 +85,12 @@ point--place dictionary.
 **No divisor group.** The downstream point--place file supplies a unified normalized place type
 and its degree. Building divisors as finite formal sums of all such places remains separate work.
 
-## Roadmap
-
-`TauCetiRoadmap/EllipticCurves/README.md`, **Layer 0** (the function field, places, and divisors).
-Its §Places asks for "the places of `W.FunctionField` over `K`" with `W.infinityPlace` singled out
-as the one place beyond the affine ones; this is the statement that pins it down, and it is what
-turns a valuation produced by some construction — the restriction of `v_∞` along an isogeny, in
-`Isogeny/InfinityPlace.lean` — into *the* place at infinity. The dual-isogeny milestone of Layer 1
-names that step: "an unpointed induced-place map for finite function-field embeddings, with the
-named criterion `MapsInfinity λ ↔ λ_*(O₂) = O₃`".
+Among the places of `W.FunctionField` over `K`, `W.infinityPlace` is the one beyond the affine
+ones; this is the statement that pins it down, and it is what turns a valuation produced by some
+construction — the restriction of `v_∞` along an isogeny, in `Isogeny/InfinityPlace.lean` — into
+*the* place at infinity. That step is what relates an unpointed induced-place map for finite
+function-field embeddings to `MapsInfinity`: an embedding `λ` maps infinity exactly when
+`λ_*(O₂) = O₃`.
 
 ## Provenance
 

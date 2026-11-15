@@ -26,9 +26,9 @@ If `g : Y ⟶ S` is moreover flat and locally of finite presentation (finite loc
 sections `Γ(Y, g⁻¹ U)` over an affine open `U` of `S` form a projective `Γ(S, U)`-module
 (`AlgebraicGeometry.Scheme.Hom.projective_app`).
 
-Finite, flat and locally finitely presented morphisms each respect isomorphisms
-(`TauCeti.isFinite_respectsIso`, `TauCeti.flat_respectsIso` and
-`TauCeti.locallyOfFinitePresentation_respectsIso`).
+Finite, flat, locally finite type and locally finitely presented morphisms each respect
+isomorphisms (`TauCeti.isFinite_respectsIso`, `TauCeti.flat_respectsIso`,
+`TauCeti.locallyOfFiniteType_respectsIso` and `TauCeti.locallyOfFinitePresentation_respectsIso`).
 -/
 
 public section
@@ -45,9 +45,8 @@ theorem Scheme.Hom.moduleFinite_appTop {R : Type u} [CommRing R] {X : Scheme.{u}
     (f : X ⟶ Spec (.of R)) [IsFinite f] [Algebra R Γ(X, ⊤)]
     (hf : algebraMap R Γ(X, ⊤) = ((Scheme.ΓSpecIso (.of R)).inv ≫ f.appTop).hom) :
     Module.Finite R Γ(X, ⊤) := by
-  rw [← RingHom.finite_algebraMap, hf, CommRingCat.hom_comp]
-  exact f.finite_appTop.comp (RingHom.Finite.of_surjective _
-    (Scheme.ΓSpecIso (.of R)).commRingCatIsoToRingEquiv.symm.surjective)
+  rw [← RingHom.finite_algebraMap, hf]
+  exact (RingHom.finite_respectsIso.cancel_left_isIso _ _).mpr f.finite_appTop
 
 /-- The sections of a finite, flat, locally finitely presented morphism `g : Y ⟶ S` over an affine
 open `U` of `S` form a projective module over `Γ(S, U)`. -/
@@ -55,9 +54,8 @@ theorem Scheme.Hom.projective_app {Y S : Scheme.{u}} (g : Y ⟶ S) [IsFinite g] 
     [LocallyOfFinitePresentation g] (U : S.affineOpens) :
     letI := (g.app U).hom.toAlgebra
     Module.Projective Γ(S, U) Γ(Y, g ⁻¹ᵁ U) := by
-  have hflat := HasRingHomProperty.appLE @Flat g inferInstance U ⟨_, U.2.preimage g⟩ le_rfl
-  have hfp := HasRingHomProperty.appLE @LocallyOfFinitePresentation g inferInstance U
-    ⟨_, U.2.preimage g⟩ le_rfl
+  have hflat := g.flat_appLE U.2 (U.2.preimage g) le_rfl
+  have hfp := g.finitePresentation_appLE U.2 (U.2.preimage g) le_rfl
   rw [Scheme.Hom.appLE_eq_app] at hflat hfp
   have hfin := g.finite_app U U.2
   algebraize [(g.app U).hom]
@@ -82,6 +80,12 @@ instance isFinite_respectsIso :
 /-- Flat morphisms of schemes respect isomorphisms. -/
 instance flat_respectsIso :
     MorphismProperty.RespectsIso (@Flat : MorphismProperty Scheme.{u}) :=
+  MorphismProperty.respectsIso_of_isStableUnderComposition
+    (fun _ _ f (_ : IsIso f) ↦ inferInstance)
+
+/-- Morphisms of schemes locally of finite type respect isomorphisms. -/
+instance locallyOfFiniteType_respectsIso :
+    MorphismProperty.RespectsIso (@LocallyOfFiniteType : MorphismProperty Scheme.{u}) :=
   MorphismProperty.respectsIso_of_isStableUnderComposition
     (fun _ _ f (_ : IsIso f) ↦ inferInstance)
 

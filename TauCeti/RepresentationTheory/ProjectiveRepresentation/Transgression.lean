@@ -38,8 +38,9 @@ attribute [local instance] trivialMulDistribMulAction
 
 variable (k G : Type) [Field k] [IsAlgClosed k] [Group G] [Finite G]
 
-/-- The character transgression of the common finite lifting extension is surjective
-onto `H²(G, kˣ)`, in arbitrary characteristic. -/
+omit [Finite G] in
+/-- The character transgression of the common lifting extension, which is finite when `G` is
+finite, is surjective onto `H²(G, kˣ)`, in arbitrary characteristic. -/
 theorem projectiveLiftingFactorSet_characterTransgression_surjective :
     Function.Surjective
       ((projectiveLiftingFactorSet k G).characterTransgression (A := kˣ)) := by
@@ -72,7 +73,7 @@ local instance : HasEnoughRootsOfUnity k (Monoid.exponent
   exact (m i).property
 
 local instance : HasEnoughRootsOfUnity k (Monoid.exponent
-    (Abelianization (projectiveLiftingFactorSet k G).Extension)) := by
+    (Group.Abelianization (projectiveLiftingFactorSet k G).Extension)) := by
   have hcard : Nat.card (projectiveLiftingFactorSet k G).Extension =
       Nat.card G ^ (Nat.card (FactorSet G (rootsOfUnity (Nat.card G) k)) + 1) := by
     rw [Nat.card_congr (FactorSet.Extension.equivProd (projectiveLiftingFactorSet k G)),
