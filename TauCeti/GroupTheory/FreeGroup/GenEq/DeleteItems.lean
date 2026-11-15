@@ -166,7 +166,7 @@ theorem substituteVars_restoreWord (U : Fin n → List (A × Bool))
     (w : List ((Fin Sᶜ.card ⊕ A) × Bool)) :
     FreeGroup.substituteVars U (restoreWord S w) =
       FreeGroup.substituteVars (U ∘ Sᶜ.orderEmbOfFin rfl) w :=
-  FreeGroup.substituteVars_map_sumMap _ _ _
+  FreeGroup.substituteVars_map _ _ _
 
 @[simp]
 theorem restoreEquation_fst
