@@ -336,7 +336,6 @@ theorem orthogonalGroupCongr_symm
     e.orthogonalGroupCongr.symm = e.symm.orthogonalGroupCongr := by
   ext g m
   simp
-  rfl
 
 end Congr
 
@@ -739,7 +738,6 @@ theorem specialOrthogonalGroupCongr_symm
     e.specialOrthogonalGroupCongr.symm = e.symm.specialOrthogonalGroupCongr := by
   ext g m
   simp
-  rfl
 
 end SpecialCongr
 
