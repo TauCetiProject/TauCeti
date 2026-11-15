@@ -8,10 +8,10 @@ module
 public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import TauCeti.Analysis.Complex.Laurent.Expansion
 public import TauCeti.Analysis.Complex.Runge.SimpleFraction
-import Mathlib.Algebra.Polynomial.AlgebraMap
 import Mathlib.Topology.ContinuousMap.Compact
+import Mathlib.Topology.ContinuousMap.Polynomial
+import TauCeti.Analysis.Calculus.FDeriv.Add
 import TauCeti.Analysis.Complex.HolomorphicFunctions.Basic
-import TauCeti.Topology.MetricSpace.EBall
 
 /-!
 # Runge approximation of negative Laurent series and exterior holomorphic functions
@@ -71,22 +71,15 @@ theorem IsFilledIn.exists_differentiableOn_norm_eval_inv_sub_lt (hfill : IsFille
     rw [dist_eq_norm, ContinuousMap.norm_lt_iff _ hδ]
     intro z
     simpa [w, φ, ρ, HolomorphicFunctions.of_apply] using hbound z.val z.property
-  have hq (Q : ℂ[X]) (z : K) :
-      ((Polynomial.aeval (⟨w, hw⟩ : S) Q : S) : C(K, ℂ)) z = Q.eval ((z : ℂ) - a)⁻¹ := by
-    induction Q using Polynomial.induction_on' with
-    | add p₁ p₂ hp₁ hp₂ =>
-      simp only [map_add, Subalgebra.coe_add, ContinuousMap.add_apply, eval_add, hp₁, hp₂]
-    | monomial n c =>
-      simp only [aeval_monomial, eval_monomial, Subalgebra.coe_mul, Subalgebra.coe_pow,
-        Subalgebra.coe_algebraMap, ContinuousMap.mul_apply, ContinuousMap.pow_apply,
-        _root_.algebraMap_apply, smul_eq_mul, mul_one]
-      rfl
   let q : S := Polynomial.aeval (⟨w, hw⟩ : S) P
   obtain ⟨g, hg, hdist⟩ := Metric.mem_closure_iff.mp q.property ε hε
   obtain ⟨g', rfl⟩ := hg
   refine ⟨HolomorphicFunctions.extend g', HolomorphicFunctions.differentiableOn_extend g',
     fun z hz => ?_⟩
-  rw [HolomorphicFunctions.extend_apply g' ⟨z, hKΩ hz⟩, ← hq P ⟨z, hz⟩]
+  have hqz : (q : C(K, ℂ)) ⟨z, hz⟩ = P.eval (z - a)⁻¹ := by
+    simp only [q, Polynomial.coe_aeval_mk_apply, Polynomial.aeval_continuousMap_apply, w,
+      ContinuousMap.coe_mk]
+  rw [HolomorphicFunctions.extend_apply g' ⟨z, hKΩ hz⟩, ← hqz]
   exact lt_of_le_of_lt ((q.val - φ g').norm_coe_le_norm ⟨z, hz⟩)
     (by simpa [dist_eq_norm] using hdist)
 
@@ -115,29 +108,6 @@ theorem IsFilledIn.exists_differentiableOn_norm_zpow_neg_smul_sub_lt (hfill : Is
   refine ⟨fun z => q z • v, hq.smul_const v, fun z hz => ?_⟩
   rw [zpow_neg, zpow_natCast, ← inv_pow, ← sub_smul, norm_smul]
   exact (mul_lt_mul_of_pos_right (hbound z hz) hv_pos).trans_eq (div_mul_cancel₀ ε hv_pos.ne')
-
-/-- Helper approximating any finite sum of uniformly approximable functions on `K` by a sum of
-functions complex-differentiable on `Ω`. -/
-private theorem exists_differentiableOn_norm_sum_sub_lt {ι : Type*} (s : Finset ι)
-    {f : ι → ℂ → F} {ε : ℝ} (hε : 0 < ε)
-    (happrox : ∀ i ∈ s, ∀ δ > 0, ∃ g : ℂ → F, DifferentiableOn ℂ g Ω ∧
-      ∀ z ∈ K, ‖f i z - g z‖ < δ) :
-    ∃ g : ℂ → F, DifferentiableOn ℂ g Ω ∧ ∀ z ∈ K, ‖(∑ i ∈ s, f i z) - g z‖ < ε := by
-  classical
-  have hδ : 0 < ε / (s.card + 1 : ℝ) := div_pos hε (by positivity)
-  have hall : ∀ i : ι, ∃ g : ℂ → F, DifferentiableOn ℂ g Ω ∧
-      (i ∈ s → ∀ z ∈ K, ‖f i z - g z‖ < ε / (s.card + 1 : ℝ)) := fun i => by
-    by_cases hi : i ∈ s
-    · obtain ⟨g, hg, hb⟩ := happrox i hi _ hδ
-      exact ⟨g, hg, fun _ => hb⟩
-    · exact ⟨0, differentiableOn_const 0, fun h => False.elim (hi h)⟩
-  choose g hg hbound using hall
-  refine ⟨fun z => ∑ i ∈ s, g i z, DifferentiableOn.fun_sum fun i _ => hg i, fun z hz => ?_⟩
-  rw [← Finset.sum_sub_distrib]
-  refine lt_of_le_of_lt (norm_sum_le s _) ?_
-  refine lt_of_le_of_lt (Finset.sum_le_sum fun i hi => (hbound i hi z hz).le) ?_
-  rw [Finset.sum_const, nsmul_eq_mul, mul_div_left_comm]
-  exact mul_lt_of_lt_one_right hε ((div_lt_one (by positivity)).mpr (by linarith))
 
 end NormedSpace
 
@@ -185,14 +155,16 @@ theorem IsFilledIn.exists_differentiableOn_norm_laurentNegPart_sub_lt
     _ = ε := add_halves ε
 
 /-- **Runge approximation on the exterior of a closed disk.** If `K` is compact, filled in `Ω`, and
-disjoint from `Metric.closedBall a r` (`0 ≤ r`), every function `f : ℂ → F` complex-differentiable
-on `(Metric.closedBall a r)ᶜ` is uniformly approximable on `K` by functions complex-differentiable
-on `Ω`. -/
+disjoint from `Metric.closedBall a r`, every function `f : ℂ → F` complex-differentiable on
+`(Metric.closedBall a r)ᶜ` is uniformly approximable on `K` by functions complex-differentiable on
+`Ω`. -/
 theorem IsFilledIn.exists_differentiableOn_norm_sub_lt_of_differentiableOn_compl_closedBall
     (hfill : IsFilledIn K Ω) (hΩ : IsOpen Ω) (hK : IsCompact K) (hKΩ : K ⊆ Ω)
-    {a : ℂ} {r : ℝ} (hr : 0 ≤ r) (haK : Disjoint K (closedBall a r))
+    {a : ℂ} {r : ℝ} (haK : Disjoint K (closedBall a r))
     {f : ℂ → F} (hf : DifferentiableOn ℂ f (closedBall a r)ᶜ) {ε : ℝ} (hε : 0 < ε) :
     ∃ g : ℂ → F, DifferentiableOn ℂ g Ω ∧ ∀ z ∈ K, ‖f z - g z‖ < ε := by
+  rcases lt_or_ge r 0 with hr | hr
+  · exact ⟨f, hf.mono (by simp [closedBall_eq_empty.mpr hr]), fun _ _ => by simp [hε]⟩
   have hf_ann : DifferentiableOn ℂ f (eball a ⊤ \ closedBall a r) := by
     rwa [eball_top, ← compl_eq_univ_sdiff]
   have hL : HasLaurentSeriesOnAnnulus f (circleLaurentCoeff f a (r + 1)) a r ⊤ :=
@@ -217,7 +189,7 @@ theorem IsFilledIn.exists_differentiableOn_norm_sub_lt_of_differentiableOn_compl
     {ε : ℝ} (hε : 0 < ε) :
     ∃ g : ℂ → F, DifferentiableOn ℂ g Ω ∧ ∀ z ∈ K, ‖f z - g z‖ < ε := by
   refine hfill.exists_differentiableOn_norm_sub_lt_of_differentiableOn_compl_closedBall
-    (a := a) hΩ hK hKΩ le_rfl ?_ ?_ hε
+    (a := a) (r := 0) hΩ hK hKΩ ?_ ?_ hε
   · simpa only [closedBall_zero, disjoint_singleton_right] using ha
   · simpa only [closedBall_zero] using hf
 

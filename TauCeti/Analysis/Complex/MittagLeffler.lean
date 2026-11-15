@@ -5,14 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Meromorphic.NormalForm
-public import TauCeti.Analysis.Complex.Laurent.Expansion
 public import TauCeti.Analysis.Meromorphic.PrincipalPart
 import Mathlib.Analysis.Complex.LocallyUniformLimit
+import Mathlib.Topology.Homeomorph.Lemmas
 import TauCeti.Analysis.Complex.Runge.Laurent
 import TauCeti.Analysis.Normed.Module.Exhaustion
 import TauCeti.Topology.Codiscrete
-import TauCeti.Topology.MetricSpace.EBall
 
 /-!
 # The Mittag-Leffler theorem and holomorphic functions with prescribed isolated singularities
@@ -30,10 +30,11 @@ with its normal-form refinement `TauCeti.exists_meromorphicNFOn_prescribed_princ
 scalar polynomial principal-part form `TauCeti.exists_meromorphic_principalPart_eq`).
 
 The predicate `TauCeti.HasPrescribedSingularities f Ω E P` packages the realization condition and
-records its algebraic and geometric properties: invariance under changing the prescribed germs by
-analytic germs, closure under linear operations, restriction to subsets, compatibility with
-translations and nonzero complex dilations, and uniqueness of solutions on `Ω \ E` up to a unique
-function complex-differentiable on all of `Ω`.
+records its algebraic and geometric properties: congruence and invariance under changing the
+prescribed germs by analytic germs, closure under linear operations, restriction to subsets,
+compatibility with precomposition (in particular translations and nonzero complex dilations),
+characterization via `TauCeti.meromorphicGerms.principalPart`, and uniqueness of solutions on
+`Ω \ E` up to a unique function complex-differentiable on all of `Ω`.
 
 ## Main definitions and results
 
@@ -42,13 +43,12 @@ function complex-differentiable on all of `Ω`.
 * `TauCeti.HasPrescribedSingularities.iff_exists_differentiableOn_eqOn_add`: given one solution
   `f₁`, any `f₂` realizes the same singularities if and only if it agrees on `Ω \ E` with `f₁ + h`
   for a function `h` complex-differentiable on `Ω` (unique on `Ω`).
-* `TauCeti.exists_analyticOnNhd_compl_singleton_tendsto_cocompact_sub_analyticAt`: every isolated
-  singularity on a punctured neighborhood admits a global representative analytic on `{c}ᶜ` and
-  vanishing along `Filter.cocompact ℂ`.
 * `TauCeti.exists_holomorphic_prescribed_isolated_singularities`: global realization of arbitrary
   isolated singularities (including essential singularities) on `Ω \ E`.
-* `TauCeti.exists_meromorphic_prescribed_principal_parts` and
-  `TauCeti.exists_meromorphic_principalPart_eq`: the Mittag-Leffler theorem on open subsets of `ℂ`.
+* `TauCeti.hasPrescribedSingularities_eval_inv_sub_iff`,
+  `TauCeti.exists_meromorphic_prescribed_principal_parts`, and
+  `TauCeti.exists_meromorphic_principalPart_eq`: polynomial principal-part characterization and the
+  Mittag-Leffler theorem on open subsets of `ℂ`.
 
 ## References
 
@@ -105,8 +105,30 @@ theorem _root_.TauCeti.hasPrescribedSingularities_empty {f : ℂ → F} {Ω : Se
   simp [hasPrescribedSingularities_iff]
 
 /-- The zero function realizes zero singularity data. -/
+@[simp]
 theorem zero (Ω E : Set ℂ) : HasPrescribedSingularities (0 : ℂ → F) Ω E 0 :=
   ⟨differentiableOn_const 0, fun _ => ⟨0, analyticAt_const, by simp⟩⟩
+
+/-- Congruence in `f`: replacing `f₁` by `f₂` agreeing with `f₁` on `Ω \ E` and on `𝓝[≠] a.val`
+for every `a : E` preserves `HasPrescribedSingularities`. -/
+theorem congr {f₁ f₂ : ℂ → F} {Ω E : Set ℂ} {P : E → ℂ → F}
+    (hf₁ : HasPrescribedSingularities f₁ Ω E P) (hf : EqOn f₁ f₂ (Ω \ E))
+    (hfE : ∀ a : E, f₁ =ᶠ[𝓝[≠] a.val] f₂) :
+    HasPrescribedSingularities f₂ Ω E P := by
+  refine ⟨hf₁.1.congr hf.symm, fun a => ?_⟩
+  obtain ⟨g, hg, heq⟩ := hf₁.2 a
+  refine ⟨g, hg, ?_⟩
+  filter_upwards [hfE a, heq] with z hzf hz
+  rwa [← hzf]
+
+/-- On an open set `Ω` with `E ⊆ Ω` and `Eᶜ ∈ Filter.codiscreteWithin Ω`, replacing `f₁` by any
+`f₂` agreeing with `f₁` on `Ω \ E` preserves `HasPrescribedSingularities`. -/
+theorem congr_of_eqOn {f₁ f₂ : ℂ → F} {Ω E : Set ℂ} {P : E → ℂ → F}
+    (hf₁ : HasPrescribedSingularities f₁ Ω E P) (hΩ : IsOpen Ω) (hEΩ : E ⊆ Ω)
+    (hE : Eᶜ ∈ codiscreteWithin Ω) (hf : EqOn f₁ f₂ (Ω \ E)) :
+    HasPrescribedSingularities f₂ Ω E P :=
+  hf₁.congr hf fun a =>
+    mem_of_superset (hΩ.sdiff_mem_nhdsNE_of_compl_mem_codiscreteWithin hE (hEΩ a.property)) hf
 
 /-- Realizing prescribed singularities is closed under pointwise addition. -/
 theorem add {f₁ f₂ : ℂ → F} {Ω E : Set ℂ} {P₁ P₂ : E → ℂ → F}
@@ -128,6 +150,13 @@ theorem neg {f : ℂ → F} {Ω E : Set ℂ} {P : E → ℂ → F}
   filter_upwards [heq] with z hz
   simp only [Pi.neg_apply, ← hz]
   abel
+
+/-- Negating both `f` and `P` preserves `HasPrescribedSingularities`. -/
+@[simp]
+theorem _root_.TauCeti.hasPrescribedSingularities_neg_iff {f : ℂ → F} {Ω E : Set ℂ}
+    {P : E → ℂ → F} :
+    HasPrescribedSingularities (-f) Ω E (-P) ↔ HasPrescribedSingularities f Ω E P :=
+  ⟨fun h => by simpa only [neg_neg] using h.neg, HasPrescribedSingularities.neg⟩
 
 /-- Realizing prescribed singularities is closed under pointwise subtraction. -/
 theorem sub {f₁ f₂ : ℂ → F} {Ω E : Set ℂ} {P₁ P₂ : E → ℂ → F}
@@ -160,45 +189,47 @@ theorem restrict {f : ℂ → F} {Ω Ω' E : Set ℂ} {P : E → ℂ → F}
     HasPrescribedSingularities f Ω' (Ω' ∩ E) (fun a => P ⟨a.val, a.property.2⟩) :=
   hf.mono hΩ inter_subset_right Subset.rfl
 
+/-- **Precomposition compatibility.** Precomposing with a map `φ : ℂ → ℂ` complex-differentiable on
+`φ ⁻¹' (Ω \ E)` that is complex-analytic and maps `𝓝[≠] a.val` into `𝓝[≠] (φ a.val)` at every
+`a : φ ⁻¹' E` pulls back `HasPrescribedSingularities`. -/
+theorem comp {f : ℂ → F} {Ω E : Set ℂ} {P : E → ℂ → F}
+    (hf : HasPrescribedSingularities f Ω E P) {φ : ℂ → ℂ}
+    (hφ_diff : DifferentiableOn ℂ φ (φ ⁻¹' (Ω \ E)))
+    (hφ_an : ∀ a : (φ ⁻¹' E : Set ℂ), AnalyticAt ℂ φ a.val)
+    (hφ_tend : ∀ a : (φ ⁻¹' E : Set ℂ), Tendsto φ (𝓝[≠] a.val) (𝓝[≠] (φ a.val))) :
+    HasPrescribedSingularities (fun z => f (φ z)) (φ ⁻¹' Ω) (φ ⁻¹' E)
+      (fun a z => P ⟨φ a.val, a.property⟩ (φ z)) := by
+  refine ⟨hf.1.comp hφ_diff fun _ hz => hz, fun a => ?_⟩
+  obtain ⟨g, hg, heq⟩ := hf.2 ⟨φ a.val, a.property⟩
+  exact ⟨fun z => g (φ z), hg.fun_comp_of_eq (hφ_an a) rfl, (hφ_tend a).eventually heq⟩
+
 /-- **Translation compatibility.** Precomposing with `z ↦ z + c` shifts both the domain, the
 singular locus, and the prescribed local germs. -/
 theorem comp_add_right {f : ℂ → F} {Ω E : Set ℂ} {P : E → ℂ → F}
     (hf : HasPrescribedSingularities f Ω E P) (c : ℂ) :
     HasPrescribedSingularities (fun z => f (z + c)) ((· + c) ⁻¹' Ω) ((· + c) ⁻¹' E)
-      (fun a z => P ⟨a.val + c, a.property⟩ (z + c)) := by
-  refine ⟨hf.1.comp (differentiable_id.add_const c).differentiableOn fun _ hz => hz, fun a => ?_⟩
-  obtain ⟨g, hg, heq⟩ := hf.2 ⟨a.val + c, a.property⟩
-  have hcont : ContinuousAt (fun z : ℂ => z + c) a.val :=
-    (continuous_id.add continuous_const).continuousAt
-  have htend : Tendsto (fun z : ℂ => z + c) (𝓝[≠] a.val) (𝓝[≠] (a.val + c)) :=
-    tendsto_nhdsWithin_iff.mpr ⟨hcont.mono_left nhdsWithin_le_nhds,
-      eventually_mem_nhdsWithin.mono fun _ hz h => hz (add_right_cancel h)⟩
-  exact ⟨fun z => g (z + c), hg.fun_comp_of_eq (analyticAt_id.add analyticAt_const) rfl,
-    htend.eventually heq⟩
+      (fun a z => P ⟨a.val + c, a.property⟩ (z + c)) :=
+  hf.comp (differentiable_id.add_const c).differentiableOn
+    (fun _ => analyticAt_id.add analyticAt_const)
+    (fun _ => Filter.map_add_right_nhdsNE.le)
 
 /-- **Scaling compatibility.** Precomposing with `z ↦ c * z` for `c ≠ 0` scales the domain, the
 singular locus, and the prescribed local germs. -/
 theorem comp_mul_left {f : ℂ → F} {Ω E : Set ℂ} {P : E → ℂ → F}
     (hf : HasPrescribedSingularities f Ω E P) {c : ℂ} (hc : c ≠ 0) :
     HasPrescribedSingularities (fun z => f (c * z)) ((c * ·) ⁻¹' Ω) ((c * ·) ⁻¹' E)
-      (fun a z => P ⟨c * a.val, a.property⟩ (c * z)) := by
-  refine ⟨hf.1.comp (differentiable_id.const_mul c).differentiableOn fun _ hz => hz, fun a => ?_⟩
-  obtain ⟨g, hg, heq⟩ := hf.2 ⟨c * a.val, a.property⟩
-  have hcont : ContinuousAt (fun z : ℂ => c * z) a.val :=
-    (continuous_const.mul continuous_id).continuousAt
-  have htend : Tendsto (fun z : ℂ => c * z) (𝓝[≠] a.val) (𝓝[≠] (c * a.val)) :=
-    tendsto_nhdsWithin_iff.mpr ⟨hcont.mono_left nhdsWithin_le_nhds,
-      eventually_mem_nhdsWithin.mono fun _ hz h => hz (mul_left_cancel₀ hc h)⟩
-  exact ⟨fun z => g (c * z), hg.fun_comp_of_eq (analyticAt_const.mul analyticAt_id) rfl,
-    htend.eventually heq⟩
+      (fun a z => P ⟨c * a.val, a.property⟩ (c * z)) :=
+  hf.comp (differentiable_id.const_mul c).differentiableOn
+    (fun _ => analyticAt_const.mul analyticAt_id)
+    (fun a => ((Homeomorph.mulLeft₀ c hc).map_punctured_nhds_eq a.val).le)
 
 /-- **Uniqueness modulo `H(Ω)`.** Two functions realizing the same prescribed singularities on an
-open set `Ω` along a relatively closed discrete subset `E ⊆ Ω` differ on `Ω \ E` by a function
+open set `Ω` along `E` (`Eᶜ ∈ Filter.codiscreteWithin Ω`) differ on `Ω \ E` by a function
 complex-differentiable on all of `Ω` (which is unique on `Ω` by
 `IsOpen.eqOn_of_eqOn_sdiff_of_compl_mem_codiscreteWithin`). -/
 theorem exists_differentiableOn_eqOn_sub {f₁ f₂ : ℂ → F} {Ω E : Set ℂ} {P : E → ℂ → F}
     (hf₁ : HasPrescribedSingularities f₁ Ω E P) (hf₂ : HasPrescribedSingularities f₂ Ω E P)
-    (hΩ : IsOpen Ω) (hEΩ : E ⊆ Ω) (hE : Eᶜ ∈ codiscreteWithin Ω) :
+    (hΩ : IsOpen Ω) (hE : Eᶜ ∈ codiscreteWithin Ω) :
     ∃ h : ℂ → F, DifferentiableOn ℂ h Ω ∧ EqOn (f₁ - f₂) h (Ω \ E) := by
   classical
   have hdiff := hf₁.sub hf₂
@@ -211,7 +242,7 @@ theorem exists_differentiableOn_eqOn_sub {f₁ f₂ : ℂ → F} {Ω E : Set ℂ
     have hnhds : insert x ((Ω \ E) ∩ {z | (f₁ - f₂) z - (P - P) ⟨x, hxE⟩ z =
         (hdiff.2 ⟨x, hxE⟩).choose z}) ∈ 𝓝 x :=
       insert_mem_nhds_iff.mpr (inter_mem
-        (hΩ.sdiff_mem_nhdsNE_of_compl_mem_codiscreteWithin hE (hEΩ hxE)) hx_ev)
+        (hΩ.sdiff_mem_nhdsNE_of_compl_mem_codiscreteWithin hE hx) hx_ev)
     filter_upwards [hnhds] with z hz
     rcases hz with rfl | ⟨hzΩE, hz_eq⟩
     · simp [h, hxE]
@@ -228,7 +259,8 @@ end HasPrescribedSingularities
 /-- **Invariance under analytic germ perturbations.** Changing each prescribed germ `P₁ a` by a
 germ that agrees on `𝓝[≠] a.val` with an analytic function at `a.val` leaves
 `HasPrescribedSingularities` unchanged. -/
-theorem hasPrescribedSingularities_congr {f : ℂ → F} {Ω E : Set ℂ} {P₁ P₂ : E → ℂ → F}
+theorem hasPrescribedSingularities_iff_of_analyticAt_sub {f : ℂ → F} {Ω E : Set ℂ}
+    {P₁ P₂ : E → ℂ → F}
     (hP : ∀ a : E, ∃ q : ℂ → F, AnalyticAt ℂ q a.val ∧
       ∀ᶠ z in 𝓝[≠] a.val, P₁ a z - P₂ a z = q z) :
     HasPrescribedSingularities f Ω E P₁ ↔ HasPrescribedSingularities f Ω E P₂ := by
@@ -247,6 +279,17 @@ theorem hasPrescribedSingularities_congr {f : ℂ → F} {Ω E : Set ℂ} {P₁ 
   refine ⟨-q, hq.neg, ?_⟩
   filter_upwards [hQq] with z hz
   rw [Pi.neg_apply, ← hz, neg_sub]
+
+/-- Congruence for `HasPrescribedSingularities` under equality on `Ω \ E` and punctured
+neighborhoods of `E`. -/
+theorem hasPrescribedSingularities_congr {f₁ f₂ : ℂ → F} {Ω E : Set ℂ}
+    {P₁ P₂ : E → ℂ → F} (hf : EqOn f₁ f₂ (Ω \ E))
+    (hfE : ∀ a : E, f₁ =ᶠ[𝓝[≠] a.val] f₂)
+    (hP : ∀ a : E, P₁ a =ᶠ[𝓝[≠] a.val] P₂ a) :
+    HasPrescribedSingularities f₁ Ω E P₁ ↔ HasPrescribedSingularities f₂ Ω E P₂ := by
+  rw [hasPrescribedSingularities_iff_of_analyticAt_sub (P₂ := P₂) fun a =>
+    ⟨0, analyticAt_const, (hP a).mono fun _ hz => by simp [hz]⟩]
+  exact ⟨fun h => h.congr hf hfE, fun h => h.congr hf.symm fun a => (hfE a).symm⟩
 
 end Predicate
 
@@ -277,16 +320,10 @@ theorem iff_exists_differentiableOn_eqOn_add {f₁ f₂ : ℂ → F} {Ω E : Set
     HasPrescribedSingularities f₂ Ω E P ↔
       ∃ h : ℂ → F, DifferentiableOn ℂ h Ω ∧ EqOn f₂ (f₁ + h) (Ω \ E) := by
   refine ⟨fun hf₂ => ?_, ?_⟩
-  · obtain ⟨h, hh, heq⟩ := hf₂.exists_differentiableOn_eqOn_sub hf₁ hΩ hEΩ hE
+  · obtain ⟨h, hh, heq⟩ := hf₂.exists_differentiableOn_eqOn_sub hf₁ hΩ hE
     exact ⟨h, hh, fun z hz => by simp [Pi.add_apply, ← heq hz]⟩
   · rintro ⟨h, hh, heq⟩
-    have hf₁h := hf₁.add_differentiableOn hΩ hEΩ hh
-    refine ⟨hf₁h.1.congr heq, fun a => ?_⟩
-    obtain ⟨g, hg, hfg⟩ := hf₁h.2 a
-    refine ⟨g, hg, ?_⟩
-    filter_upwards [hΩ.sdiff_mem_nhdsNE_of_compl_mem_codiscreteWithin hE (hEΩ a.property), hfg]
-      with z hzΩE hz
-    rwa [heq hzΩE]
+    exact (hf₁.add_differentiableOn hΩ hEΩ hh).congr_of_eqOn hΩ hEΩ hE heq.symm
 
 /-- If every prescribed germ `P a` is meromorphic at `a.val`, any solution of
 `HasPrescribedSingularities f Ω E P` is meromorphic on all of `Ω`. -/
@@ -304,35 +341,7 @@ theorem meromorphicOn {f : ℂ → F} {Ω E : Set ℂ} {P : E → ℂ → F}
 
 end HasPrescribedSingularities
 
-/-! ### Local-to-global singular representatives and compact-exhaustion patching -/
-
-/-- **Global singular representative of an isolated singularity.** If `f : ℂ → F` is
-complex-differentiable on a punctured neighborhood of `c : ℂ`, its negative Laurent part on a small
-punctured disk around `c` defines a function `q : ℂ → F` that is complex-analytic on the entire
-punctured plane `{c}ᶜ`, vanishes along `Filter.cocompact ℂ`, and differs from `f` on `𝓝[≠] c` by a
-function complex-analytic at `c`. -/
-theorem exists_analyticOnNhd_compl_singleton_tendsto_cocompact_sub_analyticAt
-    {f : ℂ → F} {c : ℂ} (hf : ∀ᶠ z in 𝓝[≠] c, DifferentiableAt ℂ f z) :
-    ∃ q : ℂ → F, AnalyticOnNhd ℂ q {c}ᶜ ∧ Tendsto q (cocompact ℂ) (𝓝 0) ∧
-      ∃ g : ℂ → F, AnalyticAt ℂ g c ∧ ∀ᶠ z in 𝓝[≠] c, f z - q z = g z := by
-  obtain ⟨R, hR_pos, hR⟩ := eventually_nhds_iff_ball.mp (eventually_nhdsWithin_iff.mp hf)
-  let R' : ℝ≥0∞ := ENNReal.ofReal R
-  have hf_ann : DifferentiableOn ℂ f (eball c R' \ closedBall c 0) := by
-    rw [eball_ofReal, closedBall_zero]
-    exact fun z ⟨hz_ball, hz_ne⟩ => (hR z hz_ball hz_ne).differentiableWithinAt
-  have hρR : ENNReal.ofReal (R / 2) < R' :=
-    (ENNReal.ofReal_lt_ofReal_iff hR_pos).mpr (half_lt_self hR_pos)
-  have hL : HasLaurentSeriesOnAnnulus f (circleLaurentCoeff f c (R / 2)) c 0 R' :=
-    hf_ann.hasLaurentSeriesOnAnnulus le_rfl (half_pos hR_pos) hρR
-  refine ⟨laurentNegPart (circleLaurentCoeff f c (R / 2)) c,
-    by simpa only [closedBall_zero] using hL.analyticOnNhd_laurentNegPart,
-    hL.tendsto_laurentNegPart_cocompact,
-    laurentPosPart (circleLaurentCoeff f c (R / 2)) c,
-    hL.analyticOnNhd_laurentPosPart c (mem_eball_self hL.outerRadius_pos), ?_⟩
-  filter_upwards [sdiff_mem_nhdsWithin_compl (ball_mem_nhds c hR_pos) {c}] with z hz
-  have hz_ann : z ∈ eball c R' \ closedBall c 0 := by
-    rwa [eball_ofReal, closedBall_zero]
-  exact sub_eq_of_eq_add (hL.eq_laurentPosPart_add_laurentNegPart hz_ann)
+/-! ### Compact-exhaustion patching -/
 
 /-- Construct holomorphic Runge correction terms on each compact piece `K k` for the `(k + 1)`-th
 batch of global singular representatives. -/
@@ -563,6 +572,48 @@ theorem exists_meromorphicNFOn_prescribed_principal_parts
 
 end CompleteSpace
 
+/-- At any marked point `a : E` where `f` and `P a` are meromorphic, realizing prescribed
+singularities implies that `f` and `P a` have the same algebraic principal part. -/
+theorem HasPrescribedSingularities.principalPart_mk_eq {f : ℂ → ℂ} {Ω E : Set ℂ}
+    {P : E → ℂ → ℂ} (hf : HasPrescribedSingularities f Ω E P) (a : E)
+    (hfa : MeromorphicAt f a.val) (hPa : MeromorphicAt (P a) a.val) :
+    meromorphicGerms.principalPart (meromorphicGerms.mk f hfa) =
+      meromorphicGerms.principalPart (meromorphicGerms.mk (P a) hPa) := by
+  obtain ⟨g, hg, heq⟩ := hf.2 a
+  rw [← sub_eq_zero, ← map_sub]
+  refine meromorphicGerms.principalPart_eq_zero_iff.mpr ⟨g, hg, ?_⟩
+  rw [AddSubgroupClass.coe_sub, meromorphicGerms.coe_mk, meromorphicGerms.coe_mk,
+    ← Germ.coe_sub, Germ.coe_eq]
+  exact heq
+
+/-- **Characterization of polynomial principal parts via `HasPrescribedSingularities`.** Given an
+open set `Ω ⊆ ℂ`, a subset `E ⊆ Ω` with `Eᶜ ∈ Filter.codiscreteWithin Ω`, and polynomials
+`P : E → ℂ[X]` without constant term, `f : ℂ → ℂ` satisfies
+`HasPrescribedSingularities f Ω E (fun a z => (P a).eval (z - a.val)⁻¹)` if and only if `f` is
+meromorphic on `Ω`, complex-differentiable on `Ω \ E`, and has algebraic principal part `P a` at
+every `a : E`. -/
+theorem hasPrescribedSingularities_eval_inv_sub_iff {f : ℂ → ℂ} {Ω : Set ℂ} (hΩ : IsOpen Ω)
+    {E : Set ℂ} (hEΩ : E ⊆ Ω) (hE : Eᶜ ∈ codiscreteWithin Ω)
+    {P : E → ℂ[X]} (hP : ∀ a : E, (P a).coeff 0 = 0) :
+    HasPrescribedSingularities f Ω E (fun a z => (P a).eval (z - a.val)⁻¹) ↔
+      ∃ hf : MeromorphicOn f Ω, DifferentiableOn ℂ f (Ω \ E) ∧
+        ∀ a : E, meromorphicGerms.principalPart
+          (meromorphicGerms.mk f (hf a.val (hEΩ a.property))) = P a := by
+  refine ⟨fun h => ?_, fun ⟨hf, hdiff, hprin⟩ => ⟨hdiff, fun a => ?_⟩⟩
+  · have hf : MeromorphicOn f Ω :=
+      h.meromorphicOn hΩ hE fun a => (P a).meromorphicAt_eval_inv_sub a.val
+    refine ⟨hf, h.1, fun a => ?_⟩
+    have hmk : meromorphicGerms.mk (fun z => (P a).eval (z - a.val)⁻¹)
+        ((P a).meromorphicAt_eval_inv_sub a.val) = meromorphicGerms.evalInvSub a.val (P a) :=
+      Subtype.ext (by rw [meromorphicGerms.coe_mk, coe_evalInvSub])
+    rw [h.principalPart_mk_eq a (hf a.val (hEΩ a.property))
+      ((P a).meromorphicAt_eval_inv_sub a.val), hmk,
+      meromorphicGerms.principalPart_evalInvSub_of_coeff_zero (hP a)]
+  · obtain ⟨-, g, hg, hgφ⟩ := meromorphicGerms.principalPart_eq_iff.mp (hprin a)
+    refine ⟨g, hg, ?_⟩
+    rwa [AddSubgroupClass.coe_sub, meromorphicGerms.coe_mk, coe_evalInvSub, ← Germ.coe_sub,
+      Germ.coe_eq] at hgφ
+
 /-- **Polynomial principal-part Mittag-Leffler theorem.** Given an open set `Ω ⊆ ℂ`, a relatively
 closed discrete subset `E ⊆ Ω`, and at each `a : E` a polynomial `P a : ℂ[X]` without constant term,
 there exists `f : ℂ → ℂ` meromorphic on `Ω` and complex-differentiable on `Ω \ E` whose algebraic
@@ -573,13 +624,8 @@ theorem exists_meromorphic_principalPart_eq
     ∃ (f : ℂ → ℂ) (hf : MeromorphicOn f Ω), DifferentiableOn ℂ f (Ω \ E) ∧
       ∀ a : E, meromorphicGerms.principalPart
         (meromorphicGerms.mk f (hf a.val (hEΩ a.property))) = P a := by
-  obtain ⟨f, hf, hsing, hdiff⟩ := exists_meromorphic_prescribed_principal_parts hΩ hEΩ hE
+  obtain ⟨f, _, hsing, hdiff⟩ := exists_meromorphic_prescribed_principal_parts hΩ hEΩ hE
     (fun a z => (P a).eval (z - a.val)⁻¹) fun a => (P a).meromorphicAt_eval_inv_sub a.val
-  refine ⟨f, hf, hdiff, fun a => ?_⟩
-  obtain ⟨g, hg, heq⟩ := hsing a
-  refine meromorphicGerms.principalPart_eq_iff.mpr ⟨hP a, g, hg, ?_⟩
-  rw [AddSubgroupClass.coe_sub, meromorphicGerms.coe_mk, coe_evalInvSub, ← Germ.coe_sub,
-    Germ.coe_eq]
-  exact heq
+  exact ⟨f, (hasPrescribedSingularities_eval_inv_sub_iff hΩ hEΩ hE hP).mp ⟨hdiff, hsing⟩⟩
 
 end TauCeti
