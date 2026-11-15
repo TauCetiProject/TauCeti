@@ -6,7 +6,7 @@ Authors: Claude
 module
 
 public import Mathlib.Analysis.MellinInversion
-public import TauCeti.Analysis.MellinTransform
+import TauCeti.Analysis.MellinTransform
 import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
 
 /-!
