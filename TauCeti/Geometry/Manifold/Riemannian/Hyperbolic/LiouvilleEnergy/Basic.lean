@@ -185,7 +185,9 @@ theorem hasDerivAt_liouvilleEnergy_add_smul {K u v : M → ℝ}
       (∫ x, 2 * v x * Real.exp (2 * u x) ∂μ) 0 := by
     have h2u : Continuous fun x ↦ 2 * u x := continuous_const.mul hu.continuous
     have h2v : Continuous fun x ↦ 2 * v x := continuous_const.mul hv.continuous
-    convert hasDerivAt_integral_exp_add_mul (μ := μ) h2u h2v 0 using 1
+    convert hasDerivAt_integral_exp_add_mul (μ := μ) (t₀ := 0)
+      (.of_forall fun s ↦ (by fun_prop : Continuous fun x ↦
+        Real.exp (2 * u x + s * (2 * v x))).integrable_of_compactSpace) using 1
     · funext t
       exact integral_congr_ae (ae_of_all _ fun x ↦ by ring_nf)
     · simp only [zero_mul, add_zero]

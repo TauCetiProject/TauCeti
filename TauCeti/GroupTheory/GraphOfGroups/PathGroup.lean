@@ -71,26 +71,10 @@ private def fromTreePresentation : GraphOfGroups.π₁Tree 𝔸 T.darts →* Pat
         GraphOfGroups.π₁Tree.edge T.darts e.1) := by
   simp only [toTreePresentation, PathGroup.lift_ofPath]
 
-private theorem weight_tree_path (a b : Γ.V) :
-    (T.path a b).weight
-      (fun {a b : Γ.V} (e : a ⟶ b) =>
-        (GraphOfGroups.π₁Tree.edge T.darts e.1 : GraphOfGroups.π₁Tree 𝔸 T.darts)) = 1 := by
-  have hw {a b : Γ.V} (p : Γ.Path a b)
-      (hp : ∀ e ∈ Path.darts Γ p, e ∈ T.darts) :
-      p.weight (fun {a b : Γ.V} (e : a ⟶ b) => (GraphOfGroups.π₁Tree.edge T.darts e.1 :
-        GraphOfGroups.π₁Tree 𝔸 T.darts)) = 1 := by
-    induction p with
-    | nil => simp
-    | cons p e ih =>
-      simp only [Quiver.Path.weight_cons]
-      rw [ih (fun d hd => hp d (by simp [hd])),
-        GraphOfGroups.π₁Tree.edge_eq_one (hp e.1 (by simp))]
-      simp
-  exact hw _ (fun _ => T.mem_of_mem_darts_path)
-
 @[simp] private theorem toTreePresentation_loop (e : Γ.E) :
     T.toTreePresentation v 𝔸 (T.loop v e) = GraphOfGroups.π₁Tree.edge T.darts e := by
-  simp [loop_def, Quiver.Path.weight_comp, weight_tree_path]
+  simp [loop_def, Quiver.Path.weight_comp,
+    T.weight_path_eq_one (fun _ => GraphOfGroups.π₁Tree.edge_eq_one (𝔸 := 𝔸))]
 
 private theorem fromTreePresentation_weight {a b : Γ.V} (p : Γ.Path a b) :
     T.fromTreePresentation v 𝔸
@@ -137,13 +121,8 @@ omit [∀ a, Subsingleton (𝔸.vertexGroup a)]
 /-- The reduced path group is free on the positive non-tree darts. -/
 def pathGroupEquivFreeGroup {O : Set Γ.E} (hO : Γ.IsOrientation O) :
     PathGroup Γ v ≃* FreeGroup ↥(O \ T.darts) :=
-  let 𝔸 : GraphOfGroups.{u, w, 0, 0} Γ :=
-    { vertexGroup _ := PUnit
-      edgeGroup _ := PUnit
-      ω _ := 1
-      ω_injective _ := Function.injective_of_subsingleton _ }
-  (T.pathGroupEquivTreePresentation v 𝔸).trans
-    (GraphOfGroups.π₁Tree.equivFreeGroup 𝔸 hO T.rev_mem)
+  (T.pathGroupEquivTreePresentation v (GraphOfGroups.trivial Γ)).trans
+    (GraphOfGroups.π₁Tree.equivFreeGroup _ hO T.rev_mem)
 
 /-- A free generator corresponds to its based tree loop. -/
 @[simp] theorem pathGroupEquivFreeGroup_symm_of {O : Set Γ.E} (hO : Γ.IsOrientation O)

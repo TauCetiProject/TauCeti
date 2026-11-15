@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Cohomology.Cap.Relative
-public import TauCeti.Topology.VectorBundle.EulerClass
+public import TauCeti.AlgebraicTopology.Cohomology.Cap.Kronecker
+public import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient.Field
+public import TauCeti.Topology.VectorBundle.Thom.Isomorphism
 
 /-!
 # The homology Thom map of a vector bundle
@@ -39,15 +40,32 @@ that the Mayer–Vietoris argument uses. On the fibre pair `(E_b, E_b ∖ {0})` 
 the cap product with the restriction of `u`, pushed forward along the constant map at `b`
 (`TauCeti.singularHomologyMap_fiberThomPairMap_comp_homologyThomMap`).
 
+With coefficients in `K` itself, the homology Thom map is the transpose of the cohomology Thom map
+`TauCeti.thomMap` under the Kronecker pairing, up to a sign:
+`⟨a, Φ_u(x)⟩ = (-1)^(n p) ⟨π^*a ⌣ u, x⟩` for `a ∈ Hᵖ(B; K)` and `x ∈ Hₘ(E, E₀; K)`
+(`TauCeti.homologyThomMap_comp_singularKronecker`). The cap product with `u` is adjoint to the cup
+product `u ⌣ π^*a` with `u` on the left, and graded commutativity of the cup product of relative
+and absolute classes (`TopPair.singularCup_gradedComm`) moves `u` to the right, where the Thom map
+has it. Over a field the Kronecker pairing identifies cohomology with the dual of homology, so the
+homology Thom map is bijective in a degree exactly when the Thom map is bijective in the
+corresponding degree (`TauCeti.bijective_homologyThomMap_iff`): the Thom isomorphism in cohomology
+over a field gives the one in homology, and conversely.
+
 ## Main definitions and results
 
 * `TauCeti.homologyThomMap`: the homology Thom map `x ↦ π_*(x ⌢ u)`, linear in `u`.
 * `TauCeti.homologyThomMap_naturality`, `TauCeti.homologyThomMap_pullback`: naturality.
 * `TauCeti.singularHomologyMap_fiberThomPairMap_comp_homologyThomMap`: the restriction to a fibre.
+* `TauCeti.homologyThomMap_comp_singularKronecker`: the homology Thom map is the transpose of the
+  Thom map, up to the sign `(-1)^(n p)`.
+* `TauCeti.bijective_homologyThomMap_iff`: over a field, the homology Thom map is bijective exactly
+  when the Thom map is.
 
 ## References
 
 * E. H. Spanier, *Algebraic Topology*, McGraw-Hill (1966), Chapter 5, Section 7.
+* A. Hatcher, *Algebraic Topology*, Cambridge University Press (2002), Section 3.3, the identity
+  `⟨ψ, x ⌢ φ⟩ = ⟨φ ⌣ ψ, x⟩`.
 * J. W. Milnor, J. D. Stasheff, *Characteristic Classes*, Annals of Mathematics Studies 76,
   Princeton (1974), §10.
 -/
@@ -134,5 +152,64 @@ theorem singularHomologyMap_fiberThomPairMap_comp_homologyThomMap (b : B) {n p m
           (TopCat.ofHom (ContinuousMap.const (E b) b)) := by
   rw [homologyThomMap_apply, ← Category.assoc, ← TopPair.singularCap_naturality, Category.assoc,
     ← Functor.map_comp, fiberThomPairMap_fst_comp_thomPairProj]
+
+/-- **The homology Thom map is the transpose of the Thom map**: for `u ∈ Hⁿ(E, E₀; K)`,
+`a ∈ Hᵖ(B; K)` and `x ∈ Hₘ(E, E₀; K)`, `m = n + p`, the Kronecker pairing of `a` with the homology
+Thom map `Φ_u(x) = π_*(x ⌢ u)` is `(-1)^(n p)` times the pairing of the Thom map
+`π^*a ⌣ u` (`TauCeti.thomMap`) with `x`. -/
+theorem homologyThomMap_comp_singularKronecker {n p m : ℕ} (h : n + p = m)
+    (u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n)
+    (a : (TopCat.of B).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) p) :
+    homologyThomMap F E (ModuleCat.of K K) n p m h u ≫ (TopCat.of B).singularKronecker K p a =
+      ((-1 : ℤ) ^ (n * p)) • (thomPair F E).singularKronecker K m
+        (thomMap F E (ModuleCat.of K K) n p m (by omega) u a) := by
+  -- `⟨a, π_*(x ⌢ u)⟩ = ⟨π^*a, x ⌢ u⟩ = ⟨u ⌣ π^*a, x⟩`, and `u ⌣ π^*a = (-1)^(n p) π^*a ⌣ u`.
+  rw [homologyThomMap_apply, Category.assoc, ← TopCat.singularKronecker_naturality,
+    TopPair.singularCap_comp_singularKronecker, thomMap_apply,
+    TopPair.singularCup_gradedComm K (thomPair F E) (u := (λ_ (𝟙_ (ModuleCat.{w} K))).inv)
+      (u' := (λ_ (ModuleCat.of K K)).inv) (μ' := (λ_ (ModuleCat.of K K)).hom)
+      (μ := (ρ_ (ModuleCat.of K K)).hom) ?_ ?_ (by omega), map_zsmul, mul_comm]
+  -- `thomMap` cups along `(λ_ (𝟙_ (ModuleCat K))).inv`, while the cap product side uses
+  -- `ModuleCat.of K K`; both remaining `rfl`s close the definitional equality
+  -- `𝟙_ (ModuleCat K) = ModuleCat.of K K` of Mathlib's monoidal structure on `ModuleCat K`.
+  · rfl
+  · rw [braiding_tensorUnit_left, Iso.inv_hom_id_assoc, ← unitors_inv_equal]
+    rfl
+  · exact braiding_leftUnitor _
+
+/-- **Over a field, the homology Thom map is bijective exactly when the Thom map is**: for
+`u ∈ Hⁿ(E, E₀; K)` and `m = n + p`, the homology Thom map `Hₘ(E, E₀; K) ⟶ Hₚ(B; K)` is bijective
+if and only if the Thom map `Hᵖ(B; K) ⟶ Hᵐ(E, E₀; K)` is. Through the universal coefficient
+isomorphisms `TopCat.singularCohomologyDualEquiv` and `TopPair.singularCohomologyDualEquiv`, the
+Thom map is `±` the dual map of the homology Thom map
+(`TauCeti.homologyThomMap_comp_singularKronecker`), and a linear map between vector spaces is
+bijective exactly when its dual map is. -/
+theorem bijective_homologyThomMap_iff {K : Type w} [Field K] {n p m : ℕ} (h : n + p = m)
+    (u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) :
+    Function.Bijective (homologyThomMap F E (ModuleCat.of K K) n p m h u).hom ↔
+      Function.Bijective (thomMap F E (ModuleCat.of K K) n p m (by omega) u) := by
+  set T := (homologyThomMap F E (ModuleCat.of K K) n p m h u).hom
+  have hc : ((-1 : K) ^ (n * p)) ≠ 0 := pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero)
+  -- The linear form of `π^*a ⌣ u` is `(-1)^(n p)` times the dual map of `T` applied to that
+  -- of `a`.
+  have key : ∀ a, (thomPair F E).singularCohomologyDualEquiv m
+      (thomMap F E (ModuleCat.of K K) n p m (by omega) u a) =
+      LinearEquiv.smulOfNeZero K _ _ hc
+        (T.dualMap ((TopCat.of B).singularCohomologyDualEquiv p a)) := by
+    intro a
+    ext x
+    have hx := congrArg (fun φ ↦ φ.hom x) (homologyThomMap_comp_singularKronecker F E h u a)
+    simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_zsmul,
+      LinearMap.smul_apply] at hx
+    rw [LinearEquiv.smulOfNeZero_apply, LinearMap.smul_apply, LinearMap.dualMap_apply,
+      TopPair.singularCohomologyDualEquiv_apply, TopCat.singularCohomologyDualEquiv_apply, hx]
+    simp [← Int.cast_smul_eq_zsmul K, ← mul_assoc, ← mul_pow]
+  have e : ⇑(thomMap F E (ModuleCat.of K K) n p m (by omega) u) =
+      ⇑((thomPair F E).singularCohomologyDualEquiv m).symm ∘ ⇑(LinearEquiv.smulOfNeZero K _ _ hc) ∘
+        ⇑T.dualMap ∘ ⇑((TopCat.of B).singularCohomologyDualEquiv p) := by
+    funext a
+    simp only [Function.comp_apply, ← key, LinearEquiv.symm_apply_apply]
+  rw [e, EquivLike.comp_bijective, EquivLike.comp_bijective, EquivLike.bijective_comp,
+    LinearMap.dualMap_bijective_iff]
 
 end TauCeti

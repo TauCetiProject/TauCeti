@@ -61,7 +61,8 @@ integrable on that set.
 Likewise, a function locally integrable on `s` times a continuous function whose compact support
 lies in `s`, on either side, is integrable on the whole space, and applying a field of continuous
 linear maps that is continuous on a locally closed set `s` to a function locally integrable on `s`
-keeps it locally integrable on `s`.
+keeps it locally integrable on `s`, as does applying a locally integrable field of operators to a
+continuous function.
 
 A function continuous on a compact set is bounded there, so for a measure finite on compact sets
 it lies in every `Lᵖ` on each measurable subset of that compact set.
@@ -657,6 +658,23 @@ theorem continuousOn_clm_apply {f : X → F} {A : X → F →L[𝕜] G} (hs : Is
   exact isBoundedBilinearMap_apply.continuous.comp_aestronglyMeasurable₂
     ((hA.mono hks).aestronglyMeasurable_of_isCompact hk hk.measurableSet)
     (hf k hks hk).aestronglyMeasurable
+
+/-- Applying a field of continuous linear maps that is locally integrable on a locally closed set
+`s` to a function continuous on `s` gives a function locally integrable on `s`. This is the
+counterpart of `MeasureTheory.LocallyIntegrableOn.continuousOn_clm_apply` with the roles of the
+operator and the vector exchanged. -/
+theorem clm_apply_continuousOn {f : X → F} {A : X → F →L[𝕜] G} (hs : IsLocallyClosed s)
+    (hA : LocallyIntegrableOn A s μ) (hf : ContinuousOn f s) :
+    LocallyIntegrableOn (fun x ↦ A x (f x)) s μ := by
+  rw [locallyIntegrableOn_iff hs] at hA ⊢
+  intro k hks hk
+  obtain ⟨C, hC⟩ := hk.exists_bound_of_continuousOn (hf.mono hks)
+  refine Integrable.mono' ((hA k hks hk).norm.mul_const C) ?_
+    ((ae_restrict_iff' hk.measurableSet).2 <| ae_of_all _ fun x hx ↦ (A x).le_opNorm_of_le
+      (hC x hx))
+  exact isBoundedBilinearMap_apply.continuous.comp_aestronglyMeasurable₂
+    (hA k hks hk).aestronglyMeasurable
+    ((hf.mono hks).aestronglyMeasurable_of_isCompact hk hk.measurableSet)
 
 end MeasureTheory.LocallyIntegrableOn
 

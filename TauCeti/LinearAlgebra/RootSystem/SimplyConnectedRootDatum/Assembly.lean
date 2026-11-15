@@ -415,7 +415,27 @@ def simpleSupportEquivSimplyConnectedBase (t : DynkinType) (ht : t.Valid) :
     ((t.simpleSupportEquivSimplyConnectedBase ht i : Fin t.numRoots)) = t.simpleIndex ht i := by
   simp [simpleSupportEquivSimplyConnectedBase]
 
+/-- The inverse of the Bourbaki numbering sends a simple root to its node, with the same
+zero-based value. -/
+@[simp] theorem val_simpleSupportEquivSimplyConnectedBase_symm (t : DynkinType) (ht : t.Valid)
+    (k : (t.simplyConnectedBase ht).support) :
+    (((t.simpleSupportEquivSimplyConnectedBase ht).symm k : Fin t.rank) : ℕ) =
+      (k : Fin t.numRoots) := (rfl)
+
+/-- The simple root attached to the node of a simple root is that root. -/
+@[simp] theorem simpleIndex_simpleSupportEquivSimplyConnectedBase_symm (t : DynkinType)
+    (ht : t.Valid) (k : (t.simplyConnectedBase ht).support) :
+    t.simpleIndex ht ((t.simpleSupportEquivSimplyConnectedBase ht).symm k) = k :=
+  congrArg Subtype.val ((t.simpleSupportEquivSimplyConnectedBase ht).apply_symm_apply k)
+
+/-- The node of the simple root attached to a node is that node. -/
+@[simp] theorem simpleSupportEquivSimplyConnectedBase_symm_mk_simpleIndex (t : DynkinType)
+    (ht : t.Valid) (i : Fin t.rank) (hk : t.simpleIndex ht i ∈ (t.simplyConnectedBase ht).support) :
+    (t.simpleSupportEquivSimplyConnectedBase ht).symm ⟨t.simpleIndex ht i, hk⟩ = i :=
+  (t.simpleSupportEquivSimplyConnectedBase ht).symm_apply_eq.2 (Subtype.ext (by simp))
+
 /-- The pinned base has one simple root per Bourbaki node. -/
+@[simp]
 theorem card_support_simplyConnectedBase (t : DynkinType) (ht : t.Valid) :
     (t.simplyConnectedBase ht).support.card = t.rank := by
   classical

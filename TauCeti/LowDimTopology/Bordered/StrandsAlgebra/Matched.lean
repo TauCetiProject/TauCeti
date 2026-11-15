@@ -931,6 +931,12 @@ theorem isMatchedGenerator_idOn_empty (s : Finset β) :
   disjoint_source := by simp
   disjoint_target := by simp
 
+/-- The single strand of a chord `i < j`, with no horizontal strands added, indexes a generator. -/
+theorem isMatchedGenerator_single_empty {i j : α} (h : i < j) :
+    IsMatchedGenerator M (single i j h.le) ∅ :=
+  ⟨fun _ hk ↦ h.ne ((mem_single.1 hk).1.symm.trans (mem_single.1 hk).2), by simp, by simp,
+    disjoint_empty_right _, disjoint_empty_right _⟩
+
 /-- The idempotent `I(s)` is the generator `a(∅, s)`: the empty diagram with a horizontal strand
 added at one point of each pair in `s`. -/
 theorem matchedIdem_eq_horizontalCompletion (s : Finset β) :

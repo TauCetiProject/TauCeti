@@ -301,32 +301,35 @@ theorem single_sub_single_mem_range_incidenceBoundary {a b : Γ.V}
     exact (sub_add_sub_cancel _ _ _).symm
 
 /-- A boundary-zero chain supported on a dart set with injective boundary vanishes.
-The chain may be written in any larger ambient dart set. -/
+The chain may be written in any ambient dart set. -/
 theorem eq_zero_of_incidenceBoundary_eq_zero
-    (hsub : F ⊆ O) (hinj : Function.Injective (Γ.incidenceBoundary F R)) (c : O →₀ R)
+    (hinj : Function.Injective (Γ.incidenceBoundary F R)) (c : O →₀ R)
     (hc : Γ.incidenceBoundary O R c = 0) (hs : ∀ e ∈ c.support, e.val ∈ F) :
     c = 0 := by
   classical
-  let i : F → O := Set.inclusion hsub
-  have hi : Function.Injective i := Set.inclusion_injective hsub
-  let b := Finsupp.comapDomain i c hi.injOn
-  have hb : Finsupp.mapDomain i b = c := by
-    apply Finsupp.mapDomain_comapDomain i hi c
+  let b := Finsupp.comapDomain (Set.inclusion (Set.inter_subset_left : O ∩ F ⊆ O)) c
+    (Set.inclusion_injective _).injOn
+  have hb : Finsupp.mapDomain (Set.inclusion (Set.inter_subset_left : O ∩ F ⊆ O)) b = c := by
+    apply Finsupp.mapDomain_comapDomain _ (Set.inclusion_injective _) c
     intro e he
-    exact ⟨⟨e.val, hs e he⟩, Subtype.ext rfl⟩
-  have hboundary : Γ.incidenceBoundary F R b = 0 := by
-    rw [← Γ.incidenceBoundary_mapDomain_inclusion hsub R b, hb, hc]
-  have hbzero : b = 0 := hinj (hboundary.trans (map_zero _).symm)
+    exact ⟨⟨e.1, e.2, hs e he⟩, rfl⟩
+  have hboundary : Γ.incidenceBoundary F R
+      (Finsupp.mapDomain (Set.inclusion (Set.inter_subset_right : O ∩ F ⊆ F)) b) = 0 := by
+    rw [incidenceBoundary_mapDomain_inclusion, ← incidenceBoundary_mapDomain_inclusion
+      (Set.inter_subset_left : O ∩ F ⊆ O), hb, hc]
+  have hbzero : b = 0 :=
+    Finsupp.mapDomain_injective (Set.inclusion_injective _)
+      (by simpa using hinj (hboundary.trans (map_zero _).symm))
   rw [← hb, hbzero, Finsupp.mapDomain_zero]
 
-/-- If the boundary is injective on a dart subset, chains in any larger dart set are
+/-- If the boundary is injective on a dart subset, chains in any ambient dart set are
 determined by their boundaries and their coordinates outside that subset. -/
 theorem eq_of_incidenceBoundary_eq_of_forall_notMem
-    (hsub : F ⊆ O) (hinj : Function.Injective (Γ.incidenceBoundary F R)) (c d : O →₀ R)
+    (hinj : Function.Injective (Γ.incidenceBoundary F R)) (c d : O →₀ R)
     (hboundary : Γ.incidenceBoundary O R c = Γ.incidenceBoundary O R d)
     (hchord : ∀ e : O, e.val ∉ F → c e = d e) : c = d := by
   apply sub_eq_zero.mp
-  apply eq_zero_of_incidenceBoundary_eq_zero hsub hinj (c - d)
+  apply eq_zero_of_incidenceBoundary_eq_zero hinj (c - d)
   · simp [hboundary]
   · intro e he
     by_contra h

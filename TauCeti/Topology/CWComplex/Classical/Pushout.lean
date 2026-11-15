@@ -147,20 +147,18 @@ maps of `C` followed by `C → Z ∪_a C` (`TauCeti.relativeCWPushout_map_apply`
       (range (pushout.inr (relCWBaseInclusion C) (TopCat.ofHom a))) :=
   (relCWAdjunctionSpaceRelativeCWComplex C a).toRelCWComplex
 
+attribute [local instance] relativeCWPushout
+
 variable (C) in
 /-- The `n`-cells of `Z ∪_a C` are the `n`-cells of `C`. -/
 def relativeCWPushoutCellEquiv (n : ℕ) :
-    letI := relativeCWPushout C a
     cell (univ : Set (relCWAdjunctionSpace C a)) n ≃ cell C n :=
   (relCWAdjunctionSpaceRelativeCWComplex C a).toRelCWComplexCellEquiv n
 
 /-- The characteristic map of an `n`-cell of `Z ∪_a C` is the characteristic map of the
 corresponding cell of `C`, followed by the map `C → Z ∪_a C`. -/
-theorem relativeCWPushout_map_apply (n : ℕ)
-    (i : letI := relativeCWPushout C a
-      cell (univ : Set (relCWAdjunctionSpace C a)) n)
+theorem relativeCWPushout_map_apply (n : ℕ) (i : cell (univ : Set (relCWAdjunctionSpace C a)) n)
     (x : closedBall (0 : Fin n → ℝ) 1) :
-    letI := relativeCWPushout C a
     map n i x = pushout.inl (relCWBaseInclusion C) (TopCat.ofHom a)
       ⟨map n (relativeCWPushoutCellEquiv C a n i) x,
         mem_of_subset_of_mem (closedCell_subset_complex n _) (mem_image_of_mem _ x.2)⟩ := by
