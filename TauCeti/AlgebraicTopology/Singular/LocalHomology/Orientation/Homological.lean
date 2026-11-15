@@ -45,6 +45,8 @@ orientation (`TauCeti.HomologicalOrientation.ofSimplyConnectedSpace`).
   agree up to reversal.
 * `TauCeti.HomologicalOrientation.neg_ne`: on a nonempty manifold, an orientation differs from its
   reversal.
+* `TauCeti.HomologicalOrientation.bijective_toSpanSingleton`: in the dimension of `M`, a local
+  orientation freely generates the local homology.
 * `TauCeti.HomologicalOrientation.nonempty_of_simplyConnectedSpace`: a simply connected manifold
   has an orientation.
 
@@ -167,6 +169,16 @@ theorem zsmul_left_injective (hd : finrank ℝ E = d) (o : HomologicalOrientatio
   rw [← sub_eq_zero, ← (o x).property.zsmul_eq_zero_iff
     (singularHomologyComplSingletonFinrankIso _ (chartAt E x) (mem_chart_source E x)), sub_zsmul, h]
   simp
+
+/-- In the dimension of the manifold, a local orientation freely generates the local homology:
+`c ↦ c • o x` is a bijection from `ℤ` onto `Hₙ(M, M ∖ {x}; ℤ)`. -/
+theorem bijective_toSpanSingleton (hd : finrank ℝ E = d) (o : HomologicalOrientation M E d)
+    (x : M) : Function.Bijective (LinearMap.toSpanSingleton ℤ _ (o x).val) := by
+  refine ⟨fun c c' h ↦ o.zsmul_left_injective hd x ?_, fun y ↦ ?_⟩
+  · -- The module structure of the local homology and the `ℤ`-action of its group agree.
+    exact (int_smul_eq_zsmul _ c _).symm.trans (h.trans (int_smul_eq_zsmul _ c' _))
+  · obtain ⟨c, hc⟩ := (isLocalOrientation_iff _ _ _).1 (o x).property y
+    exact ⟨c, (int_smul_eq_zsmul _ c _).trans hc⟩
 
 section SimplyConnected
 
