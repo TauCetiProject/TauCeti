@@ -30,7 +30,7 @@ This is exactly the statement that `a` is a critical point of `a' ↦ S(q, a') +
 
 When this critical point is nondegenerate at `(q₀, a₀, Q₀)`, the intermediate position can be
 eliminated near `(q₀, Q₀)`: when `S` and `T` are `C^(n+2)` at the matched points, there is a
-`C^(n+1)` stationary branch `b(q, Q) ∈ M₂` through `a₀`, and the function
+`C^(n+1)` stationary branch `b(q, Q) ∈ M₂` through `a₀`, and the `C^(n+2)` function
 `R(q, Q) = S(q, b) + T(b, Q)` on `M₁ × M₃` generates the composite relation. On an open
 neighbourhood of `(q₀, Q₀)`,
 
@@ -200,8 +200,9 @@ Let `S` on `M₁ × M₂` and `T` on `M₂ × M₃` be `C^(n+2)` at `(q₀, a₀
 `a₀` be a nondegenerate critical point of `a ↦ S(q₀, a) + T(a, Q₀)`, so that the relations they
 generate match at `(q₀, a₀, Q₀)`. Then there are a stationary branch `b : M₁ × M₃ → M₂` through
 `a₀`, `C^(n+1)` at `(q₀, Q₀)`, and the generating function `R(q, Q) = S(q, b) + T(b, Q)` of the
-composite relation: on an open neighbourhood `D` of `(q₀, Q₀)` the intermediate cotangent points
-match along `b`, and `R` has source covector `d_q S(q, b)` and target covector `-d_Q T(b, Q)`.
+composite relation, `C^(n+2)` at `(q₀, Q₀)`: on an open neighbourhood `D` of `(q₀, Q₀)` the
+intermediate cotangent points match along `b`, and `R` has source covector `d_q S(q, b)` and
+target covector `-d_Q T(b, Q)`.
 Near `((q₀, Q₀), a₀)`, the matching equation holds exactly on the graph of `b`.
 
 All assertions except the value at `(q₀, Q₀)` are local; no global composite relation and no
@@ -215,7 +216,7 @@ theorem exists_generatingComposition [CompleteSpace E₁] [CompleteSpace E₂] [
       IsOpen D ∧ (q₀, Q₀) ∈ D ∧ b (q₀, Q₀) = a₀ ∧
       (∀ y, R y = S (y.1, b y) + T (b y, y.2)) ∧
       ContMDiffAt (I₁.prod I₃) I₂ (n + 1) b (q₀, Q₀) ∧
-      ContMDiffAt (I₁.prod I₃) 𝓘(ℝ) (n + 1) R (q₀, Q₀) ∧
+      ContMDiffAt (I₁.prod I₃) 𝓘(ℝ) (n + 2) R (q₀, Q₀) ∧
       (∀ y ∈ D,
         generatingTarget I₂ S (y.1, b y) = generatingSource I₂ T (b y, y.2) ∧
         generatingSource I₁ R y = generatingSource I₁ S (y.1, b y) ∧
@@ -277,12 +278,15 @@ theorem exists_generatingComposition [CompleteSpace E₁] [CompleteSpace E₂] [
       ContDiffAt.contMDiffAt_extChartAt_symm_comp_extChartAt (I := I₁.prod I₃) (x := (q₀, Q₀))
         (by simpa only [extChartAt_prod, PartialEquiv.prod_coe] using hb')
         (by simpa only [extChartAt_prod, PartialEquiv.prod_coe] using hb'₀)
-  have hR : ContMDiffAt (I₁.prod I₃) 𝓘(ℝ) (n + 1) R (q₀, Q₀) := by
-    have hle : n + 1 ≤ n + 2 := by gcongr; norm_num
-    have hS₀ : ContMDiffAt (I₁.prod I₂) 𝓘(ℝ) (n + 1) S (q₀, b (q₀, Q₀)) := hb₀ ▸ hS.of_le hle
-    have hT₀ : ContMDiffAt (I₂.prod I₃) 𝓘(ℝ) (n + 1) T (b (q₀, Q₀), Q₀) := hb₀ ▸ hT.of_le hle
-    exact (hS₀.comp (q₀, Q₀) (contMDiffAt_fst.prodMk hb)).add
-      (hT₀.comp (q₀, Q₀) (hb.prodMk contMDiffAt_snd))
+  -- `R` reads as `R'` in the product chart at `(q₀, Q₀)`, so it is `C^(n+2)` like `R'`.
+  have hR : ContMDiffAt (I₁.prod I₃) 𝓘(ℝ) (n + 2) R (q₀, Q₀) := by
+    rw [contMDiffAt_iff_contDiffAt_comp_extChartAt_symm]
+    simp only [extChartAt_prod, PartialEquiv.prod_coe]
+    refine hR'.congr_of_eventuallyEq ?_
+    filter_upwards [prod_mem_nhds (extChartAt_target_mem_nhds q₀)
+      (extChartAt_target_mem_nhds Q₀)] with z hz
+    simp only [comp_apply, PartialEquiv.prod_symm, PartialEquiv.prod_coe, R, b, hR'def, S', T',
+      e₁, e₃, (extChartAt I₁ q₀).right_inv hz.1, (extChartAt I₃ Q₀).right_inv hz.2]
   /- Step 3: shrink the coordinate domain so that the branch stays in the chart at `a₀` and the
   coordinate expressions stay differentiable. -/
   have hev : ∀ᶠ y' in 𝓝 (e₁ q₀, e₃ Q₀), y' ∈ D' ∧ b' y' ∈ e₂.target ∧

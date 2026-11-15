@@ -191,6 +191,22 @@ theorem cotangentGeneratingTarget_tripleSum_snd_eq_zero_iff {x : (V × Z) × (W 
       _root_.zero_apply]
     linarith
 
+/-- The two intermediate cotangent points match exactly when `(a,b)` is a critical point of
+`(a',b') ↦ S(q,a') + T(a',b') + R(b',Q)`. -/
+theorem cotangentGeneratingTarget_eq_cotangentGeneratingSource_triple_iff
+    {q : V} {a : W} {b : U} {Q : Z}
+    (hS : DifferentiableAt ℝ S (q, a)) (hT : DifferentiableAt ℝ T (a, b))
+    (hR : DifferentiableAt ℝ R (b, Q)) :
+    cotangentGeneratingTarget S (q, a) = cotangentGeneratingSource T (a, b) ∧
+        cotangentGeneratingTarget T (a, b) = cotangentGeneratingSource R (b, Q) ↔
+      fderiv ℝ (fun p : W × U ↦ S (q, p.1) + T p + R (p.2, Q)) (a, b) = 0 := by
+  have hF := differentiableAt_cotangentGeneratingTripleSum (x := ((q, Q), (a, b))) hS hT hR
+  rw [← cotangentGeneratingTarget_tripleSum_snd_eq_zero_iff (x := ((q, Q), (a, b))) hS hT hR]
+  have hslice := fderiv_slice_right hF
+  simp only [cotangentGeneratingTripleSum_def] at hslice
+  simp only [hslice, ContinuousLinearMap.ext_iff, cotangentGeneratingTarget_snd_apply,
+    ContinuousLinearMap.comp_apply, inr_apply, _root_.zero_apply, neg_eq_zero]
+
 /-- Along a differentiable matched branch the internal derivatives cancel, leaving just the
 two endpoint derivatives of the first and last generating functions. -/
 theorem fderiv_cotangentGeneratingTripleSum_comp_graph_apply
@@ -205,14 +221,8 @@ theorem fderiv_cotangentGeneratingTripleSum_comp_graph_apply
         fderiv ℝ R ((c y).2, y.2) (0, v.2) := by
   have hF := differentiableAt_cotangentGeneratingTripleSum (x := (y, c y)) hS hT hR
   have hzero : fderiv ℝ (fun z ↦ cotangentGeneratingTripleSum S T R (y, z)) (c y) = 0 := by
-    rw [fderiv_slice_right hF]
-    apply ContinuousLinearMap.ext
-    intro z
-    have hcrit := (cotangentGeneratingTarget_tripleSum_snd_eq_zero_iff
-      (x := (y, c y)) hS hT hR).2 ⟨h₁, h₂⟩
-    have h := congrArg (fun p : StrongDual ℝ (W × U) ↦ p z) hcrit
-    simpa only [cotangentGeneratingTarget_snd_apply, _root_.zero_apply,
-      ContinuousLinearMap.comp_apply, inr_apply, neg_eq_zero] using h
+    simpa only [cotangentGeneratingTripleSum_def] using
+      (cotangentGeneratingTarget_eq_cotangentGeneratingSource_triple_iff hS hT hR).1 ⟨h₁, h₂⟩
   rw [hF.hasFDerivAt.fderiv_comp_graph_eq_fderiv_slice_of_fderiv_right_eq_zero hc hzero,
     fderiv_slice_left hF, ContinuousLinearMap.comp_apply, inl_apply,
     fderiv_cotangentGeneratingTripleSum_apply hS hT hR]
