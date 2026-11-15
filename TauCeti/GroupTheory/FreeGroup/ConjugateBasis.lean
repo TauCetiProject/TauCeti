@@ -21,8 +21,8 @@ rank in the free group of rank two, sending the `i`-th generator to `bⁱ a b⁻
 * `FreeGroup.injective_lift_conj_zpow`: for a family of letters `f : ι → α` avoiding `c` and a
   family of exponents `k : ι → ℤ` with the pairs `(f i, k i)` pairwise distinct, the
   homomorphism `FreeGroup ι →* FreeGroup α` sending `i` to `cᵏ⁽ⁱ⁾ f(i) c⁻ᵏ⁽ⁱ⁾` is injective.
-* `TauCeti.injective_freeGroup_lift_conj_zpow_of`: the elements `bᵏ a b⁻ᵏ` for distinct `k`
-  freely generate a free subgroup of `FreeGroup (Fin 2)`.
+* `FreeGroup.injective_lift_conj_zpow_of_ne`: for a letter `x ≠ c` and distinct exponents `k`,
+  the conjugates `cᵏ x c⁻ᵏ` freely generate a free subgroup of `FreeGroup α`.
 
 ## Implementation notes
 
@@ -91,19 +91,13 @@ theorem injective_lift_conj_zpow {c : α} {f : ι → α} {k : ι → ℤ} (hc :
   rw [← MonoidHom.coe_comp, toShiftSemidirect_comp_lift_conj_zpow hc, MonoidHom.coe_comp]
   exact SemidirectProduct.inl_injective.comp (map_injective hfk)
 
-end FreeGroup
-
-namespace TauCeti
-
-/-- For distinct integers `k i`, the elements `bᵏ⁽ⁱ⁾ a b⁻ᵏ⁽ⁱ⁾` of the free group `F(a, b)` freely
-generate a free subgroup. In particular `FreeGroup (Fin n)` embeds in `FreeGroup (Fin 2)` by
-sending the `i`-th generator to `bⁱ a b⁻ⁱ`. This is the case `c = b`, `f i = a` of
-`FreeGroup.injective_lift_conj_zpow`. -/
-theorem injective_freeGroup_lift_conj_zpow_of {ι : Type*} {k : ι → ℤ}
+/-- Let `x ≠ c` be two letters of `α`. For distinct integers `k i`, the conjugates
+`cᵏ⁽ⁱ⁾ x c⁻ᵏ⁽ⁱ⁾` freely generate a free subgroup of `FreeGroup α`. For `α = {a, b}`, `c = b` and
+`x = a`, this embeds `FreeGroup (Fin n)` in `FreeGroup (Fin 2)` by sending the `i`-th generator
+to `bⁱ a b⁻ⁱ`. -/
+theorem injective_lift_conj_zpow_of_ne {c x : α} (hx : x ≠ c) {k : ι → ℤ}
     (hk : Function.Injective k) :
-    Function.Injective (FreeGroup.lift fun i =>
-      (FreeGroup.of (1 : Fin 2) ^ k i * FreeGroup.of 0 * (FreeGroup.of 1 ^ k i)⁻¹)) :=
-  FreeGroup.injective_lift_conj_zpow (f := fun _ => 0) (fun _ => zero_ne_one)
-    fun _ _ h => hk (Prod.ext_iff.1 h).2
+    Function.Injective (lift fun i => of c ^ k i * of x * (of c ^ k i)⁻¹) :=
+  injective_lift_conj_zpow (f := fun _ => x) (fun _ => hx) fun _ _ h => hk (Prod.ext_iff.1 h).2
 
-end TauCeti
+end FreeGroup
