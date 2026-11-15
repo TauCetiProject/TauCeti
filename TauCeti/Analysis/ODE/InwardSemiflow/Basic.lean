@@ -414,8 +414,9 @@ theorem add_mem_forwardSemiflowInterval_iff (hX : LocallyLipschitzOn S X)
         dsimp only; split_ifs with hus
         · exact forwardSemiflow_mem hX (hsub₁ ⟨hu.1, hus.trans_lt hsb₁⟩)
         · exact hS₂ ⟨by linarith, by linarith [hu.2]⟩)
-      (fun _ hu ↦ hasDerivWithinAt_ite_Ico X hs0 hsb₁ hb₂ h0₂
-        (fun _ hv ↦ hasDerivWithinAt_forwardSemiflow_Ico hX hsub₁ hv) hγ₂' hu)
+      (fun _ hu ↦ hasDerivWithinAt_ite_Ico X h0₂
+        (fun _ hv ↦ (hasDerivWithinAt_forwardSemiflow_Ico hX hsub₁
+          ⟨hv.1, hv.2.trans_lt hsb₁⟩).mono fun _ hr ↦ ⟨hr.1, hr.2.trans_lt hsb₁⟩) hγ₂' hu)
       ⟨by positivity, by linarith [htI₂.2]⟩
 
 /-- **The semiflow cocycle law.** When `s` lies in the forward interval at `x` and `t` lies in the

@@ -94,6 +94,7 @@ private theorem norm_sub_dysonSeriesLeft_le_add_mul_integral {X : E → E} {DX :
     (hγ_cont.sub hγ₀_cont |>.sub
       ((continuous_dysonSeriesLeft hM₀_cont).clm_apply continuous_const).continuousOn).norm
   have hsub_t : uIcc 0 t ⊆ Icc 0 τ := uIcc_of_le ht.1 ▸ Icc_subset_Icc_right ht.2
+  -- Step 1: Express `w t` as an integral from the integral equations for `γ`, `γ₀`, and `A`.
   have hA_int : A t (y - y₀) - (y - y₀) =
       ∫ s in (0 : ℝ)..t, DX (γ₀ (projIcc 0 τ hτ.le s)) (A s (y - y₀)) := by
     simpa [A] using (intervalIntegral.integral_eq_sub_of_hasDerivAt
@@ -112,6 +113,7 @@ private theorem norm_sub_dysonSeriesLeft_le_add_mul_integral {X : E → E} {DX :
       ← intervalIntegral.integral_sub (hInt1.sub hInt2) hInt3]
     refine intervalIntegral.integral_congr fun s hs ↦ ?_
     simp only [projIcc_of_mem hτ.le (hsub_t hs), w, map_sub]; abel
+  -- Step 2: Bound the integrand by `R₀ + CD * ‖w s‖` and integrate over `[0, t]`.
   have hDX_s : ContinuousOn (fun s ↦ DX (γ₀ s)) (Icc 0 τ) :=
     hM₀_cont.continuousOn.congr fun s hs ↦ by simp [projIcc_of_mem hτ.le hs]
   have hrem_int : IntervalIntegrable
@@ -250,10 +252,12 @@ private theorem hasFDerivWithinAt_local_forwardSemiflow {C U : Set E} (hC : Conv
     have h := hpdist.trans_le (min_le_right _ _)
     rw [Prod.dist_eq] at h
     exact (le_max_right _ _).trans_lt h
+  -- Step 1: Split the linearization error into time error `E₁` and spatial error `E₂`.
   let E₁ := Φ p.1 p.2 - Φ p₀.1 p.2 - (p.1 - p₀.1) • X (Φ p₀.1 p₀.2)
   let E₂ := Φ p₀.1 p.2 - Φ p₀.1 p₀.2 -
     dysonSeriesLeft (fun s ↦ fderivWithin ℝ X (U ∩ C) (Φ (projIcc 0 τ hτ.le s) p₀.2))
       p₀.1 (p.2 - p₀.2)
+  -- Step 2: Bound `E₁` by integrating `X (Φ s p.2) - X (Φ p₀.1 p₀.2)` over `[p₀.1, p.1]`.
   have ht_inc : ‖E₁‖ ≤ ε / 2 * ‖p - p₀‖ := by
     have hX_y : ContinuousOn (fun s ↦ X (Φ s p.2)) (Icc 0 τ) :=
       hXΦ_cont.comp (continuousOn_id.prodMk continuousOn_const) fun _ hs ↦ ⟨hs, hpS.2⟩
@@ -285,6 +289,7 @@ private theorem hasFDerivWithinAt_local_forwardSemiflow {C U : Set E} (hC : Conv
       ⟨uIcc_subset_Icc hp₀.1 hpS.1 (uIoc_subset_uIcc hs), hpS.2⟩ hs_dist
     exact le_of_lt (by
       simpa only [Function.comp_apply, Function.uncurry_def, dist_eq_norm] using hcl)
+  -- Step 3: Combine the time and spatial bounds to conclude the `o(‖p - p₀‖)` estimate.
   rw [show uncurry Φ p - uncurry Φ p₀ -
       ((ContinuousLinearMap.fst ℝ ℝ E).smulRight (X (Φ p₀.1 p₀.2)) +
         (dysonSeriesLeft (fun s ↦ fderivWithin ℝ X (U ∩ C) (Φ (projIcc 0 τ hτ.le s) p₀.2))
@@ -569,6 +574,7 @@ theorem Convex.exists_contDiffOn_inwardSemiflow {C U : Set E} (hC : Convex ℝ C
         HasDerivWithinAt (fun s ↦ Φ s y) (X (Φ t y)) (Icc 0 τ) t) ∧
       (∀ y ∈ ball x₀ r ∩ C, ∀ t s : ℝ, 0 ≤ t → 0 ≤ s → t + s ≤ τ →
         Φ s y ∈ ball x₀ r → Φ (t + s) y = Φ t (Φ s y)) := by
+  -- Step 1: Shrink to an open ball `U' ⊆ U` on which `X` stays strictly inward to `C`.
   have hX1 : ContDiffOn ℝ 1 X (U ∩ C) := hX.of_le (mod_cast hm)
   obtain ⟨rU, hrU, hballU⟩ := Metric.isOpen_iff.mp hU x₀ hx₀.1
   obtain ⟨rI, hrI, hballI⟩ := Metric.mem_nhdsWithin_iff.mp
@@ -580,6 +586,7 @@ theorem Convex.exists_contDiffOn_inwardSemiflow {C U : Set E} (hC : Convex ℝ C
       (hX1.mono (inter_subset_inter_left C hU'_sub))
   have hX_in_U' (y : E) (hy : y ∈ U' ∩ C) : X y ∈ TauCeti.strictInwardCone C y :=
     hballI ⟨ball_subset_ball (min_le_right _ _) hy.1, hU'_sub hy.1, hy.2⟩ hy.2
+  -- Step 2: Restrict the maximal `C^m` semiflow on `U' ∩ C` to a uniform short-time box.
   obtain ⟨r, hr, τ, hτ, _, _, h2rU', _, hsub, -⟩ :=
     TauCeti.exists_local_forwardSemiflow_continuousOn hC isOpen_ball hX_lip_U'
       ⟨mem_ball_self (lt_min hrU hrI), hx₀.2⟩ hX_in

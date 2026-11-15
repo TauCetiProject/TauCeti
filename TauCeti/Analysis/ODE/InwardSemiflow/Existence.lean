@@ -96,6 +96,7 @@ private theorem exists_Icc_trajectory_of_ball_subset {C : Set E} {X : E → E} {
     ∃ γ : ℝ → E, γ 0 = x ∧ MapsTo γ (Icc 0 b) (ball x₀ (2 * r) ∩ C) ∧
       (∀ t ∈ Icc 0 b, γ t = x + ∫ s in (0 : ℝ)..t, X (γ s)) ∧
       ∀ t ∈ Icc 0 b, HasDerivWithinAt γ (X (γ t)) (Icc 0 b) t := by
+  -- Step 1: The inward cone tube `S ⊆ C(Icc 0 b, E)` is closed and nonempty, hence complete.
   let S : Set C(Icc 0 b, E) :=
     {γ | ∀ t : Icc 0 b, γ t ∈ closedBall (x + (t : ℝ) • X x) (ε / 2 * (t : ℝ))}
   have hS_closed : IsClosed S := by
@@ -111,6 +112,7 @@ private theorem exists_Icc_trajectory_of_ball_subset {C : Set E} {X : E → E} {
   have hf_cont (γ : S) : Continuous (f γ) :=
     hK.continuousOn.comp_continuous (γ.1.continuous.comp continuous_projIcc)
       fun _ ↦ (hS_mem γ _).1
+  -- Step 2: The Picard operator preserves `S` and contracts with Lipschitz constant `1 / 2`.
   let P₀ : S → C(Icc 0 b, E) := fun γ ↦ ⟨fun t ↦ x + ∫ s in (0 : ℝ)..(t : ℝ), f γ s,
     ((continuous_primitive (fun _ _ ↦ (hf_cont γ).intervalIntegrable _ _) 0).const_add x).comp
       continuous_subtype_val⟩
@@ -145,6 +147,7 @@ private theorem exists_Icc_trajectory_of_ball_subset {C : Set E} {X : E → E} {
             rw [NNReal.coe_div, NNReal.coe_one, NNReal.coe_two]
             exact mul_le_mul_of_nonneg_right
               ((mul_le_mul_of_nonneg_left t.2.2 K.coe_nonneg).trans hcontr) dist_nonneg
+  -- Step 3: Extract the Banach fixed point and verify its integral and derivative identities.
   set γstar : S := hP.fixedPoint
   let γ : ℝ → E := fun t ↦ x + ∫ s in (0 : ℝ)..t, f γstar s
   have hγ_eq (t : ℝ) (ht : t ∈ Icc 0 b) : γ t = γstar.1 ⟨t, ht⟩ :=
@@ -180,6 +183,7 @@ private theorem exists_Ico_and_Icc_forwardSemiflow_of_ball_subset {C U : Set E}
   set τ : ℝ := min (min (δ / 4) (r / (4 * M))) (min (ε / (8 * L * M)) (1 / (8 * L)))
   have hτ : 0 < τ := by positivity
   have hKL : (K : ℝ) ≤ L := by linarith [hL_def]
+  -- Verify the inward-tube, radius, self-map, and contraction bounds uniformly on `ball x₀ r ∩ C`.
   have htraj (y : E) (hy : y ∈ ball x₀ r ∩ C) :
       Ico 0 (2 * τ) ⊆ forwardSemiflowInterval X (U ∩ C) y ∧
       (∀ t ∈ Icc 0 τ, forwardSemiflow X (U ∩ C) t y ∈ ball x₀ (2 * r) ∩ C) ∧
@@ -594,6 +598,7 @@ theorem forwardSemiflowInterval_eq_Ici_of_isCompact_sublevel {C : Set E} (hC : C
   have hlub : IsLUB (forwardSemiflowInterval X C x) b := isLUB_csSup ⟨0, h0⟩ hbdd
   set c' := max c 0
   set R := f x + c' * b
+  -- Step 1: On `[0, T]`, `s ↦ f (Φ s x) - max c 0 * s` is antitone, trapping `Φ T x` in `{f ≤ R}`.
   have htrap (T : ℝ) (hT : T ∈ Ioo 0 b) : forwardSemiflow X C T x ∈ {y ∈ C | f y ≤ R} := by
     have hTJ : T ∈ forwardSemiflowInterval X C x :=
       forwardSemiflowInterval_eq_Ico_of_isLUB hlub ▸ ⟨hT.1.le, hT.2⟩
@@ -620,6 +625,7 @@ theorem forwardSemiflowInterval_eq_Ici_of_isCompact_sublevel {C : Set E} (hC : C
     have hle0T := hg_anti ⟨le_rfl, hT.1.le⟩ ⟨hT.1.le, le_rfl⟩ hT.1.le
     simp only [g, forwardSemiflow_zero, mul_zero, sub_zero] at hle0T
     linarith [mul_le_mul_of_nonneg_left hT.2.le (le_max_right c 0)]
+  -- Step 2: By compact escape, the trajectory must leave the compact sublevel `{y ∈ C | f y ≤ R}`.
   have hesc : ∀ᶠ t in 𝓝[<] b, forwardSemiflow X C t x ∉ {y ∈ C | f y ≤ R} := by
     simpa only [univ_inter] using eventually_notMem_nhdsLT_forwardSemiflow hC
       isOpen_univ hX' (fun y hy ↦ hX_in y hy.2) ⟨trivial, hx⟩
