@@ -355,11 +355,14 @@ theorem exists_contDiff_ae_eq_of_forall_mem_sobolevFields
     (hS i 2).exists_zeroAtInftyContinuousMap_ae_eq (finrank_real_complex_lt_two_mul one_lt_two)
   have hg_smooth (i : Fin 4) : ContDiff ℝ ∞ (g i) :=
     contDiff_of_forall_memSobolev_of_ae_eq (hS i) (g i).continuous (hg i)
-  set w : ℂ → EuclideanSpace ℝ (Fin 4) := fun z ↦ WithLp.toLp 2 fun i ↦ (g i z).re
+  set w : ℂ → EuclideanSpace ℝ (Fin 4) := fun z ↦ WithLp.toLp 2 fun i ↦ (g i z).re with hw_def
+  have hw_apply (z : ℂ) (i : Fin 4) : w z i = (g i z).re :=
+    (congrArg (fun f : ℂ → EuclideanSpace ℝ (Fin 4) ↦ f z i) hw_def).trans
+      (PiLp.toLp_apply 2 _ _ i)
   have hw : ContDiff ℝ ∞ w := contDiff_euclidean.2 fun i ↦ reCLM.contDiff.comp (hg_smooth i)
   have huw (i : Fin 4) : u i =ᵐ[volume] fun z ↦ w z i := by
     filter_upwards [hg i, ofRealCLM.coeFn_compLp (u i)] with z hgz huz
-    simpa [w] using congrArg Complex.re (huz.symm.trans hgz)
+    simpa [hw_apply] using congrArg Complex.re (huz.symm.trans hgz)
   have hyw : y =ᵐ[volume] w := by
     filter_upwards [ae_all_iff.2 fun i ↦ (hu i).symm.trans (huw i)] with z hz
     ext i
@@ -372,7 +375,9 @@ theorem exists_contDiff_ae_eq_of_forall_mem_sobolevFields
     obtain ⟨C, -, hC⟩ :=
       exists_norm_iteratedFDeriv_le_mul_norm_toBesselPotentialSpace (E := ℂ) (F := ℂ) hsn
     refine ⟨‖reCLM‖ * (C * ‖(hS i ((n : ℝ) + 2)).toBesselPotentialSpace‖), fun z ↦ ?_⟩
-    have hcomp : (fun z ↦ w z i) = fun z ↦ reCLM (g i z) := rfl
+    have hcomp : (fun z ↦ w z i) = fun z ↦ reCLM (g i z) := by
+      funext z
+      rw [hw_apply, reCLM_apply]
     rw [hcomp]
     refine (reCLM.norm_iteratedFDeriv_comp_left (hg_smooth i).contDiffAt
       (by exact_mod_cast le_top)).trans ?_

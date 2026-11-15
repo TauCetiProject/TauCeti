@@ -64,8 +64,9 @@ dimensional, of real dimension at most `2 m`
 At a framed vortex, `2 m` is the real dimension of the tangent space of the divisor space
 `Sym^m ℂ`; this is the upper bound in the identification of the kernel with that tangent space.
 Surjectivity of the principal-part map and the resulting dimension `2 m` are proved in
-`TauCeti.Analysis.PDE.Vortex.KernelDimension`, and the comparison with the weak `L²` and Sobolev
-`H^s` kernels is proved in `TauCeti.Analysis.PDE.Vortex.EllipticRegularity`.
+`TauCeti.Analysis.PDE.Vortex.KernelDimension`, and the comparison with the weak `L²` kernel, and
+membership of kernel elements in every `H^s`, are proved in
+`TauCeti.Analysis.PDE.Vortex.EllipticRegularity`.
 
 ## References
 

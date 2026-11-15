@@ -597,6 +597,8 @@ def weakGaugeFixedKernel (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
     refine ⟨((hu η hη hηc).1.const_mul c).congr hae.symm, ?_⟩
     rw [integral_congr_ae hae, integral_const_mul, (hu η hη hηc).2, mul_zero]
 
+/-- Membership in `weakGaugeFixedKernel x` unfolds to integrability and vanishing integral against
+`L_x* η` for every smooth compactly supported test field `η`. -/
 @[simp]
 theorem mem_weakGaugeFixedKernel {x : ℂ → EuclideanSpace ℝ (Fin 4)}
     {u : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ)} :
@@ -658,12 +660,24 @@ def gaugeFixedKernelEquivWeak {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : Con
       refine ⟨⟨w, hwK⟩, Subtype.ext (Lp.ext_iff.2 ?_)⟩
       exact (coeFn_gaugeFixedKernelToLp ⟨w, hwK⟩).trans huw.symm⟩
 
+/-- Passing from `gaugeFixedKernel x` to `weakGaugeFixedKernel x` via `gaugeFixedKernelEquivWeak`
+acts as `gaugeFixedKernelToLp x`. -/
 @[simp]
 theorem coe_gaugeFixedKernelEquivWeak {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ ∞ x)
     (hbound : ∀ i : Fin 4, ∀ n : ℕ, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
     (y : gaugeFixedKernel x) :
     (gaugeFixedKernelEquivWeak hx hbound y : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ)) =
       gaugeFixedKernelToLp x y := (rfl)
+
+/-- The `L²` class of `(gaugeFixedKernelEquivWeak hx hbound).symm u` is `u`. -/
+@[simp]
+theorem gaugeFixedKernelToLp_gaugeFixedKernelEquivWeak_symm {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx : ContDiff ℝ ∞ x)
+    (hbound : ∀ i : Fin 4, ∀ n : ℕ, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
+    (u : weakGaugeFixedKernel x) :
+    gaugeFixedKernelToLp x ((gaugeFixedKernelEquivWeak hx hbound).symm u) =
+      (u : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ)) := by
+  rw [← coe_gaugeFixedKernelEquivWeak hx hbound, LinearEquiv.apply_symm_apply]
 
 /-- At a smooth field `x` with bounded derivatives of all orders, testing against `C^k` compactly
 supported fields for any `1 ≤ k ≤ ∞` (in particular `k = 1`, `k = 2`, or `k = ∞`) cuts out the
@@ -677,12 +691,9 @@ theorem mem_weakGaugeFixedKernel_iff_forall_contDiff {k : ℕ∞ω} (hk : 1 ≤ 
         ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ = 0 := by
   refine ⟨fun hu η hη hηc ↦ ?_, fun hu ↦ (mem_weakGaugeFixedKernel_iff hx.continuous).2
     fun η hη hηc ↦ hu η (hη.of_le hk') hηc⟩
-  set y : gaugeFixedKernel x := (gaugeFixedKernelEquivWeak hx hbound).symm ⟨u, hu⟩
-  have huy : u = gaugeFixedKernelToLp x y :=
-    congrArg Subtype.val ((gaugeFixedKernelEquivWeak hx hbound).apply_symm_apply ⟨u, hu⟩).symm
-  rw [huy]
-  exact integral_inner_gaugeFixedKernelToLp_gaugeFixedAdjoint_eq_zero hx.continuous y
-    (hη.of_le hk) hηc
+  simpa only [gaugeFixedKernelToLp_gaugeFixedKernelEquivWeak_symm hx hbound ⟨u, hu⟩] using
+    integral_inner_gaugeFixedKernelToLp_gaugeFixedAdjoint_eq_zero hx.continuous
+      ((gaugeFixedKernelEquivWeak hx hbound).symm ⟨u, hu⟩) (hη.of_le hk) hηc
 
 /-- **Finite-dimensionality of the weak `L²` kernel.** At a smooth field `x` with bounded
 derivatives of all orders, `∂bar_a α = 0`, `|α|² → 1` at infinity, and zero divisor `D`, the weak
@@ -699,7 +710,10 @@ theorem finiteDimensional_weakGaugeFixedKernel {x : ℂ → EuclideanSpace ℝ (
       fun _ hy ↦ mem_gaugeFixedKernel.1 hy
   exact (gaugeFixedKernelEquivWeak hx hbound).finiteDimensional
 
-/-- **The weak `L²` kernel of `L_x` has real dimension `2 |D|`.** -/
+/-- **The weak `L²` kernel of `L_x` has real dimension `2 |D|`.** Let `x` be a smooth field whose
+coordinates have bounded derivatives of all orders, satisfying the holomorphicity rows
+`∂bar_a α = 0` with `|α|² → 1` at infinity and zero divisor `D`. Then `weakGaugeFixedKernel x` has
+real dimension `2 |D|`. -/
 theorem finrank_weakGaugeFixedKernel_eq_two_mul_card {x : ℂ → EuclideanSpace ℝ (Fin 4)}
     {D : Multiset ℂ} (hx : ContDiff ℝ ∞ x)
     (hbound : ∀ i : Fin 4, ∀ n : ℕ, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
@@ -710,7 +724,10 @@ theorem finrank_weakGaugeFixedKernel_eq_two_mul_card {x : ℂ → EuclideanSpace
   (gaugeFixedKernelEquivWeak hx hbound).symm.finrank_eq.trans
     (finrank_gaugeFixedKernel_eq_two_mul_card hx hhol hlim hD)
 
-/-- **The weak `L²` kernel of `L_x` at a framed degree-`m` field has real dimension `2 m`.** -/
+/-- **The weak `L²` kernel of `L_x` at a framed degree-`m` field has real dimension `2 m`.** Let `x`
+be a smooth field whose coordinates have bounded derivatives of all orders, satisfying the
+holomorphicity rows `∂bar_a α = 0` and the degree-`m` end framing `α(z) (z / |z|)⁻ᵐ → 1`. Then
+`weakGaugeFixedKernel x` has real dimension `2 m`. -/
 theorem finrank_weakGaugeFixedKernel_eq_two_mul {m : ℕ} {x : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hx : ContDiff ℝ ∞ x)
     (hbound : ∀ i : Fin 4, ∀ n : ℕ, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
@@ -773,7 +790,9 @@ theorem exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_and_mem_s
     mem_sobolevFields_one_of_mem_framedFieldSpace_of_integral_inner_gaugeFixedAdjoint_eq hs hx
       hx₁.continuous (Lp.memLp _) (Lp.memLp g) fun η hη hc ↦ hQ g η (hη.of_le (by simp)) hc⟩
 
-/-- **The kernel of `L_x` at a smooth field in `A_m^s` (`s > 1`) has real dimension `2 m`.** -/
+/-- **The kernel of `L_x` at a smooth field in `A_m^s` (`s > 1`) has real dimension `2 m`.** Let `x`
+be a smooth field in `framedFieldSpace f m s` (`s > 1`) satisfying the holomorphicity rows
+`∂bar_a α = 0`. Then `gaugeFixedKernel x` has real dimension `2 m`. -/
 theorem finrank_gaugeFixedKernel_eq_two_mul_of_mem_framedFieldSpace
     {f : ContDiffBump (0 : ℝ)} {m : ℕ} {s : ℝ} (hs : 1 < s) {x : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hx : x ∈ framedFieldSpace f m s) (hxs : ContDiff ℝ ∞ x)
@@ -782,7 +801,9 @@ theorem finrank_gaugeFixedKernel_eq_two_mul_of_mem_framedFieldSpace
   finrank_gaugeFixedKernel_eq_two_mul hxs hhol
     (tendsto_sectionValue_mul_inv_pow hs hx hxs.continuous)
 
-/-- **The weak `L²` kernel of `L_x` at a field in every `A_m^k` has real dimension `2 m`.** -/
+/-- **The weak `L²` kernel of `L_x` at a field in every `A_m^k` has real dimension `2 m`.** Let `x`
+be a continuous field lying in `framedFieldSpace f m k` for every `k : ℕ` and satisfying the
+holomorphicity rows `∂bar_a α = 0`. Then `weakGaugeFixedKernel x` has real dimension `2 m`. -/
 theorem finrank_weakGaugeFixedKernel_eq_two_mul_of_forall_mem_framedFieldSpace
     {f : ContDiffBump (0 : ℝ)} {m : ℕ} {x : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hx : ∀ k : ℕ, x ∈ framedFieldSpace f m k) (hcont : Continuous x)

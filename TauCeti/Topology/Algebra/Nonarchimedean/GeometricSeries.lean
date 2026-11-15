@@ -7,11 +7,12 @@ module
 
 public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import Mathlib.Topology.Algebra.InfiniteSum.Ring
+public import TauCeti.Topology.Algebra.InfiniteSum.NeumannSeries
 public import TauCeti.Topology.Algebra.Nonarchimedean.LinearTopology
 public import TauCeti.Topology.Algebra.TopologicallyNilpotent.Basic
 
 /-!
-# The geometric series in a complete nonarchimedean ring
+# The geometric series in a complete nonarchimedean ring, and its operator form
 
 **Wedhorn, *Adic Spaces*, Proposition 5.38.** In a complete nonarchimedean topological ring,
 `1 - a` is a unit for every topologically nilpotent `a`.
@@ -24,8 +25,14 @@ consumed) — and for the powers of `a` that is precisely topological nilpotence
 `Summable.one_sub_mul_tsum_pow` and `Summable.tsum_pow_mul_one_sub` then exhibit `∑ aⁿ` as a
 two-sided inverse.
 
-What is exported is unit-hood alone; a consumer wanting the inverse should use
-`ha.summable_pow.one_sub_mul_tsum_pow` directly.
+For a ring element what is exported is unit-hood alone; a consumer wanting the inverse should use
+`ha.summable_pow.one_sub_mul_tsum_pow` directly. The file also exports the operator form, the
+Neumann series in a complete nonarchimedean group: for a continuous additive endomorphism `N`
+whose iterates `Nⁿ x` tend to zero, `y = ∑ Nⁿ x` converges and solves `y - N y = x`. So
+`x ↦ ∑ Nⁿ x` is a right inverse of `1 - N` on such `x`, for maps that are not multiplication by an
+element. The identity itself, for any convergent Neumann series, is
+`Summable.tsum_iterate_sub_apply_tsum_iterate`, in
+`TauCeti/Topology/Algebra/InfiniteSum/NeumannSeries.lean`.
 
 Mathlib has the analytic counterpart, `isUnit_one_sub_of_norm_lt_one`, which needs a norm; the
 nonarchimedean-topological statement is what the Huber theory uses, since a Huber ring carries no
@@ -38,17 +45,23 @@ canonical norm.
   `∑ cₙ aⁿ` is summable for every family of coefficients `cₙ`.
 * `IsTopologicallyNilpotent.isUnit_one_sub` : the unit-hood half of Proposition 5.38.
 * `IsTopologicallyNilpotent.isUnit_one_add` : the `1 + a` form, which is the one consumers want.
+* `NonarchimedeanAddGroup.tsum_iterate_sub_apply_tsum_iterate` : the Neumann series of a
+  continuous additive endomorphism `N` of a complete nonarchimedean group. If the iterates `Nⁿ x`
+  tend to zero then `y = ∑ Nⁿ x` solves `y - N y = x`. This is the operator form of the geometric
+  series, for maps that are not multiplication by an element of a ring.
 
 ## Provenance
 
 Ported from AINTLIB's `projects/AdicSpaces/Adic spaces/GeometricSeries.lean`, branch
-`dev/adic-spaces`, commit `37bbdaeb`, Apache-2.0, Chris Birkbeck. The proofs are AINTLIB's and rest
-entirely on Mathlib primitives. Two deliberate differences from the source: the ring here is only a
-`Ring`, the unit being built from both one-sided geometric identities instead of from
-commutativity; and the negation-stability lemma the `1 + a` form needs lives in
+`dev/adic-spaces`, commit `37bbdaeb`, Apache-2.0, Chris Birkbeck. The proofs of the ring results are
+AINTLIB's and rest entirely on Mathlib primitives. Two deliberate differences from the source: the
+ring here is only a `Ring`, the unit being built from both one-sided geometric identities instead of
+from commutativity; and the negation-stability lemma the `1 + a` form needs lives in
 `TauCeti/Topology/Algebra/TopologicallyNilpotent/Basic.lean`, stated at the hypotheses it actually
 requires rather than under this file's uniform nonarchimedean block. The `omit` annotations record
-which hypotheses each proof uses.
+which hypotheses each proof uses. The `NeumannSeries` section
+(`NonarchimedeanAddGroup.tsum_iterate_sub_apply_tsum_iterate`) is not from AINTLIB: it was written
+for Tau Ceti, as the operator form of the ported geometric-series identity.
 
 ## References
 
@@ -97,5 +110,22 @@ theorem IsTopologicallyNilpotent.isUnit_one_add {a : A} (ha : IsTopologicallyNil
     IsUnit (1 + a) := by
   rw [← sub_neg_eq_add]
   exact ha.neg.isUnit_one_sub
+
+section NeumannSeries
+
+variable {G F : Type*} [AddCommGroup G] [FunLike F G G] [AddMonoidHomClass F G G]
+
+/-- **The Neumann series in a complete nonarchimedean group.** In a complete Hausdorff
+nonarchimedean additive group, if the iterates `Nⁿ x` of a continuous additive endomorphism `N`
+tend to zero, then `y = ∑ Nⁿ x` solves `y - N y = x`; the series converges by
+`NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero`. -/
+theorem NonarchimedeanAddGroup.tsum_iterate_sub_apply_tsum_iterate [UniformSpace G]
+    [IsUniformAddGroup G] [NonarchimedeanAddGroup G] [CompleteSpace G] [T2Space G] {N : F}
+    (hN : Continuous N) {x : G} (hx : Tendsto (fun n ↦ N^[n] x) atTop (𝓝 0)) :
+    ∑' n, N^[n] x - N (∑' n, N^[n] x) = x :=
+  (NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero
+    (Nat.cofinite_eq_atTop ▸ hx)).tsum_iterate_sub_apply_tsum_iterate hN
+
+end NeumannSeries
 
 end
