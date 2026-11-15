@@ -284,14 +284,12 @@ theorem hasExtensionByZero_of_le_one [IsManifold 𝓘(ℝ, ℂ) 1 M]
     simp only [U]
     split_ifs with hii
     · rw [hii]
-      refine MemWkpLoc.congr_fun ?_ (fun y hy ↦ (coord_chartSection G hy).symm)
-        (A.image i).isOpen.measurableSet
+      refine MemWkpLoc.congr ?_ (fun y hy ↦ coord_chartSection G hy)
       exact (finBasis ℝ F).memWkpLoc_iff.2 fun j ↦
         (Wkp.memWkpLoc_value_of_ae_le (Opens.ext (A.image i).isOpen.interior_eq)
           (ae_subset.2 (by simp)) ((g : Fin (finrank ℝ F) → Wkp volume (A.image i) p k) j)).congr_ae
           (hGj j)
-    · exact memWkpLoc_zero_fun.congr_fun (fun y hy ↦ (A.coord_eq_zero hy.1 (ht _ hy.2)).symm)
-        (hopen i').measurableSet
+    · exact memWkpLoc_zero_fun.congr fun y hy ↦ A.coord_eq_zero hy.1 (ht _ hy.2)
   obtain ⟨w, hw⟩ := exists_ae_eq_coord_of_memWkpLoc_trivialization_comp_chart_symm
     (A := A) hk A.chart (fun _ ↦ IsManifold.chart_mem_maximalAtlas _) A.triv U hU
     (fun x ↦ let ⟨i', hi', hi'U⟩ := hcover x
