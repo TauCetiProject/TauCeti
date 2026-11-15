@@ -211,7 +211,8 @@ private theorem pullback_chart (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y))
       (((A.pullback f).core.localTriv i) p).2 := by
   simp only [localTriv_apply, indexAt_eq, coordChange_pullback]
 
-private theorem continuous_pullbackLift (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
+/-- Lifting `(A.pullback f).core.TotalSpace` along `f` to `A.core.TotalSpace` is continuous. -/
+theorem continuous_pullbackLift (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
     Continuous (fun p : (A.pullback f).core.TotalSpace =>
       (⟨f p.proj, p.2⟩ : A.core.TotalSpace)) := by
   refine continuous_iff_continuousAt.2 fun p => ?_
@@ -256,6 +257,18 @@ def pullbackHomeomorph (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
 @[simp] theorem pullbackHomeomorph_symm_apply (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y))
     (p : TotalSpace (Fin A.rank → 𝕜) ((⇑f) *ᵖ A.core.Fiber)) :
     (A.pullbackHomeomorph f).symm p = ⟨p.proj, p.2⟩ := (rfl)
+
+/-- A map into `(A.pullback f).core.TotalSpace` is continuous if and only if its base projection to
+`X` and its lifted map into `A.core.TotalSpace` are continuous. -/
+theorem continuous_mk_pullback_iff (A : FiniteRankBundleCore 𝕜 Y)
+    (f : C(X, Y)) {b : Z → X} {s : Z → Fin A.rank → 𝕜} :
+    Continuous (fun z ↦ (⟨b z, s z⟩ : (A.pullback f).core.TotalSpace)) ↔
+      Continuous b ∧ Continuous (fun z ↦ (⟨f (b z), s z⟩ : A.core.TotalSpace)) := by
+  rw [← (A.pullbackHomeomorph f).comp_continuous_iff,
+    (inducing_pullbackTotalSpaceEmbedding (Fin A.rank → 𝕜) A.core.Fiber f).continuous_iff,
+    continuous_prodMk]
+  -- Both sides evaluate pointwise to `(b z, ⟨f (b z), s z⟩)`.
+  rfl
 
 /-- The comparison carries the chart at `i` to Mathlib's pullback of the chart at `f i`. -/
 theorem pullbackHomeomorph_localTriv (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) (i : X)
