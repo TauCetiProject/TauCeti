@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Symplectic.StandardCompatible
 public import TauCeti.LinearAlgebra.Orientation.Prod
 
 import TauCeti.Geometry.Symplectic.Complex.Module.Basic
+import TauCeti.Geometry.Symplectic.ExistsCompatible
 import TauCeti.Geometry.Symplectic.Lagrangian.Basic
 import TauCeti.LinearAlgebra.Basis.Triangular
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
@@ -46,9 +47,11 @@ The symplectic orientation is also determined by any almost complex structure `J
 process: the span of the first `i` adapted pairs is `J`-invariant, hence symplectic, and projecting
 the next pair onto its symplectic complement yields a Darboux basis whose matrix in the adapted
 basis is triangular with positive diagonal. Hence two symplectic forms taming a common `J` have the
-same orientation (`TauCeti.SymplecticForm.Tames.orientation_eq`). Taming a fixed `J` is an open
-condition on `ω`, so this is the input for the local constancy of the tangent symplectic
-orientations of a symplectic manifold.
+same orientation (`TauCeti.SymplecticForm.Tames.orientation_eq`). Since every almost complex
+structure is tamed by some symplectic form (`TauCeti.AlmostComplexStructure.exists_tames`), this
+defines the complex orientation of `(V, J)` (`TauCeti.AlmostComplexStructure.orientation`).
+Taming a fixed `J` is an open condition on `ω`, so this is the input for the local constancy of the
+tangent symplectic orientations of a symplectic manifold.
 
 This is the linear model for the orientation of a symplectic manifold, read on each tangent
 space, and the product law computes the orientation of a product such as
@@ -58,6 +61,8 @@ space, and the product law computes the orientation of a product such as
 
 * `TauCeti.SymplecticForm.orientation ω hk`: the symplectic orientation of `V`, indexed by
   `Fin k` where `finrank ℝ V = k`.
+* `TauCeti.AlmostComplexStructure.orientation J hk`: the complex orientation of `(V, J)`, in which
+  the `J`-adapted bases are positive.
 
 ## Main results
 
@@ -71,6 +76,8 @@ space, and the product law computes the orientation of a product such as
   positive for the symplectic orientation.
 * `TauCeti.SymplecticForm.Tames.orientation_eq`: symplectic forms taming a common almost complex
   structure have the same symplectic orientation.
+* `TauCeti.AlmostComplexStructure.orientation_eq_of_tames`: the complex orientation of `J` is the
+  symplectic orientation of any form taming `J`.
 
 ## References
 
@@ -358,5 +365,33 @@ theorem Tames.orientation_eq (hJ : ω.Tames J) {ω' : SymplecticForm V} (hJ' : �
   rw [← hJ.orientation_reindex hb hk h, hJ'.orientation_reindex hb hk h]
 
 end SymplecticForm
+
+namespace AlmostComplexStructure
+
+variable {V : Type*} [AddCommGroup V] [Module ℝ V] [FiniteDimensional ℝ V] {k : ℕ}
+
+/-- The **complex orientation** of a finite-dimensional real vector space `V` with an almost
+complex structure `J`, where `finrank ℝ V = k`: the orientation in which the `J`-adapted bases
+`(v₁, J v₁, …, vₙ, J vₙ)` are positive (`TauCeti.AlmostComplexStructure.orientation_reindex`). It
+is the symplectic orientation of any symplectic form taming `J`
+(`TauCeti.AlmostComplexStructure.orientation_eq_of_tames`). -/
+noncomputable def orientation (J : AlmostComplexStructure V) (hk : finrank ℝ V = k) :
+    Orientation ℝ V (Fin k) :=
+  J.exists_tames.choose.orientation hk
+
+/-- The complex orientation of `J` is the symplectic orientation of every form taming `J`. -/
+theorem orientation_eq_of_tames {J : AlmostComplexStructure V} {ω : SymplecticForm V}
+    (hJ : ω.Tames J) (hk : finrank ℝ V = k) : J.orientation hk = ω.orientation hk :=
+  J.exists_tames.choose_spec.orientation_eq hJ hk
+
+/-- **`J`-adapted bases are positive for the complex orientation.** Every `J`-adapted basis
+`(v₁, J v₁, …, vₙ, J vₙ)`, listed in this interleaved order, is positive. -/
+theorem orientation_reindex (J : AlmostComplexStructure V) {n : ℕ}
+    {b : Basis (Fin n × Fin 2) ℝ V} (hb : ∀ i, b (i, 1) = J (b (i, 0))) (hk : finrank ℝ V = k)
+    (h : n * 2 = k) :
+    (b.reindex (finProdFinEquiv.trans (finCongr h))).orientation = J.orientation hk := by
+  rw [J.exists_tames.choose_spec.orientation_reindex hb hk h, orientation]
+
+end AlmostComplexStructure
 
 end TauCeti

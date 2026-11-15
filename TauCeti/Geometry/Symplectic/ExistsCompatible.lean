@@ -8,6 +8,9 @@ module
 public import TauCeti.Geometry.Symplectic.Finrank
 public import TauCeti.Geometry.Symplectic.Restrict
 
+import Mathlib.LinearAlgebra.Matrix.BilinearForm
+import Mathlib.LinearAlgebra.Matrix.DotProduct
+
 /-!
 # Every symplectic vector space carries a compatible almost complex structure
 
@@ -38,6 +41,8 @@ are those of McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*, Se
   two summands of a symplectic splitting assemble into one on the whole space.
 * `TauCeti.SymplecticForm.exists_compatible` and `TauCeti.SymplecticForm.exists_tames`: the
   existence theorems.
+* `TauCeti.AlmostComplexStructure.exists_tames`: conversely, every almost complex structure on a
+  finite-dimensional space is tamed by some symplectic form.
 * `TauCeti.SymplecticForm.even_finrank` and `TauCeti.SymplecticForm.isEmpty_of_odd_finrank`: a
   symplectic vector space has even dimension, so an odd-dimensional space carries no symplectic
   form at all.
@@ -205,5 +210,35 @@ theorem isEmpty_of_odd_finrank (h : Odd (finrank ℝ V)) :
   ⟨fun ω => (Nat.not_even_iff_odd.2 h) ω.even_finrank⟩
 
 end SymplecticForm
+
+namespace AlmostComplexStructure
+
+variable {V : Type*} [AddCommGroup V] [Module ℝ V] [FiniteDimensional ℝ V]
+
+/-- **Every almost complex structure is tamed by a symplectic form.** For an almost complex
+structure `J` on a finite-dimensional real vector space and any inner product `g`, the form
+`ω(u, v) = g(J u, v) - g(u, J v)` is alternating and `ω(v, J v) = g(J v, J v) + g(v, v) > 0` for
+`v ≠ 0`, so it is a symplectic form taming `J`. -/
+theorem exists_tames (J : AlmostComplexStructure V) : ∃ ω : SymplecticForm V, ω.Tames J := by
+  -- Any inner product on `V` will do; take the dot product in a basis.
+  let e := (Module.finBasis ℝ V).equivFun
+  let g : LinearMap.BilinForm ℝ V := (Matrix.toBilin' 1).compl₁₂ e.toLinearMap e.toLinearMap
+  have hge (v w : V) : g v w = e v ⬝ᵥ e w := by simp [g, Matrix.toBilin'_apply']
+  let B : LinearMap.BilinForm ℝ V :=
+    g.compl₁₂ J.toLinearMap LinearMap.id - g.compl₁₂ LinearMap.id J.toLinearMap
+  have hB (u v : V) : B u v = e (J u) ⬝ᵥ e v - e u ⬝ᵥ e (J v) := by simp [B, hge]
+  have hpos (v : V) (hv : v ≠ 0) : 0 < B v (J v) := by
+    rw [hB, J.apply_apply, map_neg, dotProduct_neg, sub_neg_eq_add]
+    exact add_pos_of_nonneg_of_pos (Finset.sum_nonneg fun i _ ↦ mul_self_nonneg _)
+      (lt_of_le_of_ne (Finset.sum_nonneg fun i _ ↦ mul_self_nonneg _)
+        (Ne.symm ((not_congr dotProduct_self_eq_zero).2 ((LinearEquiv.map_ne_zero_iff e).2 hv))))
+  have halt : B.IsAlt := fun v ↦ by rw [hB, dotProduct_comm, sub_self]
+  -- A form taming `J` is nondegenerate: `ω(v, J v) > 0` for `v ≠ 0`.
+  refine ⟨⟨B, halt, (LinearMap.IsRefl.nondegenerate_iff_separatingLeft halt.isRefl).2
+    fun v hv ↦ ?_⟩, hpos⟩
+  by_contra hv0
+  exact (hpos v hv0).ne' (hv (J v))
+
+end AlmostComplexStructure
 
 end TauCeti
