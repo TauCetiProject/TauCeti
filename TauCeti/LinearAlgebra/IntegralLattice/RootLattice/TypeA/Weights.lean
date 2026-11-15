@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeA.CosetMinimum
+public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeA.ZeroSum
 
 /-!
 # Fundamental weights and shortest coset representatives of `Aₙ`
@@ -33,8 +33,9 @@ minimum `k (n + 1 - k) / (n + 1)`.
 
 ## Main declarations
 
-* `TauCeti.IntegralLattice.typeACosetRepresentative`: computable simple-root coordinates of the
-  shortest vector in `[k] = k ω₁` (the Bourbaki fundamental weight `ϖₖ` for `1 ≤ k ≤ n`).
+* `TauCeti.IntegralLattice.typeACosetRepresentative`: computable simple-root coordinates of a dual
+  representative of `[k] = k ω₁`, which for `k ≤ n + 1` is the canonical shortest vector in `[k]`
+  (the Bourbaki fundamental weight `ϖₖ` for `1 ≤ k ≤ n`).
 * `TauCeti.IntegralLattice.typeACosetRepresentativeDual`: the representative bundled in the dual
   carrier of `typeARootLattice n`, with `mk_typeACosetRepresentativeDual`.
 * `TauCeti.IntegralLattice.typeAIsometryZeroSumLattice_typeACosetRepresentative_apply`: its
@@ -60,9 +61,10 @@ open Finset Matrix
 
 variable {n : ℕ}
 
-/-- **The canonical shortest representative of the discriminant coset `[k] = k ω₁` of `Aₙ`** in
-Bourbaki simple-root coordinates.  For `1 ≤ k ≤ n` it is the `k`-th Bourbaki fundamental weight
-`ϖₖ`, while for `k = 0` and `k = n + 1` it is the zero vector. -/
+/-- **The canonical coset representative of `[k] = k ω₁` in `Aₙ`** in Bourbaki simple-root
+coordinates.  For arbitrary `k : ℕ` it lies in the dual carrier and represents `k ω₁`; for
+`k ≤ n + 1` it is the shortest representative of `[k]` (the `k`-th Bourbaki fundamental weight `ϖₖ`
+for `1 ≤ k ≤ n`, and `0` for `k = 0` and `k = n + 1`). -/
 def typeACosetRepresentative (n k : ℕ) : Fin n → ℚ :=
   fun j ↦ ((min (j.val + 1) k : ℕ) : ℚ) - (k : ℚ) * (j.val + 1) / (n + 1)
 
@@ -241,13 +243,5 @@ theorem form_typeACosetRepresentative_self {k : ℕ} (hk : k ≤ n + 1) :
   have hn : (n : ℚ) + 1 ≠ 0 := by positivity
   rw [form_typeACosetRepresentative hk hk, min_self]
   field_simp
-
-/-- For `a : ZMod (n + 1)`, `typeACosetRepresentative n a.val` has squared norm
-`a.val (n + 1 - a.val) / (n + 1)`. -/
-theorem form_typeACosetRepresentative_val_self (a : ZMod (n + 1)) :
-    (typeARootLattice n).form (typeACosetRepresentative n a.val)
-        (typeACosetRepresentative n a.val) =
-      (a.val : ℚ) * (n + 1 - a.val) / (n + 1) :=
-  form_typeACosetRepresentative_self (ZMod.val_lt a).le
 
 end TauCeti.IntegralLattice

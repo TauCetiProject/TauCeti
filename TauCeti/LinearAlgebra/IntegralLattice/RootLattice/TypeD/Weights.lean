@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.Dynkin
-public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeD.CosetMinimum
 
 /-!
 # Spinor, vector and cospinor weights of `Dₙ` in simple-root coordinates
@@ -20,10 +19,10 @@ s = (1/2, …, 1/2),    v = (0, …, 0, 1),    c = (1/2, …, 1/2, -1/2),
 
 corresponding to the glue labels `[1]`, `[2]` and `[3]`.  The uniform root lattice
 `(D n).rootLattice ht` instead uses Bourbaki simple-root coordinates `Fin n → ℚ`, related to the
-checkerboard model for `4 ≤ n` by `TauCeti.DynkinType.rootLatticeIsometryCheckerboard`.
+checkerboard model for `4 ≤ n` by `TauCeti.DynkinType.rootLatticeIsometryCheckerboard` (with
+inverse coordinate formula `TauCeti.DynkinType.rootLatticeIsometryCheckerboard_symm_apply`).
 
-This file gives the explicit inverse coordinate formula for `rootLatticeIsometryCheckerboard` and
-defines the computable simple-root vectors `typeDSpinorWeight`, `typeDVectorWeight` and
+This file defines the computable simple-root vectors `typeDSpinorWeight`, `typeDVectorWeight` and
 `typeDCospinorWeight` on `Fin n → ℚ` that correspond to `s`, `v` and `c`:
 
 * `typeDSpinorWeight n` is the Bourbaki spinor fundamental weight `ϖₙ`, with coordinates
@@ -33,18 +32,17 @@ defines the computable simple-root vectors `typeDSpinorWeight`, `typeDVectorWeig
   fundamental weight `ϖ_{n-1}`, swapping the two fork coordinates of `ϖₙ`.
 
 Under `rootLatticeIsometryCheckerboard`, these three vectors map literally to `checkerboardSpinor`,
-`checkerboardVector` and `checkerboardCospinor`, so they inherit their dual-lattice memberships,
+`checkerboardVector` and `checkerboardCospinor`, so they inherit their dual-carrier memberships,
 simple-root pairings, squared norms `n / 4`, `1`, `n / 4`, and discriminant classes.
 
 ## Main declarations
 
-* `TauCeti.DynkinType.rootLatticeIsometryCheckerboard_symm_apply`: explicit simple-root coordinates
-  of any rational vector of the checkerboard ambient space.
 * `TauCeti.IntegralLattice.typeDSpinorWeight`, `typeDVectorWeight`, `typeDCospinorWeight`:
   computable simple-root vectors for the `[1]`, `[2]` and `[3]` cosets of `Dₙ`.
 * `TauCeti.IntegralLattice.rootLatticeIsometryCheckerboard_typeDSpinorWeight`,
-  `rootLatticeIsometryCheckerboard_typeDVectorWeight`,
-  `rootLatticeIsometryCheckerboard_typeDCospinorWeight`: they map to `s`, `v` and `c`.
+  `TauCeti.IntegralLattice.rootLatticeIsometryCheckerboard_typeDVectorWeight`,
+  `TauCeti.IntegralLattice.rootLatticeIsometryCheckerboard_typeDCospinorWeight`: they map to `s`,
+  `v` and `c`.
 * `TauCeti.IntegralLattice.typeDSpinorWeightDual`, `typeDVectorWeightDual`,
   `typeDCospinorWeightDual`: the bundled dual-carrier elements of `((D n).rootLattice ht)`, together
   with their simple-root pairings, squared norms and discriminant classes.
@@ -57,43 +55,6 @@ simple-root pairings, squared norms `n / 4`, `1`, `n / 4`, and discriminant clas
 -/
 
 public section
-
-namespace TauCeti.DynkinType
-
-open IntegralLattice
-
-/-- **Inverse simple-root coordinates on `Dₙ`.**  For `4 ≤ n`, the inverse of
-`rootLatticeIsometryCheckerboard` reads prefix sums `y₀ + ⋯ + yₖ` on the chain nodes `k + 2 < n`,
-`(∑ yⱼ) / 2 - y_{n-1}` at node `n - 2`, and `(∑ yⱼ) / 2` at node `n - 1`. -/
-theorem rootLatticeIsometryCheckerboard_symm_apply (n : ℕ) (hn : 4 ≤ n)
-    (ht : (D n).IsSimplyLaced) (y : Fin n → ℚ) (k : Fin n) :
-    (rootLatticeIsometryCheckerboard n hn ht).symm y k =
-      if (k : ℕ) + 2 < n then ∑ j ∈ Finset.Iic k, y j
-      else if (k : ℕ) + 1 < n then (∑ j, y j) / 2 - y ⟨n - 1, by omega⟩
-      else (∑ j, y j) / 2 := by
-  let : Invertible (2 : ℚ) := invertibleOfNonzero two_ne_zero
-  set e := rootLatticeIsometryCheckerboard n hn ht
-  have hexp (x : Fin n → ℚ) :
-      e x = ∑ i : Fin n, x i • typeDSimpleRootBasis ℚ n hn i := by
-    have hx : x = ∑ i : Fin n, x i • Pi.single i 1 := by
-      ext j
-      simp [Finset.sum_apply, Pi.single_apply]
-    refine (congrArg e hx).trans ((map_sum e (fun i : Fin n ↦ x i • Pi.single i (1 : ℚ))
-      Finset.univ).trans ?_)
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    have hcb : checkerboardSimpleRoot n hn i = typeDSimpleRootBasis ℚ n hn i := by
-      ext j
-      rw [checkerboardSimpleRoot_apply, typeDSimpleRootBasis_apply]
-    exact (map_smul e (x i) (Pi.single i (1 : ℚ))).trans
-      (congrArg (x i • ·) ((rootLatticeIsometryCheckerboard_single n hn ht i).trans hcb))
-  have hrepr : e ((typeDSimpleRootBasis ℚ n hn).repr y) = y :=
-    (hexp _).trans ((typeDSimpleRootBasis ℚ n hn).sum_repr y)
-  have hsymm : e.symm y = (typeDSimpleRootBasis ℚ n hn).repr y :=
-    (congrArg e.symm hrepr.symm).trans (e.symm_apply_apply _)
-  rw [congrFun hsymm k, typeDSimpleRootBasis_repr_apply ℚ hn y k, invOf_eq_inv]
-  split_ifs <;> ring
-
-end TauCeti.DynkinType
 
 namespace TauCeti.IntegralLattice
 
@@ -185,9 +146,11 @@ theorem rootLatticeIsometryCheckerboard_typeDSpinorWeight (hn : 4 ≤ n)
     ((rootLatticeIsometryCheckerboard n hn ht).apply_symm_apply _)
 
 /-- **`rootLatticeIsometryCheckerboard` sends `typeDVectorWeight n` to `checkerboardVector n`.** -/
-theorem rootLatticeIsometryCheckerboard_typeDVectorWeight [NeZero n] (hn : 4 ≤ n)
+theorem rootLatticeIsometryCheckerboard_typeDVectorWeight (hn : 4 ≤ n)
     (ht : (D n).IsSimplyLaced) :
+    letI : NeZero n := ⟨by omega⟩
     rootLatticeIsometryCheckerboard n hn ht (typeDVectorWeight n) = checkerboardVector n := by
+  have : NeZero n := ⟨by omega⟩
   have hsymm :
       (rootLatticeIsometryCheckerboard n hn ht).symm (checkerboardVector n) =
         typeDVectorWeight n := by
@@ -212,9 +175,11 @@ theorem rootLatticeIsometryCheckerboard_typeDVectorWeight [NeZero n] (hn : 4 ≤
 
 /-- **`rootLatticeIsometryCheckerboard` sends `typeDCospinorWeight n` to
 `checkerboardCospinor n`.** -/
-theorem rootLatticeIsometryCheckerboard_typeDCospinorWeight [NeZero n] (hn : 4 ≤ n)
+theorem rootLatticeIsometryCheckerboard_typeDCospinorWeight (hn : 4 ≤ n)
     (ht : (D n).IsSimplyLaced) :
+    letI : NeZero n := ⟨by omega⟩
     rootLatticeIsometryCheckerboard n hn ht (typeDCospinorWeight n) = checkerboardCospinor n := by
+  have : NeZero n := ⟨by omega⟩
   have hc : checkerboardCospinor n = checkerboardSpinor n - checkerboardVector n := by
     ext j
     rw [checkerboardCospinor_apply, Pi.sub_apply, checkerboardSpinor_apply,
@@ -382,11 +347,13 @@ theorem mk_typeDSpinorWeightDual (hn : 4 ≤ n) (ht : (D n).IsSimplyLaced) :
 /-- `typeDVectorWeightDual` represents the vector class pulled back along
 `rootLatticeIsometryCheckerboard`. -/
 @[simp]
-theorem mk_typeDVectorWeightDual [NeZero n] (hn : 4 ≤ n) (ht : (D n).IsSimplyLaced) :
+theorem mk_typeDVectorWeightDual (hn : 4 ≤ n) (ht : (D n).IsSimplyLaced) :
+    letI : NeZero n := ⟨by omega⟩
     (Submodule.Quotient.mk (typeDVectorWeightDual n hn ht) :
         ((D n).rootLattice ht).DiscriminantGroup) =
       (rootLatticeIsometryCheckerboard n hn ht).symm.discriminantGroupEquiv
         (checkerboardVectorClass n) := by
+  have : NeZero n := ⟨by omega⟩
   apply (rootLatticeIsometryCheckerboard n hn ht).discriminantGroupEquiv.injective
   rw [Isometry.discriminantGroupEquiv_mk, Isometry.discriminantGroupEquiv_symm,
     LinearEquiv.apply_symm_apply, mk_eq_checkerboardVectorClass_iff,
@@ -397,11 +364,13 @@ theorem mk_typeDVectorWeightDual [NeZero n] (hn : 4 ≤ n) (ht : (D n).IsSimplyL
 /-- `typeDCospinorWeightDual` represents the cospinor class pulled back along
 `rootLatticeIsometryCheckerboard`. -/
 @[simp]
-theorem mk_typeDCospinorWeightDual [NeZero n] (hn : 4 ≤ n) (ht : (D n).IsSimplyLaced) :
+theorem mk_typeDCospinorWeightDual (hn : 4 ≤ n) (ht : (D n).IsSimplyLaced) :
+    letI : NeZero n := ⟨by omega⟩
     (Submodule.Quotient.mk (typeDCospinorWeightDual n hn ht) :
         ((D n).rootLattice ht).DiscriminantGroup) =
       (rootLatticeIsometryCheckerboard n hn ht).symm.discriminantGroupEquiv
         (checkerboardCospinorClass n) := by
+  have : NeZero n := ⟨by omega⟩
   apply (rootLatticeIsometryCheckerboard n hn ht).discriminantGroupEquiv.injective
   rw [Isometry.discriminantGroupEquiv_mk, Isometry.discriminantGroupEquiv_symm,
     LinearEquiv.apply_symm_apply, mk_eq_checkerboardCospinorClass_iff,
