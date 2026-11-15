@@ -45,6 +45,8 @@ laws apply to rectangular maps.
 * `ContinuousLinearMap.singularValue_add_index_le`: `a_{m+n}(S + T) ≤ aₘ(S) + aₙ(T)`.
 * `ContinuousLinearMap.singularValue_comp_add_le_mul`: `a_{m+n}(S T) ≤ aₘ(S) aₙ(T)`.
 * `ContinuousLinearMap.singularValue_comp_comp_le`: `aₙ(A T B) ≤ ‖A‖ aₙ(T) ‖B‖`.
+* `ContinuousLinearMap.singularValue_comp_comp_le_of_norm_le_one`: `aₙ(A T B) ≤ aₙ(T)` for
+  contractions `A` and `B`.
 * `ContinuousLinearMap.singularValue_smul`: `aₙ(c T) = ‖c‖ aₙ(T)`.
 * `ContinuousLinearMap.lipschitzWith_singularValue`: `T ↦ aₙ(T)` is `1`-Lipschitz.
 * `ContinuousLinearMap.kyFanGauge`: the Ky Fan gauge `Kₖ(T) = ∑_{n<k} aₙ(T)`.
@@ -233,6 +235,17 @@ theorem singularValue_comp_comp_le (A : G →L[𝕜] H) (T : F →L[𝕜] G) (B 
     rw [mul_assoc]
     gcongr
     exact T.singularValue_comp_le_right B n
+
+/-- **Compression by contractions.** `aₙ(A T B) ≤ aₙ(T)` when `‖A‖ ≤ 1` and `‖B‖ ≤ 1`. -/
+theorem singularValue_comp_comp_le_of_norm_le_one {A : G →L[𝕜] H} {B : E →L[𝕜] F}
+    (hA : ‖A‖ ≤ 1) (hB : ‖B‖ ≤ 1) (T : F →L[𝕜] G) (n : ℕ) :
+    (A.comp (T.comp B)).singularValue n ≤ T.singularValue n := by
+  have hA' : ‖A‖₊ ≤ 1 := mod_cast hA
+  have hB' : ‖B‖₊ ≤ 1 := mod_cast hB
+  calc (A.comp (T.comp B)).singularValue n ≤ ‖A‖₊ * T.singularValue n * ‖B‖₊ :=
+        A.singularValue_comp_comp_le T B n
+    _ ≤ 1 * T.singularValue n * 1 := by gcongr
+    _ = T.singularValue n := by simp
 
 /-- **Mixed-index product inequality.** `a_{m+n}(S T) ≤ aₘ(S) aₙ(T)`. -/
 theorem singularValue_comp_add_le_mul (S : F →L[𝕜] G) (T : E →L[𝕜] F) (m n : ℕ) :
