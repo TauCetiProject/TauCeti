@@ -13,12 +13,14 @@ public import TauCeti.Topology.VectorBundle.Orientation.Cover
 
 Over `ℝ` the determinant line bundle of Fredholm operators (`TauCeti.FredholmDetLine`) has an
 orientation double cover, and its projection is a covering map
-(`TauCeti.FredholmDetLine.isCoveringMap_orientationCover_proj`). Orientations of determinant lines
-are therefore transported along continuous paths of Fredholm operators by lifting to this cover
-(`TauCeti.VectorBundleOrientationCover.orientationTransport`), canonically and without any choice
-of connection. This transport is how orientations of moduli spaces in Morse and Floer theory,
-which are orientations of the determinant lines of their linearized operators, are compared along
-paths of operators.
+(`TauCeti.FredholmDetLine.isCoveringMap_orientationCover_proj`). This is the hypothesis of the
+orientation transport of the separate module
+`TauCeti.Topology.VectorBundle.Orientation.Cover.Transport`, which is not imported here: with it,
+`TauCeti.VectorBundleOrientationCover.orientationTransport` transports orientations of
+determinant lines along continuous paths of Fredholm operators by lifting to this cover,
+canonically and without any choice of connection. This transport is how orientations of moduli
+spaces in Morse and Floer theory, which are orientations of the determinant lines of their
+linearized operators, are compared along paths of operators.
 
 ## Main results
 
@@ -41,8 +43,9 @@ variable (E F : Type*) [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace
   [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
 
 /-- **The orientation double cover of the determinant line bundle is a covering map.** Lifting
-paths of Fredholm operators to it transports orientations of determinant lines
-(`TauCeti.VectorBundleOrientationCover.orientationTransport`). -/
+paths of Fredholm operators to it transports orientations of determinant lines; that transport is
+`TauCeti.VectorBundleOrientationCover.orientationTransport`, defined in the separate module
+`TauCeti.Topology.VectorBundle.Orientation.Cover.Transport`. -/
 theorem isCoveringMap_orientationCover_proj :
     IsCoveringMap (VectorBundleOrientationCover.proj :
       VectorBundleOrientationCover ℝ (FredholmDetLine ℝ E F) (Fin 1) →

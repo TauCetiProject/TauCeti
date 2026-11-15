@@ -41,8 +41,6 @@ continuous in the orientation double cover is the transport of its initial value
 
 ## Main definitions
 
-* `TauCeti.VectorBundleOrientationCover.fiberEquiv`: the fibre of the orientation double cover
-  over `b` is the set of orientations of `E b`.
 * `TauCeti.VectorBundleOrientationCover.orientationTransport`: transport of orientations along a
   path.
 
@@ -67,45 +65,7 @@ variable {B : Type*} [TopologicalSpace B]
   {E : B → Type*} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
   [∀ b, Module ℝ (E b)] {ι : Type*}
 
-variable (F E ι) in
-/-- The fibre of the orientation double cover over `b` is the set of orientations of `E b`. -/
-def fiberEquiv (b : B) :
-    (proj : VectorBundleOrientationCover F E ι → B) ⁻¹' {b} ≃ Orientation ℝ (E b) ι where
-  toFun p := Set.mem_singleton_iff.mp p.2 ▸ p.1.orientation
-  invFun o := ⟨⟨b, o⟩, rfl⟩
-  left_inv := by
-    rintro ⟨⟨b', o⟩, h⟩
-    obtain rfl : b' = b := h
-    rfl
-  right_inv _ := rfl
-
-omit [TopologicalSpace B] [NormedAddCommGroup F] [NormedSpace ℝ F]
-    [TopologicalSpace (TotalSpace F E)] in
-@[simp]
-theorem fiberEquiv_mk {b : B} (o : Orientation ℝ (E b) ι) :
-    fiberEquiv F E ι b ⟨⟨b, o⟩, rfl⟩ = o :=
-  (rfl)
-
-omit [TopologicalSpace B] [NormedAddCommGroup F] [NormedSpace ℝ F]
-    [TopologicalSpace (TotalSpace F E)] in
-@[simp]
-theorem fiberEquiv_symm_apply {b : B} (o : Orientation ℝ (E b) ι) :
-    (fiberEquiv F E ι b).symm o = ⟨⟨b, o⟩, rfl⟩ :=
-  (rfl)
-
-variable [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
-
-/-- The deck involution, read on the fibre over `b`, is the negation of orientations. -/
-theorem fiberEquiv_fiberMap_deck {b : B}
-    (p : (proj : VectorBundleOrientationCover F E ι → B) ⁻¹' {b}) :
-    fiberEquiv F E ι b (Function.fiberMap ⇑(deck (F := F) (E := E) (ι := ι) :
-        C(VectorBundleOrientationCover F E ι, VectorBundleOrientationCover F E ι))
-      proj_comp_deck b p) = -fiberEquiv F E ι b p := by
-  obtain ⟨⟨b', o⟩, h⟩ := p
-  obtain rfl : b' = b := h
-  rw [fiberMap_deck_mk, fiberEquiv_mk, fiberEquiv_mk]
-
-variable [Fintype ι]
+variable [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E] [Fintype ι]
 
 variable (E) in
 /-- **Transport of orientations along a path.** For a path `γ` from `b₀` to `b₁`, an orientation
@@ -137,7 +97,8 @@ theorem orientationTransport_eq_of_continuous (γ : Path b₀ b₁)
   rw [orientationTransport_apply]
   congr 1
   exact Subtype.ext <| (isCoveringMap_proj hι).monodromy_eq_apply_one hΓ <|
-    congrArg Subtype.val ((fiberEquiv F E ι b₀).symm_apply_apply ⟨Γ 0, h₀⟩).symm
+    congrArg Subtype.val ((fiberEquiv_symm_apply _).symm.trans
+      ((fiberEquiv F E ι b₀).symm_apply_apply ⟨Γ 0, h₀⟩)).symm
 
 /-- **Homotopy invariance.** Transport along homotopic paths, with fixed endpoints, agrees. -/
 theorem orientationTransport_eq_of_homotopic {γ γ' : Path b₀ b₁} (h : γ.Homotopic γ') :

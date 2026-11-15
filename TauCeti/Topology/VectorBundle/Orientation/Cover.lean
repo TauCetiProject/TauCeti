@@ -48,6 +48,8 @@ in a trivialization have locally constant determinant sign.
 * `TauCeti.VectorBundleOrientationCover.sheet`: the points read as a fixed orientation of `F` in
   a trivialization.
 * `TauCeti.VectorBundleOrientationCover.deck`: the deck involution reversing orientations.
+* `TauCeti.VectorBundleOrientationCover.fiberEquiv`: the fibre of the cover over `b` is the set
+  of orientations of `E b`.
 * `TauCeti.VectorBundleOrientation.ofContinuous`: an orientation from a continuous section.
 
 ## Main results
@@ -108,6 +110,32 @@ theorem mk_eq_mk_iff {b : B} {o o' : Orientation ℝ (E b) ι} :
   · exact fun h ↦ eq_of_heq (VectorBundleOrientationCover.mk.inj h).2
   · rintro rfl
     rfl
+
+variable (F E ι) in
+/-- The fibre of the orientation double cover over `b` is the set of orientations of `E b`. -/
+def fiberEquiv (b : B) :
+    (proj : VectorBundleOrientationCover F E ι → B) ⁻¹' {b} ≃ Orientation ℝ (E b) ι where
+  toFun p := Set.mem_singleton_iff.mp p.2 ▸ p.1.orientation
+  invFun o := ⟨⟨b, o⟩, rfl⟩
+  left_inv := by
+    rintro ⟨⟨b', o⟩, h⟩
+    obtain rfl : b' = b := h
+    rfl
+  right_inv _ := rfl
+
+omit [TopologicalSpace B] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [TopologicalSpace (TotalSpace F E)] in
+@[simp]
+theorem fiberEquiv_mk {b : B} (o : Orientation ℝ (E b) ι) :
+    fiberEquiv F E ι b ⟨⟨b, o⟩, rfl⟩ = o :=
+  (rfl)
+
+omit [TopologicalSpace B] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [TopologicalSpace (TotalSpace F E)] in
+@[simp]
+theorem fiberEquiv_symm_apply {b : B} (o : Orientation ℝ (E b) ι) :
+    (fiberEquiv F E ι b).symm o = ⟨⟨b, o⟩, rfl⟩ :=
+  (rfl)
 
 /-- The sheet of the orientation double cover read as the orientation `o` of the model fibre in
 the linear trivialization `e`: the orientations of fibres over `e.baseSet` that `e` transports
@@ -204,7 +232,17 @@ theorem fiberMap_deck_mk {b : B} (o : Orientation ℝ (E b) ι) :
     Function.fiberMap ⇑(deck (F := F) (E := E) (ι := ι) :
         C(VectorBundleOrientationCover F E ι, VectorBundleOrientationCover F E ι))
       proj_comp_deck b ⟨⟨b, o⟩, rfl⟩ = ⟨⟨b, -o⟩, rfl⟩ :=
-  Subtype.ext (by rw [Function.fiberMap_apply_coe, ContinuousMap.coe_ofClass, deck_apply])
+  Subtype.ext (by simp [deck_apply])
+
+/-- The deck involution, read on the fibre over `b`, is the negation of orientations. -/
+theorem fiberEquiv_fiberMap_deck {b : B}
+    (p : (proj : VectorBundleOrientationCover F E ι → B) ⁻¹' {b}) :
+    fiberEquiv F E ι b (Function.fiberMap ⇑(deck (F := F) (E := E) (ι := ι) :
+        C(VectorBundleOrientationCover F E ι, VectorBundleOrientationCover F E ι))
+      proj_comp_deck b p) = -fiberEquiv F E ι b p := by
+  obtain ⟨⟨b', o⟩, h⟩ := p
+  obtain rfl : b' = b := h
+  rw [fiberMap_deck_mk, fiberEquiv_mk, fiberEquiv_mk]
 
 /-- The deck involution reverses the orientation of each point. -/
 @[simp]
