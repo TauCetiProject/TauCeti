@@ -37,6 +37,7 @@ Darboux basis this is the classical normalization of the symplectic volume form 
 
 * `ContinuousAlternatingMap.wedgePow_compContinuousLinearMap`: wedge powers commute with
   pullback along continuous linear maps.
+* `ContinuousAlternatingMap.wedgePow_one_apply`: `φ ^ 1 = φ`.
 * `ContinuousAlternatingMap.wedgePow_smul`: `(c φ) ^ m = c ^ m φ ^ m`.
 * `ContinuousAlternatingMap.wedgePow_succ_apply_vecCons`: the power rule for inserting a vector
   into a wedge power of a two-form.
@@ -83,6 +84,14 @@ theorem wedgePow_zero_apply (φ : E [⋀^Fin k]→L[ℝ] ℝ) (v : Fin 0 → E) 
 theorem wedgePow_succ (φ : E [⋀^Fin k]→L[ℝ] ℝ) (m : ℕ) :
     wedgePow φ (m + 1) = pairedWedge (ContinuousLinearMap.mul ℝ ℝ)
       (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (wedgePow φ m) φ := (rfl)
+
+/-- The first wedge power of a form is the form itself, read through `k * 1 = k`. -/
+theorem wedgePow_one_apply (φ : E [⋀^Fin k]→L[ℝ] ℝ) (v : Fin (k * 1) → E) :
+    wedgePow φ 1 v = φ (v ∘ Fin.cast (Nat.mul_one k).symm) := by
+  rw [wedgePow_succ]
+  refine (pairedWedge_apply_zero_left (ContinuousLinearMap.mul ℝ ℝ)
+    (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (wedgePow φ 0) φ v).trans ?_
+  simp only [ContinuousLinearMap.mul_apply', wedgePow_zero_apply, one_mul]
 
 /-- Wedge powers commute with pullback along continuous linear maps. -/
 @[simp]

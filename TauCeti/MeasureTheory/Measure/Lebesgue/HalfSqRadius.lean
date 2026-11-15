@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.PolarCoord
 public import Mathlib.MeasureTheory.Constructions.Pi
+public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.MeasureTheory.Function.JacobianOneDim
 
@@ -16,9 +17,10 @@ import Mathlib.MeasureTheory.Function.JacobianOneDim
 The map `(q, p) ↦ (q² + p²) / 2` sends planar Lebesgue measure to `2π` times Lebesgue measure on
 the half-line `[0, ∞)` (`TauCeti.map_volume_half_sq_add_sq`): in polar coordinates `(r, θ)` the
 area element is `r dr dθ = ds dθ` for `s = r² / 2`, and the angle ranges over an interval of
-length `2π`. Taking products, the map `(q, p) ↦ ((q_i² + p_i²) / 2)_i` on `ℝ^ι × ℝ^ι` sends
-Lebesgue measure to `(2π)^|ι|` times Lebesgue measure on the closed positive orthant
-(`TauCeti.map_volume_pi_half_sq_add_sq`).
+length `2π`. The same holds for `z ↦ ‖z‖² / 2` on the Euclidean plane
+(`TauCeti.map_volume_euclideanSpace_half_sq_norm`). Taking products, the map
+`(q, p) ↦ ((q_i² + p_i²) / 2)_i` on `ℝ^ι × ℝ^ι` sends Lebesgue measure to `(2π)^|ι|` times
+Lebesgue measure on the closed positive orthant (`TauCeti.map_volume_pi_half_sq_add_sq`).
 
 Read on `ℂ^ι` with `z_i = q_i + i p_i`, these maps are the moment maps `|z_i|² / 2` of the reversed
 rotation actions `z_i ↦ exp(-i θ_i) z_i` of the circle and of the torus, and the statements
@@ -92,6 +94,21 @@ theorem map_volume_half_sq_add_sq :
   rw [lintegral_mul_const _ hm, ← hrad, lintegral_indicator_one hA, Measure.restrict_apply hA,
     mul_comm]
   ring_nf
+
+/-- **Half the squared norm pushes Lebesgue measure on the Euclidean plane to `2π` times Lebesgue
+measure on `[0, ∞)`.** -/
+theorem map_volume_euclideanSpace_half_sq_norm :
+    (volume : Measure (EuclideanSpace ℝ (Fin 2))).map (fun z ↦ ‖z‖ ^ 2 / 2) =
+      ENNReal.ofReal (2 * π) • volume.restrict (Ici 0) := by
+  -- In the coordinates `z ↦ (z 0, z 1)`, which preserve Lebesgue measure, this is
+  -- `map_volume_half_sq_add_sq`.
+  have he : MeasurePreserving (fun z : EuclideanSpace ℝ (Fin 2) ↦ (z 0, z 1)) volume volume :=
+    (volume_preserving_finTwoArrow ℝ).comp (PiLp.volume_preserving_ofLp (Fin 2))
+  have hfun : (fun z : EuclideanSpace ℝ (Fin 2) ↦ ‖z‖ ^ 2 / 2) =
+      (fun x : ℝ × ℝ ↦ (x.1 ^ 2 + x.2 ^ 2) / 2) ∘ fun z ↦ (z 0, z 1) := by
+    funext z
+    rw [Function.comp_apply, EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_two]
+  rw [hfun, ← Measure.map_map (by fun_prop) he.measurable, he.map_eq, map_volume_half_sq_add_sq]
 
 variable {ι : Type*} [Fintype ι]
 
