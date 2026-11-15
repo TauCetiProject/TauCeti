@@ -250,7 +250,8 @@ lemma map_cubic_deriv_eq_one (ha : ν a ≤ 1) (hb : ν b ≤ 1)
       (3 * t ^ 2 + 2 * a * t + b) ^ 2 * ((a ^ 2 - 3 * b) - (3 * t ^ 2 + 2 * a * t + b)) := by
     ring
   have h3b : ν (3 * b) ≤ 1 := by
-    rw [show 3 * b = b + b + b by ring]
+    have h3 : 3 * b = b + b + b := by ring
+    rw [h3]
     exact ν.map_add_le (ν.map_add_le hb hb) hb
   have hK : ν (a ^ 2 - 3 * b) ≤ 1 :=
     ν.map_sub_le (by rw [map_pow]; exact pow_le_one' ha 2) h3b
@@ -263,9 +264,10 @@ lemma map_cubic_deriv_eq_one (ha : ν a ≤ 1) (hb : ν b ≤ 1)
   refine ν.eq_one_of_mul_eq_one (b := (3 * t ^ 2 + 2 * a * t + b) *
       ((a ^ 2 - 3 * b) - (3 * t ^ 2 + 2 * a * t + b))) hs
     (by rw [map_mul]; exact mul_le_one' hs hK') ?_
-  rw [show (3 * t ^ 2 + 2 * a * t + b) * ((3 * t ^ 2 + 2 * a * t + b) *
-    ((a ^ 2 - 3 * b) - (3 * t ^ 2 + 2 * a * t + b))) = (3 * t ^ 2 + 2 * a * t + b) ^ 2 *
-    ((a ^ 2 - 3 * b) - (3 * t ^ 2 + 2 * a * t + b)) by ring, map_mul, map_pow]
+  have hmul : (3 * t ^ 2 + 2 * a * t + b) * ((3 * t ^ 2 + 2 * a * t + b) *
+      ((a ^ 2 - 3 * b) - (3 * t ^ 2 + 2 * a * t + b))) = (3 * t ^ 2 + 2 * a * t + b) ^ 2 *
+      ((a ^ 2 - 3 * b) - (3 * t ^ 2 + 2 * a * t + b)) := by ring
+  rw [hmul, map_mul, map_pow]
   exact hd
 
 end CubicDerivative
