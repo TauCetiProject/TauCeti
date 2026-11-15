@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.LocallyConvex.DualProjectiveLimit
+public import TauCeti.Analysis.LocallyConvex.FinalTopology
 
 /-!
 # Inductive limits of normed spaces with compact bonding maps
@@ -34,6 +35,34 @@ topology on the dual of `L`, the topology of uniform convergence on bounded subs
 projective-limit topology, and precomposition is an isomorphism of topological vector spaces
 `L′_b ≃ lim_j B j′` (`TauCeti.dualProjectiveLimit.strongDualEquiv`).
 
+In the dual direction, gluing the continuous stage evaluations `B j →L[𝕜] (lim_k B k′)′_b` yields
+`TauCeti.dualProjectiveLimit.evalInductive`. When `L` is locally convex over `ℝ` or `ℂ`, inverse
+continuity of `evalInductive` follows directly from an explicit polar and bipolar comparison:
+for any closed absolutely convex `0`-neighborhood `U` in `L`, the image under `precomp ι hι` of
+`StrongDual.polar 𝕜 U` is von Neumann bounded in `dualProjectiveLimit T`
+(`TauCeti.dualProjectiveLimit.isVonNBounded_image_precomp_polar`), coincides with the evaluation
+polar when `L` has the final functional-continuity property
+(`TauCeti.dualProjectiveLimit.image_precomp_polar_eq`), and pulls back under `evalInductive` via
+its polar to the bipolar `U°° = U`
+(`TauCeti.dualProjectiveLimit.preimage_polar_image_precomp_polar_eq_closure`).
+Forward continuity of `evalInductive` holds whenever the topology of `L` is at least as fine as the
+final locally convex topology of the maps `ι j`
+(`TauCeti.dualProjectiveLimit.continuous_evalInductive_of_le_finalLocallyConvexTopology`), and in
+fact forces the topology of `L` to equal that final locally convex topology
+(`TauCeti.dualProjectiveLimit.finalLocallyConvexTopology_eq`). When `L` is `T₁` and the bonding
+maps are weakly compact, `evalInductive` upgrades to the topological linear isomorphism
+`L ≃L[𝕜] StrongDual 𝕜 (dualProjectiveLimit T)` (`TauCeti.dualProjectiveLimit.evalEquiv`),
+transporting completeness from the strong dual of the Fréchet space `dualProjectiveLimit T` to `L`
+across the additive uniform equivalence
+(`TauCeti.dualProjectiveLimit.completeSpace_of_continuous_evalInductive`).
+
+Finally, composing `evalEquiv` with `(strongDualEquiv …).symm.arrowCongr (.refl 𝕜 𝕜)` constructs
+the canonical strong-bidual isomorphism `L ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 L)`
+(`TauCeti.dualProjectiveLimit.inductiveBidualEquiv`), which agrees pointwise with canonical
+evaluation (`TauCeti.dualProjectiveLimit.inductiveBidualEquiv_apply_apply`) and intertwines
+continuous linear maps with their double strong transposes
+(`TauCeti.dualProjectiveLimit.precomp_precomp_comp_inductiveBidualEquiv`).
+
 A typical example is the space of holomorphic germs along a compact subset of `ℂⁿ`, the inductive
 limit of the Banach spaces of bounded holomorphic functions on a shrinking sequence of
 neighbourhoods, whose restriction maps are compact by Montel's theorem.
@@ -43,11 +72,23 @@ neighbourhoods, whose restriction maps are compact by Montel's theorem.
 * `TauCeti.isVonNBounded_iff_exists_subset_image_closedBall`: regularity of the inductive limit.
 * `TauCeti.dualProjectiveLimit.strongDualEquiv`: the strong dual of the inductive limit is the
   projective limit of the dual spaces.
+* `TauCeti.dualProjectiveLimit.preimage_polar_image_precomp_polar_eq_closure`: explicit polar and
+  bipolar comparison for `evalInductive`.
+* `TauCeti.dualProjectiveLimit.comap_evalInductive_le_nhds`: inverse continuity of `evalInductive`.
+* `TauCeti.dualProjectiveLimit.continuous_evalInductive_of_le_finalLocallyConvexTopology`,
+  `TauCeti.dualProjectiveLimit.finalLocallyConvexTopology_eq`: forward continuity and final-topology
+  characterization.
+* `TauCeti.dualProjectiveLimit.evalEquiv`: topological linear isomorphism
+  `L ≃L[𝕜] StrongDual 𝕜 (dualProjectiveLimit T)`.
+* `TauCeti.dualProjectiveLimit.completeSpace_of_continuous_evalInductive`: completeness of `L`.
+* `TauCeti.dualProjectiveLimit.inductiveBidualEquiv`: canonical strong-bidual isomorphism
+  `L ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 L)` and its naturality.
 
 ## References
 
 * H. Komatsu, *Projective and injective limits of weakly compact sequences of locally convex
   spaces*, J. Math. Soc. Japan 19 (1967), 366–383.
+* H. H. Schaefer, *Topological Vector Spaces*, Chapter IV, §5.
 -/
 
 public section
@@ -55,6 +96,7 @@ public section
 noncomputable section
 
 open ContinuousLinearMap Filter Metric Topology
+open scoped ComplexOrder
 
 namespace TauCeti
 
@@ -145,6 +187,8 @@ def strongDualEquiv [SeparatingDual 𝕜 L] (hT : ∀ n, (T n).IsWeaklyCompact)
   continuous_toFun := (precomp ι hι).continuous
   continuous_invFun := continuous_symm_precomp hT hι hinj hcover hfinal
 
+section StrongDualEquiv
+
 variable [SeparatingDual 𝕜 L] (hT : ∀ n, (T n).IsWeaklyCompact)
   (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n) (hinj : ∀ n, Function.Injective (ι n))
   (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x)
@@ -163,6 +207,367 @@ theorem strongDualEquiv_symm_apply_apply (f : dualProjectiveLimit T) {n : ℕ} (
       (f : ∀ n, StrongDual 𝕜 (B n)) n z := by
   conv_rhs => rw [← (strongDualEquiv hT hι hinj hcover hfinal).apply_symm_apply f]
   rw [coe_strongDualEquiv, precomp_apply, coe_comp, Function.comp_apply]
+
+/-- Evaluating the functional `(strongDualEquiv …).symm f` at any `x : L` agrees with pairing
+`evalInductive … x` against `f`. -/
+theorem strongDualEquiv_symm_apply_eq_evalInductive (f : dualProjectiveLimit T) (x : L) :
+    (strongDualEquiv hT hι hinj hcover hfinal).symm f x =
+      evalInductive hι hinj hcover x f := by
+  obtain ⟨n, z, rfl⟩ := hcover x
+  simp
+
+end StrongDualEquiv
+
+section PolarComparison
+
+/-- For any `0`-neighborhood `U` in `L`, the image in `dualProjectiveLimit T` of its strong polar
+`StrongDual.polar 𝕜 U` under `precomp ι hι` is von Neumann bounded, because each stage inclusion
+`ι n` is continuous and hence `precomp ι hι` is continuous. -/
+theorem isVonNBounded_image_precomp_polar
+    (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n) {U : Set L} (hU : U ∈ 𝓝 (0 : L)) :
+    Bornology.IsVonNBounded 𝕜 (precomp ι hι '' StrongDual.polar 𝕜 U) :=
+  (StrongDual.isVonNBounded_polar hU).image (precomp ι hι)
+
+/-- Under the final functional-continuity property on `L`, the image under `precomp ι hι` of the
+strong polar of `U ⊆ L` coincides with the polar of `evalInductive hι hinj hcover '' U` in
+`dualProjectiveLimit T`. -/
+theorem image_precomp_polar_eq (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
+    (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x)
+    (hfinal : ∀ ψ : L →ₗ[𝕜] 𝕜, (∀ n, Continuous (ψ ∘ ι n)) → Continuous ψ) (U : Set L) :
+    precomp ι hι '' StrongDual.polar 𝕜 U =
+      (topDualPairing 𝕜 (dualProjectiveLimit T)).polar (evalInductive hι hinj hcover '' U) := by
+  ext f
+  simp only [Set.mem_image, StrongDual.mem_polar_iff]
+  change (∃ φ : StrongDual 𝕜 L, (∀ x ∈ U, ‖φ x‖ ≤ 1) ∧ precomp ι hι φ = f) ↔
+    ∀ Φ ∈ evalInductive hι hinj hcover '' U, ‖Φ f‖ ≤ 1
+  simp only [Set.forall_mem_image]
+  refine ⟨fun ⟨φ, hφ, hf⟩ x hx ↦ ?_, fun hf ↦ ?_⟩
+  · subst hf
+    rw [evalInductive_apply_precomp]
+    exact hφ x hx
+  · obtain ⟨φ, rfl⟩ := precomp_surjective hι hinj hcover hfinal f
+    refine ⟨φ, fun x hx ↦ ?_, rfl⟩
+    simpa using hf hx
+
+/-- Pulling back the polar in `StrongDual 𝕜 (dualProjectiveLimit T)` of
+`precomp ι hι '' StrongDual.polar 𝕜 U` along `evalInductive` recovers the bipolar of `U` in `L`. -/
+theorem preimage_polar_image_precomp_polar (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
+    (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x) (U : Set L) :
+    evalInductive hι hinj hcover ⁻¹' StrongDual.polar 𝕜 (precomp ι hι '' StrongDual.polar 𝕜 U) =
+      (topDualPairing 𝕜 L).polar (StrongDual.polar 𝕜 U) := by
+  ext x
+  change (∀ f ∈ precomp ι hι '' StrongDual.polar 𝕜 U, ‖evalInductive hι hinj hcover x f‖ ≤ 1) ↔
+    ∀ φ ∈ StrongDual.polar 𝕜 U, ‖φ x‖ ≤ 1
+  simp
+
+/-- **Explicit bipolar comparison for `evalInductive`.** For a nonempty absolutely convex subset
+`U` of a locally convex space `L` over `ℝ` or `ℂ`, pulling back the strong polar of
+`precomp ι hι '' StrongDual.polar 𝕜 U` along `evalInductive` gives `_root_.closure U`. -/
+theorem preimage_polar_image_precomp_polar_eq_closure
+    [Module ℝ L] [IsScalarTower ℝ 𝕜 L] [IsTopologicalAddGroup L] [ContinuousSMul 𝕜 L]
+    [LocallyConvexSpace ℝ L]
+    (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
+    (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x)
+    {U : Set L} (hU : AbsConvex 𝕜 U) (hne : U.Nonempty) :
+    evalInductive hι hinj hcover ⁻¹' StrongDual.polar 𝕜 (precomp ι hι '' StrongDual.polar 𝕜 U) =
+      _root_.closure U := by
+  rw [preimage_polar_image_precomp_polar, hU.bipolar_eq_closure hne]
+
+end PolarComparison
+
+section EvaluationIsomorphism
+
+/-- **Inverse continuity of `evalInductive` at `0`.** In any locally convex space `L` over `ℝ` or
+`ℂ` with compatible injective covering continuous linear maps `ι n : B n →L[𝕜] L`, the pullback of
+`𝓝 0` along `evalInductive` is finer than or equal to `𝓝 (0 : L)`. -/
+theorem comap_evalInductive_le_nhds_zero
+    [Module ℝ L] [IsScalarTower ℝ 𝕜 L] [IsTopologicalAddGroup L] [ContinuousSMul 𝕜 L]
+    [LocallyConvexSpace ℝ L]
+    (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
+    (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x) :
+    Filter.comap (evalInductive hι hinj hcover) (𝓝 0) ≤ 𝓝 (0 : L) := by
+  have : LocallyConvexSpace 𝕜 L := locallyConvexSpace_RCLike_iff.2 ‹_›
+  intro W hW
+  obtain ⟨U, ⟨hU, hUclosed, hUabs⟩, hUW⟩ := (nhds_hasBasis_absConvex_closed 𝕜 L).mem_iff.1 hW
+  refine ⟨{Φ : StrongDual 𝕜 (dualProjectiveLimit T) |
+      Set.MapsTo Φ (precomp ι hι '' StrongDual.polar 𝕜 U) (closedBall (0 : 𝕜) 1)},
+    ContinuousLinearMap.eventually_nhds_zero_mapsTo
+      (isVonNBounded_image_precomp_polar hι hU) (closedBall_mem_nhds 0 one_pos),
+    fun x hx ↦ hUW ?_⟩
+  have hne : U.Nonempty := ⟨0, mem_of_mem_nhds hU⟩
+  dsimp only [id]
+  rw [← hUclosed.closure_eq,
+    ← preimage_polar_image_precomp_polar_eq_closure hι hinj hcover hUabs hne,
+    Set.mem_preimage, StrongDual.mem_polar_iff]
+  intro f hf
+  simpa [mem_closedBall, dist_zero_right] using hx hf
+
+/-- **Inverse continuity of `evalInductive`.** On any locally convex space `L` over `ℝ` or `ℂ`,
+pulling back `𝓝 (evalInductive … x)` along `evalInductive` is finer than or equal to `𝓝 x`. -/
+theorem comap_evalInductive_le_nhds
+    [Module ℝ L] [IsScalarTower ℝ 𝕜 L] [IsTopologicalAddGroup L] [ContinuousSMul 𝕜 L]
+    [LocallyConvexSpace ℝ L]
+    (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
+    (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x) (x : L) :
+    Filter.comap (evalInductive hι hinj hcover)
+      (𝓝 (evalInductive hι hinj hcover x)) ≤ 𝓝 x := by
+  let ev : L →ₗ[𝕜] (dualProjectiveLimit T →L[𝕜] 𝕜) := evalInductive hι hinj hcover
+  change Filter.comap ev (𝓝 (ev x)) ≤ 𝓝 x
+  rw [← nhds_translation_sub x, ← nhds_translation_sub (ev x), Filter.comap_comap]
+  have hcomp : ((· - ev x) ∘ ev) = (ev ∘ (· - x)) := funext fun z ↦ (map_sub ev z x).symm
+  rw [hcomp, ← Filter.comap_comap]
+  exact Filter.comap_mono (comap_evalInductive_le_nhds_zero hι hinj hcover)
+
+/-- If `evalInductive` is continuous on a locally convex space `L` over `ℝ` or `ℂ`, then it is
+inducing. -/
+theorem isInducing_evalInductive_of_continuous
+    [Module ℝ L] [IsScalarTower ℝ 𝕜 L] [IsTopologicalAddGroup L] [ContinuousSMul 𝕜 L]
+    [LocallyConvexSpace ℝ L]
+    (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
+    (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x)
+    (hcont : Continuous (evalInductive hι hinj hcover)) :
+    IsInducing (evalInductive hι hinj hcover) :=
+  isInducing_iff_nhds.2 fun x ↦
+    le_antisymm (hcont.tendsto x).le_comap (comap_evalInductive_le_nhds hι hinj hcover x)
+
+/-- If `evalInductive` is continuous, then every linear functional on `L` whose composites with all
+stage maps `ι n` are continuous is itself continuous on `L`. -/
+theorem continuous_of_continuous_comp_of_continuous_evalInductive
+    (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
+    (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x)
+    (hcont : Continuous (evalInductive hι hinj hcover))
+    (ψ : L →ₗ[𝕜] 𝕜) (hψ : ∀ n, Continuous (ψ ∘ ι n)) :
+    Continuous ψ := by
+  let f : dualProjectiveLimit T :=
+    ⟨fun n ↦ ⟨ψ.comp (ι n).toLinearMap, hψ n⟩, mem_dualProjectiveLimit.2 fun n ↦ by
+      ext z
+      exact congrArg ψ (congr($(hι n) z))⟩
+  refine ((continuous_eval_const f).comp hcont).congr fun x ↦ ?_
+  obtain ⟨n, z, rfl⟩ := hcover x
+  simp [f]
+
+/-- **Forward continuity from the final locally convex topology.** Whenever the topology of `L` is
+at least as fine as the final locally convex topology of the maps `ι n`, the glued evaluation map
+`evalInductive` is continuous into `StrongDual 𝕜 (dualProjectiveLimit T)`. -/
+theorem continuous_evalInductive_of_le_finalLocallyConvexTopology
+    [∀ n, Module ℝ (B n)] [∀ n, IsScalarTower ℝ 𝕜 (B n)] [Module ℝ L] [IsScalarTower ℝ 𝕜 L]
+    (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
+    (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x)
+    (hle : ‹TopologicalSpace L› ≤
+      finalLocallyConvexTopology fun n ↦ (ι n).toLinearMap.restrictScalars ℝ) :
+    Continuous (evalInductive hι hinj hcover) := by
+  have : ContinuousSMul ℝ (StrongDual 𝕜 (dualProjectiveLimit T)) :=
+    IsScalarTower.continuousSMul 𝕜
+  have hcont₀ := (FinalLocallyConvexTopology.continuous_iff_continuous_comp
+    (fun n ↦ (ι n).toLinearMap.restrictScalars ℝ) (evalInductive hι hinj hcover)).2 fun n ↦
+      (eval T n).continuous.congr fun z ↦ (evalInductive_ι hι hinj hcover n z).symm
+  exact continuous_iff_le_induced.2 (hle.trans (continuous_iff_le_induced.1 hcont₀))
+
+/-- Auxiliary helper identifying `finalLocallyConvexTopology` with the topology induced by
+`evalInductive` on a fresh module `L₀` carrying no prior `TopologicalSpace` instance. -/
+private theorem eq_induced_finalLocallyConvexTopology
+    [∀ n, Module ℝ (B n)] [∀ n, IsScalarTower ℝ 𝕜 (B n)]
+    {L₀ : Type*} [AddCommGroup L₀] [Module 𝕜 L₀] [Module ℝ L₀] [IsScalarTower ℝ 𝕜 L₀]
+    (ιₗ : ∀ n, B n →ₗ[𝕜] L₀) (hι : ∀ n, (ιₗ (n + 1)).comp (T n).toLinearMap = ιₗ n)
+    (hinj : ∀ n, Function.Injective (ιₗ n)) (hcover : ∀ x : L₀, ∃ n, ∃ y, ιₗ n y = x) :
+    ∃ ev : L₀ → StrongDual 𝕜 (dualProjectiveLimit T),
+      (∀ n z, ev (ιₗ n z) = eval T n z) ∧
+      finalLocallyConvexTopology (fun n ↦ (ιₗ n).restrictScalars ℝ) =
+        TopologicalSpace.induced ev inferInstance := by
+  let f : ∀ n, B n →ₗ[ℝ] L₀ := fun n ↦ (ιₗ n).restrictScalars ℝ
+  let _ : TopologicalSpace L₀ := finalLocallyConvexTopology f
+  let _ : ContinuousSMul 𝕜 L₀ := FinalLocallyConvexTopology.continuousSMul ιₗ
+  let ι₀ : ∀ n, B n →L[𝕜] L₀ := fun n ↦ ⟨ιₗ n, FinalLocallyConvexTopology.continuous f n⟩
+  have hι₀ : ∀ n, (ι₀ (n + 1)).comp (T n) = ι₀ n := fun n ↦ by
+    ext z
+    exact congr($(hι n) z)
+  have hcont₀ : Continuous (evalInductive hι₀ hinj hcover) :=
+    continuous_evalInductive_of_le_finalLocallyConvexTopology hι₀ hinj hcover le_rfl
+  exact ⟨evalInductive hι₀ hinj hcover, evalInductive_ι hι₀ hinj hcover,
+    (isInducing_evalInductive_of_continuous hι₀ hinj hcover hcont₀).eq_induced⟩
+
+/-- On a locally convex space `L` over `ℝ` or `ℂ` with compatible injective covering continuous
+linear maps `ι n : B n →L[𝕜] L`, continuity of `evalInductive` forces the topology of `L` to equal
+the final locally convex topology of the maps `ι n`. -/
+theorem finalLocallyConvexTopology_eq
+    [∀ n, Module ℝ (B n)] [∀ n, IsScalarTower ℝ 𝕜 (B n)]
+    [Module ℝ L] [IsScalarTower ℝ 𝕜 L] [IsTopologicalAddGroup L] [ContinuousSMul 𝕜 L]
+    [LocallyConvexSpace ℝ L]
+    (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
+    (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x)
+    (hcont : Continuous (evalInductive hι hinj hcover)) :
+    finalLocallyConvexTopology (fun n ↦ (ι n).toLinearMap.restrictScalars ℝ) =
+      ‹TopologicalSpace L› := by
+  obtain ⟨ev, hev, ht₀⟩ := eq_induced_finalLocallyConvexTopology (fun n ↦ (ι n).toLinearMap)
+    (fun n ↦ congrArg ContinuousLinearMap.toLinearMap (hι n)) hinj hcover
+  have heq : ev = evalInductive hι hinj hcover := funext fun x ↦ by
+    obtain ⟨n, z, rfl⟩ := hcover x
+    exact (hev n z).trans (evalInductive_ι hι hinj hcover n z).symm
+  rw [ht₀, heq, ← (isInducing_evalInductive_of_continuous hι hinj hcover hcont).eq_induced]
+
+/-- **Canonical evaluation isomorphism onto the strong dual of `dualProjectiveLimit T`.** Let `L`
+be a `T₁` locally convex space over `ℝ` or `ℂ`, covered by compatible injective continuous linear
+maps `ι n : B n →L[𝕜] L` from normed spaces with weakly compact bonding maps `T n`. Whenever
+`evalInductive` is continuous — in particular when `L` carries the final locally convex topology of
+the `ι n` — it is a topological linear isomorphism `L ≃L[𝕜] StrongDual 𝕜 (dualProjectiveLimit T)`.
+-/
+def evalEquiv [Module ℝ L] [IsScalarTower ℝ 𝕜 L] [IsTopologicalAddGroup L] [ContinuousSMul 𝕜 L]
+    [LocallyConvexSpace ℝ L] [T1Space L]
+    (hT : ∀ n, (T n).IsWeaklyCompact) (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
+    (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x)
+    (hcont : Continuous (evalInductive hι hinj hcover)) :
+    L ≃L[𝕜] StrongDual 𝕜 (dualProjectiveLimit T) :=
+  let e := LinearEquiv.ofBijective (evalInductive hι hinj hcover)
+    ⟨evalInductive_injective hι hinj hcover, evalInductive_surjective hT hι hinj hcover⟩
+  { toLinearEquiv := e
+    continuous_toFun := hcont
+    continuous_invFun :=
+      (isInducing_evalInductive_of_continuous hι hinj hcover hcont).continuous_iff.2 <|
+        continuous_id.congr fun Φ ↦ (e.apply_symm_apply Φ).symm }
+
+@[simp]
+theorem coe_evalEquiv [Module ℝ L] [IsScalarTower ℝ 𝕜 L] [IsTopologicalAddGroup L]
+    [ContinuousSMul 𝕜 L] [LocallyConvexSpace ℝ L] [T1Space L]
+    (hT : ∀ n, (T n).IsWeaklyCompact) (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
+    (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x)
+    (hcont : Continuous (evalInductive hι hinj hcover)) :
+    ⇑(evalEquiv hT hι hinj hcover hcont) = evalInductive hι hinj hcover :=
+  (rfl)
+
+@[simp]
+theorem toLinearMap_evalEquiv [Module ℝ L] [IsScalarTower ℝ 𝕜 L] [IsTopologicalAddGroup L]
+    [ContinuousSMul 𝕜 L] [LocallyConvexSpace ℝ L] [T1Space L]
+    (hT : ∀ n, (T n).IsWeaklyCompact) (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
+    (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x)
+    (hcont : Continuous (evalInductive hι hinj hcover)) :
+    (evalEquiv hT hι hinj hcover hcont).toLinearMap = evalInductive hι hinj hcover :=
+  (rfl)
+
+@[simp]
+theorem evalEquiv_ι [Module ℝ L] [IsScalarTower ℝ 𝕜 L] [IsTopologicalAddGroup L]
+    [ContinuousSMul 𝕜 L] [LocallyConvexSpace ℝ L] [T1Space L]
+    (hT : ∀ n, (T n).IsWeaklyCompact) (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
+    (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x)
+    (hcont : Continuous (evalInductive hι hinj hcover)) (n : ℕ) (z : B n) :
+    evalEquiv hT hι hinj hcover hcont (ι n z) = eval T n z :=
+  evalInductive_ι hι hinj hcover n z
+
+@[simp]
+theorem evalEquiv_symm_eval [Module ℝ L] [IsScalarTower ℝ 𝕜 L] [IsTopologicalAddGroup L]
+    [ContinuousSMul 𝕜 L] [LocallyConvexSpace ℝ L] [T1Space L]
+    (hT : ∀ n, (T n).IsWeaklyCompact) (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
+    (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x)
+    (hcont : Continuous (evalInductive hι hinj hcover)) (n : ℕ) (z : B n) :
+    (evalEquiv hT hι hinj hcover hcont).symm (eval T n z) = ι n z :=
+  (evalEquiv hT hι hinj hcover hcont).symm_apply_eq.2
+    (evalEquiv_ι hT hι hinj hcover hcont n z).symm
+
+/-- **Completeness of compact inductive limits.** Let `L` be a `T₁` locally convex uniform additive
+group over `ℝ` or `ℂ`, covered by compatible injective continuous linear maps `ι n : B n →L[𝕜] L`
+with weakly compact bonding maps `T n`. If `evalInductive` is continuous — in particular if `L`
+carries the final locally convex topology — then `L` is complete with respect to its additive
+uniformity, by transporting `ContinuousLinearMap.instCompleteSpace` from the strong dual of the
+Fréchet space `dualProjectiveLimit T` along the uniform equivalence `evalEquiv`. -/
+theorem completeSpace_of_continuous_evalInductive {L : Type*} [AddCommGroup L] [Module 𝕜 L]
+    [Module ℝ L] [IsScalarTower ℝ 𝕜 L] [UniformSpace L] [IsUniformAddGroup L]
+    [ContinuousSMul 𝕜 L] [LocallyConvexSpace ℝ L] [T1Space L] {ι : ∀ n, B n →L[𝕜] L}
+    (hT : ∀ n, (T n).IsWeaklyCompact) (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
+    (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x)
+    (hcont : Continuous (evalInductive hι hinj hcover)) :
+    CompleteSpace L :=
+  ((evalEquiv hT hι hinj hcover hcont).isUniformEmbedding.completeSpace_congr
+    (evalEquiv hT hι hinj hcover hcont).surjective).mpr inferInstance
+
+/-- **Strong reflexivity of compact inductive limits.** Composing `evalEquiv` with
+`(strongDualEquiv …).symm.arrowCongr (.refl 𝕜 𝕜)` yields the canonical topological linear
+isomorphism from a `T₁` locally convex compact inductive limit `L` onto its strong bidual
+`StrongDual 𝕜 (StrongDual 𝕜 L)`. -/
+def inductiveBidualEquiv [Module ℝ L] [IsScalarTower ℝ 𝕜 L] [IsTopologicalAddGroup L]
+    [ContinuousSMul 𝕜 L] [LocallyConvexSpace ℝ L] [T1Space L]
+    (hT : ∀ n, (T n).IsWeaklyCompact) (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
+    (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x)
+    (hcont : Continuous (evalInductive hι hinj hcover)) :
+    L ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 L) :=
+  let hfinal := continuous_of_continuous_comp_of_continuous_evalInductive hι hinj hcover hcont
+  (evalEquiv hT hι hinj hcover hcont).trans <|
+    (strongDualEquiv hT hι hinj hcover hfinal).symm.arrowCongr (ContinuousLinearEquiv.refl 𝕜 𝕜)
+
+/-- `inductiveBidualEquiv` factors as `evalEquiv` followed by the strong transpose of
+`strongDualEquiv`. -/
+theorem inductiveBidualEquiv_eq_trans [Module ℝ L] [IsScalarTower ℝ 𝕜 L]
+    [IsTopologicalAddGroup L] [ContinuousSMul 𝕜 L] [LocallyConvexSpace ℝ L] [T1Space L]
+    (hT : ∀ n, (T n).IsWeaklyCompact) (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
+    (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x)
+    (hcont : Continuous (evalInductive hι hinj hcover)) :
+    inductiveBidualEquiv hT hι hinj hcover hcont =
+      (evalEquiv hT hι hinj hcover hcont).trans
+        ((strongDualEquiv hT hι hinj hcover
+          (continuous_of_continuous_comp_of_continuous_evalInductive hι hinj hcover
+            hcont)).symm.arrowCongr (ContinuousLinearEquiv.refl 𝕜 𝕜)) := by
+  rfl
+
+/-- At every functional `ℓ : StrongDual 𝕜 L`, `inductiveBidualEquiv … x` sends `ℓ` to
+`(evalEquiv … x ∘ strongDualEquiv …) ℓ = (strongDualEquiv … ℓ) x = ℓ x`. -/
+@[simp]
+theorem inductiveBidualEquiv_apply_apply [Module ℝ L] [IsScalarTower ℝ 𝕜 L]
+    [IsTopologicalAddGroup L] [ContinuousSMul 𝕜 L] [LocallyConvexSpace ℝ L] [T1Space L]
+    (hT : ∀ n, (T n).IsWeaklyCompact) (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
+    (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x)
+    (hcont : Continuous (evalInductive hι hinj hcover)) (x : L) (ℓ : StrongDual 𝕜 L) :
+    inductiveBidualEquiv hT hι hinj hcover hcont x ℓ = ℓ x := by
+  simp [inductiveBidualEquiv]
+
+/-- The underlying linear map of `inductiveBidualEquiv` is the canonical bidual evaluation
+`ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜)`. -/
+@[simp]
+theorem toLinearMap_inductiveBidualEquiv [Module ℝ L] [IsScalarTower ℝ 𝕜 L]
+    [IsTopologicalAddGroup L] [ContinuousSMul 𝕜 L] [LocallyConvexSpace ℝ L] [T1Space L]
+    (hT : ∀ n, (T n).IsWeaklyCompact) (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
+    (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x)
+    (hcont : Continuous (evalInductive hι hinj hcover)) :
+    (inductiveBidualEquiv hT hι hinj hcover hcont).toLinearMap =
+      ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) := by
+  ext x ℓ
+  simp
+
+/-- The inverse of the strong transpose of `inductiveBidualEquiv` is the canonical strong-bidual
+evaluation map of `StrongDual 𝕜 L`. -/
+@[simp]
+theorem toLinearMap_inductiveBidualEquiv_arrowCongr_refl [Module ℝ L] [IsScalarTower ℝ 𝕜 L]
+    [IsTopologicalAddGroup L] [ContinuousSMul 𝕜 L] [LocallyConvexSpace ℝ L] [T1Space L]
+    (hT : ∀ n, (T n).IsWeaklyCompact) (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
+    (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x)
+    (hcont : Continuous (evalInductive hι hinj hcover)) :
+    ((inductiveBidualEquiv hT hι hinj hcover hcont).arrowCongr (.refl 𝕜 𝕜)).toLinearMap =
+      ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) :=
+  (inductiveBidualEquiv hT hι hinj hcover hcont).toLinearMap_arrowCongr_refl_of_forall_apply_eq
+    (inductiveBidualEquiv_apply_apply hT hι hinj hcover hcont)
+
+/-- **Naturality of `inductiveBidualEquiv` for continuous linear maps.** Any continuous linear map
+`u : L →L[𝕜] L'` between compact inductive limits is intertwined with its double strong transpose
+`precomp 𝕜 (precomp 𝕜 u)` by `inductiveBidualEquiv`. -/
+theorem precomp_precomp_comp_inductiveBidualEquiv
+    [Module ℝ L] [IsScalarTower ℝ 𝕜 L] [IsTopologicalAddGroup L] [ContinuousSMul 𝕜 L]
+    [LocallyConvexSpace ℝ L] [T1Space L]
+    (hT : ∀ n, (T n).IsWeaklyCompact) (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
+    (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x)
+    (hcont : Continuous (evalInductive hι hinj hcover))
+    {B' : ℕ → Type*} [∀ n, NormedAddCommGroup (B' n)] [∀ n, NormedSpace 𝕜 (B' n)]
+    {T' : ∀ n, B' n →L[𝕜] B' (n + 1)} {L' : Type*} [AddCommGroup L'] [Module 𝕜 L']
+    [Module ℝ L'] [IsScalarTower ℝ 𝕜 L'] [TopologicalSpace L'] [IsTopologicalAddGroup L']
+    [ContinuousSMul 𝕜 L'] [LocallyConvexSpace ℝ L'] [T1Space L'] {ι' : ∀ n, B' n →L[𝕜] L'}
+    (hT' : ∀ n, (T' n).IsWeaklyCompact) (hι' : ∀ n, (ι' (n + 1)).comp (T' n) = ι' n)
+    (hinj' : ∀ n, Function.Injective (ι' n)) (hcover' : ∀ x : L', ∃ n, ∃ y, ι' n y = x)
+    (hcont' : Continuous (evalInductive hι' hinj' hcover'))
+    (u : L →L[𝕜] L') :
+    (ContinuousLinearMap.precomp 𝕜 (ContinuousLinearMap.precomp 𝕜 u)).comp
+        (inductiveBidualEquiv hT hι hinj hcover hcont).toContinuousLinearMap =
+      (inductiveBidualEquiv hT' hι' hinj' hcover' hcont').toContinuousLinearMap.comp u :=
+  u.precomp_precomp_comp_of_forall_apply_eq
+    (inductiveBidualEquiv_apply_apply hT hι hinj hcover hcont)
+    (inductiveBidualEquiv_apply_apply hT' hι' hinj' hcover' hcont')
+
+end EvaluationIsomorphism
 
 end dualProjectiveLimit
 
