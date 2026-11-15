@@ -19,15 +19,18 @@ central coordinate: its `k`-points are the `ad`-nilpotent elements of the derive
 
 This is smaller than the set of `ad`-nilpotent elements of `𝔤` as soon as the center of `𝔤` is
 nonzero: every central element is `ad`-nilpotent, and the `ad`-nilpotent elements are the sums of a
-central element and a point of the cone (`TauCeti.isNilpotent_ad_iff_exists_mem_center_add`). When
-the Killing form of `𝔤` is nondegenerate the two sets agree
-(`TauCeti.nilpotentConeIdeal_le_ker_lift_eval_iff`).
+central element and a point of the cone. When the Killing form of `𝔤` is nondegenerate the two sets
+agree (`TauCeti.nilpotentConeIdeal_le_ker_lift_eval_iff`).
 
 ## Main results
 
 * `nilpotentConeIdeal_le_ker_lift_eval_iff_mem_derivedSeries_and_isNilpotent_ad`, in the namespace
   `TauCeti.reductiveCommHopfAlgProperty`: the `k`-points of the nilpotent cone of a reductive group
   are the `ad`-nilpotent elements of `⁅𝔤, 𝔤⁆`.
+* `nilpotentConeIdeal_le_ker_lift_eval_add_iff`: for `z` central and `y ∈ ⁅𝔤, 𝔤⁆`, the point
+  `z + y` lies on the cone exactly when `z = 0` and `ad y` is nilpotent.
+* `isNilpotent_ad_iff_exists_mem_center_add_nilpotentConeIdeal_le_ker_lift_eval`: the
+  `ad`-nilpotent elements of `𝔤` are the sums of a central element and a point of the cone.
 
 ## References
 
@@ -60,5 +63,30 @@ theorem nilpotentConeIdeal_le_ker_lift_eval_iff_mem_derivedSeries_and_isNilpoten
   have := hH.geometricallyConnected.connectedSpace k H.obj
   have := hH.hasCentralRadical_dual_cotangentSpace
   TauCeti.nilpotentConeIdeal_le_ker_lift_eval_iff_mem_derivedSeries_and_isNilpotent_ad
+
+/-- **The nilpotent cone of a reductive group has zero central coordinate.** For a reductive affine
+group over an algebraically closed field of characteristic zero, let `z` be a central element of
+the Lie algebra `𝔤` and `y ∈ ⁅𝔤, 𝔤⁆`. Then `z + y` lies on the nilpotent cone exactly when the
+central coordinate `z` is zero and `ad y` is nilpotent. -/
+theorem nilpotentConeIdeal_le_ker_lift_eval_add_iff (hH : reductiveCommHopfAlgProperty k H)
+    {z y : 𝔤} (hz : z ∈ LieAlgebra.center k 𝔤) (hy : y ∈ LieAlgebra.derivedSeries k 𝔤 1) :
+    nilpotentConeIdeal k H ≤ RingHom.ker (SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 (z + y))) ↔
+      z = 0 ∧ IsNilpotent (LieAlgebra.ad k 𝔤 y) :=
+  have := hH.geometricallyConnected.connectedSpace k H.obj
+  have := hH.hasCentralRadical_dual_cotangentSpace
+  TauCeti.nilpotentConeIdeal_le_ker_lift_eval_add_iff hz hy
+
+/-- **The `ad`-nilpotent elements of the Lie algebra of a reductive group.** For a reductive affine
+group over an algebraically closed field of characteristic zero, `ad x` is nilpotent exactly when
+`x = z + y` with `z` central and `y` on the nilpotent cone. -/
+theorem isNilpotent_ad_iff_exists_mem_center_add_nilpotentConeIdeal_le_ker_lift_eval
+    (hH : reductiveCommHopfAlgProperty k H) {x : 𝔤} :
+    IsNilpotent (LieAlgebra.ad k 𝔤 x) ↔
+      ∃ z ∈ LieAlgebra.center k 𝔤, ∃ y : 𝔤,
+        nilpotentConeIdeal k H ≤ RingHom.ker (SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 y)) ∧
+          z + y = x :=
+  have := hH.geometricallyConnected.connectedSpace k H.obj
+  have := hH.hasCentralRadical_dual_cotangentSpace
+  TauCeti.isNilpotent_ad_iff_exists_mem_center_add_nilpotentConeIdeal_le_ker_lift_eval
 
 end TauCeti.reductiveCommHopfAlgProperty

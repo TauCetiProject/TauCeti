@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Reductive.Basic
+public import TauCeti.Algebra.Lie.AdjointAction.Basic
 public import TauCeti.Algebra.Lie.AdjointAction.InvariantZeroLocus
-import TauCeti.Algebra.Lie.AdjointAction.Basic
 import TauCeti.Algebra.Lie.Killing.AdNilpotent
 import TauCeti.Algebra.Lie.TracePowerPolynomial
 
@@ -18,7 +18,8 @@ Let `L` be a finite-dimensional reductive Lie algebra over a field `K` of charac
 that `L = Z(L) ⊕ ⁅L, L⁆` with `⁅L, L⁆` semisimple. The invariant polynomial functions on `L`
 (`TauCeti.SymmetricAlgebra.lieInvariants`) of positive degree include the linear functions
 vanishing on `⁅L, L⁆`, the *central coordinates*, and their common zero locus is therefore
-smaller than the set of `ad`-nilpotent elements. This file computes both sets.
+smaller than the set of `ad`-nilpotent elements. This file computes the common zero locus and
+compares it with the `ad`-nilpotent elements.
 
 * The common zeros of the invariants of positive degree are the `ad`-nilpotent elements of the
   derived ideal (`TauCeti.mem_derivedSeries_and_isNilpotent_ad_iff_forall_lift_eval_eq_zero`).
@@ -26,9 +27,9 @@ smaller than the set of `ad`-nilpotent elements. This file computes both sets.
   when its central coordinate `z` vanishes and `y` is `ad`-nilpotent
   (`TauCeti.forall_lift_eval_add_eq_zero_iff`).
 * The `ad`-nilpotent elements are the sums `z + y` of an arbitrary central element `z` and an
-  `ad`-nilpotent element `y` of `⁅L, L⁆` (`TauCeti.isNilpotent_ad_iff_exists_mem_center_add`), and
-  `y` is `ad`-nilpotent in `L` exactly when it is `ad`-nilpotent in the semisimple Lie algebra
-  `⁅L, L⁆` (`LieIdeal.isNilpotent_ad_iff`).
+  `ad`-nilpotent element `y` of `⁅L, L⁆` (`TauCeti.isNilpotent_ad_iff_exists_mem_center_add`, in
+  `TauCeti.Algebra.Lie.Reductive.Basic`), and `y` is `ad`-nilpotent in `L` exactly when it is
+  `ad`-nilpotent in the semisimple Lie algebra `⁅L, L⁆` (`LieIdeal.isNilpotent_ad_iff`).
 
 So the zero locus of the invariants of positive degree is `{0} × 𝒩(⁅L, L⁆)`, while the
 `ad`-nilpotent locus is the larger set `Z(L) × 𝒩(⁅L, L⁆)`, where `𝒩(⁅L, L⁆)` is the set of
@@ -48,13 +49,11 @@ such eigenvectors.
   algebra, the common zeros of the invariants of positive degree are the `ad`-nilpotent elements
   of the derived ideal.
 * `TauCeti.forall_lift_eval_add_eq_zero_iff`: the same in the coordinates of `Z(L) ⊕ ⁅L, L⁆`.
-* `TauCeti.isNilpotent_ad_iff_exists_mem_center_add`: the `ad`-nilpotent elements of a reductive
-  Lie algebra are the sums of a central element and an `ad`-nilpotent element of the derived ideal.
 
 ## References
 
-* J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §19.1 and
-  §23.1.
+* N. Bourbaki, *Lie Groups and Lie Algebras*, Chapter I, §6.4.
+* J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §23.1.
 * B. Kostant, *Lie group representations on polynomial rings*, Amer. J. Math. 85 (1963),
   327–404.
 -/
@@ -99,24 +98,11 @@ theorem forall_lift_eval_add_eq_zero_iff {z y : L} (hz : z ∈ center K L)
     (∀ p ∈ lieInvariants K L (Dual K L), algebraMapInv p = 0 →
       lift (Dual.eval K L (z + y)) p = 0) ↔ z = 0 ∧ IsNilpotent (ad K L y) := by
   rw [← mem_derivedSeries_and_isNilpotent_ad_iff_forall_lift_eval_eq_zero,
-    isNilpotent_ad_add_iff_of_mem_center hz, add_mem_cancel_right hy]
+    LieAlgebra.isNilpotent_ad_add_iff_of_mem_center_left hz, add_mem_cancel_right hy]
   refine and_congr_left fun _ ↦ ⟨fun hz' ↦ ?_, fun h ↦ h ▸ zero_mem _⟩
   have h := center_inf_derivedSeries_eq_bot K L
   rw [← LieSubmodule.mem_bot (R := K) (L := L) z, ← h]
   exact ⟨hz, hz'⟩
-
-/-- **The `ad`-nilpotent elements of a reductive Lie algebra.** In a finite-dimensional reductive
-Lie algebra over a field of characteristic zero, `ad x` is nilpotent exactly when `x = z + y` with
-`z` central and `y` an `ad`-nilpotent element of the derived ideal. Unlike the common zeros of the
-invariants (`TauCeti.forall_lift_eval_add_eq_zero_iff`), the central coordinate `z` is
-arbitrary. -/
-theorem isNilpotent_ad_iff_exists_mem_center_add {x : L} :
-    IsNilpotent (ad K L x) ↔
-      ∃ z ∈ center K L, ∃ y ∈ derivedSeries K L 1, IsNilpotent (ad K L y) ∧ z + y = x := by
-  refine ⟨fun hx ↦ ?_, fun ⟨z, hz, y, _, hy, hzy⟩ ↦
-    hzy ▸ (isNilpotent_ad_add_iff_of_mem_center hz y).mpr hy⟩
-  obtain ⟨z, hz, y, hyD, rfl⟩ := exists_mem_center_add_mem_derivedSeries K L x
-  exact ⟨z, hz, y, hyD, (isNilpotent_ad_add_iff_of_mem_center hz y).mp hx, rfl⟩
 
 end Reductive
 

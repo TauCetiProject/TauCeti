@@ -51,6 +51,7 @@ whole algebra.
   solvable.
 * `LieIdeal.isSolvable_of_isSolvable_map`: solvability descends from the image together with the
   part of the ideal lying in the kernel.
+* `LieAlgebra.lie_mem_derivedSeries_one`: every bracket lies in the derived ideal.
 * `LieAlgebra.derivedAbelianOfIdeal_le`: Mathlib's abelian ideal `LieAlgebra.derivedAbelianOfIdeal`
   of an ideal (the last nonzero term of its derived series when the ideal is solvable, and `⊥`
   otherwise) lies inside the ideal.
@@ -221,6 +222,11 @@ end LieIdeal
 namespace LieAlgebra
 
 variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L']
+
+/-- Every bracket lies in the derived ideal `⁅L, L⁆`, the first term of the derived series. -/
+theorem lie_mem_derivedSeries_one (x y : L) : ⁅x, y⁆ ∈ derivedSeries R L 1 := by
+  rw [derivedSeries_def, derivedSeriesOfIdeal_succ, derivedSeriesOfIdeal_zero]
+  exact LieSubmodule.lie_mem_lie (LieSubmodule.mem_top x) (LieSubmodule.mem_top y)
 
 /-- The ideal `derivedAbelianOfIdeal I` is contained in `I`. When `I` is solvable this is the last
 nonzero term of its derived series; otherwise it is `⊥`. -/

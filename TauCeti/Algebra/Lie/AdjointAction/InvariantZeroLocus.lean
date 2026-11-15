@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Lie.Killing
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.LieModule
 import TauCeti.Algebra.Lie.Killing.AdNilpotent
 import TauCeti.Algebra.Lie.Killing.Basic
+import TauCeti.Algebra.Lie.Solvable.Basic
 import TauCeti.Algebra.Lie.TracePowerPolynomial
 
 /-!
@@ -43,14 +44,17 @@ Both directions hold more generally, and are proved in
   `LinearMap.isNilpotent_iff_forall_trace_pow_eq_zero`
   (`TauCeti.isNilpotent_toEnd_of_forall_lift_eval_eq_zero`).
 
-* **Common zeros of the invariants lie in the derived ideal.** A linear function vanishing on
-  `⁅L, L⁆` is an invariant of degree one, so every common zero of the invariants of positive degree
-  lies in `⁅L, L⁆` (`TauCeti.mem_derivedSeries_of_forall_lift_eval_eq_zero`), over any field. In
-  a reductive Lie algebra this cuts out the central coordinates.
+Thus, pointwise, when the Killing form of `L` is nondegenerate, the nilpotent cone is the zero
+fibre of the map defined by the invariant polynomial functions of positive degree. For the adjoint
+quotient `𝔤 → 𝔤 // G` of a group `G`, this describes the points of its zero fibre wherever its
+invariant algebra is `S(𝔤*)^𝔤`.
 
-Thus, pointwise, the nilpotent cone is the zero fibre of the map defined by the invariant
-polynomial functions of positive degree. For the adjoint quotient `𝔤 → 𝔤 // G` of a group `G`,
-this describes the points of its zero fibre wherever its invariant algebra is `S(𝔤*)^𝔤`.
+Without that hypothesis the zero fibre can be strictly smaller than the ad-nilpotent locus. A
+linear function vanishing on `⁅L, L⁆` is an invariant of degree one, so every common zero of the
+invariants of positive degree lies in `⁅L, L⁆`, over any field
+(`TauCeti.mem_derivedSeries_of_forall_lift_eval_eq_zero`). For a reductive `L` with nonzero centre
+this excludes the nonzero central elements, although they are ad-nilpotent; see
+`TauCeti.Algebra.Lie.Reductive.InvariantZeroLocus`.
 
 ## Main results
 
@@ -89,9 +93,8 @@ theorem mem_derivedSeries_of_forall_lift_eval_eq_zero {x : L}
     (p := (derivedSeries K L 1 : Submodule K L)) hx
   refine hφx ?_
   have hinv : ι K (Dual K L) φ ∈ lieInvariants K L (Dual K L) :=
-    ι_mem_lieInvariants_of_apply_lie_eq_zero fun y z ↦ LinearMap.mem_ker.mp <| hφ <| by
-      rw [derivedSeries_def, derivedSeriesOfIdeal_succ, derivedSeriesOfIdeal_zero]
-      exact LieSubmodule.lie_mem_lie (LieSubmodule.mem_top y) (LieSubmodule.mem_top z)
+    ι_mem_lieInvariants_iff_apply_lie_eq_zero.mpr fun y z ↦
+      LinearMap.mem_ker.mp <| hφ <| lie_mem_derivedSeries_one y z
   simpa using h _ hinv (algebraMapInv_ι φ)
 
 variable [CharZero K]

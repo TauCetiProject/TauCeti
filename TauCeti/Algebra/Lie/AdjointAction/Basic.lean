@@ -51,8 +51,10 @@ For an ideal, adjoint nilpotence also passes back to the ambient Lie algebra
   ad-semisimple in the ambient Lie algebra is ad-semisimple in the subalgebra.
 * `LieIdeal.isNilpotent_ad_iff`: an element of an ideal is ad-nilpotent in the ideal exactly when
   it is ad-nilpotent in the ambient Lie algebra.
-* `TauCeti.isNilpotent_ad_add_iff_of_mem_center`: adding a central element does not change
-  ad-nilpotence.
+* `TauCeti.LieAlgebra.ad_eq_zero_iff`: the adjoint action of `z` vanishes exactly when `z` is
+  central, so adding a central element does not change the adjoint action
+  (`TauCeti.LieAlgebra.ad_add_of_mem_center_left`) or ad-nilpotence
+  (`TauCeti.LieAlgebra.isNilpotent_ad_add_iff_of_mem_center_left`).
 
 ## References
 
@@ -142,41 +144,54 @@ variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
 when it acts nilpotently on the whole Lie algebra: `ad x` maps `L` into `I`, where its powers are
 those of the adjoint action of `I`. For a subalgebra which is not an ideal only the implication
 `LieSubalgebra.isNilpotent_ad_of_isNilpotent_ad` holds. -/
+@[simp]
 theorem isNilpotent_ad_iff (I : LieIdeal R L) {x : I} :
     IsNilpotent (ad R I x) ↔ IsNilpotent (ad R L x) := by
-  -- on `I`, the powers of `ad x` are those of the adjoint action of `I`
-  have key (m : ℕ) (v : I) : (ad R L x ^ m) v = ((ad R I x ^ m) v : L) := by
-    induction m generalizing v with
-    | zero => simp
-    | succ m ih => simpa [pow_succ] using ih ⁅x, v⁆
   refine ⟨fun ⟨n, hn⟩ ↦ ⟨n + 1, LinearMap.ext fun y ↦ ?_⟩,
     I.toLieSubalgebra.isNilpotent_ad_of_isNilpotent_ad⟩
-  -- `ad x` maps `L` into `I`
-  have h := key n ⟨⁅(x : L), y⁆, _root_.lie_mem_left R L I _ _ x.2⟩
-  simp only [hn, LinearMap.zero_apply, ZeroMemClass.coe_zero] at h
-  simpa [pow_succ] using h
+  -- `ad x` maps `L` into `I`, where its powers are those of the adjoint action of `I`
+  have h : ((ad R I x ^ n) ⟨⁅(x : L), y⁆, _root_.lie_mem_left R L I _ _ x.2⟩ : L) =
+      (ad R L x ^ n) ⁅(x : L), y⁆ :=
+    LieSubalgebra.coe_ad_pow R L I.toLieSubalgebra x _ n
+  simpa [pow_succ, hn] using h.symm
 
 end LieIdeal
-
-namespace TauCeti
-
-open _root_.LieAlgebra
-
-/-- Adding a central element does not change the adjoint action, so it does not change
-`ad`-nilpotence. -/
-theorem isNilpotent_ad_add_iff_of_mem_center {R L : Type*} [CommRing R] [LieRing L]
-    [LieAlgebra R L] {z : L} (hz : z ∈ center R L) (y : L) :
-    IsNilpotent (ad R L (z + y)) ↔ IsNilpotent (ad R L y) := by
-  have hz' : ad R L z = 0 := LinearMap.ext fun w ↦ by
-    rw [ad_apply, LinearMap.zero_apply, ← lie_skew,
-      (LieModule.mem_maxTrivSubmodule R L L z).mp hz w, neg_zero]
-  rw [map_add, hz', zero_add]
-
-end TauCeti
 
 namespace TauCeti.LieAlgebra
 
 open _root_.LieAlgebra
+
+section Center
+
+variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+/-- The adjoint action of `z` vanishes exactly when `z` is central. -/
+theorem ad_eq_zero_iff {z : L} : ad R L z = 0 ↔ z ∈ center R L := by
+  rw [← LieHom.mem_ker, ad_ker_eq_self_module_ker, self_module_ker_eq_center]
+
+/-- Adding a central element on the left does not change the adjoint action. -/
+theorem ad_add_of_mem_center_left {z : L} (hz : z ∈ center R L) (y : L) :
+    ad R L (z + y) = ad R L y := by
+  rw [map_add, ad_eq_zero_iff.mpr hz, zero_add]
+
+/-- Adding a central element on the right does not change the adjoint action. -/
+theorem ad_add_of_mem_center_right (y : L) {z : L} (hz : z ∈ center R L) :
+    ad R L (y + z) = ad R L y := by
+  rw [add_comm, ad_add_of_mem_center_left hz]
+
+/-- Adding a central element on the left does not change `ad`-nilpotence. -/
+theorem isNilpotent_ad_add_iff_of_mem_center_left {z : L} (hz : z ∈ center R L) (y : L) :
+    IsNilpotent (ad R L (z + y)) ↔ IsNilpotent (ad R L y) := by
+  rw [ad_add_of_mem_center_left hz]
+
+/-- Adding a central element on the right does not change `ad`-nilpotence. -/
+theorem isNilpotent_ad_add_iff_of_mem_center_right (y : L) {z : L} (hz : z ∈ center R L) :
+    IsNilpotent (ad R L (y + z)) ↔ IsNilpotent (ad R L y) := by
+  rw [ad_add_of_mem_center_right y hz]
+
+end Center
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
