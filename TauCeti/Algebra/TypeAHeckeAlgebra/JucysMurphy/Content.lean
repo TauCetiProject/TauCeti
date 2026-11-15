@@ -103,6 +103,35 @@ theorem sub_one_mul_additiveContent {Q : R} (hQ : Q ≠ 0) (c : ℤ) :
     rw [hrec, mul_add, hpow] at ih
     linear_combination ih
 
+/-- The cocycle identity `[a + b]_Q = [a]_Q + Q ^ a * [b]_Q` of additive contents. Like
+`additiveContent_add_one`, it holds also at `Q = 1`. -/
+theorem additiveContent_add {Q : R} (hQ : Q ≠ 0) (a b : ℤ) :
+    additiveContent Q (a + b) = additiveContent Q a + Q ^ a * additiveContent Q b := by
+  induction b using Int.induction_on with
+  | zero => simp
+  | succ b ih =>
+    rw [← add_assoc, additiveContent_add_one, ih, additiveContent_add_one, zpow_add₀ hQ]
+    ring
+  | pred b ih =>
+    have h₁ := additiveContent_add_one Q (a + (-(b : ℤ) - 1))
+    have h₂ := additiveContent_add_one Q (-(b : ℤ) - 1)
+    rw [show a + (-(b : ℤ) - 1) + 1 = a + -(b : ℤ) by ring, ih, zpow_add₀ hQ] at h₁
+    rw [sub_add_cancel] at h₂
+    rw [h₂] at h₁
+    linear_combination -h₁
+
+/-- Negating the content: `[-c]_Q = -Q ^ (-c) * [c]_Q`. -/
+theorem additiveContent_neg {Q : R} (hQ : Q ≠ 0) (c : ℤ) :
+    additiveContent Q (-c) = -(Q ^ (-c) * additiveContent Q c) := by
+  have h := additiveContent_add hQ (-c) c
+  rw [neg_add_cancel, additiveContent_zero] at h
+  linear_combination -h
+
+/-- A content and its negative vanish together. -/
+theorem additiveContent_neg_eq_zero_iff {Q : R} (hQ : Q ≠ 0) (c : ℤ) :
+    additiveContent Q (-c) = 0 ↔ additiveContent Q c = 0 := by
+  rw [additiveContent_neg hQ, neg_eq_zero, mul_eq_zero, or_iff_right (zpow_ne_zero _ hQ)]
+
 /-- Away from `Q = 1`, the additive content is the usual quotient. -/
 theorem additiveContent_eq_div {Q : R} (hQ : Q ≠ 0) (hQ1 : Q ≠ 1) (c : ℤ) :
     additiveContent Q c = (Q ^ c - 1) / (Q - 1) := by
