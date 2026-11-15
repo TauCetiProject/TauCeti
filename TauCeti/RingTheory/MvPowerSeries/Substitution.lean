@@ -47,6 +47,9 @@ uniformities are shadowed, so the evaluation the statement is about is never re-
   univariate series viewed in several variables is evaluating it at the matching entry of the
   family — the case of `aeval_subst` at a single variable, which is how a one-variable series
   meets a two-variable evaluation.
+* `MvPowerSeries.pairSubstitution` : the substitution family `Unit ⊕ Unit → MvPowerSeries σ O`
+  sending the left variable to `q₁` and the right one to `q₂`; substituting a pair of series into
+  a two-variable one is `subst (pairSubstitution q₁ q₂) f`.
 * `MvPowerSeries.hasSubst_pair` : a pair of series with vanishing constant coefficient is a
   legitimate substitution family for the two variables indexed by `Unit ⊕ Unit`.
 * `MvPowerSeries.coordSpecialize`, `MvPowerSeries.hasSubst_coordSpecialize` and the two
