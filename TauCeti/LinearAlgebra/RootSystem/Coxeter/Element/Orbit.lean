@@ -26,72 +26,27 @@ import TauCeti.LinearAlgebra.RootSystem.LongestElement
 /-!
 # Steinberg's Coxeter orbits on roots and the root-count formula `|Φ| = r · h`
 
-Let `P` be a finite, reduced, crystallographic root pairing with base `b` of rank
-`r = b.support.card` (either irreducible, or more generally having finite-type Cartan matrix with
-preconnected Dynkin diagram), and let `c = wordProd P b l` be any Coxeter element, of order
-`h = orderOf c`. This file proves Steinberg's root-orbit theorem and Bourbaki's uniform root-count
-formula without assuming that the roots span the ambient module:
-
-1. **Inversions of Coxeter words.** Because every duplicate-free word in a Coxeter system is
-   reduced (`CoxeterSystem.isReduced_of_nodup`), `c` has exactly `r` inversions
-   (`TauCeti.ncard_inversions_wordProd_eq_card_support`).
-2. **Free cyclic orbits of size `h`.** Pairing the regular primitive `h`-th root eigenvector of `c`
-   from `RootPairing.Base.exists_eigenvector_exp_two_pi_I_div_orderOf_wordProd_of_isFiniteType`
-   against any coroot shows that `c ^ k` fixes a root `j` if and only if `h ∣ k`
-   (`RootPairing.Base.weylGroupToPerm_wordProd_pow_apply_eq_self_iff_of_isFiniteType`,
-   `RootPairing.Base.weylGroupToPerm_wordProd_pow_apply_eq_self_iff`). Every `⟨c⟩`-orbit on the root
-   indices `ι` therefore has minimal period and cardinality `h`
-   (`RootPairing.Base.minimalPeriod_weylGroupToPerm_wordProd`,
-   `RootPairing.Base.ncard_sameCycle_weylGroupToPerm_wordProd`).
-3. **Sign changes along each orbit.** The sum `s` of the roots in any `⟨c⟩`-orbit is `c`-fixed,
-   hence fixed by every Weyl-group element
-   (`TauCeti.wordProd_smul_eq_self_iff_forall_smul_eq_self`), including `TauCeti.longestElement`.
-   Because `longestElement` exchanges positive and negative
-   roots and `TauCeti.posRootCone` is pointed, no orbit can consist purely of positive roots or
-   purely of negative roots, so every `⟨c⟩`-orbit contains at least one inversion of `c`. On
-   Coleman's Coxeter plane for the bipartite Coxeter element `c₀`, each coroot functional varies
-   sinusoidally as `‖z‖ cos (φ - ψ)`, so each `⟨c₀⟩`-orbit crosses from `Φ⁺` to `Φ⁻` at a unique
-   step. Counting fibers over the `r` inversions yields `r` orbits of size `h`, hence `|Φ| = r · h`
-   and `2 |Φ⁺| = r · h` for every Coxeter element `c`, and in turn a unique inversion in every
-   `⟨c⟩`-orbit for an arbitrary ordering of the simple reflections.
-4. **Exceptional root counts.** Combining the finite-type and connectedness theorems for standard
-   Dynkin types (`TauCeti.DynkinType.isFiniteType_cartanMatrix_E8`,
-   `TauCeti.DynkinType.connected_diagramGraph_cartanMatrix`) with the Coxeter numbers from
-   `TauCeti.Coxeter.orderOf_wordProd_of_hasCartanType_E8` (and `E₆`, `E₇`, `F₄`, `G₂`) gives the
-   root counts `240` (`120` positive) for `E₈`, `126` (`63` positive) for `E₇`, `72` (`36`
-   positive) for `E₆`, `48` (`24` positive) for `F₄`, and `12` (`6` positive) for `G₂` for any
-   reduced crystallographic root pairing of that Cartan type (requiring neither spanning nor
-   module-level irreducibility over `R`).
-
-## Main results
-
-* `TauCeti.ncard_inversions_wordProd_of_nodup` and
-  `TauCeti.ncard_inversions_wordProd_eq_card_support`: inversion counts of duplicate-free words and
-  Coxeter elements.
-* `RootPairing.Base.weylGroupToPerm_wordProd_pow_apply_eq_self_iff_of_isFiniteType`,
-  `RootPairing.Base.weylGroupToPerm_wordProd_pow_apply_eq_self_iff`, and
-  `RootPairing.Base.minimalPeriod_weylGroupToPerm_wordProd`: every `⟨c⟩`-orbit on `ι` is free of
-  size `orderOf c`.
-* `RootPairing.Base.natCard_eq_card_support_mul_orderOf_wordProd_of_isFiniteType`,
-  `RootPairing.Base.natCard_eq_card_support_mul_orderOf_wordProd`, and
-  `RootPairing.Base.two_mul_ncard_posRoots_eq_card_support_mul_orderOf_wordProd`: `|Φ| = r · h` and
-  `2 |Φ⁺| = r · h`.
-* `RootPairing.Base.card_quotient_sameCycle_weylGroupToPerm_wordProd`,
-  `RootPairing.Base.existsUnique_sameCycle_mem_inversions_wordProd`, and
-  `RootPairing.Base.existsUnique_pow_mem_inversions_wordProd`: `c` has `r` orbits on `ι`, each
-  meeting `inversions P b c` in a unique root.
-* `RootPairing.natCard_eq_of_hasCartanType_E8` and `RootPairing.ncard_posRoots_of_hasCartanType_E8`
-  (together with `E₆`, `E₇`, `F₄`, `G₂`): root and positive-root cardinalities of the exceptional
-  Cartan types, matching `RootPairing.natCard_eq_of_hasCartanType_A` and
-  `RootPairing.ncard_posRoots_of_hasCartanType_A`.
+For a finite, reduced, crystallographic root pairing `P` with base `b` of rank `r = b.support.card`
+and any Coxeter element `c = wordProd P b l` of order `h = orderOf c`, this file proves Steinberg's
+root-orbit theorem and Bourbaki's uniform root-count formula without assuming root spanning:
+1. **Inversions** (`TauCeti.ncard_inversions_wordProd_eq_card_support`): `c` has `r` inversions.
+2. **Free cyclic orbits** (`RootPairing.Base.weylGroupToPerm_wordProd_pow_apply_eq_self_iff`,
+   `RootPairing.Base.minimalPeriod_weylGroupToPerm_wordProd`): every `⟨c⟩`-orbit on `ι` has minimal
+   period and cardinality `h`.
+3. **Unique inversion per orbit and `|Φ| = r · h`**
+   (`RootPairing.Base.natCard_eq_card_support_mul_orderOf_wordProd`,
+   `RootPairing.Base.existsUnique_sameCycle_mem_inversions_wordProd`,
+   `RootPairing.Base.existsUnique_pow_mem_inversions_wordProd`): invariance under
+   `TauCeti.longestElement` forces a sign change on every orbit, and sinusoidal variation on
+   Coleman's Coxeter plane makes this crossing unique, giving `r` orbits of size `h`.
+4. **Exceptional root counts** (`RootPairing.natCard_eq_of_hasCartanType_E8`,
+   `RootPairing.ncard_posRoots_of_hasCartanType_E8`, and `E₆`, `E₇`, `F₄`, `G₂`): `240` (`120`),
+   `126` (`63`), `72` (`36`), `48` (`24`), and `12` (`6`) roots (positive roots).
 
 ## References
-
 * R. Steinberg, *Finite reflection groups*, Trans. Amer. Math. Soc. **91** (1959), 493–504.
-* N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Ch. V, §6, no. 2, Proposition 3, and
-  Ch. VI, §1, no. 11, Proposition 33.
-* J. E. Humphreys, *Reflection Groups and Coxeter Groups*, Cambridge University Press (1990),
-  §§ 3.16–3.18.
+* N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Ch. V, §6, no. 2; Ch. VI, §1, no. 11.
+* J. E. Humphreys, *Reflection Groups and Coxeter Groups*, §§ 3.16–3.18.
 -/
 
 public section
@@ -139,8 +94,6 @@ namespace RootPairing.Base
 
 section TrigonometricSignChange
 
-/-- If `0 < δ ≤ π`, `0 < cos α`, and `cos (α + δ) ≤ 0`, then shifting `α` by an integer multiple
-of `2π` places it in `[π / 2 - δ, π / 2)`. -/
 private lemma exists_shift_mem_of_cos_pos_of_cos_add_nonpos {δ α : ℝ}
     (hδ0 : 0 < δ) (hδpi : δ ≤ Real.pi) (hcos : 0 < Real.cos α) (hcos_add : Real.cos (α + δ) ≤ 0) :
     ∃ m : ℤ, Real.pi / 2 - δ ≤ α - m * (2 * Real.pi) ∧ α - m * (2 * Real.pi) < Real.pi / 2 := by
@@ -148,17 +101,14 @@ private lemma exists_shift_mem_of_cos_pos_of_cos_add_nonpos {δ α : ℝ}
   let m : ℤ := ⌊(α + Real.pi) / (2 * Real.pi)⌋
   set β : ℝ := α - m * (2 * Real.pi)
   have hlo : -Real.pi ≤ β := by
-    have := (le_div_iff₀ h2pi).mp (Int.floor_le ((α + Real.pi) / (2 * Real.pi)))
-    linarith
+    linarith [(le_div_iff₀ h2pi).mp (Int.floor_le ((α + Real.pi) / (2 * Real.pi)))]
   have hhi : β < Real.pi := by
-    have := (div_lt_iff₀ h2pi).mp (Int.lt_floor_add_one ((α + Real.pi) / (2 * Real.pi)))
-    linarith
+    linarith [(div_lt_iff₀ h2pi).mp (Int.lt_floor_add_one ((α + Real.pi) / (2 * Real.pi)))]
   have hcosβ : 0 < Real.cos β := by rwa [Real.cos_sub_int_mul_two_pi]
   have hβ_gt : -(Real.pi / 2) < β := by
     by_contra! hle
     have hnp := Real.cos_nonpos_of_pi_div_two_le_of_le (x := -β) (by linarith) (by linarith)
-    rw [Real.cos_neg] at hnp
-    linarith
+    rw [Real.cos_neg] at hnp; linarith
   have hβ_lt : β < Real.pi / 2 := by
     by_contra! hge
     linarith [Real.cos_nonpos_of_pi_div_two_le_of_le (x := β) hge (by linarith [Real.pi_pos])]
@@ -170,8 +120,6 @@ private lemma exists_shift_mem_of_cos_pos_of_cos_add_nonpos {δ α : ℝ}
     linarith
   exact ⟨m, hβ_ge, hβ_lt⟩
 
-/-- Along a regular `h`-gon (`2 ≤ h`) with angular step `2π / h`, at most one vertex `k : Fin h`
-satisfies `0 < cos (α₀ + 2π k / h)` and `cos (α₀ + 2π (k + 1) / h) ≤ 0`. -/
 private lemma eq_of_cos_sign_change_fin {h : ℕ} (hh : 2 ≤ h) (α₀ : ℝ) {k₁ k₂ : Fin h}
     (hpos₁ : 0 < Real.cos (α₀ + 2 * Real.pi * (k₁ : ℝ) / h))
     (hneg₁ : Real.cos (α₀ + 2 * Real.pi * ((k₁ : ℝ) + 1) / h) ≤ 0)
@@ -193,9 +141,8 @@ private lemma eq_of_cos_sign_change_fin {h : ℕ} (hh : 2 ≤ h) (α₀ : ℝ) {
     (by rwa [show α₀ + 2 * Real.pi * (k₂ : ℝ) / h + δ =
       α₀ + 2 * Real.pi * ((k₂ : ℝ) + 1) / h by simp only [δ]; ring])
   set n : ℤ := (k₂ : ℤ) - (k₁ : ℤ) - (m₂ - m₁) * (h : ℤ)
-  have hdiff : (n : ℝ) * δ =
-      (α₀ + 2 * Real.pi * (k₂ : ℝ) / h - m₂ * (2 * Real.pi)) -
-        (α₀ + 2 * Real.pi * (k₁ : ℝ) / h - m₁ * (2 * Real.pi)) := by
+  have hdiff : (n : ℝ) * δ = (α₀ + 2 * Real.pi * (k₂ : ℝ) / h - m₂ * (2 * Real.pi)) -
+      (α₀ + 2 * Real.pi * (k₁ : ℝ) / h - m₁ * (2 * Real.pi)) := by
     push_cast [n]; rw [hk, hk, h2pi]; ring
   have hn_gt : (-1 : ℤ) < n := by
     have : ((-1 : ℤ) : ℝ) * δ < (n : ℝ) * δ := by push_cast; linarith
@@ -204,10 +151,8 @@ private lemma eq_of_cos_sign_change_fin {h : ℕ} (hh : 2 ≤ h) (α₀ : ℝ) {
     have : (n : ℝ) * δ < ((1 : ℤ) : ℝ) * δ := by push_cast; linarith
     exact_mod_cast lt_of_mul_lt_mul_right this hδ0.le
   have hdvd : (h : ℤ) ∣ ((k₂ : ℤ) - (k₁ : ℤ)) := ⟨m₂ - m₁, by rw [mul_comm]; omega⟩
-  have hnat_dvd : h ∣ ((k₂ : ℤ) - (k₁ : ℤ)).natAbs := by
-    simpa using Int.natAbs_dvd_natAbs.mpr hdvd
   have hnat_zero : ((k₂ : ℤ) - (k₁ : ℤ)).natAbs = 0 :=
-    Nat.eq_zero_of_dvd_of_lt hnat_dvd (by omega)
+    Nat.eq_zero_of_dvd_of_lt (by simpa using Int.natAbs_dvd_natAbs.mpr hdvd) (by omega)
   exact Fin.ext (by omega)
 
 end TrigonometricSignChange
@@ -237,15 +182,13 @@ theorem weylGroupToPerm_wordProd_pow_apply_eq_self_iff_of_isFiniteType (b : P.Ba
     have hWpow (m : ℕ) : (W_ℂ ^ m) *ᵥ z = (ζ ^ m) • z := by
       induction m with
       | zero => simp
-      | succ m ih =>
-        rw [pow_succ', ← mulVec_mulVec, ih, mulVec_smul, hz_eig, smul_smul, ← pow_succ]
+      | succ m ih => rw [pow_succ', ← mulVec_mulVec, ih, mulVec_smul, hz_eig, smul_smul, ← pow_succ]
     have hfix_inv : P.weylGroupToPerm (c ^ k)⁻¹ j = j :=
       (P.weylGroupToPerm (c ^ k)).injective (by
         rw [← Equiv.Perm.mul_apply, ← map_mul, mul_inv_cancel, map_one, Equiv.Perm.one_apply, hfix])
     have heval := b.corootEval_weylGroupToPerm_inv (hW.pow k) ℂ j z
     rw [hfix_inv, Matrix.map_pow, hWpow k, map_smul, smul_eq_mul] at heval
-    have hζk : ζ ^ k = 1 := mul_right_cancel₀ (hz_reg j) (by linear_combination -heval)
-    exact hz_prim.dvd_of_pow_eq_one k hζk
+    exact hz_prim.dvd_of_pow_eq_one k (mul_right_cancel₀ (hz_reg j) (by linear_combination -heval))
   · rw [orderOf_dvd_iff_pow_eq_one.mp hdvd, map_one, Equiv.Perm.one_apply]
 
 /-- **Steinberg's freeness of Coxeter orbits on roots.** For any Coxeter element
@@ -254,8 +197,7 @@ index `j : ι`, the power `c ^ k` fixes `j` if and only if `orderOf c ∣ k`. -/
 theorem weylGroupToPerm_wordProd_pow_apply_eq_self_iff [P.IsIrreducible] (b : P.Base)
     {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l) (j : ι) (k : ℕ) :
     P.weylGroupToPerm (wordProd P b l ^ k) j = j ↔ orderOf (wordProd P b l) ∣ k := by
-  have : Nonempty ι := ⟨j⟩
-  have : NeZero (2 : R) := ⟨by norm_num⟩
+  have : Nonempty ι := ⟨j⟩; have : NeZero (2 : R) := ⟨by norm_num⟩
   exact b.weylGroupToPerm_wordProd_pow_apply_eq_self_iff_of_isFiniteType
     (isFiniteType_cartanMatrix b) (preconnected_diagramGraph_cartanMatrix b) hnd hall j k
 
@@ -281,8 +223,7 @@ theorem minimalPeriod_weylGroupToPerm_wordProd_of_isFiniteType (b : P.Base)
 theorem minimalPeriod_weylGroupToPerm_wordProd [P.IsIrreducible] (b : P.Base)
     {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l) (j : ι) :
     Function.minimalPeriod (P.weylGroupToPerm (wordProd P b l)) j = orderOf (wordProd P b l) := by
-  have : Nonempty ι := ⟨j⟩
-  have : NeZero (2 : R) := ⟨by norm_num⟩
+  have : Nonempty ι := ⟨j⟩; have : NeZero (2 : R) := ⟨by norm_num⟩
   exact b.minimalPeriod_weylGroupToPerm_wordProd_of_isFiniteType
     (isFiniteType_cartanMatrix b) (preconnected_diagramGraph_cartanMatrix b) hnd hall j
 
@@ -302,45 +243,7 @@ theorem ncard_sameCycle_weylGroupToPerm_wordProd [P.IsIrreducible] (b : P.Base)
     {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l) (j : ι) :
     {k : ι | Equiv.Perm.SameCycle (P.weylGroupToPerm (wordProd P b l)) j k}.ncard =
       orderOf (wordProd P b l) := by
-  have : Nonempty ι := ⟨j⟩
-  have : NeZero (2 : R) := ⟨by norm_num⟩
-  exact b.ncard_sameCycle_weylGroupToPerm_wordProd_of_isFiniteType
-    (isFiniteType_cartanMatrix b) (preconnected_diagramGraph_cartanMatrix b) hnd hall j
-
-/-- Equivalence between `Fin (orderOf c)` and the `⟨c⟩`-orbit of a root `j : ι`. -/
-private noncomputable def finOrderOfEquivSameCycle (b : P.Base)
-    (hft : IsFiniteType b.cartanMatrix) (hconn : (diagramGraph b.cartanMatrix).Preconnected)
-    {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l) (j : ι) :
-    Fin (orderOf (wordProd P b l)) ≃
-      {k : ι // Equiv.Perm.SameCycle (P.weylGroupToPerm (wordProd P b l)) j k} :=
-  Equiv.ofBijective
-    (fun m ↦ ⟨P.weylGroupToPerm (wordProd P b l ^ (m : ℕ)) j,
-      ⟨(m : ℤ), by rw [zpow_natCast, map_pow]⟩⟩)
-    (by
-      have := P.finite_weylGroup_of_base b
-      set c := wordProd P b l
-      refine ⟨fun m₁ m₂ heq ↦ ?_, fun ⟨k, hk⟩ ↦ ?_⟩
-      · have hval : P.weylGroupToPerm (c ^ (m₁ : ℕ)) j = P.weylGroupToPerm (c ^ (m₂ : ℕ)) j :=
-          Subtype.mk.inj heq
-        have hdvd_sub {a b' : Fin (orderOf c)} (hle : (a : ℕ) ≤ (b' : ℕ))
-            (hab : P.weylGroupToPerm (c ^ (a : ℕ)) j = P.weylGroupToPerm (c ^ (b' : ℕ)) j) :
-            a = b' := by
-          have hfix : P.weylGroupToPerm (c ^ ((b' : ℕ) - (a : ℕ))) j = j := by
-            apply (P.weylGroupToPerm (c ^ (a : ℕ))).injective
-            rw [← Equiv.Perm.mul_apply, ← map_mul, ← pow_add, Nat.add_sub_of_le hle, hab]
-          have hdvd := (b.weylGroupToPerm_wordProd_pow_apply_eq_self_iff_of_isFiniteType
-            hft hconn hnd hall j _).mp hfix
-          have hlt : (b' : ℕ) - (a : ℕ) < orderOf c := by have := b'.isLt; omega
-          have h0 := Nat.eq_zero_of_dvd_of_lt hdvd hlt
-          exact Fin.ext (by omega)
-        rcases le_total m₁ m₂ with hle | hle
-        · exact hdvd_sub hle hval
-        · exact (hdvd_sub hle hval.symm).symm
-      · obtain ⟨n, rfl⟩ := hk.exists_nat_pow_eq
-        have hh_pos : 0 < orderOf c := orderOf_pos c
-        refine ⟨⟨n % orderOf c, Nat.mod_lt n hh_pos⟩, Subtype.ext ?_⟩
-        dsimp only
-        rw [pow_mod_orderOf, map_pow])
+  rw [Equiv.Perm.ncard_setOf_sameCycle, b.minimalPeriod_weylGroupToPerm_wordProd hnd hall j]
 
 /-- A nonempty subset of roots whose sum is fixed by `longestElement P b` contains both a positive
 root and a negative root (requiring no spanning hypothesis on `P`). -/
@@ -349,45 +252,36 @@ private theorem exists_isPos_and_not_isPos_of_longestElement_smul_sum_eq_self (b
     (hw₀ : longestElement P b • ∑ y ∈ O, P.root y = ∑ y ∈ O, P.root y) :
     (∃ y ∈ O, b.IsPos y) ∧ (∃ y ∈ O, ¬ b.IsPos y) := by
   set w₀ := longestElement P b
-  set s : M := ∑ y ∈ O, P.root y
-  have hneg_root (z : ι) : -P.root z = P.root (P.reflectionPerm z z) := by
-    rw [P.root_reflectionPerm, P.reflection_apply_self]
-  refine ⟨?_, ?_⟩
-  · by_contra! hall_neg
-    have hns_cone : -s ∈ posRootCone P b := by
-      rw [show -s = ∑ y ∈ O, P.root (P.reflectionPerm y y) by
-        simp only [s, ← Finset.sum_neg_distrib, hneg_root]]
-      exact AddSubmonoid.sum_mem _ fun y hy ↦ root_mem_posRootCone_of_mem_posRoots P b
-        ((reflectionPerm_self_mem_posRoots_iff_mem_negRoots P b y).mpr
-          ((mem_negRoots P b y).mpr (hall_neg y hy)))
-    have hs_cone : s ∈ posRootCone P b := by
-      rw [← hw₀, show w₀ • s = ∑ y ∈ O, P.root (P.weylGroupToPerm w₀ y) by
-        simp only [s, Finset.smul_sum, P.weylGroup_apply_root]]
-      exact AddSubmonoid.sum_mem _ fun y hy ↦ root_mem_posRootCone_of_mem_posRoots P b
-        (mapsTo_negRoots_posRoots_longestElement P b ((mem_negRoots P b y).mpr (hall_neg y hy)))
-    have hs0 : s = 0 := (isPointed_posRootCone P b).eq_zero_of_mem_of_neg_mem hs_cone hns_cone
-    refine sum_root_ne_zero_of_mem_posRoots P b hOne (f := fun y ↦ P.reflectionPerm y y)
-      (fun y hy ↦ (reflectionPerm_self_mem_posRoots_iff_mem_negRoots P b y).mpr
-        ((mem_negRoots P b y).mpr (hall_neg y hy))) ?_
-    simp only [← hneg_root, Finset.sum_neg_distrib, ← show s = ∑ y ∈ O, P.root y from rfl, hs0,
-      neg_zero]
-  · by_contra! hall_pos
+  have hnot_all_pos {S : Finset ι} (hSne : S.Nonempty)
+      (hS : w₀ • ∑ y ∈ S, P.root y = ∑ y ∈ S, P.root y) : ∃ y ∈ S, ¬ b.IsPos y := by
+    by_contra! hall_pos
+    set s : M := ∑ y ∈ S, P.root y
+    have hneg_root (z : ι) : -P.root z = P.root (P.reflectionPerm z z) := by
+      rw [P.root_reflectionPerm, P.reflection_apply_self]
     have hs_cone : s ∈ posRootCone P b := AddSubmonoid.sum_mem _ fun y hy ↦
       root_mem_posRootCone_of_mem_posRoots P b ((mem_posRoots P b y).mpr (hall_pos y hy))
     have hns_cone : -s ∈ posRootCone P b := by
-      rw [← hw₀, show -(w₀ • s) = ∑ y ∈ O, P.root
+      rw [← hS, show -(w₀ • s) = ∑ y ∈ S, P.root
           (P.reflectionPerm (P.weylGroupToPerm w₀ y) (P.weylGroupToPerm w₀ y)) by
         simp only [s, Finset.smul_sum, P.weylGroup_apply_root, ← Finset.sum_neg_distrib, hneg_root]]
       exact AddSubmonoid.sum_mem _ fun y hy ↦ root_mem_posRootCone_of_mem_posRoots P b
         ((reflectionPerm_self_mem_posRoots_iff_mem_negRoots P b _).mpr
           (mapsTo_posRoots_negRoots_longestElement P b ((mem_posRoots P b y).mpr (hall_pos y hy))))
-    exact sum_root_ne_zero_of_mem_posRoots P b hOne (f := id)
+    exact sum_root_ne_zero_of_mem_posRoots P b hSne (f := id)
       (fun y hy ↦ (mem_posRoots P b y).mpr (hall_pos y hy))
       ((isPointed_posRootCone P b).eq_zero_of_mem_of_neg_mem hs_cone hns_cone)
+  refine ⟨?_, hnot_all_pos hOne hw₀⟩
+  have himg_sum : ∑ z ∈ O.map (P.weylGroupToPerm w₀).toEmbedding, P.root z = ∑ y ∈ O, P.root y := by
+    rw [Finset.sum_map]
+    simpa only [Equiv.coe_toEmbedding, Finset.smul_sum, P.weylGroup_apply_root] using hw₀
+  obtain ⟨_, hz, hnot_pos⟩ := hnot_all_pos hOne.map (by rwa [himg_sum])
+  obtain ⟨y, hyO, rfl⟩ := Finset.mem_map.mp hz
+  dsimp only [Equiv.coe_toEmbedding] at hnot_pos
+  refine ⟨y, hyO, ?_⟩
+  by_contra hy_neg
+  exact hnot_pos ((mem_posRoots P b _).mp
+    (mapsTo_negRoots_posRoots_longestElement P b ((mem_negRoots P b y).mpr hy_neg)))
 
-/-- Every `⟨c⟩`-orbit on `ι` meets `inversions P b c`: the orbit sum is `c`-fixed, hence fixed by
-`longestElement P b`, so the orbit contains both positive and negative roots and therefore steps
-from `Φ⁺` to `Φ⁻`. -/
 private theorem exists_sameCycle_mem_inversions_wordProd (b : P.Base)
     {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l) (j : ι) :
     ∃ k : ι, Equiv.Perm.SameCycle (P.weylGroupToPerm (wordProd P b l)) j k ∧
@@ -418,7 +312,6 @@ private theorem exists_sameCycle_mem_inversions_wordProd (b : P.Base)
       rwa [← Equiv.Perm.mul_apply, ← pow_succ', hn]
     · exact ih ((σ ^ n) y₁) hmid rfl
 
-/-- Partitioning `ι` into `⟨c⟩`-cycles gives `Nat.card ι = |ι / ⟨c⟩| * orderOf c`. -/
 private theorem natCard_eq_card_quotient_mul_orderOf_wordProd (b : P.Base)
     (hft : IsFiniteType b.cartanMatrix) (hconn : (diagramGraph b.cartanMatrix).Preconnected)
     {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l) :
@@ -435,20 +328,16 @@ private theorem natCard_eq_card_quotient_mul_orderOf_wordProd (b : P.Base)
       (Finset.univ.filter fun y ↦ π y = q).card = orderOf c := by
     have hset : (Finset.univ.filter fun y ↦ π y = q) =
         (Finset.univ.filter fun y ↦ Equiv.Perm.SameCycle σ q.out y) := by
-      ext y
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and, π]
+      ext y; simp only [Finset.mem_filter, Finset.mem_univ, true_and, π]
       exact ⟨fun hy ↦ (Quotient.exact (hy.trans q.out_eq.symm)).symm,
         fun hy ↦ (Quotient.sound hy.symm).trans q.out_eq⟩
     rw [hset, ← b.ncard_sameCycle_weylGroupToPerm_wordProd_of_isFiniteType hft hconn hnd hall q.out,
       ← Set.ncard_coe_finset]
-    congr 1; ext y
-    exact Finset.mem_filter.trans (and_iff_right (Finset.mem_univ y))
+    congr 1; ext y; exact Finset.mem_filter.trans (and_iff_right (Finset.mem_univ y))
   rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card, ← Finset.card_univ,
     Finset.card_eq_sum_card_fiberwise (f := π) (t := Finset.univ) (fun x _ ↦ Finset.mem_univ _)]
   simp only [hfib, Finset.sum_const, Finset.card_univ, smul_eq_mul]
 
-/-- On Coleman's Coxeter plane for the bipartite Coxeter element `c₀` (in rank at least two), at
-most one step `m : Fin (orderOf c₀)` along the `⟨c₀⟩`-orbit of `j` lands in `inversions P b c₀`. -/
 private theorem subsingleton_fin_pow_mem_inversions_bipartite_of_isFiniteType (b : P.Base)
     [Nontrivial b.support] (hft : IsFiniteType b.cartanMatrix)
     (hconn : (diagramGraph b.cartanMatrix).Preconnected)
@@ -466,7 +355,7 @@ private theorem subsingleton_fin_pow_mem_inversions_bipartite_of_isFiniteType (b
   obtain ⟨e₁, e₂, -, -, -, hWinv_pow, hsector⟩ :=
     b.exists_coxeterPlane_bipartiteCoxeterElement_of_isFiniteType hft hconn col
   have hh_ge_two : 2 ≤ h := by
-    have hpos : 0 < h := orderOf_pos c₀
+    have := orderOf_pos c₀
     have hne1 : h ≠ 1 := fun h1 ↦
       (weylCoxeterSystem P b).bipartiteCoxeterElement_ne_one col (orderOf_eq_one_iff.mp h1)
     omega
@@ -484,13 +373,11 @@ private theorem subsingleton_fin_pow_mem_inversions_bipartite_of_isFiniteType (b
     simp only [map_add, map_smul, smul_eq_mul, hre, him, Real.cos_sub]; ring
   have hnorm_pos : 0 < ‖z‖ := (norm_nonneg z).lt_of_ne' fun h0 ↦
     b.corootEval_ne_zero_of_forall_pos hy₀ j (by rw [hcos_formula φ₀, h0, zero_mul])
-  have hisPos_iff (k : ℕ) :
-      b.IsPos (P.weylGroupToPerm (c₀ ^ k) j) ↔
-        0 < Real.cos (φ₀ - z.arg + 2 * Real.pi * k / h) := by
+  have hisPos_iff (k : ℕ) : b.IsPos (P.weylGroupToPerm (c₀ ^ k) j) ↔
+      0 < Real.cos (φ₀ - z.arg + 2 * Real.pi * k / h) := by
     rw [← mem_posRoots, ← b.corootEval_pos_iff_mem_posRoots hy₀]
     have heq := b.corootEval_weylGroupToPerm_inv
-      ((b.actsBy_bipartiteCoxeterElement_inv col).pow k) ℝ j
-      (Real.cos φ₀ • e₁ + Real.sin φ₀ • e₂)
+      ((b.actsBy_bipartiteCoxeterElement_inv col).pow k) ℝ j (Real.cos φ₀ • e₁ + Real.sin φ₀ • e₂)
     rw [inv_pow, inv_inv, Matrix.map_pow, hWinv_pow k φ₀, hcos_formula] at heq
     rw [heq, show φ₀ + 2 * Real.pi * k / h - z.arg = φ₀ - z.arg + 2 * Real.pi * k / h by ring]
     exact mul_pos_iff_of_pos_left hnorm_pos
@@ -504,8 +391,6 @@ private theorem subsingleton_fin_pow_mem_inversions_bipartite_of_isFiniteType (b
   exact eq_of_cos_sign_change_fin hh_ge_two (φ₀ - z.arg)
     (hstep m₁ hm₁).1 (hstep m₁ hm₁).2 (hstep m₂ hm₂).1 (hstep m₂ hm₂).2
 
-/-- Rank-at-most-one case of `|Φ| = r · h`: either `b.support` is empty (so `ι` is empty) or
-`b.support` is a singleton and the unique simple reflection generates a single orbit of roots. -/
 private theorem natCard_eq_card_support_mul_orderOf_wordProd_subsingleton (b : P.Base)
     [Subsingleton b.support] (hft : IsFiniteType b.cartanMatrix)
     (hconn : (diagramGraph b.cartanMatrix).Preconnected)
@@ -520,9 +405,8 @@ private theorem natCard_eq_card_support_mul_orderOf_wordProd_subsingleton (b : P
     have hl_eq : l = [i₀] := by
       obtain ⟨a, tail, rfl⟩ := List.exists_cons_of_ne_nil (List.ne_nil_of_mem (hall i₀))
       rw [List.nodup_cons] at hnd
-      have htail : tail = [] := List.eq_nil_iff_forall_not_mem.mpr fun x hx ↦
-        hnd.1 (Subsingleton.elim x a ▸ hx)
-      rw [htail, Subsingleton.elim a i₀]
+      rw [List.eq_nil_iff_forall_not_mem.mpr fun x hx ↦ hnd.1 (Subsingleton.elim x a ▸ hx),
+        Subsingleton.elim a i₀]
     set c := wordProd P b l
     have hword_pow (lw : List b.support) : wordProd P b lw = c ^ lw.length := by
       induction lw with
@@ -532,8 +416,7 @@ private theorem natCard_eq_card_support_mul_orderOf_wordProd_subsingleton (b : P
           rw [show c = wordProd P b l from rfl, hl_eq, wordProd_cons, wordProd_nil, mul_one,
             Subsingleton.elim i₀ a]
         rw [wordProd_cons, ih, ← hc_eq, List.length_cons, pow_succ']
-    have huniv :
-        {k : ι | Equiv.Perm.SameCycle (P.weylGroupToPerm c) (i₀ : ι) k} = Set.univ := by
+    have huniv : {k : ι | Equiv.Perm.SameCycle (P.weylGroupToPerm c) (i₀ : ι) k} = Set.univ := by
       refine Set.eq_univ_of_forall fun j ↦ ?_
       obtain ⟨i, hi, w, rfl⟩ := exists_mem_support_weylGroupToPerm_eq b j
       have hi_eq : i = (i₀ : ι) := congrArg Subtype.val (Subsingleton.elim (⟨i, hi⟩ : b.support) i₀)
@@ -546,13 +429,10 @@ private theorem natCard_eq_card_support_mul_orderOf_wordProd_subsingleton (b : P
     rw [hcard_supp, one_mul, hncard]
   · rw [not_nonempty_iff] at hne
     have : IsEmpty ι := ⟨fun j ↦ by
-      obtain ⟨i, hi, -, -⟩ := exists_mem_support_weylGroupToPerm_eq b j
-      exact hne.false ⟨i, hi⟩⟩
-    have hcard0 : b.support.card = 0 := by rw [← Fintype.card_coe, Fintype.card_eq_zero]
-    rw [Nat.card_eq_fintype_card, Fintype.card_eq_zero, hcard0, zero_mul]
+      obtain ⟨i, hi, -, -⟩ := exists_mem_support_weylGroupToPerm_eq b j; exact hne.false ⟨i, hi⟩⟩
+    rw [Nat.card_eq_fintype_card, Fintype.card_eq_zero, ← Fintype.card_coe, Fintype.card_eq_zero,
+      zero_mul]
 
-/-- In rank at least two, each `⟨c₀⟩`-orbit meets `inversions P b c₀` in a unique root, so the
-number of `⟨c₀⟩`-orbits equals `b.support.card`. -/
 private theorem card_quotient_sameCycle_bipartite_of_isFiniteType (b : P.Base)
     [Nontrivial b.support] (hft : IsFiniteType b.cartanMatrix)
     (hconn : (diagramGraph b.cartanMatrix).Preconnected)
@@ -573,15 +453,12 @@ private theorem card_quotient_sameCycle_bipartite_of_isFiniteType (b : P.Base)
   have hfib_inv (q : Quotient (Equiv.Perm.SameCycle.setoid σ₀)) :
       ((inversionsFinset P b c₀).filter fun y ↦ π₀ y = q).card = 1 := by
     rw [Finset.card_eq_one]
-    obtain ⟨k, hsc, hinv⟩ := hword₀ ▸
-      b.exists_sameCycle_mem_inversions_wordProd hnd₀ hall₀ q.out
+    obtain ⟨k, hsc, hinv⟩ := hword₀ ▸ b.exists_sameCycle_mem_inversions_wordProd hnd₀ hall₀ q.out
     refine ⟨k, Finset.eq_singleton_iff_unique_mem.mpr
       ⟨Finset.mem_filter.mpr ⟨(mem_inversionsFinset P b c₀ k).mpr hinv,
         (Quotient.eq.mpr hsc.symm).trans q.out_eq⟩, fun y hy ↦ ?_⟩⟩
     obtain ⟨hy_inv, hy_q⟩ := Finset.mem_filter.mp hy
-    have hy_sc : Equiv.Perm.SameCycle σ₀ q.out y :=
-      (Quotient.exact (hy_q.trans q.out_eq.symm)).symm
-    obtain ⟨n₁, rfl⟩ := hy_sc.exists_nat_pow_eq
+    obtain ⟨n₁, rfl⟩ := ((Quotient.exact (hy_q.trans q.out_eq.symm)).symm).exists_nat_pow_eq
     obtain ⟨n₂, rfl⟩ := hsc.exists_nat_pow_eq
     have hmod (n : ℕ) : (σ₀ ^ n) q.out = P.weylGroupToPerm (c₀ ^ (n % orderOf c₀)) q.out := by
       rw [← map_pow, ← pow_mod_orderOf]
@@ -620,10 +497,9 @@ theorem natCard_eq_card_support_mul_orderOf_wordProd_of_isFiniteType (b : P.Base
     let σ₀ := P.weylGroupToPerm c₀
     have hcard_Q₀ : Nat.card (Quotient (Equiv.Perm.SameCycle.setoid σ₀)) = b.support.card :=
       b.card_quotient_sameCycle_bipartite_of_isFiniteType hft hconn col
-    have hconj : IsConj (wordProd P b l) c₀ := by
+    obtain ⟨u, hu⟩ : IsConj (wordProd P b l) c₀ := by
       rw [← weylCoxeterSystem_wordProd]
       exact (weylCoxeterSystem P b).isConj_wordProd_bipartiteCoxeterElement hacyc col hnd hall
-    obtain ⟨u, hu⟩ := hconj
     calc Nat.card ι
         = Nat.card (Quotient (Equiv.Perm.SameCycle.setoid
             (P.weylGroupToPerm (wordProd P b (l₁ ++ l₂))))) *
@@ -646,8 +522,8 @@ theorem natCard_eq_card_support_mul_orderOf_wordProd [P.IsIrreducible] (b : P.Ba
       (isFiniteType_cartanMatrix b) (preconnected_diagramGraph_cartanMatrix b) hnd hall
   · have : IsEmpty ι := not_nonempty_iff.mp hne
     have : IsEmpty b.support := ⟨fun i ↦ IsEmpty.false i.1⟩
-    have hcard0 : b.support.card = 0 := by rw [← Fintype.card_coe, Fintype.card_eq_zero]
-    rw [Nat.card_eq_fintype_card, Fintype.card_eq_zero, hcard0, zero_mul]
+    rw [Nat.card_eq_fintype_card, Fintype.card_eq_zero, ← Fintype.card_coe, Fintype.card_eq_zero,
+      zero_mul]
 
 /-- **Positive-root count formula `2 |Φ⁺| = r · h`.** Twice the number of positive roots equals
 `b.support.card * orderOf (wordProd P b l)`. -/
@@ -715,9 +591,7 @@ theorem existsUnique_sameCycle_mem_inversions_wordProd [P.IsIrreducible] (b : P.
     (Finset.mem_univ _)
   obtain ⟨k, hk⟩ := Finset.card_eq_one.mp hfib_j.symm
   refine ⟨k, ?_, fun y ⟨hy_sc, hy_inv⟩ ↦ ?_⟩
-  · have hmem : k ∈ (inversionsFinset P b c).filter fun y ↦ π y = π j :=
-      hk ▸ Finset.mem_singleton_self k
-    obtain ⟨hk_inv, hk_q⟩ := Finset.mem_filter.mp hmem
+  · obtain ⟨hk_inv, hk_q⟩ := Finset.mem_filter.mp (hk ▸ Finset.mem_singleton_self k)
     exact ⟨(Quotient.exact hk_q).symm, (mem_inversionsFinset P b c k).mp hk_inv⟩
   · have hmem : y ∈ (inversionsFinset P b c).filter fun z ↦ π z = π j :=
       Finset.mem_filter.mpr ⟨(mem_inversionsFinset P b c y).mpr hy_inv, Quotient.sound hy_sc.symm⟩
@@ -729,22 +603,30 @@ theorem existsUnique_pow_mem_inversions_wordProd [P.IsIrreducible] (b : P.Base)
     {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l) (j : ι) :
     ∃! m : Fin (orderOf (wordProd P b l)),
       P.weylGroupToPerm (wordProd P b l ^ (m : ℕ)) j ∈ inversions P b (wordProd P b l) := by
-  have : Nonempty ι := ⟨j⟩
-  have : NeZero (2 : R) := ⟨by norm_num⟩
-  let e := b.finOrderOfEquivSameCycle (isFiniteType_cartanMatrix b)
-    (preconnected_diagramGraph_cartanMatrix b) hnd hall j
+  have := P.finite_weylGroup_of_base b
+  let c := wordProd P b l
   obtain ⟨k, ⟨hk_sc, hk_inv⟩, hk_uniq⟩ :=
     b.existsUnique_sameCycle_mem_inversions_wordProd hnd hall j
-  let m₀ := e.symm ⟨k, hk_sc⟩
-  refine ⟨m₀, ?_, fun m hm ↦ ?_⟩
-  · have hm₀ : P.weylGroupToPerm (wordProd P b l ^ (m₀ : ℕ)) j = k :=
-      congrArg Subtype.val (e.apply_symm_apply ⟨k, hk_sc⟩)
-    dsimp only
-    rwa [hm₀]
-  · apply e.injective
-    have he : e m₀ = ⟨k, hk_sc⟩ := e.apply_symm_apply ⟨k, hk_sc⟩
-    rw [he]
-    exact Subtype.ext (hk_uniq (e m).1 ⟨(e m).2, hm⟩)
+  obtain ⟨n, rfl⟩ := hk_sc.exists_nat_pow_eq
+  let m₀ : Fin (orderOf c) := ⟨n % orderOf c, Nat.mod_lt n (orderOf_pos c)⟩
+  have hm₀_eq : P.weylGroupToPerm (c ^ (m₀ : ℕ)) j = (P.weylGroupToPerm c ^ n) j := by
+    dsimp only [m₀]; rw [pow_mod_orderOf, map_pow]
+  refine ⟨m₀, by dsimp only; rwa [hm₀_eq], fun m hm ↦ ?_⟩
+  have heq : P.weylGroupToPerm (c ^ (m : ℕ)) j = P.weylGroupToPerm (c ^ (m₀ : ℕ)) j :=
+    (hk_uniq _ ⟨⟨(m : ℤ), by rw [zpow_natCast, map_pow]⟩, hm⟩).trans hm₀_eq.symm
+  suffices ∀ a b' : Fin (orderOf c), (a : ℕ) ≤ (b' : ℕ) →
+      P.weylGroupToPerm (c ^ (a : ℕ)) j = P.weylGroupToPerm (c ^ (b' : ℕ)) j → a = b' by
+    rcases le_total m m₀ with hle | hle
+    · exact this m m₀ hle heq
+    · exact (this m₀ m hle heq.symm).symm
+  intro a b' hle hab
+  have hfix : P.weylGroupToPerm (c ^ ((b' : ℕ) - (a : ℕ))) j = j :=
+    (P.weylGroupToPerm (c ^ (a : ℕ))).injective (by
+      rw [← Equiv.Perm.mul_apply, ← map_mul, ← pow_add, Nat.add_sub_of_le hle, hab])
+  have hdvd := (b.weylGroupToPerm_wordProd_pow_apply_eq_self_iff hnd hall j _).mp hfix
+  have hlt : (b' : ℕ) < orderOf (wordProd P b l) := b'.isLt
+  have h0 := Nat.eq_zero_of_dvd_of_lt hdvd (by omega)
+  exact Fin.ext (by omega)
 
 end Orbits
 
@@ -760,31 +642,27 @@ variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommG
   [Module R N] (P : RootPairing ι R M N) [Finite ι] [CharZero R] [IsDomain R]
   [P.IsCrystallographic] [P.IsReduced] (b : P.Base)
 
-/-- Helper specializing `|Φ| = r · h` to any valid finite-type Dynkin diagram `t`. -/
-private theorem natCard_eq_rank_mul_orderOf_wordProd_of_hasCartanType {t : DynkinType}
+private theorem natCard_eq_of_hasCartanType_aux {t : DynkinType} {h₀ n : ℕ}
     (ht : t.Valid) (hft : IsFiniteType t.cartanMatrix) (h : HasCartanType P b t)
-    {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l) :
-    Nat.card ι = t.rank * orderOf (wordProd P b l) := by
+    (hord : ∀ {l : List b.support}, l.Nodup → (∀ i, i ∈ l) → orderOf (wordProd P b l) = h₀)
+    (hn : t.rank * h₀ = n) : Nat.card ι = n := by
+  classical
+  let l : List b.support := Finset.univ.toList
+  have hnd : l.Nodup := Finset.nodup_toList _
+  have hall : ∀ i, i ∈ l := fun i ↦ Finset.mem_toList.mpr (Finset.mem_univ i)
   obtain ⟨e, he⟩ := (hasCartanType_iff b t).mp h
-  have hsub : b.cartanMatrix = t.cartanMatrix.submatrix e e := Matrix.ext he
-  have hft_b : IsFiniteType b.cartanMatrix := hsub ▸ hft.submatrix e.injective
+  have hft_b : IsFiniteType b.cartanMatrix := (Matrix.ext he) ▸ hft.submatrix e.injective
   have hconn_b : (diagramGraph b.cartanMatrix).Preconnected := by
     let iso : diagramGraph b.cartanMatrix ≃g diagramGraph t.cartanMatrix :=
       ⟨e, fun {i j} ↦ by simp only [diagramGraph_adj, he, ne_eq, e.injective.eq_iff]⟩
     exact (iso.connected_iff.mpr (DynkinType.connected_diagramGraph_cartanMatrix ht)).preconnected
   rw [b.natCard_eq_card_support_mul_orderOf_wordProd_of_isFiniteType hft_b hconn_b hnd hall,
-    h.card_support]
+    h.card_support, hord hnd hall, hn]
 
 /-- **A root pairing with a base of Cartan type `E₆` has `72` roots.** -/
-theorem natCard_eq_of_hasCartanType_E6 (h : HasCartanType P b .E6) : Nat.card ι = 72 := by
-  classical
-  let l : List b.support := Finset.univ.toList
-  have hnd : l.Nodup := Finset.nodup_toList _
-  have hall : ∀ i, i ∈ l := fun i ↦ Finset.mem_toList.mpr (Finset.mem_univ i)
-  rw [P.natCard_eq_rank_mul_orderOf_wordProd_of_hasCartanType b DynkinType.valid_E6
-    DynkinType.isFiniteType_cartanMatrix_E6 h hnd hall,
-    Coxeter.orderOf_wordProd_of_hasCartanType_E6 h hnd hall]
-  rfl
+theorem natCard_eq_of_hasCartanType_E6 (h : HasCartanType P b .E6) : Nat.card ι = 72 :=
+  P.natCard_eq_of_hasCartanType_aux b DynkinType.valid_E6 DynkinType.isFiniteType_cartanMatrix_E6 h
+    (fun hnd hall ↦ Coxeter.orderOf_wordProd_of_hasCartanType_E6 h hnd hall) rfl
 
 /-- **A base of Cartan type `E₆` has `36` positive roots.** -/
 theorem ncard_posRoots_of_hasCartanType_E6 (h : HasCartanType P b .E6) :
@@ -792,15 +670,9 @@ theorem ncard_posRoots_of_hasCartanType_E6 (h : HasCartanType P b .E6) :
   rw [ncard_posRoots_eq_natCard_div_two, P.natCard_eq_of_hasCartanType_E6 b h]
 
 /-- **A root pairing with a base of Cartan type `E₇` has `126` roots.** -/
-theorem natCard_eq_of_hasCartanType_E7 (h : HasCartanType P b .E7) : Nat.card ι = 126 := by
-  classical
-  let l : List b.support := Finset.univ.toList
-  have hnd : l.Nodup := Finset.nodup_toList _
-  have hall : ∀ i, i ∈ l := fun i ↦ Finset.mem_toList.mpr (Finset.mem_univ i)
-  rw [P.natCard_eq_rank_mul_orderOf_wordProd_of_hasCartanType b DynkinType.valid_E7
-    DynkinType.isFiniteType_cartanMatrix_E7 h hnd hall,
-    Coxeter.orderOf_wordProd_of_hasCartanType_E7 h hnd hall]
-  rfl
+theorem natCard_eq_of_hasCartanType_E7 (h : HasCartanType P b .E7) : Nat.card ι = 126 :=
+  P.natCard_eq_of_hasCartanType_aux b DynkinType.valid_E7 DynkinType.isFiniteType_cartanMatrix_E7 h
+    (fun hnd hall ↦ Coxeter.orderOf_wordProd_of_hasCartanType_E7 h hnd hall) rfl
 
 /-- **A base of Cartan type `E₇` has `63` positive roots.** -/
 theorem ncard_posRoots_of_hasCartanType_E7 (h : HasCartanType P b .E7) :
@@ -808,15 +680,9 @@ theorem ncard_posRoots_of_hasCartanType_E7 (h : HasCartanType P b .E7) :
   rw [ncard_posRoots_eq_natCard_div_two, P.natCard_eq_of_hasCartanType_E7 b h]
 
 /-- **A root pairing with a base of Cartan type `E₈` has `240` roots.** -/
-theorem natCard_eq_of_hasCartanType_E8 (h : HasCartanType P b .E8) : Nat.card ι = 240 := by
-  classical
-  let l : List b.support := Finset.univ.toList
-  have hnd : l.Nodup := Finset.nodup_toList _
-  have hall : ∀ i, i ∈ l := fun i ↦ Finset.mem_toList.mpr (Finset.mem_univ i)
-  rw [P.natCard_eq_rank_mul_orderOf_wordProd_of_hasCartanType b DynkinType.valid_E8
-    DynkinType.isFiniteType_cartanMatrix_E8 h hnd hall,
-    Coxeter.orderOf_wordProd_of_hasCartanType_E8 h hnd hall]
-  rfl
+theorem natCard_eq_of_hasCartanType_E8 (h : HasCartanType P b .E8) : Nat.card ι = 240 :=
+  P.natCard_eq_of_hasCartanType_aux b DynkinType.valid_E8 DynkinType.isFiniteType_cartanMatrix_E8 h
+    (fun hnd hall ↦ Coxeter.orderOf_wordProd_of_hasCartanType_E8 h hnd hall) rfl
 
 /-- **A base of Cartan type `E₈` has `120` positive roots.** -/
 theorem ncard_posRoots_of_hasCartanType_E8 (h : HasCartanType P b .E8) :
@@ -824,15 +690,9 @@ theorem ncard_posRoots_of_hasCartanType_E8 (h : HasCartanType P b .E8) :
   rw [ncard_posRoots_eq_natCard_div_two, P.natCard_eq_of_hasCartanType_E8 b h]
 
 /-- **A root pairing with a base of Cartan type `F₄` has `48` roots.** -/
-theorem natCard_eq_of_hasCartanType_F4 (h : HasCartanType P b .F4) : Nat.card ι = 48 := by
-  classical
-  let l : List b.support := Finset.univ.toList
-  have hnd : l.Nodup := Finset.nodup_toList _
-  have hall : ∀ i, i ∈ l := fun i ↦ Finset.mem_toList.mpr (Finset.mem_univ i)
-  rw [P.natCard_eq_rank_mul_orderOf_wordProd_of_hasCartanType b DynkinType.valid_F4
-    DynkinType.isFiniteType_cartanMatrix_F4 h hnd hall,
-    Coxeter.orderOf_wordProd_of_hasCartanType_F4 h hnd hall]
-  rfl
+theorem natCard_eq_of_hasCartanType_F4 (h : HasCartanType P b .F4) : Nat.card ι = 48 :=
+  P.natCard_eq_of_hasCartanType_aux b DynkinType.valid_F4 DynkinType.isFiniteType_cartanMatrix_F4 h
+    (fun hnd hall ↦ Coxeter.orderOf_wordProd_of_hasCartanType_F4 h hnd hall) rfl
 
 /-- **A base of Cartan type `F₄` has `24` positive roots.** -/
 theorem ncard_posRoots_of_hasCartanType_F4 (h : HasCartanType P b .F4) :
@@ -840,15 +700,9 @@ theorem ncard_posRoots_of_hasCartanType_F4 (h : HasCartanType P b .F4) :
   rw [ncard_posRoots_eq_natCard_div_two, P.natCard_eq_of_hasCartanType_F4 b h]
 
 /-- **A root pairing with a base of Cartan type `G₂` has `12` roots.** -/
-theorem natCard_eq_of_hasCartanType_G2 (h : HasCartanType P b .G2) : Nat.card ι = 12 := by
-  classical
-  let l : List b.support := Finset.univ.toList
-  have hnd : l.Nodup := Finset.nodup_toList _
-  have hall : ∀ i, i ∈ l := fun i ↦ Finset.mem_toList.mpr (Finset.mem_univ i)
-  rw [P.natCard_eq_rank_mul_orderOf_wordProd_of_hasCartanType b DynkinType.valid_G2
-    DynkinType.isFiniteType_cartanMatrix_G2 h hnd hall,
-    Coxeter.orderOf_wordProd_of_hasCartanType_G2 h hnd hall]
-  rfl
+theorem natCard_eq_of_hasCartanType_G2 (h : HasCartanType P b .G2) : Nat.card ι = 12 :=
+  P.natCard_eq_of_hasCartanType_aux b DynkinType.valid_G2 DynkinType.isFiniteType_cartanMatrix_G2 h
+    (fun hnd hall ↦ Coxeter.orderOf_wordProd_of_hasCartanType_G2 h hnd hall) rfl
 
 /-- **A base of Cartan type `G₂` has `6` positive roots.** -/
 theorem ncard_posRoots_of_hasCartanType_G2 (h : HasCartanType P b .G2) :
@@ -858,3 +712,5 @@ theorem ncard_posRoots_of_hasCartanType_G2 (h : HasCartanType P b .G2) :
 end ExceptionalRootCounts
 
 end RootPairing
+
+end
