@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.LSeries.Nonvanishing
 public import Mathlib.NumberTheory.NumberField.DedekindZeta
 public import Mathlib.NumberTheory.Real.GoldenRatio
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
+public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Realization
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.Character
 public import TauCeti.NumberTheory.NumberField.Discriminant.Basic
 import Mathlib.Analysis.Complex.ExponentialBounds
@@ -20,6 +21,7 @@ import TauCeti.NumberTheory.NumberField.Units.Regulator.Basic
 import TauCeti.NumberTheory.LSeries.ZetaMul
 import TauCeti.NumberTheory.LSeries.Quadratic.Character
 import TauCeti.NumberTheory.NumberField.PrimeIdeal
+import TauCeti.NumberTheory.NumberField.Quadratic.InfinitePlace
 import TauCeti.NumberTheory.NumberField.Quadratic.Regulator
 import TauCeti.NumberTheory.NumberField.Quadratic.TotalRamification
 import TauCeti.NumberTheory.NumberField.Quadratic.Units
@@ -87,8 +89,10 @@ signature is `(r₁, r₂) = (2, 0)` and `w = 2`.
   `TauCeti.NumberField.classNumber_mul_regulator_eq_sqrt_mul_LFunction_one`: the analytic class
   number formula `L(1, χ_D) = 2 R h / √D` (equivalently `h R = √D L(1, χ_D) / 2`) for a real
   quadratic field, with upper bound `classNumber_mul_regulator_le_sqrt_mul_one_add_log`.
-* `TauCeti.NumberField.two_mul_log_goldenRatio_div_sqrt_abs_discr_le_LFunction_one_re`: the sharp
-  sign-independent lower bound `2 log φ / √|D| ≤ (L(1, χ_D)).re` for every quadratic field.
+* `TauCeti.NumberField.two_mul_log_goldenRatio_div_sqrt_abs_discr_le_LFunction_one_re` and
+  `TauCeti.Multiquadratic.two_mul_log_goldenRatio_div_sqrt_le_LFunction_one_re`: the sharp
+  sign-independent lower bound `2 log φ / √|D| ≤ (L(1, χ_D)).re` for every quadratic field and
+  every fundamental discriminant `D ≠ 1`.
 
 ## References
 
@@ -509,10 +513,7 @@ theorem two_mul_log_goldenRatio_div_sqrt_abs_discr_le_LFunction_one_re :
     Nat.one_le_cast.mpr (classNumber_pos K)
   rcases lt_trichotomy (discr K) 0 with hneg | hzero | hpos
   · -- Imaginary quadratic case (`D < 0`): `L(1, χ_D) = 2π h / (w √|D|) ≥ π / (3 √|D|)`.
-    have hdeg := InfinitePlace.card_add_two_mul_card_eq_rank K
-    have hc : nrComplexPlaces K = 1 :=
-      InfinitePlace.nrComplexPlaces_eq_one_of_discr_lt_zero hneg (by omega)
-    have : IsTotallyComplex K := nrRealPlaces_eq_zero_iff.mp (by omega)
+    have : IsTotallyComplex K := isTotallyComplex_of_finrank_eq_two_of_discr_neg hK hneg
     rw [LFunction_one_eq_two_mul_pi_mul_classNumber_div hK, Complex.ofReal_re]
     have hw_le : (Nat.card (𝓞 K)ˣ : ℝ) ≤ 6 := by
       rw [Units.card_units_of_isTotallyComplex_of_discr hK]
@@ -533,7 +534,7 @@ theorem two_mul_log_goldenRatio_div_sqrt_abs_discr_le_LFunction_one_re :
       _ = 2 * π * classNumber K / (Nat.card (𝓞 K)ˣ * √|(discr K : ℝ)|) := div_div _ _ _
   · exact absurd hzero (discr_ne_zero K)
   · -- Real quadratic case (`D > 0`): `L(1, χ_D) = 2 R h / √D ≥ 2 log φ / √D`.
-    have : IsTotallyReal K := IsTotallyReal.of_zero_lt_discr hpos (by omega)
+    have : IsTotallyReal K := isTotallyReal_of_finrank_eq_two_of_discr_nonneg hK hpos.le
     rw [LFunction_one_eq_two_mul_regulator_mul_classNumber_div hK, Complex.ofReal_re,
       abs_of_pos (Int.cast_pos.mpr hpos)]
     have hreg : Real.log Real.goldenRatio ≤ Units.regulator K :=
@@ -544,3 +545,23 @@ theorem two_mul_log_goldenRatio_div_sqrt_abs_discr_le_LFunction_one_re :
     gcongr
 
 end TauCeti.NumberField
+
+namespace TauCeti.Multiquadratic
+
+/-- **Sharp lower bound on `L(1, χ_D)` for a fundamental discriminant `D ≠ 1`.** For every
+fundamental discriminant `D ≠ 1`, `2 log ((1 + √5) / 2) / √|D| ≤ (L(1, χ_D)).re`, with equality
+at `D = 5`. -/
+theorem two_mul_log_goldenRatio_div_sqrt_le_LFunction_one_re {D : ℤ} [NeZero D.natAbs]
+    (hD : Int.IsFundamentalDiscr D) (hD1 : D ≠ 1) :
+    2 * Real.log Real.goldenRatio / √(D.natAbs : ℝ) ≤
+      ((fundamentalDiscriminantCharCast ℂ D hD).LFunction 1).re := by
+  obtain ⟨K, _, _, hK, rfl⟩ := exists_finrank_eq_two_and_discr_eq hD hD1
+  have heq : fundamentalDiscriminantCharCast ℂ (NumberField.discr K) hD =
+      (fundamentalDiscriminantChar (NumberField.discr K) (isFundamentalDiscr_discr hK)).ringHomComp
+        (Int.castRingHom ℂ) := by
+    ext a
+    simp
+  rw [Nat.cast_natAbs, Int.cast_abs, heq]
+  exact TauCeti.NumberField.two_mul_log_goldenRatio_div_sqrt_abs_discr_le_LFunction_one_re hK
+
+end TauCeti.Multiquadratic

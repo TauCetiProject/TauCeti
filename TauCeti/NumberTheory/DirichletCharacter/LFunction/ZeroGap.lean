@@ -17,15 +17,14 @@ import TauCeti.NumberTheory.DirichletCharacter.LFunction.Deriv
 import TauCeti.NumberTheory.DirichletCharacter.Quadratic
 import TauCeti.NumberTheory.DirichletCharacter.Quadratic.FundamentalDiscriminant
 import TauCeti.NumberTheory.NumberField.Quadratic.DedekindZeta
-import TauCeti.NumberTheory.NumberField.Quadratic.Model
 
 /-!
 # Effective distance of a quadratic real zero from `1`
 
-For a primitive nonprincipal quadratic Dirichlet character `χ` of level `N`, realizing `χ` as the
-Kronecker character `χ_D` of a quadratic field `ℚ(√d)` of discriminant `D` (`|D| = N`) transfers the
-analytic class-number lower bound `2 log ((1 + √5) / 2) / √|D| ≤ (L(1, χ_D)).re`
-(`TauCeti.NumberField.two_mul_log_goldenRatio_div_sqrt_abs_discr_le_LFunction_one_re`) to `L(1, χ)`:
+For a primitive nonprincipal quadratic Dirichlet character `χ` of level `N`, `χ` is the Kronecker
+character `χ_D` of a fundamental discriminant `D ≠ 1` with `|D| = N`, so the analytic class-number
+lower bound `2 log ((1 + √5) / 2) / √|D| ≤ (L(1, χ_D)).re`
+(`TauCeti.Multiquadratic.two_mul_log_goldenRatio_div_sqrt_le_LFunction_one_re`) gives:
 
 `2 log ((1 + √5) / 2) / √N ≤ (L(1, χ)).re ≤ ‖L(1, χ)‖`.
 
@@ -45,9 +44,7 @@ of `L(s, χ)`:
 
 ## Main results
 
-* `TauCeti.Multiquadratic.two_mul_log_goldenRatio_div_sqrt_le_re_LFunction_one`:
-  `2 log φ / √|D| ≤ (L(1, χ_D)).re` for every fundamental discriminant `D ≠ 1`.
-* `DirichletCharacter.IsPrimitive.two_mul_log_goldenRatio_div_sqrt_le_re_LFunction_one` and
+* `DirichletCharacter.IsPrimitive.two_mul_log_goldenRatio_div_sqrt_le_LFunction_one_re` and
   `DirichletCharacter.IsPrimitive.two_mul_log_goldenRatio_div_sqrt_le_norm_LFunction_one`:
   `2 log φ / √N ≤ (L(1, χ)).re ≤ ‖L(1, χ)‖` for every primitive nonprincipal quadratic character
   `χ` of level `N`.
@@ -79,48 +76,6 @@ public section
 
 open Complex
 
-namespace TauCeti.Multiquadratic
-
-/-- Every fundamental discriminant `D ≠ 1` is the field discriminant of a quadratic number field
-`ℚ(√d)` (`QuadraticAlgebra ℚ d 0` for `d = D` when `D ≡ 1 (mod 4)` and `d = D / 4` when
-`D ≡ 0 (mod 4)`). -/
-private theorem exists_quadratic_field_discr_eq {D : ℤ} (hD : Int.IsFundamentalDiscr D)
-    (hD1 : D ≠ 1) :
-    ∃ (K : Type) (_ : Field K) (_ : NumberField K),
-      Module.finrank ℚ K = 2 ∧ NumberField.discr K = D := by
-  obtain ⟨d, hsf, hd1, hDd⟩ : ∃ d : ℤ, Squarefree d ∧ d ≠ 1 ∧ fundamentalDiscriminant d = D := by
-    rcases Int.isFundamentalDiscr_iff_squarefree.mp hD with ⟨hmod, hsf⟩ | ⟨h4, hsf, hmod⟩
-    · exact ⟨D, hsf, hD1, fundamentalDiscriminant_of_mod_four_eq_one hmod⟩
-    · refine ⟨D / 4, hsf, by omega, ?_⟩
-      rw [fundamentalDiscriminant_of_mod_four_ne_one (by omega)]
-      omega
-  have : Fact (¬ IsSquare d) := ⟨fun h ↦ by
-    obtain ⟨r, rfl⟩ := h
-    rcases Int.isUnit_iff.mp (hsf r ⟨1, by ring⟩) with rfl | rfl <;> exact hd1 (by norm_num)⟩
-  refine ⟨QuadraticAlgebra ℚ (d : ℚ) 0, inferInstance, inferInstance,
-    NumberField.finrank_rat_eq_two QuadraticAlgebra.minpoly_integralSqrt_omega
-      QuadraticAlgebra.adjoin_integralSqrt_omega, ?_⟩
-  rw [discr_eq_fundamentalDiscriminant QuadraticAlgebra.minpoly_integralSqrt_omega
-    QuadraticAlgebra.adjoin_integralSqrt_omega hsf, hDd]
-
-/-- **Sharp lower bound on `L(1, χ_D)` for a fundamental discriminant `D ≠ 1`.** Realizing `D` as
-the discriminant of a quadratic field `K` gives `2 log ((1 + √5) / 2) / √|D| ≤ (L(1, χ_D)).re`,
-with equality at `D = 5`. -/
-theorem two_mul_log_goldenRatio_div_sqrt_le_re_LFunction_one {D : ℤ} [NeZero D.natAbs]
-    (hD : Int.IsFundamentalDiscr D) (hD1 : D ≠ 1) :
-    2 * Real.log Real.goldenRatio / √(D.natAbs : ℝ) ≤
-      ((fundamentalDiscriminantCharCast ℂ D hD).LFunction 1).re := by
-  obtain ⟨K, _, _, hK, rfl⟩ := exists_quadratic_field_discr_eq hD hD1
-  have heq : fundamentalDiscriminantCharCast ℂ (NumberField.discr K) hD =
-      (fundamentalDiscriminantChar (NumberField.discr K) (isFundamentalDiscr_discr hK)).ringHomComp
-        (Int.castRingHom ℂ) := by
-    ext a
-    simp
-  rw [Nat.cast_natAbs, Int.cast_abs, heq]
-  exact TauCeti.NumberField.two_mul_log_goldenRatio_div_sqrt_abs_discr_le_LFunction_one_re hK
-
-end TauCeti.Multiquadratic
-
 namespace DirichletCharacter
 
 open TauCeti.Multiquadratic
@@ -129,10 +84,10 @@ section LOneLowerBound
 
 variable {N : ℕ} [NeZero N] {χ : DirichletCharacter ℂ N}
 
-/-- **Sharp lower bound on `(L(1, χ)).re` for a primitive nonprincipal quadratic character.** Every
-such character of level `N` is the Kronecker character of a fundamental discriminant `D ≠ 1` with
-`|D| = N`, so `2 log ((1 + √5) / 2) / √N ≤ (L(1, χ)).re`. -/
-theorem IsPrimitive.two_mul_log_goldenRatio_div_sqrt_le_re_LFunction_one (hprim : χ.IsPrimitive)
+/-- **Sharp lower bound on `(L(1, χ)).re` for a primitive nonprincipal quadratic character.** For
+every primitive nonprincipal quadratic Dirichlet character `χ` of level `N`,
+`2 log ((1 + √5) / 2) / √N ≤ (L(1, χ)).re`, with equality at `N = 5`. -/
+theorem IsPrimitive.two_mul_log_goldenRatio_div_sqrt_le_LFunction_one_re (hprim : χ.IsPrimitive)
     (hq : χ.IsQuadratic) (hχ : χ ≠ 1) :
     2 * Real.log Real.goldenRatio / √(N : ℝ) ≤ (χ.LFunction 1).re := by
   obtain ⟨D, hD, rfl, hval⟩ := hprim.exists_isFundamentalDiscr_apply_eq hq
@@ -143,13 +98,13 @@ theorem IsPrimitive.two_mul_log_goldenRatio_div_sqrt_le_re_LFunction_one (hprim 
   have hD1 : D ≠ 1 := fun h1 ↦
     hχ (hχ_eq.trans ((fundamentalDiscriminantCharCast_eq_one_iff hD).mpr h1))
   rw [hχ_eq]
-  exact TauCeti.Multiquadratic.two_mul_log_goldenRatio_div_sqrt_le_re_LFunction_one hD hD1
+  exact TauCeti.Multiquadratic.two_mul_log_goldenRatio_div_sqrt_le_LFunction_one_re hD hD1
 
 /-- **Norm lower bound on `L(1, χ)` for a primitive nonprincipal quadratic character.** -/
 theorem IsPrimitive.two_mul_log_goldenRatio_div_sqrt_le_norm_LFunction_one (hprim : χ.IsPrimitive)
     (hq : χ.IsQuadratic) (hχ : χ ≠ 1) :
     2 * Real.log Real.goldenRatio / √(N : ℝ) ≤ ‖χ.LFunction 1‖ :=
-  (hprim.two_mul_log_goldenRatio_div_sqrt_le_re_LFunction_one hq hχ).trans (re_le_norm _)
+  (hprim.two_mul_log_goldenRatio_div_sqrt_le_LFunction_one_re hq hχ).trans (re_le_norm _)
 
 end LOneLowerBound
 
@@ -174,8 +129,8 @@ private theorem mul_sqrt_mul_log_sq_le_rpow {n : ℕ} (hn : 3 ≤ n) {ε : ℝ} 
       ≤ 32 * (n : ℝ) ^ (1 / 2 : ℝ) * (4 / ε ^ 2 * (n : ℝ) ^ ε) := by
         rw [← Real.sqrt_eq_rpow]
         gcongr
-    _ = 128 / ε ^ 2 * ((n : ℝ) ^ (1 / 2 : ℝ) * (n : ℝ) ^ ε) := by ring
-    _ = 128 / ε ^ 2 * (n : ℝ) ^ (1 / 2 + ε) := by rw [← Real.rpow_add hn0]
+      _ = 128 / ε ^ 2 * ((n : ℝ) ^ (1 / 2 : ℝ) * (n : ℝ) ^ ε) := by ring
+      _ = 128 / ε ^ 2 * (n : ℝ) ^ (1 / 2 + ε) := by rw [← Real.rpow_add hn0]
 
 variable {N : ℕ} [NeZero N] {χ : DirichletCharacter ℂ N}
 
@@ -289,12 +244,13 @@ theorem exists_pos_mul_rpow_le_one_sub_of_LFunction_eq_zero {ε : ℝ} (hε : 0 
     by have := Real.log_pos Real.one_lt_goldenRatio; positivity,
     fun _ _ χ hq hχ _ hβ ↦ χ.mul_rpow_le_one_sub_of_LFunction_eq_zero hε hq hχ hβ⟩
 
-/-- **Effective `N⁻¹` distance of a quadratic real zero from `1`.** Specializing
-`mul_rpow_le_one_sub_of_LFunction_eq_zero` to `ε = 1 / 2` gives
-`log ((1 + √5) / 2) / (512 N) ≤ 1 - β` for every real zero `β` of `L(s, χ)`. -/
+/-- **Effective `N⁻¹` distance of a quadratic real zero from `1`.** For every nonprincipal
+quadratic Dirichlet character `χ` of level `N` and every real zero `β` of `L(s, χ)`,
+`log ((1 + √5) / 2) / (512 N) ≤ 1 - β`. -/
 theorem div_level_le_one_sub_of_LFunction_eq_zero (hq : χ.IsQuadratic) (hχ : χ ≠ 1) {β : ℝ}
     (hβ : χ.LFunction β = 0) :
     Real.log Real.goldenRatio / (512 * N) ≤ 1 - β := by
+  -- Apply `mul_rpow_le_one_sub_of_LFunction_eq_zero` at `ε = 1 / 2`.
   have h := χ.mul_rpow_le_one_sub_of_LFunction_eq_zero (ε := 1 / 2) (by norm_num) hq hχ hβ
   have hN0 : (N : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
   convert h using 1

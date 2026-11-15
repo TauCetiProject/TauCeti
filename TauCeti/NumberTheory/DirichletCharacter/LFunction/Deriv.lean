@@ -51,10 +51,10 @@ inequality and `‖L(1, χ)‖ ≤ 1 + log N`, any real zero `β` of `L(s, χ)` 
 * `DirichletCharacter.norm_deriv_LFunction_le_of_re_pos`,
   `DirichletCharacter.norm_deriv_LFunction_ofReal_le_of_pos`: explicit bounds for `‖L'(s, χ)‖` on
   `Re(s) > 0` and on `(0, ∞)`.
-* `DirichletCharacter.norm_deriv_LFunction_le_of_one_sub_inv_log_le`:
+* `DirichletCharacter.norm_deriv_LFunction_le_of_one_sub_one_div_log_le`:
   `‖L'(σ, χ)‖ ≤ 64 (log N)²` for `σ ≥ 1 - 1 / log N`.
-* `DirichletCharacter.norm_LFunction_sub_le_of_one_sub_inv_log_le`: Lipschitz bound for `L(σ, χ)`
-  on `[1 - 1 / log N, ∞)`.
+* `DirichletCharacter.norm_LFunction_sub_le_of_one_sub_one_div_log_le`: Lipschitz bound for
+  `L(σ, χ)` on `[1 - 1 / log N, ∞)`.
 * `DirichletCharacter.norm_LFunction_one_div_log_sq_le_one_sub_of_LFunction_eq_zero`: every real
   zero `β` of `L(s, χ)` satisfies `‖L(1, χ)‖ / (64 (log N)²) ≤ 1 - β`.
 
@@ -74,32 +74,15 @@ namespace DirichletCharacter
 variable {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
 
 omit [NeZero N] in
-private theorem sum_isBigO_one' (hχ : χ ≠ 1) :
-    (fun n : ℕ ↦ ∑ k ∈ Icc 1 n, χ k) =O[atTop] fun n ↦ (n : ℝ) ^ (0 : ℝ) := by
-  rcases N.eq_zero_or_pos with rfl | hN
-  · refine isBigO_iff.mpr ⟨‖χ 1‖, Eventually.of_forall fun n ↦ ?_⟩
-    have hsub : ∑ k ∈ Icc 1 n, χ k = if 1 ≤ n then χ 1 else 0 := by
-      split_ifs with hn
-      · rw [← sum_erase_add (Icc 1 n) _ (left_mem_Icc.mpr hn), sum_eq_zero, zero_add, Nat.cast_one]
-        intro k hk
-        rw [mem_erase, mem_Icc] at hk
-        exact MulChar.map_nonunit χ fun hu ↦ by
-          rcases Int.isUnit_iff.mp (show IsUnit (k : ℤ) from hu) with h | h <;> omega
-      · rw [Icc_eq_empty hn, sum_empty]
-    split_ifs at hsub <;> simp [hsub]
-  · have : NeZero N := ⟨hN.ne'⟩
-    refine isBigO_iff.mpr ⟨N, Eventually.of_forall fun n ↦ ?_⟩
-    simpa using χ.norm_sum_Icc_le_level hχ n
-
-omit [NeZero N] in
 /-- The integral representing `L'(s, χ)` converges absolutely on the half-plane `Re(s) > 0`. -/
 theorem integrableOn_sum_mul_one_sub_mul_log_mul_cpow (hχ : χ ≠ 1) {s : ℂ} (hs : 0 < s.re) :
     IntegrableOn
       (fun t : ℝ ↦ (∑ k ∈ Icc 1 ⌊t⌋₊, χ k) * (1 - s * Real.log t) * (t : ℂ) ^ (-(s + 1)))
       (Set.Ioi 1) := by
-  have h1 := TauCeti.LSeries.integrableOn_sum_mul_cpow_of_isBigO _ (χ.sum_isBigO_one' hχ) hs
+  have h1 :=
+    TauCeti.LSeries.integrableOn_sum_mul_cpow_of_isBigO _ (χ.sum_Icc_isBigO_rpow_zero hχ) hs
   have h2 := (TauCeti.LSeries.integrableOn_sum_mul_log_mul_cpow_of_isBigO _
-    (χ.sum_isBigO_one' hχ) hs).const_mul s
+    (χ.sum_Icc_isBigO_rpow_zero hχ) hs).const_mul s
   refine (h1.sub h2).congr_fun (fun t _ ↦ ?_) measurableSet_Ioi
   dsimp only [Pi.sub_apply]
   ring
@@ -110,7 +93,8 @@ theorem hasDerivAt_LFunction_of_re_pos (hχ : χ ≠ 1) {s : ℂ} (hs : 0 < s.re
     HasDerivAt χ.LFunction
       (∫ t in Set.Ioi (1 : ℝ),
         (∑ k ∈ Icc 1 ⌊t⌋₊, χ k) * (1 - s * Real.log t) * (t : ℂ) ^ (-(s + 1))) s := by
-  have hderiv := TauCeti.LSeries.hasDerivAt_mul_integral_of_isBigO _ (χ.sum_isBigO_one' hχ) hs
+  have hderiv :=
+    TauCeti.LSeries.hasDerivAt_mul_integral_of_isBigO _ (χ.sum_Icc_isBigO_rpow_zero hχ) hs
   refine hderiv.congr_of_eventuallyEq ?_
   filter_upwards [(isOpen_lt continuous_const continuous_re).mem_nhds hs] with z hz
   exact χ.LFunction_eq_mul_integral hχ hz
@@ -124,62 +108,33 @@ theorem deriv_LFunction_eq_integral (hχ : χ ≠ 1) {s : ℂ} (hs : 0 < s.re) :
 
 /-! ### Level-split partial summation on `(1, N]` and `(N, ∞)` -/
 
-omit [NeZero N] χ in
-/-- Summation by parts on `1 ≤ k ≤ n`: pairing partial sums against forward differences leaves a
-boundary term at `n` minus the weighted sum. -/
-private theorem sum_Ico_sum_Icc_mul_sub (a g : ℕ → ℂ) (n : ℕ) :
-    ∑ m ∈ Ico 1 n, (∑ k ∈ Icc 1 m, a k) * (g (m + 1) - g m) =
-      (∑ k ∈ Icc 1 n, a k) * g n - ∑ k ∈ Icc 1 n, a k * g k := by
-  rcases eq_or_ne n 0 with rfl | hn0
-  · simp
-  have hn : 1 ≤ n := Nat.one_le_iff_ne_zero.mpr hn0
-  clear hn0
-  induction n, hn using Nat.le_induction with
-  | base => simp
-  | succ m hm ih =>
-    rw [sum_Ico_succ_top hm, ih, sum_Icc_succ_top (Nat.le_add_right_of_le hm),
-      sum_Icc_succ_top (Nat.le_add_right_of_le hm)]
-    ring
-
 omit [NeZero N] in
-/-- Integrating a smooth derivative `g'` against the partial-sum step function on `(1, n]` gives
-the discrete forward-difference sum over `1 ≤ m < n`. -/
-private theorem integral_Ioc_one_natCast_sum_mul_eq {g g' : ℝ → ℂ}
-    (hg : ∀ t : ℝ, 1 ≤ t → HasDerivAt g (g' t) t) (hcont : ContinuousOn g' (Set.Ici 1))
-    {n : ℕ} (hn : 1 ≤ n) :
-    ∫ t in Set.Ioc (1 : ℝ) (n : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, χ k) * g' t =
-      ∑ m ∈ Ico 1 n, (∑ k ∈ Icc 1 m, χ k) * (g (m + 1 : ℕ) - g (m : ℕ)) := by
-  have hint_step (m : ℕ) :
-      IntegrableOn (fun t : ℝ ↦ (∑ k ∈ Icc 1 ⌊t⌋₊, χ k) * g' t) (Set.Ioc 1 (m : ℝ)) := by
-    have hloc : IntegrableOn (fun t : ℝ ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, χ k) (Set.Icc 1 (m : ℝ)) :=
-      (TauCeti.locallyIntegrableOn_sum_Icc_natFloor (fun k ↦ χ k) 1).integrableOn_compact_subset
-        (Set.Icc_subset_Ici_self.trans (Set.Ici_subset_Ici.mpr zero_le_one)) isCompact_Icc
-    exact (hloc.mul_continuousOn (hcont.mono Set.Icc_subset_Ici_self) isCompact_Icc).mono_set
-      Set.Ioc_subset_Icc_self
-  induction n, hn using Nat.le_induction with
-  | base => simp
-  | succ m hm ih =>
-    have hm1 : (1 : ℝ) ≤ m := mod_cast hm
-    have hunit : ∫ t in Set.Ioc (m : ℝ) (m + 1 : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, χ k) * g' t =
-        (∑ k ∈ Icc 1 m, χ k) * (g (m + 1 : ℕ) - g (m : ℕ)) := by
-      have hcongr : Set.EqOn (fun t : ℝ ↦ (∑ k ∈ Icc 1 ⌊t⌋₊, χ k) * g' t)
-          (fun t : ℝ ↦ (∑ k ∈ Icc 1 m, χ k) * g' t) (Set.Ioo (m : ℝ) (m + 1 : ℝ)) := by
-        intro t ht
-        have hfl : ⌊t⌋₊ = m :=
-          (Nat.floor_eq_iff (by linarith [ht.1])).mpr ⟨ht.1.le, ht.2⟩
-        simp [hfl]
-      rw [integral_Ioc_eq_integral_Ioo, setIntegral_congr_fun measurableSet_Ioo hcongr,
-        ← integral_Ioc_eq_integral_Ioo, ← intervalIntegral.integral_of_le (by linarith),
-        intervalIntegral.integral_const_mul,
-        intervalIntegral.integral_eq_sub_of_hasDerivAt
-          (fun t ht ↦ hg t (hm1.trans (by rw [Set.uIcc_of_le (by linarith)] at ht; exact ht.1)))
-          ((hcont.mono (by rw [Set.uIcc_of_le (by linarith)]; exact fun t ht ↦ hm1.trans ht.1)
-            ).intervalIntegrable), Nat.cast_add, Nat.cast_one]
-    rw [Nat.cast_add, Nat.cast_one, ← Set.Ioc_union_Ioc_eq_Ioc hm1 (by linarith),
-      setIntegral_union (Set.Ioc_disjoint_Ioc_of_le le_rfl) measurableSet_Ioc (hint_step m)
-        ((hint_step (m + 1)).mono_set
-          (by rw [Nat.cast_add, Nat.cast_one]; exact Set.Ioc_subset_Ioc_left hm1)),
-      ih, hunit, sum_Ico_succ_top hm]
+/-- Integrating a continuous derivative `g'` against the partial-sum step function of a
+nonprincipal character `χ` over `(1, N]` gives `-∑_{k=1}^N χ(k) g(k)`, since `S(N) = 0` cancels the
+boundary term at `N` in Abel's summation formula. -/
+private theorem integral_Ioc_one_level_sum_mul_eq (hχ : χ ≠ 1) {g g' : ℝ → ℂ}
+    (hg : ∀ t : ℝ, 1 ≤ t → HasDerivAt g (g' t) t) (hcont : ContinuousOn g' (Set.Ici 1)) :
+    ∫ t in Set.Ioc (1 : ℝ) (N : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, χ k) * g' t =
+      -∑ k ∈ Icc 1 N, χ k * g (k : ℕ) := by
+  let c : ℕ → ℂ := fun k ↦ if k = 0 then 0 else χ k
+  have hsum (w : ℕ → ℂ) (m : ℕ) : ∑ k ∈ Icc 0 m, w k * c k = ∑ k ∈ Icc 1 m, χ k * w k := by
+    rw [Icc_eq_cons_Ioc (Nat.zero_le m), sum_cons, ← Icc_add_one_left_eq_Ioc]
+    simp only [c, ↓reduceIte, mul_zero, zero_add]
+    refine sum_congr rfl fun k hk ↦ ?_
+    simp [Nat.ne_of_gt (mem_Icc.mp hk).1, mul_comm]
+  have hsum1 (m : ℕ) : ∑ k ∈ Icc 0 m, c k = ∑ k ∈ Icc 1 m, χ k := by
+    simpa using hsum (fun _ ↦ 1) m
+  have hdiff : ∀ t ∈ Set.Icc (1 : ℝ) N, DifferentiableAt ℝ g t :=
+    fun t ht ↦ (hg t ht.1).differentiableAt
+  have hderiv_eq : Set.EqOn (deriv g) g' (Set.Icc (1 : ℝ) N) :=
+    fun t ht ↦ (hg t ht.1).deriv
+  have hint : IntegrableOn (deriv g) (Set.Icc (1 : ℝ) N) :=
+    (hcont.mono Set.Icc_subset_Ici_self).integrableOn_Icc.congr_fun hderiv_eq.symm measurableSet_Icc
+  have habel := sum_mul_eq_sub_integral_mul₀' c rfl N hdiff hint
+  rw [hsum, hsum1, χ.sum_Icc_one_level_eq_zero hχ, mul_zero, zero_sub] at habel
+  refine (setIntegral_congr_fun measurableSet_Ioc fun t ht ↦ ?_).trans
+    (neg_eq_iff_eq_neg.mp habel.symm)
+  rw [(hg t ht.1.le).deriv, hsum1, mul_comm]
 
 omit [NeZero N] χ in
 /-- Antiderivative of `(t : ℂ) ^ (-(s + 1))` on `(0, ∞)` for `s ≠ 0`. -/
@@ -216,17 +171,15 @@ theorem LFunction_eq_sum_Icc_add_mul_integral (hχ : χ ≠ 1) {s : ℂ} (hs : 0
     χ.LFunction s = (∑ n ∈ Icc 1 N, χ n / (n : ℂ) ^ s) +
       s * ∫ t in Set.Ioi (N : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, χ k) * (t : ℂ) ^ (-(s + 1)) := by
   have hs0 : s ≠ 0 := fun h ↦ by simp [h] at hs
-  have hN1 : 1 ≤ N := NeZero.one_le
-  have hN1' : (1 : ℝ) ≤ N := mod_cast hN1
-  have hint := TauCeti.LSeries.integrableOn_sum_mul_cpow_of_isBigO _ (χ.sum_isBigO_one' hχ) hs
+  have hN1' : (1 : ℝ) ≤ N := Nat.one_le_cast.mpr NeZero.one_le
+  have hint :=
+    TauCeti.LSeries.integrableOn_sum_mul_cpow_of_isBigO _ (χ.sum_Icc_isBigO_rpow_zero hχ) hs
   have hcont : ContinuousOn (fun t : ℝ ↦ (t : ℂ) ^ (-(s + 1))) (Set.Ici 1) := fun t ht ↦
     (continuousAt_ofReal_cpow_const _ _ (Or.inr (zero_lt_one.trans_le ht).ne')).continuousWithinAt
-  have hhead := χ.integral_Ioc_one_natCast_sum_mul_eq
+  have hhead := χ.integral_Ioc_one_level_sum_mul_eq hχ
     (g := fun y : ℝ ↦ -(y : ℂ) ^ (-s) / s)
-    (fun t ht ↦ hasDerivAt_neg_cpow_div hs0 (zero_lt_one.trans_le ht)) hcont hN1
+    (fun t ht ↦ hasDerivAt_neg_cpow_div hs0 (zero_lt_one.trans_le ht)) hcont
   simp only [ofReal_natCast] at hhead
-  rw [sum_Ico_sum_Icc_mul_sub (g := fun n : ℕ ↦ -(n : ℂ) ^ (-s) / s),
-    χ.sum_Icc_one_level_eq_zero hχ, zero_mul, zero_sub] at hhead
   rw [χ.LFunction_eq_mul_integral hχ hs, ← Set.Ioc_union_Ioi_eq_Ioi hN1',
     setIntegral_union (Set.Ioc_disjoint_Ioi le_rfl) measurableSet_Ioi
       (hint.mono_set Set.Ioc_subset_Ioi_self) (hint.mono_set (Set.Ioi_subset_Ioi hN1')),
@@ -243,8 +196,7 @@ theorem deriv_LFunction_eq_neg_sum_Icc_add_integral (hχ : χ ≠ 1) {s : ℂ} (
     deriv χ.LFunction s = -(∑ n ∈ Icc 1 N, χ n * Real.log n / (n : ℂ) ^ s) +
       ∫ t in Set.Ioi (N : ℝ),
         (∑ k ∈ Icc 1 ⌊t⌋₊, χ k) * (1 - s * Real.log t) * (t : ℂ) ^ (-(s + 1)) := by
-  have hN1 : 1 ≤ N := NeZero.one_le
-  have hN1' : (1 : ℝ) ≤ N := mod_cast hN1
+  have hN1' : (1 : ℝ) ≤ N := Nat.one_le_cast.mpr NeZero.one_le
   have hint := χ.integrableOn_sum_mul_one_sub_mul_log_mul_cpow hχ hs
   have hcont : ContinuousOn
       (fun t : ℝ ↦ (1 - s * Real.log t) * (t : ℂ) ^ (-(s + 1))) (Set.Ici 1) := by
@@ -252,12 +204,10 @@ theorem deriv_LFunction_eq_neg_sum_Icc_add_integral (hχ : χ ≠ 1) {s : ℂ} (
       (Real.continuousOn_log.mono fun t ht ↦ (zero_lt_one.trans_le ht).ne')))).mul fun t ht ↦ ?_
     exact (continuousAt_ofReal_cpow_const _ _
       (Or.inr (zero_lt_one.trans_le ht).ne')).continuousWithinAt
-  have hhead := χ.integral_Ioc_one_natCast_sum_mul_eq
+  have hhead := χ.integral_Ioc_one_level_sum_mul_eq hχ
     (g := fun y : ℝ ↦ (y : ℂ) ^ (-s) * Real.log y)
-    (fun t ht ↦ hasDerivAt_cpow_mul_log s (zero_lt_one.trans_le ht)) hcont hN1
+    (fun t ht ↦ hasDerivAt_cpow_mul_log s (zero_lt_one.trans_le ht)) hcont
   simp only [ofReal_natCast, ← mul_assoc] at hhead
-  rw [sum_Ico_sum_Icc_mul_sub (g := fun n : ℕ ↦ (n : ℂ) ^ (-s) * Real.log n),
-    χ.sum_Icc_one_level_eq_zero hχ, zero_mul, zero_sub] at hhead
   rw [χ.deriv_LFunction_eq_integral hχ hs, ← Set.Ioc_union_Ioi_eq_Ioi hN1',
     setIntegral_union (Set.Ioc_disjoint_Ioi le_rfl) measurableSet_Ioi
       (hint.mono_set Set.Ioc_subset_Ioi_self) (hint.mono_set (Set.Ioi_subset_Ioi hN1')),
@@ -322,9 +272,9 @@ private theorem integrableOn_and_integral_tail {a A σ : ℝ} (ha : 1 ≤ a) (hA
   rw [integral_Ioi_of_hasDerivAt_of_nonneg' hd hpos hlim]
   simp [tailAntideriv]
 
-/-- **Explicit bound for `L'(s, χ)` on `Re(s) > 0`.** Splitting at the level `N` bounds `‖L'(s, χ)‖`
-by the finite sum `∑_{n=1}^N (log n) n^{-Re(s)}` plus an explicit tail term of size `O(N^{1 - Re(s)}
-log N)`. -/
+/-- **Explicit bound for `L'(s, χ)` on `Re(s) > 0`.** For a nonprincipal character `χ` of level `N`
+and `Re(s) > 0`, `‖L'(s, χ)‖ ≤ ∑_{n=1}^N (log n) n^{-Re(s)} +
+N^{1 - Re(s)} ((1 + ‖s‖ / Re(s)) / Re(s) + ‖s‖ / Re(s) · log N)`. -/
 theorem norm_deriv_LFunction_le_of_re_pos (hχ : χ ≠ 1) {s : ℂ} (hs : 0 < s.re) :
     ‖deriv χ.LFunction s‖ ≤ (∑ n ∈ Icc 1 N, Real.log n * (n : ℝ) ^ (-s.re)) +
       (N : ℝ) ^ (1 - s.re) * ((1 + ‖s‖ / s.re) / s.re + ‖s‖ / s.re * Real.log N) := by
@@ -366,8 +316,8 @@ theorem norm_deriv_LFunction_le_of_re_pos (hχ : χ ≠ 1) {s : ℂ} (hs : 0 < s
   rw [χ.deriv_LFunction_eq_neg_sum_Icc_add_integral hχ hs]
   exact (norm_add_le _ _).trans (add_le_add hhead htail)
 
-/-- **Explicit bound for `L'(σ, χ)` at real `σ > 0`.** For real `σ > 0`, `‖s‖ = Re(s) = σ`
-simplifies the tail term to `N^{1 - σ} (log N + 2 / σ)`. -/
+/-- **Explicit bound for `L'(σ, χ)` at real `σ > 0`.** For a nonprincipal character `χ` of level `N`
+and real `σ > 0`, `‖L'(σ, χ)‖ ≤ ∑_{n=1}^N (log n) n^{-σ} + N^{1 - σ} (log N + 2 / σ)`. -/
 theorem norm_deriv_LFunction_ofReal_le_of_pos (hχ : χ ≠ 1) {σ : ℝ} (hσ : 0 < σ) :
     ‖deriv χ.LFunction σ‖ ≤ (∑ n ∈ Icc 1 N, Real.log n * (n : ℝ) ^ (-σ)) +
       (N : ℝ) ^ (1 - σ) * (Real.log N + 2 / σ) := by
@@ -404,17 +354,16 @@ private theorem sum_Icc_log_div_le_log_sq {n : ℕ} (hn : 1 ≤ n) :
     _ = Real.log n ^ 2 := (sq _).symm
 
 omit [NeZero N] χ in
-/-- Numerical lower bound `23 / 21 < log n` for `3 ≤ n`, deduced from `exp 1 < 2.719` and
-`2.719 ^ 23 < 3 ^ 21`. -/
+/-- Numerical lower bound `23 / 21 < log n` for `3 ≤ n`. -/
 private theorem div_lt_log_of_three_le {n : ℕ} (hn : 3 ≤ n) : (23 : ℝ) / 21 < Real.log n := by
   have hexp : Real.exp 23 < (n : ℝ) ^ (21 : ℕ) := by
-    have h1 : Real.exp 1 < 2.719 := Real.exp_one_lt_d9.trans (by norm_num)
     have h23 : Real.exp 23 = Real.exp 1 ^ 23 := by
       rw [← Real.exp_nat_mul]
       norm_num
     rw [h23]
     calc
-      Real.exp 1 ^ 23 < (2.719 : ℝ) ^ 23 := pow_lt_pow_left₀ h1 (Real.exp_nonneg _) (by decide)
+      Real.exp 1 ^ 23 < (2.719 : ℝ) ^ 23 :=
+        pow_lt_pow_left₀ (Real.exp_one_lt_d9.trans (by norm_num)) (Real.exp_nonneg _) (by decide)
       _ < (3 : ℝ) ^ 21 := by norm_num
       _ ≤ (n : ℝ) ^ 21 := pow_le_pow_left₀ (by positivity) (mod_cast hn) 21
   have hlog := Real.log_lt_log (Real.exp_pos 23) hexp
@@ -429,9 +378,6 @@ private theorem sum_Icc_log_mul_rpow_neg_le {n : ℕ} (hn : 3 ≤ n) {σ : ℝ}
     (hσ : 1 - 1 / Real.log n ≤ σ) :
     ∑ k ∈ Icc 1 n, Real.log k * (k : ℝ) ^ (-σ) ≤ Real.exp 1 * Real.log n ^ 2 := by
   have hlog_pos : 0 < Real.log n := lt_trans (by norm_num) (div_lt_log_of_three_le hn)
-  have hnpow : (n : ℝ) ^ (1 / Real.log n) = Real.exp 1 := by
-    rw [Real.rpow_def_of_pos (by exact_mod_cast (by omega : 0 < n)),
-      mul_one_div_cancel hlog_pos.ne']
   calc
     ∑ k ∈ Icc 1 n, Real.log k * (k : ℝ) ^ (-σ)
       ≤ ∑ k ∈ Icc 1 n, Real.exp 1 * (Real.log k / k) := by
@@ -441,14 +387,16 @@ private theorem sum_Icc_log_mul_rpow_neg_le {n : ℕ} (hn : 3 ≤ n) {σ : ℝ}
         have hk0 : (0 : ℝ) < k := zero_lt_one.trans_le hk1
         have hrpow : (k : ℝ) ^ (-σ) ≤ Real.exp 1 / k := by
           calc
-            (k : ℝ) ^ (-σ) ≤ (k : ℝ) ^ (-1 + 1 / Real.log n) :=
-              Real.rpow_le_rpow_of_exponent_le hk1 (by linarith)
-            _ = (k : ℝ) ^ (-1 : ℝ) * (k : ℝ) ^ (1 / Real.log n) := Real.rpow_add hk0 _ _
-            _ ≤ (k : ℝ)⁻¹ * (n : ℝ) ^ (1 / Real.log n) := by
+            (k : ℝ) ^ (-σ) ≤ (k : ℝ) ^ (-1 + (Real.log n)⁻¹) :=
+              Real.rpow_le_rpow_of_exponent_le hk1 (by rw [← one_div]; linarith)
+            _ = (k : ℝ) ^ (-1 : ℝ) * (k : ℝ) ^ (Real.log n)⁻¹ := Real.rpow_add hk0 _ _
+            _ ≤ (k : ℝ)⁻¹ * (n : ℝ) ^ (Real.log n)⁻¹ := by
               rw [Real.rpow_neg_one]
               exact mul_le_mul_of_nonneg_left
                 (Real.rpow_le_rpow hk0.le hkn (by positivity)) (by positivity)
-            _ = Real.exp 1 / k := by rw [hnpow, div_eq_mul_inv, mul_comm]
+            _ ≤ (k : ℝ)⁻¹ * Real.exp 1 :=
+              mul_le_mul_of_nonneg_left Real.rpow_inv_log_le_exp_one (by positivity)
+            _ = Real.exp 1 / k := by rw [div_eq_mul_inv, mul_comm]
         calc
           Real.log k * (k : ℝ) ^ (-σ) ≤ Real.log k * (Real.exp 1 / k) :=
             mul_le_mul_of_nonneg_left hrpow (Real.log_nonneg hk1)
@@ -458,9 +406,8 @@ private theorem sum_Icc_log_mul_rpow_neg_le {n : ℕ} (hn : 3 ≤ n) {σ : ℝ}
       mul_le_mul_of_nonneg_left (sum_Icc_log_div_le_log_sq (by omega)) (Real.exp_nonneg 1)
 
 /-- **Near-one derivative bound for `L(s, χ)`.** For a nonprincipal character `χ` of level `N` and
-every real `σ ≥ 1 - 1 / log N`, `‖L'(σ, χ)‖ ≤ 64 (log N)²`. No upper bound on `σ` and no
-primitivity hypothesis are required. -/
-theorem norm_deriv_LFunction_le_of_one_sub_inv_log_le (hχ : χ ≠ 1) {σ : ℝ}
+every real `σ ≥ 1 - 1 / log N`, `‖L'(σ, χ)‖ ≤ 64 (log N)²`. -/
+theorem norm_deriv_LFunction_le_of_one_sub_one_div_log_le (hχ : χ ≠ 1) {σ : ℝ}
     (hσ : 1 - 1 / Real.log N ≤ σ) :
     ‖deriv χ.LFunction σ‖ ≤ 64 * Real.log N ^ 2 := by
   have hN3 : 3 ≤ N := χ.three_le_level_of_ne_one hχ
@@ -471,15 +418,11 @@ theorem norm_deriv_LFunction_le_of_one_sub_inv_log_le (hχ : χ ≠ 1) {σ : ℝ
     linarith
   have hσ_lo : (2 : ℝ) / 23 < σ := by linarith
   have hσ_pos : 0 < σ := by linarith
-  have hexp1 : Real.exp 1 < 2.719 := Real.exp_one_lt_d9.trans (by norm_num)
-  have hNpow : (N : ℝ) ^ (1 / Real.log N) = Real.exp 1 := by
-    rw [Real.rpow_def_of_pos (by exact_mod_cast (by omega : 0 < N)),
-      mul_one_div_cancel hlog_pos.ne']
   have hsum := sum_Icc_log_mul_rpow_neg_le hN3 hσ
   have htail : (N : ℝ) ^ (1 - σ) * (Real.log N + 2 / σ) ≤ 22 * Real.exp 1 * Real.log N ^ 2 := by
-    have h1 : (N : ℝ) ^ (1 - σ) ≤ Real.exp 1 := by
-      rw [← hNpow]
-      exact Real.rpow_le_rpow_of_exponent_le (by exact_mod_cast (by omega : 1 ≤ N)) (by linarith)
+    have h1 : (N : ℝ) ^ (1 - σ) ≤ Real.exp 1 :=
+      (Real.rpow_le_rpow_of_exponent_le (by exact_mod_cast (by omega : 1 ≤ N))
+        (by rw [← one_div]; linarith)).trans Real.rpow_inv_log_le_exp_one
     have h2 : 2 / σ ≤ 23 := by
       rw [div_le_iff₀ hσ_pos]
       linarith
@@ -491,12 +434,11 @@ theorem norm_deriv_LFunction_le_of_one_sub_inv_log_le (hχ : χ ≠ 1) {σ : ℝ
           mul_le_mul h1 h3 (by positivity) (Real.exp_nonneg 1)
       _ = 22 * Real.exp 1 * Real.log N ^ 2 := by ring
   refine (χ.norm_deriv_LFunction_ofReal_le_of_pos hχ hσ_pos).trans ?_
-  nlinarith [sq_nonneg (Real.log N)]
+  nlinarith [Real.exp_one_lt_d9, sq_nonneg (Real.log N)]
 
-/-- **Lipschitz bound for `L(σ, χ)` near and above `1`.** On `[1 - 1 / log N, ∞)`, the continued
-L-function of a nonprincipal character satisfies
-`‖L(σ₂, χ) - L(σ₁, χ)‖ ≤ 64 (log N)² |σ₂ - σ₁|`. -/
-theorem norm_LFunction_sub_le_of_one_sub_inv_log_le (hχ : χ ≠ 1) {σ₁ σ₂ : ℝ}
+/-- **Lipschitz bound for `L(σ, χ)` near and above `1`.** For a nonprincipal character `χ` of level
+`N` and `σ₁, σ₂ ≥ 1 - 1 / log N`, `‖L(σ₂, χ) - L(σ₁, χ)‖ ≤ 64 (log N)² |σ₂ - σ₁|`. -/
+theorem norm_LFunction_sub_le_of_one_sub_one_div_log_le (hχ : χ ≠ 1) {σ₁ σ₂ : ℝ}
     (h₁ : 1 - 1 / Real.log N ≤ σ₁) (h₂ : 1 - 1 / Real.log N ≤ σ₂) :
     ‖χ.LFunction σ₂ - χ.LFunction σ₁‖ ≤ 64 * Real.log N ^ 2 * |σ₂ - σ₁| := by
   have hd : ∀ x : ℝ, HasDerivAt (fun t : ℝ ↦ χ.LFunction t) (deriv χ.LFunction x) x := fun x ↦
@@ -505,18 +447,17 @@ theorem norm_LFunction_sub_le_of_one_sub_inv_log_le (hχ : χ ≠ 1) {σ₁ σ�
       64 * Real.log N ^ 2 := by
     intro x hx
     rw [(hd x).deriv]
-    exact χ.norm_deriv_LFunction_le_of_one_sub_inv_log_le hχ ((le_min h₁ h₂).trans hx.1)
+    exact χ.norm_deriv_LFunction_le_of_one_sub_one_div_log_le hχ ((le_min h₁ h₂).trans hx.1)
   simpa only [Real.norm_eq_abs] using (convex_uIcc σ₁ σ₂).norm_image_sub_le_of_norm_deriv_le
     (fun x _ ↦ (hd x).differentiableAt) hb Set.left_mem_uIcc Set.right_mem_uIcc
 
 /-- **Zero-separation bound from `L(1, χ)`.** For any nonprincipal character `χ` of level `N` and
-any real zero `β` of `L(s, χ)`, `‖L(1, χ)‖ / (64 (log N)²) ≤ 1 - β`. No preliminary interval
-assumption on `β` is needed: `L(s, χ) ≠ 0` for `Re(s) ≥ 1` forces `β < 1`, and for
-`β < 1 - 1 / log N` the bound `‖L(1, χ)‖ ≤ 1 + log N` already makes the left-hand side smaller than
-`1 / log N`. -/
+any real zero `β` of `L(s, χ)`, `‖L(1, χ)‖ / (64 (log N)²) ≤ 1 - β`. -/
 theorem norm_LFunction_one_div_log_sq_le_one_sub_of_LFunction_eq_zero (hχ : χ ≠ 1) {β : ℝ}
     (hβ : χ.LFunction β = 0) :
     ‖χ.LFunction 1‖ / (64 * Real.log N ^ 2) ≤ 1 - β := by
+  -- Nonvanishing on `Re(s) ≥ 1` forces `β < 1`; for `β < 1 - 1 / log N` use
+  -- `‖L(1, χ)‖ ≤ 1 + log N`.
   have hlog : (23 : ℝ) / 21 < Real.log N := div_lt_log_of_three_le (χ.three_le_level_of_ne_one hχ)
   have hlog_pos : 0 < Real.log N := by linarith
   have hβ1 : β < 1 := by
@@ -531,7 +472,7 @@ theorem norm_LFunction_one_div_log_sq_le_one_sub_of_LFunction_eq_zero (hχ : χ 
   · have h1_mem : 1 - 1 / Real.log N ≤ 1 := by
       have : 0 ≤ 1 / Real.log N := by positivity
       linarith
-    have hlip := χ.norm_LFunction_sub_le_of_one_sub_inv_log_le hχ hnear h1_mem
+    have hlip := χ.norm_LFunction_sub_le_of_one_sub_one_div_log_le hχ hnear h1_mem
     rw [ofReal_one, hβ, sub_zero, abs_of_pos (sub_pos.mpr hβ1)] at hlip
     rw [div_le_iff₀ (by positivity)]
     linarith

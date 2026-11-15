@@ -43,10 +43,26 @@ namespace DirichletCharacter
 
 variable {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
 
-private theorem sum_isBigO_one (hχ : χ ≠ 1) :
+omit [NeZero N] χ in
+/-- The partial sums `∑_{k=1}^n χ(k)` of a nonprincipal Dirichlet character are `O(n ^ 0)` as
+`n → ∞`. -/
+theorem sum_Icc_isBigO_rpow_zero {F : Type*} [NormedField F] (χ : DirichletCharacter F N)
+    (hχ : χ ≠ 1) :
     (fun n : ℕ ↦ ∑ k ∈ Icc 1 n, χ k) =O[atTop] fun n ↦ (n : ℝ) ^ (0 : ℝ) := by
-  refine isBigO_iff.mpr ⟨N, Eventually.of_forall fun n ↦ ?_⟩
-  simpa using χ.norm_sum_Icc_le_level hχ n
+  rcases N.eq_zero_or_pos with rfl | hN
+  · refine isBigO_iff.mpr ⟨‖χ 1‖, Eventually.of_forall fun n ↦ ?_⟩
+    have hsub : ∑ k ∈ Icc 1 n, χ k = if 1 ≤ n then χ 1 else 0 := by
+      split_ifs with hn
+      · rw [← sum_erase_add (Icc 1 n) _ (left_mem_Icc.mpr hn), sum_eq_zero, zero_add, Nat.cast_one]
+        intro k hk
+        rw [mem_erase, mem_Icc] at hk
+        exact MulChar.map_nonunit χ fun hu ↦ by
+          rcases Int.isUnit_iff.mp (show IsUnit (k : ℤ) from hu) with h | h <;> omega
+      · rw [Icc_eq_empty hn, sum_empty]
+    split_ifs at hsub <;> simp [hsub]
+  · have : NeZero N := ⟨hN.ne'⟩
+    refine isBigO_iff.mpr ⟨N, Eventually.of_forall fun n ↦ ?_⟩
+    simpa using χ.norm_sum_Icc_le_level hχ n
 
 /-- Partial summation represents the continued L-function of a nonprincipal character on the
 whole half-plane `Re(s) > 0`. -/
@@ -54,7 +70,8 @@ theorem LFunction_eq_mul_integral (hχ : χ ≠ 1) {s : ℂ} (hs : 0 < s.re) :
     χ.LFunction s =
       s * ∫ t in Set.Ioi (1 : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, χ k) * (t : ℂ) ^ (-(s + 1)) := by
   have hopen : IsOpen {z : ℂ | 0 < z.re} := isOpen_lt continuous_const continuous_re
-  have hF := TauCeti.LSeries.differentiableOn_mul_integral_of_isBigO _ (χ.sum_isBigO_one hχ)
+  have hF :=
+    TauCeti.LSeries.differentiableOn_mul_integral_of_isBigO _ (χ.sum_Icc_isBigO_rpow_zero hχ)
   have heq : χ.LFunction =ᶠ[𝓝 (2 : ℂ)]
       fun z ↦ z * ∫ t in Set.Ioi (1 : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, χ k) *
         (t : ℂ) ^ (-(z + 1)) := by
@@ -62,7 +79,7 @@ theorem LFunction_eq_mul_integral (hχ : χ ≠ 1) {s : ℂ} (hs : 0 < s.re) :
       (by norm_num : (2 : ℂ) ∈ {z : ℂ | 1 < z.re})] with z hz
     rw [LFunction_eq_LSeries χ hz]
     exact LSeries_eq_mul_integral _ le_rfl (lt_trans zero_lt_one hz)
-      (χ.LSeriesSummable_of_one_lt_re hz) (χ.sum_isBigO_one hχ)
+      (χ.LSeriesSummable_of_one_lt_re hz) (χ.sum_Icc_isBigO_rpow_zero hχ)
   have hL := (differentiable_LFunction hχ).differentiableOn.analyticOnNhd hopen
   exact (hL.eqOn_of_preconnected_of_eventuallyEq
     (hF.analyticOnNhd hopen) (convex_halfSpace_re_gt 0).isPreconnected
@@ -86,7 +103,7 @@ theorem norm_LFunction_one_le_one_add_log (hχ : χ ≠ 1) :
     rw [hf, norm_mul, norm_cpow_eq_rpow_re_of_pos ht]
     norm_num
   have hint : IntegrableOn (fun t ↦ ‖f t‖) (Set.Ioi 1) :=
-    (TauCeti.LSeries.integrableOn_sum_mul_cpow_of_isBigO _ (χ.sum_isBigO_one hχ)
+    (TauCeti.LSeries.integrableOn_sum_mul_cpow_of_isBigO _ (χ.sum_Icc_isBigO_rpow_zero hχ)
       (s := 1) (by simp)).norm
   -- Split the integral at `N`: bound the partial sums by `t` below `N` and by `N` above it.
   have hlow : ∫ t in Set.Ioc 1 (N : ℝ), ‖f t‖ ≤ Real.log N := by

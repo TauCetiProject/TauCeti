@@ -100,24 +100,22 @@ public section
 namespace DirichletCharacter
 
 /-- A nonprincipal Dirichlet character sums to zero over a full period. -/
-theorem sum_range_eq_zero_of_ne_one {R : Type*} [CommSemiring R] [IsCancelMulZero R] {N : ℕ}
+theorem sum_range_eq_zero_of_ne_one {R : Type*} [CommRing R] [IsDomain R] {N : ℕ}
     (χ : DirichletCharacter R N) (hχ : χ ≠ 1) :
     ∑ n ∈ Finset.range N, χ n = 0 := by
   rcases N.eq_zero_or_pos with rfl | hN
   · simp
   have : NeZero N := ⟨hN.ne'⟩
-  have hbij : ∑ n ∈ Finset.range N, χ n = ∑ a : ZMod N, χ a :=
-    Finset.sum_nbij' (Nat.cast : ℕ → ZMod N) ZMod.val
-      (by simp) (fun a _ ↦ Finset.mem_range.mpr a.val_lt)
-      (fun n hn ↦ ZMod.val_natCast_of_lt (Finset.mem_range.mp hn))
-      (fun a _ ↦ ZMod.natCast_zmod_val a) (by intros; rfl)
-  rw [hbij]
-  rcases MulChar.ne_one_iff.mp hχ with ⟨b, hb⟩
-  refine eq_zero_of_mul_eq_self_left hb ?_
-  simpa only [Finset.mul_sum, ← map_mul] using b.mulLeft_bijective.sum_comp _
+  calc
+    _ = ∑ a : ZMod N, χ a := by
+      exact Finset.sum_nbij' (Nat.cast : ℕ → ZMod N) ZMod.val
+        (by simp) (fun a _ ↦ Finset.mem_range.mpr a.val_lt)
+        (fun n hn ↦ ZMod.val_natCast_of_lt (Finset.mem_range.mp hn))
+        (fun a _ ↦ ZMod.natCast_zmod_val a) (by intros; rfl)
+    _ = 0 := χ.sum_eq_zero_of_ne_one hχ
 
 /-- A nonprincipal Dirichlet character sums to zero over `1 ≤ k ≤ N`. -/
-theorem sum_Icc_one_level_eq_zero {R : Type*} [CommSemiring R] [IsCancelMulZero R] {N : ℕ}
+theorem sum_Icc_one_level_eq_zero {R : Type*} [CommRing R] [IsDomain R] {N : ℕ}
     (χ : DirichletCharacter R N) (hχ : χ ≠ 1) :
     ∑ k ∈ Finset.Icc 1 N, χ k = 0 := by
   rcases N.eq_zero_or_pos with rfl | hN
@@ -169,7 +167,7 @@ theorem conductor_eq_eight_of_apply_one_ne_apply_five {R : Type*} [CommMonoidWit
   conductor_eq_prime_pow_of_emod_eq_of_apply_ne_apply (p := 2) (k := 3) Nat.prime_two chi
     isCoprime_one_left ⟨5, -3, by norm_num⟩ (by norm_num) hdist
 
-/-- Every Dirichlet character of level two is principal, since `(ZMod 2)ˣ` is trivial. -/
+/-- Every Dirichlet character of level two is principal. -/
 theorem level_two {R : Type*} [CommMonoidWithZero R] (χ : DirichletCharacter R 2) : χ = 1 := by
   refine MulChar.ext fun u ↦ ?_
   simp [(by decide : ∀ u : (ZMod 2)ˣ, u = 1) u]
