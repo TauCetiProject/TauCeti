@@ -446,7 +446,7 @@ theorem le_order_prod_pow_sub_prod_pow {ι : Type*} {a b : ι → MvPowerSeries 
   classical
   induction d using Finsupp.induction with
   | zero => simp
-  | single_add i k f hi hk ih =>
+  | single_add i k f _ _ ih =>
     have hprod (c : ι → MvPowerSeries τ R) : ((Finsupp.single i k + f).prod fun i k ↦ c i ^ k) =
         c i ^ k * f.prod fun i k ↦ c i ^ k := by
       rw [Finsupp.prod_add_index' (fun _ ↦ pow_zero _) (fun _ _ _ ↦ pow_add _ _ _),
@@ -469,7 +469,7 @@ theorem le_order_subst_sub_subst {H : MvPowerSeries σ R} {k : ℕ}
   refine nat_le_order fun e he ↦ ?_
   rw [coeff_subst_sub_subst ha hb]
   refine finsum_eq_zero_of_forall_eq_zero fun d ↦ ?_
-  rcases eq_or_ne d 0 with rfl | hd
+  rcases eq_or_ne d 0 with rfl | _
   · simp
   by_cases hdk : d.degree < k
   · rw [coeff_of_lt_order (hH.trans_lt' (by exact_mod_cast hdk)), zero_smul]

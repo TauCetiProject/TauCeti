@@ -24,11 +24,12 @@ This is the value component of the classical inhomogeneous heat solution operato
 Hölder regularity of the forcing controls the value's parabolic seminorm; time regularity is
 not needed for that estimate.
 
-`heatDuhamelPotentialFDerivL` is the gradient component, for complete codomains. It sends bounded
-continuous forcing on `E × [0,T]` to the spatial gradient `D w` of its Duhamel potential `w`, as a
-bounded continuous field on the slab, with operator norm at most `C √T` for a constant `C`
-independent of `T`. Its continuity is `TauCeti.continuousOn_fderiv_heatDuhamelPotential`; no
-Hölder regularity of the forcing is needed. It is the spatial derivative of the Duhamel potential
+`heatDuhamelPotentialFDerivL` is the gradient component. It sends bounded continuous forcing on
+`E × [0,T]` to the spatial gradient `D w` of its Duhamel potential `w`, as a bounded continuous
+field on the slab, with operator norm at most `C √T` for a constant `C` independent of `T`. Its
+continuity is `TauCeti.continuousOn_fderiv_heatDuhamelPotential`; no Hölder regularity of the
+forcing is needed, and no completeness of the codomain (for incomplete codomains the potential,
+hence the operator, is zero). It is the spatial derivative of the Duhamel potential
 (`hasFDerivAt_heatDuhamelPotentialFDerivL`); for Hölder forcing it is therefore the spatial
 derivative of the value field (`hasFDerivAt_heatDuhamelPotentialHolderL`), which is the gradient
 identity required of a map in the order-two space `ParabolicC2HolderSpace`.
@@ -92,7 +93,7 @@ private theorem holderWith_potential (hα : 0 < α) (hα₂ : α ≤ 2)
   holderWith_heatDuhamelPotential
     (continuous_timeExtension T.coe_nonneg f.continuous).stronglyMeasurable
     (fun s _ x => by
-      simpa only [coe_nnnorm] using norm_timeExtension_holderSpace_le T.coe_nonneg f s x)
+      simpa only [coe_nnNorm] using norm_timeExtension_holderSpace_le T.coe_nonneg f s x)
     (fun s _ => holderWith_timeExtension_holderSpace T.coe_nonneg f s) hα hα₂
 
 private theorem norm_forcing_potential_le (f : HolderSpace α (slab (E := E) 0 T) F)
@@ -218,14 +219,11 @@ theorem norm_heatDuhamelPotentialHolderL_le (hα : 0 < α) (hα₂ : α ≤ 2) :
 
 section Gradient
 
-variable [CompleteSpace F]
-
 /-- A local shortcut for bounded gradient fields, keeping instance search shallow. -/
 local instance : NormedAddCommGroup (slab (E := E) 0 T →ᵇ (E →L[ℝ] F)) := inferInstance
 /-- A local shortcut for scalar operations on bounded gradient fields. -/
 local instance : NormedSpace ℝ (slab (E := E) 0 T →ᵇ (E →L[ℝ] F)) := inferInstance
 
-omit [CompleteSpace F] in
 /-- At every nonnegative time the Duhamel potential is differentiable in space. -/
 private theorem differentiable_potential (f : slab (E := E) 0 T →ᵇ F) {t : ℝ} (ht : 0 ≤ t) :
     Differentiable ℝ (heatDuhamelPotential (fun s x => timeExtension T.coe_nonneg f x s) t) := by
@@ -420,13 +418,6 @@ private theorem hessian_slabMk (f : HolderSpace α (slab (E := E) 0 T) F) (x : E
     hessian f (slabMk x t) = fderiv ℝ (fderiv ℝ (heatDuhamelPotential (forcing f) t)) x := by
   rw [hessian, space_slabMk, time_slabMk]
 
-variable [CompleteSpace F]
-
-/-- A local shortcut for bounded gradient fields, keeping instance search shallow. -/
-local instance : NormedAddCommGroup (slab (E := E) 0 T →ᵇ (E →L[ℝ] F)) := inferInstance
-/-- A local shortcut for scalar operations on bounded gradient fields. -/
-local instance : NormedSpace ℝ (slab (E := E) 0 T →ᵇ (E →L[ℝ] F)) := inferInstance
-
 /-- One constant controls both the supremum and the parabolic `α`-Hölder seminorm of the Hessian:
 `‖D²w‖_∞ ≤ C ‖f‖ T^(α/2)` and `[D²w]_{α,par} ≤ C ‖f‖`. -/
 private theorem exists_hessian_bounds (hα₀ : 0 < α) (hα₁ : α < 1) :
@@ -456,7 +447,7 @@ private theorem exists_hessian_bounds (hα₀ : 0 < α) (hα₁ : α < 1) :
     calc _ ≤ C₂ * ‖f‖₊ * (t : ℝ) ^ ((α : ℝ) / 2) :=
           hC₂ (stronglyMeasurable_forcing f) hfM hH ht x
       _ ≤ C₂.toNNReal * ‖f‖ * (T : ℝ) ^ ((α : ℝ) / 2) := by
-          rw [coe_nnnorm]
+          rw [coe_nnNorm]
           gcongr
           · exact le_coe_toNNReal C₂
           · exact t.2.2
@@ -559,7 +550,6 @@ private theorem norm_timeField_le (hα₀ : 0 < α) (hα₁ : α < 1)
   (norm_add_le _ _).trans (add_le_add_left ((ContinuousLinearMap.norm_id_compHolder₂_apply_le
     _ _).trans (mul_le_mul_of_nonneg_right (HolderSpace.norm_const_le _) (norm_nonneg _))) _)
 
-omit [CompleteSpace F] in
 /-- The gradient of the Duhamel potential is differentiable in space at every time of the slab,
 with derivative the Hessian. -/
 private theorem hasFDerivAt_fderiv (hα₀ : 0 < α) (f : HolderSpace α (slab (E := E) 0 T) F)
@@ -573,6 +563,24 @@ private theorem hasFDerivAt_fderiv (hα₀ : 0 < α) (f : HolderSpace α (slab (
     (ae_of_all _ fun s => ae_of_all _ fun y => norm_forcing_le f s y)
     (ae_of_all _ fun s => holderWith_forcing f s) hα₀ ht
   exact ((h.fderiv_right (m := 1) (by norm_num)).differentiable (by norm_num) x).hasFDerivAt
+
+/-- The constant of the operator-norm bound, depending only on `α`, `E` and `F`. -/
+private def duhamelConstant (hα₀ : 0 < α) (hα₁ : α < 1) : ℝ :=
+  2 + gradientConstant (E := E) (F := F) +
+    2 * (‖traceL (E := E) (F := F)‖ + 1) * (hessianConstant (E := E) (F := F) hα₀ hα₁ : ℝ)
+
+private theorem duhamelConstant_nonneg (hα₀ : 0 < α) (hα₁ : α < 1) :
+    0 ≤ duhamelConstant (E := E) (F := F) hα₀ hα₁ := by
+  have := gradientConstant_nonneg (E := E) (F := F)
+  unfold duhamelConstant
+  positivity
+
+variable [CompleteSpace F]
+
+/-- A local shortcut for bounded gradient fields, keeping instance search shallow. -/
+local instance : NormedAddCommGroup (slab (E := E) 0 T →ᵇ (E →L[ℝ] F)) := inferInstance
+/-- A local shortcut for scalar operations on bounded gradient fields. -/
+local instance : NormedSpace ℝ (slab (E := E) 0 T →ᵇ (E →L[ℝ] F)) := inferInstance
 
 /-- The Duhamel potential of Hölder forcing, assembled from its four fields. -/
 private def potentialTwo (hα₀ : 0 < α) (hα₁ : α < 1) (hT : (0 : ℝ) < T)
@@ -608,17 +616,6 @@ private theorem potentialTwo_apply (hα₀ : 0 < α) (hα₁ : α < 1) (hT : (0 
       heatDuhamelPotentialHolderL hα₀ (hα₁.trans one_lt_two).le f p := by
   rw [potentialTwo, ParabolicC2HolderSpace.mk_apply, HolderSpace.toBoundedContinuousFunction_apply]
 
-/-- The constant of the operator-norm bound, depending only on `α`, `E` and `F`. -/
-private def duhamelConstant (hα₀ : 0 < α) (hα₁ : α < 1) : ℝ :=
-  2 + gradientConstant (E := E) (F := F) +
-    2 * (‖traceL (E := E) (F := F)‖ + 1) * (hessianConstant (E := E) (F := F) hα₀ hα₁ : ℝ)
-
-private theorem duhamelConstant_nonneg (hα₀ : 0 < α) (hα₁ : α < 1) :
-    0 ≤ duhamelConstant (E := E) (F := F) hα₀ hα₁ := by
-  have := gradientConstant_nonneg (E := E) (F := F)
-  unfold duhamelConstant
-  positivity
-
 private theorem norm_potentialTwo_le (hα₀ : 0 < α) (hα₁ : α < 1) (hT : (0 : ℝ) < T)
     (f : HolderSpace α (slab (E := E) 0 T) F) :
     ‖potentialTwo hα₀ hα₁ hT f‖ ≤ duhamelConstant (E := E) (F := F) hα₀ hα₁ * (1 + T) * ‖f‖ := by
@@ -627,7 +624,6 @@ private theorem norm_potentialTwo_le (hα₀ : 0 < α) (hα₁ : α < 1) (hT : (
   set L := ‖traceL (E := E) (F := F)‖
   have hCg : 0 ≤ Cg := gradientConstant_nonneg
   have hCh : 0 ≤ Ch := NNReal.coe_nonneg _
-  have hL : 0 ≤ L := norm_nonneg _
   have hf : 0 ≤ ‖f‖ := norm_nonneg _
   have hT0 : (0 : ℝ) ≤ T := T.coe_nonneg
   -- The four fields of the potential.

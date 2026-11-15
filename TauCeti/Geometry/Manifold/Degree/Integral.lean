@@ -201,7 +201,7 @@ private theorem exists_mem_nhds_integrableTopForm_and_integralTopForm [CompactSp
   -- on each sheet according to the orientation sign there, and sum.
   set s := (hy.finite_preimage (o.card_eq.symm.trans o'.card_eq) hf.continuous).toFinset
   have hs (x : M) : x ∈ s ↔ f x = y := by simp [s]
-  obtain ⟨e, hxe, hfe, hsgn, hdisj, V, hV, hVt, hVs⟩ :=
+  obtain ⟨e, -, hfe, hsgn, hdisj, V, hV, hVt, hVs⟩ :=
     exists_stack_of_records o o' hf hy s hs
   refine ⟨V, hV, fun φ hφ hφV ↦ ?_⟩
   set K := _root_.tsupport (α := E' [⋀^Fin k]→L[ℝ] ℝ) φ

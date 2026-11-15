@@ -78,7 +78,7 @@ theorem fourierCoeffOn_ae_derivative (hab : a < b)
     have hcoe : ContDiff ℝ 1 (fun t : ℝ ↦ (t : ℂ)) := ofRealCLM.contDiff
     fun_prop
   have hed : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt e (-k * e t) t := by
-    filter_upwards with t ht
+    filter_upwards with t _
     simpa [e, k, neg_div] using hasDerivAt_fourier_neg (b - a) n t
   have heb : e b = e a := by
     have h : (b : AddCircle (b - a)) = (a : AddCircle (b - a)) := by

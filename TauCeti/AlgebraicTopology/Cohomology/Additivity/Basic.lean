@@ -62,10 +62,8 @@ universe w v u
 
 namespace TauCeti
 
--- `Small.{v} ι` is stated after `Category.{v} C` so that `v` is already determined when it is
--- synthesised; declaring it first makes Lean solve it by `small_self` and collapse `w` into `v`.
 variable {ι : Type w} (X : ι → TopCat.{w})
-  (C : Type u) [Category.{v} C] [Small.{v} ι] [HasCoproducts.{w} C] [Abelian C] (R : C)
+  (C : Type u) [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
   (k : Type*) [Ring k] [Linear k C] (M : C)
 
 /-- **Additivity of singular cochains.** The singular cochain complex of a disjoint union is the
@@ -81,7 +79,7 @@ def isLimitFanSingularCochainComplex :
 /-- **Additivity of singular cohomology.** In every degree, the singular cohomology of a
 disjoint union is the product of the singular cohomologies of its summands. The projections are
 the maps on cohomology induced by the canonical inclusions of the summands. -/
-def isLimitFanSingularCohomology (n : ℕ) :
+def isLimitFanSingularCohomology [Small.{v} ι] (n : ℕ) :
     IsLimit (Fan.mk ((TopCat.of (Σ i, X i)).singularCohomology R k M n)
       (fun i ↦ TopCat.singularCohomologyMap (sigmaι X i) n) :
       Fan fun i ↦ (X i).singularCohomology R k M n) :=

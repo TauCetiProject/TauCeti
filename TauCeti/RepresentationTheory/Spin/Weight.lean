@@ -62,8 +62,7 @@ of `CliffordAlgebra.quadraticLieSubalgebra Q` is exhibited as a Cartan subalgebr
 below always means a tuple of simultaneous eigenvalues for the indexed family `H`, not a linear
 character of a Cartan subalgebra. No ordering of `ι` is used to single out a Borel, so no weight
 is called highest here; the elements `H i` are not compared with a matrix model of `𝔰𝔬(2l + 1)`
-or `𝔰𝔬(2l)`; and the abstract `Bₗ`/`Dₗ` root data are not mentioned. Those comparisons are the
-rest of the layer this file opens.
+or `𝔰𝔬(2l)`; and the abstract `Bₗ`/`Dₗ` root data are not mentioned.
 
 ## Main definitions
 
@@ -103,8 +102,6 @@ rest of the layer this file opens.
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), §20.1: the weights
   `½(±1, …, ±1)` of the spin module `S = ⋀·W`.
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §5.
-* [Spin-representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md),
-  Layer 5, "Weights of the spin module".
 -/
 
 public section

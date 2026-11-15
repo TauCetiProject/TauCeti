@@ -67,7 +67,6 @@ computed componentwise on an orthogonal direct sum.
 * V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, §1.4,
   Proposition 1.4.1.
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layer 4.
 -/
 
 public section

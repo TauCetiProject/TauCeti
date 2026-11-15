@@ -26,11 +26,11 @@ coordinate functions. Specializing to two
 vertices gives a homeomorphism from the standard one-simplex to the unit interval. Its boundary,
 the bottom abstract complex on `Fin 2`, is then identified with the unit zero-sphere.
 
-These are the first realization round-trips in layer 11 of the geometric-topology roadmap. The
-roadmap asks that the realization of the boundary of the standard `n`-simplex be homeomorphic to
-`Sⁿ⁻¹`; `realizationOneSimplexBoundaryHomeomorphSphereZero` establishes the base case `n = 1`.
-The interval identification also supplies the standard topological model for the simplicial
-interval used in the later product-and-collapse formulation of Zeeman's conjecture.
+The realization of the boundary of the standard `(n + 1)`-simplex is homeomorphic to the unit
+`n`-sphere (`Simplex.BoundarySphere`); `realizationOneSimplexBoundaryHomeomorphSphereZero` is a
+direct proof of the case `n = 0`, with the sphere taken in `ℝ`. The interval identification also
+supplies the standard topological model for the simplicial interval used in the product-and-collapse
+formulation of Zeeman's conjecture (`Zeeman`).
 
 The barycentric simplex uses Mathlib's `Convexity.StdSimplex`, and its homeomorphism with the
 unit interval is Mathlib's `Convexity.StdSimplex.homeomorphI`. The zero-sphere identification is

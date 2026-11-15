@@ -19,11 +19,11 @@ exhibits each `K` as `ℚ⟮x⟯` for `x` a root of an integer polynomial of bou
 coefficient height; finiteness follows because there are finitely many such polynomials. The proof
 extracts the *finiteness* of that generating set but discards the *count*.
 
-This file is the **effective Hermite--Minkowski count** (the Layer-2 summit of the effective-bounds
-roadmap): an explicit upper bound on the number of such fields. We re-run the generating-set step of
-Mathlib's argument to expose the explicit polynomial bounds, then feed them to the elementary
-field-counting lemma assembled in `TauCeti.IntermediateField` (built on the bounded-polynomial root
-count of `TauCeti.Algebra.Polynomial`). The result is
+This file is the **effective Hermite--Minkowski count**: an explicit upper bound on the number of
+such fields. We re-run the generating-set step of Mathlib's argument to expose the explicit
+polynomial bounds, then feed them to the elementary field-counting lemma assembled in
+`TauCeti.IntermediateField` (built on the bounded-polynomial root count of
+`TauCeti.Algebra.Polynomial`). The result is
 
 `#{K : |discr K| ≤ N} ≤ (2 * C + 1) ^ (D + 1) * D`,
 

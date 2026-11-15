@@ -61,9 +61,9 @@ criterion, which it replaces:
 that was stated only for the étale algebra of an elliptic curve, as
 `WeierstrassCurve.Affine.M.mk_eq_one_iff` in `MordellWeil/XSubT.lean`. The argument is Michael
 Stoll's, from `EllipticCurves/Mathlib/Basic.lean` lines 93-99 and 145-147
-(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, pinned by
-`TauCetiRoadmap/EllipticCurves/README.md` at `66889eada51a`), where it is split between
-`IsUnit.exists_pow_eq_unit_iff` and `Units.modPow.unit_eq_one_iff`; the two are one statement here.
+(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, at commit `66889eada51a`), where
+it is split between `IsUnit.exists_pow_eq_unit_iff` and `Units.modPow.unit_eq_one_iff`; the two
+are one statement here.
 -/
 
 public section

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.NovikovModule.Bilinear
 public import TauCeti.RingTheory.NovikovSeries.Grading
+public import TauCeti.Algebra.Ring.NegOnePow
 
 /-!
 # Homogeneous completed combinations and supported products
@@ -25,6 +26,10 @@ corresponding reference-degree shifts. These results apply to the supported kern
 `TauCeti.NovikovModule.kernelMap` and `TauCeti.NovikovModule.kernelProduct`; they do not require
 discrete or injective periods. A diagonal kernel whose coefficient depends only on the degree
 acts on each homogeneous piece as a scalar.
+
+If degrees change by even amounts within each orbit of a finite union of torsors, then a
+combination of degree `e` has nonzero coordinates only in orbits whose reference generator has the
+parity of `e`, so on its coordinates the sign of a reference degree is the sign `(-1)^e`.
 
 The coordinate construction follows `TauCeti.NovikovModule.coordinates`, and the coefficient
 pieces are `TauCeti.NovikovSeries.gradeBy`.
@@ -160,6 +165,42 @@ theorem smul_mem_gradeBy {j k : D} {b : NovikovSeries R H N} {a : NovikovModule 
 end Coordinates
 
 end Semiring
+
+section Sign
+
+variable {H ι₁ : Type*} [AddGroup H] [Finite ι₁] {N : H →+ ℝ}
+  {P₁ : ι₁ → Type*} [∀ i, AddTorsor H (P₁ i)] {F₁ : (Σ i, P₁ i) → ℝ}
+  (hF₁ : ∀ i h (p : P₁ i), F₁ ⟨i, h +ᵥ p⟩ = F₁ ⟨i, p⟩ - N h) (r₁ : ∀ i, P₁ i)
+
+/-- If degrees change by even amounts within each orbit, then a combination of degree `e` has
+nonzero coordinates only in orbits whose reference generator has the parity of `e`: the
+coordinate in an orbit vanishes unless the orbit has generators of degree `e`. -/
+theorem even_sub_of_coordinates_ne_zero [Semiring R] {d : (Σ i, P₁ i) → ℤ}
+    (hd : ∀ i (h : H) (p : P₁ i), Even (d ⟨i, h +ᵥ p⟩ - d ⟨i, p⟩)) {e : ℤ} {a : NovikovModule R F₁}
+    (ha : a ∈ gradeBy R F₁ d e) {i : ι₁} (h₀ : coordinates hF₁ r₁ a i ≠ 0) :
+    Even (d ⟨i, r₁ i⟩ - e) := by
+  obtain ⟨h, hh⟩ : ∃ h, (coordinates hF₁ r₁ a i).coeff h ≠ 0 := by
+    by_contra! hc
+    exact h₀ (NovikovSeries.ext hc)
+  rw [coordinates_coeff] at hh
+  rw [← mem_gradeBy_iff.1 ha _ hh]
+  simpa only [neg_sub] using (hd i h (r₁ i)).neg
+
+/-- If degrees change by even amounts within each orbit, then on the coordinates of a combination
+of degree `e` the sign of the degree of a reference generator is the sign `(-1)^e`: the
+coordinate in an orbit vanishes unless the orbit has generators of degree `e`, which all have the
+parity of its reference generator. -/
+theorem negOnePowCast_smul_coordinates_of_mem_gradeBy [Ring R] {d : (Σ i, P₁ i) → ℤ}
+    (hd : ∀ i (h : H) (p : P₁ i), Even (d ⟨i, h +ᵥ p⟩ - d ⟨i, p⟩)) {e : ℤ} {a : NovikovModule R F₁}
+    (ha : a ∈ gradeBy R F₁ d e) (i : ι₁) :
+    negOnePowCast R (d ⟨i, r₁ i⟩) • coordinates hF₁ r₁ a i =
+      negOnePowCast R e • coordinates hF₁ r₁ a i := by
+  by_cases h₀ : coordinates hF₁ r₁ a i = 0
+  · rw [h₀, smul_zero, smul_zero]
+  rw [← sub_add_cancel (d ⟨i, r₁ i⟩) e, negOnePowCast_add,
+    negOnePowCast_even (even_sub_of_coordinates_ne_zero hF₁ r₁ hd ha h₀), one_mul]
+
+end Sign
 
 section Map
 

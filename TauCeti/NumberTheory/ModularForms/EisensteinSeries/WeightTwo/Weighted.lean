@@ -75,7 +75,8 @@ how `G₂^W` is compared with series built from Mathlib's `EisensteinSeries.G2`.
 * `TauCeti.EisensteinSeries.hasSum_weightedG2`: the series over integer pairs.
 * `TauCeti.EisensteinSeries.hasSum_weightedG2_of_sum_eq_zero`: for a weight of total mass zero,
   the weighted series itself.
-* `TauCeti.EisensteinSeries.weightedG2_slash_apply`: the slash action.
+* `TauCeti.EisensteinSeries.weightedG2_slash_apply`: the slash action, and
+  `TauCeti.EisensteinSeries.weightedG2_single_slash` for a single residue.
 * `TauCeti.EisensteinSeries.weightedG2_comp_neg`: the series is unchanged when the residues are
   negated.
 * `TauCeti.EisensteinSeries.weightedG2_mdifferentiable`: holomorphy on `ℍ`.
@@ -222,13 +223,8 @@ private lemma one_div_divisionPoint_sub_sq (b y : Fin 2 → ℤ) (z : ℍ) :
     1 / (divisionPoint N b z - (y 0 * z + y 1)) ^ 2 =
       (N : ℂ) ^ 2 * eisSummand 2 (b - N • y) z := by
   have hN : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
-  have h : ((b - N • y) 0 : ℂ) * z + (b - N • y) 1 =
-      N * (divisionPoint N b z - (y 0 * z + y 1)) := by
-    simp only [divisionPoint, Pi.sub_apply, nsmul_eq_mul, Pi.mul_apply, Pi.natCast_apply,
-      Int.cast_sub, Int.cast_mul, Int.cast_natCast]
-    field_simp
-    ring
-  rw [eisSummand, h, _root_.zpow_neg, zpow_ofNat, mul_pow, mul_inv, ← mul_assoc,
+  rw [divisionPoint, eisSummand, TauCeti.UpperHalfPlane.intCast_sub_nsmul_mul_add_intCast,
+    _root_.zpow_neg, zpow_ofNat, mul_pow, mul_inv, ← mul_assoc,
     mul_inv_cancel₀ (pow_ne_zero 2 hN), one_mul, one_div]
 
 private lemma one_div_sq_eq_eisSummand (y : Fin 2 → ℤ) (z : ℍ) :
@@ -338,6 +334,21 @@ theorem weightedG2_single_neg (a : Fin 2 → ZMod N) :
     ext b
     simp [Pi.single_apply, neg_eq_iff_eq_neg]
   rw [← h, weightedG2_comp_neg]
+
+/-- **The slash action on a single-residue series.** Slashing the series of the residue `a` by
+`γ ∈ SL(2, ℤ)` gives the series of the residue `a γ`. -/
+theorem weightedG2_single_slash (a : Fin 2 → ZMod N) (γ : SL(2, ℤ)) :
+    weightedG2 (Pi.single a (1 : ℂ)) ∣[(2 : ℤ)] γ =
+      weightedG2 (Pi.single (a ᵥ* ((γ : SL(2, ZMod N)) : Matrix (Fin 2) (Fin 2) (ZMod N)))
+        (1 : ℂ)) := by
+  classical
+  rw [weightedG2_slash_apply]
+  congr 1
+  ext b
+  simp only [Pi.single_apply]
+  -- `b γ⁻¹ = a` exactly when `b = a γ`
+  refine if_congr ?_ rfl rfl
+  rw [Matrix.SpecialLinearGroup.vecMul_eq_iff_eq_vecMul_inv, ← map_inv, inv_inv]
 
 /-! ### Holomorphy -/
 

@@ -57,6 +57,14 @@ theorem rightAngleRotation_basis_one (hb : b.toBasis.orientation = o) :
     o.rightAngleRotation (b 1) = -b 0 := by
   rw [← o.rightAngleRotation_basis_zero hb, rightAngleRotation_rightAngleRotation]
 
+/-- In an oriented plane, `o.areaForm a x = 0` implies the scaled identity
+`‖a‖ ^ 2 • x = ⟪a, x⟫ • a`, including when `a = 0`. -/
+theorem sq_norm_smul_eq_of_areaForm_eq_zero {a x : E} (h : o.areaForm a x = 0) :
+    ‖a‖ ^ 2 • x = inner ℝ a x • a := by
+  refine ext_inner_right ℝ fun y ↦ ?_
+  rw [real_inner_smul_left, real_inner_smul_left, ← o.inner_mul_inner_add_areaForm_mul_areaForm,
+    h, zero_mul, add_zero]
+
 end Orientation
 
 namespace Complex

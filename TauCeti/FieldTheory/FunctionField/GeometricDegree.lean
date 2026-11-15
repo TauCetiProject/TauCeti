@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.Minpoly.IsIntegrallyClosedIn
-import TauCeti.Algebra.Algebra.Subalgebra.Adjoin
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
+import TauCeti.FieldTheory.IntermediateField.LinearDisjoint
 
 /-!
 # The geometric degree of an extension of function fields
@@ -437,18 +437,8 @@ theorem finrank_constantCompositum_eq_finrank_of_linearDisjoint
   · have hk' : ¬ Module.Finite k k' := fun _ ↦ hk (Algebra.IsAlgebraic.of_finite k k')
     rw [Module.finrank_of_not_finite hk', Module.finrank_of_not_finite]
     intro hfin
-    have hrank := Subalgebra.LinearDisjoint.adjoin_rank_eq_rank_left H
-    have hrk := rank_adjoin_eq_rank_adjoin_range (k := k) (F := F) (F' := F')
-      ((IsScalarTower.toAlgHom k k' F').fieldRange : Set F')
-    have hle : Module.rank F (Algebra.adjoin F
-        ((IsScalarTower.toAlgHom k k' F').fieldRange : Set F')) ≤
-        Module.rank F (constantCompositum F k' F') := by
-      rw [← Subalgebra.rank_toSubmodule]
-      exact Submodule.rank_mono (Subalgebra.toSubmodule.monotone
-        (IntermediateField.algebra_adjoin_le_adjoin F _))
     have h2 : Module.rank k (IsScalarTower.toAlgHom k k' F').fieldRange ≤
-        Module.rank F (constantCompositum F k' F') :=
-      hrank.symm.le.trans (hrk.symm.le.trans hle)
+        Module.rank F (constantCompositum F k' F') := H.rank_left_le_adjoin_rank
     have := Module.rank_lt_aleph0_iff.mp (h2.trans_lt (Module.rank_lt_aleph0_iff.mpr hfin))
     exact hk' (Module.Finite.equiv e.symm.toLinearEquiv)
 

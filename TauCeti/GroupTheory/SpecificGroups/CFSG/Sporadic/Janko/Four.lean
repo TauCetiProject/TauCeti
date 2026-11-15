@@ -10,10 +10,10 @@ public import TauCeti.GroupTheory.Presentation.GroupPresentation
 /-!
 # A transcribed presentation of the fourth Janko group
 
-This file carries the `J₄` row of the sporadic presentation data required by milestone S1 of
-`TauCetiRoadmap/CFSGStatement/README.md`. It records John Bray's ATLAS version 3 presentation on
-the type II standard generators `x`, `y`, and `t` as a `TauCeti.GroupPresentation`, together with
-its exact source, generator convention, transcription notes, expected counts, and count check.
+This file carries the `J₄` row of the sporadic presentation data. It records John Bray's ATLAS
+version 3 presentation on the type II standard generators `x`, `y`, and `t` as a
+`TauCeti.GroupPresentation`, together with its exact source, generator convention, transcription
+notes, expected counts, and count check.
 
 The twelve relators are
 
@@ -41,8 +41,8 @@ As an independent transcription check, GAP 4.15.1 with AtlasRep 2.1.9 evaluates 
 compiled words below to the identity after applying the ATLAS restandardization program from the
 112-dimensional characteristic-two representation's type I generators to type II generators.
 This computation is provenance rather than a Lean theorem: the file asserts no order, finiteness,
-simplicity, or identification result. The independent `FiniteSimpleGroups` development named by
-the roadmap does not cover `J₄`, so no cross-check against that development is available.
+simplicity, or identification result. The independent `FiniteSimpleGroups` development does not
+cover `J₄`, so no cross-check against that development is available.
 
 ## Independent source-to-Lean read-through
 
@@ -67,7 +67,7 @@ expanding each source conjugate `t^s` as `s⁻¹ts` gives precisely `sourceConj 
 and `sourceConj t secondConjugator`; the two conjugating words agree letter for letter with the
 Magma file. None of the twelve constructor entries is commented out or marked redundant. This
 checks every source relator, inverse, exponent, conjugating word, and source-order position
-independently of the original transcription and closes this row's S1 source-to-Lean read-through.
+independently of the original transcription and closes this row's source-to-Lean read-through.
 
 The row is a sealed definition, so it publishes an equation for each of its fields: the transcribed
 relator expressions with their generator indices written out, and the provenance a manifest row

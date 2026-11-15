@@ -234,6 +234,18 @@ theorem realCliffordForm_zero_single_one (n : ℕ) (i : Fin n) :
     realCliffordForm n 0 (Pi.single i 1) = 1 := by
   rw [realCliffordForm_apply_single, realCliffordWeight_of_lt i.isLt, one_pow, mul_one]
 
+/-- Every coordinate unit vector among the first `p` coordinates has value one for the real
+Clifford form of signature `(p, q)`. -/
+theorem realCliffordForm_single_one_of_lt {p q : ℕ} {i : Fin (p + q)} (hi : (i : ℕ) < p) :
+    realCliffordForm p q (Pi.single i 1) = 1 := by
+  rw [realCliffordForm_apply_single, realCliffordWeight_of_lt hi, one_pow, mul_one]
+
+/-- Every coordinate unit vector among the last `q` coordinates has value `-1` for the real
+Clifford form of signature `(p, q)`. -/
+theorem realCliffordForm_single_one_of_le {p q : ℕ} {i : Fin (p + q)} (hi : p ≤ (i : ℕ)) :
+    realCliffordForm p q (Pi.single i 1) = -1 := by
+  rw [realCliffordForm_apply_single, realCliffordWeight_of_le hi, one_pow, mul_one]
+
 /-- The real Clifford algebra of signature `(p, q)` has dimension `2 ^ (p + q)`, as every Clifford
 algebra of a space of that dimension does. This is the count that forces the surjections built
 below to be isomorphisms. -/

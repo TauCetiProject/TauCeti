@@ -228,7 +228,7 @@ private theorem exists_eq_nsmul_pairingIn_of_mem_closure [P.IsRootSystem] (b : P
   intro N
   induction N using Nat.strong_induction_on with
   | _ N ih =>
-  intro n hn hN hQ hC
+  intro n _ hN hQ hC
   set χ := Finsupp.linearCombination ℤ b.cartanMatrix.row n
   have hinj := b.linearIndependent_cartanMatrix_row.finsuppLinearCombination_injective
   obtain ⟨k, hk⟩ := b.exists_pos_of_mem_closure_range_cartanMatrix_row hC

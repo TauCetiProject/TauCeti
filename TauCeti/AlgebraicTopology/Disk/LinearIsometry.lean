@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Disk
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.Topology.Algebra.OrthogonalGroup
-import TauCeti.Analysis.InnerProductSpace.LinearIsometry
+import TauCeti.Analysis.Normed.Operator.LinearIsometryEquiv.Determinant
 import TauCeti.Topology.Homotopy.LinearIsometryEquiv
 
 /-!

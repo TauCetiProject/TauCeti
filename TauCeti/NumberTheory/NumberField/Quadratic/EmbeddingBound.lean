@@ -210,7 +210,6 @@ theorem abs_im_mul_sqrt_le (z : QuadraticAlgebra ℚ r 0) :
 `|v| ≤ (‖σ₊ z‖ + ‖σ₋ z‖)/(2 √|r|)`. -/
 theorem abs_im_le (hr : r ≠ 0) (z : QuadraticAlgebra ℚ r 0) :
     |(z.im : ℝ)| ≤ (‖sqrtEmbedding r z‖ + ‖negSqrtEmbedding r z‖) / (2 * √|(r : ℝ)|) := by
-  have hs : 0 < √|(r : ℝ)| := Real.sqrt_pos.mpr (abs_pos.mpr (by exact_mod_cast hr))
   rw [le_div_iff₀ (by positivity)]
   linarith [abs_im_mul_sqrt_le z]
 

@@ -6,18 +6,34 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
+public import TauCeti.GroupTheory.FreeGroup.Reduce
 
 /-!
 # Cyclic reduction and word length in a free group
 
-These lemmas relate cyclic reduction to the identity and give the length of a positive power.
+These lemmas bound the length of a cyclic reduction, relate cyclic reduction to the identity
+and give the length of a positive power. Words of constant sign are cyclically reduced.
 -/
 
 public section
 
 namespace FreeGroup
 
+/-- A word all of whose letters have the same sign is cyclically reduced. -/
+theorem isCyclicallyReduced_of_forall_snd_eq {α : Type*} {w : List (α × Bool)} {e : Bool}
+    (h : ∀ x ∈ w, x.2 = e) : IsCyclicallyReduced w :=
+  ⟨isReduced_of_forall_snd_eq h, fun x hx y hy _ ↦
+    (h x (List.mem_of_getLast? hx)).trans (h y (List.mem_of_mem_head? hy)).symm⟩
+
 variable {α : Type*} [DecidableEq α]
+
+/-- Cyclic reduction does not lengthen a word. -/
+@[to_additive]
+theorem length_reduceCyclically_le (L : List (α × Bool)) :
+    (reduceCyclically L).length ≤ L.length := by
+  have h := congrArg List.length (reduceCyclically.conj_conjugator_reduceCyclically L)
+  simp only [List.length_append] at h
+  omega
 
 /-- A free-group element has empty cyclic reduction exactly when it is the identity. -/
 @[to_additive (attr := simp)]

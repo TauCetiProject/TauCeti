@@ -75,8 +75,8 @@ theorem IsTree.helly_theorem (h : Γ.IsTree) {ι : Type*} {F : ι → Set Γ.V} 
       fun i hi => by simpa using (h_inter i hi i hi)
   induction s using Finset.induction_on with
   | empty => simp
-  | insert a s ha ih =>
-    intro C hC hCne hCF
+  | insert a s _ ih =>
+    intro C hC _ hCF
     have hs_convex : ∀ i ∈ s, Γ.IsConvex (F i) := fun i hi =>
       h_convex i (Finset.mem_insert_of_mem hi)
     have hs_inter : ∀ i ∈ s, ∀ j ∈ s, (F i ∩ F j).Nonempty := fun i hi j hj =>

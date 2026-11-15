@@ -199,9 +199,10 @@ theorem isOrder_of_isIntegral [IsIntegrallyClosed R] [IsNoetherianRing R]
 
 /-- **Integral closures are orders.** The integral closure of an integrally closed noetherian domain
 `R` in a finite separable extension `L` of its fraction field `F` is an `R`-order in `L`. -/
-theorem integralClosure_isOrder [IsDomain R] [IsIntegrallyClosed R] [IsNoetherianRing R]
+theorem integralClosure_isOrder [IsIntegrallyClosed R] [IsNoetherianRing R]
     (L : Type*) [Field L] [Algebra F L] [Algebra R L] [IsScalarTower R F L] [FiniteDimensional F L]
     [Algebra.IsSeparable F L] : IsOrder F (integralClosure R L) := by
+  have := IsDomain.of_faithfulSMul R F
   exact isOrder_iff.2 ⟨IsIntegralClosure.finite R F L (integralClosure R L),
     span_integralClosure_eq_top⟩
 

@@ -128,7 +128,7 @@ theorem exists_sample_dist_add_one_lt {K : Set (MooreFreeLoopSpace X)} (hK : IsC
     ∃ N : ℕ, ∀ r ≥ N, ∀ γ ∈ K, ∀ i : Fin (r + 1),
       dist (γ.toMoorePath.sample (r + 1) i)
         (γ.toMoorePath.sample (r + 1) (i + 1)) < ε := by
-  obtain ⟨N, hN, h⟩ := MoorePath.exists_sample_arc_dist_lt
+  obtain ⟨N, _, h⟩ := MoorePath.exists_sample_arc_dist_lt
     (hK.image continuous_toMoorePath) hε
   refine ⟨N, fun r hr γ hγ i ↦ ?_⟩
   have harc := h (r + 1) (by omega) γ.toMoorePath ⟨γ, hγ, rfl⟩ i

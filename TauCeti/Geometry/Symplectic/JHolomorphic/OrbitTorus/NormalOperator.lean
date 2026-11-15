@@ -337,7 +337,7 @@ theorem fderiv_apply_stdComplexLineReal_eq_zero_of_orbitTorusOperator_eq_zero (h
   obtain ⟨t₀, ht₀, h₂⟩ := (hg₂ s₀).exists_mem_Ico₀ hd t
   have h₀ := @hzero (s₀, t₀) ⟨Ico_subset_Icc_self hs₀, Ico_subset_Icc_self ht₀⟩
   have hg0 : g (s₀, t₀) = 0 := by
-    have h₃ : 0 ≤ ‖J₀ (fderiv ℝ u (s₀, t₀) stdComplexLineImag) + S t₀ (u (s₀, t₀))‖ ^ 2 := by
+    have _ : 0 ≤ ‖J₀ (fderiv ℝ u (s₀, t₀) stdComplexLineImag) + S t₀ (u (s₀, t₀))‖ ^ 2 := by
       positivity
     have h₄ : 0 ≤ g (s₀, t₀) := norm_nonneg _
     simp only [Pi.zero_apply] at h₀

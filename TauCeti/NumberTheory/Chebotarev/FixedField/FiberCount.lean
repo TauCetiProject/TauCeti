@@ -345,15 +345,12 @@ theorem fixedField_frobenius_fiber_inertiaDeg_eq_one_card_mul
   -- Grouped by the prime of `E` below them, they are exactly the primes above the
   -- residue-degree-one primes of the relative fibre at which `τ` is the relative Frobenius,
   -- and there are `orderOf σ / orderOf τ` of those above each such prime.
-  set w := AlgEquiv.restrictScalars K τ with hw_def
+  set w := AlgEquiv.restrictScalars K τ
   have hC : ConjClasses.mk w = C := ConjClasses.mem_carrier_iff_mk_eq.mp hτ
   have hp' : p ∈ frobeniusPrimeSet K L (ConjClasses.mk w) := hC ▸ hp
   have hur : ∀ (R : Ideal (𝓞 L)) [R.IsPrime] [R.LiesOver p.asIdeal],
       Algebra.IsUnramifiedAt (𝓞 K) R :=
     (mem_frobeniusPrimeSet_iff.mp hp).choose
-  have hord : orderOf τ = orderOf w :=
-    (orderOf_injective (AlgEquiv.restrictScalarsHom K)
-      (AlgEquiv.restrictScalarsHom_injective K) τ).symm
   -- The absolute fibre `U` of `w` above `p`.
   let U := {Q : HeightOneSpectrum (𝓞 L) //
     Q.under (𝓞 K) = p ∧ IsArithFrobAt (𝓞 K) w Q.asIdeal}

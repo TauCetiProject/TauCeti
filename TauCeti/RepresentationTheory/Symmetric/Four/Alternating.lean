@@ -7,11 +7,14 @@ module
 
 public import TauCeti.GroupTheory.Perm.FinFour.Alternating
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Cyclotomic.AlternatingFour
+public import TauCeti.RepresentationTheory.Induction.Clifford.Alternating.FixedConstituents
 public import TauCeti.RepresentationTheory.Induction.Clifford.Alternating.Standard
 public import TauCeti.RepresentationTheory.Symmetric.Four.Basic
 public import TauCeti.RingTheory.RootsOfUnity.PrimeOrder
 public import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
 public import Mathlib.RingTheory.RootsOfUnity.Basic
+import TauCeti.RepresentationTheory.Induction.Clifford.Alternating.Classification
+import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 
 /-!
 # Restricting the representations of `S₄` to `A₄`
@@ -42,6 +45,13 @@ has coefficient sum `1 + ζ + ζ² = 0`, so lies in `E`, and `g ∈ A₄` acts o
 The vectors `v_ζ` and `v_{ζ²}` form a basis of `E`, which gives the equivalence of
 representations `Res E ≃ L_ζ ⊕ L_{ζ²}`; over `ℂ` and for `ζ = ω` this is `Res E ≃ L_ω ⊕ L_{ω²}`.
 
+The other irreducible representations of `S₄` restrict as follows: the trivial and sign
+representations to `L₁` (`TauCeti.signLinearCharacter_comp_alternatingGroup_subtype`), and the
+standard representation and its sign twist to `T` (`FDRep.resSignTwistAlternatingGroupIso`).
+Hence, over an algebraically closed field of characteristic zero, each of the four irreducible
+representations `L₁`, `L_ζ`, `L_{ζ²}`, `T` of `A₄` occurs in the restriction of an irreducible
+representation of `S₄`: `E` lies over `L_ζ` and `L_{ζ²}` through the eigenvectors `v_ζ`, `v_{ζ²}`.
+
 ## Main definitions
 
 * `TauCeti.alternatingGroupFourLinearCharacter`: the linear character `L_ζ` of `A₄`.
@@ -61,6 +71,10 @@ representations `Res E ≃ L_ζ ⊕ L_{ζ²}`; over `ℂ` and for `ζ = ω` this
   `v_ζ` by `L_ζ(g)`.
 * `TauCeti.alternatingGroupFourTwoDimensionalEquiv_symm_apply`: the inverse of the equivalence
   sends `(a, b)` to `a v_ζ + b v_{ζ²}`.
+* `TauCeti.symmetricGroupFourTwoDimensionalRepresentation_liesOver`: `E` lies over `L_ζ` for
+  every cube root of unity `ζ ≠ 1`.
+* `FDRep.exists_simple_liesOver_alternatingGroupFour`: every irreducible representation of
+  `A₄` occurs in the restriction of an irreducible representation of `S₄`.
 
 ## References
 
@@ -151,6 +165,12 @@ theorem alternatingGroupFourLinearCharacter_injective :
   Subtype.ext <| by
     rw [← alternatingGroupFourLinearCharacter_threeCycle ζ,
       ← alternatingGroupFourLinearCharacter_threeCycle ζ', h]
+
+/-- `L_{ζ⁻¹}` is the inverse character `(L_ζ)⁻¹`. -/
+@[simp]
+theorem alternatingGroupFourLinearCharacter_inv (ζ : rootsOfUnity 3 k) :
+    alternatingGroupFourLinearCharacter ζ⁻¹ = (alternatingGroupFourLinearCharacter ζ)⁻¹ :=
+  MonoidHom.ext fun g => by simp [alternatingGroupFourLinearCharacter_apply, inv_pow]
 
 end LinearCharacter
 
@@ -328,4 +348,71 @@ theorem alternatingGroupFourTwoDimensionalEquiv_symm_apply (ζ : rootsOfUnity 3 
 
 end Decomposition
 
+section LiesOver
+
+open CategoryTheory
+
+variable {k : Type*} [Field k]
+
+/-- **`E` lies over `L_ζ`** for every cube root of unity `ζ ≠ 1` in a field: `x ↦ x v_ζ` is a
+nonzero intertwiner from `L_ζ` to the restriction of `E` to `A₄`. -/
+theorem symmetricGroupFourTwoDimensionalRepresentation_liesOver (ζ : rootsOfUnity 3 k)
+    (hζ : ζ ≠ 1) :
+    (FDRep.of (symmetricGroupFourTwoDimensionalRepresentation k)).LiesOver
+      (alternatingGroup (Fin 4)).subtype
+      (FDRep.ofLinearCharacter (alternatingGroupFourLinearCharacter ζ)) := by
+  rw [FDRep.ofLinearCharacter_def]
+  refine FDRep.liesOver_of_intertwiningMap _ _
+    ((alternatingGroupFourTwoDimensionalEquiv ζ hζ).symm.toIntertwiningMap.comp
+      (Representation.IntertwiningMap.inl k _ _)) fun h => ?_
+  -- Evaluating at `1` gives `v_ζ = 0`, whose coefficient at `M₀` is `1`.
+  have h1 : (alternatingGroupFourTwoDimensionalEquiv ζ hζ).symm (1, 0) = 0 :=
+    DFunLike.congr_fun h (1 : k)
+  rw [alternatingGroupFourTwoDimensionalEquiv_symm_apply, one_smul, zero_smul, add_zero] at h1
+  have h0 := congrArg (fun v => MonoidAlgebra.coeff (Subtype.val v) 0) h1
+  simp [MonoidAlgebra.coeff_add, MonoidAlgebra.coeff_single] at h0
+
+end LiesOver
+
 end TauCeti
+
+namespace FDRep
+
+open CategoryTheory TauCeti Equiv
+
+variable {k : Type} [Field k] [IsAlgClosed k] [CharZero k]
+
+/-- **Every irreducible representation of `A₄` occurs in the restriction of an irreducible
+representation of `S₄`**, over an algebraically closed field of characteristic zero. -/
+theorem exists_simple_liesOver_alternatingGroupFour (W : FDRep k (alternatingGroup (Fin 4)))
+    [Simple W] :
+    ∃ B : FDRep k (Perm (Fin 4)), Simple B ∧ B.LiesOver (alternatingGroup (Fin 4)).subtype W := by
+  have : NeZero ((3 : ℕ) : k) := ⟨by norm_num⟩
+  obtain ⟨μ, hμ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot k 3
+  have hζ : hμ.toRootsOfUnity ≠ 1 := fun h => hμ.ne_one (by norm_num) <| by
+    simpa using congrArg (fun u : rootsOfUnity 3 k => ((u : kˣ) : k)) h
+  have hχ : alternatingGroupFourLinearCharacter hμ.toRootsOfUnity ≠ 1 := by
+    rw [← alternatingGroupFourLinearCharacter_one]
+    exact alternatingGroupFourLinearCharacter_injective.ne hζ
+  have hE : Simple (FDRep.of (symmetricGroupFourTwoDimensionalRepresentation k)) :=
+    (FDRep.simple_iff_isIrreducible _).mpr <| by
+      rw [FDRep.of_ρ']
+      exact isIrreducible_symmetricGroupFourTwoDimensionalRepresentation (by norm_num)
+  have hV : Simple (FDRep.of (standardRepresentation k (Fin 4))) :=
+    (FDRep.simple_iff_isIrreducible _).mpr <| by
+      rw [FDRep.of_ρ']
+      exact isIrreducible_standardRepresentation (by norm_num) (Or.inr (by norm_num))
+  -- `W` is one of `L₁`, `L_ζ`, `L_{ζ⁻¹}` and `T`, which lie under the trivial representation,
+  -- `E`, `E` and the standard representation respectively.
+  rcases (simple_alternatingGroupFour_iff W hχ).mp ‹_› with ⟨⟨e⟩⟩ | ⟨⟨e⟩⟩ | ⟨⟨e⟩⟩ | ⟨⟨e⟩⟩
+  · exact ⟨_, inferInstance, ((liesOver_trivial_alternatingGroup_iff _).mpr
+      (Or.inl ⟨Iso.refl _⟩)).of_iso_right e.symm⟩
+  · exact ⟨_, hE, (symmetricGroupFourTwoDimensionalRepresentation_liesOver _ hζ).of_iso_right
+      e.symm⟩
+  · rw [← alternatingGroupFourLinearCharacter_inv] at e
+    exact ⟨_, hE, (symmetricGroupFourTwoDimensionalRepresentation_liesOver _
+      (inv_ne_one.mpr hζ)).of_iso_right e.symm⟩
+  · exact ⟨_, hV, ((liesOver_alternatingGroupFourStandard_iff _).mpr
+      (Or.inl ⟨Iso.refl _⟩)).of_iso_right e.symm⟩
+
+end FDRep

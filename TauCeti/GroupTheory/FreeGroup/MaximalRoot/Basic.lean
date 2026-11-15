@@ -37,6 +37,8 @@ roots of `g * x * g⁻¹` and `x⁻¹` are `g * r * g⁻¹` and `r⁻¹`, with t
   maximal root.
 * `IsFreeGroup.centralizer_singleton_eq_zpowers_self`: the centralizer of a non-proper-power `u`
   is `zpowers u`.
+* `IsFreeGroup.intEquivCentralizer`: the centralizer of a non-proper-power `u` is isomorphic to
+  `ℤ`, via `k ↦ u ^ k`.
 
 * `Group.maximalRoot_conj`, `Group.maximalRoot_inv`, `Group.maximalRoot_pow`: transport
   maximal-root decompositions under conjugation, inversion, and positive powers.
@@ -79,6 +81,27 @@ theorem centralizer_singleton_eq_zpowers_self {u : G} (hu : ¬IsProperPower u) :
     centralizer {u} = zpowers u :=
   centralizer_singleton_eq_zpowers one_ne_zero hu (pow_one u)
 
+/-- In a free group, the centralizer of an element `u` that is not a proper power is infinite
+cyclic: `k ↦ u ^ k` is an isomorphism of `ℤ` with it. -/
+noncomputable def intEquivCentralizer {u : G} (hu : ¬IsProperPower u) :
+    Multiplicative ℤ ≃* centralizer {u} :=
+  (MonoidHom.ofInjective (f := zpowersHom G u) fun _ _ h => Multiplicative.toAdd.injective <|
+    IsMulTorsionFree.zpow_right_injective (ne_one_of_not_isProperPower hu) h).trans
+    (MulEquiv.subgroupCongr <| (range_zpowersHom u).trans
+      (centralizer_singleton_eq_zpowers_self hu).symm)
+
+@[simp] theorem coe_intEquivCentralizer_apply {u : G} (hu : ¬IsProperPower u)
+    (k : Multiplicative ℤ) : (intEquivCentralizer hu k : G) = u ^ k.toAdd :=
+  (rfl)
+
+@[simp] theorem intEquivCentralizer_symm_apply_zpow {u : G} (hu : ¬IsProperPower u) (k : ℤ)
+    (hk : u ^ k ∈ centralizer {u}) : (intEquivCentralizer hu).symm ⟨u ^ k, hk⟩ = .ofAdd k :=
+  (intEquivCentralizer hu).symm_apply_eq.2 (Subtype.ext (by simp))
+
+@[simp] theorem intEquivCentralizer_symm_apply_self {u : G} (hu : ¬IsProperPower u)
+    (hk : u ∈ centralizer {u}) : (intEquivCentralizer hu).symm ⟨u, hk⟩ = .ofAdd 1 :=
+  (intEquivCentralizer hu).symm_apply_eq.2 (Subtype.ext (by simp))
+
 /-- Uniqueness of maximal roots in a free group: if `r` and `s` are not proper powers and the
 exponent `l` is nonzero, then `r ^ k = s ^ l` exactly when `r = s` and `k = l`. The exponent `l`
 cannot be dropped as well: `r ^ 0 = s ^ 0` for all `r` and `s`. -/
@@ -118,7 +141,7 @@ theorem exists_maximalRoot {x : G} (hx : x ≠ 1) :
     · exact ⟨t⁻¹, k, zpowers_inv, by omega, by simpa [inv_pow] using hm⟩
   have hr := not_isProperPower_of_zpowers_eq_centralizer hx (hrt.trans ht)
   refine ⟨(r, k), ⟨hk, hrk, hr⟩, ?_⟩
-  rintro ⟨s, l⟩ ⟨hl, hsl, hs⟩
+  rintro ⟨s, l⟩ ⟨_, hsl, hs⟩
   exact Prod.ext_iff.2 <|
     (pow_eq_pow_iff_of_not_isProperPower hk hs hr).1 (hsl.trans hrk.symm)
 

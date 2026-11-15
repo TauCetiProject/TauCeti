@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import Mathlib.LinearAlgebra.Contraction
+public import Mathlib.LinearAlgebra.TensorProduct.Projective
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 public import TauCeti.LinearAlgebra.Dual.BaseChange
 

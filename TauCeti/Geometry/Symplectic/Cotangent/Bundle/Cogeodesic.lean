@@ -172,7 +172,7 @@ theorem mfderiv_coe_reebVectorField_cosphereBundle (z : cosphereBundle I M) :
   have hlam := liouvilleForm_hamiltonianVectorField_kineticEnergy (I := I) z.1
   rw [hz, one_pow] at hlam
   rw [isSymplectic_symplecticForm.isNondegenerate.mfderiv_reebVectorField_mpullback _
-    isContactForm_mpullback_liouvilleForm_cosphereBundle ?_ ?_ (by rw [hlam]; exact one_ne_zero),
+    isContactForm_mpullback_liouvilleForm_cosphereBundle ?_ ?_,
     hlam, inv_one, one_smul]
   · rw [symplecticForm_eq_neg_mextDeriv, Pi.neg_apply, neg_neg]
   · rw [range_mfderiv_coe_cosphereBundle, mvfderiv_kineticEnergy (snd_ne_zero_of_mem_cosphereBundle

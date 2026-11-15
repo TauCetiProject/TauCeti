@@ -20,7 +20,7 @@ carries a *named* Coxeter matrix, and identifies the outcome with the finite-typ
 `CoxeterMatrix.A`, `.B`, `.E₆`, `.E₇`, `.E₈`, `.F₄` and `.G₂` that Mathlib already pins.
 
 The identifications are worth spelling out one type at a time because they supply the matrix-level
-part of the classification's acceptance criteria: in the Bourbaki numbering, type `Aₙ` gives
+part of the classification: in the Bourbaki numbering, type `Aₙ` gives
 `CoxeterMatrix.A n`. The `Bₙ`/`Cₙ` pair collapses here: transposing a Cartan matrix leaves every
 Cartan product fixed, so the two types, which are distinct root systems with transposed Cartan
 matrices, share the single Coxeter matrix `CoxeterMatrix.B n`. That collapse is exactly the
@@ -57,14 +57,13 @@ Bourbaki numbering, at that pair of fork nodes.
   `TauCeti.HasCartanType.exists_coxeterMatrixOfBase_eq`, its existential form for a base of Cartan
   type `t`. Its corollaries
   `TauCeti.HasCartanType.exists_coxeterMatrixOfBase_eq_A` and
-  `TauCeti.HasCartanType.exists_coxeterMatrixOfBase_eq_G2` are the two the roadmap names.
+  `TauCeti.HasCartanType.exists_coxeterMatrixOfBase_eq_G2` specialize it to types `Aₙ` and `G₂`.
 
 ## References
 
-This file supplies the clause "recovering `CoxeterMatrix.A n` as `coxeterMatrixOfBase b`" of the
-`Aₙ` worked example, and its `G₂` counterpart, in
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`, bridging the `coxeterMatrixOfBase` of
-Layer 2 and the `DynkinType` enumeration of Layer 5. The translation of a Cartan product into a
+This file bridges `TauCeti.coxeterMatrixOfBase` and the `TauCeti.DynkinType` enumeration,
+recovering `CoxeterMatrix.A n` as `coxeterMatrixOfBase b` for a base of type `Aₙ`, and its `G₂`
+counterpart. The translation of a Cartan product into a
 Coxeter order is Bourbaki, *Lie Groups and Lie Algebras, Chapters 4-6*, Ch. VI, §1.3, and
 Humphreys, *Introduction to Lie Algebras and Representation Theory*, §9.4 and §11.4.
 -/

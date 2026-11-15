@@ -72,11 +72,6 @@ manifold differential of a function to tangent vectors whose base point varies.
 * `TauCeti.mdifferentiableWithinAt_vectorSpace_iff_differentiableWithinAt` and its `At` and `On`
   forms: a vector field on a normed space is differentiable in the manifold sense exactly when it
   is differentiable as a map of the space.
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 1, "The infinitesimal adjoint".
 -/
 
 public section
@@ -121,7 +116,7 @@ theorem contMDiff_tangentBundle_mk_constBase {v : N → E}
     ContMDiff J I.tangent n
       (fun p => TotalSpace.mk' E x (v p) : N → TangentBundle I M) := by
   intro p
-  rw [Bundle.contMDiffAt_totalSpace]
+  rw [Bundle.contMDiffAt_totalSpace_iff]
   constructor
   · exact contMDiffAt_const
   · have hx : x ∈ (extChartAt I x).source := mem_extChartAt_source _
@@ -459,7 +454,7 @@ theorem ContMDiffWithinAt.contDiffWithinAt_mpullbackWithin_extChartAt_symm
     ContDiffWithinAt 𝕜 n
       (VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm V (range I))
       ((extChartAt I x).symm ⁻¹' s ∩ range I) (extChartAt I x x) := by
-  have hc := contMDiffWithinAt_section.mp hV
+  have hc := contMDiffWithinAt_section_iff.mp hV
   rw [contMDiffWithinAt_iff_source, contMDiffWithinAt_iff_contDiffWithinAt,
     Function.comp_def] at hc
   have heq := VectorField.trivializationAt_snd_eventuallyEq_mpullbackWithin_extChartAt_symm V x

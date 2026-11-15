@@ -87,7 +87,7 @@ variable [FiniteDimensional k⟮x⟯ F]
 /-- **The different exponents of `F / k(x)` are at most one.** -/
 theorem differentExponent_adjoin_le_one (Q : Place k F) :
     Place.differentExponent k k⟮x⟯ Q ≤ 1 := by
-  obtain ⟨y, u, hu, hy, hgen⟩ := exists_sq_eq_algebraMap_adjoin_simple_eq_top hdeg
+  obtain ⟨y, u, _, hy, hgen⟩ := exists_sq_eq_algebraMap_adjoin_simple_eq_top hdeg
   rw [Place.differentExponent_eq_of_pow_eq_of_prime k k⟮x⟯ Nat.prime_two hgen hy
     (by exact_mod_cast (NeZero.ne (2 : k)))]
   split_ifs <;> omega
@@ -95,7 +95,7 @@ theorem differentExponent_adjoin_le_one (Q : Place k F) :
 /-- **The different exponent is one exactly at the ramified places** of `F / k(x)`. -/
 theorem differentExponent_adjoin_eq_one_iff_one_lt_ramificationIdx (Q : Place k F) :
     Place.differentExponent k k⟮x⟯ Q = 1 ↔ 1 < Place.ramificationIdx k⟮x⟯ Q := by
-  obtain ⟨y, u, hu, hy, hgen⟩ := exists_sq_eq_algebraMap_adjoin_simple_eq_top hdeg
+  obtain ⟨y, u, _, hy, hgen⟩ := exists_sq_eq_algebraMap_adjoin_simple_eq_top hdeg
   rw [Place.differentExponent_eq_of_pow_eq_of_prime k k⟮x⟯ Nat.prime_two hgen hy
     (by exact_mod_cast (NeZero.ne (2 : k))),
     Place.ramificationIdx_eq_of_pow_eq_of_prime k k⟮x⟯ Nat.prime_two hgen hy

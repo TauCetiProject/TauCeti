@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.Analysis.Calculus.DifferentialForm.CylinderHomotopy
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
@@ -54,7 +55,11 @@ the unit tangent vector at every time.
 
 * `TauCeti.homotopyOperator`: the homotopy operator `h`.
 * `TauCeti.IsSmoothForm.homotopyOperator`: `h` preserves `C^r` regularity.
-* `TauCeti.homotopyOperator_add`: `h` is additive on continuous forms.
+* `TauCeti.homotopyOperator_add`, `TauCeti.homotopyOperator_sub`: `h` is additive on continuous
+  forms.
+* `TauCeti.homotopyOperator_mpullback_apply_eq_zero`: `h (f^* σ)` vanishes over every point at
+  which `f` is stationary in time.
+* `TauCeti.homotopyOperator_mpullback_fst`: `h` kills forms pulled back from `M`.
 * `TauCeti.homotopyOperator_mpullback_prodMap_id`: `h` commutes with pullback along `g × id` for
   a map `g` with invertible derivatives.
 * `TauCeti.homotopyOperator_mpullback_prodMap_id_of_isSmoothForm`: the same for a continuous form
@@ -62,6 +67,14 @@ the unit tangent vector at every time.
 * `TauCeti.mextDeriv_homotopyOperator_add_homotopyOperator_mextDeriv`: the cochain-homotopy
   identity `d (h φ) + h (d φ) = ι₁^* φ - ι₀^* φ`.
 * `TauCeti.mextDeriv_homotopyOperator`: for a closed form, `d (h φ) = ι₁^* φ - ι₀^* φ`.
+* `TauCeti.homotopyOperator_mextDeriv_of_mpullback_eq_zero`: for a form whose end slices vanish,
+  `h (d φ) = -d (h φ)`.
+* `TauCeti.mextDeriv_homotopyOperator_homotopyOperator`: for a closed form `φ` on the double
+  cylinder `(M × [0, 1]) × [0, 1]`, with `h_s` and `h_t` the homotopy operators in the outer and
+  inner time coordinates, `d (h_t (h_s φ)) = (ι₁^* (h_s φ) - ι₀^* (h_s φ)) - (h_t (j₁^* φ) -
+  h_t (j₀^* φ))`, where `ι_c x = (x, c)` and `j_c p = (p, c)`. No condition on `φ` at the ends of
+  the inner cylinder is needed; when `h_s φ` vanishes over both of them, this is the
+  homotopy-rel-ends invariance of the homotopy operator.
 
 ## References
 
@@ -135,11 +148,24 @@ theorem homotopyOperator_apply_eq_zero
       fun i ↦ ((w i : E), (0 : EuclideanSpace ℝ (Fin 1)))) = 0
   exact h _ _
 
+/-- The homotopy operator of a pullback `f^* σ` vanishes at every point `x` over which the map
+`f : M × [0, 1] → N` is stationary in time: when `f (x, t) = y` for every `t`, the derivative of
+`f` kills the unit time vector `∂ₜ` at every `(x, t)`. -/
+theorem homotopyOperator_mpullback_apply_eq_zero {E' H' N : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace N]
+    [ChartedSpace H' N] {f : M × Icc (0 : ℝ) 1 → N} {x : M} {y : N} (hx : ∀ t, f (x, t) = y)
+    (σ : RoughForm I' N F (k + 1)) :
+    homotopyOperator (mpullback (I.prod (𝓡∂ 1)) I' f σ) x = 0 := by
+  refine homotopyOperator_apply_eq_zero fun t v ↦ ?_
+  rw [mpullback_apply]
+  exact (σ (f (x, t))).map_coord_zero 0
+    (mfderiv_inr_eq_zero_of_forall_apply_eq (fun s ↦ (hx s).trans (hx t).symm) _)
+
 /-- The homotopy operator of the zero form is zero. -/
 @[simp]
 theorem homotopyOperator_zero :
     homotopyOperator (0 : RoughForm (I.prod (𝓡∂ 1)) (M × Icc (0 : ℝ) 1) F (k + 1)) = 0 := by
-  funext x
+  funext _
   -- The integrand of the zero form is the zero function.
   exact intervalIntegral.integral_zero (E := E [⋀^Fin k]→L[ℝ] F) (a := 0) (b := 1)
 
@@ -151,6 +177,17 @@ theorem homotopyOperator_smul (c : ℝ)
   funext x
   -- The integrand of `c • φ` is `c` times the integrand of `φ`.
   exact intervalIntegral.integral_smul (μ := volume) (a := 0) (b := 1) c (homotopyIntegrand φ x)
+
+/-- The homotopy operator kills every form pulled back from `M` along the projection
+`M × [0, 1] → M`: such a form vanishes on the unit time vector `∂ₜ`. -/
+@[simp]
+theorem homotopyOperator_mpullback_fst (φ : RoughForm I M F (k + 1)) :
+    homotopyOperator (mpullback (I.prod (𝓡∂ 1)) I Prod.fst φ) = 0 := by
+  funext x
+  refine homotopyOperator_apply_eq_zero fun t v ↦ ?_
+  rw [mpullback_apply, mfderiv_fst]
+  -- The projection sends the first vector `∂ₜ = (0, 1)` to `0`.
+  exact (φ x).map_coord_zero 0 rfl
 
 /-- The integrand of the homotopy operator of a pullback along `g × id` is the integrand at the
 image point, evaluated on the images of the vectors under the derivative of `g`. -/
@@ -422,6 +459,15 @@ theorem homotopyOperator_add [IsManifold I 1 M]
   rw [Pi.add_apply, key, key, key, mpullbackWithin_add]
   exact cylinderHomotopy_add_apply (hc hφ) (hc hψ)
 
+/-- The homotopy operator commutes with subtraction of continuous forms, on a `C¹` manifold
+possibly with boundary or corners. -/
+theorem homotopyOperator_sub [IsManifold I 1 M]
+    {φ ψ : RoughForm (I.prod (𝓡∂ 1)) (M × Icc (0 : ℝ) 1) F (k + 1)}
+    (hφ : IsSmoothForm (I.prod (𝓡∂ 1)) 0 φ) (hψ : IsSmoothForm (I.prod (𝓡∂ 1)) 0 ψ) :
+    homotopyOperator (φ - ψ) = homotopyOperator φ - homotopyOperator ψ := by
+  rw [sub_eq_add_neg, homotopyOperator_add hφ hψ.neg, ← neg_one_smul ℝ ψ, homotopyOperator_smul,
+    neg_one_smul, sub_eq_add_neg]
+
 /-- For a continuous form on the cylinder, the integrand of the homotopy operator at a point is
 interval integrable: in the chart at that point it is the integrand of the flat cylinder homotopy
 operator, which is continuous in time, composed with an invertible chart derivative. -/
@@ -504,7 +550,7 @@ theorem mextDeriv_homotopyOperator_add_homotopyOperator_mextDeriv [IsManifold I 
       eventually_of_mem self_mem_nhdsWithin fun y hy ↦ inChartAt_homotopyOperator x₀ hsub hsu φ hy
     have hset : s =ᶠ[𝓝 (extChartAt I x₀ x₀)] range I := by
       filter_upwards [mem_nhdsWithin_iff_eventually.1 hsn] with y hy
-      exact propext ⟨fun h ↦ extChartAt_target_subset_range x₀ (hsub h), hy⟩
+      exact ⟨fun h ↦ extChartAt_target_subset_range x₀ (hsub h), hy⟩
     rw [mextDeriv_def, ← extDerivWithin_congr_set hset]
     exact heq.extDerivWithin_eq (heq.self_of_nhdsWithin hxs)
   -- `h (d φ)` at `x₀` is the cylinder homotopy operator of the flat exterior derivative of `η`.
@@ -536,5 +582,60 @@ theorem mextDeriv_homotopyOperator [IsManifold I 2 M] [CompleteSpace F]
         mpullback I (I.prod (𝓡∂ 1)) (fun y ↦ (y, 0)) φ x := by
   rw [← mextDeriv_homotopyOperator_add_homotopyOperator_mextDeriv hφ x, hclosed,
     homotopyOperator_zero, Pi.zero_apply, add_zero]
+
+/-! ### Forms vanishing at the ends of the cylinder, and the double cylinder -/
+
+/-- For a `C¹` form `φ` on `M × [0, 1]` with values in a Banach space, on a `C²` manifold possibly
+with boundary or corners, whose slices at both ends vanish, the homotopy operator anticommutes with
+the exterior derivative: `h (d φ) = -d (h φ)`. -/
+theorem homotopyOperator_mextDeriv_of_mpullback_eq_zero [IsManifold I 2 M] [CompleteSpace F]
+    {φ : RoughForm (I.prod (𝓡∂ 1)) (M × Icc (0 : ℝ) 1) F (k + 1)}
+    (hφ : IsSmoothForm (I.prod (𝓡∂ 1)) 1 φ)
+    (h₀ : mpullback I (I.prod (𝓡∂ 1)) (fun x ↦ (x, 0)) φ = 0)
+    (h₁ : mpullback I (I.prod (𝓡∂ 1)) (fun x ↦ (x, 1)) φ = 0) :
+    homotopyOperator (mextDeriv φ) = -mextDeriv (homotopyOperator φ) := by
+  funext x
+  have key := mextDeriv_homotopyOperator_add_homotopyOperator_mextDeriv hφ x
+  rw [h₀, h₁, Pi.zero_apply, sub_zero] at key
+  rw [Pi.neg_apply, eq_neg_iff_add_eq_zero]
+  exact (add_comm _ _).trans key
+
+/-- **The iterated homotopy operator on the double cylinder.** For a closed `C¹` `(k + 2)`-form
+`φ` on `(M × [0, 1]) × [0, 1]` with values in a Banach space, on a `C²` manifold `M` possibly with
+boundary or corners, the exterior derivative of `h_t (h_s φ)` is
+`(ι₁^* (h_s φ) - ι₀^* (h_s φ)) - (h_t (j₁^* φ) - h_t (j₀^* φ))`, where the inner homotopy operator
+`h_s` integrates over the last coordinate `s` and the outer one `h_t` over `t`, `ι_c x = (x, c)`,
+and `j_c p = (p, c)`. -/
+theorem mextDeriv_homotopyOperator_homotopyOperator [IsManifold I 2 M] [CompleteSpace F]
+    {φ : RoughForm ((I.prod (𝓡∂ 1)).prod (𝓡∂ 1)) ((M × Icc (0 : ℝ) 1) × Icc (0 : ℝ) 1) F (k + 2)}
+    (hφ : IsSmoothForm ((I.prod (𝓡∂ 1)).prod (𝓡∂ 1)) 1 φ) (hclosed : mextDeriv φ = 0) :
+    mextDeriv (homotopyOperator (homotopyOperator φ)) =
+      (mpullback I (I.prod (𝓡∂ 1)) (fun x ↦ (x, 1)) (homotopyOperator φ) -
+          mpullback I (I.prod (𝓡∂ 1)) (fun x ↦ (x, 0)) (homotopyOperator φ)) -
+        (homotopyOperator
+            (mpullback (I.prod (𝓡∂ 1)) ((I.prod (𝓡∂ 1)).prod (𝓡∂ 1)) (fun p ↦ (p, 1)) φ) -
+          homotopyOperator
+            (mpullback (I.prod (𝓡∂ 1)) ((I.prod (𝓡∂ 1)).prod (𝓡∂ 1)) (fun p ↦ (p, 0)) φ)) := by
+  have : IsManifold (I.prod (𝓡∂ 1)) ((1 : ℕ∞) + 1 : WithTop ℕ∞) (M × Icc (0 : ℝ) 1) :=
+    IsManifold.of_le (n := 2) (by norm_num)
+  have hres (c : Icc (0 : ℝ) 1) : ContMDiff (I.prod (𝓡∂ 1)) ((I.prod (𝓡∂ 1)).prod (𝓡∂ 1))
+      ((0 : ℕ∞) + 1) fun p : M × Icc (0 : ℝ) 1 ↦ (p, c) :=
+    contMDiff_id.prodMk contMDiff_const
+  -- The slices `j₁^* φ` and `j₀^* φ` in `s` are continuous.
+  set φ₁ := mpullback (I.prod (𝓡∂ 1)) ((I.prod (𝓡∂ 1)).prod (𝓡∂ 1)) (fun p ↦ (p, 1)) φ
+  set φ₀ := mpullback (I.prod (𝓡∂ 1)) ((I.prod (𝓡∂ 1)).prod (𝓡∂ 1)) (fun p ↦ (p, 0)) φ
+  have hφ₁ : IsSmoothForm (I.prod (𝓡∂ 1)) 0 φ₁ := (hφ.of_le (by simp)).mpullback (hres 1)
+  have hφ₀ : IsSmoothForm (I.prod (𝓡∂ 1)) 0 φ₀ := (hφ.of_le (by simp)).mpullback (hres 0)
+  -- `L = h_s φ` is `C¹` and, by the cochain-homotopy identity in `s`, `d L = j₁^* φ - j₀^* φ`.
+  have hL : IsSmoothForm (I.prod (𝓡∂ 1)) 1 (homotopyOperator φ) := hφ.homotopyOperator
+  have hdL : mextDeriv (homotopyOperator φ) = φ₁ - φ₀ :=
+    funext (mextDeriv_homotopyOperator hφ hclosed)
+  -- The homotopy operator in `t` commutes with the difference of the continuous forms `j₁^* φ`
+  -- and `j₀^* φ`; the cochain-homotopy identity in `t` for `L` concludes.
+  funext x
+  have key := mextDeriv_homotopyOperator_add_homotopyOperator_mextDeriv hL x
+  rw [hdL, homotopyOperator_sub hφ₁ hφ₀] at key
+  rw [Pi.sub_apply, Pi.sub_apply, Pi.sub_apply, ← key, Pi.sub_apply]
+  abel
 
 end TauCeti

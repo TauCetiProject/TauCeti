@@ -43,7 +43,7 @@ theorem addHaar_image_eq_zero_of_finrank_le_finrank (hEF : finrank ℝ E ≤ fin
       (fun x hx ↦ (hf x hx).differentiableWithinAt) hEF
   · borelize E
     refine addHaar_image_eq_zero_of_not_surjective_fderivWithin ν hEF (f' := fun _ ↦ 0) hf
-      fun x hx hsurj ↦ ?_
+      fun x _ hsurj ↦ ?_
     obtain ⟨y, hy⟩ := exists_ne (0 : F)
     obtain ⟨v, hv⟩ := hsurj y
     exact hy (by rw [← hv, zero_apply])

@@ -54,10 +54,6 @@ connected one.
 * J. C. Jantzen, *Representations of Algebraic Groups*, II.1.
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plates I--IX, for the Cartan matrices
   and their determinants.
-
-This decides which admissible lattices the Chevalley--Demazure construction of Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md` may be built from, for its consumer, the pinned simply
-connected ambient group of milestone L0 of `TauCetiRoadmap/CFSGStatement/README.md`.
 -/
 
 public section
