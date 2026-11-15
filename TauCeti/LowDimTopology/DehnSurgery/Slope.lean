@@ -12,7 +12,7 @@ public import Mathlib.Data.Rat.Lemmas
 public import Mathlib.LinearAlgebra.Pi
 public import Mathlib.Topology.Compactification.OnePoint.Basic
 public import Mathlib.Topology.Instances.AddCircle.Real
-public import TauCeti.Algebra.Module.Primitive
+public import TauCeti.Algebra.Module.Primitive.Basic
 
 /-!
 # Slopes on a framed boundary torus

@@ -10,7 +10,7 @@ public import Mathlib.Basic.Real.Basic
 public import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.NumberTheory.ArithmeticFunction.Misc
-public import TauCeti.Algebra.Module.Primitive
+public import TauCeti.Algebra.Module.Primitive.Basic
 
 /-!
 # Upper-triangular representatives of integral matrices of fixed determinant

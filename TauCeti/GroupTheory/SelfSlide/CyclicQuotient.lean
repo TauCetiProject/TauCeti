@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.Data.ZMod.Units
 public import Mathlib.GroupTheory.Index
-public import TauCeti.Algebra.Module.Primitive
+public import TauCeti.Algebra.Module.Primitive.Basic
 import Mathlib.Tactic.Linarith
 
 /-!

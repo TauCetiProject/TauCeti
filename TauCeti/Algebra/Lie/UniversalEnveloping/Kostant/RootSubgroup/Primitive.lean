@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.Sl2
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Basic
-public import TauCeti.Algebra.Module.Primitive
+public import TauCeti.Algebra.Module.Primitive.Basic
 import Mathlib.NumberTheory.Padics.PadicVal.Basic
 import TauCeti.Algebra.Lie.Sl2.Straightening
 import TauCeti.Algebra.Module.Primitive.Submodule
