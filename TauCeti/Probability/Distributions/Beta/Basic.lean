@@ -54,7 +54,6 @@ The moment calculation rewrites the density integral as Euler's beta integral â€
 
 ## References
 
-* Tau Ceti roadmap, `StandardDistributions`, Layer 1, "Beta".
 * N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*, vol. 2,
   2nd ed., Wiley, 1995.
 -/

@@ -155,7 +155,7 @@ theorem IsNondegenerateFixedPt.eventually_isNondegenerateFixedPt_of_isFixedPt [I
     (hf : ContMDiffAt (J.prod I) I n (uncurry f) (p₀, x₀))
     (h : IsNondegenerateFixedPt I (f p₀) x₀) :
     ∀ᶠ q in 𝓝 (p₀, x₀), IsFixedPt (f q.1) q.2 → IsNondegenerateFixedPt I (f q.1) q.2 := by
-  have : CompleteSpace E := FiniteDimensional.complete 𝕜 E
+  have : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 E
   have h1 : (1 : ℕ∞ω) ≤ n := ENat.one_le_iff_ne_zero_withTop.2 hn
   have : IsManifold I 1 M := IsManifold.of_le h1
   have : IsManifold J 1 N := IsManifold.of_le h1
@@ -218,7 +218,7 @@ theorem IsNondegenerateFixedPt.exists_contMDiffAt_fixedPt_continuation [Complete
     ∃ g : N → M, g p₀ = x₀ ∧ ContMDiffAt J I n g p₀ ∧
       (∀ᶠ p in 𝓝 p₀, IsNondegenerateFixedPt I (f p) (g p)) ∧
       ∀ᶠ q in 𝓝 (p₀, x₀), IsFixedPt (f q.1) q.2 ↔ g q.1 = q.2 := by
-  have : CompleteSpace E := FiniteDimensional.complete 𝕜 E
+  have : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 E
   have hx : f p₀ x₀ = x₀ := h.isFixedPt
   have hGc := contDiffAt_fixedPtCoord hf hx
   have hinv := isInvertible_fderiv_fixedPtCoord_comp_inr hn hf h

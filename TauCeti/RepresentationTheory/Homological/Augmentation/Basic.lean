@@ -68,13 +68,13 @@ the sum of its coefficients; it is the map out of the left regular representatio
 abbrev augmentation : leftRegular k G ⟶ trivial k G k := leftRegularHom (trivial k G k) 1
 
 /-- The augmentation of representations is the coefficient sum
-`TauCeti.MonoidAlgebra.augmentation`. -/
+`MonoidAlgebra.augmentation`. -/
 theorem augmentation_hom_apply (w : MonoidAlgebra k G) :
-    (augmentation k G).hom w = TauCeti.MonoidAlgebra.augmentation k G w := by
+    (augmentation k G).hom w = MonoidAlgebra.augmentation k G w := by
   induction w using MonoidAlgebra.induction_linear with
   | zero => simp
   | add x y hx hy => rw [map_add, map_add, hx, hy]
-  | single g r => simp [TauCeti.MonoidAlgebra.augmentation_single]
+  | single g r => simp [MonoidAlgebra.augmentation_single]
 
 /-- The augmentation is surjective. -/
 instance augmentation_epi : Epi (augmentation k G) :=
@@ -142,23 +142,23 @@ theorem augmentationSES_res_shortExact {H : Type*} [Monoid H] (f : H →* G) :
 left regular representation. -/
 private def augmentationKerToLeftRegular :
     ofModuleMonoidAlgebra.obj (ModuleCat.of (MonoidAlgebra k G)
-      (RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G))) ⟶ leftRegular k G :=
+      (RingHom.ker (MonoidAlgebra.augmentation k G))) ⟶ leftRegular k G :=
   ConcreteCategory.ofHom
   { toFun x := ((RestrictScalars.addEquiv k (MonoidAlgebra k G) _ x :
-      RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G)) : MonoidAlgebra k G)
+      RingHom.ker (MonoidAlgebra.augmentation k G)) : MonoidAlgebra k G)
     map_add' _ _ := rfl
     map_smul' r x := (congrArg Subtype.val
       (RestrictScalars.addEquiv_map_smul k (MonoidAlgebra k G)
-        (RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G)) r x)).trans
+        (RingHom.ker (MonoidAlgebra.augmentation k G)) r x)).trans
       (Algebra.smul_def r _).symm
     -- Both actions are left multiplication by `single h 1`; the closing `rfl`s identify the
     -- representations `ofModule I_G` and `ofMulAction k G G` with the actions of the objects
     -- `ofModuleMonoidAlgebra.obj I_G` and `leftRegular k G`, which are these by definition.
     isIntertwining' h := LinearMap.ext fun x ↦
       (congrArg (fun y ↦ ((RestrictScalars.addEquiv k (MonoidAlgebra k G) _ y :
-          RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G)) : MonoidAlgebra k G))
+          RingHom.ker (MonoidAlgebra.augmentation k G)) : MonoidAlgebra k G))
         ((Representation.ofModule_asAlgebraHom_apply_apply
-          (RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G)) (MonoidAlgebra.single h 1)
+          (RingHom.ker (MonoidAlgebra.augmentation k G)) (MonoidAlgebra.single h 1)
             x).symm.trans
           (by rw [Representation.asAlgebraHom_single_one]; rfl))).symm.trans
       ((Representation.asAlgebraHom_ofMulAction_smul_eq_mul _ _).symm.trans
@@ -168,7 +168,7 @@ private def augmentationKerToLeftRegular :
 categorical augmentation ideal `Rep.augmentationIdeal k G`. -/
 def augmentationKerIso :
     ofModuleMonoidAlgebra.obj (ModuleCat.of (MonoidAlgebra k G)
-      (RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G))) ≅ augmentationIdeal k G :=
+      (RingHom.ker (MonoidAlgebra.augmentation k G))) ≅ augmentationIdeal k G :=
   let l := KernelFork.IsLimit.lift' (augmentationιIsKernel k G)
     (augmentationKerToLeftRegular k G) (by
     ext x
@@ -178,13 +178,13 @@ def augmentationKerIso :
     (RestrictScalars.addEquiv k (MonoidAlgebra k G) _).injective (Subtype.ext h)
   have : Mono l.1 := mono_of_mono_fac l.2
   have hy (y : augmentationIdeal k G) :
-      (augmentationι k G).hom y ∈ RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G) := by
+      (augmentationι k G).hom y ∈ RingHom.ker (MonoidAlgebra.augmentation k G) := by
     rw [RingHom.mem_ker, ← augmentation_hom_apply, ← ConcreteCategory.comp_apply,
       augmentationι_comp_augmentation]
     rfl
   have : Epi l.1 := (Rep.epi_iff_surjective _).2 fun y ↦
     ⟨(RestrictScalars.addEquiv k (MonoidAlgebra k G)
-      (RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G))).symm ⟨_, hy y⟩,
+      (RingHom.ker (MonoidAlgebra.augmentation k G))).symm ⟨_, hy y⟩,
       (Rep.mono_iff_injective (augmentationι k G)).1 inferInstance <|
         (ConcreteCategory.comp_apply l.1 (augmentationι k G) _).symm.trans
           (ConcreteCategory.congr_hom l.2 _)⟩
@@ -195,11 +195,11 @@ def augmentationKerIso :
 @[simp]
 theorem augmentationι_augmentationKerIso_hom_apply
     (x : (ofModuleMonoidAlgebra.obj (ModuleCat.of (MonoidAlgebra k G)
-      (RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G)))).V) :
+      (RingHom.ker (MonoidAlgebra.augmentation k G)))).V) :
     (augmentationι k G).hom ((augmentationKerIso k G).hom x) =
       ((RestrictScalars.addEquiv k (MonoidAlgebra k G)
-        (RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G)) x :
-          RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G)) : MonoidAlgebra k G) := by
+        (RingHom.ker (MonoidAlgebra.augmentation k G)) x :
+          RingHom.ker (MonoidAlgebra.augmentation k G)) : MonoidAlgebra k G) := by
   simp only [augmentationKerIso, asIso_hom]
   have hzero : augmentationKerToLeftRegular k G ≫ augmentation k G = 0 := by
     ext y

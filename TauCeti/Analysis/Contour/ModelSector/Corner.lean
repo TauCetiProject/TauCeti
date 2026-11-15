@@ -37,7 +37,7 @@ every `ε`, so the pair is packaged here as a single curve through the centre.
   existence form.
 * `TauCeti.Contour.windingNumber_eq_zero_twoRayCorner` — its generalized winding number vanishes.
 
-This is Layer 1 of the Hungerbühler–Wasem generalized residue theorem (HW Thm 3.3).
+This is an ingredient of the Hungerbühler–Wasem generalized residue theorem (HW Thm 3.3).
 
 ## References
 

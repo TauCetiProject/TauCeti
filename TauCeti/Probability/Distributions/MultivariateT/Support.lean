@@ -52,7 +52,7 @@ theorem support_multivariateTMeasure (m : EuclideanSpace ℝ ι) {S : Matrix ι 
         Set (EuclideanSpace ℝ ι)) := by
   have := isProbabilityMeasure_chiSquaredMeasure hν.le
   apply Subset.antisymm
-  · exact Measure.support_subset_of_isClosed (AffineSubspace.closed_of_finiteDimensional _)
+  · exact Measure.support_subset_of_isClosed (AffineSubspace.isClosed_of_finiteDimensional _)
       (ae_mem_affineRange_multivariateTMeasure m S ν)
   · intro x hx
     rw [Measure.support_eq_forall_isOpen]
@@ -102,7 +102,7 @@ theorem mutuallySingular_multivariateTMeasure_volume (m : EuclideanSpace ℝ ι)
     rw [← AffineSubspace.direction_mk' m (LinearMap.range S.toEuclideanLin)]
     simpa only [AffineSubspace.direction_top] using congrArg AffineSubspace.direction h
   refine ⟨(A : Set (EuclideanSpace ℝ ι))ᶜ,
-    A.closed_of_finiteDimensional.measurableSet.compl, ?_, ?_⟩
+    A.isClosed_of_finiteDimensional.measurableSet.compl, ?_, ?_⟩
   · exact mem_ae_iff.mp
       (Filter.eventually_mem_set.mp (ae_mem_affineRange_multivariateTMeasure m S ν))
   · rw [compl_compl]

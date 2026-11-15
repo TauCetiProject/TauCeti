@@ -128,7 +128,7 @@ instance symmetricMatrixSecondCountableTopology :
 
 instance symmetricMatrixCompleteSpace :
     CompleteSpace (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :=
-  FiniteDimensional.complete ℝ _
+  FiniteDimensional.completeSpace ℝ _
 
 instance symmetricMatrixContinuousENorm :
     ContinuousENorm (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :=

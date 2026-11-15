@@ -83,14 +83,13 @@ Equalities of the automorphisms themselves are proved with `TauCeti.serre_equiv_
 equivalence-level extensionality principle of the presentation, so that no proof here has to
 descend to the underlying homomorphisms by hand.
 
-## Roadmap
+## Applications
 
-Both automorphisms are prerequisites for the pinned Chevalley--Demazure group schemes, Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`, which asks for the split reductive group scheme over
-`ℤ` to be built "via a Chevalley basis and the Kostant `ℤ`-form of the enveloping algebra". The
-Serre presentation of `TauCeti/Algebra/Lie/Presentation/Serre.lean` is the explicit carrier of the
-Lie algebra that construction starts from, and the two automorphisms are the two symmetries of it
-that construction uses.
+Both automorphisms are inputs to the pinned Chevalley--Demazure group schemes, the split reductive
+group schemes over `ℤ` built via a Chevalley basis and the Kostant `ℤ`-form of the enveloping
+algebra. The Serre presentation of `TauCeti/Algebra/Lie/Presentation/Serre.lean` is the explicit
+carrier of the Lie algebra that construction starts from, and the two automorphisms are the two
+symmetries of it that construction uses.
 
 The Chevalley involution is the immediate one: the classical normalisation of a Chevalley basis
 picks the root vectors `x α` and `x (-α)` compatibly by transporting them along an automorphism
@@ -107,9 +106,9 @@ semisimple Lie algebra identified with the presentation.
 The diagram automorphisms are the second: a pinning is what makes "the" graph automorphism well
 defined, and on the Chevalley--Demazure side the graph automorphism of the group scheme is obtained
 by descending the one that permutes the divided powers of the generators in the Kostant `ℤ`-form,
-which is `TauCeti.serreDiagramAut` on the underlying Lie algebra. Consumed in turn by milestone L0
-of `TauCetiRoadmap/CFSGStatement/README.md`, whose twisted groups of Lie type are the fixed points
-of a Steinberg endomorphism built from a graph automorphism of the ambient pinned group.
+which is `TauCeti.serreDiagramAut` on the underlying Lie algebra. The twisted groups of Lie type
+are the fixed points of a Steinberg endomorphism built from such a graph automorphism of the
+ambient pinned group.
 
 ## References
 
