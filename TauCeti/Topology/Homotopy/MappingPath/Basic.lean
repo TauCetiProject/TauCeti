@@ -177,7 +177,7 @@ theorem map_comp_incl (a : C(B, B')) (b : C(K, K')) (h : b.comp f = f'.comp a) :
   apply Subtype.ext
   apply Prod.ext
   · rfl
-  · ext t
+  · ext _
     exact ContinuousMap.congr_fun h x
 
 @[simp]

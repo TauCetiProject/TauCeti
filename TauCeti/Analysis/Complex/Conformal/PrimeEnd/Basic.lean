@@ -302,8 +302,8 @@ a crosscut inside `U` lies in one component of the complement of any crosscut di
 `hsep'` is the separation condition in terms of components. It is private because its hypotheses
 are the local facts established in the proof of that theorem. -/
 private theorem connectedComponentIn_sdiff_succ_subset_sdiff (hUc : IsPreconnected U)
-    (hopen : ∀ k, IsOpen (U \ C k)) (hdisj : ∀ n, Disjoint (C n) (C (n + 1)))
-    (hcomp : ∀ {j k : ℕ}, Disjoint (C j) (C k) → ∀ {v : ℂ}, v ∈ C k ∩ U →
+    (hopen : ∀ k, IsOpen (U \ C k)) (hdisj : ∀ n, Disjoint (C n) (C (n + 1) ∩ U))
+    (hcomp : ∀ {j k : ℕ}, Disjoint (C j) (C k ∩ U) → ∀ {v : ℂ}, v ∈ C k ∩ U →
       C k ∩ U ⊆ connectedComponentIn (U \ C j) v)
     (hsep' : ∀ (k : ℕ) {z w : ℂ}, z ∈ C 0 ∩ U → w ∈ C (k + 2) ∩ U →
       z ∈ U \ C (k + 1) ∧ w ∈ U \ C (k + 1) ∧
@@ -323,7 +323,8 @@ private theorem connectedComponentIn_sdiff_succ_subset_sdiff (hUc : IsPreconnect
     obtain ⟨hzm, -, hza⟩ := hsep' m hz ha
     have hCD : C (m + 1) ∩ U ⊆ connectedComponentIn (U \ C (m + 1 + 1)) b := by
       rw [connectedComponentIn_eq hq]
-      exact hcomp (hdisj (m + 1)).symm ⟨hqC, hqU⟩
+      exact hcomp (disjoint_left.2 fun a ha hb => disjoint_left.1 (hdisj (m + 1)) hb.1 ⟨ha, hb.2⟩)
+        ⟨hqC, hqU⟩
     obtain ⟨p, hp, hpF⟩ := hUc.exists_mem_inter_closure_connectedComponentIn_sdiff (hopen (m + 1))
       hzm ha.2 fun h => hza (connectedComponentIn_eq h)
     obtain ⟨y, hyD, hyF⟩ :=
@@ -338,12 +339,11 @@ private theorem connectedComponentIn_sdiff_succ_subset_sdiff (hUc : IsPreconnect
     exact hzb (by rw [connectedComponentIn_eq (hFE hyF), connectedComponentIn_eq hyD])
 
 /-- **Pommerenke's separation condition forces nesting.** Let `U` be a preconnected open set and
-let `C` be a sequence of closed ranges of crosscuts of `U`, each disjoint from the next. If each
+let `C` be a sequence of closed ranges of crosscuts of `U`. If each
 crosscut `C (n + 1)` separates the points of the first crosscut inside `U` from those of the next
 one, then the domains cut off by `C` decrease. -/
 theorem nullChainDomain_succ_subset_of_separatesIn (hUo : IsOpen U) (hUc : IsPreconnected U)
     (hcut : ∀ n, ∃ (x y : ℂ) (γ : Path x y), γ.IsCrosscut U ∧ range γ = C n)
-    (hdisj : ∀ n, Disjoint (C n) (C (n + 1)))
     (hsep : ∀ n {x y : ℂ} (γ : Path x y), range γ = C (n + 1) →
       ∀ z ∈ C 0 ∩ U, ∀ w ∈ C (n + 2) ∩ U, γ.SeparatesIn U z w) (n : ℕ) :
     nullChainDomain U C (n + 1) ⊆ nullChainDomain U C n := by
@@ -353,23 +353,32 @@ theorem nullChainDomain_succ_subset_of_separatesIn (hUo : IsOpen U) (hUc : IsPre
   have hopen (k : ℕ) : IsOpen (U \ C k) := by
     obtain ⟨x, y, γ, -, hrange⟩ := hcut k
     exact hUo.sdiff (hrange ▸ (isCompact_range γ.continuous).isClosed)
-  -- Inside `U`, the crosscut `C k` lies in one component of `U \ C j` for any `C j` it misses.
-  have hcomp {j k : ℕ} (hjk : Disjoint (C j) (C k)) {v : ℂ} (hv : v ∈ C k ∩ U) :
-      C k ∩ U ⊆ connectedComponentIn (U \ C j) v :=
-    (hconn k).isPreconnected.subset_connectedComponentIn hv
-      fun w hw => ⟨hw.2, disjoint_right.mp hjk hw.1⟩
   have hsep' (k : ℕ) {z w : ℂ} (hz : z ∈ C 0 ∩ U) (hw : w ∈ C (k + 2) ∩ U) :
       z ∈ U \ C (k + 1) ∧ w ∈ U \ C (k + 1) ∧
         connectedComponentIn (U \ C (k + 1)) z ≠ connectedComponentIn (U \ C (k + 1)) w := by
     obtain ⟨x, y, γ, -, hrange⟩ := hcut (k + 1)
     simpa only [Path.separatesIn_def, hrange] using hsep k γ hrange z hz w hw
+  -- Consecutive crosscuts are disjoint inside `U`, because the later one is separated by the
+  -- earlier one from the first.
+  have hdisj (k : ℕ) : Disjoint (C k) (C (k + 1) ∩ U) := by
+    obtain ⟨z, hz⟩ := (hconn 0).nonempty
+    cases k with
+    | zero =>
+      obtain ⟨w, hw⟩ := (hconn 2).nonempty
+      exact disjoint_left.2 fun a ha hb => (hsep' 0 ⟨ha, hb.2⟩ hw).1.2 hb.1
+    | succ m => exact disjoint_left.2 fun a ha hb => (hsep' m hz hb).2.1.2 ha
+  -- Inside `U`, the crosscut `C k` lies in one component of `U \ C j` for any `C j` it misses.
+  have hcomp {j k : ℕ} (hjk : Disjoint (C j) (C k ∩ U)) {v : ℂ} (hv : v ∈ C k ∩ U) :
+      C k ∩ U ⊆ connectedComponentIn (U \ C j) v :=
+    (hconn k).isPreconnected.subset_connectedComponentIn hv
+      fun w hw => ⟨hw.2, disjoint_right.mp hjk hw⟩
   obtain ⟨a, ha⟩ := (hconn (n + 1)).nonempty
   obtain ⟨b, hb⟩ := (hconn (n + 2)).nonempty
   obtain ⟨z, hz⟩ := (hconn 0).nonempty
   rw [nullChainDomain_eq_connectedComponentIn_of_isPreconnected (hconn (n + 2)).isPreconnected
-      ((hdisj (n + 1)).mono_right inter_subset_left) hb,
+      (hdisj (n + 1)) hb,
     nullChainDomain_eq_connectedComponentIn_of_isPreconnected (hconn (n + 1)).isPreconnected
-      ((hdisj n).mono_right inter_subset_left) ha]
+      (hdisj n) ha]
   obtain ⟨hzU, hbU, hzb⟩ := hsep' n hz hb
   -- First, the domain `D` cut off by `C (n + 1)` misses `C n`.
   have hDC : connectedComponentIn (U \ C (n + 1)) b ⊆ U \ C n :=
@@ -394,7 +403,7 @@ theorem isNullChain_iff_separatesIn (hUo : IsOpen U) (hUc : IsPreconnected U)
     IsNullChain U C ↔ ∀ n {x y : ℂ} (γ : Path x y), range γ = C (n + 1) →
       ∀ z ∈ C 0 ∩ U, ∀ w ∈ C (n + 2) ∩ U, γ.SeparatesIn U z w :=
   ⟨fun hC _ _ _ _ hγ _ hz _ hw => hC.separatesIn hγ hz hw, fun hsep =>
-    ⟨hcut, hdisj, nullChainDomain_succ_subset_of_separatesIn hUo hUc hcut hdisj hsep, hdiam⟩⟩
+    ⟨hcut, hdisj, nullChainDomain_succ_subset_of_separatesIn hUo hUc hcut hsep, hdiam⟩⟩
 
 /-- Two sequences of cuts of `U` are **equivalent** when every domain cut off by either one
 contains a domain cut off by the other. -/

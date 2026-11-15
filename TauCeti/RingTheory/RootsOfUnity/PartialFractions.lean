@@ -59,7 +59,7 @@ theorem sum_inv_pow_mul_sub_one (hζ : IsPrimitiveRoot ζ n) (hy : y ^ n ≠ 1) 
     ∑ k ∈ range n, ∑ i ∈ range n, (ζ ^ i * y) ^ k =
         ∑ k ∈ range n, (if n ∣ k then (n : K) else 0) * y ^ k := by
       apply sum_congr rfl
-      intro k hk
+      intro k _
       simp_rw [mul_pow, pow_right_comm ζ _ k]
       rw [← sum_mul, ← Fin.sum_univ_eq_sum_range, hζ.sum_pow_pow_eq]
     _ = n := by

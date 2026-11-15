@@ -197,7 +197,6 @@ theorem thetaSeries_vadd_eq_sum_of_le (hL : IsEven L) {M : Submodule ℤ E} [Dis
     congr 1
     rcases eq_or_ne c 0 with rfl | hc
     · simp
-    have hc : (c : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hc
     push_cast
     field_simp
   · rcases eq_or_ne c 0 with rfl | hc

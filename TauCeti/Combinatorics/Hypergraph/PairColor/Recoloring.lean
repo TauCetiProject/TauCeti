@@ -215,7 +215,7 @@ theorem exists_recoloring_isRegularPair [Fintype κ] (S : PairColorSystem κ V)
     have hpc : p c ≤ 1 := hp1 ▸ single_le_sum (fun c _ ↦ hp c) (mem_univ c)
     exact (abs_sub_le_iff.2 ⟨by linarith [hp c], by linarith [hp c]⟩).trans hε1.le
   refine ⟨S', hrev, hagree, ?_, hfull⟩
-  obtain hε2 | hε2 := le_or_gt 1 (2 * ε)
+  obtain hε2 | _ := le_or_gt 1 (2 * ε)
   · exact isRegularPair_of_one_le hε2
   rw [isRegularPair_iff]
   intro c s' hs' t' ht' hs's ht't

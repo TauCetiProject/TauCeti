@@ -152,7 +152,8 @@ theorem tendsto_toLaurentSeries_iff {ι : Type*} {l : Filter ι}
     Tendsto (fun i => toLaurentSeries (f i)) l (𝓝 (toLaurentSeries a)) ↔ Tendsto f l (𝓝 a) := by
   rw [tendsto_laurentSeries_iff_coeff, tendsto_nhds_iff]
   refine ⟨fun ⟨⟨b, hb⟩, hcoeff⟩ C => ?_, fun h => ?_⟩
-  · filter_upwards [hahnSeries_eventually_forall_lt_coeff_eq hb hcoeff ⌈C⌉] with i hi k hk
+  · filter_upwards [hahnSeries_eventually_forall_lt_coeff_eq hb ⌈C⌉ fun k _ ↦ hcoeff k]
+      with i hi k hk
     exact hi k (Int.lt_ceil.2 hk)
   simp only [coeff_toLaurentSeries]
   obtain ⟨m, hm⟩ := a.bddBelow_support_int

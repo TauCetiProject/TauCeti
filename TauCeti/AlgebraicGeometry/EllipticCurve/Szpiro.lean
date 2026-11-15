@@ -437,7 +437,6 @@ private theorem le_of_abc_of_ne_zero {ε ε₀ C₀ : ℝ} (hε₀ : 0 < ε₀) 
   · exact_mod_cast (Nat.one_le_pow _ _ (by omega)).trans (le_max_left _ _)
   · exact_mod_cast Nat.one_le_iff_ne_zero.2 hN
   · exact_mod_cast Nat.one_le_iff_ne_zero.2 (by positivity)
-  have hR₁ : (1 : ℝ) ≤ R := by exact_mod_cast Nat.radical_pos _
   have hg₁ : (1 : ℝ) ≤ g := by exact_mod_cast hg₀
   calc (M : ℝ) ≤ g * ((max (max a.natAbs b.natAbs) c.natAbs : ℕ) : ℝ) := by exact_mod_cast hM
     _ ≤ g * (C₀ * ((radical (a * b * c).natAbs : ℕ) : ℝ) ^ (1 + ε₀)) := by gcongr

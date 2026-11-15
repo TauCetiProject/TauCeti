@@ -20,7 +20,7 @@ particular, the whole range is null.
 Every derivative in this dimension range is nonsurjective, so the range is exactly the set of
 critical values. The proof uses the Hausdorff-dimension route already developed in Mathlib:
 `DifferentiableOn.dimH_image_le` says that differentiable maps do not increase dimension, and
-`addHaar_eq_zero_of_dimH_lt_finrank` turns the strict dimension bound into nullity for every
+`Measure.addHaar_eq_zero_of_dimH_lt_finrank` turns the strict dimension bound into nullity for every
 normalization of additive Haar measure.
 
 Together with the equal-dimensional case, this isolates the higher-regularity Morse--Sard argument

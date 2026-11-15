@@ -55,6 +55,8 @@ coefficient theorem needs for the vanishing of the cohomology of `M` above its d
   `TauCeti.mem_range_localHomologySystemCone_π_app_iff`: for compact `M`, restriction to a point
   has image the classes invariant under transport along loops in degree `n`, and it is injective
   if `M` is connected.
+* `TauCeti.singularHomologyToLocalHomology_injective`: for compact connected `M`, the map
+  `Hₙ(M) → Hₙ(M, M ∖ {x})` is injective.
 * `TauCeti.isIso_localHomologySystemCone_π_app` and
   `TauCeti.singularHomologyIsoOfSimplyConnectedSpace`: for compact simply connected `M`,
   `Hₙ(M) ≅ Hₙ(M, M ∖ {x}) ≅ N`.
@@ -132,6 +134,22 @@ theorem localHomologySystemCone_π_app_injective [CompactSpace M] [ConnectedSpac
   -- Transport the equality at `x` along a path from `x` to `y`.
   let f : x ⟶ y := Path.Homotopic.Quotient.mk (PathConnectedSpace.somePath x.as y.as)
   rw [← Cone.w _ f, ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, h]
+
+/-- **A top-dimensional class of a compact connected manifold is determined at one point**: the map
+`Hₙ(M; N) → Hₙ(M, M ∖ {x}; N)` to the local homology at any point `x` is injective. -/
+theorem singularHomologyToLocalHomology_injective [CompactSpace M] [ConnectedSpace M] {n : ℕ}
+    (hn : finrank ℝ E = n) (x : M) :
+    Function.Injective (singularHomologyToLocalHomology N x n) := by
+  have : IsEmpty (TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).snd := by
+    simp only [compl_univ]
+    exact inferInstanceAs (IsEmpty (∅ : Set M))
+  have hπ : IsIso ((TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).singularHomologyπ
+      (C := ModuleCat.{w} Λ) N n) := inferInstance
+  intro γ δ h
+  rw [singularHomologyToLocalHomology_apply, singularHomologyToLocalHomology_apply,
+    ← localHomologySystemCone_π_app N M E n (FundamentalGroupoid.mk x)] at h
+  exact ((ConcreteCategory.isIso_iff_bijective _).1 hπ).1
+    (localHomologySystemCone_π_app_injective N hn (FundamentalGroupoid.mk x) h)
 
 /-- **The image of the top homology of a compact manifold in local homology.** A local
 class at `x` is the restriction of a class of `Hₙ(M, M ∖ M; N)` exactly when it is fixed by the

@@ -40,8 +40,8 @@ shift `T ^ i` — is read off the determinants rather than off a formula for tho
 * `TauCeti.eq_zero_of_not_forall_apply_eq_one_of_unitsMap_eq_one`: **the vanishing horn**.
 * `TauCeti.cuspFormOfSmulSlashScaleGL_mem_cuspFormCharSpace`: the descent horn carries any
   character `χ₀` that `χ` pulls back from; the dichotomy specializes it to `hfac.χ₀`.
-* `TauCeti.exists_cuspForm_mem_cuspFormCharSpace_or_eq_zero`: **the level-lowering dichotomy**, in
-  the roadmap's `DirichletCharacter` phrasing — either `χ` factors through `N / l` and `f` is a
+* `TauCeti.exists_cuspForm_mem_cuspFormCharSpace_or_eq_zero`: **the level-lowering dichotomy**,
+  phrased over a `DirichletCharacter` — either `χ` factors through `N / l` and `f` is a
   cusp form of level `N / l` for the lowered character, or `f = 0`.
 
 ## Implementation notes
@@ -200,7 +200,7 @@ theorem eq_zero_of_not_forall_apply_eq_one_of_unitsMap_eq_one {l : ℕ} [NeZero 
   · -- at level `0` the reduction `(ZMod 0)ˣ → (ZMod (0 / l))ˣ` is the identity, so `hχ` fails
     refine absurd ?_ hχ
     intro u hu
-    have h0 : ∀ (n : ℕ) (hn : n = 0) (h : n ∣ 0), ZMod.unitsMap h u = 1 → u = 1 := by
+    have h0 : ∀ (n : ℕ) (_ : n = 0) (h : n ∣ 0), ZMod.unitsMap h u = 1 → u = 1 := by
       rintro n rfl h
       simp [ZMod.unitsMap_self]
     rw [h0 _ (Nat.zero_div l) _ hu, map_one]

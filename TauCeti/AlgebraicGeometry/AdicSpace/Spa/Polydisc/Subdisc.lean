@@ -339,7 +339,7 @@ theorem gaussPoint_mem_closedSubdisc_iff (hr₀ : 0 < r) (hr₁ : r ≤ 1) (a c 
     gaussPoint hr₀ hr₁ ∈ closedSubdisc a c ↔ ‖a‖ ≤ ‖c‖ ∧ r ≤ ‖c‖ := by
   rw [mem_closedSubdisc, gaussPoint_vle_iff, gaussPoint_vle_zero_iff, ← NNReal.coe_le_coe,
     coe_closedDiscGaussValuation_weightedX_sub_weightedC, closedDiscGaussValuation_weightedC,
-    coe_nnnorm, max_le_iff, map_eq_zero_iff _ (weightedC_injective _ isWeightFamily_one_weight)]
+    coe_nnNorm, max_le_iff, map_eq_zero_iff _ (weightedC_injective _ isWeightFamily_one_weight)]
   exact ⟨fun h ↦ ⟨h.1.2, h.1.1⟩, fun h ↦
     ⟨⟨h.2, h.1⟩, fun hc ↦ hr₀.not_ge (h.2.trans (by rw [hc, norm_zero]))⟩⟩
 
@@ -356,10 +356,10 @@ theorem gaussPointBelow_mem_closedSubdisc_zero_iff (hr₀ : 0 < r) (hr₁ : r �
   refine ⟨fun h ↦ ?_, fun h ↦ ⟨?_, fun hc ↦ hr₀.not_ge (h.trans (by rw [hc, norm_zero]))⟩⟩
   · by_contra! hlt
     refine (closedDiscGaussValuationBelow_lt_of_lt hr₀ hr₁ ?_).not_ge h.1
-    rwa [← NNReal.coe_lt_coe, hT, hC, coe_nnnorm]
+    rwa [← NNReal.coe_lt_coe, hT, hC, coe_nnNorm]
   · rcases h.lt_or_eq with hlt | heq
     · refine (closedDiscGaussValuationBelow_lt_of_lt hr₀ hr₁ ?_).le
-      rwa [← NNReal.coe_lt_coe, hT, hC, coe_nnnorm]
+      rwa [← NNReal.coe_lt_coe, hT, hC, coe_nnNorm]
     · exact le_of_not_ge (not_closedDiscGaussValuationBelow_weightedC_le hr₀ hr₁ heq.symm)
 
 /-- **`η_{r⁺}` lies in `D(0, |c|)` exactly when `r < ‖c‖`.** At `‖c‖ = r` the variable `T` is
@@ -377,10 +377,10 @@ theorem gaussPointAbove_mem_closedSubdisc_zero_iff (hr₀ : 0 < r) (hr₁ : r < 
   · by_contra! hle
     rcases hle.lt_or_eq with hlt | heq
     · refine (closedDiscGaussValuationAbove_lt_of_lt hr₀ hr₁.le ?_).not_ge h.1
-      rwa [← NNReal.coe_lt_coe, hT, hC, coe_nnnorm]
+      rwa [← NNReal.coe_lt_coe, hT, hC, coe_nnNorm]
     · exact not_closedDiscGaussValuationAbove_weightedX_le hr₀ hr₁.le heq h.1
   · refine (closedDiscGaussValuationAbove_lt_of_lt hr₀ hr₁.le ?_).le
-    rwa [← NNReal.coe_lt_coe, hT, hC, coe_nnnorm]
+    rwa [← NNReal.coe_lt_coe, hT, hC, coe_nnNorm]
 
 variable [CompleteSpace K]
 
@@ -391,7 +391,7 @@ theorem discPoint_mem_closedSubdisc_iff (b : K) (hb : ‖b‖ ≤ 1) (hr₀ : 0 
     (a c : K) : discPoint b hb hr₀ hr₁ ∈ closedSubdisc a c ↔ ‖b - a‖ ≤ ‖c‖ ∧ r ≤ ‖c‖ := by
   rw [mem_closedSubdisc, discPoint_vle_iff, discPoint_vle_zero_iff, taylorHom_weightedC,
     ← NNReal.coe_le_coe, coe_closedDiscGaussValuation_taylorHom_weightedX_sub_weightedC hb,
-    closedDiscGaussValuation_weightedC, coe_nnnorm, max_le_iff, norm_sub_rev,
+    closedDiscGaussValuation_weightedC, coe_nnNorm, max_le_iff, norm_sub_rev,
     map_eq_zero_iff _ (weightedC_injective _ isWeightFamily_one_weight)]
   exact ⟨fun h ↦ ⟨h.1.2, h.1.1⟩, fun h ↦
     ⟨⟨h.2, h.1⟩, fun hc ↦ hr₀.not_ge (h.2.trans (by rw [hc, norm_zero]))⟩⟩

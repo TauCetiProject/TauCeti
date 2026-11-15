@@ -34,10 +34,9 @@ Both trade a stubborn `g` for a better-behaved one without leaving the coset.
 
 Ported from the AINTLIB `LeanModularForms` project
 (`HeckeRIngs/AbstractHeckeRing/Commutativity.lean`,
-<https://github.com/CBirkbeck/AINTLIB/tree/main/projects/LeanModularForms>), per the
-ModularForms roadmap's dependency policy, rebuilt on the one-sided multiplicity count of the
-vendored Mathlib stack. The two reductions are generalised from `Gamma0_AL_scalar_reduce` and
-`bar_mem_DC_of_bar_conj_mem` in that project's
+<https://github.com/CBirkbeck/AINTLIB/tree/main/projects/LeanModularForms>), rebuilt on the
+one-sided multiplicity count `DoubleCoset.multiplicity_eq_card_filter`. The two reductions are
+generalised from `Gamma0_AL_scalar_reduce` and `bar_mem_DC_of_bar_conj_mem` in that project's
 [`HeckeRIngs/GLn/CongruenceHecke/AtkinLehner.lean`](https://github.com/CBirkbeck/AINTLIB),
 Apache-2.0 at commit `2baa76f742bdb4fb8ee323fabba41203bd390e08`: there they are stated for the
 Atkin-Lehner anti-involution of `Γ₀(N)`, and the conjugation one is proved by hand for an

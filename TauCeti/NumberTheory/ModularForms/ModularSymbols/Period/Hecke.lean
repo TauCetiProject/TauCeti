@@ -90,7 +90,7 @@ theorem periodMap_heckeSlashCuspFormEnd {Γ : Subgroup SL(2, ℤ)} [Γ.FiniteInd
     coe_heckeSlashCuspFormEnd, heckeSlashSum_def, periodIntegrand_sum_left]
   -- each summand is the substitution `z ↦ aᵥ z`; the summands are integrable along the geodesic
   -- because they are themselves periods of `f`, along the geodesic moved by `aᵥ`
-  rw [cuspIntegral_sum _ hγ fun v _ ↦ ?_]
+  rw [cuspIntegral_sum _ fun v _ ↦ ?_]
   · exact Finset.sum_congr rfl fun v _ ↦
       cuspIntegral_periodIntegrand_slash hk f P (hA v) (hpos v) _ _
   · rw [← periodIntegrand_adjugate_slash hk f P (hA v) (hpos v), ← SlashAction.slash_mul]

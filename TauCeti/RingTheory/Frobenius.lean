@@ -41,6 +41,8 @@ each of them, which again carries hypotheses of its own, such as those of
   subgroup is again a Frobenius element.
 * `IsArithFrobAt.of_le` — a Frobenius element at `Q` is one at any larger ideal with the same
   contraction to the base.
+* `Ideal.exists_isArithFrobAt_smul` — translating a member of the fiber of `σ` by `c` gives a
+  member of the fiber of `c * σ * c⁻¹`.
 * `Ideal.nonempty_frobenius_fiber_equiv_of_isConj` — conjugate elements have equipotent fibers
   above a fixed ideal of the base, as a bijection between them.
 * `Ideal.frobenius_fiber_card_eq_of_isConj` — the `Nat.card` form of that equipotence.
@@ -145,7 +147,11 @@ namespace Ideal
 variable {R S G : Type*} [CommRing R] [CommRing S] [Algebra R S] [Group G]
   [MulSemiringAction G S] [SMulCommClass G R S]
 
-private theorem exists_isArithFrobAt_smul {p : Ideal R} {σ τ c : G} {P : Ideal S}
+/-- **Translating a Frobenius fiber.** If `P` is a nonzero prime of `S` above `p` at which `σ` is an
+arithmetic Frobenius, then `c • P` is a nonzero prime above `p` at which the conjugate
+`τ = c * σ * c⁻¹` is an arithmetic Frobenius. This is the map underlying
+`nonempty_frobenius_fiber_equiv_of_isConj`. -/
+theorem exists_isArithFrobAt_smul {p : Ideal R} {σ τ c : G} {P : Ideal S}
     (hτ : c * σ * c⁻¹ = τ)
     (h : ∃ (_ : P.IsPrime) (_ : P.LiesOver p) (_ : P ≠ ⊥), IsArithFrobAt R σ P) :
     ∃ (_ : (c • P).IsPrime) (_ : (c • P).LiesOver p) (_ : c • P ≠ ⊥),

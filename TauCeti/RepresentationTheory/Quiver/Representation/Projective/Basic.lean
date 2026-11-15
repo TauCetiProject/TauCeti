@@ -50,9 +50,9 @@ identification of representations with left modules over the path algebra it is 
 
 ## Implementation notes
 
-The name `indecProjRep` is the one the roadmap pins for this object. Indecomposability is *not*
-proved here: it needs the Krull-Schmidt theory of Layer 2, which is not yet available. What is
-proved is projectivity, and the universal property that makes `Pᵢ` the representable functor at
+Indecomposability, which the name `indecProjRep` records, is *not* proved here; over an acyclic
+quiver it is proved in `TauCeti.RepresentationTheory.Quiver.Representation.Indecomposable`. What is
+proved here is projectivity, and the universal property that makes `Pᵢ` the representable functor at
 `i`; both are independent of any finiteness assumption on `Q`, so no such assumption is made.
 
 `Pᵢ` is built by `CategoryTheory.Paths.lift`: a representation of `Q` is a functor out of the free
@@ -90,9 +90,8 @@ objects sit in a common category only when those universes agree, and the surjec
 
 ## References
 
-This implements the indecomposable projectives of Layer 1 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`. See Assem--Simson--
-Skowroński, *Elements of the Representation Theory of Associative Algebras I*, Ch. III.
+See Assem--Simson--Skowroński, *Elements of the Representation Theory of Associative Algebras I*,
+Ch. III.
 -/
 
 public section

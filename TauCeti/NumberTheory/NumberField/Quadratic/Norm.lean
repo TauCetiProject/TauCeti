@@ -25,9 +25,9 @@ For a quadratic number field `K = ℚ(√d)` presented by an algebraic integer `
 * `exists_norm_eq_neg_one_of_sq_sub_mul_sq_eq_neg_one`: a solution of the negative Pell equation
   `b² - d a² = -1` supplies a unit of norm `-1`.
 
-The positivity is a descent input for the genus theory of the multiquadratic roadmap: for a
-norm-`±1` element `α` it upgrades `N(α) = ±1` to `N(α) = 1`, the hypothesis of Hilbert's
-Theorem 90 used to realise a `2`-torsion class by an ambiguous ideal.
+The positivity is a descent input for genus theory: for a norm-`±1` element `α` it upgrades
+`N(α) = ±1` to `N(α) = 1`, the hypothesis of Hilbert's Theorem 90 used to realise a `2`-torsion
+class by an ambiguous ideal.
 
 See D. A. Cox, *Primes of the Form x² + ny²*, and F. Lemmermeyer, *Reciprocity Laws*.
 -/
@@ -53,7 +53,7 @@ coefficient of the minimal polynomial `X² - d`, times the sign `(-1)^{[K:ℚ]} 
       minpoly_rat_quadratic hmin, natDegree_X_pow_sub_C]
   rw [← hgen', Algebra.PowerBasis.norm_gen_eq_coeff_zero_minpoly, hdim, hgen',
     minpoly_rat_quadratic hmin]
-  simp [coeff_sub, coeff_X_pow]
+  simp [coeff_X_pow]
 
 /-- **The norm in the basis `1, θ`:** `N(b + aθ) = b² - d·a²`. This is the generic quadratic norm
 formula with `Tr(θ) = 0` and `N(θ) = -d`. The left-hand side uses the rat-cast normal form
@@ -140,7 +140,7 @@ theorem exists_norm_eq_neg_one_of_sq_sub_mul_sq_eq_neg_one (hmin : minpoly ℤ �
     rw [← Algebra.coe_norm_int, hxdef, TauCeti.NumberField.norm_int_add_mul_gen hmin hgen, hab]
     norm_num
   have hunit : IsUnit x := by
-    rw [NumberField.isUnit_iff_norm, RingOfIntegers.coe_norm, hnorm]
+    rw [NumberField.isUnit_iff_norm, NumberField.RingOfIntegers.coe_norm, hnorm]
     norm_num
   exact ⟨hunit.unit, by rwa [IsUnit.unit_spec]⟩
 

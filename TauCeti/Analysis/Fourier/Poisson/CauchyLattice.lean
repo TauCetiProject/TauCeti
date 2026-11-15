@@ -55,7 +55,7 @@ private theorem tsum_cexp_neg_mul_abs_int_eq_tsum_div {y : ℝ} (hy : 0 < y) :
     refine IsLittleO.isBigO (IsLittleO.of_norm_left ?_)
     simpa only [f, Complex.norm_exp, Complex.ofReal_re] using
       exp_neg_mul_abs_isLittleO_abs_rpow_cocompact hscale (-2)
-  set γ : NNReal := ⟨y, hy.le⟩ with hγdef
+  set γ : NNReal := ⟨y, hy.le⟩
   have hγ_coe : (γ : ℝ) = y := NNReal.coe_mk y hy.le
   have hγ : γ ≠ 0 := fun hz => hy.ne' (hγ_coe ▸ congrArg (fun u : NNReal => (u : ℝ)) hz)
   have hFourierCauchy : 𝓕 f = fun x : ℝ =>

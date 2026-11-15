@@ -48,6 +48,15 @@ variable {A : Type*} [Semiring A] (F : AlgFiltration A)
 attribute [instance] isTwoSided
 attribute [simp] ideal_zero
 
+/-- Powers of the first filtration ideal lie in the corresponding filtration ideals. -/
+theorem ideal_one_pow_le (k : ℕ) : F.ideal 1 ^ k ≤ F.ideal k := by
+  induction k with
+  | zero => simp only [Submodule.pow_zero, Ideal.one_eq_top, ideal_zero, le_refl]
+  | succ k ih =>
+    rw [Ideal.IsTwoSided.pow_succ, Ideal.mul_le]
+    intro x hx y hy
+    simpa only [Nat.add_comm 1 k] using F.mul_mem hx (ih hy)
+
 /-- The decreasing family, viewed with increasing order-dual indices. -/
 def orderDual : ℕᵒᵈ → Ideal A := fun k => F.ideal k.ofDual
 

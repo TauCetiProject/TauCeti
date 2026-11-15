@@ -613,7 +613,6 @@ private theorem IsNestedInsert.contract_right {x : PlanarMatching (k + 2)} {f : 
     (hc' : c' = c + 1) : IsNestedInsert (x.contract a) f c' j ∧ pv x a ≠ a + 1 := by
   subst hc'
   have hK := h.card_eq
-  have hle := h.le
   have b₀ := h.block 0 (by omega)
   rw [add_zero] at b₀
   have b₀' : pv x a = c := by

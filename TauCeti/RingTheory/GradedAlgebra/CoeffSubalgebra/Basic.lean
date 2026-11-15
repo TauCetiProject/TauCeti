@@ -101,7 +101,7 @@ theorem mem_coeffSubalgebra_iff {f : B[X]} : f ∈ coeffSubalgebra M ↔ ∀ n, 
 theorem monomial_mem_coeffSubalgebra_iff {n : ℕ} {b : B} :
     Polynomial.monomial n b ∈ coeffSubalgebra M ↔ b ∈ M n := by
   refine ⟨fun h ↦ by simpa using h n, fun hb m ↦ ?_⟩
-  rw [coeff_monomial]
+  rw [coeff_monomial_apply]
   split_ifs with h
   · exact h ▸ hb
   · exact zero_mem _
@@ -293,7 +293,7 @@ private theorem decomposeAux_coe (x : ⨁ n, grade M n) :
   | zero => ext1; ext1; simp [component]
   | of m y =>
     rw [coeAddMonoidHom_of, component_of_mem y.2, of_apply]
-  | add x y hx hy => rw [map_add, component_add, hx, hy, add_apply]
+  | add x y hx hy => rw [map_add, component_add, hx, hy, DirectSum.add_apply]
 
 variable (M) in
 /-- `coeffSubalgebra M` is the internal direct sum of its graded pieces. -/

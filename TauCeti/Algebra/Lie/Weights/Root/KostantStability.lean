@@ -89,14 +89,25 @@ vector at `β + n α`, and the integer is the rising factorial
 
 Each step multiplies the coefficient by a Chevalley structure constant, which is `± (p + n + 1)`
 by the normalization of a Chevalley system. -/
-theorem ad_pow_rootVector_eq_zero_or_exists {α β : Weight K H L} (hα : α.IsNonZero)
-    (hβ : β.IsNonZero)
+theorem ad_pow_rootVector_eq_zero_or_exists {α β : Weight K H L}
     (hαβ : (α : H → K) + β ≠ 0) (n : ℕ) :
     ((ad K L (x α)) ^ n) (x β) = 0 ∨
       ∃ γ : Weight K H L, (γ : H → K) = (β : H → K) + (n : K) • (α : H → K) ∧
         chainBotCoeff (α : H → K) γ = chainBotCoeff (α : H → K) β + n ∧
         ∃ z : ℤ, z.natAbs = (chainBotCoeff (α : H → K) β + 1).ascFactorial n ∧
           ((ad K L (x α)) ^ n) (x β) = (z : K) • x γ := by
+  -- The root vector at a zero weight vanishes, which settles the degenerate strings.
+  by_cases hβ : β.IsZero
+  · exact Or.inl (by rw [hx.toIsSl2System.eq_zero_of_isZero β hβ, map_zero])
+  by_cases hα : α.IsZero
+  · cases n with
+    | zero => exact Or.inr ⟨β, by simp, by simp, 1, by simp, by simp⟩
+    | succ n =>
+      refine Or.inl ?_
+      rw [hx.toIsSl2System.eq_zero_of_isZero α hα, map_zero, zero_pow n.succ_ne_zero,
+        LinearMap.zero_apply]
+  replace hα : α.IsNonZero := hα
+  replace hβ : β.IsNonZero := hβ
   induction n with
   | zero =>
     refine Or.inr ⟨β, by simp, by simp, 1, by simp, by simp⟩
@@ -144,11 +155,10 @@ theorem ad_pow_rootVector_eq_zero_or_exists {α β : Weight K H L} (hα : α.IsN
 /-- Every divided iterated bracket at a root of a nonopposite root string has an
 integer coefficient. -/
 theorem exists_int_inv_factorial_smul_ad_pow_eq_zsmul
-    (α β : Weight K H L) (hα : α.IsNonZero) (hβ : β.IsNonZero)
-    (hab : (α : H → K) + β ≠ 0)
+    (α β : Weight K H L) (hab : (α : H → K) + β ≠ 0)
     (γ : Weight K H L) (n : ℕ) (hγ : (γ : H → K) = (β : H → K) + (n : K) • (α : H → K)) :
     ∃ z : ℤ, (n.factorial : K)⁻¹ • ((ad K L (x α)) ^ n) (x β) = z • x γ := by
-  rcases hx.ad_pow_rootVector_eq_zero_or_exists hα hβ hab n with
+  rcases hx.ad_pow_rootVector_eq_zero_or_exists hab n with
     hzero | ⟨δ, hδ, -, z, hz, hpow⟩
   · exact ⟨0, by simp [hzero]⟩
   have hδγ : δ = γ := by
@@ -212,7 +222,6 @@ theorem inv_factorial_smul_ad_pow_rootVector_mem (α β : Weight K H L) (n : ℕ
     | 0 => simp
     | (m + 1) => simp [hxa, zero_pow]
   have hα : α.IsNonZero := fun hz => hxa (hx.toIsSl2System.eq_zero_of_isZero α hz)
-  have hβ : β.IsNonZero := fun hz => hxb (hx.toIsSl2System.eq_zero_of_isZero β hz)
   by_cases hαβ : (α : H → K) + β = 0
   · -- the string through `-α`: the `sl₂`-triple computation
     have hβα : β = -α := by
@@ -224,10 +233,10 @@ theorem inv_factorial_smul_ad_pow_rootVector_mem (α β : Weight K H L) (n : ℕ
     subst hβα
     exact hx.inv_factorial_smul_ad_pow_root_neg_mem α hα n
   -- the generic string, where the rising factorial is divisible by `n !`
-  rcases hx.ad_pow_rootVector_eq_zero_or_exists hα hβ hαβ n with h0 | ⟨γ, hγ, -⟩
+  rcases hx.ad_pow_rootVector_eq_zero_or_exists hαβ n with h0 | ⟨γ, hγ, -⟩
   · rw [h0, smul_zero]
     exact zero_mem _
-  obtain ⟨w, hw⟩ := hx.exists_int_inv_factorial_smul_ad_pow_eq_zsmul α β hα hβ hαβ γ n hγ
+  obtain ⟨w, hw⟩ := hx.exists_int_inv_factorial_smul_ad_pow_eq_zsmul α β hαβ γ n hγ
   rw [hw]
   exact zsmul_mem (hx.rootVector_mem_chevalleyLieLattice γ) w
 

@@ -47,6 +47,6 @@ theorem fieldRange_candidateGenusField_eq_hilbertClassField {d : ℤ} (hd : Squa
     exact isUnramifiedIn_candidateGenusField hd hnsq
       (w.asIdeal.under (𝓞 (candidateGenusFieldBase hd))) w.asIdeal inferInstance inferInstance
   · exact isUnramifiedAtInfinitePlaces_candidateGenusField hd hneg
-  · rw [finrank_candidateGenusField_over_candidateGenusFieldBase hd hnsq, hclass]
+  · rw [finrank_candidateGenusField_over_candidateGenusFieldBase hd, hclass]
 
 end TauCeti.ClassFieldTheory

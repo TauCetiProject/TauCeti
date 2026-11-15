@@ -160,7 +160,6 @@ conjugation-fixed classes.** For `K = ℚ(√d)` with `d > 0` squarefree whose p
 all positive, exactly `2 ^ (t - 1)` ideal classes are fixed by the quadratic conjugation. -/
 theorem natCard_mulEquiv_ringOfIntegersQuadraticConj_eq_self_eq_two_pow_of_forall_pos
     {s : Finset ℤ} (hs : ∀ P ∈ s, IsPrimeDiscriminant P)
-    (heven : ∀ P ∈ s, ∀ P' ∈ s, IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant P' → P = P')
     (hprod : ∏ P ∈ s, P = fundamentalDiscriminant d)
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
     (hsf : Squarefree d) (hpos : ∀ P ∈ s, 0 < P) :
@@ -177,7 +176,7 @@ theorem natCard_mulEquiv_ringOfIntegersQuadraticConj_eq_self_eq_two_pow_of_foral
       mulEquiv_ringOfIntegersQuadraticConj_apply_eq_self_iff hmin hgen C),
     ← TauCeti.ClassGroup.card_elementaryTwoQuotient_eq_card_twoTorsion,
     TauCeti.ClassGroup.card_elementaryTwoQuotient_eq_two_pow_twoRank,
-    (twoRank_eq_ncard_ramifiedPrimes_sub_one_iff hs heven hprod hmin hgen hsf hd).mpr hpos]
+    (twoRank_eq_ncard_ramifiedPrimes_sub_one_iff hs hprod hmin hgen hsf hd).mpr hpos]
 
 /-- **The ambiguous class number formula for a real quadratic field with a negative prime
 discriminant, counted by conjugation-fixed classes.** For `K = ℚ(√d)` with `d > 0` squarefree and
@@ -185,7 +184,6 @@ some negative prime discriminant `P ∈ s`, exactly `2 ^ (t - 2)` ideal classes 
 quadratic conjugation. -/
 theorem natCard_mulEquiv_ringOfIntegersQuadraticConj_eq_self_eq_two_pow_of_neg {s : Finset ℤ}
     (hs : ∀ P ∈ s, IsPrimeDiscriminant P)
-    (heven : ∀ P ∈ s, ∀ P' ∈ s, IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant P' → P = P')
     (hprod : ∏ P ∈ s, P = fundamentalDiscriminant d)
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
     (hsf : Squarefree d) (hd : 0 < d) {P : ℤ} (hP : P ∈ s) (hneg : P < 0) :
@@ -196,7 +194,7 @@ theorem natCard_mulEquiv_ringOfIntegersQuadraticConj_eq_self_eq_two_pow_of_neg {
       mulEquiv_ringOfIntegersQuadraticConj_apply_eq_self_iff hmin hgen C),
     ← TauCeti.ClassGroup.card_elementaryTwoQuotient_eq_card_twoTorsion,
     TauCeti.ClassGroup.card_elementaryTwoQuotient_eq_two_pow_twoRank,
-    twoRank_eq_ncard_ramifiedPrimes_sub_two_of_neg hs heven hprod hmin hgen hsf hd hP hneg]
+    twoRank_eq_ncard_ramifiedPrimes_sub_two_of_neg hs hprod hmin hgen hsf hd hP hneg]
 
 /-- **The strongly ambiguous class number of a quadratic field with a unit of norm `-1`.** For
 `K = ℚ(√d)` with `d` squarefree, if some unit of `𝓞 K` has norm `-1` (so `K` is real), then exactly

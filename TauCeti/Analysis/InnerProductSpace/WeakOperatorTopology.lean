@@ -176,7 +176,7 @@ theorem tendsto_of_forall_inner_apply_tendsto {α : Type*} {l : Filter α}
     {A : α → E →L[𝕜] F} {B : E →L[𝕜] F}
     (h : ∀ x y, Tendsto (fun a ↦ ⟪y, A a x⟫_𝕜) l (𝓝 ⟪y, B x⟫_𝕜)) :
     Tendsto A l (𝓝 B) := by
-  have := FiniteDimensional.complete 𝕜 F
+  have := FiniteDimensional.completeSpace 𝕜 F
   have : FiniteDimensional 𝕜 (E →WOT[𝕜] F) :=
     FiniteDimensional.of_injective (ContinuousLinearMapWOT.linearEquiv 𝕜).toLinearMap
       (ContinuousLinearMapWOT.linearEquiv 𝕜).injective

@@ -108,15 +108,12 @@ theorem exists_diffeotopy_extend_boundaryCircles_of_lifts {ι : Type*} [Finite �
     (hdis hij).mono (image_subset_range _ _) (image_subset_range _ _)
   have ha (i : ι) (p : EuclideanHalfSpace 1 × AddCircle T) (hp : p.1.1 0 ≤ 1) :
       χ i p ∈ W i := ⟨p, ⟨by dsimp; linarith, mem_univ _⟩, rfl⟩
-  have hb (i : ι) (p : EuclideanHalfSpace 1 × AddCircle T) (hp : p.1.1 0 ≤ 1) :
-      χ i (p.1, φ i p.2) ∈ W i :=
-    ⟨(p.1, φ i p.2), ⟨by dsimp; linarith, mem_univ _⟩, rfl⟩
   obtain ⟨Φ, K, hK, hKW, hΦK, hΦ⟩ :=
     exists_diffeotopy_final_comp_eqOn_of_pairwise_disjoint Finset.univ
       (by simpa only [Finset.coe_univ] using hW)
       (A := {p : EuclideanHalfSpace 1 × AddCircle T | p.1.1 0 ≤ 1})
       (a := fun i p ↦ χ i p) (b := fun i p ↦ χ i (p.1, φ i p.2))
-      (fun i _ ↦ ha i) (fun i _ ↦ hb i) (fun i _ ↦ by
+      (fun i _ ↦ ha i) (fun i _ ↦ by
         obtain ⟨Φ, K, hK, hKW, hΦK, hΦ⟩ :=
           exists_diffeotopy_extend_boundaryCircle_of_lift (hχ i) (hχo i) (hF i) hn
             (hper i) (hpos i) (hφ i)

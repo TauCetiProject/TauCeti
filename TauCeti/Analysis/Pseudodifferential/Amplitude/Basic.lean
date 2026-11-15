@@ -32,7 +32,13 @@ reduce to left symbols (`TauCeti.Amplitude.leftSymbol`, in
 
 * `TauCeti.Amplitude`: amplitudes, with the derivatives `TauCeti.Amplitude.spatialDerivFst`
   (`∂_{x_j}`), `TauCeti.Amplitude.spatialDerivSnd` (`∂_{y_j}`) and
-  `TauCeti.Amplitude.frequencyDeriv` (`∂_{ξ_j}`, lowering the order by one).
+  `TauCeti.Amplitude.frequencyDeriv` (`∂_{ξ_j}`, lowering the order by one), which commute with
+  each other (`TauCeti.Amplitude.spatialDerivFst_spatialDerivSnd_comm` and its companions).
+* `TauCeti.Amplitude.exists_norm_mixedDeriv_le_of_leibniz`: symbol estimates for a family of
+  functions of `(x, ξ)` built from amplitudes, from its Leibniz rules and a bound on the family.
+* `TauCeti.Amplitude.diagonal`: the restriction `(x, ξ) ↦ a(x, x, ξ)` of an amplitude to the
+  diagonal, a symbol of order `m`, with the Leibniz rules `TauCeti.Amplitude.spatialDeriv_diagonal`
+  and `TauCeti.Amplitude.frequencyDeriv_diagonal`.
 * `TauCeti.Amplitude.ofRight`: the amplitude `b(y, ξ)` of the right quantization of a symbol `b`.
 * `TauCeti.Amplitude.HasCompactInputSupport`: the amplitude vanishes for input positions outside a
   compact set; then its estimates hold uniformly in `y`
@@ -242,6 +248,68 @@ theorem coefficient_frequencyDeriv (j : Fin n) (a : Amplitude n V W m)
   simp [frequencyDeriv]
 
 
+/-! ### Commuting derivatives -/
+
+section Comm
+
+/-- The coefficient of `∂_{x_j} a` as a directional derivative of the coefficient of `a`. -/
+theorem coefficient_spatialDerivFst_eq_iteratedFDerivAlong (j : Fin n) (a : Amplitude n V W m) :
+    (spatialDerivFst j a).coefficient =
+      iteratedFDerivAlong ℝ [(EuclideanSpace.single j 1, 0)] a.coefficient :=
+  (rfl)
+
+/-- The coefficient of `∂_{y_j} a` as a directional derivative of the coefficient of `a`. -/
+theorem coefficient_spatialDerivSnd_eq_iteratedFDerivAlong (j : Fin n) (a : Amplitude n V W m) :
+    (spatialDerivSnd j a).coefficient =
+      iteratedFDerivAlong ℝ [(0, EuclideanSpace.single j 1, 0)] a.coefficient :=
+  (rfl)
+
+/-- The coefficient of `∂_{ξ_j} a` as a directional derivative of the coefficient of `a`. -/
+theorem coefficient_frequencyDeriv_eq_iteratedFDerivAlong (j : Fin n) (a : Amplitude n V W m) :
+    (frequencyDeriv j a).coefficient =
+      iteratedFDerivAlong ℝ [(0, 0, EuclideanSpace.single j 1)] a.coefficient :=
+  (rfl)
+
+/-- Derivatives of an amplitude along two directions commute. -/
+private theorem iteratedFDerivAlong_pair_comm (a : Amplitude n V W m)
+    (d e : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n) :
+    iteratedFDerivAlong ℝ [d] (iteratedFDerivAlong ℝ [e] a.coefficient) =
+      iteratedFDerivAlong ℝ [e] (iteratedFDerivAlong ℝ [d] a.coefficient) := by
+  rw [← iteratedFDerivAlong_append, ← iteratedFDerivAlong_append]
+  exact (List.Perm.swap e d []).iteratedFDerivAlong_eq a.contDiff_coefficient (by simp)
+
+/-- Two derivatives in the output position commute. -/
+theorem spatialDerivFst_comm (j l : Fin n) (a : Amplitude n V W m) :
+    spatialDerivFst j (spatialDerivFst l a) = spatialDerivFst l (spatialDerivFst j a) :=
+  Amplitude.ext (iteratedFDerivAlong_pair_comm a _ _)
+
+/-- Two derivatives in the input position commute. -/
+theorem spatialDerivSnd_comm (j l : Fin n) (a : Amplitude n V W m) :
+    spatialDerivSnd j (spatialDerivSnd l a) = spatialDerivSnd l (spatialDerivSnd j a) :=
+  Amplitude.ext (iteratedFDerivAlong_pair_comm a _ _)
+
+/-- Two frequency derivatives commute. -/
+theorem frequencyDeriv_comm (j l : Fin n) (a : Amplitude n V W m) :
+    frequencyDeriv j (frequencyDeriv l a) = frequencyDeriv l (frequencyDeriv j a) :=
+  Amplitude.ext (iteratedFDerivAlong_pair_comm a _ _)
+
+/-- Derivatives in the output and in the input position commute. -/
+theorem spatialDerivFst_spatialDerivSnd_comm (j l : Fin n) (a : Amplitude n V W m) :
+    spatialDerivFst j (spatialDerivSnd l a) = spatialDerivSnd l (spatialDerivFst j a) :=
+  Amplitude.ext (iteratedFDerivAlong_pair_comm a _ _)
+
+/-- Derivatives in the output position and in the frequency commute. -/
+theorem spatialDerivFst_frequencyDeriv_comm (j l : Fin n) (a : Amplitude n V W m) :
+    spatialDerivFst j (frequencyDeriv l a) = frequencyDeriv l (spatialDerivFst j a) :=
+  Amplitude.ext (iteratedFDerivAlong_pair_comm a _ _)
+
+/-- Derivatives in the input position and in the frequency commute. -/
+theorem spatialDerivSnd_frequencyDeriv_comm (j l : Fin n) (a : Amplitude n V W m) :
+    spatialDerivSnd j (frequencyDeriv l a) = frequencyDeriv l (spatialDerivSnd j a) :=
+  Amplitude.ext (iteratedFDerivAlong_pair_comm a _ _)
+
+end Comm
+
 /-- The amplitude `a(x, y, ξ) = b(y, ξ)` of the **right quantization**
 `u ↦ (2π)⁻ⁿ ∫∫ exp(i ⟪x - y, ξ⟫) b(y, ξ) u(y) dy dξ` of a symbol `b`. -/
 def ofRight (b : Symbol n V W m) : Amplitude n V W m where
@@ -359,7 +427,7 @@ theorem _root_.TauCeti.Symbol.HasCompactSpatialSupport.hasCompactInputSupport_of
     {b : Symbol n V W m} (hb : b.HasCompactSpatialSupport) :
     (ofRight b).HasCompactInputSupport := by
   obtain ⟨L, hL, hLb⟩ := Symbol.hasCompactSpatialSupport_iff.mp hb
-  exact ⟨L, hL, fun x y hy ξ ↦ hLb y hy ξ⟩
+  exact ⟨L, hL, fun _ y hy ξ ↦ hLb y hy ξ⟩
 
 /-- For an amplitude with compact input support, the estimates hold for all input positions,
 uniformly for output positions in a compact set. -/
@@ -491,6 +559,166 @@ theorem HasCompactInputSupport.fourier_spatialDerivSnd_slice {a : Amplitude n V 
   simp only [f, fderiv_slice_snd_apply, EuclideanSpace.inner_single_right, one_mul,
     conj_trivial] at h
   simpa only [coefficient_spatialDerivSnd] using h
+
+/-! ### Symbol estimates from the Leibniz rules -/
+
+section Leibniz
+
+/-- **Symbol estimates from the Leibniz rules for amplitudes.** Let `F a ha` be a family of smooth
+functions of the position and the frequency, indexed by the amplitudes `a` of order `m` satisfying
+a predicate `P` that is stable under the derivatives `∂_{x_j}`, `∂_{y_j}` and `∂_{ξ_j}`, which
+satisfies the Leibniz rules `∂_{x_j} (F a) = F (∂_{x_j} a) + F (∂_{y_j} a)` and
+`∂_{ξ_j} (F a) = F (∂_{ξ_j} a)`. If every member is bounded by `C ⟨ξ⟩ ^ (m - s)` for positions in a
+compact set, then so is every mixed derivative `∂_x^α ∂_ξ^β (F a)`, with the weight
+`⟨ξ⟩ ^ (m - s - |β|)`. -/
+theorem exists_norm_mixedDeriv_le_of_leibniz (s : ℝ) (P : ∀ {m : ℝ}, Amplitude n V W m → Prop)
+    (hPfst : ∀ {m : ℝ} {a : Amplitude n V W m}, P a → ∀ j, P (spatialDerivFst j a))
+    (hPsnd : ∀ {m : ℝ} {a : Amplitude n V W m}, P a → ∀ j, P (spatialDerivSnd j a))
+    (hPfreq : ∀ {m : ℝ} {a : Amplitude n V W m}, P a → ∀ j, P (frequencyDeriv j a))
+    (F : ∀ {m : ℝ} (a : Amplitude n V W m), P a →
+      CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W)
+    (hF : ∀ {m : ℝ} (a : Amplitude n V W m) (ha : P a), ContDiff ℝ ∞ (F a ha))
+    (hspatial : ∀ {m : ℝ} (a : Amplitude n V W m) (ha : P a) (j : Fin n)
+      (x ξ : CoordinateSpace n), coordinateDeriv [j] (fun y ↦ F a ha (y, ξ)) x =
+        F (spatialDerivFst j a) (hPfst ha j) (x, ξ) + F (spatialDerivSnd j a) (hPsnd ha j) (x, ξ))
+    (hfrequency : ∀ {m : ℝ} (a : Amplitude n V W m) (ha : P a) (j : Fin n)
+      (x ξ : CoordinateSpace n), coordinateDeriv [j] (fun η ↦ F a ha (x, η)) ξ =
+        F (frequencyDeriv j a) (hPfreq ha j) (x, ξ))
+    (hbound : ∀ {m : ℝ} (a : Amplitude n V W m) (ha : P a) {K : Set (CoordinateSpace n)},
+      IsCompact K → ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
+        ‖F a ha (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - s) / 2))
+    (a : Amplitude n V W m) (ha : P a) (α β : List (Fin n)) {K : Set (CoordinateSpace n)}
+    (hK : IsCompact K) :
+    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
+      ‖mixedDeriv α β (F a ha) x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - s - β.length) / 2) := by
+  obtain ⟨D, hD⟩ : ∃ D, α.length + β.length = D := ⟨_, rfl⟩
+  induction D generalizing m α β with
+  | zero =>
+    obtain ⟨rfl, rfl⟩ : α = [] ∧ β = [] := by
+      simpa [List.length_eq_zero_iff] using hD
+    obtain ⟨C, hC0, hC⟩ := hbound a ha hK
+    exact ⟨C, hC0, fun x hx ξ ↦ by simpa using hC x hx ξ⟩
+  | succ D ih =>
+    rcases List.eq_nil_or_concat' β with rfl | ⟨β', j, rfl⟩
+    · rcases List.eq_nil_or_concat' α with rfl | ⟨α', j, rfl⟩
+      · simp at hD
+      · obtain ⟨C₁, hC₁0, hC₁⟩ := ih (spatialDerivFst j a) (hPfst ha j) α' [] (by simpa using hD)
+        obtain ⟨C₂, hC₂0, hC₂⟩ := ih (spatialDerivSnd j a) (hPsnd ha j) α' [] (by simpa using hD)
+        refine ⟨C₁ + C₂, add_nonneg hC₁0 hC₂0, fun x hx ξ ↦ ?_⟩
+        have hfun : (fun q : CoordinateSpace n × CoordinateSpace n ↦
+            coordinateDeriv [j] (fun y ↦ F a ha (y, q.2)) q.1) =
+              F (spatialDerivFst j a) (hPfst ha j) + F (spatialDerivSnd j a) (hPsnd ha j) :=
+          funext fun q ↦ hspatial a ha j q.1 q.2
+        rw [← mixedDeriv_coordinateDeriv_fst (hF a ha), hfun]
+        exact norm_mixedDeriv_add_le (hF _ _) (hF _ _) (hC₁ x hx ξ) (hC₂ x hx ξ)
+    · have hlen : α.length + β'.length = D := by
+        simp only [List.length_append, List.length_singleton] at hD
+        omega
+      obtain ⟨C, hC0, hC⟩ := ih (frequencyDeriv j a) (hPfreq ha j) α β' hlen
+      refine ⟨C, hC0, fun x hx ξ ↦ ?_⟩
+      have hfun : (fun q : CoordinateSpace n × CoordinateSpace n ↦
+          coordinateDeriv [j] (fun η ↦ F a ha (q.1, η)) q.2) =
+            F (frequencyDeriv j a) (hPfreq ha j) :=
+        funext fun q ↦ hfrequency a ha j q.1 q.2
+      have e : (m - 1 - s - β'.length) / 2 = (m - s - (β' ++ [j]).length) / 2 := by
+        simp only [List.length_append, List.length_singleton, Nat.cast_add, Nat.cast_one]
+        ring
+      have h := hC x hx ξ
+      rw [e] at h
+      rw [← mixedDeriv_coordinateDeriv_snd, hfun]
+      exact h
+
+end Leibniz
+
+/-! ### The restriction to the diagonal -/
+
+section Diagonal
+
+/-- The derivative of `x ↦ a(x, x, ξ)` in the direction `e_j` is `∂_{x_j} a + ∂_{y_j} a` at
+`(x, x, ξ)`. -/
+private theorem coordinateDeriv_diagonal_fst (a : Amplitude n V W m) (j : Fin n)
+    (x ξ : CoordinateSpace n) :
+    coordinateDeriv [j] (fun y ↦ a.coefficient (y, y, ξ)) x =
+      (spatialDerivFst j a).coefficient (x, x, ξ) +
+        (spatialDerivSnd j a).coefficient (x, x, ξ) := by
+  have hφ : HasFDerivAt (fun y : CoordinateSpace n ↦ (y, y, ξ))
+      ((ContinuousLinearMap.id ℝ (CoordinateSpace n)).prod
+        ((ContinuousLinearMap.id ℝ (CoordinateSpace n)).prod 0)) x :=
+    (hasFDerivAt_id x).prodMk ((hasFDerivAt_id x).prodMk (hasFDerivAt_const ξ x))
+  have h := (a.contDiff_coefficient.differentiable (by simp) _).hasFDerivAt.comp x hφ
+  rw [coordinateDeriv_cons, coordinateDeriv_nil, coefficient_spatialDerivFst,
+    coefficient_spatialDerivSnd, ← map_add]
+  simp only [Function.comp_def] at h
+  rw [h.fderiv]
+  simp
+
+/-- The derivative of `ξ ↦ a(x, x, ξ)` in the direction `e_j` is `∂_{ξ_j} a` at `(x, x, ξ)`. -/
+private theorem coordinateDeriv_diagonal_snd (a : Amplitude n V W m) (j : Fin n)
+    (x ξ : CoordinateSpace n) :
+    coordinateDeriv [j] (fun η ↦ a.coefficient (x, x, η)) ξ =
+      (frequencyDeriv j a).coefficient (x, x, ξ) := by
+  have hφ : HasFDerivAt (fun η : CoordinateSpace n ↦ (x, x, η))
+      ((0 : CoordinateSpace n →L[ℝ] CoordinateSpace n).prod
+        ((0 : CoordinateSpace n →L[ℝ] CoordinateSpace n).prod
+          (ContinuousLinearMap.id ℝ (CoordinateSpace n)))) ξ :=
+    (hasFDerivAt_const x ξ).prodMk ((hasFDerivAt_const x ξ).prodMk (hasFDerivAt_id ξ))
+  have h := (a.contDiff_coefficient.differentiable (by simp) _).hasFDerivAt.comp ξ hφ
+  rw [coordinateDeriv_cons, coordinateDeriv_nil, coefficient_frequencyDeriv]
+  simp only [Function.comp_def] at h
+  rw [h.fderiv]
+  simp
+
+/-- The restriction `(x, ξ) ↦ a(x, x, ξ)` of an amplitude of order `m` to the diagonal, a symbol of
+order `m`. It is the leading term of the left symbol
+(`TauCeti.Amplitude.leftSymbol_eq_diagonal_add_leftRemainder_one`). -/
+def diagonal (a : Amplitude n V W m) : Symbol n V W m where
+  coefficient p := a.coefficient (p.1, p.1, p.2)
+  contDiff_coefficient := a.contDiff_coefficient.comp (by fun_prop)
+  exists_bound K hK α β :=
+    exists_norm_mixedDeriv_le_of_leibniz 0 (fun _ ↦ True) (fun _ _ ↦ trivial)
+      (fun _ _ ↦ trivial) (fun _ _ ↦ trivial)
+      (fun a _ p ↦ a.coefficient (p.1, p.1, p.2))
+      (fun a _ ↦ a.contDiff_coefficient.comp (by fun_prop))
+      (fun a _ j x ξ ↦ coordinateDeriv_diagonal_fst a j x ξ)
+      (fun a _ j x ξ ↦ coordinateDeriv_diagonal_snd a j x ξ)
+      (fun a _ K hK ↦ by
+        obtain ⟨C, hC0, hC⟩ := a.exists_bound (K ×ˢ K) (hK.prod hK) [] [] []
+        exact ⟨C, hC0, fun x hx ξ ↦ by
+          simpa [amplitudeDirections_def] using hC x x ⟨hx, hx⟩ ξ⟩)
+      a trivial α β hK |>.imp fun _ h ↦ by simpa using h
+
+@[simp]
+theorem coefficient_diagonal (a : Amplitude n V W m) (x ξ : CoordinateSpace n) :
+    a.diagonal.coefficient (x, ξ) = a.coefficient (x, x, ξ) :=
+  (rfl)
+
+/-- **Leibniz rule in the position** for the restriction to the diagonal. -/
+theorem spatialDeriv_diagonal (j : Fin n) (a : Amplitude n V W m) :
+    Symbol.spatialDeriv j a.diagonal =
+      (spatialDerivFst j a).diagonal + (spatialDerivSnd j a).diagonal := by
+  ext1
+  funext ⟨x, ξ⟩
+  simp only [Symbol.coefficient_spatialDeriv, Symbol.coefficient_add, Pi.add_apply,
+    coefficient_diagonal]
+  exact coordinateDeriv_diagonal_fst a j x ξ
+
+/-- **Leibniz rule in the frequency** for the restriction to the diagonal. -/
+theorem frequencyDeriv_diagonal (j : Fin n) (a : Amplitude n V W m) :
+    Symbol.frequencyDeriv j a.diagonal = (frequencyDeriv j a).diagonal := by
+  ext1
+  funext ⟨x, ξ⟩
+  simp only [Symbol.coefficient_frequencyDeriv, coefficient_diagonal]
+  exact coordinateDeriv_diagonal_snd a j x ξ
+
+/-- The amplitude `b(y, ξ)` of the right quantization of a symbol `b` restricts on the diagonal
+to `b`. -/
+@[simp]
+theorem diagonal_ofRight (b : Symbol n V W m) : (ofRight b).diagonal = b := by
+  ext1
+  funext ⟨x, ξ⟩
+  simp
+
+end Diagonal
 
 end Amplitude
 

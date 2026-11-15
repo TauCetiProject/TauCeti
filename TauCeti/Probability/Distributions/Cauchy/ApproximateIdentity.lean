@@ -131,7 +131,6 @@ theorem tendstoUniformly_integral_mul_cauchyPDFReal_smul [CompleteSpace E] {g : 
   have hv : Continuous v := (continuous_const.mul (continuous_const.min
     (continuous_abs.div_const δ))).add (continuous_const.mul ((hh.sub continuous_const).abs))
   have hvb (s : ℝ) : ‖v s‖ ≤ 2 * H * M + M * (H + 1) := by
-    have hw0 : 0 ≤ min 1 (|s| / δ) := le_min zero_le_one (by positivity)
     have hw1 : min 1 (|s| / δ) ≤ 1 := min_le_left _ _
     have h1 : |h s - 1| ≤ H + 1 := (abs_sub _ _).trans (by simpa using hhH s)
     rw [Real.norm_of_nonneg (by positivity)]

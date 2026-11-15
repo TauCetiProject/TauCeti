@@ -9,6 +9,8 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Topology.VectorBundle.Pullback
 public import TauCeti.LinearAlgebra.Orientation.Basic
 
+import Mathlib.Topology.LocallyConstant.Basic
+
 /-!
 # Orientations of real vector bundles
 
@@ -429,6 +431,7 @@ theorem coe_ofEventually (hι : Fintype.card ι = finrank ℝ F) (o : ∀ b, Ori
     (he : ∀ b, b ∈ (e b).baseSet) (ho) : ⇑(ofEventually hι o e he ho) = o :=
   (rfl)
 
+omit [FiniteDimensional ℝ F] in
 /-- Over a preconnected base, two orientations of a bundle of rank `card ι` either agree or are
 opposite. -/
 theorem eq_or_eq_neg [PreconnectedSpace B] (hι : Fintype.card ι = finrank ℝ F)
@@ -438,8 +441,9 @@ theorem eq_or_eq_neg [PreconnectedSpace B] (hι : Fintype.card ι = finrank ℝ 
   have hfib (b : B) : o b = o' b ∨ o b = -o' b := by
     have hb := FiberBundle.mem_baseSet_trivializationAt' (F := F) (E := E) b
     have hinj := ((trivializationAt F E b).mapOrientation ι hb).injective
-    rcases Orientation.eq_or_eq_neg (((trivializationAt F E b).mapOrientation ι hb) (o b))
-      (((trivializationAt F E b).mapOrientation ι hb) (o' b)) hι with h | h
+    rcases Orientation.eq_or_eq_neg_of_card_eq_finrank
+        (((trivializationAt F E b).mapOrientation ι hb) (o b))
+        (((trivializationAt F E b).mapOrientation ι hb) (o' b)) hι with h | h
     · exact .inl (hinj h)
     · exact .inr (hinj (by rwa [Trivialization.mapOrientation_neg]))
   have hcompl : {b | o b = o' b}ᶜ = {b | o b = (-o') b} := by
@@ -457,13 +461,22 @@ theorem eq_or_eq_neg [PreconnectedSpace B] (hι : Fintype.card ι = finrank ℝ 
     ext b
     exact (h.symm.subset (mem_univ b) : o b = o' b)
 
-/-- Over a preconnected base, an orientation of a trivial bundle of rank `card ι` is the constant
-orientation given by its value at any point. -/
-theorem eq_trivial [PreconnectedSpace B] (hι : Fintype.card ι = finrank ℝ F)
+omit [Fintype ι] [FiniteDimensional ℝ F] in
+/-- Over a preconnected base, an orientation of a trivial bundle is the constant orientation given
+by its value at any point. -/
+theorem eq_trivial [PreconnectedSpace B]
     (o : VectorBundleOrientation F (Bundle.Trivial B F) ι) (b : B) : o = trivial B (o b) := by
-  refine (eq_or_eq_neg hι o (trivial B (o b))).resolve_right fun h ↦ ?_
-  have hb : o b = -o b := by simpa using congr($h b)
-  exact Module.Ray.ne_neg_self (o b) hb
+  -- The fibre `Bundle.Trivial B F x` is `F` only by unfolding, so the type ascription retypes
+  -- the values `o x` as orientations of `F` in order to speak of local constancy.
+  have hlc : IsLocallyConstant fun x ↦ show Orientation ℝ F ι from o x :=
+    (IsLocallyConstant.iff_eventually_eq _).2 fun x ↦
+      Filter.mem_of_superset
+        ((isOpen_setOf_eq o (trivial B (o x))).mem_nhds (trivial_apply _ x).symm) fun y hy ↦ by
+          rw [mem_ofPred_eq, trivial_apply] at hy
+          exact hy
+  ext x
+  exact (hlc.apply_eq_of_isPreconnected isPreconnected_univ (mem_univ x) (mem_univ b)).trans
+    (trivial_apply _ x).symm
 
 end VectorBundleOrientation
 

@@ -314,7 +314,7 @@ theorem mem_pentagonTerminalSelfPairs_iff_sides
       D.recutTerminal_geometry hcommon hcol hpentagon hrectangle
     rw [hself] at hmiddle hPleft hPbottom hrleft hrright
     have hne := Grid.ne_left_of_mem_cIoo hcol
-    have hne' := Grid.ne_right_of_mem_cIoo hcol
+    have _ := Grid.ne_right_of_mem_cIoo hcol
     -- The rectangle of `E` starts in the row of the pentagon of `D` on its initial side.
     have hrbottom : E.rectangle.bottom = D.pentagon.bottom := by
       rw [GridRectangleBetween.bottom_def, hrleft, hmiddle, GridState.swapColumns_apply,

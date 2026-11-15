@@ -117,7 +117,7 @@ private theorem setLIntegral_setLIntegral_enorm_sub_le_of_measurable
     have hset : MeasurableSet {p : E × E | p.1 + p.2 ∈ U} :=
       (measurable_fst.add measurable_snd) hU
     have hg : Measurable fun p : E × E => ‖u (p.1 + p.2) - u p.1‖ₑ :=
-      ((hum.comp (measurable_fst.add measurable_snd)).sub (hum.comp measurable_fst)).enorm
+      ((hum.comp (measurable_fst.add measurable_snd)).sub (hum.comp measurable_fst)).eNorm
     have hF_eq : Function.uncurry F =
         {p : E × E | p.1 + p.2 ∈ U}.indicator fun p => ‖u (p.1 + p.2) - u p.1‖ₑ := by
       ext ⟨x, h⟩
@@ -157,7 +157,7 @@ private theorem setLIntegral_setLIntegral_enorm_sub_le_of_measurable
         lintegral_mono hinner
     _ = (∫⁻ h in U - U, ‖h‖ₑ ∂μ) * totalVariationOn μ Ω u := by
         have hUU : MeasurableSet (U - U) := (Ω.isOpen.sub_left).measurableSet
-        rw [lintegral_mul_const _ (measurable_enorm.indicator hUU), lintegral_indicator hUU]
+        rw [lintegral_mul_const _ (measurable_eNorm.indicator hUU), lintegral_indicator hUU]
 
 /-- **The double-integral estimate.** On a convex open set `Ω`, a locally integrable `u`
 satisfies `∫_Ω ∫_Ω |u x - u y| ≤ (∫_{Ω - Ω} ‖h‖) |Du|(Ω)`, where `|Du|(Ω)` is the total
@@ -176,7 +176,7 @@ theorem setLIntegral_setLIntegral_enorm_sub_le_mul_totalVariationOn
         filter_upwards [hv] with x hx
         refine lintegral_congr_ae ?_
         filter_upwards [hv] with y hy
-        rw [hx, hy, enorm_sub_rev]
+        rw [hx, hy, eNorm_sub_rev]
     _ ≤ _ := setLIntegral_setLIntegral_enorm_sub_le_of_measurable hconv (hu.congr hv)
         hm.stronglyMeasurable_mk.measurable
 
@@ -192,12 +192,12 @@ theorem setLIntegral_enorm_sub_setAverage_le_mul_totalVariationOn
     hu.aestronglyMeasurable.mono_measure (Measure.restrict_mono hS le_rfl)
   calc ∫⁻ x in Ω, ‖u x - ⨍ y in S, u y ∂μ‖ₑ ∂μ
       ≤ ∫⁻ x in Ω, (∫⁻ y in Ω, ‖u x - u y‖ₑ ∂μ) * (μ S)⁻¹ ∂μ := lintegral_mono fun x => by
-        rw [enorm_sub_rev, ← div_eq_mul_inv]
+        rw [eNorm_sub_rev, ← div_eq_mul_inv]
         refine (enorm_setAverage_sub_le_setLAverage hSm hS₀ hS_top (u x)).trans ?_
         rw [setLAverage_eq]
         gcongr ?_ / _
         refine (lintegral_mono_set hS).trans_eq' (lintegral_congr fun y => ?_)
-        exact enorm_sub_rev _ _
+        exact eNorm_sub_rev _ _
     _ = (∫⁻ x in Ω, ∫⁻ y in Ω, ‖u x - u y‖ₑ ∂μ ∂μ) * (μ S)⁻¹ :=
         lintegral_mul_const' _ _ (ENNReal.inv_ne_top.2 hS₀)
     _ ≤ (∫⁻ h in (Ω : Set E) - Ω, ‖h‖ₑ ∂μ) * totalVariationOn μ Ω u * (μ S)⁻¹ := by
@@ -295,7 +295,7 @@ private theorem setLIntegral_enorm_sub_setAverage_le_of_closure_subset {U T : Se
       ∫⁻ x in A, ‖u x - ⨍ y in T, u y ∂μ‖ₑ ∂μ ≤ e n + M * e n + C * totalVariationOn μ Ω u := by
     -- The smooth inequality for `v n` on `U`, whose variation there is at most `|Du|(Ω)`.
     have hvA : ∫⁻ x in A, ‖v n x - ⨍ y in T, v n y ∂μ‖ₑ ∂μ ≤ C * totalVariationOn μ Ω u := by
-      refine (setLIntegral_enorm_sub_setAverage_le_mul_measure_rpow_mul_of_convex hU hUc hUb
+      refine (setLIntegral_enorm_sub_setAverage_le_mul_measure_rpow_mul_of_convex hUc hUb
         (hv n).contDiffOn hT hT₀ hA).trans (mul_le_mul_right ?_ _)
       have hL := ((hv n).locallyLipschitz.locallyLipschitzOn (s := U)
         ).totalVariationOn_eq_setLIntegral_enorm_fderiv (μ := μ) (Ω := ⟨U, hU⟩)
@@ -347,7 +347,7 @@ private theorem setLIntegral_enorm_sub_setAverage_le_of_measurableSet
         ≤ ∫⁻ x in A ∩ V n, (‖u x - ⨍ y in S ∩ V n, u y ∂μ‖ₑ +
             ‖(⨍ y in S ∩ V n, u y ∂μ) - a‖ₑ) ∂μ :=
           lintegral_mono fun x => by
-            simpa only [sub_add_sub_cancel] using enorm_add_le (u x - ⨍ y in S ∩ V n, u y ∂μ)
+            simpa only [sub_add_sub_cancel] using eNorm_add_le (u x - ⨍ y in S ∩ V n, u y ∂μ)
               ((⨍ y in S ∩ V n, u y ∂μ) - a)
       _ = ∫⁻ x in A ∩ V n, ‖u x - ⨍ y in S ∩ V n, u y ∂μ‖ₑ ∂μ +
             ‖(⨍ y in S ∩ V n, u y ∂μ) - a‖ₑ * μ (A ∩ V n) := by

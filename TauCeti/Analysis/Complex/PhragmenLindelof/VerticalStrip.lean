@@ -41,7 +41,6 @@ theorem isBigO_exp_rpow_exp_exp_vertical_strip (a b A B : ℝ) {c : ℝ} (hc : 0
       (fun z ↦ Real.exp (Real.exp (c * |z.im|))) := by
   let p := max A 0
   let K := |a| + |b| + 1
-  have hp : 0 ≤ p := le_max_right _ _
   have hK : 0 < K := by dsimp [K]; positivity
   have htail := ((isLittleO_rpow_exp_pos_mul_atTop p hc).const_mul_left
     (|B| * K ^ p)).eventuallyLE

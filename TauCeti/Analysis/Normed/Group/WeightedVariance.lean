@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Group.Real
 public import Mathlib.Basic.ENNReal.BigOperators
+public import TauCeti.Analysis.Normed.Group.Real
 import TauCeti.Algebra.BigOperators.Finset.WeightedVariance
 
 /-!
@@ -42,12 +42,11 @@ theorem sum_mul_enorm_sub_sq_eq {ι : Type*} (s : Finset ι) {w : ι → ℝ≥0
     ∑ i ∈ s, (w i : ℝ≥0∞) * ‖a - b i‖ₑ ^ 2 =
       ‖a - ∑ i ∈ s, (w i : ℝ) * b i‖ₑ ^ 2 +
         ∑ i ∈ s, (w i : ℝ≥0∞) * ‖∑ j ∈ s, (w j : ℝ) * b j - b i‖ₑ ^ 2 := by
-  have hsq (r : ℝ) : ‖r‖ₑ ^ 2 = ENNReal.ofReal (r ^ 2) := by
-    rw [Real.enorm_eq_ofReal_abs, ← ENNReal.ofReal_pow (abs_nonneg r), sq_abs]
   have hmul (c : ℝ≥0) (r : ℝ) : (c : ℝ≥0∞) * ‖r‖ₑ ^ 2 = ENNReal.ofReal (c * r ^ 2) := by
-    rw [hsq, ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul c.coe_nonneg]
+    rw [Real.enorm_sq_eq_ofReal_sq, ← ENNReal.ofReal_coe_nnreal,
+      ← ENNReal.ofReal_mul c.coe_nonneg]
   simp only [hmul]
-  simp only [hsq]
+  simp only [Real.enorm_sq_eq_ofReal_sq]
   rw [← ENNReal.ofReal_sum_of_nonneg fun i _ ↦ by positivity,
     ← ENNReal.ofReal_sum_of_nonneg fun i _ ↦ by positivity,
     ← ENNReal.ofReal_add (sq_nonneg _) (sum_nonneg fun i _ ↦ by positivity),

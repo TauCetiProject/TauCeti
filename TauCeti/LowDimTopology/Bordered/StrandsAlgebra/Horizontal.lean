@@ -374,7 +374,7 @@ theorem crossingCount_resolve (hq : q ∈ φ.inversions) (hc : c ≠ q.2) :
     filter_congr fun x hx ↦ by rw [he hx]]
   rcases lt_or_gt_of_ne hc with hcj | hjc
   · -- Below `j` the two counts agree strand by strand.
-    refine congrArg card (filter_congr fun x hx ↦ ?_)
+    refine congrArg card (filter_congr fun x _ ↦ ?_)
     rcases eq_or_ne x i with rfl | hxi
     · rw [Equiv.swap_apply_left, hfi, hfj]
       exact and_congr_right fun _ ↦ iff_of_true (hcj.trans_le hjB) (hcj.trans (hjB.trans_lt hBA))

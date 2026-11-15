@@ -76,11 +76,6 @@ any witness supplies the required upper bound.
 * S. Janson, *Graphons, cut norm and distance, couplings and rearrangements*, NYJM Monographs 4
   (2013), Thm 6.9 (the two forms agree) with Thm A.9 (the transport from `(I, volume)`).
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), §8.2.
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 5 — `cutDistPullback` and
-  `cutDist_eq_cutDistPullback`, whose signatures follow
-  `TauCetiRoadmap/DenseGraphLimits/Suggested.lean` (with the two carrier measures implicit, as
-  they are for `cutDist` here). The atomless mod-null equivalence
-  `exists_mpModNull_equiv_unitInterval` is the layer's other target and is not built here.
 -/
 
 public section

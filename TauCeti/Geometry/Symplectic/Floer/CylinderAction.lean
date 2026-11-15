@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Continuation
 public import TauCeti.Geometry.Symplectic.Floer.Manifold
-public import TauCeti.Geometry.Symplectic.Hamiltonian.Action
+public import TauCeti.Geometry.Symplectic.Hamiltonian.Action.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction.Capped
 import TauCeti.Analysis.Calculus.FDeriv.Prod
@@ -219,8 +219,7 @@ theorem neg_setIntegral_fderiv_linearHomotopy_le {H₀ H₁ : ℝ → M → ℝ}
   have hcurv (z : ℝ × ℝ) :
       fderiv ℝ (fun w ↦ linearHomotopy β H₀ H₁ w (u z)) z stdComplexLineReal =
         deriv β z.1 * (H₁ z.2 (u z) - H₀ z.2 (u z)) :=
-    fderiv_linearHomotopy_stdComplexLineReal (hβ.differentiable one_ne_zero z.1) (hd hH₀ _ _)
-      (hd hH₁ _ _)
+    fderiv_linearHomotopy_stdComplexLineReal (hd hH₀ _ _) (hd hH₁ _ _)
   simp only [hcurv]
   have hp : Continuous fun z : ℝ × ℝ ↦ (z.2, u z) := continuous_snd.prodMk hu
   have hle := neg_mul_setIntegral_le_setIntegral_deriv_mul

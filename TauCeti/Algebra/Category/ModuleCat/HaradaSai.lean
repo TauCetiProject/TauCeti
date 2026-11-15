@@ -137,7 +137,6 @@ theorem length_range_map_le (hF : ∀ i, Indecomposable (F.obj i))
   induction n generalizing i j with
   | zero => simpa using hrange φ
   | succ n ih =>
-    have hpow : 2 ^ (n + 1) = 2 ^ n + 2 ^ n := by rw [pow_succ, mul_two]
     have hpos := Nat.one_le_two_pow (n := n)
     by_cases hbn : b ≤ n
     · exact (ih φ (by omega)).trans (Nat.cast_le.mpr (by omega))

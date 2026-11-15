@@ -103,7 +103,7 @@ private theorem holderOnWith_fderiv_apply_add_mul {s : Set E} {u : E → ℝ} {b
   simp only [ContinuousLinearMap.id_apply, ContinuousLinearMap.lsmul_apply, smul_eq_mul] at h₁ h₂
   refine (h₁.add h₂).mono_const (add_le_add ?_ ?_)
   · exact mul_le_of_le_one_left zero_le (by
-      rw [← NNReal.coe_le_coe, coe_nnnorm, NNReal.coe_one]; exact ContinuousLinearMap.norm_id_le)
+      rw [← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_one]; exact ContinuousLinearMap.norm_id_le)
   · exact mul_le_of_le_one_left zero_le ContinuousLinearMap.opNNNorm_lsmul_le
 
 /-- **The interior Schauder estimate with lower-order terms.** Let `0 < α < 1`, let
@@ -205,14 +205,11 @@ theorem
   -- `β` is the coefficient of the bound `P` of `Du` and `D²u` in the Hölder constant of
   -- `b · ∇u + c u`, and `ε` is an interpolation scale small enough to absorb `[D²u]_α`.
   set β : ℝ := 4 * B + L
-  have hβ : 0 ≤ β := by positivity
   obtain ⟨ε, hε, hε1, hεC⟩ :=
     Real.exists_pos_le_one_mul_rpow_le (2 * C₀ * β) (NNReal.coe_pos.2 hα)
       (by norm_num : (0 : ℝ) < 1 / 2)
   set e : ℝ := ε ^ (α : ℝ)
-  have he : 0 ≤ e := by positivity
   set c' : ℝ := 34 / ε + 32 / ε ^ 2
-  have hc' : 0 ≤ c' := by positivity
   set γ : ℝ := β * c' + 2 * B + L + 1
   have hγ : 0 ≤ γ := by positivity
   refine ⟨(2 * C₀ * (1 + γ)).toNNReal,

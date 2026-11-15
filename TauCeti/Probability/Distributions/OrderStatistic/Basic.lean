@@ -8,7 +8,7 @@ module
 public import Mathlib.Probability.Distributions.Beta
 public import Mathlib.Probability.HasLaw
 public import Mathlib.Probability.Independence.Basic
-public import TauCeti.Analysis.SpecialFunctions.IncompleteBeta
+public import TauCeti.Analysis.SpecialFunctions.IncompleteBeta.Basic
 public import TauCeti.Probability.Distributions.OrderStatistic.Independent
 public import TauCeti.Probability.Distributions.Uniform.Basic
 public import TauCeti.Probability.Quantile

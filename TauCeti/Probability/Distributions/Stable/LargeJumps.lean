@@ -80,7 +80,7 @@ theorem integrable_abs_rpow_compoundPoissonMeasure_stableLevyMeasure_iff
       (stableLevyMeasure_abs_gt_ne_top hε)).ne'
   have hmem := memLp_id_compoundPoissonMeasure_iff
     (μ := cond (stableLevyMeasure α β) {x : ℝ | ε < |x|})
-    (p := ENNReal.ofReal q) (by positivity) ENNReal.ofReal_ne_top hrate
+    (p := ENNReal.ofReal q) ENNReal.ofReal_ne_top hrate
   rw [memLp_id_ofReal_iff_integrable_abs_rpow hq,
     memLp_id_ofReal_iff_integrable_abs_rpow hq] at hmem
   exact hmem.trans (integrable_abs_rpow_cond_stableLevyMeasure_iff hα hβ hε)

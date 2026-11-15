@@ -10,7 +10,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
 public import TauCeti.Algebra.Central.Quaternion
 public import TauCeti.Algebra.Quaternion.NormForm
 public import TauCeti.Algebra.Subalgebra.Center
-import TauCeti.RingTheory.Semisimple.BasicAlgebra
+import TauCeti.RingTheory.Nilpotent.Reduced
 
 /-!
 # The compact four-dimensional even Clifford algebra
@@ -191,7 +191,7 @@ noncomputable def realCliffordFourZeroEvenEquivQuaternionProd :
 its discriminant quadratic algebra, is the split algebra `ℝ × ℝ`. -/
 noncomputable def realCliffordFourZeroCenterEvenEquivProd :
     Subalgebra.center ℝ (CliffordAlgebra.even (realCliffordForm 4 0)) ≃ₐ[ℝ] ℝ × ℝ :=
-  (centerCongr realCliffordFourZeroEvenEquivQuaternionProd).trans
+  (Subalgebra.centerCongr realCliffordFourZeroEvenEquivQuaternionProd).trans
     (centerProdAlgEquivOfIsCentral ℝ ℍ[ℝ] ℍ[ℝ])
 
 /-- The inverse of the compact centre equivalence sends a pair of reals to the even Clifford

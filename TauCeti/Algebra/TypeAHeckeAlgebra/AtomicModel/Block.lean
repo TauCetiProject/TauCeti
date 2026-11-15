@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.CycleWord
-public import TauCeti.Algebra.TypeAHeckeAlgebra.Cocenter
+public import TauCeti.Algebra.TypeAHeckeAlgebra.Cocenter.Basic
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.RingTheory.PowerSeries.Inverse
 
