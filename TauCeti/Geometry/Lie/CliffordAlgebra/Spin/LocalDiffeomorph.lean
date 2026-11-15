@@ -119,4 +119,80 @@ theorem isLocalDiffeomorph_realCliffordSpinToSpecialOrthogonalSmoothRange (n : �
   simpa only [realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_lieMap] using
     realCliffordSpinToSpecialOrthogonalRangeLieMap_bijective n
 
+/-- In quadratic Clifford coordinates, any Spin derivation equals the normalized exterior bivector
+of its special-orthogonal differential in `so(n, ℝ)`. -/
+theorem realCliffordSpinLieEquivQuadratic_eq_bivectorExterior (n : ℕ)
+    (X : LeftInvariantDerivation 𝓘(ℝ, SpinLieModel(n)) (SpinUnitsRange(n))) :
+    let Q := QuadraticMap.weightedSumSquares ℝ (1 : Fin n → ℝ)
+    letI := bivectorLieRing Q
+    letI := bivectorLieAlgebra Q
+    realCliffordSpinLieEquivQuadratic n X =
+      bivectorExteriorEquivQuadraticLieSubalgebra (realCliffordForm n 0)
+        ((bivectorEquivSo n ℝ).symm
+          (realCliffordSpecialOrthogonalLieEquivSo n
+            (realCliffordSpinToSpecialOrthogonalRangeLieMap n X))) := by
+  let Q := QuadraticMap.weightedSumSquares ℝ (1 : Fin n → ℝ)
+  let _ := bivectorLieRing Q
+  let _ := bivectorLieAlgebra Q
+  apply (realCliffordSpinToSpecialOrthogonalCoordinateLieHom_bijective n).injective
+  -- Congruence avoids costly `isDefEq` unfolding across the Spin/SO Lie-subalgebra models.
+  calc
+    realCliffordSpinToSpecialOrthogonalCoordinateLieHom n (realCliffordSpinLieEquivQuadratic n X)
+      = realCliffordSpecialOrthogonalLieEquivSo n
+          (realCliffordSpinToSpecialOrthogonalRangeLieMap n
+            ((realCliffordSpinLieEquivQuadratic n).symm (realCliffordSpinLieEquivQuadratic n X))) :=
+      realCliffordSpinToSpecialOrthogonalCoordinateLieHom_apply n _
+    _ = realCliffordSpecialOrthogonalLieEquivSo n
+          (realCliffordSpinToSpecialOrthogonalRangeLieMap n X) :=
+      congrArg (fun Y ↦ realCliffordSpecialOrthogonalLieEquivSo n
+        (realCliffordSpinToSpecialOrthogonalRangeLieMap n Y))
+        ((realCliffordSpinLieEquivQuadratic n).symm_apply_apply X)
+    _ = bivectorEquivSo n ℝ ((bivectorEquivSo n ℝ).symm
+          (realCliffordSpecialOrthogonalLieEquivSo n
+            (realCliffordSpinToSpecialOrthogonalRangeLieMap n X))) :=
+      ((bivectorEquivSo n ℝ).apply_symm_apply _).symm
+    _ = realCliffordSpinToSpecialOrthogonalCoordinateLieHom n
+          (bivectorExteriorEquivQuadraticLieSubalgebra (realCliffordForm n 0)
+            ((bivectorEquivSo n ℝ).symm
+              (realCliffordSpecialOrthogonalLieEquivSo n
+                (realCliffordSpinToSpecialOrthogonalRangeLieMap n X)))) :=
+      (realCliffordSpinToSpecialOrthogonalCoordinateLieHom_eq_bivectorEquivSo n _).symm
+
+/-- Lifting a skew-symmetric matrix `M ∈ so(n, ℝ)` to the native Spin Lie algebra and passing to
+quadratic Clifford coordinates recovers the normalized exterior bivector of `M`. -/
+theorem realCliffordSpinLieEquivQuadratic_realCliffordSpinToSpecialOrthogonalRangeLieEquiv_symm
+    (n : ℕ) (M : LieAlgebra.Orthogonal.so (Fin n) ℝ) :
+    let Q := QuadraticMap.weightedSumSquares ℝ (1 : Fin n → ℝ)
+    letI := bivectorLieRing Q
+    letI := bivectorLieAlgebra Q
+    realCliffordSpinLieEquivQuadratic n
+        ((realCliffordSpinToSpecialOrthogonalRangeLieEquiv n).symm
+          ((realCliffordSpecialOrthogonalLieEquivSo n).symm M)) =
+      bivectorExteriorEquivQuadraticLieSubalgebra (realCliffordForm n 0)
+        ((bivectorEquivSo n ℝ).symm M) := by
+  let Q := QuadraticMap.weightedSumSquares ℝ (1 : Fin n → ℝ)
+  let _ := bivectorLieRing Q
+  let _ := bivectorLieAlgebra Q
+  -- Congruence avoids costly `isDefEq` unfolding across the Spin/SO Lie-subalgebra models.
+  calc
+    _ = bivectorExteriorEquivQuadraticLieSubalgebra (realCliffordForm n 0)
+          ((bivectorEquivSo n ℝ).symm
+            (realCliffordSpecialOrthogonalLieEquivSo n
+              (realCliffordSpinToSpecialOrthogonalRangeLieEquiv n
+                ((realCliffordSpinToSpecialOrthogonalRangeLieEquiv n).symm
+                  ((realCliffordSpecialOrthogonalLieEquivSo n).symm M))))) :=
+      realCliffordSpinLieEquivQuadratic_eq_bivectorExterior n _
+    _ = bivectorExteriorEquivQuadraticLieSubalgebra (realCliffordForm n 0)
+          ((bivectorEquivSo n ℝ).symm
+            (realCliffordSpecialOrthogonalLieEquivSo n
+              ((realCliffordSpecialOrthogonalLieEquivSo n).symm M))) :=
+      congrArg (fun Y ↦ bivectorExteriorEquivQuadraticLieSubalgebra (realCliffordForm n 0)
+        ((bivectorEquivSo n ℝ).symm (realCliffordSpecialOrthogonalLieEquivSo n Y)))
+        ((realCliffordSpinToSpecialOrthogonalRangeLieEquiv n).apply_symm_apply _)
+    _ = bivectorExteriorEquivQuadraticLieSubalgebra (realCliffordForm n 0)
+          ((bivectorEquivSo n ℝ).symm M) :=
+      congrArg (fun N ↦ bivectorExteriorEquivQuadraticLieSubalgebra (realCliffordForm n 0)
+        ((bivectorEquivSo n ℝ).symm N))
+        ((realCliffordSpecialOrthogonalLieEquivSo n).apply_symm_apply M)
+
 end TauCeti.CliffordAlgebra

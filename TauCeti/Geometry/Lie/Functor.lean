@@ -197,9 +197,8 @@ theorem lieMap_one [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] :
   let _ : T2Space G := I.t2Space_of_lieGroup ∞
   let _ : T2Space G' := I'.t2Space_of_lieGroup ∞
   apply (leftInvariantDerivationLinearIsometryEquivModelVectorSpace (I := I') (G := G')).injective
-  have hconst : (⇑(1 : ContMDiffMonoidMorphism I I' ∞ G G') : G → G') = fun _ ↦ (1 : G') := rfl
   rw [zero_apply, map_zero, leftInvariantDerivationLinearIsometryEquivModelVectorSpace_lieMap,
-    hconst, mfderiv_const]
+    ContMDiffMonoidMorphism.coe_one, Pi.one_def, mfderiv_const]
   rfl
 
 /-- The Lie map of a composite is the composite of the two Lie maps. -/

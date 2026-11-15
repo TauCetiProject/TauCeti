@@ -151,7 +151,7 @@ theorem prodLieEquiv_lieMap_inl (X : LeftInvariantDerivation I G) :
       (X, 0) := by
   have h : ContMDiffMonoidMorphism.inl (I := I) (I' := I') (n := ∞) (G := G) (G' := G') =
       ContMDiffMonoidMorphism.id.prod (1 : ContMDiffMonoidMorphism I I' ∞ G G') :=
-    DFunLike.coe_injective <| funext fun x ↦ by simp; rfl
+    DFunLike.coe_injective <| funext fun x ↦ by simp
   simpa [h] using prodLieEquiv_lieMap_prod .id (1 : ContMDiffMonoidMorphism I I' ∞ G G') X
 
 /-- The second factor inclusion maps into the second Lie-algebra summand under `prodLieEquiv`. -/
@@ -160,7 +160,7 @@ theorem prodLieEquiv_lieMap_inr (Y : LeftInvariantDerivation I' G') :
       (0, Y) := by
   have h : ContMDiffMonoidMorphism.inr (I := I) (I' := I') (n := ∞) (G := G) (G' := G') =
       (1 : ContMDiffMonoidMorphism I' I ∞ G' G).prod .id :=
-    DFunLike.coe_injective <| funext fun y ↦ by simp; rfl
+    DFunLike.coe_injective <| funext fun y ↦ by simp
   simpa [h] using prodLieEquiv_lieMap_prod (1 : ContMDiffMonoidMorphism I' I ∞ G' G) .id Y
 
 /-- The inverse product Lie equivalence reconstructs a derivation as the sum of the Lie maps of

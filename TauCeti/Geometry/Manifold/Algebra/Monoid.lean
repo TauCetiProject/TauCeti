@@ -35,6 +35,12 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n : ℕ∞ω}
   {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
   {G' : Type*} [TopologicalSpace G'] [ChartedSpace H' G'] [Monoid G']
 
+@[to_additive (attr := simp)]
+theorem coe_one : ⇑(1 : ContMDiffMonoidMorphism I I' n G G') = 1 := (rfl)
+
+@[to_additive]
+theorem one_apply (x : G) : (1 : ContMDiffMonoidMorphism I I' n G G') x = 1 := (rfl)
+
 /-- The identity smooth monoid morphism. -/
 @[to_additive /-- The identity smooth additive monoid morphism. -/]
 def id : ContMDiffMonoidMorphism I I n G G where
@@ -135,7 +141,7 @@ theorem fst_comp_inl :
 @[to_additive (attr := simp)]
 theorem snd_comp_inl :
     (snd (I := I) (I' := I') (n := n) (G := G) (G' := G')).comp inl = 1 :=
-  DFunLike.coe_injective <| funext fun x ↦ by simp; rfl
+  DFunLike.coe_injective <| funext fun x ↦ by simp
 
 /-- The inclusion of the second factor into a product as a smooth monoid morphism. -/
 @[to_additive
@@ -150,7 +156,7 @@ theorem inr_apply (y : G') : inr (I := I) (I' := I') (n := n) (G := G) y = (1, y
 @[to_additive (attr := simp)]
 theorem fst_comp_inr :
     (fst (I := I) (I' := I') (n := n) (G := G) (G' := G')).comp inr = 1 :=
-  DFunLike.coe_injective <| funext fun x ↦ by simp; rfl
+  DFunLike.coe_injective <| funext fun x ↦ by simp
 
 @[to_additive (attr := simp)]
 theorem snd_comp_inr :
@@ -164,25 +170,41 @@ variable {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
   {G'' : Type*} [TopologicalSpace G''] [ChartedSpace H'' G''] [Monoid G'']
 
 /-- Pairing two smooth monoid morphisms into a product. -/
-@[to_additive /-- Pairing two smooth additive monoid morphisms into a product. -/]
+@[to_additive prod /-- Pairing two smooth additive monoid morphisms into a product. -/]
 def prod (φ : ContMDiffMonoidMorphism I'' I n G'' G)
     (ψ : ContMDiffMonoidMorphism I'' I' n G'' G') :
     ContMDiffMonoidMorphism I'' (I.prod I') n G'' (G × G') where
   toMonoidHom := φ.toMonoidHom.prod ψ.toMonoidHom
   contMDiff_toFun := φ.contMDiff_toFun.prodMk ψ.contMDiff_toFun
 
-@[to_additive (attr := simp)]
+@[to_additive (attr := simp) prod_apply]
 theorem prod_apply (φ : ContMDiffMonoidMorphism I'' I n G'' G)
     (ψ : ContMDiffMonoidMorphism I'' I' n G'' G') (x : G'') : φ.prod ψ x = (φ x, ψ x) := (rfl)
 
-@[to_additive (attr := simp)]
+@[to_additive (attr := simp) fst_comp_prod]
 theorem fst_comp_prod (φ : ContMDiffMonoidMorphism I'' I n G'' G)
     (ψ : ContMDiffMonoidMorphism I'' I' n G'' G') : fst.comp (φ.prod ψ) = φ :=
   DFunLike.coe_injective <| funext fun x ↦ by simp
 
-@[to_additive (attr := simp)]
+@[to_additive (attr := simp) snd_comp_prod]
 theorem snd_comp_prod (φ : ContMDiffMonoidMorphism I'' I n G'' G)
     (ψ : ContMDiffMonoidMorphism I'' I' n G'' G') : snd.comp (φ.prod ψ) = ψ :=
+  DFunLike.coe_injective <| funext fun x ↦ by simp
+
+@[to_additive (attr := simp) prod_unique]
+theorem prod_unique (φ : ContMDiffMonoidMorphism I'' (I.prod I') n G'' (G × G')) :
+    (fst.comp φ).prod (snd.comp φ) = φ :=
+  DFunLike.coe_injective <| funext fun x ↦ by simp
+
+@[to_additive prod_comp]
+theorem prod_comp
+    {E''' : Type*} [NormedAddCommGroup E'''] [NormedSpace 𝕜 E''']
+    {H''' : Type*} [TopologicalSpace H'''] {I''' : ModelWithCorners 𝕜 E''' H'''}
+    {G''' : Type*} [TopologicalSpace G'''] [ChartedSpace H''' G'''] [Monoid G''']
+    (φ : ContMDiffMonoidMorphism I'' I n G'' G)
+    (ψ : ContMDiffMonoidMorphism I'' I' n G'' G')
+    (χ : ContMDiffMonoidMorphism I''' I'' n G''' G'') :
+    (φ.prod ψ).comp χ = (φ.comp χ).prod (ψ.comp χ) :=
   DFunLike.coe_injective <| funext fun x ↦ by simp
 
 end Prod
