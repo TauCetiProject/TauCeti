@@ -99,30 +99,10 @@ theorem aestronglyMeasurable_integrand_of_aefinStronglyMeasurable {μ : Measure 
 `s ↦ π(f s)(U_s v)` is Bochner integrable. -/
 theorem integrable_integrand_of_integrable {μ : Measure G} [μ.InnerRegularCompactLTTop]
     {f : G → A} (hf : Integrable f μ) (v : H) :
-    Integrable (fun s => P.coefficient (f s) (P.group s v)) μ := by
-  refine (hf.norm.mul_const ‖v‖).mono'
+    Integrable (fun s => P.coefficient (f s) (P.group s v)) μ :=
+  (hf.norm.mul_const ‖v‖).mono'
     (P.aestronglyMeasurable_integrand_of_aefinStronglyMeasurable hf.aefinStronglyMeasurable v)
-    (.of_forall fun s => ?_)
-  calc ‖P.coefficient (f s) (P.group s v)‖
-      ≤ ‖P.coefficient (f s)‖ * ‖P.group s v‖ := (P.coefficient (f s)).le_opNorm _
-    _ ≤ ‖f s‖ * ‖v‖ := by
-      rw [P.isUnitary.norm_map]
-      exact mul_le_mul_of_nonneg_right (NonUnitalStarAlgHom.norm_apply_le _ _) (norm_nonneg _)
-
-omit [R1Space G] [BorelSpace G] in
-private theorem norm_integral_integrand_le {μ : Measure G}
-    {f : G → A} (hf : Integrable f μ) (v : H) :
-    ‖∫ s, P.coefficient (f s) (P.group s v) ∂μ‖ ≤ (∫ s, ‖f s‖ ∂μ) * ‖v‖ := by
-  calc ‖∫ s, P.coefficient (f s) (P.group s v) ∂μ‖
-      ≤ ∫ s, ‖f s‖ * ‖v‖ ∂μ := by
-        refine norm_integral_le_of_norm_le (hf.norm.mul_const ‖v‖) (.of_forall fun s => ?_)
-        calc ‖P.coefficient (f s) (P.group s v)‖
-            ≤ ‖P.coefficient (f s)‖ * ‖P.group s v‖ := (P.coefficient (f s)).le_opNorm _
-          _ ≤ ‖f s‖ * ‖v‖ := by
-            rw [P.isUnitary.norm_map]
-            exact mul_le_mul_of_nonneg_right (NonUnitalStarAlgHom.norm_apply_le _ _)
-              (norm_nonneg _)
-    _ = (∫ s, ‖f s‖ ∂μ) * ‖v‖ := integral_mul_const _ _
+    (.of_forall fun s => P.norm_coefficient_group_apply_le (f s) s v)
 
 /-- Auxiliary bounded operator `v ↦ ∫ s, π(u s)(U_s v) ∂μ` for a fixed `u : Lp A 1 μ`. -/
 private def integratedBochnerL1Aux (μ : Measure G) [μ.InnerRegularCompactLTTop]
@@ -343,72 +323,33 @@ theorem norm_integratedStarAlgHomL1_le (μ : Measure G) [μ.IsHaarMeasure]
   P.norm_integratedOperatorL1_le μ x
 
 /-- Multiplicativity of `integratedBochnerL1` for Bochner twisted convolution of integrable
-functions when `μ` is left-invariant and `μ.inv ≪ μ`. -/
-theorem integratedBochnerL1_bochnerConvolution_of_inv_absolutelyContinuous {μ : Measure G}
+functions when `μ` is left-invariant and `μ.inv ≪ μ` (in particular for inner regular or regular
+Haar measures via `Measure.inv_absolutelyContinuous_of_innerRegular` and
+`Measure.inv_absolutelyContinuous_of_regular`). -/
+theorem integratedBochnerL1_bochnerConvolution {μ : Measure G}
     [IsLocallyFiniteMeasure μ] [μ.InnerRegularCompactLTTop] [μ.IsMulLeftInvariant]
     (hinv : μ.inv ≪ μ) {f g : G → A} (hf : Integrable f μ) (hg : Integrable g μ) :
     P.integratedBochnerL1 μ
-      ((α.integrable_bochnerConvolution_of_inv_absolutelyContinuous hinv hf hg).toL1
+      ((α.integrable_bochnerConvolution hinv hf hg).toL1
         (α.bochnerConvolution μ f g)) =
       P.integratedBochnerL1 μ (hf.toL1 f) * P.integratedBochnerL1 μ (hg.toL1 g) := by
-  rw [← α.toL1Equiv_mul_symm_toL1_of_inv_absolutelyContinuous hinv hf hg,
+  rw [← α.toL1Equiv_mul_symm_toL1 hinv hf hg,
     P.integratedBochnerL1_toL1Equiv μ, map_mul, P.integratedOperatorL1_toL1Equiv_symm μ,
     P.integratedOperatorL1_toL1Equiv_symm μ]
 
 /-- Star-preservation of `integratedBochnerL1` for Bochner twisted involution of integrable
-functions when `μ` is a Haar measure with `μ.InnerRegularCompactLTTop` and `μ.inv ≪ μ`. -/
-theorem integratedBochnerL1_bochnerInvolution_of_inv_absolutelyContinuous {μ : Measure G}
+functions when `μ` is a Haar measure with `μ.InnerRegularCompactLTTop` and `μ.inv ≪ μ` (in
+particular for inner regular or regular Haar measures). -/
+theorem integratedBochnerL1_bochnerInvolution {μ : Measure G}
     [μ.IsHaarMeasure] [μ.InnerRegularCompactLTTop]
     (hinv : μ.inv ≪ μ) {f : G → A} (hf : Integrable f μ) :
     P.integratedBochnerL1 μ
-      ((α.integrable_bochnerInvolution_of_inv_absolutelyContinuous hinv hf).toL1
+      ((α.integrable_bochnerInvolution hinv hf).toL1
         (α.bochnerInvolution f)) =
       star (P.integratedBochnerL1 μ (hf.toL1 f)) := by
-  rw [← α.toL1Equiv_star_symm_toL1_of_inv_absolutelyContinuous hinv hf,
+  rw [← α.toL1Equiv_star_symm_toL1 hinv hf,
     P.integratedBochnerL1_toL1Equiv μ, P.integratedOperatorL1_star μ,
     P.integratedOperatorL1_toL1Equiv_symm μ]
-
-/-- Multiplicativity of `integratedBochnerL1` for Bochner twisted convolution against an inner
-regular Haar measure. -/
-theorem integratedBochnerL1_bochnerConvolution {μ : Measure G}
-    [μ.IsHaarMeasure] [μ.InnerRegular] {f g : G → A}
-    (hf : Integrable f μ) (hg : Integrable g μ) :
-    P.integratedBochnerL1 μ ((α.integrable_bochnerConvolution hf hg).toL1
-      (α.bochnerConvolution μ f g)) =
-      P.integratedBochnerL1 μ (hf.toL1 f) * P.integratedBochnerL1 μ (hg.toL1 g) :=
-  P.integratedBochnerL1_bochnerConvolution_of_inv_absolutelyContinuous
-    μ.inv_absolutelyContinuous_of_innerRegular hf hg
-
-/-- Star-preservation of `integratedBochnerL1` for Bochner twisted involution against an inner
-regular Haar measure. -/
-theorem integratedBochnerL1_bochnerInvolution {μ : Measure G}
-    [μ.IsHaarMeasure] [μ.InnerRegular] {f : G → A} (hf : Integrable f μ) :
-    P.integratedBochnerL1 μ
-      ((α.integrable_bochnerInvolution hf).toL1 (α.bochnerInvolution f)) =
-      star (P.integratedBochnerL1 μ (hf.toL1 f)) :=
-  P.integratedBochnerL1_bochnerInvolution_of_inv_absolutelyContinuous
-    μ.inv_absolutelyContinuous_of_innerRegular hf
-
-/-- Multiplicativity of `integratedBochnerL1` for Bochner twisted convolution against a regular
-Haar measure. -/
-theorem integratedBochnerL1_bochnerConvolution_of_regular {μ : Measure G}
-    [μ.IsHaarMeasure] [μ.Regular] {f g : G → A}
-    (hf : Integrable f μ) (hg : Integrable g μ) :
-    P.integratedBochnerL1 μ ((α.integrable_bochnerConvolution_of_regular hf hg).toL1
-      (α.bochnerConvolution μ f g)) =
-      P.integratedBochnerL1 μ (hf.toL1 f) * P.integratedBochnerL1 μ (hg.toL1 g) :=
-  P.integratedBochnerL1_bochnerConvolution_of_inv_absolutelyContinuous
-    μ.inv_absolutelyContinuous_of_regular hf hg
-
-/-- Star-preservation of `integratedBochnerL1` for Bochner twisted involution against a regular
-Haar measure. -/
-theorem integratedBochnerL1_bochnerInvolution_of_regular {μ : Measure G}
-    [μ.IsHaarMeasure] [μ.Regular] {f : G → A} (hf : Integrable f μ) :
-    P.integratedBochnerL1 μ
-      ((α.integrable_bochnerInvolution_of_regular hf).toL1 (α.bochnerInvolution f)) =
-      star (P.integratedBochnerL1 μ (hf.toL1 f)) :=
-  P.integratedBochnerL1_bochnerInvolution_of_inv_absolutelyContinuous
-    μ.inv_absolutelyContinuous_of_regular hf
 
 end StarAndBochnerOps
 

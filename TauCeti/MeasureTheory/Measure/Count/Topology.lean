@@ -11,10 +11,11 @@ public import Mathlib.MeasureTheory.Group.Measure
 /-!
 # Counting measure on discrete spaces
 
-Counting measure is finite on compact sets, outer regular, inner regular, and regular in a
-discrete space with measurable singletons. On a discrete group it is therefore both a regular and
-an inner regular Haar measure. These instances allow regular representations and `L¹` convolution
-algebras on counting-measure `Lᵖ` spaces without a countability assumption.
+Counting measure is inner regular in any topological space with measurable singletons, and on a
+discrete space it is also finite on compact sets, outer regular, and regular. On a discrete group
+it is therefore both a regular and an inner regular Haar measure. These instances allow regular
+representations and `L¹` convolution algebras on counting-measure `Lᵖ` spaces without a
+countability assumption.
 -/
 
 public section
@@ -53,11 +54,6 @@ theorem exists_isCompact_lt_count {s : Set X} {r : ℝ≥0∞} (hr : r < count s
 every finite subset is compact. -/
 instance count_innerRegular : (count : Measure X).InnerRegular where
   innerRegular _ _ _ hr := exists_isCompact_lt_count hr
-
-/-- Counting measure is inner regular on sets of finite measure in any topological space with
-measurable singletons. -/
-instance count_innerRegularCompactLTTop : (count : Measure X).InnerRegularCompactLTTop :=
-  inferInstance
 
 variable [DiscreteTopology X]
 

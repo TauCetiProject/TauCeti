@@ -71,17 +71,14 @@ theorem integrable_integrand (f : C_c(G, A)) (v : H) :
   (P.continuous_integrand f v).integrable_of_hasCompactSupport
     (P.hasCompactSupport_integrand f v)
 
-private theorem norm_integral_le (f : C_c(G, A)) (v : H) :
-    ‖∫ g, P.coefficient (f g) (P.group g v) ∂μ‖ ≤ (∫ g, ‖f g‖ ∂μ) * ‖v‖ := by
-  calc
-    _ ≤ ∫ g, ‖f g‖ * ‖v‖ ∂μ := by
-      refine norm_integral_le_of_norm_le (f.integrable.norm.mul_const _) (.of_forall fun g => ?_)
-      calc
-        _ ≤ ‖P.coefficient (f g)‖ * ‖P.group g v‖ := (P.coefficient (f g)).le_opNorm _
-        _ ≤ ‖f g‖ * ‖v‖ := by
-          rw [P.isUnitary.norm_map]
-          exact mul_le_mul_of_nonneg_right (NonUnitalStarAlgHom.norm_apply_le _ _) (norm_nonneg _)
-    _ = _ := integral_mul_const _ _
+omit [OpensMeasurableSpace G] [IsFiniteMeasureOnCompacts μ] in
+/-- For an integrable coefficient function `f : G → A`, the vector integral
+`∫ g, π(f g)(U_g v) ∂μ` has norm at most `(∫ g, ‖f g‖ ∂μ) * ‖v‖`. -/
+theorem norm_integral_integrand_le {μ : Measure G} {f : G → A} (hf : Integrable f μ) (v : H) :
+    ‖∫ g, P.coefficient (f g) (P.group g v) ∂μ‖ ≤ (∫ g, ‖f g‖ ∂μ) * ‖v‖ :=
+  (norm_integral_le_of_norm_le (hf.norm.mul_const ‖v‖)
+    (.of_forall fun g => P.norm_coefficient_group_apply_le (f g) g v)).trans_eq
+    (integral_mul_const _ _)
 
 /-- The integrated form on compactly supported coefficient functions, defined by vector
 integration rather than operator-valued Bochner integration. -/
@@ -94,7 +91,7 @@ def integratedOperator : C_c(G, A) →ₗ[ℂ] (H →L[ℂ] H) where
       map_smul' c v := by
         simp_rw [map_smul]
         exact integral_smul c _ }
-    (∫ g, ‖f g‖ ∂μ) (P.norm_integral_le μ f)
+    (∫ g, ‖f g‖ ∂μ) (P.norm_integral_integrand_le f.integrable)
   map_add' f h := by
     ext v
     simp only [LinearMap.mkContinuous_apply, CompactlySupportedContinuousMap.add_apply, map_add,
@@ -116,7 +113,7 @@ theorem norm_integratedOperator_le (f : C_c(G, A)) :
     ‖P.integratedOperator μ f‖ ≤ ∫ g, ‖f g‖ ∂μ := by
   refine ContinuousLinearMap.opNorm_le_bound _ (integral_nonneg fun _ => norm_nonneg _) fun v => ?_
   rw [integratedOperator_apply]
-  exact P.norm_integral_le μ f v
+  exact P.norm_integral_integrand_le f.integrable v
 
 /-- Matrix coefficients can be computed by integrating vector matrix coefficients. -/
 theorem inner_integratedOperator_apply (f : C_c(G, A)) (w v : H) :
