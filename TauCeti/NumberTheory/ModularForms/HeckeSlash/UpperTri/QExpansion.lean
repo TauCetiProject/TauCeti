@@ -274,10 +274,10 @@ theorem qExpansion_heckeSlashUpperTri (hp : 0 < p) {f : ℍ → ℂ}
     rw [qExpansion_coeff_heckeSlashUpperTri k p hp hfper' hfhol hfbdd m,
       PowerSeries.coeff_mk]
 
-/-- **The coefficient formula for a bundled modular form**, the shape Layer 2(b) consumes: for
-`f` a modular form of weight `k` on a group with `1` among its strict periods — every
-congruence subgroup between `Γ₁(N)` and `Γ₀(N)` has this, since it contains `T` — the
-upper-triangular sum reads off the coefficients of `f` along `p ℕ`. -/
+/-- **The coefficient formula for a bundled modular form**, the shape the Hecke operators on
+modular forms consume: for `f` a modular form of weight `k` on a group with `1` among its strict
+periods — every congruence subgroup between `Γ₁(N)` and `Γ₀(N)` has this, since it contains `T` —
+the upper-triangular sum reads off the coefficients of `f` along `p ℕ`. -/
 @[simp]
 theorem qExpansion_coeff_heckeSlashUpperTri' {F : Type*} [FunLike F ℍ ℂ]
     {Γ : Subgroup (GL (Fin 2) ℝ)} [ModularFormClass F Γ k] (hΓ : (1 : ℝ) ∈ Γ.strictPeriods)

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Topology.Algebra.ContinuousAffineMap
@@ -13,6 +14,8 @@ import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import TauCeti.MeasureTheory.Measure.Haar.Unique
 import Mathlib.MeasureTheory.Measure.Prod
+import Mathlib.MeasureTheory.Group.Integral
+import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 import Mathlib.MeasureTheory.Measure.Real
 import Mathlib.RingTheory.Norm.Transitivity
 import TauCeti.MeasureTheory.Measure.OpenPos
@@ -41,9 +44,15 @@ measure of the image of the closed unit ball under a linear endomorphism `f` wit
 closed ball of radius `‖f‖` bounds `|det f|` by `‖f‖` raised to the dimension; restricting scalars
 to `ℝ` gives the same bound for `‖det f‖` over `ℂ`, or any `RCLike` field.
 
+For a continuous linear equivalence `L` and a scale `t`, the rescaled coordinate
+`t⁻¹ • L (y - x)` turns integrals of functions of it into integrals over the target scaled by
+`tⁿ / ρ`, when `L` carries the measure to `ρ⁻¹` times a Haar measure of the target.
+
 ## Main results
 
 * `MeasureTheory.Measure.addHaar_real_ball_of_pos`: the real measure of a positive-radius ball.
+* `MeasureTheory.Measure.addHaar_real_ball_rpow`: `μ (ball x r) ^ e = r ^ (n e) μ (ball 0 1) ^ e` in
+  dimension `n`.
 * `MeasureTheory.Measure.finrank_div_mul_addHaar_real_ball`:
   `(n / r) μ (ball x r) = n rⁿ⁻¹ μ (ball 0 1)` in dimension `n`.
 * `MeasureTheory.Measure.hasDerivAt_measureReal_ball`: `ρ ↦ μ (ball x ρ)` has derivative
@@ -57,6 +66,9 @@ to `ℝ` gives the same bound for `‖det f‖` over `ℂ`, or any `RCLike` fiel
   set in a nontrivial space.
 * `MeasureTheory.Measure.addHaar_closedBall_ae_eq_ball_of_ne_zero`: the same agreement at nonzero
   radius, including trivial spaces.
+* `MeasureTheory.Measure.restrict_closedBall_eq_restrict_ball`,
+  `MeasureTheory.Measure.restrict_closedBall_eq_restrict_ball_of_ne_zero`: restricting to a closed
+  ball or to the open ball of the same radius gives the same measure.
 * `MeasureTheory.Measure.ae_eq_closedBall_of_subset_of_measure_eq`: a set inside a closed ball,
   with the measure of a closed ball of the same radius, agrees with it up to a null set.
 * `MeasureTheory.Measure.addHaar_ball_lt_addHaar_ball_iff`: concentric balls are ordered by
@@ -65,8 +77,6 @@ to `ℝ` gives the same bound for `‖det f‖` over `ℂ`, or any `RCLike` fiel
   measure of a centered ball in a nontrivial space.
 * `MeasureTheory.Measure.setOf_addHaar_ball_norm_lt_addHaar_ball`: the points whose centered
   norm-radius ball has measure below that of the radius-`r` ball form exactly the radius-`r` ball.
-* `MeasureTheory.Measure.setOf_measure_ball_norm_lt_top`: every centered norm-radius ball has
-  finite measure for a measure finite on compact sets in a proper space.
 * `MeasureTheory.Measure.addHaar_setOf_addHaar_ball_norm_lt`: in a nontrivial space, the set where
   the centered ball has measure below `m` has measure `m`.
 * `MeasureTheory.Measure.addHaar_real_closedBall_div_le`: a closed ball of radius `R ≤ c r` has
@@ -94,11 +104,15 @@ to `ℝ` gives the same bound for `‖det f‖` over `ℂ`, or any `RCLike` fiel
 * `MeasureTheory.Measure.eLpNorm_ball_le_mul_rpow`: Hölder's inequality on a ball, with the volume
   of a ball of radius `R > 0` written through that of the unit ball (for `R ≤ 0` the ball is
   empty).
+* `MeasureTheory.Measure.rpow_neg_mul_toReal_eLpNorm_ball_le`: the same in scale-invariant form,
+  `R^(-n/p₀) ‖f‖_{L^{p₀}(B(x₀, R))} ≤ |B(0, 1)|^(1/p₀ - 1/p) R^(-n/p) ‖f‖_{L^p(B(x₀, R))}`.
 * `ContinuousAffineMap.measurePreserving_of_abs_det_eq_one`: a continuous affine self-map whose
   linear part has `|det| = 1` preserves an additive Haar measure.
 * `ContinuousLinearMap.abs_det_le_opNorm_pow`: `|det f| ≤ ‖f‖ ^ n` in dimension `n`.
 * `ContinuousLinearMap.norm_det_le_opNorm_pow`: `‖det f‖ ≤ ‖f‖ ^ n` in dimension `n` over an
   `RCLike` field.
+* `TauCeti.integral_comp_rescale_eq`: integrals of functions of the rescaled coordinate are the
+  target integrals scaled by `tⁿ / ρ`.
 -/
 
 public section
@@ -128,6 +142,16 @@ theorem _root_.MeasureTheory.Measure.sqrt_addHaar_real_ball
     Real.sqrt_eq_rpow, ← Real.rpow_mul hR.le]
   ring_nf
 
+/-- A real power of the real measure of a ball of radius `r > 0` is `r ^ (n e)` times the same power
+of the real measure of the unit ball, where `n` is the dimension. -/
+theorem addHaar_real_ball_rpow
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    (x : E) {r : ℝ} (hr : 0 < r) (e : ℝ) :
+    mu.real (ball x r) ^ e = r ^ ((finrank ℝ E : ℝ) * e) * mu.real (ball 0 1) ^ e := by
+  rw [addHaar_real_ball_of_pos _ _ hr, Real.mul_rpow (by positivity) measureReal_nonneg,
+    ← Real.rpow_natCast, ← Real.rpow_mul hr.le]
+
 /-- Hölder's inequality on a ball: for `p₀ ≤ p`, the `L^{p₀}` norm on `B(x₀, R)` is at most the
 `L^p` norm times `(Rⁿ |B(0, 1)|)^{1/p₀ - 1/p}`, where `n` is the dimension. For `R > 0` this
 factor is `|B(x₀, R)|^{1/p₀ - 1/p}`; for `R ≤ 0` the ball is empty, so the inequality holds
@@ -152,6 +176,42 @@ theorem eLpNorm_ball_le_mul_rpow
   have h := eLpNorm_le_eLpNorm_mul_rpow_measure_univ (ENNReal.ofReal_le_ofReal hp₀p) hf
   rwa [hvol, ENNReal.toReal_ofReal hp₀0.le, ENNReal.toReal_ofReal (hp₀0.le.trans hp₀p),
     ENNReal.ofReal_rpow_of_nonneg (by positivity) he] at h
+
+/-- Hölder's inequality on a ball, in scale-invariant form: for `0 < p₀ ≤ p`, `R > 0` and `f` in
+`L^p` on `B = B(x₀, R)` in dimension `n`, `R^(-n/p₀) ‖f‖_{L^{p₀}(B)}` is at most
+`|B(0, 1)|^(1/p₀ - 1/p) R^(-n/p) ‖f‖_{L^p(B)}`. -/
+theorem rpow_neg_mul_toReal_eLpNorm_ball_le
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    {F : Type*} [NormedAddCommGroup F] {f : E → F} {p₀ p R : ℝ} {x₀ : E} (hR : 0 < R)
+    (hp₀0 : 0 < p₀) (hp₀p : p₀ ≤ p) (hf : MemLp f (ENNReal.ofReal p) (mu.restrict (ball x₀ R))) :
+    R ^ (-((finrank ℝ E : ℝ) / p₀)) *
+        (eLpNorm f (ENNReal.ofReal p₀) (mu.restrict (ball x₀ R))).toReal ≤
+      mu.real (ball (0 : E) 1) ^ (1 / p₀ - 1 / p) *
+        (R ^ (-((finrank ℝ E : ℝ) / p)) *
+          (eLpNorm f (ENNReal.ofReal p) (mu.restrict (ball x₀ R))).toReal) := by
+  have hω : 0 ≤ mu.real (ball (0 : E) 1) := measureReal_nonneg
+  have hV : 0 ≤ (R ^ finrank ℝ E * mu.real (ball (0 : E) 1)) ^ (1 / p₀ - 1 / p) :=
+    Real.rpow_nonneg (mul_nonneg (by positivity) hω) _
+  have hhol := ENNReal.toReal_mono (ENNReal.mul_ne_top hf.eLpNorm_ne_top ENNReal.ofReal_ne_top)
+    (eLpNorm_ball_le_mul_rpow mu (x₀ := x₀) hp₀0 hp₀p hf.aestronglyMeasurable)
+  rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal hV] at hhol
+  -- `R^(-n/p₀) (Rⁿ |B(0, 1)|)^(1/p₀ - 1/p) = |B(0, 1)|^(1/p₀ - 1/p) R^(-n/p)`.
+  have hRpow : R ^ (-((finrank ℝ E : ℝ) / p₀)) *
+      (R ^ finrank ℝ E * mu.real (ball (0 : E) 1)) ^ (1 / p₀ - 1 / p) =
+        mu.real (ball (0 : E) 1) ^ (1 / p₀ - 1 / p) * R ^ (-((finrank ℝ E : ℝ) / p)) := by
+    rw [Real.mul_rpow (by positivity) hω, ← Real.rpow_natCast, ← Real.rpow_mul hR.le,
+      ← mul_assoc, ← Real.rpow_add hR, mul_comm]
+    congr 2
+    field_simp
+    ring
+  calc R ^ (-((finrank ℝ E : ℝ) / p₀)) *
+        (eLpNorm f (ENNReal.ofReal p₀) (mu.restrict (ball x₀ R))).toReal
+      ≤ R ^ (-((finrank ℝ E : ℝ) / p₀)) *
+          ((eLpNorm f (ENNReal.ofReal p) (mu.restrict (ball x₀ R))).toReal *
+            (R ^ finrank ℝ E * mu.real (ball (0 : E) 1)) ^ (1 / p₀ - 1 / p)) := by
+        gcongr
+    _ = _ := by rw [mul_left_comm, hRpow]; ring
 
 /-- For a ball of radius `r > 0` in dimension `n`, `n / r` times its real measure is
 `n rⁿ⁻¹` times the real measure of the unit ball, the derivative in `r` of its measure. -/
@@ -245,10 +305,28 @@ theorem addHaar_closedBall_ae_eq_ball_of_ne_zero
     (mu : Measure E) [mu.IsAddHaarMeasure] (x : E) (r : ℝ) (hr : r ≠ 0) :
     closedBall x r =ᵐ[mu] ball x r := by
   rcases subsingleton_or_nontrivial E with hE | hE
-  · apply Filter.EventuallyEq.of_eq
+  · apply Filter.EventuallyEqSet.of_eq
     ext y
     simp [mem_closedBall, mem_ball, Subsingleton.elim y x, le_iff_lt_or_eq, Ne.symm hr]
   · exact mu.addHaar_closedBall_ae_eq_ball x r
+
+/-- In a nontrivial finite-dimensional space, restricting an additive Haar measure to a closed
+ball or to the open ball of the same radius gives the same measure. -/
+theorem _root_.MeasureTheory.Measure.restrict_closedBall_eq_restrict_ball
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [Nontrivial E] [MeasurableSpace E] [BorelSpace E]
+    (mu : Measure E) [mu.IsAddHaarMeasure] (x : E) (r : ℝ) :
+    mu.restrict (closedBall x r) = mu.restrict (ball x r) :=
+  Measure.restrict_congr_set (mu.addHaar_closedBall_ae_eq_ball x r)
+
+/-- At nonzero radius, restricting an additive Haar measure to a closed ball or to the open ball
+of the same radius gives the same measure, even in a trivial space. -/
+theorem _root_.MeasureTheory.Measure.restrict_closedBall_eq_restrict_ball_of_ne_zero
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E]
+    (mu : Measure E) [mu.IsAddHaarMeasure] (x : E) {r : ℝ} (hr : r ≠ 0) :
+    mu.restrict (closedBall x r) = mu.restrict (ball x r) :=
+  Measure.restrict_congr_set (mu.addHaar_closedBall_ae_eq_ball_of_ne_zero x r hr)
 
 /-- A null-measurable set inside a closed ball of radius `r`, with the measure of some closed ball
 of radius `r`, agrees up to a null set with the ball containing it. -/
@@ -306,14 +384,6 @@ theorem setOf_addHaar_ball_norm_lt_addHaar_ball
   rw [Set.mem_ofPred_eq, mu.addHaar_ball_lt_addHaar_ball_iff 0 (norm_nonneg x),
     mem_ball_zero_iff]
 
-/-- Every centered norm-radius ball has finite measure when the space is proper and the measure
-is finite on compact sets; no Haar or vector-space hypothesis is needed. -/
-theorem setOf_measure_ball_norm_lt_top
-    {E : Type*} [SeminormedAddCommGroup E] [ProperSpace E] [MeasurableSpace E]
-    (mu : Measure E) [IsFiniteMeasureOnCompacts mu] :
-    {x : E | mu (ball (0 : E) ‖x‖) < ⊤} = Set.univ :=
-  Set.eq_univ_of_forall fun _ ↦ measure_ball_lt_top
-
 /-- In a nontrivial finite-dimensional space, `{x | μ (ball 0 ‖x‖) < m}` is the centered open ball
 of `μ`-measure `m` when `m` is finite, and the whole space when `m = ∞`; in both cases its
 measure is `m`. -/
@@ -323,7 +393,7 @@ theorem addHaar_setOf_addHaar_ball_norm_lt
     (m : ENNReal) :
     mu {x | mu (ball (0 : E) ‖x‖) < m} = m := by
   rcases eq_or_ne m ⊤ with rfl | hm
-  · rw [mu.setOf_measure_ball_norm_lt_top, measure_univ_of_isAddLeftInvariant]
+  · simp [measure_ball_lt_top, measure_univ_of_isAddLeftInvariant]
   -- For finite `m`, pick the radius `r` of the centered ball of measure `m`.
   obtain ⟨r, _, hr⟩ := mu.exists_nonneg_addHaar_ball_eq hm
   rw [← hr, mu.setOf_addHaar_ball_norm_lt_addHaar_ball]
@@ -576,5 +646,38 @@ theorem addHaar_eq_zero_of_prod_mk_preimage_image_eq_zero (μH : Measure H) [IsA
 end Fubini
 
 end MeasureTheory.Measure
+
+namespace TauCeti
+
+section Rescale
+
+variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
+  [NormedSpace ℝ F] [NormedAddCommGroup G] [NormedSpace ℝ G]
+
+/-- Integrals of functions of the rescaled coordinate `Ψ y = t⁻¹ • L (y - x)` are integrals over
+the target scaled by `t ^ n / ρ`, when `L` carries the measure `μ` to `ρ⁻¹` times a Haar measure
+`ν` of the target (here `n` is the dimension of the target). The integrand may take values in any
+real normed space. -/
+theorem integral_comp_rescale_eq [FiniteDimensional ℝ F] [MeasurableSpace E] [BorelSpace E]
+    [MeasurableSpace F] [BorelSpace F] {μ : Measure E} [μ.IsAddRightInvariant]
+    {ν : Measure F} [ν.IsAddHaarMeasure] {ρ t : ℝ} (hρ : 0 < ρ) (ht0 : 0 < t) (L : E ≃L[ℝ] F)
+    (hmap : Measure.map L μ = ρ⁻¹.toNNReal • ν) (x : E) {Ψ : E → F}
+    (hΨ : Ψ = fun y ↦ t⁻¹ • L (y - x)) (k : F → G) :
+    ∫ y, k (Ψ y) ∂μ = (ρ⁻¹ * t ^ finrank ℝ F) • ∫ z, k z ∂ν := by
+  subst hΨ
+  have h := integral_map_equiv L.toHomeomorph.toMeasurableEquiv (μ := μ) fun z ↦ k (t⁻¹ • z)
+  simp only [Homeomorph.toMeasurableEquiv_coe, ContinuousLinearEquiv.coe_toHomeomorph] at h
+  calc ∫ y, k (t⁻¹ • L (y - x)) ∂μ
+      = ∫ z, k (t⁻¹ • z) ∂Measure.map L μ := by
+        rw [integral_sub_right_eq_self (fun y ↦ k (t⁻¹ • L y)) x, h]
+    _ = ρ⁻¹ • ∫ z, k (t⁻¹ • z) ∂ν := by
+        rw [hmap, integral_smul_nnreal_measure]
+        simp [NNReal.smul_def, hρ.le]
+    _ = (ρ⁻¹ * t ^ finrank ℝ F) • ∫ z, k z ∂ν := by
+        rw [Measure.integral_comp_inv_smul_of_nonneg _ _ ht0.le, smul_smul]
+
+end Rescale
+
+end TauCeti
 
 end

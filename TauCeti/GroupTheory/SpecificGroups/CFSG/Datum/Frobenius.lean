@@ -43,11 +43,9 @@ points, or a finite group.
   `TauCeti.ValidLieTypeIndex.datumFrobenius_exponent`: it multiplies both lattices by `q`, fixes
   the root enumeration, and rescales every root by `q`.
 
-## Roadmap
+## Related declarations and references
 
-This is the root-datum layer of the `Frob_q` of milestone L1, "ordinary and graph Steinberg maps",
-of `TauCetiRoadmap/CFSGStatement/README.md`, whose table sets the Steinberg map of the untwisted
-families to `Frob_q`. The field-level half is
+The Steinberg map of the untwisted families is `Frob_q`. The field-level half is
 `TauCeti.ValidLieTypeIndex.frobeniusEquiv` in
 `TauCeti/GroupTheory/SpecificGroups/CFSG/Frobenius.lean`. The corresponding endomorphism of points
 is `TauCeti.ValidLieTypeIndex.frobenius` in

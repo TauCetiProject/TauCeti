@@ -15,7 +15,7 @@ Mathlib defines an abstract `sl₂` triple (`IsSl2Triple h e f`: the relations `
 `⁅h, e⁆ = 2e`, `⁅h, f⁆ = -2f`, with `h ≠ 0`) and the whole primitive-vector calculus that rests on
 it. This file adds three things Mathlib does not have.
 
-The first is a supply of triples, none being exhibited in the special linear Lie algebra. For every
+The first is a supply of triples: Mathlib exhibits none in the special linear Lie algebra. For every
 pair `i ≠ j` of indices, the matrix units
 
 `e = Eᵢⱼ`, `f = Eⱼᵢ`, `h = Eᵢᵢ - Eⱼⱼ`
@@ -61,7 +61,10 @@ that composes to zero is already zero.
   by a standard triple is the whole of `sl (Fin 2) R`. The underlying expansion of an arbitrary
   element in the triple is `TauCeti.eq_smul_single_add_smul_single_add_smul_singleSubSingle`.
 * `IsSl2Triple.isSl2Triple_restrict`: an arbitrary triple regarded inside the subalgebra that it
-  generates.
+  generates, using `IsSl2Triple.e_mem_toLieSubalgebra`, `IsSl2Triple.f_mem_toLieSubalgebra` and
+  `IsSl2Triple.h_mem_toLieSubalgebra`, which say that the three elements of the triple lie in it.
+* `TauCeti.val_one_one_eq_neg_val_zero_zero`: the bottom-right entry of a trace-zero `2 × 2`
+  matrix is minus its top-left entry.
 * `IsSl2Triple.map`: the image of a triple under a Lie algebra homomorphism that does not kill its
   Cartan element is a triple.
 * `IsSl2Triple.lieSubmoduleOfStable`: a submodule stable under the raising and lowering elements of
@@ -97,13 +100,9 @@ needs neither, being a bilinearity argument over an arbitrary commutative ring.
 The `sl (Fin 2) R` results are stated for an arbitrary pair `i ≠ j` of indices in `Fin 2`, not just
 for `(0, 1)`: the opposite pair gives the opposite triple `(-h, f, e)`, and both are standard.
 
-## References
-
-This is the concrete input to Layer 0 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, whose worked `sl₂` is
-*"`LieAlgebra.SpecialLinear.sl (Fin 2) K` with its standard triple"*, and whose classification
-targets carry the hypothesis `htop : t.toLieSubalgebra K = ⊤` that
-`TauCeti.toLieSubalgebra_isSl2Triple_single_eq_top` discharges for that model.
+The `sl₂` classification theorems carry the hypothesis `htop : t.toLieSubalgebra K = ⊤`, which
+`TauCeti.toLieSubalgebra_isSl2Triple_single_eq_top` discharges for the standard triple of
+`sl (Fin 2) R`.
 -/
 
 public section
@@ -264,10 +263,14 @@ def slFinTwoEquivFun : SpecialLinear.sl (Fin 2) R ≃ₗ[R] (Fin 3 → R) where
 
 variable {R}
 
+/-- `slFinTwoEquivFun` sends a trace-zero `2 × 2` matrix `A` to its coordinates
+`(A 0 1, A 1 0, A 0 0)`. -/
 @[simp]
 theorem slFinTwoEquivFun_apply (A : SpecialLinear.sl (Fin 2) R) :
     slFinTwoEquivFun R A = ![A.val 0 1, A.val 1 0, A.val 0 0] := by rfl
 
+/-- The inverse of `slFinTwoEquivFun` rebuilds the matrix `!![v 2, v 0; v 1, -v 2]` from its
+coordinates `v`. -/
 @[simp]
 theorem slFinTwoEquivFun_symm_apply (v : Fin 3 → R) :
     ((slFinTwoEquivFun R).symm v).val = !![v 2, v 0; v 1, -v 2] := by rfl
@@ -500,6 +503,8 @@ def lieSubmoduleOfStable (t : IsSl2Triple h e f) (S : Submodule K M)
     exact S.add_mem (S.add_mem (S.smul_mem _ (he m hm)) (S.smul_mem _ (hf m hm)))
       (S.smul_mem _ (hh m hm))
 
+/-- The underlying submodule of `IsSl2Triple.lieSubmoduleOfStable` is the submodule `S` it is
+built from. -/
 @[simp]
 theorem lieSubmoduleOfStable_toSubmodule (t : IsSl2Triple h e f) (S : Submodule K M)
     (he : ∀ m ∈ S, ⁅e, m⁆ ∈ S) (hf : ∀ m ∈ S, ⁅f, m⁆ ∈ S) :

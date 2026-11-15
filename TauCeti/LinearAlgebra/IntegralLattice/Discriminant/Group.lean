@@ -42,8 +42,6 @@ equivalence of discriminant groups.  The construction respects identity, inverse
 
 * V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, §1.1.
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md` (Layer 2).
-* `TauCetiRoadmap/IntegralLattices/Suggested.lean`.
 -/
 
 public section

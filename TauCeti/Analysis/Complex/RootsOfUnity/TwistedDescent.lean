@@ -39,6 +39,7 @@ unique continuous function with this factorization (`TauCeti.eqOn_descendPowTwis
 * `TauCeti.descendPowTwist`: the descent of a function transforming by `ζ ↦ ζ ^ r`.
 * `TauCeti.differentiableOn_descendPowTwist` and `TauCeti.analyticOnNhd_descendPowTwist`: it is
   holomorphic, hence analytic, on `(· ^ m) '' s`.
+* `TauCeti.differentiableAt_descendPowTwist_pow`: the pointwise form away from `0`.
 * `TauCeti.pow_smul_descendPowTwist_pow`: the factorization `f u = u ^ r • g (u ^ m)` on `s`.
 * `TauCeti.eqOn_descendPowTwist`: uniqueness of the factorization.
 * `TauCeti.analyticOrderAt_eq_add_analyticOrderAt_descendPowTwist_mul`: `ord₀ f = r + ord₀ g * m`.
@@ -94,6 +95,17 @@ theorem pow_smul_descendPowTwist_pow_of_ne_zero (hr : r < m) {f : ℂ → E} {u 
     sub_zero, sub_zero, descendPow_pow (pow_sub_smul_invariant hr.le hf), smul_smul, smul_smul]
   convert one_smul ℂ (f u) using 2
   rw [mul_right_comm, ← pow_add, Nat.add_sub_cancel' hr.le, mul_inv_cancel₀ hum]
+
+/-- **The descent is holomorphic away from `0`.** If `f` transforms by `ζ ↦ ζ ^ r` near a
+nonzero point `u` and is complex differentiable at `u`, then `descendPowTwist m r f` is complex
+differentiable at `u ^ m`. -/
+theorem differentiableAt_descendPowTwist_pow {f : ℂ → E} {u : ℂ} (hr : r ≤ m)
+    (hf : ∀ᶠ v in 𝓝 u, ∀ ζ : rootsOfUnity m ℂ, f (ζ • v) = ((ζ : ℂˣ) : ℂ) ^ r • f v)
+    (hu : u ≠ 0) (hfu : DifferentiableAt ℂ f u) :
+    DifferentiableAt ℂ (descendPowTwist m r f) (u ^ m) := by
+  rw [descendPowTwist, differentiableAt_dslope_of_ne (pow_ne_zero m hu)]
+  exact differentiableAt_descendPow_pow (hf.mono fun v hv ↦ pow_sub_smul_invariant hr hv) hu
+    ((differentiableAt_id.pow _).smul hfu)
 
 /-- **The descent of a holomorphic equivariant function is holomorphic.** If `f` is holomorphic
 on an open set `s` and transforms by `ζ ↦ ζ ^ r` at every point of `s`, then

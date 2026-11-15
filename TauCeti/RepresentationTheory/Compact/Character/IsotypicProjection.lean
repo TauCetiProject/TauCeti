@@ -139,7 +139,7 @@ variable {W W' : Type*}
   [NormedAddCommGroup W'] [NormedSpace k W'] [FiniteDimensional k W']
 
 local instance instCompleteSpaceIsotypicProjectionNormed : CompleteSpace V :=
-  FiniteDimensional.complete k V
+  FiniteDimensional.completeSpace k V
 
 variable (rho : ContRepresentation k G V) (hrho : Continuous rho)
 
@@ -228,7 +228,7 @@ variable [IsAlgClosed k] [InnerProductSpace k V] [NormedSpace ℝ V] [SMulCommCl
 variable {W : Type*} [NormedAddCommGroup W] [NormedSpace k W] [FiniteDimensional k W]
 
 local instance instCompleteSpaceIsotypicProjectionAmbient : CompleteSpace V :=
-  FiniteDimensional.complete k V
+  FiniteDimensional.completeSpace k V
 
 variable (rho : ContRepresentation k G V) (hrho : Continuous rho)
 
@@ -306,7 +306,7 @@ variable [InnerProductSpace k V] [NormedSpace ℝ V] [SMulCommClass ℝ k V]
   [FiniteDimensional k V]
 
 local instance instCompleteSpaceIsotypicProjectionInner : CompleteSpace V :=
-  FiniteDimensional.complete k V
+  FiniteDimensional.completeSpace k V
 
 section UnitarySelected
 

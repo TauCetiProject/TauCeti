@@ -87,8 +87,6 @@ development at commit `003655ccf010cdf44c4f67d6675167b54ce0e9df` contain related
 approximation proofs. The proof here was written independently against Tau Ceti's existing
 raw-measure, `ℝ≥0∞`-valued transport-cost and finite-duality APIs; no code was taken from either
 development.
-
-This is Layer 2, item 4 of the optimal-transport roadmap, in its compact continuous case.
 -/
 
 public section

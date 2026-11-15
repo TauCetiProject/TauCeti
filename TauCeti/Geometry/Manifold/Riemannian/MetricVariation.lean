@@ -64,7 +64,7 @@ theorem eVariationOn_eq_pathELength_open
           ((ContMDiffOn.subtypeVal_comp_iff U γ (Icc a b)).mpr hγ))
     _ = Manifold.pathELength 𝓘(ℝ, F) ((Subtype.val : U → F) ∘ γ) a b := by
       rw [Manifold.pathELength_eq_lintegral_mfderivWithin_Icc]
-      simp only [mfderivWithin_eq_fderivWithin, enorm_tangentSpace_vectorSpace]
+      simp only [mfderivWithin_eq_fderivWithin, eNorm_tangentSpace_vectorSpace]
       apply setLIntegral_congr_fun measurableSet_Icc
       intro t _
       -- The scalar tangent space is definitionally the model field, but its bundled instances hide

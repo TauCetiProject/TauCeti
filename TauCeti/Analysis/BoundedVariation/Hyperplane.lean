@@ -82,9 +82,9 @@ private lemma perimeter_setOf_inner_lt_le (hν : ‖ν‖ = 1) (c : ℝ) (Ω : O
   calc ENNReal.ofReal (∫ x in {x | ⟪x, ν⟫ < c}, divergenceCLM φ x)
       ≤ ‖∫ x in S, ⟪φ x, ν⟫ ∂μHE[finrank ℝ F - 1]‖ₑ := by
         rw [hdiv]
-        exact Real.ofReal_le_enorm _
+        exact Real.ofReal_le_eNorm _
     _ ≤ ∫⁻ x in S, (Ω : Set F).indicator 1 x ∂μHE[finrank ℝ F - 1] :=
-        (enorm_integral_le_lintegral_enorm _).trans (lintegral_mono hle)
+        (eNorm_integral_le_lintegral_eNorm _).trans (lintegral_mono hle)
     _ = μHE[finrank ℝ F - 1] (Ω ∩ S) := by
         rw [lintegral_indicator_one Ω.isOpen.measurableSet, Measure.restrict_apply
           Ω.isOpen.measurableSet]
