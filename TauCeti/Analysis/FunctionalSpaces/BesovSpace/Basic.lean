@@ -53,7 +53,8 @@ both its tempered distribution and this `Lᵖ` data.
 * `TauCeti.BesovSpace.block`: the block `Δⱼ u` as an `Lᵖ` function, with
   `TauCeti.BesovSpace.norm_eq_tsum_rpow` and `TauCeti.BesovSpace.hasSum_norm` (`q < ∞`) and
   `TauCeti.BesovSpace.norm_eq_ciSup` (`q = ∞`) expressing the norm through the blocks, and the
-  single-block bound `TauCeti.BesovSpace.rpow_mul_norm_block_le`; conversely
+  single-block bound `TauCeti.BesovSpace.rpow_mul_norm_block_le`, and the weighted block norms as
+  a sequence in `ℓ^q`, `TauCeti.BesovSpace.exists_lp_eq_rpow_mul_norm_block_and_norm_le`; conversely
   `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq` bounds the norm of a
   distribution by any `ℓ^q` majorant of its weighted block norms.
 * `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_block`: a tempered distribution whose
@@ -555,6 +556,17 @@ theorem rpow_mul_norm_block_le (u : BesovSpace F φ s p q) (j : ℕ) :
     2 ^ (s * j) * ‖u.block j‖ ≤ ‖u‖ := by
   rw [← norm_weightedBlocks_apply, ← norm_weightedBlocks]
   exact lp.norm_apply_le_norm (zero_lt_one.trans_le Fact.out).ne' _ j
+
+/-- **The weighted block norms as a sequence in `ℓ^q`.** The sequence `(2^{js} ‖Δⱼ u‖_p)ⱼ` of
+`u ∈ B^s_{p,q}` is an element of `ℓ^q` of norm at most `‖u‖`. It is the majorant to which the
+summation lemmas for series of spectrally localized pieces are applied. -/
+theorem exists_lp_eq_rpow_mul_norm_block_and_norm_le (u : BesovSpace F φ s p q) :
+    ∃ c : lp (fun _ : ℕ ↦ ℝ) q, (∀ j : ℕ, c j = 2 ^ (s * j) * ‖u.block j‖) ∧ ‖c‖ ≤ ‖u‖ := by
+  refine ⟨⟨fun k ↦ ‖u.weightedBlocks k‖, (lp.memℓp _).norm⟩, fun j ↦ ?_, ?_⟩
+  · -- The entries of the anonymous `lp` element are its defining sequence by definition.
+    exact norm_weightedBlocks_apply u j
+  · rw [← norm_weightedBlocks]
+    exact lp.norm_mono (zero_lt_one.trans_le Fact.out).ne' fun k ↦ (norm_norm _).le
 
 /-- **The blocks depend continuously on the element:** `‖Δⱼ u‖_p ≤ 2^{-js} ‖u‖`. -/
 theorem continuous_block (j : ℕ) : Continuous fun u : BesovSpace F φ s p q ↦ u.block j := by
