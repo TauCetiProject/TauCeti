@@ -9,9 +9,8 @@ public import TauCeti.Analysis.PDE.Vortex.EllipticRegularity
 public import TauCeti.Analysis.PDE.Vortex.SobolevRealization
 public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
-import Mathlib.Analysis.LocallyConvex.HahnBanach
-import Mathlib.Analysis.Normed.Operator.Banach
 import TauCeti.Analysis.Distribution.TestFunction.Inner
+import TauCeti.Analysis.Fredholm.Criteria
 import TauCeti.Analysis.Sobolev.BesselPotential.Basic
 import TauCeti.Analysis.Sobolev.W1p.Density
 import TauCeti.MeasureTheory.Function.Lp.Norm
@@ -53,8 +52,8 @@ connect it with the realization on `H¹`.
   `TauCeti.Analysis.PDE.Vortex.RightInverse` solves `L_x y = f` weakly for every `f ∈ L²`, so the
   realization is onto (`TauCeti.Vortex.sobolevGaugeFixedOperator_surjective`).
 
-A surjective bounded operator between Banach spaces is open, and a finite-dimensional subspace is
-complemented, so with the finite-dimensional kernel the realization is Fredholm
+A surjective bounded operator between Banach spaces with finite-dimensional kernel is Fredholm
+(`ContinuousLinearMap.IsFredholm.of_surjective`), so the realization is Fredholm
 (`TauCeti.Vortex.isFredholm_sobolevGaugeFixedOperator`). Its index is the real dimension of its
 kernel (`LinearMap.index_of_surjective`). The identification of this kernel with the real tangent
 space of the divisor space, of dimension `2m`, is not proved here.
@@ -244,11 +243,7 @@ theorem isFredholm_sobolevGaugeFixedOperator (hx : ContDiff ℝ 1 x)
     (hcov : Tendsto (fun z ↦ covariantDerivative x z 1) (cocompact ℂ) (𝓝 0))
     (hax : a =ᵐ[μ⊤] x) :
     (sobolevGaugeFixedOperator a).IsFredholm := by
-  have hsurj := sobolevGaugeFixedOperator_surjective hx hsol hlim hax
   have := finiteDimensional_ker_sobolevGaugeFixedOperator hx hsol hlim hcov hax
-  exact (Function.Surjective.isFredholm_iff _ hsurj).2
-    ⟨((sobolevGaugeFixedOperator a).isOpenMap hsurj).isQuotientMap
-      (sobolevGaugeFixedOperator a).continuous hsurj,
-      Submodule.ClosedComplemented.of_finiteDimensional _, this⟩
+  exact .of_surjective (sobolevGaugeFixedOperator_surjective hx hsol hlim hax)
 
 end TauCeti.Vortex
