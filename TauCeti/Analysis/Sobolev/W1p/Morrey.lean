@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Sobolev.W1p.Density
 
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.Analysis.Calculus.Gradient
-import TauCeti.Analysis.Sobolev.Morrey
+import TauCeti.Analysis.Sobolev.Morrey.Basic
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
