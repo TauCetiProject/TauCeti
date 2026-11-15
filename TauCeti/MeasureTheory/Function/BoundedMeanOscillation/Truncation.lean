@@ -22,8 +22,9 @@ without the local-finiteness assumption of the general postcomposition preservat
 For pointwise bounds and agreement, import `TauCeti.Algebra.Order.Group.MinMax`: the clipped
 value has norm at most `|M|` (`TauCeti.abs_max_min_le`), and for nonnegative heights at most the
 original norm (`TauCeti.abs_max_min_le_abs`). It equals the original value once its absolute
-value is at most the height (`TauCeti.max_neg_min_eq_self_of_abs_le`). This module is also
-re-exported by `TauCeti.MeasureTheory.Function.LpSeminorm.Clipping`, which provides essential
+value is at most the height (`TauCeti.max_neg_min_eq_self_of_abs_le`).
+`TauCeti.Algebra.Order.Group.MinMax` is re-exported by
+`TauCeti.MeasureTheory.Function.LpSeminorm.Clipping`, which also provides essential
 boundedness (`MeasureTheory.AEStronglyMeasurable.memLp_top_max_min`) and finite-exponent `Lᵖ`
 convergence of scalar products with the clipped multipliers to `b • f` when `b • f` lies in `Lᵖ`
 (`TauCeti.tendsto_eLpNorm_max_min_smul_sub`). Together these results permit passage from bounded

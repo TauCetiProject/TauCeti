@@ -64,6 +64,9 @@ easy half of Sarason's characterization.
   modulus.
 * `TauCeti.vmoModulus`, `TauCeti.MemVMO`: the VMO modulus and the space of functions of
   vanishing mean oscillation.
+* `LipschitzWith.bmoSeminorm_comp_le`, `LipschitzWith.vmoModulus_comp_le`: Lipschitz
+  postcomposition bounds for the BMO seminorm and VMO modulus, and
+  `TauCeti.MemBMO.comp_lipschitz`, `TauCeti.MemVMO.comp_lipschitz`: preservation of BMO and VMO.
 * `TauCeti.memVMO_of_tendsto_bmoSeminorm`: VMO is closed in BMO.
 * `UniformContinuous.memVMO`, `Continuous.memVMO_of_hasCompactSupport`: uniformly continuous
   functions of bounded mean oscillation, and continuous functions with compact support, have
