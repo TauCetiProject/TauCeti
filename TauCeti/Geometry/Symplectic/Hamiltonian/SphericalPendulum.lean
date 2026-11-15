@@ -11,6 +11,10 @@ public import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 public import Mathlib.Topology.Order.IntermediateValue
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
+import Mathlib.Analysis.Calculus.Deriv.Add
+import Mathlib.Analysis.Calculus.Deriv.Inv
+import Mathlib.Analysis.Calculus.Deriv.Mul
+import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.FDeriv.WithLp
 
 /-!
