@@ -102,8 +102,8 @@ theorem CountablyRectifiable.exists_measurable_cover_tangent_projection
   have hgood (n : ℕ) := (hQ n).exists_measurable_mem
   choose B hBae hBm hB using hgood
   refine ⟨fun n ↦ S n ∩ B n, Q, fun n ↦ (hSm n).inter (hBm n), hQm, ?_, ?_⟩
-  · apply ae_le_set.mp
-    refine (ae_le_set.mpr hcover).trans
+  · apply ae_subset.mp
+    refine (ae_subset.mpr hcover).trans
       (Filter.EventuallySubset.countable_iUnion fun n ↦ ?_)
     filter_upwards [hBae n] with y hy hys
     exact ⟨hys, hy⟩
@@ -146,7 +146,7 @@ theorem CountablyRectifiable.exists_measurable_approximate_tangent_projection
       infer_instance
     exact ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div_of_isLocallyFiniteMeasure k
       (hEm.diff (hTm n).nullMeasurableSet)
-  filter_upwards [ae_le_set.mpr hcover, ae_all_iff.mpr hzero] with x hcov hzero hxE
+  filter_upwards [ae_subset.mpr hcover, ae_all_iff.mpr hzero] with x hcov hzero hxE
   have hxS : x ∈ S := hcov hxE
   let n := Nat.find (hindex ⟨x, hxS⟩)
   have hxn : x ∈ T n := Nat.find_spec (hindex ⟨x, hxS⟩)

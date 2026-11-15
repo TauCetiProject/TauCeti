@@ -17,7 +17,8 @@ import TauCeti.Topology.Algebra.Ring.MaximalIdeals
 Every ideal of the Monsky–Washnitzer algebra over a complete nontrivially normed ultrametric
 field is closed for the unit Gauss norm. Moreover, every coset has an element of least norm:
 the infimum defining the residue norm is attained. Thus presentation quotients of
-overconvergent algebras carry genuine residue norms, not merely seminorms.
+overconvergent algebras carry genuine residue norms, not merely seminorms. Extension to
+the Tate algebra preserves these quotient Gauss norms (`Ideal.norm_mk_map_toTate`).
 
 Closedness follows by contracting the closed extended ideal in the Tate algebra, using
 faithful flatness. To obtain a least-norm representative, approximate a Tate-algebra
@@ -83,6 +84,44 @@ residue Gauss norm. -/
 theorem _root_.Ideal.exists_mk_eq_and_norm_eq_washnitzerAlgebra (I : Ideal W) (q : W ⧸ I) :
     ∃ f : W, Ideal.Quotient.mk I f = q ∧ ‖f‖ = ‖q‖ :=
   Ideal.Quotient.exists_mk_eq_and_norm_eq_iff.mpr I.exists_norm_sub_le_washnitzerAlgebra q
+
+/-- Extension of an ideal to the Tate algebra preserves the quotient Gauss norm of every
+Monsky–Washnitzer series. -/
+@[simp] theorem _root_.Ideal.norm_mk_map_toTate (I : Ideal W) (f : W) :
+    ‖Ideal.Quotient.mk (I.map (toTate σ K)) (toTate σ K f)‖ =
+      ‖Ideal.Quotient.mk I f‖ := by
+  apply le_antisymm
+  · obtain ⟨g, hg, hnorm⟩ := I.exists_norm_sub_eq_norm_mk_washnitzerAlgebra f
+    calc ‖Ideal.Quotient.mk (I.map (toTate σ K)) (toTate σ K f)‖
+        = ‖Ideal.Quotient.mk (I.map (toTate σ K)) (toTate σ K (f - g))‖ := by
+          rw [map_sub, map_sub, Ideal.Quotient.eq_zero_iff_mem.mpr
+            (Ideal.mem_map_of_mem _ hg), sub_zero]
+      _ ≤ ‖toTate σ K (f - g)‖ := Ideal.Quotient.norm_mk_le _ _
+      _ = ‖Ideal.Quotient.mk I f‖ := (norm_toTate _).trans hnorm
+  · set M := ‖Ideal.Quotient.mk (I.map (toTate σ K)) (toTate σ K f)‖
+    refine le_of_forall_pos_le_add fun ε hε ↦ ?_
+    obtain ⟨h, hh, hnorm⟩ := Ideal.Quotient.norm_mk_lt
+      (Ideal.Quotient.mk (I.map (toTate σ K)) (toTate σ K f)) hε
+    have hmem : h - toTate σ K f ∈ I.map (toTate σ K) := Ideal.Quotient.eq.mp hh
+    -- Approximate the difference by the image of an element of `I`.
+    have hclosure := Ideal.map_subset_closure_image_of_denseRange denseRange_toTate I hmem
+    obtain ⟨_, ⟨g, hg, rfl⟩, hdist⟩ := Metric.mem_closure_iff.mp hclosure ε hε
+    let f' := f + g
+    have hf' : Ideal.Quotient.mk I f' = Ideal.Quotient.mk I f := by
+      rw [map_add, Ideal.Quotient.eq_zero_iff_mem.mpr hg, add_zero]
+    have hdefect : ‖h - toTate σ K f'‖ ≤ ε := by
+      have heq : h - toTate σ K f' = (h - toTate σ K f) - toTate σ K g := by
+        rw [map_add]
+        abel
+      simpa only [heq, dist_eq_norm, norm_sub_rev] using hdist.le
+    calc ‖Ideal.Quotient.mk I f‖ ≤ ‖f'‖ := hf' ▸ Ideal.Quotient.norm_mk_le I f'
+      _ = ‖toTate σ K f'‖ := (norm_toTate f').symm
+      _ = ‖h + (toTate σ K f' - h)‖ := by congr 1; abel
+      _ ≤ max ‖h‖ ‖toTate σ K f' - h‖ := IsUltrametricDist.norm_add_le_max _ _
+      _ ≤ max (M + ε) ε := max_le_max hnorm.le (by rwa [norm_sub_rev])
+      _ ≤ M + ε := max_le le_rfl (by
+        have hM : 0 ≤ M := norm_nonneg (Ideal.Quotient.mk _ (toTate σ K f))
+        linarith)
 
 -- Closedness supplies Mathlib's normed quotient, without a reducedness hypothesis.
 noncomputable example (I : Ideal W) : NormedCommRing (W ⧸ I) := inferInstance

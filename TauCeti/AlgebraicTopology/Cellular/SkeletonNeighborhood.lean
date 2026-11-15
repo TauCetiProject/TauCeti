@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Cellular.Chains
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
+public import TauCeti.AlgebraicTopology.Singular.Twisted.Equivalence
 public import TauCeti.Topology.CWComplex.Classical.Skeleton.Neighborhood
 
 /-!
@@ -32,6 +33,7 @@ new pair, leaving the open `n`-cells relative to their outer halves.
 * `TauCeti.isIso_singularHomologyMap_skeletonPairToNeighborhood`: the inclusion
   `(Xⁿ, Xⁿ⁻¹) ⟶ (Xⁿ, TauCeti.skeletonNeighborhood C n)` induces isomorphisms on relative singular
   homology.
+* `TauCeti.isIso_twistedHomologyMap_skeletonPairToNeighborhood`: the same with local coefficients.
 * `TauCeti.skeletonNeighborhoodToPair`, `TauCeti.skeletonPairToNeighborhoodHomotopy`, and
   `TauCeti.skeletonNeighborhoodToPairHomotopy`: the inverse map and the two pair homotopies.
 * `TauCeti.cellularChainGroupIsoNeighborhood`: the resulting isomorphism from the cellular chain
@@ -123,6 +125,16 @@ theorem isIso_singularHomologyMap_skeletonPairToNeighborhood (n k : ℕ) :
   · exact skeletonNeighborhoodToPairHomotopy C n
 
 end
+
+/-- **The inclusion `(Xⁿ, Xⁿ⁻¹) ⟶ (Xⁿ, TauCeti.skeletonNeighborhood C n)` induces isomorphisms
+on relative homology with local coefficients**, for every local coefficient system `L` on `Xⁿ` and
+in every degree. -/
+theorem isIso_twistedHomologyMap_skeletonPairToNeighborhood {R : Type u} [Ring R] (n k : ℕ)
+    (L : LocalCoefficientSystem.{u, w, max w v} R (skeletonNeighborhoodPair C n).fst) :
+    IsIso (TopPair.twistedHomologyMap (skeletonPairToNeighborhood C n) L k) :=
+  LocalCoefficientSystem.isIso_relativeTwistedHomologyMap_of_homotopyInverse L _
+    (skeletonNeighborhoodToPair C n) ⟨skeletonPairToNeighborhoodHomotopy C n⟩
+    ⟨skeletonNeighborhoodToPairHomotopy C n⟩ k
 
 section
 

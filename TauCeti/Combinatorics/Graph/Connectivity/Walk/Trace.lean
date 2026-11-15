@@ -93,6 +93,10 @@ theorem walkGraph_le_of_pos (p : G.Walk x y) (hp : 0 < p.length) : G.walkGraph p
   apply p.walkGraph_le
   exact p.support_subset_vertexSet_of_pos hp x p.start_mem_support
 
+/-- Every cycle traces a subgraph of its ambient graph. -/
+theorem IsCycle.walkGraph_le {p : G.Walk x x} (hp : p.IsCycle) : G.walkGraph p ≤ G :=
+  p.walkGraph_le_of_pos hp.length_pos
+
 /-- The endpoints of a walk are reachable within the graph traced by that walk. -/
 theorem reachable_walkGraph (p : G.Walk x y) :
     (G.walkGraph p).Reachable x y := by

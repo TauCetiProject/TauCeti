@@ -113,7 +113,7 @@ private theorem trialityLinearMap_mem_checkerboardCarrier {x : Fin 4 → ℚ}
   choose z hz using hxZ
   simp only [Fin.sum_univ_four, hz] at hm
   have hm' : z 0 + z 1 + z 2 + z 3 = 2 * m := by exact_mod_cast hm
-  refine mem_checkerboardCarrier_of ![m, m - z 2 - z 3, m - z 1 - z 3, m - z 0 - z 3]
+  refine mem_checkerboardCarrier_of_even_sum ![m, m - z 2 - z 3, m - z 1 - z 3, m - z 0 - z 3]
     (fun i ↦ ?_) ⟨m - z 3, by simp only [Fin.sum_univ_four]; simp; linear_combination -hm'⟩
   fin_cases i <;> simp [trialityLinearMap_apply, hz] <;> linarith
 
@@ -188,7 +188,7 @@ theorem discriminantGroupEquiv_checkerboardTriality_checkerboardVectorClass :
   rw [← (mk_eq_checkerboardVectorClass_iff ⟨_, checkerboardVector_mem_dualCarrier⟩).2
       (by simp), Isometry.discriminantGroupEquiv_mk,
     mk_eq_checkerboardCospinorClass_iff, Isometry.coe_dualCarrierEquiv_apply]
-  refine mem_checkerboardCarrier_of ![0, -1, -1, 0] (fun i ↦ ?_) ⟨-1, by decide⟩
+  refine mem_checkerboardCarrier_of_even_sum ![0, -1, -1, 0] (fun i ↦ ?_) ⟨-1, by decide⟩
   fin_cases i <;> norm_num [Fin.ext_iff]
 
 /-- Triality sends the spinor class to the vector class. -/
@@ -198,7 +198,7 @@ theorem discriminantGroupEquiv_checkerboardTriality_checkerboardSpinorClass :
       checkerboardVectorClass 4 := by
   rw [checkerboardSpinorClass_def, Isometry.discriminantGroupEquiv_mk,
     mk_eq_checkerboardVectorClass_iff, Isometry.coe_dualCarrierEquiv_apply]
-  refine mem_checkerboardCarrier_of ![1, 0, 0, -1] (fun i ↦ ?_) ⟨0, by decide⟩
+  refine mem_checkerboardCarrier_of_even_sum ![1, 0, 0, -1] (fun i ↦ ?_) ⟨0, by decide⟩
   fin_cases i <;> norm_num [Fin.ext_iff]
 
 /-- Triality sends the cospinor class to the spinor class: it maps the cospinor vector
@@ -210,7 +210,7 @@ theorem discriminantGroupEquiv_checkerboardTriality_checkerboardCospinorClass :
   rw [← (mk_eq_checkerboardCospinorClass_iff ⟨_, checkerboardCospinor_mem_dualCarrier⟩).2
       (by simp), Isometry.discriminantGroupEquiv_mk,
     mk_eq_checkerboardSpinorClass_iff, Isometry.coe_dualCarrierEquiv_apply]
-  refine mem_checkerboardCarrier_of 0 (fun i ↦ ?_) ⟨0, by decide⟩
+  refine mem_checkerboardCarrier_of_even_sum 0 (fun i ↦ ?_) ⟨0, by decide⟩
   fin_cases i <;> norm_num [Fin.ext_iff]
 
 variable {F : Type*} [Field F] [Finite F] (hF : Nat.card F = 4) {ω : F} (hω : ω ^ 2 + ω + 1 = 0)

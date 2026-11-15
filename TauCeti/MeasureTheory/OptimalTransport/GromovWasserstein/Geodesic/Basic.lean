@@ -98,15 +98,15 @@ theorem gromovWassersteinEDist_le_of_ae_isGeodesicSegment [SFinite π]
     (hgm s hs) (hgm t ht) p).trans_eq ?_
   -- Pass to the real distance, which the geodesic condition scales by the constant `|s - t|`.
   rw [gromovWassersteinDistortion_def,
-    eLpNorm_congr_enorm_ae hd hdist (.of_forall fun q ↦ by simp [edist_dist,
-      Real.enorm_of_nonneg dist_nonneg]),
-    ← Real.enorm_of_nonneg (abs_nonneg (s - t)), ← eLpNorm_const_smul]
-  refine eLpNorm_congr_enorm_ae
+    eLpNorm_congr_eNorm_ae hd hdist (.of_forall fun q ↦ by simp [edist_dist,
+      Real.eNorm_of_nonneg dist_nonneg]),
+    ← Real.eNorm_of_nonneg (abs_nonneg (s - t)), ← eLpNorm_const_smul]
+  refine eLpNorm_congr_eNorm_ae
     (continuous_edist.comp_aestronglyMeasurable₂ (hgm s hs) (hgm t ht))
     (hdist.const_smul _) ?_
   filter_upwards [hg] with q hq
-  simp only [id_eq, Pi.smul_apply, smul_eq_mul, enorm_eq_self, edist_dist, hq.dist_eq s hs t ht,
-    Real.enorm_of_nonneg (mul_nonneg (abs_nonneg _) dist_nonneg)]
+  simp only [id_eq, Pi.smul_apply, smul_eq_mul, eNorm_eq_self, edist_dist, hq.dist_eq s hs t ht,
+    Real.eNorm_of_nonneg (mul_nonneg (abs_nonneg _) dist_nonneg)]
 
 /-- An interpolating kernel has finite `p`-size whenever the first kernel has finite `p`-size
 about `z` and the plan has finite distortion: each value lies within the endpoint discrepancy of
@@ -123,9 +123,9 @@ private theorem memLp_edist_of_ae_isGeodesicSegment [SFinite π] (hp : 1 ≤ p)
   have hle : eLpNorm (fun q ↦ edist (g q t) z) p (π.prod π) ≤
       eLpNorm ((fun q ↦ edist (ωX (q.1.1, q.2.1)) (ωY (q.1.2, q.2.2))) +
         fun q ↦ edist (ωX (q.1.1, q.2.1)) z) p (π.prod π) := by
-    refine eLpNorm_mono_enorm_ae hgt ?_
+    refine eLpNorm_mono_eNorm_ae hgt ?_
     filter_upwards [hg] with q hq
-    simp only [Pi.add_apply, enorm_eq_self]
+    simp only [Pi.add_apply, eNorm_eq_self]
     have hdt : dist (g q t) (g q 0) = t * dist (ωX (q.1.1, q.2.1)) (ωY (q.1.2, q.2.2)) := by
       rw [dist_comm, hq.source, hq.dist_source_apply ht]
     calc edist (g q t) z ≤ edist (g q t) (g q 0) + edist (g q 0) z := edist_triangle _ _ _

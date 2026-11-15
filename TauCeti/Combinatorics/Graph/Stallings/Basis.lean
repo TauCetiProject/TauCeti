@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Stallings.Folded
-public import TauCeti.GroupTheory.GraphOfGroups.PathGroup
+public import TauCeti.GroupTheory.GraphOfGroups.Rank
 public import Mathlib.GroupTheory.FreeGroup.IsFreeGroup
 
 /-!
@@ -18,14 +18,22 @@ subgroup, indexed by the positive non-tree darts. The basis word for a dart foll
 from the chosen vertex to its source, crosses the dart, and returns along the tree.
 
 `StallingsGraph.basisEquiv` gives the explicit isomorphism from the free group on these
-darts to the accepted subgroup. Its inverse sends a closed path's reading to the same path
-in spanning-tree coordinates. The construction does not require finiteness or the core
-condition: any folded graph with a spanning tree has this basis.
+darts to the accepted subgroup. Its inverse reads an accepted element along the graph and
+multiplies the signed coordinates of the darts crossed: a positive non-tree dart contributes
+its generator, its reverse the inverse generator, and a tree dart nothing. The construction
+does not require finiteness or the core condition: any folded graph with a spanning tree has
+this basis.
+
+Consequently the accepted subgroup is finitely generated exactly when there are finitely many
+positive non-tree darts, its rank is then their number, and it is trivial exactly when there
+are none. For a connected graph with finitely many vertices this gives the Euler form of the
+rank: the rank plus the number of vertices is the number of positive darts plus one, so that as
+an integer the rank is the number of positive darts minus the number of vertices plus one.
 
 ## References
 
 * I. Kapovich and A. Myasnikov, *Stallings foldings and subgroups of free groups*,
-  §6, Lemma 6.1 and Corollary 6.8.
+  §6, Lemma 6.1 and Corollary 6.8; §8, Lemma 8.2.
 * A. Hatcher, *Algebraic Topology*, §1.A, Proposition 1A.2.
 -/
 
@@ -95,6 +103,11 @@ def pathGroupEquivSubgroup (hS : S.IsFolded) (a : S.graph.V) :
       ⟨S.read p, S.read_mem_subgroup p⟩ :=
   Subtype.ext (S.pathGroupRead_ofPath p)
 
+/-- The reduced closed path representing an accepted element reads that element. -/
+@[simp] theorem read_toPath_pathGroupEquivSubgroup_symm (hS : S.IsFolded) {a : S.graph.V}
+    (g : S.subgroup a) : S.read ((S.pathGroupEquivSubgroup hS a).symm g).toPath = g := by
+  rw [← S.coe_pathGroupEquivSubgroup_apply hS, MulEquiv.apply_symm_apply]
+
 variable (T : S.graph.SpanningTree) (a : S.graph.V) {O : Set S.graph.E}
 
 /-- The group word read by the tree loop at `a` through a dart. When the graph is folded,
@@ -146,14 +159,28 @@ def basisEquiv (hS : S.IsFolded) (hO : S.graph.IsOrientation O) :
   rw [basisEquiv, MulEquiv.trans_apply, S.coe_pathGroupEquivSubgroup_apply,
     ← S.pathGroupRead_apply, T.pathGroupEquivFreeGroup_symm_of, S.pathGroupRead_loop]
 
-/-- The inverse basis map reads a closed path in spanning-tree coordinates, recording its
-non-tree darts with their orientation signs. -/
+/-- The inverse basis map sends the reading of a closed path to the product of the signed
+coordinates of its darts: a positive non-tree dart contributes its generator, its reverse the
+inverse generator, and tree darts nothing. The path need not be reduced. -/
 @[simp] theorem basisEquiv_symm_read (hS : S.IsFolded) (hO : S.graph.IsOrientation O)
     (p : S.graph.Path a a) :
     (S.basisEquiv T a hS hO).symm ⟨S.read p, S.read_mem_subgroup p⟩ =
-      T.pathGroupEquivFreeGroup a hO (PathGroup.ofPath p) := by
+      p.weight (fun {x y : S.graph.V} (e : x ⟶ y) =>
+        GraphOfGroups.π₁Tree.dartWord O T.darts e.1) := by
+  rw [← T.pathGroupEquivFreeGroup_ofPath a hO]
   apply (S.basisEquiv T a hS hO).injective
   simp [basisEquiv]
+
+/-- The inverse basis map reads an accepted element along the graph from the chosen vertex,
+along its unique reduced closed path, and multiplies the signed coordinates of the darts
+crossed. -/
+theorem basisEquiv_symm_apply (hS : S.IsFolded) (hO : S.graph.IsOrientation O) (g : S.subgroup a) :
+    (S.basisEquiv T a hS hO).symm g =
+      ((S.pathGroupEquivSubgroup hS a).symm g).toPath.weight
+        (fun {x y : S.graph.V} (e : x ⟶ y) =>
+          GraphOfGroups.π₁Tree.dartWord O T.darts e.1) := by
+  rw [← T.pathGroupEquivFreeGroup_apply a hO, basisEquiv, MulEquiv.symm_trans_apply,
+    MulEquiv.symm_symm]
 
 /-- The embedding into the ambient free group is the lift of the tree-loop words. -/
 theorem subtype_comp_basisEquiv (hS : S.IsFolded) (hO : S.graph.IsOrientation O) :
@@ -191,6 +218,52 @@ def freeGroupBasis (hS : S.IsFolded) (hO : S.graph.IsOrientation O) :
     S.freeGroupBasis T a hS hO e =
       ⟨S.treeLoopWord T a e.1, S.treeLoopWord_mem_subgroup T a e.1⟩ := by
   exact S.basisEquiv_of T a hS hO e
+
+/-- The accepted subgroup of a folded graph is finitely generated exactly when finitely many
+positive darts lie outside a spanning tree. The graph may have infinitely many vertices. -/
+theorem fg_subgroup_iff (hS : S.IsFolded) (hO : S.graph.IsOrientation O) :
+    Group.FG (S.subgroup a) ↔ Finite ↥(O \ T.darts) :=
+  (S.freeGroupBasis T a hS hO).fg_iff_finite
+
+/-- The rank of the accepted subgroup of a folded graph is the number of positive darts
+outside a spanning tree. -/
+theorem rank_subgroup (hS : S.IsFolded) (hO : S.graph.IsOrientation O) [Group.FG (S.subgroup a)] :
+    Group.rank (S.subgroup a) = Nat.card ↥(O \ T.darts) :=
+  (S.freeGroupBasis T a hS hO).rank_eq_nat_card
+
+/-- The Euler form of the rank: for a connected folded graph with finitely many vertices
+accepting a finitely generated subgroup, the rank of that subgroup plus the number of vertices
+is the number of positive darts plus one. -/
+theorem rank_subgroup_add_card (hS : S.IsFolded) (hO : S.graph.IsOrientation O)
+    (h : S.graph.Connected) [Finite S.graph.V] [Group.FG (S.subgroup a)] :
+    Group.rank (S.subgroup a) + Nat.card S.graph.V = Nat.card O + 1 := by
+  have : Group.FG (PathGroup S.graph a) := (isMulFG_congr (S.pathGroupEquivSubgroup hS a)).mpr ‹_›
+  rw [← Group.rank_congr (S.pathGroupEquivSubgroup hS a), hO.rank_pathGroup_add_card h a]
+
+/-- As an integer, the rank of the subgroup accepted by a connected folded graph with finitely
+many vertices, when finitely generated, is the number of positive darts of any orientation `O`
+minus the number of vertices plus one. -/
+theorem rank_subgroup_eq_card_sub_card_add_one (hS : S.IsFolded) (hO : S.graph.IsOrientation O)
+    (h : S.graph.Connected) [Finite S.graph.V] [Group.FG (S.subgroup a)] :
+    (Group.rank (S.subgroup a) : ℤ) = Nat.card O - Nat.card S.graph.V + 1 := by
+  have := S.rank_subgroup_add_card a hS hO h
+  omega
+
+/-- A folded graph accepts only the identity exactly when its basis is empty: every positive
+dart lies in the spanning tree. In particular a graph without darts accepts the trivial
+subgroup, of rank zero. -/
+theorem subgroup_eq_bot_iff (hS : S.IsFolded) (hO : S.graph.IsOrientation O) :
+    S.subgroup a = ⊥ ↔ O ⊆ T.darts := by
+  constructor
+  · intro h e heO
+    by_contra heT
+    have hone : S.basisEquiv T a hS hO (FreeGroup.of ⟨e, heO, heT⟩) = 1 :=
+      Subtype.ext (Subgroup.mem_bot.mp (h ▸ (S.basisEquiv T a hS hO _).2))
+    exact FreeGroup.of_ne_one _ ((S.basisEquiv T a hS hO).map_eq_one_iff.mp hone)
+  · intro h
+    have : IsEmpty ↥(O \ T.darts) := ⟨fun e => e.2.2 (h e.2.1)⟩
+    have := (S.basisEquiv T a hS hO).symm.toEquiv.subsingleton
+    exact Subgroup.eq_bot_of_subsingleton _
 
 end
 end TauCeti.StallingsGraph

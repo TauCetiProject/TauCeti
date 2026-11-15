@@ -52,6 +52,13 @@ read as the function `A.halfCoord i s` on `ℂ`; for a `Cᵏ` section of a `Cᵏ
   coordinate change of the bundle.
 * `TauCeti.FiniteBundleAtlas.contDiffOn_halfCoord`: the chart coordinates of a `Cᵏ` section are
   `Cᵏ` up to the boundary.
+* `TauCeti.FiniteBundleAtlas.isCompact_closure_halfImage`,
+  `TauCeti.FiniteBundleAtlas.closure_halfImage_subset_extChartAt_target`: the interior of a chart
+  image has compact closure inside the target of the extended chart.
+* `TauCeti.FiniteBundleAtlas.contDiffOn_comp_chart_symm_closedUpperHalfPlaneModel_symm`: the
+  chart readings of a `Cⁿ` function are `Cⁿ` up to the boundary.
+* `TauCeti.FiniteBundleAtlas.halfCoord_fun_smul`: chart readings of sections are linear over
+  functions on `M`.
 -/
 
 public section
@@ -110,7 +117,7 @@ theorem interior_halfClosedImage (i : Fin A.n) :
 axis, so the image and its interior differ by a null set. -/
 theorem halfClosedImage_ae_le_halfImage (i : Fin A.n) :
     A.halfClosedImage i ≤ᵐ[volume] (A.halfImage i : Set ℂ) :=
-  (EventuallyEqSet.inter EventuallyEq.rfl (Complex.setOf_le_im_ae_eq 0)).le
+  (EventuallyEqSet.inter EventuallyEqSet.rfl (Complex.setOf_le_im_ae_eq 0)).subset
 
 /-- Every point of the image of chart `i` in `ℂ`, including the points on the real axis, is a
 limit of points of its interior. -/
@@ -211,6 +218,42 @@ theorem halfImage_subset_halfChartSet (i : Fin A.n) :
   (A.halfImage_subset_extChartAt_image_closure_dom i).trans
     (A.extChartAt_image_closure_dom_subset_halfChartSet i)
 
+/-- The closure of the interior of the image of chart `i` in `ℂ` lies in the compact image of the
+closure of the chart domain. -/
+private theorem closure_halfImage_subset_extChartAt_image_closure_dom (i : Fin A.n) :
+    closure (A.halfImage i : Set ℂ) ⊆
+      extChartAt closedUpperHalfPlaneModel (A.center i) '' closure (A.dom i) :=
+  closure_minimal (A.halfImage_subset_extChartAt_image_closure_dom i)
+    (A.isCompact_extChartAt_image_closure_dom i).isClosed
+
+/-- The interior of the image of chart `i` in `ℂ` has compact closure. -/
+theorem isCompact_closure_halfImage (i : Fin A.n) : IsCompact (closure (A.halfImage i : Set ℂ)) :=
+  (A.isCompact_extChartAt_image_closure_dom i).of_isClosed_subset isClosed_closure
+    (A.closure_halfImage_subset_extChartAt_image_closure_dom i)
+
+/-- The closure of the interior of the image of chart `i` in `ℂ`, including its points on the real
+axis, lies in the target of the extended chart `i`, a relatively open subset of the closed upper
+half-plane. -/
+theorem closure_halfImage_subset_extChartAt_target (i : Fin A.n) :
+    closure (A.halfImage i : Set ℂ) ⊆ (extChartAt closedUpperHalfPlaneModel (A.center i)).target :=
+  (A.closure_halfImage_subset_extChartAt_image_closure_dom i).trans <| by
+    rintro _ ⟨x, hx, rfl⟩
+    exact (extChartAt closedUpperHalfPlaneModel (A.center i)).map_source (by
+      rw [extChartAt_source]; exact A.closure_dom_subset_source i hx)
+
+/-- **The chart readings of a `Cⁿ` function are `Cⁿ` up to the boundary**, on the target of the
+extended chart, a relatively open subset of the closed upper half-plane. -/
+theorem contDiffOn_comp_chart_symm_closedUpperHalfPlaneModel_symm {G : Type*}
+    [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {n : WithTop ℕ∞} [IsManifold closedUpperHalfPlaneModel n M] {φ : M → G}
+    (hφ : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ, G) n φ) (i : Fin A.n) :
+    ContDiffOn ℝ n (fun z ↦ φ ((A.chart i).symm (closedUpperHalfPlaneModel.symm z)))
+      (extChartAt closedUpperHalfPlaneModel (A.center i)).target := by
+  rw [← contMDiffOn_iff_contDiffOn]
+  refine (hφ.contMDiffOn.comp (t := univ) (contMDiffOn_extChartAt_symm (A.center i))
+    fun _ _ ↦ mem_univ _).congr fun z _ ↦ ?_
+  rw [Function.comp_apply, extChartAt_coe_symm, Function.comp_apply]
+
 variable [IsManifold closedUpperHalfPlaneModel 1 M]
 
 /-- Chart transitions carry interior points of the overlap to interior points. -/
@@ -301,6 +344,15 @@ theorem halfCoord_eq_coordChange {i i' : Fin A.n} (s : ∀ x, V x) {z : ℂ}
       (A.halfCoord i s (A.halfTransition i i' z)) := by
   rw [halfCoord, halfCoord, symm_halfTransition]
   exact A.coord_eq_coordChange s hz.1
+
+/-- On the image of chart `i`, including its points on the real axis, the chart reading of
+`x ↦ φ x • s x` is the chart reading of `φ` times that of `s`. -/
+theorem halfCoord_fun_smul (i : Fin A.n) (φ : M → ℝ) (s : ∀ x, V x) {z : ℂ}
+    (hz : closedUpperHalfPlaneModel.symm z ∈ A.image i) :
+    A.halfCoord i (fun x ↦ φ x • s x) z =
+      φ ((A.chart i).symm (closedUpperHalfPlaneModel.symm z)) • A.halfCoord i s z := by
+  rw [halfCoord_def, halfCoord_def]
+  exact A.coord_fun_smul i φ s hz
 
 end FiniteBundleAtlas
 

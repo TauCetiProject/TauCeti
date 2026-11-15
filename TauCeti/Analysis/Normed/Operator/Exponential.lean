@@ -153,7 +153,7 @@ finite-dimensional complex normed space, the spectrum of `exp N` is the image of
 `N` under the exponential. -/
 theorem spectrum_exp (N : V →L[ℂ] V) :
     spectrum ℂ (exp N) = exp '' spectrum ℂ N := by
-  have := FiniteDimensional.complete ℂ V
+  have := FiniteDimensional.completeSpace ℂ V
   -- The inclusion `⊇` is `spectrum.exp_mem_exp`. For `⊆`, `exp N` is a polynomial `P (N)`, so its
   -- spectrum consists of the values `P (μ)` at the eigenvalues `μ` of `N`, and an eigenvector for
   -- `μ` shows `P (μ) = exp μ`.

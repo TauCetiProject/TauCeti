@@ -293,22 +293,22 @@ plane vortex with `|α| → 1` at infinity whose section is `|α|` times the win
 reference field of `A_m^s` at rate `c`: `‖x(z) - x_ref(z)‖ ≤ K exp (-c |z|)`. Equivalently, its
 winding-`m` end trivialization converges to the vacuum at that rate. -/
 theorem exists_norm_sub_referenceField_le_mul_exp
-    (hb₁ : Differentiable ℝ (fun w ↦ x w 0)) (hb₂ : Differentiable ℝ (fun w ↦ x w 1))
+    (hb₁ : Continuous (fun w ↦ x w 0)) (hb₂ : Continuous (fun w ↦ x w 1))
     (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
     (hphase : ∀ᶠ z in cocompact ℂ, sectionValue x z = ‖sectionValue x z‖ * windingPhase m z)
     (f : ContDiffBump (0 : ℝ)) {c : ℝ} (hc : c < 1 / 2) :
     ∃ K, ∀ z, ‖x z - referenceField f m z‖ ≤ K * Real.exp (-(c * ‖z‖)) := by
-  obtain ⟨K₁, hK₁⟩ := exists_norm_covariantDerivative_le_mul_exp hb₁ hb₂ hp hq hsol hlim hc
-  obtain ⟨K₂, hK₂⟩ := exists_one_sub_normSq_le_mul_exp hb₁ hb₂ hp hq hsol hlim hc
+  obtain ⟨K₁, hK₁⟩ := exists_norm_covariantDerivative_le_mul_exp hb₁ hp hq hsol hlim hc
+  obtain ⟨K₂, hK₂⟩ := exists_one_sub_normSq_le_mul_exp hp hq hsol hlim hc
   obtain ⟨R, -, hR⟩ :=
     hasBasis_cobounded_norm.eventually_iff.mp (cobounded_eq_cocompact (α := ℂ) ▸ hphase)
   have hcont : Continuous fun z ↦ ‖x z - referenceField f m z‖ := by
     have hx : Continuous x := by
       refine contDiff_zero.1 (contDiff_euclidean.2 fun i ↦ contDiff_zero.2 ?_)
       fin_cases i
-      exacts [hb₁.continuous, hb₂.continuous, hp.continuous, hq.continuous]
+      exacts [hb₁, hb₂, hp.continuous, hq.continuous]
     exact (hx.sub (contDiff_referenceField f m).continuous).norm
   refine exists_forall_le_mul_exp_of_eventually_le hcont (K := 4 * K₁ + K₂ / 2) ?_
   filter_upwards [tendsto_norm_cocompact_atTop.eventually_gt_atTop (max R (max 1 f.rOut)),
@@ -322,7 +322,7 @@ theorem exists_norm_sub_referenceField_le_mul_exp
   have hs0 : 0 ≤ ‖sectionValue x z‖ := norm_nonneg _
   have h := norm_sub_referenceField_le f hrOut (hp.differentiable (by norm_num) z)
     (hq.differentiable (by norm_num) z) hnhds (by nlinarith)
-    (by nlinarith [normSq_le_one_of_tendsto hb₁ hb₂ hp hq hsol hlim z])
+    (by nlinarith [normSq_le_one_of_tendsto hp hq hsol hlim z])
   have h1 := hK₁ z 1
   have hI := hK₁ z I
   rw [norm_one, mul_one] at h1
@@ -374,7 +374,7 @@ theorem exists_framedGaugeGroup_norm_smul_sub_referenceField_le_mul_exp (hx : Co
   obtain ⟨u, hu⟩ := exists_framedGaugeGroup_sectionValue_smul_eq hx hframe
   refine ⟨u, hu, fun c hc ↦ ?_⟩
   have huc := ((mem_framedGaugeGroup _).1 u.property).1
-  have hy : ContDiff ℝ ∞ (u • x) := contDiff_gaugeTransform huc hx
+  have hy : ContDiff ℝ ∞ (u • x) := contDiff_gaugeTransform (by simpa using huc) hx
   have hcd (i : Fin 4) : ContDiff ℝ ∞ (fun z ↦ (u • x) z i) := contDiff_euclidean.1 hy i
   have hsol' (z : ℂ) : equation (u • x) z = 0 :=
     (equation_gaugeTransform_eq_zero_iff ((huc.of_le (by norm_cast)).contDiffAt)
@@ -383,8 +383,7 @@ theorem exists_framedGaugeGroup_norm_smul_sub_referenceField_le_mul_exp (hx : Co
     refine (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe).congr fun z ↦ ?_
     rw [← sq_norm_sectionValue, ← sq_norm_sectionValue, framedGaugeGroup_smul,
       sectionValue_gaugeTransform, norm_mul, Circle.norm_coe, one_mul]
-  exact exists_norm_sub_referenceField_le_mul_exp ((hcd 0).differentiable (by simp))
-    ((hcd 1).differentiable (by simp)) ((hcd 2).of_le (by norm_cast)) ((hcd 3).of_le (by norm_cast))
-    hsol' hlim hu f hc
+  exact exists_norm_sub_referenceField_le_mul_exp (hcd 0).continuous (hcd 1).continuous
+    ((hcd 2).of_le (by norm_cast)) ((hcd 3).of_le (by norm_cast)) hsol' hlim hu f hc
 
 end TauCeti.Vortex

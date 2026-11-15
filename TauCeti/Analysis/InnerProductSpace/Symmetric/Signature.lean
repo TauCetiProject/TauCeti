@@ -81,8 +81,9 @@ theorem equivalent_weightedSumSquares_eigenvalues (hT : T.IsSymmetric) {n : ℕ}
   let b := hT.eigenvectorBasis rfl
   -- The polar form of `Q` is `⟪T x, y⟫`, because `T` is symmetric.
   have hassoc (x y : E) : QuadraticMap.associated Q x y = ⟪T x, y⟫_ℝ := by
-    simp [QuadraticMap.associated_apply, hQ, inner_add_left, inner_add_right, hT y x,
-      real_inner_comm]
+    rw [QuadraticMap.associated_apply, Module.End.smul_def,
+      QuadraticMap.half_moduleEnd_apply_eq_half_smul]
+    simp [invOf_eq_inv, hQ, inner_add_left, inner_add_right, hT y x, real_inner_comm]
     ring
   have hb (i : Fin (Module.finrank ℝ E)) : T (b i) = hT.eigenvalues rfl i • b i :=
     hT.apply_eigenvectorBasis rfl i

@@ -121,8 +121,8 @@ theorem timeEHolderNorm_one_le_of_hasDerivWithinAt {w wₜ : E → ℝ → F} {C
     timeEHolderNorm 1
         (fun p : slab (E := E) a b => w (p : ParabolicSpaceTime E).space (slabTime p)) ≤ C := by
   refine timeEHolderNorm_le_iff.2 fun x t s => ?_
-  have hlip := ((convex_Icc a b).lipschitzOnWith_of_nnnorm_hasDerivWithin_le (hw x)
-    fun t ht => by rw [← NNReal.coe_le_coe, coe_nnnorm]; exact hC x t ht).to_restrict
+  have hlip := ((convex_Icc a b).lipschitzOnWith_of_nnNorm_hasDerivWithin_le (hw x)
+    fun t ht => by rw [← NNReal.coe_le_coe, coe_nnNorm]; exact hC x t ht).to_restrict
   simpa only [space_slabMk, slabTime_slabMk, Set.domRestrict_apply] using holderWith_one.2 hlip t s
 
 variable [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -136,9 +136,9 @@ theorem spaceEHolderNorm_one_le_of_hasFDerivAt {w : E → ℝ → F} {w' : E →
     spaceEHolderNorm 1
         (fun p : slab (E := E) a b => w (p : ParabolicSpaceTime E).space (slabTime p)) ≤ C := by
   refine spaceEHolderNorm_le_iff.2 fun t x y => ?_
-  have hlip := lipschitzOnWith_univ.1 (convex_univ.lipschitzOnWith_of_nnnorm_hasFDerivWithin_le
+  have hlip := lipschitzOnWith_univ.1 (convex_univ.lipschitzOnWith_of_nnNorm_hasFDerivWithin_le
     (fun z _ => (hw t t.2 z).hasFDerivWithinAt)
-    fun z _ => by rw [← NNReal.coe_le_coe, coe_nnnorm]; exact hC z t t.2)
+    fun z _ => by rw [← NNReal.coe_le_coe, coe_nnNorm]; exact hC z t t.2)
   simpa only [space_slabMk, slabTime_slabMk] using holderWith_one.2 hlip x y
 
 /-- The comparison of constants in `eHolderNorm_add_eHolderNorm_le`: with `M₁ = 2 M₀ / ε + M₂ ε`

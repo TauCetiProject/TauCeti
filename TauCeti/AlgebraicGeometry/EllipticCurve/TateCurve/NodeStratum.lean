@@ -338,9 +338,9 @@ private theorem exists_tateUniformizationX_add_tateUniformizationY_eq (q : Kˣ)
       exact norm_tateNodeErr_sub_le q (U v) (U w) hq (hqU v) ((hU v).trans_lt hs)
         ((hU w).trans (hU v).symm)
   have hF : ContractingWith ‖s‖₊ (fun v : S ↦ (⟨tateNodeStep q (U v) s, hmem v⟩ : S)) := by
-    refine ⟨by rwa [← NNReal.coe_lt_coe, coe_nnnorm, NNReal.coe_one],
+    refine ⟨by rwa [← NNReal.coe_lt_coe, coe_nnNorm, NNReal.coe_one],
       LipschitzWith.of_dist_le_mul fun v w ↦ ?_⟩
-    rw [Subtype.dist_eq, Subtype.dist_eq, dist_eq_norm, dist_eq_norm, coe_nnnorm, ← hUv v, ← hUv w]
+    rw [Subtype.dist_eq, Subtype.dist_eq, dist_eq_norm, dist_eq_norm, coe_nnNorm, ← hUv v, ← hUv w]
     exact hlip v w
   exact ⟨U _, hU _, tateUniformizationX_add_tateUniformizationY_of_tateNodeStep_eq q (U _)
     (norm_ne_zero_iff.mp (by rw [hU₁]; exact one_ne_zero))

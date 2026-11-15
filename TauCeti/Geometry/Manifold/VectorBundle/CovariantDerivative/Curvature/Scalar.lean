@@ -83,18 +83,8 @@ of the chart source; the frame need not be orthonormal. -/
 theorem scalarCurvature_eq_sum_chartInvGramMatrix (a : M) {x : M}
     (hx : x ∈ (chartAt H a).source) :
     cov.scalarCurvature x = ∑ i, ∑ j, chartInvGramMatrix (I := I) a x i j *
-      cov.ricciTensor x (chartLocalFrame (I := I) a i x) (chartLocalFrame (I := I) a j x) := by
-  have hx' : x ∈ (trivializationAt E (TangentSpace I) a).baseSet := by
-    simpa only [TangentBundle.trivializationAt_baseSet] using hx
-  let b := (trivializationAt E (TangentSpace I) a).basisAt (Module.finBasis ℝ E) hx'
-  have hb : ⇑b = fun i ↦ chartLocalFrame (I := I) a i x :=
-    funext fun i ↦ (chartLocalFrame_apply_of_mem_chart_source (I := I) a hx i).symm
-  have hgram : Matrix.gram ℝ b = chartGramMatrix (I := I) a x := by
-    ext i j
-    rw [Matrix.gram_apply, chartGramMatrix_apply, hb]
-  have hinv : (Matrix.gram ℝ b)⁻¹ = chartInvGramMatrix (I := I) a x :=
-    Matrix.inv_eq_left_inv (hgram ▸ chartInvGramMatrix_mul_chartGramMatrix (I := I) a hx)
-  rw [scalarCurvature_apply, TauCeti.bilinFormTrace_eq_sum_inv_gram _ b, hinv, hb]
+      cov.ricciTensor x (chartLocalFrame (I := I) a i x) (chartLocalFrame (I := I) a j x) :=
+  bilinFormTrace_eq_sum_chartInvGramMatrix a hx _
 
 open Riemannian.Tensor in
 /-- The scalar curvature of a smooth connection on the tangent bundle is smooth when the metric is

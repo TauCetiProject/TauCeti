@@ -10,6 +10,9 @@ public import TauCeti.Algebra.AlgebraicGroup.Connected.AlgebraicallyClosed
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Scheme.Basic
 public import TauCeti.AlgebraicGeometry.AffineGroupScheme.Connected
+public import Mathlib.RingTheory.Localization.Away.Basic
+import Mathlib.RingTheory.Localization.Away.Lemmas
+import Mathlib.RingTheory.LocalProperties.Reduced
 
 /-!
 # The identity-component affine group scheme
@@ -34,6 +37,10 @@ hypothesis used when testing identity components of closed subgroups against a g
   the identity component.
 * `TauCeti.FiniteTypeCommHopfAlgCat.geometricallyConnected_identityComponent`: geometric
   connectedness of the identity component.
+* `TauCeti.FiniteTypeCommHopfAlgCat.isLocalization_away_identityComponent`: its coordinate algebra
+  is a localization of `H` at an idempotent.
+* `TauCeti.FiniteTypeCommHopfAlgCat.isReduced_identityComponent`: the identity component of a
+  reduced group is reduced.
 * `TauCeti.FiniteTypeCommHopfAlgCat.identityComponentSpec`: its affine group scheme.
 * `TauCeti.FiniteTypeCommHopfAlgCat.geometricallyConnected_identityComponentSpec`: geometric
   connectedness of its structural morphism.
@@ -128,6 +135,29 @@ noncomputable instance connectedSpace_identityComponent
   rw [HopfAlgebra.identityComponentHopfIdeal_toIdeal]
   exact PrimeSpectrum.connectedSpace_quotient_connectedComponentIdeal
     (Bialgebra.augmentationPoint k H)
+
+/-- The coordinate algebra of the identity component is the localization of `H` at the idempotent
+selecting the connected component of the augmentation point. -/
+theorem isLocalization_away_identityComponent (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
+    IsLocalization.Away
+      (PrimeSpectrum.connectedComponentIdempotent (R := H) (Bialgebra.augmentationPoint k H))
+      (identityComponent H) := by
+  -- Elaborating through the bundled identity component directly exceeds the heartbeat limit, so
+  -- expose the quotient carrier and rewrite its Hopf ideal explicitly.
+  change IsLocalization.Away _
+    (H ⧸ (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H)).toIdeal)
+  rw [HopfAlgebra.identityComponentHopfIdeal_toIdeal_eq_span]
+  exact IsLocalization.Away.quotient_of_isIdempotentElem
+    (PrimeSpectrum.isIdempotentElem_connectedComponentIdempotent (R := H) _)
+
+/-- The identity component of a reduced finite-type affine group is reduced, its coordinate
+algebra being a localization of `H` (`isLocalization_away_identityComponent`). -/
+instance isReduced_identityComponent (H : FiniteTypeCommHopfAlgCat.{u, u} k) [IsReduced H] :
+    IsReduced (identityComponent H) :=
+  have := isLocalization_away_identityComponent H
+  isReduced_localizationPreserves (.powers
+    (PrimeSpectrum.connectedComponentIdempotent (R := H) (Bialgebra.augmentationPoint k H)))
+    (identityComponent H) ‹IsReduced H›
 
 /-- The identity component of a finite-type affine group over an algebraically closed field is
 geometrically connected, even when the group is not smooth. -/

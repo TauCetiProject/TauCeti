@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.VonMangoldt
+import TauCeti.NumberTheory.NumberField.Ideal.LogNorm
 
 /-!
 # Crude prime counts and the higher prime powers of a number field
@@ -92,14 +93,10 @@ variable {K : Type*} [Field K] [NumberField K]
 theorem two_pow_card_le_absNorm {I : Ideal (𝓞 K)} (hI : I ≠ 0)
     {s : Finset (Ideal (𝓞 K))} (hprime : ∀ P ∈ s, Prime P) (hdvd : ∀ P ∈ s, P ∣ I) :
     2 ^ s.card ≤ Ideal.absNorm I := by
-  have hprod : (∏ P ∈ s, P) ∣ I := Finset.prod_primes_dvd I hprime hdvd
   calc 2 ^ s.card = ∏ _P ∈ s, 2 := by rw [Finset.prod_const]
     _ ≤ ∏ P ∈ s, Ideal.absNorm P :=
         Finset.prod_le_prod fun P hP ↦ one_lt_absNorm_of_prime (hprime P hP)
-    _ = Ideal.absNorm (∏ P ∈ s, P) := (map_prod Ideal.absNorm _ _).symm
-    _ ≤ Ideal.absNorm I :=
-        Nat.le_of_dvd (Nat.pos_of_ne_zero (Ideal.absNorm_eq_zero_iff.not.mpr hI))
-          (map_dvd Ideal.absNorm hprod)
+    _ ≤ Ideal.absNorm I := prod_absNorm_le_absNorm hI hprime hdvd
 
 /-- The **crude prime count**: there are at most `[K:ℚ] / log 2 · x log x` height-one primes of
 absolute norm at most `x`.

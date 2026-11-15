@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
 import TauCeti.Algebra.Module.ZLattice.Scaling
 import TauCeti.Algebra.Module.ZLattice.Summable
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
+import TauCeti.Analysis.Normed.Module.Cone
 import TauCeti.Analysis.PositiveDefinite.FourierAtom
 
 /-!
@@ -51,6 +52,8 @@ of the wave front set of a complex distribution onto the base is exactly its sin
   point of `Ω` exactly when it is microlocally smooth there in every nonzero direction.
 * `Distribution.fst_image_waveFrontSet`: the projection of the wave front set is the singular
   support.
+* `Distribution.singularSupport_eq_empty_iff_waveFrontSet_eq_empty`: a complex distribution has
+  empty singular support exactly when it has empty wave front set.
 * `Distribution.singularSupport_delta`: the singular support of the point mass at `x₀` is `{x₀}`.
 
 ## References
@@ -86,9 +89,8 @@ theorem exists_nhds_forall_decay_of_forall_isMicrolocallySmoothAt {T : 𝓓'(Ω,
   -- For each unit direction, a neighbourhood of `x` and an open cone with uniform decay.
   choose U hU Γ hΓ hξΓ hcone hdecay using fun ξ : sphere (0 : E) 1 ↦
     (h ξ (ne_zero_of_mem_unit_sphere ξ)).exists_nhds_cone
-  -- Finitely many of the cones cover the unit sphere.
-  obtain ⟨t, ht⟩ := (isCompact_sphere (0 : E) 1).elim_finite_subcover Γ hΓ
-    fun ζ hζ ↦ mem_iUnion.2 ⟨⟨ζ, hζ⟩, hξΓ _⟩
+  -- Finitely many of the cones cover the nonzero vectors.
+  obtain ⟨t, ht⟩ := TauCeti.exists_finset_compl_singleton_subset_biUnion hΓ hξΓ hcone
   refine ⟨⋂ ξ ∈ t, U ξ, (biInter_finset_mem t).2 fun ξ _ ↦ hU ξ, fun ψ hψ N ↦ ?_⟩
   have hdecay' : ∀ ξ ∈ t, ∃ C, ∀ η ∈ Γ ξ, (1 + ‖η‖) ^ N * ‖T.localFourier ψ η‖ ≤ C :=
     fun ξ hξ ↦ hdecay ξ ψ (hψ.trans (biInter_subset_of_mem hξ)) N
@@ -97,12 +99,7 @@ theorem exists_nhds_forall_decay_of_forall_isMicrolocallySmoothAt {T : 𝓓'(Ω,
   refine ⟨‖T.localFourier ψ 0‖ + ∑ ξ ∈ t, |C ξ|, fun η ↦ ?_⟩
   rcases eq_or_ne η 0 with rfl | hη
   · simpa using hsum
-  -- The direction of `η` lies in one of the finitely many cones, hence so does `η`.
-  have hη' : 0 < ‖η‖ := norm_pos_iff.2 hη
-  obtain ⟨ξ, hξt, hηξ⟩ := mem_iUnion₂.1 (ht (show ‖η‖⁻¹ • η ∈ sphere (0 : E) 1 by
-    simp [norm_smul, inv_mul_cancel₀ hη'.ne']))
-  have hηΓ : η ∈ Γ ξ := by
-    simpa [smul_smul, mul_inv_cancel₀ hη'.ne'] using hcone ξ ‖η‖ hη' _ hηξ
+  obtain ⟨ξ, hξt, hηΓ⟩ := mem_iUnion₂.1 (ht hη)
   calc (1 + ‖η‖) ^ N * ‖T.localFourier ψ η‖ ≤ C ξ := hC ξ hξt η hηΓ
     _ ≤ |C ξ| := le_abs_self _
     _ ≤ ∑ ξ ∈ t, |C ξ| := Finset.single_le_sum (f := fun ξ ↦ |C ξ|) (fun _ _ ↦ abs_nonneg _) hξt
@@ -252,6 +249,12 @@ theorem fst_image_waveFrontSet (T : 𝓓'(Ω, ℂ)) :
     obtain ⟨ξ, hξ, hT⟩ := not_forall₂.1 fun hne ↦
       (notMem_singularSupport_iff_forall_isMicrolocallySmoothAt hx).2 hne h
     exact ⟨(x, ξ), mem_waveFrontSet_iff.2 ⟨hx, hξ, hT⟩, rfl⟩
+
+/-- A complex distribution has empty singular support exactly when it has empty wave front
+set. -/
+theorem singularSupport_eq_empty_iff_waveFrontSet_eq_empty {T : 𝓓'(Ω, ℂ)} :
+    T.singularSupport = ∅ ↔ T.waveFrontSet = ∅ := by
+  rw [← fst_image_waveFrontSet, image_eq_empty]
 
 /-- The singular support of the complex point mass at `x₀ ∈ Ω` is `{x₀}`, for `E` nontrivial. -/
 theorem singularSupport_delta [Nontrivial E] {x₀ : E} (hx₀ : x₀ ∈ Ω) :

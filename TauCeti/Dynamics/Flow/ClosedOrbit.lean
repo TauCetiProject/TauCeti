@@ -188,15 +188,31 @@ theorem apply_eq_self_iff_exists_zsmul [T1Space α] (hx : ∃ t, ϕ t x ≠ x) :
     ϕ t x = x ↔ ∃ n : ℤ, n • ϕ.minimalPeriod x = t := by
   rw [← mem_periods, ϕ.periods_eq_zmultiples_minimalPeriod hx, AddSubgroup.mem_zmultiples_iff]
 
+/-- The minimal period is a return time, with no separation assumption on the space. It may be
+zero, in which case the statement is trivial: this happens when the positive periods have no
+minimum (the periods are dense) or when there are none. -/
 @[simp]
-theorem apply_minimalPeriod [T1Space α] (x : α) : ϕ (ϕ.minimalPeriod x) x = x := by
-  by_cases hx : ∃ t, ϕ t x ≠ x
-  · have : ϕ.minimalPeriod x ∈ ϕ.periods x := by
-      rw [ϕ.periods_eq_zmultiples_minimalPeriod hx]
-      exact AddSubgroup.mem_zmultiples _
-    exact ϕ.mem_periods.1 this
-  · simp only [not_exists, not_not] at hx
-    exact hx _
+theorem apply_minimalPeriod (x : α) : ϕ (ϕ.minimalPeriod x) x = x := by
+  by_cases hbot : ϕ.periods x = ⊥
+  · have : {t | t ∈ ϕ.periods x ∧ 0 < t} = ∅ := by
+      ext t
+      simp only [hbot, AddSubgroup.mem_bot, mem_empty_iff_false, iff_false]
+      rintro ⟨rfl, h⟩
+      exact h.false
+    rw [minimalPeriod, this, Real.sInf_empty]
+    exact ϕ.mem_periods.1 (zero_mem _)
+  by_cases hleast : ∃ a, IsLeast {t | t ∈ ϕ.periods x ∧ 0 < t} a
+  · obtain ⟨a, ha⟩ := hleast
+    rw [minimalPeriod, ha.csInf_eq]
+    exact ϕ.mem_periods.1 ha.1.1
+  -- Without a least positive period the periods are dense, so the infimum is `0`.
+  have hdense := AddSubgroup.dense_of_no_min _ hbot hleast
+  have h0 : ϕ.minimalPeriod x = 0 := by
+    refine le_antisymm (le_of_forall_pos_le_add fun ε hε ↦ ?_) (ϕ.minimalPeriod_nonneg x)
+    obtain ⟨t, ht, ht₀, htε⟩ := hdense.exists_between hε
+    exact (ϕ.minimalPeriod_le (ϕ.mem_periods.1 ht) ht₀).trans (by linarith)
+  rw [h0]
+  exact ϕ.mem_periods.1 (zero_mem _)
 
 /-- The minimal period is positive exactly at periodic points which are not rest points. -/
 theorem minimalPeriod_pos_iff [T1Space α] :

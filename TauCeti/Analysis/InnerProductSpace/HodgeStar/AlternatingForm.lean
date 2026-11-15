@@ -43,6 +43,7 @@ metric this expresses the star through the inverse metric and the volume of the 
 ## Main results
 
 * `Orientation.wedge_formHodgeStar_apply`: `α ∧ ⋆β = ⟨α, β⟩ vol`.
+* `Orientation.formHodgeStar_wedge_formHodgeStar_apply_zero`: `⋆(α ∧ ⋆β) 0 = ⟨α, β⟩`.
 * `Orientation.formHodgeStar_formHodgeStar`: `⋆⋆α = (-1) ^ (k l) α`.
 * `Orientation.formHodgeStar_alternatingFormEquiv_ιMulti_apply`: the star of the form dual to
   `u₁ ∧ ⋯ ∧ uₖ` evaluates on `(w₁, …, wₗ)` as `vol(u₁, …, uₖ, w₁, …, wₗ)`.
@@ -200,6 +201,18 @@ theorem formHodgeStar_volumeFormL (hn : n + 0 = finrank ℝ V) :
     o.formHodgeStar hn o.volumeFormL = ContinuousAlternatingMap.constOfIsEmpty ℝ V (Fin 0) 1 := by
   rw [← one_smul ℝ o.volumeFormL, ← o.formHodgeStar_constOfIsEmpty (by omega),
     formHodgeStar_formHodgeStar, zero_mul, pow_zero, one_smul]
+
+/-- **Recovering the inner product of `k`-forms via the Hodge star**: `⋆(α ∧ ⋆β)` evaluated at `0`
+equals `⟨α, β⟩`. -/
+theorem formHodgeStar_wedge_formHodgeStar_apply_zero {k l : ℕ} (hkl : k + l = finrank ℝ V)
+    (hm0 : (k + l) + 0 = finrank ℝ V) (α β : V [⋀^Fin k]→L[ℝ] ℝ) :
+    o.formHodgeStar hm0 (α.wedge (o.formHodgeStar hkl β)) 0 = alternatingFormInner V k α β := by
+  obtain rfl : n = k + l := _i.out.symm.trans hkl.symm
+  have hw : α.wedge (o.formHodgeStar hkl β) = alternatingFormInner V k α β • o.volumeFormL := by
+    ext v
+    simp [o.wedge_formHodgeStar_apply]
+  rw [hw, map_smul, o.formHodgeStar_volumeFormL hm0]
+  simp
 
 /-! ### The even middle degree -/
 

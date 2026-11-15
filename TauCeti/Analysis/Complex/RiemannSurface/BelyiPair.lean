@@ -510,7 +510,7 @@ theorem coe_β_pow {n : ℕ} (hn : n ≠ 0) : ⇑(pow hn).β = OnePoint.map fun 
 
 /-- The power map `z ↦ z ^ n` of the sphere is a Belyi map of degree `n`. -/
 theorem degree_β_pow {n : ℕ} (hn : n ≠ 0) : degree (pow hn).β = n :=
-  (congrArg degree (coe_β_pow hn)).trans (degree_onePointMap_pow hn)
+  (congrArg degree (coe_β_pow hn)).trans degree_onePointMap_pow
 
 /-- The power map `z ↦ z ^ n` is unramified over `1`. -/
 theorem one_notMem_branchValues_β_pow {n : ℕ} (hn : n ≠ 0) :

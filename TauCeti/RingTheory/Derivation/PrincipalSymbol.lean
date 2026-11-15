@@ -105,10 +105,12 @@ map sending `(a₁, …, aₘ)` to the `A`-linear iterated commutator `[⋯[D, a
 manifold acting on smooth sections of vector bundles, its value at `a₁ = ⋯ = aₘ = f` is `m!`
 times the principal symbol of `D` at `df`. -/
 def commutatorSymbol : (m : ℕ) →
-    differentialOperators R A M N m →ₗ[R] MultilinearMap R (fun _ : Fin m ↦ A) (M →ₗ[A] N)
-  | 0 => (MultilinearMap.constLinearEquivOfIsEmpty R R (fun _ : Fin 0 ↦ A)
+    differentialOperators R A M N m →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin m ↦ A) (M
+        →ₗ[A] N)
+  | 0 => (MultilinearMap.constLinearEquivOfIsEmpty R (RingHom.id R) (fun _ : Fin 0 ↦ A)
       (M →ₗ[A] N)).toLinearMap ∘ₗ toLinearMapOfOrderZero
-  | m + 1 => (multilinearCurryLeftEquiv R (fun _ : Fin (m + 1) ↦ A) (M →ₗ[A] N)).symm.toLinearMap ∘ₗ
+  | m + 1 => (multilinearCurryLeftEquiv (RingHom.id R) (fun _ : Fin (m + 1) ↦ A) (M →ₗ[A]
+      N)).symm.toLinearMap ∘ₗ
       LinearMap.compRight R (commutatorSymbol m) ∘ₗ smulCommutatorOfOrderSucc
 
 theorem commutatorSymbol_zero_apply (D : differentialOperators R A M N 0) (a : Fin 0 → A)
@@ -398,7 +400,7 @@ the iterated commutator `[⋯[D, a₁], …, aₘ]` (`cotangentSymbol_toCotangen
 ideal of a point `x` of a manifold, `I / I²` is the cotangent space at `x` and the reductions of
 spaces of sections are their fibres at `x`. -/
 noncomputable def cotangentSymbol {m : ℕ} (D : differentialOperators R A M N m) :
-    MultilinearMap (A ⧸ I) (fun _ : Fin m ↦ I.Cotangent)
+    MultilinearMap (RingHom.id (A ⧸ I)) (fun _ : Fin m ↦ I.Cotangent)
       ((M ⧸ (I • ⊤ : Submodule A M)) →ₗ[A ⧸ I] (N ⧸ (I • ⊤ : Submodule A N))) where
   toFun ω := LinearMap.reduceModIdeal I
     (commutatorSymbol R A M N m D fun i ↦ (cotangentRep I (ω i) : A))

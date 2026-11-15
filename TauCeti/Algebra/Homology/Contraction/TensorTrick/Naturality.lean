@@ -40,7 +40,7 @@ variable {R : Type uR} [CommRing R]
 homogeneous degree-zero map between compatible contractions. -/
 theorem reducedTensorWordsHomotopy_naturality
     (c : LinearSpecialContraction dM dN) (c' : LinearSpecialContraction dM' dN')
-    {G : InternalGrading R M} {G' : InternalGrading R M'}
+    {G : InternalGrading R M ℤ} {G' : InternalGrading R M' ℤ}
     (f : M →ₗ[R] M') (g : N →ₗ[R] N')
     (hf : LinearMap.IsHomogeneous f G.piece G'.piece 0)
     (hi : f ∘ₗ c.incl = c'.incl ∘ₗ g)
