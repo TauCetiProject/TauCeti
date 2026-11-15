@@ -158,6 +158,12 @@ theorem apply_linearEquivOfInjective_symm (h : Exact f g) (hf : Function.Injecti
     (x : g.ker) : f ((h.linearEquivOfInjective hf).symm x) = x := by
   rw [← coe_linearEquivOfInjective_apply h hf, LinearEquiv.apply_symm_apply]
 
+/-- The inverse kernel equivalence sends the image of an element back to that element. -/
+@[simp]
+theorem linearEquivOfInjective_symm_mk (h : Exact f g) (hf : Function.Injective f)
+    (x : M) (hx : f x ∈ g.ker) : (h.linearEquivOfInjective hf).symm ⟨f x, hx⟩ = x :=
+  hf (by simp)
+
 end Semiring
 
 /-- **Left exactness of `Hom`** over a possibly noncommutative ring. If

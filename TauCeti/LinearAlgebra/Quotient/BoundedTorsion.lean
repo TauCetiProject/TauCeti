@@ -27,7 +27,8 @@ namespace Submodule
 
 /-- If `S ≤ ker h`, bounds on power torsion in `ker h / S` and in `range h` give a bound
 in the quotient by `S`. Annihilation of the whole kernel quotient is not required. -/
-theorem pow_smul_eq_zero_quotient_of_le_ker {R : Type*} [Ring R] {r : R} {k l : ℕ}
+theorem pow_smul_quotient_eq_zero_of_le_ker_of_bounded_torsion_of_pow_smul_eq_zero
+    {R : Type*} [Ring R] {r : R} {k l : ℕ}
     {N P : Type*} [AddCommGroup N] [Module R N] [AddCommMonoid P] [Module R P]
     (S : Submodule R N) {h : N →ₗ[R] P} (hS : S ≤ h.ker)
     (hrange : ∀ (n : ℕ) (z : h.range), r ^ n • z = 0 → r ^ l • z = 0)
@@ -51,7 +52,7 @@ namespace LinearMap
 
 /-- In a complex, bounds on power torsion in the homology and in the last map's range give
 a bound in the preceding cokernel. Annihilation of the whole homology is not required. -/
-theorem pow_smul_eq_zero_coker_of_bounded_torsion_homology
+theorem pow_smul_coker_eq_zero_of_bounded_torsion_of_pow_smul_eq_zero
     {R : Type*} [Ring R] {r : R} {k l : ℕ}
     {M N P : Type*} [AddCommMonoid M] [Module R M] [AddCommGroup N] [Module R N]
     [AddCommMonoid P] [Module R P] (g : M →ₗ[R] N)
@@ -59,6 +60,7 @@ theorem pow_smul_eq_zero_coker_of_bounded_torsion_homology
     (hrange : ∀ (n : ℕ) (z : h.range), r ^ n • z = 0 → r ^ l • z = 0)
     (hH : ∀ (n : ℕ) (y : N), y ∈ h.ker → r ^ n • y ∈ g.range → r ^ k • y ∈ g.range)
     (n : ℕ) (x : N ⧸ g.range) (hx : r ^ n • x = 0) : r ^ (k + l) • x = 0 :=
-  g.range.pow_smul_eq_zero_quotient_of_le_ker (range_le_ker_iff.mpr hgh) hrange hH n x hx
+  g.range.pow_smul_quotient_eq_zero_of_le_ker_of_bounded_torsion_of_pow_smul_eq_zero
+    (range_le_ker_iff.mpr hgh) hrange hH n x hx
 
 end LinearMap
