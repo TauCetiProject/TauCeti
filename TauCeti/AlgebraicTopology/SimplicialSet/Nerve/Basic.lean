@@ -242,11 +242,6 @@ theorem objEquiv_symm_eq {n : ℕ} (s : ComposableArrows C n) :
     (nerveMap F).app (op ⦋n⦌) (objEquiv.symm s) = objEquiv.symm ((F.mapComposableArrows n).obj s) :=
   (rfl)
 
-theorem nerveMap_app_eq_objEquiv_symm {D : Type u} [Category.{v} D] (F : C ⥤ D) {n : ℕ}
-    (s : (nerve C) _⦋n⦌) :
-    (nerveMap F).app (op ⦋n⦌) s = objEquiv.symm ((F.mapComposableArrows n).obj (objEquiv s)) :=
-  (rfl)
-
 @[simp] theorem objEquiv_map {m n : ℕ} (f : ⦋m⦌ ⟶ ⦋n⦌) (s : (nerve C) _⦋n⦌) :
     objEquiv ((nerve C).map f.op s) =
       (objEquiv s).whiskerLeft (SimplexCategory.toCat.map f).toFunctor := (rfl)
@@ -270,9 +265,6 @@ theorem nerveMap_app_eq_objEquiv_symm {D : Type u} [Category.{v} D] (F : C ⥤ D
 @[simp] theorem σ_objEquiv_symm {n : ℕ} (i : Fin (n + 1)) (s : ComposableArrows C n) :
     (nerve C).σ i (objEquiv.symm s) =
       objEquiv.symm (s.whiskerLeft (Fin.predAbove_right_monotone i).functor) := (rfl)
-
-theorem objEquiv_symm_nerveEquiv_symm (X : C) :
-    objEquiv.symm (nerveEquiv.symm X) = (nerveEquiv.symm X : (nerve C) _⦋0⦌) := (rfl)
 
 theorem _root_.CategoryTheory.nerveEquiv_symm_eq_mk₀ (X : C) :
     nerveEquiv.symm X = ComposableArrows.mk₀ X := (rfl)

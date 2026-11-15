@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Convex.ConvexSpace.Defs
 public import TauCeti.Algebra.BigOperators.Finset.PartialSum
+import Mathlib.Data.Finset.Sort
 
 /-!
 # Faces of the standard simplex
@@ -26,11 +27,11 @@ The prefix sums `TauCeti.prefixSum N x.weights` of the weights of a point `x` of
 `StdSimplex R (Fin n)` lie between `0` and `1`.
 
 Pushing a point forward along `f` maps the support of its weights by `f`
-(`StdSimplex.support_weights_map`), so every point of `StdSimplex R (Fin (n + 1))` strips uniquely
-along a strictly monotone face map to an interior point with nowhere-vanishing coordinates
-(`StdSimplex.exists_strictMono_map_eq`, `StdSimplex.eq_dim_of_injective_map_eq`,
-`StdSimplex.eq_of_strictMono_map_eq`), and monotone maps out of a finite linear order are
-determined by the pushforward of any interior point
+(`StdSimplex.support_weights_map`), so every point of `StdSimplex R X` on a linear order `X` strips
+uniquely along a strictly monotone map from `Fin (k + 1)` to an interior point with
+nowhere-vanishing coordinates (`StdSimplex.exists_strictMono_map_eq`,
+`StdSimplex.equivOfInjectiveMapEq`, `StdSimplex.eq_of_strictMono_map_eq`), and monotone maps out of
+a linear order are determined by the pushforward of any interior point
 (`StdSimplex.eq_of_monotone_map_eq_of_weights_ne_zero`).
 -/
 
@@ -256,60 +257,58 @@ theorem range_eq_of_map_eq {Z : Type*} {f₁ : X → Z} {x₁ : StdSimplex R X}
     (hx₂ : ∀ j, x₂.weights j ≠ 0) (h : x₁.map f₁ = x₂.map f₂) : Set.range f₁ = Set.range f₂ :=
   Set.ext fun z ↦ by rw [← weights_map_ne_zero_iff f₁ hx₁, ← weights_map_ne_zero_iff f₂ hx₂, h]
 
-/-- Every point of `StdSimplex R (Fin (n + 1))` is the pushforward along a strictly monotone map
-`Fin (k + 1) → Fin (n + 1)` of an interior point. -/
-theorem exists_strictMono_map_eq : ∀ {n : ℕ} (w : StdSimplex R (Fin (n + 1))),
-    ∃ (k : ℕ) (f : Fin (k + 1) → Fin (n + 1)) (w₀ : StdSimplex R (Fin (k + 1))),
+/-- Every point of `StdSimplex R X` on a linear order `X` is the pushforward along a strictly
+monotone map `Fin (k + 1) → X` of an interior point of `StdSimplex R (Fin (k + 1))`. -/
+theorem exists_strictMono_map_eq [LinearOrder X] (w : StdSimplex R X) :
+    ∃ (k : ℕ) (f : Fin (k + 1) → X) (w₀ : StdSimplex R (Fin (k + 1))),
       StrictMono f ∧ (∀ j, w₀.weights j ≠ 0) ∧ w = w₀.map f := by
-  -- Adapts the zero-weight face-stripping induction of `SimplicialSet.PrismRealization`.
-  intro n
-  induction n using Nat.strong_induction_on with | _ n ih =>
-  intro w
-  by_cases h0 : ∃ j, w.weights j = 0
-  · obtain ⟨j, hj⟩ := h0
-    obtain _ | n := n
-    · have htot := w.total_of_fintype
-      rw [Fin.sum_univ_one, ← Fin.eq_zero j, hj] at htot
-      exact absurd htot zero_ne_one
-    have hsupp : ↑w.weights.support ⊆ Set.range j.succAbove := fun i hi ↦
-      Fin.exists_succAbove_eq fun h ↦ by simp [h, hj] at hi
-    obtain ⟨k, g, w₀, hg, hw₀, hw'⟩ :=
-      ih n (Nat.lt_succ_self n) (comap Fin.succAbove_right_injective w hsupp)
-    exact ⟨k, j.succAbove ∘ g, w₀, (Fin.strictMono_succAbove j).comp hg, hw₀,
-      by rw [map_comp, ← hw', map_comap]⟩
-  · push Not at h0
-    exact ⟨n, id, w, strictMono_id, h0, (map_id w).symm⟩
+  obtain ⟨k, hk⟩ := Nat.exists_eq_succ_of_ne_zero w.support_weights_nonempty.card_ne_zero
+  let e := w.weights.support.orderEmbOfFin hk
+  have hsupp : ↑w.weights.support ⊆ Set.range e := by rw [Finset.range_orderEmbOfFin]
+  refine ⟨k, e, comap e.injective w hsupp, e.strictMono, ?_, (map_comap e.injective w hsupp).symm⟩
+  intro j
+  rw [weights_comap_apply]
+  exact Finsupp.mem_support_iff.1 (w.weights.support.orderEmbOfFin_mem hk j)
 
-/-- Injective maps from `Fin (k₁ + 1)` and `Fin (k₂ + 1)` pushing interior points to the same point
-satisfy `k₁ = k₂`. -/
-theorem eq_dim_of_injective_map_eq {Z : Type*} {k₁ k₂ : ℕ} {f₁ : Fin (k₁ + 1) → Z}
-    (hf₁ : f₁.Injective) {w₁ : StdSimplex R (Fin (k₁ + 1))} (hw₁ : ∀ j, w₁.weights j ≠ 0)
-    {f₂ : Fin (k₂ + 1) → Z} (hf₂ : f₂.Injective) {w₂ : StdSimplex R (Fin (k₂ + 1))}
-    (hw₂ : ∀ j, w₂.weights j ≠ 0) (h : w₁.map f₁ = w₂.map f₂) : k₁ = k₂ := by
-  classical
-  have hcard {k : ℕ} {f : Fin (k + 1) → Z} (hf : f.Injective)
-      {w : StdSimplex R (Fin (k + 1))} (hw : ∀ j, w.weights j ≠ 0) :
-      (w.map f).weights.support.card = k + 1 := by
-    have hsupp : w.weights.support = Finset.univ := Finset.ext fun j ↦ by simp [hw j]
-    rw [support_weights_map, hsupp, Finset.card_image_of_injective _ hf, Finset.card_fin]
-  exact Nat.succ.inj ((hcard hf₁ hw₁).symm.trans ((congrArg (·.weights.support.card) h).trans
-    (hcard hf₂ hw₂)))
+/-- Two injective maps pushing interior points of standard simplices to the same point induce an
+equivalence between their domains intertwining the maps. -/
+noncomputable def equivOfInjectiveMapEq {Z : Type*} {f₁ : X → Z} (hf₁ : f₁.Injective)
+    {w₁ : StdSimplex R X} (hw₁ : ∀ i, w₁.weights i ≠ 0) {f₂ : Y → Z} (hf₂ : f₂.Injective)
+    {w₂ : StdSimplex R Y} (hw₂ : ∀ j, w₂.weights j ≠ 0) (h : w₁.map f₁ = w₂.map f₂) :
+    X ≃ Y :=
+  ((Equiv.ofInjective f₁ hf₁).trans (Set.equivOfEq (range_eq_of_map_eq hw₁ hw₂ h))).trans
+    (Equiv.ofInjective f₂ hf₂).symm
 
-/-- A strictly monotone map from a well-founded linear order pushing an interior point to a given
-point of a standard simplex is uniquely determined together with the interior point. -/
-theorem eq_of_strictMono_map_eq [LinearOrder X] [WellFoundedLT X] [Preorder Y]
+/-- `equivOfInjectiveMapEq` intertwines `f₂` with `f₁`. -/
+theorem apply_equivOfInjectiveMapEq {Z : Type*} {f₁ : X → Z} (hf₁ : f₁.Injective)
+    {w₁ : StdSimplex R X} (hw₁ : ∀ i, w₁.weights i ≠ 0) {f₂ : Y → Z} (hf₂ : f₂.Injective)
+    {w₂ : StdSimplex R Y} (hw₂ : ∀ j, w₂.weights j ≠ 0) (h : w₁.map f₁ = w₂.map f₂) (x : X) :
+    f₂ (equivOfInjectiveMapEq hf₁ hw₁ hf₂ hw₂ h x) = f₁ x := by
+  simp [equivOfInjectiveMapEq, Equiv.apply_ofInjective_symm]
+
+/-- The inverse of `equivOfInjectiveMapEq` intertwines `f₁` with `f₂`. -/
+theorem apply_equivOfInjectiveMapEq_symm {Z : Type*} {f₁ : X → Z} (hf₁ : f₁.Injective)
+    {w₁ : StdSimplex R X} (hw₁ : ∀ i, w₁.weights i ≠ 0) {f₂ : Y → Z} (hf₂ : f₂.Injective)
+    {w₂ : StdSimplex R Y} (hw₂ : ∀ j, w₂.weights j ≠ 0) (h : w₁.map f₁ = w₂.map f₂) (y : Y) :
+    f₁ ((equivOfInjectiveMapEq hf₁ hw₁ hf₂ hw₂ h).symm y) = f₂ y := by
+  simp [equivOfInjectiveMapEq, Equiv.apply_ofInjective_symm]
+
+/-- A strictly monotone map from a linear order pushing an interior point to a given point of a
+standard simplex is uniquely determined together with the interior point. -/
+theorem eq_of_strictMono_map_eq [LinearOrder X] [Preorder Y]
     {f₁ f₂ : X → Y} (hf₁ : StrictMono f₁) (hf₂ : StrictMono f₂)
     {w₁ w₂ : StdSimplex R X} (hw₁ : ∀ i, w₁.weights i ≠ 0) (hw₂ : ∀ i, w₂.weights i ≠ 0)
     (h : w₁.map f₁ = w₂.map f₂) : f₁ = f₂ ∧ w₁ = w₂ := by
+  let : Fintype X := ⟨w₁.weights.support, fun i ↦ Finsupp.mem_support_iff.2 (hw₁ i)⟩
   obtain rfl := (StrictMono.range_inj_of_wellFoundedLT hf₁ hf₂).1 (range_eq_of_map_eq hw₁ hw₂ h)
   exact ⟨rfl, map_injective hf₁.injective h⟩
 
-/-- Monotone maps from a finite linear order into a partial order are determined by the pushforward
+/-- Monotone maps from a linear order into a partial order are determined by the pushforward
 of any interior point of `StdSimplex R X`. -/
-theorem eq_of_monotone_map_eq_of_weights_ne_zero [Finite X] [LinearOrder X] [PartialOrder Y]
+theorem eq_of_monotone_map_eq_of_weights_ne_zero [LinearOrder X] [PartialOrder Y]
     {f₁ f₂ : X → Y} (hf₁ : Monotone f₁) (hf₂ : Monotone f₂)
     {w : StdSimplex R X} (hw : ∀ a, w.weights a ≠ 0) (h : w.map f₁ = w.map f₂) : f₁ = f₂ := by
-  cases nonempty_fintype X
+  let : Fintype X := ⟨w.weights.support, fun a ↦ Finsupp.mem_support_iff.2 (hw a)⟩
   classical
   have hpos (a : X) : 0 < w.weights a := lt_of_le_of_ne (w.nonneg a) (hw a).symm
   have hset (y : Y) :

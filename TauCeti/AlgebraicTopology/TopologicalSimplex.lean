@@ -9,7 +9,6 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.StdSimplexOne
 public import Mathlib.AlgebraicTopology.SimplicialSet.TopAdj
 public import Mathlib.AlgebraicTopology.SingularSet
 public import Mathlib.CategoryTheory.Limits.Shapes.SingleObj
-public import TauCeti.Geometry.Convex.ConvexSpace.Barycenter
 public import TauCeti.Geometry.Convex.ConvexSpace.ContractibleSpaceStdSimplex
 public import TauCeti.Geometry.Convex.ConvexSpace.Defs
 public import TauCeti.Geometry.Convex.ConvexSpace.LocallyPathConnectedSpaceStdSimplex
@@ -145,8 +144,10 @@ lemma eq_dim_of_mono_stdSimplex_map_eq {n k₁ k₂ : ℕ} {ι₁ : ⦋k₁⦌ �
     {w₁ : StdSimplex R (Fin (k₁ + 1))} (hw₁ : ∀ j, w₁.weights j ≠ 0) {ι₂ : ⦋k₂⦌ ⟶ ⦋n⦌} [Mono ι₂]
     {w₂ : StdSimplex R (Fin (k₂ + 1))} (hw₂ : ∀ j, w₂.weights j ≠ 0) (h : w₁.map ι₁ = w₂.map ι₂) :
     k₁ = k₂ :=
-  StdSimplex.eq_dim_of_injective_map_eq (mono_iff_injective.1 ‹_›) hw₁
-    (mono_iff_injective.1 ‹_›) hw₂ h
+  Nat.succ.inj (by
+    simpa using Fintype.card_congr
+      (StdSimplex.equivOfInjectiveMapEq (mono_iff_injective.1 ‹_›) hw₁
+        (mono_iff_injective.1 ‹_›) hw₂ h))
 
 /-- A monomorphism `⦋k⦌ ⟶ ⦋n⦌` pushing an interior point to a given point is uniquely determined
 together with the interior point. -/
@@ -165,15 +166,6 @@ lemma eq_of_stdSimplex_map_eq_of_weights_ne_zero {n r : ℕ} {π₁ π₂ : ⦋n
   ext i : 3
   exact congrFun (StdSimplex.eq_of_monotone_map_eq_of_weights_ne_zero
     π₁.toOrderHom.monotone π₂.toOrderHom.monotone hw h) i
-
-/-- Morphisms `⦋n⦌ ⟶ ⦋r⦌` are determined by the pushforward of `StdSimplex.barycenter`. -/
-lemma eq_of_barycenter_map_eq {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
-    {n r : ℕ} {π₁ π₂ : ⦋n⦌ ⟶ ⦋r⦌}
-    (h : (StdSimplex.barycenter (K := K) (M := Fin (n + 1))).map π₁ =
-      (StdSimplex.barycenter (K := K) (M := Fin (n + 1))).map π₂) : π₁ = π₂ := by
-  ext i : 3
-  exact congrFun (StdSimplex.eq_of_monotone_barycenter_map_eq
-    π₁.toOrderHom.monotone π₂.toOrderHom.monotone h) i
 
 end StdSimplex
 

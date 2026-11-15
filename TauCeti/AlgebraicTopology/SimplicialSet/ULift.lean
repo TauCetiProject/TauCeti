@@ -109,11 +109,6 @@ theorem yonedaEquiv_uliftFunctorHomEquiv {n : SimplexCategory}
   yonedaEquiv.apply_symm_apply _
 
 theorem uliftFunctorHomEquiv_symm_apply {n : SimplexCategory} (f : stdSimplex.{u}.obj n ⟶ X) :
-    (uliftFunctorHomEquiv.{u, v} X n).symm f = yonedaEquiv.symm (ULift.up (yonedaEquiv f)) :=
-  (rfl)
-
-theorem uliftFunctorHomEquiv_symm_eq_yonedaEquiv_symm {n : SimplexCategory}
-    (f : stdSimplex.{u}.obj n ⟶ X) :
     (uliftFunctorHomEquiv.{u, v} X n).symm f =
       yonedaEquiv.symm (X.uliftFunctorObjEquiv.{v} (Opposite.op n) (yonedaEquiv f)) :=
   (rfl)
