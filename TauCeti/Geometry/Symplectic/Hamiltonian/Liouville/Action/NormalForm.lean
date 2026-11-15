@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.ActionAngle
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Action.Chart
+
+-- Access the body of `IsLocalDiffeomorphAt` to destructure the partial diffeomorphism witnessing
+-- that the actions are a local diffeomorphism.
 import all Mathlib.Geometry.Manifold.LocalDiffeomorph
 
 /-!
@@ -162,18 +165,60 @@ private theorem injective_mfderiv_rescaledCover (ha : a ≠ 0) {q : (ι → ℝ)
     Injective (mfderiv 𝓘(ℝ, (ι → ℝ) × (ι → ℝ))
       ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ))
       (rescaledCover p a A) q) := by
-  obtain ⟨e, he⟩ := (CotangentBundle.isLocalDiffeomorph_actionAngleCover (ι := ι) p
-    (a • q.1, a⁻¹ • A q.2)).isInvertible_mfderiv (by simp)
-  have hκ : Injective ⇑(mfderiv 𝓘(ℝ, (ι → ℝ) × (ι → ℝ))
-      ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ))
-      (CotangentBundle.actionAngleCover p) (a • q.1, a⁻¹ • A q.2)) :=
-    he ▸ e.injective
+  have hκ := ((CotangentBundle.isLocalDiffeomorph_actionAngleCover (ι := ι) p
+    (a • q.1, a⁻¹ • A q.2)).isInvertible_mfderiv (by simp)).injective
   intro u u' huu'
   rw [mfderiv_rescaledCover_apply hA u, mfderiv_rescaledCover_apply hA u'] at huu'
   obtain ⟨h₁, h₂⟩ := Prod.mk.inj (hκ huu')
   exact Prod.ext (smul_right_injective _ ha h₁) (hA' (smul_right_injective _ (inv_ne_zero ha) h₂))
 
+/-- The rescaled model is smooth on `ℝ^ι × t` when `A` is smooth on the open set `t`. -/
+private theorem contMDiffOn_rescaledCover {t : Set (ι → ℝ)} (ht : IsOpen t)
+    (hA : ContDiffOn ℝ ∞ A t) :
+    ContMDiffOn 𝓘(ℝ, (ι → ℝ) × (ι → ℝ))
+      ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ)) ∞
+      (rescaledCover p a A) (univ ×ˢ t) :=
+  fun q hq ↦ (contMDiffAt_rescaledCover
+    ((hA q.2 hq.2).contDiffAt (ht.mem_nhds hq.2))).contMDiffWithinAt
+
 end Model
+
+/-! ### Descending a map through a local diffeomorphism -/
+
+section Descent
+
+variable {V E H M F G N : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace M] [ChartedSpace H M]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace G] {J : ModelWithCorners ℝ F G}
+  [TopologicalSpace N] [ChartedSpace G N]
+  {Ψ : V → M} {κ : V → N} {Φ : M → N} {W : Set V} {q : V}
+
+/-- If `Φ ∘ Ψ = κ` on an open neighbourhood of `q`, the differential of `Φ` at `Ψ q` takes
+`dΨ(u)` to `dκ(u)`. -/
+private theorem mfderiv_apply_mfderiv_of_eqOn_comp (hW : IsOpen W) (hq : q ∈ W)
+    (hΦΨ : EqOn (Φ ∘ Ψ) κ W) (hΦ : MDifferentiableAt I J Φ (Ψ q))
+    (hΨ : MDifferentiableAt 𝓘(ℝ, V) I Ψ q) (u : TangentSpace 𝓘(ℝ, V) q) :
+    mfderiv I J Φ (Ψ q) (mfderiv 𝓘(ℝ, V) I Ψ q u) = mfderiv 𝓘(ℝ, V) J κ q u := by
+  rw [← mfderiv_comp_apply q hΦ hΨ,
+    (Filter.eventuallyEq_of_mem (hW.mem_nhds hq) hΦΨ).mfderiv_eq]
+  -- The cast between the tangent spaces at `(Φ ∘ Ψ) q` and `κ q` is definitionally the identity.
+  rfl
+
+/-- If `Φ ∘ Ψ = κ` on an open set `W ∋ q`, where `Ψ` is a local diffeomorphism at `q` and `κ` is
+smooth on `W` with injective differential at `q`, between spaces of the same finite dimension,
+then `Φ` is a local diffeomorphism at `Ψ q`. -/
+private theorem isLocalDiffeomorphAt_of_eqOn_comp [FiniteDimensional ℝ V] [FiniteDimensional ℝ F]
+    [IsManifold J ∞ N] (hW : IsOpen W) (hq : q ∈ W) (hΦΨ : EqOn (Φ ∘ Ψ) κ W)
+    (hκ : ContMDiffOn 𝓘(ℝ, V) J ∞ κ W) (hκ' : Injective (mfderiv 𝓘(ℝ, V) J κ q))
+    (hdim : Module.finrank ℝ V = Module.finrank ℝ F)
+    (hΨ : IsLocalDiffeomorphAt 𝓘(ℝ, V) I ∞ Ψ q) :
+    IsLocalDiffeomorphAt I J ∞ Φ (Ψ q) := by
+  refine IsLocalDiffeomorphAt.of_comp_right (isLocalDiffeomorphAt_of_injective_mfderiv
+    (hκ.congr hΦΨ) hW hq BoundarylessManifold.isInteriorPoint (by simp) ?_ hdim) hΨ
+  rwa [(Filter.eventuallyEq_of_mem (hW.mem_nhds hq) hΦΨ).mfderiv_eq]
+
+end Descent
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless] [TopologicalSpace M]
@@ -255,40 +300,23 @@ theorem exists_actionAngle (hσ : σ.IsSymplectic) (hF : ContMDiff I 𝓘(ℝ, �
     have hd := (mdifferentiableAt_iff_differentiableAt.1
       ((hAloc c hc).mdifferentiableAt (by simp))).hasFDerivAt
     refine ⟨hd, ?_⟩
-    obtain ⟨e, he⟩ := (hAloc c hc).isInvertible_mfderiv (by simp)
-    have h : Injective ⇑(mfderiv 𝓘(ℝ, ι → ℝ) 𝓘(ℝ, ι → ℝ) A c) := he ▸ e.injective
-    rwa [hd.hasMFDerivAt.mfderiv] at h
-  -- `Φ ∘ Ψ = κ` on the open set `W`, where `κ` is a local diffeomorphism, so `Φ` is one on
-  -- `Ψ '' W`.
+    rw [← hd.hasMFDerivAt.mfderiv]
+    exact ((hAloc c hc).isInvertible_mfderiv (by simp)).injective
+  -- `Φ ∘ Ψ = κ` on the open set `W`, where `κ` has injective differential, so `Φ` is a local
+  -- diffeomorphism on `Ψ '' W`.
   have hΦΨW : EqOn (Φ ∘ Ψ) κ W := fun q hq ↦ hΦΨ q hq
-  have hΦΨmf (q : (ι → ℝ) × (ι → ℝ)) (hq : q ∈ W) :
-      mfderiv 𝓘(ℝ, (ι → ℝ) × (ι → ℝ))
-          ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ)) (Φ ∘ Ψ) q =
-        mfderiv 𝓘(ℝ, (ι → ℝ) × (ι → ℝ))
-          ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ)) κ q :=
-    Filter.EventuallyEq.mfderiv_eq (Filter.eventuallyEq_of_mem (hW.mem_nhds hq) hΦΨW)
   have hΦloc (q : (ι → ℝ) × (ι → ℝ)) (hq : q ∈ W) :
       IsLocalDiffeomorphAt I
-        ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ)) ∞ Φ (Ψ q) := by
-    have hκW : ContMDiffOn 𝓘(ℝ, (ι → ℝ) × (ι → ℝ))
-        ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ)) ∞ κ W :=
-      fun q hq ↦ (contMDiffAt_rescaledCover
-        (contMDiffAt_iff_contDiffAt.1 (hAloc q.2 hq.2).contMDiffAt)).contMDiffWithinAt
-    refine IsLocalDiffeomorphAt.of_comp_right (isLocalDiffeomorphAt_of_injective_mfderiv
-      (hκW.congr hΦΨW) hW hq BoundarylessManifold.isInteriorPoint (by simp) ?_ ?_) (hΨloc q hq)
-    · rw [hΦΨmf q hq]
-      exact injective_mfderiv_rescaledCover ha (hdA q.2 hq.2).1 (hdA q.2 hq.2).2
-    · rw [Module.finrank_prod, Module.finrank_prod,
-        LinearMap.toContinuousLinearMap.symm.finrank_eq, Module.finrank_linearMap_self]
+        ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ)) ∞ Φ (Ψ q) :=
+    isLocalDiffeomorphAt_of_eqOn_comp hW hq hΦΨW
+      (contMDiffOn_rescaledCover hU₀ fun c hc ↦ (contMDiffAt_iff_contDiffAt.1
+        (hAloc c hc).contMDiffAt).contDiffWithinAt)
+      (injective_mfderiv_rescaledCover ha (hdA q.2 hq.2).1 (hdA q.2 hq.2).2)
+      CotangentBundle.finrank_actionAngleCover_model (hΨloc q hq)
   refine ⟨Ψ '' W, (fun c ↦ a⁻¹ • A c) '' U₀, Φ, fun J ↦ ΦA.symm (a • J), ?_, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, ?_⟩
   · -- `Ψ` is a local homeomorphism on the open set `W`, so `Ψ '' W` is open.
-    have hΨW : IsLocalDiffeomorphOn 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) I ∞ Ψ W :=
-      (isLocalDiffeomorphOn_iff W).2 fun q ↦ hΨloc q q.2
-    refine isOpen_iff_mem_nhds.2 ?_
-    rintro _ ⟨q, hq, rfl⟩
-    rw [← hΨW.isLocalHomeomorphOn.map_nhds_eq hq]
-    exact Filter.image_mem_map (hW.mem_nhds hq)
+    exact ((isLocalDiffeomorphOn_iff W).2 fun q ↦ hΨloc q q.2).isLocalHomeomorphOn.isOpen_image hW
   · -- The component is swept out by the angles at the value `F x ∈ U₀`.
     rw [← hrange]
     rintro _ ⟨θ, rfl⟩
@@ -320,23 +348,15 @@ theorem exists_actionAngle (hσ : σ.IsSymplectic) (hF : ContMDiff I 𝓘(ℝ, �
   · rintro _ ⟨q, hq, rfl⟩ v w
     -- Write `v` and `w` as images under the invertible differential of `Ψ`, and compare the
     -- pullbacks along `Ψ` of `σ` and along `Φ ∘ Ψ = κ` of the canonical form.
-    obtain ⟨e, he⟩ := (hΨloc q hq).isInvertible_mfderiv (by simp)
-    obtain ⟨v', rfl⟩ : ∃ v', mfderiv 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) I Ψ q v' = v :=
-      ⟨e.symm v, by rw [← he]; exact e.apply_symm_apply v⟩
-    obtain ⟨w', rfl⟩ : ∃ w', mfderiv 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) I Ψ q w' = w :=
-      ⟨e.symm w, by rw [← he]; exact e.apply_symm_apply w⟩
-    have hchain (u : TangentSpace 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) q) :
-        mfderiv I ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ)) Φ (Ψ q)
-            (mfderiv 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) I Ψ q u) =
-          mfderiv 𝓘(ℝ, (ι → ℝ) × (ι → ℝ))
-            ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ)) κ q u := by
-      rw [← mfderiv_comp_apply q ((hΦloc q hq).mdifferentiableAt (by simp))
-        ((hΨloc q hq).mdifferentiableAt (by simp)), hΦΨmf q hq]
-      rfl
+    have hΨsurj := ((hΨloc q hq).isInvertible_mfderiv (by simp)).surjective
+    obtain ⟨v', rfl⟩ := hΨsurj v
+    obtain ⟨w', rfl⟩ := hΨsurj w
+    have hchain := mfderiv_apply_mfderiv_of_eqOn_comp hW hq hΦΨW
+      ((hΦloc q hq).mdifferentiableAt (by simp)) ((hΨloc q hq).mdifferentiableAt (by simp))
     -- The components of `dA` are the derivatives of the components of `A`.
     have hAi (i : ι) (u : ι → ℝ) : fderiv ℝ A q.2 u i = fderiv ℝ (fun c ↦ A c i) q.2 u := by
-      rw [((hasFDerivAt_pi'.1 (hdA q.2 hq.2).1) i).fderiv]
-      rfl
+      rw [((hasFDerivAt_pi'.1 (hdA q.2 hq.2).1) i).fderiv, ContinuousLinearMap.comp_apply,
+        ContinuousLinearMap.proj_apply]
     rw [CotangentBundle.eval₂_symplecticForm, hchain, hchain,
       ← CotangentBundle.eval₂_symplecticForm (κ q),
       eval₂_symplecticForm_mfderiv_rescaledCover ha (hdA q.2 hq.2).1]

@@ -86,6 +86,7 @@ theorem actionAngleCover_snd_apply (x : (ι → ℝ) × (ι → ℝ)) (v : ι �
     (torusTimeForm (fun _ ↦ p) j) (fun i ↦ (x.1 i : AddCircle p))) w).trans
     (Finset.sum_congr rfl fun j _ ↦ ?_)
   rw [smul_apply, SmoothForm.degreeOneEquiv_apply_apply_vec, torusTimeForm_apply]
+  -- Definitionally `w = v`, and `•` on `ℝ` is `*`.
   rfl
 
 /-- **The actions of `κ(θ, I)` are `I`.** The covector `κ(θ, I)` takes the value `I_i` on the
@@ -147,30 +148,14 @@ theorem surjective_actionAngleCover :
   -- `z.2` is a covector on the tangent space, a type synonym of `ι → ℝ`.
   rfl
 
-/-- The covering map `(θ, I) ↦ [θ]` of the torus, read on pairs of angles and actions, is smooth. -/
-private theorem contMDiff_coe_pi_fst :
-    ContMDiff 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) ∞
-      (fun x : (ι → ℝ) × (ι → ℝ) ↦ fun i ↦ (x.1 i : AddCircle p)) :=
-  contMDiff_pi_iff.2 fun i ↦ (AddCircle.contMDiff_coe p ∞).comp
-    ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) i).comp
-      (ContinuousLinearMap.fst ℝ (ι → ℝ) (ι → ℝ))).contMDiff
-
-/-- The covering map `(θ, I) ↦ [θ]` of the torus has derivative `(a, b) ↦ a`. -/
-private theorem mfderiv_coe_pi_fst (x : (ι → ℝ) × (ι → ℝ))
-    (v : TangentSpace 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) x) :
-    mfderiv 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
-      (fun x : (ι → ℝ) × (ι → ℝ) ↦ fun i ↦ (x.1 i : AddCircle p)) x v = v.1 := by
-  have h := (AddCircle.hasMFDerivAt_coe_pi (ι := ι) p x.1).comp x
-    (ContinuousLinearMap.fst ℝ (ι → ℝ) (ι → ℝ)).hasMFDerivAt
-  -- The composite is the map of the statement, and its derivative is `fst`.
-  exact DFunLike.congr_fun h.mfderiv v
-
 /-- **The action–angle covering map is smooth.** -/
 theorem contMDiff_actionAngleCover :
     ContMDiff 𝓘(ℝ, (ι → ℝ) × (ι → ℝ))
       ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ)) ∞
       (actionAngleCover (ι := ι) p) := by
-  have hb := contMDiff_coe_pi_fst (ι := ι) p
+  -- The base map `(θ, I) ↦ [θ]` is the smooth covering map of the torus after `fst`.
+  have hb := (AddCircle.contMDiff_coe_pi (ι := ι) p ∞).comp
+    (ContinuousLinearMap.fst ℝ (ι → ℝ) (ι → ℝ)).contMDiff
   refine ContMDiff.sum_sectionAlong Finset.univ _ hb fun j _ ↦ ?_
   -- Each term is a smooth coefficient times the smooth section `dθ_j` along the base map.
   exact ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) j).comp
@@ -187,10 +172,17 @@ theorem mpullback_liouvilleForm_actionAngleCover_apply (x : (ι → ℝ) × (ι 
         (actionAngleCover p)
         (liouvilleForm (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p)).1 x v =
       ∑ j, x.2 j * (v 0).1 j := by
+  -- The base map `(θ, I) ↦ [θ]` is the covering map of the torus after `fst`, so its derivative
+  -- is `fst`.
+  have hb (u : TangentSpace 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) x) :
+      mfderiv 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
+        (fun x : (ι → ℝ) × (ι → ℝ) ↦ fun i ↦ (x.1 i : AddCircle p)) x u = u.1 :=
+    DFunLike.congr_fun ((AddCircle.hasMFDerivAt_coe_pi (ι := ι) p x.1).comp x
+      (ContinuousLinearMap.fst ℝ (ι → ℝ) (ι → ℝ)).hasMFDerivAt).mfderiv u
   rw [mpullback_liouvilleForm_apply_of_proj_comp_eq (g := fun x : (ι → ℝ) × (ι → ℝ) ↦
       fun i ↦ (x.1 i : AddCircle p)) (fun _ ↦ rfl)
       (((contMDiff_actionAngleCover p) x).mdifferentiableAt (by simp)),
-    mfderiv_coe_pi_fst, actionAngleCover_snd_apply]
+    hb, actionAngleCover_snd_apply]
 
 /-- The one-form `(θ, I) ↦ ∑ j, I_j dθ_j` on `ℝ^ι × ℝ^ι`, as a continuous linear function of the
 point. -/
@@ -272,6 +264,15 @@ theorem eval₂_symplecticForm_mfderiv_actionAngleCover (x : (ι → ℝ) × (ι
   rw [← Finset.sum_neg_distrib]
   exact Finset.sum_congr rfl fun j _ ↦ by ring
 
+omit [Fintype ι] in
+/-- The source `ℝ^ι × ℝ^ι` of the action–angle covering map and the model
+`ℝ^ι × (ℝ^ι →L[ℝ] ℝ)` of the cotangent bundle of the torus have the same dimension. -/
+theorem finrank_actionAngleCover_model [Finite ι] :
+    Module.finrank ℝ ((ι → ℝ) × (ι → ℝ)) = Module.finrank ℝ ((ι → ℝ) × ((ι → ℝ) →L[ℝ] ℝ)) := by
+  -- Covectors are linear maps by finite dimensionality.
+  rw [Module.finrank_prod, Module.finrank_prod,
+    LinearMap.toContinuousLinearMap.symm.finrank_eq, Module.finrank_linearMap_self]
+
 /-- **The action–angle covering map is a local diffeomorphism.** Its pullback
 `∑ j, dθ_j ∧ dI_j` of the canonical symplectic form is nondegenerate, so its differential is
 injective, between spaces of the same dimension. -/
@@ -283,19 +284,16 @@ theorem isLocalDiffeomorph_actionAngleCover :
   intro x
   refine isLocalDiffeomorphAt_of_injective_mfderiv (contMDiff_actionAngleCover p).contMDiffOn
     isOpen_univ (Set.mem_univ x) BoundarylessManifold.isInteriorPoint (by simp)
-    ((injective_iff_map_eq_zero _).2 fun v hv ↦ ?_) ?_
-  · -- A vector killed by the differential pairs to zero with every vector under `∑ dθ_j ∧ dI_j`.
-    have h (w : TangentSpace 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) x) :
-        ∑ j, (v.1 j * w.2 j - w.1 j * v.2 j) = 0 :=
-      (eval₂_symplecticForm_mfderiv_actionAngleCover p x v w).symm.trans (by
-        rw [hv, eval₂_symplecticForm]
-        exact LinearMap.map_zero₂ _ _)
-    have h₁ : v.1 = 0 := funext fun i ↦ by simpa [Pi.single_apply] using h (0, Pi.single i 1)
-    have h₂ : v.2 = 0 := funext fun i ↦ by simpa [Pi.single_apply] using h (Pi.single i 1, 0)
-    exact Prod.ext h₁ h₂
-  · -- Both sides have dimension `2 |ι|`; covectors are linear maps by finite dimensionality.
-    rw [Module.finrank_prod, Module.finrank_prod,
-      LinearMap.toContinuousLinearMap.symm.finrank_eq, Module.finrank_linearMap_self]
+    ((injective_iff_map_eq_zero _).2 fun v hv ↦ ?_) finrank_actionAngleCover_model
+  -- A vector killed by the differential pairs to zero with every vector under `∑ dθ_j ∧ dI_j`.
+  have h (w : TangentSpace 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) x) :
+      ∑ j, (v.1 j * w.2 j - w.1 j * v.2 j) = 0 :=
+    (eval₂_symplecticForm_mfderiv_actionAngleCover p x v w).symm.trans (by
+      rw [hv, eval₂_symplecticForm]
+      exact LinearMap.map_zero₂ _ _)
+  have h₁ : v.1 = 0 := funext fun i ↦ by simpa [Pi.single_apply] using h (0, Pi.single i 1)
+  have h₂ : v.2 = 0 := funext fun i ↦ by simpa [Pi.single_apply] using h (Pi.single i 1, 0)
+  exact Prod.ext h₁ h₂
 
 end CotangentBundle
 
