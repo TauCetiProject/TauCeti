@@ -38,16 +38,17 @@ back from the base generate the vertical motions:
   (`IsLagrangianFibration.poissonBracket_comp_eq_zero`): the coordinates of a chart of `B`, pulled
   back to `M`, form an involutive family with independent differentials;
 * every integral curve of such a vertical field stays in one fibre
-  (`IsLagrangianFibration.apply_eq_of_isMIntegralCurve_hamiltonianVectorField_comp`), and so does
+  (`IsLagrangianFibration.apply_eq_of_isMIntegralCurveOn_hamiltonianVectorField_comp`), and so does
   every maximal integral curve, so for a proper `π` the Hamiltonian vector field of every smooth
   pulled-back function is complete
   (`IsLagrangianFibration.isCompleteVectorField_hamiltonianVectorField_comp`).
 
-These vertical Hamiltonian flows generate the fibrewise action of `T*B` from which the period
-lattice `Λ ⊆ T*B` of the fibration is built
+Over each point `b`, these vertical Hamiltonian flows give the action of `T*_b B` on the fibre
+`π⁻¹(b)` and its period lattice `Λ_b ⊆ T*_b B`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianFibration.fiberAction` and
 `TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianFibration.periodLattice`, in
-`TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Fibration`).
+`TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Fibration`). Assembling the lattices `Λ_b` into
+the period lattice `Λ ⊆ T*B` of the fibration is not done here.
 
 ## References
 
@@ -148,6 +149,28 @@ theorem poissonBracket_comp_eq_zero [FiniteDimensional ℝ E] {g k : B → ℝ} 
   rw [hσ.poissonBracket_eq_mvfderiv, mvfderiv_comp_apply x hg (h.mdifferentiableAt x),
     h.mfderiv_hamiltonianVectorField_comp_eq_zero hk, map_zero]
 
+/-- **Integral curves of vertical Hamiltonian fields stay in their fibre.** Along an integral curve
+`γ` on an open preconnected set `s` of the Hamiltonian vector field of a pulled-back function
+`g ∘ π`, with `g` differentiable at the points of the curve, the projection `π` is constant. -/
+theorem apply_eq_of_isMIntegralCurveOn_hamiltonianVectorField_comp [FiniteDimensional ℝ E]
+    [IsManifold J 1 B] {g : B → ℝ} {γ : ℝ → M} {s : Set ℝ}
+    (hγ : IsMIntegralCurveOn γ (σ.hamiltonianVectorField (g ∘ π)) s) (hs : IsOpen s)
+    (hs' : IsPreconnected s) (hg : ∀ t ∈ s, MDifferentiableAt J 𝓘(ℝ) g (π (γ t))) {t₀ t : ℝ}
+    (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
+    π (γ t) = π (γ t₀) :=
+  hγ.apply_eq_of_mfderiv_apply_eq_zero hs hs' (fun _ _ ↦ h.mdifferentiableAt _)
+    (fun u hu ↦ h.mfderiv_hamiltonianVectorField_comp_eq_zero (hg u hu)) ht₀ ht
+
+/-- Along an integral curve `γ` of the Hamiltonian vector field of a pulled-back function `g ∘ π`,
+with `g` differentiable at the points of the curve, the projection `π` is constant. -/
+theorem apply_eq_of_isMIntegralCurve_hamiltonianVectorField_comp [FiniteDimensional ℝ E]
+    [IsManifold J 1 B] {g : B → ℝ} {γ : ℝ → M}
+    (hγ : IsMIntegralCurve γ (σ.hamiltonianVectorField (g ∘ π)))
+    (hg : ∀ t, MDifferentiableAt J 𝓘(ℝ) g (π (γ t))) (s t : ℝ) :
+    π (γ t) = π (γ s) :=
+  h.apply_eq_of_isMIntegralCurveOn_hamiltonianVectorField_comp (hγ.isMIntegralCurveOn Set.univ)
+    isOpen_univ isPreconnected_univ (fun t _ ↦ hg t) (Set.mem_univ s) (Set.mem_univ t)
+
 /-- **Vertical Hamiltonian flows stay in their fibre.** Along the maximal integral curve through
 `x` of the Hamiltonian vector field of a `C²` pulled-back function `g ∘ π`, the projection `π` is
 constant. -/
@@ -160,23 +183,10 @@ theorem apply_maximalIntegralCurve_hamiltonianVectorField_comp [FiniteDimensiona
     (by rw [one_add_one_eq_two]; exact hg.comp (h.contMDiff.of_le (by simp)))
   have h0 := zero_mem_maximalIntegralCurveInterval_of_mem ht
   conv_rhs => rw [← maximalIntegralCurve_zero (v := σ.hamiltonianVectorField (g ∘ π)) (x := x)]
-  exact (isMIntegralCurveOn_maximalIntegralCurve hv).apply_eq_of_mfderiv_apply_eq_zero
-    isOpen_maximalIntegralCurveInterval isPreconnected_maximalIntegralCurveInterval
-    (fun _ _ ↦ h.mdifferentiableAt _)
-    (fun _ _ ↦ h.mfderiv_hamiltonianVectorField_comp_eq_zero ((hg _).mdifferentiableAt (by simp)))
-    h0 ht
-
-/-- **Integral curves of vertical Hamiltonian fields stay in their fibre.** Along an integral curve
-`γ` of the Hamiltonian vector field of a pulled-back function `g ∘ π`, with `g` differentiable, the
-projection `π` is constant. -/
-theorem apply_eq_of_isMIntegralCurve_hamiltonianVectorField_comp [FiniteDimensional ℝ E]
-    [IsManifold J 1 B] {g : B → ℝ} (hg : MDifferentiable J 𝓘(ℝ) g) {γ : ℝ → M}
-    (hγ : IsMIntegralCurve γ (σ.hamiltonianVectorField (g ∘ π))) (s t : ℝ) :
-    π (γ t) = π (γ s) :=
-  (hγ.isMIntegralCurveOn Set.univ).apply_eq_of_mfderiv_apply_eq_zero isOpen_univ
-    isPreconnected_univ (fun _ _ ↦ h.mdifferentiableAt _)
-    (fun _ _ ↦ h.mfderiv_hamiltonianVectorField_comp_eq_zero (hg _)) (Set.mem_univ s)
-    (Set.mem_univ t)
+  exact h.apply_eq_of_isMIntegralCurveOn_hamiltonianVectorField_comp
+    (isMIntegralCurveOn_maximalIntegralCurve hv) isOpen_maximalIntegralCurveInterval
+    isPreconnected_maximalIntegralCurveInterval (fun _ _ ↦ (hg _).mdifferentiableAt (by simp)) h0
+    ht
 
 /-- **Vertical Hamiltonian flows of a proper Lagrangian fibration are complete.** If the projection
 `π` is proper, the Hamiltonian vector field of every `C²` pulled-back function `g ∘ π` is complete:

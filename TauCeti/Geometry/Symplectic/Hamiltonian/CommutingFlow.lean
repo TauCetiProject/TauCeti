@@ -675,20 +675,14 @@ the curve `t ↦ (t v) • x` is an integral curve of the vector field `∑ i, v
 theorem isMIntegralCurve_hamiltonianFlowAction_smul (v : ι → ℝ) (x : M) :
     IsMIntegralCurve (fun t : ℝ ↦ (hσ.hamiltonianFlowAction hF hcomm hc (t • v)).toMul x)
       fun y ↦ ∑ i, v i • σ.hamiltonianVectorField (F · i) y := by
-  intro t
-  have ho := ((hσ.contMDiff_hamiltonianFlowAction_apply hF hcomm hc x).mdifferentiableAt
-    (n := ∞) (by simp) (x := t • v)).hasMFDerivAt
-  have hl : HasMFDerivAt 𝓘(ℝ) 𝓘(ℝ, ι → ℝ) (fun t : ℝ ↦ t • v) t
-      (ContinuousLinearMap.toSpanSingleton ℝ v) :=
-    hasMFDerivAt_iff_hasFDerivAt.2 (ContinuousLinearMap.toSpanSingleton ℝ v).hasFDerivAt
-  refine (ho.comp t hl).congr_mfderiv (ContinuousLinearMap.ext_ring ?_)
-  convert hσ.mfderiv_hamiltonianFlowAction_apply hF hcomm hc x (t • v) v using 1
-  -- The side goals mix tangent spaces of `ℝ`, `ι → ℝ` and `M` with their model spaces, so `simp`
-  -- and `rw` do not match the composition lemmas; `exact` unifies them up to definitional
-  -- unfolding of `TangentSpace`.
-  · exact (ContinuousLinearMap.comp_apply _ (ContinuousLinearMap.toSpanSingleton ℝ v) 1).trans <|
-      congrArg _ <| (ContinuousLinearMap.toSpanSingleton_apply ℝ v 1).trans (one_smul ℝ v)
-  · exact ContinuousLinearMap.smulRight_apply.trans (one_smul ℝ _)
+  refine Manifold.isMIntegralCurve_iff_curveVelocity_eq.2 fun t ↦ ?_
+  have hd := (hσ.contMDiff_hamiltonianFlowAction_apply hF hcomm hc x).mdifferentiableAt
+    (n := ∞) (by simp) (x := t • v)
+  have hl : HasDerivAt (fun s : ℝ ↦ s • v) v t := by
+    simpa using (hasDerivAt_id t).smul_const v
+  exact ⟨hd.comp t hl.differentiableAt.mdifferentiableAt,
+    (hd.curveVelocity_comp_mfderiv hl).trans
+      (hσ.mfderiv_hamiltonianFlowAction_apply hF hcomm hc x (t • v) v)⟩
 
 /-! ### Moving a map by the Hamiltonian flow action -/
 

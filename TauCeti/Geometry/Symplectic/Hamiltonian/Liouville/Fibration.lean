@@ -20,17 +20,24 @@ manifold `B` of dimension `n`, with proper projection. With the convention `ι_{
 Hamiltonian vector field of a pulled-back function `g ∘ π` is tangent to the fibres, and along the
 fibre `π⁻¹(b)` it only depends on the covector `dg_b ∈ T*_b B`.
 
-**The fibrewise action.** A covector `ξ ∈ T*_b B` acts on the fibre `π⁻¹(b)` by the time-one map
-of the flow of `X_{g ∘ π}`, for any function `g` with `dg_b = ξ`
-(`IsLagrangianFibration.fiberAction`). Precisely, for every such `g` differentiable at `b`, the
-curve `t ↦ (t ξ) • x` is an integral curve of `X_{g ∘ π}`
-(`IsLagrangianFibration.isMIntegralCurve_fiberAction`), so for a `C²` function `g` the action of
-`ξ` is the time-one map of the flow of `X_{g ∘ π}`
-(`IsLagrangianFibration.coe_fiberAction_apply_eq_globalFlow`). The action is additive because the
-functions pulled back from the base Poisson-commute. It is built from the action of `ℝⁿ` by the
-flows of the coordinates of a chart of `B` at `b`
+**The fibrewise action.** A covector `ξ ∈ T*_b B` acts on the fibre `π⁻¹(b)`
+(`IsLagrangianFibration.fiberAction`). For every function `g` on `B` differentiable at `b` with
+`dg_b = ξ`, the curve `t ↦ (t ξ) • x` is an integral curve of `X_{g ∘ π}`
+(`IsLagrangianFibration.isMIntegralCurve_fiberAction`). So when `X_{g ∘ π}` is `C¹`, for instance
+for a `C²` function `g`, the action of `t ξ` is the time-`t` map of the flow of `X_{g ∘ π}`
+(`IsLagrangianFibration.coe_fiberAction_smul_apply_eq_flowOf`,
+`IsLagrangianFibration.coe_fiberAction_smul_apply_eq_globalFlow`); in particular `ξ` acts by its
+time-one map (`IsLagrangianFibration.coe_fiberAction_apply_eq_globalFlow`). The action is
+additive because the functions pulled back from the base Poisson-commute. It is built from the
+action of `ℝⁿ` by the flows of the coordinates of a chart of `B` at `b`
 (`TauCeti.SmoothTwoForm.IsSymplectic.hamiltonianFlowAction`), but by the characterization above it
-does not depend on that chart.
+does not depend on that chart. More generally, for a family `κ : B → ℝ^ι` the covector
+`∑ i, vᵢ dκᵢ` acts as `v` does under the Hamiltonian flow action of `κ ∘ π`
+(`IsLagrangianFibration.coe_fiberAction_apply_eq_hamiltonianFlowAction`). The orbit maps are smooth
+immersions, with derivative `η ↦ X_{g ∘ π}` for `dg_b = η`
+(`IsLagrangianFibration.contMDiff_fiberAction_apply`,
+`IsLagrangianFibration.mfderiv_fiberAction_apply`,
+`IsLagrangianFibration.injective_mfderiv_fiberAction_apply`).
 
 **The period lattice.** The *period lattice* `Λ_b ⊆ T*_b B` is the group of covectors acting
 trivially on the fibre (`IsLagrangianFibration.periodLattice`). It is discrete whenever the fibre
@@ -40,9 +47,11 @@ fibres are moreover connected:
 
 * the action is transitive on each fibre (`IsLagrangianTorusFibration.exists_fiberAction_apply_eq`),
   and `Λ_b` is the stabilizer of every point of `π⁻¹(b)`
-  (`IsLagrangianTorusFibration.mem_periodLattice_iff_fiberAction_apply_eq`);
-* the orbit map descends to a homeomorphism `T*_b B ⧸ Λ_b ≃ₜ π⁻¹(b)`
-  (`IsLagrangianTorusFibration.quotientPeriodLatticeHomeomorph`);
+  (`IsLagrangianTorusFibration.mem_periodLattice_iff_fiberAction_apply_eq`,
+  `IsLagrangianTorusFibration.mem_periodLattice_iff_mem_hamiltonianFlowStabilizer`);
+* the orbit map descends to an equivariant homeomorphism `T*_b B ⧸ Λ_b ≃ₜ π⁻¹(b)`
+  (`IsLagrangianTorusFibration.quotientPeriodLatticeHomeomorph`,
+  `IsLagrangianTorusFibration.quotientPeriodLatticeHomeomorph_add`);
 * `Λ_b` is a discrete, full lattice in `T*_b B`, of rank `n`
   (`IsLagrangianTorusFibration.discreteTopology_periodLattice`,
   `IsLagrangianTorusFibration.isZLattice_periodLattice`,
@@ -148,13 +157,9 @@ identity as derivative at `b`. -/
 private theorem mvfderiv_comp_chartMap (b : B) (ξ : F →L[ℝ] ℝ) :
     mvfderiv J (ξ ∘ chartMap (J := J) b) b = ξ := by
   ext v
-  rw [mvfderiv_comp_apply_of_differentiableAt ξ.differentiableAt
-    ((chartMap b).contMDiff.mdifferentiableAt (by simp)), ξ.fderiv,
-    mvfderiv_apply_eq_mfderiv_apply, (chartMap_eventuallyEq b).mfderiv_eq,
-    mfderiv_extChartAt_self]
-  -- The remaining map is `tangentSpaceCast ∘L id`, the identity by definition of the tangent space.
-  -- Mathlib states no lemma for the values of `tangentSpaceCast`, and `comp_id` does not match
-  -- through the `TangentSpace` synonyms.
+  rw [ξ.mvfderiv_comp_apply ((chartMap b).contMDiff.mdifferentiableAt (by simp)),
+    mvfderiv_apply_of_eventuallyEq_extChartAt (chartMap_eventuallyEq b)]
+  -- Both sides are `ξ v`, the tangent vector `v` at `b` being read in the model space `F`.
   rfl
 
 variable (h : hσ.IsLagrangianFibration J π)
@@ -163,6 +168,23 @@ include h
 private theorem contMDiff_chartFamily (b : B) :
     ContMDiff I 𝓘(ℝ, Fin (finrank ℝ F) → ℝ) ∞ (chartFamily (J := J) π b) :=
   contMDiff_pi_module_iff.2 fun i ↦ (contMDiff_chartCoord b i).comp h.contMDiff
+
+/-- The Hamiltonian vector field of `(ξ ∘ κ) ∘ π`, where `κ` is the chart map at `b`, is the
+combination `∑ i, ξ(eᵢ) X_{Gᵢ}` of the Hamiltonian vector fields of the chart family. -/
+private theorem hamiltonianVectorField_comp_chartMap (b : B) (ξ : F →L[ℝ] ℝ) (y : M) :
+    σ.hamiltonianVectorField ((ξ ∘ chartMap (J := J) b) ∘ π) y =
+      ∑ i, covectorCoords ξ i • σ.hamiltonianVectorField (chartFamily (J := J) π b · i) y := by
+  -- `(ξ ∘ κ) ∘ π = ∑ i, ξ(eᵢ) Gᵢ`, and the coordinate functions are differentiable.
+  have hfun : (ξ ∘ chartMap (J := J) b) ∘ π =
+      fun y ↦ ∑ i, covectorCoords ξ i • chartFamily (J := J) π b y i := by
+    funext y
+    simp only [comp_apply, smul_eq_mul, chartFamily_apply, sum_covectorCoords_mul_chartCoord]
+  have hd (i : Fin (finrank ℝ F)) :
+      MDifferentiableAt I 𝓘(ℝ) (fun y ↦ covectorCoords ξ i • chartFamily (J := J) π b y i) y :=
+    (((contMDiff_chartCoord b i).comp h.contMDiff).mdifferentiableAt (by simp)).const_smul _
+  rw [hfun, hamiltonianVectorField_fun_sum fun i _ ↦ hd i]
+  exact Finset.sum_congr rfl fun i _ ↦
+    hamiltonianVectorField_const_smul (f := fun y ↦ chartFamily (J := J) π b y i) _ _
 
 /-- The chart family at `b` is regular along the fibre over `b`. -/
 private theorem isRegularPoint_chartFamily {b : B} {y : M} (hy : π y = b) :
@@ -230,10 +252,10 @@ private theorem poissonBracket_chartFamily (b : B) (i j : Fin (finrank ℝ F)) (
   h.poissonBracket_comp_eq_zero ((contMDiff_chartCoord b i).mdifferentiableAt (by simp))
     ((contMDiff_chartCoord b j).mdifferentiableAt (by simp))
 
-variable [T2Space M] [BoundarylessManifold I M]
+variable [T2Space M]
 
-private theorem isCompleteVectorField_chartFamily (hπ : IsProperMap π) (b : B)
-    (i : Fin (finrank ℝ F)) :
+private theorem isCompleteVectorField_chartFamily [BoundarylessManifold I M] (hπ : IsProperMap π)
+    (b : B) (i : Fin (finrank ℝ F)) :
     IsCompleteVectorField (σ.hamiltonianVectorField (chartFamily (J := J) π b · i)) :=
   h.isCompleteVectorField_hamiltonianVectorField_comp hπ
     ((contMDiff_chartCoord b i).of_le (by simp))
@@ -259,19 +281,8 @@ private theorem isMIntegralCurve_chartAction (b : B) (ξ : F →L[ℝ] ℝ) (x :
     IsSymplectic.isMIntegralCurve_hamiltonianFlowAction_smul ⟨hσc, hσ⟩
       (h.contMDiff_chartFamily (J := J) b) (h.poissonBracket_chartFamily b)
       (h.isCompleteVectorField_chartFamily hπ b) (covectorCoords ξ) x
-  -- `(ξ ∘ κ) ∘ π = ∑ i, ξ(eᵢ) Gᵢ`, so its Hamiltonian vector field is `∑ i, ξ(eᵢ) X_{Gᵢ}`, the
-  -- coordinate functions being differentiable.
-  have hfun : (ξ ∘ chartMap (J := J) b) ∘ π =
-      fun y ↦ ∑ i, covectorCoords ξ i • chartFamily (J := J) π b y i := by
-    funext y
-    simp only [comp_apply, smul_eq_mul, chartFamily_apply, sum_covectorCoords_mul_chartCoord]
-  have hd (i : Fin (finrank ℝ F)) (y : M) :
-      MDifferentiableAt I 𝓘(ℝ) (fun y ↦ covectorCoords ξ i • chartFamily (J := J) π b y i) y :=
-    (((contMDiff_chartCoord b i).comp h.contMDiff).mdifferentiableAt (by simp)).const_smul _
   refine fun t ↦ (hγ t).congr_mfderiv ?_
-  rw [hfun, hamiltonianVectorField_fun_sum fun i _ ↦ hd i _]
-  exact congrArg _ <| Finset.sum_congr rfl fun i _ ↦
-    (hamiltonianVectorField_const_smul (f := fun y ↦ chartFamily (J := J) π b y i) _ _).symm
+  rw [h.hamiltonianVectorField_comp_chartMap]
 
 /-- The chart action preserves the fibres of `π`. -/
 private theorem apply_chartAction (b : B) (v : Fin (finrank ℝ F) → ℝ) (x : M) :
@@ -280,8 +291,8 @@ private theorem apply_chartAction (b : B) (v : Fin (finrank ℝ F) → ℝ) (x :
   have hg : MDifferentiable J 𝓘(ℝ) (ξ ∘ chartMap (J := J) b) :=
     (ξ.contMDiff.comp (chartMap b).contMDiff).mdifferentiable (by simp)
   simpa [ξ, (h.chartAction hπ hσc b).map_zero] using
-    h.apply_eq_of_isMIntegralCurve_hamiltonianVectorField_comp hg
-      (h.isMIntegralCurve_chartAction hπ hσc b ξ x) 0 1
+    h.apply_eq_of_isMIntegralCurve_hamiltonianVectorField_comp
+      (h.isMIntegralCurve_chartAction hπ hσc b ξ x) (fun _ ↦ hg _) 0 1
 
 private theorem chartAction_mem (b : B) (v : Fin (finrank ℝ F) → ℝ) (x : π ⁻¹' {b}) :
     (h.chartAction hπ hσc b v).toMul x ∈ π ⁻¹' {b} := by
@@ -299,9 +310,12 @@ private theorem coe_chartHomeomorph_apply (b : B) (v : Fin (finrank ℝ F) → �
 
 /-- **The fibrewise action of the cotangent space.** For a Lagrangian fibration `π` with proper
 projection and a closed form `σ`, a covector `ξ ∈ T*_b B` acts on the fibre `π⁻¹(b)` by the
-time-one map of the Hamiltonian flow of `g ∘ π`, for any function `g` on `B` with `dg_b = ξ`
-(`IsLagrangianFibration.isMIntegralCurve_fiberAction`,
-`IsLagrangianFibration.coe_fiberAction_apply_eq_globalFlow`). Covectors at `b` are read in the
+time-one map of the Hamiltonian flow of `g ∘ π`, for any function `g` on `B` differentiable at `b`
+with `dg_b = ξ` whose Hamiltonian vector field `X_{g ∘ π}` is `C¹`, for instance any `C²` function
+`g` with `dg_b = ξ` (`IsLagrangianFibration.coe_fiberAction_smul_apply_eq_flowOf`,
+`IsLagrangianFibration.coe_fiberAction_apply_eq_globalFlow`). For any `g` differentiable at `b`
+with `dg_b = ξ`, the curve `t ↦ (t ξ) • x` is an integral curve of `X_{g ∘ π}`
+(`IsLagrangianFibration.isMIntegralCurve_fiberAction`). Covectors at `b` are read in the
 model space `F` of `B`. This is a homomorphism to the group of self-homeomorphisms of the fibre,
 written additively: `ξ + η` acts as `ξ` after `η`. -/
 def fiberAction (b : B) : (F →L[ℝ] ℝ) →+ Additive (π ⁻¹' {b} ≃ₜ π ⁻¹' {b}) where
@@ -342,21 +356,97 @@ theorem isMIntegralCurve_fiberAction (b : B) (ξ : F →L[ℝ] ℝ) (x : π ⁻�
   rw [hamiltonianVectorField_comp_eq_of_mvfderiv_eq (h.mdifferentiableAt _)
     (by rw [hb]; exact hd) (by rw [hb]; exact hg) (by rw [hb, mvfderiv_comp_chartMap, hgξ])]
 
-/-- **The fibrewise action is the time-one map of a vertical Hamiltonian flow.** If `g : B → ℝ` is
-`C²` with `dg_b = ξ`, then `ξ` moves each point of the fibre over `b` by the time-one map of the
-(complete) Hamiltonian flow of `g ∘ π`. In particular the action does not depend on the chart used
-to construct it. -/
-theorem coe_fiberAction_apply_eq_globalFlow (b : B) (ξ : F →L[ℝ] ℝ) (x : π ⁻¹' {b}) {g : B → ℝ}
-    (hg : ContMDiff J 𝓘(ℝ) 2 g) (hgξ : mvfderiv J g b = ξ)
+/-- **The fibrewise action is a vertical Hamiltonian flow.** If `g : B → ℝ` is differentiable at
+`b` with `dg_b = ξ` and the Hamiltonian vector field of `g ∘ π` is `C¹`, then `t ξ` moves each point
+of the fibre over `b` by the time-`t` map of the maximal flow of `g ∘ π`. In particular the action
+does not depend on the chart used to construct it. -/
+theorem coe_fiberAction_smul_apply_eq_flowOf (b : B) (ξ : F →L[ℝ] ℝ) (x : π ⁻¹' {b}) {g : B → ℝ}
+    (hg : MDifferentiableAt J 𝓘(ℝ) g b) (hgξ : mvfderiv J g b = ξ)
     (hv : ContMDiff I I.tangent 1
-      fun y ↦ (⟨y, σ.hamiltonianVectorField (g ∘ π) y⟩ : TangentBundle I M)) :
-    ((h.fiberAction hπ hσc b ξ).toMul x : M) =
-      globalFlow (σ.hamiltonianVectorField (g ∘ π)) hv
-        (h.isCompleteVectorField_hamiltonianVectorField_comp hπ hg) 1 x := by
-  have hγ := h.isMIntegralCurve_fiberAction hπ hσc b ξ x ((hg b).mdifferentiableAt (by simp)) hgξ
-  have := globalFlow_eq_of_isMIntegralCurve hv
-    (h.isCompleteVectorField_hamiltonianVectorField_comp hπ hg) hγ 1
+      fun y ↦ (⟨y, σ.hamiltonianVectorField (g ∘ π) y⟩ : TangentBundle I M)) (t : ℝ) :
+    ((h.fiberAction hπ hσc b (t • ξ)).toMul x : M) =
+      flowOf (σ.hamiltonianVectorField (g ∘ π)) t x := by
+  have := flowOf_eq_of_isMIntegralCurve hv (h.isMIntegralCurve_fiberAction hπ hσc b ξ x hg hgξ) t
   simpa using this.symm
+
+/-- **The fibrewise action of a `C²` function is its vertical Hamiltonian flow.** If `g : B → ℝ` is
+`C²` with `dg_b = ξ`, then `t ξ` moves each point of the fibre over `b` by the time-`t` map of the
+maximal flow of `g ∘ π`. -/
+theorem coe_fiberAction_smul_apply_eq_flowOf_of_contMDiff (b : B) (ξ : F →L[ℝ] ℝ) (x : π ⁻¹' {b})
+    {g : B → ℝ} (hg : ContMDiff J 𝓘(ℝ) 2 g) (hgξ : mvfderiv J g b = ξ) (t : ℝ) :
+    ((h.fiberAction hπ hσc b (t • ξ)).toMul x : M) =
+      flowOf (σ.hamiltonianVectorField (g ∘ π)) t x :=
+  h.coe_fiberAction_smul_apply_eq_flowOf hπ hσc b ξ x ((hg b).mdifferentiableAt (by simp)) hgξ
+    (hσ.contMDiff_hamiltonianVectorField (n := 1) (by simp)
+      (by rw [one_add_one_eq_two]; exact hg.comp (h.contMDiff.of_le (by simp)))) t
+
+/-- If `g : B → ℝ` is differentiable at `b` with `dg_b = ξ` and the Hamiltonian vector field of
+`g ∘ π` is `C¹` and complete, then `t ξ` moves each point of the fibre over `b` by the time-`t` map
+of the flow of `g ∘ π`. -/
+theorem coe_fiberAction_smul_apply_eq_globalFlow (b : B) (ξ : F →L[ℝ] ℝ) (x : π ⁻¹' {b})
+    {g : B → ℝ} (hg : MDifferentiableAt J 𝓘(ℝ) g b) (hgξ : mvfderiv J g b = ξ)
+    (hv : ContMDiff I I.tangent 1
+      fun y ↦ (⟨y, σ.hamiltonianVectorField (g ∘ π) y⟩ : TangentBundle I M))
+    (hc : IsCompleteVectorField (σ.hamiltonianVectorField (g ∘ π))) (t : ℝ) :
+    ((h.fiberAction hπ hσc b (t • ξ)).toMul x : M) =
+      globalFlow (σ.hamiltonianVectorField (g ∘ π)) hv hc t x := by
+  rw [h.coe_fiberAction_smul_apply_eq_flowOf hπ hσc b ξ x hg hgξ hv, flowOf_eq_globalFlow hv hc]
+
+/-- **The fibrewise action is the time-one map of a vertical Hamiltonian flow.** If `g : B → ℝ` is
+differentiable at `b` with `dg_b = ξ` and the Hamiltonian vector field of `g ∘ π` is `C¹` and
+complete, then `ξ` moves each point of the fibre over `b` by the time-one map of the flow of
+`g ∘ π`. -/
+theorem coe_fiberAction_apply_eq_globalFlow (b : B) (ξ : F →L[ℝ] ℝ) (x : π ⁻¹' {b}) {g : B → ℝ}
+    (hg : MDifferentiableAt J 𝓘(ℝ) g b) (hgξ : mvfderiv J g b = ξ)
+    (hv : ContMDiff I I.tangent 1
+      fun y ↦ (⟨y, σ.hamiltonianVectorField (g ∘ π) y⟩ : TangentBundle I M))
+    (hc : IsCompleteVectorField (σ.hamiltonianVectorField (g ∘ π))) :
+    ((h.fiberAction hπ hσc b ξ).toMul x : M) =
+      globalFlow (σ.hamiltonianVectorField (g ∘ π)) hv hc 1 x := by
+  simpa using h.coe_fiberAction_smul_apply_eq_globalFlow hπ hσc b ξ x hg hgξ hv hc 1
+
+/-- **The fibrewise action through the flows of a family of functions on the base.** Let
+`κ : B → ℝ^ι` be differentiable at `b`, such that the functions `κᵢ ∘ π` form a smooth family with
+complete Hamiltonian vector fields (they Poisson-commute by
+`IsLagrangianFibration.poissonBracket_comp_eq_zero`). Then the covector `∑ i, vᵢ dκᵢ` at `b` acts
+on the fibre over `b` as `v` does under the Hamiltonian flow action of the family `κ ∘ π`. -/
+theorem coe_fiberAction_apply_eq_hamiltonianFlowAction {ι : Type*} [Fintype ι] {κ : B → ι → ℝ}
+    (hF : ContMDiff I 𝓘(ℝ, ι → ℝ) ∞ fun y ↦ κ (π y))
+    (hcomm : ∀ i j y, σ.poissonBracket (fun y ↦ κ (π y) i) (fun y ↦ κ (π y) j) y = 0)
+    (hc : ∀ i, IsCompleteVectorField (σ.hamiltonianVectorField (fun y ↦ κ (π y) i))) {b : B}
+    (hκ : ∀ i, MDifferentiableAt J 𝓘(ℝ) (κ · i) b) (v : ι → ℝ) (x : π ⁻¹' {b}) :
+    ((h.fiberAction hπ hσc b (∑ i, v i • mvfderiv J (κ · i) b : F →L[ℝ] ℝ)).toMul x : M) =
+      (IsSymplectic.hamiltonianFlowAction ⟨hσc, hσ⟩ hF hcomm hc v).toMul x := by
+  set g : B → ℝ := fun c ↦ ∑ i, v i • κ c i
+  have hFi (i : ι) : ContMDiff I 𝓘(ℝ) ∞ (fun y ↦ κ (π y) i) := contMDiff_pi_module_iff.1 hF i
+  have hgπ : ContMDiff I 𝓘(ℝ) ∞ (g ∘ π) :=
+    contMDiff_finsetSum fun i _ ↦
+      (contMDiff_const : ContMDiff I 𝓘(ℝ) ∞ fun _ : M ↦ v i).smul (hFi i)
+  -- `X_{g ∘ π} = ∑ i, vᵢ X_{κᵢ ∘ π}`, the vector field generating the line through `v`.
+  have hX : σ.hamiltonianVectorField (g ∘ π) =
+      fun y ↦ ∑ i, v i • σ.hamiltonianVectorField (fun y ↦ κ (π y) i) y := by
+    funext y
+    have hfun : g ∘ π = fun y ↦ ∑ i, v i • κ (π y) i := rfl
+    rw [hfun, hamiltonianVectorField_fun_sum (F := fun i y ↦ v i • κ (π y) i) fun i _ ↦
+      ((hFi i).mdifferentiableAt (by simp)).const_smul (v i)]
+    exact Finset.sum_congr rfl fun i _ ↦
+      hamiltonianVectorField_const_smul (f := fun y ↦ κ (π y) i) _ _
+  have hκv (i : ι) : MDifferentiableAt J 𝓘(ℝ) (fun c ↦ v i • κ c i) b := (hκ i).const_smul (v i)
+  have hg : MDifferentiableAt J 𝓘(ℝ) g b := by
+    convert MDifferentiableAt.sum (t := Finset.univ) fun i _ ↦ hκv i using 1
+    funext c
+    simp [g]
+  have hgξ : mvfderiv J g b = (∑ i, v i • mvfderiv J (κ · i) b : F →L[ℝ] ℝ) := by
+    rw [mvfderiv_fun_sum (f := fun i c ↦ v i • κ c i) fun i _ ↦ hκv i]
+    exact Finset.sum_congr rfl fun i _ ↦ mvfderiv_const_smul (hκ i) (v i)
+  have hv := hσ.contMDiff_hamiltonianVectorField (n := 1) (f := g ∘ π) (by simp)
+    (hgπ.of_le (by simp))
+  have hγ := IsSymplectic.isMIntegralCurve_hamiltonianFlowAction_smul ⟨hσc, hσ⟩ hF hcomm hc v x
+  rw [← hX] at hγ
+  have h1 := h.coe_fiberAction_smul_apply_eq_flowOf hπ hσc b _ x hg hgξ hv 1
+  have h2 := flowOf_eq_of_isMIntegralCurve hv hγ 1
+  simp only [one_smul, zero_smul, map_zero, toMul_zero, Diffeomorph.coe_one, id_eq] at h1 h2
+  exact h1.trans h2
 
 /-- **The orbit maps of the fibrewise action are smooth.** -/
 theorem contMDiff_fiberAction_apply (b : B) (x : π ⁻¹' {b}) :
@@ -371,6 +461,51 @@ theorem continuous_fiberAction_apply (b : B) (x : π ⁻¹' {b}) :
     Continuous fun ξ ↦ (h.fiberAction hπ hσc b ξ).toMul x :=
   (h.contMDiff_fiberAction_apply hπ hσc b x).continuous.subtype_mk _
 
+/-- The derivative of an orbit map of the fibrewise action is that of the chart action, read in
+the coordinates of covectors. -/
+private theorem mfderiv_fiberAction_apply_eq_comp (b : B) (x : π ⁻¹' {b}) (ξ : F →L[ℝ] ℝ) :
+    mfderiv 𝓘(ℝ, F →L[ℝ] ℝ) I (fun ξ ↦ ((h.fiberAction hπ hσc b ξ).toMul x : M)) ξ =
+      (mfderiv 𝓘(ℝ, Fin (finrank ℝ F) → ℝ) I
+          (fun v ↦ (h.chartAction hπ hσc b v).toMul (x : M)) (covectorCoords ξ)).comp
+        (covectorCoords (F := F)).toContinuousLinearMap :=
+  ((IsSymplectic.contMDiff_hamiltonianFlowAction_apply ⟨hσc, hσ⟩
+    (h.contMDiff_chartFamily (J := J) b) (h.poissonBracket_chartFamily b)
+    (h.isCompleteVectorField_chartFamily hπ b) x).mdifferentiableAt (by simp)
+    (x := covectorCoords ξ)).hasMFDerivAt.comp ξ
+    (covectorCoords (F := F)).toContinuousLinearMap.hasMFDerivAt |>.mfderiv
+
+/-- **The derivative of an orbit map of the fibrewise action.** If `g : B → ℝ` is differentiable at
+`b` with `dg_b = η`, the derivative at `ξ` of the orbit map `ξ ↦ ξ • x` sends `η` to the
+Hamiltonian vector of `g ∘ π` at `ξ • x`. -/
+theorem mfderiv_fiberAction_apply (b : B) (x : π ⁻¹' {b}) (ξ η : F →L[ℝ] ℝ) {g : B → ℝ}
+    (hg : MDifferentiableAt J 𝓘(ℝ) g b) (hgη : mvfderiv J g b = η) :
+    mfderiv 𝓘(ℝ, F →L[ℝ] ℝ) I (fun ξ ↦ ((h.fiberAction hπ hσc b ξ).toMul x : M)) ξ η =
+      σ.hamiltonianVectorField (g ∘ π) ((h.fiberAction hπ hσc b ξ).toMul x) := by
+  rw [h.mfderiv_fiberAction_apply_eq_comp hπ hσc b x ξ]
+  refine (IsSymplectic.mfderiv_hamiltonianFlowAction_apply ⟨hσc, hσ⟩
+    (h.contMDiff_chartFamily (J := J) b) (h.poissonBracket_chartFamily b)
+    (h.isCompleteVectorField_chartFamily hπ b) x _ _).trans ?_
+  refine (h.hamiltonianVectorField_comp_chartMap b η _).symm.trans ?_
+  -- The point `ξ • x` lies in the fibre over `b`, where both fields only depend on the covector.
+  have hd : MDifferentiableAt J 𝓘(ℝ) (η ∘ chartMap (J := J) b) b :=
+    (η.contMDiff.comp (chartMap b).contMDiff).mdifferentiableAt (by simp)
+  have key (y : M) (hy : π y = b) : σ.hamiltonianVectorField ((η ∘ chartMap (J := J) b) ∘ π) y =
+      σ.hamiltonianVectorField (g ∘ π) y :=
+    hamiltonianVectorField_comp_eq_of_mvfderiv_eq (h.mdifferentiableAt _) (by rw [hy]; exact hd)
+      (by rw [hy]; exact hg) (by rw [hy, mvfderiv_comp_chartMap, hgη])
+  exact key _ (h.chartAction_mem hπ hσc b _ x)
+
+/-- **The orbit maps of the fibrewise action are immersions.** -/
+theorem injective_mfderiv_fiberAction_apply (b : B) (x : π ⁻¹' {b}) (ξ : F →L[ℝ] ℝ) :
+    Injective
+      (mfderiv 𝓘(ℝ, F →L[ℝ] ℝ) I (fun ξ ↦ ((h.fiberAction hπ hσc b ξ).toMul x : M)) ξ) := by
+  rw [h.mfderiv_fiberAction_apply_eq_comp hπ hσc b x ξ]
+  exact (IsSymplectic.injective_mfderiv_hamiltonianFlowAction_apply ⟨hσc, hσ⟩
+    (h.contMDiff_chartFamily (J := J) b) (h.poissonBracket_chartFamily b)
+    (h.isCompleteVectorField_chartFamily hπ b)
+    (h.isRegularPoint_chartFamily (h.chartAction_mem hπ hσc b _ x))).comp
+    covectorCoords.injective
+
 /-! ### The period lattice -/
 
 /-- **The period lattice** `Λ_b ⊆ T*_b B` of a Lagrangian fibration: the subgroup of covectors at
@@ -379,6 +514,10 @@ theorem continuous_fiberAction_apply (b : B) (x : π ⁻¹' {b}) :
 fibration it is a full lattice (`IsLagrangianTorusFibration.isZLattice_periodLattice`). -/
 def periodLattice (b : B) : AddSubgroup (F →L[ℝ] ℝ) :=
   (h.fiberAction hπ hσc b).ker
+
+@[simp]
+theorem ker_fiberAction (b : B) : (h.fiberAction hπ hσc b).ker = h.periodLattice hπ hσc b :=
+  (rfl)
 
 /-- A covector lies in the period lattice exactly when it fixes every point of the fibre. -/
 @[simp]
@@ -414,18 +553,17 @@ namespace IsLagrangianTorusFibration
 
 open IsLagrangianFibration
 
-variable [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [I.Boundaryless]
+variable [FiniteDimensional ℝ E] [T2Space M] [I.Boundaryless]
   (h : hσ.IsLagrangianTorusFibration J π)
 include h
 
-omit [FiniteDimensional ℝ F] [IsManifold J ∞ B] [T2Space B] [T2Space M]
-  [BoundarylessManifold I M] [I.Boundaryless] in
+omit [FiniteDimensional ℝ F] [IsManifold J ∞ B] [T2Space B] [T2Space M] [I.Boundaryless] in
 /-- The dimension count `2 n = dim M` in the form the Liouville–Arnold lemmas expect. -/
 private theorem two_mul_card_eq_finrank [Nonempty M] :
     2 * Fintype.card (Fin (finrank ℝ F)) = finrank ℝ E := by
   rw [Fintype.card_fin, h.two_mul_finrank]
 
-omit [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [I.Boundaryless] in
+omit [FiniteDimensional ℝ E] [T2Space M] [I.Boundaryless] in
 /-- The connected component through a point of the fibre over `b` of its level of the chart family
 at `b` consists of regular points of the chart family. -/
 private theorem isRegularPoint_chartFamily_of_mem_connectedComponentIn {b : B} {x : M}
@@ -435,7 +573,7 @@ private theorem isRegularPoint_chartFamily_of_mem_connectedComponentIn {b : B} {
   rw [h.connectedComponentIn_chartFamily (h.isConnected_preimage_singleton b) hx] at hy
   exact h.isRegularPoint_chartFamily hy
 
-omit [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [I.Boundaryless] in
+omit [FiniteDimensional ℝ E] [T2Space M] [I.Boundaryless] in
 /-- The connected component through a point of the fibre over `b` of its level of the chart family
 at `b` is compact. -/
 private theorem isCompact_connectedComponentIn_chartFamily {b : B} {x : M} (hx : π x = b) :
@@ -497,6 +635,21 @@ theorem mem_periodLattice_iff_fiberAction_apply_eq {b : B} (x : π ⁻¹' {b}) {
   obtain ⟨η, rfl⟩ := h.exists_fiberAction_apply_eq hσc x y
   rw [← Homeomorph.mul_apply, ← toMul_add, ← map_add, add_comm, map_add, toMul_add,
     Homeomorph.mul_apply, hξ]
+
+/-- For a regular Lagrangian torus fibration and a family `κ : B → ℝ^ι` as in
+`IsLagrangianFibration.coe_fiberAction_apply_eq_hamiltonianFlowAction`, the covector `∑ i, vᵢ dκᵢ`
+at `b` is a period exactly when `v` stabilizes a point `x` of the fibre over `b` under the
+Hamiltonian flow action of `κ ∘ π`. -/
+theorem mem_periodLattice_iff_mem_hamiltonianFlowStabilizer {ι : Type*} [Fintype ι]
+    {κ : B → ι → ℝ} (hF : ContMDiff I 𝓘(ℝ, ι → ℝ) ∞ fun y ↦ κ (π y))
+    (hcomm : ∀ i j y, σ.poissonBracket (fun y ↦ κ (π y) i) (fun y ↦ κ (π y) j) y = 0)
+    (hc : ∀ i, IsCompleteVectorField (σ.hamiltonianVectorField (fun y ↦ κ (π y) i))) {b : B}
+    (hκ : ∀ i, MDifferentiableAt J 𝓘(ℝ) (κ · i) b) (v : ι → ℝ) (x : π ⁻¹' {b}) :
+    (∑ i, v i • mvfderiv J (κ · i) b : F →L[ℝ] ℝ) ∈ h.periodLattice h.isProperMap hσc b ↔
+      v ∈ IsSymplectic.hamiltonianFlowStabilizer ⟨hσc, hσ⟩ hF hcomm hc x := by
+  rw [h.mem_periodLattice_iff_fiberAction_apply_eq hσc x,
+    IsSymplectic.mem_hamiltonianFlowStabilizer, Subtype.ext_iff,
+    h.coe_fiberAction_apply_eq_hamiltonianFlowAction h.isProperMap hσc hF hcomm hc hκ v x]
 
 /-- Two covectors act alike on a point of a fibre exactly when they differ by a period. -/
 theorem fiberAction_apply_eq_iff {b : B} (x : π ⁻¹' {b}) {ξ η : F →L[ℝ] ℝ} :
@@ -562,6 +715,34 @@ def quotientPeriodLatticeHomeomorph {b : B} (x : π ⁻¹' {b}) :
 theorem quotientPeriodLatticeHomeomorph_mk {b : B} (x : π ⁻¹' {b}) (ξ : F →L[ℝ] ℝ) :
     h.quotientPeriodLatticeHomeomorph hσc x ξ = (h.fiberAction h.isProperMap hσc b ξ).toMul x :=
   (rfl)
+
+@[simp]
+theorem quotientPeriodLatticeHomeomorph_zero {b : B} (x : π ⁻¹' {b}) :
+    h.quotientPeriodLatticeHomeomorph hσc x 0 = x := by
+  rw [← QuotientAddGroup.mk_zero, quotientPeriodLatticeHomeomorph_mk, map_zero, toMul_zero,
+    Homeomorph.one_apply]
+
+/-- The homeomorphism `T*_b B ⧸ Λ_b ≃ₜ π⁻¹(b)` intertwines the actions of `T*_b B`. -/
+@[simp]
+theorem quotientPeriodLatticeHomeomorph_add {b : B} (x : π ⁻¹' {b}) (ξ : F →L[ℝ] ℝ)
+    (q : (F →L[ℝ] ℝ) ⧸ h.periodLattice h.isProperMap hσc b) :
+    h.quotientPeriodLatticeHomeomorph hσc x (ξ + q) =
+      (h.fiberAction h.isProperMap hσc b ξ).toMul (h.quotientPeriodLatticeHomeomorph hσc x q) := by
+  obtain ⟨η, rfl⟩ := QuotientAddGroup.mk_surjective q
+  rw [← QuotientAddGroup.mk_add, quotientPeriodLatticeHomeomorph_mk,
+    quotientPeriodLatticeHomeomorph_mk, map_add, toMul_add, Homeomorph.mul_apply]
+
+@[simp]
+theorem quotientPeriodLatticeHomeomorph_symm_fiberAction_apply {b : B} (x : π ⁻¹' {b})
+    (ξ : F →L[ℝ] ℝ) :
+    (h.quotientPeriodLatticeHomeomorph hσc x).symm ((h.fiberAction h.isProperMap hσc b ξ).toMul x) =
+      ξ := by
+  rw [Homeomorph.symm_apply_eq, quotientPeriodLatticeHomeomorph_mk]
+
+@[simp]
+theorem quotientPeriodLatticeHomeomorph_symm_apply_self {b : B} (x : π ⁻¹' {b}) :
+    (h.quotientPeriodLatticeHomeomorph hσc x).symm x = 0 := by
+  rw [Homeomorph.symm_apply_eq, quotientPeriodLatticeHomeomorph_zero]
 
 /-- **The period lattice is a full lattice.** For a regular Lagrangian torus fibration, the period
 lattice at `b` spans `T*_b B`. The discreteness instance holds by
