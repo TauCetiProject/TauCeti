@@ -256,8 +256,8 @@ theorem manifoldLeviForm_comp_apply (hu : ContMDiffAt 𝓘(ℝ, F) 𝓘(ℝ) 2 u
     have hcoord : writtenInExtChartAt 𝓘(ℂ, E) 𝓘(ℂ, F) x g = G := by
       ext z
       rfl
-    have hpoint : extChartAt 𝓘(ℂ, E) x x = chartAt E x x := by rfl
-    rw [hcoord, modelWithCornersSelf_coe, Set.range_id, fderivWithin_univ, hpoint]
+    rw [hcoord, modelWithCornersSelf_coe, Set.range_id, fderivWithin_univ,
+      TauCeti.extChartAt_model_apply_eq_chartAt_apply]
   have hcomp : (u ∘ g) ∘ (chartAt E x).symm =ᶠ[𝓝 (chartAt E x x)]
       (u ∘ (chartAt F (g x)).symm) ∘ G := by
     have hcont : Tendsto (g ∘ (chartAt E x).symm) (𝓝 (chartAt E x x)) (𝓝 (g x)) := by

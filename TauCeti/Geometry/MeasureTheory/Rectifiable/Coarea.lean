@@ -209,7 +209,7 @@ theorem ae_countablyRectifiable_inter_preimage {f : E → F} {s : Set E} {K : �
   -- Pull the almost-everywhere statement back along the linear isomorphism `eF`.
   have : (μ.map eF).IsAddHaarMeasure := eF.isAddHaarMeasure_map μ
   have hqmp : QuasiMeasurePreserving eF μ volume :=
-    ⟨eF.continuous.measurable, absolutelyContinuous_isAddHaarMeasure (μ.map eF) volume⟩
+    ⟨eF.continuous.measurable.aemeasurable, absolutelyContinuous_isAddHaarMeasure (μ.map eF) volume⟩
   filter_upwards [hqmp.ae hae₀] with y hy
   -- Push `(eE '' s) ∩ g₀ ⁻¹' {eF y}` forward along the Lipschitz inverse `eE.symm`.
   have hsub : eE.symm '' (eE '' s ∩ g₀ ⁻¹' {eF y}) = s ∩ f ⁻¹' {y} := by

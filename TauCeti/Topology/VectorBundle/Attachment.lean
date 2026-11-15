@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.VectorBundle.SphereBundle
+public import TauCeti.Topology.VectorBundle.SphereBundle.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.Excision
 import TauCeti.Analysis.Normed.Module.Ball.Radial.Push
 import TauCeti.Topology.ContinuousMap.GlueClosedEmbeddings

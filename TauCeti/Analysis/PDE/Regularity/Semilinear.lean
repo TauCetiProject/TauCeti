@@ -101,7 +101,8 @@ private theorem UniformlyEllipticOn.exists_value_ae_eq_of_energyFormH1_eq [Decid
   obtain ⟨U₁, hU₁⟩ := hj W hWc hWΩ₀
   obtain ⟨G, hG⟩ := Wkp.exists_value_ae_eq_comp_of_contDiffOn (by norm_num) Omega.isOpen hWc
     hWΩ₀ j (hΦ.of_le (by exact_mod_cast le_top)) hwj U₁ hU₁
-  obtain ⟨GA, hGA⟩ := Wkp.exists_value_ae_eq_mul_of_contDiffOn Omega.isOpen hWc hWΩ₀ (j + 1) hA G
+  obtain ⟨GA, hGA⟩ := Wkp.exists_value_ae_eq_mul_of_contDiffOn Omega.isOpen.uniqueDiffOn hWc hWΩ₀
+    (j + 1) hA G
   obtain ⟨GC, hGC⟩ := Wkp.exists_value_ae_eq_of_contDiffOn_of_isCompact (mu := volume)
     (Omega := W) (p := 2) (j + 1) Omega.isOpen (hC.of_le (by exact_mod_cast le_top)) hWc
     subset_closure hWΩ₀
@@ -119,7 +120,7 @@ private theorem UniformlyEllipticOn.exists_value_ae_eq_of_energyFormH1_eq [Decid
     filter_upwards [hF] with x hx
     rw [hx]
   obtain ⟨U, hU⟩ := (ha.mono_set hWΩ').exists_value_eq_value_restrictL_of_contDiffOn
-    (fun i l => (hsmooth i l).mono hWΩ') (j + 1) huW hV hVW₀
+    (fun i l => (hsmooth i l).mono hWΩ') contDiffOn_const contDiffOn_const (j + 1) huW hV hVW₀
   refine ⟨U, ?_⟩
   rw [hU]
   exact (W1p.value_restrictL_ae _ _).trans (ae_restrict_of_ae_restrict_of_subset

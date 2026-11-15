@@ -82,7 +82,7 @@ namespace TauCeti
 namespace ReducedTensorWords
 
 variable {R : Type uR} {M : Type uM} [CommRing R] [AddCommGroup M] [Module R M]
-  {G : InternalGrading R M}
+  {G : InternalGrading R M ℤ}
 
 /-! ### The brace and the Gerstenhaber bracket -/
 

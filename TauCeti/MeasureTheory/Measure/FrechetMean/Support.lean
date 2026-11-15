@@ -41,8 +41,8 @@ variable {X : Type*} [PseudoEMetricSpace X] [MeasurableSpace X]
 support, including when that supremum is infinite or the support is empty. -/
 theorem chebyshevRadius_eq_iSup_support (μ : Measure X) (x : X) :
     chebyshevRadius μ x = ⨆ y ∈ μ.support, edist x y := by
-  rw [chebyshevRadius_def, eLpNormEssSup_eq_essSup_enorm]
-  simp only [enorm_eq_self]
+  rw [chebyshevRadius_def, eLpNormEssSup_eq_essSup_eNorm]
+  simp only [eNorm_eq_self]
   exact essSup_eq_iSup_support _ (continuous_const.edist continuous_id).lowerSemicontinuous
     μ.support_mem_ae
 

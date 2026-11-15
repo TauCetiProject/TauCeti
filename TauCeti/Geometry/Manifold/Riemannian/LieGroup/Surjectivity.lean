@@ -54,7 +54,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 attribute [local instance] ContMDiffMul.boundarylessManifold
 
-private local instance : CompleteSpace E := FiniteDimensional.complete ℝ E
+private local instance : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
 
 variable
   (hL : ∀ (g : G) (a b : TangentSpace I (1 : G)),

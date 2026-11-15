@@ -41,7 +41,12 @@ diffeomorphism between them (`TauCeti.borderedInteriorDiffeomorph`).
 * `TauCeti.hasGroupoid_borderedInterior` and `TauCeti.isManifold_borderedInterior`: the interior
   of a Riemann surface with boundary is an analytic manifold modelled on `ℂ`.
 * `TauCeti.mem_borderedInterior_iff_im_pos`: a point is in the interior exactly when one, or any,
-  chart of the atlas sends it to a point of positive imaginary part.
+  chart of the maximal atlas sends it to a point of positive imaginary part.
+* `TauCeti.subtypeRestr_trans_upperHalfPlaneChart_mem_maximalAtlas`: a bordered holomorphic chart
+  of a Riemann surface with boundary, restricted to the interior and read in `ℂ`, is a holomorphic
+  chart of the interior. Its image and inverse are
+  `TauCeti.subtypeRestr_trans_upperHalfPlaneChart_target` and
+  `TauCeti.subtypeRestr_trans_upperHalfPlaneChart_symm_apply`.
 * `TauCeti.chartAt_borderedInterior_source`, `TauCeti.chartAt_borderedInterior_target` and
   `TauCeti.chartAt_borderedInterior_symm_apply`: the domain, image and inverse of the chart of the
   interior, in terms of the chart of `M`.
@@ -117,14 +122,14 @@ theorem mem_borderedInterior_iff_im_chartAt_pos {x : M} :
     Complex.interior_setOfPred_le_im]
   simp [extChartAt]
 
-/-- A point in the source of a chart of the atlas is in the interior exactly when the chart sends
-it to a point of positive imaginary part. -/
+/-- A point in the source of a chart of the maximal atlas is in the interior exactly when the
+chart sends it to a point of positive imaginary part. -/
 theorem mem_borderedInterior_iff_im_pos {e : OpenPartialHomeomorph M ClosedUpperHalfPlane}
-    (he : e ∈ atlas ClosedUpperHalfPlane M) {x : M} (hx : x ∈ e.source) :
+    (he : e ∈ IsManifold.maximalAtlas closedUpperHalfPlaneModel 1 M) {x : M}
+    (hx : x ∈ e.source) :
     x ∈ borderedInterior M ↔ 0 < (e x : ℂ).im := by
   rw [mem_borderedInterior_iff_im_chartAt_pos]
-  have hc := (contDiffGroupoid 1 closedUpperHalfPlaneModel).compatible
-    (chart_mem_atlas ClosedUpperHalfPlane x) he
+  have hc := (he _ (chart_mem_atlas ClosedUpperHalfPlane x)).2
   simpa [hx] using im_pos_iff_of_mem_contDiffGroupoid hc one_ne_zero
     (z := chartAt ClosedUpperHalfPlane x x) (by simp [hx])
 
@@ -162,7 +167,35 @@ theorem chartAt_borderedInterior_source (x : borderedInterior M) :
     mem_preimage, TopologicalSpace.Opens.chartAt_eq, OpenPartialHomeomorph.subtypeRestr_source,
     upperHalfPlaneChart_source, mem_ofPred_eq]
   refine ⟨And.left, fun hy ↦ ⟨hy, ?_⟩⟩
-  exact (mem_borderedInterior_iff_im_pos (chart_mem_atlas _ _) hy).1 y.2
+  exact (mem_borderedInterior_iff_im_pos (IsManifold.chart_mem_maximalAtlas _) hy).1 y.2
+
+/-- The restriction of a chart `e` of the maximal atlas of `M` to the interior, read in `ℂ`, takes
+values in the points of positive imaginary part whose model inverse lies in the target of `e`. -/
+theorem subtypeRestr_trans_upperHalfPlaneChart_target
+    {e : OpenPartialHomeomorph M ClosedUpperHalfPlane}
+    (he : e ∈ IsManifold.maximalAtlas closedUpperHalfPlaneModel 1 M)
+    (hs : Nonempty (borderedInterior M)) :
+    (e.subtypeRestr hs ≫ₕ upperHalfPlaneChart).target =
+      closedUpperHalfPlaneModel.symm ⁻¹' e.target ∩ {z : ℂ | 0 < z.im} := by
+  ext z
+  simp only [OpenPartialHomeomorph.subtypeRestr_def, upperHalfPlaneChart_target,
+    upperHalfPlaneChart_symm_apply, mfld_simps]
+  refine ⟨fun h ↦ ⟨h.2.1, h.1⟩, fun h ↦ ⟨h.2, h.1, ?_⟩⟩
+  refine (mem_borderedInterior_iff_im_pos he (e.map_target h.1)).2 ?_
+  rw [e.right_inv h.1, coe_closedUpperHalfPlaneModel_symm_of_im_nonneg h.2.le]
+  exact h.2
+
+/-- The inverse of the restriction of a chart `e` of `M` to the interior, read in `ℂ`, is the
+inverse of `e` after the model inverse. -/
+theorem subtypeRestr_trans_upperHalfPlaneChart_symm_apply
+    {e : OpenPartialHomeomorph M ClosedUpperHalfPlane} {hs : Nonempty (borderedInterior M)}
+    {z : ℂ} (hz : z ∈ (e.subtypeRestr hs ≫ₕ upperHalfPlaneChart).target) :
+    (((e.subtypeRestr hs ≫ₕ upperHalfPlaneChart).symm z : borderedInterior M) : M) =
+      e.symm (closedUpperHalfPlaneModel.symm z) := by
+  rw [OpenPartialHomeomorph.trans_target, mem_inter_iff, mem_preimage,
+    upperHalfPlaneChart_symm_apply] at hz
+  rw [OpenPartialHomeomorph.coe_trans_symm, Function.comp_apply, upperHalfPlaneChart_symm_apply]
+  exact e.subtypeRestr_symm_apply _ hz.2
 
 /-- The chart of the interior at `x` takes values in the points of positive imaginary part whose
 model inverse lies in the target of the chart of `M` at `x`. -/
@@ -170,14 +203,8 @@ model inverse lies in the target of the chart of `M` at `x`. -/
 theorem chartAt_borderedInterior_target (x : borderedInterior M) :
     (chartAt ℂ x).target = closedUpperHalfPlaneModel.symm ⁻¹'
       (chartAt ClosedUpperHalfPlane (x : M)).target ∩ {z : ℂ | 0 < z.im} := by
-  ext z
-  simp only [chartAt_borderedInterior, Opens.chartAt_eq, OpenPartialHomeomorph.subtypeRestr_def,
-    upperHalfPlaneChart_target, upperHalfPlaneChart_symm_apply, mfld_simps]
-  refine ⟨fun h ↦ ⟨h.2.1, h.1⟩, fun h ↦ ⟨h.2, h.1, ?_⟩⟩
-  refine (mem_borderedInterior_iff_im_pos (chart_mem_atlas _ _)
-    ((chartAt _ _).map_target h.1)).2 ?_
-  rw [(chartAt _ _).right_inv h.1, coe_closedUpperHalfPlaneModel_symm_of_im_nonneg h.2.le]
-  exact h.2
+  rw [chartAt_borderedInterior, Opens.chartAt_eq]
+  exact subtypeRestr_trans_upperHalfPlaneChart_target (IsManifold.chart_mem_maximalAtlas _) _
 
 /-- The inverse of the chart of the interior at `x` is the inverse of the chart of `M` at `x`
 after the model inverse. -/
@@ -185,11 +212,8 @@ theorem chartAt_borderedInterior_symm_apply (x : borderedInterior M) {z : ℂ}
     (hz : z ∈ (chartAt ℂ x).target) :
     ((chartAt ℂ x).symm z : M) =
       (chartAt ClosedUpperHalfPlane (x : M)).symm (closedUpperHalfPlaneModel.symm z) := by
-  rw [chartAt_borderedInterior, OpenPartialHomeomorph.trans_target, mem_inter_iff, mem_preimage,
-    upperHalfPlaneChart_symm_apply, Opens.chartAt_eq] at hz
-  rw [chartAt_borderedInterior, OpenPartialHomeomorph.coe_trans_symm, Function.comp_apply,
-    upperHalfPlaneChart_symm_apply, Opens.chartAt_eq]
-  exact (chartAt ClosedUpperHalfPlane (x : M)).subtypeRestr_symm_apply _ hz.2
+  rw [chartAt_borderedInterior, Opens.chartAt_eq] at hz ⊢
+  exact subtypeRestr_trans_upperHalfPlaneChart_symm_apply hz
 
 /-- The interior of a Riemann surface with boundary has holomorphic transition maps. -/
 instance hasGroupoid_borderedInterior [HasGroupoid M borderedHolomorphicGroupoid] :
@@ -205,6 +229,35 @@ instance hasGroupoid_borderedInterior [HasGroupoid M borderedHolomorphicGroupoid
 instance isManifold_borderedInterior [HasGroupoid M borderedHolomorphicGroupoid] :
     IsManifold 𝓘(ℂ) ω (borderedInterior M) :=
   IsManifold.mk' _ _ _
+
+/-- The restriction of a bordered holomorphic chart of `M` to the interior, read in `ℂ` through
+the open upper half-plane, is a holomorphic chart of the interior. -/
+theorem subtypeRestr_trans_upperHalfPlaneChart_mem_maximalAtlas
+    {e : OpenPartialHomeomorph M ClosedUpperHalfPlane}
+    (he : e ∈ borderedHolomorphicGroupoid.maximalAtlas M) (hs : Nonempty (borderedInterior M)) :
+    e.subtypeRestr hs ≫ₕ upperHalfPlaneChart ∈
+      IsManifold.maximalAtlas 𝓘(ℂ) 1 (borderedInterior M) := by
+  have key : ∀ x : borderedInterior M,
+      (e.subtypeRestr hs).symm ≫ₕ chartAt ClosedUpperHalfPlane x ∈ borderedHolomorphicGroupoid ∧
+        (chartAt ClosedUpperHalfPlane x).symm ≫ₕ e.subtypeRestr hs ∈
+          borderedHolomorphicGroupoid := fun x ↦
+    ⟨borderedHolomorphicGroupoid.mem_of_eqOnSource (closedUnderRestriction'
+        (he _ (chart_mem_atlas _ (x : M))).1
+          (e.isOpen_inter_preimage_symm (borderedInterior M).2))
+        (e.subtypeRestr_symm_trans_subtypeRestr hs _),
+      borderedHolomorphicGroupoid.mem_of_eqOnSource (closedUnderRestriction'
+        (he _ (chart_mem_atlas _ (x : M))).2
+          ((chartAt ClosedUpperHalfPlane (x : M)).isOpen_inter_preimage_symm
+            (borderedInterior M).2))
+        ((chartAt ClosedUpperHalfPlane (x : M)).subtypeRestr_symm_trans_subtypeRestr hs e)⟩
+  rintro _ ⟨x, rfl⟩
+  have h₁ := upperHalfPlaneChart_symm_trans_mem_contDiffGroupoid (key x).1
+  have h₂ := upperHalfPlaneChart_symm_trans_mem_contDiffGroupoid (key x).2
+  simp only [OpenPartialHomeomorph.trans_assoc] at h₁ h₂
+  simp only [OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm,
+    OpenPartialHomeomorph.trans_assoc]
+  exact ⟨contDiffGroupoid_le (by exact_mod_cast le_top) h₁,
+    contDiffGroupoid_le (by exact_mod_cast le_top) h₂⟩
 
 /-- The extended chart of the open-subset structure of the interior at `y` evaluates as the
 chart of the interior at `y`. -/

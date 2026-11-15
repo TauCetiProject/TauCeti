@@ -383,7 +383,7 @@ private theorem mem_initialOverlapPartners_of_recut
       second := GridPentagonBetween.ofRightEq R.second hright hturn }
   have hD : D.toRectangleDecomposition = R := by
     apply GridRectangleDecomposition.ext <;>
-      simp [D, GridRectanglePentagonDecomposition.pentagon, hright]
+      simp [D, GridRectanglePentagonDecomposition.pentagon]
   have hrecut : E.toRectangleDecomposition.IsRecut D.toRectangleDecomposition := by
     rw [hD]
     exact E.toRectangleDecomposition.isRecut_recut hone hfirst hsecond
