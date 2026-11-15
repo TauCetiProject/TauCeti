@@ -202,7 +202,7 @@ theorem mainSum_lambdaSquared_selbergWeights (s : BoundingSieve) {z : ℝ} :
       rw [sq, ← mul_assoc, mul_inv_cancel₀ hG, one_mul]
 
 /-- The finite Selberg upper bound with its full weighted remainder. -/
-theorem siftedSum_le_selbergWeights (s : BoundingSieve) {z : ℝ} (hz : 1 ≤ z) :
+theorem siftedSum_le_totalMass_div_truncatedSelbergSum_add_errSum (s : BoundingSieve) {z : ℝ} (hz : 1 ≤ z) :
     s.siftedSum ≤ s.totalMass / s.truncatedSelbergSum z +
       s.errSum (lambdaSquared (s.selbergWeights z)) := by
   simpa only [s.mainSum_lambdaSquared_selbergWeights, div_eq_mul_inv] using
