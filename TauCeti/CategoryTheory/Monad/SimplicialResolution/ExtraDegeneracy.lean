@@ -22,14 +22,15 @@ augmentation.
 
 Every free object `G W` is split by the comultiplication `δ_W`, which gives an extra degeneracy
 of the reversed resolution of `G W`. This makes precise the projectivity of free objects in
-[GHS] Lemma 2.5(1), using the comonad identities as in [BB] §1. Applying a functor and
+Gainutdinov–Haferkamp–Schweigert, Lemma 2.5(1), using the comonad identities as in Barr–Beck,
+§1. Applying a functor and
 Mathlib's `ExtraDegeneracy.homotopyEquiv` then contracts the resolution onto its augmentation.
 
 ## References
 
-* [M. Barr and J. Beck, *Homology and standard constructions*][BB], §1.
-* [A. Gainutdinov, J. Haferkamp and C. Schweigert, *Davydov-Yetter cohomology, comonads and
-  Ocneanu rigidity*][GHS], arXiv:1910.06094, Lemma 2.5.
+* M. Barr and J. Beck, *Homology and standard constructions*, §1.
+* A. Gainutdinov, J. Haferkamp and C. Schweigert, *Davydov-Yetter cohomology, comonads and
+  Ocneanu rigidity*, arXiv:1910.06094, Lemma 2.5.
 -/
 
 public section
@@ -83,7 +84,8 @@ def resolutionInnerMap : ∀ n : ℕ, (G.resolutionStage n).obj X ⟶ (G.resolut
       rw [← Fin.succ_castSucc, resolutionFace_succ_app, resolutionFace_succ_app]
       exact (G.map_comp _ _).symm.trans ((congrArg G.map (ih i)).trans (G.map_comp _ _))
 
-/-- Applying `a` beneath all layers commutes with every comultiplication. -/
+/-- Applying `a` beneath all layers commutes with a comultiplication in any position but the
+innermost. -/
 @[reassoc] lemma resolutionInnerMap_comp_resolutionDegeneracy_castSucc (n : ℕ)
     (i : Fin (n + 1)) :
     G.resolutionInnerMap a (n + 1) ≫ (G.resolutionDegeneracy (n + 1) i.castSucc).app X =
