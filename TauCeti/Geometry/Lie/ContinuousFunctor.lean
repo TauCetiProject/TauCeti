@@ -19,8 +19,11 @@ the smooth Lie functor.
 ## Main results
 
 * `ContinuousMonoidHom.lieMap` is the Lie map of a continuous homomorphism.
-* `ContinuousMonoidHom.lieMap_comp` gives its composition law.
+* `ContinuousMonoidHom.lieMap_one` and `ContinuousMonoidHom.lieMap_comp` give its trivial-morphism
+  and composition laws.
 * `ContinuousMonoidHom.lieMap_injective` gives faithfulness on preconnected sources.
+* `ContinuousMonoidHom.isLocalDiffeomorph_iff_lieMap_bijective` characterizes smooth local
+  diffeomorphisms via bijectivity of `lieMap`.
 -/
 
 public section
@@ -68,6 +71,16 @@ theorem lieMap_id :
       ContMDiffMonoidMorphism.coe_id, ContinuousMonoidHom.coe_id]
   rw [lieMap, h, _root_.lieMap_id]
 
+/-- The Lie map of the trivial continuous homomorphism is zero. -/
+@[simp]
+theorem lieMap_one :
+    lieMap (I := I) (I' := I') (1 : G →ₜ* G') = 0 := by
+  have h : (1 : G →ₜ* G').toContMDiffMonoidMorphism I I' = 1 := by
+    apply DFunLike.coe_injective
+    rw [ContinuousMonoidHom.coe_toContMDiffMonoidMorphism]
+    rfl
+  rw [lieMap, h, _root_.lieMap_one]
+
 /-- The Lie map of a composite of continuous homomorphisms is the composite of their Lie maps. -/
 theorem lieMap_comp
     {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E'']
@@ -113,5 +126,28 @@ theorem lieMap_injective [PreconnectedSpace G] :
   ext x
   simpa only [ContinuousMonoidHom.coe_toContMDiffMonoidMorphism] using
     congrArg (fun k : ContMDiffMonoidMorphism I I' ∞ G G' ↦ k x) hsmooth
+
+/-- A continuous homomorphism that is a smooth local diffeomorphism at the identity has bijective
+Lie map. -/
+theorem lieMap_bijective_of_isLocalDiffeomorphAt (f : G →ₜ* G')
+    (hf : IsLocalDiffeomorphAt I I' ∞ f 1) :
+    Function.Bijective (lieMap (I := I) (I' := I') f) := by
+  rw [lieMap_def]
+  apply ContMDiffMonoidMorphism.lieMap_bijective_of_isLocalDiffeomorphAt
+  rwa [ContinuousMonoidHom.coe_toContMDiffMonoidMorphism]
+
+/-- A continuous homomorphism with bijective Lie map is a smooth local diffeomorphism. -/
+theorem isLocalDiffeomorph_of_lieMap_bijective (f : G →ₜ* G')
+    (hf : Function.Bijective (lieMap (I := I) (I' := I') f)) :
+    IsLocalDiffeomorph I I' ∞ f := by
+  rw [← ContinuousMonoidHom.coe_toContMDiffMonoidMorphism (I := I) (I' := I') f]
+  exact (f.toContMDiffMonoidMorphism I I').isLocalDiffeomorph_of_lieMap_bijective hf
+
+/-- A continuous homomorphism of finite-dimensional real Lie groups is a smooth local
+diffeomorphism if and only if its Lie map is bijective. -/
+theorem isLocalDiffeomorph_iff_lieMap_bijective (f : G →ₜ* G') :
+    IsLocalDiffeomorph I I' ∞ f ↔ Function.Bijective (lieMap (I := I) (I' := I') f) :=
+  ⟨fun hf ↦ lieMap_bijective_of_isLocalDiffeomorphAt f (hf 1),
+    isLocalDiffeomorph_of_lieMap_bijective f⟩
 
 end ContinuousMonoidHom

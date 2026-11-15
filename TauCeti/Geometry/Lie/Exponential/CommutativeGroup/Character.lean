@@ -51,6 +51,7 @@ a character `χ` acts by `exp(ξ) · z = e^{i α_χ(ξ)} z`.
 
 * `TauCeti.periodLattice I G`: the period lattice `Λ_ℤ = (2π)⁻¹ ker(exp)`.
 * `ContinuousMonoidHom.lieWeight χ`: the real weight `α_χ` of a circle character.
+* `ContinuousMonoidHom.lieWeightKerLieSubalgebra χ`: the kernel of `α_χ` as a Lie subalgebra.
 
 ## Main results
 
@@ -223,6 +224,23 @@ theorem lieWeight_apply (χ : G →ₜ* Circle) (X : LeftInvariantDerivation I G
 theorem lieWeight_lie (χ : G →ₜ* Circle) (X Y : LeftInvariantDerivation I G) :
     lieWeight χ ⁅X, Y⁆ = 0 := by
   rw [lieWeight_apply, LieHom.map_lie, LieModule.IsTrivial.trivial, map_zero]
+
+/-- The kernel of the real weight of a circle character as a Lie subalgebra of `𝔤`. -/
+def lieWeightKerLieSubalgebra (χ : G →ₜ* Circle) : LieSubalgebra ℝ (LeftInvariantDerivation I G) :=
+  { LinearMap.ker (lieWeight (I := I) χ) with
+    lie_mem' := fun {X Y} _ _ ↦ lieWeight_lie χ X Y }
+
+/-- Membership in `lieWeightKerLieSubalgebra χ` means vanishing real weight under `χ`. -/
+@[simp]
+theorem mem_lieWeightKerLieSubalgebra (χ : G →ₜ* Circle) {X : LeftInvariantDerivation I G} :
+    X ∈ lieWeightKerLieSubalgebra (I := I) χ ↔ lieWeight (I := I) χ X = 0 :=
+  LinearMap.mem_ker
+
+/-- The underlying submodule of `lieWeightKerLieSubalgebra χ` is `ker (lieWeight χ)`. -/
+@[simp]
+theorem lieWeightKerLieSubalgebra_toSubmodule (χ : G →ₜ* Circle) :
+    (lieWeightKerLieSubalgebra (I := I) χ).toSubmodule = LinearMap.ker (lieWeight (I := I) χ) :=
+  (rfl)
 
 /-- **Naturality of weights.** The weight of `χ ∘ f` is the weight of `χ` composed with the Lie
 map of `f`. -/
