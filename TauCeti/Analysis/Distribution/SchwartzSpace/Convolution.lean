@@ -42,7 +42,10 @@ starting point of the estimates for multiplication operators on Sobolev spaces.
 * `SchwartzMap.eLpNorm_fourierMultiplierCLM_le`: the `Lᵖ` bound `‖T_σ φ‖_p ≤ ‖𝓕⁻ σ‖₁ ‖φ‖_p`.
 * `SchwartzMap.norm_fourierInv_bilin_fourier_apply_le`: the pointwise bound
   `‖𝓕⁻ (B (σ ·) (𝓕 f ·)) x‖ ≤ ‖B‖ ‖𝓕⁻ σ‖₁ sup ‖f‖` for a bilinear multiplier with a Schwartz
-  symbol, such as an operator-valued one.
+  symbol, such as an operator-valued one, and
+  `SchwartzMap.norm_integral_fourierChar_smul_bilin_fourier_le`: the same bound
+  `‖𝓕⁻ ρ‖₁ ‖B‖ ‖𝓕⁻ σ‖₁ sup ‖f‖` for the multiplier composed with the scalar multiplier `ρ`, written
+  as a single Fourier integral.
 * `SchwartzMap.integrable_sub_smul`: for a Schwartz function `f` and `u ∈ Lᵖ`, `1 ≤ p ≤ ∞`, the
   convolution integral `∫ f (x - y) • u y` converges absolutely at every `x`.
 * `SchwartzMap.fourierInv_convolution`: the inverse Fourier transform of a convolution is the
@@ -59,7 +62,7 @@ starting point of the estimates for multiplication operators on Sobolev spaces.
 
 public section
 
-open scoped FourierTransform SchwartzMap ENNReal
+open scoped FourierTransform SchwartzMap ENNReal RealInnerProductSpace
 open FourierTransform ContinuousLinearMap MeasureTheory
 open scoped Convolution
 
@@ -203,6 +206,43 @@ theorem norm_fourierInv_bilin_fourier_apply_le [CompleteSpace F₁] (B : F₁ �
           (.of_forall fun t ↦ (B.le_opNorm₂ _ _).trans (by gcongr; exact hf _))
     _ = ‖B‖ * (∫ y, ‖𝓕⁻ σ y‖) * M := by
         rw [integral_mul_const, integral_const_mul]
+
+/-- **Pointwise bound for a modulated multiplier.** For a scalar Schwartz function `ρ`, a
+continuous bilinear map `B`, a Schwartz symbol `σ` and a Schwartz function `f` bounded by `M`,
+
+`‖∫ 𝐞 ⟪ξ, x⟫ ρ(ξ) B (σ ξ) (𝓕 f ξ) dξ‖ ≤ ‖𝓕⁻ ρ‖₁ ‖B‖ ‖𝓕⁻ σ‖₁ M`:
+
+the integral is the convolution of `𝓕⁻ ρ` with the convolution of `𝓕⁻ σ` with `f`. -/
+theorem norm_integral_fourierChar_smul_bilin_fourier_le [CompleteSpace F₁]
+    (ρ : 𝓢(E, ℂ)) (B : F₁ →L[ℂ] F₂ →L[ℂ] F₃) (σ : 𝓢(E, F₁)) (f : 𝓢(E, F₂)) {M : ℝ}
+    (hf : ∀ y, ‖f y‖ ≤ M) (x : E) :
+    ‖∫ ξ, 𝐞 ⟪ξ, x⟫ • ρ ξ • B (σ ξ) (𝓕 f ξ)‖ ≤
+      (∫ y, ‖𝓕⁻ ρ y‖) * (‖B‖ * (∫ y, ‖𝓕⁻ σ y‖) * M) := by
+  have h0 : 0 ≤ (∫ y, ‖𝓕⁻ ρ y‖) * (‖B‖ * (∫ y, ‖𝓕⁻ σ y‖) * M) :=
+    mul_nonneg (integral_nonneg fun _ ↦ norm_nonneg _) (mul_nonneg (mul_nonneg
+      (opNorm_nonneg B) (integral_nonneg fun _ ↦ norm_nonneg _)) ((norm_nonneg _).trans (hf 0)))
+  -- Without completeness of `F₃` the left side vanishes by the integral convention.
+  by_cases hF₃ : CompleteSpace F₃
+  swap
+  · rw [integral_of_not_completeSpace hF₃, norm_zero]
+    exact h0
+  set Z : 𝓢(E, F₃) := convolution B (𝓕⁻ σ) f
+  have hZ : (fun ξ ↦ B (σ ξ) (𝓕 f ξ)) = ⇑(𝓕 Z : 𝓢(E, F₃)) := by
+    ext ξ
+    rw [fourier_convolution, fourier_fourierInv_eq, pairing_apply_apply]
+  have hZM (y : E) : ‖Z y‖ ≤ ‖B‖ * (∫ y, ‖𝓕⁻ σ y‖) * M := by
+    have h := norm_fourierInv_bilin_fourier_apply_le B σ f hf y
+    rwa [hZ, ← fourierInv_coe, fourierInv_fourier_eq] at h
+  have hkey : ∫ ξ, 𝐞 ⟪ξ, x⟫ • ρ ξ • B (σ ξ) (𝓕 f ξ) =
+      𝓕⁻ (fun ξ ↦ lsmul ℂ ℂ (ρ ξ) (𝓕 Z ξ)) x := by
+    rw [Real.fourierInv_eq]
+    refine integral_congr_ae (.of_forall fun ξ ↦ ?_)
+    dsimp only
+    rw [lsmul_apply, ← congrFun hZ ξ]
+  rw [hkey]
+  refine (norm_fourierInv_bilin_fourier_apply_le _ ρ Z hZM x).trans ?_
+  rw [mul_assoc]
+  exact mul_le_of_le_one_left h0 opNorm_lsmul_le
 
 /-- **The Fourier transform of a product is the convolution of the Fourier transforms.** For
 Schwartz functions `f`, `g` and a continuous bilinear map `B`, the Fourier transform of the

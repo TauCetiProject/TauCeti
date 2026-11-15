@@ -18,8 +18,9 @@ import TauCeti.Analysis.Pseudodifferential.Sobolev
 Let `a` be a symbol of order `m` on `ℝⁿ` (`TauCeti.Symbol n V W m`) that vanishes for positions
 outside a compact set, with values in operators between finite-dimensional complex normed spaces.
 The Hölder–Zygmund space `𝒞^r = B^r_{∞,∞}` (`TauCeti.BesovSpace V φ r ∞ ∞`) is measured by the
-Littlewood–Paley blocks `Δⱼ` through `supⱼ 2^{jr} ‖Δⱼ u‖_∞`. This file proves that `Op(a)` lowers
-this smoothness by exactly `m`, for every real `r`: on Schwartz functions,
+Littlewood–Paley blocks `Δⱼ` through `supⱼ 2^{jr} ‖Δⱼ u‖_∞`. This file proves that `Op(a)` maps
+`𝒞^r` to `𝒞^{r - m}`, losing at most `m` orders of smoothness, for every real `r`: on Schwartz
+functions,
 
 `‖Op(a) u‖_{𝒞^{r - m}} ≤ C ‖u‖_{𝒞^r}`
 
@@ -163,48 +164,6 @@ theorem HasCompactSpatialSupport.fourierInv_smul_fourier_quantizeSchwartzValue
 
 end Superposition
 
-/-! ### Counting the pieces met by a translate -/
-
-/-- If `Q ≥ 1`, at most `2Q + 1` indices `k` satisfy both `2^j ≤ Q 2^k` and `2^k ≤ Q 2^j`. -/
-private theorem card_filter_two_pow_le (s : Finset ℕ) (j : ℕ) {Q : ℝ} (hQ : 1 ≤ Q) :
-    ((s.filter fun k ↦ (2 : ℝ) ^ j ≤ Q * 2 ^ k ∧ (2 : ℝ) ^ k ≤ Q * 2 ^ j).card : ℝ) ≤
-      2 * Q + 1 := by
-  set d := ⌊Q⌋₊
-  -- A power `2^i ≤ Q` has `i < 2^i ≤ Q`, so `i ≤ d`.
-  have hd {i l : ℕ} (h : (2 : ℝ) ^ i ≤ Q * 2 ^ l) : i - l ≤ d := by
-    refine Nat.le_floor ((Nat.cast_le.2 (Nat.lt_two_pow_self).le).trans ?_)
-    rcases le_total l i with hli | hil
-    · rw [Nat.cast_pow, Nat.cast_ofNat]
-      have h2 : (2 : ℝ) ^ (i - l) * 2 ^ l ≤ Q * 2 ^ l := by rwa [← pow_add, Nat.sub_add_cancel hli]
-      exact le_of_mul_le_mul_right h2 (by positivity)
-    · simpa [Nat.sub_eq_zero_of_le hil] using hQ
-  have hsub : (s.filter fun k ↦ (2 : ℝ) ^ j ≤ Q * 2 ^ k ∧ (2 : ℝ) ^ k ≤ Q * 2 ^ j) ⊆
-      Finset.Icc (j - d) (j + d) := fun k hk ↦ by
-    obtain ⟨h₁, h₂⟩ := (Finset.mem_filter.1 hk).2
-    have := hd h₁
-    have := hd h₂
-    exact Finset.mem_Icc.2 ⟨by omega, by omega⟩
-  calc ((s.filter fun k ↦ (2 : ℝ) ^ j ≤ Q * 2 ^ k ∧ (2 : ℝ) ^ k ≤ Q * 2 ^ j).card : ℝ)
-      ≤ (Finset.Icc (j - d) (j + d)).card := by exact_mod_cast Finset.card_le_card hsub
-    _ ≤ 2 * d + 1 := by
-        rw [Nat.card_Icc]
-        exact_mod_cast (by omega : j + d + 1 - (j - d) ≤ 2 * d + 1)
-    _ ≤ 2 * Q + 1 := by gcongr; exact Nat.floor_le (by linarith)
-
-/-- If `2^j ≤ Q 2^k` and `2^k ≤ Q 2^j`, then `2^{σ (j - k)} ≤ Q ^ |σ|` for every real `σ`. -/
-private theorem two_rpow_mul_sub_le {j k : ℕ} {Q : ℝ} (h₁ : (2 : ℝ) ^ j ≤ Q * 2 ^ k)
-    (h₂ : (2 : ℝ) ^ k ≤ Q * 2 ^ j) (σ : ℝ) :
-    (2 : ℝ) ^ (σ * ((j : ℝ) - k)) ≤ Q ^ |σ| := by
-  have hle {i l : ℕ} (h : (2 : ℝ) ^ i ≤ Q * 2 ^ l) : (2 : ℝ) ^ ((i : ℝ) - l) ≤ Q := by
-    rw [Real.rpow_sub two_pos, Real.rpow_natCast, Real.rpow_natCast, div_le_iff₀ (by positivity)]
-    exact h
-  rcases le_total 0 σ with hσ | hσ
-  · rw [abs_of_nonneg hσ, mul_comm, Real.rpow_mul zero_le_two]
-    exact Real.rpow_le_rpow (by positivity) (hle h₁) hσ
-  · rw [abs_of_nonpos hσ, show σ * ((j : ℝ) - k) = ((k : ℝ) - j) * -σ by ring,
-      Real.rpow_mul zero_le_two]
-    exact Real.rpow_le_rpow (by positivity) (hle h₂) (by linarith)
-
 /-! ### The estimate for one translate -/
 
 section Estimates
@@ -269,43 +228,6 @@ private theorem HasCompactSpatialSupport.exists_integral_norm_fourierInv_cutoff_
     _ = C * (2 ^ k) ^ m * (1 + ‖θ‖ ^ 2) ^ (-ρ / 2) := by
         rw [hw, ← Real.rpow_neg (by positivity), neg_div]
         ring
-
-omit [CompleteSpace V] [FiniteDimensional ℂ V] [FiniteDimensional ℂ W] in
-/-- **One modulated piece.** For Schwartz functions `ρ`, `σ` and `w` with `‖w‖ ≤ M`,
-`‖∫ 𝐞 ⟪ζ, x⟫ ρ(ζ) σ(ζ) 𝓕 w(ζ) dζ‖ ≤ ‖𝓕⁻ ρ‖₁ ‖𝓕⁻ σ‖₁ M`: the integral is the convolution of
-`𝓕⁻ ρ` with the convolution of `𝓕⁻ σ` with `w`. -/
-private theorem norm_integral_fourierChar_smul_apply_fourier_le (ρ : 𝓢(CoordinateSpace n, ℂ))
-    (σ : 𝓢(CoordinateSpace n, V →L[ℂ] W)) (w : 𝓢(CoordinateSpace n, V)) {M : ℝ}
-    (hw : ∀ y, ‖w y‖ ≤ M) (x : CoordinateSpace n) :
-    ‖∫ ζ, 𝐞 ⟪ζ, x⟫ • ρ ζ • σ ζ (𝓕 w ζ)‖ ≤
-      (∫ y, ‖𝓕⁻ ρ y‖) * ((∫ y, ‖𝓕⁻ σ y‖) * M) := by
-  set Z : 𝓢(CoordinateSpace n, W) :=
-    SchwartzMap.convolution (ContinuousLinearMap.id ℂ (V →L[ℂ] W)) (𝓕⁻ σ) w
-  have hZ : (fun ζ ↦ ContinuousLinearMap.id ℂ (V →L[ℂ] W) (σ ζ) (𝓕 w ζ)) =
-      ⇑(𝓕 Z : 𝓢(CoordinateSpace n, W)) := by
-    ext ζ
-    rw [SchwartzMap.fourier_convolution, fourier_fourierInv_eq, SchwartzMap.pairing_apply_apply]
-  have hZM (y : CoordinateSpace n) : ‖Z y‖ ≤ (∫ y, ‖𝓕⁻ σ y‖) * M := by
-    have h := SchwartzMap.norm_fourierInv_bilin_fourier_apply_le
-      (ContinuousLinearMap.id ℂ (V →L[ℂ] W)) σ w hw y
-    rw [hZ, ← SchwartzMap.fourierInv_coe, fourierInv_fourier_eq] at h
-    have hM : 0 ≤ (∫ y, ‖𝓕⁻ σ y‖) * M :=
-      mul_nonneg (integral_nonneg fun _ ↦ norm_nonneg _) ((norm_nonneg _).trans (hw 0))
-    rw [mul_assoc] at h
-    exact h.trans (mul_le_of_le_one_left hM ContinuousLinearMap.norm_id_le)
-  have hkey : ∫ ζ, 𝐞 ⟪ζ, x⟫ • ρ ζ • σ ζ (𝓕 w ζ) =
-      𝓕⁻ (fun ζ ↦ ContinuousLinearMap.lsmul ℂ ℂ (ρ ζ) (𝓕 Z ζ)) x := by
-    rw [Real.fourierInv_eq]
-    refine integral_congr_ae (.of_forall fun ζ ↦ ?_)
-    dsimp only
-    rw [← congrFun hZ ζ]
-    rfl
-  rw [hkey]
-  refine (SchwartzMap.norm_fourierInv_bilin_fourier_apply_le _ ρ Z hZM x).trans ?_
-  have h0 : 0 ≤ (∫ y, ‖𝓕⁻ ρ y‖) * ((∫ y, ‖𝓕⁻ σ y‖) * M) :=
-    mul_nonneg (integral_nonneg fun _ ↦ norm_nonneg _) ((norm_nonneg _).trans (hZM 0))
-  rw [mul_assoc]
-  exact mul_le_of_le_one_left h0 ContinuousLinearMap.opNorm_lsmul_le
 
 omit [CompleteSpace V] [FiniteDimensional ℂ V] [CompleteSpace W] [FiniteDimensional ℂ W] in
 /-- The translates `ζ ↦ ψⱼ (ζ + θ)` of the Littlewood–Paley pieces are compactly supported. -/
@@ -426,8 +348,14 @@ private theorem HasCompactSpatialSupport.norm_integral_fourierChar_smul_le
   have hσn : ∫ y, ‖𝓕⁻ σS y‖ =
       ∫ y, ‖𝓕⁻ (fun ζ ↦ φ.enlargedLittlewoodPaley L k ζ • g ζ) y‖ := by
     rw [SchwartzMap.fourierInv_coe, hσ]
+  have h := SchwartzMap.norm_integral_fourierChar_smul_bilin_fourier_le ρS
+    (ContinuousLinearMap.id ℂ (V →L[ℂ] W)) σS _ hM x
+  simp only [ContinuousLinearMap.id_apply] at h
   rw [heq, ← hρn, ← hσn]
-  exact norm_integral_fourierChar_smul_apply_fourier_le ρS σS _ hM x
+  refine h.trans (mul_le_mul_of_nonneg_left ?_ (integral_nonneg fun _ ↦ norm_nonneg _))
+  rw [mul_assoc]
+  exact mul_le_of_le_one_left (mul_nonneg (integral_nonneg fun _ ↦ norm_nonneg _)
+    ((norm_nonneg _).trans (hM 0))) ContinuousLinearMap.norm_id_le
 
 omit [CompleteSpace V] [FiniteDimensional ℂ V] [CompleteSpace W] [FiniteDimensional ℂ W] in
 /-- **Distant pieces do not contribute.** The term of the decomposition of the modulated piece
@@ -501,7 +429,7 @@ private theorem HasCompactSpatialSupport.two_rpow_mul_norm_integral_fourierChar_
     _ ≤ Cψ * max CK 0 * (1 + ‖θ‖ ^ 2) ^ (-ρ / 2) * M * Q ^ |r - m| := by
         rw [hpow]
         gcongr
-        exact two_rpow_mul_sub_le hk.1 hk.2 _
+        exact two_rpow_mul_sub_le_rpow_abs hk.1 hk.2 _
 
 omit [CompleteSpace V] [FiniteDimensional ℂ V] [CompleteSpace W] [FiniteDimensional ℂ W] in
 /-- The arithmetic of the final bound for one translate: with `Q = c (1 + ‖θ‖)` and `s ≥ 0`,
@@ -591,7 +519,7 @@ private theorem HasCompactSpatialSupport.exists_norm_integral_fourierChar_smul_l
           (2 : ℝ) ^ j ≤ Q * 2 ^ k ∧ (2 : ℝ) ^ k ≤ Q * 2 ^ j).card * X := by
         rw [Finset.sum_ite, Finset.sum_const_zero, add_zero, Finset.sum_const, nsmul_eq_mul]
     _ ≤ (2 * Q + 1) * X :=
-        mul_le_mul_of_nonneg_right (card_filter_two_pow_le _ j hQ) (by positivity)
+        mul_le_mul_of_nonneg_right (card_filter_two_pow_le_mul_two_pow_le _ j hQ) (by positivity)
     _ ≤ 3 * (Cψ * max CK 0) * (c * √2) ^ (1 + |r - m|) *
           (1 + ‖θ‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) * M :=
         two_mul_add_one_mul_le hc hM0 (mul_nonneg Cψ.2 (le_max_right CK 0)) (abs_nonneg _) θ

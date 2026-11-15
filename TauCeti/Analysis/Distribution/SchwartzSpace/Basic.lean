@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
+import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 
 /-!
 # Weighted bounds and integrability of Schwartz functions
@@ -218,18 +219,13 @@ theorem exists_integrable_norm_iteratedFDeriv_add_le (f : 𝓢(E, F)) (n : ℕ) 
     _ ≤ 2 ^ p * (2 ^ p * S) := by gcongr
 
 /-- For a measure charging every nonempty open set, the values of a Schwartz function are bounded by
-the `L^∞` norm of its class: the essential supremum of a continuous function is its supremum. -/
+the `L^∞` norm of its class, by `Continuous.eNorm_le_eLpNormEssSup`. -/
 theorem norm_le_norm_toLp_top [μ.IsOpenPosMeasure] (f : 𝓢(E, F)) (x : E) :
     ‖f x‖ ≤ ‖f.toLp ⊤ μ‖ := by
   rw [norm_toLp]
   refine (ENNReal.ofReal_le_iff_le_toReal (memLp_top f μ).eLpNorm_ne_top).1 ?_
   rw [ofReal_norm, eLpNorm_exponent_top f.continuous.aestronglyMeasurable]
-  by_contra h
-  rw [not_le] at h
-  -- The open set where `‖f‖ₑ` exceeds its essential supremum is null, but contains `x`.
-  have hnull : μ {y | eLpNormEssSup f μ < ‖f y‖ₑ} = 0 := by
-    simpa only [not_le] using ae_iff.1 (ae_le_eLpNormEssSup (f := f) (μ := μ))
-  exact ((isOpen_lt continuous_const f.continuous.eNorm).measure_pos μ ⟨x, h⟩).ne' hnull
+  exact f.continuous.eNorm_le_eLpNormEssSup x
 
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
 

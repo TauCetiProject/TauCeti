@@ -18,10 +18,15 @@ kernels.
 
 * `TauCeti.exists_integral_norm_fourierInv_cutoff_smul_le`: let `χ` be a smooth cutoff supported
   where `1 + ‖ξ‖ ^ 2 ≍ R ^ 2`, with `‖D^k χ‖ ≤ B_k R ^ (-k)`. Then the kernel of the dyadic piece
-  `χ g` has `L¹` norm at most `C R ^ m`, with `C` independent of `R` and `χ`. By
+  `χ g` has `L¹` norm at most `C R ^ m`, with `C` independent of `R` and `χ`, and depending on `g`
+  only through its estimate constants `C_i`. By
   `TauCeti.exists_norm_iteratedFDeriv_cutoff_smul_le` the product is a band-limited symbol at
   scale `R` with constant `O(R ^ m)`, and the scale-invariant `L¹` bound
   `SchwartzMap.exists_integral_norm_fourierInv_le_of_support_subset` applies.
+* `TauCeti.exists_integral_norm_fourierInv_cutoff_smul_le_of_finiteDimensional`: the same bound,
+  with the same uniformity, for `g` valued in a finite-dimensional complex normed space, such as a
+  space of operators between finite-dimensional spaces. It follows from the previous bound by
+  expanding `g` in a basis.
 
 These kernel bounds are what make a Fourier multiplier by a symbol of order `m` act on the
 Littlewood–Paley blocks `Δⱼ` like multiplication by `2^{jm}`, uniformly in `1 ≤ p ≤ ∞`.
@@ -122,7 +127,7 @@ theorem exists_integral_norm_fourierInv_cutoff_smul_le {m : ℝ} {N : ℕ}
 /-- **Kernels of dyadic pieces of symbols with finite-dimensional values.** The bound of
 `TauCeti.exists_integral_norm_fourierInv_cutoff_smul_le` for a symbol `g` with values in a
 finite-dimensional complex normed space, such as a space of operators `V →L[ℂ] W` between
-finite-dimensional spaces: there is a constant `C`, depending only on `W`, `a`, `b` and `B`, with
+finite-dimensional spaces: there is a constant `C`, which does not depend on `g`, `R` or `χ`, with
 `∫ ‖𝓕⁻ (χ g) x‖ dx ≤ C R ^ m`. It follows from the scalar case by expanding `g` in a basis. -/
 theorem exists_integral_norm_fourierInv_cutoff_smul_le_of_finiteDimensional {G : Type*}
     [NormedAddCommGroup G] [NormedSpace ℂ G] [FiniteDimensional ℂ G] {m : ℝ} {N : ℕ}
