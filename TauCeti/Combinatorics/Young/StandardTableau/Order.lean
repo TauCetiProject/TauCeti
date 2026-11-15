@@ -33,6 +33,9 @@ distinct tabloids, and that is how
 
 * `TauCeti.StandardYoungTableau.lt_iff_rowIndex_lt`: labels in one column are ordered by row.
 * `TauCeti.StandardYoungTableau.lt_iff_colIndex_lt`: labels in one row are ordered by column.
+* `TauCeti.StandardYoungTableau.apply_lt_apply_of_le`: more generally, labels increase strictly
+  along the product order of the cells; `TauCeti.StandardYoungTableau.apply_lt_apply_of_mem` is
+  its form for cells given by their coordinates.
 * `TauCeti.exists_standardYoungTableau_toTableau_eq_iff`: conversely, a tableau whose labels
   increase down each column and along each row is standard.
 * `TauCeti.StandardYoungTableau.rowIndex_injective`: a standard Young tableau is determined by the
@@ -98,6 +101,39 @@ theorem lt_iff_colIndex_lt (T : StandardYoungTableau μ) {x y : Fin μ.card}
   · exact hc
   · exact absurd (rowIndex_colIndex_injective T.toTableau (Prod.ext hrow hc)) hxy.ne
   · exact absurd (lt_of_colIndex_lt T hrow.symm hc) (asymm hxy)
+
+/-! ### Comparing two labels along the product order of cells -/
+
+/-- The labels of a standard Young tableau increase strictly along the product order of the
+cells. -/
+theorem apply_lt_apply_of_le (T : StandardYoungTableau μ) {c d : ↥μ.cells} (h₁ : c.1.1 ≤ d.1.1)
+    (h₂ : c.1.2 ≤ d.1.2) (hne : c ≠ d) : T c < T d := by
+  obtain ⟨⟨i₁, j₁⟩, hc⟩ := c
+  obtain ⟨⟨i₂, j₂⟩, hd⟩ := d
+  simp only at h₁ h₂
+  have hd' : (i₂, j₂) ∈ μ := (YoungDiagram.mem_cells _).mp hd
+  have hm : (i₁, j₂) ∈ μ := μ.up_left_mem h₁ le_rfl hd'
+  -- pass through the cell `(i₁, j₂)`, first along the row of `c`, then down the column of `d`
+  have hrow : T ⟨(i₁, j₁), hc⟩ ≤ T ⟨(i₁, j₂), (YoungDiagram.mem_cells _).mpr hm⟩ := by
+    rcases h₂.lt_or_eq with h | rfl
+    · exact (T.row_strict h hm).le
+    · exact le_rfl
+  have hcol : T ⟨(i₁, j₂), (YoungDiagram.mem_cells _).mpr hm⟩ ≤ T ⟨(i₂, j₂), hd⟩ := by
+    rcases h₁.lt_or_eq with h | rfl
+    · exact (T.col_strict h hd').le
+    · exact le_rfl
+  refine lt_of_le_of_ne (hrow.trans hcol) fun h => hne ?_
+  exact T.injective h
+
+/-- Coordinate form of `TauCeti.StandardYoungTableau.apply_lt_apply_of_le`: the label of the cell
+`(i₁, j₁)` is smaller than that of a different cell `(i₂, j₂)` weakly below and to the right of
+it. -/
+theorem apply_lt_apply_of_mem (T : StandardYoungTableau μ) {i₁ j₁ i₂ j₂ : ℕ}
+    (hc : (i₁, j₁) ∈ μ) (hd : (i₂, j₂) ∈ μ) (h₁ : i₁ ≤ i₂) (h₂ : j₁ ≤ j₂)
+    (hne : i₁ < i₂ ∨ j₁ < j₂) : T ⟨(i₁, j₁), hc⟩ < T ⟨(i₂, j₂), hd⟩ :=
+  T.apply_lt_apply_of_le h₁ h₂ fun h => by
+    simp only [Subtype.mk.injEq, Prod.mk.injEq] at h
+    omega
 
 end StandardYoungTableau
 

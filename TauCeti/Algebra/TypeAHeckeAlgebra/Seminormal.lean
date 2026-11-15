@@ -91,6 +91,9 @@ At `Q = 1` it is Young's coefficient `1 / d`. -/
 def seminormalDiag (Q : K) (d : ℤ) : K :=
   Q ^ d / additiveContent Q d
 
+theorem seminormalDiag_def (Q : K) (d : ℤ) : seminormalDiag Q d = Q ^ d / additiveContent Q d :=
+  (rfl)
+
 /-- The off-diagonal coefficient of the seminormal form: `g = q T` sends the vector of a tableau
 of axial distance `-d` to `seminormalDiag Q (-d)` times itself plus `seminormalOffDiag Q d` times
 the vector of the exchanged tableau, whose axial distance is `d`. It is `1` for `d < -1`,
@@ -105,15 +108,14 @@ variable {Q : K}
 coefficient is `Q`. -/
 @[simp]
 theorem seminormalDiag_one : seminormalDiag Q 1 = Q := by
-  have h : additiveContent Q 1 = 1 := by simpa using additiveContent_natCast Q 1
-  rw [seminormalDiag, h, zpow_one, div_one]
+  rw [seminormalDiag, additiveContent_one_right, zpow_one, div_one]
 
 /-- At axial distance `-1`, the label `k + 1` immediately below `k`, the diagonal coefficient
 is `-1`. -/
 @[simp]
 theorem seminormalDiag_neg_one (hQ : Q ≠ 0) : seminormalDiag Q (-1) = -1 := by
-  have h : additiveContent Q 1 = 1 := by simpa using additiveContent_natCast Q 1
-  rw [seminormalDiag, additiveContent_neg hQ, h, mul_one, div_neg, div_self (zpow_ne_zero _ hQ)]
+  rw [seminormalDiag, additiveContent_neg hQ, additiveContent_one_right, mul_one, div_neg,
+    div_self (zpow_ne_zero _ hQ)]
 
 /-- The diagonal coefficient at a negative axial distance is `-[d]_Q⁻¹`. -/
 theorem seminormalDiag_neg (hQ : Q ≠ 0) (d : ℤ) :
@@ -226,23 +228,17 @@ private abbrev labelSwap (k : ℕ) (hk : k + 1 < μ.card) : Equiv.Perm (Fin μ.c
 /-- The seminormal operator of `g = q T_k` on functions on *all* tableaux, in pull form: the
 value at `t` combines the values at `t` and at `t` with `k` and `k + 1` exchanged. -/
 private def seminormalAux (Q : K) (k : ℕ) (hk : k + 1 < μ.card) :
-    Module.End K (YoungTableau μ → K) where
-  toFun φ t := seminormalDiag Q (axialDistance t k hk) * φ t +
-    seminormalOffDiag Q (axialDistance t k hk) * φ (relabel (labelSwap k hk) t)
-  map_add' φ ψ := by
-    funext t
-    simp only [Pi.add_apply]
-    ring
-  map_smul' c φ := by
-    funext t
-    simp only [Pi.smul_apply, smul_eq_mul, RingHom.id_apply]
-    ring
+    Module.End K (YoungTableau μ → K) :=
+  LinearMap.mulLeft K (fun t => seminormalDiag Q (axialDistance t k hk)) +
+    LinearMap.mulLeft K (fun t => seminormalOffDiag Q (axialDistance t k hk)) ∘ₗ
+      LinearMap.funLeft K K (relabel (labelSwap k hk))
 
 private theorem seminormalAux_apply (Q : K) (k : ℕ) (hk : k + 1 < μ.card)
     (φ : YoungTableau μ → K) (t : YoungTableau μ) :
     seminormalAux Q k hk φ t = seminormalDiag Q (axialDistance t k hk) * φ t +
-      seminormalOffDiag Q (axialDistance t k hk) * φ (relabel (labelSwap k hk) t) :=
-  (rfl)
+      seminormalOffDiag Q (axialDistance t k hk) * φ (relabel (labelSwap k hk) t) := by
+  rw [seminormalAux, LinearMap.add_apply, LinearMap.comp_apply, LinearMap.mulLeft_apply,
+    LinearMap.mulLeft_apply, Pi.add_apply, Pi.mul_apply, Pi.mul_apply, LinearMap.funLeft_apply]
 
 variable (K) in
 /-- Extension by zero from the standard tableaux to all tableaux. -/
@@ -300,7 +296,7 @@ private theorem seminormalAux_sq_apply (hQ : Q ≠ 0) (k : ℕ) (hk : k + 1 < μ
     (hd : additiveContent Q (axialDistance t k hk) ≠ 0) :
     seminormalAux Q k hk (seminormalAux Q k hk φ) t =
       (Q - 1) * seminormalAux Q k hk φ t + Q * φ t := by
-  have hd0 : axialDistance t k hk ≠ 0 := fun h => hd (by rw [h, additiveContent_zero])
+  have hd0 := ne_zero_of_additiveContent_ne_zero hd
   have h₁ := seminormalDiag_add_seminormalDiag_neg hQ hd
   have h₂ := seminormalOffDiag_mul_seminormalOffDiag_neg (Q := Q) hd0
   simp only [seminormalAux_apply, relabel_relabel, Equiv.swap_mul_self, relabel_one,
@@ -397,12 +393,12 @@ private theorem seminormalAux_braid_apply (hQ : Q ≠ 0) {k : ℕ} (hk : k + 1 +
       y - x := by
     simp only [axialDistance_def, labelContent_relabel, mul_inv_rev, Equiv.swap_inv,
       Equiv.Perm.mul_apply, Equiv.swap_apply_right, hs, hr, ← hx, ← hy]
-  have hxy0 : y - x ≠ 0 := fun h => hxy (by rw [h, additiveContent_zero])
-  have hyz0 : z - y ≠ 0 := fun h => hyz (by rw [h, additiveContent_zero])
   have hB₁ := diag_braid_left hQ hxy hyz hxz
   have hB₂ := diag_braid_right hQ hxy hyz hxz
-  have hE₁ := seminormalOffDiag_mul_seminormalOffDiag_neg (Q := Q) hxy0
-  have hE₂ := seminormalOffDiag_mul_seminormalOffDiag_neg (Q := Q) hyz0
+  have hE₁ := seminormalOffDiag_mul_seminormalOffDiag_neg (Q := Q)
+    (ne_zero_of_additiveContent_ne_zero hxy)
+  have hE₂ := seminormalOffDiag_mul_seminormalOffDiag_neg (Q := Q)
+    (ne_zero_of_additiveContent_ne_zero hyz)
   rw [neg_sub] at hE₁ hE₂
   simp only [seminormalAux_apply, relabel_relabel, Equiv.swap_mul_self, relabel_one,
     a₀, a₁, a₂, a₃, b₀, b₁, b₂, b₃, labelSwap_braid hk]
@@ -413,20 +409,12 @@ private theorem seminormalAux_braid_apply (hQ : Q ≠ 0) {k : ℕ} (hk : k + 1 +
 
 /-- Multiplication by `Q ^ labelContent t i` at the tableau `t`, the expected action of the
 Jucys–Murphy element of strand `i`. -/
-private def contentMul (Q : K) (i : Fin μ.card) : Module.End K (YoungTableau μ → K) where
-  toFun φ t := Q ^ labelContent t i * φ t
-  map_add' φ ψ := by
-    funext t
-    simp only [Pi.add_apply]
-    ring
-  map_smul' c φ := by
-    funext t
-    simp only [Pi.smul_apply, smul_eq_mul, RingHom.id_apply]
-    ring
+private def contentMul (Q : K) (i : Fin μ.card) : Module.End K (YoungTableau μ → K) :=
+  LinearMap.mulLeft K (fun t => Q ^ labelContent t i)
 
 private theorem contentMul_apply (Q : K) (i : Fin μ.card) (φ : YoungTableau μ → K)
-    (t : YoungTableau μ) : contentMul Q i φ t = Q ^ labelContent t i * φ t :=
-  (rfl)
+    (t : YoungTableau μ) : contentMul Q i φ t = Q ^ labelContent t i * φ t := by
+  rw [contentMul, LinearMap.mulLeft_apply, Pi.mul_apply]
 
 /-- The Jucys–Murphy recursion `J_(k+1) = Q⁻¹ g_k J_k g_k` on a tableau vector: conjugating
 multiplication by `Q ^ content k` with the seminormal operator of `g_k` gives `Q` times the
@@ -436,7 +424,7 @@ private theorem seminormalAux_contentMul_seminormalAux_apply (hQ : Q ≠ 0) (k :
     (hd : additiveContent Q (axialDistance t k hk) ≠ 0) :
     seminormalAux Q k hk (contentMul Q ⟨k, by omega⟩ (seminormalAux Q k hk φ)) t =
       Q * (Q ^ labelContent t ⟨k + 1, hk⟩ * φ t) := by
-  have hd0 : axialDistance t k hk ≠ 0 := fun h => hd (by rw [h, additiveContent_zero])
+  have hd0 := ne_zero_of_additiveContent_ne_zero hd
   have hE := seminormalOffDiag_mul_seminormalOffDiag_neg (Q := Q) hd0
   have hA := seminormalDiag_add_seminormalDiag_neg_mul_zpow hQ (axialDistance t k hk)
   have hpow : Q ^ labelContent t ⟨k + 1, hk⟩ =

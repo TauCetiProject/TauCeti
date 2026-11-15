@@ -63,6 +63,17 @@ theorem additiveContent_neg_natCast (Q : R) (n : ℕ) :
 theorem additiveContent_zero (Q : R) : additiveContent Q 0 = 0 := by
   simp [additiveContent]
 
+/-- A content with nonzero additive content is nonzero. -/
+theorem ne_zero_of_additiveContent_ne_zero {Q : R} {c : ℤ} (h : additiveContent Q c ≠ 0) :
+    c ≠ 0 := by
+  rintro rfl
+  exact h (additiveContent_zero Q)
+
+/-- The content one has value one. -/
+@[simp]
+theorem additiveContent_one_right (Q : R) : additiveContent Q 1 = 1 := by
+  simpa using additiveContent_natCast Q 1
+
 /-- At `Q = 1` the additive content is the ordinary integer content. -/
 @[simp]
 theorem additiveContent_one (c : ℤ) : additiveContent (1 : R) c = c := by
