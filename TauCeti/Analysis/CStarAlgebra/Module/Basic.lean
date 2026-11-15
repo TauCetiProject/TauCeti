@@ -32,10 +32,14 @@ Riesz theorem.
 
 ## Main declarations
 
-* `CStarModule.inner_polarization`: the polarization identity expressing `⟪x, y⟫_A` through the
-  inner products `⟪z, z⟫_A`.
-* `CStarModule.ext_inner_left`, `CStarModule.ext_inner_right`: vectors are determined by their
-  inner products against all vectors.
+* `CStarModule.inner_polarization`, `CStarModule.inner_map_polarization`: polarization identities
+  expressing `⟪x, y⟫_A` and `⟪x, T y⟫_A` through diagonal inner products.
+* `CStarModule.ext_inner_left`, `CStarModule.ext_inner_right`, `CStarModule.ext_inner_map`:
+  vectors are determined by their inner products against all vectors, and complex-linear
+  endomorphisms by their diagonal inner products `⟪x, T x⟫_A`.
+* `CStarModule.ofLinearIsometry`, `CStarModule.instSubmodule`: pullback of a `CStarModule`
+  structure along an `A`-equivariant complex-linear isometry, and automatic restriction to
+  invariant submodules.
 * `CStarModule.isGreatest_norm_inner`: norm recovery, `‖x‖` is the largest value of
   `‖⟪y, x⟫_A‖` over the closed unit ball.
 * `CStarModule.norm_smul_le`: `‖a x‖ ≤ ‖a‖ ‖x‖`.
@@ -110,7 +114,81 @@ theorem ext_inner_right {x y : E} (h : ∀ z, inner A x z = inner A y z) : x = y
   intro z
   simpa using congrArg star (h z)
 
+/-- Polarization identity for a complex-linear endomorphism: `⟪x, T y⟫_A` is determined by the
+diagonal values `⟪z, T z⟫_A`. Compare `inner_map_polarization'` for inner product spaces. -/
+lemma inner_map_polarization (T : E →ₗ[ℂ] E) (x y : E) :
+    inner A x (T y) = (4 : ℂ)⁻¹ • (inner A (x + y) (T (x + y)) - inner A (x - y) (T (x - y)) -
+      I • inner A (x + I • y) (T (x + I • y)) + I • inner A (x - I • y) (T (x - I • y))) := by
+  simp only [map_add, map_sub, map_smul, inner_add_left, inner_add_right, inner_sub_left,
+    inner_sub_right, inner_smul_left_complex, inner_smul_right_complex, Complex.star_def, conj_I,
+    smul_add, smul_sub, smul_neg, smul_smul, neg_smul, I_mul_I]
+  module
+
+/-- A complex-linear endomorphism of a C⋆-module vanishes if and only if all its diagonal inner
+products `⟪x, T x⟫_A` vanish. -/
+theorem inner_map_self_eq_zero (T : E →ₗ[ℂ] E) :
+    (∀ x : E, inner A x (T x) = 0) ↔ T = 0 := by
+  refine ⟨fun h ↦ LinearMap.ext fun y ↦ ext_inner_left (A := A) fun x ↦ ?_, fun h x ↦ by simp [h]⟩
+  rw [inner_map_polarization T x y, h, h, h, h]
+  simp
+
+/-- Two complex-linear endomorphisms of a C⋆-module are equal if and only if they have the same
+diagonal inner products `⟪x, S x⟫_A = ⟪x, T x⟫_A`. -/
+theorem ext_inner_map (S T : E →ₗ[ℂ] E) :
+    (∀ x : E, inner A x (S x) = inner A x (T x)) ↔ S = T := by
+  rw [← sub_eq_zero, ← inner_map_self_eq_zero (A := A) (S - T)]
+  simp [inner_sub_right, sub_eq_zero]
+
 end Algebraic
+
+section Pullback
+
+variable {A E F : Type*} [NonUnitalSemiring A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
+  [SeminormedAddCommGroup E] [Module ℂ E] [SMul A E] [CStarModule A E]
+  [NormedAddCommGroup F] [Module ℂ F] [SMul A F]
+
+/-- Pull a `CStarModule` structure back along a complex-linear isometry `f : F →ₗᵢ[ℂ] E` that
+commutes with the `A`-action. This applies to non-unital coefficient algebras as well as standalone
+subobject types. -/
+@[reducible]
+def ofLinearIsometry (f : F →ₗᵢ[ℂ] E) (hf : ∀ (a : A) (x : F), f (a • x) = a • f x) :
+    CStarModule A F where
+  inner x y := inner A (f x) (f y)
+  inner_add_right {x y z} := by rw [map_add, inner_add_right]
+  inner_self_nonneg := inner_self_nonneg
+  inner_self {x} := inner_self.trans (map_eq_zero_iff f f.injective)
+  inner_op_smul_right {a x y} := by rw [hf, inner_op_smul_right]
+  inner_smul_right_complex {z x y} := by rw [map_smul, inner_smul_right_complex]
+  star_inner x y := star_inner (f x) (f y)
+  norm_eq_sqrt_norm_inner_self x := by
+    rw [← f.norm_map x]
+    exact norm_eq_sqrt_norm_inner_self (f x)
+
+end Pullback
+
+section Submodule
+
+variable {A E : Type*} [Ring A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
+  [SeminormedAddCommGroup E] [Module ℂ E] [Module A E] [IsScalarTower ℂ A E] [CStarModule A E]
+
+/-- Any `A`-submodule of a Hilbert C⋆-module `E` inherits a `CStarModule A` structure by
+restriction. For right Hilbert `B`-modules over a unital C⋆-algebra `B`, apply with `A = Bᵐᵒᵖ`. -/
+instance instSubmodule (M : Submodule A E) : CStarModule A M where
+  inner x y := inner A (x : E) (y : E)
+  inner_add_right := inner_add_right
+  inner_self_nonneg := inner_self_nonneg
+  inner_self := inner_self.trans Submodule.coe_eq_zero
+  inner_op_smul_right := inner_op_smul_right
+  inner_smul_right_complex := inner_smul_right_complex
+  star_inner x y := star_inner (x : E) (y : E)
+  norm_eq_sqrt_norm_inner_self x := norm_eq_sqrt_norm_inner_self (x : E)
+
+/-- The inner product on an `A`-submodule agrees with the ambient inner product. -/
+@[simp]
+theorem submodule_coe_inner (M : Submodule A E) (x y : M) :
+    inner A x y = inner A (x : E) (y : E) := by rfl
+
+end Submodule
 
 variable {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
