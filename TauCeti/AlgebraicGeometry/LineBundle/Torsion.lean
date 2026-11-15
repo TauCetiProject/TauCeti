@@ -10,19 +10,17 @@ public import TauCeti.Algebra.Module.Torsion.Snake
 public import TauCeti.AlgebraicGeometry.LineBundle.Functoriality
 
 /-!
-# Linear pullback and `N`-torsion of line-bundle classes
+# `N`-torsion of line-bundle classes and linear pullback
 
-On the additively written Picard group `Additive (LineBundleClass X)` of a scheme `X`, pullback
-along a morphism `f : X ⟶ Y` is a `ℤ`-linear map `LineBundleClass.pullbackLinearMap f`. For every
-natural number `N`, the `N`-torsion subgroup `AddSubgroup.torsionBy (Additive (LineBundleClass X))`
-carries the canonical `ZMod N`-module structure `AddSubgroup.torsionBy.zmodModule`, and pullback
-restricts to a `ZMod N`-linear map `LineBundleClass.pullbackTorsionLinearMap f N` via
-`TauCeti.torsionByMap`.
+For every natural number `N`, the `N`-torsion subgroup
+`AddSubgroup.torsionBy (Additive (LineBundleClass X)) (N : ℤ)` of the additively written Picard
+group of a scheme `X` carries the canonical `ZMod N`-module structure
+`AddSubgroup.torsionBy.zmodModule`, and the `ℤ`-linear pullback `LineBundleClass.pullbackLinearMap`
+along a morphism `f : X ⟶ Y` restricts to a `ZMod N`-linear map
+`LineBundleClass.pullbackTorsionLinearMap f N` via `TauCeti.torsionByMap`.
 
 ## Main definitions
 
-* `TauCeti.AlgebraicGeometry.LineBundleClass.pullbackLinearMap`: `ℤ`-linear pullback on
-  `Additive (LineBundleClass ·)`, upgraded to `pullbackLinearEquiv` for scheme isomorphisms.
 * `TauCeti.AlgebraicGeometry.LineBundleClass.torsionByModule`: the canonical `ZMod N`-module
   structure on `Pic(X)[N]`.
 * `TauCeti.AlgebraicGeometry.LineBundleClass.pullbackTorsionLinearMap`: `ZMod N`-linear pullback on
@@ -40,70 +38,6 @@ namespace TauCeti.AlgebraicGeometry.LineBundleClass
 universe u
 
 variable {X Y Z : Scheme.{u}}
-
-/-! ### `ℤ`-linear pullback on `Additive (LineBundleClass ·)` -/
-
-/-- Pullback of line-bundle classes along a scheme morphism `f : X ⟶ Y`, packaged as a `ℤ`-linear
-map on the additively written Picard groups. -/
-def pullbackLinearMap (f : X ⟶ Y) :
-    Additive (LineBundleClass Y) →ₗ[ℤ] Additive (LineBundleClass X) :=
-  (MonoidHom.toAdditive (pullbackHom f)).toIntLinearMap
-
-/-- `pullbackLinearMap f` acts on underlying multiplicative classes by `LineBundleClass.pullback`.
--/
-@[simp]
-lemma toMul_pullbackLinearMap_apply (f : X ⟶ Y) (a : Additive (LineBundleClass Y)) :
-    (pullbackLinearMap f a).toMul = pullback f a.toMul := by
-  simp [pullbackLinearMap]
-
-/-- `pullbackLinearMap f` sends `Additive.ofMul a` to `Additive.ofMul (pullback f a)`. -/
-@[simp]
-lemma pullbackLinearMap_ofMul (f : X ⟶ Y) (a : LineBundleClass Y) :
-    pullbackLinearMap f (Additive.ofMul a) = Additive.ofMul (pullback f a) := by
-  simp [pullbackLinearMap]
-
-/-- Pullback along the identity morphism is the identity `ℤ`-linear map. -/
-@[simp]
-lemma pullbackLinearMap_id (X : Scheme.{u}) :
-    pullbackLinearMap (𝟙 X) = LinearMap.id := by
-  ext a
-  simp
-
-/-- `pullbackLinearMap` is contravariantly functorial under composition of scheme morphisms. -/
-@[simp]
-lemma pullbackLinearMap_comp (f : X ⟶ Y) (g : Y ⟶ Z) :
-    pullbackLinearMap (f ≫ g) = pullbackLinearMap f ∘ₗ pullbackLinearMap g := by
-  ext a
-  simp [pullback_comp]
-
-/-- An isomorphism of schemes induces a `ℤ`-linear equivalence of additively written Picard groups.
--/
-def pullbackLinearEquiv (e : X ≅ Y) :
-    Additive (LineBundleClass Y) ≃ₗ[ℤ] Additive (LineBundleClass X) :=
-  LinearEquiv.ofLinearMap (pullbackLinearMap e.hom) (pullbackLinearMap e.inv)
-    (by rw [← pullbackLinearMap_comp, e.hom_inv_id, pullbackLinearMap_id])
-    (by rw [← pullbackLinearMap_comp, e.inv_hom_id, pullbackLinearMap_id])
-
-/-- The underlying `ℤ`-linear map of `pullbackLinearEquiv e` is `pullbackLinearMap e.hom`. -/
-lemma toLinearMap_pullbackLinearEquiv (e : X ≅ Y) :
-    (pullbackLinearEquiv e).toLinearMap = pullbackLinearMap e.hom := by
-  ext a
-  simp [pullbackLinearEquiv]
-
-/-- Applying `pullbackLinearEquiv e` agrees with `pullbackLinearMap e.hom`. -/
-@[simp]
-lemma pullbackLinearEquiv_apply (e : X ≅ Y) (a : Additive (LineBundleClass Y)) :
-    pullbackLinearEquiv e a = pullbackLinearMap e.hom a := by
-  simp [pullbackLinearEquiv]
-
-/-- The inverse of `pullbackLinearEquiv e` is `pullbackLinearEquiv e.symm`. -/
-@[simp]
-lemma symm_pullbackLinearEquiv (e : X ≅ Y) :
-    (pullbackLinearEquiv e).symm = pullbackLinearEquiv e.symm := by
-  ext a
-  simp [pullbackLinearEquiv]
-
-/-! ### `ZMod N`-module structure and pullback on `N`-torsion -/
 
 /-- The canonical `ZMod N`-module structure on the `N`-torsion subgroup `Pic(X)[N]` of
 `Additive (LineBundleClass X)`. -/
@@ -171,7 +105,7 @@ lemma pullbackTorsionLinearEquiv_apply (e : X ≅ Y) (N : ℕ)
 
 /-- The inverse of `pullbackTorsionLinearEquiv e N` is `pullbackTorsionLinearEquiv e.symm N`. -/
 @[simp]
-lemma symm_pullbackTorsionLinearEquiv (e : X ≅ Y) (N : ℕ) :
+lemma pullbackTorsionLinearEquiv_symm (e : X ≅ Y) (N : ℕ) :
     (pullbackTorsionLinearEquiv e N).symm = pullbackTorsionLinearEquiv e.symm N := by
   ext a
   simp [pullbackTorsionLinearEquiv]

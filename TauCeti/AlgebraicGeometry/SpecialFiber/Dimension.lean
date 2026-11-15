@@ -22,9 +22,6 @@ fibre are therefore curves over the residue field.
 
 ## Main declarations
 
-* `AlgebraicGeometry.Scheme.Hom.coheight_le_succ_of_relativeDimensionLE`: every point of a locally
-  Noetherian scheme of relative dimension at most `d` over a Noetherian ring of Krull dimension at
-  most one has codimension at most `d + 1`.
 * `AlgebraicGeometry.Scheme.Hom.relativeDimensionLE_subscheme_vanishingIdeal_closure_singleton`:
   the closure of a non-generic point of the special fibre has relative dimension at most `d` over
   the residue field when all points of `X` have codimension at most `d + 1`.
@@ -40,24 +37,6 @@ universe u
 namespace AlgebraicGeometry.Scheme.Hom
 
 variable {R : Type u} [CommRing R] [IsLocalRing R] {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R))
-
-omit [IsLocalRing R] in
-/-- Every point of a locally Noetherian scheme of relative dimension at most `d` over a Noetherian
-ring of Krull dimension at most one has codimension at most `d + 1`. For a family of curves over a
-discrete valuation ring (`d = 1`), every point of the total space has codimension at most two. -/
-theorem coheight_le_succ_of_relativeDimensionLE [IsNoetherianRing R] [Ring.DimensionLEOne R]
-    [IsLocallyNoetherian X] {d : ℕ} [RelativeDimensionLE d toBase] (x : X) :
-    coheight x ≤ d + 1 := by
-  have hbase : topologicalKrullDim (Spec (.of R)) ≤ 1 :=
-    (PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim R).trans_le
-      (KrullDimLE.krullDim_le (n := 1) (α := PrimeSpectrum R))
-  have htot : topologicalKrullDim X ≤ (1 : WithBot ℕ∞) + d :=
-    (topologicalKrullDim_le_add_of_relativeDimensionLE (d := d) toBase).trans
-      (add_le_add_left hbase _)
-  have hx : (coheight x : WithBot ℕ∞) ≤ ((d + 1 : ℕ) : WithBot ℕ∞) := by
-    refine (coheight_le_topologicalKrullDim x).trans (htot.trans ?_)
-    rw [Nat.cast_add, Nat.cast_one, add_comm]
-  exact_mod_cast hx
 
 /-- **The components of the special fibre are curves.** If all points of `X` have codimension at
 most `d + 1`, then the closure of a point of the special fibre which is not a generic point of an

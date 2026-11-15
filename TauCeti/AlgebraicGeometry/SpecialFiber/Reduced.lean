@@ -204,11 +204,19 @@ instance _root_.AlgebraicGeometry.Scheme.Hom.isClosedImmersion_subschemeToReduce
     infer_instance
   exact .of_comp_isClosedImmersion _ (reducedSpecialFiberι R toBase)
 
-variable {R} in
+end ReducedSpecialFiber
+
+end TauCeti
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+universe u
+
 /-- Composing the inclusion into the reduced special fibre with `X_{s,red} ⟶ X_s` recovers the
 inclusion into the scheme-theoretic special fibre. -/
 @[reassoc (attr := simp)]
-lemma _root_.AlgebraicGeometry.Scheme.Hom.subschemeToReducedSpecialFiber_toSpecialFiber
+lemma subschemeToReducedSpecialFiber_reducedSpecialFiberToSpecialFiber
+    {R : Type u} [CommRing R] [IsLocalRing R] {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R))
     {x : X} (hx : toBase x = closedPoint R) :
     toBase.subschemeToReducedSpecialFiber hx ≫ reducedSpecialFiberToSpecialFiber R toBase =
       subschemeToSpecialFiber
@@ -218,14 +226,6 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.subschemeToReducedSpecialFiber_toSpeci
     reducedSpecialFiberToSpecialFiber_specialFiberι,
     toBase.subschemeToReducedSpecialFiber_reducedSpecialFiberι,
     subschemeToSpecialFiber_specialFiberι]
-
-end ReducedSpecialFiber
-
-end TauCeti
-
-namespace AlgebraicGeometry.Scheme.Hom
-
-universe u
 
 variable {R : Type u} [CommRing R] [IsLocalRing R] [Ring.DimensionLEOne R]
   {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R)) [IsIntegral X] [IsNoetherian X]

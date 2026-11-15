@@ -162,6 +162,11 @@ components. -/
 def principalDivisors : Submodule ℤ (T.Component → ℤ) :=
   LinearMap.range T.weightedIntersection.vecMulLinear
 
+/-- `T.principalDivisors` is the range of `T.weightedIntersection.vecMulLinear`. -/
+lemma principalDivisors_eq_range :
+    T.principalDivisors = LinearMap.range T.weightedIntersection.vecMulLinear :=
+  (rfl)
+
 /-- The subgroup spanned by the rows of the intersection matrix itself, the unweighted analogue of
 `TauCeti.NumericalType.principalDivisors`. -/
 def intersectionRelations : Submodule ℤ (T.Component → ℤ) :=

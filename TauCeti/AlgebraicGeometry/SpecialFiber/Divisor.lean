@@ -67,11 +67,9 @@ theorem specialFiberMultiplicity_congr_of_associated {π π' : R} (h : Associate
   apply Nat.cast_injective (R := ℤ)
   rw [toBase.specialFiberMultiplicity_coe, toBase.specialFiberMultiplicity_coe]
   obtain ⟨u, rfl⟩ := h
-  let f := toBase.appTop ((Scheme.ΓSpecIso (.of R)).inv π)
-  let g := toBase.appTop ((Scheme.ΓSpecIso (.of R)).inv ↑u)
-  change X.ord (X.germToFunctionField ⊤ f) x =
-    X.ord (X.germToFunctionField ⊤ (toBase.appTop ((Scheme.ΓSpecIso (.of R)).inv (π * ↑u)))) x
   rw [map_mul, map_mul, map_mul]
+  set f := toBase.appTop ((Scheme.ΓSpecIso (.of R)).inv π)
+  set g := toBase.appTop ((Scheme.ΓSpecIso (.of R)).inv ↑u)
   rcases eq_or_ne (X.germToFunctionField ⊤ f) 0 with hf0 | hf0
   · rw [hf0, zero_mul]
   have hg_unit : IsUnit g :=

@@ -61,6 +61,9 @@ over the field `κ(z)`, so the inequality bounds its dimension by `e + d`.
   locally Noetherian schemes of relative dimension at most `d`, `dim X ≤ dim Y + d`.
 * `TauCeti.AlgebraicGeometry.RelativeDimensionLE.comp`: relative dimensions at most `d` and `e`
   compose to relative dimension at most `d + e` for morphisms locally of finite type.
+* `AlgebraicGeometry.Scheme.Hom.coheight_le_succ_of_relativeDimensionLE`: every point of a locally
+  Noetherian scheme of relative dimension at most `d` over a Noetherian ring of Krull dimension at
+  most one has codimension at most `d + 1`.
 
 ## References
 
@@ -362,3 +365,27 @@ theorem coheight_le_of_relativeDimensionLE_of_field {K : Type u} [Field K]
 end AlgebraicGeometry
 
 end TauCeti
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+universe u
+
+/-- Every point of a locally Noetherian scheme of relative dimension at most `d` over a Noetherian
+ring of Krull dimension at most one has codimension at most `d + 1`. For a family of curves over a
+discrete valuation ring (`d = 1`), every point of the total space has codimension at most two. -/
+theorem coheight_le_succ_of_relativeDimensionLE {R : Type u} [CommRing R] [IsNoetherianRing R]
+    [Ring.KrullDimLE 1 R] {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R)) [IsLocallyNoetherian X]
+    {d : ℕ} [TauCeti.AlgebraicGeometry.RelativeDimensionLE d toBase] (x : X) :
+    Order.coheight x ≤ d + 1 := by
+  have hbase : topologicalKrullDim (Spec (.of R)) ≤ 1 :=
+    (PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim R).trans_le
+      (Order.KrullDimLE.krullDim_le (n := 1) (α := PrimeSpectrum R))
+  have htot : topologicalKrullDim X ≤ (1 : WithBot ℕ∞) + d :=
+    (TauCeti.AlgebraicGeometry.topologicalKrullDim_le_add_of_relativeDimensionLE (d := d)
+      toBase).trans (add_le_add_left hbase _)
+  have hx : (Order.coheight x : WithBot ℕ∞) ≤ ((d + 1 : ℕ) : WithBot ℕ∞) := by
+    refine (TauCeti.coheight_le_topologicalKrullDim x).trans (htot.trans ?_)
+    rw [Nat.cast_add, Nat.cast_one, add_comm]
+  exact_mod_cast hx
+
+end AlgebraicGeometry.Scheme.Hom

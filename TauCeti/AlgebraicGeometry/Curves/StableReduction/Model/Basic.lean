@@ -8,8 +8,8 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
 public import Mathlib.AlgebraicGeometry.Morphisms.Proper
-public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.AlgebraicGeometry.Fibers
+public import TauCeti.AlgebraicGeometry.Noetherian
 
 /-!
 # Models over discrete valuation rings
@@ -28,7 +28,7 @@ public section
 noncomputable section
 
 open CategoryTheory Limits
-open AlgebraicGeometry
+open _root_.AlgebraicGeometry
 
 namespace TauCeti
 
@@ -69,13 +69,11 @@ attribute [instance] Model.flat Model.locallyOfFinitePresentation Model.quasiCom
 /-- The total space of a model over a discrete valuation ring is a Noetherian scheme, being
 locally of finite presentation and quasi-compact over a Noetherian affine base. -/
 instance isNoetherian_total (M : Model R K C toK) : IsNoetherian M.total :=
-  (AlgebraicGeometry.isNoetherian_iff M.total).mpr
-    ⟨LocallyOfFiniteType.isLocallyNoetherian M.toBase,
-      QuasiCompact.compactSpace_of_compactSpace M.toBase⟩
+  TauCeti.AlgebraicGeometry.isNoetherian_of_finiteType M.toBase
 
 /-- Properness of the structure morphism is an additional property of a model. -/
 abbrev IsProper (M : Model R K C toK) : Prop :=
-  AlgebraicGeometry.IsProper M.toBase
+  _root_.AlgebraicGeometry.IsProper M.toBase
 
 /-- The morphism on generic fibres induced by a morphism over the base. -/
 def baseChangeHom (M : Model R K C toK) {N : Model R K C toK} (f : M.total ⟶ N.total)
