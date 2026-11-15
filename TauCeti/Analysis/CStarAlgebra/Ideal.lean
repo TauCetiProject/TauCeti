@@ -49,7 +49,8 @@ algebra. When `A` has a proper involution (in particular, when `A` is a C⋆-alg
 * `TwoSidedIdeal.toSubmodule` and `TwoSidedIdeal.toNonUnitalStarSubalgebra`: bundle a closed
   two-sided ideal of a C⋆-algebra as a `Submodule ℂ A` and as a `NonUnitalStarSubalgebra ℂ A`.
 * `TwoSidedIdeal.nonUnitalCStarAlgebra`: a closed two-sided ideal `I : TwoSidedIdeal A` is a
-  `NonUnitalCStarAlgebra` on its subtype carrier, with canonical isometric `⋆`-monomorphism
+  `NonUnitalCStarAlgebra` on its subtype carrier (inheriting `StarOrderedRing` via
+  `TwoSidedIdeal.instStarOrderedRing`), with canonical isometric `⋆`-monomorphism
   `TwoSidedIdeal.starAlgHom : I →⋆ₙₐ[ℂ] A` and `⋆`-isomorphism
   `TwoSidedIdeal.toNonUnitalStarSubalgebraEquiv : I ≃⋆ₐ[ℂ] I.toNonUnitalStarSubalgebra`.
 * `NonUnitalStarSubalgebra.multiplierHom`: the canonical contractive star-algebra homomorphism
@@ -291,6 +292,31 @@ theorem subtype_comp_toNonUnitalStarSubalgebraEquiv :
     (NonUnitalStarSubalgebraClass.subtype I.toNonUnitalStarSubalgebra).comp
       I.toNonUnitalStarSubalgebraEquiv.toNonUnitalStarAlgHom = I.starAlgHom :=
   (rfl)
+
+/-- Every closed two-sided ideal of an ordered C⋆-algebra inherits `StarOrderedRing` for the
+subtype partial order, transported from `Subtype.starOrderedRing I.toNonUnitalStarSubalgebra`. -/
+instance instStarOrderedRing [PartialOrder A] [StarOrderedRing A] : StarOrderedRing I where
+  le_iff x y := by
+    let e := I.toNonUnitalStarSubalgebraEquiv
+    have hle : x ≤ y ↔ e x ≤ e y := Iff.rfl
+    rw [hle, StarOrderedRing.le_iff]
+    refine ⟨fun ⟨p, hp, hpy⟩ => ⟨e.symm p, ?_, ?_⟩, fun ⟨p, hp, hpy⟩ => ⟨e p, ?_, ?_⟩⟩
+    · refine AddSubmonoid.closure_induction
+        (by
+          rintro _ ⟨s, rfl⟩
+          rw [map_mul, map_star]
+          exact AddSubmonoid.subset_closure ⟨e.symm s, rfl⟩)
+        (AddSubmonoid.zero_mem _)
+        (fun _ _ _ _ ha hb => by rw [map_add]; exact AddSubmonoid.add_mem _ ha hb) hp
+    · simpa [map_add] using congrArg e.symm hpy
+    · refine AddSubmonoid.closure_induction
+        (by
+          rintro _ ⟨s, rfl⟩
+          rw [map_mul, map_star]
+          exact AddSubmonoid.subset_closure ⟨e s, rfl⟩)
+        (AddSubmonoid.zero_mem _)
+        (fun _ _ _ _ ha hb => by rw [map_add]; exact AddSubmonoid.add_mem _ ha hb) hp
+    · simpa [map_add] using congrArg e hpy
 
 end CStarAlgebra
 
