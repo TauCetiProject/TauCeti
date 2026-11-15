@@ -23,8 +23,8 @@ By the universal property `TauCeti.TemperleyLieb.lift`, this defines an `R`-alge
 `TauCeti.TemperleyLieb.signEquiv δ n : TemperleyLieb R δ n ≃ₐ[R] TemperleyLieb R (-δ) n` whose
 inverse is the same sign-reversal construction at `-δ`. By contrast, any `R`-algebra homomorphism
 `TemperleyLieb R δ 2 →ₐ[R] TemperleyLieb R (-δ) 2` fixing the generator forces `2 * δ = 0`
-(`TauCeti.TemperleyLieb.two_mul_eq_zero_of_algHom_e_two`), since scalar multiples of the
-two-strand generator are linearly independent (`TauCeti.TemperleyLieb.smul_left_injective_e_two`).
+(`TauCeti.TemperleyLieb.two_mul_eq_zero_of_algHom_e_two`), since distinct scalar multiples of the
+two-strand generator are distinct (`TauCeti.TemperleyLieb.smul_left_injective_e_two`).
 
 The sign isomorphism commutes with adding a straight strand (`signEquiv_strandIncl`), preserves the
 augmentation (`aug_signEquiv`), sends Jones–Wenzl projections to Jones–Wenzl projections
@@ -188,31 +188,30 @@ theorem aug_signEquiv_symm (δ : R) {n : ℕ} (x : TemperleyLieb R (-δ) n) :
     aug ((signEquiv δ n).symm x) = aug x := by
   simpa using (aug_signEquiv δ ((signEquiv δ n).symm x)).symm
 
+private theorem ringInverse_neg_one_pow_mul (k : ℕ) (a : R) :
+    Ring.inverse ((-1 : R) ^ k * a) = (-1 : R) ^ k * Ring.inverse a := by
+  have hinv1 : Ring.inverse (-1 : R) = -1 := by
+    simpa using Ring.inverse_unit (-1 : Rˣ)
+  rw [Ring.inverse_mul (Or.inl (isUnit_one.neg.pow k)), ← Ring.inverse_pow, hinv1, mul_comm]
+
 /-- The sign isomorphism sends the Jones–Wenzl projection at `δ` to the Jones–Wenzl projection at
-`-δ`, over every commutative ring and with no invertibility assumption on the quantum integers:
-the parity signs of `[m + 1]`, `[m + 2]`, and `-e (-δ) (Fin.last m)` cancel in Wenzl's recursion. -/
+`-δ`, over every commutative ring and with no invertibility assumption on the quantum integers. -/
 @[simp]
 theorem signEquiv_jonesWenzl (δ : R) :
     ∀ n : ℕ, signEquiv δ n (jonesWenzl δ n) = jonesWenzl (-δ) n
   | 0 => by simp
   | 1 => by simp
   | m + 2 => by
-    have hinv1 : Ring.inverse (-1 : R) = -1 := by
-      simpa using Ring.inverse_unit (-1 : Rˣ)
-    have hinv_pow (k : ℕ) : Ring.inverse ((-1 : R) ^ k) = (-1 : R) ^ k := by
-      rw [← Ring.inverse_pow, hinv1]
     have hneg_sq : (-1 : R) ^ m * (-1 : R) ^ m = 1 := by
-      rw [← mul_pow, neg_one_mul, neg_neg, one_pow]
+      rw [← mul_pow]
+      simp
     have hcoeff :
         qInt R (-δ) (m + 1) * Ring.inverse (qInt R (-δ) (m + 2)) =
           -(qInt R δ (m + 1) * Ring.inverse (qInt R δ (m + 2))) := by
-      rw [qInt_neg δ (m + 1), qInt_neg δ (m + 2),
-        Ring.inverse_mul (Or.inl (isUnit_one.neg.pow (m + 3))), hinv_pow]
+      rw [qInt_neg δ (m + 1), qInt_neg δ (m + 2), ringInverse_neg_one_pow_mul]
       simp only [pow_succ]
       linear_combination -(qInt R δ (m + 1) * Ring.inverse (qInt R δ (m + 2))) * hneg_sq
-    rw [jonesWenzl_add_two, jonesWenzl_add_two, map_sub, map_smul, map_mul, map_mul,
-      signEquiv_strandIncl, signEquiv_jonesWenzl δ (m + 1), signEquiv_e, hcoeff]
-    simp [neg_smul, smul_neg]
+    simp [jonesWenzl_add_two, signEquiv_jonesWenzl δ (m + 1), hcoeff]
 
 /-- The inverse sign isomorphism sends the Jones–Wenzl projection at `-δ` to that at `δ`. -/
 @[simp]
@@ -255,17 +254,20 @@ def signStarAlgEquiv (n : ℕ) : TemperleyLieb R δ n ≃⋆ₐ[R] TemperleyLieb
 /-- Applying `signStarAlgEquiv` agrees with `signEquiv`. -/
 @[simp]
 theorem signStarAlgEquiv_apply {n : ℕ} (x : TemperleyLieb R δ n) :
-    signStarAlgEquiv δ n x = signEquiv δ n x := (rfl)
+    signStarAlgEquiv δ n x = signEquiv δ n x := by
+  rw [signStarAlgEquiv, StarAlgEquiv.ofAlgEquiv_apply]
 
 /-- Applying the inverse of `signStarAlgEquiv` agrees with `(signEquiv δ n).symm`. -/
 @[simp]
 theorem signStarAlgEquiv_symm_apply {n : ℕ} (x : TemperleyLieb R (-δ) n) :
-    (signStarAlgEquiv δ n).symm x = (signEquiv δ n).symm x := (rfl)
+    (signStarAlgEquiv δ n).symm x = (signEquiv δ n).symm x := by
+  rw [StarAlgEquiv.symm_apply_eq, signStarAlgEquiv_apply, AlgEquiv.apply_symm_apply]
 
 /-- The underlying algebra equivalence of `signStarAlgEquiv` is `signEquiv`. -/
 @[simp]
 theorem toAlgEquiv_signStarAlgEquiv (n : ℕ) :
-    (signStarAlgEquiv δ n).toAlgEquiv = signEquiv δ n := (rfl)
+    (signStarAlgEquiv δ n).toAlgEquiv = signEquiv δ n := by
+  rw [signStarAlgEquiv, StarAlgEquiv.toAlgEquiv_ofAlgEquiv]
 
 end Apply
 
@@ -277,48 +279,39 @@ section Trace
 
 variable {R : Type*} [CommRing R] {δ : R}
 
+private theorem neg_one_pow_smul_comp_aux {δ δ' : R} (h : δ' = -δ)
+    {F : ∀ n : ℕ, TemperleyLieb R δ n ≃ₐ[R] TemperleyLieb R δ' n}
+    (he : ∀ (n : ℕ) (i : Fin (n - 1)), F n (e δ i) = -e δ' i)
+    (hstrand : ∀ (n : ℕ) (x : TemperleyLieb R δ (n + 1)),
+      F (n + 2) (strandIncl x) = strandIncl (F (n + 1) x))
+    {tr' : ∀ n : ℕ, TemperleyLieb R δ' n →ₗ[R] R}
+    (htr' : IsMarkovTrace R δ' tr') :
+    IsMarkovTrace R δ (fun n ↦ (-1 : R) ^ n • (tr' n).comp (F n).toLinearMap) where
+  map_one n := by
+    simp [htr'.map_one, h, ← mul_pow]
+  map_mul_comm n x y := by
+    simp [htr'.map_mul_comm]
+  map_strandIncl n x := by
+    simp [hstrand, htr'.map_strandIncl, h, pow_succ]
+    ring
+  map_strandIncl_mul_e_last n x := by
+    simp [hstrand, he, htr'.map_strandIncl_mul_e_last, pow_succ]
+
 /-- Pulling back a Markov trace at `-δ` along `signEquiv` and scaling level `n` by `(-1) ^ n`
 produces a Markov trace at `δ`. -/
-theorem signPullback {tr' : ∀ n : ℕ, TemperleyLieb R (-δ) n →ₗ[R] R}
+theorem neg_one_pow_smul_comp_signEquiv {tr' : ∀ n : ℕ, TemperleyLieb R (-δ) n →ₗ[R] R}
     (htr' : IsMarkovTrace R (-δ) tr') :
-    IsMarkovTrace R δ (fun n ↦ (-1 : R) ^ n • (tr' n).comp (signEquiv δ n).toLinearMap) where
-  map_one n := by
-    rw [LinearMap.smul_apply, LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, _root_.map_one,
-      htr'.map_one, smul_eq_mul, ← mul_pow, neg_one_mul, neg_neg]
-  map_mul_comm n x y := by
-    simp only [LinearMap.smul_apply, LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, map_mul,
-      htr'.map_mul_comm]
-  map_strandIncl n x := by
-    simp only [LinearMap.smul_apply, LinearMap.comp_apply, AlgEquiv.toLinearMap_apply,
-      signEquiv_strandIncl, htr'.map_strandIncl, smul_eq_mul, pow_succ]
-    ring
-  map_strandIncl_mul_e_last n x := by
-    simp only [LinearMap.smul_apply, LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, map_mul,
-      signEquiv_strandIncl, signEquiv_e, mul_neg, map_neg, htr'.map_strandIncl_mul_e_last,
-      smul_eq_mul, pow_succ]
-    ring
+    IsMarkovTrace R δ (fun n ↦ (-1 : R) ^ n • (tr' n).comp (signEquiv δ n).toLinearMap) :=
+  neg_one_pow_smul_comp_aux rfl (fun _ ↦ signEquiv_e δ) (fun _ ↦ signEquiv_strandIncl δ) htr'
 
-/-- Pushing forward a Markov trace at `δ` along `(signEquiv δ n).symm` and scaling level `n` by
-`(-1) ^ n` produces a Markov trace at `-δ`. -/
-theorem signPushforward {tr : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R}
+/-- Pushing forward a Markov trace at `δ` along `signEquiv` and scaling level `n` by `(-1) ^ n`
+produces a Markov trace at `-δ`. -/
+theorem neg_one_pow_smul_comp_signEquiv_symm {tr : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R}
     (htr : IsMarkovTrace R δ tr) :
     IsMarkovTrace R (-δ)
-      (fun n ↦ (-1 : R) ^ n • (tr n).comp (signEquiv δ n).symm.toLinearMap) where
-  map_one n := by
-    rw [LinearMap.smul_apply, LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, _root_.map_one,
-      htr.map_one, smul_eq_mul, ← mul_pow, neg_one_mul]
-  map_mul_comm n x y := by
-    simp only [LinearMap.smul_apply, LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, map_mul,
-      htr.map_mul_comm]
-  map_strandIncl n x := by
-    simp only [LinearMap.smul_apply, LinearMap.comp_apply, AlgEquiv.toLinearMap_apply,
-      signEquiv_symm_strandIncl, htr.map_strandIncl, smul_eq_mul, pow_succ]
-    ring
-  map_strandIncl_mul_e_last n x := by
-    simp only [LinearMap.smul_apply, LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, map_mul,
-      signEquiv_symm_strandIncl, signEquiv_symm_e, mul_neg, map_neg,
-      htr.map_strandIncl_mul_e_last, smul_eq_mul, pow_succ]
-    ring
+      (fun n ↦ (-1 : R) ^ n • (tr n).comp (signEquiv δ n).symm.toLinearMap) :=
+  neg_one_pow_smul_comp_aux (neg_neg δ).symm (fun _ ↦ signEquiv_symm_e δ)
+    (fun _ ↦ signEquiv_symm_strandIncl δ) htr
 
 /-- **Sign transformation of Markov traces.** For Markov traces `tr` at `δ` and `tr'` at `-δ`,
 the sign isomorphism multiplies the trace on `n` strands by `(-1) ^ n`. -/
@@ -327,7 +320,8 @@ theorem map_signEquiv {tr : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R}
     (htr : IsMarkovTrace R δ tr) (htr' : IsMarkovTrace R (-δ) tr') {n : ℕ}
     (x : TemperleyLieb R δ n) :
     tr' n (signEquiv δ n x) = (-1) ^ n * tr n x := by
-  have heq := LinearMap.congr_fun (congrFun (htr'.unique htr.signPushforward) n) (signEquiv δ n x)
+  have heq := LinearMap.congr_fun
+    (congrFun (htr'.unique htr.neg_one_pow_smul_comp_signEquiv_symm) n) (signEquiv δ n x)
   simpa only [LinearMap.smul_apply, LinearMap.comp_apply, AlgEquiv.toLinearMap_apply,
     AlgEquiv.symm_apply_apply, smul_eq_mul] using heq
 
@@ -337,8 +331,8 @@ theorem map_signEquiv_symm {tr : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R}
     (htr : IsMarkovTrace R δ tr) (htr' : IsMarkovTrace R (-δ) tr') {n : ℕ}
     (x : TemperleyLieb R (-δ) n) :
     tr n ((signEquiv δ n).symm x) = (-1) ^ n * tr' n x := by
-  have heq := LinearMap.congr_fun (congrFun (htr.unique htr'.signPullback) n)
-    ((signEquiv δ n).symm x)
+  have heq := LinearMap.congr_fun
+    (congrFun (htr.unique htr'.neg_one_pow_smul_comp_signEquiv) n) ((signEquiv δ n).symm x)
   simpa only [LinearMap.smul_apply, LinearMap.comp_apply, AlgEquiv.toLinearMap_apply,
     AlgEquiv.apply_symm_apply, smul_eq_mul] using heq
 
@@ -350,13 +344,8 @@ theorem inverse_pow_mul_map_signEquiv {tr : ∀ n : ℕ, TemperleyLieb R δ n �
     (htr : IsMarkovTrace R δ tr) (htr' : IsMarkovTrace R (-δ) tr') {n : ℕ}
     (x : TemperleyLieb R δ n) :
     Ring.inverse ((-δ) ^ n) * tr' n (signEquiv δ n x) = Ring.inverse (δ ^ n) * tr n x := by
-  have hinv1 : Ring.inverse (-1 : R) = -1 := by
-    simpa using Ring.inverse_unit (-1 : Rˣ)
-  have hinv_neg : Ring.inverse (-δ) = -Ring.inverse δ := by
-    rw [← neg_one_mul, Ring.inverse_mul (Or.inl isUnit_one.neg), hinv1, mul_neg_one]
-  rw [htr.map_signEquiv htr', ← Ring.inverse_pow, ← Ring.inverse_pow, hinv_neg, ← mul_assoc,
-    ← mul_pow]
-  ring
+  rw [neg_pow, ringInverse_neg_one_pow_mul, htr.map_signEquiv htr', mul_mul_mul_comm, ← mul_pow]
+  simp
 
 end Trace
 
@@ -424,11 +413,8 @@ theorem map_traceRadical_signEquiv (n : ℕ) :
     Ideal.map (signEquiv δ n : TemperleyLieb R δ n →+* TemperleyLieb R (-δ) n)
       ((tr n).traceRadical (htr.map_mul_comm n)) =
         (tr' n).traceRadical (htr'.map_mul_comm n) := by
-  apply le_antisymm
-  · rw [Ideal.map_le_iff_le_comap, htr.comap_traceRadical_signEquiv htr']
-  · intro y hy
-    rw [← (signEquiv δ n).apply_symm_apply y]
-    exact Ideal.mem_map_of_mem _ ((htr.signEquiv_symm_mem_traceRadical_iff htr' y).2 hy)
+  rw [← htr.comap_traceRadical_signEquiv htr' n, Ideal.map_coe, Ideal.comap_coe,
+    Ideal.map_comap_of_surjective _ (signEquiv δ n).surjective]
 
 /-- The algebra isomorphism between the trace-radical quotients at `δ` and `-δ` induced by
 `TauCeti.TemperleyLieb.signEquiv`. -/
@@ -442,8 +428,8 @@ def quotientSignEquiv (n : ℕ) :
 theorem quotientSignEquiv_mk (n : ℕ) (x : TemperleyLieb R δ n) :
     htr.quotientSignEquiv htr' n
       (Ideal.Quotient.mk ((tr n).traceRadical (htr.map_mul_comm n)) x) =
-        Ideal.Quotient.mk ((tr' n).traceRadical (htr'.map_mul_comm n)) (signEquiv δ n x) :=
-  (rfl)
+        Ideal.Quotient.mk ((tr' n).traceRadical (htr'.map_mul_comm n)) (signEquiv δ n x) := by
+  rw [quotientSignEquiv, Ideal.quotientEquivAlg_mk]
 
 /-- The inverse of `quotientSignEquiv` acts on quotient classes by applying `(signEquiv δ n).symm`
 to representatives. -/
@@ -452,8 +438,8 @@ theorem quotientSignEquiv_symm_mk (n : ℕ) (x : TemperleyLieb R (-δ) n) :
     (htr.quotientSignEquiv htr' n).symm
       (Ideal.Quotient.mk ((tr' n).traceRadical (htr'.map_mul_comm n)) x) =
         Ideal.Quotient.mk ((tr n).traceRadical (htr.map_mul_comm n))
-          ((signEquiv δ n).symm x) :=
-  (rfl)
+          ((signEquiv δ n).symm x) := by
+  rw [quotientSignEquiv, Ideal.quotientEquivAlg_symm, Ideal.quotientEquivAlg_mk]
 
 /-- The quotient sign isomorphisms commute with the injective strand maps `quotientStrandIncl`
 between trace-radical quotients. -/

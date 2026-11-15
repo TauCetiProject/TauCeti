@@ -344,7 +344,7 @@ theorem exists_neg_one_pow_mul_map_star_mul_self_neg (htr : IsMarkovTrace ℂ (�
     (hn : ⌊π / arccos (-δ / 2)⌋₊ ≤ n) :
     ∃ x : TemperleyLieb ℂ (δ : ℂ) n, (-1 : ℂ) ^ n * tr n (star x * x) < 0 := by
   let : Fact (IsSelfAdjoint (-(δ : ℂ))) := ⟨(Fact.out : IsSelfAdjoint (δ : ℂ)).neg⟩
-  obtain ⟨y, hy⟩ := exists_map_star_mul_self_neg_of_eq htr.signPushforward
+  obtain ⟨y, hy⟩ := exists_map_star_mul_self_neg_of_eq htr.neg_one_pow_smul_comp_signEquiv_symm
     (Complex.ofReal_neg δ).symm (neg_pos.2 hδ) hδJ hn
   refine ⟨(signEquiv (δ : ℂ) n).symm y, ?_⟩
   simpa only [LinearMap.smul_apply, LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, map_mul,
@@ -353,7 +353,7 @@ theorem exists_neg_one_pow_mul_map_star_mul_self_neg (htr : IsMarkovTrace ℂ (�
 /-- **Jones's restriction at negative loop parameters.** If `δ < 0` and the signed Hermitian forms
 `(x, y) ↦ (-1) ^ n * tr n (x⋆ * y)` of a Markov trace are positive semidefinite on every number of
 strands, then `-δ` is an admissible Jones loop parameter. -/
-theorem mem_jonesLoopParameters_neg_of_forall_neg_one_pow_mul_nonneg
+theorem neg_mem_jonesLoopParameters_of_forall_neg_one_pow_mul_nonneg
     (htr : IsMarkovTrace ℂ (δ : ℂ) tr) (hδ : δ < 0)
     (h : ∀ (n : ℕ) (x : TemperleyLieb ℂ (δ : ℂ) n),
       0 ≤ (-1 : ℂ) ^ n * tr n (star x * x)) :
@@ -382,7 +382,7 @@ theorem forall_neg_one_pow_mul_map_star_mul_self_nonneg_iff
         0 ≤ (-1 : ℂ) ^ n * tr n (star x * x)) ↔
       -δ ∈ jonesLoopParameters := by
   let : Fact (IsSelfAdjoint (-(δ : ℂ))) := ⟨(Fact.out : IsSelfAdjoint (δ : ℂ)).neg⟩
-  rw [← forall_map_star_mul_self_nonneg_iff_of_eq htr.signPushforward
+  rw [← forall_map_star_mul_self_nonneg_iff_of_eq htr.neg_one_pow_smul_comp_signEquiv_symm
     (Complex.ofReal_neg δ).symm (neg_pos.2 hδ)]
   refine forall_congr' fun n ↦ ?_
   rw [← (signEquiv (δ : ℂ) n).toEquiv.forall_congr_right]
@@ -398,9 +398,6 @@ theorem forall_inv_pow_mul_map_star_mul_self_nonneg_iff
     (∀ (n : ℕ) (x : TemperleyLieb ℂ (δ : ℂ) n),
         0 ≤ ((δ : ℂ) ^ n)⁻¹ * tr n (star x * x)) ↔
       |δ| ∈ jonesLoopParameters := by
-  have hreal {r : ℝ} (hr : 0 < r) {z : ℂ} : 0 ≤ (r : ℂ) * z ↔ 0 ≤ z := by
-    rw [Complex.nonneg_iff, Complex.nonneg_iff, Complex.re_ofReal_mul, Complex.im_ofReal_mul,
-      mul_nonneg_iff_of_pos_left hr, eq_comm, mul_eq_zero_iff_left hr.ne', eq_comm]
   rcases hδ.lt_or_gt with hneg | hpos
   · rw [abs_of_neg hneg, ← htr.forall_neg_one_pow_mul_map_star_mul_self_nonneg_iff hneg]
     refine forall_congr' fun n ↦ forall_congr' fun x ↦ ?_
@@ -409,11 +406,13 @@ theorem forall_inv_pow_mul_map_star_mul_self_nonneg_iff
       rw [hsplit, mul_pow, mul_inv, ← inv_pow, inv_neg, inv_one, ← Complex.ofReal_pow,
         ← Complex.ofReal_inv, mul_comm]
     rw [hpow, mul_assoc]
-    exact hreal (inv_pos.2 (pow_pos (neg_pos.2 hneg) n))
+    simpa only [mul_zero] using mul_le_mul_iff_right₀ (b := 0)
+      (Complex.zero_lt_real.2 (inv_pos.2 (pow_pos (neg_pos.2 hneg) n)))
   · rw [abs_of_pos hpos, ← htr.forall_map_star_mul_self_nonneg_iff hpos]
     refine forall_congr' fun n ↦ forall_congr' fun x ↦ ?_
     rw [← Complex.ofReal_pow, ← Complex.ofReal_inv]
-    exact hreal (inv_pos.2 (pow_pos hpos n))
+    simpa only [mul_zero] using
+      mul_le_mul_iff_right₀ (b := 0) (Complex.zero_lt_real.2 (inv_pos.2 (pow_pos hpos n)))
 
 end IsMarkovTrace
 
