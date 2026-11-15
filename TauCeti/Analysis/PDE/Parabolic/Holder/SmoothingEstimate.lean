@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Restriction
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Schauder
+import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Matrix.QuadraticBounds
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
@@ -50,7 +51,8 @@ interpolation inequality at the time step `τ δ`
 of `u` by `(1 + 40 (τ δ)^(-α/2)) sup |u|` plus `2 τ δ ‖u‖_{2+α,par; [δ/4, T]}`. After
 multiplication by `δ^(1 + α/2)`, the last term is a multiple of `τ` times the weighted norm at
 `δ/4`; for `τ` small it is absorbed into the supremum over `δ` of the weighted norms, which is
-finite because `u` lies in the closed-slab space. Finally the comparison principle
+finite because `u` lies in the closed-slab space
+(`TauCeti.le_two_mul_of_le_half_mul_comp_add`). Finally the comparison principle
 (`TauCeti.ParabolicC2HolderSpace.norm_valueL_le_exp_mul`) bounds `sup |u|` by `sup |u(·, 0)|`
 and `‖P u‖`.
 
@@ -302,44 +304,6 @@ private theorem weighted_step (hα₁ : α < 1) {T d T₀ : ℝ} {hT : 0 < T} (h
   -- The restrictions in `key` and in the goal differ only in proof terms.
   convert key using 3
 
-/-- **Absorption of the weighted supremum.** Let `w d ≥ 0` be defined for `0 < d < T` and bounded
-above. If `w d ≤ w (d / 4) / 2 + C` for every `d`, with `0 ≤ C`, then `w d ≤ 2 C` for every
-`d`. -/
-private theorem le_two_mul_of_le_half_mul_add {T B C : ℝ} (w : ∀ d : ℝ, 0 < d → d < T → ℝ)
-    (hw₀ : ∀ d hd hdT, 0 ≤ w d hd hdT) (hB : ∀ d hd hdT, w d hd hdT ≤ B) (hC : 0 ≤ C)
-    (hw : ∀ d (hd : 0 < d) (hdT : d < T),
-      w d hd hdT ≤ 1 / 2 * w (d / 4) (by linarith) (by linarith) + C)
-    {d : ℝ} (hd : 0 < d) (hdT : d < T) : w d hd hdT ≤ 2 * C := by
-  -- Extend `w` by zero outside `(0, T)`.
-  let W : ℝ → ℝ := fun d ↦ if h : 0 < d ∧ d < T then w d h.1 h.2 else 0
-  have hWeq (d : ℝ) (h : 0 < d ∧ d < T) : W d = w d h.1 h.2 := dite_eq_left h
-  have hWne (d : ℝ) (h : ¬(0 < d ∧ d < T)) : W d = 0 := dite_eq_right h
-  have hW₀ (d : ℝ) : 0 ≤ W d := by
-    by_cases h : 0 < d ∧ d < T
-    · rw [hWeq d h]
-      exact hw₀ _ _ _
-    · rw [hWne d h]
-  have hbdd : BddAbove (range W) := by
-    refine ⟨max B 0, ?_⟩
-    rintro _ ⟨d, rfl⟩
-    by_cases h : 0 < d ∧ d < T
-    · rw [hWeq d h]
-      exact (hB _ _ _).trans (le_max_left _ _)
-    · rw [hWne d h]
-      exact le_max_right _ _
-  have hW (d : ℝ) : W d ≤ 1 / 2 * W (d / 4) + C := by
-    by_cases h : 0 < d ∧ d < T
-    · rw [hWeq d h, hWeq (d / 4) ⟨by linarith [h.1], by linarith [h.1, h.2]⟩]
-      exact hw d h.1 h.2
-    · rw [hWne d h]
-      linarith [hW₀ (d / 4)]
-  -- Half of the supremum of `W` absorbs into the left-hand side.
-  have hsup : iSup W ≤ 1 / 2 * iSup W + C :=
-    ciSup_le fun d ↦ by linarith [le_ciSup hbdd (d / 4), hW d]
-  have hd' := le_ciSup hbdd d
-  rw [hWeq d ⟨hd, hdT⟩] at hd'
-  linarith
-
 /-- **The time step of the interpolation.** For `CS, A ≥ 0` there is `τ ∈ (0, 1/4]` with
 `CS · 32 A τ ≤ 1/2`. -/
 private theorem exists_pos_le_quarter_and_mul_le_half {CS A : ℝ} (hCS : 0 ≤ CS) (hA : 0 ≤ A) :
@@ -404,13 +368,11 @@ theorem exists_rpow_mul_norm_restrictL_le (hα₀ : 0 < α) (hα₁ : α < 1) (h
   set m : ℝ := 1 + T₀
   set C₁ : ℝ := CS * (24 * (T₀ * m + A * m + B) + (A * (m + 40 * τ ^ (-(α : ℝ) / 2)) + B))
   set E₀ : ℝ := Real.exp (K * T₀) * (1 + T₀)
-  have hC₁ : 0 ≤ C₁ := by positivity
   refine ⟨2 * C₁ * (1 + E₀), by positivity,
     fun T hT hTT₀ a b c ha hak hbk hck u M hM δ hδ hδT ↦ ?_⟩
   set Pu := ‖euclideanParabolicOperatorL hα₁.le a b c u‖
   set V := ‖valueL u‖
   have hM₀ : 0 ≤ M := (abs_nonneg _).trans (hM 0)
-  have hPu : 0 ≤ Pu := norm_nonneg _
   have hT₀ : (T : ℝ) ≤ T₀ := by exact_mod_cast hTT₀
   have ha' : ∀ p (ξ : EuclideanSpace ℝ ι), (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ ≤
       (∑ _i : ι, ∑ _j : ι, (K : ℝ)) * ‖ξ‖ ^ 2 := fun p ξ ↦
@@ -423,19 +385,24 @@ theorem exists_rpow_mul_norm_restrictL_le (hα₀ : 0 < α) (hα₁ : α < 1) (h
     (fun q ↦ (le_abs_self _).trans ((HolderSpace.norm_apply_le c q).trans hck)) K.coe_nonneg
     (by rw [sub_zero]; exact hT₀) u hM
   -- Absorb the weighted norms `d^(1 + α/2) ‖u‖_{2+α,par; [d, T]}`, `0 < d < T`.
-  have hsup := le_two_mul_of_le_half_mul_add
-    (fun d hd hdT ↦ d ^ (1 + (α : ℝ) / 2) * ‖restrictL hd.le le_rfl hdT u‖)
-    (fun d hd _ ↦ mul_nonneg (Real.rpow_nonneg hd.le _) (norm_nonneg _)) (B := T₀ * m * ‖u‖)
-    (fun d hd hdT ↦ by
+  have hsup := le_two_mul_of_le_half_mul_comp_add (C := C₁ * (Pu + V))
+    (w := fun d : Ioo (0 : ℝ) T ↦ (d : ℝ) ^ (1 + (α : ℝ) / 2) *
+      ‖restrictL d.2.1.le le_rfl d.2.2 u‖)
+    (f := fun d ↦ ⟨d / 4, by linarith [d.2.1], by linarith [d.2.1, d.2.2]⟩)
+    ⟨T₀ * m * ‖u‖, by
+      rintro _ ⟨⟨d, hd, hdT⟩, rfl⟩
       -- The restrictions differ only in proof terms.
-      convert rpow_mul_norm_restrictL_le hα₂ hT₀ u hd hdT using 1)
-    (mul_nonneg hC₁ (add_nonneg hPu (norm_nonneg _)))
-    (fun d hd hdT ↦ by
+      convert rpow_mul_norm_restrictL_le hα₂ hT₀ u hd hdT using 1⟩
+    (fun ⟨d, hd, hdT⟩ ↦ by
       obtain ⟨χ, hχ⟩ := hcut hT hd
       have key := weighted_step hα₁ hd hdT (by positivity) (by linarith) a b c u hCS
         (hS T hT hTT₀ a b c ha ha' hak hbk hck) hχ hτ₀ hτ₄ hτabs (hdT.le.trans hT₀)
       -- The restrictions in `key` and in the goal differ only in proof terms.
-      convert key using 3) hδ hδT
+      convert key using 3) ⟨δ, hδ, hδT⟩
+  replace hsup : δ ^ (1 + (α : ℝ) / 2) * ‖restrictL hδ.le le_rfl hδT u‖ ≤
+      2 * (C₁ * (Pu + V)) := by
+    -- The restrictions differ only in proof terms.
+    convert hsup using 3
   calc δ ^ (1 + (α : ℝ) / 2) * ‖restrictL hδ.le le_rfl hδT u‖ ≤ 2 * (C₁ * (Pu + V)) := hsup
     _ ≤ 2 * C₁ * ((1 + E₀) * (M + Pu)) := by
       rw [← mul_assoc]

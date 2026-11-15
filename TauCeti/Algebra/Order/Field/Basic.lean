@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Archimedean.Basic
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Tactic.FieldSimp
@@ -106,6 +107,8 @@ Finally, a nonnegative quantity bounded by `A / t ^ k` with `0 < t` forces `0 �
 * `TauCeti.add_le_mul_add_mul_of_le_of_le`: `U + Y ≤ (2 + (2 M² + 1) (2 / c) (a + b)) (Z + W)` from
   `U ≤ 2 Z + 2 M² Y` and `c / 2 * Y ≤ a Z + b W`.
 * `TauCeti.le_two_mul_of_le_add_mul`: `J ≤ 2 * Y` from `J ≤ Y + X * J`, `X ≤ 1 / 2` and `0 ≤ J`.
+* `TauCeti.le_two_mul_of_le_half_mul_comp_add`: `w x ≤ 2 * C` for a function `w` bounded above
+  with `w y ≤ 1 / 2 * w (f y) + C` for every `y`, in an archimedean ordered field.
 -/
 
 public section
@@ -372,6 +375,26 @@ theorem add_le_mul_add_mul_of_le_of_le {α : Type*} [Field α] [LinearOrder α]
 theorem le_two_mul_of_le_add_mul {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
     {J X Y : α} (hJ : 0 ≤ J) (hX : X ≤ 1 / 2) (h : J ≤ Y + X * J) : J ≤ 2 * Y := by
   nlinarith [mul_le_mul_of_nonneg_right hX hJ]
+
+/-- Iterated absorption of a halved term: if `w` is bounded above and
+`w y ≤ 1 / 2 * w (f y) + C` for every `y`, then `w x ≤ 2 * C` for every `x`. -/
+theorem le_two_mul_of_le_half_mul_comp_add {α β : Type*} [Field α] [LinearOrder α]
+    [IsStrictOrderedRing α] [Archimedean α] {w : β → α} {f : β → β} {C : α}
+    (hw : BddAbove (Set.range w)) (h : ∀ y, w y ≤ 1 / 2 * w (f y) + C) (x : β) :
+    w x ≤ 2 * C := by
+  obtain ⟨B, hB⟩ := hw
+  -- Iterating `h` gives `(w y - 2 C) 2 ^ n ≤ B - 2 C` for every `n`.
+  have key (n : ℕ) : ∀ y, (w y - 2 * C) * 2 ^ n ≤ B - 2 * C := by
+    induction n with
+    | zero => exact fun y ↦ by linarith [hB ⟨y, rfl⟩]
+    | succ n ih =>
+      refine fun y ↦ le_trans ?_ (ih (f y))
+      rw [pow_succ, mul_comm (2 ^ n : α) 2, ← mul_assoc]
+      exact mul_le_mul_of_nonneg_right (by linarith [h y]) (by positivity)
+  by_contra! hx
+  obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt ((B - 2 * C) / (w x - 2 * C)) one_lt_two
+  rw [div_lt_iff₀ (by linarith)] at hn
+  linarith [key n x, mul_comm (w x - 2 * C) (2 ^ n)]
 
 /-- The bookkeeping bound `C (M + N P + N) ≤ C (1 + P) (M + N)` for nonnegative `C`, `M` and
 `P`. -/
