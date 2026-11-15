@@ -219,7 +219,9 @@ theorem exists_timeCutoff (hα : α ≤ 2) :
       ∃ χ : ParabolicC2HolderSpace α E ℝ hT, IsTimeCutoff A B δ χ := by
   obtain ⟨L₁, hL₁⟩ := Real.smoothTransition.exists_forall_norm_deriv_le
   lift L₁ to ℝ≥0 using (norm_nonneg _).trans (hL₁ 0)
-  obtain ⟨L₂, hlip⟩ := Real.smoothTransition.exists_lipschitzWith_deriv
+  obtain ⟨L₂, hlip⟩ := ContDiff.lipschitzWith_of_hasCompactSupport
+    Real.smoothTransition.hasCompactSupport_deriv
+    (Real.smoothTransition.contDiff.iterate_deriv 1) (by simp)
   refine ⟨2 * L₁, 4 * L₂ + 4 * L₁, fun {T} hT {δ} hδ ↦ ?_⟩
   lift δ to ℝ≥0 using hδ.le
   -- The cutoff is `φ(t) = ψ(2 t / δ - 1)`, with derivative `φ'`.
