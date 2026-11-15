@@ -302,7 +302,7 @@ theorem sum_characterDegree_sq_eq_card :
 /-- **The degree of an irreducible character divides the order of the group.** -/
 theorem characterDegree_dvd_card [CharZero k] (i : Fin (Nat.card (ConjClasses G))) :
     characterDegree k i ∣ Nat.card G := by
-  simpa using Representation.finrank_dvd_card (irreducibleRepresentation k i)
+  simpa using (irreducibleRepresentation k i).finrank_dvd_card
 
 end Enumeration
 
