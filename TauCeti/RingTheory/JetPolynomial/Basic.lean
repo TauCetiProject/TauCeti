@@ -110,23 +110,24 @@ end Stage
 
 section TotalDeriv
 
-variable {R : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A] [DecidableEq ι]
-  (d : ι → Derivation R A A)
+variable {R : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A] (d : ι → Derivation R A A)
 
 /-- The total derivative `D_μ` on the polynomial jet algebra, for coefficient derivations
 `d μ = ∂_μ` of `A`: it differentiates coefficients by `∂_μ` and sends the jet variable `u^a_I`
 to `u^a_{I + e_μ}`. -/
 def totalDeriv (μ : ι) : Derivation R (JetPolynomial ι α A) (JetPolynomial ι α A) :=
+  letI := Classical.decEq ι
   (d μ).mvMapCoeffs +
     (mkDerivation A fun v : α × (ι → ℕ) => (X (v.1, v.2 + Pi.single μ 1) :
       JetPolynomial ι α A)).restrictScalars R
 
 /-- The defining formula of the total derivative: the coefficientwise derivation plus the
 `A`-linear derivation raising the multi-index of each jet variable. -/
-theorem totalDeriv_def (μ : ι) :
+theorem totalDeriv_def [DecidableEq ι] (μ : ι) :
     totalDeriv (α := α) d μ = (d μ).mvMapCoeffs +
       (mkDerivation A fun v : α × (ι → ℕ) => (X (v.1, v.2 + Pi.single μ 1) :
-        JetPolynomial ι α A)).restrictScalars R := (rfl)
+        JetPolynomial ι α A)).restrictScalars R := by
+  unfold totalDeriv; congr!
 
 /-- Total derivatives act on coefficients by the coefficient derivations. -/
 @[simp, grind =]
@@ -136,13 +137,14 @@ theorem totalDeriv_C (μ : ι) (a : A) :
 
 /-- Total derivatives raise the multi-index of a jet variable: `D_μ u^a_I = u^a_{I + e_μ}`. -/
 @[simp, grind =]
-theorem totalDeriv_X (μ : ι) (a : α) (I : ι → ℕ) :
+theorem totalDeriv_X [DecidableEq ι] (μ : ι) (a : α) (I : ι → ℕ) :
     totalDeriv d μ (X (a, I) : JetPolynomial ι α A) = X (a, I + Pi.single μ 1) := by
-  simp [totalDeriv]
+  simp [totalDeriv_def]
 
 /-- The total derivative `D_μ` is the only `R`-derivation of the polynomial jet algebra acting
 on coefficients by `∂_μ` and sending `u^a_I` to `u^a_{I + e_μ}`. -/
-theorem eq_totalDeriv {μ : ι} {D : Derivation R (JetPolynomial ι α A) (JetPolynomial ι α A)}
+theorem eq_totalDeriv [DecidableEq ι] {μ : ι}
+    {D : Derivation R (JetPolynomial ι α A) (JetPolynomial ι α A)}
     (hC : ∀ a, D (C a) = C (d μ a))
     (hX : ∀ (a : α) (I : ι → ℕ), D (X (a, I)) = X (a, I + Pi.single μ 1)) :
     D = totalDeriv d μ :=
@@ -152,6 +154,7 @@ theorem eq_totalDeriv {μ : ι} {D : Derivation R (JetPolynomial ι α A) (JetPo
 theorem totalDeriv_comm {μ ν : ι} (hd : Commute (d μ : Module.End R A) (d ν))
     (p : JetPolynomial ι α A) :
     totalDeriv d μ (totalDeriv d ν p) = totalDeriv d ν (totalDeriv d μ p) := by
+  classical
   induction p using MvPolynomial.induction_on with
   | C a =>
     have := LinearMap.congr_fun hd.eq a
@@ -174,6 +177,7 @@ variable [Fintype ι]
 /-- Total derivatives raise the stage by at most one. -/
 theorem totalDeriv_mem_jetStage {r : ℕ} {p : JetPolynomial ι α A} (hp : p ∈ jetStage ι α A r)
     (μ : ι) : totalDeriv d μ p ∈ jetStage ι α A (r + 1) := by
+  classical
   rw [jetStage_def, supported_eq_adjoin_X] at hp
   induction hp using Algebra.adjoin_induction with
   | mem x hx =>
@@ -194,6 +198,7 @@ theorem totalDeriv_mem_jetStage {r : ℕ} {p : JetPolynomial ι α A} (hp : p �
 `|I|` does not lie in stage `|I|`. -/
 theorem totalDeriv_X_notMem_jetStage [Nontrivial A] (μ : ι) (a : α) (I : ι → ℕ) :
     totalDeriv d μ (X (a, I) : JetPolynomial ι α A) ∉ jetStage ι α A (∑ ν, I ν) := by
+  classical
   simp [Finset.sum_add_distrib]
 
 end TotalDeriv
@@ -202,8 +207,8 @@ end TotalDeriv
 
 section Eval
 
-variable [CommSemiring A] [Fintype ι] {R B : Type*} [CommRing R] [CommRing B] [Algebra R B]
-  [Algebra A B]
+variable [CommSemiring A] [Fintype ι] {R B : Type*} [CommSemiring R] [CommSemiring B]
+  [Algebra R B] [Algebra A B]
   (δ : ι → Derivation R B B) (hδ : ∀ i j, Commute (δ i : Module.End R B) (δ j)) (f : α → B)
 
 /-- Evaluation of polynomial jets along a field `f : α → B` in an `A`-algebra `B` with commuting
@@ -224,10 +229,11 @@ theorem jetEval_X (a : α) (I : ι → ℕ) :
 /-- **Total derivatives are derivatives along fields.** If the derivations `δ_μ` of `B` restrict
 to the coefficient derivations `∂_μ` on `A`, then differentiating the evaluation of a polynomial
 jet `p` along a field is evaluating its total derivative: `δ_μ (p(j f)) = (D_μ p)(j f)`. -/
-theorem apply_jetEval [Algebra R A] [DecidableEq ι] (d : ι → Derivation R A A)
+theorem apply_jetEval [Algebra R A] (d : ι → Derivation R A A)
     (μ : ι) (hdδ : ∀ a, δ μ (algebraMap A B a) = algebraMap A B (d μ a))
     (p : JetPolynomial ι α A) :
     δ μ (jetEval δ hδ f p) = jetEval δ hδ f (totalDeriv d μ p) := by
+  classical
   induction p using MvPolynomial.induction_on with
   | C a => rw [algHom_C, totalDeriv_C, algHom_C, hdδ]
   | add p q hp hq => rw [map_add, map_add, map_add, hp, hq, map_add]

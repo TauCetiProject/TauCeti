@@ -56,8 +56,7 @@ def mvMapCoeffs : Derivation R (MvPolynomial σ A) (MvPolynomial σ A) where
   map_add' := AddMonoidAlgebra.map_add _
   map_smul' r p := by
     ext m
-    rw [coeff_addMonoidAlgebraMap, coeff_smul, coeff_smul, coeff_addMonoidAlgebraMap]
-    exact d.map_smul r _
+    simp
   map_one_eq_zero' := by
     classical
     ext m
@@ -84,8 +83,7 @@ def mvMapCoeffs : Derivation R (MvPolynomial σ A) (MvPolynomial σ A) where
 /-- The coefficients of `d.mvMapCoeffs p` are the derivatives of those of `p`. -/
 @[simp, grind =]
 theorem coeff_mvMapCoeffs (p : MvPolynomial σ A) (m : σ →₀ ℕ) :
-    (d.mvMapCoeffs p).coeff m = d (p.coeff m) :=
-  coeff_addMonoidAlgebraMap _ p m
+    (d.mvMapCoeffs p).coeff m = d (p.coeff m) := (rfl)
 
 /-- `d.mvMapCoeffs` differentiates the coefficient of a monomial. -/
 @[simp, grind =]
