@@ -22,7 +22,8 @@ The adjoint of the differential is the canonical isometric horizontal lift. Its 
 the differential is exactly the native orthogonal projection onto the horizontal space; the
 complementary projection is the vertical one. Thus the differential decreases norms, with
 equality exactly on horizontal vectors. The gradient of a pulled-back function is the horizontal
-lift of its gradient. Product projections give submersions with arbitrary-dimensional fibres.
+lift of its gradient. Product projections give submersions with arbitrary-dimensional fibres,
+whose horizontal lifts and orthogonal projections act factorwise.
 
 These are pointwise splitting and metric identities. They do not assert regularity of the
 horizontal distribution or construct horizontal lifts of curves.
@@ -229,6 +230,28 @@ theorem horizontalLift_fst (p : M × N) (v : TangentSpace I p.1) :
     ContinuousLinearEquiv.apply_symm_apply, inner_zero_left, add_zero,
     Manifold.tangentSpaceProdEquiv_apply]
   erw [ContinuousLinearMap.coe_fst']
+
+/-- For the first projection of a Riemannian product `M × N → M`, the horizontal orthogonal
+projection keeps the first tangent component and zeroes the second. -/
+theorem starProjection_orthogonal_ker_fst (p : M × N) (v : TangentSpace (I.prod J) p) :
+    (mfderiv (I.prod J) I (@Prod.fst M N) p).kerᗮ.starProjection v =
+      (Manifold.tangentSpaceProdEquiv p).symm ((Manifold.tangentSpaceProdEquiv p v).1, 0) := by
+  rw [← (isRiemannianSubmersion_fst (I := I) (J := J)).horizontalLift_mfderiv, horizontalLift_fst,
+    mfderiv_fst]
+  simp only [Manifold.tangentSpaceProdEquiv_apply]
+  rfl
+
+/-- For the first projection of a Riemannian product `M × N → M`, the vertical orthogonal
+projection zeroes the first tangent component and keeps the second. -/
+theorem starProjection_ker_fst (p : M × N) (v : TangentSpace (I.prod J) p) :
+    (mfderiv (I.prod J) I (@Prod.fst M N) p).ker.starProjection v =
+      (Manifold.tangentSpaceProdEquiv p).symm (0, (Manifold.tangentSpaceProdEquiv p v).2) := by
+  rw [eq_sub_of_add_eq
+    ((mfderiv (I.prod J) I (@Prod.fst M N) p).ker.starProjection_add_starProjection_orthogonal v),
+    starProjection_orthogonal_ker_fst]
+  apply (Manifold.tangentSpaceProdEquiv p).injective
+  rw [map_sub, ContinuousLinearEquiv.apply_symm_apply, ContinuousLinearEquiv.apply_symm_apply]
+  exact Prod.ext (sub_self _) (sub_zero _)
 
 end Product
 

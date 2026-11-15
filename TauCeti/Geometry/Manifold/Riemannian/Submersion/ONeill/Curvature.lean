@@ -36,8 +36,8 @@ difference between the horizontal curvature of `M` and the curvature of the base
   `(3 / 4) ‖v [X, Y]‖²`, giving `K_N(df X, df Y) = K_M(X, Y) + (3 / 4) ‖v [X, Y]‖²`.
 
 In particular, a Riemannian submersion is curvature-nondecreasing on horizontal two-planes, with
-equality on a linearly independent horizontal pair `(u, v)` if and only if `A_u v = 0`, and lower
-bounds on sectional curvature descend to the base.
+equality on any horizontal pair `(u, v)` if and only if `A_u v = 0`, and lower bounds on sectional
+curvature descend to the base.
 
 The curvature sign convention follows Lee: `R(X, Y) Z = ∇_X ∇_Y Z - ∇_Y ∇_X Z - ∇_[X, Y] Z`, with
 `Rm(u, v, w, z) = ⟪R(u, v) w, z⟫` and sectional-curvature numerator `⟪R(u, v) v, u⟫`.
@@ -572,34 +572,44 @@ theorem sectionalCurvature_le_sectionalCurvature_mfderiv {x : M} {u v : TangentS
     (div_nonneg (mul_nonneg (by positivity) (sq_nonneg _))
       (Matrix.posSemidef_gram ℝ ![u, v]).det_nonneg)
 
-/-- On a linearly independent base pair, the base sectional curvature equals that of its horizontal
-lift at `x` if and only if O'Neill's tensor `A` vanishes on the lifted pair. -/
-theorem sectionalCurvature_map_eq_iff_oneillA_eq_zero {x : M}
-    {b₁ b₂ : TangentSpace J (f x)} (hb : LinearIndependent ℝ ![b₁, b₂]) :
-    (leviCivitaConnection J N).sectionalCurvature
-        (isMetricCompatible_leviCivitaConnection J) (f x) b₁ b₂ =
-      (leviCivitaConnection I M).sectionalCurvature
-        (isMetricCompatible_leviCivitaConnection I) x
-        (h.horizontalLift x b₁) (h.horizontalLift x b₂) ↔
-      h.oneillA x (h.horizontalLift x b₁) (h.horizontalLift x b₂) = 0 := by
-  rw [h.sectionalCurvature_map, add_eq_left, div_eq_zero_iff,
-    or_iff_left (Matrix.det_gram_ne_zero_iff_linearIndependent.mpr hb),
-    mul_eq_zero, or_iff_right (by norm_num), sq_eq_zero_iff, norm_eq_zero]
-
-/-- On a linearly independent horizontal pair, the base sectional curvature equals the horizontal
-sectional curvature if and only if `A_u v = 0`. -/
+/-- On any horizontal pair, the base sectional curvature equals the horizontal sectional curvature
+if and only if `A_u v = 0`. No linear-independence guard is needed: on dependent pairs both
+sectional curvatures are zero and `A_u v = 0` by skew-symmetry on horizontal vectors. -/
 theorem sectionalCurvature_mfderiv_eq_iff_oneillA_eq_zero {x : M} {u v : TangentSpace I x}
-    (hu : u ∈ (mfderiv I J f x).kerᗮ) (hv : v ∈ (mfderiv I J f x).kerᗮ)
-    (huv : LinearIndependent ℝ ![u, v]) :
+    (hu : u ∈ (mfderiv I J f x).kerᗮ) (hv : v ∈ (mfderiv I J f x).kerᗮ) :
     (leviCivitaConnection J N).sectionalCurvature
         (isMetricCompatible_leviCivitaConnection J) (f x)
         (mfderiv I J f x u) (mfderiv I J f x v) =
       (leviCivitaConnection I M).sectionalCurvature
         (isMetricCompatible_leviCivitaConnection I) x u v ↔
       h.oneillA x u v = 0 := by
-  rw [h.sectionalCurvature_mfderiv hu hv, add_eq_left, div_eq_zero_iff,
-    or_iff_left (Matrix.det_gram_ne_zero_iff_linearIndependent.mpr huv),
-    mul_eq_zero, or_iff_right (by norm_num), sq_eq_zero_iff, norm_eq_zero]
+  by_cases huv : LinearIndependent ℝ ![u, v]
+  · rw [h.sectionalCurvature_mfderiv hu hv, add_eq_left, div_eq_zero_iff,
+      or_iff_left (Matrix.det_gram_ne_zero_iff_linearIndependent.mpr huv),
+      mul_eq_zero, or_iff_right (by norm_num), sq_eq_zero_iff, norm_eq_zero]
+  · have hA : h.oneillA x u v = 0 := by
+      rw [linearIndependent_fin2] at huv
+      push Not at huv
+      by_cases hv0 : v = 0
+      · simp [hv0]
+      · obtain ⟨a, ha⟩ := huv hv0
+        change a • v = u at ha
+        rw [← ha, map_smul, smul_apply, h.oneillA_self hv, smul_zero]
+    exact iff_of_true (h.sectionalCurvature_mfderiv_of_oneillA_eq_zero hu hv hA) hA
+
+/-- On any base pair, the base sectional curvature equals that of its horizontal lift at `x` if and
+only if O'Neill's tensor `A` vanishes on the lifted pair. No linear-independence guard is needed. -/
+theorem sectionalCurvature_map_eq_iff_oneillA_eq_zero (x : M)
+    (b₁ b₂ : TangentSpace J (f x)) :
+    (leviCivitaConnection J N).sectionalCurvature
+        (isMetricCompatible_leviCivitaConnection J) (f x) b₁ b₂ =
+      (leviCivitaConnection I M).sectionalCurvature
+        (isMetricCompatible_leviCivitaConnection I) x
+        (h.horizontalLift x b₁) (h.horizontalLift x b₂) ↔
+      h.oneillA x (h.horizontalLift x b₁) (h.horizontalLift x b₂) = 0 := by
+  simpa only [h.mfderiv_horizontalLift] using
+    h.sectionalCurvature_mfderiv_eq_iff_oneillA_eq_zero
+      (h.horizontalLift_mem_orthogonal_ker x b₁) (h.horizontalLift_mem_orthogonal_ker x b₂)
 
 /-- **Descent of lower sectional-curvature bounds at a point.** If every horizontal two-plane at
 `x` has sectional curvature at least `κ`, then every tangent two-plane of `N` at `f x` has

@@ -30,8 +30,8 @@ vertical vector fields:
   one has `h (∇_u X) = A_(X x) u` and `∇_u X = A_(X x) u + T_u (X x)`. Combining both components
   yields the full derivative `∇_w X` along an arbitrary tangent vector `w` at `x`.
 
-For the first projection of a Riemannian product `M × N → M`, the horizontal and vertical
-projections read off the two factor components and both `oneillA` and `oneillT` vanish identically.
+For the first projection of a Riemannian product `M × N → M`, both `oneillA` and `oneillT` vanish
+identically.
 
 ## Main results
 
@@ -42,9 +42,8 @@ projections read off the two factor components and both `oneillA` and `oneillT` 
   `TauCeti.IsRiemannianSubmersion.leviCivitaConnection_horizontalLift_of_mem_ker`,
   `TauCeti.IsRiemannianSubmersion.leviCivitaConnection_horizontalLift_apply`: Levi-Civita
   derivatives of basic horizontal lifts along horizontal, vertical, and arbitrary tangent vectors.
-* `TauCeti.starProjection_orthogonal_ker_fst`, `TauCeti.starProjection_ker_fst`,
-  `TauCeti.oneillA_fst`, `TauCeti.oneillT_fst`: explicit projections and vanishing of O'Neill's
-  tensors for a Riemannian product projection.
+* `TauCeti.oneillA_fst`, `TauCeti.oneillT_fst`: vanishing of O'Neill's tensors for a Riemannian
+  product projection.
 
 ## References
 
@@ -331,54 +330,11 @@ variable
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   {G : Type*} [TopologicalSpace G] {J : ModelWithCorners ℝ F G}
   {N : Type*} [TopologicalSpace N] [ChartedSpace G N] [IsManifold J ∞ N]
   [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
-
-/-- For the first projection of a Riemannian product `M × N → M`, the horizontal orthogonal
-projection keeps the first tangent component and zeroes the second. -/
-theorem starProjection_orthogonal_ker_fst (p : M × N) (v : TangentSpace (I.prod J) p) :
-    (mfderiv (I.prod J) I (@Prod.fst M N) p).kerᗮ.starProjection v =
-      (Manifold.tangentSpaceProdEquiv p).symm ((Manifold.tangentSpaceProdEquiv p v).1, 0) := by
-  set hsub := isRiemannianSubmersion_fst (I := I) (J := J) (M := M) (N := N)
-  set v₁ := (Manifold.tangentSpaceProdEquiv p v).1
-  set v₂ := (Manifold.tangentSpaceProdEquiv p v).2
-  have hv₁ : (Manifold.tangentSpaceProdEquiv p).symm (v₁, 0) ∈
-      (mfderiv (I.prod J) I (@Prod.fst M N) p).kerᗮ := by
-    rw [← horizontalLift_fst]
-    exact hsub.horizontalLift_mem_orthogonal_ker p v₁
-  have hv₂ : (Manifold.tangentSpaceProdEquiv p).symm (0, v₂) ∈
-      (mfderiv (I.prod J) I (@Prod.fst M N) p).kerᗮᗮ := by
-    rw [Submodule.mem_orthogonal]
-    intro u hu
-    obtain ⟨b, rfl⟩ := hsub.range_horizontalLift p ▸ hu
-    rw [LinearIsometry.coe_toLinearMap, horizontalLift_fst, Manifold.inner_tangentSpace_prod,
-      ContinuousLinearEquiv.apply_symm_apply, ContinuousLinearEquiv.apply_symm_apply]
-    simp
-  have hdecomp : v = (Manifold.tangentSpaceProdEquiv p).symm (v₁, 0) +
-      (Manifold.tangentSpaceProdEquiv p).symm (0, v₂) := by
-    apply (Manifold.tangentSpaceProdEquiv p).injective
-    rw [map_add, ContinuousLinearEquiv.apply_symm_apply, ContinuousLinearEquiv.apply_symm_apply]
-    exact Prod.ext (add_zero v₁).symm (zero_add v₂).symm
-  conv_lhs => rw [hdecomp]
-  rw [map_add, Submodule.starProjection_eq_self_iff.mpr hv₁,
-    (Submodule.starProjection_apply_eq_zero_iff _).mpr hv₂, add_zero]
-
-/-- For the first projection of a Riemannian product `M × N → M`, the vertical orthogonal
-projection zeroes the first tangent component and keeps the second. -/
-theorem starProjection_ker_fst (p : M × N) (v : TangentSpace (I.prod J) p) :
-    (mfderiv (I.prod J) I (@Prod.fst M N) p).ker.starProjection v =
-      (Manifold.tangentSpaceProdEquiv p).symm (0, (Manifold.tangentSpaceProdEquiv p v).2) := by
-  rw [eq_sub_of_add_eq
-    ((mfderiv (I.prod J) I (@Prod.fst M N) p).ker.starProjection_add_starProjection_orthogonal v),
-    starProjection_orthogonal_ker_fst]
-  apply (Manifold.tangentSpaceProdEquiv p).injective
-  rw [map_sub, ContinuousLinearEquiv.apply_symm_apply, ContinuousLinearEquiv.apply_symm_apply]
-  exact Prod.ext (sub_self _) (sub_zero _)
-
-variable
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
 
 private theorem leviCivitaConnection_projections_fst_eq_zero (p : M × N)
