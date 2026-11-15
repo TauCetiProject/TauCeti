@@ -99,13 +99,6 @@ variable {C : Type u} [Category.{v} C] [HasCoproducts.{0} C] [Abelian C] (R : C)
   {c : N × Ico (0 : ℝ) 1 → X} (hc : IsCollar f c) (hιf : range ι = (range f)ᶜ)
 include hc hιf
 
-/-- If `ι(M)` is the complement of the boundary `f(N)`, then the complement `Kₜ` of the collar of
-positive depth `t` lies in `ι(M)`. -/
-theorem IsCollar.compl_collarPart_subset_range {t : ℝ} (ht : 0 < t) :
-    (collarPart c t)ᶜ ⊆ range ι := by
-  rw [hιf]
-  exact compl_subset_compl.2 (hc.range_subset_collarPart ht)
-
 omit hιf in
 /-- The relative homology of a pair `(T, S)` with `S = ∂X = f(N)` and `T` the collar `Cₜ` of
 positive depth vanishes: the collar coordinates deform `Cₜ` onto `∂X` relative to `∂X`. -/
