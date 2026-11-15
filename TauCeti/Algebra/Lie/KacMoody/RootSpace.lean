@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Graded
-public import TauCeti.Algebra.Lie.KacMoody.Triangular
+public import TauCeti.Algebra.Lie.KacMoody.CartanInjectivity
 public import TauCeti.Algebra.Lie.Subalgebra.LieSpan
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Realization.RootLattice
 import Mathlib.Data.Set.Finite.List
@@ -144,10 +144,8 @@ instance : SetLike.GradedBracket
 
 /-- Every Cartan element `cartanElement R x` has root weight `0`. -/
 theorem cartanElement_mem_rootSpace_zero (x : H) :
-    cartanElement R x ∈ rootSpace R 0 := by
-  rw [mem_rootSpace_iff]
-  intro y
-  simp
+    cartanElement R x ∈ rootSpace R 0 :=
+  (mem_rootSpace_iff R).2 fun _ => by simp
 
 /-- The Cartan subalgebra lies in the zero root space. -/
 theorem cartanSubalgebra_toSubmodule_le_rootSpace_zero :
@@ -158,41 +156,31 @@ theorem cartanSubalgebra_toSubmodule_le_rootSpace_zero :
 
 /-- The `i`-th raising generator `eᵢ` lies in the simple root space `𝔤_{αᵢ}`. -/
 theorem positiveGenerator_mem_rootSpace (i : I) :
-    positiveGenerator R i ∈ rootSpace R (R.root i) := by
-  rw [mem_rootSpace_iff]
-  intro x
-  exact lie_cartanElement_positiveGenerator R x i
+    positiveGenerator R i ∈ rootSpace R (R.root i) :=
+  (mem_rootSpace_iff R).2 fun x => lie_cartanElement_positiveGenerator R x i
 
 /-- The `i`-th lowering generator `fᵢ` lies in the negative simple root space `𝔤_{-αᵢ}`. -/
 theorem negativeGenerator_mem_rootSpace (i : I) :
-    negativeGenerator R i ∈ rootSpace R (-R.root i) := by
-  rw [mem_rootSpace_iff]
-  intro x
-  simp [lie_cartanElement_negativeGenerator]
+    negativeGenerator R i ∈ rootSpace R (-R.root i) :=
+  (mem_rootSpace_iff R).2 fun x => by simp [lie_cartanElement_negativeGenerator]
 
 private theorem map_rootSpace_chevalleyInvolution_le (α : Module.Dual K H) :
     (rootSpace R α).map (chevalleyInvolution R).toLinearMap ≤ rootSpace R (-α) := by
   rintro _ ⟨z, hz, rfl⟩
-  rw [mem_rootSpace_iff]
-  intro x
+  refine (mem_rootSpace_iff R).2 fun x => ?_
+  change ⁅cartanElement R x, chevalleyInvolution R z⁆ = (-α) x • chevalleyInvolution R z
   have hx : cartanElement R x = -chevalleyInvolution R (cartanElement R x) := by simp
-  calc
-    ⁅cartanElement R x, chevalleyInvolution R z⁆
-      = -⁅chevalleyInvolution R (cartanElement R x), chevalleyInvolution R z⁆ := by
-        conv_lhs => rw [hx]
-        rw [neg_lie]
-    _ = -chevalleyInvolution R ⁅cartanElement R x, z⁆ := by rw [← LieEquiv.map_lie]
-    _ = (-α) x • chevalleyInvolution R z := by
-        rw [lie_cartanElement_of_mem_rootSpace R hz x, map_smul, LinearMap.neg_apply, neg_smul]
+  conv_lhs => rw [hx]
+  rw [neg_lie, ← LieEquiv.map_lie, lie_cartanElement_of_mem_rootSpace R hz x, map_smul,
+    LinearMap.neg_apply, neg_smul]
 
 /-- The Chevalley involution maps the root space `𝔤_α` onto `𝔤_{-α}`. -/
 @[simp]
 theorem map_rootSpace_chevalleyInvolution (α : Module.Dual K H) :
     (rootSpace R α).map (chevalleyInvolution R).toLinearMap = rootSpace R (-α) := by
-  refine le_antisymm (map_rootSpace_chevalleyInvolution_le R α) (fun z hz => ?_)
-  have hz' : chevalleyInvolution R z ∈ rootSpace R α := by
-    simpa using map_rootSpace_chevalleyInvolution_le R (-α) ⟨z, hz, rfl⟩
-  exact ⟨chevalleyInvolution R z, hz', chevalleyInvolution_chevalleyInvolution R z⟩
+  refine le_antisymm (map_rootSpace_chevalleyInvolution_le R α) fun z hz =>
+    ⟨chevalleyInvolution R z, ?_, chevalleyInvolution_chevalleyInvolution R z⟩
+  simpa using map_rootSpace_chevalleyInvolution_le R (-α) ⟨z, hz, rfl⟩
 
 /-- The Chevalley involution sends a right-normed bracket of raising generators to the
 corresponding signed right-normed bracket of lowering generators. -/
@@ -385,33 +373,21 @@ private theorem triangularLinearMap_bijective :
   · rintro ⟨x, y, z⟩ h0
     change (x : PresentedLieAlgebra R) + y + z = 0 at h0
     have hx0 : (x : PresentedLieAlgebra R) = 0 := by
-      have hyz : -(x : PresentedLieAlgebra R) = (y : PresentedLieAlgebra R) + z := by
-        calc
-          -(x : PresentedLieAlgebra R) = -((x : PresentedLieAlgebra R) + y + z) + (y + z) := by
-            abel
-          _ = (y : PresentedLieAlgebra R) + z := by rw [h0, neg_zero, zero_add]
-      have hmem : -(x : PresentedLieAlgebra R) ∈
-          (cartanSubalgebra R).toSubmodule ⊔ (positiveSubalgebra R).toSubmodule :=
-        hyz ▸ add_mem (Submodule.mem_sup_left y.2) (Submodule.mem_sup_right z.2)
-      exact neg_eq_zero.1 <|
-        (Submodule.disjoint_def.1
-          (disjoint_negativeSubalgebra_cartanSubalgebra_sup_positiveSubalgebra R))
-          _ (neg_mem x.2) hmem
+      have hyz : -(x : PresentedLieAlgebra R) = (y : PresentedLieAlgebra R) + z :=
+        neg_eq_iff_add_eq_zero.2 (by simpa [add_assoc] using h0)
+      exact neg_eq_zero.1 <| (Submodule.disjoint_def.1
+        (disjoint_negativeSubalgebra_cartanSubalgebra_sup_positiveSubalgebra R)) _ (neg_mem x.2)
+        (hyz ▸ add_mem (Submodule.mem_sup_left y.2) (Submodule.mem_sup_right z.2))
     have hyz0 : (y : PresentedLieAlgebra R) + z = 0 := by simpa [hx0] using h0
-    have hy0 : (y : PresentedLieAlgebra R) = 0 := by
-      have hz' : -(y : PresentedLieAlgebra R) = z := eq_of_sub_eq_zero (by
-        calc
-          -(y : PresentedLieAlgebra R) - z = -((y : PresentedLieAlgebra R) + z) := by abel
-          _ = 0 := by rw [hyz0, neg_zero])
-      exact neg_eq_zero.1 <|
-        (Submodule.disjoint_def.1 (disjoint_positiveSubalgebra_cartanSubalgebra R).symm)
-          _ (neg_mem y.2) (hz' ▸ z.2)
-    have hz0 : (z : PresentedLieAlgebra R) = 0 := by simpa [hy0] using hyz0
-    exact Prod.ext (Subtype.ext hx0) (Prod.ext (Subtype.ext hy0) (Subtype.ext hz0))
+    have hy0 : (y : PresentedLieAlgebra R) = 0 :=
+      neg_eq_zero.1 <| (Submodule.disjoint_def.1
+        (disjoint_positiveSubalgebra_cartanSubalgebra R).symm)
+        _ (neg_mem y.2) ((neg_eq_iff_add_eq_zero.2 hyz0) ▸ z.2)
+    exact Prod.ext (Subtype.ext hx0)
+      (Prod.ext (Subtype.ext hy0) (Subtype.ext (by simpa [hy0] using hyz0)))
   · have hu : u ∈ (negativeSubalgebra R).toSubmodule ⊔ (cartanSubalgebra R).toSubmodule ⊔
-        (positiveSubalgebra R).toSubmodule := by
-      rw [negativeSubalgebra_sup_cartanSubalgebra_sup_positiveSubalgebra_eq_top R]
-      exact Submodule.mem_top
+        (positiveSubalgebra R).toSubmodule :=
+      negativeSubalgebra_sup_cartanSubalgebra_sup_positiveSubalgebra_eq_top R ▸ Submodule.mem_top
     obtain ⟨ab, hab, z, hz, rfl⟩ := Submodule.mem_sup.1 hu
     obtain ⟨x, hx, y, hy, rfl⟩ := Submodule.mem_sup.1 hab
     exact ⟨(⟨x, hx⟩, ⟨y, hy⟩, ⟨z, hz⟩), rfl⟩
@@ -433,23 +409,20 @@ theorem triangularEquiv_apply
 /-- The inverse of `TauCeti.KacMoody.triangularEquiv` embeds `n⁻` into the first summand. -/
 @[simp]
 theorem triangularEquiv_symm_coe_negative (x : negativeSubalgebra R) :
-    (triangularEquiv R).symm x = (x, 0, 0) := by
-  apply (triangularEquiv R).injective
-  simp
+    (triangularEquiv R).symm x = (x, 0, 0) :=
+  (triangularEquiv R).injective (by simp)
 
 /-- The inverse of `TauCeti.KacMoody.triangularEquiv` embeds `𝔥` into the middle summand. -/
 @[simp]
 theorem triangularEquiv_symm_coe_cartan (y : cartanSubalgebra R) :
-    (triangularEquiv R).symm y = (0, y, 0) := by
-  apply (triangularEquiv R).injective
-  simp
+    (triangularEquiv R).symm y = (0, y, 0) :=
+  (triangularEquiv R).injective (by simp)
 
 /-- The inverse of `TauCeti.KacMoody.triangularEquiv` embeds `n⁺` into the last summand. -/
 @[simp]
 theorem triangularEquiv_symm_coe_positive (z : positiveSubalgebra R) :
-    (triangularEquiv R).symm z = (0, 0, z) := by
-  apply (triangularEquiv R).injective
-  simp
+    (triangularEquiv R).symm z = (0, 0, z) :=
+  (triangularEquiv R).injective (by simp)
 
 /-! ### Internal `Q`-grading and graded Lie algebra instances -/
 
@@ -540,20 +513,17 @@ theorem rootSpace_zero_eq :
     rootSpace R 0 = (cartanSubalgebra R).toSubmodule := by
   refine le_antisymm (fun u hu => ?_) (cartanSubalgebra_toSubmodule_le_rootSpace_zero R)
   have hu' : u ∈ (negativeSubalgebra R).toSubmodule ⊔ (cartanSubalgebra R).toSubmodule ⊔
-      (positiveSubalgebra R).toSubmodule := by
-    rw [negativeSubalgebra_sup_cartanSubalgebra_sup_positiveSubalgebra_eq_top R]
-    exact Submodule.mem_top
+      (positiveSubalgebra R).toSubmodule :=
+    negativeSubalgebra_sup_cartanSubalgebra_sup_positiveSubalgebra_eq_top R ▸ Submodule.mem_top
   obtain ⟨ab, hab, z, hz, rfl⟩ := Submodule.mem_sup.1 hu'
   obtain ⟨x, hx, y, hy, rfl⟩ := Submodule.mem_sup.1 hab
   have hxz0 : x + z = 0 := by
-    have hmem0 : x + z ∈ rootSpace R 0 := by
-      have hsub : x + y + z - y = x + z := by abel
-      simpa only [hsub] using sub_mem hu (cartanSubalgebra_toSubmodule_le_rootSpace_zero R hy)
+    have hsub : x + y + z - y = x + z := by abel
     exact (Submodule.disjoint_def.1
       (disjoint_negativeSubalgebra_sup_positiveSubalgebra_rootSpace_zero R)) _
-      (add_mem (Submodule.mem_sup_left hx) (Submodule.mem_sup_right hz)) hmem0
-  have hrearr : x + y + z = x + z + y := by abel
-  rwa [hrearr, hxz0, zero_add]
+      (add_mem (Submodule.mem_sup_left hx) (Submodule.mem_sup_right hz))
+      (hsub ▸ sub_mem hu (cartanSubalgebra_toSubmodule_le_rootSpace_zero R hy))
+  rwa [show x + y + z = x + z + y by abel, hxz0, zero_add]
 
 /-- Over a field of characteristic zero, `n⁺` is the direct sum of the root spaces of nonzero
 elements of the positive root cone `Q₊`. -/
@@ -562,9 +532,8 @@ theorem positiveSubalgebra_toSubmodule_eq_biSup_rootSpace :
       ⨆ α ∈ {α : Module.Dual K H | α ∈ R.posRootCone ∧ α ≠ 0}, rootSpace R α := by
   refine le_antisymm (positiveSubalgebra_toSubmodule_le_biSup_rootSpace R) (fun u hu => ?_)
   have hu' : u ∈ (negativeSubalgebra R).toSubmodule ⊔ (cartanSubalgebra R).toSubmodule ⊔
-      (positiveSubalgebra R).toSubmodule := by
-    rw [negativeSubalgebra_sup_cartanSubalgebra_sup_positiveSubalgebra_eq_top R]
-    exact Submodule.mem_top
+      (positiveSubalgebra R).toSubmodule :=
+    negativeSubalgebra_sup_cartanSubalgebra_sup_positiveSubalgebra_eq_top R ▸ Submodule.mem_top
   obtain ⟨ab, hab, z, hz, rfl⟩ := Submodule.mem_sup.1 hu'
   have hab_le : (negativeSubalgebra R).toSubmodule ⊔ (cartanSubalgebra R).toSubmodule ≤
       ⨆ α ∈ insert (0 : Module.Dual K H) {α : Module.Dual K H | -α ∈ R.posRootCone ∧ α ≠ 0},
@@ -579,12 +548,9 @@ theorem positiveSubalgebra_toSubmodule_eq_biSup_rootSpace :
     rcases h0neg with rfl | hneg
     · exact hpos.2 rfl
     · exact hpos.2 (R.isPointed_posRootCone _ hpos.1 hneg.1)
-  have hab0 : ab = 0 := by
-    have hab_pos : ab ∈
-        ⨆ α ∈ {α : Module.Dual K H | α ∈ R.posRootCone ∧ α ≠ 0}, rootSpace R α := by
-      simpa using sub_mem hu (positiveSubalgebra_toSubmodule_le_biSup_rootSpace R hz)
-    exact (Submodule.disjoint_def.1 ((iSupIndep_rootSpace R).disjoint_biSup_biSup hdisj)) _
-      (hab_le hab) hab_pos
+  have hab0 : ab = 0 :=
+    (Submodule.disjoint_def.1 ((iSupIndep_rootSpace R).disjoint_biSup_biSup hdisj)) _ (hab_le hab)
+      (by simpa using sub_mem hu (positiveSubalgebra_toSubmodule_le_biSup_rootSpace R hz))
   rwa [hab0, zero_add]
 
 /-- Over a field of characteristic zero, `n⁻` is the direct sum of the root spaces of weights
