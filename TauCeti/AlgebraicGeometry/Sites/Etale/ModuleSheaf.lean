@@ -5,32 +5,40 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
-public import Mathlib.AlgebraicGeometry.Sites.EtalePoint
+public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.CategoryTheory.Functor.ReflectsIso.Exact
-public import TauCeti.Algebra.Category.ModuleCat.ForgetCorepresentable
-public import TauCeti.CategoryTheory.Sites.LocallyConstant
+public import TauCeti.AlgebraicGeometry.Sites.Etale.Pullback
+public import TauCeti.AlgebraicGeometry.Sites.EtaleSepClosed
 
 /-!
-# Étale sheaves of modules: geometric stalks and finite lisse sheaves
+# Étale sheaves of modules: geometric stalks, pullback, and finite lisse sheaves
 
 Let `S` be a scheme and `Λ` a ring. This file studies sheaves of `Λ`-modules on the small étale
-site of `S` through their stalks at geometric points, and defines finite lisse sheaves.
+site of `S` through their stalks at geometric points and pullback along scheme morphisms, and
+develops the basic properties of finite lisse sheaves.
 
 A geometric point `s : Spec Ω ⟶ S`, with `Ω` a separably closed field, is a point
 `AlgebraicGeometry.Scheme.pointSmallEtale s` of the small étale site (Mathlib). Its fibre
 functor on sheaves of `Λ`-modules is the stalk functor
 `TauCeti.AlgebraicGeometry.Scheme.etaleStalk Λ s`, with values in `Λ`-modules. Its underlying set
-is the stalk of the underlying sheaf of sets. The stalk functor is exact, and the stalks at a
-family of geometric points meeting every point of `S` are jointly conservative, because the
-corresponding points of the étale site form a conservative family (Mathlib's
-`AlgebraicGeometry.Scheme.isConservative_pointSmallEtale`). Hence exactness of a sequence of étale
-sheaves of modules can be tested on stalks.
+is the stalk of the underlying sheaf of sets, and it identifies naturally with pulling back along
+`s` to `Spec Ω` and taking global sections
+(`TauCeti.AlgebraicGeometry.Scheme.smallEtalePullbackCompΓIsoEtaleStalk`). For any morphism of
+schemes `f : X ⟶ Y`, the stalk of `f^* F` at `x` identifies with the stalk of `F` at `x ≫ f`, and
+both `etaleStalk Λ s` and `f.smallEtalePullback (ModuleCat.{u} Λ)` preserve short exact sequences.
+Stalks at a family of geometric points meeting every point of `S` are jointly conservative
+(Mathlib's `AlgebraicGeometry.Scheme.isConservative_pointSmallEtale`), so exactness of a sequence
+of étale sheaves of modules can be tested on stalks.
 
 A sheaf of `Λ`-modules is *finite lisse* if it is étale locally isomorphic to the constant sheaf
 on a finitely generated `Λ`-module (`CategoryTheory.Sheaf.IsFiniteLisse`); for a finite ring
-`Λ` these are the étale locally constant sheaves with finite fibres. Its stalks are finitely
-generated `Λ`-modules. No invertibility hypothesis on `Λ` is needed.
+`Λ` these are the étale locally constant sheaves with finite fibres. Finite lisse sheaves contain
+`0`, are closed under binary biproducts and arbitrary base change, satisfy étale descent along
+jointly surjective étale families (in particular étale covers and surjective étale morphisms), and
+have finitely generated stalks. Over the spectrum of a separably closed field `Ω`, an étale sheaf
+of `Λ`-modules is finite lisse if and only if its module of global sections is finitely generated
+over `Λ` (equivalently, it is globally isomorphic to a constant sheaf on a finitely generated
+`Λ`-module). No invertibility hypothesis on `Λ` is needed.
 
 ## Main declarations
 
@@ -38,8 +46,12 @@ generated `Λ`-modules. No invertibility hypothesis on `Λ` is needed.
   `Λ`-modules.
 * `TauCeti.AlgebraicGeometry.Scheme.etaleStalkCompForgetIso`: the underlying set of the stalk is
   the stalk of the underlying sheaf of sets.
-* `TauCeti.AlgebraicGeometry.Scheme.shortExact_map_etaleStalk`: stalks preserve short exact
-  sequences.
+* `TauCeti.AlgebraicGeometry.Scheme.smallEtalePullbackCompEtaleStalkIso`,
+  `TauCeti.AlgebraicGeometry.Scheme.smallEtalePullbackCompΓIsoEtaleStalk`: stalk comparison
+  `(f^* F)_x ≅ F_{x ≫ f}` and identification `Γ(Spec Ω, s^* F) ≅ F_s`.
+* `TauCeti.AlgebraicGeometry.Scheme.shortExact_map_etaleStalk`,
+  `TauCeti.AlgebraicGeometry.Scheme.shortExact_map_smallEtalePullback`: geometric stalks and
+  scheme-morphism pullbacks preserve short exact sequences of étale module sheaves.
 * `TauCeti.AlgebraicGeometry.Scheme.jointlyReflectIsomorphisms_etaleStalk`,
   `TauCeti.AlgebraicGeometry.Scheme.isIso_of_forall_isIso_etaleStalk`: stalks at geometric points
   whose images cover `S` jointly reflect isomorphisms.
@@ -48,9 +60,17 @@ generated `Λ`-modules. No invertibility hypothesis on `Λ` is needed.
   sheaves of modules is (short) exact if and only if it is so on the stalks at a family of
   geometric points whose images cover `S`; `exact_iff_forall_exact_map_etaleStalk` and
   `shortExact_iff_forall_shortExact_map_etaleStalk` use all geometric points.
-* `CategoryTheory.Sheaf.IsFiniteLisse`: finite lisse étale sheaves of modules.
-* `CategoryTheory.Sheaf.IsFiniteLisse.finite_etaleStalk`: the stalks of a finite lisse sheaf are
-  finitely generated.
+* `CategoryTheory.Sheaf.IsFiniteLisse`: finite lisse étale sheaves of modules, closed under zero
+  (`CategoryTheory.Sheaf.isFiniteLisse_zero`), binary biproducts
+  (`CategoryTheory.Sheaf.IsFiniteLisse.biprod`), and scheme base change
+  (`CategoryTheory.Sheaf.IsFiniteLisse.smallEtalePullback`).
+* `CategoryTheory.Sheaf.isFiniteLisse_iff_of_iUnion_range_eq_univ`,
+  `CategoryTheory.Sheaf.isFiniteLisse_iff_of_cover`,
+  `CategoryTheory.Sheaf.isFiniteLisse_iff_of_surjective`: étale descent of `IsFiniteLisse`.
+* `CategoryTheory.Sheaf.isFiniteLisse_iff_finite_Γ_of_isSepClosed`,
+  `CategoryTheory.Sheaf.isFiniteLisse_iff_exists_iso_constantSheaf_of_isSepClosed`,
+  `CategoryTheory.Sheaf.isFiniteLisse_smallEtalePullback_iff_finite_etaleStalk`: characterization
+  of finite lisse sheaves on a separably closed field and after pullback to a geometric point.
 
 ## References
 
@@ -64,7 +84,7 @@ public section
 
 universe u
 
-open CategoryTheory Limits Opposite AlgebraicGeometry Scheme
+open CategoryTheory Limits ZeroObject Opposite AlgebraicGeometry Scheme
 
 namespace TauCeti.AlgebraicGeometry.Scheme
 
@@ -153,6 +173,42 @@ theorem isIso_of_forall_isIso_etaleStalk {F G : Sheaf (smallEtaleTopology S) (Mo
 
 end Conservative
 
+section Pullback
+
+variable {X Y : Scheme.{u}}
+
+/-- For a morphism of schemes `f : X ⟶ Y` and a geometric point `x : Spec Ω ⟶ X`, the stalk of
+`f^* F` at `x` identifies naturally with the stalk of `F` at `x ≫ f` in `ModuleCat.{u} Λ`. -/
+noncomputable def smallEtalePullbackCompEtaleStalkIso (f : X ⟶ Y)
+    {Ω : Type u} [Field Ω] [IsSepClosed Ω] (x : Spec (.of Ω) ⟶ X) :
+    f.smallEtalePullback (ModuleCat.{u} Λ) ⋙ etaleStalk Λ x ≅ etaleStalk Λ (x ≫ f) :=
+  f.smallEtalePullbackCompSheafFiberIso x (ModuleCat.{u} Λ)
+
+/-- Pulling an étale sheaf of `Λ`-modules on `S` back along a geometric point `s : Spec Ω ⟶ S` and
+taking global sections over `Spec Ω` recovers the geometric stalk at `s`. -/
+noncomputable def smallEtalePullbackCompΓIsoEtaleStalk
+    {Ω : Type u} [Field Ω] [IsSepClosed Ω] (s : Spec (.of Ω) ⟶ S) :
+    s.smallEtalePullback (ModuleCat.{u} Λ) ⋙
+        Sheaf.Γ (smallEtaleTopology (Spec (.of Ω))) (ModuleCat.{u} Λ) ≅
+      etaleStalk Λ s :=
+  Functor.isoWhiskerLeft (s.smallEtalePullback (ModuleCat.{u} Λ))
+      (pointSmallEtaleIdSheafFiberIso Ω).symm ≪≫
+    (Functor.associator _ _ _).symm ≪≫
+    smallEtalePullbackCompEtaleStalkIso Λ s (𝟙 (Spec (.of Ω))) ≪≫
+    GrothendieckTopology.Point.sheafFiberIsoOfFiberIso
+      (Functor.isoWhiskerLeft (Etale.forget S)
+        (coyoneda.mapIso (CategoryTheory.Over.isoMk (Iso.refl _) (Category.id_comp s)).op.symm))
+
+variable {Λ} in
+/-- **Pullback of étale sheaves of modules is exact.** Inverse image along any morphism of schemes
+`f : X ⟶ Y` preserves short exact sequences of étale sheaves of `Λ`-modules. -/
+theorem shortExact_map_smallEtalePullback (f : X ⟶ Y)
+    {T : ShortComplex (Sheaf (smallEtaleTopology Y) (ModuleCat.{u} Λ))} (hT : T.ShortExact) :
+    (T.map (f.smallEtalePullback (ModuleCat.{u} Λ))).ShortExact :=
+  hT.map_of_exact _
+
+end Pullback
+
 end TauCeti.AlgebraicGeometry.Scheme
 
 namespace CategoryTheory.ShortComplex
@@ -207,7 +263,7 @@ namespace CategoryTheory.Sheaf
 
 open TauCeti.AlgebraicGeometry.Scheme
 
-variable {S : Scheme.{u}} {Λ : Type u} [Ring Λ]
+variable {S X Y : Scheme.{u}} {Λ : Type u} [Ring Λ]
 
 /-- An étale sheaf of `Λ`-modules on `S` is *finite lisse* if it is étale locally isomorphic to the
 constant sheaf on a finitely generated `Λ`-module: every étale `S`-scheme is covered by étale
@@ -224,6 +280,20 @@ theorem IsFiniteLisse.of_iso {F G : Sheaf (smallEtaleTopology S) (ModuleCat.{u} 
     (e : F ≅ G) (hF : F.IsFiniteLisse) : G.IsFiniteLisse :=
   IsLocallyConstantIn.of_iso e hF
 
+/-- The zero étale sheaf of `Λ`-modules is finite lisse. -/
+theorem isFiniteLisse_zero :
+    (0 : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)).IsFiniteLisse := by
+  have : Subsingleton (0 : ModuleCat.{u} Λ) :=
+    ModuleCat.subsingleton_of_isZero (isZero_zero _)
+  exact isLocallyConstantIn_zero (P := fun M : ModuleCat.{u} Λ ↦ Module.Finite Λ M) inferInstance
+
+/-- Binary biproducts of finite lisse étale sheaves of `Λ`-modules are finite lisse. -/
+theorem IsFiniteLisse.biprod {F₁ F₂ : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)}
+    (h₁ : F₁.IsFiniteLisse) (h₂ : F₂.IsFiniteLisse) :
+    (F₁ ⊞ F₂).IsFiniteLisse :=
+  IsLocallyConstantIn.biprod (P := fun M : ModuleCat.{u} Λ ↦ Module.Finite Λ M)
+    (fun M₁ M₂ _ _ ↦ Module.Finite.equiv (ModuleCat.biprodIsoProd M₁ M₂).symm.toLinearEquiv) h₁ h₂
+
 /-- The stalks of a finite lisse étale sheaf of `Λ`-modules at geometric points are finitely
 generated `Λ`-modules. -/
 theorem IsFiniteLisse.finite_etaleStalk {F : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)}
@@ -231,5 +301,96 @@ theorem IsFiniteLisse.finite_etaleStalk {F : Sheaf (smallEtaleTopology S) (Modul
     Module.Finite Λ ((etaleStalk Λ s).obj F) := by
   obtain ⟨M, hM, ⟨e⟩⟩ := IsLocallyConstantIn.exists_sheafFiber_iso hF (pointSmallEtale s)
   exact Module.Finite.equiv e.symm.toLinearEquiv
+
+/-- **Base-change stability of finite lisse sheaves.** Pulling a finite lisse étale sheaf of
+`Λ`-modules back along any morphism of schemes `f : X ⟶ Y` yields a finite lisse sheaf on `X`. -/
+theorem IsFiniteLisse.smallEtalePullback {F : Sheaf (smallEtaleTopology Y) (ModuleCat.{u} Λ)}
+    (hF : F.IsFiniteLisse) (f : X ⟶ Y) :
+    ((f.smallEtalePullback (ModuleCat.{u} Λ)).obj F).IsFiniteLisse :=
+  IsLocallyConstantIn.smallEtalePullback hF f
+
+/-- **Étale descent of finite lisse sheaves.** For a jointly surjective family of étale morphisms
+`g i : U i ⟶ S`, an étale sheaf of `Λ`-modules `F` on `S` is finite lisse if and only if each
+pullback `(g i)^* F` is finite lisse on `U i`. -/
+theorem isFiniteLisse_iff_of_iUnion_range_eq_univ
+    (F : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ))
+    {ι : Type*} {U : ι → Scheme.{u}} (g : ∀ i, U i ⟶ S) [∀ i, AlgebraicGeometry.Etale (g i)]
+    (hg : ⋃ i, Set.range (g i) = .univ) :
+    F.IsFiniteLisse ↔ ∀ i, (((g i).smallEtalePullback (ModuleCat.{u} Λ)).obj F).IsFiniteLisse :=
+  isLocallyConstantIn_smallEtaleTopology_iff_of_iUnion_range_eq_univ F g hg
+
+/-- Being finite lisse can be tested on any étale cover of `S`. -/
+theorem isFiniteLisse_iff_of_cover
+    (F : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ))
+    (𝒰 : S.Cover (Scheme.precoverage @AlgebraicGeometry.Etale)) :
+    F.IsFiniteLisse ↔
+      ∀ i : 𝒰.I₀, (((𝒰.f i).smallEtalePullback (ModuleCat.{u} Λ)).obj F).IsFiniteLisse :=
+  isLocallyConstantIn_smallEtaleTopology_iff_of_cover F 𝒰
+
+/-- Being finite lisse can be tested after pullback along any surjective étale morphism
+`g : X ⟶ S`. -/
+theorem isFiniteLisse_iff_of_surjective
+    (F : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ))
+    (g : X ⟶ S) [AlgebraicGeometry.Etale g] [Surjective g] :
+    F.IsFiniteLisse ↔ ((g.smallEtalePullback (ModuleCat.{u} Λ)).obj F).IsFiniteLisse :=
+  isLocallyConstantIn_smallEtaleTopology_iff_of_surjective F g
+
+section SepClosed
+
+variable {Ω : Type u} [Field Ω] [IsSepClosed Ω]
+
+/-- **Finite lisse sheaves on a separably closed field.** Over `Spec Ω` with `Ω` separably closed,
+an étale sheaf of `Λ`-modules is finite lisse if and only if its module of global sections is
+finitely generated over `Λ`. -/
+theorem isFiniteLisse_iff_finite_Γ_of_isSepClosed
+    (F : Sheaf (smallEtaleTopology (Spec (.of Ω))) (ModuleCat.{u} Λ)) :
+    F.IsFiniteLisse ↔
+      Module.Finite Λ ((Sheaf.Γ (smallEtaleTopology (Spec (.of Ω))) (ModuleCat.{u} Λ)).obj F) := by
+  refine ⟨fun hF ↦ ?_, fun hF ↦ ?_⟩
+  · have := hF.finite_etaleStalk (𝟙 (Spec (.of Ω)))
+    exact Module.Finite.equiv ((pointSmallEtaleIdSheafFiberIso Ω).app F).toLinearEquiv
+  · have : IsIso ((constantSheafΓAdj (smallEtaleTopology (Spec (.of Ω)))
+        (ModuleCat.{u} Λ)).counit.app F) :=
+      isIso_of_reflects_iso _ (Sheaf.Γ (smallEtaleTopology (Spec (.of Ω))) (ModuleCat.{u} Λ))
+    exact (isFiniteLisse_constantSheaf
+      ((Sheaf.Γ (smallEtaleTopology (Spec (.of Ω))) (ModuleCat.{u} Λ)).obj F)).of_iso
+      (asIso ((constantSheafΓAdj (smallEtaleTopology (Spec (.of Ω)))
+        (ModuleCat.{u} Λ)).counit.app F))
+
+/-- Over `Spec Ω` with `Ω` separably closed, an étale sheaf of `Λ`-modules is finite lisse if and
+only if it is globally isomorphic to the constant sheaf on a finitely generated `Λ`-module. -/
+theorem isFiniteLisse_iff_exists_iso_constantSheaf_of_isSepClosed
+    (F : Sheaf (smallEtaleTopology (Spec (.of Ω))) (ModuleCat.{u} Λ)) :
+    F.IsFiniteLisse ↔
+      ∃ (M : ModuleCat.{u} Λ) (_ : Module.Finite Λ M),
+        Nonempty (F ≅ (constantSheaf (smallEtaleTopology (Spec (.of Ω)))
+          (ModuleCat.{u} Λ)).obj M) := by
+  refine ⟨fun hF ↦ ?_, fun ⟨M, _, ⟨e⟩⟩ ↦ (isFiniteLisse_constantSheaf M).of_iso e.symm⟩
+  have hΓ : Module.Finite Λ
+      ((Sheaf.Γ (smallEtaleTopology (Spec (.of Ω))) (ModuleCat.{u} Λ)).obj F) :=
+    (isFiniteLisse_iff_finite_Γ_of_isSepClosed F).mp hF
+  have : IsIso ((constantSheafΓAdj (smallEtaleTopology (Spec (.of Ω)))
+      (ModuleCat.{u} Λ)).counit.app F) :=
+    isIso_of_reflects_iso _ (Sheaf.Γ (smallEtaleTopology (Spec (.of Ω))) (ModuleCat.{u} Λ))
+  exact ⟨(Sheaf.Γ (smallEtaleTopology (Spec (.of Ω))) (ModuleCat.{u} Λ)).obj F, hΓ,
+    ⟨(asIso ((constantSheafΓAdj (smallEtaleTopology (Spec (.of Ω)))
+      (ModuleCat.{u} Λ)).counit.app F)).symm⟩⟩
+
+/-- For any étale sheaf of `Λ`-modules `F` on `S` and any geometric point `s : Spec Ω ⟶ S`, the
+pullback `s^* F` on `Spec Ω` is finite lisse if and only if the geometric stalk `F_s` is a finitely
+generated `Λ`-module. -/
+theorem isFiniteLisse_smallEtalePullback_iff_finite_etaleStalk
+    (F : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)) (s : Spec (.of Ω) ⟶ S) :
+    ((s.smallEtalePullback (ModuleCat.{u} Λ)).obj F).IsFiniteLisse ↔
+      Module.Finite Λ ((etaleStalk Λ s).obj F) := by
+  refine (isFiniteLisse_iff_finite_Γ_of_isSepClosed _).trans ⟨fun h ↦ ?_, fun _ ↦ ?_⟩
+  · have : Module.Finite Λ
+        ((s.smallEtalePullback (ModuleCat.{u} Λ) ⋙
+          Sheaf.Γ (smallEtaleTopology (Spec (.of Ω))) (ModuleCat.{u} Λ)).obj F) := h
+    exact Module.Finite.equiv ((smallEtalePullbackCompΓIsoEtaleStalk Λ s).app F).toLinearEquiv
+  · exact Module.Finite.equiv
+      ((smallEtalePullbackCompΓIsoEtaleStalk Λ s).app F).symm.toLinearEquiv
+
+end SepClosed
 
 end CategoryTheory.Sheaf
