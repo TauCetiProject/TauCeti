@@ -23,6 +23,8 @@ public section
 open TauCeti TauCeti.Dagger
 open scoped DualNumber
 
+namespace TauCeti.Examples.DaggerContinuity
+
 variable (K : Type*) [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
 
 -- On the base field and the univariate Monsky–Washnitzer algebra, `affinoidTopology` and
@@ -38,9 +40,13 @@ example : washnitzerAlgebra.X (Fin 1) K 0 ∈ intSubring K (washnitzerAlgebra (F
 
 section DualNumbers
 
-local instance : Module.Finite K K[ε] := inferInstanceAs (Module.Finite K (K × K))
+/-- `K[ε]` is a finite `K`-module via its underlying product `K × K`. -/
+local instance moduleFiniteDualNumber : Module.Finite K K[ε] :=
+  inferInstanceAs (Module.Finite K (K × K))
 
-local instance : IsDaggerAlgebra K K[ε] := IsDaggerAlgebra.of_finite (A := K)
+/-- `K[ε]` is a `K`-dagger algebra as a finite `K`-algebra. -/
+local instance isDaggerAlgebraDualNumber : IsDaggerAlgebra K K[ε] :=
+  IsDaggerAlgebra.of_finite (A := K)
 
 -- Even though `K[ε]` is nonreduced, its canonical affinoid topology is Hausdorff and Tate.
 example :
@@ -85,3 +91,5 @@ example : Function.Surjective (completion.map (TrivSqZeroExt.fstHom K K K)) :=
     fun c ↦ ⟨algebraMap K K[ε] c, by simp⟩
 
 end DualNumbers
+
+end TauCeti.Examples.DaggerContinuity
