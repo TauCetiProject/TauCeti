@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Triangulated.Generators
-public import TauCeti.Algebra.Homology.Periodic.Compression.Derived
-public import TauCeti.Algebra.Homology.Periodic.Compression.ZeroDifferential
+public import TauCeti.Algebra.Homology.Periodic.Compression.Gradable
 public import TauCeti.Algebra.Homology.Periodic.FlagResolution
 
 /-!
@@ -15,9 +14,9 @@ public import TauCeti.Algebra.Homology.Periodic.FlagResolution
 
 In an abelian category with enough projectives and a uniform finite bound on projective
 dimensions, every isomorphism-closed triangulated subcategory containing the compressions of
-bounded complexes is the entire positive-period derived category. This is generation by shifts
-and cones, without taking retracts or passing to an idempotent completion. In particular the
-thick envelope of the image is also the entire category.
+bounded complexes, the gradable objects, is the entire positive-period derived category. This
+is generation by shifts and cones, without taking retracts or passing to an idempotent
+completion. In particular the thick envelope of the image is also the entire category.
 
 The proof uses projective flag resolutions. Every zero-differential layer of such a flag is
 itself the compression of a bounded complex, and degreewise split extensions give distinguished
@@ -44,23 +43,9 @@ namespace TauCeti.PeriodicComplex
 variable {C : Type u} [Category.{v} C] [Abelian C] {n : ℕ} [NeZero n]
   [HasDerivedCategory.{w} C]
 
-private lemma mem_of_d_eq_zero
-    (P : ObjectProperty (DerivedCategory C n)) [P.IsClosedUnderIsomorphisms]
-    (hP : (derivedCompressionFunctor (C := C) n).essImage ≤ P)
-    (K : CochainComplex C (ZMod n)) (hd : ∀ i j, K.d i j = 0) :
-    P ((DerivedCategory.Qh C n).obj ((HomotopyCategory.quotient C _).obj K)) := by
-  let L := boundedGradedLift K.X
-  let e := (derivedCompressionFunctorFactors n).app
-      ((HomotopyCategory.Bounded.quotient C).obj L) ≪≫
-    (DerivedCategory.Qh C n).mapIso ((quotientCompHomotopyCompressionFunctorIso n).app L) ≪≫
-    (DerivedCategory.Qh C n).mapIso ((HomotopyCategory.quotient C _).mapIso
-      (eqToIso (compressionFunctor_obj n L) ≪≫ K.compressionIsoOfDEqZero hd))
-  exact P.prop_of_iso e (hP _ ((derivedCompressionFunctor n).obj_mem_essImage _))
-
 private lemma mem_of_hasProjectiveFlag
     (P : ObjectProperty (DerivedCategory C n)) [P.IsTriangulated]
-    [P.IsClosedUnderIsomorphisms]
-    (hP : (derivedCompressionFunctor (C := C) n).essImage ≤ P)
+    [P.IsClosedUnderIsomorphisms] (hP : gradable C n ≤ P)
     {K : CochainComplex C (ZMod n)} (hK : HasProjectiveFlag K) :
     P ((DerivedCategory.Qh C n).obj ((HomotopyCategory.quotient C _).obj K)) := by
   let R := P.inverseImage (DerivedCategory.Qh C n)
@@ -79,19 +64,18 @@ private lemma mem_of_hasProjectiveFlag
     -- The vertices of this distinguished triangle are the homotopy classes of the three
     -- complexes in the degreewise split sequence.
     simpa [R] using R.ext_of_isTriangulatedClosed₂ _ hT
-      (by simpa [R] using ih) (by simpa [R] using mem_of_d_eq_zero P hP S.X₃ hd)
+      (by simpa [R] using ih)
+      (by simpa [R] using hP _ (gradable_Qh_obj_quotient_obj_of_d_eq_zero S.X₃ hd))
 
 variable [EnoughProjectives C]
 
 /-- **Generation by compression, before idempotent completion.** In finite global dimension,
-every isomorphism-closed triangulated subcategory containing the image of bounded derived
-compression is the entire positive-period derived category. Only shifts and cones, not closure
-under retracts, are assumed of the subcategory. -/
-theorem eq_top_of_essImage_derivedCompressionFunctor_le (d : ℕ)
-    (hd : ∀ X : C, HasProjectiveDimensionLT X d)
+every isomorphism-closed triangulated subcategory containing the gradable objects, the image of
+bounded derived compression, is the entire positive-period derived category. Only shifts and
+cones, not closure under retracts, are assumed of the subcategory. -/
+theorem eq_top_of_gradable_le (d : ℕ) (hd : ∀ X : C, HasProjectiveDimensionLT X d)
     (P : ObjectProperty (DerivedCategory C n)) [P.IsTriangulated]
-    [P.IsClosedUnderIsomorphisms]
-    (hP : (derivedCompressionFunctor (C := C) n).essImage ≤ P) : P = ⊤ := by
+    [P.IsClosedUnderIsomorphisms] (hP : gradable C n ≤ P) : P = ⊤ := by
   apply top_unique
   intro Y _
   obtain ⟨⟨K⟩, ⟨e⟩⟩ :=
@@ -111,11 +95,8 @@ theorem eq_top_of_essImage_orbitDerivedCompressionFunctor_le (d : ℕ)
     (P : ObjectProperty (DerivedCategory C n)) [P.IsTriangulated]
     [P.IsClosedUnderIsomorphisms]
     (hP : (orbitDerivedCompressionFunctor (C := C) n).essImage ≤ P) : P = ⊤ := by
-  apply eq_top_of_essImage_derivedCompressionFunctor_le d hd P
-  rintro Y ⟨X, ⟨e⟩⟩
-  exact hP Y ⟨(OrbitCategory.projection (n := (n : ℤ))).obj X,
-    ⟨(OrbitCategory.projectionCompLift _
-      (derivedCompressionFunctorPeriodicityIso n n (by simp))).app X ≪≫ e⟩⟩
+  rw [essImage_orbitDerivedCompressionFunctor] at hP
+  exact eq_top_of_gradable_le d hd P hP
 
 /-- In finite global dimension, the thick envelope of the derived orbit functor's image is the
 entire positive-period derived category. The stronger shift-and-cone generation statement is

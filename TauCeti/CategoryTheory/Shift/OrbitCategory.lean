@@ -74,6 +74,7 @@ to compare bounded derived categories with periodic derived categories.
 * `TauCeti.OrbitCategory.lift_map_homOf`: the descent on homogeneous pieces.
 * `TauCeti.OrbitCategory.lift_map_periodicity_hom_app`: the descent carries the periodicity
   isomorphism of the projection to `φ`.
+* `TauCeti.OrbitCategory.essImage_lift`: the descent has the same essential image as `G`.
 * `TauCeti.OrbitCategory.map_map_homOf`: the induced functor on homogeneous pieces.
 * `TauCeti.OrbitCategory.map_map_periodicity_hom_app`: the induced functor carries the
   periodicity isomorphism of the projection to the shift comparison followed by periodicity.
@@ -250,6 +251,9 @@ instance : (projection (D := D) (n := n)).Additive where
 instance : (projection (D := D) (n := n)).Faithful where
   map_injective h := (ShiftedHom.homEquiv _ (by simp)).injective (DirectSum.of_injective
     (β := fun j : ℤ ↦ ShiftedHom _ _ (n * j)) 0 (by simp only [homOf_def] at h; exact h))
+
+instance : (projection (D := D) (n := n)).EssSurj :=
+  Functor.essSurj_of_surj fun X ↦ ⟨X.obj, rfl⟩
 
 /-- For `m = n * i`, the objects `X⟦m⟧` and `X` are isomorphic in the orbit category: the
 identity of `X⟦m⟧` is a homogeneous morphism `X⟦m⟧ ⟶ X` of degree `i`. Its inverse has
@@ -453,6 +457,13 @@ theorem projectionCompLift_hom_app (X : D) : (projectionCompLift G φ).hom.app X
 @[simp]
 theorem projectionCompLift_inv_app (X : D) : (projectionCompLift G φ).inv.app X = 𝟙 _ := by
   rfl
+
+/-- The descent has the same essential image as `G`: every object of `D/[n]` is the projection
+of an object of `D`, on which the descent is `G`. -/
+@[simp]
+theorem essImage_lift : (lift G φ).essImage = G.essImage := by
+  rw [← Functor.essImage_comp_of_essSurj (F := projection)]
+  exact Functor.essImage_eq_of_natIso (projectionCompLift G φ)
 
 /-- The descent carries the periodicity isomorphism of the projection to `φ`. -/
 theorem lift_map_periodicity_hom_app (X : D) :

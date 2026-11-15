@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.ObjectProperty.Shift
 public import Mathlib.CategoryTheory.Triangulated.Functor
 
 /-!
@@ -23,6 +24,10 @@ structure, the image of a triangle by `⟦n⟧` is isomorphic to its shift by `n
 triangles (`TauCeti.shiftFunctorMapTriangleIso`). With `n = -1`, these are used to make the
 shifted mapping cocone `(mappingCone φ)⟦-1⟧` of a morphism of cochain complexes commute with the
 shifts compatibly with its projection to the source of `φ`.
+
+The essential image of a functor commuting with shifts is stable under shifts
+(`CategoryTheory.Functor.essImage_isStableUnderShift`); no fullness is needed, unlike for the
+triangulated subcategory structure on the essential image of a full triangle functor.
 -/
 
 public section
@@ -164,3 +169,18 @@ end MapTriangle
 end ShiftFunctor
 
 end TauCeti
+
+namespace CategoryTheory.Functor
+
+variable {C D : Type*} [Category* C] [Category* D] {A : Type*} [AddMonoid A] [HasShift C A]
+  [HasShift D A]
+
+/-- The essential image of a functor commuting with shifts is stable under shifts: if
+`F.obj X ≅ Y`, then `F.obj (X⟦a⟧) ≅ (F.obj X)⟦a⟧ ≅ Y⟦a⟧`. -/
+instance essImage_isStableUnderShift (F : C ⥤ D) [F.CommShift A] :
+    F.essImage.IsStableUnderShift A where
+  isStableUnderShiftBy a := ⟨by
+    rintro Y ⟨X, ⟨e⟩⟩
+    exact ⟨X⟦a⟧, ⟨(F.commShiftIso a).app X ≪≫ (shiftFunctor D a).mapIso e⟩⟩⟩
+
+end CategoryTheory.Functor
