@@ -49,7 +49,7 @@ global étale algebra with its images in the completions passes through exactly 
   of it the square-class conditions of the `2`-descent are stated in — on units of `K`, and on the
   image of `K`.
 * `IsDedekindDomain.HeightOneSpectrum.ringChar_residueField_adicCompletionIntegers_ne_two`: at a
-  place not dividing `2`, the residue field of `𝒪_v` has odd characteristic.
+  place not dividing `2`, the residue field of `𝒪_v` does not have characteristic `2`.
 * `IsDedekindDomain.HeightOneSpectrum.exists_unit_not_isSquare`: at such a place, with finite
   residue field, `𝒪_v` carries a unit that is not a square in `K_v`. This is the input the
   local image count at a good odd place needs.
@@ -209,10 +209,11 @@ theorem span_singleton_eq_maximalIdeal_pow {x : v.adicCompletionIntegers K} {e :
   rw [Ideal.span_singleton_eq_span_singleton.mpr (associated_unit_mul_left _ _ u.isUnit),
     ← Ideal.span_singleton_pow, hπ.maximalIdeal_eq]
 
-/-- **At a place not dividing `2`, the residue characteristic is odd.** The residue field of `𝒪_v`
-is the residue field of `v` by `residueFieldEquivAdicCompletionIntegers`, so this is the hypothesis
-`2 ∉ v` transported along that equivalence — stated as a statement about `ringChar` because that is
-the form `FiniteField.exists_nonsquare` consumes. -/
+/-- **At a place not dividing `2`, the residue characteristic is not `2`.** The residue field of
+`𝒪_v` is the residue field of `v` by `residueFieldEquivAdicCompletionIntegers`, so this is the
+hypothesis `2 ∉ v` transported along that equivalence — stated as a statement about `ringChar`
+because that is the form `FiniteField.exists_nonsquare` consumes. The characteristic may also be
+`0`, as at the place `(X)` of `ℚ[X]`. -/
 theorem ringChar_residueField_adicCompletionIntegers_ne_two (hv2 : (2 : R) ∉ v.asIdeal) :
     ringChar (IsLocalRing.ResidueField (v.adicCompletionIntegers K)) ≠ 2 := by
   -- first, `2` is not in the maximal ideal of `𝒪_v`: it contracts to `v`
