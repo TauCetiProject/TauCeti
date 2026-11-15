@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.Complex.Analytic
 public import TauCeti.Geometry.Manifold.IsManifold.RestrictScalars
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
 public import TauCeti.Geometry.Manifold.Morse.CWModel
-public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Manifold
 import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Sphere
 import TauCeti.Geometry.Manifold.Morse.EulerCharacteristic
@@ -41,8 +41,7 @@ the end of this file).
 ## Main results
 
 * `TauCeti.ComplexManifold.finiteCWType`: a compact Hausdorff manifold modelled on a boundaryless
-  complex model over a finite-dimensional space, of class `C^n` for some `n ≠ 0`, has finite CW
-  type.
+  complex model, of class `C^n` for some `n ≠ 0`, has finite CW type.
 * `TauCeti.ComplexManifold.instFiniteCWType`: the corresponding low-priority instance for compact
   Riemann surfaces, charted on `ℂ`.
 
@@ -74,19 +73,22 @@ namespace ComplexManifold
 
 section FiniteCWType
 
-variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   [TopologicalSpace H] {M : Type u} [TopologicalSpace M] [T2Space M] [CompactSpace M]
 
 variable (I : ModelWithCorners ℂ E H) [I.Boundaryless] (M) [ChartedSpace H M] in
 /-- **Compact complex manifolds have finite CW type.** A compact Hausdorff manifold modelled on a
-boundaryless complex model `I` over a finite-dimensional space, of class `C^n` for some `n ≠ 0`, is
-homotopy equivalent to a finite CW complex. With the same charts it is a compact smooth
-boundaryless real manifold, modelled on `I.restrictScalars ℝ`, so this is
-`TauCeti.FiniteCWType.of_isManifold`. -/
-theorem finiteCWType {n : ℕ∞ω} (hn : n ≠ 0) [h : IsManifold I n M] : FiniteCWType M :=
+boundaryless complex model `I`, of class `C^n` for some `n ≠ 0`, is homotopy equivalent to a finite
+CW complex. When `M` is nonempty its model space `E` is automatically finite-dimensional, so with
+the same charts `M` is a compact smooth boundaryless real manifold modelled on
+`I.restrictScalars ℝ` and `TauCeti.FiniteCWType.of_isManifold` applies. -/
+theorem finiteCWType {n : ℕ∞ω} (hn : n ≠ 0) [h : IsManifold I n M] : FiniteCWType M := by
+  rcases isEmpty_or_nonempty M with _ | _
+  · exact (Homeomorph.empty : M ≃ₜ PEmpty.{u + 1}).finiteCWType
+  have : FiniteDimensional ℂ E := FiniteDimensional.of_locallyCompact_manifold M I
   have : IsManifold (I.restrictScalars ℝ) ∞ M :=
     I.isManifold_restrictScalars ℝ (h.of_ne_zero ∞ hn)
-  FiniteCWType.of_isManifold (I := I.restrictScalars ℝ) M
+  exact FiniteCWType.of_isManifold (I := I.restrictScalars ℝ) M
 
 /-- **Compact Riemann surfaces have finite CW type.** A compact Hausdorff complex manifold charted
 on `ℂ` has finite CW type. This is a low-priority instance, the case `I = 𝓘(ℂ)` of

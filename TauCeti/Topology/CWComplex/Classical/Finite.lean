@@ -13,8 +13,8 @@ public import Mathlib.Topology.CWComplex.Classical.Finite
 A relative or absolute CW complex with no cells in dimensions strictly above `d` is
 finite-dimensional (`Topology.RelCWComplex.finiteDimensional_of_isEmpty_cell_gt`,
 `Topology.CWComplex.finiteDimensional_of_isEmpty_cell_gt`), regardless of how many cells lie in
-dimensions at most `d`. In particular, a relative CW complex in an empty ambient space has no cells
-in any dimension (`Topology.RelCWComplex.instIsEmptyCell`).
+dimensions at most `d`. In particular, an empty relative CW complex has no cells in any dimension
+(`Topology.RelCWComplex.instIsEmptyCell`).
 
 A finite relative CW complex `C` over a compact base `D` is compact
 (`Topology.RelCWComplex.isCompact_of_finite`): it is the union of `D` and of its finitely many
@@ -40,10 +40,11 @@ lemma RelCWComplex.finiteDimensional_of_isEmpty_cell_gt {X : Type*} [Topological
 
 variable {X : Type*} [TopologicalSpace X] {C D : Set X}
 
-/-- A relative CW complex in an empty ambient space has no cells in any dimension. -/
-instance RelCWComplex.instIsEmptyCell [IsEmpty X] [RelCWComplex C D] (n : ℕ) :
+/-- An empty relative CW complex has no cells in any dimension. -/
+instance RelCWComplex.instIsEmptyCell [RelCWComplex C D] [IsEmpty C] (n : ℕ) :
     IsEmpty (RelCWComplex.cell C n) :=
-  ⟨fun j ↦ isEmptyElim (RelCWComplex.map n j 0)⟩
+  ⟨fun j ↦ isEmptyElim (⟨_, RelCWComplex.openCell_subset_complex n j
+    (RelCWComplex.map_zero_mem_openCell n j)⟩ : C)⟩
 
 /-- **A finite relative CW complex over a compact base is compact.** -/
 theorem RelCWComplex.isCompact_of_finite [RelCWComplex C D] [RelCWComplex.Finite C]

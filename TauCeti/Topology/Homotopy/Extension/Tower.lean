@@ -363,7 +363,8 @@ a sequence whose bonding maps are embeddings with images having the homotopy ext
 Let `Y` be the union of an increasing sequence of subsets `A k`, each with the homotopy extension
 property in the next, carrying the topology coherent with them, and let `h k : F k ≃ₕ A k` be
 homotopy equivalences commuting with the inclusions. Then the colimit of `F` is homotopy equivalent
-to `Y` by a homotopy equivalence restricting to `h k` on every stage. -/
+to `Y` by a homotopy equivalence restricting to `h k` on every stage and whose inverse maps each
+`A k` into the range of `c.ι.app k`. -/
 theorem exists_homotopyEquiv_of_isColimit
     (hF : ∀ k : ℕ, IsEmbedding (F.map (homOfLE k.le_succ)))
     (hFh : ∀ k : ℕ, HasHomotopyExtensionProperty (range (F.map (homOfLE k.le_succ))))
@@ -372,7 +373,8 @@ theorem exists_homotopyEquiv_of_isColimit
     (hAH : ∀ k, HasHomotopyExtensionProperty ((↑) ⁻¹' A k : Set (A (k + 1))))
     (h : ∀ k, F.obj k ≃ₕ A k)
     (hh : ∀ k w, (h (k + 1) (F.map (homOfLE k.le_succ) w) : Y) = h k w) :
-    ∃ H : c.pt ≃ₕ Y, ∀ k w, H (c.ι.app k w) = (h k w : Y) := by
+    ∃ H : c.pt ≃ₕ Y,
+      (∀ k w, H (c.ι.app k w) = (h k w : Y)) ∧ ∀ k, MapsTo H.symm (A k) (range (c.ι.app k)) := by
   -- `Y` is the colimit of the `A k`, the `h k` form a levelwise homotopy equivalence from `F` to
   -- the sequence of the `A k`, and the induced map of colimits is a homotopy equivalence.
   let hcY := TopCat.isColimitOfIsCoherentWith hA hAY hAc
@@ -382,8 +384,9 @@ theorem exists_homotopyEquiv_of_isColimit
       exact Subtype.ext (hh k w)
   refine ⟨cofibrationTowerHomotopyEquiv hF hFh (fun k ↦ .inclusion (hA k.le_succ)) (fun k ↦ by
       rw [TopCat.range_subspaceDiagram_map]
-      exact hAH k) f (fun k ↦ ⟨h k, rfl⟩) hc hcY, fun k w ↦ ?_⟩
-  exact ConcreteCategory.congr_hom (hc.ι_map _ f k) w
+      exact hAH k) f (fun k ↦ ⟨h k, rfl⟩) hc hcY,
+    fun k w ↦ ConcreteCategory.congr_hom (hc.ι_map _ f k) w,
+    fun k y hy ↦ ⟨_, (ConcreteCategory.congr_hom (hcY.ι_map c _ k) ⟨y, hy⟩).symm⟩⟩
 
 end ColimitUnion
 

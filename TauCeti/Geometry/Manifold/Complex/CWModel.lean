@@ -45,10 +45,11 @@ the global CW homotopy models of Andreotti–Frankel and Milnor:
   is a proper bounded-below strictly plurisubharmonic Morse exhaustion, giving both a global
   Hausdorff CW model of `M` of dimension at most `n` and compatible finite CW models of the
   Euclidean ball intersections `{x | ‖i x - a‖² ≤ r k}`
-  (`TauCeti.exists_cwComplex_sublevel_homotopyEquiv_norm_sq_sub_comp`). Transporting an inner
-  product along a continuous linear equivalence extends the global `n`-dimensional CW homotopy model
-  to proper holomorphic immersions into any proper complex normed space and closed holomorphic
-  embeddings into any finite-dimensional complex normed space
+  (`TauCeti.exists_cwComplex_sublevel_homotopyEquiv_norm_sq_sub_comp`). Transporting the source
+  manifold from any boundaryless complex model `I` to `TauCeti.BoundarylessModel I M` and
+  transporting an inner product on the target along a continuous linear equivalence extends the
+  global `n`-dimensional CW homotopy model to proper holomorphic immersions into any proper complex
+  normed space and closed holomorphic embeddings into any finite-dimensional complex normed space
   (`TauCeti.exists_cwComplex_homotopyEquiv_of_isProperMap_holomorphic_immersion`,
   `TauCeti.exists_cwComplex_homotopyEquiv_of_isClosedEmbedding`, and the `Manifold.IsImmersion`
   forms). Neither finite-dimensionality of the model space `E` nor second-countability of `M` is
@@ -466,43 +467,64 @@ theorem exists_cwComplex_sublevel_homotopyEquiv_norm_sq_sub_comp {F : Type*}
     ha.exists_cwComplex_sublevel_homotopyEquiv_of_manifoldMorseIndex_le hap hbdd hidx
   exact ⟨a, r, X, _, ‹_›, ‹_›, h, W, _, ‹_›, ‹_›, ‹_›, ι, j, hSub, ha, hap, hrest⟩
 
+end HolomorphicImmersion
+
+section HolomorphicImmersionModel
+
+variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℂ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℂ E H} [I.Boundaryless] [TopologicalSpace M] [ChartedSpace H M]
+  [IsManifold I 1 M] [T2Space M]
+
 /-- **Andreotti–Frankel–Milnor CW theorem for proper holomorphic immersions.** If a Hausdorff
-complex manifold `M` admits a proper holomorphic immersion into a proper complex normed space, then
-`M` is homotopy equivalent to a Hausdorff CW complex with no cells in dimensions strictly greater
-than `finrank ℂ E`. Neither finite-dimensionality of `E` nor second-countability of `M` is assumed
-separately. -/
+manifold `M` modelled on a boundaryless complex model `I` over `E` admits a proper holomorphic
+immersion into a proper complex normed space, then `M` is homotopy equivalent to a Hausdorff CW
+complex with no cells in dimensions strictly greater than `finrank ℂ E`. Neither
+finite-dimensionality of `E` nor second-countability of `M` is assumed separately. -/
 theorem exists_cwComplex_homotopyEquiv_of_isProperMap_holomorphic_immersion {F : Type*}
     [NormedAddCommGroup F] [NormedSpace ℂ F] [ProperSpace F] {i : M → F}
-    (hi : MDifferentiable 𝓘(ℂ, E) 𝓘(ℂ, F) i)
-    (hinj : ∀ x, Injective (mvfderiv 𝓘(ℂ, E) i x)) (hip : IsProperMap i) :
+    (hi : MDifferentiable I 𝓘(ℂ, F) i)
+    (hinj : ∀ x, Injective (mvfderiv I i x)) (hip : IsProperMap i) :
     ∃ (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X) (_ : CWComplex (univ : Set X)),
       Nonempty (M ≃ₕ X) ∧ ∀ k, finrank ℂ E < k → IsEmpty (cell (univ : Set X) k) := by
-  -- Transport an inner product from `EuclideanSpace ℂ (Fin (finrank ℂ F))` along a continuous
-  -- complex linear equivalence so that Milnor's squared-distance exhaustion applies.
+  -- Transport `M` to `BoundarylessModel I M` and equip `F` with an inner product via a continuous
+  -- complex linear equivalence with `EuclideanSpace ℂ (Fin (finrank ℂ F))`.
+  let hM := BoundarylessModel.homeomorph I M
+  have : T2Space (BoundarylessModel I M) := hM.symm.isEmbedding.t2Space
   have : FiniteDimensional ℂ F := .of_locallyCompactSpace ℂ
   let e : F ≃L[ℂ] EuclideanSpace ℂ (Fin (finrank ℂ F)) :=
     ContinuousLinearEquiv.ofFinrankEq finrank_euclideanSpace_fin.symm
-  have hein : ∀ x, Injective (mvfderiv 𝓘(ℂ, E) (e ∘ i) x) := fun x v w hvw ↦ by
-    simp only [mvfderiv_comp_apply_of_differentiableAt e.differentiableAt (hi x), e.fderiv] at hvw
-    exact hinj x (e.injective hvw)
+  let j : BoundarylessModel I M → EuclideanSpace ℂ (Fin (finrank ℂ F)) := (e ∘ i) ∘ hM.symm
+  have hei : MDifferentiable I 𝓘(ℂ, EuclideanSpace ℂ (Fin (finrank ℂ F))) (e ∘ i) :=
+    (e.contDiff.contMDiff.mdifferentiable one_ne_zero).comp hi
+  have hj_diff : MDifferentiable 𝓘(ℂ, E) 𝓘(ℂ, EuclideanSpace ℂ (Fin (finrank ℂ F))) j :=
+    fun x ↦ (BoundarylessModel.mdifferentiableAt_source_iff I 𝓘(ℂ, _) (e ∘ i) x).2 (hei _)
+  have hj_inj : ∀ x, Injective (mvfderiv 𝓘(ℂ, E) j x) := fun x ↦ by
+    rw [injective_mvfderiv_iff, BoundarylessModel.mfderiv_source I 𝓘(ℂ, _) (e ∘ i) x]
+    have hein : Injective (mvfderiv I (e ∘ i) (hM.symm x)) := fun v w hvw ↦ by
+      simp only [mvfderiv_comp_apply_of_differentiableAt e.differentiableAt (hi _),
+        e.fderiv] at hvw
+      exact hinj _ (e.injective hvw)
+    exact ((injective_mvfderiv_iff.1 hein).comp
+      (tangentSpaceCastModel I (hM.symm x)).symm.injective).comp
+      (tangentSpaceCastModel 𝓘(ℂ, E) x).injective
   obtain ⟨_, _, X, _, _, _, h, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -,
       hdim, -⟩ :=
-    exists_cwComplex_sublevel_homotopyEquiv_norm_sq_sub_comp
-      ((e.contDiff.contMDiff.mdifferentiable one_ne_zero).comp hi) hein
-      (e.toHomeomorph.isClosedEmbedding.isProperMap.comp hip)
-  exact ⟨X, _, ‹_›, ‹_›, ⟨h.symm⟩, hdim⟩
+    exists_cwComplex_sublevel_homotopyEquiv_norm_sq_sub_comp hj_diff hj_inj
+      ((e.toHomeomorph.isClosedEmbedding.isProperMap.comp hip).comp
+        hM.symm.isClosedEmbedding.isProperMap)
+  exact ⟨X, _, ‹_›, ‹_›, ⟨hM.toHomotopyEquiv.trans h.symm⟩, hdim⟩
 
 omit [T2Space M] in
 /-- **Andreotti–Frankel–Milnor CW theorem for closed holomorphic embeddings** (Milnor, *Morse
-Theory*, Theorem 7.2). Every complex manifold admitting a holomorphic immersion into a
-finite-dimensional complex normed space which is a closed topological embedding is homotopy
-equivalent to a Hausdorff CW complex with no cells in dimensions strictly greater than
-`finrank ℂ E`. Hausdorffness and second-countability of `M` follow from the closed embedding, and no
-separate `FiniteDimensional ℂ E` assumption is needed. -/
+Theory*, Theorem 7.2). Every manifold `M` modelled on a boundaryless complex model `I` over `E`
+admitting a holomorphic immersion into a finite-dimensional complex normed space which is a closed
+topological embedding is homotopy equivalent to a Hausdorff CW complex with no cells in dimensions
+strictly greater than `finrank ℂ E`. Hausdorffness and second-countability of `M` follow from the
+closed embedding, and no separate `FiniteDimensional ℂ E` assumption is needed. -/
 theorem exists_cwComplex_homotopyEquiv_of_isClosedEmbedding {F : Type*} [NormedAddCommGroup F]
     [NormedSpace ℂ F] [FiniteDimensional ℂ F] {i : M → F}
-    (hi : MDifferentiable 𝓘(ℂ, E) 𝓘(ℂ, F) i)
-    (hinj : ∀ x, Injective (mvfderiv 𝓘(ℂ, E) i x)) (hclosed : IsClosedEmbedding i) :
+    (hi : MDifferentiable I 𝓘(ℂ, F) i)
+    (hinj : ∀ x, Injective (mvfderiv I i x)) (hclosed : IsClosedEmbedding i) :
     ∃ (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X) (_ : CWComplex (univ : Set X)),
       Nonempty (M ≃ₕ X) ∧ ∀ k, finrank ℂ E < k → IsEmpty (cell (univ : Set X) k) := by
   have : T2Space M := hclosed.isEmbedding.t2Space
@@ -510,7 +532,7 @@ theorem exists_cwComplex_homotopyEquiv_of_isClosedEmbedding {F : Type*} [NormedA
   exact exists_cwComplex_homotopyEquiv_of_isProperMap_holomorphic_immersion hi hinj
     hclosed.isProperMap
 
-end HolomorphicImmersion
+end HolomorphicImmersionModel
 
 /-! ### Smooth affine complete intersections -/
 
@@ -610,16 +632,18 @@ end TauCeti
 
 namespace Manifold.IsImmersion
 
-variable {E : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℂ E]
-  [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℂ, E) 1 M]
+variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℂ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℂ E H} [I.Boundaryless] [TopologicalSpace M] [ChartedSpace H M]
+  [IsManifold I 1 M]
 
 /-- **Andreotti–Frankel–Milnor CW theorem for `Manifold.IsImmersion` along a proper map.** If
-`i : M → F` is a proper holomorphic `C^r` immersion (`r ≠ 0`) of a Hausdorff complex manifold into a
-proper complex normed space, then `M` is homotopy equivalent to a Hausdorff CW complex with no cells
-in dimensions strictly greater than `finrank ℂ E`. -/
+`i : M → F` is a proper holomorphic `C^r` immersion (`r ≠ 0`) of a Hausdorff manifold modelled on a
+boundaryless complex model `I` over `E` into a proper complex normed space, then `M` is homotopy
+equivalent to a Hausdorff CW complex with no cells in dimensions strictly greater than
+`finrank ℂ E`. -/
 theorem exists_cwComplex_homotopyEquiv_of_isProperMap [T2Space M] {F : Type*}
     [NormedAddCommGroup F] [NormedSpace ℂ F] [ProperSpace F] {r : ℕ∞ω} {i : M → F}
-    (hi : IsImmersion 𝓘(ℂ, E) 𝓘(ℂ, F) r i) (hr : r ≠ 0) (hip : IsProperMap i) :
+    (hi : IsImmersion I 𝓘(ℂ, F) r i) (hr : r ≠ 0) (hip : IsProperMap i) :
     ∃ (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X) (_ : CWComplex (univ : Set X)),
       Nonempty (M ≃ₕ X) ∧ ∀ k, finrank ℂ E < k → IsEmpty (cell (univ : Set X) k) :=
   TauCeti.exists_cwComplex_homotopyEquiv_of_isProperMap_holomorphic_immersion
@@ -627,12 +651,13 @@ theorem exists_cwComplex_homotopyEquiv_of_isProperMap [T2Space M] {F : Type*}
     (fun x ↦ TauCeti.injective_mvfderiv_iff.2 (hi.mfderiv_injective hr x)) hip
 
 /-- **Andreotti–Frankel–Milnor CW theorem for `Manifold.IsImmersion` along a closed embedding.** If
-`i : M → F` is a holomorphic `C^r` immersion (`r ≠ 0`) into a finite-dimensional complex normed
-space which is a closed embedding, then `M` is homotopy equivalent to a Hausdorff CW complex with no
-cells in dimensions strictly greater than `finrank ℂ E`. -/
+`i : M → F` is a holomorphic `C^r` immersion (`r ≠ 0`) of a manifold modelled on a boundaryless
+complex model `I` over `E` into a finite-dimensional complex normed space which is a closed
+embedding, then `M` is homotopy equivalent to a Hausdorff CW complex with no cells in dimensions
+strictly greater than `finrank ℂ E`. -/
 theorem exists_cwComplex_homotopyEquiv_of_isClosedEmbedding {F : Type*} [NormedAddCommGroup F]
     [NormedSpace ℂ F] [FiniteDimensional ℂ F] {r : ℕ∞ω} {i : M → F}
-    (hi : IsImmersion 𝓘(ℂ, E) 𝓘(ℂ, F) r i) (hr : r ≠ 0) (hclosed : IsClosedEmbedding i) :
+    (hi : IsImmersion I 𝓘(ℂ, F) r i) (hr : r ≠ 0) (hclosed : IsClosedEmbedding i) :
     ∃ (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X) (_ : CWComplex (univ : Set X)),
       Nonempty (M ≃ₕ X) ∧ ∀ k, finrank ℂ E < k → IsEmpty (cell (univ : Set X) k) :=
   TauCeti.exists_cwComplex_homotopyEquiv_of_isClosedEmbedding (hi.contMDiff.mdifferentiable hr)
@@ -660,6 +685,22 @@ example {n N : ℕ} {M : Type u} [TopologicalSpace M] [ChartedSpace (Fin n → �
   obtain ⟨X, _, _, _, hX, hdim⟩ :=
     hi.exists_cwComplex_homotopyEquiv_of_isClosedEmbedding (by simp) hclosed
   exact ⟨X, _, ‹_›, ‹_›, hX, fun k hk ↦ hdim k (by rwa [Module.finrank_fin_fun])⟩
+
+/-- **Check: product of complex manifolds (`𝓘(ℂ, E₁).prod 𝓘(ℂ, E₂)`).** Any product `M₁ × M₂` of
+complex manifolds admitting a closed smooth holomorphic immersion into `Fin N → ℂ` is homotopy
+equivalent to a Hausdorff CW complex of dimension at most `m + n`. -/
+example {m n N : ℕ} {M₁ M₂ : Type u} [TopologicalSpace M₁] [TopologicalSpace M₂]
+    [ChartedSpace (Fin m → ℂ) M₁] [ChartedSpace (Fin n → ℂ) M₂]
+    [IsManifold 𝓘(ℂ, Fin m → ℂ) ∞ M₁] [IsManifold 𝓘(ℂ, Fin n → ℂ) ∞ M₂]
+    {i : M₁ × M₂ → Fin N → ℂ}
+    (hi : Manifold.IsImmersion (𝓘(ℂ, Fin m → ℂ).prod 𝓘(ℂ, Fin n → ℂ)) 𝓘(ℂ, Fin N → ℂ) ∞ i)
+    (hclosed : IsClosedEmbedding i) :
+    ∃ (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X) (_ : CWComplex (univ : Set X)),
+      Nonempty (M₁ × M₂ ≃ₕ X) ∧ ∀ k, m + n < k → IsEmpty (cell (univ : Set X) k) := by
+  obtain ⟨X, _, _, _, hX, hdim⟩ :=
+    hi.exists_cwComplex_homotopyEquiv_of_isClosedEmbedding (by simp) hclosed
+  exact ⟨X, _, ‹_›, ‹_›, hX,
+    fun k hk ↦ hdim k (by simpa [Module.finrank_prod, Module.finrank_fin_fun] using hk)⟩
 
 /-- **Check: smooth affine complex curves (`n = 1`).** Every complex curve charted on `ℂ` admitting
 a closed holomorphic embedding into `Fin N → ℂ` has the homotopy type of a `1`-dimensional CW

@@ -69,12 +69,11 @@ universe u
 namespace TauCeti
 
 variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [FiniteDimensional ℝ E]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] [CompactSpace M] {f : M → ℝ}
 
 variable (I M) in
 include I in
-omit [FiniteDimensional ℝ E] in
 /-- **The Betti numbers of a compact manifold vanish above its dimension.** For a compact
 boundaryless manifold `M` of dimension `m` and a nontrivial ring `k`, `bⱼ(M; k) = 0` for `j > m`:
 a Morse function on `M` has no critical points of index above `m`. -/
