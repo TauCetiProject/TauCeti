@@ -81,18 +81,6 @@ theorem compContinuous_mem_ucb {f : H →ᵇ ℝ} (hf : f ∈ ucb H) (φ : G →
 
 end Multiplicative
 
-/-- The pullback `f ↦ f ∘ φ` along a continuous additive homomorphism `φ : G →ₜ+ H`, as a unital
-algebra homomorphism from `AddUCB H` to `AddUCB G`. -/
-def AddUCB.compRightAlgHom {G H : Type*} [AddGroup G] [TopologicalSpace G] [IsTopologicalAddGroup G]
-    [AddGroup H] [TopologicalSpace H] [IsTopologicalAddGroup H] (φ : G →ₜ+ H) :
-    AddUCB H →ₐ[ℝ] AddUCB G where
-  toFun f := ⟨(f : H →ᵇ ℝ).compContinuous (φ : C(G, H)), compContinuous_mem_addUcb f.2 φ⟩
-  map_one' := rfl
-  map_mul' _ _ := rfl
-  map_zero' := rfl
-  map_add' _ _ := rfl
-  commutes' _ := rfl
-
 namespace UCB
 
 variable {G H K : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
@@ -101,7 +89,8 @@ variable {G H K : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
 /-- The pullback `f ↦ f ∘ φ` along a continuous homomorphism `φ : G →ₜ* H`, as a unital algebra
 homomorphism from `UCB H` to `UCB G`. -/
-@[to_additive existing]
+@[to_additive /-- The pullback `f ↦ f ∘ φ` along a continuous additive homomorphism `φ : G →ₜ+ H`,
+as a unital algebra homomorphism from `AddUCB H` to `AddUCB G`. -/]
 def compRightAlgHom (φ : G →ₜ* H) : UCB H →ₐ[ℝ] UCB G where
   toFun f := ⟨(f : H →ᵇ ℝ).compContinuous (φ : C(G, H)), compContinuous_mem_ucb f.2 φ⟩
   map_one' := rfl
@@ -184,14 +173,12 @@ variable {G H : Type*} [AddGroup G] [TopologicalSpace G] [IsTopologicalAddGroup 
 /-- The pullback intertwines left translation by `φ g` with left translation by `g`. -/
 theorem compRightAlgHom_leftTranslation (φ : G →ₜ+ H) (g : G) (f : AddUCB H) :
     compRightAlgHom φ (leftTranslation (φ g) f) = leftTranslation g (compRightAlgHom φ f) := by
-  ext
-  simp
+  ext; simp
 
 /-- The pullback intertwines right translation by `φ g` with right translation by `g`. -/
 theorem compRightAlgHom_rightTranslation (φ : G →ₜ+ H) (g : G) (f : AddUCB H) :
     compRightAlgHom φ (rightTranslation (φ g) f) = rightTranslation g (compRightAlgHom φ f) := by
-  ext
-  simp
+  ext; simp
 
 end AddUCB
 

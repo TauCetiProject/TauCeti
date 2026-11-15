@@ -309,6 +309,17 @@ search does not derive this from the inherited normed space structure, because t
 instance : NormSMulClass ℝ (UCB G) :=
   ⟨fun c f => norm_smul c (f : G →ᵇ ℝ)⟩
 
+/-- `AddUCB H` has the constant function `1` as multiplicative identity. -/
+@[to_additive_dont_translate]
+instance instOneAddUCB {H : Type*} [AddGroup H] [TopologicalSpace H] [IsTopologicalAddGroup H] :
+    One (AddUCB H) :=
+  inferInstance
+
+/-- `UCB G` has the constant function `1` as multiplicative identity. -/
+@[to_additive existing instOneAddUCB, to_additive_dont_translate]
+instance instOneUCB : One (UCB G) :=
+  inferInstance
+
 /-- Constant functions belong to `ucb G`. -/
 @[to_additive (attr := simp) const_mem_addUcb /-- Constant functions belong to `addUcb G`. -/]
 theorem const_mem_ucb (c : ℝ) : BoundedContinuousFunction.const G c ∈ ucb G :=
@@ -373,16 +384,17 @@ theorem le_def {f g : UCB G} : f ≤ g ↔ ∀ x, (f : G →ᵇ ℝ) x ≤ (g : 
 theorem abs_apply_le_norm (f : UCB G) (x : G) : |(f : G →ᵇ ℝ) x| ≤ ‖f‖ :=
   (f : G →ᵇ ℝ).norm_coe_le_norm x
 
-/-- Every element of `UCB G` lies below the constant function with value its supremum norm. -/
-theorem le_norm_smul_one (f : UCB G) : f ≤ ‖f‖ • 1 :=
-  le_def.2 fun x => by simpa using (f : G →ᵇ ℝ).apply_le_norm x
-
 end UCB
 
 /-- Every element of `AddUCB H` lies below the constant function with value its supremum norm. -/
 theorem AddUCB.le_norm_smul_one {H : Type*} [AddGroup H] [TopologicalSpace H]
     [IsTopologicalAddGroup H] (f : AddUCB H) : f ≤ ‖f‖ • 1 :=
   AddUCB.le_def.2 fun x => by simpa using (f : H →ᵇ ℝ).apply_le_norm x
+
+/-- Every element of `UCB G` lies below the constant function with value its supremum norm. -/
+@[to_additive existing AddUCB.le_norm_smul_one]
+theorem UCB.le_norm_smul_one (f : UCB G) : f ≤ ‖f‖ • 1 :=
+  UCB.le_def.2 fun x => by simpa using (f : G →ᵇ ℝ).apply_le_norm x
 
 end UCB
 

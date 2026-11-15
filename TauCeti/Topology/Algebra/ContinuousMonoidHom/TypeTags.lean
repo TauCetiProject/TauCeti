@@ -43,37 +43,27 @@ def ContinuousAddMonoidHom.toMultiplicative :
   left_inv _ := rfl
   right_inv _ := rfl
 
-@[simp]
-theorem ContinuousAddMonoidHom.toMultiplicative_toMonoidHom (f : α →ₜ+ β) :
+@[simp] theorem ContinuousAddMonoidHom.toMultiplicative_toMonoidHom (f : α →ₜ+ β) :
     (f.toMultiplicative : Multiplicative α →* Multiplicative β) =
-      f.toAddMonoidHom.toMultiplicative :=
-  (rfl)
+      f.toAddMonoidHom.toMultiplicative := (rfl)
 
-@[simp]
-theorem ContinuousAddMonoidHom.coe_toMultiplicative (f : α →ₜ+ β) :
-    ⇑f.toMultiplicative = ofAdd ∘ f ∘ toAdd :=
-  (rfl)
+@[simp] theorem ContinuousAddMonoidHom.coe_toMultiplicative (f : α →ₜ+ β) :
+    ⇑f.toMultiplicative = ofAdd ∘ f ∘ toAdd := (rfl)
 
-@[simp]
-theorem ContinuousAddMonoidHom.toMultiplicative_apply_apply (f : α →ₜ+ β) (a : Multiplicative α) :
-    f.toMultiplicative a = ofAdd (f a.toAdd) :=
-  (rfl)
+@[simp] theorem ContinuousAddMonoidHom.toMultiplicative_apply_apply (f : α →ₜ+ β)
+    (a : Multiplicative α) : f.toMultiplicative a = ofAdd (f a.toAdd) := (rfl)
 
-@[simp]
-theorem ContinuousAddMonoidHom.toMultiplicative_symm_apply_apply
+@[simp] theorem ContinuousAddMonoidHom.toMultiplicative_symm_apply_apply
     (f : Multiplicative α →ₜ* Multiplicative β) (a : α) :
-    (ContinuousAddMonoidHom.toMultiplicative.symm f) a = (f (ofAdd a)).toAdd :=
-  (rfl)
+    (ContinuousAddMonoidHom.toMultiplicative.symm f) a = (f (ofAdd a)).toAdd := (rfl)
 
-@[simp]
-theorem ContinuousAddMonoidHom.toMultiplicative_id :
+@[simp] theorem ContinuousAddMonoidHom.toMultiplicative_id :
     (ContinuousAddMonoidHom.id α).toMultiplicative = ContinuousMonoidHom.id (Multiplicative α) :=
   (rfl)
 
 /-- `ContinuousAddMonoidHom.toMultiplicative` commutes with composition. -/
 theorem ContinuousAddMonoidHom.toMultiplicative_comp (g : β →ₜ+ γ) (f : α →ₜ+ β) :
-    (g.comp f).toMultiplicative = g.toMultiplicative.comp f.toMultiplicative :=
-  (rfl)
+    (g.comp f).toMultiplicative = g.toMultiplicative.comp f.toMultiplicative := (rfl)
 
 end ToMultiplicative
 
@@ -94,35 +84,24 @@ def ContinuousMonoidHom.toAdditive :
   left_inv _ := rfl
   right_inv _ := rfl
 
-@[simp]
-theorem ContinuousMonoidHom.toAdditive_toAddMonoidHom (f : α →ₜ* β) :
-    (f.toAdditive : Additive α →+ Additive β) = f.toMonoidHom.toAdditive :=
-  (rfl)
+@[simp] theorem ContinuousMonoidHom.toAdditive_toAddMonoidHom (f : α →ₜ* β) :
+    (f.toAdditive : Additive α →+ Additive β) = f.toMonoidHom.toAdditive := (rfl)
 
-@[simp]
-theorem ContinuousMonoidHom.coe_toAdditive (f : α →ₜ* β) :
-    ⇑f.toAdditive = ofMul ∘ f ∘ toMul :=
-  (rfl)
+@[simp] theorem ContinuousMonoidHom.coe_toAdditive (f : α →ₜ* β) :
+    ⇑f.toAdditive = ofMul ∘ f ∘ toMul := (rfl)
 
-@[simp]
-theorem ContinuousMonoidHom.toAdditive_apply_apply (f : α →ₜ* β) (a : Additive α) :
-    f.toAdditive a = ofMul (f a.toMul) :=
-  (rfl)
+@[simp] theorem ContinuousMonoidHom.toAdditive_apply_apply (f : α →ₜ* β) (a : Additive α) :
+    f.toAdditive a = ofMul (f a.toMul) := (rfl)
 
-@[simp]
-theorem ContinuousMonoidHom.toAdditive_symm_apply_apply
+@[simp] theorem ContinuousMonoidHom.toAdditive_symm_apply_apply
     (f : Additive α →ₜ+ Additive β) (a : α) :
-    (ContinuousMonoidHom.toAdditive.symm f) a = (f (ofMul a)).toMul :=
-  (rfl)
+    (ContinuousMonoidHom.toAdditive.symm f) a = (f (ofMul a)).toMul := (rfl)
 
-@[simp]
-theorem ContinuousMonoidHom.toAdditive_id :
-    (ContinuousMonoidHom.id α).toAdditive = ContinuousAddMonoidHom.id (Additive α) :=
-  (rfl)
+@[simp] theorem ContinuousMonoidHom.toAdditive_id :
+    (ContinuousMonoidHom.id α).toAdditive = ContinuousAddMonoidHom.id (Additive α) := (rfl)
 
 /-- `ContinuousMonoidHom.toAdditive` commutes with composition. -/
 theorem ContinuousMonoidHom.toAdditive_comp (g : β →ₜ* γ) (f : α →ₜ* β) :
-    (g.comp f).toAdditive = g.toAdditive.comp f.toAdditive :=
-  (rfl)
+    (g.comp f).toAdditive = g.toAdditive.comp f.toAdditive := (rfl)
 
 end ToAdditive

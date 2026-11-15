@@ -294,20 +294,15 @@ theorem coe_leftTranslation (g : H) (f : addUcbSubalgebra 𝕜 H) :
       (f : H →ᵇ 𝕜).compContinuous (ContinuousMap.addLeft (-g)) :=
   BoundedContinuousFunction.compContinuousₗᵢ_apply ..
 
-@[simp]
-theorem leftTranslation_apply (g : H) (f : addUcbSubalgebra 𝕜 H) (x : H) :
+@[simp] theorem leftTranslation_apply (g : H) (f : addUcbSubalgebra 𝕜 H) (x : H) :
     (leftTranslation 𝕜 H g f : H →ᵇ 𝕜) x = (f : H →ᵇ 𝕜) (-g + x) :=
   DFunLike.congr_fun (coe_leftTranslation g f) x
 
-@[simp]
-theorem leftTranslation_zero : leftTranslation 𝕜 H (0 : H) = 1 := by
-  ext
-  simp
+@[simp] theorem leftTranslation_zero : leftTranslation 𝕜 H (0 : H) = 1 := by ext; simp
 
 theorem leftTranslation_add (g h : H) :
     leftTranslation 𝕜 H (g + h) = leftTranslation 𝕜 H g * leftTranslation 𝕜 H h := by
-  ext
-  simp [add_assoc]
+  ext; simp [add_assoc]
 
 end addUcbSubalgebra
 
@@ -335,83 +330,65 @@ theorem coe_rightTranslation (g : H) (f : AddUCB H) :
     (rightTranslation g f : H →ᵇ ℝ) = (f : H →ᵇ ℝ).compContinuous (ContinuousMap.addRight g) :=
   BoundedContinuousFunction.compContinuousₗᵢ_apply ..
 
-@[simp]
-theorem leftTranslation_apply (g : H) (f : AddUCB H) (x : H) :
+@[simp] theorem leftTranslation_apply (g : H) (f : AddUCB H) (x : H) :
     (leftTranslation g f : H →ᵇ ℝ) x = (f : H →ᵇ ℝ) (-g + x) :=
   DFunLike.congr_fun (coe_leftTranslation g f) x
 
-@[simp]
-theorem rightTranslation_apply (g : H) (f : AddUCB H) (x : H) :
+@[simp] theorem rightTranslation_apply (g : H) (f : AddUCB H) (x : H) :
     (rightTranslation g f : H →ᵇ ℝ) x = (f : H →ᵇ ℝ) (x + g) :=
   DFunLike.congr_fun (coe_rightTranslation g f) x
 
-@[simp]
-theorem leftTranslation_zero : leftTranslation (0 : H) = 1 :=
+@[simp] theorem leftTranslation_zero : leftTranslation (0 : H) = 1 :=
   addUcbSubalgebra.leftTranslation_zero
 
 theorem leftTranslation_add (g h : H) :
     leftTranslation (g + h) = leftTranslation g * leftTranslation h :=
   addUcbSubalgebra.leftTranslation_add g h
 
-@[simp]
-theorem leftTranslation_symm (g : H) : (leftTranslation g).symm = leftTranslation (-g) :=
+@[simp] theorem leftTranslation_symm (g : H) : (leftTranslation g).symm = leftTranslation (-g) :=
   LinearIsometryEquiv.ext fun _ => (leftTranslation g).symm_apply_eq.2 (by ext; simp)
 
 theorem leftTranslation_neg (g : H) : leftTranslation (-g) = (leftTranslation g)⁻¹ := by
   rw [LinearIsometryEquiv.inv_def, leftTranslation_symm]
 
-@[simp]
-theorem rightTranslation_zero : rightTranslation (0 : H) = 1 := by
-  ext
-  simp
+@[simp] theorem rightTranslation_zero : rightTranslation (0 : H) = 1 := by ext; simp
 
 theorem rightTranslation_add (g h : H) :
     rightTranslation (g + h) = rightTranslation g * rightTranslation h := by
-  ext
-  simp [add_assoc]
+  ext; simp [add_assoc]
 
-@[simp]
-theorem rightTranslation_symm (g : H) : (rightTranslation g).symm = rightTranslation (-g) :=
+@[simp] theorem rightTranslation_symm (g : H) :
+    (rightTranslation g).symm = rightTranslation (-g) :=
   LinearIsometryEquiv.ext fun _ => (rightTranslation g).symm_apply_eq.2 (by ext; simp)
 
 theorem rightTranslation_neg (g : H) : rightTranslation (-g) = (rightTranslation g)⁻¹ := by
   rw [LinearIsometryEquiv.inv_def, rightTranslation_symm]
 
 /-- Left translation preserves and reflects the pointwise order. -/
-@[simp]
-theorem leftTranslation_le_leftTranslation_iff {g : H} {f f' : AddUCB H} :
-    leftTranslation g f ≤ leftTranslation g f' ↔ f ≤ f' := by
-  refine ⟨fun h => le_def.2 fun x => ?_, fun h => le_def.2 fun x => by simpa using le_def.1 h _⟩
-  simpa using le_def.1 h (g + x)
+@[simp] theorem leftTranslation_le_leftTranslation_iff {g : H} {f f' : AddUCB H} :
+    leftTranslation g f ≤ leftTranslation g f' ↔ f ≤ f' :=
+  ⟨fun h => le_def.2 fun x => by simpa using le_def.1 h (g + x),
+    fun h => le_def.2 fun x => by simpa using le_def.1 h _⟩
 
 /-- Left translation fixes the constant function `1`. -/
-@[simp]
-theorem leftTranslation_apply_one (g : H) : leftTranslation g 1 = 1 := by
-  ext
-  simp
+@[simp] theorem leftTranslation_apply_one (g : H) : leftTranslation g 1 = 1 := by ext; simp
 
 /-- Left translation fixes every constant function. -/
-@[simp]
-theorem leftTranslation_apply_algebraMap (g : H) (c : ℝ) :
+@[simp] theorem leftTranslation_apply_algebraMap (g : H) (c : ℝ) :
     leftTranslation g (algebraMap ℝ (AddUCB H) c) = algebraMap ℝ (AddUCB H) c := by
   simp [Algebra.algebraMap_eq_smul_one]
 
 /-- Right translation preserves and reflects the pointwise order. -/
-@[simp]
-theorem rightTranslation_le_rightTranslation_iff {g : H} {f f' : AddUCB H} :
-    rightTranslation g f ≤ rightTranslation g f' ↔ f ≤ f' := by
-  refine ⟨fun h => le_def.2 fun x => ?_, fun h => le_def.2 fun x => by simpa using le_def.1 h _⟩
-  simpa using le_def.1 h (x + -g)
+@[simp] theorem rightTranslation_le_rightTranslation_iff {g : H} {f f' : AddUCB H} :
+    rightTranslation g f ≤ rightTranslation g f' ↔ f ≤ f' :=
+  ⟨fun h => le_def.2 fun x => by simpa using le_def.1 h (x + -g),
+    fun h => le_def.2 fun x => by simpa using le_def.1 h _⟩
 
 /-- Right translation fixes the constant function `1`. -/
-@[simp]
-theorem rightTranslation_apply_one (g : H) : rightTranslation g 1 = 1 := by
-  ext
-  simp
+@[simp] theorem rightTranslation_apply_one (g : H) : rightTranslation g 1 = 1 := by ext; simp
 
 /-- Right translation fixes every constant function. -/
-@[simp]
-theorem rightTranslation_apply_algebraMap (g : H) (c : ℝ) :
+@[simp] theorem rightTranslation_apply_algebraMap (g : H) (c : ℝ) :
     rightTranslation g (algebraMap ℝ (AddUCB H) c) = algebraMap ℝ (AddUCB H) c := by
   simp [Algebra.algebraMap_eq_smul_one]
 
@@ -429,17 +406,13 @@ theorem continuous_leftTranslation_apply (f : AddUCB H) :
   refine continuous_iff_continuousAt.2 fun g => ?_
   have h₁ : Tendsto (fun h : H => -g + h) (𝓝 g) (𝓝 0) := by
     simpa using (continuous_const_add (-g)).tendsto g
-  have h₂ := ((leftTranslation g).continuous.tendsto f).comp
-    ((tendsto_leftTranslation_apply_nhds_zero f).comp h₁)
-  refine h₂.congr fun h => ?_
-  ext
-  simp [← add_assoc]
+  refine (((leftTranslation g).continuous.tendsto f).comp
+    ((tendsto_leftTranslation_apply_nhds_zero f).comp h₁)).congr fun h => by ext; simp [← add_assoc]
 
 /-- Left and right translations of `AddUCB H` commute. -/
 theorem commute_leftTranslation_rightTranslation (g h : H) :
     Commute (leftTranslation g) (rightTranslation h) := by
-  ext
-  simp [add_assoc]
+  ext; simp [add_assoc]
 
 /-- Left and right translations of `AddUCB H` commute, applied to a function. -/
 theorem leftTranslation_rightTranslation (g h : H) (f : AddUCB H) :

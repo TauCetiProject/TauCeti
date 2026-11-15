@@ -266,38 +266,32 @@ end MulEquiv
 
 namespace TauCeti
 
+private theorem exists_finset_symmDiff_lt_of_equiv {α β : Type*} [DecidableEq α] [DecidableEq β]
+    (e : α ≃ β) {act₁ : α → Finset α → Finset α} {act₂ : β → Finset β → Finset β}
+    {K : Finset α} {ε : ℝ}
+    (h : ∃ F : Finset β, F.Nonempty ∧ ∀ b ∈ K.image e, (#(act₂ b F ∆ F) : ℝ) < ε * #F)
+    (he : ∀ a F, act₁ a (F.image e.symm) = (act₂ (e a) F).image e.symm) :
+    ∃ F : Finset α, F.Nonempty ∧ ∀ a ∈ K, (#(act₁ a F ∆ F) : ℝ) < ε * #F := by
+  obtain ⟨F, hF, hFK⟩ := h
+  refine ⟨F.image e.symm, hF.image _, fun a ha => ?_⟩
+  rw [he, ← image_symmDiff _ _ e.symm.injective, card_image_of_injective _ e.symm.injective,
+    card_image_of_injective _ e.symm.injective]
+  exact hFK (e a) (mem_image_of_mem _ ha)
+
 /-- `Multiplicative A` has Følner sets if and only if `A` has additive Følner sets. -/
 @[simp]
 theorem hasFoelnerSets_multiplicative_iff {A : Type*} [AddGroup A] :
     HasFoelnerSets (Multiplicative A) ↔ HasAddFoelnerSets A := by
   classical
   rw [hasFoelnerSets_iff, hasAddFoelnerSets_iff]
-  have hsmul (a : A) (F : Finset A) :
-      Multiplicative.ofAdd a • F.image Multiplicative.ofAdd =
-        (a +ᵥ F).image Multiplicative.ofAdd := by
-    simp only [vadd_finset_def, smul_finset_def, image_image, vadd_eq_add, smul_eq_mul,
-      Function.comp_def, ofAdd_add]
-  have hvadd (a : A) (F : Finset (Multiplicative A)) :
-      a +ᵥ F.image Multiplicative.toAdd =
-        (Multiplicative.ofAdd a • F).image Multiplicative.toAdd := by
-    simp only [vadd_finset_def, smul_finset_def, image_image, vadd_eq_add, smul_eq_mul,
-      Function.comp_def, toAdd_mul, toAdd_ofAdd]
-  constructor
-  · intro h K ε hε
-    obtain ⟨F, hF, hFK⟩ := h (K.image Multiplicative.ofAdd) ε hε
-    refine ⟨F.image Multiplicative.toAdd, hF.image _, fun a ha => ?_⟩
-    rw [hvadd, ← image_symmDiff _ _ Multiplicative.toAdd.injective,
-      card_image_of_injective _ Multiplicative.toAdd.injective,
-      card_image_of_injective _ Multiplicative.toAdd.injective]
-    exact hFK (Multiplicative.ofAdd a) (mem_image_of_mem _ ha)
-  · intro h K ε hε
-    obtain ⟨F, hF, hFK⟩ := h (K.image Multiplicative.toAdd) ε hε
-    refine ⟨F.image Multiplicative.ofAdd, hF.image _, fun g hg => ?_⟩
-    have hg' : Multiplicative.ofAdd g.toAdd = g := rfl
-    rw [← hg', hsmul, ← image_symmDiff _ _ Multiplicative.ofAdd.injective,
-      card_image_of_injective _ Multiplicative.ofAdd.injective,
-      card_image_of_injective _ Multiplicative.ofAdd.injective]
-    exact hFK g.toAdd (mem_image_of_mem _ hg)
+  refine ⟨fun h K ε hε => exists_finset_symmDiff_lt_of_equiv Multiplicative.ofAdd
+      (h (K.image Multiplicative.ofAdd) ε hε) fun a F => by
+        simp only [vadd_finset_def, smul_finset_def, image_image, vadd_eq_add, smul_eq_mul,
+          Function.comp_def]; rfl,
+    fun h K ε hε => exists_finset_symmDiff_lt_of_equiv Multiplicative.toAdd
+      (h (K.image Multiplicative.toAdd) ε hε) fun g F => by
+        simp only [vadd_finset_def, smul_finset_def, image_image, vadd_eq_add, smul_eq_mul,
+          Function.comp_def]; rfl⟩
 
 /-- `Additive G` has additive Følner sets if and only if `G` has Følner sets. -/
 @[simp]

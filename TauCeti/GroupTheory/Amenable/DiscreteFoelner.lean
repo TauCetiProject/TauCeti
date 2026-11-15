@@ -155,17 +155,30 @@ theorem amenable_iff_exists_sum_tsum_abs_sub_lt [DiscreteTopology G] :
   ⟨fun _ K _ hε ↦ Amenable.exists_sum_tsum_abs_sub_lt K hε,
     fun h ↦ .of_hasFoelnerSets (hasFoelnerSets_of_forall_exists_sum_tsum_abs_sub_lt h)⟩
 
-/-- An amenable discrete group has Følner sets. -/
-theorem Amenable.hasFoelnerSets [DiscreteTopology G] [Amenable G] : HasFoelnerSets G :=
-  hasFoelnerSets_of_forall_exists_sum_tsum_abs_sub_lt fun K _ hε ↦
-    Amenable.exists_sum_tsum_abs_sub_lt K hε
-
 /-- A discrete group is amenable exactly when it has Følner sets. -/
 theorem amenable_iff_hasFoelnerSets [DiscreteTopology G] : Amenable G ↔ HasFoelnerSets G :=
-  ⟨fun _ ↦ Amenable.hasFoelnerSets, .of_hasFoelnerSets⟩
+  ⟨fun _ ↦ hasFoelnerSets_of_forall_exists_sum_tsum_abs_sub_lt fun K _ hε ↦
+      Amenable.exists_sum_tsum_abs_sub_lt K hε,
+    .of_hasFoelnerSets⟩
+
+/-- A discrete additive group is amenable exactly when it has additive Følner sets. -/
+theorem addAmenable_iff_hasAddFoelnerSets {A : Type*} [AddGroup A] [TopologicalSpace A]
+    [IsTopologicalAddGroup A] [DiscreteTopology A] : AddAmenable A ↔ HasAddFoelnerSets A := by
+  rw [← amenable_multiplicative_iff, amenable_iff_hasFoelnerSets, hasFoelnerSets_multiplicative_iff]
+
+attribute [to_additive existing addAmenable_iff_hasAddFoelnerSets] amenable_iff_hasFoelnerSets
+
+/-- An amenable discrete group has Følner sets. -/
+@[to_additive AddAmenable.hasAddFoelnerSets
+/-- An amenable discrete additive group has additive Følner sets. -/]
+theorem Amenable.hasFoelnerSets [DiscreteTopology G] [Amenable G] : HasFoelnerSets G :=
+  amenable_iff_hasFoelnerSets.1 ‹_›
 
 /-- A discrete group is amenable exactly when its counting-measure maximal Følner filter is
 nontrivial. -/
+@[to_additive addAmenable_iff_maxAddFoelner_neBot
+/-- A discrete additive group is amenable exactly when its counting-measure maximal additive Følner
+filter is nontrivial. -/]
 theorem amenable_iff_maxFoelner_neBot [DiscreteTopology G] :
     Amenable G ↔
       (letI : MeasurableSpace G := ⊤
@@ -174,6 +187,10 @@ theorem amenable_iff_maxFoelner_neBot [DiscreteTopology G] :
 
 /-- A discrete group is amenable exactly when for every finite `K ⊆ G` and every `ε > 0` there is
 a finite nonempty `F ⊆ G` with `|gF △ F| < ε · |F|` for all `g ∈ K`. -/
+@[to_additive addAmenable_iff_exists_finset
+/-- A discrete additive group is amenable exactly when for every finite `K ⊆ G` and
+every `ε > 0` there is a finite nonempty `F ⊆ G` with `|(a +ᵥ F) △ F| < ε · |F|` for all
+`a ∈ K`. -/]
 theorem amenable_iff_exists_finset [DiscreteTopology G] [DecidableEq G] :
     Amenable G ↔ ∀ K : Finset G, ∀ ε : ℝ, 0 < ε →
       ∃ F : Finset G, F.Nonempty ∧ ∀ g ∈ K, (#((g • F) ∆ F) : ℝ) < ε * #F := by
@@ -183,49 +200,19 @@ section Additive
 
 variable {A : Type*} [AddGroup A] [TopologicalSpace A] [IsTopologicalAddGroup A]
 
-/-- A discrete additive group is amenable exactly when it has additive Følner sets. -/
-theorem addAmenable_iff_hasAddFoelnerSets [DiscreteTopology A] :
-    AddAmenable A ↔ HasAddFoelnerSets A := by
-  rw [← amenable_multiplicative_iff, amenable_iff_hasFoelnerSets, hasFoelnerSets_multiplicative_iff]
-
-/-- An amenable discrete additive group has additive Følner sets. -/
-theorem AddAmenable.hasAddFoelnerSets [DiscreteTopology A] [AddAmenable A] :
-    HasAddFoelnerSets A :=
-  addAmenable_iff_hasAddFoelnerSets.1 ‹_›
-
-/-- A discrete additive group is amenable exactly when its counting-measure maximal additive Følner
-filter is nontrivial. -/
-theorem addAmenable_iff_maxAddFoelner_neBot [DiscreteTopology A] :
-    AddAmenable A ↔
-      (letI : MeasurableSpace A := ⊤
-      Filter.NeBot (maxAddFoelner A (MeasureTheory.Measure.count : MeasureTheory.Measure A))) :=
-  addAmenable_iff_hasAddFoelnerSets
-
-/-- A discrete additive group is amenable exactly when for every finite `K ⊆ A` and every `ε > 0`
-there is a finite nonempty `F ⊆ A` with `|(a +ᵥ F) △ F| < ε · |F|` for all `a ∈ K`. -/
-theorem addAmenable_iff_exists_finset [DiscreteTopology A] [DecidableEq A] :
-    AddAmenable A ↔ ∀ K : Finset A, ∀ ε : ℝ, 0 < ε →
-      ∃ F : Finset A, F.Nonempty ∧ ∀ a ∈ K, (#((a +ᵥ F) ∆ F) : ℝ) < ε * #F := by
-  rw [addAmenable_iff_hasAddFoelnerSets, hasAddFoelnerSets_iff]
-
-/-- **Reiter's condition for additive groups.** In an amenable discrete additive group, for every
-finite `K` and `ε > 0` there is a finitely supported probability density `p` with
-`∑_{a ∈ K} ∑_x |p (-a + x) - p x| < ε`. -/
-theorem AddAmenable.exists_sum_tsum_abs_sub_lt [DiscreteTopology A] [AddAmenable A] (K : Finset A)
-    {ε : ℝ} (hε : 0 < ε) :
-    ∃ p : A → ℝ, 0 ≤ p ∧ p.HasFiniteSupport ∧ ∑' x, p x = 1 ∧
-      ∑ a ∈ K, ∑' x, |p (-a + x) - p x| < ε := by
-  classical
-  obtain ⟨p, hp0, hpfin, hp1, hpε⟩ :=
-    Amenable.exists_sum_tsum_abs_sub_lt (G := Multiplicative A) (K.image Multiplicative.ofAdd) hε
-  refine ⟨p ∘ Multiplicative.ofAdd, fun x => hp0 _, ?_,
-    (Multiplicative.ofAdd.tsum_eq p).trans hp1, ?_⟩
+private theorem exists_sum_tsum_abs_sub_lt_of_equiv {α β : Type*} [DecidableEq β] (e : α ≃ β)
+    {op₁ : α → α → α} {op₂ : β → β → β} {K : Finset α} {ε : ℝ} {p : β → ℝ}
+    (hp0 : 0 ≤ p) (hpfin : p.HasFiniteSupport) (hp1 : ∑' x, p x = 1)
+    (hpε : ∑ b ∈ K.image e, ∑' x, |p (op₂ b x) - p x| < ε)
+    (he : ∀ a x, e (op₁ a x) = op₂ (e a) (e x)) :
+    ∃ q : α → ℝ, 0 ≤ q ∧ q.HasFiniteSupport ∧ ∑' x, q x = 1 ∧
+      ∑ a ∈ K, ∑' x, |q (op₁ a x) - q x| < ε := by
+  refine ⟨p ∘ e, fun _ => hp0 _, ?_, (e.tsum_eq p).trans hp1, ?_⟩
   · rw [HasFiniteSupport, Function.support_comp_eq_preimage]
-    exact hpfin.preimage Multiplicative.ofAdd.injective.injOn
-  · rw [sum_image Multiplicative.ofAdd.injective.injOn] at hpε
+    exact hpfin.preimage e.injective.injOn
+  · rw [sum_image e.injective.injOn] at hpε
     refine lt_of_eq_of_lt (sum_congr rfl fun a _ => ?_) hpε
-    simpa only [Function.comp_apply, ofAdd_add, ofAdd_neg] using
-      Multiplicative.ofAdd.tsum_eq fun x => |p ((Multiplicative.ofAdd a)⁻¹ * x) - p x|
+    simpa only [Function.comp_apply, he] using e.tsum_eq fun x => |p (op₂ (e a) x) - p x|
 
 /-- A discrete additive group is amenable exactly when it satisfies **Reiter's condition**: for
 every finite `K` and `ε > 0` there is a finitely supported probability density `p` with
@@ -234,19 +221,24 @@ theorem addAmenable_iff_exists_sum_tsum_abs_sub_lt [DiscreteTopology A] :
     AddAmenable A ↔ ∀ K : Finset A, ∀ ε : ℝ, 0 < ε →
       ∃ p : A → ℝ, 0 ≤ p ∧ p.HasFiniteSupport ∧ ∑' x, p x = 1 ∧
         ∑ a ∈ K, ∑' x, |p (-a + x) - p x| < ε := by
-  refine ⟨fun _ K _ hε => AddAmenable.exists_sum_tsum_abs_sub_lt K hε, fun h => ?_⟩
   classical
   rw [← amenable_multiplicative_iff, amenable_iff_exists_sum_tsum_abs_sub_lt]
-  intro K ε hε
-  obtain ⟨p, hp0, hpfin, hp1, hpε⟩ := h (K.image Multiplicative.toAdd) ε hε
-  refine ⟨p ∘ Multiplicative.toAdd, fun x => hp0 _, ?_,
-    (Multiplicative.toAdd.tsum_eq p).trans hp1, ?_⟩
-  · rw [HasFiniteSupport, Function.support_comp_eq_preimage]
-    exact hpfin.preimage Multiplicative.toAdd.injective.injOn
-  · rw [sum_image Multiplicative.toAdd.injective.injOn] at hpε
-    refine lt_of_eq_of_lt (sum_congr rfl fun g _ => ?_) hpε
-    simpa only [Function.comp_apply, toAdd_mul, toAdd_inv] using
-      Multiplicative.toAdd.tsum_eq fun x => |p (-g.toAdd + x) - p x|
+  refine ⟨fun h K ε hε => ?_, fun h K ε hε => ?_⟩
+  · obtain ⟨p, hp0, hpfin, hp1, hpε⟩ := h (K.image Multiplicative.ofAdd) ε hε
+    exact exists_sum_tsum_abs_sub_lt_of_equiv Multiplicative.ofAdd hp0 hpfin hp1 hpε
+      fun _ _ => by simp
+  · obtain ⟨p, hp0, hpfin, hp1, hpε⟩ := h (K.image Multiplicative.toAdd) ε hε
+    exact exists_sum_tsum_abs_sub_lt_of_equiv Multiplicative.toAdd hp0 hpfin hp1 hpε
+      fun _ _ => by simp
+
+/-- **Reiter's condition for additive groups.** In an amenable discrete additive group, for every
+finite `K` and `ε > 0` there is a finitely supported probability density `p` with
+`∑_{a ∈ K} ∑_x |p (-a + x) - p x| < ε`. -/
+theorem AddAmenable.exists_sum_tsum_abs_sub_lt [DiscreteTopology A] [AddAmenable A] (K : Finset A)
+    {ε : ℝ} (hε : 0 < ε) :
+    ∃ p : A → ℝ, 0 ≤ p ∧ p.HasFiniteSupport ∧ ∑' x, p x = 1 ∧
+      ∑ a ∈ K, ∑' x, |p (-a + x) - p x| < ε :=
+  addAmenable_iff_exists_sum_tsum_abs_sub_lt.1 ‹_› K _ hε
 
 end Additive
 

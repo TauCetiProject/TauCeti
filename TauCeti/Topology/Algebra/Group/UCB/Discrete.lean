@@ -50,19 +50,6 @@ theorem ucb_eq_top : ucb G = ⊤ := by
 
 end Multiplicative
 
-/-- On a discrete additive group `G`, the pullback `f ↦ f ∘ r` along an arbitrary map `r : G → H`,
-as a unital algebra homomorphism from `AddUCB H` to `AddUCB G`. -/
-def AddUCB.compRightAlgHomOfDiscrete {G H : Type*} [AddGroup G] [TopologicalSpace G]
-    [DiscreteTopology G] [AddGroup H] [TopologicalSpace H] [IsTopologicalAddGroup H] (r : G → H) :
-    AddUCB H →ₐ[ℝ] AddUCB G where
-  toFun f := ((Subalgebra.equivOfEq _ _ addUcb_eq_top).trans Subalgebra.topEquiv).symm
-    ((f : H →ᵇ ℝ).compContinuous ⟨r, continuous_of_discreteTopology⟩)
-  map_one' := rfl
-  map_mul' _ _ := rfl
-  map_zero' := rfl
-  map_add' _ _ := rfl
-  commutes' _ := rfl
-
 namespace UCB
 
 variable {G : Type*} [Group G] [TopologicalSpace G] [DiscreteTopology G]
@@ -131,7 +118,8 @@ variable {H : Type*} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
 
 /-- On a discrete group `G`, the pullback `f ↦ f ∘ r` along an arbitrary map `r : G → H`, as a
 unital algebra homomorphism from `UCB H` to `UCB G`. -/
-@[to_additive existing]
+@[to_additive /-- On a discrete additive group `G`, the pullback `f ↦ f ∘ r` along an arbitrary map
+`r : G → H`, as a unital algebra homomorphism from `AddUCB H` to `AddUCB G`. -/]
 def compRightAlgHomOfDiscrete (r : G → H) : UCB H →ₐ[ℝ] UCB G where
   toFun f := (discreteAlgEquiv G).symm
     ((f : H →ᵇ ℝ).compContinuous ⟨r, continuous_of_discreteTopology⟩)
@@ -192,20 +180,16 @@ variable {G H : Type*} [AddGroup G] [TopologicalSpace G] [DiscreteTopology G]
   [AddGroup H] [TopologicalSpace H] [IsTopologicalAddGroup H]
 
 /-- The inverse discrete identification intertwines left translation. -/
-@[simp]
-theorem discreteAlgEquiv_symm_compContinuous_addLeft (g : G) (f : G →ᵇ ℝ) :
+@[simp] theorem discreteAlgEquiv_symm_compContinuous_addLeft (g : G) (f : G →ᵇ ℝ) :
     (discreteAlgEquiv G).symm (f.compContinuous (ContinuousMap.addLeft (-g))) =
-      leftTranslation g ((discreteAlgEquiv G).symm f) := by
-  apply (discreteAlgEquiv G).injective
-  simp [coe_leftTranslation]
+      leftTranslation g ((discreteAlgEquiv G).symm f) :=
+  (discreteAlgEquiv G).injective (by simp [coe_leftTranslation])
 
 /-- The inverse discrete identification intertwines right translation. -/
-@[simp]
-theorem discreteAlgEquiv_symm_compContinuous_addRight (g : G) (f : G →ᵇ ℝ) :
+@[simp] theorem discreteAlgEquiv_symm_compContinuous_addRight (g : G) (f : G →ᵇ ℝ) :
     (discreteAlgEquiv G).symm (f.compContinuous (ContinuousMap.addRight g)) =
-      rightTranslation g ((discreteAlgEquiv G).symm f) := by
-  apply (discreteAlgEquiv G).injective
-  simp [coe_rightTranslation]
+      rightTranslation g ((discreteAlgEquiv G).symm f) :=
+  (discreteAlgEquiv G).injective (by simp [coe_rightTranslation])
 
 /-- If `r (φ h + x) = h + r x` for an additive homomorphism `φ : H →+ G`, then the pullback along
 `r` intertwines left translation by `h` with left translation by `φ h`. -/
@@ -213,8 +197,7 @@ theorem compRightAlgHomOfDiscrete_leftTranslation (φ : H →+ G) {r : G → H}
     (hr : ∀ h x, r (φ h + x) = h + r x) (h : H) (f : AddUCB H) :
     compRightAlgHomOfDiscrete r (leftTranslation h f) =
       leftTranslation (φ h) (compRightAlgHomOfDiscrete r f) := by
-  ext x
-  simp [← map_neg, hr]
+  ext x; simp [← map_neg, hr]
 
 end AddUCB
 
