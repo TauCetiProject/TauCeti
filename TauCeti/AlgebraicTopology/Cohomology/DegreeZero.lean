@@ -334,11 +334,8 @@ theorem bijective_singularCup_left_of_forall_isUnit (M : ModuleCat.{w} k)
         (fun a ↦ X.singularCup k (λ_ (𝟙_ (ModuleCat.{w} k))).inv (ρ_ M).hom p 0 p rfl a y)
         (fun a ↦ X.singularCup k (λ_ (𝟙_ (ModuleCat.{w} k))).inv (ρ_ M).hom p 0 p rfl a x) := by
     intro a
-    refine (X.singularCup_assoc k (u₁₂ := (λ_ _).inv) (u := (λ_ _).inv) (u₂₃ := (λ_ _).inv)
-      (u' := (λ_ _).inv) (by monoidal) (μ₁₂ := (ρ_ M).hom) (μ := (ρ_ M).hom)
-      (μ₂₃ := (λ_ (𝟙_ (ModuleCat.{w} k))).hom) (μ' := (ρ_ M).hom) (by monoidal) rfl rfl rfl rfl
-      a x y).trans ?_
-    rw [hxy, TopCat.singularCohomologyZeroOne_def]
+    refine (X.singularCup_rightUnitor_assoc k rfl rfl rfl rfl a x y).trans ?_
+    rw [← unitors_equal, hxy, TopCat.singularCohomologyZeroOne_def]
     exact X.singularCup_constSingularCocycle_right k (η := 𝟙 _) (by simp [unitors_inv_equal])
       (by simp) rfl a
   exact ⟨Function.LeftInverse.injective (key u v h₁), Function.RightInverse.surjective (key v u h₂)⟩

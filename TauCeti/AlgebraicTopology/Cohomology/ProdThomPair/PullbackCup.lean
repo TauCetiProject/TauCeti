@@ -213,10 +213,7 @@ private theorem bijective_pullbackCup_prodThomPair_of_continuousLinearEquiv
     funext a
     rw [← hε, Function.comp_apply, TopPair.pullbackCup_apply, TopPair.pullbackCup_apply,
       TopPair.pullbackCup_apply, ← TopCat.singularCup_naturality]
-    exact ((prodThomPair B F).singularCup_assoc K (u₁₂ := (λ_ _).inv) (u := (λ_ _).inv)
-      (u₂₃ := (λ_ _).inv) (u' := (λ_ _).inv) (by monoidal) (μ₁₂ := (ρ_ M).hom)
-      (μ := (ρ_ M).hom) (μ₂₃ := (ρ_ (ModuleCat.of K K)).hom) (μ' := (ρ_ M).hom) (by monoidal)
-      rfl h (zero_add _) h _ _ _).symm
+    exact (TopPair.singularCup_rightUnitor_assoc K _ rfl h (zero_add _) h _ _ _).symm
   rw [hfac]
   exact (hA M p m h).comp (bijective_singularCup_left_of_forall_isUnit M ε hunit p)
 
