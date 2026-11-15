@@ -13,7 +13,8 @@ public import Mathlib.Topology.Sheaves.SheafCondition.UniqueGluing
 
 Composing restriction maps along inclusions of opens in both directions gives the identity after
 any morphism into the starting section object, since the inclusions force the opens to be equal;
-in particular restriction from an open to itself is the identity on sections.
+in particular restriction from an open to itself is the identity on sections, and any two
+composites of restriction maps with the same source and target agree on sections.
 A family of sections over opens is compatible as soon as any two of its sections are restrictions
 of a common section in the family, and two sections of a sheaf of types that agree on the
 intersection of their domains glue to a section over the union.
@@ -24,6 +25,8 @@ intersection of their domains glue to a section over the union.
   directions gives the identity after any morphism into the starting section object.
 * `TopCat.Presheaf.map_apply_eq_self`: restriction from an open to itself is the identity on
   sections.
+* `TopCat.Presheaf.map_map_apply`: two successive restrictions of a section agree with any single
+  restriction between the same opens.
 * `TopCat.Presheaf.isCompatible_of_directed`: a family of sections, any two of which are
   restrictions of a common member, is compatible.
 * `TopCat.Presheaf.IsSheaf.exists_gluing_sup`: two sections of a sheaf of types that agree on the
@@ -56,6 +59,14 @@ theorem map_apply_eq_self {FC : C → C → Type*} {CC : C → Type*}
     [∀ X Y, FunLike (FC X Y) (CC X) (CC Y)] [ConcreteCategory C FC] (F : Presheaf C T)
     {V : Opens T} (i : op V ⟶ op V) (s : ToType (F.obj (op V))) : F.map i s = s := by
   rw [Subsingleton.elim i (𝟙 _), F.map_id, ConcreteCategory.id_apply]
+
+/-- Two successive restrictions of a section agree with any single restriction between the same
+opens: in the thin category of opens there is only one morphism between two opens. -/
+theorem map_map_apply {FC : C → C → Type*} {CC : C → Type*}
+    [∀ X Y, FunLike (FC X Y) (CC X) (CC Y)] [ConcreteCategory C FC] (F : Presheaf C T)
+    {V W Y : Opens T} (i : op Y ⟶ op W) (j : op W ⟶ op V) (k : op Y ⟶ op V)
+    (s : ToType (F.obj (op Y))) : F.map j (F.map i s) = F.map k s := by
+  rw [← ConcreteCategory.comp_apply, ← F.map_comp, Subsingleton.elim (i ≫ j) k]
 
 /-- A family of sections over a directed family of opens is compatible as soon as any two of its
 sections are restrictions of a common section in the family. -/
