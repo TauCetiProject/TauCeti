@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.TensorProduct.Quotient
 public import TauCeti.RingTheory.Depth.Basic
 public import TauCeti.RingTheory.Depth.WeaklyRegular
 public import TauCeti.RingTheory.Regular.RegularSequence
+public import TauCeti.RingTheory.Flat.Noetherian
 public import TauCeti.RingTheory.Flat.QuotSMulTop
 public import TauCeti.RingTheory.QuotSMulTop
 
@@ -37,7 +38,7 @@ closed fibre, which embeds in `N ⊗[R] M` by flatness, so `N ⊗[R] M` has dept
 * `IsLocalRing.depth_tensorProduct_eq_add_of_flat`:
   `depth (N ⊗[R] M) = depth M + depth (N ⧸ 𝔪_R N)`.
 * `IsLocalRing.depth_eq_add_of_flat`: `depth S = depth R + depth (S ⧸ 𝔪_R S)` for a flat local
-  homomorphism `R → S`.
+  homomorphism `R → S` with `S` Noetherian.
 
 ## References
 
@@ -180,14 +181,16 @@ end Flat
 end Depth
 
 /-- **Depth along a flat local homomorphism of rings.** For a flat local homomorphism `R → S` of
-Noetherian local rings, the depth of `S` is the depth of `R` plus the depth of the closed fibre
-`S ⧸ 𝔪_R S`, as a module over `S`. -/
+local rings with `S` Noetherian (so `R` is Noetherian too, by faithful flatness), the depth of `S`
+is the depth of `R` plus the depth of the closed fibre `S ⧸ 𝔪_R S`, as a module over `S`. -/
 @[stacks 0337]
 theorem depth_eq_add_of_flat {R S : Type u} [CommRing R] [CommRing S] [Algebra R S]
-    [IsLocalRing R] [IsLocalRing S] [IsNoetherianRing R] [IsNoetherianRing S]
+    [IsLocalRing R] [IsLocalRing S] [IsNoetherianRing S]
     [IsLocalHom (algebraMap R S)] [Module.Flat R S] :
     depth (ModuleCat.of S S) = depth (ModuleCat.of R R) +
       depth (ModuleCat.of S (S ⧸ (maximalIdeal R).map (algebraMap R S))) := by
+  have : Module.FaithfullyFlat R S := .of_flat_of_isLocalHom
+  have : IsNoetherianRing R := .of_faithfullyFlat S
   have h := depth_tensorProduct_eq_add_of_flat (R := R) (S := S) (N := S) (M := R)
   rwa [depth_eq_of_linearEquiv (AlgebraTensorModule.rid R S S),
     depth_eq_of_linearEquiv (Submodule.quotEquivOfEq _ _ (by simp) :

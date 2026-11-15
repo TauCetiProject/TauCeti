@@ -105,6 +105,15 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.basicOpen_smul_def (f r : Γ(X, U)
     r • y = X.presheaf.map (homOfLE (X.basicOpen_le f)).op r • y :=
   rfl
 
+/-- The restriction of sections of an `𝒪_X`-module between basic opens of `U` is
+`Γ(X, U)`-linear. -/
+lemma _root_.AlgebraicGeometry.Scheme.Modules.map_smul_of_basicOpen_le {f t : Γ(X, U)}
+    (h : X.basicOpen t ≤ X.basicOpen f) (r : Γ(X, U)) (y : Γ(M, X.basicOpen f)) :
+    M.presheaf.map (homOfLE h).op (r • y) = r • M.presheaf.map (homOfLE h).op y := by
+  rw [M.basicOpen_smul_def, Scheme.Modules.map_smul, ← ConcreteCategory.comp_apply,
+    ← Functor.map_comp]
+  rfl
+
 /-- The restriction of sections of an `𝒪_X`-module from `U` to `X.basicOpen f`, as a
 `Γ(X, U)`-linear map. -/
 def _root_.AlgebraicGeometry.Scheme.Modules.basicOpenRestrict (f : Γ(X, U)) :

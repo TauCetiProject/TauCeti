@@ -281,7 +281,7 @@ private theorem count_normalizedFactors_stickelbergerPhi [DecidableEq (Ideal (�
     rfl
   have hloc := intValuation_smul_stickelbergerPhi hm hpm v τ⁻¹
   rw [hΦτ, v.intValuation_eq_exp_neg_multiplicity hΦ, multiplicity_eq_count_normalizedFactors
-    v.irreducible (by simpa using hΦ), normalize_eq] at hloc
+    v.irreducible, normalize_eq] at hloc
   rw [Nat.cast_injective (neg_injective (WithZero.exp_injective hloc)),
     TauCeti.NumberField.sum_val_galEquivZMod_filter_inv_smul_eq_smul hpm P τ]
 

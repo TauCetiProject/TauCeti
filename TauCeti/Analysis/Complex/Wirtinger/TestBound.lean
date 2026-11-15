@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Wirtinger.Mollification
 public import TauCeti.Analysis.Complex.Wirtinger.InteriorEstimate
 public import TauCeti.Analysis.Sobolev.TestFunctionLp.Basic
+import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import Mathlib.Topology.MetricSpace.Thickening
@@ -226,10 +227,8 @@ theorem exists_enorm_integral_lineDeriv_smul_le_of_integral_conjWirtingerDeriv_e
       ((measure_mono (thickening_subset_cthickening R K)).trans_lt
         hK.cthickening.measure_lt_top).ne
   have hp0 : p ≠ 0 := (zero_lt_one.trans hp).ne'
-  have hexp : 0 ≤ 1 / p.toReal - 1 / r.toReal := by
-    simp only [one_div, ← ENNReal.toReal_inv]
-    exact sub_nonneg.2 (ENNReal.toReal_mono (by simpa using hp0)
-      (ENNReal.inv_le_inv.mpr hpr))
+  have hexp : 0 ≤ 1 / p.toReal - 1 / r.toReal :=
+    ENNReal.one_div_toReal_sub_one_div_toReal_nonneg hp0 hpr
   have hfinite : (volume.restrict (W : Set ℂ)) univ ^ (1 / p.toReal - 1 / r.toReal) ≠ ⊤ :=
     ENNReal.rpow_ne_top_of_nonneg hexp (measure_ne_top _ _)
   let A := ((volume.restrict (W : Set ℂ)) univ ^ (1 / p.toReal - 1 / r.toReal)).toNNReal

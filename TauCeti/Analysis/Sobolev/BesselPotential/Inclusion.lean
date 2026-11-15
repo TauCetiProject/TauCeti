@@ -36,6 +36,16 @@ common compact support, are statements about this map.
   of a space into itself is the identity, and inclusions compose.
 * `BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM`: it is the identity on Schwartz
   functions.
+* `BesselPotentialSpace.inclusion_injective`, `BesselPotentialSpace.toLp_inclusion_injective`: it
+  is injective, and an element is determined by the `L²` function of its inclusion.
+* `BesselPotentialSpace.coeFn_toLp_inclusion_add`, `BesselPotentialSpace.coeFn_toLp_inclusion_smul`:
+  the `L²` function of the inclusion is additive and homogeneous almost everywhere.
+* `BesselPotentialSpace.toTemperedDistribution_toLp_inclusion`: for `s ≥ 0`, the inclusion into
+  `H^0(E, F) = L²` exhibits every element of `H^s(E, F)` as an `L²` function, which lies in `H^s`
+  (`BesselPotentialSpace.memSobolev_toLp_inclusion`) and defines `u` again
+  (`BesselPotentialSpace.toBesselPotentialSpace_memSobolev_toLp_inclusion`).
+* `BesselPotentialSpace.toLp_inclusion_toBesselPotentialSpace`: for `s ≥ 0`, the `L²` function of
+  the element of `H^s(E, F)` defined by an `L²` function `g` is `g`.
 -/
 
 public section
@@ -145,5 +155,58 @@ theorem inclusion_toBesselPotentialSpaceCLM (h : r ≤ s) (u : 𝓢(E, F)) :
     inclusion h (SchwartzMap.toBesselPotentialSpaceCLM s 2 u) =
       SchwartzMap.toBesselPotentialSpaceCLM r 2 u :=
   ext (by simp)
+
+/-- The inclusion `H^s ⊆ H^r` is injective. -/
+theorem inclusion_injective (h : r ≤ s) :
+    Function.Injective (inclusion h : H^{s}(E, F) →L[ℂ] H^{r}(E, F)) := fun u v huv ↦
+  ext (by rw [← toDistr_inclusion h u, huv, toDistr_inclusion])
+
+/-- An element of `H^s(E, F)` is determined by the `L²` function of its inclusion into `H^r(E, F)`.
+For `r = 0` this is the `L²` function of the element itself
+(`toTemperedDistribution_toLp_inclusion`). -/
+theorem toLp_inclusion_injective (h : r ≤ s) :
+    Function.Injective fun u : H^{s}(E, F) ↦ (inclusion h u).toLp :=
+  (injective_toLp E F r 2).comp (inclusion_injective h)
+
+/-- The `L²` function of the inclusion of `u + v` is almost everywhere the sum of those of `u`
+and `v`. -/
+theorem coeFn_toLp_inclusion_add (h : r ≤ s) (u v : H^{s}(E, F)) :
+    ⇑(inclusion h (u + v)).toLp =ᵐ[volume] ⇑(inclusion h u).toLp + ⇑(inclusion h v).toLp := by
+  rw [map_add, toLp_add]
+  exact Lp.coeFn_add _ _
+
+/-- The `L²` function of the inclusion of `c • u` is almost everywhere `c` times that of `u`. -/
+theorem coeFn_toLp_inclusion_smul (h : r ≤ s) (c : ℂ) (u : H^{s}(E, F)) :
+    ⇑(inclusion h (c • u)).toLp =ᵐ[volume] c • ⇑(inclusion h u).toLp := by
+  rw [map_smul, toLp_smul]
+  exact Lp.coeFn_smul _ _
+
+/-- **Elements of `H^s`, `s ≥ 0`, are `L²` functions.** The `L²` function underlying the
+inclusion of `u ∈ H^s(E, F)` into `H^0(E, F)` has the tempered distribution `u`. -/
+@[simp]
+theorem toTemperedDistribution_toLp_inclusion (h : 0 ≤ s) (u : H^{s}(E, F)) :
+    ((inclusion h u).toLp : 𝓢'(E, F)) = u := by
+  rw [← (inclusion h u).bessel_toDistr_eq_toLp]
+  simp [besselPotential_zero]
+
+/-- For `s ≥ 0`, the `L²` function of `u ∈ H^s(E, F)` lies in `H^s`. -/
+theorem memSobolev_toLp_inclusion (h : 0 ≤ s) (u : H^{s}(E, F)) :
+    MemSobolev s 2 ((inclusion h u).toLp : 𝓢'(E, F)) := by
+  rw [toTemperedDistribution_toLp_inclusion]
+  exact u.memSobolev_toDistr
+
+/-- For `s ≥ 0`, the element of `H^s(E, F)` defined by the `L²` function of `u ∈ H^s(E, F)` is
+`u`. -/
+theorem toBesselPotentialSpace_memSobolev_toLp_inclusion (h : 0 ≤ s) (u : H^{s}(E, F)) :
+    (memSobolev_toLp_inclusion h u).toBesselPotentialSpace = u :=
+  ext (by simp)
+
+/-- For `s ≥ 0`, the `L²` function of the element of `H^s(E, F)` defined by an `L²` function `g`
+is `g`. -/
+theorem toLp_inclusion_toBesselPotentialSpace (h : 0 ≤ s) {f : 𝓢'(E, F)} (hf : MemSobolev s 2 f)
+    {g : Lp F 2 (volume : Measure E)} (hg : (g : 𝓢'(E, F)) = f) :
+    (inclusion h hf.toBesselPotentialSpace).toLp = g := by
+  refine LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot ?_
+  simp [hg]
 
 end BesselPotentialSpace

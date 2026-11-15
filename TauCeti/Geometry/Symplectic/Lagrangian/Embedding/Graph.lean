@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Graph
 public import TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Basic
-public import TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Symplectic
+public import TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Symplectic.Basic
 public import TauCeti.Geometry.Symplectic.Lagrangian.Graph
 
 /-!

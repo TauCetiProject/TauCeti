@@ -157,7 +157,8 @@ theorem complexSmoothCommutatorSymbol_mvfderiv (hx : I.IsInteriorPoint x) {m : �
       mvfderiv_const, add_zero]
   simp only [hd]
   rw [complexSmoothCommutatorSymbol,
-    pointCommutatorSymbol_toCotangent_add_algebraMap _ (ker_complexEvalAlgHom x),
+    pointCommutatorSymbol_toCotangent_add_algebraMap _
+      (ker_complexEvalAlgHom_eq_complexSmoothVanishingIdeal x),
     ContMDiffMap.complexEvalAlgHom_apply]
 
 /-- The commutator symbol is symmetric. -/
@@ -182,7 +183,7 @@ theorem mk_algebraMap_complexSmoothCommutatorSymbol (hx : I.IsInteriorPoint x) {
         (algebraMap ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
           (complexSmoothCommutatorSymbol I hx D fun i ↦ complexSmoothCotangentEquiv hx (u i))) =
       cotangentSymbol ℂ (complexSmoothVanishingIdeal I x) D u (Submodule.Quotient.mk 1) :=
-  mk_algebraMap_pointCommutatorSymbol _ (ker_complexEvalAlgHom x) D u
+  mk_algebraMap_pointCommutatorSymbol _ (ker_complexEvalAlgHom_eq_complexSmoothVanishingIdeal x) D u
 
 /-- The commutator symbol of an operator of order at most `m + 1` on complex smooth functions
 vanishes at every interior point if the operator has order at most `m`. -/

@@ -97,11 +97,13 @@ theorem mem_smoothVanishingIdeal_iff {x : M} {f : C^∞⟮I, M; ℝ⟯} :
     f ∈ smoothVanishingIdeal I x ↔ f x = 0 :=
   RingHom.mem_ker
 
-/-- The vanishing ideal at `x` is the kernel of evaluation at `x` as a real algebra
+/-- The vanishing ideal at `x` is also the kernel of evaluation at `x` as an `ℝ`-algebra
 homomorphism. -/
-theorem ker_evalAlgHom (x : M) :
+@[simp]
+theorem ker_evalAlgHom_eq_smoothVanishingIdeal (x : M) :
     RingHom.ker (ContMDiffMap.evalAlgHom x : C^∞⟮I, M; ℝ⟯ →ₐ[ℝ] ℝ) = smoothVanishingIdeal I x :=
-  Ideal.ext fun _ ↦ by simp
+  Ideal.ext fun f ↦ by
+    rw [RingHom.mem_ker, ContMDiffMap.evalAlgHom_apply, mem_smoothVanishingIdeal_iff]
 
 /-- A function in the square of the vanishing ideal at `x` vanishes at `x`. -/
 theorem apply_eq_zero_of_mem_smoothVanishingIdeal_sq {x : M} {f : C^∞⟮I, M; ℝ⟯}

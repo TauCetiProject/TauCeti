@@ -58,7 +58,8 @@ theorem mem_complexSmoothVanishingIdeal_iff {x : M} {f : C^∞⟮I, M; 𝓘(ℝ,
 
 /-- The complex vanishing ideal at `x` is the kernel of evaluation at `x` as a complex algebra
 homomorphism. -/
-theorem ker_complexEvalAlgHom (x : M) :
+@[simp]
+theorem ker_complexEvalAlgHom_eq_complexSmoothVanishingIdeal (x : M) :
     RingHom.ker (ContMDiffMap.complexEvalAlgHom x : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₐ[ℂ] ℂ) =
       complexSmoothVanishingIdeal I x :=
   Ideal.ext fun _ ↦ by simp
