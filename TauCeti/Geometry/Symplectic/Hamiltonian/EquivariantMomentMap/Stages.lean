@@ -126,15 +126,6 @@ theorem dualQuotEquivDualAnnihilator_residualMomentMapLift
       (residualMomentMapLift μ N i hi z) = ⟨μ (i z), hi z⟩ := by
   rw [residualMomentMapLift_def, LinearEquiv.apply_symm_apply]
 
-/-- The coercion to `𝔤*` of the image of the lifted residual moment map under
-`(𝔤 ⧸ 𝔫)* ≃ 𝔫⁰` is `μ ∘ i`. -/
-theorem coe_dualQuotEquivDualAnnihilator_residualMomentMapLift
-    (hi : ∀ z, μ (i z) ∈ (groupLieSubalgebraOfSubgroup (I := I) N).toSubmodule.dualAnnihilator)
-    (z : Z) :
-    ((groupLieSubalgebraOfSubgroup (I := I) N).toSubmodule.dualQuotEquivDualAnnihilator
-      (residualMomentMapLift μ N i hi z) : Module.Dual ℝ (GroupLieAlgebra I G)) = μ (i z) := by
-  rw [dualQuotEquivDualAnnihilator_residualMomentMapLift]
-
 /-- The lifted residual moment map vanishes at `z` exactly when `μ` vanishes at `i z`. -/
 @[simp]
 theorem residualMomentMapLift_eq_zero_iff
