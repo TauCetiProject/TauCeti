@@ -10,7 +10,7 @@ public import TauCeti.Algebra.GroupWithZero.Units.Basic
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Norm
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Map
 public import TauCeti.FieldTheory.GaloisCohomology.Hilbert90
-public import TauCeti.FieldTheory.GaloisCohomology.UnitsCoeffMap
+public import TauCeti.FieldTheory.GaloisCohomology.Units.CoeffMap
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.DeltaNaturality
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LongExact
@@ -82,7 +82,7 @@ corestriction on the invariant `σ b` of the fixing subgroup is the product of t
   of separable closures over an arbitrary field extension.
 * `TauCeti.kummerCor`: corestriction `H¹(G_L, μₙ) → H¹(G_K, μₙ)` along a `K`-embedding of a
   finite extension, with its coefficient identifications `TauCeti.kummerCoeffMapSymm` and
-  `TauCeti.unitsCoeffMapSymm` (`TauCeti.FieldTheory.GaloisCohomology.UnitsCoeffMap`).
+  `TauCeti.unitsCoeffMapSymm` (`TauCeti.FieldTheory.GaloisCohomology.Units.CoeffMap`).
 
 ## Main results
 
@@ -834,20 +834,6 @@ theorem unitsCoeffMapSymm_kummerCoeffIncl (y : KummerCoeff L n) :
     unitsCoeffMapSymm K L σ (kummerCoeffIncl L n y) =
       kummerCoeffIncl K n (kummerCoeffMapSymm K n L σ y) :=
   Additive.toMul.injective <| Units.ext <| by simp
-
-/-- The coefficient map commutes with the `n`th power map of the Kummer sequence. -/
-@[simp]
-theorem unitsCoeffMapSymm_unitsCoeffPow (y : UnitsCoeff L) :
-    unitsCoeffMapSymm K L σ (unitsCoeffPow L n y) = unitsCoeffPow K n (unitsCoeffMapSymm K L σ y) :=
-  Additive.toMul.injective <| Units.ext <| by simp
-
-/-- The coefficient map carries the invariant of `G_L` attached to `b ∈ Lˣ` to the invariant of
-`Gal(Kˢ/σ(L))` attached to `b`. -/
-@[simp]
-theorem unitsCoeffMapSymm_coe_baseUnitsEquivInvariants (b : Lˣ) :
-    unitsCoeffMapSymm K L σ (baseUnitsEquivInvariants L (Additive.ofMul b)) =
-      embeddedUnitsInvariants K L σ b :=
-  Additive.toMul.injective <| Units.ext <| by simp [separableClosureRingEquiv_algebraMap]
 
 variable [FiniteDimensional K L]
 

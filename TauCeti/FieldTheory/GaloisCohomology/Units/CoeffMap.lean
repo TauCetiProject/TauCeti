@@ -28,6 +28,12 @@ along `L/K`; they involve no exponent, Kummer map or Hilbert 90, so they live he
   `G_L ≃ₜ* Gal(Kˢ/σ(L))`.
 * `TauCeti.unitsCoeffMapSymm_unitsCoeffMap`, `TauCeti.unitsCoeffMap_unitsCoeffMapSymm`: they are
   inverse to each other.
+* `TauCeti.unitsCoeffMapSymm_unitsCoeffPow`, `TauCeti.unitsCoeffMap_unitsCoeffPow`: both commute
+  with the `n`th power map `TauCeti.unitsCoeffPow`.
+* `TauCeti.unitsCoeffMapSymm_coe_baseUnitsEquivInvariants`,
+  `TauCeti.unitsCoeffMap_coe_embeddedUnitsInvariants`,
+  `TauCeti.unitsCoeffMap_coe_baseUnitsEquivInvariants`: their effect on the invariants attached to
+  units of `L` and of `K`.
 -/
 
 public section
@@ -53,11 +59,9 @@ theorem toMul_unitsCoeffMapSymm (y : UnitsCoeff L) :
   (rfl)
 
 /-- **`unitsCoeffMapSymm` is equivariant** along the inverse of `G_L ≃ₜ* Gal(Kˢ/σ(L))`. -/
-@[simp↓]
+@[simp]
 theorem unitsCoeffMapSymm_smul (h : ↥σ.fieldRange.fixingSubgroup) (y : UnitsCoeff L) :
-    unitsCoeffMapSymm K L σ
-        (((absoluteGaloisGroupEquivFixingSubgroup K L σ).symm :
-          ↥σ.fieldRange.fixingSubgroup →ₜ* AbsoluteGaloisGroup L) h • y) =
+    unitsCoeffMapSymm K L σ ((absoluteGaloisGroupEquivFixingSubgroup K L σ).symm h • y) =
       h • unitsCoeffMapSymm K L σ y := by
   refine Additive.toMul.injective ?_
   rw [Subgroup.smul_def (α := UnitsCoeff K), toMul_unitsCoeffMapSymm, Additive.toMul_smul,
@@ -80,11 +84,9 @@ theorem toMul_unitsCoeffMap (x : UnitsCoeff K) :
 
 /-- **`unitsCoeffMap` is equivariant** along `G_L ≃ₜ* Gal(Kˢ/σ(L))`: an automorphism `g` of `Lˢ`
 over `L` acts on `(Kˢ)ˣ` through its image in the subgroup of `G_K` fixing `σ(L)`. -/
-@[simp↓]
+@[simp]
 theorem unitsCoeffMap_smul (g : AbsoluteGaloisGroup L) (x : UnitsCoeff K) :
-    unitsCoeffMap K L σ
-        ((absoluteGaloisGroupEquivFixingSubgroup K L σ :
-          AbsoluteGaloisGroup L →ₜ* ↥σ.fieldRange.fixingSubgroup) g • x) =
+    unitsCoeffMap K L σ (absoluteGaloisGroupEquivFixingSubgroup K L σ g • x) =
       g • unitsCoeffMap K L σ x := by
   refine Additive.toMul.injective ?_
   rw [Subgroup.smul_def (α := UnitsCoeff K), toMul_unitsCoeffMap, Additive.toMul_smul,
@@ -102,5 +104,44 @@ theorem unitsCoeffMapSymm_unitsCoeffMap (x : UnitsCoeff K) :
 theorem unitsCoeffMap_unitsCoeffMapSymm (y : UnitsCoeff L) :
     unitsCoeffMap K L σ (unitsCoeffMapSymm K L σ y) = y :=
   Additive.toMul.injective <| Units.ext <| by simp
+
+/-! ### Interaction with the coefficient operations -/
+
+/-- `unitsCoeffMapSymm` commutes with the `n`th power map of the Kummer sequence. -/
+@[simp]
+theorem unitsCoeffMapSymm_unitsCoeffPow (n : ℕ) (y : UnitsCoeff L) :
+    unitsCoeffMapSymm K L σ (unitsCoeffPow L n y) = unitsCoeffPow K n (unitsCoeffMapSymm K L σ y) :=
+  Additive.toMul.injective <| Units.ext <| by simp
+
+/-- `unitsCoeffMap` commutes with the `n`th power map of the Kummer sequence. -/
+@[simp]
+theorem unitsCoeffMap_unitsCoeffPow (n : ℕ) (x : UnitsCoeff K) :
+    unitsCoeffMap K L σ (unitsCoeffPow K n x) = unitsCoeffPow L n (unitsCoeffMap K L σ x) :=
+  Additive.toMul.injective <| Units.ext <| by simp
+
+/-- `unitsCoeffMapSymm` carries the invariant of `G_L` attached to `b ∈ Lˣ` to the invariant of
+`Gal(Kˢ/σ(L))` attached to `b`. -/
+@[simp]
+theorem unitsCoeffMapSymm_coe_baseUnitsEquivInvariants (b : Lˣ) :
+    unitsCoeffMapSymm K L σ (baseUnitsEquivInvariants L (Additive.ofMul b)) =
+      embeddedUnitsInvariants K L σ b :=
+  Additive.toMul.injective <| Units.ext <| by simp [separableClosureRingEquiv_algebraMap]
+
+/-- `unitsCoeffMap` carries the invariant of `Gal(Kˢ/σ(L))` attached to `b ∈ Lˣ` to the invariant
+of `G_L` attached to `b`, inverting `TauCeti.unitsCoeffMapSymm_coe_baseUnitsEquivInvariants`. -/
+@[simp]
+theorem unitsCoeffMap_coe_embeddedUnitsInvariants (b : Lˣ) :
+    unitsCoeffMap K L σ (embeddedUnitsInvariants K L σ b) =
+      baseUnitsEquivInvariants L (Additive.ofMul b) := by
+  rw [← unitsCoeffMapSymm_coe_baseUnitsEquivInvariants, unitsCoeffMap_unitsCoeffMapSymm]
+
+/-- `unitsCoeffMap` carries the invariant of `G_K` attached to `a ∈ Kˣ` to the invariant of `G_L`
+attached to the image of `a` in `Lˣ`. -/
+@[simp]
+theorem unitsCoeffMap_coe_baseUnitsEquivInvariants (a : Kˣ) :
+    unitsCoeffMap K L σ (baseUnitsEquivInvariants K (Additive.ofMul a)) =
+      baseUnitsEquivInvariants L (Additive.ofMul (Units.map (algebraMap K L).toMonoidHom a)) :=
+  Additive.toMul.injective <| Units.ext <| by
+    simp [IsScalarTower.algebraMap_apply K L (SeparableClosure L)]
 
 end TauCeti

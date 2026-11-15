@@ -272,7 +272,9 @@ theorem subgroupInvMap_characterCarryCocycle_of_mk_eq_artinMap {L : Type} [Field
         (unitsCoeffMapSymm K L σ) continuous_of_discreteTopology (unitsCoeffMapSymm_smul K L σ)
         ((unitsRepH2Equiv L).symm (unitsRepH2Equiv L
           (characterCarryCocycle χ hχ (baseUnitsEquivInvariants L (.ofMul b))))) := by
-    rw [AddEquiv.symm_apply_apply, explicitMap2_characterCarryCocycle]
+    rw [AddEquiv.symm_apply_apply, explicitMap2_characterCarryCocycle
+      (T.symm : ↥σ.fieldRange.fixingSubgroup →ₜ* AbsoluteGaloisGroup L) _ _
+      (unitsCoeffMapSymm_smul K L σ)]
     congr 2
     · simp only [hχψ]
     · exact Subtype.ext ((unitsCoeffMapSymm_coe_baseUnitsEquivInvariants K L σ b).symm.trans
