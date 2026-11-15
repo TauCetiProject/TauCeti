@@ -13,12 +13,14 @@ public import Mathlib.Topology.LocallyConstant.Algebra
 /-!
 # Trivial variable-rank bundle atlases and categorical zero objects
 
-Given a locally constant rank function `r : LocallyConstant X ℕ`, `FiniteRankAtlas.trivial 𝕜 X r`
-places the constant-rank trivial core on each clopen rank stratum `{x : X // r x = n}`, with
-identity transition maps everywhere. `FiniteRankAtlas.continuous_mk_trivial_iff` characterizes
-continuity of maps into its reconstructed total space in terms of continuity of coordinate vectors
-on each clopen rank stratum, and `FiniteRankAtlas.trivialConstTotalSpaceHomeomorph` identifies the
-reconstructed total space of a constant-rank trivial atlas with `X × (Fin n → 𝕜)`.
+`FiniteRankAtlas.stratumCore` packages the point-indexed coordinate core on each clopen rank
+stratum of a variable-rank atlas as a `FiniteRankBundleCore`. Given a locally constant rank
+function `r : LocallyConstant X ℕ`, `FiniteRankAtlas.trivial 𝕜 X r` places the constant-rank
+trivial core on each clopen rank stratum `{x : X // r x = n}`, with identity transition maps
+everywhere. `FiniteRankAtlas.continuous_mk_trivial_iff` characterizes continuity of maps into its
+reconstructed total space in terms of continuity of coordinate vectors on each clopen rank stratum,
+and `FiniteRankAtlas.trivialConstTotalSpaceHomeomorph` identifies the reconstructed total space of
+a constant-rank trivial atlas with `X × (Fin n → 𝕜)`.
 
 `FiniteRankAtlas.isZero_iff_rank_eq_zero` proves unconditionally (including when `X` is empty) that
 a variable-rank atlas `A` is a categorical zero object in `FiniteRankAtlas 𝕜 X` if and only if
@@ -32,7 +34,7 @@ a variable-rank atlas `A` is a categorical zero object in `FiniteRankAtlas 𝕜 
 
 public section
 
-open Bundle CategoryTheory CategoryTheory.Limits Topology
+open Bundle CategoryTheory CategoryTheory.Limits
 
 namespace TauCeti.FiniteRankAtlas
 
@@ -51,10 +53,12 @@ def stratumCore (A : FiniteRankAtlas 𝕜 X) (n : ℕ) :
   core := A.charts n
   indexAt_eq := A.indexAt_eq n
 
+/-- Rank of `A.stratumCore n`. -/
 @[simp]
 theorem rank_stratumCore (A : FiniteRankAtlas 𝕜 X) (n : ℕ) :
     (A.stratumCore n).rank = n := (rfl)
 
+/-- Underlying `VectorBundleCore` of `A.stratumCore n`. -/
 @[simp]
 theorem core_stratumCore (A : FiniteRankAtlas 𝕜 X) (n : ℕ) :
     (A.stratumCore n).core = A.charts n := (rfl)
@@ -69,14 +73,17 @@ def trivial (r : LocallyConstant X ℕ) : FiniteRankAtlas 𝕜 X where
   charts n := (FiniteRankBundleCore.trivial 𝕜 {x : X // r x = n} n).core
   indexAt_eq _ _ := rfl
 
+/-- Rank function of `trivial 𝕜 X r`. -/
 @[simp]
 theorem rank_trivial (r : LocallyConstant X ℕ) :
     (trivial 𝕜 X r).rank = r := (rfl)
 
+/-- Rank-`n` stratum coordinate core of `trivial 𝕜 X r`. -/
 @[simp]
 theorem charts_trivial (r : LocallyConstant X ℕ) (n : ℕ) :
     (trivial 𝕜 X r).charts n = (FiniteRankBundleCore.trivial 𝕜 {x : X // r x = n} n).core := (rfl)
 
+/-- Packaged rank-`n` `FiniteRankBundleCore` of `trivial 𝕜 X r`. -/
 @[simp]
 theorem stratumCore_trivial (r : LocallyConstant X ℕ) (n : ℕ) :
     (trivial 𝕜 X r).stratumCore n = FiniteRankBundleCore.trivial 𝕜 {x : X // r x = n} n := (rfl)
@@ -132,11 +139,13 @@ def trivialConstTotalSpaceHomeomorph (n : ℕ) :
   continuous_invFun :=
     (continuous_mk_trivial_const_iff (𝕜 := 𝕜) (X := X) (n := n)).2 ⟨continuous_fst, continuous_snd⟩
 
+/-- Forward evaluation of `trivialConstTotalSpaceHomeomorph`. -/
 @[simp]
 theorem trivialConstTotalSpaceHomeomorph_apply (n : ℕ)
     (p : TotalSpace Unit (trivial 𝕜 X (LocallyConstant.const X n)).Fiber) :
     trivialConstTotalSpaceHomeomorph (𝕜 := 𝕜) (X := X) n p = (p.proj, p.2) := (rfl)
 
+/-- Inverse evaluation of `trivialConstTotalSpaceHomeomorph`. -/
 @[simp]
 theorem trivialConstTotalSpaceHomeomorph_symm_apply (n : ℕ) (p : X × (Fin n → 𝕜)) :
     (trivialConstTotalSpaceHomeomorph (𝕜 := 𝕜) (X := X) n).symm p = ⟨p.1, p.2⟩ := (rfl)
@@ -168,12 +177,14 @@ theorem isZero_trivial_zero : IsZero (trivial 𝕜 X 0) :=
 theorem isZero_of_isEmpty [IsEmpty X] (A : FiniteRankAtlas 𝕜 X) : IsZero A :=
   isZero_iff_rank_eq_zero.2 (LocallyConstant.ext isEmptyElim)
 
+/-- Variable-rank bundle atlases have a categorical zero object given by `trivial 𝕜 X 0`. -/
 instance : HasZeroObject (FiniteRankAtlas 𝕜 X) :=
   ⟨⟨trivial 𝕜 X 0, isZero_trivial_zero⟩⟩
 
 open ZeroObject in
+/-- The categorical zero object in `FiniteRankAtlas 𝕜 X` has rank zero. -/
 @[simp]
 theorem rank_zero : (0 : FiniteRankAtlas 𝕜 X).rank = 0 :=
-  isZero_iff_rank_eq_zero.1 (Limits.isZero_zero _)
+  isZero_iff_rank_eq_zero.1 (isZero_zero _)
 
 end TauCeti.FiniteRankAtlas

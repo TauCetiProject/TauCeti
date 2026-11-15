@@ -55,7 +55,7 @@ From this criterion we obtain:
 
 public section
 
-open Bundle CategoryTheory CategoryTheory.Limits Set Topology
+open Bundle CategoryTheory CategoryTheory.Limits
 
 namespace TauCeti.FiniteRankAtlas
 
@@ -114,14 +114,12 @@ noncomputable def whitneyStratumCore (A D : FiniteRankAtlas 𝕜 X) (n : ℕ) :
 
 /-- Every point of the rank-`n` stratum of `A.rank + D.rank` is its own preferred chart index in
 `whitneyStratumCore`. -/
-@[simp]
-theorem indexAt_whitneyStratumCore (A D : FiniteRankAtlas 𝕜 X) (n : ℕ)
+@[simp] theorem indexAt_whitneyStratumCore (A D : FiniteRankAtlas 𝕜 X) (n : ℕ)
     (x : {x : X // (A.rank + D.rank) x = n}) :
     (whitneyStratumCore A D n).indexAt x = x :=
   (isLocallyConstant_rankSplit A D n).indexAt_pointIndexedVectorBundleCore _
-    (fun pq y =>
-      ((whitneyPieceCore A D n pq).core.indexAt_congrModel _ y).trans
-        ((whitneyPieceCore A D n pq).indexAt_eq y)) x
+    (fun pq y => ((whitneyPieceCore A D n pq).core.indexAt_congrModel _ y).trans
+      ((whitneyPieceCore A D n pq).indexAt_eq y)) x
 
 /-- The Whitney sum of two variable-rank bundle atlases, with locally constant rank
 `A.rank + D.rank` and concatenated coordinate fibres `Fin (A.rank x + D.rank x) → 𝕜`. -/
@@ -134,12 +132,12 @@ noncomputable def whitneySum (A D : FiniteRankAtlas 𝕜 X) : FiniteRankAtlas �
   charts := whitneyStratumCore A D
   indexAt_eq := indexAt_whitneyStratumCore A D
 
-@[simp]
-theorem rank_whitneySum (A D : FiniteRankAtlas 𝕜 X) :
+/-- The rank function of `whitneySum A D` is the sum `A.rank + D.rank`. -/
+@[simp] theorem rank_whitneySum (A D : FiniteRankAtlas 𝕜 X) :
     (whitneySum A D).rank = A.rank + D.rank := (rfl)
 
-@[simp]
-theorem charts_whitneySum (A D : FiniteRankAtlas 𝕜 X) (n : ℕ) :
+/-- Stratum coordinate core of `whitneySum A D` on the rank-`n` clopen stratum. -/
+@[simp] theorem charts_whitneySum (A D : FiniteRankAtlas 𝕜 X) (n : ℕ) :
     (whitneySum A D).charts n = whitneyStratumCore A D n := (rfl)
 
 private theorem continuous_whitneyPieceCore_iff {Z : Type*} [TopologicalSpace Z]
@@ -167,27 +165,28 @@ private theorem continuous_whitneyPieceCore_iff {Z : Type*} [TopologicalSpace Z]
   refine (FiniteRankBundleCore.continuous_mk_whitneySum_iff
     ((A.stratumCore pq.1.1).pullback (rankInclusionLeft A D n pq))
     ((D.stratumCore pq.1.2).pullback (rankInclusionRight A D n pq))).trans ?_
+  rw [(A.stratumCore pq.1.1).continuous_core_pullback_iff (rankInclusionLeft A D n pq),
+    (D.stratumCore pq.1.2).continuous_core_pullback_iff (rankInclusionRight A D n pq)]
+  simp only [and_iff_right hg]
   exact and_congr
-    (((A.stratumCore pq.1.1).continuous_mk_pullback_iff
-      (rankInclusionLeft A D n pq)).trans (and_iff_right hg))
-    (((D.stratumCore pq.1.2).continuous_mk_pullback_iff
-      (rankInclusionRight A D n pq)).trans (and_iff_right hg))
+    (continuous_congr fun z =>
+      (A.stratumCore pq.1.1).pullbackLift_eq_mk (rankInclusionLeft A D n pq) _ rfl rfl)
+    (continuous_congr fun z =>
+      (D.stratumCore pq.1.2).pullbackLift_eq_mk (rankInclusionRight A D n pq) _ rfl rfl)
 
 private theorem splitCoords_cast_fst {n p q a d : ℕ}
     (hp : a = p) (hq : d = q) (hn : a + d = n) (hpq : p + q = n)
     (v : Fin (a + d) → 𝕜) (i : Fin p) :
     (splitCoords (𝕜 := 𝕜) p q (fun k : Fin (p + q) => v (Fin.cast (hpq.trans hn.symm) k))).1 i =
       (splitCoords (𝕜 := 𝕜) a d v).1 (Fin.cast hp.symm i) := by
-  subst hp hq hn
-  rfl
+  subst hp hq hn; rfl
 
 private theorem splitCoords_cast_snd {n p q a d : ℕ}
     (hp : a = p) (hq : d = q) (hn : a + d = n) (hpq : p + q = n)
     (v : Fin (a + d) → 𝕜) (j : Fin q) :
     (splitCoords (𝕜 := 𝕜) p q (fun k : Fin (p + q) => v (Fin.cast (hpq.trans hn.symm) k))).2 j =
       (splitCoords (𝕜 := 𝕜) a d v).2 (Fin.cast hq.symm j) := by
-  subst hp hq hn
-  rfl
+  subst hp hq hn; rfl
 
 private theorem continuous_blocks_of_continuous_whitneySum {Y : Type*} [TopologicalSpace Y]
     {A D : FiniteRankAtlas 𝕜 X} {b : Y → X} {s : ∀ y, (whitneySum A D).Fiber (b y)}
@@ -200,10 +199,8 @@ private theorem continuous_blocks_of_continuous_whitneySum {Y : Type*} [Topologi
         TotalSpace Unit D.Fiber)) := by
   have hb : Continuous b := (whitneySum A D).continuous_proj.comp hs
   have hstrata := ((whitneySum A D).continuous_mk_iff_rankStrata hb s).1 hs
-  let s₁ (y : Y) : A.Fiber (b y) :=
-    (splitCoords (𝕜 := 𝕜) (A.rank (b y)) (D.rank (b y)) (s y)).1
-  let s₂ (y : Y) : D.Fiber (b y) :=
-    (splitCoords (𝕜 := 𝕜) (A.rank (b y)) (D.rank (b y)) (s y)).2
+  let s₁ (y : Y) : A.Fiber (b y) := (splitCoords (𝕜 := 𝕜) (A.rank (b y)) (D.rank (b y)) (s y)).1
+  let s₂ (y : Y) : D.Fiber (b y) := (splitCoords (𝕜 := 𝕜) (A.rank (b y)) (D.rank (b y)) (s y)).2
   have hpiece (p q : ℕ) := (continuous_whitneyPieceCore_iff A D (p + q) ⟨(p, q), rfl⟩
     ((((hb.comp continuous_subtype_val).comp continuous_subtype_val).subtype_mk _).subtype_mk _)
     (fun y => fun i : Fin (p + q) => s y.1.1 (Fin.cast y.1.2.symm i))).1 <|
@@ -211,36 +208,32 @@ private theorem continuous_blocks_of_continuous_whitneySum {Y : Type*} [Topologi
         _ ((hb.comp continuous_subtype_val).subtype_mk _) _).1 (hstrata (p + q)) ⟨(p, q), rfl⟩
   refine ⟨(A.continuous_mk_iff_rankStrata hb s₁).2 fun p => ?_,
     (D.continuous_mk_iff_rankStrata hb s₂).2 fun q => ?_⟩
-  · apply continuous_of_cover_nhds
+  · refine continuous_of_cover_nhds
       (s := fun q : ℕ => {z : {y : Y // A.rank (b y) = p} | D.rank (b z.1) = q})
-    · exact fun z => ⟨D.rank (b z.1),
-        ((D.rank.isLocallyConstant.isOpen_fiber _).preimage
-          (hb.comp continuous_subtype_val)).mem_nhds rfl⟩
-    · intro q
-      rw [continuousOn_iff_continuous_domRestrict]
-      let g : {z : {y : Y // A.rank (b y) = p} // D.rank (b z.1) = q} →
-          {y : {y : Y // (A.rank + D.rank) (b y) = p + q} //
-            rankSplit A D (p + q) ⟨b y.1, y.2⟩ = ⟨(p, q), rfl⟩} :=
-        fun z => ⟨⟨z.1.1, congrArg₂ (· + ·) z.1.2 z.2⟩, Subtype.ext (Prod.ext z.1.2 z.2)⟩
-      have hg : Continuous g :=
-        ((continuous_subtype_val.comp continuous_subtype_val).subtype_mk _).subtype_mk _
-      refine ((hpiece p q).1.comp hg).congr fun z => TotalSpace.mk_inj.mpr (funext fun i => ?_)
-      exact splitCoords_cast_fst z.1.2 z.2 (g z).1.2 rfl (s z.1.1) i
-  · apply continuous_of_cover_nhds
+      (fun z => ⟨D.rank (b z.1), ((D.rank.isLocallyConstant.isOpen_fiber _).preimage
+        (hb.comp continuous_subtype_val)).mem_nhds rfl⟩) fun q => ?_
+    rw [continuousOn_iff_continuous_domRestrict]
+    let g : {z : {y : Y // A.rank (b y) = p} // D.rank (b z.1) = q} →
+        {y : {y : Y // (A.rank + D.rank) (b y) = p + q} //
+          rankSplit A D (p + q) ⟨b y.1, y.2⟩ = ⟨(p, q), rfl⟩} :=
+      fun z => ⟨⟨z.1.1, congrArg₂ (· + ·) z.1.2 z.2⟩, Subtype.ext (Prod.ext z.1.2 z.2)⟩
+    have hg : Continuous g :=
+      ((continuous_subtype_val.comp continuous_subtype_val).subtype_mk _).subtype_mk _
+    exact ((hpiece p q).1.comp hg).congr fun z =>
+      TotalSpace.mk_inj.mpr (funext (splitCoords_cast_fst z.1.2 z.2 (g z).1.2 rfl (s z.1.1)))
+  · refine continuous_of_cover_nhds
       (s := fun p : ℕ => {z : {y : Y // D.rank (b y) = q} | A.rank (b z.1) = p})
-    · exact fun z => ⟨A.rank (b z.1),
-        ((A.rank.isLocallyConstant.isOpen_fiber _).preimage
-          (hb.comp continuous_subtype_val)).mem_nhds rfl⟩
-    · intro p
-      rw [continuousOn_iff_continuous_domRestrict]
-      let g : {z : {y : Y // D.rank (b y) = q} // A.rank (b z.1) = p} →
-          {y : {y : Y // (A.rank + D.rank) (b y) = p + q} //
-            rankSplit A D (p + q) ⟨b y.1, y.2⟩ = ⟨(p, q), rfl⟩} :=
-        fun z => ⟨⟨z.1.1, congrArg₂ (· + ·) z.2 z.1.2⟩, Subtype.ext (Prod.ext z.2 z.1.2)⟩
-      have hg : Continuous g :=
-        ((continuous_subtype_val.comp continuous_subtype_val).subtype_mk _).subtype_mk _
-      refine ((hpiece p q).2.comp hg).congr fun z => TotalSpace.mk_inj.mpr (funext fun j => ?_)
-      exact splitCoords_cast_snd z.2 z.1.2 (g z).1.2 rfl (s z.1.1) j
+      (fun z => ⟨A.rank (b z.1), ((A.rank.isLocallyConstant.isOpen_fiber _).preimage
+        (hb.comp continuous_subtype_val)).mem_nhds rfl⟩) fun p => ?_
+    rw [continuousOn_iff_continuous_domRestrict]
+    let g : {z : {y : Y // D.rank (b y) = q} // A.rank (b z.1) = p} →
+        {y : {y : Y // (A.rank + D.rank) (b y) = p + q} //
+          rankSplit A D (p + q) ⟨b y.1, y.2⟩ = ⟨(p, q), rfl⟩} :=
+      fun z => ⟨⟨z.1.1, congrArg₂ (· + ·) z.2 z.1.2⟩, Subtype.ext (Prod.ext z.2 z.1.2)⟩
+    have hg : Continuous g :=
+      ((continuous_subtype_val.comp continuous_subtype_val).subtype_mk _).subtype_mk _
+    exact ((hpiece p q).2.comp hg).congr fun z =>
+      TotalSpace.mk_inj.mpr (funext (splitCoords_cast_snd z.2 z.1.2 (g z).1.2 rfl (s z.1.1)))
 
 /-- **Continuity into a variable-rank Whitney sum.** A map into the reconstructed total space of
 `whitneySum A D` is continuous if and only if its two coordinate blocks under `splitCoords` define
@@ -257,10 +250,8 @@ theorem continuous_mk_whitneySum_iff {Y : Type*} [TopologicalSpace Y]
   refine ⟨continuous_blocks_of_continuous_whitneySum, ?_⟩
   rintro ⟨hs₁, hs₂⟩
   have hb : Continuous b := A.continuous_proj.comp hs₁
-  let s₁ (y : Y) : A.Fiber (b y) :=
-    (splitCoords (𝕜 := 𝕜) (A.rank (b y)) (D.rank (b y)) (s y)).1
-  let s₂ (y : Y) : D.Fiber (b y) :=
-    (splitCoords (𝕜 := 𝕜) (A.rank (b y)) (D.rank (b y)) (s y)).2
+  let s₁ (y : Y) : A.Fiber (b y) := (splitCoords (𝕜 := 𝕜) (A.rank (b y)) (D.rank (b y)) (s y)).1
+  let s₂ (y : Y) : D.Fiber (b y) := (splitCoords (𝕜 := 𝕜) (A.rank (b y)) (D.rank (b y)) (s y)).2
   have hs₁_strata := (A.continuous_mk_iff_rankStrata hb s₁).1 hs₁
   have hs₂_strata := (D.continuous_mk_iff_rankStrata hb s₂).1 hs₂
   refine ((whitneySum A D).continuous_mk_iff_rankStrata hb s).2 fun n => ?_
@@ -272,16 +263,14 @@ theorem continuous_mk_whitneySum_iff {Y : Type*} [TopologicalSpace Y]
   · let g₁ : {y : {y : Y // (A.rank + D.rank) (b y) = n} // rankSplit A D n ⟨b y.1, y.2⟩ = pq} →
         {z : Y // A.rank (b z) = pq.1.1} :=
       fun y => ⟨y.1.1, congrArg (fun u : {pq : ℕ × ℕ // pq.1 + pq.2 = n} => u.1.1) y.2⟩
-    have hg₁ : Continuous g₁ :=
-      (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
+    have hg₁ : Continuous g₁ := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
     refine ((hs₁_strata pq.1.1).comp hg₁).congr fun y => TotalSpace.mk_inj.mpr (funext fun i => ?_)
     exact (splitCoords_cast_fst (g₁ y).2
       (congrArg (fun u : {pq : ℕ × ℕ // pq.1 + pq.2 = n} => u.1.2) y.2) y.1.2 pq.2 (s y.1.1) i).symm
   · let g₂ : {y : {y : Y // (A.rank + D.rank) (b y) = n} // rankSplit A D n ⟨b y.1, y.2⟩ = pq} →
         {z : Y // D.rank (b z) = pq.1.2} :=
       fun y => ⟨y.1.1, congrArg (fun u : {pq : ℕ × ℕ // pq.1 + pq.2 = n} => u.1.2) y.2⟩
-    have hg₂ : Continuous g₂ :=
-      (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
+    have hg₂ : Continuous g₂ := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
     refine ((hs₂_strata pq.1.2).comp hg₂).congr fun y => TotalSpace.mk_inj.mpr (funext fun j => ?_)
     exact (splitCoords_cast_snd
       (congrArg (fun u : {pq : ℕ × ℕ // pq.1 + pq.2 = n} => u.1.1) y.2)
@@ -308,14 +297,11 @@ noncomputable def whitneyInl (A D : FiniteRankAtlas 𝕜 X) : A ⟶ whitneySum A
   fiberMap x := (splitCoords (𝕜 := 𝕜) (A.rank x) (D.rank x)).symm.toLinearMap.comp
     (LinearMap.inl 𝕜 (A.Fiber x) (D.Fiber x))
   continuous_totalSpaceMap := by
-    refine continuous_mk_whitneySum_iff.2 ⟨?_, ?_⟩
-    · refine continuous_id.congr fun p => ?_
-      rcases p with ⟨x, v⟩
-      exact TotalSpace.mk_inj.mpr <| congrArg Prod.fst
+    refine continuous_mk_whitneySum_iff.2 ⟨continuous_id.congr fun ⟨x, v⟩ => ?_,
+      (D.continuous_zeroSection.comp A.continuous_proj).congr fun ⟨x, v⟩ => ?_⟩
+    · exact TotalSpace.mk_inj.mpr <| congrArg Prod.fst
         ((splitCoords (𝕜 := 𝕜) (M := 𝕜) (A.rank x) (D.rank x)).apply_symm_apply (v, 0)).symm
-    · refine (D.continuous_zeroSection.comp A.continuous_proj).congr fun p => ?_
-      rcases p with ⟨x, v⟩
-      exact TotalSpace.mk_inj.mpr <| congrArg Prod.snd
+    · exact TotalSpace.mk_inj.mpr <| congrArg Prod.snd
         ((splitCoords (𝕜 := 𝕜) (M := 𝕜) (A.rank x) (D.rank x)).apply_symm_apply (v, 0)).symm
 
 /-- Inclusion of the second summand into the variable-rank Whitney sum. -/
@@ -323,61 +309,63 @@ noncomputable def whitneyInr (A D : FiniteRankAtlas 𝕜 X) : D ⟶ whitneySum A
   fiberMap x := (splitCoords (𝕜 := 𝕜) (A.rank x) (D.rank x)).symm.toLinearMap.comp
     (LinearMap.inr 𝕜 (A.Fiber x) (D.Fiber x))
   continuous_totalSpaceMap := by
-    refine continuous_mk_whitneySum_iff.2 ⟨?_, ?_⟩
-    · refine (A.continuous_zeroSection.comp D.continuous_proj).congr fun p => ?_
-      rcases p with ⟨x, w⟩
-      exact TotalSpace.mk_inj.mpr <| congrArg Prod.fst
+    refine continuous_mk_whitneySum_iff.2
+      ⟨(A.continuous_zeroSection.comp D.continuous_proj).congr fun ⟨x, w⟩ => ?_,
+        continuous_id.congr fun ⟨x, w⟩ => ?_⟩
+    · exact TotalSpace.mk_inj.mpr <| congrArg Prod.fst
         ((splitCoords (𝕜 := 𝕜) (M := 𝕜) (A.rank x) (D.rank x)).apply_symm_apply (0, w)).symm
-    · refine continuous_id.congr fun p => ?_
-      rcases p with ⟨x, w⟩
-      exact TotalSpace.mk_inj.mpr <| congrArg Prod.snd
+    · exact TotalSpace.mk_inj.mpr <| congrArg Prod.snd
         ((splitCoords (𝕜 := 𝕜) (M := 𝕜) (A.rank x) (D.rank x)).apply_symm_apply (0, w)).symm
 
+/-- Fibrewise linear action of `whitneyFst A D` at `x : X`. -/
 @[simp] theorem fiberMap_whitneyFst (A D : FiniteRankAtlas 𝕜 X) (x : X) :
     (whitneyFst A D).fiberMap x =
       (LinearMap.fst 𝕜 (A.Fiber x) (D.Fiber x)).comp
         (splitCoords (𝕜 := 𝕜) (A.rank x) (D.rank x)).toLinearMap := (rfl)
 
+/-- Fibrewise linear action of `whitneySnd A D` at `x : X`. -/
 @[simp] theorem fiberMap_whitneySnd (A D : FiniteRankAtlas 𝕜 X) (x : X) :
     (whitneySnd A D).fiberMap x =
       (LinearMap.snd 𝕜 (A.Fiber x) (D.Fiber x)).comp
         (splitCoords (𝕜 := 𝕜) (A.rank x) (D.rank x)).toLinearMap := (rfl)
 
+/-- Fibrewise linear action of `whitneyInl A D` at `x : X`. -/
 @[simp] theorem fiberMap_whitneyInl (A D : FiniteRankAtlas 𝕜 X) (x : X) :
     (whitneyInl A D).fiberMap x =
       (splitCoords (𝕜 := 𝕜) (A.rank x) (D.rank x)).symm.toLinearMap.comp
         (LinearMap.inl 𝕜 (A.Fiber x) (D.Fiber x)) := (rfl)
 
+/-- Fibrewise linear action of `whitneyInr A D` at `x : X`. -/
 @[simp] theorem fiberMap_whitneyInr (A D : FiniteRankAtlas 𝕜 X) (x : X) :
     (whitneyInr A D).fiberMap x =
       (splitCoords (𝕜 := 𝕜) (A.rank x) (D.rank x)).symm.toLinearMap.comp
         (LinearMap.inr 𝕜 (A.Fiber x) (D.Fiber x)) := (rfl)
 
+/-- Composing the first inclusion with the first projection is the identity on `A`. -/
 @[reassoc (attr := simp)] theorem whitneyInl_fst (A D : FiniteRankAtlas 𝕜 X) :
     whitneyInl A D ≫ whitneyFst A D = 𝟙 A := by
-  apply hom_ext; intro x
-  apply LinearMap.ext; intro v
+  apply hom_ext; intro x; apply LinearMap.ext; intro v
   exact congrArg Prod.fst
     ((splitCoords (𝕜 := 𝕜) (M := 𝕜) (A.rank x) (D.rank x)).apply_symm_apply (v, 0))
 
+/-- Composing the first inclusion with the second projection is zero. -/
 @[reassoc (attr := simp)] theorem whitneyInl_snd (A D : FiniteRankAtlas 𝕜 X) :
     whitneyInl A D ≫ whitneySnd A D = 0 := by
-  apply hom_ext; intro x
-  apply LinearMap.ext; intro v
+  apply hom_ext; intro x; apply LinearMap.ext; intro v
   exact congrArg Prod.snd
     ((splitCoords (𝕜 := 𝕜) (M := 𝕜) (A.rank x) (D.rank x)).apply_symm_apply (v, 0))
 
+/-- Composing the second inclusion with the first projection is zero. -/
 @[reassoc (attr := simp)] theorem whitneyInr_fst (A D : FiniteRankAtlas 𝕜 X) :
     whitneyInr A D ≫ whitneyFst A D = 0 := by
-  apply hom_ext; intro x
-  apply LinearMap.ext; intro w
+  apply hom_ext; intro x; apply LinearMap.ext; intro w
   exact congrArg Prod.fst
     ((splitCoords (𝕜 := 𝕜) (M := 𝕜) (A.rank x) (D.rank x)).apply_symm_apply (0, w))
 
+/-- Composing the second inclusion with the second projection is the identity on `D`. -/
 @[reassoc (attr := simp)] theorem whitneyInr_snd (A D : FiniteRankAtlas 𝕜 X) :
     whitneyInr A D ≫ whitneySnd A D = 𝟙 D := by
-  apply hom_ext; intro x
-  apply LinearMap.ext; intro w
+  apply hom_ext; intro x; apply LinearMap.ext; intro w
   exact congrArg Prod.snd
     ((splitCoords (𝕜 := 𝕜) (M := 𝕜) (A.rank x) (D.rank x)).apply_symm_apply (0, w))
 
@@ -395,18 +383,23 @@ noncomputable def whitneyBicone (A D : FiniteRankAtlas 𝕜 X) : BinaryBicone A 
   inr_fst := whitneyInr_fst A D
   inr_snd := whitneyInr_snd A D
 
+/-- Underlying object of `whitneyBicone A D`. -/
 @[simp] theorem whitneyBicone_pt (A D : FiniteRankAtlas 𝕜 X) :
     (whitneyBicone A D).pt = whitneySum A D := (rfl)
 
+/-- First projection of `whitneyBicone A D`. -/
 @[simp] theorem whitneyBicone_fst (A D : FiniteRankAtlas 𝕜 X) :
     (whitneyBicone A D).fst = whitneyFst A D := (rfl)
 
+/-- Second projection of `whitneyBicone A D`. -/
 @[simp] theorem whitneyBicone_snd (A D : FiniteRankAtlas 𝕜 X) :
     (whitneyBicone A D).snd = whitneySnd A D := (rfl)
 
+/-- First inclusion of `whitneyBicone A D`. -/
 @[simp] theorem whitneyBicone_inl (A D : FiniteRankAtlas 𝕜 X) :
     (whitneyBicone A D).inl = whitneyInl A D := (rfl)
 
+/-- Second inclusion of `whitneyBicone A D`. -/
 @[simp] theorem whitneyBicone_inr (A D : FiniteRankAtlas 𝕜 X) :
     (whitneyBicone A D).inr = whitneyInr A D := (rfl)
 
@@ -414,8 +407,7 @@ noncomputable def whitneyBicone (A D : FiniteRankAtlas 𝕜 X) : BinaryBicone A 
 @[simp] theorem whitney_total (A D : FiniteRankAtlas 𝕜 X) :
     whitneyFst A D ≫ whitneyInl A D + whitneySnd A D ≫ whitneyInr A D =
       𝟙 (whitneySum A D) := by
-  apply hom_ext; intro x
-  apply LinearMap.ext; intro v
+  apply hom_ext; intro x; apply LinearMap.ext; intro v
   let e := splitCoords (𝕜 := 𝕜) (M := 𝕜) (A.rank x) (D.rank x)
   exact (e.symm.map_add ((e v).1, 0) (0, (e v).2)).symm.trans <|
     (congrArg e.symm (Prod.ext (add_zero _) (zero_add _))).trans (e.symm_apply_apply v)
@@ -433,17 +425,18 @@ instance : HasBinaryBiproducts (FiniteRankAtlas 𝕜 X) where
 instance : HasFiniteBiproducts (FiniteRankAtlas 𝕜 X) :=
   hasFiniteBiproducts_of_hasBinaryBiproducts
 
+/-- Rank additivity for the categorical binary biproduct `A ⊞ D`. -/
 @[simp] theorem rank_biprod (A D : FiniteRankAtlas 𝕜 X) :
     (A ⊞ D).rank = A.rank + D.rank :=
   (biprod.uniqueUpToIso A D (whitneyBiconeIsBilimit A D)).symm.finiteRankAtlas_rank_eq
 
+/-- Rank additivity for finite categorical biproducts `⨁ f`. -/
 @[simp] theorem rank_biproduct.{w} {J : Type w} [Fintype J] (f : J → FiniteRankAtlas 𝕜 X) :
     (⨁ f).rank = ∑ j, (f j).rank := by
   suffices ∀ (n : ℕ) {K : Type w} [Fintype K] (g : K → FiniteRankAtlas 𝕜 X),
       Fintype.card K = n → (⨁ g).rank = ∑ k, (g k).rank from
     this (Fintype.card J) f rfl
-  intro n
-  induction n with
+  intro n; induction n with
   | zero =>
     intro K _ g hK
     have : IsEmpty K := Fintype.card_eq_zero_iff.1 hK
@@ -457,18 +450,15 @@ instance : HasFiniteBiproducts (FiniteRankAtlas 𝕜 X) :=
       have : Unique {k : K // k = k₀} :=
         { default := ⟨k₀, rfl⟩, uniq := fun ⟨_, hk⟩ => Subtype.ext hk }
       have h1 : Fintype.card {k : K // k = k₀} = 1 := Fintype.card_unique
-      rw [Fintype.card_subtype_compl (· = k₀), h1, hK]
-      omega
+      rw [Fintype.card_subtype_compl (· = k₀), h1, hK]; omega
     calc
       (⨁ g).rank = (g k₀ ⊞ ⨁ Subtype.restrict (· ≠ k₀) g).rank :=
         (biproductSubtypeNeIso g k₀).finiteRankAtlas_rank_eq
       _ = (g k₀).rank + (⨁ Subtype.restrict (· ≠ k₀) g).rank := rank_biprod _ _
       _ = (g k₀).rank + ∑ k : {k : K // k ≠ k₀}, (g k.1).rank := by
-        rw [ih (Subtype.restrict (· ≠ k₀) g) hcard]
-        rfl
+        rw [ih (Subtype.restrict (· ≠ k₀) g) hcard]; rfl
       _ = ∑ k, (g k).rank := by
-        rw [← Finset.add_sum_erase _ _ (Finset.mem_univ k₀)]
-        congr 1
+        rw [← Finset.add_sum_erase _ _ (Finset.mem_univ k₀)]; congr 1
         refine Finset.sum_bij (fun k _ => k.1)
           (fun k _ => Finset.mem_erase.2 ⟨k.2, Finset.mem_univ _⟩)
           (fun _ _ _ _ h => Subtype.ext h)
@@ -485,13 +475,16 @@ variable {A A' A'' D D' D'' C E : FiniteRankAtlas 𝕜 X}
 noncomputable def whitneyLift (f : E ⟶ A) (g : E ⟶ D) : E ⟶ whitneySum A D :=
   f ≫ whitneyInl A D + g ≫ whitneyInr A D
 
+/-- Explicit expansion of `whitneyLift f g` in terms of `whitneyInl` and `whitneyInr`. -/
 theorem whitneyLift_def (f : E ⟶ A) (g : E ⟶ D) :
     whitneyLift f g = f ≫ whitneyInl A D + g ≫ whitneyInr A D := (rfl)
 
+/-- Composing `whitneyLift f g` with the first projection recovers `f`. -/
 @[reassoc (attr := simp)] theorem whitneyLift_fst (f : E ⟶ A) (g : E ⟶ D) :
     whitneyLift f g ≫ whitneyFst A D = f := by
   simp [whitneyLift, Preadditive.add_comp]
 
+/-- Composing `whitneyLift f g` with the second projection recovers `g`. -/
 @[reassoc (attr := simp)] theorem whitneyLift_snd (f : E ⟶ A) (g : E ⟶ D) :
     whitneyLift f g ≫ whitneySnd A D = g := by
   simp [whitneyLift, Preadditive.add_comp]
@@ -499,12 +492,8 @@ theorem whitneyLift_def (f : E ⟶ A) (g : E ⟶ D) :
 /-- Every morphism into a Whitney sum is the pairing of its two projections. -/
 theorem eq_whitneyLift (h : E ⟶ whitneySum A D) :
     h = whitneyLift (h ≫ whitneyFst A D) (h ≫ whitneySnd A D) := by
-  calc
-    h = h ≫ 𝟙 (whitneySum A D) := (Category.comp_id h).symm
-    _ = h ≫ (whitneyFst A D ≫ whitneyInl A D + whitneySnd A D ≫ whitneyInr A D) := by
-      rw [whitney_total]
-    _ = whitneyLift (h ≫ whitneyFst A D) (h ≫ whitneySnd A D) := by
-      simp only [whitneyLift, Preadditive.comp_add, Category.assoc]
+  nth_rw 1 [← Category.comp_id h, ← whitney_total]
+  simp only [whitneyLift, Preadditive.comp_add, Category.assoc]
 
 /-- Morphisms into a Whitney sum are determined by their two projections. -/
 theorem whitneySum_hom_ext {h₁ h₂ : E ⟶ whitneySum A D}
@@ -512,14 +501,17 @@ theorem whitneySum_hom_ext {h₁ h₂ : E ⟶ whitneySum A D}
     (hsnd : h₁ ≫ whitneySnd A D = h₂ ≫ whitneySnd A D) : h₁ = h₂ := by
   rw [eq_whitneyLift h₁, eq_whitneyLift h₂, hfst, hsnd]
 
+/-- Precomposition distributes into `whitneyLift`. -/
 @[reassoc] theorem comp_whitneyLift (h : C ⟶ E) (f : E ⟶ A) (g : E ⟶ D) :
     h ≫ whitneyLift f g = whitneyLift (h ≫ f) (h ≫ g) := by
   simp only [whitneyLift, Preadditive.comp_add, Category.assoc]
 
+/-- Pairing the two canonical projections gives the identity on `whitneySum A D`. -/
 @[simp] theorem whitneyLift_fst_snd (A D : FiniteRankAtlas 𝕜 X) :
     whitneyLift (whitneyFst A D) (whitneySnd A D) = 𝟙 (whitneySum A D) :=
   whitney_total A D
 
+/-- Fibrewise linear action of `whitneyLift f g` at `x : X`. -/
 @[simp] theorem fiberMap_whitneyLift (f : E ⟶ A) (g : E ⟶ D) (x : X) :
     (whitneyLift f g).fiberMap x =
       (splitCoords (𝕜 := 𝕜) (A.rank x) (D.rank x)).symm.toLinearMap.comp
@@ -529,6 +521,7 @@ theorem whitneySum_hom_ext {h₁ h₂ : E ⟶ whitneySum A D}
   exact (e.symm.map_add (f.fiberMap x v, 0) (0, g.fiberMap x v)).symm.trans
     (congrArg e.symm (Prod.ext (add_zero _) (zero_add _)))
 
+/-- Coordinate blocks of `(whitneyLift f g).fiberMap x v` under `splitCoords`. -/
 theorem splitCoords_fiberMap_whitneyLift (f : E ⟶ A) (g : E ⟶ D) (x : X) (v : E.Fiber x) :
     splitCoords (𝕜 := 𝕜) (A.rank x) (D.rank x) ((whitneyLift f g).fiberMap x v) =
       (f.fiberMap x v, g.fiberMap x v) := by
@@ -540,17 +533,19 @@ theorem splitCoords_fiberMap_whitneyLift (f : E ⟶ A) (g : E ⟶ D) (x : X) (v 
 noncomputable def whitneyDesc (f : A ⟶ E) (g : D ⟶ E) : whitneySum A D ⟶ E :=
   whitneyFst A D ≫ f + whitneySnd A D ≫ g
 
+/-- Explicit expansion of `whitneyDesc f g` in terms of `whitneyFst` and `whitneySnd`. -/
 theorem whitneyDesc_def (f : A ⟶ E) (g : D ⟶ E) :
     whitneyDesc f g = whitneyFst A D ≫ f + whitneySnd A D ≫ g := (rfl)
 
+/-- Restricting `whitneyDesc f g` along `whitneyInl` recovers `f`. -/
 @[reassoc (attr := simp)] theorem whitneyInl_desc (f : A ⟶ E) (g : D ⟶ E) :
-    whitneyInl A D ≫ whitneyDesc f g = f := by
-  simp [whitneyDesc, Preadditive.comp_add]
+    whitneyInl A D ≫ whitneyDesc f g = f := by simp [whitneyDesc, Preadditive.comp_add]
 
+/-- Restricting `whitneyDesc f g` along `whitneyInr` recovers `g`. -/
 @[reassoc (attr := simp)] theorem whitneyInr_desc (f : A ⟶ E) (g : D ⟶ E) :
-    whitneyInr A D ≫ whitneyDesc f g = g := by
-  simp [whitneyDesc, Preadditive.comp_add]
+    whitneyInr A D ≫ whitneyDesc f g = g := by simp [whitneyDesc, Preadditive.comp_add]
 
+/-- Composing a pairing `whitneyLift f g` with a copairing `whitneyDesc h k`. -/
 @[reassoc (attr := simp)] theorem whitneyLift_desc (f : E ⟶ A) (g : E ⟶ D) (h : A ⟶ C) (k : D ⟶ C) :
     whitneyLift f g ≫ whitneyDesc h k = f ≫ h + g ≫ k := by
   simp [whitneyLift, whitneyDesc, Preadditive.add_comp, Preadditive.comp_add]
@@ -558,12 +553,8 @@ theorem whitneyDesc_def (f : A ⟶ E) (g : D ⟶ E) :
 /-- Every morphism out of a Whitney sum is the copairing of its two restrictions. -/
 theorem eq_whitneyDesc (h : whitneySum A D ⟶ E) :
     h = whitneyDesc (whitneyInl A D ≫ h) (whitneyInr A D ≫ h) := by
-  calc
-    h = 𝟙 (whitneySum A D) ≫ h := (Category.id_comp h).symm
-    _ = (whitneyFst A D ≫ whitneyInl A D + whitneySnd A D ≫ whitneyInr A D) ≫ h := by
-      rw [whitney_total]
-    _ = whitneyDesc (whitneyInl A D ≫ h) (whitneyInr A D ≫ h) := by
-      simp only [whitneyDesc, Preadditive.add_comp, Category.assoc]
+  nth_rw 1 [← Category.id_comp h, ← whitney_total]
+  simp only [whitneyDesc, Preadditive.add_comp, Category.assoc]
 
 /-- Morphisms out of a Whitney sum are determined by their restrictions to the two summands. -/
 theorem whitneySum_hom_ext' {h₁ h₂ : whitneySum A D ⟶ E}
@@ -571,20 +562,24 @@ theorem whitneySum_hom_ext' {h₁ h₂ : whitneySum A D ⟶ E}
     (hinr : whitneyInr A D ≫ h₁ = whitneyInr A D ≫ h₂) : h₁ = h₂ := by
   rw [eq_whitneyDesc h₁, eq_whitneyDesc h₂, hinl, hinr]
 
+/-- Postcomposition distributes into `whitneyDesc`. -/
 @[reassoc] theorem whitneyDesc_comp (f : A ⟶ E) (g : D ⟶ E) (h : E ⟶ C) :
     whitneyDesc f g ≫ h = whitneyDesc (f ≫ h) (g ≫ h) := by
   simp only [whitneyDesc, Preadditive.add_comp, Category.assoc]
 
+/-- Copairing the two canonical inclusions gives the identity on `whitneySum A D`. -/
 @[simp] theorem whitneyDesc_inl_inr (A D : FiniteRankAtlas 𝕜 X) :
     whitneyDesc (whitneyInl A D) (whitneyInr A D) = 𝟙 (whitneySum A D) :=
   whitney_total A D
 
+/-- Fibrewise linear action of `whitneyDesc f g` at `x : X`. -/
 @[simp] theorem fiberMap_whitneyDesc (f : A ⟶ E) (g : D ⟶ E) (x : X) :
     (whitneyDesc f g).fiberMap x =
       ((f.fiberMap x).coprod (g.fiberMap x)).comp
         (splitCoords (𝕜 := 𝕜) (A.rank x) (D.rank x)).toLinearMap := by
   apply LinearMap.ext; intro _; rfl
 
+/-- Pointwise formula for `(whitneyDesc f g).fiberMap x` in terms of `splitCoords`. -/
 theorem fiberMap_whitneyDesc_apply (f : A ⟶ E) (g : D ⟶ E) (x : X)
     (v : (whitneySum A D).Fiber x) :
     (whitneyDesc f g).fiberMap x v =
@@ -598,37 +593,43 @@ theorem fiberMap_whitneyDesc_apply (f : A ⟶ E) (g : D ⟶ E) (x : X)
 noncomputable def whitneyMap (f : A ⟶ A') (g : D ⟶ D') : whitneySum A D ⟶ whitneySum A' D' :=
   whitneyLift (whitneyFst A D ≫ f) (whitneySnd A D ≫ g)
 
+/-- Explicit expansion of `whitneyMap f g` as a `whitneyLift`. -/
 theorem whitneyMap_def (f : A ⟶ A') (g : D ⟶ D') :
     whitneyMap f g = whitneyLift (whitneyFst A D ≫ f) (whitneySnd A D ≫ g) := (rfl)
 
+/-- First projection of `whitneyMap f g`. -/
 @[reassoc (attr := simp)] theorem whitneyMap_fst (f : A ⟶ A') (g : D ⟶ D') :
-    whitneyMap f g ≫ whitneyFst A' D' = whitneyFst A D ≫ f :=
-  whitneyLift_fst _ _
+    whitneyMap f g ≫ whitneyFst A' D' = whitneyFst A D ≫ f := whitneyLift_fst _ _
 
+/-- Second projection of `whitneyMap f g`. -/
 @[reassoc (attr := simp)] theorem whitneyMap_snd (f : A ⟶ A') (g : D ⟶ D') :
-    whitneyMap f g ≫ whitneySnd A' D' = whitneySnd A D ≫ g :=
-  whitneyLift_snd _ _
+    whitneyMap f g ≫ whitneySnd A' D' = whitneySnd A D ≫ g := whitneyLift_snd _ _
 
+/-- Naturality of `whitneyInl` with respect to `whitneyMap`. -/
 @[reassoc (attr := simp)] theorem whitneyInl_map (f : A ⟶ A') (g : D ⟶ D') :
     whitneyInl A D ≫ whitneyMap f g = f ≫ whitneyInl A' D' :=
   whitneySum_hom_ext (by simp) (by simp)
 
+/-- Naturality of `whitneyInr` with respect to `whitneyMap`. -/
 @[reassoc (attr := simp)] theorem whitneyInr_map (f : A ⟶ A') (g : D ⟶ D') :
     whitneyInr A D ≫ whitneyMap f g = g ≫ whitneyInr A' D' :=
   whitneySum_hom_ext (by simp) (by simp)
 
+/-- `whitneyMap` preserves identity morphisms. -/
 @[simp] theorem whitneyMap_id (A D : FiniteRankAtlas 𝕜 X) :
-    whitneyMap (𝟙 A) (𝟙 D) = 𝟙 (whitneySum A D) := by
-  simp [whitneyMap_def]
+    whitneyMap (𝟙 A) (𝟙 D) = 𝟙 (whitneySum A D) := by simp [whitneyMap_def]
 
+/-- `whitneyMap` sends a pair of zero morphisms to zero. -/
 @[simp] theorem whitneyMap_zero (A A' D D' : FiniteRankAtlas 𝕜 X) :
     whitneyMap (0 : A ⟶ A') (0 : D ⟶ D') = 0 :=
   whitneySum_hom_ext (by simp) (by simp)
 
+/-- `whitneyMap` preserves composition in both arguments. -/
 @[simp] theorem whitneyMap_comp (f₁ : A ⟶ A') (f₂ : A' ⟶ A'') (g₁ : D ⟶ D') (g₂ : D' ⟶ D'') :
     whitneyMap (f₁ ≫ f₂) (g₁ ≫ g₂) = whitneyMap f₁ g₁ ≫ whitneyMap f₂ g₂ :=
   whitneySum_hom_ext (by simp) (by simp)
 
+/-- Fibrewise linear action of `whitneyMap f g` at `x : X`. -/
 @[simp] theorem fiberMap_whitneyMap (f : A ⟶ A') (g : D ⟶ D') (x : X) :
     (whitneyMap f g).fiberMap x =
       (splitCoords (𝕜 := 𝕜) (A'.rank x) (D'.rank x)).symm.toLinearMap.comp
@@ -638,6 +639,7 @@ theorem whitneyMap_def (f : A ⟶ A') (g : D ⟶ D') :
     fiberMap_whitneySnd]
   apply LinearMap.ext; intro _; rfl
 
+/-- Coordinate blocks of `(whitneyMap f g).fiberMap x v` under `splitCoords`. -/
 theorem splitCoords_fiberMap_whitneyMap (f : A ⟶ A') (g : D ⟶ D') (x : X)
     (v : (whitneySum A D).Fiber x) :
     splitCoords (𝕜 := 𝕜) (A'.rank x) (D'.rank x) ((whitneyMap f g).fiberMap x v) =
@@ -654,9 +656,11 @@ noncomputable def whitneyMapIso (e₁ : A ≅ A') (e₂ : D ≅ D') :
   hom_inv_id := by rw [← whitneyMap_comp, e₁.hom_inv_id, e₂.hom_inv_id, whitneyMap_id]
   inv_hom_id := by rw [← whitneyMap_comp, e₁.inv_hom_id, e₂.inv_hom_id, whitneyMap_id]
 
+/-- Forward morphism of `whitneyMapIso e₁ e₂`. -/
 @[simp] theorem whitneyMapIso_hom (e₁ : A ≅ A') (e₂ : D ≅ D') :
     (whitneyMapIso e₁ e₂).hom = whitneyMap e₁.hom e₂.hom := (rfl)
 
+/-- Inverse morphism of `whitneyMapIso e₁ e₂`. -/
 @[simp] theorem whitneyMapIso_inv (e₁ : A ≅ A') (e₂ : D ≅ D') :
     (whitneyMapIso e₁ e₂).inv = whitneyMap e₁.inv e₂.inv := (rfl)
 
@@ -672,12 +676,15 @@ noncomputable def whitneyCommIso (A D : FiniteRankAtlas 𝕜 X) :
   hom_inv_id := whitneySum_hom_ext (by simp) (by simp)
   inv_hom_id := whitneySum_hom_ext (by simp) (by simp)
 
+/-- Forward morphism of `whitneyCommIso A D`. -/
 @[simp] theorem whitneyCommIso_hom (A D : FiniteRankAtlas 𝕜 X) :
     (whitneyCommIso A D).hom = whitneyLift (whitneySnd A D) (whitneyFst A D) := (rfl)
 
+/-- Inverse morphism of `whitneyCommIso A D`. -/
 @[simp] theorem whitneyCommIso_inv (A D : FiniteRankAtlas 𝕜 X) :
     (whitneyCommIso A D).inv = whitneyLift (whitneySnd D A) (whitneyFst D A) := (rfl)
 
+/-- Naturality of the symmetry isomorphism `whitneyCommIso` with respect to `whitneyMap`. -/
 @[reassoc] theorem whitneyMap_commIso_hom {A A' D D' : FiniteRankAtlas 𝕜 X}
     (f : A ⟶ A') (g : D ⟶ D') :
     whitneyMap f g ≫ (whitneyCommIso A' D').hom =
@@ -694,16 +701,19 @@ noncomputable def whitneyAssocIso (A D C : FiniteRankAtlas 𝕜 X) :
   hom_inv_id := whitneySum_hom_ext (whitneySum_hom_ext (by simp) (by simp)) (by simp)
   inv_hom_id := whitneySum_hom_ext (by simp) (whitneySum_hom_ext (by simp) (by simp))
 
+/-- Forward morphism of `whitneyAssocIso A D C`. -/
 @[simp] theorem whitneyAssocIso_hom (A D C : FiniteRankAtlas 𝕜 X) :
     (whitneyAssocIso A D C).hom =
       whitneyLift (whitneyFst _ _ ≫ whitneyFst A D)
         (whitneyLift (whitneyFst _ _ ≫ whitneySnd A D) (whitneySnd _ _)) := (rfl)
 
+/-- Inverse morphism of `whitneyAssocIso A D C`. -/
 @[simp] theorem whitneyAssocIso_inv (A D C : FiniteRankAtlas 𝕜 X) :
     (whitneyAssocIso A D C).inv =
       whitneyLift (whitneyLift (whitneyFst _ _) (whitneySnd _ _ ≫ whitneyFst D C))
         (whitneySnd _ _ ≫ whitneySnd D C) := (rfl)
 
+/-- Naturality of the associativity isomorphism `whitneyAssocIso` with respect to `whitneyMap`. -/
 @[reassoc] theorem whitneyMap_assocIso_hom {A A' D D' C C' : FiniteRankAtlas 𝕜 X}
     (f : A ⟶ A') (g : D ⟶ D') (h : C ⟶ C') :
     whitneyMap (whitneyMap f g) h ≫ (whitneyAssocIso A' D' C').hom =
@@ -718,16 +728,19 @@ noncomputable def whitneyZeroLeftIso (A : FiniteRankAtlas 𝕜 X) :
   hom_inv_id := whitneySum_hom_ext' (isZero_trivial_zero.eq_of_src _ _) (by simp)
   inv_hom_id := whitneyInr_snd (trivial 𝕜 X 0) A
 
+/-- Forward morphism of `whitneyZeroLeftIso A`. -/
 @[simp] theorem whitneyZeroLeftIso_hom (A : FiniteRankAtlas 𝕜 X) :
     (whitneyZeroLeftIso A).hom = whitneySnd (trivial 𝕜 X 0) A := (rfl)
 
+/-- Inverse morphism of `whitneyZeroLeftIso A`. -/
 @[simp] theorem whitneyZeroLeftIso_inv (A : FiniteRankAtlas 𝕜 X) :
     (whitneyZeroLeftIso A).inv = whitneyInr (trivial 𝕜 X 0) A := (rfl)
 
+/-- Naturality of `whitneyZeroLeftIso` with respect to `whitneyMap`. -/
 @[reassoc] theorem whitneyMap_zeroLeftIso_hom {A A' : FiniteRankAtlas 𝕜 X}
     (g : trivial 𝕜 X 0 ⟶ trivial 𝕜 X 0) (f : A ⟶ A') :
-    whitneyMap g f ≫ (whitneyZeroLeftIso A').hom = (whitneyZeroLeftIso A).hom ≫ f := by
-  simp only [whitneyZeroLeftIso_hom, whitneyMap_snd]
+    whitneyMap g f ≫ (whitneyZeroLeftIso A').hom = (whitneyZeroLeftIso A).hom ≫ f :=
+  whitneyMap_snd g f
 
 /-- Right unit isomorphism for Whitney sum with the trivial rank-zero atlas. -/
 noncomputable def whitneyZeroRightIso (A : FiniteRankAtlas 𝕜 X) :
@@ -737,16 +750,19 @@ noncomputable def whitneyZeroRightIso (A : FiniteRankAtlas 𝕜 X) :
   hom_inv_id := whitneySum_hom_ext' (by simp) (isZero_trivial_zero.eq_of_src _ _)
   inv_hom_id := whitneyInl_fst A (trivial 𝕜 X 0)
 
+/-- Forward morphism of `whitneyZeroRightIso A`. -/
 @[simp] theorem whitneyZeroRightIso_hom (A : FiniteRankAtlas 𝕜 X) :
     (whitneyZeroRightIso A).hom = whitneyFst A (trivial 𝕜 X 0) := (rfl)
 
+/-- Inverse morphism of `whitneyZeroRightIso A`. -/
 @[simp] theorem whitneyZeroRightIso_inv (A : FiniteRankAtlas 𝕜 X) :
     (whitneyZeroRightIso A).inv = whitneyInl A (trivial 𝕜 X 0) := (rfl)
 
+/-- Naturality of `whitneyZeroRightIso` with respect to `whitneyMap`. -/
 @[reassoc] theorem whitneyMap_zeroRightIso_hom {A A' : FiniteRankAtlas 𝕜 X}
     (f : A ⟶ A') (g : trivial 𝕜 X 0 ⟶ trivial 𝕜 X 0) :
-    whitneyMap f g ≫ (whitneyZeroRightIso A').hom = (whitneyZeroRightIso A).hom ≫ f := by
-  simp only [whitneyZeroRightIso_hom, whitneyMap_fst]
+    whitneyMap f g ≫ (whitneyZeroRightIso A').hom = (whitneyZeroRightIso A).hom ≫ f :=
+  whitneyMap_fst f g
 
 private theorem splitCoords_symm_cast {n p q a d : ℕ}
     (hp : a = p) (hq : d = q) (hn : a + d = n) (hpq : p + q = n)
@@ -757,52 +773,40 @@ private theorem splitCoords_symm_cast {n p q a d : ℕ}
           (fun k => (splitCoords (𝕜 := 𝕜) a d v).1 (Fin.cast hp.symm k),
             fun k => (splitCoords (𝕜 := 𝕜) a d v).2 (Fin.cast hq.symm k))) i := by
   subst hp hq hn
-  have h := (splitCoords (𝕜 := 𝕜) a d).symm_apply_apply v
-  exact (congrFun h i).symm
+  exact (congrFun ((splitCoords (𝕜 := 𝕜) a d).symm_apply_apply v) i).symm
 
 private theorem continuous_trivialAdd_hom (r₁ r₂ : LocallyConstant X ℕ) :
     Continuous (fun p : TotalSpace Unit (whitneySum (trivial 𝕜 X r₁) (trivial 𝕜 X r₂)).Fiber =>
       (⟨p.proj, p.2⟩ : TotalSpace Unit (trivial 𝕜 X (r₁ + r₂)).Fiber)) := by
-  have hfst_snd := continuous_mk_whitneySum_iff.1
-    (continuous_id
-      (X := TotalSpace Unit (whitneySum (trivial 𝕜 X r₁) (trivial 𝕜 X r₂)).Fiber))
-  have hc₁ := (continuous_mk_trivial_iff (r := r₁)
-    (whitneySum (trivial 𝕜 X r₁) (trivial 𝕜 X r₂)).continuous_proj _).1 hfst_snd.1
-  have hc₂ := (continuous_mk_trivial_iff (r := r₂)
-    (whitneySum (trivial 𝕜 X r₁) (trivial 𝕜 X r₂)).continuous_proj _).1 hfst_snd.2
-  refine (continuous_mk_trivial_iff (r := r₁ + r₂)
-    (whitneySum (trivial 𝕜 X r₁) (trivial 𝕜 X r₂)).continuous_proj
+  let WT := whitneySum (trivial 𝕜 X r₁) (trivial 𝕜 X r₂)
+  have hfst_snd := continuous_mk_whitneySum_iff.1 (continuous_id (X := TotalSpace Unit WT.Fiber))
+  have hc₁ := (continuous_mk_trivial_iff (r := r₁) WT.continuous_proj _).1 hfst_snd.1
+  have hc₂ := (continuous_mk_trivial_iff (r := r₂) WT.continuous_proj _).1 hfst_snd.2
+  refine (continuous_mk_trivial_iff (r := r₁ + r₂) WT.continuous_proj
     (fun p => (p.2 : (trivial 𝕜 X (r₁ + r₂)).Fiber p.proj))).2 fun n => ?_
-  let S := {y : TotalSpace Unit (whitneySum (trivial 𝕜 X r₁) (trivial 𝕜 X r₂)).Fiber //
-    (r₁ + r₂) y.proj = n}
+  let S := {y : TotalSpace Unit WT.Fiber // (r₁ + r₂) y.proj = n}
   apply continuous_of_cover_nhds
     (s := fun pq : ℕ × ℕ => {y : S | r₁ y.1.proj = pq.1 ∧ r₂ y.1.proj = pq.2})
   · exact fun y => ⟨(r₁ y.1.proj, r₂ y.1.proj),
       (((r₁.isLocallyConstant.isOpen_fiber _).preimage
-          ((whitneySum (trivial 𝕜 X r₁) (trivial 𝕜 X r₂)).continuous_proj.comp
-            continuous_subtype_val)).inter
+          (WT.continuous_proj.comp continuous_subtype_val)).inter
         ((r₂.isLocallyConstant.isOpen_fiber _).preimage
-          ((whitneySum (trivial 𝕜 X r₁) (trivial 𝕜 X r₂)).continuous_proj.comp
-            continuous_subtype_val))).mem_nhds ⟨rfl, rfl⟩⟩
+          (WT.continuous_proj.comp continuous_subtype_val))).mem_nhds ⟨rfl, rfl⟩⟩
   · rintro ⟨p, q⟩
     rw [continuousOn_iff_continuous_domRestrict]
     by_cases hpq : p + q = n
     · let g₁ : {y : S // r₁ y.1.proj = p ∧ r₂ y.1.proj = q} →
-          {z : TotalSpace Unit (whitneySum (trivial 𝕜 X r₁) (trivial 𝕜 X r₂)).Fiber //
-            r₁ z.proj = p} := fun y => ⟨y.1.1, y.2.1⟩
+          {z : TotalSpace Unit WT.Fiber // r₁ z.proj = p} := fun y => ⟨y.1.1, y.2.1⟩
       let g₂ : {y : S // r₁ y.1.proj = p ∧ r₂ y.1.proj = q} →
-          {z : TotalSpace Unit (whitneySum (trivial 𝕜 X r₁) (trivial 𝕜 X r₂)).Fiber //
-            r₂ z.proj = q} := fun y => ⟨y.1.1, y.2.2⟩
-      have hg₁ : Continuous g₁ :=
-        (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
-      have hg₂ : Continuous g₂ :=
-        (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
-      have hpair := ((hc₁ p).comp hg₁).prodMk ((hc₂ q).comp hg₂)
+          {z : TotalSpace Unit WT.Fiber // r₂ z.proj = q} := fun y => ⟨y.1.1, y.2.2⟩
+      have hg₁ : Continuous g₁ := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
+      have hg₂ : Continuous g₂ := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
       have hjoined :=
         (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : Fin n => 𝕜) (finCongr hpq)).continuous.comp
-          ((splitCoords (𝕜 := 𝕜) (M := 𝕜) p q).symm.continuous.comp hpair)
-      refine hjoined.congr fun y => funext fun i => ?_
-      exact (splitCoords_symm_cast y.2.1 y.2.2 y.1.2 hpq y.1.1.2 i).symm
+          ((splitCoords (𝕜 := 𝕜) (M := 𝕜) p q).symm.continuous.comp
+            (((hc₁ p).comp hg₁).prodMk ((hc₂ q).comp hg₂)))
+      exact hjoined.congr fun y =>
+        funext fun i => (splitCoords_symm_cast y.2.1 y.2.2 y.1.2 hpq y.1.1.2 i).symm
     · have : IsEmpty {y : S // r₁ y.1.proj = p ∧ r₂ y.1.proj = q} :=
         ⟨fun y => hpq ((congrArg₂ (· + ·) y.2.1.symm y.2.2.symm).trans y.1.2)⟩
       exact continuous_of_discreteTopology
@@ -821,41 +825,33 @@ private theorem continuous_trivialAdd_inv (r₁ r₂ : LocallyConstant X ℕ) :
   · refine (continuous_mk_trivial_iff (r := r₁)
       (trivial 𝕜 X (r₁ + r₂)).continuous_proj _).2 fun p => ?_
     let S := {y : TotalSpace Unit (trivial 𝕜 X (r₁ + r₂)).Fiber // r₁ y.proj = p}
-    apply continuous_of_cover_nhds
-      (s := fun q : ℕ => {y : S | r₂ y.1.proj = q})
-    · exact fun y => ⟨r₂ y.1.proj,
-        ((r₂.isLocallyConstant.isOpen_fiber _).preimage
-          ((trivial 𝕜 X (r₁ + r₂)).continuous_proj.comp continuous_subtype_val)).mem_nhds rfl⟩
-    · intro q
-      rw [continuousOn_iff_continuous_domRestrict]
-      let g : {y : S // r₂ y.1.proj = q} →
-          {z : TotalSpace Unit (trivial 𝕜 X (r₁ + r₂)).Fiber // (r₁ + r₂) z.proj = p + q} :=
-        fun y => ⟨y.1.1, congrArg₂ (· + ·) y.1.2 y.2⟩
-      have hg : Continuous g :=
-        (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
-      have hfst := (continuous_fst.comp
-        (splitCoords (𝕜 := 𝕜) (M := 𝕜) p q).continuous).comp ((hc (p + q)).comp hg)
-      refine hfst.congr fun y => funext fun i => ?_
-      exact splitCoords_cast_fst y.1.2 y.2 (g y).2 rfl y.1.1.2 i
+    refine continuous_of_cover_nhds (s := fun q : ℕ => {y : S | r₂ y.1.proj = q})
+      (fun y => ⟨r₂ y.1.proj, ((r₂.isLocallyConstant.isOpen_fiber _).preimage
+        ((trivial 𝕜 X (r₁ + r₂)).continuous_proj.comp continuous_subtype_val)).mem_nhds rfl⟩)
+      fun q => ?_
+    rw [continuousOn_iff_continuous_domRestrict]
+    let g : {y : S // r₂ y.1.proj = q} →
+        {z : TotalSpace Unit (trivial 𝕜 X (r₁ + r₂)).Fiber // (r₁ + r₂) z.proj = p + q} :=
+      fun y => ⟨y.1.1, congrArg₂ (· + ·) y.1.2 y.2⟩
+    have hg : Continuous g := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
+    exact (((continuous_fst.comp (splitCoords (𝕜 := 𝕜) (M := 𝕜) p q).continuous).comp
+      ((hc (p + q)).comp hg)).congr
+      fun y => funext (splitCoords_cast_fst y.1.2 y.2 (g y).2 rfl y.1.1.2))
   · refine (continuous_mk_trivial_iff (r := r₂)
       (trivial 𝕜 X (r₁ + r₂)).continuous_proj _).2 fun q => ?_
     let S := {y : TotalSpace Unit (trivial 𝕜 X (r₁ + r₂)).Fiber // r₂ y.proj = q}
-    apply continuous_of_cover_nhds
-      (s := fun p : ℕ => {y : S | r₁ y.1.proj = p})
-    · exact fun y => ⟨r₁ y.1.proj,
-        ((r₁.isLocallyConstant.isOpen_fiber _).preimage
-          ((trivial 𝕜 X (r₁ + r₂)).continuous_proj.comp continuous_subtype_val)).mem_nhds rfl⟩
-    · intro p
-      rw [continuousOn_iff_continuous_domRestrict]
-      let g : {y : S // r₁ y.1.proj = p} →
-          {z : TotalSpace Unit (trivial 𝕜 X (r₁ + r₂)).Fiber // (r₁ + r₂) z.proj = p + q} :=
-        fun y => ⟨y.1.1, congrArg₂ (· + ·) y.2 y.1.2⟩
-      have hg : Continuous g :=
-        (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
-      have hsnd := (continuous_snd.comp
-        (splitCoords (𝕜 := 𝕜) (M := 𝕜) p q).continuous).comp ((hc (p + q)).comp hg)
-      refine hsnd.congr fun y => funext fun j => ?_
-      exact splitCoords_cast_snd y.2 y.1.2 (g y).2 rfl y.1.1.2 j
+    refine continuous_of_cover_nhds (s := fun p : ℕ => {y : S | r₁ y.1.proj = p})
+      (fun y => ⟨r₁ y.1.proj, ((r₁.isLocallyConstant.isOpen_fiber _).preimage
+        ((trivial 𝕜 X (r₁ + r₂)).continuous_proj.comp continuous_subtype_val)).mem_nhds rfl⟩)
+      fun p => ?_
+    rw [continuousOn_iff_continuous_domRestrict]
+    let g : {y : S // r₁ y.1.proj = p} →
+        {z : TotalSpace Unit (trivial 𝕜 X (r₁ + r₂)).Fiber // (r₁ + r₂) z.proj = p + q} :=
+      fun y => ⟨y.1.1, congrArg₂ (· + ·) y.2 y.1.2⟩
+    have hg : Continuous g := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
+    exact (((continuous_snd.comp (splitCoords (𝕜 := 𝕜) (M := 𝕜) p q).continuous).comp
+      ((hc (p + q)).comp hg)).congr
+      fun y => funext (splitCoords_cast_snd y.2 y.1.2 (g y).2 rfl y.1.1.2))
 
 /-- Canonical isomorphism identifying the Whitney sum of two trivial variable-rank atlases with the
 trivial atlas of the summed rank, acting as the identity on every coordinate fibre. -/
@@ -867,13 +863,13 @@ noncomputable def trivialAddIso (r₁ r₂ : LocallyConstant X ℕ) :
         (trivial 𝕜 X (r₁ + r₂)).Fiber x))
     (continuous_trivialAdd_hom r₁ r₂) (continuous_trivialAdd_inv r₁ r₂)
 
-@[simp]
-theorem fiberMap_trivialAddIso_hom (r₁ r₂ : LocallyConstant X ℕ) (x : X) :
+/-- Forward fibrewise action of `trivialAddIso r₁ r₂` is the identity. -/
+@[simp] theorem fiberMap_trivialAddIso_hom (r₁ r₂ : LocallyConstant X ℕ) (x : X) :
     (trivialAddIso (𝕜 := 𝕜) r₁ r₂).hom.fiberMap x = LinearMap.id :=
   fiberMap_isoMk_hom _ _ _ x
 
-@[simp]
-theorem fiberMap_trivialAddIso_inv (r₁ r₂ : LocallyConstant X ℕ) (x : X) :
+/-- Inverse fibrewise action of `trivialAddIso r₁ r₂` is the identity. -/
+@[simp] theorem fiberMap_trivialAddIso_inv (r₁ r₂ : LocallyConstant X ℕ) (x : X) :
     (trivialAddIso (𝕜 := 𝕜) r₁ r₂).inv.fiberMap x = LinearMap.id :=
   fiberMap_isoMk_inv _ _ _ x
 
@@ -900,8 +896,7 @@ noncomputable def whitneySumFiberedProdHomeomorph (A D : FiniteRankAtlas 𝕜 X)
       {pq : TotalSpace Unit A.Fiber × TotalSpace Unit D.Fiber // pq.1.proj = pq.2.proj} where
   toFun := fiberedProdToFun A D
   invFun := fiberedProdInvFun A D
-  left_inv p := by
-    rcases p with ⟨x, v⟩
+  left_inv := fun ⟨x, v⟩ => by
     have hpair : fiberedProdToFun A D ⟨x, v⟩ =
         ⟨(⟨x, (whitneyFst A D).fiberMap x v⟩, ⟨x, (whitneySnd A D).fiberMap x v⟩), rfl⟩ :=
       Subtype.ext (Prod.ext ((whitneyFst A D).totalSpaceMap_mk x v)
@@ -910,8 +905,7 @@ noncomputable def whitneySumFiberedProdHomeomorph (A D : FiniteRankAtlas 𝕜 X)
       (TotalSpace.mk_inj.mpr
         ((splitCoords (𝕜 := 𝕜) (M := 𝕜) (A.rank x) (D.rank x)).symm_apply_apply v))
   right_inv := by
-    rintro ⟨⟨⟨x₁, u⟩, ⟨x₂, w⟩⟩, h⟩
-    cases h
+    rintro ⟨⟨⟨x₁, u⟩, ⟨x₂, w⟩⟩, h⟩; cases h
     let v : (whitneySum A D).Fiber x₁ :=
       (splitCoords (𝕜 := 𝕜) (A.rank x₁) (D.rank x₁)).symm (u, w)
     exact Subtype.ext (Prod.ext
@@ -925,27 +919,24 @@ noncomputable def whitneySumFiberedProdHomeomorph (A D : FiniteRankAtlas 𝕜 X)
     (((whitneyFst A D).totalSpaceMap.continuous).prodMk
       ((whitneySnd A D).totalSpaceMap.continuous)).subtype_mk _
   continuous_invFun := by
-    refine continuous_mk_whitneySum_iff.2 ⟨?_, ?_⟩
-    · refine (continuous_fst.comp continuous_subtype_val).congr fun pq => ?_
-      rcases pq with ⟨⟨⟨x₁, u⟩, ⟨x₂, w⟩⟩, h⟩
-      cases h
-      exact TotalSpace.mk_inj.mpr
-        (congrArg Prod.fst
-          ((splitCoords (𝕜 := 𝕜) (M := 𝕜) (A.rank x₁) (D.rank x₁)).apply_symm_apply (u, w))).symm
-    · refine (continuous_snd.comp continuous_subtype_val).congr fun pq => ?_
-      rcases pq with ⟨⟨⟨x₁, u⟩, ⟨x₂, w⟩⟩, h⟩
-      cases h
-      exact TotalSpace.mk_inj.mpr
-        (congrArg Prod.snd
-          ((splitCoords (𝕜 := 𝕜) (M := 𝕜) (A.rank x₁) (D.rank x₁)).apply_symm_apply (u, w))).symm
+    refine continuous_mk_whitneySum_iff.2
+      ⟨(continuous_fst.comp continuous_subtype_val).congr fun pq => ?_,
+        (continuous_snd.comp continuous_subtype_val).congr fun pq => ?_⟩
+    · rcases pq with ⟨⟨⟨x₁, u⟩, ⟨x₂, w⟩⟩, h⟩; cases h
+      exact TotalSpace.mk_inj.mpr (congrArg Prod.fst
+        ((splitCoords (𝕜 := 𝕜) (M := 𝕜) (A.rank x₁) (D.rank x₁)).apply_symm_apply (u, w))).symm
+    · rcases pq with ⟨⟨⟨x₁, u⟩, ⟨x₂, w⟩⟩, h⟩; cases h
+      exact TotalSpace.mk_inj.mpr (congrArg Prod.snd
+        ((splitCoords (𝕜 := 𝕜) (M := 𝕜) (A.rank x₁) (D.rank x₁)).apply_symm_apply (u, w))).symm
 
-@[simp]
-theorem whitneySumFiberedProdHomeomorph_apply_fst (A D : FiniteRankAtlas 𝕜 X)
+/-- First component of `whitneySumFiberedProdHomeomorph A D` is `(whitneyFst A D).totalSpaceMap`. -/
+@[simp] theorem whitneySumFiberedProdHomeomorph_apply_fst (A D : FiniteRankAtlas 𝕜 X)
     (p : TotalSpace Unit (whitneySum A D).Fiber) :
     (whitneySumFiberedProdHomeomorph A D p).1.1 = (whitneyFst A D).totalSpaceMap p := (rfl)
 
-@[simp]
-theorem whitneySumFiberedProdHomeomorph_apply_snd (A D : FiniteRankAtlas 𝕜 X)
+/-- Second component of `whitneySumFiberedProdHomeomorph A D` is
+`(whitneySnd A D).totalSpaceMap`. -/
+@[simp] theorem whitneySumFiberedProdHomeomorph_apply_snd (A D : FiniteRankAtlas 𝕜 X)
     (p : TotalSpace Unit (whitneySum A D).Fiber) :
     (whitneySumFiberedProdHomeomorph A D p).1.2 = (whitneySnd A D).totalSpaceMap p := (rfl)
 
@@ -959,9 +950,7 @@ theorem whitneySumFiberedProdHomeomorph_naturality {A A' D D' : FiniteRankAtlas 
         by simp⟩ := by
   rcases p with ⟨x, v⟩
   let w : (whitneySum A' D').Fiber x := (whitneyMap f g).fiberMap x v
-  have hw : (whitneyMap f g).totalSpaceMap ⟨x, v⟩ = ⟨x, w⟩ :=
-    (whitneyMap f g).totalSpaceMap_mk x v
-  rw [hw]
+  rw [(whitneyMap f g).totalSpaceMap_mk x v]
   exact Subtype.ext (Prod.ext
     (((whitneyFst A' D').totalSpaceMap_mk x w).trans <|
       (TotalSpace.mk_inj.mpr (congrArg Prod.fst (splitCoords_fiberMap_whitneyMap f g x v))).trans <|

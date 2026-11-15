@@ -32,7 +32,7 @@ No finite-cover, decidable-equality, separation, or completeness assumption is r
 
 public section
 
-open Bundle Set Topology
+open Topology
 
 namespace IsLocallyConstant
 
@@ -41,18 +41,6 @@ variable {R B F α : Type*} [NontriviallyNormedField R] [TopologicalSpace B]
   {ι : α → Type*} {c : B → α}
 
 section Sigma
-
-/-- Helper extracting the fibre membership and chart membership from an image chart in `B`. -/
-private theorem mem_image_baseSet_iff
-    (Z : ∀ a : α, VectorBundleCore R {x : B // c x = a} F (ι a))
-    (a : α) (i : ι a) (x : B) :
-    x ∈ Subtype.val '' (Z a).baseSet i ↔
-      ∃ hx : c x = a, (⟨x, hx⟩ : {y : B // c y = a}) ∈ (Z a).baseSet i := by
-  constructor
-  · rintro ⟨⟨y, hy⟩, hmem, rfl⟩
-    exact ⟨hy, hmem⟩
-  · rintro ⟨hx, hmem⟩
-    exact ⟨⟨x, hx⟩, hmem, rfl⟩
 
 open scoped Classical in
 /-- Glue a family of `VectorBundleCore`s on the clopen fibres of a locally constant function
@@ -67,80 +55,76 @@ noncomputable def sigmaVectorBundleCore (hc : IsLocallyConstant c)
   mem_baseSet_at x := ⟨⟨x, rfl⟩, (Z (c x)).mem_baseSet_at ⟨x, rfl⟩, rfl⟩
   coordChange p q x :=
     if hp : c x = p.1 then
-      if hq : p.1 = q.1 then
-        (Z p.1).coordChange p.2 (hq ▸ q.2) ⟨x, hp⟩
-      else
-        ContinuousLinearMap.id R F
-    else
-      ContinuousLinearMap.id R F
-  coordChange_self p x hx v := by
-    rcases p with ⟨a, i⟩
-    obtain ⟨hxa, hxi⟩ := (mem_image_baseSet_iff Z a i x).1 hx
-    subst hxa
+      if hq : p.1 = q.1 then (Z p.1).coordChange p.2 (hq ▸ q.2) ⟨x, hp⟩
+      else ContinuousLinearMap.id R F
+    else ContinuousLinearMap.id R F
+  coordChange_self := by
+    rintro ⟨a, i⟩ x hx v
+    dsimp only at hx ⊢
+    rw [Subtype.coe_image] at hx
+    obtain ⟨rfl, hxi⟩ := hx
     simp [(Z (c x)).coordChange_self i ⟨x, rfl⟩ hxi v]
-  continuousOn_coordChange p q := by
-    rcases p with ⟨a, i⟩
-    rcases q with ⟨b, j⟩
+  continuousOn_coordChange := by
+    rintro ⟨a, i⟩ ⟨b, j⟩
+    dsimp only
     by_cases hab : a = b
     · subst hab
-      rw [continuousOn_iff_continuous_domRestrict]
-      let f : ↥((Subtype.val '' (Z a).baseSet i) ∩ (Subtype.val '' (Z a).baseSet j)) →
-          {y : B // c y = a} :=
-        fun x => ⟨x.1, ((mem_image_baseSet_iff Z a i x.1).1 x.2.1).choose⟩
+      rw [Subtype.coe_image, Subtype.coe_image, continuousOn_iff_continuous_domRestrict]
+      let f : ↥({x | ∃ h : c x = a, ⟨x, h⟩ ∈ (Z a).baseSet i} ∩
+          {x | ∃ h : c x = a, ⟨x, h⟩ ∈ (Z a).baseSet j}) → {y : B // c y = a} :=
+        fun x => ⟨x.1, x.2.1.choose⟩
       have hf : Continuous f := continuous_subtype_val.subtype_mk _
-      have hf_mem : ∀ x, f x ∈ (Z a).baseSet i ∩ (Z a).baseSet j := fun x => by
-        obtain ⟨_, hi⟩ := (mem_image_baseSet_iff Z a i x.1).1 x.2.1
-        obtain ⟨_, hj⟩ := (mem_image_baseSet_iff Z a j x.1).1 x.2.2
-        exact ⟨hi, hj⟩
-      refine (((Z a).continuousOn_coordChange i j).comp_continuous hf hf_mem).congr fun x => ?_
+      refine (((Z a).continuousOn_coordChange i j).comp_continuous hf
+        fun x => ⟨x.2.1.choose_spec, x.2.2.choose_spec⟩).congr fun x => ?_
       dsimp only [Function.comp_apply, Set.domRestrict]
       rw [dite_eq_left (f x).2, dite_eq_left rfl]
     · refine (continuousOn_const (c := ContinuousLinearMap.id R F)).congr fun x _ => ?_
       by_cases hx : c x = a <;> simp [hx, hab]
-  coordChange_comp p q r x hx v := by
-    rcases p with ⟨a, i⟩
-    rcases q with ⟨b, j⟩
-    rcases r with ⟨d, k⟩
-    obtain ⟨ha, hi⟩ := (mem_image_baseSet_iff Z a i x).1 hx.1.1
-    obtain ⟨hb, hj⟩ := (mem_image_baseSet_iff Z b j x).1 hx.1.2
-    obtain ⟨hd, hk⟩ := (mem_image_baseSet_iff Z d k x).1 hx.2
-    subst ha
-    have hba : b = c x := hb.symm
-    have hda : d = c x := hd.symm
-    subst hba hda
+  coordChange_comp := by
+    rintro ⟨a, i⟩ ⟨b, j⟩ ⟨d, k⟩ x ⟨⟨hx₁, hx₂⟩, hx₃⟩ v
+    dsimp only at hx₁ hx₂ hx₃ ⊢
+    rw [Subtype.coe_image] at hx₁ hx₂ hx₃
+    obtain ⟨rfl, hi⟩ := hx₁
+    obtain ⟨hb, hj⟩ := hx₂
+    obtain ⟨hd, hk⟩ := hx₃
+    subst hb hd
     simp [(Z (c x)).coordChange_comp i j k ⟨x, rfl⟩ ⟨⟨hi, hj⟩, hk⟩ v]
 
+/-- Each chart domain of `hc.sigmaVectorBundleCore Z` is the image in `B` of the corresponding
+fibre chart domain. -/
 theorem baseSet_sigmaVectorBundleCore (hc : IsLocallyConstant c)
     (Z : ∀ a : α, VectorBundleCore R {x : B // c x = a} F (ι a)) (p : Σ a : α, ι a) :
     (hc.sigmaVectorBundleCore Z).baseSet p = Subtype.val '' (Z p.1).baseSet p.2 := (rfl)
 
+/-- Base set of a local trivialization of `hc.sigmaVectorBundleCore Z`. -/
 @[simp]
 theorem localTriv_baseSet_sigmaVectorBundleCore (hc : IsLocallyConstant c)
     (Z : ∀ a : α, VectorBundleCore R {x : B // c x = a} F (ι a)) (p : Σ a : α, ι a) :
     ((hc.sigmaVectorBundleCore Z).localTriv p).baseSet =
       Subtype.val '' ((Z p.1).localTriv p.2).baseSet := (rfl)
 
+/-- Preferred chart index of `hc.sigmaVectorBundleCore Z` at a base point `x : B`. -/
 @[simp]
 theorem indexAt_sigmaVectorBundleCore (hc : IsLocallyConstant c)
     (Z : ∀ a : α, VectorBundleCore R {x : B // c x = a} F (ι a)) (x : B) :
     (hc.sigmaVectorBundleCore Z).indexAt x = ⟨c x, (Z (c x)).indexAt ⟨x, rfl⟩⟩ := (rfl)
 
+/-- Preferred chart index of `hc.sigmaVectorBundleCore Z` at a point of the fibre `c ⁻¹' {a}`. -/
 theorem indexAt_sigmaVectorBundleCore_coe (hc : IsLocallyConstant c)
     (Z : ∀ a : α, VectorBundleCore R {x : B // c x = a} F (ι a))
     (a : α) (x : {x : B // c x = a}) :
     (hc.sigmaVectorBundleCore Z).indexAt x.1 = ⟨a, (Z a).indexAt x⟩ := by
-  rcases x with ⟨x, hx⟩
-  cases hx
+  rcases x with ⟨x, rfl⟩
   rfl
 
+/-- Transition operator of `hc.sigmaVectorBundleCore Z` between two charts on the same fibre. -/
 @[simp]
 theorem coordChange_sigmaVectorBundleCore_same (hc : IsLocallyConstant c)
     (Z : ∀ a : α, VectorBundleCore R {x : B // c x = a} F (ι a))
     (a : α) (i j : ι a) (x : {x : B // c x = a}) :
     (hc.sigmaVectorBundleCore Z).coordChange ⟨a, i⟩ ⟨a, j⟩ x.1 =
       (Z a).coordChange i j x := by
-  rcases x with ⟨x, hx⟩
-  cases hx
+  rcases x with ⟨x, rfl⟩
   simp [sigmaVectorBundleCore]
 
 /-- On each clopen fibre `c ⁻¹' {a}`, the preferred trivialization of the glued core agrees with
@@ -161,13 +145,8 @@ noncomputable def sigmaVectorBundleCoreHomeomorph (hc : IsLocallyConstant c)
     (Σ a : α, (Z a).TotalSpace) ≃ₜ (hc.sigmaVectorBundleCore Z).TotalSpace where
   toFun p := ⟨p.2.proj.1, p.2.2⟩
   invFun p := ⟨c p.proj, ⟨⟨p.proj, rfl⟩, p.2⟩⟩
-  left_inv := by
-    rintro ⟨a, ⟨⟨x, hx⟩, v⟩⟩
-    cases hx
-    rfl
-  right_inv := by
-    rintro ⟨x, v⟩
-    rfl
+  left_inv := by rintro ⟨a, ⟨⟨x, rfl⟩, v⟩⟩; rfl
+  right_inv := fun ⟨_, _⟩ => rfl
   continuous_toFun := by
     refine continuous_sigma fun a => continuous_iff_continuousAt.2 fun p₀ => ?_
     rw [FiberBundle.continuousAt_totalSpace]
@@ -179,39 +158,37 @@ noncomputable def sigmaVectorBundleCoreHomeomorph (hc : IsLocallyConstant c)
     simp only [id_eq, VectorBundleCore.trivializationAt]
     exact hc.localTrivAt_sigmaVectorBundleCore_snd Z a p₀.proj p.proj p.2
   continuous_invFun := by
-    apply continuous_of_cover_nhds
+    refine continuous_of_cover_nhds
       (s := fun a : α => {p : (hc.sigmaVectorBundleCore Z).TotalSpace | c p.proj = a})
-    · intro p
-      exact ⟨c p.proj,
-        ((hc.isOpen_fiber (c p.proj)).preimage
-          (hc.sigmaVectorBundleCore Z).continuous_proj).mem_nhds rfl⟩
-    · intro a
-      rw [continuousOn_iff_continuous_domRestrict]
-      have hsub : Continuous fun q :
-          {p : (hc.sigmaVectorBundleCore Z).TotalSpace // c p.proj = a} =>
-          (⟨⟨q.1.proj, q.2⟩, q.1.2⟩ : (Z a).TotalSpace) := by
-        refine continuous_iff_continuousAt.2 fun q₀ => ?_
-        rw [FiberBundle.continuousAt_totalSpace]
-        have hq₀ := (FiberBundle.continuousAt_totalSpace _ _).1
-          (continuous_subtype_val.continuousAt (x := q₀))
-        refine ⟨(((hc.sigmaVectorBundleCore Z).continuous_proj.comp
-          continuous_subtype_val).subtype_mk _).continuousAt, ?_⟩
-        convert hq₀.2 using 1
-        funext q
-        simp only [VectorBundleCore.trivializationAt]
-        exact (hc.localTrivAt_sigmaVectorBundleCore_snd Z a ⟨q₀.1.proj, q₀.2⟩
-          ⟨q.1.proj, q.2⟩ q.1.2).symm
-      refine (continuous_sigmaMk.comp hsub).congr fun q => ?_
-      rcases q with ⟨⟨x, v⟩, hx⟩
-      cases hx
-      rfl
+      (fun p => ⟨c p.proj, ((hc.isOpen_fiber _).preimage
+        (hc.sigmaVectorBundleCore Z).continuous_proj).mem_nhds rfl⟩) fun a => ?_
+    rw [continuousOn_iff_continuous_domRestrict]
+    have hsub : Continuous fun q :
+        {p : (hc.sigmaVectorBundleCore Z).TotalSpace // c p.proj = a} =>
+        (⟨⟨q.1.proj, q.2⟩, q.1.2⟩ : (Z a).TotalSpace) := by
+      refine continuous_iff_continuousAt.2 fun q₀ => ?_
+      rw [FiberBundle.continuousAt_totalSpace]
+      have hq₀ := (FiberBundle.continuousAt_totalSpace _ _).1
+        (continuous_subtype_val.continuousAt (x := q₀))
+      refine ⟨(((hc.sigmaVectorBundleCore Z).continuous_proj.comp
+        continuous_subtype_val).subtype_mk _).continuousAt, ?_⟩
+      convert hq₀.2 using 1
+      funext q
+      simp only [VectorBundleCore.trivializationAt]
+      exact (hc.localTrivAt_sigmaVectorBundleCore_snd Z a ⟨q₀.1.proj, q₀.2⟩
+        ⟨q.1.proj, q.2⟩ q.1.2).symm
+    refine (continuous_sigmaMk.comp hsub).congr ?_
+    rintro ⟨⟨_, _⟩, rfl⟩
+    rfl
 
+/-- Evaluation of `sigmaVectorBundleCoreHomeomorph` on an element of a fibre total space. -/
 @[simp]
 theorem sigmaVectorBundleCoreHomeomorph_apply (hc : IsLocallyConstant c)
     (Z : ∀ a : α, VectorBundleCore R {x : B // c x = a} F (ι a))
     (p : Σ a : α, (Z a).TotalSpace) :
     hc.sigmaVectorBundleCoreHomeomorph Z p = ⟨p.2.proj.1, p.2.2⟩ := (rfl)
 
+/-- Evaluation of the inverse of `sigmaVectorBundleCoreHomeomorph`. -/
 @[simp]
 theorem sigmaVectorBundleCoreHomeomorph_symm_apply (hc : IsLocallyConstant c)
     (Z : ∀ a : α, VectorBundleCore R {x : B // c x = a} F (ι a))
@@ -237,13 +214,11 @@ theorem continuous_mk_sigmaVectorBundleCore_iff {Y : Type*} [TopologicalSpace Y]
     cases hy
     rfl
   · intro hs
-    apply continuous_of_cover_nhds (s := fun a : α => {y : Y | c (b y) = a})
-    · intro y
-      exact ⟨c (b y), ((hc.isOpen_fiber (c (b y))).preimage hb).mem_nhds rfl⟩
-    · intro a
-      rw [continuousOn_iff_continuous_domRestrict]
-      exact ((hc.sigmaVectorBundleCoreHomeomorph Z).continuous.comp
-        (continuous_sigmaMk.comp (hs a))).congr fun _ => rfl
+    refine continuous_of_cover_nhds (s := fun a : α => {y : Y | c (b y) = a})
+      (fun y => ⟨c (b y), ((hc.isOpen_fiber (c (b y))).preimage hb).mem_nhds rfl⟩) fun a => ?_
+    rw [continuousOn_iff_continuous_domRestrict]
+    exact ((hc.sigmaVectorBundleCoreHomeomorph Z).continuous.comp
+      (continuous_sigmaMk.comp (hs a))).congr fun _ => rfl
 
 end Sigma
 
@@ -256,6 +231,7 @@ noncomputable def pointIndexedVectorBundleCore (hc : IsLocallyConstant c)
     VectorBundleCore R B F B :=
   (hc.sigmaVectorBundleCore Z).reindex (Equiv.sigmaFiberEquiv c).symm
 
+/-- Chart domain of `hc.pointIndexedVectorBundleCore Z` at a base point `x : B`. -/
 theorem baseSet_pointIndexedVectorBundleCore (hc : IsLocallyConstant c)
     (Z : ∀ a : α, VectorBundleCore R {x : B // c x = a} F {x : B // c x = a}) (x : B) :
     (hc.pointIndexedVectorBundleCore Z).baseSet x =
@@ -264,6 +240,7 @@ theorem baseSet_pointIndexedVectorBundleCore (hc : IsLocallyConstant c)
     baseSet_sigmaVectorBundleCore]
   rfl
 
+/-- Base set of the local trivialization of `hc.pointIndexedVectorBundleCore Z` at `x : B`. -/
 @[simp]
 theorem localTriv_baseSet_pointIndexedVectorBundleCore (hc : IsLocallyConstant c)
     (Z : ∀ a : α, VectorBundleCore R {x : B // c x = a} F {x : B // c x = a}) (x : B) :
@@ -273,18 +250,21 @@ theorem localTriv_baseSet_pointIndexedVectorBundleCore (hc : IsLocallyConstant c
     localTriv_baseSet_sigmaVectorBundleCore]
   rfl
 
+/-- Preferred chart index of `hc.pointIndexedVectorBundleCore Z` in terms of the fibre core. -/
 @[simp]
 theorem indexAt_pointIndexedVectorBundleCore_eq (hc : IsLocallyConstant c)
     (Z : ∀ a : α, VectorBundleCore R {x : B // c x = a} F {x : B // c x = a}) (x : B) :
     (hc.pointIndexedVectorBundleCore Z).indexAt x = ((Z (c x)).indexAt ⟨x, rfl⟩).1 := by
   simp [pointIndexedVectorBundleCore]
 
+/-- If every fibre core satisfies `indexAt x = x`, so does `hc.pointIndexedVectorBundleCore Z`. -/
 theorem indexAt_pointIndexedVectorBundleCore (hc : IsLocallyConstant c)
     (Z : ∀ a : α, VectorBundleCore R {x : B // c x = a} F {x : B // c x = a})
     (hZ : ∀ a x, (Z a).indexAt x = x) (x : B) :
     (hc.pointIndexedVectorBundleCore Z).indexAt x = x := by
   simp [hZ]
 
+/-- Transition operator of `hc.pointIndexedVectorBundleCore Z` between points on the same fibre. -/
 @[simp]
 theorem coordChange_pointIndexedVectorBundleCore_same (hc : IsLocallyConstant c)
     (Z : ∀ a : α, VectorBundleCore R {x : B // c x = a} F {x : B // c x = a})
@@ -306,6 +286,7 @@ noncomputable def pointIndexedVectorBundleCoreHomeomorph (hc : IsLocallyConstant
   (hc.sigmaVectorBundleCoreHomeomorph Z).trans
     ((hc.sigmaVectorBundleCore Z).reindexHomeomorph (Equiv.sigmaFiberEquiv c).symm)
 
+/-- Evaluation of `pointIndexedVectorBundleCoreHomeomorph` on a fibre total-space point. -/
 @[simp]
 theorem pointIndexedVectorBundleCoreHomeomorph_apply (hc : IsLocallyConstant c)
     (Z : ∀ a : α, VectorBundleCore R {x : B // c x = a} F {x : B // c x = a})
@@ -314,6 +295,7 @@ theorem pointIndexedVectorBundleCoreHomeomorph_apply (hc : IsLocallyConstant c)
   (hc.sigmaVectorBundleCore Z).reindexHomeomorph_apply (Equiv.sigmaFiberEquiv c).symm
     (hc.sigmaVectorBundleCoreHomeomorph Z p)
 
+/-- Evaluation of the inverse of `pointIndexedVectorBundleCoreHomeomorph`. -/
 @[simp]
 theorem pointIndexedVectorBundleCoreHomeomorph_symm_apply (hc : IsLocallyConstant c)
     (Z : ∀ a : α, VectorBundleCore R {x : B // c x = a} F {x : B // c x = a})

@@ -32,8 +32,10 @@ bundles over the empty base.
 `whitneySum A D` with the total space of Mathlib's native direct-sum bundle
 `A.core.Fiber ×ᵇ D.core.Fiber`, over the identity of the base and by
 `whitneySumFiberEquiv` (`TauCeti.splitCoords`) on each fibre, intertwining the
-projections, inclusions, and direct sums of bundle maps. The base is arbitrary, and
-the scalar field need not be complete.
+projections, inclusions, and direct sums of bundle maps, and
+`continuous_mk_whitneySum_iff` characterizes continuity of maps into
+`(whitneySum A D).core.TotalSpace` by continuity of their two coordinate blocks. The
+base is arbitrary, and the scalar field need not be complete.
 
 The construction uses Mathlib's coordinate cores, its direct-sum vector bundle
 `Bundle.Prod`, and its preadditive criterion

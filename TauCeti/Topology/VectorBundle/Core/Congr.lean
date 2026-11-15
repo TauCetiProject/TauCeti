@@ -26,14 +26,16 @@ finite-dimensionality assumption is needed.
 
 public section
 
-open Bundle Topology
+open Bundle
 
 namespace VectorBundleCore
 
-variable {R B F G ι ι' : Type*} [NontriviallyNormedField R] [TopologicalSpace B]
-  [NormedAddCommGroup F] [NormedSpace R F] [NormedAddCommGroup G] [NormedSpace R G]
+variable {R B F ι : Type*} [NontriviallyNormedField R] [TopologicalSpace B]
+  [NormedAddCommGroup F] [NormedSpace R F]
 
 section CongrModel
+
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace R G]
 
 /-- Transport the model fibre of a `VectorBundleCore` along a continuous linear equivalence
 `e : F ≃L[R] G` by conjugating every transition operator by `e`. -/
@@ -50,32 +52,40 @@ def congrModel (Z : VectorBundleCore R B F ι) (e : F ≃L[R] G) : VectorBundleC
   coordChange_comp i j k x hx v := by
     simp [Z.coordChange_comp i j k x hx (e.symm v)]
 
+/-- Transporting the model fibre leaves every chart domain unchanged. -/
 theorem baseSet_congrModel (Z : VectorBundleCore R B F ι) (e : F ≃L[R] G) (i : ι) :
     (Z.congrModel e).baseSet i = Z.baseSet i := (rfl)
 
+/-- Transporting the model fibre preserves the base set of each local trivialization. -/
 @[simp]
 theorem localTriv_baseSet_congrModel (Z : VectorBundleCore R B F ι) (e : F ≃L[R] G) (i : ι) :
     ((Z.congrModel e).localTriv i).baseSet = (Z.localTriv i).baseSet := (rfl)
 
+/-- Transporting the model fibre preserves the preferred chart index at each base point. -/
 @[simp]
 theorem indexAt_congrModel (Z : VectorBundleCore R B F ι) (e : F ≃L[R] G) (x : B) :
     (Z.congrModel e).indexAt x = Z.indexAt x := (rfl)
 
+/-- Transition operators of `Z.congrModel e` conjugate those of `Z` by `e`. -/
 @[simp]
 theorem coordChange_congrModel (Z : VectorBundleCore R B F ι) (e : F ≃L[R] G)
     (i j : ι) (x : B) :
     (Z.congrModel e).coordChange i j x = e.arrowCongr e (Z.coordChange i j x) := (rfl)
 
+/-- Pointwise evaluation of a transition operator in `Z.congrModel e`. -/
 theorem coordChange_congrModel_apply (Z : VectorBundleCore R B F ι) (e : F ≃L[R] G)
     (i j : ι) (x : B) (v : G) :
     (Z.congrModel e).coordChange i j x v = e (Z.coordChange i j x (e.symm v)) := (rfl)
 
+/-- Transporting the model fibre along the identity continuous linear equivalence is the
+identity. -/
 @[simp]
 theorem congrModel_refl (Z : VectorBundleCore R B F ι) :
     Z.congrModel (.refl R F) = Z := by
   cases Z
   rfl
 
+/-- Successive model transports compose via `ContinuousLinearEquiv.trans`. -/
 theorem congrModel_trans {H : Type*} [NormedAddCommGroup H] [NormedSpace R H]
     (Z : VectorBundleCore R B F ι) (e : F ≃L[R] G) (e' : G ≃L[R] H) :
     (Z.congrModel e).congrModel e' = Z.congrModel (e.trans e') := (rfl)
@@ -114,11 +124,13 @@ def congrModelHomeomorph (Z : VectorBundleCore R B F ι) (e : F ≃L[R] G) :
       coordChange_congrModel]
     exact (e.symm_apply_apply _).symm
 
+/-- Forward evaluation of `congrModelHomeomorph`. -/
 @[simp]
 theorem congrModelHomeomorph_apply (Z : VectorBundleCore R B F ι) (e : F ≃L[R] G)
     (p : Z.TotalSpace) :
     Z.congrModelHomeomorph e p = ⟨p.proj, e p.2⟩ := (rfl)
 
+/-- Inverse evaluation of `congrModelHomeomorph`. -/
 @[simp]
 theorem congrModelHomeomorph_symm_apply (Z : VectorBundleCore R B F ι) (e : F ≃L[R] G)
     (p : (Z.congrModel e).TotalSpace) :
@@ -149,6 +161,8 @@ end CongrModel
 
 section Reindex
 
+variable {ι' : Type*}
+
 /-- Reparametrize the chart index type of a `VectorBundleCore` along `e : ι' ≃ ι`. -/
 def reindex (Z : VectorBundleCore R B F ι) (e : ι' ≃ ι) : VectorBundleCore R B F ι' where
   baseSet i := Z.baseSet (e i)
@@ -161,28 +175,34 @@ def reindex (Z : VectorBundleCore R B F ι) (e : ι' ≃ ι) : VectorBundleCore 
   continuousOn_coordChange i j := Z.continuousOn_coordChange (e i) (e j)
   coordChange_comp i j k x hx v := Z.coordChange_comp (e i) (e j) (e k) x hx v
 
+/-- Chart domain of `Z.reindex e` at an index `i : ι'`. -/
 theorem baseSet_reindex (Z : VectorBundleCore R B F ι) (e : ι' ≃ ι) (i : ι') :
     (Z.reindex e).baseSet i = Z.baseSet (e i) := (rfl)
 
+/-- Base set of a local trivialization of `Z.reindex e`. -/
 @[simp]
 theorem localTriv_baseSet_reindex (Z : VectorBundleCore R B F ι) (e : ι' ≃ ι) (i : ι') :
     ((Z.reindex e).localTriv i).baseSet = (Z.localTriv (e i)).baseSet := (rfl)
 
+/-- Preferred chart index of `Z.reindex e` at a base point `x : B`. -/
 @[simp]
 theorem indexAt_reindex (Z : VectorBundleCore R B F ι) (e : ι' ≃ ι) (x : B) :
     (Z.reindex e).indexAt x = e.symm (Z.indexAt x) := (rfl)
 
+/-- Transition operator of `Z.reindex e` between indices `i` and `j`. -/
 @[simp]
 theorem coordChange_reindex (Z : VectorBundleCore R B F ι) (e : ι' ≃ ι)
     (i j : ι') (x : B) :
     (Z.reindex e).coordChange i j x = Z.coordChange (e i) (e j) x := (rfl)
 
+/-- Reindexing along the identity equivalence is the identity. -/
 @[simp]
 theorem reindex_refl (Z : VectorBundleCore R B F ι) :
     Z.reindex (.refl ι) = Z := by
   cases Z
   rfl
 
+/-- Successive chart reindexings compose contravariantly via `Equiv.trans`. -/
 theorem reindex_trans {ι'' : Type*} (Z : VectorBundleCore R B F ι)
     (e : ι' ≃ ι) (e' : ι'' ≃ ι') :
     (Z.reindex e).reindex e' = Z.reindex (e'.trans e) := by
@@ -216,11 +236,13 @@ def reindexHomeomorph (Z : VectorBundleCore R B F ι) (e : ι' ≃ ι) :
     funext p
     simp [VectorBundleCore.trivializationAt, ← VectorBundleCore.localTrivAt_def]
 
+/-- Forward evaluation of `reindexHomeomorph`. -/
 @[simp]
 theorem reindexHomeomorph_apply (Z : VectorBundleCore R B F ι) (e : ι' ≃ ι)
     (p : Z.TotalSpace) :
     Z.reindexHomeomorph e p = ⟨p.proj, p.2⟩ := (rfl)
 
+/-- Inverse evaluation of `reindexHomeomorph`. -/
 @[simp]
 theorem reindexHomeomorph_symm_apply (Z : VectorBundleCore R B F ι) (e : ι' ≃ ι)
     (p : (Z.reindex e).TotalSpace) :
