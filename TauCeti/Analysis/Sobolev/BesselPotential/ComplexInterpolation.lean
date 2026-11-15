@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.BesselPotential.ComplexOrder
+public import TauCeti.Analysis.Sobolev.BesselPotential.Extension
 import Mathlib.Analysis.Complex.Hadamard
 import Mathlib.Analysis.Normed.Operator.Extend
 import TauCeti.Analysis.InnerProductSpace.Calculus
@@ -42,7 +43,10 @@ is entire, bounded on the strip `0 ≤ re z ≤ 1`, and on the two boundary line
 and the choice `v = J^{2 t_θ} (T u)` turns this into the norm bound
 (`SchwartzMap.norm_toBesselPotentialSpaceCLM_le_rpow_mul_rpow_mul_norm`). Since Schwartz functions
 are dense, `T` then extends to a bounded operator `H^{s_θ} → H^{t_θ}`
-(`SchwartzMap.exists_apply_toBesselPotentialSpaceCLM_eq_and_norm_le_rpow_mul_rpow`).
+(`SchwartzMap.exists_apply_toBesselPotentialSpaceCLM_eq_and_norm_le_rpow_mul_rpow`). In the
+language of `SchwartzMap.HasSobolevExtension`, an operator of Schwartz spaces extending to
+`H^{s₀} → H^{t₀}` and to `H^{s₁} → H^{t₁}` extends to `H^{s_θ} → H^{t_θ}`
+(`SchwartzMap.HasSobolevExtension.interpolate`).
 
 ## Main declarations
 
@@ -50,6 +54,8 @@ are dense, `T` then extends to a bounded operator `H^{s_θ} → H^{t_θ}`
   inequality.
 * `SchwartzMap.exists_apply_toBesselPotentialSpaceCLM_eq_and_norm_le_rpow_mul_rpow`: the
   interpolated operator `H^{s_θ} → H^{t_θ}`.
+* `SchwartzMap.HasSobolevExtension.interpolate`: Sobolev extensions of an operator of Schwartz
+  spaces interpolate.
 
 ## References
 
@@ -260,6 +266,26 @@ theorem exists_apply_toBesselPotentialSpaceCLM_eq_and_norm_le_rpow_mul_rpow
   · exact LinearMap.extendOfNorm_eq hdense ⟨_, hbd⟩ u
   · exact LinearMap.opNorm_extendOfNorm_le hdense
       (mul_nonneg (Real.rpow_nonneg hM₀ _) (Real.rpow_nonneg hM₁ _)) hbd
+
+/-- **Interpolation of Sobolev extensions.** If a continuous linear map `A` of Schwartz spaces
+extends to bounded operators `H^{s₀} → H^{t₀}` and `H^{s₁} → H^{t₁}`, then for `0 ≤ θ ≤ 1` it
+extends to a bounded operator `H^{s_θ} → H^{t_θ}`, where `s_θ = (1 - θ) s₀ + θ s₁` and
+`t_θ = (1 - θ) t₀ + θ t₁`. -/
+theorem HasSobolevExtension.interpolate {A : 𝓢(E₁, V) →L[ℂ] 𝓢(E₁, W)} {s₀ s₁ t₀ t₁ : ℝ}
+    (h₀ : HasSobolevExtension A s₀ t₀) (h₁ : HasSobolevExtension A s₁ t₁) {θ : ℝ}
+    (hθ : θ ∈ Set.Icc (0 : ℝ) 1) :
+    HasSobolevExtension A ((1 - θ) * s₀ + θ * s₁) ((1 - θ) * t₀ + θ * t₁) := by
+  -- The two estimates hold with nonnegative constants, so they interpolate.
+  have hbound {s t : ℝ} (h : HasSobolevExtension A s t) : ∃ M, 0 ≤ M ∧ ∀ u,
+      ‖toBesselPotentialSpaceCLM t 2 (A u)‖ ≤ M * ‖toBesselPotentialSpaceCLM s 2 u‖ := by
+    obtain ⟨M, hM⟩ := hasSobolevExtension_iff_exists_norm_le.mp h
+    exact ⟨max M 0, le_max_right _ _, fun u ↦ (hM u).trans
+      (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _))⟩
+  obtain ⟨M₀, hM₀, hA₀⟩ := hbound h₀
+  obtain ⟨M₁, hM₁, hA₁⟩ := hbound h₁
+  exact hasSobolevExtension_iff_exists_norm_le.mpr
+    ⟨_, norm_toBesselPotentialSpaceCLM_le_rpow_mul_rpow_mul_norm (T := A.toLinearMap) hM₀ hM₁ hA₀
+      hA₁ hθ⟩
 
 end Interpolation
 

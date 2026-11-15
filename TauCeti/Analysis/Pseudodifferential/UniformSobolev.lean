@@ -10,20 +10,21 @@ public import TauCeti.Analysis.Pseudodifferential.SchwartzMapping
 public import TauCeti.Analysis.Sobolev.BesselPotential.Extension
 import TauCeti.Analysis.Pseudodifferential.Frequency.Multiplier
 import TauCeti.Analysis.Pseudodifferential.Sobolev
+import TauCeti.Analysis.Sobolev.BesselPotential.ComplexInterpolation
 
 /-!
-# Sobolev mapping of uniform symbols at even steps
+# Sobolev mapping of uniform symbols
 
 Let `a` be a symbol of order `m` on `ℝⁿ` whose estimates
 `‖∂_x^α ∂_ξ^β a(x, ξ)‖ ≤ C_{α,β} ⟨ξ⟩^(m - |β|)` hold uniformly in the position
 (`TauCeti.Symbol.IsUniform`). This file proves that its left quantization `Op(a)` extends from
 Schwartz functions to a bounded operator `H^s(ℝⁿ; V) → H^{s - m}(ℝⁿ; W)` between
-Bessel-potential spaces whenever `s - m` is an even integer, for complex Hilbert fibres of any
-dimension (`TauCeti.Symbol.exists_quantizeUniformSobolevHilbert_of_sub_eq_two_mul`) and for
-finite-dimensional normed fibres (`TauCeti.Symbol.exists_quantizeUniformSobolev_of_sub_eq_two_mul`).
-In contrast to `TauCeti.Symbol.exists_quantizeSobolev`, no compact spatial support is assumed; the
-case `s = m = 0` is the Calderón–Vaillancourt theorem
-`TauCeti.Symbol.exists_quantizeUniformOrderZeroLp`, from which everything else is derived.
+Bessel-potential spaces for every real `s`, for complex Hilbert fibres of any dimension
+(`TauCeti.Symbol.exists_quantizeUniformSobolevHilbert`) and for finite-dimensional normed fibres
+(`TauCeti.Symbol.exists_quantizeUniformSobolev`). In contrast to
+`TauCeti.Symbol.exists_quantizeSobolev`, no compact spatial support is assumed; the case
+`s = m = 0` is the Calderón–Vaillancourt theorem `TauCeti.Symbol.exists_quantizeUniformOrderZeroLp`,
+from which everything else is derived.
 
 ## The commutator with the Laplacian
 
@@ -52,26 +53,33 @@ isometry, induction on `k` from the Calderón–Vaillancourt theorem shows that 
 map `L²` to `H^{2k}` and symbols of order `2k` map `L²` to `H^{-2k}`; composing with `J^s` on the
 right gives the general statement.
 
-Only even steps arise because `J²` is the only Bessel multiplier used on the left. Intermediate
-orders need either interpolation of the scale `H^s` between consecutive even orders, or the
-composition of `J^t` with `Op(a)` on the left for every real `t`.
+Only even steps arise this way because `J²` is the only Bessel multiplier used on the left.
+
+## Interpolation
+
+For a general real `s`, choose the integer `k` with `2k ≤ s - m < 2k + 2`. The operator `Op(a)`
+extends to `H^{m + 2k} → H^{2k}` and to `H^{m + 2k + 2} → H^{2k + 2}`, and `s` and `s - m` are
+the same convex combination of the two source and of the two target orders. Interpolation on the
+Hilbert scale of Bessel-potential spaces (`SchwartzMap.HasSobolevExtension.interpolate`) gives the
+extension `H^s → H^{s - m}`.
 
 ## Main results
 
 * `TauCeti.Symbol.hasSobolevExtension_quantizeUniformCLM_zero`: the Calderón–Vaillancourt
   theorem in the form `SchwartzMap.HasSobolevExtension` of an operator `L² → L²`.
-* `TauCeti.Symbol.hasSobolevExtension_quantizeUniformCLM_of_sub_eq_two_mul`: the Sobolev mapping
-  `H^s → H^{s - m}` for uniform symbols when `s - m ∈ 2ℤ`, for complex Hilbert fibres, in the
+* `TauCeti.Symbol.hasSobolevExtension_quantizeUniformCLM`: the Sobolev mapping
+  `H^s → H^{s - m}` for uniform symbols and every real `s`, for complex Hilbert fibres, in the
   composable form `SchwartzMap.HasSobolevExtension`.
-* `TauCeti.Symbol.exists_quantizeUniformSobolevHilbert_of_sub_eq_two_mul`: the same mapping as an
-  extension acting on tempered distributions.
-* `TauCeti.Symbol.exists_quantizeUniformSobolev_of_sub_eq_two_mul`: the same mapping for
-  finite-dimensional complex normed fibres.
+* `TauCeti.Symbol.exists_quantizeUniformSobolevHilbert`: the same mapping as an extension acting
+  on tempered distributions.
+* `TauCeti.Symbol.exists_quantizeUniformSobolev`: the same mapping for finite-dimensional complex
+  normed fibres.
 
 ## References
 
 * M. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI* (2008), Lecture I, §3.
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, Theorem 18.1.13.
+* J. Bergh and J. Löfström, *Interpolation Spaces: An Introduction*, Springer, 1976, §6.4.
 -/
 
 public section
@@ -196,7 +204,7 @@ private theorem hasSobolevExtension_quantizeUniformCLM_of_le (k : ℕ) :
 
 /-- Uniform symbols of order `m` quantize to bounded operators `H^s → H^{s - m}` when
 `s - m ∈ 2ℤ`. -/
-theorem hasSobolevExtension_quantizeUniformCLM_of_sub_eq_two_mul (a : Symbol n V W m)
+private theorem hasSobolevExtension_quantizeUniformCLM_of_sub_eq_two_mul (a : Symbol n V W m)
     (ha : a.IsUniform) {s : ℝ} {k : ℤ} (hk : s - m = 2 * k) :
     SchwartzMap.HasSobolevExtension (quantizeUniformCLM a ha) s (s - m) := by
   -- `Op(a) = Op(a ⟨ξ / 2π⟩ ^ (-s)) ∘ J^s`, and `J^s : H^s → L²` is an isometry.
@@ -220,18 +228,34 @@ theorem hasSobolevExtension_quantizeUniformCLM_of_sub_eq_two_mul (a : Symbol n V
       (by push_cast at hk ⊢; linarith)).comp hJ
     simpa using h
 
-/-- **Sobolev mapping of uniform symbols at even steps**, for complex Hilbert fibres. Let `a` be a
-symbol of order `m` whose estimates are uniform in the position. If `s - m` is an even integer, the
-quantization `Op(a)` extends from Schwartz functions to a bounded operator
-`H^s(ℝⁿ; V) → H^{s - m}(ℝⁿ; W)`. No compact spatial support and no finite dimension is needed. -/
-theorem exists_quantizeUniformSobolevHilbert_of_sub_eq_two_mul (a : Symbol n V W m)
-    (ha : a.IsUniform) {s : ℝ} {k : ℤ} (hk : s - m = 2 * k) :
+/-- **Sobolev mapping of uniform symbols**, in the composable form
+`SchwartzMap.HasSobolevExtension`. Uniform symbols of order `m` quantize to bounded operators
+`H^s → H^{s - m}` for every real `s`. -/
+theorem hasSobolevExtension_quantizeUniformCLM (a : Symbol n V W m) (ha : a.IsUniform) (s : ℝ) :
+    SchwartzMap.HasSobolevExtension (quantizeUniformCLM a ha) s (s - m) := by
+  -- Interpolate between the even steps `m + 2k` and `m + 2k + 2`, where `k = ⌊(s - m) / 2⌋`.
+  set k := ⌊(s - m) / 2⌋
+  set θ := (s - m) / 2 - k with hθ_def
+  have hθ : θ ∈ Set.Icc (0 : ℝ) 1 :=
+    ⟨sub_nonneg.mpr (Int.floor_le _), by linarith [Int.lt_floor_add_one ((s - m) / 2)]⟩
+  have h₀ := hasSobolevExtension_quantizeUniformCLM_of_sub_eq_two_mul a ha (s := m + 2 * k)
+    (by ring)
+  have h₁ := hasSobolevExtension_quantizeUniformCLM_of_sub_eq_two_mul a ha (s := m + 2 * k + 2)
+    (k := k + 1) (by push_cast; ring)
+  have h := h₀.interpolate h₁ hθ
+  rwa [show (1 - θ) * (m + 2 * k) + θ * (m + 2 * k + 2) = s by rw [hθ_def]; ring,
+    show (1 - θ) * (m + 2 * k - m) + θ * (m + 2 * k + 2 - m) = s - m by rw [hθ_def]; ring] at h
+
+/-- **Sobolev mapping of uniform symbols**, for complex Hilbert fibres. Let `a` be a symbol of
+order `m` whose estimates are uniform in the position. For every real `s`, the quantization
+`Op(a)` extends from Schwartz functions to a bounded operator `H^s(ℝⁿ; V) → H^{s - m}(ℝⁿ; W)`.
+No compact spatial support and no finite dimension is needed. -/
+theorem exists_quantizeUniformSobolevHilbert (a : Symbol n V W m) (ha : a.IsUniform) (s : ℝ) :
     ∃ T : H^{s}(CoordinateSpace n, V) →L[ℂ] H^{s - m}(CoordinateSpace n, W),
       ∀ (u : 𝓢(CoordinateSpace n, V)) (φ : 𝓢(CoordinateSpace n, ℂ)),
         (T (SchwartzMap.toBesselPotentialSpaceCLM s 2 u)).toDistr φ =
           ∫ x, φ x • quantizeSchwartzValue a.coefficient u x :=
-  exists_toDistr_of_hasSobolevExtension
-    (hasSobolevExtension_quantizeUniformCLM_of_sub_eq_two_mul a ha hk)
+  exists_toDistr_of_hasSobolevExtension (hasSobolevExtension_quantizeUniformCLM a ha s)
 
 end Extension
 
@@ -243,17 +267,15 @@ variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [CompleteSpace
   [FiniteDimensional ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W] [CompleteSpace W]
   [FiniteDimensional ℂ W]
 
-/-- **Sobolev mapping of uniform symbols at even steps.** Let `a` be a symbol of order `m` whose
-estimates are uniform in the position, between finite-dimensional complex normed spaces. If
-`s - m` is an even integer, the quantization `Op(a)` extends from Schwartz functions to a bounded
-operator `H^s(ℝⁿ; V) → H^{s - m}(ℝⁿ; W)`. No compact spatial support is needed.
+/-- **Sobolev mapping of uniform symbols.** Let `a` be a symbol of order `m` whose estimates are
+uniform in the position, between finite-dimensional complex normed spaces. For every real `s`, the
+quantization `Op(a)` extends from Schwartz functions to a bounded operator
+`H^s(ℝⁿ; V) → H^{s - m}(ℝⁿ; W)`. No compact spatial support is needed.
 
 The norms of `V` and `W` need not come from inner products: as for
 `TauCeti.Symbol.exists_quantizeSobolev`, isomorphisms with `ℂ^k` and `ℂ^l` reduce the statement
-to complex Hilbert fibres
-(`TauCeti.Symbol.exists_quantizeUniformSobolevHilbert_of_sub_eq_two_mul`). -/
-theorem exists_quantizeUniformSobolev_of_sub_eq_two_mul (a : Symbol n V W m) (ha : a.IsUniform)
-    {s : ℝ} {k : ℤ} (hk : s - m = 2 * k) :
+to complex Hilbert fibres (`TauCeti.Symbol.exists_quantizeUniformSobolevHilbert`). -/
+theorem exists_quantizeUniformSobolev (a : Symbol n V W m) (ha : a.IsUniform) (s : ℝ) :
     ∃ T : H^{s}(CoordinateSpace n, V) →L[ℂ] H^{s - m}(CoordinateSpace n, W),
       ∀ (u : 𝓢(CoordinateSpace n, V)) (φ : 𝓢(CoordinateSpace n, ℂ)),
         (T (SchwartzMap.toBesselPotentialSpaceCLM s 2 u)).toDistr φ =
@@ -263,8 +285,8 @@ theorem exists_quantizeUniformSobolev_of_sub_eq_two_mul (a : Symbol n V W m) (ha
     ContinuousLinearEquiv.ofFinrankEq finrank_euclideanSpace_fin.symm
   let e₂ : W ≃L[ℂ] EuclideanSpace ℂ (Fin (Module.finrank ℂ W)) :=
     ContinuousLinearEquiv.ofFinrankEq finrank_euclideanSpace_fin.symm
-  obtain ⟨T, hT⟩ := exists_quantizeUniformSobolevHilbert_of_sub_eq_two_mul _ (ha.map
-    ((e₁.arrowCongr e₂).toContinuousLinearMap.restrictScalars ℝ)) hk
+  obtain ⟨T, hT⟩ := exists_quantizeUniformSobolevHilbert _ (ha.map
+    ((e₁.arrowCongr e₂).toContinuousLinearMap.restrictScalars ℝ)) s
   exact ⟨_, toDistr_postcomp_comp_comp_postcomp_toBesselPotentialSpaceCLM_apply a e₁ e₂ hT⟩
 
 end Mapping

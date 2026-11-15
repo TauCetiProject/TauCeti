@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
+import Mathlib.Analysis.Normed.Operator.Extend
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 
 /-!
@@ -25,7 +26,9 @@ symbol `⟨ξ⟩ ^ t = (1 + ‖ξ‖ ^ 2) ^ (t / 2)`, extends to an operator `H^
 ## Main declarations
 
 * `SchwartzMap.HasSobolevExtension`: `A` extends to a bounded operator `H^s → H^r`, characterised
-  by `SchwartzMap.hasSobolevExtension_iff`.
+  by `SchwartzMap.hasSobolevExtension_iff`, and by the estimate
+  `‖A u‖_{H^r} ≤ M ‖u‖_{H^s}` on Schwartz functions
+  (`SchwartzMap.hasSobolevExtension_iff_exists_norm_le`).
 * `SchwartzMap.hasSobolevExtension_zero`, `SchwartzMap.hasSobolevExtension_id`: the zero map and the
   identity extend.
 * `SchwartzMap.HasSobolevExtension.comp`, `SchwartzMap.HasSobolevExtension.add`,
@@ -63,6 +66,24 @@ theorem hasSobolevExtension_iff {A : 𝓢(E, F) →L[ℂ] 𝓢(E, G)} {s r : ℝ
     HasSobolevExtension A s r ↔ ∃ T : H^{s}(E, F) →L[ℂ] H^{r}(E, G),
       T ∘L toBesselPotentialSpaceCLM s 2 = toBesselPotentialSpaceCLM r 2 ∘L A :=
   Iff.rfl
+
+/-- `A` extends to a bounded operator `H^s → H^r` if and only if it satisfies an estimate
+`‖A u‖_{H^r} ≤ M ‖u‖_{H^s}` on Schwartz functions. -/
+theorem hasSobolevExtension_iff_exists_norm_le {A : 𝓢(E, F) →L[ℂ] 𝓢(E, G)} {s r : ℝ} :
+    HasSobolevExtension A s r ↔ ∃ M, ∀ u,
+      ‖toBesselPotentialSpaceCLM r 2 (A u)‖ ≤ M * ‖toBesselPotentialSpaceCLM s 2 u‖ := by
+  constructor
+  · rintro ⟨T, hT⟩
+    refine ⟨‖T‖, fun u ↦ ?_⟩
+    rw [← ContinuousLinearMap.comp_apply (toBesselPotentialSpaceCLM r 2), ← hT,
+      ContinuousLinearMap.comp_apply]
+    exact T.le_opNorm _
+  · intro hM
+    have hdense := denseRange_toBesselPotentialSpaceCLM (E := E) (F := F) s (p := 2)
+      ENNReal.ofNat_ne_top
+    refine ⟨((toBesselPotentialSpaceCLM r 2).toLinearMap ∘ₗ A.toLinearMap).extendOfNorm
+      (toBesselPotentialSpaceCLM s 2).toLinearMap, ContinuousLinearMap.ext fun u ↦ ?_⟩
+    exact LinearMap.extendOfNorm_eq hdense hM u
 
 /-- The zero map extends to a bounded operator `H^s → H^r`. -/
 theorem hasSobolevExtension_zero (s r : ℝ) :
