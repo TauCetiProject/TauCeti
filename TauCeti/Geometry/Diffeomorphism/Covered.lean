@@ -54,7 +54,8 @@ within a path component, since evaluations at two points joined by a path are ho
 * `isCoveredByDiffeomorphisms_of_section`: a section of evaluation makes `M` covered.
 * `isCoveredByDiffeomorphisms_of_smul`: the condition from a smooth group action.
 * `isCoveredByDiffeomorphisms_of_lieGroup`: compact Lie groups are covered by diffeomorphisms.
-* `IsCoveredByDiffeomorphisms.mul_left`: multiples of `ℓ`.
+* `IsCoveredByDiffeomorphisms.mul_left`, `IsCoveredByDiffeomorphisms.abs`,
+  `isCoveredByDiffeomorphisms_neg_right`: multiples, absolute value and sign of `ℓ`.
 * `isCoveredByDiffeomorphisms_neg`: independence of the orientation.
 * `isCoveredByDiffeomorphisms_iff_of_joined`,
   `isCoveredByDiffeomorphisms_iff_of_pathConnectedSpace`: independence of the base point.
@@ -191,6 +192,18 @@ theorem IsCoveredByDiffeomorphisms.mul_left {x₀ : M} {ℓ : ℤ}
 theorem IsCoveredByDiffeomorphisms.of_one {x₀ : M} (h : o.IsCoveredByDiffeomorphisms hd n x₀ 1)
     (ℓ : ℤ) : o.IsCoveredByDiffeomorphisms hd n x₀ ℓ := by
   simpa using h.mul_left ℓ
+
+/-- Covering by `-ℓ` is equivalent to covering by `ℓ`. -/
+@[simp]
+theorem isCoveredByDiffeomorphisms_neg_right {x₀ : M} {ℓ : ℤ} :
+    o.IsCoveredByDiffeomorphisms hd n x₀ (-ℓ) ↔ o.IsCoveredByDiffeomorphisms hd n x₀ ℓ :=
+  ⟨fun h ↦ by simpa using h.mul_left (-1), fun h ↦ by simpa using h.mul_left (-1)⟩
+
+/-- If `M` is `ℓ`-covered by diffeomorphisms, it is `|ℓ|`-covered by diffeomorphisms. -/
+theorem IsCoveredByDiffeomorphisms.abs {x₀ : M} {ℓ : ℤ}
+    (h : o.IsCoveredByDiffeomorphisms hd n x₀ ℓ) :
+    o.IsCoveredByDiffeomorphisms hd n x₀ |ℓ| := by
+  simpa only [Int.sign_mul_self_eq_abs] using h.mul_left ℓ.sign
 
 /-- Covering by diffeomorphisms does not depend on the orientation. -/
 @[simp]
