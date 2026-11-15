@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Analysis.ODE.Basic
 public import Mathlib.Analysis.ODE.ExistUnique
-import TauCeti.Analysis.ODE.Gronwall.Interior
+import TauCeti.Analysis.ODE.ExistUnique
+import TauCeti.Analysis.ODE.Gronwall.TwoSided
 
 /-!
 # Global solutions of state-Lipschitz nonautonomous ODEs
@@ -29,9 +30,6 @@ glue uniquely by `ODE.eqOn_Icc_of_hasDerivAt`.
 
 ## Main declarations
 
-* `ODE.eqOn_Icc_of_lipschitzOnWith` and `ODE.eqOn_Icc_of_hasDerivAt`: two continuous curves on
-  `[a, b]` solving `γ' t = v t (γ t)` on `(a, b)` and agreeing at any `c ∈ [a, b]` agree throughout
-  `[a, b]`.
 * `ODE.nonautonomousGlobalSolution`: the global solution of `γ' t = v t (γ t)` with `γ s = x`.
 * `ODE.nonautonomousGlobalSolution_self` and `ODE.hasDerivAt_nonautonomousGlobalSolution`: it
   solves the initial value problem on all of `ℝ`.
@@ -63,43 +61,6 @@ private noncomputable def stepRadius (K : ℝ≥0) : ℝ :=
 private theorem stepRadius_pos (K : ℝ≥0) : 0 < stepRadius K := by
   unfold stepRadius
   positivity
-
-section Normed
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- Two curves continuous on `[a, b]`, remaining inside `s t` and solving `γ' t = v t (γ t)` at
-interior points `t ∈ (a, b)` where `v t` is `K`-Lipschitz on `s t`, agree throughout `[a, b]`
-whenever they agree at an interior or boundary point `c ∈ [a, b]`. -/
-theorem eqOn_Icc_of_lipschitzOnWith {a b c : ℝ} {v : ℝ → E → E} {s : ℝ → Set E} {K : ℝ≥0}
-    {f g : ℝ → E} (hv : ∀ t ∈ Ioo a b, LipschitzOnWith K (v t) (s t)) (hc : c ∈ Icc a b)
-    (hf : ContinuousOn f (Icc a b)) (hf' : ∀ t ∈ Ioo a b, HasDerivAt f (v t (f t)) t)
-    (hfs : ∀ t ∈ Ioo a b, f t ∈ s t)
-    (hg : ContinuousOn g (Icc a b)) (hg' : ∀ t ∈ Ioo a b, HasDerivAt g (v t (g t)) t)
-    (hgs : ∀ t ∈ Ioo a b, g t ∈ s t) (hfc : f c = g c) :
-    EqOn f g (Icc a b) := fun t ht ↦ by
-  have hle := TauCeti.norm_le_gronwallBound_of_norm_deriv_le (f := fun u ↦ f u - g u)
-    (f' := fun u ↦ v u (f u) - v u (g u)) (δ := 0) (K := K) (ε := 0) hc (hf.sub hg)
-    (fun u hu ↦ (hf' u hu).sub (hg' u hu)) (by simp [hfc])
-    (fun u hu ↦ by
-      simpa only [add_zero, dist_eq_norm] using
-        (hv u hu).dist_le_mul (f u) (hfs u hu) (g u) (hgs u hu))
-    t ht
-  rw [gronwallBound_ε0_δ0] at hle
-  exact sub_eq_zero.1 (norm_le_zero_iff.1 hle)
-
-/-- Two curves continuous on `[a, b]` that solve `γ' t = v t (γ t)` on `(a, b)` and agree at an
-interior or boundary point `c ∈ [a, b]` agree throughout `[a, b]`. -/
-theorem eqOn_Icc_of_hasDerivAt {a b c : ℝ} {v : ℝ → E → E} {K : ℝ≥0} {f g : ℝ → E}
-    (hv : ∀ t ∈ Ioo a b, LipschitzWith K (v t)) (hc : c ∈ Icc a b)
-    (hf : ContinuousOn f (Icc a b)) (hf' : ∀ t ∈ Ioo a b, HasDerivAt f (v t (f t)) t)
-    (hg : ContinuousOn g (Icc a b)) (hg' : ∀ t ∈ Ioo a b, HasDerivAt g (v t (g t)) t)
-    (hfc : f c = g c) :
-    EqOn f g (Icc a b) :=
-  eqOn_Icc_of_lipschitzOnWith (s := fun _ ↦ univ) (fun t ht ↦ (hv t ht).lipschitzOnWith) hc
-    hf hf' (fun _ _ ↦ trivial) hg hg' (fun _ _ ↦ trivial) hfc
-
-end Normed
 
 section Complete
 
@@ -376,39 +337,23 @@ theorem nonautonomousGlobalSolution_neg (v : ℝ → E → E) (hvc : ∀ x, Cont
     (fun z ↦ ((hvc z).comp continuous_neg).neg) (fun u ↦ (hv (-u)).neg) (-s) hγ) t
   simpa using heq
 
-private theorem dist_nonautonomousGlobalSolution_le_of_le (v : ℝ → E → E)
-    (hvc : ∀ x, Continuous (v · x)) {K : ℝ≥0} (hv : ∀ t, LipschitzWith K (v t))
-    {s t : ℝ} (hst : s ≤ t) (x y : E) :
-    dist (nonautonomousGlobalSolution v hvc hv s x t)
-      (nonautonomousGlobalSolution v hvc hv s y t) ≤ dist x y * Real.exp (K * (t - s)) := by
-  simpa using dist_le_of_trajectories_ODE (v := v) (K := K) (a := s) (b := t)
-    (f := nonautonomousGlobalSolution v hvc hv s x)
-    (g := nonautonomousGlobalSolution v hvc hv s y) (δ := dist x y)
-    hv
-    (continuous_nonautonomousGlobalSolution_apply v hvc hv s x).continuousOn
-    (fun u _ ↦ (hasDerivAt_nonautonomousGlobalSolution v hvc hv s x u).hasDerivWithinAt)
-    (continuous_nonautonomousGlobalSolution_apply v hvc hv s y).continuousOn
-    (fun u _ ↦ (hasDerivAt_nonautonomousGlobalSolution v hvc hv s y u).hasDerivWithinAt)
-    (by simp) t ⟨hst, le_rfl⟩
-
 /-- **Continuous dependence on the initial value.** Two global solutions started at time `s` drift
 apart at most exponentially in `|t - s|` at rate `K`. -/
 theorem dist_nonautonomousGlobalSolution_le (v : ℝ → E → E) (hvc : ∀ x, Continuous (v · x))
     {K : ℝ≥0} (hv : ∀ t, LipschitzWith K (v t)) (s : ℝ) (x y : E) (t : ℝ) :
     dist (nonautonomousGlobalSolution v hvc hv s x t)
       (nonautonomousGlobalSolution v hvc hv s y t) ≤ dist x y * Real.exp (K * |t - s|) := by
-  rcases le_total s t with hst | hts
-  · simpa [abs_of_nonneg (sub_nonneg.2 hst)] using
-      dist_nonautonomousGlobalSolution_le_of_le v hvc hv hst x y
-  · have h := dist_nonautonomousGlobalSolution_le_of_le (fun u z ↦ -v (-u) z)
-      (fun z ↦ ((hvc z).comp continuous_neg).neg) (fun u ↦ (hv (-u)).neg)
-      (s := -s) (t := -t) (neg_le_neg hts) x y
-    rw [← nonautonomousGlobalSolution_neg v hvc hv s x (-t),
-      ← nonautonomousGlobalSolution_neg v hvc hv s y (-t), neg_neg] at h
-    have habs : -t - -s = |t - s| := by
-      rw [abs_of_nonpos (sub_nonpos.2 hts)]
-      ring
-    rwa [habs] at h
+  let φx := nonautonomousGlobalSolution v hvc hv s x
+  let φy := nonautonomousGlobalSolution v hvc hv s y
+  simpa only [φx, φy, dist_eq_norm, gronwallBound_ε0] using
+    TauCeti.norm_le_gronwallBound_of_norm_derivWithin_le (f := fun u ↦ φx u - φy u)
+      (f' := fun u ↦ v u (φx u) - v u (φy u)) (a := min s t) (b := max s t) (t₀ := s)
+      (δ := dist x y) (K := K) (ε := 0) ⟨min_le_left s t, le_max_left s t⟩
+      (fun u _ ↦ ((hasDerivAt_nonautonomousGlobalSolution v hvc hv s x u).sub
+        (hasDerivAt_nonautonomousGlobalSolution v hvc hv s y u)).hasDerivWithinAt)
+      (by simp [φx, φy, dist_eq_norm])
+      (fun u _ ↦ by simpa only [add_zero] using (hv u).norm_sub_le (φx u) (φy u))
+      t ⟨min_le_right s t, le_max_right s t⟩
 
 /-- **Joint continuity** of `ODE.nonautonomousGlobalSolution` in the initial time, initial value,
 and evaluation time. -/

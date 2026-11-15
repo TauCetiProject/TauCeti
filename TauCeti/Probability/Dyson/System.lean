@@ -28,8 +28,8 @@ When two Dyson trajectories `γ₁` and `γ₂` are driven by the same additive 
 regularity assumption on `w`), their difference `γ₁ - γ₂` cancels `w` identically and is
 differentiable on `(0, ∞)` with derivative `dysonDrift n (γ₁ u) - dysonDrift n (γ₂ u)`. Combining
 the positive-part chain rule `HasDerivAt.max_zero_pow` with the open-chamber dissipativity
-inequality `sum_sub_dysonDrift_mul_max_sub_nonpos` shows that `t ↦ ∑ᵢ max (γ₁ t i - γ₂ t i) 0 ^ 2`
-is antitone on `ℝ≥0`. This yields in turn:
+inequality `sum_dysonDrift_sub_dysonDrift_mul_max_sub_zero_nonpos` shows that
+`t ↦ ∑ᵢ max (γ₁ t i - γ₂ t i) 0 ^ 2` is antitone on `ℝ≥0`. This yields in turn:
 
 * coordinatewise order comparison `x ≤ y → γ₁ t ≤ γ₂ t` (AGZ Lemma 4.3.6);
 * `ℓ²`-contraction `∑ᵢ (γ₁ t i - γ₂ t i)² ≤ ∑ᵢ (xᵢ - yᵢ)²` and continuous dependence on the initial
@@ -235,8 +235,8 @@ theorem antitone_sum_max_sub_zero_sq (h₁ : IsDysonPath n x w γ₁) (h₂ : Is
       intro u (hu : 0 < u)
       rw [(hφ_deriv u hu).deriv]
       exact mul_nonpos_of_nonneg_of_nonpos zero_le_two
-        (sum_sub_dysonDrift_mul_max_sub_nonpos (h₁.strictAnti (Real.toNNReal_pos.2 hu))
-          (h₂.strictAnti (Real.toNNReal_pos.2 hu)))
+        (sum_dysonDrift_sub_dysonDrift_mul_max_sub_zero_nonpos
+          (h₁.strictAnti (Real.toNNReal_pos.2 hu)) (h₂.strictAnti (Real.toNNReal_pos.2 hu)))
   intro s t hst
   simpa [φ] using hanti (NNReal.coe_nonneg s) (NNReal.coe_nonneg t) (NNReal.coe_le_coe.2 hst)
 
@@ -293,15 +293,8 @@ theorem sum_sq_sub_le (h₁ : IsDysonPath n x w γ₁) (h₂ : IsDysonPath n y w
 /-- **Pathwise uniqueness for Dyson trajectories.** Two Dyson trajectories from the same initial
 configuration `x` and driven by the same path `w` are equal at all times. -/
 protected theorem eq {γ₁ γ₂ : ℝ≥0 → Fin n → ℝ} (h₁ : IsDysonPath n x w γ₁)
-    (h₂ : IsDysonPath n x w γ₂) : γ₁ = γ₂ := by
-  ext t i
-  have hle : (γ₁ t i - γ₂ t i) ^ 2 ≤ 0 := by
-    calc (γ₁ t i - γ₂ t i) ^ 2
-        ≤ ∑ k, (γ₁ t k - γ₂ t k) ^ 2 :=
-          single_le_sum (f := fun k ↦ (γ₁ t k - γ₂ t k) ^ 2) (fun k _ ↦ sq_nonneg _) (mem_univ i)
-      _ ≤ ∑ k, (x k - x k) ^ 2 := h₁.sum_sq_sub_le h₂ t
-      _ = 0 := by simp
-  exact sub_eq_zero.1 (sq_eq_zero_iff.1 ((sq_nonneg _).antisymm' hle))
+    (h₂ : IsDysonPath n x w γ₂) : γ₁ = γ₂ :=
+  funext fun t ↦ (h₁.le_of_le h₂ le_rfl t).antisymm (h₂.le_of_le h₁ le_rfl t)
 
 end Comparison
 

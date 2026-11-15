@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Dyson.System
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.ODE.Gronwall
+import TauCeti.Analysis.ODE.ExistUnique
 import TauCeti.Analysis.ODE.Nonautonomous
 
 /-!
@@ -23,19 +24,19 @@ dependence and state-uniform Lipschitz constant `2 / δ²`, solved globally on `
 `ODE.nonautonomousGlobalSolution`.
 
 Because `dysonDriftTrunc n δ` agrees with `dysonDrift n` on the `δ`-separated chamber
-`{z | ∀ i < j, δ ≤ z i - z j}`, interior-derivative ODE uniqueness (`ODE.eqOn_Icc_of_hasDerivAt`)
-yields:
+`{z | ∀ i < j, δ ≤ z i - z j}`, local uniqueness of `dysonTruncPath` (`eqOn_dysonTruncPath`, via
+`ODE.eqOn_Icc_of_hasDerivAt`) yields:
 
-* **Consistency across thresholds** (`dysonTruncPath_eq_of_le_of_mem_chamber`): for `0 < δ₁ ≤ δ₂`,
+* **Consistency across thresholds** (`dysonTruncPath_eq_of_le_of_le_sub`): for `0 < δ₁ ≤ δ₂`,
   `dysonTruncPath` at threshold `δ₁` agrees with `dysonTruncPath` at threshold `δ₂` on `[0, T]`
   whenever the `δ₂`-trajectory remains in the `δ₂`-chamber on `(0, T)`.
-* **Agreement with any Dyson path before exit** (`IsDysonPath.eq_dysonTruncPath_of_mem_chamber`):
+* **Agreement with any Dyson path before exit** (`IsDysonPath.eq_dysonTruncPath_of_le_sub`):
   any `IsDysonPath` staying in the `δ`-chamber on `(0, T)` coincides with `dysonTruncPath` on
   `[0, T]`.
-* **Pasting into a global solution** (`exists_isDysonPath_of_forall_exists_trunc_mem_chamber` and
-  `exists_isDysonSolution_of_ae_trunc_mem_chamber`): once every finite horizon `[0, T]` admits a
-  positive gap threshold `δ` up to which `dysonTruncPath` avoids the `δ`-boundary, the truncated
-  solutions paste into a global `IsDysonPath` (and almost surely into `IsDysonSolution`).
+* **Pasting into a global solution** (`exists_isDysonPath_of_forall_exists_le_dysonTruncPath_sub`
+  and `exists_isDysonSolution_of_ae_le_dysonTruncPath_sub`): once every finite horizon `[0, T]`
+  admits a positive gap threshold `δ` up to which `dysonTruncPath` avoids the `δ`-boundary, the
+  truncated solutions paste into a global `IsDysonPath` (and almost surely into `IsDysonSolution`).
 
 ## Main declarations
 
@@ -47,12 +48,12 @@ yields:
   `TauCeti.Probability.eqOn_dysonTruncPath_of_eqOn`: Grönwall continuous dependence in `(x, w)` and
   prefix congruence in `w` on `[0, T]`.
 * `TauCeti.Probability.sum_dysonTruncPath`: center-of-mass conservation.
-* `TauCeti.Probability.dysonTruncPath_eq_of_le_of_mem_chamber`: compatibility of truncations up to
+* `TauCeti.Probability.dysonTruncPath_eq_of_le_of_le_sub`: compatibility of truncations up to
   exit from the `δ₂`-chamber.
-* `TauCeti.Probability.IsDysonPath.eq_dysonTruncPath_of_mem_chamber`: local agreement between any
+* `TauCeti.Probability.IsDysonPath.eq_dysonTruncPath_of_le_sub`: local agreement between any
   `IsDysonPath` and `dysonTruncPath` on `[0, T]`.
-* `TauCeti.Probability.exists_isDysonPath_of_forall_exists_trunc_mem_chamber` and
-  `TauCeti.Probability.exists_isDysonSolution_of_ae_trunc_mem_chamber`: pasting non-exiting
+* `TauCeti.Probability.exists_isDysonPath_of_forall_exists_le_dysonTruncPath_sub` and
+  `TauCeti.Probability.exists_isDysonSolution_of_ae_le_dysonTruncPath_sub`: pasting non-exiting
   truncated trajectories into `IsDysonPath` and `IsDysonSolution`.
 
 ## References
@@ -290,7 +291,7 @@ theorem sum_dysonTruncPath (n : ℕ) {δ : ℝ} (hδ : 0 < δ) (x : Fin n → �
 /-- **Threshold compatibility up to chamber exit.** For `0 < δ₁ ≤ δ₂`, if `dysonTruncPath` at
 threshold `δ₂` stays inside `{z | ∀ i < j, δ₂ ≤ z i - z j}` on `(0, T)`, then `dysonTruncPath` at
 threshold `δ₁` agrees with it throughout `[0, T]`. -/
-theorem dysonTruncPath_eq_of_le_of_mem_chamber {n : ℕ} {δ₁ δ₂ : ℝ} (hδ₁ : 0 < δ₁)
+theorem dysonTruncPath_eq_of_le_of_le_sub {n : ℕ} {δ₁ δ₂ : ℝ} (hδ₁ : 0 < δ₁)
     (hle : δ₁ ≤ δ₂) {x : Fin n → ℝ} {w : ℝ≥0 → Fin n → ℝ} (hw : Continuous w) {T : ℝ≥0}
     (hch : ∀ t ∈ Ioo (0 : ℝ≥0) T, ∀ ⦃i j : Fin n⦄, i < j →
       δ₂ ≤ dysonTruncPath n (hδ₁.trans_le hle) x hw t i -
@@ -298,59 +299,38 @@ theorem dysonTruncPath_eq_of_le_of_mem_chamber {n : ℕ} {δ₁ δ₂ : ℝ} (h�
     ∀ t ∈ Icc (0 : ℝ≥0) T,
       dysonTruncPath n hδ₁ x hw t = dysonTruncPath n (hδ₁.trans_le hle) x hw t := by
   set hδ₂ : 0 < δ₂ := hδ₁.trans_le hle
-  have hu : EqOn (dysonTruncSmooth n hδ₁ x hw) (dysonTruncSmooth n hδ₂ x hw) (Icc 0 (T : ℝ)) := by
-    refine ODE.eqOn_Icc_of_hasDerivAt (a := 0) (b := T) (c := 0)
-      (fun s _ ↦ lipschitzWith_dysonTruncField n hδ₁ w s) ⟨le_rfl, NNReal.coe_nonneg T⟩
-      (continuous_dysonTruncSmooth n hδ₁ x hw).continuousOn
-      (fun s _ ↦ hasDerivAt_dysonTruncSmooth n hδ₁ x hw s)
-      (continuous_dysonTruncSmooth n hδ₂ x hw).continuousOn
-      (fun s hs ↦ ?_) (by rw [dysonTruncSmooth_zero, dysonTruncSmooth_zero])
+  have heq : EqOn (dysonTruncPath n hδ₂ x hw) (dysonTruncPath n hδ₁ x hw) (Icc 0 T) := by
+    refine eqOn_dysonTruncPath hδ₁ hw (continuous_dysonTruncPath n hδ₂ x hw).continuousOn
+      fun t ht i ↦ ?_
+    rw [dysonTruncPath_apply n hδ₂ x hw t i]
+    congr 1
+    refine _root_.intervalIntegral.integral_congr_Ioo_of_le (NNReal.coe_nonneg t) fun s hs ↦ ?_
     have hs_nn : s.toNNReal ∈ Ioo (0 : ℝ≥0) T :=
       ⟨Real.toNNReal_pos.2 hs.1,
-        NNReal.coe_lt_coe.1 (by rw [Real.coe_toNNReal s hs.1.le]; exact hs.2)⟩
-    have hst : dysonTruncSmooth n hδ₂ x hw s + w s.toNNReal =
-        dysonTruncPath n hδ₂ x hw s.toNNReal := by
-      simp [dysonTruncPath, Real.coe_toNNReal s hs.1.le]
-    have htr : dysonTruncField n δ₂ w s (dysonTruncSmooth n hδ₂ x hw s) =
-        dysonTruncField n δ₁ w s (dysonTruncSmooth n hδ₂ x hw s) := by
-      simp only [dysonTruncField, hst]
-      rw [dysonDriftTrunc_eq_dysonDrift (hch s.toNNReal hs_nn),
-        dysonDriftTrunc_eq_dysonDrift fun i j hij ↦ hle.trans (hch s.toNNReal hs_nn hij)]
-    rw [← htr]
-    exact hasDerivAt_dysonTruncSmooth n hδ₂ x hw s
-  intro t ht
-  have ht' : (t : ℝ) ∈ Icc (0 : ℝ) T := ⟨NNReal.coe_nonneg t, NNReal.coe_le_coe.2 ht.2⟩
-  simp only [dysonTruncPath, hu ht']
+        NNReal.coe_lt_coe.1 ((Real.coe_toNNReal s hs.1.le).trans_lt
+          (hs.2.trans_le (NNReal.coe_le_coe.2 ht.2)))⟩
+    rw [dysonDriftTrunc_eq_dysonDrift (hch s.toNNReal hs_nn),
+      dysonDriftTrunc_eq_dysonDrift fun i j hij ↦ hle.trans (hch s.toNNReal hs_nn hij)]
+  exact fun _ ht ↦ (heq ht).symm
 
 /-- **Local agreement of any Dyson path with `dysonTruncPath` before chamber exit.** If `γ` solves
 `IsDysonPath n x w γ` for continuous `w` and stays inside the `δ`-chamber
 `{z | ∀ i < j, δ ≤ z i - z j}` on `(0, T)` (`0 < δ`), then `γ` coincides with
 `dysonTruncPath n hδ x hw` throughout `[0, T]`. -/
-theorem IsDysonPath.eq_dysonTruncPath_of_mem_chamber {n : ℕ} {x : Fin n → ℝ}
+theorem IsDysonPath.eq_dysonTruncPath_of_le_sub {n : ℕ} {x : Fin n → ℝ}
     {w γ : ℝ≥0 → Fin n → ℝ} (hγ : IsDysonPath n x w γ) (hw : Continuous w) {δ : ℝ} (hδ : 0 < δ)
     {T : ℝ≥0} (hch : ∀ t ∈ Ioo (0 : ℝ≥0) T, ∀ ⦃i j : Fin n⦄, i < j → δ ≤ γ t i - γ t j) :
     ∀ t ∈ Icc (0 : ℝ≥0) T, γ t = dysonTruncPath n hδ x hw t := by
-  set f : ℝ → Fin n → ℝ := fun s ↦ γ s.toNNReal - w s.toNNReal
-  have hf_cont : Continuous f := (hγ.continuous.sub hw).comp continuous_real_toNNReal
-  have hf_eq : EqOn f (dysonTruncSmooth n hδ x hw) (Icc 0 (T : ℝ)) := by
-    refine ODE.eqOn_Icc_of_hasDerivAt (a := 0) (b := T) (c := 0)
-      (fun s _ ↦ lipschitzWith_dysonTruncField n hδ w s) ⟨le_rfl, NNReal.coe_nonneg T⟩
-      hf_cont.continuousOn (fun s hs ↦ ?_)
-      (continuous_dysonTruncSmooth n hδ x hw).continuousOn
-      (fun s _ ↦ hasDerivAt_dysonTruncSmooth n hδ x hw s)
-      (by simp [f, hγ.eval_zero, dysonTruncSmooth_zero])
-    have hs_nn : s.toNNReal ∈ Ioo (0 : ℝ≥0) T :=
-      ⟨Real.toNNReal_pos.2 hs.1,
-        NNReal.coe_lt_coe.1 (by rw [Real.coe_toNNReal s hs.1.le]; exact hs.2)⟩
-    have htr : dysonTruncField n δ w s (f s) = dysonDrift n (γ s.toNNReal) := by
-      simp only [dysonTruncField, f, sub_add_cancel]
-      exact dysonDriftTrunc_eq_dysonDrift (hch s.toNNReal hs_nn)
-    rw [htr]
-    exact hasDerivAt_pi.2 fun i ↦ hγ.hasDerivAt_sub_drive i hs.1
-  intro t ht
-  have ht' : (t : ℝ) ∈ Icc (0 : ℝ) T := ⟨NNReal.coe_nonneg t, NNReal.coe_le_coe.2 ht.2⟩
-  have hft : γ t - w t = dysonTruncSmooth n hδ x hw t := by simpa [f] using hf_eq ht'
-  rw [dysonTruncPath, ← hft, sub_add_cancel]
+  intro _ hr
+  refine eqOn_dysonTruncPath hδ hw hγ.continuous.continuousOn (fun t ht i ↦ ?_) hr
+  rw [hγ.apply_eq t i]
+  congr 1
+  refine _root_.intervalIntegral.integral_congr_Ioo_of_le (NNReal.coe_nonneg t) fun s hs ↦ ?_
+  have hs_nn : s.toNNReal ∈ Ioo (0 : ℝ≥0) T :=
+    ⟨Real.toNNReal_pos.2 hs.1,
+      NNReal.coe_lt_coe.1 ((Real.coe_toNNReal s hs.1.le).trans_lt
+        (hs.2.trans_le (NNReal.coe_le_coe.2 ht.2)))⟩
+  rw [← dysonDriftTrunc_eq_dysonDrift (hch s.toNNReal hs_nn)]
 
 /-- Any trajectory `γ` that agrees on every compact horizon `[0, T]` with some `δ`-truncated Dyson
 trajectory staying inside the `δ`-chamber on `[0, T]` is a global `IsDysonPath`. -/
@@ -393,7 +373,7 @@ theorem isDysonPath_of_forall_exists_eq_dysonTruncPath {n : ℕ} {x : Fin n → 
 `T : ℝ≥0` there exists `δ > 0` such that `dysonTruncPath n hδ x hw` remains in the `δ`-chamber on
 `[0, T]`, then the truncated trajectories paste into a global `IsDysonPath n x w γ` agreeing on
 each `[0, T]` with every truncation that stays in its chamber on `(0, T)`. -/
-theorem exists_isDysonPath_of_forall_exists_trunc_mem_chamber {n : ℕ} {x : Fin n → ℝ}
+theorem exists_isDysonPath_of_forall_exists_le_dysonTruncPath_sub {n : ℕ} {x : Fin n → ℝ}
     {w : ℝ≥0 → Fin n → ℝ} (hw : Continuous w)
     (hch : ∀ T : ℝ≥0, ∃ (δ : ℝ) (hδ : 0 < δ),
       ∀ t ∈ Icc (0 : ℝ≥0) T, ∀ ⦃i j : Fin n⦄, i < j →
@@ -415,9 +395,9 @@ theorem exists_isDysonPath_of_forall_exists_trunc_mem_chamber {n : ℕ} {x : Fin
       ∀ t ∈ Icc (0 : ℝ≥0) T, γ t = dysonTruncPath n hδ x hw t := by
     intro T δ hδ hδ_ch t ht
     have hm : 0 < min δ (δT t) := lt_min hδ (hδT t)
-    have heq₁ := dysonTruncPath_eq_of_le_of_mem_chamber hm (min_le_right δ (δT t)) hw
+    have heq₁ := dysonTruncPath_eq_of_le_of_le_sub hm (min_le_right δ (δT t)) hw
       (fun s hs ↦ hchT t s (Ioo_subset_Icc_self hs)) t ⟨zero_le, le_rfl⟩
-    have heq₂ := dysonTruncPath_eq_of_le_of_mem_chamber hm (min_le_left δ (δT t)) hw
+    have heq₂ := dysonTruncPath_eq_of_le_of_le_sub hm (min_le_left δ (δT t)) hw
       hδ_ch t ht
     exact heq₁.symm.trans heq₂
   refine ⟨γ, isDysonPath_of_forall_exists_eq_dysonTruncPath hw fun T ↦
@@ -430,7 +410,7 @@ theorem exists_isDysonPath_of_forall_exists_trunc_mem_chamber {n : ℕ} {x : Fin
 `P`-almost-surely continuous paths and on `P`-almost every sample path each finite horizon `[0, T]`
 admits a positive threshold `δ` up to which `dysonTruncPath` stays in the `δ`-chamber, the
 truncated trajectories assemble into an `IsDysonSolution β n x P B X`. -/
-theorem exists_isDysonSolution_of_ae_trunc_mem_chamber {Ω : Type*} [MeasurableSpace Ω]
+theorem exists_isDysonSolution_of_ae_le_dysonTruncPath_sub {Ω : Type*} [MeasurableSpace Ω]
     (β : ℝ) (n : ℕ) (x : Fin n → ℝ) (P : Measure Ω) (B : Fin n → ℝ≥0 → Ω → ℝ)
     (hB : ∀ i, ∀ᵐ ω ∂P, Continuous (B i · ω))
     (hch : ∀ᵐ ω ∂P, ∀ (hw : Continuous (fun t i ↦ Real.sqrt (2 / (β * n)) * B i t ω)) (T : ℝ≥0),
@@ -447,7 +427,7 @@ theorem exists_isDysonSolution_of_ae_trunc_mem_chamber {Ω : Type*} [MeasurableS
   rw [← ae_all_iff] at hB
   filter_upwards [hB, hch] with ω hωB hωch
   have hw : Continuous (w ω) := continuous_pi fun i ↦ continuous_const.mul (hωB i)
-  obtain ⟨γ, hγ, -⟩ := exists_isDysonPath_of_forall_exists_trunc_mem_chamber hw (hωch hw)
+  obtain ⟨γ, hγ, -⟩ := exists_isDysonPath_of_forall_exists_le_dysonTruncPath_sub hw (hωch hw)
   have hg : good ω := ⟨γ, hγ⟩
   have hX : (fun t ↦ X t ω) = hg.choose := by
     ext t i

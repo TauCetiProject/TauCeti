@@ -38,11 +38,11 @@ bounded by `δ⁻¹` and globally Lipschitz with constant `2 / δ²`.
 * `TauCeti.Probability.dysonDrift`: the repulsive drift `n⁻¹ ∑_{j ≠ i} (x i - x j)⁻¹`.
 * `TauCeti.Probability.sum_mul_dysonDrift` and `TauCeti.Probability.sum_dysonDrift`: off-diagonal
   pairing over `i < j` and zero coordinate sum.
-* `TauCeti.Probability.sum_sub_dysonDrift_mul_sub` and
-  `TauCeti.Probability.sum_sub_dysonDrift_mul_sub_nonpos`: monotonicity identity and dissipativity
-  on the open chamber.
-* `TauCeti.Probability.sum_sub_dysonDrift_mul_max_sub_nonpos`: positive-part dissipativity on the
-  open chamber.
+* `TauCeti.Probability.sum_dysonDrift_sub_dysonDrift_mul_sub` and
+  `TauCeti.Probability.sum_dysonDrift_sub_dysonDrift_mul_sub_nonpos`: monotonicity identity and
+  dissipativity on the open chamber.
+* `TauCeti.Probability.sum_dysonDrift_sub_dysonDrift_mul_max_sub_zero_nonpos`: positive-part
+  dissipativity on the open chamber.
 * `TauCeti.Probability.dysonDriftTrunc`: antisymmetric truncation at gap threshold `δ`.
 * `TauCeti.Probability.dysonDriftTrunc_eq_dysonDrift`: agreement on `{x | ∀ i < j, δ ≤ x i - x j}`.
 * `TauCeti.Probability.lipschitzWith_dysonDriftTrunc`: global Lipschitz bound for `0 < δ`.
@@ -164,7 +164,7 @@ theorem sum_dysonDrift (n : ℕ) (x : Fin n → ℝ) :
 /-- **Monotonicity identity for the Dyson drift** (AGZ §4.3.1, proof of Proposition 4.3.5). For any
 two injective configurations `x, y : Fin n → ℝ`, `⟨dysonDrift n x - dysonDrift n y, x - y⟩` equals
 `-n⁻¹ ∑_{i < j} ((xᵢ - xⱼ) - (yᵢ - yⱼ))² / ((xᵢ - xⱼ)(yᵢ - yⱼ))`. -/
-theorem sum_sub_dysonDrift_mul_sub {n : ℕ} {x y : Fin n → ℝ} (hx : Function.Injective x)
+theorem sum_dysonDrift_sub_dysonDrift_mul_sub {n : ℕ} {x y : Fin n → ℝ} (hx : Function.Injective x)
     (hy : Function.Injective y) :
     ∑ i, (dysonDrift n x i - dysonDrift n y i) * (x i - y i) =
       -(n : ℝ)⁻¹ * ∑ i, ∑ j ∈ Ioi i,
@@ -187,10 +187,10 @@ theorem sum_sub_dysonDrift_mul_sub {n : ℕ} {x y : Fin n → ℝ} (hx : Functio
 
 /-- **Dissipativity of the Dyson drift on the open chamber.** For `StrictAnti x` and `StrictAnti y`,
 `∑ᵢ (dysonDrift n x i - dysonDrift n y i) (xᵢ - yᵢ) ≤ 0`. -/
-theorem sum_sub_dysonDrift_mul_sub_nonpos {n : ℕ} {x y : Fin n → ℝ} (hx : StrictAnti x)
+theorem sum_dysonDrift_sub_dysonDrift_mul_sub_nonpos {n : ℕ} {x y : Fin n → ℝ} (hx : StrictAnti x)
     (hy : StrictAnti y) :
     ∑ i, (dysonDrift n x i - dysonDrift n y i) * (x i - y i) ≤ 0 := by
-  rw [sum_sub_dysonDrift_mul_sub hx.injective hy.injective, neg_mul, neg_nonpos]
+  rw [sum_dysonDrift_sub_dysonDrift_mul_sub hx.injective hy.injective, neg_mul, neg_nonpos]
   refine mul_nonneg (by positivity) (sum_nonneg fun i _ ↦ sum_nonneg fun j hj ↦ ?_)
   have hij : i < j := mem_Ioi.1 hj
   exact div_nonneg (sq_nonneg _)
@@ -199,8 +199,8 @@ theorem sum_sub_dysonDrift_mul_sub_nonpos {n : ℕ} {x y : Fin n → ℝ} (hx : 
 /-- **One-sided positive-part dissipativity on the open chamber** (for AGZ Lemma 4.3.6). For
 `StrictAnti x` and `StrictAnti y`, testing `dysonDrift n x - dysonDrift n y` against
 `i ↦ max (x i - y i) 0` is nonpositive. -/
-theorem sum_sub_dysonDrift_mul_max_sub_nonpos {n : ℕ} {x y : Fin n → ℝ} (hx : StrictAnti x)
-    (hy : StrictAnti y) :
+theorem sum_dysonDrift_sub_dysonDrift_mul_max_sub_zero_nonpos {n : ℕ} {x y : Fin n → ℝ}
+    (hx : StrictAnti x) (hy : StrictAnti y) :
     ∑ i, (dysonDrift n x i - dysonDrift n y i) * max (x i - y i) 0 ≤ 0 := by
   set u : Fin n → ℝ := fun k ↦ max (x k - y k) 0
   have hrew : ∑ i, (dysonDrift n x i - dysonDrift n y i) * u i =
