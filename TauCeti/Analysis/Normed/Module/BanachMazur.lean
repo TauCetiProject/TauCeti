@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
-public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
-public import Mathlib.Analysis.RCLike.Lemmas
-public import TauCeti.Analysis.Normed.Operator.ContinuousLinearEquiv
+import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
+import Mathlib.Analysis.RCLike.Lemmas
+import TauCeti.Analysis.Normed.Operator.ContinuousLinearEquiv
 
 /-!
 # The Banach–Mazur distance
@@ -30,14 +30,14 @@ same dimension (`FiniteDimensional.nonempty_continuousLinearEquiv_iff_finrank_eq
 
 * `TauCeti.banachMazurDist_comm`: the distance is symmetric.
 * `TauCeti.banachMazurDist_triangle`: the multiplicative triangle inequality
-  `d(E, G) ≤ d(E, F) d(F, G)`.
+  `d(E, G) ≤ d(E, F) d(F, G)`, when `E` and `F` are isomorphic.
 * `TauCeti.one_le_banachMazurDist`: between isomorphic spaces with nontrivial topology the
   distance is at least `1`.
 * `LinearIsometryEquiv.banachMazurDist_congr_left` and
   `LinearIsometryEquiv.banachMazurDist_congr_right`: the distance is invariant under replacing
   either space by an isometric copy.
 * `TauCeti.exists_norm_mul_norm_symm_eq_banachMazurDist`: over a locally compact field, the
-  infimum is attained for finite-dimensional normed spaces.
+  infimum is attained between isomorphic finite-dimensional normed spaces.
 * `TauCeti.banachMazurDist_eq_one_iff`: over `ℝ` or `ℂ`, two nonzero finite-dimensional spaces
   are at distance one exactly when they are isometric.
 
