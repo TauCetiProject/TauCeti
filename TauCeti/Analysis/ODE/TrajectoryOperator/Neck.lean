@@ -290,17 +290,16 @@ constant `C` such that, for every `R` and `s`, the `k`-th derivative of the neck
 coefficients `a_R(· - R)` converge to `-tanh` in `C^k` on every half-line `s ≤ c`,
 exponentially fast as `R → ∞`. At order `0` this is `TauCeti.abs_neckCoeff_sub_add_tanh_le`. -/
 theorem exists_abs_iteratedDeriv_neckCoeff_sub_add_iteratedDeriv_tanh_le (k : ℕ) :
-    ∃ C, ∀ R s, |iteratedDeriv k (neckCoeff R) (s - R) + iteratedDeriv k tanh s| ≤
+    ∃ C, 0 ≤ C ∧ ∀ R s, |iteratedDeriv k (neckCoeff R) (s - R) + iteratedDeriv k tanh s| ≤
       C * exp (2 * (s - 2 * R)) := by
   cases k with
-  | zero => exact ⟨2, fun R s ↦ by simpa using abs_neckCoeff_sub_add_tanh_le R s⟩
+  | zero => exact ⟨2, zero_le_two, fun R s ↦ by simpa using abs_neckCoeff_sub_add_tanh_le R s⟩
   | succ n =>
     -- `a_R(s - R) = 1 + tanh (s - 2 R) - tanh s`, so only `tanh⁽ⁿ⁺¹⁾ (s - 2 R)` remains.
-    obtain ⟨C, hC⟩ := exists_abs_iteratedDeriv_succ_tanh_le n
-    refine ⟨C, fun R s ↦ ?_⟩
+    obtain ⟨C, hC₀, hC⟩ := exists_abs_iteratedDeriv_succ_tanh_le n
+    refine ⟨C, hC₀, fun R s ↦ ?_⟩
     rw [iteratedDeriv_succ_neckCoeff, sub_add_cancel, show s - R - R = s - 2 * R by ring,
       sub_add_cancel]
-    have hC₀ : 0 ≤ C := by simpa using (abs_nonneg _).trans (hC 0)
     refine (hC _).trans (mul_le_mul_of_nonneg_left (exp_le_exp.2 ?_) hC₀)
     linarith [neg_abs_le (s - 2 * R)]
 
@@ -310,19 +309,34 @@ constant `C` such that, for every `R` and `s`, the `k`-th derivative of the neck
 coefficients `a_R(· + R)` converge to `tanh` in `C^k` on every half-line `s ≥ c`, exponentially
 fast as `R → ∞`. At order `0` this is `TauCeti.abs_neckCoeff_add_sub_tanh_le`. -/
 theorem exists_abs_iteratedDeriv_neckCoeff_add_sub_iteratedDeriv_tanh_le (k : ℕ) :
-    ∃ C, ∀ R s, |iteratedDeriv k (neckCoeff R) (s + R) - iteratedDeriv k tanh s| ≤
+    ∃ C, 0 ≤ C ∧ ∀ R s, |iteratedDeriv k (neckCoeff R) (s + R) - iteratedDeriv k tanh s| ≤
       C * exp (-(2 * (s + 2 * R))) := by
   cases k with
-  | zero => exact ⟨2, fun R s ↦ by simpa using abs_neckCoeff_add_sub_tanh_le R s⟩
+  | zero => exact ⟨2, zero_le_two, fun R s ↦ by simpa using abs_neckCoeff_add_sub_tanh_le R s⟩
   | succ n =>
     -- `a_R(s + R) = 1 - tanh (s + 2 R) + tanh s`, so only `-tanh⁽ⁿ⁺¹⁾ (s + 2 R)` remains.
-    obtain ⟨C, hC⟩ := exists_abs_iteratedDeriv_succ_tanh_le n
-    have hC₀ : 0 ≤ C := by simpa using (abs_nonneg _).trans (hC 0)
-    refine ⟨C, fun R s ↦ ?_⟩
+    obtain ⟨C, hC₀, hC⟩ := exists_abs_iteratedDeriv_succ_tanh_le n
+    refine ⟨C, hC₀, fun R s ↦ ?_⟩
     rw [iteratedDeriv_succ_neckCoeff, add_sub_cancel_right, show s + R + R = s + 2 * R by ring,
       sub_sub_cancel_left, abs_neg]
     refine (hC _).trans (mul_le_mul_of_nonneg_left (exp_le_exp.2 ?_) hC₀)
     linarith [le_abs_self (s + 2 * R)]
+
+/-- A family of functions within `C exp (a - b R)` of `G` on `S`, with `b > 0`, converges to `G`
+uniformly on `S` as `R → ∞`. -/
+private theorem tendstoUniformlyOn_of_abs_sub_le_mul_exp {F : ℝ → ℝ → ℝ} {G : ℝ → ℝ}
+    {S : Set ℝ} {C a b : ℝ} (hb : 0 < b) (h : ∀ R, ∀ s ∈ S, |F R s - G s| ≤ C * exp (a - b * R)) :
+    TendstoUniformlyOn F G atTop S := by
+  have hlim : Tendsto (fun R ↦ C * exp (a - b * R)) atTop (𝓝 0) := by
+    have h : Tendsto (fun R : ℝ ↦ a - b * R) atTop atBot :=
+      (tendsto_atBot_add_const_left _ a (tendsto_id.const_mul_atTop_of_neg (neg_lt_zero.2 hb))).congr
+        fun R ↦ by simp only [id]; ring
+    simpa using (tendsto_exp_atBot.comp h).const_mul C
+  rw [Metric.tendstoUniformlyOn_iff]
+  intro ε hε
+  filter_upwards [(tendsto_order.1 hlim).2 ε hε] with R hR s hs
+  rw [Real.dist_eq, abs_sub_comm]
+  exact (h R s hs).trans_lt hR
 
 /-- The translated neck coefficients `a_R(· - R)` converge to `-tanh` as `R → ∞` in every `C^k`
 norm, uniformly on every half-line `s ≤ c`: the neck operator `d/ds - a_R`, read near `-R`,
@@ -330,19 +344,11 @@ converges to `d/ds + tanh s`. -/
 theorem tendstoUniformlyOn_iteratedDeriv_neckCoeff_sub (k : ℕ) (c : ℝ) :
     TendstoUniformlyOn (fun R s ↦ iteratedDeriv k (neckCoeff R) (s - R))
       (fun s ↦ -iteratedDeriv k tanh s) atTop (Iic c) := by
-  obtain ⟨C, hC⟩ := exists_abs_iteratedDeriv_neckCoeff_sub_add_iteratedDeriv_tanh_le k
-  have hC₀ : 0 ≤ C := by simpa using (abs_nonneg _).trans (hC 0 0)
-  -- On `s ≤ c` the bound is at most `C exp (2 (c - 2 R))`, which tends to `0`.
-  have hlim : Tendsto (fun R ↦ C * exp (2 * (c - 2 * R))) atTop (𝓝 0) := by
-    have h : Tendsto (fun R : ℝ ↦ 2 * (c - 2 * R)) atTop atBot :=
-      (tendsto_atBot_add_const_left _ (2 * c) (tendsto_id.const_mul_atTop_of_neg
-        (by norm_num : (-4 : ℝ) < 0))).congr fun R ↦ by simp only [id]; ring
-    simpa using (tendsto_exp_atBot.comp h).const_mul C
-  rw [Metric.tendstoUniformlyOn_iff]
-  intro ε hε
-  filter_upwards [(tendsto_order.1 hlim).2 ε hε] with R hR s hs
-  rw [Real.dist_eq, ← abs_neg, neg_sub, sub_neg_eq_add]
-  refine ((hC R s).trans (mul_le_mul_of_nonneg_left (exp_le_exp.2 ?_) hC₀)).trans_lt hR
+  obtain ⟨C, hC₀, hC⟩ := exists_abs_iteratedDeriv_neckCoeff_sub_add_iteratedDeriv_tanh_le k
+  -- On `s ≤ c` the bound is at most `C exp (2 c - 4 R)`.
+  refine tendstoUniformlyOn_of_abs_sub_le_mul_exp (a := 2 * c) four_pos fun R s hs ↦ ?_
+  rw [sub_neg_eq_add]
+  refine (hC R s).trans (mul_le_mul_of_nonneg_left (exp_le_exp.2 ?_) hC₀)
   linarith [mem_Iic.1 hs]
 
 /-- The translated neck coefficients `a_R(· + R)` converge to `tanh` as `R → ∞` in every `C^k`
@@ -351,19 +357,10 @@ converges to `d/ds - tanh s`. -/
 theorem tendstoUniformlyOn_iteratedDeriv_neckCoeff_add (k : ℕ) (c : ℝ) :
     TendstoUniformlyOn (fun R s ↦ iteratedDeriv k (neckCoeff R) (s + R))
       (iteratedDeriv k tanh) atTop (Ici c) := by
-  obtain ⟨C, hC⟩ := exists_abs_iteratedDeriv_neckCoeff_add_sub_iteratedDeriv_tanh_le k
-  have hC₀ : 0 ≤ C := by simpa using (abs_nonneg _).trans (hC 0 0)
-  -- On `s ≥ c` the bound is at most `C exp (-2 (c + 2 R))`, which tends to `0`.
-  have hlim : Tendsto (fun R ↦ C * exp (-(2 * (c + 2 * R)))) atTop (𝓝 0) := by
-    have h : Tendsto (fun R : ℝ ↦ -(2 * (c + 2 * R))) atTop atBot :=
-      (tendsto_atBot_add_const_left _ (-(2 * c)) (tendsto_id.const_mul_atTop_of_neg
-        (by norm_num : (-4 : ℝ) < 0))).congr fun R ↦ by simp only [id]; ring
-    simpa using (tendsto_exp_atBot.comp h).const_mul C
-  rw [Metric.tendstoUniformlyOn_iff]
-  intro ε hε
-  filter_upwards [(tendsto_order.1 hlim).2 ε hε] with R hR s hs
-  rw [Real.dist_eq, abs_sub_comm]
-  refine ((hC R s).trans (mul_le_mul_of_nonneg_left (exp_le_exp.2 ?_) hC₀)).trans_lt hR
+  obtain ⟨C, hC₀, hC⟩ := exists_abs_iteratedDeriv_neckCoeff_add_sub_iteratedDeriv_tanh_le k
+  -- On `s ≥ c` the bound is at most `C exp (-2 c - 4 R)`.
+  refine tendstoUniformlyOn_of_abs_sub_le_mul_exp (a := -(2 * c)) four_pos fun R s hs ↦ ?_
+  refine (hC R s).trans (mul_le_mul_of_nonneg_left (exp_le_exp.2 ?_) hC₀)
   linarith [mem_Ici.1 hs]
 
 /-- `a_R(s) - 1 = tanh (s - R) - tanh (s + R)`. -/
@@ -377,11 +374,12 @@ there is a constant `C` such that, for every `R` and `s`, the `k`-th derivative 
 coefficient of `d/ds - a_R` converges to its limit `1` at both ends exponentially in `C^k`, at
 the rate `exp (-2 |s|)` set by the ends of the two pieces `d/ds ± tanh s`. -/
 theorem exists_abs_iteratedDeriv_neckCoeff_sub_one_le (k : ℕ) :
-    ∃ C, ∀ R s, |iteratedDeriv k (fun s ↦ neckCoeff R s - 1) s| ≤ C * exp (2 * (|R| - |s|)) := by
+    ∃ C, 0 ≤ C ∧ ∀ R s,
+      |iteratedDeriv k (fun s ↦ neckCoeff R s - 1) s| ≤ C * exp (2 * (|R| - |s|)) := by
   cases k with
   | zero =>
     -- Compare both terms of `tanh (s - R) - tanh (s + R)` with `1` at `+∞` and with `-1` at `-∞`.
-    refine ⟨4, fun R s ↦ ?_⟩
+    refine ⟨4, zero_le_four, fun R s ↦ ?_⟩
     rw [iteratedDeriv_zero, neckCoeff_sub_one, abs_le]
     have hR₁ := neg_abs_le R
     have hR₂ := le_abs_self R
@@ -401,9 +399,8 @@ theorem exists_abs_iteratedDeriv_neckCoeff_sub_one_le (k : ℕ) :
         exp_le_exp.2 (by rw [abs_of_nonpos hs]; linarith)
       constructor <;> linarith [neg_one_lt_tanh (s - R), neg_one_lt_tanh (s + R)]
   | succ n =>
-    obtain ⟨C, hC⟩ := exists_abs_iteratedDeriv_succ_tanh_le n
-    have hC₀ : 0 ≤ C := by simpa using (abs_nonneg _).trans (hC 0)
-    refine ⟨2 * C, fun R s ↦ ?_⟩
+    obtain ⟨C, hC₀, hC⟩ := exists_abs_iteratedDeriv_succ_tanh_le n
+    refine ⟨2 * C, by positivity, fun R s ↦ ?_⟩
     rw [iteratedDeriv_fun_sub ((contDiff_neckCoeff R).contDiffAt) contDiffAt_const]
     simp only [iteratedDeriv_const, Nat.add_one_ne_zero, ↓reduceIte, sub_zero]
     rw [iteratedDeriv_succ_neckCoeff]

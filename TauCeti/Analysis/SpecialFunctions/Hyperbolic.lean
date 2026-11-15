@@ -43,7 +43,7 @@ in terms of the exponentials `exp (± r / 2)`, and the Gaussian bound
 * `Real.hasDerivAt_inv_cosh` — the derivative of `(cosh x)⁻¹` is `-tanh x * (cosh x)⁻¹`.
 * `Real.one_add_tanh`, `Real.one_sub_tanh`, `Real.one_add_tanh_le` and `Real.one_sub_tanh_le` —
   `1 ± tanh x = exp (± x) / cosh x`, so `Real.tanh` approaches `∓1` at the rate `2 * exp (± 2 x)`.
-* `Real.one_sub_tanh_sq_le`, `Real.exists_iteratedDeriv_succ_tanh_eq` and
+* `Real.one_sub_tanh_sq_le`, `Real.exists_iteratedDeriv_succ_tanh_eq_mul_eval` and
   `Real.exists_abs_iteratedDeriv_succ_tanh_le` — every derivative of positive order of
   `Real.tanh` is `1 - tanh x ^ 2 ≤ 4 * exp (-(2 * |x|))` times a polynomial in `tanh x`, so it is
   at most a constant times `exp (-(2 * |x|))`: `Real.tanh` converges to `±1` in every `C^k` norm.
@@ -250,7 +250,7 @@ theorem one_sub_tanh_sq_le (x : ℝ) : 1 - tanh x ^ 2 ≤ 4 * exp (-(2 * |x|)) :
 open _root_.Polynomial in
 /-- Every derivative of positive order of the hyperbolic tangent is `1 - tanh x ^ 2` times a
 polynomial in `tanh x`, since `tanh' = 1 - tanh ^ 2`. -/
-theorem exists_iteratedDeriv_succ_tanh_eq (n : ℕ) :
+theorem exists_iteratedDeriv_succ_tanh_eq_mul_eval (n : ℕ) :
     ∃ p : ℝ[X], ∀ x, iteratedDeriv (n + 1) tanh x = (1 - tanh x ^ 2) * p.eval (tanh x) := by
   have ht (x : ℝ) : HasDerivAt tanh (1 - tanh x ^ 2) x := by
     simpa [one_sub_tanh_sq] using hasDerivAt_tanh x
@@ -273,17 +273,17 @@ order is `1 - tanh x ^ 2` (`Real.one_sub_tanh_sq_le`) times a polynomial in `tan
 bounded since `tanh x ∈ [-1, 1]`. So `tanh` converges to `±1` at `±∞` in every `C^k` norm, at the
 rate `exp (-2 |x|)`. -/
 theorem exists_abs_iteratedDeriv_succ_tanh_le (n : ℕ) :
-    ∃ C, ∀ x, |iteratedDeriv (n + 1) tanh x| ≤ C * exp (-(2 * |x|)) := by
-  obtain ⟨p, hp⟩ := exists_iteratedDeriv_succ_tanh_eq n
+    ∃ C, 0 ≤ C ∧ ∀ x, |iteratedDeriv (n + 1) tanh x| ≤ C * exp (-(2 * |x|)) := by
+  obtain ⟨p, hp⟩ := exists_iteratedDeriv_succ_tanh_eq_mul_eval n
   obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn
     (p.differentiable.continuous.continuousOn (s := Set.Icc (-1 : ℝ) 1))
-  refine ⟨4 * C, fun x ↦ ?_⟩
-  have hs : 0 ≤ 1 - tanh x ^ 2 := by nlinarith [neg_one_lt_tanh x, tanh_lt_one x]
-  have hb : |p.eval (tanh x)| ≤ C := by
+  have hb (x : ℝ) : |p.eval (tanh x)| ≤ C := by
     simpa [Real.norm_eq_abs] using hC (tanh x) ⟨(neg_one_lt_tanh x).le, (tanh_lt_one x).le⟩
+  refine ⟨4 * C, by linarith [(abs_nonneg _).trans (hb 0)], fun x ↦ ?_⟩
+  have hs : 0 ≤ 1 - tanh x ^ 2 := (sub_pos.2 (tanh_sq_lt_one x)).le
   rw [hp, abs_mul, abs_of_nonneg hs]
   calc (1 - tanh x ^ 2) * |p.eval (tanh x)| ≤ 4 * exp (-(2 * |x|)) * C :=
-        mul_le_mul (one_sub_tanh_sq_le x) hb (abs_nonneg _) (by positivity)
+        mul_le_mul (one_sub_tanh_sq_le x) (hb x) (abs_nonneg _) (by positivity)
     _ = 4 * C * exp (-(2 * |x|)) := by ring
 
 /-- The square of `sinh (r / 2)` in terms of `exp (± r / 2)`:
