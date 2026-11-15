@@ -225,16 +225,15 @@ def evenUnitaryGroupMap (f : Q₁ →qᵢ Q₂) :
     CliffordAlgebra.evenUnitaryGroup Q₁ →* CliffordAlgebra.evenUnitaryGroup Q₂ :=
   ((Units.map (CliffordAlgebra.map f).toMonoidHom).comp
       (CliffordAlgebra.evenUnitaryGroup Q₁).subtype).codRestrict _ fun x ↦ by
-    rw [MonoidHom.comp_apply, Subgroup.coe_subtype, CliffordAlgebra.evenUnitaryGroup.mem_iff,
-      Units.coe_map, AlgHom.toRingHom_eq_coe, RingHom.toMonoidHom_eq_coe,
-      AlgHom.toRingHom_toMonoidHom, MonoidHom.coe_ofClass]
     -- `map f` commutes with the canonical star (`CliffordAlgebra.map_star`), so it also bundles as
     -- a star monoid homomorphism, whose underlying function is again `map f`.
-    exact ⟨CliffordAlgebra.map_mem_even f (CliffordAlgebra.evenUnitaryGroup.mem_even _ x.2),
-      Unitary.map_mem
-        ({ (CliffordAlgebra.map f).toMonoidHom with map_star' := CliffordAlgebra.map_star f } :
+    refine (CliffordAlgebra.evenUnitaryGroup.mem_iff Q₂).mpr ⟨?_, ?_⟩
+    · simpa using CliffordAlgebra.map_mem_even f
+        (CliffordAlgebra.evenUnitaryGroup.mem_even _ x.2)
+    · simpa using Unitary.map_mem
+        (⟨(CliffordAlgebra.map f).toMonoidHom, CliffordAlgebra.map_star f⟩ :
           CliffordAlgebra Q₁ →⋆* CliffordAlgebra Q₂)
-        (CliffordAlgebra.evenUnitaryGroup.mem_unitary _ x.2)⟩
+        (CliffordAlgebra.evenUnitaryGroup.mem_unitary _ x.2)
 
 /-- After coercion, the induced map is the `Units.map` of the Clifford-algebra map. -/
 @[simp]
