@@ -65,6 +65,9 @@ one-parameter automorphism groups of C⋆-algebras.
 * `TauCeti.dysonSeriesLeft_const`: the left series of a constant path `a` is `t ↦ exp (t • a)`.
 * `TauCeti.dysonSeries_neg_mul_dysonSeriesLeft`, `TauCeti.dysonSeriesLeft_mul_dysonSeries_neg`:
   the Dyson series of `-p` is the inverse of the left Dyson series of `p`.
+* `Commute.dysonSeriesLeft`, `Commute.dysonSeries_neg`: an element commuting with every value of
+  the path commutes with its left Dyson series and with the inverse; for paths of operators
+  commuting with a complex structure, the propagator is complex linear.
 * `TauCeti.eq_dysonSeriesLeft_apply_add_integral`: variation of constants, every solution of
   `w' t = M t (w t) + f t` is `w t = Γ t (w 0 + ∫₀ᵗ Γ(s)⁻¹ (f s) ds)`.
 
@@ -418,6 +421,26 @@ theorem dysonSeriesLeft_mul_dysonSeries_neg (hp : Continuous p) (t : ℝ) :
           ContinuousLinearMap.mul_apply', Pi.neg_apply, mul_neg]; noncomm_ring)
     · exact (hasDerivAt_const s (1 : B)).congr_deriv (by simp [L])
   exact congrFun h t
+
+/-- **The left Dyson series commutes with what commutes with the path.** An element commuting
+with every value of a continuous path `p` commutes with its left Dyson series. -/
+theorem _root_.Commute.dysonSeriesLeft {a : B} (hp : Continuous p) (ha : ∀ t, Commute a (p t))
+    (t : ℝ) : Commute a (TauCeti.dysonSeriesLeft p t) := by
+  -- The commutator `a Γ - Γ a` solves `f' = p f` and vanishes at `0`.
+  have h := eq_dysonSeriesLeft_mul hp
+    (f := fun t => a * TauCeti.dysonSeriesLeft p t - TauCeti.dysonSeriesLeft p t * a)
+    (fun t => ?_) t
+  · simpa [Commute, SemiconjBy, dysonSeriesLeft_zero, sub_eq_zero] using h
+  · refine (((hasDerivAt_dysonSeriesLeft hp t).const_mul a).sub
+      ((hasDerivAt_dysonSeriesLeft hp t).mul_const a)).congr_deriv ?_
+    rw [mul_sub, ← mul_assoc, (ha t).eq, mul_assoc, mul_assoc]
+
+/-- An element commuting with every value of a continuous path `p` commutes with the inverse
+`dysonSeries (-p) t` of its left Dyson series. -/
+theorem _root_.Commute.dysonSeries_neg {a : B} (hp : Continuous p) (ha : ∀ t, Commute a (p t))
+    (t : ℝ) : Commute a (TauCeti.dysonSeries (-p) t) :=
+  Commute.units_inv_right (u := ⟨_, _, dysonSeriesLeft_mul_dysonSeries_neg hp t,
+    dysonSeries_neg_mul_dysonSeriesLeft hp t⟩) (Commute.dysonSeriesLeft hp ha t)
 
 /-- The left Dyson series of a continuous path takes invertible values, with inverse the Dyson
 series of `-p`. -/
