@@ -43,6 +43,9 @@ sheaves on a field by discrete continuous `Gal(Ω/K)`-sets (SGA 4, Exposé VIII,
 
 * `AlgebraicGeometry.Scheme.galoisStalk K Ω A`: the stalk at `Spec Ω ⟶ Spec K` of an étale sheaf
   on `Spec K`, with its action of `Gal(Ω/K)`.
+* `AlgebraicGeometry.Scheme.toGaloisStalk K Ω A F X t`: the germ at a lift `t` of the geometric
+  point of sections over an étale `K`-scheme `X`, landing in `((galoisStalk K Ω A).obj F).V`, with
+  `AlgebraicGeometry.Scheme.galoisStalkDesc` for morphisms out of the stalk.
 
 ## Main results
 
@@ -157,7 +160,7 @@ theorem toPresheafFiber_galoisStalkMap_app_apply {FA : A → A → Type*} {CA : 
 /-- **The Galois action on stalks of étale sheaves on a field.** The stalk at the geometric point
 `Spec Ω ⟶ Spec K` of an étale sheaf on `Spec K`, with the action of `Gal(Ω/K)` through the
 automorphisms `Spec σ` of the geometric point. -/
-@[expose, simps]
+@[expose]
 noncomputable def galoisStalk :
     Sheaf (smallEtaleTopology (Spec (.of K))) A ⥤ Action A Gal(Ω/K) where
   obj F :=
@@ -174,11 +177,146 @@ noncomputable def galoisStalk :
     { hom := (pointSmallEtale (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).sheafFiber.map f
       comm σ := ((galoisStalkMap K Ω A σ).naturality f).symm }
 
+/-- The underlying object of the stalk with its Galois action is the stalk. -/
+theorem galoisStalk_obj_V (F : Sheaf (smallEtaleTopology (Spec (.of K))) A) :
+    ((galoisStalk K Ω A).obj F).V =
+      (pointSmallEtale (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).sheafFiber.obj F :=
+  (rfl)
+
+/-- `σ ∈ Gal(Ω/K)` acts on the stalk by `galoisStalkMap K Ω A σ`. -/
+theorem galoisStalk_obj_ρ_asHom (F : Sheaf (smallEtaleTopology (Spec (.of K))) A)
+    (σ : Gal(Ω/K)) :
+    (((galoisStalk K Ω A).obj F).ρ σ).asHom = (galoisStalkMap K Ω A σ).app F :=
+  (rfl)
+
+/-- The equivariant map of stalks induced by a morphism of sheaves is the map of stalks. -/
+theorem galoisStalk_map_hom {F G : Sheaf (smallEtaleTopology (Spec (.of K))) A} (f : F ⟶ G) :
+    ((galoisStalk K Ω A).map f).hom =
+      (pointSmallEtale (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).sheafFiber.map f :=
+  (rfl)
+
+-- The germ API below restates `toPresheafFiber` and its lemmas with the stalk typed as
+-- `((galoisStalk K Ω A).obj F).V`. The presheaf fiber that `toPresheafFiber` lands in agrees with
+-- this object only after unfolding `galoisStalk` and `sheafFiber`, so `simp` and `rw` cannot
+-- combine Mathlib's germ lemmas with the Galois action or with `galoisStalk.map`.
+
+/-- The germ at a lift `t` of the geometric point of a section of an étale sheaf over an étale
+`K`-scheme `X`, as an element of the stalk with its Galois action. -/
+noncomputable def toGaloisStalk (F : Sheaf (smallEtaleTopology (Spec (.of K))) A)
+    (X : (Spec (.of K)).Etale)
+    (t : (pointSmallEtale (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).fiber.obj X) :
+    F.obj.obj (op X) ⟶ ((galoisStalk K Ω A).obj F).V :=
+  (pointSmallEtale _).toPresheafFiber X t F.obj
+
+theorem toGaloisStalk_def (F : Sheaf (smallEtaleTopology (Spec (.of K))) A)
+    (X : (Spec (.of K)).Etale)
+    (t : (pointSmallEtale (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).fiber.obj X) :
+    toGaloisStalk K Ω A F X t = (pointSmallEtale _).toPresheafFiber X t F.obj :=
+  (rfl)
+
+/-- Two morphisms out of the stalk agree when they agree on all germs. -/
+@[ext]
+theorem galoisStalk_hom_ext {F : Sheaf (smallEtaleTopology (Spec (.of K))) A} {T : A}
+    {f g : ((galoisStalk K Ω A).obj F).V ⟶ T}
+    (h : ∀ (X : (Spec (.of K)).Etale)
+      (t : (pointSmallEtale (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).fiber.obj X),
+      toGaloisStalk K Ω A F X t ≫ f = toGaloisStalk K Ω A F X t ≫ g) : f = g :=
+  (pointSmallEtale _).presheafFiber_hom_ext h
+
+section Desc
+
+variable {K Ω A} {F : Sheaf (smallEtaleTopology (Spec (.of K))) A} {T : A}
+  (φ : ∀ (X : (Spec (.of K)).Etale),
+    (pointSmallEtale (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).fiber.obj X →
+      (F.obj.obj (op X) ⟶ T))
+  (hφ : ∀ ⦃X Y : (Spec (.of K)).Etale⦄ (f : X ⟶ Y)
+    (t : (pointSmallEtale (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).fiber.obj X),
+    F.obj.map f.op ≫ φ X t = φ Y ((pointSmallEtale _).fiber.map f t))
+
+/-- The morphism out of the stalk given by a compatible family of morphisms out of the sections,
+indexed by the lifts of the geometric point. -/
+noncomputable def galoisStalkDesc : ((galoisStalk K Ω A).obj F).V ⟶ T :=
+  (pointSmallEtale _).presheafFiberDesc φ hφ
+
+theorem galoisStalkDesc_def :
+    galoisStalkDesc φ hφ = (pointSmallEtale _).presheafFiberDesc φ hφ :=
+  (rfl)
+
+@[reassoc (attr := simp), elementwise (attr := simp)]
+theorem toGaloisStalk_galoisStalkDesc (X : (Spec (.of K)).Etale)
+    (t : (pointSmallEtale (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).fiber.obj X) :
+    toGaloisStalk K Ω A F X t ≫ galoisStalkDesc φ hφ = φ X t :=
+  (pointSmallEtale _).toPresheafFiber_presheafFiberDesc φ hφ X t
+
+end Desc
+
+/-- Germs are compatible with restriction along morphisms of étale `K`-schemes. -/
+@[reassoc (attr := simp), elementwise (attr := simp)]
+theorem toGaloisStalk_w (F : Sheaf (smallEtaleTopology (Spec (.of K))) A)
+    {X Y : (Spec (.of K)).Etale} (f : X ⟶ Y)
+    (t : (pointSmallEtale (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).fiber.obj X) :
+    F.obj.map f.op ≫ toGaloisStalk K Ω A F X t =
+      toGaloisStalk K Ω A F Y ((pointSmallEtale _).fiber.map f t) :=
+  (pointSmallEtale _).toPresheafFiber_w f t F.obj
+
+/-- Germs are natural in the sheaf. -/
+@[reassoc (attr := simp), elementwise (attr := simp)]
+theorem toGaloisStalk_naturality {F G : Sheaf (smallEtaleTopology (Spec (.of K))) A}
+    (g : F ⟶ G) (X : (Spec (.of K)).Etale)
+    (t : (pointSmallEtale (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).fiber.obj X) :
+    toGaloisStalk K Ω A F X t ≫ ((galoisStalk K Ω A).map g).hom =
+      g.hom.app (op X) ≫ toGaloisStalk K Ω A G X t :=
+  (pointSmallEtale _).toPresheafFiber_naturality g.hom X t
+
+/-- `σ ∈ Gal(Ω/K)` sends the germ at a lift `t` to the germ at the lift `Spec σ ≫ t`. -/
+@[reassoc (attr := simp), elementwise (attr := simp)]
+theorem toGaloisStalk_ρ (F : Sheaf (smallEtaleTopology (Spec (.of K))) A)
+    (X : (Spec (.of K)).Etale)
+    (t : (pointSmallEtale (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).fiber.obj X)
+    (σ : Gal(Ω/K)) :
+    toGaloisStalk K Ω A F X t ≫ (((galoisStalk K Ω A).obj F).ρ σ).asHom =
+      toGaloisStalk K Ω A F X
+        ((pointSmallEtaleHom _ (Spec.map_algHom_comp_map_algebraMap σ)).hom.app X t) :=
+  toPresheafFiber_galoisStalkMap_app K Ω A σ F X t
+
 section Concrete
 
 variable {A : Type (v + 1)} [LargeCategory A] {FA : A → A → Type*} {CA : A → Type*}
   [∀ X Y, FunLike (FA X Y) (CA X) (CA Y)] [ConcreteCategory A FA] [HasColimitsOfSize.{u, u} A]
   [PreservesFilteredColimitsOfSize.{u, u} (CategoryTheory.forget A)]
+
+omit [PreservesFilteredColimitsOfSize.{u, u} (CategoryTheory.forget A)] in
+/-- `σ ∈ Gal(Ω/K)` sends the germ at a lift `t` of a section to its germ at the lift `Spec σ ≫ t`,
+for the action of `Gal(Ω/K)` on the elements of the stalk. -/
+@[simp]
+theorem smul_toGaloisStalk_apply (F : Sheaf (smallEtaleTopology (Spec (.of K))) A)
+    (X : (Spec (.of K)).Etale)
+    (t : (pointSmallEtale (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).fiber.obj X)
+    (σ : Gal(Ω/K)) (z : ToType (F.obj.obj (op X))) :
+    σ • toGaloisStalk K Ω A F X t z = toGaloisStalk K Ω A F X
+      ((pointSmallEtaleHom _ (Spec.map_algHom_comp_map_algebraMap σ)).hom.app X t) z :=
+  toGaloisStalk_ρ_apply K Ω A F X t σ z
+
+/-- Every element of the stalk is the germ of a section over an étale `K`-scheme at a lift of the
+geometric point. -/
+theorem toGaloisStalk_jointly_surjective (F : Sheaf (smallEtaleTopology (Spec (.of K))) A)
+    (p : ToType ((galoisStalk K Ω A).obj F).V) :
+    ∃ (X : (Spec (.of K)).Etale)
+      (t : (pointSmallEtale (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).fiber.obj X)
+      (z : ToType (F.obj.obj (op X))), toGaloisStalk K Ω A F X t z = p :=
+  (pointSmallEtale _).toPresheafFiber_jointly_surjective (P := F.obj) p
+
+/-- Two sections have the same germ at a lift `t` exactly when they agree after restriction to
+some étale `K`-scheme over `X` with a lift of the geometric point mapping to `t`. -/
+theorem toGaloisStalk_eq_iff (F : Sheaf (smallEtaleTopology (Spec (.of K))) A)
+    (X : (Spec (.of K)).Etale)
+    (t : (pointSmallEtale (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).fiber.obj X)
+    (z₁ z₂ : ToType (F.obj.obj (op X))) :
+    toGaloisStalk K Ω A F X t z₁ = toGaloisStalk K Ω A F X t z₂ ↔
+      ∃ (Y : (Spec (.of K)).Etale) (f : Y ⟶ X)
+        (y : (pointSmallEtale (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).fiber.obj Y),
+        (pointSmallEtale _).fiber.map f y = t ∧ F.obj.map f.op z₁ = F.obj.map f.op z₂ :=
+  (pointSmallEtale _).toPresheafFiber_eq_iff' X t z₁ z₂
 
 /-- **Point stabilizers of the Galois action on stalks are open**: for an étale sheaf `F` on
 `Spec K` with values in a concrete category whose forgetful functor preserves filtered colimits,
@@ -189,7 +327,7 @@ theorem isOpen_stabilizer_galoisStalk (F : Sheaf (smallEtaleTopology (Spec (.of 
     IsOpen (MulAction.stabilizer Gal(Ω/K) p : Set Gal(Ω/K)) := by
   -- `p` is the germ of a section `z` over an étale `K`-scheme `X` at a lift `t` of the geometric
   -- point, and `t` is fixed by the fixing subgroup of a finite extension `L` of `K`, which is open.
-  obtain ⟨X, t, z, hp⟩ := (pointSmallEtale _).toPresheafFiber_jointly_surjective (P := F.obj) p
+  obtain ⟨X, t, z, hp⟩ := toGaloisStalk_jointly_surjective K Ω F p
   have : Etale X.hom := X.prop
   obtain ⟨L, _, hL⟩ :=
     exists_finiteDimensional_forall_mem_fixingSubgroup_SpecMap_comp_eq K Ω X.hom t.left (Over.w t)
@@ -200,7 +338,7 @@ theorem isOpen_stabilizer_galoisStalk (F : Sheaf (smallEtaleTopology (Spec (.of 
     Over.OverMorphism.ext ((pointSmallEtaleHom_hom_app_left _ _ X t).trans (hL σ hσ))
   -- `σ` acts on `p` through `galoisStalkMap`, which sends the germ at `t` to the germ at `t`.
   subst hp
-  exact (toPresheafFiber_galoisStalkMap_app_apply K Ω A σ F X t z).trans (by rw [ht])
+  rw [smul_toGaloisStalk_apply, ht]
 
 end Concrete
 
