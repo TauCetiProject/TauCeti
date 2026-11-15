@@ -8,9 +8,10 @@ module
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ContinuousCohomologyIso
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.DimensionShifting.Basic
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.GroupCohomologyIso
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.GroupCohomologyIso.Basic
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Coinduced
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.LongExactSequence
+public import TauCeti.Topology.Algebra.MulAction.Discrete
 import TauCeti.RepresentationTheory.Rep.TensorShortExact
 import TauCeti.RepresentationTheory.Coinduced
 
@@ -69,10 +70,6 @@ namespace TauCeti.ContCohomology
 
 variable (G : Type) [Group G] [TopologicalSpace G] [DiscreteTopology G]
   (M : Type) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction G M]
-
-/-- An action of a discrete group on a discrete module is continuous. -/
-local instance continuousSMul_of_discreteTopology : ContinuousSMul G M :=
-  ⟨continuous_of_discreteTopology⟩
 
 /-! ### The dimension-shifting sequence in `Rep ℤ G` -/
 

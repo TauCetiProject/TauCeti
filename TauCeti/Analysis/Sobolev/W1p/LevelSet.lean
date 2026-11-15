@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.W1p.ChainRule
 
 import Mathlib.Algebra.Order.Group.PosPart
+import TauCeti.MeasureTheory.Function.EssSup
 
 /-!
 # Weak gradients on level sets
@@ -20,14 +21,24 @@ The level may be any real number, including on domains of infinite measure. Thes
 statements apply to measurable level sets, which need not contain any open set. They remove
 the ambiguity of truncation gradients at a threshold and support continuity of positive
 truncation in the Sobolev norm.
+
+If the superlevel sets `{u > l}`, `l > k`, have finite measure and `u > k` on a set of positive
+measure, then there are levels
+`lⱼ ≥ k`, each exceeded by `u` on a set of positive measure, along which the measure of
+`{u > lⱼ, ∇u ≠ 0}` tends to zero. This is the measure-theoretic input of the weak maximum
+principle with bounded drift.
+
+The same holds for the classical gradient of a `C¹` function, which is read off from the weak
+statement on small balls. In particular a level set of a `C¹` function on which its derivative
+does not vanish is null.
 -/
 
 public section
 
 namespace TauCeti
 
-open Filter MeasureTheory Set TopologicalSpace
-open scoped ENNReal InnerProductSpace
+open Filter _root_.MeasureTheory Set TopologicalSpace
+open scoped ENNReal InnerProductSpace Gradient Topology
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
@@ -38,8 +49,7 @@ The level may be any real number, even when `Ω` has infinite measure. -/
 theorem W1p.gradient_ae_eq_zero_on_level_set (hp : p ≠ ∞) (u : W1p mu Omega p) (k : ℝ) :
     ∀ᵐ x ∂mu.restrict Omega, W1p.value u x = k → W1p.gradient u x = 0 := by
   classical
-  have hneg : ⇑(W1p.value (-u)) =ᵐ[mu.restrict Omega] -W1p.value u := by
-    simpa only [← W1p.valueL_apply, map_neg] using Lp.coeFn_neg (W1p.value u)
+  have hneg := W1p.value_neg_ae u
   have hconst : HasWeakFDerivOn mu Omega (fun _ : E => k) 0 :=
     hasWeakFDerivOn_iff.2 fun _ => hasWeakLineDerivOn_const k
   have hsplit := (W1p.hasWeakFDerivOn_posPartAbove hp k u).sub
@@ -63,6 +73,17 @@ theorem W1p.gradient_ae_eq_zero_on_level_set (hp : p ≠ ∞) (u : W1p mu Omega 
     simpa only [Pi.sub_apply, Pi.zero_apply, sub_zero, hpos, hneg, map_zero] using hx
   exact innerSL_inj.mp (hz.trans (map_zero _).symm)
 
+/-- At a level `k`, the jet of a Sobolev function has zero gradient almost everywhere on the
+level set of its value. -/
+theorem W1p.snd_ae_eq_zero_of_fst_eq (hp : p ≠ ∞) (u : W1p mu Omega p) (k : ℝ) :
+    ∀ᵐ x ∂mu.restrict Omega, ((u : Sobolev1JetLp mu Omega p) x).fst = k →
+      ((u : Sobolev1JetLp mu Omega p) x).snd = 0 := by
+  filter_upwards [W1p.value_apply_ae u, W1p.gradient_apply_ae u,
+    W1p.gradient_ae_eq_zero_on_level_set hp u k] with x hv hg hz
+  intro hx
+  rw [← hg]
+  exact hz (hv.trans hx)
+
 /-- Weak gradients agree almost everywhere wherever the values agree, even if their
 coincidence set has empty interior. -/
 theorem W1p.gradient_ae_eq_on_eq (hp : p ≠ ∞) (u v : W1p mu Omega p) :
@@ -78,6 +99,147 @@ theorem W1p.gradient_ae_eq_on_eq (hp : p ≠ ∞) (u v : W1p mu Omega p) :
     with x hx hux hgx
   intro h
   apply sub_eq_zero.mp
-  simpa only [hgx, Pi.sub_apply] using hx (by simp [hux, h])
+  simpa only [hgx, Pi.sub_apply] using hx (by rw [hux, Pi.sub_apply, h, sub_self])
+
+/-- If increasing levels `mⱼ`, eventually above `k`, have a null intersection of the sets
+`{u > mⱼ, ∇u ≠ 0}`, and each lies below an admissible level `l ≥ k` (one exceeded by `u` on a set
+of positive measure), then admissible levels along which the measure of `{u > l, ∇u ≠ 0}` tends to
+zero exist. -/
+private theorem W1p.exists_tendsto_measure_of_monotone_levels (u : W1p mu Omega p) {k : ℝ}
+    (hfin : ∀ l, k < l → mu.restrict Omega {x | l < W1p.value u x} ≠ ∞)
+    (m : ℕ → ℝ) (hm : Monotone m) (hmk : ∃ i, k < m i)
+    (hnull : mu.restrict Omega (⋂ j, {x | m j < W1p.value u x ∧ W1p.gradient u x ≠ 0}) = 0)
+    (hL : ∀ j, ∃ l, k ≤ l ∧ m j ≤ l ∧ ¬ ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ l) :
+    ∃ l : ℕ → ℝ, (∀ j, k ≤ l j ∧ ¬ ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ l j) ∧
+      Tendsto (fun j ↦ mu.restrict Omega {x | l j < W1p.value u x ∧ W1p.gradient u x ≠ 0})
+        atTop (𝓝 0) := by
+  set μ := mu.restrict Omega
+  set T : ℝ → Set E :=
+    fun l ↦ {x | l < W1p.value u x ∧ W1p.gradient u x ≠ 0}
+  have hT : ∀ l, MeasurableSet (T l) := fun l ↦
+    (measurableSet_lt measurable_const (Lp.stronglyMeasurable (W1p.value u)).measurable).inter
+      ((Lp.stronglyMeasurable (W1p.gradient u)).measurable (measurableSet_singleton 0).compl)
+  have hTanti : Antitone T := fun l l' hll' x hx ↦ ⟨hll'.trans_lt hx.1, hx.2⟩
+  obtain ⟨i, hi⟩ := hmk
+  choose l hkl hml hnot using hL
+  refine ⟨l, fun j ↦ ⟨hkl j, hnot j⟩, tendsto_of_tendsto_of_tendsto_of_le_of_le
+    tendsto_const_nhds ?_ (fun _ ↦ zero_le) fun j ↦ measure_mono (hTanti (hml j))⟩
+  have := tendsto_measure_iInter_atTop (μ := μ) (s := fun j ↦ T (m j))
+    (fun j ↦ (hT _).nullMeasurableSet) (fun i j hij ↦ hTanti (hm hij))
+    ⟨i, ne_top_of_le_ne_top (hfin _ hi) (measure_mono fun _ hx ↦ hx.1)⟩
+  rwa [hnull] at this
+
+/-- The bounded case of `W1p.exists_tendsto_measure_lt_value_and_gradient_ne_zero`: `u` is
+essentially bounded above, so there are admissible levels `lⱼ ≥ k` along which the measure of
+`{u > lⱼ, ∇u ≠ 0}` tends to zero. -/
+private theorem W1p.exists_tendsto_measure_of_bddAbove (hp : p ≠ ∞) (u : W1p mu Omega p) {k : ℝ}
+    (hfin : ∀ l, k < l → mu.restrict Omega {x | l < W1p.value u x} ≠ ∞)
+    (hk : ¬ ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ k)
+    (hbdd : BddAbove {l : ℝ | k ≤ l ∧ ¬ ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ l}) :
+    ∃ l : ℕ → ℝ, (∀ j, k ≤ l j ∧ ¬ ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ l j) ∧
+      Tendsto (fun j ↦ mu.restrict Omega {x | l j < W1p.value u x ∧ W1p.gradient u x ≠ 0})
+        atTop (𝓝 0) := by
+  set μ := mu.restrict Omega
+  set L : Set ℝ := {l | k ≤ l ∧ ¬ ∀ᵐ x ∂μ, W1p.value u x ≤ l}
+  have hkL : k ∈ L := ⟨le_rfl, hk⟩
+  obtain ⟨hle, hkM⟩ := ae_le_csSup_of_bddAbove (W1p.value u) hk hbdd
+  set M := sSup L
+  refine W1p.exists_tendsto_measure_of_monotone_levels u hfin (fun j ↦ M - 1 / ((j : ℝ) + 1))
+    (fun i j hij ↦ ?_) ?_ ?_ fun j ↦ ?_
+  · dsimp only
+    gcongr
+  · obtain ⟨i, hi⟩ := exists_nat_one_div_lt (sub_pos.2 hkM)
+    exact ⟨i, by linarith⟩
+  · rw [measure_eq_zero_iff_ae_notMem]
+    filter_upwards [hle, W1p.gradient_ae_eq_zero_on_level_set hp u M] with x hxM hlev hx
+    rw [mem_iInter] at hx
+    have hMx : M ≤ W1p.value u x := le_of_forall_pos_le_add fun ε hε ↦ by
+      obtain ⟨j, hjε⟩ := exists_nat_one_div_lt hε
+      linarith [(hx j).1]
+    exact (hx 0).2 (hlev (le_antisymm hxM hMx))
+  · have hlt : max k (M - 1 / ((j : ℝ) + 1)) < M :=
+      max_lt hkM (sub_lt_self _ (by positivity))
+    obtain ⟨l', hl'L, hl'⟩ := exists_lt_of_lt_csSup ⟨k, hkL⟩ hlt
+    exact ⟨max k (M - 1 / ((j : ℝ) + 1)), le_max_left _ _, le_max_right _ _,
+      fun hae ↦ hl'L.2 (hae.mono fun x hx ↦ hx.trans hl'.le)⟩
+
+
+/-- Let `u ∈ W^{1,p}(Ω)`, `1 ≤ p < ∞`, have superlevel sets `{u > l}` of finite measure for every
+`l > k` (for instance because `Ω` has finite measure, or because `k ≥ 0`), and suppose `u > k` on
+a set of positive measure. Then there are levels `lⱼ ≥ k`, each exceeded by `u` on a set of positive
+measure, along which the measure of `{u > lⱼ, ∇u ≠ 0}` tends to zero. The proof compares the
+levels with an increasing sequence approaching the essential supremum `M` of `u`; along it the
+sets shrink to `{u = M, ∇u ≠ 0}`, which is null because the weak gradient vanishes almost
+everywhere on level sets, or to the empty set if `u` is essentially unbounded above. The
+statement asserts neither monotonicity nor convergence of the levels. -/
+theorem W1p.exists_tendsto_measure_lt_value_and_gradient_ne_zero (hp : p ≠ ∞)
+    (u : W1p mu Omega p) {k : ℝ}
+    (hfin : ∀ l, k < l → mu.restrict Omega {x | l < W1p.value u x} ≠ ∞)
+    (hk : ¬ ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ k) :
+    ∃ l : ℕ → ℝ, (∀ j, k ≤ l j ∧ ¬ ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ l j) ∧
+      Tendsto (fun j ↦ mu.restrict Omega {x | l j < W1p.value u x ∧ W1p.gradient u x ≠ 0})
+        atTop (𝓝 0) := by
+  by_cases hbdd : BddAbove {l : ℝ | k ≤ l ∧ ¬ ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ l}
+  · exact W1p.exists_tendsto_measure_of_bddAbove hp u hfin hk hbdd
+  · -- `u` is essentially unbounded above; take the levels `j`.
+    refine W1p.exists_tendsto_measure_of_monotone_levels u hfin (fun j ↦ (j : ℝ)) Nat.mono_cast
+      (exists_nat_gt k) ?_ fun j ↦ ?_
+    · rw [measure_eq_zero_iff_ae_notMem]
+      refine Eventually.of_forall fun x hx ↦ ?_
+      obtain ⟨j, hj⟩ := exists_nat_gt (W1p.value u x)
+      exact lt_asymm hj (mem_iInter.1 hx j).1
+    · obtain ⟨l, hlL, hjl⟩ := not_bddAbove_iff.1 hbdd j
+      exact ⟨l, hlL.1, hjl.le, hlL.2⟩
+
+/-- The classical gradient of a function of class `C¹` on `Ω` vanishes almost everywhere on each
+of its level sets in `Ω`. This is read off from
+`TauCeti.W1p.gradient_ae_eq_zero_on_level_set` on small balls. -/
+theorem gradient_ae_eq_zero_on_level_set_of_contDiffOn {w : E → ℝ}
+    (hw : ContDiffOn ℝ 1 w Omega) (k : ℝ) :
+    ∀ᵐ x ∂mu.restrict Omega, w x = k → ∇ w x = 0 := by
+  have hO := Omega.isOpen
+  set N := {x | x ∈ (Omega : Set E) ∧ w x = k ∧ ∇ w x ≠ 0}
+  have hN : mu N = 0 := by
+    refine measure_null_of_locally_null N fun x hx => ?_
+    obtain ⟨r, hr, hrO⟩ := Metric.isOpen_iff.1 hO x hx.1
+    set V : Opens E := ⟨Metric.ball x (r / 2), Metric.isOpen_ball⟩
+    obtain ⟨U, hUv, hUg⟩ := W1p.exists_value_gradient_ae_eq_of_contDiffOn_of_isCompact
+      (mu := mu) (Omega := V) (p := 2) hO hw (isCompact_closedBall x (r / 2))
+      Metric.ball_subset_closedBall ((Metric.closedBall_subset_ball (by linarith)).trans hrO)
+    refine ⟨N ∩ V, inter_mem_nhdsWithin N
+      (Metric.isOpen_ball.mem_nhds (Metric.mem_ball_self (by linarith))), ?_⟩
+    have hae : ∀ᵐ y ∂mu.restrict V, w y = k → ∇ w y = 0 := by
+      filter_upwards [W1p.gradient_ae_eq_zero_on_level_set ENNReal.ofNat_ne_top U k, hUv, hUg]
+        with y hy hv hg hyk
+      rw [← hg]
+      exact hy (hv.trans hyk)
+    rw [ae_restrict_iff' V.isOpen.measurableSet, ae_iff] at hae
+    refine measure_mono_null (fun y hy => ?_) hae
+    obtain ⟨⟨-, hyk, hyg⟩, hyV⟩ := hy
+    exact fun h => hyg (h hyV hyk)
+  filter_upwards [ae_restrict_of_ae (measure_eq_zero_iff_ae_notMem.1 hN),
+    ae_restrict_mem hO.measurableSet] with x hx hxO hxk
+  by_contra h
+  exact hx ⟨hxO, hxk, h⟩
 
 end TauCeti
+
+namespace ContDiff
+
+open MeasureTheory TauCeti TopologicalSpace
+open scoped Gradient
+
+variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
+
+/-- A level set of a `C¹` function is null if the derivative does not vanish on it. -/
+theorem measure_setOf_eq_eq_zero_of_fderiv_ne_zero {w : E → ℝ} (hw : ContDiff ℝ 1 w) {k : ℝ}
+    (hreg : ∀ x, w x = k → fderiv ℝ w x ≠ 0) : mu {x | w x = k} = 0 := by
+  have h := gradient_ae_eq_zero_on_level_set_of_contDiffOn (mu := mu) (Omega := ⊤)
+    hw.contDiffOn k
+  rw [Opens.coe_top, Measure.restrict_univ] at h
+  rw [measure_eq_zero_iff_ae_notMem]
+  filter_upwards [h] with x hx hxk
+  exact hreg x hxk (by simpa [gradient] using hx hxk)
+
+end ContDiff

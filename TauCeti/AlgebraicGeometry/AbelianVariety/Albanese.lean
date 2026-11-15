@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
@@ -33,6 +33,9 @@ comparison `Jac (E, O) ≅ E` once an elliptic curve is known to be an abelian v
 
 * `AbelianVariety.IsAlbanese x₀ a`: the pointed morphism `a : X ⟶ J.toOver` has the Albanese
   property;
+* `AbelianVariety.IsAlbanese.existsUnique_fac_toOver`,
+  `AbelianVariety.isAlbanese_iff_existsUnique_fac_toOver`: the universal property can equivalently
+  quantify over all morphisms of schemes over `K`, since any factorization is pointed;
 * `AbelianVariety.IsAlbanese.homEquiv`: homomorphisms `J ⟶ A` are in bijection with pointed
   morphisms `X ⟶ A.toOver`, by composition with `a`;
 * `AbelianVariety.IsAlbanese.lift`, `AbelianVariety.IsAlbanese.fac`,
@@ -55,6 +58,12 @@ comparison `Jac (E, O) ≅ E` once an elliptic curve is known to be an abelian v
   eds.), Springer, 1986, Section 6 (the universal property of the Abel–Jacobi map).
 * J. S. Milne, *Abelian Varieties*, Corollary 1.2 (pointed morphisms of abelian varieties are
   homomorphisms).
+
+The scheme-morphism formulation is adapted from Axel Delaval, Jie Xu and Shitan Xu's
+Jacobian library, release `baef7723da528551b7d2f93bd9a9a53303b04dbc`,
+`Jacobian/AlgebraicGeometry/AbelianVariety/Albanese/UniversalProperty.lean`,
+`AlgebraicGeometry.IsAlbanese.existsUnique_schemeMap`. It uses Tau Ceti's `IsAlbanese` and
+`Hom.equivPointed` in place of the source library's abelian-variety and rigidity interfaces.
 -/
 
 public section
@@ -98,11 +107,34 @@ lemma comp_toOverHom_eq_one {J A : AbelianVariety K} {a : X ⟶ J.toOver}
     (ha : x₀ ≫ a = η[J.toOver]) (φ : J ⟶ A) : x₀ ≫ a ≫ toOverHom φ = η[A.toOver] := by
   rw [reassoc_of% ha, one_hom]
 
+/-- A factorization of a pointed morphism through another pointed morphism preserves the
+identity. -/
+lemma one_comp_eq_one_of_comp_eq {J A : AbelianVariety K} {a : X ⟶ J.toOver}
+    {f : X ⟶ A.toOver} {φ : J.toOver ⟶ A.toOver}
+    (ha : x₀ ≫ a = η[J.toOver]) (hf : x₀ ≫ f = η[A.toOver]) (hφ : a ≫ φ = f) :
+    η[J.toOver] ≫ φ = η[A.toOver] := by
+  rw [← ha, Category.assoc, hφ, hf]
+
 namespace IsAlbanese
 
 variable {J : AbelianVariety K} {a : X ⟶ J.toOver} (h : IsAlbanese x₀ a)
 
 include h
+
+/-- Every pointed morphism factors uniquely through the Albanese morphism, even among all
+morphisms of schemes over `K`. Any competing factorization sends the identity to the identity,
+so rigidity makes it a homomorphism of abelian varieties. -/
+lemma existsUnique_fac_toOver {A : AbelianVariety K} (f : X ⟶ A.toOver)
+    (hf : x₀ ≫ f = η[A.toOver]) :
+    ∃! φ : J.toOver ⟶ A.toOver, a ≫ φ = f := by
+  obtain ⟨φ, hφ, huniq⟩ := h.existsUnique_fac A f hf
+  refine ⟨toOverHom φ, hφ, fun ψ hψ ↦ ?_⟩
+  have hψ₀ := one_comp_eq_one_of_comp_eq h.comp_eq_one hf hψ
+  let ψ' : J ⟶ A := (equivPointed J A).symm ⟨ψ, hψ₀⟩
+  have hψ' : a ≫ toOverHom ψ' = f := by
+    simpa only [ψ', toOverHom_equivPointed_symm_apply] using hψ
+  simpa only [ψ', toOverHom_equivPointed_symm_apply] using
+    congrArg toOverHom (huniq ψ' hψ')
 
 /-- Homomorphisms out of the Albanese variety `J` are the pointed morphisms out of `X`: a
 homomorphism `φ : J ⟶ A` corresponds to `a ≫ φ`. -/
@@ -209,6 +241,24 @@ lemma of_iso {J' : AbelianVariety K} (e : J ≅ J') : IsAlbanese x₀ (a ≫ toO
 
 end IsAlbanese
 
+/-- The Albanese property is equivalent to unique factorization by arbitrary morphisms of
+schemes over `K`; the factorization automatically preserves the identity. -/
+lemma isAlbanese_iff_existsUnique_fac_toOver {J : AbelianVariety K} {a : X ⟶ J.toOver} :
+    IsAlbanese x₀ a ↔ x₀ ≫ a = η[J.toOver] ∧
+      ∀ (A : AbelianVariety K) (f : X ⟶ A.toOver), x₀ ≫ f = η[A.toOver] →
+        ∃! φ : J.toOver ⟶ A.toOver, a ≫ φ = f := by
+  constructor
+  · intro h
+    exact ⟨h.comp_eq_one, fun _ f hf ↦ h.existsUnique_fac_toOver f hf⟩
+  · rintro ⟨ha, h⟩
+    refine ⟨ha, fun A f hf ↦ ?_⟩
+    obtain ⟨φ, hφ, huniq⟩ := h A f hf
+    have hφ₀ := one_comp_eq_one_of_comp_eq ha hf hφ
+    refine ⟨(equivPointed J A).symm ⟨φ, hφ₀⟩, ?_, fun ψ hψ ↦ ?_⟩
+    · simpa only [toOverHom_equivPointed_symm_apply] using hφ
+    · apply toOverHom_injective
+      simpa only [toOverHom_equivPointed_symm_apply] using huniq (toOverHom ψ) hψ
+
 /-- A pointed isomorphism `a : X ⟶ A.toOver` onto an abelian variety has the Albanese property:
 for a pointed morphism `f : X ⟶ B.toOver`, the composite `inv a ≫ f` is a pointed morphism of
 abelian varieties, hence a homomorphism by rigidity. -/
@@ -216,8 +266,7 @@ theorem isAlbanese_of_isIso {A : AbelianVariety K} (a : X ⟶ A.toOver) [IsIso a
     (ha : x₀ ≫ a = η[A.toOver]) : IsAlbanese x₀ a where
   comp_eq_one := ha
   existsUnique_fac B f hf := by
-    have hf' : η[A.toOver] ≫ inv a ≫ f = η[B.toOver] := by
-      rw [← ha, Category.assoc, IsIso.hom_inv_id_assoc, hf]
+    have hf' := one_comp_eq_one_of_comp_eq ha hf (IsIso.hom_inv_id_assoc a f)
     refine ⟨(equivPointed A B).symm ⟨inv a ≫ f, hf'⟩, by simp,
       fun φ (hφ : _ = f) ↦ (equivPointed A B).eq_symm_apply.2 (Subtype.ext ?_)⟩
     rw [coe_equivPointed_apply, ← IsIso.inv_hom_id_assoc a (toOverHom φ), hφ]

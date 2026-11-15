@@ -29,10 +29,11 @@ vectors form an infinite shell of norm zero
 
 ## Main results
 
-* `TauCeti.IntegralLattice.IsPosSemidef.integralNorm_nonneg` and
+* `TauCeti.IntegralLattice.IsPosSemidef.integralNorm_nonneg`,
+  `TauCeti.IntegralLattice.IsPosSemidef.isPosSemidef_integralForm` and
   `TauCeti.IntegralLattice.IsPosDef.posDef_integralNorm`: the integral norm form of a positive
-  semidefinite lattice is nonnegative, and that of a positive definite lattice is positive
-  definite.
+  semidefinite lattice is nonnegative (and its integral bilinear form is positive semidefinite),
+  and that of a positive definite lattice is positive definite.
 * `TauCeti.IntegralLattice.IsPosDef.finite_setOf_norm_le`: only finitely many lattice vectors have
   norm at most a given rational bound.
 * `TauCeti.IntegralLattice.IsPosDef.finite_vectorsOfNorm` and
@@ -70,6 +71,12 @@ theorem IsPosSemidef.integralNorm_nonneg (hL : L.IsPosSemidef) (x : L) :
     exact L.isPosSemidef_iff.mp hL x
   rw [← L.integralNorm_cast x] at h
   exact_mod_cast h
+
+/-- The integral bilinear form of a positive semidefinite lattice is positive semidefinite. -/
+theorem IsPosSemidef.isPosSemidef_integralForm (hL : L.IsPosSemidef) :
+    L.integralForm.IsPosSemidef :=
+  (LinearMap.BilinForm.isPosSemidef_iff_forall_nonneg _ L.isSymm_integralForm).2 fun x ↦ by
+    simpa only [integralNorm_apply] using hL.integralNorm_nonneg x
 
 /-- The integral norm form of a positive definite lattice is positive definite. -/
 theorem IsPosDef.posDef_integralNorm (hL : L.IsPosDef) : L.integralNorm.PosDef := by

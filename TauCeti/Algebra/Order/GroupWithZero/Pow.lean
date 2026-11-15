@@ -5,21 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Order.GroupWithZero.Canonical
-import Mathlib.Tactic
+public import Mathlib.Algebra.Order.GroupWithZero.Basic
 
 /-!
-# Power bounds in ordered monoids with zero
+# Power comparisons in ordered monoids with zero
 
-This file contains exponent bookkeeping for comparisons between powers. The first result is an
-inequality for elements bounded by a power of an element at most `1`. It turns valuation estimates
-for exponential and logarithm coefficients into geometric decay on deep ideals. The second shows
-that a comparison `x ^ m ≤ y ^ n` of nonnegative elements depends only on the ratio `m : n`.
+This file shows that a comparison `x ^ m ≤ y ^ n` of nonnegative elements of a linearly ordered
+monoid with zero depends only on the ratio `m : n`.
 
 ## Main results
 
-* `TauCeti.pow_mul_pow_le_of_le`: bounds a product of powers using a bound `t ≤ γ ^ i` and
-  inequalities between the exponents.
 * `TauCeti.pow_le_pow_iff_of_mul_eq`: `x ^ m ≤ y ^ n ↔ x ^ m' ≤ y ^ n'` when the exponent pairs
   `(m, n)` and `(m', n')` are proportional.
 -/
@@ -27,29 +22,6 @@ that a comparison `x ^ m ≤ y ^ n` of nonnegative elements depends only on the 
 public section
 
 namespace TauCeti
-
-/-- If `t ≤ γ ^ i`, `e ≤ d * i` and `d * q < m`, then
-`t ^ (m * d) * γ ^ (d * i - e) ≤ t ^ d * (γ ^ (d * i - e)) ^ m * γ ^ (d * (e * q))`. -/
-theorem pow_mul_pow_le_of_le {Γ₀ : Type*} [LinearOrderedCommMonoidWithZero Γ₀]
-    {γ t : Γ₀} (hγ : γ ≤ 1) {d e i m q : ℕ} (ht : t ≤ γ ^ i) (hi : e ≤ d * i) (hq : d * q < m) :
-    t ^ (m * d) * γ ^ (d * i - e) ≤ t ^ d * (γ ^ (d * i - e)) ^ m * γ ^ (d * (e * q)) := by
-  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega⟩
-  obtain ⟨s, hs⟩ : ∃ s, d * i = s + e := ⟨d * i - e, by omega⟩
-  rw [hs, Nat.add_sub_cancel]
-  have hdq : e * (d * q) ≤ e * m := Nat.mul_le_mul_left e (by omega)
-  have hexp : s * (m + 1) + d * (e * q) ≤ i * m * d + s := by
-    have : i * m * d = d * i * m := by ring
-    nlinarith
-  calc t ^ ((m + 1) * d) * γ ^ s = t ^ d * t ^ (m * d) * γ ^ s := by
-        rw [add_mul, one_mul, pow_add, mul_comm (t ^ (m * d))]
-    _ ≤ t ^ d * (γ ^ i) ^ (m * d) * γ ^ s := by
-        gcongr
-    _ = t ^ d * γ ^ (i * m * d + s) := by
-        rw [← pow_mul, mul_assoc, ← pow_add, ← mul_assoc i]
-    _ ≤ t ^ d * γ ^ (s * (m + 1) + d * (e * q)) :=
-        mul_le_mul_right (pow_le_pow_right_of_le_one' hγ hexp) _
-    _ = t ^ d * (γ ^ s) ^ (m + 1) * γ ^ (d * (e * q)) := by
-        rw [pow_add, ← pow_mul, mul_assoc]
 
 /-- In a linearly ordered monoid with zero, raising both sides of `x ^ m ≤ y ^ n` to a nonzero
 power does not change it, so for nonnegative `x` and `y` the comparison depends only on the ratio

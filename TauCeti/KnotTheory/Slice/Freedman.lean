@@ -39,6 +39,8 @@ commutator subgroup (`TauCeti.hasPerfectCommutatorSubgroup_unknot`), and it is t
 ## Main results
 
 * `TauCeti.FreedmanSliceTheorem.isTopologicallySlice`: applying the theorem to a knot.
+* `TauCeti.FreedmanSliceTheorem.isTopologicallySlice_of_smoothAmbientIsotopic`: applying it to an
+  ambient-isotopic representative.
 
 ## References
 
@@ -79,5 +81,15 @@ theorem FreedmanSliceTheorem.isTopologicallySlice (h : FreedmanSliceTheorem)
     {K : SmoothCircleEmbedding (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1)}
     (hK : K.HasPerfectCommutatorSubgroup) : IsTopologicallySlice K :=
   h K hK
+
+/-- Freedman's conclusion is available for any smooth ambient-isotopic representative of an
+Alexander-one knot. -/
+theorem FreedmanSliceTheorem.isTopologicallySlice_of_smoothAmbientIsotopic
+    (h : FreedmanSliceTheorem)
+    {K K' : SmoothCircleEmbedding (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1)}
+    (hKK' : SmoothEmbedding.SmoothAmbientIsotopic K K')
+    (hK : K.HasPerfectCommutatorSubgroup) : IsTopologicallySlice K' :=
+  h.isTopologicallySlice
+    ((SmoothCircleEmbedding.hasPerfectCommutatorSubgroup_smoothAmbientIsotopic_iff hKK').mp hK)
 
 end TauCeti

@@ -48,7 +48,7 @@ open scoped MonoidAlgebra
 
 namespace Representation.IntertwiningMap
 
-variable {k G V W : Type*} [Field k] [Group G] [Finite G] [NeZero (Nat.card G : k)]
+variable {k G V W : Type*} [Field k] [Group G] [NeZero (Nat.card G : k)]
   [AddCommGroup V] [Module k V] [AddCommGroup W] [Module k W]
   {ρ : Representation k G V} {σ : Representation k G W}
 
@@ -57,6 +57,7 @@ group `G` is invertible, an injective intertwining map `f : ρ → σ` has an in
 inverse `p : σ → ρ`, that is, `p ∘ f = id`. -/
 theorem exists_leftInverse_of_injective (f : IntertwiningMap ρ σ) (hf : Function.Injective f) :
     ∃ p : IntertwiningMap σ ρ, p.comp f = IntertwiningMap.id ρ := by
+  have : Finite G := Nat.finite_of_card_ne_zero fun h ↦ NeZero.ne (Nat.card G : k) (by simp [h])
   let e := IntertwiningMap.equivLinearMapAsModule ρ σ
   obtain ⟨q, hq⟩ := MonoidAlgebra.exists_leftInverse_of_injective (e f)
     (LinearMap.ker_eq_bot.mpr hf)
@@ -83,7 +84,7 @@ end Representation.IntertwiningMap
 
 namespace Representation
 
-variable {k G V W : Type*} [Field k] [Group G] [Finite G] [NeZero (Nat.card G : k)]
+variable {k G V W : Type*} [Field k] [Group G] [NeZero (Nat.card G : k)]
   [AddCommGroup V] [Module k V] [AddCommGroup W] [Module k W]
   [FiniteDimensional k V] [FiniteDimensional k W]
 
@@ -91,6 +92,7 @@ variable {k G V W : Type*} [Field k] [Group G] [Finite G] [NeZero (Nat.card G : 
 directions between finite-dimensional representations have equal dimension. -/
 theorem finrank_intertwiningMap_comm (ρ : Representation k G V) (σ : Representation k G W) :
     Module.finrank k (IntertwiningMap ρ σ) = Module.finrank k (IntertwiningMap σ ρ) := by
+  have : Finite G := Nat.finite_of_card_ne_zero fun h ↦ NeZero.ne (Nat.card G : k) (by simp [h])
   rw [(IntertwiningMap.equivLinearMapAsModule ρ σ).finrank_eq,
     (IntertwiningMap.equivLinearMapAsModule σ ρ).finrank_eq]
   exact TauCeti.finrank_linearMap_comm_of_isSemisimpleModule ρ.asModule σ.asModule
@@ -103,8 +105,7 @@ open CategoryTheory CategoryTheory.Limits
 
 universe u v w
 
-variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G]
-  [NeZero (Nat.card G : k)]
+variable {k : Type u} {G : Type v} [Field k] [Group G] [NeZero (Nat.card G : k)]
 
 namespace Rep
 
@@ -112,6 +113,7 @@ namespace Rep
 order is invertible in the coefficient field. -/
 theorem nonempty_splitting_of_shortExact {S : ShortComplex (Rep.{w} k G)}
     (hS : S.ShortExact) : Nonempty S.Splitting := by
+  have : Finite G := Nat.finite_of_card_ne_zero fun h ↦ NeZero.ne (Nat.card G : k) (by simp [h])
   have := hS.mono_f
   obtain ⟨r, hr⟩ := S.f.hom.exists_leftInverse_of_injective
     ((Rep.mono_iff_injective S.f).mp inferInstance)

@@ -14,10 +14,9 @@ public import TauCeti.Geometry.Symplectic.AlmostComplex
 /-!
 # Constant-structure `J`-holomorphic maps
 
-This file adds the first map-level definition for the analytic Heegaard Floer roadmap:
-a map between real normed spaces, each carrying a single *fixed* almost complex structure,
-is holomorphic at a point when it has a Frechet derivative there and that derivative commutes
-with the two structures.
+This file defines constant-structure `J`-holomorphic maps: a map between real normed spaces, each
+carrying a single *fixed* almost complex structure, is holomorphic at a point when it has a Frechet
+derivative there and that derivative commutes with the two structures.
 
 ## Scope: the constant-structure (flat) model only
 
@@ -34,14 +33,11 @@ image point `u(z)`. The constant-structure predicate cannot express that: its ta
 downstream Neg/Transport/Congruence/Prod/Line/energy calculus built on it, therefore lives
 entirely in the flat model.
 
-The `ConstStructure` stem is a deliberate reservation. The plain name `IsJHolomorphic` is left
-free for the eventual varying-structure curve definition (roadmap `HeegaardFloer/README.md`,
-Lane F2.1's `J`-holomorphic maps and the manifold/bundle layer built on them), so that layer
-does not silently collide with -- or get mistaken for -- the flat model recorded here. Those
-later versions should still use this file as their local model on coordinate charts and tangent
-fibers, matching the same Cauchy--Riemann convention. This settles the design choice raised in
-`https://github.com/TauCetiProject/TauCeti/issues/797`, Task 1: rename (rather than
-point-parametrize `J'`), and document the scope.
+The `ConstStructure` stem is a deliberate reservation: the plain name belongs to the
+varying-structure predicate `TauCeti.IsJHolomorphic`
+(`TauCeti.Geometry.Symplectic.JHolomorphic.Varying`), which recovers the flat model recorded here
+for constant structures (`TauCeti.isJHolomorphicAt_constStructure_iff`), so the two cannot collide
+or be mistaken for one another.
 
 ## Main declarations
 

@@ -12,7 +12,9 @@ public import Mathlib.LinearAlgebra.UnitaryGroup
 # Quadratic and matrix orthogonal groups
 
 When multiplication by two is injective in the base ring, a linear automorphism preserves the
-standard quadratic form exactly when its matrix is orthogonal. Adding determinant one
+standard quadratic form exactly when its matrix is orthogonal. The equivalence
+`TauCeti.standardOrthogonalGroupEquiv` bundles this criterion, with inverse given by matrix-vector
+multiplication. Adding determinant one
 identifies the two special orthogonal groups. These criteria transfer quadratic-space results
 to the matrix models of the classical groups.
 
@@ -31,6 +33,8 @@ public section
 namespace TauCeti
 
 open Matrix
+
+attribute [local instance] starRingOfComm
 
 universe u v
 
@@ -74,6 +78,38 @@ theorem toMatrix_mem_orthogonalGroup_iff (R : Type u) [CommRing R]
     simp only [polar_toQuadraticForm'_one, B, Matrix.toLinearMap₂'_apply', Matrix.one_mulVec,
       smul_eq_mul]
   simp only [hpolar, h2.eq_iff, BilinForm.isIsometry_iff, LinearEquiv.coe_coe]
+
+/-- The orthogonal group of the standard quadratic form is the matrix orthogonal group,
+provided multiplication by two is injective. -/
+noncomputable def standardOrthogonalGroupEquiv (h2 : IsSMulRegular R (2 : R)) :
+    QuadraticMap.orthogonalGroup (Matrix.toQuadraticForm' (1 : Matrix n n R)) ≃*
+      Matrix.orthogonalGroup n R where
+  toFun g := ⟨LinearMap.toMatrix' (g : (n → R) ≃ₗ[R] (n → R)).toLinearMap,
+    (toMatrix_mem_orthogonalGroup_iff R n h2 _).mpr g.2⟩
+  invFun A := ⟨Matrix.UnitaryGroup.toLinearEquiv A,
+    (toMatrix_mem_orthogonalGroup_iff R n h2 _).mp (by
+      simp [Matrix.UnitaryGroup.toLinearEquiv])⟩
+  left_inv g := Subtype.ext <| LinearEquiv.ext fun x ↦ by
+    simp [Matrix.UnitaryGroup.toLinearEquiv]
+  right_inv A := Subtype.ext <| by simp [Matrix.UnitaryGroup.toLinearEquiv]
+  map_mul' g h := Subtype.ext <| by
+    simpa using LinearMap.toMatrix'_mul
+      (g : (n → R) ≃ₗ[R] (n → R)).toLinearMap
+      (h : (n → R) ≃ₗ[R] (n → R)).toLinearMap
+
+/-- The standard orthogonal comparison takes the coordinate matrix of an automorphism. -/
+@[simp]
+theorem coe_standardOrthogonalGroupEquiv_apply (h2 : IsSMulRegular R (2 : R))
+    (g : QuadraticMap.orthogonalGroup (Matrix.toQuadraticForm' (1 : Matrix n n R))) :
+    (standardOrthogonalGroupEquiv h2 g : Matrix n n R) =
+      LinearMap.toMatrix' (g : (n → R) ≃ₗ[R] (n → R)).toLinearMap := (rfl)
+
+/-- The inverse standard orthogonal comparison acts by matrix-vector multiplication. -/
+@[simp]
+theorem standardOrthogonalGroupEquiv_symm_apply (h2 : IsSMulRegular R (2 : R))
+    (A : Matrix.orthogonalGroup n R) (x : n → R) :
+    ((standardOrthogonalGroupEquiv h2).symm A : (n → R) ≃ₗ[R] (n → R)) x =
+      (A : Matrix n n R) *ᵥ x := (rfl)
 
 /-- The coordinate matrix is special orthogonal exactly when the linear automorphism is
 special orthogonal for the standard quadratic form. -/

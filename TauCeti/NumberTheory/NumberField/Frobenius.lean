@@ -62,11 +62,17 @@ namespace NumberField
 variable {K : Type*} [Field K] [NumberField K] {p : ℕ} [Fact p.Prime]
 
 variable (K) in
+omit [NumberField K] in
 /-- **Relative Frobenius elements exist.** For a finite Galois extension `L/K` of number fields
 and a nonzero prime `Q` of `𝓞 L`, some `σ ∈ Gal(L/K)` is an arithmetic Frobenius at `Q`. -/
 theorem exists_isArithFrobAt {L : Type*} [Field L] [NumberField L] [Algebra K L] [IsGalois K L]
     (Q : Ideal (𝓞 L)) [Q.IsPrime] (hQ : Q ≠ ⊥) :
     ∃ σ : L ≃ₐ[K] L, IsArithFrobAt (𝓞 K) σ Q := by
+  have : CharZero K := (algebraMap K L).charZero
+  have : FiniteDimensional ℚ K :=
+    Module.Finite.of_injective (algebraMap K L).toRatAlgHom.toLinearMap
+      (algebraMap K L).injective
+  have : NumberField K := ⟨⟩
   let _ : Finite (𝓞 L ⧸ Q) := Ring.HasFiniteQuotients.finiteQuotient hQ
   exact IsArithFrobAt.exists_of_isInvariant (𝓞 K) (L ≃ₐ[K] L) Q
 
@@ -211,12 +217,12 @@ theorem isArithFrobAt_apply_sqrt_eq_self_iff_mod_eight
       sq_one_add_div_two_sub_self hx hd
   have hcong : σ • w - w ^ 2 ∈ Q := by
     have h := hσ w
-    rwa [natCard_quotient_under_of_liesOver (p := 2) Q,
+    rwa [natCard_quotient_under_of_liesOver (n := 2) Q,
       MulSemiringAction.toAlgHom_apply] at h
   have hfix : σ • w = w ↔ σ x = x := by
     rw [← (FaithfulSMul.algebraMap_injective (𝓞 K) K).eq_iff,
       algebraMap_smul_eq_apply, hw]
-    simp only [map_div₀, map_add, map_one, map_ofNat, div_left_inj' (two_ne_zero : (2 : K) ≠ 0),
+    simp only [map_div₀, map_add, map_one, map_ofNat, div_left_inj₀ (two_ne_zero : (2 : K) ≠ 0),
       add_right_inj]
   -- Its conjugates are `w` and `1 - w`, even when the ambient field is larger.
   have hpm : σ • w = w ∨ σ • w = 1 - w := by
@@ -235,20 +241,20 @@ theorem isArithFrobAt_apply_sqrt_eq_self_iff_mod_eight
       rw [h] at hcong
       have hmem := Q.neg_mem hcong
       rw [neg_sub, hwsq] at hmem
-      exact (algebraMap_int_mem_iff_dvd_of_liesOver Q _).mp hmem
+      exact (algebraMap_mem_iff_dvd_of_liesOver Q _).mp hmem
     · intro h
       rcases hpm with hfix | hneg
       · exact hfix
-      · have hemem := (algebraMap_int_mem_iff_dvd_of_liesOver Q (d / 4)).mpr h
+      · have hemem := (algebraMap_mem_iff_dvd_of_liesOver Q (d / 4)).mpr h
         have htwo : (2 : 𝓞 K) ∈ Q := by
-          simpa using (algebraMap_int_mem_iff_dvd_of_liesOver Q 2).mpr (dvd_refl 2)
+          simpa using (algebraMap_mem_iff_dvd_of_liesOver Q (2 : ℤ)).mpr (dvd_refl 2)
         have hone : (1 : 𝓞 K) ∈ Q := by
           have hsum := Q.add_mem (Q.add_mem hcong hemem) (Q.mul_mem_right w htwo)
           rw [hneg] at hsum
           convert hsum using 1
           linear_combination hwsq
         have hbad : (2 : ℤ) ∣ 1 :=
-          (algebraMap_int_mem_iff_dvd_of_liesOver Q 1).mp (by simpa using hone)
+          (algebraMap_mem_iff_dvd_of_liesOver Q 1).mp (by simpa using hone)
         norm_num at hbad
   rw [← hfix, heven, Int.dvd_iff_emod_eq_zero]
   omega

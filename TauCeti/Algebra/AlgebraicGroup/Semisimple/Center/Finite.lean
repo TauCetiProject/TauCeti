@@ -61,7 +61,7 @@ private theorem reducedCenter_identityComponent_eq_augmentation
     (CommHopfAlgCat.mkQuotient_surjective _ _).comp
       (CommHopfAlgCat.mkQuotient_surjective _ _)
   let I := J.comapOfSurjective q.hom hq
-  let e := CommHopfAlgCat.quotientIsoOfSurjective q hq J
+  let e := CommHopfAlgCat.Hom.quotientIsoOfSurjective q hq J
   have hcentral : I.IsCentral := by
     apply (CommHopfAlgCat.isCentral_centerDefiningIdeal G.obj).mono
     intro x hx

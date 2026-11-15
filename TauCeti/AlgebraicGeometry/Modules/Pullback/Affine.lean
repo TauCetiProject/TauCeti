@@ -22,7 +22,7 @@ for the same comparison over an arbitrary target
 `TauCeti.AlgebraicGeometry.Modules.Pullback.Quasicoherent`).
 
 The strong symmetric monoidal pullback on quasicoherent sheaves is packaged in
-`TauCeti.AlgebraicGeometry.Modules.Pullback.Monoidal`.
+`TauCeti.AlgebraicGeometry.Modules.Pullback.Monoidal.Basic`.
 
 ## References
 
@@ -54,8 +54,6 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.isIso_pullback_δ_of_isAffine
     (M N : Y.Modules)
     [M.IsQuasicoherent] : IsIso (Functor.OplaxMonoidal.δ (pullback f) M N) := by
   obtain ⟨P⟩ := M.nonempty_presentation_of_isAffine
-  have : (SheafOfModules.pushforward f.toRingCatSheafHom).IsRightAdjoint :=
-    inferInstanceAs (pushforward f).IsRightAdjoint
   exact P.isIso_pullback_δ f.toRingCatSheafHom N
 
 /-- Pullback from an affine base preserves a tensor product with a quasicoherent right factor.
@@ -64,8 +62,6 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.isIso_pullback_δ_right_of_isAff
     (M N : Y.Modules)
     [N.IsQuasicoherent] : IsIso (Functor.OplaxMonoidal.δ (pullback f) M N) := by
   obtain ⟨P⟩ := N.nonempty_presentation_of_isAffine
-  have : (SheafOfModules.pushforward f.toRingCatSheafHom).IsRightAdjoint :=
-    inferInstanceAs (pushforward f).IsRightAdjoint
   exact P.isIso_pullback_δ_right f.toRingCatSheafHom M
 
 end

@@ -48,7 +48,8 @@ only where the statement forces it.
   dichotomy.
 
 The split-morphism cancellation lemmas include `TauCeti.isSplitMono_of_isSplitMono_comp` and
-`TauCeti.isSplitEpi_of_isSplitEpi_comp`.
+`TauCeti.isSplitEpi_of_isSplitEpi_comp`, and their isomorphism-invariance forms
+`TauCeti.isSplitEpi_comp_iff_of_isIso` and `TauCeti.isSplitMono_comp_iff_of_isIso`.
 
 ## Implementation notes
 
@@ -98,21 +99,21 @@ theorem isSplitEpi_of_isSplitEpi_comp {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z)
     [IsSplitEpi (f ≫ g)] : IsSplitEpi g :=
   IsSplitEpi.mk' ⟨section_ (f ≫ g) ≫ f, by rw [Category.assoc]; exact IsSplitEpi.id _⟩
 
-/-- If postcomposition with an isomorphism is a split epimorphism, the original morphism is
-also a split epimorphism. -/
-theorem isSplitEpi_of_isSplitEpi_comp_iso {X Y Y' : C} (f : X ⟶ Y) (e : Y ≅ Y')
-    [IsSplitEpi (f ≫ e.hom)] : IsSplitEpi f := by
-  have h : (f ≫ e.hom) ≫ e.inv = f := by simp
-  rw [← h]
-  infer_instance
+/-- Postcomposing with an isomorphism does not change whether a morphism is a split
+epimorphism. -/
+@[simp]
+theorem isSplitEpi_comp_iff_of_isIso {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z) [IsIso g] :
+    IsSplitEpi (f ≫ g) ↔ IsSplitEpi f := by
+  refine ⟨fun _ ↦ ?_, fun _ ↦ inferInstance⟩
+  simpa using (inferInstance : IsSplitEpi ((f ≫ g) ≫ inv g))
 
-/-- If precomposition with an isomorphism is a split monomorphism, the original morphism is
-also a split monomorphism. -/
-theorem isSplitMono_of_isSplitMono_iso_comp {X' X Y : C} (e : X' ≅ X) (f : X ⟶ Y)
-    [IsSplitMono (e.hom ≫ f)] : IsSplitMono f := by
-  have h : e.inv ≫ e.hom ≫ f = f := by simp
-  rw [← h]
-  infer_instance
+/-- Precomposing with an isomorphism does not change whether a morphism is a split
+monomorphism. -/
+@[simp]
+theorem isSplitMono_comp_iff_of_isIso {X Y Z : C} (g : X ⟶ Y) [IsIso g] (f : Y ⟶ Z) :
+    IsSplitMono (g ≫ f) ↔ IsSplitMono f := by
+  refine ⟨fun _ ↦ ?_, fun _ ↦ inferInstance⟩
+  simpa using (inferInstance : IsSplitMono (inv g ≫ g ≫ f))
 
 /-! ### Irreducible morphisms -/
 
@@ -177,46 +178,29 @@ theorem not_isIrreducibleMorphism_id (X : C) : ¬ IsIrreducibleMorphism (𝟙 X)
 /-! ### Invariance under isomorphisms of the source and the target -/
 
 /-- **Postcomposing an irreducible morphism with an isomorphism keeps it irreducible.** -/
-theorem IsIrreducibleMorphism.comp_iso (hf : IsIrreducibleMorphism f) {Y' : C} (e : Y ≅ Y') :
-    IsIrreducibleMorphism (f ≫ e.hom) := by
-  refine ⟨fun _ => hf.not_isSplitMono (isSplitMono_of_isSplitMono_comp f e.hom),
-    fun _ => hf.not_isSplitEpi (isSplitEpi_of_isSplitEpi_comp_iso f e), fun Z g h hgh => ?_⟩
-  have hgh' : g ≫ h ≫ e.inv = f := by simp [reassoc_of% hgh]
-  rcases hf.factors g (h ≫ e.inv) hgh' with hsplit | hsplit
-  · exact Or.inl hsplit
-  · refine Or.inr ?_
-    have hh : h = (h ≫ e.inv) ≫ e.hom := by simp
-    rw [hh]
-    infer_instance
+theorem IsIrreducibleMorphism.comp_iso (hf : IsIrreducibleMorphism f) {Y' : C} (g : Y ⟶ Y')
+    [IsIso g] : IsIrreducibleMorphism (f ≫ g) :=
+  ⟨fun _ ↦ hf.not_isSplitMono (isSplitMono_of_isSplitMono_comp f g),
+    by simpa using hf.not_isSplitEpi,
+    fun Z a b hab ↦ by simpa using hf.factors a (b ≫ inv g) (by simp [reassoc_of% hab])⟩
 
 /-- **Precomposing an irreducible morphism with an isomorphism keeps it irreducible.** -/
-theorem IsIrreducibleMorphism.iso_comp (hf : IsIrreducibleMorphism f) {X' : C} (e : X' ≅ X) :
-    IsIrreducibleMorphism (e.hom ≫ f) := by
-  refine ⟨fun _ => hf.not_isSplitMono (isSplitMono_of_isSplitMono_iso_comp e f),
-    fun _ => hf.not_isSplitEpi (isSplitEpi_of_isSplitEpi_comp e.hom f), fun Z g h hgh => ?_⟩
-  have hgh' : (e.inv ≫ g) ≫ h = f := by simp [hgh]
-  rcases hf.factors (e.inv ≫ g) h hgh' with hsplit | hsplit
-  · refine Or.inl ?_
-    have hg : g = e.hom ≫ e.inv ≫ g := by simp
-    rw [hg]
-    infer_instance
-  · exact Or.inr hsplit
+theorem IsIrreducibleMorphism.iso_comp (hf : IsIrreducibleMorphism f) {X' : C} (g : X' ⟶ X)
+    [IsIso g] : IsIrreducibleMorphism (g ≫ f) :=
+  ⟨by simpa using hf.not_isSplitMono, fun _ ↦ hf.not_isSplitEpi (isSplitEpi_of_isSplitEpi_comp g f),
+    fun Z a b hab ↦ by simpa using hf.factors (inv g ≫ a) b (by simp [hab])⟩
 
 /-- Irreducibility is invariant under an isomorphism of the target. -/
 @[simp]
-theorem isIrreducibleMorphism_comp_iso_iff {Y' : C} (e : Y ≅ Y') :
-    IsIrreducibleMorphism (f ≫ e.hom) ↔ IsIrreducibleMorphism f := by
-  refine ⟨fun hf => ?_, fun hf => hf.comp_iso e⟩
-  have h : (f ≫ e.hom) ≫ e.symm.hom = f := by simp
-  exact h ▸ hf.comp_iso e.symm
+theorem isIrreducibleMorphism_comp_iso_iff {Y' : C} (g : Y ⟶ Y') [IsIso g] :
+    IsIrreducibleMorphism (f ≫ g) ↔ IsIrreducibleMorphism f :=
+  ⟨fun hf ↦ by simpa using hf.comp_iso (inv g), fun hf ↦ hf.comp_iso g⟩
 
 /-- Irreducibility is invariant under an isomorphism of the source. -/
 @[simp]
-theorem isIrreducibleMorphism_iso_comp_iff {X' : C} (e : X' ≅ X) :
-    IsIrreducibleMorphism (e.hom ≫ f) ↔ IsIrreducibleMorphism f := by
-  refine ⟨fun hf => ?_, fun hf => hf.iso_comp e⟩
-  have h : e.symm.hom ≫ e.hom ≫ f = f := by simp
-  exact h ▸ hf.iso_comp e.symm
+theorem isIrreducibleMorphism_iso_comp_iff {X' : C} (g : X' ⟶ X) [IsIso g] :
+    IsIrreducibleMorphism (g ≫ f) ↔ IsIrreducibleMorphism f :=
+  ⟨fun hf ↦ by simpa using hf.iso_comp (inv g), fun hf ↦ hf.iso_comp g⟩
 
 /-! ### Zero morphisms -/
 
@@ -229,9 +213,8 @@ variable [HasZeroMorphisms C]
 theorem not_isIrreducibleMorphism_zero (X Y : C) : ¬ IsIrreducibleMorphism (0 : X ⟶ Y) := by
   intro hf
   rcases hf.factors (0 : X ⟶ X) (0 : X ⟶ Y) zero_comp with h | h
-  · have hid : (0 : X ⟶ X) ≫ retraction (0 : X ⟶ X) = 𝟙 X := IsSplitMono.id _
-    rw [zero_comp] at hid
-    exact hf.not_isSplitMono (IsSplitMono.mk' ⟨0, by rw [zero_comp, hid]⟩)
+  · have : IsSplitMono ((0 : X ⟶ Y) ≫ (0 : Y ⟶ X)) := by rwa [comp_zero]
+    exact hf.not_isSplitMono (isSplitMono_of_isSplitMono_comp _ (0 : Y ⟶ X))
   · exact hf.not_isSplitEpi h
 
 /-- An irreducible morphism is nonzero. -/

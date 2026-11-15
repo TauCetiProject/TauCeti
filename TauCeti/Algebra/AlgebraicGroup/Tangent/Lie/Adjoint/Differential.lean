@@ -1,0 +1,114 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Codex
+-/
+module
+
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Tangent
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Infinitesimal
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Cotangent
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Representation
+public import TauCeti.Algebra.AlgebraicGroup.Representation.Differential
+
+/-!
+# Differentiating the adjoint comodule
+
+The differentiated action of the adjoint comodule is the Lie bracket on the dual of the
+augmentation cotangent space. This connects the dual-number description of the infinitesimal
+adjoint action with the differentiated representation used to study invariant subspaces.
+Restricting the adjoint comodule to a closed subgroup, the differentiated action of a tangent
+vector of the subgroup is the bracket with its image under the differential of the inclusion
+(`TauCeti.differential_corestrict_adjointComodule`).
+
+## References
+
+* J. S. Milne, *Algebraic Groups* (2017), §10.d, 10.18–10.23.
+-/
+
+public section
+
+open scoped TensorProduct
+
+namespace Derivation
+
+open TauCeti TensorProduct TrivSqZeroExt WithConv
+
+universe u
+
+variable {R H : Type u} [CommRing R] [CommRing H] [HopfAlgebra R H]
+variable [Module.Finite R (Bialgebra.CotangentSpace R H)]
+variable [Module.Projective R (Bialgebra.CotangentSpace R H)]
+
+attribute [local instance] adjointComodule
+
+/-- The differential of the adjoint comodule is the adjoint action of the tangent Lie algebra,
+expressed in the cotangent-dual model. -/
+-- Apply before the general differential and adjoint-coaction evaluation rules expand the input.
+@[simp↓]
+theorem differential_adjointComodule (d : Derivation R H (Bialgebra.CounitAlgebra R H R))
+    (x : Module.Dual R (Bialgebra.CotangentSpace R H)) :
+    Comodule.differential (R := R) (H := H) d x =
+      ⁅(cotangentDualLieEquiv (R := R) (H := H)).symm d, x⁆ := by
+  -- The proof combines `Derivation.adDerivation_dualNumber_apply` with
+  -- `TauCeti.Comodule.snd_endOfPoint_derivationToTrivSqZeroExtEquivLift`.
+  let C := Bialgebra.CounitAlgebra R H R
+  -- Extract the infinitesimal coefficient after scalar extension, so both descriptions
+  -- of the differentiated action can be compared in the cotangent-dual model.
+  have hcoeff := algEquivSelf_cotangentLinearEquiv_rTensor_sndHom (R := R) (A := H)
+  -- Compute the adjoint action on the constant lift of the input tangent vector.
+  have haction := tangentScalarExtensionEquiv_adjointComodule_endOfPoint
+    (R := R) (H := H) (CommAlgCat.of R (DualNumber C))
+    ((derivationMulEquivTangentKer R H R (.ofAdd d)).val) (1 ⊗ₜ[R] x)
+  have hinit : tangentScalarExtensionEquiv (R := R) (A := H) (B := DualNumber C)
+      (1 ⊗ₜ[R] x) =
+      mapValue ((inlAlgHom R C C).comp
+        (Bialgebra.CounitAlgebra.algEquivSelf R H R).symm.toAlgHom)
+          (cotangentLinearEquiv (B := R) x) := by
+    ext a
+    rw [tangentScalarExtensionEquiv_tmul_apply, one_mul, mapValue_apply]
+    erw [AlgHom.comp_apply, cotangentLinearEquiv_apply_apply]
+    simp only [AlgEquiv.coe_toAlgHom,
+      Bialgebra.CounitAlgebra.algEquivSelf_symm_apply]
+    rfl
+  -- Compare infinitesimal coefficients using the two established dual-number formulas.
+  apply (cotangentDualLieEquiv (R := R) (H := H)).injective
+  rw [LieHom.map_lie, LieEquiv.coe_toLieHom, LieEquiv.apply_symm_apply]
+  ext a
+  apply (Bialgebra.CounitAlgebra.algEquivSelf R H R).injective
+  rw [cotangentDualLieEquiv_apply,
+    ← Comodule.snd_endOfPoint_derivationToTrivSqZeroExtEquivLift, hcoeff]
+  rw [hinit] at haction
+  have ha := DFunLike.congr_fun haction a
+  -- The tangent-point equivalence packages the same dual-number lift.
+  simp only [derivationMulEquivTangentKer_apply_ofConv, toAdd_ofAdd] at ha
+  rw [ha]
+  rw [pointInCounitAlgebra_eq_pointsMulEquiv_symm, adDerivation_dualNumber_apply]
+  simp only [snd_add, snd_inl, snd_inr, zero_add, cotangentDualLieEquiv_apply]
+
+end Derivation
+
+namespace TauCeti
+
+universe u
+
+variable {R H : Type u} [CommRing R] [CommRing H] [HopfAlgebra R H]
+variable [Module.Finite R (Bialgebra.CotangentSpace R H)]
+variable [Module.Projective R (Bialgebra.CotangentSpace R H)]
+
+attribute [local instance] Derivation.adjointComodule
+
+/-- **The restricted adjoint representation differentiates to the bracket.** A tangent vector `d`
+of the closed subgroup cut out by `J` acts on `𝔤` by the bracket with its image in `𝔤` under the
+differential of the inclusion. -/
+theorem differential_corestrict_adjointComodule (J : HopfIdeal R H)
+    (d : Derivation R (H ⧸ J.toIdeal) (Bialgebra.CounitAlgebra R (H ⧸ J.toIdeal) R))
+    (y : Module.Dual R (Bialgebra.CotangentSpace R H)) :
+    letI := Comodule.Corestrict (M := Module.Dual R (Bialgebra.CotangentSpace R H))
+      (Bialgebra.Quotient.mkBialgHom (R := R) J.toIdeal).toCoalgHom
+    Comodule.differential (R := R) (H := H ⧸ J.toIdeal) d y =
+      ⁅(Derivation.cotangentDualLieEquiv (R := R) (H := H)).symm (J.quotientLieHom d), y⁆ := by
+  rw [Comodule.differential_corestrict, Derivation.differential_adjointComodule,
+    HopfIdeal.quotientLieHom_apply]
+
+end TauCeti

@@ -12,11 +12,12 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Weyl
 /-!
 # The Weyl group of the symplectic diagonal torus is the hyperoctahedral group
 
-Over a field `k` with a unit different from its inverse, the normalizer quotient `N(T)/T` of the
+Over a domain `k` with a unit different from its inverse, the normalizer quotient `N(T)/T` of the
 paired diagonal torus `T` in `Sp₂ₘ(k)` acts faithfully on the `2m` coordinate lines
 (`TauCeti.GLSymplecticFin.diagonalNormalizerQuotientPerm_injective`). This file computes the image
 of that action: it consists exactly of the signed permutations. Hence `N(T)/T` is the
-hyperoctahedral group `Sym(Bool) ≀ Sym(m)`.
+hyperoctahedral group `Sym(Bool) ≀ Sym(m)`. In rank zero the comparison holds over any
+commutative ring, without a separating unit.
 
 The coordinate lines are labelled by `Fin m × Bool` through `signedCoordinateEquiv`: the line
 `(i, false)` is the `i`-th line of the first block, on which the torus acts by `tᵢ`, and
@@ -96,12 +97,12 @@ private theorem diagonalCoordinates_signedCoordinateEquiv_not {R : Type*} [Monoi
       (diagonalCoordinates t (signedCoordinateEquiv m x))⁻¹ := by
   rcases x with ⟨i, _ | _⟩ <;> simp
 
-variable {k : Type*} [Field k] (u : kˣ) (hu : u ≠ u⁻¹)
+variable {k : Type*}
 
-include hu in
 /-- If, for every torus element, the diagonal entry on the line `y` is the inverse of the entry on
 the line `x`, then `y` is the other line of the symplectic plane of `x`. -/
-private theorem eq_not_of_forall_diagonalCoordinates_eq_inv {x y : Fin m × Bool}
+private theorem eq_not_of_forall_diagonalCoordinates_eq_inv [Monoid k]
+    (u : kˣ) (hu : u ≠ u⁻¹) {x y : Fin m × Bool}
     (h : ∀ t : Fin m → kˣ, diagonalCoordinates t (signedCoordinateEquiv m y) =
       (diagonalCoordinates t (signedCoordinateEquiv m x))⁻¹) :
     y = (x.1, !x.2) := by
@@ -124,6 +125,28 @@ private theorem eq_not_of_forall_diagonalCoordinates_eq_inv {x y : Fin m × Bool
     rw [Pi.mulSingle_eq_of_ne hji] at hi
     apply hu1
     cases s <;> cases r <;> simpa [eq_comm (b := u)] using hi
+
+/-- In rank zero, the paired diagonal normalizer quotient agrees with the signed permutation
+group over any commutative ring: both groups are trivial. -/
+def diagonalNormalizerQuotientMulEquivWreathProductOfIsEmpty
+    (k : Type*) [CommRing k] (m : ℕ) [IsEmpty (Fin m)] :
+    Subgroup.normalizerQuotient (diagonalTorus k m) ≃*
+      WreathProduct (Equiv.Perm Bool) (Fin m) := by
+  let _ : Unique (Subgroup.normalizerQuotient (diagonalTorus k m)) := uniqueOfSubsingleton 1
+  let _ : Subsingleton (WreathProduct (Equiv.Perm Bool) (Fin m)) :=
+    (WreathProduct.imprimitiveToPerm_injective (Equiv.Perm Bool) (Fin m) Bool).subsingleton
+  let _ : Unique (WreathProduct (Equiv.Perm Bool) (Fin m)) := uniqueOfSubsingleton 1
+  exact MulEquiv.ofUnique
+
+/-- Every normalizer class maps to the identity signed permutation in rank zero. -/
+@[simp]
+theorem diagonalNormalizerQuotientMulEquivWreathProductOfIsEmpty_apply
+    (k : Type*) [CommRing k] (m : ℕ) [IsEmpty (Fin m)]
+    (q : Subgroup.normalizerQuotient (diagonalTorus k m)) :
+    diagonalNormalizerQuotientMulEquivWreathProductOfIsEmpty k m q = 1 := by
+  rw [Subsingleton.elim q 1, map_one]
+
+variable [CommRing k] [IsCancelMulZero k] (u : kˣ) (hu : u ≠ u⁻¹)
 
 /-- The coordinate permutation of a normalizer element, relabelled by `Fin m × Bool`. -/
 private def signedPerm :
@@ -242,24 +265,42 @@ private theorem range_signedQuotientPerm :
     · exact ⟨_, (signedQuotientPerm_mk u hu _).trans
         (signedPerm_differenceShortRootWeylElement u hu hij)⟩
 
-/-- **The Weyl group of the symplectic diagonal torus.** Over a field with a unit different from
+/-- **The Weyl group of the symplectic diagonal torus.** Over a domain with a unit different from
 its inverse, the normalizer quotient `N(T)/T` of the paired diagonal torus `T` in `Sp₂ₘ(k)` is the
 hyperoctahedral group `Sym(Bool) ≀ Sym(m)` of signed permutations. The class of a normalizer
 element acts on `Fin m × Bool` as its coordinate permutation does on the coordinate lines; see
 `signedCoordinateEquiv_diagonalNormalizerQuotientMulEquivWreathProduct_apply`. -/
 def diagonalNormalizerQuotientMulEquivWreathProduct :
-    Subgroup.normalizerQuotient (diagonalTorus k m) ≃* WreathProduct (Equiv.Perm Bool) (Fin m) :=
-  ((MonoidHom.ofInjective (signedQuotientPerm_injective u hu)).trans
-    (MulEquiv.subgroupCongr (range_signedQuotientPerm u hu))).trans
-      (MonoidHom.ofInjective
-        (WreathProduct.imprimitiveToPerm_injective (Equiv.Perm Bool) (Fin m) Bool)).symm
+    Subgroup.normalizerQuotient (diagonalTorus k m) ≃* WreathProduct (Equiv.Perm Bool) (Fin m) := by
+  classical
+  by_cases hm : IsEmpty (Fin m)
+  · let _ := hm
+    exact diagonalNormalizerQuotientMulEquivWreathProductOfIsEmpty k m
+  · exact ((MonoidHom.ofInjective (signedQuotientPerm_injective u hu)).trans
+      (MulEquiv.subgroupCongr (range_signedQuotientPerm u hu))).trans
+        (MonoidHom.ofInjective
+          (WreathProduct.imprimitiveToPerm_injective (Equiv.Perm Bool) (Fin m) Bool)).symm
+
+private theorem diagonalNormalizerQuotientMulEquivWreathProduct_eq :
+    diagonalNormalizerQuotientMulEquivWreathProduct (m := m) u hu =
+      ((MonoidHom.ofInjective (signedQuotientPerm_injective u hu)).trans
+        (MulEquiv.subgroupCongr (range_signedQuotientPerm u hu))).trans
+          (MonoidHom.ofInjective
+            (WreathProduct.imprimitiveToPerm_injective (Equiv.Perm Bool) (Fin m) Bool)).symm := by
+  classical
+  rw [diagonalNormalizerQuotientMulEquivWreathProduct]
+  split
+  · rename_i hm
+    let _ := hm
+    exact MulEquiv.toMonoidHom_injective (Subsingleton.elim _ _)
+  · rfl
 
 private theorem imprimitiveToPerm_diagonalNormalizerQuotientMulEquivWreathProduct
     (q : Subgroup.normalizerQuotient (diagonalTorus k m)) :
     WreathProduct.imprimitiveToPerm (Equiv.Perm Bool) (Fin m) Bool
         (diagonalNormalizerQuotientMulEquivWreathProduct u hu q) =
       signedQuotientPerm u hu q := by
-  rw [diagonalNormalizerQuotientMulEquivWreathProduct, MulEquiv.trans_apply,
+  rw [diagonalNormalizerQuotientMulEquivWreathProduct_eq, MulEquiv.trans_apply,
     MonoidHom.apply_ofInjective_symm]
   simp [MonoidHom.ofInjective_apply]
 

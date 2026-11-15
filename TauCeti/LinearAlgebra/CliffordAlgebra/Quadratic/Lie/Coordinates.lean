@@ -33,6 +33,8 @@ the basis-independent Killing contraction and root-space projection API.
   skew-adjoint endomorphism.
 * `CliffordAlgebra.adjointCliffordHom_eq_sum_bivector`: the adjoint lift as a `1 / 4`-scaled sum
   against a Killing-dual basis.
+* `CliffordAlgebra.four_smul_adjointCliffordHom_eq_sum_ι_mul_ι`: the same formula without the
+  bivector, as a sum of products of two Clifford generators.
 
 ## References
 
@@ -58,7 +60,7 @@ variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
 /-- The bilinear Clifford bivector obtained by applying `ad x` in the first slot.
 
 Bundling the summand in the adjoint coordinate formula lets the canonical Killing-dual contraction
-lemmas, in particular `TauCeti.sum_apply_killingDualBasis_eq`, act on it directly. -/
+lemmas, in particular `LinearMap.sum_apply_dualBasis_eq`, act on it directly. -/
 noncomputable def adjointBivector {R : Type u} [CommRing R] [Invertible (2 : R)]
     {L : Type v} [LieRing L] [LieAlgebra R L]
     (Q : QuadraticForm R L) (x : L) : L →ₗ[R] L →ₗ[R] CliffordAlgebra Q :=
@@ -109,33 +111,13 @@ theorem soEquivQuadratic_eq_sum_bivector {ι : Type w} [Fintype ι] [DecidableEq
     rw [← map_sum, ← map_smul]
     congr 1
     rw [Finset.sum_sub_distrib]
+    have hnd := QuadraticMap.nondegenerate_polar_iff.mpr hQ
     have hfirst :
         ∑ i, Q.polarBilin (d i) x • (f : Module.End K V) (b i) =
           (f : Module.End K V) x := by
-      calc
-        _ = (f : Module.End K V) (∑ i, Q.polarBilin (d i) x • b i) := by
-          rw [map_sum]
-          simp only [map_smul]
-        _ = (f : Module.End K V) x := by
-          congr 1
-          calc
-            _ = ∑ i, b.repr x i • b i := by
-              apply Finset.sum_congr rfl
-              intro i _
-              congr 1
-              calc
-                Q.polarBilin (d i) x = Q.polarBilin x (d i) :=
-                  QuadraticMap.polar_comm Q (d i) x
-                _ = (LinearMap.BilinForm.dualBasis Q.polarBilin
-                    (QuadraticMap.nondegenerate_polar_iff.mpr hQ) d).repr x i :=
-                  (LinearMap.BilinForm.dualBasis_repr_apply
-                    (QuadraticMap.nondegenerate_polar_iff.mpr hQ) d x i).symm
-                _ = b.repr x i := by
-                  rw [LinearMap.BilinForm.dualBasis_dualBasis
-                    (QuadraticMap.nondegenerate_polar_iff.mpr hQ)
-                    (LinearMap.BilinForm.isSymm_def.mpr fun y z ↦
-                      QuadraticMap.polar_comm Q y z) b]
-            _ = x := b.sum_repr x
+      simpa only [← map_smul, ← map_sum] using
+        congrArg (f : Module.End K V)
+          (LinearMap.BilinForm.sum_apply_dualBasis_smul (B := Q.polarBilin) hnd b x)
     have hskew (i : ι) :
         Q.polarBilin ((f : Module.End K V) (b i)) x =
           -Q.polarBilin (b i) ((f : Module.End K V) x) := by
@@ -143,23 +125,11 @@ theorem soEquivQuadratic_eq_sum_bivector {ι : Type w} [Fintype ι] [DecidableEq
     have hsecond :
         ∑ i, Q.polarBilin ((f : Module.End K V) (b i)) x • d i =
           -(f : Module.End K V) x := by
-      calc
-        _ = ∑ i, -(Q.polarBilin (b i) ((f : Module.End K V) x) • d i) := by
-          apply Finset.sum_congr rfl
-          intro i _
-          rw [hskew, neg_smul]
-        _ = -(∑ i, Q.polarBilin (b i) ((f : Module.End K V) x) • d i) := by
-          rw [Finset.sum_neg_distrib]
-        _ = -(f : Module.End K V) x := by
-          congr 1
-          calc
-            _ = ∑ i, d.repr ((f : Module.End K V) x) i • d i := by
-              apply Finset.sum_congr rfl
-              intro i _
-              congr 1
-              rw [LinearMap.BilinForm.dualBasis_repr_apply]
-              exact QuadraticMap.polar_comm Q (b i) ((f : Module.End K V) x)
-            _ = (f : Module.End K V) x := d.sum_repr ((f : Module.End K V) x)
+      simp only [hskew, neg_smul, Finset.sum_neg_distrib, QuadraticMap.polarBilin_apply_apply]
+      congr 1
+      simpa only [QuadraticMap.polar_comm Q (b _), QuadraticMap.polarBilin_apply_apply] using
+        LinearMap.BilinForm.sum_apply_smul_dualBasis (B := Q.polarBilin) hnd b
+          ((f : Module.End K V) x)
     simp only [QuadraticMap.polarBilin_apply_apply] at hfirst hsecond
     rw [hfirst, hsecond, sub_neg_eq_add, ← two_smul K, ← mul_smul,
       inv_mul_cancel₀ (Invertible.ne_zero (2 : K)), one_smul]
@@ -203,5 +173,33 @@ theorem adjointCliffordHom_eq_sum_bivector {ι : Type w} [Fintype ι]
   congr 1
   rw [← mul_inv_rev]
   norm_num
+
+/-- **The adjoint quadratic lift as a sum of products of generators.** Four times the lift of `x` is
+the sum of the products of the generators of `[x, b i]` and of the Killing-dual basis vectors.
+Passing from bivectors to products costs nothing, because the scalar part of the sum is the trace
+of `ad x`, which vanishes. -/
+theorem four_smul_adjointCliffordHom_eq_sum_ι_mul_ι {ι' : Type w} [Fintype ι']
+    [DecidableEq ι'] {L : Type v} [LieRing L] [LieAlgebra K L]
+    [_root_.LieAlgebra.IsKilling K L]
+    (b : Module.Basis ι' K L) (x : L) :
+    (4 : K) • @adjointCliffordHom K L _ _ _ b.finiteDimensional_of_finite _ _ x =
+      ∑ i, ι (_root_.TauCeti.LieAlgebra.killingQuadraticForm K L) ⁅x, b i⁆ *
+        ι (_root_.TauCeti.LieAlgebra.killingQuadraticForm K L) (killingDualBasis b i) := by
+  have hprod (y z : L) :
+      ι (_root_.TauCeti.LieAlgebra.killingQuadraticForm K L) y *
+          ι (_root_.TauCeti.LieAlgebra.killingQuadraticForm K L) z =
+        bivector (_root_.TauCeti.LieAlgebra.killingQuadraticForm K L) y z +
+          killingForm K L y z •
+            (1 : CliffordAlgebra (_root_.TauCeti.LieAlgebra.killingQuadraticForm K L)) := by
+    rw [ι_mul_ι_eq_bivector_add, _root_.TauCeti.LieAlgebra.polar_killingQuadraticForm,
+      Algebra.algebraMap_eq_smul_one, smul_smul, invOf_mul_cancel_left]
+  have h4 : (4 : K) ≠ 0 := by
+    have h22 : (4 : K) = 2 * 2 := by norm_num
+    rw [h22]
+    exact mul_ne_zero (Invertible.ne_zero (2 : K)) (Invertible.ne_zero (2 : K))
+  simp_rw [hprod, Finset.sum_add_distrib, ← Finset.sum_smul,
+    sum_killingForm_lie_killingDualBasis_eq_zero, zero_smul, add_zero]
+  rw [adjointCliffordHom_eq_sum_bivector b x, smul_smul, mul_inv_cancel₀ h4, one_smul]
+  simp only [adjointBivector_apply]
 
 end CliffordAlgebra

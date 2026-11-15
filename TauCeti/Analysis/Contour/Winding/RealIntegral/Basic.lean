@@ -19,19 +19,17 @@ the generalized winding number by the **real** integral
 where `x + i y = γ − w`. Writing `γ − w = x + i y` and `γ' = ẋ + i ẏ`, the winding integrand
 `(γ − w)⁻¹ · γ'` has imaginary part exactly `(x ẏ − y ẋ) / (x² + y²)` (the real integrand above,
 here with denominator `Complex.normSq (γ − w) = x² + y²`); this pointwise piece is
-`realWindingIntegrand_eq_div`. For a point *off* the curve the
-winding number is a genuine integer (`exists_int_windingNumber_of_closed`), hence real, so the
-ordinary index integral `(2πi)⁻¹ ∮_γ dz/(z − w)` is purely imaginary: its real part vanishes and its
-imaginary part is the real integral above. This is the off-curve (no principal-value) case of the
-real formula — the computational workhorse of Layer 1; the on-curve bounded-integrand form and the
-`½·k·|Λ̇|` crossing value need the immersion geometry and stay separate.
+`realWindingIntegrand_eq_div`. For a point *off* the curve the winding number is a genuine integer
+(`exists_int_windingNumber_of_closed`), hence real, so the unnormalized integral `∮_γ dz/(z − w)` is
+purely imaginary: its real part vanishes, and its imaginary part divided by `2π` is the winding
+number, given by the real integral above. This is the off-curve (no principal-value) case of the
+real formula; the on-curve bounded-integrand form and the `½·k·|Λ̇|` crossing value need the
+immersion geometry and stay separate.
 
 ## Main results
 
 * `TauCeti.Contour.windingNumber_eq_real_integral_of_closed` — the winding number of a closed curve
   off `w` equals the real bounded integral `(1 / 2π) ∫ (x ẏ − y ẋ) / (x² + y²)`.
-
-This is Layer 1 of the Hungerbühler–Wasem generalized residue theorem (HW Thm 3.3).
 
 ## References
 
@@ -42,7 +40,7 @@ This is Layer 1 of the Hungerbühler–Wasem generalized residue theorem (HW Thm
 
 The pointwise imaginary-part decomposition and the real winding formula are migrated and cleaned
 from the AINTLIB `LeanModularForms` generalized-winding-number development, restated here for a raw
-`γ : ℝ → ℂ` on an oriented interval in the vocabulary the roadmap fixes.
+`γ : ℝ → ℂ` on an oriented interval.
 -/
 
 public section
@@ -75,7 +73,7 @@ theorem windingNumber_eq_real_integral_of_closed {γ : ℝ → ℂ} {w : ℂ} {a
     windingNumber γ a b w
       = ((1 / (2 * Real.pi)
           * ∫ t in a..b, realWindingIntegrand (γ t - w) (deriv γ t) : ℝ) : ℂ) := by
-  obtain ⟨n, hn⟩ := exists_int_windingNumber_of_closed hclosed hP hγ_cont hγ_diff h_avoid h_int
+  obtain ⟨n, hn⟩ := exists_int_windingNumber_of_closed hclosed hP hγ_cont hγ_diff h_avoid
   -- The winding number is the ordinary index integral, and it equals the integer `n`.
   have hwind_int : windingNumber γ a b w
       = (2 * (Real.pi : ℂ) * Complex.I)⁻¹ * ∫ t in a..b, (γ t - w)⁻¹ * deriv γ t :=

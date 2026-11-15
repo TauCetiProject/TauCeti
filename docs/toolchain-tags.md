@@ -21,6 +21,12 @@ The commit is on that Lean toolchain, its post-merge CI passed, and its oleans a
 Lake artifact cache, so a checkout builds without recompiling the library. The tool checks
 the recorded CI result and the published cache; neither needs a rebuild.
 
+New tags also require their commit to lie on main's first-parent history at or behind
+the protected [security audit cursor](security-audit.md). The tool reads fresh remote
+refs and repeats the coverage check immediately before publishing. This is a bounded
+source inspection, with the scope and bootstrap limits described in that policy.
+Tag creation is admin-only, and published `v*` tags cannot be changed or deleted.
+
 ## What it does not cover
 
 The tool tags only commits on `main`. A release mathlib has tagged but `main` has not
@@ -31,11 +37,11 @@ daily bump stepped over the release's window on Mathlib master, which a later bu
 avoid, or Mathlib cut the release on its `stable` branch, which `check-bump.sh` will not let
 this repository pin at all.
 
-Such a release can still be tagged by hand off a `main` commit. `v4.33.0` is one: a commit
+Historically, such releases were tagged by hand off a `main` commit. `v4.33.0` is one: a commit
 off `afb1aacb` changing only the two pin files, built from source, with its cache uploaded
 manually. The report marks it `tagged`, notes that it was constructed, and says whether it
-found a cache. `--create` does not construct these; the procedure is in the module docstring
-of `scripts/toolchain_tags.py`.
+found a cache. These existing tags remain unchanged. Constructing a new side-branch
+release is no longer an exception: future tags must use audited main history.
 
 Releases older than `v4.33.0-rc1` are out of scope, because the Lake cache has no older
 entries. That bound is `EARLIEST_RELEASE` in the script; raise it if the cache is pruned,
@@ -50,6 +56,12 @@ if the state has changed since its last message. It reads that state from a mark
 message, so it stores nothing, and it never creates a tag. Before comparing that marker,
 the bot repairs the missing `shell` language on its own newest old-style command fence;
 that one-time edit leaves the report body unchanged.
+
+The trusted Worker also dispatches this report after advancing the security cursor.
+That dispatch uses the workflow on the default branch, even when the cursor still
+points at an older commit. A release ahead of the cursor is reported as
+`pending-security-audit`; cursor updates only produce a new message when release
+readiness changes.
 
 The wait matters: the push lands 40 to 70 minutes before the release is taggable, because
 `ci.yml` coalesces bursts of `main` pushes and then takes 20 to 30 minutes, publishing the
@@ -67,7 +79,8 @@ python3 scripts/toolchain_tags.py --create v4.34.0     # one tag
 python3 scripts/toolchain_tags.py --create --all       # every ready release
 ```
 
-Run `--create` after a bump lands on a new toolchain. It needs a `gh` login with write
-access; the report needs only read.
+Run `--create` after a bump lands on a new toolchain and the security cursor covers
+its commit. It needs a `gh` login with repository-admin permission; the report needs
+only read access.
 
 If a tag does not match the rule, the tool reports it and changes nothing.

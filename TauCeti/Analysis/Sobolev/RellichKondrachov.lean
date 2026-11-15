@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.Translation
 public import TauCeti.MeasureTheory.Function.Lp.CastMeasure
 public import TauCeti.MeasureTheory.Function.Lp.FrechetKolmogorov
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
+import TauCeti.MeasureTheory.Measure.Restrict
 
 /-!
 # Rellich--Kondrachov for zero-boundary first-order Sobolev spaces
@@ -28,7 +29,8 @@ increment by `‖h‖ ‖∇u‖ₚ`.  Restriction back to `Ω` then gives compa
 map `TauCeti.W1p0.valueL`.
 
 The corresponding statement for all of `W^{1,p}(Ω)` requires a boundary-regular extension
-operator and is not claimed here.
+operator; for bounded Lipschitz domains it is
+`TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomainWith`.
 
 ## Main declaration
 
@@ -36,9 +38,9 @@ operator and is not claimed here.
 
 ## References
 
-Lane A.6 of `TauCetiRoadmap/PDE/README.md`; H. Brezis, *Functional Analysis, Sobolev Spaces and
-Partial Differential Equations*, Corollary 9.16; L. C. Evans, *Partial Differential Equations*,
-Section 5.7.  The compactness criterion used here is the Kolmogorov--Riesz form proved in
+H. Brezis, *Functional Analysis, Sobolev Spaces and Partial Differential Equations*,
+Corollary 9.16; L. C. Evans, *Partial Differential Equations*, Section 5.7.  The compactness
+criterion used here is the Kolmogorov--Riesz form proved in
 `TauCeti/MeasureTheory/Function/Lp/FrechetKolmogorov.lean`.
 -/
 
@@ -55,21 +57,14 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega : Opens E} {p : ENNReal} [Fact (1 ≤ p)]
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] in
-/-- Restricting to `⊤` leaves a measure unchanged; this identifies the whole-space `Lᵖ` space in
-which the zero extension takes its values with `Lᵖ(mu)`. -/
-private theorem restrict_coe_top (nu : Measure E) :
-    nu.restrict ((⊤ : Opens E) : Set E) = nu := by
-  rw [Opens.coe_top, Measure.restrict_univ]
-
 /-- The value of a zero-boundary Sobolev function, extended by zero to the whole space. -/
 private def W1p0.valueExtendByZeroL : W1p0 mu Omega p →L[ℝ] Lp ℝ p mu :=
-  (castLpₗᵢ (𝕜 := ℝ) (restrict_coe_top mu)).toLinearIsometry.toContinuousLinearMap.comp <|
-    (W1p0.valueL (Omega := ⊤)).comp (W1p0.extendByZeroL le_top)
+  (castLpₗᵢ (𝕜 := ℝ) (Measure.restrict_coe_opens_top mu)).toLinearIsometry.toContinuousLinearMap
+    |>.comp <| (W1p0.valueL (Omega := ⊤)).comp (W1p0.extendByZeroL le_top)
 
 private theorem W1p0.valueExtendByZeroL_apply (u : W1p0 mu Omega p) :
     W1p0.valueExtendByZeroL u =
-      castLpₗᵢ (𝕜 := ℝ) (restrict_coe_top mu)
+      castLpₗᵢ (𝕜 := ℝ) (Measure.restrict_coe_opens_top mu)
         (W1p0.valueL (W1p0.extendByZeroL le_top u)) :=
   rfl
 
@@ -99,16 +94,16 @@ private theorem W1p0.isCompactOperator_valueExtendByZeroL (hp : p ≠ ∞)
   -- Zero extension gives the fixed support and norm bounds in Fréchet--Kolmogorov.
   have hsupp : ∀ f ∈ S, ∀ᵐ x ∂mu, x ∉ (Omega : Set E) → f x = 0 := by
     intro f hf
-    obtain ⟨u, hu, rfl⟩ := hf
+    obtain ⟨u, _, rfl⟩ := hf
     rw [W1p0.coeFn_valueExtendByZeroL_eq_value]
     exact W1p0.value_extendByZeroL_ae_eq_zero_compl u
   have hbdd : ∀ f ∈ S, eLpNorm f p mu ≤ 1 := by
     intro f hf
     obtain ⟨u, hu, rfl⟩ := hf
     rw [mem_ball, dist_zero_right] at hu
-    rw [← Lp.enorm_def]
+    rw [← Lp.eNorm_def]
     calc
-      ‖W1p0.valueExtendByZeroL u‖ₑ ≤ ‖(1 : ℝ)‖ₑ := enorm_le_iff_norm_le.mpr
+      ‖W1p0.valueExtendByZeroL u‖ₑ ≤ ‖(1 : ℝ)‖ₑ := eNorm_le_iff_norm_le.mpr
         ((W1p0.norm_valueExtendByZeroL_le (mu := mu) (Omega := Omega) (p := p) u).trans
           (by simpa using hu.le))
       _ = 1 := by simp
@@ -118,7 +113,7 @@ private theorem W1p0.isCompactOperator_valueExtendByZeroL (hp : p ≠ ∞)
     intro epsilon hepsilon
     obtain ⟨delta, hdelta, hbound⟩ :=
       W1p0.exists_pos_forall_eLpNorm_value_extendByZeroL_comp_add_sub_le_of_norm_le
-        (S := ball (0 : W1p0 mu Omega p) 1) (C := 1) hp
+        (S := ball (0 : W1p0 mu Omega p) 1) (C := 1)
         (fun u hu => (mem_ball_zero_iff.1 hu).le) hepsilon
     refine ⟨delta, hdelta, fun f hf h hh => ?_⟩
     obtain ⟨u, hu, rfl⟩ := hf

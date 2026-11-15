@@ -1,0 +1,452 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Genus.One.Basic
+import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.ProperSubgraph
+import Mathlib.Tactic.LinearCombination
+
+/-!
+# Minimal numerical types of genus one with four components
+
+This file classifies the numerical data of a minimal numerical type of genus one once its four
+components have been exhibited as a path or a three-leaf star. Together with the cycle
+classification in `TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Genus.One.Basic`,
+these are cases (10)--(15) of the Stacks Project's classification.
+
+A tree on four vertices is either a path or a three-leaf star. For a path `x - y - z - t`, the
+three possible unoriented weight patterns are
+
+* `(w, 2w, 2w, 4w)`, with multiplicities `(2m, 2m, 2m, m)`;
+* `(w, 2w, 2w, w)`, with constant multiplicity;
+* `(2w, w, w, 2w)`, with multiplicities `(m, 2m, 2m, m)`.
+
+For a star with centre `c`, the two possibilities have weights and multiplicities
+`(w; w, w, 2w)` and `(2w; 2w, 2w, w)`, with the corresponding affine-Dynkin kernel vectors.
+The proofs use the existing two-component `(-2)` classification to factor every positive
+intersection number by the weights at its endpoints. The fibre relations then leave exactly the
+displayed possibilities.
+
+## References
+
+* [Stacks Project, Lemma 55.6.2, Tag 0C8T](https://stacks.math.columbia.edu/tag/0C8T).
+-/
+
+public section
+
+namespace TauCeti
+
+namespace NumericalType
+
+open Finset
+
+universe u
+
+variable {T : NumericalType.{u}}
+
+/-- The three unoriented path shapes among the minimal numerical types of genus one with four
+components, listed in the order of cases (11)--(13) of Stacks, Tag 0C8T. -/
+def IsGenusOneFourPathShape (T : NumericalType) (x y z t : T.Component) : Prop :=
+  ((T.weight y : ℤ) = 2 * T.weight x ∧ (T.weight z : ℤ) = 2 * T.weight x ∧
+      (T.weight t : ℤ) = 4 * T.weight x ∧
+      (T.multiplicity y : ℤ) = T.multiplicity x ∧
+      (T.multiplicity z : ℤ) = T.multiplicity x ∧
+      (T.multiplicity x : ℤ) = 2 * T.multiplicity t ∧
+      T.intersection x y = 2 * T.weight x ∧
+      T.intersection y z = 2 * T.weight x ∧
+      T.intersection z t = 4 * T.weight x) ∨
+    ((T.weight y : ℤ) = 2 * T.weight x ∧ (T.weight z : ℤ) = 2 * T.weight x ∧
+      (T.weight t : ℤ) = T.weight x ∧
+      (T.multiplicity y : ℤ) = T.multiplicity x ∧
+      (T.multiplicity z : ℤ) = T.multiplicity x ∧
+      (T.multiplicity t : ℤ) = T.multiplicity x ∧
+      T.intersection x y = 2 * T.weight x ∧
+      T.intersection y z = 2 * T.weight x ∧
+      T.intersection z t = 2 * T.weight x) ∨
+    ((T.weight x : ℤ) = 2 * T.weight y ∧ (T.weight z : ℤ) = T.weight y ∧
+      (T.weight t : ℤ) = 2 * T.weight y ∧
+      (T.multiplicity y : ℤ) = 2 * T.multiplicity x ∧
+      (T.multiplicity z : ℤ) = 2 * T.multiplicity x ∧
+      (T.multiplicity t : ℤ) = T.multiplicity x ∧
+      T.intersection x y = 2 * T.weight y ∧
+      T.intersection y z = T.weight y ∧
+      T.intersection z t = 2 * T.weight y)
+
+/-- Unfold `IsGenusOneFourPathShape` into its three weight, multiplicity and intersection
+patterns. -/
+theorem isGenusOneFourPathShape_iff {x y z t : T.Component} :
+    T.IsGenusOneFourPathShape x y z t ↔
+      ((T.weight y : ℤ) = 2 * T.weight x ∧ (T.weight z : ℤ) = 2 * T.weight x ∧
+          (T.weight t : ℤ) = 4 * T.weight x ∧
+          (T.multiplicity y : ℤ) = T.multiplicity x ∧
+          (T.multiplicity z : ℤ) = T.multiplicity x ∧
+          (T.multiplicity x : ℤ) = 2 * T.multiplicity t ∧
+          T.intersection x y = 2 * T.weight x ∧
+          T.intersection y z = 2 * T.weight x ∧
+          T.intersection z t = 4 * T.weight x) ∨
+        ((T.weight y : ℤ) = 2 * T.weight x ∧ (T.weight z : ℤ) = 2 * T.weight x ∧
+          (T.weight t : ℤ) = T.weight x ∧
+          (T.multiplicity y : ℤ) = T.multiplicity x ∧
+          (T.multiplicity z : ℤ) = T.multiplicity x ∧
+          (T.multiplicity t : ℤ) = T.multiplicity x ∧
+          T.intersection x y = 2 * T.weight x ∧
+          T.intersection y z = 2 * T.weight x ∧
+          T.intersection z t = 2 * T.weight x) ∨
+        ((T.weight x : ℤ) = 2 * T.weight y ∧ (T.weight z : ℤ) = T.weight y ∧
+          (T.weight t : ℤ) = 2 * T.weight y ∧
+          (T.multiplicity y : ℤ) = 2 * T.multiplicity x ∧
+          (T.multiplicity z : ℤ) = 2 * T.multiplicity x ∧
+          (T.multiplicity t : ℤ) = T.multiplicity x ∧
+          T.intersection x y = 2 * T.weight y ∧
+          T.intersection y z = T.weight y ∧
+          T.intersection z t = 2 * T.weight y) :=
+  Iff.rfl
+
+/-- The fibre relation when four distinct components exhaust a numerical type. -/
+private lemma fiber_relation_of_card_eq_four (hcard : Fintype.card T.Component = 4)
+    {i j k l : T.Component} (hij : i ≠ j) (hik : i ≠ k) (hil : i ≠ l) (hjk : j ≠ k)
+    (hjl : j ≠ l) (hkl : k ≠ l) (r : T.Component) :
+    (T.multiplicity i : ℤ) * T.intersection r i +
+        T.multiplicity j * T.intersection r j + T.multiplicity k * T.intersection r k +
+      T.multiplicity l * T.intersection r l = 0 := by
+  have hi : i ∉ ({j, k, l} : Finset T.Component) := by simp [hij, hik, hil]
+  have hj : j ∉ ({k, l} : Finset T.Component) := by simp [hjk, hjl]
+  have hu : (univ : Finset T.Component) = {i, j, k, l} :=
+    (eq_univ_of_card _ (by
+      rw [card_insert_of_notMem hi, card_insert_of_notMem hj, card_pair hkl, hcard])).symm
+  have h := T.fiber_relation r
+  rwa [hu, sum_insert hi, sum_insert hj, sum_pair hkl, ← add_assoc, ← add_assoc] at h
+
+/-- The positive weight of a component cancels from an integer equation. -/
+private lemma eq_of_weight_mul_eq_weight_mul {r : T.Component} {a b : ℤ}
+    (h : T.weight r * a = T.weight r * b) : a = b :=
+  mul_left_cancel₀ (by simp) h
+
+/-- The four oriented endpoint-factor patterns compatible with the fibre relations along a
+four-vertex path. -/
+private lemma path_factor_cases {m₁ m₂ m₃ m₄ p₁ q₁ p₂ q₂ p₃ q₃ : ℤ}
+    (hm₁ : 0 < m₁) (hm₃ : 0 < m₃) (hm₄ : 0 < m₄)
+    (h₁ : IsGenusOneEdgeFactor p₁ q₁) (h₂ : IsGenusOneEdgeFactor p₂ q₂)
+    (h₃ : IsGenusOneEdgeFactor p₃ q₃)
+    (e₁ : m₂ * p₁ = 2 * m₁) (e₂ : m₁ * q₁ + m₃ * p₂ = 2 * m₂)
+    (e₃ : m₂ * q₂ + m₄ * p₃ = 2 * m₃) (e₄ : m₃ * q₃ = 2 * m₄) :
+    (p₁ = 2 ∧ q₁ = 1 ∧ p₂ = 1 ∧ q₂ = 1 ∧ p₃ = 2 ∧ q₃ = 1) ∨
+      (p₁ = 2 ∧ q₁ = 1 ∧ p₂ = 1 ∧ q₂ = 1 ∧ p₃ = 1 ∧ q₃ = 2) ∨
+      (p₁ = 1 ∧ q₁ = 2 ∧ p₂ = 1 ∧ q₂ = 1 ∧ p₃ = 2 ∧ q₃ = 1) ∨
+      (p₁ = 1 ∧ q₁ = 2 ∧ p₂ = 1 ∧ q₂ = 1 ∧ p₃ = 1 ∧ q₃ = 2) := by
+  rw [isGenusOneEdgeFactor_iff] at h₁ h₂ h₃
+  rcases h₁ with (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩) <;>
+    rcases h₂ with (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩) <;>
+    rcases h₃ with (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩) <;>
+    omega
+
+/-- The six labelled endpoint-factor patterns compatible with the fibre relations at a
+three-leaf star. -/
+private lemma star_factor_cases {m₀ m₁ m₂ m₃ p₁ q₁ p₂ q₂ p₃ q₃ : ℤ}
+    (hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (hm₃ : 0 < m₃)
+    (h₁ : IsGenusOneEdgeFactor p₁ q₁) (h₂ : IsGenusOneEdgeFactor p₂ q₂)
+    (h₃ : IsGenusOneEdgeFactor p₃ q₃)
+    (e₀ : m₁ * p₁ + m₂ * p₂ + m₃ * p₃ = 2 * m₀) (e₁ : m₀ * q₁ = 2 * m₁)
+    (e₂ : m₀ * q₂ = 2 * m₂) (e₃ : m₀ * q₃ = 2 * m₃) :
+    (p₁ = 2 ∧ q₁ = 1 ∧ p₂ = 1 ∧ q₂ = 1 ∧ p₃ = 1 ∧ q₃ = 1) ∨
+      (p₁ = 1 ∧ q₁ = 1 ∧ p₂ = 2 ∧ q₂ = 1 ∧ p₃ = 1 ∧ q₃ = 1) ∨
+      (p₁ = 1 ∧ q₁ = 1 ∧ p₂ = 1 ∧ q₂ = 1 ∧ p₃ = 2 ∧ q₃ = 1) ∨
+      (p₁ = 1 ∧ q₁ = 2 ∧ p₂ = 1 ∧ q₂ = 1 ∧ p₃ = 1 ∧ q₃ = 1) ∨
+      (p₁ = 1 ∧ q₁ = 1 ∧ p₂ = 1 ∧ q₂ = 2 ∧ p₃ = 1 ∧ q₃ = 1) ∨
+      (p₁ = 1 ∧ q₁ = 1 ∧ p₂ = 1 ∧ q₂ = 1 ∧ p₃ = 1 ∧ q₃ = 2) := by
+  rw [isGenusOneEdgeFactor_iff] at h₁ h₂ h₃
+  rcases h₁ with (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩) <;>
+    rcases h₂ with (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩) <;>
+    rcases h₃ with (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩) <;>
+    omega
+
+/-- Four components forming a path and having self-intersection `-2w` have one of the three
+path shapes in `IsGenusOneFourPathShape`, after possibly reversing the path. -/
+theorem isGenusOneFourPathShape_or_isGenusOneFourPathShape
+    (hcard : Fintype.card T.Component = 4)
+    {i j k l : T.Component} (hi : T.intersection i i = -(2 * (T.weight i : ℤ)))
+    (hj : T.intersection j j = -(2 * (T.weight j : ℤ)))
+    (hk : T.intersection k k = -(2 * (T.weight k : ℤ)))
+    (hl : T.intersection l l = -(2 * (T.weight l : ℤ)))
+    (hik0 : T.intersection i k = 0) (hil0 : T.intersection i l = 0)
+    (hjl0 : T.intersection j l = 0) (hij0 : 0 < T.intersection i j)
+    (hjk0 : 0 < T.intersection j k) (hkl0 : 0 < T.intersection k l) :
+    T.IsGenusOneFourPathShape i j k l ∨ T.IsGenusOneFourPathShape l k j i := by
+  -- The four components are distinct, so they exhaust `T` and each satisfies a fibre relation.
+  have hr := fiber_relation_of_card_eq_four hcard (T.ne_of_intersection_nonneg hi hij0.le)
+    (T.ne_of_intersection_nonneg hi hik0.ge) (T.ne_of_intersection_nonneg hi hil0.ge)
+    (T.ne_of_intersection_nonneg hj hjk0.le) (T.ne_of_intersection_nonneg hj hjl0.ge)
+    (T.ne_of_intersection_nonneg hk hkl0.le)
+  have ri := hr i
+  have rj := hr j
+  have rk := hr k
+  have rl := hr l
+  rw [hi, hik0, hil0] at ri
+  rw [T.intersection_comm j i, hj, hjl0] at rj
+  rw [T.intersection_comm k i, hik0, T.intersection_comm k j, hk] at rk
+  rw [T.intersection_comm l i, hil0, T.intersection_comm l j, hjl0,
+    T.intersection_comm l k, hl] at rl
+  -- Each edge factors through its endpoint weights in one of five ways.
+  obtain ⟨p₁, q₁, hpq₁, hp₁, hq₁⟩ := T.exists_genusOneEdgeFactors (by omega) hi hj hij0
+  obtain ⟨p₂, q₂, hpq₂, hp₂, hq₂⟩ := T.exists_genusOneEdgeFactors (by omega) hj hk hjk0
+  obtain ⟨p₃, q₃, hpq₃, hp₃, hq₃⟩ := T.exists_genusOneEdgeFactors (by omega) hk hl hkl0
+  -- Cancelling the weights turns the fibre relations into equations on the factors.
+  have e₁ : (T.multiplicity j : ℤ) * p₁ = 2 * T.multiplicity i :=
+    eq_of_weight_mul_eq_weight_mul (r := i) (by rw [hp₁] at ri; linear_combination ri)
+  have e₂ : (T.multiplicity i : ℤ) * q₁ + T.multiplicity k * p₂ = 2 * T.multiplicity j :=
+    eq_of_weight_mul_eq_weight_mul (r := j) (by rw [hq₁, hp₂] at rj; linear_combination rj)
+  have e₃ : (T.multiplicity j : ℤ) * q₂ + T.multiplicity l * p₃ = 2 * T.multiplicity k :=
+    eq_of_weight_mul_eq_weight_mul (r := k) (by rw [hq₂, hp₃] at rk; linear_combination rk)
+  have e₄ : (T.multiplicity k : ℤ) * q₃ = 2 * T.multiplicity l :=
+    eq_of_weight_mul_eq_weight_mul (r := l) (by rw [hq₃] at rl; linear_combination rl)
+  clear ri rj rk rl hr hi hj hk hl hik0 hil0 hjl0 hij0 hjk0 hkl0
+  -- Four factor patterns survive; the first three are the three path shapes on `i j k l`, and
+  -- the last is the middle shape on the reversed path.
+  rcases path_factor_cases (by simp) (by simp) (by simp) hpq₁ hpq₂ hpq₃ e₁ e₂ e₃ e₄ with
+    h | h | h | h <;> rw [isGenusOneFourPathShape_iff, isGenusOneFourPathShape_iff] <;>
+    rcases h with ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩
+  · left; left; refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> omega
+  · left; right; left; refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> omega
+  · left; right; right; refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> omega
+  · right; left
+    refine ⟨by omega, by omega, by omega, by omega, by omega, by omega, ?_, ?_, ?_⟩
+    · rw [T.intersection_comm l k]; omega
+    · rw [T.intersection_comm k j]; omega
+    · rw [T.intersection_comm j i]; omega
+
+/-- A minimal numerical type of genus one whose four components form the displayed path has one
+of the path shapes in cases (11)--(13) of Stacks, Tag 0C8T. -/
+theorem isGenusOneFourPathShape_or_isGenusOneFourPathShape_of_isMinimal_and_arithmeticGenus_eq_one
+    (hcard : Fintype.card T.Component = 4) (hT : T.IsMinimal) (hg : T.arithmeticGenus = 1)
+    {i j k l : T.Component} (hik0 : T.intersection i k = 0)
+    (hil0 : T.intersection i l = 0) (hjl0 : T.intersection j l = 0)
+    (hij0 : 0 < T.intersection i j) (hjk0 : 0 < T.intersection j k)
+    (hkl0 : 0 < T.intersection k l) :
+    T.IsGenusOneFourPathShape i j k l ∨ T.IsGenusOneFourPathShape l k j i := by
+  have h₂ := (T.isMinimal_and_arithmeticGenus_eq_one_iff (by omega)).mp ⟨hT, hg⟩
+  exact isGenusOneFourPathShape_or_isGenusOneFourPathShape hcard
+    (T.isMinusTwoIndex_iff.mp (h₂ i)).2 (T.isMinusTwoIndex_iff.mp (h₂ j)).2
+    (T.isMinusTwoIndex_iff.mp (h₂ k)).2 (T.isMinusTwoIndex_iff.mp (h₂ l)).2
+    hik0 hil0 hjl0 hij0 hjk0 hkl0
+
+/-- The two star shapes among the minimal numerical types of genus one with four components.
+The first argument is the centre, and the last argument is the distinguished leaf: it is the
+double-weight leaf in case (14) and the half-weight leaf in case (15) of Stacks, Tag 0C8T. -/
+def IsGenusOneFourStarShape (T : NumericalType) (c x y z : T.Component) : Prop :=
+  ((T.weight x : ℤ) = T.weight c ∧ (T.weight y : ℤ) = T.weight c ∧
+      (T.weight z : ℤ) = 2 * T.weight c ∧
+      (T.multiplicity c : ℤ) = 2 * T.multiplicity x ∧
+      (T.multiplicity y : ℤ) = T.multiplicity x ∧
+      (T.multiplicity z : ℤ) = T.multiplicity x ∧
+      T.intersection c x = T.weight c ∧ T.intersection c y = T.weight c ∧
+      T.intersection c z = 2 * T.weight c) ∨
+    ((T.weight x : ℤ) = T.weight c ∧ (T.weight y : ℤ) = T.weight c ∧
+      (T.weight c : ℤ) = 2 * T.weight z ∧
+      (T.multiplicity c : ℤ) = 2 * T.multiplicity x ∧
+      (T.multiplicity y : ℤ) = T.multiplicity x ∧
+      (T.multiplicity z : ℤ) = T.multiplicity c ∧
+      T.intersection c x = T.weight c ∧ T.intersection c y = T.weight c ∧
+      T.intersection c z = T.weight c)
+
+/-- Unfold `IsGenusOneFourStarShape` into its two weight, multiplicity and intersection
+patterns. -/
+theorem isGenusOneFourStarShape_iff {c x y z : T.Component} :
+    T.IsGenusOneFourStarShape c x y z ↔
+      ((T.weight x : ℤ) = T.weight c ∧ (T.weight y : ℤ) = T.weight c ∧
+          (T.weight z : ℤ) = 2 * T.weight c ∧
+          (T.multiplicity c : ℤ) = 2 * T.multiplicity x ∧
+          (T.multiplicity y : ℤ) = T.multiplicity x ∧
+          (T.multiplicity z : ℤ) = T.multiplicity x ∧
+          T.intersection c x = T.weight c ∧ T.intersection c y = T.weight c ∧
+          T.intersection c z = 2 * T.weight c) ∨
+        ((T.weight x : ℤ) = T.weight c ∧ (T.weight y : ℤ) = T.weight c ∧
+          (T.weight c : ℤ) = 2 * T.weight z ∧
+          (T.multiplicity c : ℤ) = 2 * T.multiplicity x ∧
+          (T.multiplicity y : ℤ) = T.multiplicity x ∧
+          (T.multiplicity z : ℤ) = T.multiplicity c ∧
+          T.intersection c x = T.weight c ∧ T.intersection c y = T.weight c ∧
+          T.intersection c z = T.weight c) :=
+  Iff.rfl
+
+/-- The bookkeeping step of `exists_isGenusOneFourStarShape`: if some ordering `x, y, z` of the
+three leaves `i, j, k` of a four-component star with centre `c` has a star shape, then the ordering
+also exhausts the components together with `c` and consists of distinct, pairwise disjoint leaves,
+which gives the full conclusion. -/
+private theorem exists_isGenusOneFourStarShape_of_exists_shape
+    (hcard : Fintype.card T.Component = 4) {c i j k : T.Component}
+    (hci : c ≠ i) (hcj : c ≠ j) (hck : c ≠ k) (hij : i ≠ j) (hik : i ≠ k) (hjk : j ≠ k)
+    (hij0 : T.intersection i j = 0) (hik0 : T.intersection i k = 0)
+    (hjk0 : T.intersection j k = 0)
+    (h : ∃ x y z, ({x, y, z} : Finset T.Component) = {i, j, k} ∧
+      T.IsGenusOneFourStarShape c x y z) :
+    ∃ x y z, ({x, y, z} : Finset T.Component) = {i, j, k} ∧
+      ({c, x, y, z} : Finset T.Component) = univ ∧
+      x ≠ y ∧ x ≠ z ∧ y ≠ z ∧
+      T.intersection x y = 0 ∧ T.intersection x z = 0 ∧ T.intersection y z = 0 ∧
+      T.IsGenusOneFourStarShape c x y z := by
+  classical
+  obtain ⟨x, y, z, hset, hshape⟩ := h
+  have huniv : ({c, x, y, z} : Finset T.Component) = univ := by
+    rw [hset]
+    apply eq_univ_of_card
+    simp [hci, hcj, hck, hij, hik, hjk, hcard]
+  have hxyz : x ≠ y ∧ x ≠ z ∧ y ≠ z := by
+    apply card_triple_eq_three_iff.mp
+    rw [hset]
+    exact card_triple_eq_three_iff.mpr ⟨hij, hik, hjk⟩
+  have hzero (u v : T.Component) (hu : u ∈ ({x, y, z} : Finset T.Component))
+      (hv : v ∈ ({x, y, z} : Finset T.Component)) (huv : u ≠ v) :
+      T.intersection u v = 0 := by
+    rw [hset] at hu hv
+    simp only [mem_insert, mem_singleton] at hu hv
+    grind [T.intersection_comm]
+  exact ⟨x, y, z, hset, huniv, hxyz.1, hxyz.2.1, hxyz.2.2,
+    hzero x y (by simp) (by simp) hxyz.1,
+    hzero x z (by simp) (by simp) hxyz.2.1,
+    hzero y z (by simp) (by simp) hxyz.2.2, hshape⟩
+
+/-- Four components forming a three-leaf star and having self-intersection `-2w` have one of the
+two star shapes in `IsGenusOneFourStarShape`, after designating a suitable leaf. -/
+theorem exists_isGenusOneFourStarShape (hcard : Fintype.card T.Component = 4)
+    {c i j k : T.Component} (hc : T.intersection c c = -(2 * (T.weight c : ℤ)))
+    (hi : T.intersection i i = -(2 * (T.weight i : ℤ)))
+    (hj : T.intersection j j = -(2 * (T.weight j : ℤ)))
+    (hk : T.intersection k k = -(2 * (T.weight k : ℤ)))
+    (hij0 : T.intersection i j = 0) (hik0 : T.intersection i k = 0)
+    (hjk0 : T.intersection j k = 0) (hci0 : 0 < T.intersection c i)
+    (hcj0 : 0 < T.intersection c j) (hck0 : 0 < T.intersection c k) :
+    ∃ x y z, ({x, y, z} : Finset T.Component) = {i, j, k} ∧
+      ({c, x, y, z} : Finset T.Component) = univ ∧
+      x ≠ y ∧ x ≠ z ∧ y ≠ z ∧
+      T.intersection x y = 0 ∧ T.intersection x z = 0 ∧ T.intersection y z = 0 ∧
+      T.IsGenusOneFourStarShape c x y z := by
+  classical
+  have hci := T.ne_of_intersection_nonneg hc hci0.le
+  have hcj := T.ne_of_intersection_nonneg hc hcj0.le
+  have hck := T.ne_of_intersection_nonneg hc hck0.le
+  have hij := T.ne_of_intersection_nonneg hi hij0.ge
+  have hik := T.ne_of_intersection_nonneg hi hik0.ge
+  have hjk := T.ne_of_intersection_nonneg hj hjk0.ge
+  refine exists_isGenusOneFourStarShape_of_exists_shape hcard hci hcj hck hij hik hjk hij0 hik0
+    hjk0 ?_
+  -- The four components are distinct, so they exhaust `T` and each satisfies a fibre relation.
+  have hr := fiber_relation_of_card_eq_four hcard hci hcj hck hij hik hjk
+  have rc := hr c
+  have ri := hr i
+  have rj := hr j
+  have rk := hr k
+  rw [hc] at rc
+  rw [T.intersection_comm i c, hi, hij0, hik0] at ri
+  rw [T.intersection_comm j c, T.intersection_comm j i, hij0, hj, hjk0] at rj
+  rw [T.intersection_comm k c, T.intersection_comm k i, hik0,
+    T.intersection_comm k j, hjk0, hk] at rk
+  -- Each edge factors through its endpoint weights in one of five ways.
+  obtain ⟨p₁, q₁, hpq₁, hp₁, hq₁⟩ := T.exists_genusOneEdgeFactors (by omega) hc hi hci0
+  obtain ⟨p₂, q₂, hpq₂, hp₂, hq₂⟩ := T.exists_genusOneEdgeFactors (by omega) hc hj hcj0
+  obtain ⟨p₃, q₃, hpq₃, hp₃, hq₃⟩ := T.exists_genusOneEdgeFactors (by omega) hc hk hck0
+  -- Cancelling the weights turns the fibre relations into equations on the factors.
+  have e₀ : (T.multiplicity i : ℤ) * p₁ + T.multiplicity j * p₂ +
+      T.multiplicity k * p₃ = 2 * T.multiplicity c :=
+    eq_of_weight_mul_eq_weight_mul (r := c)
+      (by rw [hp₁, hp₂, hp₃] at rc; linear_combination rc)
+  have e₁ : (T.multiplicity c : ℤ) * q₁ = 2 * T.multiplicity i :=
+    eq_of_weight_mul_eq_weight_mul (r := i) (by rw [hq₁] at ri; linear_combination ri)
+  have e₂ : (T.multiplicity c : ℤ) * q₂ = 2 * T.multiplicity j :=
+    eq_of_weight_mul_eq_weight_mul (r := j) (by rw [hq₂] at rj; linear_combination rj)
+  have e₃ : (T.multiplicity c : ℤ) * q₃ = 2 * T.multiplicity k :=
+    eq_of_weight_mul_eq_weight_mul (r := k) (by rw [hq₃] at rk; linear_combination rk)
+  clear rc ri rj rk hr hc hi hj hk hij0 hik0 hjk0 hci0 hcj0 hck0
+  -- Six labelled factor patterns survive; each is one of the two star shapes once the
+  -- distinguished leaf is moved to the last position.
+  rcases star_factor_cases (by simp) (by simp) (by simp) hpq₁ hpq₂ hpq₃ e₀ e₁ e₂ e₃ with
+    h | h | h | h | h | h <;> simp only [isGenusOneFourStarShape_iff] <;>
+    rcases h with ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩
+  · exact ⟨j, k, i, by rw [pair_comm k i, insert_comm j i], .inl <| by
+      refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> omega⟩
+  · exact ⟨i, k, j, by rw [pair_comm k j], .inl <| by
+      refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> omega⟩
+  · exact ⟨i, j, k, rfl, .inl <| by
+      refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> omega⟩
+  · exact ⟨j, k, i, by rw [pair_comm k i, insert_comm j i], .inr <| by
+      refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> omega⟩
+  · exact ⟨i, k, j, by rw [pair_comm k j], .inr <| by
+      refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> omega⟩
+  · exact ⟨i, j, k, rfl, .inr <| by
+      refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> omega⟩
+
+/-- A minimal numerical type of genus one whose four components form the displayed three-leaf
+star has one of the star shapes in cases (14) and (15) of Stacks, Tag 0C8T. -/
+theorem exists_isGenusOneFourStarShape_of_isMinimal_and_arithmeticGenus_eq_one
+    (hcard : Fintype.card T.Component = 4) (hT : T.IsMinimal) (hg : T.arithmeticGenus = 1)
+    {c i j k : T.Component} (hij0 : T.intersection i j = 0)
+    (hik0 : T.intersection i k = 0) (hjk0 : T.intersection j k = 0)
+    (hci0 : 0 < T.intersection c i) (hcj0 : 0 < T.intersection c j)
+    (hck0 : 0 < T.intersection c k) :
+    ∃ x y z, ({x, y, z} : Finset T.Component) = {i, j, k} ∧
+      ({c, x, y, z} : Finset T.Component) = univ ∧
+      x ≠ y ∧ x ≠ z ∧ y ≠ z ∧
+      T.intersection x y = 0 ∧ T.intersection x z = 0 ∧ T.intersection y z = 0 ∧
+      T.IsGenusOneFourStarShape c x y z := by
+  have h₂ := (T.isMinimal_and_arithmeticGenus_eq_one_iff (by omega)).mp ⟨hT, hg⟩
+  exact T.exists_isGenusOneFourStarShape hcard (T.isMinusTwoIndex_iff.mp (h₂ c)).2
+    (T.isMinusTwoIndex_iff.mp (h₂ i)).2 (T.isMinusTwoIndex_iff.mp (h₂ j)).2
+    (T.isMinusTwoIndex_iff.mp (h₂ k)).2 hij0 hik0 hjk0 hci0 hcj0 hck0
+
+/-- For a genus-one four-component path whose vertices exhaust all components, some component's
+weight divides every weight with quotient at most four, and some component's multiplicity
+divides every multiplicity with quotient at most six. -/
+lemma IsGenusOneFourPathShape.exists_weight_and_multiplicity_dvd_and_le
+    {x y z t : T.Component} (h4 : T.IsGenusOneFourPathShape x y z t)
+    (huniv : ({x, y, z, t} : Finset T.Component) = univ) :
+    (∃ j, ∀ i, (T.weight j : ℕ) ∣ T.weight i ∧ (T.weight i : ℕ) ≤ 4 * T.weight j) ∧
+      (∃ j, ∀ i, (T.multiplicity j : ℕ) ∣ T.multiplicity i ∧
+        (T.multiplicity i : ℕ) ≤ 6 * T.multiplicity j) := by
+  classical
+  rcases isGenusOneFourPathShape_iff.mp h4 with ⟨hw1, hw2, hw3, hm1, hm2, hm3, -⟩ |
+    ⟨hw1, hw2, hw3, hm1, hm2, hm3, -⟩ | ⟨hw1, hw2, hw3, hm1, hm2, hm3, -⟩
+  case' inl =>
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) x t ?_ ?_
+  case' inr.inl =>
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) x x ?_ ?_
+  case' inr.inr =>
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) y x ?_ ?_
+  all_goals
+    intro i
+    have hi : i ∈ ({x, y, z, t} : Finset T.Component) := huniv ▸ mem_univ i
+    simp only [mem_insert, mem_singleton] at hi
+    rcases hi with rfl | rfl | rfl | rfl
+    all_goals
+      simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
+      omega
+
+/-- For a genus-one four-component star whose vertices exhaust all components, some component's
+weight divides every weight with quotient at most four, and some component's multiplicity
+divides every multiplicity with quotient at most six. -/
+lemma IsGenusOneFourStarShape.exists_weight_and_multiplicity_dvd_and_le
+    {c₀ x y z : T.Component} (hstar : T.IsGenusOneFourStarShape c₀ x y z)
+    (huniv : ({c₀, x, y, z} : Finset T.Component) = univ) :
+    (∃ j, ∀ i, (T.weight j : ℕ) ∣ T.weight i ∧ (T.weight i : ℕ) ≤ 4 * T.weight j) ∧
+      (∃ j, ∀ i, (T.multiplicity j : ℕ) ∣ T.multiplicity i ∧
+        (T.multiplicity i : ℕ) ≤ 6 * T.multiplicity j) := by
+  classical
+  rcases isGenusOneFourStarShape_iff.mp hstar with ⟨hw1, hw2, hw3, hm1, hm2, hm3, -⟩ |
+    ⟨hw1, hw2, hw3, hm1, hm2, hm3, -⟩
+  case' inl =>
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) c₀ x ?_ ?_
+  case' inr =>
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) z x ?_ ?_
+  all_goals
+    intro i
+    have hi : i ∈ ({c₀, x, y, z} : Finset T.Component) := huniv ▸ mem_univ i
+    simp only [mem_insert, mem_singleton] at hi
+    rcases hi with rfl | rfl | rfl | rfl
+    all_goals
+      simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
+      omega
+
+end NumericalType
+
+end TauCeti

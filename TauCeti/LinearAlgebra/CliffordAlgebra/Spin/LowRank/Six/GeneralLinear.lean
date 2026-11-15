@@ -1,0 +1,459 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.EvenUnitary
+public import TauCeti.RepresentationTheory.Spin.Polarization.Split.Even
+public import TauCeti.RepresentationTheory.Spin.Structure
+import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Center
+
+/-!
+# The even unitary group of a split six-dimensional quadratic space
+
+A matrix-product model of the even Clifford algebra of a nondegenerate six-dimensional form
+identifies its reverse-unitary group with the general linear group of either matrix factor.
+Reversal exchanges the two central idempotents, so the second component of a unitary element
+is determined by the inverse of its first component. This differs from dimension four, where
+reversal preserves both factors and imposes determinant one in each.
+
+The canonical polarization of the hyperbolic space `splitEvenForm K 3` supplies such a model
+through `TauCeti.SpinPolarizationData.evenCliffordEquivProdMatrix`. Its matrix factors have size
+four. In particular, the even unitary group of three rational hyperbolic planes is `GL₄(ℚ)`.
+This file concerns the even unitary carrier; its Spin subgroup is the subgroup of
+determinant-one matrices, by `TauCeti.hyperbolicSixSpinEquivSpecialLinear`.
+
+## Main definitions
+
+* `AlgEquiv.evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix`: for a matrix-product model of the
+  even Clifford algebra, the even unitary group is isomorphic to the general linear group of the
+  first matrix factor.
+* `TauCeti.hyperbolicSixEvenEquivMatrixProd`: the matrix-product model of the even Clifford
+  algebra of three hyperbolic planes.
+* `TauCeti.hyperbolicSixEvenUnitaryEquivGeneralLinear`: the resulting isomorphism of the even
+  unitary group of three hyperbolic planes with `GL₄(K)`.
+
+## Main results
+
+* `TauCeti.coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_spinGroupToEvenUnitary_apply`:
+  for a polarized six-dimensional space, the matrix assigned to a Spin element in the half-spin
+  matrix-product model is the matrix of its even half-spin action (`spinPlusAction`) in the basis
+  `TauCeti.spinPlusFinBasisOfFinrankEqSix`.
+
+## References
+
+* M.-A. Knus, A. Merkurjev, M. Rost and J.-P. Tignol, *The Book of Involutions* (1998), §15.
+* The half-spin matrix-product structure theorem
+  `TauCeti.SpinPolarizationData.evenCliffordEquivProdMatrix`.
+-/
+
+public section
+
+namespace TauCeti
+
+open _root_.CliffordAlgebra Module
+
+universe u v w
+
+variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
+  {Q : QuadraticForm K V} {n : Type w} [Fintype n] [DecidableEq n]
+
+private def matrixProdReverse
+    (e : even Q ≃ₐ[K] Matrix n n K × Matrix n n K) :
+    (Matrix n n K × Matrix n n K) →ₗ[K] (Matrix n n K × Matrix n n K) :=
+  e.toLinearMap.comp ((reverseEven Q).comp e.symm.toLinearMap)
+
+private theorem matrixProdReverse_apply
+    (e : even Q ≃ₐ[K] Matrix n n K × Matrix n n K) (x : Matrix n n K × Matrix n n K) :
+    matrixProdReverse e x = e (reverseEven Q (e.symm x)) := (rfl)
+
+private theorem matrixProdReverse_mul
+    (e : even Q ≃ₐ[K] Matrix n n K × Matrix n n K) (x y : Matrix n n K × Matrix n n K) :
+    matrixProdReverse e (x * y) = matrixProdReverse e y * matrixProdReverse e x := by
+  simp [matrixProdReverse_apply]
+
+private theorem matrixProdReverse_involutive
+    (e : even Q ≃ₐ[K] Matrix n n K × Matrix n n K) :
+    Function.Involutive (matrixProdReverse e) := by
+  intro x
+  simp [matrixProdReverse_apply]
+
+private theorem matrixProdReverse_one
+    (e : even Q ≃ₐ[K] Matrix n n K × Matrix n n K) : matrixProdReverse e 1 = 1 := by
+  simp [matrixProdReverse_apply]
+
+private theorem matrixProdReverse_mem_center
+    (e : even Q ≃ₐ[K] Matrix n n K × Matrix n n K) {x : Matrix n n K × Matrix n n K}
+    (hx : x ∈ Subalgebra.center K (Matrix n n K × Matrix n n K)) :
+    matrixProdReverse e x ∈ Subalgebra.center K (Matrix n n K × Matrix n n K) := by
+  rw [Subalgebra.mem_center_iff] at hx ⊢
+  intro y
+  have h := congrArg (matrixProdReverse e) (hx (matrixProdReverse e y))
+  simpa [matrixProdReverse_mul, matrixProdReverse_involutive e y] using h.symm
+
+private theorem matrixProdReverse_one_zero
+    [Nonempty n] [Invertible (2 : K)] (hQ : Q.Nondegenerate) (hV : finrank K V = 6)
+    (e : even Q ≃ₐ[K] Matrix n n K × Matrix n n K) :
+    matrixProdReverse e (1, 0) = (0, 1) := by
+  have : FiniteDimensional K V := Module.finite_of_finrank_eq_succ hV
+  have hp : ((1, 0) : Matrix n n K × Matrix n n K) ∈ Subalgebra.center K _ := by
+    simp [Subalgebra.mem_center_iff]
+  -- Reversal is an involution fixing `0` and `1`, so the image of `(1, 0)` is neither of them.
+  have hinv := matrixProdReverse_involutive e (1, 0)
+  -- The image is a central idempotent, so its matrix coordinates are scalar idempotents.
+  have hc := matrixProdReverse_mem_center e hp
+  simp only [Subalgebra.center_prod, Subalgebra.mem_prod, Algebra.IsCentral.mem_center_iff K] at hc
+  obtain ⟨⟨a, ha⟩, b, hb⟩ := hc
+  have hr : matrixProdReverse e (1, 0) = (algebraMap K _ a, algebraMap K _ b) := Prod.ext ha hb
+  obtain ⟨rfl | rfl, rfl | rfl⟩ : (a = 1 ∨ a = 0) ∧ (b = 1 ∨ b = 0) := by
+    simpa [hr, ← map_mul, mul_right_eq_self₀] using (matrixProdReverse_mul e (1, 0) (1, 0)).symm
+  · simp [hr, Prod.mk_one_one, matrixProdReverse_one, Prod.ext_iff] at hinv
+  · -- Then `(1, 0)` is a reversal-fixed central element, hence a scalar, which it is not.
+    obtain ⟨c, hc⟩ := (CliffordAlgebra.reverseEven_eq_self_iff_of_mem_center_of_finrank_eq_six
+      hQ hV (MulEquivClass.apply_mem_center e.symm hp)).mp
+        (e.injective (by simpa [matrixProdReverse_apply] using hr))
+    simpa using congrArg (fun x ↦ (e x).1 - (e x).2) hc
+  · simpa using hr
+  · simp [hr, Prod.mk_zero_zero, Prod.ext_iff] at hinv
+
+private theorem matrixProdReverse_fst_one_zero
+    [Nonempty n] [Invertible (2 : K)] (hQ : Q.Nondegenerate) (hV : finrank K V = 6)
+    (e : even Q ≃ₐ[K] Matrix n n K × Matrix n n K) (a : Matrix n n K) :
+    (matrixProdReverse e (a, 0)).1 = 0 := by
+  have h := matrixProdReverse_mul e (a, 0) (1, 0)
+  rw [matrixProdReverse_one_zero hQ hV] at h
+  have h' := congrArg (fun z : Matrix n n K × Matrix n n K => z.1) h
+  simpa using h'
+
+private theorem matrixProdReverse_fst_recovery
+    [Nonempty n] [Invertible (2 : K)] (hQ : Q.Nondegenerate) (hV : finrank K V = 6)
+    (e : even Q ≃ₐ[K] Matrix n n K × Matrix n n K) (x : Matrix n n K × Matrix n n K) :
+    matrixProdReverse e ((matrixProdReverse e x).1, 0) = (0, x.2) := by
+  have h := matrixProdReverse_mul e (matrixProdReverse e x) (1, 0)
+  have hleft : matrixProdReverse e x * (1, 0) = ((matrixProdReverse e x).1, 0) := by
+    apply Prod.ext <;> simp
+  have hright : (0, 1) * x = (0, x.2) := by
+    apply Prod.ext <;> simp
+  simpa only [hleft, matrixProdReverse_one_zero hQ hV,
+    matrixProdReverse_involutive e x, hright] using h
+
+private def evenUnitaryGroupMatrixFirst
+    (e : even Q ≃ₐ[K] Matrix n n K × Matrix n n K) :
+    evenUnitaryGroup Q →* Matrix.GeneralLinearGroup n K :=
+  ((MonoidHom.fst _ _).comp (e.toMonoidHom.comp (evenUnitaryGroupEvenPart Q))).toHomUnits
+
+private theorem evenUnitaryGroupMatrixFirst_coe
+    (e : even Q ≃ₐ[K] Matrix n n K × Matrix n n K) (x : evenUnitaryGroup Q) :
+    (evenUnitaryGroupMatrixFirst e x : Matrix n n K) =
+      (e (evenUnitaryGroupEvenPart Q x)).1 := by
+  simp [evenUnitaryGroupMatrixFirst]
+
+private theorem evenUnitaryGroupMatrixFirst_inv_coe
+    (e : even Q ≃ₐ[K] Matrix n n K × Matrix n n K) (x : evenUnitaryGroup Q) :
+    (↑((evenUnitaryGroupMatrixFirst e x)⁻¹) : Matrix n n K) =
+      (matrixProdReverse e (e (evenUnitaryGroupEvenPart Q x))).1 := by
+  rw [← map_inv, evenUnitaryGroupMatrixFirst_coe, ← reverseEven_evenUnitaryGroupEvenPart]
+  simp only [matrixProdReverse_apply, e.symm_apply_apply]
+
+private theorem evenUnitaryGroupMatrixFirst_injective
+    [Nonempty n] [Invertible (2 : K)] (hQ : Q.Nondegenerate) (hV : finrank K V = 6)
+    (e : even Q ≃ₐ[K] Matrix n n K × Matrix n n K) :
+    Function.Injective (evenUnitaryGroupMatrixFirst e) := by
+  intro x y hxy
+  have hfst : (e (evenUnitaryGroupEvenPart Q x)).1 =
+      (e (evenUnitaryGroupEvenPart Q y)).1 := by
+    simpa only [evenUnitaryGroupMatrixFirst_coe] using congrArg Units.val hxy
+  have hinv :
+      (matrixProdReverse e (e (evenUnitaryGroupEvenPart Q x))).1 =
+        (matrixProdReverse e (e (evenUnitaryGroupEvenPart Q y))).1 := by
+    simpa only [evenUnitaryGroupMatrixFirst_inv_coe] using
+      congrArg (fun u : Matrix.GeneralLinearGroup n K => (↑(u⁻¹) : Matrix n n K)) hxy
+  have hsnd : (e (evenUnitaryGroupEvenPart Q x)).2 =
+      (e (evenUnitaryGroupEvenPart Q y)).2 := by
+    have h := congrArg (fun a : Matrix n n K => (matrixProdReverse e (a, 0)).2) hinv
+    simpa only [matrixProdReverse_fst_recovery hQ hV, Prod.snd] using h
+  have heven := e.injective (Prod.ext hfst hsnd)
+  apply Subtype.ext
+  apply Units.ext
+  simpa only [coe_evenUnitaryGroupEvenPart] using congrArg Subtype.val heven
+
+private theorem matrixProdReverse_unit_pair_mul
+    [Nonempty n] [Invertible (2 : K)] (hQ : Q.Nondegenerate) (hV : finrank K V = 6)
+    (e : even Q ≃ₐ[K] Matrix n n K × Matrix n n K) (u : Matrix.GeneralLinearGroup n K) :
+    matrixProdReverse e (((u : Matrix n n K), 0) + matrixProdReverse e (↑(u⁻¹), 0)) *
+        (((u : Matrix n n K), 0) + matrixProdReverse e (↑(u⁻¹), 0)) = 1 := by
+  have hfst := matrixProdReverse_fst_one_zero hQ hV e (u : Matrix n n K)
+  have hfstInv := matrixProdReverse_fst_one_zero hQ hV e (↑(u⁻¹) : Matrix n n K)
+  have hmul :
+      matrixProdReverse e ((u : Matrix n n K), 0) * matrixProdReverse e (↑(u⁻¹), 0) = (0, 1) := by
+    rw [← matrixProdReverse_mul]
+    simpa [Prod.mk_mul_mk] using matrixProdReverse_one_zero hQ hV e
+  rw [map_add, matrixProdReverse_involutive e (↑(u⁻¹), 0)]
+  apply Prod.ext
+  · simp only [Prod.fst_mul, Prod.fst_add, hfst, hfstInv,
+      zero_add, add_zero, Units.inv_mul, Prod.fst_one]
+  · have h := congrArg (fun z : Matrix n n K × Matrix n n K => z.2) hmul
+    simpa only [Prod.snd_mul, Prod.snd_add, Prod.snd, zero_add, add_zero, Prod.snd_one] using h
+
+private def evenUnitaryGroupMatrixLift
+    [Nonempty n] [Invertible (2 : K)] (hQ : Q.Nondegenerate) (hV : finrank K V = 6)
+    (e : even Q ≃ₐ[K] Matrix n n K × Matrix n n K) (u : Matrix.GeneralLinearGroup n K) :
+    evenUnitaryGroup Q := by
+  let y : even Q := e.symm (((u : Matrix n n K), 0) + matrixProdReverse e (↑(u⁻¹), 0))
+  have hy : reverseEven Q y * y = 1 := by
+    apply e.injective
+    simpa [y, matrixProdReverse_apply] using matrixProdReverse_unit_pair_mul hQ hV e u
+  have hy' : y * reverseEven Q y = 1 := by
+    apply e.injective
+    have h := matrixProdReverse_unit_pair_mul hQ hV e u⁻¹
+    simpa [y, matrixProdReverse_apply, add_comm] using h
+  let v : (CliffordAlgebra Q)ˣ :=
+    { val := y
+      inv := reverseEven Q y
+      val_inv := congrArg Subtype.val hy'
+      inv_val := congrArg Subtype.val hy }
+  refine ⟨v, (evenUnitaryGroup.mem_iff_reverse_mul_self_eq_one Q).mpr ⟨y.2, ?_⟩⟩
+  simpa only [v, coe_reverseEven_apply, Subalgebra.coe_mul, Subalgebra.coe_one] using
+    congrArg Subtype.val hy
+
+private theorem evenUnitaryGroupMatrixLift_evenPart
+    [Nonempty n] [Invertible (2 : K)] (hQ : Q.Nondegenerate) (hV : finrank K V = 6)
+    (e : even Q ≃ₐ[K] Matrix n n K × Matrix n n K) (u : Matrix.GeneralLinearGroup n K) :
+    evenUnitaryGroupEvenPart Q (evenUnitaryGroupMatrixLift hQ hV e u) =
+      e.symm (((u : Matrix n n K), 0) + matrixProdReverse e (↑(u⁻¹), 0)) := by
+  apply Subtype.ext
+  simp [evenUnitaryGroupMatrixLift, coe_evenUnitaryGroupEvenPart]
+
+private theorem evenUnitaryGroupMatrixFirst_surjective
+    [Nonempty n] [Invertible (2 : K)] (hQ : Q.Nondegenerate) (hV : finrank K V = 6)
+    (e : even Q ≃ₐ[K] Matrix n n K × Matrix n n K) :
+    Function.Surjective (evenUnitaryGroupMatrixFirst e) := by
+  intro u
+  refine ⟨evenUnitaryGroupMatrixLift hQ hV e u, Units.ext ?_⟩
+  simp [evenUnitaryGroupMatrixFirst_coe, evenUnitaryGroupMatrixLift_evenPart,
+    matrixProdReverse_fst_one_zero hQ hV]
+
+end TauCeti
+
+namespace AlgEquiv
+
+open CliffordAlgebra Module
+
+universe u v w
+
+variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
+  {Q : QuadraticForm K V} {n : Type w} [Fintype n] [DecidableEq n] [Nonempty n]
+  [Invertible (2 : K)]
+
+omit [Nonempty n] in
+/-- In a matrix-product model of a nondegenerate six-dimensional even Clifford algebra,
+reversal exchanges the two central idempotents. -/
+@[simp]
+theorem map_reverseEven_symm_one_zero_of_finrank_eq_six
+    (e : even Q ≃ₐ[K] Matrix n n K × Matrix n n K)
+    (hQ : Q.Nondegenerate) (hV : finrank K V = 6) :
+    e (reverseEven Q (e.symm (1, 0))) = (0, 1) := by
+  rcases isEmpty_or_nonempty n with hn | hn
+  · exact Subsingleton.elim _ _
+  exact TauCeti.matrixProdReverse_one_zero hQ hV e
+
+/-- Projecting to the first matrix factor identifies the reverse-unitary group of a
+nondegenerate six-dimensional even Clifford algebra with the general linear group.
+The matrix model is part of the data; reversal determines the inverse map uniquely. -/
+noncomputable def evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix
+    (e : even Q ≃ₐ[K] Matrix n n K × Matrix n n K)
+    (hQ : Q.Nondegenerate) (hV : finrank K V = 6) :
+    evenUnitaryGroup Q ≃* Matrix.GeneralLinearGroup n K :=
+  MulEquiv.ofBijective (TauCeti.evenUnitaryGroupMatrixFirst e)
+    ⟨TauCeti.evenUnitaryGroupMatrixFirst_injective hQ hV e,
+      TauCeti.evenUnitaryGroupMatrixFirst_surjective hQ hV e⟩
+
+/-- The general linear equivalence evaluates the first factor of the chosen even-Clifford model. -/
+@[simp]
+theorem coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_apply
+    (e : even Q ≃ₐ[K] Matrix n n K × Matrix n n K)
+    (hQ : Q.Nondegenerate) (hV : finrank K V = 6) (x : evenUnitaryGroup Q) :
+    (e.evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix hQ hV x : Matrix n n K) =
+      (e (evenUnitaryGroupEvenPart Q x)).1 := by
+  rw [evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix]
+  exact TauCeti.evenUnitaryGroupMatrixFirst_coe e x
+
+/-- The first matrix component of the inverse unitary transport is the given general linear
+matrix. This reconstruction rule runs before simplifying the full inverse Clifford value. -/
+@[simp↓]
+theorem fst_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_symm_apply_evenPart
+    (e : even Q ≃ₐ[K] Matrix n n K × Matrix n n K)
+    (hQ : Q.Nondegenerate) (hV : finrank K V = 6) (u : Matrix.GeneralLinearGroup n K) :
+    (e (evenUnitaryGroupEvenPart Q
+      ((e.evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix hQ hV).symm u))).1 =
+        (u : Matrix n n K) := by
+  have h := coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_apply e hQ hV
+    ((e.evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix hQ hV).symm u)
+  simpa only [MulEquiv.apply_symm_apply] using h.symm
+
+/-- The inverse general linear equivalence has even Clifford value obtained from the first
+matrix and the reversed inverse matrix in the other factor. -/
+@[simp]
+theorem evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_symm_apply_evenPart
+    (e : even Q ≃ₐ[K] Matrix n n K × Matrix n n K)
+    (hQ : Q.Nondegenerate) (hV : finrank K V = 6) (u : Matrix.GeneralLinearGroup n K) :
+    evenUnitaryGroupEvenPart Q
+        ((e.evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix hQ hV).symm u) =
+      e.symm (((u : Matrix n n K), 0) + e (reverseEven Q (e.symm (↑(u⁻¹), 0)))) := by
+  have h : (e.evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix hQ hV).symm u =
+      TauCeti.evenUnitaryGroupMatrixLift hQ hV e u := by
+    apply (e.evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix hQ hV).injective
+    apply Units.ext
+    simp [TauCeti.evenUnitaryGroupMatrixLift_evenPart,
+      TauCeti.matrixProdReverse_fst_one_zero hQ hV]
+  rw [h, TauCeti.evenUnitaryGroupMatrixLift_evenPart, TauCeti.matrixProdReverse_apply]
+
+end AlgEquiv
+
+namespace TauCeti
+
+open _root_.CliffordAlgebra Module
+
+section Polarized
+
+variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
+  {Q : QuadraticForm K V} (P : SpinPolarizationData Q)
+
+namespace SpinPolarizationData
+
+/-- The remainder line of a polarization of a six-dimensional quadratic space vanishes. -/
+theorem line_eq_bot_of_finrank_eq_six (hV : finrank K V = 6) : P.line = ⊥ :=
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
+  P.line_eq_bot_of_even_finrank (hV ▸ by decide)
+
+/-- A polarization of a six-dimensional quadratic space has a three-dimensional isotropic
+summand `W`. -/
+theorem finrank_W_eq_three_of_finrank_eq_six (hV : finrank K V = 6) : finrank K P.W = 3 :=
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
+  P.finrank_W_eq_of_finrank_eq_two_mul hV
+
+/-- A polarization of a six-dimensional quadratic space has a nonzero isotropic summand `W`. -/
+theorem W_ne_bot_of_finrank_eq_six (hV : finrank K V = 6) : P.W ≠ ⊥ :=
+  Submodule.nontrivial_iff_ne_bot.mp <|
+    Module.nontrivial_of_finrank_eq_succ (P.finrank_W_eq_three_of_finrank_eq_six hV)
+
+end SpinPolarizationData
+
+/-- The even half-spin module of a polarized six-dimensional quadratic space has dimension
+four. -/
+theorem finrank_spinPlus_eq_four_of_finrank_eq_six (hV : finrank K V = 6) :
+    finrank K (spinPlus Q P) = 4 := by
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
+  rw [finrank_spinPlus P,
+    P.finrank_W_eq_three_of_finrank_eq_six hV]
+  norm_num
+
+/-- The basis `Module.finBasisOfFinrankEq` of the even half-spin module of a polarized
+six-dimensional quadratic space. It is the basis in which `Algebra.endAlgEquivMatrix` computes the
+first factor of `TauCeti.SpinPolarizationData.evenCliffordEquivProdMatrix`. -/
+noncomputable def spinPlusFinBasisOfFinrankEqSix (hV : finrank K V = 6) :
+    Basis (Fin 4) K (spinPlus Q P) :=
+  haveI : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
+  Module.finBasisOfFinrankEq K (spinPlus Q P) (finrank_spinPlus_eq_four_of_finrank_eq_six P hV)
+
+/-- `TauCeti.spinPlusFinBasisOfFinrankEqSix` is the basis `Module.finBasisOfFinrankEq` for the
+dimension count `TauCeti.finrank_spinPlus_eq_four_of_finrank_eq_six`. -/
+theorem spinPlusFinBasisOfFinrankEqSix_def [FiniteDimensional K (spinPlus Q P)]
+    (hV : finrank K V = 6) :
+    spinPlusFinBasisOfFinrankEqSix P hV =
+      Module.finBasisOfFinrankEq K (spinPlus Q P)
+        (finrank_spinPlus_eq_four_of_finrank_eq_six P hV) :=
+  -- `(rfl)`, not `rfl`: the body of `spinPlusFinBasisOfFinrankEqSix` is not `@[expose]`d.
+  (rfl)
+
+/-- The first matrix factor of a polarized six-dimensional Spin element is the matrix of its
+even half-spin action in the basis `TauCeti.spinPlusFinBasisOfFinrankEqSix`. -/
+theorem coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_spinGroupToEvenUnitary_apply
+    [Invertible (2 : K)] [FiniteDimensional K V] (hV : finrank K V = 6)
+    (s : spinGroup Q) :
+    (AlgEquiv.evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix
+        (P.evenCliffordEquivProdMatrix (l := 3) (P.W_ne_bot_of_finrank_eq_six hV) hV)
+        (P.nondegenerate_of_line_eq_bot (P.line_eq_bot_of_finrank_eq_six hV)) hV
+        (spinGroupToEvenUnitary Q s) :
+        Matrix (Fin 4) (Fin 4) K) =
+      LinearMap.toMatrix (spinPlusFinBasisOfFinrankEqSix P hV) (spinPlusFinBasisOfFinrankEqSix P hV)
+        (spinPlusAction Q P (P.line_eq_bot_of_finrank_eq_six hV)
+          (spinGroupToEven Q s)) := by
+  -- Plain `simp` first rewrites the matrix size `2 ^ (3 - 1)`, after which
+  -- `evenCliffordEquivProdMatrix_apply` no longer applies.
+  simp only [AlgEquiv.coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_apply,
+    CliffordAlgebra.evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply,
+    SpinPolarizationData.evenCliffordEquivProdMatrix_apply, Algebra.endAlgEquivMatrix_apply,
+    spinPlusFinBasisOfFinrankEqSix_def]
+
+end Polarized
+
+variable (K : Type u) [Field K]
+
+variable [NeZero (2 : K)]
+
+/-- The invertibility witness used by the characteristic-not-two Clifford APIs. -/
+local instance hyperbolicSixInvertibleTwo : Invertible (2 : K) :=
+  invertibleOfNonzero (NeZero.ne (2 : K))
+
+/-- The half-spin matrix-product model of the even Clifford algebra of three hyperbolic planes. -/
+noncomputable def hyperbolicSixEvenEquivMatrixProd :
+    even (splitEvenForm K 3) ≃ₐ[K]
+      Matrix (Fin 4) (Fin 4) K × Matrix (Fin 4) (Fin 4) K :=
+  (splitEvenPolarization K 3).evenCliffordEquivProdMatrix (l := 3)
+    (splitEvenPolarization_W_ne_bot K (by norm_num)) (finrank_splitEvenSpace K 3)
+
+omit [NeZero (2 : K)] in
+/-- The hyperbolic matrix-product model is the model of the canonical split polarization. -/
+theorem hyperbolicSixEvenEquivMatrixProd_apply (x : even (splitEvenForm K 3)) :
+    hyperbolicSixEvenEquivMatrixProd K x =
+      (splitEvenPolarization K 3).evenCliffordEquivProdMatrix (l := 3)
+        (splitEvenPolarization_W_ne_bot K (by norm_num))
+        (finrank_splitEvenSpace K 3) x :=
+  (rfl)
+
+/-- The even unitary group of three hyperbolic planes is the four-dimensional general linear
+group. In particular, specializing `K` to `ℚ` gives the split rational six-dimensional model. -/
+noncomputable def hyperbolicSixEvenUnitaryEquivGeneralLinear :
+    evenUnitaryGroup (splitEvenForm K 3) ≃* Matrix.GeneralLinearGroup (Fin 4) K :=
+  (hyperbolicSixEvenEquivMatrixProd K).evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix
+    (nondegenerate_splitEvenForm K 3)
+      ((finrank_splitEvenSpace K 3).trans (by norm_num : (2 : ℕ) * 3 = 6))
+
+/-- The hyperbolic general linear equivalence is the first half-spin matrix component. -/
+@[simp]
+theorem coe_hyperbolicSixEvenUnitaryEquivGeneralLinear_apply
+    (x : evenUnitaryGroup (splitEvenForm K 3)) :
+    (hyperbolicSixEvenUnitaryEquivGeneralLinear K x : Matrix (Fin 4) (Fin 4) K) =
+      (hyperbolicSixEvenEquivMatrixProd K (evenUnitaryGroupEvenPart (splitEvenForm K 3) x)).1 := by
+  simp [hyperbolicSixEvenUnitaryEquivGeneralLinear]
+
+/-- Reconstructing a hyperbolic even unitary element recovers the given first matrix component.
+The rule precedes simplification of the full inverse Clifford value. -/
+@[simp↓]
+theorem fst_hyperbolicSixEvenUnitaryEquivGeneralLinear_symm_apply_evenPart
+    (u : Matrix.GeneralLinearGroup (Fin 4) K) :
+    (hyperbolicSixEvenEquivMatrixProd K
+      (evenUnitaryGroupEvenPart (splitEvenForm K 3)
+        ((hyperbolicSixEvenUnitaryEquivGeneralLinear K).symm u))).1 =
+          (u : Matrix (Fin 4) (Fin 4) K) := by
+  simp only [hyperbolicSixEvenUnitaryEquivGeneralLinear,
+    AlgEquiv.fst_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_symm_apply_evenPart]
+
+/-- The inverse hyperbolic equivalence reconstructs the even Clifford value using reversal
+and the inverse of the given general linear matrix. -/
+@[simp]
+theorem hyperbolicSixEvenUnitaryEquivGeneralLinear_symm_apply_evenPart
+    (u : Matrix.GeneralLinearGroup (Fin 4) K) :
+    evenUnitaryGroupEvenPart (splitEvenForm K 3)
+        ((hyperbolicSixEvenUnitaryEquivGeneralLinear K).symm u) =
+      (hyperbolicSixEvenEquivMatrixProd K).symm
+        (((u : Matrix (Fin 4) (Fin 4) K), 0) + hyperbolicSixEvenEquivMatrixProd K
+          (reverseEven (splitEvenForm K 3)
+            ((hyperbolicSixEvenEquivMatrixProd K).symm (↑(u⁻¹), 0)))) := by
+  simp only [hyperbolicSixEvenUnitaryEquivGeneralLinear,
+    AlgEquiv.evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_symm_apply_evenPart]
+
+end TauCeti

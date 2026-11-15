@@ -77,18 +77,11 @@ at the origin: it is the origin statement applied to
   the base point: every geodesic line is `TauCeti.PoincareDisc.geodesicLine (γ 0) u` for a unique
   direction.
 
-This advances the conformal-mapping roadmap's L2 target "the hyperbolic / Poincaré metric on `𝔻`"
-(see `ConformalMapping/README.md`), completing the geodesic description that
-`Poincare/Geodesic.lean` began. It reuses Tau Ceti's pseudo-hyperbolic, hyperbolic-distance and
-disc-automorphism API throughout, and `TauCeti/Analysis/Convex/Segment.lean` — itself built on
-Mathlib's `segment` and `SameRay` — for the Euclidean side.
-As with the rest of the L0--L3 conformal-mapping material it is coordinated with the upstream
-Mathlib Riemann-mapping effort leanprover-community/mathlib4#33505 and the preceding
-human-curated work in `Analysis/Complex/RiemannMapping.lean` and
-`Analysis/Complex/BranchLogRoot.lean`; none of that
-material contains a Poincaré metric on the disc, and Mathlib's hyperbolic geometry on the upper
-half-plane (`Analysis/Complex/UpperHalfPlane`) has no geodesics, so nothing here duplicates it.
-Should a human-curated Poincaré disc land upstream, this file should be refactored onto it.
+This completes the description of the geodesics that `Poincare/Geodesic.lean` began. It reuses
+Tau Ceti's pseudo-hyperbolic, hyperbolic-distance and disc-automorphism API throughout, and
+`TauCeti/Analysis/Convex/Segment.lean` — itself built on Mathlib's `segment` and `SameRay` — for
+the Euclidean side. Mathlib's hyperbolic geometry on the upper half-plane
+(`Analysis/Complex/UpperHalfPlane`) has no geodesics, so nothing here duplicates it.
 -/
 
 public section
@@ -173,8 +166,6 @@ theorem hyperbolicDist_zero_add_eq_iff_of_norm_lt_one (hm : ‖m‖ < 1) (hw : �
     have heq := Real.artanh_injOn hquotIoo hwIoo h
     rw [div_eq_iff (by nlinarith [norm_nonneg m] : (1 : ℝ) + ‖m‖ * pseudoHyperbolicExpr m w ≠ 0)]
       at heq
-    have hkey : pseudoHyperbolicExpr m w * (1 - ‖m‖ * ‖w‖) = ‖w‖ - ‖m‖ := by
-      linear_combination heq
     have hle : ‖m‖ ≤ ‖w‖ := by nlinarith [mul_nonneg hρ0 hden.le]
     have hρeq : pseudoHyperbolicExpr m w = |‖m‖ - ‖w‖| / (1 - ‖m‖ * ‖w‖) := by
       rw [abs_of_nonpos (by linarith), eq_div_iff hden.ne']

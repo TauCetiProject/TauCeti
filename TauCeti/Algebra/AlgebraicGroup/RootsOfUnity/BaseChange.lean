@@ -23,10 +23,6 @@ The characteristic lemmas spell out that the equivalence reads a point on the ba
 standard generator `1 ⊗ single (ofAdd 1) 1`, how the inverse point evaluates on scalar
 multiples of that generator.
 
-This is part of the ReductiveGroups roadmap worked examples: `μ_n = D(ℤ/n)` in the
-diagonalizable-groups lane, together with the Layer 0 base-change target for Hopf algebras and
-their functors of points.
-
 ## Main declarations
 
 * `TauCeti.RootsOfUnityGroup.baseChangePointsMulEquiv`: the multiplicative equivalence from

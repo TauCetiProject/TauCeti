@@ -35,7 +35,7 @@ public section
 
 namespace TauCeti.GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G)
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n)
   {x z : GridState n}
 
 /-- The terminal-side recut whose second rectangle becomes a pentagon is counted in the

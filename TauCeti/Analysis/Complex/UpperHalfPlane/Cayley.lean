@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.Deriv.Inv
 public import Mathlib.Analysis.Calculus.LogDeriv
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Basic
@@ -42,6 +43,8 @@ half-plane. The open-half-plane restriction, centred at an arbitrary point of `�
   bijection from the open unit disc onto the open upper half-plane.
 * `TauCeti.bijOn_sub_I_div_add_I_im_nonneg`: the transform is a bijection from the closed upper
   half-plane onto the closed unit disc minus `1`.
+* `TauCeti.bijOn_I_mul_one_add_div_one_sub_closedBall_sdiff`: its inverse is a bijection from the
+  closed unit disc minus `1` onto the closed upper half-plane.
 * `TauCeti.differentiableOn_sub_I_div_add_I`: the transform is holomorphic away from its pole.
 * `TauCeti.differentiableOn_sub_I_div_add_I_im_nonneg`: in particular, it is holomorphic on a
   neighbourhood of the closed upper half-plane.
@@ -51,6 +54,16 @@ half-plane. The open-half-plane restriction, centred at an arbitrary point of `�
 * `TauCeti.I_mul_one_add_sub_I_div_add_I_div_one_sub`: the inverse identity.
 * `TauCeti.boundaryCayley`: the boundary Cayley map from `ℝ` to `Circle`.
 * `TauCeti.tendsto_sub_I_div_add_I_cobounded`: the transform tends to `1` at infinity.
+* `TauCeti.tendsto_I_mul_one_add_div_one_sub_nhdsNE_one`: its inverse tends to infinity at `1`,
+  within the closed upper half-plane when approached from the closed disc
+  (`TauCeti.tendsto_I_mul_one_add_div_one_sub_nhdsWithin_closedBall_sdiff_one`).
+* `TauCeti.im_I_mul_sub_div_add`, `TauCeti.norm_mul_I_sub_div_add_I_le_one`,
+  `TauCeti.mul_I_sub_I_mul_sub_div_add_div_add_I` and
+  `TauCeti.I_mul_sub_mul_I_sub_div_add_I_div_add`: for a point `ζ` of the unit circle, the
+  rotated transform `z ↦ i (ζ - z) / (ζ + z)` carries the closed unit disc minus `-ζ` onto the
+  closed upper half-plane, with inverse `w ↦ ζ (i - w) / (w + i)`.
+* `TauCeti.contDiffAt_I_mul_sub_div_add` and `TauCeti.contDiffAt_mul_I_sub_div_add_I`: these
+  two maps are analytic away from their poles `-ζ` and `-i`.
 
 ## References
 
@@ -60,6 +73,7 @@ half-plane. The open-half-plane restriction, centred at an arbitrary point of `�
 public section
 
 open Bornology Complex Filter Metric Set Topology
+open scoped ContDiff
 
 namespace TauCeti
 
@@ -208,6 +222,14 @@ theorem bijOn_sub_I_div_add_I_im_nonneg :
     rw [mem_ofPred_eq, ← norm_sub_I_div_add_I_le_one_iff hne, heq]
     exact mem_closedBall_zero_iff.mp hw.1
 
+/-- **The inverse Cayley transform on the closed disc.** The map `w ↦ i (1 + w) / (1 - w)` is a
+bijection from the closed unit disc with the point `1` removed onto the closed upper half-plane;
+it inverts `z ↦ (z - i) / (z + i)`. -/
+theorem bijOn_I_mul_one_add_div_one_sub_closedBall_sdiff :
+    BijOn (fun w : ℂ => I * (1 + w) / (1 - w)) (closedBall 0 1 \ {1}) {z | 0 ≤ z.im} :=
+  bijOn_sub_I_div_add_I_im_nonneg.symm ⟨fun _ hw => (sub_I_div_add_I_inverse hw.2).2,
+    fun _ hz => I_mul_one_add_sub_I_div_add_I_div_one_sub (add_I_ne_zero_of_im_nonneg hz)⟩
+
 /-- The Cayley transform is complex differentiable away from its pole at `-i`. -/
 theorem differentiableOn_sub_I_div_add_I :
     DifferentiableOn ℂ (fun z : ℂ => (z - I) / (z + I)) {z | z + I ≠ 0} :=
@@ -230,9 +252,33 @@ theorem hasDerivAt_I_mul_one_add_div_one_sub {w : ℂ} (hw : w ≠ 1) :
   field_simp
   ring
 
-/-- The pre-Schwarzian of the inverse Cayley transform is `2 / (1 - ζ)`. -/
-theorem logDeriv_deriv_I_mul_one_add_div_one_sub {ζ : ℂ} (hζ : ζ ≠ 1) :
+/-- The inverse Cayley transform tends to infinity as the disc variable tends to its pole `1`. -/
+theorem tendsto_I_mul_one_add_div_one_sub_nhdsNE_one :
+    Tendsto (fun ζ : ℂ => I * (1 + ζ) / (1 - ζ)) (𝓝[≠] 1) (cobounded ℂ) := by
+  have hzero : Tendsto (fun ζ : ℂ => 1 - ζ) (𝓝[≠] 1) (𝓝[≠] 0) := by
+    refine tendsto_nhdsWithin_iff.mpr ⟨?_, ?_⟩
+    · simpa using (tendsto_const_nhds.sub (tendsto_id.mono_left nhdsWithin_le_nhds) :
+        Tendsto (fun ζ : ℂ => 1 - ζ) (𝓝[≠] 1) (𝓝 (1 - 1)))
+    · exact eventually_nhdsWithin_of_forall fun ζ hζ => sub_ne_zero.mpr (Ne.symm hζ)
+  refine ((tendsto_sub_const_cobounded I).comp
+    ((tendsto_mul_left_cobounded (mul_ne_zero two_ne_zero I_ne_zero)).comp
+      (tendsto_inv₀_nhdsNE_zero.comp hzero))).congr' ?_
+  filter_upwards [self_mem_nhdsWithin] with ζ hζ
+  have hne : 1 - ζ ≠ 0 := sub_ne_zero.mpr (Ne.symm hζ)
+  dsimp only [Function.comp_def]
+  field_simp
+  ring
+
+/-- The pre-Schwarzian of the inverse Cayley transform is `2 / (1 - ζ)` (at its pole `ζ = 1` both
+sides are `0` by convention). -/
+theorem logDeriv_deriv_I_mul_one_add_div_one_sub {ζ : ℂ} :
     logDeriv (deriv fun ξ : ℂ => I * (1 + ξ) / (1 - ξ)) ζ = 2 / (1 - ζ) := by
+  rcases eq_or_ne ζ 1 with rfl | hζ
+  · -- at the pole the map is not differentiable, so its derivative is `0` by convention
+    have hnd : ¬ DifferentiableAt ℂ (fun ξ : ℂ => I * (1 + ξ) / (1 - ξ)) 1 := fun hd ↦
+      not_continuousAt_of_tendsto tendsto_I_mul_one_add_div_one_sub_nhdsNE_one
+        nhdsWithin_le_nhds (disjoint_nhds_cobounded _) hd.continuousAt
+    simp [logDeriv_apply, deriv_zero_of_not_differentiableAt hnd]
   have heq : (deriv fun ξ : ℂ => I * (1 + ξ) / (1 - ξ)) =ᶠ[𝓝 ζ]
       fun ξ => 2 * I / (1 - ξ) ^ 2 :=
     eventuallyEq_of_mem (isOpen_ne.mem_nhds hζ) fun _ hξ =>
@@ -265,25 +311,21 @@ theorem tendsto_sub_I_div_add_I_cobounded :
 variable tends to the omitted boundary point `1`. -/
 theorem tendsto_I_mul_one_add_div_one_sub_nhdsWithin_one :
     Tendsto (fun ζ : ℂ => I * (1 + ζ) / (1 - ζ)) (𝓝[ball 0 1] 1)
-      (cobounded ℂ ⊓ 𝓟 UpperHalfPlane.upperHalfPlaneSet) := by
-  have hzero : Tendsto (fun ζ : ℂ => 1 - ζ) (𝓝[ball 0 1] 1) (𝓝[≠] 0) := by
-    refine tendsto_nhdsWithin_iff.mpr ⟨?_, ?_⟩
-    · simpa using (tendsto_const_nhds.sub
-        (tendsto_id.mono_left nhdsWithin_le_nhds) :
-        Tendsto (fun ζ : ℂ => 1 - ζ) (𝓝[ball 0 1] 1) (𝓝 (1 - 1)))
-    · exact eventually_nhdsWithin_of_forall fun ζ hζ =>
-        sub_ne_zero.mpr (ne_of_mem_ball_of_norm_eq_one hζ norm_one).symm
-  have hlim := (tendsto_sub_const_cobounded I).comp
-    ((tendsto_mul_left_cobounded (mul_ne_zero two_ne_zero I_ne_zero)).comp
-      (tendsto_inv₀_nhdsNE_zero.comp hzero))
-  refine tendsto_inf.mpr ⟨hlim.congr' ?_, ?_⟩
-  · filter_upwards [self_mem_nhdsWithin] with ζ hζ
-    have hne := sub_ne_zero.mpr (ne_of_mem_ball_of_norm_eq_one hζ norm_one).symm
-    dsimp only [Function.comp_def]
-    field_simp
-    ring
-  · exact tendsto_principal.mpr (eventually_nhdsWithin_of_forall fun ζ hζ =>
-      bijOn_I_mul_one_add_div_one_sub_ball.mapsTo hζ)
+      (cobounded ℂ ⊓ 𝓟 UpperHalfPlane.upperHalfPlaneSet) :=
+  tendsto_inf.mpr ⟨tendsto_I_mul_one_add_div_one_sub_nhdsNE_one.mono_left
+      (nhdsWithin_mono _ fun _ hζ => ne_of_mem_of_not_mem hζ (by simp)),
+    tendsto_principal.mpr (eventually_nhdsWithin_of_forall fun _ hζ =>
+      bijOn_I_mul_one_add_div_one_sub_ball.mapsTo hζ)⟩
+
+/-- The inverse Cayley transform tends to infinity within the closed upper half-plane as the
+variable tends to the omitted boundary point `1` within the closed disc. -/
+theorem tendsto_I_mul_one_add_div_one_sub_nhdsWithin_closedBall_sdiff_one :
+    Tendsto (fun ζ : ℂ => I * (1 + ζ) / (1 - ζ)) (𝓝[closedBall 0 1 \ {1}] 1)
+      (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) :=
+  tendsto_inf.mpr ⟨tendsto_I_mul_one_add_div_one_sub_nhdsNE_one.mono_left
+      (nhdsWithin_mono _ fun _ hζ => hζ.2),
+    tendsto_principal.mpr (eventually_nhdsWithin_of_forall fun _ hζ =>
+      bijOn_I_mul_one_add_div_one_sub_closedBall_sdiff.mapsTo hζ)⟩
 
 /-- The boundary Cayley map from the real line to the unit circle, sending
 `x` to `(x - i) / (x + i)`. -/
@@ -345,5 +387,71 @@ theorem cayley_simple_fraction {ζ : ℂ} (x : ℝ) (hζ1 : ζ ≠ 1)
   field_simp
   ring
 
+/-! ### Cayley transforms of the closed unit disc centred at a boundary point -/
+
+/-- The imaginary part of `i (ζ - z) / (ζ + z)` is `(‖ζ‖² - ‖z‖²) / ‖ζ + z‖²`. -/
+theorem im_I_mul_sub_div_add (ζ z : ℂ) :
+    (I * (ζ - z) / (ζ + z)).im = (normSq ζ - normSq z) / normSq (ζ + z) := by
+  rw [div_im, ← sub_div, normSq_apply, normSq_apply, normSq_apply]
+  congr 1
+  simp only [mul_re, mul_im, I_re, I_im, sub_re, sub_im, add_re, add_im]
+  ring
+
+/-- The map `z ↦ i (ζ - z) / (ζ + z)` sends the closed disc of radius `‖ζ‖` into the closed upper
+half-plane. -/
+theorem im_I_mul_sub_div_add_nonneg {ζ z : ℂ} (hz : ‖z‖ ≤ ‖ζ‖) :
+    0 ≤ (I * (ζ - z) / (ζ + z)).im := by
+  rw [im_I_mul_sub_div_add, normSq_eq_norm_sq, normSq_eq_norm_sq]
+  exact div_nonneg (sub_nonneg.2 (pow_le_pow_left₀ (norm_nonneg _) hz 2)) (normSq_nonneg _)
+
+/-- For `‖ζ‖ ≤ 1`, the map `w ↦ ζ (i - w) / (w + i)` sends the closed upper half-plane into the
+closed unit disc. -/
+theorem norm_mul_I_sub_div_add_I_le_one {ζ w : ℂ} (hζ : ‖ζ‖ ≤ 1) (hw : 0 ≤ w.im) :
+    ‖ζ * (I - w) / (w + I)‖ ≤ 1 := by
+  rw [mul_div_assoc, norm_mul, norm_div, norm_sub_rev]
+  exact (mul_le_of_le_one_left (by positivity) hζ).trans
+    ((norm_sub_I_div_norm_add_I_le_one_iff (add_I_ne_zero_of_im_nonneg hw)).2 hw)
+
+/-- For `ζ ≠ 0`, the map `w ↦ ζ (i - w) / (w + i)` never takes the value `-ζ`. -/
+theorem mul_I_sub_div_add_I_ne_neg {ζ : ℂ} (hζ : ζ ≠ 0) (w : ℂ) : ζ * (I - w) / (w + I) ≠ -ζ := by
+  intro h
+  rcases eq_or_ne (w + I) 0 with hw | hw
+  · rw [hw, div_zero, eq_comm, neg_eq_zero] at h
+    exact hζ h
+  · rw [div_eq_iff hw] at h
+    have : ζ * (2 * I) = 0 := by linear_combination h
+    simp [hζ, I_ne_zero] at this
+
+/-- The map `w ↦ ζ (i - w) / (w + i)` inverts `z ↦ i (ζ - z) / (ζ + z)` away from `-ζ`. -/
+theorem mul_I_sub_I_mul_sub_div_add_div_add_I {ζ z : ℂ} (hζ : ζ ≠ 0) (hz : ζ + z ≠ 0) :
+    ζ * (I - I * (ζ - z) / (ζ + z)) / (I * (ζ - z) / (ζ + z) + I) = z := by
+  have h2 : I * (ζ - z) / (ζ + z) + I = 2 * I * ζ / (ζ + z) := by
+    field_simp
+    ring
+  rw [h2, div_eq_iff (by simp [hζ, hz, I_ne_zero])]
+  field_simp
+  ring
+
+/-- The map `z ↦ i (ζ - z) / (ζ + z)` inverts `w ↦ ζ (i - w) / (w + i)` away from `-i`. -/
+theorem I_mul_sub_mul_I_sub_div_add_I_div_add {ζ w : ℂ} (hζ : ζ ≠ 0) (hw : w + I ≠ 0) :
+    I * (ζ - ζ * (I - w) / (w + I)) / (ζ + ζ * (I - w) / (w + I)) = w := by
+  have h2 : ζ + ζ * (I - w) / (w + I) = 2 * I * ζ / (w + I) := by
+    field_simp
+    ring
+  rw [h2, div_eq_iff (by simp [hζ, hw, I_ne_zero])]
+  field_simp
+  ring
+
+/-- The map `z ↦ i (ζ - z) / (ζ + z)` is analytic away from its pole `-ζ`. -/
+theorem contDiffAt_I_mul_sub_div_add {n : ℕ∞ω} (ζ : ℂ) {z : ℂ} (hz : ζ + z ≠ 0) :
+    ContDiffAt ℂ n (fun z : ℂ ↦ I * (ζ - z) / (ζ + z)) z :=
+  (contDiffAt_const.mul (contDiffAt_const.sub contDiffAt_id)).div
+    (contDiffAt_const.add contDiffAt_id) hz
+
+/-- The map `w ↦ ζ (i - w) / (w + i)` is analytic away from its pole `-i`. -/
+theorem contDiffAt_mul_I_sub_div_add_I {n : ℕ∞ω} (ζ : ℂ) {w : ℂ} (hw : w + I ≠ 0) :
+    ContDiffAt ℂ n (fun w : ℂ ↦ ζ * (I - w) / (w + I)) w :=
+  (contDiffAt_const.mul (contDiffAt_const.sub contDiffAt_id)).div
+    (contDiffAt_id.add contDiffAt_const) hw
 
 end TauCeti

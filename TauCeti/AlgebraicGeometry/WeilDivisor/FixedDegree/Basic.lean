@@ -17,14 +17,10 @@ degree `d`.  It is equivalent to Mathlib's symmetric power `Sym X d`, by reading
 its finitely supported multiplicity function and conversely reading an effective divisor by its
 natural-number coefficients.
 
-This is the formal divisor model behind the Jacobian roadmap's Layer C symmetric-power lane:
-the scheme-level construction of `Symᵈ X` and relative effective Cartier divisors is later
-geometry, but the Abel-map input already needs the divisor represented by an unordered
-degree-`d` collection of points.
+The scheme-level construction of `Symᵈ X` and of relative effective Cartier divisors is not
+attempted here.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer C, "Relative effective
-Cartier divisors and symmetric powers `Symᵈ X`", as a small prerequisite built from the
-existing Layer A `WeilDivisor` API.  No external mathematics is vendored.
+This file is built from Tau Ceti's `WeilDivisor` API. No external mathematics is vendored.
 -/
 
 public section
@@ -41,7 +37,7 @@ noncomputable section
 
 /-- The effective Weil divisors of degree `d`. -/
 abbrev EffectiveDivisorOfDegree (X : Type*) (d : ℕ) : Type _ :=
-  {D : WeilDivisor X // IsEffective D ∧ degree D = d}
+  {D : WeilDivisor X // 0 ≤ D ∧ degree D = d}
 
 namespace EffectiveDivisorOfDegree
 
@@ -51,7 +47,7 @@ lemma ext {D E : EffectiveDivisorOfDegree X d} (h : (D : WeilDivisor X) = E) : D
 
 /-- The zero effective divisor, regarded as the unique effective divisor of degree `0`. -/
 abbrev zero (X : Type*) : EffectiveDivisorOfDegree X 0 :=
-  ⟨0, isEffective_zero, degree_zero⟩
+  ⟨0, le_rfl, degree_zero⟩
 
 /-- The underlying Weil divisor of the degree-zero effective divisor is zero. -/
 @[simp]
@@ -78,22 +74,18 @@ lemma coe_cast {d e : ℕ} (h : d = e) (D : EffectiveDivisorOfDegree X d) :
   simp
 
 @[simp]
-lemma isEffective (D : EffectiveDivisorOfDegree X d) : IsEffective (D : WeilDivisor X) :=
+lemma coe_nonneg (D : EffectiveDivisorOfDegree X d) : 0 ≤ (D : WeilDivisor X) :=
   D.property.1
 
 @[simp]
 lemma degree_eq (D : EffectiveDivisorOfDegree X d) : degree (D : WeilDivisor X) = d :=
   D.property.2
 
-lemma mem_effectiveSubmonoid (D : EffectiveDivisorOfDegree X d) :
-    (D : WeilDivisor X) ∈ effectiveSubmonoid X :=
-  (WeilDivisor.mem_effectiveSubmonoid _).mpr D.isEffective
-
 /-- An effective divisor of degree `d` from finitely supported natural multiplicities whose
 total multiplicity is `d`. -/
 abbrev ofFinsupp (m : X →₀ ℕ) (hm : m.sum (fun _ n => n) = d) :
     EffectiveDivisorOfDegree X d :=
-  ⟨WeilDivisor.ofFinsupp m, isEffective_ofFinsupp m, by
+  ⟨WeilDivisor.ofFinsupp m, ofFinsupp_nonneg m, by
     rw [degree_ofFinsupp]
     exact_mod_cast hm⟩
 
@@ -131,7 +123,7 @@ lemma ofFinsupp_multiplicityFinsupp (D : EffectiveDivisorOfDegree X d) :
     WeilDivisor.ofFinsupp D.multiplicityFinsupp = (D : WeilDivisor X) := by
   ext x
   rw [WeilDivisor.coeff_ofFinsupp, multiplicityFinsupp_apply]
-  exact Int.toNat_of_nonneg ((isEffective_iff (D : WeilDivisor X)).mp D.property.1 x)
+  exact Int.toNat_of_nonneg (coeff_nonneg D.coe_nonneg x)
 
 /-- The natural multiplicity function of a degree-`d` effective divisor has total mass `d`. -/
 lemma sum_multiplicityFinsupp (D : EffectiveDivisorOfDegree X d) :
@@ -241,7 +233,7 @@ end Sym
 /-- Pushing forward a fixed-degree effective divisor preserves its degree. -/
 abbrev pushforward (f : X → Y) (D : EffectiveDivisorOfDegree X d) :
     EffectiveDivisorOfDegree Y d :=
-  ⟨WeilDivisor.pushforward f D, D.isEffective.pushforward f, by
+  ⟨WeilDivisor.pushforward f D, pushforward_nonneg D.coe_nonneg f, by
     rw [degree_pushforward, D.degree_eq]⟩
 
 @[simp]
@@ -252,7 +244,7 @@ lemma coe_pushforward (f : X → Y) (D : EffectiveDivisorOfDegree X d) :
 /-- Pushing forward along the identity function is the identity on fixed-degree divisors. -/
 @[simp]
 lemma pushforward_id (D : EffectiveDivisorOfDegree X d) :
-    D.pushforward (fun x : X => x) = D := by
+    D.pushforward (id : X → X) = D := by
   ext
   rw [coe_pushforward, WeilDivisor.pushforward_id]
   rfl

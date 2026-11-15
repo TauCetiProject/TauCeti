@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.Subgroup.Pointwise
+public import Mathlib.GroupTheory.GroupAction.ConjAct
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.QuotientGroup.Basic
+public import TauCeti.Algebra.BigOperators.Group.List
 public import TauCeti.Algebra.Group.Subgroup.Finite
+public import TauCeti.Algebra.Group.Subgroup.Pointwise
 
 /-!
 # Left translation on a coset space
@@ -37,10 +39,18 @@ For a finite group, a sum can also be split over the left or right cosets of a s
 ## Main statements
 
 * `TauCeti.stabilizer_quotientGroup_mk`: the stabilizer of `sH` in `G` is `sHs⁻¹`.
+* `Subgroup.card_orbit_quotientGroup_mk`: the size of the `K`-orbit of `sH` is the relative
+  index of `H` in the conjugate of `K` by `s⁻¹`.
+* `Subgroup.card_orbit_quotientGroup_mk_eq_relIndex_inf`: the same size as the index of `K ⊓ sHs⁻¹`
+  in `K`.
 * `TauCeti.smul_quotientGroup_mk_eq_self_iff`: `g` fixes the coset `sH` exactly when `s⁻¹ g s`
   lies in `H`.
 * `Subgroup.natCard_mul_natCard_fixedBy`: the elements conjugating `g` into `H` number
   `|H| * |(G ⧸ H)^g|`.
+* `Subgroup.natCard_stabilizer_mul_natCard_mem_carrier`: counted by the conjugate they produce,
+  the same elements number `|C_G(g)| * #(H ∩ [g])`.
+* `Subgroup.natCard_fixedBy_mul_natCard`: the fixed-coset identity
+  `#(G ⧸ H)^g · |H| = |C_G(g)| · #(H ∩ [g])`.
 * `TauCeti.smul_quotient_eq_self_of_mem`: an element of a normal subgroup fixes every coset.
 * `TauCeti.quotientBot_equivariant`: `QuotientGroup.quotientBot` intertwines left translation on
   `G ⧸ ⊥` with left translation in `G`.
@@ -50,8 +60,15 @@ For a finite group, a sum can also be split over the left or right cosets of a s
   along the left or right cosets of a subgroup.
 * `QuotientGroup.eq_subgroupOf`: two elements of a subgroup `H` lie in the same left coset of
   `N.subgroupOf H` exactly when they lie in the same left coset of `N`.
+* `QuotientGroup.nontrivial_subgroupOf_of_inf_eq_bot`: `H ⧸ (Z ∩ H)` is nontrivial when `H`
+  contains a nontrivial subgroup meeting `Z` trivially.
 * `QuotientGroup.out_mul_out_mul_inv_mem`: the defect of the representatives chosen by
   `Quotient.out` from preserving multiplication lies in the subgroup.
+* `QuotientGroup.mk_list_prod`: the class of a list product is the product of the classes.
+* `QuotientGroup.inv_mul_mul_list_prod_map_mul_mem`: central corrections can be absorbed into the
+  two tail products of a word, modulo a normal subgroup.
+* `QuotientGroup.mk_inv_eq_self_of_sq_mem`: the class of `s` is its own inverse when `s ^ 2`
+  lies in the normal subgroup.
 -/
 
 public section
@@ -101,6 +118,26 @@ theorem smul_quotientGroup_mk_eq_self_iff (H : Subgroup G) (g s : G) :
     Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ← map_inv, MulAut.smul_def, MulAut.conj_apply]
   simp
 
+/-- The size of the orbit of `sH` under a subgroup `K` is the relative index of `H` in the
+conjugate of `K` by `s⁻¹`. -/
+theorem _root_.Subgroup.card_orbit_quotientGroup_mk (K H : Subgroup G) (s : G) :
+    Nat.card (orbit K ((s : G) : G ⧸ H)) =
+      H.relIndex (MulAut.conj s⁻¹ • K) := by
+  -- The stabilizer of `sH` in `K` is `sHs⁻¹` read inside `K`; orbit-stabilizer then gives the
+  -- index of `sHs⁻¹` in `K`, which conjugation by `s⁻¹` turns into the stated relative index.
+  have hstab : stabilizer K ((s : G) : G ⧸ H) = (MulAut.conj s • H).subgroupOf K := by
+    ext k
+    simp [← stabilizer_quotientGroup_mk]
+  rw [← Subgroup.relIndex_pointwise_smul (MulAut.conj s), map_inv, smul_inv_smul,
+    Subgroup.relIndex, ← hstab, Nat.card_coe_set_eq, index_stabilizer]
+
+/-- **Orbit-stabilizer for the intersection with a conjugate**: the `K`-orbit of the coset `sH` has
+as many elements as `K ⊓ sHs⁻¹` has index in `K`. -/
+theorem _root_.Subgroup.card_orbit_quotientGroup_mk_eq_relIndex_inf (K H : Subgroup G) (s : G) :
+    Nat.card (orbit K ((s : G) : G ⧸ H)) = (K ⊓ MulAut.conj s • H).relIndex K := by
+  rw [Subgroup.card_orbit_quotientGroup_mk, Subgroup.inf_relIndex_left]
+  simpa using (Subgroup.relIndex_pointwise_smul (MulAut.conj s) H (MulAut.conj s⁻¹ • K)).symm
+
 /-- The elements `x` of `G` with `x⁻¹ g x ∈ H` are the preimage of the `g`-fixed points of `G ⧸ H`,
 a union of `|(G ⧸ H)^g|` cosets of `H`. -/
 theorem _root_.Subgroup.natCard_mul_natCard_fixedBy (H : Subgroup G) (g : G) :
@@ -116,6 +153,48 @@ theorem _root_.Subgroup.natCard_mul_natCard_fixedBy (H : Subgroup G) (g : G) :
     _ = Nat.card (QuotientGroup.mk ⁻¹' (MulAction.fixedBy (G ⧸ H) g) : Set G) :=
         (Nat.card_congr (QuotientGroup.preimageMkEquivSubgroupProdSet H _)).symm
     _ = Nat.card {x : G // x⁻¹ * g * x ∈ H} := Nat.card_congr (Equiv.subtypeEquivRight hmem)
+
+/-- The elements `x` of `G` with `x⁻¹ g x ∈ H`, counted by the conjugate they produce: there are
+`|C_G(g)|` of them over each element of `H` conjugate to `g`, where the centralizer `C_G(g)` is the
+stabilizer of `g` for the conjugation action. This is the companion of
+`Subgroup.natCard_mul_natCard_fixedBy`, which counts the same elements by their cosets. -/
+theorem _root_.Subgroup.natCard_stabilizer_mul_natCard_mem_carrier (H : Subgroup G) (g : G) :
+    Nat.card (stabilizer (ConjAct G) g) *
+        Nat.card {x : G // x ∈ (ConjClasses.mk g).carrier ∧ x ∈ H} =
+      Nat.card {x : G // x⁻¹ * g * x ∈ H} := by
+  -- Reparametrize by `c = x⁻¹` in `ConjAct G`, for which `x⁻¹ * g * x = c • g`.
+  have e₁ : {x : G // x⁻¹ * g * x ∈ H} ≃ {c : ConjAct G // c • g ∈ H} :=
+    (Equiv.inv G).trans ConjAct.toConjAct.toEquiv |>.subtypeEquiv fun x ↦ by
+      simp [ConjAct.smul_def]
+  -- The conjugates `c • g` are the points of the orbit of `g`, identified with `G ⧸ C_G(g)`.
+  set T : Set (ConjAct G ⧸ stabilizer (ConjAct G) g) :=
+    {q | ofQuotientStabilizer (ConjAct G) g q ∈ H}
+  have hset : {c : ConjAct G | c • g ∈ H} = QuotientGroup.mk ⁻¹' T := by
+    ext c
+    simp [T, ofQuotientStabilizer_mk]
+  have e₂ : T ≃ {x : G // x ∈ (ConjClasses.mk g).carrier ∧ x ∈ H} :=
+    ((orbitEquivQuotientStabilizer (ConjAct G) g).symm.subtypeEquiv
+        (p := (· ∈ T)) (q := fun y : orbit (ConjAct G) g ↦ (y : G) ∈ H) fun q ↦ by
+          induction q using QuotientGroup.induction_on
+          simp [T, ofQuotientStabilizer_mk]).trans <|
+      (Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ orbit (ConjAct G) g) (· ∈ H)).trans <|
+        Equiv.subtypeEquivRight fun x ↦ by rw [ConjAct.orbit_eq_carrier_conjClasses]
+  rw [Nat.card_congr e₁, ← Nat.card_congr e₂, ← Nat.card_prod,
+    ← Nat.card_congr (QuotientGroup.preimageMkEquivSubgroupProdSet _ T), ← hset, Set.coe_ofPred]
+
+/-- **The fixed-coset identity.** For a subgroup `H` of a group `G` and `g : G`,
+
+`#(G ⧸ H)^g · |H| = |C_G(g)| · #(H ∩ [g])`,
+
+where the centralizer `C_G(g)` is the stabilizer of `g` for the conjugation action and `[g]` is
+the conjugacy class of `g`. Both sides count the `x : G` with `x⁻¹ g x ∈ H`; no finiteness is
+needed, with the convention that `Nat.card` of an infinite type is `0`. -/
+theorem _root_.Subgroup.natCard_fixedBy_mul_natCard (H : Subgroup G) (g : G) :
+    Nat.card (fixedBy (G ⧸ H) g) * Nat.card H =
+      Nat.card (stabilizer (ConjAct G) g) *
+        Nat.card {x : G // x ∈ (ConjClasses.mk g).carrier ∧ x ∈ H} := by
+  rw [mul_comm, Subgroup.natCard_mul_natCard_fixedBy,
+    Subgroup.natCard_stabilizer_mul_natCard_mem_carrier]
 
 /-- Left translation on the cosets of the trivial subgroup is left translation in the group.
 
@@ -156,12 +235,66 @@ theorem _root_.QuotientGroup.eq_subgroupOf {H N : Subgroup G} {x y : H} :
   rw [QuotientGroup.eq, QuotientGroup.eq, Subgroup.mem_subgroupOf, Subgroup.coe_mul,
     Subgroup.coe_inv]
 
+/-- If `H` contains a subgroup `U ≠ 1` meeting `Z` trivially, then `H ⧸ (Z ∩ H)` is nontrivial,
+since otherwise `U ≤ H ≤ Z`. -/
+theorem _root_.QuotientGroup.nontrivial_subgroupOf_of_inf_eq_bot {H U Z : Subgroup G}
+    (hUH : U ≤ H) (hZU : Z ⊓ U = ⊥) (hU : U ≠ ⊥) : Nontrivial (H ⧸ Z.subgroupOf H) := by
+  rw [QuotientGroup.nontrivial_iff, Ne, Subgroup.subgroupOf_eq_top]
+  exact fun h ↦ hU (eq_bot_iff.mpr (hZU ▸ le_inf (hUH.trans h) le_rfl))
+
 /-- The representatives chosen by `Quotient.out` preserve multiplication up to an element of the
 normal subgroup: `q.out * r.out * (q * r).out⁻¹ ∈ N`. -/
 theorem _root_.QuotientGroup.out_mul_out_mul_inv_mem (N : Subgroup G) [N.Normal]
     (q r : G ⧸ N) : q.out * r.out * (q * r).out⁻¹ ∈ N := by
   rw [← div_eq_mul_inv, ← QuotientGroup.eq_iff_div_mem, QuotientGroup.mk_mul,
     QuotientGroup.out_eq', QuotientGroup.out_eq', QuotientGroup.out_eq']
+
+/-- The class modulo a normal subgroup of a list product is the product of the classes. -/
+@[simp]
+theorem _root_.QuotientGroup.mk_list_prod (K : Subgroup G) [K.Normal] (l : List G) :
+    ((l.prod : G) : G ⧸ K) = (l.map ((↑) : G → G ⧸ K)).prod := by
+  induction l with
+  | nil => simp
+  | cons a l ih => simp [ih]
+
+/-- **Absorbing central corrections into a word.** Let `K` be a normal subgroup of `G` and let
+the classes of the `u_i` modulo `K` be central. If the class of
+`(∏_{l₁} t_i) * w * (∏_{l₂} t_i) * ∏_{l₁ ++ l₂} u_i` modulo `K` is the class of `b`, then
+`b⁻¹ * (∏_{l₁} t_i u_i) * w * (∏_{l₂} t_i u_i)` lies in `K`. -/
+theorem _root_.QuotientGroup.inv_mul_mul_list_prod_map_mul_mem {ι : Type*} (K : Subgroup G)
+    [K.Normal] {t u : ι → G} (hu : ∀ i, (u i : G ⧸ K) ∈ Submonoid.center (G ⧸ K))
+    {l₁ l₂ : List ι} {b w : G}
+    (h : (((l₁.map t).prod * w * (l₂.map t).prod * ((l₁ ++ l₂).map u).prod : G) : G ⧸ K) =
+      (b : G ⧸ K)) :
+    b⁻¹ * ((l₁.map fun i ↦ t i * u i).prod * w * (l₂.map fun i ↦ t i * u i).prod) ∈ K := by
+  refine (QuotientGroup.eq_one_iff _).mp ?_
+  have hprod : ∀ l : List ι, (((l.map fun i ↦ t i * u i).prod : G) : G ⧸ K) =
+      ((l.map t).prod : G ⧸ K) * ((l.map u).prod : G ⧸ K) := fun l ↦ by
+    simpa [Function.comp_def] using
+      List.prod_map_mul_of_mem_center l (fun i ↦ ((t i : G) : G ⧸ K)) _ fun i _ ↦ hu i
+  have hUcen : ∀ l : List ι, (((l.map u).prod : G) : G ⧸ K) ∈ Submonoid.center _ := fun l ↦ by
+    rw [QuotientGroup.mk_list_prod, List.map_map]
+    exact Submonoid.list_prod_mem _ fun x hx ↦ by
+      obtain ⟨i, -, rfl⟩ := List.mem_map.mp hx
+      exact hu i
+  simp only [QuotientGroup.mk_mul, List.map_append, List.prod_append] at h
+  set W := (w : G ⧸ K)
+  set P₁ := (((l₁.map t).prod : G) : G ⧸ K)
+  set P₂ := (((l₂.map t).prod : G) : G ⧸ K)
+  set U₁ := (((l₁.map u).prod : G) : G ⧸ K)
+  set U₂ := (((l₂.map u).prod : G) : G ⧸ K)
+  have e₁ : ∀ q, q * U₁ = U₁ * q := Submonoid.mem_center_iff.mp (hUcen l₁)
+  simp only [QuotientGroup.mk_mul, QuotientGroup.mk_inv, hprod, ← h, inv_mul_eq_one]
+  calc P₁ * W * P₂ * (U₁ * U₂) = P₁ * (W * P₂ * U₁) * U₂ := by simp only [mul_assoc]
+    _ = P₁ * (U₁ * (W * P₂)) * U₂ := by rw [e₁]
+    _ = P₁ * U₁ * W * (P₂ * U₂) := by simp only [mul_assoc]
+
+/-- The class of `s` in `G ⧸ N` is its own inverse when `s ^ 2 ∈ N`. -/
+theorem _root_.QuotientGroup.mk_inv_eq_self_of_sq_mem {N : Subgroup G} [N.Normal] {s : G}
+    (hs : s ^ 2 ∈ N) : (s : G ⧸ N)⁻¹ = s :=
+  inv_eq_of_mul_eq_one_right <| by
+    rw [← QuotientGroup.mk_mul, QuotientGroup.eq_one_iff, ← sq]
+    exact hs
 
 section Finite
 

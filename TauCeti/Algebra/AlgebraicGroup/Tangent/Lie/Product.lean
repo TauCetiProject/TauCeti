@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Map
+public import TauCeti.Algebra.Bialgebra.TensorProduct
 public import Mathlib.Algebra.Lie.Prod
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 import Mathlib.LinearAlgebra.Basis.VectorSpace
@@ -40,9 +41,8 @@ arbitrary commutative coefficient algebra; it needs no antipode, finiteness, or 
 * J. S. Milne, *Algebraic Groups* (2017), §10.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 11.
 
-This supplies the direct-product compatibility for `Lie(G)` in Layer 2, "Tangent space at the
-identity / `Lie(G)`", of the ReductiveGroups roadmap. It also gives the additive tangent-dimension
-formula needed by the same layer's dimension tools.
+This supplies the direct-product compatibility for `Lie(G)` and the additive tangent-dimension
+formula.
 -/
 
 public section
@@ -175,7 +175,7 @@ private theorem ofTensorProductComponents_tensorProductComponents
                 (TauCeti.Bialgebra.TensorProduct.includeRight
                   (R := R) (H₁ := H₁) (H₂ := H₂)) d)) (h₁ ⊗ₜ[R] h₂) =
           d (h₁ ⊗ₜ[R] h₂)
-      rw [Derivation.add_apply, derivationComp_apply, derivationComp_apply,
+      rw [_root_.add_apply, derivationComp_apply, derivationComp_apply,
         derivationComp_apply, derivationComp_apply]
       simp only [BialgHom.coe_toAlgHom, TauCeti.Bialgebra.TensorProduct.projectLeft_tmul,
         TauCeti.Bialgebra.TensorProduct.projectRight_tmul]
@@ -256,7 +256,7 @@ theorem tensorProductLieEquiv_symm_apply_tmul
           Bialgebra.CounitAlgebra.algEquivSelf R H₁ B (d.1 h₁) +
         Coalgebra.counit (R := R) h₁ •
           Bialgebra.CounitAlgebra.algEquivSelf R H₂ B (d.2 h₂) := by
-  simp only [tensorProductLieEquiv_symm_apply, Derivation.add_apply, derivationComp_apply,
+  simp only [tensorProductLieEquiv_symm_apply, _root_.add_apply, derivationComp_apply,
     BialgHom.coe_toAlgHom, TauCeti.Bialgebra.TensorProduct.projectLeft_tmul,
     TauCeti.Bialgebra.TensorProduct.projectRight_tmul, Derivation.map_smul, map_smul,
     Bialgebra.CounitAlgebra.algEquivSelf_apply]

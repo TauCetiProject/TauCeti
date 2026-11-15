@@ -40,8 +40,7 @@ commutative algebra over the ground field is unipotent.
 
 * A. Borel, *Linear Algebraic Groups*, Proposition 14.4, for the unipotent-radical application.
 
-This supplies the reduced-source descent input for Layer 5, "The unipotent radical", of the
-ReductiveGroups roadmap.
+This supplies the reduced-source descent input for the unipotent radical.
 -/
 
 public section
@@ -73,8 +72,8 @@ theorem coefficientMatrix_charpoly_eq
   let C := Comodule.coefficientMatrix (C := A) b
   let P : Polynomial k := (Polynomial.X - 1) ^ Module.finrank k M
   rw [geometricallyUnipotentPointsCommHopfAlgProperty_iff] at hA
-  apply Polynomial.ext
-  intro r
+  apply AddMonoidAlgebra.ext
+  ext r
   apply TauCeti.eq_of_forall_algHom_apply_eq (k := k) (K := AlgebraicClosure k)
   intro q
   have hq := (HopfAlgebra.isUnipotentPoint_def (WithConv.toConv q)).mp

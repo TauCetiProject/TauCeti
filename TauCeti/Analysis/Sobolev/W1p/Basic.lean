@@ -5,15 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.TestFunctionLp
+public import TauCeti.Analysis.Sobolev.TestFunctionLp.Basic
 import TauCeti.Analysis.Normed.Lp.ProdLp
+public import TauCeti.MeasureTheory.Function.Lp.Exponent
 import TauCeti.MeasureTheory.Function.Lp.Norm
 public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.SpecificCodomains.WithLp
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 import Mathlib.Analysis.InnerProductSpace.Dual
-import TauCeti.Analysis.Sobolev.GraphStep
+import TauCeti.Analysis.Sobolev.GraphStep.Basic
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # First-order weak Sobolev spaces
@@ -48,6 +50,9 @@ is the usual Hilbert norm
 which is the space needed for energy methods in PDE.  No boundedness or
 boundary regularity of `Ω` is used.
 
+The ambient jet projections and component norm estimates only require `E` to be a real normed
+space. The inner product is needed to interpret the gradient as a weak derivative.
+
 ## Main declarations
 
 * `TauCeti.Sobolev1Jet`: the value-gradient fibre `ℝ × E` with its Euclidean product norm.
@@ -58,11 +63,33 @@ boundary regularity of `Ω` is used.
 * `TauCeti.W1p.valueL` and `TauCeti.W1p.gradientL`: the two components as continuous linear
   projections from the Sobolev space, with `TauCeti.W1p.value_coe` and
   `TauCeti.W1p.gradient_coe` identifying them with the components of the ambient jet.
+* `TauCeti.W1p.coe_ae_eq_toLp_value_gradient`: the ambient jet of a Sobolev function is almost
+  everywhere its value-gradient pair.
 * `TauCeti.W1p.locallyIntegrableOn_gradient`: the weak gradient is locally integrable on `Ω`.
 * `TauCeti.W1p.gradient_ae_eq_zero_of_value_ae_eq_zero`: the weak gradient vanishes wherever
-  the value vanishes on an open subset.
+  the value vanishes on an open subset, and with it the whole jet
+  (`TauCeti.W1p.coe_ae_eq_zero_of_value_ae_eq_zero`), and likewise off a closed set
+  (`TauCeti.W1p.gradient_ae_eq_zero_of_value_ae_eq_zero_of_isClosed`).
+* `TauCeti.W1p.const`: on a domain of finite measure, a constant function is an element of
+  `W^{1,p}(Ω)` with weak gradient `0`.
+* `TauCeti.W1p.exists_value_gradient_ae_eq_of_hasWeakFDerivOn`: an `Lᵖ` function with an `Lᵖ`
+  weak derivative is an element of `W^{1,p}(Ω)` whose weak gradient is dual to that derivative.
+* `TauCeti.W1p.exists_value_gradient_ae_eq_of_contDiffOn`: a `C¹` function on `Ω` with `u` and
+  `∇u` in `Lᵖ(Ω)` is an element of `W^{1,p}(Ω)`.
+* `TauCeti.W1p.gradient_ae_eq_of_contDiffOn`: conversely, the weak gradient of an element of
+  `W^{1,p}(Ω)` with a `C¹` representative is the classical gradient of the representative;
+  `TauCeti.W1p.memLp_fderiv_of_contDiffOn`: in particular its derivative lies in `Lᵖ(Ω)`.
+* `TauCeti.W1p.exists_value_gradient_ae_eq_of_contDiffOn_of_isCompact`: a function of class
+  `C¹` on an open set `U` is an element of `W^{1,p}(Ω)` for every `Ω` inside a compact subset
+  of `U`.
+* `TauCeti.W1p.exists_value_gradient_ae_eq_continuousLinearMap`: on a bounded `Ω`, a continuous
+  linear functional is an element of `W^{1,p}(Ω)` whose weak gradient is its dual vector.
+* `TauCeti.W1p.exists_value_gradient_ae_eq_of_hasCompactSupport`: a compactly supported `C¹`
+  function is an element of `W^{1,p}(E)`, with the `Lᵖ` norms of the function and its gradient.
 * `TauCeti.W1p.ofExponentLE`: on a domain of finite measure, `W^{1,q}(Ω) ⊆ W^{1,p}(Ω)` for
   `p ≤ q`.
+* `TauCeti.W1p.ofExponentLEL`: the same inclusion as a continuous linear map, with norm at most
+  `μ(Ω) ^ (1/p - 1/q)` (`TauCeti.W1p.opNorm_ofExponentLEL_le`).
 
 ## References
 
@@ -111,7 +138,9 @@ private theorem assembleSobolev1JetLp_apply_ae (u : Lp ℝ p (mu.restrict Omega)
       assembleSobolev1JetLp u g x = WithLp.toLp 2 (u x, g x) := by
   exact (memLp_assembleSobolev1Jet u g).coeFn_toLp
 
-variable [InnerProductSpace ℝ E] [Fact (1 <= p)]
+section NormedSpace
+
+variable [NormedSpace ℝ E] [Fact (1 <= p)]
 
 /-- The continuous linear projection from an `Lᵖ` Sobolev jet to its value component. -/
 def Sobolev1JetLp.valueL :
@@ -157,11 +186,9 @@ jet. -/
 theorem Sobolev1JetLp.value_apply_ae (J : Sobolev1JetLp mu Omega p) :
     ∀ᵐ x ∂mu.restrict Omega,
       Sobolev1JetLp.value J x = WithLp.fst (J x) := by
-  -- `coeFn_compLp` is stated for the unbundled `compLp`; expose that implementation of
-  -- `valueL` so its pointwise theorem applies.
-  change ∀ᵐ x ∂mu.restrict Omega,
-    (WithLp.fstL 2 ℝ ℝ E).compLp J x = (WithLp.fstL 2 ℝ ℝ E) (J x)
-  exact (WithLp.fstL 2 ℝ ℝ E).coeFn_compLp J
+  rw [← Sobolev1JetLp.valueL_apply, Sobolev1JetLp.valueL_eq_compLpL]
+  filter_upwards [(WithLp.fstL 2 ℝ ℝ E).coeFn_compLpL J] with x hx
+  simpa only [WithLp.fstL_apply] using hx
 
 /-- The gradient component of a Sobolev jet is, almost everywhere on `Ω`, the second coordinate of
 the jet. -/
@@ -169,14 +196,14 @@ the jet. -/
 theorem Sobolev1JetLp.gradient_apply_ae (J : Sobolev1JetLp mu Omega p) :
     ∀ᵐ x ∂mu.restrict Omega,
       Sobolev1JetLp.gradient J x = WithLp.snd (J x) := by
-  -- As for `value_apply_ae`, expose the unbundled `compLp` implementation consumed by
-  -- Mathlib's pointwise coercion theorem.
-  change ∀ᵐ x ∂mu.restrict Omega,
-    (WithLp.sndL 2 ℝ ℝ E).compLp J x = (WithLp.sndL 2 ℝ ℝ E) (J x)
-  exact (WithLp.sndL 2 ℝ ℝ E).coeFn_compLp J
+  rw [← Sobolev1JetLp.gradientL_apply, Sobolev1JetLp.gradientL_eq_compLpL]
+  filter_upwards [(WithLp.sndL 2 ℝ ℝ E).coeFn_compLpL J] with x hx
+  simpa only [WithLp.sndL_apply] using hx
 
+-- `Sobolev1JetLp` abbreviates an `Lp` space, and Mathlib's `MeasureTheory.Lp.ext` is `@[ext high]`;
+-- the priority puts this lemma before it.
 /-- Two Sobolev jets are equal when their value and gradient components are equal. -/
-@[ext]
+@[ext high + 1]
 theorem Sobolev1JetLp.ext {J K : Sobolev1JetLp mu Omega p}
     (hvalue : Sobolev1JetLp.value J = Sobolev1JetLp.value K)
     (hgradient : Sobolev1JetLp.gradient J = Sobolev1JetLp.gradient K) : J = K := by
@@ -222,29 +249,20 @@ theorem Sobolev1JetLp.norm_le_norm_value_add_norm_gradient (J : Sobolev1JetLp mu
     exact WithLp.prod_norm_le_norm_fst_add_norm_snd (J x)
   simpa using Lp.norm_le_add_of_ae_norm_le zero_le_one zero_le_one hle
 
-/-- At exponent two, the Sobolev jet norm is the Hilbert graph norm of its components. -/
+/-- At exponent two, the squared Sobolev jet norm is the sum of the squared component norms. -/
 theorem Sobolev1JetLp.norm_sq_eq_norm_value_sq_add_norm_gradient_sq
     (J : Sobolev1JetLp mu Omega 2) :
     ‖J‖ ^ 2 = ‖Sobolev1JetLp.value J‖ ^ 2 + ‖Sobolev1JetLp.gradient J‖ ^ 2 := by
-  rw [← real_inner_self_eq_norm_sq J,
-    ← real_inner_self_eq_norm_sq (Sobolev1JetLp.value J),
-    ← real_inner_self_eq_norm_sq (Sobolev1JetLp.gradient J),
-    L2.inner_def, L2.inner_def, L2.inner_def,
-    ← integral_add (L2.integrable_inner (Sobolev1JetLp.value J) (Sobolev1JetLp.value J))
-      (L2.integrable_inner (Sobolev1JetLp.gradient J) (Sobolev1JetLp.gradient J))]
+  rw [← Lp.integral_norm_sq_eq_norm_sq J,
+    ← Lp.integral_norm_sq_eq_norm_sq (Sobolev1JetLp.value J),
+    ← Lp.integral_norm_sq_eq_norm_sq (Sobolev1JetLp.gradient J),
+    ← integral_add (Lp.memLp (Sobolev1JetLp.value J)).norm.integrable_sq
+      (Lp.memLp (Sobolev1JetLp.gradient J)).norm.integrable_sq]
   apply integral_congr_ae
   filter_upwards [Sobolev1JetLp.value_apply_ae J,
     Sobolev1JetLp.gradient_apply_ae J] with x hvalue hgradient
-  rw [WithLp.prod_inner_apply, WithLp.ofLp_fst, WithLp.ofLp_snd, ← hvalue, ← hgradient]
-
-/-- The candidate weak Fréchet derivative recorded by the gradient component of a Sobolev jet. -/
-def Sobolev1JetLp.candidateWeakFDeriv (J : Sobolev1JetLp mu Omega p) : E → E →L[ℝ] ℝ :=
-  fun x => innerSL ℝ (Sobolev1JetLp.gradient J x)
-
-@[simp]
-theorem Sobolev1JetLp.candidateWeakFDeriv_apply (J : Sobolev1JetLp mu Omega p) (x v : E) :
-    Sobolev1JetLp.candidateWeakFDeriv J x v = ⟪v, Sobolev1JetLp.gradient J x⟫_ℝ := by
-  rw [Sobolev1JetLp.candidateWeakFDeriv, innerSL_apply_apply, real_inner_comm]
+  rw [hvalue, hgradient]
+  exact WithLp.prod_norm_sq_eq_of_L2 _
 
 @[simp]
 private theorem value_assembleSobolev1JetLp (u : Lp ℝ p (mu.restrict Omega))
@@ -264,28 +282,27 @@ private theorem gradient_assembleSobolev1JetLp (u : Lp ℝ p (mu.restrict Omega)
     assembleSobolev1JetLp_apply_ae u g] with x hgradient hassemble
   simpa only [hassemble, WithLp.toLp_snd] using hgradient
 
+end NormedSpace
+
+variable [InnerProductSpace ℝ E] [Fact (1 <= p)]
+
+/-- The candidate weak Fréchet derivative recorded by the gradient component of a Sobolev jet. -/
+def Sobolev1JetLp.candidateWeakFDeriv (J : Sobolev1JetLp mu Omega p) : E → E →L[ℝ] ℝ :=
+  fun x => innerSL ℝ (Sobolev1JetLp.gradient J x)
+
+/-- The defining formula of the candidate weak Fréchet derivative. It is not a simp lemma: simp
+evaluates the candidate at a vector with `Sobolev1JetLp.candidateWeakFDeriv_apply`. -/
+theorem Sobolev1JetLp.candidateWeakFDeriv_def (J : Sobolev1JetLp mu Omega p) (x : E) :
+    Sobolev1JetLp.candidateWeakFDeriv J x = innerSL ℝ (Sobolev1JetLp.gradient J x) := (rfl)
+
+@[simp]
+theorem Sobolev1JetLp.candidateWeakFDeriv_apply (J : Sobolev1JetLp mu Omega p) (x v : E) :
+    Sobolev1JetLp.candidateWeakFDeriv J x v = ⟪v, Sobolev1JetLp.gradient J x⟫_ℝ := by
+  rw [Sobolev1JetLp.candidateWeakFDeriv, innerSL_apply_apply, real_inner_comm]
+
 /-! ### The weak Sobolev space `W^{1,p}(Ω)` -/
 
-variable [OpensMeasurableSpace E]
-
-private theorem testIntegral_eq_zero_iff
-    (f f' : E → ℝ) (hf : LocallyIntegrableOn f Omega mu)
-    (hf' : LocallyIntegrableOn f' Omega mu) (phi : 𝓓(Omega, ℝ)) (v : E) :
-    (∫ x in Omega,
-        lineDeriv ℝ (phi : E → ℝ) x v * f x + phi x * f' x ∂mu) = 0 ↔
-      (∫ x, lineDeriv ℝ (phi : E → ℝ) x v • f x ∂mu) =
-        -(∫ x, phi x • f' x ∂mu) := by
-  have hleft : Integrable (fun x => lineDeriv ℝ (phi : E → ℝ) x v * f x) mu := by
-    simpa only [smul_eq_mul] using integrable_lineDeriv_smul_of_locallyIntegrableOn hf phi v
-  have hright : Integrable (fun x => phi x * f' x) mu := by
-    simpa only [smul_eq_mul] using integrable_smul_of_locallyIntegrableOn hf' phi
-  rw [integral_add hleft.integrableOn hright.integrableOn]
-  simp only [← smul_eq_mul]
-  rw [setIntegral_lineDeriv_smul_eq_integral_lineDeriv_smul,
-    setIntegral_smul_eq_integral_smul]
-  constructor <;> intro h <;> linarith
-
-variable [mu.IsAddHaarMeasure]
+variable [OpensMeasurableSpace E] [mu.IsAddHaarMeasure]
 
 /-- A value-gradient jet as a jet of `TauCeti.weakDerivStepSubmodule` over `Lᵖ(Ω)`: the value is
 kept, and the `E`-valued gradient becomes the field of continuous linear functionals
@@ -394,6 +411,80 @@ def W1p.gradient (u : W1p mu Omega p) : Lp E p (mu.restrict Omega) :=
 @[simp]
 theorem W1p.gradientL_apply (u : W1p mu Omega p) : W1p.gradientL u = W1p.gradient u := (rfl)
 
+/-- The weak gradient of a sum is the sum of the weak gradients. -/
+@[simp]
+theorem W1p.gradient_add (u v : W1p mu Omega p) :
+    W1p.gradient (u + v) = W1p.gradient u + W1p.gradient v :=
+  map_add W1p.gradientL u v
+
+/-- The weak gradient of a negation is the negation of the weak gradient. -/
+@[simp]
+theorem W1p.gradient_neg (u : W1p mu Omega p) : W1p.gradient (-u) = -W1p.gradient u :=
+  map_neg W1p.gradientL u
+
+/-- The weak gradient of a difference is the difference of the weak gradients. -/
+@[simp]
+theorem W1p.gradient_sub (u v : W1p mu Omega p) :
+    W1p.gradient (u - v) = W1p.gradient u - W1p.gradient v :=
+  map_sub W1p.gradientL u v
+
+/-- The weak gradient of zero is zero. -/
+@[simp]
+theorem W1p.gradient_zero : W1p.gradient (0 : W1p mu Omega p) = 0 :=
+  map_zero W1p.gradientL
+
+/-- The weak gradient of a scalar multiple is the scalar multiple of the weak gradient. -/
+@[simp]
+theorem W1p.gradient_smul {S : Type*} [SMul S (W1p mu Omega p)]
+    [SMul S (Lp E p (mu.restrict Omega))]
+    [LinearMap.CompatibleSMul (W1p mu Omega p) (Lp E p (mu.restrict Omega)) S ℝ]
+    (c : S) (u : W1p mu Omega p) :
+    W1p.gradient (c • u) = c • W1p.gradient u :=
+  W1p.gradientL.map_smul_of_tower c u
+
+/-- The weak gradient of a finite sum is the sum of the weak gradients. -/
+@[simp]
+theorem W1p.gradient_sum {ι : Type*} (s : Finset ι) (u : ι → W1p mu Omega p) :
+    W1p.gradient (∑ j ∈ s, u j) = ∑ j ∈ s, W1p.gradient (u j) :=
+  map_sum W1p.gradientL u s
+
+/-- The value component of zero is zero. -/
+@[simp]
+theorem W1p.value_zero : W1p.value (0 : W1p mu Omega p) = 0 :=
+  map_zero W1p.valueL
+
+/-- The value component of a sum is the sum of the value components. -/
+@[simp]
+theorem W1p.value_add (u v : W1p mu Omega p) :
+    W1p.value (u + v) = W1p.value u + W1p.value v :=
+  map_add W1p.valueL u v
+
+/-- The value component of a negation is the negation of the value component. -/
+@[simp]
+theorem W1p.value_neg (u : W1p mu Omega p) : W1p.value (-u) = -W1p.value u :=
+  map_neg W1p.valueL u
+
+/-- The value component of a difference is the difference of the value components. -/
+@[simp]
+theorem W1p.value_sub (u v : W1p mu Omega p) :
+    W1p.value (u - v) = W1p.value u - W1p.value v :=
+  map_sub W1p.valueL u v
+
+/-- The value component of a scalar multiple is the scalar multiple of the value component. -/
+@[simp]
+theorem W1p.value_smul {S : Type*} [SMul S (W1p mu Omega p)]
+    [SMul S (Lp ℝ p (mu.restrict Omega))]
+    [LinearMap.CompatibleSMul (W1p mu Omega p) (Lp ℝ p (mu.restrict Omega)) S ℝ]
+    (c : S) (u : W1p mu Omega p) :
+    W1p.value (c • u) = c • W1p.value u :=
+  W1p.valueL.map_smul_of_tower c u
+
+/-- The value component of a finite sum is the sum of the value components. -/
+@[simp]
+theorem W1p.value_sum {ι : Type*} (s : Finset ι) (u : ι → W1p mu Omega p) :
+    W1p.value (∑ j ∈ s, u j) = ∑ j ∈ s, W1p.value (u j) :=
+  map_sum W1p.valueL u s
+
 /-- `W1p.valueL` is the ambient jet projection precomposed with the inclusion, so the Sobolev
 value component *is* the value component of the underlying ambient jet. -/
 theorem W1p.value_coe (u : W1p mu Omega p) :
@@ -407,14 +498,54 @@ theorem W1p.value_apply_ae (u : W1p mu Omega p) :
   rw [W1p.value_coe]
   exact Sobolev1JetLp.value_apply_ae (u : Sobolev1JetLp mu Omega p)
 
+/-- On the whole space, the value of a Sobolev function is in `Lᵖ(μ)`. -/
+theorem W1p.memLp_value (u : W1p mu ⊤ p) : MemLp (W1p.value u : E → ℝ) p mu := by
+  simpa using Lp.memLp (W1p.value u)
+
 /-- The value of a finite sum of Sobolev functions is almost everywhere the sum of their values. -/
 theorem W1p.value_finsetSum_ae {ι : Type*} (s : Finset ι) (u : ι → W1p mu Omega p) :
     ∀ᵐ x ∂mu.restrict Omega, W1p.value (∑ j ∈ s, u j) x = ∑ j ∈ s, W1p.value (u j) x := by
-  have h : W1p.value (∑ j ∈ s, u j) = ∑ j ∈ s, W1p.value (u j) := by
-    simp only [← W1p.valueL_apply, map_sum]
   filter_upwards [Lp.coeFn_fun_finsetSum s fun j => W1p.value (u j)] with x hx
-  rw [h, hx]
+  rw [W1p.value_sum, hx]
 
+/-- The value of the negation of a Sobolev function is almost everywhere the negation of its
+value. -/
+theorem W1p.value_neg_ae (u : W1p mu Omega p) :
+    ⇑(W1p.value (-u)) =ᵐ[mu.restrict Omega] -⇑(W1p.value u) := by
+  simpa only [← W1p.valueL_apply, map_neg] using Lp.coeFn_neg (W1p.value u)
+
+/-- The value of a sum of two Sobolev functions is almost everywhere the sum of their values. -/
+theorem W1p.value_add_ae (u v : W1p mu Omega p) :
+    ⇑(W1p.value (u + v)) =ᵐ[mu.restrict Omega] ⇑(W1p.value u) + ⇑(W1p.value v) := by
+  simpa only [← W1p.valueL_apply, map_add] using Lp.coeFn_add (W1p.value u) (W1p.value v)
+
+/-- The value of a difference of two Sobolev functions is almost everywhere the difference of
+their values. -/
+theorem W1p.value_sub_ae (u v : W1p mu Omega p) :
+    ⇑(W1p.value (u - v)) =ᵐ[mu.restrict Omega] ⇑(W1p.value u) - ⇑(W1p.value v) := by
+  simpa only [← W1p.valueL_apply, map_sub] using Lp.coeFn_sub (W1p.value u) (W1p.value v)
+
+/-- The value of a scalar multiple of a Sobolev function is almost everywhere the scalar multiple
+of its value. -/
+theorem W1p.value_smul_ae (c : ℝ) (u : W1p mu Omega p) :
+    ⇑(W1p.value (c • u)) =ᵐ[mu.restrict Omega] c • ⇑(W1p.value u) := by
+  simpa only [← W1p.valueL_apply, map_smul] using Lp.coeFn_smul c (W1p.value u)
+
+/-- The value of the midpoint of two Sobolev functions is almost everywhere the average of their
+values. -/
+theorem W1p.value_midpoint_ae (u v : W1p mu Omega p) :
+    ⇑(W1p.value (midpoint ℝ u v)) =ᵐ[mu.restrict Omega]
+      fun x => (W1p.value u x + W1p.value v x) / 2 := by
+  filter_upwards [W1p.value_smul_ae (⅟2 : ℝ) (u + v), W1p.value_add_ae u v] with x hs ha
+  rw [midpoint_eq_smul_add, hs, Pi.smul_apply, ha, Pi.add_apply, smul_eq_mul, invOf_eq_inv]
+  ring
+
+/-- The weak gradient of the midpoint of two Sobolev functions is the midpoint of their weak
+gradients. -/
+@[simp]
+theorem W1p.gradient_midpoint (u v : W1p mu Omega p) :
+    W1p.gradient (midpoint ℝ u v) = midpoint ℝ (W1p.gradient u) (W1p.gradient v) :=
+  (W1p.gradientL (mu := mu) (Omega := Omega) (p := p)).toLinearMap.toAffineMap.map_midpoint u v
 
 /-- As for `TauCeti.W1p.value_coe`: the Sobolev gradient component is the gradient component of
 the underlying ambient jet. -/
@@ -440,15 +571,67 @@ theorem W1p.ext {u v : W1p mu Omega p}
 theorem W1p.norm_value_le (u : W1p mu Omega p) : ‖W1p.value u‖ ≤ ‖u‖ :=
   Sobolev1JetLp.norm_value_le u.1
 
+/-- The extended norm of a Sobolev function controls the extended norm of its value component. -/
+theorem W1p.enorm_value_le (u : W1p mu Omega p) : ‖W1p.value u‖ₑ ≤ ‖u‖ₑ :=
+  eNorm_le_iff_norm_le.2 (W1p.norm_value_le u)
+
 /-- The norm of a Sobolev function controls the norm of its weak gradient. -/
 theorem W1p.norm_gradient_le (u : W1p mu Omega p) : ‖W1p.gradient u‖ ≤ ‖u‖ :=
   Sobolev1JetLp.norm_gradient_le u.1
+
+/-- The extended norm of a Sobolev function controls the extended norm of its weak gradient. -/
+theorem W1p.enorm_gradient_le (u : W1p mu Omega p) : ‖W1p.gradient u‖ₑ ≤ ‖u‖ₑ :=
+  eNorm_le_iff_norm_le.2 (W1p.norm_gradient_le u)
+
+/-- Almost everywhere on `Ω`, the difference of the weak gradients is bounded by the
+`W^{1,∞}` distance. -/
+theorem W1p.ae_norm_gradient_sub_le_dist (u v : W1p mu Omega ⊤) :
+    ∀ᵐ x ∂mu.restrict Omega, ‖W1p.gradient u x - W1p.gradient v x‖ ≤ dist u v := by
+  filter_upwards [Lp.ae_norm_le_norm_top (W1p.gradient u - W1p.gradient v),
+    Lp.coeFn_sub (W1p.gradient u) (W1p.gradient v)] with x hx hcoe
+  have hn : ‖W1p.gradient u - W1p.gradient v‖ ≤ dist u v := by
+    simpa only [dist_eq_norm, W1p.gradient_sub] using W1p.norm_gradient_le (u - v)
+  simpa only [hcoe, Pi.sub_apply] using hx.trans hn
+
+/-- The `Lᵖ` norm of the weak gradient on subsets of `Ω` is monotone in the subset. -/
+theorem W1p.toReal_eLpNorm_gradient_mono (u : W1p mu Omega p) {s t : Set E} (hst : s ⊆ t)
+    (ht : t ⊆ (Omega : Set E)) :
+    (eLpNorm (W1p.gradient u) p (mu.restrict s)).toReal ≤
+      (eLpNorm (W1p.gradient u) p (mu.restrict t)).toReal :=
+  ENNReal.toReal_mono
+    ((eLpNorm_mono_measure _ (Measure.restrict_mono ht le_rfl)).trans_lt
+      (Lp.eLpNorm_lt_top _)).ne
+    (eLpNorm_mono_measure _ (Measure.restrict_mono hst le_rfl))
 
 /-- The norm of a Sobolev function is at most the sum of the norms of its value and its weak
 gradient. -/
 theorem W1p.norm_le_norm_value_add_norm_gradient (u : W1p mu Omega p) :
     ‖u‖ ≤ ‖W1p.value u‖ + ‖W1p.gradient u‖ :=
   Sobolev1JetLp.norm_le_norm_value_add_norm_gradient u.1
+
+/-- The extended norm of a Sobolev function is at most the sum of the extended norms of its value
+and its weak gradient. -/
+theorem W1p.enorm_le_enorm_value_add_enorm_gradient (u : W1p mu Omega p) :
+    ‖u‖ₑ ≤ ‖W1p.value u‖ₑ + ‖W1p.gradient u‖ₑ := by
+  simpa only [ENNReal.ofReal_add (norm_nonneg _) (norm_nonneg _), ofReal_norm] using
+    ENNReal.ofReal_le_ofReal (W1p.norm_le_norm_value_add_norm_gradient u)
+
+/-- Almost everywhere on `Ω`, the squared norm of the jet of a Sobolev function is the sum of the
+squared norms of its value and its weak gradient. -/
+theorem W1p.norm_apply_sq_ae (u : W1p mu Omega p) :
+    ∀ᵐ x ∂mu.restrict Omega,
+      ‖(u : Sobolev1JetLp mu Omega p) x‖ ^ 2 = ‖W1p.value u x‖ ^ 2 + ‖W1p.gradient u x‖ ^ 2 := by
+  filter_upwards [W1p.value_apply_ae u, W1p.gradient_apply_ae u] with x hv hg
+  rw [hv, hg]
+  exact WithLp.prod_norm_sq_eq_of_L2 _
+
+/-- The ambient jet of a Sobolev function is almost everywhere its value-gradient pair. -/
+theorem W1p.coe_ae_eq_toLp_value_gradient (u : W1p mu Omega p) :
+    (u : Sobolev1JetLp mu Omega p) =ᵐ[mu.restrict Omega]
+      fun x => WithLp.toLp 2 (W1p.value u x, W1p.gradient u x) := by
+  filter_upwards [W1p.value_apply_ae u, W1p.gradient_apply_ae u] with x hv hg
+  rw [hv, hg]
+  simp only [WithLp.fst, WithLp.snd, Prod.mk.eta, WithLp.toLp_ofLp]
 
 /-- At exponent two, the norm on `W1p` is the Hilbert graph norm. -/
 theorem W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq (u : W1p mu Omega 2) :
@@ -460,11 +643,6 @@ theorem W1p.integrable_norm_gradient_sq (u : W1p mu Omega 2) :
     Integrable (fun x => ‖W1p.gradient u x‖ ^ 2) (mu.restrict Omega) :=
   (memLp_two_iff_integrable_sq_norm (Lp.memLp (W1p.gradient u)).aestronglyMeasurable).1
     (Lp.memLp (W1p.gradient u))
-
-/-- The squared pointwise value of a real Sobolev function is integrable. -/
-theorem W1p.integrable_value_sq (u : W1p mu Omega 2) :
-    Integrable (fun x => (W1p.value u x) ^ 2) (mu.restrict Omega) :=
-  (Lp.memLp (W1p.value u)).integrable_sq
 
 /-- The integral of the squared Sobolev gradient is its squared `L²` norm. -/
 theorem W1p.integral_norm_gradient_sq_eq_norm_gradient_sq (u : W1p mu Omega 2) :
@@ -511,30 +689,15 @@ theorem mem_w1pSubmodule_iff_hasWeakFDerivOn (J : Sobolev1JetLp mu Omega p) :
     J ∈ w1pSubmodule mu Omega p ↔
       HasWeakFDerivOn mu Omega (Sobolev1JetLp.value J)
         (Sobolev1JetLp.candidateWeakFDeriv J) := by
-  have hvalue : LocallyIntegrableOn (Sobolev1JetLp.value J) Omega mu :=
-    locallyIntegrableOn_of_locallyIntegrable_restrict
-      ((Lp.memLp (Sobolev1JetLp.value J)).locallyIntegrable Fact.out)
-  have hderiv (v : E) : LocallyIntegrableOn
-      (fun x => Sobolev1JetLp.candidateWeakFDeriv J x v) Omega mu := by
-    apply locallyIntegrableOn_of_locallyIntegrable_restrict
-    have hinner := (Lp.memLp (Sobolev1JetLp.gradient J)).const_inner (𝕜 := ℝ) v
-    exact (hinner.locallyIntegrable Fact.out).congr <| by
-      filter_upwards with x
-      simp only [Sobolev1JetLp.candidateWeakFDeriv_apply]
-  rw [mem_w1pSubmodule_iff]
-  constructor
-  · intro h
-    rw [hasWeakFDerivOn_iff]
-    intro v
-    rw [hasWeakLineDerivOn_iff_testFunction]
-    refine ⟨inferInstance, hvalue, hderiv v, fun phi => ?_⟩
-    exact (testIntegral_eq_zero_iff _ _ hvalue (hderiv v) phi v).mp (h phi v)
-  · intro h
-    rw [hasWeakFDerivOn_iff] at h
-    intro phi v
-    exact (testIntegral_eq_zero_iff _ _ (h v).locallyIntegrableOn
-      (h v).locallyIntegrableOn_deriv phi v).mpr
-        ((h v).integral_lineDeriv_smul_eq_neg_integral_smul phi)
+  rw [w1pSubmodule, ClosedSubmodule.mem_comap,
+    mem_weakDerivStepSubmodule_iff_hasWeakFDerivOn, fst_toWeakDerivStepJet,
+    ContinuousLinearMap.id_apply]
+  have hderiv : (WithLp.snd (toWeakDerivStepJet J) :
+      Lp (E →L[ℝ] ℝ) p (mu.restrict Omega)) =ᵐ[mu.restrict Omega]
+      Sobolev1JetLp.candidateWeakFDeriv J := by
+    rw [snd_toWeakDerivStepJet]
+    exact (innerSL ℝ (E := E)).coeFn_compLpL (Sobolev1JetLp.gradient J)
+  exact ⟨fun h => h.congr_ae_deriv hderiv, fun h => h.congr_ae_deriv hderiv.symm⟩
 
 /-- Construct a Sobolev function from its `Lᵖ` value and weak-gradient components. -/
 def W1p.mk (u : Lp ℝ p (mu.restrict Omega)) (g : Lp E p (mu.restrict Omega))
@@ -570,8 +733,50 @@ theorem W1p.hasWeakFDerivOn (u : W1p mu Omega p) :
 component is. -/
 theorem W1p.locallyIntegrableOn_gradient (u : W1p mu Omega p) :
     LocallyIntegrableOn (W1p.gradient u : E → E) (Omega : Set E) mu :=
-  locallyIntegrableOn_of_locallyIntegrable_restrict
-    ((Lp.memLp (W1p.gradient u)).locallyIntegrable Fact.out)
+  Lp.locallyIntegrableOn (W1p.gradient u) Fact.out
+
+/-- **An `Lᵖ` function with an `Lᵖ` weak derivative is a Sobolev function.** If `u` and a weak
+derivative `D` of `u` on `Ω` both lie in `Lᵖ(Ω)`, then `u` is represented by an element of
+`W^{1,p}(Ω)` whose weak gradient is the field of vectors dual to `D`. -/
+theorem W1p.exists_value_gradient_ae_eq_of_hasWeakFDerivOn {u : E → ℝ} {D : E → E →L[ℝ] ℝ}
+    (hu : MemLp u p (mu.restrict Omega)) (hD : MemLp D p (mu.restrict Omega))
+    (h : HasWeakFDerivOn mu Omega u D) :
+    ∃ v : W1p mu Omega p, W1p.value v =ᵐ[mu.restrict Omega] u ∧
+      W1p.gradient v =ᵐ[mu.restrict Omega]
+        fun x => (InnerProductSpace.toDual ℝ E).symm (D x) := by
+  have hg : MemLp (fun x => (InnerProductSpace.toDual ℝ E).symm (D x)) p (mu.restrict Omega) :=
+    hD.of_le ((InnerProductSpace.toDual ℝ E).symm.continuous.comp_aestronglyMeasurable
+      hD.aestronglyMeasurable) (ae_of_all _ fun x => by simp)
+  refine ⟨W1p.mk (hu.toLp u) (hg.toLp _)
+    ((h.congr_ae hu.coeFn_toLp.symm).congr_ae_deriv ?_), ?_, ?_⟩
+  · filter_upwards [hg.coeFn_toLp] with x hx
+    ext w
+    rw [hx, innerSL_apply_apply, InnerProductSpace.toDual_symm_apply]
+  · rw [W1p.value_mk]
+    exact hu.coeFn_toLp
+  · rw [W1p.gradient_mk]
+    exact hg.coeFn_toLp
+
+/-- The extended norm of a Sobolev function is at most `‖u‖_{Lᵖ} + ‖D‖_{Lᵖ}` whenever its value
+agrees almost everywhere with `u` and its weak gradient with the dual of `D`. -/
+theorem W1p.enorm_le_eLpNorm_add_eLpNorm_of_ae_eq {v : W1p mu Omega p} {u : E → ℝ}
+    {D : E → E →L[ℝ] ℝ} (hv : W1p.value v =ᵐ[mu.restrict Omega] u)
+    (hg : W1p.gradient v =ᵐ[mu.restrict Omega]
+      fun x => (InnerProductSpace.toDual ℝ E).symm (D x)) :
+    ‖v‖ₑ ≤ eLpNorm u p (mu.restrict Omega) + eLpNorm D p (mu.restrict Omega) := by
+  have hDm : AEStronglyMeasurable D (mu.restrict Omega) := by
+    simpa using (InnerProductSpace.toDual ℝ E).continuous.comp_aestronglyMeasurable
+      ((Lp.aestronglyMeasurable (W1p.gradient v)).congr hg)
+  refine (W1p.enorm_le_enorm_value_add_enorm_gradient v).trans_eq ?_
+  rw [Lp.eNorm_def, Lp.eNorm_def, eLpNorm_congr_ae hv]
+  exact congrArg _ (eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _) hDm
+    (hg.mono fun x hx => by rw [hx, LinearIsometryEquiv.norm_map]))
+
+/-- A Sobolev function is integrable near every point of its (open) domain. -/
+theorem W1p.integrableAtFilter_value_of_mem (u : W1p mu Omega p) {x : E}
+    (hx : x ∈ (Omega : Set E)) : IntegrableAtFilter (W1p.value u) (nhds x) mu := by
+  simpa [nhdsWithin_eq_nhds.2 (Omega.isOpen.mem_nhds hx)] using
+    (W1p.hasWeakFDerivOn u).locallyIntegrableOn x hx
 
 section
 variable [BorelSpace E]
@@ -590,6 +795,63 @@ theorem W1p.gradient_ae_eq_zero_of_value_ae_eq_zero {V : Opens E} (hV : V ≤ Om
     simpa using hx
   exact innerSL_inj.1 h0
 
+/-- **A Sobolev function vanishing on an open subset has vanishing jet there.** Both the value
+and, by `TauCeti.W1p.gradient_ae_eq_zero_of_value_ae_eq_zero`, the weak gradient vanish. -/
+theorem W1p.coe_ae_eq_zero_of_value_ae_eq_zero {V : Opens E} (hV : V ≤ Omega)
+    {u : W1p mu Omega p} (hu : ∀ᵐ x ∂mu.restrict (V : Set E), W1p.value u x = 0) :
+    ∀ᵐ x ∂mu.restrict (V : Set E), (u : Sobolev1JetLp mu Omega p) x = 0 := by
+  have hgrad := W1p.gradient_ae_eq_zero_of_value_ae_eq_zero hV hu
+  have hvalApply := (ae_restrict_iff' Omega.isOpen.measurableSet).1 (W1p.value_apply_ae u)
+  have hgradApply := (ae_restrict_iff' Omega.isOpen.measurableSet).1 (W1p.gradient_apply_ae u)
+  rw [ae_restrict_iff' V.isOpen.measurableSet] at hu hgrad ⊢
+  filter_upwards [hu, hgrad, hvalApply, hgradApply] with x hv hg hv' hg' hxV
+  exact (WithLp.ext_iff _).2 (Prod.ext ((hv' (hV hxV)).symm.trans (hv hxV))
+    ((hg' (hV hxV)).symm.trans (hg hxV)))
+
+/-- **The jet of a Sobolev function vanishes off the support of any representative of its value.**
+If the value of `u` agrees almost everywhere on `Ω` with `f`, then outside `tsupport f` the value
+vanishes on the open set `Ω ∖ tsupport f`, hence so does the whole jet
+(`TauCeti.W1p.coe_ae_eq_zero_of_value_ae_eq_zero`). -/
+theorem W1p.coe_ae_eq_zero_of_not_mem_tsupport {u : W1p mu Omega p} {f : E → ℝ}
+    (hu : W1p.value u =ᵐ[mu.restrict (Omega : Set E)] f) :
+    ∀ᵐ x ∂mu.restrict (Omega : Set E),
+      x ∉ tsupport f → (u : Sobolev1JetLp mu Omega p) x = 0 := by
+  let V : Opens E := ⟨(tsupport f)ᶜ ∩ (Omega : Set E),
+    (isClosed_tsupport f).isOpen_compl.inter Omega.isOpen⟩
+  have hV : ∀ᵐ x ∂mu.restrict (V : Set E), W1p.value u x = 0 := by
+    filter_upwards [ae_restrict_of_ae_restrict_of_subset (Set.inter_subset_right :
+        (V : Set E) ⊆ Omega) hu, ae_restrict_mem V.isOpen.measurableSet] with x hx hxV
+    rw [hx]
+    exact image_eq_zero_of_notMem_tsupport hxV.1
+  have hjet := W1p.coe_ae_eq_zero_of_value_ae_eq_zero
+    (Set.inter_subset_right : (V : Set E) ⊆ Omega) hV
+  rw [ae_restrict_iff' V.isOpen.measurableSet] at hjet
+  rw [ae_restrict_iff' Omega.isOpen.measurableSet]
+  filter_upwards [hjet] with x hx hxΩ hxt
+  exact hx ⟨hxt, hxΩ⟩
+
+/-- **The weak gradient of a Sobolev function vanishing off a closed set vanishes off it.**  If
+`u ∈ W^{1,p}(Ω)` vanishes almost everywhere outside a closed set `K`, then so does its weak
+gradient, because `u` vanishes on the open set `Ω \ K`. -/
+theorem W1p.gradient_ae_eq_zero_of_value_ae_eq_zero_of_isClosed {K : Set E}
+    {u : W1p mu Omega p} (hK : IsClosed K)
+    (hu : ∀ᵐ x ∂mu.restrict (Omega : Set E), x ∉ K → W1p.value u x = 0) :
+    ∀ᵐ x ∂mu.restrict (Omega : Set E), x ∉ K → W1p.gradient u x = 0 := by
+  have hmeas : MeasurableSet (Omega : Set E) := Omega.isOpen.measurableSet
+  have humu : ∀ᵐ x ∂mu, x ∈ (Omega : Set E) → x ∉ K → W1p.value u x = 0 :=
+    (ae_restrict_iff' hmeas).1 hu
+  set V : Opens E := ⟨(Omega : Set E) \ K, Omega.isOpen.sdiff hK⟩
+  have hVmeas : MeasurableSet (V : Set E) := V.isOpen.measurableSet
+  have hvalV : ∀ᵐ x ∂mu.restrict (V : Set E), W1p.value u x = 0 := by
+    rw [ae_restrict_iff' hVmeas]
+    filter_upwards [humu] with x hx hxV
+    exact hx hxV.1 hxV.2
+  have hgradV := (ae_restrict_iff' hVmeas).1
+    (W1p.gradient_ae_eq_zero_of_value_ae_eq_zero (V := V) Set.sdiff_subset hvalV)
+  rw [ae_restrict_iff' hmeas]
+  filter_upwards [hgradV] with x hx hxO hxK
+  exact hx ⟨hxO, hxK⟩
+
 /-- Two Sobolev functions are equal when their `Lᵖ` value components are equal.  Uniqueness of
 weak derivatives determines the gradient component. -/
 @[ext]
@@ -603,6 +865,133 @@ theorem W1p.ext_value {u v : W1p mu Omega p} (hvalue : W1p.value u = W1p.value v
     simpa only [hvalue] using W1p.hasWeakFDerivOn v
   filter_upwards [hderiv] with x hx
   exact innerSL_inj.mp hx
+
+section Const
+
+variable [IsFiniteMeasure (mu.restrict (Omega : Set E))]
+
+/-- On a domain of finite measure, the constant function `c` as an element of `W^{1,p}(Ω)`. Its
+weak gradient is `0`. -/
+def W1p.const (c : ℝ) : W1p mu Omega p :=
+  W1p.mk (Lp.const p (mu.restrict Omega) c) 0 <| by
+    have hconst : HasWeakFDerivOn mu Omega (fun _ : E => c) 0 :=
+      hasWeakFDerivOn_iff.2 fun _ => hasWeakLineDerivOn_const c
+    refine (hconst.congr_ae (Lp.coeFn_const p _ c).symm).congr_ae_deriv ?_
+    filter_upwards [Lp.coeFn_zero E p (mu.restrict Omega)] with x hx
+    rw [hx, Pi.zero_apply, Pi.zero_apply, map_zero]
+
+/-- The value component of the constant Sobolev function `c` is the constant `c` in `Lᵖ`. -/
+@[simp]
+theorem W1p.value_const (c : ℝ) :
+    W1p.value (W1p.const c : W1p mu Omega p) = Lp.const p (mu.restrict Omega) c :=
+  W1p.value_mk _ _ _
+
+/-- The weak gradient of a constant Sobolev function is `0`. -/
+@[simp]
+theorem W1p.gradient_const (c : ℝ) : W1p.gradient (W1p.const c : W1p mu Omega p) = 0 :=
+  W1p.gradient_mk _ _ _
+
+/-- Adding a constant `c` to a Sobolev function adds `c` to its value almost everywhere. -/
+theorem W1p.value_add_const_ae (u : W1p mu Omega p) (c : ℝ) :
+    ∀ᵐ x ∂mu.restrict Omega, W1p.value (u + W1p.const c) x = W1p.value u x + c := by
+  rw [← W1p.valueL_apply, map_add, W1p.valueL_apply, W1p.valueL_apply, W1p.value_const]
+  filter_upwards [Lp.coeFn_add (W1p.value u) (Lp.const p (mu.restrict Omega) c),
+    Lp.coeFn_const p (mu.restrict Omega) c] with x h1 h2
+  rw [h1, Pi.add_apply, h2, Function.const_apply]
+
+/-- Adding a constant to a Sobolev function does not change its weak gradient. -/
+theorem W1p.gradient_add_const (u : W1p mu Omega p) (c : ℝ) :
+    W1p.gradient (u + W1p.const c) = W1p.gradient u := by
+  rw [W1p.gradient_add, W1p.gradient_const, add_zero]
+
+end Const
+
+open scoped Gradient in
+/-- **A `C¹` function with integrable gradient is a Sobolev function.** If `u` is `C¹` on the open
+set `Ω` and both `u` and its classical gradient `∇u` lie in `Lᵖ(Ω)`, then `u` is represented by an
+element of `W^{1,p}(Ω)` whose weak gradient is `∇u`. Nothing is assumed about `u` at the boundary
+of `Ω`. -/
+theorem W1p.exists_value_gradient_ae_eq_of_contDiffOn {u : E → ℝ} (hu : ContDiffOn ℝ 1 u Omega)
+    (hv : MemLp u p (mu.restrict Omega)) (hg : MemLp (∇ u) p (mu.restrict Omega)) :
+    ∃ U : W1p mu Omega p, W1p.value U =ᵐ[mu.restrict Omega] u ∧
+      W1p.gradient U =ᵐ[mu.restrict Omega] ∇ u := by
+  refine ⟨W1p.mk (hv.toLp u) (hg.toLp _)
+    (((hasWeakFDerivOn_gradient_of_contDiffOn hu).congr_ae hv.coeFn_toLp.symm).congr_ae_deriv ?_),
+    ?_, ?_⟩
+  · filter_upwards [hg.coeFn_toLp] with x hx
+    rw [hx]
+  · rw [W1p.value_mk]
+    exact hv.coeFn_toLp
+  · rw [W1p.gradient_mk]
+    exact hg.coeFn_toLp
+
+open scoped Gradient in
+/-- **The weak gradient of a `C¹` representative is its classical gradient.** If the value of
+`u ∈ W^{1,p}(Ω)` agrees almost everywhere on `Ω` with a function `v` that is `C¹` on `Ω`, then the
+weak gradient of `u` is `∇v` almost everywhere on `Ω`. In particular `∇v ∈ Lᵖ(Ω)`. -/
+theorem W1p.gradient_ae_eq_of_contDiffOn (u : W1p mu Omega p) {v : E → ℝ}
+    (hv : ContDiffOn ℝ 1 v Omega) (huv : W1p.value u =ᵐ[mu.restrict Omega] v) :
+    W1p.gradient u =ᵐ[mu.restrict Omega] ∇ v := by
+  have h := ((W1p.hasWeakFDerivOn u).congr_ae huv).ae_eq
+    (hasWeakFDerivOn_gradient_of_contDiffOn hv)
+  filter_upwards [h] with x hx
+  exact innerSL_inj.mp hx
+
+open scoped Gradient in
+/-- **A `C¹` representative has an `Lᵖ` derivative.** If the value of `u ∈ W^{1,p}(Ω)` agrees
+almost everywhere on `Ω` with a function `v` that is `C¹` on `Ω`, then `Dv ∈ Lᵖ(Ω)`. -/
+theorem W1p.memLp_fderiv_of_contDiffOn (u : W1p mu Omega p) {v : E → ℝ}
+    (hv : ContDiffOn ℝ 1 v Omega) (huv : W1p.value u =ᵐ[mu.restrict Omega] v) :
+    MemLp (fderiv ℝ v) p (mu.restrict Omega) :=
+  ((InnerProductSpace.toDual ℝ E).toContinuousLinearEquiv.toContinuousLinearMap.comp_memLp'
+    ((Lp.memLp (W1p.gradient u)).ae_eq (W1p.gradient_ae_eq_of_contDiffOn u hv huv))).ae_eq
+    (ae_of_all _ fun _ ↦ toDual_gradient)
+
+open scoped Gradient in
+/-- **A `C¹` function is a Sobolev function on compactly contained subdomains.** If `u` is `C¹`
+on an open set `U` and `Ω` lies in a compact subset `K` of `U`, then `u` is represented by an
+element of `W^{1,p}(Ω)` whose weak gradient is the classical gradient `∇u`. -/
+theorem W1p.exists_value_gradient_ae_eq_of_contDiffOn_of_isCompact {u : E → ℝ} {U K : Set E}
+    (hU : IsOpen U) (hu : ContDiffOn ℝ 1 u U) (hK : IsCompact K) (hΩK : (Omega : Set E) ⊆ K)
+    (hKU : K ⊆ U) :
+    ∃ v : W1p mu Omega p, W1p.value v =ᵐ[mu.restrict Omega] u ∧
+      W1p.gradient v =ᵐ[mu.restrict Omega] ∇ u := by
+  have hgrad : ContinuousOn (∇ u) U :=
+    (InnerProductSpace.toDual ℝ E).symm.continuous.comp_continuousOn
+      (hu.continuousOn_fderiv_of_isOpen hU le_rfl)
+  exact W1p.exists_value_gradient_ae_eq_of_contDiffOn (hu.mono (hΩK.trans hKU))
+    ((hu.continuousOn.mono hKU).memLp_restrict_of_subset_isCompact hK Omega.isOpen.measurableSet
+      hΩK p)
+    ((hgrad.mono hKU).memLp_restrict_of_subset_isCompact hK Omega.isOpen.measurableSet hΩK p)
+
+open scoped Gradient in
+/-- **A continuous linear functional is a Sobolev function on a bounded domain.** If `Ω` is
+bounded, then `ℓ : E →L[ℝ] ℝ` is represented by an element of `W^{1,p}(Ω)` whose weak gradient is
+the constant vector `(InnerProductSpace.toDual ℝ E).symm ℓ` dual to `ℓ`. -/
+theorem W1p.exists_value_gradient_ae_eq_continuousLinearMap
+    (hΩ : Bornology.IsBounded (Omega : Set E)) (ℓ : StrongDual ℝ E) :
+    ∃ v : W1p mu Omega p, W1p.value v =ᵐ[mu.restrict Omega] ℓ ∧
+      W1p.gradient v =ᵐ[mu.restrict Omega] fun _ => (InnerProductSpace.toDual ℝ E).symm ℓ := by
+  have hgrad : ∇ (ℓ : E → ℝ) = fun _ => (InnerProductSpace.toDual ℝ E).symm ℓ :=
+    gradient_eq fun _ => hasGradientAt_iff_hasFDerivAt.2 (by simpa using ℓ.hasFDerivAt)
+  simpa only [hgrad] using W1p.exists_value_gradient_ae_eq_of_contDiffOn_of_isCompact isOpen_univ
+    ℓ.contDiff.contDiffOn hΩ.isCompact_closure subset_closure (Set.subset_univ _)
+
+open scoped Gradient in
+/-- **A compactly supported `C¹` function is a Sobolev function on the whole space.** It is
+represented by an element of `W^{1,p}(E)` whose weak gradient is the classical gradient `∇u`, and
+whose value and gradient components have the `Lᵖ` norms of `u` and of `∇u`. -/
+theorem W1p.exists_value_gradient_ae_eq_of_hasCompactSupport {u : E → ℝ} (hu : ContDiff ℝ 1 u)
+    (hus : HasCompactSupport u) :
+    ∃ v : W1p mu ⊤ p, W1p.value v =ᵐ[mu] u ∧ W1p.gradient v =ᵐ[mu] ∇ u ∧
+      ‖W1p.value v‖ = (eLpNorm u p mu).toReal ∧ ‖W1p.gradient v‖ = (eLpNorm (∇ u) p mu).toReal := by
+  have hμ : mu.restrict ((⊤ : Opens E) : Set E) = mu := by simp
+  obtain ⟨v, hv, hg⟩ := W1p.exists_value_gradient_ae_eq_of_contDiffOn (p := p) hu.contDiffOn
+    (by rw [hμ]; exact hu.continuous.memLp_of_hasCompactSupport hus)
+    (by rw [hμ]; exact hus.memLp_gradient hu)
+  refine ⟨v, by simpa only [hμ] using hv, by simpa only [hμ] using hg, ?_, ?_⟩
+  · rw [Lp.norm_def, eLpNorm_congr_ae hv, hμ]
+  · rw [Lp.norm_def, eLpNorm_congr_ae hg, hμ]
 
 end
 
@@ -670,59 +1059,29 @@ theorem W1p.gradient_ofExponentLE_ae (hpq : p ≤ q) (u : W1p mu Omega q) :
     Sobolev1JetLp.gradient_apply_ae (u : Sobolev1JetLp mu Omega q)] with x hp hq
   rw [hp, hq]
 
-/-- Coercion of `W1p.ofExponentLE` to the ambient jet space preserves zero. -/
-theorem W1p.coe_ofExponentLE_zero (hpq : p ≤ q) :
-    (W1p.ofExponentLE hpq (0 : W1p mu Omega q) : Sobolev1JetLp mu Omega p) = 0 :=
-  Subtype.ext rfl
-
 /-- Lowering the exponent sends zero to zero. -/
 @[simp]
 theorem W1p.ofExponentLE_zero (hpq : p ≤ q) :
     W1p.ofExponentLE hpq (0 : W1p mu Omega q) = 0 :=
-  Subtype.ext (W1p.coe_ofExponentLE_zero hpq)
-
-/-- Coercion of `W1p.ofExponentLE` to the ambient jet space preserves addition. -/
-theorem W1p.coe_ofExponentLE_add (hpq : p ≤ q) (u v : W1p mu Omega q) :
-    (W1p.ofExponentLE hpq (u + v) : Sobolev1JetLp mu Omega p) =
-      (W1p.ofExponentLE hpq u : Sobolev1JetLp mu Omega p) +
-        (W1p.ofExponentLE hpq v : Sobolev1JetLp mu Omega p) :=
-  Subtype.ext rfl
+  Subtype.ext (Subtype.ext rfl)
 
 /-- Lowering the exponent preserves addition. -/
 @[simp]
 theorem W1p.ofExponentLE_add (hpq : p ≤ q) (u v : W1p mu Omega q) :
     W1p.ofExponentLE hpq (u + v) = W1p.ofExponentLE hpq u + W1p.ofExponentLE hpq v :=
-  Subtype.ext (W1p.coe_ofExponentLE_add hpq u v)
-
-/-- Coercion of `W1p.ofExponentLE` to the ambient jet space preserves real scalar multiplication. -/
-theorem W1p.coe_ofExponentLE_smul (hpq : p ≤ q) (c : ℝ) (u : W1p mu Omega q) :
-    (W1p.ofExponentLE hpq (c • u) : Sobolev1JetLp mu Omega p) =
-      c • (W1p.ofExponentLE hpq u : Sobolev1JetLp mu Omega p) :=
-  Subtype.ext rfl
+  Subtype.ext (Subtype.ext rfl)
 
 /-- Lowering the exponent preserves real scalar multiplication. -/
 @[simp]
 theorem W1p.ofExponentLE_smul (hpq : p ≤ q) (c : ℝ) (u : W1p mu Omega q) :
     W1p.ofExponentLE hpq (c • u) = c • W1p.ofExponentLE hpq u :=
-  Subtype.ext (W1p.coe_ofExponentLE_smul hpq c u)
-
-/-- Coercion of `W1p.ofExponentLE` to the ambient jet space at equal exponents is the identity. -/
-theorem W1p.coe_ofExponentLE_self (u : W1p mu Omega p) :
-    (W1p.ofExponentLE (le_refl p) u : Sobolev1JetLp mu Omega p) = u :=
-  Subtype.ext rfl
+  Subtype.ext (Subtype.ext rfl)
 
 /-- Lowering the exponent from `p` to itself is the identity. -/
 @[simp]
 theorem W1p.ofExponentLE_self (u : W1p mu Omega p) :
     W1p.ofExponentLE (le_refl p) u = u :=
-  Subtype.ext (W1p.coe_ofExponentLE_self u)
-
-/-- Coercions of composed ambient exponent inclusions compose transitively. -/
-theorem W1p.coe_ofExponentLE_ofExponentLE {r : ENNReal} [Fact (1 ≤ r)]
-    (hpq : p ≤ q) (hqr : q ≤ r) (u : W1p mu Omega r) :
-    (W1p.ofExponentLE hpq (W1p.ofExponentLE hqr u) : Sobolev1JetLp mu Omega p) =
-      (W1p.ofExponentLE (hpq.trans hqr) u : Sobolev1JetLp mu Omega p) :=
-  Subtype.ext rfl
+  Subtype.ext (Subtype.ext rfl)
 
 /-- Exponent inclusions compose transitively. -/
 @[simp]
@@ -730,7 +1089,61 @@ theorem W1p.ofExponentLE_ofExponentLE {r : ENNReal} [Fact (1 ≤ r)]
     (hpq : p ≤ q) (hqr : q ≤ r) (u : W1p mu Omega r) :
     W1p.ofExponentLE hpq (W1p.ofExponentLE hqr u) =
       W1p.ofExponentLE (hpq.trans hqr) u :=
-  Subtype.ext (W1p.coe_ofExponentLE_ofExponentLE hpq hqr u)
+  Subtype.ext (Subtype.ext rfl)
+
+/-- On a domain of finite measure, the continuous inclusion `W^{1,q}(Ω) → W^{1,p}(Ω)` for
+`p ≤ q`, with norm at most `μ(Ω) ^ (1/p - 1/q)`; it does not change the value or the weak gradient
+(`TauCeti.W1p.ofExponentLE`). -/
+def W1p.ofExponentLEL (hpq : p ≤ q) : W1p mu Omega q →L[ℝ] W1p mu Omega p :=
+  LinearMap.mkContinuous
+    { toFun := W1p.ofExponentLE hpq
+      map_add' := W1p.ofExponentLE_add hpq
+      map_smul' := W1p.ofExponentLE_smul hpq }
+    (mu Omega ^ (1 / p.toReal - 1 / q.toReal)).toReal fun u => by
+      rw [LinearMap.coe_mk, AddHom.coe_mk, ← Submodule.norm_coe, ← Submodule.norm_coe u,
+        W1p.coe_ofExponentLE, ← Lp.ofExponentLEL_apply (𝕜 := ℝ), ← Measure.restrict_apply_univ]
+      exact Lp.norm_ofExponentLEL_apply_le hpq _
+
+/-- The continuous inclusion `TauCeti.W1p.ofExponentLEL` applies `TauCeti.W1p.ofExponentLE`. -/
+theorem W1p.ofExponentLEL_apply (hpq : p ≤ q) (u : W1p mu Omega q) :
+    W1p.ofExponentLEL hpq u = W1p.ofExponentLE hpq u :=
+  (rfl)
+
+/-- The value of the image of a Sobolev function is the `Lᵖ` copy of its value. -/
+@[simp]
+theorem W1p.value_ofExponentLEL (hpq : p ≤ q) (u : W1p mu Omega q) :
+    W1p.value (W1p.ofExponentLEL hpq u) = Lp.ofExponentLEL ℝ ℝ hpq (W1p.value u) :=
+  Lp.ext (by
+    rw [Lp.coeFn_ofExponentLEL, W1p.ofExponentLEL_apply]
+    exact W1p.value_ofExponentLE_ae hpq u)
+
+/-- The weak gradient of the image of a Sobolev function is the `Lᵖ` copy of its weak gradient. -/
+@[simp]
+theorem W1p.gradient_ofExponentLEL (hpq : p ≤ q) (u : W1p mu Omega q) :
+    W1p.gradient (W1p.ofExponentLEL hpq u) = Lp.ofExponentLEL ℝ E hpq (W1p.gradient u) :=
+  Lp.ext (by
+    rw [Lp.coeFn_ofExponentLEL, W1p.ofExponentLEL_apply]
+    exact W1p.gradient_ofExponentLE_ae hpq u)
+
+/-- Lowering the exponent is injective. -/
+theorem W1p.ofExponentLEL_injective (hpq : p ≤ q) :
+    Function.Injective (W1p.ofExponentLEL (mu := mu) (Omega := Omega) hpq) := fun u v h =>
+  Subtype.ext <| Lp.ofExponentLEL_injective (𝕜 := ℝ) hpq <| by
+    rw [Lp.ofExponentLEL_apply, Lp.ofExponentLEL_apply, ← W1p.coe_ofExponentLE hpq,
+      ← W1p.coe_ofExponentLE hpq, ← W1p.ofExponentLEL_apply hpq, ← W1p.ofExponentLEL_apply hpq, h]
+
+/-- The operator norm of `W^{1,q}(Ω) → W^{1,p}(Ω)` is at most `μ(Ω) ^ (1/p - 1/q)`. -/
+theorem W1p.opNorm_ofExponentLEL_le (hpq : p ≤ q) :
+    ‖W1p.ofExponentLEL (mu := mu) (Omega := Omega) hpq‖ ≤
+      (mu Omega ^ (1 / p.toReal - 1 / q.toReal)).toReal := by
+  rw [W1p.ofExponentLEL]
+  exact LinearMap.mkContinuous_norm_le _ ENNReal.toReal_nonneg _
+
+/-- Lowering the exponent multiplies the `W^{1,p}` norm by at most `μ(Ω) ^ (1/p - 1/q)`. -/
+theorem W1p.norm_ofExponentLEL_apply_le (hpq : p ≤ q) (u : W1p mu Omega q) :
+    ‖W1p.ofExponentLEL hpq u‖ ≤ (mu Omega ^ (1 / p.toReal - 1 / q.toReal)).toReal * ‖u‖ :=
+  (W1p.ofExponentLEL (mu := mu) (Omega := Omega) hpq).le_of_opNorm_le
+    (W1p.opNorm_ofExponentLEL_le hpq) u
 
 end Exponent
 

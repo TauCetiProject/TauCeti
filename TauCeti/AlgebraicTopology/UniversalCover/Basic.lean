@@ -27,6 +27,8 @@ the quotient topology coming from the compact-open based-path space.
   topologized as the quotient of `BasedPath x₀` under endpoint-preserving homotopy.
 * `UniversalCover.proj : UniversalCover x₀ → X`: the endpoint projection (auto-generated).
 * `UniversalCover.basepointLift`: the constant-path point over `x₀`.
+* `UniversalCover.fiberEquivFundamentalGroup`: the basepoint fibre is in bijection with
+  endpoint-fixed loop homotopy classes.
 * `UniversalCover.sheet`: the sheet indexed by `q : Path.Homotopic.Quotient x₀ x` over a good
   neighborhood `U`, viewed as a subset of `UniversalCover x₀`.
 
@@ -163,6 +165,41 @@ theorem basepointLift_coe (x₀ : X) :
       mk x₀ (Path.Homotopic.Quotient.refl x₀) := by
   simp only [basepointLift]
   rw [ofBasedPath_ofPath, Path.Homotopic.Quotient.mk_refl]
+
+/-- The fibre over the basepoint of the based-path universal cover is in bijection with
+endpoint-fixed loop homotopy classes. This is a type equivalence, not a group equivalence. -/
+def fiberEquivFundamentalGroup (x₀ : X) :
+    (proj : UniversalCover x₀ → X) ⁻¹' {x₀} ≃ FundamentalGroup X x₀ where
+  toFun e := FundamentalGroup.fromPath (cast (congrArg (Path.Homotopic.Quotient x₀) e.2) e.1.path)
+  invFun g := ⟨mk x₀ g.toPath, rfl⟩
+  left_inv := by
+    rintro ⟨⟨x, q⟩, hx⟩
+    -- Eliminate the endpoint equality before comparing the dependent path-class fields.
+    have h : x = x₀ := hx
+    subst x
+    rfl
+  right_inv g := by cases g; rfl
+
+/-- The inverse fibre bijection represents a loop class by that same class in the cover. -/
+@[simp]
+theorem coe_fiberEquivFundamentalGroup_symm (x₀ : X) (g : FundamentalGroup X x₀) :
+    ((fiberEquivFundamentalGroup x₀).symm g : UniversalCover x₀) = mk x₀ g.toPath :=
+  (rfl)
+
+/-- On a point whose endpoint is already the basepoint, the fibre bijection reads its class. -/
+@[simp]
+theorem fiberEquivFundamentalGroup_apply_mk (x₀ : X) (q : Path.Homotopic.Quotient x₀ x₀) :
+    fiberEquivFundamentalGroup x₀ ⟨mk x₀ q, rfl⟩ = FundamentalGroup.fromPath q :=
+  (rfl)
+
+/-- The distinguished constant-path lift corresponds to the identity loop class. -/
+@[simp]
+theorem fiberEquivFundamentalGroup_basepointLift (x₀ : X) :
+    fiberEquivFundamentalGroup x₀ (basepointLift x₀) = 1 := by
+  have h : basepointLift x₀ = ⟨mk x₀ (Path.Homotopic.Quotient.refl x₀), rfl⟩ :=
+    Subtype.ext (basepointLift_coe x₀)
+  rw [h, fiberEquivFundamentalGroup_apply_mk]
+  rfl
 
 /-- The endpoint projection of the universal cover has range the path component of `x₀`. -/
 @[simp]

@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.PermutationTriple.EulerCharacteristic
 public import TauCeti.Combinatorics.PermutationTriple.GeometryType
 public import TauCeti.Combinatorics.PermutationTriple.Passport.Basic
+public import TauCeti.Combinatorics.PermutationTriple.Primitivity.Defs
 
 /-!
 # Classes in a passport
@@ -17,20 +18,26 @@ subgroup up to conjugacy and fixed ordered cycle partitions.  This file collects
 a finite set and defines the passport size to be its cardinality.
 
 The ordered cycle partitions determine the Euler characteristic, genus, order triple, and geometry
-type.  The comparison theorems below state this without choosing representatives of isomorphism
-classes.  In particular, a passport is a coarser invariant than an isomorphism class; no uniqueness
-of a class inside a passport is asserted.
+type, and the conjugacy class of the monodromy subgroup determines primitivity.  The comparison
+theorems below state this without choosing representatives of isomorphism classes.  In
+particular, a passport is a coarser invariant than an isomorphism class; no uniqueness of a class
+inside a passport is asserted.
 
 ## Main declarations
 
 * `TauCeti.PassportSpec.classSet`: the finite set of connected isomorphism classes in a passport.
 * `TauCeti.PassportSpec.passportSize`: the number of those classes.
 * `TauCeti.PassportSpec.passportSize_eq_card_hasPassport`: the passport size as a `Nat.card`.
+* `TauCeti.PassportSpec.partition_eq_of_mem_classSet`: passports sharing a class have the same
+  ordered partitions.
+* `TauCeti.PassportSpec.disjoint_classSet`: distinct passports with the same reference subgroup
+  share no class.
 * `TauCeti.PassportSpec.cycleData_eq_of_hasPassport`: two triples in one passport have the same
   ordered cycle data.
 * `TauCeti.PassportSpec.genus_eq_of_hasPassport`: a passport determines the genus.
 * `TauCeti.PassportSpec.orderTriple_eq_of_hasPassport`: a passport determines the order triple.
 * `TauCeti.PassportSpec.geometryType_eq_of_hasPassport`: a passport determines the geometry type.
+* `TauCeti.PassportSpec.isPrimitive_iff_of_hasPassport`: a passport determines primitivity.
 
 ## References
 
@@ -136,6 +143,28 @@ theorem passportSize_conjugate (P : PassportSpec n) (tau : Perm (Fin n)) :
     (P.conjugate tau).passportSize = P.passportSize := by
   rw [passportSize_def, passportSize_def, classSet_conjugate]
 
+/-- Two passports sharing an isomorphism class have the same ordered cycle partitions. -/
+theorem partition_eq_of_mem_classSet {P Q : PassportSpec n} {c : ConnectedIsoClass n}
+    (hP : c ∈ P.classSet) (hQ : c ∈ Q.classSet) (i : Fin 3) : P.partition i = Q.partition i := by
+  obtain ⟨t, rfl⟩ := ConnectedIsoClass.mk_surjective c
+  rw [mem_classSet, ConnectedIsoClass.hasPassport_mk, hasPassport_iff] at hP hQ
+  obtain ⟨-, hP0, hP1, hPinf⟩ := hP
+  obtain ⟨-, hQ0, hQ1, hQinf⟩ := hQ
+  fin_cases i
+  · simp [← hP0, ← hQ0]
+  · simp [← hP1, ← hQ1]
+  · simp [← hPinf, ← hQinf]
+
+/-- Two passports with the same reference subgroup that share an isomorphism class are equal. -/
+theorem eq_of_mem_classSet {P Q : PassportSpec n} (hG : P.G = Q.G) {c : ConnectedIsoClass n}
+    (hP : c ∈ P.classSet) (hQ : c ∈ Q.classSet) : P = Q :=
+  ext_partition hG (partition_eq_of_mem_classSet hP hQ)
+
+/-- Distinct passports with the same reference subgroup have disjoint class sets. -/
+theorem disjoint_classSet {P Q : PassportSpec n} (hG : P.G = Q.G) (hne : P ≠ Q) :
+    Disjoint P.classSet Q.classSet :=
+  Finset.disjoint_left.mpr fun _ hP hQ ↦ hne (eq_of_mem_classSet hG hP hQ)
+
 /-! ## Invariants determined by a passport -/
 
 /-- Two connected triples in the same passport have identical ordered full cycle partitions. -/
@@ -169,6 +198,17 @@ theorem geometryType_eq_of_hasPassport {P : PassportSpec n} {t t' : ConnectedTri
     (ht : HasPassport t P) (ht' : HasPassport t' P) : t.1.geometryType = t'.1.geometryType := by
   apply PermutationTriple.geometryType_eq_of_sum_eq
   rw [orderTriple_eq_of_hasPassport ht ht']
+
+/-- Two connected triples in the same passport are either both primitive or both imprimitive:
+their monodromy subgroups are conjugate in the ambient symmetric group. -/
+theorem isPrimitive_iff_of_hasPassport {P : PassportSpec n} {t t' : ConnectedTriple n}
+    (ht : HasPassport t P) (ht' : HasPassport t' P) : t.1.IsPrimitive ↔ t'.1.IsPrimitive := by
+  have key (s : ConnectedTriple n) (hs : HasPassport s P) :
+      s.1.IsPrimitive ↔ IsPreprimitive P.G (Fin n) := by
+    obtain ⟨⟨τ, hτ⟩, -⟩ := (hasPassport_iff s P).mp hs
+    rw [← hτ, Equiv.conj_eq_permCongrHom, Equiv.isPreprimitive_map_permCongrHom_iff,
+      PermutationTriple.isPrimitive_iff]
+  rw [key t ht, key t' ht']
 
 end PassportSpec
 

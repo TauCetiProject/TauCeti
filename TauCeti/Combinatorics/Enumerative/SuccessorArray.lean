@@ -216,6 +216,10 @@ theorem visitCount_add (x : ℕ → α) (a : α) (m n : ℕ) :
   classical
   simpa only [visitCount_eq_count] using Nat.count_add (p := fun i => x i = a) m n
 
+/-- A sequence makes at most `n` visits before time `n`. -/
+theorem visitCount_le (x : ℕ → α) (a : α) (n : ℕ) : visitCount x a n ≤ n := by
+  simpa only [visitCount_eq_count] using Nat.count_le (p := fun i => x i = a) (n := n)
+
 /-- **The arrival/departure balance of a finite prefix.** Reading the first `t` successors of `z`
 as a word, its occurrences of `b` together with a possible occurrence of `b` at time `0` match the
 visits of `z` to `b` before `t` together with a possible visit at time `t`. -/
@@ -480,7 +484,7 @@ theorem eq_pathOfSuccessors (h₀ : y 0 = a₀)
     y = pathOfSuccessors a₀ s := by
   funext n
   induction n using Nat.strong_induction_on with
-  | h n ih =>
+  | ind n ih =>
     match n with
     | 0 => simpa using h₀
     | n + 1 =>

@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Contour.PwC1ImmersionOn
 public import TauCeti.Analysis.Contour.RegularityConditions
 import TauCeti.Analysis.Contour.Crossing.Finiteness
-public import TauCeti.Analysis.Contour.Winding.Number.Circle
+public import TauCeti.Analysis.Contour.Winding.Number.Circle.Basic
 public import TauCeti.Analysis.Contour.Winding.Number.Concat
 public import TauCeti.Analysis.Contour.Winding.Number.Reparam
 public import TauCeti.Analysis.Contour.Winding.Number.Segment.Basic
@@ -263,7 +263,7 @@ theorem isPwC1ImmersionOn_halfDiscBoundary (hR : 0 < R) :
       rw [min_eq_left (by linarith : (-R : ℝ) ≤ R + Real.pi),
         max_eq_right (by linarith : (-R : ℝ) ≤ R + Real.pi)]
       simpa using ⟨by linarith, by linarith⟩)
-    fun c d hcd hsub hdisj => ?_
+    fun c d hcd _ hdisj => ?_
   have huniq : UniqueDiffOn ℝ (Icc c d) := uniqueDiffOn_Icc hcd
   -- Disjointness from the breakpoint puts the piece entirely on one side of `R`.
   have hside : d ≤ R ∨ R ≤ c := by

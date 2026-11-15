@@ -22,7 +22,7 @@ centre `a` are uniquely determined by the automorphism, not merely available for
 
 ## Why uniqueness is a separate matter
 
-Surjectivity onto `Aut(𝔻)` is the Schwarz-lemma classification and is already merged.  Injectivity
+Surjectivity onto `Aut(𝔻)` is the Schwarz-lemma classification.  Injectivity
 is elementary, but it is not formal: the family is indexed by two parameters and *a priori* nothing
 prevents different pairs from naming the same map — a family of Möbius maps of `ℂ` written in
 homogeneous coordinates is a genuine example of a parametrisation that is not injective.  What
@@ -51,18 +51,11 @@ isomorphism onto `TauCeti.unitDiscRotation`, as recorded by the `example` below.
 
 ## Generality
 
-Everything here concerns `Aut(𝔻)` and is `ℂ`-scalar, as the conformal-mapping roadmap's generality
-bar fixes for layers L0--L6; the underlying facts about `Complex.UnitDisc` and its `Circle` action
-are stated at that generality in `Analysis/Complex/UnitDisc/Basic.lean`.
+Everything here concerns `Aut(𝔻)` and is `ℂ`-scalar; the underlying facts about `Complex.UnitDisc`
+and its `Circle` action are stated at that generality in `Analysis/Complex/UnitDisc/Basic.lean`.
 
-This completes the conformal-mapping roadmap's L2 description of the disc automorphism group
-`Aut(𝔻) = {e^{iθ}(z−a)/(1−āz)}` (see `ConformalMapping/README.md`), whose existence half is
-`TauCeti.mem_unitDiscAut_iff`.  As with the rest of the L0--L3 conformal-mapping material it is
-coordinated with the upstream Mathlib Riemann-mapping effort
-leanprover-community/mathlib4#33505, whose preceding human-curated work is
-`Analysis/Complex/RiemannMapping.lean` and `Analysis/Complex/BranchLogRoot.lean`; neither contains
-a disc automorphism group, and should one land upstream these declarations are a temporary shim to
-be deleted and their consumers refactored onto it.
+Together with `TauCeti.mem_unitDiscAut_iff`, this describes the disc automorphism group as
+`Aut(𝔻) = {e^{iθ}(z−a)/(1−āz)}`.
 
 ## References
 
@@ -112,7 +105,7 @@ theorem unitDiscStandardAutomorphismEquiv_eq_iff :
   have hval := congrArg
     (fun e : Complex.UnitDisc ≃ Complex.UnitDisc => e ((unitDiscMoebiusEquiv a).symm w)) h
   simp only [unitDiscStandardAutomorphismEquiv_apply, hmoe] at hval
-  exact ⟨circle_smul_left_injective hw hval, rfl⟩
+  exact ⟨Complex.UnitDisc.circle_smul_left_injective hw hval, rfl⟩
 
 /-- **The standard parametrisation of `Aut(𝔻)` is injective**: distinct pairs `(u, a)` name
 distinct automorphisms.  With `TauCeti.coe_unitDiscAut`, which says the parametrisation has
@@ -217,7 +210,7 @@ theorem eq_one_of_mem_unitDiscAut_of_isFixedPt {e : Equiv.Perm Complex.UnitDisc}
   have hu : u = 1 := by
     rw [hua] at hfMw
     simp only [unitDiscStandardAutomorphismEquiv_apply, unitDiscMoebius_zero] at hfMw
-    exact circle_smul_left_injective hMw (by simpa only [one_smul] using hfMw)
+    exact Complex.UnitDisc.circle_smul_left_injective hMw (by simpa only [one_smul] using hfMw)
   have hone : M * e * M⁻¹ = 1 := by
     rw [hua]
     exact unitDiscStandardAutomorphismEquiv_eq_one_iff.2 ⟨hu, rfl⟩

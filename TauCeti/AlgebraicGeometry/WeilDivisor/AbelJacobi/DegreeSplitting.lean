@@ -24,11 +24,8 @@ Under this splitting, the class of a point divisor `[x]` has `Pic⁰` component 
 weighted Abel-Jacobi class of `x`, and degree component `w x`. Equivalently, the degree-corrected
 class `[x] - w(x)[x₀]` maps to the Abel-Jacobi class together with degree `0`.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, the "`Pic⁰ X = ker deg`
-(as an abstract group)" item and the rational-point degree splitting used by the later
-normalized Abel-Jacobi morphism. No external mathematics is vendored; the proofs combine Tau
-Ceti's existing `OrderSystem.picZero`, `weightedAbelJacobiClass`, and
-`classGroupAddEquivPicZeroProdInt` APIs.
+No external mathematics is vendored; the proofs combine Tau Ceti's `OrderSystem.picZero`,
+`weightedAbelJacobiClass`, and `classGroupAddEquivPicZeroProdInt` APIs.
 -/
 
 public section

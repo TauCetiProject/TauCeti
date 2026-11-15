@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.ExtensionBasis
 public import TauCeti.Algebra.Coalgebra.Comodule.Flag.Basic
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
+import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Submodule
 
 /-!
 # Upper-triangular comodule structures and extensions
@@ -22,13 +23,15 @@ The coefficient matrix has the expected block form. Its diagonal blocks are the 
 matrices of `N` and `M ⧸ N`, its lower-left block is zero because `N` is stable, and its
 upper-right block records the extension class.
 
-This is the extension step needed by the Kolchin inductions in Layer 5, "Unipotent groups", of the
-ReductiveGroups roadmap. A weight line supplies the first diagonal block; applying the induction
-hypothesis to the quotient and this file to the resulting extension constructs the complete
-invariant flag.
+This is the extension step needed by the Kolchin inductions on unipotent groups. A weight line
+supplies the first diagonal block; applying the induction hypothesis to the quotient and this file
+to the resulting extension constructs the complete invariant flag.
 
 ## Main declarations
 
+* `TauCeti.Comodule.coefficientMatrix_castAdd_castAdd_of_castAdd_eq` and
+  `TauCeti.Comodule.coefficientMatrix_natAdd_castAdd_of_castAdd_eq`: the block form of the
+  coefficient matrix in any basis whose first block is a basis of a subcomodule.
 * `TauCeti.Comodule.extensionBasis`: the basis of a comodule obtained from bases of a subcomodule
   and its quotient.
 * `TauCeti.Comodule.coefficientMatrix_extensionBasis_castAdd_castAdd`: the subcomodule diagonal
@@ -51,7 +54,7 @@ public section
 
 namespace TauCeti.Comodule
 
-open Module
+open _root_.Module
 
 universe u v w
 
@@ -60,6 +63,50 @@ noncomputable section
 attribute [local instance 1100] Module.Free.of_divisionRing Module.Flat.of_free
 
 variable {k : Type u} {C : Type v} {M : Type w} {m n : ℕ}
+
+section Semiring
+
+variable [CommSemiring k]
+variable [AddCommMonoid C] [Module k C] [Coalgebra k C] [Module.Flat k C]
+variable [AddCommMonoid M] [Module k M] [Comodule k C M]
+
+/-- If the first block of a basis of `M` is a basis of the subcomodule `N`, the corresponding
+diagonal block of its coefficient matrix is the coefficient matrix of `N` in that basis. -/
+theorem coefficientMatrix_castAdd_castAdd_of_castAdd_eq
+    (N : Subcomodule k C M) (bN : Basis (Fin m) k N) (b : Basis (Fin (m + n)) k M)
+    (hb : ∀ j, b (Fin.castAdd n j) = bN j) (i j : Fin m) :
+    coefficientMatrix (C := C) b (Fin.castAdd n i) (Fin.castAdd n j) =
+      coefficientMatrix (C := C) bN i j := by
+  rw [coefficientMatrix_apply, hb, ← N.subtype_apply (bN j), matrixCoefficient_map,
+    coefficientMatrix_apply]
+  congr 1
+  refine bN.ext fun l ↦ ?_
+  simp only [LinearMap.comp_apply, Subcomodule.subtype_toLinearMap,
+    SMulMemClass.subtype_apply, ← hb, Basis.coord_apply, Basis.repr_self,
+    Finsupp.single_apply, (Fin.castAdd_injective m n).eq_iff]
+
+omit [Module.Flat k C] in
+/-- If the first block of a basis of `M` is a basis of the subcomodule `N`, the lower-left block
+of its coefficient matrix vanishes. This is the matrix form of stability of the subcomodule. -/
+theorem coefficientMatrix_natAdd_castAdd_of_castAdd_eq
+    (N : Subcomodule k C M) (bN : Basis (Fin m) k N) (b : Basis (Fin (m + n)) k M)
+    (hb : ∀ j, b (Fin.castAdd n j) = bN j) (i : Fin n) (j : Fin m) :
+    coefficientMatrix (C := C) b (Fin.natAdd m i) (Fin.castAdd n j) = 0 := by
+  have hcoord : (b.coord (Fin.natAdd m i)).comp (SMulMemClass.subtype N) = 0 := by
+    refine bN.ext fun l ↦ ?_
+    rw [LinearMap.comp_apply, SMulMemClass.subtype_apply, ← hb]
+    simp only [Basis.coord_apply, Basis.repr_self, Finsupp.single_apply, LinearMap.zero_apply]
+    refine ite_eq_right fun h ↦ ?_
+    have hval := congrArg Fin.val h
+    simp only [Fin.val_castAdd, Fin.val_natAdd] at hval
+    omega
+  rw [coefficientMatrix_apply, hb]
+  exact N.carrier.matrixCoefficient_eq_zero_of_mem_dualAnnihilator (N.coact_mem (bN j).2)
+    ((Submodule.mem_dualAnnihilator _).2 fun w hw ↦
+      LinearMap.congr_fun hcoord ⟨w, Subcomodule.mem_carrier.1 hw⟩)
+
+end Semiring
+
 variable [Field k]
 variable [AddCommGroup C] [Module k C] [Coalgebra k C]
 variable [AddCommGroup M] [Module k M] [Comodule k C M]
@@ -135,13 +182,8 @@ theorem coefficientMatrix_extensionBasis_castAdd_castAdd
     (bQ : Basis (Fin n) k (M ⧸ N.toSubmodule)) (i j : Fin m) :
     coefficientMatrix (C := C) (extensionBasis N bN bQ)
         (Fin.castAdd n i) (Fin.castAdd n j) =
-      coefficientMatrix (C := C) bN i j := by
-  rw [coefficientMatrix_apply, extensionBasis_castAdd, coefficientMatrix_apply]
-  rw [← N.subtype_apply (bN j), matrixCoefficient_map]
-  congr 2
-  ext x
-  simp only [LinearMap.comp_apply, Subcomodule.subtype_toLinearMap,
-    SMulMemClass.subtype_apply, Basis.coord_apply, extensionBasis_repr_castAdd]
+      coefficientMatrix (C := C) bN i j :=
+  coefficientMatrix_castAdd_castAdd_of_castAdd_eq N bN _ (extensionBasis_castAdd N bN bQ) i j
 
 /-- The lower-left block of the combined coefficient matrix vanishes. This is the matrix form of
 stability of the subcomodule. -/
@@ -150,20 +192,8 @@ theorem coefficientMatrix_extensionBasis_natAdd_castAdd
     (N : Subcomodule k C M) (bN : Basis (Fin m) k N)
     (bQ : Basis (Fin n) k (M ⧸ N.toSubmodule)) (i : Fin n) (j : Fin m) :
     coefficientMatrix (C := C) (extensionBasis N bN bQ)
-        (Fin.natAdd m i) (Fin.castAdd n j) = 0 := by
-  rw [coefficientMatrix_apply, extensionBasis_castAdd, ← N.subtype_apply (bN j),
-    matrixCoefficient_map]
-  have hcoord :
-      ((extensionBasis N bN bQ).coord (Fin.natAdd m i)).comp N.subtype.toLinearMap = 0 := by
-    ext x
-    simp only [LinearMap.comp_apply, Subcomodule.subtype_toLinearMap,
-      SMulMemClass.subtype_apply, Basis.coord_apply, extensionBasis_repr_natAdd,
-      LinearMap.zero_apply]
-    have hx : N.toSubmodule.mkQ (x : M) = 0 :=
-      (Submodule.Quotient.mk_eq_zero _).mpr x.2
-    rw [hx, map_zero, Finsupp.zero_apply]
-  rw [hcoord]
-  simp
+        (Fin.natAdd m i) (Fin.castAdd n j) = 0 :=
+  coefficientMatrix_natAdd_castAdd_of_castAdd_eq N bN _ (extensionBasis_castAdd N bN bQ) i j
 
 /-- The quotient diagonal block of the combined coefficient matrix is the coefficient matrix in
 the given quotient basis. -/

@@ -100,7 +100,7 @@ private lemma ne_elliptic_of_mem_canonicalReps [ModularFormClass F 𝒮ℒ k] {f
     p ≠ I ∧ p ≠ ρ ∧ p ≠ (1 : ℝ) +ᵥ ρ := by
   have hcond := (mem_canonicalReps.mp hp).2
   refine ⟨fun h ↦ ?_, fun h ↦ ?_, fun h ↦ ?_⟩ <;> subst h <;>
-    rcases hcond with ⟨hgt, habs⟩ | ⟨hre, hgt⟩ | ⟨hne, hnorm, hre⟩
+    rcases hcond with ⟨hgt, habs⟩ | ⟨hre, hgt⟩ | ⟨hne, _, hre⟩
   · norm_num at hgt
   · norm_num at hre
   · norm_num at hre
@@ -171,7 +171,7 @@ theorem finsum_orderOfVanishingOnOrbit_eq_sum_canonicalReps [ModularFormClass F 
     obtain ⟨p, hp, hporb⟩ := exists_mem_canonicalReps_orbit_mk_eq q.2.1 q.2.2
       ((hasFiniteSupport_orderOfVanishingOnOrbit_nonElliptic f).mem_toFinset.mp hq)
     exact ⟨p, hp, Subtype.ext hporb⟩
-  · intro p hp
+  · intro p _
     exact (orderOfVanishingOnOrbit_mk f p).symm
 
 /-- The canonical-representative sum splits into the three family sums of the core identity:

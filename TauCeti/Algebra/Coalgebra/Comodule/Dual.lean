@@ -28,6 +28,7 @@ finiteness condition on `H`.
 
 * `TauCeti.Comodule.dualCoact`: the coaction map on the linear dual.
 * `TauCeti.Comodule.dualTensorHom_dualCoact`: its characteristic linear-map equation.
+* `TauCeti.Comodule.dualCoact_eq_sum`: the dual coaction written in a basis.
 * `TauCeti.Comodule.dual`: the explicit, non-global dual comodule structure.
 
 ## References
@@ -78,6 +79,18 @@ theorem dualTensorHom_dualCoact_apply (φ : Module.Dual R M) (m : M) :
         (matrixCoefficient (R := R) (C := H) φ m) := by
   rw [dualTensorHom_dualCoact]
   simp only [LinearMap.comp_apply, matrixCoefficientBilinear_apply_apply]
+
+/-- The dual coaction written in a basis: the coefficient of `b*ⱼ` is the antipode of the
+matrix coefficient `c(φ, b j)`. -/
+theorem dualCoact_eq_sum {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι R M)
+    (φ : Module.Dual R M) :
+    dualCoact (R := R) (H := H) (M := M) φ =
+      ∑ j, b.dualBasis j ⊗ₜ[R] HopfAlgebra.antipode R (matrixCoefficient (C := H) φ (b j)) := by
+  apply (dualTensorHomEquivOfBasis (N := H) b).injective
+  rw [dualTensorHomEquivOfBasis_apply, dualTensorHomEquivOfBasis_apply]
+  refine b.ext fun l ↦ ?_
+  rw [dualTensorHom_dualCoact_apply, map_sum, LinearMap.sum_apply]
+  simp [dualTensorHom_apply, Finsupp.single_apply]
 
 /-- Applying the counit to the coefficient leg of the dual coaction recovers the original
 functional. -/

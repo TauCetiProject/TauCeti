@@ -11,7 +11,6 @@ public import
   TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ClosedImmersion
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Relations
-import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Rigidity
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Torus
 
 /-!
@@ -34,7 +33,8 @@ the twenty-four tripled weights triality acts by
 numbered-symmetry construction on a Kostant toral-closure carrier; its remaining inputs, a linear
 automorphism of the module intertwining the Serre root generators along the permutation and
 acting monomially on the lattice basis, are supplied in
-`TauCeti.Algebra.Lie.D4.Tripled.Triality`, which builds the triality automorphism of the carrier.
+`TauCeti.Algebra.Lie.D4.Tripled.Triality.Basic`, which builds the triality automorphism of the
+carrier.
 
 The character by which the split torus rescales a numbered root subgroup is
 `TauCeti.TypeDStd.rootGeneratorWeight`, a row of the type-`D₄` Cartan matrix, identified with the
@@ -212,17 +212,6 @@ instance isClosedImmersion_weightTorus : IsClosedImmersion weightTorus.hom.hom.l
   TauCeti.UniversalEnvelopingAlgebra.isClosedImmersion_kostantWeightTorusToToral
     _ _ _ _ _ _ _ _ span_range_d4TripledWeight_eq_top
 
-/-- Two morphisms out of the tripled type-`D₄` carrier agree when they agree on its numbered
-root subgroups and represented split torus. -/
-@[ext]
-theorem groupScheme_hom_ext {Y : _root_.CommHopfAlgCat.{0} ℤ}
-    (f g : groupScheme ⟶
-      (AlgebraicGeometry.hopfSpec (CommRingCat.of ℤ)).obj (Opposite.op Y))
-    (hroot : ∀ k, rootSubgroup k ≫ f = rootSubgroup k ≫ g)
-    (htorus : weightTorus ≫ f = weightTorus ≫ g) : f = g :=
-  TauCeti.UniversalEnvelopingAlgebra.kostantToralGroupScheme_hom_ext
-    _ _ _ _ _ _ _ _ f g hroot htorus
-
 /-! ## Matrix-valued points -/
 
 /-- The matrix-valued points of the tripled type-`D₄` carrier. -/
@@ -242,7 +231,7 @@ theorem points_def (A : Type v) [CommRing A] :
 
 /-- A matrix is a carrier point exactly when its associated convolution point kills the defining
 Hopf ideal. -/
-@[simp]
+-- Not `@[simp]`: rewriting membership into this raw condition defeats the membership lemmas.
 theorem mem_points_iff (A : Type v) [CommRing A]
     (g : _root_.Matrix.GeneralLinearGroup (Fin 24) A) :
     g ∈ points A ↔
@@ -361,7 +350,7 @@ theorem weightTorusPoints_conj_rootSubgroupPoints (k : Fin 4 ⊕ Fin 4) (A : Typ
 
 /-- **Conjugation by the tripled weight torus acts on each numbered root subgroup through its
 positive or negative simple-root character, on scheme points.** -/
-@[simp]
+-- Not `@[simp]`: `simp` does not match its left-hand side, even with the lemma alone; use `rw`.
 theorem weightTorus_conj_rootSubgroup (k : Fin 4 ⊕ Fin 4) (A : Type) [CommRing A]
     (s : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
       (SplitTorus.groupScheme ℤ (Fin 4)).X)

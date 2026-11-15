@@ -12,7 +12,6 @@ public import Mathlib.Algebra.Polynomial.FieldDivision
 public import Mathlib.LinearAlgebra.FreeModule.PID
 public import Mathlib.LinearAlgebra.Projection
 public import Mathlib.RingTheory.Polynomial.Basic
-public import TauCeti.Algebra.Module.GradedModule.HomogeneousPart
 public import TauCeti.Algebra.Module.GradedModule.Polynomial
 public import TauCeti.Algebra.Module.GradedModule.Quotient
 import TauCeti.Algebra.Module.GradedModule.DirectSum
@@ -24,7 +23,7 @@ Suppose `M` is internally integer graded over a domain `k`, is torsion-free over
 multiplication by `X` strictly lowers degree. Then its `k[X]`-torsion submodule is precisely its
 `X`-power torsion submodule, even for elements with several homogeneous components. This torsion
 submodule is homogeneous, so it and its quotient inherit gradings through
-`InternalGrading.submodule` and `InternalGrading.quotient`, after restricting scalars to `k`.
+`InternalGrading.submodule` and `InternalGrading.quotient`, as gradings by `k`-submodules.
 Over a field, finite generation gives a single power of `X` annihilating the entire torsion
 submodule; the ambient module need not be torsion.
 
@@ -55,7 +54,7 @@ namespace TauCeti.InternalGrading
 
 variable {k M : Type*} [CommRing k] [IsDomain k] [AddCommGroup M]
   [Module k M] [Module k[X] M] [IsScalarTower k k[X] M] [Module.IsTorsionFree k M]
-  {G : InternalGrading k M} {d : ℕ}
+  {G : InternalGrading k M ℤ} {d : ℕ}
 
 /-- If `X` strictly lowers degree in a module torsion-free over its coefficient domain, the
 polynomial torsion submodule equals the submodule of elements killed by powers of `X`.
@@ -72,7 +71,7 @@ theorem torsion_eq_torsion'_powers_X (hd : d ≠ 0)
     simp only [C_0, sub_zero] at hab hb
     have hb0 : b.coeff 0 ≠ 0 := fun h ↦ hb (X_dvd_iff.mpr h)
     refine ⟨⟨X ^ a.rootMultiplicity 0, ⟨a.rootMultiplicity 0, rfl⟩⟩, ?_⟩
-    apply smul_injective_of_coeff_zero_ne_zero hd hX hb0
+    apply isSMulRegular_of_coeff_zero hd hX (IsSMulRegular.of_ne_zero hb0)
     simp only [Submonoid.smul_def] at hax
     rw [hab, mul_smul, smul_comm] at hax
     simpa only [Submonoid.smul_def, smul_zero] using hax
@@ -80,8 +79,8 @@ theorem torsion_eq_torsion'_powers_X (hd : d ≠ 0)
     exact ⟨⟨X ^ n, pow_mem X_mem_nonZeroDivisors n⟩, hx⟩
 
 /-- The torsion submodule of a graded polynomial module is homogeneous if `X` strictly lowers
-degree and the module is torsion-free over its coefficient domain. In particular its scalar
-restriction is a valid input to the existing submodule and quotient grading constructors. -/
+degree and the module is torsion-free over its coefficient domain. In particular it is a valid
+input to the existing submodule and quotient grading constructors. -/
 theorem isHomogeneous_torsion (hd : d ≠ 0)
     (hX : ∀ ⦃p : ℤ⦄ ⦃x : M⦄, x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p - d)) :
     DirectSum.SetLike.IsHomogeneous G.piece (Submodule.torsion k[X] M) := by
@@ -89,16 +88,11 @@ theorem isHomogeneous_torsion (hd : d ≠ 0)
   rw [torsion_eq_torsion'_powers_X hd hX, Submodule.mem_torsion'_iff] at hx ⊢
   obtain ⟨⟨_, n, rfl⟩, hn⟩ := hx
   refine ⟨⟨X ^ n, ⟨n, rfl⟩⟩, ?_⟩
-  have hf : LinearMap.IsHomogeneous (_root_.LinearMap.lsmul k[X] M (X ^ n))
-      G.piece G.piece (-(n : ℤ) * d) := by
-    apply LinearMap.isHomogeneous_def.mpr
-    intro q y hy
-    simpa only [neg_mul, sub_eq_add_neg, _root_.LinearMap.lsmul_apply] using
-      X_pow_smul_mem_piece hX n hy
-  rw [Submonoid.smul_def] at hn
-  have key := hf.map_decompose p x
-  simpa only [Submonoid.smul_def, _root_.LinearMap.lsmul_apply, hn,
-    DirectSum.decompose_zero, DirectSum.zero_apply, ZeroMemClass.coe_zero] using key
+  rw [Submonoid.smul_def] at hn ⊢
+  have key := coe_decompose_X_pow_smul hX n (p - n * d) x
+  rw [sub_add_cancel, hn, DirectSum.decompose_zero, DirectSum.zero_apply,
+    ZeroMemClass.coe_zero] at key
+  exact key.symm
 
 end TauCeti.InternalGrading
 
@@ -106,7 +100,7 @@ namespace TauCeti.InternalGrading
 
 variable {k M : Type*} [Field k] [AddCommGroup M]
   [Module k M] [Module k[X] M] [IsScalarTower k k[X] M] [Module.Finite k[X] M]
-  {G : InternalGrading k M} {d : ℕ}
+  {G : InternalGrading k M ℤ} {d : ℕ}
 
 /-- Over a field, the torsion submodule of a finitely generated graded polynomial module is
 annihilated by one power of `X`, and equals the kernel of that power. The module itself need not
@@ -145,7 +139,7 @@ theorem torsion_eq_torsionBy_X_pow (hd : d ≠ 0)
 /-- A finitely generated polynomial module over a field admits a homogeneous complement to
 its torsion submodule when `X` strictly lowers degree. The complement is not canonical;
 no homogeneous basis is assumed or asserted. -/
-theorem exists_isCompl_torsion_of_X_smul_mem_piece (G : InternalGrading k M) (hd : d ≠ 0)
+theorem exists_isCompl_torsion_of_X_smul_mem_piece (G : InternalGrading k M ℤ) (hd : d ≠ 0)
     (hX : ∀ ⦃p : ℤ⦄ ⦃x : M⦄, x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p - d)) :
     ∃ L : Submodule k[X] M, IsCompl (Submodule.torsion k[X] M) L ∧
       DirectSum.SetLike.IsHomogeneous G.piece L := by
@@ -166,13 +160,13 @@ theorem exists_isCompl_torsion_of_X_smul_mem_piece (G : InternalGrading k M) (hd
   have hshift : ∀ ⦃p : ℤ⦄ ⦃x : M⦄,
       x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p + -(d : ℤ)) := by
     simpa only [sub_eq_add_neg] using hX
-  let e₀ := G.homogeneousPart G hshift hshift e 0
+  let e₀ := G.homogeneousPartPolynomial G hshift hshift e 0
   have hT := G.isHomogeneous_torsion hd hX
   have he₀T (x : M) : e₀ x ∈ T := by
     rw [← DirectSum.sum_support_decompose G.piece x, map_sum]
     apply T.sum_mem
-    intro p hp
-    rw [G.homogeneousPart_apply_of_mem G hshift hshift e 0
+    intro p _
+    rw [G.homogeneousPartPolynomial_apply_of_mem G hshift hshift e 0
       (DirectSum.decompose G.piece x p).property, add_zero]
     exact hT p (heT _)
   let ρ := e₀.codRestrict T he₀T
@@ -184,13 +178,13 @@ theorem exists_isCompl_torsion_of_X_smul_mem_piece (G : InternalGrading k M) (hd
     rw [map_sum]
     conv_rhs => rw [← DirectSum.sum_support_decompose G.piece (x : M)]
     apply Finset.sum_congr rfl
-    intro p hp
-    rw [G.homogeneousPart_apply_of_mem G hshift hshift e 0
+    intro p _
+    rw [G.homogeneousPartPolynomial_apply_of_mem G hshift hshift e 0
       (DirectSum.decompose G.piece (x : M) p).property, add_zero]
     rw [hefix ⟨_, hT p x.property⟩]
     exact DirectSum.decompose_of_mem_same G.piece
       (DirectSum.decompose G.piece (x : M) p).property
-  refine ⟨_root_.LinearMap.ker e₀, ?_, G.isHomogeneous_homogeneousPart G
+  refine ⟨_root_.LinearMap.ker e₀, ?_, G.isHomogeneous_homogeneousPartPolynomial G
     hshift hshift e 0 |>.isHomogeneous_ker⟩
   rw [← e₀.ker_codRestrict T he₀T]
   exact _root_.LinearMap.isCompl_of_proj hρ
@@ -203,14 +197,14 @@ section InducedGradings
 
 variable {k M : Type*} [CommRing k] [IsDomain k] [AddCommGroup M]
   [Module k M] [Module k[X] M] [IsScalarTower k k[X] M] [Module.IsTorsionFree k M]
-  (G : InternalGrading k M) {d : ℕ} (hd : d ≠ 0)
+  (G : InternalGrading k M ℤ) {d : ℕ} (hd : d ≠ 0)
   (hX : ∀ ⦃p : ℤ⦄ ⦃x : M⦄, x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p - d))
 
--- Scalar restriction preserves membership, so the standard constructors suffice.
-example : InternalGrading k ((Submodule.torsion k[X] M).restrictScalars k) :=
+-- The standard constructors accept the `k[X]`-submodule directly.
+example : InternalGrading k (Submodule.torsion k[X] M) ℤ :=
   G.submodule _ (G.isHomogeneous_torsion hd hX)
 
-example : InternalGrading k (M ⧸ (Submodule.torsion k[X] M).restrictScalars k) :=
+example : InternalGrading k (M ⧸ Submodule.torsion k[X] M) ℤ :=
   G.quotient _ (G.isHomogeneous_torsion hd hX)
 
 end InducedGradings
@@ -242,7 +236,7 @@ local notation "Q" => k[X] ⧸ Submodule.span k[X] {(X ^ 2 : k[X])}
 
 -- A positive-length torsion module with two distinct nonzero homogeneous classes.
 -- Its grading is induced on the actual module quotient, not on an alternate representation.
-private theorem quotient_X_sq_example : ∃ G : InternalGrading k Q,
+private theorem quotient_X_sq_example : ∃ G : InternalGrading k Q ℤ,
     (∀ ⦃p : ℤ⦄ ⦃x⦄, x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p - 1)) ∧
     (Submodule.Quotient.mk (1 : k[X]) : Q) ∈ G.piece 0 ∧
     (Submodule.Quotient.mk (X : k[X]) : Q) ∈ G.piece (-1) ∧
@@ -261,28 +255,18 @@ private theorem quotient_X_sq_example : ∃ G : InternalGrading k Q,
       Nat.cast_ofNat, Nat.cast_one, one_mul, sub_eq_add_neg] using
       H.X_pow_smul_mem_piece (d := 1)
         (fun _ _ hx ↦ Polynomial.X_smul_mem_negDegreeGrading_piece hx) 2 hx
-  have hI : DirectSum.SetLike.IsHomogeneous H.piece (I.restrictScalars k) := by
-    intro p y hy
-    rw [Submodule.restrictScalars_mem] at hy ⊢
+  have hI : DirectSum.SetLike.IsHomogeneous H.piece I := by
     have hr := hf.isHomogeneous_range
-    rw [_root_.LinearMap.range_toSpanSingleton] at hr
-    exact hr p hy
-  -- Transport the standard quotient grading along the scalar-restriction equivalence.
-  let e := Submodule.Quotient.restrictScalarsEquiv k I
-  let G := (H.quotient (I.restrictScalars k) hI).map e
+    rwa [_root_.LinearMap.range_toSpanSingleton] at hr
+  let G := H.quotient I hI
   have hmem (p : ℤ) (x : k[X]) (hx : x ∈ H.piece p) :
-      (Submodule.Quotient.mk x : k[X] ⧸ I) ∈ G.piece p := by
-    rw [InternalGrading.mem_map_piece_iff, Submodule.Quotient.restrictScalarsEquiv_symm_mk]
-    exact H.mk_mem_quotient_piece _ hI hx
+      (Submodule.Quotient.mk x : k[X] ⧸ I) ∈ G.piece p :=
+    H.mk_mem_quotient_piece _ hI hx
   have hX : ∀ ⦃p : ℤ⦄ ⦃x : k[X] ⧸ I⦄,
       x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p - 1) := by
     intro p x hx
-    rw [InternalGrading.mem_map_piece_iff, InternalGrading.mem_quotient_piece_iff] at hx
-    obtain ⟨y, hy, hxy⟩ := hx
-    have heq : (Submodule.Quotient.mk y : k[X] ⧸ I) = x := by
-      simpa only [e, Submodule.Quotient.restrictScalarsEquiv_mk,
-        LinearEquiv.apply_symm_apply] using congrArg e hxy
-    rw [← heq, ← Submodule.Quotient.mk_smul]
+    obtain ⟨y, hy, rfl⟩ := (H.mem_quotient_piece_iff I hI).1 hx
+    rw [← Submodule.Quotient.mk_smul]
     exact hmem _ _ (Polynomial.X_smul_mem_negDegreeGrading_piece hy)
   -- The two classes survive in distinct degrees, and multiplication by X² is zero.
   refine ⟨G, hX, hmem 0 1 ?_, hmem (-1) X ?_, ?_, ?_, ?_,
@@ -307,13 +291,13 @@ private theorem quotient_X_sq_example : ∃ G : InternalGrading k Q,
         I.smul_mem y (Submodule.mem_span_singleton_self (X ^ 2 : k[X]))
 
 -- Every element of k[X]/(X²) is torsion; the theorem still constructs the homogeneous splitting.
-example : ∃ (G : InternalGrading k Q) (L : Submodule k[X] Q),
+example : ∃ (G : InternalGrading k Q ℤ) (L : Submodule k[X] Q),
     Submodule.torsion k[X] Q = ⊤ ∧ IsCompl (Submodule.torsion k[X] Q) L ∧
       DirectSum.SetLike.IsHomogeneous G.piece L := by
   obtain ⟨G, hX, _, _, _, _, hann, _⟩ := quotient_X_sq_example k
   obtain ⟨L, hL, hhom⟩ := G.exists_isCompl_torsion_of_X_smul_mem_piece one_ne_zero hX
   refine ⟨G, L, eq_top_iff.mpr ?_, hL, hhom⟩
-  intro x hx
+  intro x _
   exact (Submodule.mem_torsion_iff x).mpr
     ⟨⟨X ^ 2, pow_mem X_mem_nonZeroDivisors 2⟩, hann x⟩
 
@@ -336,7 +320,7 @@ private instance (i : Bool) : IsScalarTower k k[X] (mixedSummand k i) := by
 private instance (i : Bool) : Module.Finite k[X] (mixedSummand k i) := by
   cases i <;> dsimp [mixedSummand] <;> infer_instance
 
-example : ∃ (G : InternalGrading k (⨁ i : Bool, mixedSummand k i))
+example : ∃ (G : InternalGrading k (⨁ i : Bool, mixedSummand k i) ℤ)
     (L : Submodule k[X] (⨁ i : Bool, mixedSummand k i)),
     IsCompl (Submodule.torsion k[X] (⨁ i : Bool, mixedSummand k i)) L ∧
       DirectSum.SetLike.IsHomogeneous G.piece L ∧
@@ -344,7 +328,7 @@ example : ∃ (G : InternalGrading k (⨁ i : Bool, mixedSummand k i))
       Submodule.torsion k[X] (⨁ i : Bool, mixedSummand k i) ≠ ⊤ := by
   classical
   obtain ⟨H, hHX, _, _, h1, _, hann, _⟩ := quotient_X_sq_example k
-  let J : ∀ i : Bool, InternalGrading k (mixedSummand k i) := fun i ↦
+  let J : ∀ i : Bool, InternalGrading k (mixedSummand k i) ℤ := fun i ↦
     match i with
     | false => Polynomial.negDegreeGrading k
     | true => H

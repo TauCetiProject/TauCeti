@@ -105,7 +105,6 @@ theorem integrable_eval_mul_gaussianEnvelope (μ : ℝ) (q : ℝ[X]) {w : ℝ≥
     integrable_withDensity_iff (measurable_gaussianPDF μ w)
       (ae_of_all _ fun _ => ENNReal.ofReal_lt_top)] at hint
   simp only [toReal_gaussianPDF] at hint
-  have hw' : (0 : ℝ) < (w : ℝ) := NNReal.coe_pos.mpr (zero_lt_iff.mpr hw)
   have hsqrt : Real.sqrt (2 * Real.pi * (w : ℝ)) ≠ 0 :=
     (Real.sqrt_pos.mpr (by positivity)).ne'
   refine (hint.const_mul (Real.sqrt (2 * Real.pi * (w : ℝ)))).congr (ae_of_all _ fun x => ?_)

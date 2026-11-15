@@ -21,6 +21,10 @@ cylinder embeds in the mapping torus and covers precisely the inverse image of t
 commuting with the projections. Thus mapping-torus presentations supply actual local product
 charts for fibering over the circle, for arbitrary topological fibres and monodromies.
 
+The fibre inclusion `MappingTorus.incl` factors through such an open cylinder, so it is an
+embedding (`MappingTorus.isEmbedding_incl`) and a homeomorphism onto the fibre over `0`
+(`MappingTorus.fiberHomeomorph`).
+
 ## References
 
 * A. Hatcher, *Algebraic Topology*, Section 2.2 (the mapping-torus construction).
@@ -55,7 +59,9 @@ theorem isOpenEmbedding_mk_Ioo (φ : F ≃ₜ F) (a : ℝ) :
   · simpa using hn.symm
   · exact Subtype.ext ht
 
-private theorem range_mk_Ioo (φ : F ≃ₜ F) (a : ℝ) :
+/-- The cylinder over `(a, a + 1)` covers precisely the part of the mapping torus lying over the
+circle cut at `a`. -/
+theorem range_mk_Ioo (φ : F ≃ₜ F) (a : ℝ) :
     range (fun p : F × Ioo a (a + 1) => mk φ p.1 p.2) =
       (((proj φ) ⁻¹' {(a : UnitAddCircle)})ᶜ : Set (MappingTorus φ)) := by
   let c := AddCircle.openPartialHomeomorphCoe (1 : ℝ) a
@@ -80,6 +86,22 @@ private theorem range_mk_Ioo (φ : F ≃ₜ F) (a : ℝ) :
     refine ⟨⟨(φ ^ n) x, ⟨s, hs⟩⟩, ?_⟩
     dsimp only
     rw [hst, mk_vadd]
+
+/-- The fibre inclusion at height zero is an embedding: it factors through the open cylinder over
+`(-1/2, 1/2)`. -/
+theorem isEmbedding_incl (φ : F ≃ₜ F) : IsEmbedding (incl φ) := by
+  have h : ⇑(incl φ) = (fun p : F × Ioo (-1 / 2 : ℝ) (-1 / 2 + 1) => mk φ p.1 p.2) ∘
+      fun x ↦ (x, ⟨0, by norm_num, by norm_num⟩) := funext (incl_apply φ)
+  rw [h]
+  exact (isOpenEmbedding_mk_Ioo φ _).isEmbedding.comp (isEmbedding_prodMkLeft _)
+
+/-- The fibre inclusion `MappingTorus.incl` is a homeomorphism onto the fibre over `0`. -/
+def fiberHomeomorph (φ : F ≃ₜ F) : F ≃ₜ fiber φ :=
+  (isEmbedding_incl φ).toHomeomorph.trans (Homeomorph.setCongr (range_incl φ))
+
+@[simp]
+theorem coe_fiberHomeomorph_apply (φ : F ≃ₜ F) (x : F) :
+    (fiberHomeomorph φ x : MappingTorus φ) = incl φ x := (rfl)
 
 /-- The cylinder over `(a, a + 1)` is homeomorphic to the part of the mapping torus
 lying over the circle cut at `a`. -/

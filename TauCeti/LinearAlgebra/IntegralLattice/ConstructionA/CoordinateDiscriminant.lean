@@ -51,7 +51,7 @@ namespace TauCeti.ConstructionA
 
 open Matrix
 
-variable (m : ℕ+) (ι : Type*) [Fintype ι]
+variable (m : ℕ) [NeZero m] (ι : Type*) [Fintype ι]
 
 /-! ## The zero-code lattice and its dual carrier -/
 
@@ -79,7 +79,7 @@ instance : (zeroLattice m ι).IsNondegenerate := by
 when `m` divides each of its coordinates. -/
 @[simp]
 theorem intCast_mem_zeroLattice_carrier_iff (z : ι → ℤ) :
-    (fun i ↦ (z i : ℚ)) ∈ (zeroLattice m ι).carrier ↔ ∀ i, ((m : ℕ) : ℤ) ∣ z i := by
+    (fun i ↦ (z i : ℚ)) ∈ (zeroLattice m ι).carrier ↔ ∀ i, (m : ℤ) ∣ z i := by
   rw [zeroLattice_carrier, intCast_mem_lattice]
   simp [funext_iff, ZMod.intCast_zmod_eq_zero_iff_dvd]
 
@@ -88,7 +88,7 @@ whole word space. -/
 @[simp]
 theorem zeroLattice_dualCarrier :
     (zeroLattice m ι).dualCarrier = lattice m (⊤ : AddSubgroup (ι → ZMod m)) := by
-  have hbot : AddSubgroup.toZModSubmodule (m : ℕ) (⊥ : AddSubgroup (ι → ZMod m)) = ⊥ := by
+  have hbot : AddSubgroup.toZModSubmodule m (⊥ : AddSubgroup (ι → ZMod m)) = ⊥ := by
     ext x
     simp
   rw [IntegralLattice.dualCarrier, zeroLattice_form, zeroLattice_carrier, dualSubmodule_lattice,
@@ -126,12 +126,12 @@ theorem coe_dualCarrierIntEquiv_apply (z : ι → ℤ) :
 
 /-- Reduction of a dual vector modulo `m`, read off its integer coordinates. -/
 private noncomputable def toCoordinate :
-    (zeroLattice m ι).dualCarrier →ₗ[ℤ] (ι → ZMod (m : ℕ)) :=
-  ((Int.castAddHom (ZMod (m : ℕ))).toIntLinearMap.compLeft ι).comp
+    (zeroLattice m ι).dualCarrier →ₗ[ℤ] (ι → ZMod m) :=
+  ((Int.castAddHom (ZMod m)).toIntLinearMap.compLeft ι).comp
     (dualCarrierIntEquiv m ι).symm.toLinearMap
 
 private theorem toCoordinate_dualCarrierIntEquiv (z : ι → ℤ) :
-    toCoordinate m ι (dualCarrierIntEquiv m ι z) = fun i ↦ ((z i : ZMod (m : ℕ))) := by
+    toCoordinate m ι (dualCarrierIntEquiv m ι z) = fun i ↦ ((z i : ZMod m)) := by
   rw [toCoordinate, LinearMap.comp_apply, LinearEquiv.coe_coe,
     LinearEquiv.symm_apply_apply]
   rfl
@@ -152,7 +152,7 @@ private theorem ker_toCoordinate :
 /-- **Reduction modulo `m` identifies the discriminant group of the zero-code lattice with the
 word space `(ℤ/m)^ι`.** -/
 noncomputable def discriminantEquiv :
-    (zeroLattice m ι).DiscriminantGroup ≃ₗ[ℤ] (ι → ZMod (m : ℕ)) :=
+    (zeroLattice m ι).DiscriminantGroup ≃ₗ[ℤ] (ι → ZMod m) :=
   (Submodule.quotEquivOfEq _ _ (ker_toCoordinate m ι).symm).trans
     ((toCoordinate m ι).quotKerEquivOfSurjective (toCoordinate_surjective m ι))
 
@@ -166,7 +166,7 @@ private theorem discriminantEquiv_mk (x : (zeroLattice m ι).dualCarrier) :
 @[simp]
 theorem discriminantEquiv_mk_intCast (z : ι → ℤ) :
     discriminantEquiv m ι (Submodule.Quotient.mk (dualCarrierIntEquiv m ι z)) =
-      fun i ↦ ((z i : ZMod (m : ℕ))) := by
+      fun i ↦ ((z i : ZMod m)) := by
   rw [discriminantEquiv_mk, toCoordinate_dualCarrierIntEquiv]
 
 /-- Reduction of a quotient representative whose underlying dual vector has integer coordinates.
@@ -175,7 +175,7 @@ theorem discriminantEquiv_mk_of_intCast (z : ι → ℤ)
     (hz : (fun i ↦ (z i : ℚ)) ∈ (zeroLattice m ι).dualCarrier) :
     discriminantEquiv m ι
         (Submodule.Quotient.mk (⟨(fun i ↦ (z i : ℚ)), hz⟩ : (zeroLattice m ι).dualCarrier)) =
-      fun i ↦ ((z i : ZMod (m : ℕ))) := by
+      fun i ↦ ((z i : ZMod m)) := by
   have hrep : (⟨(fun i ↦ (z i : ℚ)), hz⟩ : (zeroLattice m ι).dualCarrier) =
       dualCarrierIntEquiv m ι z := by
     apply Subtype.ext
@@ -186,7 +186,7 @@ theorem discriminantEquiv_mk_of_intCast (z : ι → ℤ)
 integer lift. -/
 @[simp]
 theorem discriminantEquiv_symm_intCast (z : ι → ℤ) :
-    (discriminantEquiv m ι).symm (fun i ↦ ((z i : ZMod (m : ℕ)))) =
+    (discriminantEquiv m ι).symm (fun i ↦ ((z i : ZMod m))) =
       Submodule.Quotient.mk (dualCarrierIntEquiv m ι z) :=
   (discriminantEquiv m ι).symm_apply_eq.mpr (discriminantEquiv_mk_intCast m ι z).symm
 
@@ -201,7 +201,7 @@ theorem zeroLattice_discriminantPairing_mk_intCast (z w : ι → ℤ) :
     coe_dualCarrierIntEquiv_apply, coe_dualCarrierIntEquiv_apply, form_apply, dotProduct]
 
 private theorem pairing_discriminantEquiv (x y : (zeroLattice m ι).DiscriminantGroup) :
-    ((FiniteBilinearModule.zmodStandard (m : ℕ)).coordinatePower ι).pairing
+    ((FiniteBilinearModule.zmodStandard m).coordinatePower ι).pairing
         (discriminantEquiv m ι x) (discriminantEquiv m ι y) =
       (zeroLattice m ι).discriminantBilinearModule.pairing x y := by
   induction x using Submodule.Quotient.induction_on with
@@ -219,7 +219,7 @@ private theorem pairing_discriminantEquiv (x y : (zeroLattice m ι).Discriminant
 The underlying equivalence is reduction modulo `m` of integer coordinates. -/
 noncomputable def discriminantIsometry :
     FiniteBilinearModule.Isometry (zeroLattice m ι).discriminantBilinearModule
-      ((FiniteBilinearModule.zmodStandard (m : ℕ)).coordinatePower ι) where
+      ((FiniteBilinearModule.zmodStandard m).coordinatePower ι) where
   toAddEquiv := (discriminantEquiv m ι).toAddEquiv
   map_pairing' := pairing_discriminantEquiv m ι
 
@@ -231,7 +231,7 @@ theorem discriminantIsometry_apply (x : (zeroLattice m ι).DiscriminantGroup) :
 
 /-- **Over an even modulus the zero-code lattice is even**: the code `⊥` is quadratically
 isotropic for the coordinate alphabet. -/
-theorem isEven_zeroLattice (hm : Even (m : ℕ)) : (zeroLattice m ι).IsEven := by
+theorem isEven_zeroLattice (hm : Even m) : (zeroLattice m ι).IsEven := by
   rw [zeroLattice, isEven_integralLattice_iff m hm]
   intro x hx
   rw [AddSubgroup.mem_bot.mp hx]
@@ -239,7 +239,7 @@ theorem isEven_zeroLattice (hm : Even (m : ℕ)) : (zeroLattice m ι).IsEven := 
 
 /-- **The discriminant quadratic value of the zero-code lattice is the normalized sum of squares
 of an integer lift**, `(∑ i, zᵢ²) / (2m)` modulo `ℤ`. -/
-theorem zeroLattice_discriminantQuadraticMap_mk_intCast (hm : Even (m : ℕ)) (z : ι → ℤ) :
+theorem zeroLattice_discriminantQuadraticMap_mk_intCast (hm : Even m) (z : ι → ℤ) :
     (zeroLattice m ι).discriminantQuadraticMap (isEven_zeroLattice m ι hm)
         (Submodule.Quotient.mk (dualCarrierIntEquiv m ι z)) =
       (((∑ i, (z i : ℚ) ^ 2) / (2 * m) : ℚ) : AddCircle (1 : ℚ)) := by
@@ -249,9 +249,9 @@ theorem zeroLattice_discriminantQuadraticMap_mk_intCast (hm : Even (m : ℕ)) (z
   rw [dotProduct]
   field_simp [Finset.sum_div]
 
-private theorem quadratic_discriminantEquiv (hm : Even (m : ℕ))
+private theorem quadratic_discriminantEquiv (hm : Even m)
     (x : (zeroLattice m ι).DiscriminantGroup) :
-    ((FiniteQuadraticModule.zmodStandard (m : ℕ) hm).coordinatePower ι).quadratic
+    ((FiniteQuadraticModule.zmodStandard m hm).coordinatePower ι).quadratic
         (discriminantEquiv m ι x) =
       ((zeroLattice m ι).discriminantQuadraticModule (isEven_zeroLattice m ι hm)).quadratic x := by
   induction x using Submodule.Quotient.induction_on with
@@ -259,26 +259,26 @@ private theorem quadratic_discriminantEquiv (hm : Even (m : ℕ))
     obtain ⟨z, rfl⟩ := (dualCarrierIntEquiv m ι).surjective x
     rw [IntegralLattice.discriminantQuadraticModule_quadratic,
       zeroLattice_discriminantQuadraticMap_mk_intCast m ι hm, discriminantEquiv_mk_intCast,
-      coordinatePower_zmodStandard_quadratic_intCast (m : ℕ) hm]
+      coordinatePower_zmodStandard_quadratic_intCast m hm]
 
 /-- **Over an even modulus the discriminant quadratic module of the zero-code lattice is the
 quadratic coordinate alphabet over `ℤ/m`**, in the half-norm convention. -/
-noncomputable def discriminantQuadraticIsometry (hm : Even (m : ℕ)) :
+noncomputable def discriminantQuadraticIsometry (hm : Even m) :
     FiniteQuadraticModule.Isometry
       ((zeroLattice m ι).discriminantQuadraticModule (isEven_zeroLattice m ι hm))
-      ((FiniteQuadraticModule.zmodStandard (m : ℕ) hm).coordinatePower ι) where
+      ((FiniteQuadraticModule.zmodStandard m hm).coordinatePower ι) where
   __ := discriminantEquiv m ι
   map_app' := quadratic_discriminantEquiv m ι hm
 
 @[simp]
-theorem discriminantQuadraticIsometry_apply (hm : Even (m : ℕ))
+theorem discriminantQuadraticIsometry_apply (hm : Even m)
     (x : (zeroLattice m ι).DiscriminantGroup) :
     discriminantQuadraticIsometry m ι hm x = discriminantEquiv m ι x := (rfl)
 
 /-- Forgetting the quadratic map from the even-modulus isometry recovers the bilinear
 identification of the discriminant module with the coordinate alphabet. -/
 @[simp]
-theorem discriminantQuadraticIsometry_toFiniteBilinearModule (hm : Even (m : ℕ)) :
+theorem discriminantQuadraticIsometry_toFiniteBilinearModule (hm : Even m) :
     (discriminantQuadraticIsometry m ι hm).toFiniteBilinearModule =
       discriminantIsometry m ι := by
   apply FiniteBilinearModule.Isometry.toAddEquiv_injective

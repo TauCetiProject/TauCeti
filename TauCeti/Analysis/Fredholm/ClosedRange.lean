@@ -12,10 +12,8 @@ public import TauCeti.Analysis.Fredholm.Basic
 /-!
 # Closed range from a finite-dimensional cokernel
 
-For the nonlinear-analysis substrate of the analytic Heegaard Floer roadmap (Lane F0, "Fredholm
-operators and index theory"), this file proves that the closed-range hypothesis in the definition
-of a Fredholm operator is *automatic* between Banach spaces once the cokernel is finite
-dimensional.
+This file proves that the closed-range hypothesis in the definition of a Fredholm operator is
+*automatic* between Banach spaces once the cokernel is finite dimensional.
 
 Concretely, a continuous linear map `T : E →L[𝕜] F` between complete normed spaces whose cokernel
 `F ⧸ range T` is finite dimensional already has closed range. The proof is a clean application of
@@ -53,7 +51,7 @@ namespace TauCeti
 
 open Module
 
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜] [CompleteSpace 𝕜]
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
 variable {E F : Type*}
 variable [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
 variable [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
@@ -67,14 +65,14 @@ Closedness of the range is therefore not an independent hypothesis in the Banach
 forced by finite dimensionality of the cokernel. The proof runs the Banach open mapping theorem on
 the surjection `Φ(x, n) = T x + n` from `E × N`, where `N` is a finite-dimensional algebraic
 complement of `range T`. -/
-theorem _root_.ContinuousLinearMap.isClosed_range_of_finite_coker (T : E →L[𝕜] F)
-    [FiniteDimensional 𝕜 (F ⧸ LinearMap.range (T : E →ₗ[𝕜] F))] :
+theorem _root_.ContinuousLinearMap.isClosed_range_of_finite_coker [CompleteSpace 𝕜]
+    (T : E →L[𝕜] F) [FiniteDimensional 𝕜 (F ⧸ LinearMap.range (T : E →ₗ[𝕜] F))] :
     IsClosed (LinearMap.range (T : E →ₗ[𝕜] F) : Set F) := by
   set R := LinearMap.range (T : E →ₗ[𝕜] F) with hR
   -- A finite-dimensional algebraic complement `N` of `range T`.
   obtain ⟨N, hN⟩ := R.exists_isCompl
   have : FiniteDimensional 𝕜 N := (Submodule.quotientEquivOfIsCompl R N hN).finiteDimensional
-  have : CompleteSpace N := FiniteDimensional.complete 𝕜 N
+  have : CompleteSpace N := FiniteDimensional.completeSpace 𝕜 N
   -- The auxiliary map `Φ(x, n) = T x + n`, the coproduct of `T` and the inclusion of `N`,
   -- continuous linear from the Banach space `E × N`.
   set Φ : (E × N) →L[𝕜] F := T.coprod N.subtypeL with hΦdef
@@ -112,6 +110,7 @@ theorem _root_.ContinuousLinearMap.IsFredholm.of_finite_ker_coker (T : E →L[�
     (hcoker : FiniteDimensional 𝕜 (F ⧸ LinearMap.range (T : E →ₗ[𝕜] F))) :
     ContinuousLinearMap.IsFredholm T where
   isStrictMap := by
+    have : CompleteSpace 𝕜 := by let := IsRCLikeNormedField.rclike 𝕜; infer_instance
     have hclosed := by
       have := hcoker
       exact ContinuousLinearMap.isClosed_range_of_finite_coker T
@@ -119,6 +118,7 @@ theorem _root_.ContinuousLinearMap.IsFredholm.of_finite_ker_coker (T : E →L[�
     rw [Topology.isStrictMap_iff_isQuotientMap_rangeFactorization]
     exact T.rangeRestrict.isQuotientMap Set.rangeFactorization_surjective
   isClosed_range := by
+    have : CompleteSpace 𝕜 := by let := IsRCLikeNormedField.rclike 𝕜; infer_instance
     have := hcoker
     exact ContinuousLinearMap.isClosed_range_of_finite_coker T
   finite_ker := hker

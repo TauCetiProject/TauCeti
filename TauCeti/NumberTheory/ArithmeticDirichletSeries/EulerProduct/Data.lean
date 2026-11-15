@@ -81,6 +81,12 @@ noncomputable def localPowerSeries (D : EulerProductData K)
     (P : HeightOneSpectrum (𝓞 K)) : PowerSeries ℂ :=
   D.toIdealArithmeticFunction.localPowerSeries P
 
+/-- The bundled local power series is the canonical series of its coefficient function. -/
+theorem localPowerSeries_def (D : EulerProductData K)
+    (P : HeightOneSpectrum (𝓞 K)) :
+    D.localPowerSeries P = D.toIdealArithmeticFunction.localPowerSeries P :=
+  (rfl)
+
 /-- Coefficients of the bundled local power series are the prime-power values of the data. -/
 @[simp]
 theorem coeff_localPowerSeries (D : EulerProductData K)
@@ -89,13 +95,10 @@ theorem coeff_localPowerSeries (D : EulerProductData K)
       D (P.primeIdealPow n) :=
   IdealArithmeticFunction.coeff_localPowerSeries D.toIdealArithmeticFunction P n
 
-/-- The degree-zero prime-power coefficient is one. -/
+/-- Euler-product data take the unit ideal to one. -/
 @[simp]
-theorem apply_primeIdealPow_zero (D : EulerProductData K)
-    (P : HeightOneSpectrum (𝓞 K)) : D (P.primeIdealPow 0) = 1 := by
-  have hpow : P.primeIdealPow 0 = 1 := Subtype.ext (by simp)
-  rw [hpow]
-  exact D.isMultiplicative.map_one
+theorem apply_one (D : EulerProductData K) : D 1 = 1 :=
+  D.isMultiplicative.map_one
 
 /-- The local power series has constant coefficient one. -/
 @[simp]
@@ -215,6 +218,11 @@ noncomputable instance : StarMul (EulerProductData K) where
 @[simp]
 theorem star_apply (D : EulerProductData K) (I : (Ideal (𝓞 K))⁰) :
     (star D) I = star (D I) := (rfl)
+
+/-- Conjugation of Euler-product data conjugates its underlying ideal coefficients. -/
+@[simp]
+theorem toIdealArithmeticFunction_star (D : EulerProductData K) :
+    (star D).toIdealArithmeticFunction = star D.toIdealArithmeticFunction := (rfl)
 
 /-- Restrict Euler-product data away from a set of height-one primes, leaving its
 coefficients unchanged on ideals prime to that set and setting the others to zero. -/

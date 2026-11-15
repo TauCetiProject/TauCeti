@@ -92,8 +92,13 @@ theorem StrictCohomologicalDimensionLE.corestriction_surjOn_primaryComponent (hp
   | succ n =>
     -- `Hⁿ⁺¹(U, M)` is torsion, so a preimage of `x` can be replaced by a `p`-primary one
     obtain ⟨y, rfl⟩ := h.exists_corestriction_eq hU M hx
-    exact exists_mem_primaryComponent_apply_eq (corestriction U M hU (n + 1)).hom hp
-      (isAddTorsion_continuousCohomology n y) hx
+    simpa only [← AddCommGroup.primaryComponent_toAddSubmonoid,
+      AddSubgroup.mem_toAddSubmonoid, TopModuleCat.Hom.hom, SetLike.mem_coe,
+      Set.mem_image] using
+      exists_mem_primaryComponent_apply_eq (corestriction U M hU (n + 1)).hom hp
+        (isAddTorsion_continuousCohomology n y) (by
+          simpa only [← AddCommGroup.primaryComponent_toAddSubmonoid,
+            AddSubgroup.mem_toAddSubmonoid, TopModuleCat.Hom.hom, SetLike.mem_coe] using hx)
   | zero =>
     -- `x` comes from `H⁰(G, M[p ^ k])`, whose classes are corestrictions of classes killed by
     -- `p ^ k`; corestriction is natural in the coefficients `M[p ^ k] → M`
@@ -213,10 +218,9 @@ private theorem shapiroMap_coeffMap_traceKerCover (n : ℕ)
         rfl)
     have h₂ (x : G ⧸ U) : E (ev x ≫ cj x - ev x) =
         DiscreteCoind.conj U U M x.out⁻¹ (show U.map (MulAut.conj x.out⁻¹).toMonoidHom = U from
-          Subgroup.Normal.map_conj_eq U _).ge (φ x) - φ x := by
-      rw [_root_.map_sub]
+          Subgroup.Normal.map_conj_eq U _).ge (φ x) - φ x :=
       -- As above, `ev x` and `cj x` evaluate as evaluation at `x` and conjugation, by `rfl`.
-      exact congrArg₂ (· - ·) (TopRep.comp_apply (ev x) (cj x) φ) rfl
+      (map_sub E _ _).trans (congrArg₂ (· - ·) (TopRep.comp_apply (ev x) (cj x) φ) rfl)
     exact h₁.trans ((DiscreteCoind.traceKerCover_apply U M φ).trans
       ((Finset.sum_congr rfl fun x _ => (h₂ x).symm).trans (map_sum E _ Finset.univ).symm))
   have hcoeff : coeffMap π₂ n ≫ coeffMap ι₁ n =
@@ -225,22 +229,18 @@ private theorem shapiroMap_coeffMap_traceKerCover (n : ℕ)
     simp only [Functor.map_comp, Functor.map_sum, Functor.map_sub] at h
     simp only [continuousCohomologyFunctor_map] at h
     exact h
-  -- Read the two coefficient maps as one composite (`ConcreteCategory.comp_apply`, by `rfl`), so
-  -- that `hcoeff` rewrites it.
-  change shapiroMap U M n ((coeffMap π₂ n ≫ coeffMap ι₁ n) a) = _
-  rw [hcoeff]
   -- Evaluation at `a` is additive in the morphism.
   let E : (continuousCohomology n (ofDiscreteModule ℤ G (G ⧸ U → DiscreteCoind G U M)) ⟶
       continuousCohomology n (ofDiscreteModule ℤ G (DiscreteCoind G U M))) →+
       continuousCohomology n (ofDiscreteModule ℤ G (DiscreteCoind G U M)) :=
     AddMonoidHom.mk' (fun f => f a) fun _ _ => rfl
-  rw [show (∑ x : G ⧸ U, (coeffMap (ev x) n ≫ coeffMap (cj x) n - coeffMap (ev x) n)) a =
-    E (∑ x : G ⧸ U, (coeffMap (ev x) n ≫ coeffMap (cj x) n - coeffMap (ev x) n)) from rfl,
-    map_sum, _root_.map_sum]
+  -- Read the two coefficient maps as one composite evaluated at `a` (`ConcreteCategory.comp_apply`,
+  -- by `rfl`), so that `hcoeff` rewrites it and `E` distributes over the sum.
+  change shapiroMap U M n (E (coeffMap π₂ n ≫ coeffMap ι₁ n)) = _
+  rw [hcoeff, map_sum, _root_.map_sum]
   refine Finset.sum_congr rfl fun x _ => ?_
   rw [_root_.map_sub, _root_.map_sub]
-  congr 1
-  exact (ConcreteCategory.congr_hom (shapiroMap_comp_conjNormalMap U M x.out⁻¹ n)
+  exact congrArg (· - _) (ConcreteCategory.congr_hom (shapiroMap_comp_conjNormalMap U M x.out⁻¹ n)
     (coeffMap (ev x) n a)).symm
 
 /-- **The core of NSW (3.3.11), injectivity**, under the hypothesis that `p`-primary preimages
@@ -277,7 +277,9 @@ private theorem mem_conjDiffClosure_of_isAddTorsion (hp : p.Prime) {n : ℕ}
   obtain ⟨b₀, hb₀⟩ := (S₁.longExact_exact₂ n c).1 htr
   obtain ⟨b, hbp, hbb⟩ := exists_mem_primaryComponent_apply_eq
     (coeffMap (ofDiscreteModuleMap S₁.incl.toIntLinearMap S₁.incl_equivariant) n).hom hp (hB b₀)
-    (hb₀ ▸ hcp)
+    (by simpa only [← AddCommGroup.primaryComponent_toAddSubmonoid,
+      AddSubgroup.mem_toAddSubmonoid] using hb₀ ▸ hcp)
+  rw [← AddCommGroup.primaryComponent_toAddSubmonoid, AddSubgroup.mem_toAddSubmonoid] at hbp
   -- Its connecting image is `p`-primary in degree `n + 1`, hence zero, so `b` comes from a
   -- `p`-primary class `a` of the cover.
   have hδ : S₂.delta n b = 0 := by
@@ -289,7 +291,9 @@ private theorem mem_conjDiffClosure_of_isAddTorsion (hp : p.Prime) {n : ℕ}
   obtain ⟨a₀, ha₀⟩ := (S₂.longExact_exact₃ n b).1 hδ
   obtain ⟨a, hap, haa⟩ := exists_mem_primaryComponent_apply_eq
     (coeffMap (ofDiscreteModuleMap S₂.proj.toIntLinearMap S₂.proj_equivariant) n).hom hp (hP a₀)
-    (ha₀ ▸ hbp)
+    (by simpa only [← AddCommGroup.primaryComponent_toAddSubmonoid,
+      AddSubgroup.mem_toAddSubmonoid] using ha₀ ▸ hbp)
+  rw [← AddCommGroup.primaryComponent_toAddSubmonoid, AddSubgroup.mem_toAddSubmonoid] at hap
   -- Then `y` is the sum of the differences `(σ)_* w - w` of the Shapiro images of the components.
   have hy' := shapiroMap_coeffMap_traceKerCover M hU n a
   rw [haa, ha₀, hbb, hb₀, hc] at hy'

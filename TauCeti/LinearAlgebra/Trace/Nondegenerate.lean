@@ -10,46 +10,40 @@ public import Mathlib.LinearAlgebra.Trace
 /-!
 # Nondegeneracy of the trace pairing
 
-This file records that the trace pairing on the endomorphisms of a finite free module is
-nondegenerate.
+This file records that the trace pairing `(f, g) ↦ trace (f * g)` on the endomorphisms of a
+finite free module over a commutative semiring is nondegenerate. This is the endomorphism
+counterpart of `Matrix.ext_iff_trace_mul_right`.
 
-## Main result
+## Main results
 
-* `TauCeti.LinearMap.ext_iff_trace_mul_right`: two endomorphisms are equal exactly when their
+* `LinearMap.ext_iff_trace_mul_right`: two endomorphisms are equal exactly when their
   products with every endomorphism have equal trace.
-* `TauCeti.LinearMap.eq_zero_of_trace_mul_eq_zero`: the corresponding zero criterion.
+* `LinearMap.forall_trace_mul_eq_zero_iff`: an endomorphism is zero exactly when its products
+  with every endomorphism have zero trace.
 -/
 
 public section
 
-namespace TauCeti.LinearMap
+namespace LinearMap
 
 variable {K V : Type*} [CommSemiring K] [AddCommMonoid V] [Module K V]
+  [Module.Free K V] [Module.Finite K V]
 
 /-- The trace pairing on the endomorphisms of a finite free module over a commutative semiring is
-nondegenerate. -/
-theorem ext_iff_trace_mul_right [Module.Free K V] [Module.Finite K V]
-    (f g : Module.End K V) :
-    f = g ↔ ∀ h : Module.End K V,
-      _root_.LinearMap.trace K V (f * h) = _root_.LinearMap.trace K V (g * h) := by
-  constructor
-  · rintro rfl
-    exact fun _ ↦ rfl
-  · intro h
-    let b := Module.Free.chooseBasis K V
-    apply (_root_.LinearMap.toMatrix b b).injective
-    apply Matrix.ext_iff_trace_mul_right.mpr
-    intro Y
-    have hY := h (Matrix.toLin b b Y)
-    rw [_root_.LinearMap.trace_eq_matrix_trace K b,
-      _root_.LinearMap.trace_eq_matrix_trace K b] at hY
-    simpa only [_root_.LinearMap.toMatrix_mul, _root_.LinearMap.toMatrix_toLin] using hY
+nondegenerate: two endomorphisms are equal exactly when their products with every endomorphism
+have equal trace. -/
+theorem ext_iff_trace_mul_right {f g : Module.End K V} :
+    f = g ↔ ∀ h : Module.End K V, trace K V (f * h) = trace K V (g * h) := by
+  refine ⟨fun hfg _ ↦ hfg ▸ rfl, fun hfg ↦ ?_⟩
+  let b := Module.Free.chooseBasis K V
+  refine (toMatrix b b).injective <| Matrix.ext_iff_trace_mul_right.mpr fun Y ↦ ?_
+  simpa [trace_eq_matrix_trace K b, toMatrix_mul] using hfg (Matrix.toLin b b Y)
 
-/-- An endomorphism whose product with every endomorphism has zero trace is zero. -/
-theorem eq_zero_of_trace_mul_eq_zero [Module.Free K V] [Module.Finite K V]
-    (f : Module.End K V)
-    (h : ∀ g : Module.End K V, _root_.LinearMap.trace K V (f * g) = 0) : f = 0 := by
-  rw [ext_iff_trace_mul_right]
-  simpa using h
+/-- An endomorphism of a finite free module is zero exactly when its products with every
+endomorphism have zero trace. -/
+@[simp]
+theorem forall_trace_mul_eq_zero_iff {f : Module.End K V} :
+    (∀ g : Module.End K V, trace K V (f * g) = 0) ↔ f = 0 := by
+  simp [ext_iff_trace_mul_right (g := 0)]
 
-end TauCeti.LinearMap
+end LinearMap

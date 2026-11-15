@@ -212,7 +212,8 @@ theorem gradedLieHom_id :
 
 /-- The graded Lie homomorphism of a composite is the composite of the graded Lie homomorphisms:
 the graded Lie ring is a functor. -/
-@[simp]
+-- Not `@[simp]`: on the left-hand side `hg` and `hf` occur only inside the proof `hg.comp hf`,
+-- so `simp` cannot instantiate them.
 theorem gradedLieHom_comp (g : H →* K) (hg : Continuous g) (f : G →* H) (hf : Continuous f) :
     gradedLieHom p (g.comp f) (hg.comp hf) = (gradedLieHom p g hg).comp (gradedLieHom p f hf) := by
   refine LieHom.ext fun x => ?_

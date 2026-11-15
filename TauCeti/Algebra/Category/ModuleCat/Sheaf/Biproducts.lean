@@ -5,15 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Colimits
+public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Limits
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
 
 /-!
 # Finite biproducts of sheaves of modules
 
-Sheaves of modules over a sheaf of rings form a preadditive category with finite coproducts, so
-they have finite biproducts. These biproducts provide the finite direct sums used to construct
-finite free sheaves and their monoidal duality.
+Sheaves of modules over a sheaf of rings form a preadditive category with finite limits, so
+they have finite biproducts. No sheafification hypotheses are needed: finite products of sheaves
+of modules are computed sectionwise. These biproducts provide the finite direct sums used to
+construct finite free sheaves and their monoidal duality.
 
 ## Main declaration
 
@@ -26,17 +27,16 @@ open CategoryTheory Limits
 
 namespace TauCeti
 
-universe u v₁ u₁
+universe v u v₁ u₁
 
 namespace SheafOfModules
 
 variable {C : Type u₁} [Category.{v₁} C] {J : GrothendieckTopology C} (R : Sheaf J RingCat.{u})
-  [HasWeakSheafify J AddCommGrpCat.{u}] [J.WEqualsLocallyBijective AddCommGrpCat.{u}]
 
 /-- Sheaves of modules have finite biproducts, since they form a preadditive category with finite
-coproducts. -/
-instance hasFiniteBiproducts : HasFiniteBiproducts (SheafOfModules.{u} R) :=
-  .of_hasFiniteCoproducts
+products. -/
+instance hasFiniteBiproducts : HasFiniteBiproducts (SheafOfModules.{v} R) :=
+  .of_hasFiniteProducts
 
 end SheafOfModules
 

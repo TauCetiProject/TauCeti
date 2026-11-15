@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Algebra.DirectSum.FiniteSupport
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Map
-public import TauCeti.CategoryTheory.AInfinity.Basic
+public import TauCeti.Algebra.Homology.AInfinity.Algebra.Unit
+public import TauCeti.CategoryTheory.AInfinity.Unit
 
 /-!
 # The one-object A-infinity category of an A-infinity algebra
@@ -35,6 +36,9 @@ differential and composition are `m₁` and `m₂` of `𝒜`.
 * `TauCeti.AInfinitySingleObj.homDifferential_aInfinityCategory` and
   `TauCeti.AInfinitySingleObj.comp_aInfinityCategory`: its differential and composition are `m₁`
   and `m₂`.
+* `TauCeti.AInfinitySingleObj.strictUnit` and
+  `TauCeti.AInfinitySingleObj.algebraStrictUnit`: strict units of the algebra and its one-object
+  category determine one another.
 
 ## References
 
@@ -130,6 +134,18 @@ theorem coe_pathOperation_aInfinityCategory_apply {n : ℕ} (X : Fin (n + 1) →
   obtain rfl : X = fun _ ↦ star 𝒜 := funext fun _ ↦ Subsingleton.elim _ _
   simp [AInfinityCategory.coe_pathOperation_apply, toAInfinityAlgebra_aInfinityCategory]
 
+/-- On an arbitrary string of endomorphisms, the total operation of the one-object category,
+projected to its Hom module, is the original algebra operation. -/
+@[simp]
+theorem homProjection_m_homInclusion_aInfinityCategory {n : ℕ}
+    (X : Fin (n + 1) → AInfinitySingleObj 𝒜) (f : Fin n → A) :
+    homProjection (R := R) (X 0) (X (Fin.last n))
+        ((aInfinityCategory 𝒜).m n fun i ↦
+          homInclusion (X i.rev.castSucc) (X i.rev.succ) (f i)) = 𝒜.m n f := by
+  obtain rfl : X = fun _ ↦ star 𝒜 := funext fun _ ↦ Subsingleton.elim _ _
+  simp only [toAInfinityAlgebra_aInfinityCategory, AInfinityAlgebra.map_m_apply,
+    totalHomEquiv_apply, totalHomEquiv_symm_apply, homProjection_homInclusion]
+
 /-- The differential of the one-object `A∞` category is the unary operation of the algebra. -/
 @[simp]
 theorem homDifferential_aInfinityCategory (X Y : AInfinitySingleObj 𝒜) (a : A) :
@@ -157,6 +173,64 @@ theorem comp_aInfinityCategory (X Y Z : AInfinitySingleObj 𝒜) (a b : A) :
   congr 1
   funext i
   fin_cases i <;> simp
+
+/-! ### Strict units -/
+
+/-- A strict unit of an `A∞` algebra gives the constant family of strict identities in its
+one-object `A∞` category. -/
+theorem strictUnit {e : A} (h : 𝒜.StrictUnit e) :
+    (aInfinityCategory 𝒜).StrictUnit (fun _ ↦ e) where
+  degree_zero _ := h.degree_zero
+  binary_left X Y f := by
+    rw [comp_aInfinityCategory]
+    exact h.binary_left f
+  binary_right X Y f := by
+    rw [comp_aInfinityCategory]
+    exact h.binary_right f
+  higher n hn x hx := by
+    rw [toAInfinityAlgebra_aInfinityCategory, AInfinityAlgebra.map_m_apply]
+    rw [h.higher n hn (fun i ↦ (totalHomEquiv 𝒜).symm (x i))]
+    · exact map_zero (totalHomEquiv 𝒜)
+    · obtain ⟨i, X, hi⟩ := hx
+      refine ⟨i, ?_⟩
+      rw [hi]
+      obtain rfl := Subsingleton.elim X (star 𝒜)
+      simpa only [totalHomEquiv_apply] using (totalHomEquiv 𝒜).symm_apply_apply e
+
+/-- A strict identity family in the one-object `A∞` category gives a strict unit of the
+underlying `A∞` algebra. -/
+theorem algebraStrictUnit
+    {e : ∀ X : AInfinitySingleObj 𝒜, homModule (R := R) X X}
+    (h : (aInfinityCategory 𝒜).StrictUnit e) : 𝒜.StrictUnit (e (star 𝒜)) where
+  degree_zero := h.degree_zero (star 𝒜)
+  binary_left x := by
+    simpa only [comp_aInfinityCategory] using h.binary_left (star 𝒜) (star 𝒜) x
+  binary_right x := by
+    simpa only [comp_aInfinityCategory] using h.binary_right (star 𝒜) (star 𝒜) x
+  higher n hn x hx := by
+    have hzero := h.higher n hn (fun i ↦ totalHomEquiv 𝒜 (x i))
+      (by
+        obtain ⟨i, hi⟩ := hx
+        refine ⟨i, star 𝒜, ?_⟩
+        rw [hi, totalHomEquiv_apply])
+    rw [toAInfinityAlgebra_aInfinityCategory, AInfinityAlgebra.map_m_apply] at hzero
+    have hx' : (fun i ↦ (totalHomEquiv 𝒜).symm (totalHomEquiv 𝒜 (x i))) = x := by
+      funext i
+      exact (totalHomEquiv 𝒜).symm_apply_apply (x i)
+    rw [hx'] at hzero
+    exact (totalHomEquiv 𝒜).injective (by simpa only [map_zero] using hzero)
+
+/-- An `A∞` algebra is strictly unital exactly when its one-object `A∞` category is strictly
+unital. -/
+@[simp]
+theorem strictlyUnital_aInfinityCategory_iff :
+    (aInfinityCategory 𝒜).StrictlyUnital ↔ ∃ e : A, 𝒜.StrictUnit e := by
+  unfold AInfinityCategory.StrictlyUnital
+  constructor
+  · rintro ⟨e, he⟩
+    exact ⟨e (star 𝒜), algebraStrictUnit 𝒜 he⟩
+  · rintro ⟨e, he⟩
+    exact ⟨fun _ ↦ e, strictUnit 𝒜 he⟩
 
 end AInfinitySingleObj
 

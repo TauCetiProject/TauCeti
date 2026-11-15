@@ -22,7 +22,8 @@ The result is packaged as a *normalized cusp datum* `Subgroup.CuspDatum`: a cusp
 generator of the full stabilizer, and a positive width with the conjugation formula. Such a datum
 records exactly the choices from which cusp neighbourhoods and the `q`-coordinate
 `exp (2 * π * I * σ z / w)` are built. The width is not an invariant of the cusp alone; it depends
-on the scaling, and the datum is unique once the cusp and the scaling are fixed.
+on the scaling, and the datum is unique once the scaling is fixed (the scaling determines the
+cusp).
 
 ## Main declarations
 
@@ -30,10 +31,11 @@ on the scaling, and the datum is unique once the cusp and the scaling are fixed.
 * `Subgroup.CuspDatum.cusp_eq_of_scaling_eq`: cusp data with equal scalings have equal cusps.
 * `Subgroup.CuspDatum.mem_stabilizer_iff_conj`: the conjugated stabilizer of the cusp is exactly
   the group of translations by `width * ℤ`.
-* `Subgroup.CuspDatum.ext`: a cusp datum is determined by its cusp and
-  scaling.
+* `Subgroup.CuspDatum.ext`: a cusp datum is determined by its scaling.
 * `Subgroup.IsCuspPoint.exists_cuspDatum`: for a discrete `Γ`, every cusp point and every scaling
   sending it to `∞` carry a cusp datum.
+* `Subgroup.commute_of_smul_parabolicFixedPoint`: for a discrete `Γ`, an element fixing the fixed
+  point of a parabolic element commutes with it.
 
 ## References
 
@@ -91,7 +93,7 @@ private theorem exists_pos_zmultiples_eq_cuspPeriods [DiscreteTopology Γ] {c : 
     rw [mem_cuspPeriods, ← hpx]
     simp [mul_assoc]
   have := discreteTopology_cuspPeriods (Γ := Γ) σ
-  have := AddSubgroup.discrete_iff_addCyclic.mpr this
+  have := AddSubgroup.isAddCyclic_iff_discreteTopology.mpr this
   have : Nontrivial (cuspPeriods Γ σ) := ⟨⟨⟨x, hxP⟩, 0, fun h ↦ hx (congrArg Subtype.val h)⟩⟩
   obtain ⟨a, ha, haP⟩ := LinearOrderedAddCommGroup.Subgroup.exists_neg_generator
     (cuspPeriods Γ σ)
@@ -139,7 +141,7 @@ private theorem mem_stabilizer_iff_of_zmultiples_eq_cuspPeriods {c : OnePoint �
       have h := hconj w
       rw [← hm', hm1, Int.cast_one, one_mul, mul_inv_eq_iff_eq_mul] at h
       exact h
-    obtain ⟨y, hy⟩ := exists_eq_upperRightHom_of_commute hfix hw.ne' hcomm
+    obtain ⟨y, hy⟩ := exists_eq_upperRightHom_of_commute hw.ne' hcomm
     have hyP : y ∈ cuspPeriods Γ σ := by
       rw [mem_cuspPeriods, ← hy]
       simp [mul_assoc]
@@ -159,7 +161,7 @@ of `cusp` in `Γ`, and a positive `width` such that `σ * generator * σ⁻¹` i
 full stabilizer with the translations by `width * ℤ`
 (`Subgroup.CuspDatum.mem_stabilizer_iff_conj`).
 
-The width depends on the scaling and not only on the cusp; given the cusp and the scaling, the
+The width depends on the scaling and not only on the cusp; given the scaling, the
 datum is unique (`Subgroup.CuspDatum.ext`). In particular a proper power
 of the generator, although also conjugate to a positive translation, never forms a cusp datum.
 For a discrete `Γ`, every cusp point and every scaling sending it to `∞` carry a cusp datum
@@ -231,6 +233,16 @@ theorem cuspOrbit_eq_iff (D' : Γ.CuspDatum) :
 theorem mem_stabilizer_iff {g : Γ} : g ∈ stabilizer Γ D.cusp ↔ ∃ n : ℤ, D.generator ^ n = g := by
   rw [← D.zpowers_generator, mem_zpowers_iff]
 
+/-- Every nonidentity element of the stabilizer of a normalized cusp is parabolic. -/
+theorem isParabolic_of_mem_stabilizer_of_ne_one {g : Γ}
+    (hg : g ∈ stabilizer Γ D.cusp) (h1 : g ≠ 1) : IsParabolic (g : PSL(2, ℝ)) := by
+  obtain ⟨k, rfl⟩ := D.mem_stabilizer_iff.mp hg
+  have hk0 : k ≠ 0 := by
+    intro hk0
+    exact h1 (by simp [hk0])
+  rw [Subgroup.coe_zpow]
+  exact D.isParabolic_generator.zpow hk0
+
 /-- Conjugation by the scaling sends the `n`-th power of the generator to translation by
 `n * width`. -/
 @[simp]
@@ -260,12 +272,12 @@ theorem mem_stabilizer_iff_conj {g : Γ} :
   rw [MulAut.conj_apply, MulAut.conj_apply, Subgroup.coe_zpow,
     D.scaling_mul_generator_zpow_mul_inv, hn]
 
-/-- **Uniqueness of normalized cusp data.** A cusp datum is determined by its cusp and its
-scaling: the width is then the positive generator of the conjugated stabilizer, and the
-generator is the corresponding element of `Γ`. -/
+/-- **Uniqueness of normalized cusp data.** A cusp datum is determined by its scaling, which
+determines its cusp: the width is then the positive generator of the conjugated stabilizer, and
+the generator is the corresponding element of `Γ`. -/
 @[ext]
-theorem ext {D D' : Γ.CuspDatum} (hc : D.cusp = D'.cusp)
-    (hσ : D.scaling = D'.scaling) : D = D' := by
+theorem ext {D D' : Γ.CuspDatum} (hσ : D.scaling = D'.scaling) : D = D' := by
+  have hc : D.cusp = D'.cusp := cusp_eq_of_scaling_eq D D' hσ
   obtain ⟨n, hn⟩ := D.mem_stabilizer_iff_conj.mp (hc ▸ D'.generator_mem_stabilizer)
   obtain ⟨m, hm⟩ := D'.mem_stabilizer_iff_conj.mp (hc ▸ D.generator_mem_stabilizer)
   rw [hσ, D'.scaling_mul_generator_mul_inv] at hn
@@ -334,6 +346,20 @@ theorem IsCuspPoint.exists_cuspDatum_cusp_eq [DiscreteTopology Γ] {c : OnePoint
   obtain ⟨σ, hσ⟩ := MulAction.exists_smul_eq PSL(2, ℝ) c ∞
   obtain ⟨D, hD, -⟩ := hc.exists_cuspDatum hσ
   exact ⟨D, hD⟩
+
+/-- In a discrete subgroup of `PSL(2, ℝ)`, an element fixing the fixed point of a parabolic element
+commutes with it: both lie in the stabilizer of that cusp, which is infinite cyclic. -/
+theorem commute_of_smul_parabolicFixedPoint [DiscreteTopology Γ] {g h : PSL(2, ℝ)} (hg : g ∈ Γ)
+    (hh : h ∈ Γ) (hpar : IsParabolic g)
+    (hhg : h • parabolicFixedPoint g = parabolicFixedPoint g) : Commute g h := by
+  obtain ⟨D, hD⟩ := (isCuspPoint_iff_exists_parabolicFixedPoint_eq.2
+    ⟨⟨g, hg⟩, hpar, rfl⟩).exists_cuspDatum_cusp_eq
+  obtain ⟨m, hm⟩ := (D.mem_stabilizer_iff (g := ⟨g, hg⟩)).1
+    (mem_stabilizer_iff.2 (by rw [hD]; exact hpar.smul_parabolicFixedPoint))
+  obtain ⟨n, hn⟩ := (D.mem_stabilizer_iff (g := ⟨h, hh⟩)).1
+    (mem_stabilizer_iff.2 (by rw [hD]; exact hhg))
+  exact congrArg Subtype.val (hm ▸ hn ▸ Commute.zpow_zpow_self D.generator m n :
+    Commute (⟨g, hg⟩ : Γ) ⟨h, hh⟩).eq
 
 /-- Every cusp orbit of a discrete subgroup of `PSL(2, ℝ)` is represented by a cusp datum. -/
 theorem CuspDatum.cuspOrbit_surjective [DiscreteTopology Γ] :

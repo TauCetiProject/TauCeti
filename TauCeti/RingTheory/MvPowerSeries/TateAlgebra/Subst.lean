@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Coefficients
+public import TauCeti.RingTheory.MvPowerSeries.Basic
 public import Mathlib.RingTheory.MvPowerSeries.Substitution
 public import TauCeti.RingTheory.MvPolynomial.NormCoeff
 
@@ -23,23 +24,25 @@ Renamings of the variables are the simplest examples. The triangular substitutio
 `Xᵢ ↦ Xᵢ + Yᵅⁱ` used to make a restricted series distinguished in one variable are the examples
 this file is written for.
 
-The constant terms are required to vanish because the formal substitution is only defined for
-such families. Evaluating a Tate algebra at arbitrary elements of norm at most `1` requires the
-completeness of the target and is not treated here.
+Vanishing constant terms ensure that the formal substitution is defined. Evaluating a Tate algebra
+at arbitrary elements of norm at most `1` requires the completeness of the target and is not treated
+here.
 
 ## Main results
 
 * `MvPowerSeries.hasSubst_coe`: polynomials without constant term in finitely many variables
-  form a substitutable family, and `MvPolynomial.coe_finsuppProd_pow`: the coercion to power
-  series commutes with the products of powers that appear in the coefficients of a
-  substitution.
+  form a substitutable family.
 * `MvPowerSeries.norm_coeff_subst_le`: each coefficient of a substitution is bounded by the
-  supremum of the terms contributing to it, in any ultrametric normed commutative ring.
+  supremum of the terms contributing to it, in any ultrametric seminormed commutative ring.
 * `MvPowerSeries.norm_coeff_subst_coe_le` and `MvPowerSeries.norm_coeff_subst_coe_sub_le`: for a
   substitution of unit-ball polynomials, a coefficient is controlled by the coefficients of the
   substituted series at the exponents contributing to it, possibly after isolating one of them.
 * `MvPowerSeries.IsRestricted.subst`: substitution of unit-ball polynomials without constant
   term preserves unit-radius restrictedness.
+* `MvPowerSeries.IsRestricted.subst_of_totalDegree_le`: at constant radii, such a substitution
+  of polynomials of total degree at most `A` carries series restricted at `ρ` to series
+  restricted at any `ρ' ≥ 1` with `ρ' ^ A ≤ ρ`. This is what lets the substitution act on
+  overconvergent series.
 * `MvPowerSeries.restrictedSubst`: the resulting `R`-algebra homomorphism of Tate algebras, and
   `MvPowerSeries.norm_restrictedSubst_le`: it does not increase the Gauss norm.
 * `MvPowerSeries.restrictedSubstEquiv`: two mutually inverse substitutions give an
@@ -62,13 +65,6 @@ section CommRing
 
 variable {σ τ R : Type*} [CommRing R]
 
-/-- The coercion of polynomials to power series commutes with products of powers. -/
-theorem _root_.MvPolynomial.coe_finsuppProd_pow (a : σ → MvPolynomial τ R) (d : σ →₀ ℕ) :
-    ((d.prod fun s n ↦ a s ^ n : MvPolynomial τ R) : MvPowerSeries τ R) =
-      d.prod fun s n ↦ (a s : MvPowerSeries τ R) ^ n := by
-  simp only [Finsupp.prod, ← MvPolynomial.coe_pow]
-  exact map_prod (MvPolynomial.coeToMvPowerSeries.ringHom (σ := τ) (R := R)) _ _
-
 /-- Polynomials without constant term form a substitutable family over finitely many
 variables. -/
 theorem hasSubst_coe [Finite σ] {a : σ → MvPolynomial τ R}
@@ -80,7 +76,9 @@ theorem hasSubst_coe [Finite σ] {a : σ → MvPolynomial τ R}
 
 end CommRing
 
-variable {σ τ R : Type*} [NormedCommRing R] [IsUltrametricDist R]
+section SeminormedCommRing
+
+variable {σ τ R : Type*} [SeminormedCommRing R] [IsUltrametricDist R]
 
 /-- **Ultrametric bound for the coefficients of a substitution.** The coefficient of a
 substitution is a finite sum of the products `coeff d f * coeff e (∏ₛ (a s) ^ (d s))`, so it is
@@ -91,12 +89,6 @@ theorem norm_coeff_subst_le {a : σ → MvPowerSeries τ R} (ha : HasSubst a)
     ‖coeff e (subst a f)‖ ≤ r := by
   rw [coeff_subst ha, finsum_eq_sum _ (coeff_subst_finite ha f e)]
   exact IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg hr fun d _ ↦ h d
-
-omit [IsUltrametricDist R] in
-/-- Restrictedness at the unit radius is convergence of the coefficient norms to zero. -/
-theorem isRestricted_one_iff {f : MvPowerSeries σ R} :
-    IsRestricted (fun _ ↦ 1) f ↔ Tendsto (fun t ↦ ‖coeff t f‖) cofinite (𝓝 0) := by
-  simp [IsRestricted]
 
 variable [NormOneClass R]
 
@@ -112,8 +104,9 @@ theorem norm_coeff_subst_coe_le [Finite σ] {a : σ → MvPolynomial τ R}
   rw [← MvPolynomial.coe_finsuppProd_pow, MvPolynomial.coeff_coe]
   by_cases hd : (d.prod fun s n ↦ a s ^ n).coeff e = 0
   · simp [hd, hr]
-  · exact (norm_mul_le _ _).trans <| (mul_le_of_le_one_right (norm_nonneg _)
-      (TauCeti.MvPolynomial.norm_coeff_prod_pow_le_one ha₁ d e)).trans (h d hd)
+  · have hprod : ‖(d.prod fun s n ↦ a s ^ n).coeff e‖ ≤ 1 := by
+      simpa using MvPolynomial.norm_coeff_prod_pow_le (r := 1) norm_one.le d (fun s _ ↦ ha₁ s) e
+    exact (norm_mul_le _ _).trans <| (mul_le_of_le_one_right (norm_nonneg _) hprod).trans (h d hd)
 
 /-- **Isolating one term of a substitution.** Up to the contribution
 `coeff ν f * coeff e (∏ₛ (a s) ^ (ν s))` of a single exponent `ν`, a coefficient of a substitution
@@ -139,6 +132,56 @@ theorem norm_coeff_subst_coe_sub_le [Finite σ] {a : σ → MvPolynomial τ R}
     simp [hr]
   · simpa [coeff_monomial_ne hdν] using h d hdν hd
 
+end SeminormedCommRing
+
+variable {σ τ R : Type*} [NormedCommRing R] [IsUltrametricDist R]
+
+variable [NormOneClass R]
+
+/-- **Substitution of unit-ball polynomials at constant radii.** Let finitely many polynomials
+without constant term have all coefficients of norm at most `1` and total degree at most `A`. If
+`1 ≤ ρ'` and `ρ' ^ A ≤ ρ`, then substituting them into a series restricted at the constant radius
+`ρ` gives a series restricted at the constant radius `ρ'`. -/
+theorem IsRestricted.subst_of_totalDegree_le [Finite σ] {a : σ → MvPolynomial τ R}
+    (ha₀ : ∀ s, (a s).constantCoeff = 0) (ha₁ : ∀ s t, ‖(a s).coeff t‖ ≤ 1) {A : ℕ}
+    (hA : ∀ s, (a s).totalDegree ≤ A) {ρ ρ' : ℝ} (hρ' : 1 ≤ ρ') (hρ : ρ' ^ A ≤ ρ)
+    {f : MvPowerSeries σ R} (hf : IsRestricted (fun _ ↦ ρ) f) :
+    IsRestricted (fun _ ↦ ρ') (f.subst fun s ↦ (a s : MvPowerSeries τ R)) := by
+  classical
+  rw [isRestricted_const_iff] at hf ⊢
+  have hρ'0 : 0 < ρ' := zero_lt_one.trans_le hρ'
+  -- An exponent `e` receives contributions only from exponents `d` with `|e| ≤ A |d|`.
+  have hdeg (d : σ →₀ ℕ) (e : τ →₀ ℕ) (he : (d.prod fun s n ↦ a s ^ n).coeff e ≠ 0) :
+      ρ' ^ e.degree ≤ ρ ^ d.degree := by
+    have hle : e.degree ≤ A * d.degree := by
+      refine (MvPolynomial.le_totalDegree (MvPolynomial.mem_support_iff.mpr he)).trans
+        ((MvPolynomial.totalDegree_finsetProd _ _).trans ?_)
+      rw [Finsupp.degree_apply, Finset.mul_sum]
+      exact Finset.sum_le_sum fun s _ ↦ (MvPolynomial.totalDegree_pow _ _).trans
+        (by rw [mul_comm]; exact Nat.mul_le_mul_right _ (hA s))
+    calc ρ' ^ e.degree ≤ ρ' ^ (A * d.degree) := pow_le_pow_right₀ hρ' hle
+      _ = (ρ' ^ A) ^ d.degree := pow_mul _ _ _
+      _ ≤ ρ ^ d.degree := pow_le_pow_left₀ (by positivity) hρ _
+  refine tendsto_order.mpr ⟨fun b hb ↦ .of_forall fun e ↦ hb.trans_le (by positivity),
+    fun ε hε ↦ ?_⟩
+  -- Only the finitely many large weighted coefficients of `f` can produce a large weighted
+  -- coefficient, and each of them contributes through a polynomial with finite support.
+  have hB : {d | ε / 2 ≤ ‖coeff d f‖ * ρ ^ d.degree}.Finite := by
+    simpa [eventually_cofinite, not_lt] using hf.eventually (gt_mem_nhds (half_pos hε))
+  have hE : (⋃ d ∈ {d | ε / 2 ≤ ‖coeff d f‖ * ρ ^ d.degree},
+      ((d.prod fun s n ↦ a s ^ n : MvPolynomial τ R).support : Set (τ →₀ ℕ))).Finite :=
+    hB.biUnion fun d _ ↦ Finset.finite_toSet _
+  filter_upwards [hE.compl_mem_cofinite] with e he
+  have hpos : 0 < ρ' ^ e.degree := pow_pos hρ'0 _
+  refine lt_of_le_of_lt ?_ (half_lt_self hε)
+  rw [← le_div_iff₀ hpos]
+  refine norm_coeff_subst_coe_le ha₀ ha₁ f e (by positivity) fun d hd ↦ ?_
+  have hsmall : ‖coeff d f‖ * ρ ^ d.degree < ε / 2 := by
+    by_contra hlt
+    exact he (Set.mem_iUnion₂.mpr ⟨d, le_of_not_gt hlt, MvPolynomial.mem_support_iff.mpr hd⟩)
+  rw [le_div_iff₀ hpos]
+  exact ((mul_le_mul_of_nonneg_left (hdeg d e hd) (norm_nonneg _))).trans hsmall.le
+
 /-- **Substitution of unit-ball polynomials preserves restrictedness.** If finitely many
 polynomials without constant term have all coefficients of norm at most `1`, then substituting
 them into a unit-radius restricted series gives a unit-radius restricted series. -/
@@ -146,22 +189,8 @@ theorem IsRestricted.subst [Finite σ] {a : σ → MvPolynomial τ R}
     (ha₀ : ∀ s, (a s).constantCoeff = 0) (ha₁ : ∀ s t, ‖(a s).coeff t‖ ≤ 1)
     {f : MvPowerSeries σ R} (hf : IsRestricted (fun _ ↦ 1) f) :
     IsRestricted (fun _ ↦ 1) (f.subst fun s ↦ (a s : MvPowerSeries τ R)) := by
-  classical
-  rw [isRestricted_one_iff] at hf ⊢
-  refine tendsto_order.mpr ⟨fun b hb ↦ .of_forall fun e ↦ hb.trans_le (norm_nonneg _),
-    fun ε hε ↦ ?_⟩
-  -- Only the finitely many large coefficients of `f` can produce a large coefficient, and each
-  -- of them contributes through a polynomial with finite support.
-  have hB : {d | ε / 2 ≤ ‖coeff d f‖}.Finite := by
-    simpa [eventually_cofinite, not_lt] using hf.eventually (gt_mem_nhds (half_pos hε))
-  have hE : (⋃ d ∈ {d | ε / 2 ≤ ‖coeff d f‖},
-      ((d.prod fun s n ↦ a s ^ n : MvPolynomial τ R).support : Set (τ →₀ ℕ))).Finite :=
-    hB.biUnion fun d _ ↦ Finset.finite_toSet _
-  filter_upwards [hE.compl_mem_cofinite] with e he
-  refine (norm_coeff_subst_coe_le ha₀ ha₁ f e (half_pos hε).le fun d hd ↦ ?_).trans_lt
-    (half_lt_self hε)
-  by_contra hlt
-  exact he (Set.mem_biUnion (le_of_not_ge hlt) (MvPolynomial.mem_support_iff.mpr hd))
+  obtain ⟨A, hA⟩ := (Set.finite_range fun s ↦ (a s).totalDegree).bddAbove
+  exact hf.subst_of_totalDegree_le ha₀ ha₁ (fun s ↦ hA ⟨s, rfl⟩) le_rfl (one_pow A).le
 
 variable [Finite σ] (a : σ → MvPolynomial τ R) (ha₀ : ∀ s, (a s).constantCoeff = 0)
   (ha₁ : ∀ s t, ‖(a s).coeff t‖ ≤ 1)
@@ -189,7 +218,7 @@ theorem coe_restrictedSubst (f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1
 /-- Substitution of unit-ball polynomials does not increase the Gauss norm. -/
 theorem norm_restrictedSubst_le (f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) :
     ‖restrictedSubst a ha₀ ha₁ f‖ ≤ ‖f‖ := by
-  rw [norm_le_iff (norm_nonneg _)]
+  rw [norm_le_iff]
   intro e
   simp only [one_pow, Finsupp.prod_fun_one, mul_one, coe_restrictedSubst]
   refine norm_coeff_subst_coe_le ha₀ ha₁ _ e (norm_nonneg _) fun d _ ↦ ?_

@@ -8,6 +8,9 @@ module
 public import Mathlib.Topology.Clopen
 public import Mathlib.Topology.Covering.Basic
 
+import TauCeti.Topology.Covering.Comp
+import TauCeti.Topology.Covering.Homeomorph
+
 /-!
 # Covering maps and clopen sets
 
@@ -20,7 +23,9 @@ fibre.
 Openness alone is not enough: for `s` open but not closed, a point of `frontier s` has every
 neighbourhood meeting `s`, so no neighbourhood of it is evenly covered by a surjection onto `s`.
 Mathlib's `IsCoveringMap` allows empty fibres, which is exactly what makes the clopen statement
-work without assuming `p` surjective or `s = X`.
+work without assuming `p` surjective or `s = X`. In particular the inclusion of a clopen subset is
+a covering map, so a covering map with finite fibres restricts to a covering map on every clopen
+subset of its domain, such as a connected component of a locally connected total space.
 
 The number of points in a fibre of a covering map is locally constant: an evenly covered
 neighbourhood identifies the fibres over all of its points. So for any type `α`, the set of points
@@ -30,6 +35,8 @@ whose fibre is in bijection with `α` is clopen.
 
 * `IsCoveringMap.subtypeVal_comp`: the composite of a covering map onto a clopen
   subspace with the subspace inclusion is a covering map.
+* `IsCoveringMap.domRestrict_of_isClopen`: the restriction of a covering map with finite fibres to a
+  clopen subset of its domain is a covering map.
 * `IsCoveringMap.isClopen_setOf_nonempty_fiber_equiv`: the points whose fibre is in bijection
   with a given type form a clopen set.
 * `IsCoveringMap.nonempty_fiber_equiv`: over a preconnected base all fibres are in bijection, and
@@ -39,14 +46,14 @@ whose fibre is in bijection with `α` is clopen.
 
 public section
 
-namespace TauCeti
+namespace IsCoveringMap
 
 variable {E X : Type*} [TopologicalSpace E] [TopologicalSpace X] {s : Set X}
 
 /-- **A covering map onto a clopen subspace is a covering map into the ambient space.** Points of
 `s` inherit their evenly covered neighbourhoods through the open inclusion, and points outside
 `s` are evenly covered by `sᶜ` with empty fibre. -/
-theorem _root_.IsCoveringMap.subtypeVal_comp {p : E → s} (hp : IsCoveringMap p) (hs : IsClopen s) :
+theorem subtypeVal_comp {p : E → s} (hp : IsCoveringMap p) (hs : IsClopen s) :
     IsCoveringMap (Subtype.val ∘ p) := by
   intro x
   by_cases hx : x ∈ s
@@ -55,10 +62,18 @@ theorem _root_.IsCoveringMap.subtypeVal_comp {p : E → s} (hp : IsCoveringMap p
       (IsEvenlyCovered.of_preimage_eq_empty Empty (hs.isClosed.isOpen_compl.mem_nhds hx) ?_)
     exact Set.eq_empty_of_forall_notMem fun e he => he (p e).2
 
+/-- **A covering map with finite fibres restricts to a covering map on a clopen set.** For a
+clopen subset `t ⊆ E`, the inclusion `t ↪ E` followed by `p : E → X` is a covering map
+`t → X`. -/
+theorem domRestrict_of_isClopen {p : E → X} (hp : IsCoveringMap p)
+    (hfin : ∀ x, (p ⁻¹' {x}).Finite) {t : Set E} (ht : IsClopen t) :
+    IsCoveringMap (t.domRestrict p) :=
+  hp.comp (IsCoveringMap.id.subtypeVal_comp ht) hfin
+
 /-- **The number of points in a fibre of a covering map is locally constant.** Over an evenly
 covered neighbourhood all fibres are in bijection, so both the points whose fibre is in bijection
 with `α` and the points whose fibre is not are open. -/
-theorem _root_.IsCoveringMap.isClopen_setOf_nonempty_fiber_equiv {p : E → X} (hp : IsCoveringMap p)
+theorem isClopen_setOf_nonempty_fiber_equiv {p : E → X} (hp : IsCoveringMap p)
     (α : Type*) : IsClopen {x : X | Nonempty (p ⁻¹' {x} ≃ α)} := by
   have key : ∀ y : X, ∃ U : Set X, y ∈ U ∧ IsOpen U ∧
       ∀ z ∈ U, Nonempty (p ⁻¹' {z} ≃ p ⁻¹' {y}) := by
@@ -75,7 +90,7 @@ theorem _root_.IsCoveringMap.isClopen_setOf_nonempty_fiber_equiv {p : E → X} (
 
 /-- **Over a preconnected base, all fibres of a covering map are in bijection.** The points whose
 fibre is in bijection with the fibre over `y` form a clopen set containing `y`, hence everything. -/
-theorem _root_.IsCoveringMap.nonempty_fiber_equiv [PreconnectedSpace X] {p : E → X}
+theorem nonempty_fiber_equiv [PreconnectedSpace X] {p : E → X}
     (hp : IsCoveringMap p) (x y : X) : Nonempty (p ⁻¹' {x} ≃ p ⁻¹' {y}) :=
   (hp.isClopen_setOf_nonempty_fiber_equiv (p ⁻¹' {y})).connectedComponent_subset
     (x := y) ⟨Equiv.refl _⟩
@@ -83,10 +98,10 @@ theorem _root_.IsCoveringMap.nonempty_fiber_equiv [PreconnectedSpace X] {p : E �
 
 /-- **A covering map from a nonempty space onto a preconnected space is surjective:** every fibre
 is in bijection with the fibre through a given point. -/
-theorem _root_.IsCoveringMap.surjective [PreconnectedSpace X] [Nonempty E] {p : E → X}
+theorem surjective [PreconnectedSpace X] [Nonempty E] {p : E → X}
     (hp : IsCoveringMap p) : Function.Surjective p := fun x => by
   obtain ⟨e⟩ := ‹Nonempty E›
   obtain ⟨ν⟩ := hp.nonempty_fiber_equiv x (p e)
   exact ⟨(ν.symm ⟨e, rfl⟩).1, (ν.symm ⟨e, rfl⟩).2⟩
 
-end TauCeti
+end IsCoveringMap

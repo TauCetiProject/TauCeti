@@ -40,12 +40,10 @@ an embedding that is locally bicollared. The embedding hypothesis cannot be drop
 figure-eight immersion of a line into the plane is locally bicollared and is not an embedding,
 since bicollars only see the domain locally.
 
-This is the codimension-one collaring bullet of layer 2 of the geometric-topology roadmap
-(`TauCetiRoadmap/GeometricTopology/README.md`). What remains of that bullet is its global sphere
-conclusion: a locally flat `(n-1)`-sphere in `Sⁿ` is bicollared. That conclusion needs a genuinely
-global collaring argument and is not proved here. Positive-codimension normal bundles, the
-companion notion, are flagged by the roadmap as a dependency to be taken from elsewhere rather
-than built in this layer.
+The global statement for spheres, Brown's theorem that a locally flat `(n-1)`-sphere in `Sⁿ` is
+bicollared, needs a genuinely global collaring argument and is not proved here; it is stated in
+`TauCeti.Geometry.Manifold.LocallyFlat.Sphere`. Positive-codimension normal bundles, the
+companion notion, are not treated here.
 
 ## Main definitions
 
@@ -196,6 +194,20 @@ theorem apply_mem_closure_image (h : IsBicollar f b) {s : Set ℝ} (hs : (0 : �
   rw [closure_prod_eq, closure_univ]
   exact ⟨mem_univ _, hs⟩
 
+/-- The slice of a bicollar through a point `x` of the domain, at a preconnected set `s` of
+nonzero depths, misses the collared image and so lies in a single connected component of its
+complement. -/
+theorem image_singleton_prod_subset_connectedComponentIn (h : IsBicollar f b) (x : N)
+    {s : Set ℝ} (hs : IsPreconnected s) (h0 : (0 : ℝ) ∉ s) {t : ℝ} (ht : t ∈ s) :
+    b '' ({x} ×ˢ s) ⊆ connectedComponentIn (range f)ᶜ (b (x, t)) := by
+  refine ((isPreconnected_singleton.prod hs).image b
+    h.isOpenEmbedding.continuous.continuousOn).subset_connectedComponentIn
+    (mem_image_of_mem b ⟨rfl, ht⟩) ?_
+  rintro _ ⟨⟨y, r⟩, ⟨-, hr⟩, rfl⟩ hmem
+  have : (y, r) ∈ b ⁻¹' range f := hmem
+  rw [h.preimage_range] at this
+  exact h0 (this.2 ▸ hr)
+
 /-- A bicollar restricts to a bicollar over any open subset of the domain. -/
 theorem restrict (h : IsBicollar f b) {U : Set N} (hU : IsOpen U) :
     IsBicollar (f ∘ ((↑) : U → N)) (b ∘ Prod.map ((↑) : U → N) id) where
@@ -221,6 +233,25 @@ theorem comp_prodMap_id_neg (h : IsBicollar f b) : IsBicollar f (b ∘ Prod.map 
   isOpenEmbedding := h.isOpenEmbedding.comp
     (IsOpenEmbedding.id.prodMap (Homeomorph.neg ℝ).isOpenEmbedding)
   apply_zero x := by simpa using h.apply_zero x
+
+open Function in
+/-- Bicollars with pairwise disjoint images assemble into a bicollar of the map they collar on the
+disjoint union of their domains. -/
+theorem sigma {ι : Type*} {N : ι → Type*} [∀ i, TopologicalSpace (N i)] {f : ∀ i, N i → M}
+    {b : ∀ i, N i × ℝ → M} (h : ∀ i, IsBicollar (f i) (b i))
+    (hb : Pairwise (Disjoint on fun i => range (b i))) :
+    IsBicollar (fun x : Σ i, N i => f x.1 x.2) (fun p => b p.1.1 (p.1.2, p.2)) where
+  isOpenEmbedding := by
+    have hinj : Function.Injective fun q : Σ i, N i × ℝ => b q.1 q.2 := by
+      rintro ⟨i, p⟩ ⟨j, q⟩ hpq
+      obtain rfl | hij := eq_or_ne i j
+      · rw [(h i).isOpenEmbedding.injective (a₁ := p) (a₂ := q) hpq]
+      · exact ((hb hij).ne_of_mem (mem_range_self p) (mem_range_self q) hpq).elim
+    exact (IsOpenEmbedding.of_continuous_injective_isOpenMap
+      (continuous_sigma fun i => (h i).isOpenEmbedding.continuous) hinj
+      (isOpenMap_sigma.2 fun i => (h i).isOpenEmbedding.isOpenMap)).comp
+      (Homeomorph.sigmaProdDistrib (ι := ι) (X := N) (Y := ℝ)).isOpenEmbedding
+  apply_zero x := (h x.1).apply_zero x.2
 
 end IsBicollar
 

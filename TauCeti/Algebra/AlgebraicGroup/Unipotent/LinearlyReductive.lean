@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Coalgebra.Subcoalgebra.RegularSubcomodule
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Augmentation
 import TauCeti.Algebra.Coalgebra.Basic
 import TauCeti.Algebra.Coalgebra.Subcoalgebra.Finite
+import TauCeti.Algebra.Coalgebra.Subcomodule.Finite
 import TauCeti.RingTheory.Smooth.GeometricallyReduced
 
 /-!
@@ -29,19 +30,17 @@ over a field, gives `Δ h = h ⊗ 1` for every `h`, hence `h = ε(h) · 1`. So t
 the augmentation ideal vanishes, and the counit is a bialgebra equivalence `H ≃ k`; equivalently
 the group of points over every commutative value algebra is trivial.
 
-Smoothness may replace reducedness, since a smooth algebra over a field is reduced. That is the
-form the roadmap's definitions are stated in, so it is also given for the object properties
+Smoothness may replace reducedness, since a smooth algebra over a field is reduced, so the result
+is also given for the object properties
 `TauCeti.geometricallyUnipotentPointsCommHopfAlgProperty` and
 `TauCeti.linearlyReductiveCommHopfAlgProperty`.
 
 ## Main declarations
 
 * `TauCeti.Comodule.exists_mem_ne_zero_coact_eq_tmul_one_of_forall_isUnipotentPoint`: every
-  nonzero subcomodule of a finite-dimensional comodule over a unipotent group has a nonzero fixed
-  vector.
+  nonzero subcomodule of a comodule over a unipotent group has a nonzero fixed vector.
 * `TauCeti.Comodule.coact_eq_tmul_one_of_isCompletelyReducible_of_forall_isUnipotentPoint`: a
-  unipotent group acts trivially on every completely reducible finite-dimensional
-  representation.
+  unipotent group acts trivially on every completely reducible representation.
 * `TauCeti.HopfAlgebra.comul_eq_tmul_one_of_isLinearlyReductive_of_forall_exists_fixed`: the
   regular comodule of a linearly reductive coalgebra with enough fixed vectors is trivial; this is
   the step of the argument that does not mention unipotence.
@@ -64,12 +63,6 @@ form the roadmap's definitions are stated in, so it is also given for the object
   unipotent.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, §3.2 and §8.3.
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
-
-This is the first theorem relating the two Layer 6 notions of the ReductiveGroups roadmap,
-reductivity defined by a trivial geometric unipotent radical and linear reductivity defined by
-complete reducibility. It is the step that rules out unipotent subgroups; deducing reductivity
-from linear reductivity in general still needs the invariants of a normal closed subgroup to be
-a subrepresentation of the ambient group.
 -/
 
 public section
@@ -94,28 +87,34 @@ namespace Comodule
 variable {M : Type w} [AddCommGroup M] [Module k M] [Comodule k H M]
 
 /-- Kolchin's theorem, applied to a nonzero subcomodule: over a reduced finite-type commutative
-Hopf algebra with unipotent points, every nonzero subcomodule of a finite-dimensional comodule
-contains a nonzero vector fixed by the ambient coaction. -/
+Hopf algebra with unipotent points, every nonzero subcomodule of a comodule contains a nonzero
+vector fixed by the ambient coaction. -/
 theorem exists_mem_ne_zero_coact_eq_tmul_one_of_forall_isUnipotentPoint
-    [IsAlgClosed k] [Algebra.FiniteType k H] [IsReduced H] [FiniteDimensional k M]
+    [IsAlgClosed k] [Algebra.FiniteType k H] [IsReduced H]
     (hH : ∀ g : WithConv (H →ₐ[k] k), HopfAlgebra.IsUnipotentPoint g)
     (N : Subcomodule k H M) (hN : N ≠ ⊥) :
     ∃ v ∈ N, v ≠ 0 ∧ coact (R := k) (C := H) (M := M) v = v ⊗ₜ[k] (1 : H) := by
   obtain ⟨w, hwN, hw0⟩ := Subcomodule.ne_bot_iff.mp hN
   let _ : AddCommGroup N := Module.addCommMonoidToAddCommGroup k
-  -- `↥N` and `↥N.toSubmodule` subtype the same carrier, so finite-dimensionality transfers.
-  have _ : FiniteDimensional k N := inferInstanceAs (FiniteDimensional k N.toSubmodule)
-  have _ : Nontrivial N := ⟨⟨⟨w, hwN⟩, 0, fun hc ↦ hw0 (congrArg Subtype.val hc)⟩⟩
+  -- Every element of the comodule `N` lies in a finite-dimensional subcomodule `P`.
+  obtain ⟨P, hPfin, hwP⟩ :=
+    Subcomodule.exists_finite_subcomodule_mem (R := k) (C := H) (M := N) ⟨w, hwN⟩
+  let _ : AddCommGroup P := Module.addCommMonoidToAddCommGroup k
+  -- `↥P` and `↥P.toSubmodule` subtype the same carrier, so finite-dimensionality transfers.
+  have _ : FiniteDimensional k P := hPfin
+  have _ : Nontrivial P :=
+    ⟨⟨⟨⟨w, hwN⟩, hwP⟩, 0, fun hc ↦ hw0 (congrArg (Subtype.val ∘ Subtype.val) hc)⟩⟩
   obtain ⟨v, hv, hvc⟩ :=
-    (hasNonzeroFixedVector_iff (k := k) (H := H) (M := N)).mp
-      (hasNonzeroFixedVector_of_forall_isUnipotentPoint (M := N) hH)
-  exact ⟨v, v.2, fun hc ↦ hv (Subtype.ext hc), Subcomodule.coact_coe_eq_tmul_one N hvc⟩
+    (hasNonzeroFixedVector_iff (k := k) (H := H) (M := P)).mp
+      (hasNonzeroFixedVector_of_forall_isUnipotentPoint (M := P) hH)
+  refine ⟨v.1.1, v.1.2, fun hc ↦ hv (Subtype.ext (Subtype.ext hc)), ?_⟩
+  exact Subcomodule.coact_coe_eq_tmul_one N (Subcomodule.coact_coe_eq_tmul_one P hvc)
 
-/-- If a finite-dimensional comodule over a reduced finite-type commutative Hopf algebra with
+/-- If a comodule over a reduced finite-type commutative Hopf algebra with
 unipotent points is completely reducible, then the coaction is trivial on it: the represented
 unipotent group acts trivially on every completely reducible representation. -/
 theorem coact_eq_tmul_one_of_isCompletelyReducible_of_forall_isUnipotentPoint
-    [IsAlgClosed k] [Algebra.FiniteType k H] [IsReduced H] [FiniteDimensional k M]
+    [IsAlgClosed k] [Algebra.FiniteType k H] [IsReduced H]
     (hcr : IsCompletelyReducible k H M)
     (hH : ∀ g : WithConv (H →ₐ[k] k), HopfAlgebra.IsUnipotentPoint g) (m : M) :
     coact (R := k) (C := H) (M := M) m = m ⊗ₜ[k] (1 : H) :=

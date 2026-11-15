@@ -8,38 +8,31 @@ module
 public import Mathlib.MeasureTheory.VectorMeasure.Decomposition.Jordan
 
 /-!
-# Total variation of a difference of measures, eventwise
+# Jordan decomposition of a difference of measures, eventwise
 
 The positive part of the Jordan decomposition of a signed measure `s` has total mass equal to
-the largest value of `s` on a set, and its negative part the largest value of `-s`. For a
-difference `μ - ν` of two finite measures these are the largest excess `μ A - ν A` and the
-largest excess `ν A - μ A` over measurable events `A`. Consequently, eventwise bounds
+the largest value of `s` on a set, and its negative part the largest value of `-s`; the two
+masses agree exactly when `s` vanishes on the whole space. For a difference `μ - ν` of two
+finite measures these are the largest excess `μ A - ν A` and the largest excess `ν A - μ A` over
+measurable events `A`, and they agree exactly when `μ` and `ν` have the same total mass.
 
-```text
-μ A ≤ ν A + c,    ν A ≤ μ A + d    (A measurable)
-```
-
-bound Mathlib's total variation measure of `μ.toSignedMeasure - ν.toSignedMeasure` on the whole
-space by `c + d`. For two finite measures of the same total mass the two parts have equal mass,
-so the total variation on the whole space is at most `2 * c` exactly when every event satisfies
-`μ A ≤ ν A + c`.
-
-This pins down the normalization relating two common conventions for probability measures:
-`SignedMeasure.totalVariation` on `Set.univ` is the signed-measure norm `‖μ - ν‖`, which is twice
-the total-variation distance `sup_A |μ A - ν A|`.
+These masses compute Mathlib's total variation distance `etvDist μ ν` through measurable events;
+see `TauCeti.MeasureTheory.Measure.TotalVariation.Basic`.
 
 ## Main declarations
 
 * `MeasureTheory.SignedMeasure.toJordanDecomposition_posPart_univ_eq_iSup` and
   `MeasureTheory.SignedMeasure.toJordanDecomposition_negPart_univ_eq_iSup`: the masses of the
   positive and negative parts as suprema of `s` and `-s`;
-* `MeasureTheory.Measure.totalVariation_toSignedMeasure_sub_univ_le`: eventwise bounds in both
-  directions bound the total variation of a difference of finite measures;
-* `MeasureTheory.Measure.totalVariation_toSignedMeasure_sub_univ_le_two_mul_iff`: for finite
-  measures of equal total mass, the total variation is at most `2 * c` if and only if every
-  measurable event satisfies `μ A ≤ ν A + c`.
+* `MeasureTheory.SignedMeasure.toJordanDecomposition_posPart_univ_eq_negPart_univ_iff`: the two
+  parts have equal mass if and only if `s univ = 0`;
+* `MeasureTheory.Measure.toJordanDecomposition_toSignedMeasure_sub_posPart_univ_eq_iSup` and
+  `MeasureTheory.Measure.toJordanDecomposition_toSignedMeasure_sub_negPart_univ_eq_iSup`: the
+  same masses for `μ - ν`, as largest excesses over measurable events;
+* `MeasureTheory.Measure.toJordanDecomposition_toSignedMeasure_sub_posPart_univ_eq_negPart_univ_iff`
+  states that, for finite measures, the two parts of `μ - ν` have equal mass if and only if
+  `μ univ = ν univ`.
 -/
-
 public section
 
 open Set
@@ -55,15 +48,14 @@ namespace SignedMeasure
 over all sets (`s` vanishes on non-measurable sets, so they do not contribute). -/
 theorem toJordanDecomposition_posPart_univ_eq_iSup (s : SignedMeasure α) :
     s.toJordanDecomposition.posPart univ = ⨆ A : Set α, ENNReal.ofReal (s A) := by
-  set j := s.toJordanDecomposition with hj
-  obtain ⟨S, hS, hpos, hneg⟩ := j.mutuallySingular
+  set j := s.toJordanDecomposition
   refine le_antisymm ?_ (iSup_le fun A => ?_)
-  · -- The positive part is carried by `Sᶜ`, where `s` agrees with it.
-    have hSc : ENNReal.ofReal (s Sᶜ) = j.posPart univ := by
-      rw [s.apply_eq_posPart_real_sub_negPart_real hS.compl, ← hj, measureReal_def j.negPart,
-        hneg, ENNReal.toReal_zero, sub_zero, ofReal_measureReal, ← measure_add_measure_compl hS,
-        hpos, zero_add]
-    exact hSc ▸ le_iSup (fun A => ENNReal.ofReal (s A)) Sᶜ
+  · -- The positive part is `s` restricted to the positive set `i` of a Hahn decomposition.
+    obtain ⟨i, hi, hi₀, -, hpos, -⟩ := s.toJordanDecomposition_spec
+    calc
+      j.posPart univ = ENNReal.ofReal (s i) := by
+        rw [hpos, ← ofReal_measureReal, toMeasureOfZeroLE_real_apply _ hi₀ hi .univ, inter_univ]
+      _ ≤ ⨆ A : Set α, ENNReal.ofReal (s A) := le_iSup (fun A => ENNReal.ofReal (s A)) i
   · by_cases hA : MeasurableSet A
     · calc
         ENNReal.ofReal (s A) ≤ ENNReal.ofReal (j.posPart.real A) := by
@@ -79,6 +71,14 @@ over all sets. -/
 theorem toJordanDecomposition_negPart_univ_eq_iSup (s : SignedMeasure α) :
     s.toJordanDecomposition.negPart univ = ⨆ A : Set α, ENNReal.ofReal (-s A) := by
   simpa [toJordanDecomposition_neg] using (-s).toJordanDecomposition_posPart_univ_eq_iSup
+
+/-- The positive and negative parts of the Jordan decomposition of `s` have equal total mass if
+and only if `s` vanishes on the whole space. -/
+@[simp]
+theorem toJordanDecomposition_posPart_univ_eq_negPart_univ_iff (s : SignedMeasure α) :
+    s.toJordanDecomposition.posPart univ = s.toJordanDecomposition.negPart univ ↔
+      s univ = 0 := by
+  rw [s.apply_eq_posPart_real_sub_negPart_real .univ, sub_eq_zero, measureReal_eq_measureReal_iff]
 
 end SignedMeasure
 
@@ -106,47 +106,14 @@ theorem toJordanDecomposition_toSignedMeasure_sub_negPart_univ_eq_iSup :
   rw [← neg_sub, SignedMeasure.toJordanDecomposition_neg, JordanDecomposition.neg_negPart,
     toJordanDecomposition_toSignedMeasure_sub_posPart_univ_eq_iSup]
 
-/-- **Total variation from eventwise bounds.** If every measurable event has `μ`-mass at most its
-`ν`-mass plus `c`, and `ν`-mass at most its `μ`-mass plus `d`, then the total variation of
-`μ - ν` on the whole space is at most `c + d`. -/
-theorem totalVariation_toSignedMeasure_sub_univ_le {c d : ℝ≥0∞}
-    (h₁ : ∀ A, MeasurableSet A → μ A ≤ ν A + c) (h₂ : ∀ A, MeasurableSet A → ν A ≤ μ A + d) :
-    (μ.toSignedMeasure - ν.toSignedMeasure).totalVariation univ ≤ c + d := by
-  rw [SignedMeasure.totalVariation, add_apply,
-    toJordanDecomposition_toSignedMeasure_sub_posPart_univ_eq_iSup,
-    toJordanDecomposition_toSignedMeasure_sub_negPart_univ_eq_iSup]
-  gcongr
-  · exact iSup₂_le fun A hA => tsub_le_iff_left.2 (h₁ A hA)
-  · exact iSup₂_le fun A hA => tsub_le_iff_left.2 (h₂ A hA)
-
-/-- For finite measures of equal total mass, the positive and negative parts of the Jordan
-decomposition of `μ - ν` have equal total mass. -/
-theorem toJordanDecomposition_toSignedMeasure_sub_posPart_univ_eq_negPart_univ
-    (h : μ univ = ν univ) :
+/-- The positive and negative parts of the Jordan decomposition of `μ - ν` have equal total mass
+if and only if the finite measures `μ` and `ν` have equal total mass. -/
+theorem toJordanDecomposition_toSignedMeasure_sub_posPart_univ_eq_negPart_univ_iff :
     (μ.toSignedMeasure - ν.toSignedMeasure).toJordanDecomposition.posPart univ =
-      (μ.toSignedMeasure - ν.toSignedMeasure).toJordanDecomposition.negPart univ := by
-  set s := μ.toSignedMeasure - ν.toSignedMeasure
-  have hs : s univ = 0 := by
-    rw [toSignedMeasure_sub_apply MeasurableSet.univ, measureReal_def, measureReal_def, h,
-      sub_self]
-  rw [s.apply_eq_posPart_real_sub_negPart_real MeasurableSet.univ, sub_eq_zero,
-    measureReal_def, measureReal_def] at hs
-  exact (ENNReal.toReal_eq_toReal_iff' (measure_ne_top _ _) (measure_ne_top _ _)).1 hs
-
-/-- **Total variation as an eventwise bound.** For finite measures of equal total mass (e.g. two
-probability measures), the total variation of `μ - ν` on the whole space is at most `2 * c` if
-and only if every measurable event has `μ`-mass at most its `ν`-mass plus `c`. In other words,
-`(μ.toSignedMeasure - ν.toSignedMeasure).totalVariation univ` is twice the total-variation
-distance `sup_A |μ A - ν A|`. -/
-theorem totalVariation_toSignedMeasure_sub_univ_le_two_mul_iff (h : μ univ = ν univ)
-    {c : ℝ≥0∞} :
-    (μ.toSignedMeasure - ν.toSignedMeasure).totalVariation univ ≤ 2 * c ↔
-      ∀ A, MeasurableSet A → μ A ≤ ν A + c := by
-  rw [SignedMeasure.totalVariation, add_apply,
-    ← toJordanDecomposition_toSignedMeasure_sub_posPart_univ_eq_negPart_univ h, ← two_mul,
-    ENNReal.mul_le_mul_iff_right two_ne_zero ENNReal.ofNat_ne_top,
-    toJordanDecomposition_toSignedMeasure_sub_posPart_univ_eq_iSup]
-  simp only [iSup_le_iff, tsub_le_iff_left]
+        (μ.toSignedMeasure - ν.toSignedMeasure).toJordanDecomposition.negPart univ ↔
+      μ univ = ν univ := by
+  rw [SignedMeasure.toJordanDecomposition_posPart_univ_eq_negPart_univ_iff,
+    toSignedMeasure_sub_apply .univ, sub_eq_zero, measureReal_eq_measureReal_iff]
 
 end Measure
 

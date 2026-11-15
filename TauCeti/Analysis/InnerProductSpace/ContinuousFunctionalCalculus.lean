@@ -1,0 +1,397 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors and Kitware, Inc. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors, Jon Crall, OpenAI GPT-5.6 Thinking, Claude Opus 5,
+  OpenAI GPT-6
+-/
+module
+
+public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric
+public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
+public import Mathlib.Analysis.Convex.Basic
+public import Mathlib.Analysis.InnerProductSpace.StarOrder
+public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
+public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Subalgebra
+public import TauCeti.Analysis.InnerProductSpace.Complexification
+import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
+import TauCeti.Analysis.Normed.Operator.Banach
+import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.RealImaginaryPart
+
+/-!
+# The continuous functional calculus on real and `RCLike` Hilbert spaces
+
+Mathlib's continuous functional calculus for bounded self-adjoint operators comes from the
+complex `C⋆`-algebra structure of `E →L[ℂ] E`, so it is available only on complex Hilbert spaces.
+This file supplies the instance
+
+`ContinuousFunctionalCalculus ℝ (E →L[𝕜] E) IsSelfAdjoint`
+
+for every Hilbert space `E` over `RCLike 𝕜`, in any dimension, for every real algebra structure on
+`E →L[𝕜] E` compatible with the `𝕜`-action (`IsScalarTower ℝ 𝕜 (E →L[𝕜] E)`), and with it
+Mathlib's star order (`ContinuousLinearMap.instStarOrderedRingRCLike`). Hence `cfc f T` and the
+positive square root `CFC.sqrt T` of a positive operator are available on Hilbert spaces over
+every `RCLike 𝕜`, as is the absolute value `CFC.abs T = √(T† T)` of every bounded operator. Over
+an abstract `RCLike` field, the real algebra structure is `ContinuousLinearMap.realAlgebra`,
+obtained by restricting scalars along `ℝ → 𝕜`; at `𝕜 = ℝ` and `𝕜 = ℂ` it is Mathlib's own, and any
+two compatible real algebra structures coincide by `Algebra.restrictScalars_eq`.
+
+The real calculus is pulled back from the complexification. Complexification
+`T ↦ T_ℂ` (`ContinuousLinearMap.complexifyL2StarAlgHom`) is an isometric unital `⋆`-homomorphism
+from `X →L[ℝ] X` into the complex `C⋆`-algebra `X_ℂ →L[ℂ] X_ℂ`, so it is a closed embedding,
+and `StarAlgHom.continuousFunctionalCalculus_of_isClosedEmbedding` applies. Consequently
+complexification preserves the spectrum of a self-adjoint operator
+(`ContinuousLinearMap.spectrum_complexifyL2`) and intertwines the two calculi
+(`ContinuousLinearMap.complexifyL2_cfc`): `(f(T))_ℂ = f(T_ℂ)`. Since the calculus of the complex
+`C⋆`-algebra is isometric, so is the real one.
+
+The calculus over `RCLike 𝕜` is in turn pulled back from the real one along realification. A
+Hilbert space `E` over `𝕜` is a real Hilbert space for the inner product `re ⟪x, y⟫`
+(`InnerProductSpace.rclikeToReal`), and restricting scalars `T ↦ T.restrictScalars ℝ` is an
+isometric unital `⋆`-homomorphism from `E →L[𝕜] E` into the real operators on `E`
+(`ContinuousLinearMap.restrictScalarsStarAlgHom`): the adjoint for `re ⟪·, ·⟫` of the restriction
+of `T` is the restriction of `T†` (`ContinuousLinearMap.adjoint_restrictScalars`). Realification
+preserves the spectrum of an operator, on any Banach space, by the inverse mapping theorem
+(`ContinuousLinearMap.spectrum_restrictScalars`, in `TauCeti.Analysis.Normed.Operator.Banach`), and
+so it intertwines the two calculi (`ContinuousLinearMap.restrictScalars_cfc`).
+
+## Main declarations
+
+* `ContinuousLinearMap.instContinuousFunctionalCalculusRealIsSelfAdjoint`: the continuous
+  functional calculus for bounded self-adjoint operators on a real Hilbert space.
+* `ContinuousLinearMap.instContinuousFunctionalCalculusRCLikeIsSelfAdjoint`: the continuous
+  functional calculus for bounded self-adjoint operators on a Hilbert space over `RCLike 𝕜`.
+* `ContinuousLinearMap.instStarOrderedRingRCLike`: Mathlib's star order on bounded operators,
+  registered here as an instance.
+* `ContinuousLinearMap.instIsometricContinuousFunctionalCalculusRealIsSelfAdjoint`: the real
+  calculus is isometric, hence continuous in the operator.
+* `ContinuousLinearMap.spectrum_complexifyL2`: complexification preserves the spectrum of a
+  self-adjoint operator.
+* `ContinuousLinearMap.complexifyL2_cfc`: complexification commutes with the continuous
+  functional calculus.
+* `ContinuousLinearMap.restrictScalarsStarAlgHom`: realification of the bounded operators on a
+  Hilbert space over `RCLike 𝕜`, as a `⋆`-algebra homomorphism over `ℝ`.
+* `ContinuousLinearMap.restrictScalars_cfc`: realification commutes with the continuous functional
+  calculus.
+* `LinearIsometryEquiv.cfcₙ_conjStarAlgEquiv`, `LinearIsometryEquiv.posPart_conjStarAlgEquiv`,
+  `LinearIsometryEquiv.negPart_conjStarAlgEquiv`: isometric conjugation commutes with the
+  non-unital continuous functional calculus and with positive and negative parts.
+
+## Acknowledgements
+
+A real continuous functional calculus for bounded operators, also obtained from the
+complexification, appears in
+`ForTauCeti/Analysis/InnerProductSpace/RealContinuousFunctionalCalculus.lean` of the
+[AIQ DKPS formalization](https://github.com/AIQ-Kitware/aiq-dkps-formalization)
+(Kitware, Inc.; Apache-2.0). There the calculus is descended through the conjugation of the
+complexification; here it is restricted to the closed range of the complexification map.
+The normal-operator half-plane bound
+`ContinuousLinearMap.nonneg_add_star_sub_smul_of_spectrum_re` is adapted from
+`DavisKahan/InfiniteDimensional/TanTwoTheta/QuarterAcuteFormGap.lean`, Kitware DKPS
+(Jon Crall, OpenAI GPT-5.6 Thinking and Claude Opus 5; Apache-2.0). It turns a lower
+bound `a` on real parts of the spectrum into `W + W† ≥ 2 a I`.
+-/
+
+public section
+
+open scoped InnerProductSpace
+
+namespace ContinuousLinearMap
+
+variable {X : Type*} [NormedAddCommGroup X] [InnerProductSpace ℝ X] [CompleteSpace X]
+
+/-- **The continuous functional calculus for bounded self-adjoint operators on a real Hilbert
+space**, pulled back from the complexification. -/
+instance instContinuousFunctionalCalculusRealIsSelfAdjoint :
+    ContinuousFunctionalCalculus ℝ (X →L[ℝ] X) IsSelfAdjoint :=
+  (complexifyL2StarAlgHom X).continuousFunctionalCalculus_of_isClosedEmbedding
+    (isClosedEmbedding_complexifyL2StarAlgHom X) fun _ ↦ by simp
+
+/-- Complexification preserves the spectrum of a self-adjoint operator on a real Hilbert space. -/
+theorem spectrum_complexifyL2 {T : X →L[ℝ] X} (hT : IsSelfAdjoint T) :
+    spectrum ℝ T.complexifyL2 = spectrum ℝ T := by
+  -- Instance search finds `StarModule ℝ` on the complex operators only for the real scalar
+  -- action restricted from `ℂ`, not for the action of `ContinuousLinearMap.algebra`.
+  have : StarModule ℝ (WithLp 2 (TauCeti.Complexification X) →L[ℂ]
+      WithLp 2 (TauCeti.Complexification X)) :=
+    StarModule.complexToReal (E := WithLp 2 (TauCeti.Complexification X) →L[ℂ]
+      WithLp 2 (TauCeti.Complexification X))
+  have hφ := isClosedEmbedding_complexifyL2StarAlgHom X
+  simpa using (complexifyL2StarAlgHom X).spectrum_apply_eq_of_injective_of_isClosed_range
+    hφ.injective hφ.isClosed_range (q := IsSelfAdjoint) (by simpa using hT)
+
+/-- Complexification commutes with the continuous functional calculus: for a bounded
+operator `T` on a real Hilbert space, `(f(T))_ℂ = f(T_ℂ)`. -/
+theorem complexifyL2_cfc (f : ℝ → ℝ) (T : X →L[ℝ] X) :
+    (cfc f T).complexifyL2 = cfc f T.complexifyL2 := by
+  by_cases hT : IsSelfAdjoint T
+  · by_cases hf : ContinuousOn f (spectrum ℝ T)
+    · simpa using (complexifyL2StarAlgHom X).map_cfc f T hf
+        (isClosedEmbedding_complexifyL2StarAlgHom X).continuous hT (by simpa using hT)
+    · rw [cfc_apply_of_not_continuousOn _ hf, cfc_apply_of_not_continuousOn,
+        complexifyL2_zero]
+      rwa [spectrum_complexifyL2 hT]
+  · rw [cfc_apply_of_not_predicate _ hT, cfc_apply_of_not_predicate, complexifyL2_zero]
+    simpa using hT
+
+/-- The continuous functional calculus for bounded self-adjoint operators on a real Hilbert space
+is isometric: `‖f(T)‖` is the supremum of `|f|` on the spectrum of `T`. This is what makes the
+calculus continuous in the operator, as in `CFC.continuousOn_rpow` and `CFC.continuousOn_sqrt`. -/
+instance instIsometricContinuousFunctionalCalculusRealIsSelfAdjoint :
+    IsometricContinuousFunctionalCalculus ℝ (X →L[ℝ] X) IsSelfAdjoint where
+  isometric T hT := by
+    refine AddMonoidHomClass.isometry_of_norm (cfcHom hT (R := ℝ)) fun f ↦ ?_
+    -- See `spectrum_complexifyL2` for this instance.
+    have : StarModule ℝ (WithLp 2 (TauCeti.Complexification X) →L[ℂ]
+        WithLp 2 (TauCeti.Complexification X)) :=
+      StarModule.complexToReal (E := WithLp 2 (TauCeti.Complexification X) →L[ℂ]
+        WithLp 2 (TauCeti.Complexification X))
+    -- Complexification is isometric and intertwines the two calculi, and the calculus of the
+    -- complex `C⋆`-algebra is isometric, on the same spectrum.
+    set g : ℝ → ℝ := Function.extend Subtype.val f 0
+    have hgf (x : spectrum ℝ T) : g x = f x := Subtype.val_injective.extend_apply f 0 x
+    have hg : ContinuousOn g (spectrum ℝ T) := by
+      rw [continuousOn_iff_continuous_domRestrict]
+      exact f.continuous.congr fun x ↦ (hgf x).symm
+    have hsp := spectrum_complexifyL2 hT
+    rw [cfcHom_eq_cfc_extend 0 hT, ← norm_complexifyL2, complexifyL2_cfc g T]
+    refine le_antisymm (norm_cfc_le (norm_nonneg f) fun x hx ↦ ?_)
+      ((ContinuousMap.norm_le f (norm_nonneg _)).2 fun x ↦ ?_)
+    · rw [hsp] at hx
+      simpa [hgf ⟨x, hx⟩] using f.norm_coe_le_norm ⟨x, hx⟩
+    · rw [← hgf x]
+      exact norm_apply_le_norm_cfc g T.complexifyL2 (by rw [hsp]; exact x.2) (hsp ▸ hg)
+        (by simpa using hT)
+
+section RCLike
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+
+-- The declarations below are stated for the real Hilbert space underlying `E`, with inner product
+-- `re ⟪x, y⟫` (`InnerProductSpace.rclikeToReal`). It cannot be a local instance, since `𝕜` does
+-- not appear in `InnerProductSpace ℝ E`.
+
+/-- For the real inner product `re ⟪x, y⟫`, the adjoint of the realification of a bounded
+operator is the realification of its adjoint. -/
+@[simp]
+theorem adjoint_restrictScalars {F : Type*} [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+    [CompleteSpace F] (T : E →L[𝕜] F) :
+    letI := InnerProductSpace.rclikeToReal 𝕜 E
+    letI := InnerProductSpace.rclikeToReal 𝕜 F
+    adjoint (T.restrictScalars ℝ) = (adjoint T).restrictScalars ℝ := by
+  let := InnerProductSpace.rclikeToReal 𝕜 E
+  let := InnerProductSpace.rclikeToReal 𝕜 F
+  refine ((eq_adjoint_iff _ _).2 fun x y ↦ ?_).symm
+  simp only [real_inner_eq_re_inner 𝕜, coe_restrictScalars', adjoint_inner_left]
+
+/-- A bounded operator on a Hilbert space over `RCLike 𝕜` is self-adjoint exactly when its
+realification is, for the real inner product `re ⟪x, y⟫`. -/
+@[simp]
+theorem isSelfAdjoint_restrictScalars_iff {T : E →L[𝕜] E} :
+    letI := InnerProductSpace.rclikeToReal 𝕜 E
+    IsSelfAdjoint (T.restrictScalars ℝ) ↔ IsSelfAdjoint T := by
+  let := InnerProductSpace.rclikeToReal 𝕜 E
+  simp only [isSelfAdjoint_iff', adjoint_restrictScalars, ContinuousLinearMap.ext_iff,
+    coe_restrictScalars']
+
+variable [Algebra ℝ (E →L[𝕜] E)] [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)]
+
+variable (𝕜 E) in
+/-- Realification `T ↦ T.restrictScalars ℝ` of the bounded operators on a Hilbert space over
+`RCLike 𝕜`, as a `⋆`-algebra homomorphism over `ℝ` into the bounded operators on the underlying
+real Hilbert space, for any real algebra structure compatible with the `𝕜`-action. -/
+noncomputable def restrictScalarsStarAlgHom :
+    letI := InnerProductSpace.rclikeToReal 𝕜 E
+    (E →L[𝕜] E) →⋆ₐ[ℝ] (E →L[ℝ] E) :=
+  letI := InnerProductSpace.rclikeToReal 𝕜 E
+  { toFun := restrictScalars ℝ
+    map_one' := rfl
+    map_mul' _ _ := rfl
+    map_zero' := rfl
+    map_add' _ _ := rfl
+    commutes' r := by
+      ext x
+      simp [IsScalarTower.algebraMap_apply ℝ 𝕜 (E →L[𝕜] E), Algebra.algebraMap_eq_smul_one]
+    map_star' T := (adjoint_restrictScalars T).symm }
+
+@[simp]
+theorem restrictScalarsStarAlgHom_apply (T : E →L[𝕜] E) :
+    letI := InnerProductSpace.rclikeToReal 𝕜 E
+    restrictScalarsStarAlgHom 𝕜 E T = T.restrictScalars ℝ := (rfl)
+
+variable (𝕜 E) in
+/-- Realification of the bounded operators on a Hilbert space over `RCLike 𝕜` is an isometry. -/
+theorem isometry_restrictScalarsStarAlgHom :
+    letI := InnerProductSpace.rclikeToReal 𝕜 E
+    Isometry (restrictScalarsStarAlgHom 𝕜 E) :=
+  letI := InnerProductSpace.rclikeToReal 𝕜 E
+  (restrictScalarsIsometry 𝕜 E E ℝ ℝ).isometry
+
+variable (𝕜 E) in
+/-- Realification of the bounded operators on a Hilbert space over `RCLike 𝕜` is a closed
+embedding. -/
+theorem isClosedEmbedding_restrictScalarsStarAlgHom :
+    letI := InnerProductSpace.rclikeToReal 𝕜 E
+    Topology.IsClosedEmbedding (restrictScalarsStarAlgHom 𝕜 E) :=
+  letI := InnerProductSpace.rclikeToReal 𝕜 E
+  (isometry_restrictScalarsStarAlgHom 𝕜 E).isClosedEmbedding
+
+/-- **The continuous functional calculus for bounded self-adjoint operators on a Hilbert space
+over `RCLike 𝕜`**, for any real algebra structure on the operators compatible with the `𝕜`-action,
+pulled back from the real calculus along realification. -/
+instance instContinuousFunctionalCalculusRCLikeIsSelfAdjoint :
+    ContinuousFunctionalCalculus ℝ (E →L[𝕜] E) IsSelfAdjoint :=
+  letI := InnerProductSpace.rclikeToReal 𝕜 E
+  (restrictScalarsStarAlgHom 𝕜 E).continuousFunctionalCalculus_of_isClosedEmbedding
+    (isClosedEmbedding_restrictScalarsStarAlgHom 𝕜 E) fun _ ↦
+      isSelfAdjoint_restrictScalars_iff.symm
+
+/-- Realification commutes with the continuous functional calculus: for an operator `T` on a
+Hilbert space over `RCLike 𝕜`, `(f(T)).restrictScalars ℝ = f(T.restrictScalars ℝ)`. -/
+theorem restrictScalars_cfc (f : ℝ → ℝ) (T : E →L[𝕜] E) :
+    letI := InnerProductSpace.rclikeToReal 𝕜 E
+    (cfc f T).restrictScalars ℝ = cfc f (T.restrictScalars ℝ) := by
+  -- Synthesized before the real inner product is introduced, since `NormedSpace ℝ E` then gives
+  -- a second action of `ℝ` on `E →L[𝕜] E`, and instance search would pick that one instead.
+  have : IsScalarTower ℝ ℝ (E →L[𝕜] E) := inferInstance
+  let := InnerProductSpace.rclikeToReal 𝕜 E
+  by_cases hT : IsSelfAdjoint T
+  · by_cases hf : ContinuousOn f (spectrum ℝ T)
+    · simpa using (restrictScalarsStarAlgHom 𝕜 E).map_cfc f T hf
+        (isClosedEmbedding_restrictScalarsStarAlgHom 𝕜 E).continuous hT
+        (isSelfAdjoint_restrictScalars_iff.2 hT)
+    · rw [cfc_apply_of_not_continuousOn _ hf, cfc_apply_of_not_continuousOn]
+      · rfl
+      · rwa [spectrum_restrictScalars]
+  · rw [cfc_apply_of_not_predicate _ hT, cfc_apply_of_not_predicate]
+    · rfl
+    · exact fun h ↦ hT (isSelfAdjoint_restrictScalars_iff.1 h)
+
+-- The bounded operators on a Hilbert space over `RCLike 𝕜` form a star-ordered ring for the
+-- Loewner order: the positive operators are exactly the sums of operators `S† S`. Mathlib proves
+-- this from the real continuous functional calculus, which is now available for every `𝕜`.
+attribute [instance] instStarOrderedRingRCLike
+
+end RCLike
+
+/-- Adding a nonnegative operator to a strictly positive real Hilbert space operator preserves
+strict positivity. -/
+theorem _root_.IsStrictlyPositive.add_nonneg_real {S T : X →L[ℝ] X}
+    (hS : IsStrictlyPositive S) (hT : 0 ≤ T) : IsStrictlyPositive (S + T) := by
+  have hp : 0 ≤ S + T := add_nonneg hS.nonneg hT
+  -- Mathlib supplies the addition result for complex C⋆-algebras; complexification preserves
+  -- the spectrum of a self-adjoint real operator, hence also its invertibility.
+  let Φ := complexifyL2StarAlgHom X
+  have hΦ : IsStrictlyPositive (Φ (S + T)) := by
+    rw [map_add]
+    exact (hS.isUnit.map Φ |>.isStrictlyPositive (map_nonneg Φ hS.nonneg)).add_nonneg
+      (map_nonneg Φ hT)
+  refine IsStrictlyPositive.iff_of_unital.mpr ⟨hp, ?_⟩
+  rw [← spectrum.zero_notMem_iff ℝ, ← spectrum_complexifyL2 hp.isSelfAdjoint]
+  simpa only [Φ, complexifyL2StarAlgHom_apply] using
+    (spectrum.zero_notMem_iff ℝ).mpr hΦ.isUnit
+
+/-- Adding a strictly positive operator to a nonnegative real Hilbert space operator preserves
+strict positivity. -/
+theorem _root_.IsStrictlyPositive.nonneg_add_real {S T : X →L[ℝ] X}
+    (hS : 0 ≤ S) (hT : IsStrictlyPositive T) : IsStrictlyPositive (S + T) :=
+  add_comm T S ▸ hT.add_nonneg_real hS
+
+/-- Strictly positive operators on a real Hilbert space form a convex set. -/
+theorem convex_setOf_isStrictlyPositive :
+    Convex ℝ {T : X →L[ℝ] X | IsStrictlyPositive T} := by
+  refine convex_iff_forall_pos.mpr fun S hS T hT a b ha hb _ ↦ ?_
+  exact (IsStrictlyPositive.smul ha hS).add_nonneg_real (smul_nonneg hb.le hT.nonneg)
+
+/-- The inner product of two images under a positive operator's square root. -/
+theorem inner_sqrt_apply_sqrt_apply_eq_inner {T : X →L[ℝ] X} (hT : 0 ≤ T) (u v : X) :
+    ⟪CFC.sqrt T u, CFC.sqrt T v⟫_ℝ = ⟪T u, v⟫_ℝ := by
+  rw [← (nonneg_iff_isPositive.mp (CFC.sqrt_nonneg T)).inner_left_eq_inner_right,
+    ← mul_apply_eq_comp, CFC.sqrt_mul_sqrt_self T hT]
+
+/-- Negative real powers of a positive real Hilbert space operator above the identity are
+contractions in operator norm. -/
+theorem norm_rpow_le_one_of_one_le_of_nonpos (P : X →L[ℝ] X) (hP : 1 ≤ P)
+    {s : ℝ} (hs : s ≤ 0) : ‖P ^ s‖ ≤ 1 := by
+  have hP₀ : 0 ≤ P := zero_le_one.trans hP
+  rw [CFC.rpow_eq_cfc_real hP₀]
+  -- Complexification is isometric and intertwines the calculi. Mathlib supplies the
+  -- isometric calculus on complex operators, whereas the real calculus is only bundled
+  -- as a continuous calculus.
+  have hself := (nonneg_iff_isPositive.mp hP₀).isSelfAdjoint
+  have _ : ContinuousOn (fun r : ℝ ↦ r ^ s) (spectrum ℝ P) :=
+    continuousOn_id.rpow_const fun r hr ↦ Or.inl
+      (ne_of_gt (zero_lt_one.trans_le ((CFC.one_le_iff (R := ℝ) P).mp hP r hr)))
+  rw [← norm_complexifyL2, complexifyL2_cfc (fun r : ℝ ↦ r ^ s) P]
+  apply norm_cfc_le zero_le_one
+  intro r hr
+  rw [spectrum_complexifyL2 (nonneg_iff_isPositive.mp hP₀).isSelfAdjoint] at hr
+  have hr₁ : 1 ≤ r := (CFC.one_le_iff (R := ℝ) P).mp hP r hr
+  simpa only [Real.norm_eq_abs, abs_of_nonneg (Real.rpow_nonneg (by linarith) s)] using
+    Real.rpow_le_one_of_one_le_of_nonpos hr₁ hs
+
+/-- Nonpositive real powers of an operator above the identity do not increase vector norms. -/
+theorem norm_rpow_apply_le_of_one_le_of_nonpos (P : X →L[ℝ] X) (hP : 1 ≤ P)
+    {s : ℝ} (hs : s ≤ 0) (y : X) : ‖(P ^ s) y‖ ≤ ‖y‖ := by
+  simpa only [one_mul] using (P ^ s).le_of_opNorm_le
+    (P.norm_rpow_le_one_of_one_le_of_nonpos hP hs) y
+
+open scoped ComplexOrder ComplexStarModule
+
+/-- A spectral half-plane bound for a normal operator is an order bound
+for its Hermitian part. -/
+theorem nonneg_add_star_sub_smul_of_spectrum_re
+    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [CompleteSpace E]
+    (W : E →L[ℂ] E) [IsStarNormal W] {a : ℝ}
+    (hspec : ∀ z ∈ spectrum ℂ W, a ≤ z.re) :
+    0 ≤ W + star W - ((2 * a : ℝ) : ℂ) • 1 := by
+  have hreal : algebraMap ℝ (E →L[ℂ] E) a ≤ (ℜ W : E →L[ℂ] E) := by
+    apply (algebraMap_le_iff_le_spectrum (ha := (ℜ W).2)).2
+    rw [spectrum_realPart' W]
+    rintro _ ⟨z, hz, rfl⟩
+    exact hspec z hz
+  have hpos := smul_nonneg (a := (2 : ℝ)) (by norm_num) (sub_nonneg.mpr hreal)
+  simpa only [smul_sub, realPart_apply_coe, smul_smul, mul_inv_cancel₀ (by norm_num : (2 : ℝ) ≠ 0),
+    one_smul, Algebra.algebraMap_eq_smul_one, Complex.coe_smul] using hpos
+
+end ContinuousLinearMap
+
+namespace LinearIsometryEquiv
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+
+/-- Conjugation of bounded operators by a linear isometric equivalence is continuous. -/
+@[fun_prop]
+theorem continuous_conjStarAlgEquiv (e : E ≃ₗᵢ[𝕜] F) : Continuous e.conjStarAlgEquiv :=
+  e.toContinuousLinearEquiv.conjContinuousAlgEquiv.continuous.congr fun _ ↦ rfl
+
+variable [Algebra ℝ (E →L[𝕜] E)] [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)]
+  [Algebra ℝ (F →L[𝕜] F)] [IsScalarTower ℝ 𝕜 (F →L[𝕜] F)]
+
+/-- Conjugation by a linear isometric equivalence commutes with the non-unital continuous
+functional calculus. -/
+theorem cfcₙ_conjStarAlgEquiv (e : E ≃ₗᵢ[𝕜] F) (f : ℝ → ℝ) (A : E →L[𝕜] E) :
+    cfcₙ f (e.conjStarAlgEquiv A) = e.conjStarAlgEquiv (cfcₙ f A) :=
+  (cfcₙ_eq_cfcₙ_transfer (p := IsSelfAdjoint) (q := IsSelfAdjoint)
+    (e.conjStarAlgEquiv.restrictScalars ℝ) e.continuous_conjStarAlgEquiv
+    (fun x ↦ ⟨fun hx ↦ hx.map e.conjStarAlgEquiv,
+      fun hx ↦ e.conjStarAlgEquiv.symm_apply_apply x ▸ hx.map e.conjStarAlgEquiv.symm⟩)
+    f (e.conjStarAlgEquiv A)).trans
+    (congrArg (fun X ↦ e.conjStarAlgEquiv (cfcₙ f X)) (e.conjStarAlgEquiv.symm_apply_apply A))
+
+/-- Conjugation by a linear isometric equivalence commutes with the positive part of a bounded
+operator. -/
+@[simp]
+theorem posPart_conjStarAlgEquiv (e : E ≃ₗᵢ[𝕜] F) (A : E →L[𝕜] E) :
+    (e.conjStarAlgEquiv A)⁺ = e.conjStarAlgEquiv A⁺ := by
+  simpa [CFC.posPart_def] using e.cfcₙ_conjStarAlgEquiv _ A
+
+/-- Conjugation by a linear isometric equivalence commutes with the negative part of a bounded
+operator. -/
+@[simp]
+theorem negPart_conjStarAlgEquiv (e : E ≃ₗᵢ[𝕜] F) (A : E →L[𝕜] E) :
+    (e.conjStarAlgEquiv A)⁻ = e.conjStarAlgEquiv A⁻ := by
+  simpa [CFC.negPart_def] using e.cfcₙ_conjStarAlgEquiv _ A
+
+end LinearIsometryEquiv

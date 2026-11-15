@@ -36,10 +36,8 @@ identities and composition, and form an additive commutative group.
 * `TauCeti.Hodge.HodgeStructure.Hom.map_conjF_le`: morphisms preserve the conjugate filtration.
 * `TauCeti.Hodge.HodgeStructure.Hom.map_piece_le`: morphisms preserve every Hodge component.
 
-This supplies the morphism companion in Layer L0 of
-`TauCetiRoadmap/HodgeStructures/README.md`.  It follows the opposed-filtration convention of
-Deligne, *Théorie de Hodge II*, §1.2.1, and the usual morphism convention in Voisin,
-*Hodge Theory and Complex Algebraic Geometry I*, §7.
+This file follows the opposed-filtration convention of Deligne, *Théorie de Hodge II*, §1.2.1,
+and the usual morphism convention in Voisin, *Hodge Theory and Complex Algebraic Geometry I*, §7.
 -/
 
 public section
@@ -451,7 +449,7 @@ theorem zero_comp (f : Hom source target) : (0 : Hom target third).comp f = 0 :=
 /-- Composing with a zero morphism on the right gives zero. -/
 @[simp]
 theorem comp_zero (g : Hom target third) : g.comp (0 : Hom source target) = 0 := by
-  ext x
+  ext _
   exact g.toIntLinearMap.map_zero
 
 end Hom

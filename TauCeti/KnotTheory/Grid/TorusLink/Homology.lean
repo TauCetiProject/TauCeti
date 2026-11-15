@@ -64,7 +64,7 @@ variable (p q : ℕ)
 /-- No power of a grid variable kills the class of the `X`-marking state in the unblocked grid
 homology of a torus link grid. -/
 theorem X_pow_smul_XMarkingClass_torusLink_ne_zero (R : Type*) [CommRing R] [CharP R 2]
-    [Nontrivial R] (i : Fin (p + 1 + (q + 1))) (k : ℕ) :
+    (i : Fin (p + 1 + (q + 1))) (k : ℕ) :
     (MvPolynomial.X i ^ k : MvPolynomial (Fin (p + 1 + (q + 1))) R) •
       (torusLink p q).XMarkingClass R ≠ 0 :=
   (torusLink p q).X_pow_smul_XMarkingClass_ne_zero R

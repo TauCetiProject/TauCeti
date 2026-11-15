@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Sites.SheafCohomology.Basic
+public import TauCeti.CategoryTheory.Sites.SheafCohomology.FreeYoneda
 
 /-!
 # Sheaf cohomology at a terminal object
@@ -20,7 +20,9 @@ Mathlib carries two accounts of the cohomology of an abelian sheaf `F` on a site
 They agree when `X` is a terminal object, and this file supplies that comparison. The abstract
 Mayer-Vietoris sequence of `Mathlib.CategoryTheory.Sites.SheafCohomology.MayerVietoris` is stated
 in terms of `Sheaf.H'`, so the comparison is what lets a covering of the whole site compute
-`Sheaf.H`.
+`Sheaf.H`. The source comparison identifies the free generator with the constant section one,
+as characterized by `Limits.IsTerminal.freeYonedaSheafSectionsEquiv_inv_comp`. This makes the
+terminal-object comparison compatible with inverse image on sheaf cohomology.
 
 ## Main declarations
 
@@ -42,42 +44,16 @@ namespace CategoryTheory
 
 variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C}
 
-private noncomputable def yonedaObjIsoConst {T : C} (hT : IsTerminal T) :
-    yoneda.obj T ≅ (Functor.const Cᵒᵖ).obj PUnit.{v + 1} :=
-  (hT.isTerminalObj yoneda).uniqueUpToIso (Functor.isTerminalConst Cᵒᵖ Types.isTerminalPUnit)
-
-private def freeObjPUnitIso :
-    AddCommGrpCat.free.obj PUnit.{v + 1} ≅ AddCommGrpCat.of (ULift.{v} ℤ) :=
-  AddEquiv.toAddCommGrpIso ((FreeAbelianGroup.uniqueEquiv PUnit).trans AddEquiv.ulift.symm)
-
-private noncomputable def freeYonedaObjIsoConst {T : C} (hT : IsTerminal T) :
-    yoneda.obj T ⋙ AddCommGrpCat.free.{v} ≅
-      (Functor.const Cᵒᵖ).obj (AddCommGrpCat.of (ULift.{v} ℤ)) :=
-  Functor.isoWhiskerRight (yonedaObjIsoConst hT) AddCommGrpCat.free ≪≫
-    Functor.constComp (J := Cᵒᵖ) PUnit.{v + 1} AddCommGrpCat.free ≪≫
-      (Functor.const Cᵒᵖ).mapIso freeObjPUnitIso
-
-noncomputable section
-
-variable [HasWeakSheafify J AddCommGrpCat.{v}]
-
-private def freeYonedaSheafIsoConstantSheaf {T : C} (hT : IsTerminal T) :
-    (presheafToSheaf J AddCommGrpCat.{v}).obj (yoneda.obj T ⋙ AddCommGrpCat.free) ≅
-      (constantSheaf J AddCommGrpCat.{v}).obj (AddCommGrpCat.of (ULift.{v} ℤ)) :=
-  (presheafToSheaf J _).mapIso (freeYonedaObjIsoConst hT)
-
-end
-
 noncomputable section
 
 variable [HasSheafify J AddCommGrpCat.{v}] [HasExt.{w} (Sheaf J AddCommGrpCat.{v})]
 
--- Mathlib's `functorH` and `extFunctorObj` use definitionally equal object and map data.
+-- Mathlib's `extFunctorObj` and `functorH` use definitionally equal object and map data.
 -- Naming that identification here isolates the definitional coincidence used below.
-private noncomputable def functorHIso (n : ℕ) :
-    _root_.CategoryTheory.Sheaf.functorH J n ≅
-      (_root_.CategoryTheory.Abelian.extFunctor n).obj
-        (op ((constantSheaf J AddCommGrpCat.{v}).obj (AddCommGrpCat.of (ULift ℤ)))) :=
+private def extFunctorObjIsoFunctorH (n : ℕ) :
+    (_root_.CategoryTheory.Abelian.extFunctor n).obj
+        (op ((constantSheaf J AddCommGrpCat.{v}).obj (AddCommGrpCat.of (ULift ℤ)))) ≅
+      _root_.CategoryTheory.Sheaf.functorH J n :=
   NatIso.ofComponents (fun _ => Iso.refl _)
     (by
       intros
@@ -89,6 +65,47 @@ end
 end CategoryTheory
 
 end TauCeti
+
+namespace CategoryTheory.Limits.IsTerminal
+
+open TauCeti.CategoryTheory
+
+variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C}
+  [HasSheafify J AddCommGrpCat.{v}]
+
+private noncomputable def constantIntegersCorepresentableBy {T : C} (hT : IsTerminal T) :
+    ((sheafSections J AddCommGrpCat.{v}).obj (Opposite.op T) ⋙
+      forget AddCommGrpCat).CorepresentableBy
+      ((constantSheaf J AddCommGrpCat.{v}).obj (AddCommGrpCat.of (ULift ℤ))) :=
+  ((constantSheafAdj J AddCommGrpCat.{v} hT).corepresentableBy _).ofIso
+    (Functor.isoWhiskerLeft _ AddCommGrpCat.coyonedaObjIsoForget)
+
+/-- The free abelian sheaf on a terminal object is the constant sheaf of integers. -/
+noncomputable def freeYonedaSheafIsoConstant {T : C} (hT : IsTerminal T) :
+    (freeYonedaSheafFunctor J).obj T ≅
+      (constantSheaf J AddCommGrpCat.{v}).obj (AddCommGrpCat.of (ULift ℤ)) :=
+  (freeYonedaSheafCorepresentableBy J T).uniqueUpToIso
+    (constantIntegersCorepresentableBy hT)
+
+/-- The terminal-object comparison identifies the free generator with the constant section
+one, so precomposition with its inverse preserves the represented section. -/
+lemma freeYonedaSheafSectionsEquiv_inv_comp {T : C} (hT : IsTerminal T)
+    (F : Sheaf J AddCommGrpCat.{v}) (a : (freeYonedaSheafFunctor J).obj T ⟶ F) :
+    AddCommGrpCat.uliftZMultiplesAddEquiv _
+        ((constantSheafAdj J AddCommGrpCat.{v} hT).homEquiv _ _
+          (hT.freeYonedaSheafIsoConstant.inv ≫ a)) =
+      freeYonedaSheafSectionsEquiv J T F a := by
+  let e := constantIntegersCorepresentableBy (J := J) hT
+  have he : hT.freeYonedaSheafIsoConstant.inv =
+      e.homEquiv.symm ((freeYonedaSheafCorepresentableBy J T).homEquiv (𝟙 _)) := rfl
+  -- The left side is the corepresentation bijection for the constant integer sheaf.
+  change e.homEquiv (hT.freeYonedaSheafIsoConstant.inv ≫ a) = _
+  rw [he, e.homEquiv_comp, Equiv.apply_symm_apply,
+    freeYonedaSheafCorepresentableBy_homEquiv]
+  exact (freeYonedaSheafSectionsEquiv_naturality_right J (𝟙 _) a).symm.trans
+    (congrArg (freeYonedaSheafSectionsEquiv J T F) (Category.id_comp a))
+
+end CategoryTheory.Limits.IsTerminal
 
 namespace CategoryTheory.Sheaf
 
@@ -102,13 +119,21 @@ noncomputable def cohomologyPresheafEvaluationIsoFunctorH (n : ℕ) {T : C} (hT 
     cohomologyPresheafFunctor J n ⋙ (evaluation Cᵒᵖ AddCommGrpCat.{w}).obj (op T) ≅
       functorH J n :=
   (Abelian.extFunctor n).mapIso
-      (TauCeti.CategoryTheory.freeYonedaSheafIsoConstantSheaf hT).symm.op ≪≫
-    TauCeti.CategoryTheory.functorHIso n
+      hT.freeYonedaSheafIsoConstant.symm.op ≪≫
+    TauCeti.CategoryTheory.extFunctorObjIsoFunctorH n
 
 /-- At a terminal object, the cohomology of the object is the cohomology of the site. -/
 noncomputable abbrev cohomologyPresheafObjIsoH (F : Sheaf J AddCommGrpCat.{v}) (n : ℕ)
     {T : C} (hT : IsTerminal T) :
     H' F n T ≅ AddCommGrpCat.of (H F n) :=
   (cohomologyPresheafEvaluationIsoFunctorH J n hT).app F
+
+/-- The terminal-object comparison is precomposition of extensions with the inverse
+of the free-sheaf comparison. -/
+lemma cohomologyPresheafObjIsoH_hom_apply (F : Sheaf J AddCommGrpCat.{v}) (n : ℕ)
+    {T : C} (hT : IsTerminal T) (x : F.H' n T) :
+    (F.cohomologyPresheafObjIsoH n hT).hom x =
+      (Abelian.Ext.mk₀ hT.freeYonedaSheafIsoConstant.inv).comp x (zero_add n) :=
+  (rfl)
 
 end CategoryTheory.Sheaf

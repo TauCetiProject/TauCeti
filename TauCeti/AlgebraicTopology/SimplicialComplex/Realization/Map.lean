@@ -275,4 +275,46 @@ theorem realizationHomeomorph_symm_apply
     (hfg : f.comp g = id L.toPreAbstractSimplicialComplex) (x : Realization L) :
     (f.realizationHomeomorph g hgf hfg).symm x = g.realizationMap x := (rfl)
 
+/-- The realization of a simplicial map with a simplicial right inverse is surjective. -/
+theorem realizationMap_surjective
+    (f : SimplicialMap K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex)
+    (g : SimplicialMap L.toPreAbstractSimplicialComplex K.toPreAbstractSimplicialComplex)
+    (hfg : f.comp g = id L.toPreAbstractSimplicialComplex) :
+    Function.Surjective f.realizationMap := fun y ↦
+  ⟨g.realizationMap y, by
+    have h := realizationMap_comp f g
+    rw [hfg, realizationMap_id] at h
+    exact (DFunLike.congr_fun h y).symm⟩
+
 end PreAbstractSimplicialComplex.SimplicialMap
+
+namespace TauCeti.PreAbstractSimplicialComplex.SimplicialMap
+
+open _root_.AbstractSimplicialComplex
+
+/-- Realization carries the support of a point to the vertex image of its support. It fires
+before `realizationMap_val` rewrites the realization to a `Finsupp.mapDomain`. -/
+@[simp↓]
+theorem support_realizationMap {α β : Type*} [DecidableEq β]
+    {K : AbstractSimplicialComplex α} {L : AbstractSimplicialComplex β}
+    (f : _root_.PreAbstractSimplicialComplex.SimplicialMap
+      K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex)
+    (x : Realization K) :
+    (f.realizationMap x).1.support = x.1.support.image f := by
+  rw [_root_.PreAbstractSimplicialComplex.SimplicialMap.realizationMap_val]
+  exact Finsupp.support_mapDomain_of_nonneg (fun i ↦ Realization.nonneg K x i) f
+
+/-- A simplicial map whose realization is surjective transports sets defined by support predicates
+whenever those predicates correspond under the vertex map. -/
+theorem image_realizationMap_ofPred_support {α β : Type*} [DecidableEq β]
+    {K : AbstractSimplicialComplex α} {L : AbstractSimplicialComplex β}
+    (f : _root_.PreAbstractSimplicialComplex.SimplicialMap
+      K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex)
+    (hf : Function.Surjective f.realizationMap)
+    {P : Finset α → Prop} {Q : Finset β → Prop}
+    (hPQ : ∀ s, P s ↔ Q (s.image f)) :
+    f.realizationMap '' {x | P x.1.support} = {y | Q y.1.support} := by
+  simpa only [Set.preimage_ofPred_eq, support_realizationMap, ← hPQ] using
+    Set.image_preimage_eq {y : Realization L | Q y.1.support} hf
+
+end TauCeti.PreAbstractSimplicialComplex.SimplicialMap

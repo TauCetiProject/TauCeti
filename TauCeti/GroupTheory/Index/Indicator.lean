@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Ring.Int.Units
 public import Mathlib.GroupTheory.Index
 
-import Mathlib.Algebra.Order.SuccPred
+import Mathlib.Algebra.GroupWithZero.Units.Fintype
 import Mathlib.Data.Nat.Prime.Basic
 
 /-!
@@ -36,103 +36,77 @@ sign-valued character used to prove bimultiplicativity of the Hilbert symbol.
 
 ## References
 
-* Mathlib's `Subgroup.index_dvd_two_iff` and `Subgroup.mul_mem_iff_of_index_two` provide the
-  index-two subgroup criteria used to prove multiplicativity.
+* Mathlib's `Subgroup.mul_mem_iff_of_index_two` and `Subgroup.index_ker` provide the two
+  directions of the multiplicativity criterion.
 -/
 
 public section
 
-namespace TauCeti
+namespace Subgroup
 
 variable {G : Type*} [Group G]
 
 open scoped Classical in
 /-- The sign indicator of a subgroup: it is `1` on the subgroup and `-1` off it. -/
-noncomputable def _root_.Subgroup.signIndicator (H : Subgroup G) (x : G) : ℤˣ :=
+noncomputable def signIndicator (H : Subgroup G) (x : G) : ℤˣ :=
   (H : Set G)ᶜ.mulIndicator (fun _ ↦ (-1 : ℤˣ)) x
 
 /-- The sign indicator is `1` on its subgroup. -/
 @[simp]
-theorem _root_.Subgroup.signIndicator_of_mem (H : Subgroup G) {x : G} (hx : x ∈ H) :
+theorem signIndicator_of_mem (H : Subgroup G) {x : G} (hx : x ∈ H) :
     H.signIndicator x = 1 := by
-  simp [Subgroup.signIndicator, hx]
+  simp [signIndicator, hx]
 
 /-- The sign indicator is `-1` outside its subgroup. -/
 @[simp]
-theorem _root_.Subgroup.signIndicator_of_notMem (H : Subgroup G) {x : G} (hx : x ∉ H) :
+theorem signIndicator_of_notMem (H : Subgroup G) {x : G} (hx : x ∉ H) :
     H.signIndicator x = -1 := by
-  simp [Subgroup.signIndicator, hx]
+  simp [signIndicator, hx]
 
 /-- The sign indicator detects membership by taking the value `1`. -/
 @[simp]
-theorem _root_.Subgroup.signIndicator_eq_one_iff (H : Subgroup G) {x : G} :
+theorem signIndicator_eq_one_iff (H : Subgroup G) {x : G} :
     H.signIndicator x = 1 ↔ x ∈ H := by
-  by_cases hx : x ∈ H
-  · simp [hx]
-  · simp only [H.signIndicator_of_notMem hx, hx, iff_false]
-    exact Int.units_ne_iff_eq_neg.mpr rfl
+  by_cases hx : x ∈ H <;> simp [hx, Units.ext_iff]
 
 /-- The sign indicator detects nonmembership by taking the value `-1`. -/
 @[simp]
-theorem _root_.Subgroup.signIndicator_eq_neg_one_iff (H : Subgroup G) {x : G} :
+theorem signIndicator_eq_neg_one_iff (H : Subgroup G) {x : G} :
     H.signIndicator x = -1 ↔ x ∉ H := by
-  by_cases hx : x ∈ H
-  · simp only [H.signIndicator_of_mem hx, hx, not_true_eq_false, iff_false]
-    exact Int.units_ne_iff_eq_neg.mpr (by simp)
-  · simp [hx]
+  by_cases hx : x ∈ H <;> simp [hx, Units.ext_iff]
 
 /-- **The sign indicator is multiplicative exactly when the subgroup index divides two.**
 
 This is the version without a finiteness assumption.  The divisibility condition is essential:
 Mathlib records an infinite index as zero, which satisfies `H.index ≤ 2` but does not divide
 two. -/
-theorem _root_.Subgroup.signIndicator_mul_iff_index_dvd_two (H : Subgroup G) :
+theorem signIndicator_mul_iff_index_dvd_two (H : Subgroup G) :
     (∀ x y : G, H.signIndicator (x * y) = H.signIndicator x * H.signIndicator y) ↔
       H.index ∣ 2 := by
-  constructor
-  · intro hmul
-    rw [Subgroup.index_dvd_two_iff]
-    by_cases htop : H = ⊤
-    · subst H
-      exact ⟨1, by simp⟩
-    · obtain ⟨a, -, ha⟩ := IsConcreteLE.exists_of_lt (lt_top_iff_ne_top.mpr htop)
-      refine ⟨a, fun b ↦ ?_⟩
-      by_cases hb : b ∈ H
-      · exact Or.inr hb
-      · left
-        by_contra hba
-        have h := hmul b a
-        rw [H.signIndicator_of_notMem hba, H.signIndicator_of_notMem hb,
-          H.signIndicator_of_notMem ha] at h
-        have hbad : (-1 : ℤˣ) = 1 := by
-          simpa only [neg_mul, one_mul, neg_neg] using h
-        exact Int.units_ne_iff_eq_neg.mpr rfl hbad
-  · intro hindex
-    rcases (Nat.dvd_prime Nat.prime_two).mp hindex with hindex | hindex
-    · have htop := Subgroup.index_eq_one.mp hindex
-      subst H
-      simp [Subgroup.signIndicator]
-    · intro x y
-      by_cases hx : x ∈ H <;> by_cases hy : y ∈ H <;>
-        simp [Subgroup.signIndicator, hx, hy, H.mul_mem_iff_of_index_two hindex]
+  refine ⟨fun hmul ↦ ?_, fun hindex x y ↦ ?_⟩
+  · -- A multiplicative sign indicator is a homomorphism with kernel `H`, so the index of `H`
+    -- is the order of a subgroup of `ℤˣ`.
+    let f : G →* ℤˣ := MonoidHom.mk' H.signIndicator hmul
+    have hker : f.ker = H := by ext; simp [f]
+    rw [← hker, index_ker f, ← Fintype.card_units_int, ← Nat.card_eq_fintype_card]
+    exact card_subgroup_dvd_card f.range
+  · rcases (Nat.dvd_prime Nat.prime_two).mp hindex with hindex | hindex
+    · obtain rfl := index_eq_one.mp hindex
+      simp
+    · by_cases hx : x ∈ H <;> by_cases hy : y ∈ H <;>
+        simp [hx, hy, H.mul_mem_iff_of_index_two hindex]
 
 /-- For a subgroup with finite quotient, the sign indicator is multiplicative exactly when the
 subgroup has index at most two. -/
-theorem _root_.Subgroup.signIndicator_mul_iff_index_le_two (H : Subgroup G) [H.FiniteIndex] :
+theorem signIndicator_mul_iff_index_le_two (H : Subgroup G) [H.FiniteIndex] :
     (∀ x y : G, H.signIndicator (x * y) = H.signIndicator x * H.signIndicator y) ↔
       H.index ≤ 2 := by
-  rw [H.signIndicator_mul_iff_index_dvd_two]
-  constructor
-  · exact fun h ↦ Nat.le_of_dvd (by decide) h
-  · intro hle
-    have hne : H.index ≠ 0 := H.index_ne_zero_of_finite
-    rcases Order.le_two_iff.mp hle with hindex | hindex | hindex
-    · exact (hne hindex).elim
-    · simp [hindex]
-    · simp [hindex]
+  rw [H.signIndicator_mul_iff_index_dvd_two, Nat.dvd_prime Nat.prime_two]
+  have := H.index_ne_zero_of_finite
+  omega
 
 /-- The sign indicator, bundled as a homomorphism when the subgroup index divides two. -/
-noncomputable def _root_.Subgroup.signIndicatorHom (H : Subgroup G)
+noncomputable def signIndicatorHom (H : Subgroup G)
     (hindex : H.index ∣ 2) :
     G →* ℤˣ where
   toFun := H.signIndicator
@@ -141,46 +115,35 @@ noncomputable def _root_.Subgroup.signIndicatorHom (H : Subgroup G)
 
 /-- The bundled sign-indicator homomorphism evaluates to the underlying sign indicator. -/
 @[simp]
-theorem _root_.Subgroup.signIndicatorHom_apply (H : Subgroup G) (hindex : H.index ∣ 2)
+theorem signIndicatorHom_apply (H : Subgroup G) (hindex : H.index ∣ 2)
     (x : G) :
-    H.signIndicatorHom hindex x = H.signIndicator x :=
-  by simp [Subgroup.signIndicatorHom]
+    H.signIndicatorHom hindex x = H.signIndicator x := by
+  simp [signIndicatorHom]
 
 /-- The kernel of the sign-indicator homomorphism is the original subgroup. -/
 @[simp]
-theorem _root_.Subgroup.ker_signIndicatorHom (H : Subgroup G) (hindex : H.index ∣ 2) :
+theorem ker_signIndicatorHom (H : Subgroup G) (hindex : H.index ∣ 2) :
     (H.signIndicatorHom hindex).ker = H := by
   ext x
   simp
 
 /-- The sign-indicator homomorphism is onto precisely when the subgroup is proper. -/
-theorem _root_.Subgroup.signIndicatorHom_surjective_iff (H : Subgroup G)
+theorem signIndicatorHom_surjective_iff (H : Subgroup G)
     (hindex : H.index ∣ 2) :
     Function.Surjective (H.signIndicatorHom hindex) ↔ H ≠ ⊤ := by
-  constructor
-  · intro hsurj htop
-    obtain ⟨x, hx⟩ := hsurj (-1)
-    subst H
-    have hxone : (⊤ : Subgroup G).signIndicatorHom hindex x = 1 := by simp
-    exact Int.units_ne_iff_eq_neg.mpr (by simp) (hxone.symm.trans hx)
-  · intro htop u
-    obtain ⟨a, -, ha⟩ := IsConcreteLE.exists_of_lt (lt_top_iff_ne_top.mpr htop)
+  refine ⟨fun hsurj htop ↦ ?_, fun htop u ↦ ?_⟩
+  · obtain ⟨x, hx⟩ := hsurj (-1)
+    simp [htop, Units.ext_iff] at hx
+  · obtain ⟨a, -, ha⟩ := IsConcreteLE.exists_of_lt (lt_top_iff_ne_top.mpr htop)
     rcases Int.units_eq_one_or u with rfl | rfl
     · exact ⟨1, by simp⟩
     · exact ⟨a, by simp [ha]⟩
 
 /-- The sign-indicator homomorphism is onto precisely for a subgroup of index two. -/
-theorem _root_.Subgroup.signIndicatorHom_surjective_iff_index_eq_two (H : Subgroup G)
+theorem signIndicatorHom_surjective_iff_index_eq_two (H : Subgroup G)
     (hindex : H.index ∣ 2) :
     Function.Surjective (H.signIndicatorHom hindex) ↔ H.index = 2 := by
-  rw [H.signIndicatorHom_surjective_iff hindex]
-  rcases (Nat.dvd_prime Nat.prime_two).mp hindex with hindex | hindex
-  · have htop := Subgroup.index_eq_one.mp hindex
-    subst H
-    simp
-  · simp only [hindex, iff_true]
-    intro htop
-    subst H
-    simp at hindex
+  rw [H.signIndicatorHom_surjective_iff hindex, Ne, ← index_eq_one]
+  rcases (Nat.dvd_prime Nat.prime_two).mp hindex with hindex | hindex <;> simp [hindex]
 
-end TauCeti
+end Subgroup

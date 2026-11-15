@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.RootsOfUnity.Finite
 public import TauCeti.RingTheory.RootsOfUnity.Henselian
 public import TauCeti.RingTheory.RootsOfUnity.IntegrallyClosed
 
+import TauCeti.Algebra.GroupWithZero.Units.Basic
 import TauCeti.GroupTheory.OrderOfElement.Basic
 
 /-!
@@ -40,6 +41,8 @@ fields.
 * `TauCeti.teichmuller_eq_iff`: the characterization of its values.
 * `TauCeti.eq_teichmuller`: it is the only multiplicative section of reduction.
 * `TauCeti.range_teichmuller`: its image is exactly `μ_{q-1}(R)`.
+* `TauCeti.teichmuller_neg_one`: for odd `q` it sends `-1` to `-1`.
+* `TauCeti.unitsMap_teichmuller`: it is natural along local homomorphisms.
 * `TauCeti.rootsOfUnityMulEquivUnitsResidueField`: reduction is an isomorphism `μ_{q-1}(R) ≃* kˣ`.
 * `TauCeti.isComplement'_rootsOfUnity_ker_unitsMap_residue`,
   `TauCeti.unitsMulEquivRootsOfUnityProdKerResidue`: the Teichmüller splitting
@@ -163,12 +166,50 @@ theorem range_teichmuller :
     exact teichmuller_pow_card_sub_one R x
   · rw [← rootsOfUnityMulEquivUnitsResidueField_symm_apply, MulEquiv.symm_apply_apply]
 
-/-- A Henselian local ring with residue field of cardinality `q` has exactly `q - 1` roots of
-unity of order dividing `q - 1`. -/
+omit [Finite (ResidueField R)] in
+/-- A Henselian local ring with finite residue field of cardinality `q` has exactly `q - 1` roots
+of unity of order dividing `q - 1`. For an infinite residue field both sides are `0` (the
+`Nat.card` of an infinite type), since `rootsOfUnity 0 R` is all of `Rˣ`, which is infinite. -/
 theorem card_rootsOfUnity :
     Nat.card (rootsOfUnity (Nat.card (ResidueField R) - 1) R) =
       Nat.card (ResidueField R) - 1 := by
-  rw [Nat.card_congr (rootsOfUnityMulEquivUnitsResidueField R).toEquiv, Nat.card_units]
+  rcases finite_or_infinite (ResidueField R) with h | h
+  · rw [Nat.card_congr (rootsOfUnityMulEquivUnitsResidueField R).toEquiv, Nat.card_units]
+  · have hR : Infinite Rˣ :=
+      Infinite.of_surjective _ (IsLocalRing.surjective_units_map_of_local_ringHom
+        (residue R) residue_surjective inferInstance)
+    rw [Nat.card_eq_zero_of_infinite (α := ResidueField R), zero_tsub, rootsOfUnity_zero,
+      Subgroup.card_top]
+    exact Nat.card_eq_zero_of_infinite
+
+/-- For odd `q`, the Teichmüller lift of `-1` is `-1`. (For even `q` the residue `-1` is `1`,
+whose lift is `1`.) -/
+@[simp]
+theorem teichmuller_neg_one (hq : Odd (Nat.card (ResidueField R))) :
+    teichmuller R (-1) = -1 :=
+  (teichmuller_eq_iff R).2 ⟨(Nat.Odd.sub_odd hq odd_one).neg_one_pow, by simp⟩
+
+section Naturality
+
+variable {R} {S : Type*} [CommRing S] [HenselianLocalRing S] [Finite (ResidueField S)]
+
+/-- **Naturality of the Teichmüller lift.** For a local homomorphism `f : R → S` of Henselian local
+rings with finite residue fields, `f` carries the Teichmüller lift in `R` of `x` to the
+Teichmüller lift in `S` of the image of `x` under the induced map of residue fields. -/
+@[simp] theorem unitsMap_teichmuller (f : R →+* S) [IsLocalHom f] (x : (ResidueField R)ˣ) :
+    Units.map (f : R →* S) (teichmuller R x) =
+      teichmuller S (Units.map (ResidueField.map f : ResidueField R →* ResidueField S) x) := by
+  refine ((teichmuller_eq_iff S).2 ⟨?_, ?_⟩).symm
+  -- The residue field of `S` is a finite extension of that of `R`, so `q_R - 1 ∣ q_S - 1`.
+  · obtain ⟨k, hk⟩ : Nat.card (ResidueField R) - 1 ∣ Nat.card (ResidueField S) - 1 := by
+      let := (ResidueField.map f).toAlgebra
+      have : Module.Finite (ResidueField R) (ResidueField S) := .of_finite
+      rw [Module.natCard_eq_pow_finrank (K := ResidueField R) (V := ResidueField S)]
+      exact Nat.sub_one_dvd_pow_sub_one _ _
+    rw [hk, pow_mul, ← map_pow, teichmuller_pow_card_sub_one, map_one, one_pow]
+  · simp [← ResidueField.map_residue]
+
+end Naturality
 
 /-! ### The Teichmüller splitting of the unit group
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Ring.NegOnePow
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.Algebra.DirectSum.Internal
+public import TauCeti.RingTheory.GradedAlgebra.Trivial
 import TauCeti.Algebra.Module.GradedModule.Internal
 
 /-!
@@ -49,10 +50,14 @@ its degree alone.
 * `TauCeti.IsNonUnitalDGAlgebra.leibniz_of_map_eq_zero` and
   `TauCeti.IsNonUnitalDGAlgebra.map_mul_eq_zero_of_map_eq_zero` specialize the Leibniz rule
   when the right factor is a cycle.
+* `TauCeti.IsNonUnitalDGAlgebra.leibniz_of_mem_zero` specializes the Leibniz rule when the left
+  factor has degree zero.
 * `TauCeti.IsDGAlgebra.map_one_eq_zero` and `TauCeti.IsDGAlgebra.map_algebraMap`: the differential
   annihilates the unit and, more generally, the image of the ground ring.
 * `TauCeti.isNonUnitalDGAlgebra_zero` and `TauCeti.isDGAlgebra_zero`: a graded algebra with zero
   differential is a differential graded algebra.
+* `TauCeti.isDGAlgebra_trivialGrading`: in particular, the ground ring, trivially graded with zero
+  differential, is a differential graded algebra.
 
 For a unital DG algebra, the homogeneous consequences of the axioms are also available through
 its regular differential graded left module.  Cycles, boundaries, and the cohomology algebra are
@@ -91,11 +96,10 @@ an arbitrary left factor, without a homogeneity hypothesis. -/
 theorem map_mul_of_leibniz_of_map_eq_zero
     (hl : ∀ {p : ℤ} {a : A}, a ∈ 𝒜 p → ∀ b : A, d (a * b) = d a * b + p.negOnePow • (a * d b))
     (a : A) {b : A} (hb : d b = 0) : d (a * b) = d a * b := by
-  classical
-  conv_lhs => rw [← DirectSum.sum_support_decompose 𝒜 a, Finset.sum_mul, map_sum]
-  conv_rhs => rw [← DirectSum.sum_support_decompose 𝒜 a, map_sum, Finset.sum_mul]
-  refine Finset.sum_congr rfl fun p _ ↦ ?_
-  rw [hl (SetLike.coe_mem _) b, hb, mul_zero, smul_zero, add_zero]
+  induction a using DirectSum.Decomposition.inductionOn 𝒜 with
+  | zero => simp
+  | homogeneous a => simp [hl a.property b, hb]
+  | add a a' ha ha' => simp [add_mul, ha, ha']
 
 end Leibniz
 
@@ -137,6 +141,11 @@ theorem leibniz_of_map_eq_zero (h : IsNonUnitalDGAlgebra 𝒜 d) (a : A) {b : A}
     (hb : d b = 0) : d (a * b) = d a * b :=
   map_mul_of_leibniz_of_map_eq_zero h.leibniz a hb
 
+/-- The Leibniz rule for a left factor of degree zero, where the sign is trivial. -/
+theorem leibniz_of_mem_zero (h : IsNonUnitalDGAlgebra 𝒜 d) {a : A} (ha : a ∈ 𝒜 0) (b : A) :
+    d (a * b) = d a * b + a * d b := by
+  simpa using h.leibniz ha b
+
 /-- The product of two cycles in a nonunital DG algebra is a cycle. -/
 theorem map_mul_eq_zero_of_map_eq_zero (h : IsNonUnitalDGAlgebra 𝒜 d) {a b : A}
     (ha : d a = 0) (hb : d b = 0) : d (a * b) = 0 := by
@@ -155,13 +164,13 @@ theorem isNonUnitalDGAlgebra_zero (𝒜 : ℤ → Submodule R A) [SetLike.Graded
 
 end NonUnital
 
-section Unital
+section UnitalLeibniz
 
-variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A] {𝒜 : ℤ → Submodule R A}
-  [GradedAlgebra 𝒜] {d : A →ₗ[R] A}
+variable {A σ : Type*} [NonAssocRing A] [SetLike σ A] {𝒜 : ℤ → σ}
+  [SetLike.GradedOne 𝒜] {d : A → A}
 
-/-- A linear map satisfying the graded Leibniz rule annihilates the unit: the rule for `1 * 1`
-reads `d 1 = d 1 + d 1`. -/
+/-- A function satisfying the graded Leibniz rule annihilates the unit: the rule for `1 * 1`
+reads `d 1 = d 1 + d 1`. Neither additivity nor a direct-sum decomposition is needed. -/
 theorem map_one_eq_zero_of_leibniz
     (hl : ∀ {p : ℤ} {a : A}, a ∈ 𝒜 p → ∀ b : A, d (a * b) = d a * b + p.negOnePow • (a * d b)) :
     d 1 = 0 := by
@@ -169,11 +178,26 @@ theorem map_one_eq_zero_of_leibniz
   simp only [mul_one, one_mul, Int.negOnePow_zero, one_smul] at key
   exact left_eq_add.mp key
 
-/-- A linear map satisfying the graded Leibniz rule annihilates the image of the ground ring. -/
+end UnitalLeibniz
+
+section AlgebraLeibniz
+
+variable {R A : Type*} [CommSemiring R] [Ring A] [Algebra R A] {𝒜 : ℤ → Submodule R A}
+  [SetLike.GradedOne 𝒜] {d : A →ₗ[R] A}
+
+/-- A linear map satisfying the graded Leibniz rule annihilates the image of the ground semiring.
+Only the unit's degree-zero membership is needed from the grading. -/
 theorem map_algebraMap_of_leibniz
     (hl : ∀ {p : ℤ} {a : A}, a ∈ 𝒜 p → ∀ b : A, d (a * b) = d a * b + p.negOnePow • (a * d b))
     (r : R) : d (algebraMap R A r) = 0 := by
   rw [Algebra.algebraMap_eq_smul_one, map_smul, map_one_eq_zero_of_leibniz hl, smul_zero]
+
+end AlgebraLeibniz
+
+section Unital
+
+variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A] {𝒜 : ℤ → Submodule R A}
+  [GradedAlgebra 𝒜] {d : A →ₗ[R] A}
 
 /-- A **differential graded algebra**: an internally `ℤ`-graded `R`-algebra `𝒜` on a carrier `A`
 together with an `R`-linear map `d` which raises degree by one, squares to zero, and satisfies the
@@ -215,6 +239,12 @@ theorem isDGAlgebra_zero (𝒜 : ℤ → Submodule R A) [GradedAlgebra 𝒜] :
   map_mem := fun _ ↦ zero_mem _
   sq_zero _ := rfl
   leibniz := fun _ _ ↦ by simp
+
+/-- The ground ring with its trivial grading and zero differential is a differential graded
+algebra. -/
+theorem isDGAlgebra_trivialGrading (R : Type*) [CommRing R] :
+    IsDGAlgebra (trivialGrading R R) (0 : R →ₗ[R] R) :=
+  isDGAlgebra_zero _
 
 end Unital
 

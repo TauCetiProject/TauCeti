@@ -29,6 +29,9 @@ points of a proper curve to be reindexed by function-field places.
 
 ## Main results
 
+* `CodimensionOnePoint.exists_toPlace_eq_of_lift`: a morphism from the spectrum of the valuation
+  ring of a place that restricts to the generic point sends the closed point to the centre of the
+  place;
 * `CodimensionOnePoint.toPlace_surjective`: every place of the function field of such a curve is
   attached to a codimension-one point;
 * `CodimensionOnePoint.equivPlace`: the resulting equivalence between codimension-one points and
@@ -55,23 +58,17 @@ namespace CodimensionOnePoint
 variable {k : Type u} [Field k] {X : Scheme.{u}} [IsIntegral X] [X.Over (Spec (.of k))]
   [∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X))]
 
-/-- Every normalized place of the function field of an integral curve over `k` is attached to a
-codimension-one point, as soon as the structure morphism satisfies the existence part of the
-valuative criterion. A proper curve is the motivating instance. -/
-theorem toPlace_surjective (hex : ValuativeCriterion.Existence (X ↘ Spec (.of k)))
-    (hdim : ∀ x : X, coheight x ≤ 1) :
-    Function.Surjective (fun x : CodimensionOnePoint X ↦ X.toPlace (k := k) (x : X)) := by
-  intro P
-  let S : ValuativeCommSq (X ↘ Spec (.of k)) :=
-    { R := P.integers
-      K := X.functionField
-      i₁ := X.fromSpecStalk (genericPoint X)
-      i₂ := Spec.map (CommRingCat.ofHom (algebraMap k P.integers))
-      commSq := ⟨by
-        rw [X.fromSpecStalk_genericPoint_comp_over (k := k), ← Spec.map_comp]
-        congr 1⟩ }
-  obtain ⟨l, hlK, -⟩ := (hex S).exists_lift.some
-  let x : X := l (IsLocalRing.closedPoint S.R)
+omit [∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X))] in
+/-- The lift `l` factors the inclusion of the stalk at the image `x` of the closed point into the
+function field through the valuation ring of `P`. -/
+private lemma algebraMap_stalk_mem_integers_of_lift (P : Place k X.functionField)
+    (l : Spec (.of P.integers) ⟶ X)
+    (hlK : Spec.map (CommRingCat.ofHom (algebraMap P.integers X.functionField)) ≫ l =
+      X.fromSpecStalk (genericPoint X))
+    (a : X.presheaf.stalk (l (IsLocalRing.closedPoint P.integers))) :
+    algebraMap (X.presheaf.stalk (l (IsLocalRing.closedPoint P.integers))) X.functionField a ∈
+      P.integers := by
+  let x : X := l (IsLocalRing.closedPoint P.integers)
   have hg :
       Spec.map (CommRingCat.ofHom
           (algebraMap (X.presheaf.stalk x) X.functionField)) ≫ X.fromSpecStalk x =
@@ -90,30 +87,48 @@ theorem toPlace_surjective (hex : ValuativeCriterion.Existence (X ↘ Spec (.of 
           (algebraMap P.integers X.functionField) =
         CommRingCat.ofHom (algebraMap (X.presheaf.stalk x) X.functionField) :=
     Spec.map_injective hspec
-  -- The lift factors the inclusion of the stalk at `x` into the function field through the
-  -- valuation ring of `P`; this is the only consequence of `hmap` used below.
+  have ha : algebraMap P.integers X.functionField (Scheme.stalkClosedPointTo l a) =
+      algebraMap (X.presheaf.stalk x) X.functionField a := by
+    simpa only [CommRingCat.hom_comp, RingHom.coe_comp, Function.comp_apply,
+      CommRingCat.hom_ofHom] using
+      congrArg (fun g : X.presheaf.stalk x →+* X.functionField ↦ g a)
+        (CommRingCat.hom_ext_iff.mp hmap)
+  rw [← ha, ValuationSubring.algebraMap_apply]
+  exact (Scheme.stalkClosedPointTo l a).property
+
+omit [∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X))] in
+/-- If the stalk at `x` maps into the valuation ring of a place, then `x` is not the generic point:
+there the stalk is the whole function field. -/
+private lemma ne_genericPoint_of_algebraMap_mem_integers (P : Place k X.functionField) {x : X}
+    (hmem : ∀ a : X.presheaf.stalk x, algebraMap (X.presheaf.stalk x) X.functionField a ∈
+      P.integers) : x ≠ genericPoint X := by
+  intro hx
+  -- At the generic point the stalk is the whole function field, so `hmem` would make the
+  -- valuation ring of `P` everything.
+  let e : X.presheaf.stalk x ≅ X.functionField := X.presheaf.stalkCongr (.of_eq hx)
+  have halg (b : X.presheaf.stalk x) :
+      algebraMap (X.presheaf.stalk x) X.functionField b = e.hom b := by
+    rw [RingHom.algebraMap_toAlgebra]
+    simp [e]
+  refine P.integers_ne_top (le_antisymm le_top fun f _ ↦ ?_)
+  have h := hmem (e.inv f)
+  rwa [halg, Iso.inv_hom_id_apply (C := CommRingCat) e f] at h
+
+/-- **The closed point of a lift is the centre of the place.** If a morphism `l : Spec 𝒪_P ⟶ X`
+from the spectrum of the valuation ring of a place `P` of `k(X)` restricts to the generic point on
+`Spec k(X)`, then on a scheme of dimension at most one the image of the closed point of `Spec 𝒪_P`
+is a codimension-one point whose place is `P`. -/
+theorem exists_toPlace_eq_of_lift (hdim : ∀ x : X, coheight x ≤ 1)
+    (P : Place k X.functionField) (l : Spec (.of P.integers) ⟶ X)
+    (hlK : Spec.map (CommRingCat.ofHom (algebraMap P.integers X.functionField)) ≫ l =
+      X.fromSpecStalk (genericPoint X)) :
+    ∃ y : CodimensionOnePoint X, (y : X) = l (IsLocalRing.closedPoint P.integers) ∧
+      X.toPlace (k := k) (y : X) = P := by
+  let x : X := l (IsLocalRing.closedPoint P.integers)
   have hmem (a : X.presheaf.stalk x) :
-      algebraMap (X.presheaf.stalk x) X.functionField a ∈ P.integers := by
-    have ha : algebraMap P.integers X.functionField (Scheme.stalkClosedPointTo l a) =
-        algebraMap (X.presheaf.stalk x) X.functionField a := by
-      simpa only [CommRingCat.hom_comp, RingHom.coe_comp, Function.comp_apply,
-        CommRingCat.hom_ofHom] using
-        congrArg (fun g : X.presheaf.stalk x →+* X.functionField ↦ g a)
-          (CommRingCat.hom_ext_iff.mp hmap)
-    rw [← ha, ValuationSubring.algebraMap_apply]
-    exact (Scheme.stalkClosedPointTo l a).property
-  have hx_ne : x ≠ genericPoint X := by
-    intro hx
-    -- At the generic point the stalk is the whole function field, so `hmem` would make the
-    -- valuation ring of `P` everything.
-    let e : X.presheaf.stalk x ≅ X.functionField := X.presheaf.stalkCongr (.of_eq hx)
-    have halg (b : X.presheaf.stalk x) :
-        algebraMap (X.presheaf.stalk x) X.functionField b = e.hom b := by
-      rw [RingHom.algebraMap_toAlgebra]
-      simp [e]
-    refine P.integers_ne_top (le_antisymm le_top fun f _ ↦ ?_)
-    have h := hmem (e.inv f)
-    rwa [halg, Iso.inv_hom_id_apply (C := CommRingCat) e f] at h
+      algebraMap (X.presheaf.stalk x) X.functionField a ∈ P.integers :=
+    algebraMap_stalk_mem_integers_of_lift P l hlK a
+  have hx_ne : x ≠ genericPoint X := ne_genericPoint_of_algebraMap_mem_integers P hmem
   have hx_pos : 0 < coheight x := by
     rw [coheight_pos]
     intro hxmax
@@ -125,10 +140,29 @@ theorem toPlace_surjective (hex : ValuativeCriterion.Existence (X ↘ Spec (.of 
   let y : CodimensionOnePoint X := ⟨x, hx_one⟩
   let _ : IsDiscreteValuationRing (X.presheaf.stalk x) := inferInstanceAs
     (IsDiscreteValuationRing (X.presheaf.stalk (y : X)))
-  refine ⟨y, Place.eq_of_integers_le ?_⟩
+  refine ⟨y, rfl, Place.eq_of_integers_le ?_⟩
   intro f hf
   obtain ⟨a, rfl⟩ := (X.mem_toPlace_integers_iff_exists_stalk (k := k) x _).mp hf
   exact hmem a
+
+/-- Every normalized place of the function field of an integral curve over `k` is attached to a
+codimension-one point, as soon as the structure morphism satisfies the existence part of the
+valuative criterion. A proper curve is the motivating instance. -/
+theorem toPlace_surjective (hex : ValuativeCriterion.Existence (X ↘ Spec (.of k)))
+    (hdim : ∀ x : X, coheight x ≤ 1) :
+    Function.Surjective (fun x : CodimensionOnePoint X ↦ X.toPlace (k := k) (x : X)) := by
+  intro P
+  let S : ValuativeCommSq (X ↘ Spec (.of k)) :=
+    { R := P.integers
+      K := X.functionField
+      i₁ := X.fromSpecStalk (genericPoint X)
+      i₂ := Spec.map (CommRingCat.ofHom (algebraMap k P.integers))
+      commSq := ⟨by
+        rw [X.fromSpecStalk_genericPoint_comp_over (k := k), ← Spec.map_comp]
+        congr 1⟩ }
+  obtain ⟨l, hlK, -⟩ := (hex S).exists_lift.some
+  obtain ⟨y, -, hy⟩ := exists_toPlace_eq_of_lift hdim P l hlK
+  exact ⟨y, hy⟩
 
 /-- The codimension-one points of a separated integral curve over `k` whose structure morphism
 satisfies the existence part of the valuative criterion, a proper curve for instance, are

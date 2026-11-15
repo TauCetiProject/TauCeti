@@ -6,8 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Lifts
+public import TauCeti.Algebra.Polynomial.Splits
+public import TauCeti.FieldTheory.FunctionField.Place.Degree
 public import TauCeti.FieldTheory.FunctionField.Place.Existence
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
+import TauCeti.FieldTheory.FunctionField.AffineModel.Kummer
+import TauCeti.RingTheory.DedekindDomain.IntegralClosure
+import TauCeti.RingTheory.Valuation.RootMonic
 
 /-!
 # Kummer's theorem: places over a place, from a factorization modulo that place
@@ -35,13 +40,26 @@ factors.
 determine it: the ramification indices are not computed and there may be places over `P` that no
 factor of the reduction produces.  The complementary statement, that the places produced are all
 of them with `e (P' ∣ P) = ε` the multiplicity of `γ` in the reduction and `f (P' ∣ P) = deg γ`,
-needs the monogenicity hypothesis `𝒪'_P = 𝒪_P[y]` (Stichtenoth, Corollary 3.3.8) and is not proved
-here.
+needs the monogenicity hypothesis `𝒪'_P = 𝒪_P[y]` on the integral closure `𝒪'_P` of `𝒪_P` in
+`F'` (Stichtenoth, Corollary 3.3.8).  Under that hypothesis it is proved in the last section, by
+running the affine-model form of `TauCeti/FieldTheory/FunctionField/AffineModel/Kummer.lean` on
+the local model `𝒪_P ⊆ 𝒪'_P`.  That model is a Dedekind domain with no separability hypothesis
+(`TauCeti.integralClosure.isDedekindDomain`), and monogenicity makes it a finite `𝒪_P`-module and
+its conductor trivial.  Unlike the affine-model form, only integrality of `y` at `P` is asked, not
+at every place of a whole chart.
+
+When `y` generates `F'` over `F` and the reduction of `φ` has no repeated factors, the splitting is
+determined without monogenicity, by counting (Stichtenoth, Theorem 3.3.7): the relative degrees of
+the places attached to the factors are at least their degrees, which add up to `[F' : F]`, so by
+the fundamental inequality these places are all the places over `P`, each unramified with relative
+degree the degree of its factor.
 
 ## Main definitions
 
 * `TauCeti.Place.integersEval`: evaluation at `y : F'` of a polynomial over the valuation ring
   `𝒪_P` of a place `P` of `F / k`.
+* `TauCeti.Place.restrictEquivNormalizedFactors`: under monogenicity, the places over `P` in
+  bijection with the normalized irreducible factors of the reduction of `φ`.
 
 ## Main results
 
@@ -54,11 +72,35 @@ here.
 * `TauCeti.Place.exists_injective_restrict_eq`: **Kummer's theorem**, packaged: an injective
   family of places over `P`, indexed by a family of monic irreducible factors of the reduction of
   `φ`, whose relative degrees are at least the degrees of the factors.
+* `TauCeti.Place.splits_map_residue_of_forall_relativeDegree_eq_one`: if every place over `P` has
+  relative degree one, the reduction of `φ` splits.
+* `TauCeti.Place.exists_finset_card_eq_forall_exists_restrict_eq_valuation_sub_lt_one`: at a
+  rational place, a separable split reduction of `φ` gives `deg φ` constants `a`, each with a
+  place over `P` at which `y - a` vanishes.
+* `TauCeti.Place.exists_restrict_eq_relativeDegree_eq_and_isSeparable`: for a generator `y` with
+  separable reduction of `φ`, each irreducible factor `γ` of the reduction is attained by a
+  place over `P` of relative degree exactly `deg γ` with separable residue field extension.
+* `TauCeti.Place.exists_equiv_restrict_eq_of_prod_eq_map_residue` and
+  `TauCeti.Place.ramificationIdx_eq_one_of_prod_eq_map_residue`: **Kummer's theorem for a
+  reduction without repeated factors** (Stichtenoth, Theorem 3.3.7): if `F' = F(y)` and the
+  reduction of `φ` is a product of pairwise distinct monic irreducible factors, the places over
+  `P` correspond to these factors, are unramified, and have relative degree the degree of their
+  factor.
+* `TauCeti.Place.restrictEquivNormalizedFactors`: **Kummer's theorem under monogenicity**
+  (Stichtenoth, Corollary 3.3.8): if `𝒪'_P = 𝒪_P[y]`, the places over `P` are in bijection with
+  the normalized irreducible factors `γ` of the reduction of `φ`.
+* `TauCeti.Place.relativeDegree_restrictEquivNormalizedFactors_symm_apply`,
+  `TauCeti.Place.ramificationIdx_restrictEquivNormalizedFactors_symm_apply` and
+  `TauCeti.Place.valuation_integersEval_restrictEquivNormalizedFactors_symm_apply_lt_one`: the
+  place attached to `γ` has relative degree `deg γ`, ramification index the multiplicity of `γ`,
+  and is a zero of any lift of `γ` evaluated at `y`.
+* `TauCeti.Place.natCard_setOf_restrict_eq`: under monogenicity, the number of places over `P`
+  is the number of distinct irreducible factors of the reduction of `φ`.
 
 ## References
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
-  Theorem 3.3.7.
+  Theorem 3.3.7 and Corollary 3.3.8.
 -/
 
 public section
@@ -73,8 +115,7 @@ universe u u' v v'
 
 variable {k : Type u} {k' : Type u'} {F : Type v} {F' : Type v'}
 variable [Field k] [Field k'] [Field F] [Field F']
-variable [Algebra k k'] [Algebra k F] [Algebra k' F'] [Algebra F F'] [Algebra k F']
-variable [IsScalarTower k k' F'] [IsScalarTower k F F']
+variable [Algebra k k'] [Algebra k F] [Algebra k' F'] [Algebra F F']
 
 /-! ### Evaluating a polynomial integral at a place -/
 
@@ -89,29 +130,26 @@ noncomputable def integersEval (y : F') : P.integers[X] →+* F' :=
 
 variable {P}
 
-omit [Algebra k F'] [IsScalarTower k F F'] in
 theorem integersEval_eq_aeval_map (y : F') (g : P.integers[X]) :
     P.integersEval y g = aeval y (g.map (algebraMap P.integers F)) := by
   rw [aeval_def, eval₂_map]
   rfl
 
-omit [Algebra k F'] [IsScalarTower k F F'] in
 @[simp]
 theorem integersEval_C (y : F') (a : P.integers) :
     P.integersEval y (C a) = algebraMap F F' (a : F) := by
   rw [integersEval, coe_eval₂RingHom, eval₂_C, RingHom.comp_apply,
     ValuationSubring.algebraMap_apply]
 
-omit [Algebra k F'] [IsScalarTower k F F'] in
 @[simp]
 theorem integersEval_X (y : F') : P.integersEval y (X : P.integers[X]) = y := by
   rw [integersEval, coe_eval₂RingHom, eval₂_X]
 
+variable [Algebra k F'] [IsScalarTower k F F'] in
 theorem integersEval_algebraMap (y : F') (c : k) :
     P.integersEval y (C (algebraMap k P.integers c)) = algebraMap k F' c := by
   rw [integersEval_C, coe_algebraMap_constants, ← IsScalarTower.algebraMap_apply]
 
-omit [Algebra k F'] [IsScalarTower k F F'] in
 /-- A polynomial over `𝒪_P` vanishing at `y` is divisible by any monic `φ` over `𝒪_P` whose image
 in `F[X]` is the minimal polynomial of `y`: division by a monic polynomial does not leave
 `𝒪_P[X]`, so divisibility may be tested over `F`. -/
@@ -131,13 +169,32 @@ section Integral
 
 variable [FiniteDimensional F F']
 
-omit [Algebra k F'] [IsScalarTower k k' F'] in
 /-- A polynomial over `𝒪_P` whose image in `F[X]` is the minimal polynomial of `y : F'` is monic,
 because `𝒪_P → F` is injective. -/
-private theorem monic_of_map_eq_minpoly {P : Place k F} {y : F'} {φ : P.integers[X]}
+theorem monic_of_map_eq_minpoly {P : Place k F} {y : F'} {φ : P.integers[X]}
     (hmin : φ.map (algebraMap P.integers F) = minpoly F y) : φ.Monic :=
   Polynomial.monic_of_injective (IsFractionRing.injective P.integers F)
     (hmin ▸ minpoly.monic (IsIntegral.of_finite F y))
+
+omit [FiniteDimensional F F'] in
+/-- A polynomial over `𝒪_P` whose image in `F[X]` is the minimal polynomial of a generator `y` of
+`F' / F` has degree `[F' : F]`. For a transcendental generator `y` the extension `F' / F` is
+infinite, the minimal polynomial and hence `φ` are `0`, and both degrees are `0`. -/
+theorem natDegree_eq_finrank_of_map_eq_minpoly {P : Place k F} {y : F'}
+    (hy : IntermediateField.adjoin F {y} = ⊤) {φ : P.integers[X]}
+    (hmin : φ.map (algebraMap P.integers F) = minpoly F y) :
+    φ.natDegree = Module.finrank F F' := by
+  by_cases hint : IsIntegral F y
+  · rw [← natDegree_map_eq_of_injective (IsFractionRing.injective P.integers F), hmin,
+      ← IntermediateField.adjoin.finrank hint, hy, IntermediateField.finrank_top']
+  · -- a transcendental generator has minimal polynomial `0`, and `F' / F` is infinite
+    rw [minpoly.eq_zero hint] at hmin
+    have hφ : φ = 0 := Polynomial.map_injective _ (IsFractionRing.injective P.integers F)
+      (hmin.trans (Polynomial.map_zero _).symm)
+    rw [hφ, natDegree_zero]
+    exact (Module.finrank_of_not_finite fun _ ↦ hint (IsIntegral.of_finite F y)).symm
+
+variable [Algebra k F'] [IsScalarTower k k' F'] [IsScalarTower k F F']
 
 /-- A root `y : F'` of a polynomial over `𝒪_P` whose image in `F[X]` is the minimal polynomial of
 `y` is integral at every place of `F' / k'` lying over `P`: that polynomial is monic, the
@@ -159,18 +216,19 @@ end Integral
 
 section Residue
 
-variable (k F) [FiniteDimensional F F']
+variable (k F) [Algebra k F'] [IsScalarTower k k' F'] [IsScalarTower k F F']
 
-/-- **Kummer's theorem at a single place, in residue-field form**: if `g` is monic over `𝒪_P` with
-irreducible reduction `γ` over the residue field `F_P`, and `g (y)` vanishes at a place `P'` of
-`F' / k'` over `P` at which `y` is integral, then `γ` is the minimal polynomial over `F_P` of the
-residue of `y` at `P'`. -/
-private theorem minpoly_residue_eq (P' : Place k' F') {y : F'} (hy : y ∈ P'.integers)
-    {g : (P'.restrict k F).integers[X]} (hg : g.Monic)
-    (hirr : Irreducible (g.map (IsLocalRing.residue (P'.restrict k F).integers)))
+section IsIntegral
+
+variable [Algebra.IsIntegral F F']
+
+/-- If `g (y)` vanishes at a place `P'` of `F' / k'` over `P` at which `y` is integral, then the
+residue of `y` at `P'` is a root of the reduction of `g` over the residue field `F_P`. -/
+private theorem aeval_residue_eq_zero (P' : Place k' F') {y : F'} (hy : y ∈ P'.integers)
+    {g : (P'.restrict k F).integers[X]}
     (hv : P'.valuation ((P'.restrict k F).integersEval y g) < 1) :
-    minpoly (P'.restrict k F).ResidueField (IsLocalRing.residue P'.integers ⟨y, hy⟩) =
-      g.map (IsLocalRing.residue (P'.restrict k F).integers) := by
+    aeval (IsLocalRing.residue P'.integers (⟨y, hy⟩ : P'.integers))
+      (g.map (IsLocalRing.residue (P'.restrict k F).integers)) = 0 := by
   -- Evaluating `g` at `y` inside `𝒪_{P'}` and then including into `F'` is `integersEval`.
   have hcomp : (algebraMap P'.integers F').comp
       (algebraMap (P'.restrict k F).integers P'.integers) =
@@ -192,10 +250,65 @@ private theorem minpoly_residue_eq (P' : Place k' F') {y : F'} (hy : y ∈ P'.in
       (algebraMap (P'.restrict k F).ResidueField P'.ResidueField).comp
         (IsLocalRing.residue (P'.restrict k F).integers) :=
     RingHom.ext fun a ↦ (IsLocalRing.ResidueField.algebraMap_residue a).symm
-  have hroot : aeval (IsLocalRing.residue P'.integers (⟨y, hy⟩ : P'.integers))
-      (g.map (IsLocalRing.residue (P'.restrict k F).integers)) = 0 := by
-    rw [aeval_def, eval₂_map, ← hres, ← hom_eval₂, hzero]
-  exact (minpoly.eq_of_irreducible_of_monic hirr hroot (hg.map _)).symm
+  rw [aeval_def, eval₂_map, ← hres, ← hom_eval₂, hzero]
+
+/-- **Integrality from a small value of a monic polynomial**: if a monic `g` over `𝒪_P` has
+`P'`-valuation of `g (y)` less than one, at a place `P'` over `P`, then `y` is integral at `P'`:
+otherwise the leading term of `g (y)` dominates its valuation. -/
+private theorem mem_integers_of_valuation_integersEval_lt_one (P' : Place k' F') {y : F'}
+    {g : (P'.restrict k F).integers[X]} (hg : g.Monic)
+    (hv : P'.valuation ((P'.restrict k F).integersEval y g) < 1) : y ∈ P'.integers := by
+  by_contra hy
+  rw [mem_integers_iff, not_le] at hy
+  have hcoeff (a : (P'.restrict k F).integers) :
+      P'.valuation (algebraMap F F' (a : F)) ≤ 1 :=
+    P'.mem_integers_iff.mp ((restrict_eq_iff_integers_le k F P' _).mp rfl _ a.2)
+  set f := (algebraMap F F').comp (algebraMap (P'.restrict k F).integers F) with hf
+  rw [integersEval, coe_eval₂RingHom, eval₂_eq_eval_map, ← hf] at hv
+  rw [P'.valuation.map_eval_eq_of_one_lt (hg.map f) (fun i _ ↦ ?_) hy] at hv
+  · exact not_lt.mpr (one_le_pow₀ hy.le) hv
+  · rw [coeff_map]
+    exact hcoeff _
+
+/-- **Kummer's theorem at a single place, in residue-field form**: if `g` is monic over `𝒪_P` with
+irreducible reduction `γ` over the residue field `F_P`, and `g (y)` vanishes at a place `P'` of
+`F' / k'` over `P` at which `y` is integral, then `γ` is the minimal polynomial over `F_P` of the
+residue of `y` at `P'`. -/
+private theorem minpoly_residue_eq (P' : Place k' F') {y : F'} (hy : y ∈ P'.integers)
+    {g : (P'.restrict k F).integers[X]} (hg : g.Monic)
+    (hirr : Irreducible (g.map (IsLocalRing.residue (P'.restrict k F).integers)))
+    (hv : P'.valuation ((P'.restrict k F).integersEval y g) < 1) :
+    minpoly (P'.restrict k F).ResidueField (IsLocalRing.residue P'.integers ⟨y, hy⟩) =
+      g.map (IsLocalRing.residue (P'.restrict k F).integers) :=
+  (minpoly.eq_of_irreducible_of_monic hirr (aeval_residue_eq_zero k F P' hy hv)
+    (hg.map _)).symm
+
+/-- If a monic `g` over `𝒪_P` with irreducible **separable** reduction `γ` vanishes at `y` modulo
+a place `P'` over `P`, and `f (P' ∣ P) = deg γ`, then the residue field `F'_{P'}` is generated over
+`F_P` by the residue of `y`, a root of `γ`, so it is separable over `F_P`. -/
+private theorem isSeparable_residueField_of_relativeDegree_eq (P' : Place k' F') {y : F'}
+    (hy : y ∈ P'.integers) {g : (P'.restrict k F).integers[X]} (hg : g.Monic)
+    (hirr : Irreducible (g.map (IsLocalRing.residue (P'.restrict k F).integers)))
+    (hsep : (g.map (IsLocalRing.residue (P'.restrict k F).integers)).Separable)
+    (hv : P'.valuation ((P'.restrict k F).integersEval y g) < 1)
+    (hrel : relativeDegree k F P' =
+      (g.map (IsLocalRing.residue (P'.restrict k F).integers)).natDegree) :
+    Algebra.IsSeparable (P'.restrict k F).ResidueField P'.ResidueField := by
+  have hminres := minpoly_residue_eq k F P' hy hg hirr hv
+  have hsepres : IsSeparable (P'.restrict k F).ResidueField
+      (IsLocalRing.residue P'.integers ⟨y, hy⟩) := by
+    rw [IsSeparable, hminres]
+    exact hsep
+  have : FiniteDimensional (P'.restrict k F).ResidueField P'.ResidueField :=
+    Module.finite_of_finrank_pos (by rw [← relativeDegree_def, hrel]; exact hirr.natDegree_pos)
+  have htop : IntermediateField.adjoin (P'.restrict k F).ResidueField
+      {IsLocalRing.residue P'.integers ⟨y, hy⟩} = ⊤ := by
+    refine IntermediateField.eq_of_le_of_finrank_eq le_top ?_
+    rw [IntermediateField.adjoin.finrank hsepres.isIntegral, hminres,
+      IntermediateField.finrank_top', ← relativeDegree_def, hrel]
+  have := (IntermediateField.isSeparable_adjoin_simple_iff_isSeparable _ _).mpr hsepres
+  rw [htop] at this
+  exact AlgEquiv.Algebra.isSeparable IntermediateField.topEquiv
 
 variable {k F}
 
@@ -205,29 +318,42 @@ polynomial, namely the minimal polynomial of the residue of `y`.  This is what m
 attached to distinct irreducible factors of the reduction of `φ` distinct (Stichtenoth,
 Theorem 3.3.7). -/
 theorem map_residue_eq_of_valuation_lt_one {P : Place k F} {P' : Place k' F'}
-    (hres : P'.restrict k F = P) {y : F'} (hy : y ∈ P'.integers) {g₁ g₂ : P.integers[X]}
+    (hres : P'.restrict k F = P) {y : F'} {g₁ g₂ : P.integers[X]}
     (hg₁ : g₁.Monic) (hirr₁ : Irreducible (g₁.map (IsLocalRing.residue P.integers)))
     (hv₁ : P'.valuation (P.integersEval y g₁) < 1)
     (hg₂ : g₂.Monic) (hirr₂ : Irreducible (g₂.map (IsLocalRing.residue P.integers)))
     (hv₂ : P'.valuation (P.integersEval y g₂) < 1) :
     g₁.map (IsLocalRing.residue P.integers) = g₂.map (IsLocalRing.residue P.integers) := by
   subst hres
+  have hy := mem_integers_of_valuation_integersEval_lt_one k F P' hg₁ hv₁
   rw [← minpoly_residue_eq k F P' hy hg₁ hirr₁ hv₁, minpoly_residue_eq k F P' hy hg₂ hirr₂ hv₂]
 
-/-- **The relative degree bound of Kummer's theorem** (Stichtenoth, Theorem 3.3.7): a place `P'`
-over `P` at which a monic `g` with irreducible reduction `γ` vanishes has relative degree at
-least `deg γ`, because `γ` is the minimal polynomial of the residue of `y` at `P'`. -/
+end IsIntegral
+
+variable {k F} [FiniteDimensional F F']
+
+/-- **The relative degree bound of Kummer's theorem** (Stichtenoth, Theorem 3.3.7): let `P'` be a
+place over `P` at which `y` is integral, and let `g` be a polynomial over `𝒪_P` with irreducible
+reduction `γ` such that `g (y)` vanishes at `P'`. Then `P'` has relative degree at least `deg γ`,
+because `γ` is associated to the minimal polynomial of the residue of `y` at `P'`, and so has the
+same degree. -/
 theorem natDegree_map_residue_le_relativeDegree {P : Place k F} {P' : Place k' F'}
     (hres : P'.restrict k F = P) {y : F'} (hy : y ∈ P'.integers) {g : P.integers[X]}
-    (hg : g.Monic) (hirr : Irreducible (g.map (IsLocalRing.residue P.integers)))
+    (hirr : Irreducible (g.map (IsLocalRing.residue P.integers)))
     (hv : P'.valuation (P.integersEval y g) < 1) :
     (g.map (IsLocalRing.residue P.integers)).natDegree ≤ relativeDegree k F P' := by
   subst hres
-  have hmin := minpoly_residue_eq k F P' hy hg hirr hv
+  have hroot := aeval_residue_eq_zero k F P' hy hv
   have hint : IsIntegral (P'.restrict k F).ResidueField
       (IsLocalRing.residue P'.integers (⟨y, hy⟩ : P'.integers)) :=
-    ⟨_, hg.map _, by rw [← hmin]; exact minpoly.aeval _ _⟩
-  rw [relativeDegree_def, ← hmin]
+    IsAlgebraic.isIntegral ⟨_, hirr.ne_zero, hroot⟩
+  -- the minimal polynomial is the monic associate of the irreducible reduction
+  have hdeg : (minpoly (P'.restrict k F).ResidueField
+      (IsLocalRing.residue P'.integers (⟨y, hy⟩ : P'.integers))).natDegree =
+        (g.map (IsLocalRing.residue (P'.restrict k F).integers)).natDegree := by
+    rw [← minpoly.eq_of_irreducible hirr hroot,
+      natDegree_mul_C (inv_ne_zero (leadingCoeff_ne_zero.mpr hirr.ne_zero))]
+  rw [relativeDegree_def, ← hdeg]
   exact Nat.le_of_dvd Module.finrank_pos (minpoly.degree_dvd hint)
 
 end Residue
@@ -235,8 +361,6 @@ end Residue
 /-! ### Kummer's theorem -/
 
 section Kummer
-
-variable [FiniteDimensional F F'] [Algebra.IsIntegral k k']
 
 /-- Every monic polynomial over the residue field `F_P` lifts to a monic polynomial over the
 valuation ring `𝒪_P`. -/
@@ -246,28 +370,27 @@ theorem exists_monic_map_residue_eq (P : Place k F) {γ : P.ResidueField[X]} (h�
     ((lifts_iff_coeff_lifts γ).mpr fun n ↦ IsLocalRing.residue_surjective (γ.coeff n)) hγ
   exact ⟨g, hmonic, hmap⟩
 
-/-- **Kummer's theorem** (Stichtenoth, Theorem 3.3.7), for one irreducible factor.  Let `P` be a
-place of `F / k`, let `y : F'` be a root of a monic `φ ∈ 𝒪_P[X]` whose image in `F[X]` is the
-minimal polynomial of `y`, and let `g ∈ 𝒪_P[X]` be monic with irreducible reduction dividing the
-reduction of `φ`.  Then some place `P'` of `F' / k'` lies over `P`, has `g (y)` in its maximal
-ideal, and has relative degree at least the degree of the reduction of `g`.
+variable [Algebra k F'] [IsScalarTower k k' F'] [IsScalarTower k F F']
+variable [FiniteDimensional F F'] [Algebra.IsIntegral k k']
 
-The theorem bounds the splitting of `P` without determining it: nothing here says that every
-place over `P` arises this way, and the ramification indices are not computed. -/
-theorem exists_restrict_eq_of_irreducible_map_residue (hF : IsFunctionField k F) (P : Place k F)
-    (y : F') {φ g : P.integers[X]}
-    (hmin : φ.map (algebraMap P.integers F) = minpoly F y) (hg : g.Monic)
-    (hirr : Irreducible (g.map (IsLocalRing.residue P.integers)))
+omit [Algebra k F'] [IsScalarTower k F F'] in
+/-- Let `φ` be a lift of the minimal polynomial of `y`, and let `g` be a polynomial whose reduction
+is a nonunit dividing the reduction of `φ`.  Then the evaluations at `y` of the polynomials
+whose reduction is divisible by the reduction of `g` lie in a proper ideal of `𝒪_P[y]`. -/
+private theorem exists_ideal_ne_top_of_not_isUnit_map_residue (P : Place k F) (y : F')
+    {φ g : P.integers[X]} (hmin : φ.map (algebraMap P.integers F) = minpoly F y)
+    (hγ : ¬IsUnit (g.map (IsLocalRing.residue P.integers)))
     (hdvd : g.map (IsLocalRing.residue P.integers) ∣ φ.map (IsLocalRing.residue P.integers)) :
-    ∃ P' : Place k' F', P'.restrict k F = P ∧ P'.valuation (P.integersEval y g) < 1 ∧
-      (g.map (IsLocalRing.residue P.integers)).natDegree ≤ relativeDegree k F P' := by
+    ∃ J : Ideal (P.integersEval (F' := F') y).range, J ≠ ⊤ ∧
+      ∀ q : P.integers[X], g.map (IsLocalRing.residue P.integers) ∣
+        q.map (IsLocalRing.residue P.integers) →
+        (P.integersEval (F' := F') y).rangeRestrict q ∈ J := by
   classical
   have hφ : φ.Monic := monic_of_map_eq_minpoly (F' := F') hmin
-  set res := IsLocalRing.residue P.integers with hresdef
-  set γ := g.map res with hγdef
-  set ev := P.integersEval (F' := F') y with hevdef
-  -- The reduction map to the field `F_P[X] / (γ)`; its kernel `K` contains `φ` and `g`.
-  have hspan : Ideal.span {γ} ≠ ⊤ := fun h ↦ hirr.not_isUnit (Ideal.span_singleton_eq_top.mp h)
+  set res := IsLocalRing.residue P.integers
+  set γ := g.map res
+  set ev := P.integersEval (F' := F') y
+  have hspan : Ideal.span {γ} ≠ ⊤ := fun h ↦ hγ (Ideal.span_singleton_eq_top.mp h)
   have : Nontrivial (P.ResidueField[X] ⧸ Ideal.span {γ}) :=
     Ideal.Quotient.nontrivial_iff.mpr hspan
   set ψ : P.integers[X] →+* (P.ResidueField[X] ⧸ Ideal.span {γ}) :=
@@ -276,11 +399,9 @@ theorem exists_restrict_eq_of_irreducible_map_residue (hF : IsFunctionField k F)
   have hmemK : ∀ q : P.integers[X], q ∈ K ↔ γ ∣ q.map res := fun q ↦ by
     rw [hKdef, RingHom.mem_ker, hψdef, RingHom.comp_apply, coe_mapRingHom,
       Ideal.Quotient.eq_zero_iff_mem, Ideal.mem_span_singleton]
-  have hKtop : K ≠ ⊤ := fun h ↦ by
-    have h1 : ψ 1 = 0 := RingHom.mem_ker.mp ((Ideal.eq_top_iff_one K).mp h)
-    exact one_ne_zero (α := P.ResidueField[X] ⧸ Ideal.span {γ}) (by rwa [map_one] at h1)
-  -- The ideal of `𝒪_P[y]` it induces is proper, because the kernel of the evaluation map is
-  -- generated by `φ`, which lies in `K`.
+  have hKtop : K ≠ ⊤ := RingHom.ker_ne_top ψ
+  -- The ideal of `𝒪_P[y]` induced by the kernel `K` of `ψ` is proper, because the
+  -- kernel of the evaluation map is generated by `φ`, which lies in `K`.
   have hkerle : RingHom.ker ev ≤ K := fun q hq ↦
     (hmemK q).mpr (hdvd.trans (Polynomial.map_dvd res
       (dvd_of_integersEval_eq_zero hφ hmin (RingHom.mem_ker.mp hq))))
@@ -290,23 +411,45 @@ theorem exists_restrict_eq_of_irreducible_map_residue (hF : IsFunctionField k F)
     rw [hJdef, Ideal.comap_map_of_surjective _ ev.rangeRestrict_surjective,
       ← RingHom.ker_eq_comap_bot, ev.ker_rangeRestrict, sup_eq_left.mpr hkerle] at hcomap
     exact hKtop hcomap
-  -- A uniformizer of `P` gives a nonzero element of that ideal.
+  exact ⟨J, hJtop, fun q hq ↦ Ideal.mem_map_of_mem _ ((hmemK q).mpr hq)⟩
+
+/-- **Kummer's theorem** (Stichtenoth, Theorem 3.3.7), for one irreducible factor.  Let `P` be a
+place of `F / k`, let `y : F'` be a root of a monic `φ ∈ 𝒪_P[X]` whose image in `F[X]` is the
+minimal polynomial of `y`, and let `g ∈ 𝒪_P[X]` have irreducible reduction dividing the
+reduction of `φ`.  Then some place `P'` of `F' / k'` lies over `P`, has `g (y)` in its maximal
+ideal, and has relative degree at least the degree of the reduction of `g`.
+
+The theorem bounds the splitting of `P` without determining it: nothing here says that every
+place over `P` arises this way, and the ramification indices are not computed. -/
+theorem exists_restrict_eq_of_irreducible_map_residue (hF : IsFunctionField k F) (P : Place k F)
+    (y : F') {φ g : P.integers[X]}
+    (hmin : φ.map (algebraMap P.integers F) = minpoly F y)
+    (hirr : Irreducible (g.map (IsLocalRing.residue P.integers)))
+    (hdvd : g.map (IsLocalRing.residue P.integers) ∣ φ.map (IsLocalRing.residue P.integers)) :
+    ∃ P' : Place k' F', P'.restrict k F = P ∧ P'.valuation (P.integersEval y g) < 1 ∧
+      (g.map (IsLocalRing.residue P.integers)).natDegree ≤ relativeDegree k F P' := by
+  set ev := P.integersEval (F' := F') y with hevdef
+  -- `J` is a proper ideal of `𝒪_P[y]` containing the images of the polynomials whose reduction is
+  -- divisible by that of `g`.
+  obtain ⟨J, hJtop, hmemJ⟩ :=
+    exists_ideal_ne_top_of_not_isUnit_map_residue P y hmin hirr.not_isUnit hdvd
+  -- A uniformizer of `P` gives a nonzero element of `J`.
   obtain ⟨t, ht⟩ := P.exists_isUniformizer
   rw [P.isUniformizer_iff_ord_eq_one] at ht
   have ht0 : t ≠ 0 := by rintro rfl; simp at ht
   have htmem : t ∈ P.integers := P.mem_integers_iff_ord_nonneg.mpr (by omega)
   have htcoe : ((⟨t, htmem⟩ : P.integers) : F) = t := (rfl)
-  have htK : C (⟨t, htmem⟩ : P.integers) ∈ K := by
-    rw [hmemK, Polynomial.map_C, (P.residue_eq_zero_iff_ord_pos (by rw [htcoe]; exact ht0)).mpr
+  have htK : ev.rangeRestrict (C (⟨t, htmem⟩ : P.integers)) ∈ J := by
+    refine hmemJ _ ?_
+    rw [Polynomial.map_C, (P.residue_eq_zero_iff_ord_pos (by rw [htcoe]; exact ht0)).mpr
       (by rw [htcoe]; omega), map_zero]
     exact dvd_zero _
   have hJbot : J ≠ ⊥ := fun h ↦ by
-    have hmem : ev.rangeRestrict (C (⟨t, htmem⟩ : P.integers)) ∈ J := Ideal.mem_map_of_mem _ htK
-    rw [h, Ideal.mem_bot] at hmem
-    have : ev (C (⟨t, htmem⟩ : P.integers)) = 0 := congrArg Subtype.val hmem
+    rw [h, Ideal.mem_bot] at htK
+    have : ev (C (⟨t, htmem⟩ : P.integers)) = 0 := congrArg Subtype.val htK
     rw [hevdef, integersEval_C] at this
     exact ht0 ((algebraMap F F').injective (by rwa [map_zero]))
-  -- Stichtenoth's existence theorem dominates it by a place of `F'`.
+  -- Stichtenoth's existence theorem dominates `J` by a place of `F'`.
   have hkA : ∀ c : k, algebraMap k F' c ∈ ev.range :=
     fun c ↦ ⟨C (algebraMap k P.integers c), integersEval_algebraMap y c⟩
   obtain ⟨Q, hQint, hQval⟩ := Place.exists_forall_mem_integers_and_valuation_lt_one
@@ -317,41 +460,508 @@ theorem exists_restrict_eq_of_irreducible_map_residue (hF : IsFunctionField k F)
     rw [hP'def, integers_constantsEquiv]
     exact hQint ⟨algebraMap F F' f, C (⟨f, hf⟩ : P.integers), by rw [hevdef, integersEval_C]⟩
   have hvg : P'.valuation (P.integersEval y g) < 1 := by
-    have hgK : g ∈ K := (hmemK g).mpr dvd_rfl
-    simpa [hP'def, hevdef] using hQval _ (Ideal.mem_map_of_mem ev.rangeRestrict hgK)
+    simpa [hP'def, hevdef] using hQval _ (hmemJ g dvd_rfl)
   -- `y` is integral over `𝒪_P`, hence lies in the valuation ring of `P'`.
   exact ⟨P', hrestrict, hvg, natDegree_map_residue_le_relativeDegree hrestrict
-    (mem_integers_of_map_eq_minpoly hrestrict hmin) hg hirr hvg⟩
+    (mem_integers_of_map_eq_minpoly hrestrict hmin) hirr hvg⟩
 
 /-- **Kummer's theorem** (Stichtenoth, Theorem 3.3.7), packaged.  Let `P` be a place of `F / k`
 and let `y : F'` be a root of a monic `φ ∈ 𝒪_P[X]` whose image in `F[X]` is the minimal
 polynomial of `y`.  To a family of pairwise distinct monic irreducible factors `γ i` of the
 reduction of `φ` modulo `P` there is an injective family of places of `F' / k'` over `P`, the
-place attached to `γ i` having relative degree at least `deg (γ i)`.
+place attached to `γ i` having relative degree at least `deg (γ i)`, and the value at `y` of a
+monic lift of `γ i` to `𝒪_P[X]` vanishing there.
 
 The factorization of the reduction of `φ` therefore bounds the splitting of `P` in `F' / F` from
-below; determining it needs the monogenicity hypothesis of Stichtenoth's Corollary 3.3.8. -/
+below.  It is determined when the reduction has no repeated factors and `y` generates `F'`
+(`TauCeti.Place.exists_equiv_restrict_eq_of_prod_eq_map_residue`), and under the monogenicity
+hypothesis of Stichtenoth's Corollary 3.3.8 (`TauCeti.Place.restrictEquivNormalizedFactors`). -/
 theorem exists_injective_restrict_eq (hF : IsFunctionField k F) (P : Place k F) (y : F')
     {φ : P.integers[X]} (hmin : φ.map (algebraMap P.integers F) = minpoly F y)
     {ι : Type*} {γ : ι → P.ResidueField[X]} (hmonic : ∀ i, (γ i).Monic)
     (hirr : ∀ i, Irreducible (γ i))
     (hdvd : ∀ i, γ i ∣ φ.map (IsLocalRing.residue P.integers)) (hinj : Function.Injective γ) :
     ∃ Q : ι → Place k' F', Function.Injective Q ∧
-      ∀ i, (Q i).restrict k F = P ∧ (γ i).natDegree ≤ relativeDegree k F (Q i) := by
+      ∀ i, (Q i).restrict k F = P ∧ (γ i).natDegree ≤ relativeDegree k F (Q i) ∧
+        ∃ g : P.integers[X], g.Monic ∧ g.map (IsLocalRing.residue P.integers) = γ i ∧
+          (Q i).valuation (P.integersEval y g) < 1 := by
   choose g hgm hgmap using fun i ↦ P.exists_monic_map_residue_eq (hmonic i)
   choose Q hQres hQval hQdeg using fun i ↦ exists_restrict_eq_of_irreducible_map_residue
-    (k' := k') hF P y hmin (hgm i) (hgmap i ▸ hirr i) (hgmap i ▸ hdvd i)
-  -- `y` is integral over `𝒪_P`, so it has a residue at each of these places.
-  have hyint : ∀ i, y ∈ (Q i).integers := fun i ↦
-    mem_integers_of_map_eq_minpoly (hQres i) hmin
-  refine ⟨Q, fun i j hij ↦ hinj ?_, fun i ↦ ⟨hQres i, hgmap i ▸ hQdeg i⟩⟩
+    (k' := k') hF P y hmin (hgmap i ▸ hirr i) (hgmap i ▸ hdvd i)
+  refine ⟨Q, fun i j hij ↦ hinj ?_, fun i ↦
+    ⟨hQres i, hgmap i ▸ hQdeg i, g i, hgm i, hgmap i, hQval i⟩⟩
   rw [← hgmap i, ← hgmap j]
-  refine map_residue_eq_of_valuation_lt_one (hQres i) (hyint i) (hgm i) (hgmap i ▸ hirr i)
+  refine map_residue_eq_of_valuation_lt_one (hQres i) (hgm i) (hgmap i ▸ hirr i)
     (hQval i) (hgm j) (hgmap j ▸ hirr j) ?_
   rw [hij]
   exact hQval j
 
+/-- **The reduction splits when every place above has relative degree one.**  Let `y : F'` be a
+root of a monic `φ` over the valuation ring of a place `P` of `F / k`, whose image in `F[X]` is the
+minimal polynomial of `y`.  If every place of `F' / k'` over `P` has relative degree one, then the
+reduction of `φ` modulo `P` splits over the residue field `F_P`. -/
+theorem splits_map_residue_of_forall_relativeDegree_eq_one (hF : IsFunctionField k F)
+    (P : Place k F) (y : F') {φ : P.integers[X]}
+    (hmin : φ.map (algebraMap P.integers F) = minpoly F y)
+    (h : ∀ P' : Place k' F', P'.restrict k F = P → relativeDegree k F P' = 1) :
+    (φ.map (IsLocalRing.residue P.integers)).Splits := by
+  -- By Kummer's theorem each irreducible factor of the reduction has degree at most the relative
+  -- degree of some place over `P`. Lift the factor to `𝒪_P`.
+  refine Splits.of_forall_irreducible_dvd_natDegree_le_one fun γ hγ hdvd ↦ ?_
+  obtain ⟨g, rfl⟩ := Polynomial.map_surjective (IsLocalRing.residue P.integers)
+    IsLocalRing.residue_surjective γ
+  obtain ⟨P', hP', -, hdeg⟩ := exists_restrict_eq_of_irreducible_map_residue (k' := k') hF P y
+    hmin hγ hdvd
+  rwa [h P' hP'] at hdeg
+
+/-- **Kummer's theorem at a rational place of split separable reduction.**  Let `y : F'` be a
+root of a monic `φ` over the valuation ring of a rational place `P` of `F / k`, whose image in
+`F[X]` is the minimal polynomial of `y`.  If the reduction of `φ` modulo `P` is separable and
+splits over the residue field `F_P = k`, then there are `deg φ` constants `a`, the roots of the
+reduction, each with a place of `F' / k'` over `P` at which `y - a` vanishes.
+
+Over an algebraically closed `k` the rationality of `P` and the splitting are automatic
+(`TauCeti.Place.degree_eq_one_of_isAlgClosed_of_isFunctionField`, `IsAlgClosed.splits`). -/
+theorem exists_finset_card_eq_forall_exists_restrict_eq_valuation_sub_lt_one
+    (hF : IsFunctionField k F) (P : Place k F) (hdeg : P.degree = 1) (y : F') {φ : P.integers[X]}
+    (hmin : φ.map (algebraMap P.integers F) = minpoly F y)
+    (hsep : (φ.map (IsLocalRing.residue P.integers)).Separable)
+    (hsplit : (φ.map (IsLocalRing.residue P.integers)).Splits) :
+    ∃ s : Finset k, s.card = φ.natDegree ∧ ∀ a ∈ s, ∃ P' : Place k' F',
+      P'.restrict k F = P ∧ P'.valuation (y - algebraMap k F' a) < 1 := by
+  classical
+  -- Move the reduction of `φ` to `k` along the residue field `F_P ≃ k`.
+  set e := P.residueFieldEquivOfDegreeEqOne hdeg
+  set ψ := (φ.map (IsLocalRing.residue P.integers)).map (e.symm : P.ResidueField →+* k)
+  have hmonic : φ.Monic := monic_of_map_eq_minpoly hmin
+  have hψdeg : ψ.natDegree = φ.natDegree := by
+    rw [(hmonic.map _).natDegree_map, hmonic.natDegree_map]
+  refine ⟨ψ.roots.toFinset, ?_, fun a ha ↦ ?_⟩
+  · rw [Multiset.toFinset_card_of_nodup (nodup_roots hsep.map),
+      splits_iff_card_roots.mp (hsplit.map _), hψdeg]
+  -- Each root `a` gives the factor `X - a` of the reduction, and Kummer's theorem a place.
+  have hroot :
+      (φ.map (IsLocalRing.residue P.integers)).IsRoot (algebraMap k P.ResidueField a) := by
+    have h := isRoot_of_mem_roots (Multiset.mem_toFinset.mp ha)
+    rw [← e.symm_apply_apply a] at h
+    rw [← residueFieldEquivOfDegreeEqOne_apply P hdeg]
+    exact (isRoot_map_iff (f := (e.symm : P.ResidueField →+* k)) e.symm.injective).mp h
+  have hgmap : (X - C (algebraMap k P.integers a)).map (IsLocalRing.residue P.integers) =
+      X - C (algebraMap k P.ResidueField a) := by
+    rw [Polynomial.map_sub, Polynomial.map_X, Polynomial.map_C,
+      IsScalarTower.algebraMap_apply k P.integers P.ResidueField,
+      IsLocalRing.ResidueField.algebraMap_eq]
+  obtain ⟨P', hP', hv, -⟩ := exists_restrict_eq_of_irreducible_map_residue (k' := k') hF P y hmin
+    (hgmap ▸ irreducible_X_sub_C _) (hgmap ▸ dvd_iff_isRoot.mpr hroot)
+  refine ⟨P', hP', ?_⟩
+  rwa [map_sub, integersEval_X, integersEval_algebraMap] at hv
+
+open UniqueFactorizationMonoid in
+/-- **Kummer's theorem at a place of separable reduction.**  Let `y` generate `F'` over `F`, and
+let `φ ∈ 𝒪_P[X]` be monic, with image in `F[X]` the minimal polynomial of `y` and with
+**separable** reduction modulo `P`.  Then every irreducible factor `γ` of that reduction is
+attained by a place `P'` of `F' / k'` over `P` of relative degree exactly `deg γ`, whose residue
+field is separable over `F_P`: it is generated by the residue of `y`, a root of `γ`.
+
+The distinct irreducible factors of the reduction have degrees adding up to `deg φ = [F' : F]`,
+so the lower bounds of `TauCeti.Place.exists_injective_restrict_eq` and the fundamental inequality
+`TauCeti.Place.sum_ramificationIdx_mul_relativeDegree_le_finrank` pin every relative degree
+down. -/
+theorem exists_restrict_eq_relativeDegree_eq_and_isSeparable (hF : IsFunctionField k F)
+    (P : Place k F) {y : F'} (hy : IntermediateField.adjoin F {y} = ⊤) {φ : P.integers[X]}
+    (hmin : φ.map (algebraMap P.integers F) = minpoly F y)
+    (hsep : (φ.map (IsLocalRing.residue P.integers)).Separable) {γ : P.ResidueField[X]}
+    (hirr : Irreducible γ)
+    (hdvd : γ ∣ φ.map (IsLocalRing.residue P.integers)) :
+    ∃ P' : Place k' F', P'.restrict k F = P ∧ relativeDegree k F P' = γ.natDegree ∧
+      Algebra.IsSeparable (P'.restrict k F).ResidueField P'.ResidueField := by
+  classical
+  set res := IsLocalRing.residue P.integers with hres
+  have hφ : φ.Monic := monic_of_map_eq_minpoly hmin
+  have hφ0 : φ.map res ≠ 0 := (hφ.map res).ne_zero
+  -- The distinct monic irreducible factors of the reduction of `φ`.
+  set S := (normalizedFactors (φ.map res)).toFinset with hSdef
+  have hS (q : P.ResidueField[X]) : q ∈ S ↔ Irreducible q ∧ q.Monic ∧ q ∣ φ.map res := by
+    rw [hSdef, Multiset.mem_toFinset, Polynomial.mem_normalizedFactors_iff hφ0]
+  -- Their degrees add up to `[F' : F]`, since the reduction is squarefree.
+  have hdegS : ∑ q ∈ S, q.natDegree = Module.finrank F F' := by
+    have hnodup := (squarefree_iff_nodup_normalizedFactors hφ0).mp hsep.squarefree
+    have hprod : ∏ q ∈ S, q = φ.map res := by
+      rw [Finset.prod_eq_multiset_prod, hSdef, Multiset.toFinset_val,
+        Multiset.dedup_eq_self.mpr hnodup, Multiset.map_id', prod_normalizedFactors_eq hφ0,
+        (hφ.map res).normalize_eq_self]
+    have hdeg : (∏ q ∈ S, q).natDegree = ∑ q ∈ S, q.natDegree :=
+      natDegree_prod_of_monic S (fun q ↦ q) fun q hq ↦ ((hS q).mp hq).2.1
+    rw [← hdeg, hprod, hφ.natDegree_map, natDegree_eq_finrank_of_map_eq_minpoly hy hmin]
+  -- Kummer's theorem attaches to the factors pairwise distinct places over `P`.
+  obtain ⟨Q, hQinj, hQ⟩ := exists_injective_restrict_eq (k' := k') hF P y hmin (ι := S)
+    (γ := Subtype.val) (fun q ↦ ((hS q).mp q.2).2.1) (fun q ↦ ((hS q).mp q.2).1)
+    (fun q ↦ ((hS q).mp q.2).2.2) Subtype.val_injective
+  -- The fundamental inequality then forces `f (Q q ∣ P) = deg q` for every factor `q`.
+  have hle : ∑ q : S, relativeDegree k F (Q q) ≤ ∑ q : S, (q : P.ResidueField[X]).natDegree := by
+    rw [Finset.sum_coe_sort S fun q ↦ q.natDegree, hdegS]
+    refine le_trans (Finset.sum_le_sum fun q _ ↦
+      Nat.le_mul_of_pos_left _ (ramificationIdx_pos F (Q q))) ?_
+    rw [← Finset.sum_image (f := fun P' ↦ ramificationIdx F P' * relativeDegree k F P')
+      hQinj.injOn]
+    exact sum_ramificationIdx_mul_relativeDegree_le_finrank k F P _ fun P' hP' ↦ by
+      obtain ⟨q, -, rfl⟩ := Finset.mem_image.mp hP'
+      exact (hQ q).1
+  have heq := (Finset.sum_eq_sum_iff_of_le fun q _ ↦ (hQ q).2.1).mp
+    (le_antisymm (Finset.sum_le_sum fun q _ ↦ (hQ q).2.1) hle)
+  -- Specialize to the monic associate `γ'` of `γ`, and identify the place below with `P`.
+  obtain ⟨γ', hmonic, hirr', hdvd', hdeg'⟩ : ∃ γ' : P.ResidueField[X], γ'.Monic ∧ Irreducible γ' ∧
+      γ' ∣ φ.map res ∧ γ'.natDegree = γ.natDegree :=
+    ⟨normalize γ, monic_normalize hirr.ne_zero, irreducible_normalize_iff.mpr hirr,
+      normalize_dvd_iff.mpr hdvd, natDegree_normalize⟩
+  have hγ : γ' ∈ S := (hS γ').mpr ⟨hirr', hmonic, hdvd'⟩
+  obtain ⟨hP', -, g', hg'm, hg'map, hv'⟩ := hQ ⟨γ', hγ⟩
+  have hrel : relativeDegree k F (Q ⟨γ', hγ⟩) = γ'.natDegree :=
+    (heq ⟨γ', hγ⟩ (Finset.mem_univ _)).symm
+  generalize Q ⟨γ', hγ⟩ = P' at hP' hv' hrel
+  clear_value res S
+  subst hP' hres
+  exact ⟨P', rfl, hrel.trans hdeg', isSeparable_residueField_of_relativeDegree_eq k F P'
+    (mem_integers_of_map_eq_minpoly rfl hmin) hg'm (hg'map ▸ hirr') (hg'map ▸ hsep.of_dvd hdvd')
+    hv' (hg'map ▸ hrel)⟩
+
 end Kummer
+
+/-! ### Kummer's theorem for a reduction without repeated factors -/
+
+section DistinctFactors
+
+open scoped _root_.IntermediateField
+
+variable [Algebra k F'] [IsScalarTower k k' F'] [IsScalarTower k F F']
+variable [FiniteDimensional F F'] [Algebra.IsIntegral k k']
+
+/-- The counting behind Kummer's theorem for a reduction without repeated factors.  The places
+attached to the factors `γ i` have relative degrees at least `deg (γ i)`, which add up to
+`deg φ = [F' : F]`; by the fundamental inequality they therefore exhaust the places over `P`,
+with ramification index one and relative degree exactly `deg (γ i)`. -/
+private theorem exists_injective_restrict_eq_of_prod_eq (hF : IsFunctionField k F)
+    (P : Place k F) {y : F'} (hy : F⟮y⟯ = ⊤) {φ : P.integers[X]}
+    (hmin : φ.map (algebraMap P.integers F) = minpoly F y) {ι : Type*} [Fintype ι]
+    {γ : ι → P.ResidueField[X]} (hmonic : ∀ i, (γ i).Monic) (hirr : ∀ i, Irreducible (γ i))
+    (hinj : Function.Injective γ) (hprod : ∏ i, γ i = φ.map (IsLocalRing.residue P.integers)) :
+    ∃ Q : ι → Place k' F', Function.Injective Q ∧
+      (∀ i, (Q i).restrict k F = P ∧ ramificationIdx F (Q i) = 1 ∧
+        relativeDegree k F (Q i) = (γ i).natDegree) ∧
+      ∀ P' : Place k' F', P'.restrict k F = P → P' ∈ Set.range Q := by
+  classical
+  obtain ⟨Q, hQinj, hQ⟩ := exists_injective_restrict_eq (k' := k') hF P y hmin hmonic hirr
+    (fun i ↦ hprod ▸ Finset.dvd_prod_of_mem γ (Finset.mem_univ i)) hinj
+  have hφ : φ.Monic := monic_of_map_eq_minpoly hmin
+  -- The degrees of the factors add up to `deg φ = [F' : F]`.
+  have hsum : ∑ i, (γ i).natDegree = Module.finrank F F' := by
+    rw [← natDegree_prod_of_monic _ _ fun i _ ↦ hmonic i, hprod, hφ.natDegree_map,
+      natDegree_eq_finrank_of_map_eq_minpoly hy hmin]
+  have hle := sum_ramificationIdx_mul_relativeDegree_le_finrank (k' := k') (F' := F') k F P
+  have himage := hle (Finset.univ.map ⟨Q, hQinj⟩) (by simpa using fun i ↦ (hQ i).1)
+  simp only [Finset.sum_map, Function.Embedding.coeFn_mk] at himage
+  -- Each factor contributes at most `e · f` of its place, and the total is at most `[F' : F]`,
+  -- so every contribution is exactly `deg (γ i)`.
+  have hterm (i : ι) :
+      (γ i).natDegree ≤ ramificationIdx F (Q i) * relativeDegree k F (Q i) :=
+    (hQ i).2.1.trans (Nat.le_mul_of_pos_left _ (ramificationIdx_pos F (Q i)))
+  have heq := (Finset.sum_eq_sum_iff_of_le (s := Finset.univ) fun i _ ↦ hterm i).mp
+    (le_antisymm (Finset.sum_le_sum fun i _ ↦ hterm i) (hsum ▸ himage))
+  refine ⟨Q, hQinj, fun i ↦ ⟨(hQ i).1, ?_, ?_⟩, fun P' hP' ↦ ?_⟩
+  · have hf := (hQ i).2.1
+    have hi := heq i (Finset.mem_univ i)
+    have hpos := one_le_relativeDegree k F (Q i)
+    refine Nat.eq_of_mul_eq_mul_right hpos (le_antisymm ?_ ?_)
+    · rw [one_mul]
+      exact hi ▸ hf
+    · exact Nat.mul_le_mul_right _ (ramificationIdx_pos F (Q i))
+  · have hi := heq i (Finset.mem_univ i)
+    exact le_antisymm ((Nat.le_mul_of_pos_left _ (ramificationIdx_pos F (Q i))).trans hi.ge)
+      (hQ i).2.1
+  -- A place over `P` outside the family would push the total above `[F' : F]`.
+  by_contra hnot
+  have hnmem : P' ∉ Finset.univ.map ⟨Q, hQinj⟩ := by simpa using hnot
+  have hins := hle (insert P' (Finset.univ.map ⟨Q, hQinj⟩))
+    (by simpa [hP'] using fun i ↦ (hQ i).1)
+  simp only [Finset.sum_insert hnmem, Finset.sum_map, Function.Embedding.coeFn_mk] at hins
+  rw [← Finset.sum_congr rfl heq, hsum] at hins
+  have := Nat.mul_le_mul (ramificationIdx_pos F P') (one_le_relativeDegree k F P')
+  omega
+
+/-- **Kummer's theorem for a reduction without repeated factors** (Stichtenoth, Theorem 3.3.7).
+Let `P` be a place of an algebraic function field `F / k` and let `y` generate the finite
+extension `F' / F`, a root of a monic `φ ∈ 𝒪_P[X]` whose image in `F[X]` is the minimal
+polynomial of `y`.  If the reduction of `φ` modulo `P` is the product of pairwise distinct monic
+irreducible polynomials `γ i`, then the places of `F' / k'` over `P` correspond to the factors
+`γ i`, the place attached to `γ i` having relative degree `deg (γ i)`.  Every one of them is
+unramified over `P` (`TauCeti.Place.ramificationIdx_eq_one_of_prod_eq_map_residue`).
+
+Unlike `TauCeti.Place.restrictEquivNormalizedFactors`, no monogenicity of the integral closure of
+`𝒪_P` is assumed: the absence of repeated factors is what determines the splitting. -/
+theorem exists_equiv_restrict_eq_of_prod_eq_map_residue (hF : IsFunctionField k F)
+    (P : Place k F) {y : F'} (hy : F⟮y⟯ = ⊤) {φ : P.integers[X]}
+    (hmin : φ.map (algebraMap P.integers F) = minpoly F y) {ι : Type*} [Fintype ι]
+    {γ : ι → P.ResidueField[X]} (hmonic : ∀ i, (γ i).Monic) (hirr : ∀ i, Irreducible (γ i))
+    (hinj : Function.Injective γ) (hprod : ∏ i, γ i = φ.map (IsLocalRing.residue P.integers)) :
+    ∃ e : ι ≃ {P' : Place k' F' // P'.restrict k F = P},
+      ∀ i, relativeDegree k F (e i).1 = (γ i).natDegree := by
+  obtain ⟨Q, hQinj, hQ, hsurj⟩ := exists_injective_restrict_eq_of_prod_eq (k' := k') hF P hy hmin
+    hmonic hirr hinj hprod
+  refine ⟨.ofBijective (fun i ↦ ⟨Q i, (hQ i).1⟩)
+    ⟨fun i j h ↦ hQinj (congrArg Subtype.val h), fun P' ↦ ?_⟩, fun i ↦ (hQ i).2.2⟩
+  obtain ⟨i, hi⟩ := hsurj P'.1 P'.2
+  exact ⟨i, Subtype.ext hi⟩
+
+/-- **A reduction without repeated factors is unramified** (Stichtenoth, Theorem 3.3.7): under the
+hypotheses of `TauCeti.Place.exists_equiv_restrict_eq_of_prod_eq_map_residue`, every place of
+`F' / k'` over `P` has ramification index one. -/
+theorem ramificationIdx_eq_one_of_prod_eq_map_residue (hF : IsFunctionField k F)
+    (P : Place k F) {y : F'} (hy : F⟮y⟯ = ⊤) {φ : P.integers[X]}
+    (hmin : φ.map (algebraMap P.integers F) = minpoly F y) {ι : Type*} [Fintype ι]
+    {γ : ι → P.ResidueField[X]} (hmonic : ∀ i, (γ i).Monic) (hirr : ∀ i, Irreducible (γ i))
+    (hinj : Function.Injective γ) (hprod : ∏ i, γ i = φ.map (IsLocalRing.residue P.integers))
+    {P' : Place k' F'} (hP' : P'.restrict k F = P) : ramificationIdx F P' = 1 := by
+  obtain ⟨Q, -, hQ, hsurj⟩ := exists_injective_restrict_eq_of_prod_eq (k' := k') hF P hy hmin
+    hmonic hirr hinj hprod
+  obtain ⟨i, rfl⟩ := hsurj P' hP'
+  exact (hQ i).2.1
+
+end DistinctFactors
+
+/-! ### Kummer's theorem under monogenicity -/
+
+section Monogenic
+
+open IsDedekindDomain UniqueFactorizationMonoid
+
+attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
+
+variable (k) in
+/-- The place of the maximal ideal of `𝒪_P` is `P`. -/
+private theorem ofPrime_maximalIdeal (P : Place k F) :
+    ofPrime k F (IsDiscreteValuationRing.maximalIdeal P.integers) = P := by
+  have hR : ∀ r : P.integers, algebraMap P.integers F r ∈ P.integers := fun r ↦ by
+    rw [ValuationSubring.algebraMap_apply]
+    exact r.2
+  have h : IsDiscreteValuationRing.maximalIdeal P.integers = P.center hR := by
+    ext r
+    rw [mem_center_asIdeal, ValuationSubring.algebraMap_apply,
+      ← mem_maximalIdeal_iff_valuation_lt_one]
+    rfl
+  rw [h, ofPrime_center]
+
+variable {P : Place k F} {y : F'}
+
+/-- Under monogenicity, `y` lies in the local model `𝒪'_P`. -/
+private theorem mem_integralClosure_of_adjoin_eq
+    (hy : Algebra.adjoin P.integers {y} = integralClosure P.integers F') :
+    y ∈ integralClosure P.integers F' :=
+  hy ▸ Algebra.subset_adjoin rfl
+
+/-- Under monogenicity, `𝒪'_P = 𝒪_P[y]` as an algebra over itself. -/
+private theorem adjoin_eq_top_of_adjoin_eq
+    (hy : Algebra.adjoin P.integers {y} = integralClosure P.integers F') :
+    Algebra.adjoin P.integers
+        {(⟨y, mem_integralClosure_of_adjoin_eq hy⟩ : integralClosure P.integers F')} = ⊤ := by
+  refine Subalgebra.map_injective (f := (integralClosure P.integers F').val)
+    Subtype.val_injective ?_
+  rw [AlgHom.map_adjoin, Set.image_singleton, Algebra.map_top, Subalgebra.range_val]
+  exact hy
+
+/-- Under monogenicity, `𝒪'_P` is a finite `𝒪_P`-module. -/
+private theorem moduleFinite_integralClosure_of_adjoin_eq
+    (hy : Algebra.adjoin P.integers {y} = integralClosure P.integers F') :
+    Module.Finite P.integers (integralClosure P.integers F') :=
+  hy ▸ Algebra.finite_adjoin_simple_of_isIntegral (mem_integralClosure_of_adjoin_eq hy)
+
+/-- The monic polynomial `φ` over `𝒪_P` lifting the minimal polynomial of `y` over `F` is the
+minimal polynomial of `y` over `𝒪_P`, viewed in the local model `𝒪'_P`. -/
+private theorem minpoly_eq_of_adjoin_eq {φ : P.integers[X]}
+    (hmin : φ.map (algebraMap P.integers F) = minpoly F y)
+    (hy : Algebra.adjoin P.integers {y} = integralClosure P.integers F') :
+    minpoly P.integers
+        (⟨y, mem_integralClosure_of_adjoin_eq hy⟩ : integralClosure P.integers F') = φ := by
+  rw [← minpoly.algebraMap_eq Subtype.val_injective]
+  refine Polynomial.map_injective _ (IsFractionRing.injective P.integers F) ?_
+  rw [hmin]
+  exact (minpoly.isIntegrallyClosed_eq_field_fractions' F
+    (mem_integralClosure_of_adjoin_eq hy)).symm
+
+/-- Under monogenicity, `P` is prime to the conductor of `𝒪_P[y]` in `𝒪'_P`: that conductor is
+the unit ideal. -/
+private theorem conductor_sup_eq_top_of_adjoin_eq
+    (hy : Algebra.adjoin P.integers {y} = integralClosure P.integers F') :
+    (conductor P.integers
+        (⟨y, mem_integralClosure_of_adjoin_eq hy⟩ : integralClosure P.integers F')).comap
+        (algebraMap P.integers (integralClosure P.integers F')) ⊔
+      (IsDiscreteValuationRing.maximalIdeal P.integers).asIdeal = ⊤ := by
+  rw [conductor_eq_top_of_adjoin_eq_top (adjoin_eq_top_of_adjoin_eq hy), Ideal.comap_top,
+    top_sup_eq]
+
+attribute [local instance] Ideal.Quotient.field
+
+open scoped Classical in
+/-- Under monogenicity, the normalized factors of `minpoly 𝒪_P y` modulo the maximal ideal of
+`𝒪_P` are the normalized factors of the reduction of `φ` over the residue field `F_P`. -/
+private def normalizedFactorsEquiv {φ : P.integers[X]}
+    (hmin : φ.map (algebraMap P.integers F) = minpoly F y)
+    (hy : Algebra.adjoin P.integers {y} = integralClosure P.integers F') :
+    {d : (P.integers ⧸ (IsDiscreteValuationRing.maximalIdeal P.integers).asIdeal)[X] |
+        d ∈ normalizedFactors ((minpoly P.integers
+          (⟨y, mem_integralClosure_of_adjoin_eq hy⟩ : integralClosure P.integers F')).map
+            (Ideal.Quotient.mk (IsDiscreteValuationRing.maximalIdeal P.integers).asIdeal))} ≃
+      {γ : P.ResidueField[X] // γ ∈ normalizedFactors (φ.map (IsLocalRing.residue P.integers))} :=
+  Equiv.subtypeEquivRight fun γ ↦ by
+    rw [Set.mem_ofPred_eq, minpoly_eq_of_adjoin_eq hmin hy]
+    rfl
+
+variable [Algebra k F'] [IsScalarTower k k' F'] [IsScalarTower k F F'] [Algebra.IsIntegral k k']
+
+/-- The constants of `F' / k'` lie in the integral closure `𝒪'_P` of `𝒪_P` in `F'`, because they
+are integral over `k ⊆ 𝒪_P`. -/
+private theorem algebraMap_mem_integralClosure (P : Place k F) (c : k') :
+    algebraMap k' F' c ∈ integralClosure P.integers F' :=
+  have : IsScalarTower k P.integers F' := .of_algebraMap_eq fun c ↦ by
+    rw [IsScalarTower.algebraMap_apply P.integers F F',
+      ← IsScalarTower.algebraMap_apply k P.integers F, ← IsScalarTower.algebraMap_apply k F F']
+  (IsIntegral.algebraMap (Algebra.IsIntegral.isIntegral (R := k) c)).tower_top
+
+/-- The action of the constants `k'` on the local model `𝒪'_P`. -/
+private noncomputable instance algebraConstantsIntegralClosure (P : Place k F) :
+    Algebra k' (integralClosure P.integers F') :=
+  ((algebraMap k' F').codRestrict _ (algebraMap_mem_integralClosure P)).toAlgebra
+
+private instance isScalarTowerConstantsIntegralClosure (P : Place k F) :
+    IsScalarTower k' (integralClosure P.integers F') F' :=
+  .of_algebraMap_eq fun _ ↦ rfl
+
+variable [FiniteDimensional F F']
+variable (k k' F) (P)
+
+open scoped Classical in
+/-- **Kummer's theorem under monogenicity** (Stichtenoth, Corollary 3.3.8).  Let `P` be a place of
+`F / k` and let `y : F'` generate the integral closure `𝒪'_P` of `𝒪_P` in `F'` as an
+`𝒪_P`-algebra, `𝒪'_P = 𝒪_P[y]`; let `φ ∈ 𝒪_P[X]` have image the minimal polynomial of `y` over
+`F`, so that `φ` is the minimal polynomial of `y` over `𝒪_P`.  Then the places of `F' / k'` over
+`P` are in bijection with the monic irreducible factors of the reduction of `φ` modulo `P`.  The
+place attached to a factor `γ` has relative degree `deg γ` and ramification index the multiplicity
+of `γ` (`TauCeti.Place.relativeDegree_restrictEquivNormalizedFactors_symm_apply` and
+`TauCeti.Place.ramificationIdx_restrictEquivNormalizedFactors_symm_apply`), and `γ (y)` vanishes
+there (`TauCeti.Place.valuation_integersEval_restrictEquivNormalizedFactors_symm_apply_lt_one`).
+
+No separability of `F' / F` and no hypothesis on the constant fields beyond integrality of
+`k' / k` is needed. -/
+noncomputable def restrictEquivNormalizedFactors {φ : P.integers[X]}
+    (hmin : φ.map (algebraMap P.integers F) = minpoly F y)
+    (hy : Algebra.adjoin P.integers {y} = integralClosure P.integers F') :
+    {P' : Place k' F' // P'.restrict k F = P} ≃
+      {γ : P.ResidueField[X] // γ ∈ normalizedFactors (φ.map (IsLocalRing.residue P.integers))} :=
+  have := TauCeti.integralClosure.isDedekindDomain P.integers F F'
+  have := moduleFinite_integralClosure_of_adjoin_eq hy
+  (Equiv.subtypeEquivRight fun P' ↦ by rw [ofPrime_maximalIdeal]).trans <|
+    (restrictOfPrimeEquivNormalizedFactors k F (IsDiscreteValuationRing.maximalIdeal P.integers)
+      (conductor_sup_eq_top_of_adjoin_eq hy)
+      (integralClosure.isIntegral ⟨y, mem_integralClosure_of_adjoin_eq hy⟩)).trans
+      (normalizedFactorsEquiv hmin hy)
+
+variable {k k' F P}
+
+open scoped Classical in
+/-- The place attached by `TauCeti.Place.restrictEquivNormalizedFactors` to a factor is the one
+attached to it by the affine-model form of Kummer's theorem, for the model `𝒪_P ⊆ 𝒪'_P`. -/
+private theorem coe_restrictEquivNormalizedFactors_symm_apply {φ : P.integers[X]}
+    (hmin : φ.map (algebraMap P.integers F) = minpoly F y)
+    (hy : Algebra.adjoin P.integers {y} = integralClosure P.integers F')
+    (γ : {γ : P.ResidueField[X] //
+      γ ∈ normalizedFactors (φ.map (IsLocalRing.residue P.integers))}) :
+    haveI := TauCeti.integralClosure.isDedekindDomain P.integers F F'
+    haveI := moduleFinite_integralClosure_of_adjoin_eq hy
+    ((restrictEquivNormalizedFactors k k' F P hmin hy).symm γ).1 =
+      ((restrictOfPrimeEquivNormalizedFactors k F (IsDiscreteValuationRing.maximalIdeal P.integers)
+        (conductor_sup_eq_top_of_adjoin_eq hy)
+        (integralClosure.isIntegral ⟨y, mem_integralClosure_of_adjoin_eq hy⟩)).symm
+          ((normalizedFactorsEquiv hmin hy).symm γ)).1 :=
+  rfl
+
+open scoped Classical in
+/-- **The relative degree of a Kummer factor is its degree** (Stichtenoth, Corollary 3.3.8): under
+monogenicity, the place of `F' / k'` over `P` attached to a normalized irreducible factor `γ` of
+the reduction of `φ` has relative degree `deg γ`. -/
+@[simp]
+theorem relativeDegree_restrictEquivNormalizedFactors_symm_apply {φ : P.integers[X]}
+    (hmin : φ.map (algebraMap P.integers F) = minpoly F y)
+    (hy : Algebra.adjoin P.integers {y} = integralClosure P.integers F')
+    (γ : {γ : P.ResidueField[X] //
+      γ ∈ normalizedFactors (φ.map (IsLocalRing.residue P.integers))}) :
+    relativeDegree k F ((restrictEquivNormalizedFactors k k' F P hmin hy).symm γ).1 =
+      γ.1.natDegree := by
+  have := TauCeti.integralClosure.isDedekindDomain P.integers F F'
+  have := moduleFinite_integralClosure_of_adjoin_eq hy
+  rw [coe_restrictEquivNormalizedFactors_symm_apply,
+    relativeDegree_restrictOfPrimeEquivNormalizedFactors_symm_apply]
+  rfl
+
+open scoped Classical in
+/-- **The ramification index of a Kummer factor is its multiplicity** (Stichtenoth,
+Corollary 3.3.8): under monogenicity, the place of `F' / k'` over `P` attached to a normalized
+irreducible factor `γ` of the reduction of `φ` has ramification index the multiplicity of `γ` in
+that reduction. -/
+@[simp]
+theorem ramificationIdx_restrictEquivNormalizedFactors_symm_apply {φ : P.integers[X]}
+    (hmin : φ.map (algebraMap P.integers F) = minpoly F y)
+    (hy : Algebra.adjoin P.integers {y} = integralClosure P.integers F')
+    (γ : {γ : P.ResidueField[X] //
+      γ ∈ normalizedFactors (φ.map (IsLocalRing.residue P.integers))}) :
+    ramificationIdx F ((restrictEquivNormalizedFactors k k' F P hmin hy).symm γ).1 =
+      multiplicity γ.1 (φ.map (IsLocalRing.residue P.integers)) := by
+  have := TauCeti.integralClosure.isDedekindDomain P.integers F F'
+  have := moduleFinite_integralClosure_of_adjoin_eq hy
+  rw [coe_restrictEquivNormalizedFactors_symm_apply,
+    ramificationIdx_restrictOfPrimeEquivNormalizedFactors_symm_apply]
+  conv_lhs => arg 2; rw [minpoly_eq_of_adjoin_eq hmin hy]
+  rfl
+
+open scoped Classical in
+/-- **The place attached to a Kummer factor is the one where that factor vanishes**: under
+monogenicity, if `Q ∈ 𝒪_P[X]` reduces to a normalized irreducible factor of the reduction of
+`φ`, then `Q (y)` has a zero at the place of `F' / k'` attached to that factor. -/
+theorem valuation_integersEval_restrictEquivNormalizedFactors_symm_apply_lt_one
+    {φ : P.integers[X]} (hmin : φ.map (algebraMap P.integers F) = minpoly F y)
+    (hy : Algebra.adjoin P.integers {y} = integralClosure P.integers F') {Q : P.integers[X]}
+    (hQ : Q.map (IsLocalRing.residue P.integers) ∈
+      normalizedFactors (φ.map (IsLocalRing.residue P.integers))) :
+    ((restrictEquivNormalizedFactors k k' F P hmin hy).symm
+        ⟨Q.map (IsLocalRing.residue P.integers), hQ⟩).1.valuation (P.integersEval y Q) < 1 := by
+  have := TauCeti.integralClosure.isDedekindDomain P.integers F F'
+  have := moduleFinite_integralClosure_of_adjoin_eq hy
+  have h := valuation_restrictOfPrimeEquivNormalizedFactors_symm_apply_lt_one (k' := k')
+    (F' := F') k F (IsDiscreteValuationRing.maximalIdeal P.integers)
+    (conductor_sup_eq_top_of_adjoin_eq hy)
+    (integralClosure.isIntegral ⟨y, mem_integralClosure_of_adjoin_eq hy⟩) (Q := Q)
+    ((normalizedFactorsEquiv hmin hy).symm ⟨Q.map (IsLocalRing.residue P.integers), hQ⟩).2
+  -- `Q (y)` computed in `F'` is the image of `Q (y)` computed in `𝒪'_P`.
+  have heval : algebraMap (integralClosure P.integers F') F'
+      (aeval (⟨y, mem_integralClosure_of_adjoin_eq hy⟩ : integralClosure P.integers F') Q) =
+        P.integersEval y Q := by
+    rw [← aeval_algebraMap_apply, integersEval_eq_aeval_map, aeval_map_algebraMap]
+    rfl
+  rw [heval] at h
+  rwa [coe_restrictEquivNormalizedFactors_symm_apply]
+
+open scoped Classical in
+/-- **The number of places over a place, under monogenicity** (Stichtenoth, Corollary 3.3.8):
+when `𝒪'_P = 𝒪_P[y]`, the places of `F' / k'` over `P` are as many as the distinct monic
+irreducible factors of the reduction of `φ` modulo `P`. -/
+theorem natCard_setOf_restrict_eq {φ : P.integers[X]}
+    (hmin : φ.map (algebraMap P.integers F) = minpoly F y)
+    (hy : Algebra.adjoin P.integers {y} = integralClosure P.integers F') :
+    Nat.card {P' : Place k' F' | P'.restrict k F = P} =
+      (normalizedFactors (φ.map (IsLocalRing.residue P.integers))).toFinset.card := by
+  rw [← Nat.card_eq_finsetCard]
+  exact Nat.card_congr ((restrictEquivNormalizedFactors k k' F P hmin hy).trans
+    (Equiv.subtypeEquivRight fun _ ↦ Multiset.mem_toFinset.symm))
+
+end Monogenic
 
 end Place
 

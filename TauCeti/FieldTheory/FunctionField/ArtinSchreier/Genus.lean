@@ -13,7 +13,8 @@ public import TauCeti.AlgebraicGeometry.WeilDivisor.FiniteSum
 public import TauCeti.FieldTheory.ArtinSchreier.Basic
 
 import TauCeti.FieldTheory.FunctionField.Different.Hurwitz
-import TauCeti.FieldTheory.FunctionField.Different.ArtinSchreier
+import TauCeti.FieldTheory.FunctionField.Different.ArtinSchreier.Basic
+import TauCeti.FieldTheory.FunctionField.Place.ConstantField
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.Unramified
 
@@ -47,6 +48,10 @@ exactness of the constants over any function field with exact constants. For an 
 nontriviality, and exactness of the constants are derived from the equation and a pole.
 For a single pole, `two_mul_genus_eq_of_exists_reduced_artinSchreier_pole_ratFunc`
 gives `2g = (p - 1) ((m + 1) deg P - 2)` directly.
+
+Over a perfect constant field every residue field is perfect, so reduced representatives exist
+at every place and only finitely many of them have poles
+(`exists_reduced_artinSchreier_representatives`): the formula then needs no supplied data.
 
 ## References
 
@@ -92,6 +97,7 @@ variable (hreg : ∀ P ∉ S, ∃ w : F, u - (w ^ p - w) ∈ P.integers)
 
 include hF hF' hgen hy hpole hreg
 
+omit hF' in
 /-- The different of an Artin--Schreier extension is computed by the conorm of its reduced
 conductor divisor. This is a divisor identity, before taking degrees or imposing exact constants.
 The supplied pole orders are necessarily positive because they are not divisible by `p`. -/
@@ -109,6 +115,7 @@ theorem Divisor.nsmul_different_eq_zsmul_conorm_of_pow_sub_self_eq :
   let _ := ArtinSchreier.isGalois hy hgen
   let _ : Algebra.IsIntegral F F' := Algebra.IsIntegral.of_finite F F'
   refine WeilDivisor.ext fun P' ↦ ?_
+  have hF' := Place.isFunctionField_of_place hF.finite_extension P'
   rw [WeilDivisor.coeff_nsmul, Divisor.coeff_different, WeilDivisor.coeff_zsmul,
     Divisor.coeff_conorm, WeilDivisor.coeff_ofFinsetWithMultiplicity]
   by_cases hP : P'.restrict k F ∈ S
@@ -147,8 +154,8 @@ theorem Divisor.finrank_mul_degree_different_of_pow_sub_self_eq :
   let _ : FiniteDimensional k k' := hF.finiteDimensional_baseExtension hF'
   let _ : Algebra.IsIntegral k k' := Algebra.IsIntegral.of_finite k k'
   have h := congrArg Divisor.degree
-    (Divisor.nsmul_different_eq_zsmul_conorm_of_pow_sub_self_eq
-      hF hF' p hgen hy S m hpole hreg)
+    (Divisor.nsmul_different_eq_zsmul_conorm_of_pow_sub_self_eq (k' := k') (F' := F')
+      hF p hgen hy S m hpole hreg)
   rw [map_nsmul, Divisor.degree_zsmul, nsmul_eq_mul] at h
   have hp : (p : ℤ) ≠ 0 := by exact_mod_cast (Fact.out : p.Prime).ne_zero
   rcases S.eq_empty_or_nonempty with hS | hS
@@ -259,9 +266,8 @@ theorem two_mul_genus_sub_two_eq_of_exists_reduced_artinSchreier_poles
   obtain ⟨w₀, hw₀, hdiv⟩ := hpole P hP
   have hneg := ord_neg_of_ord_eq_neg_of_not_dvd hw₀ hdiv
   have hu := ne_pow_sub_self_of_exists_reduced_artinSchreier_pole (v := P.valuation) p
-    (Fact.out : p.Prime).one_lt
-    ⟨w₀, by simpa only [Valuation.ord_def, ← P.ord_def] using hneg,
-      by simpa only [Valuation.ord_def, ← P.ord_def] using hdiv⟩
+    ⟨w₀, by simpa only [Place.ord_valuation] using hneg,
+      by simpa only [Place.ord_valuation] using hdiv⟩
   let _ := ArtinSchreier.isSplittingField hy hgen
   let _ := Polynomial.IsSplittingField.finiteDimensional F'
     (Polynomial.X ^ p - Polynomial.X - Polynomial.C u)
@@ -273,6 +279,51 @@ theorem two_mul_genus_sub_two_eq_of_exists_reduced_artinSchreier_poles
     artinSchreier_genus_formula hF hF' p hgen hy S m hpole hreg hex hex' hu
 
 end Poles
+
+section PerfectField
+
+variable {k : Type u} {F : Type v} [Field k] [Field F] [Algebra k F]
+
+/-- **Reduced Artin--Schreier representatives exist over a perfect constant field.** For `u` in
+an algebraic function field `F / k` of characteristic `p` with `k` perfect, there are a finite
+set `S` of places and pole orders `m P` such that at each `P ∈ S` some `u - (w ^ p - w)` has a
+pole of order `m P` prime to `p`, and at every other place some `u - (w ^ p - w)` is regular.
+These are the hypotheses of the genus formula `TauCeti.artinSchreier_genus_formula`, so over a
+perfect constant field it applies to every Artin--Schreier extension. Perfectness of `k` enters
+only through the perfectness of the residue fields
+(`TauCeti.Place.exists_reduced_artinSchreier_representative`). -/
+theorem exists_reduced_artinSchreier_representatives [PerfectField k] (hF : IsFunctionField k F)
+    (p : ℕ) [CharP F p] (u : F) :
+    ∃ (S : Finset (Place k F)) (m : Place k F → ℕ),
+      (∀ P ∈ S, ∃ w : F, P.ord (u - (w ^ p - w)) = -(m P : ℤ) ∧
+        ¬ (p : ℤ) ∣ P.ord (u - (w ^ p - w))) ∧
+      ∀ P ∉ S, ∃ w : F, u - (w ^ p - w) ∈ P.integers := by
+  classical
+  -- In characteristic zero, `w = 1 - u` makes `u - (w ^ 0 - w)` vanish at every place.
+  obtain hp | rfl := CharP.char_is_prime_or_zero F p
+  swap
+  · exact ⟨∅, 0, by simp, fun P _ ↦ ⟨1 - u, by simp⟩⟩
+  have := Fact.mk hp
+  -- Choose a reduced representative at every place; only the poles of `u` can need a pole.
+  have hred (P : Place k F) : ∃ w : F, u - (w ^ p - w) ∈ P.integers ∨
+      (P.ord (u - (w ^ p - w)) < 0 ∧ ¬ (p : ℤ) ∣ P.ord (u - (w ^ p - w))) :=
+    have := P.perfectField_residueField hF
+    P.exists_reduced_artinSchreier_representative p u
+  choose w hw using hred
+  refine ⟨(Place.finite_setOf_ord_neg hF u).toFinset.filter
+      fun P ↦ u - (w P ^ p - w P) ∉ P.integers,
+    fun P ↦ (-P.ord (u - (w P ^ p - w P))).toNat, fun P hP ↦ ?_, fun P hP ↦ ?_⟩
+  · obtain ⟨hneg, hdvd⟩ := (hw P).resolve_left (Finset.mem_filter.mp hP).2
+    exact ⟨w P, by dsimp only; omega, hdvd⟩
+  · rw [Finset.mem_filter, Set.Finite.mem_toFinset, Set.mem_ofPred_eq, not_and_or, not_not] at hP
+    rcases hP with hP | hP
+    · refine ⟨0, ?_⟩
+      rw [zero_pow (Fact.out : p.Prime).ne_zero, sub_zero, sub_zero,
+        P.mem_integers_iff_ord_nonneg]
+      omega
+    · exact ⟨w P, hP⟩
+
+end PerfectField
 
 section RatFunc
 

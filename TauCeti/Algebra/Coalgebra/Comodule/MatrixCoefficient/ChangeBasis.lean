@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Matrix
-public import Mathlib.LinearAlgebra.Matrix.Basis
+public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Intertwiner
 
 /-!
 # Change of basis for comodule coefficient matrices
@@ -33,16 +32,7 @@ theorem coefficientMatrix_mul_toMatrix (b : Basis ι R M) (c : Basis κ R M) :
     coefficientMatrix (C := C) b * (b.toMatrix c).map (algebraMap R C) =
       (b.toMatrix c).map (algebraMap R C) * coefficientMatrix (C := C) c := by
   classical
-  ext i j
-  have hleft := congrArg (matrixCoefficientLinear (C := C) (b.coord i)) (b.sum_repr (c j))
-  have hright := congrArg
-    (fun z ↦ TensorProduct.lid R C (TensorProduct.map (b.coord i) LinearMap.id z))
-    (coact_basis_eq_sum_coefficientMatrix (C := C) c j)
-  simp only [map_sum, map_smul, matrixCoefficientLinear_apply] at hleft
-  simp only [map_sum, TensorProduct.map_tmul, LinearMap.id_apply,
-    TensorProduct.lid_tmul, Basis.coord_apply, ← matrixCoefficient_def] at hright
-  simp only [Matrix.mul_apply, Matrix.map_apply, Basis.toMatrix_apply,
-    coefficientMatrix_apply]
-  simpa only [Algebra.smul_def, Algebra.commutes, coefficientMatrix_apply] using hleft.trans hright
+  simpa [← LinearMap.toMatrix_id_eq_basis_toMatrix] using
+    (Hom.id R C M).coefficientMatrix_mul_toMatrix c b
 
 end Module.Basis

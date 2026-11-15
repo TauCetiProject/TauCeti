@@ -92,7 +92,7 @@ variable {M : Type*} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModul
 submodule of `M →ₗ[K] M` because bracketing with an element of `L` kills `N`. -/
 def homScalarOn (N : LieSubmodule K L M) : LieSubmodule K L (M →ₗ[K] M) where
   carrier := {φ | (∀ m, φ m ∈ N) ∧ ∃ c : K, ∀ n ∈ N, φ n = c • n}
-  zero_mem' := ⟨fun m ↦ by simp, 0, fun n _ ↦ by simp⟩
+  zero_mem' := ⟨fun _ ↦ by simp, 0, fun n _ ↦ by simp⟩
   add_mem' := by
     rintro φ ψ ⟨hφ, c, hc⟩ ⟨hψ, c', hc'⟩
     exact ⟨fun m ↦ N.add_mem (hφ m) (hψ m), c + c',
@@ -111,7 +111,7 @@ def homScalarOn (N : LieSubmodule K L M) : LieSubmodule K L (M →ₗ[K] M) wher
 `TauCeti.homScalarOn` that misses every projection onto a nonzero `N`. -/
 def homVanishingOn (N : LieSubmodule K L M) : LieSubmodule K L (M →ₗ[K] M) where
   carrier := {φ | (∀ m, φ m ∈ N) ∧ ∀ n ∈ N, φ n = 0}
-  zero_mem' := ⟨fun m ↦ by simp, fun n _ ↦ by simp⟩
+  zero_mem' := ⟨fun _ ↦ by simp, fun n _ ↦ by simp⟩
   add_mem' := by
     rintro φ ψ ⟨hφ, hc⟩ ⟨hψ, hc'⟩
     exact ⟨fun m ↦ N.add_mem (hφ m) (hψ m), fun n hn ↦ by simp [hc n hn, hc' n hn]⟩
@@ -268,9 +268,9 @@ private theorem exists_invariant_notMem_of_forall_lie_mem {d : ℕ} (ih : Invari
     rw [finrank_span_singleton hne] at hle
     have hP : finrank K (((W : Submodule K M) ⊔ Submodule.span K {v₀} :
         Submodule K M) : Type _) = finrank K P := by
-      simpa only [P] using finrank_toSubmodule P
+      simpa only [P] using LieSubmodule.finrank_toSubmodule P
     have hw : finrank K ((W : Submodule K M) : Type _) = finrank K W :=
-      finrank_toSubmodule W
+      LieSubmodule.finrank_toSubmodule W
     omega
   have : FiniteDimensional K P :=
     Submodule.finiteDimensional_sup (W : Submodule K M) (Submodule.span K {v₀})

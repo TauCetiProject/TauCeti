@@ -30,6 +30,8 @@ determines their square classes. That boundary is recorded there by
   into the first coefficient of a diagonal form of rank at least two.
 * `TauCeti.diagonalChain_iff_equivalent`: Witt's chain theorem in rank at least two.
 * `TauCeti.diagonalChain_iff_equivalent_of_two_le`: the same statement in inequality form.
+* `TauCeti.equivalent_weightedSumSquares_tail_of_head_eq`: cancel a common first coefficient
+  from isometric diagonal forms.
 * `TauCeti.RegularFormClass.exists_eq_mk_rankOne_add_of_mem_unitValueSet`: a represented unit
   splits off the class of a diagonal form of rank at least two as a rank-one summand.
 
@@ -135,6 +137,31 @@ theorem exists_diagonalChain_first_eq_of_mem_unitValueSet {n : ℕ}
         refine ⟨replaceHeadPair v c, ?_, by simp⟩
         exact hwv.tail (DiagonalStep.binary (binaryStep_replaceHeadPair v c hhead))
 
+/-- Cancelling a common first unit coefficient from isometric diagonal forms leaves isometric
+tails. The remaining rank may be zero or one; equivalence of the tails does not assert that they
+are connected by a diagonal chain in rank one. -/
+theorem equivalent_weightedSumSquares_tail_of_head_eq {n : ℕ}
+    {w w' : Fin (n + 1) → Kˣ} (hhead : w 0 = w' 0)
+    (h : (weightedSumSquares K fun i ↦ (w i : K)).Equivalent
+      (weightedSumSquares K fun i ↦ (w' i : K))) :
+    (weightedSumSquares K fun i ↦ (Fin.tail w i : K)).Equivalent
+      (weightedSumSquares K fun i ↦ (Fin.tail w' i : K)) := by
+  have hpresented : (presentedForm ⟨n + 1, w⟩).Equivalent
+      (presentedForm ⟨n + 1, w'⟩) := by
+    simpa only [presentedForm_eq_weightedSumSquares_coe] using h
+  have hleft : (((w 0 : K) • (QuadraticMap.sq : QuadraticForm K K)).prod
+      (presentedForm ⟨n, Fin.tail w⟩)).Equivalent (presentedForm ⟨n + 1, w⟩) :=
+    ⟨presentedFormConsIsometryEquiv w⟩
+  have hright : (((w 0 : K) • (QuadraticMap.sq : QuadraticForm K K)).prod
+      (presentedForm ⟨n, Fin.tail w'⟩)).Equivalent (presentedForm ⟨n + 1, w'⟩) := by
+    rw [hhead]
+    exact ⟨presentedFormConsIsometryEquiv w'⟩
+  have hspan : Submodule.span K {(1 : K)} = ⊤ :=
+    (Submodule.span_singleton_eq_top_iff K (1 : K)).mpr fun x ↦ ⟨x, by simp⟩
+  have htail := equivalent_of_equivalent_prod_of_span_singleton_eq_top hspan (by simp)
+    (hleft.trans (hpresented.trans hright.symm))
+  simpa only [presentedForm_eq_weightedSumSquares_coe] using htail
+
 /-- **Witt's chain theorem** in its nontrivial range: two diagonal forms of rank at least two are
 isometric if and only if their coefficient families are connected by a diagonal chain. -/
 @[simp]
@@ -167,34 +194,10 @@ theorem diagonalChain_iff_equivalent {n : ℕ} {w w' : Fin (n + 2) → Kˣ} :
       have hwu_equiv : (weightedSumSquares K fun i ↦ (w i : K)).Equivalent
           (weightedSumSquares K fun i ↦ (u i : K)) :=
         h.trans hwu.equivalent
-      have hprod :
-          (((w 0 : K) • (QuadraticMap.sq : QuadraticForm K K)).prod
-              (presentedForm ⟨n + 2, Fin.tail w⟩)).Equivalent
-            (((w 0 : K) • (QuadraticMap.sq : QuadraticForm K K)).prod
-              (presentedForm ⟨n + 2, Fin.tail u⟩)) := by
-        have hwuPresented : (presentedForm ⟨n + 3, w⟩).Equivalent
-            (presentedForm ⟨n + 3, u⟩) := by
-          simpa only [presentedForm_eq_weightedSumSquares_coe] using hwu_equiv
-        have hwcons :
-            (((w 0 : K) • (QuadraticMap.sq : QuadraticForm K K)).prod
-                (presentedForm ⟨n + 2, Fin.tail w⟩)).Equivalent
-              (presentedForm ⟨n + 3, w⟩) :=
-          ⟨presentedFormConsIsometryEquiv w⟩
-        have hucons :
-            (((w 0 : K) • (QuadraticMap.sq : QuadraticForm K K)).prod
-                (presentedForm ⟨n + 2, Fin.tail u⟩)).Equivalent
-              (presentedForm ⟨n + 3, u⟩) := by
-          rw [← hu0]
-          exact ⟨presentedFormConsIsometryEquiv u⟩
-        exact hwcons.trans (hwuPresented.trans hucons.symm)
-      have hspan : Submodule.span K {(1 : K)} = ⊤ :=
-        (Submodule.span_singleton_eq_top_iff K (1 : K)).mpr fun x ↦ ⟨x, by simp⟩
       have htail :
           (weightedSumSquares K fun i ↦ (Fin.tail w i : K)).Equivalent
-            (weightedSumSquares K fun i ↦ (Fin.tail u i : K)) := by
-        have hpresented :=
-          equivalent_of_equivalent_prod_of_span_singleton_eq_top hspan (by simp) hprod
-        simpa only [presentedForm_eq_weightedSumSquares_coe] using hpresented
+            (weightedSumSquares K fun i ↦ (Fin.tail u i : K)) :=
+        equivalent_weightedSumSquares_tail_of_head_eq hu0.symm hwu_equiv
       have htailChain : DiagonalChain (Fin.tail w) (Fin.tail u) := ih htail
       have hconsChain : DiagonalChain w u := by
         convert htailChain.cons (w 0) using 1

@@ -41,27 +41,22 @@ points `t` gives `ENNReal.ofReal h` times the integral of `f`: for `0 ≤ h` thi
 integral, and for `h < 0` the windows are empty and both sides vanish. -/
 theorem lintegral_setLIntegral_Ioc_add {f : ℝ → ℝ≥0∞} (hf : AEMeasurable f) (h : ℝ) :
     ∫⁻ t, ∫⁻ r in Ioc t (t + h), f r = ENNReal.ofReal h * ∫⁻ r, f r := by
-  set g := hf.mk f
-  have hg : Measurable g := hf.measurable_mk
-  have hwindow (t : ℝ) : ∫⁻ r in Ioc t (t + h), f r = ∫⁻ r, (Ioc t (t + h)).indicator g r := by
-    rw [lintegral_indicator measurableSet_Ioc]
-    exact lintegral_congr_ae (ae_restrict_of_ae hf.ae_eq_mk)
-  -- The window `Ioc t (t + h)` contains `r` exactly when `t ∈ Ico (r - h) r`.
-  have hswap (t r : ℝ) :
-      (Ioc t (t + h)).indicator g r = (Ico (r - h) r).indicator (fun _ ↦ g r) t := by
-    simp only [indicator, mem_Ioc, mem_Ico]
-    grind
-  have hmeas : Measurable (Function.uncurry fun t r ↦ (Ioc t (t + h)).indicator g r) := by
+  have hmeas : AEMeasurable (Function.uncurry fun t r ↦ (Ioc t (t + h)).indicator f r)
+      (volume.prod volume) := by
     have hS : MeasurableSet {q : ℝ × ℝ | q.1 < q.2 ∧ q.2 ≤ q.1 + h} :=
       (measurableSet_lt measurable_fst measurable_snd).inter
         (measurableSet_le measurable_snd (measurable_fst.add_const h))
-    convert (hg.comp measurable_snd).indicator hS using 1
+    convert hf.comp_snd.indicator hS using 1
     ext ⟨t, r⟩
     simp [indicator, mem_Ioc]
-  simp_rw [hwindow]
-  rw [lintegral_lintegral_swap hmeas.aemeasurable]
+  -- The window `Ioc t (t + h)` contains `r` exactly when `t ∈ Ico (r - h) r`.
+  have hswap (t r : ℝ) :
+      (Ioc t (t + h)).indicator f r = (Ico (r - h) r).indicator (fun _ ↦ f r) t := by
+    grind [indicator]
+  simp_rw [← lintegral_indicator measurableSet_Ioc]
+  rw [lintegral_lintegral_swap hmeas]
   simp_rw [hswap, lintegral_indicator_const measurableSet_Ico, Real.volume_Ico, sub_sub_cancel]
-  rw [lintegral_mul_const _ hg, mul_comm, lintegral_congr_ae hf.ae_eq_mk]
+  rw [lintegral_mul_const' _ _ ENNReal.ofReal_ne_top, mul_comm]
 
 /-- Integrating the integrals of `f` over the sliding windows `Ioc t (t + h)` that lie in
 `Ioc a b`, that is over the starting points `t ∈ Ioc a (b - h)`, gives at most `ENNReal.ofReal h`
@@ -71,14 +66,10 @@ theorem setLIntegral_setLIntegral_Ioc_add_le {f : ℝ → ℝ≥0∞} {a b : ℝ
     ∫⁻ t in Ioc a (b - h), ∫⁻ r in Ioc t (t + h), f r ≤
       ENNReal.ofReal h * ∫⁻ r in Ioc a b, f r := by
   -- Inside `Ioc a b`, `f` agrees with its extension by zero, to which the global identity applies.
-  have hwindow : ∀ t ∈ Ioc a (b - h),
-      ∫⁻ r in Ioc t (t + h), f r = ∫⁻ r in Ioc t (t + h), (Ioc a b).indicator f r :=
-    fun t ht ↦ setLIntegral_congr_fun measurableSet_Ioc fun r hr ↦
-      (indicator_of_mem (show r ∈ Ioc a b from ⟨ht.1.trans hr.1, by linarith [hr.2, ht.2]⟩)
-        f).symm
   calc ∫⁻ t in Ioc a (b - h), ∫⁻ r in Ioc t (t + h), f r
       = ∫⁻ t in Ioc a (b - h), ∫⁻ r in Ioc t (t + h), (Ioc a b).indicator f r :=
-        setLIntegral_congr_fun measurableSet_Ioc hwindow
+        setLIntegral_congr_fun measurableSet_Ioc fun t ht ↦ setLIntegral_congr_fun
+          measurableSet_Ioc fun r hr ↦ (indicator_of_mem (by grind) f).symm
     _ ≤ ∫⁻ t, ∫⁻ r in Ioc t (t + h), (Ioc a b).indicator f r := setLIntegral_le_lintegral _ _
     _ = ENNReal.ofReal h * ∫⁻ r in Ioc a b, f r := by
       rw [lintegral_setLIntegral_Ioc_add ((aemeasurable_indicator_iff measurableSet_Ioc).2 hf),

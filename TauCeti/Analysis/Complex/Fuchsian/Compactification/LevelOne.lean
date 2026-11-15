@@ -51,7 +51,9 @@ private theorem isParabolic_psl2zToPSL2R_iff (a : SL(2, ℤ)) :
   rw [psl2zToPSL2R_mk, sl2zToPSL2R_apply, isParabolic_mk_iff]
   rfl
 
-private theorem isCuspPoint_iff_isCusp (c : OnePoint ℝ) :
+/-- The projective cusp points of the effective modular group are Mathlib's cusps of
+`SL(2, ℤ)`; in particular, they are the rational projective boundary points. -/
+theorem isCuspPoint_iff_isCusp (c : OnePoint ℝ) :
     psl2zToPSL2R.range.IsCuspPoint c ↔ _root_.IsCusp c 𝒮ℒ := by
   constructor
   · intro hc

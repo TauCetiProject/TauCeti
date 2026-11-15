@@ -106,7 +106,7 @@ private lemma groupSchemePointMulEquiv_comp_inclusion
     (q : WithConv (coordinateHopfAlgebra R m →ₐ[R] A)) :
     groupSchemePointMulEquiv m A q ≫ (inclusion R m).hom.hom =
       GeneralLinear.groupSchemePointMulEquiv (m + m) A
-        ((CommHopfAlgCat.mapPointsFunctor (coordinateMap R m)).app
+        ((CommHopfAlgCat.Hom.mapPointsFunctor (coordinateMap R m)).app
           (CommAlgCat.of R A) q) := by
   rw [inclusion_eq_constantForm,
     ConstantForm.inclusion_eq_eqToHom_comp_hopfSpec_map]

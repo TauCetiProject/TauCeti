@@ -29,9 +29,8 @@ group in the general linear group.
 * J. E. Humphreys, *Linear Algebraic Groups*, §§26--27.
 * R. Steinberg, *Lectures on Chevalley Groups*, §§3--4.
 
-This advances Layer 9, "The Chevalley--Demazure construction", of
-`TauCetiRoadmap/ReductiveGroups/README.md`: it supplies the ring-general generation step used to
-identify the explicit full-weight type `A` carrier on field and integral points.
+This is the ring-general generation step used to identify the explicit full-weight type `A`
+carrier on field and integral points.
 -/
 
 public section
@@ -46,8 +45,8 @@ variable {A : Type u} [CommRing A]
 private theorem rootTransvection_mem_points (k : Fin r ⊕ Fin r) (c : A) :
     TauCeti.transvectionUnit (rootTarget_ne_rootSource r k) c ∈ points r A := by
   have h := (rootSubgroupPoints r k A (Multiplicative.ofAdd c)).property
-  rw [coe_rootSubgroupPoints, kostantRootSubgroupMatrix_eq_transvection] at h
-  simpa only [MulEquiv.apply_symm_apply, toAdd_ofAdd] using h
+  rw [coe_rootSubgroupPoints_eq_transvectionUnit] at h
+  simpa only [toAdd_ofAdd] using h
 
 /-- Every elementary transvection over a commutative ring is a point of the type `A_r` carrier. -/
 theorem transvectionUnit_mem_points {i j : Fin (r + 1)} (hij : i ≠ j) (c : A) :

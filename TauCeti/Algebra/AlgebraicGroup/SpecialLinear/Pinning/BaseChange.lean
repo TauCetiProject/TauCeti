@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Pinning.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Pinning.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Root.BaseChange
 
 /-!
@@ -55,37 +56,9 @@ def standardPinningRootSpaceBaseChangeEquiv (i : Fin r) :
         (Multiplicative.ofAdd (standardPinningSimpleRootEquiv (R := R) i).val) ≃ₗ[K]
       Derivation.adjointWeightSpace (standardPinning K r).torus.coordinateMap.hom
         (Multiplicative.ofAdd (standardPinningSimpleRootEquiv (R := K) i).val) :=
-  (((standardPinning R r).rootSpaceEquiv
-    (standardPinningSimpleRootEquiv (R := R) i)).symm.baseChange R K _ _).trans
-      ((TensorProduct.AlgebraTensorModule.rid R K K).trans
-        ((standardPinning K r).rootSpaceEquiv
-          (standardPinningSimpleRootEquiv (R := K) i)))
-
-/-- The simple-root base-change equivalence preserves the chosen scalar coordinates. -/
-@[simp↓]
-theorem standardPinningRootSpaceBaseChangeEquiv_tmul (i : Fin r) (c : K) (b : R) :
-    standardPinningRootSpaceBaseChangeEquiv R K r i
-        (c ⊗ₜ[R] (standardPinning R r).rootSpaceEquiv
-          (standardPinningSimpleRootEquiv (R := R) i) b) =
-      (standardPinning K r).rootSpaceEquiv (standardPinningSimpleRootEquiv (R := K) i)
-        (c * algebraMap R K b) := by
-  simp only [standardPinningRootSpaceBaseChangeEquiv, LinearEquiv.trans_apply,
-    LinearEquiv.baseChange_tmul, LinearEquiv.symm_apply_apply,
-    TensorProduct.AlgebraTensorModule.rid_tmul,
-    Algebra.smul_def]
-  rw [mul_comm]
-
-/-- The inverse simple-root comparison expresses a chosen vector over `K` as
-its scalar coordinate times the chosen generator over `R`. -/
-@[simp↓]
-theorem standardPinningRootSpaceBaseChangeEquiv_symm_apply (i : Fin r) (c : K) :
-    (standardPinningRootSpaceBaseChangeEquiv R K r i).symm
-        ((standardPinning K r).rootSpaceEquiv
-          (standardPinningSimpleRootEquiv (R := K) i) c) =
-      c ⊗ₜ[R] (standardPinning R r).rootSpaceEquiv
-        (standardPinningSimpleRootEquiv (R := R) i) 1 := by
-  apply (standardPinningRootSpaceBaseChangeEquiv R K r i).symm_apply_eq.mpr
-  rw [standardPinningRootSpaceBaseChangeEquiv_tmul R K r, map_one, mul_one]
+  (standardPinning R r).rootSpaceBaseChangeEquiv (standardPinning K r)
+    (standardPinningSimpleRootEquiv (R := R) i)
+    (standardPinningSimpleRootEquiv (R := K) i)
 
 /-- Forgetting the root-space restrictions identifies the base-change equivalence
 with the geometric scalar extension of the ambient Lie algebra. -/
@@ -99,7 +72,7 @@ theorem standardPinningRootSpaceBaseChangeEquiv_tmul_coe (i : Fin r) (c : K)
           (Bialgebra.CotangentSpace R (coordinateHopfAlgebra R (r + 1))))) := by
   obtain ⟨b, rfl⟩ := ((standardPinning R r).rootSpaceEquiv
     (standardPinningSimpleRootEquiv (R := R) i)).surjective x
-  rw [standardPinningRootSpaceBaseChangeEquiv_tmul]
+  rw [standardPinningRootSpaceBaseChangeEquiv, Pinning.rootSpaceBaseChangeEquiv_tmul]
   -- The root-space coercions use the quotient-indexed cotangent presentation.
   erw [standardPinning_rootSpaceEquiv_apply_coe,
     standardPinning_rootSpaceEquiv_apply_coe, TensorProduct.tmul_smul,

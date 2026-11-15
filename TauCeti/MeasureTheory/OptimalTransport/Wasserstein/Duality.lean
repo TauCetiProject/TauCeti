@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.MeasureTheory.Function.LpSeminorm.EDist
 public import TauCeti.MeasureTheory.OptimalTransport.Duality.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Basic
 
@@ -84,22 +85,9 @@ theorem ofReal_integral_add_integral_le_wassersteinEDist_add_rpow (hp1 : 1 ≤ p
         = eLpNorm (fun y ↦ edist y (Q₂ y)) p B :=
       eLpNorm_comp_measurePreserving hd₂.aestronglyMeasurable hγ.measurePreserving_snd
     refine hle.trans ?_
-    calc eLpNorm (fun z : Y × Y ↦ edist (Q₁ z.1) (Q₂ z.2)) p γ
-        ≤ eLpNorm ((fun z : Y × Y ↦ edist z.1 z.2) +
-            ((fun z : Y × Y ↦ edist z.1 (Q₁ z.1)) + fun z ↦ edist z.2 (Q₂ z.2))) p γ := by
-          refine eLpNorm_mono_enorm hmeas.aestronglyMeasurable fun z ↦ ?_
-          simp only [enorm_eq_self, Pi.add_apply]
-          calc edist (Q₁ z.1) (Q₂ z.2)
-              ≤ edist (Q₁ z.1) z.1 + edist z.1 z.2 + edist z.2 (Q₂ z.2) :=
-                edist_triangle4 _ _ _ _
-            _ = edist z.1 z.2 + (edist z.1 (Q₁ z.1) + edist z.2 (Q₂ z.2)) := by
-                rw [edist_comm (Q₁ z.1)]
-                ring
-      _ ≤ eLpNorm (fun z : Y × Y ↦ edist z.1 z.2) p γ +
-            (eLpNorm (fun z : Y × Y ↦ edist z.1 (Q₁ z.1)) p γ +
-              eLpNorm (fun z : Y × Y ↦ edist z.2 (Q₂ z.2)) p γ) :=
-          (eLpNorm_add_le hp1).trans (add_le_add le_rfl (eLpNorm_add_le hp1))
-      _ = eLpNorm (fun z : Y × Y ↦ edist z.1 z.2) p γ + e := by rw [hmarg₁, hmarg₂]
+    exact (eLpNorm_edist_le_add (f := Prod.fst) (g := Prod.snd) (f' := fun z ↦ Q₁ z.1)
+      (g' := fun z ↦ Q₂ z.2) hp1 hmeas.aestronglyMeasurable).trans_eq
+      (by rw [hmarg₁, hmarg₂])
   have hroot : D ^ p.toReal⁻¹ ≤ wassersteinEDist p A B + e :=
     tsub_le_iff_right.1 (le_wassersteinEDist fun γ hγ ↦ tsub_le_iff_right.2 (key γ hγ))
   calc D = (D ^ p.toReal⁻¹) ^ p.toReal := (ENNReal.rpow_inv_rpow hr.ne' D).symm
