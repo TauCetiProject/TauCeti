@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Restriction.NormedSpace
+import TauCeti.Geometry.Manifold.Riemannian.Hessian.OneDimensional
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
@@ -76,31 +77,11 @@ theorem hessian_restrictOpenTangentSpace_real_eq_mul_deriv_deriv
   let g := (riemannianMetricVectorSpace ℝ).ofLE (m := ∞) le_top
   let : RiemannianBundle (fun r : U ↦ TangentSpace 𝓘(ℝ) r) :=
     ⟨(g.restrictOpenTangentSpace U).toRiemannianMetric⟩
-  let e₁ : TangentSpace 𝓘(ℝ) x := (tangentSpaceCastModel 𝓘(ℝ) x).symm 1
-  have hu (u : TangentSpace 𝓘(ℝ) x) : u = tangentSpaceCastModel 𝓘(ℝ) x u • e₁ :=
-    (tangentSpaceCastModel 𝓘(ℝ) x).injective (by simp [e₁])
-  have he₁ : inner ℝ e₁ e₁ = (1 : ℝ) := by
-    change (g.restrictOpenTangentSpace U).inner x e₁ e₁ = 1
-    rw [inner_restrictOpenTangentSpace_real]
-    simp [e₁]
-  let b := stdOrthonormalBasis ℝ (TangentSpace 𝓘(ℝ) x)
-  have h1 : hessian 𝓘(ℝ) (fun r : U ↦ f r) x e₁ e₁ = deriv (deriv f) x := by
-    have hlap := laplaceBeltrami_eq_sum_hessian 𝓘(ℝ) (fun r : U ↦ f r) x b
-    have hcard : Fintype.card (Fin (Module.finrank ℝ (TangentSpace 𝓘(ℝ) x))) = 1 := by
-      rw [Fintype.card_fin, (tangentSpaceCastModel 𝓘(ℝ) x).toLinearEquiv.finrank_eq,
-        Module.finrank_self]
-    have hsum : (∑ i, hessian 𝓘(ℝ) (fun r : U ↦ f r) x (b i) (b i)) =
-        ∑ _i : Fin (Module.finrank ℝ (TangentSpace 𝓘(ℝ) x)),
-          hessian 𝓘(ℝ) (fun r : U ↦ f r) x e₁ e₁ :=
-      Finset.sum_congr rfl fun i _ ↦ by
-        have hi := b.inner_eq_one i
-        rw [hu (b i), real_inner_smul_left, real_inner_smul_right, he₁, mul_one] at hi
-        rw [hu (b i), hessian_smul_left, hessian_smul_right, ← mul_assoc, hi, one_mul]
-    rw [hsum, Finset.sum_const, Finset.card_univ, hcard, one_smul,
-      laplaceBeltrami_restrictOpenTangentSpace_real_eq_deriv_deriv U hf] at hlap
-    exact hlap.symm
-  conv_lhs => rw [hu v, hu w]
-  rw [hessian_smul_left, hessian_smul_right, h1]
+  let _ := Bundle.instIsContMDiffRiemannianBundle (g.restrictOpenTangentSpace U)
+  have hin : inner ℝ v w = tangentSpaceCastModel 𝓘(ℝ) x v * tangentSpaceCastModel 𝓘(ℝ) x w :=
+    inner_restrictOpenTangentSpace_real U x v w
+  rw [hessian_eq_laplaceBeltrami_mul_inner_of_finrank_le_one (by simp),
+    laplaceBeltrami_restrictOpenTangentSpace_real_eq_deriv_deriv U hf, hin]
   ring
 
 /-- The squared gradient norm for the restricted Euclidean metric on an open

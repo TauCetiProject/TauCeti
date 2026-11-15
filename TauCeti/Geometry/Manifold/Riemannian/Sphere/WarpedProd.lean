@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Curvature
 public import TauCeti.Geometry.Manifold.Riemannian.Restriction.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.WarpedProd.Scalar
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.WarpedProd.Nonnegative
 import TauCeti.Geometry.Manifold.Riemannian.Restriction.Real
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.VectorSpace
 
@@ -20,8 +21,10 @@ two-plane `X = (a₁, v₁)`, `Y = (a₂, v₂)` at `(r, u)` into mixed and vert
 * `⟪R(X, Y) Y, X⟫ = -f(r) f''(r) ‖a₁ • v₂ - a₂ • v₁‖² + f(r)² (1 - f'(r)²) det(Gram(v₁, v₂))`.
 
 Hence mixed planes have sectional curvature `-f''/f`, vertical planes have `(1 - f'²)/f²`, any
-common bound or value transfers to every tangent two-plane, and the scalar curvature is
-`n(n-1)(1-f'²)/f² - 2n f''/f`. Smoothness and nonvanishing of `f` are needed only on the open set.
+common bound or value transfers to every tangent two-plane (in particular, the sectional curvature
+is nonnegative on all planes when `f f'' ≤ 0` and `f'² ≤ 1` at the point), and the scalar curvature
+is `n(n-1)(1-f'²)/f² - 2n f''/f`. Smoothness and nonvanishing of `f` are needed only on the open
+set; no standard-cap assumptions enter these computations.
 
 ## Main results
 
@@ -32,7 +35,8 @@ common bound or value transfers to every tangent two-plane, and the scalar curva
   `TauCeti.sectionalCurvature_warpedProdTangentSpace_real_sphere_vertical`,
   `TauCeti.le_sectionalCurvature_warpedProdTangentSpace_real_sphere`,
   `TauCeti.sectionalCurvature_warpedProdTangentSpace_real_sphere_le`,
-  `TauCeti.hasSectionalCurvatureAt_warpedProdTangentSpace_real_sphere`: sectional curvature of
+  `TauCeti.hasSectionalCurvatureAt_warpedProdTangentSpace_real_sphere`,
+  `TauCeti.sectionalCurvature_warpedProdTangentSpace_real_sphere_nonneg`: sectional curvature of
   mixed, vertical, and general two-planes.
 * `TauCeti.scalarCurvature_warpedProdTangentSpace_real_sphere`: scalar curvature formula.
 
@@ -421,11 +425,6 @@ theorem sectionalCurvature_warpedProdTangentSpace_real_sphere_vertical
     zero_pow two_ne_zero, mul_zero, zero_add]
   field_simp [hf₀ p.1, hdet]
 
-private theorem det_gram_fin_two_nonneg {E : Type*} [SeminormedAddCommGroup E]
-    [InnerProductSpace ℝ E] (v w : E) : 0 ≤ (Matrix.gram ℝ ![v, w]).det := by
-  rw [Matrix.real_det_gram_fin_two]
-  nlinarith [real_inner_mul_inner_self_le v w]
-
 /-- A common lower bound `κ` on the mixed and vertical sectional curvatures `-f''/f` and
 `(1 - f'²)/f²` bounds the curvature numerator from below for all tangent pairs, hence bounds the
 sectional curvature of every tangent two-plane at `p`. -/
@@ -451,32 +450,12 @@ theorem le_sectionalCurvature_warpedProdTangentSpace_real_sphere
     (mul_sq_eq_neg_mul_deriv_deriv (hf₀ p.1))
   have h2 := (mul_le_mul_of_nonneg_right hvert (by positivity)).trans_eq
     (mul_pow_four_eq_sq_mul_one_sub (hf₀ p.1))
-  nlinarith [det_gram_fin_two_nonneg (tangentSpaceProdEquiv p X).2 (tangentSpaceProdEquiv p Y).2,
+  nlinarith [(Matrix.posSemidef_gram ℝ
+      ![(tangentSpaceProdEquiv p X).2, (tangentSpaceProdEquiv p Y).2]).det_nonneg,
     sq_nonneg ‖tangentSpaceCastModel 𝓘(ℝ) p.1 (tangentSpaceProdEquiv p X).1 •
         (tangentSpaceProdEquiv p Y).2 -
       tangentSpaceCastModel 𝓘(ℝ) p.1 (tangentSpaceProdEquiv p Y).1 •
         (tangentSpaceProdEquiv p X).2‖]
-
-/-- If `-f''/f` and `(1 - f'²)/f²` are nonnegative at `p`, the sectional curvature of
-`dr² + f(r)² g_(Sⁿ)` is nonnegative on *every* pair of tangent vectors at `p` (dependent pairs
-give zero). -/
-theorem sectionalCurvature_warpedProdTangentSpace_real_sphere_nonneg
-    (p : U × Metric.sphere (0 : V) 1)
-    (hmix : 0 ≤ -deriv (deriv f) p.1 / f p.1)
-    (hvert : 0 ≤ (1 - deriv f p.1 ^ 2) / f p.1 ^ 2)
-    (X Y : TangentSpace (𝓘(ℝ).prod (𝓡 n)) p) :
-    letI : RiemannianBundle
-      (fun q : U × Metric.sphere (0 : V) 1 ↦ TangentSpace (𝓘(ℝ).prod (𝓡 n)) q) :=
-      ⟨((((riemannianMetricVectorSpace ℝ).ofLE (m := ∞) le_top).restrictOpenTangentSpace U
-        ).warpedProdTangentSpace (fun r ↦ f r) hf hf₀
-        ((sphereRoundMetric (E := V) (n := n)).ofLE (m := ∞) le_top)).toRiemannianMetric⟩
-    0 ≤ (leviCivitaConnection (𝓘(ℝ).prod (𝓡 n)) (U × Metric.sphere (0 : V) 1)).sectionalCurvature
-        (isMetricCompatible_leviCivitaConnection (𝓘(ℝ).prod (𝓡 n))) p X Y := by
-  let _ := realSphereWarpedBundle U hf hf₀ (V := V) (n := n)
-  by_cases hXY : LinearIndependent ℝ ![X, Y]
-  · exact le_sectionalCurvature_warpedProdTangentSpace_real_sphere U hf hf₀ p hmix hvert X Y hXY
-  · rw [sectionalCurvature_apply,
-      not_not.mp (Matrix.det_gram_ne_zero_iff_linearIndependent.not.mpr hXY), div_zero]
 
 /-- A common upper bound `κ` on `-f''/f` and `(1 - f'²)/f²` bounds the sectional curvature of
 every tangent two-plane at `p` from above. -/
@@ -502,7 +481,8 @@ theorem sectionalCurvature_warpedProdTangentSpace_real_sphere_le
     (mul_le_mul_of_nonneg_right hmix (sq_nonneg (f p.1)))
   have h2 := (mul_pow_four_eq_sq_mul_one_sub (hf₀ p.1)).symm.trans_le
     (mul_le_mul_of_nonneg_right hvert (by positivity))
-  nlinarith [det_gram_fin_two_nonneg (tangentSpaceProdEquiv p X).2 (tangentSpaceProdEquiv p Y).2,
+  nlinarith [(Matrix.posSemidef_gram ℝ
+      ![(tangentSpaceProdEquiv p X).2, (tangentSpaceProdEquiv p Y).2]).det_nonneg,
     sq_nonneg ‖tangentSpaceCastModel 𝓘(ℝ) p.1 (tangentSpaceProdEquiv p X).1 •
         (tangentSpaceProdEquiv p Y).2 -
       tangentSpaceCastModel 𝓘(ℝ) p.1 (tangentSpaceProdEquiv p Y).1 •
@@ -558,5 +538,53 @@ theorem scalarCurvature_warpedProdTangentSpace_real_sphere
       (hf₂.differentiableAt (by norm_num))]
   simp only [finrank_euclideanSpace_fin]
   ring
+
+/-- The metric `dr² + f(r)² g_(Sⁿ)` has nonnegative sectional curvature when
+`f f'' ≤ 0` and `f'² ≤ 1` at the radial coordinate. The warping function need
+only be smooth and nonzero on the open set; its sign is irrelevant. -/
+theorem sectionalCurvature_warpedProdTangentSpace_real_sphere_nonneg
+    (U : Opens ℝ) {f : ℝ → ℝ}
+    (hf : ContMDiff 𝓘(ℝ) 𝓘(ℝ) ∞ (fun r : U ↦ f r))
+    (hf₀ : ∀ r : U, f r ≠ 0)
+    {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {n : ℕ}
+    [Fact (Module.finrank ℝ V = n + 1)] (p : U × Metric.sphere (0 : V) 1)
+    (hdd : f p.1 * deriv (deriv f) p.1 ≤ 0) (hd : deriv f p.1 ^ 2 ≤ 1)
+    (u v : TangentSpace (𝓘(ℝ).prod (𝓡 n)) p) :
+    let g := (riemannianMetricVectorSpace ℝ).ofLE (m := ∞) le_top
+    letI : RiemannianBundle (fun q : U × Metric.sphere (0 : V) 1 ↦
+      TangentSpace (𝓘(ℝ).prod (𝓡 n)) q) :=
+      ⟨((g.restrictOpenTangentSpace U).warpedProdTangentSpace (fun r ↦ f r) hf hf₀
+        ((sphereRoundMetric (E := V) (n := n)).ofLE (m := ∞) le_top)).toRiemannianMetric⟩
+    0 ≤ (leviCivitaConnection (𝓘(ℝ).prod (𝓡 n))
+      (U × Metric.sphere (0 : V) 1)).sectionalCurvature
+      (isMetricCompatible_leviCivitaConnection (𝓘(ℝ).prod (𝓡 n))) p u v := by
+  let g := (riemannianMetricVectorSpace ℝ).ofLE (m := ∞) le_top
+  let g₁ := g.restrictOpenTangentSpace U
+  let g₂ := (sphereRoundMetric (E := V) (n := n)).ofLE (m := ∞) le_top
+  let : RiemannianBundle (fun r : U ↦ TangentSpace 𝓘(ℝ) r) := ⟨g₁.toRiemannianMetric⟩
+  let : RiemannianBundle (fun s : Metric.sphere (0 : V) 1 ↦ TangentSpace (𝓡 n) s) :=
+    ⟨g₂.toRiemannianMetric⟩
+  let : RiemannianBundle (fun q : U × Metric.sphere (0 : V) 1 ↦
+    TangentSpace (𝓘(ℝ).prod (𝓡 n)) q) :=
+    ⟨(g₁.warpedProdTangentSpace (fun r ↦ f r) hf hf₀ g₂).toRiemannianMetric⟩
+  have h : IsWarpedProduct 𝓘(ℝ) (𝓡 n) (Metric.sphere (0 : V) 1) (fun r : U ↦ f r) :=
+    ⟨fun q a b ↦ ContMDiffRiemannianMetric.warpedProdTangentSpace_inner _ _ _ _ _ q a b⟩
+  have hf₂ : ContDiffAt ℝ 2 f (p.1 : ℝ) :=
+    (contMDiffAt_iff_contDiffAt.1 (contMDiffAt_subtype_iff.1
+      hf.contMDiffAt)).of_le (by simp)
+  apply h.sectionalCurvature_nonneg_of_finrank_le_one hf (by simp) p
+  · rwa [laplaceBeltrami_restrictOpenTangentSpace_real_eq_deriv_deriv U hf₂]
+  · intro a b
+    have hR := g₂.isConstantCurvatureTensor_iff 1 |>.mp
+      isConstantCurvatureTensor_sphereRoundMetric_ofLE p.2 a b b
+    rw [hR, one_smul]
+    simp only [inner_sub_left, real_inner_smul_left]
+    rw [sq_norm_mgradient_restrictOpenTangentSpace_real_eq_sq_deriv U
+      (hf₂.differentiableAt (by norm_num)), Matrix.real_det_gram_fin_two]
+    have hgram := (Matrix.posSemidef_gram ℝ ![a, b]).det_nonneg
+    rw [Matrix.real_det_gram_fin_two] at hgram
+    have hbound := mul_le_mul_of_nonneg_right hd hgram
+    simp only [real_inner_comm b a] at *
+    nlinarith
 
 end TauCeti

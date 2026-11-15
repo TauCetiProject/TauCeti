@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Completeness
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Pullback
 public import TauCeti.Geometry.Manifold.Riemannian.WithMetric.Distance
-public import TauCeti.Geometry.RicciFlow.StandardCap.PuncturedMetric
+public import TauCeti.Geometry.RicciFlow.StandardCap.SectionalCurvature
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Analysis.Normed.Operator.Coercive

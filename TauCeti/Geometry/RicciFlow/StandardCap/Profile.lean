@@ -122,16 +122,34 @@ include hf
 theorem differentiable : Differentiable ℝ f :=
   hf.contDiff.differentiable (by simp)
 
+/-- Near the tip, on `(-r₀, r₀)`, a standard cap profile and its first two derivatives agree with
+`2 sin (r / 2)`, `cos (r / 2)`, and `-sin (r / 2) / 2`. -/
+theorem exists_eq_two_mul_sin_and_deriv :
+    ∃ r₀ > 0, ∀ r, |r| < r₀ →
+      f r = 2 * sin (r / 2) ∧ deriv f r = cos (r / 2) ∧
+        deriv (deriv f) r = -sin (r / 2) / 2 := by
+  obtain ⟨r₀, hr₀, h⟩ := hf.exists_eq_two_mul_sin
+  have hIoo : ∀ s ∈ Ioo (-r₀) r₀, f s = 2 * sin (s / 2) := fun s hs ↦ by
+    rcases le_or_gt 0 s with h0 | h0
+    · exact h s ⟨h0, hs.2⟩
+    · have hodd := hf.odd (-s)
+      rw [neg_neg] at hodd
+      rw [hodd, h (-s) ⟨by linarith, by linarith [hs.1]⟩, neg_div, sin_neg]
+      ring
+  refine ⟨r₀, hr₀, fun r hr ↦ ?_⟩
+  have hmem : r ∈ Ioo (-r₀) r₀ := abs_lt.1 hr
+  have heq : f =ᶠ[𝓝 r] fun s ↦ 2 * sin (s / 2) :=
+    eventuallyEq_iff_exists_mem.2 ⟨Ioo (-r₀) r₀, isOpen_Ioo.mem_nhds hmem, hIoo⟩
+  have hd : deriv f =ᶠ[𝓝 r] fun s ↦ cos (s / 2) := by
+    filter_upwards [heq.deriv] with s hs
+    rw [hs, (((hasDerivAt_id' s).div_const 2).sin.const_mul 2).deriv]; ring
+  refine ⟨hIoo r hmem, hd.eq_of_nhds, ?_⟩
+  rw [hd.deriv_eq, (((hasDerivAt_id' r).div_const 2).cos).deriv]; ring
+
 /-- Near the tip, on both sides, a standard cap profile is `2 sin (r / 2)`. -/
 theorem eventuallyEq_two_mul_sin : f =ᶠ[𝓝 0] fun r ↦ 2 * sin (r / 2) := by
-  obtain ⟨r₀, hr₀, h⟩ := hf.exists_eq_two_mul_sin
-  filter_upwards [Ioo_mem_nhds (neg_lt_zero.2 hr₀) hr₀] with r hr
-  rcases le_or_gt 0 r with h0 | h0
-  · exact h r ⟨h0, hr.2⟩
-  · have hodd := hf.odd (-r)
-    rw [neg_neg] at hodd
-    rw [hodd, h (-r) ⟨by linarith, by linarith [hr.1]⟩, neg_div, sin_neg]
-    ring
+  obtain ⟨r₀, hr₀, h⟩ := hf.exists_eq_two_mul_sin_and_deriv
+  filter_upwards [Ioo_mem_nhds (neg_lt_zero.2 hr₀) hr₀] with r hr using (h r (abs_lt.2 hr)).1
 
 /-- A standard cap profile vanishes at the tip. -/
 theorem apply_zero : f 0 = 0 := by
@@ -140,10 +158,8 @@ theorem apply_zero : f 0 = 0 := by
 /-- A standard cap profile has unit slope at the tip. -/
 @[simp]
 theorem deriv_zero : deriv f 0 = 1 := by
-  have h : HasDerivAt (fun r : ℝ ↦ 2 * sin (r / 2)) (2 * (cos (0 / 2) * (1 / 2))) 0 :=
-    ((hasDerivAt_id' 0).div_const 2).sin.const_mul 2
-  rw [hf.eventuallyEq_two_mul_sin.deriv_eq, h.deriv]
-  simp
+  obtain ⟨r₀, hr₀, h⟩ := hf.exists_eq_two_mul_sin_and_deriv
+  simpa using (h 0 (by simpa using hr₀)).2.1
 
 /-- The derivative of a standard cap profile is antitone on `[0, ∞)`. -/
 theorem antitoneOn_deriv : AntitoneOn (deriv f) (Ici 0) :=
