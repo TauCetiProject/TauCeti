@@ -12,6 +12,8 @@ public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.Topology.Compactness.Paracompact
 public import Mathlib.Topology.Sets.Compacts
+import TauCeti.Geometry.Manifold.ChartedSpace
+import TauCeti.Topology.ContinuousOn.PuncturedNhds
 
 /-!
 # Coordinate overlaps, measurability, precompact chart neighborhoods and transported charts
@@ -66,6 +68,9 @@ smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
   preferred extended chart is the preferred chart.
 * `TauCeti.comp_extChartAt_symm_comp_extChartAt_eventuallyEq`: a chart representative
   composed with its chart agrees locally with the original function.
+* `ModelWithCorners.tendsto_extChartAt_nhdsNE`, `ModelWithCorners.tendsto_extChartAt_symm_nhdsNE`:
+  punctured neighbourhoods at a point and at its extended chart image map into one another (the
+  inverse direction for a boundaryless model).
 * `TauCeti.measurableEmbedding_extChartAt_restrict`: an extended chart restricted to its source is
   a measurable embedding.
 * `MeasurableSet.image_extChartAt`: for a Borel measurable space on the manifold, the image of a
@@ -82,6 +87,9 @@ smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
   coordinate bounds for compact subsets of manifolds modelled on a locally compact space.
 * `TauCeti.exists_finite_compact_chart_cover`: a compact manifold modelled on a locally compact
   space is covered by the relative interiors of finitely many compact coordinate sets.
+* `TauCeti.CompactChartAtlas`: a finite family of compact coordinate sets whose relative interiors
+  cover `M`; `TauCeti.CompactChartAtlas.instNonempty` provides one on a compact manifold modelled
+  on a locally compact space.
 * `TauCeti.exists_locallyFinite_compact_extChartAt_cover`: a locally finite compact coordinate
   cover of a locally compact, sigma-compact Hausdorff manifold.
 * `TauCeti.exists_convex_uniqueDiffOn_mem_nhdsWithin_extChartAt`: a convex neighbourhood of the
@@ -222,6 +230,23 @@ theorem comp_extChartAt_symm_comp_extChartAt_eventuallyEq {α : Type*} (f : M �
     (f ∘ (extChartAt I x).symm) ∘ extChartAt I x =ᶠ[𝓝 x] f := by
   filter_upwards [extChartAt_source_mem_nhds (I := I) x] with y hy
   exact congrArg f ((extChartAt I x).left_inv hy)
+
+variable (I) in
+/-- The extended chart at `x` maps punctured neighbourhoods of `x` into punctured neighbourhoods of
+`extChartAt I x x`. -/
+theorem _root_.ModelWithCorners.tendsto_extChartAt_nhdsNE (x : M) :
+    Filter.Tendsto (extChartAt I x) (𝓝[≠] x) (𝓝[≠] (extChartAt I x x)) :=
+  (I.continuous.continuousAt.tendsto_nhdsNE I.injective).comp (tendsto_chartAt_nhdsNE x)
+
+variable (I) in
+/-- For a boundaryless model, the inverse of the extended chart at `x` maps punctured
+neighbourhoods of `extChartAt I x x` into punctured neighbourhoods of `x`. -/
+theorem _root_.ModelWithCorners.tendsto_extChartAt_symm_nhdsNE [I.Boundaryless] (x : M) :
+    Filter.Tendsto (extChartAt I x).symm (𝓝[≠] (extChartAt I x x)) (𝓝[≠] x) := by
+  have hI : Filter.Tendsto I.symm (𝓝[≠] (extChartAt I x x)) (𝓝[≠] (chartAt H x x)) := by
+    have h := (I.toHomeomorph.symm.map_punctured_nhds_eq (I.toHomeomorph (chartAt H x x))).le
+    rwa [Homeomorph.symm_apply_apply, ModelWithCorners.toHomeomorph_apply] at h
+  exact (tendsto_chartAt_symm_nhdsNE x).comp hI
 
 /-- A point `y` of the closure of `s` is read in its preferred extended chart as a point of the
 closure of the chart image of `s`, intersected with the range of the model. -/
@@ -587,6 +612,33 @@ theorem exists_finite_compact_chart_cover [CompactSpace M] [LocallyCompactSpace 
   · have hmem := (hu i).2.2.2.2 (Set.mem_image_of_mem _ hz)
     rwa [(extChartAt I (α i)).right_inv z.2] at hmem
   · simpa only [Set.mem_ofPred_eq, (extChartAt I (α i)).left_inv hy] using hyi
+
+/-- A *compact chart atlas* of `M`: finitely many points `center i` of `M` with compact subsets
+`piece i` of the extended chart targets at them, whose relative interiors cover `M`. Every compact
+manifold modelled on a locally compact space has one (`TauCeti.CompactChartAtlas.instNonempty`). -/
+structure CompactChartAtlas (I : ModelWithCorners 𝕜 E H) (M : Type*) [TopologicalSpace M]
+    [ChartedSpace H M] where
+  /-- The index type of the atlas. -/
+  ι : Type
+  /-- The atlas is finite. -/
+  [fintype : Fintype ι]
+  /-- The chart centers. -/
+  center : ι → M
+  /-- The compact coordinate pieces. -/
+  piece : ∀ i, TopologicalSpace.Compacts (extChartAt I (center i)).target
+  /-- The relative interiors of the pieces cover the manifold. -/
+  interior_cover : ∀ y : M, ∃ i, ∃ hy : y ∈ (extChartAt I (center i)).source,
+    (⟨extChartAt I (center i) y, (extChartAt I (center i)).map_source hy⟩ :
+      (extChartAt I (center i)).target) ∈ interior (piece i : Set (extChartAt I (center i)).target)
+
+attribute [instance] CompactChartAtlas.fintype
+
+/-- **Existence of compact chart atlases.** A compact manifold modelled on a locally compact space
+has a compact chart atlas. -/
+instance CompactChartAtlas.instNonempty [CompactSpace M] [LocallyCompactSpace H] :
+    Nonempty (CompactChartAtlas I M) := by
+  obtain ⟨N, c, K, hK⟩ := exists_finite_compact_chart_cover (I := I) (M := M)
+  exact ⟨⟨Fin N, c, K, hK⟩⟩
 
 /-- A locally compact, sigma-compact Hausdorff manifold has a locally finite cover by compact
 coordinate sets in preferred extended charts. Their inverse images cover the manifold, including

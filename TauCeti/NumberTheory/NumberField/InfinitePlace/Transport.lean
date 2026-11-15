@@ -52,6 +52,8 @@ in another universe, such as `Shrink K`.
   `NumberField.InfinitePlace.realEquivOfRingEquiv_symm`,
   `NumberField.InfinitePlace.realEquivOfRingEquiv_trans_apply`,
   `NumberField.InfinitePlace.realEquivOfRingEquiv_trans`: functoriality of `realEquivOfRingEquiv`.
+* `NumberField.InfinitePlace.eq_equivOfRingEquiv_iff`: an infinite place `w'` equals
+  `equivOfRingEquiv e w` iff `∀ x, w' (e x) = w x`.
 * `NumberField.InfinitePlace.isUnramified_equivOfRingEquiv_iff`,
   `IsUnramifiedAtInfinitePlaces.of_equiv_equiv`, `IsUnramifiedAtInfinitePlaces.iff_of_equiv_equiv`:
   transport of unramifiedness at infinite places across compatible field isomorphisms.
@@ -208,6 +210,13 @@ theorem realEquivOfRingEquiv_trans (e : K ≃+* L) (e' : L ≃+* M) :
       (realEquivOfRingEquiv e).trans (realEquivOfRingEquiv e') :=
   Equiv.ext fun w ↦ (realEquivOfRingEquiv_trans_apply e e' w).symm
 
+/-- An infinite place `w'` of `L` equals `equivOfRingEquiv e w` precisely when `e` intertwines `w`
+and `w'` on every element of `K`. -/
+theorem eq_equivOfRingEquiv_iff {e : K ≃+* L} {w : InfinitePlace K} {w' : InfinitePlace L} :
+    w' = equivOfRingEquiv e w ↔ ∀ x, w' (e x) = w x := by
+  refine ⟨fun h x ↦ by subst h; simp, fun h ↦ InfinitePlace.ext _ _ fun y ↦ ?_⟩
+  rw [equivOfRingEquiv_apply, ← h, e.apply_symm_apply]
+
 /-- **Unramifiedness of an infinite place transports across compatible field isomorphisms.** -/
 theorem isUnramified_equivOfRingEquiv_iff {K' L' : Type*} [Field K'] [Field L']
     [Algebra K L] [Algebra K' L'] (f : K ≃+* K') (g : L ≃+* L')
@@ -215,11 +224,10 @@ theorem isUnramified_equivOfRingEquiv_iff {K' L' : Type*} [Field K'] [Field L']
     (w : InfinitePlace L) :
     (equivOfRingEquiv g w).IsUnramified K' ↔ w.IsUnramified K := by
   have hsub : (equivOfRingEquiv g w).comap (algebraMap K' L') =
-      equivOfRingEquiv f (w.comap (algebraMap K L)) := by
-    rw [equivOfRingEquiv_eq_comap, equivOfRingEquiv_eq_comap, ← comap_comp, ← comap_comp]
-    congr 1
-    ext x
-    exact g.symm_apply_eq.mpr <| by simpa using RingHom.congr_fun hcomp (f.symm x)
+      equivOfRingEquiv f (w.comap (algebraMap K L)) :=
+    eq_equivOfRingEquiv_iff.mpr fun x ↦ by
+      have hx : algebraMap K' L' (f x) = g (algebraMap K L x) := RingHom.congr_fun hcomp x
+      simp [hx]
   rw [IsUnramified, IsUnramified, hsub, mult_equivOfRingEquiv, mult_equivOfRingEquiv]
 
 /-- **Unramifiedness at all infinite places transports across compatible field isomorphisms.** -/
