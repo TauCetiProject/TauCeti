@@ -24,7 +24,9 @@ It is the spectral sequence of a filtered complex from
 `ℤ`, so chains in degree `n` are placed in degree `-n` along `ComplexShape.embeddingDownNat`.
 
 * **Graded pieces.** The quotient `F_b / F_a` of two stages of the filtration is the cokernel of
-  the map `F (X a) ⟶ F (X b)` (`TauCeti.subspaceChainFiltrationCokernelIso`).
+  the map `F (X a) ⟶ F (X b)` (`TauCeti.subspaceChainFiltrationCokernelIso`), so its cohomology
+  vanishes where the homology of that cokernel does
+  (`TauCeti.isZero_homology_cokernel_subspaceChainFiltration`).
 * **First page.** The object at `(p, q)` on the first page (numbered `2` in the indexing of
   `CochainComplex.spectralSequence`) is the homology in degree `n` of that cokernel for the pair
   `(X (q + 1), X q)`, with `p + q = -n` (`TauCeti.subspaceChainSpectralSequenceFirstPageXIso`).
@@ -33,11 +35,12 @@ It is the spectral sequence of a filtered complex from
   spectral sequence converges strongly
   (`TauCeti.subspaceChainSpectralSequencePageXIsoGradedOfFinite`).
 * **Comparison.** A natural transformation `φ : F ⟶ G` carries the filtration of `F Y` into that
-  of `G Y` (`TauCeti.subspaceChainFiltrationMap`). If every component of `φ` is a
-  quasi-isomorphism, it induces an isomorphism of spectral sequences on every page
-  (`TauCeti.subspaceChainSpectralSequenceIso`), with no boundedness or exhaustiveness assumption
-  on the filtration. On the first page and on the abutment it is the map in homology induced by
-  `φ` (`TauCeti.spectralSequenceMap_subspaceChainFiltrationMap_two_f_comp` and
+  of `G Y` (`TauCeti.subspaceChainFiltrationMap`), functorially in `φ`
+  (`TauCeti.subspaceChainFiltrationMap_id`, `TauCeti.subspaceChainFiltrationMap_comp`). If every
+  component of `φ` is a quasi-isomorphism, it induces an isomorphism of spectral sequences on
+  every page (`TauCeti.subspaceChainSpectralSequenceIso`), with no boundedness or exhaustiveness
+  assumption on the filtration. On the first page and on the abutment it is the map in homology
+  induced by `φ` (`TauCeti.spectralSequenceMap_subspaceChainFiltrationMap_two_f_comp` and
   `TauCeti.spectralObjectMap_subspaceChainFiltrationMap_abutment_comp`).
 
 The simplicial singular instance is `TauCeti.filteredSpaceSpectralSequence`, and the normalized
@@ -110,6 +113,14 @@ lemma subspaceChainFiltrationIso_hom_comp_subspaceChainFiltrationι (q : ℤ) :
       (subspaceChainFiltration F X q).arrow :=
   Subobject.underlyingIso_hom_comp_eq_mk _
 
+/-- The inverse identification of the `q`-th stage of the filtration with `F (X q)` is compatible
+with the inclusions into `F Y`. -/
+@[reassoc (attr := simp)]
+lemma subspaceChainFiltrationIso_inv_comp_arrow (q : ℤ) :
+    (subspaceChainFiltrationIso F X q).inv ≫ (subspaceChainFiltration F X q).arrow =
+      subspaceChainFiltrationι F X q :=
+  Subobject.underlyingIso_arrow _
+
 variable {X}
 
 omit [∀ P : TopPair.{w}, Mono (F.map P.map)] in
@@ -175,16 +186,13 @@ from `F (X b)` (`TauCeti.π_subspaceChainFiltrationCokernelIso_hom`). -/
 def subspaceChainFiltrationCokernelIso {a b : ℤ} (hab : X a ⊆ X b) :
     cokernel (Subobject.ofLE _ _ (subspaceChainFiltration_mono F hab)) ≅
       (cokernel (F.map (TopPair.ofInclusion hab).map)).extend ComplexShape.embeddingDownNat :=
-  have hS : (ShortComplex.mk _ _
-      (cokernel.condition (F.map (TopPair.ofInclusion hab).map))).ShortExact :=
-    ShortComplex.ShortExact.mk' (ShortComplex.exact_of_g_is_cokernel _ (cokernelIsCokernel _))
-      inferInstance (inferInstanceAs (Epi (cokernel.π _)))
   cokernel.mapIso _
       (extendMap (F.map (TopPair.ofInclusion hab).map) ComplexShape.embeddingDownNat)
       (subspaceChainFiltrationIso F X a) (subspaceChainFiltrationIso F X b)
       (ofLE_comp_subspaceChainFiltrationIso_hom F hab) ≪≫
     (colimit.isColimit _).coconePointUniqueUpToIso
-      (hS.extend ComplexShape.embeddingDownNat).gIsCokernel
+      ((cokernelSequence_shortExact (F.map (TopPair.ofInclusion hab).map)).extend
+        ComplexShape.embeddingDownNat).gIsCokernel
 
 /-- The identification of `F_b / F_a` with the cokernel of `F (X a) ⟶ F (X b)` is induced by the
 quotient map from `F (X b)`. -/
@@ -198,6 +206,20 @@ lemma π_subspaceChainFiltrationCokernelIso_hom {a b : ℤ} (hab : X a ⊆ X b) 
   -- quotient map, and the second sends that quotient map to the cokernel cofork's map.
   (cokernel.π_desc_assoc _ _ _ _).trans <| (Category.assoc _ _ _).trans <|
     congrArg (_ ≫ ·) (IsColimit.comp_coconePointUniqueUpToIso_hom _ _ WalkingParallelPair.one)
+
+/-- The quotient `F_b / F_a` of two stages of the filtration has vanishing cohomology in degree
+`m` when the homology in degree `n` of the cokernel of `F (X a) ⟶ F (X b)` vanishes for `m = -n`.
+In positive degrees `m` there is nothing to check. -/
+lemma isZero_homology_cokernel_subspaceChainFiltration {a b : ℤ} (hab : X a ⊆ X b) (m : ℤ)
+    (h : ∀ n : ℕ, m = -n → IsZero ((cokernel (F.map (TopPair.ofInclusion hab).map)).homology n)) :
+    IsZero ((cokernel (Subobject.ofLE _ _ (subspaceChainFiltration_mono F hab))).homology m) := by
+  refine IsZero.of_iso ?_
+    ((homologyFunctor A _ m).mapIso (subspaceChainFiltrationCokernelIso F hab))
+  by_cases hm : ∃ n : ℕ, ComplexShape.embeddingDownNat.f n = m
+  · obtain ⟨n, hn⟩ := hm
+    exact (h n hn.symm).of_iso (extendHomologyIso _ _ hn)
+  · push Not at hm
+    exact (extend_exactAt _ _ m hm).isZero_homology
 
 variable (hX : Monotone X)
 
@@ -220,7 +242,7 @@ def subspaceChainCokernelFiltrationFunctorMapIso {a b : ℤ} (f : (a : EInt) ⟶
 /-- The identification of the cokernel of a transition map of the filtration functor with the
 cokernel of the map of chains of the pair is induced by the quotient map from the chains of the
 larger subset. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma π_subspaceChainCokernelFiltrationFunctorMapIso_hom {a b : ℤ} (f : (a : EInt) ⟶ b) :
     cokernel.π _ ≫ (subspaceChainCokernelFiltrationFunctorMapIso F hX f).hom =
       (CochainComplex.filtrationFunctorObjIso _ _ b).hom ≫
@@ -285,6 +307,16 @@ def subspaceChainAbutmentIso (n : ℕ) :
   CochainComplex.filtrationAbutmentIso _ _ _ ≪≫
     extendHomologyIso _ ComplexShape.embeddingDownNat rfl
 
+/-- The identification of the abutment is the identification
+`CochainComplex.filtrationAbutmentIso` of the abutment with the cohomology of the filtered
+complex, followed by the identification of the cohomology of the reindexed complex `F Y` with its
+homology. -/
+lemma subspaceChainAbutmentIso_eq (n : ℕ) :
+    subspaceChainAbutmentIso F hX n =
+      CochainComplex.filtrationAbutmentIso _ _ _ ≪≫
+        extendHomologyIso _ ComplexShape.embeddingDownNat rfl :=
+  (rfl)
+
 /-- **Strong convergence of the spectral sequence of a finite filtration of a space.** If `F`
 vanishes on empty spaces, `X a = ∅` and `X b` is all of `Y`, then on every page `r ≥ 2` with
 `q - r + 2 ≤ a` and `b ≤ q + r - 1`, the object at `(p, q)` is the graded piece `F_{q+1} H / F_q H`
@@ -345,7 +377,7 @@ def subspaceChainFiltrationMap :
 
 /-- The comparison of the filtrations is the restriction of `φ` on `Y` to the stages of the
 filtrations. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma subspaceChainFiltrationMap_app_comp (a : EInt) :
     (subspaceChainFiltrationMap hX φ).app a ≫
         CochainComplex.filtrationFunctorArrow _ (monotone_subspaceChainFiltration G hX) a =
@@ -356,19 +388,43 @@ lemma subspaceChainFiltrationMap_app_comp (a : EInt) :
     (hG := monotone_subspaceChainFiltration G hX) _
     (factors_subspaceChainFiltration X φ) a).trans (Category.assoc _ _ _).symm
 
+/-- The comparison of the filtrations along the identity of `F` is the identity. -/
+@[simp]
+lemma subspaceChainFiltrationMap_id : subspaceChainFiltrationMap hX (𝟙 F) = 𝟙 _ := by
+  ext a : 2
+  rw [← cancel_mono (CochainComplex.filtrationFunctorArrow _ _ a),
+    subspaceChainFiltrationMap_app_comp, NatTrans.id_app, NatTrans.id_app, extendMap_id,
+    Category.id_comp, Category.comp_id]
+
+/-- The comparison of the filtrations along a composite of natural transformations is the
+composite of the comparisons. -/
+@[reassoc, simp]
+lemma subspaceChainFiltrationMap_comp {H : TopCat.{w} ⥤ ChainComplex A ℕ}
+    [∀ P : TopPair.{w}, Mono (H.map P.map)] (ψ : G ⟶ H) :
+    subspaceChainFiltrationMap hX (φ ≫ ψ) =
+      subspaceChainFiltrationMap hX φ ≫ subspaceChainFiltrationMap hX ψ := by
+  ext a : 2
+  rw [← cancel_mono (CochainComplex.filtrationFunctorArrow _ _ a)]
+  simp only [NatTrans.comp_app, Category.assoc, subspaceChainFiltrationMap_app_comp,
+    subspaceChainFiltrationMap_app_comp_assoc, extendMap_comp]
+
 /-- On the `n`-th stage, the comparison of the filtrations is `φ` on `X n`, under the
 identifications of the stages with the chains of `X n`. -/
-private lemma subspaceChainFiltrationMap_app_comp_filtrationFunctorObjIsoOfEqMk_hom (n : ℤ) :
+@[reassoc]
+lemma subspaceChainFiltrationMap_app_comp_filtrationFunctorObjIso_hom (n : ℤ) :
     (subspaceChainFiltrationMap hX φ).app n ≫
-        (CochainComplex.filtrationFunctorObjIsoOfEqMk _ (monotone_subspaceChainFiltration G hX)
-          (subspaceChainFiltrationι G X) (subspaceChainFiltration_def G X) n).hom =
-      (CochainComplex.filtrationFunctorObjIsoOfEqMk _ (monotone_subspaceChainFiltration F hX)
-          (subspaceChainFiltrationι F X) (subspaceChainFiltration_def F X) n).hom ≫
-        extendMap (φ.app _) ComplexShape.embeddingDownNat := by
-  rw [← cancel_mono (subspaceChainFiltrationι G X n), Category.assoc, Category.assoc,
-    ← subspaceChainFiltrationι_comp_extendMap_app]
-  simp only [CochainComplex.filtrationFunctorObjIsoOfEqMk_hom_comp,
-    CochainComplex.filtrationFunctorObjIsoOfEqMk_hom_comp_assoc]
+        (CochainComplex.filtrationFunctorObjIso _ _ n).hom ≫
+          Subobject.ofLE _ _ (CochainComplex.filtrationEInt_coe _ n).le ≫
+            (subspaceChainFiltrationIso G X n).hom =
+      (CochainComplex.filtrationFunctorObjIso _ _ n).hom ≫
+        Subobject.ofLE _ _ (CochainComplex.filtrationEInt_coe _ n).le ≫
+          (subspaceChainFiltrationIso F X n).hom ≫
+            extendMap (φ.app _) ComplexShape.embeddingDownNat := by
+  rw [← cancel_mono (subspaceChainFiltrationι G X n)]
+  simp only [Category.assoc, ← subspaceChainFiltrationι_comp_extendMap_app,
+    subspaceChainFiltrationIso_hom_comp_subspaceChainFiltrationι,
+    subspaceChainFiltrationIso_hom_comp_subspaceChainFiltrationι_assoc, Subobject.ofLE_arrow,
+    Subobject.ofLE_arrow_assoc]
   exact (subspaceChainFiltrationMap_app_comp hX φ n).trans (Category.assoc _ _ _)
 
 variable [∀ Z : TopCat.{w}, QuasiIso (φ.app Z)]
@@ -378,18 +434,16 @@ quasi-isomorphism on every stage, including the zero stage `⊥` and the whole c
 instance quasiIso_subspaceChainFiltrationMap_app (a : EInt) :
     QuasiIso ((subspaceChainFiltrationMap hX φ).app a) := by
   refine CochainComplex.quasiIso_filtrationFunctorMap_app _ _ _ _ (fun n ↦ ?_) a
-  have h : QuasiIso ((subspaceChainFiltrationMap hX φ).app n ≫
-      (CochainComplex.filtrationFunctorObjIsoOfEqMk _ (monotone_subspaceChainFiltration G hX)
-        (subspaceChainFiltrationι G X) (subspaceChainFiltration_def G X) n).hom) := by
-    rw [subspaceChainFiltrationMap_app_comp_filtrationFunctorObjIsoOfEqMk_hom]
+  have h := subspaceChainFiltrationMap_app_comp_filtrationFunctorObjIso_hom hX φ n
+  rw [← Subobject.isoOfEq_hom _ _ (CochainComplex.filtrationEInt_coe _ n),
+    ← Subobject.isoOfEq_hom _ _ (CochainComplex.filtrationEInt_coe _ n)] at h
+  have : QuasiIso ((subspaceChainFiltrationMap hX φ).app n ≫
+      (CochainComplex.filtrationFunctorObjIso _ _ n).hom ≫
+        (Subobject.isoOfEq _ _ (CochainComplex.filtrationEInt_coe _ n)).hom ≫
+          (subspaceChainFiltrationIso G X n).hom) := by
+    rw [h]
     infer_instance
-  exact (quasiIso_iff_comp_right _ _).1 h
-
-/-- **Natural quasi-isomorphisms of chain functors induce isomorphisms of the spectral objects of
-a filtered space.** -/
-instance isIso_spectralObjectMap_subspaceChainFiltrationMap :
-    IsIso (CochainComplex.spectralObjectMap (subspaceChainFiltrationMap hX φ)) :=
-  CochainComplex.isIso_spectralObjectMap_of_quasiIso _
+  exact (quasiIso_iff_comp_right _ _).1 this
 
 /-- **Natural quasi-isomorphisms of chain functors induce isomorphisms of the spectral sequences
 of a filtered space.** If every component of `φ : F ⟶ G` is a quasi-isomorphism, the comparison
@@ -412,32 +466,20 @@ lemma subspaceChainSpectralSequenceIso_hom :
 omit [∀ Z : TopCat.{w}, QuasiIso (φ.app Z)] in
 /-- On the graded pieces of the filtrations, the comparison of the filtrations is the map of
 cokernels induced by `φ`. -/
-private lemma cokernel_map_subspaceChainFiltrationMap_comp {a b : ℤ} (f : (a : EInt) ⟶ b) :
+@[reassoc]
+lemma cokernel_map_subspaceChainFiltrationMap_comp {a b : ℤ} (f : (a : EInt) ⟶ b) :
     cokernel.map _ _ _ _ ((subspaceChainFiltrationMap hX φ).naturality f) ≫
         (subspaceChainCokernelFiltrationFunctorMapIso G hX f).hom =
       (subspaceChainCokernelFiltrationFunctorMapIso F hX f).hom ≫
         extendMap (cokernel.map _ _ (φ.app _) (φ.app _) (φ.naturality _))
           ComplexShape.embeddingDownNat := by
-  have hι : (subspaceChainFiltrationMap hX φ).app b ≫
-      (CochainComplex.filtrationFunctorObjIso _ _ b).hom ≫
-        Subobject.ofLE _ _ (CochainComplex.filtrationEInt_coe _ b).le ≫
-          (subspaceChainFiltrationIso G X b).hom =
-      (CochainComplex.filtrationFunctorObjIso _ _ b).hom ≫
-        Subobject.ofLE _ _ (CochainComplex.filtrationEInt_coe _ b).le ≫
-          (subspaceChainFiltrationIso F X b).hom ≫
-            extendMap (φ.app _) ComplexShape.embeddingDownNat := by
-    rw [← cancel_mono (subspaceChainFiltrationι G X b)]
-    simp only [Category.assoc, ← subspaceChainFiltrationι_comp_extendMap_app,
-      subspaceChainFiltrationIso_hom_comp_subspaceChainFiltrationι,
-      subspaceChainFiltrationIso_hom_comp_subspaceChainFiltrationι_assoc, Subobject.ofLE_arrow,
-      Subobject.ofLE_arrow_assoc]
-    exact (subspaceChainFiltrationMap_app_comp hX φ b).trans (Category.assoc _ _ _)
   refine (cancel_epi (cokernel.π _)).1 ?_
   -- The ambient space of the pair `(X b, X a)` is the subspace `X b` of `Y` only up to
   -- definitional unfolding, so the composites are formed with terms rather than `rw`.
   exact (cokernel.π_desc_assoc _ _ _ _).trans <| (Category.assoc _ _ _).trans <|
     (congrArg (_ ≫ ·) (π_subspaceChainCokernelFiltrationFunctorMapIso_hom G hX f)).trans <|
-    ((reassoc_of% hι) _).trans <| (congrArg (_ ≫ _ ≫ ·)
+    (subspaceChainFiltrationMap_app_comp_filtrationFunctorObjIso_hom_assoc hX φ b _).trans <|
+      (congrArg (_ ≫ _ ≫ ·)
       ((congrArg (_ ≫ ·) ((extendMap_comp _ _ _).symm.trans <|
         (congrArg (extendMap · _) (cokernel.π_desc _ _ _).symm).trans
           (extendMap_comp _ _ _))).trans (Category.assoc _ _ _).symm)).trans

@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Homology.SpectralObject.SpectralSequence
 public import Mathlib.Algebra.Homology.SpectralObject.FirstPage
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.Algebra.Homology.ShortComplex.LeftHomology
+public import TauCeti.Algebra.Homology.SpectralSequence.Comparison
 -- The statement of `SpectralObject.spectralSequence_iso` refers to private auxiliary proofs of
 -- this file, so that it may only be used with access to its private declarations.
 import all Mathlib.Algebra.Homology.SpectralObject.SpectralSequence
@@ -39,10 +40,13 @@ which is functorial in `φ`.
   next page.
 * `CategoryTheory.Abelian.SpectralObject.spectralSequenceMap_id`,
   `CategoryTheory.Abelian.SpectralObject.spectralSequenceMap_comp`: functoriality.
-* `CategoryTheory.Abelian.SpectralObject.EMap_comp_EIsoH_hom` and, in the same namespace,
-  `spectralSequencePageXMap_comp_spectralSequenceFirstPageXIso_hom`: on the first page, under
-  the identifications `spectralSequenceFirstPageXIso` of its objects with objects `H`, the
-  morphism of pages is the morphism `φ` on `H`.
+* An isomorphism of spectral objects induces an isomorphism of spectral sequences (an instance on
+  `CategoryTheory.Abelian.SpectralObject.spectralSequenceMap`), hence on every page and on every
+  object of every page.
+* `spectralSequencePageXMap_comp_spectralSequenceFirstPageXIso_hom`, in the namespace
+  `CategoryTheory.Abelian.SpectralObject`: on the first page, under the identifications
+  `spectralSequenceFirstPageXIso` of its objects with objects `H`, the morphism of pages is the
+  morphism `φ` on `H`.
 
 ## Implementation notes
 
@@ -280,22 +284,28 @@ lemma spectralSequenceMap_comp :
   ext r hr : 2
   simp
 
+section IsIso
+
+variable [IsIso φ]
+
+/-- An isomorphism of spectral objects induces an isomorphism of spectral sequences. -/
+instance : IsIso (spectralSequenceMap data φ) :=
+  ⟨spectralSequenceMap data (inv φ), by simp [← spectralSequenceMap_comp],
+    by simp [← spectralSequenceMap_comp]⟩
+
+/-- An isomorphism of spectral objects induces an isomorphism on every page. -/
+instance (r : ℤ) (hr : r₀ ≤ r) : IsIso (spectralSequencePageMap data φ r hr) := by
+  rw [← spectralSequenceMap_hom]
+  infer_instance
+
+/-- An isomorphism of spectral objects induces an isomorphism on every object of every page. -/
+instance (r : ℤ) (hr : r₀ ≤ r) (pq : κ) : IsIso (spectralSequencePageXMap data φ r hr pq) := by
+  rw [← spectralSequencePageMap_f]
+  infer_instance
+
+end IsIso
 
 section FirstPage
-
-/-- Under the identifications `EIsoH` of `E(𝟙 i, f, 𝟙 j)` with `H(f)`, the map `EMap φ` is the
-morphism `φ` on `H(f)`. -/
-@[reassoc]
-lemma EMap_comp_EIsoH_hom {i j : ι} (f : i ⟶ j) (n₀ n₁ n₂ : ℤ) (hn₁ : n₀ + 1 = n₁)
-    (hn₂ : n₁ + 1 = n₂) :
-    EMap φ (𝟙 i) f (𝟙 j) n₀ n₁ n₂ hn₁ hn₂ ≫ (Y.EIsoH f n₀ n₁ n₂ hn₁ hn₂).hom =
-      (X.EIsoH f n₀ n₁ n₂ hn₁ hn₂).hom ≫ (φ.hom n₁).app (mk₁ f) := by
-  have h : cyclesMapOfHom φ (𝟙 i) f n₁ ≫ (Y.cyclesIsoH f n₁ n₂ hn₂).hom =
-      (X.cyclesIsoH f n₁ n₂ hn₂).hom ≫ (φ.hom n₁).app (mk₁ f) := by
-    rw [← Iso.inv_comp_eq, ← Category.assoc, ← Iso.eq_comp_inv, X.cyclesIsoH_inv f n₁ n₂ hn₂,
-      Y.cyclesIsoH_inv f n₁ n₂ hn₂, toCycles_cyclesMapOfHom]
-  rw [← cancel_epi (X.πE (𝟙 i) f (𝟙 j) n₀ n₁ n₂ hn₁ hn₂), πE_EMap_assoc,
-    Y.πE_EIsoH_hom f n₀ n₁ n₂ hn₁ hn₂, X.πE_EIsoH_hom_assoc f n₀ n₁ n₂ hn₁ hn₂, h]
 
 variable [data.HasFirstPageComputation]
 

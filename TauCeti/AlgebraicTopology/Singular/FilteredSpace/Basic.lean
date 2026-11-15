@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.FirstPage
-public import TauCeti.AlgebraicTopology.Singular.Empty
 public import TauCeti.AlgebraicTopology.Singular.FilteredSpace.ChainFunctor
 public import TauCeti.AlgebraicTopology.Singular.Triple
 
@@ -70,25 +69,6 @@ universe w v u
 
 variable {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
 
-namespace TopPair
-
-/-- The cokernel of the map of singular chains induced by the inclusion of the subspace of a pair
-`P` is the relative singular chain complex of `P`. The isomorphism is induced by the quotient map
-(`TopPair.π_cokernelSingularChainComplexIso_hom`). -/
-def cokernelSingularChainComplexIso (P : TopPair.{w}) :
-    cokernel (((AlgebraicTopology.singularChainComplexFunctor A).obj R).map P.map) ≅
-      P.singularChainComplex R :=
-  (colimit.isColimit _).coconePointUniqueUpToIso (P.isColimitCokernelCoforkSingularChainComplex R)
-
-/-- The identification of the cokernel with the relative singular chain complex of a pair is
-induced by the quotient map from the singular chains of the ambient space. -/
-@[reassoc]
-lemma π_cokernelSingularChainComplexIso_hom (P : TopPair.{w}) :
-    cokernel.π _ ≫ (P.cokernelSingularChainComplexIso R).hom = P.singularChainComplexπ R :=
-  IsColimit.comp_coconePointUniqueUpToIso_hom _ _ WalkingParallelPair.one
-
-end TopPair
-
 namespace TauCeti
 
 variable {Y : TopCat.{w}} (X : ℤ → Set Y)
@@ -128,7 +108,7 @@ private lemma extendMap_π_comp_cokernelSingularChainComplexIso_hom (P : TopPair
         (P.cokernelSingularChainComplexIso R).hom =
     extendMap (P.singularChainComplexπ R) ComplexShape.embeddingDownNat :=
   (extendMap_comp _ _ _).symm.trans
-    (congrArg (extendMap · _) (TopPair.π_cokernelSingularChainComplexIso_hom R P))
+    (congrArg (extendMap · _) (TopPair.π_cokernelSingularChainComplexIso_hom P R))
 
 /-- The quotient `F_b / F_a` of two stages of the filtration of the singular chains of `Y` by
 the singular chains of the `X q` is the relative singular chain complex of the pair `(X b, X a)`,
@@ -159,38 +139,24 @@ cohomology in degree `m` when the relative singular homology `Hₙ(X b, X a)` va
 lemma isZero_homology_cokernel_singularChainFiltration {a b : ℤ} (hab : X a ⊆ X b) (m : ℤ)
     (h : ∀ n : ℕ, m = -n → IsZero ((TopPair.ofInclusion hab).singularHomology R n)) :
     IsZero ((cokernel (Subobject.ofLE _ _ (subspaceChainFiltration_mono
-      ((singularChainComplexFunctor A).obj R) hab))).homology m) := by
-  refine IsZero.of_iso ?_
-    ((homologyFunctor A _ m).mapIso (singularChainFiltrationCokernelIso R hab))
-  by_cases hm : ∃ n : ℕ, ComplexShape.embeddingDownNat.f n = m
-  · obtain ⟨n, hn⟩ := hm
-    exact (h n hn.symm).of_iso (extendHomologyIso _ _ hn)
-  · push Not at hm
-    exact (extend_exactAt _ _ m hm).isZero_homology
+      ((singularChainComplexFunctor A).obj R) hab))).homology m) :=
+  isZero_homology_cokernel_subspaceChainFiltration _ hab m fun n hn ↦
+    (h n hn).of_iso ((homologyFunctor A _ n).mapIso
+      ((TopPair.ofInclusion hab).cokernelSingularChainComplexIso R))
 
 variable (hX : Monotone X)
 
 variable (X) in
 /-- The `q`-th stage of the filtration of singular chains, with the singular chains of `X q` written
-as the simplicial chains of its singular simplicial set. -/
+as the simplicial chains of its singular simplicial set. This is
+`TauCeti.subspaceChainFiltrationIso` with its target restated, so that its composites with the
+quotient maps onto relative singular chains are formed syntactically in the proofs below, where
+`simp` cannot see through `singularChainComplexFunctor`. -/
 private def singularChainFiltrationIso (q : ℤ) :
     (singularChainFiltration R X q : CochainComplex A ℤ) ≅
       ((TopCat.toSSet.obj (TopPair.ofSubset (X q)).snd).chainComplex R).extend
         ComplexShape.embeddingDownNat :=
   subspaceChainFiltrationIso _ X q
-
-/-- Under the identifications of the stages of the filtration of singular chains with the singular
-chains of the subsets, the inclusion `F_a ⟶ F_b` is induced by the inclusion `X a ⊆ X b`. -/
-private lemma ofLE_comp_singularChainFiltrationIso_hom_assoc {a b : ℤ} (hab : X a ⊆ X b)
-    {Z : CochainComplex A ℤ} (h : ((TopCat.toSSet.obj (TopPair.ofSubset (X b)).snd).chainComplex
-      R).extend ComplexShape.embeddingDownNat ⟶ Z) :
-    Subobject.ofLE _ _ (subspaceChainFiltration_mono _ hab) ≫
-        (singularChainFiltrationIso R X b).hom ≫ h =
-      (singularChainFiltrationIso R X a).hom ≫
-        extendMap (SSet.chainComplexMap (TopCat.toSSet.map (TopPair.ofInclusion hab).map) R)
-          ComplexShape.embeddingDownNat ≫ h :=
-  (Category.assoc _ _ _).symm.trans <|
-    (congrArg (· ≫ h) (ofLE_comp_subspaceChainFiltrationIso_hom _ hab)).trans (Category.assoc _ _ _)
 
 /-- The quotient of two stages of the filtration of singular chains, as the cokernel of a
 transition map of the functor `CochainComplex.filtrationFunctor` of the filtration, is the
@@ -370,11 +336,12 @@ private def gradedShortComplexHom : gradedShortComplex R hX q ⟶ tripleShortCom
       (subspaceChainFiltration_mono _ (hX (by lia : q ≤ q + 1)))]
     -- The identification of `F_{q+1}` with the chains of `X (q + 1)` lands in the chains of the
     -- subspace `X (q + 1)` of `Y`, which are those of the ambient space of the pair
-    -- `(X (q + 1), X (q - 1))` only up to unfolding `MorphismProperty.Arrow.mk`; `erw` matches
-    -- the composite up to that unfolding.
-    erw [ofLE_comp_singularChainFiltrationIso_hom_assoc R (hX (by lia : q ≤ q + 1))]
+    -- `(X (q + 1), X (q - 1))` only up to unfolding `MorphismProperty.Arrow.mk`, and the stage
+    -- identification is `singularChainFiltrationIso`; `erw` matches the composite up to unfolding.
+    erw [ofLE_comp_subspaceChainFiltrationIso_hom_assoc ((singularChainComplexFunctor A).obj R)
+      (hX (by lia : q ≤ q + 1))]
     exact congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans <|
-      congrArg (_ ≫ ·) (extendMap_π_comp_innerToTotal R hX q))
+      (congrArg (_ ≫ ·) (extendMap_π_comp_innerToTotal R hX q)).trans (Category.assoc _ _ _).symm)
   comm₂₃ := by
     unfold gradedShortComplex kernelCokernelCompSequence.snakeInput
     refine (cancel_epi (cokernel.π _)).1 ?_

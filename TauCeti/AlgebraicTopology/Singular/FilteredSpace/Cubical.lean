@@ -64,17 +64,6 @@ namespace TauCeti
 
 variable (k : Type u) [Ring k]
 
-/-- The normalized cubical chains of an empty space vanish, since it has no singular cubes. -/
-lemma isZero_normalizedCubicalChainComplex_obj (Z : TopCat.{u}) [IsEmpty Z] :
-    IsZero ((normalizedCubicalChainComplex k).obj Z) := by
-  rw [IsZero.iff_id_eq_zero]
-  ext n : 1
-  have : IsEmpty (SingularCube Z n) := ⟨fun c ↦ isEmptyElim (c fun _ ↦ 0)⟩
-  have : Subsingleton (((normalizedCubicalChainComplex k).obj Z).X n) :=
-    (normalizedCubicalChainComplexXEquiv (R := k) _ n).toEquiv.subsingleton_congr.2
-      (Submodule.Quotient.mk_surjective _).subsingleton
-  exact (ModuleCat.isZero_of_subsingleton _).eq_of_src _ _
-
 variable {Y : TopCat.{u}} {X : ℤ → Set Y} (hX : Monotone X)
 
 /-- **The cubical and simplicial spectral sequences of a filtered space are isomorphic.** The
@@ -97,22 +86,6 @@ lemma filteredSpaceCubicalSpectralSequenceIso_hom :
         (CochainComplex.spectralObjectMap (subspaceChainFiltrationMap hX (cubicalToSingular k))) :=
   subspaceChainSpectralSequenceIso_hom hX (cubicalToSingular k)
 
-/-- On the cokernel of the map of chains of a pair, the map induced by `TauCeti.cubicalToSingular`
-is the relative comparison map `TopPair.cubicalToSingularRel`, under the identification of that
-cokernel with the relative singular chains. -/
-private lemma cokernel_map_cubicalToSingular_comp (P : TopPair.{u}) :
-    cokernel.map _ _ ((cubicalToSingular k).app _) ((cubicalToSingular k).app _)
-        ((cubicalToSingular k).naturality P.map) ≫
-        (P.cokernelSingularChainComplexIso (ModuleCat.of k k)).hom =
-      TopPair.cubicalToSingularRel k P := by
-  -- The cokernel of the map of singular chains is written through `TauCeti.singularChains` on one
-  -- side and through simplicial chains on the other, so the composites are formed with terms.
-  exact (cancel_epi (cokernel.π _)).1 <| (cokernel.π_desc_assoc _ _ _ _).trans <|
-    (Category.assoc _ _ _).trans <|
-      ((congrArg (_ ≫ ·) (TopPair.π_cokernelSingularChainComplexIso_hom _ P)).trans <|
-        congrArg (_ ≫ ·) (TopPair.singularRelπ_eq k P).symm).trans
-          (TopPair.π_cubicalToSingularRel k P).symm
-
 /-- **The comparison of the cubical and simplicial spectral sequences on the first page.** Under
 the identifications of the objects of the first pages with relative cubical and relative
 simplicial homology, the isomorphism `TauCeti.filteredSpaceCubicalSpectralSequenceIso` is the map
@@ -129,7 +102,7 @@ lemma filteredSpaceCubicalSpectralSequenceIso_hom_two_f_comp (pq : ℤ × ℤ) (
         homologyMap (TopPair.cubicalToSingularRel k (TopPair.ofInclusion (hX (by lia : a ≤ b))))
           n := by
   rw [filteredSpaceCubicalSpectralSequenceIso_hom, filteredSpaceSpectralSequenceFirstPageXIso_hom,
-    ← cokernel_map_cubicalToSingular_comp, homologyMap_comp]
+    ← TopPair.cokernel_map_cubicalToSingular_comp, homologyMap_comp]
   exact spectralSequenceMap_subspaceChainFiltrationMap_two_f_comp_assoc hX (cubicalToSingular k)
     pq a b ha hb m hm n hn _
 

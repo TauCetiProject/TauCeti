@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.SpectralObject.IsIso
+public import TauCeti.Algebra.Homology.SpectralObject.Map
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Naturality
 import TauCeti.Algebra.Homology.HomotopyCategory.MappingCone
 
@@ -16,8 +16,8 @@ Let `α : F ⟶ G` be a natural transformation of functors `ι ⥤ CochainComple
 components are quasi-isomorphisms. On `H^n(f)`, the induced morphism of spectral objects is the
 map in cohomology of the morphism of mapping cones of `F.map f` and `G.map f`, which is a
 quasi-isomorphism (`CochainComplex.mappingCone.quasiIso_map`). So `α` induces an isomorphism of
-spectral objects (`CochainComplex.isIso_spectralObjectMap_of_quasiIso`), hence of spectral
-sequences.
+spectral objects (the instance `CochainComplex.isIso_spectralObjectMap_of_quasiIso`), hence of
+spectral sequences.
 
 For a morphism `f : K ⟶ L` of complexes carrying an increasing filtration `F` of `K` into an
 increasing filtration `G` of `L`, the components of the induced morphism of filtration functors
@@ -55,7 +55,7 @@ variable {ι : Type*} [Category* ι] {F G : ι ⥤ CochainComplex C ℤ}
 
 /-- **Natural quasi-isomorphisms induce an isomorphism of spectral objects.** If every component
 of `α : F ⟶ G` is a quasi-isomorphism, then `spectralObjectMap α` is an isomorphism. -/
-theorem isIso_spectralObjectMap_of_quasiIso (α : F ⟶ G) [∀ i, QuasiIso (α.app i)] :
+instance isIso_spectralObjectMap_of_quasiIso (α : F ⟶ G) [∀ i, QuasiIso (α.app i)] :
     IsIso (spectralObjectMap α) := by
   refine Abelian.SpectralObject.isIso_of_isIso_hom_app _ fun n D ↦ ?_
   obtain ⟨i, j, f, rfl⟩ := ComposableArrows.mk₁_surjective D

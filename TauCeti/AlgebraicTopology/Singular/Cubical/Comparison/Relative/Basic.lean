@@ -54,7 +54,9 @@ relative homotopy invariance of cubical homology is transported from the simplic
   boundary of a cube sending the boundary of the cube into the subspace, as a chain and as a cycle
   of the subspace (`TopPair.map_cubicalBoundaryChainOfCube`).
 * `TopPair.singularToCubicalRel k P`, `TopPair.cubicalToSingularRel k P`: the relative comparison
-  maps.
+  maps. Under the identification `TopPair.cokernelSingularChainComplexIso` of relative singular
+  chains with a cokernel, the latter is the map of cokernels induced by `TauCeti.cubicalToSingular`
+  (`TopPair.cokernel_map_cubicalToSingular_comp`).
 * `TopPair.singularCubicalHomologyIso k P n`: relative cubical homology is relative singular
   homology.
 * `TopPair.singularToCubicalRelCompHomotopy k P`: the relative comparison maps compose to a map
@@ -578,6 +580,23 @@ theorem π_cubicalToSingularRel (P : TopPair.{u}) :
     cokernel.π _ ≫ cubicalToSingularRel k P =
       (cubicalToSingular k).app P.fst ≫ singularRelπ k P :=
   cokernel.π_desc _ _ _
+
+/-- On the cokernel of the map of chains of a pair, the map induced by `TauCeti.cubicalToSingular`
+is the relative comparison map `TopPair.cubicalToSingularRel`, under the identification
+`TopPair.cokernelSingularChainComplexIso` of that cokernel with the relative singular chains. -/
+@[reassoc]
+theorem cokernel_map_cubicalToSingular_comp (P : TopPair.{u}) :
+    cokernel.map _ _ ((cubicalToSingular k).app _) ((cubicalToSingular k).app _)
+        ((cubicalToSingular k).naturality P.map) ≫
+        (P.cokernelSingularChainComplexIso (ModuleCat.of k k)).hom =
+      cubicalToSingularRel k P := by
+  -- The cokernel of the map of singular chains is written through `TauCeti.singularChains` on one
+  -- side and through simplicial chains on the other, so the composites are formed with terms.
+  exact (cancel_epi (cokernel.π _)).1 <| (cokernel.π_desc_assoc _ _ _ _).trans <|
+    (Category.assoc _ _ _).trans <|
+      ((congrArg (_ ≫ ·) (π_cokernelSingularChainComplexIso_hom P _)).trans <|
+        congrArg (_ ≫ ·) (singularRelπ_eq k P).symm).trans
+          (π_cubicalToSingularRel k P).symm
 
 /-- The comparison maps as a morphism of short complexes from the simplicial chain sequence of a
 pair to the cubical one. -/

@@ -33,6 +33,11 @@ spectral sequences induced by `φ`.
 * `CategoryTheory.Abelian.SpectralObject.EMap_id`, `EMap_comp`: functoriality.
 * `CategoryTheory.Abelian.SpectralObject.map_EMap`: compatibility with `X.map`.
 * `CategoryTheory.Abelian.SpectralObject.d_EMap`: compatibility with the differentials.
+* `CategoryTheory.Abelian.SpectralObject.EMap_comp_EIsoH_hom`: under the identifications
+  `EIsoH` of `E(𝟙 i, f, 𝟙 j)` with `H(f)`, `EMap φ` is the morphism `φ` on `H(f)`.
+* `CategoryTheory.Abelian.SpectralObject.isIso_of_isIso_hom_app`: a morphism of spectral objects
+  which is an isomorphism on every component is an isomorphism. Conversely, the components of an
+  isomorphism are isomorphisms (an instance on `φ.hom n`).
 
 ## References
 
@@ -299,5 +304,44 @@ lemma d_EMap :
     toCycles_cyclesMapOfHom_assoc]
 
 end Differentials
+
+section EIsoH
+
+/-- Under the identifications `EIsoH` of `E(𝟙 i, f, 𝟙 j)` with `H(f)`, the map `EMap φ` is the
+morphism `φ` on `H(f)`. -/
+@[reassoc]
+lemma EMap_comp_EIsoH_hom {i j : ι} (f : i ⟶ j) (n₀ n₁ n₂ : ℤ) (hn₁ : n₀ + 1 = n₁)
+    (hn₂ : n₁ + 1 = n₂) :
+    EMap φ (𝟙 i) f (𝟙 j) n₀ n₁ n₂ hn₁ hn₂ ≫ (Y.EIsoH f n₀ n₁ n₂ hn₁ hn₂).hom =
+      (X.EIsoH f n₀ n₁ n₂ hn₁ hn₂).hom ≫ (φ.hom n₁).app (mk₁ f) := by
+  have h : cyclesMapOfHom φ (𝟙 i) f n₁ ≫ (Y.cyclesIsoH f n₁ n₂ hn₂).hom =
+      (X.cyclesIsoH f n₁ n₂ hn₂).hom ≫ (φ.hom n₁).app (mk₁ f) := by
+    rw [← Iso.inv_comp_eq, ← Category.assoc, ← Iso.eq_comp_inv, X.cyclesIsoH_inv f n₁ n₂ hn₂,
+      Y.cyclesIsoH_inv f n₁ n₂ hn₂, toCycles_cyclesMapOfHom]
+  rw [← cancel_epi (X.πE (𝟙 i) f (𝟙 j) n₀ n₁ n₂ hn₁ hn₂), πE_EMap_assoc,
+    Y.πE_EIsoH_hom f n₀ n₁ n₂ hn₁ hn₂, X.πE_EIsoH_hom_assoc f n₀ n₁ n₂ hn₁ hn₂, h]
+
+end EIsoH
+
+section IsIso
+
+/-- The components of an isomorphism of spectral objects are isomorphisms. -/
+instance [IsIso φ] (n : ℤ) : IsIso (φ.hom n) :=
+  ⟨(inv φ).hom n, by rw [← comp_hom, IsIso.hom_inv_id, id_hom],
+    by rw [← comp_hom, IsIso.inv_hom_id, id_hom]⟩
+
+/-- **A morphism of spectral objects is an isomorphism when all its components are.** -/
+lemma isIso_of_isIso_hom_app
+    (h : ∀ (n : ℤ) (D : ComposableArrows ι 1), IsIso ((φ.hom n).app D)) : IsIso φ := by
+  have (n : ℤ) : IsIso (φ.hom n) := NatIso.isIso_of_isIso_app _
+  let ψ : Y ⟶ X :=
+    { hom n := inv (φ.hom n)
+      comm n₀ n₁ hn₁ i j k f g := by
+        rw [← cancel_epi ((φ.hom n₀).app (mk₁ g)), ← cancel_mono ((φ.hom n₁).app (mk₁ f))]
+        simp only [Category.assoc, NatIso.isIso_inv_app, IsIso.inv_hom_id, Category.comp_id,
+          IsIso.hom_inv_id_assoc, Hom.comm] }
+  exact ⟨ψ, Hom.ext <| funext fun n ↦ by simp [ψ], Hom.ext <| funext fun n ↦ by simp [ψ]⟩
+
+end IsIso
 
 end CategoryTheory.Abelian.SpectralObject
