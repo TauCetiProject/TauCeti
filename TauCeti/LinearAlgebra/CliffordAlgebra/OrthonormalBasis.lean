@@ -34,6 +34,10 @@ basis vector `e_s` indexed by a finite set `s` of indices squares to the sign
 * `OrthonormalBasis.map_apply_mul_map_apply`: `Q (bᵢ) Q (bⱼ) = 1` for orthonormal basis vectors.
 * `OrthonormalBasis.prod_map_map_eq_neg_one_pow`: `Q` takes the value `-1` on orthonormal basis
   vectors.
+* `OrthonormalBasis.ι_apply_ι_apply_comm`, `OrthonormalBasis.ι_apply_ι_apply_self`: in every
+  representation of the Clifford algebra, `c(bᵢ) c(bⱼ) = -c(bⱼ) c(bᵢ)` for `i ≠ j` and
+  `c(bᵢ) c(bᵢ) = -1`.
+* `OrthonormalBasis.ι_apply_eq_sum`: `c(v) = ∑ᵢ ⟪bᵢ, v⟫ c(bᵢ)` in every representation.
 * `CliffordAlgebra.even_ι_bilin_add_swap_eq_neg_two_inner`: in the even subalgebra,
   `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`.
 * `CliffordAlgebra.basis_mul_self_of_orthonormal`: `e_s * e_s = (-1) ^ ((|s| + 1).choose 2)`.
@@ -85,6 +89,38 @@ theorem prod_map_map_eq_neg_one_pow (l : List ι) : ((l.map b).map Q).prod = (-1
   simp only [List.map_map, List.mem_map, Function.comp_apply] at hx
   obtain ⟨i, -, rfl⟩ := hx
   simp [hQ, b.orthonormal.1 i]
+
+section Representation
+
+variable {S M : Type*} [Semiring S] [Algebra ℝ S] [AddCommGroup M] [Module S M] [Module ℝ M]
+  [IsScalarTower ℝ S M] (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End S M)
+
+/-- For `Q v = -‖v‖²`, Clifford multiplications by distinct orthonormal basis vectors anticommute
+in every representation of the Clifford algebra: `c(bᵢ) c(bⱼ) y = -c(bⱼ) c(bᵢ) y`. -/
+theorem ι_apply_ι_apply_comm {i j : ι} (hij : i ≠ j) (y : M) :
+    ρ (CliffordAlgebra.ι Q (b i)) (ρ (CliffordAlgebra.ι Q (b j)) y) =
+      -ρ (CliffordAlgebra.ι Q (b j)) (ρ (CliffordAlgebra.ι Q (b i)) y) := by
+  rw [← mul_apply_eq_comp, ← map_mul,
+    CliffordAlgebra.ι_mul_ι_comm_of_isOrtho (b.isOrtho_apply hQ hij), map_neg, map_mul,
+    LinearMap.neg_apply, mul_apply_eq_comp]
+
+/-- For `Q v = -‖v‖²`, Clifford multiplication by an orthonormal basis vector squares to `-1` in
+every representation of the Clifford algebra: `c(bᵢ) c(bᵢ) y = -y`. -/
+theorem ι_apply_ι_apply_self (i : ι) (y : M) :
+    ρ (CliffordAlgebra.ι Q (b i)) (ρ (CliffordAlgebra.ι Q (b i)) y) = -y := by
+  rw [← mul_apply_eq_comp, ← map_mul, CliffordAlgebra.ι_sq_scalar, AlgHom.commutes,
+    Module.algebraMap_end_apply, hQ, b.orthonormal.1 i]
+  simp
+
+omit hQ in
+/-- Clifford multiplication expanded in an orthonormal basis, in every representation of the
+Clifford algebra: `c(v) y = ∑ᵢ ⟪bᵢ, v⟫ c(bᵢ) y`. -/
+theorem ι_apply_eq_sum (v : V) (y : M) :
+    ρ (CliffordAlgebra.ι Q v) y = ∑ i, ⟪b i, v⟫ • ρ (CliffordAlgebra.ι Q (b i)) y := by
+  conv_lhs => rw [← b.sum_repr' v]
+  simp [map_sum, map_smul, LinearMap.sum_apply]
+
+end Representation
 
 end OrthonormalBasis
 

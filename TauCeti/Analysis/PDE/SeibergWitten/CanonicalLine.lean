@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.SeibergWitten.SelfDualSplitting
+public import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Kahler
 import TauCeti.LinearAlgebra.CliffordAlgebra.HalfSpinor
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
@@ -356,40 +357,22 @@ theorem cliffordProjection_kahlerForm_apply_eq_zero_iff {β : positiveHalfSpinor
 
 /-! ### Two Clifford multiplications on the canonical eigenspace -/
 
-omit [Fact (finrank ℝ V = 4)] [FiniteDimensional ℂ W] in
-include hQ in
-/-- Clifford multiplications by distinct members of an orthonormal frame anticommute. -/
-private theorem ι_apply_ι_apply_comm {i j : Fin 4} (hij : i ≠ j) (y : W) :
-    ρ (ι Q (e i)) (ρ (ι Q (e j)) y) = -ρ (ι Q (e j)) (ρ (ι Q (e i)) y) := by
-  rw [← mul_apply_eq_comp, ← map_mul, ι_mul_ι_comm_of_isOrtho (e.isOrtho_apply hQ hij),
-    map_neg, map_mul, LinearMap.neg_apply, mul_apply_eq_comp]
-
-omit [Fact (finrank ℝ V = 4)] [FiniteDimensional ℂ W] in
-include hQ in
-/-- Clifford multiplication by a member of an orthonormal frame squares to `-1`. -/
-private theorem ι_apply_ι_apply_self (i : Fin 4) (y : W) :
-    ρ (ι Q (e i)) (ρ (ι Q (e i)) y) = -y := by
-  simp [hQ, e.orthonormal.1 i]
-
-omit [Fact (finrank ℝ V = 4)] [FiniteDimensional ℂ W] in
-/-- Clifford multiplication expanded in an orthonormal frame:
-`c(v) y = ∑ₖ ⟪e_k, v⟫ c(e_k) y`. -/
-private theorem ι_apply_eq_sum (v : V) (y : W) :
-    ρ (ι Q v) y = ∑ k, (⟪e k, v⟫ : ℂ) • ρ (ι Q (e k)) y := by
-  conv_lhs => rw [← e.sum_repr' v]
-  simp [map_sum, map_smul, LinearMap.sum_apply, Complex.coe_smul]
-
 include hQ he h₀ h₂ in
 /-- **Clifford multiplication on the canonical eigenspace in complex coordinates**: if
 `P_α ψ = ψ`, then `c(v) ψ = z₀(v) c(e₀) ψ + z₂(v) c(e₂) ψ`, where `z₀(v) = ⟪e₀, v⟫ + i ⟪e₁, v⟫`
 and `z₂(v) = ⟪e₂, v⟫ + i ⟪e₃, v⟫` are the coordinates of `v` in the basis `(e₀, e₂)` of the
-complex vector space `(V, J)`. -/
+complex vector space `(V, J)` (`AlmostComplexStructure.basisOfOrthonormalBasis`). -/
 theorem ι_apply_of_cliffordProjection_apply_eq_self {ψ : positiveHalfSpinors o ρ}
     (hψ : cliffordProjection o ρ J.kahlerForm ψ = ψ) (v : V) :
-    ρ (ι Q v) ψ = ((⟪e 0, v⟫ : ℂ) + Complex.I * ⟪e 1, v⟫) • ρ (ι Q (e 0)) ψ +
-      ((⟪e 2, v⟫ : ℂ) + Complex.I * ⟪e 3, v⟫) • ρ (ι Q (e 2)) ψ := by
+    letI := J.complexModule
+    ρ (ι Q v) ψ =
+      (AlmostComplexStructure.basisOfOrthonormalBasis h₀ h₂).repr v 0 • ρ (ι Q (e 0)) ψ +
+        (AlmostComplexStructure.basisOfOrthonormalBasis h₀ h₂).repr v 1 • ρ (ι Q (e 2)) ψ := by
   have hkl : 2 + 2 = finrank ℝ V := (Fact.out : finrank ℝ V = 4).symm
-  rw [ι_apply_eq_sum (e := e)]
+  simp only [AlmostComplexStructure.basisOfOrthonormalBasis_repr_apply_zero,
+    AlmostComplexStructure.basisOfOrthonormalBasis_repr_apply_one]
+  rw [e.ι_apply_eq_sum ρ]
+  simp only [← Complex.coe_smul]
   exact sum_smul_ι_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hψ _
 
 include hQ he h₀ h₂ in
@@ -409,14 +392,14 @@ private theorem ι_apply_ι_apply_frame {ψ : positiveHalfSpinors o ρ}
   have h₃ : ρ (ι Q (e 3)) ψ = Complex.I • ρ (ι Q (e 2)) ψ := by
     rw [← h₂]
     exact ι_apply_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hψ (e 2)
-  have p20 := ι_apply_ι_apply_comm (ρ := ρ) hQ (e := e) (i := 2) (j := 0) (by decide) ψ
+  have p20 := e.ι_apply_ι_apply_comm hQ ρ (i := 2) (j := 0) (by decide) ψ
   refine ⟨?_, p20, ?_, ?_, ?_⟩
-  · rw [ι_apply_ι_apply_comm hQ (by decide), h₁, map_smul, ι_apply_ι_apply_self hQ, smul_neg,
-      neg_neg]
-  · rw [ι_apply_ι_apply_comm hQ (by decide), h₃, map_smul]
-  · rw [ι_apply_ι_apply_comm hQ (by decide), h₁, map_smul, p20, smul_neg, neg_neg]
-  · rw [ι_apply_ι_apply_comm hQ (by decide), h₃, map_smul, ι_apply_ι_apply_self hQ, smul_neg,
-      neg_neg]
+  · rw [e.ι_apply_ι_apply_comm hQ ρ (by decide), h₁, map_smul, e.ι_apply_ι_apply_self hQ ρ,
+      smul_neg, neg_neg]
+  · rw [e.ι_apply_ι_apply_comm hQ ρ (by decide), h₃, map_smul]
+  · rw [e.ι_apply_ι_apply_comm hQ ρ (by decide), h₁, map_smul, p20, smul_neg, neg_neg]
+  · rw [e.ι_apply_ι_apply_comm hQ ρ (by decide), h₃, map_smul, e.ι_apply_ι_apply_self hQ ρ,
+      smul_neg, neg_neg]
 
 include hQ he h₀ h₂ in
 /-- **Two Clifford multiplications on the canonical eigenspace**: if `P_α ψ = ψ`, then
@@ -427,9 +410,12 @@ determinant of `v, w` in this basis, and `⟪v, w⟫ - i ⟪v, J w⟫` is the He
 `(V, J)`. -/
 theorem ι_apply_ι_apply_of_cliffordProjection_apply_eq_self {ψ : positiveHalfSpinors o ρ}
     (hψ : cliffordProjection o ρ J.kahlerForm ψ = ψ) (v w : V) :
+    letI := J.complexModule
     ρ (ι Q v) (ρ (ι Q w) ψ) =
-      (((⟪e 0, v⟫ : ℂ) + Complex.I * ⟪e 1, v⟫) * ((⟪e 2, w⟫ : ℂ) + Complex.I * ⟪e 3, w⟫) -
-          ((⟪e 2, v⟫ : ℂ) + Complex.I * ⟪e 3, v⟫) * ((⟪e 0, w⟫ : ℂ) + Complex.I * ⟪e 1, w⟫)) •
+      ((AlmostComplexStructure.basisOfOrthonormalBasis h₀ h₂).repr v 0 *
+            (AlmostComplexStructure.basisOfOrthonormalBasis h₀ h₂).repr w 1 -
+          (AlmostComplexStructure.basisOfOrthonormalBasis h₀ h₂).repr v 1 *
+            (AlmostComplexStructure.basisOfOrthonormalBasis h₀ h₂).repr w 0) •
         ρ (ι Q (e 0)) (ρ (ι Q (e 2)) ψ) -
       ((⟪v, w⟫ : ℂ) - ⟪v, J w⟫ * Complex.I) • (ψ : W) := by
   obtain ⟨p10, p20, p30, p12, p32⟩ := ι_apply_ι_apply_frame hQ he h₀ h₂ hψ
@@ -447,9 +433,11 @@ theorem ι_apply_ι_apply_of_cliffordProjection_apply_eq_self {ψ : positiveHalf
       Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons]
     ring
   rw [ι_apply_of_cliffordProjection_apply_eq_self hQ he h₀ h₂ hψ w, map_add, map_smul,
-    map_smul, ι_apply_eq_sum (e := e) v (ρ (ι Q (e 0)) ψ), ι_apply_eq_sum (e := e) v,
-    Fin.sum_univ_four, Fin.sum_univ_four, p10, p20, p30, p12, p32, ι_apply_ι_apply_self hQ,
-    ι_apply_ι_apply_self hQ, hvw, hvJw]
+    map_smul, e.ι_apply_eq_sum ρ v (ρ (ι Q (e 0)) ψ), e.ι_apply_eq_sum ρ v,
+    Fin.sum_univ_four, Fin.sum_univ_four, p10, p20, p30, p12, p32, e.ι_apply_ι_apply_self hQ ρ,
+    e.ι_apply_ι_apply_self hQ ρ, hvw, hvJw]
+  simp only [AlmostComplexStructure.basisOfOrthonormalBasis_repr_apply_zero,
+    AlmostComplexStructure.basisOfOrthonormalBasis_repr_apply_one, ← Complex.coe_smul]
   push_cast
   match_scalars
   · linear_combination (⟪e 1, v⟫ * ⟪e 1, w⟫ + ⟪e 3, v⟫ * ⟪e 3, w⟫ : ℂ) * Complex.I_sq
@@ -465,11 +453,11 @@ theorem bivectorExterior_kahlerForm_apply_ι_apply_ι_apply_of_cliffordProjectio
   obtain ⟨-, p20, -, p12, p32⟩ := ι_apply_ι_apply_frame hQ he h₀ h₂ hψ
   have h1 : ρ (ι Q (e 1)) (ρ (ι Q (e 0)) (ρ (ι Q (e 2)) ψ)) =
       Complex.I • ρ (ι Q (e 2)) ψ := by
-    rw [ι_apply_ι_apply_comm hQ (by decide), p12, map_smul, ι_apply_ι_apply_self hQ, smul_neg,
-      neg_neg]
+    rw [e.ι_apply_ι_apply_comm hQ ρ (by decide), p12, map_smul, e.ι_apply_ι_apply_self hQ ρ,
+      smul_neg, neg_neg]
   have h3 : ρ (ι Q (e 3)) (ρ (ι Q (e 0)) (ρ (ι Q (e 2)) ψ)) =
       -(Complex.I • ρ (ι Q (e 0)) ψ) := by
-    rw [ι_apply_ι_apply_comm hQ (by decide), p32, map_smul]
+    rw [e.ι_apply_ι_apply_comm hQ ρ (by decide), p32, map_smul]
   rw [AlmostComplexStructure.bivectorExterior_kahlerForm hQ h₀ h₂, map_add, map_mul, map_mul,
     LinearMap.add_apply, mul_apply_eq_comp, mul_apply_eq_comp, h1, h3, map_smul, map_neg,
     map_smul, p20]

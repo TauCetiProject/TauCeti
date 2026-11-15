@@ -570,16 +570,21 @@ theorem det_unitaryLift (A : J.unitaryGroup Q) :
       map_eq_zero_iff _ (map_ι_injective ρ (hQe 2))]
     exact fun h ↦ hu₀ (Subtype.ext h)
   have huω := bivectorExterior_apply_of_cliffordProjection_apply_eq_self o ρ hu
+  have huω' : ρ (bivectorExterior Q J.kahlerForm) (positiveHalfSpinorsEquiv o ρ u) =
+      (-2 * Complex.I) • (positiveHalfSpinorsEquiv o ρ u : W) := by
+    rw [LinearEquiv.coe_ofEq_apply]
+    exact huω
   -- The canonical lift `x` of `A` has `x β = det x • β` and `x β = c(A e₀) c(A e₂) u`, which is
   -- `D β - h u` with `D` the complex determinant of `A` in the frame.
   have hact := coe_spinCGroupHalfSpinRep_unitaryLift_apply_of_coe_eq hQ he h₀ h₂ hQ₀ hW hρ A
-    (ψ := positiveHalfSpinorsEquiv o ρ u) huω (φ := ⟨β, hβmem⟩) rfl
+    huω' (φ := ⟨β, hβmem⟩) (by rw [LinearEquiv.coe_ofEq_apply])
   rw [spinCGroupHalfSpinRep_apply_eq_det_smul_of_mem_canonicalLineFixingSubgroup_of_bivectorExterior
       hQ he h₀ h₂ hQ₀ hW (unitaryLift_mem_canonicalLineFixingSubgroup hQ he h₀ h₂ hQ₀ hW hρ A)
       (β := ⟨β, hβmem⟩) hβω, LinearEquiv.coe_ofEq_apply,
     ι_apply_ι_apply_of_cliffordProjection_apply_eq_self hQ he h₀ h₂ hu] at hact
   simp only [Submodule.coe_smul] at hact
   rw [AlmostComplexStructure.det_eq_of_orthonormalBasis h₀ h₂]
+  simp only [IsComplexLinearMap.toComplexLinearMap_apply]
   exact eq_of_smul_eq_smul_sub_smul hβω huω hβ₀ (by simpa using hu₀) hact
 
 end Intertwiner
