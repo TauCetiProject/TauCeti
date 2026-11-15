@@ -20,6 +20,8 @@ arbitrary weight families and need no completeness, surjectivity or open-mapping
 ## Main results
 
 * `TauCeti.Huber.mem_ker_weightedMap_iff`: the kernel of `weightedMap` is coefficientwise.
+* `TauCeti.Huber.weightedMap_injective`: an injective coefficient map induces an injective map on
+  weighted restricted series.
 * `Ideal.coeff_mem_of_mem_map_weightedC`: series in `J · A⟨X⟩_T` have coefficients in `J`.
 -/
 
@@ -42,6 +44,17 @@ theorem mem_ker_weightedMap_iff {φ : A →+* B} (hφ : Continuous φ) {T : Fin 
   · simpa using congrArg (fun g : weightedRestrictedSubring S hS ↦
       MvPowerSeries.coeff ν (g : MvPowerSeries (Fin k) B)) h
   · simpa using h ν
+
+/-- An injective continuous ring homomorphism induces an injective homomorphism on weighted
+restricted series for any compatible weight families. -/
+theorem weightedMap_injective {φ : A →+* B} (hφ : Continuous φ) {T : Fin k → Set A}
+    {S : Fin k → Set B} {hT : IsWeightFamily T} {hS : IsWeightFamily S}
+    {hTS : ∀ i, φ '' T i ⊆ S i} (hφinj : Function.Injective φ) :
+    Function.Injective (weightedMap hφ hT hS hTS) := fun _ _ h ↦
+  Subtype.ext <| MvPowerSeries.ext fun ν ↦ hφinj <| by
+    simpa only [coe_weightedMap, MvPowerSeries.coeff_map] using
+      congrArg (fun g : weightedRestrictedSubring S hS ↦
+        MvPowerSeries.coeff ν (g : MvPowerSeries (Fin k) B)) h
 
 end TauCeti.Huber
 
