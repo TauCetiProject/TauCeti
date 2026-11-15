@@ -253,12 +253,17 @@ lemma d_succ (p : ℕ) : (cartanEilenbergResolution K).d (p + 1) p = rowπ K (p 
 end cartanEilenbergResolution
 
 /-- The augmentation of the Cartan–Eilenberg resolution. -/
+-- The body is exposed so that `cartanEilenbergResolutionπ_eq` holds outside this file.
+@[expose]
 def cartanEilenbergResolutionπ : (cartanEilenbergResolution K).X 0 ⟶ K := rowπ K 0
 
 namespace cartanEilenbergResolution
 
-/-- The augmentation `cartanEilenbergResolutionπ K` is `rowπ K 0`, so it vanishes on the first
-kernel. -/
+/-- The augmentation of the Cartan–Eilenberg resolution is the map from the row `0` onto
+`kernels K 0 = K`. -/
+lemma cartanEilenbergResolutionπ_eq : cartanEilenbergResolutionπ K = rowπ K 0 := (rfl)
+
+/-- The augmentation vanishes on the first kernel. -/
 @[reassoc (attr := simp)]
 lemma rowι_π : rowι K 0 ≫ cartanEilenbergResolutionπ K = 0 := rowι_rowπ K 0
 
