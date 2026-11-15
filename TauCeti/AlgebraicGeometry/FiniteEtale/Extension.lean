@@ -11,7 +11,7 @@ import TauCeti.AlgebraicGeometry.Morphisms.Flat.NonZeroDivisors
 import TauCeti.RingTheory.Etale.PuncturedFiniteness
 
 import TauCeti.AlgebraicGeometry.AffineScheme
-import TauCeti.AlgebraicGeometry.Morphisms.RamificationLocus
+import TauCeti.AlgebraicGeometry.Morphisms.RamificationLocus.Basic
 
 /-!
 # Extending finite étale covers from their sections
