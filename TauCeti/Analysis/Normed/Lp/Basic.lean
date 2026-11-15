@@ -21,13 +21,20 @@ the `ℓ^q` norm of a sequence is at most its `ℓᵖ` norm (`lp.norm_le_norm_of
 form of Mathlib's inclusion `Memℓp.of_exponent_ge`. A sequence indexed by `ℕ` whose terms are
 bounded by a geometric sequence `C rⁱ` with `0 ≤ r < 1` lies in every `ℓᵖ` with `p ≠ 0`
 (`Memℓp.of_norm_le_geometric`), and for `1 ≤ p` its `ℓᵖ` norm is at most `C (1 - r)⁻¹`
-(`lp.norm_le_of_norm_le_geometric`). The scalar coordinate vectors are linearly independent, and
+(`lp.norm_le_of_norm_le_geometric`). Membership in `ℓᵖ` is unchanged by a unit scalar factor
+(`IsUnit.memℓp_smul_iff`), and conversely, for `p ≠ 0` the geometric sequence `rⁱ`, or a nonzero
+multiple `C rⁱ` of it, lies in `ℓᵖ` exactly when `‖r‖ < 1`, or `‖r‖ = 1` and `p = ∞`
+(`TauCeti.memℓp_pow_iff`, `TauCeti.memℓp_const_mul_pow_iff`). The scalar coordinate vectors are
+linearly independent, and
 vectors in their span vanish outside the corresponding indices. These algebraic facts hold over
 normed rings at every exponent. In `ℓ²`, the squared norm of a finite sum of single-coordinate
 vectors is the sum of the squared norms of its coordinates (`lp.norm_sum_single_sq`, and
 `lp.enorm_sum_single` for the extended norm). It follows that the operators `v ↦ (aᵢ v)ᵢ` from `F`
 to `ℓ²(F)` and `(wᵢ) ↦ ∑ᵢ aᵢ wᵢ` from `ℓ²(F)` to `F`, for finitely many scalars `aᵢ`, have norm at
 most `‖(aᵢ)‖_{ℓ²}` (`lp.norm_sum_single_comp_lsmul_le`, `lp.norm_sum_lsmul_comp_evalCLM_le`).
+
+A uniformly bounded family of operators with a common domain assembles into an `ℓ∞`-valued
+operator (`ContinuousLinearMap.piLpInfty`), with the same norm bound.
 
 For a finite exponent `p` and a countable index type, `lp E p` is separable as soon as every
 `E i` is (`lp.separableSpace`): the finite sums of coordinate vectors with entries in countable
@@ -40,8 +47,43 @@ operators on `lp E p` that converges on every `single i x` converges at every ve
 
 public section
 
-open scoped ENNReal Topology
+open scoped ENNReal NNReal Topology
 open Filter
+
+namespace ContinuousLinearMap
+
+variable {ι 𝕜 X : Type*} {E : ι → Type*} [NontriviallyNormedField 𝕜]
+  [SeminormedAddCommGroup X] [NormedSpace 𝕜 X]
+  [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace 𝕜 (E i)]
+
+/-- A uniformly bounded family of operators, assembled into an operator with values in `ℓ∞`. -/
+noncomputable def piLpInfty (f : ∀ i, X →L[𝕜] E i) (C : ℝ≥0) (hf : ∀ i, ‖f i‖₊ ≤ C) :
+    X →L[𝕜] lp E ∞ :=
+  LinearMap.mkContinuous
+    { toFun x := ⟨fun i ↦ f i x, memℓp_infty ⟨C * ‖x‖, by
+        rintro _ ⟨i, rfl⟩
+        exact (f i).le_opNorm x |>.trans
+          (mul_le_mul_of_nonneg_right (by exact_mod_cast hf i) (norm_nonneg x))⟩⟩
+      map_add' x y := lp.ext <| funext fun i ↦ (f i).map_add x y
+      map_smul' c x := lp.ext <| funext fun i ↦ (f i).map_smul c x }
+    C fun x ↦ lp.norm_le_of_forall_le (by positivity) fun i ↦
+      (f i).le_opNorm x |>.trans
+        (mul_le_mul_of_nonneg_right (by exact_mod_cast hf i) (norm_nonneg x))
+
+/-- Each coordinate of the assembled operator is the corresponding member of the family. -/
+@[simp]
+theorem piLpInfty_apply (f : ∀ i, X →L[𝕜] E i) (C : ℝ≥0) (hf : ∀ i, ‖f i‖₊ ≤ C)
+    (x : X) (i : ι) : piLpInfty f C hf x i = f i x := (rfl)
+
+/-- The norm of the assembled operator is at most the uniform bound. -/
+theorem nnnorm_piLpInfty_le (f : ∀ i, X →L[𝕜] E i) (C : ℝ≥0) (hf : ∀ i, ‖f i‖₊ ≤ C) :
+    ‖piLpInfty f C hf‖₊ ≤ C := by
+  refine opNNNorm_le_bound _ _ fun x ↦ ?_
+  exact_mod_cast lp.norm_le_of_forall_le (by positivity : 0 ≤ (C : ℝ) * ‖x‖)
+    (fun i ↦ (f i).le_opNorm x |>.trans
+      (mul_le_mul_of_nonneg_right (by exact_mod_cast hf i) (norm_nonneg x)))
+
+end ContinuousLinearMap
 
 namespace lp
 
@@ -246,6 +288,20 @@ end Density
 
 end lp
 
+section Smul
+
+variable {ι 𝕜 : Type*} {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)] {p : ℝ≥0∞} [NormedRing 𝕜]
+  [∀ i, Module 𝕜 (E i)] [∀ i, IsBoundedSMul 𝕜 (E i)]
+
+/-- Multiplying a sequence by a unit does not change whether it lies in `ℓᵖ`. -/
+theorem IsUnit.memℓp_smul_iff {c : 𝕜} (hc : IsUnit c) {f : ∀ i, E i} :
+    Memℓp (c • f) p ↔ Memℓp f p := by
+  obtain ⟨u, rfl⟩ := hc
+  refine ⟨fun hf ↦ ?_, fun hf ↦ hf.const_smul _⟩
+  simpa [smul_smul] using hf.const_smul (↑u⁻¹ : 𝕜)
+
+end Smul
+
 section Geometric
 
 variable {E : ℕ → Type*} [∀ i, NormedAddCommGroup (E i)] {p : ℝ≥0∞} {C r : ℝ}
@@ -278,5 +334,43 @@ theorem lp.norm_le_of_norm_le_geometric [Fact (1 ≤ p)] {f : lp E p} (hr0 : 0 �
     _ ≤ ∑' i, C * r ^ i :=
         (hgeom.of_nonneg_of_le (fun _ ↦ norm_nonneg _) hf).tsum_le_tsum hf hgeom
     _ = C * (1 - r)⁻¹ := by rw [tsum_mul_left, tsum_geometric_of_lt_one hr0 hr1]
+
+namespace TauCeti
+
+/-- **Geometric sequences in `ℓᵖ`.** For `p ≠ 0`, the geometric sequence `rⁱ` lies in `ℓᵖ`
+exactly when `‖r‖ < 1`, or when `‖r‖ = 1` and `p = ∞`. -/
+theorem memℓp_pow_iff {R : Type*} [NormedRing R] [NormOneClass R] [NormMulClass R] {r : R}
+    (hp : p ≠ 0) : Memℓp (fun i : ℕ ↦ r ^ i) p ↔ ‖r‖ < 1 ∨ ‖r‖ = 1 ∧ p = ∞ := by
+  refine ⟨fun hf ↦ ?_, ?_⟩
+  · by_contra h
+    push Not at h
+    -- The terms do not decrease: `1 ≤ ‖rⁱ‖`.
+    have hle (i : ℕ) : 1 ≤ ‖r ^ i‖ := (norm_pow r i).symm ▸ one_le_pow₀ h.1
+    rcases eq_or_ne p ∞ with rfl | hptop
+    · -- For `p = ∞`, `‖r‖ > 1` and the terms are unbounded.
+      have hr : 1 < ‖r‖ := h.1.lt_of_ne fun h' ↦ h.2 h'.symm rfl
+      obtain ⟨M, hM⟩ := hf.bddAbove
+      have ht : Tendsto (fun i : ℕ ↦ ‖r ^ i‖) atTop atTop := by
+        simp_rw [norm_pow]
+        exact tendsto_pow_atTop_atTop_of_one_lt hr
+      obtain ⟨i, hi⟩ := (ht.eventually_gt_atTop M).exists
+      exact hi.not_ge (hM ⟨i, rfl⟩)
+    · -- For `p < ∞`, the terms of a sequence in `ℓᵖ` tend to zero.
+      have hpr : 0 < p.toReal := ENNReal.toReal_pos hp hptop
+      obtain ⟨i, hi⟩ := ((hf.summable hpr).tendsto_atTop_zero.eventually
+        (gt_mem_nhds zero_lt_one)).exists
+      exact hi.not_ge (Real.one_le_rpow (hle i) hpr.le)
+  · rintro (hr | ⟨hr, rfl⟩)
+    · exact Memℓp.of_norm_le_geometric (C := 1) (norm_nonneg r) hr
+        (fun i ↦ by rw [norm_pow, one_mul]) hp
+    · exact memℓp_infty ⟨1, by rintro _ ⟨i, rfl⟩; simp [norm_pow, hr]⟩
+
+/-- **Nonzero multiples of geometric sequences in `ℓᵖ`.** For `C ≠ 0` and `p ≠ 0`, the sequence
+`C rⁱ` lies in `ℓᵖ` exactly when `‖r‖ < 1`, or when `‖r‖ = 1` and `p = ∞`. -/
+theorem memℓp_const_mul_pow_iff {𝕜 : Type*} [NormedDivisionRing 𝕜] {C r : 𝕜} (hC : C ≠ 0)
+    (hp : p ≠ 0) : Memℓp (fun i : ℕ ↦ C * r ^ i) p ↔ ‖r‖ < 1 ∨ ‖r‖ = 1 ∧ p = ∞ :=
+  (hC.isUnit.memℓp_smul_iff (f := fun i : ℕ ↦ r ^ i)).trans (memℓp_pow_iff hp)
+
+end TauCeti
 
 end Geometric

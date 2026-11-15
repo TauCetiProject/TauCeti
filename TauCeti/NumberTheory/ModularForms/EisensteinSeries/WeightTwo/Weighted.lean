@@ -75,7 +75,8 @@ how `G₂^W` is compared with series built from Mathlib's `EisensteinSeries.G2`.
 * `TauCeti.EisensteinSeries.hasSum_weightedG2`: the series over integer pairs.
 * `TauCeti.EisensteinSeries.hasSum_weightedG2_of_sum_eq_zero`: for a weight of total mass zero,
   the weighted series itself.
-* `TauCeti.EisensteinSeries.weightedG2_slash_apply`: the slash action.
+* `TauCeti.EisensteinSeries.weightedG2_slash_apply`: the slash action, and
+  `TauCeti.EisensteinSeries.weightedG2_single_slash` for a single residue.
 * `TauCeti.EisensteinSeries.weightedG2_comp_neg`: the series is unchanged when the residues are
   negated.
 * `TauCeti.EisensteinSeries.weightedG2_mdifferentiable`: holomorphy on `ℍ`.
@@ -333,6 +334,21 @@ theorem weightedG2_single_neg (a : Fin 2 → ZMod N) :
     ext b
     simp [Pi.single_apply, neg_eq_iff_eq_neg]
   rw [← h, weightedG2_comp_neg]
+
+/-- **The slash action on a single-residue series.** Slashing the series of the residue `a` by
+`γ ∈ SL(2, ℤ)` gives the series of the residue `a γ`. -/
+theorem weightedG2_single_slash (a : Fin 2 → ZMod N) (γ : SL(2, ℤ)) :
+    weightedG2 (Pi.single a (1 : ℂ)) ∣[(2 : ℤ)] γ =
+      weightedG2 (Pi.single (a ᵥ* ((γ : SL(2, ZMod N)) : Matrix (Fin 2) (Fin 2) (ZMod N)))
+        (1 : ℂ)) := by
+  classical
+  rw [weightedG2_slash_apply]
+  congr 1
+  ext b
+  simp only [Pi.single_apply]
+  -- `b γ⁻¹ = a` exactly when `b = a γ`
+  refine if_congr ?_ rfl rfl
+  rw [Matrix.SpecialLinearGroup.vecMul_eq_iff_eq_vecMul_inv, ← map_inv, inv_inv]
 
 /-! ### Holomorphy -/
 

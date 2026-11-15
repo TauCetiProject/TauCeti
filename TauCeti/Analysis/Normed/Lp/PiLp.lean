@@ -32,8 +32,9 @@ vector of `Lᵖ(Fin k, E)` by zero onto the first `k` coordinates of `Lᵖ(Fin n
 places its coordinates in the slots `j < k`; the vectors so obtained are those whose coordinates
 `j ≥ k` vanish. The finite sum against a zero-extended vector reduces to the sum over its original
 coordinates. Over an index type with at most one element, the `Lᵖ` norm is the norm of the
-coordinate, and any linear isometry equivalence into `PiLp p F` restricts to coordinatewise
-submodules via `LinearIsometryEquiv.subspacePiLp`.
+coordinate. Reindexing the coordinates along the identity bijection is the identity, and any linear
+isometry equivalence into `PiLp p F` restricts to coordinatewise submodules via
+`LinearIsometryEquiv.subspacePiLp`.
 
 ## Source
 
@@ -298,6 +299,22 @@ end LinearIsometry
 
 namespace LinearIsometryEquiv
 
+section CongrLeft
+
+variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {𝕜 E : Type*} [Semiring 𝕜] [SeminormedAddCommGroup E]
+  [Module 𝕜 E] {ι : Type*} [Fintype ι]
+
+/-- Reindexing the coordinates of `Lᵖ(ι, E)` along the identity of `ι` is the identity. -/
+@[simp]
+theorem piLpCongrLeft_refl :
+    piLpCongrLeft p 𝕜 E (Equiv.refl ι) = LinearIsometryEquiv.refl 𝕜 (PiLp p fun _ : ι ↦ E) := by
+  ext x i
+  simp [piLpCongrLeft_apply, Equiv.piCongrLeft'_refl]
+
+end CongrLeft
+
+section SubspacePiLp
+
 variable {ι 𝕜 X : Type*} [Fintype ι] {p : ℝ≥0∞} [Fact (1 ≤ p)] [Ring 𝕜]
   [SeminormedAddCommGroup X] [Module 𝕜 X] {F : ι → Type*} [∀ i, SeminormedAddCommGroup (F i)]
   [∀ i, Module 𝕜 (F i)]
@@ -337,5 +354,7 @@ theorem coe_subspacePiLp_symm_single [DecidableEq ι] (e : X ≃ₗᵢ[𝕜] PiL
   e.injective <| by
     rw [e.apply_symm_apply]; ext k : 1; rw [e.apply_coe_subspacePiLp_symm M N hMN]
     rcases eq_or_ne k j with rfl | hkj <;> simp [*]
+
+end SubspacePiLp
 
 end LinearIsometryEquiv

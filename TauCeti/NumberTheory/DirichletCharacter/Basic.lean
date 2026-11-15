@@ -46,6 +46,10 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
   at naturals prime to the new level, and
   `DirichletCharacter.changeLevel_ringHomComp_intCast_apply`: the value of a lifted integer-valued
   character at an integer prime to the new level.
+* `DirichletCharacter.apply_intCast_eq_of_forall_isCoprime`: characters of equal levels agreeing
+  at the integers prime to the level agree at every integer.
+* `DirichletCharacter.one_natCast`: the trivial character modulo `N` is `1` at the natural numbers
+  prime to `N` and `0` at the others.
 * `DirichletCharacter.apply_eq_one_of_conductor_dvd`: a character is `1` at every integer prime
   to its level and congruent to `1` modulo a multiple of its conductor.
 * `DirichletCharacter.conductor_dvd_iff_forall_odd`: conversely, the conductor divides `d`, which
@@ -294,6 +298,27 @@ theorem changeLevel_ringHomComp_intCast_apply {R : Type*} [CommRing R] {d N : �
     (ψ : DirichletCharacter ℤ d) {n : ℤ} (hn : IsCoprime n N) :
     changeLevel h (ψ.ringHomComp (Int.castRingHom R)) n = ψ n := by
   rw [changeLevel_eq_cast_of_dvd' _ h hn, MulChar.ringHomComp_apply, eq_intCast]
+
+/-- Two Dirichlet characters of equal levels that agree at the integers prime to the level agree
+at every integer, since both vanish at the others. The levels are equal natural numbers, not
+necessarily the same expression, so characters indexed by different formulas for one level can be
+compared. -/
+theorem apply_intCast_eq_of_forall_isCoprime {R : Type*} [CommMonoidWithZero R] {N M : ℕ}
+    {χ : DirichletCharacter R N} {ψ : DirichletCharacter R M} (hNM : N = M)
+    (h : ∀ n : ℤ, IsCoprime n N → χ n = ψ n) (n : ℤ) : χ n = ψ n := by
+  by_cases hn : IsCoprime n N
+  · exact h n hn
+  · subst hNM
+    rw [χ.map_nonunit (by rwa [ZMod.isUnit_intCast_iff_isCoprime, isCoprime_comm]),
+      ψ.map_nonunit (by rwa [ZMod.isUnit_intCast_iff_isCoprime, isCoprime_comm])]
+
+/-- **The trivial character at a natural number.** The trivial character modulo `N` is `1` at the
+natural numbers prime to `N` and `0` at the others. -/
+theorem one_natCast {R : Type*} [CommMonoidWithZero R] {N : ℕ} (n : ℕ) :
+    (1 : DirichletCharacter R N) n = if n.Coprime N then 1 else 0 := by
+  split_ifs with hn
+  · exact MulChar.one_apply ((ZMod.isUnit_iff_coprime n N).mpr hn)
+  · exact MulChar.map_nonunit _ (mt (ZMod.isUnit_iff_coprime n N).mp hn)
 
 /-- The product character at the least common multiple of the levels is the pointwise product
 on natural numbers, including the nonunits. -/

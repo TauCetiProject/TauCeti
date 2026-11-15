@@ -34,6 +34,8 @@ with its Serre presentation.
 ## Main definitions
 
 * `TauCeti.serreLiftEquiv`: the Serre presentation `Matrix.ToLieAlgebra K b.cartanMatrixᵀ ≃ₗ⁅K⁆ L`.
+* `LieAlgebra.Basis.serreLiftEquiv`: the presentation numbered by a Lie algebra basis, allowing
+  its transposed matrix to be identified with a specified matrix.
 
 ## Main results
 
@@ -168,5 +170,109 @@ theorem serreLift_injective (b : LieAlgebra.Basis ι H) :
   rw [hfac, LieHom.coe_comp]
   exact (serreLift_injective_of_base hS hspan).comp
     (Function.LeftInverse.injective (g := serreLift hβ) fun x ↦ DFunLike.congr_fun hβα x)
+
+/-- Serre's theorem for a Lie algebra basis after identifying its transposed Cartan matrix
+with the matrix of a given Serre system. -/
+theorem serreLift_injective_of_A_transpose_eq (b : LieAlgebra.Basis ι H)
+    {CM : Matrix ι ι ℤ} (hCM : b.Aᵀ = CM) (hS : IsSerreSystem K CM b.h b.e b.f) :
+    Function.Injective (serreLift hS) := by
+  subst CM
+  exact b.serreLift_injective
+
+variable (b : LieAlgebra.Basis ι H) {CM : Matrix ι ι ℤ}
+  (hCM : b.Aᵀ = CM)
+
+/-- The Serre presentation isomorphism of a Lie algebra basis, with its transposed Cartan
+matrix identified with `CM`. It sends the numbered Serre generators to the basis generators. -/
+noncomputable def serreLiftEquiv : Matrix.ToLieAlgebra K CM ≃ₗ⁅K⁆ L :=
+  LieEquiv.ofBijective (serreLift (hCM ▸ isSerreSystem_lieBasis b))
+    ⟨b.serreLift_injective_of_A_transpose_eq hCM _, serreLift_surjective _ b.span_ef⟩
+
+/-- The presentation isomorphism of a Lie algebra basis is the Serre lift. -/
+@[simp]
+theorem coe_serreLiftEquiv :
+    ⇑(b.serreLiftEquiv hCM) = serreLift (hCM ▸ isSerreSystem_lieBasis b) :=
+  (rfl)
+
+/-- The inverse presentation sends a basis Cartan generator to the numbered Serre generator. -/
+@[simp]
+theorem serreLiftEquiv_symm_h (i : ι) :
+    (b.serreLiftEquiv hCM).symm (b.h i) = serreH K CM i := by
+  rw [LieEquiv.symm_apply_eq, coe_serreLiftEquiv, serreLift_serreH]
+
+/-- The inverse presentation sends a basis raising generator to the numbered Serre generator. -/
+@[simp]
+theorem serreLiftEquiv_symm_e (i : ι) :
+    (b.serreLiftEquiv hCM).symm (b.e i) = serreE K CM i := by
+  rw [LieEquiv.symm_apply_eq, coe_serreLiftEquiv, serreLift_serreE]
+
+/-- The inverse presentation sends a basis lowering generator to the numbered Serre generator. -/
+@[simp]
+theorem serreLiftEquiv_symm_f (i : ι) :
+    (b.serreLiftEquiv hCM).symm (b.f i) = serreF K CM i := by
+  rw [LieEquiv.symm_apply_eq, coe_serreLiftEquiv, serreLift_serreF]
+
+omit [DecidableEq ι] in
+/-- Two Killing Lie algebras with Lie algebra bases having the same numbered Cartan matrix
+are isomorphic, preserving the Cartan, raising and lowering generators. -/
+noncomputable def lieEquivOfCartanMatrixEq
+    {L₂ : Type*} [LieRing L₂] [LieAlgebra K L₂] [FiniteDimensional K L₂] [IsKilling K L₂]
+    {H₂ : LieSubalgebra K L₂} (b₂ : LieAlgebra.Basis ι H₂) (hA : b.A = b₂.A) :
+    L ≃ₗ⁅K⁆ L₂ := by
+  letI := Classical.decEq ι
+  exact (b.serreLiftEquiv rfl).symm.trans
+    (b₂.serreLiftEquiv (congrArg Matrix.transpose hA.symm))
+
+section Comparison
+
+variable {L₂ : Type*} [LieRing L₂] [LieAlgebra K L₂] [FiniteDimensional K L₂] [IsKilling K L₂]
+  {H₂ : LieSubalgebra K L₂} (b₂ : LieAlgebra.Basis ι H₂) (hA : b.A = b₂.A)
+
+omit [DecidableEq ι] in
+/-- The comparison of Lie algebra bases preserves the numbered Cartan generators. -/
+@[simp]
+theorem lieEquivOfCartanMatrixEq_h (i : ι) :
+    b.lieEquivOfCartanMatrixEq b₂ hA (b.h i) = b₂.h i := by
+  classical
+  simp [lieEquivOfCartanMatrixEq]
+
+omit [DecidableEq ι] in
+/-- The comparison of Lie algebra bases preserves the numbered raising generators. -/
+@[simp]
+theorem lieEquivOfCartanMatrixEq_e (i : ι) :
+    b.lieEquivOfCartanMatrixEq b₂ hA (b.e i) = b₂.e i := by
+  classical
+  simp [lieEquivOfCartanMatrixEq]
+
+omit [DecidableEq ι] in
+/-- The comparison of Lie algebra bases preserves the numbered lowering generators. -/
+@[simp]
+theorem lieEquivOfCartanMatrixEq_f (i : ι) :
+    b.lieEquivOfCartanMatrixEq b₂ hA (b.f i) = b₂.f i := by
+  classical
+  simp [lieEquivOfCartanMatrixEq]
+
+omit [DecidableEq ι] in
+/-- The inverse comparison of Lie algebra bases preserves the numbered Cartan generators. -/
+@[simp]
+theorem lieEquivOfCartanMatrixEq_symm_h (i : ι) :
+    (b.lieEquivOfCartanMatrixEq b₂ hA).symm (b₂.h i) = b.h i := by
+  rw [LieEquiv.symm_apply_eq, lieEquivOfCartanMatrixEq_h]
+
+omit [DecidableEq ι] in
+/-- The inverse comparison of Lie algebra bases preserves the numbered raising generators. -/
+@[simp]
+theorem lieEquivOfCartanMatrixEq_symm_e (i : ι) :
+    (b.lieEquivOfCartanMatrixEq b₂ hA).symm (b₂.e i) = b.e i := by
+  rw [LieEquiv.symm_apply_eq, lieEquivOfCartanMatrixEq_e]
+
+omit [DecidableEq ι] in
+/-- The inverse comparison of Lie algebra bases preserves the numbered lowering generators. -/
+@[simp]
+theorem lieEquivOfCartanMatrixEq_symm_f (i : ι) :
+    (b.lieEquivOfCartanMatrixEq b₂ hA).symm (b₂.f i) = b.f i := by
+  rw [LieEquiv.symm_apply_eq, lieEquivOfCartanMatrixEq_f]
+
+end Comparison
 
 end LieAlgebra.Basis
