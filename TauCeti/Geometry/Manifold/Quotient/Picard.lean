@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Quotient.AssociatedBundle
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteRank.Picard
-public import TauCeti.Geometry.Manifold.Complex.Compact
 public import TauCeti.Topology.Covering.Proper
 public import TauCeti.Topology.Covering.Quotient
 public import Mathlib.GroupTheory.OrderOfElement
@@ -44,10 +43,10 @@ decided by equivariant functions on `E`:
   characterization of `[L_χ]` in `ContMDiffPicardGroup IB n X` in terms of non-existence of
   nowhere-vanishing `χ ^ m`-equivariant `C^n` functions on `E` for `0 < m < orderOf χ`.
 
-Over `ℂ` at positive regularity `n ≠ 0` (in particular `n = ∞` or `n = ω`), if the total space `E`
-is a compact connected boundaryless complex manifold — for instance whenever `X` is compact, `E` is
-connected, and `G` is finite — every holomorphic function on `E` is constant, so no nontrivial
-character admits a nowhere-vanishing holomorphic equivariant function:
+Over `ℂ` at positive regularity `n ≠ 0` (in particular `n = ∞` or `n = ω`), if `p` is
+differentiable and the total space `E` is a compact connected boundaryless complex manifold — for
+instance whenever `X` is compact, `E` is connected, and `G` is finite — every holomorphic function
+on `E` is constant, so no nontrivial character admits a globally trivial line bundle:
 
 * `characterPicardHom_injective`: `(G →* ℂˣ) →* ContMDiffPicardGroup IB n X` is injective;
 * `orderOf_characterPicardHom_eq`: the order of `[L_χ]` in the holomorphic Picard group equals
@@ -87,13 +86,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E X G : Type*} [TopologicalSpace E] [TopologicalSpace X] [ChartedSpace HB X]
   [Group G] [MulAction G E] {p : E → X} (hp : IsQuotientCoveringMap p G)
 
-/-- The line bundle `hp.characterCore χ` of a character of the deck group is `C^n` for every model
-of the base and every regularity. -/
-instance isContMDiff_characterCore (χ : G →* 𝕜ˣ) :
-    (hp.characterCore χ).IsContMDiff IB n := by
-  rw [characterCore_def]
-  infer_instance
-
 /-- The point-indexed finite-rank core of a character has locally constant transitions, so it is a
 `C^n` vector bundle for every model of the base and every regularity. -/
 instance isContMDiff_characterFiniteRankCore (χ : G →* 𝕜ˣ) :
@@ -114,51 +106,34 @@ noncomputable def characterFiniteRankCoreDiffeomorph (χ : G →* 𝕜ˣ) :
     simpa only [characterFiniteRankCoreHomeomorph_apply,
       characterFiniteRankCoreHomeomorph_symm_apply] using
       (hp.characterFiniteRankCoreHomeomorph χ).symm_apply_apply p₀
-  right_inv q := by
-    rcases q with ⟨_, _⟩
-    rfl
+  right_inv := fun ⟨_, _⟩ ↦ rfl
   contMDiff_toFun p₀ := by
     let P : (Fin (hp.characterFiniteRankCore χ).rank → 𝕜) →L[𝕜] 𝕜 :=
       ContinuousLinearMap.proj ⟨0, by simp⟩
     obtain ⟨hb, hp₀'⟩ := Bundle.contMDiffAt_totalSpace_iff.mp
-      (contMDiffAt_id
-        (I := IB.prod 𝓘(𝕜, Fin (hp.characterFiniteRankCore χ).rank → 𝕜)) (x := p₀))
+      (contMDiffAt_id (I := IB.prod 𝓘(𝕜, Fin (hp.characterFiniteRankCore χ).rank → 𝕜)) (x := p₀))
     refine Bundle.contMDiffAt_totalSpace_iff.mpr ⟨hb, ?_⟩
-    have hsnd : (fun z : (hp.characterFiniteRankCore χ).core.TotalSpace ↦
-        (trivializationAt 𝕜 (hp.characterCore χ).Fiber p₀.1
-          ⟨z.1, (z.2 : Fin (hp.characterFiniteRankCore χ).rank → 𝕜) ⟨0, by simp⟩⟩).2) =
-        fun z ↦ P (trivializationAt (Fin (hp.characterFiniteRankCore χ).rank → 𝕜)
-          (hp.characterFiniteRankCore χ).core.Fiber p₀.proj z).2 :=
-      funext fun z ↦ hp.trivializationAt_characterCore_snd χ p₀.1 z
-    exact hsnd ▸ P.contMDiff.contMDiffAt.comp p₀ hp₀'
+    exact (funext fun z ↦ hp.trivializationAt_characterCore_snd χ p₀.1 z) ▸
+      P.contMDiff.contMDiffAt.comp p₀ hp₀'
   contMDiff_invFun q := by
     let L : 𝕜 →L[𝕜] (Fin (hp.characterFiniteRankCore χ).rank → 𝕜) :=
       ContinuousLinearMap.pi fun _ ↦ ContinuousLinearMap.id 𝕜 𝕜
     obtain ⟨hb, hq'⟩ := Bundle.contMDiffAt_totalSpace_iff.mp
       (contMDiffAt_id (I := IB.prod 𝓘(𝕜)) (x := q))
     refine Bundle.contMDiffAt_totalSpace_iff.mpr ⟨hb, ?_⟩
-    have hsnd : (fun z : (hp.characterCore χ).TotalSpace ↦
-        (trivializationAt (Fin (hp.characterFiniteRankCore χ).rank → 𝕜)
-          (hp.characterFiniteRankCore χ).core.Fiber q.1
-          ⟨z.1, (fun _ ↦ (z.2 : 𝕜) : Fin (hp.characterFiniteRankCore χ).rank → 𝕜)⟩).2) =
-        fun z ↦ L (trivializationAt 𝕜 (hp.characterCore χ).Fiber q.proj z).2 :=
-      funext fun z ↦ funext fun k ↦
-        hp.trivializationAt_characterFiniteRankCore_snd χ q.1 z k
-    exact hsnd ▸ L.contMDiff.contMDiffAt.comp q hq'
+    exact (funext fun z ↦ funext fun k ↦
+        hp.trivializationAt_characterFiniteRankCore_snd χ q.1 z k) ▸
+      L.contMDiff.contMDiffAt.comp q hq'
 
-@[simp]
-theorem characterFiniteRankCoreDiffeomorph_apply (χ : G →* 𝕜ˣ)
+@[simp] theorem characterFiniteRankCoreDiffeomorph_apply (χ : G →* 𝕜ˣ)
     (p₀ : (hp.characterFiniteRankCore χ).core.TotalSpace) :
     hp.characterFiniteRankCoreDiffeomorph IB n χ p₀ =
-      ⟨p₀.1, (p₀.2 : Fin (hp.characterFiniteRankCore χ).rank → 𝕜) ⟨0, by simp⟩⟩ :=
-  (rfl)
+      ⟨p₀.1, (p₀.2 : Fin (hp.characterFiniteRankCore χ).rank → 𝕜) ⟨0, by simp⟩⟩ := (rfl)
 
-@[simp]
-theorem characterFiniteRankCoreDiffeomorph_symm_apply (χ : G →* 𝕜ˣ)
+@[simp] theorem characterFiniteRankCoreDiffeomorph_symm_apply (χ : G →* 𝕜ˣ)
     (q : (hp.characterCore χ).TotalSpace) :
     (hp.characterFiniteRankCoreDiffeomorph IB n χ).symm q =
-      ⟨q.1, (fun _ ↦ (q.2 : 𝕜) : Fin (hp.characterFiniteRankCore χ).rank → 𝕜)⟩ :=
-  (rfl)
+      ⟨q.1, (fun _ ↦ (q.2 : 𝕜) : Fin (hp.characterFiniteRankCore χ).rank → 𝕜)⟩ := (rfl)
 
 /-- Nowhere-vanishing `C^n` sections of `hp.characterFiniteRankCore χ` correspond to
 nowhere-vanishing `C^n` sections of `hp.characterCore χ`. -/
@@ -173,26 +148,24 @@ theorem exists_section_ne_zero_characterFiniteRankCore_iff (χ : G →* 𝕜ˣ) 
   let k₀ : Fin (hp.characterFiniteRankCore χ).rank := ⟨0, by simp⟩
   constructor
   · rintro ⟨σ, hσ, hσ₀⟩
-    refine ⟨fun x ↦ (σ x : Fin (hp.characterFiniteRankCore χ).rank → 𝕜) k₀, ?_, fun x h0 ↦ hσ₀ x ?_⟩
-    · exact ((hp.characterFiniteRankCoreDiffeomorph IB n χ).contMDiff.comp hσ).congr fun _ ↦ rfl
-    · let v : Fin (hp.characterFiniteRankCore χ).rank → 𝕜 := σ x
-      change v = 0
-      ext k
-      rw [show k = k₀ from Fin.ext (Nat.lt_one_iff.mp k.2)]
-      exact h0
+    refine ⟨fun x ↦ (σ x : Fin (hp.characterFiniteRankCore χ).rank → 𝕜) k₀,
+      ((hp.characterFiniteRankCoreDiffeomorph IB n χ).contMDiff.comp hσ).congr fun _ ↦ rfl,
+      fun x h0 ↦ hσ₀ x ?_⟩
+    let v : Fin (hp.characterFiniteRankCore χ).rank → 𝕜 := σ x
+    change v = 0
+    ext k; rw [show k = k₀ from Fin.ext (Nat.lt_one_iff.mp k.2)]; exact h0
   · rintro ⟨τ, hτ, hτ₀⟩
-    refine ⟨fun x _ ↦ (τ x : 𝕜), ?_, fun x h0 ↦ hτ₀ x (congrFun h0 k₀)⟩
-    exact ((hp.characterFiniteRankCoreDiffeomorph IB n χ).symm.contMDiff.comp hτ).congr fun _ ↦ rfl
+    exact ⟨fun x _ ↦ (τ x : 𝕜),
+      ((hp.characterFiniteRankCoreDiffeomorph IB n χ).symm.contMDiff.comp hτ).congr fun _ ↦ rfl,
+      fun x h0 ↦ hτ₀ x (congrFun h0 k₀)⟩
 
 /-- The `C^n` line-bundle core over `X` attached to a character `χ : G →* 𝕜ˣ` of the deck group. -/
 noncomputable def characterContMDiffCore (χ : G →* 𝕜ˣ) :
     ContMDiffFiniteRankBundleCore IB n X :=
   ⟨hp.characterFiniteRankCore χ, inferInstance⟩
 
-@[simp]
-theorem toCore_characterContMDiffCore (χ : G →* 𝕜ˣ) :
-    (hp.characterContMDiffCore IB n χ).toCore = hp.characterFiniteRankCore χ :=
-  (rfl)
+@[simp] theorem toCore_characterContMDiffCore (χ : G →* 𝕜ˣ) :
+    (hp.characterContMDiffCore IB n χ).toCore = hp.characterFiniteRankCore χ := (rfl)
 
 theorem rank_characterContMDiffCore (χ : G →* 𝕜ˣ) :
     (hp.characterContMDiffCore IB n χ).toCore.rank = 1 :=
@@ -221,32 +194,14 @@ noncomputable def characterContMDiffCoreOneIso :
 noncomputable def characterContMDiffCoreMulIso (χ ψ : G →* 𝕜ˣ) :
     hp.characterContMDiffCore IB n χ ⊗ hp.characterContMDiffCore IB n ψ ≅
       hp.characterContMDiffCore IB n (χ * ψ) :=
-  let e : (Fin ((hp.characterFiniteRankCore χ).rank *
-        (hp.characterFiniteRankCore ψ).rank) → 𝕜) ≃L[𝕜]
-      (Fin (hp.characterFiniteRankCore (χ * ψ)).rank → 𝕜) :=
-    ContinuousLinearEquiv.piCongrLeft 𝕜
-      (fun _ : Fin (hp.characterFiniteRankCore (χ * ψ)).rank ↦ 𝕜)
-      (finCongr (by simp))
   ContMDiffFiniteRankBundleCore.constIso
     (fun i ↦ by
       change (hp.characterFiniteRankCore χ).core.baseSet i ∩
           (hp.characterFiniteRankCore ψ).core.baseSet i =
         (hp.characterFiniteRankCore (χ * ψ)).core.baseSet i
       simp only [characterFiniteRankCore_baseSet, Set.inter_self])
-    e fun i j x _ _ ↦ by
-      have hχ := hp.characterFiniteRankCore_coordChange χ i j x
-      have hψ := hp.characterFiniteRankCore_coordChange ψ i j x
-      have hχψ := hp.characterFiniteRankCore_coordChange (χ * ψ) i j x
-      rw [MonoidHom.mul_apply, Units.val_mul] at hχψ
-      have key : e.toContinuousLinearMap.comp
-          (((hp.characterFiniteRankCore χ).core.coordChange i j x).kronecker
-            ((hp.characterFiniteRankCore ψ).core.coordChange i j x)) =
-          ((hp.characterFiniteRankCore (χ * ψ)).core.coordChange i j x).comp
-            e.toContinuousLinearMap := by
-        rw [hχ, hψ, hχψ, ContinuousLinearMap.smul_kronecker, ContinuousLinearMap.kronecker_smul,
-          smul_smul, ContinuousLinearMap.id_kronecker_id, ContinuousLinearMap.comp_smul,
-          ContinuousLinearMap.smul_comp, ContinuousLinearMap.comp_id, ContinuousLinearMap.id_comp]
-      exact key
+    (hp.characterMulFibreEquiv χ ψ)
+    fun i j x _ _ ↦ hp.characterFiniteRankCore_mul_intertwine χ ψ i j x
 
 /-- **Tensor powers of a `C^n` character line bundle.** For every `m : ℕ`, the `m`-th tensor power
 of `hp.characterContMDiffCore IB n χ` is canonically isomorphic to
@@ -272,8 +227,7 @@ noncomputable def characterContMDiffCoreTensorPowerOrderOfIsoUnit (χ : G →* �
 
 /-- For every character `χ : G →* 𝕜ˣ`, `χ ^ Nat.card G = 1`. -/
 private theorem pow_natCard_eq_one (χ : G →* 𝕜ˣ) : χ ^ Nat.card G = 1 := by
-  ext g
-  simp [← map_pow]
+  ext g; simp [← map_pow]
 
 /-- The `Nat.card G`-th tensor power of `L_χ` is canonically isomorphic in
 `ContMDiffFiniteRankBundleCore IB n X` to the trivial line bundle `𝟙_`. -/
@@ -302,8 +256,7 @@ noncomputable def characterPicardHom : (G →* 𝕜ˣ) →* ContMDiffPicardGroup
       ← Skeleton.toSkeleton_tensorObj]
     exact Quotient.sound ⟨(hp.characterContMDiffCoreMulIso IB n χ ψ).symm⟩
 
-@[simp]
-theorem val_characterPicardHom_apply (χ : G →* 𝕜ˣ) :
+@[simp] theorem val_characterPicardHom_apply (χ : G →* 𝕜ˣ) :
     (hp.characterPicardHom IB n χ : Skeleton (ContMDiffFiniteRankBundleCore IB n X)) =
       toSkeleton (hp.characterContMDiffCore IB n χ) :=
   ContMDiffPicardGroup.val_mkOfTensorIsoUnit _
@@ -328,8 +281,7 @@ theorem orderOf_characterPicardHom_dvd (χ : G →* 𝕜ˣ) :
 /-- The order of `[L_χ]` in `ContMDiffPicardGroup IB n X` divides `Nat.card G`. -/
 theorem orderOf_characterPicardHom_dvd_natCard (χ : G →* 𝕜ˣ) :
     orderOf (hp.characterPicardHom IB n χ) ∣ Nat.card G :=
-  orderOf_dvd_of_pow_eq_one <| by
-    rw [← map_pow, pow_natCard_eq_one, map_one]
+  orderOf_dvd_of_pow_eq_one <| by rw [← map_pow, pow_natCard_eq_one, map_one]
 
 /-- If `characterPicardHom IB n` is injective, `[L_χ]` has the exact order of `χ` in
 `ContMDiffPicardGroup IB n X`. -/
@@ -352,12 +304,10 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   {E X G : Type*} [TopologicalSpace E] [ChartedSpace HM E] [TopologicalSpace X]
   [ChartedSpace HB X] [Group G] [MulAction G E] {p : E → X} (hp : IsQuotientCoveringMap p G)
 
-@[simp]
-theorem ofRankOne_characterContMDiffCore (χ : G →* 𝕜ˣ) :
+@[simp] theorem ofRankOne_characterContMDiffCore (χ : G →* 𝕜ˣ) :
     ContMDiffPicardGroup.ofRankOne (hp.characterContMDiffCore IB n χ)
       (hp.rank_characterContMDiffCore IB n χ) = hp.characterPicardHom IB n χ :=
-  Units.ext <| by
-    rw [ContMDiffPicardGroup.val_ofRankOne, val_characterPicardHom_apply]
+  Units.ext <| by rw [ContMDiffPicardGroup.val_ofRankOne, val_characterPicardHom_apply]
 
 /-- Over a complete scalar field, `[L_χ] = 1` in `ContMDiffPicardGroup IB n X` if and only if
 `hp.characterCore χ` admits a global linear trivialization in its maximal `C^n` atlas. -/
@@ -441,10 +391,8 @@ theorem orderOf_characterPicardHom_eq_iff_forall_lt (χ : G →* 𝕜ˣ) (hχ : 
   have hpow : hp.characterPicardHom IB n χ ^ orderOf χ = 1 := by
     rw [← map_pow, pow_orderOf_eq_one, map_one]
   refine ⟨fun h m hm0 hmlt ↦ ?_, fun h ↦ ⟨hpow, fun m hmlt hm0 ↦ ?_⟩⟩
-  · rw [← hp.characterPicardHom_pow_eq_one_iff hpd χ m]
-    exact h.2 m hmlt hm0
-  · rw [ne_eq, hp.characterPicardHom_pow_eq_one_iff hpd χ m]
-    exact h m hm0 hmlt
+  · rw [← hp.characterPicardHom_pow_eq_one_iff hpd χ m]; exact h.2 m hmlt hm0
+  · rw [ne_eq, hp.characterPicardHom_pow_eq_one_iff hpd χ m]; exact h m hm0 hmlt
 
 end Complete
 
@@ -470,55 +418,40 @@ theorem eq_one_of_contMDiff_equivariant_ne_zero [CompactSpace E] [ConnectedSpace
   ext g
   have hconst : f (g • y₀) = f y₀ :=
     (hf.mdifferentiable hn).apply_eq_of_compactSpace (g • y₀) y₀
-  have hmul : (χ g : ℂ) * f y₀ = 1 * f y₀ := by
-    rw [← hfG g y₀, one_mul, hconst]
-  exact mul_right_cancel₀ (hf₀ y₀) hmul
+  exact mul_right_cancel₀ (hf₀ y₀)
+    (by rw [← hfG g y₀, MonoidHom.one_apply, Units.val_one, one_mul, hconst])
 
-section WithLocalDiffeomorph
+section WithMDifferentiable
 
-variable (hpd : IsLocalDiffeomorph I IB n p) (hn : n ≠ 0)
+variable (hpd : MDifferentiable I IB p) (hn : n ≠ 0)
 include hpd hn
 
-/-- Over a compact connected complex covering space `E`, `hp.characterCore χ` is globally trivial
-in its maximal `C^n` atlas (`n ≠ 0`, e.g. `n = ∞`) if and only if `χ = 1`. -/
-theorem exists_trivialization_baseSet_eq_univ_characterCore_iff_eq_one
-    [CompactSpace E] [ConnectedSpace E] (χ : G →* ℂˣ) :
-    (∃ (e : Trivialization ℂ (π ℂ (hp.characterCore χ).Fiber)) (_ : e.IsLinear ℂ),
-        e.toOpenPartialHomeomorph ∈ (contMDiffFiberwiseLinear X ℂ IB n).maximalAtlas
-          (TotalSpace ℂ (hp.characterCore χ).Fiber) ∧ e.baseSet = univ) ↔
-      χ = 1 := by
-  refine ⟨fun h ↦ ?_, ?_⟩
-  · obtain ⟨f, hf, hf₀, hfG⟩ :=
-      (hp.exists_trivialization_baseSet_eq_univ_characterCore_iff hpd χ).mp h
-    exact eq_one_of_contMDiff_equivariant_ne_zero hn hf hf₀ hfG
-  · rintro rfl
-    exact hp.exists_trivialization_baseSet_eq_univ_characterCore_one
-
-/-- **Injectivity of the character homomorphism on compact connected complex coverings.** When the
-covering manifold `E` is compact and connected and `n ≠ 0` (in particular `n = ∞`, the holomorphic
-Picard group), `(G →* ℂˣ) →* ContMDiffPicardGroup IB n X` is injective. -/
+/-- **Injectivity of the character homomorphism on compact connected complex coverings.** When `p`
+is differentiable, the covering manifold `E` is compact and connected, and `n ≠ 0` (in particular
+`n = ∞`, the holomorphic Picard group), `(G →* ℂˣ) →* ContMDiffPicardGroup IB n X` is injective. -/
 theorem characterPicardHom_injective [CompactSpace E] [ConnectedSpace E] :
     Function.Injective (hp.characterPicardHom IB n) :=
-  (hp.characterPicardHom_injective_iff hpd).mpr fun _ ⟨_, hf, hf₀, hfG⟩ ↦
-    eq_one_of_contMDiff_equivariant_ne_zero hn hf hf₀ hfG
+  (injective_iff_map_eq_one _).mpr fun χ hχ ↦
+    (hp.exists_trivialization_baseSet_eq_univ_characterCore_iff_eq_one hpd hn χ).mp
+      ((hp.characterPicardHom_eq_one_iff_exists_trivialization_baseSet_eq_univ χ).mp hχ)
 
-/-- **Exact Picard order on compact connected complex coverings.** When `E` is compact and
-connected and `n ≠ 0` (in particular `n = ∞`), `[L_χ]` has exact order `orderOf χ` in
-`ContMDiffPicardGroup IB n X`. -/
+/-- **Exact Picard order on compact connected complex coverings.** When `p` is differentiable, `E`
+is compact and connected, and `n ≠ 0` (in particular `n = ∞`), `[L_χ]` has exact order `orderOf χ`
+in `ContMDiffPicardGroup IB n X`. -/
 theorem orderOf_characterPicardHom_eq [CompactSpace E] [ConnectedSpace E] (χ : G →* ℂˣ) :
     orderOf (hp.characterPicardHom IB n χ) = orderOf χ :=
   hp.orderOf_characterPicardHom_eq_of_injective IB n (hp.characterPicardHom_injective hpd hn) χ
 
-/-- **Injectivity of the character homomorphism for finite coverings of compact bases.** If `X` is
-compact, `G` is finite, `E` is connected, and `n ≠ 0`, then
+/-- **Injectivity of the character homomorphism for finite coverings of compact bases.** If `p` is
+differentiable, `X` is compact, `G` is finite, `E` is connected, and `n ≠ 0`, then
 `hp.characterPicardHom IB n : (G →* ℂˣ) →* ContMDiffPicardGroup IB n X` is injective. -/
 theorem characterPicardHom_injective_of_compactSpace_base [CompactSpace X] [ConnectedSpace E]
     [Finite G] : Function.Injective (hp.characterPicardHom IB n) :=
   have := hp.compactSpace
   hp.characterPicardHom_injective hpd hn
 
-/-- **Exact Picard order for finite coverings of compact bases.** If `X` is compact, `G` is finite,
-`E` is connected, and `n ≠ 0`, then `[L_χ]` has exact order `orderOf χ` in
+/-- **Exact Picard order for finite coverings of compact bases.** If `p` is differentiable, `X` is
+compact, `G` is finite, `E` is connected, and `n ≠ 0`, then `[L_χ]` has exact order `orderOf χ` in
 `ContMDiffPicardGroup IB n X`. -/
 theorem orderOf_characterPicardHom_eq_of_compactSpace_base [CompactSpace X] [ConnectedSpace E]
     [Finite G] (χ : G →* ℂˣ) :
@@ -526,7 +459,7 @@ theorem orderOf_characterPicardHom_eq_of_compactSpace_base [CompactSpace X] [Con
   have := hp.compactSpace
   hp.orderOf_characterPicardHom_eq hpd hn χ
 
-end WithLocalDiffeomorph
+end WithMDifferentiable
 
 end ComplexCompact
 

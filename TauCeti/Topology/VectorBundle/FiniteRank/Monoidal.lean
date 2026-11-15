@@ -362,19 +362,14 @@ section TensorUnitCriteria
 
 @[simp] theorem coordChange_tensorUnit (i j x : B) :
     (𝟙_ (FiniteRankBundleCore 𝕜 B)).core.coordChange i j x =
-      ContinuousLinearMap.id 𝕜 (Fin 1 → 𝕜) :=
-  (rfl)
+      ContinuousLinearMap.id 𝕜 (Fin 1 → 𝕜) := (rfl)
 
 /-- Isomorphic finite-rank cores over a nonempty base have the same rank. -/
 theorem rank_eq_of_iso [Nonempty B] {A D : FiniteRankBundleCore 𝕜 B} (e : A ≅ D) :
-    A.rank = D.rank := by
-  obtain ⟨x⟩ := ‹Nonempty B›
-  calc
-    A.rank = Module.finrank 𝕜 ((fiberFunctor (𝕜 := 𝕜) x).obj A) :=
-      (Module.finrank_fin_fun 𝕜).symm
-    _ = Module.finrank 𝕜 ((fiberFunctor (𝕜 := 𝕜) x).obj D) :=
-      ((fiberFunctor (𝕜 := 𝕜) x).mapIso e).toLinearEquiv.finrank_eq
-    _ = D.rank := Module.finrank_fin_fun 𝕜
+    A.rank = D.rank :=
+  let ⟨x⟩ := ‹Nonempty B›
+  (Module.finrank_fin_fun 𝕜).symm.trans <|
+    ((fiberFunctor (𝕜 := 𝕜) x).mapIso e).toLinearEquiv.finrank_eq.trans (Module.finrank_fin_fun 𝕜)
 
 /-- Over a nonempty base, any left factor in a tensor-product isomorphism with the monoidal unit
 has rank one. -/
@@ -382,64 +377,50 @@ theorem rank_eq_one_of_tensor_iso_tensorUnit [Nonempty B] {A D : FiniteRankBundl
     (e : A ⊗ D ≅ 𝟙_ (FiniteRankBundleCore 𝕜 B)) : A.rank = 1 :=
   Nat.eq_one_of_mul_eq_one_right (rank_eq_of_iso e)
 
+section IsoTensorUnit
+
+variable (A : FiniteRankBundleCore 𝕜 B)
+  (e : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin (𝟙_ (FiniteRankBundleCore 𝕜 B)).rank → 𝕜))
+  (h : ∀ i j x, x ∈ A.core.baseSet i → x ∈ A.core.baseSet j →
+    A.core.coordChange i j x = ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜))
+
 /-- A core whose transition maps on chart overlaps are all the identity, equipped with a continuous
 linear equivalence of its model fibre with `Fin 1 → 𝕜`, is canonically isomorphic to the monoidal
 unit `𝟙_ (FiniteRankBundleCore 𝕜 B)` even when its chart domains are proper subsets of `B`. -/
-def isoTensorUnitOfCoordChangeEqId (A : FiniteRankBundleCore 𝕜 B)
-    (e : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin (𝟙_ (FiniteRankBundleCore 𝕜 B)).rank → 𝕜))
-    (h : ∀ i j x, x ∈ A.core.baseSet i → x ∈ A.core.baseSet j →
-      A.core.coordChange i j x = ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜)) :
-    A ≅ 𝟙_ (FiniteRankBundleCore 𝕜 B) where
+def isoTensorUnitOfCoordChangeEqId : A ≅ 𝟙_ (FiniteRankBundleCore 𝕜 B) where
   hom :=
     { operator := fun _ _ ↦ ⟨fun _ ↦ e.toContinuousLinearMap, continuous_const⟩
-      compatible := fun i i' _ _ x hi hi' _ _ v ↦ by
-        rw [coordChange_tensorUnit, h i i' x hi hi']
-        rfl }
+      compatible := fun i i' _ _ x hi hi' _ _ _ ↦ by
+        rw [coordChange_tensorUnit, h i i' x hi hi']; rfl }
   inv :=
     { operator := fun _ _ ↦ ⟨fun _ ↦ e.symm.toContinuousLinearMap, continuous_const⟩
-      compatible := fun _ _ j j' x _ _ hj hj' v ↦ by
-        rw [coordChange_tensorUnit, h j j' x hj hj']
-        rfl }
+      compatible := fun _ _ j j' x _ _ hj hj' _ ↦ by
+        rw [coordChange_tensorUnit, h j j' x hj hj']; rfl }
   hom_inv_id := hom_ext fun x ↦ by
     rw [fiberMap_comp, CoordinateHom.fiberMap_def, CoordinateHom.fiberMap_def, fiberMap_id]
-    ext v : 1
-    exact e.symm_apply_apply v
+    ext v : 1; exact e.symm_apply_apply v
   inv_hom_id := hom_ext fun x ↦ by
     rw [fiberMap_comp, CoordinateHom.fiberMap_def, CoordinateHom.fiberMap_def, fiberMap_id]
-    ext v : 1
-    exact e.apply_symm_apply v
+    ext v : 1; exact e.apply_symm_apply v
 
-theorem operator_isoTensorUnitOfCoordChangeEqId_hom (A : FiniteRankBundleCore 𝕜 B)
-    (e : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin (𝟙_ (FiniteRankBundleCore 𝕜 B)).rank → 𝕜))
-    (h : ∀ i j x, x ∈ A.core.baseSet i → x ∈ A.core.baseSet j →
-      A.core.coordChange i j x = ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜))
-    (i j : B) (x : ↥(A.core.baseSet i ∩ (𝟙_ (FiniteRankBundleCore 𝕜 B)).core.baseSet j)) :
-    (isoTensorUnitOfCoordChangeEqId A e h).hom.operator i j x = e.toContinuousLinearMap :=
-  (rfl)
+theorem operator_isoTensorUnitOfCoordChangeEqId_hom (i j : B)
+    (x : ↥(A.core.baseSet i ∩ (𝟙_ (FiniteRankBundleCore 𝕜 B)).core.baseSet j)) :
+    (isoTensorUnitOfCoordChangeEqId A e h).hom.operator i j x = e.toContinuousLinearMap := (rfl)
 
-theorem operator_isoTensorUnitOfCoordChangeEqId_inv (A : FiniteRankBundleCore 𝕜 B)
-    (e : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin (𝟙_ (FiniteRankBundleCore 𝕜 B)).rank → 𝕜))
-    (h : ∀ i j x, x ∈ A.core.baseSet i → x ∈ A.core.baseSet j →
-      A.core.coordChange i j x = ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜))
-    (i j : B) (x : ↥((𝟙_ (FiniteRankBundleCore 𝕜 B)).core.baseSet i ∩ A.core.baseSet j)) :
-    (isoTensorUnitOfCoordChangeEqId A e h).inv.operator i j x = e.symm.toContinuousLinearMap :=
-  (rfl)
+theorem operator_isoTensorUnitOfCoordChangeEqId_inv (i j : B)
+    (x : ↥((𝟙_ (FiniteRankBundleCore 𝕜 B)).core.baseSet i ∩ A.core.baseSet j)) :
+    (isoTensorUnitOfCoordChangeEqId A e h).inv.operator i j x =
+      e.symm.toContinuousLinearMap := (rfl)
 
-@[simp] theorem fiberMap_isoTensorUnitOfCoordChangeEqId_hom (A : FiniteRankBundleCore 𝕜 B)
-    (e : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin (𝟙_ (FiniteRankBundleCore 𝕜 B)).rank → 𝕜))
-    (h : ∀ i j x, x ∈ A.core.baseSet i → x ∈ A.core.baseSet j →
-      A.core.coordChange i j x = ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜)) (x : B) :
+@[simp] theorem fiberMap_isoTensorUnitOfCoordChangeEqId_hom (x : B) :
     (isoTensorUnitOfCoordChangeEqId A e h).hom.fiberMap x = e.toContinuousLinearMap := by
-  rw [CoordinateHom.fiberMap_def]
-  rfl
+  rw [CoordinateHom.fiberMap_def]; rfl
 
-@[simp] theorem fiberMap_isoTensorUnitOfCoordChangeEqId_inv (A : FiniteRankBundleCore 𝕜 B)
-    (e : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin (𝟙_ (FiniteRankBundleCore 𝕜 B)).rank → 𝕜))
-    (h : ∀ i j x, x ∈ A.core.baseSet i → x ∈ A.core.baseSet j →
-      A.core.coordChange i j x = ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜)) (x : B) :
+@[simp] theorem fiberMap_isoTensorUnitOfCoordChangeEqId_inv (x : B) :
     (isoTensorUnitOfCoordChangeEqId A e h).inv.fiberMap x = e.symm.toContinuousLinearMap := by
-  rw [CoordinateHom.fiberMap_def]
-  rfl
+  rw [CoordinateHom.fiberMap_def]; rfl
+
+end IsoTensorUnit
 
 end TensorUnitCriteria
 

@@ -22,10 +22,11 @@ Because the model fibre of a `FiniteRankBundleCore` is an explicit coordinate sp
 expanding an operator along the standard basis vectors `Pi.single k 1` recovers `C^n` regularity
 of all chart operators from `C^n` regularity of the glued total-space map without completeness of
 the scalar field (`FiniteRankBundleCore.contMDiff_totalSpaceMap_iff_inChartCoordinates`). Hence
-monoidal products and right-recursive tensor powers preserve `C^n` cores and `C^n` bundle maps,
-and the tensor-power coherence isomorphisms (`tensorPowerOne`, `tensorUnitTensorPowerIso`,
-`tensorPowerAdd`, `tensorTensorPowerIso`) induce `C^n` diffeomorphisms of total spaces without
-completeness of `𝕜` or manifold assumptions on the base.
+monoidal products and right-recursive tensor powers preserve `C^n` cores and `C^n` bundle maps
+without completeness of `𝕜` or manifold assumptions on the base;
+`TauCeti.ContMDiffFiniteRankBundleCore` in
+`TauCeti.Geometry.Manifold.VectorBundle.FiniteRank.Picard` packages this into a symmetric monoidal
+category.
 
 ## References
 
@@ -146,59 +147,59 @@ theorem coe_tensorBraidingDiffeomorph_symm :
 
 theorem contMDiff_totalSpaceMap_associator_hom :
     ContMDiff (I.prod 𝓘(𝕜, Fin ((A ⊗ D) ⊗ C).rank → 𝕜))
-      (I.prod 𝓘(𝕜, Fin (A ⊗ (D ⊗ C)).rank → 𝕜)) n (α_ A D C).hom.totalSpaceMap := by
-  rw [← coe_tensorAssociatorDiffeomorph (I := I) (n := n) A D C]
-  exact (tensorAssociatorDiffeomorph (I := I) (n := n) A D C).contMDiff
+      (I.prod 𝓘(𝕜, Fin (A ⊗ (D ⊗ C)).rank → 𝕜)) n (α_ A D C).hom.totalSpaceMap :=
+  coe_tensorAssociatorDiffeomorph (I := I) (n := n) A D C ▸
+    (tensorAssociatorDiffeomorph (I := I) (n := n) A D C).contMDiff
 
 theorem contMDiff_totalSpaceMap_associator_inv :
     ContMDiff (I.prod 𝓘(𝕜, Fin (A ⊗ (D ⊗ C)).rank → 𝕜))
-      (I.prod 𝓘(𝕜, Fin ((A ⊗ D) ⊗ C).rank → 𝕜)) n (α_ A D C).inv.totalSpaceMap := by
-  rw [← coe_tensorAssociatorDiffeomorph_symm (I := I) (n := n) A D C]
-  exact (tensorAssociatorDiffeomorph (I := I) (n := n) A D C).symm.contMDiff
+      (I.prod 𝓘(𝕜, Fin ((A ⊗ D) ⊗ C).rank → 𝕜)) n (α_ A D C).inv.totalSpaceMap :=
+  coe_tensorAssociatorDiffeomorph_symm (I := I) (n := n) A D C ▸
+    (tensorAssociatorDiffeomorph (I := I) (n := n) A D C).symm.contMDiff
 
 omit [D.core.IsContMDiff I n] [C.core.IsContMDiff I n] in
 theorem contMDiff_totalSpaceMap_leftUnitor_hom :
     ContMDiff (I.prod 𝓘(𝕜, Fin ((𝟙_ (FiniteRankBundleCore 𝕜 B)) ⊗ A).rank → 𝕜))
-      (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) n (λ_ A).hom.totalSpaceMap := by
-  rw [← coe_tensorLeftUnitorDiffeomorph (I := I) (n := n) A]
-  exact (tensorLeftUnitorDiffeomorph (I := I) (n := n) A).contMDiff
+      (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) n (λ_ A).hom.totalSpaceMap :=
+  coe_tensorLeftUnitorDiffeomorph (I := I) (n := n) A ▸
+    (tensorLeftUnitorDiffeomorph (I := I) (n := n) A).contMDiff
 
 omit [D.core.IsContMDiff I n] [C.core.IsContMDiff I n] in
 theorem contMDiff_totalSpaceMap_leftUnitor_inv :
     ContMDiff (I.prod 𝓘(𝕜, Fin A.rank → 𝕜))
       (I.prod 𝓘(𝕜, Fin ((𝟙_ (FiniteRankBundleCore 𝕜 B)) ⊗ A).rank → 𝕜)) n
-      (λ_ A).inv.totalSpaceMap := by
-  rw [← coe_tensorLeftUnitorDiffeomorph_symm (I := I) (n := n) A]
-  exact (tensorLeftUnitorDiffeomorph (I := I) (n := n) A).symm.contMDiff
+      (λ_ A).inv.totalSpaceMap :=
+  coe_tensorLeftUnitorDiffeomorph_symm (I := I) (n := n) A ▸
+    (tensorLeftUnitorDiffeomorph (I := I) (n := n) A).symm.contMDiff
 
 omit [D.core.IsContMDiff I n] [C.core.IsContMDiff I n] in
 theorem contMDiff_totalSpaceMap_rightUnitor_hom :
     ContMDiff (I.prod 𝓘(𝕜, Fin (A ⊗ (𝟙_ (FiniteRankBundleCore 𝕜 B))).rank → 𝕜))
-      (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) n (ρ_ A).hom.totalSpaceMap := by
-  rw [← coe_tensorRightUnitorDiffeomorph (I := I) (n := n) A]
-  exact (tensorRightUnitorDiffeomorph (I := I) (n := n) A).contMDiff
+      (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) n (ρ_ A).hom.totalSpaceMap :=
+  coe_tensorRightUnitorDiffeomorph (I := I) (n := n) A ▸
+    (tensorRightUnitorDiffeomorph (I := I) (n := n) A).contMDiff
 
 omit [D.core.IsContMDiff I n] [C.core.IsContMDiff I n] in
 theorem contMDiff_totalSpaceMap_rightUnitor_inv :
     ContMDiff (I.prod 𝓘(𝕜, Fin A.rank → 𝕜))
       (I.prod 𝓘(𝕜, Fin (A ⊗ (𝟙_ (FiniteRankBundleCore 𝕜 B))).rank → 𝕜)) n
-      (ρ_ A).inv.totalSpaceMap := by
-  rw [← coe_tensorRightUnitorDiffeomorph_symm (I := I) (n := n) A]
-  exact (tensorRightUnitorDiffeomorph (I := I) (n := n) A).symm.contMDiff
+      (ρ_ A).inv.totalSpaceMap :=
+  coe_tensorRightUnitorDiffeomorph_symm (I := I) (n := n) A ▸
+    (tensorRightUnitorDiffeomorph (I := I) (n := n) A).symm.contMDiff
 
 omit [C.core.IsContMDiff I n] in
 theorem contMDiff_totalSpaceMap_braiding_hom :
     ContMDiff (I.prod 𝓘(𝕜, Fin (A ⊗ D).rank → 𝕜))
-      (I.prod 𝓘(𝕜, Fin (D ⊗ A).rank → 𝕜)) n (β_ A D).hom.totalSpaceMap := by
-  rw [← coe_tensorBraidingDiffeomorph (I := I) (n := n) A D]
-  exact (tensorBraidingDiffeomorph (I := I) (n := n) A D).contMDiff
+      (I.prod 𝓘(𝕜, Fin (D ⊗ A).rank → 𝕜)) n (β_ A D).hom.totalSpaceMap :=
+  coe_tensorBraidingDiffeomorph (I := I) (n := n) A D ▸
+    (tensorBraidingDiffeomorph (I := I) (n := n) A D).contMDiff
 
 omit [C.core.IsContMDiff I n] in
 theorem contMDiff_totalSpaceMap_braiding_inv :
     ContMDiff (I.prod 𝓘(𝕜, Fin (D ⊗ A).rank → 𝕜))
-      (I.prod 𝓘(𝕜, Fin (A ⊗ D).rank → 𝕜)) n (β_ A D).inv.totalSpaceMap := by
-  rw [← coe_tensorBraidingDiffeomorph_symm (I := I) (n := n) A D]
-  exact (tensorBraidingDiffeomorph (I := I) (n := n) A D).symm.contMDiff
+      (I.prod 𝓘(𝕜, Fin (A ⊗ D).rank → 𝕜)) n (β_ A D).inv.totalSpaceMap :=
+  coe_tensorBraidingDiffeomorph_symm (I := I) (n := n) A D ▸
+    (tensorBraidingDiffeomorph (I := I) (n := n) A D).symm.contMDiff
 
 end Coherence
 
@@ -250,8 +251,7 @@ theorem contMDiffOn_inChartCoordinates_of_contMDiff_totalSpaceMap (f : A ⟶ A')
     simp only [VectorBundleCore.inChartCoordinates_apply, A'.core.localTriv_apply,
       A.core.localTriv_symm_apply i hx.1]
   let Φ : (Fin A.rank → Fin A'.rank → 𝕜) → (Fin A.rank → 𝕜) →L[𝕜] (Fin A'.rank → 𝕜) :=
-    fun g ↦ ∑ k : Fin A.rank,
-      smulRightL 𝕜 (Fin A.rank → 𝕜) (Fin A'.rank → 𝕜) (proj k) (g k)
+    fun g ↦ ∑ k : Fin A.rank, smulRightL 𝕜 (Fin A.rank → 𝕜) (Fin A'.rank → 𝕜) (proj k) (g k)
   have hΦ : ContDiff 𝕜 n Φ :=
     ContDiff.sum fun k _ ↦
       (smulRightL 𝕜 (Fin A.rank → 𝕜) (Fin A'.rank → 𝕜) (proj k)).contDiff.comp
@@ -259,8 +259,7 @@ theorem contMDiffOn_inChartCoordinates_of_contMDiff_totalSpaceMap (f : A ⟶ A')
   refine (hΦ.contMDiff.comp_contMDiffOn (contMDiffOn_pi_module_iff.mpr hcol)).congr fun x _ ↦ ?_
   ext v m
   have hv : (∑ k : Fin A.rank, v k • Pi.single k (1 : 𝕜)) = v := by
-    ext l
-    simp [Finset.sum_apply, Pi.single_apply]
+    ext l; simp [Finset.sum_apply, Pi.single_apply]
   symm
   calc
     (Φ fun k ↦ A.core.inChartCoordinates A'.core i j x (f.fiberMap x) (Pi.single k 1)) v m
@@ -268,8 +267,7 @@ theorem contMDiffOn_inChartCoordinates_of_contMDiff_totalSpaceMap (f : A ⟶ A')
           A.core.inChartCoordinates A'.core i j x (f.fiberMap x) (v k • Pi.single k 1)) m := by
         simp only [Φ, sum_apply, smulRightL_apply_apply, smulRight_apply, proj_apply,
           _root_.map_smul]
-    _ = A.core.inChartCoordinates A'.core i j x (f.fiberMap x) v m := by
-        rw [← map_sum, hv]
+    _ = A.core.inChartCoordinates A'.core i j x (f.fiberMap x) v m := by rw [← map_sum, hv]
 
 /-- For a morphism between `C^n` finite-rank cores, the glued map of total spaces is `C^n`
 if and only if every chart operator is `C^n` on its domain, without completeness of `𝕜`. -/
@@ -341,8 +339,7 @@ def isoToDiffeomorph (e : A ≅ D)
   CoordinateHom.toDiffeomorphOfInv e.hom e.inv e.hom_inv_id e.inv_hom_id he_hom he_inv
 
 omit [A.core.IsContMDiff I n] [D.core.IsContMDiff I n] in
-@[simp]
-theorem coe_isoToDiffeomorph (e : A ≅ D)
+@[simp] theorem coe_isoToDiffeomorph (e : A ≅ D)
     (he_hom : ContMDiff (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin D.rank → 𝕜)) n
       e.hom.totalSpaceMap)
     (he_inv : ContMDiff (I.prod 𝓘(𝕜, Fin D.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) n
@@ -351,8 +348,7 @@ theorem coe_isoToDiffeomorph (e : A ≅ D)
   CoordinateHom.coe_toDiffeomorphOfInv _ _ _ _ _ _
 
 omit [A.core.IsContMDiff I n] [D.core.IsContMDiff I n] in
-@[simp]
-theorem coe_isoToDiffeomorph_symm (e : A ≅ D)
+@[simp] theorem coe_isoToDiffeomorph_symm (e : A ≅ D)
     (he_hom : ContMDiff (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin D.rank → 𝕜)) n
       e.hom.totalSpaceMap)
     (he_inv : ContMDiff (I.prod 𝓘(𝕜, Fin D.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) n
@@ -366,200 +362,11 @@ theorem contMDiff_totalSpaceMap_tensorPowerHom (f : A ⟶ D)
       f.totalSpaceMap) :
     ∀ m : ℕ, ContMDiff (I.prod 𝓘(𝕜, Fin (A.tensorPower m).rank → 𝕜))
       (I.prod 𝓘(𝕜, Fin (D.tensorPower m).rank → 𝕜)) n (tensorPowerHom f m).totalSpaceMap
-  | 0 => by
-    rw [tensorPowerHom_zero]
-    exact CoordinateHom.contMDiff_totalSpaceMap_id _
+  | 0 => by rw [tensorPowerHom_zero]; exact CoordinateHom.contMDiff_totalSpaceMap_id _
   | m + 1 => by
     rw [tensorPowerHom_succ]
     exact contMDiff_totalSpaceMap_monoidalTensorHom (tensorPowerHom f m) f
       (contMDiff_totalSpaceMap_tensorPowerHom f hf m) hf
-
-/-- A `C^n` isomorphism of finite-rank cores induces a `C^n` bundle diffeomorphism between their
-`m`-th tensor powers. -/
-def tensorPowerCongrDiffeomorph (e : A ≅ D)
-    (he_hom : ContMDiff (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin D.rank → 𝕜)) n
-      e.hom.totalSpaceMap)
-    (he_inv : ContMDiff (I.prod 𝓘(𝕜, Fin D.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) n
-      e.inv.totalSpaceMap) (m : ℕ) :
-    (A.tensorPower m).core.TotalSpace ≃ₘ^n⟮I.prod 𝓘(𝕜, Fin (A.tensorPower m).rank → 𝕜),
-      I.prod 𝓘(𝕜, Fin (D.tensorPower m).rank → 𝕜)⟯ (D.tensorPower m).core.TotalSpace :=
-  isoToDiffeomorph (tensorPowerCongr e m)
-    (by
-      rw [tensorPowerCongr_hom]
-      exact contMDiff_totalSpaceMap_tensorPowerHom e.hom he_hom m)
-    (by
-      rw [tensorPowerCongr_inv]
-      exact contMDiff_totalSpaceMap_tensorPowerHom e.inv he_inv m)
-
-@[simp]
-theorem coe_tensorPowerCongrDiffeomorph (e : A ≅ D)
-    (he_hom : ContMDiff (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin D.rank → 𝕜)) n
-      e.hom.totalSpaceMap)
-    (he_inv : ContMDiff (I.prod 𝓘(𝕜, Fin D.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) n
-      e.inv.totalSpaceMap) (m : ℕ) :
-    ⇑(tensorPowerCongrDiffeomorph (I := I) (n := n) e he_hom he_inv m) =
-      (tensorPowerCongr e m).hom.totalSpaceMap :=
-  coe_isoToDiffeomorph _ _ _
-
-@[simp]
-theorem coe_tensorPowerCongrDiffeomorph_symm (e : A ≅ D)
-    (he_hom : ContMDiff (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin D.rank → 𝕜)) n
-      e.hom.totalSpaceMap)
-    (he_inv : ContMDiff (I.prod 𝓘(𝕜, Fin D.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) n
-      e.inv.totalSpaceMap) (m : ℕ) :
-    ⇑(tensorPowerCongrDiffeomorph (I := I) (n := n) e he_hom he_inv m).symm =
-      (tensorPowerCongr e m).inv.totalSpaceMap :=
-  coe_isoToDiffeomorph_symm _ _ _
-
-omit [D.core.IsContMDiff I n] in
-/-- The first tensor power of a `C^n` core is `C^n` diffeomorphic to the core itself. -/
-noncomputable def tensorPowerOneDiffeomorph (A : FiniteRankBundleCore 𝕜 B)
-    [A.core.IsContMDiff I n] :
-    (A.tensorPower 1).core.TotalSpace ≃ₘ^n⟮I.prod 𝓘(𝕜, Fin (A.tensorPower 1).rank → 𝕜),
-      I.prod 𝓘(𝕜, Fin A.rank → 𝕜)⟯ A.core.TotalSpace :=
-  isoToDiffeomorph (tensorPowerOne A)
-    (by
-      rw [tensorPowerOne_hom]
-      exact contMDiff_totalSpaceMap_leftUnitor_hom A)
-    (by
-      rw [tensorPowerOne_inv]
-      exact contMDiff_totalSpaceMap_leftUnitor_inv A)
-
-omit [D.core.IsContMDiff I n] in
-@[simp]
-theorem coe_tensorPowerOneDiffeomorph (A : FiniteRankBundleCore 𝕜 B)
-    [A.core.IsContMDiff I n] :
-    ⇑(tensorPowerOneDiffeomorph (I := I) (n := n) A) = (tensorPowerOne A).hom.totalSpaceMap :=
-  coe_isoToDiffeomorph _ _ _
-
-omit [D.core.IsContMDiff I n] in
-@[simp]
-theorem coe_tensorPowerOneDiffeomorph_symm (A : FiniteRankBundleCore 𝕜 B)
-    [A.core.IsContMDiff I n] :
-    ⇑(tensorPowerOneDiffeomorph (I := I) (n := n) A).symm =
-      (tensorPowerOne A).inv.totalSpaceMap :=
-  coe_isoToDiffeomorph_symm _ _ _
-
-omit [A.core.IsContMDiff I n] [D.core.IsContMDiff I n] in
-theorem contMDiff_totalSpaceMap_tensorUnitTensorPowerIso_hom :
-    ∀ m : ℕ, ContMDiff
-      (I.prod 𝓘(𝕜, Fin ((𝟙_ (FiniteRankBundleCore 𝕜 B)).tensorPower m).rank → 𝕜))
-      (I.prod 𝓘(𝕜, Fin (𝟙_ (FiniteRankBundleCore 𝕜 B)).rank → 𝕜)) n
-      (tensorUnitTensorPowerIso (𝕜 := 𝕜) (B := B) m).hom.totalSpaceMap
-  | 0 => by
-    rw [tensorUnitTensorPowerIso_zero]
-    exact CoordinateHom.contMDiff_totalSpaceMap_id _
-  | m + 1 => by
-    rw [tensorUnitTensorPowerIso_succ]
-    exact CoordinateHom.contMDiff_totalSpaceMap_comp
-      (contMDiff_totalSpaceMap_leftUnitor_hom (𝟙_ (FiniteRankBundleCore 𝕜 B)))
-      (contMDiff_totalSpaceMap_monoidalTensorHom _ _
-        (contMDiff_totalSpaceMap_tensorUnitTensorPowerIso_hom m)
-        (CoordinateHom.contMDiff_totalSpaceMap_id _))
-
-omit [A.core.IsContMDiff I n] [D.core.IsContMDiff I n] in
-theorem contMDiff_totalSpaceMap_tensorUnitTensorPowerIso_inv :
-    ∀ m : ℕ, ContMDiff
-      (I.prod 𝓘(𝕜, Fin (𝟙_ (FiniteRankBundleCore 𝕜 B)).rank → 𝕜))
-      (I.prod 𝓘(𝕜, Fin ((𝟙_ (FiniteRankBundleCore 𝕜 B)).tensorPower m).rank → 𝕜)) n
-      (tensorUnitTensorPowerIso (𝕜 := 𝕜) (B := B) m).inv.totalSpaceMap
-  | 0 => by
-    rw [tensorUnitTensorPowerIso_zero]
-    exact CoordinateHom.contMDiff_totalSpaceMap_id _
-  | m + 1 => by
-    rw [tensorUnitTensorPowerIso_succ]
-    exact CoordinateHom.contMDiff_totalSpaceMap_comp
-      (contMDiff_totalSpaceMap_monoidalTensorHom _ _
-        (contMDiff_totalSpaceMap_tensorUnitTensorPowerIso_inv m)
-        (CoordinateHom.contMDiff_totalSpaceMap_id _))
-      (contMDiff_totalSpaceMap_leftUnitor_inv (𝟙_ (FiniteRankBundleCore 𝕜 B)))
-
-omit [A.core.IsContMDiff I n] [D.core.IsContMDiff I n] in
-/-- Every tensor power of the monoidal unit is `C^n` diffeomorphic to the monoidal unit. -/
-def tensorUnitTensorPowerDiffeomorph (m : ℕ) :
-    ((𝟙_ (FiniteRankBundleCore 𝕜 B)).tensorPower m).core.TotalSpace ≃ₘ^n⟮
-      I.prod 𝓘(𝕜, Fin ((𝟙_ (FiniteRankBundleCore 𝕜 B)).tensorPower m).rank → 𝕜),
-      I.prod 𝓘(𝕜, Fin (𝟙_ (FiniteRankBundleCore 𝕜 B)).rank → 𝕜)⟯
-      (𝟙_ (FiniteRankBundleCore 𝕜 B)).core.TotalSpace :=
-  isoToDiffeomorph (tensorUnitTensorPowerIso m)
-    (contMDiff_totalSpaceMap_tensorUnitTensorPowerIso_hom m)
-    (contMDiff_totalSpaceMap_tensorUnitTensorPowerIso_inv m)
-
-omit [A.core.IsContMDiff I n] [D.core.IsContMDiff I n] in
-@[simp]
-theorem coe_tensorUnitTensorPowerDiffeomorph (m : ℕ) :
-    ⇑(tensorUnitTensorPowerDiffeomorph (𝕜 := 𝕜) (B := B) (I := I) (n := n) m) =
-      (tensorUnitTensorPowerIso m).hom.totalSpaceMap :=
-  coe_isoToDiffeomorph _ _ _
-
-omit [A.core.IsContMDiff I n] [D.core.IsContMDiff I n] in
-@[simp]
-theorem coe_tensorUnitTensorPowerDiffeomorph_symm (m : ℕ) :
-    ⇑(tensorUnitTensorPowerDiffeomorph (𝕜 := 𝕜) (B := B) (I := I) (n := n) m).symm =
-      (tensorUnitTensorPowerIso m).inv.totalSpaceMap :=
-  coe_isoToDiffeomorph_symm _ _ _
-
-omit [D.core.IsContMDiff I n] in
-theorem contMDiff_totalSpaceMap_tensorPowerAdd_hom (A : FiniteRankBundleCore 𝕜 B)
-    [A.core.IsContMDiff I n] (m : ℕ) :
-    ∀ k : ℕ, ContMDiff (I.prod 𝓘(𝕜, Fin (A.tensorPower (m + k)).rank → 𝕜))
-      (I.prod 𝓘(𝕜, Fin (A.tensorPower m ⊗ A.tensorPower k).rank → 𝕜)) n
-      (tensorPowerAdd A m k).hom.totalSpaceMap
-  | 0 => by
-    rw [tensorPowerAdd_zero]
-    exact contMDiff_totalSpaceMap_rightUnitor_inv (A.tensorPower m)
-  | k + 1 => by
-    rw [tensorPowerAdd_succ]
-    exact CoordinateHom.contMDiff_totalSpaceMap_comp
-      (contMDiff_totalSpaceMap_associator_hom (A.tensorPower m) (A.tensorPower k) A)
-      (contMDiff_totalSpaceMap_monoidalTensorHom _ _
-        (contMDiff_totalSpaceMap_tensorPowerAdd_hom A m k)
-        (CoordinateHom.contMDiff_totalSpaceMap_id A.core))
-
-omit [D.core.IsContMDiff I n] in
-theorem contMDiff_totalSpaceMap_tensorPowerAdd_inv (A : FiniteRankBundleCore 𝕜 B)
-    [A.core.IsContMDiff I n] (m : ℕ) :
-    ∀ k : ℕ, ContMDiff (I.prod 𝓘(𝕜, Fin (A.tensorPower m ⊗ A.tensorPower k).rank → 𝕜))
-      (I.prod 𝓘(𝕜, Fin (A.tensorPower (m + k)).rank → 𝕜)) n
-      (tensorPowerAdd A m k).inv.totalSpaceMap
-  | 0 => by
-    rw [tensorPowerAdd_zero]
-    exact contMDiff_totalSpaceMap_rightUnitor_hom (A.tensorPower m)
-  | k + 1 => by
-    rw [tensorPowerAdd_succ]
-    exact CoordinateHom.contMDiff_totalSpaceMap_comp
-      (contMDiff_totalSpaceMap_monoidalTensorHom _ _
-        (contMDiff_totalSpaceMap_tensorPowerAdd_inv A m k)
-        (CoordinateHom.contMDiff_totalSpaceMap_id A.core))
-      (contMDiff_totalSpaceMap_associator_inv (A.tensorPower m) (A.tensorPower k) A)
-
-omit [D.core.IsContMDiff I n] in
-/-- Addition of exponents in tensor powers as a `C^n` bundle diffeomorphism. -/
-def tensorPowerAddDiffeomorph (A : FiniteRankBundleCore 𝕜 B) [A.core.IsContMDiff I n]
-    (m k : ℕ) :
-    (A.tensorPower (m + k)).core.TotalSpace ≃ₘ^n⟮
-      I.prod 𝓘(𝕜, Fin (A.tensorPower (m + k)).rank → 𝕜),
-      I.prod 𝓘(𝕜, Fin (A.tensorPower m ⊗ A.tensorPower k).rank → 𝕜)⟯
-      (A.tensorPower m ⊗ A.tensorPower k).core.TotalSpace :=
-  isoToDiffeomorph (tensorPowerAdd A m k)
-    (contMDiff_totalSpaceMap_tensorPowerAdd_hom A m k)
-    (contMDiff_totalSpaceMap_tensorPowerAdd_inv A m k)
-
-omit [D.core.IsContMDiff I n] in
-@[simp]
-theorem coe_tensorPowerAddDiffeomorph (A : FiniteRankBundleCore 𝕜 B)
-    [A.core.IsContMDiff I n] (m k : ℕ) :
-    ⇑(tensorPowerAddDiffeomorph (I := I) (n := n) A m k) =
-      (tensorPowerAdd A m k).hom.totalSpaceMap :=
-  coe_isoToDiffeomorph _ _ _
-
-omit [D.core.IsContMDiff I n] in
-@[simp]
-theorem coe_tensorPowerAddDiffeomorph_symm (A : FiniteRankBundleCore 𝕜 B)
-    [A.core.IsContMDiff I n] (m k : ℕ) :
-    ⇑(tensorPowerAddDiffeomorph (I := I) (n := n) A m k).symm =
-      (tensorPowerAdd A m k).inv.totalSpaceMap :=
-  coe_isoToDiffeomorph_symm _ _ _
 
 omit [D.core.IsContMDiff I n] in
 theorem contMDiff_totalSpaceMap_isoTensorUnitOfCoordChangeEqId_hom
