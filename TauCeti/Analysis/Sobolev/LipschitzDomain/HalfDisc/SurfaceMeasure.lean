@@ -44,7 +44,7 @@ the isometry `t ↦ (0, t)`. -/
 theorem euclideanHausdorffMeasure_restrict_halfDiscFlatSegment (r : ℝ) :
     (μHE[1] : Measure (WithLp 2 (ℝ × ℝ))).restrict (halfDiscFlatSegment r) =
       (volume.restrict (Icc (-r) r)).map fun t : ℝ => WithLp.toLp 2 ((0 : ℝ), t) := by
-  have hι := WithLp.isometry_toLp_zero_prod (p := 2) (α := ℝ) (β := ℝ)
+  have hι := WithLp.isometry_toLp_prodMk_left 2 (β := ℝ) (0 : ℝ)
   have hvol : (μHE[1] : Measure ℝ) = volume := by
     simpa using InnerProductSpace.euclideanHausdorffMeasure_eq_volume (V := ℝ)
   have hpre : (fun t : ℝ => WithLp.toLp 2 ((0 : ℝ), t)) ⁻¹' halfDiscFlatSegment r = Icc (-r) r := by
@@ -58,7 +58,7 @@ theorem euclideanHausdorffMeasure_restrict_halfDiscFlatSegment (r : ℝ) :
 /-- The flat segment of the half-disc of radius `r` has length `2 r`. -/
 theorem euclideanHausdorffMeasure_halfDiscFlatSegment (r : ℝ) :
     (μHE[1] : Measure (WithLp 2 (ℝ × ℝ))) (halfDiscFlatSegment r) = ENNReal.ofReal (2 * r) := by
-  have hι := WithLp.isometry_toLp_zero_prod (p := 2) (α := ℝ) (β := ℝ)
+  have hι := WithLp.isometry_toLp_prodMk_left 2 (β := ℝ) (0 : ℝ)
   rw [← Measure.restrict_apply_univ, euclideanHausdorffMeasure_restrict_halfDiscFlatSegment,
     Measure.map_apply hι.continuous.measurable MeasurableSet.univ,
     preimage_univ, Measure.restrict_apply_univ, Real.volume_Icc]
@@ -72,7 +72,7 @@ theorem eqOn_halfDiscFlatSegment_of_ae_eq {Y : Type*} [TopologicalSpace Y] [T2Sp
     (hf : ContinuousOn f (halfDiscFlatSegment r)) (hg : ContinuousOn g (halfDiscFlatSegment r))
     (hfg : f =ᵐ[(μHE[1] : Measure (WithLp 2 (ℝ × ℝ))).restrict (halfDiscFlatSegment r)] g) :
     EqOn f g (halfDiscFlatSegment r) := by
-  have hι := WithLp.isometry_toLp_zero_prod (p := 2) (α := ℝ) (β := ℝ)
+  have hι := WithLp.isometry_toLp_prodMk_left 2 (β := ℝ) (0 : ℝ)
   have hmaps : MapsTo (fun t : ℝ => WithLp.toLp 2 ((0 : ℝ), t)) (Icc (-r) r)
       (halfDiscFlatSegment r) := by
     rw [← image_Icc_eq_halfDiscFlatSegment]
