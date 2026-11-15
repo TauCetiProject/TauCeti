@@ -112,12 +112,14 @@ theorem sphericalCategory_iff_leftDim_eq_rightDim :
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [leftTrace_eq_smul_leftDim k, rightTrace_eq_smul_rightDim k, h]
 
+omit [∀ (X : C) [Simple X], FiniteDimensional k (X ⟶ X)] in
 include k in
 /-- Over an algebraically closed field, closing up the coevaluation `η_ X Xᘁ` of a simple object `X`
 against the evaluation of the normalized swapped pairing `TauCeti.simpleSwapExactPairing X` yields
 `leftDim X ≫ rightDim X`. -/
 @[reassoc]
-theorem coevaluation_comp_simpleSwapExactPairing_evaluation [Simple (𝟙_ C)] (X : C) [Simple X] :
+theorem coevaluation_comp_simpleSwapExactPairing_evaluation [Simple (𝟙_ C)] (X : C) [Simple X]
+    [FiniteDimensional k (X ⟶ X)] :
     η_ X Xᘁ ≫ @ExactPairing.evaluation C _ _ Xᘁ X (simpleSwapExactPairing X) =
       leftDim X ≫ rightDim X := by
   let p₁ : ExactPairing Xᘁ X := simpleSwapExactPairing X

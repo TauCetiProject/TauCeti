@@ -70,6 +70,55 @@ namespace CategoryTheory.Center
 
 attribute [local instance] Abelian.hasFiniteBiproducts
 
+section SimpleDecomposition
+
+variable {C : Type u} [Category.{v} C] [Abelian C]
+
+/-- Projection from `Y` to the representative of the simple class of `a i` in a simple biproduct
+decomposition `e : Y ≅ ⨁ a`. -/
+private def decompProj {Y : C} {ι : Type*} (a : ι → C) [∀ i, Simple (a i)]
+    [HasBiproduct a] (e : Y ≅ ⨁ a) (i : ι) : Y ⟶ (SimpleClasses.classOf (a i)).repr :=
+  e.hom ≫ biproduct.π a i ≫ (SimpleClasses.classOfReprIso (a i)).inv
+
+/-- Inclusion from the representative of the simple class of `a i` into `Y` in a simple biproduct
+decomposition `e : Y ≅ ⨁ a`. -/
+private def decompIncl {Y : C} {ι : Type*} (a : ι → C) [∀ i, Simple (a i)]
+    [HasBiproduct a] (e : Y ≅ ⨁ a) (i : ι) : (SimpleClasses.classOf (a i)).repr ⟶ Y :=
+  (SimpleClasses.classOfReprIso (a i)).hom ≫ biproduct.ι a i ≫ e.inv
+
+private theorem sum_decompProj_comp_decompIncl {Y : C} {ι : Type*} [Fintype ι] (a : ι → C)
+    [∀ i, Simple (a i)] [HasBiproduct a] (e : Y ≅ ⨁ a) :
+    ∑ i : ι, decompProj a e i ≫ decompIncl a e i = 𝟙 Y :=
+  SimpleClasses.sum_comp_classOfReprIso_eq_id a e
+
+variable [IsFiniteSemisimpleCategory C]
+
+/-- Index type of the chosen simple biproduct decomposition of `Y`. -/
+private def chosenSimpleIndex (Y : C) : Type :=
+  (IsFiniteSemisimpleCategory.exists_biproduct_simples Y).choose
+
+private instance (Y : C) : Fintype (chosenSimpleIndex Y) :=
+  (IsFiniteSemisimpleCategory.exists_biproduct_simples Y).choose_spec.choose
+
+/-- Family of simple objects in the chosen biproduct decomposition of `Y`. -/
+private def chosenSimpleFamily (Y : C) : chosenSimpleIndex Y → C :=
+  (IsFiniteSemisimpleCategory.exists_biproduct_simples Y).choose_spec.choose_spec.choose
+
+private instance (Y : C) (i : chosenSimpleIndex Y) : Simple (chosenSimpleFamily Y i) :=
+  (IsFiniteSemisimpleCategory.exists_biproduct_simples Y).choose_spec.choose_spec.choose_spec.choose
+    i
+
+private instance (Y : C) : HasBiproduct (chosenSimpleFamily Y) :=
+  (IsFiniteSemisimpleCategory.exists_biproduct_simples
+    Y).choose_spec.choose_spec.choose_spec.choose_spec.choose
+
+/-- Isomorphism `Y ≅ ⨁ chosenSimpleFamily Y` of the chosen simple biproduct decomposition of `Y`. -/
+private def chosenSimpleIso (Y : C) : Y ≅ ⨁ chosenSimpleFamily Y :=
+  (IsFiniteSemisimpleCategory.exists_biproduct_simples
+    Y).choose_spec.choose_spec.choose_spec.choose_spec.choose_spec.some
+
+end SimpleDecomposition
+
 section CoendCowedge
 
 variable (k : Type w) [Field k] [IsAlgClosed k]
@@ -98,10 +147,18 @@ biproduct decomposition of `Y`. -/
 private def coendιAux {Y : C} {ι : Type*} [Fintype ι] (a : ι → C) [∀ i, Simple (a i)]
     [HasBiproduct a] (e : Y ≅ ⨁ a) (X : C) : Y ⊗ X ⊗ Yᘁ ⟶ inductionObj X :=
   ∑ i : ι,
-    (e.hom ≫ biproduct.π a i ≫ (SimpleClasses.classOfReprIso (a i)).inv) ▷ (X ⊗ Yᘁ) ≫
-      (SimpleClasses.classOf (a i)).repr ◁ X ◁
-        ((SimpleClasses.classOfReprIso (a i)).hom ≫ biproduct.ι a i ≫ e.inv)ᘁ ≫
+    decompProj a e i ▷ (X ⊗ Yᘁ) ≫
+      (SimpleClasses.classOf (a i)).repr ◁ X ◁ (decompIncl a e i)ᘁ ≫
       biproduct.ι (inductionSummand X) (SimpleClasses.classOf (a i))
+
+omit [MonoidalPreadditive C] in
+private theorem coendιAux_def {Y : C} {ι : Type*} [Fintype ι] (a : ι → C) [∀ i, Simple (a i)]
+    [HasBiproduct a] (e : Y ≅ ⨁ a) (X : C) :
+    coendιAux a e X = ∑ i : ι,
+      decompProj a e i ▷ (X ⊗ Yᘁ) ≫
+        (SimpleClasses.classOf (a i)).repr ◁ X ◁ (decompIncl a e i)ᘁ ≫
+        biproduct.ι (inductionSummand X) (SimpleClasses.classOf (a i)) :=
+  rfl
 
 include k in
 /-- `coendιAux` is dinatural with respect to any morphism `g : Y ⟶ Y'`, regardless of which simple
@@ -111,55 +168,44 @@ private theorem coendιAux_dinatural {Y Y' : C} {ι ι' : Type*} [Fintype ι] [F
     (b : ι' → C) [∀ j, Simple (b j)] [HasBiproduct b] (e' : Y' ≅ ⨁ b)
     (X : C) (g : Y ⟶ Y') :
     g ▷ (X ⊗ Y'ᘁ) ≫ coendιAux b e' X = Y ◁ X ◁ gᘁ ≫ coendιAux a e X := by
-  let p (i : ι) : Y ⟶ (SimpleClasses.classOf (a i)).repr :=
-    e.hom ≫ biproduct.π a i ≫ (SimpleClasses.classOfReprIso (a i)).inv
-  let q (i : ι) : (SimpleClasses.classOf (a i)).repr ⟶ Y :=
-    (SimpleClasses.classOfReprIso (a i)).hom ≫ biproduct.ι a i ≫ e.inv
-  let p' (j : ι') : Y' ⟶ (SimpleClasses.classOf (b j)).repr :=
-    e'.hom ≫ biproduct.π b j ≫ (SimpleClasses.classOfReprIso (b j)).inv
-  let q' (j : ι') : (SimpleClasses.classOf (b j)).repr ⟶ Y' :=
-    (SimpleClasses.classOfReprIso (b j)).hom ≫ biproduct.ι b j ≫ e'.inv
-  have hY : ∑ i, p i ≫ q i = 𝟙 Y := SimpleClasses.sum_comp_classOfReprIso_eq_id a e
-  have hY' : ∑ j, p' j ≫ q' j = 𝟙 Y' := SimpleClasses.sum_comp_classOfReprIso_eq_id b e'
-  have hgL (i : ι) : q i ≫ g = ∑ j, (q i ≫ g ≫ p' j) ≫ q' j := by
-    simp only [Category.assoc, ← Preadditive.comp_sum, hY', Category.comp_id]
-  have hgR (j : ι') : g ≫ p' j = ∑ i, p i ≫ (q i ≫ g ≫ p' j) := by
-    simp only [← Category.assoc, ← Preadditive.sum_comp, hY, Category.id_comp]
-  -- Fold the summands of `coendιAux` in terms of `p`, `q`, `p'`, `q'`.
-  change g ▷ (X ⊗ Y'ᘁ) ≫ (∑ j, p' j ▷ (X ⊗ Y'ᘁ) ≫
-      (SimpleClasses.classOf (b j)).repr ◁ X ◁ (q' j)ᘁ ≫
-      biproduct.ι (inductionSummand X) (SimpleClasses.classOf (b j))) =
-    Y ◁ X ◁ gᘁ ≫ (∑ i, p i ▷ (X ⊗ Yᘁ) ≫
-      (SimpleClasses.classOf (a i)).repr ◁ X ◁ (q i)ᘁ ≫
-      biproduct.ι (inductionSummand X) (SimpleClasses.classOf (a i)))
-  calc g ▷ (X ⊗ Y'ᘁ) ≫ (∑ j, p' j ▷ (X ⊗ Y'ᘁ) ≫ _ ◁ X ◁ (q' j)ᘁ ≫
+  have hgL (i : ι) : decompIncl a e i ≫ g =
+      ∑ j, (decompIncl a e i ≫ g ≫ decompProj b e' j) ≫ decompIncl b e' j := by
+    simp only [Category.assoc, ← Preadditive.comp_sum, sum_decompProj_comp_decompIncl b e',
+      Category.comp_id]
+  have hgR (j : ι') : g ≫ decompProj b e' j =
+      ∑ i, decompProj a e i ≫ (decompIncl a e i ≫ g ≫ decompProj b e' j) := by
+    simp only [← Category.assoc, ← Preadditive.sum_comp, sum_decompProj_comp_decompIncl a e,
+      Category.id_comp]
+  rw [coendιAux_def, coendιAux_def]
+  calc g ▷ (X ⊗ Y'ᘁ) ≫ (∑ j, decompProj b e' j ▷ (X ⊗ Y'ᘁ) ≫ _ ◁ X ◁ (decompIncl b e' j)ᘁ ≫
           biproduct.ι (inductionSummand X) (SimpleClasses.classOf (b j)))
-      = ∑ j, (g ≫ p' j) ▷ (X ⊗ Y'ᘁ) ≫ _ ◁ X ◁ (q' j)ᘁ ≫
+      = ∑ j, (g ≫ decompProj b e' j) ▷ (X ⊗ Y'ᘁ) ≫ _ ◁ X ◁ (decompIncl b e' j)ᘁ ≫
           biproduct.ι (inductionSummand X) (SimpleClasses.classOf (b j)) := by
           simp only [Preadditive.comp_sum, ← comp_whiskerRight_assoc]
-    _ = ∑ j, ∑ i, p i ▷ (X ⊗ Y'ᘁ) ≫ _ ◁ X ◁ (q' j)ᘁ ≫
-          ((q i ≫ g ≫ p' j) ▷ (X ⊗ _) ≫
+    _ = ∑ j, ∑ i, decompProj a e i ▷ (X ⊗ Y'ᘁ) ≫ _ ◁ X ◁ (decompIncl b e' j)ᘁ ≫
+          ((decompIncl a e i ≫ g ≫ decompProj b e' j) ▷ (X ⊗ _) ≫
             biproduct.ι (inductionSummand X) (SimpleClasses.classOf (b j))) := by
           refine Finset.sum_congr rfl fun j _ ↦ ?_
           conv_lhs => rw [hgR j]
           simp only [sum_whiskerRight, Preadditive.sum_comp]
           refine Finset.sum_congr rfl fun i _ ↦ ?_
-          rw [comp_whiskerRight_assoc (p i) (q i ≫ g ≫ p' j),
-            whisker_exchange_assoc (q i ≫ g ≫ p' j), Category.assoc]
-    _ = ∑ j, ∑ i, p i ▷ (X ⊗ Y'ᘁ) ≫
-          _ ◁ X ◁ ((q' j)ᘁ ≫ (q i ≫ g ≫ p' j)ᘁ) ≫
+          rw [comp_whiskerRight_assoc (decompProj a e i)
+              (decompIncl a e i ≫ g ≫ decompProj b e' j),
+            whisker_exchange_assoc]
+    _ = ∑ j, ∑ i, decompProj a e i ▷ (X ⊗ Y'ᘁ) ≫
+          _ ◁ X ◁ ((decompIncl b e' j)ᘁ ≫ (decompIncl a e i ≫ g ≫ decompProj b e' j)ᘁ) ≫
           biproduct.ι (inductionSummand X) (SimpleClasses.classOf (a i)) := by
           refine Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun i _ ↦ ?_
-          rw [repr_codinatural k X (q i ≫ g ≫ p' j), ← whiskerLeft_comp_assoc,
-            ← whiskerLeft_comp]
-    _ = ∑ i, p i ▷ (X ⊗ Y'ᘁ) ≫ _ ◁ X ◁ (q i ≫ g)ᘁ ≫
+          rw [repr_codinatural k X (decompIncl a e i ≫ g ≫ decompProj b e' j),
+            ← whiskerLeft_comp_assoc, ← whiskerLeft_comp]
+    _ = ∑ i, decompProj a e i ▷ (X ⊗ Y'ᘁ) ≫ _ ◁ X ◁ (decompIncl a e i ≫ g)ᘁ ≫
           biproduct.ι (inductionSummand X) (SimpleClasses.classOf (a i)) := by
           rw [Finset.sum_comm]
           refine Finset.sum_congr rfl fun i _ ↦ ?_
           conv_rhs => rw [hgL i, rightAdjointMate_sum]
           simp only [comp_rightAdjointMate, whiskerLeft_sum, Preadditive.comp_sum,
             Preadditive.sum_comp, Category.assoc]
-    _ = Y ◁ X ◁ gᘁ ≫ (∑ i, p i ▷ (X ⊗ Yᘁ) ≫ _ ◁ X ◁ (q i)ᘁ ≫
+    _ = Y ◁ X ◁ gᘁ ≫ (∑ i, decompProj a e i ▷ (X ⊗ Yᘁ) ≫ _ ◁ X ◁ (decompIncl a e i)ᘁ ≫
           biproduct.ι (inductionSummand X) (SimpleClasses.classOf (a i))) := by
           simp only [Preadditive.comp_sum, comp_rightAdjointMate, whiskerLeft_comp,
             ← whisker_exchange_assoc, Category.assoc]
@@ -175,13 +221,21 @@ variable {C : Type u} [Category.{v} C] [Abelian C] [MonoidalCategory C] [Monoida
 
 /-- The canonical dinatural coend coprojection `Y ⊗ X ⊗ Yᘁ ⟶ inductionObj X`. -/
 def inductionCoendι (X Y : C) : Y ⊗ X ⊗ Yᘁ ⟶ inductionObj X :=
-  let h := IsFiniteSemisimpleCategory.exists_biproduct_simples Y
-  let _ := h.choose_spec.choose
-  let a := h.choose_spec.choose_spec.choose
-  let _ := h.choose_spec.choose_spec.choose_spec.choose
-  let _ := h.choose_spec.choose_spec.choose_spec.choose_spec.choose
-  let e := h.choose_spec.choose_spec.choose_spec.choose_spec.choose_spec.some
-  coendιAux a e X
+  coendιAux (chosenSimpleFamily Y) (chosenSimpleIso Y) X
+
+omit [MonoidalPreadditive C] in
+private theorem inductionCoendι_eq_coendιAux (X Y : C) :
+    inductionCoendι X Y = coendιAux (chosenSimpleFamily Y) (chosenSimpleIso Y) X :=
+  rfl
+
+omit [MonoidalPreadditive C] in
+private theorem inductionCoendι_def (X Y : C) :
+    inductionCoendι X Y = ∑ i : chosenSimpleIndex Y,
+      decompProj (chosenSimpleFamily Y) (chosenSimpleIso Y) i ▷ (X ⊗ Yᘁ) ≫
+        (SimpleClasses.classOf (chosenSimpleFamily Y i)).repr ◁ X ◁
+          (decompIncl (chosenSimpleFamily Y) (chosenSimpleIso Y) i)ᘁ ≫
+        biproduct.ι (inductionSummand X) (SimpleClasses.classOf (chosenSimpleFamily Y i)) :=
+  rfl
 
 include k in
 /-- Dinaturality of `inductionCoendι`: precomposing with `g ▷ (X ⊗ Y'ᘁ)` on the first factor agrees
@@ -189,19 +243,8 @@ with precomposing with `Y ◁ X ◁ gᘁ` on the third factor. -/
 @[reassoc]
 theorem inductionCoendι_dinatural (X : C) {Y Y' : C} (g : Y ⟶ Y') :
     g ▷ (X ⊗ Y'ᘁ) ≫ inductionCoendι X Y' = Y ◁ X ◁ gᘁ ≫ inductionCoendι X Y := by
-  let h := IsFiniteSemisimpleCategory.exists_biproduct_simples Y
-  let : Fintype h.choose := h.choose_spec.choose
-  let a := h.choose_spec.choose_spec.choose
-  let : ∀ i, Simple (a i) := h.choose_spec.choose_spec.choose_spec.choose
-  let : HasBiproduct a := h.choose_spec.choose_spec.choose_spec.choose_spec.choose
-  let e := h.choose_spec.choose_spec.choose_spec.choose_spec.choose_spec.some
-  let h' := IsFiniteSemisimpleCategory.exists_biproduct_simples Y'
-  let : Fintype h'.choose := h'.choose_spec.choose
-  let b := h'.choose_spec.choose_spec.choose
-  let : ∀ j, Simple (b j) := h'.choose_spec.choose_spec.choose_spec.choose
-  let : HasBiproduct b := h'.choose_spec.choose_spec.choose_spec.choose_spec.choose
-  let e' := h'.choose_spec.choose_spec.choose_spec.choose_spec.choose_spec.some
-  exact coendιAux_dinatural k a e b e' X g
+  rw [inductionCoendι_eq_coendιAux, inductionCoendι_eq_coendιAux]
+  exact coendιAux_dinatural k _ _ _ _ X g
 
 include k in
 /-- On the chosen representative `S.repr` of a simple class `S`, `inductionCoendι` is the biproduct
@@ -209,37 +252,31 @@ inclusion of the `S`-summand. -/
 @[reassoc] -- Not `@[simp]` because `k` cannot be inferred from the LHS.
 theorem inductionCoendι_repr (X : C) (S : SimpleClasses C) :
     inductionCoendι X S.repr = biproduct.ι (inductionSummand X) S := by
-  let h := IsFiniteSemisimpleCategory.exists_biproduct_simples S.repr
-  let : Fintype h.choose := h.choose_spec.choose
-  let a := h.choose_spec.choose_spec.choose
-  let : ∀ i, Simple (a i) := h.choose_spec.choose_spec.choose_spec.choose
-  let : HasBiproduct a := h.choose_spec.choose_spec.choose_spec.choose_spec.choose
-  let e := h.choose_spec.choose_spec.choose_spec.choose_spec.choose_spec.some
-  let p (i : h.choose) : S.repr ⟶ (SimpleClasses.classOf (a i)).repr :=
-    e.hom ≫ biproduct.π a i ≫ (SimpleClasses.classOfReprIso (a i)).inv
-  let q (i : h.choose) : (SimpleClasses.classOf (a i)).repr ⟶ S.repr :=
-    (SimpleClasses.classOfReprIso (a i)).hom ≫ biproduct.ι a i ≫ e.inv
-  -- Unfold `inductionCoendι X S.repr` to `coendιAux` for the chosen decomposition of `S.repr`.
-  change coendιAux a e X = biproduct.ι (inductionSummand X) S
+  rw [inductionCoendι_def]
   symm
   calc biproduct.ι (inductionSummand X) S
-      = (∑ i, p i ≫ q i) ▷ (X ⊗ S.reprᘁ) ≫ biproduct.ι (inductionSummand X) S := by
-          rw [SimpleClasses.sum_comp_classOfReprIso_eq_id a e, id_whiskerRight, Category.id_comp]
-    _ = ∑ i, p i ▷ (X ⊗ S.reprᘁ) ≫
-          (q i ▷ (X ⊗ S.reprᘁ) ≫ biproduct.ι (inductionSummand X) S) := by
+      = (∑ i, decompProj (chosenSimpleFamily S.repr) (chosenSimpleIso S.repr) i ≫
+            decompIncl (chosenSimpleFamily S.repr) (chosenSimpleIso S.repr) i) ▷
+          (X ⊗ S.reprᘁ) ≫ biproduct.ι (inductionSummand X) S := by
+          rw [sum_decompProj_comp_decompIncl, id_whiskerRight, Category.id_comp]
+    _ = ∑ i, decompProj (chosenSimpleFamily S.repr) (chosenSimpleIso S.repr) i ▷ (X ⊗ S.reprᘁ) ≫
+          (decompIncl (chosenSimpleFamily S.repr) (chosenSimpleIso S.repr) i ▷ (X ⊗ S.reprᘁ) ≫
+            biproduct.ι (inductionSummand X) S) := by
           simp only [sum_whiskerRight, Preadditive.sum_comp, comp_whiskerRight_assoc]
-    _ = ∑ i, p i ▷ (X ⊗ S.reprᘁ) ≫ _ ◁ X ◁ (q i)ᘁ ≫
-          biproduct.ι (inductionSummand X) (SimpleClasses.classOf (a i)) := by
+    _ = ∑ i, decompProj (chosenSimpleFamily S.repr) (chosenSimpleIso S.repr) i ▷ (X ⊗ S.reprᘁ) ≫
+          _ ◁ X ◁ (decompIncl (chosenSimpleFamily S.repr) (chosenSimpleIso S.repr) i)ᘁ ≫
+          biproduct.ι (inductionSummand X)
+            (SimpleClasses.classOf (chosenSimpleFamily S.repr i)) := by
           refine Finset.sum_congr rfl fun i _ ↦ ?_
-          rw [repr_codinatural k X (q i)]
-    _ = coendιAux a e X := rfl
+          rw [repr_codinatural k X
+            (decompIncl (chosenSimpleFamily S.repr) (chosenSimpleIso S.repr) i)]
 
 omit [MonoidalPreadditive C] in
 /-- Naturality of `inductionCoendι` in `X` with respect to `inductionMap f`. -/
 @[reassoc]
 theorem inductionCoendι_comp_inductionMap {X X' : C} (f : X ⟶ X') (Y : C) :
     inductionCoendι X Y ≫ inductionMap f = Y ◁ f ▷ Yᘁ ≫ inductionCoendι X' Y := by
-  dsimp only [inductionCoendι, coendιAux]
+  rw [inductionCoendι_def, inductionCoendι_def]
   simp only [Preadditive.sum_comp, Preadditive.comp_sum, Category.assoc, biproduct.ι_map]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [← whiskerLeft_comp_assoc, whisker_exchange, whiskerLeft_comp_assoc,
@@ -381,35 +418,27 @@ theorem map_coendι_comp_inductionMapDesc {D : Type*} [Category* D] [Preadditive
       F.map (g ▷ (X ⊗ Y'ᘁ)) ≫ w Y' = F.map (Y ◁ X ◁ gᘁ) ≫ w Y)
     (Y : C) :
     F.map (inductionCoendι X Y) ≫ inductionMapDesc w = w Y := by
-  let h := IsFiniteSemisimpleCategory.exists_biproduct_simples Y
-  let : Fintype h.choose := h.choose_spec.choose
-  let a := h.choose_spec.choose_spec.choose
-  let : ∀ i, Simple (a i) := h.choose_spec.choose_spec.choose_spec.choose
-  let : HasBiproduct a := h.choose_spec.choose_spec.choose_spec.choose_spec.choose
-  let e := h.choose_spec.choose_spec.choose_spec.choose_spec.choose_spec.some
-  let p (i : h.choose) : Y ⟶ (SimpleClasses.classOf (a i)).repr :=
-    e.hom ≫ biproduct.π a i ≫ (SimpleClasses.classOfReprIso (a i)).inv
-  let q (i : h.choose) : (SimpleClasses.classOf (a i)).repr ⟶ Y :=
-    (SimpleClasses.classOfReprIso (a i)).hom ≫ biproduct.ι a i ≫ e.inv
-  -- Unfold `inductionCoendι X Y` to `coendιAux` for the chosen decomposition of `Y`.
-  change F.map (coendιAux a e X) ≫ inductionMapDesc w = w Y
-  dsimp only [coendιAux]
-  rw [F.map_sum, Preadditive.sum_comp]
-  calc ∑ i, F.map (p i ▷ (X ⊗ Yᘁ) ≫ _ ◁ X ◁ (q i)ᘁ ≫
-          biproduct.ι (inductionSummand X) (SimpleClasses.classOf (a i))) ≫ inductionMapDesc w
-      = ∑ i, F.map (p i ▷ (X ⊗ Yᘁ)) ≫ F.map (_ ◁ X ◁ (q i)ᘁ) ≫
-          (F.map (biproduct.ι (inductionSummand X) (SimpleClasses.classOf (a i))) ≫
+  rw [inductionCoendι_def, F.map_sum, Preadditive.sum_comp]
+  calc ∑ i, F.map (decompProj (chosenSimpleFamily Y) (chosenSimpleIso Y) i ▷ (X ⊗ Yᘁ) ≫
+          _ ◁ X ◁ (decompIncl (chosenSimpleFamily Y) (chosenSimpleIso Y) i)ᘁ ≫
+          biproduct.ι (inductionSummand X)
+            (SimpleClasses.classOf (chosenSimpleFamily Y i))) ≫ inductionMapDesc w
+      = ∑ i, F.map (decompProj (chosenSimpleFamily Y) (chosenSimpleIso Y) i ▷ (X ⊗ Yᘁ)) ≫
+          F.map (_ ◁ X ◁ (decompIncl (chosenSimpleFamily Y) (chosenSimpleIso Y) i)ᘁ) ≫
+          (F.map (biproduct.ι (inductionSummand X)
+              (SimpleClasses.classOf (chosenSimpleFamily Y i))) ≫
             inductionMapDesc w) := by
           refine Finset.sum_congr rfl fun i _ ↦ ?_
           rw [F.map_comp, F.map_comp, Category.assoc, Category.assoc]
-    _ = ∑ i, F.map ((p i ≫ q i) ▷ (X ⊗ Yᘁ)) ≫ w Y := by
+    _ = ∑ i, F.map ((decompProj (chosenSimpleFamily Y) (chosenSimpleIso Y) i ≫
+            decompIncl (chosenSimpleFamily Y) (chosenSimpleIso Y) i) ▷ (X ⊗ Yᘁ)) ≫ w Y := by
           refine Finset.sum_congr rfl fun i _ ↦ ?_
-          rw [map_ι_comp_inductionMapDesc, ← hw (q i), ← Category.assoc, ← F.map_comp,
-            ← comp_whiskerRight]
+          rw [map_ι_comp_inductionMapDesc,
+            ← hw (decompIncl (chosenSimpleFamily Y) (chosenSimpleIso Y) i), ← Category.assoc,
+            ← F.map_comp, ← comp_whiskerRight]
     _ = w Y := by
           rw [← Preadditive.sum_comp, ← F.map_sum, ← sum_whiskerRight,
-            SimpleClasses.sum_comp_classOfReprIso_eq_id a e, id_whiskerRight, F.map_id,
-            Category.id_comp]
+            sum_decompProj_comp_decompIncl, id_whiskerRight, F.map_id, Category.id_comp]
 
 /-- Precomposing `inductionDesc w` with `inductionCoendι X Y` recovers `w Y` whenever `w` is
 dinatural. -/

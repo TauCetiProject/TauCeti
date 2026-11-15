@@ -103,8 +103,10 @@ theorem endAlgEquivOfSimple_tensorUnit_apply (f : 𝟙_ (Center C) ⟶ 𝟙_ (Ce
   simp only [smul_f, id_f]
   exact (endAlgEquivOfSimple_smul_id (k := k) (X := 𝟙_ C) (End.of f.f)).symm
 
-omit [MonoidalPreadditive C] [MonoidalLinear k C] [RigidCategory C] in
-private theorem endAlgEquivOfSimple_sum {ι : Type*} (s : Finset ι) (f : ι → (𝟙_ C ⟶ 𝟙_ C)) :
+omit [MonoidalPreadditive C] [MonoidalLinear k C] [RigidCategory C]
+  [∀ X Y : C, FiniteDimensional k (X ⟶ Y)] in
+private theorem endAlgEquivOfSimple_sum [FiniteDimensional k (𝟙_ C ⟶ 𝟙_ C)]
+    {ι : Type*} (s : Finset ι) (f : ι → (𝟙_ C ⟶ 𝟙_ C)) :
     endAlgEquivOfSimple k (𝟙_ C) (End.of (∑ i ∈ s, f i)) =
       ∑ i ∈ s, endAlgEquivOfSimple k (𝟙_ C) (End.of (f i)) := by
   induction s using Finset.cons_induction with
@@ -294,10 +296,10 @@ section GlobalDim
 
 variable {C} [Fintype (SimpleClasses C)]
 
-omit [IsFiniteSemisimpleCategory C] in
+omit [IsFiniteSemisimpleCategory C] [∀ X Y : C, FiniteDimensional k (X ⟶ Y)] in
 include k in
 /-- The left pivotal dimension of `inductionObj X` is `leftDim X` composed with `globalDim C`. -/
-theorem leftDim_inductionObj (X : C) :
+theorem leftDim_inductionObj [FiniteDimensional k (𝟙_ C ⟶ 𝟙_ C)] (X : C) :
     leftDim (inductionObj X) = leftDim X ≫ globalDim C := by
   suffices End.of (leftDim (inductionObj X)) = End.of (leftDim X ≫ globalDim C) from
     congrArg End.asHom this
@@ -310,10 +312,10 @@ theorem leftDim_inductionObj (X : C) :
     End.of_comp, End.of_comp, map_mul, map_mul, map_mul]
   ring
 
-omit [IsFiniteSemisimpleCategory C] in
+omit [IsFiniteSemisimpleCategory C] [∀ X Y : C, FiniteDimensional k (X ⟶ Y)] in
 include k in
 /-- The right pivotal dimension of `inductionObj X` is `rightDim X` composed with `globalDim C`. -/
-theorem rightDim_inductionObj (X : C) :
+theorem rightDim_inductionObj [FiniteDimensional k (𝟙_ C ⟶ 𝟙_ C)] (X : C) :
     rightDim (inductionObj X) = rightDim X ≫ globalDim C := by
   suffices End.of (rightDim (inductionObj X)) = End.of (rightDim X ≫ globalDim C) from
     congrArg End.asHom this
