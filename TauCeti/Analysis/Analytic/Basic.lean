@@ -6,11 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Analytic.Basic
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
+public import Mathlib.Analysis.RCLike.Basic
+import Mathlib.Analysis.Analytic.IteratedFDeriv
+import Mathlib.Analysis.Calculus.FDeriv.Analytic
 import TauCeti.Analysis.Analytic.ConvergenceRadius
 import TauCeti.Analysis.Calculus.FormalMultilinearSeries
 
 /-!
-# The leading term of a rescaled Taylor remainder
+# Taylor terms and symmetric Taylor series of analytic functions
 
 If `f` has the power series `∑ₖ pₖ` at `x`, then along the rays `t ↦ x + t • y` the Taylor
 remainder of order `k` is of size `tᵏ`, and after division by `tᵏ` it converges to the term of
@@ -23,6 +27,15 @@ uniformly for `y` in a bounded set
 The homogeneous terms of a power series are thereby recovered as limits of rescaled values of the
 function, which lets properties of `f` that are stable under dilation, translation and uniform
 limits pass to its Taylor terms.
+
+Over `ℝ` or `ℂ`, when the codomain is complete, symmetrizing `p` via the iterated Fréchet
+derivatives replaces `p` on the exact same convergence ball by the canonical Taylor series
+`n ↦ (n!)⁻¹ • iteratedFDeriv 𝕜 n f x`, which depends only on `f` and `x`
+(`HasFPowerSeriesOnBall.inv_factorial_smul_iteratedFDeriv`,
+`HasFPowerSeriesAt.inv_factorial_smul_iteratedFDeriv`). Over any characteristic-zero field, if all
+iterated Fréchet derivatives of an analytic function into a complete space vanish at `x`, then the
+function vanishes on a neighbourhood of `x`
+(`AnalyticAt.eventuallyEq_zero_of_iteratedFDeriv_eq_zero`).
 -/
 
 public section
@@ -80,3 +93,59 @@ theorem tendstoUniformlyOn_inv_pow_smul_sub_partialSum (hp : HasFPowerSeriesAt f
     _ < ε := htε
 
 end HasFPowerSeriesAt
+
+section RCLike
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
+  {f : E → F} {p : FormalMultilinearSeries 𝕜 E F} {x : E} {r : ENNReal}
+
+/-- Over `ℝ` or `ℂ`, any power series representing `f` on `eball x r` can be replaced on the same
+ball by the canonical symmetric Taylor series `n ↦ (n!)⁻¹ • iteratedFDeriv 𝕜 n f x`, because
+symmetrizing over the `n!` permutations of `Fin n` does not increase the operator norm. -/
+theorem HasFPowerSeriesOnBall.inv_factorial_smul_iteratedFDeriv
+    (hp : HasFPowerSeriesOnBall f p x r) :
+    HasFPowerSeriesOnBall f (fun n ↦ (n.factorial : 𝕜)⁻¹ • iteratedFDeriv 𝕜 n f x) x r where
+  r_le := by
+    have hnorm (n : ℕ) :
+        ‖(n.factorial : 𝕜)⁻¹ • iteratedFDeriv 𝕜 n f x‖ ≤ (1 : NNReal) ^ n * ‖p n‖ := by
+      have hsum : ‖iteratedFDeriv 𝕜 n f x‖ ≤ (n.factorial : ℝ) * ‖p n‖ := by
+        refine ContinuousMultilinearMap.opNorm_le_bound (by positivity) fun v ↦ ?_
+        rw [hp.iteratedFDeriv_eq_sum_of_completeSpace v]
+        calc ‖∑ σ : Equiv.Perm (Fin n), p n fun i ↦ v (σ i)‖
+            ≤ ∑ σ : Equiv.Perm (Fin n), ‖p n fun i ↦ v (σ i)‖ := norm_sum_le _ _
+          _ ≤ ∑ σ : Equiv.Perm (Fin n), ‖p n‖ * ∏ i, ‖v (σ i)‖ :=
+              Finset.sum_le_sum fun σ _ ↦ (p n).le_opNorm _
+          _ = ∑ _σ : Equiv.Perm (Fin n), ‖p n‖ * ∏ i, ‖v i‖ :=
+              Finset.sum_congr rfl fun σ _ ↦ by rw [Equiv.prod_comp σ (fun i ↦ ‖v i‖)]
+          _ = (n.factorial : ℝ) * ‖p n‖ * ∏ i, ‖v i‖ := by
+              simp [Finset.sum_const, Fintype.card_perm, mul_assoc]
+      rw [NNReal.coe_one, one_pow, one_mul, norm_smul, norm_inv, RCLike.norm_natCast]
+      exact (inv_pos.2 (Nat.cast_pos.2 n.factorial_pos)).le |> fun h0 ↦
+        (mul_le_mul_of_nonneg_left hsum h0).trans_eq
+          (inv_mul_cancel_left₀ (Nat.cast_ne_zero.2 n.factorial_ne_zero) _)
+    exact hp.r_le.trans <| ENNReal.le_of_forall_pos_nnreal_lt fun ρ _ hρ ↦
+      p.le_radius_of_norm_le_mul_pow hnorm (by simpa using hρ)
+  r_pos := hp.r_pos
+  hasSum hy := hp.hasSum_iteratedFDeriv hy
+
+/-- Over `ℝ` or `ℂ`, a function admitting a power series at `x` admits the canonical symmetric
+Taylor series `n ↦ (n!)⁻¹ • iteratedFDeriv 𝕜 n f x` at `x`. -/
+theorem HasFPowerSeriesAt.inv_factorial_smul_iteratedFDeriv (hp : HasFPowerSeriesAt f p x) :
+    HasFPowerSeriesAt f (fun n ↦ (n.factorial : 𝕜)⁻¹ • iteratedFDeriv 𝕜 n f x) x :=
+  let ⟨r, hr⟩ := hp
+  ⟨r, hr.inv_factorial_smul_iteratedFDeriv⟩
+
+end RCLike
+
+/-- If `f` is analytic at `x` over a characteristic-zero field into a complete space and all of its
+iterated Fréchet derivatives at `x` vanish, then `f` vanishes on a neighbourhood of `x`. -/
+theorem AnalyticAt.eventuallyEq_zero_of_iteratedFDeriv_eq_zero [CharZero 𝕜] [CompleteSpace F]
+    (hf : AnalyticAt 𝕜 f x) (h : ∀ n : ℕ, iteratedFDeriv 𝕜 n f x = 0) : f =ᶠ[𝓝 x] 0 := by
+  obtain ⟨p, r, hp⟩ := hf
+  filter_upwards [Metric.eball_mem_nhds x hp.r_pos] with y hy
+  have hy0 : y - x ∈ Metric.eball (0 : E) r := by
+    simpa [Metric.mem_eball, edist_dist, dist_eq_norm] using hy
+  have hsum := hp.hasSum_iteratedFDeriv hy0
+  simp only [h, zero_apply, smul_zero, add_sub_cancel] at hsum
+  exact hsum.unique hasSum_zero
