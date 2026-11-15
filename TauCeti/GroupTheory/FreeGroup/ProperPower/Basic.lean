@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.FreeGroup.Basic
-public import TauCeti.GroupTheory.SpecificGroups.Heisenberg
+public import TauCeti.GroupTheory.SpecificGroups.Heisenberg.Basic
 public import TauCeti.GroupTheory.ProperPower
 
 /-!
