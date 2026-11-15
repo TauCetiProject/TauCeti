@@ -15,6 +15,7 @@ import TauCeti.Algebra.Module.LocalizedModule.Pullback
 import TauCeti.RingTheory.FormalGlueing.Cokernel
 import TauCeti.RingTheory.FormalGlueing.ExtensionComparison
 import TauCeti.RingTheory.FormalGlueing.Injectivity
+import TauCeti.RingTheory.Localization.Module
 
 /-!
 # Reconstructing modules by formal gluing

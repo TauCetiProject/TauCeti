@@ -31,7 +31,6 @@ of the two localized maps are equivalent, and the underlying localized modules a
 
 * `IsLocalizedModule.baseChange`, `IsLocalizedModule.baseChange_powers`: scalar extension of a
   localization map is a localization map at the image submonoid.
-* `LocalizedModule.map_comp`: `LocalizedModule.map` preserves composition of linear maps.
 * `LocalizedModule.baseChangeEquiv`: the natural `A`-linear equivalence
   `A ⊗[R] LocalizedModule T M ≃ₗ[A] LocalizedModule (Algebra.algebraMapSubmonoid A T) (A ⊗[R] M)`.
 * `LocalizedModule.map_baseChange_surjective`, `LocalizedModule.map_baseChange_bijective`,
@@ -82,16 +81,6 @@ theorem IsLocalizedModule.baseChange_powers (r : R) (f : M →ₗ[R] M')
 end IsLocalizedModule
 
 namespace LocalizedModule
-
-/-- `LocalizedModule.map` preserves composition of `R`-linear maps. -/
-@[simp]
-theorem map_comp {R M₁ M₂ M₃ : Type*} [CommSemiring R] (T : Submonoid R)
-    [AddCommMonoid M₁] [Module R M₁] [AddCommMonoid M₂] [Module R M₂]
-    [AddCommMonoid M₃] [Module R M₃] (f : M₁ →ₗ[R] M₂) (g : M₂ →ₗ[R] M₃) :
-    LocalizedModule.map T (g ∘ₗ f) = LocalizedModule.map T g ∘ₗ LocalizedModule.map T f := by
-  ext z
-  induction z using LocalizedModule.induction_on with
-  | h m t => simp
 
 section BaseChange
 

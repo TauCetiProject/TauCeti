@@ -11,6 +11,7 @@ public import TauCeti.RingTheory.TensorProduct.AlgEquiv
 import TauCeti.Algebra.Module.Torsion.Localization
 import TauCeti.RingTheory.FormalGlueing.Modules
 import TauCeti.RingTheory.FormalGlueing.Subalgebra
+import TauCeti.RingTheory.Localization.Module
 
 /-!
 # Reconstructing algebras by formal gluing
