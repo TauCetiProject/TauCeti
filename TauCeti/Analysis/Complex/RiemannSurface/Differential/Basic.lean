@@ -370,6 +370,19 @@ theorem MeromorphicAt.eventually_holomorphicAt [IsManifold 𝓘(ℂ) 1 X]
     nhdsWithin_le_nhds ((chartAt ℂ x).open_source.mem_nhds (mem_chart_source ℂ x))] with y hy hys
   exact (holomorphicAt_iff_of_mem_maximalAtlas (chart_mem_maximalAtlas x) hys).2 hy
 
+/-- A `1`-form holomorphic at `x` is holomorphic at every point near `x`. -/
+theorem HolomorphicAt.eventually_holomorphicAt [IsManifold 𝓘(ℂ) 1 X] (hω : ω.HolomorphicAt x) :
+    ∀ᶠ y in 𝓝 x, ω.HolomorphicAt y := by
+  filter_upwards [((chartAt ℂ x).continuousAt (mem_chart_source ℂ x)).eventually
+      ((holomorphicAt_def ω x).1 hω).eventually_analyticAt,
+    (chartAt ℂ x).open_source.mem_nhds (mem_chart_source ℂ x)] with y hy hys
+  exact (holomorphicAt_iff_of_mem_maximalAtlas (chart_mem_maximalAtlas x) hys).2 hy
+
+/-- The points where a `1`-form is holomorphic form an open set. -/
+theorem isOpen_setOf_holomorphicAt [IsManifold 𝓘(ℂ) 1 X] (ω : OneForm X) :
+    IsOpen {x | ω.HolomorphicAt x} :=
+  isOpen_iff_mem_nhds.2 fun _ hx ↦ HolomorphicAt.eventually_holomorphicAt hx
+
 /-- A `1`-form meromorphic and of finite order at `x` does not vanish on a punctured
 neighbourhood of `x`. -/
 theorem MeromorphicAt.eventually_apply_ne_zero [IsManifold 𝓘(ℂ) 1 X]
