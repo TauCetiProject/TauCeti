@@ -15,8 +15,10 @@ import Mathlib.Tactic.Module
 
 The formal derivative of a field is again a field: differentiating a Laurent series lowers
 its lower bound by at most one. In normalized mode indexing its coefficients are
-`(∂A)[[n]] = -n • A[[n - 1]]`. This construction is linear over the coefficient ring and
-requires no characteristic-zero assumption.
+`(∂A)[[n]] = -n • A[[n - 1]]`, and iterated differentiation scales negative modes by ascending
+factorials (`VertexOperator.ncoeff_iterate_derivative_neg`, so `((∂ᵏ A)[[-1]]) = k! • A[[-k - 1]]`).
+This construction is linear over the coefficient ring and requires no characteristic-zero
+assumption.
 
 Differentiation preserves mutual locality, increasing a locality bound by one. More generally,
 iterated derivatives in the two variables increase the bound by the sum of their orders.
@@ -67,6 +69,25 @@ theorem ncoeff_derivative (A : VertexOperator R V) (n : ℤ) :
   have h₁ : -n - 1 + 1 = -n := by omega
   have h₂ : -(n - 1) - 1 = -n := by omega
   rw [h₁, h₂]
+
+/-- Iterated differentiation scales negative normalized modes by an ascending factorial:
+`(∂ᵏ A)₍₋ᵣ₋₁₎ = (r + 1)(r + 2)⋯(r + k) A₍₋ᵣ₋ₖ₋₁₎`. -/
+theorem ncoeff_iterate_derivative_neg (A : VertexOperator R V) (k r : ℕ) :
+    ((derivative (R := R) (V := V))^[k] A)[[-r - 1]] =
+      (r + 1).ascFactorial k • A[[-(r + k : ℕ) - 1]] := by
+  induction k generalizing A with
+  | zero => simp
+  | succ k ih =>
+    rw [Function.iterate_succ_apply, ih (derivative A), ncoeff_derivative]
+    have h₁ : -((r + k : ℕ) : ℤ) - 1 - 1 = -((r + (k + 1) : ℕ) : ℤ) - 1 := by omega
+    have h₂ : -(-((r + k : ℕ) : ℤ) - 1) = ((r + 1 + k : ℕ) : ℤ) := by omega
+    rw [h₁, h₂, natCast_zsmul, smul_smul, mul_comm, ← Nat.ascFactorial_succ]
+
+/-- The mode `(-1)` of the `k`-th derivative is `k! • A₍₋ₖ₋₁₎`. -/
+@[simp]
+theorem ncoeff_neg_one_iterate_derivative (A : VertexOperator R V) (k : ℕ) :
+    ((derivative (R := R) (V := V))^[k] A)[[-1]] = k.factorial • A[[-k - 1]] := by
+  simpa using ncoeff_iterate_derivative_neg A k 0
 
 namespace IsLocalOfOrder
 

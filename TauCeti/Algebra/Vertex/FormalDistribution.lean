@@ -23,7 +23,9 @@ abelian group, with no division or characteristic hypothesis.
 
 Every distribution killed by `(z-w)^N` has a unique expansion in these terms for `j < N`.
 The coefficient of the `j`th term is exactly `Res_z (z-w)^j c`. Applied to the commutator of
-native vertex operators, this gives the formal delta expansion of mutual locality.
+native vertex operators, this gives the formal delta expansion of mutual locality, and shows that
+annihilation of a vector by all modes of a field propagates along any mutually local field
+(`VertexOperator.IsLocalOfOrder.ncoeff_apply_ncoeff_apply_eq_zero`).
 No multiplication of arbitrary distributions or convergence of infinite sums is asserted.
 
 ## References
@@ -253,5 +255,44 @@ theorem IsLocalOfOrder.commutatorDistribution_eq_sum_deltaTerm {A B : VertexOper
       FormalDistribution.deltaTerm j (FormalDistribution.residue
         ((FormalDistribution.mulSub ^ j) (A.commutatorDistribution B))) :=
   FormalDistribution.eq_sum_deltaTerm ((isLocalOfOrder_iff_mulSub_pow_eq_zero A B N).mp h)
+
+/-- If `B` is mutually local with `C` and every mode of `B` annihilates `v`, then every mode of `B`
+also annihilates `(C[[n]]) v`. -/
+theorem IsLocalOfOrder.ncoeff_apply_ncoeff_apply_eq_zero
+    {B C : VertexOperator R V} {N : ℕ} (hBC : B.IsLocalOfOrder C N) {v : V}
+    (hv : ∀ m : ℤ, (B[[m]]) v = 0) (m n : ℤ) :
+    (B[[m]]) ((C[[n]]) v) = 0 := by
+  obtain ⟨P, hP⟩ := C.exists_forall_ncoeff_apply_eq_zero v
+  let d : FormalDistribution V := fun a b ↦ (B[[b]]) ((C[[a + P]]) v)
+  have hd_mulSub : ∀ (k : ℕ) (a b : ℤ),
+      ((FormalDistribution.mulSub ^ k) d) a b =
+        -((((FormalDistribution.mulSub ^ k) (C.commutatorDistribution B)) (a + P) b) v) := by
+    intro k
+    induction k with
+    | zero =>
+      intro a b
+      simp [d, commutatorDistribution_apply, hv b]
+    | succ k ih =>
+      intro a b
+      have ha : a + 1 + (P : ℤ) = a + P + 1 := by omega
+      simp only [pow_succ', AddMonoid.End.coe_mul, Function.comp_apply,
+        FormalDistribution.mulSub_apply, ih, ha, LinearMap.sub_apply]
+      abel
+  have hdN : (FormalDistribution.mulSub ^ N) d = 0 := by
+    funext a b
+    rw [hd_mulSub, (isLocalOfOrder_iff_mulSub_pow_eq_zero C B N).mp hBC.symm]
+    simp
+  have hd0 : d = 0 := by
+    rw [FormalDistribution.eq_sum_deltaTerm hdN]
+    refine Finset.sum_eq_zero fun j _ ↦ ?_
+    have hres : FormalDistribution.residue ((FormalDistribution.mulSub ^ j) d) = 0 := by
+      funext k
+      rw [FormalDistribution.residue_apply, FormalDistribution.mulSub_pow_apply]
+      refine Finset.sum_eq_zero fun ij _ ↦ ?_
+      have hij : (P : ℤ) ≤ ij.1 + P := by omega
+      simp [d, hP _ hij]
+    rw [hres, map_zero]
+  have hn : n - (P : ℤ) + P = n := by omega
+  simpa only [d, hn, Pi.zero_apply] using congrFun (congrFun hd0 (n - P)) m
 
 end VertexOperator

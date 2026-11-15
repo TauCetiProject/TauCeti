@@ -41,6 +41,11 @@ larger order (`VertexOperator.IsLocalOfOrder.mono`), and it is symmetric in `A` 
 * `VertexOperator.ext_ncoeff`: vertex operators with the same normalized coefficients are equal.
 * `VertexOperator.IsLocalOfOrder.mono`, `VertexOperator.IsLocalOfOrder.symm`: locality is
   monotone in the order and symmetric.
+* `VertexOperator.IsLocalOfOrder.of_commute`: fields with pairwise commuting modes are local of
+  order `0`.
+* `VertexOperator.IsLocalOfOrder.zero_left`, `VertexOperator.IsLocalOfOrder.add_left`,
+  `VertexOperator.IsLocalOfOrder.smul_left`, `VertexOperator.IsLocalOfOrder.sub_left`: linear
+  closure of mutual locality.
 
 ## References
 
@@ -94,7 +99,12 @@ theorem isLocalOfOrder_iff {A B : VertexOperator R V} {N : ℕ} :
 
 namespace IsLocalOfOrder
 
-variable {A B : VertexOperator R V} {N : ℕ}
+variable {A B C : VertexOperator R V} {M N : ℕ}
+
+/-- Two fields whose modes pairwise commute are mutually local of order `0`. -/
+theorem of_commute (h : ∀ m n : ℤ, Commute (A[[m]]) (B[[n]])) : A.IsLocalOfOrder B 0 := by
+  intro m n
+  simp [sub_eq_zero.mpr (h m n).eq]
 
 /-- Locality of order `N` implies locality of order `N + 1`: the sum for `N + 1` at `(m, n)` is
 the sum for `N` at `(m + 1, n)` minus the sum for `N` at `(m, n + 1)`. -/
@@ -143,6 +153,86 @@ theorem symm (h : A.IsLocalOfOrder B N) : B.IsLocalOfOrder A N := by
     rw [Prod.fst_swap, Prod.snd_swap, Nat.choose_symm_of_eq_add (mem_antidiagonal.1 hij).symm, hN]
     module
   rw [sum_congr rfl e, ← smul_sum, h m n, smul_zero]
+
+/-- The zero field is local of any order `N` to every field. -/
+@[simp]
+theorem zero_left (B : VertexOperator R V) (N : ℕ) :
+    (0 : VertexOperator R V).IsLocalOfOrder B N := by
+  intro m n
+  simp
+
+/-- Every field is local of any order `N` to the zero field. -/
+@[simp]
+theorem zero_right (A : VertexOperator R V) (N : ℕ) : A.IsLocalOfOrder 0 N :=
+  (zero_left A N).symm
+
+/-- Sums of fields local to `C` are local to `C`. -/
+theorem add_left (hA : A.IsLocalOfOrder C M) (hB : B.IsLocalOfOrder C N) :
+    (A + B).IsLocalOfOrder C (max M N) := by
+  have hA' := hA.mono (le_max_left M N)
+  have hB' := hB.mono (le_max_right M N)
+  intro m n
+  have e : ∀ ij ∈ antidiagonal (max M N),
+      (max M N).choose ij.1 • (-1 : ℤ) ^ ij.2 •
+        ((A + B)[[m + ij.1]] * C[[n + ij.2]] - C[[n + ij.2]] * (A + B)[[m + ij.1]]) =
+      (max M N).choose ij.1 • (-1 : ℤ) ^ ij.2 •
+        (A[[m + ij.1]] * C[[n + ij.2]] - C[[n + ij.2]] * A[[m + ij.1]]) +
+      (max M N).choose ij.1 • (-1 : ℤ) ^ ij.2 •
+        (B[[m + ij.1]] * C[[n + ij.2]] - C[[n + ij.2]] * B[[m + ij.1]]) := by
+    intro ij _
+    simp only [map_add, Pi.add_apply, add_mul, mul_add]
+    module
+  rw [sum_congr rfl e, sum_add_distrib, hA' m n, hB' m n, add_zero]
+
+/-- A field local to two fields is local to their sum. -/
+theorem add_right (hB : A.IsLocalOfOrder B M) (hC : A.IsLocalOfOrder C N) :
+    A.IsLocalOfOrder (B + C) (max M N) :=
+  (hB.symm.add_left hC.symm).symm
+
+/-- Scalar multiples preserve locality on the left. -/
+theorem smul_left (r : R) (h : A.IsLocalOfOrder B N) : (r • A).IsLocalOfOrder B N := by
+  intro m n
+  have e : ∀ ij ∈ antidiagonal N,
+      N.choose ij.1 • (-1 : ℤ) ^ ij.2 •
+        ((r • A)[[m + ij.1]] * B[[n + ij.2]] - B[[n + ij.2]] * (r • A)[[m + ij.1]]) =
+      r • (N.choose ij.1 • (-1 : ℤ) ^ ij.2 •
+        (A[[m + ij.1]] * B[[n + ij.2]] - B[[n + ij.2]] * A[[m + ij.1]])) := by
+    intro ij _
+    simp only [map_smul, Pi.smul_apply, smul_mul_assoc, mul_smul_comm, smul_sub, smul_comm r]
+  rw [sum_congr rfl e, ← smul_sum, h m n, smul_zero]
+
+/-- Scalar multiples preserve locality on the right. -/
+theorem smul_right (r : R) (h : A.IsLocalOfOrder B N) : A.IsLocalOfOrder (r • B) N :=
+  (h.symm.smul_left r).symm
+
+/-- Negation preserves locality on the left. -/
+theorem neg_left (h : A.IsLocalOfOrder B N) : (-A).IsLocalOfOrder B N :=
+  neg_one_smul R A ▸ h.smul_left (-1 : R)
+
+/-- Negating the left field does not change locality of order `N`. -/
+@[simp]
+theorem neg_left_iff : (-A).IsLocalOfOrder B N ↔ A.IsLocalOfOrder B N :=
+  ⟨fun h ↦ neg_neg A ▸ h.neg_left, neg_left⟩
+
+/-- Negation preserves locality on the right. -/
+theorem neg_right (h : A.IsLocalOfOrder B N) : A.IsLocalOfOrder (-B) N :=
+  h.symm.neg_left.symm
+
+/-- Negating the right field does not change locality of order `N`. -/
+@[simp]
+theorem neg_right_iff : A.IsLocalOfOrder (-B) N ↔ A.IsLocalOfOrder B N :=
+  ⟨fun h ↦ neg_neg B ▸ h.neg_right, neg_right⟩
+
+/-- Differences of fields local to `C` are local to `C`. -/
+theorem sub_left (hA : A.IsLocalOfOrder C M) (hB : B.IsLocalOfOrder C N) :
+    (A - B).IsLocalOfOrder C (max M N) := by
+  rw [sub_eq_add_neg]
+  exact hA.add_left hB.neg_left
+
+/-- A field local to two fields is local to their difference. -/
+theorem sub_right (hB : A.IsLocalOfOrder B M) (hC : A.IsLocalOfOrder C N) :
+    A.IsLocalOfOrder (B - C) (max M N) :=
+  (hB.symm.sub_left hC.symm).symm
 
 end IsLocalOfOrder
 
