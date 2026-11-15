@@ -37,9 +37,10 @@ is discrete; in particular, where the stabilizer is trivial on a Hausdorff manif
 (`TauCeti.Lie.isotropy_fundamental_eq_bot_of_stabilizer_eq_bot`) and the orbit map is an immersion
 (`TauCeti.isImmersion_smul_const_of_stabilizer_eq_bot`). For a proper action the orbit map is
 moreover a closed topological embedding at such a point
-(`ProperSMul.isClosedEmbedding_smul_const`), and `𝔤_x = 0` holds at such a point without an
-explicit Hausdorff hypothesis
-(`TauCeti.isotropy_fundamental_eq_bot_of_properSMul_of_stabilizer_eq_bot`). Hence **the orbit map of
+(`ProperSMul.isClosedEmbedding_smul_const`), and `𝔤_x = 0` and `dim G ≤ dim M` hold at such a point
+without an explicit Hausdorff hypothesis
+(`TauCeti.isotropy_fundamental_eq_bot_of_properSMul_of_stabilizer_eq_bot`,
+`TauCeti.finrank_le_of_properSMul_of_stabilizer_eq_bot`). Hence **the orbit map of
 a free point of a proper smooth action is a smooth embedding with closed image**
 (`TauCeti.isSmoothEmbedding_smul_const`). This is the first step of the proof of the quotient
 manifold theorem for free proper actions.
@@ -65,7 +66,6 @@ attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  [CompleteSpace E]
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
   {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [CompleteSpace E']
   {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
@@ -77,7 +77,7 @@ variable [FiniteDimensional ℝ E'] [I.Boundaryless] [I'.Boundaryless]
 /-- **Orbit maps of locally free points are immersions.** The orbit map `g ↦ g • x` of a smooth
 action is an immersion exactly when the isotropy algebra `𝔤_x` is trivial, that is, when the
 action is locally free at `x`. -/
-theorem isImmersion_smul_const_iff {x : M} :
+theorem isImmersion_smul_const_iff [CompleteSpace E] {x : M} :
     IsImmersion I I' ∞ (fun g : G ↦ g • x) ↔
       (InfinitesimalAction.fundamental I G I' M).isotropy x = ⊥ := by
   constructor
@@ -90,16 +90,15 @@ theorem isImmersion_smul_const_iff {x : M} :
 
 variable [FiniteDimensional ℝ E]
 
-omit [CompleteSpace E] [CompleteSpace E'] in
+omit [CompleteSpace E'] in
 /-- **Orbit maps of free points are immersions.** Where the stabilizer of `x` is trivial, the
 orbit map `g ↦ g • x` of a smooth action on a Hausdorff manifold is an immersion. -/
 theorem isImmersion_smul_const_of_stabilizer_eq_bot [T2Space M] {x : M}
     (hx : MulAction.stabilizer G x = ⊥) : IsImmersion I I' ∞ (fun g : G ↦ g • x) :=
-  letI := FiniteDimensional.completeSpace ℝ E
   letI := FiniteDimensional.completeSpace ℝ E'
   isImmersion_smul_const_iff.2 (Lie.isotropy_fundamental_eq_bot_of_stabilizer_eq_bot hx)
 
-omit [CompleteSpace E] [CompleteSpace E'] in
+omit [CompleteSpace E'] in
 /-- **Free orbits of proper smooth actions are closed embedded submanifolds.** Where the stabilizer
 of `x` is trivial, the orbit map `g ↦ g • x` of a proper smooth action is a smooth embedding. Its
 image, the orbit of `x`, is closed (`ProperSMul.isClosed_orbit`). -/
@@ -120,5 +119,18 @@ theorem isotropy_fundamental_eq_bot_of_properSMul_of_stabilizer_eq_bot [Boundary
   have : T2Space G := I.t2Space_of_lieGroup ∞
   have : T2Space M := t2Space_of_properSMul_of_t1Group (G := G)
   exact Lie.isotropy_fundamental_eq_bot_of_stabilizer_eq_bot hx
+
+include I I' in
+variable (I I') in
+omit [CompleteSpace E'] [I.Boundaryless] [I'.Boundaryless] in
+/-- Where the stabilizer of `x` is trivial, a proper smooth action of a finite-dimensional real Lie
+group `G` on a finite-dimensional boundaryless manifold `M` satisfies `dim G ≤ dim M` (without an
+explicit Hausdorffness assumption on `M`). -/
+theorem finrank_le_of_properSMul_of_stabilizer_eq_bot [BoundarylessManifold I' M] [ProperSMul G M]
+    {x : M} (hx : MulAction.stabilizer G x = ⊥) :
+    Module.finrank ℝ E ≤ Module.finrank ℝ E' := by
+  have : T2Space G := I.t2Space_of_lieGroup ∞
+  have : T2Space M := t2Space_of_properSMul_of_t1Group (G := G)
+  exact Lie.finrank_le_of_stabilizer_eq_bot I I' hx
 
 end TauCeti

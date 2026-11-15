@@ -132,13 +132,17 @@ end Differential
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I (minSmoothness ℝ 3) G]
-  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [CompleteSpace E']
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
   {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [IsManifold I' ∞ M] [MulAction G M]
   [ContMDiffSMul I I' ∞ G M]
 
 attribute [local instance] lieGroupOne
 attribute [local instance] contMDiffSMulOneOfInfty
+
+section CompleteSpace
+
+variable [CompleteSpace E']
 
 /-- **The image of the differential of the orbit map** at `g` is the orbit tangent space at
 `g • x`, spanned by the values of the fundamental vector fields. -/
@@ -208,6 +212,8 @@ theorem surjective_mfderiv_smul_const_iff (x : M) (g : G) :
   rw [← orbitTangent_fundamental_smul_eq_top_iff g, ← range_mfderiv_smul_const,
     LinearMap.range_eq_top, ContinuousLinearMap.coe_coe]
 
+end CompleteSpace
+
 section VerticalKernel
 
 variable {EQ : Type*} [NormedAddCommGroup EQ] [NormedSpace ℝ EQ]
@@ -216,7 +222,7 @@ variable {EQ : Type*} [NormedAddCommGroup EQ] [NormedSpace ℝ EQ]
 
 /-- The orbit tangent space `𝔤 · x` is contained in the kernel of `dp_x` whenever `p` is
 differentiable at `x` and locally invariant along the orbit of `x`. -/
-theorem orbitTangent_fundamental_le_ker_mfderiv {p : M → Q} {x : M}
+theorem orbitTangent_fundamental_le_ker_mfderiv [CompleteSpace E'] {p : M → Q} {x : M}
     (hp : MDifferentiableAt I' JQ p x) (hinv : ∀ᶠ g in 𝓝 (1 : G), p (g • x) = p x) :
     (InfinitesimalAction.fundamental I G I' M).orbitTangent x ≤ (mfderiv I' JQ p x).ker := by
   intro v hv
