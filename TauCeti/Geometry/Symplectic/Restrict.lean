@@ -121,38 +121,53 @@ variable (ω : SymplecticForm V) {e e' : V}
 
 /-- On vectors `w + a e + b e'` with `w` in the symplectic complement of the plane of `e` and `e'`,
 where `ω e' e = 1`, the form splits as the form on the complement plus the area form of the
-plane. -/
+plane: this is `isSymplectomorphism_prodEquivOfIsCompl` for that plane. -/
 lemma apply_add_smul_add_smul (h : ω e' e = 1) {w w' : V}
     (hw : w ∈ ω.orthogonal (Submodule.span ℝ {e, e'}))
     (hw' : w' ∈ ω.orthogonal (Submodule.span ℝ {e, e'})) (a b a' b' : ℝ) :
     ω (w + a • e + b • e') (w' + a' • e + b' • e') = ω w w' - a * b' + b * a' := by
-  rw [mem_orthogonal_span_pair_iff] at hw hw'
-  have h₁ : ω.toBilinForm e e = 0 := ω.self_eq_zero e
-  have h₂ : ω.toBilinForm e' e' = 0 := ω.self_eq_zero e'
-  have h₃ : ω.toBilinForm e' e = 1 := h
-  have h₄ : ω.toBilinForm e e' = -1 := ω.isAlt.apply_eq_neg_one_of_apply_eq_one h
-  have h₅ : ω.toBilinForm e w' = 0 := hw'.1
-  have h₆ : ω.toBilinForm e' w' = 0 := hw'.2
-  have h₇ : ω.toBilinForm w e = 0 := by rw [← neg_eq_zero]; exact (ω.neg_eq w e).trans hw.1
-  have h₈ : ω.toBilinForm w e' = 0 := by rw [← neg_eq_zero]; exact (ω.neg_eq w e').trans hw.2
-  -- Unfold the coercion of `ω` to its bilinear form, to expand by bilinearity.
-  change ω.toBilinForm _ _ = ω.toBilinForm w w' - _ + _
-  simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, h₁, h₂,
-    h₃, h₄, h₅, h₆, h₇, h₈]
+  have hp (c d : ℝ) : c • e + d • e' ∈ Submodule.span ℝ {e, e'} :=
+    Submodule.mem_span_pair.2 ⟨c, d, rfl⟩
+  -- The equivalence and the product of restrictions both unfold to sums, so the
+  -- symplectomorphism statement is restated in these terms.
+  have key : ω (a • e + b • e' + w) (a' • e + b' • e' + w') =
+      ω (a • e + b • e') (a' • e + b' • e') + ω w w' :=
+    (ω.isSymplectomorphism_prodEquivOfIsCompl (ω.isAlt.isCompl_span_pair_orthogonal h)).apply
+      (⟨_, hp a b⟩, ⟨w, hw⟩) (⟨_, hp a' b'⟩, ⟨w', hw'⟩)
+  have hee' : ω e e' = -1 := ω.isAlt.apply_eq_neg_one_of_apply_eq_one h
+  rw [apply_smul_add_smul, hee'] at key
+  rw [show w + a • e + b • e' = a • e + b • e' + w by abel,
+    show w' + a' • e + b' • e' = a' • e + b' • e' + w' by abel, key]
   ring
 
 /-- The projection onto the symplectic complement of the plane of `e` and `e'` along that plane,
-where `ω e' e = 1`: `v ↦ v - ω(e', v) e + ω(e, v) e'`. -/
-@[expose] def orthogonalSpanPairProj (h : ω e' e = 1) :
+where `ω e' e = 1`. It is `v ↦ v - ω(e', v) e + ω(e, v) e'` (`coe_orthogonalSpanPairProj`). -/
+noncomputable def orthogonalSpanPairProj (h : ω e' e = 1) :
     V →ₗ[ℝ] ω.orthogonal (Submodule.span ℝ {e, e'}) :=
-  LinearMap.codRestrict _
-    (LinearMap.id - (ω.toBilinForm e').smulRight e + (ω.toBilinForm e).smulRight e')
-    (ω.isAlt.sub_smul_add_smul_mem_orthogonal_span_pair h)
+  Submodule.projectionOnto _ _ (ω.isAlt.isCompl_span_pair_orthogonal h).symm
+
+/-- The projection is the identity on the symplectic complement of the plane. -/
+lemma orthogonalSpanPairProj_apply_of_mem (h : ω e' e = 1) {w : V}
+    (hw : w ∈ ω.orthogonal (Submodule.span ℝ {e, e'})) :
+    ω.orthogonalSpanPairProj h w = ⟨w, hw⟩ :=
+  Submodule.projectionOnto_apply_of_mem_left _ hw
+
+/-- The projection vanishes exactly on the plane of `e` and `e'`. -/
+@[simp]
+lemma orthogonalSpanPairProj_apply_eq_zero_iff (h : ω e' e = 1) {v : V} :
+    ω.orthogonalSpanPairProj h v = 0 ↔ v ∈ Submodule.span ℝ {e, e'} :=
+  Submodule.projectionOnto_apply_eq_zero_iff _
 
 @[simp]
 lemma coe_orthogonalSpanPairProj (h : ω e' e = 1) (v : V) :
-    (ω.orthogonalSpanPairProj h v : V) = v - ω e' v • e + ω e v • e' :=
-  rfl
+    (ω.orthogonalSpanPairProj h v : V) = v - ω e' v • e + ω e v • e' := by
+  have hw := ω.isAlt.sub_smul_add_smul_mem_orthogonal_span_pair h v
+  have hp : ω e' v • e + (-ω e v) • e' ∈ Submodule.span ℝ {e, e'} :=
+    Submodule.mem_span_pair.2 ⟨_, _, rfl⟩
+  have hv : v = (v - ω e' v • e + ω e v • e') + (ω e' v • e + (-ω e v) • e') := by module
+  conv_lhs => rw [hv, map_add, orthogonalSpanPairProj_apply_of_mem _ h hw,
+    (orthogonalSpanPairProj_apply_eq_zero_iff _ h).2 hp]
+  simp
 
 /-- The splitting of `ω` along the plane of `e` and `e'` and its symplectic complement. -/
 lemma apply_eq_orthogonalSpanPairProj (h : ω e' e = 1) (u v : V) :
