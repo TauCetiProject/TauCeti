@@ -15,39 +15,26 @@ import TauCeti.LinearAlgebra.Dual.Lemmas
 # Half-spin decomposition of the graded tensor product of Clifford modules
 
 Let `V` and `W` be even-dimensional oriented real inner product spaces of dimensions `n` and `m`
-with the negative-metric forms `Q₁ v = -‖v‖²` and `Q₂ w = -‖w‖²`, and equip `V ⊕ W` with the
-ordered product orientation `Orientation.prod o₁ o₂`. By
-`CliffordAlgebra.complexProdTensor_complexVolume_of_map_eq_prod`, the chirality `Γ_(V ⊕ W)` acts on
-the graded tensor product `E ⊗ F` of complex Clifford modules `E` and `F` as the tensor grading
-`Γ_V ⊗ Γ_W`. Combining this with `Module.End.eigenspaceTensorMapEquiv` decomposes the `μ`-eigenspace
-(`μ² = 1`) of `Γ_(V ⊕ W)` on `E ⊗ F` as
-
-  `(E ⊗ F)^μ ≃ (E⁺ ⊗ F^μ) × (E⁻ ⊗ F^{-μ})`,
-
-so that `(E ⊗ F)⁺ ≃ (E⁺ ⊗ F⁺) × (E⁻ ⊗ F⁻)` and `(E ⊗ F)⁻ ≃ (E⁺ ⊗ F⁻) × (E⁻ ⊗ F⁺)` without any
-finiteness assumption on `E` or `F`
-(`CliffordAlgebra.complexProdTensorComplexVolumeEigenspaceEquiv`).
-
-For finite-dimensional modules this gives the rank formula, and for spinor modules `S_V` and `S_W`
-with `n + m ≠ 0` it gives `dim S^±_(V ⊕ W) = 2 ^ ((n + m) / 2 - 1)` (including when one summand is
-zero-dimensional, with either orientation); in particular, for two oriented planes (`n = m = 2`),
-`S⁺_(V ⊕ W) ≃ S⁺_V ⊗ S⁺_W ⊕ S⁻_V ⊗ S⁻_W` has dimension `1 + 1 = 2` inside
-`dim (S_V ⊗ S_W) = 4`.
+with `Q₁ v = -‖v‖²` and `Q₂ w = -‖w‖²`, and equip `V ⊕ W` with `Orientation.prod o₁ o₂`. Since
+`Γ_(V ⊕ W)` acts on `E ⊗ F` as `Γ_V ⊗ Γ_W`, `Module.End.eigenspaceTensorMapEquiv` decomposes its
+`μ`-eigenspace (`μ * μ = 1`) as `(E ⊗ F)^μ ≃ (E⁺ ⊗ F^μ) × (E⁻ ⊗ F^{-μ})` without finiteness
+assumptions on `E` or `F`. For finite-dimensional modules this gives the rank formula, and for
+spinor modules with `n + m ≠ 0` it gives `dim (S_V ⊗ S_W)^± = 2 ^ ((n + m) / 2 - 1)` (in
+particular `1 + 1 = 2` inside `dim = 4` for two oriented planes `n = m = 2`).
 
 ## Main definitions
 
-* `CliffordAlgebra.complexProdTensorComplexVolumeEigenspaceEquiv`: the linear equivalence
+* `CliffordAlgebra.complexProdTensorComplexVolumeEigenspaceEquiv`:
   `(E ⊗ F)^μ ≃ (E⁺ ⊗ F^μ) × (E⁻ ⊗ F^{-μ})` for `μ * μ = 1`.
 
 ## Main results
 
 * `CliffordAlgebra.complexProdTensorComplexVolumeEigenspaceEquiv_apply` and
-  `CliffordAlgebra.coe_complexProdTensorComplexVolumeEigenspaceEquiv_symm_apply`: the projection and
+  `CliffordAlgebra.coe_complexProdTensorComplexVolumeEigenspaceEquiv_symm_apply`: projection and
   inclusion formulas.
-* `CliffordAlgebra.finrank_eigenspace_complexProdTensor_complexVolume`: dimension formula for
-  finite-dimensional `E` and `F`.
-* `CliffordAlgebra.finrank_eigenspace_complexProdTensor_complexVolume_of_bijective_lsmul`: for
-  spinor modules with `n + m ≠ 0`, `dim (S_V ⊗ S_W)^± = 2 ^ ((n + m) / 2 - 1)`.
+* `CliffordAlgebra.finrank_eigenspace_complexProdTensor_complexVolume` and
+  `CliffordAlgebra.finrank_eigenspace_complexProdTensor_complexVolume_of_bijective_lsmul`: general
+  and spinor half-rank formulas.
 
 ## References
 
@@ -138,9 +125,9 @@ theorem finrank_eigenspace_complexProdTensor_complexVolume [Module.Finite ℂ E]
           finrank ℂ ((ρ₂ (complexVolume Q₂ o₂)).eigenspace μ) +
         finrank ℂ ((ρ₁ (complexVolume Q₁ o₁)).eigenspace (-1)) *
           finrank ℂ ((ρ₂ (complexVolume Q₂ o₂)).eigenspace (-μ)) := by
-  let e := complexProdTensorComplexVolumeEigenspaceEquiv hQ o₁ hQ₁ hn o₂ hQ₂ hm o ρ₁ ρ₂ ho hμ
-  rw [e.finrank_eq, Module.finrank_prod, Module.finrank_tensorProduct,
-    Module.finrank_tensorProduct]
+  rw [(complexProdTensorComplexVolumeEigenspaceEquiv hQ o₁ hQ₁ hn o₂ hQ₂ hm o ρ₁ ρ₂ ho
+      hμ).finrank_eq,
+    Module.finrank_prod, Module.finrank_tensorProduct, Module.finrank_tensorProduct]
 
 end Modules
 
@@ -178,34 +165,26 @@ theorem finrank_eigenspace_complexProdTensor_complexVolume_of_bijective_lsmul
   have hμ2 : μ * μ = 1 := by rcases hμ with rfl | rfl <;> norm_num
   have hnegμ : -μ = 1 ∨ -μ = -1 := by rcases hμ with rfl | rfl <;> simp
   rw [finrank_eigenspace_complexProdTensor_complexVolume hQ o₁ hQ₁ hn o₂ hQ₂ hm o _ _ ho hμ2]
-  by_cases hm0 : m = 0
-  · have hn0 : n ≠ 0 := fun h ↦ hnm (by omega)
+  rcases eq_or_ne m 0 with rfl | hm0
+  · have hn0 : n ≠ 0 := by omega
+    have hc := Submodule.finrank_add_eq_of_isCompl
+      (isCompl_eigenspace_complexVolume (E := S₂) o₂ hQ₂)
+    rw [finrank_eq_two_pow_of_bijective_lsmul _ h₂, hW] at hc
     have hsum₂ : finrank ℂ ((Algebra.lsmul ℂ ℂ S₂ (complexVolume Q₂ o₂)).eigenspace μ) +
-        finrank ℂ ((Algebra.lsmul ℂ ℂ S₂ (complexVolume Q₂ o₂)).eigenspace (-μ)) =
-        2 ^ (m / 2) := by
-      have hc := Submodule.finrank_add_eq_of_isCompl
-        (isCompl_eigenspace_complexVolume (E := S₂) o₂ hQ₂)
-      rw [finrank_eq_two_pow_of_bijective_lsmul _ h₂, hW] at hc
+        finrank ℂ ((Algebra.lsmul ℂ ℂ S₂ (complexVolume Q₂ o₂)).eigenspace (-μ)) = 1 := by
       rcases hμ with rfl | rfl
-      · exact hc
-      · rw [neg_neg, add_comm]
-        exact hc
+      · simpa using hc
+      · rw [neg_neg, add_comm]; simpa using hc
     rw [finrank_eigenspace_complexVolume_of_bijective_lsmul o₁ hQ₁ h₁ hn0 (.inl rfl),
       finrank_eigenspace_complexVolume_of_bijective_lsmul o₁ hQ₁ h₁ hn0 (.inr rfl),
-      ← mul_add, hsum₂, ← pow_add]
-    congr 1
-    obtain ⟨k, rfl⟩ := hn
-    omega
+      ← mul_add, hsum₂, mul_one, add_zero]
   · have hsum₁ := Submodule.finrank_add_eq_of_isCompl
       (isCompl_eigenspace_complexVolume (E := S₁) o₁ hQ₁)
     rw [finrank_eq_two_pow_of_bijective_lsmul _ h₁, hV] at hsum₁
     rw [finrank_eigenspace_complexVolume_of_bijective_lsmul o₂ hQ₂ h₂ hm0 hμ,
       finrank_eigenspace_complexVolume_of_bijective_lsmul o₂ hQ₂ h₂ hm0 hnegμ,
       ← add_mul, hsum₁, ← pow_add]
-    congr 1
-    obtain ⟨k, rfl⟩ := hn
-    obtain ⟨l, rfl⟩ := hm
-    omega
+    obtain ⟨k, rfl⟩ := hn; obtain ⟨l, rfl⟩ := hm; congr 1; omega
 
 end Spinors
 

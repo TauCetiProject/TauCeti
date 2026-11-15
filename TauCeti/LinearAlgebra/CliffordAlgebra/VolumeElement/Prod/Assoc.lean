@@ -12,26 +12,16 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Prod.Basic
 # Associativity of the graded tensor product of complex Clifford modules
 
 Let `U`, `V`, `W` be real inner product spaces, with `U` and `V` oriented of even dimensions `n`
-and `m` and carrying the negative-metric forms `Q₁ u = -‖u‖²` and `Q₂ v = -‖v‖²`. Equip `U ⊕ V`
-with the ordered product orientation `Orientation.prod o₁ o₂`. By
-`CliffordAlgebra.complexProdTensor_complexVolume_of_map_eq_prod`, the chirality of `U ⊕ V` acts on
-`E ⊗ F` as the tensor grading `Γ_U ⊗ Γ_V`, so Mathlib's `TensorProduct.assoc ℂ E F G` intertwines
-the two iterated `complexProdTensor` actions along `LinearIsometryEquiv.withLpProdAssoc 2 ℝ U V W`
-(`CliffordAlgebra.conjAlgEquiv_complexProdTensor_assoc`,
-`CliffordAlgebra.assoc_complexProdTensor`), realizing the abstract associativity law of
-`TauCeti/LinearAlgebra/CliffordAlgebra/Prod/Assoc.lean` on `L²` orthogonal sums. Neither
-finite-dimensionality of `W` nor a metric hypothesis on `Q₃` is required for the action associator.
-
-When `W` is also finite-dimensional of dimension `p` with orientation `o₃`,
-`LinearIsometryEquiv.withLpProdAssoc 2 ℝ U V W` transports the left-associated ordered product
-orientation `((o₁ × o₂) × o₃)` to the right-associated one `(o₁ × (o₂ × o₃))` (reindexed along
-`n + m + p = n + (m + p)`), and hence carries `Γ_((U ⊕ V) ⊕ W)` to `Γ_(U ⊕ (V ⊕ W))`
-(`CliffordAlgebra.map_withLpProdAssocIsometry_complexVolume`).
+and `m` and carrying `Q₁ u = -‖u‖²` and `Q₂ v = -‖v‖²`. For the ordered product orientation
+`Orientation.prod o₁ o₂` on `U ⊕ V`, `Γ_(U ⊕ V)` acts on `E ⊗ F` as `Γ_U ⊗ Γ_V`, so
+`TensorProduct.assoc ℂ E F G` intertwines the two iterated `complexProdTensor` actions along
+`LinearIsometryEquiv.withLpProdAssoc 2 ℝ U V W` without finiteness or metric assumptions on `W`.
+When `W` is also oriented of dimension `p`, `withLpProdAssoc` carries `((o₁ × o₂) × o₃)` to
+`(o₁ × (o₂ × o₃))` (reindexed along `add_assoc`) and `Γ_((U ⊕ V) ⊕ W)` to `Γ_(U ⊕ (V ⊕ W))`.
 
 ## Main definitions
 
-* `CliffordAlgebra.withLpProdAssocIsometry`: `LinearIsometryEquiv.withLpProdAssoc 2 ℝ U V W` as a
-  quadratic isometry equivalence `Q₁₂_₃ ≃ Q₁_₂₃`.
+* `CliffordAlgebra.withLpProdAssocIsometry`: `withLpProdAssoc` as a quadratic isometry equivalence.
 
 ## Main results
 
@@ -39,8 +29,7 @@ orientation `((o₁ × o₂) × o₃)` to the right-associated one `(o₁ × (o�
   `CliffordAlgebra.assoc_complexProdTensor`: `TensorProduct.assoc ℂ E F G` intertwines the iterated
   graded tensor product actions.
 * `CliffordAlgebra.map_withLpProdAssoc_orientation` and
-  `CliffordAlgebra.map_withLpProdAssocIsometry_complexVolume`: compatibility with the iterated
-  ordered product orientations and their normalized complex volume elements.
+  `CliffordAlgebra.map_withLpProdAssocIsometry_complexVolume`: orientation and volume transport.
 
 ## References
 
@@ -126,37 +115,27 @@ theorem map_withLpProdAssoc_orientation
       o₁.prod o₂₃ Fact.out Fact.out) :
     o₁₂_₃.map (Fin (n + m + p)) (LinearIsometryEquiv.withLpProdAssoc 2 ℝ U V W).toLinearEquiv =
       Orientation.reindex ℝ _ (finCongr (add_assoc n m p).symm) o₁_₂₃ := by
-  let eL : WithLp 2 (WithLp 2 (U × V) × W) ≃ₗ[ℝ] (U × V) × W :=
-    (WithLp.linearEquiv 2 ℝ (WithLp 2 (U × V) × W)).trans
-      ((WithLp.linearEquiv 2 ℝ (U × V)).prodCongr (LinearEquiv.refl ℝ W))
-  let eR : WithLp 2 (U × WithLp 2 (V × W)) ≃ₗ[ℝ] U × V × W :=
-    (WithLp.linearEquiv 2 ℝ (U × WithLp 2 (V × W))).trans
-      ((LinearEquiv.refl ℝ U).prodCongr (WithLp.linearEquiv 2 ℝ (V × W)))
+  let eL := (WithLp.linearEquiv 2 ℝ (WithLp 2 (U × V) × W)).trans
+    ((WithLp.linearEquiv 2 ℝ (U × V)).prodCongr (LinearEquiv.refl ℝ W))
+  let eR := (WithLp.linearEquiv 2 ℝ (U × WithLp 2 (V × W))).trans
+    ((LinearEquiv.refl ℝ U).prodCongr (WithLp.linearEquiv 2 ℝ (V × W)))
   have hcomm : (LinearIsometryEquiv.withLpProdAssoc 2 ℝ U V W).toLinearEquiv.trans eR =
-      eL.trans (LinearEquiv.prodAssoc ℝ U V W) := by
-    ext x <;> rfl
+      eL.trans (LinearEquiv.prodAssoc ℝ U V W) := by ext x <;> rfl
   have hL : o₁₂_₃.map (Fin (n + m + p)) eL =
       (o₁.prod o₂ Fact.out Fact.out).prod o₃
-        (by
-          rw [Module.finrank_prod, (Fact.out : finrank ℝ U = n), (Fact.out : finrank ℝ V = m)])
+        (by rw [Module.finrank_prod, (Fact.out : finrank ℝ U = n), (Fact.out : finrank ℝ V = m)])
         Fact.out := by
     rw [Orientation.map_trans, ho₁₂_₃, Orientation.map_prod, ho₁₂, Orientation.map_refl,
       Equiv.refl_apply]
   have hR : o₁_₂₃.map (Fin (n + (m + p))) eR =
       o₁.prod (o₂.prod o₃ Fact.out Fact.out) Fact.out
-        (by
-          rw [Module.finrank_prod, (Fact.out : finrank ℝ V = m),
-            (Fact.out : finrank ℝ W = p)]) := by
+        (by rw [Module.finrank_prod, (Fact.out : finrank ℝ V = m),
+          (Fact.out : finrank ℝ W = p)]) := by
     rw [Orientation.map_trans, ho₁_₂₃, Orientation.map_prod, ho₂₃, Orientation.map_refl,
       Equiv.refl_apply]
-  have key : (o₁₂_₃.map (Fin (n + m + p))
-      (LinearIsometryEquiv.withLpProdAssoc 2 ℝ U V W).toLinearEquiv).map
-      (Fin (n + m + p)) eR =
-      (Orientation.reindex ℝ _ (finCongr (add_assoc n m p).symm) o₁_₂₃).map
-      (Fin (n + m + p)) eR := by
-    rw [← Orientation.map_trans, hcomm, Orientation.map_trans, hL,
-      Orientation.map_prodAssoc_prod, Orientation.map_reindex, hR]
-  exact (Orientation.map (Fin (n + m + p)) eR).injective key
+  refine (Orientation.map (Fin (n + m + p)) eR).injective ?_
+  rw [← Orientation.map_trans, hcomm, Orientation.map_trans, hL, Orientation.map_prodAssoc_prod,
+    Orientation.map_reindex, hR]
 
 end Orientation
 
@@ -203,18 +182,14 @@ theorem conjAlgEquiv_complexProdTensor_assoc :
         (equivOfIsometry
           ((withLpProdAssocIsometry hQ₁₂ hQ₂₃ hQ₁₂_₃ hQ₁_₂₃).baseChange ℂ)).toAlgHom := by
   have hγ := complexProdTensor_complexVolume_of_map_eq_prod hQ₁₂ o₁ hQ₁ hn ρ₁ ρ₂ o₂ o₁₂ hm ho₁₂
-  apply CliffordAlgebra.hom_ext
-  apply TensorProduct.AlgebraTensorModule.ext
-  intro z x
+  refine CliffordAlgebra.hom_ext <| TensorProduct.AlgebraTensorModule.ext fun z x ↦ ?_
   have hzx : z ⊗ₜ[ℝ] x = z • (1 ⊗ₜ[ℝ] x) := by rw [smul_tmul', smul_eq_mul, mul_one]
-  rw [hzx, map_smul, map_smul]
-  refine congrArg (z • ·) ?_
+  rw [hzx, map_smul, map_smul]; refine congrArg (z • ·) ?_
   let u := (WithLp.ofLp (WithLp.ofLp x).1).1
   let v := (WithLp.ofLp (WithLp.ofLp x).1).2
   let w := (WithLp.ofLp x).2
   have hx : x = WithLp.toLp 2 (WithLp.toLp 2 (u, v), w) := by
     simp only [u, v, w, Prod.mk.eta, WithLp.toLp_ofLp]
-  rw [hx]
   have hiso : equivOfIsometry ((withLpProdAssocIsometry hQ₁₂ hQ₂₃ hQ₁₂_₃ hQ₁_₂₃).baseChange ℂ)
       (ι (Q₁₂_₃.baseChange ℂ) (1 ⊗ₜ[ℝ] WithLp.toLp 2 (WithLp.toLp 2 (u, v), w))) =
       ι (Q₁_₂₃.baseChange ℂ) (1 ⊗ₜ[ℝ] WithLp.toLp 2 (u, WithLp.toLp 2 (v, w))) := by
@@ -222,13 +197,12 @@ theorem conjAlgEquiv_complexProdTensor_assoc :
       QuadraticMap.IsometryEquiv.baseChange_tmul, withLpProdAssocIsometry_apply,
       LinearIsometryEquiv.withLpProdAssoc_apply, WithLp.toLp_fst, WithLp.toLp_fst,
       WithLp.toLp_snd, WithLp.toLp_snd]
-  rw [LinearMap.comp_apply, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
+  rw [hx, LinearMap.comp_apply, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
     AlgHom.toLinearMap_apply, AlgHom.comp_apply, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
     AlgEquiv.coe_toAlgHom, hiso, LinearEquiv.conjAlgEquiv_apply,
     complexProdTensor_ι_one_tmul_toLp, complexProdTensor_ι_one_tmul_toLp, hγ,
     complexProdTensor_ι_one_tmul_toLp, complexProdTensor_ι_one_tmul_toLp]
-  apply TensorProduct.ext_threefold'
-  intro e f g
+  refine TensorProduct.ext_threefold' fun e f g ↦ ?_
   simp only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, TensorProduct.assoc_symm_tmul,
     LinearMap.add_apply, LinearMap.rTensor_tmul, TensorProduct.map_tmul, map_add,
     TensorProduct.assoc_tmul, tmul_add, add_tmul, add_assoc]
@@ -245,10 +219,10 @@ theorem assoc_complexProdTensor (a : CliffordAlgebra (Q₁₂_₃.baseChange ℂ
         (equivOfIsometry
           ((withLpProdAssocIsometry hQ₁₂ hQ₂₃ hQ₁₂_₃ hQ₁_₂₃).baseChange ℂ) a)
         (TensorProduct.assoc ℂ E F G t) := by
-  have h := congrArg (fun f ↦ f a (TensorProduct.assoc ℂ E F G t))
-    (conjAlgEquiv_complexProdTensor_assoc hQ₁₂ hQ₂₃ hQ₁₂_₃ hQ₁_₂₃ o₁ hQ₁ hn o₂ hQ₂ hm o₁₂ ho₁₂
-      ρ₁ ρ₂ ρ₃)
-  simpa [LinearEquiv.conjAlgEquiv_apply] using h
+  simpa [LinearEquiv.conjAlgEquiv_apply] using
+    congrArg (fun f ↦ f a (TensorProduct.assoc ℂ E F G t))
+      (conjAlgEquiv_complexProdTensor_assoc hQ₁₂ hQ₂₃ hQ₁₂_₃ hQ₁_₂₃ o₁ hQ₁ hn o₂ hQ₂ hm o₁₂ ho₁₂
+        ρ₁ ρ₂ ρ₃)
 
 end Action
 

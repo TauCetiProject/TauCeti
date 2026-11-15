@@ -12,15 +12,10 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Basic
 
 Replacing the grading operator `γ` of `E` by `-γ` in `AlgHom.cliffordProdTensor` changes the
 generator action `c₁(v) ⊗ 1 + γ ⊗ c₂(w)` into `c₁(v) ⊗ 1 - γ ⊗ c₂(w)`. Whenever `F` carries an
-endomorphism `δ` anticommuting with every `c₂(w)`, the operator `1 ⊗ δ` (`LinearMap.lTensor E δ`)
-intertwines the `-γ`-graded tensor product action with the `γ`-graded one on the entire Clifford
-algebra (`AlgHom.lTensor_comp_cliffordProdTensor_neg`). When `δ` is moreover an involution,
-`(LinearEquiv.ofInvolutive δ hδ).lTensor E` conjugates one action into the other
-(`AlgHom.conjAlgEquiv_cliffordProdTensor_neg`).
-
-For oriented Euclidean spaces this expresses the effect of reversing the orientation of the first
-summand, and also supplies the sign correction in the reverse-dual comparison when `dim V ≡ 2
-(mod 4)`.
+endomorphism `δ` anticommuting with every `c₂(w)`, `1 ⊗ δ` (`LinearMap.lTensor E δ`) intertwines
+the `-γ`-graded tensor product action with the `γ`-graded one on the entire Clifford algebra
+(`AlgHom.lTensor_comp_cliffordProdTensor_neg`), conjugating one into the other when `δ` is an
+involution (`AlgHom.conjAlgEquiv_cliffordProdTensor_neg`).
 
 ## References
 
@@ -46,10 +41,8 @@ variable {R M₁ M₂ E F : Type*} [CommRing R]
 theorem cliffordProdTensor_neg_ι (x : M₁ × M₂) :
     cliffordProdTensor ρ₁ (-γ) (by rw [neg_mul_neg, hγ])
         (fun v ↦ by rw [neg_mul, mul_neg, neg_neg, hγρ, neg_neg]) ρ₂ (ι (Q₁.prod Q₂) x) =
-      (ρ₁ (ι Q₁ x.1)).rTensor F - TensorProduct.map γ (ρ₂ (ι Q₂ x.2)) := by
-  apply TensorProduct.ext'
-  intro e f
-  simp [cliffordProdTensor_ι_tmul, neg_tmul, sub_eq_add_neg]
+      (ρ₁ (ι Q₁ x.1)).rTensor F - TensorProduct.map γ (ρ₂ (ι Q₂ x.2)) :=
+  TensorProduct.ext' fun _ _ ↦ by simp [cliffordProdTensor_ι_tmul, neg_tmul, sub_eq_add_neg]
 
 /-- **Intertwining the negated-grading product action**: if `δ` anticommutes with every generator
 of `Q₂` on `F`, then `1 ⊗ δ` intertwines the `-γ`-graded tensor product action with the `γ`-graded
@@ -62,12 +55,9 @@ theorem lTensor_comp_cliffordProdTensor_neg {δ : Module.End R F}
         (fun v ↦ by rw [neg_mul, mul_neg, neg_neg, hγρ, neg_neg]) ρ₂ a =
       cliffordProdTensor ρ₁ γ hγ hγρ ρ₂ a ∘ₗ δ.lTensor E := by
   induction a using CliffordAlgebra.induction with
-  | algebraMap r =>
-    ext z
-    simp [Algebra.algebraMap_eq_smul_one]
+  | algebraMap r => ext z; simp [Algebra.algebraMap_eq_smul_one]
   | ι v =>
-    apply TensorProduct.ext'
-    intro e f
+    refine TensorProduct.ext' fun e f ↦ ?_
     have hf := LinearMap.congr_fun (hδρ v.2) f
     simp only [mul_apply_eq_comp, LinearMap.neg_apply] at hf
     simp [cliffordProdTensor_ι_tmul, hf, tmul_neg, neg_tmul]
@@ -84,15 +74,11 @@ theorem conjAlgEquiv_cliffordProdTensor_neg {δ : Module.End R F}
         (cliffordProdTensor ρ₁ (-γ) (by rw [neg_mul_neg, hγ])
           (fun v ↦ by rw [neg_mul, mul_neg, neg_neg, hγρ, neg_neg]) ρ₂) =
       cliffordProdTensor ρ₁ γ hγ hγρ ρ₂ := by
-  apply AlgHom.ext
-  intro a
+  refine AlgHom.ext fun a ↦ ?_
+  have he : ((LinearEquiv.ofInvolutive δ hδ).lTensor E).toLinearMap = δ.lTensor E :=
+    TensorProduct.ext' fun _ _ ↦ rfl
   rw [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, LinearEquiv.conjAlgEquiv_apply,
-    ← LinearMap.comp_assoc, eq_comm, LinearEquiv.eq_comp_toLinearMap_symm, eq_comm]
-  have he : ((LinearEquiv.ofInvolutive δ hδ).lTensor E).toLinearMap = δ.lTensor E := by
-    apply TensorProduct.ext'
-    intro e f
-    rfl
-  rw [he]
+    ← LinearMap.comp_assoc, eq_comm, LinearEquiv.eq_comp_toLinearMap_symm, eq_comm, he]
   exact lTensor_comp_cliffordProdTensor_neg ρ₁ γ hγ hγρ ρ₂ hδρ a
 
 end AlgHom

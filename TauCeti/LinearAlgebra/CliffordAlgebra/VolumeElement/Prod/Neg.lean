@@ -11,24 +11,17 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Prod.Basic
 /-!
 # Orientation reversal in the graded tensor product of complex Clifford modules
 
-Reversing the orientation `o₁` of the even-dimensional space `V` negates its chirality `Γ_V`, so
-in `CliffordAlgebra.complexProdTensor` the vector action `c(0, w) = Γ_V ⊗ c_W(w)` becomes
-`-Γ_V ⊗ c_W(w)` (`CliffordAlgebra.complexProdTensor_neg_orientation_ι_one_tmul_toLp_inr`).
-
-When `W` is also even-dimensional, its normalized complex volume element `Γ_W` anticommutes with
-every vector of `W` (for any quadratic form `Q₂`), so `1 ⊗ Γ_W` (`LinearMap.lTensor E`) intertwines
-the `-o₁` product action with the `o₁` product action on the entire complexified Clifford algebra
-(`CliffordAlgebra.lTensor_complexVolume_comp_complexProdTensor_neg`). When moreover
-`Q₂ w = -‖w‖²`, `1 ⊗ Γ_W` is an involution conjugating one action into the other
-(`CliffordAlgebra.conjAlgEquiv_complexProdTensor_neg`). Reversing either `o₁` or `o₂` reverses the
-ordered product orientation of `V ⊕ W` and negates the product chirality `Γ_V ⊗ Γ_W`
-(`CliffordAlgebra.complexProdTensor_neg_orientation_complexVolume`,
-`CliffordAlgebra.complexProdTensor_complexVolume_neg_right`).
+Reversing the orientation `o₁` of the even-dimensional space `V` negates `Γ_V`, so in
+`CliffordAlgebra.complexProdTensor` the vector action `c(0, w) = Γ_V ⊗ c_W(w)` becomes
+`-Γ_V ⊗ c_W(w)`. When `W` is also even-dimensional, `1 ⊗ Γ_W` intertwines the `-o₁` product action
+with the `o₁` product action on the entire complexified Clifford algebra (and conjugates one into
+the other when `Q₂ w = -‖w‖²`), while reversing `o₁` or `o₂` negates the product chirality
+`Γ_V ⊗ Γ_W`.
 
 ## Main results
 
-* `CliffordAlgebra.complexProdTensor_neg_orientation_ι_one_tmul_toLp_inr`: for `-o₁`, a vector
-  `(0, w)` acts by `-(Γ_V ⊗ c_W(w))`.
+* `CliffordAlgebra.complexProdTensor_neg_orientation_ι_one_tmul_toLp_inr`: for `-o₁`, `(0, w)` acts
+  by `-(Γ_V ⊗ c_W(w))`.
 * `CliffordAlgebra.lTensor_complexVolume_comp_complexProdTensor_neg` and
   `CliffordAlgebra.conjAlgEquiv_complexProdTensor_neg`: `1 ⊗ Γ_W` intertwines (and, for
   `Q₂ w = -‖w‖²`, conjugates) the `-o₁` and `o₁` product actions.
@@ -64,10 +57,8 @@ variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteD
 `CliffordAlgebra.complexProdTensor`. -/
 theorem complexProdTensor_neg_orientation_ι_one_tmul_toLp_inr (w : W) :
     complexProdTensor hQ (-o₁) hQ₁ hn ρ₁ ρ₂ (ι (Q.baseChange ℂ) (1 ⊗ₜ WithLp.toLp 2 (0, w))) =
-      -TensorProduct.map (ρ₁ (complexVolume Q₁ o₁)) (ρ₂ (ι (Q₂.baseChange ℂ) (1 ⊗ₜ w))) := by
-  apply TensorProduct.ext'
-  intro e f
-  simp [neg_tmul]
+      -TensorProduct.map (ρ₁ (complexVolume Q₁ o₁)) (ρ₂ (ι (Q₂.baseChange ℂ) (1 ⊗ₜ w))) :=
+  TensorProduct.ext' fun _ _ ↦ by simp [neg_tmul]
 
 section EvenRight
 
@@ -88,11 +79,11 @@ theorem lTensor_complexVolume_comp_complexProdTensor_neg
     rw [complexVolume_neg_orientation, map_neg]
   have hγ := map_complexVolume_mul_self o₁ hQ₁ ρ₁
   have hγρ := map_complexVolume_mul_map_ι o₁ hn ρ₁
-  have hδρ := map_complexVolume_mul_map_ι o₂ hm ρ₂
   rw [complexProdTensor_def, complexProdTensor_def, AlgHom.comp_apply, AlgHom.comp_apply,
     AlgHom.cliffordProdTensor_congr_grading ρ₁ _ _ _ ρ₂ hneg (by rw [neg_mul_neg, hγ])
       (fun v ↦ by rw [neg_mul, mul_neg, neg_neg, hγρ, neg_neg])]
-  exact AlgHom.lTensor_comp_cliffordProdTensor_neg ρ₁ (ρ₁ (complexVolume Q₁ o₁)) hγ hγρ ρ₂ hδρ _
+  exact AlgHom.lTensor_comp_cliffordProdTensor_neg ρ₁ _ hγ hγρ ρ₂
+    (map_complexVolume_mul_map_ι o₂ hm ρ₂) _
 
 include hm in
 /-- When `Q₂ w = -‖w‖²` and `W` is even-dimensional, conjugating by the involution `1 ⊗ Γ_W`
@@ -102,18 +93,15 @@ theorem conjAlgEquiv_complexProdTensor_neg (hQ₂ : ∀ w, Q₂ w = -‖w‖ ^ 2
         (map_complexVolume_involutive o₂ hQ₂ ρ₂)).lTensor E).conjAlgEquiv ℂ).toAlgHom).comp
       (complexProdTensor hQ (-o₁) hQ₁ hn ρ₁ ρ₂) =
       complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ := by
-  apply AlgHom.ext
-  intro a
-  rw [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, LinearEquiv.conjAlgEquiv_apply,
-    ← LinearMap.comp_assoc, eq_comm, LinearEquiv.eq_comp_toLinearMap_symm, eq_comm]
-  have he : ((LinearEquiv.ofInvolutive (ρ₂ (complexVolume Q₂ o₂))
-      (map_complexVolume_involutive o₂ hQ₂ ρ₂)).lTensor E).toLinearMap =
-      (ρ₂ (complexVolume Q₂ o₂)).lTensor E := by
-    apply TensorProduct.ext'
-    intro e f
-    rfl
-  rw [he]
-  exact lTensor_complexVolume_comp_complexProdTensor_neg hQ o₁ hQ₁ hn ρ₁ ρ₂ o₂ hm a
+  have hneg : ρ₁ (complexVolume Q₁ (-o₁)) = -ρ₁ (complexVolume Q₁ o₁) := by
+    rw [complexVolume_neg_orientation, map_neg]
+  have hγ := map_complexVolume_mul_self o₁ hQ₁ ρ₁
+  have hγρ := map_complexVolume_mul_map_ι o₁ hn ρ₁
+  rw [complexProdTensor_def, complexProdTensor_def, ← AlgHom.comp_assoc,
+    AlgHom.cliffordProdTensor_congr_grading ρ₁ _ _ _ ρ₂ hneg (by rw [neg_mul_neg, hγ])
+      (fun v ↦ by rw [neg_mul, mul_neg, neg_neg, hγρ, neg_neg]),
+    AlgHom.conjAlgEquiv_cliffordProdTensor_neg ρ₁ _ hγ hγρ ρ₂
+      (map_complexVolume_involutive o₂ hQ₂ ρ₂) (map_complexVolume_mul_map_ι o₂ hm ρ₂)]
 
 variable [Fact (finrank ℝ (WithLp 2 (V × W)) = n + m)]
 include hm
@@ -127,9 +115,7 @@ theorem complexProdTensor_neg_orientation_complexVolume
     complexProdTensor hQ (-o₁) hQ₁ hn ρ₁ ρ₂ (complexVolume Q o') =
       -TensorProduct.map (ρ₁ (complexVolume Q₁ o₁)) (ρ₂ (complexVolume Q₂ o₂)) := by
   rw [complexProdTensor_complexVolume_of_map_eq_prod hQ (-o₁) hQ₁ hn ρ₁ ρ₂ o₂ o' hm ho']
-  apply TensorProduct.ext'
-  intro e f
-  simp [neg_tmul]
+  exact TensorProduct.ext' fun _ _ ↦ by simp [neg_tmul]
 
 /-- Reversing `o₂` reverses the ordered product orientation `o₁ × (-o₂)` and negates the product
 chirality action `Γ_V ⊗ Γ_W`. -/
@@ -140,9 +126,7 @@ theorem complexProdTensor_complexVolume_neg_right
     complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ (complexVolume Q o') =
       -TensorProduct.map (ρ₁ (complexVolume Q₁ o₁)) (ρ₂ (complexVolume Q₂ o₂)) := by
   rw [complexProdTensor_complexVolume_of_map_eq_prod hQ o₁ hQ₁ hn ρ₁ ρ₂ (-o₂) o' hm ho']
-  apply TensorProduct.ext'
-  intro e f
-  simp [tmul_neg]
+  exact TensorProduct.ext' fun _ _ ↦ by simp [tmul_neg]
 
 end EvenRight
 
