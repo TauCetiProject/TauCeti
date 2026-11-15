@@ -124,7 +124,6 @@ variable {K : Type*} [Field K] [Fintype ι]
 
 /-- Recover the span of the first `k` vectors of a basis from the hyperplane of `p`-fold
 wedges meeting those vectors, where `k + p` is the ambient dimension. -/
-@[simp]
 theorem recoverSpan_wedgeSpan {p k : ℕ} {x : Fin (Fintype.card ι) → ι → K}
     (hx : LinearIndependent K x) (h : k + p = Fintype.card ι) :
     recoverSpan p (wedgeSpan k p x) = Submodule.span K (x '' {j | (j : ℕ) < k}) := by
