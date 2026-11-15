@@ -13,6 +13,7 @@ public import Mathlib.Analysis.Quaternion
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.Algebra.Quaternion.MulMatrix
 import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
+import TauCeti.Analysis.Calculus.FDeriv.Comp
 
 /-!
 # Partial derivatives of quaternion-valued functions
@@ -47,6 +48,9 @@ since `K_t = 1` and `L_x = -1`.
 * `Quaternion.fderiv_re_apply`, `Quaternion.fderiv_imI_apply`, `Quaternion.fderiv_imJ_apply`,
   `Quaternion.fderiv_imK_apply`: the derivative of a component of `f` is the component of the
   derivative of `f`.
+* `Quaternion.hasFDerivAt_coe_comp_iff`, `Quaternion.coe_re_of_hasFDerivAt_coe_comp`: for a
+  real-valued `g`, the real derivatives of `y ↦ (g y : ℍ)` are those of `g` viewed in `ℍ`, so they
+  take real values.
 * `Quaternion.exists_eq_mul_iff_components`: a continuous real-linear map `ℍ →L[ℝ] ℍ` is a left
   multiplication exactly when its partials satisfy the first system above.
 * `Quaternion.exists_eq_mul_flip_iff_components`: it is a right multiplication exactly when its
@@ -104,6 +108,26 @@ theorem fderiv_imK_apply (hf : HasFDerivAt f f' x) (v : E) :
       ((QuaternionAlgebra.imKₗ (-1 : ℝ) 0 (-1)).toContinuousLinearMap.comp f') x :=
     (QuaternionAlgebra.imKₗ (-1 : ℝ) 0 (-1)).toContinuousLinearMap.hasFDerivAt.comp x hf
   simp [h.fderiv]
+
+/-- For a real-valued `g`, the function `y ↦ (g y : ℍ)` has the real derivative `g'` followed
+by the coercion `ℝ → ℍ` exactly when `g` has derivative `g'`. -/
+theorem hasFDerivAt_coe_comp_iff {g : E → ℝ} {g' : E →L[ℝ] ℝ} :
+    HasFDerivAt (fun y ↦ (g y : ℍ)) ((Algebra.linearMap ℝ ℍ).toContinuousLinearMap.comp g') x ↔
+      HasFDerivAt g g' x := by
+  -- The coercion `Algebra.linearMap ℝ ℍ` has the real part as a left inverse.
+  have hemb : Topology.IsEmbedding (Algebra.linearMap ℝ ℍ).toContinuousLinearMap :=
+    .of_leftInverse (f := (QuaternionAlgebra.reₗ (-1 : ℝ) 0 (-1)).toContinuousLinearMap)
+      (fun r ↦ by simp) (map_continuous _) (map_continuous _)
+  simpa [Function.comp_def] using
+    ContinuousLinearMap.hasFDerivAt_comp_left_iff_of_isEmbedding _ hemb (k := g) (k' := g') (y := x)
+
+/-- For a real-valued `g`, every real derivative of `y ↦ (g y : ℍ)` takes real values. -/
+theorem coe_re_of_hasFDerivAt_coe_comp {g : E → ℝ} {D : E →L[ℝ] ℍ}
+    (hD : HasFDerivAt (fun y ↦ (g y : ℍ)) D x) (v : E) : ((D v).re : ℍ) = D v := by
+  simpa using DFunLike.congr_fun (ContinuousLinearMap.comp_comp_eq_of_hasFDerivAt_comp_left
+    (Algebra.linearMap ℝ ℍ).toContinuousLinearMap
+    (QuaternionAlgebra.reₗ (-1 : ℝ) 0 (-1)).toContinuousLinearMap (fun r ↦ by simp) (k := g)
+    (by simpa [Function.comp_def] using hD)) v
 
 /-- A continuous real-linear map `D : ℍ →L[ℝ] ℍ` is a left multiplication
 `L_a = ContinuousLinearMap.mul ℝ ℍ a` exactly when its partials satisfy

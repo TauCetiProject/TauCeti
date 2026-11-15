@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Quaternion.QuotientDeriv
 import TauCeti.Algebra.Quaternion.Basic
-import TauCeti.Analysis.Calculus.FDeriv.Comp
+import TauCeti.Analysis.Quaternion.PartialDeriv
 
 /-!
 # Quotient derivatives of real-valued quaternionic functions
@@ -53,45 +53,34 @@ variable {g : ℍ → ℝ} {q b : ℍ}
 real derivative of `g` at `q` is `0`. -/
 theorem hasLeftQuotientFDerivAt_coe_comp_iff :
     HasLeftQuotientFDerivAt (fun x ↦ (g x : ℍ)) q b ↔ b = 0 ∧ HasFDerivAt g (0 : ℍ →L[ℝ] ℝ) q := by
-  -- `Algebra.linearMap ℝ ℍ` is the coercion `ℝ → ℍ`, with left inverse the real part.
-  have hre : Function.LeftInverse (QuaternionAlgebra.reₗ (-1 : ℝ) 0 (-1)).toContinuousLinearMap
-      (Algebra.linearMap ℝ ℍ).toContinuousLinearMap := fun r ↦ by simp
-  have hemb := Topology.IsEmbedding.of_leftInverse hre (map_continuous _) (map_continuous _)
   refine ⟨fun hb ↦ ?_, fun ⟨hb, hg⟩ ↦ ?_⟩
   · obtain rfl : b = 0 := by
       -- Otherwise the derivative value `(i * b⁻¹) * b = i` would be real.
       by_contra hb0
-      have h := DFunLike.congr_fun (ContinuousLinearMap.comp_comp_eq_of_hasFDerivAt_comp_left _ _
-        hre (k := g) hb.hasFDerivAt) (⟨0, 1, 0, 0⟩ * b⁻¹)
-      simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.flip_apply,
-        ContinuousLinearMap.mul_apply', mul_assoc, inv_mul_cancel₀ hb0, mul_one] at h
+      have h := Quaternion.coe_re_of_hasFDerivAt_coe_comp hb.hasFDerivAt (⟨0, 1, 0, 0⟩ * b⁻¹)
+      simp only [ContinuousLinearMap.flip_apply, ContinuousLinearMap.mul_apply', mul_assoc,
+        inv_mul_cancel₀ hb0, mul_one] at h
       simpa using congrArg QuaternionAlgebra.imI h
-    refine ⟨rfl, (ContinuousLinearMap.hasFDerivAt_comp_left_iff_of_isEmbedding _ hemb).mp ?_⟩
-    simpa [Function.comp_def, hasLeftQuotientFDerivAt_iff_hasFDerivAt] using hb
-  · simpa [Function.comp_def, hb, hasLeftQuotientFDerivAt_iff_hasFDerivAt] using
-      (ContinuousLinearMap.hasFDerivAt_comp_left_iff_of_isEmbedding _ hemb).mpr hg
+    refine ⟨rfl, Quaternion.hasFDerivAt_coe_comp_iff.mp ?_⟩
+    simpa [hasLeftQuotientFDerivAt_iff_hasFDerivAt] using hb
+  · simpa [hb, hasLeftQuotientFDerivAt_iff_hasFDerivAt] using
+      Quaternion.hasFDerivAt_coe_comp_iff.mpr hg
 
 /-- A real-valued function `x ↦ (g x : ℍ)` has right slope `b` at `q` exactly when `b = 0` and the
 real derivative of `g` at `q` is `0`. -/
 theorem hasRightQuotientFDerivAt_coe_comp_iff :
     HasRightQuotientFDerivAt (fun x ↦ (g x : ℍ)) q b ↔ b = 0 ∧ HasFDerivAt g (0 : ℍ →L[ℝ] ℝ) q := by
-  -- `Algebra.linearMap ℝ ℍ` is the coercion `ℝ → ℍ`, with left inverse the real part.
-  have hre : Function.LeftInverse (QuaternionAlgebra.reₗ (-1 : ℝ) 0 (-1)).toContinuousLinearMap
-      (Algebra.linearMap ℝ ℍ).toContinuousLinearMap := fun r ↦ by simp
-  have hemb := Topology.IsEmbedding.of_leftInverse hre (map_continuous _) (map_continuous _)
   refine ⟨fun hb ↦ ?_, fun ⟨hb, hg⟩ ↦ ?_⟩
   · obtain rfl : b = 0 := by
       -- Otherwise the derivative value `b * (b⁻¹ * i) = i` would be real.
       by_contra hb0
-      have h := DFunLike.congr_fun (ContinuousLinearMap.comp_comp_eq_of_hasFDerivAt_comp_left _ _
-        hre (k := g) hb.hasFDerivAt) (b⁻¹ * ⟨0, 1, 0, 0⟩)
-      simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.mul_apply', ← mul_assoc,
-        mul_inv_cancel₀ hb0, one_mul] at h
+      have h := Quaternion.coe_re_of_hasFDerivAt_coe_comp hb.hasFDerivAt (b⁻¹ * ⟨0, 1, 0, 0⟩)
+      simp only [ContinuousLinearMap.mul_apply', ← mul_assoc, mul_inv_cancel₀ hb0, one_mul] at h
       simpa using congrArg QuaternionAlgebra.imI h
-    refine ⟨rfl, (ContinuousLinearMap.hasFDerivAt_comp_left_iff_of_isEmbedding _ hemb).mp ?_⟩
-    simpa [Function.comp_def, hasRightQuotientFDerivAt_iff_hasFDerivAt] using hb
-  · simpa [Function.comp_def, hb, hasRightQuotientFDerivAt_iff_hasFDerivAt] using
-      (ContinuousLinearMap.hasFDerivAt_comp_left_iff_of_isEmbedding _ hemb).mpr hg
+    refine ⟨rfl, Quaternion.hasFDerivAt_coe_comp_iff.mp ?_⟩
+    simpa [hasRightQuotientFDerivAt_iff_hasFDerivAt] using hb
+  · simpa [hb, hasRightQuotientFDerivAt_iff_hasFDerivAt] using
+      Quaternion.hasFDerivAt_coe_comp_iff.mpr hg
 
 /-- A real-valued function `x ↦ (g x : ℍ)` is left quotient differentiable at `q` exactly when the
 real derivative of `g` at `q` is `0`. -/
