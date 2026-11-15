@@ -8,13 +8,16 @@ module
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Basic
 
 /-!
-# Orthogonal countable splitting for projection-valued measures
+# Orthogonal countable splitting and diagonal-measure laws for projection-valued measures
 
 The diagonal scalar measure records the squared norm of the projection of a
 Hilbert-space vector onto a measurable spectral region. For a countable
 measurable partition, these squared norms sum to the squared norm of the
-original vector. The identity applies to projection-valued measures on
-arbitrary measurable spaces.
+original vector. Because `P.proj B hB` is linear and multiplicative on intersections,
+the diagonal measures inherit quadratic scaling under scalar multiplication, the
+parallelogram identity on sums and differences, `2`-subadditivity on sums, and
+measure restriction under a spectral projection. The identities apply to
+projection-valued measures on arbitrary measurable spaces.
 
 Adapted from Kitware's DKPS formalization in
 `ForTauCeti/Analysis/InnerProductSpace/ProjValMeasure/Additivity.lean`.
@@ -60,6 +63,54 @@ theorem tsum_enorm_sq_proj (P : ProjValMeasure X H) {ι : Type*} [Countable ι]
     _ = (P.diag ξ) (⋃ k, B k) := (measure_iUnion hdisj hB).symm
     _ = (P.diag ξ) Set.univ := by rw [hcov]
     _ = ‖ξ‖ₑ ^ 2 := P.diag_univ ξ
+
+/-- The diagonal measure at the zero vector is the zero measure. -/
+@[simp]
+theorem diag_zero (P : ProjValMeasure X H) : P.diag 0 = 0 := by
+  ext B hB
+  rw [← P.enorm_sq_proj_apply B hB 0]
+  simp
+
+/-- Scaling a vector by `c` scales its diagonal measure by `‖c‖ₑ ^ 2`. -/
+theorem diag_smul (P : ProjValMeasure X H) (c : ℂ) (ξ : H) :
+    P.diag (c • ξ) = (‖c‖ₑ ^ 2) • P.diag ξ := by
+  ext B hB
+  rw [smul_apply, ← P.enorm_sq_proj_apply B hB (c • ξ),
+    ← P.enorm_sq_proj_apply B hB ξ, map_smul, eNorm_smul, mul_pow, smul_eq_mul]
+
+/-- Negating a vector leaves its diagonal measure unchanged. -/
+@[simp]
+theorem diag_neg (P : ProjValMeasure X H) (ξ : H) : P.diag (-ξ) = P.diag ξ := by
+  simpa using P.diag_smul (-1) ξ
+
+/-- **Parallelogram law** for the diagonal measures of a projection-valued measure:
+`P.diag (ξ + ψ) + P.diag (ξ - ψ) = 2 • (P.diag ξ + P.diag ψ)`. -/
+theorem diag_add_diag_sub (P : ProjValMeasure X H) (ξ ψ : H) :
+    P.diag (ξ + ψ) + P.diag (ξ - ψ) = (2 : ℝ≥0∞) • (P.diag ξ + P.diag ψ) := by
+  ext B hB
+  simp only [add_apply, smul_apply, smul_eq_mul,
+    ← P.enorm_sq_proj_apply B hB, map_add, map_sub]
+  have hpar := parallelogram_law_with_norm ℂ (P.proj B hB ξ) (P.proj B hB ψ)
+  have hreal :
+      ‖P.proj B hB ξ + P.proj B hB ψ‖ ^ 2 + ‖P.proj B hB ξ - P.proj B hB ψ‖ ^ 2 =
+        2 * (‖P.proj B hB ξ‖ ^ 2 + ‖P.proj B hB ψ‖ ^ 2) := by
+    linarith
+  have hof := congrArg ENNReal.ofReal hreal
+  simpa [ENNReal.ofReal_add, ENNReal.ofReal_mul, ENNReal.ofReal_pow, norm_nonneg,
+    ofReal_norm] using hof
+
+/-- The diagonal measure of `ξ + ψ` is bounded by `2 • (P.diag ξ + P.diag ψ)`. -/
+theorem diag_add_le (P : ProjValMeasure X H) (ξ ψ : H) :
+    P.diag (ξ + ψ) ≤ (2 : ℝ≥0∞) • (P.diag ξ + P.diag ψ) := by
+  rw [← P.diag_add_diag_sub ξ ψ]
+  exact Measure.le_add_right le_rfl
+
+/-- Projecting a vector onto a measurable set `B` restricts its diagonal measure to `B`. -/
+theorem diag_proj (P : ProjValMeasure X H) {B : Set X} (hB : MeasurableSet B) (ξ : H) :
+    P.diag (P.proj B hB ξ) = (P.diag ξ).restrict B := by
+  ext C hC
+  rw [Measure.restrict_apply hC, ← P.enorm_sq_proj_apply C hC, ← mul_apply_eq_comp,
+    P.proj_inter, P.enorm_sq_proj_apply]
 
 end ProjValMeasure
 end TauCeti

@@ -22,6 +22,9 @@ uniform norm control for integration against polarized spectral measures: integr
 a bounded measurable function is bounded in absolute value by its supremum norm times
 `‖ψ‖ * ‖ξ‖`.
 
+On any measurable set `B`, restricting via `P.proj B hB` sharpens the bound to
+`(P.polarizedComplexMeasure ψ ξ).variation B ≤ ofReal (‖P.proj B hB ψ‖ * ‖P.proj B hB ξ‖)`,
+so the variation is absolutely continuous with respect to both `P.diag ψ` and `P.diag ξ`.
 On the diagonal, the variation of `P.polarizedComplexMeasure ξ ξ` is exactly `P.diag ξ`.
 
 The finite-variation instance makes this property available to the vector-measure
@@ -104,5 +107,48 @@ theorem variation_polarizedComplexMeasure_self (P : ProjValMeasure X H) (ξ : H)
   rw [polarizedComplexMeasure_self_eq_withDensityᵥ,
     Measure.variation_withDensityᵥ (integrable_const _)]
   simp
+
+/-- On any measurable set `B`, the variation of `P.polarizedComplexMeasure ψ ξ` is bounded by
+`ENNReal.ofReal (‖P.proj B hB ψ‖ * ‖P.proj B hB ξ‖)`. -/
+theorem polarizedComplexMeasure_variation_apply_le (P : ProjValMeasure X H) (ψ ξ : H)
+    {B : Set X} (hB : MeasurableSet B) :
+    (P.polarizedComplexMeasure ψ ξ).variation B ≤
+      ENNReal.ofReal (‖P.proj B hB ψ‖ * ‖P.proj B hB ξ‖) := by
+  calc
+    (P.polarizedComplexMeasure ψ ξ).variation B
+        = ((P.polarizedComplexMeasure ψ ξ).variation.restrict B) Set.univ :=
+      (Measure.restrict_apply_univ _).symm
+    _ = ((P.polarizedComplexMeasure ψ ξ).restrict B).variation Set.univ := by
+      rw [VectorMeasure.variation_restrict hB]
+    _ = (P.polarizedComplexMeasure (P.proj B hB ψ) (P.proj B hB ξ)).variation Set.univ := by
+      rw [P.polarizedComplexMeasure_proj_proj ψ ξ hB]
+    _ ≤ ENNReal.ofReal (‖P.proj B hB ψ‖ * ‖P.proj B hB ξ‖) :=
+      P.polarizedComplexMeasure_variation_univ_le _ _
+
+/-- Extended-norm form of `polarizedComplexMeasure_variation_apply_le`. -/
+theorem polarizedComplexMeasure_variation_apply_le_enorm (P : ProjValMeasure X H) (ψ ξ : H)
+    {B : Set X} (hB : MeasurableSet B) :
+    (P.polarizedComplexMeasure ψ ξ).variation B ≤
+      ‖P.proj B hB ψ‖ₑ * ‖P.proj B hB ξ‖ₑ := by
+  refine (P.polarizedComplexMeasure_variation_apply_le ψ ξ hB).trans_eq ?_
+  rw [ENNReal.ofReal_mul (norm_nonneg _), ofReal_norm, ofReal_norm]
+
+/-- The variation of `P.polarizedComplexMeasure ψ ξ` is absolutely continuous with respect to
+`P.diag ψ`. -/
+theorem polarizedComplexMeasure_variation_absolutelyContinuous_left (P : ProjValMeasure X H)
+    (ψ ξ : H) : (P.polarizedComplexMeasure ψ ξ).variation ≪ P.diag ψ := by
+  refine Measure.AbsolutelyContinuous.mk fun B hB h0 => nonpos_iff_eq_zero.mp ?_
+  have hψ0 : ‖P.proj B hB ψ‖ = 0 :=
+    eq_zero_of_pow_eq_zero ((P.norm_sq_proj_apply B hB ψ).trans (by simp [h0]))
+  simpa [hψ0] using P.polarizedComplexMeasure_variation_apply_le ψ ξ hB
+
+/-- The variation of `P.polarizedComplexMeasure ψ ξ` is absolutely continuous with respect to
+`P.diag ξ`. -/
+theorem polarizedComplexMeasure_variation_absolutelyContinuous_right (P : ProjValMeasure X H)
+    (ψ ξ : H) : (P.polarizedComplexMeasure ψ ξ).variation ≪ P.diag ξ := by
+  refine Measure.AbsolutelyContinuous.mk fun B hB h0 => nonpos_iff_eq_zero.mp ?_
+  have hξ0 : ‖P.proj B hB ξ‖ = 0 :=
+    eq_zero_of_pow_eq_zero ((P.norm_sq_proj_apply B hB ξ).trans (by simp [h0]))
+  simpa [hξ0] using P.polarizedComplexMeasure_variation_apply_le ψ ξ hB
 
 end TauCeti.ProjValMeasure
