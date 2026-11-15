@@ -56,7 +56,9 @@ continuation potential of the coordinate expression of `f`, and the time derivat
 
 * `TauCeti.mem_criticalPoints_continuationPotential_iff`: the critical points of `F`.
 * `TauCeti.mem_criticalPoints_continuationPotential_iff_of_mem_Icc`: the critical points in the
-  slab lie over critical points of `f₀` at `t = 0` and of `f₁` at `t = 1`.
+  slab lie over critical points of `f₀` at `t = 0` and of `f₁` at `t = 1`;
+  `TauCeti.mem_criticalPoints_continuationPotential_iff_of_snd_mem_Icc` is the same statement for a
+  path independent of the time for `t < δ` and for `t > 1 - δ`.
 * `TauCeti.isManifoldNondegenerateCriticalPoint_continuationPotential_zero_iff` and
   `TauCeti.isManifoldNondegenerateCriticalPoint_continuationPotential_one_iff`: nondegeneracy at
   the two ends.
@@ -108,6 +110,13 @@ theorem _root_.ContMDiff.continuationPotential {n : WithTop ℕ∞}
     ContMDiff (I.prod 𝓘(ℝ)) 𝓘(ℝ) n (continuationPotential C f) := by
   rw [continuationPotential_eq_add]
   exact ((contDiff_intervalBasePotential C).contMDiff.comp contMDiff_snd).add hf
+
+/-- The continuation potential of a differentiable function on `M × ℝ` is differentiable. -/
+theorem _root_.MDifferentiable.continuationPotential (hf : MDifferentiable (I.prod 𝓘(ℝ)) 𝓘(ℝ) f) :
+    MDifferentiable (I.prod 𝓘(ℝ)) 𝓘(ℝ) (continuationPotential C f) := by
+  rw [continuationPotential_eq_add]
+  exact (((contDiff_intervalBasePotential C (n := 1)).contMDiff.mdifferentiable one_ne_zero).comp
+    mdifferentiable_snd).add hf
 
 /-! ### The two ends -/
 
@@ -212,6 +221,24 @@ theorem mem_criticalPoints_continuationPotential_iff_of_mem_Icc {z : M × ℝ}
       (by rwa [fderiv_comp_extChartAt_symm_apply_zero_one (mem_extChartAt_source z.1) hd])
       (by rwa [fderiv_comp_extChartAt_symm_apply_zero_one (mem_extChartAt_source z.1) hd]),
     comp_extChartAt_symm_prodMk_right, ← mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero]
+
+/-- **The critical points of the continuation potential in the slab, for a path constant near its
+ends.** Let `f` be independent of the time for `t < δ` and for `t > 1 - δ`, with
+`∂ₜ f < C t (1 - t²)` in the open slab. At a point of the slab `M × [0, 1]` where `f` is
+differentiable, a critical point of the continuation potential lies over a critical point of `f₀`
+on `M × {0}` or of `f₁` on `M × {1}`, and conversely. -/
+theorem mem_criticalPoints_continuationPotential_iff_of_snd_mem_Icc {δ : ℝ} {z : M × ℝ}
+    (hf : MDifferentiableAt (I.prod 𝓘(ℝ)) 𝓘(ℝ) f z) (hδ : 0 < δ)
+    (hf₀ : ∀ x t, t < δ → f (x, t) = f (x, 0)) (hf₁ : ∀ x t, 1 - δ < t → f (x, t) = f (x, 1))
+    (hlt : ∀ x, ∀ t ∈ Ioo (0 : ℝ) 1, deriv (fun s ↦ f (x, s)) t < C * t * (1 - t ^ 2))
+    (hz : z.2 ∈ Icc 0 1) :
+    z ∈ criticalPoints (I.prod 𝓘(ℝ)) (continuationPotential C f) ↔
+      (z.2 = 0 ∨ z.2 = 1) ∧ z.1 ∈ criticalPoints I (fun x ↦ f (x, z.2)) := by
+  refine mem_criticalPoints_continuationPotential_iff_of_mem_Icc hf hz (hlt z.1 z.2) fun hz' ↦ ?_
+  rcases eq_endpoints_or_mem_Ioo_of_mem_Icc hz with h | h | h
+  · exact deriv_prodMk_eq_zero_of_lt hf₀ (h ▸ hδ)
+  · exact deriv_prodMk_eq_zero_of_gt hf₁ (by linarith)
+  · exact absurd h hz'
 
 /-! ### Morse on the slab -/
 

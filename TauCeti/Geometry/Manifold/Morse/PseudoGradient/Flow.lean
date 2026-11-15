@@ -162,25 +162,15 @@ theorem mfderiv_eq_zero_of_mem_unstableSet {a y : M} (hy : y ∈ hX.flow.unstabl
 theorem exists_tendsto_atTop (hf : IsMorse 𝓘(ℝ, E) f) (y : M) :
     ∃ x, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0 ∧ Tendsto (fun t ↦ hX.flow t y) atTop (𝓝 x) :=
   Flow.exists_tendsto_atTop_of_antitone hX.flow hf.contMDiff.continuous hX.antitone_flow
-    (by simpa only [criticalPoints_eq_setOf_mfderiv_eq_zero] using hf.finite_criticalPoints)
-    (fun z hz ↦ hX.mfderiv_eq_zero_of_forall_eq hz) y
+    (by simpa only [criticalPoints_eq_setOf_mfderiv_eq_zero] using hf.finite_criticalPoints) y
+    (fun z _ hz ↦ hX.mfderiv_eq_zero_of_forall_eq hz)
 
 /-- **Every orbit converges backward in time to a critical point.** -/
 theorem exists_tendsto_atBot (hf : IsMorse 𝓘(ℝ, E) f) (y : M) :
-    ∃ x, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0 ∧ Tendsto (fun t ↦ hX.flow t y) atBot (𝓝 x) := by
-  obtain ⟨x, hx, htend⟩ := Flow.exists_tendsto_atTop_of_antitone hX.flow.reverse
-    hf.contMDiff.continuous.neg
-    (fun y ↦ fun s t hst ↦ by
-      simp only [Flow.reverse_apply, Pi.neg_apply]
-      exact neg_le_neg (hX.antitone_flow y (neg_le_neg hst)))
-    (by simpa only [criticalPoints_eq_setOf_mfderiv_eq_zero] using hf.finite_criticalPoints)
-    (fun z hz ↦ hX.mfderiv_eq_zero_of_forall_eq fun t ↦ by
-      have := hz (-t)
-      simp only [Flow.reverse_apply, neg_neg, Pi.neg_apply] at this
-      exact neg_inj.1 this) y
-  refine ⟨x, hx, ?_⟩
-  have := htend.comp tendsto_neg_atBot_atTop
-  simpa [comp_def, Flow.reverse_apply] using this
+    ∃ x, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0 ∧ Tendsto (fun t ↦ hX.flow t y) atBot (𝓝 x) :=
+  Flow.exists_tendsto_atBot_of_antitone hX.flow hf.contMDiff.continuous hX.antitone_flow
+    (by simpa only [criticalPoints_eq_setOf_mfderiv_eq_zero] using hf.finite_criticalPoints) y
+    (fun z _ hz ↦ hX.mfderiv_eq_zero_of_forall_eq hz)
 
 /-- **An orbit trapped near a critical point converges to it.** If the forward orbit of `w` stays
 in a closed set `K` whose only critical point of the Morse function `f` is `x`, then the orbit

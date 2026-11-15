@@ -35,7 +35,8 @@ only upwards: once `f (γ a) ≥ c`, it stays in `{f > c}` at every later time, 
 field pointing out of a domain `{f ≤ c}` along its boundary are shown never to re-enter it.
 
 Finally, an integral curve along which the vector field vanishes does not move at all: it is a
-constant curve.
+constant curve. On a product `M × F`, the second component of an integral curve moves with the
+second component of the field, so it is strictly increasing when that component is positive.
 
 ## Main declarations
 
@@ -50,6 +51,10 @@ constant curve.
   a level of `f` only upwards when `df(v) > 0` along that level.
 * `IsMIntegralCurve.apply_eq_of_forall_eq_zero`: an integral curve along which the vector field
   vanishes is constant.
+* `IsMIntegralCurveOn.hasDerivAt_snd`, `IsMIntegralCurve.hasDerivAt_snd`: the derivative of the
+  second component of an integral curve in a product.
+* `IsMIntegralCurve.strictMono_snd`: the second component increases strictly where the second
+  component of the field is positive.
 -/
 
 public section
@@ -182,3 +187,33 @@ theorem apply_lt_of_apply_le (hγ : IsMIntegralCurveOn γ v s) (hs : IsOpen s) (
     ⟨ht.2, le_rfl⟩).not_ge hb
 
 end IsMIntegralCurveOn
+
+section Prod
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {V : (z : M × F) → TangentSpace (I.prod 𝓘(ℝ, F)) z} {c : ℝ → M × F}
+
+/-- **The second component of an integral curve in a product.** Along an integral curve `c` of a
+vector field `V` on `M × F` on a neighbourhood of `t`, the second component of `c` has derivative
+the second component of `V (c t)` at `t`. -/
+theorem IsMIntegralCurveOn.hasDerivAt_snd {s : Set ℝ} (hc : IsMIntegralCurveOn c V s) {t : ℝ}
+    (hs : s ∈ 𝓝 t) : HasDerivAt (fun r ↦ (c r).2) (V (c t) : E × F).2 t :=
+  hasDerivAt_iff_hasFDerivAt.2 <|
+    hasMFDerivAt_iff_hasFDerivAt.1 ((hc t (mem_of_mem_nhds hs)).hasMFDerivAt hs).snd_curve
+
+/-- **The second component of an integral curve in a product.** Along an integral curve `c` of a
+vector field `V` on `M × F`, the second component of `c` has derivative the second component of
+`V (c t)` at `t`. -/
+theorem IsMIntegralCurve.hasDerivAt_snd (hc : IsMIntegralCurve c V) (t : ℝ) :
+    HasDerivAt (fun r ↦ (c r).2) (V (c t) : E × F).2 t :=
+  (hc.isMIntegralCurveOn univ).hasDerivAt_snd univ_mem
+
+/-- **The second component increases along an integral curve.** If the second component of a
+vector field `V` on `M × ℝ` is positive along an integral curve `c`, then the second component of
+`c` is strictly increasing. -/
+theorem IsMIntegralCurve.strictMono_snd {V : (z : M × ℝ) → TangentSpace (I.prod 𝓘(ℝ)) z}
+    {c : ℝ → M × ℝ} (hc : IsMIntegralCurve c V) (hpos : ∀ t, 0 < (V (c t) : E × ℝ).2) :
+    StrictMono fun t ↦ (c t).2 :=
+  strictMono_of_hasDerivAt_pos hc.hasDerivAt_snd hpos
+
+end Prod
