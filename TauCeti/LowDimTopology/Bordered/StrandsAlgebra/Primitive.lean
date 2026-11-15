@@ -78,7 +78,10 @@ pointed matched circle `Z`, the matched subalgebra is `A(Z)`, so the `I(s)` are 
 primitive orthogonal idempotents of `A(Z)`
 (`TauCeti.StrandsAlgebra.completeOrthogonalIdempotents_matchedIdem`), and the left ideals
 `A(Z) I(s)` are indecomposable modules over a coefficient ring
-(`TauCeti.isPrimitiveIdempotent_iff_isIndecomposableModule`).
+(`TauCeti.isPrimitiveIdempotent_iff_isIndecomposableModule`). Conversely, `I(s)` is primitive only
+when `s` is a set of pairs of the matching and `1` is primitive in the coefficient semiring, since
+a splitting `1 = a + b` gives the splitting `I(s) = a I(s) + b I(s)`
+(`TauCeti.StrandsAlgebra.isPrimitiveIdempotent_matchedIdem_iff`).
 
 ## Main definitions
 
@@ -102,6 +105,9 @@ primitive orthogonal idempotents of `A(Z)`
 * `TauCeti.StrandsAlgebra.isPrimitiveIdempotent_matchedIdem` and
   `TauCeti.StrandsAlgebra.completeOrthogonalIdempotents_matchedIdem`: the `I(s)` are a complete set
   of primitive orthogonal idempotents of the matched subalgebra.
+* `TauCeti.StrandsAlgebra.isPrimitiveIdempotent_matchedIdem_iff`: `I(s)` is a primitive
+  idempotent of the matched subalgebra exactly when `s` is a set of pairs of the matching and `1`
+  is primitive in the coefficient semiring.
 * `TauCeti.StrandsAlgebra.exists_isIdempotentElem_and_eq_smul_matchedIdem` and
   `TauCeti.StrandsAlgebra.eq_zero_or_eq_matchedIdem_of_isIdempotentElem`: the idempotents of the
   corner of `I(s)` in the matched subalgebra.
@@ -435,9 +441,7 @@ theorem isPrimitiveIdempotent_matchedIdem (hR : IsPrimitiveIdempotent (1 : R)) {
   have hsum : (matchedIdem R M s : StrandsAlgebra R α) = matchedSum R M (idOn S) := by
     rw [matchedIdem_eq_horizontalCompletion, horizontalCompletion_eq_matchedSum
       (isMatchedGenerator_idOn_empty M s) hS, idOn_addHorizontal, empty_union]
-  have he : (basis R α).repr (matchedIdem R M s) (idOn S) = 1 := by
-    classical
-    rw [hsum, repr_matchedSum_apply, ite_eq_left ((matchedSetoid M).iseqv.refl _)]
+  have he : (basis R α).repr (matchedIdem R M s) (idOn S) = 1 := repr_matchedIdem_apply_idOn hS
   -- The identity diagrams with a nonzero coefficient in `I(s)` are related to `I(S)` by moving
   -- horizontal strands within matched pairs, so elements of the matched subalgebra have equal
   -- coefficients on them.
@@ -455,6 +459,40 @@ theorem isPrimitiveIdempotent_matchedIdem (hR : IsPrimitiveIdempotent (1 : R)) {
   · refine (eq_zero_or_eq_zero_of_add_eq hR he (hcoord f₁) (hcoord f₂)
       (congrArg Subtype.val h₁) (congrArg Subtype.val h₂) (congrArg Subtype.val h₁₂)
       (congrArg Subtype.val h₂₁) (congrArg Subtype.val hsum)).imp Subtype.ext Subtype.ext
+
+/-- **The idempotents `I(s)` are primitive exactly when expected.** The idempotent `I(s)` of the
+matched subalgebra is primitive exactly when `s` is a set of pairs of the matching and `1` is
+primitive in the coefficient semiring: otherwise `I(s)` is zero, or a splitting `1 = a + b` gives
+the splitting `I(s) = a I(s) + b I(s)`. -/
+theorem isPrimitiveIdempotent_matchedIdem_iff {s : Finset β} :
+    IsPrimitiveIdempotent
+        (⟨matchedIdem R M s, matchedIdem_mem_matchedSubalgebra M s⟩ : matchedSubalgebra R M) ↔
+      IsPrimitiveIdempotent (1 : R) ∧ s ⊆ univ.image M := by
+  refine ⟨fun hprim ↦ ?_, fun ⟨hR, hs⟩ ↦ isPrimitiveIdempotent_matchedIdem hR hs⟩
+  set e : matchedSubalgebra R M := ⟨matchedIdem R M s, matchedIdem_mem_matchedSubalgebra M s⟩
+  have hs : s ⊆ univ.image M := by
+    by_contra hs
+    exact hprim.ne_zero (Subtype.ext ((matchedIdem_eq_horizontalCompletion M s).trans
+      (horizontalCompletion_eq_zero_of_not_subset _ hs)))
+  obtain ⟨S, hS⟩ := matchedChoices_nonempty_iff.2 hs
+  have : Nontrivial R := by
+    refine (subsingleton_or_nontrivial R).resolve_left fun _ ↦ hprim.ne_zero ?_
+    exact Subtype.ext ((basis R α).repr.injective (Subsingleton.elim _ _))
+  -- The coefficient of `r I(s)` at `I(S)` is `r`.
+  have hcoeff (r : R) :
+      (basis R α).repr ((r • e : matchedSubalgebra R M) : StrandsAlgebra R α) (idOn S) = r := by
+    simp [e, hS]
+  have hidem {r : R} (hr : IsIdempotentElem r) : IsIdempotentElem (r • e) := by
+    rw [IsIdempotentElem, smul_mul_smul_comm, hr.eq, hprim.isIdempotentElem.eq]
+  have horth {r r' : R} (h : r * r' = 0) : (r • e) * (r' • e) = 0 := by
+    rw [smul_mul_smul_comm, h, zero_smul]
+  refine ⟨⟨.one, one_ne_zero, fun {a b} ha hb hab hba hsum ↦ ?_⟩, hs⟩
+  refine (hprim.eq_zero_or_eq_zero_of_add (hidem ha) (hidem hb) (horth hab) (horth hba)
+    (by rw [← add_smul, hsum, one_smul])).imp (fun h ↦ ?_) fun h ↦ ?_
+  · rw [← hcoeff a, h]
+    simp
+  · rw [← hcoeff b, h]
+    simp
 
 /-- **The idempotents `I(s)` of the matched subalgebra are a complete family of orthogonal
 idempotents**, indexed by the sets `s` of pairs of the matching: they are orthogonal idempotents
@@ -513,46 +551,6 @@ private theorem smul_eq_zero_or_eq_of_isIdempotentElem (hR : IsPrimitiveIdempote
 
 variable {β : Type*} [DecidableEq β] {M : α → β}
 
-/-- An element of the matched subalgebra has the same coefficient on the identity diagrams of any
-two sets with the same image, each mapped injectively by `M`: such sets are related by moving
-their points to matched points one at a time. The induction is on the number of points of `S`
-outside `T`. -/
-private theorem repr_idOn_eq_of_mem_matchedSubalgebra {x : StrandsAlgebra R α}
-    (hx : x ∈ matchedSubalgebra R M) :
-    ∀ (n : ℕ) (S T : Finset α), #(S \ T) = n → S.image M = T.image M →
-      #(S.image M) = #S → #(T.image M) = #T →
-      (basis R α).repr x (idOn S) = (basis R α).repr x (idOn T) := by
-  intro n
-  induction n with
-  | zero =>
-    intro S T hn hST hS hT
-    rw [card_eq_zero, sdiff_eq_empty_iff_subset] at hn
-    rw [eq_of_subset_of_card_le hn (by rw [← hS, ← hT, hST])]
-  | succ n ih =>
-    intro S T hn hST hS hT
-    obtain ⟨a, ha⟩ : (S \ T).Nonempty := card_pos.1 (by omega)
-    rw [mem_sdiff] at ha
-    obtain ⟨b, hbT, hba⟩ : ∃ b ∈ T, M b = M a := by
-      have hmem := mem_image_of_mem M ha.1
-      rw [hST, mem_image] at hmem
-      exact hmem
-    have hinj : Set.InjOn M (S : Set α) := card_image_iff.1 hS
-    have hbS : b ∉ S := fun hbS ↦ ha.2 (hinj ha.1 hbS hba.symm ▸ hbT)
-    set S' := insert b (S.erase a)
-    have hS'image : S'.image M = S.image M := by
-      rw [image_insert, hba, ← image_insert, insert_erase ha.1]
-    have hS'card : #S' = #S := by
-      rw [card_insert_of_notMem fun h ↦ hbS (mem_of_mem_erase h), card_erase_of_mem ha.1]
-      have := card_pos.2 ⟨a, ha.1⟩
-      omega
-    have hS'T : S' \ T = (S \ T).erase a := by
-      rw [insert_sdiff_of_mem _ hbT, erase_sdiff_comm]
-    have hswap := (mem_matchedSubalgebra.1 hx).2 (idOn S) a b hba.symm
-    rw [swapHorizontal_idOn ha.1 hbS] at hswap
-    rw [← hswap]
-    refine ih S' T ?_ (hS'image.trans hST) (by rw [hS'image, hS'card, hS]) hT
-    rw [hS'T, card_erase_of_mem (mem_sdiff.2 ha), hn, Nat.add_sub_cancel]
-
 /-- **The idempotents of the matched subalgebra in the corner of `I(s)`** are the multiples
 `c I(s)` by idempotents `c` of the coefficient ring. -/
 theorem exists_isIdempotentElem_and_eq_smul_matchedIdem {e : StrandsAlgebra R α} {s : Finset β}
@@ -562,20 +560,20 @@ theorem exists_isIdempotentElem_and_eq_smul_matchedIdem {e : StrandsAlgebra R α
   by_cases hsec : ∃ S : Finset α, S.image M = s ∧ #S = #s
   · obtain ⟨S₀, hS₀, hcard₀⟩ := hsec
     set c := (basis R α).repr e (idOn S₀)
+    have hmem {S : Finset α} (h : S.image M = s ∧ #S = #s) : S ∈ matchedChoices M s :=
+      mem_matchedChoices.2 ⟨h.1, card_image_iff.1 (by rw [h.1, h.2])⟩
     -- The horizontal part of `e` is that of `I(s) e`, and all its coefficients on the sets over
     -- `s` agree with `c`.
     have hhe : horizontalPart R α e = c • matchedIdem R M s := by
       conv_lhs => rw [← hl, map_mul, horizontalPart_matchedIdem, matchedIdem_def, sum_mul]
       rw [matchedIdem_def, smul_sum]
       refine sum_congr rfl fun S hS ↦ ?_
-      obtain ⟨hSim, hScard⟩ := (mem_filter.1 hS).2
       rw [idem_mul_horizontalPart]
       congr 1
-      exact repr_idOn_eq_of_mem_matchedSubalgebra hm _ S S₀ rfl (hSim.trans hS₀.symm)
-        (by rw [hSim, hScard]) (by rw [hS₀, hcard₀])
+      exact repr_apply_idOn_eq hm (hmem (mem_filter.1 hS).2) (hmem ⟨hS₀, hcard₀⟩)
     refine ⟨c, eq_smul_of_horizontalPart_eq_smul (φ := idOn S₀) he
       (isIdempotentElem_matchedIdem M s) (horizontalPart_matchedIdem M s) ?_ hl hr hhe⟩
-    rw [repr_matchedIdem_apply, source_idOn, ite_eq_left ⟨rfl, hS₀, hcard₀⟩]
+    exact repr_matchedIdem_apply_idOn (hmem ⟨hS₀, hcard₀⟩)
   · -- No set lies over `s`, so `I(s) = 0` and hence `e = 0`.
     have h0 : matchedIdem R M s = 0 := by
       rw [matchedIdem_def]
