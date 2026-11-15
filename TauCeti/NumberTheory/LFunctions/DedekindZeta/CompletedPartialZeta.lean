@@ -246,8 +246,8 @@ theorem summable_integral_unitCone {D : Set (realSpace K)} (hD : IsUnitFundament
       (integrable_archGaussian_mul_archNorm_cpow hx hσ0)).congr fun u ↦ ?_
     refine setIntegral_congr_fun (measurableSet_unitCone hD.measurableSet) fun y hy ↦ ?_
     rw [coe_idealLatticeNeZeroEquiv, archGaussian_unit_smul, ← archNorm_unitScale u y, norm_mul,
-      norm_archNorm_cpow (fun w ↦ unitScale_pos ((mem_unitCone.mp hy).1 w) u), div_ofNat_re,
-      ofReal_re]
+      norm_cpow_eq_rpow_re_of_pos (archNorm_pos fun w ↦ unitScale_pos ((mem_unitCone.mp hy).1 w) u),
+      div_ofNat_re, ofReal_re]
   · refine (((TauCeti.summable_absNorm_rpow_ideal_iff (K := K)).mpr hσ).subtype _
       |>.mul_left _).congr fun 𝔟 ↦ (tsum_unit_setIntegral_norm_archGaussian hD I 𝔟 hσ_pos).symm
 
@@ -270,7 +270,8 @@ private theorem summable_setIntegral_norm_archNorm_cpow_mul_archGaussian {D : Se
         ∂archHaar K :=
   (summable_integral_unitCone hD I hs).congr fun _ ↦
     setIntegral_congr_fun (measurableSet_unitCone hD.measurableSet) fun _ hy ↦ by
-      rw [norm_mul, norm_archNorm_cpow (mem_unitCone.mp hy).1, div_ofNat_re, mul_comm]
+      rw [norm_mul, norm_cpow_eq_rpow_re_of_pos (archNorm_pos (mem_unitCone.mp hy).1), div_ofNat_re,
+        mul_comm]
 
 /-- **Integrability of the norm-weighted reduced theta series on `unitCone D`** for `Re s > 1`. -/
 theorem integrableOn_archNorm_cpow_mul_latticeTheta_sub_one {D : Set (realSpace K)}

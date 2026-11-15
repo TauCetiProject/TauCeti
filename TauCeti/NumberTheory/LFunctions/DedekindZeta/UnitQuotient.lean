@@ -140,41 +140,17 @@ theorem tsum_absNorm_cpow_eq_mul_tsum_idealLattice_fundamentalCone
 
 /-! ### The ideals of the class of `J⁻¹` -/
 
-private theorem mk0_eq_inv_mk0_iff (J 𝔟 : (Ideal (𝓞 K))⁰) :
-    ClassGroup.mk0 𝔟 = (ClassGroup.mk0 J)⁻¹ ↔
-      IsPrincipal ((𝔟 : Ideal (𝓞 K)) * (J : Ideal (𝓞 K))) := by
-  rw [eq_inv_iff_mul_eq_one, ← map_mul, ClassGroup.mk0_eq_one_iff (𝔟 * J).2, Submonoid.coe_mul]
-
 private theorem tsum_mk0_eq_inv_mk0 (J : (Ideal (𝓞 K))⁰) (s : ℂ) :
     (∑' 𝔟 : {𝔟 : (Ideal (𝓞 K))⁰ // ClassGroup.mk0 𝔟 = (ClassGroup.mk0 J)⁻¹},
         (absNorm (𝔟 : Ideal (𝓞 K)) : ℂ) ^ (-s)) =
       ∑' 𝔟 : {𝔟 : (Ideal (𝓞 K))⁰ // IsPrincipal ((𝔟 : Ideal (𝓞 K)) * (J : Ideal (𝓞 K)))},
         (absNorm (𝔟 : Ideal (𝓞 K)) : ℂ) ^ (-s) :=
-  (Equiv.subtypeEquivRight (mk0_eq_inv_mk0_iff J)).tsum_eq
+  (Equiv.subtypeEquivRight fun 𝔟 : (Ideal (𝓞 K))⁰ ↦
+    show ClassGroup.mk0 𝔟 = (ClassGroup.mk0 J)⁻¹ ↔
+        IsPrincipal ((𝔟 : Ideal (𝓞 K)) * (J : Ideal (𝓞 K))) by
+      rw [eq_inv_iff_mul_eq_one, ← map_mul, ClassGroup.mk0_eq_one_iff (𝔟 * J).2,
+        Submonoid.coe_mul]).tsum_eq
     fun 𝔟 ↦ (absNorm (𝔟.1 : Ideal (𝓞 K)) : ℂ) ^ (-s)
-
-/-- **Multiplying by `J` matches the ideals of the class of `J⁻¹` with the principal multiples of
-`J`.** The sum of `N(I)^(-s)` over the principal ideals `I` divisible by `J` is `N(J)^(-s)` times
-the sum of `N(𝔟)^(-s)` over the nonzero integral ideals `𝔟` with `𝔟 J` principal. Both sides are
-`tsum`s, so the identity also holds where neither family is summable. -/
-theorem tsum_absNorm_cpow_dvd_isPrincipal (J : (Ideal (𝓞 K))⁰) (s : ℂ) :
-    ∑' I : {I : (Ideal (𝓞 K))⁰ // (J : Ideal (𝓞 K)) ∣ I ∧ IsPrincipal (I : Ideal (𝓞 K))},
-        (absNorm (I : Ideal (𝓞 K)) : ℂ) ^ (-s) =
-      (absNorm (J : Ideal (𝓞 K)) : ℂ) ^ (-s) *
-        ∑' 𝔟 : {𝔟 : (Ideal (𝓞 K))⁰ // IsPrincipal ((𝔟 : Ideal (𝓞 K)) * (J : Ideal (𝓞 K)))},
-          (absNorm (𝔟 : Ideal (𝓞 K)) : ℂ) ^ (-s) := by
-  -- `𝔟 ↦ J 𝔟` matches the nonzero ideals with the multiples of `J` (Mathlib's `Equiv.dvd` in the
-  -- cancellative monoid of nonzero ideals), and carries the condition on `𝔟 J` along.
-  let e : {𝔟 : (Ideal (𝓞 K))⁰ // IsPrincipal ((𝔟 : Ideal (𝓞 K)) * (J : Ideal (𝓞 K)))} ≃
-      {I : (Ideal (𝓞 K))⁰ // (J : Ideal (𝓞 K)) ∣ I ∧ IsPrincipal (I : Ideal (𝓞 K))} :=
-    ((Equiv.dvd J).subtypeEquiv (q := fun I ↦ IsPrincipal (I.1 : Ideal (𝓞 K)))
-        fun 𝔟 ↦ by rw [Equiv.dvd_apply, Submonoid.coe_mul, mul_comm]).trans <|
-      (Equiv.subtypeSubtypeEquivSubtypeInter (fun I ↦ J ∣ I)
-        fun I : (Ideal (𝓞 K))⁰ ↦ IsPrincipal (I : Ideal (𝓞 K))).trans <|
-        Equiv.subtypeEquivRight fun _ ↦ by rw [nonZeroDivisors_dvd_iff_dvd_coe]
-  rw [← e.tsum_eq, ← tsum_mul_left]
-  refine tsum_congr fun 𝔟 ↦ ?_
-  simp [e, map_mul, Complex.natCast_mul_natCast_cpow]
 
 /-- **The sum over the points of `J` in the fundamental cone.** For `Re s > 1`, the sum of
 `|N(x)|^(-s)` over the points `x` of the fundamental cone that are images of elements of `J`

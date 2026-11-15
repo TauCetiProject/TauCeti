@@ -15,9 +15,8 @@ Mathlib defines Deligne's archimedean factors `Gammaℝ s = π ^ (-s / 2) * Gamm
 
 * `Complex.Gammaℂ_eq_zero_iff`: the total zero values of `Gammaℂ` occur at the nonpositive
   integers, complementing `Complex.Gammaℝ_eq_zero_iff`.
-* `Complex.two_mul_Gammaℝ_two_mul` and `Complex.Gammaℝ_two_mul`: at `2 * z` the real factor
-  differs from `Gammaℂ z` by `2 ^ (z - 1)`, everywhere on `ℂ` including at the poles where both
-  totalized values vanish.
+* `Complex.two_mul_Gammaℝ_two_mul`: twice the real factor at `2 * z` is `2 ^ z` times `Gammaℂ z`,
+  everywhere on `ℂ` including at the poles where both totalized values vanish.
 -/
 
 public section
@@ -37,11 +36,5 @@ theorem two_mul_Gammaℝ_two_mul (z : ℂ) : 2 * Gammaℝ (2 * z) = 2 ^ z * Gamm
     rw [← cpow_add _ _ two_ne_zero, add_neg_cancel, cpow_zero]
   rw [Gammaℝ_def, Gammaℂ_def, neg_div, mul_div_cancel_left₀ _ two_ne_zero, h2π]
   linear_combination 2 * (Real.pi : ℂ) ^ (-z) * Gamma z * h2.symm
-
-/-- The real archimedean factor at `2 * z` is `2 ^ (z - 1)` times the complex archimedean factor
-at `z`. -/
-theorem Gammaℝ_two_mul (z : ℂ) : Gammaℝ (2 * z) = 2 ^ (z - 1) * Gammaℂ z := by
-  rw [cpow_sub _ _ two_ne_zero, cpow_one, div_mul_eq_mul_div, eq_div_iff two_ne_zero,
-    mul_comm, two_mul_Gammaℝ_two_mul]
 
 end Complex

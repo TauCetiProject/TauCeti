@@ -168,9 +168,4 @@ theorem integral_archGaussian_mul_archNorm_cpow (hx : mixedEmbedding.norm x ≠ 
         rw [Finset.prod_mul_distrib, prod_Gammaℝ_mult_mul, mixedEmbedding.norm_apply,
           ofReal_prod_pow_mult_cpow fun w ↦ (ha w).le]
 
-/-- At any positive parameter `y`, the norm of `(archNorm y : ℂ) ^ s` is `archNorm y ^ s.re`. -/
-theorem norm_archNorm_cpow {y : realSpace K} (hy : ∀ w, 0 < y w) (s : ℂ) :
-    ‖(archNorm y : ℂ) ^ s‖ = archNorm y ^ s.re :=
-  norm_cpow_eq_rpow_re_of_pos (archNorm_pos hy) s
-
 end TauCeti.LFunctions
