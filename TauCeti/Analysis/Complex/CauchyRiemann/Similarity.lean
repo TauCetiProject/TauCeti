@@ -345,6 +345,25 @@ private theorem exists_similarity_of_contDiffOn_of_innerProductSpace [FiniteDime
     rw [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.mul_def,
       Ring.inverse_mul_cancel _ (hunit z hz), one_apply_eq_self]
 
+/-! ### Transport along complex-linear equivalences -/
+
+/-- A factorization `e ∘ ξ = Φ σ` on a set `s`, read through a complex-linear equivalence
+`e : V ≃L[ℂ] W`, gives the factorization `ξ = Φ' σ'` on `s` with the conjugated factor
+`Φ' = e⁻¹ Φ e` and `σ' = e⁻¹ σ`: `Φ'` is continuous and invertible on `s` because `Φ` is, and
+`σ'` is complex differentiable on `s` because `σ` is. -/
+theorem continuousOn_and_isUnit_and_differentiableOn_and_eqOn_symm_conjContinuousAlgEquiv
+    {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
+    [NormedSpace ℂ W] {e : V ≃L[ℂ] W} {s : Set ℂ} {ξ : ℂ → V} {Φ : ℂ → W →L[ℂ] W} {σ : ℂ → W}
+    (hΦ : ContinuousOn Φ s) (hΦu : ∀ z ∈ s, IsUnit (Φ z)) (hσ : DifferentiableOn ℂ σ s)
+    (hξ : EqOn (fun z ↦ e (ξ z)) (fun z ↦ Φ z (σ z)) s) :
+    ContinuousOn (fun z ↦ e.symm.conjContinuousAlgEquiv (Φ z)) s ∧
+      (∀ z ∈ s, IsUnit (e.symm.conjContinuousAlgEquiv (Φ z))) ∧
+      DifferentiableOn ℂ (fun z ↦ e.symm (σ z)) s ∧
+      EqOn ξ (fun z ↦ e.symm.conjContinuousAlgEquiv (Φ z) (e.symm (σ z))) s :=
+  ⟨e.symm.conjContinuousAlgEquiv.continuous.comp_continuousOn hΦ, fun z hz ↦ (hΦu z hz).map _,
+    (e.symm : W →L[ℂ] V).differentiable.comp_differentiableOn hσ,
+    fun z hz ↦ by simpa using congrArg e.symm (hξ hz)⟩
+
 /-! ### Finite-dimensional complex normed spaces -/
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [FiniteDimensional ℂ V]
@@ -392,16 +411,9 @@ theorem exists_similarity_of_contDiffOn (hΩ : IsOpen Ω) (hξ : ContDiffOn ℝ 
   obtain ⟨r, hr, hrΩ, Φ, σ, hΦ, hΦu, hσ, hξσ⟩ :=
     exists_similarity_of_contDiffOn_of_innerProductSpace hΩ hξ'
       (hconj.comp_aestronglyMeasurable hCm) hC'b heq' hz₀
-  refine ⟨r, hr, hrΩ, fun z ↦ e.symm.conjContinuousAlgEquiv (Φ z), fun z ↦ e.symm (σ z),
-    ?_, fun z hz ↦ (hΦu z hz).map _,
-    ((e.symm : _ →L[ℂ] V).differentiable.comp_differentiableOn hσ).congr fun _ _ ↦ rfl,
-    fun z hz ↦ ?_⟩
-  · simp only [ContinuousLinearEquiv.conjContinuousAlgEquiv_apply]
-    exact continuousOn_const.clm_comp (hΦ.clm_comp continuousOn_const)
-  · have h := congrArg e.symm (hξσ hz)
-    simp only [Function.comp_apply, eR, ContinuousLinearMap.coe_restrictScalars',
-      ContinuousLinearEquiv.coe_coe, e.symm_apply_apply] at h
-    simp [h]
+  exact ⟨r, hr, hrΩ, _, _,
+    continuousOn_and_isUnit_and_differentiableOn_and_eqOn_symm_conjContinuousAlgEquiv (e := e)
+      hΦ hΦu hσ hξσ⟩
 
 /-- A `C¹` solution of `∂ₛξ + i ∂ₜξ + C ξ = 0` on an open set `Ω`, with measurable, locally
 bounded real-linear coefficient `C`, has a similarity factorization at every point of `Ω`. -/
@@ -413,11 +425,7 @@ theorem hasSimilarityFactorizationAt_of_contDiffOn (hΩ : IsOpen Ω) (hξ : Cont
   have := FiniteDimensional.completeSpace ℂ V
   obtain ⟨r, hr, -, Φ, σ, hΦ, hΦu, hσ, hξσ⟩ :=
     exists_similarity_of_contDiffOn hΩ hξ hCm hCb heq hz₀
-  obtain ⟨u, hu⟩ := hΦu z₀ (mem_ball_self hr)
-  -- restricting the scalars of the equivalence `Φ z₀` to `ℝ` keeps it invertible
-  refine .of_eqOn_ball hr (Φ := fun z ↦ (Φ z).restrictScalars ℝ)
-    ((ContinuousLinearMap.restrictScalarsL ℂ V V ℝ ℂ).continuous.comp_continuousOn hΦ)
-    (hu ▸ ⟨((ContinuousLinearEquiv.unitsEquiv ℂ V u).restrictScalars ℝ).toUnit, rfl⟩) hσ hξσ
+  exact .of_eqOn_ball_clm hr hΦ (hΦu z₀ (mem_ball_self hr)) hσ hξσ
 
 /-- **Unique continuation** for classical solutions. On a connected open set `Ω`, a `C¹` solution
 of `∂ₛξ + i ∂ₜξ + C ξ = 0`, with measurable, locally bounded real-linear coefficient `C`, that

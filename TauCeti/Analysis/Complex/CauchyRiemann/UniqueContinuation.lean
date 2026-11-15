@@ -91,6 +91,18 @@ theorem HasSimilarityFactorizationAt.of_eqOn_ball {r : ℝ} (hr : 0 < r)
   ⟨Φ, σ, hΦ.continuousAt (ball_mem_nhds z₀ hr), hΦ₀,
     hσ.analyticAt (ball_mem_nhds z₀ hr), eventually_of_mem (ball_mem_nhds z₀ hr) hξ⟩
 
+/-- The disc form of the factorization with a complex-linear factor: `ξ = Ψ σ` on a disc about
+`z₀`, with `Ψ` a family of complex-linear maps continuous on the disc and invertible at `z₀`, and
+`σ` complex differentiable on the disc. -/
+theorem HasSimilarityFactorizationAt.of_eqOn_ball_clm {r : ℝ} (hr : 0 < r) {Ψ : ℂ → V →L[ℂ] V}
+    (hΨ : ContinuousOn Ψ (ball z₀ r)) (hΨ₀ : IsUnit (Ψ z₀)) (hσ : DifferentiableOn ℂ σ (ball z₀ r))
+    (hξ : EqOn ξ (fun z ↦ Ψ z (σ z)) (ball z₀ r)) : HasSimilarityFactorizationAt ξ z₀ := by
+  obtain ⟨u, hu⟩ := hΨ₀
+  -- restricting the scalars of the equivalence `Ψ z₀` to `ℝ` keeps it invertible
+  exact .of_eqOn_ball hr (Φ := fun z ↦ (Ψ z).restrictScalars ℝ)
+    ((ContinuousLinearMap.restrictScalarsL ℂ V V ℝ ℂ).continuous.comp_continuousOn hΨ)
+    (hu ▸ ⟨((ContinuousLinearEquiv.unitsEquiv ℂ V u).restrictScalars ℝ).toUnit, rfl⟩) hσ hξ
+
 omit [CompleteSpace V] in
 /-- A family of real-linear maps continuous at `z₀` and invertible there carries a factorization of
 `η` at `z₀` to one of `z ↦ Φ z (η z)`. This reduces factorizations for a variable complex

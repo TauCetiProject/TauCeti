@@ -244,20 +244,12 @@ theorem exists_similarity_of_isWeakLinearCauchyRiemannOn_I_smul_id (hp : 2 < p)
   obtain ⟨r, hr, hrΩ, Φ, σ, hΦ, hΦW, hΦu, hσ, hξσ⟩ :=
     exists_similarity_of_isWeakLinearCauchyRiemannOn_I_smul_id_of_innerProductSpace hp' hC' hξ' hz₀
   -- conjugate the factor back to `V`
-  let L : (EuclideanSpace ℂ (Fin (Module.finrank ℂ V)) →L[ℂ] _) →L[ℝ] V →L[ℂ] V :=
-    (e.symm.arrowCongr e.symm).toContinuousLinearMap.restrictScalars ℝ
-  have hL (Ψ : EuclideanSpace ℂ (Fin (Module.finrank ℂ V)) →L[ℂ] _) :
-      L Ψ = e.symm.conjContinuousAlgEquiv Ψ := by
-    ext v
-    simp [L]
-  refine ⟨r, hr, hrΩ, fun z ↦ L (Φ z), fun z ↦ e.symm (σ z),
-    L.continuous.comp_continuousOn hΦ, hΦW.clm_comp L,
-    fun z hz ↦ by simpa only [hL] using (hΦu z hz).map e.symm.conjContinuousAlgEquiv,
-    ((e.symm : _ →L[ℂ] V).differentiable.comp_differentiableOn hσ).congr fun _ _ ↦ rfl,
-    fun z hz ↦ ?_⟩
-  have h := congrArg e.symm (hξσ hz)
-  simp only [A, ContinuousLinearEquiv.coe_restrictScalars', e.symm_apply_apply] at h
-  simp [h, hL]
+  obtain ⟨hΦ', hΦu', hσ', hξσ'⟩ :=
+    continuousOn_and_isUnit_and_differentiableOn_and_eqOn_symm_conjContinuousAlgEquiv (e := e)
+      (ξ := ξ) hΦ hΦu hσ fun z hz ↦ by simpa [A] using hξσ hz
+  exact ⟨r, hr, hrΩ, _, _, hΦ',
+    hΦW.clm_comp ((e.symm.arrowCongr e.symm).toContinuousLinearMap.restrictScalars ℝ),
+    hΦu', hσ', hξσ'⟩
 
 /-- Let `2 < p`, possibly `p = ∞`. A `W^{1,p}_loc` weak solution of `∂ₛξ + i ∂ₜξ + C ξ = 0` on
 an open set `Ω` (`TauCeti.IsWeakLinearCauchyRiemannOn p`), with `C ∈ Lᵖ_loc(Ω)`, has a similarity
@@ -273,11 +265,7 @@ theorem hasSimilarityFactorizationAt_of_isWeakLinearCauchyRiemannOn_I_smul_id (h
     exists_similarity_of_isWeakLinearCauchyRiemannOn_I_smul_id (lt_min hp (by norm_num))
       ((min_le_right _ _).trans_lt ENNReal.ofNat_lt_top).ne (hC.mono_exponent hq)
       (IsWeakCauchyRiemannOn.mono_exponent hξ hq) hz₀
-  obtain ⟨u, hu⟩ := hΦu z₀ (mem_ball_self hr)
-  -- restricting the scalars of the equivalence `Φ z₀` to `ℝ` keeps it invertible
-  refine .of_eqOn_ball hr (Φ := fun z ↦ (Φ z).restrictScalars ℝ)
-    ((ContinuousLinearMap.restrictScalarsL ℂ V V ℝ ℂ).continuous.comp_continuousOn hΦ)
-    (hu ▸ ⟨((ContinuousLinearEquiv.unitsEquiv ℂ V u).restrictScalars ℝ).toUnit, rfl⟩) hσ hξσ
+  exact .of_eqOn_ball_clm hr hΦ (hΦu z₀ (mem_ball_self hr)) hσ hξσ
 
 /-- **Unique continuation** for weak solutions with `Lᵖ` coefficients. Let `2 < p`, possibly
 `p = ∞`. On a connected open set `Ω`, a `W^{1,p}_loc` weak solution of `∂ₛξ + i ∂ₜξ + C ξ = 0`
