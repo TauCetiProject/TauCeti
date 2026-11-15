@@ -51,6 +51,8 @@ Tauberian theorem needs to count prime ideals.
 
 ## Main results
 
+* `TauCeti.dedekindZeta_rat` and `TauCeti.dedekindZeta_residue_rat`: over `ℚ`, `ζ_ℚ` is
+  `LSeries 1` and its residue at `s = 1` is `1`.
 * `TauCeti.setOf_one_le_re_subset_setOf_one_sub_one_div_finrank_lt_re`: the closed half-plane
   `Re s ≥ 1` lies in the half-plane of continuation.
 * `TauCeti.isBigO_card_idealsLE_sub`: the number of nonzero integral ideals of norm at most `x` is
@@ -82,6 +84,31 @@ open Asymptotics Filter IsDedekindDomain NumberField TauCeti.GlobalNumberFields
 open scoped nonZeroDivisors Topology
 
 namespace TauCeti
+
+/-- Over `ℚ`, the Dedekind zeta function is `LSeries 1`, the `L`-series of the constant coefficient
+`1`. -/
+@[simp]
+theorem dedekindZeta_rat (s : ℂ) : dedekindZeta ℚ s = LSeries 1 s := by
+  rw [dedekindZeta_eq_LSeries_dedekindZetaCoeff]
+  congr 1
+  ext n
+  simp
+
+/-- **The Dedekind zeta function of `ℚ` has residue `1` at `s = 1`.** -/
+@[simp]
+theorem dedekindZeta_residue_rat : dedekindZeta_residue ℚ = 1 := by
+  have hsum : Tendsto (fun n : ℕ ↦ (∑ _k ∈ Finset.Icc 1 n, (1 : ℝ)) / (n : ℝ)) atTop (𝓝 1) := by
+    refine tendsto_const_nhds.congr' ?_
+    filter_upwards [eventually_ge_atTop 1] with n hn
+    have hn0 : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (by lia)
+    simp [Nat.card_Icc, hn0]
+  have h1 := LSeries_tendsto_sub_mul_nhds_one_of_tendsto_sum_div_and_nonneg (fun _ ↦ (1 : ℝ)) hsum
+    fun _ ↦ zero_le_one
+  have h1' : Tendsto (fun s : ℝ ↦ ((s : ℂ) - 1) * dedekindZeta ℚ s) (𝓝[>] 1)
+      (𝓝 ((1 : ℝ) : ℂ)) := by
+    simpa [dedekindZeta_rat, Pi.one_def, Complex.ofReal_sub] using h1
+  exact Complex.ofReal_injective
+    (tendsto_nhds_unique (tendsto_sub_one_mul_dedekindZeta_nhdsGT ℚ) h1')
 
 /-- The closed half-plane `Re s ≥ 1` lies in the half-plane of the Dedekind zeta continuation. -/
 theorem setOf_one_le_re_subset_setOf_one_sub_one_div_finrank_lt_re

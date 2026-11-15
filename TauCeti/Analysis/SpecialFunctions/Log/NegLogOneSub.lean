@@ -23,6 +23,8 @@ together with its exact domain of summability.
 
 ## Main results
 
+* `Real.neg_log_one_sub_sub_pos`: for `x < 1` with `x ≠ 0`, the remainder `-log (1 - x) - x` is
+  strictly positive.
 * `Real.neg_log_one_sub_sub_le`: for `0 ≤ x < 1`, the remainder is at most
   `x² / (2 (1 - x))`.
 * `Real.neg_log_one_sub_rpow_sub_le_div`: for `2 ≤ y` and `0 < s`, it is at most
@@ -35,6 +37,9 @@ together with its exact domain of summability.
 * `Real.neg_log_one_sub_le_iff`: for `x < 1`, `-log (1 - x) ≤ c ↔ x ≤ 1 - exp (-c)`.
 * `Real.hasSum_pow_div_natCast` and `Real.summable_pow_div_natCast_iff`: the series
   `∑ xⁿ / n` sums to `-log (1 - x)` for `|x| < 1` and is summable exactly there.
+* `Real.neg_log_one_sub_sub_sum_Icc_nonneg` and `Real.neg_log_one_sub_sub_sum_Icc_le`: for
+  `0 ≤ x < 1`, the `m`-th Taylor remainder `-log (1 - x) - ∑ k ∈ Icc 1 m, x ^ k / k` lies in
+  `[0, x ^ (m + 1) / ((m + 1) (1 - x))]`.
 * `Complex.norm_neg_log_one_sub_sub_le`: for complex `z` with `‖z‖ ≤ 1/2`, the remainder
   `-log (1 - z) - z` has norm at most `‖z‖ ^ 2`.
 
@@ -55,6 +60,11 @@ namespace Real
 theorem neg_log_one_sub_sub_nonneg {x : ℝ} (hx1 : x < 1) :
     0 ≤ -log (1 - x) - x := by
   linarith [log_le_sub_one_of_pos (sub_pos.mpr hx1)]
+
+/-- The quadratic remainder of `-log (1 - x)` is strictly positive for `x < 1` with `x ≠ 0`. -/
+theorem neg_log_one_sub_sub_pos {x : ℝ} (hx0 : x ≠ 0) (hx1 : x < 1) :
+    0 < -log (1 - x) - x := by
+  linarith [log_lt_sub_one_of_pos (sub_pos.mpr hx1) (by intro h; apply hx0; linarith)]
 
 /-- The quadratic remainder of `-log (1 - x)` is at most `x² / (2 (1 - x))` for
 `0 ≤ x < 1`. This is Mathlib's complex logarithm bound read along the reals. -/
@@ -161,6 +171,36 @@ theorem summable_pow_div_natCast_iff {x : ℝ} :
   refine not_summable_one_div_natCast (habs.of_nonneg_of_le (fun n => by positivity) fun n => ?_)
   exact div_le_div_of_nonneg_right (one_le_pow₀ (not_lt.mp hx)) n.cast_nonneg
 
+private theorem hasSum_pow_div_natCast_tail {x : ℝ} (hx : |x| < 1) (m : ℕ) :
+    HasSum (fun j : ℕ ↦ x ^ (j + (m + 1)) / (j + (m + 1) : ℕ))
+      (-log (1 - x) - ∑ k ∈ Finset.Icc 1 m, x ^ k / k) := by
+  have hrange : ∑ k ∈ Finset.range (m + 1), x ^ k / (k : ℝ) = ∑ k ∈ Finset.Icc 1 m, x ^ k / k := by
+    refine (Finset.sum_subset (fun k hk ↦ ?_) fun k hkR hk ↦ ?_).symm
+    · rw [Finset.mem_Icc] at hk
+      exact Finset.mem_range.mpr (by lia)
+    · rw [Finset.mem_range] at hkR
+      have hk0 : k = 0 := by simp only [Finset.mem_Icc, not_and, not_le] at hk; lia
+      simp [hk0]
+  rw [← hrange]
+  exact (hasSum_nat_add_iff' (m + 1)).mpr (hasSum_pow_div_natCast hx)
+
+/-- For `0 ≤ x < 1`, the `m`-th Taylor remainder of `-log (1 - x)` is nonnegative. -/
+theorem neg_log_one_sub_sub_sum_Icc_nonneg {x : ℝ} (hx0 : 0 ≤ x) (hx1 : x < 1) (m : ℕ) :
+    0 ≤ -log (1 - x) - ∑ k ∈ Finset.Icc 1 m, x ^ k / k :=
+  (hasSum_pow_div_natCast_tail (by rwa [abs_of_nonneg hx0]) m).nonneg fun _ ↦ by positivity
+
+/-- For `0 ≤ x < 1`, the `m`-th Taylor remainder of `-log (1 - x)` is at most
+`x ^ (m + 1) / ((m + 1) (1 - x))`. -/
+theorem neg_log_one_sub_sub_sum_Icc_le {x : ℝ} (hx0 : 0 ≤ x) (hx1 : x < 1) (m : ℕ) :
+    -log (1 - x) - ∑ k ∈ Finset.Icc 1 m, x ^ k / k ≤ x ^ (m + 1) / ((m + 1) * (1 - x)) := by
+  have hgeom : HasSum (fun j : ℕ ↦ x ^ (m + 1) / (m + 1 : ℕ) * x ^ j)
+      (x ^ (m + 1) / ((m + 1) * (1 - x))) := by
+    convert (hasSum_geometric_of_lt_one hx0 hx1).mul_left (x ^ (m + 1) / (m + 1 : ℕ)) using 1
+    rw [Nat.cast_add, Nat.cast_one, ← div_div, div_eq_mul_inv]
+  refine hasSum_le (fun j ↦ ?_) (hasSum_pow_div_natCast_tail (by rwa [abs_of_nonneg hx0]) m) hgeom
+  rw [add_comm j, pow_add, div_mul_eq_mul_div]
+  exact div_le_div_of_nonneg_left (by positivity) (by positivity)
+    (by exact_mod_cast le_add_right le_rfl)
 end Real
 
 namespace Complex
