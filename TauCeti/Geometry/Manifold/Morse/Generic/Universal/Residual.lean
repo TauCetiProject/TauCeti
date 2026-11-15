@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Generic.Universal.Differential
-import TauCeti.Analysis.Fredholm.ClosedRange
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Banach
 import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.SecondCountable
@@ -105,8 +104,7 @@ theorem mem_residual_setOf_isRegularSectionParameter_universalDifferential {k : 
     (fun z _ ↦ hcont z) (fun z _ ↦ ?_)
     (fun z _ ↦ surjective_sectionLinearization_universalDifferential k hK hk z) (fun z _ ↦ ?_)
   · -- The slice linearization is a map between finite-dimensional spaces.
-    exact ContinuousLinearMap.IsFredholm.of_finite_ker_coker (E := E) (F := E →L[ℝ] ℝ) _
-      inferInstance inferInstance
+    exact ContinuousLinearMap.isFredholm_of_finiteDimensional _
   · -- The slice linearization maps `T_x M`, which is `E`, to its dual, so it has index zero.
     have hdual : Module.finrank ℝ (TangentSpace 𝓘(ℝ, E) z.1 →L[ℝ] ℝ) =
         Module.finrank ℝ (TangentSpace 𝓘(ℝ, E) z.1) :=
