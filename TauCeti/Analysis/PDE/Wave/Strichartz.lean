@@ -10,6 +10,7 @@ public import TauCeti.Analysis.PDE.Wave.Dispersive
 import TauCeti.Analysis.Convolution.Young
 import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
 import TauCeti.Analysis.Fourier.ChangeOfVariables
+import TauCeti.MeasureTheory.Function.Lp.Star
 import TauCeti.MeasureTheory.Integral.RieszThorin
 
 /-!
@@ -92,14 +93,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 
 /-! ### The multiplier `Pⱼ` -/
 
-/-- A symbol almost everywhere equal to the real cutoff `ψⱼ` is its own complex conjugate, so
-`Pⱼ` is self-adjoint. -/
-private theorem star_eq_self_of_ae_eq_littlewoodPaley {j : ℤ} {m : Lp ℂ ∞ (volume : Measure E)}
-    (hm : m =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) : star m = m := by
-  apply Lp.ext
-  filter_upwards [Lp.coeFn_star m, hm] with ξ h₁ h₂
-  rw [h₁, Pi.star_apply, h₂, Complex.star_def, Complex.conj_ofReal]
-
 /-- **`Pⱼ` is bounded on `L¹`, uniformly in `j`.** It is convolution with `𝓕⁻ ψⱼ`, and
 `‖𝓕⁻ ψⱼ‖₁ = ‖𝓕⁻ ψ₀‖₁` because `ψⱼ` is `ψ₀` rescaled. -/
 private theorem exists_eLpNorm_fourierMultiplierCLM_one_le :
@@ -122,11 +115,8 @@ private theorem exists_eLpNorm_fourierMultiplierCLM_one_le :
     have hσ : (σ : E → ℂ) = fun ξ ↦ (ψ 0 : E → ℂ) (((2 : ℝ) ^ j)⁻¹ • ξ) := by
       funext ξ
       rw [hψ, hψ, littlewoodPaley_apply_eq_littlewoodPaley_zero_apply φ j ξ]
-    have h := integral_norm_pow_mul_norm_fourierInv_comp_smul (ψ 0 : E → ℂ) 0
-      (inv_ne_zero (zpow_ne_zero j (two_ne_zero (α := ℝ))))
-    simp only [pow_zero, one_mul] at h
     rw [hσ]
-    exact h
+    exact integral_norm_fourierInv_comp_smul _ (inv_ne_zero (zpow_ne_zero j two_ne_zero))
   have hK : AEStronglyMeasurable (𝓕⁻ (σ : E → ℂ)) volume := by
     rw [← SchwartzMap.fourierInv_coe]
     exact (𝓕⁻ σ).continuous.aestronglyMeasurable
@@ -232,7 +222,7 @@ private theorem adjoint_halfWavePropagator_comp_fourierMultiplierCLM {j : ℤ}
     (halfWavePropagator ℂ t ∘L Lp.fourierMultiplierCLM ℂ m)† =
       Lp.fourierMultiplierCLM ℂ m ∘L halfWavePropagator ℂ (-t) := by
   rw [ContinuousLinearMap.adjoint_comp, Lp.adjoint_fourierMultiplierCLM,
-    φ.star_eq_self_of_ae_eq_littlewoodPaley hm, halfWavePropagator_def, adjoint_phasePropagator]
+    Lp.star_eq_self_of_ae_eq_ofReal hm, halfWavePropagator_def, adjoint_phasePropagator]
 
 /-- The time pairings of `U(t) = W₊(t) Pⱼ` are `U(s) U(t)* = W₊(s - t) Pⱼ²`. -/
 private theorem halfWavePropagator_comp_apply_adjoint {j : ℤ}
