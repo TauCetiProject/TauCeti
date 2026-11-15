@@ -63,8 +63,9 @@ than `r`; differentiating it `r` more times gives a differential equation.
   P-recursive, that is, satisfies a linear recurrence with coefficients in `k[X]`.
 * `PowerSeries.IsDFinite.add`, `PowerSeries.IsDFinite.mul`, `PowerSeries.IsDFinite.derivative`:
   closure under sums, products and differentiation (with `neg`, `sub` and `iterate_derivative`).
-* `PowerSeries.IsDFinite.tower_top`: D-finiteness over `k` implies D-finiteness over every field
-  `k'` between `k` and `K`.
+* `PowerSeries.IsDFinite.tower_top`, `PowerSeries.IsDFinite.map`, `PowerSeries.IsDFinite.rescale`:
+  D-finiteness is preserved under scalar extension, compatible ring homomorphisms, and rescaling by
+  elements of `k`.
 * `PowerSeries.isDFinite_polynomial`, `PowerSeries.isDFinite_algebraMap`,
   `PowerSeries.isDFinite_exp`, `PowerSeries.isDFinite_mk_pow`: polynomials over `K` or over `k`,
   the exponential series and the geometric series with ratio in `k` are D-finite.
@@ -625,5 +626,44 @@ theorem isDFinite_mk_pow (a : k) : IsDFinite k (mk fun n ↦ algebraMap k K a ^ 
       Nat.zero_mod, add_zero, neg_mul, Matrix.cons_val_one, Matrix.cons_val_fin_one,
       Polynomial.eval_one, map_one, Nat.mod_succ, pow_succ, one_mul]
     ring⟩
+
+/-- Compatible ring homomorphisms `σ₀ : k →+* k'` and `σ : K →+* K'` preserve D-finiteness. -/
+theorem IsDFinite.map {k' K' : Type*} [Field k'] [CommRing K'] [Algebra k' K']
+    (σ₀ : k →+* k') (σ : K →+* K') (hcomm : ∀ x, σ (algebraMap k K x) = algebraMap k' K' (σ₀ x))
+    {f : K⟦X⟧} (hf : IsDFinite k f) : IsDFinite k' (PowerSeries.map σ f) := by
+  obtain ⟨r, q, hq, h⟩ := isDFinite_iff_pRecursive.mp hf
+  refine isDFinite_iff_pRecursive.mpr
+    ⟨r, fun i ↦ (q i).map σ₀, (Polynomial.map_ne_zero_iff σ₀.injective).mpr hq, fun n ↦ ?_⟩
+  have hn := congrArg σ (h n)
+  rw [map_sum, map_zero] at hn
+  rw [← hn]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  dsimp only
+  rw [Algebra.smul_def, Algebra.smul_def, map_mul, hcomm, coeff_map, ← map_natCast σ₀,
+    Polynomial.eval_map_apply]
+
+/-- Rescaling the indeterminate by `algebraMap k K c` for `c : k` preserves D-finiteness over
+`k`. -/
+theorem IsDFinite.rescale (c : k) {f : K⟦X⟧} (hf : IsDFinite k f) :
+    IsDFinite k (PowerSeries.rescale (algebraMap k K c) f) := by
+  rcases eq_or_ne c 0 with rfl | _
+  · have h0 : PowerSeries.rescale (algebraMap k K 0) f =
+        ((Polynomial.C (constantCoeff f) : K[X]) : K⟦X⟧) := by
+      ext (_ | n) <;> simp
+    rw [h0]
+    exact isDFinite_polynomial k _
+  obtain ⟨r, q, hq, h⟩ := isDFinite_iff_pRecursive.mp hf
+  refine isDFinite_iff_pRecursive.mpr
+    ⟨r, fun i ↦ Polynomial.C (c ^ (r - (i : ℕ))) * q i, by simpa using hq, fun n ↦ ?_⟩
+  have hsum : ∑ i : Fin (r + 1),
+      (Polynomial.C (c ^ (r - (i : ℕ))) * q i).eval (n : k) •
+        coeff (n + i) (PowerSeries.rescale (algebraMap k K c) f) =
+      (c ^ (n + r)) • ∑ i : Fin (r + 1), (q i).eval (n : k) • coeff (n + i) f := by
+    rw [Finset.smul_sum]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    have hi := i.isLt
+    rw [coeff_rescale, Polynomial.eval_mul, Polynomial.eval_C, ← map_pow, ← Algebra.smul_def,
+      smul_smul, smul_smul, mul_right_comm, ← pow_add, show r - (i : ℕ) + (n + i) = n + r by omega]
+  rw [hsum, h n, smul_zero]
 
 end PowerSeries
