@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Cluster.CoefficientSemifield.Basic
+public import Mathlib.Algebra.Ring.Equiv
 
 /-!
 # Homomorphisms of coefficient semifields
@@ -26,8 +27,6 @@ over `Q`.
   indexed products.
 * The `Unique` instance for homomorphisms into the one-element coefficient semifield, which is
   therefore terminal.
-* `RingEquiv.toCoefficientSemifieldHom`: a bijection preserving multiplication and auxiliary
-  addition, as a homomorphism.
 
 ## References
 
@@ -224,17 +223,56 @@ end TauCeti
 
 namespace RingEquiv
 
-open TauCeti
+variable {P Q R : Type*} [TauCeti.CoefficientSemifield P]
+  [TauCeti.CoefficientSemifield Q] [TauCeti.CoefficientSemifield R]
 
-variable {P Q : Type*} [CoefficientSemifield P] [CoefficientSemifield Q]
-
-/-- A bijection preserving multiplication and the auxiliary addition, as a homomorphism of
+/-- An isomorphism preserving multiplication and auxiliary addition is a homomorphism of
 coefficient semifields. -/
-def toCoefficientSemifieldHom (e : P ≃+* Q) : CoefficientSemifieldHom P Q :=
-  { e.toMulEquiv.toMonoidHom with map_add' := map_add e }
+def toCoefficientSemifieldHom (e : P ≃+* Q) : TauCeti.CoefficientSemifieldHom P Q :=
+  { MonoidHom.ofClass e, AddHomClass.toAddHom e with }
 
 @[simp]
-theorem coe_toCoefficientSemifieldHom (e : P ≃+* Q) : ⇑e.toCoefficientSemifieldHom = e :=
+theorem coe_toCoefficientSemifieldHom (e : P ≃+* Q) :
+    ⇑e.toCoefficientSemifieldHom = e :=
   (rfl)
+
+@[simp]
+theorem toCoefficientSemifieldHom_refl :
+    (RingEquiv.refl P).toCoefficientSemifieldHom = TauCeti.CoefficientSemifieldHom.id P := by
+  ext
+  rfl
+
+@[simp]
+theorem toCoefficientSemifieldHom_trans (e : P ≃+* Q) (f : Q ≃+* R) :
+    (e.trans f).toCoefficientSemifieldHom =
+      f.toCoefficientSemifieldHom.comp e.toCoefficientSemifieldHom := by
+  ext
+  rfl
+
+@[simp]
+theorem toCoefficientSemifieldHom_comp_symm_toCoefficientSemifieldHom (e : P ≃+* Q) :
+    e.toCoefficientSemifieldHom.comp e.symm.toCoefficientSemifieldHom =
+      TauCeti.CoefficientSemifieldHom.id Q := by
+  ext x
+  simp
+
+@[simp]
+theorem symm_toCoefficientSemifieldHom_comp_toCoefficientSemifieldHom (e : P ≃+* Q) :
+    e.symm.toCoefficientSemifieldHom.comp e.toCoefficientSemifieldHom =
+      TauCeti.CoefficientSemifieldHom.id P := by
+  ext x
+  simp
+
+/-- Passing to coefficient-semifield homomorphisms retains the full isomorphism. -/
+theorem toCoefficientSemifieldHom_injective :
+    Function.Injective (toCoefficientSemifieldHom : (P ≃+* Q) → _) := by
+  intro e f h
+  ext x
+  simpa only [coe_toCoefficientSemifieldHom] using DFunLike.congr_fun h x
+
+@[simp]
+theorem toCoefficientSemifieldHom_inj {e f : P ≃+* Q} :
+    e.toCoefficientSemifieldHom = f.toCoefficientSemifieldHom ↔ e = f :=
+  toCoefficientSemifieldHom_injective.eq_iff
 
 end RingEquiv
