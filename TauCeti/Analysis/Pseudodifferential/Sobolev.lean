@@ -110,6 +110,8 @@ families of operators.
   which `u` is considered (`TauCeti.Symbol.toDistr_quantizeSobolev_congr`).
 * `TauCeti.Symbol.quantizeSobolev_ofSpatial_smul`: the symbol `ψ(x)` quantizes to the
   multiplication by `ψ`.
+* `TauCeti.Symbol.quantizeSobolev_eq_smulLeftCLM_comp`: the symbol `φ(x) a(x, ξ)` quantizes to
+  `φ · Op(a)`, for every Schwartz function `φ`.
 * `TauCeti.Symbol.continuous_quantizeSobolev`: continuity in operator norm along continuous
   families of symbols vanishing outside a fixed compact set.
 * `TauCeti.Symbol.toDistr_quantizeSobolev_congr`: the operators for different Sobolev orders `s`
@@ -1118,6 +1120,27 @@ theorem quantizeSobolev_ofSpatial_smul {ψ : 𝓢(CoordinateSpace n, ℂ)} (hψ 
     BesselPotentialSpace.toDistr_smulLeftCLM, SchwartzMap.toDistr_toBesselPotentialSpaceCLM,
     smulLeftCLM_toTemperedDistributionCLM_eq, SchwartzMap.toTemperedDistributionCLM_apply_apply,
     SchwartzMap.smulLeftCLM_apply_apply ψ.hasTemperateGrowth]
+
+/-- **Multiplication on the left.** If the coefficient of `b` is `φ(x) a(x, ξ)` for a Schwartz
+function `φ`, then `Op(b) = φ · Op(a)` as operators `H^s → H^{s - m}`. No support condition on `φ`
+is needed. -/
+theorem quantizeSobolev_eq_smulLeftCLM_comp {b : Symbol n V W m}
+    (ha : a.HasCompactSpatialSupport) (hb : b.HasCompactSpatialSupport)
+    {φ : 𝓢(CoordinateSpace n, ℂ)} (hab : ∀ x ξ, b.coefficient (x, ξ) = φ x • a.coefficient (x, ξ))
+    (s : ℝ) :
+    b.quantizeSobolev hb s =
+      BesselPotentialSpace.smulLeftCLM (s - m) φ ∘L a.quantizeSobolev ha s := by
+  refine BesselPotentialSpace.continuousLinearMap_ext ENNReal.ofNat_ne_top fun u ↦
+    BesselPotentialSpace.ext ?_
+  ext ψ
+  rw [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_smulLeftCLM,
+    smulLeftCLM_apply_apply, toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply,
+    toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply]
+  refine integral_congr_ae (.of_forall fun x ↦ ?_)
+  dsimp only
+  rw [SchwartzMap.smulLeftCLM_apply_apply φ.hasTemperateGrowth, smul_eq_mul, mul_smul,
+    quantizeSchwartzValue_congr_left (b := φ x • a.coefficient) (fun ξ ↦ hab x ξ),
+    quantizeSchwartzValue_smul_left, smul_comm]
 
 /-- **Smoothing operators gain every order of regularity.** For a smoothing symbol `a` with compact
 spatial support, the quantization `Op(a) u` of any `u ∈ H^s` lies in `H^t` for every real `t`. -/
