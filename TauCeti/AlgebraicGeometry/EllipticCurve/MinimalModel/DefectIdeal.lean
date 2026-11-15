@@ -150,17 +150,8 @@ theorem count_weierstrassDefectIdeal_eq_obstructionExponentAt
     ((Associates.mk v.asIdeal).count
       (Associates.mk (weierstrassDefectIdeal O W)).factors : ℤ) =
       obstructionExponentAt O v W := by
-  have hexp : ∀ᶠ w : HeightOneSpectrum O in Filter.cofinite,
-      ((obstructionExponentAt O w W).toNat : ℤ) = 0 := by
-    rw [Filter.eventually_cofinite]
-    refine (hasFiniteMulSupport_pow_obstructionExponentAt_toNat O W).subset fun w hw => ?_
-    simp only [Set.mem_ofPred_eq, Int.natCast_eq_zero, Function.mem_mulSupport, ne_eq,
-      Ideal.one_eq_top, Ideal.pow_eq_top_iff, w.isPrime.ne_top, false_or] at hw ⊢
-    exact hw
-  rw [← FractionalIdeal.count_coe K v (weierstrassDefectIdeal_ne_bot O W),
-    weierstrassDefectIdeal_def, FractionalIdeal.coeIdeal_finprod (nonZeroDivisors O) K le_rfl]
-  simp_rw [FractionalIdeal.coeIdeal_pow, ← zpow_natCast]
-  rw [FractionalIdeal.count_finprod K v _ hexp]
+  rw [weierstrassDefectIdeal_def,
+    Ideal.count_finprod_asIdeal_pow (hasFiniteMulSupport_pow_obstructionExponentAt_toNat O W) v]
   have : IsIntegral (Localization.AtPrime v.asIdeal) W :=
     IsIntegral.of_isScalarTower (R := O) W
   exact Int.toNat_of_nonneg (obstructionExponentAt_nonneg_of_isIntegral O v W)
@@ -197,8 +188,8 @@ theorem coe_weierstrassDefectIdeal_smul_mul_toPrincipalIdeal
     rw [Units.val_mul, FractionalIdeal.count_mul K v I.ne_zero
       (toPrincipalIdeal O K C.u).ne_zero,
       FractionalIdeal.count_toPrincipalIdeal_eq_neg_log_valuation, hI, hJ,
-      FractionalIdeal.count_coe K v (weierstrassDefectIdeal_ne_bot O (C • W)),
-      FractionalIdeal.count_coe K v (weierstrassDefectIdeal_ne_bot O W),
+      FractionalIdeal.count_coeIdeal K v (weierstrassDefectIdeal_ne_bot O (C • W)),
+      FractionalIdeal.count_coeIdeal K v (weierstrassDefectIdeal_ne_bot O W),
       count_weierstrassDefectIdeal_eq_obstructionExponentAt,
       count_weierstrassDefectIdeal_eq_obstructionExponentAt,
       obstructionExponentAt_smul, Valuation.ord_def]

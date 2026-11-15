@@ -13,8 +13,9 @@ public import TauCeti.FieldTheory.FunctionField.Place.Extension.Galois
 
 An automorphism of a function field transports a function with order `-n` at `P` and
 nonnegative order elsewhere to one with the same property at the image of `P`. Thus pole
-numbers, gaps, and the finite set of gaps are invariant under the action on places. This is
-the invariance needed to make the exceptional Weierstrass places an invariant set.
+numbers, gaps, the finite set of gaps, and the Weierstrass weight are invariant under the action
+on places. This is the invariance needed to make the exceptional Weierstrass places an invariant
+set.
 
 The transport uses only the order functions at places; it needs no function-field or
 exact-constant hypothesis.
@@ -78,6 +79,15 @@ theorem weierstrassGaps_smul :
     (σ • P).weierstrassGaps = P.weierstrassGaps := by
   ext n
   simp only [mem_weierstrassGaps_iff, isGap_smul_iff σ P n]
+
+/-- The Weierstrass weight is unchanged by an automorphism. -/
+@[simp]
+theorem weierstrassWeight_smul :
+    (σ • P).weierstrassWeight = P.weierstrassWeight := by
+  have h := (σ • P).weierstrassWeight_add_card_add_one_choose_two
+  rw [weierstrassGaps_smul] at h
+  have := P.weierstrassWeight_add_card_add_one_choose_two
+  omega
 
 end Place
 

@@ -9,7 +9,6 @@ public import Mathlib.LinearAlgebra.Projection
 public import Mathlib.RingTheory.GradedAlgebra.Homogeneous.Submodule
 public import Mathlib.RingTheory.TwoSidedIdeal.Kernel
 public import TauCeti.Algebra.Homology.DG.Algebra.Hom.Basic
-public import TauCeti.RingTheory.GradedAlgebra.Trivial
 
 /-!
 # Augmented differential graded algebras
@@ -45,12 +44,6 @@ universe uR uA
 
 variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A]
   {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A}
-
-/-- The ground ring with its trivial grading and zero differential is a differential graded
-algebra. -/
-theorem isDGAlgebra_trivialGrading (R : Type uR) [CommRing R] :
-    IsDGAlgebra (trivialGrading R R) (0 : R →ₗ[R] R) :=
-  isDGAlgebra_zero _
 
 /-- An augmentation of a differential graded algebra over `R` is a DG algebra morphism to `R`,
 where the ground ring is concentrated in degree zero and has zero differential. -/

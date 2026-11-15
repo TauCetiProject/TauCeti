@@ -15,7 +15,7 @@ module
 -- `Mₚ(Mᵩ(R)) ≃ₐ Mₚ˟ᵩ(R)` used in a proof below; that is why none of those is imported again here.
 public import TauCeti.Algebra.BrauerGroup.Basic
 -- `TauCeti.Algebra.CentralSimple.End` is imported publicly: its simplicity instance
--- `TauCeti.IsSimpleRing.moduleEnd_of_field`, together with the centrality instance it re-exports
+-- `IsSimpleRing.moduleEnd_of_field`, together with the centrality instance it re-exports
 -- from `Mathlib.Algebra.Central.End`, is what bundles `End_K V` as a term of `CSA K` in the
 -- statements below.
 public import TauCeti.Algebra.CentralSimple.End
@@ -98,11 +98,6 @@ Brauer-group computations go through the splitting side only.
 
 ## References
 
-This implements the Brauer-triviality prerequisites of the first bullet of Layer 6 ("the API that
-the identity and inverse rest on: finite-dimensional `Module.End K V` is Brauer-equivalent to `K`;
-`Matrix n n K` is Brauer-trivial") together with the "Finite base fields" bullet ("`BrauerGroup` of
-a finite field is trivial") of the
-[semisimple algebras roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md).
 See P. Gille, T. Szamuely, *Central Simple Algebras and Galois Cohomology*, Section 2.4, and
 R. S. Pierce, *Associative Algebras*, GTM 88, Chapter 12.
 -/

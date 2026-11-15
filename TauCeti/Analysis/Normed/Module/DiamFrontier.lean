@@ -33,11 +33,11 @@ a convenience of `Metric.diam`, which vanishes on unbounded sets: in `ℝ` the u
 Nothing here needs `V` to be open, connected, or measurable, and the ambient space is an arbitrary
 real normed space: only the segment and the norm are used.
 
-The intended consumer is layer **L5** of `TauCetiRoadmap/ConformalMapping/README.md`, Carathéodory's
-boundary correspondence. There the piece of a domain that a crosscut cuts off has to be shown small,
-and what is small is its boundary — the crosscut itself together with the arc of the domain boundary
-it separates; `TauCeti.diam_frontier` is what converts that into a bound on the piece.
-`TauCeti/Analysis/Complex/Conformal/CutDiameter.lean` carries out that conversion.
+The intended consumer is Carathéodory's boundary correspondence. There the piece of a domain that
+a crosscut cuts off has to be shown small, and what is small is its boundary — the crosscut itself
+together with the arc of the domain boundary it separates; `TauCeti.diam_frontier` is what converts
+that into a bound on the piece. `TauCeti/Analysis/Complex/Conformal/CutDiameter.lean` carries out
+that conversion.
 
 ## Main results
 
@@ -75,7 +75,7 @@ theorem exists_mem_frontier_dist_le (hV : IsBounded V) (hx : x ∈ V) (hne : y �
     rw [hγ, dist_eq_norm]
     simp [norm_smul, abs_of_nonneg ht]
   have hγ1 : γ 1 = x := by simp [hγ, hd]
-  set T : ℝ := max 1 ((R + 1) / ‖d‖) with hT
+  set T : ℝ := max 1 ((R + 1) / ‖d‖)
   have hT1 : (1 : ℝ) ≤ T := le_max_left _ _
   have hTd : R + 1 ≤ T * ‖d‖ := by
     have := le_max_right 1 ((R + 1) / ‖d‖)

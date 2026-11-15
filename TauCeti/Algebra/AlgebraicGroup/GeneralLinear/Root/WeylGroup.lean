@@ -12,11 +12,13 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalize
 /-!
 # The Weyl group of the diagonal torus in the general linear group
 
-For a field `k` with a nontrivial unit group, the normalizer quotient of the diagonal torus in
-`GL_n(k)` is the permutation group of the coordinate lines. Independently, the Weyl group of the
-diagonal coordinate root datum is the permutation group of its universe-lifted coordinates. This
-file identifies those two groups and proves that the identification gives the same actions on the
-character lattice and on the roots.
+For a commutative semiring `k` with cancellation by nonzero elements and a nontrivial unit
+group, the normalizer quotient of the diagonal torus in `GL_n(k)` is the permutation group of
+the coordinate lines. Independently, the Weyl group of the diagonal coordinate root datum is the
+permutation group of its universe-lifted coordinates. This file identifies those two groups and
+proves that the identification gives the same actions on the character lattice and on the roots.
+In dimensions zero and one, both groups are trivial over any semiring, with no assumptions on
+cancellation or the unit group.
 
 Concretely, the class of a normalizing matrix `g` maps to the root-datum automorphism attached to
 `diagonalNormalizerPerm g`. The class of a permutation matrix for the transposition `(i j)` maps
@@ -36,10 +38,6 @@ coordinate root datum describe the same Weyl group of the standard split torus i
 
 * J. S. Milne, *Algebraic Groups* (2017), Example 19.7 and Section 21.1.
 * J. E. Humphreys, *Linear Algebraic Groups* (1975), Sections 16.1 and 26.3.
-
-This advances Layer 7, "Root datum `(G, T)` with its Weyl group", of the ReductiveGroups roadmap
-through the group-of-points Weyl group of the standard split maximal torus of `GL_n`; the
-scheme-level identification is not addressed here.
 -/
 
 public section
@@ -50,7 +48,7 @@ universe u v
 
 noncomputable section
 
-variable {k : Type v} [Field k] [Nontrivial kˣ] {n : ℕ}
+variable {k : Type v} [CommSemiring k] [IsCancelMulZero k] [Nontrivial kˣ] {n : ℕ}
 
 /-- Transport Weyl groups along an equality of root data. -/
 private noncomputable def weylGroupMulEquivOfEq
@@ -141,16 +139,54 @@ private theorem diagonalWeylGroupMulEquivCoordinateWeylGroup_symm_ofIdx
       RootPairing.weylGroup.ofIdx (diagonalRootDatum.{u} n) p :=
   weylGroupMulEquivOfEq_symm_ofIdx _ _ _ p
 
+/-- In dimensions zero and one, the diagonal normalizer quotient agrees with the Weyl group
+over any semiring: both groups are trivial. -/
+noncomputable def diagonalNormalizerQuotientMulEquivWeylGroupOfSubsingleton
+    (k : Type v) [Semiring k] (n : ℕ) [Subsingleton (Fin n)] :
+    Subgroup.normalizerQuotient (TauCeti.diagonalTorus k n) ≃*
+      (diagonalRootDatum.{u} n).weylGroup := by
+  let _ : Unique (Subgroup.normalizerQuotient (TauCeti.diagonalTorus k n)) :=
+    uniqueOfSubsingleton 1
+  exact ((MulEquiv.ofUnique :
+    Subgroup.normalizerQuotient (TauCeti.diagonalTorus k n) ≃* Equiv.Perm (Fin n)).trans <|
+      Equiv.ulift.symm.permCongrHom.trans SplitTorus.coordinatePermMulEquivWeylGroup).trans <|
+        (diagonalWeylGroupMulEquivCoordinateWeylGroup.{u} n).symm
+
+/-- Every normalizer class maps to the identity Weyl element in dimensions zero and one. -/
+@[simp]
+theorem diagonalNormalizerQuotientMulEquivWeylGroupOfSubsingleton_apply
+    (k : Type v) [Semiring k] (n : ℕ) [Subsingleton (Fin n)]
+    (q : Subgroup.normalizerQuotient (TauCeti.diagonalTorus k n)) :
+    diagonalNormalizerQuotientMulEquivWeylGroupOfSubsingleton.{u} k n q = 1 := by
+  rw [Subsingleton.elim q 1, map_one]
+
 /-- **The normalizer quotient of the diagonal torus is the Weyl group of its coordinate root
 datum.** The intermediate permutation is transported from `Fin n` to the universe-lifted
 coordinate type used by `diagonalRootDatum`. -/
-noncomputable def diagonalNormalizerQuotientMulEquivWeylGroup (k : Type v) [Field k]
-    [Nontrivial kˣ] (n : ℕ) :
+noncomputable def diagonalNormalizerQuotientMulEquivWeylGroup (k : Type v) [CommSemiring k]
+    [IsCancelMulZero k] [Nontrivial kˣ] (n : ℕ) :
     Subgroup.normalizerQuotient (TauCeti.diagonalTorus k n) ≃*
-      (diagonalRootDatum.{u} n).weylGroup :=
-  ((diagonalNormalizerQuotientMulEquivPerm (k := k) (n := n)).trans <|
-    Equiv.ulift.symm.permCongrHom.trans SplitTorus.coordinatePermMulEquivWeylGroup).trans <|
-      (diagonalWeylGroupMulEquivCoordinateWeylGroup.{u} n).symm
+      (diagonalRootDatum.{u} n).weylGroup := by
+  classical
+  by_cases hn : Subsingleton (Fin n)
+  · let _ := hn
+    exact diagonalNormalizerQuotientMulEquivWeylGroupOfSubsingleton k n
+  · exact ((diagonalNormalizerQuotientMulEquivPerm (k := k) (n := n)).trans <|
+      Equiv.ulift.symm.permCongrHom.trans SplitTorus.coordinatePermMulEquivWeylGroup).trans <|
+        (diagonalWeylGroupMulEquivCoordinateWeylGroup.{u} n).symm
+
+private theorem diagonalNormalizerQuotientMulEquivWeylGroup_eq :
+    diagonalNormalizerQuotientMulEquivWeylGroup.{u} k n =
+      ((diagonalNormalizerQuotientMulEquivPerm (k := k) (n := n)).trans <|
+        Equiv.ulift.symm.permCongrHom.trans SplitTorus.coordinatePermMulEquivWeylGroup).trans
+          (diagonalWeylGroupMulEquivCoordinateWeylGroup.{u} n).symm := by
+  classical
+  rw [diagonalNormalizerQuotientMulEquivWeylGroup]
+  split
+  · rename_i hn
+    let _ := hn
+    exact MulEquiv.toMonoidHom_injective (Subsingleton.elim _ _)
+  · rfl
 
 /-- On a normalizer representative, the Weyl-group equivalence is the root-datum automorphism
 induced by its coordinate permutation. -/
@@ -162,7 +198,7 @@ theorem diagonalNormalizerQuotientMulEquivWeylGroup_mk
         (SplitTorus.coordinatePermMulEquivWeylGroup
           (Equiv.ulift.symm.permCongrHom
             (diagonalNormalizerPerm (k := k) (n := n) g))) := by
-  simp only [diagonalNormalizerQuotientMulEquivWeylGroup, MulEquiv.trans_apply,
+  simp only [diagonalNormalizerQuotientMulEquivWeylGroup_eq, MulEquiv.trans_apply,
     Equiv.permCongrHom_coe, diagonalNormalizerQuotientMulEquivPerm_mk]
 
 /-- A permutation matrix represents the Weyl element induced by the same coordinate
@@ -189,7 +225,7 @@ theorem diagonalNormalizerQuotientMulEquivWeylGroup_smul_apply
     (diagonalNormalizerQuotientMulEquivWeylGroup k n q • x) a =
       x (ULift.up
         ((diagonalNormalizerQuotientMulEquivPerm (k := k) (n := n) q).symm a.down)) := by
-  rw [diagonalNormalizerQuotientMulEquivWeylGroup]
+  rw [diagonalNormalizerQuotientMulEquivWeylGroup_eq]
   simp only [MulEquiv.trans_apply, Equiv.permCongrHom_coe,
     diagonalWeylGroupMulEquivCoordinateWeylGroup_symm_smul_apply,
     SplitTorus.coordinatePermMulEquivWeylGroup_smul_apply]
@@ -208,7 +244,7 @@ theorem diagonalNormalizerQuotientMulEquivWeylGroup_weightMap_apply
       Finsupp.domLCongr (R := ℤ)
         (Equiv.ulift.symm.permCongrHom
           (diagonalNormalizerQuotientMulEquivPerm (k := k) (n := n) q)) x := by
-  rw [diagonalNormalizerQuotientMulEquivWeylGroup]
+  rw [diagonalNormalizerQuotientMulEquivWeylGroup_eq]
   rw [MulEquiv.trans_apply,
     diagonalWeylGroupMulEquivCoordinateWeylGroup_symm_weightMap_apply]
   exact SplitTorus.coordinatePermMulEquivWeylGroup_weightMap_apply _ _
@@ -222,7 +258,7 @@ theorem diagonalNormalizerQuotientMulEquivWeylGroup_coweightMap_apply
     (diagonalNormalizerQuotientMulEquivWeylGroup k n q).1.coweightMap x a =
       x (ULift.up
         (diagonalNormalizerQuotientMulEquivPerm (k := k) (n := n) q a.down)) := by
-  rw [diagonalNormalizerQuotientMulEquivWeylGroup]
+  rw [diagonalNormalizerQuotientMulEquivWeylGroup_eq]
   simp only [MulEquiv.trans_apply, Equiv.permCongrHom_coe,
     diagonalWeylGroupMulEquivCoordinateWeylGroup_symm_coweightMap_apply,
     SplitTorus.coordinatePermMulEquivWeylGroup_coweightMap_apply,
@@ -238,7 +274,7 @@ theorem diagonalNormalizerQuotientMulEquivWeylGroup_indexEquiv_apply
       SplitTorus.coordinatePermRootIndex
         (Equiv.ulift.symm.permCongrHom
           (diagonalNormalizerQuotientMulEquivPerm (k := k) (n := n) q)) p := by
-  rw [diagonalNormalizerQuotientMulEquivWeylGroup]
+  rw [diagonalNormalizerQuotientMulEquivWeylGroup_eq]
   rw [MulEquiv.trans_apply, MulEquiv.trans_apply]
   rw [diagonalWeylGroupMulEquivCoordinateWeylGroup_symm_indexEquiv_apply]
   exact SplitTorus.coordinatePermMulEquivWeylGroup_indexEquiv_apply _ _

@@ -13,7 +13,8 @@ public import TauCeti.Algebra.Coalgebra.Subcoalgebra.Lattice
 # Images of subcoalgebras
 
 This file proves that coalgebra morphisms send subcoalgebras to subcoalgebras. The underlying
-submodule of the image is the ordinary image of the underlying submodule.
+submodule of the image is the ordinary image of the underlying submodule. As with
+`CoalgHom`, the source and target need only carry `CoalgebraStruct` instances.
 
 Images preserve finite generation, allowing finite subcoalgebras to be transported along
 coalgebra morphisms.
@@ -40,9 +41,9 @@ universe u v w x
 
 variable {R : Type u} {C : Type v} {D : Type w} {E : Type x}
 variable [CommSemiring R]
-variable [AddCommMonoid C] [Module R C] [Coalgebra R C]
-variable [AddCommMonoid D] [Module R D] [Coalgebra R D]
-variable [AddCommMonoid E] [Module R E] [Coalgebra R E]
+variable [AddCommMonoid C] [Module R C] [CoalgebraStruct R C]
+variable [AddCommMonoid D] [Module R D] [CoalgebraStruct R D]
+variable [AddCommMonoid E] [Module R E] [CoalgebraStruct R E]
 
 namespace Subcoalgebra
 
@@ -102,7 +103,6 @@ theorem map_bot (f : C →ₗc[R] D) : (⊥ : Subcoalgebra R C).map f = ⊥ := b
   simp only [← mem_toSubmodule, map_toSubmodule, bot_toSubmodule, Submodule.map_bot]
 
 /-- The image of the top subcoalgebra is the range of the coalgebra morphism as a submodule. -/
-@[simp]
 theorem map_top_toSubmodule (f : C →ₗc[R] D) :
     ((⊤ : Subcoalgebra R C).map f).toSubmodule = LinearMap.range f.toLinearMap := by
   rw [map_toSubmodule, top_toSubmodule, Submodule.map_top]

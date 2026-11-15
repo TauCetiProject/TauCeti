@@ -202,7 +202,7 @@ theorem frobeniusPsi_fixedField_sub_mul_frobeniusPsi_isLittleO (C : ConjClasses 
     rw [frobeniusTheta_apply, ← primeTheta_apply,
       ← primeTheta_fixedField_eq_mul_frobeniusTheta C sigma hsigma x,
       ← primeTheta_union Set.disjoint_sdiff_right,
-      Set.union_sdiff_cancel fun P hP ↦ hP.1]
+      Set.union_sdiff_cancel fun P (hP : P ∈ A) ↦ hP.1]
   simp only [u, hsplit]
   ring
 

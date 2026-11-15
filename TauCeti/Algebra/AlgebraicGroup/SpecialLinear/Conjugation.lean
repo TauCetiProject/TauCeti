@@ -111,7 +111,7 @@ theorem mem_quotientPointsSubgroup_kernelHopfIdeal_conjugationMap_iff
 
 /-- Over a field, the kernel of `SLₙ → PGLₙ` is the represented centre of `SLₙ`.
 The equality is of defining Hopf ideals, so also detects nonreduced central subgroup schemes. -/
-theorem kernelHopfIdeal_conjugationMap {k : Type u} [Field k] (hn : 0 < n) :
+theorem kernelHopfIdeal_conjugationMap {k : Type u} [Field k] :
     CommHopfAlgCat.kernelHopfIdeal (conjugationMap n k) =
       CommHopfAlgCat.centerDefiningIdeal (coordinateHopfAlgebra k n) := by
   -- Follow the universal-point kernel argument for `ProjectiveGeneralLinear.conjugationMap`.
@@ -121,6 +121,11 @@ theorem kernelHopfIdeal_conjugationMap {k : Type u} [Field k] (hn : 0 < n) :
           (CommHopfAlgCat.kernelHopfIdeal (conjugationMap n k)) A ↔
         g ∈ CommHopfAlgCat.centerPointsSubgroup _ A := by
     intro A g
+    rcases Nat.eq_zero_or_pos n with rfl | hn
+    · -- Over `Fin 0` the points group is trivial, so both subgroups contain `g = 1`.
+      have hg : g = 1 := (pointsMulEquiv (R := k) (A := A) 0).injective (Subsingleton.elim _ _)
+      subst hg
+      exact ⟨fun _ ↦ Subgroup.one_mem _, fun _ ↦ Subgroup.one_mem _⟩
     rw [mem_quotientPointsSubgroup_kernelHopfIdeal_conjugationMap_iff,
       ← map_centerPointsSubgroup_pointsMulEquiv_eq_center n hn A]
     exact ⟨fun ⟨g', hg', h⟩ => (pointsMulEquiv (R := k) n).injective h ▸ hg',
@@ -149,7 +154,7 @@ in every characteristic and also in rank zero. -/
 theorem mapPointsFunctor_conjugationMap_app_surjective {R : Type u} [CommRing R]
     (K : Type w) [Field K] [IsAlgClosed K] [Algebra R K] :
     Function.Surjective
-      ((CommHopfAlgCat.mapPointsFunctor (conjugationMap n R)).app (CommAlgCat.of R K)) := by
+      ((CommHopfAlgCat.Hom.mapPointsFunctor (conjugationMap n R)).app (CommAlgCat.of R K)) := by
   -- Combine Mathlib's `PSL ≃ PGL` equivalence over algebraically closed fields with the
   -- Skolem–Noether identification `Matrix.ProjGenLinGroup.innerAut_bijective`.
   intro q
@@ -160,7 +165,7 @@ theorem mapPointsFunctor_conjugationMap_app_surjective {R : Type u} [CommRing R]
   obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective s
   refine ⟨(pointsMulEquiv (R := R) (A := K) n).symm g,
     (ProjectiveGeneralLinear.pointsMulEquiv n R _).injective ?_⟩
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply,
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
     pointsMulEquiv_conjugationMap, MulEquiv.apply_symm_apply]
   rw [← Matrix.ProjGenLinGroup.innerAut_mk]
   have hs' : Matrix.ProjectiveSpecialLinearGroup.toPGL (QuotientGroup.mk g) = p := by

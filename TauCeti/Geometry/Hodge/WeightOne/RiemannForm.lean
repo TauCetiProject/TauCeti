@@ -132,7 +132,7 @@ theorem isPolarization [Module.Flat ℤ V] (h : IsRiemannForm J E) (hℂ : IsBas
       simp at hx0
     simp only [latticeHodgeStructure_weilOperator,
       latticeComplexification_realificationComplexEquiv_one_tmul,
-      Hodge.integralFormBaseChange_realificationComplexEquiv_one_tmul]
+      TauCeti.Hodge.bilinForm_realificationComplexEquiv_one_tmul]
     exact Complex.zero_lt_real.mpr (h.positive a ha)
 
 /-- The polarized effective weight-one Hodge structure of a flat integral module with a complex
@@ -151,7 +151,7 @@ theorem polarization_Qint [Module.Flat ℤ V] (h : IsRiemannForm J E) (hℂ : Is
 that form. -/
 @[simp]
 theorem polarization_Q [Module.Flat ℤ V] (h : IsRiemannForm J E) (hℂ : IsBaseChange ℂ ιℂ) :
-    (h.polarization hℂ).Q = Hodge.integralFormBaseChange hℂ E := by
+    (h.polarization hℂ).Q = IsBaseChange.bilinForm hℂ E := by
   rw [Hodge.Polarization.Q_def, polarization_Qint]
 
 end IsRiemannForm
@@ -169,17 +169,17 @@ theorem isRiemannForm_of_isPolarization {J : AlmostComplexStructure (Hodge.Reali
       (Hodge.realificationComplexEquiv hℂ (1 ⊗ₜ[ℝ] y))
     simp only [latticeHodgeStructure_weilOperator,
       latticeComplexification_realificationComplexEquiv_one_tmul,
-      Hodge.integralFormBaseChange_realificationComplexEquiv_one_tmul] at hiso
+      TauCeti.Hodge.bilinForm_realificationComplexEquiv_one_tmul] at hiso
     exact_mod_cast hiso
   · have hne : Hodge.realificationComplexEquiv hℂ (1 ⊗ₜ[ℝ] x) ≠ 0 := by
       rw [Ne, LinearEquiv.map_eq_zero_iff]
       intro h0
       exact hx (Module.Flat.tensorProduct_mk_injective ℝ (Hodge.Realification V) ℂ
         (by simpa using h0))
-    have hpos := h.integralFormBaseChange_weilOperator_self_pos (by simp) hne
+    have hpos := h.bilinForm_weilOperator_self_pos (by simp) hne
     simp only [latticeHodgeStructure_weilOperator,
       latticeComplexification_realificationComplexEquiv_one_tmul,
-      Hodge.integralFormBaseChange_realificationComplexEquiv_one_tmul] at hpos
+      TauCeti.Hodge.bilinForm_realificationComplexEquiv_one_tmul] at hpos
     exact Complex.zero_lt_real.mp hpos
 
 /-- **When `V` is flat over `ℤ`, the Riemann forms for `J` are exactly the forms polarizing its

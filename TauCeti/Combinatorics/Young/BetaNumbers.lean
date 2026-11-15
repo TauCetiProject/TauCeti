@@ -120,7 +120,7 @@ theorem exists_eq_betaNumber_of_strictAnti {r : ℕ} {η : Fin r → ℕ} (hη :
   have hshift : ∀ j : Fin r, r - 1 - (j : ℕ) ≤ η j := by
     intro j
     have hr : 0 < r := Nat.lt_of_le_of_lt (Nat.zero_le _) j.isLt
-    set L : Fin r := ⟨r - 1, by omega⟩ with hLdef
+    set L : Fin r := ⟨r - 1, by omega⟩ with _hLdef
     have hLval : (L : ℕ) = r - 1 := rfl
     have hle : j ≤ L := Fin.le_def.mpr (by rw [hLval]; omega)
     have hgap := hη.add_sub_le_nat hle
@@ -132,8 +132,8 @@ theorem exists_eq_betaNumber_of_strictAnti {r : ℕ} {η : Fin r → ℕ} (hη :
     have hgap := hη.add_sub_le_nat hij
     have hi := hshift i
     have hj := hshift j
-    have hij' : (i : ℕ) ≤ (j : ℕ) := Fin.le_def.mp hij
-    have hjr : (j : ℕ) < r := j.isLt
+    have _ : (i : ℕ) ≤ (j : ℕ) := Fin.le_def.mp hij
+    have _ : (j : ℕ) < r := j.isLt
     omega
   refine ⟨ofRowLensFin _ hanti, colLen_zero_ofRowLensFin_le _ hanti, fun j => ?_⟩
   rw [betaNumber_def, rowLen_ofRowLensFin]

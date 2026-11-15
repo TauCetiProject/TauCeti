@@ -1,0 +1,460 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Algebra.Homology.HomologicalComplex
+public import Mathlib.Algebra.Homology.Additive
+public import TauCeti.LinearAlgebra.Graded.LinearMap
+public import TauCeti.RepresentationTheory.Continuous.Restriction
+public import TauCeti.RepresentationTheory.Continuous.TopRep.Subquotients
+
+/-!
+# The cochain complex of a graded topological representation
+
+Let `M` be a topological representation of `G` whose underlying module carries a `ℤ`-indexed
+family `ℳ` of submodules, each stable under the action, and let `d : M ⟶ M` be an equivariant
+endomorphism of degree one with `d ≫ d = 0`. Then the subrepresentations on the pieces `ℳ n` for
+`n : ℕ`, with the restrictions of `d`, form a cochain complex of topological representations. This
+file performs that assembly.
+
+Constructions such as tensor products and tensor induction are easier to write on a single carrier
+than on a family of summands: the total module of a resolution carries one action and one
+differential, and a tensor product of such modules again does. Continuous cohomology, on the other
+hand, is computed from complexes in `TopRep k G` indexed by `ℕ` (`TopRep.resolution'`), and the
+comparison of `TopRep.ResolutionContraction` takes such a complex as input. This construction
+passes from the first description to the second. No decomposition hypothesis on `ℳ` is needed, and
+the pieces in negative degrees are ignored.
+
+This is the counterpart for topological representations of `TauCeti.gradedCochainComplex`, which
+assembles a `ℤ`-indexed complex of modules from the same kind of data.
+
+## Main definitions
+
+* `TopRep.gradedCochainComplex`: the cochain complex whose degree-`n` term is the subrepresentation
+  on `ℳ n` and whose differential is the restriction of `d`.
+* `TopRep.gradedCochainComplexι`: the inclusion of each term into `M`.
+* `TopRep.gradedCochainComplexRestrict`: the linear maps between terms induced by a homogeneous
+  linear endomorphism of `M`.
+* `TopRep.gradedCochainComplexInvariant`: a fixed homogeneous vector of `M` as an invariant
+  element of a term.
+* `TopRep.gradedCochainComplexLift`: the factorization through a term of a morphism into `M`
+  with values in one piece of the grading.
+* `TopRep.gradedCochainComplexMap`: the chain map induced by a morphism of degree zero commuting
+  with the differentials.
+* `TopRep.resGradedCochainComplexIso`: forming a graded complex commutes with group restriction.
+* `TopRep.gradedCochainComplexIso`: an isomorphism preserving and detecting degrees induces
+  an isomorphism of complexes when it commutes with the differentials.
+* `TopRep.gradedCochainComplexResMap`: the chain map from the restricted complex of a graded
+  representation induced by a morphism of degree zero.
+
+## Main results
+
+* `TopRep.gradedCochainComplex_d_comp_ι`: the inclusions intertwine the differential of the
+  complex with `d`.
+* `TopRep.gradedCochainComplex_d_apply`: the same statement on an element.
+* `TopRep.gradedCochainComplexLift_comp_ι`, `TopRep.gradedCochainComplexLift_unique`: the
+  factorization through a term is characterized by its composite with the inclusion.
+* `TopRep.gradedCochainComplex_d_invariant`: a fixed homogeneous vector killed by `d` is an
+  invariant cocycle of the complex.
+-/
+
+public section
+
+open CategoryTheory
+
+namespace TopRep
+
+universe u v w
+
+variable {k : Type u} [Ring k] [TopologicalSpace k] {G : Type v} [Monoid G]
+  (M : TopRep.{w} k G) (ℳ : ℤ → Submodule k M.V)
+  (hρ : ∀ n g x, x ∈ ℳ n → M.ρ g x ∈ ℳ n)
+  (d : M ⟶ M) (hd : TauCeti.LinearMap.IsHomogeneous d.hom.toLinearMap ℳ ℳ 1) (hdd : d ≫ d = 0)
+
+include hd in
+/-- An endomorphism of degree one carries the degree-`n` piece into the degree-`n + 1` piece, with
+the degree written as the cast of a natural number. -/
+private theorem mem_succ_of_isHomogeneous (n : ℕ) (x : M.V) (hx : x ∈ ℳ n) :
+    d.hom x ∈ ℳ ((n + 1 : ℕ) : ℤ) := by
+  rw [Nat.cast_succ]
+  exact hd.map_mem hx
+
+/-- The **cochain complex of a graded topological representation**: its degree-`n` term is the
+subrepresentation on the piece `ℳ n`, with the induced topology, and its differential is the
+restriction of the degree-one endomorphism `d`, which squares to zero. -/
+-- The body is exposed so that an element of `ℳ n` is an element of the degree-`n` term: this is
+-- how a homogeneous vector of `M`, such as a cocycle written on the total module, is fed to the
+-- complex.
+@[expose] noncomputable def gradedCochainComplex : CochainComplex (TopRep.{w} k G) ℕ :=
+  CochainComplex.of
+    (fun n ↦ M.subrepresentation (ℳ n) (hρ n))
+    (fun n ↦ subrepresentationLift M (ℳ ((n + 1 : ℕ) : ℤ))
+      (hρ _)
+      (subrepresentationι M (ℳ n) (hρ n) ≫ d)
+      (fun y ↦ by
+        rw [comp_apply, subrepresentationι_apply]
+        exact mem_succ_of_isHomogeneous M ℳ d hd n y.1 y.2))
+    (fun n ↦ by
+      -- Both sides lift the zero morphism into `M` through the inclusion of `ℳ (n + 2)`.
+      have hlift := subrepresentationLift_unique M (ℳ ((n + 1 + 1 : ℕ) : ℤ)) (hρ _)
+        (0 : M.subrepresentation (ℳ n) (hρ n) ⟶ M) (fun _ ↦ zero_mem _)
+      refine (hlift _ ?_).trans (hlift 0 Limits.zero_comp).symm
+      rw [Category.assoc, subrepresentationLift_comp_ι, subrepresentationLift_comp_ι_assoc,
+        Category.assoc, hdd, Limits.comp_zero])
+
+/-- The degree-`n` term of `gradedCochainComplex` is the subrepresentation on `ℳ n`. -/
+theorem gradedCochainComplex_X (n : ℕ) :
+    (M.gradedCochainComplex ℳ hρ d hd hdd).X n =
+      M.subrepresentation (ℳ n) (hρ n) :=
+  (rfl)
+
+/-- The action on a term of `gradedCochainComplex` is the action of `M`. -/
+@[simp]
+theorem gradedCochainComplex_ρ_apply (n : ℕ) (g : G)
+    (v : ((M.gradedCochainComplex ℳ hρ d hd hdd).X n).V) :
+    (((M.gradedCochainComplex ℳ hρ d hd hdd).X n).ρ g v).1 = M.ρ g v.1 :=
+  congrArg Subtype.val (subrepresentation_ρ_apply M (ℳ n) (hρ n) g v)
+
+/-- A map into a term of `gradedCochainComplex` is continuous exactly when it is continuous as a
+map into `M`, since the term carries the topology induced from `M`. -/
+theorem continuous_gradedCochainComplex_X_iff {Z : Type*} [TopologicalSpace Z] (n : ℕ)
+    (f : Z → ((M.gradedCochainComplex ℳ hρ d hd hdd).X n).V) :
+    Continuous f ↔ Continuous fun z ↦ (f z).1 :=
+  Topology.IsInducing.subtypeVal.continuous_iff
+
+/-- A morphism into `M` with values in `ℳ n` factors through the degree-`n` term of
+`gradedCochainComplex`. -/
+noncomputable def gradedCochainComplexLift {Y : TopRep.{w} k G} (n : ℕ) (f : Y ⟶ M)
+    (hf : ∀ y, f.hom y ∈ ℳ n) : Y ⟶ (M.gradedCochainComplex ℳ hρ d hd hdd).X n :=
+  subrepresentationLift M (ℳ n) (hρ n) f hf
+
+/-- The factorization through a term of `gradedCochainComplex` evaluates by the original
+morphism. -/
+@[simp]
+theorem gradedCochainComplexLift_apply {Y : TopRep.{w} k G} (n : ℕ) (f : Y ⟶ M)
+    (hf : ∀ y, f.hom y ∈ ℳ n) (y : Y.V) :
+    ((M.gradedCochainComplexLift ℳ hρ d hd hdd n f hf).hom y).1 = f.hom y :=
+  congrArg Subtype.val (subrepresentationLift_apply M (ℳ n) (hρ n) f hf y)
+
+/-- A linear endomorphism `f` of `M` of degree `q` restricts to a linear map from the degree-`m`
+term of `gradedCochainComplex` to the degree-`n` term whenever `m + q = n`. Such maps need not be
+equivariant: the contracting homotopies of `TopRep.ResolutionContraction` are of this form. -/
+noncomputable def gradedCochainComplexRestrict (f : M.V →ₗ[k] M.V) {q : ℤ}
+    (hf : TauCeti.LinearMap.IsHomogeneous f ℳ ℳ q) {m n : ℕ} (hmn : (m : ℤ) + q = n) :
+    ((M.gradedCochainComplex ℳ hρ d hd hdd).X m).V →ₗ[k]
+      ((M.gradedCochainComplex ℳ hρ d hd hdd).X n).V :=
+  f.restrict (p := ℳ m) (q := ℳ n) fun _ hv ↦ hmn ▸ hf.map_mem hv
+
+/-- The restriction of a homogeneous linear endomorphism to the terms of `gradedCochainComplex`
+evaluates by the endomorphism. -/
+@[simp]
+theorem gradedCochainComplexRestrict_apply (f : M.V →ₗ[k] M.V) {q : ℤ}
+    (hf : TauCeti.LinearMap.IsHomogeneous f ℳ ℳ q) {m n : ℕ} (hmn : (m : ℤ) + q = n)
+    (v : ((M.gradedCochainComplex ℳ hρ d hd hdd).X m).V) :
+    (M.gradedCochainComplexRestrict ℳ hρ d hd hdd f hf hmn v).1 = f v.1 :=
+  (rfl)
+
+/-- The inclusion of the degree-`n` term of `gradedCochainComplex` into the graded
+representation. -/
+noncomputable def gradedCochainComplexι (n : ℕ) :
+    (M.gradedCochainComplex ℳ hρ d hd hdd).X n ⟶ M :=
+  subrepresentationι M (ℳ n) (hρ n)
+
+/-- The inclusion of a term of `gradedCochainComplex` is the inclusion of the submodule. -/
+@[simp]
+theorem gradedCochainComplexι_apply (n : ℕ) (v : ((M.gradedCochainComplex ℳ hρ d hd hdd).X n).V) :
+    (M.gradedCochainComplexι ℳ hρ d hd hdd n).hom v = v.1 :=
+  subrepresentationι_apply M (ℳ n) _ v
+
+/-- The inclusions of the terms of `gradedCochainComplex` are injective. -/
+theorem gradedCochainComplexι_injective (n : ℕ) :
+    Function.Injective (M.gradedCochainComplexι ℳ hρ d hd hdd n).hom :=
+  subrepresentationι_injective M (ℳ n) _
+
+/-- The factorization through a term of `gradedCochainComplex`, followed by the inclusion, is the
+original morphism. -/
+@[reassoc (attr := simp)]
+theorem gradedCochainComplexLift_comp_ι {Y : TopRep.{w} k G} (n : ℕ) (f : Y ⟶ M)
+    (hf : ∀ y, f.hom y ∈ ℳ n) :
+    M.gradedCochainComplexLift ℳ hρ d hd hdd n f hf ≫ M.gradedCochainComplexι ℳ hρ d hd hdd n =
+      f :=
+  subrepresentationLift_comp_ι M (ℳ n) (hρ n) f hf
+
+/-- A morphism into a term of `gradedCochainComplex` is the factorization of its composite with
+the inclusion. -/
+theorem gradedCochainComplexLift_unique {Y : TopRep.{w} k G} (n : ℕ) (f : Y ⟶ M)
+    (hf : ∀ y, f.hom y ∈ ℳ n) (g : Y ⟶ (M.gradedCochainComplex ℳ hρ d hd hdd).X n)
+    (hg : g ≫ M.gradedCochainComplexι ℳ hρ d hd hdd n = f) :
+    g = M.gradedCochainComplexLift ℳ hρ d hd hdd n f hf :=
+  subrepresentationLift_unique M (ℳ n) (hρ n) f hf g hg
+
+/-- **The inclusions intertwine the differentials**: the differential of `gradedCochainComplex`
+followed by the inclusion is the inclusion followed by `d`. -/
+@[reassoc]
+theorem gradedCochainComplex_d_comp_ι (n : ℕ) :
+    (M.gradedCochainComplex ℳ hρ d hd hdd).d n (n + 1) ≫
+        M.gradedCochainComplexι ℳ hρ d hd hdd (n + 1) =
+      M.gradedCochainComplexι ℳ hρ d hd hdd n ≫ d := by
+  dsimp only [gradedCochainComplex]
+  rw [CochainComplex.of_d]
+  exact subrepresentationLift_comp_ι _ _ _ _ _
+
+/-- The differential of `gradedCochainComplex` on an element is `d` applied to it in `M`. -/
+@[simp]
+theorem gradedCochainComplex_d_apply (n : ℕ)
+    (v : ((M.gradedCochainComplex ℳ hρ d hd hdd).X n).V) :
+    (((M.gradedCochainComplex ℳ hρ d hd hdd).d n (n + 1)).hom v).1 = d.hom v.1 := by
+  rw [← gradedCochainComplexι_apply, ← gradedCochainComplexι_apply, ← comp_apply,
+    gradedCochainComplex_d_comp_ι, comp_apply]
+
+/-- A vector of `ℳ n` fixed by `G` is an invariant element of the degree-`n` term of
+`gradedCochainComplex`. -/
+def gradedCochainComplexInvariant (n : ℕ) (z : M.V) (hz : z ∈ ℳ n) (hinv : ∀ g, M.ρ g z = z) :
+    ((M.gradedCochainComplex ℳ hρ d hd hdd).X n).ρ.invariants :=
+  ⟨⟨z, hz⟩, fun g ↦ Subtype.ext ((gradedCochainComplex_ρ_apply M ℳ hρ d hd hdd n g _).trans
+    (hinv g))⟩
+
+/-- The invariant element of a term of `gradedCochainComplex` given by a fixed vector of `ℳ n` is
+that vector. -/
+@[simp]
+theorem gradedCochainComplexInvariant_val (n : ℕ) (z : M.V) (hz : z ∈ ℳ n)
+    (hinv : ∀ g, M.ρ g z = z) :
+    ((M.gradedCochainComplexInvariant ℳ hρ d hd hdd n z hz hinv :
+      ((M.gradedCochainComplex ℳ hρ d hd hdd).X n).V)).1 = z :=
+  (rfl)
+
+/-- A fixed vector of `ℳ n` killed by `d` is a cocycle of `gradedCochainComplex`. -/
+theorem gradedCochainComplex_d_invariant {n : ℕ} {z : M.V} (hz : z ∈ ℳ n)
+    (hinv : ∀ g, M.ρ g z = z) (hdz : d.hom z = 0) :
+    ((M.gradedCochainComplex ℳ hρ d hd hdd).d n (n + 1)).hom
+      (M.gradedCochainComplexInvariant ℳ hρ d hd hdd n z hz hinv :
+        ((M.gradedCochainComplex ℳ hρ d hd hdd).X n).V) = 0 :=
+  Subtype.ext ((gradedCochainComplex_d_apply M ℳ hρ d hd hdd n _).trans hdz)
+
+section Map
+
+variable {M ℳ hρ d hd hdd} {M' : TopRep.{w} k G} {ℳ' : ℤ → Submodule k M'.V}
+  {hρ' : ∀ n g x, x ∈ ℳ' n → M'.ρ g x ∈ ℳ' n} {d' : M' ⟶ M'}
+  {hd' : TauCeti.LinearMap.IsHomogeneous d'.hom.toLinearMap ℳ' ℳ' 1} {hdd' : d' ≫ d' = 0}
+
+/-- A morphism `F : M ⟶ M'` of graded topological representations, of degree zero and commuting
+with the differentials, restricts degree by degree to a chain map between their cochain
+complexes. This is the counterpart of `TauCeti.gradedCochainComplexMap` for topological
+representations. -/
+noncomputable def gradedCochainComplexMap (F : M ⟶ M')
+    (hF : TauCeti.LinearMap.IsHomogeneous F.hom.toLinearMap ℳ ℳ' 0) (hFd : d ≫ F = F ≫ d') :
+    M.gradedCochainComplex ℳ hρ d hd hdd ⟶ M'.gradedCochainComplex ℳ' hρ' d' hd' hdd' where
+  f n := M'.gradedCochainComplexLift ℳ' hρ' d' hd' hdd' n
+    (M.gradedCochainComplexι ℳ hρ d hd hdd n ≫ F) fun v ↦ by
+      have h := hF.map_mem v.2
+      rw [add_zero] at h
+      rw [comp_apply, gradedCochainComplexι_apply]
+      exact h
+  comm' i j hij := by
+    obtain rfl : i + 1 = j := hij
+    refine ConcreteCategory.hom_ext _ _ fun v ↦ ?_
+    apply gradedCochainComplexι_injective M' ℳ' hρ' d' hd' hdd' (i + 1)
+    simp only [comp_apply, gradedCochainComplexι_apply, gradedCochainComplex_d_apply,
+      gradedCochainComplexLift_apply]
+    rw [← comp_apply, ← comp_apply, hFd]
+
+/-- The chain map `gradedCochainComplexMap F` evaluates by `F`. -/
+@[simp]
+theorem gradedCochainComplexMap_f_apply (F : M ⟶ M')
+    (hF : TauCeti.LinearMap.IsHomogeneous F.hom.toLinearMap ℳ ℳ' 0) (hFd : d ≫ F = F ≫ d')
+    (n : ℕ) (v : ((M.gradedCochainComplex ℳ hρ d hd hdd).X n).V) :
+    (((gradedCochainComplexMap (hρ' := hρ') (hd' := hd') (hdd' := hdd') F hF hFd).f n).hom
+      v).1 = F.hom v.1 := by
+  simp only [gradedCochainComplexMap, gradedCochainComplexLift_apply, comp_apply,
+    gradedCochainComplexι_apply]
+
+/-- An isomorphism preserving and detecting degrees and commuting with the differentials induces
+an isomorphism of the associated cochain complexes. -/
+noncomputable def gradedCochainComplexIso (F : M ≅ M')
+    (hF : ∀ n x, F.hom.hom x ∈ ℳ' n ↔ x ∈ ℳ n)
+    (hFd : d ≫ F.hom = F.hom ≫ d') :
+    M.gradedCochainComplex ℳ hρ d hd hdd ≅ M'.gradedCochainComplex ℳ' hρ' d' hd' hdd' := by
+  have hhom : TauCeti.LinearMap.IsHomogeneous F.hom.hom.toLinearMap ℳ ℳ' 0 :=
+    TauCeti.LinearMap.isHomogeneous_def.2 fun n x hx ↦ by
+      rw [add_zero]
+      exact (hF n x).2 hx
+  have hinv : TauCeti.LinearMap.IsHomogeneous F.inv.hom.toLinearMap ℳ' ℳ 0 :=
+    TauCeti.LinearMap.isHomogeneous_def.2 fun n x hx ↦ by
+      rw [add_zero]
+      exact (hF n (F.inv.hom x)).1 (by simpa using hx)
+  have hdinv : d' ≫ F.inv = F.inv ≫ d := by
+    apply (cancel_mono F.hom).1
+    simp only [Category.assoc, F.inv_hom_id, Category.comp_id]
+    rw [hFd, F.inv_hom_id_assoc]
+  exact
+    { hom := gradedCochainComplexMap F.hom hhom hFd
+      inv := gradedCochainComplexMap F.inv hinv hdinv
+      hom_inv_id := by
+        apply HomologicalComplex.Hom.ext
+        funext n
+        refine ConcreteCategory.hom_ext _ _ fun x ↦ Subtype.ext ?_
+        simp only [HomologicalComplex.comp_f, comp_apply,
+          gradedCochainComplexMap_f_apply, HomologicalComplex.id_f, id_apply]
+        exact ConcreteCategory.congr_hom F.hom_inv_id x.1
+      inv_hom_id := by
+        apply HomologicalComplex.Hom.ext
+        funext n
+        refine ConcreteCategory.hom_ext _ _ fun x ↦ Subtype.ext ?_
+        simp only [HomologicalComplex.comp_f, comp_apply,
+          gradedCochainComplexMap_f_apply, HomologicalComplex.id_f, id_apply]
+        exact ConcreteCategory.congr_hom F.inv_hom_id x.1 }
+
+/-- The induced complex isomorphism applies the original isomorphism in each degree. -/
+@[simp]
+theorem gradedCochainComplexIso_hom_f_apply (F : M ≅ M')
+    (hF : ∀ n x, F.hom.hom x ∈ ℳ' n ↔ x ∈ ℳ n)
+    (hFd : d ≫ F.hom = F.hom ≫ d') (n : ℕ)
+    (x : ((M.gradedCochainComplex ℳ hρ d hd hdd).X n).V) :
+    (((gradedCochainComplexIso (hρ' := hρ') (hd' := hd') (hdd' := hdd')
+      F hF hFd).hom.f n).hom x).1 = F.hom.hom x.1 := by
+  dsimp only [gradedCochainComplexIso]
+  simp only [gradedCochainComplexMap_f_apply]
+
+/-- The inverse complex isomorphism applies the inverse original isomorphism in each degree. -/
+@[simp]
+theorem gradedCochainComplexIso_inv_f_apply (F : M ≅ M')
+    (hF : ∀ n x, F.hom.hom x ∈ ℳ' n ↔ x ∈ ℳ n)
+    (hFd : d ≫ F.hom = F.hom ≫ d') (n : ℕ)
+    (x : ((M'.gradedCochainComplex ℳ' hρ' d' hd' hdd').X n).V) :
+    (((gradedCochainComplexIso (hρ := hρ) (hd := hd) (hdd := hdd)
+      (hρ' := hρ') (hd' := hd') (hdd' := hdd')
+      F hF hFd).inv.f n).hom x).1 = F.inv.hom x.1 := by
+  dsimp only [gradedCochainComplexIso]
+  simp only [gradedCochainComplexMap_f_apply]
+
+end Map
+
+end TopRep
+
+namespace TopRep
+
+section ResMap
+
+variable {k : Type*} [Ring k] [TopologicalSpace k] {G H : Type*} [Group G] [Monoid H]
+  {M : TopRep k G} {ℳ : ℤ → Submodule k M.V}
+  {hρ : ∀ n g x, x ∈ ℳ n → M.ρ g x ∈ ℳ n} {d : M ⟶ M}
+  {hd : TauCeti.LinearMap.IsHomogeneous d.hom.toLinearMap ℳ ℳ 1} {hdd : d ≫ d = 0}
+  {M' : TopRep k H} {ℳ' : ℤ → Submodule k M'.V}
+  {hρ' : ∀ n g x, x ∈ ℳ' n → M'.ρ g x ∈ ℳ' n} {d' : M' ⟶ M'}
+  {hd' : TauCeti.LinearMap.IsHomogeneous d'.hom.toLinearMap ℳ' ℳ' 1} {hdd' : d' ≫ d' = 0}
+
+/-- The restriction along `φ` of the complex of `M` maps to the complex of the restriction of
+`M`, by the identity of `ℳ n` in each degree. -/
+private noncomputable def resGradedCochainComplexHom (φ : H →* G) :
+    ((resFunctor φ).mapHomologicalComplex _).obj (M.gradedCochainComplex ℳ hρ d hd hdd) ⟶
+      (TopRep.res φ M).gradedCochainComplex ℳ (fun n h ↦ hρ n (φ h)) ((resFunctor φ).map d)
+        (TauCeti.LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ hd.map_mem hx)
+        (by rw [← Functor.map_comp, hdd, Functor.map_zero]) where
+  f n := (TopRep.res φ M).gradedCochainComplexLift _ _ _ _ _ n
+    ((resFunctor φ).map (M.gradedCochainComplexι ℳ hρ d hd hdd n)) fun v ↦ by
+      rw [resFunctor_map_hom, ContIntertwiningMap.restrict_apply, gradedCochainComplexι_apply]
+      exact v.2
+  comm' i j hij := by
+    obtain rfl : i + 1 = j := hij
+    refine ConcreteCategory.hom_ext _ _ fun v ↦ Subtype.ext ?_
+    rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, gradedCochainComplex_d_apply,
+      gradedCochainComplexLift_apply, gradedCochainComplexLift_apply]
+    -- Both sides are the restriction of the inclusion of the degree `i` term followed by `d`.
+    exact congr(((resFunctor φ).map $(gradedCochainComplex_d_comp_ι M ℳ hρ d hd hdd i)).hom v).symm
+
+/-- A morphism `F : res φ M ⟶ M'` of degree zero commuting with the differentials, from the
+restriction of a graded `G`-representation along `φ : H →* G` to a graded `H`-representation,
+restricts degree by degree to a chain map from the restriction of the complex of `M` to the
+complex of `M'`. It is `TopRep.gradedCochainComplexMap F` on the complex of `res φ M`, whose terms
+are those of the restricted complex. -/
+noncomputable def gradedCochainComplexResMap (φ : H →* G) (F : TopRep.res φ M ⟶ M')
+    (hF : TauCeti.LinearMap.IsHomogeneous F.hom.toLinearMap ℳ ℳ' 0)
+    (hFd : (resFunctor φ).map d ≫ F = F ≫ d') :
+    ((resFunctor φ).mapHomologicalComplex _).obj (M.gradedCochainComplex ℳ hρ d hd hdd) ⟶
+      M'.gradedCochainComplex ℳ' hρ' d' hd' hdd' :=
+  resGradedCochainComplexHom φ ≫ gradedCochainComplexMap F hF hFd
+
+-- Not a `simp` lemma: `simp` rewrites the source object of the component, a term of the restricted
+-- complex, through `CategoryTheory.Functor.mapHomologicalComplex_obj_X`, so the left-hand side is
+-- not in `simp`-normal form; use it with `rw` or `simp only`.
+/-- The chain map `gradedCochainComplexResMap φ F` evaluates by `F`. -/
+theorem gradedCochainComplexResMap_f_apply (φ : H →* G) (F : TopRep.res φ M ⟶ M')
+    (hF : TauCeti.LinearMap.IsHomogeneous F.hom.toLinearMap ℳ ℳ' 0)
+    (hFd : (resFunctor φ).map d ≫ F = F ≫ d') (n : ℕ)
+    (v : ((resFunctor φ).obj ((M.gradedCochainComplex ℳ hρ d hd hdd).X n)).V) :
+    (((gradedCochainComplexResMap (hρ' := hρ') (hd' := hd') (hdd' := hdd') φ F hF hFd).f n).hom
+      v).1 = F.hom v.1 := by
+  rw [gradedCochainComplexResMap, HomologicalComplex.comp_f, comp_apply,
+    gradedCochainComplexMap_f_apply]
+  exact congrArg F.hom ((gradedCochainComplexLift_apply _ _ _ _ _ _ _ _ _ v).trans
+    (gradedCochainComplexι_apply M ℳ hρ d hd hdd n v))
+
+/-- Restricting a homogeneous term does not change its underlying vector. -/
+private theorem resGradedCochainComplexHom_f_apply (φ : H →* G) (n : ℕ)
+    (z : ((resFunctor φ).obj ((M.gradedCochainComplex ℳ hρ d hd hdd).X n)).V) :
+    (((resGradedCochainComplexHom (hρ := hρ) (hd := hd) (hdd := hdd) φ).f n).hom z).1 =
+      z.1 := by
+  dsimp only [resGradedCochainComplexHom, HomologicalComplex.Hom.f]
+  rw [gradedCochainComplexLift_apply, resFunctor_map_hom,
+    ContIntertwiningMap.restrict_apply, gradedCochainComplexι_apply]
+
+/-- Forming the complex of a graded representation commutes with restriction of the group.
+The comparison is the identity on the homogeneous vectors in every degree. -/
+noncomputable def resGradedCochainComplexIso (φ : H →* G) :
+    ((resFunctor φ).mapHomologicalComplex _).obj (M.gradedCochainComplex ℳ hρ d hd hdd) ≅
+      (TopRep.res φ M).gradedCochainComplex ℳ (fun n h ↦ hρ n (φ h)) ((resFunctor φ).map d)
+        (TauCeti.LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ hd.map_mem hx)
+        (by rw [← Functor.map_comp, hdd, Functor.map_zero]) := by
+  let f := resGradedCochainComplexHom (M := M) (hρ := hρ) (hd := hd) (hdd := hdd) φ
+  have hf (n : ℕ) (z) : ((f.f n).hom z).1 = z.1 :=
+    resGradedCochainComplexHom_f_apply φ n z
+  let e (n : ℕ) : _ ≅ _ :=
+    { hom := f.f n
+      inv := ofHom
+        { toContinuousLinearMap := ContinuousLinearMap.id k (ℳ (n : ℤ))
+          isIntertwining' := fun g ↦ by
+            ext z
+            apply Subtype.ext
+            -- The native homogeneous term and its restriction have the same subtype carrier
+            -- only at semireducible transparency. Thus id_comp/comp_id cannot match the two
+            -- carrier presentations; normalize their vector applications before rewriting.
+            change (((res φ M).ρ.subrepresentation (ℳ n)
+              (fun g x hx ↦ hρ n (φ g) x hx)) g z).1 =
+                (((M.gradedCochainComplex ℳ hρ d hd hdd).X n).ρ (φ g) z).1
+            rw [ContRepresentation.coe_subrepresentation_apply]
+            exact (M.gradedCochainComplex_ρ_apply ℳ hρ d hd hdd n (φ g) z).symm }
+      hom_inv_id := by
+        apply ConcreteCategory.hom_ext
+        intro z
+        exact Subtype.ext (hf n z)
+      inv_hom_id := by
+        apply ConcreteCategory.hom_ext
+        intro z
+        exact Subtype.ext (hf n z) }
+  exact HomologicalComplex.Hom.isoOfComponents e (fun i j _ ↦ f.comm i j)
+
+-- Neither application lemma is a simp lemma: simplifying the source or target changes a term
+-- of the restricted complex through Functor.mapHomologicalComplex_obj_X, so the indexed
+-- left-hand sides are not in normal form.
+/-- The restriction comparison does not change the underlying homogeneous vector. -/
+theorem resGradedCochainComplexIso_hom_f_apply (φ : H →* G) (n : ℕ)
+    (z : ((resFunctor φ).obj ((M.gradedCochainComplex ℳ hρ d hd hdd).X n)).V) :
+    (((resGradedCochainComplexIso (hρ := hρ) (hd := hd) (hdd := hdd) φ).hom.f n).hom z).1 =
+      z.1 :=
+  resGradedCochainComplexHom_f_apply φ n z
+
+/-- The inverse restriction comparison does not change the underlying homogeneous vector. -/
+theorem resGradedCochainComplexIso_inv_f_apply (φ : H →* G) (n : ℕ)
+    (z : (((TopRep.res φ M).gradedCochainComplex ℳ (fun n h ↦ hρ n (φ h))
+      ((resFunctor φ).map d)
+      (TauCeti.LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ hd.map_mem hx)
+      (by rw [← Functor.map_comp, hdd, Functor.map_zero])).X n).V) :
+    (((resGradedCochainComplexIso (hρ := hρ) (hd := hd) (hdd := hdd) φ).inv.f n).hom z).1 =
+      z.1 := (rfl)
+
+end ResMap
+
+end TopRep

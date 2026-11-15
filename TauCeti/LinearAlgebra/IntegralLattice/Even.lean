@@ -45,8 +45,6 @@ condition, because they occur twice in the norm of an integral linear combinatio
 
 * V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, §1.1.
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md`
-* `TauCetiRoadmap/IntegralLattices/Suggested.lean`
 -/
 
 public section
@@ -147,7 +145,7 @@ theorem isEven_ofGramMatrix_iff {ι : Type*} [Fintype ι] (b : Basis ι ℚ V)
 /-- An equivalence preserving self-pairings identifies lattice evenness with even self-pairings
 in an arbitrary integral module. -/
 theorem isEven_iff_of_integralForm_equiv (L : IntegralLattice V) {M : Type*}
-    [AddCommGroup M] [Module ℤ M] (B : LinearMap.BilinForm ℤ M) (e : M ≃ₗ[ℤ] L)
+    [AddCommGroup M] (B : LinearMap.BilinForm ℤ M) (e : M ≃ₗ[ℤ] L)
     (hB : ∀ x, L.integralForm (e x) (e x) = B x x) :
     L.IsEven ↔ ∀ x, Even (B x x) := by
   rw [IsEven, e.surjective.forall]

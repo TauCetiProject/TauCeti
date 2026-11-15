@@ -12,22 +12,20 @@ public import TauCeti.LinearAlgebra.TotallyReal.Finrank
 /-!
 # Lagrangian subspaces of a tame pair are maximal totally real
 
-The analytic Heegaard Floer roadmap keeps *totally real* and *Lagrangian* as separate named
-hypotheses (a totally real subspace `L` is one disjoint from its `J`-image, `L ⊓ JL = ⊥`, and a
-maximal totally real one is moreover complementary, `V = L ⊕ JL`; a Lagrangian subspace is one
-equal to its symplectic complement, `L^ω = L`), because the two play
-different roles downstream: totally real boundary conditions for the Cauchy--Riemann operator and
-the tori `T_α`, `T_β` in `Sym^g(Σ)` (Lane F4), Lagrangian boundary conditions for exact Lagrangian
-Floer homology (Lane F3). They are nevertheless tightly linked: on a finite-dimensional space, as
-soon as a symplectic form `ω` *tames* an almost complex structure `J`, every Lagrangian subspace
-is automatically maximal totally real. This file records that link in general, complementing the
-standard-model statement in `Lagrangian.lean` where the coordinate factors of `V × V` are seen to
-be simultaneously Lagrangian and maximal totally real.
+*Totally real* and *Lagrangian* are kept as separate named hypotheses (a totally real subspace `L`
+is one disjoint from its `J`-image, `L ⊓ JL = ⊥`, and a maximal totally real one is moreover
+complementary, `V = L ⊕ JL`; a Lagrangian subspace is one equal to its symplectic complement,
+`L^ω = L`), because the two play different roles downstream: totally real boundary conditions for
+the Cauchy--Riemann operator and the tori `T_α`, `T_β` in `Sym^g(Σ)`, Lagrangian boundary conditions
+for exact Lagrangian Floer homology. They are nevertheless tightly linked: on a finite-dimensional
+space, as soon as a symplectic form `ω` *tames* an almost complex structure `J`, every Lagrangian
+subspace is automatically maximal totally real. This file records that link in general,
+complementing the standard-model statement in `TauCeti.Geometry.Symplectic.Lagrangian.Basic` where
+the coordinate factors of `V × V` are seen to be simultaneously Lagrangian and maximal totally real.
 
 The mechanism is the one classical computation behind "a compatible `J` makes a Lagrangian totally
 real" (McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*, Section 2.6), split here
-into its two genuinely separate pieces, following the roadmap's instruction to keep tame and
-compatible distinct:
+into its two genuinely separate pieces, keeping tame and compatible distinct:
 
 * **Disjointness** `L ⊓ JL = ⊥` needs only *taming*, not invariance: if `x = J y` lies in an
   isotropic `L` with `y ∈ L`, then `ω(y, J y) = ω(y, x) = 0` by isotropy, so `y = 0` by taming,

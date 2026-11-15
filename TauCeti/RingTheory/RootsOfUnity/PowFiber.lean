@@ -49,8 +49,7 @@ theorem rootsOfUnity.smul_eq_mul [CommMonoid M]
 @[simp]
 theorem rootsOfUnity.smul_pow [CommMonoid M]
     (ζ : rootsOfUnity m M) (u : M) : (ζ • u) ^ m = u ^ m := by
-  simp only [rootsOfUnity.smul_eq_mul, mul_pow, ← Units.val_pow_eq_pow_val,
-    (mem_rootsOfUnity m _).mp ζ.2, Units.val_one, one_mul]
+  rw [rootsOfUnity.smul_eq_mul, mul_pow, (mem_rootsOfUnity' m _).mp ζ.2, one_mul]
 
 namespace TauCeti
 
@@ -61,16 +60,11 @@ theorem pow_eq_pow_iff_exists_rootsOfUnity_smul [CommGroupWithZero M]
     u ^ m = v ^ m ↔ ∃ ζ : rootsOfUnity m M, ζ • u = v := by
   refine ⟨fun h ↦ ?_, fun ⟨ζ, hζ⟩ ↦ hζ ▸ (rootsOfUnity.smul_pow ζ u).symm⟩
   rcases eq_or_ne u 0 with rfl | hu
-  · refine ⟨1, ?_⟩
-    rw [zero_pow hm, eq_comm, pow_eq_zero_iff hm] at h
-    rw [h, one_smul]
-  · have hv : v ≠ 0 := by
-      rintro rfl
-      exact hu (pow_eq_zero_iff hm |>.mp (h.trans (zero_pow hm)))
-    refine ⟨⟨Units.mk0 (v / u) (div_ne_zero hv hu), ?_⟩, ?_⟩
-    · simp only [mem_rootsOfUnity', Units.val_mk0, div_pow, h,
-        div_self (pow_ne_zero m hv)]
-    · simp only [rootsOfUnity.smul_eq_mul, Units.val_mk0, div_mul_cancel₀ v hu]
+  · exact ⟨1, by simpa [hm, eq_comm] using h⟩
+  have hv : v ≠ 0 := ne_zero_pow hm (h ▸ pow_ne_zero m hu)
+  refine ⟨⟨Units.mk0 (v / u) (div_ne_zero hv hu), ?_⟩, ?_⟩
+  · rw [mem_rootsOfUnity', Units.val_mk0, div_pow, h, div_self (pow_ne_zero m hv)]
+  · rw [rootsOfUnity.smul_eq_mul, Units.val_mk0, div_mul_cancel₀ v hu]
 
 /-- For `m ≠ 0`, the orbit relation of the `m`-th roots of unity acting by multiplication is the
 relation of having the same `m`-th power. -/
@@ -96,8 +90,7 @@ theorem stabilizer_rootsOfUnity_of_ne_zero [CommMonoidWithZero M] [IsRightCancel
     stabilizer (rootsOfUnity m M) u = ⊥ := by
   refine (Subgroup.eq_bot_iff_forall _).mpr fun ζ hζ ↦ ?_
   rw [mem_stabilizer_iff, rootsOfUnity.smul_eq_mul] at hζ
-  exact Subtype.ext <| Units.ext <| by
-    simpa using mul_right_cancel₀ hu (hζ.trans (one_mul u).symm)
+  simpa using mul_right_cancel₀ hu (hζ.trans (one_mul u).symm)
 
 /-- Every `m`-th root of unity fixes `0`. -/
 @[simp]

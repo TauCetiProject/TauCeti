@@ -267,15 +267,8 @@ theorem mem_iff_forall_realCharacter_nonneg (hi : IsIntegralLattice i) (hσ : Is
   let _ := ToricRay.finite_of_fg hσ.fg
   let _ := Fintype.ofFinite (ToricRay σ)
   let B := hi.isBaseChange.basis b
-  have hB : ∀ c, B c = i (b c) := fun c ↦ by
-    simpa using hi.isBaseChange.basis_apply b c
-  have hcoord : ∀ c, hi.realCharacter (b.coord c).toAddMonoidHom v = B.repr v c := by
-    intro c
-    have : hi.realCharacter (b.coord c).toAddMonoidHom = B.coord c := by
-      refine B.ext fun c' ↦ ?_
-      rw [Module.Basis.coord_apply, B.repr_self, hB]
-      by_cases hc : c' = c <;> simp [Module.Basis.coord_apply, hc]
-    rw [this, Module.Basis.coord_apply]
+  have hcoord : ∀ c, hi.realCharacter (b.coord c).toAddMonoidHom v = B.repr v c := fun c ↦ by
+    rw [hi.realCharacter_coord, Module.Basis.coord_apply]
   have hmem : ∀ c, (b.coord c).toAddMonoidHom ∈ dualSemigroup hi σ := fun c ↦ by
     simpa using (dualSemigroupCoord hi hσ.toIsToricCone hb c).2
   have hinr : ∀ j, B.repr v (Sum.inr j) = 0 := by
@@ -290,7 +283,7 @@ theorem mem_iff_forall_realCharacter_nonneg (hi : IsIntegralLattice i) (hσ : Is
   rw [← B.sum_repr v, Fintype.sum_sum_type]
   simp only [hinr, zero_smul, Finset.sum_const_zero, add_zero]
   refine Submodule.sum_mem _ fun ρ _ ↦ ?_
-  rw [hB]
+  rw [hi.isBaseChange.basis_apply, AddMonoidHom.coe_toIntLinearMap]
   exact σ.smul_mem (hcoord (Sum.inl ρ) ▸ h _ (hmem (Sum.inl ρ)))
     (ρ.1.isFaceOf.le (hb ρ).mem)
 

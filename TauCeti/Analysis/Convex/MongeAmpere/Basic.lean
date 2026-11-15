@@ -1,0 +1,699 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.Convex.Hessian
+public import TauCeti.Analysis.Convex.SubgradientImage
+public import TauCeti.Analysis.Convex.Measure
+public import Mathlib.MeasureTheory.Function.Jacobian
+import TauCeti.Analysis.Convex.Alexandrov
+import TauCeti.Analysis.Convex.Extrema
+import TauCeti.Analysis.Convex.SlopeSets
+
+/-!
+# The Aleksandrov Monge–Ampère measure of a convex function
+
+Let `E` be a finite-dimensional real inner product space with an additive Haar measure `μ`, and
+let `f : E → EReal` be convex (convex real epigraph, never `⊥`), with `D` the interior of its
+effective domain `{x | f x ≠ ⊤}`. The *subgradient image* of a set `s` is
+`∂f(s) = ⋃ x ∈ s, ∂f(x)` (`TauCeti.subgradientImage`), the union of the subdifferentials of `f`
+for the inner product. The *Aleksandrov Monge–Ampère measure* of `f` is
+
+  `MA_f(s) = μ(∂f(s ∩ D))`
+
+for Borel `s`. It gives the weak (Aleksandrov) sense in which a merely convex function solves
+the Monge–Ampère equation `det D²f = ν`. The same formula defines a measure for every `μ`
+absolutely continuous with respect to a Haar measure, such as the weighted measure
+`s ↦ ∫_{∂f(s ∩ D)} g` for `μ = volume.withDensity g`.
+
+That `s ↦ μ(∂f(s ∩ D))` is a measure rests on two facts.
+
+* A point `y` that is a subgradient at two distinct points `x₁ ≠ x₂` is a point where the
+  conjugate `f⋆` has the two subgradients `x₁` and `x₂`, so `f⋆` is not differentiable there.
+  By Rademacher's theorem for the convex function `f⋆`, such points form a `μ`-null set
+  (`TauCeti.measure_setOf_exists_ne_mem_subdifferential_eq_zero`); this needs no convexity of `f`.
+  Hence the subgradient images of disjoint sets are almost disjoint.
+* The subgradient image of a compact subset of `D` is compact
+  (`TauCeti.isCompact_subgradientImage`). Open subsets of `D` are σ-compact, so their
+  subgradient images are measurable; complements are handled by the almost-disjointness, so the
+  subgradient image of every Borel subset of `D` is null measurable
+  (`TauCeti.nullMeasurableSet_subgradientImage`).
+
+A finite convex function `u` on an open convex set `Ω` is covered by extending it by `⊤` off `Ω`;
+then `D = Ω` and the subdifferential is the set of `y` with `u x + ⟪x' - x, y⟫ ≤ u x'` for all
+`x' ∈ Ω` (`TauCeti.mongeAmpereMeasure_ite_apply`).
+
+For a convex function that is twice differentiable on `D`, the Aleksandrov measure is the
+classical one, `MA_f = det (D²f) dx` on `D` (`TauCeti.mongeAmpereMeasure_eq_withDensity_det`).
+On `D` the subdifferential is the gradient, so `MA_f(s) = μ(∇f(s ∩ D))`. This is computed by the
+change of variables formula along the gradient
+(`TauCeti.withDensity_image_gradient_eq_setLIntegral`): on a set where the subdifferential is the
+single gradient `∇f x` and has a positive derivative `H x`, the gradient is injective where `H x`
+is nondegenerate (`TauCeti.apply_sub_eq_zero_of_forall_mem_subdifferential_norm_sub_le`) and maps
+the set where `H x` is degenerate to a null set. The Hessian of a convex function is positive
+(`TauCeti.isPositive_of_hasFDerivAt_gradient`).
+
+The *Aleksandrov maximum principle* bounds a convex function by its Monge–Ampère mass: if `u` is
+convex on a bounded open convex `Ω`, continuous on the closure and nonnegative on the frontier,
+then `max (-u x₀) 0 ^ n ≤ C diam(Ω) ^ (n - 1) dist(x₀, ∂Ω) MA_u(Ω)` for `x₀ ∈ Ω`, with
+`C = 2 ^ (n + 1) / μ (ball 0 1)`
+(`TauCeti.ofReal_neg_pow_mul_addHaar_ball_le_mul_mongeAmpereMeasure`). Every slope `p` of an
+affine function through `(x₀, u x₀)` lying below `u` on the frontier is a subgradient of `u` at
+some point of `Ω` (`TauCeti.exists_forall_add_inner_le_of_forall_frontier`). When `u ≥ 0` on the
+frontier and `u x₀ < 0`, these slopes include a convex set containing a ball of radius
+`-u x₀ / diam Ω` and a point of norm `-u x₀ / dist(x₀, ∂Ω)`, and the volume of such a set is
+bounded below by `Convex.ofReal_dist_mul_pow_mul_addHaar_ball_le`.
+
+## Main definitions
+
+* `TauCeti.mongeAmpereMeasure μ f` — the Aleksandrov Monge–Ampère measure of `f`; it is `0` when
+  `f` is not convex or `μ` is not absolutely continuous with respect to a Haar measure.
+
+## Main statements
+
+* `TauCeti.measure_setOf_exists_ne_mem_subdifferential_eq_zero` and
+  `TauCeti.aedisjoint_subgradientImage` — almost no point is a subgradient at two distinct points,
+  so subgradient images of disjoint sets are almost disjoint;
+* `TauCeti.mongeAmpereMeasure_apply` — `MA_f(s) = μ(∂f(s ∩ D))` for measurable `s`;
+* `TauCeti.mongeAmpereMeasure_add` — `MA_f` is additive in the reference measure, among measures
+  absolutely continuous with respect to an additive Haar measure;
+* `TauCeti.mongeAmpereMeasure_compl_interior` — `MA_f` is concentrated on `D`;
+* `TauCeti.mongeAmpereMeasure_lt_top` and `TauCeti.isLocallyFiniteMeasure_comap_mongeAmpereMeasure`
+  — when `μ` is finite on compact sets, `MA_f` is finite on compact subsets of `D`, so it is a
+  locally finite measure on `D`;
+* `TauCeti.sigmaFinite_mongeAmpereMeasure` — when `μ` is finite on compact sets, `MA_f` is
+  σ-finite for every `f`;
+* `TauCeti.mongeAmpereMeasure_ite_apply` — the formula for a finite convex function on an open
+  set;
+* `TauCeti.mongeAmpereMeasure_ite_eq_restrict` — the measure is local: restricting a convex
+  function to an open convex subset restricts its Monge–Ampère measure;
+* `TauCeti.withDensity_restrict_le_mongeAmpereMeasure` and
+  `TauCeti.mongeAmpereMeasure_le_withDensity_restrict` — comparison of a density with the
+  Monge–Ampère measure on an open convex subset;
+* `TauCeti.injOn_gradient_inter_setOf_det_ne_zero` — the gradient is injective on the points
+  where the subdifferential is the single gradient with an expansion of nonzero determinant;
+* `TauCeti.withDensity_image_gradient_eq_setLIntegral` — the change of variables formula
+  `∫_{∇F(t)} g dμ = ∫_t det (H x) g (∇F x) dμ` along the gradient of a convex function, on a set
+  `t` where the subdifferential is the single gradient with positive derivative `H x`;
+* `TauCeti.mongeAmpereMeasure_eq_withDensity_det` and
+  `TauCeti.mongeAmpereMeasure_ite_eq_withDensity_det` — for a twice differentiable convex function,
+  the Aleksandrov measure is `det (D²f) dx` on the interior of the effective domain;
+* `TauCeti.ofReal_neg_pow_mul_addHaar_ball_le_mul_mongeAmpereMeasure` — **the Aleksandrov
+  maximum principle**.
+
+## References
+
+* A. D. Aleksandrov, *Dirichlet's problem for the equation Det ‖z_{ij}‖ = φ(z₁, …, zₙ, z, x₁, …,
+  xₙ). I*, Vestnik Leningrad. Univ. Ser. Mat. Meh. Astr. 13 (1958), 5–24.
+* C. E. Gutiérrez, *The Monge–Ampère Equation*, 2nd ed., Progress in Nonlinear Differential
+  Equations and Their Applications 89, Birkhäuser, 2016, §1.1, in particular Theorem 1.1.13, and
+  §1.4 for the Aleksandrov maximum principle.
+* A. Figalli, *The Monge–Ampère Equation and Its Applications*, Zurich Lectures in Advanced
+  Mathematics, EMS, 2017, §2.1, in particular Theorem 2.3.
+-/
+
+public section
+
+noncomputable section
+
+namespace TauCeti
+
+open MeasureTheory Measure Set Filter Metric Module
+open scoped Topology ENNReal Gradient
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {f : E → EReal}
+
+section Overlap
+
+variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] (μ : Measure E)
+  [μ.IsAddHaarMeasure]
+
+/-- **Almost no point is a subgradient at two distinct points.** For any `f : E → EReal` on a
+finite-dimensional real inner product space, the set of `y` lying in the subdifferentials of `f`
+at two distinct points is null for every additive Haar measure. -/
+theorem measure_setOf_exists_ne_mem_subdifferential_eq_zero (f : E → EReal) :
+    μ {y | ∃ x₁ x₂, x₁ ≠ x₂ ∧ y ∈ subdifferential (innerₗ E) f x₁ ∧
+      y ∈ subdifferential (innerₗ E) f x₂} = 0 := by
+  by_cases hdom : ∃ x, f x ≠ ⊤
+  · obtain ⟨x₀, hx₀⟩ := hdom
+    refine measure_mono_null ?_ (ae_iff.1 (ae_eventually_ne_top_and_differentiableAt_toReal
+      (μ := μ) (convex_epigraph_fenchelConjugate (innerₗ E) f)
+      (fenchelConjugate_ne_bot (innerₗ E) hx₀)))
+    rintro y ⟨x₁, x₂, hne, h₁, h₂⟩ hy
+    have h₁' := mem_subdifferential_fenchelConjugate_of_mem_subdifferential (innerₗ E) h₁
+    have h₂' := mem_subdifferential_fenchelConjugate_of_mem_subdifferential (innerₗ E) h₂
+    rw [flip_innerₗ] at h₁' h₂'
+    obtain ⟨hev, hd⟩ := hy (ne_top_of_mem_subdifferential _ h₁')
+    exact hne ((hasGradientAt_toReal_of_mem_subdifferential h₁' hev hd).unique
+      (hasGradientAt_toReal_of_mem_subdifferential h₂' hev hd))
+  · simp only [not_exists, not_not] at hdom
+    refine measure_mono_null ?_ measure_empty
+    rintro y ⟨x₁, -, -, h₁, -⟩
+    exact ne_top_of_mem_subdifferential _ h₁ (hdom x₁)
+
+/-- **Subgradient images of disjoint sets are almost disjoint.** For any `f : E → EReal` on a
+finite-dimensional real inner product space, the subgradient images of disjoint sets meet in a
+null set for every additive Haar measure. -/
+theorem aedisjoint_subgradientImage (f : E → EReal) {s t : Set E} (hst : Disjoint s t) :
+    AEDisjoint μ (subgradientImage (innerₗ E) f s) (subgradientImage (innerₗ E) f t) := by
+  refine measure_mono_null ?_ (measure_setOf_exists_ne_mem_subdifferential_eq_zero μ f)
+  rintro y ⟨h₁, h₂⟩
+  obtain ⟨x₁, hx₁, h₁⟩ := (mem_subgradientImage_iff _).1 h₁
+  obtain ⟨x₂, hx₂, h₂⟩ := (mem_subgradientImage_iff _).1 h₂
+  exact ⟨x₁, x₂, hst.ne_of_mem hx₁ hx₂, h₁, h₂⟩
+
+end Overlap
+
+section Convex
+
+variable (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2})
+include hf
+
+variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] (μ : Measure E)
+  [μ.IsAddHaarMeasure]
+
+/-- **Subgradient images of Borel subsets of the domain are null measurable.** For a convex
+`f : E → EReal` on a finite-dimensional real inner product space, the subgradient image of the
+part of a measurable set inside the interior of the effective domain is null measurable for every
+additive Haar measure. If `f` takes the value `⊥`, then no point has a subgradient and the image
+is empty. -/
+theorem nullMeasurableSet_subgradientImage {s : Set E} (hs : MeasurableSet s) :
+    NullMeasurableSet (subgradientImage (innerₗ E) f (s ∩ interior {x | f x ≠ ⊤})) μ := by
+  set D := interior {x | f x ≠ ⊤}
+  by_cases hbot : ∀ x, f x ≠ ⊥
+  swap
+  · convert MeasurableSet.empty.nullMeasurableSet
+    refine eq_empty_of_forall_notMem fun y hy => hbot ?_
+    obtain ⟨x, -, hx⟩ := (mem_subgradientImage_iff _).1 hy
+    exact apply_ne_bot_of_mem_subdifferential _ hx
+  -- On open sets: an open subset of `D` is a countable union of compact sets.
+  have hopen : ∀ U, IsOpen U → NullMeasurableSet (subgradientImage (innerₗ E) f (U ∩ D)) μ := by
+    intro U hU
+    have : LocallyCompactSpace (U ∩ D : Set E) := (hU.inter isOpen_interior).locallyCompactSpace
+    obtain ⟨K, hK, hKU⟩ := isSigmaCompact_iff_sigmaCompactSpace.2 (inferInstance :
+      SigmaCompactSpace (U ∩ D : Set E))
+    rw [← hKU, subgradientImage_iUnion]
+    refine NullMeasurableSet.iUnion fun n => ?_
+    refine (isCompact_subgradientImage hf hbot (hK n) fun x hx => ?_).isClosed
+      |>.measurableSet.nullMeasurableSet
+    exact (hKU ▸ mem_iUnion_of_mem n hx : x ∈ U ∩ D).2
+  refine MeasurableSet.induction_on_open
+    (C := fun t _ => NullMeasurableSet (subgradientImage (innerₗ E) f (t ∩ D)) μ) hopen ?_ ?_ s hs
+  · -- On complements: the subgradient images of `t` and `tᶜ` are almost disjoint and cover the
+    -- subgradient image of `D`.
+    intro t _ ht
+    refine ((hopen univ isOpen_univ).diff ht).congr (ae_eq_set.2 ⟨?_, ?_⟩)
+    · refine measure_mono_null (fun y hy => ?_) (measure_empty (μ := μ))
+      obtain ⟨⟨hyD, hyt⟩, hytc⟩ := hy
+      obtain ⟨x, ⟨-, hx⟩, hyx⟩ := (mem_subgradientImage_iff _).1 hyD
+      by_cases hxt : x ∈ t
+      · exact hyt ((mem_subgradientImage_iff _).2 ⟨x, ⟨hxt, hx⟩, hyx⟩)
+      · exact hytc ((mem_subgradientImage_iff _).2 ⟨x, ⟨hxt, hx⟩, hyx⟩)
+    · refine measure_mono_null (fun y hy => ?_) (aedisjoint_subgradientImage μ f
+        (disjoint_compl_left.mono inter_subset_left inter_subset_left :
+          Disjoint (tᶜ ∩ D) (t ∩ D)))
+      obtain ⟨hytc, hy'⟩ := hy
+      obtain ⟨x, hx, hyx⟩ := (mem_subgradientImage_iff _).1 hytc
+      refine ⟨hytc, ?_⟩
+      by_contra hyt
+      exact hy' ⟨(mem_subgradientImage_iff _).2 ⟨x, ⟨mem_univ x, hx.2⟩, hyx⟩, hyt⟩
+  · -- On countable unions: the subgradient image commutes with unions.
+    intro g _ _ hg
+    simpa only [iUnion_inter, subgradientImage_iUnion] using NullMeasurableSet.iUnion hg
+
+end Convex
+
+variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+
+open Classical in
+/-- The **Aleksandrov Monge–Ampère measure** of `f : E → EReal` with respect to a measure `μ`
+that is absolutely continuous with respect to an additive Haar measure. When `f` is convex
+(convex real epigraph, never `⊥`), it is the measure with `MA_f(s) = μ(∂f(s ∩ D))` for
+measurable `s`, where `D` is the interior of the effective domain and `∂f` the subgradient image
+for the inner product (`mongeAmpereMeasure_apply`). For an additive Haar `μ` this is the
+Aleksandrov measure; for `μ = ν.withDensity g` it is the weighted measure `∫_{∂f(s ∩ D)} g dν`.
+If `f` is not convex, or `μ` is not absolutely continuous with respect to a Haar measure, it is
+`0`. -/
+def mongeAmpereMeasure (μ : Measure E) (f : E → EReal) : Measure E :=
+  if h : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2} ∧ (∀ x, f x ≠ ⊥) ∧
+      ∃ ν : Measure E, ν.IsAddHaarMeasure ∧ μ ≪ ν then
+    Measure.ofMeasurable
+      (fun s _ => μ (subgradientImage (innerₗ E) f (s ∩ interior {x | f x ≠ ⊤})))
+      (by simp) fun g hg hd => by
+        obtain ⟨hf, _, ν, _, hμ⟩ := h
+        simp only [iUnion_inter, subgradientImage_iUnion]
+        exact measure_iUnion₀
+          (fun i j hij => hμ (aedisjoint_subgradientImage ν f
+            ((hd hij).mono inter_subset_left inter_subset_left)))
+          fun i => (nullMeasurableSet_subgradientImage hf ν (hg i)).mono_ac hμ
+  else 0
+
+variable (μ : Measure E) {ν : Measure E} [ν.IsAddHaarMeasure]
+
+/-- The Aleksandrov Monge–Ampère measure of a convex function evaluated on a measurable set `s` is
+the measure of the subgradient image of the part of `s` in the interior of the effective domain. -/
+theorem mongeAmpereMeasure_apply (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2})
+    (hbot : ∀ x, f x ≠ ⊥) (hμ : μ ≪ ν) {s : Set E} (hs : MeasurableSet s) :
+    mongeAmpereMeasure μ f s =
+      μ (subgradientImage (innerₗ E) f (s ∩ interior {x | f x ≠ ⊤})) := by
+  rw [mongeAmpereMeasure, dite_eq_left ⟨hf, hbot, ν, inferInstance, hμ⟩, ofMeasurable_apply _ hs]
+
+/-- The Aleksandrov Monge–Ampère measure of a function whose real epigraph is not convex is
+`0`. -/
+theorem mongeAmpereMeasure_eq_zero_of_not_convex (hf : ¬Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) :
+    mongeAmpereMeasure μ f = 0 := by
+  rw [mongeAmpereMeasure, dite_eq_right fun h => hf h.1]
+
+/-- The Aleksandrov Monge–Ampère measure of a function taking the value `⊥` is `0`. -/
+theorem mongeAmpereMeasure_eq_zero_of_eq_bot {x : E} (hx : f x = ⊥) :
+    mongeAmpereMeasure μ f = 0 := by
+  rw [mongeAmpereMeasure, dite_eq_right fun h => h.2.1 x hx]
+
+/-- The Aleksandrov Monge–Ampère measure with respect to a measure that is not absolutely
+continuous with respect to an additive Haar measure is `0`. -/
+theorem mongeAmpereMeasure_eq_zero_of_not_absolutelyContinuous (hμ : ¬μ ≪ ν) :
+    mongeAmpereMeasure μ f = 0 := by
+  rw [mongeAmpereMeasure, dite_eq_right]
+  rintro ⟨-, -, ν', _, hμ'⟩
+  exact hμ (hμ'.trans (absolutelyContinuous_isAddHaarMeasure ν' ν))
+
+omit μ in
+/-- The Aleksandrov Monge–Ampère measure is additive in the reference measure, among measures
+absolutely continuous with respect to an additive Haar measure. -/
+theorem mongeAmpereMeasure_add {μ₁ μ₂ : Measure E} (hμ₁ : μ₁ ≪ ν) (hμ₂ : μ₂ ≪ ν) :
+    mongeAmpereMeasure (μ₁ + μ₂) f = mongeAmpereMeasure μ₁ f + mongeAmpereMeasure μ₂ f := by
+  by_cases hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}
+  · by_cases hbot : ∀ x, f x ≠ ⊥
+    · ext s hs
+      rw [add_apply, mongeAmpereMeasure_apply _ hf hbot (hμ₁.add_left hμ₂) hs,
+        mongeAmpereMeasure_apply _ hf hbot hμ₁ hs, mongeAmpereMeasure_apply _ hf hbot hμ₂ hs,
+        add_apply]
+    · obtain ⟨x, hx⟩ := not_forall_not.1 hbot
+      simp only [mongeAmpereMeasure_eq_zero_of_eq_bot _ hx, add_zero]
+  · simp only [mongeAmpereMeasure_eq_zero_of_not_convex _ hf, add_zero]
+
+/-- The Aleksandrov Monge–Ampère measure is concentrated on the interior of the effective
+domain. -/
+@[simp]
+theorem mongeAmpereMeasure_compl_interior :
+    mongeAmpereMeasure μ f (interior {x | f x ≠ ⊤})ᶜ = 0 := by
+  rw [mongeAmpereMeasure]
+  split_ifs
+  · rw [ofMeasurable_apply _ measurableSet_interior.compl, compl_inter_self]
+    simp
+  · simp
+
+/-- The Aleksandrov Monge–Ampère measure of a convex function, with respect to a measure that is
+finite on compact sets, is finite on every compact subset of the interior of the effective
+domain. -/
+theorem mongeAmpereMeasure_lt_top [IsFiniteMeasureOnCompacts μ]
+    (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) (hbot : ∀ x, f x ≠ ⊥) (hμ : μ ≪ ν) {K : Set E}
+    (hK : IsCompact K) (hKD : K ⊆ interior {x | f x ≠ ⊤}) :
+    mongeAmpereMeasure μ f K < ∞ := by
+  rw [mongeAmpereMeasure_apply μ hf hbot hμ hK.measurableSet, inter_eq_left.2 hKD]
+  exact (isCompact_subgradientImage hf hbot hK hKD).measure_lt_top
+
+/-- The Aleksandrov Monge–Ampère measure of a convex function, with respect to a measure that is
+finite on compact sets, is a locally finite measure on the interior of the effective domain. -/
+theorem isLocallyFiniteMeasure_comap_mongeAmpereMeasure [IsFiniteMeasureOnCompacts μ]
+    (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) (hbot : ∀ x, f x ≠ ⊥) (hμ : μ ≪ ν) :
+    IsLocallyFiniteMeasure
+      ((mongeAmpereMeasure μ f).comap ((↑) : interior {x | f x ≠ ⊤} → E)) := by
+  have : LocallyCompactSpace (interior {x | f x ≠ ⊤}) := isOpen_interior.locallyCompactSpace
+  have : IsFiniteMeasureOnCompacts
+      ((mongeAmpereMeasure μ f).comap ((↑) : interior {x | f x ≠ ⊤} → E)) := by
+    refine ⟨fun K hK => ?_⟩
+    rw [comap_subtype_coe_apply measurableSet_interior]
+    exact mongeAmpereMeasure_lt_top μ hf hbot hμ (hK.image continuous_subtype_val)
+      (image_subset_iff.2 fun x _ => x.2)
+  infer_instance
+
+/-- The Aleksandrov Monge–Ampère measure with respect to a measure that is finite on compact sets
+is σ-finite. For a convex function it is carried by the interior of the effective domain, which is
+a countable union of compact sets of finite Monge–Ampère measure; otherwise it is `0`. -/
+theorem sigmaFinite_mongeAmpereMeasure (f : E → EReal) [IsFiniteMeasureOnCompacts μ] :
+    SigmaFinite (mongeAmpereMeasure μ f) := by
+  by_cases h : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2} ∧ (∀ x, f x ≠ ⊥) ∧
+      ∃ ν : Measure E, ν.IsAddHaarMeasure ∧ μ ≪ ν
+  swap
+  · rw [mongeAmpereMeasure, dite_eq_right h]
+    infer_instance
+  obtain ⟨hf, hbot, ν, _, hμ⟩ := h
+  have : LocallyCompactSpace (interior {x | f x ≠ ⊤}) := isOpen_interior.locallyCompactSpace
+  obtain ⟨K, hK, hKD⟩ := isSigmaCompact_iff_sigmaCompactSpace.2 (inferInstance :
+    SigmaCompactSpace (interior {x | f x ≠ ⊤}))
+  refine sigmaFinite_of_countable ((countable_range K).insert (interior {x | f x ≠ ⊤})ᶜ) ?_ ?_
+  · rintro s (rfl | ⟨n, rfl⟩)
+    · simp
+    · exact mongeAmpereMeasure_lt_top μ hf hbot hμ (hK n) (hKD ▸ subset_iUnion K n)
+  · rw [sUnion_insert, sUnion_range, hKD, compl_union_self]
+
+section Ite
+
+variable {Ω : Set E} [DecidablePred (· ∈ Ω)] {u : E → ℝ}
+
+/-- **The Aleksandrov Monge–Ampère measure of a finite convex function on an open set.** Let `u`
+be convex on an open set `Ω`, extended by `⊤` off `Ω`. On a measurable set `s`, its Monge–Ampère
+measure is the measure of the set of `y` that are subgradients of `u` relative to `Ω` at some
+point of `s ∩ Ω`, i.e. satisfy `u x + ⟪x' - x, y⟫ ≤ u x'` for every `x' ∈ Ω`. -/
+theorem mongeAmpereMeasure_ite_apply (hΩ : IsOpen Ω) (hu : ConvexOn ℝ Ω u) (hμ : μ ≪ ν)
+    {s : Set E} (hs : MeasurableSet s) :
+    mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤) s =
+      μ (⋃ x ∈ s ∩ Ω, {y | ∀ x' ∈ Ω, u x + inner ℝ (x' - x) y ≤ u x'}) := by
+  rw [mongeAmpereMeasure_apply μ (convexOn_iff_convex_epigraph_ite.1 hu) ite_ne_bot hμ hs,
+    setOf_ite_ne_top, hΩ.interior_eq]
+  congr 1
+  ext y
+  simp only [mem_subgradientImage_iff, mem_iUnion, exists_prop]
+  exact exists_congr fun x => and_congr_right fun hx => mem_subdifferential_ite_iff _ hx.2
+
+/-- **The Aleksandrov Monge–Ampère measure is local.** Let `u` be convex on a set `Ω`, and
+let `U ⊆ Ω` be open and convex. The Monge–Ampère measure of `u` restricted to `U` (extended by `⊤`
+off `U`) is the restriction to `U` of the Monge–Ampère measure of `u` on `Ω`: a subgradient of `u`
+relative to the neighbourhood `U` of a point is a subgradient relative to `Ω`. -/
+theorem mongeAmpereMeasure_ite_eq_restrict {U : Set E} [DecidablePred (· ∈ U)]
+    (hU : IsOpen U) (hUc : Convex ℝ U) (hUΩ : U ⊆ Ω) (hu : ConvexOn ℝ Ω u) :
+    mongeAmpereMeasure μ (fun x => if x ∈ U then (u x : EReal) else ⊤) =
+      (mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤)).restrict U := by
+  by_cases h : ∃ ν : Measure E, ν.IsAddHaarMeasure ∧ μ ≪ ν
+  swap
+  · -- without an additive Haar measure dominating `μ` both sides are `0`
+    have h0 (g : E → EReal) : mongeAmpereMeasure μ g = 0 :=
+      mongeAmpereMeasure_eq_zero_of_not_absolutelyContinuous (ν := volume) μ
+        fun hμ => h ⟨volume, inferInstance, hμ⟩
+    rw [h0, h0, Measure.restrict_zero]
+  obtain ⟨ν, _, hμ⟩ := h
+  ext s hs
+  have hsU : s ∩ U ∩ interior Ω = s ∩ U :=
+    inter_eq_left.2 (inter_subset_right.trans (hU.subset_interior_iff.2 hUΩ))
+  rw [Measure.restrict_apply hs, mongeAmpereMeasure_ite_apply μ hU (hu.subset hUΩ hUc) hμ hs,
+    mongeAmpereMeasure_apply μ (convexOn_iff_convex_epigraph_ite.1 hu) ite_ne_bot hμ
+      (hs.inter hU.measurableSet),
+    setOf_ite_ne_top, hsU]
+  congr 1
+  ext y
+  simp only [mem_subgradientImage_iff, mem_iUnion, exists_prop]
+  refine exists_congr fun x => and_congr_right fun hx => ?_
+  rw [mem_subdifferential_ite_iff _ (hUΩ hx.2)]
+  constructor
+  · intro h
+    exact hu.add_le_of_eventually_add_le (hUΩ hx.2) ((innerₗ E).flip y) (by
+      filter_upwards [mem_nhdsWithin_of_mem_nhds (hU.mem_nhds hx.2)] with x' hx'
+      simpa only [LinearMap.flip_apply, innerₗ_apply_apply] using h x' hx')
+  · exact fun h x' hx' => h x' (hUΩ hx')
+
+/-- **Density below an Aleksandrov subsolution on an open convex set.** Let `u` be convex on a set
+`Ω` and `U ⊆ Ω` open and convex. If `f dμ ≤ MA_u^Ω` on `Ω`, where `MA_u^Ω` is the
+Monge–Ampère measure of `u` extended by `⊤` off `Ω`, then every density `g ≤ f` on `U` satisfies
+`g dμ ≤ MA_u^U` on `U`, where `MA_u^U` is the Monge–Ampère measure of `u` extended by `⊤` off
+`U`. -/
+theorem withDensity_restrict_le_mongeAmpereMeasure {U : Set E} [DecidablePred (· ∈ U)]
+    {f g : E → ℝ} (hU : IsOpen U) (hUc : Convex ℝ U) (hUΩ : U ⊆ Ω)
+    (hu : ConvexOn ℝ Ω u) (hg : ∀ x ∈ U, g x ≤ f x)
+    (hMA : (μ.restrict Ω).withDensity (fun x => ENNReal.ofReal (f x)) ≤
+      mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤)) :
+    (μ.restrict U).withDensity (fun x => ENNReal.ofReal (g x)) ≤
+      mongeAmpereMeasure μ (fun x => if x ∈ U then (u x : EReal) else ⊤) := by
+  rw [mongeAmpereMeasure_ite_eq_restrict μ hU hUc hUΩ hu]
+  calc (μ.restrict U).withDensity (fun x => ENNReal.ofReal (g x))
+      ≤ (μ.restrict U).withDensity fun x => ENNReal.ofReal (f x) :=
+        withDensity_mono (ae_restrict_of_forall_mem hU.measurableSet fun x hx =>
+          ENNReal.ofReal_le_ofReal (hg x hx))
+    _ = ((μ.restrict Ω).withDensity fun x => ENNReal.ofReal (f x)).restrict U := by
+        rw [restrict_withDensity hU.measurableSet, restrict_restrict_of_subset hUΩ]
+    _ ≤ _ := Measure.restrict_mono subset_rfl hMA
+
+/-- **Density above an Aleksandrov supersolution on an open convex set.** Let `u` be convex on a set
+`Ω` and `U ⊆ Ω` open and convex. If `MA_u^Ω ≤ f dμ` on `Ω`, where `MA_u^Ω` is the
+Monge–Ampère measure of `u` extended by `⊤` off `Ω`, then every density `g ≥ f` on `U` satisfies
+`MA_u^U ≤ g dμ` on `U`, where `MA_u^U` is the Monge–Ampère measure of `u` extended by `⊤` off
+`U`. -/
+theorem mongeAmpereMeasure_le_withDensity_restrict {U : Set E} [DecidablePred (· ∈ U)]
+    {f g : E → ℝ} (hU : IsOpen U) (hUc : Convex ℝ U) (hUΩ : U ⊆ Ω)
+    (hu : ConvexOn ℝ Ω u) (hg : ∀ x ∈ U, f x ≤ g x)
+    (hMA : mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤) ≤
+      (μ.restrict Ω).withDensity (fun x => ENNReal.ofReal (f x))) :
+    mongeAmpereMeasure μ (fun x => if x ∈ U then (u x : EReal) else ⊤) ≤
+      (μ.restrict U).withDensity (fun x => ENNReal.ofReal (g x)) := by
+  rw [mongeAmpereMeasure_ite_eq_restrict μ hU hUc hUΩ hu]
+  calc (mongeAmpereMeasure μ fun x => if x ∈ Ω then (u x : EReal) else ⊤).restrict U
+      ≤ ((μ.restrict Ω).withDensity fun x => ENNReal.ofReal (f x)).restrict U :=
+        Measure.restrict_mono subset_rfl hMA
+    _ = (μ.restrict U).withDensity fun x => ENNReal.ofReal (f x) := by
+        rw [restrict_withDensity hU.measurableSet, restrict_restrict_of_subset hUΩ]
+    _ ≤ _ :=
+        withDensity_mono (ae_restrict_of_forall_mem hU.measurableSet fun x hx =>
+          ENNReal.ofReal_le_ofReal (hg x hx))
+
+end Ite
+
+/-! ### Change of variables along the gradient -/
+
+section Smooth
+
+variable [μ.IsAddHaarMeasure]
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- The gradient of a convex `f : E → EReal` is injective on the points of a set `t` at which the
+subdifferential of `f` is the single gradient `∇F x`, with the expansion
+`y' = ∇F x + H x (x' - x) + o(‖x' - x‖)`, and `det (H x) ≠ 0`. If two such points `x₁ ≠ x₂` had
+the same gradient, it would be a subgradient along the segment between them, and the expansion
+at `x₁` would vanish in the direction `x₂ - x₁`
+(`apply_sub_eq_zero_of_forall_mem_subdifferential_norm_sub_le`). -/
+theorem injOn_gradient_inter_setOf_det_ne_zero (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2})
+    {H : E → E →L[ℝ] E} {t : Set E}
+    (hP : ∀ x ∈ t, subdifferential (innerₗ E) f x = {(∇ fun x' => (f x').toReal) x} ∧
+      ∀ ε > 0, ∀ᶠ x' in 𝓝 x, ∀ y' ∈ subdifferential (innerₗ E) f x',
+        ‖y' - (∇ fun x' => (f x').toReal) x - H x (x' - x)‖ ≤ ε * ‖x' - x‖) :
+    InjOn (∇ fun x' => (f x').toReal) (t ∩ {x | (H x).det ≠ 0}) := by
+  intro x₁ hx₁ x₂ hx₂ hg
+  by_contra hne
+  have hy₁ : (∇ fun x' => (f x').toReal) x₁ ∈ subdifferential (innerₗ E) f x₁ := by
+    rw [(hP x₁ hx₁.1).1]; exact mem_singleton _
+  have hy₂ : (∇ fun x' => (f x').toReal) x₁ ∈ subdifferential (innerₗ E) f x₂ := by
+    rw [hg, (hP x₂ hx₂.1).1]; exact mem_singleton _
+  refine hx₁.2 (LinearMap.det_eq_zero_iff_ker_ne_bot.2 ((Submodule.ne_bot_iff _).2
+    ⟨x₂ - x₁, LinearMap.mem_ker.2 ?_, sub_ne_zero.2 (Ne.symm hne)⟩))
+  exact apply_sub_eq_zero_of_forall_mem_subdifferential_norm_sub_le hf hy₁ hy₂ (hP x₁ hx₁.1).2
+
+/-- **Change of variables along the gradient of a convex function.** Let `f : E → EReal` be convex,
+with real representative `F x = (f x).toReal`, and let `t` be a set at each point of
+which the subdifferential of `f` is the single gradient `∇F x`, with the expansion
+`y' = ∇F x + H x (x' - x) + o(‖x' - x‖)` for a positive `H x`, and suppose the part of `t` where
+`det (H x) ≠ 0` is measurable. Then `∫_{∇F(t)} g dμ = ∫_t det (H x) g (∇F x) dμ` for
+every additive Haar measure `μ`. The gradient is injective on the nondegenerate part of `t`, by
+`apply_sub_eq_zero_of_forall_mem_subdifferential_norm_sub_le`, and maps the degenerate part to a
+null set. -/
+theorem withDensity_image_gradient_eq_setLIntegral
+    (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) {H : E → E →L[ℝ] E} {t : Set E}
+    (htZ : MeasurableSet (t ∩ {x | (H x).det ≠ 0}))
+    (hP : ∀ x ∈ t, subdifferential (innerₗ E) f x = {(∇ fun x' => (f x').toReal) x} ∧
+      (H x).IsPositive ∧ ∀ ε > 0, ∀ᶠ x' in 𝓝 x, ∀ y' ∈ subdifferential (innerₗ E) f x',
+        ‖y' - (∇ fun x' => (f x').toReal) x - H x (x' - x)‖ ≤ ε * ‖x' - x‖)
+    (g : E → ℝ≥0∞) :
+    μ.withDensity g ((∇ fun x' => (f x').toReal) '' t) =
+      ∫⁻ x in t, ENNReal.ofReal (H x).det * g ((∇ fun x' => (f x').toReal) x) ∂μ := by
+  set G := ∇ fun x' => (f x').toReal
+  set Z := t ∩ {x | (H x).det ≠ 0}
+  have hder : ∀ s ⊆ t, ∀ x ∈ s, HasFDerivWithinAt G (H x) s x := fun s hs x hx =>
+    hasFDerivWithinAt_gradient_toReal_of_forall_mem_subdifferential_norm_sub_le
+      (fun x' hx' => by rw [(hP x' (hs hx')).1]; exact mem_singleton _) (hP x (hs hx)).2.2
+  have hinj : InjOn G Z :=
+    injOn_gradient_inter_setOf_det_ne_zero hf fun x hx => ⟨(hP x hx).1, (hP x hx).2.2⟩
+  have hdeg : ∀ x ∈ t \ Z, (H x).det = 0 := fun x hx => not_not.1 fun h => hx.2 ⟨hx.1, h⟩
+  have hZ0 : μ.withDensity g (G '' (t \ Z)) = 0 :=
+    withDensity_absolutelyContinuous μ g
+      (addHaar_image_eq_zero_of_det_fderivWithin_eq_zero μ (hder _ sdiff_subset) hdeg)
+  have hzero : ∫⁻ x in t \ Z, ENNReal.ofReal (H x).det * g (G x) ∂μ = 0 := by
+    refine le_antisymm ?_ bot_le
+    simpa only [lintegral_zero] using setLIntegral_mono (μ := μ) (s := t \ Z)
+      (f := fun x => ENNReal.ofReal (H x).det * g (G x)) (g := fun _ => 0) measurable_const
+      fun x hx => by simp [hdeg x hx]
+  calc μ.withDensity g (G '' t) = μ.withDensity g (G '' Z) := by
+        refine le_antisymm ?_ (measure_mono (image_mono inter_subset_left))
+        calc μ.withDensity g (G '' t) = μ.withDensity g (G '' Z ∪ G '' (t \ Z)) := by
+              rw [← image_union, union_sdiff_cancel inter_subset_left]
+          _ ≤ _ := measure_union_le _ _
+          _ = _ := by rw [hZ0, add_zero]
+    _ = ∫⁻ x in Z, ENNReal.ofReal |(H x).det| * g (G x) ∂μ := by
+        rw [withDensity_apply']
+        exact lintegral_image_eq_lintegral_abs_det_fderiv_mul μ htZ (hder _ inter_subset_left)
+          hinj g
+    _ = ∫⁻ x in t, ENNReal.ofReal (H x).det * g (G x) ∂μ := by
+        rw [← lintegral_inter_add_sdiff _ t htZ, inter_eq_right.2 inter_subset_left, hzero,
+          add_zero]
+        refine setLIntegral_congr_fun htZ fun x hx => ?_
+        rw [abs_of_nonneg ((ContinuousLinearMap.isPositive_toLinearMap_iff _).2
+          (hP x hx.1).2.1).det_nonneg]
+
+/-- **The Monge–Ampère measure of a twice differentiable convex function is `det (D²f) dx`.**
+Let `f : E → EReal` be convex and never `⊥`, with real representative `F x = (f x).toReal`, and
+suppose that on the interior `D` of the effective domain both `F` and its gradient `∇ F` are
+differentiable. Then for every additive Haar measure `μ`, the Aleksandrov Monge–Ampère measure of
+`f` is `μ` restricted to `D` with density `det (D(∇ F))`, the determinant of the Hessian. -/
+theorem mongeAmpereMeasure_eq_withDensity_det (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2})
+    (hbot : ∀ x, f x ≠ ⊥)
+    (hd : ∀ x ∈ interior {x | f x ≠ ⊤}, DifferentiableAt ℝ (fun x' => (f x').toReal) x)
+    (hd₂ : ∀ x ∈ interior {x | f x ≠ ⊤},
+      DifferentiableAt ℝ (∇ fun x' => (f x').toReal) x) :
+    mongeAmpereMeasure μ f = (μ.restrict (interior {x | f x ≠ ⊤})).withDensity
+      fun x => ENNReal.ofReal (fderiv ℝ (∇ fun x' => (f x').toReal) x).det := by
+  set D := interior {x | f x ≠ ⊤}
+  set G := ∇ fun x' => (f x').toReal
+  have hH : ∀ x ∈ D, HasFDerivAt G (fderiv ℝ G x) x := fun x hx => (hd₂ x hx).hasFDerivAt
+  -- On `D` every subgradient is the gradient, so the subdifferential at `x ∈ D` is `{G x}`, with
+  -- the expansion `y' = G x + DG x (x' - x) + o(‖x' - x‖)`, and `DG x` is positive.
+  have hP : ∀ x ∈ D, subdifferential (innerₗ E) f x = {G x} ∧ (fderiv ℝ G x).IsPositive ∧
+      ∀ ε > 0, ∀ᶠ x' in 𝓝 x, ∀ y' ∈ subdifferential (innerₗ E) f x',
+        ‖y' - G x - fderiv ℝ G x (x' - x)‖ ≤ ε * ‖x' - x‖ := by
+    intro x hx
+    have hexp : ∀ ε > 0, ∀ᶠ x' in 𝓝 x, ∀ y' ∈ subdifferential (innerₗ E) f x',
+        ‖y' - G x - fderiv ℝ G x (x' - x)‖ ≤ ε * ‖x' - x‖ := fun ε hε => by
+      filter_upwards [(hH x hx).isLittleO.bound hε, isOpen_interior.mem_nhds hx]
+        with x' hx' hx'D y' hy'
+      rwa [← gradient_toReal_eq_of_mem_subdifferential hy' (mem_interior_iff_mem_nhds.1 hx'D)
+        (hd x' hx'D)]
+    refine ⟨subdifferential_eq_singleton_gradient_of_forall_mem_subdifferential_norm_sub_le
+      (eventually_nonempty_subdifferential hf hbot (mem_interior_iff_mem_nhds.1 hx)) hexp, ?_, hexp⟩
+    exact (ContinuousLinearMap.isPositive_toLinearMap_iff _).1 (isPositive_of_hasFDerivAt_gradient
+      hf hbot hx (eventually_of_mem (isOpen_interior.mem_nhds hx) hd) (hH x hx))
+  -- The nondegenerate set `{det ≠ 0}` is measurable.
+  have hN : MeasurableSet {x | (fderiv ℝ G x).det ≠ 0} :=
+    (measurableSet_singleton 0).compl.preimage
+      (ContinuousLinearMap.continuous_det.measurable.comp (measurable_fderiv ℝ G))
+  ext s hs
+  have hS : MeasurableSet (s ∩ D) := hs.inter measurableSet_interior
+  rw [mongeAmpereMeasure_apply μ hf hbot AbsolutelyContinuous.rfl hs,
+    withDensity_apply _ hs, Measure.restrict_restrict hs]
+  -- The subgradient image of `s ∩ D` is its gradient image.
+  have himage : subgradientImage (innerₗ E) f (s ∩ D) = G '' (s ∩ D) := by
+    ext y
+    simp only [mem_subgradientImage_iff, mem_image]
+    refine exists_congr fun x => and_congr_right fun hx => ?_
+    rw [(hP x hx.2).1, mem_singleton_iff, eq_comm]
+  rw [himage]
+  simpa [withDensity_one] using
+    withDensity_image_gradient_eq_setLIntegral μ hf (hS.inter hN) (fun x hx => hP x hx.2) 1
+
+/-- **The Monge–Ampère measure of a twice differentiable convex function on an open set.** If `u`
+is convex on an open set `Ω`, and `u` and its gradient are differentiable on `Ω`, then the
+Aleksandrov Monge–Ampère measure of `u` (extended by `⊤` off `Ω`) is `det (D²u) dx` on `Ω`: it is
+`μ` restricted to `Ω` with density `det (D(∇ u))`, for every additive Haar measure `μ`. This
+applies in particular to every convex `u` of class `C²` on `Ω`. -/
+theorem mongeAmpereMeasure_ite_eq_withDensity_det {Ω : Set E} [DecidablePred (· ∈ Ω)]
+    {u : E → ℝ} (hΩ : IsOpen Ω) (hu : ConvexOn ℝ Ω u) (hd : DifferentiableOn ℝ u Ω)
+    (hd₂ : DifferentiableOn ℝ (∇ u) Ω) :
+    mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤) =
+      (μ.restrict Ω).withDensity fun x => ENNReal.ofReal (fderiv ℝ (∇ u) x).det := by
+  -- Near each point of `Ω`, the real representative of the extension is `u`.
+  have hF : ∀ x ∈ Ω, (fun x' => ((if x' ∈ Ω then (u x' : EReal) else ⊤)).toReal) =ᶠ[𝓝 x] u :=
+    fun x hx => eventually_of_mem (hΩ.mem_nhds hx) fun x' hx' => by simp [hx']
+  have hG : ∀ x ∈ Ω, (∇ fun x' => ((if x' ∈ Ω then (u x' : EReal) else ⊤)).toReal) =ᶠ[𝓝 x] ∇ u :=
+    fun x hx => (hF x hx).gradient
+  have hD : interior {x | (if x ∈ Ω then (u x : EReal) else ⊤) ≠ ⊤} = Ω := by
+    rw [setOf_ite_ne_top, hΩ.interior_eq]
+  have hdF : ∀ x ∈ interior {x | (if x ∈ Ω then (u x : EReal) else ⊤) ≠ ⊤},
+      DifferentiableAt ℝ (fun x' => ((if x' ∈ Ω then (u x' : EReal) else ⊤)).toReal) x := by
+    rw [hD]
+    exact fun x hx => ((hd x hx).differentiableAt (hΩ.mem_nhds hx)).congr_of_eventuallyEq (hF x hx)
+  have hdG : ∀ x ∈ interior {x | (if x ∈ Ω then (u x : EReal) else ⊤) ≠ ⊤},
+      DifferentiableAt ℝ (∇ fun x' => ((if x' ∈ Ω then (u x' : EReal) else ⊤)).toReal) x := by
+    rw [hD]
+    exact fun x hx =>
+      ((hd₂ x hx).differentiableAt (hΩ.mem_nhds hx)).congr_of_eventuallyEq (hG x hx)
+  rw [mongeAmpereMeasure_eq_withDensity_det μ (convexOn_iff_convex_epigraph_ite.1 hu) ite_ne_bot
+    hdF hdG, hD]
+  ext s hs
+  rw [withDensity_apply _ hs, withDensity_apply _ hs, Measure.restrict_restrict hs]
+  exact setLIntegral_congr_fun (hs.inter hΩ.measurableSet) fun x hx => by
+    rw [(hG x hx.2).fderiv_eq]
+
+end Smooth
+
+/-! ### The Aleksandrov maximum principle -/
+
+section MaximumPrinciple
+
+variable {Ω : Set E} {u : E → ℝ}
+
+variable [Nontrivial E] (μ : Measure E) [μ.IsAddHaarMeasure] [DecidablePred (· ∈ Ω)]
+
+/-- **The Aleksandrov maximum principle.** Let `Ω` be a bounded open convex subset of a real inner
+product space `E` of finite dimension `n ≥ 1`, and let `u` be convex on `Ω`, continuous on its
+closure, and nonnegative on its frontier. Then at every `x₀ ∈ Ω`,
+
+  `max (-u x₀) 0 ^ n * μ (ball 0 1) ≤ 2 ^ (n + 1) * diam Ω ^ (n - 1) * dist(x₀, ∂Ω) * MA_u(Ω)`,
+
+where `dist(x₀, ∂Ω)` is the distance from `x₀` to the complement of `Ω` and `MA_u` is the
+Aleksandrov Monge–Ampère measure of `u` (extended by `⊤` off `Ω`) with respect to the additive
+Haar measure `μ`. When `MA_u(Ω)` is finite, this bounds the negative part `max (-u x₀) 0` above
+on `Ω` and shows that `max (-u x₀) 0 = O(dist(x₀, ∂Ω) ^ (1 / n))` as `x₀` approaches the
+boundary. -/
+theorem ofReal_neg_pow_mul_addHaar_ball_le_mul_mongeAmpereMeasure (hΩo : IsOpen Ω)
+    (hΩ : Bornology.IsBounded Ω) (hu : ConvexOn ℝ Ω u) (hc : ContinuousOn u (closure Ω))
+    (hfr : ∀ x ∈ frontier Ω, 0 ≤ u x) {x₀ : E} (hx₀ : x₀ ∈ Ω) :
+    ENNReal.ofReal (-u x₀) ^ finrank ℝ E * μ (ball 0 1) ≤
+      2 ^ (finrank ℝ E + 1) * ENNReal.ofReal (diam Ω ^ (finrank ℝ E - 1) * infDist x₀ Ωᶜ) *
+        mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤) Ω := by
+  -- The subgradient image of `Ω` contains the convex set `P` of slopes of affine functions through
+  -- `(x₀, u x₀)` lying below `0` on the frontier. It contains the ball of radius `h / D` about `0`,
+  -- with `h = -u x₀` and `D = diam Ω`, and a slope of norm `h / d`, with `d = dist(x₀, ∂Ω)`,
+  -- normal to a hyperplane supporting `Ω` at a nearest point of the complement.
+  set n := finrank ℝ E
+  have hn : 1 ≤ n := finrank_pos
+  rcases le_or_gt 0 (u x₀) with hux₀ | hux₀
+  · rw [ENNReal.ofReal_of_nonpos (by linarith), zero_pow (by omega), zero_mul]
+    exact bot_le
+  set h := -u x₀
+  have hh : 0 < h := by linarith
+  set d := infDist x₀ Ωᶜ
+  set D := diam Ω
+  -- The complement of `Ω` is nonempty, and `x₀` is at positive distance `d` from it; the ball of
+  -- radius `d` about `x₀` lies in `Ω`, so `D ≥ 2 * d > 0`.
+  have hΩc : Ωᶜ.Nonempty := nonempty_compl.2 fun h' => NormedSpace.unbounded_univ ℝ E (h' ▸ hΩ)
+  have hd : 0 < d := (hΩo.isClosed_compl.notMem_iff_infDist_pos hΩc).1 fun h' => h' hx₀
+  have hD : 0 < D := by
+    have hsub : ball x₀ d ⊆ Ω := by simpa using ball_infDist_subset_compl (x := x₀) (s := Ωᶜ)
+    have := diam_mono hsub hΩ
+    rw [diam_ball_eq x₀ hd.le] at this
+    linarith
+  -- The admissible slopes.
+  set P := {p : E | ∀ x ∈ frontier Ω, u x₀ + inner ℝ (x - x₀) p ≤ 0}
+  have hPconv : Convex ℝ P := convex_setOf_forall_add_inner_le _ _ _
+  have hball : ball 0 (h / D) ⊆ P :=
+    ball_subset_setOf_forall_add_inner_le hΩ hx₀ frontier_subset_closure
+  obtain ⟨q, hq, hqn⟩ :=
+    exists_mem_setOf_forall_add_inner_le_dist_eq hΩo hu.1 hx₀ frontier_subset_closure hh.le hΩc
+  -- Every admissible slope is a subgradient of `u` relative to `Ω` at a point of `Ω`.
+  have hPS : P ⊆ ⋃ x ∈ Ω ∩ Ω, {y | ∀ x' ∈ Ω, u x + inner ℝ (x' - x) y ≤ u x'} := by
+    intro p hp
+    obtain ⟨x₁, hx₁, hx₁'⟩ := exists_forall_add_inner_le_of_forall_frontier
+      hΩ.isCompact_closure hc hx₀ fun x hx => (hp x hx).trans (hfr x hx)
+    exact mem_biUnion ⟨hx₁, hx₁⟩ hx₁'
+  -- Multiply the volume bound for `P` through by `D ^ (n - 1) * d`.
+  have hreal : D ^ (n - 1) * d * (h / d * (h / D) ^ (n - 1)) = h ^ n := by
+    rw [div_pow, ← Nat.sub_add_cancel hn, pow_succ']
+    simp only [Nat.add_sub_cancel]
+    field_simp
+  calc ENNReal.ofReal h ^ n * μ (ball 0 1)
+      = ENNReal.ofReal (D ^ (n - 1) * d) *
+          (ENNReal.ofReal (h / d * (h / D) ^ (n - 1)) * μ (ball 0 1)) := by
+        rw [← mul_assoc, ← ENNReal.ofReal_mul (by positivity), hreal,
+          ENNReal.ofReal_pow hh.le]
+    _ ≤ ENNReal.ofReal (D ^ (n - 1) * d) * (2 ^ (n + 1) * μ P) := by
+        rw [← hqn]
+        gcongr _ * ?_
+        exact hPconv.ofReal_dist_mul_pow_mul_addHaar_ball_le (μ := μ) (div_pos hh hD) hball hq
+    _ ≤ ENNReal.ofReal (D ^ (n - 1) * d) *
+          (2 ^ (n + 1) * μ (⋃ x ∈ Ω ∩ Ω, {y | ∀ x' ∈ Ω, u x + inner ℝ (x' - x) y ≤ u x'})) := by
+        gcongr
+    _ = _ := by
+        rw [mongeAmpereMeasure_ite_apply μ hΩo hu AbsolutelyContinuous.rfl hΩo.measurableSet]
+        ring
+
+end MaximumPrinciple
+
+end TauCeti

@@ -84,7 +84,7 @@ theorem IsNormal.comap_of_injective {I : HopfIdeal k K} (hI : I.IsNormal)
   have hzeroK :
       Algebra.TensorProduct.map (AlgHom.id k K) q
           (HopfAlgebra.conjugationAlgHom (R := k) (H := K) (f x)) = 0 := by
-    rw [← RingHom.mem_ker, ker_tensorProduct_map_id_quotient]
+    rw [← RingHom.mem_ker, Ideal.ker_tensorProduct_map_id_quotient]
     exact hconjK
   have hmaps :
       Algebra.TensorProduct.map f.toAlgHom g =
@@ -111,7 +111,7 @@ theorem IsNormal.comap_of_injective {I : HopfIdeal k K} (hI : I.IsNormal)
     rw [comap_toIdeal]
     ext y
     simp [g, q, Ideal.Quotient.eq_zero_iff_mem, mem_toIdeal]
-  rw [hgker, rightTensorIdeal_def, AlgHom.toRingHom_eq_coe, Ideal.map_coe,
+  rw [hgker, Ideal.rightTensorIdeal_def, AlgHom.toRingHom_eq_coe, Ideal.map_coe,
     ← Algebra.TensorProduct.lTensor_ker_of_flat g,
     RingHom.mem_ker]
   have hmaps' :
@@ -159,7 +159,7 @@ theorem isNormal_ker_of_conjugation_equivariant (f : H →ₐc[k] K)
   rw [isNormal_iff_conjugation_mem]
   intro x hx
   rw [ker_toIdeal]
-  rw [rightTensorIdeal_def, AlgHom.toRingHom_eq_coe, Ideal.map_coe,
+  rw [Ideal.rightTensorIdeal_def, AlgHom.toRingHom_eq_coe, Ideal.map_coe,
     ← Algebra.TensorProduct.lTensor_ker_of_flat f.toAlgHom,
     RingHom.mem_ker]
   have hfx : f x = 0 := (mem_ker f).mp hx

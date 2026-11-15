@@ -8,7 +8,9 @@ module
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.FiniteExtension
 public import TauCeti.NumberTheory.LocalField.InertiaDegree
 public import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Basic
+import TauCeti.GroupTheory.Index.Basic
 import TauCeti.NumberTheory.LocalField.Teichmuller
+import TauCeti.Topology.Algebra.Group.Subgroup
 
 /-!
 # Inertia and Frobenius along a finite extension of local fields
@@ -30,8 +32,21 @@ on `L^{ur}` as the `n`-th power of the arithmetic Frobenius of `L` exactly when 
 
 These are the inputs of the functoriality of the local Weil group under finite extensions.
 
+They also determine how inertia sits along the extension. Since Frobenius generates
+`Gal(K^{ur}/K)` topologically, the image of `G_L` there is the open subgroup of index `f`, so
+`G_L · I_K` has index `f` in `G_K`. As `G_L` has index `[L : K] = e f` in `G_K`, the image
+`I_L = G_L ∩ I_K` of the inertia subgroup of `L` has index `e = e(L/K)` in that of `K`.
+
+The description of inertia through the roots of `X^{q^g} − X` needs no chosen embedding: under any
+ring isomorphism `L^{alg} ≃ K^{alg}`, elements of `G_L` and `G_K` that correspond lie in the
+inertia subgroups together. This identifies the inertia subgroup of a finite extension `M` of `K`
+inside `K^{alg}` with the elements of `I_K` fixing `M`, once `K^{alg}` is read as an algebraic
+closure of `M`.
+
 ## Main results
 
+* `RingEquiv.mem_inertiaSubgroup_iff_of_semiconj`: if `φ ∘ τ = σ ∘ φ` for a ring isomorphism
+  `φ : L^{alg} ≃ K^{alg}`, then `σ ∈ I_K` exactly when `τ ∈ I_L`.
 * `TauCeti.restrictMaximalUnramifiedHom_absoluteGaloisGroupExtend_eq_zpow_iff`: the image of
   `τ ∈ G_L` acts on `K^{ur}` as `Frob_K ^ (f n)` exactly when `τ` acts on `L^{ur}` as
   `Frob_L ^ n`, for every integer `n`.
@@ -40,6 +55,14 @@ These are the inputs of the functoriality of the local Weil group under finite e
   arithmetic Frobenius lift of `L` acts on `K^{ur}` as `Frob_K ^ f`.
 * `TauCeti.inertiaDegree_dvd_of_restrictMaximalUnramifiedHom_absoluteGaloisGroupExtend_eq_zpow`:
   an element of `G_L` acting on `K^{ur}` as `Frob_K ^ m` has `f ∣ m`.
+* `TauCeti.comap_absoluteGaloisGroupExtend_inertiaSubgroup`,
+  `TauCeti.map_absoluteGaloisGroupExtend_inertiaSubgroup`: `I_L` is the preimage of `I_K`, and its
+  image is `I_K ∩ G_L`.
+* `TauCeti.index_map_restrictMaximalUnramifiedHom_range_absoluteGaloisGroupExtend`,
+  `TauCeti.index_range_absoluteGaloisGroupExtend_sup_inertiaSubgroup`: the image of `G_L` in
+  `Gal(K^{ur}/K)` has index `f`, and so does `G_L · I_K` in `G_K`.
+* `TauCeti.relIndex_map_absoluteGaloisGroupExtend_inertiaSubgroup`: the image of `I_L` has index
+  `e(L/K)` in `I_K`.
 
 ## References
 
@@ -52,6 +75,37 @@ public section
 noncomputable section
 
 open ValuativeRel IntermediateField
+
+namespace RingEquiv
+
+open TauCeti
+
+variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
+  [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
+
+/-- **Inertia along an identification of algebraic closures.** Let `L/K` be an extension of
+nonarchimedean local fields and `φ : L^{alg} ≃ K^{alg}` a ring isomorphism, and let `τ ∈ G_L` and
+`σ ∈ G_K` correspond under `φ`, that is `φ ∘ τ = σ ∘ φ`. Then `σ` lies in the inertia subgroup of
+`K` exactly when `τ` lies in that of `L`. No compatibility of `φ` with `L` or `K` is needed: both
+inertia subgroups are cut out by the roots of the polynomials `X^{q^g} − X`, which every ring
+isomorphism preserves. -/
+theorem mem_inertiaSubgroup_iff_of_semiconj (φ : AlgebraicClosure L ≃+* AlgebraicClosure K)
+    {τ : Gal(AlgebraicClosure L/L)} {σ : Gal(AlgebraicClosure K/K)} (h : Function.Semiconj φ τ σ) :
+    σ ∈ inertiaSubgroup K ↔ τ ∈ inertiaSubgroup L := by
+  refine ⟨fun hσ ↦ mem_inertiaSubgroup_iff_pow_natCard_pow_eq_self.2 fun z g hg hz ↦ ?_,
+    fun hτ ↦ mem_inertiaSubgroup_iff_pow_natCard_pow_eq_self.2 fun x g hg hx ↦ ?_⟩
+  · -- A root of `X^{(q^f)^g} − X` is a root of `X^{q^{f g}} − X`.
+    rw [natCard_residueField K L, ← pow_mul] at hz
+    refine φ.injective ((h z).trans ?_)
+    exact mem_inertiaSubgroup_iff_pow_natCard_pow_eq_self.1 hσ (φ z) _
+      (mul_ne_zero inertiaDegree_pos.ne' hg) (by rw [← map_pow, hz])
+  · obtain ⟨z, rfl⟩ := φ.surjective x
+    have hz : z ^ Nat.card 𝓀[K] ^ g = z := φ.injective (by rw [map_pow, hx])
+    exact (h z).symm.trans (congrArg φ (mem_inertiaSubgroup_iff_pow_natCard_pow_eq_self.1 hτ z g
+      hg (pow_natCard_residueField_pow_eq_self hz)))
+
+end RingEquiv
 
 namespace TauCeti
 
@@ -124,12 +178,6 @@ private theorem forall_absoluteGaloisGroupExtend_apply_pow_iff (τ : Field.absol
       ∀ (z : AlgebraicClosure L) (g : ℕ), g ≠ 0 → z ^ Nat.card 𝓀[L] ^ g = z →
         DFunLike.coe (F := Gal(AlgebraicClosure L/L)) τ z = z ^ Nat.card 𝓀[L] ^ n := by
   have hf : inertiaDegree K L ≠ 0 := inertiaDegree_pos.ne'
-  -- A root of `X^{q^g} − X` is a root of `X^{(q^f)^g} − X = X^{(q^g)^f} − X`.
-  have hroot {z : AlgebraicClosure L} {g : ℕ} (hz : z ^ Nat.card 𝓀[K] ^ g = z) :
-      z ^ Nat.card 𝓀[L] ^ g = z := by
-    rw [natCard_residueField K L, ← pow_mul, mul_comm, pow_mul]
-    have h := Function.IsFixedPt.iterate (f := (· ^ Nat.card 𝓀[K] ^ g)) hz (inertiaDegree K L)
-    rwa [pow_iterate] at h
   have hexp : Nat.card 𝓀[K] ^ (inertiaDegree K L * n) = Nat.card 𝓀[L] ^ n := by
     rw [natCard_residueField K L, pow_mul]
   simp_rw [hexp]
@@ -145,8 +193,9 @@ private theorem forall_absoluteGaloisGroupExtend_apply_pow_iff (τ : Field.absol
     exact h x _ (mul_ne_zero hf hg) hx
   · exact (forall_absoluteGaloisGroupExtend_apply_iff ι τ
       (fun x hx ↦ mem_separableClosure_of_pow_natCard_pow_eq_self hg hx)
-      (fun z hz ↦ mem_separableClosure_of_pow_natCard_pow_eq_self hg (hroot hz))).2
-      (fun z hz ↦ h z g hg (hroot hz)) x hx
+      (fun z hz ↦ mem_separableClosure_of_pow_natCard_pow_eq_self hg
+        (pow_natCard_residueField_pow_eq_self hz))).2
+      (fun z hz ↦ h z g hg (pow_natCard_residueField_pow_eq_self hz)) x hx
 
 /-- **Frobenius along a finite extension.** For `n : ℕ`, the image of `τ ∈ G_L` in `G_K` acts on
 `K^{ur}` as the `f n`-th power of the arithmetic Frobenius of `K`, where `f = f(L/K)`, exactly when
@@ -257,5 +306,91 @@ theorem inertiaDegree_dvd_of_restrictMaximalUnramifiedHom_absoluteGaloisGroupExt
       (inertiaDegree_dvd_of_restrictMaximalUnramifiedHom_absoluteGaloisGroupExtend_eq_pow ι
         (τ := τ⁻¹) ?_))
     rw [map_inv, map_inv, h, zpow_neg, inv_inv, zpow_natCast]
+
+/-! ### Inertia and its index along a finite extension -/
+
+/-- **Inertia along a finite extension, as a preimage.** The inertia subgroup of `L` is the
+preimage of that of `K` under the embedding `G_L → G_K`. -/
+@[simp]
+theorem comap_absoluteGaloisGroupExtend_inertiaSubgroup :
+    (inertiaSubgroup K).comap (absoluteGaloisGroupExtend K L ι) = inertiaSubgroup L :=
+  Subgroup.ext fun _ ↦ absoluteGaloisGroupExtend_mem_inertiaSubgroup_iff ι
+
+/-- **Inertia along a finite extension, as an image.** The image of the inertia subgroup of `L` in
+`G_K` is the part of the inertia subgroup of `K` lying in the image of `G_L`. -/
+@[simp]
+theorem map_absoluteGaloisGroupExtend_inertiaSubgroup :
+    (inertiaSubgroup L).map (absoluteGaloisGroupExtend K L ι) =
+      inertiaSubgroup K ⊓ (absoluteGaloisGroupExtend K L ι).range := by
+  rw [← comap_absoluteGaloisGroupExtend_inertiaSubgroup ι, Subgroup.map_comap_eq, inf_comm]
+
+/-- The integers `m` such that `Frob_K ^ m` is the action on `K^{ur}` of an element of `G_L` are
+the multiples of the residue degree `f(L/K)`. -/
+private theorem zpow_mem_map_restrictMaximalUnramifiedHom_range_iff (m : ℤ) :
+    maximalUnramifiedFrobenius K (AlgebraicClosure K) ^ m ∈
+        (absoluteGaloisGroupExtend K L ι).range.map (restrictMaximalUnramifiedHom K) ↔
+      (inertiaDegree K L : ℤ) ∣ m := by
+  refine ⟨?_, ?_⟩
+  · rintro ⟨_, ⟨τ, rfl⟩, h⟩
+    exact inertiaDegree_dvd_of_restrictMaximalUnramifiedHom_absoluteGaloisGroupExtend_eq_zpow ι h
+  · -- The `k`-th power of an arithmetic Frobenius lift of `L` acts as `Frob_K ^ (f k)`.
+    rintro ⟨k, rfl⟩
+    obtain ⟨σ, hσ⟩ := exists_isArithFrobeniusLift L
+    refine ⟨_, ⟨σ ^ k, rfl⟩, ?_⟩
+    rw [map_zpow, map_zpow, hσ.restrictMaximalUnramifiedHom_absoluteGaloisGroupExtend ι,
+      ← zpow_natCast, ← zpow_mul]
+
+/-- **The image of `G_L` in `Gal(K^{ur}/K)` has index `f(L/K)`**: the elements of `G_L` act on
+`K^{ur}` through an open subgroup of index the residue degree. -/
+theorem index_map_restrictMaximalUnramifiedHom_range_absoluteGaloisGroupExtend :
+    ((absoluteGaloisGroupExtend K L ι).range.map (restrictMaximalUnramifiedHom K)).index =
+      inertiaDegree K L := by
+  -- The image `U` is open, so its index is that of its trace on the dense subgroup generated by
+  -- Frobenius, and the powers of Frobenius in `U` are those with exponent divisible by `f(L/K)`.
+  set H := (absoluteGaloisGroupExtend K L ι).range
+  set U := H.map (restrictMaximalUnramifiedHom K)
+  have hH : IsOpen (H : Set (Field.absoluteGaloisGroup K)) :=
+    isOpen_range_absoluteGaloisGroupExtend K L ι
+  have : U.FiniteIndex := ⟨ne_zero_of_dvd_ne_zero
+    (by rw [index_range_absoluteGaloisGroupExtend]; exact Module.finrank_pos.ne')
+    (H.index_map_dvd (restrictMaximalUnramifiedHom_surjective K))⟩
+  -- `U` is the image of the compact subgroup `H`, so closed, and of finite index, so open.
+  have : T2Space Gal(maximalUnramifiedExtension K (AlgebraicClosure K)/K) := krullTopology_t2
+  have hU : IsOpen (U : Set (Gal(maximalUnramifiedExtension K (AlgebraicClosure K)/K))) :=
+    U.isOpen_of_isClosed_of_finiteIndex (Subgroup.isClosed_map
+      (H.isClosed_of_isOpen hH).isCompact _ (continuous_restrictMaximalUnramifiedHom K))
+  have hdense : DenseRange (zpowersHom _ (maximalUnramifiedFrobenius K (AlgebraicClosure K))) := by
+    rw [DenseRange, ← MonoidHom.coe_range, Subgroup.range_zpowersHom,
+      Subgroup.dense_iff_topologicalClosure_eq_top]
+    exact topologicalClosure_zpowers_maximalUnramifiedFrobenius
+  have hcomap : U.comap (zpowersHom _ (maximalUnramifiedFrobenius K (AlgebraicClosure K))) =
+      AddSubgroup.toSubgroup (AddSubgroup.zmultiples (inertiaDegree K L : ℤ)) := by
+    ext m
+    rw [Subgroup.mem_comap, zpowersHom_apply, zpow_mem_map_restrictMaximalUnramifiedHom_range_iff,
+      Multiplicative.mem_toSubgroup, Int.mem_zmultiples_iff]
+  rw [← Subgroup.index_comap_of_denseRange hdense hU, hcomap, AddSubgroup.index_toSubgroup,
+    Int.index_zmultiples, Int.natAbs_natCast]
+
+/-- **`G_L · I_K` has index `f(L/K)` in `G_K`.** -/
+theorem index_range_absoluteGaloisGroupExtend_sup_inertiaSubgroup :
+    ((absoluteGaloisGroupExtend K L ι).range ⊔ inertiaSubgroup K).index = inertiaDegree K L := by
+  rw [← ker_restrictMaximalUnramifiedHom, ← Subgroup.comap_map_eq,
+    Subgroup.index_comap_of_surjective _ (restrictMaximalUnramifiedHom_surjective K),
+    index_map_restrictMaximalUnramifiedHom_range_absoluteGaloisGroupExtend]
+
+/-- **The inertia subgroup of `L` has index `e(L/K)` in that of `K`**: the image of `I_L` in `G_K`
+is a subgroup of `I_K` of index the ramification index of `L/K`. -/
+theorem relIndex_map_absoluteGaloisGroupExtend_inertiaSubgroup :
+    ((inertiaSubgroup L).map (absoluteGaloisGroupExtend K L ι)).relIndex (inertiaSubgroup K) =
+      ramificationIndex K L := by
+  -- The image of `I_L` is `I_K ∩ G_L`, whose index in `I_K` is that of `G_L` in `G_L · I_K`, that
+  -- is `[L : K] / f(L/K) = e(L/K)`.
+  have h := Subgroup.relIndex_mul_index
+    (le_sup_left : (absoluteGaloisGroupExtend K L ι).range ≤ _ ⊔ inertiaSubgroup K)
+  rw [index_range_absoluteGaloisGroupExtend_sup_inertiaSubgroup,
+    index_range_absoluteGaloisGroupExtend, ← ramificationIndex_mul_inertiaDegree,
+    Subgroup.relIndex_sup_of_le_normalizer Subgroup.le_normalizer_of_normal] at h
+  rw [map_absoluteGaloisGroupExtend_inertiaSubgroup, Subgroup.inf_relIndex_left]
+  exact Nat.eq_of_mul_eq_mul_right inertiaDegree_pos h
 
 end TauCeti

@@ -18,7 +18,7 @@ This file gives one explicit permutation of each cycle type, then lets the execu
 The chosen order is the identity, a transposition, a product of two disjoint transpositions, a
 three-cycle, and a four-cycle.  Thus the class sizes are `1, 6, 3, 8, 6`.  This ordering is used by
 the exact character-table certificate in
-`TauCeti.RepresentationTheory.CharacterTable.Dixon.Rational.SymmetricFour`.
+`TauCeti.RepresentationTheory.CharacterTable.Dixon.Rational.SymmetricFour.Basic`.
 
 ## Main declarations
 

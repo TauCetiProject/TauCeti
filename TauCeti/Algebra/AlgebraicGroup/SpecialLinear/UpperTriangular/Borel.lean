@@ -134,7 +134,7 @@ theorem isBorelCandidate_definingHopfIdeal :
     HopfIdeal.IsBorelCandidate k
       (FiniteTypeCommHopfAlgCat.of k (SpecialLinear.coordinateHopfAlgebra k n))
       (definingHopfIdeal k n) :=
-  HopfIdeal.IsBorelCandidate.mk (smoothCommHopfAlgProperty_coordinateHopfAlgebra n k)
+  HopfIdeal.IsBorelCandidate.mk (smoothCommHopfAlgProperty_coordinateHopfAlgebra k n)
     (geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra n k)
     (geometricallySolvablePointsCommHopfAlgProperty_coordinateHopfAlgebra n k)
 
@@ -180,14 +180,15 @@ theorem isBorelOverAlgClosed_iff_exists_eq_conjugate [IsAlgClosed k]
 
 /-- **Any two Borel subgroups of `SLₙ` over an algebraically closed field are conjugate** by a
 rational point of `SLₙ`. -/
-theorem exists_conjugate_eq_of_isBorelOverAlgClosed [IsAlgClosed k]
+theorem exists_conjugate_eq_of_isBorelOverAlgClosed
     {I J : HopfIdeal k (SpecialLinear.coordinateHopfAlgebra k n)}
     (hI : HopfIdeal.IsBorelOverAlgClosed k
       (FiniteTypeCommHopfAlgCat.of k (SpecialLinear.coordinateHopfAlgebra k n)) I)
     (hJ : HopfIdeal.IsBorelOverAlgClosed k
       (FiniteTypeCommHopfAlgCat.of k (SpecialLinear.coordinateHopfAlgebra k n)) J) :
-    ∃ g : WithConv (SpecialLinear.coordinateHopfAlgebra k n →ₐ[k] k), I.conjugate g = J :=
-  HopfIdeal.exists_conjugate_eq_of_isBorelOverAlgClosed _
+    ∃ g : WithConv (SpecialLinear.coordinateHopfAlgebra k n →ₐ[k] k), I.conjugate g = J := by
+  have : IsAlgClosed k := ((HopfIdeal.isBorelOverAlgClosed_iff _ _ _).mp hI).1
+  exact HopfIdeal.exists_conjugate_eq_of_isBorelOverAlgClosed _
     (isBorelCandidate_definingHopfIdeal k n)
     exists_conjugate_definingHopfIdeal_le_of_isBorelOverAlgClosed hI hJ
 

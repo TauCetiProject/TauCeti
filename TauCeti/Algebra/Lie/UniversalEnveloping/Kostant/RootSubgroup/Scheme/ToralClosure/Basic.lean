@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Torus
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.Generated.Basic
-public import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup
+public import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Basic
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Internal
 
 /-!
@@ -20,16 +20,15 @@ basis vector. Distinguished nilpotent vectors give represented root-subgroup mor
 families.
 
 On coordinate Hopf algebras, the defining ideal is the largest Hopf ideal killed by every root
-subgroup coordinate map and by the weight-torus coordinate map. Quotienting by that ideal gives
-an explicit affine group scheme, and both the root subgroups and the torus factor through it. The
-previously constructed root-generated group scheme is a closed subgroup scheme of this toral
-closure.
+subgroup coordinate map and by the weight-torus coordinate map. Quotienting by that ideal gives an
+explicit affine group scheme, and both the root subgroups and the torus factor through it. The
+root-generated group scheme is a closed subgroup scheme of this toral closure.
 
-For arbitrary vectors and weights, no maximality of the torus and no reductivity or Borel
-structure is asserted. When the inputs come from a Chevalley system and an admissible weight
-lattice, this is the carrier assembled from the torus and root subgroups in the
-Chevalley--Demazure construction. The remaining pinning work must identify the appropriate Borel
-and prove the root-datum properties.
+For arbitrary vectors and weights, no maximality of the torus and no reductivity or Borel structure
+is asserted. When the inputs come from a Chevalley system and an admissible weight lattice, this is
+the carrier assembled from the torus and root subgroups in the Chevalley--Demazure construction.
+Identifying the appropriate Borel subgroup and proving the root-datum properties are not treated
+here.
 
 ## Main declarations
 
@@ -48,9 +47,7 @@ and prove the root-datum properties.
 
 The construction is the scheme-theoretic closure of the torus and root subgroups used in the
 Chevalley--Demazure construction; see J. E. Humphreys, *Linear Algebraic Groups*, §26, and
-R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 7.1. It advances Layer 9, "pinned
-Chevalley--Demazure group schemes over `ℤ`", of `TauCetiRoadmap/ReductiveGroups/README.md` and
-supplies the assembled ambient carrier required by milestone L0 of the CFSGStatement roadmap.
+R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 7.1.
 -/
 
 public section
@@ -124,7 +121,7 @@ theorem kostantToralDefiningIdeal_comapOfSurjective_le_of_comp_eq
     (ToralClosure.Internal.kostantToralGeneratorMap e h ρ M hM b wt id hnil) φ hφ
     (fun j => match j with | .inl i => .inl (s i) | .inr _ => .inr ())
     (fun j => match j with | .inl _ => 𝟙 _ | .inr _ => t) ?_ ?_
-  · rintro (i | u)
+  · rintro (i | _)
     · exact fun _ _ hxy => hxy
     · exact ht
   · rintro (i | u)

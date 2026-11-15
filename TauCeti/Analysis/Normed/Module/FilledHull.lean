@@ -10,6 +10,7 @@ public import TauCeti.Topology.FilledHull
 public import TauCeti.Analysis.Normed.Module.Ball.Exterior
 import Mathlib.Analysis.LocallyConvex.Separation
 import Mathlib.Analysis.Normed.Operator.NNNorm
+import TauCeti.Analysis.Normed.Module.Ball
 
 /-!
 # Boundedness and diameter of filled hulls
@@ -41,6 +42,8 @@ regularity assumptions on `K`. The related frontier bound in
 ## Main results
 
 * `TauCeti.filledHull_sphere` — filling a sphere gives the closed ball.
+* `TauCeti.range_smul_coe_sphere_subset_filledHull_sdiff` — scaling the unit sphere by `r`
+  places its image strictly inside the sphere of radius `R` whenever `‖r‖ < R`.
 * `TauCeti.filledHull_subset_closedConvexHull` — the filled hull of a nonempty set lies in its
   closed convex hull.
 * `TauCeti.isBounded_filledHull` and `TauCeti.diam_filledHull` — filling preserves boundedness
@@ -52,6 +55,9 @@ regularity assumptions on `K`. The related frontier bound in
   component of a bounded set is unique in dimension at least two.
 * `TauCeti.mem_filledHull_or_mem_filledHull_of_notMem_connectedComponentIn` — of two points in
   different complementary components, at least one lies in the filled hull, in dimension at
+  least two.
+* `TauCeti.compl_filledHull_eq_connectedComponentIn` and `TauCeti.isConnected_compl_filledHull`:
+  outside its filled hull, the complement of a bounded set is a single component, in dimension at
   least two.
 -/
 
@@ -96,6 +102,18 @@ theorem filledHull_sphere (x : E) {r : ℝ} (hr : 0 ≤ r) :
     · exact subset_filledHull (mem_sphere.mpr h)
     · exact subset_filledHull_of_frontier_subset isBounded_ball frontier_ball_subset_sphere
         (mem_ball.mpr h)
+
+/-- Scaling the unit sphere by any real `r` of norm less than `R` places its image in the
+filled hull of the sphere of radius `R`, away from that sphere. This includes zero and negative
+scales and requires no separation assumption on the ambient seminormed space. -/
+theorem range_smul_coe_sphere_subset_filledHull_sdiff {r R : ℝ} (hrR : ‖r‖ < R) :
+    range (fun u : sphere (0 : E) 1 => r • (u : E)) ⊆
+      filledHull (range fun u : sphere (0 : E) 1 => R • (u : E)) \
+        range fun u : sphere (0 : E) 1 => R • (u : E) := by
+  have hR : 0 < R := (norm_nonneg r).trans_lt hrR
+  rw [range_smul_coe_sphere hR, filledHull_sphere _ hR.le]
+  rintro x ⟨u, rfl⟩
+  simpa [norm_smul, norm_eq_of_mem_sphere u] using hrR
 
 /-- The filled hull of a nonempty set lies in its closed convex hull. Nonemptiness is essential:
 with the zero seminorm, `filledHull ∅ = univ`, while `closedConvexHull ℝ ∅ = ∅`. -/
@@ -196,7 +214,8 @@ theorem connectedComponentIn_compl_eq_of_unbounded_component (h : 1 < Module.ran
   obtain ⟨x', hx'c, hx'R⟩ := hesc x hx
   obtain ⟨y', hy'c, hy'R⟩ := hesc y hy
   have h1 : y' ∈ connectedComponentIn Kᶜ x' :=
-    (isPreconnected_compl_closedBall h 0 R).subset_connectedComponentIn hx'R hext hy'R
+    (isPathConnected_compl_closedBall h 0 R).isConnected.isPreconnected.subset_connectedComponentIn
+      hx'R hext hy'R
   rw [connectedComponentIn_eq hx'c, connectedComponentIn_eq h1, ← connectedComponentIn_eq hy'c]
 
 /-- **Two points in different components of the complement of a bounded set cannot both lie outside
@@ -211,5 +230,31 @@ theorem mem_filledHull_or_mem_filledHull_of_notMem_connectedComponentIn (h : 1 <
     simp only [mem_filledHull_iff] at hcon
     exact hxy ((connectedComponentIn_compl_eq_of_unbounded_component h hK hcon.1 hcon.2).symm ▸
       mem_connectedComponentIn (mem_compl hy))
+
+/-- **The complement of the filled hull of a bounded set is its unbounded complementary
+component** in a real normed space of dimension at least two: it is the component of `Kᶜ` through
+any point outside the filled hull. -/
+theorem compl_filledHull_eq_connectedComponentIn (h : 1 < Module.rank ℝ E) (hK : IsBounded K)
+    (hx : x ∉ filledHull K) : (filledHull K)ᶜ = connectedComponentIn Kᶜ x := by
+  refine Subset.antisymm (fun y hy => ?_) fun y hy hyH => hx ?_
+  · rw [connectedComponentIn_compl_eq_of_unbounded_component h hK (mem_filledHull_iff.not.mp hx)
+      (mem_filledHull_iff.not.mp hy)]
+    exact mem_connectedComponentIn fun hyK => hy (subset_filledHull hyK)
+  · exact (mem_filledHull_iff_of_mem_connectedComponentIn hy).mp hyH
+
+/-- A bounded set does not fill a nontrivial real normed space: some point lies outside its filled
+hull. -/
+theorem nonempty_compl_filledHull [Nontrivial E] (hK : IsBounded K) : (filledHull K)ᶜ.Nonempty :=
+  nonempty_compl.mpr fun h =>
+    NormedSpace.unbounded_univ ℝ E (h ▸ isBounded_filledHull.mpr hK)
+
+/-- The complement of the filled hull of a bounded set is connected in a real normed space of
+dimension at least two. -/
+theorem isConnected_compl_filledHull (h : 1 < Module.rank ℝ E) (hK : IsBounded K) :
+    IsConnected (filledHull K)ᶜ := by
+  have : Nontrivial E := rank_pos_iff_nontrivial.mp (zero_lt_one.trans h)
+  obtain ⟨x, hx⟩ := nonempty_compl_filledHull hK
+  rw [compl_filledHull_eq_connectedComponentIn h hK hx]
+  exact isConnected_connectedComponentIn_iff.mpr fun hxK => hx (subset_filledHull hxK)
 
 end TauCeti

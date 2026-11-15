@@ -64,6 +64,9 @@ as `Kˣ` enters through an `Additive` adapter.
   group, normalized so that the Artin map satisfies the character formula.
 * `TauCeti.ClassFieldTheory.NormalLayer.norm`, `normSubgroup`, `NormQuotient`, `normQuotientMk`:
   the norm of the layer, its image, the norm quotient and the quotient map onto it.
+* `TauCeti.ClassFieldTheory.NormalLayer.normQuotientEquivOfGroundEquiv`: the norm quotient read
+  as `A / N` through an identification of a group `A` with the ground level that carries `N` onto
+  the norm subgroup.
 * `TauCeti.ClassFieldTheory.NormalLayer.zeroTateClass`: the zero-dimensional Tate class of an
   element of the ground level.
 
@@ -124,11 +127,6 @@ public noncomputable section
 open CategoryTheory Representation
 
 namespace TauCeti.ClassFieldTheory
-
--- Provenance: the signatures of the formation type and normal-layer structure below, and of
--- `level`, `rep`, `norm` and the
--- cohomology carriers, follow the blueprint `Suggested.lean` of the Tau Ceti `ClassFieldTheory`
--- roadmap (`TauCetiRoadmap/ClassFieldTheory/README.md` and `Suggested.lean`).
 
 attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
 
@@ -309,6 +307,26 @@ theorem galOfOpenNormalEquiv_mk (V : OpenNormalSubgroup G) (u : (ofOpenNormal V)
     galOfOpenNormalEquiv V (QuotientGroup.mk u) = QuotientGroup.mk (u : G) :=
   (rfl)
 
+/-- The inverse identification of `G ⧸ V` with the Galois group of `V ◁ ⊤` sends the class of `u`
+to the class of `u`. -/
+@[simp]
+theorem galOfOpenNormalEquiv_symm_mk (V : OpenNormalSubgroup G) (u : (ofOpenNormal V).ground) :
+    (galOfOpenNormalEquiv V).symm (QuotientGroup.mk (u : G)) = QuotientGroup.mk u :=
+  (MulEquiv.symm_apply_eq _).2 (galOfOpenNormalEquiv_mk V u).symm
+
+/-- The ground level of the layer `V ◁ G` of an open normal subgroup `V` is the level `A^G` of the
+whole group. -/
+def groundEquivOfOpenNormal (F : Formation G) (V : OpenNormalSubgroup G) :
+    F.level ⊤ ≃ₗ[ℤ] F.level (ofOpenNormal V).ground :=
+  LinearEquiv.ofEq _ _ (congrArg F.level (ground_ofOpenNormal V).symm)
+
+/-- The identification of `A^G` with the ground level of `V ◁ G` moves no element of the ambient
+module. -/
+@[simp]
+theorem groundEquivOfOpenNormal_apply_coe (F : Formation G) (V : OpenNormalSubgroup G)
+    (a : F.level ⊤) : (dsimp% only (groundEquivOfOpenNormal F V a : F.toRep.V)) = a :=
+  (rfl)
+
 section Finite
 
 /-- The top subgroup is open in the compact ground subgroup, so the Galois group is finite. -/
@@ -355,9 +373,9 @@ theorem level_top_le_comap (u : L.ground) :
     simpa using L.conj_mem_top (L.ground.toSubgroup.inv_mem u.2) hv
   have hvu : v * (u : G) = (u : G) * ((u : G)⁻¹ * v * (u : G)) := by group
   calc F.toRep.ρ v (F.toRep.ρ (u : G) x)
-      = F.toRep.ρ (v * (u : G)) x := by rw [map_mul, Module.End.mul_apply]
+      = F.toRep.ρ (v * (u : G)) x := by rw [map_mul, mul_apply_eq_comp]
     _ = F.toRep.ρ (u : G) (F.toRep.ρ ((u : G)⁻¹ * v * (u : G)) x) := by
-        rw [hvu, map_mul, Module.End.mul_apply]
+        rw [hvu, map_mul, mul_apply_eq_comp]
     _ = F.toRep.ρ (u : G) x := by rw [(F.mem_level.1 hx) _ hconj]
 
 /-- The action of the ground subgroup `U` on the top level `A^V`. -/
@@ -516,7 +534,7 @@ Tate pairing of `σ ∈ Γ^ab` with the connecting class `δχ` of a character i
 sign it is `χ(σ)`, and the Artin map satisfies the classical character formula
 `χ(artinMap a) = inv(a₀ ∪ δχ)` instead of being the inverse of the classical reciprocity map. -/
 def tateHMinusTwoEquivAbelianization :
-    L.TrivialTateH (-2) ≃+ Additive (Abelianization L.Gal) :=
+    L.TrivialTateH (-2) ≃+ Additive (Group.Abelianization L.Gal) :=
   TauCeti.TateCohomology.HNegTwoAddEquivAbelianization.trans (AddEquiv.neg _)
 
 /-- The layer's degree-`-2` identification is the negative of the generic identification for its
@@ -530,14 +548,13 @@ theorem tateHMinusTwoEquivAbelianization_apply (x : L.TrivialTateH (-2)) :
 -- `Rep.trivial` is also an `abbrev` for `Rep.of`, so `simp` reduces its carrier as well.
 /-- The degree `-2` identification sends the standard first-homology class represented by
 `(g, 1)` to the class of `g⁻¹` in the additive abelianization. -/
-@[simp]
 theorem tateHMinusTwoEquivAbelianization_single_one (g : L.Gal) :
     (dsimp% only (L.tateHMinusTwoEquivAbelianization
       ((TateCohomology.isoGroupHomology (-2) 1 rfl).inv.app (Rep.trivial ℤ L.Gal ℤ)
         (groupHomology.H1π (Rep.trivial ℤ L.Gal ℤ)
           ((groupHomology.cycles₁IsoOfIsTrivial (Rep.trivial ℤ L.Gal ℤ)).inv
             (Finsupp.single g 1)))))) =
-      Additive.ofMul (Abelianization.of g⁻¹) := by
+      Additive.ofMul (Group.Abelianization.of g⁻¹) := by
   rw [tateHMinusTwoEquivAbelianization_apply,
     TauCeti.TateCohomology.HNegTwoAddEquivAbelianization_single_one, map_inv, ofMul_inv]
 
@@ -545,13 +562,14 @@ theorem tateHMinusTwoEquivAbelianization_single_one (g : L.Gal) :
 first-homology class represented by `(g⁻¹, 1)`. -/
 @[simp]
 theorem tateHMinusTwoEquivAbelianization_symm_of (g : L.Gal) :
-    L.tateHMinusTwoEquivAbelianization.symm (Additive.ofMul (Abelianization.of g)) =
+    L.tateHMinusTwoEquivAbelianization.symm (Additive.ofMul (Group.Abelianization.of g)) =
       (TateCohomology.isoGroupHomology (-2) 1 rfl).inv.app
         (Rep.trivial ℤ L.Gal ℤ)
         (groupHomology.H1π (Rep.trivial ℤ L.Gal ℤ)
           ((groupHomology.cycles₁IsoOfIsTrivial (Rep.trivial ℤ L.Gal ℤ)).inv
-            (Finsupp.single g⁻¹ 1))) := by
-  simp [AddEquiv.symm_apply_eq]
+            (Finsupp.single g⁻¹ 1))) :=
+  (AddEquiv.symm_apply_eq _).2
+    ((L.tateHMinusTwoEquivAbelianization_single_one g⁻¹).trans (by rw [inv_inv])).symm
 
 /-- **In positive degrees the Tate cohomology of a finite normal layer is its ordinary
 cohomology.** This is Mathlib's comparison `TateCohomology.isoGroupCohomology`, stated between the
@@ -669,7 +687,6 @@ theorem tateHZeroEquivNormQuotient_H0π (x : (L.rep F).ρ.invariants) :
   have h := TateCohomology.H0π_comp_H0IsoNormQuotient_hom_apply (L.rep F) x
   simp [tateHZeroEquivNormQuotient, h]
 
--- Specified by the class field theory roadmap, `TauCetiRoadmap/ClassFieldTheory/Suggested.lean`.
 /-- The **zero-dimensional Tate class** `a₀` of an element `a` of the ground level `A^U`: the class
 of `a` in the degree-zero Tate group `H^0(U/V, A^V)`, reading `a` as an invariant of the
 coefficient module `A^V`. -/
@@ -699,6 +716,56 @@ theorem zeroTateClass_eq_zero_iff (a : F.level L.ground) :
     (dsimp% only (L.zeroTateClass F a = 0)) ↔ a ∈ L.normSubgroup F := by
   rw [← (L.tateHZeroEquivNormQuotient F).map_eq_zero_iff,
     tateHZeroEquivNormQuotient_zeroTateClass, normQuotientMk_apply, Submodule.Quotient.mk_eq_zero]
+
+section GroundEquiv
+
+variable {A : Type*} [Group A] {N : Subgroup A} (e : Additive A ≃+ F.level L.ground)
+
+/-- The map `A → A^U / N_{U/V}(A^V)` through an identification `e` of `A` with the ground level,
+written multiplicatively. -/
+private def groundNormQuotientHom : A →* Multiplicative (L.NormQuotient F) :=
+  AddMonoidHom.toMultiplicativeRight ((L.normQuotientMk F).toAddMonoidHom.comp e.toAddMonoidHom)
+
+private theorem groundNormQuotientHom_apply (a : A) :
+    L.groundNormQuotientHom F e a = Multiplicative.ofAdd (L.normQuotientMk F (e (.ofMul a))) :=
+  (rfl)
+
+private theorem ker_groundNormQuotientHom (hN : ∀ a, e (.ofMul a) ∈ L.normSubgroup F ↔ a ∈ N) :
+    N = (L.groundNormQuotientHom F e).ker := by
+  ext a
+  rw [MonoidHom.mem_ker, ← hN, groundNormQuotientHom_apply, ofAdd_eq_one, normQuotientMk_apply,
+    Submodule.Quotient.mk_eq_zero]
+
+private theorem surjective_groundNormQuotientHom :
+    Function.Surjective (L.groundNormQuotientHom F e) := fun z ↦ by
+  obtain ⟨x, hx⟩ := Submodule.Quotient.mk_surjective _ z.toAdd
+  obtain ⟨a, rfl⟩ := e.surjective x
+  refine ⟨a.toMul, ?_⟩
+  rw [groundNormQuotientHom_apply, ofMul_toMul, normQuotientMk_apply, hx, ofAdd_toAdd]
+
+/-- **The norm quotient read through an identification of the ground level**: if `e` identifies a
+group `A` with the ground level `A^U` of the layer and carries the normal subgroup `N` onto the
+norm subgroup `N_{U/V}(A^V)`, then `e` descends to an identification of `A / N` with the norm
+quotient. -/
+def normQuotientEquivOfGroundEquiv [N.Normal] (hN : ∀ a, e (.ofMul a) ∈ L.normSubgroup F ↔ a ∈ N) :
+    Additive (A ⧸ N) ≃+ L.NormQuotient F :=
+  MulEquiv.toAdditiveLeft
+    ((QuotientGroup.quotientMulEquivOfEq (L.ker_groundNormQuotientHom F e hN)).trans
+      (QuotientGroup.quotientKerEquivOfSurjective _ (L.surjective_groundNormQuotientHom F e)))
+
+/-- `normQuotientEquivOfGroundEquiv` sends the class of `a ∈ A` to the class of `e a` in the norm
+quotient. -/
+@[simp]
+theorem normQuotientEquivOfGroundEquiv_mk [N.Normal]
+    (hN : ∀ a, e (.ofMul a) ∈ L.normSubgroup F ↔ a ∈ N) (a : A) :
+    L.normQuotientEquivOfGroundEquiv F e hN (.ofMul (a : A ⧸ N)) =
+      L.normQuotientMk F (e (.ofMul a)) := by
+  rw [normQuotientEquivOfGroundEquiv, QuotientGroup.quotientKerEquivOfSurjective,
+    AddEquiv.toMultiplicativeRight_symm_apply_apply, toMul_ofMul, MulEquiv.trans_apply,
+    QuotientGroup.quotientMulEquivOfEq_mk, QuotientGroup.quotientKerEquivOfRightInverse_apply,
+    QuotientGroup.kerLift_mk, groundNormQuotientHom_apply, toAdd_ofAdd]
+
+end GroundEquiv
 
 end Norm
 

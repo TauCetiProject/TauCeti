@@ -16,9 +16,6 @@ An arbitrary indexed product of real additive circles with nonzero periods is a
 These results derive directly from the Eilenberg--Mac Lane product API and the circle
 calculation in `TauCeti.AlgebraicTopology.UniversalCover.Circle.EilenbergMacLane`.
 
-This realizes `TauCetiRoadmap/UniversalCovers/README.md`, Stage 4, item 13,
-"`K(G, 1)` spaces", for arbitrary products of circles.
-
 ## Main declarations
 
 * `AddCircle.isAspherical_pi`: an indexed product of real circles is aspherical.

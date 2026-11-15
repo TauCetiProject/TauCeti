@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.Reflection.DimensionVector
 public import TauCeti.RepresentationTheory.Quiver.Reflection.Iterate
+import TauCeti.LinearAlgebra.Reflection
 import TauCeti.RepresentationTheory.Quiver.Reflection.EulerForm
 
 /-!
@@ -69,10 +70,8 @@ without first passing through root-system combinatorics.
 
 ## References
 
-This implements the Coxeter-element half of the "Coxeter functor" target of Layer 4 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, which the reflection
-induction of Layer 5 consumes. See Bernstein--Gelfand--Ponomarev, *Coxeter functors and Gabriel's
-theorem*, and Derksen--Weyman, *An Introduction to Quiver Representations*.
+See Bernstein--Gelfand--Ponomarev, *Coxeter functors and Gabriel's theorem*, and Derksen--Weyman,
+*An Introduction to Quiver Representations*.
 -/
 
 public section
@@ -110,7 +109,7 @@ theorem vertexPreReflectionList_cons (i : Q) (l : List Q) :
 theorem vertexPreReflectionList_apply_cons (i : Q) (l : List Q) (d : Q → ℤ) :
     vertexPreReflectionList Q (i :: l) d
       = vertexPreReflectionList Q l (vertexPreReflection Q i d) := by
-  rw [vertexPreReflectionList_cons, Module.End.mul_apply]
+  rw [vertexPreReflectionList_cons, mul_apply_eq_comp]
 
 omit [Quiver Q] [∀ a b : Q, Fintype (a ⟶ b)] in
 /-- The composite of the simple reflections along a word is unchanged by reflecting the quiver
@@ -166,10 +165,10 @@ theorem nonneg_vertexPreReflectionList_take_append {d : Q → ℤ} {l₁ l₂ : 
       0 ≤ vertexPreReflectionList Q (l₂.take r) (vertexPreReflectionList Q l₁ d)) :
     ∀ r ≤ (l₁ ++ l₂).length, 0 ≤ vertexPreReflectionList Q ((l₁ ++ l₂).take r) d := by
   intro r hr
-  rw [List.take_append, vertexPreReflectionList_append, Module.End.mul_apply]
+  rw [List.take_append, vertexPreReflectionList_append, mul_apply_eq_comp]
   rcases le_or_gt r l₁.length with h | h
   · rw [Nat.sub_eq_zero_of_le h, List.take_zero, vertexPreReflectionList_nil,
-      Module.End.one_apply]
+      one_apply_eq_self]
     exact h₁ r h
   · rw [List.take_of_length_le h.le]
     refine h₂ (r - l₁.length) ?_
@@ -248,7 +247,7 @@ private theorem map_vertexReflection_toLinearMap {l : List Q}
       = l.map (vertexPreReflection Q) := by
   rw [List.map_map, ← List.attach_map_val (f := vertexPreReflection Q)]
   apply List.map_congr_left
-  intro i hi
+  intro i _
   apply LinearMap.coe_injective
   exact coe_vertexReflection Q (hl i.1 i.2)
 
@@ -264,7 +263,7 @@ private theorem toLinearMap_list_prod
     _ = _ := by
       apply congrArg List.prod
       apply List.map_congr_left
-      intro e he
+      intro e _
       exact LinearEquiv.automorphismGroup.toLinearMapMonoidHom_apply e
 
 /-- Coercing the reflection automorphism along a word to a function gives the corresponding
@@ -298,7 +297,7 @@ theorem coe_vertexReflectionList_symm {l : List Q} (hl : ∀ i ∈ l, IsEmpty (i
     simp only [inv_inv, List.map_map]
     congr 1
     apply List.map_congr_left
-    intro i hi
+    intro i _
     exact vertexReflection_symm Q (hl i.1 i.2)
   have h : (vertexReflectionList Q hl).symm.toLinearMap =
       vertexPreReflectionList Q l.reverse := by
@@ -323,7 +322,7 @@ theorem vertexPreReflectionList_reverse_mul {l : List Q}
     vertexPreReflectionList Q l.reverse * vertexPreReflectionList Q l = 1 := by
   apply LinearMap.ext
   intro d
-  rw [Module.End.mul_apply, Module.End.one_apply, ← coe_vertexReflectionList_symm Q hl,
+  rw [mul_apply_eq_comp, one_apply_eq_self, ← coe_vertexReflectionList_symm Q hl,
     ← coe_vertexReflectionList Q hl]
   exact (vertexReflectionList Q hl).symm_apply_apply d
 
@@ -340,8 +339,8 @@ theorem vertexPreReflectionList_reverse_apply_append {l₂ : List Q}
     (hl₂ : ∀ i ∈ l₂, IsEmpty (i ⟶ i)) (l₁ : List Q) (d : Q → ℤ) :
     vertexPreReflectionList Q l₂.reverse (vertexPreReflectionList Q (l₁ ++ l₂) d)
       = vertexPreReflectionList Q l₁ d := by
-  rw [vertexPreReflectionList_append, Module.End.mul_apply, ← Module.End.mul_apply,
-    vertexPreReflectionList_reverse_mul Q hl₂, Module.End.one_apply]
+  rw [vertexPreReflectionList_append, mul_apply_eq_comp, ← mul_apply_eq_comp,
+    vertexPreReflectionList_reverse_mul Q hl₂, one_apply_eq_self]
 
 /-- **Reading a nonnegative reflection word backwards stays nonnegative.** If every intermediate
 vector of the word `l` applied to `d` is nonnegative, then every intermediate vector of the
@@ -384,27 +383,15 @@ polarized Tits form, to the simple dimension vector at every vertex of that word
 theorem titsPolarForm_single_eq_zero_of_vertexPreReflectionList_eq_self {l : List Q}
     (hnd : l.Nodup) {v : Q → ℤ} (hv : vertexPreReflectionList Q l v = v) {i : Q} (hi : i ∈ l) :
     titsPolarForm Q (Pi.single i 1) v = 0 := by
-  induction l with
-  | nil => simp at hi
-  | cons j l ih =>
-    obtain ⟨hjl, hnd'⟩ := List.nodup_cons.mp hnd
-    -- The head `j` occurs nowhere else in the word, so the remaining reflections leave the `j`-th
-    -- coordinate of `sⱼ v` untouched.
-    have hcoord : vertexPreReflectionList Q (j :: l) v j
-        = v j - titsPolarForm Q (Pi.single j 1) v := by
-      rw [vertexPreReflectionList_apply_cons,
-        vertexPreReflectionList_apply_of_notMem Q hjl, vertexPreReflection_apply]
-      simp
-    -- The `j`-th coordinate of the fixed-point equation therefore reads `vⱼ - ⟨αⱼ, v⟩ = vⱼ`.
-    rw [hv] at hcoord
-    have hj : titsPolarForm Q (Pi.single j 1) v = 0 := by omega
-    -- Then `sⱼ` fixes `v`, so the tail of the word fixes `v` as well.
-    have hfix : vertexPreReflection Q j v = v :=
-      vertexPreReflection_apply_of_titsPolarForm_eq_zero Q j hj
-    rw [vertexPreReflectionList_apply_cons, hfix] at hv
-    rcases List.mem_cons.mp hi with rfl | hi'
-    · exact hj
-    · exact ih hnd' hv hi'
+  -- The composite is a product of reflections along the standard basis vectors, which are
+  -- linearly independent.
+  have hpre : vertexPreReflection Q =
+      fun i ↦ Module.preReflection (Pi.single i 1) (titsPolarForm Q (Pi.single i 1)) :=
+    funext fun i ↦ LinearMap.ext fun d ↦ by
+      rw [vertexPreReflection_apply, Module.preReflection_apply]
+  rw [vertexPreReflectionList, hpre] at hv
+  exact (Module.list_prod_map_preReflection_apply_eq_self_iff (Pi.linearIndependent_single_one Q ℤ)
+    (List.nodup_reverse.mpr hnd)).mp hv i (List.mem_reverse.mpr hi)
 
 /-- A vector fixed by the reflection product along a repetition-free word in *all* the vertices
 lies in the radical of the polarized Tits form. -/

@@ -15,8 +15,7 @@ import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
 Precomposition of counit-valued derivations along a bialgebra morphism
 (`TauCeti.derivationComp`) preserves the convolution commutator: the differential of a
-morphism of affine monoid schemes is a morphism of Lie algebras (ReductiveGroups
-roadmap, Layer 2, "the differential of a homomorphism"). The bracket identity uses
+morphism of affine monoid schemes is a morphism of Lie algebras. The bracket identity uses
 only the coalgebra half of the morphism — it intertwines the convolution products
 termwise; the algebra half already entered in `derivationComp`, which needs
 `d (φ (x * y)) = d (φ x * φ y)` to produce a derivation at all.
@@ -183,7 +182,6 @@ section FiniteDimensional
 
 variable {k A A' : Type*} [Field k] [CommRing A] [Bialgebra k A]
   [CommRing A'] [Bialgebra k A']
-  [Module.Finite k (Derivation k A (Bialgebra.CounitAlgebra k A k))]
   [Module.Finite k (Derivation k A' (Bialgebra.CounitAlgebra k A' k))]
 
 /-- A surjective bialgebra morphism between equal-dimensional tangent Lie algebras induces a
@@ -195,6 +193,9 @@ theorem derivationCompLieHom_bijective_of_surjective_of_finrank_eq
         Module.finrank k (Derivation k A' (Bialgebra.CounitAlgebra k A' k))) :
     Function.Bijective (derivationCompLieHom (B := k) φ) := by
   have hinjective := derivationCompLieHom_injective_of_surjective (B := k) φ hφ
+  -- The source embeds into the finite-dimensional target, so it is finite-dimensional too.
+  have : Module.Finite k (Derivation k A (Bialgebra.CounitAlgebra k A k)) :=
+    Module.Finite.of_injective (derivationCompLieHom (B := k) φ).toLinearMap hinjective
   refine ⟨hinjective, ?_⟩
   simpa only [LieHom.coe_toLinearMap] using
     (LinearMap.injective_iff_surjective_of_finrank_eq_finrank

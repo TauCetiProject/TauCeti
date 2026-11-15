@@ -89,7 +89,7 @@ private lemma primitive_row_tsum (a : Fin 2 → ZMod N) :
           rw [heq, h1] at ha ⊢
           first | rw [hpos] at ha | rw [hneg] at ha
           rw [← ha]
-          simp [gammaSet, hpos, hneg, zpow_neg, ← inv_zpow]
+          simp [gammaSet, hpos, hneg, _root_.zpow_neg, ← _root_.inv_zpow]
       · have hp : x ≠ ![0, 1] := fun h ↦ h0 (by simp [h])
         have hm : x ≠ ![0, -1] := fun h ↦ h0 (by simp [h])
         simp [hx, h0, hp, hm]
@@ -141,7 +141,7 @@ theorem tendsto_eisensteinSeries_atImInfty (hk : 3 ≤ k) (a : Fin 2 → ZMod N)
     have hz : (ofComplex (I * t) : ℍ) ∈ verticalStrip 0 1 := by
       rw [ofComplex_apply_of_im_pos (by simpa using zero_lt_one.trans_le ht)]
       simpa [verticalStrip] using ht
-    simpa only [eisSummand, one_div, ← zpow_neg, norm_zpow, ← Real.rpow_intCast,
+    simpa only [eisSummand, one_div, ← _root_.zpow_neg, norm_zpow, ← Real.rpow_intCast,
       Int.cast_neg] using summand_bound_of_mem_verticalStrip (by positivity) x.1 one_pos hz
   rw [primitive_row_tsum a] at hrow
   have hvalue := tendsto_nhds_unique hrow
@@ -180,8 +180,8 @@ theorem eisensteinSeriesMF_neg (hk : 3 ≤ k) (a : Fin 2 → ZMod N) :
     ext i
     fin_cases i <;> simp [vecMul, dotProduct]
   rw [SL_slash, hGL, ModularForm.slash_neg_one, hres] at h
-  apply DFunLike.coe_injective
-  simpa only [FunLike.coe_smul, coe_eisensteinSeriesMF] using h.symm
+  ext z
+  simpa using congrFun h.symm z
 
 /-- A residue class with no primitive integral lift has zero Eisenstein series. -/
 @[simp]
@@ -306,7 +306,7 @@ private theorem exists_sub_sum_smul_eisensteinSeriesMF_mem_cuspFormSubmodule (hk
     Finset.sum_add_distrib, Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte, hc, hneg,
     constantTermAt_neg]
   have hsq : (-1 : ℂ) ^ k * (-1) ^ k = 1 := by
-    rw [← mul_zpow, neg_one_mul, neg_neg, one_zpow]
+    rw [← mul_zpow, neg_one_mul, neg_neg, _root_.one_zpow]
   linear_combination (-(constantTermAt γ f) / 2) * hsq
 
 /-- In weight `k ≥ 3`, the primitive residue-class Eisenstein series and the cusp forms

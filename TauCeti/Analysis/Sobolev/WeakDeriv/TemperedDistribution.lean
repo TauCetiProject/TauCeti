@@ -29,7 +29,7 @@ the forward implication only requires temperate growth.
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators I*, Section 7.1.
 
 The formalization uses Mathlib's `MeasureTheory.Lp.toTemperedDistribution` and the real-test
-extensionality theorem `TauCeti.temperedDistribution_ext_real`.
+extensionality theorem `TemperedDistribution.ext_real`.
 -/
 
 public section
@@ -51,7 +51,7 @@ derivative whenever that derivative is represented by an `L^q` function, `q ≥ 
 theorem HasWeakLineDerivOn.lineDerivOp_toTemperedDistribution_eq
     {u : Lp F p μ} {u' : Lp F q μ} {v : E} (h : HasWeakLineDerivOn μ ⊤ u u' v) :
     ∂_{v} (Lp.toTemperedDistribution u) = Lp.toTemperedDistribution u' := by
-  apply temperedDistribution_ext_real
+  apply TemperedDistribution.ext_real
   intro φ hφ
   have hweak := (hasWeakLineDerivOn_iff h.locallyIntegrableOn
     h.locallyIntegrableOn_deriv).1 h φ (φ.smooth ⊤) hφ (by simp)
@@ -132,5 +132,25 @@ theorem hasWeakLineDerivOn_iff_lineDerivOp_toTemperedDistribution_ofReal_eq
       simp [hx]
     · filter_upwards [hu'] with x hx
       simp [hx]
+
+/-- **Classical derivatives are distributional derivatives.** If a real `C¹` function `f` agrees
+`μ`-almost everywhere with `u ∈ Lᵖ`, and its classical derivative in the direction `v` agrees
+`μ`-almost everywhere with `u' ∈ L^q`, then `∂_v u = u'` as complexified tempered distributions,
+for any additive Haar measure `μ`. -/
+theorem lineDerivOp_toTemperedDistribution_ofReal_eq_of_contDiff [μ.IsAddHaarMeasure]
+    {f : E → ℝ} (hf : ContDiff ℝ 1 f) {u : Lp ℝ p μ} {u' : Lp ℝ q μ} {v : E}
+    (huf : u =ᵐ[μ] f) (hu'f : u' =ᵐ[μ] fun x ↦ fderiv ℝ f x v) :
+    ∂_{v} (Lp.toTemperedDistribution (Complex.ofRealCLM.compLp u)) =
+      Lp.toTemperedDistribution (Complex.ofRealCLM.compLp u') := by
+  have hcont : Continuous fun x ↦ fderiv ℝ f x v :=
+    (hf.continuous_fderiv one_ne_zero).clm_apply continuous_const
+  have hline : HasWeakLineDerivOn μ ⊤ f (fun x ↦ fderiv ℝ f x v) v :=
+    hasWeakLineDerivOn_of_hasLineDerivAt (hf.continuous.locallyIntegrable.locallyIntegrableOn _)
+      (hcont.locallyIntegrable.locallyIntegrableOn _)
+      fun x _ ↦ (hf.differentiable one_ne_zero x).hasFDerivAt.hasLineDerivAt v
+  have hline' : HasWeakLineDerivOn μ ⊤ u u' v :=
+    (hline.congr_ae (by simpa only [Opens.coe_top, Measure.restrict_univ] using huf.symm))
+      |>.congr_ae_deriv (by simpa only [Opens.coe_top, Measure.restrict_univ] using hu'f.symm)
+  exact (hasWeakLineDerivOn_iff_lineDerivOp_toTemperedDistribution_ofReal_eq u u' v).1 hline'
 
 end TauCeti

@@ -1,0 +1,158 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Algebra.Order.Floor.Semiring
+public import Mathlib.Data.Nat.Find
+public import Mathlib.Order.Filter.AtTopBot.Basic
+public import Mathlib.Order.Filter.Finite
+
+import Mathlib.Order.SuccPred.Nat
+import TauCeti.Order.SuccPred.IntermediateValue
+
+/-!
+# Diagonal indices and floor cutoffs along `atTop`
+
+If for every `k` a property `P k n` holds for all large `n`, then an index `κ n` tending to
+infinity can be chosen so slowly that `P (κ n) n` holds for all large `n`
+(`TauCeti.exists_tendsto_atTop_of_forall_eventually`). This is the diagonal step of constructions
+that must meet countably many eventual requirements at once with a single sequence, such as a
+recovery sequence built from a countable neighbourhood basis. It complements Mathlib's
+`Filter.extraction_forall_of_eventually`, which meets the requirements along a subsequence
+instead.
+
+The second statement is the diagonal extraction of a subsequence along which countably many
+sequences converge at once (`TauCeti.extraction_forall_exists_tendsto`): if every subsequence of
+each of the sequences `x j` has a convergent further subsequence, a single subsequence makes all of
+them converge. It is the compactness step of the Arzelà–Ascoli theorem.
+
+Finally, a sequence converges along `atTop` exactly when it does so along real (or other floor
+semiring) cutoffs `x ↦ u ⌊x⌋₊` (`TauCeti.tendsto_comp_natFloor_iff`). This compares limits of
+partial sums `∑ n ≤ x` taken over real and over natural cutoffs. More generally, a reindexing
+`g : ℕ → ℕ` that tends to infinity and eventually never increases by more than one at a time
+takes every large value, so `map g atTop = atTop` (`TauCeti.map_atTop_eq_of_le_add_one`) and
+`u ∘ g` converges exactly when `u` does (`TauCeti.tendsto_comp_iff_of_le_add_one`). For instance,
+a partial product over the primes `p ≤ n` is a function of the prime count `π n`, which moves in
+steps of at most one.
+
+In a ring of characteristic zero without zero divisors, `a + k * b` vanishes for all large natural
+numbers `k` exactly when `a = b = 0`, and otherwise it is nonzero for all large `k`
+(`TauCeti.eventually_add_mul_eq_zero_iff`): it vanishes for at most one `k` unless `b = 0`.
+-/
+
+public section
+
+open Filter
+
+namespace TauCeti
+
+/-- If for every `k` the property `P k n` holds for all large `n`, then there is an index `κ n`
+tending to infinity with `P (κ n) n` for all large `n`. -/
+theorem exists_tendsto_atTop_of_forall_eventually {P : ℕ → ℕ → Prop}
+    (h : ∀ k, ∀ᶠ n in atTop, P k n) :
+    ∃ κ : ℕ → ℕ, Tendsto κ atTop atTop ∧ ∀ᶠ n in atTop, P (κ n) n := by
+  classical
+  choose N hN using fun k ↦ eventually_atTop.1 (h k)
+  -- `κ n` is the largest `k ≤ n` such that `N j ≤ n` for every `j ≤ k`.
+  refine ⟨fun n ↦ Nat.findGreatest (fun k ↦ ∀ j ≤ k, N j ≤ n) n, tendsto_atTop.2 fun k ↦ ?_, ?_⟩
+  · filter_upwards [eventually_ge_atTop k, (eventually_all_finset (Finset.range (k + 1))).2
+      fun j _ ↦ eventually_ge_atTop (N j)] with n hkn hn
+    exact Nat.le_findGreatest hkn fun j hj ↦ hn j (Finset.mem_range.2 (Nat.lt_succ_of_le hj))
+  · filter_upwards [eventually_ge_atTop (N 0)] with n hn
+    refine hN _ _ (Nat.findGreatest_spec (P := fun k ↦ ∀ j ≤ k, N j ≤ n) (Nat.zero_le n)
+      (fun j hj ↦ ?_) _ le_rfl)
+    rwa [Nat.le_zero.1 hj]
+
+/-- **Diagonal extraction.** Let `x j : ℕ → X` be countably many sequences and `l y` the filter of
+a convergence to `y` on `X`. If every subsequence of every `x j` has a further subsequence
+converging to some point, then one subsequence makes every `x j` converge. -/
+theorem extraction_forall_exists_tendsto {X : Type*} {l : X → Filter X} {x : ℕ → ℕ → X}
+    (h : ∀ j (ψ : ℕ → ℕ), StrictMono ψ →
+      ∃ y, ∃ ψ' : ℕ → ℕ, StrictMono ψ' ∧ Tendsto (fun n ↦ x j (ψ (ψ' n))) atTop (l y)) :
+    ∃ ψ : ℕ → ℕ, StrictMono ψ ∧ ∀ j, ∃ y, Tendsto (fun n ↦ x j (ψ n)) atTop (l y) := by
+  choose y ψ' hψ' hy using h
+  -- `θ j` is the subsequence along which `x 0, …, x j` converge, each refining the previous one.
+  let θ : ℕ → {ψ : ℕ → ℕ // StrictMono ψ} := fun j ↦ Nat.rec
+    ⟨ψ' 0 id strictMono_id, hψ' 0 id strictMono_id⟩
+    (fun j θj ↦ ⟨θj.1 ∘ ψ' (j + 1) θj.1 θj.2, θj.2.comp (hψ' (j + 1) θj.1 θj.2)⟩) j
+  have hθ0 : (θ 0).1 = ψ' 0 id strictMono_id := rfl
+  have hθsucc j : (θ (j + 1)).1 = (θ j).1 ∘ ψ' (j + 1) (θ j).1 (θ j).2 := rfl
+  have hθ j : ∃ z, Tendsto (fun n ↦ x j ((θ j).1 n)) atTop (l z) := by
+    cases j with
+    | zero => exact ⟨_, by simpa only [hθ0, id] using hy 0 id strictMono_id⟩
+    | succ j =>
+      exact ⟨_, by simpa only [hθsucc, Function.comp_apply] using hy (j + 1) (θ j).1 (θ j).2⟩
+  -- Every later `θ n` is a subsequence of `θ j`.
+  have hsub j n (hjn : j ≤ n) a : ∃ b, a ≤ b ∧ (θ n).1 a = (θ j).1 b := by
+    induction n, hjn using Nat.le_induction generalizing a with
+    | base => exact ⟨a, le_rfl, rfl⟩
+    | succ n _ ih =>
+      obtain ⟨b, hab, hb⟩ := ih (ψ' (n + 1) (θ n).1 (θ n).2 a)
+      exact ⟨b, ((hψ' _ _ _).id_le a).trans hab, by rw [hθsucc]; exact hb⟩
+  -- The diagonal subsequence `n ↦ θ n n`.
+  refine ⟨fun n ↦ (θ n).1 n, strictMono_nat_of_lt_succ fun n ↦ ?_, fun j ↦ ?_⟩
+  · rw [hθsucc]
+    exact (θ n).2.monotone ((hψ' _ _ _).id_le _) |>.trans_lt' ((θ n).2 n.lt_succ_self)
+  · obtain ⟨z, hz⟩ := hθ j
+    choose m hm using fun n ↦ hsub j (max j n) (le_max_left _ _) (max j n)
+    refine ⟨z, (hz.comp (tendsto_atTop_mono (fun n ↦ (le_max_right j n).trans (hm n).1)
+      tendsto_id)).congr' ?_⟩
+    filter_upwards [eventually_ge_atTop j] with n hn
+    simp only [Function.comp_apply, ← (hm n).2, max_eq_right hn]
+
+/-- A sequence `u` converges along `atTop` if and only if its values `u ⌊x⌋₊` at the natural
+floors of `x` converge as `x → ∞` in a floor semiring such as `ℝ`. -/
+theorem tendsto_comp_natFloor_iff {R X : Type*} [Semiring R] [LinearOrder R]
+    [FloorSemiring R] {u : ℕ → X} {l : Filter X} :
+    Tendsto (fun x : R ↦ u ⌊x⌋₊) atTop l ↔ Tendsto u atTop l := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.comp ?_⟩
+  · have hcast : Tendsto (fun n : ℕ ↦ (n : R)) atTop atTop :=
+      tendsto_atTop_atTop.2 fun x ↦
+        ⟨⌈x⌉₊, fun n hn ↦ Nat.le_of_ceil_le hn⟩
+    simpa [Function.comp_def] using h.comp hcast
+  · exact tendsto_atTop_atTop.2 fun n ↦ ⟨n, fun x hx ↦ Nat.le_floor hx⟩
+
+/-- A map `g : ℕ → ℕ` that tends to infinity and eventually increases by at most one at each step
+takes every large value, so it pushes `atTop` forward to `atTop`. -/
+theorem map_atTop_eq_of_le_add_one {g : ℕ → ℕ} (hg : Tendsto g atTop atTop)
+    (hle : ∀ᶠ n in atTop, g (n + 1) ≤ g n + 1) : map g atTop = atTop := by
+  refine le_antisymm hg (le_map fun s hs ↦ ?_)
+  obtain ⟨K, hK⟩ := eventually_atTop.1 ((eventually_mem_set.2 hs).and hle)
+  -- Every value `m ≥ g K` is attained at some index `n ≥ K`.
+  suffices h : ∀ m, g K ≤ m → ∃ n, K ≤ n ∧ g n = m from mem_atTop_sets.2 ⟨g K, fun m hm ↦ by
+    obtain ⟨n, hn, rfl⟩ := h m hm
+    exact ⟨n, (hK n hn).1, rfl⟩⟩
+  intro m hm
+  obtain ⟨A, hA⟩ := (hg.eventually_ge_atTop m).exists_forall_of_atTop
+  obtain ⟨n, hn, hgn⟩ := Nat.exists_mem_Icc_eq_of_le_succ (le_max_left K A)
+    (fun i hKi _ ↦ (hK i hKi).2) hm (hA (max K A) (le_max_right K A))
+  exact ⟨n, hn.1, hgn⟩
+
+/-- If `g : ℕ → ℕ` tends to infinity and eventually increases by at most one at each step, then
+`u ∘ g` converges along `atTop` exactly when `u` does. -/
+theorem tendsto_comp_iff_of_le_add_one {X : Type*} {g : ℕ → ℕ} (hg : Tendsto g atTop atTop)
+    (hle : ∀ᶠ n in atTop, g (n + 1) ≤ g n + 1) {u : ℕ → X} {l : Filter X} :
+    Tendsto (u ∘ g) atTop l ↔ Tendsto u atTop l := by
+  rw [← tendsto_map'_iff, map_atTop_eq_of_le_add_one hg hle]
+
+/-- In a ring of characteristic zero without zero divisors, `a + k * b` vanishes for all large
+natural numbers `k` exactly when `a = b = 0`, and otherwise it is nonzero for all large `k`. -/
+theorem eventually_add_mul_eq_zero_iff {R : Type*} [Ring R] [NoZeroDivisors R] [CharZero R]
+    (a b : R) : ∀ᶠ k : ℕ in atTop, (a + k * b = 0 ↔ a = 0 ∧ b = 0) := by
+  by_cases h : ∃ k₀ : ℕ, a + k₀ * b = 0
+  · obtain ⟨k₀, hk₀⟩ := h
+    filter_upwards [eventually_gt_atTop k₀] with k hk
+    refine ⟨fun hk' ↦ ?_, fun ⟨ha, hb⟩ ↦ by simp [ha, hb]⟩
+    -- Two vanishing values `k₀ < k` force `(k - k₀) * b = 0`, hence `b = 0`.
+    have hb : b = 0 := by
+      have : ((k : R) - k₀) * b = 0 := by
+        rw [sub_mul, ← add_sub_add_left_eq_sub _ _ a, hk', hk₀, sub_zero]
+      exact (mul_eq_zero.1 this).resolve_left (sub_ne_zero.2 (Nat.cast_injective.ne hk.ne'))
+    exact ⟨by simpa [hb] using hk', hb⟩
+  · push Not at h
+    exact .of_forall fun k ↦ iff_of_false (h k) fun ⟨ha, hb⟩ ↦ h 0 (by simp [ha, hb])
+
+end TauCeti

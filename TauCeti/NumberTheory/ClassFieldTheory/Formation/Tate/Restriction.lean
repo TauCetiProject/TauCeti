@@ -56,8 +56,6 @@ relative degree `[E : F]` in every degree.
   degree.
 * `TauCeti.ClassFieldTheory.LayerRestriction.kerNormTransfer_trans_sub_mem`: the relative transfer
   of norm kernels is transitive along a tower modulo the augmentation submodule.
-* `TauCeti.ClassFieldTheory.LayerRestriction.tateRes_trans_of_neg_one_le`: Tate restriction is
-  functorial along towers in every degree at least minus one.
 * `TauCeti.ClassFieldTheory.LayerRestriction.tateRes_trans_eq_comp` and
   `TauCeti.ClassFieldTheory.LayerRestriction.tateRes_trans`: Tate restriction is functorial along
   towers of layers in every degree.
@@ -329,7 +327,7 @@ theorem kerNormTransfer_trans_sub_mem (T : LayerRestriction a b) (T' : LayerRest
   rw [← neg_sub]
   exact Submodule.neg_mem _ hsum
 
--- The nonnegative degrees of `tateRes_trans_of_neg_one_le`.
+-- The nonnegative degrees of `tateRes_trans_eq_comp`.
 private theorem tateRes_trans_of_nonneg (T : LayerRestriction a b) (T' : LayerRestriction b c)
     (F : Formation G) (r : ℤ) (hr : 0 ≤ r) :
     (T.trans T').tateRes F r = T'.tateRes F r ≫ T.tateRes F r := by
@@ -347,26 +345,6 @@ private theorem tateRes_trans_of_nonneg (T : LayerRestriction a b) (T' : LayerRe
   · rw [tateRes_ofNat_succ, tateRes_ofNat_succ, tateRes_ofNat_succ,
       cohomologyRes_trans T T']
     simp only [Category.assoc, Iso.inv_hom_id_assoc]
-
-/-- **Tate restriction is functorial along a tower in every degree at least minus one.**
-Restricting from `K/F` to `K/E` and then to `K/E'` agrees with direct restriction from `K/F` to
-`K/E'`.
-
-Unlike the nonnegative degrees, degree `-1` is not a formal consequence
-of functoriality of some change-of-group map: there restriction is the relative transfer, which is
-transitive only modulo the augmentation submodule — exactly the submodule degree `-1` Tate
-cohomology divides by. See `kerNormTransfer_trans_sub_mem`. -/
-theorem tateRes_trans_of_neg_one_le (T : LayerRestriction a b) (T' : LayerRestriction b c)
-    (F : Formation G) (r : ℤ) (hr : -1 ≤ r) :
-    (T.trans T').tateRes F r = T'.tateRes F r ≫ T.tateRes F r := by
-  obtain rfl | hr := hr.eq_or_lt
-  · ext x
-    induction x using TauCeti.TateCohomology.HNegOne_induction_on with
-    | h y =>
-      rw [ModuleCat.comp_apply, tateRes_neg_one_HNegOneπ, tateRes_neg_one_HNegOneπ,
-        tateRes_neg_one_HNegOneπ, TauCeti.TateCohomology.HNegOneπ_eq_iff]
-      exact kerNormTransfer_trans_sub_mem T T' F y
-  · exact tateRes_trans_of_nonneg T T' F r (by omega)
 
 -- The degrees below `-1` of `tateRes_trans`, where restriction is the transfer in group homology.
 attribute [local instance] Subgroup.fintypeOfFinite in
@@ -394,15 +372,26 @@ private theorem tateRes_negSucc_succ_trans (T : LayerRestriction a b) (T' : Laye
 
 /-- **Tate restriction is functorial along a tower, in every integer degree**, as an identity of
 morphisms: restricting from `K/F` to `K/E'` is restricting from `K/F` to `K/E` and then from `K/E`
-to `K/E'`. -/
+to `K/E'`.
+
+Unlike the nonnegative degrees, degree `-1` is not a formal consequence
+of functoriality of some change-of-group map: there restriction is the relative transfer, which is
+transitive only modulo the augmentation submodule — exactly the submodule degree `-1` Tate
+cohomology divides by. See `kerNormTransfer_trans_sub_mem`. -/
 @[reassoc]
 theorem tateRes_trans_eq_comp (T : LayerRestriction a b) (T' : LayerRestriction b c)
     (F : Formation G) (r : ℤ) : (T.trans T').tateRes F r = T'.tateRes F r ≫ T.tateRes F r := by
   -- The degrees are left to unification: instantiating at the literal `-1` rather than
   -- `Int.negSucc 0` makes `exact` markedly slower.
   rcases r with _ | (_ | n)
-  · exact tateRes_trans_of_neg_one_le T T' F _ (by lia)
-  · exact tateRes_trans_of_neg_one_le T T' F _ le_rfl
+  · exact tateRes_trans_of_nonneg T T' F _ (by lia)
+  · change (T.trans T').tateRes F (-1) = T'.tateRes F (-1) ≫ T.tateRes F (-1)
+    ext x
+    induction x using TauCeti.TateCohomology.HNegOne_induction_on with
+    | h y =>
+      rw [ModuleCat.comp_apply, tateRes_neg_one_HNegOneπ, tateRes_neg_one_HNegOneπ,
+        tateRes_neg_one_HNegOneπ, TauCeti.TateCohomology.HNegOneπ_eq_iff]
+      exact kerNormTransfer_trans_sub_mem T T' F y
   · exact tateRes_negSucc_succ_trans T T' F n
 
 /-- **Tate restriction is functorial along a tower, in every integer degree.** Restricting from

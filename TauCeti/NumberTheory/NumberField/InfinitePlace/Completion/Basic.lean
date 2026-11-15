@@ -18,8 +18,9 @@ places. For a number field, its restriction agrees with the normalization in
 idele norm.
 
 `NumberField.InfinitePlace.Completion.norm_algebraMap` compares the completion norm with the place
-absolute value on the dense base field. The normalized value is continuous and takes every
-nonnegative real value.
+absolute value on the dense base field, and
+`NumberField.InfinitePlace.Completion.funext_of_continuous` says that continuous maps out of the
+completion are determined by their values on it. The normalized value is continuous.
 
 Archimedean completions are nontrivially normed fields, and the diagonal embeddings form scalar
 towers over any commutative semiring base.
@@ -48,10 +49,19 @@ instance Completion.instNontriviallyNormedField (v : InfinitePlace K) :
       (map_zero _), map_ofNat]
     norm_num
 
+/-- The algebra map of `K` into its completion at an infinite place is the coercion. -/
+theorem Completion.algebraMap_apply_eq_coe (w : InfinitePlace K) (x : K) :
+    algebraMap K w.Completion x = (x : w.Completion) := by
+  rw [AbsoluteValue.Completion.algebraMap_def, WithAbs.algebraMap_right_apply,
+    Algebra.algebraMap_self_apply]
+
 /-- The diagonal algebra structures on an archimedean completion form a scalar tower. -/
 instance {R : Type*} [CommSemiring R] [Algebra R K] (w : InfinitePlace K) :
-    IsScalarTower R K w.Completion :=
-  (Completion.equiv w).isScalarTower R K
+    IsScalarTower R K w.Completion := by
+  apply IsScalarTower.of_algebraMap_eq
+  intro r
+  simp only [AbsoluteValue.Completion.algebraMap_def, WithAbs.algebraMap_right_apply,
+    Algebra.algebraMap_self_apply]
 
 /-- The normalized absolute value on the completion at an infinite place. -/
 def completionNormalizedAbsValue (w : InfinitePlace K) : w.Completion →*₀ ℝ :=
@@ -67,8 +77,19 @@ theorem completionNormalizedAbsValue_apply (w : InfinitePlace K) (x : w.Completi
 @[simp↓]
 theorem Completion.norm_algebraMap (w : InfinitePlace K) (x : K) :
     ‖algebraMap K w.Completion x‖ = w x := by
-  rw [Completion.algebraMap_apply]
-  exact Completion.norm_coe w (WithAbs.toAbs w.1 x)
+  rw [Completion.algebraMap_apply_eq_coe]
+  exact AbsoluteValue.Completion.norm_coe (WithAbs.toAbs w.1 x)
+
+/-- Two continuous maps out of an archimedean completion `K_w` into a Hausdorff space agree once
+they agree on `K`. -/
+theorem Completion.funext_of_continuous {w : InfinitePlace K} {B : Type*} [TopologicalSpace B]
+    [T2Space B] {f g : w.Completion → B} (hf : Continuous f) (hg : Continuous g)
+    (h : ∀ x : K, f (algebraMap K w.Completion x) = g (algebraMap K w.Completion x)) : f = g := by
+  funext a
+  induction a using AbsoluteValue.Completion.induction_on with
+  | hp => exact isClosed_eq hf hg
+  | ih a =>
+    simpa only [Completion.algebraMap_apply_eq_coe, WithAbs.toAbs_ofAbs] using h a.ofAbs
 
 /-- On the dense copy of `K`, the infinite completion value is the normalized
 infinite-place value. -/
@@ -108,21 +129,5 @@ theorem continuous_completionNormalizedAbsValue (w : InfinitePlace K) :
   convert continuous_norm.pow w.mult using 1
   ext x
   exact completionNormalizedAbsValue_apply w x
-
-/-- Every nonnegative real number is the normalized absolute value of an element of the completion
-at an infinite place. -/
-theorem exists_completionNormalizedAbsValue_eq (w : InfinitePlace K) {t : ℝ} (ht : 0 ≤ t) :
-    ∃ x : w.Completion, completionNormalizedAbsValue w x = t := by
-  rcases w.isReal_or_isComplex with hw | hw
-  · obtain ⟨x, hx⟩ := Completion.surjective_extensionEmbeddingOfIsReal hw t
-    refine ⟨x, ?_⟩
-    rw [completionNormalizedAbsValue_of_isReal w hw,
-      ← (Completion.isometry_extensionEmbeddingOfIsReal hw).norm_map_of_map_zero (map_zero _), hx,
-      Real.norm_of_nonneg ht]
-  · obtain ⟨x, hx⟩ := Completion.surjective_extensionEmbedding_of_isComplex hw (√t : ℂ)
-    refine ⟨x, ?_⟩
-    rw [completionNormalizedAbsValue_of_isComplex w hw,
-      ← (Completion.isometry_extensionEmbedding w).norm_map_of_map_zero (map_zero _), hx,
-      Complex.norm_real, Real.norm_of_nonneg (Real.sqrt_nonneg t), Real.sq_sqrt ht]
 
 end NumberField.InfinitePlace

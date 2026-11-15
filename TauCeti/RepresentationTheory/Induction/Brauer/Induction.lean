@@ -85,7 +85,7 @@ theorem indVirtualCharacters_eq_virtualCharacters_isElementary [CharZero k] [IsA
   let n := Nat.card G
   have hn : 0 < n := Nat.card_pos
   let _ : NeZero n := ⟨hn.ne'⟩
-  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot k n
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot k n
   obtain ⟨t, ht⟩ := hζ.exists_additive_retraction
   let _ : Invertible (Nat.card G : k) := invertibleOfNonzero (Nat.cast_ne_zero.mpr hn.ne')
   rw [indVirtualCharacters_eq_virtualCharacters_iff_forall_prime

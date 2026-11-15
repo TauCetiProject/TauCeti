@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.OptimalTransport.Monge
 public import TauCeti.MeasureTheory.OptimalTransport.Realization
-public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.WeakConvergence
+
+import TauCeti.MeasureTheory.Measure.LevyProkhorovMetric
 
 /-!
 # Density of graph plans among couplings
@@ -17,12 +17,26 @@ of graph plans of measurable, law-preserving maps. A countable quantization of t
 each point by a uniformly small distance. Realizing the coupling exactly after this quantization
 then makes its graph realization close in the Lévy--Prokhorov metric.
 
-This is the measure-theoretic approximation used to compare the Monge and Kantorovich problems
-for bounded continuous costs. It does not assert that a limiting coupling is itself a graph plan.
+It does not assert that a limiting coupling is itself a graph plan.
 
-The realization step follows A. Pratelli, *On the equality between Monge's infimum and
-Kantorovich's minimum in optimal mass transportation*, Ann. I. H. Poincaré Probab. Statist.
-43 (2007), §1.1.
+Integration of a bounded continuous cost is continuous in the weak topology, so this density is
+the classical route to the equality of the Monge and Kantorovich values for such costs. Density
+alone does not reach unbounded or infinite costs; Pratelli's theorem
+`TauCeti.mongeCost_eq_transportCost_of_continuous` proves the equality for every continuous cost
+by a direct construction.
+
+## Main statements
+
+* `TauCeti.Coupling.dense_graphPlans` — graph plans are dense among the couplings of an atomless
+  source law;
+* `TauCeti.Coupling.mem_closure_graphPlans` — every coupling lies in the weak closure of the graph
+  plans of transport maps.
+
+## References
+
+* A. Pratelli, *On the equality between Monge's infimum and Kantorovich's minimum in optimal mass
+  transportation*, Ann. I. H. Poincaré Probab. Statist. 43 (2007), 1--13; the realization step
+  follows §1.1, and Theorem B there is the general continuous-cost equality.
 -/
 
 public section
@@ -38,7 +52,10 @@ variable {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
   [MetricSpace X] [MetricSpace Y] [PolishSpace X] [PolishSpace Y]
   [BorelSpace X] [BorelSpace Y]
   {μ : Measure X} {ν : Measure Y} {π : Measure (X × Y)}
-  [IsProbabilityMeasure μ] [NullSingletonClass μ]
+
+section Probability
+
+variable [IsProbabilityMeasure μ] [NullSingletonClass μ]
 
 /-- Every coupling with an atomless source has a graph realization arbitrarily close in the
 Lévy--Prokhorov metric. The source and target marginals of the realization are exact. -/
@@ -53,7 +70,7 @@ theorem exists_graphPlan_levyProkhorovEDist_lt (hπ : IsCoupling π μ ν)
   classical
   let u : ℕ → X := TopologicalSpace.denseSeq X
   have hu : DenseRange u := TopologicalSpace.denseRange_denseSeq X
-  let r : ℝ := ε * ε / 32
+  let r : ℝ := ε / 4
   have hr : 0 < r := by dsimp [r]; positivity
   have hidx : ∀ x : X, ∃ i, dist x (u i) < r :=
     fun x ↦ Metric.denseRange_iff.1 hu x r hr
@@ -68,36 +85,17 @@ theorem exists_graphPlan_levyProkhorovEDist_lt (hπ : IsCoupling π μ ν)
   obtain ⟨T, hT, hqmap⟩ := hπ.exists_measurePreserving_map_graphPlan_eq hq
   have hmap : π.map F = (graphPlan T μ).map F := by
     have hu' : Measurable (Prod.map u (id : Y → Y)) :=
-      (Measurable.of_discrete).prodMap measurable_id
-    have hcomp : (Prod.map u (id : Y → Y)) ∘ (Prod.map q id) = F := by
-      funext z
-      rfl
-    calc
-      π.map F = (π.map (Prod.map q id)).map (Prod.map u id) := by
-        rw [Measure.map_map hu' (hq.prodMap measurable_id), hcomp]
-      _ = ((graphPlan T μ).map (Prod.map q id)).map (Prod.map u id) := by
-        rw [hqmap]
-      _ = (graphPlan T μ).map F := by
-        rw [Measure.map_map hu' (hq.prodMap measurable_id), hcomp]
-  let : IsProbabilityMeasure (graphPlan T μ) :=
-    (isCoupling_graphPlan hT.hasLaw).isProbabilityMeasure
-  have hleft : wassersteinEDist 1 π (π.map F) ≤ ENNReal.ofReal r :=
-    wassersteinEDist_map_le_of_edist_le π hF.aemeasurable (Filter.Eventually.of_forall hdist)
-  have hright : wassersteinEDist 1 (graphPlan T μ) ((graphPlan T μ).map F) ≤
-      ENNReal.ofReal r :=
-    wassersteinEDist_map_le_of_edist_le (graphPlan T μ) hF.aemeasurable
-      (Filter.Eventually.of_forall hdist)
-  have hrbound : ENNReal.ofReal r < ENNReal.ofReal (ε / 4) * ENNReal.ofReal (ε / 4) := by
-    rw [← ENNReal.ofReal_mul (by positivity : 0 ≤ ε / 4)]
-    exact (ENNReal.ofReal_lt_ofReal_iff (by positivity : 0 < ε / 4 * (ε / 4))).2
-      (by dsimp [r]; nlinarith [sq_pos_of_pos hε])
+      Measurable.of_discrete.prodMap measurable_id
+    have hq' := hq.prodMap (measurable_id : Measurable (id : Y → Y))
+    have hcomp : (Prod.map u (id : Y → Y)) ∘ (Prod.map q id) = F := rfl
+    simpa only [Measure.map_map hu' hq', hcomp] using
+      congrArg (Measure.map (Prod.map u (id : Y → Y))) hqmap.symm
   have hdistleft : levyProkhorovEDist π (π.map F) ≤ ENNReal.ofReal (ε / 4) :=
-    levyProkhorovEDist_le_of_wassersteinEDist_lt_mul_self measurable_edist
-      (by norm_num : (1 : ℝ≥0∞) ≤ 1) (hleft.trans_lt hrbound)
+    π.levyProkhorovEDist_map_le_of_edist_le hF.aemeasurable (Filter.Eventually.of_forall hdist)
   have hdistright : levyProkhorovEDist (graphPlan T μ) ((graphPlan T μ).map F) ≤
       ENNReal.ofReal (ε / 4) :=
-    levyProkhorovEDist_le_of_wassersteinEDist_lt_mul_self measurable_edist
-      (by norm_num : (1 : ℝ≥0∞) ≤ 1) (hright.trans_lt hrbound)
+    (graphPlan T μ).levyProkhorovEDist_map_le_of_edist_le hF.aemeasurable
+      (Filter.Eventually.of_forall hdist)
   refine ⟨T, hT, ?_⟩
   calc
     levyProkhorovEDist π (graphPlan T μ) ≤
@@ -134,8 +132,6 @@ theorem Coupling.mem_closure_graphPlans {μ₀ : ProbabilityMeasure X}
     intro ε hε
     obtain ⟨T, hT, hdist⟩ :=
       exists_graphPlan_levyProkhorovEDist_lt π₀.2 hε
-    let : IsProbabilityMeasure (graphPlan T (μ₀ : Measure X)) :=
-      (isCoupling_graphPlan hT.hasLaw).isProbabilityMeasure
     let ρ : ProbabilityMeasure (X × Y) := ⟨graphPlan T (μ₀ : Measure X), inferInstance⟩
     refine ⟨e ρ, ⟨ρ, ⟨T, hT, rfl⟩, rfl⟩, ?_⟩
     rw [LevyProkhorov.dist_probabilityMeasure_def, levyProkhorovDist]
@@ -151,56 +147,15 @@ theorem Coupling.dense_graphPlans {μ₀ : ProbabilityMeasure X} {ν₀ : Probab
     Dense {π₀ : Coupling μ₀ ν₀ |
       ∃ T : X → Y, MeasurePreserving T (μ₀ : Measure X) (ν₀ : Measure Y) ∧
         π₀.1.toMeasure = graphPlan T (μ₀ : Measure X)} := by
-  apply Subtype.dense_iff.2
-  intro ρ hρ
+  refine Topology.IsEmbedding.subtypeVal.isInducing.dense_iff.2 ?_
+  rintro ⟨ρ, hρ⟩
   have hclosure := Coupling.mem_closure_graphPlans (⟨ρ, hρ⟩ : Coupling μ₀ ν₀)
   apply closure_mono _ hclosure
   intro σ hσ
   obtain ⟨T, hT, hσ⟩ := hσ
   refine ⟨⟨σ, ?_⟩, ⟨T, hT, hσ⟩, rfl⟩
-  -- Expose the subtype predicate so the equality of raw measures rewrites its argument.
-  change IsCoupling σ.toMeasure (μ₀ : Measure X) (ν₀ : Measure Y)
   exact hσ.symm ▸ isCoupling_graphPlan hT.hasLaw
 
-/-- For an atomless source, the Monge and Kantorovich values agree for every bounded continuous
-nonnegative cost. The graph plans from `Coupling.mem_closure_graphPlans` approach every
-coupling in the weak topology, where integration of this cost is continuous. -/
-theorem mongeCost_eq_transportCost_boundedContinuous
-    {μ₀ : ProbabilityMeasure X} {ν₀ : ProbabilityMeasure Y}
-    [NullSingletonClass (μ₀ : Measure X)] (f : BoundedContinuousFunction (X × Y) NNReal) :
-    mongeCost (fun z ↦ (f z : ℝ≥0∞)) (μ₀ : Measure X) (ν₀ : Measure Y) =
-      transportCost (fun z ↦ (f z : ℝ≥0∞)) (μ₀ : Measure X) (ν₀ : Measure Y) := by
-  apply le_antisymm ?_ (transportCost_le_mongeCost _ _ _)
-  apply le_transportCost
-  intro π hπ
-  let ρ : ProbabilityMeasure (X × Y) := ⟨π, hπ.isProbabilityMeasure⟩
-  let π₀ : Coupling μ₀ ν₀ := ⟨ρ, hπ⟩
-  have hclosure := Coupling.mem_closure_graphPlans π₀
-  have hcont : Continuous (fun σ : ProbabilityMeasure (X × Y) ↦ ∫⁻ z, f z ∂σ) :=
-    ProbabilityMeasure.continuous_lintegral_boundedContinuousFunction f
-  have hclosed : IsClosed {σ : ProbabilityMeasure (X × Y) |
-      mongeCost (fun z ↦ (f z : ℝ≥0∞)) (μ₀ : Measure X) (ν₀ : Measure Y) ≤
-        ∫⁻ z, f z ∂σ} := isClosed_le continuous_const hcont
-  have hsubset :
-      {σ : ProbabilityMeasure (X × Y) |
-        ∃ T : X → Y, MeasurePreserving T (μ₀ : Measure X) (ν₀ : Measure Y) ∧
-          σ.toMeasure = graphPlan T (μ₀ : Measure X)} ⊆
-      {σ : ProbabilityMeasure (X × Y) |
-        mongeCost (fun z ↦ (f z : ℝ≥0∞)) (μ₀ : Measure X) (ν₀ : Measure Y) ≤
-          ∫⁻ z, f z ∂σ} := by
-    intro σ hσ
-    obtain ⟨T, hT, hσ⟩ := hσ
-    calc
-      mongeCost (fun z ↦ (f z : ℝ≥0∞)) (μ₀ : Measure X) (ν₀ : Measure Y) ≤
-          transportMapCost (fun z ↦ (f z : ℝ≥0∞)) (μ₀ : Measure X) T :=
-        mongeCost_le_transportMapCost hT.hasLaw _
-      _ = ∫⁻ z, f z ∂graphPlan T (μ₀ : Measure X) :=
-        transportMapCost_eq_lintegral_graphPlan hT.aemeasurable
-          (measurable_coe_nnreal_ennreal.comp f.continuous.measurable).aemeasurable
-      _ = ∫⁻ z, f z ∂σ := by rw [hσ]
-  have hmem : ρ ∈ {σ : ProbabilityMeasure (X × Y) |
-      mongeCost (fun z ↦ (f z : ℝ≥0∞)) (μ₀ : Measure X) (ν₀ : Measure Y) ≤
-        ∫⁻ z, f z ∂σ} := hclosed.closure_subset (closure_mono hsubset hclosure)
-  exact hmem
+end Probability
 
 end TauCeti

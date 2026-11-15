@@ -56,24 +56,6 @@ section Transversal
 
 variable {G : Type u} [Group G] {U : Subgroup G} {s : G} {α β : U →* Multiplicative (ZMod 2)}
 
-/-- At the trivial coset, `α` read on the transversal word is the first Shapiro component. -/
-private theorem evensExtend_lWord_mk_one (hU : U.index = 2) (hs : s ∉ U) (γ : G) :
-    evensExtend U α (lWord U (U.indexTwoTransversal s) (QuotientGroup.mk 1) γ) =
-      evensB1 U s α γ := by
-  by_cases hγ : γ ∈ U
-  · rw [lWord_indexTwoTransversal_mk_one_of_mem s hγ, evensB1_of_mem hγ]
-  · rw [lWord_indexTwoTransversal_mk_one_of_notMem hU hs hγ, evensB1_of_notMem hγ]
-
-/-- At the coset of `s`, `α` read on the transversal word is the second Shapiro component. -/
-private theorem evensExtend_lWord_mk (hU : U.index = 2) (hs : s ∉ U) (γ : G) :
-    evensExtend U α (lWord U (U.indexTwoTransversal s) (QuotientGroup.mk s) γ) =
-      evensBs U s α γ := by
-  by_cases hγ : γ ∈ U
-  · have hsγ : s⁻¹ * γ ∉ U := by simp [Subgroup.mul_mem_iff_of_index_two hU, hs, hγ]
-    rw [lWord_indexTwoTransversal_mk_of_mem hU hs hγ, evensBs_apply, evensB1_of_notMem hsγ]
-  · have hsγ : s⁻¹ * γ ∈ U := by simp [Subgroup.mul_mem_iff_of_index_two hU, hs, hγ]
-    rw [lWord_indexTwoTransversal_mk_of_notMem hU hs hγ, evensBs_apply, evensB1_of_mem hsγ]
-
 open scoped Classical in
 /-- At the trivial coset, the `s`-conjugate of `β` read on the transversal word is the second
 Shapiro component, corrected by `β (s²)` off `U`. -/
@@ -87,7 +69,7 @@ private theorem evensExtend_conj_lWord_mk_one (hU : U.index = 2) (hs : s ∉ U) 
       ite_eq_left hη, add_zero]
   · have hsη : s⁻¹ * η ∈ U := by simp [Subgroup.mul_mem_iff_of_index_two hU, hs, hη]
     have hsplit : s⁻¹ * (η * s) * s = s⁻¹ * η * (s * s) := by group
-    rw [lWord_indexTwoTransversal_mk_one_of_notMem hU hs hη, hsplit, evensExtend_mul hsη hss,
+    rw [lWord_indexTwoTransversal_mk_one_of_notMem s hη, hsplit, evensExtend_mul hsη hss,
       evensBs_apply, evensB1_of_mem hsη, ite_eq_right hη]
 
 open scoped Classical in
@@ -99,7 +81,7 @@ private theorem evensExtend_conj_lWord_mk (hU : U.index = 2) (hs : s ∉ U) (η 
   have hss : s * s ∈ U := by simp [Subgroup.mul_mem_iff_of_index_two hU, hs]
   by_cases hη : η ∈ U
   · have hsplit : s⁻¹ * (s⁻¹ * η * s) * s = (s * s)⁻¹ * η * (s * s) := by group
-    rw [lWord_indexTwoTransversal_mk_of_mem hU hs hη, hsplit,
+    rw [lWord_indexTwoTransversal_mk_of_mem hs hη, hsplit,
       evensExtend_mul (U.mul_mem (U.inv_mem hss) hη) hss, evensExtend_mul (U.inv_mem hss) hη,
       evensExtend_inv, evensB1_of_mem hη, ite_eq_left hη]
     grind
@@ -156,7 +138,7 @@ private theorem evensGraphCochain_polarization [Fintype (G ⧸ U)] (hU : U.index
   rw [sum_quotient_eq_add_of_index_two hU hs,
     evensExtend_add_evensExtend_inv_mul hU hs η, evensExtend_add_evensExtend_inv_mul hU hs γ,
     evensExtend_add_evensExtend_inv_mul hU hs (γ * η),
-    evensExtend_lWord_mk_one hU hs, evensExtend_lWord_mk hU hs]
+    evensExtend_lWord_mk_one, evensExtend_lWord_mk hU hs]
   by_cases hγ : γ ∈ U <;> by_cases hη : η ∈ U
   · simp only [smul_quotient_eq_self_of_mem (U.inv_mem hγ), ite_eq_left hγ, ite_eq_left hη,
       ite_eq_left (U.mul_mem hγ hη),
@@ -249,7 +231,7 @@ theorem evensGraphCocycle_polarization (U : OpenSubgroup G) (hU : U.toSubgroup.i
     apply (trivialF2Equiv G).injective
     simp only [trivialF2Equiv_symm_apply, TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply,
       map_add, map_sub, trivialF2Equiv_apply, AddSubgroupClass.coe_sub, coe_evensGraphCocycle,
-      coe_evensHomCocycleAmbient, cocyclesMap1_coe, cochainsMap1_apply, MonoidHom.coe_ofClass,
+      coe_evensHomCocycleAmbient, coe_cocyclesMap1, cochainsMap1_apply, MonoidHom.coe_ofClass,
       Subgroup.inverseConjugationHom_apply, DistribSMul.toAddMonoidHom_apply,
       trivialF2Pairing_apply, coe_cocyclesCor2, Pi.sub_apply, cochainsCor2_apply,
       Subgroup.mk_smul, map_sum]

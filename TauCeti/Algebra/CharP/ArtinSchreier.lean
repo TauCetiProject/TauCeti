@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Algebra.Defs
 public import Mathlib.Algebra.CharP.Defs
 
 import Mathlib.Algebra.CharP.Lemmas
-import Mathlib.Tactic.Ring
+import Mathlib.Tactic.Abel
 
 /-!
 # Translating an Artin–Schreier generator
@@ -30,11 +30,11 @@ namespace TauCeti
 
 /-- Translating an Artin–Schreier generator `y` by `w ∈ F` translates the right-hand side of
 `y ^ p - y = u` by `w ^ p - w`. -/
-theorem sub_algebraMap_pow_sub_self_eq {F F' : Type*} [CommRing F] [CommRing F']
+theorem sub_algebraMap_pow_sub_self_eq {F F' : Type*} [CommRing F] [Ring F']
     [Algebra F F'] (p : ℕ) [ExpChar F' p] (y : F') (w : F) :
     (y - algebraMap F F' w) ^ p - (y - algebraMap F F' w) =
       (y ^ p - y) - algebraMap F F' (w ^ p - w) := by
-  rw [sub_pow_expChar, map_sub, map_pow]
-  ring
+  rw [sub_pow_expChar_of_commute p (Algebra.commute_algebraMap_right w y), map_sub, map_pow]
+  abel
 
 end TauCeti

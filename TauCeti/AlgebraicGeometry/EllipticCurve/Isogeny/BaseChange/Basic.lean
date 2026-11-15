@@ -42,16 +42,18 @@ readings are uses of one construction.
 
 ## What is not here
 
-**The degree.** `deg (φ.map f) = deg φ` is a true and wanted statement — it is flat base change of
-a finite morphism — but it is not a formal consequence of anything above: it compares
-`[K(W₁.map f) : (φ.map f)^*K(W₂.map f)]` with `[F(W₁) : φ^*F(W₂)]`, which needs the function field
-of the base-changed curve to be recognised as a localisation of `K ⊗_F F[W₁]`. That comparison, and
-with it the invariance of the separable and inseparable degrees, is its own development.
+**The degree.** `deg (φ.map f) = deg φ` is not a formal consequence of anything above: it compares
+`[K(W₁.map f) : (φ.map f)^*K(W₂.map f)]` with `[F(W₁) : φ^*F(W₂)]`, which needs `F(W₁)` and `K` to
+be linearly disjoint over `F`. It is `TauCeti.Isogeny.degree_map`, in
+`Isogeny/BaseChange/Degree.lean`. The invariance of the separable and inseparable degrees is not
+proved there.
 
 ## Main definitions
 
 * `TauCeti.CoordinatePullback.map`: the base-changed coordinate pullback.
 * `TauCeti.Isogeny.map`: the base-changed isogeny.
+* `TauCeti.Isogeny.baseChange`: the base change of an isogeny of curves over `F` to an extension
+  `K` of `F`, typed between `W₁⁄K` and `W₂⁄K`.
 
 ## Main results
 
@@ -68,15 +70,10 @@ with it the invariance of the separable and inseparable degrees, is its own deve
   isogeny and composition.
 * `TauCeti.Isogeny.map_id`, `TauCeti.Isogeny.map_map`: functoriality in the base map itself.
 
-## Roadmap
-
-`TauCetiRoadmap/EllipticCurves/README.md`, **Layer 0.5** (README:369). Its first milestone
-(README:376-378) asks for "base change of Weierstrass equations, coordinate rings, function
-fields, points, and isogenies, compatible with identity, composition, degree, separability,
-`MapsInfinity`, duals, and induced point maps"; this file is the isogeny entry, with the identity,
-composition and `MapsInfinity` clauses. Layer 1's dual-isogeny milestone (README:529-531) opens
-"for the **separable** part, base change to `Kˢᵉᵖ`, where `Kˢᵉᵖ(W₁)/φ^*Kˢᵉᵖ(W₂)` **is** Galois",
-and `Isogeny.map` is the arrow that base change names there.
+This is the isogeny part of base change for Weierstrass curves, with its compatibility with the
+identity, composition and `MapsInfinity`. For the separable part of an isogeny, the dual is
+built after base change to `Kˢᵉᵖ`, where `Kˢᵉᵖ(W₁)/φ^*Kˢᵉᵖ(W₂)` is Galois; `Isogeny.map` is that
+base change.
 
 Mathlib's `WeierstrassCurve.map_id` and `WeierstrassCurve.map_map` are proved by `rfl`. Their
 affine specialisations are therefore definitional equalities too, so the identity and composition
@@ -265,6 +262,14 @@ theorem map_map (φ : Isogeny W₁ W₂) (f : F →+* K) (g : K →+* L) :
   apply Isogeny.ext
   rw [map_pullback, map_pullback, map_pullback]
   exact CoordinatePullback.map_map φ.pullback f g
+
+open WeierstrassCurve in
+variable (K) in
+/-- The base change of an isogeny `φ : W₁ → W₂` to an extension `K` of `F`, typed between the base
+changes `W₁⁄K` and `W₂⁄K`. -/
+noncomputable abbrev baseChange [Algebra F K] {W₁ W₂ : WeierstrassCurve F}
+    (φ : Isogeny W₁.toAffine W₂.toAffine) : Isogeny (W₁⁄K).toAffine (W₂⁄K).toAffine :=
+  φ.map (algebraMap F K)
 
 end Isogeny
 

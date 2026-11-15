@@ -101,14 +101,14 @@ theorem IsNormalDomain.enorm_riemannianLog_eq_pathELength_of_piecewise (h : IsNo
     pathELength_add ht.1 ht.2
   have hL : pathELength I γ a b ≠ ⊤ := by
     rw [hlen]
-    exact enorm_ne_top
+    exact eNorm_ne_top
   have hA_top : pathELength I γ a t ≠ ⊤ :=
     ne_top_of_le_ne_top hL (hsum ▸ le_self_add)
   have hB_top : pathELength I γ t b ≠ ⊤ :=
     ne_top_of_le_ne_top hL (hsum ▸ le_add_self)
   have hreal : (pathELength I γ a t).toReal + (pathELength I γ t b).toReal =
       ‖riemannianLog I M p U (γ b)‖ := by
-    rw [← ENNReal.toReal_add hA_top hB_top, hsum, hlen, toReal_enorm]
+    rw [← ENNReal.toReal_add hA_top hB_top, hsum, hlen, toReal_eNorm]
   have hB' := (ENNReal.ofReal_le_iff_le_toReal hB_top).1 hB
   rw [← ofReal_norm]
   refine le_antisymm hA ?_
@@ -135,22 +135,20 @@ private theorem continuousOn_norm_curveVelocityWithin_riemannianExp_comp
   (contMDiffOn_riemannianExp_comp h hw hdom).continuousOn_norm_curveVelocityWithin
     (uniqueMDiffOn_iff_uniqueDiffOn.2 (uniqueDiffOn_Icc hcd))
 
-/-- **The logarithm of a minimizer moves radially.** For a `C¹` path `w` in a normal domain whose
-norm grows exactly by the arc length of `exp_p ∘ w`, the derivative of `w` at an interior time
-where `w` does not vanish is a nonnegative multiple of `w` itself. -/
-private theorem hasDerivAt_of_norm_eq_add_integral (h : IsNormalDomain I M p U)
+/-- **The radial identity for a minimizer.** For a `C¹` path `w` in a normal domain whose norm grows
+exactly by the arc length of `exp_p ∘ w`, at an interior time the inner product of `w` with its
+derivative is `‖w‖` times the speed of `exp_p ∘ w`. -/
+private theorem inner_deriv_eq_norm_mul_of_norm_eq_add_integral (h : IsNormalDomain I M p U)
     {w : ℝ → TangentSpace I p} {c d : ℝ} (hw : ContDiffOn ℝ 1 w (Icc c d))
     (hdom : MapsTo w (Icc c d) U)
     (hr : ∀ t ∈ Icc c d, ‖w t‖ = ‖w c‖ + ∫ u in c..t,
       ‖curveVelocityWithin I (riemannianExp I M p ∘ w) (Icc c d) u‖)
-    {t : ℝ} (ht : t ∈ Ioo c d) (hwt : w t ≠ 0) :
-    HasDerivAt w ((‖curveVelocityWithin I (riemannianExp I M p ∘ w) (Icc c d) t‖ / ‖w t‖) • w t)
-      t := by
+    {t : ℝ} (ht : t ∈ Ioo c d) :
+    inner ℝ (w t) (deriv w t) =
+      ‖w t‖ * ‖curveVelocityWithin I (riemannianExp I M p ∘ w) (Icc c d) t‖ := by
   set σ : ℝ → ℝ := fun u ↦ ‖curveVelocityWithin I (riemannianExp I M p ∘ w) (Icc c d) u‖
-    with hσ_def
   have htIcc : t ∈ Icc c d := Ioo_subset_Icc_self ht
   have hN : Icc c d ∈ 𝓝 t := Icc_mem_nhds ht.1 ht.2
-  have hdomt : w t ∈ expDomain I M p := h.subset_expDomain (hdom htIcc)
   have hσ : ContinuousOn σ (Icc c d) :=
     continuousOn_norm_curveVelocityWithin_riemannianExp_comp h (ht.1.trans ht.2) hw hdom
   -- the derivative of `w` at `t`
@@ -174,9 +172,29 @@ private theorem hasDerivAt_of_norm_eq_add_integral (h : IsNormalDomain I M p U)
     · rw [← hr t htIcc]
       push_cast
       ring
-  have hkey : inner ℝ (w t) (deriv w t) = ‖w t‖ * σ t := by
-    have := hQ.unique hQ'
-    linarith
+  have := hQ.unique hQ'
+  linarith
+
+/-- **The logarithm of a minimizer moves radially.** For a `C¹` path `w` in a normal domain whose
+norm grows exactly by the arc length of `exp_p ∘ w`, the derivative of `w` at an interior time
+where `w` does not vanish is a nonnegative multiple of `w` itself. -/
+private theorem hasDerivAt_of_norm_eq_add_integral (h : IsNormalDomain I M p U)
+    {w : ℝ → TangentSpace I p} {c d : ℝ} (hw : ContDiffOn ℝ 1 w (Icc c d))
+    (hdom : MapsTo w (Icc c d) U)
+    (hr : ∀ t ∈ Icc c d, ‖w t‖ = ‖w c‖ + ∫ u in c..t,
+      ‖curveVelocityWithin I (riemannianExp I M p ∘ w) (Icc c d) u‖)
+    {t : ℝ} (ht : t ∈ Ioo c d) (hwt : w t ≠ 0) :
+    HasDerivAt w ((‖curveVelocityWithin I (riemannianExp I M p ∘ w) (Icc c d) t‖ / ‖w t‖) • w t)
+      t := by
+  set σ : ℝ → ℝ := fun u ↦ ‖curveVelocityWithin I (riemannianExp I M p ∘ w) (Icc c d) u‖
+    with hσ_def
+  have htIcc : t ∈ Icc c d := Ioo_subset_Icc_self ht
+  have hN : Icc c d ∈ 𝓝 t := Icc_mem_nhds ht.1 ht.2
+  have hdomt : w t ∈ expDomain I M p := h.subset_expDomain (hdom htIcc)
+  have hwt' : HasDerivAt w (deriv w t) t :=
+    (((hw t htIcc).contDiffAt hN).differentiableAt one_ne_zero).hasDerivAt
+  have hkey : inner ℝ (w t) (deriv w t) = ‖w t‖ * σ t :=
+    inner_deriv_eq_norm_mul_of_norm_eq_add_integral h hw hdom hr ht
   -- the speed of `exp_p ∘ w` at `t` is the differential of `exp_p` applied to `w'`
   have hspeed : σ t =
       ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (w t) (deriv w t)‖ := by
@@ -295,9 +313,9 @@ private theorem IsNormalDomain.sameRay_riemannianLog_of_enorm_eq_add_pathELength
     rw [← contMDiffOn_iff_contDiffOn]
     exact (h.contMDiffOn_riemannianLog.of_le (by simp)).comp hγ hγU
   have hdom : MapsTo (riemannianLog I M p U ∘ γ) (Icc c d) U := fun u hu ↦
-    h.riemannianLog_mem (hγU hu)
+    riemannianLog_mem (hγU hu)
   have hEq : EqOn (riemannianExp I M p ∘ (riemannianLog I M p U ∘ γ)) γ (Icc c d) :=
-    fun u hu ↦ h.riemannianExp_riemannianLog (hγU hu)
+    fun u hu ↦ riemannianExp_riemannianLog (hγU hu)
   -- the radial norm grows by the arc length of the curve
   have hr : ∀ u ∈ Icc c d, ‖(riemannianLog I M p U ∘ γ) u‖ =
       ‖(riemannianLog I M p U ∘ γ) c‖ + ∫ s in c..u,
@@ -312,7 +330,6 @@ private theorem IsNormalDomain.sameRay_riemannianLog_of_enorm_eq_add_pathELength
     rw [← pathELength_congr (hEq.mono (Icc_subset_Icc_right hu.2)),
       ContMDiffOn.pathELength_eq_ofReal_integral_norm_curveVelocityWithin
         (contMDiffOn_riemannianExp_comp h hc hdom)
-        (uniqueMDiffOn_iff_uniqueDiffOn.2 (uniqueDiffOn_Icc hcd)) hu.1
         (Icc_subset_Icc_right hu.2), ← ofReal_norm, ← ofReal_norm,
       ← ENNReal.ofReal_add (norm_nonneg _) hnn] at h1
     exact (ENNReal.ofReal_eq_ofReal_iff (norm_nonneg _) (add_nonneg (norm_nonneg _) hnn)).1 h1
@@ -347,7 +364,7 @@ theorem IsNormalDomain.monotoneOn_norm_riemannianLog_of_pathELength_eq_of_piecew
   have hlen' : pathELength I γ a b = ‖riemannianLog I M p U (γ b)‖ₑ := by
     rw [hlen, pathELength_riemannianExp_smul_zero_one h hv, hγb, h.riemannianLog_riemannianExp hv]
   intro s hs u hu hsu
-  refine enorm_le_iff_norm_le.1 ?_
+  refine eNorm_le_iff_norm_le.1 ?_
   rw [h.enorm_riemannianLog_eq_pathELength_of_piecewise hγ hγU hγa hlen' hs,
     h.enorm_riemannianLog_eq_pathELength_of_piecewise hγ hγU hγa hlen' hu]
   exact pathELength_mono le_rfl hsu
@@ -407,7 +424,7 @@ theorem IsNormalDomain.eq_riemannianExp_smul_of_pathELength_eq_of_piecewise
     {t : ℝ} (ht : t ∈ Icc a b) :
     γ t = riemannianExp I M p ((‖riemannianLog I M p U (γ t)‖ / ‖v‖) • v) := by
   rw [← h.riemannianLog_eq_smul_of_pathELength_eq_of_piecewise hv hγ hγU hγa hγb hlen ht,
-    h.riemannianExp_riemannianLog (hγU ht)]
+    riemannianExp_riemannianLog (hγU ht)]
 
 /-- **Piecewise `C¹` minimizers are reparametrized radial geodesics.** A piecewise `C¹` curve on
 `[a, b]` from the centre of a normal neighbourhood to `exp_p v`, staying in the neighbourhood and

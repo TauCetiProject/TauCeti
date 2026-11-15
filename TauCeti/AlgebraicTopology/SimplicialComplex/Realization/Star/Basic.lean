@@ -16,7 +16,9 @@ import Mathlib.Topology.Algebra.Ring.Real
 # Geometric stars and radial coordinates
 
 Open vertex stars cover the realization, and closed stars consist of points whose carriers
-lie in the corresponding combinatorial closed star. Finite closed stars are compact.
+lie in the corresponding combinatorial closed star. Finite closed stars are compact. A closed
+star is a neighbourhood of every point whose carrier contains its face, both in the realization
+and relative to the polyhedron of any precomplex in it.
 
 The closed star of a vertex is a cone on its link. Removing the apex gives a product of
 that link with `[0, 1)`: the interval coordinate is the barycentric coordinate at the apex,
@@ -39,7 +41,7 @@ public section
 
 noncomputable section
 
-open Set TauCeti.SetLike
+open Set Topology TauCeti.SetLike
 
 namespace AbstractSimplicialComplex
 
@@ -112,6 +114,19 @@ theorem mem_closedStarRealization_iff {σ : Finset ι} {x : Realization K} :
     x ∈ K.closedStarRealization σ ↔ x.1.support ∪ σ ∈ K := by
   simp [mem_closedStarRealization, PreAbstractSimplicialComplex.mem_closedStar, support_mem]
 
+/-- A realized closed star is a neighbourhood of every point whose carrier contains the
+finite vertex set. In particular this applies to the face barycentre. -/
+theorem closedStarRealization_mem_nhds {σ : Finset ι} {x : Realization K}
+    (hx : σ ⊆ x.1.support) : K.closedStarRealization σ ∈ 𝓝 x := by
+  have hopen := isOpen_biInter_finset fun i (_ : i ∈ σ) => K.isOpen_openStarRealization i
+  have hmem : x ∈ ⋂ i ∈ σ, K.openStarRealization i :=
+    mem_iInter₂.mpr fun i hi => K.mem_openStarRealization_iff_mem_support.mpr (hx hi)
+  refine Filter.mem_of_superset (hopen.mem_nhds hmem) fun y hy => ?_
+  have hsub : σ ⊆ y.1.support := fun i hi =>
+    K.mem_openStarRealization_iff_mem_support.mp (mem_iInter₂.mp hy i hi)
+  rw [mem_closedStarRealization_iff, Finset.union_eq_left.mpr hsub]
+  exact support_mem K y
+
 variable (v : ι)
 
 /-- The polyhedron of the link of `v`, inside the realization of `K`. -/
@@ -122,6 +137,24 @@ def geometricLink : Set (Realization K) :=
 @[simp]
 theorem mem_geometricLink (x : Realization K) :
     x ∈ geometricLink K v ↔ x.1 v = 0 ∧ x ∈ closedStarRealization K {v} := (Iff.rfl)
+
+/-- The geometric link is compact whenever its closed star is compact. -/
+theorem isCompact_geometricLink (hc : IsCompact (closedStarRealization K {v})) :
+    IsCompact (geometricLink K v) := by
+  have heq : geometricLink K v = {x : Realization K | x.1 v = 0} ∩
+      closedStarRealization K {v} := by
+    ext x
+    simp
+  rw [heq]
+  exact hc.inter_left
+    (isClosed_eq ((continuous_apply v).comp (continuous_realization_coe K)) continuous_const)
+
+/-- The coordinate vectors of the geometric link form a compact set whenever its closed star is
+compact. -/
+theorem isCompact_range_geometricLink (hc : IsCompact (closedStarRealization K {v})) :
+    IsCompact (range fun y : geometricLink K v => (y.1.1 : ι → ℝ)) := by
+  have := isCompact_iff_compactSpace.mp (K.isCompact_geometricLink v hc)
+  exact isCompact_range ((continuous_realization_coe K).comp continuous_subtype_val)
 
 /-- The apex coordinate of a geometric link point is zero. -/
 @[simp]
@@ -135,6 +168,14 @@ theorem mem_geometricLink_iff (x : Realization K) :
   simp [geometricLink, PreAbstractSimplicialComplex.mem_link,
     support_mem, Finset.disjoint_singleton_right]
 
+/-- The geometric link is compact when its combinatorial link has finitely many faces,
+even when the ambient vertex type is infinite. -/
+theorem isCompact_geometricLink_of_finite
+    (hfin : (PreAbstractSimplicialComplex.link K.toPreAbstractSimplicialComplex {v}).faces.Finite) :
+    IsCompact (geometricLink K v) := by
+  convert K.isCompact_setOf_support_mem PreAbstractSimplicialComplex.link_le hfin using 1
+  exact Set.ext (mem_geometricLink_iff K v)
+
 /-- The apex, regarded as a point of its geometric closed star. -/
 def starApex : closedStarRealization K {v} :=
   ⟨vertex K v, by
@@ -145,6 +186,15 @@ def starApex : closedStarRealization K {v} :=
 /-- The underlying realization point of the closed-star apex is its vertex. -/
 @[simp]
 theorem starApex_val : (starApex K v).1 = vertex K v := (rfl)
+
+/-- A point of the closed star is the apex exactly when its apex coordinate is one. -/
+theorem eq_starApex_iff (x : closedStarRealization K {v}) : x = starApex K v ↔ x.1.1 v = 1 := by
+  rw [← Subtype.coe_inj, starApex_val, Realization.eq_vertex_iff]
+
+/-- A point of the closed star whose apex coordinate is not less than one is the apex. -/
+theorem eq_starApex_of_not_lt {x : closedStarRealization K {v}} (hx : ¬x.1.1 v < 1) :
+    x = starApex K v :=
+  (eq_starApex_iff K v x).mpr (le_antisymm (Realization.le_one K x.1 v) (not_lt.mp hx))
 
 /-- The punctured geometric closed star, expressed by the apex coordinate being less than one. -/
 def puncturedClosedStar : Set (Realization K) :=
@@ -366,6 +416,27 @@ theorem continuous_starLinkProjection
   · simp only [h, ↓reduceIte]
     exact hinv.mul (hc w)
 
+/-- Radial projection onto the link is continuous when the chosen closed star is compact.
+No hypothesis on the topology outside that star is needed. -/
+theorem continuous_starLinkProjection_of_isCompact
+    (hcompact : IsCompact (closedStarRealization K {v})) :
+    Continuous (starLinkProjection K v) := by
+  have hlink : Topology.IsEmbedding (fun x : geometricLink K v => (x.1.1 : ι → ℝ)) :=
+    (K.isClosedEmbedding_realization_coe_restrict hcompact).isEmbedding.comp
+      (Topology.IsEmbedding.inclusion fun _ hx => ((mem_geometricLink K v _).mp hx).2)
+  apply hlink.continuous_iff.mpr
+  apply continuous_pi
+  intro w
+  simp only [Function.comp_apply, starLinkProjection_apply]
+  have hc := continuous_puncturedStar_coordinate K v
+  have hinv := (continuous_const.sub (hc v)).inv₀
+    (fun x => (sub_pos.mpr x.2.2).ne')
+  by_cases h : w = v
+  · simp only [h, ↓reduceIte]
+    exact continuous_const
+  · simp only [h, ↓reduceIte]
+    exact hinv.mul (hc w)
+
 /-- The star rays vary continuously when the realization has its coordinate topology. -/
 theorem continuous_starRay
     (hK : Topology.IsInducing (fun x : Realization K => (x.1 : ι → ℝ))) :
@@ -415,3 +486,28 @@ theorem puncturedClosedStarHomeomorph_symm_apply
     (puncturedClosedStarHomeomorph K v hK).symm p = starRay K v p.1 p.2 := (rfl)
 
 end AbstractSimplicialComplex
+
+namespace PreAbstractSimplicialComplex
+
+open AbstractSimplicialComplex
+
+variable {ι : Type*} [DecidableEq ι] {A : AbstractSimplicialComplex ι} {σ : Finset ι}
+
+/-- A closed face star is a neighbourhood of every point whose carrier contains that face,
+relative to the original polyhedron in a containing weak realization. In particular this
+applies to the face barycentre. -/
+theorem setOf_support_mem_closedStar_mem_nhds (K : PreAbstractSimplicialComplex ι)
+    {x : {x : Realization A // x.1.support ∈ K}} (hx : σ ⊆ x.1.1.support) :
+    {y : {x : Realization A // x.1.support ∈ K} |
+      y.1.1.support ∈ closedStar K σ} ∈ 𝓝 x := by
+  have hopen := (isOpen_biInter_finset fun i (_ : i ∈ σ) =>
+    A.isOpen_openStarRealization i).preimage
+      (continuous_subtype_val (p := fun x : Realization A => x.1.support ∈ K))
+  have hmem : x.1 ∈ ⋂ i ∈ σ, A.openStarRealization i :=
+    mem_iInter₂.mpr fun i hi => A.mem_openStarRealization_iff_mem_support.mpr (hx hi)
+  refine Filter.mem_of_superset (hopen.mem_nhds hmem) fun y hy => ?_
+  have hsub : σ ⊆ y.1.1.support := fun i hi =>
+    A.mem_openStarRealization_iff_mem_support.mp (mem_iInter₂.mp hy i hi)
+  exact mem_closedStar.mpr ⟨y.2, by simpa only [Finset.union_eq_left.mpr hsub] using y.2⟩
+
+end PreAbstractSimplicialComplex

@@ -50,7 +50,8 @@ closes the family.
 
 Note that `Spv (A, I)` is *not* pro-constructible in `Spv A` in general, so
 `TauCeti.IsProConstructible.spectralSpace` cannot be used: that would give a spectral inclusion
-(`TauCeti.IsProConstructible.isSpectralMap_subtypeVal`), which Wedhorn's Remark 7.6 denies.
+(`TauCeti.IsProConstructible.isSpectralMap_subtypeVal`), which Wedhorn's Remark 7.6 denies
+(`TauCeti.ValuationSpectrum.not_isSpectralMap_subtypeVal_spvOfIdeal_top_mvPolynomial`).
 
 ## Main definitions
 
@@ -59,9 +60,9 @@ Note that `Spv (A, I)` is *not* pro-constructible in `Spv A` in general, so
 * `TauCeti.ValuationSpectrum.rationalFamily` : Wedhorn's family `R`, which generates the
   topology of `Spv (A, I)`.
 (Two things used in the proof are deliberately private: the compact witness topology coinduced
-along `r_I`, a device for the patch criterion rather than API, and the two branch lemmas of step
-(ii), whose statements are specific to the case split. `exists_isAdmissible_basicOpenFinset`
-below is the public neighbourhood interface that merges them.)
+along `r_I`, a device for the patch criterion rather than API, and the cofinal branch lemma of
+step (ii), whose statement is specific to the case split. `exists_isAdmissible_basicOpenFinset`
+below is the public neighbourhood interface that merges the two branches.)
 
 ## Main results
 
@@ -71,6 +72,12 @@ below is the public neighbourhood interface that merges them.)
 * `TauCeti.ValuationSpectrum.isTopologicalBasis_rationalFamily` : **step (i)**, that `R` is
   moreover a *basis* — it is closed under intersection, through `IsAdmissible.mul` and
   `inter_mem_rationalFamily`.
+* `exists_one_mem_basicOpenFinset_subset_of_characteristicSubgroup_eq_top` : the branch
+  `Γ_v = cΓ_v` of step (ii), for a finite numerator set: around a point with full characteristic
+  group, every `Spv(A)(T/s)` contains a rational open whose numerators include `1`.
+* `TauCeti.ValuationSpectrum.exists_vle_one_mul_of_characteristicSubgroup_eq_top` : at a point
+  with full characteristic group, every `s` outside the support has a multiple `d * s` with
+  `v(d s) ≥ 1`, still outside the support.
 * `TauCeti.ValuationSpectrum.restrictToIdealCodRestrict_preimage` : **step (iii)**,
   `r_I⁻¹(Spv(A,I)(T/s)) = Spv(A)(T/s)`.
 * `TauCeti.ValuationSpectrum.isCompact_of_mem_rationalFamily` : the members of `R` are
@@ -189,7 +196,7 @@ theorem IsAdmissible.mul {I : Ideal A} {T₁ T₂ : Finset A} {u₁ u₂ : A}
 has a multiple `d * s` whose value is at least `1` and which is still outside the support. This
 is the witness Wedhorn takes at the start of the `Γ_v = cΓ_v` branch of 7.5(ii): full
 characteristic group means `(v s)⁻¹` is dominated by an attained value. -/
-private theorem exists_vle_one_mul_of_characteristicSubgroup_eq_top {v : Spv A}
+theorem exists_vle_one_mul_of_characteristicSubgroup_eq_top {v : Spv A}
     (htop : characteristicSubgroup v.valuation = ⊤) {s : A}
     (hs0 : ¬ v.toValuativeRel.vle s 0) :
     ∃ d : A, v.toValuativeRel.vle 1 (d * s) ∧ ¬ v.toValuativeRel.vle (d * s) 0 := by
@@ -212,28 +219,33 @@ private theorem exists_vle_one_mul_of_characteristicSubgroup_eq_top {v : Spv A}
     rw [w.restrict_eq_zero_iff.mpr (le_antisymm hle zero_le)] at hone
     exact absurd hone (by simp)
 
-/-- **Wedhorn 7.5(ii), the branch `Γ_v = cΓ_v`.** A witness `d` with `v(ds) ≥ 1` turns the basic
-open `Spv(A)(f/s)` into `Spv(A)({df, 1}/ds)`, whose numerator set contains `1` and is therefore
-admissible for every `I`. -/
-private theorem exists_basicOpenFinset_of_characteristicSubgroup_eq_top {v : Spv A}
-    (htop : characteristicSubgroup v.valuation = ⊤) {f s : A} (hv : v ∈ basicOpen f s) :
-    ∃ (T : Finset A) (u : A), (1 : A) ∈ T ∧ v ∈ basicOpenFinset T u ∧
-      basicOpenFinset T u ⊆ basicOpen f s := by
+/-- **Wedhorn 7.5(ii), the branch `Γ_v = cΓ_v`.** A witness `d` with `v(ds) ≥ 1` turns the
+rational open `Spv(A)(T/s)` into `Spv(A)((dT ∪ {ds, 1})/ds)`, whose numerator set contains `1` and
+is therefore admissible for every `I`. In particular, every neighbourhood of a point of
+`Spv (A, A)` contains a rational open around it whose numerators generate the unit ideal. -/
+theorem exists_one_mem_basicOpenFinset_subset_of_characteristicSubgroup_eq_top {v : Spv A}
+    (htop : characteristicSubgroup v.valuation = ⊤) {T : Finset A} {s : A}
+    (hv : v ∈ basicOpenFinset T s) :
+    ∃ (T' : Finset A) (u : A), (1 : A) ∈ T' ∧ v ∈ basicOpenFinset T' u ∧
+      basicOpenFinset T' u ⊆ basicOpenFinset T s := by
   classical
-  rw [mem_basicOpen_iff] at hv
-  obtain ⟨hfs, hs0⟩ := hv
+  obtain ⟨hTs, hs0⟩ := (mem_basicOpenFinset_iff T s v).mp hv
   obtain ⟨d, hvle_one, hds0⟩ := exists_vle_one_mul_of_characteristicSubgroup_eq_top htop hs0
-  have hdfs : v.toValuativeRel.vle (d * f) (d * s) := by
-    have h := v.toValuativeRel.mul_vle_mul_left hfs d
-    rwa [mul_comm f d, mul_comm s d] at h
-  refine ⟨{d * f, 1}, d * s, by simp, (mem_basicOpenFinset_iff _ _ _).mpr ⟨?_, hds0⟩, ?_⟩
-  · intro t ht
-    simp only [Finset.mem_insert, Finset.mem_singleton] at ht
-    rcases ht with rfl | rfl
-    · exact hdfs
+  refine ⟨insert 1 ((insert s T).image (d * ·)), d * s, by simp,
+    (mem_basicOpenFinset_iff _ _ v).mpr ⟨fun t ht ↦ ?_, hds0⟩, fun w hw ↦ ?_⟩
+  · simp only [Finset.mem_insert, Finset.mem_image] at ht
+    rcases ht with rfl | ⟨t, ht, rfl⟩
     · exact hvle_one
-  · exact fun x hx ↦ basicOpen_mul_subset d f s
-      (basicOpenFinset_subset_basicOpen (by simp) hx)
+    · have h := v.toValuativeRel.mul_vle_mul_left
+        (ht.elim (· ▸ v.toValuativeRel.vle_refl s) (hTs t)) d
+      rwa [mul_comm t d, mul_comm s d] at h
+  -- each numerator, multiplied by `d`, is a numerator of the new presentation
+  have hbasic : ∀ t ∈ insert s T, w ∈ basicOpen t s := fun t ht ↦
+    basicOpen_mul_subset d t s (basicOpenFinset_subset_basicOpen
+      (Finset.mem_insert_of_mem (Finset.mem_image_of_mem _ ht)) hw)
+  exact (mem_basicOpenFinset_iff T s w).mpr
+    ⟨fun t ht ↦ ((mem_basicOpen_iff t s w).mp (hbasic t (Finset.mem_insert_of_mem ht))).1,
+      ((mem_basicOpen_iff s s w).mp (hbasic s (Finset.mem_insert_self s T))).2⟩
 
 /-- **Wedhorn 7.5(ii), the cofinal branch.** Cofinality of each generator below `v(s)` supplies
 an exponent per generator; adjoining those powers to `{f}` gives an admissible numerator set
@@ -285,8 +297,11 @@ theorem exists_isAdmissible_basicOpenFinset {I : Ideal A}
     exact ⟨T, s, isAdmissible_of_forall_exists_pow_mem hI hpow, hvT,
       basicOpenFinset_subset_basicOpen hfT⟩
   · obtain ⟨T, u, h1, hvT, hsub⟩ :=
-      exists_basicOpenFinset_of_characteristicSubgroup_eq_top htop hv
-    exact ⟨T, u, isAdmissible_of_one_mem h1, hvT, hsub⟩
+      exists_one_mem_basicOpenFinset_subset_of_characteristicSubgroup_eq_top htop (T := {f})
+        ((mem_basicOpenFinset_iff _ s v).mpr
+          ⟨by simpa using ((mem_basicOpen_iff f s v).mp hv).1, ((mem_basicOpen_iff f s v).mp hv).2⟩)
+    exact ⟨T, u, isAdmissible_of_one_mem h1, hvT,
+      hsub.trans (basicOpenFinset_subset_basicOpen (Finset.mem_singleton_self f))⟩
 
 /-! ### The basis `R` and the topology it generates -/
 

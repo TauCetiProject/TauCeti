@@ -6,13 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Matrix.Order
+public import Mathlib.Data.Matrix.ColumnRowPartitioned
+public import TauCeti.LinearAlgebra.Matrix.Block
 
 /-!
 # Positive-semidefinite matrix algebra
 
 This file supplements Mathlib's `Matrix.PosSemidef` API for matrices indexed by arbitrary types.
 It provides rank-one and constant matrices, finite Schur products, Schur powers,
-products of weights over unions of finite sets, and the quadratic-form characterization.
+products of weights over unions and symmetric differences of finite sets, the quadratic-form
+characterization, and conversion of quadratic forms to nonnegative reals.
+It also gives block matrix-vector constraints over commutative star-ordered rings with a
+proper star: a null vector of a diagonal block is a null vector of the block above or below it.
+In particular, a zero lower-right diagonal block forces both off-diagonal blocks to vanish.
+Over the same rings, `0 ≤ A ≤ B` forces every null vector of `B` to be a null vector of `A`.
 
 The results apply in particular to positive-definite kernels, represented directly as matrices,
 but do not depend on Tau Ceti's positive-definite-function theory.
@@ -22,15 +29,30 @@ but do not depend on Tau Ceti's positive-definite-function theory.
 * `TauCeti.posSemidef_rankOne`: rank-one positive-semidefinite matrices.
 * `TauCeti.posSemidef_const_one` and `TauCeti.posSemidef_const_of_nonneg`: constant matrices.
 * `TauCeti.posSemidef_iff_finite_sum`: the quadratic-form characterization.
+* `TauCeti.posSemidef_of_support_posSemidef`: a Hermitian matrix is positive semidefinite when
+  its principal submatrices on supports of finitely supported vectors are.
 * `TauCeti.posSemidef_schur_finset_prod` and `Matrix.PosSemidef.hadamard_pow`: finite Schur
   products and Schur powers.
 * `TauCeti.posSemidef_prod_union`: the matrix `(i, j) ↦ ∏_{a ∈ L i ∪ L j} w a` for weights in
   `[0, 1]`.
+* `TauCeti.posSemidef_prod_symmDiff`: the matrix `(i, j) ↦ ∏_{a ∈ L i ∆ L j} w a` for weights in
+  `[-1, 1]`.
+* `Matrix.PosSemidef.toBlocks₁₁`, `Matrix.PosSemidef.toBlocks₂₂` and
+  `Matrix.PosSemidef.overlapping_blocks`: positivity of principal blocks.
+* `Matrix.PosSemidef.toBlocks₁₂_mulVec_eq_zero` and
+  `Matrix.PosSemidef.toBlocks₂₁_mulVec_eq_zero`: block null-vector constraints.
+* `Matrix.PosSemidef.toBlocks₁₂_eq_zero_of_toBlocks₂₂_eq_zero` and
+  `Matrix.PosSemidef.toBlocks₂₁_eq_zero_of_toBlocks₂₂_eq_zero`: zero off-diagonal blocks
+  when the lower-right diagonal block is zero.
+* `Matrix.PosSemidef.mulVec_eq_zero_of_posSemidef_sub`: null vectors of `B` are null vectors of
+  `A` when `A` and `B - A` are positive semidefinite.
 
 ## References
 
 * C. Berg, J. P. R. Christensen, P. Ressel, *Harmonic Analysis on Semigroups* (GTM 100, 1984),
   Chapter 3.
+* T. W. Anderson, *An Introduction to Multivariate Statistical Analysis*, 3rd ed., 2003,
+  Chapter 2 (partitioned covariance matrices and conditional Gaussian distributions).
 -/
 
 public section
@@ -44,7 +66,9 @@ universe u v w
 
 variable {α : Type v}
 
-private theorem posSemidef_of_support_posSemidef {R : Type u}
+/-- A conjugate-symmetric matrix over an arbitrary index type is positive semidefinite as soon
+as all its principal submatrices on finite supports of finitely supported vectors are. -/
+theorem posSemidef_of_support_posSemidef {R : Type u}
     [Ring R] [PartialOrder R] [StarRing R] (K : α → α → R)
     (hHerm : (Matrix.of fun a b => K a b).IsHermitian) (hgram : ∀ x : α →₀ R,
       (Matrix.of fun i j : x.support => K (i : α) (j : α)).PosSemidef) :
@@ -176,6 +200,47 @@ theorem posSemidef_prod_union {ι : Type w} [DecidableEq α] (L : ι → Finset 
     rw [heq]
     exact posSemidef_schur_finset_prod fun a _ => (hfactor a).submatrix Subtype.val
 
+/-- For real weights `w` in `[-1, 1]` and finite sets `L i`, the matrix
+`(i, j) ↦ ∏_{a ∈ L i ∆ L j} w a` is positive semidefinite. For constant weight `w ≡ r` this is
+the kernel `r ^ #(L i ∆ L j)` of the symmetric-difference metric. -/
+theorem posSemidef_prod_symmDiff {𝕜 ι : Type*} [RCLike 𝕜] [DecidableEq α] (L : ι → Finset α)
+    {w : α → ℝ} (hw : ∀ a, |w a| ≤ 1) :
+    Matrix.PosSemidef (fun i j => ((∏ a ∈ symmDiff (L i) (L j), w a : ℝ) : 𝕜)) := by
+  -- The sign of `i` at `a`, recording whether `a ∈ L i`.
+  let σ : α → ι → ℝ := fun a i => if a ∈ L i then 1 else -1
+  -- The factor at `a` is `1` when `a` lies in both or neither of `L i`, `L j`, and `w a` otherwise.
+  have hfactor (a : α) : Matrix.PosSemidef (fun i j =>
+      (((1 + w a) / 2 : ℝ) : 𝕜) + star ((√((1 - w a) / 2) * σ a i : ℝ) : 𝕜) *
+        ((√((1 - w a) / 2) * σ a j : ℝ) : 𝕜)) :=
+    (posSemidef_const_of_nonneg (RCLike.ofReal_nonneg.2 (by linarith [(abs_le.1 (hw a)).1]))).add
+      (posSemidef_rankOne _)
+  have hterm (i j : ι) (a : α) :
+      (((1 + w a) / 2 : ℝ) : 𝕜) + star ((√((1 - w a) / 2) * σ a i : ℝ) : 𝕜) *
+        ((√((1 - w a) / 2) * σ a j : ℝ) : 𝕜) =
+        ((if a ∈ symmDiff (L i) (L j) then w a else 1 : ℝ) : 𝕜) := by
+    have hsq : √((1 - w a) / 2) * √((1 - w a) / 2) = (1 - w a) / 2 :=
+      Real.mul_self_sqrt (by linarith [(abs_le.1 (hw a)).2])
+    rw [RCLike.star_def, RCLike.conj_ofReal, ← RCLike.ofReal_mul, ← RCLike.ofReal_add]
+    congr 1
+    generalize √((1 - w a) / 2) = s at hsq
+    by_cases hi : a ∈ L i <;> by_cases hj : a ∈ L j <;>
+      simp only [σ, hi, hj, Finset.mem_symmDiff, ↓reduceIte] <;> grind
+  refine posSemidef_of_support_posSemidef
+    (fun i j => ((∏ a ∈ symmDiff (L i) (L j), w a : ℝ) : 𝕜)) ?_ fun x => ?_
+  · ext i j
+    simp [symmDiff_comm]
+  · let s : Finset α := x.support.biUnion L
+    have hs (i : x.support) : L i ⊆ s := fun a ha => Finset.mem_biUnion.mpr ⟨i, i.property, ha⟩
+    have heq : (Matrix.of fun i j : x.support => ((∏ a ∈ symmDiff (L i) (L j), w a : ℝ) : 𝕜)) =
+        (fun i j : x.support => ∏ a ∈ s, ((((1 + w a) / 2 : ℝ) : 𝕜) +
+          star ((√((1 - w a) / 2) * σ a i : ℝ) : 𝕜) * ((√((1 - w a) / 2) * σ a j : ℝ) : 𝕜))) := by
+      ext i j
+      simp_rw [Matrix.of_apply, hterm, ← RCLike.ofReal_prod]
+      rw [Finset.prod_ite_mem, Finset.inter_eq_right.mpr
+        ((symmDiff_le_sup (a := L i) (b := L j)).trans (Finset.union_subset (hs i) (hs j)))]
+    rw [heq]
+    exact posSemidef_schur_finset_prod fun a _ => (hfactor a).submatrix Subtype.val
+
 end TauCeti
 
 /-- Schur powers of a positive-semidefinite matrix are positive semidefinite. -/
@@ -190,3 +255,124 @@ theorem Matrix.PosSemidef.hadamard_pow {α 𝕜 : Type*} [RCLike 𝕜] {K : α �
         ext
         rw [Matrix.hadamard_apply, Matrix.of_apply, Matrix.of_apply, pow_succ]
       exact heq ▸ ih.hadamard hK
+
+namespace Matrix.PosSemidef
+
+section PrincipalBlocks
+
+variable {R m n p : Type*} [Ring R] [PartialOrder R] [StarRing R]
+
+/-- The upper-left principal block of a positive-semidefinite matrix is positive semidefinite. -/
+theorem toBlocks₁₁ {M : Matrix (m ⊕ n) (m ⊕ n) R} (h : M.PosSemidef) :
+    M.toBlocks₁₁.PosSemidef := by
+  simpa only [toBlocks₁₁_eq_submatrix] using h.submatrix Sum.inl
+
+/-- The lower-right principal block of a positive-semidefinite matrix is positive semidefinite. -/
+theorem toBlocks₂₂ {M : Matrix (m ⊕ n) (m ⊕ n) R} (h : M.PosSemidef) :
+    M.toBlocks₂₂.PosSemidef := by
+  simpa only [toBlocks₂₂_eq_submatrix] using h.submatrix Sum.inr
+
+/-- Restricting a positive-semidefinite three-block matrix to the first and second blocks,
+or to the first and third blocks, gives two positive-semidefinite matrices. -/
+theorem overlapping_blocks
+    {A : Matrix m m R} {B : Matrix m n R} {C : Matrix m p R}
+    {D : Matrix n n R} {E : Matrix n p R} {F : Matrix p p R}
+    (h : (fromBlocks A (fromCols B C) (fromCols B C)ᴴ
+      (fromBlocks D E Eᴴ F)).PosSemidef) :
+    (fromBlocks A B Bᴴ D).PosSemidef ∧ (fromBlocks A C Cᴴ F).PosSemidef := by
+  constructor
+  · convert h.submatrix (Sum.map id Sum.inl) using 1
+    ext i j
+    cases i <;> cases j <;> simp [submatrix_apply, conjTranspose_apply]
+  · convert h.submatrix (Sum.map id Sum.inr) using 1
+    ext i j
+    cases i <;> cases j <;> simp [submatrix_apply, conjTranspose_apply]
+
+end PrincipalBlocks
+
+variable {α 𝕜 : Type*} [RCLike 𝕜]
+
+/-- Half the real quadratic form of a positive-semidefinite matrix is unchanged by conversion
+to a nonnegative real and back. -/
+theorem coe_toNNReal_re_dotProduct_div_two [Fintype α] {A : Matrix α α 𝕜}
+    (hA : A.PosSemidef) (x : α → 𝕜) :
+    ((RCLike.re (star x ⬝ᵥ A *ᵥ x) / 2).toNNReal : ℝ) =
+      RCLike.re (star x ⬝ᵥ A *ᵥ x) / 2 :=
+  Real.coe_toNNReal _ (div_nonneg (hA.re_dotProduct_nonneg x) (by norm_num))
+
+/-- Half a positive-semidefinite quadratic form vanishes as a nonnegative real exactly when
+its real part vanishes. -/
+theorem toNNReal_re_dotProduct_div_two_eq_zero_iff [Fintype α] {A : Matrix α α 𝕜}
+    (hA : A.PosSemidef) (x : α → 𝕜) :
+    (RCLike.re (star x ⬝ᵥ A *ᵥ x) / 2).toNNReal = 0 ↔
+      RCLike.re (star x ⬝ᵥ A *ᵥ x) = 0 := by
+  rw [← NNReal.coe_eq_zero, hA.coe_toNNReal_re_dotProduct_div_two]
+  simp
+
+variable {R ι κ : Type*} [CommRing R] [PartialOrder R] [StarRing R] [StarOrderedRing R]
+  [IsProperStar R] {S : Matrix (ι ⊕ κ) (ι ⊕ κ) R}
+
+/-- A null vector of the lower-right block of a positive-semidefinite matrix is also
+a null vector of its upper-right block, when the upper index type is finite. -/
+private theorem toBlocks₁₂_mulVec_eq_zero_of_finite [Finite ι] [Fintype κ] (hS : S.PosSemidef)
+    {x : κ → R} (hx : S.toBlocks₂₂ *ᵥ x = 0) : S.toBlocks₁₂ *ᵥ x = 0 := by
+  let := Fintype.ofFinite ι
+  -- Extend the null vector by zero in the other block. Its quadratic form vanishes.
+  have hq : star (Sum.elim 0 x) ⬝ᵥ S *ᵥ Sum.elim 0 x = 0 := by
+    rw [← fromBlocks_toBlocks S, fromBlocks_mulVec, dotProduct_block]
+    simp [Function.star_sumElim, hx]
+  have hz := hS.dotProduct_mulVec_zero_iff.mp hq
+  rw [← fromBlocks_toBlocks S, fromBlocks_mulVec] at hz
+  simpa using congrArg (fun v => v ∘ Sum.inl) hz
+
+/-- A null vector of the lower-right block of a positive-semidefinite matrix is also
+a null vector of its upper-right block. -/
+theorem toBlocks₁₂_mulVec_eq_zero [Fintype κ] (hS : S.PosSemidef)
+    {x : κ → R} (hx : S.toBlocks₂₂ *ᵥ x = 0) : S.toBlocks₁₂ *ᵥ x = 0 := by
+  ext i
+  -- Restrict to the single row `i` of the upper block.
+  have h := (hS.submatrix (Sum.map (fun _ : Unit => i) id)).toBlocks₁₂_mulVec_eq_zero_of_finite
+    (x := x) hx
+  simpa [mulVec, dotProduct, toBlocks₁₂] using congrFun h ()
+
+/-- A zero lower-right block of a positive-semidefinite matrix forces the upper-right
+block to vanish. -/
+theorem toBlocks₁₂_eq_zero_of_toBlocks₂₂_eq_zero
+    (hS : S.PosSemidef) (h22 : S.toBlocks₂₂ = 0) : S.toBlocks₁₂ = 0 := by
+  ext i k
+  -- Restrict to the single row `i` and the single column `k`.
+  have h22' : (S.submatrix (Sum.map (fun _ : Unit => i) fun _ : Unit => k)
+      (Sum.map (fun _ : Unit => i) fun _ : Unit => k)).toBlocks₂₂ = 0 := by
+    ext _ _
+    exact congrFun₂ h22 k k
+  have h := (hS.submatrix (Sum.map (fun _ : Unit => i) fun _ : Unit => k)).toBlocks₁₂_mulVec_eq_zero
+    (x := fun _ => 1) (by rw [h22', zero_mulVec])
+  simpa [mulVec, dotProduct, toBlocks₁₂] using congrFun h ()
+
+/-- A zero lower-right block of a positive-semidefinite matrix also forces the lower-left
+block to vanish, by Hermitian symmetry. -/
+theorem toBlocks₂₁_eq_zero_of_toBlocks₂₂_eq_zero
+    (hS : S.PosSemidef) (h22 : S.toBlocks₂₂ = 0) : S.toBlocks₂₁ = 0 := by
+  have hB : S.toBlocks₁₂ᴴ = S.toBlocks₂₁ := by
+    ext i j
+    exact hS.isHermitian.apply _ _
+  rw [← hB, hS.toBlocks₁₂_eq_zero_of_toBlocks₂₂_eq_zero h22, conjTranspose_zero]
+
+/-- A null vector of the upper-left block of a positive-semidefinite matrix is also
+a null vector of its lower-left block. -/
+theorem toBlocks₂₁_mulVec_eq_zero [Fintype ι] (hS : S.PosSemidef)
+    {x : ι → R} (hx : S.toBlocks₁₁ *ᵥ x = 0) : S.toBlocks₂₁ *ᵥ x = 0 := by
+  have h := (hS.submatrix Sum.swap).toBlocks₁₂_mulVec_eq_zero (x := x)
+  rw [← fromBlocks_toBlocks S, fromBlocks_submatrix_sum_swap_sum_swap,
+    toBlocks_fromBlocks₂₂, toBlocks_fromBlocks₁₂] at h
+  exact h hx
+
+/-- If `A` and `B - A` are positive semidefinite, that is `0 ≤ A ≤ B` in the Loewner order, then
+every null vector of `B` is a null vector of `A`. -/
+theorem mulVec_eq_zero_of_posSemidef_sub [Fintype ι] {A B : Matrix ι ι R} (hA : A.PosSemidef)
+    (hBA : (B - A).PosSemidef) {x : ι → R} (hx : B *ᵥ x = 0) : A *ᵥ x = 0 := by
+  have h := hBA.dotProduct_mulVec_nonneg x
+  rw [sub_mulVec, dotProduct_sub, hx, dotProduct_zero, zero_sub, neg_nonneg] at h
+  exact hA.dotProduct_mulVec_zero_iff.1 (le_antisymm h (hA.dotProduct_mulVec_nonneg x))
+
+end Matrix.PosSemidef

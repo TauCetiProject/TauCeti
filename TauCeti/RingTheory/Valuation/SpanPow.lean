@@ -9,7 +9,7 @@ public import Mathlib.RingTheory.Ideal.Operations
 public import Mathlib.RingTheory.Valuation.Basic
 
 /-!
-# A valuation on a power of a spanned ideal
+# Valuations on spanned ideals
 
 If `v ≤ δ` on a generating set `s` and `v ≤ 1` on the ideal `Ideal.span s`, then
 `v ≤ δ ^ n` on `Ideal.span s ^ (n + 1)`.
@@ -33,9 +33,13 @@ element of `I` rather than a generator only ever yields the bound `1`, so the ex
 grows. Instead the power is rewritten as the span of the pointwise power `s ^ n`
 (`Submodule.span_pow`), which keeps the generators visible.
 
+A finite set also contains a nonvanishing element of greatest value whenever the radical
+of its span contains an element of nonzero value. This maximum needs no bound on the ideal.
+
 ## Main results
 
 * `Valuation.map_le_pow_of_mem_span_pow_succ`
+* `Valuation.exists_mem_max_restrict_ne_zero`
 
 ## References
 
@@ -89,5 +93,27 @@ theorem map_le_pow_of_mem_span_pow_succ (hs : ∀ t ∈ s, v t ≤ δ)
   refine Submodule.mul_induction_on ha (fun r hr y hy ↦ ?_) fun x y hx hy ↦ ?_
   · exact v.map_mul_le_pow_of_mem_span_pow hs h1 n y hy r hr
   · exact v.map_add_le hx hy
+
+/-- A finite set has a nonvanishing element of greatest value if the radical of its span
+contains an element of nonzero value. -/
+theorem exists_mem_max_restrict_ne_zero {A Γ : Type*} [CommRing A]
+    [LinearOrderedCommGroupWithZero Γ] {v : Valuation A Γ} {T : Finset A} {a₀ : A}
+    (ha₀ : a₀ ∈ (Ideal.span (T : Set A)).radical) (ha₀0 : v a₀ ≠ 0) :
+    ∃ t₀ ∈ T, v t₀ ≠ 0 ∧ ∀ t ∈ T, v.restrict t ≤ v.restrict t₀ := by
+  have hsupp : ¬ ∀ t ∈ T, t ∈ v.supp := by
+    intro hall
+    have hspan : Ideal.span (T : Set A) ≤ v.supp := Ideal.span_le.mpr hall
+    have ha₀supp := (inferInstance : v.supp.IsPrime).radical_le_iff.mpr hspan ha₀
+    exact ha₀0 ((v.mem_supp_iff _).mp ha₀supp)
+  have hTne : T.Nonempty := by
+    rcases T.eq_empty_or_nonempty with rfl | hne'
+    · exact absurd (by simp) hsupp
+    · exact hne'
+  obtain ⟨t₀, ht₀T, ht₀max⟩ := T.exists_max_image (fun t ↦ v.restrict t) hTne
+  refine ⟨t₀, ht₀T, fun hz ↦ hsupp fun t ht ↦ ?_, ht₀max⟩
+  rw [v.mem_supp_iff]
+  have hle : v.restrict t ≤ v.restrict t₀ := ht₀max t ht
+  rw [v.restrict_eq_zero_iff.mpr hz] at hle
+  exact v.restrict_eq_zero_iff.mp (le_antisymm hle zero_le)
 
 end Valuation

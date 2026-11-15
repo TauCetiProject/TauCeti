@@ -43,8 +43,6 @@ dimension count of the Specht module and is not done here.
 * [W. Fulton, *Young Tableaux*][fulton1997], Section 7.2, Lemma 3.
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), Lemma 4.24 and
   Lemma 4.26.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 3.
 -/
 
 public section
@@ -122,8 +120,9 @@ multiple of the Young symmetrizer: it vanishes off `Row(t) · Col(t)` by the key
 and on `p q` it is `sign q • c_t`. -/
 theorem exists_eq_smul_youngSymmetrizer_single (t : YoungTableau μ)
     (σ : Equiv.Perm (Fin μ.card)) :
-    ∃ κ : ℚ, rowSymmetrizer t * MonoidAlgebra.single σ 1 * columnAntisymmetrizer t =
-      κ • youngSymmetrizer t := by
+    ∃ κ : ℚ, rowSymmetrizer (R := ℚ) t * MonoidAlgebra.single σ 1 * columnAntisymmetrizer (R :=
+      ℚ) t =
+      κ • youngSymmetrizer (R := ℚ) t := by
   by_cases h : RowMeetsColumnTwice t (relabel σ t)
   · exact ⟨0, by
       rw [h.rowSymmetrizer_mul_single_mul_columnAntisymmetrizer_eq_zero, zero_smul]⟩
@@ -137,9 +136,10 @@ of the group algebra, `a_t x b_t ∈ ℚ ∙ c_t`.  This is the linear extension
 `TauCeti.YoungTableau.exists_eq_smul_youngSymmetrizer_single`. -/
 theorem exists_eq_smul_youngSymmetrizer (t : YoungTableau μ)
     (x : MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card))) :
-    ∃ κ : ℚ, rowSymmetrizer t * x * columnAntisymmetrizer t = κ • youngSymmetrizer t := by
-  have hspan : rowSymmetrizer t * x * columnAntisymmetrizer t ∈
-      Submodule.span ℚ {youngSymmetrizer t} := by
+    ∃ κ : ℚ, rowSymmetrizer (R := ℚ) t * x * columnAntisymmetrizer (R := ℚ) t = κ •
+      youngSymmetrizer (R := ℚ) t := by
+  have hspan : rowSymmetrizer (R := ℚ) t * x * columnAntisymmetrizer (R := ℚ) t ∈
+      Submodule.span ℚ {youngSymmetrizer (R := ℚ) t} := by
     induction x using MonoidAlgebra.induction_on with
     | of g =>
       obtain ⟨κ, hκ⟩ := exists_eq_smul_youngSymmetrizer_single t g
@@ -159,9 +159,11 @@ every element `x` of the group algebra.  Writing `c_t = a_t b_t` turns the sandw
 into the sandwich `a_t (b_t x a_t) b_t`. -/
 theorem exists_eq_smul_youngSymmetrizer_mul_mul (t : YoungTableau μ)
     (x : MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card))) :
-    ∃ κ : ℚ, youngSymmetrizer t * x * youngSymmetrizer t = κ • youngSymmetrizer t := by
+    ∃ κ : ℚ, youngSymmetrizer (R := ℚ) t * x * youngSymmetrizer (R := ℚ) t = κ •
+      youngSymmetrizer (R := ℚ) t := by
   obtain ⟨κ, hκ⟩ :=
-    exists_eq_smul_youngSymmetrizer t (columnAntisymmetrizer t * x * rowSymmetrizer t)
+    exists_eq_smul_youngSymmetrizer t (columnAntisymmetrizer (R := ℚ) t * x * rowSymmetrizer (R
+      := ℚ) t)
   refine ⟨κ, ?_⟩
   rw [← hκ]
   simp only [youngSymmetrizer_def, mul_assoc]
@@ -169,11 +171,12 @@ theorem exists_eq_smul_youngSymmetrizer_mul_mul (t : YoungTableau μ)
 /-- The square of a Young symmetrizer is a multiple of it.  Identifying the scalar needs the
 dimension of the left ideal `ℚ[Sₙ] c_t`, so it is done downstream, in
 `TauCeti.YoungTableau.youngSymmetrizer_sq`, which proves the scalar is
-`μ.card ! / finrank ℚ (ℚ[Sₙ] c_t)`.  The roadmap writes it as `μ.card ! / f^μ`, with `f^μ` the
-number of standard tableaux of shape `μ`; that form needs the standard basis theorem
-`dim S^μ = f^μ`, which is not available yet. -/
+`μ.card ! / finrank ℚ (ℚ[Sₙ] c_t)`.  In terms of the number `f^μ` of standard tableaux of shape
+`μ` the scalar is `μ.card ! / f^μ`, by the standard basis theorem `dim S^μ = f^μ`; that form is
+`TauCeti.YoungTableau.youngSymmetrizer_sq_eq_factorial_div_standardCount`. -/
 theorem exists_eq_smul_youngSymmetrizer_sq (t : YoungTableau μ) :
-    ∃ κ : ℚ, youngSymmetrizer t * youngSymmetrizer t = κ • youngSymmetrizer t := by
+    ∃ κ : ℚ, youngSymmetrizer (R := ℚ) t * youngSymmetrizer (R := ℚ) t = κ • youngSymmetrizer (R
+      := ℚ) t := by
   obtain ⟨κ, hκ⟩ := exists_eq_smul_youngSymmetrizer_mul_mul t 1
   exact ⟨κ, by rwa [mul_one] at hκ⟩
 

@@ -7,6 +7,7 @@ recurrence visibility. Pure logic only -- GitHub and Zulip are faked, so no netw
 or `gh` is needed. Run: python3 scripts/pr_status/test_stuck_alerts.py
 """
 
+import base64
 import datetime
 import json
 import os
@@ -370,6 +371,84 @@ def _install(test, routes):
     fake = RoutedGh(routes)
     core.gh_api = fake
     return fake
+
+
+class StalePinTest(unittest.TestCase):
+    REV = "a" * 40
+
+    def install(self, age_hours, *, manifest=None, date=None):
+        from unittest.mock import patch
+        now = datetime.datetime(2026, 10, 12, tzinfo=datetime.timezone.utc)
+        self.enterContext(patch.object(sa, "now_utc", return_value=now))
+        if manifest is None:
+            manifest = {"packages": [{"name": "mathlib", "rev": self.REV}]}
+        content = base64.b64encode(json.dumps(manifest).encode()).decode()
+        if date is None:
+            date = (now - datetime.timedelta(hours=age_hours)).isoformat()
+        return _install(self, [("/contents/lake-manifest.json?ref=main", content),
+                               (f"/mathlib4/git/commits/{self.REV}", date)])
+
+    def test_old_commit_alerts_despite_recent_manifest_change(self):
+        fake = self.install(13 * 24)
+        alert = sa.detect_stale_pin()[0]
+        self.assertEqual(alert["key"], "stale-pin")
+        self.assertIn("3-day freshness limit", alert["body"])
+        self.assertIn(f"/commit/{self.REV}", alert["body"])
+        self.assertFalse(any("commits?path=" in path for path, _, _ in fake.requests))
+        self.assertEqual(len(fake.requests), 2)
+        self.assertEqual(fake.requests[1][1], '.committer.date // ""')
+
+    def test_persistent_alert_body_does_not_change_with_time(self):
+        from unittest.mock import patch
+        self.install(13 * 24)
+        first = sa.detect_stale_pin()
+        tomorrow = sa.now_utc() + datetime.timedelta(days=1)
+        with patch.object(sa, "now_utc", return_value=tomorrow):
+            self.assertEqual(sa.detect_stale_pin(), first)
+
+    def test_fresh_commit_does_not_alert(self):
+        self.install(48)
+        self.assertEqual(sa.detect_stale_pin(), [])
+
+    def test_three_days_is_the_maximum_acceptable_age(self):
+        self.install(72)
+        self.assertEqual(sa.detect_stale_pin(), [])
+
+    def test_exceeding_three_days_alerts(self):
+        self.install(72 + 1 / 60)
+        self.assertEqual(len(sa.detect_stale_pin()), 1)
+
+    def test_missing_pin_is_unknown_not_healthy(self):
+        self.install(48, manifest={"packages": []})
+        with self.assertRaises(RuntimeError):
+            sa.detect_stale_pin()
+
+    def test_symbolic_pin_is_rejected_before_commit_query(self):
+        fake = self.install(48, manifest={"packages": [{"name": "mathlib", "rev": "master"}]})
+        with self.assertRaises(RuntimeError):
+            sa.detect_stale_pin()
+        self.assertEqual(len(fake.requests), 1)
+
+    def test_missing_commit_timestamp_does_not_clear_alert(self):
+        self.install(48, date="")
+        from unittest.mock import patch
+        with patch.object(sa, "DETECTORS", [("stale-pin", sa.detect_stale_pin)]):
+            alerts, failed = sa.collect_alerts()
+        self.assertEqual(alerts, [])
+        self.assertEqual(failed, {"stale-pin"})
+        z = FakeZulip([msg(1, active_content("stale-pin"))])
+        sa.reconcile(z, alerts, failed, dry_run=False)
+        self.assertEqual(z.updated, [])
+
+    def test_timezone_less_timestamp_is_unknown(self):
+        self.install(48, date="2026-10-10T00:00:00")
+        with self.assertRaises(RuntimeError):
+            sa.detect_stale_pin()
+
+    def test_future_timestamp_is_unknown(self):
+        self.install(-1)
+        with self.assertRaises(RuntimeError):
+            sa.detect_stale_pin()
 
 
 class ReadyLabelClockTest(unittest.TestCase):

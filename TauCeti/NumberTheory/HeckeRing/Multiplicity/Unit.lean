@@ -17,10 +17,8 @@ multiplying by such an `e` on either side, the multiplicity is `1` exactly on th
 `Γ₁gΓ₂ = Γ₁dΓ₂`. Specialised to a Hecke coset module, these compute the products `T(g) * T(1)`
 and `T(1) * T(g)` in later files.
 
-Vendored from the in-review mathlib4 PR
-[#41255](https://github.com/leanprover-community/mathlib4/pull/41255) (Chris Birkbeck), per the
-ModularForms roadmap's dependency policy; migrate to Mathlib and delete this file when that
-stack merges.
+Vendored from mathlib4 PR
+[#41255](https://github.com/leanprover-community/mathlib4/pull/41255) (Chris Birkbeck).
 
 ## Main results
 
@@ -28,6 +26,8 @@ stack merges.
   `multiplicity Γ₁ Γ₂ Γ₂ g e d = 1 ↔ Γ₁gΓ₂ = Γ₁dΓ₂`.
 * `DoubleCoset.multiplicity_eq_one_iff_of_mem_left`: for `e ∈ Γ₁`,
   `multiplicity Γ₁ Γ₁ Γ₂ e g d = 1 ↔ Γ₁gΓ₂ = Γ₁dΓ₂`.
+* `HeckeCoset.multiplicity_one_right_eq_zero`, `HeckeCoset.multiplicity_one_left_eq_zero`: the
+  multiplicity of the identity double coset on a Hecke coset vanishes off the diagonal.
 -/
 
 public section
@@ -71,18 +71,28 @@ private lemma exists_fibre_of_mem_left {e g d : G} (he : e ∈ Γ₁)
   rw [QuotientGroup.eq]
   simpa [ha_def, mul_assoc] using hj₀
 
+/-- For `e ∈ Γ₂`, the multiplicity of right multiplication by the identity double coset
+`Γ₂eΓ₂ = Γ₂` vanishes off the diagonal. -/
+theorem multiplicity_eq_zero_of_mem_right {g e d : G} (he : e ∈ Γ₂)
+    (h : doubleCoset g Γ₁ Γ₂ ≠ doubleCoset d Γ₁ Γ₂) : multiplicity Γ₁ Γ₂ Γ₂ g e d = 0 := by
+  by_contra h0
+  rw [multiplicity_def] at h0
+  obtain ⟨⟨p, hp⟩⟩ := (Nat.card_ne_zero.mp h0).1
+  have hp' : _ = (d : G ⧸ Γ₂) := hp
+  rw [QuotientGroup.mk_mul_of_mem _ (Γ₂.mul_mem p.2.out.2 he), QuotientGroup.eq] at hp'
+  exact h (doubleCoset_eq_of_mem (mem_doubleCoset.mpr
+    ⟨(p.1.out : G), p.1.out.2, _, hp', (mul_inv_cancel_left _ _).symm⟩)).symm
+
 /-- For `e ∈ Γ₂`, right multiplication by the identity double coset `Γ₂eΓ₂ = Γ₂` has
 multiplicity `1` exactly on the diagonal. -/
 theorem multiplicity_eq_one_iff_of_mem_right {g e d : G} (he : e ∈ Γ₂) :
     multiplicity Γ₁ Γ₂ Γ₂ g e d = 1 ↔ doubleCoset g Γ₁ Γ₂ = doubleCoset d Γ₁ Γ₂ := by
-  rw [multiplicity_def, Nat.card_eq_one_iff_unique]
   constructor
-  · rintro ⟨-, ⟨p, hp⟩⟩
-    have hp' : _ = (d : G ⧸ Γ₂) := hp
-    rw [QuotientGroup.mk_mul_of_mem _ (Γ₂.mul_mem p.2.out.2 he), QuotientGroup.eq] at hp'
-    exact (doubleCoset_eq_of_mem (mem_doubleCoset.mpr
-      ⟨(p.1.out : G), p.1.out.2, _, hp', (mul_inv_cancel_left _ _).symm⟩)).symm
+  · intro h1
+    by_contra hne
+    exact zero_ne_one ((multiplicity_eq_zero_of_mem_right he hne).symm.trans h1)
   · intro h
+    rw [multiplicity_def, Nat.card_eq_one_iff_unique]
     have := subsingleton_decompQuotient_of_mem he
     obtain ⟨p, hp⟩ := exists_fibre_of_mem_right he (h ▸ mem_doubleCoset_self Γ₁ Γ₂ d)
     refine ⟨⟨fun q₁ q₂ ↦ Subtype.ext ?_⟩, ⟨p, hp⟩⟩
@@ -92,19 +102,29 @@ theorem multiplicity_eq_one_iff_of_mem_right {g e d : G} (he : e ∈ Γ₂) :
     rw [← hsnd] at h₂
     exact Prod.ext (fst_eq_of_mul_snd_mem (Γ₂.mul_mem q₁.1.2.out.2 he) h₁ h₂) hsnd
 
+/-- For `e ∈ Γ₁`, the multiplicity of left multiplication by the identity double coset
+`Γ₁eΓ₁ = Γ₁` vanishes off the diagonal. -/
+theorem multiplicity_eq_zero_of_mem_left {e g d : G} (he : e ∈ Γ₁)
+    (h : doubleCoset g Γ₁ Γ₂ ≠ doubleCoset d Γ₁ Γ₂) : multiplicity Γ₁ Γ₁ Γ₂ e g d = 0 := by
+  by_contra h0
+  rw [multiplicity_def] at h0
+  obtain ⟨⟨p, hp⟩⟩ := (Nat.card_ne_zero.mp h0).1
+  have hp' : _ = (d : G ⧸ Γ₂) := hp
+  rw [QuotientGroup.eq] at hp'
+  exact h (doubleCoset_eq_of_mem (mem_doubleCoset.mpr
+    ⟨(p.1.out : G) * e * p.2.out, Γ₁.mul_mem (Γ₁.mul_mem p.1.out.2 he) p.2.out.2, _, hp',
+      by simp [mul_assoc]⟩)).symm
+
 /-- For `e ∈ Γ₁`, left multiplication by the identity double coset `Γ₁eΓ₁ = Γ₁` has
 multiplicity `1` exactly on the diagonal. -/
 theorem multiplicity_eq_one_iff_of_mem_left {e g d : G} (he : e ∈ Γ₁) :
     multiplicity Γ₁ Γ₁ Γ₂ e g d = 1 ↔ doubleCoset g Γ₁ Γ₂ = doubleCoset d Γ₁ Γ₂ := by
-  rw [multiplicity_def, Nat.card_eq_one_iff_unique]
   constructor
-  · rintro ⟨-, ⟨p, hp⟩⟩
-    have hp' : _ = (d : G ⧸ Γ₂) := hp
-    rw [QuotientGroup.eq] at hp'
-    exact (doubleCoset_eq_of_mem (mem_doubleCoset.mpr
-      ⟨(p.1.out : G) * e * p.2.out, Γ₁.mul_mem (Γ₁.mul_mem p.1.out.2 he) p.2.out.2, _, hp',
-        by simp [mul_assoc]⟩)).symm
+  · intro h1
+    by_contra hne
+    exact zero_ne_one ((multiplicity_eq_zero_of_mem_left he hne).symm.trans h1)
   · intro h
+    rw [multiplicity_def, Nat.card_eq_one_iff_unique]
     have := subsingleton_decompQuotient_of_mem he
     obtain ⟨p, hp⟩ := exists_fibre_of_mem_left he (h ▸ mem_doubleCoset_self Γ₁ Γ₂ d)
     refine ⟨⟨fun q₁ q₂ ↦ Subtype.ext ?_⟩, ⟨p, hp⟩⟩
@@ -174,5 +194,23 @@ theorem multiplicity_one_mul (g d : Δ) :
     multiplicity H₁ H₁ H₂ ((1 : HeckeCoset Δ H₁ H₁).rep : G) (g : G) (d : G) = 1 ↔
       mk H₁ H₂ g = mk H₁ H₂ d := by
   rw [multiplicity_eq_one_iff_of_mem_left HeckeCoset.rep_one_mem, HeckeCoset.eq_iff]
+
+/-- The multiplicity for right convolution by the identity double coset vanishes off the
+diagonal. -/
+lemma multiplicity_one_right_eq_zero
+    (g : Δ) {A : HeckeCoset Δ H₁ H₂} (hA : A ≠ HeckeCoset.mk H₁ H₂ g) :
+    multiplicity H₁ H₂ H₂ (g : G) ((1 : HeckeCoset Δ H₂ H₂).rep : G) (A.rep : G) = 0 :=
+  multiplicity_eq_zero_of_mem_right HeckeCoset.rep_one_mem fun h ↦ hA (by
+    rw [← A.mk_rep]
+    exact (HeckeCoset.eq_iff.mpr h).symm)
+
+/-- The multiplicity for left convolution by the identity double coset vanishes off the
+diagonal. -/
+lemma multiplicity_one_left_eq_zero
+    (g : Δ) {A : HeckeCoset Δ H₁ H₂} (hA : A ≠ HeckeCoset.mk H₁ H₂ g) :
+    multiplicity H₁ H₁ H₂ ((1 : HeckeCoset Δ H₁ H₁).rep : G) (g : G) (A.rep : G) = 0 :=
+  multiplicity_eq_zero_of_mem_left HeckeCoset.rep_one_mem fun h ↦ hA (by
+    rw [← A.mk_rep]
+    exact (HeckeCoset.eq_iff.mpr h).symm)
 
 end HeckeCoset

@@ -36,13 +36,12 @@ The decomposition is indexed by `Fin k` rather than by the set of atoms: a `Fin 
   finite-dimensional Lie module whose submodule lattice is complemented is the internal direct sum
   of finitely many irreducible Lie submodules.
 
-## Roadmap
+## Applications
 
-This is the shared tail of the two complete-reducibility theorems of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`: the `sl₂` case of Layer 0
-(`TauCeti/Algebra/Lie/Sl2/Decomposition.lean`) and Weyl's theorem of Layer 5
-(`TauCeti/Algebra/Lie/HighestWeight/CompleteReducibility.lean`), both of which ask for the module
-to be exhibited as a direct sum of irreducibles.
+This is the shared tail of two complete-reducibility theorems: the `sl₂` case
+(`TauCeti/Algebra/Lie/Sl2/Decomposition.lean`) and Weyl's theorem
+(`TauCeti/Algebra/Lie/HighestWeight/CompleteReducibility.lean`), both of which exhibit the module
+as a direct sum of irreducibles.
 -/
 
 public section

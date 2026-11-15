@@ -9,18 +9,17 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.LinearAlgebra.Matrix.IsDiag
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
+import TauCeti.Algebra.Field.Basic
 import TauCeti.Algebra.Group.Subgroup.Centralizer
 import TauCeti.LinearAlgebra.Matrix.Adjugate.FinTwo
 public import TauCeti.LinearAlgebra.UnitaryGroup
 public import TauCeti.Topology.Algebra.UnitaryGroup
-import TauCeti.Topology.Circle.Basic
 
 /-!
 # `SU(2)` and its maximal torus
 
-`SU(2)` is `Matrix.specialUnitaryGroup (Fin 2) ℂ`, the compact group that grounds the compact-group
-representation theory of the [compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/roadmap/representation-theory/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md).
-Its compactness and topological group structure come from
+`SU(2)` is `Matrix.specialUnitaryGroup (Fin 2) ℂ`, the basic example of a compact non-abelian
+group. Its compactness and topological group structure come from
 `TauCeti/Topology/Algebra/UnitaryGroup.lean`, where they are proved for every special unitary
 matrix group; Hausdorffness is inherited from the ambient matrix topology, `SU(2)` carrying the
 subtype topology.
@@ -291,10 +290,10 @@ private theorem circleI_sq_ne_one : (circleI : ℂ) ^ 2 ≠ 1 := by
 /-- **An element of `SU(2)` commuting with a single torus element `diag (z, z⁻¹)` with `z² ≠ 1`
 already lies in the maximal torus.** Reading off the off-diagonal entries of
 `diag (z, z⁻¹) g = g diag (z, z⁻¹)` gives `g₀₁ (z - z⁻¹) = 0` and `g₁₀ (z⁻¹ - z) = 0`, and
-`z² ≠ 1` gives `z ≠ z⁻¹` (`TauCeti.circle_sub_inv_ne_zero`). -/
+`z² ≠ 1` gives `z ≠ z⁻¹` (`TauCeti.sub_inv_eq_zero_iff`). -/
 theorem mem_torus_of_commute_torusHom {z : Circle} (hz : (z : ℂ) ^ 2 ≠ 1) {g : SU2}
     (h : torusHom z * g = g * torusHom z) : g ∈ torus := by
-  have hsub : (z : ℂ) - ((z : ℂ))⁻¹ ≠ 0 := circle_sub_inv_ne_zero hz
+  have hsub : (z : ℂ) - ((z : ℂ))⁻¹ ≠ 0 := (sub_inv_eq_zero_iff z.coe_ne_zero).not.mpr hz
   have hmat : torusMatrix z * (g : Matrix (Fin 2) (Fin 2) ℂ)
       = (g : Matrix (Fin 2) (Fin 2) ℂ) * torusMatrix z := by
     have hval := congrArg Subtype.val h
@@ -418,6 +417,11 @@ theorem torusExp_zero : torusExp 0 = 1 := by rw [torusExp, Circle.exp_zero, map_
 @[simp]
 theorem torusExp_neg (θ : ℝ) : torusExp (-θ) = (torusExp θ)⁻¹ :=
   eq_inv_of_mul_eq_one_left (by rw [← torusExp_add, neg_add_cancel, torusExp_zero])
+
+/-- The torus element `diag (e^{iθ}, e^{-iθ})` is the identity exactly when `θ` is an integer
+multiple of `2π`. -/
+theorem torusExp_eq_one_iff {θ : ℝ} : torusExp θ = 1 ↔ ∃ n : ℤ, θ = n * (2 * Real.pi) := by
+  rw [torusExp, ← map_one torusHom, torusHom_injective.eq_iff, Circle.exp_eq_one]
 
 theorem continuous_torusExp : Continuous torusExp :=
   (continuous_torusHom.comp Circle.exp.continuous).congr fun θ => by

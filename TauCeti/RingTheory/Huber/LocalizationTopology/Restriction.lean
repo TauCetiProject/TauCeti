@@ -123,7 +123,7 @@ variable {A : Type*} [CommRing A] [TopologicalSpace A]
 
 namespace PairOfDefinition
 
-variable [IsTopologicalRing A] (P : PairOfDefinition A) (T : Finset A) (s : A) (S : Type*)
+variable [IsTopologicalRing A] (P : PairOfDefinition A) (T : Set A) (s : A) (S : Type*)
   [CommRing S] [Algebra A S] [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S)
 
 /-! ### A factor of the denominator, and its inverse -/
@@ -207,7 +207,7 @@ theorem isPowerBounded_toCompletionLoc_mul_unit_inv {a r : A} (h : s = a * r)
 
 /-! ### The restriction map -/
 
-variable (T'' : Finset A) (s'' : A) (S'' : Type*) [CommRing S''] [Algebra A S'']
+variable (T'' : Set A) (s'' : A) (S'' : Type*) [CommRing S''] [Algebra A S'']
   [IsLocalization.Away s'' S''] (hden'' : HasDenominatorPower P T'' s'' S'') (r : A)
   (hs'' : s'' = s * r) (hT : ∀ t ∈ T, t * r ∈ T'')
 
@@ -236,9 +236,21 @@ theorem existsUnique_continuous_ringHom_of_refines :
   have _ := isTopologicalRing_locUniformSpace P T'' s'' S'' hden''
   have _ := isHuberRing_completion_locTopology P T'' s'' S'' hden''
   have hu := isUnit_toCompletionLoc_of_dvd P T'' s'' S'' hden'' ⟨r, hs''⟩
-  exact existsUnique_continuous_ringHom_completion_locTopology P T s S hden
-    (continuous_toCompletionLoc P T'' s'' S'' hden'').continuousAt hu
-    fun t ht ↦ isPowerBounded_toCompletionLoc_mul_unit_inv P T'' s'' S'' hden'' hs'' hu (hT t ht)
+  have _ := isHuberRing_locUniformSpace P T'' s'' S'' hden''
+  refine existsUnique_continuous_ringHom_completion_locTopology_of_isBounded_submonoidClosure P T
+    s S hden (continuous_toCompletionLoc P T'' s'' S'' hden'').continuousAt hu ?_
+  -- each fraction goes to `(t * r)/s''`, so they all lie in the image of the bounded subring `D''`
+  have hD := isBounded_locSubring P T'' s'' S'' hden''
+  rw [← locUniformSpace_toTopologicalSpace] at hD
+  refine (isBounded_image_completion_coe_of_isBounded hD).subset fun x hx ↦ ?_
+  refine (Submonoid.closure_le (S := (locSubring P T'' s'' S'').toSubmonoid.map
+    (UniformSpace.Completion.coeRingHom : S'' →+* UniformSpace.Completion S''))).mpr ?_ hx
+  rintro _ ⟨t, ht, rfl⟩
+  have h : toCompletionLoc P T'' s'' S'' hden'' t * ↑hu.unit⁻¹ =
+      ((divBy (t * r) s'' : S'') : UniformSpace.Completion S'') := by
+    rw [toCompletionLoc_unit_inv_eq P T'' s'' S'' hden'' hs'' hu, toCompletionLoc_apply,
+      ← UniformSpace.Completion.coe_mul, ← divBy_mul]
+  exact ⟨divBy (t * r) s'', divBy_mem_locSubring P T'' s'' S'' (hT t ht), h.symm⟩
 
 include r hs'' hT in
 /-- **The restriction map of a refinement**, `A⟨T/s⟩ → A⟨T''/s''⟩`: the unique continuous ring
@@ -389,7 +401,7 @@ maps, and with `restrictionRingHom_self` it is what makes the assignment functor
 The composite refinement is derived here rather than assumed: its denominator and numerator
 conditions follow from the two given refinements by associativity. -/
 @[simp]
-theorem restrictionRingHom_comp_restrictionRingHom (T''' : Finset A) (s''' : A) (S''' : Type*)
+theorem restrictionRingHom_comp_restrictionRingHom (T''' : Set A) (s''' : A) (S''' : Type*)
     [CommRing S'''] [Algebra A S'''] [IsLocalization.Away s''' S''']
     (hden''' : HasDenominatorPower P T''' s''' S''') (r₂ : A) (hs''' : s''' = s'' * r₂)
     (hT₂ : ∀ t ∈ T'', t * r₂ ∈ T''') :
@@ -429,7 +441,7 @@ theorem restrictionRingHom_comp_restrictionRingHom (T''' : Finset A) (s''' : A) 
 
 section Subset
 
-variable (T' : Finset A) (S' : Type*) [CommRing S'] [Algebra A S'] [IsLocalization.Away s S']
+variable (T' : Set A) (S' : Type*) [CommRing S'] [Algebra A S'] [IsLocalization.Away s S']
   (hden' : HasDenominatorPower P T' s S') (hTT' : ∀ u ∈ T, u ∈ T')
 
 /-- **The restriction map of a numerator enlargement.** A presentation `(T', s)` whose numerators
@@ -498,11 +510,11 @@ The conclusion is `HEq` because changing a presentation changes the uniformity u
 completion. -/
 theorem restrictionRingHomOfSubset_heq
     (P : PairOfDefinition A)
-    (T₁ T₁' : Finset A) (s₁ : A) (S : Type*) [CommRing S] [Algebra A S]
+    (T₁ T₁' : Set A) (s₁ : A) (S : Type*) [CommRing S] [Algebra A S]
     [IsLocalization.Away s₁ S] (hden₁ : HasDenominatorPower P T₁ s₁ S)
     (S' : Type*) [CommRing S'] [Algebra A S'] [IsLocalization.Away s₁ S']
     (hden₁' : HasDenominatorPower P T₁' s₁ S') (hT₁T₁' : ∀ t ∈ T₁, t ∈ T₁')
-    (T₂ T₂' : Finset A) (s₂ : A) [IsLocalization.Away s₂ S]
+    (T₂ T₂' : Set A) (s₂ : A) [IsLocalization.Away s₂ S]
     [IsLocalization.Away s₂ S'] (hden₂ : HasDenominatorPower P T₂ s₂ S)
     (hden₂' : HasDenominatorPower P T₂' s₂ S') (hT₂T₂' : ∀ t ∈ T₂, t ∈ T₂')
     (hS : locSubring P T₂ s₂ S = locSubring P T₁ s₁ S)
@@ -587,7 +599,7 @@ theorem restrictionRingHomOfSubset_self :
 the maps. With `TauCeti.Huber.PairOfDefinition.restrictionRingHomOfSubset_self` this makes the
 assignment functorial along a chain of enlargements — the shape Wedhorn's Remark 7.55 produces. -/
 @[simp]
-theorem restrictionRingHomOfSubset_comp_restrictionRingHomOfSubset (T'' : Finset A) (S'' : Type*)
+theorem restrictionRingHomOfSubset_comp_restrictionRingHomOfSubset (T'' : Set A) (S'' : Type*)
     [CommRing S''] [Algebra A S''] [IsLocalization.Away s S'']
     (hden'' : HasDenominatorPower P T'' s S'') (hT'T'' : ∀ u ∈ T', u ∈ T'') :
     letI := locUniformSpace P T s S hden

@@ -18,7 +18,7 @@ import Mathlib.RingTheory.DedekindDomain.IntegralClosure
 -- Proof-only, and NOT redundant with `DedekindDomain.Overring` below, which imports it plainly
 -- and so re-exports nothing. This supplies the `IsFractionRing` instance on a subalgebra of the
 -- fraction field, which `finite_of_fraction_model` needs; removing it fails to synthesize.
-import Mathlib.RingTheory.DedekindDomain.AdicValuation
+import Mathlib.RingTheory.DedekindDomain.AdicValuation.Completion
 import TauCeti.RingTheory.Adjoin.Tower
 import TauCeti.RingTheory.DedekindDomain.Overring
 import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
@@ -91,7 +91,9 @@ theorem finite_of_fraction_model
     { carrier := B
       mul_mem' := B.mul_mem
       add_mem' := B.add_mem
-      algebraMap_mem' := Set.algebraMap_mem_adjoin_image _ hs }
+      algebraMap_mem' x := by
+        simpa using (IsScalarTower.toAlgHom F A K).apply_mem_adjoin_image R
+          (by simp [hs] : x ∈ Algebra.adjoin F (s : Set A)) }
   let integrallyClosedB : IsIntegrallyClosed B := Subalgebra.isIntegrallyClosed_overring D
   let fractionRingB : IsFractionRing B K := inferInstanceAs (IsFractionRing D K)
   let isIntegralClosure : IsIntegralClosure B R K := IsIntegralClosure.of_isIntegrallyClosed B R K

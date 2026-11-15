@@ -22,7 +22,8 @@ across zero with nonzero derivative. The pre-Schwarzian chain rule then gives
 `z * f''(z) / f'(z) → -2` along the upper half-plane, and in particular `f'' / f' → 0`.
 
 `TauCeti.tendsto_zero_cobounded_of_eqOn_logDeriv_deriv` transfers this decay to any
-conjugation-symmetric continuation of the pre-Schwarzian which is continuous near infinity.  It
+conjugation-symmetric continuation of the pre-Schwarzian which is continuous within the upper
+half-plane at all sufficiently distant real points.  It
 supplies the full-plane limit needed in the partial-fraction characterization of the
 Schwarz--Christoffel differential equation.
 The straight-edge hypotheses concern the map in the inverse coordinate, rather than assuming
@@ -45,6 +46,11 @@ More generally, the limit of `z * f''(z) / f'(z)` at infinity does not change wh
 replaced by `f ∘ φ` for a map `φ` that fixes infinity and is conformal across it
 (`TauCeti.tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_comp_neg_inv`).  This compares an
 end of a domain that has no elementary straightening coordinate with an explicit model map.
+Underlying it is a local statement at `0`: if `F ∘ g = q ∘ (w ↦ -1 / w)` for a map `g` conformal
+across the real axis, then `w * F''(w) / F'(w) → -L - 2`
+(`TauCeti.tendsto_mul_logDeriv_deriv_nhdsWithin_of_eqOn_comp`).  Taking `F w = f (-1 / w)` gives
+the statement at infinity, and taking a translate of `f` gives the residue of such an end at a
+finite real point.
 
 ## References
 
@@ -98,7 +104,7 @@ theorem tendsto_zero_cobounded_of_eqOn_logDeriv_deriv_comp_neg_inv
     (hreal : ∀ z ∈ Ω, z.im = 0 → (g z).im = 0)
     (hupper : MapsTo g (Ω ∩ upperHalfPlaneSet) upperHalfPlaneSet)
     (hinj : InjOn g (Ω ∩ {z : ℂ | 0 ≤ z.im}))
-    {φ : ℂ → ℂ} (hφcont : ∀ᶠ z in cobounded ℂ, z.im = 0 → ContinuousAt φ z)
+    {φ : ℂ → ℂ} (hφcont : ∀ᶠ z in cobounded ℂ, z.im = 0 → ContinuousWithinAt φ upperHalfPlaneSet z)
     (hφconj : ∀ᶠ z in cobounded ℂ, φ ((starRingEnd ℂ) z) = (starRingEnd ℂ) (φ z))
     (hφ : EqOn φ (logDeriv (deriv (fun w => g (-w⁻¹)))) upperHalfPlaneSet) :
     Tendsto φ (cobounded ℂ) (𝓝 0) := by
@@ -127,7 +133,7 @@ a real segment through `0`, holomorphic and upper half-plane valued above it, an
 `z * f''(z) / f'(z) → -2` as `z` tends to infinity in the upper half-plane. -/
 theorem tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_neg_inv
     {f : ℂ → ℂ} {q b : ℂ} {r : ℝ}
-    (hr : 0 < r) (hb : b ≠ 0)
+    (hr : 0 < r)
     (hgf : EqOn g (fun w => (f (-w⁻¹) - q) / b)
       (Metric.ball 0 r ∩ upperHalfPlaneSet))
     (hcont : ContinuousOn g (Metric.ball 0 r ∩ {z : ℂ | 0 ≤ z.im}))
@@ -137,6 +143,20 @@ theorem tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_neg_inv
     (hinj : InjOn g (Metric.ball 0 r ∩ {z : ℂ | 0 ≤ z.im})) :
     Tendsto (fun z : ℂ => z * logDeriv (deriv f) z)
       (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 (-2)) := by
+  -- `b ≠ 0`: otherwise `g` vanishes on the nonempty set `ball 0 r ∩ upperHalfPlaneSet`,
+  -- while `hupper` sends that set into the upper half-plane.
+  have hb : b ≠ 0 := by
+    rintro rfl
+    have hmem : ((r / 2 : ℝ) : ℂ) * Complex.I ∈ Metric.ball (0 : ℂ) r ∩ upperHalfPlaneSet := by
+      have hr2 : 0 < r / 2 := half_pos hr
+      refine ⟨?_, ?_⟩
+      · simp only [Metric.mem_ball, dist_zero_right, norm_mul, Complex.norm_real, Complex.norm_I,
+          mul_one, Real.norm_eq_abs, abs_of_pos hr2]
+        linarith
+      · simpa [upperHalfPlaneSet] using hr2
+    have h0 := hupper hmem
+    rw [hgf hmem] at h0
+    simp [upperHalfPlaneSet] at h0
   have hball : MapsTo (starRingEnd ℂ) (Metric.ball (0 : ℂ) r) (Metric.ball 0 r) := fun z hz => by
     rw [Metric.mem_ball, ← map_zero (starRingEnd ℂ), Complex.dist_conj_conj]
     exact hz
@@ -167,13 +187,13 @@ half-plane in the coordinate `w ↦ -1 / w` at infinity and normalize the target
 If the result extends to a function `g` which is continuous and injective up to a real segment
 through `0`, holomorphic and upper half-plane valued above it, and real on it, then every
 conjugation-symmetric continuation `φ` of the pre-Schwarzian derivative of `f` which is continuous
-near infinity on the real axis tends to `0` at infinity.
+within the upper half-plane at all sufficiently distant real points tends to `0` at infinity.
 
 This is the form the Schwarz--Christoffel converse uses: `φ` is holomorphic off the finitely many
 prevertices, so it is automatically continuous near infinity, and the hypotheses on `g` say that
 the point at infinity is an interior point of a side of the polygon. -/
 theorem tendsto_zero_cobounded_of_eqOn_logDeriv_deriv {f φ : ℂ → ℂ} {q b : ℂ} {r : ℝ}
-    (hr : 0 < r) (hb : b ≠ 0)
+    (hr : 0 < r)
     (hgf : EqOn g (fun w => (f (-w⁻¹) - q) / b)
       (Metric.ball 0 r ∩ upperHalfPlaneSet))
     (hcont : ContinuousOn g (Metric.ball 0 r ∩ {z : ℂ | 0 ≤ z.im}))
@@ -181,14 +201,14 @@ theorem tendsto_zero_cobounded_of_eqOn_logDeriv_deriv {f φ : ℂ → ℂ} {q b 
     (hreal : ∀ z ∈ Metric.ball (0 : ℂ) r, z.im = 0 → (g z).im = 0)
     (hupper : MapsTo g (Metric.ball 0 r ∩ upperHalfPlaneSet) upperHalfPlaneSet)
     (hinj : InjOn g (Metric.ball 0 r ∩ {z : ℂ | 0 ≤ z.im}))
-    (hφcont : ∀ᶠ z in cobounded ℂ, z.im = 0 → ContinuousAt φ z)
+    (hφcont : ∀ᶠ z in cobounded ℂ, z.im = 0 → ContinuousWithinAt φ upperHalfPlaneSet z)
     (hφconj : Filter.Eventually
       (fun z => φ ((starRingEnd ℂ) z) = (starRingEnd ℂ) (φ z)) (cobounded ℂ))
     (hφf : EqOn φ (logDeriv (deriv f)) upperHalfPlaneSet) :
     Tendsto φ (cobounded ℂ) (𝓝 0) := by
   exact tendsto_zero_cobounded_of_tendsto_mul_upperHalfPlaneSet
     (tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_neg_inv
-      hr hb hgf hcont hholo hreal hupper hinj) hφcont hφconj hφf
+      hr hgf hcont hholo hreal hupper hinj) hφcont hφconj hφf
 
 /-- **The pre-Schwarzian of a map with a vertex at infinity.**  Read the map `f` of the upper
 half-plane in the coordinate `w ↦ -1 / w` at infinity and invert the target about `c` by
@@ -216,7 +236,7 @@ theorem tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_div_neg_inv
       |(g z).arg| = β * Real.pi / 2) :
     Tendsto (fun z : ℂ => z * logDeriv (deriv f) z)
       (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 ((β : ℂ) - 1)) := by
-  set s := Metric.ball (0 : ℂ) r ∩ upperHalfPlaneSet with hs_def
+  set s := Metric.ball (0 : ℂ) r ∩ upperHalfPlaneSet
   have hs : IsOpen s := Metric.isOpen_ball.inter isOpen_upperHalfPlaneSet
   have hball : MapsTo (starRingEnd ℂ) (Metric.ball (0 : ℂ) r) (Metric.ball 0 r) := fun z hz => by
     rw [Metric.mem_ball, ← map_zero (starRingEnd ℂ), Complex.dist_conj_conj]
@@ -245,15 +265,12 @@ theorem tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_div_neg_inv
     have hgw : h w ^ (β : ℂ) = g w := hpow (hsH w hw)
     simp only [zero_add, cpow_neg]
     rw [hgw, hgf hw, inv_div]
-  have hne : (𝓝[s] (0 : ℂ)).NeBot := by
-    rw [hs_def, nhdsWithin_inter_of_mem (mem_nhdsWithin_of_mem_nhds (Metric.ball_mem_nhds 0 hr))]
-    simpa using Real.nhdsWithin_upperHalfPlaneSet_neBot 0
   have hcorner := tendsto_sub_mul_logDeriv_deriv_of_eqOn_add_cpow Metric.isOpen_ball
-    (Metric.mem_ball_self hr) hh hh0 hdh hs hne inter_subset_left
+    (Metric.mem_ball_self hr) hh hh0 hdh hs inter_subset_left
     (fun w hw => mem_slitPlane_iff.mpr (Or.inl (hre w hw.1 hw.2)))
     (neg_ne_zero.mpr (ofReal_ne_zero.mpr hβ.1.ne')) hpowF
   -- Pass back to the original coordinate by the pre-Schwarzian chain rule.
-  have hlim := tendsto_mul_logDeriv_deriv_of_tendsto_mul_logDeriv_deriv_neg_inv hr hb hf hfn
+  have hlim := tendsto_mul_logDeriv_deriv_of_tendsto_mul_logDeriv_deriv_neg_inv hr hb hfn
     (by simpa only [sub_zero] using hcorner)
   rwa [show -(-(β : ℂ) - 1) - 2 = (β : ℂ) - 1 by ring] at hlim
 
@@ -309,23 +326,24 @@ theorem tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_exp_neg_inv
     rw [schwarzReflection_of_im_nonneg (le_of_lt hw.2), hgf hw]
   have hlog := tendsto_sub_mul_logDeriv_deriv_of_eqOn_exp
     (hG.analyticAt (Metric.isOpen_ball.mem_nhds hzero)) hG0 hdG hs hF hexp
-  have hlim := tendsto_mul_logDeriv_deriv_of_tendsto_mul_logDeriv_deriv_neg_inv hr hb hf hfn
+  have hlim := tendsto_mul_logDeriv_deriv_of_tendsto_mul_logDeriv_deriv_neg_inv hr hb hfn
     (by simpa only [sub_zero] using hlog)
   rwa [show -(-1 : ℂ) - 2 = -1 by ring] at hlim
 
-/-- **The pre-Schwarzian chain rule at infinity for a composite.**  If `f (-1 / w) = q (-1 / H w)`
-on an open set `T` on which `H` is holomorphic with nonvanishing derivative and takes values in
-the upper half-plane, where `q` is holomorphic with nonvanishing derivative, then on `T`
-the residue term `w * F''(w) / F'(w)` of `F w = f (-1 / w)` is computed from that of `q` at
+/-- **The pre-Schwarzian chain rule for a composite with a map at infinity.**  If
+`F w = q (-1 / H w)` on an open set `T` on which `H` is holomorphic with nonvanishing derivative
+and takes values in the upper half-plane, where `q` is holomorphic with nonvanishing derivative,
+then on `T` the residue term `w * F''(w) / F'(w)` is computed from that of `q` at
 `ζ = -1 / H w` and from `H`. -/
-private theorem mul_logDeriv_deriv_comp_neg_inv_eq_of_eqOn {f q H : ℂ → ℂ} {T : Set ℂ}
-    (hq : DifferentiableOn ℂ q upperHalfPlaneSet) (hqn : ∀ z ∈ upperHalfPlaneSet, deriv q z ≠ 0)
-    (hT : IsOpen T) (hHd : DifferentiableOn ℂ H T) (hdH : ∀ w ∈ T, deriv H w ≠ 0)
+private theorem mul_logDeriv_deriv_eq_of_eqOn_comp_neg_inv {F q H : ℂ → ℂ} {T : Set ℂ}
+    (hqn : ∀ z ∈ upperHalfPlaneSet, deriv q z ≠ 0) (hT : IsOpen T) (hHd : DifferentiableOn ℂ H T)
     (hHT : ∀ w ∈ T, H w ∈ upperHalfPlaneSet)
-    (hFq : EqOn (fun w => f (-w⁻¹)) (fun w => q (-(H w)⁻¹)) T) {w : ℂ} (hw : w ∈ T) :
-    w * logDeriv (deriv fun w => f (-w⁻¹)) w =
+    (hFq : EqOn F (fun w => q (-(H w)⁻¹)) T) {w : ℂ} (hw : w ∈ T) :
+    w * logDeriv (deriv F) w =
       (-((-(H w)⁻¹) * logDeriv (deriv q) (-(H w)⁻¹)) - 2) * (w * logDeriv H w) +
         w * logDeriv (deriv H) w := by
+  have hq : DifferentiableOn ℂ q upperHalfPlaneSet := fun z hz =>
+    (differentiableAt_of_deriv_ne_zero (hqn z hz)).differentiableWithinAt
   have hsim : 0 < (H w).im := hHT w hw
   have hs0 : H w ≠ 0 := fun h => by simp [h] at hsim
   have hζ : -(H w)⁻¹ ∈ upperHalfPlaneSet := im_neg_inv_pos.mpr hsim
@@ -346,10 +364,10 @@ private theorem mul_logDeriv_deriv_comp_neg_inv_eq_of_eqOn {f q H : ℂ → ℂ}
     rw [hQd.deriv]
     exact mul_ne_zero (hqn _ hζ) (inv_ne_zero (pow_ne_zero 2 hs0))
   -- Chain rule for `F = Q ∘ H`, then the `-1 / s` chain rule for `Q`.
-  have heq : deriv (fun w => f (-w⁻¹)) =ᶠ[𝓝 w] deriv (Q ∘ H) :=
+  have heq : deriv F =ᶠ[𝓝 w] deriv (Q ∘ H) :=
     (hFq.eventuallyEq_of_mem (hT.mem_nhds hw)).deriv
   rw [(logDeriv_congr_nhds heq).eq_of_nhds,
-    logDeriv_deriv_comp hQw (hHd.analyticAt (hT.mem_nhds hw)) hdQ (hdH w hw),
+    logDeriv_deriv_comp hQw (hHd.analyticAt (hT.mem_nhds hw)) hdQ,
     logDeriv_deriv_comp_neg_inv hqζ (hqn _ hζ) hs0, logDeriv_apply H w]
   field_simp
 
@@ -401,47 +419,43 @@ private theorem exists_differentiableOn_injOn_inverse_of_reflection {r : ℝ} (h
   exact ⟨⟨hHmem w hw, hHupper⟩, by
     rw [← schwarzReflection_of_im_nonneg (f := g) hHupper.le, hGH w hw]⟩
 
-/-- **The pre-Schwarzian asymptotic at infinity is invariant under maps conformal across
-infinity.**  Let `q` be holomorphic with nonvanishing derivative on the upper half-plane, with
-`ζ * q''(ζ) / q'(ζ) → L` as `ζ` tends to infinity there.  Suppose that `f ∘ φ = q` near infinity,
-where `φ` fixes infinity and is conformal across it: in the coordinate `w ↦ -1 / w`, the map
-`φ` reads as a function `g` with `g 0 = 0` which is continuous and injective up to a real
-segment through `0`, holomorphic and upper half-plane valued above it, and real on it.  Then
-also `z * f''(z) / f'(z) → L` as `z` tends to infinity in the upper half-plane.
+/-- **The residue asymptotic of a map compared with a model at infinity.**  Let `q` be
+holomorphic with nonvanishing derivative on the upper half-plane, with
+`ζ * q''(ζ) / q'(ζ) → L` as `ζ` tends to infinity there.  Suppose that
+`F (g w) = q (-1 / w)` above the axis near `0`, where `g` has `g 0 = 0` and is continuous and
+injective up to a real segment through `0`, holomorphic and upper half-plane valued above it, and
+real on it.  Then `w * F''(w) / F'(w) → -L - 2` as `w` tends to `0` in the upper half-plane.
 
-This compares a far end of a domain with an explicit model map `q` whose asymptotic is computed
-directly. -/
-theorem tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_comp_neg_inv
-    {f q : ℂ → ℂ} {r : ℝ} {L : ℂ} (hr : 0 < r)
-    (hf : DifferentiableOn ℂ f upperHalfPlaneSet)
-    (hfn : ∀ z ∈ upperHalfPlaneSet, deriv f z ≠ 0)
-    (hq : DifferentiableOn ℂ q upperHalfPlaneSet)
+So `F` has at `0` the end of `q` at infinity, read through a map conformal across the real axis.
+Both the asymptotic of a map at infinity and its residue at a finite real point are computed from
+this by a change of coordinate. -/
+theorem tendsto_mul_logDeriv_deriv_nhdsWithin_of_eqOn_comp
+    {F q : ℂ → ℂ} {r : ℝ} {L : ℂ} (hr : 0 < r)
     (hqn : ∀ z ∈ upperHalfPlaneSet, deriv q z ≠ 0)
     (hqL : Tendsto (fun z : ℂ => z * logDeriv (deriv q) z)
       (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 L))
-    (hgq : EqOn (fun w => f (-(g w)⁻¹)) (fun w => q (-w⁻¹))
-      (Metric.ball 0 r ∩ upperHalfPlaneSet))
+    (hgq : EqOn (fun w => F (g w)) (fun w => q (-w⁻¹)) (Metric.ball 0 r ∩ upperHalfPlaneSet))
     (hg0 : g 0 = 0)
     (hcont : ContinuousOn g (Metric.ball 0 r ∩ {z : ℂ | 0 ≤ z.im}))
     (hholo : DifferentiableOn ℂ g (Metric.ball 0 r ∩ upperHalfPlaneSet))
     (hreal : ∀ z ∈ Metric.ball (0 : ℂ) r, z.im = 0 → (g z).im = 0)
     (hupper : MapsTo g (Metric.ball 0 r ∩ upperHalfPlaneSet) upperHalfPlaneSet)
     (hinj : InjOn g (Metric.ball 0 r ∩ {z : ℂ | 0 ≤ z.im})) :
-    Tendsto (fun z : ℂ => z * logDeriv (deriv f) z)
-      (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 L) := by
+    Tendsto (fun w => w * logDeriv (deriv F) w) (𝓝[upperHalfPlaneSet] 0) (𝓝 (-L - 2)) := by
   obtain ⟨V, H, hV, h0V, hHd, hHi, hH0, hHT⟩ :=
     exists_differentiableOn_injOn_inverse_of_reflection hr hg0 hcont hholo hreal hupper hinj
   have hHan : AnalyticAt ℂ H 0 := hHd.analyticAt (hV.mem_nhds h0V)
   have hdH : ∀ w ∈ V, deriv H w ≠ 0 := fun w hw => deriv_ne_zero_of_injOn hHd hV hHi hw
-  -- So `f (-1 / w) = q (-1 / H w)` on the upper part of `V`.
+  -- So `F w = q (-1 / H w)` on the upper part of `V`.
   set T := V ∩ upperHalfPlaneSet
-  have hT : IsOpen T := hV.inter isOpen_upperHalfPlaneSet
-  have hFq : EqOn (fun w => f (-w⁻¹)) (fun w => q (-(H w)⁻¹)) T := by
+  have hFq : EqOn F (fun w => q (-(H w)⁻¹)) T := by
     intro w hw
     simpa only [(hHT w hw.1 hw.2).2] using hgq (hHT w hw.1 hw.2).1
   -- Now pass to the limit: `H w → 0` with `-1 / H w → ∞` in the upper half-plane.
   obtain ⟨ρ, hρ, hρV⟩ := Metric.isOpen_iff.mp hV 0 h0V
   set S := Metric.ball (0 : ℂ) ρ ∩ upperHalfPlaneSet
+  have hS : 𝓝[S] (0 : ℂ) = 𝓝[upperHalfPlaneSet] 0 :=
+    nhdsWithin_inter_of_mem (mem_nhdsWithin_of_mem_nhds (Metric.ball_mem_nhds (0 : ℂ) hρ))
   have hST : S ⊆ T := fun w hw => ⟨hρV hw.1, hw.2⟩
   have hHS : Tendsto H (𝓝[S] 0) (𝓝[≠] 0) := by
     refine tendsto_nhdsWithin_iff.mpr ⟨?_, eventually_nhdsWithin_of_forall fun w hw h => ?_⟩
@@ -469,14 +483,45 @@ theorem tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_comp_neg_inv
         hHan.deriv.deriv.continuousAt.div hHan.deriv.continuousAt (hdH 0 h0V)
     simpa using (continuousAt_id.tendsto.mul hc.tendsto).mono_left
       (nhdsWithin_le_nhds (s := S))
-  have hlim : Tendsto (fun w => w * logDeriv (deriv fun w => (f (-w⁻¹) - 0) / 1) w)
-      (𝓝[S] 0) (𝓝 (-L - 2)) := by
-    refine Tendsto.congr' ?_ (by simpa using (hfirst.mul hsimple).add hrest)
-    filter_upwards [self_mem_nhdsWithin] with w hw
-    simpa using (mul_logDeriv_deriv_comp_neg_inv_eq_of_eqOn hq hqn (hV.inter
-      isOpen_upperHalfPlaneSet) (hHd.mono inter_subset_left) (fun w hw => hdH w hw.1)
-      (fun w hw => (hHT w hw.1 hw.2).1.2) hFq (hST hw)).symm
-  simpa using tendsto_mul_logDeriv_deriv_of_tendsto_mul_logDeriv_deriv_neg_inv hρ one_ne_zero hf
-    hfn hlim
+  rw [← hS]
+  refine Tendsto.congr' ?_ (by simpa using (hfirst.mul hsimple).add hrest)
+  filter_upwards [self_mem_nhdsWithin] with w hw
+  simpa using (mul_logDeriv_deriv_eq_of_eqOn_comp_neg_inv hqn (hV.inter isOpen_upperHalfPlaneSet)
+    (hHd.mono inter_subset_left) (fun w hw => (hHT w hw.1 hw.2).1.2) hFq
+    (hST hw)).symm
+
+/-- **The pre-Schwarzian asymptotic at infinity is invariant under maps conformal across
+infinity.**  Let `q` be holomorphic with nonvanishing derivative on the upper half-plane, with
+`ζ * q''(ζ) / q'(ζ) → L` as `ζ` tends to infinity there.  Suppose that `f ∘ φ = q` near infinity,
+where `φ` fixes infinity and is conformal across it: in the coordinate `w ↦ -1 / w`, the map
+`φ` reads as a function `g` with `g 0 = 0` which is continuous and injective up to a real
+segment through `0`, holomorphic and upper half-plane valued above it, and real on it.  Then
+also `z * f''(z) / f'(z) → L` as `z` tends to infinity in the upper half-plane.
+
+This compares a far end of a domain with an explicit model map `q` whose asymptotic is computed
+directly. -/
+theorem tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_comp_neg_inv
+    {f q : ℂ → ℂ} {r : ℝ} {L : ℂ} (hr : 0 < r)
+    (hfn : ∀ z ∈ upperHalfPlaneSet, deriv f z ≠ 0)
+    (hqn : ∀ z ∈ upperHalfPlaneSet, deriv q z ≠ 0)
+    (hqL : Tendsto (fun z : ℂ => z * logDeriv (deriv q) z)
+      (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 L))
+    (hgq : EqOn (fun w => f (-(g w)⁻¹)) (fun w => q (-w⁻¹))
+      (Metric.ball 0 r ∩ upperHalfPlaneSet))
+    (hg0 : g 0 = 0)
+    (hcont : ContinuousOn g (Metric.ball 0 r ∩ {z : ℂ | 0 ≤ z.im}))
+    (hholo : DifferentiableOn ℂ g (Metric.ball 0 r ∩ upperHalfPlaneSet))
+    (hreal : ∀ z ∈ Metric.ball (0 : ℂ) r, z.im = 0 → (g z).im = 0)
+    (hupper : MapsTo g (Metric.ball 0 r ∩ upperHalfPlaneSet) upperHalfPlaneSet)
+    (hinj : InjOn g (Metric.ball 0 r ∩ {z : ℂ | 0 ≤ z.im})) :
+    Tendsto (fun z : ℂ => z * logDeriv (deriv f) z)
+      (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 L) := by
+  have hlim := tendsto_mul_logDeriv_deriv_nhdsWithin_of_eqOn_comp (F := fun w => f (-w⁻¹)) hr
+    hqn hqL hgq hg0 hcont hholo hreal hupper hinj
+  have hlim' : Tendsto (fun w => w * logDeriv (deriv fun w => (f (-w⁻¹) - 0) / 1) w)
+      (𝓝[Metric.ball 0 1 ∩ upperHalfPlaneSet] 0) (𝓝 (-L - 2)) := by
+    simpa using hlim.mono_left (nhdsWithin_mono _ inter_subset_right)
+  simpa using tendsto_mul_logDeriv_deriv_of_tendsto_mul_logDeriv_deriv_neg_inv one_pos one_ne_zero
+    hfn hlim'
 
 end TauCeti

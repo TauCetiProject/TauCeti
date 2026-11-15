@@ -52,9 +52,6 @@ sits in cubical degree zero.
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane L ("lattice homology"),
-which asks for Némethi's lattice homology together with computations for explicit plumbings: the
-degrees in which the invariant can be nonzero have to be known before any of them is computed.
 The cubical complex and its face conventions follow A. Némethi,
 [arXiv:0709.0841](https://arxiv.org/abs/0709.0841), Section 3.
 -/

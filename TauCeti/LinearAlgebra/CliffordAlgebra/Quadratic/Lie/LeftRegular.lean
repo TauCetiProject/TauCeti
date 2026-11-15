@@ -28,9 +28,9 @@ submodules include every left ideal (`CliffordAlgebra.kostantLieSubmoduleOfLeftI
 endomorphisms include every right multiplication (`CliffordAlgebra.kostantRightMul`), which is the
 commutant the isotypy argument runs on.
 
-The two instances are `scoped`, as the roadmap asks: the Clifford algebra of the Killing form is
-not otherwise an `L`-module, and a global instance would fix one of the two competing actions for
-every consumer. Write `open scoped CliffordAlgebra` to use them.
+The two instances are `scoped`: the Clifford algebra of the Killing form is not otherwise an
+`L`-module, and a global instance would fix one of the two competing actions for every consumer.
+Write `open scoped CliffordAlgebra` to use them.
 
 ## Main definitions
 
@@ -50,15 +50,10 @@ every consumer. Write `open scoped CliffordAlgebra` to use them.
   (`CliffordAlgebra.adjointCliffordHom_injective`, proved alongside the lift itself).
 
 The carrier is a finite module over `K`, which is what makes the statement that its simple
-submodules are all isomorphic a statement about something; nothing here needs that, so the
-instance saying so is left to `TauCeti.LinearAlgebra.CliffordAlgebra.Dimension`, to be imported
-by whichever later file uses it.
+submodules are all isomorphic a statement about something; nothing here needs that, so the instance
+saying so is left to `TauCeti.LinearAlgebra.CliffordAlgebra.Dimension`.
 
 ## References
-
-This implements the "Kostant's setting, packaged" target (`kostantLieRingModule`,
-`kostantLieModule`, `kostant_lie_def`) of Layer 9 in
-`TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md`.
 
 * B. Kostant, *Clifford algebra analogue of the Hopf--Koszul--Samelson theorem*, Adv. Math. 125
   (1997), 275--350.
@@ -139,7 +134,7 @@ theorem kostantRightMul_apply (d c : CliffordAlgebra (killingQuadraticForm K L))
 
 /-- **A left ideal of the Clifford algebra is a Lie submodule of Kostant's module.** The action is
 by left multiplication, which a left ideal absorbs, so every left ideal is an invariant subspace;
-what such a submodule decomposes into is the business of the later Kostant theorems, not of this
+what such a submodule decomposes into is the business of Kostant's theorems, not of this
 construction. -/
 noncomputable def kostantLieSubmoduleOfLeftIdeal
     (I : Submodule (CliffordAlgebra (killingQuadraticForm K L))

@@ -10,8 +10,10 @@ public import Mathlib.GroupTheory.FreeGroup.Reduce
 /-!
 # Normal syllable lists for free groups
 
-`exists_isSyllableNormal` writes any free group element as a product of nonzero powers of
-generators with consecutive generators distinct.
+A syllable list `[(x₁, e₁), …, (x_k, e_k)]` represents the free group element
+`syllableProd s = x₁ ^ e₁ ⋯ x_k ^ e_k`; it is `IsSyllableNormal` when every exponent is nonzero
+and consecutive generators are distinct. `exists_isSyllableNormal` writes any free group element
+as the product of a normal syllable list.
 -/
 
 public section
@@ -48,44 +50,42 @@ theorem isSyllableNormal_iff {s : List (X × ℤ)} :
     IsSyllableNormal s ↔ (∀ a ∈ s, a.2 ≠ 0) ∧ s.IsChain fun a b ↦ a.1 ≠ b.1 :=
   Iff.rfl
 
+/-- Left-multiplying the product of a normal syllable list by a generator power gives the
+product of another normal syllable list. -/
+private theorem exists_isSyllableNormal_zpow_mul (x : X) (e : ℤ) (s : List (X × ℤ))
+    (hs : IsSyllableNormal s) :
+    ∃ t, IsSyllableNormal t ∧ syllableProd t = of x ^ e * syllableProd s := by
+  obtain ⟨hs0, hsc⟩ := hs
+  rcases eq_or_ne e 0 with rfl | he
+  · exact ⟨s, ⟨hs0, hsc⟩, by simp⟩
+  match s, hs0, hsc with
+  | [], _, _ => exact ⟨[(x, e)], ⟨by simpa, .singleton _⟩, by simp⟩
+  | (y, f) :: s', hs0, hsc =>
+    by_cases hyx : y = x
+    · subst hyx
+      have hs' : IsSyllableNormal s' := ⟨fun a ha ↦ hs0 a (.tail _ ha), hsc.tail⟩
+      by_cases hf : e + f = 0
+      · exact ⟨s', hs', by simp [← mul_assoc, ← zpow_add, hf]⟩
+      · refine ⟨(y, e + f) :: s', ⟨by simpa [hf] using hs'.1, ?_⟩, by simp [mul_assoc, zpow_add]⟩
+        exact List.isChain_cons.2 ⟨(List.isChain_cons.1 hsc).1, hsc.tail⟩
+    · exact ⟨(x, e) :: (y, f) :: s', ⟨by simpa [he] using hs0, .cons_cons (Ne.symm hyx) hsc⟩,
+        by simp⟩
+
 /-- Every element of a free group is the product of a normal syllable list. -/
 theorem exists_isSyllableNormal (w : FreeGroup X) :
     ∃ s, IsSyllableNormal s ∧ syllableProd s = w := by
-  classical
-  rw [← mk_toWord (x := w)]
-  induction w.toWord with
-  | nil => exact ⟨[], ⟨by simp, .nil⟩, rfl⟩
-  | cons a L ih =>
-    obtain ⟨x, b⟩ := a
-    obtain ⟨s, ⟨hs0, hsc⟩, hs⟩ := ih
-    set ε : ℤ := if b then 1 else -1 with hε
-    have hε0 : ε ≠ 0 := by rw [hε]; split <;> simp
-    have hmk : mk ((x, b) :: L) = of x ^ ε * mk L := by
-      rw [← List.singleton_append, ← mul_mk]
-      cases b <;> simp [hε, of, inv_mk, invRev]
-    rw [hmk, ← hs]
-    match s, hs0, hsc with
-    | [], _, _ => exact ⟨[(x, ε)], ⟨by simpa using hε0, .singleton _⟩, by simp⟩
-    | (y, f) :: s', hs0, hsc =>
-      by_cases hyx : y = x
-      · subst hyx
-        by_cases hf : ε + f = 0
-        · refine ⟨s', ⟨fun a ha ↦ hs0 a (List.mem_cons_of_mem _ ha), hsc.tail⟩, ?_⟩
-          rw [syllableProd_cons, ← mul_assoc, ← zpow_add, hf, zpow_zero, one_mul]
-        · refine ⟨(y, ε + f) :: s', ⟨?_, ?_⟩, ?_⟩
-          · intro a ha
-            rcases List.mem_cons.mp ha with rfl | ha
-            · exact hf
-            · exact hs0 a (List.mem_cons_of_mem _ ha)
-          · cases s' with
-            | nil => exact .singleton _
-            | cons c s'' => exact .cons_cons (List.isChain_cons_cons.mp hsc).1 hsc.tail
-          · simp [mul_assoc, zpow_add]
-      · refine ⟨(x, ε) :: (y, f) :: s', ⟨?_, .cons_cons (Ne.symm hyx) hsc⟩, by simp⟩
-        intro a ha
-        rcases List.mem_cons.mp ha with rfl | ha
-        · exact hε0
-        · exact hs0 a ha
+  suffices h : ∀ s, IsSyllableNormal s →
+      ∃ t, IsSyllableNormal t ∧ syllableProd t = w * syllableProd s by
+    simpa using h [] ⟨by simp, .nil⟩
+  induction w with
+  | one => exact fun s hs ↦ ⟨s, hs, (one_mul _).symm⟩
+  | of x => simpa using exists_isSyllableNormal_zpow_mul x 1
+  | inv_of x _ => simpa using exists_isSyllableNormal_zpow_mul x (-1)
+  | mul u v hu hv =>
+    intro s hs
+    obtain ⟨t, ht, htv⟩ := hv s hs
+    obtain ⟨r, hr, hru⟩ := hu t ht
+    exact ⟨r, hr, by rw [hru, htv, mul_assoc]⟩
 
 end Syllables
 

@@ -10,54 +10,79 @@ public import Mathlib.FieldTheory.IntermediateField.Basic
 /-!
 # Conjugate intermediate fields
 
-The automorphism group of an extension acts on its intermediate fields by mapping their
-elements. The conjugates of a field form its orbit under this action.
+A monoid acting on `L` by `K`-algebra endomorphisms acts on the intermediate fields of `L / K`
+by mapping their elements, in parallel with `Subalgebra.pointwiseMulAction`. In particular the
+automorphism group of the extension acts this way, and the conjugates of a field form its orbit
+under that action.
 
 ## Main definitions
 
-* `TauCeti.instMulActionIntermediateField`: automorphisms act by mapping intermediate fields.
-* `IntermediateField.conjugateFields`: the orbit of an intermediate field.
+* `IntermediateField.pointwiseMulAction`: the pointwise action, an instance in the `Pointwise`
+  locale.
+* `IntermediateField.conjugateFields`: the orbit of an intermediate field under the
+  automorphism group.
 
 ## Main results
 
-* `AlgEquiv.smul_intermediateField_def`: the action is `IntermediateField.map`.
+* `IntermediateField.pointwise_smul_def`: the action is `IntermediateField.map`.
+* `IntermediateField.coe_pointwise_smul`, `IntermediateField.mem_smul_pointwise_iff_exists`:
+  the underlying set and the elements of a translated intermediate field.
+* `AlgEquiv.smul_intermediateField_def`: an automorphism acts by mapping along it.
 * `IntermediateField.mem_conjugateFields_iff`: orbit membership is an automorphism image.
 -/
 
 public section
 
-namespace TauCeti
-
-open IntermediateField MulAction
-
-variable {K L : Type*} [Field K] [Field L] [Algebra K L]
-
-/-- The action of the automorphism group of `L / K` on its intermediate fields. -/
-instance instMulActionIntermediateField : MulAction (L ≃ₐ[K] L) (IntermediateField K L) where
-  smul σ E := E.map σ.toAlgHom
-  one_smul E := by
-    -- The action is defined by `map`; the identity automorphism coerces to `AlgHom.id`.
-    change E.map (AlgHom.id K L) = E
-    exact E.map_id
-  mul_smul σ τ E := by
-    -- The product automorphism coerces to the composite in the order used by `map_map`.
-    change E.map (σ * τ).toAlgHom = (E.map τ.toAlgHom).map σ.toAlgHom
-    rw [IntermediateField.map_map]
-    congr 1
-
-end TauCeti
-
-open IntermediateField MulAction
+open MulAction
+open scoped Pointwise
 
 variable {K L : Type*} [Field K] [Field L] [Algebra K L]
+
+namespace IntermediateField
+
+section Pointwise
+
+variable {G : Type*} [Monoid G] [MulSemiringAction G L] [SMulCommClass G K L]
+
+/-- The action on intermediate fields given by applying the action to every element.
+
+This is available as an instance in the `Pointwise` locale. -/
+@[instance_reducible]
+protected def pointwiseMulAction : MulAction G (IntermediateField K L) where
+  smul g E := E.map (MulSemiringAction.toAlgHom K L g)
+  one_smul E := congr(E.map $(AlgHom.ext <| one_smul G)).trans E.map_id
+  mul_smul _ _ E := congr(E.map $(AlgHom.ext <| mul_smul _ _)).trans (E.map_map _ _).symm
+
+scoped[Pointwise] attribute [instance] IntermediateField.pointwiseMulAction
+
+/-- Acting on an intermediate field means mapping it along the induced algebra endomorphism. -/
+theorem pointwise_smul_def (g : G) (E : IntermediateField K L) :
+    g • E = E.map (MulSemiringAction.toAlgHom K L g) :=
+  (rfl)
+
+/-- The underlying set of a translated intermediate field is the translated set. -/
+@[simp, norm_cast]
+theorem coe_pointwise_smul (g : G) (E : IntermediateField K L) :
+    ((g • E : IntermediateField K L) : Set L) = g • (E : Set L) :=
+  (rfl)
+
+/-- The elements of `g • E` are the translates of the elements of `E`. -/
+@[simp]
+theorem mem_smul_pointwise_iff_exists (g : G) (x : L) (E : IntermediateField K L) :
+    x ∈ g • E ↔ ∃ y ∈ E, g • y = x :=
+  Set.mem_smul_set
+
+end Pointwise
+
+end IntermediateField
 
 namespace AlgEquiv
 
 /-- Conjugating an intermediate field means mapping it along the automorphism. -/
 @[simp]
 theorem smul_intermediateField_def (σ : L ≃ₐ[K] L) (E : IntermediateField K L) :
-    σ • E = E.map σ.toAlgHom :=
-  rfl
+    σ • E = E.map σ :=
+  (rfl)
 
 end AlgEquiv
 
@@ -70,7 +95,7 @@ def conjugateFields (E : IntermediateField K L) : Set (IntermediateField K L) :=
 /-- Membership in `conjugateFields E` means being the image of `E` under an automorphism. -/
 @[simp]
 theorem mem_conjugateFields_iff {E E' : IntermediateField K L} :
-    E' ∈ conjugateFields E ↔ ∃ σ : L ≃ₐ[K] L, E.map σ.toAlgHom = E' := by
+    E' ∈ conjugateFields E ↔ ∃ σ : L ≃ₐ[K] L, E.map σ = E' := by
   simp [conjugateFields, mem_orbit_iff, eq_comm]
 
 end IntermediateField

@@ -66,7 +66,7 @@ theorem characterLatticeEquiv_apply_eq_iff
       (DiagonalizableGroup.coordinateRing k (characterGroup σ)).obj)
     (m : σ →₀ ℤ) :
     characterLatticeEquiv k σ x = m ↔
-      TauCeti.MonoidAlgebra.scalarTensorBialgEquiv k (AlgebraicClosure k) x.toMul.val =
+      MonoidAlgebra.scalarTensorBialgEquiv k (AlgebraicClosure k) x.toMul.val =
         _root_.MonoidAlgebra.single (Multiplicative.ofAdd m) 1 := by
   rw [← (Multiplicative.ofAdd (α := σ →₀ ℤ)).apply_eq_iff_eq]
   rw [ofAdd_characterLatticeEquiv_apply]

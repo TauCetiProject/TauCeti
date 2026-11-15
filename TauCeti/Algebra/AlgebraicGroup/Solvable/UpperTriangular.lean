@@ -26,8 +26,6 @@ abelian and whose upper-unitriangular kernel is nilpotent.
 
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, Sections 2.4 and 6.3.
-
-This advances Layer 5, "Lie--Kolchin; solvable groups", of the ReductiveGroups roadmap.
 -/
 
 public section

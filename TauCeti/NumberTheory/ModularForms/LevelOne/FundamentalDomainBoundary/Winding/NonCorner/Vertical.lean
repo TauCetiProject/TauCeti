@@ -293,7 +293,7 @@ private lemma right_window_bounds (hre : w.re = 1 / 2) (hε : 0 < ε) (hε₁ : 
       ‖fdBoundary H s - w‖ ≤ ε := by
   have hk : 0 < H - Real.sqrt 3 / 2 := by linarith
   have hδpos : 0 < ε / (H - Real.sqrt 3 / 2) := div_pos hε hk
-  obtain ⟨hwl, hwr, -, -⟩ := right_window_endpoints hre hε hεc hεv
+  obtain ⟨_, hwr, -, -⟩ := right_window_endpoints hre hε hεc hεv
   have ht₀k : (H - w.im) / (H - Real.sqrt 3 / 2) * (H - Real.sqrt 3 / 2) = H - w.im :=
     div_mul_cancel₀ _ hk.ne'
   have hδk : ε / (H - Real.sqrt 3 / 2) * (H - Real.sqrt 3 / 2) = ε := div_mul_cancel₀ _ hk.ne'
@@ -333,7 +333,7 @@ private lemma truncated_integral_spec_right (hre : w.re = 1 / 2)
   obtain ⟨hwl, hwr, hL, hR⟩ := right_window_endpoints hre hε hεc hεv
   obtain ⟨hfl, hfr, hnear⟩ := right_window_bounds hre hε hε₁ hεa hεc hεv
   obtain ⟨hint, hval⟩ := truncated_integral_spec_of_slit_branch (c := -1)
-    (neg_ne_zero.mpr one_ne_zero) hwl.le hδpos (by linarith)
+    hwl.le hδpos (by linarith)
     (fun t ht htw ↦ slit_branch_vertical_right hre ht.2 (fdBoundary_ne_right hre
       (by linarith) him_lo himH fun h ↦ htw (by rw [h]; exact ⟨by linarith, by linarith⟩)))
     hfl hfr hnear
@@ -391,7 +391,6 @@ private lemma left_window_near (hre : w.re = -(1 / 2)) (hε : 0 < ε) (hεc : ε
   obtain ⟨hwl, hwr, -, -⟩ := left_window_endpoints hre hε hεc hεv
   set u := (w.im - Real.sqrt 3 / 2) / (H - Real.sqrt 3 / 2)
   set δ := ε / (H - Real.sqrt 3 / 2)
-  have hδpos : 0 < δ := div_pos hε hk
   have ht₀k : u * (H - Real.sqrt 3 / 2) = w.im - Real.sqrt 3 / 2 := div_mul_cancel₀ _ hk.ne'
   have hδk : δ * (H - Real.sqrt 3 / 2) = ε := div_mul_cancel₀ _ hk.ne'
   intro s hs
@@ -454,7 +453,7 @@ private lemma truncated_integral_spec_left (hre : w.re = -(1 / 2))
   obtain ⟨hwl, hwr, hL, hR⟩ := left_window_endpoints hre hε hεc hεv
   obtain ⟨hfl, hfr⟩ := left_window_bounds hre hε hε₁ hεa hεc hεv
   have hnear := left_window_near hre hε hεc hεv
-  obtain ⟨hint, hval⟩ := truncated_integral_spec_of_slit_branch (c := 1) one_ne_zero
+  obtain ⟨hint, hval⟩ := truncated_integral_spec_of_slit_branch (c := 1)
     (t₀ := 3 + (w.im - Real.sqrt 3 / 2) / (H - Real.sqrt 3 / 2)) (by linarith) hδpos
     (by linarith)
     (fun t ht htw ↦ by

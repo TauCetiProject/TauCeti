@@ -34,34 +34,23 @@ namespace LinearMap
 theorem eq_prodMap_add_inl_comp_snd {R A C : Type*} [Semiring R]
     [AddCommMonoid A] [Module R A] [AddCommMonoid C] [Module R C]
     {fA : A →ₗ[R] A} {fC : C →ₗ[R] C} (F : (A × C) →ₗ[R] A × C)
-    (hinl : F.comp (inl R A C) = (inl R A C).comp fA)
-    (hsnd : (snd R A C).comp F = fC.comp (snd R A C)) :
-    F = prodMap fA fC + (inl R A C).comp
-      (((fst R A C).comp (F.comp (inr R A C))).comp (snd R A C)) := by
-  refine prod_ext ?_ ?_
-  · -- On the `A` summand the off-diagonal block dies, since `snd ∘ inl = 0`.
-    rw [hinl]
-    refine ext fun a => ?_
-    simp [Prod.mk_zero_zero]
-  · -- On the `C` summand the first component is the off-diagonal block by definition, and the
-    -- second is `hsnd` read at `inr c`.
-    refine ext fun c => Prod.ext ?_ ?_
-    · simp
-    · simpa using LinearMap.congr_fun hsnd ((inr R A C) c)
+    (hinl : F ∘ₗ inl R A C = inl R A C ∘ₗ fA)
+    (hsnd : snd R A C ∘ₗ F = fC ∘ₗ snd R A C) :
+    F = prodMap fA fC + inl R A C ∘ₗ (fst R A C ∘ₗ F ∘ₗ inr R A C) ∘ₗ snd R A C := by
+  have hinl' (a : A) : F (a, 0) = (fA a, 0) := by simpa using congr($hinl a)
+  have hsnd' (x : A × C) : (F x).2 = fC x.2 := by simpa using congr($hsnd x)
+  ext <;> simp [Prod.mk_zero_zero, hinl', hsnd']
 
 /-- The trace of a block upper triangular endomorphism of `A × C` is the sum of the traces of its
-diagonal blocks: the off-diagonal `C → A` block composes to zero the other way round, so
-`LinearMap.trace_comp_comm'` makes its contribution vanish. -/
+diagonal blocks `fA` and `fC`; the off-diagonal block `u : C → A` does not contribute. -/
 theorem trace_prodMap_add_inl_comp_snd {R A C : Type*} [CommRing R]
     [AddCommGroup A] [Module R A] [Module.Free R A] [Module.Finite R A]
     [AddCommGroup C] [Module R C] [Module.Free R C] [Module.Finite R C]
     (fA : A →ₗ[R] A) (fC : C →ₗ[R] C) (u : C →ₗ[R] A) :
-    trace R (A × C) (prodMap fA fC + (inl R A C).comp (u.comp (snd R A C)))
+    trace R (A × C) (prodMap fA fC + inl R A C ∘ₗ u ∘ₗ snd R A C)
       = trace R A fA + trace R C fC := by
-  have hoff : trace R (A × C) ((inl R A C).comp (u.comp (snd R A C))) = 0 := by
-    rw [trace_comp_comm']
-    have hz : (u.comp (snd R A C)).comp (inl R A C) = 0 := by ext a; simp
-    rw [hz, map_zero]
-  rw [map_add, trace_prodMap', hoff, add_zero]
+  -- Cycling the off-diagonal term puts `snd ∘ inl = 0` in the middle.
+  rw [map_add, trace_prodMap', trace_comp_comm']
+  simp [comp_assoc]
 
 end LinearMap

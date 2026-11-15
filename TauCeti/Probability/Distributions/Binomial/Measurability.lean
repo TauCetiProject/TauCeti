@@ -26,7 +26,7 @@ countable and discrete. -/
 @[fun_prop] theorem measurable_binomial :
     Measurable fun q : ℕ × unitInterval => binomial q.1 q.2 := by
   refine measurable_from_prod_countable_right fun n => Measure.measurable_measure.2 fun s hs => ?_
-  simp only [binomial_eq_sum_dirac, Measure.finsetSum_apply, Measure.smul_apply, smul_eq_mul,
+  simp only [binomial_eq_sum_dirac, _root_.sum_apply, _root_.smul_apply, smul_eq_mul,
     Measure.dirac_apply' _ hs]
   exact Finset.measurable_sum _ fun k _ => (by fun_prop : Measurable _).mul_const _
 end TauCeti.Probability

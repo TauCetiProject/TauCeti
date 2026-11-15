@@ -15,8 +15,8 @@ depend on a choice of Cartan subalgebra or root system.
 
 ## Main results
 
-* `Matrix.fromBlocks_mem_typeD`: a block matrix `[[A, B], [C, -Aᵀ]]` belongs to the split
-  type-`D` Lie algebra when its off-diagonal blocks are skew-symmetric.
+* `Matrix.fromBlocks_mem_typeD_iff`: a block matrix `[[A, B], [C, D]]` belongs to the split
+  type-`D` Lie algebra if and only if its off-diagonal blocks are skew-symmetric and `D = -Aᵀ`.
 * `LieAlgebra.Orthogonal.typeD.apply_inr_inr`, `LieAlgebra.Orthogonal.typeD.apply_inl_inr`, and
   `LieAlgebra.Orthogonal.typeD.apply_inr_inl`: the three block relations satisfied by a type-`D`
   matrix.
@@ -28,23 +28,21 @@ namespace Matrix
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-/-- A block matrix `[[A, B], [C, -Aᵀ]]` belongs to the split type-`D` Lie algebra when its
-off-diagonal blocks are skew-symmetric. -/
-theorem fromBlocks_mem_typeD {K ι : Type*} [CommRing K] [DecidableEq ι] [Fintype ι]
-    (A B C : Matrix ι ι K) (hB : B.transpose = -B) (hC : C.transpose = -C) :
-    fromBlocks A B C (-A.transpose) ∈ LieAlgebra.Orthogonal.typeD ι K := by
-  rw [LieAlgebra.Orthogonal.typeD, mem_skewAdjointMatricesLieSubalgebra,
-    mem_skewAdjointMatricesSubmodule]
-  -- The membership lemmas leave `Matrix.IsSkewAdjoint`; its matrix-form definition reduces to
-  -- this equation, and no public rewrite lemma names that final definitional reduction.
-  change (Matrix.fromBlocks A B C (-A.transpose)).transpose *
-      LieAlgebra.Orthogonal.JD ι K =
-    LieAlgebra.Orthogonal.JD ι K *
-      (-Matrix.fromBlocks A B C (-A.transpose))
-  simp only [LieAlgebra.Orthogonal.JD, Matrix.fromBlocks_transpose,
-    Matrix.fromBlocks_neg, Matrix.fromBlocks_multiply, Matrix.transpose_neg,
-    Matrix.transpose_transpose, hB, hC, zero_mul, mul_zero, zero_add, add_zero,
-    one_mul, mul_one, neg_neg]
+/-- A block matrix `[[A, B], [C, D]]` belongs to the split type-`D` Lie algebra if and only if its
+off-diagonal blocks are skew-symmetric and `D = -Aᵀ`. -/
+theorem fromBlocks_mem_typeD_iff {K ι : Type*} [CommRing K] [DecidableEq ι] [Fintype ι]
+    {A B C D : Matrix ι ι K} :
+    fromBlocks A B C D ∈ LieAlgebra.Orthogonal.typeD ι K ↔
+      Bᵀ = -B ∧ Cᵀ = -C ∧ D = -Aᵀ := by
+  simp only [LieAlgebra.Orthogonal.typeD, mem_skewAdjointMatricesLieSubalgebra,
+    mem_skewAdjointMatricesSubmodule, Matrix.IsSkewAdjoint, Matrix.IsAdjointPair,
+    LieAlgebra.Orthogonal.JD, fromBlocks_transpose, fromBlocks_neg, fromBlocks_multiply,
+    fromBlocks_inj, zero_mul, mul_zero, zero_add, add_zero, one_mul, mul_one]
+  constructor
+  · rintro ⟨hC, hA, -, hB⟩
+    exact ⟨hB, hC, (neg_eq_iff_eq_neg.mpr hA).symm⟩
+  · rintro ⟨hB, hC, rfl⟩
+    simp [hB, hC]
 
 end Matrix
 
@@ -59,14 +57,8 @@ matrices. -/
 private theorem transpose_mul_JD (A : LieAlgebra.Orthogonal.typeD ι K) :
     (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K)ᵀ * LieAlgebra.Orthogonal.JD ι K =
       LieAlgebra.Orthogonal.JD ι K * (-(A : Matrix (ι ⊕ ι) (ι ⊕ ι) K)) := by
-  have hA := A.2
-  -- Unfold membership in `typeD` to membership in its skew-adjoint matrix submodule; Mathlib
-  -- provides no public elimination lemma for this subtype membership.
-  change (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) ∈
-    skewAdjointMatricesSubmodule (LieAlgebra.Orthogonal.JD ι K) at hA
-  rw [mem_skewAdjointMatricesSubmodule] at hA
-  -- `Matrix.IsSkewAdjoint` is definitionally the displayed equation, with no equation lemma.
-  exact hA
+  simpa only [LieAlgebra.Orthogonal.typeD, mem_skewAdjointMatricesLieSubalgebra,
+    mem_skewAdjointMatricesSubmodule, Matrix.IsSkewAdjoint, Matrix.IsAdjointPair] using A.property
 
 /-- In a type-`D` matrix, the lower-right block is the negative transpose of the upper-left
 block. -/

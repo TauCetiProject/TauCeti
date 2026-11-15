@@ -31,16 +31,17 @@ instance ComplexShape.refl.decidableRel {ι : Type*} [DecidableEq ι] :
   fun i j => inferInstanceAs (Decidable (i = j))
 
 /-- Every index of `ComplexShape.refl ι` is related to itself. -/
-theorem ComplexShape.refl_rel {ι : Type*} (i : ι) : (ComplexShape.refl ι).Rel i i :=
+theorem ComplexShape.refl_rel_self {ι : Type*} (i : ι) : (ComplexShape.refl ι).Rel i i :=
   rfl
 
 namespace TauCeti
 
 universe u v
 
+variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C]
+
 /-- The one-object homological complex associated to a square-zero endomorphism. -/
-def oneObjectHomologicalComplex {C : Type u} [Category.{v} C] [HasZeroMorphisms C]
-    (X : C) (d : X ⟶ X) (d_comp_d : d ≫ d = 0) :
+def oneObjectHomologicalComplex (X : C) (d : X ⟶ X) (d_comp_d : d ≫ d = 0) :
     HomologicalComplex C (ComplexShape.refl Unit) where
   X _ := X
   d _ _ := d
@@ -48,23 +49,21 @@ def oneObjectHomologicalComplex {C : Type u} [Category.{v} C] [HasZeroMorphisms 
 
 /-- The unique object of the one-object homological complex is its defining object. -/
 @[simp]
-theorem oneObjectHomologicalComplex_X {C : Type u} [Category.{v} C] [HasZeroMorphisms C]
-    (X : C) (d : X ⟶ X) (d_comp_d : d ≫ d = 0) (i : Unit) :
+theorem oneObjectHomologicalComplex_X (X : C) (d : X ⟶ X) (d_comp_d : d ≫ d = 0) (i : Unit) :
     (oneObjectHomologicalComplex X d d_comp_d).X i = X :=
   (rfl)
 
 /-- The unique differential of the one-object homological complex is its defining endomorphism,
-transported across the canonical object equation. -/
+transported across the canonical object equations. -/
 @[simp]
-theorem oneObjectHomologicalComplex_d {C : Type u} [Category.{v} C] [HasZeroMorphisms C]
-    (X : C) (d : X ⟶ X) (d_comp_d : d ≫ d = 0) :
-    (oneObjectHomologicalComplex X d d_comp_d).d () () =
-      eqToHom (oneObjectHomologicalComplex_X X d d_comp_d ()) ≫ d ≫
-        eqToHom (oneObjectHomologicalComplex_X X d d_comp_d ()).symm := by
-  have h : oneObjectHomologicalComplex_X X d d_comp_d () = rfl :=
-    Subsingleton.elim _ _
-  rw [h]
+theorem oneObjectHomologicalComplex_d (X : C) (d : X ⟶ X) (d_comp_d : d ≫ d = 0) (i j : Unit) :
+    (oneObjectHomologicalComplex X d d_comp_d).d i j =
+      eqToHom (oneObjectHomologicalComplex_X X d d_comp_d i) ≫ d ≫
+        eqToHom (oneObjectHomologicalComplex_X X d d_comp_d j).symm := by
+  cases i; cases j
+  -- The object equation is `rfl` here, so `eqToHom_refl` applies once its proof is replaced.
+  rw [Subsingleton.elim (oneObjectHomologicalComplex_X X d d_comp_d ()) rfl]
   unfold oneObjectHomologicalComplex
-  simp only [eqToHom_refl, Category.id_comp, Category.comp_id]
+  simp
 
 end TauCeti

@@ -14,8 +14,7 @@ public import TauCeti.Analysis.InnerProductSpace.Laplacian.WeakMaximumPrinciple
 `TauCeti.Analysis.InnerProductSpace.Laplacian.WeakMaximumPrinciple` proves the weak maximum
 principle: a continuous, `C²`, subharmonic (`0 ≤ Δ f`) function on a compact set is bounded on all
 of `K` by any bound it respects on `frontier K`. This file turns that one-sided statement into the
-two-function **comparison principle** and its consequence, **uniqueness for the Dirichlet problem**
-(PDE roadmap, Lane C, item 13, "the comparison principle").
+two-function **comparison principle** and its consequence, **uniqueness for the Dirichlet problem**.
 
 Applied to the difference `f - g`, the weak maximum principle says: if `Δ g ≤ Δ f` on the interior
 and `f ≤ g` on the frontier, then `f ≤ g` throughout `K`. Comparing in both directions gives that a

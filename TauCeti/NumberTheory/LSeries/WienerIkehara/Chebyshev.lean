@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LSeries.WienerIkehara.BoundaryGrowth
-import TauCeti.Analysis.Asymptotics.SumWindow
+import TauCeti.Analysis.Asymptotics.Sum.Window
 import TauCeti.Analysis.Fourier.Continuous
 import TauCeti.Analysis.Fourier.NonnegTestFunction
 import TauCeti.NumberTheory.LSeries.Positivity
@@ -108,13 +108,13 @@ private theorem exists_eventually_sum_Ioc_norm_le_of_boundary (ha : 0 ≤ a)
   set c : ℝ := (𝓕 psi 0).re / 2 with hc
   have hc0 : 0 < c := half_pos (Complex.pos_iff.1 hpos).1
   have hcont : Continuous fun v : ℝ ↦ (𝓕 psi v).re :=
-    Complex.continuous_re.comp (TauCeti.continuous_fourier_of_integrable
-      (hpsi.continuous.integrable_of_hasCompactSupport hsupp))
+    Complex.continuous_re.comp
+      (hpsi.continuous.integrable_of_hasCompactSupport hsupp).continuous_fourier
   obtain ⟨η, hη, hηc⟩ := Metric.eventually_nhds_iff.1
     (hcont.continuousAt.eventually (lt_mem_nhds (by linarith : c < (𝓕 psi 0).re)))
   -- The smoothed series is eventually bounded by `M`.
   have hT := tendsto_tsum_term_mul_fourier_atTop_of_nonneg ha hG hG' hsum hpsi hsupp
-  set M : ℝ := ‖2 * (π : ℂ) * A * psi 0‖ + 1 with hM
+  set M : ℝ := ‖2 * (π : ℂ) * A * psi 0‖ + 1
   have hbound := hT.norm.eventually (gt_mem_nhds (by linarith : ‖2 * (π : ℂ) * A * psi 0‖ < M))
   set q : ℝ := Real.exp (-(π * η))
   have hq0 : 0 < q := Real.exp_pos _
@@ -134,7 +134,6 @@ private theorem exists_eventually_sum_Ioc_norm_le_of_boundary (ha : 0 ≤ a)
     have hnx : (n : ℝ) ≤ x := (Nat.cast_le.2 hn2).trans (Nat.floor_le hx.le)
     have hqn : q * x < n := Nat.lt_of_floor_lt hn1
     have hn0 : n ≠ 0 := by omega
-    have hnpos : (0 : ℝ) < n := by positivity
     have hv := dist_mul_log_div_lt hx hqn hnx
     have hFn : c < (F n).re := hηc hv
     have hterm : _root_.LSeries.term a 1 n = ((‖a n‖ / n : ℝ) : ℂ) := by
@@ -165,7 +164,7 @@ theorem isBigO_sum_Icc_norm_id_of_boundary (ha : 0 ≤ a)
     (hG' : ∀ z : ℂ, 1 < z.re → G z = LSeries a z - A / (z - 1))
     (hsum : ∀ sigma : ℝ, 1 < sigma → LSeriesSummable a sigma) :
     (fun t : ℝ ↦ ∑ n ∈ Finset.Icc 1 ⌊t⌋₊, ‖a n‖) =O[atTop] fun t ↦ t := by
-  obtain ⟨q, K, hq0, hq1, h⟩ := exists_eventually_sum_Ioc_norm_le_of_boundary ha hG hG' hsum
-  exact isBigO_sum_Icc_of_sum_Ioc_floor_mul_le (fun n ↦ norm_nonneg (a n)) hq0.le hq1 h
+  obtain ⟨q, K, -, hq1, h⟩ := exists_eventually_sum_Ioc_norm_le_of_boundary ha hG hG' hsum
+  exact isBigO_sum_Icc_of_sum_Ioc_floor_mul_le (fun n ↦ norm_nonneg (a n)) hq1 h
 
 end TauCeti.LSeries

@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Quotient.Linear
 public import Mathlib.CategoryTheory.Quotient.Preadditive
 public import Mathlib.GroupTheory.QuotientGroup.Defs
+public import Mathlib.Order.BoundedOrder.Basic
 
 /-!
 # Two-sided ideals of a preadditive category and their quotients
@@ -58,8 +59,11 @@ faithfulness of precomposition with the quotient functor — applies to `C/I` un
 * `TauCeti.MorphismIdeal.exists_quotientFunctor_comp_eq_iff`: an additive functor factors through
   `C/I` exactly when its kernel contains `I`.
 * `TauCeti.MorphismIdeal.smul_mem`: an ideal of an `R`-linear category is stable under scalars.
+* `⊤` and `⊥`: the ideal of all morphisms and the zero ideal, the top and bottom of the order.
 * `TauCeti.MorphismIdeal.isZero_quotientFunctor_obj_iff`: an object becomes zero in `C/I` exactly
   when its identity belongs to `I`.
+* `TauCeti.MorphismIdeal.not_isIso_of_mem`: an ideal not containing `𝟙 X` contains no isomorphism
+  out of `X`.
 * `TauCeti.MorphismIdeal.isIso_quotientFunctor_map_iff`: a morphism becomes invertible in `C/I`
   exactly when it admits a two-sided inverse modulo `I`.
 
@@ -111,6 +115,47 @@ instance : PartialOrder (MorphismIdeal C) :=
 theorem le_def {I J : MorphismIdeal C} :
     I ≤ J ↔ ∀ ⦃X Y : C⦄ (f : X ⟶ Y), f ∈ I.hom X Y → f ∈ J.hom X Y :=
   Iff.rfl
+
+/-- The ideal of all morphisms. -/
+instance : Top (MorphismIdeal C) where
+  top :=
+    { hom _ _ := ⊤
+      comp_mem_left := fun _ _ _ ↦ AddSubgroup.mem_top _
+      comp_mem_right := fun _ _ ↦ AddSubgroup.mem_top _ }
+
+/-- The zero ideal. -/
+instance : Bot (MorphismIdeal C) where
+  bot :=
+    { hom _ _ := ⊥
+      comp_mem_left := fun _ _ h ↦ by
+        rw [AddSubgroup.mem_bot] at h ⊢
+        simp [h]
+      comp_mem_right := fun _ h ↦ by
+        rw [AddSubgroup.mem_bot] at h ⊢
+        simp [h] }
+
+@[simp]
+theorem top_hom (X Y : C) : (⊤ : MorphismIdeal C).hom X Y = ⊤ :=
+  (rfl)
+
+@[simp]
+theorem bot_hom (X Y : C) : (⊥ : MorphismIdeal C).hom X Y = ⊥ :=
+  (rfl)
+
+theorem mem_top {X Y : C} (f : X ⟶ Y) : f ∈ (⊤ : MorphismIdeal C).hom X Y := by
+  rw [top_hom]
+  exact AddSubgroup.mem_top f
+
+theorem mem_bot {X Y : C} {f : X ⟶ Y} : f ∈ (⊥ : MorphismIdeal C).hom X Y ↔ f = 0 := by
+  rw [bot_hom, AddSubgroup.mem_bot]
+
+instance : OrderTop (MorphismIdeal C) where
+  le_top _ := le_def.mpr fun _ _ f _ ↦ mem_top f
+
+instance : OrderBot (MorphismIdeal C) where
+  bot_le _ := le_def.mpr fun _ _ f hf ↦ by
+    rw [mem_bot.mp hf]
+    exact zero_mem _
 
 /-- Over an `R`-linear category an ideal is automatically stable under the scalar action, since
 `a • f = (a • 𝟙 X) ≫ f`. -/
@@ -242,6 +287,10 @@ theorem isIso_quotientFunctor_map_iff {X Y : C} (f : X ⟶ Y) :
       exact I.quotientFunctor_map_eq_iff.mpr hfg
     · rw [← I.quotientFunctor.map_comp, ← I.quotientFunctor.map_id]
       exact I.quotientFunctor_map_eq_iff.mpr hgf
+
+/-- An ideal not containing the identity of `X` contains no isomorphism out of `X`. -/
+theorem not_isIso_of_mem {X Y : C} (hX : 𝟙 X ∉ I.hom X X) {f : X ⟶ Y} (hf : f ∈ I.hom X Y) :
+    ¬ IsIso f := fun _ ↦ hX (by simpa using I.comp_mem_right (inv f) hf)
 
 /-- Every ideal is the kernel of its quotient functor. -/
 @[simp]

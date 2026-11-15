@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.Immersion.Basic
 public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 
@@ -56,11 +57,13 @@ read off it.
   is locally flat, the complementary model being the complement of the immersion.
 * `TauCeti.isLocallyClosed_range_of_isSmoothEmbedding`: the image of a `C^n` embedding into a
   boundaryless manifold is locally closed.
-* `TauCeti.SmoothEmbedding.isLocallyFlat`: the same for the bundled smooth embeddings that the
-  roadmap's geometric knot presentations are built from.
+* `TauCeti.SmoothEmbedding.isLocallyFlat`: the same for bundled smooth embeddings, from which
+  geometric knot presentations are built.
 * `TauCeti.isOpenEmbedding_of_isImmersionOfComplement_of_isEmbedding` and
   `TauCeti.isLocallyFlat_subtypeVal`: the codimension-zero end, where local flatness is openness of
   the embedding.
+* `TauCeti.IsLocallyFlat.of_isSmoothEmbedding_of_sub_eq`: for models `ℝᵏ` and `ℝᵐ` the complement is
+  `ℝᵐ⁻ᵏ`, so a smooth embedding of boundaryless manifolds is locally flat with Euclidean complement.
 
 ## Implementation notes
 
@@ -207,11 +210,11 @@ theorem IsSliceEmbedding.of_isSmoothEmbedding [J.Boundaryless] (h : IsSmoothEmbe
   .of_isImmersionOfComplement_of_isEmbedding h.isImmersion.isImmersionOfComplement_complement
     h.isEmbedding
 
-/-- **A `C^n` embedding of boundaryless manifolds is locally flat.** This is the form the
-geometric-topology roadmap asks for: the low-codimension subtleties of topological embeddings are
-confined to `TauCeti.IsLocallyFlat`, and everything smooth satisfies it. The complementary model
-space is the complement `Manifold.IsImmersion.complement` chosen by the immersion, playing the role
-of the normal directions. -/
+/-- **A `C^n` embedding of boundaryless manifolds is locally flat.** The low-codimension
+subtleties of topological embeddings are confined to `TauCeti.IsLocallyFlat`, and everything
+smooth satisfies it. The complementary model space is the complement
+`Manifold.IsImmersion.complement` chosen by the immersion, playing the role of the normal
+directions. -/
 theorem IsLocallyFlat.of_isSmoothEmbedding [I.Boundaryless] [J.Boundaryless]
     (h : IsSmoothEmbedding I J n f) : IsLocallyFlat E h.isImmersion.complement f :=
   .of_isImmersionOfComplement_of_isEmbedding h.isImmersion.isImmersionOfComplement_complement
@@ -226,10 +229,10 @@ theorem isLocallyClosed_range_of_isSmoothEmbedding [J.Boundaryless]
   (IsSliceEmbedding.of_isSmoothEmbedding h).isLocallyClosed_range
     (I.isClosed_range.prod isClosed_singleton).isLocallyClosed
 
-/-- A bundled smooth embedding of boundaryless manifolds is locally flat. This is the shape layer 4
-of the geometric-topology roadmap consumes: a geometric knot presentation is a smooth embedding of
-the circle into an ambient manifold, and this says it is in particular a locally flat topological
-embedding, so the topological statements about it are not vacuous. -/
+/-- A bundled smooth embedding of boundaryless manifolds is locally flat. A geometric knot
+presentation is a smooth embedding of the circle into an ambient manifold, and this says it is in
+particular a locally flat topological embedding, so the topological statements about it are not
+vacuous. -/
 theorem SmoothEmbedding.isLocallyFlat [I.Boundaryless] [J.Boundaryless]
     (e : SmoothEmbedding I J n M N) : IsLocallyFlat E e.isImmersion.complement e :=
   IsLocallyFlat.of_isSmoothEmbedding e.isSmoothEmbedding
@@ -256,5 +259,25 @@ theorem isLocallyFlat_subtypeVal (I : ModelWithCorners 𝕜 E H) (n : ℕ∞ω) 
     IsLocallyFlat E PUnit (Subtype.val : s → M) :=
   IsLocallyFlat.of_isImmersionOfComplement_of_isEmbedding (I := I) (J := I) (n := n)
     (IsImmersionOfComplement.of_opens s) IsEmbedding.subtypeVal
+
+/-! ### Euclidean models -/
+
+section Euclidean
+
+variable {k m : ℕ} {I : ModelWithCorners ℝ (EuclideanSpace ℝ (Fin k)) H}
+  {J : ModelWithCorners ℝ (EuclideanSpace ℝ (Fin m)) G}
+
+/-- **A `C^n` embedding of boundaryless manifolds modelled on `ℝᵏ` and `ℝᵐ` is locally flat with
+Euclidean complement**: if `j = m - k`, it is locally flat with tangential model `ℝᵏ` and
+complementary model `ℝʲ`. -/
+theorem IsLocallyFlat.of_isSmoothEmbedding_of_sub_eq [I.Boundaryless] [J.Boundaryless]
+    (h : IsSmoothEmbedding I J n f) {j : ℕ} (hj : m - k = j) :
+    IsLocallyFlat (EuclideanSpace ℝ (Fin k)) (EuclideanSpace ℝ (Fin j)) f := by
+  rcases isEmpty_or_nonempty M with hM | hM
+  · exact isLocallyFlat_iff_isSliceEmbedding.2 ⟨h.isEmbedding, isEmptyElim⟩
+  obtain ⟨L⟩ := h.isImmersion.nonempty_complement_continuousLinearEquiv hj
+  exact (IsLocallyFlat.of_isSmoothEmbedding h).transHomeomorph L.toHomeomorph (by simp)
+
+end Euclidean
 
 end TauCeti

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.AuslanderReiten.Translate
-public import TauCeti.Algebra.Module.Nakayama
+public import TauCeti.Algebra.Module.Nakayama.Basic
 import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!

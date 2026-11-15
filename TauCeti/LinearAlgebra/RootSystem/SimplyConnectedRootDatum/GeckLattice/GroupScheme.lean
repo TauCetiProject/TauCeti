@@ -29,23 +29,17 @@ the carrier traces back to explicit matrices. The ambient coordinate ordering is
 size of the ambient general linear group is
 `TauCeti.DynkinType.geckDim_eq_rank_add_numRoots`, namely `rank + numRoots`. In the classical
 construction Geck's module is the adjoint module and its weights are the roots, so this carrier is
-expected to be the adjoint form; those identifications are not formalized here. The simply
-connected carrier required by milestone L0 of
-`TauCetiRoadmap/CFSGStatement/README.md` needs instead an admissible lattice whose weights generate
-the full weight lattice. That lattice, the Borel, root subgroups for nonsimple roots, the Chevalley
-commutator relations, and the root-datum properties that turn a carrier into a pinned split
-reductive group scheme are the Layer 9 work that remains; the functoriality of `geckPoints` in the
-value ring is supplied by
+expected to be the adjoint form; those identifications are not formalized here. A simply connected
+carrier needs instead an admissible lattice whose weights generate the full weight lattice. The
+functoriality of `geckPoints` in the value ring is supplied by
 `TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.PointsFunctor`.
 
-This construction supplies part of the interface that Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md` asks for: the closed immersion into `GLₙ`, the root
-subgroup morphisms `x_{±α_i} : 𝔾ₐ → G` of the numbered simple raising and lowering generators
-and the weight-torus morphism `T → G` that factor through it, the group of `A`-valued points for
-every commutative ring `A`, and the pinning equation
-`s x_i(u) s⁻¹ = x_i(α_i(s) u)` expressing the torus action on a root subgroup through the Bourbaki
-row of the Cartan matrix. No reductivity, maximality of the torus, finiteness, or root-datum
-statement is asserted.
+This file constructs the closed immersion into `GLₙ`, the root subgroup morphisms
+`x_{±α_i} : 𝔾ₐ → G` of the numbered simple raising and lowering generators and the weight-torus
+morphism `T → G` that factor through it, the group of `A`-valued points for every commutative
+ring `A`, and the pinning equation `s x_i(u) s⁻¹ = x_i(α_i(s) u)` expressing the torus action on a
+root subgroup through the Bourbaki row of the Cartan matrix. No reductivity, maximality of the
+torus, finiteness, or root-datum statement is asserted.
 
 ## Main definitions
 
@@ -92,11 +86,6 @@ statement is asserted.
 * R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 7.1.
 * J. E. Humphreys, *Linear Algebraic Groups*, §26.
 * J. C. Jantzen, *Representations of Algebraic Groups*, II.1.
-
-This advances "The Chevalley--Demazure construction", "Root subgroup maps" and "Points over an
-algebraically closed field" in Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`, whose
-consumer is the pinned ambient group of milestone L0 of
-`TauCetiRoadmap/CFSGStatement/README.md`.
 -/
 
 public section
@@ -307,7 +296,7 @@ theorem isClosedImmersion_geckWeightTorus
 /-- **The intrinsic pinning equation for the Geck carrier.** On points over a commutative ring,
 conjugation by a weight-torus point rescales the parameter of a numbered root subgroup by the
 corresponding root character. -/
-@[simp]
+-- Not `@[simp]`: `simp` does not rewrite with it, even on its own left-hand side.
 theorem geckWeightTorus_conj_geckRootSubgroup (i : Fin t.rank ⊕ Fin t.rank)
     (A : Type) [CommRing A]
     (s : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
@@ -468,8 +457,10 @@ abbrev geckTorusMatrix {A : Type v} [CommRing A] :
     (t.geckWeightFin ht)
 
 /-- **The `A`-valued points of the Geck carrier of a valid Dynkin type**, as a subgroup of
-`GLₙ(A)` through the Hopf-ideal quotient presentation and the Geck coordinate basis. -/
-def geckPoints (A : Type v) [CommRing A] :
+`GLₙ(A)` through the Hopf-ideal quotient presentation and the Geck coordinate basis.
+This abbreviates the generic Kostant toral-closure points, so their endomorphisms specialize
+directly to the Geck carrier without transporting across an equality of subgroups. -/
+abbrev geckPoints (A : Type v) [CommRing A] :
     Subgroup (Matrix.GeneralLinearGroup (Fin (t.geckDim ht)) A) :=
   TauCeti.UniversalEnvelopingAlgebra.kostantToralPointsSubgroup
     (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
@@ -486,16 +477,16 @@ theorem geckPoints_def (A : Type v) [CommRing A] :
       GeneralLinear.hopfIdealPointsSubgroup (t.geckDim ht) (t.geckDefiningIdeal ht) A :=
   TauCeti.UniversalEnvelopingAlgebra.kostantToralPointsSubgroup_def _ _ _ _ _ _ _ _ A
 
-/-- A matrix is a point of the Geck carrier exactly when the associated convolution point
-kills its defining Hopf ideal. -/
-@[simp]
-theorem mem_geckPoints_iff (A : Type v) [CommRing A]
-    (g : Matrix.GeneralLinearGroup (Fin (t.geckDim ht)) A) :
-    g ∈ t.geckPoints ht A ↔
-      ∀ x ∈ t.geckDefiningIdeal ht,
-        ((GeneralLinear.pointsMulEquiv (R := ℤ) (t.geckDim ht)).symm g).ofConv x = 0 :=
-  TauCeti.UniversalEnvelopingAlgebra.mem_kostantToralPointsSubgroup_iff
-    _ _ _ _ _ _ _ _ A g
+/-- The points of the Geck carrier are the points of the generic Kostant toral closure they are
+cut out from. -/
+theorem geckPoints_eq_kostantToralPointsSubgroup (A : Type v) [CommRing A] :
+    t.geckPoints ht A =
+      TauCeti.UniversalEnvelopingAlgebra.kostantToralPointsSubgroup
+        (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+        (t.geckCoordinateLattice ht).toAddSubgroup
+        (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+        (t.isNilpotent_geckRepresentation_rootGenerator ht)
+        (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) A := (rfl)
 
 /-- Every matrix in a numbered Geck root subgroup is a point of the carrier. -/
 theorem geckRootSubgroupMatrix_mem_geckPoints (A : Type v) [CommRing A]
@@ -525,6 +516,22 @@ noncomputable def geckRootSubgroupPoints (i : Fin t.rank ⊕ Fin t.rank)
     (t.isNilpotent_geckRepresentation_rootGenerator ht)
     (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) i A
 
+/-- A parametrized Geck root-subgroup point homomorphism is the corresponding Kostant toral-closure
+homomorphism, transported across `geckPoints_eq_kostantToralPointsSubgroup`. -/
+theorem geckRootSubgroupPoints_def (i : Fin t.rank ⊕ Fin t.rank)
+    (A : Type v) [CommRing A] :
+    t.geckRootSubgroupPoints ht i A =
+      (MulEquiv.subgroupCongr
+          (t.geckPoints_eq_kostantToralPointsSubgroup ht A).symm).toMonoidHom.comp
+        (TauCeti.UniversalEnvelopingAlgebra.kostantToralRootSubgroupPoints
+          (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+          (t.geckCoordinateLattice ht).toAddSubgroup
+          (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+          (t.isNilpotent_geckRepresentation_rootGenerator ht)
+          (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) i A) := by
+  ext
+  rfl
+
 /-- A parametrized Geck root-subgroup point has the represented root-subgroup matrix as its
 underlying general-linear element. -/
 @[simp]
@@ -550,6 +557,21 @@ noncomputable def geckWeightTorusPoints (A : Type v) [CommRing A] :
     (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
     (t.isNilpotent_geckRepresentation_rootGenerator ht)
     (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) A
+
+/-- The represented Geck weight-torus point homomorphism is the corresponding Kostant toral-closure
+homomorphism, transported across `geckPoints_eq_kostantToralPointsSubgroup`. -/
+theorem geckWeightTorusPoints_def (A : Type v) [CommRing A] :
+    t.geckWeightTorusPoints ht A =
+      (MulEquiv.subgroupCongr
+          (t.geckPoints_eq_kostantToralPointsSubgroup ht A).symm).toMonoidHom.comp
+        (TauCeti.UniversalEnvelopingAlgebra.kostantToralWeightTorusPoints
+          (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+          (t.geckCoordinateLattice ht).toAddSubgroup
+          (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+          (t.isNilpotent_geckRepresentation_rootGenerator ht)
+          (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) A) := by
+  ext
+  rfl
 
 /-- A represented Geck weight-torus point has the weight-torus matrix as its underlying
 general-linear element. -/

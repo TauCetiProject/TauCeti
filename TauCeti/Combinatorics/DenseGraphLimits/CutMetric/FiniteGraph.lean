@@ -60,8 +60,7 @@ theorem cutDist_finiteGraphGraphonOnFin_top_two_const_half {Ω : Type*} [Measura
       abs_of_pos (by norm_num : (0 : ℝ) < 8), div_le_div_iff_of_pos_right (by norm_num)]
     exact_mod_cast hbound _ _
   · have h := abs_rectIntegral_le_cutNorm _ K
-      (MeasurableSet.of_discrete (s := ((({0} : Finset (Fin 2))) : Set (Fin 2))))
-      (MeasurableSet.of_discrete (s := ((({1} : Finset (Fin 2))) : Set (Fin 2))))
+      ((({0} : Finset (Fin 2))) : Set (Fin 2)) ((({1} : Finset (Fin 2))) : Set (Fin 2))
     rw [hrect] at h
     simpa using h
 

@@ -24,10 +24,11 @@ which fixes no representatives at all.
 
 Two families of representatives of the same right cosets differ, coset by coset, by a factor of
 `Γ₁` on the **left**, and `f ∣[k] (γ₁ x) = (f ∣[k] γ₁) ∣[k] x = f ∣[k] x` for `γ₁ ∈ Γ₁` when `f`
-is `Γ₁`-invariant: that is `slash_eq_of_rightCoset_eq`, and it is the only place invariance is
-used. Everything else is a comparison of two enumerations of the same finite set of right
-cosets: `DoubleCoset.doubleCoset_eq_iUnion_rightCosets` says the chosen representatives cover
-the double coset and `DoubleCoset.op_mul_out_inv_smul_injective` says they do so without
+is `Γ₁`-invariant: that is `SlashAction.slash_eq_of_rightCoset_eq` (in `ModularForms/Basic.lean`),
+and it is the only place invariance is used. Everything else is a comparison of two
+enumerations of the same finite set of right cosets:
+`DoubleCoset.doubleCoset_eq_iUnion_rightCosets` says the chosen representatives
+cover the double coset and `DoubleCoset.op_mul_out_inv_smul_injective` says they do so without
 repetition, which are exactly the two hypotheses demanded of the family `(aᵢ)`, so the two
 enumerations are matched by a bijection and the sums agree term by term.
 
@@ -52,21 +53,19 @@ double coset contributes to the multiplicity-weighted composite `∑_D m(D₁, D
 
 ## Main results
 
-* `HeckeRing.GL2.slash_eq_of_rightCoset_eq`: slashing a `Γ₁`-invariant function by `x` depends
-  only on the right coset `Γ₁ x`.
 * `HeckeRing.GL2.heckeSlashSum_eq_sum_of_rightCosets`: **the choice-free description of the
   slash sum.** For `Γ₁`-invariant `f`, `heckeSlashSum k D f = ∑ᵢ f ∣[k] aᵢ` for any family
   `(aᵢ)` whose right cosets `Γ₁ aᵢ` are distinct and cover the double coset.
 * `HeckeRing.GL2.heckeSlashSum_eq_sum_of_mem_doubleCoset`: the special case that fixes the
   choice of double-coset representative only: any `δ ∈ Γ₁ D.out Γ₂` gives the same sum.
-* `HeckeRing.GL2.sum_slash_eq_nsmul_heckeSlashSum`: **the weighted collapse.** A family naming
-  each right coset of the double coset exactly `m` times — repetitions allowed, covering not
-  assumed — sums to `m • heckeSlashSum k D f`.
+* `HeckeRing.GL2.sum_slash_eq_nsmul_heckeSlashSum`: **the weighted collapse.** A family of
+  elements of the double coset naming each of its right cosets exactly `m` times — repetitions
+  allowed, covering not assumed — sums to `m • heckeSlashSum k D f`.
 * `HeckeRing.GL2.sum_slash_coe_eq_nsmul_heckeSlashSum`: the weighted collapse for a form,
   whose slash-invariance discharges `hf`.
 * `HeckeRing.GL2.heckeSlashSum_coe_eq_sum_of_rightCosets`: the same description for a form of
-  level `G.map (mapGL ℝ)`, whose slash-invariance discharges the hypothesis `hf`. It is what
-  `HeckeSlash/ModularForm.lean` reads off the two exported endomorphisms with, in
+  level `G.map (mapGL ℝ)` and right group `Γ₂`, whose slash-invariance discharges the hypothesis
+  `hf`. It is what `HeckeSlash/ModularForm.lean` reads off the two exported endomorphisms with, in
   `coe_heckeSlashModularFormEnd_eq_sum` and `coe_heckeSlashCuspFormEnd_eq_sum`.
 
 ## References
@@ -78,7 +77,7 @@ double coset contributes to the multiplicity-weighted composite `∑_D m(D₁, D
 
 public section
 
-open Matrix Matrix.SpecialLinearGroup UpperHalfPlane DoubleCoset HeckeRing.GLn
+open Matrix Matrix.SpecialLinearGroup UpperHalfPlane DoubleCoset
 
 open scoped MatrixGroups ModularForm Pointwise
 
@@ -87,22 +86,9 @@ namespace HeckeRing.GL2
 variable (k : ℤ) {Δ : Submonoid (GL (Fin 2) ℚ)} {Γ₁ Γ₂ : Subgroup (GL (Fin 2) ℚ)}
   (D : HeckeCoset Δ Γ₁ Γ₂)
 
-/-- **Slashing a `Γ₁`-invariant function depends only on the right coset.** If `Γ₁ x = Γ₁ y`
-then `f ∣[k] x = f ∣[k] y`, because `y = (y x⁻¹) x` with `y x⁻¹ ∈ Γ₁` and the slash by that
-factor is trivial on `f`.
-
-This is the whole role invariance plays in the choice-freeness below: everything else is a
-comparison of two enumerations of the same set of cosets. -/
-lemma slash_eq_of_rightCoset_eq {f : ℍ → ℂ} (hf : ∀ γ ∈ Γ₁, f ∣[k] γ = f) {x y : GL (Fin 2) ℚ}
-    (h : MulOpposite.op x • (Γ₁ : Set (GL (Fin 2) ℚ)) =
-      MulOpposite.op y • (Γ₁ : Set (GL (Fin 2) ℚ))) :
-    f ∣[k] x = f ∣[k] y := by
-  have hγ : y * x⁻¹ ∈ Γ₁ := (rightCoset_eq_iff Γ₁).mp h
-  calc f ∣[k] x = (f ∣[k] (y * x⁻¹)) ∣[k] x := by rw [hf _ hγ]
-    _ = f ∣[k] (y * x⁻¹ * x) := (SlashAction.slash_mul k (y * x⁻¹) x f).symm
-    _ = f ∣[k] y := by rw [inv_mul_cancel_right]
-
 variable [Finite (DecompQuotient Γ₂ Γ₁ (D.out : GL (Fin 2) ℚ)⁻¹)]
+
+attribute [local instance] fintypeDecompQuotient
 
 /-- **The slash sum of a `Γ₁`-invariant function is the sum over any decomposition of the double
 coset into right cosets.** If the right cosets `Γ₁ aᵢ` are pairwise distinct and cover
@@ -113,19 +99,18 @@ that `heckeSlashSum` happens to pick are one such family (`doubleCoset_eq_iUnion
 `op_mul_out_inv_smul_injective`), and every other family gives the same function.
 
 Invariance of `f` under `Γ₁` is what the proof uses, once, through
-`slash_eq_of_rightCoset_eq`; on a general `f` the statement is false, as `HeckeSlash/Basic.lean`
-records. -/
+`SlashAction.slash_eq_of_rightCoset_eq`; on a general `f` the statement is false, as
+`HeckeSlash/Basic.lean` records. -/
 theorem heckeSlashSum_eq_sum_of_rightCosets {ι : Type*} [Fintype ι] (a : ι → GL (Fin 2) ℚ)
     (hcover : doubleCoset (D.out : GL (Fin 2) ℚ) Γ₁ Γ₂ =
       ⋃ i, MulOpposite.op (a i) • (Γ₁ : Set (GL (Fin 2) ℚ)))
     (hinj : Function.Injective fun i ↦ MulOpposite.op (a i) • (Γ₁ : Set (GL (Fin 2) ℚ)))
     (f : ℍ → ℂ) (hf : ∀ γ ∈ Γ₁, f ∣[k] γ = f) :
     heckeSlashSum k D f = ∑ i, f ∣[k] a i := by
-  classical
-  let _ : Fintype (DecompQuotient Γ₂ Γ₁ (D.out : GL (Fin 2) ℚ)⁻¹) := Fintype.ofFinite _
   obtain ⟨φ, hbij, hφ⟩ := exists_bijective_rightCosetRep_smul_eq D a hcover hinj
   rw [heckeSlashSum_def]
-  exact (Fintype.sum_bijective φ hbij _ _ fun i ↦ slash_eq_of_rightCoset_eq k hf (hφ i)).symm
+  exact (Fintype.sum_bijective φ hbij _ _ fun i ↦
+    SlashAction.slash_eq_of_rightCoset_eq k hf (hφ i)).symm
 
 /-- **The slash sum may be formed from any representative of the double coset.** For `δ` in
 `Γ₁ D.out Γ₂` and `Γ₁`-invariant `f`, summing `f ∣[k] (δ τᵥ⁻¹)` over `Γ₂ ⧸ (Γ₂ ∩ δ⁻¹Γ₁δ)` gives
@@ -146,9 +131,9 @@ theorem heckeSlashSum_eq_sum_of_mem_doubleCoset {δ : GL (Fin 2) ℚ}
   exact doubleCoset_eq_iUnion_rightCosets Γ₁ Γ₂ δ
 
 /-- **A family naming each right coset the same number of times sums to a multiple of the slash
-sum.** In place of the injectivity of `heckeSlashSum_eq_sum_of_rightCosets`, ask that every right
-coset of the double coset be named by exactly `m` members of the family: then the sum over the
-family is `m • heckeSlashSum k D f`.
+sum.** In place of the injectivity of `heckeSlashSum_eq_sum_of_rightCosets`, ask that every member
+of the family lie in the double coset and that every right coset of the double coset be named by
+exactly `m` members of the family: then the sum over the family is `m • heckeSlashSum k D f`.
 
 Covering is not a hypothesis. A right coset named by no member forces `m = 0`, and then both
 sides vanish; for `m ≠ 0` the family does cover, so nothing is lost by leaving it out and a user
@@ -168,23 +153,22 @@ theorem sum_slash_eq_nsmul_heckeSlashSum {ι : Type*} [Fintype ι] (a : ι → G
     (f : ℍ → ℂ) (hf : ∀ γ ∈ Γ₁, f ∣[k] γ = f) :
     ∑ i, f ∣[k] a i = m • heckeSlashSum k D f := by
   classical
-  let _ : Fintype (DecompQuotient Γ₂ Γ₁ (D.out : GL (Fin 2) ℚ)⁻¹) := Fintype.ofFinite _
   choose g hg using fun i ↦ exists_rightCosetRep_smul_eq D (hmem i)
   rw [heckeSlashSum_def, Finset.smul_sum,
-    ← Finset.sum_fiberwise_of_maps_to (fun i _ ↦ Finset.mem_univ (g i)) fun i ↦ f ∣[k] a i]
+    ← Finset.sum_fiberwise Finset.univ g fun i ↦ f ∣[k] a i]
   refine Finset.sum_congr rfl fun v _ ↦ ?_
   -- On the fibre of `v` every term is the slash by `v`'s representative, so the fibre
   -- contributes its cardinality times that one value.
   rw [Finset.sum_congr rfl fun i hi ↦
-      slash_eq_of_rightCoset_eq k hf ((Finset.mem_filter.mp hi).2 ▸ hg i), Finset.sum_const,
-    card_filter_eq_of_rightCosetRep_smul_eq D hcard hg v]
+      SlashAction.slash_eq_of_rightCoset_eq k hf ((Finset.mem_filter.mp hi).2 ▸ hg i),
+    Finset.sum_const, card_filter_eq_of_rightCosetRep_smul_eq D hcard hg v]
 
 section Form
 
 variable {G : Subgroup SL(2, ℤ)} {F : Type*} [FunLike F ℍ ℂ]
   [SlashInvariantFormClass F (G.map (mapGL ℝ)) k]
-  (D : HeckeCoset Δ (G.map (mapGL ℚ)) (G.map (mapGL ℚ)))
-  [Finite (DecompQuotient (G.map (mapGL ℚ)) (G.map (mapGL ℚ)) (D.out : GL (Fin 2) ℚ)⁻¹)]
+  (D : HeckeCoset Δ (G.map (mapGL ℚ)) Γ₂)
+  [Finite (DecompQuotient Γ₂ (G.map (mapGL ℚ)) (D.out : GL (Fin 2) ℚ)⁻¹)]
 
 /-- **The slash sum of a form of level `G.map (mapGL ℝ)` is the sum over any decomposition of the
 double coset into right cosets.** This is `heckeSlashSum_eq_sum_of_rightCosets` with the
@@ -196,7 +180,7 @@ hypothesis `hf` discharged: a form of that level is slash-invariant under `G.map
 built from a double coset, at any level, without reference to the representatives they are
 assembled from. -/
 theorem heckeSlashSum_coe_eq_sum_of_rightCosets {ι : Type*} [Fintype ι] (a : ι → GL (Fin 2) ℚ)
-    (hcover : doubleCoset (D.out : GL (Fin 2) ℚ) (G.map (mapGL ℚ)) (G.map (mapGL ℚ)) =
+    (hcover : doubleCoset (D.out : GL (Fin 2) ℚ) (G.map (mapGL ℚ)) Γ₂ =
       ⋃ i, MulOpposite.op (a i) • (G.map (mapGL ℚ) : Set (GL (Fin 2) ℚ)))
     (hinj : Function.Injective fun i ↦
       MulOpposite.op (a i) • (G.map (mapGL ℚ) : Set (GL (Fin 2) ℚ)))
@@ -214,8 +198,8 @@ that level is slash-invariant under `G.map (mapGL ℚ)` by `ModularForm.slash_eq
 bridge. -/
 theorem sum_slash_coe_eq_nsmul_heckeSlashSum {ι : Type*} [Fintype ι] (a : ι → GL (Fin 2) ℚ)
     (m : ℕ)
-    (hmem : ∀ i, a i ∈ doubleCoset (D.out : GL (Fin 2) ℚ) (G.map (mapGL ℚ)) (G.map (mapGL ℚ)))
-    (hcard : ∀ x ∈ doubleCoset (D.out : GL (Fin 2) ℚ) (G.map (mapGL ℚ)) (G.map (mapGL ℚ)),
+    (hmem : ∀ i, a i ∈ doubleCoset (D.out : GL (Fin 2) ℚ) (G.map (mapGL ℚ)) Γ₂)
+    (hcard : ∀ x ∈ doubleCoset (D.out : GL (Fin 2) ℚ) (G.map (mapGL ℚ)) Γ₂,
       Nat.card {i // MulOpposite.op (a i) • (G.map (mapGL ℚ) : Set (GL (Fin 2) ℚ)) =
         MulOpposite.op x • (G.map (mapGL ℚ) : Set (GL (Fin 2) ℚ))} = m)
     (f : F) : ∑ i, ⇑f ∣[k] a i = m • heckeSlashSum k D ⇑f :=

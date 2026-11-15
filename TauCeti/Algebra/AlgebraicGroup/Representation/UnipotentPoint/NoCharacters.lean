@@ -35,9 +35,6 @@ hypothesis is already strong enough.
 
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, Section 2.4.
-
-This completes the "no nontrivial characters" consequence in Layer 5, "Unipotent groups", of
-`TauCetiRoadmap/ReductiveGroups/README.md`.
 -/
 
 public section

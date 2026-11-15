@@ -8,17 +8,17 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Algebra
 public import Mathlib.CategoryTheory.Skeletal
 public import Mathlib.RepresentationTheory.Intertwining
-public import TauCeti.RepresentationTheory.FDRep
+public import TauCeti.Algebra.MonoidAlgebra.MapDomain
+public import TauCeti.RepresentationTheory.FDRep.Basic
 public import TauCeti.RepresentationTheory.Subrepresentation
 
 /-!
 # Isomorphism of representations and of the modules they carry
 
 Mathlib's `Representation.IntertwiningMap.equivLinearMapAsModule` identifies the intertwining maps
-`ρ → σ` with the `k[G]`-linear maps `ρ.asModule → σ.asModule`, but not the *isomorphisms* with the
-*isomorphisms*: an equivalence of representations is a bijective intertwining map, while a linear
-equivalence of modules carries its inverse as data. This file supplies the missing dictionary, in
-both directions and in the form that is usually wanted, an equivalence of `Nonempty`s.
+`ρ → σ` with the `k[G]`-linear maps `ρ.asModule → σ.asModule`. This file extends that dictionary
+to equivalences, transporting both the forward maps and their inverses. It also gives the induced
+equivalence of `Nonempty`s for isomorphism classification.
 
 The point of the dictionary is that classification statements are naturally proved on one side and
 used on the other. The isomorphism classes of simple `k[G]`-modules are what the semisimple-algebra
@@ -26,13 +26,14 @@ theory counts, while the objects being classified are representations.
 
 ## Main results
 
-* `Representation.asModuleEquiv_apply`, `Representation.asModuleEquiv_symm_apply`,
-  `Representation.IntertwiningMap.equivLinearMapAsModule_apply`, and
+* `Representation.asModuleEquiv_apply`, `Representation.asModuleEquiv_symm_apply`, and
   `Representation.IntertwiningMap.equivLinearMapAsModule_symm_apply`: evaluation of the two
-  identifications Mathlib leaves definitional, the one of `ρ.asModule` with `V` and the one between
-  intertwining maps and `k[G]`-linear maps, in both directions.
+  identifications Mathlib leaves definitional, of `ρ.asModule` with `V` and of the intertwining
+  map attached to a `k[G]`-linear map.
 * `Representation.finrank_moduleCat_asModule`: bundling the attached module and restricting
   scalars preserves the dimension of the representation.
+* `FDRep.finrank_end_eq_finrank_moduleEnd`: the categorical endomorphism space has
+  the same dimension as the endomorphism algebra of the attached group-algebra module.
 * `TauCeti.Representation.equivOfAsModuleLinearEquiv`: a `k[G]`-linear isomorphism
   `ρ.asModule ≃ₗ σ.asModule` is an equivalence of representations.
 * `TauCeti.Representation.asModuleLinearEquivOfEquiv`: the converse.
@@ -53,21 +54,41 @@ theory counts, while the objects being classified are representations.
 
 public section
 
+namespace FDRep
+
+open CategoryTheory
+open scoped MonoidAlgebra
+
+/-- Passing from a finite-dimensional representation to its group-algebra module
+preserves the dimension of its endomorphism space. -/
+theorem finrank_end_eq_finrank_moduleEnd {k G : Type*} [CommRing k] [Monoid G]
+    (V : FDRep k G) :
+    Module.finrank k (V ⟶ V) =
+      Module.finrank k (Module.End k[G] (Representation.asModule V.ρ)) := by
+  rw [← (Representation.IntertwiningMap.equivAlgEnd V.ρ).toLinearEquiv.finrank_eq]
+  have h := ((forget₂HomLinearEquiv V V).symm.trans
+    (Rep.homLinearEquiv _ _)).finrank_eq
+  -- The carrier instances of the forgotten object reduce to those of `V`; the named
+  -- action comparison then identifies the two intertwining spaces.
+  simpa only [forget₂_ρ] using! h
+
+end FDRep
+
 namespace TauCeti
 
 open CategoryTheory
 open scoped MonoidAlgebra
 
 /-- Bundling the group-algebra module of a representation and restricting scalars to the
-coefficient field preserves its dimension. The scalar structure supplied by `ModuleCat` is
-restriction along `algebraMap`, rather than the original structure on `ρ.asModule`. -/
+coefficient ring preserves its finrank. The scalar action is restriction along `algebraMap`,
+rather than the original structure on `ρ.asModule`. -/
 @[simp]
 theorem _root_.Representation.finrank_moduleCat_asModule
-    {k G V : Type*} [Field k] [Monoid G] [AddCommGroup V] [Module k V]
+    {k G V : Type*} [CommRing k] [Monoid G] [AddCommGroup V] [Module k V]
     (ρ : Representation k G V) :
-    letI := ModuleCat.moduleOfAlgebraModule (k := k) (ModuleCat.of k[G] ρ.asModule)
+    letI := Module.restrictScalars k k[G] (ModuleCat.of k[G] ρ.asModule)
     Module.finrank k (ModuleCat.of k[G] ρ.asModule) = Module.finrank k V := by
-  let := ModuleCat.moduleOfAlgebraModule (k := k) (ModuleCat.of k[G] ρ.asModule)
+  let := Module.restrictScalars k k[G] (ModuleCat.of k[G] ρ.asModule)
   let e : (ModuleCat.of k[G] ρ.asModule) ≃ₗ[k] V :=
     { toFun := fun x ↦ ρ.asModuleEquiv x
       invFun := fun x ↦ ρ.asModuleEquiv.symm x
@@ -83,9 +104,10 @@ theorem _root_.Representation.finrank_moduleCat_asModule
 
 namespace Representation
 
-variable {k G V W : Type*} [CommSemiring k] [Monoid G]
-variable [AddCommMonoid V] [Module k V] [AddCommMonoid W] [Module k W]
-variable {ρ : _root_.Representation k G V} {σ : _root_.Representation k G W}
+section Semiring
+
+variable {k G V : Type*} [Semiring k] [Monoid G] [AddCommMonoid V] [Module k V]
+variable {ρ : _root_.Representation k G V}
 
 /-- **Evaluation of the identification of `ρ.asModule` with `V`.** `Representation.asModuleEquiv`
 is the identity map of the underlying type, so it may be erased from an application; naming that
@@ -101,15 +123,11 @@ theorem _root_.Representation.asModuleEquiv_symm_apply (x : V) :
     ρ.asModuleEquiv.symm x = x :=
   (rfl)
 
-/-- **Evaluation of the `k[G]`-linear map attached to an intertwining map.** The map
-`Representation.IntertwiningMap.equivLinearMapAsModule ρ σ f` is `f` itself on the underlying
-types, so it too may be erased from an application. -/
-@[simp]
-theorem _root_.Representation.IntertwiningMap.equivLinearMapAsModule_apply
-    (f : _root_.Representation.IntertwiningMap ρ σ)
-    (x : ρ.asModule) :
-    _root_.Representation.IntertwiningMap.equivLinearMapAsModule ρ σ f x = (f (x : V) : W) :=
-  (rfl)
+end Semiring
+
+variable {k G V W : Type*} [CommSemiring k] [Monoid G]
+variable [AddCommMonoid V] [Module k V] [AddCommMonoid W] [Module k W]
+variable {ρ : _root_.Representation k G V} {σ : _root_.Representation k G W}
 
 /-- **Evaluation of the intertwining map attached to a `k[G]`-linear map.** This is the inverse
 direction of `Representation.IntertwiningMap.equivLinearMapAsModule_apply`, with the changes of
@@ -122,29 +140,48 @@ theorem _root_.Representation.IntertwiningMap.equivLinearMapAsModule_symm_apply
   (rfl)
 
 /-- **A `k[G]`-linear isomorphism of the attached modules is an equivalence of representations.**
-This reads `Representation.IntertwiningMap.equivLinearMapAsModule` backwards: the `k[G]`-linear map
-underlying `f` is an intertwining map, and it is bijective. -/
-noncomputable def equivOfAsModuleLinearEquiv (f : ρ.asModule ≃ₗ[k[G]] σ.asModule) : ρ.Equiv σ :=
-  _root_.Representation.IntertwiningMap.ofBijective
-    ((_root_.Representation.IntertwiningMap.equivLinearMapAsModule ρ σ).symm f.toLinearMap)
-    f.bijective
+The underlying intertwining map is the one attached by
+`Representation.IntertwiningMap.equivLinearMapAsModule`; the inverse is transported from
+`f.symm`. -/
+noncomputable def equivOfAsModuleLinearEquiv (f : ρ.asModule ≃ₗ[k[G]] σ.asModule) : ρ.Equiv σ where
+  toLinearEquiv := ρ.asModuleEquiv.symm ≪≫ₗ f.restrictScalars k ≪≫ₗ σ.asModuleEquiv
+  isIntertwining' :=
+    ((_root_.Representation.IntertwiningMap.equivLinearMapAsModule ρ σ).symm
+      f.toLinearMap).isIntertwining'
 
 @[simp]
 theorem equivOfAsModuleLinearEquiv_apply (f : ρ.asModule ≃ₗ[k[G]] σ.asModule) (v : V) :
     equivOfAsModuleLinearEquiv f v = σ.asModuleEquiv (f (ρ.asModuleEquiv.symm v)) :=
   (rfl)
 
-/-- **An equivalence of representations is a `k`[G]`-linear isomorphism of the attached modules.**
+/-- The inverse representation equivalence evaluates as `f.symm` through the carrier
+identifications. This simp rule removes the representation/module conversion from applications. -/
+@[simp]
+theorem equivOfAsModuleLinearEquiv_symm_apply (f : ρ.asModule ≃ₗ[k[G]] σ.asModule) (w : W) :
+    (equivOfAsModuleLinearEquiv f).symm w =
+      ρ.asModuleEquiv (f.symm (σ.asModuleEquiv.symm w)) :=
+  (rfl)
+
+/-- **An equivalence of representations is a `k[G]`-linear isomorphism of the attached modules.**
 The inverse of `TauCeti.Representation.equivOfAsModuleLinearEquiv`; the underlying map is the one
 `Representation.IntertwiningMap.equivLinearMapAsModule` attaches to the intertwining map. -/
-noncomputable def asModuleLinearEquivOfEquiv (φ : ρ.Equiv σ) : ρ.asModule ≃ₗ[k[G]] σ.asModule :=
-  LinearEquiv.ofBijective
-    (_root_.Representation.IntertwiningMap.equivLinearMapAsModule ρ σ φ.toIntertwiningMap)
-    φ.bijective
+noncomputable def asModuleLinearEquivOfEquiv (φ : ρ.Equiv σ) : ρ.asModule ≃ₗ[k[G]] σ.asModule where
+  toAddEquiv := (ρ.asModuleEquiv ≪≫ₗ φ.toLinearEquiv ≪≫ₗ σ.asModuleEquiv.symm).toAddEquiv
+  map_smul' :=
+    (_root_.Representation.IntertwiningMap.equivLinearMapAsModule ρ σ
+      φ.toIntertwiningMap).map_smul
 
 @[simp]
 theorem asModuleLinearEquivOfEquiv_apply (φ : ρ.Equiv σ) (x : ρ.asModule) :
     asModuleLinearEquivOfEquiv φ x = σ.asModuleEquiv.symm (φ (ρ.asModuleEquiv x)) :=
+  (rfl)
+
+/-- The inverse module equivalence evaluates as `φ.symm` through the carrier identifications.
+This simp rule removes the representation/module conversion from applications. -/
+@[simp]
+theorem asModuleLinearEquivOfEquiv_symm_apply (φ : ρ.Equiv σ) (y : σ.asModule) :
+    (asModuleLinearEquivOfEquiv φ).symm y =
+      ρ.asModuleEquiv.symm (φ.symm (σ.asModuleEquiv y)) :=
   (rfl)
 
 @[simp]
@@ -170,29 +207,14 @@ theorem nonempty_equiv_iff :
 variable (ρ σ) in
 /-- **The module of a product representation is equivalent to the product of the modules.** -/
 noncomputable def _root_.Representation.prodAsModuleEquiv :
-    (ρ.prod σ).asModule ≃ₗ[k[G]] ρ.asModule × σ.asModule :=
-  let f : (ρ.prod σ).asModule →ₗ[k[G]] ρ.asModule × σ.asModule :=
-    (_root_.Representation.IntertwiningMap.equivLinearMapAsModule _ _
+    (ρ.prod σ).asModule ≃ₗ[k[G]] ρ.asModule × σ.asModule where
+  toAddEquiv := ((ρ.prod σ).asModuleEquiv ≪≫ₗ
+    ρ.asModuleEquiv.symm.prodCongr σ.asModuleEquiv.symm).toAddEquiv
+  map_smul' :=
+    ((_root_.Representation.IntertwiningMap.equivLinearMapAsModule _ _
         (_root_.Representation.IntertwiningMap.fst k ρ σ)).prod
       (_root_.Representation.IntertwiningMap.equivLinearMapAsModule _ _
-        (_root_.Representation.IntertwiningMap.snd k ρ σ))
-  LinearEquiv.ofBijective f <| by
-    -- `f` is the identification of the product module with `V × W`, followed by the inverse
-    -- identifications of `V` and `W` with the factor modules.
-    have hf : ⇑f =
-        Prod.map ρ.asModuleEquiv.symm σ.asModuleEquiv.symm ∘ (ρ.prod σ).asModuleEquiv := by
-      funext x
-      rw [Function.comp_apply, Prod.map_apply, LinearMap.prod_apply, Function.prod_apply,
-        _root_.Representation.IntertwiningMap.equivLinearMapAsModule_apply,
-        _root_.Representation.IntertwiningMap.equivLinearMapAsModule_apply,
-        _root_.Representation.asModuleEquiv_symm_apply,
-        _root_.Representation.asModuleEquiv_symm_apply, _root_.Representation.asModuleEquiv_apply]
-      -- What remains is `IntertwiningMap.fst_apply` and `IntertwiningMap.snd_apply` at `x`,
-      -- read through the type synonym `(ρ.prod σ).asModule = V × W`.
-      rfl
-    rw [hf]
-    exact (ρ.asModuleEquiv.symm.bijective.prodMap σ.asModuleEquiv.symm.bijective).comp
-      (ρ.prod σ).asModuleEquiv.bijective
+        (_root_.Representation.IntertwiningMap.snd k ρ σ))).map_smul
 
 @[simp]
 theorem _root_.Representation.prodAsModuleEquiv_apply (x : (ρ.prod σ).asModule) :
@@ -200,13 +222,13 @@ theorem _root_.Representation.prodAsModuleEquiv_apply (x : (ρ.prod σ).asModule
       (ρ.asModuleEquiv.symm (x : V × W).1, σ.asModuleEquiv.symm (x : V × W).2) :=
   (rfl)
 
+/-- The inverse product-module equivalence pairs the underlying vectors in the product
+representation. This simp rule removes the product-module conversion from applications. -/
 @[simp]
 theorem _root_.Representation.prodAsModuleEquiv_symm_apply (x : ρ.asModule × σ.asModule) :
     (ρ.prodAsModuleEquiv σ).symm x =
-      (ρ.prod σ).asModuleEquiv.symm (ρ.asModuleEquiv x.1, σ.asModuleEquiv x.2) := by
-  apply (ρ.prodAsModuleEquiv σ).injective
-  rw [LinearEquiv.apply_symm_apply, _root_.Representation.prodAsModuleEquiv_apply]
-  rfl
+      (ρ.prod σ).asModuleEquiv.symm (ρ.asModuleEquiv x.1, σ.asModuleEquiv x.2) :=
+  (rfl)
 
 variable {H Q : Type*} [Monoid H] [AddCommMonoid Q] [Module k[G] Q] [Module k[H] Q]
 
@@ -222,13 +244,12 @@ noncomputable def _root_.Representation.linearEquivAsModuleComp (f : H →* G)
   invFun := e.symm
   map_add' := e.map_add
   map_smul' a x := by
-    have hcomp : ρ.asAlgebraHom.comp (MonoidAlgebra.mapDomainAlgHom k k f) =
-        _root_.Representation.asAlgebraHom (ρ.comp f) :=
-      MonoidAlgebra.algHom_ext (fun c ↦ by simp) (Subsingleton.elim _ _)
-    -- Both `asModule`s are `V`, on which `a` acts through the respective `asAlgebraHom`.
+    -- The two semireducible `asModule` carriers are `V`; read their actions through
+    -- `asAlgebraHom` before rewriting across the carrier change.
     change e (a • x) = _root_.Representation.asAlgebraHom (ρ.comp f) a (e x)
-    rw [hQ, e.map_smul, ← hcomp]
-    rfl
+    rw [hQ, e.map_smul]
+    exact congrArg (fun T : Module.End k V ↦ T (e x))
+      (MonoidAlgebra.lift_mapDomain ρ f a)
   left_inv := e.left_inv
   right_inv := e.right_inv
 

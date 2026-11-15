@@ -50,7 +50,7 @@ namespace ModularForm
 /-- The open coordinate box `(-1, 1) ×ℂ (1/2, M)` around the truncated fundamental domain. Its
 floor `1/2` sits strictly below the fundamental domain's lowest point `√3/2` while keeping the
 closed box inside the upper half-plane. -/
-def fdBox (M : ℝ) : Set ℂ := Ioo (-1) 1 ×ℂ Ioo (1 / 2) M
+noncomputable def fdBox (M : ℝ) : Set ℂ := Ioo (-1) 1 ×ℂ Ioo (1 / 2) M
 
 /-- Membership in the box, unfolded to the coordinate bounds. -/
 @[simp]
@@ -85,7 +85,7 @@ theorem finite_setOf_mem_fdBox_and_eq_zero {E : Type*} [NormedAddCommGroup E]
   have hKU : Icc (-1 : ℝ) 1 ×ℂ Icc (1 / 2) M ⊆ upperHalfPlaneSet := fun z hz =>
     lt_of_lt_of_le (by norm_num) (mem_reProdIm.mp hz).2.1
   have hconn : IsPreconnected upperHalfPlaneSet := (convex_halfSpace_im_gt 0).isPreconnected
-  refine (finite_setOf_mem_and_eq_zero_of_isCompact hg hconn hx hgx hK hKU).subset
+  refine (hg.finite_setOf_mem_and_eq_zero_of_isCompact hconn hx hgx hK hKU).subset
     fun z hz => ?_
   obtain ⟨hbox, hgz⟩ := hz
   obtain ⟨hre, him⟩ := mem_reProdIm.mp hbox

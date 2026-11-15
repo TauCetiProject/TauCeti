@@ -45,23 +45,7 @@ theorem cechCocone_hom_ext_singleton (hU : IsOpenCover U) {G : Grpd}
     (U := fun i ↦ (U i : Set X)) (fun x ↦ hU.exists_mem_nhds x)
   intro i
   let s := CechIndex.singleton i
-  have hinc : eqToHom (cechTopDiagram_obj U s).symm ≫ cechInclusion U s =
-      (TopCat.ofHom (ContinuousMap.subtypeVal (cechIntersection U s : Set X)) :
-        TopCat.of (cechIntersection U s) ⟶ X) := by
-    ext x
-    exact cechInclusion_apply U s x
-  have hpt : eqToHom (cechCocone_pt U) = 𝟙 ((cechCocone U).pt) := by rfl
-  have hleg : _root_.FundamentalGroupoid.fundamentalGroupoidFunctor.map
-      (TopCat.ofHom (ContinuousMap.subtypeVal (cechIntersection U s : Set X))) =
-      eqToHom (cechDiagram_obj U s).symm ≫ (cechCocone U).ι.app s := by
-    have hcech := cechCocone_ι_app U s
-    calc
-      _ = eqToHom (cechDiagram_obj U s).symm ≫ (cechCocone U).ι.app s ≫
-          eqToHom (cechCocone_pt U) := by
-        simpa only [← Functor.map_comp, hinc] using hcech.symm
-      _ = _ := by
-        rw [hpt]
-        exact (Category.assoc _ _ _).symm.trans (Category.comp_id _)
+  have hleg := map_subtypeVal_eq_cechCocone_ι_app U s
   have hi := congrArg (fun f => eqToHom (cechDiagram_obj U s).symm ≫ f) (h i)
   rw [← Category.assoc, ← hleg, ← Category.assoc, ← hleg] at hi
   dsimp only [s] at hi

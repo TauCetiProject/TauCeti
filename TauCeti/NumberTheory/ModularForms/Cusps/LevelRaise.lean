@@ -20,6 +20,10 @@ It applies to modular forms for arbitrary arithmetic determinant-one subgroups w
 level-raising inclusion. This transports constant-term vectors of Eisenstein series to
 higher levels.
 
+`ModularForm.exists_constantTermAt_levelRaise` packages the reduction with the first column
+of the representative, so a formula for the constant terms of `f` in terms of the first column
+of the cusp representative transports directly to `V_t f`.
+
 The two matrix reductions also apply to functions with a transformation law, such as the
 quasimodular weight-two Eisenstein series.
 
@@ -37,10 +41,24 @@ open TauCeti
 
 namespace Matrix.SpecialLinearGroup
 
-/-- A representative of the scaled cusp with primitive first column. -/
-lemma exists_scaled_cusp_reduction (γ : SL(2, ℤ)) {t : ℕ} [NeZero t] :
+/-- **Factorization of the scaled first column.** Let `(a, c)` be the first column of `γ`. The
+scaled column `(t a, c)` is `gcd(c, t)` times the first column of some `δ ∈ SL(2, ℤ)`. When
+`(t a, c)` is nonzero, `δ` represents the scaled cusp `t a / c` with a primitive first column.
+When `t = 0` and `c = 0` the scaled column is zero, no cusp is defined, and the equations impose
+no constraint on `δ`. -/
+lemma exists_scaled_cusp_reduction (γ : SL(2, ℤ)) {t : ℕ} :
     ∃ δ : SL(2, ℤ), (t : ℤ) * γ 0 0 = δ 0 0 * Int.gcd (γ 1 0) t ∧
       γ 1 0 = δ 1 0 * Int.gcd (γ 1 0) t := by
+  rcases eq_or_ne t 0 with rfl | ht
+  · -- at `t = 0` the gcd is `|c|`, and the first column `(0, sign c)` of `δ` does the job
+    rcases lt_trichotomy (γ 1 0) 0 with hc | hc | hc
+    · obtain ⟨δ, h0, h1⟩ :=
+        (isCoprime_zero_left.mpr (isUnit_one.neg : IsUnit (-1 : ℤ))).exists_SL2_col 0
+      exact ⟨δ, by simp [h0], by simp only [h1, Nat.cast_zero, Int.gcd_zero_right]; omega⟩
+    · exact ⟨1, by simp [hc], by simp [hc]⟩
+    · obtain ⟨δ, h0, h1⟩ := (isCoprime_zero_left.mpr (isUnit_one : IsUnit (1 : ℤ))).exists_SL2_col 0
+      exact ⟨δ, by simp [h0], by simp only [h1, Nat.cast_zero, Int.gcd_zero_right]; omega⟩
+  have : NeZero t := ⟨ht⟩
   have hcop := Int.isCoprime_iff_gcd_eq_one.mp (γ.isCoprime_col 0)
   have hgcd : Int.gcd ((t : ℤ) * γ 0 0) (γ 1 0) = Int.gcd (γ 1 0) t := by
     rw [Int.gcd_mul_left_left_of_gcd_eq_one hcop, Int.gcd_comm]
@@ -126,11 +144,30 @@ theorem constantTermAt_levelRaise (f : ModularForm Γ k)
   -- The normalization of `V_t` cancels the determinant power in the arithmetic slash.
   push_cast
   rw [div_zpow, div_zpow]
-  simp only [zpow_neg, div_eq_mul_inv, inv_inv]
+  simp only [_root_.zpow_neg, div_eq_mul_inv, inv_inv]
   have hp : (t : ℂ) ^ (1 - k) * (t : ℂ) ^ (k - 1) = 1 := by
     rw [← zpow_add₀ ht]
     simp
   linear_combination hp * (Int.gcd (γ 1 0) t : ℂ) ^ k *
     ((t : ℂ) ^ k)⁻¹ * constantTermAt δ f
+
+
+/-- **Constant-term transport under level raising, with an explicit reduced cusp.** The constant
+term of `V_t f` at `a/c` is `(gcd(c,t)/t)^k` times that of `f` at some `δ` with first column
+`(ta/g, c/g)`, where `g = gcd(c,t)`; the integer divisions are exact. -/
+theorem exists_constantTermAt_levelRaise (f : ModularForm Γ k)
+    (h : Γ' ≤ ConjAct.toConjAct (TauCeti.scaleGL t)⁻¹ • Γ) (γ : SL(2, ℤ)) :
+    ∃ δ : SL(2, ℤ), δ 0 0 = (t : ℤ) * γ 0 0 / Int.gcd (γ 1 0) t ∧
+      δ 1 0 = γ 1 0 / Int.gcd (γ 1 0) t ∧
+      constantTermAt γ (TauCeti.ModularForm.levelRaise t h f) =
+        ((Int.gcd (γ 1 0) t : ℂ) / t) ^ k * constantTermAt δ f := by
+  obtain ⟨δ, ha, hc⟩ := γ.exists_scaled_cusp_reduction (t := t)
+  have hg : (Int.gcd (γ 1 0) t : ℤ) ≠ 0 := by
+    exact_mod_cast (Int.gcd_pos_of_ne_zero_right (γ 1 0)
+      (Nat.cast_ne_zero.mpr (NeZero.ne t))).ne'
+  refine ⟨δ, ?_, ?_, constantTermAt_levelRaise f h γ δ ha hc⟩
+  · rw [ha, Int.mul_ediv_cancel _ hg]
+  · exact ((congrArg (fun c : ℤ ↦ c / Int.gcd (γ 1 0) t) hc).trans
+      (Int.mul_ediv_cancel _ hg)).symm
 
 end ModularForm

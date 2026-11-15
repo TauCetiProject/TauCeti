@@ -29,6 +29,8 @@ The coordinates of the restriction are obtained by base change along the quotien
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open CategoryTheory
 
 namespace TauCeti.CommHopfAlgCat
@@ -44,8 +46,8 @@ noncomputable def kernelCompositeMap (f : H ⟶ K) (g : K ⟶ L) :
   liftQuotient (kernelHopfIdeal f) (g ≫ mkQuotient L (kernelHopfIdeal (f ≫ g))) (by
     intro x hx
     apply (mkQuotient_eq_zero_iff L (kernelHopfIdeal (f ≫ g)) (g.hom x)).mpr
-    rw [kernelHopfIdeal_comp, HopfIdeal.map_toIdeal]
-    exact Ideal.mem_map_of_mem g.hom.toAlgHom.toRingHom hx)
+    rw [kernelHopfIdeal_comp]
+    exact HopfIdeal.mem_map_of_mem g.hom (HopfIdeal.mem_toIdeal.mp hx))
 
 /-- The restriction on kernels sends a quotient representative to the class of its image. -/
 @[simp]
@@ -126,7 +128,7 @@ private theorem kernelCompositeMap_property
   let e := Ideal.quotientEquivAlgOfEq L he.symm
   have hp := hiso.left (Ideal.quotientMap (I.map g.hom.toAlgHom.toRingHom)
     g.hom.toAlgHom.toRingHom Ideal.le_comap_map) e.toRingEquiv
-    (hP.quotientMap hiso g.hom.toAlgHom.toRingHom I hg)
+    (hP.quotientMap g.hom.toAlgHom.toRingHom I hg)
   convert hp using 1
   ext x
   simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, e]

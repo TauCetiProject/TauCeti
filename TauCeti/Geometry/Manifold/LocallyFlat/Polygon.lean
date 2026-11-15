@@ -6,44 +6,39 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
+public import TauCeti.Geometry.Manifold.LocallyFlat.Segment
 public import TauCeti.Geometry.Polygon.Simple
 import Mathlib.Topology.Algebra.Module.Equiv.Pi
-import TauCeti.Analysis.Convex.Between
-import TauCeti.Analysis.LocallyConvex.Separation
-import TauCeti.Analysis.Normed.Affine.Coordinate
-import TauCeti.Analysis.Normed.Affine.Ray
+import Mathlib.Topology.Algebra.Module.Equiv.Prod
 
 /-!
 # Polygonal knots are locally flat
 
-A simple closed polygon in a real normed affine space is a tame embedded circle: around each of its
-points some chart of the ambient space carries it onto a coordinate line. This file proves that the
-realization `TauCeti.SimplePolygon.realize` of a simple polygon is a locally flat embedding of the
-circle, `TauCeti.IsLocallyFlat`, so that polygonal knots in `ℝ³`, the polygonal presentation of
-knots (Burde and Zieschang, Definition 1.3), are among the locally flat embeddings to which the
-topological notions of concordance and sliceness apply.
+A simple closed polygon in a real Hausdorff locally convex affine space admits flattening charts:
+around each of its points some chart of the ambient space identifies it with a coordinate line
+in the chart target. This file proves that the realization `TauCeti.SimplePolygon.realize` of a
+simple polygon is a locally flat embedding of the circle, `TauCeti.IsLocallyFlat`, so that polygonal
+knots in `ℝ³`, the polygonal presentation of knots (Burde and Zieschang, Definition 1.3), are among
+the locally flat embeddings to which the topological notions of concordance and sliceness apply.
 
 The flattening chart at a point `z` of the polygon comes from its local structure,
 `Polygon.IsSimple.exists_mem_nhds_inter_boundary_eq`: near `z` the polygon is two segments from
-`z`, to points `a` and `b`, meeting only at `z`. Hence `a - z` and `b - z` do not lie on a common
-ray, and a continuous functional `ℓ` separates them, with `ℓ (a - z) < 0 < ℓ (b - z)`. Near `z` the
-polygon is then the graph over the coordinate `ℓ (· - z)` of a piecewise affine map, running out
-along `a - z` for negative values and along `b - z` for positive ones, and a graph is flattened by
-shearing (`TauCeti.exists_isSliceChart_of_inter_eq_inter_range`). The complementary model of the
-local flatness is any `F'` with `V ≃L[ℝ] ℝ × F'`, where `V` is the space of translations; for a knot
-in `ℝ³` it is `ℝ²`.
+`z`, to points `a` and `b`, meeting only at `z`, and two such segments are flat at `z`
+(`TauCeti.exists_isSliceChart_of_inter_eq_union_affineSegment`). The complementary model of the
+local flatness is any topological real module `F'` with `V ≃L[ℝ] ℝ × F'`, where `V` is the space of
+translations; for a knot in `ℝ³` it is `ℝ²`.
 
 That a polygonal curve is locally flat is special to curves. A piecewise-linear embedding of a
 manifold of dimension at least two need not be locally flat in codimension two: the cone on a
 knotted circle in `S³` is a piecewise-linear disc in the four-ball which is not locally flat at the
 cone point. For a curve the link of a vertex is a pair of points in a sphere, which is never
-knotted, and that is what the separating functional above uses.
+knotted. The same local model gives the local flatness of piecewise-linear curves in charts,
+`TauCeti.IsLocallyFlat.of_isPLOn_chartAt`.
 
 ## Main results
 
 * `Polygon.IsSimple.exists_isSliceChart`: every point of a simple polygon has a chart with values in
-  `ℝ × F'` carrying the polygon onto `ℝ × {0}`.
+  `ℝ × F'` identifying the polygon in its source with `ℝ × {0}` in its target.
 * `TauCeti.SimplePolygon.isLocallyFlat_realize`: the realization of a simple polygon is locally
   flat, with complementary model `F'`.
 * `TauCeti.SimplePolygon.isLocallyFlat_realize_euclideanSpace`: a polygonal knot in `ℝᵐ⁺¹` is
@@ -61,56 +56,33 @@ public section
 
 open Set Topology
 
-variable {V P F' : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [MetricSpace P]
-  [NormedAddTorsor V P] [NormedAddCommGroup F'] [NormedSpace ℝ F']
+variable {V P F' : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
+  [ContinuousSMul ℝ V] [LocallyConvexSpace ℝ V] [T2Space V]
+  [AddTorsor V P] [TopologicalSpace P] [IsTopologicalAddTorsor P]
+  [AddCommGroup F'] [Module ℝ F'] [TopologicalSpace F']
 
 namespace Polygon
 
 open TauCeti
 
-/-- **A simple polygon is flat at each of its points.** In a real normed affine space modelled on
-`V ≃L[ℝ] ℝ × F'`, every point of a simple polygon lies in the source of a chart with values in
-`ℝ × F'` carrying the polygon onto the line `ℝ × {0}`. -/
-theorem IsSimple.exists_isSliceChart {n : ℕ} [NeZero n] {poly : Polygon P n}
+/-- **A simple polygon is flat at each of its points.** In a real Hausdorff locally convex affine
+space modelled on `V ≃L[ℝ] ℝ × F'`, every point of a simple polygon lies in the source of a chart
+with values in `ℝ × F'` identifying the polygon in its source with the line `ℝ × {0}` in its
+target. -/
+theorem IsSimple.exists_isSliceChart {n : ℕ} {poly : Polygon P n}
     (h : poly.IsSimple ℝ) (e : V ≃L[ℝ] ℝ × F') {z : P} (hz : z ∈ poly.boundary ℝ) :
     ∃ φ : OpenPartialHomeomorph P (ℝ × F'), z ∈ φ.source ∧
       IsSliceChart φ ((univ : Set ℝ) ×ˢ ({0} : Set F')) (poly.boundary ℝ) := by
   obtain ⟨a, b, ha, hb, hab, U, hU, hUeq⟩ := h.exists_mem_nhds_inter_boundary_eq hz
-  set d₁ := a -ᵥ z
-  set d₂ := b -ᵥ z
-  have hd₁ : 0 < ‖d₁‖ := norm_pos_iff.2 (vsub_ne_zero.2 ha)
-  have hd₂ : 0 < ‖d₂‖ := norm_pos_iff.2 (vsub_ne_zero.2 hb)
-  obtain ⟨ℓ, h₁, h₂, hℓ⟩ := exists_strongDual_neg_pos_ne_zero
-    (zero_notMem_segment_of_affineSegment_inter_eq ha hb hab)
-    ((ContinuousLinearMap.fst ℝ ℝ F').comp e.toContinuousLinearMap) (u := e.symm (1, 0))
-    (by simp)
-  obtain ⟨Φ, hΦ⟩ := exists_homeomorph_fst_eq e ℓ hℓ z
-  -- Near `z` the polygon is the union of the rays along `d₁` and `d₂`, a graph over `ℓ`.
-  obtain ⟨g, hg, hℓg, hrange⟩ := exists_continuous_range_eq_rays ℓ h₁ h₂ z
-  obtain ⟨r, hr, hrU⟩ := Metric.mem_nhds_iff.1 hU
-  set ρ := min r (min ‖d₁‖ ‖d₂‖)
-  have hρ : 0 < ρ := lt_min hr (lt_min hd₁ hd₂)
-  obtain ⟨φ, hφ, hslice⟩ := exists_isSliceChart_of_inter_eq_inter_range Φ hg (by simp [hΦ, hℓg])
-    (U := Metric.ball z ρ) (A := poly.boundary ℝ) Metric.isOpen_ball <| by
-      ext y
-      refine and_congr_right fun hy => ?_
-      have hyU : y ∈ U := hrU (Metric.ball_subset_ball (min_le_left _ _) hy)
-      rw [Metric.mem_ball] at hy
-      have hy₁ : dist y z < ‖a -ᵥ z‖ := hy.trans_le ((min_le_right _ _).trans (min_le_left _ _))
-      have hy₂ : dist y z < ‖b -ᵥ z‖ := hy.trans_le ((min_le_right _ _).trans (min_le_right _ _))
-      have hb' : y ∈ poly.boundary ℝ ↔ y ∈ affineSegment ℝ z a ∪ affineSegment ℝ z b := by
-        simpa [hyU] using congrArg (y ∈ ·) hUeq
-      rw [hb', mem_union, mem_affineSegment_iff_of_dist_lt hy₁,
-        mem_affineSegment_iff_of_dist_lt hy₂, hrange]
-  exact ⟨φ, hφ ▸ Metric.mem_ball_self hρ, hslice⟩
+  exact exists_isSliceChart_of_inter_eq_union_affineSegment e ha hb hab hU hUeq
 
 end Polygon
 
 namespace TauCeti.SimplePolygon
 
-/-- **A polygonal knot is locally flat.** The realization of a simple polygon in a real normed
-affine space modelled on `V ≃L[ℝ] ℝ × F'` is a locally flat embedding of the circle, with
-complementary model `F'`. -/
+/-- **A polygonal knot is locally flat.** The realization of a simple polygon in a real Hausdorff
+locally convex affine space modelled on `V ≃L[ℝ] ℝ × F'` is a locally flat embedding of the circle,
+with complementary model `F'`. -/
 theorem isLocallyFlat_realize (p : SimplePolygon ℝ P) (e : V ≃L[ℝ] ℝ × F') :
     IsLocallyFlat ℝ F' p.realize := by
   refine isLocallyFlat_iff_isSliceEmbedding.2 ⟨p.isClosedEmbedding_realize.isEmbedding, fun x => ?_⟩

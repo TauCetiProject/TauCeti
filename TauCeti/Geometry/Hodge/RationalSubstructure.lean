@@ -25,14 +25,10 @@ exhibits the complexification as a sub-Hodge structure in the sense of
 `TauCeti.Hodge.HodgeStructureOn.IsSubstructure`, and the induced conjugation, filtration and
 components are read off from that general construction.
 
-The definition and its base-change interface are those specified in Layer L1 of
-`TauCetiRoadmap/HodgeStructures/README.md`, following Voisin, *Hodge Theory and Complex Algebraic
-Geometry I*, §7.1.2. The induced structure is what makes a rational Hodge substructure a subobject
-of a Hodge structure, as the semisimplicity milestone of that layer requires.
-
-The signatures of `RationalHodgeSubstructure` and `RationalHodgeSubstructure.WC` are adapted from
-the roadmap's formal companion
-[`HodgeStructures/Suggested.lean`](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/HodgeStructures/Suggested.lean).
+The definition follows Voisin, *Hodge Theory and Complex Algebraic Geometry I*, §7.1.2. The
+induced structure is what makes a rational Hodge substructure a subobject of a Hodge structure, as
+used by the semisimplicity of polarizable rational Hodge structures in
+`TauCeti/Geometry/Hodge/Semisimple.lean`.
 
 ## Main declarations
 
@@ -295,7 +291,7 @@ theorem finsetSup_WQ (s : Finset (RationalHodgeSubstructure hℚ hs)) :
   classical
   induction s using Finset.induction with
   | empty => simp
-  | insert a s ha ih => simp [ih]
+  | insert a s _ ih => simp [ih]
 
 /-- Passing to the underlying rational subspace is strictly monotone. -/
 theorem WQ_strictMono :

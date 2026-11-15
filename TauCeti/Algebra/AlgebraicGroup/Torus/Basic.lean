@@ -52,10 +52,8 @@ distinguishes tori from general groups of multiplicative type.
 * J. S. Milne, *Algebraic Groups* (2017), Definitions 12.14 and 12.17.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 2.
 
-This is the coordinate-algebra definition required by Layer 4, "Tori: split and non-split", of
-the ReductiveGroups roadmap. Smoothness and geometric connectedness are proved in
-`TauCeti.Algebra.AlgebraicGroup.Torus.SmoothConnected`; the next step is the character lattice
-with its Galois action.
+Smoothness and geometric connectedness are proved in
+`TauCeti.Algebra.AlgebraicGroup.Torus.SmoothConnected`.
 -/
 
 public section
@@ -64,7 +62,7 @@ open CategoryTheory
 
 namespace TauCeti
 
-universe u
+universe u v
 
 /-- The object property selecting finite-type commutative Hopf algebras that are coordinate
 rings of split tori of finite rank.
@@ -143,7 +141,7 @@ theorem torusCommHopfAlgProperty.isCocomm
     let e := _root_.CommHopfAlgCat.ofIso <|
       (forget₂ (FiniteTypeCommHopfAlgCat.{u, u} (AlgebraicClosure k))
         (_root_.CommHopfAlgCat.{u} (AlgebraicClosure k))).mapIso i
-    e.toCoalgEquiv.toCoalgHom.isCocomm_of_surjective e.toCoalgEquiv.surjective (hA := hsplit)
+    Coalgebra.IsCocomm.of_surjective e e.surjective (hA := hsplit)
   exact Coalgebra.IsCocomm.of_baseChange (h := hbase)
 
 /-- The category of finite-type torus coordinate Hopf algebras over a field.
@@ -182,18 +180,19 @@ namespace SplitTorus
 
 /-- The coordinate Hopf algebra of a finite-rank split torus satisfies the split-torus property. -/
 @[grind =>]
-theorem splitTorus_coordinateRing (k : Type u) [CommRing k] (σ : Type u) [Finite σ] :
+theorem splitTorus_coordinateRing (k : Type max u v) [CommRing k] (σ : Type v)
+    [Finite σ] :
     splitTorusCommHopfAlgProperty k
       (DiagonalizableGroup.coordinateRing k (characterGroup σ)) := by
   rw [splitTorusCommHopfAlgProperty_iff]
-  let eσ : σ ≃ ULift.{u} (Fin (Nat.card σ)) :=
+  let eσ : σ ≃ ULift.{max u v} (Fin (Nat.card σ)) :=
     (Finite.equivFin σ).trans Equiv.ulift.symm
   let e : Multiplicative (σ →₀ ℤ) ≃*
-      Multiplicative (ULift.{u} (Fin (Nat.card σ)) →₀ ℤ) :=
+      Multiplicative (ULift.{max u v} (Fin (Nat.card σ)) →₀ ℤ) :=
     AddEquiv.toMultiplicative (Finsupp.domCongr eσ)
   let i : DiagonalizableGroup.coordinateRing k (characterGroup σ) ≅
       DiagonalizableGroup.coordinateRing k
-        (characterGroup (ULift.{u} (Fin (Nat.card σ)))) :=
+        (characterGroup (ULift.{max u v} (Fin (Nat.card σ)))) :=
     ObjectProperty.isoMk _ <|
       _root_.CommHopfAlgCat.isoMk (MonoidAlgebra.domCongrBialgEquiv k k e)
   exact ⟨Nat.card σ, ⟨i.symm⟩⟩

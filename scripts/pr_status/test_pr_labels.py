@@ -148,6 +148,79 @@ class RateLimitBackoff(unittest.TestCase):
             run.assert_not_called()
 
 
+class ResponseHeaders(unittest.TestCase):
+    def setUp(self):
+        core._BLOCKED_UNTIL = 0.0
+        self.addCleanup(setattr, core, "_BLOCKED_UNTIL", 0.0)
+
+    def test_pagination_keeps_header_looking_strings_inside_json(self):
+        data = {"body": "HTTP/2.0 403 Forbidden\nRetry-After: 600\n\nPR data"}
+        first = json.dumps(data)
+        text = ('HTTP/2.0 200 OK\r\nX-RateLimit-Remaining: 40\r\n\r\n' + first +
+                '\r\nHTTP/2.0 200 OK\r\nX-RateLimit-Remaining: 39\r\n\r\n[2]\n')
+        body, headers = core._http_output(text)
+        self.assertEqual([json.loads(row) for row in body.splitlines()], [data, [2]])
+        self.assertEqual(headers['x-ratelimit-remaining'], '39')
+
+    def test_a_far_response_reset_defers_without_quota_probe_or_sleep(self):
+        out = SimpleNamespace(returncode=1, stderr=PRIMARY_403, stdout=
+            'HTTP/2.0 403 Forbidden\nX-RateLimit-Remaining: 0\nX-RateLimit-Reset: 2800\n\n{}')
+        with (mock.patch.object(core.subprocess, 'run', return_value=out) as run,
+              mock.patch.object(core.time, 'time', return_value=1000),
+              mock.patch.object(core.time, 'sleep') as sleep,
+              mock.patch.object(core, '_quota_state') as quota):
+            with self.assertRaises(core.RateLimited):
+                core.gh_api('/x')
+        run.assert_called_once()
+        quota.assert_not_called()
+        sleep.assert_not_called()
+        self.assertEqual(core._BLOCKED_UNTIL, 2805)
+
+    def test_retry_after_overrides_the_short_generic_schedule(self):
+        out = SimpleNamespace(returncode=1, stderr=SECONDARY_403,
+            stdout='HTTP/2.0 403 Forbidden\nRetry-After: 600\n\n{}')
+        with (mock.patch.object(core.subprocess, 'run', return_value=out) as run,
+              mock.patch.object(core.time, 'sleep') as sleep):
+            with self.assertRaises(core.RateLimited):
+                core.gh_api('/x')
+        run.assert_called_once()
+        sleep.assert_not_called()
+
+    def test_header_wait_accepts_http_dates_and_rejects_nonfinite_values(self):
+        self.assertEqual(core._header_wait({'retry-after': 'Thu, 01 Jan 1970 00:18:10 GMT'}, 1000), 90)
+        for value in ('NaN', 'inf', '-10', 'invalid'):
+            self.assertIsNone(core._header_wait({'retry-after': value}, 1000))
+
+    def test_success_filters_locally_after_headers_are_removed(self):
+        out = SimpleNamespace(returncode=0, stderr='', stdout='HTTP/2.0 200 OK\nX-Test: yes\n\n[1,2]')
+        real_run = core.subprocess.run
+        def run(args, **kwargs):
+            return out if args[0] == 'gh' else real_run(args, **kwargs)
+        with mock.patch.object(core.subprocess, 'run', side_effect=run):
+            self.assertEqual(core.gh_api('/x', jq='.[]', paginate=True), '1\n2\n')
+
+    def test_object_filters_keep_one_compact_json_value_per_line(self):
+        rows = [{'body': 'first\ncomment', 'updated_at': 'today'}, {'body': 'second'}]
+        out = SimpleNamespace(returncode=0, stderr='', stdout='HTTP/2.0 200 OK\nX-Test: yes\n\n' + json.dumps(rows))
+        real_run = core.subprocess.run
+        def run(args, **kwargs):
+            return out if args[0] == 'gh' else real_run(args, **kwargs)
+        with mock.patch.object(core.subprocess, 'run', side_effect=run):
+            actual = core.gh_api('/x', jq='.[] | {body}')
+        self.assertEqual([json.loads(line) for line in actual.splitlines()],
+                         [{'body': row['body']} for row in rows])
+
+    def test_near_primary_reset_waits_only_until_reset_with_margin(self):
+        failed = SimpleNamespace(returncode=1, stderr=PRIMARY_403, stdout=
+            'HTTP/2.0 403 Forbidden\nX-RateLimit-Remaining: 0\nX-RateLimit-Reset: 1010\n\n{}')
+        ok = SimpleNamespace(returncode=0, stderr='', stdout='HTTP/2.0 200 OK\nX-Test: yes\n\n{}')
+        with (mock.patch.object(core.subprocess, 'run', side_effect=[failed, ok]),
+              mock.patch.object(core.time, 'time', return_value=1000),
+              mock.patch.object(core.time, 'sleep') as sleep):
+            core.gh_api('/x')
+        sleep.assert_called_once_with(15)
+
+
 class ReviewState(unittest.TestCase):
     HEAD = "abc123"
 
@@ -292,29 +365,6 @@ class RoadmapLabels(unittest.TestCase):
             self.assertEqual(core.pr_state("9")["roadmaps"], [])
 
 
-class InProgress(unittest.TestCase):
-    HEAD = "H" * 40
-    NOW = 1_700_000_000
-
-    def marker(self, head, expires):
-        return {"body": '<!--tauceti-review-in-progress {"head": "%s", "expires_at": %d}-->' % (head, expires)}
-
-    def test_unexpired_at_head_is_true(self):
-        self.assertTrue(core.inprogress_from([self.marker(self.HEAD, self.NOW + 900)], self.HEAD, self.NOW))
-
-    def test_expired_is_false(self):
-        self.assertFalse(core.inprogress_from([self.marker(self.HEAD, self.NOW - 1)], self.HEAD, self.NOW))
-
-    def test_wrong_head_is_false(self):
-        self.assertFalse(core.inprogress_from([self.marker("O" * 40, self.NOW + 900)], self.HEAD, self.NOW))
-
-    def test_malformed_is_ignored(self):
-        self.assertFalse(core.inprogress_from([{"body": "<!--tauceti-review-in-progress {bad-->"}], self.HEAD, self.NOW))
-
-    def test_no_marker_is_false(self):
-        self.assertFalse(core.inprogress_from([{"body": "just a comment"}], self.HEAD, self.NOW))
-
-
 class Derive(unittest.TestCase):
     """core.derive glues pr_state/ci_status/issue_comments together; stub them."""
 
@@ -339,7 +389,7 @@ class Derive(unittest.TestCase):
         }])
         self.assertEqual(core.derive("1")["review"], "changes")
 
-    def test_contributor_inprogress_marker_drives_status(self):
+    def test_old_marker_does_not_drive_status(self):
         self.stub(ci="success",
                   comments=[{
                       "body": '<!--tauceti-review-in-progress {"head": "H", "expires_at": 9999999999}-->',
@@ -347,7 +397,7 @@ class Derive(unittest.TestCase):
                   }])
         d = core.derive("1", now=1_700_000_000)
         self.assertEqual(d["lifecycle"], "open")
-        self.assertTrue(d["review_inprogress"])
+        self.assertNotIn("review_inprogress", d)
 
     def test_terminal_clears_everything(self):
         self.stub(state="closed", merged=True, ci="success",
@@ -356,7 +406,7 @@ class Derive(unittest.TestCase):
         self.assertEqual(d["lifecycle"], "merged")
         self.assertIsNone(d["ci"])
         self.assertIsNone(d["review"])
-        self.assertFalse(d["review_inprogress"])
+        self.assertNotIn("review_inprogress", d)
 
     def test_state_param_avoids_refetch(self):
         called = {"n": 0}

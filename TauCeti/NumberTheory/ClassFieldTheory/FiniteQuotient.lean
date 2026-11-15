@@ -11,6 +11,8 @@ public import TauCeti.NumberTheory.ClassFieldTheory.MuNRep
 public import TauCeti.RepresentationTheory.Continuous.TopRep.Discrete
 public import TauCeti.Topology.Algebra.GroupAction.Discrete
 
+import TauCeti.RepresentationTheory.Continuous.Restriction
+
 /-!
 # Finite-quotient Galois coefficient representations
 
@@ -29,7 +31,9 @@ every `V` contains an open normal subgroup acting trivially on `μₙ`, of index
 (`exists_openNormalSubgroup_le_muNRep_ρ_eq_self`). On fixed fields this replaces a finite Galois
 extension `L` by `L(μₙ)`; for a prime `n = ℓ` it keeps the index prime to `ℓ`
 (`exists_openNormalSubgroup_le_muNRep_ρ_eq_self_of_coprime`), which is what descent of
-cohomology along the quotient requires.
+cohomology along the quotient requires. A subgroup acting trivially on `μₙ` makes `μₙ` the
+inflation of a finite-dimensional representation of the quotient
+(`exists_fdGalRepOfQuotient_iso_muNRep`).
 
 The functor uses `discreteTopRepFunctor` and Mathlib's `TopRep.resFunctor`. The converse uses the
 existing finite-set open-stabilizer theorem, not a second finite-quotient or Galois carrier.
@@ -93,7 +97,7 @@ theorem galRepOfQuotient_ρ_eq_self (V : OpenNormalSubgroup (Field.absoluteGaloi
     (A : Rep (ZMod n) (Field.absoluteGaloisGroup F ⧸ V.toSubgroup))
     {g : Field.absoluteGaloisGroup F} (hg : g ∈ V) (a : A.V) :
     ((galRepOfQuotient n F V).obj A).ρ g a = a := by
-  rw [galRepOfQuotient_ρ_apply, (QuotientGroup.eq_one_iff g).2 hg, map_one, Module.End.one_apply]
+  rw [galRepOfQuotient_ρ_apply, (QuotientGroup.eq_one_iff g).2 hg, map_one, one_apply_eq_self]
 
 /-- The functor leaves the underlying coefficient map unchanged. -/
 @[simp]
@@ -101,6 +105,20 @@ theorem galRepOfQuotient_map_apply (V : OpenNormalSubgroup (Field.absoluteGalois
     {A B : Rep (ZMod n) (Field.absoluteGaloisGroup F ⧸ V.toSubgroup)} (f : A ⟶ B) (a : A.V) :
     ((galRepOfQuotient n F V).map f).hom a = f.hom a :=
   (rfl)
+
+/-- Inflation is faithful: it leaves the underlying coefficient maps unchanged. -/
+instance (V : OpenNormalSubgroup (Field.absoluteGaloisGroup F)) :
+    (galRepOfQuotient n F V).Faithful :=
+  inferInstanceAs (discreteTopRepFunctor (ZMod n) (Field.absoluteGaloisGroup F ⧸ V.toSubgroup) ⋙
+    TopRep.resFunctor (QuotientGroup.mk' V.toSubgroup)).Faithful
+
+/-- Inflation is full: a map of inflated representations commuting with `G_F` commutes with its
+quotient `G_F ⧸ V`, every class of which lifts to `G_F`. -/
+instance (V : OpenNormalSubgroup (Field.absoluteGaloisGroup F)) :
+    (galRepOfQuotient n F V).Full :=
+  have := TopRep.full_res (k := ZMod n) (QuotientGroup.mk'_surjective V.toSubgroup)
+  inferInstanceAs (discreteTopRepFunctor (ZMod n) (Field.absoluteGaloisGroup F ⧸ V.toSubgroup) ⋙
+    TopRep.resFunctor (QuotientGroup.mk' V.toSubgroup)).Full
 
 /-- The inflated coefficient object carries the discrete topology. -/
 instance (V : OpenNormalSubgroup (Field.absoluteGaloisGroup F))
@@ -120,7 +138,7 @@ theorem isSmoothDiscrete_galRepOfQuotient (V : OpenNormalSubgroup (Field.absolut
     IsSmoothDiscrete (ZMod n) ((galRepOfQuotient n F V).obj A) := by
   rw [galRepOfQuotient_obj]
   exact (isSmoothDiscrete_discreteTopRep (ZMod n) _ A).res
-    (ContinuousMonoidHom.quotientMk V.toSubgroup).continuous
+    (φ := QuotientGroup.mk' V.toSubgroup) QuotientGroup.continuous_mk
 
 /-- Supply smoothness as the instance hypothesis used by local cohomology and duality. -/
 instance (V : OpenNormalSubgroup (Field.absoluteGaloisGroup F))
@@ -244,11 +262,12 @@ attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
 /-- Every finite smooth discrete Galois representation comes from a finite module over a finite
 Galois quotient. Thus finite-group representation theory applies without changing coefficients. -/
 theorem exists_galRepOfQuotient_iso (X : GalRep n F) [Finite X.V]
-    [DiscreteTopology X.V] [hX : Fact (IsSmoothDiscrete (ZMod n) X)] :
+    [hX : Fact (IsSmoothDiscrete (ZMod n) X)] :
     ∃ (V : OpenNormalSubgroup (Field.absoluteGaloisGroup F))
       (A : Rep (ZMod n) (Field.absoluteGaloisGroup F ⧸ V.toSubgroup)),
       Finite A.V ∧ Nonempty ((galRepOfQuotient n F V).obj A ≅ X) := by
   have := hX.out.continuousSMul
+  have := hX.out.discreteTopology
   obtain ⟨V, hV⟩ := (Set.finite_univ (α := X.V)).exists_openNormalSubgroup_smul_eq_self
     (G := Field.absoluteGaloisGroup F)
   obtain ⟨A, ⟨e⟩⟩ := exists_galRepOfQuotient_iso_of_trivial n F V X fun g hg x ↦
@@ -294,22 +313,45 @@ theorem exists_openNormalSubgroup_le_muNRep_ρ_eq_self (hn : IsUnit (n : F))
     exact le_inf hV hK
 
 variable {n F} in
-/-- **Adjoining `μₗ` keeps the index prime to `ℓ`.** For a prime `ℓ` invertible in `F` and an
-open normal subgroup `V` of `G_F` of index prime to `ℓ`, some open normal subgroup `W ≤ V` acts
-trivially on `μₗ`, still has index prime to `ℓ`, and has commutative quotient when `V` has: its
-index divides `[G_F : V] · (ℓ - 1)`. -/
+/-- **Adjoining `μₗ` keeps the index prime to `ℓ`.** For a prime `ℓ` and an open normal subgroup `V`
+of `G_F` of index prime to `ℓ`, some open normal subgroup `W ≤ V` acts trivially on `μₗ`, still has
+index prime to `ℓ`, and has commutative quotient when `V` has. -/
 theorem exists_openNormalSubgroup_le_muNRep_ρ_eq_self_of_coprime [Fact n.Prime]
-    (hn : IsUnit (n : F)) (V : OpenNormalSubgroup (Field.absoluteGaloisGroup F))
+    (V : OpenNormalSubgroup (Field.absoluteGaloisGroup F))
     (hV : V.toSubgroup.index.Coprime n) :
     ∃ W : OpenNormalSubgroup (Field.absoluteGaloisGroup F), W ≤ V ∧
       (∀ g ∈ W, ∀ x : (muNRep n F).V, (muNRep n F).ρ g x = x) ∧
       W.toSubgroup.index.Coprime n ∧
       (IsMulCommutative (Field.absoluteGaloisGroup F ⧸ V.toSubgroup) →
         IsMulCommutative (Field.absoluteGaloisGroup F ⧸ W.toSubgroup)) := by
-  obtain ⟨W, hWV, hW, hdvd, hcomm⟩ := exists_openNormalSubgroup_le_muNRep_ρ_eq_self hn V
-  refine ⟨W, hWV, hW,
-    Nat.Coprime.coprime_dvd_left hdvd (Nat.coprime_mul_iff_left.2 ⟨hV, ?_⟩), hcomm⟩
-  rw [Nat.totient_prime Fact.out]
-  exact (Nat.coprime_self_sub_left (Fact.out : n.Prime).one_le).2 (Nat.coprime_one_left n)
+  by_cases hn : IsUnit (n : F)
+  · obtain ⟨W, hWV, hW, hdvd, hcomm⟩ := exists_openNormalSubgroup_le_muNRep_ρ_eq_self hn V
+    refine ⟨W, hWV, hW,
+      Nat.Coprime.coprime_dvd_left hdvd (Nat.coprime_mul_iff_left.2 ⟨hV, ?_⟩), hcomm⟩
+    rw [Nat.totient_prime Fact.out]
+    exact (Nat.coprime_self_sub_left (Fact.out : n.Prime).one_le).2 (Nat.coprime_one_left n)
+  · -- In characteristic `n` the group `μₙ` is trivial, so `V` itself acts trivially on it.
+    have hn0 : (n : F) = 0 := by simpa [isUnit_iff_ne_zero] using hn
+    have : CharP F n := (CharP.charP_iff_prime_eq_zero Fact.out).2 hn0
+    have := subsingleton_kummerCoeff_of_charP (n := n) (K := F)
+    have hsub : Subsingleton (muNRep n F).V :=
+      (kummerCoeffEquivMuNRep n F).toEquiv.symm.subsingleton
+    exact ⟨V, le_rfl, fun g _ x ↦ Subsingleton.elim _ _, hV, id⟩
+
+/-- **`μₙ` is inflated from the quotient** by an open normal subgroup `V` acting trivially on it:
+some finite-dimensional representation of `G_F ⧸ V` inflates to `μₙ`
+(`exists_galRepOfQuotient_iso_of_trivial`). -/
+theorem exists_fdGalRepOfQuotient_iso_muNRep {n : ℕ} {F : Type} [Field F]
+    {V : OpenNormalSubgroup (Field.absoluteGaloisGroup F)} (hn : IsUnit (n : F))
+    (hV : ∀ g ∈ V, ∀ x : (muNRep n F).V, (muNRep n F).ρ g x = x) :
+    ∃ M : FDRep (ZMod n) (Field.absoluteGaloisGroup F ⧸ V.toSubgroup),
+      Nonempty ((fdGalRepOfQuotient n F V).obj M ≅ muNRep n F) := by
+  have : NeZero n := NeZero.of_neZero_natCast F (h := ⟨hn.ne_zero⟩)
+  obtain ⟨M, ⟨e⟩⟩ := exists_galRepOfQuotient_iso_of_trivial n F V (muNRep n F) hV
+  have : Finite (muNRep n F).V :=
+    Finite.of_equiv (KummerCoeff F n) (kummerCoeffEquivMuNRep n F).toEquiv
+  have : Finite M.V := Finite.of_equiv _ ((forget (GalRep n F)).mapIso e).toEquiv.symm
+  have : Module.Finite (ZMod n) M.V := Module.Finite.of_finite
+  exact ⟨FDRep.of M.ρ, ⟨eqToIso (fdGalRepOfQuotient_obj_of n F V M) ≪≫ e⟩⟩
 
 end TauCeti.ClassFieldTheory

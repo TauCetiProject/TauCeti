@@ -39,7 +39,7 @@ theorem subsingleton_presentationLimit_bot (P : PairOfDefinition A) {Aplus : Sub
   have hT : IsOpen (Ideal.span (({1} : Finset A) : Set A) : Set A) := by
     simp
   let p : Presentation P :=
-    ⟨{1}, 0, hasDenominatorPower_of_isOpen_span P {1} 0 _ hT⟩
+    ⟨{1}, 0, hasDenominatorPower_of_isOpen_span P ({1} : Finset A) 0 _ hT⟩
   have hp : spaBasicOpen Aplus p.num p.den = ⊥ := by
     apply Opens.ext
     ext x

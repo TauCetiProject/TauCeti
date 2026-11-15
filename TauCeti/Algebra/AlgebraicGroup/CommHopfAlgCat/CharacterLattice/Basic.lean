@@ -26,6 +26,8 @@ extension, the group-like elements, and their additive form are available throug
 `ScalarAut.instMulSemiringAction`, `ScalarAut.instGroupLikeDistribMulAction`, and
 `Additive.distribMulAction`; this module supplies the instance bridges needed for
 the opaque `Field.absoluteGaloisGroup` definition.
+It also identifies absolute Galois automorphisms with `k`-algebra automorphisms of
+`AlgebraicClosure k` and describes their actions on scalars and pure tensors.
 
 ## Main declarations
 
@@ -39,6 +41,10 @@ the opaque `Field.absoluteGaloisGroup` definition.
   induced action on geometric characters.
 * `TauCeti.CommHopfAlgCat.instAdditiveCharacterGroupGaloisAction`: an instance bridge for the
   transported additive action.
+* `Field.absoluteGaloisGroup.toAlgEquiv`: an absolute Galois automorphism viewed as a
+  `k`-algebra automorphism of `AlgebraicClosure k`.
+* `Field.absoluteGaloisGroup.smul_def`: the action on the algebraic closure is evaluation.
+* `Field.absoluteGaloisGroup.smul_tmul`: the action on a pure tensor acts on its scalar factor.
 
 ## References
 
@@ -136,3 +142,26 @@ theorem toMul_smul {A : Type v} [Semiring A] [Bialgebra k A]
 end CommHopfAlgCat
 
 end TauCeti
+
+namespace Field.absoluteGaloisGroup
+
+open scoped TensorProduct
+
+variable {k : Type u} [Field k]
+
+/-- View an absolute Galois automorphism as an algebra automorphism of the algebraic closure. -/
+noncomputable abbrev toAlgEquiv : Field.absoluteGaloisGroup k ≃*
+    (AlgebraicClosure k ≃ₐ[k] AlgebraicClosure k) := MulEquiv.refl _
+
+/-- The absolute-Galois action on the algebraic closure is evaluation of its automorphisms. -/
+theorem smul_def (σ : Field.absoluteGaloisGroup k) (a : AlgebraicClosure k) :
+    σ • a = toAlgEquiv σ a := rfl
+
+/-- The absolute-Galois action on a pure tensor acts on its scalar factor. -/
+@[simp]
+theorem smul_tmul {A : Type*} [Semiring A] [Algebra k A]
+    (σ : Field.absoluteGaloisGroup k) (a : AlgebraicClosure k) (x : A) :
+    σ • (a ⊗ₜ[k] x) = (σ • a) ⊗ₜ[k] x :=
+  TauCeti.ScalarAut.smul_tmul (toAlgEquiv σ) a x
+
+end Field.absoluteGaloisGroup

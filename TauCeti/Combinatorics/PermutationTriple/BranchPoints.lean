@@ -76,9 +76,6 @@ and only on isomorphism classes, since `swap1Inf` is an involution only up to re
   Mathematical Sciences 141, Springer 2004, §1.5.
 * E. Girondo, G. González-Diez, *Introduction to Compact Riemann Surfaces and Dessins d'Enfants*,
   London Mathematical Society Student Texts 79, Cambridge University Press 2012, §4.
-* Tau Ceti Project, [Belyi branch-point operations prototype][branch-point-prototype].
-
-[branch-point-prototype]: https://github.com/TauCetiProject/TauCetiRoadmap/blob/318e636435644f93eea44901d3d75bd1e9204e1d/TauCetiRoadmap/BelyiMaps/Suggested.lean
 -/
 
 public section
@@ -565,6 +562,45 @@ theorem isConj_component_reindexBranchPoints (ρ : Perm (Fin 3)) (i : Fin 3) :
     fin_cases i <;>
     simp [hl, hr, IsConj.refl, -isConj_iff, swap_apply_of_ne_of_ne, finRotate_apply,
       hneg]
+
+/-- Permuting branch points leaves the unordered full cycle partitions unchanged. -/
+-- Apply invariance before `unorderedCycleData_def` expands the cycle partitions.
+@[simp 1100]
+theorem unorderedCycleData_reindexBranchPoints (ρ : Perm (Fin 3)) :
+    (t.reindexBranchPoints ρ).unorderedCycleData = t.unorderedCycleData := by
+  rw [unorderedCycleData_eq_coe_ofFn, unorderedCycleData_eq_coe_ofFn]
+  have hc : (fun i => ((t.reindexBranchPoints ρ).component i).partition.parts) =
+      (fun i => (t.component i).partition.parts) ∘ ρ := by
+    funext i
+    dsimp only [Function.comp_apply]
+    rw [Equiv.Perm.partition_eq_of_isConj.mp
+      (t.isConj_component_reindexBranchPoints ρ i)]
+  rw [hc, Sym.ofFn_comp_perm]
+
+/-- Equality of unordered cycle data means equality of ordered cycle data after some
+branch-point permutation. This statement does not require connectedness or a degree bound. -/
+theorem unorderedCycleData_eq_iff_exists_reindexBranchPoints (t' : PermutationTriple n) :
+    t.unorderedCycleData = t'.unorderedCycleData ↔
+      ∃ ρ : Perm (Fin 3), (t.reindexBranchPoints ρ).cycleData = t'.cycleData := by
+  classical
+  constructor
+  · intro h
+    have hs : Sym.ofFn (fun i => (t.component i).partition.parts) =
+        Sym.ofFn (fun i => (t'.component i).partition.parts) := by
+      apply _root_.Sym.coe_injective
+      simpa only [← unorderedCycleData_eq_coe_ofFn] using h
+    obtain ⟨ρ, hρ⟩ := Sym.ofFn_eq_ofFn_iff.mp hs
+    have hp (i : Fin 3) : (t.component (ρ i)).partition.parts =
+        (t'.component i).partition.parts := congrFun hρ i
+    have hc (i : Fin 3) : ((t.reindexBranchPoints ρ).component i).partition.parts =
+        (t'.component i).partition.parts := by
+      rw [Equiv.Perm.partition_eq_of_isConj.mp
+        (t.isConj_component_reindexBranchPoints ρ i), hp]
+    have hh := And.intro (hc 0) (And.intro (hc 1) (hc 2))
+    exact ⟨ρ, by simpa [Prod.ext_iff] using hh⟩
+  · rintro ⟨ρ, hρ⟩
+    rw [← unorderedCycleData_reindexBranchPoints t ρ]
+    simp only [unorderedCycleData_def, hρ]
 
 /-- Reordering the branch points commutes with relabeling the sheets. -/
 @[simp] theorem reindexBranchPoints_smul (ρ : Perm (Fin 3)) (τ : Perm (Fin n)) :

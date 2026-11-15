@@ -114,7 +114,7 @@ theorem f4ShortRootAdjointMatrix_eq_toMatrix (X : f4ModularChevalleyLieAlgebra) 
 /-- The signed simple-root adjoint operator restricted to the modular short-root ideal. -/
 noncomputable def f4ShortRootSignedSimpleAdjoint (k : Fin 4 ⊕ Fin 4) :
     Module.End (ZMod 2) f4ShortRootLieIdeal :=
-  f4ShortRootAdjoint (f4ModularSignedSimpleRootVector k)
+  f4ShortRootAdjoint (f4ModularRootVector (f4SignedSimpleRootIndex k))
 
 /-- The signed simple-root adjoint operator is the bracket with its signed simple root vector. -/
 theorem coe_f4ShortRootSignedSimpleAdjoint_apply
@@ -122,8 +122,7 @@ theorem coe_f4ShortRootSignedSimpleAdjoint_apply
     (f4ShortRootSignedSimpleAdjoint k y : f4ModularChevalleyLieAlgebra) =
       ⁅f4ModularRootVector (f4SignedSimpleRootIndex k),
         (y : f4ModularChevalleyLieAlgebra)⁆ := by
-  simp only [f4ShortRootSignedSimpleAdjoint, coe_f4ShortRootAdjoint_apply,
-    f4ModularSignedSimpleRootVector_eq]
+  simp only [f4ShortRootSignedSimpleAdjoint, coe_f4ShortRootAdjoint_apply]
 
 /-- The signed simple-root operator is the restricted adjoint action of its root vector. -/
 @[simp] theorem f4ShortRootSignedSimpleAdjoint_apply (k : Fin 4 ⊕ Fin 4)

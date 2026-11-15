@@ -25,10 +25,8 @@ coordinates. On every commutative `R`-algebra `A`, its points are the existing s
 `TauCeti.GLSymplecticFin m A`, equivalently `TauCeti.GLSymplectic (Fin m) A`, and that
 identification is what this file adds to the general construction.
 
-Together with `TauCeti.GLSymplectic`, this completes the `Sp₂ₘ` worked example of the
-ReductiveGroups roadmap at the same boundary as the Borel example
-(`TauCeti.GeneralLinear.Borel`): construction and points identification, with no smoothness or
-reductivity claim.
+Together with `TauCeti.GLSymplectic`, this provides the construction and the points identification
+of `Sp₂ₘ`; its smoothness is proved in `TauCeti.Algebra.AlgebraicGroup.Symplectic.Smooth`.
 
 The Hopf-ideal closure conditions, the quotient, the group scheme with its closed immersion
 into `GL (m + m)`, and the ambient membership criterion `M C Mᵀ = C` all come from
@@ -91,7 +89,7 @@ theorem relationMatrix_def :
   rw [relationMatrix, ConstantForm.relationMatrix_def, JFin_map]
 
 /-- The set of defining relations: the entries of the relation matrix. -/
-abbrev relationSet : Set (GeneralLinear.coordinateHopfAlgebra R (m + m)) :=
+noncomputable abbrev relationSet : Set (GeneralLinear.coordinateHopfAlgebra R (m + m)) :=
   ConstantForm.relationSet R (m + m) (JFin m R)
 
 /-- **The symplectic Hopf ideal**: the ideal of the coordinate Hopf algebra of `GL (m + m)`
@@ -296,6 +294,17 @@ theorem coe_pointsMulEquivGLSymplectic
       Equiv.reindexGL finSumFinEquiv.symm A
         (pointsMulEquiv R m (A := A) f : GL (Fin (m + m)) A) :=
   GLSymplecticFin.coe_mulEquivGLSymplectic m A (pointsMulEquiv R m (A := A) f)
+
+/-- The `Fin m ⊕ Fin m` reading of the points identification is natural in the value algebra. -/
+theorem pointsMulEquivGLSymplectic_mapValue (phi : A →ₐ[R] B)
+    (f : WithConv (coordinateHopfAlgebra R m →ₐ[R] A)) :
+    pointsMulEquivGLSymplectic R m (A := B)
+        (AlgHom.mapValue (H := coordinateHopfAlgebra R m) phi f) =
+      GLSymplectic.map (Fin m) (phi : A →+* B)
+        (pointsMulEquivGLSymplectic R m (A := A) f) := by
+  simp only [pointsMulEquivGLSymplectic, MulEquiv.trans_apply]
+  exact (congrArg _ (pointsMulEquiv_mapValue (R := R) (m := m) (A := A) (B := B) phi f)).trans
+    (GLSymplecticFin.mulEquivGLSymplectic_map m A (phi : A →+* B) _)
 
 end Points
 

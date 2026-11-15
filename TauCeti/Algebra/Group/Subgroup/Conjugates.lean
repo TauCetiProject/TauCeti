@@ -33,6 +33,8 @@ that multiplicity.
   `[N_G(H) : H]` gives `[G : H]`.
 * `TauCeti.sum_subgroups_eq_sum_conjugacy`: group a conjugation-invariant sum by subgroup
   conjugacy classes.
+* `Subgroup.exists_map_conj_comap_eq_iff`: the preimages of two subgroups under a group
+  isomorphism are conjugate exactly when the subgroups are.
 -/
 
 public section
@@ -169,3 +171,25 @@ theorem conjugateSubgroupsEquiv_symm_apply {G G' : Type*} [Group G] [Group G']
   rfl
 
 end MulEquiv
+
+namespace Subgroup
+
+variable {G Γ : Type*} [Group G] [Group Γ]
+
+/-- **Conjugacy of subgroups is pulled back along group isomorphisms.** For an isomorphism
+`e : G ≃* Γ`, the preimages of two subgroups of `Γ` are conjugate in `G` exactly when the
+subgroups themselves are conjugate in `Γ`. -/
+theorem exists_map_conj_comap_eq_iff (e : G ≃* Γ) (H K : Subgroup Γ) :
+    (∃ σ : G, (H.comap (e : G →* Γ)).map (MulAut.conj σ : G →* G) = K.comap (e : G →* Γ)) ↔
+      ∃ τ : Γ, H.map (MulAut.conj τ : Γ →* Γ) = K := by
+  have key (σ : G) : (H.comap (e : G →* Γ)).map (MulAut.conj σ : G →* G) =
+      (H.map (MulAut.conj (e σ) : Γ →* Γ)).comap (e : G →* Γ) := by
+    -- The commuting square of conjugation with `e.symm`, conjugating by `e.symm (e σ) = σ`.
+    rw [comap_equiv_eq_map_symm, comap_equiv_eq_map_symm]
+    simpa only [MulEquiv.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, MulEquiv.symm_apply_apply] using
+      (map_map_conj H (e.symm : Γ →* G) (e σ)).symm
+  have hinj : Function.Injective (comap (e : G →* Γ)) := comap_injective e.surjective
+  refine ⟨fun ⟨σ, hσ⟩ ↦ ⟨e σ, hinj (by rwa [← key])⟩, fun ⟨τ, hτ⟩ ↦ ⟨e.symm τ, ?_⟩⟩
+  rw [key, MulEquiv.apply_symm_apply, hτ]
+
+end Subgroup

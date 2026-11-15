@@ -6,12 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Principal.Basic
+import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 
 /-!
 # The image of the degree map and the degree quotient `Cl(X)/Pic⁰`
 
-This file computes the image of the (weighted) degree homomorphism and identifies the quotient
-of the divisor class group by the abstract `Pic⁰`, continuing the Jacobian roadmap's Layer A.
+This file computes the image of the (weighted) degree homomorphism and identifies the quotient of
+the divisor class group by the abstract `Pic⁰`.
 
 `TauCeti.AlgebraicGeometry.WeilDivisor.Principal.Basic` builds, for an `OrderSystem S` whose
 principal divisors have weighted degree zero, the descended weighted degree `weightedDegreeClass` on
@@ -22,7 +23,8 @@ flags the general case, where there is no weight-one point: "the image of the we
 `d·ℤ` for the index `d` of the residue degrees". This file supplies exactly that general picture.
 Everything here is independent of the weight-one splitting theory, so it imports only `Principal`;
 the weight-one corollaries built on `degreeSection` / `weightedDegreeClass_surjective` live in the
-downstream `TauCeti.AlgebraicGeometry.WeilDivisor.Degree.Image.Splitting`, after `DegreeSplitting`.
+downstream `TauCeti.AlgebraicGeometry.WeilDivisor.Degree.Image.Splitting`, after
+`TauCeti.AlgebraicGeometry.WeilDivisor.Degree.Splitting`.
 
 The image of the weighted degree on Weil divisors is computed unconditionally, before any
 principal-divisor hypothesis, by `weightedDegree_range` in the base
@@ -39,18 +41,15 @@ isomorphism theorem then identifies the *degree quotient*
 
 `Cl(X) ⧸ Pic⁰ ≃+ (weightedDegreeClass w h).range`,
 
-the degree quotient of the class group (the divisor-class analogue of `Pic/Pic⁰`; no Picard
-scheme or Néron–Severi construction is built here). When the weights generate all of `ℤ` — for
-instance from a weight-one base point — this image is `⊤`, recovering `Cl(X) ⧸ Pic⁰ ≃+ ℤ` and
-reconciling with the splitting of `DegreeSplitting`. In the unweighted setting the degree map is
-already surjective on a nonempty point type.
+the degree quotient of the class group (the divisor-class analogue of `Pic/Pic⁰`; no Picard scheme
+or Néron–Severi construction is built here). When the weights generate all of `ℤ` — for instance
+from a weight-one base point — this image is `⊤`, recovering `Cl(X) ⧸ Pic⁰ ≃+ ℤ` and reconciling
+with the splitting of `TauCeti.AlgebraicGeometry.WeilDivisor.Degree.Splitting`. In the unweighted
+setting the degree map is already surjective on a nonempty point type.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, "Degree" and "`Pic⁰ X =
-ker deg` (as an abstract group)", by computing the image of the degree map and identifying the
-degree quotient of the class group with it. It reuses Tau Ceti's `WeilDivisor` and `OrderSystem`
-API together with Mathlib's `AddSubgroup.closure` and first-isomorphism
-(`QuotientAddGroup.quotientKerEquivRange` / `quotientKerEquivOfSurjective`) machinery; no
-external mathematics is vendored.
+This file reuses Tau Ceti's `WeilDivisor` and `OrderSystem` API together with Mathlib's
+`AddSubgroup.closure` and first-isomorphism (`QuotientAddGroup.quotientKerEquivRange` /
+`quotientKerEquivOfSurjective`) machinery; no external mathematics is vendored.
 -/
 
 public section
@@ -112,9 +111,8 @@ lemma coe_classGroupQuotientPicZeroEquivDegreeRange_mk (w : X → ℤ) (h : S.Is
 lemma classGroupQuotientPicZeroEquivDegreeRange_symm_apply (w : X → ℤ)
     (h : S.IsWeightedDegreeZero w) (c : S.ClassGroup) :
     (S.classGroupQuotientPicZeroEquivDegreeRange w h).symm
-        ⟨weightedDegreeClass w h c, c, rfl⟩ = QuotientAddGroup.mk c := by
-  rw [AddEquiv.symm_apply_eq]
-  exact Subtype.ext (S.coe_classGroupQuotientPicZeroEquivDegreeRange_mk w h c).symm
+        ⟨weightedDegreeClass w h c, c, rfl⟩ = QuotientAddGroup.mk c :=
+  TauCeti.QuotientAddGroup.quotientKerEquivRange_symm_apply (weightedDegreeClass w h) c
 
 /-- **The degree quotient at a surjective degree.** When the descended weighted degree is
 surjective — equivalently when the weights generate `ℤ`, see `weightedDegreeClass_range_eq_top` —
@@ -140,8 +138,8 @@ lemma classGroupQuotientPicZeroEquivInt_symm_weightedDegreeClass (w : X → ℤ)
     (h : S.IsWeightedDegreeZero w)
     (hsurj : Function.Surjective (weightedDegreeClass w h)) (c : S.ClassGroup) :
     (S.classGroupQuotientPicZeroEquivInt w h hsurj).symm (weightedDegreeClass w h c) =
-      QuotientAddGroup.mk c := by
-  rw [AddEquiv.symm_apply_eq, classGroupQuotientPicZeroEquivInt_mk]
+      QuotientAddGroup.mk c :=
+  TauCeti.QuotientAddGroup.quotientKerEquivOfSurjective_symm_apply (weightedDegreeClass w h) hsurj c
 
 end OrderSystem
 

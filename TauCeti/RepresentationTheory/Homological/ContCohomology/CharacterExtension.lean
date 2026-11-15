@@ -213,11 +213,10 @@ theorem explicitDelta1_shortExact (x : H1 G (ULift.{u} (ZMod p))) :
       refine CharacterExtension.ext (by simp) ?_
       simp only [shortExact_incl_apply, snd_add, snd_sub, snd_smul, hmul g h, ULift.add_down]
       ring
-    have ha := (shortExact χ htriv).mem_Z2_of_incl_comp_eq_d1 hec
+    have hδ := (shortExact χ htriv).explicitDelta1_apply f hec (fun g ↦ rfl)
       (a := fun q : G × G ↦
         ULift.up (Multiplicative.toAdd (χ q.1) * ((f : G → ULift (ZMod p)) q.2).down))
       hae
-    have hδ := (shortExact χ htriv).explicitDelta1_apply f hec (fun g ↦ rfl) ha hae
     simp only [QuotientAddGroup.mk'_apply] at hδ
     rw [hδ, H1EquivOfSmulEqSelf_symm_apply, explicitCup11_mk]
     refine congrArg (H2pi G (ULift (ZMod p))) (Subtype.ext (funext fun q ↦ ULift.ext ?_))

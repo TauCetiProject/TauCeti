@@ -42,16 +42,13 @@ private lemma extToHomology_homBoundary_representative (i j : α)
       (kernel.condition _)).ShortExact)
     (β : kernel (X.homologyπ j) ⟶ Y) :
     ∃ φ : (X.linearYonedaObj k Y).cycles i,
-      (X.linearYonedaObj k Y).iCycles i φ =
-        kernel.lift _ (X.toCycles i j) (X.toCycles_comp_homologyπ i j) ≫ β ∧
+      (X.linearYonedaObj k Y).iCycles i φ = X.toBoundaries i j ≫ β ∧
       extToHomology k X Y i j (homBoundary k hX Y β) =
         (X.linearYonedaObj k Y).homologyπ i φ := by
-  let a := kernel.lift (X.homologyπ j) (X.toCycles i j) (X.toCycles_comp_homologyπ i j)
-  have ha : X.d ((ComplexShape.up α).next i) i ≫ a = 0 := by
-    rw [← cancel_mono (kernel.ι _), Category.assoc, kernel.lift_ι, X.d_toCycles, zero_comp]
-  refine ⟨cocycleOfComp k Y a ha β, iCycles_cocycleOfComp a ha β, ?_⟩
+  have hφ := iCycles_cocycleOfComp (k := k) _ (X.d_toBoundaries _ i j) β
+  refine ⟨_, hφ, ?_⟩
   exact (congrArg (extToHomology k X Y i j) (homBoundary_apply k hX Y β)).trans
-    (extToHomology_extClass_comp_mk₀ i j β _ (iCycles_cocycleOfComp a ha β))
+    (extToHomology_extClass_comp_mk₀ i j β _ hφ)
 
 /-- Pulling back an extension of homology and then including it in cohomology is
 including it first and pulling back the resulting cohomology class. This holds in
@@ -102,7 +99,7 @@ lemma extToHomology_naturality (f : X' ⟶ X) (i j : α)
   dsimp only [b]
   simp only [Category.assoc, kernel.lift_ι]
   rw [← cancel_mono (X.iCycles j)]
-  simp only [Category.assoc, kernel.lift_ι_assoc, cyclesMap_i,
+  simp only [Category.assoc, toBoundaries_ι_assoc, cyclesMap_i,
     X.toCycles_i, X'.toCycles_i_assoc]
   exact f.comm i j
 

@@ -61,6 +61,8 @@ namespace TauCeti
 
 namespace FiniteField
 
+section Fintype
+
 variable (F : Type*) [Field F] [Fintype F]
 
 section NoZeroDivisors
@@ -81,11 +83,9 @@ theorem pow_card_pow_natDegree_minpoly {x : E} (hx : IsIntegral F x) :
 
 end NoZeroDivisors
 
-variable {E : Type*} [Field E] [Algebra F E]
-
 section Algebraic
 
-variable [Algebra.IsAlgebraic F E]
+variable {E : Type*} [Field E] [Algebra F E] [Algebra.IsAlgebraic F E]
 
 -- The inclusion behind `TauCeti.FiniteField.orbit_eq_rootSet_minpoly`, needed first to know that
 -- the orbit is finite.
@@ -139,7 +139,7 @@ theorem map_minpoly_eq_prod_orbit (x : E) :
     rw [← pow_card_eq_self_iff_mem_range_algebraMap]
     simpa [Polynomial.coeff_map, hφ, _root_.FiniteField.coe_frobeniusAlgEquivOfAlgebraic] using
       congrArg (fun p : E[X] => p.coeff n) hmapP
-  obtain ⟨Q, hQmap, -, hQmonic⟩ :=
+  obtain ⟨Q, hQmap, -, _⟩ :=
     lifts_and_natDegree_eq_and_monic ((lifts_iff_coeff_lifts P).mpr hcoeff) hPmonic
   have hxs : x ∈ s := by simp [hs, mem_orbit_self]
   have hPx : P.eval x = 0 := by
@@ -247,6 +247,8 @@ theorem mem_orbit_iff_exists_pow_card_pow {x y : E} :
     exact pow_card_pow_mem_orbit F x n
 
 end Algebraic
+
+end Fintype
 
 section Finite
 

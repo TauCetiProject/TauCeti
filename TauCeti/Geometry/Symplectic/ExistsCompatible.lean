@@ -11,11 +11,9 @@ public import TauCeti.Geometry.Symplectic.Restrict
 /-!
 # Every symplectic vector space carries a compatible almost complex structure
 
-Tameness and compatibility of an almost complex structure `J` with a symplectic form `ω` are the
-standing hypotheses of the analytic Heegaard Floer roadmap. The repository already supplied
-compatible structures for several standard models and their transports, but an arbitrary
-symplectic form on an arbitrary finite-dimensional real vector space came with no supply of
-structures at all. This file removes that gap, proving
+Tameness and compatibility of an almost complex structure `J` with a symplectic form `ω` are
+standard hypotheses of `J`-holomorphic curve theory. This file supplies compatible structures for an
+arbitrary symplectic form on an arbitrary finite-dimensional real vector space, proving
 
 `TauCeti.SymplecticForm.exists_compatible`: for every symplectic form `ω` on a finite-dimensional
 real vector space `V` there is an almost complex structure `J` with `ω.Compatible J`.
@@ -201,8 +199,9 @@ theorem even_finrank [FiniteDimensional ℝ V] (ω : SymplecticForm V) : Even (f
   J.even_finrank_real
 
 /-- A real vector space of odd dimension carries no symplectic form. -/
-theorem isEmpty_of_odd_finrank [FiniteDimensional ℝ V] (h : Odd (finrank ℝ V)) :
+theorem isEmpty_of_odd_finrank (h : Odd (finrank ℝ V)) :
     IsEmpty (SymplecticForm V) :=
+  haveI : Module.Finite ℝ V := Module.finite_of_finrank_pos h.pos
   ⟨fun ω => (Nat.not_even_iff_odd.2 h) ω.even_finrank⟩
 
 end SymplecticForm

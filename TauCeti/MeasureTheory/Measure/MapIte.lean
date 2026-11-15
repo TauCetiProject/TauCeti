@@ -5,14 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Measure.Restrict
+public import Mathlib.MeasureTheory.Measure.AEMeasurable
 
 /-!
 # Switching between two maps with the same image law
 
-Let `f` and `g` be almost-everywhere measurable maps with the same image law, `μ.map f = μ.map g`,
-and let `t` be a measurable set that `f` and `g` enter on the same points almost everywhere.
-Following `f` on the preimage of that set and `g` off it gives a map with the same image law again.
+Let `f` and `g` be almost-everywhere measurable maps, and let `t` be a measurable set that `f` and
+`g` enter on the same points almost everywhere. If the image laws of `f` and `g` agree off `t`
+(in particular, if `μ.map f = μ.map g`), then following `f` on the preimage of `t` and `g` off it
+gives a map with the same image law as `f`.
 
 The typical use is with randomized codings: if two codings `q ↦ (q.1, f q)` and `q ↦ (q.1, g q)`
 of the same joint law keep the first coordinate, one may switch between them along any measurable
@@ -20,8 +21,9 @@ event of the first coordinate.
 
 ## Main results
 
-* `TauCeti.MeasureTheory.Measure.map_ite_mem_eq` — switching between two maps with the same image
-  law along an almost-everywhere common preimage of a measurable set does not change the image law.
+* `TauCeti.MeasureTheory.Measure.map_ite_mem_eq` — switching between two maps whose image laws
+  agree off a measurable set, along an almost-everywhere common preimage of that set, does not
+  change the image law.
 -/
 
 public section
@@ -34,53 +36,40 @@ open _root_.MeasureTheory _root_.MeasureTheory.Measure
 
 variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
 
-/-- **Switching between two maps with the same image law.** If `f` and `g` are `μ`-a.e. measurable
-with `μ.map f = μ.map g`, and enter the measurable set `t` on the same points `μ`-almost everywhere,
-then the map that follows `f` when the image lies in `t` and `g` otherwise has the same image
-law. -/
+/-- **Switching between two maps with the same image law off a set.** If `f` and `g` are
+`μ`-a.e. measurable, enter the measurable set `t` on the same points `μ`-almost everywhere, and have
+the same image law off `t` (for instance because `μ.map f = μ.map g`), then the map that follows
+`f` when the image lies in `t` and `g` otherwise has the same image law as `f`. -/
 theorem map_ite_mem_eq {μ : Measure α} {f g : α → β} (hf : AEMeasurable f μ) (hg : AEMeasurable g μ)
     {t : Set β} [DecidablePred (· ∈ t)] (ht : MeasurableSet t)
     (hfgt : ∀ᵐ a ∂μ, f a ∈ t ↔ g a ∈ t)
-    (hfg : μ.map f = μ.map g) :
+    (hfg : (μ.map f).restrict tᶜ = (μ.map g).restrict tᶜ) :
     μ.map (fun a => if f a ∈ t then f a else g a) = μ.map f := by
-  have hmeas : AEMeasurable (fun a => if f a ∈ t then f a else g a) μ := by
-    refine ⟨fun a => if hf.mk f a ∈ t then hf.mk f a else hg.mk g a,
-      Measurable.ite (hf.measurable_mk ht) hf.measurable_mk hg.measurable_mk, ?_⟩
-    filter_upwards [hf.ae_eq_mk, hg.ae_eq_mk] with a ha hb
-    rw [ha, hb]
-  ext B hB
-  -- Partition using `f`'s preimage, so the two branches are disjoint even on the exceptional set.
-  have hsplit : (fun a => if f a ∈ t then f a else g a) ⁻¹' B =
-      f ⁻¹' (t ∩ B) ∪ ((f ⁻¹' t)ᶜ ∩ g ⁻¹' B) := by
-    ext a
-    by_cases ha : f a ∈ t <;> simp [ha]
-  have hdisj : Disjoint (f ⁻¹' (t ∩ B)) ((f ⁻¹' t)ᶜ ∩ g ⁻¹' B) := by
-    simp only [preimage_inter]
-    exact disjoint_compl_right.mono inter_subset_left inter_subset_left
-  have hbranch : μ ((f ⁻¹' t)ᶜ ∩ g ⁻¹' B) = μ (g ⁻¹' (tᶜ ∩ B)) := by
-    apply measure_congr
+  set h := fun a => if f a ∈ t then f a else g a
+  have hh : AEMeasurable h μ :=
+    (Measurable.ite (ht.preimage measurable_fst) measurable_fst measurable_snd).comp_aemeasurable
+      (hf.prodMk hg)
+  -- Split both laws into their parts on `t` and on `tᶜ`. Up to null sets the switched map enters
+  -- `t` exactly on `f ⁻¹' t`, where it follows `f`; off it, it follows `g`, whose law agrees with
+  -- that of `f` off `t`.
+  have hpre : h ⁻¹' t =ᵐ[μ] f ⁻¹' t := by
     filter_upwards [hfgt] with a ha
-    simp only [mem_inter_iff, mem_compl_iff, mem_preimage]
-    rw [ha]
-  have hcompl : μ (g ⁻¹' (tᶜ ∩ B)) = μ (f ⁻¹' (tᶜ ∩ B)) := by
-    rw [← map_apply_of_aemeasurable hg (ht.compl.inter hB), ← hfg,
-      map_apply_of_aemeasurable hf (ht.compl.inter hB)]
-  have hpartition : f ⁻¹' (t ∩ B) ∪ f ⁻¹' (tᶜ ∩ B) = f ⁻¹' B := by
-    ext a
-    by_cases ha : f a ∈ t <;> simp [ha]
-  calc
-    μ.map (fun a => if f a ∈ t then f a else g a) B =
-        μ (f ⁻¹' (t ∩ B) ∪ ((f ⁻¹' t)ᶜ ∩ g ⁻¹' B)) := by
-      rw [map_apply_of_aemeasurable hmeas hB, hsplit]
-    _ = μ (f ⁻¹' (t ∩ B)) + μ ((f ⁻¹' t)ᶜ ∩ g ⁻¹' B) :=
-      measure_union₀ ((hf.nullMeasurableSet_preimage ht).compl.inter
-        (hg.nullMeasurableSet_preimage hB)) hdisj.aedisjoint
-    _ = μ (f ⁻¹' (t ∩ B)) + μ (f ⁻¹' (tᶜ ∩ B)) := by rw [hbranch, hcompl]
-    _ = μ (f ⁻¹' (t ∩ B) ∪ f ⁻¹' (tᶜ ∩ B)) :=
-      (measure_union₀ (hf.nullMeasurableSet_preimage (ht.compl.inter hB))
-        (Disjoint.preimage f (disjoint_compl_right.mono inter_subset_left
-          inter_subset_left)).aedisjoint).symm
-    _ = μ (f ⁻¹' B) := congrArg μ hpartition
-    _ = μ.map f B := (map_apply_of_aemeasurable hf hB).symm
+    by_cases hfa : f a ∈ t <;> simp [h, hfa, ← ha]
+  have hpre' : f ⁻¹' t =ᵐ[μ] g ⁻¹' t := Filter.eventuallyEqSet_iff.2 hfgt
+  have hon : (μ.map h).restrict t = (μ.map f).restrict t := by
+    rw [restrict_map_of_aemeasurable hh ht, restrict_map_of_aemeasurable hf ht,
+      restrict_congr_set hpre]
+    refine map_congr ?_
+    filter_upwards [ae_restrict_mem₀ (hf.nullMeasurableSet_preimage ht)] with a (ha : f a ∈ t)
+    simp [h, ha]
+  have hoff : (μ.map h).restrict tᶜ = (μ.map f).restrict tᶜ := by
+    rw [hfg, restrict_map_of_aemeasurable hh ht.compl, restrict_map_of_aemeasurable hg ht.compl,
+      preimage_compl, preimage_compl,
+      restrict_congr_set (hpre.trans hpre').compl]
+    refine map_congr ?_
+    filter_upwards [ae_restrict_mem₀ (hg.nullMeasurableSet_preimage ht).compl,
+      ae_restrict_of_ae hfgt] with a (ha : g a ∉ t) hfa
+    simp [h, hfa.not.2 ha]
+  rw [← restrict_add_restrict_compl (μ := μ.map h) ht, hon, hoff, restrict_add_restrict_compl ht]
 
 end TauCeti.MeasureTheory.Measure
