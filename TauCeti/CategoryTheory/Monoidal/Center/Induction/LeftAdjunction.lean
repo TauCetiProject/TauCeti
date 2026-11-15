@@ -70,7 +70,7 @@ attribute [local instance] Abelian.hasFiniteBiproducts
 
 section SwapPairing
 
-variable {C : Type u} [Category.{v} C] [Abelian C] [MonoidalCategory C] [MonoidalPreadditive C]
+variable {C : Type u} [Category.{v} C] [Abelian C] [MonoidalCategory C]
   [RigidCategory C] [IsFiniteSemisimpleCategory C] [Simple (𝟙_ C)]
 
 /-- Evaluation `X ⊗ Xᘁ ⟶ 𝟙_ C` of the normalized swapped pairing `simpleSwapExactPairing X`. -/
@@ -81,8 +81,7 @@ private abbrev swapEval (X : C) [Simple X] : X ⊗ Xᘁ ⟶ 𝟙_ C :=
 private abbrev swapCoeval (X : C) [Simple X] : 𝟙_ C ⟶ Xᘁ ⊗ X :=
   @ExactPairing.coevaluation C _ _ Xᘁ X (simpleSwapExactPairing X)
 
-omit [Abelian C] [MonoidalPreadditive C] [RigidCategory C] [IsFiniteSemisimpleCategory C]
-  [Simple (𝟙_ C)] in
+omit [Abelian C] [RigidCategory C] [IsFiniteSemisimpleCategory C] [Simple (𝟙_ C)] in
 @[reassoc]
 private theorem rightDualUnitIso_inv_whiskerRight_evaluation [RightRigidCategory C] :
     (rightDualUnitIso C).inv ▷ 𝟙_ C ≫
@@ -91,7 +90,7 @@ private theorem rightDualUnitIso_inv_whiskerRight_evaluation [RightRigidCategory
   rw [rightDualUnitIso_inv, ExactPairing.rightDualIso_inv_whiskerRight_evaluation,
     TauCeti.ExactPairing.unit_evaluation]
 
-omit [MonoidalPreadditive C] [IsFiniteSemisimpleCategory C] in
+omit [IsFiniteSemisimpleCategory C] in
 /-- Canonical isomorphism `S₀.reprᘁ ≅ (RightRigidCategory.rightDual (𝟙_ C)).rightDual` for
 `S₀ = SimpleClasses.classOf (𝟙_ C)`, using the right dual assigned to `𝟙_ C` by
 `RightRigidCategory` rather than `hasRightDualUnit`. -/
@@ -183,7 +182,7 @@ private def counitLFComponent {A : C} (b : HalfBraiding A) (S : SimpleClasses C)
     A ◁ swapEval S.repr ≫
     (ρ_ A).hom
 
-omit [Field k] [IsAlgClosed k] [Linear k C] [MonoidalLinear k C] in
+omit [Field k] [IsAlgClosed k] [Linear k C] [MonoidalPreadditive C] [MonoidalLinear k C] in
 /-- Naturality and monoidality of `b` on `swapEval S.repr` rewrite `counitLFComponent b S` using the
 forward half-braiding at `S.reprᘁ`. -/
 private theorem counitLFComponent_eq_forward {A : C} (b : HalfBraiding A) (S : SimpleClasses C) :
@@ -251,7 +250,7 @@ private theorem unitLF_comp_counitF [∀ S : SimpleClasses C, FiniteDimensional 
 private def counitLF {A : C} (b : HalfBraiding A) : inductionObj A ⟶ A :=
   ∑ S : SimpleClasses C, biproduct.π (inductionSummand A) S ≫ counitLFComponent b S
 
-omit [Field k] [IsAlgClosed k] [Linear k C] [MonoidalLinear k C] in
+omit [Field k] [IsAlgClosed k] [Linear k C] [MonoidalPreadditive C] [MonoidalLinear k C] in
 @[reassoc]
 private theorem ι_comp_counitLF {A : C} (b : HalfBraiding A) (S : SimpleClasses C) :
     biproduct.ι (inductionSummand A) S ≫ counitLF b = counitLFComponent b S := by
@@ -264,7 +263,7 @@ private theorem ι_comp_counitLF {A : C} (b : HalfBraiding A) (S : SimpleClasses
     simp [Ne.symm hTS]
   · simp
 
-omit [Field k] [IsAlgClosed k] [Linear k C] [MonoidalLinear k C] in
+omit [Field k] [IsAlgClosed k] [Linear k C] [MonoidalPreadditive C] [MonoidalLinear k C] in
 private theorem counitLF_naturality {A A' : C} {b : HalfBraiding A} {b' : HalfBraiding A'}
     (f : A ⟶ A') (hf : ∀ U : C, f ▷ U ≫ (b'.β U).hom = (b.β U).hom ≫ U ◁ f) :
     inductionMap f ≫ counitLF b' = counitLF b ≫ f := by
