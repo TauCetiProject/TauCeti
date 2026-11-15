@@ -95,12 +95,12 @@ theorem isBaseChange_snd_ker_coprod_of_formalGlueing
     rintro ⟨m, hm⟩
     obtain ⟨n, hn⟩ : f m ∈ range g := by simpa [K', q] using hm
     exact ⟨⟨(m, n), by simp [K, hn]⟩, rfl⟩
+  -- `h ∘ p` is `f` applied to the first coordinate, by unfolding both codomain restrictions;
+  -- on compatible pairs this agrees with `g` applied to the second coordinate.
+  have hhp (k : K) : (h (p k) : P) = g (k : M × N).2 := hK k
   have hgc (t : S ⊗[R] K) : g (c t) = (h.liftBaseChange S (p.baseChange S t) : P) := by
     induction t with
-    | tmul s k =>
-      rw [baseChange_tmul, liftBaseChange_tmul, liftBaseChange_tmul, map_smul_of_tower,
-        Submodule.coe_smul_of_tower]
-      exact congrArg (s • ·) (hK k).symm
+    | tmul s k => simp [c, hhp]
     | add t t' ht ht' => simp only [map_add, Submodule.coe_add, ht, ht']
   -- Hence `c` reaches `range g` modulo `ker g`, and `ker g` lies in its image.
   have hc_surj : Surjective c := by
