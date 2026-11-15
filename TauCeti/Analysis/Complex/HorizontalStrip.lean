@@ -16,6 +16,10 @@ Positive real scalings and complex translations map horizontal strips bijectivel
 onto the strips whose endpoints undergo the corresponding real affine map. These
 maps rescale logarithmic strip coordinates to arbitrary boundary heights.
 
+A map recovered up to integer multiples of `i`, such as an exponential end lift of a
+cylindrical end, is injective on every set whose imaginary parts vary by less than one, such as a
+horizontal strip of height one (`TauCeti.Complex.injOn_of_exists_eq_add_intCast_mul_I`).
+
 An open set of the plane whose frontier is, to the right of some `R`, exactly the two horizontal
 lines bounding a strip, and which misses a point of the strip to the right of `R`, agrees to the
 right of `R` with the complement of the closed strip.
@@ -36,6 +40,39 @@ theorem bijOn_ofReal_mul_add_horizontalStrip {s : ℝ} (hs : 0 < s) (c : ℂ) (l
     fun w => by simp [hs]
 
 end TauCeti
+
+namespace TauCeti.Complex
+
+open Set
+
+/-- A map `f` on `ℂ` whose composite with some `g` recovers every point of a set `s` up to an
+integer multiple of `i` is injective on `s` if the imaginary parts of any two points of `s` differ
+by less than one: two points with the same image differ by an integer multiple of `i`. This is the
+injectivity of the exponential end lifts of cylindrical ends on horizontal strips of height one,
+with `g` a logarithmic end coordinate. -/
+theorem injOn_of_exists_eq_add_intCast_mul_I {α : Type*} {f : ℂ → α} {g : α → ℂ} {s : Set ℂ}
+    (h : ∀ z ∈ s, ∃ k : ℤ, g (f z) = z + k * Complex.I)
+    (hs : ∀ a ∈ s, ∀ b ∈ s, a.im - b.im ∈ Ioo (-1) 1) :
+    InjOn f s := by
+  intro a ha b hb hab
+  obtain ⟨hlo, hhi⟩ := hs a ha b hb
+  obtain ⟨k, hk⟩ := h a ha
+  obtain ⟨l, hl⟩ := h b hb
+  rw [hab, hl] at hk
+  -- The real parts agree, and the imaginary parts differ by the integer `l - k`.
+  have hre := congrArg Complex.re hk
+  have him := congrArg Complex.im hk
+  simp only [Complex.add_re, Complex.add_im, Complex.mul_re, Complex.mul_im,
+    Complex.intCast_re, Complex.intCast_im, Complex.I_re, Complex.I_im] at hre him
+  have hlt : |((l - k : ℤ) : ℝ)| < 1 := by
+    rw [abs_lt]
+    push_cast
+    constructor <;> linarith
+  rw [← Int.cast_abs, ← Int.cast_one, Int.cast_lt, Int.abs_lt_one_iff, sub_eq_zero] at hlt
+  subst hlt
+  exact Complex.ext (by linarith) (by linarith)
+
+end TauCeti.Complex
 
 namespace IsPreconnected
 

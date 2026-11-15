@@ -297,10 +297,9 @@ theorem bivectorExterior_kahlerForm_antiCanonicalSpinor {u₀ : PosSpin(o, ρ)}
 /-- The canonical Kähler Clifford projection annihilates `v₀`. -/
 @[simp] theorem cliffordProjection_antiCanonicalSpinor {u₀ : PosSpin(o, ρ)}
     (hu₀ : cliffordProjection o ρ J.kahlerForm u₀ = u₀) :
-    cliffordProjection o ρ J.kahlerForm (antiSpin(o, ρ, e) u₀) = 0 := by
-  rw [cliffordProjection_apply_eq_zero_iff]; apply Subtype.ext; rw [coe_cliffordRestriction_apply,
-    Submodule.coe_smul, bivectorExterior_kahlerForm_antiCanonicalSpinor hQ hkl he h₀ h₂₃ hu₀,
-    smul_smul]; congr 1; linear_combination 2 * I_sq
+    cliffordProjection o ρ J.kahlerForm (antiSpin(o, ρ, e) u₀) = 0 :=
+  cliffordProjection_apply_eq_zero_of_bivectorExterior_apply o ρ
+    (bivectorExterior_kahlerForm_antiCanonicalSpinor hQ hkl he h₀ h₂₃ hu₀)
 /-- The complementary Kähler Clifford projection fixes `v₀`. -/
 @[simp] theorem cliffordProjection_neg_antiCanonicalSpinor {u₀ : PosSpin(o, ρ)}
     (hu₀ : cliffordProjection o ρ J.kahlerForm u₀ = u₀) :
