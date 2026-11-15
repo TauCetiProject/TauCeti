@@ -393,4 +393,13 @@ theorem glueAlongDiscriminant_injective :
     rw [h] at hmem
     exact (((L.mem_glueAlongDiscriminant_iff M hL hM e' x y).mp hmem).trans hy).symm
 
+/-- Two gluings of `L ⊥ M` are equal if and only if they use the same isometry of discriminant
+forms. -/
+@[simp]
+theorem glueAlongDiscriminant_inj
+    {e e' : FiniteQuadraticModule.Isometry (L.discriminantQuadraticModule hL)
+      (M.discriminantQuadraticModule hM).neg} :
+    L.glueAlongDiscriminant M hL hM e = L.glueAlongDiscriminant M hL hM e' ↔ e = e' :=
+  (L.glueAlongDiscriminant_injective M hL hM).eq_iff
+
 end TauCeti.IntegralLattice
