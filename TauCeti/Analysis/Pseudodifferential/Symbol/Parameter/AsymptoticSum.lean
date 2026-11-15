@@ -124,45 +124,51 @@ theorem parameterCutoff_mk_zero_zero (t : ℝ) (x : CoordinateSpace n) :
   Real.smoothTransition.zero_of_nonpos (by simp)
 
 @[simp]
-theorem parameterCutoff_zero (p : (CoordinateSpace n × CoordinateSpace n) × ℂ) :
-    parameterCutoff 0 p = 0 :=
-  Real.smoothTransition.zero_of_nonpos (by simp)
+theorem parameterCutoff_apply_zero (t : ℝ) : parameterCutoff (n := n) t 0 = 0 :=
+  parameterCutoff_mk_zero_zero t 0
 
-theorem parameterCutoff_eq_zero_iff {t : ℝ} (ht : 0 < t)
+@[simp]
+theorem parameterCutoff_zero : parameterCutoff (n := n) 0 = 0 := by
+  ext p
+  exact Real.smoothTransition.zero_of_nonpos (by simp)
+
+theorem parameterCutoff_eq_zero_iff {t : ℝ} (ht : t ≠ 0)
     {p : (CoordinateSpace n × CoordinateSpace n) × ℂ} :
     parameterCutoff t p = 0 ↔ ‖p.1.2‖ ^ 4 + ‖p.2‖ ^ 2 ≤ t ^ 4 := by
   rw [parameterCutoff_def, Real.smoothTransition.zero_iff_nonpos, sub_nonpos,
     div_le_one (by positivity)]
 
-theorem parameterCutoff_eq_one_iff {t : ℝ} (ht : 0 < t)
+theorem parameterCutoff_eq_one_iff {t : ℝ} (ht : t ≠ 0)
     {p : (CoordinateSpace n × CoordinateSpace n) × ℂ} :
     parameterCutoff t p = 1 ↔ 2 * t ^ 4 ≤ ‖p.1.2‖ ^ 4 + ‖p.2‖ ^ 2 := by
   rw [parameterCutoff_def, Real.smoothTransition.eq_one_iff_one_le, le_sub_iff_add_le,
     le_div_iff₀ (by positivity)]
   constructor <;> intro h <;> linarith
 
-theorem parameterCutoff_eq_zero {t : ℝ} (ht : 0 < t)
+theorem parameterCutoff_eq_zero {t : ℝ}
     {p : (CoordinateSpace n × CoordinateSpace n) × ℂ} (hp : ‖p.1.2‖ ^ 4 + ‖p.2‖ ^ 2 ≤ t ^ 4) :
-    parameterCutoff t p = 0 :=
-  (parameterCutoff_eq_zero_iff ht).2 hp
+    parameterCutoff t p = 0 := by
+  rcases eq_or_ne t 0 with rfl | ht
+  · simp
+  · exact (parameterCutoff_eq_zero_iff ht).2 hp
 
-theorem parameterCutoff_eq_one {t : ℝ} (ht : 0 < t)
+theorem parameterCutoff_eq_one {t : ℝ} (ht : t ≠ 0)
     {p : (CoordinateSpace n × CoordinateSpace n) × ℂ} (hp : 2 * t ^ 4 ≤ ‖p.1.2‖ ^ 4 + ‖p.2‖ ^ 2) :
     parameterCutoff t p = 1 :=
   (parameterCutoff_eq_one_iff ht).2 hp
 
 /-- The cutoff vanishes near every point where the quasi-norm is below `t⁴`. -/
-theorem parameterCutoff_eventuallyEq_zero {t : ℝ} (ht : 0 < t)
+theorem parameterCutoff_eventuallyEq_zero {t : ℝ}
     {p : (CoordinateSpace n × CoordinateSpace n) × ℂ} (hp : ‖p.1.2‖ ^ 4 + ‖p.2‖ ^ 2 < t ^ 4) :
     parameterCutoff t =ᶠ[𝓝 p] 0 := by
   have hU : IsOpen {q : (CoordinateSpace n × CoordinateSpace n) × ℂ |
       ‖q.1.2‖ ^ 4 + ‖q.2‖ ^ 2 < t ^ 4} :=
     isOpen_lt (by fun_prop) continuous_const
   filter_upwards [hU.mem_nhds hp] with q hq
-  exact parameterCutoff_eq_zero ht hq.le
+  exact parameterCutoff_eq_zero hq.le
 
 /-- The cutoff is one near every point where the quasi-norm is above `2 t⁴`. -/
-theorem parameterCutoff_eventuallyEq_one {t : ℝ} (ht : 0 < t)
+theorem parameterCutoff_eventuallyEq_one {t : ℝ} (ht : t ≠ 0)
     {p : (CoordinateSpace n × CoordinateSpace n) × ℂ} (hp : 2 * t ^ 4 < ‖p.1.2‖ ^ 4 + ‖p.2‖ ^ 2) :
     parameterCutoff t =ᶠ[𝓝 p] 1 := by
   have hU : IsOpen {q : (CoordinateSpace n × CoordinateSpace n) × ℂ |
@@ -172,13 +178,17 @@ theorem parameterCutoff_eventuallyEq_one {t : ℝ} (ht : 0 < t)
   exact parameterCutoff_eq_one ht hq.le
 
 /-- The cutoff of radius `t` is the cutoff of radius one composed with the dilation by `t⁻¹`. -/
-theorem parameterCutoff_eq_comp {t : ℝ} (ht : 0 < t) :
+theorem parameterCutoff_eq_comp (t : ℝ) :
     parameterCutoff (n := n) t = parameterCutoff 1 ∘ parameterDilation n t⁻¹ := by
   ext p
+  rcases eq_or_ne t 0 with rfl | ht
+  · simp [parameterCutoff_def]
   simp only [Function.comp_apply, parameterCutoff_def, parameterDilation_apply, norm_smul,
-    Real.norm_eq_abs, abs_inv, abs_pow, abs_of_pos ht, one_pow, div_one]
+    Real.norm_eq_abs, abs_inv, abs_pow, sq_abs, one_pow, div_one]
   congr 1
+  have ha : |t| ^ 4 = t ^ 4 := by rw [show (4 : ℕ) = 2 * 2 from rfl, pow_mul, sq_abs, ← pow_mul]
   field_simp
+  rw [ha]
 
 /-- The cutoff does not depend on the position, so neither do its derivatives. -/
 private theorem iteratedFDeriv_parameterCutoff_mk (t : ℝ) (k : ℕ) (x ξ : CoordinateSpace n)
@@ -207,7 +217,7 @@ private theorem exists_norm_parameterIteratedFDeriv_parameterCutoff_one_le (k : 
   obtain ⟨⟨x, ξ⟩, z⟩ := p
   by_cases hfar : 2 < ‖ξ‖ ^ 4 + ‖z‖ ^ 2
   · -- Far out the cutoff is identically one.
-    have hloc := parameterCutoff_eventuallyEq_one (n := n) (p := ((x, ξ), z)) one_pos
+    have hloc := parameterCutoff_eventuallyEq_one (n := n) (p := ((x, ξ), z)) one_ne_zero
       (by simpa using hfar)
     rcases Nat.eq_zero_or_pos i with rfl | hi
     · rw [norm_parameterIteratedFDeriv_zero, Real.norm_eq_abs,
@@ -226,7 +236,7 @@ private theorem exists_norm_parameterIteratedFDeriv_parameterCutoff_one_le (k : 
       nlinarith [one_le_parameterWeight ξ z])
     have hD : ‖parameterDilation n (parameterWeight ξ z)‖ ≤ 25 := by
       have h1 := one_le_parameterWeight ξ z
-      exact (norm_parameterDilation_le_sq h1).trans (by nlinarith)
+      exact (norm_parameterDilation_le_sq (h1.trans (le_abs_self _))).trans (by nlinarith)
     have hM' : ‖iteratedFDeriv ℝ i (parameterCutoff (n := n) 1) ((x, ξ), z)‖ ≤ M := by
       rw [iteratedFDeriv_parameterCutoff_mk]
       simpa using (norm_le_pi_norm _ (⟨i, Nat.lt_succ_of_le hi⟩ : Fin (k + 1))).trans
@@ -274,7 +284,7 @@ theorem exists_norm_parameterIteratedFDeriv_parameterCutoff_le (k : ℕ) :
       (parameterIteratedFDeriv i (parameterCutoff 1) q).compContinuousLinearMap fun _ =>
         parameterDilation n (t⁻¹ * w / w') := by
     rw [parameterIteratedFDeriv_def,
-      parameterIteratedFDeriv_def, parameterCutoff_eq_comp ht0,
+      parameterIteratedFDeriv_def, parameterCutoff_eq_comp t,
       ContinuousLinearMap.iteratedFDeriv_comp_right _ (contDiff_parameterCutoff 1) _
         le_rfl]
     ext v
@@ -288,7 +298,7 @@ theorem exists_norm_parameterIteratedFDeriv_parameterCutoff_le (k : ℕ) :
   calc ‖parameterIteratedFDeriv i (parameterCutoff 1) q‖ *
         ‖parameterDilation n (t⁻¹ * w / w')‖ ^ i
       ≤ B * 1 ^ i := mul_le_mul (hB i hi q)
-        (pow_le_pow_left₀ (norm_nonneg _) (norm_parameterDilation_le_one hr0 hr1) i)
+        (pow_le_pow_left₀ (norm_nonneg _) (norm_parameterDilation_le_one ((abs_of_nonneg hr0).trans_le hr1)) i)
         (by positivity) hB0
     _ = B := by rw [one_pow, mul_one]
 
@@ -317,7 +327,7 @@ theorem exists_norm_parameterIteratedFDeriv_cutoff_smul_le (a : ParameterSymbol 
   by_cases hq : ‖ξ‖ ^ 4 + ‖z‖ ^ 2 < t ^ 4
   · -- Below the radius `t` the product vanishes near `((x, ξ), z)`.
     have hloc : (fun p => parameterCutoff t p • a.coefficient p) =ᶠ[𝓝 ((x, ξ), z)] 0 :=
-      (parameterCutoff_eventuallyEq_zero (p := ((x, ξ), z)) ht0 hq).mono fun p hp => by
+      (parameterCutoff_eventuallyEq_zero (p := ((x, ξ), z)) hq).mono fun p hp => by
         simp [hp]
     rw [hloc.parameterIteratedFDeriv_eq i, parameterIteratedFDeriv_zero, norm_zero]
     positivity
@@ -360,7 +370,7 @@ private theorem exists_norm_parameterIteratedFDeriv_cutoff_smul_sub_le
   by_cases hq : 2 * t ^ 4 < ‖ξ‖ ^ 4 + ‖z‖ ^ 2
   · -- Beyond the radius `2^(1/4) t` the difference vanishes near `((x, ξ), z)`.
     have hloc : ((fun p => parameterCutoff t p • a.coefficient p) - a.coefficient) =ᶠ[𝓝 ((x, ξ), z)]
-        0 := (parameterCutoff_eventuallyEq_one (p := ((x, ξ), z)) ht0 hq).mono fun p hp => by
+        0 := (parameterCutoff_eventuallyEq_one (p := ((x, ξ), z)) ht0.ne' hq).mono fun p hp => by
       simp [hp]
     rw [hloc.parameterIteratedFDeriv_eq k, parameterIteratedFDeriv_zero, norm_zero]
     positivity
@@ -510,7 +520,7 @@ private theorem borelSum_eq_sum {t : ℕ → ℝ} (ht : ∀ j : ℕ, (j : ℝ) +
   have ht4 : t j ≤ t j ^ 4 := le_self_pow₀ ht1 (by norm_num)
   exact hj (by
     dsimp only
-    rw [parameterCutoff_eq_zero (zero_lt_one.trans_le ht1) (by linarith [ht j]), zero_smul])
+    rw [parameterCutoff_eq_zero (by linarith [ht j]), zero_smul])
 
 /-- Near a point where `‖ξ‖⁴ + ‖z‖² < J`, the Borel sum is the finite sum of its first `J`
 terms. -/

@@ -167,30 +167,36 @@ theorem parameterDilation_comp_parameterDilation (s t : ℝ) :
   refine ContinuousLinearMap.ext fun v => ?_
   simp [smul_smul, mul_pow, mul_assoc]
 
-/-- A dilation by a factor in `[0, 1]` has norm at most one. -/
-theorem norm_parameterDilation_le_one {r : ℝ} (h₀ : 0 ≤ r) (h₁ : r ≤ 1) :
-    ‖parameterDilation n r‖ ≤ 1 := by
-  refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun v => ?_
-  have hr : r ^ 2 ≤ 1 := pow_le_one₀ h₀ h₁
-  simp only [parameterDilation_apply, Prod.norm_def, norm_smul, Real.norm_eq_abs, abs_pow,
-    abs_of_nonneg h₀, one_mul]
-  exact max_le_max (max_le_max le_rfl (mul_le_of_le_one_left (norm_nonneg _) h₁))
-    (mul_le_of_le_one_left (norm_nonneg _) hr)
+@[simp]
+theorem parameterDilation_one :
+    parameterDilation n 1 =
+      ContinuousLinearMap.id ℝ ((CoordinateSpace n × CoordinateSpace n) × ℂ) := by
+  refine ContinuousLinearMap.ext fun v => ?_
+  simp
 
-/-- A dilation by a factor `r ≥ 1` has norm at most `r²`. -/
-theorem norm_parameterDilation_le_sq {r : ℝ} (h₁ : 1 ≤ r) :
-    ‖parameterDilation n r‖ ≤ r ^ 2 := by
+/-- A dilation by any factor `r` has norm at most `max 1 r²`. -/
+theorem norm_parameterDilation_le (r : ℝ) : ‖parameterDilation n r‖ ≤ max 1 (r ^ 2) := by
   refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v => ?_
-  have hr : r ≤ r ^ 2 := by nlinarith
-  have hr' : 1 ≤ r ^ 2 := h₁.trans hr
-  simp only [parameterDilation_apply, Prod.norm_def, norm_smul, Real.norm_eq_abs, abs_pow,
-    abs_of_nonneg (zero_le_one.trans h₁)]
+  have hr : |r| ≤ max 1 (r ^ 2) := by
+    rcases le_total |r| 1 with h | h
+    · exact h.trans (le_max_left _ _)
+    · exact ((le_self_pow₀ h two_ne_zero).trans_eq (sq_abs r)).trans (le_max_right _ _)
+  simp only [parameterDilation_apply, Prod.norm_def, norm_smul, Real.norm_eq_abs, abs_pow, sq_abs]
   refine max_le (max_le ?_ ?_) ?_
-  · exact (le_mul_of_one_le_left (norm_nonneg _) hr').trans
+  · exact le_mul_of_one_le_left (norm_nonneg _) (le_max_left _ _) |>.trans
       (mul_le_mul_of_nonneg_left ((le_max_left _ _).trans (le_max_left _ _)) (by positivity))
   · exact (mul_le_mul_of_nonneg_right hr (norm_nonneg _)).trans
       (mul_le_mul_of_nonneg_left ((le_max_right _ _).trans (le_max_left _ _)) (by positivity))
-  · exact mul_le_mul_of_nonneg_left (le_max_right _ _) (by positivity)
+  · exact (mul_le_mul_of_nonneg_right (le_max_right _ _) (norm_nonneg _)).trans
+      (mul_le_mul_of_nonneg_left (le_max_right _ _) (by positivity))
+
+/-- A dilation by a factor of absolute value at most one has norm at most one. -/
+theorem norm_parameterDilation_le_one {r : ℝ} (h : |r| ≤ 1) : ‖parameterDilation n r‖ ≤ 1 :=
+  (norm_parameterDilation_le r).trans_eq (max_eq_left (sq_le_one_iff_abs_le_one r |>.2 h))
+
+/-- A dilation by a factor of absolute value at least one has norm at most `r²`. -/
+theorem norm_parameterDilation_le_sq {r : ℝ} (h : 1 ≤ |r|) : ‖parameterDilation n r‖ ≤ r ^ 2 :=
+  (norm_parameterDilation_le r).trans_eq (max_eq_right (one_le_sq_iff_one_le_abs r |>.2 h))
 
 /-- The `k`-th derivative of `f` at `p = ((x, ξ), z)`, taken in the directions dilated by
 `parameterDilation n (parameterWeight ξ z)`: a frequency direction is scaled by the weight and the
@@ -245,6 +251,7 @@ theorem parameterIteratedFDeriv_zero {A : Type*} [NormedAddCommGroup A] [NormedS
   ext v
   simp [parameterIteratedFDeriv_apply]
 
+@[to_fun]
 theorem parameterIteratedFDeriv_add {A : Type*} [NormedAddCommGroup A] [NormedSpace ℝ A] (k : ℕ)
     {f g : (CoordinateSpace n × CoordinateSpace n) × ℂ → A}
     {p : (CoordinateSpace n × CoordinateSpace n) × ℂ} (hf : ContDiffAt ℝ k f p)
@@ -254,6 +261,7 @@ theorem parameterIteratedFDeriv_add {A : Type*} [NormedAddCommGroup A] [NormedSp
   ext v
   simp [parameterIteratedFDeriv_apply, iteratedFDeriv_add_apply hf hg]
 
+@[to_fun]
 theorem parameterIteratedFDeriv_sub {A : Type*} [NormedAddCommGroup A] [NormedSpace ℝ A] (k : ℕ)
     {f g : (CoordinateSpace n × CoordinateSpace n) × ℂ → A}
     {p : (CoordinateSpace n × CoordinateSpace n) × ℂ} (hf : ContDiffAt ℝ k f p)
@@ -263,6 +271,7 @@ theorem parameterIteratedFDeriv_sub {A : Type*} [NormedAddCommGroup A] [NormedSp
   ext v
   simp [parameterIteratedFDeriv_apply, iteratedFDeriv_sub_apply hf hg]
 
+@[to_fun]
 theorem parameterIteratedFDeriv_sum {A ι : Type*} [NormedAddCommGroup A] [NormedSpace ℝ A]
     (k : ℕ) (s : Finset ι) {f : ι → (CoordinateSpace n × CoordinateSpace n) × ℂ → A}
     {p : (CoordinateSpace n × CoordinateSpace n) × ℂ} (hf : ∀ j ∈ s, ContDiffAt ℝ k (f j) p) :
@@ -277,7 +286,7 @@ theorem parameterIteratedFDeriv_fun_zero {A : Type*} [NormedAddCommGroup A] [Nor
       0 :=
   parameterIteratedFDeriv_zero k p
 
-@[simp]
+@[to_fun (attr := simp)]
 theorem parameterIteratedFDeriv_neg {A : Type*} [NormedAddCommGroup A] [NormedSpace ℝ A] (k : ℕ)
     (f : (CoordinateSpace n × CoordinateSpace n) × ℂ → A)
     (p : (CoordinateSpace n × CoordinateSpace n) × ℂ) :
@@ -285,8 +294,9 @@ theorem parameterIteratedFDeriv_neg {A : Type*} [NormedAddCommGroup A] [NormedSp
   ext v
   simp [parameterIteratedFDeriv_apply, iteratedFDeriv_neg_apply]
 
-theorem parameterIteratedFDeriv_const_smul {A : Type*} [NormedAddCommGroup A] [NormedSpace ℝ A]
-    (k : ℕ) (c : ℝ) {f : (CoordinateSpace n × CoordinateSpace n) × ℂ → A}
+@[to_fun]
+theorem parameterIteratedFDeriv_const_smul {A R : Type*} [NormedAddCommGroup A] [NormedSpace ℝ A]
+    [DistribSMul R A] [SMulCommClass ℝ R A] [ContinuousConstSMul R A] (k : ℕ) (c : R) {f : (CoordinateSpace n × CoordinateSpace n) × ℂ → A}
     {p : (CoordinateSpace n × CoordinateSpace n) × ℂ} (hf : ContDiffAt ℝ k f p) :
     parameterIteratedFDeriv k (c • f) p = c • parameterIteratedFDeriv k f p := by
   ext v
