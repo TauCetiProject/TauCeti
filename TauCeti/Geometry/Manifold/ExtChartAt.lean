@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Geometry.Manifold.IsManifold.ExtChartAt
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
+public import Mathlib.Order.Disjointed
 public import Mathlib.Topology.Compactness.Paracompact
 public import Mathlib.Topology.Sets.Compacts
 import TauCeti.Geometry.Manifold.ChartedSpace
@@ -514,6 +515,14 @@ theorem IsChartMeasurable.diff [MeasurableSpace E] {s t : Set M}
     IsChartMeasurable I (s \ t) := by
   intro x
   simpa only [Set.preimage_sdiff, Set.inter_sdiff_distrib_left] using (hs x).diff (ht x)
+
+/-- The disjointed pieces of a family of chart-measurable sets are chart measurable. -/
+theorem IsChartMeasurable.disjointed [MeasurableSpace E] {ι : Type*} [Preorder ι]
+    [LocallyFiniteOrderBot ι] {s : ι → Set M} (hs : ∀ i, IsChartMeasurable I (s i)) (i : ι) :
+    IsChartMeasurable I (_root_.disjointed s i) := by
+  rw [disjointed_apply]
+  exact (hs i).diff (Finset.sup_induction (isChartMeasurable_empty (I := I))
+    (fun _ ha _ hb ↦ ha.union hb) fun j _ ↦ hs j)
 
 /-- Chart measurability is closed under complements when open model sets are measurable. -/
 theorem IsChartMeasurable.compl [MeasurableSpace E] [OpensMeasurableSpace E] {s : Set M}
