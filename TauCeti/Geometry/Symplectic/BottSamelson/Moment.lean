@@ -27,13 +27,16 @@ of the Hermitian matrix `a Π_{L₁} + b Π_P + c Π_L`:
 (`TauCeti.BottSamelson.moment`, built on `Submodule.projectorDiagonal`). This file works with this
 map on triples of subspaces directly; no symplectic form enters the statements.
 
-The torus-fixed points of `X` are triples of coordinate subspaces. Writing `ij` for the plane
-`span(eᵢ, eⱼ)` and `eᵢ` for the line it spans, eight such triples satisfy the incidence conditions,
-and their moment values are the rows of `TauCeti.BottSamelson.fixedMoment`
-(`TauCeti.BottSamelson.exists_moment_eq_fixedMoment`), in the order
+Writing `ij` for the plane `span(eᵢ, eⱼ)` and `eᵢ` for the line spanned by `eᵢ`, the eight
+triples of coordinate subspaces
 
 `(e₀, 01, e₀)`, `(e₀, 01, e₁)`, `(e₀, 02, e₀)`, `(e₀, 02, e₂)`,
-`(e₁, 01, e₀)`, `(e₁, 01, e₁)`, `(e₁, 12, e₁)`, `(e₁, 12, e₂)`.
+`(e₁, 01, e₀)`, `(e₁, 01, e₁)`, `(e₁, 12, e₁)`, `(e₁, 12, e₂)`
+
+satisfy the incidence conditions, and their moment values are, in this order, the rows of
+`TauCeti.BottSamelson.fixedMoment` (`TauCeti.BottSamelson.exists_moment_eq_fixedMoment`).
+These triples are the torus-fixed points of `X`; this file neither defines the torus action on
+`X` nor proves that classification.
 
 For nonnegative weights `a, b, c`, every value of `μ` lies in the hexagon
 `TauCeti.BottSamelson.momentPolygon`, the convex hull of these eight values
@@ -108,6 +111,11 @@ def moment (a b c : ℝ) (L₁ P L : Submodule ℂ (EuclideanSpace ℂ (Fin 3)))
 section Moment
 
 variable (a b c : ℝ) (L₁ P L : Submodule ℂ (EuclideanSpace ℂ (Fin 3)))
+
+/-- The moment map as the weighted sum of the three projector diagonals, as functions. -/
+theorem moment_def :
+    moment a b c L₁ P L =
+      a • L₁.projectorDiagonal + b • P.projectorDiagonal + c • L.projectorDiagonal := (rfl)
 
 @[simp]
 theorem moment_apply (i : Fin 3) :
@@ -208,7 +216,8 @@ theorem moment_mem_momentPolygon {a b c : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) (hc
     nlinarith [mul_le_mul_of_nonneg_left (h4 2) hb, mul_le_mul_of_nonneg_left (h5 2) hc]
 
 /-- For nonnegative weights, every moment value of the Bott–Samelson variety of the word `121`
-lies in the convex hull of the moment values of its eight torus-fixed points. -/
+lies in the convex hull of the eight rows of `fixedMoment`, the moment values of the coordinate
+triples of `exists_moment_eq_fixedMoment`. -/
 theorem moment_mem_convexHull {a b c : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) (hc : 0 ≤ c)
     {L₁ P L : Submodule ℂ (EuclideanSpace ℂ (Fin 3))} (hL₁ : finrank ℂ L₁ = 1)
     (hP : finrank ℂ P = 2) (hL : finrank ℂ L = 1) (h : L₁ ≤ initialPlane) :
