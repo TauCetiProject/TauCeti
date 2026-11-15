@@ -161,7 +161,8 @@ theorem exists_isComplexLinear_chart_of_contDiffAt {J : ℂ → AlmostComplexStr
   -- The composite `w ↦ e₁ (B (w - c))` has inverse `y ↦ B⁻¹ (e₁⁻¹ y) + c`; both stay `C¹`, and
   -- by the chain rule its differential carries `J` to `i`.
   let e' := ((Homeomorph.subRight c).trans B.toHomeomorph).transOpenPartialHomeomorph e₁
-  have he' : ⇑e' = fun w ↦ e₁ (B (w - c)) := by
+  -- Written as `w ↦ (e₁ ∘ B) (w - c)`, the form that `fderiv_comp_sub` differentiates.
+  have he' : ⇑e' = fun w ↦ (e₁ ∘ B) (w - c) := by
     funext w
     simp [e']
   have he's : ⇑e'.symm = fun y ↦ B.symm (e₁.symm y) + c := by
@@ -169,6 +170,11 @@ theorem exists_isComplexLinear_chart_of_contDiffAt {J : ℂ → AlmostComplexStr
     simp [e']
   have hsrc : ∀ z, z ∈ e'.source ↔ B (z - c) ∈ e₁.source := fun z ↦ by
     simp [e']
+  have htgt : ∀ y ∈ e'.target, y ∈ e.target := fun y hy ↦ by
+    simp only [e', e₁, Homeomorph.transOpenPartialHomeomorph_target,
+      OpenPartialHomeomorph.restrOpen_toPartialEquiv, PartialEquiv.restr_target,
+      mem_inter_iff] at hy
+    exact hy.1
   refine ⟨e', ?_, ?_, fun z hz ↦ ?_, ?_, fun z hz ↦ ?_⟩
   · simpa [hsrc, he₁s] using hce
   · simp [e', e₁, he]
@@ -177,10 +183,9 @@ theorem exists_isComplexLinear_chart_of_contDiffAt {J : ℂ → AlmostComplexStr
       (B.contDiff.comp (contDiff_id.sub contDiff_const)).contDiffAt).contDiffWithinAt
   · rw [he's]
     exact (B.symm.contDiff.add contDiff_const).comp_contDiffOn
-      (hesC.mono fun y hy ↦ (show y ∈ e₁.target from hy).1)
-  · -- `fderiv_comp_sub` differentiates a function written as `w ↦ g (w - c)`.
-    have hd : fderiv ℝ e' z = (fderiv ℝ e₁ (B (z - c))).comp (B : ℂ →L[ℝ] ℂ) := by
-      rw [show ⇑e' = fun w ↦ (e₁ ∘ B) (w - c) from he', fderiv_comp_sub, B.comp_right_fderiv]
+      (hesC.mono htgt)
+  · have hd : fderiv ℝ e' z = (fderiv ℝ e₁ (B (z - c))).comp (B : ℂ →L[ℝ] ℂ) := by
+      rw [he', fderiv_comp_sub, B.comp_right_fderiv]
     have hz' := (hsrc z).1 hz
     rw [hd]
     exact (helin _ ((he₁s _).1 hz').1).comp (isComplexLinear_of_apply (hBJ z hz'))
