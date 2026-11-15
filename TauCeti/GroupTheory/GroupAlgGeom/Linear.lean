@@ -9,7 +9,7 @@ public import TauCeti.GroupTheory.GroupAlgGeom.EquationallyNoetherian
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import TauCeti.GroupTheory.FreeGroup.Linear
 import Mathlib.RingTheory.Ideal.Quotient.Noetherian
-import TauCeti.GroupTheory.FreeGroup.Discrimination
+import TauCeti.GroupTheory.FreeGroup.Basic
 import Mathlib.RingTheory.Polynomial.Basic
 
 /-!
@@ -38,8 +38,8 @@ the countable case.
   group with an injective homomorphism into `GL n R`.
 * `TauCeti.GroupAlgGeom.isEquationallyNoetherian_specialLinearGroup`: in particular so is
   `SL n R`.
-* `TauCeti.GroupAlgGeom.isEquationallyNoetherian_of_freeGroupBasis`,
-  `TauCeti.GroupAlgGeom.isEquationallyNoetherian_freeGroup`: free groups of any rank are
+* `TauCeti.GroupAlgGeom.isEquationallyNoetherian_freeGroup`,
+  `TauCeti.GroupAlgGeom.isEquationallyNoetherian_of_isFreeGroup`: free groups of any rank are
   equationally Noetherian over any coefficients.
 
 ## Implementation notes
@@ -61,6 +61,8 @@ already generate it, and they form the required finite subsystem.
 * R. M. Bryant, *The verbal topology of a group*, J. Algebra 48 (1977).
 * V. Guba, *Equivalence of infinite systems of equations in free groups and semigroups to finite
   subsystems*, Mat. Zametki 40 (1986).
+* I. N. Sanov, *A property of a representation of a free group*, Doklady Akad. Nauk SSSR 57
+  (1947), 657–659.
 -/
 
 public section
@@ -254,12 +256,13 @@ theorem isEquationallyNoetherian_freeGroup {α : Type*} (ι : G →* FreeGroup �
   have hrm : r (eval (.id _) (v m) (s m)) = 1 := (map_eval φ (s m)).trans (mem_V.1 hvm _ hsT)
   exact hvs (by rw [← hr m, hrm, map_one])
 
-/-- **Free groups are equationally Noetherian.** A group with a free basis, of any rank, is
-equationally Noetherian over any coefficients; for free groups of finite rank this is Guba's
-theorem. -/
-theorem isEquationallyNoetherian_of_freeGroupBasis {κ : Type*} (ι : G →* H)
-    (b : FreeGroupBasis κ H) : IsEquationallyNoetherian ι :=
-  (isEquationallyNoetherian_freeGroup (b.repr.toMonoidHom.comp ι)).of_injective
-    ⟨b.repr.toMonoidHom, fun _ => rfl⟩ b.repr.injective
+/-- **Free groups are equationally Noetherian.** A free group `H`, of any rank, is equationally
+Noetherian over any coefficients `ι : G →* H`; for free groups of finite rank this is Guba's
+theorem. A group with a free basis `b` is free by `FreeGroupBasis.isFreeGroup`. -/
+theorem isEquationallyNoetherian_of_isFreeGroup [IsFreeGroup H] (ι : G →* H) :
+    IsEquationallyNoetherian ι :=
+  let e := (IsFreeGroup.toFreeGroup H).toMonoidHom
+  (isEquationallyNoetherian_freeGroup (e.comp ι)).of_injective ⟨e, fun _ => rfl⟩
+    (IsFreeGroup.toFreeGroup H).injective
 
 end TauCeti.GroupAlgGeom

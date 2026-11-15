@@ -322,7 +322,8 @@ theorem isDiscriminatedBy_id_iff_forall_realize_iff_of_freeGroupBasis {F : Type*
       letI : Language.group.Structure F := TauCeti.Group.structureOfGroup F
       letI : (Language.constantsOn α).Structure F := Language.constantsOn.structure b
       ∀ σ : Language.group[[α]].Sentence, σ.IsUniversal → (K ⊨ σ ↔ F ⊨ σ) :=
-  isDiscriminatedBy_id_iff_forall_realize_iff (isEquationallyNoetherian_of_freeGroupBasis _ b) π hπ
+  have := b.isFreeGroup
+  isDiscriminatedBy_id_iff_forall_realize_iff (isEquationallyNoetherian_of_isFreeGroup _) π hπ
     b.closure_range_eq_top
 
 /-- **Remeslennikov's theorem** for the free group on a type `α`, with constants for its basis: a
