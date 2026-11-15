@@ -24,9 +24,9 @@ coordinatewise action a `⋆`-representation `NonUnitalStarAlgHom.hilbertSum π`
   nonzero element of `A` lies in the kernel of every summand.
 * `NonUnitalStarAlgHom.isNondegenerate_hilbertSum_iff`: the direct sum is nondegenerate if and only
   if every summand is nondegenerate.
-* `NonUnitalStarAlgHom.ampliation` and `StarAlgHom.ampliation`: the diagonal ampliation of a single
-  representation to `ℓ²(ι, K)`, preserving nondegeneracy for all `ι` and faithfulness for nonempty
-  `ι`.
+* `NonUnitalStarAlgHom.ampliation` and `StarAlgHom.ampliation`: the diagonal ampliation of any
+  `⋆`-algebra homomorphism into `K →L[𝕜] K` over `[RCLike 𝕜]` to `ℓ²(ι, K)`, preserving
+  faithfulness for nonempty `ι` and, for C⋆-algebra representations, nondegeneracy for all `ι`.
 
 ## References
 
@@ -41,6 +41,8 @@ noncomputable section
 open scoped ENNReal InnerProductSpace lp
 
 namespace NonUnitalStarAlgHom
+
+section HilbertSum
 
 variable {A ι : Type*} {H : ι → Type*} [NonUnitalCStarAlgebra A]
   [∀ i, NormedAddCommGroup (H i)] [∀ i, InnerProductSpace ℂ (H i)] [∀ i, CompleteSpace (H i)]
@@ -115,31 +117,42 @@ theorem isNondegenerate_hilbertSum_iff (π : ∀ i, A →⋆ₙₐ[ℂ] (H i →
   have h0 : lp.single 2 i ξ = 0 := h (lp.single 2 i ξ) fun a ↦ by simp [hξ a]
   simpa using congr_arg (fun y : lp H 2 ↦ y i) h0
 
+end HilbertSum
+
 section Ampliation
 
-variable {K : Type*} [NormedAddCommGroup K] [InnerProductSpace ℂ K] [CompleteSpace K]
+variable {ι 𝕜 A K : Type*} [RCLike 𝕜] [NonUnitalNonAssocSemiring A] [DistribMulAction 𝕜 A]
+  [Star A] [NormedAddCommGroup K] [InnerProductSpace 𝕜 K] [CompleteSpace K]
 
 variable (ι) in
-/-- Diagonal ampliation `a ↦ ⊕_{i : ι} ρ a` of a representation `ρ` of `A` to `ℓ²(ι, K)`. -/
-def ampliation (ρ : A →⋆ₙₐ[ℂ] (K →L[ℂ] K)) : A →⋆ₙₐ[ℂ] (ℓ²(ι, K) →L[ℂ] ℓ²(ι, K)) :=
-  (lp.ampliationStarAlgHom ι ℂ K).toNonUnitalStarAlgHom.comp ρ
+/-- Diagonal ampliation `a ↦ ⊕_{i : ι} ρ a` of a `⋆`-homomorphism `ρ` into `K →L[𝕜] K` to
+`ℓ²(ι, K)`. -/
+def ampliation (ρ : A →⋆ₙₐ[𝕜] (K →L[𝕜] K)) : A →⋆ₙₐ[𝕜] (ℓ²(ι, K) →L[𝕜] ℓ²(ι, K)) :=
+  (lp.ampliationStarAlgHom ι 𝕜 K).toNonUnitalStarAlgHom.comp ρ
 
 @[simp]
-theorem ampliation_apply (ρ : A →⋆ₙₐ[ℂ] (K →L[ℂ] K)) (a : A) :
+theorem ampliation_apply (ρ : A →⋆ₙₐ[𝕜] (K →L[𝕜] K)) (a : A) :
     ρ.ampliation ι a = lp.ampliation ι 2 (ρ a) := by
   simp [ampliation]
+
+@[simp]
+theorem ampliation_injective_iff [Nonempty ι] (ρ : A →⋆ₙₐ[𝕜] (K →L[𝕜] K)) :
+    Function.Injective (ρ.ampliation ι) ↔ Function.Injective ρ := by
+  simpa [ampliation] using
+    (lp.ampliationStarAlgHom_injective (ι := ι) (𝕜 := 𝕜) (X := K)).of_comp_iff ρ
+
+end Ampliation
+
+section AmpliationCStar
+
+variable {ι A K : Type*} [NonUnitalCStarAlgebra A] [NormedAddCommGroup K] [InnerProductSpace ℂ K]
+  [CompleteSpace K]
 
 /-- Diagonal ampliation coincides with the constant-family Hilbert direct sum. -/
 theorem ampliation_eq_hilbertSum (ρ : A →⋆ₙₐ[ℂ] (K →L[ℂ] K)) :
     ρ.ampliation ι = hilbertSum fun _ : ι ↦ ρ := by
   ext a x i
   simp
-
-@[simp]
-theorem ampliation_injective_iff [Nonempty ι] (ρ : A →⋆ₙₐ[ℂ] (K →L[ℂ] K)) :
-    Function.Injective (ρ.ampliation ι) ↔ Function.Injective ρ := by
-  simpa [ampliation] using
-    (lp.ampliationStarAlgHom_injective (ι := ι) (𝕜 := ℂ) (X := K)).of_comp_iff ρ
 
 /-- Diagonal ampliation preserves nondegeneracy over every index type, including the empty one. -/
 theorem IsNondegenerate.ampliation {ρ : A →⋆ₙₐ[ℂ] (K →L[ℂ] K)} (hρ : ρ.IsNondegenerate) :
@@ -152,11 +165,13 @@ theorem isNondegenerate_ampliation_iff [Nonempty ι] (ρ : A →⋆ₙₐ[ℂ] (
     (ρ.ampliation ι).IsNondegenerate ↔ ρ.IsNondegenerate := by
   rw [ampliation_eq_hilbertSum, isNondegenerate_hilbertSum_iff, forall_const]
 
-end Ampliation
+end AmpliationCStar
 
 end NonUnitalStarAlgHom
 
 namespace StarAlgHom
+
+section HilbertSum
 
 variable {B ι : Type*} {H : ι → Type*} [CStarAlgebra B]
   [∀ i, NormedAddCommGroup (H i)] [∀ i, InnerProductSpace ℂ (H i)] [∀ i, CompleteSpace (H i)]
@@ -202,38 +217,43 @@ theorem hilbertSum_injective_iff (π : ∀ i, B →⋆ₐ[ℂ] (H i →L[ℂ] H 
   rw [coe_hilbertSum, NonUnitalStarAlgHom.hilbertSum_injective_iff]
   rfl
 
+end HilbertSum
+
 section Ampliation
 
-variable {K : Type*} [NormedAddCommGroup K] [InnerProductSpace ℂ K] [CompleteSpace K]
+variable {ι 𝕜 B K : Type*} [RCLike 𝕜] [Semiring B] [Algebra 𝕜 B] [Star B]
+  [NormedAddCommGroup K] [InnerProductSpace 𝕜 K] [CompleteSpace K]
 
 variable (ι) in
-/-- Diagonal ampliation `b ↦ ⊕_{i : ι} ρ b` of a unital `⋆`-representation `ρ` to `ℓ²(ι, K)`. -/
-def ampliation (ρ : B →⋆ₐ[ℂ] (K →L[ℂ] K)) : B →⋆ₐ[ℂ] (ℓ²(ι, K) →L[ℂ] ℓ²(ι, K)) :=
-  (lp.ampliationStarAlgHom ι ℂ K).comp ρ
+/-- Diagonal ampliation `b ↦ ⊕_{i : ι} ρ b` of a unital `⋆`-homomorphism `ρ` into `K →L[𝕜] K` to
+`ℓ²(ι, K)`. -/
+def ampliation (ρ : B →⋆ₐ[𝕜] (K →L[𝕜] K)) : B →⋆ₐ[𝕜] (ℓ²(ι, K) →L[𝕜] ℓ²(ι, K)) :=
+  (lp.ampliationStarAlgHom ι 𝕜 K).comp ρ
 
 @[simp]
-theorem toNonUnitalStarAlgHom_ampliation (ρ : B →⋆ₐ[ℂ] (K →L[ℂ] K)) :
+theorem toNonUnitalStarAlgHom_ampliation (ρ : B →⋆ₐ[𝕜] (K →L[𝕜] K)) :
     (ρ.ampliation ι).toNonUnitalStarAlgHom = ρ.toNonUnitalStarAlgHom.ampliation ι := by
   ext; simp [ampliation]
 
 @[simp]
-theorem ampliation_apply (ρ : B →⋆ₐ[ℂ] (K →L[ℂ] K)) (b : B) :
+theorem ampliation_apply (ρ : B →⋆ₐ[𝕜] (K →L[𝕜] K)) (b : B) :
     ρ.ampliation ι b = lp.ampliation ι 2 (ρ b) := by
   simp [ampliation]
 
-/-- Diagonal ampliation coincides with the constant-family unital Hilbert direct sum. -/
-theorem ampliation_eq_hilbertSum (ρ : B →⋆ₐ[ℂ] (K →L[ℂ] K)) :
-    ρ.ampliation ι = hilbertSum fun _ : ι ↦ ρ := by
-  ext b x i
-  simp
-
 @[simp]
-theorem ampliation_injective_iff [Nonempty ι] (ρ : B →⋆ₐ[ℂ] (K →L[ℂ] K)) :
+theorem ampliation_injective_iff [Nonempty ι] (ρ : B →⋆ₐ[𝕜] (K →L[𝕜] K)) :
     Function.Injective (ρ.ampliation ι) ↔ Function.Injective ρ := by
   rw [← coe_toNonUnitalStarAlgHom, toNonUnitalStarAlgHom_ampliation]
   exact ρ.toNonUnitalStarAlgHom.ampliation_injective_iff
 
 end Ampliation
+
+/-- Diagonal ampliation coincides with the constant-family unital Hilbert direct sum. -/
+theorem ampliation_eq_hilbertSum {ι B K : Type*} [CStarAlgebra B] [NormedAddCommGroup K]
+    [InnerProductSpace ℂ K] [CompleteSpace K] (ρ : B →⋆ₐ[ℂ] (K →L[ℂ] K)) :
+    ρ.ampliation ι = hilbertSum fun _ : ι ↦ ρ := by
+  ext b x i
+  simp
 
 end StarAlgHom
 

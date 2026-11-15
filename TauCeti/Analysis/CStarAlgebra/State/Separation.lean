@@ -7,28 +7,30 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.State.Space
 import Mathlib.Analysis.CStarAlgebra.GelfandNaimarkSegal
-import Mathlib.Analysis.CStarAlgebra.Spectrum
 import TauCeti.Analysis.CStarAlgebra.Multiplier.Basic
 import TauCeti.Analysis.CStarAlgebra.State.Spectrum
 
 /-!
 # Norm recovery, order detection, and point separation by states
 
-States of a possibly nonunital C⋆-algebra `A` recover norms of normal elements, detect the
-self-adjoint subspace and the positive cone, and separate points.
+States of a possibly nonunital C⋆-algebra `A` supply injectivity of the universal GNS
+representation and reduce norm bounds, self-adjointness, positivity, order, and equality in `A`
+to scalar checks against states:
 
-* `TauCeti.CStarAlgebra.stateSpace_nonempty`, `TauCeti.stateSpace_nonempty_iff`: a C⋆-algebra has a
-  state if and only if it is nontrivial.
-* `TauCeti.exists_mem_stateSpace_norm_apply_eq_norm`,
-  `TauCeti.norm_le_iff_forall_mem_stateSpace`: on a nontrivial C⋆-algebra, every normal element `a`
-  admits a state `φ` with `‖φ a‖ = ‖a‖`, obtained by pulling a spectral state of `𝓜(ℂ, A)` back
-  along `A → 𝓜(ℂ, A)`.
-* `TauCeti.CStarAlgebra.exists_positiveContinuousLinearMap_apply_posPart_eq_zero`: if `a` is
-  self-adjoint with `a⁻ ≠ 0`, a state of `𝓜(ℂ, A)` attaining `1` on `u = ‖a⁻‖⁻¹ • a⁻` vanishes on
-  `1 - u` by Cauchy–Schwarz, hence vanishes on `a⁺ = a⁺ (1 - u)` while sending `a⁻` to `‖a⁻‖`.
+* `TauCeti.stateSpace_nonempty`, `TauCeti.stateSpace_nonempty_iff`: a C⋆-algebra has a state if
+  and only if it is nontrivial.
+* `TauCeti.exists_mem_stateSpace_apply_mul_self_eq_norm_sq`: on a nontrivial C⋆-algebra, every
+  nonnegative element `a` admits a state `φ` satisfying `φ a = ‖a‖` and `φ (a * a) = ‖a‖ ^ 2`.
+* `TauCeti.exists_mem_stateSpace_norm_apply_eq_norm`, `TauCeti.norm_le_iff_forall_mem_stateSpace`:
+  on a nontrivial C⋆-algebra, every normal element `a` admits a state `φ` with `‖φ a‖ = ‖a‖`; on
+  any C⋆-algebra, a normal element `a` satisfies `‖a‖ ≤ c` (for `0 ≤ c`) if and only if
+  `‖φ a‖ ≤ c` for every state `φ`.
+* `TauCeti.CStarAlgebra.exists_positiveContinuousLinearMap_apply_posPart_eq_zero`: for any `a : A`
+  with `a⁻ ≠ 0`, there is a norm-one positive continuous linear functional `ω : A →P[ℂ] ℂ`
+  satisfying `ω a⁺ = 0` and `ω a⁻ = ‖a⁻‖`.
 * `TauCeti.nonneg_iff_forall_mem_stateSpace`, `TauCeti.le_iff_forall_mem_stateSpace`: an element `a`
-  satisfies `0 ≤ a` if and only if `0 ≤ φ a` for every state `φ`, with neither a unit nor a prior
-  self-adjointness hypothesis on `a`.
+  satisfies `0 ≤ a` if and only if `0 ≤ φ a` for every state `φ` (and `a ≤ b` iff `φ a ≤ φ b` for
+  every state `φ`), with neither a unit nor a prior self-adjointness hypothesis on `a`.
 * `TauCeti.isSelfAdjoint_iff_forall_mem_stateSpace`, `TauCeti.eq_iff_forall_mem_stateSpace`: states
   detect self-adjointness and separate points of `A`.
 
@@ -123,45 +125,24 @@ theorem exists_positiveContinuousLinearMap_apply_posPart_eq_zero {a : A} (ha_neg
   exact ⟨ω₀.comp (.ofClass ι), norm_comp_coeHom_eq_one ι hι ω₀ hω₀_norm hu0
     (by simp [hω₀u, hu_norm]), hpos_zero, hneg_eq⟩
 
-/-- **Existence of states.** Every nontrivial (possibly nonunital) C⋆-algebra has a state. -/
-theorem stateSpace_nonempty [Nontrivial A] : (stateSpace A).Nonempty := by
-  obtain ⟨ω, hnorm, -, -⟩ :=
-    exists_positiveContinuousLinearMap_apply_mul_self_eq_norm_sq (le_rfl : (0 : A) ≤ 0)
-  exact ⟨StrongDual.toWeakDual (ω : A →L[ℂ] ℂ), ω.toWeakDual_mem_stateSpace_iff.2 hnorm⟩
-
 end CStarAlgebra
 
 section StateSpace
 
-variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] {φ : WeakDual ℂ A}
+variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
-/-- The state space of a subsingleton C⋆-algebra is empty. -/
-theorem stateSpace_eq_empty [Subsingleton A] : stateSpace A = ∅ := by
-  ext ψ
-  simp only [mem_stateSpace_iff, mem_empty_iff_false, iff_false, not_and]
-  intro _
-  rw [Subsingleton.elim (toStrongDual ψ) 0, norm_zero]
-  exact zero_ne_one
-
-variable [StarOrderedRing A]
+/-- **Existence of states.** Every nontrivial (possibly nonunital) C⋆-algebra has a state. -/
+theorem stateSpace_nonempty [Nontrivial A] : (stateSpace A).Nonempty := by
+  obtain ⟨ω, hnorm, -, -⟩ :=
+    CStarAlgebra.exists_positiveContinuousLinearMap_apply_mul_self_eq_norm_sq (le_rfl : (0 : A) ≤ 0)
+  exact ⟨StrongDual.toWeakDual (ω : A →L[ℂ] ℂ), ω.toWeakDual_mem_stateSpace_iff.2 hnorm⟩
 
 /-- The state space of a C⋆-algebra is nonempty if and only if the algebra is nontrivial. -/
 theorem stateSpace_nonempty_iff : (stateSpace A).Nonempty ↔ Nontrivial A := by
-  refine ⟨fun ⟨ψ, hψ⟩ => ?_, fun _ => CStarAlgebra.stateSpace_nonempty⟩
+  refine ⟨fun ⟨ψ, hψ⟩ => ?_, fun _ => stateSpace_nonempty⟩
   by_contra h
   rw [not_nontrivial_iff_subsingleton] at h
   simp [stateSpace_eq_empty] at hψ
-
-/-- Every state of a C⋆-algebra preserves the involution: `φ (star a) = star (φ a)`. -/
-theorem map_star_of_mem_stateSpace (hφ : φ ∈ stateSpace A) (a : A) :
-    φ (star a) = star (φ a) := by
-  obtain ⟨ω, -, rfl⟩ := mem_stateSpace_iff_exists_positiveLinearMap.1 hφ
-  exact map_star ω a
-
-/-- Every state sends self-adjoint elements to real (self-adjoint) scalars. -/
-theorem isSelfAdjoint_map_of_mem_stateSpace (hφ : φ ∈ stateSpace A) {a : A}
-    (ha : IsSelfAdjoint a) : IsSelfAdjoint (φ a) := by
-  rw [IsSelfAdjoint, ← map_star_of_mem_stateSpace hφ, ha.star_eq]
 
 /-- On a nontrivial C⋆-algebra, every nonnegative element `a` admits a state `φ` satisfying
 `φ a = ‖a‖` and `φ (a * a) = ‖a‖ ^ 2`. -/
@@ -170,13 +151,6 @@ theorem exists_mem_stateSpace_apply_mul_self_eq_norm_sq [Nontrivial A] {a : A} (
   obtain ⟨ω, hnorm, ha1, ha2⟩ :=
     CStarAlgebra.exists_positiveContinuousLinearMap_apply_mul_self_eq_norm_sq ha
   exact ⟨StrongDual.toWeakDual (ω : A →L[ℂ] ℂ), ω.toWeakDual_mem_stateSpace_iff.2 hnorm, ha1, ha2⟩
-
-/-- On a nontrivial C⋆-algebra, every nonnegative element `a` admits a state `φ` with
-`φ a = ‖a‖`. -/
-theorem exists_mem_stateSpace_apply_eq_norm [Nontrivial A] {a : A} (ha : 0 ≤ a) :
-    ∃ φ ∈ stateSpace A, φ a = ‖a‖ :=
-  let ⟨φ, hφ, ha1, _⟩ := exists_mem_stateSpace_apply_mul_self_eq_norm_sq ha
-  ⟨φ, hφ, ha1⟩
 
 /-- **Norm attainment for normal elements.** On a nontrivial C⋆-algebra, every normal element `a`
 admits a state `φ` satisfying `‖φ a‖ = ‖a‖`. -/
@@ -232,7 +206,8 @@ theorem nonneg_iff_forall_mem_stateSpace {a : A} :
   let φ : WeakDual ℂ A := StrongDual.toWeakDual (ω : A →L[ℂ] ℂ)
   have hφ : φ ∈ stateSpace A := ω.toWeakDual_mem_stateSpace_iff.2 hnorm
   have hφa : φ a = -(‖a⁻‖ : ℂ) := by
-    change ω a = -(‖a⁻‖ : ℂ)
+    simp only [φ, StrongDual.toWeakDual_apply,
+      PositiveContinuousLinearMap.coe_toContinuousLinearMap]
     conv_lhs => rw [← CFC.posPart_sub_negPart a ha_sa]
     rw [map_sub, hpos, hneg, zero_sub]
   have hre : 0 ≤ (φ a).re := (Complex.le_def.1 (h φ hφ)).1

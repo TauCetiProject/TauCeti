@@ -237,26 +237,29 @@ section lpCongrLeft
 
 open scoped lp
 
-/-- Reindexing an `ℓᵖ` sequence along an injective map preserves membership in `ℓᵖ`. -/
-theorem Memℓp.comp_of_injective {f : ι → G} (hf : Memℓp f p) {g : ι' → ι}
-    (hg : Function.Injective g) : Memℓp (f ∘ g) p := by
-  simpa using hf.indicator_comp (s := Set.univ) hg.injOn
-
 variable (p : ℝ≥0∞) (𝕜 E : Type*) [NormedRing 𝕜] [NormedAddCommGroup E] [Module 𝕜 E]
   [IsBoundedSMul 𝕜 E] [Fact (1 ≤ p)] {ι ι' ι'' : Type*}
 
 /-- An equivalence of index types induces a linear isometric equivalence of `ℓᵖ` sequence spaces,
 the `lp` counterpart of `LinearIsometryEquiv.piLpCongrLeft`. -/
 def LinearIsometryEquiv.lpCongrLeft (e : ι ≃ ι') : ℓ^p(ι, E) ≃ₗᵢ[𝕜] ℓ^p(ι', E) where
-  toFun v := ⟨v ∘ e.symm, (lp.memℓp v).comp_of_injective e.symm.injective⟩
-  invFun v := ⟨v ∘ e, (lp.memℓp v).comp_of_injective e.injective⟩
+  toFun v :=
+    ⟨v ∘ e.symm,
+      Set.indicator_univ (v ∘ e.symm) ▸
+        (lp.memℓp v).indicator_comp (s := Set.univ) e.symm.injective.injOn⟩
+  invFun v :=
+    ⟨v ∘ e,
+      Set.indicator_univ (v ∘ e) ▸ (lp.memℓp v).indicator_comp (s := Set.univ) e.injective.injOn⟩
   map_add' _ _ := lp.ext <| funext fun _ ↦ rfl
   map_smul' _ _ := lp.ext <| funext fun _ ↦ rfl
   left_inv v := lp.ext <| funext fun i ↦ congr_arg v (e.symm_apply_apply i)
   right_inv v := lp.ext <| funext fun j ↦ congr_arg v (e.apply_symm_apply j)
   norm_map' v := by
     have hp : p ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
-    let v' : ℓ^p(ι', E) := ⟨v ∘ e.symm, (lp.memℓp v).comp_of_injective e.symm.injective⟩
+    let v' : ℓ^p(ι', E) :=
+      ⟨v ∘ e.symm,
+        Set.indicator_univ (v ∘ e.symm) ▸
+          (lp.memℓp v).indicator_comp (s := Set.univ) e.symm.injective.injOn⟩
     refine le_antisymm
       (lp.norm_le_of_forall_eq_indicator_comp (f' := v') hp (s := Set.univ)
         e.symm.injective.injOn fun _ ↦ by simp [v'])

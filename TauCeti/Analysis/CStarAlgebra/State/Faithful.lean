@@ -11,24 +11,24 @@ import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.Analysis.CStarAlgebra.State.Spectrum
 
 /-!
-# Geometric series of positive functionals and faithful states on separable C⋆-algebras
+# Weighted sums of positive functionals and faithful states on separable C⋆-algebras
 
-A uniformly norm-bounded sequence `ω : ℕ → A →P[ℂ] ℂ` of positive continuous linear functionals on
-a possibly nonunital C⋆-algebra `A` can be summed with geometric weights `2⁻¹ ^ (n + 1)` in the
-operator norm of `A →L[ℂ] ℂ`:
+Norm-convergent nonnegative weighted sums of positive continuous linear functionals yield positive
+continuous linear functionals with additive operator norms on C⋆-algebras, supplying faithful
+states on nontrivial separable C⋆-algebras (and hence faithful separable GNS representations):
 
-* `PositiveContinuousLinearMap.geometricSeries`: the weighted sum
-  `∑' n : ℕ, (1 / 2 / 2 ^ n : ℝ) • ω n : A →P[ℂ] ℂ`.
-* `PositiveContinuousLinearMap.norm_geometricSeries`: its operator norm equals
-  `∑' n : ℕ, (1 / 2 / 2 ^ n) * ‖ω n‖`; in particular it is `1` when every `ω n` has norm `1`
-  (`PositiveContinuousLinearMap.norm_geometricSeries_eq_one`).
-* `PositiveContinuousLinearMap.geometricSeries_apply_eq_zero_iff`: on any `0 ≤ a`, the series
-  vanishes at `a` if and only if every `ω n a = 0`.
-
-Choosing a dense sequence `u : ℕ → A` in a nontrivial separable C⋆-algebra `A` and norm-one
-positive functionals `ω n` attaining `‖star (u n) * u n‖` at `star (u n) * u n` yields a faithful
-state (`TauCeti.CStarAlgebra.exists_faithful_positiveContinuousLinearMap`,
-`TauCeti.exists_mem_stateSpace_faithful`).
+* `PositiveContinuousLinearMap.weightedSum`: given nonnegative weights `w : ι → ℝ` and
+  `ω : ι → A →P[ℂ] ℂ` with `Summable fun i => w i * ‖(ω i : A →L[ℂ] ℂ)‖`, packages
+  `∑' i, w i • ω i` as a positive continuous linear functional `A →P[ℂ] ℂ`, with evaluation lemmas
+  `coe_weightedSum`, `hasSum_weightedSum_apply`, and `weightedSum_apply`.
+* `PositiveContinuousLinearMap.weightedSum_apply_eq_zero_iff`: on any `0 ≤ a`, the weighted sum
+  vanishes at `a` if and only if `w i = 0` or `ω i a = 0` for every `i`.
+* `PositiveContinuousLinearMap.norm_weightedSum`: on a possibly nonunital C⋆-algebra, the operator
+  norm of `weightedSum w ω hw hω` equals `∑' i, w i * ‖(ω i : A →L[ℂ] ℂ)‖`.
+* `TauCeti.CStarAlgebra.exists_faithful_positiveContinuousLinearMap`,
+  `TauCeti.exists_mem_stateSpace_faithful`: every nontrivial separable (possibly nonunital)
+  C⋆-algebra admits a faithful state (strictly positive on nonzero positive elements, equivalently
+  satisfying `φ (star a * a) = 0 → a = 0`).
 
 ## References
 
@@ -43,128 +43,119 @@ open scoped CStarAlgebra ComplexOrder Topology
 
 namespace PositiveContinuousLinearMap
 
-variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+section WeightedSum
 
-private theorem geomWeight_pos (n : ℕ) : (0 : ℝ) < 1 / 2 / 2 ^ n := by positivity
+variable {A ι : Type*} [SeminormedAddCommGroup A] [NormedSpace ℂ A] [PartialOrder A]
 
-omit [StarOrderedRing A] in
-private theorem summable_geometricWeight_mul_norm {ω : ℕ → A →P[ℂ] ℂ}
-    (hω : ∃ C, ∀ n, ‖(ω n : A →L[ℂ] ℂ)‖ ≤ C) :
-    Summable fun n : ℕ => (1 / 2 / 2 ^ n : ℝ) * ‖(ω n : A →L[ℂ] ℂ)‖ := by
-  obtain ⟨C, hC⟩ := hω
-  refine Summable.of_nonneg_of_le (fun n => by positivity) (fun n => ?_)
-    (summable_geometric_two' (max C 0))
-  calc
-    (1 / 2 / 2 ^ n : ℝ) * ‖(ω n : A →L[ℂ] ℂ)‖ ≤ (1 / 2 / 2 ^ n : ℝ) * max C 0 :=
-      mul_le_mul_of_nonneg_left ((hC n).trans (le_max_left C 0)) (geomWeight_pos n).le
-    _ = max C 0 / 2 / 2 ^ n := by ring
+private theorem summable_weighted_smul {w : ι → ℝ} {ω : ι → A →P[ℂ] ℂ} (hw : ∀ i, 0 ≤ w i)
+    (hω : Summable fun i => w i * ‖(ω i : A →L[ℂ] ℂ)‖) :
+    Summable fun i : ι => w i • (ω i : A →L[ℂ] ℂ) :=
+  .of_norm_bounded hω fun i => (norm_smul_of_nonneg (hw i) (ω i : A →L[ℂ] ℂ)).le
 
-omit [StarOrderedRing A] in
-/-- For any uniformly norm-bounded sequence `ω : ℕ → A →P[ℂ] ℂ`, the geometric series
-`∑' n, (1 / 2 / 2 ^ n : ℝ) • ω n` converges in the operator norm of `A →L[ℂ] ℂ`. -/
-theorem summable_geometricWeight_smul {ω : ℕ → A →P[ℂ] ℂ}
-    (hω : ∃ C, ∀ n, ‖(ω n : A →L[ℂ] ℂ)‖ ≤ C) :
-    Summable fun n : ℕ => (1 / 2 / 2 ^ n : ℝ) • (ω n : A →L[ℂ] ℂ) :=
-  .of_norm_bounded (summable_geometricWeight_mul_norm hω) fun n =>
-    (norm_smul_of_nonneg (geomWeight_pos n).le (ω n : A →L[ℂ] ℂ)).le
-
-omit [StarOrderedRing A] in
-private theorem hasSum_clm_geometricWeight_apply {ω : ℕ → A →P[ℂ] ℂ}
-    (hω : ∃ C, ∀ n, ‖(ω n : A →L[ℂ] ℂ)‖ ≤ C) (a : A) :
-    HasSum (fun n : ℕ => (1 / 2 / 2 ^ n : ℝ) • ω n a)
-      ((∑' n : ℕ, (1 / 2 / 2 ^ n : ℝ) • (ω n : A →L[ℂ] ℂ)) a) := by
+private theorem hasSum_clm_weighted_apply {w : ι → ℝ} {ω : ι → A →P[ℂ] ℂ} (hw : ∀ i, 0 ≤ w i)
+    (hω : Summable fun i => w i * ‖(ω i : A →L[ℂ] ℂ)‖) (a : A) :
+    HasSum (fun i : ι => w i • ω i a) ((∑' i : ι, w i • (ω i : A →L[ℂ] ℂ)) a) := by
   let ev : (A →L[ℂ] ℂ) →L[ℝ] ℂ := (ContinuousLinearMap.apply ℂ ℂ a).restrictScalars ℝ
-  simpa [ev] using ev.hasSum (summable_geometricWeight_smul hω).hasSum
+  simpa [ev] using ev.hasSum (summable_weighted_smul hw hω).hasSum
 
-/-- **Geometric series of positive functionals.** Given a uniformly norm-bounded sequence
-`ω : ℕ → A →P[ℂ] ℂ`, `geometricSeries ω hω` is the norm-convergent series
-`∑' n, (1 / 2 / 2 ^ n : ℝ) • ω n` as a positive continuous linear functional. -/
-noncomputable def geometricSeries (ω : ℕ → A →P[ℂ] ℂ)
-    (hω : ∃ C, ∀ n, ‖(ω n : A →L[ℂ] ℂ)‖ ≤ C) : A →P[ℂ] ℂ :=
-  .mk₀ (∑' n : ℕ, (1 / 2 / 2 ^ n : ℝ) • (ω n : A →L[ℂ] ℂ)) fun a ha => by
+/-- **Weighted sum of positive functionals.** Given nonnegative weights `w : ι → ℝ` and positive
+continuous linear functionals `ω : ι → A →P[ℂ] ℂ` with `Summable (fun i => w i * ‖ω i‖)`,
+`weightedSum w ω hw hω` is the norm-convergent sum `∑' i, w i • ω i` as a positive continuous
+linear functional. -/
+noncomputable def weightedSum (w : ι → ℝ) (ω : ι → A →P[ℂ] ℂ) (hw : ∀ i, 0 ≤ w i)
+    (hω : Summable fun i => w i * ‖(ω i : A →L[ℂ] ℂ)‖) : A →P[ℂ] ℂ where
+  toContinuousLinearMap := ∑' i : ι, w i • (ω i : A →L[ℂ] ℂ)
+  monotone' a b hab := by
     have hclosed : IsClosed {z : ℂ | 0 ≤ z} := by
       have hset : {z : ℂ | 0 ≤ z} = Complex.re ⁻¹' Ici 0 ∩ Complex.im ⁻¹' {0} :=
         Set.ext fun _ => by simp [Complex.le_def, eq_comm]
       rw [hset]
       exact (isClosed_Ici.preimage Complex.continuous_re).inter
         (isClosed_singleton.preimage Complex.continuous_im)
-    refine hclosed.mem_of_tendsto (hasSum_clm_geometricWeight_apply hω a).tendsto_sum_nat ?_
-    exact .of_forall fun s =>
-      sum_nonneg fun n _ => smul_nonneg (geomWeight_pos n).le ((ω n).map_nonneg ha)
+    have hsub : 0 ≤ (∑' i : ι, w i • (ω i : A →L[ℂ] ℂ)) (b - a) := by
+      refine hclosed.mem_of_tendsto (hasSum_clm_weighted_apply hw hω (b - a)) ?_
+      exact .of_forall fun s => Set.mem_ofPred.2 <| sum_nonneg fun i _ =>
+        smul_nonneg (hw i) (by rw [map_sub, sub_nonneg]; exact (ω i).monotone' hab)
+    rwa [map_sub, sub_nonneg] at hsub
 
+/-- The underlying continuous linear map of `weightedSum` is the norm-convergent sum of the scaled
+functionals. -/
 @[simp]
-theorem coe_geometricSeries (ω : ℕ → A →P[ℂ] ℂ) (hω : ∃ C, ∀ n, ‖(ω n : A →L[ℂ] ℂ)‖ ≤ C) :
-    (geometricSeries ω hω : A →L[ℂ] ℂ) = ∑' n : ℕ, (1 / 2 / 2 ^ n : ℝ) • (ω n : A →L[ℂ] ℂ) :=
-  toContinuousLinearMap_mk₀ _ _
+theorem coe_weightedSum (w : ι → ℝ) (ω : ι → A →P[ℂ] ℂ) (hw : ∀ i, 0 ≤ w i)
+    (hω : Summable fun i => w i * ‖(ω i : A →L[ℂ] ℂ)‖) :
+    (weightedSum w ω hw hω : A →L[ℂ] ℂ) = ∑' i : ι, w i • (ω i : A →L[ℂ] ℂ) := by
+  rfl
 
-/-- Pointwise `HasSum` expansion of `geometricSeries`. -/
-theorem hasSum_geometricSeries_apply (ω : ℕ → A →P[ℂ] ℂ)
-    (hω : ∃ C, ∀ n, ‖(ω n : A →L[ℂ] ℂ)‖ ≤ C) (a : A) :
-    HasSum (fun n : ℕ => (1 / 2 / 2 ^ n : ℝ) • ω n a) (geometricSeries ω hω a) := by
-  simpa only [geometricSeries, mk₀_apply] using hasSum_clm_geometricWeight_apply hω a
+/-- Pointwise `HasSum` expansion of `weightedSum`. -/
+theorem hasSum_weightedSum_apply (w : ι → ℝ) (ω : ι → A →P[ℂ] ℂ) (hw : ∀ i, 0 ≤ w i)
+    (hω : Summable fun i => w i * ‖(ω i : A →L[ℂ] ℂ)‖) (a : A) :
+    HasSum (fun i : ι => w i • ω i a) (weightedSum w ω hw hω a) :=
+  hasSum_clm_weighted_apply hw hω a
 
-/-- Pointwise `tsum` formula for `geometricSeries`. -/
-theorem geometricSeries_apply (ω : ℕ → A →P[ℂ] ℂ)
-    (hω : ∃ C, ∀ n, ‖(ω n : A →L[ℂ] ℂ)‖ ≤ C) (a : A) :
-    geometricSeries ω hω a = ∑' n : ℕ, (1 / 2 / 2 ^ n : ℝ) • ω n a :=
-  (hasSum_geometricSeries_apply ω hω a).tsum_eq.symm
+/-- Pointwise `tsum` formula for `weightedSum`. -/
+theorem weightedSum_apply (w : ι → ℝ) (ω : ι → A →P[ℂ] ℂ) (hw : ∀ i, 0 ≤ w i)
+    (hω : Summable fun i => w i * ‖(ω i : A →L[ℂ] ℂ)‖) (a : A) :
+    weightedSum w ω hw hω a = ∑' i : ι, w i • ω i a :=
+  (hasSum_weightedSum_apply w ω hw hω a).tsum_eq.symm
 
-/-- On a nonnegative element `a`, `geometricSeries ω hω a = 0` if and only if `ω n a = 0` for all
-`n : ℕ`. -/
-theorem geometricSeries_apply_eq_zero_iff (ω : ℕ → A →P[ℂ] ℂ)
-    (hω : ∃ C, ∀ n, ‖(ω n : A →L[ℂ] ℂ)‖ ≤ C) {a : A} (ha : 0 ≤ a) :
-    geometricSeries ω hω a = 0 ↔ ∀ n, ω n a = 0 := by
-  refine ⟨fun h0 n => ?_, fun h => by simp [geometricSeries_apply, h]⟩
-  have hre : HasSum (fun k : ℕ => (1 / 2 / 2 ^ k : ℝ) * (ω k a).re) 0 := by
-    simpa only [Function.comp_def, Complex.reCLM_apply, Complex.smul_re, smul_eq_mul, h0,
-      Complex.zero_re] using Complex.reCLM.hasSum (hasSum_geometricSeries_apply ω hω a)
-  have hterm_nonneg (k : ℕ) : 0 ≤ (1 / 2 / 2 ^ k : ℝ) * (ω k a).re :=
-    mul_nonneg (geomWeight_pos k).le (Complex.le_def.1 ((ω k).map_nonneg ha)).1
-  have hle : (1 / 2 / 2 ^ n : ℝ) * (ω n a).re ≤ 0 :=
-    le_hasSum hre n fun k _ => hterm_nonneg k
-  have hre_zero : (ω n a).re = 0 :=
-    (mul_eq_zero.1 (le_antisymm hle (hterm_nonneg n))).resolve_left (geomWeight_pos n).ne'
-  exact Complex.ext hre_zero (Complex.le_def.1 ((ω n).map_nonneg ha)).2.symm
+/-- On a nonnegative element `a`, `weightedSum w ω hw hω a = 0` if and only if `w i = 0` or
+`ω i a = 0` for every `i`. -/
+theorem weightedSum_apply_eq_zero_iff (w : ι → ℝ) (ω : ι → A →P[ℂ] ℂ) (hw : ∀ i, 0 ≤ w i)
+    (hω : Summable fun i => w i * ‖(ω i : A →L[ℂ] ℂ)‖) {a : A} (ha : 0 ≤ a) :
+    weightedSum w ω hw hω a = 0 ↔ ∀ i, w i = 0 ∨ ω i a = 0 := by
+  refine ⟨fun h0 i => ?_, fun h => ?_⟩
+  · have hre : HasSum (fun k : ι => w k * (ω k a).re) 0 := by
+      simpa only [Function.comp_def, Complex.reCLM_apply, Complex.smul_re, smul_eq_mul, h0,
+        Complex.zero_re] using Complex.reCLM.hasSum (hasSum_weightedSum_apply w ω hw hω a)
+    have hterm_nonneg (k : ι) : 0 ≤ w k * (ω k a).re :=
+      mul_nonneg (hw k) (Complex.le_def.1 ((ω k).map_nonneg ha)).1
+    have hle : w i * (ω i a).re ≤ 0 := le_hasSum hre i fun k _ => hterm_nonneg k
+    exact (mul_eq_zero.1 (le_antisymm hle (hterm_nonneg i))).imp_right fun hre_zero =>
+      Complex.ext hre_zero (Complex.le_def.1 ((ω i).map_nonneg ha)).2.symm
+  · rw [weightedSum_apply]
+    convert tsum_zero with i
+    rcases h i with hi | hi <;> simp [hi]
 
-/-- The operator norm of `geometricSeries ω hω` is the weighted sum of the norms `‖ω n‖`. -/
-theorem norm_geometricSeries (ω : ℕ → A →P[ℂ] ℂ) (hω : ∃ C, ∀ n, ‖(ω n : A →L[ℂ] ℂ)‖ ≤ C) :
-    ‖(geometricSeries ω hω : A →L[ℂ] ℂ)‖ =
-      ∑' n : ℕ, (1 / 2 / 2 ^ n : ℝ) * ‖(ω n : A →L[ℂ] ℂ)‖ := by
-  have hsum_norm := summable_geometricWeight_mul_norm hω
-  have hnorm_eq (n : ℕ) :
-      ‖(1 / 2 / 2 ^ n : ℝ) • (ω n : A →L[ℂ] ℂ)‖ = (1 / 2 / 2 ^ n : ℝ) * ‖(ω n : A →L[ℂ] ℂ)‖ :=
-    norm_smul_of_nonneg (geomWeight_pos n).le (ω n : A →L[ℂ] ℂ)
+end WeightedSum
+
+section CStarAlgebra
+
+variable {A ι : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+
+/-- On a C⋆-algebra, the operator norm of `weightedSum w ω hw hω` is the weighted sum of the
+operator norms `‖ω i‖`. -/
+theorem norm_weightedSum (w : ι → ℝ) (ω : ι → A →P[ℂ] ℂ) (hw : ∀ i, 0 ≤ w i)
+    (hω : Summable fun i => w i * ‖(ω i : A →L[ℂ] ℂ)‖) :
+    ‖(weightedSum w ω hw hω : A →L[ℂ] ℂ)‖ = ∑' i : ι, w i * ‖(ω i : A →L[ℂ] ℂ)‖ := by
+  have hnorm_eq (i : ι) :
+      ‖w i • (ω i : A →L[ℂ] ℂ)‖ = w i * ‖(ω i : A →L[ℂ] ℂ)‖ :=
+    norm_smul_of_nonneg (hw i) (ω i : A →L[ℂ] ℂ)
   refine le_antisymm ?_ ?_
-  · rw [coe_geometricSeries]
-    exact (norm_tsum_le_tsum_norm (by simpa only [hnorm_eq] using hsum_norm)).trans_eq
+  · rw [coe_weightedSum]
+    exact (norm_tsum_le_tsum_norm (by simpa only [hnorm_eq] using hω)).trans_eq
       (tsum_congr hnorm_eq)
-  · refine le_of_tendsto hsum_norm.hasSum (.of_forall fun s => ?_)
+  · refine le_of_tendsto hω.hasSum (.of_forall fun s => ?_)
     have hl := _root_.CStarAlgebra.increasingApproximateUnit A
     have := hl.neBot
-    have hlhs : Tendsto (fun e => ∑ n ∈ s, (1 / 2 / 2 ^ n : ℝ) * (ω n e).re)
+    have hlhs : Tendsto (fun e => ∑ i ∈ s, w i * (ω i e).re)
         (_root_.CStarAlgebra.approximateUnit A)
-        (𝓝 (∑ n ∈ s, (1 / 2 / 2 ^ n : ℝ) * ‖(ω n : A →L[ℂ] ℂ)‖)) :=
-      tendsto_finsetSum s fun n _ => tendsto_const_nhds.mul <| by
+        (𝓝 (∑ i ∈ s, w i * ‖(ω i : A →L[ℂ] ℂ)‖)) :=
+      tendsto_finsetSum s fun i _ => tendsto_const_nhds.mul <| by
         simpa [Function.comp_def] using
-          Complex.continuous_re.continuousAt.tendsto.comp ((ω n).tendsto_nhds_opNorm hl)
-    have hrhs : Tendsto (fun e => (geometricSeries ω hω e).re)
-        (_root_.CStarAlgebra.approximateUnit A) (𝓝 ‖(geometricSeries ω hω : A →L[ℂ] ℂ)‖) := by
+          Complex.continuous_re.continuousAt.tendsto.comp ((ω i).tendsto_nhds_opNorm hl)
+    have hrhs : Tendsto (fun e => (weightedSum w ω hw hω e).re)
+        (_root_.CStarAlgebra.approximateUnit A) (𝓝 ‖(weightedSum w ω hw hω : A →L[ℂ] ℂ)‖) := by
       simpa [Function.comp_def] using Complex.continuous_re.continuousAt.tendsto.comp
-        ((geometricSeries ω hω).tendsto_nhds_opNorm hl)
+        ((weightedSum w ω hw hω).tendsto_nhds_opNorm hl)
     refine le_of_tendsto_of_tendsto hlhs hrhs ?_
     filter_upwards [hl.eventually_nonneg] with e he
-    have hre : HasSum (fun k : ℕ => (1 / 2 / 2 ^ k : ℝ) * (ω k e).re)
-        (geometricSeries ω hω e).re := by
+    have hre : HasSum (fun k : ι => w k * (ω k e).re) (weightedSum w ω hw hω e).re := by
       simpa only [Function.comp_def, Complex.reCLM_apply, Complex.smul_re, smul_eq_mul] using
-        Complex.reCLM.hasSum (hasSum_geometricSeries_apply ω hω e)
+        Complex.reCLM.hasSum (hasSum_weightedSum_apply w ω hw hω e)
     exact sum_le_hasSum s
-      (fun k _ => mul_nonneg (geomWeight_pos k).le (Complex.le_def.1 ((ω k).map_nonneg he)).1) hre
+      (fun k _ => mul_nonneg (hw k) (Complex.le_def.1 ((ω k).map_nonneg he)).1) hre
 
-/-- When every `ω n` has norm `1`, `geometricSeries ω` has norm `1` (hence is a state). -/
-theorem norm_geometricSeries_eq_one (ω : ℕ → A →P[ℂ] ℂ) (hω : ∀ n, ‖(ω n : A →L[ℂ] ℂ)‖ = 1) :
-    ‖(geometricSeries ω ⟨1, fun n => (hω n).le⟩ : A →L[ℂ] ℂ)‖ = 1 := by
-  rw [norm_geometricSeries]
-  simpa [hω] using tsum_geometric_two' (1 : ℝ)
+end CStarAlgebra
 
 end PositiveContinuousLinearMap
 
@@ -195,11 +186,19 @@ theorem exists_faithful_positiveContinuousLinearMap [TopologicalSpace.SeparableS
   obtain ⟨u, hu⟩ := TopologicalSpace.exists_dense_seq A
   choose ω hω_norm hω_val _ using fun n : ℕ =>
     exists_positiveContinuousLinearMap_apply_mul_self_eq_norm_sq (star_mul_self_nonneg (u n))
-  let ψ := PositiveContinuousLinearMap.geometricSeries ω ⟨1, fun n => (hω_norm n).le⟩
+  let w : ℕ → ℝ := fun n => 1 / 2 / 2 ^ n
+  have hw_pos (n : ℕ) : 0 < w n := by positivity
+  have hsum : Summable fun n : ℕ => w n * ‖(ω n : A →L[ℂ] ℂ)‖ := by
+    simpa [w, hω_norm] using summable_geometric_two' (1 : ℝ)
+  let ψ := PositiveContinuousLinearMap.weightedSum w ω (fun n => (hw_pos n).le) hsum
+  have hψ_norm : ‖(ψ : A →L[ℂ] ℂ)‖ = 1 := by
+    rw [PositiveContinuousLinearMap.norm_weightedSum]
+    simpa [w, hω_norm] using tsum_geometric_two' (1 : ℝ)
   have hstar (a : A) (hψa : ψ (star a * a) = 0) : a = 0 := by
     by_contra ha0
-    have hall := (PositiveContinuousLinearMap.geometricSeries_apply_eq_zero_iff ω _
-      (star_mul_self_nonneg a)).1 hψa
+    have hall (n : ℕ) : ω n (star a * a) = 0 :=
+      ((PositiveContinuousLinearMap.weightedSum_apply_eq_zero_iff w ω _ hsum
+        (star_mul_self_nonneg a)).1 hψa n).resolve_left (hw_pos n).ne'
     have hpos : 0 < ‖star a * a‖ := norm_pos_iff.2 (star_mul_self_eq_zero.not.2 ha0)
     have hopen : IsOpen {b : A | ‖star a * a - star b * b‖ < ‖star a * a‖ / 3} :=
       isOpen_lt (by fun_prop) continuous_const
@@ -220,8 +219,7 @@ theorem exists_faithful_positiveContinuousLinearMap [TopologicalSpace.SeparableS
       simpa [sub_eq_add_neg, add_comm] using
         norm_add_le (ω n (star a * a)) (ω n (star (u n) * u n) - ω n (star a * a))
     linarith
-  exact ⟨ψ, PositiveContinuousLinearMap.norm_geometricSeries_eq_one ω hω_norm,
-    (forall_nonneg_apply_eq_zero_iff ψ).2 hstar, hstar⟩
+  exact ⟨ψ, hψ_norm, (forall_nonneg_apply_eq_zero_iff ψ).2 hstar, hstar⟩
 
 end CStarAlgebra
 

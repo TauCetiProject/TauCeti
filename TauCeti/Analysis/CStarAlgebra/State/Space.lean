@@ -21,8 +21,12 @@ A *state* of a possibly nonunital C⋆-algebra `A` is a positive linear function
 This file defines the state space `TauCeti.stateSpace A` as a subset of the weak-* dual
 `WeakDual ℂ A`, so that convexity, closedness and compactness refer to the weak-* topology.
 
-* `TauCeti.mem_stateSpace_iff_exists_positiveLinearMap`: the states are exactly the positive
-  linear maps `A →ₚ[ℂ] ℂ` of norm one, through the automatic continuity of positive maps.
+* `TauCeti.stateToPositiveLinearMap`, `TauCeti.mem_stateSpace_iff_exists_positiveLinearMap`: the
+  states are exactly the positive linear maps `A →ₚ[ℂ] ℂ` of norm one, through the automatic
+  continuity of positive maps.
+* `TauCeti.stateSpace_eq_empty`, `TauCeti.map_star_of_mem_stateSpace`,
+  `TauCeti.isSelfAdjoint_map_of_mem_stateSpace`: the state space of a subsingleton C⋆-algebra is
+  empty, and every state preserves `star` and self-adjointness.
 * `TauCeti.convex_stateSpace`: the state space is convex. No unit is needed, because the norm of
   a positive functional is its limit along an approximate unit.
 * `TauCeti.pullbackFunctional`: precomposition with a star homomorphism, as a continuous
@@ -37,8 +41,7 @@ For unital `A`:
   and `TauCeti.mem_stateSpace_iff_norm_eq_one_and_map_one`: a functional is a state exactly when
   `‖φ‖ = φ 1 = 1`, with positivity then automatic.
 * `TauCeti.isCompact_stateSpace`: the state space is weak-* compact, by Banach–Alaoglu.
-* `TauCeti.stateSpace_nonempty`: if `A` is nonzero it has a state, by Hahn–Banach. The state
-  space of `ℂ` is the single functional `z ↦ z`, `TauCeti.stateSpace_complex`.
+* `TauCeti.stateSpace_complex`: the state space of `ℂ` is the single functional `z ↦ z`.
 * `TauCeti.closure_convexHull_extremePoints_stateSpace`: the state space is the weak-* closed
   convex hull of its extreme points, the pure states, by the Krein–Milman theorem; in particular
   a nonzero unital C⋆-algebra has a pure state, `TauCeti.extremePoints_stateSpace_nonempty`.
@@ -87,6 +90,24 @@ theorem norm_toStrongDual_of_mem_stateSpace (hφ : φ ∈ stateSpace A) : ‖toS
 theorem norm_apply_le_of_mem_stateSpace (hφ : φ ∈ stateSpace A) (a : A) : ‖φ a‖ ≤ ‖a‖ := by
   simpa [norm_toStrongDual_of_mem_stateSpace hφ] using (toStrongDual φ).le_opNorm a
 
+/-- The state space of a subsingleton C⋆-algebra is empty. -/
+theorem stateSpace_eq_empty [Subsingleton A] : stateSpace A = ∅ := by
+  ext ψ
+  simp only [mem_stateSpace_iff, mem_empty_iff_false, iff_false, not_and]
+  intro _
+  rw [Subsingleton.elim (toStrongDual ψ) 0, norm_zero]
+  exact zero_ne_one
+
+/-- A state `φ ∈ stateSpace A` packaged as a `PositiveLinearMap` `A →ₚ[ℂ] ℂ`. -/
+noncomputable def stateToPositiveLinearMap [IsOrderedAddMonoid A] (hφ : φ ∈ stateSpace A) :
+    A →ₚ[ℂ] ℂ :=
+  .mk₀ (toStrongDual φ : A →ₗ[ℂ] ℂ) fun _ => map_nonneg_of_mem_stateSpace hφ
+
+@[simp]
+theorem stateToPositiveLinearMap_apply [IsOrderedAddMonoid A] (hφ : φ ∈ stateSpace A) (a : A) :
+    stateToPositiveLinearMap hφ a = φ a := by
+  rfl
+
 /-- In the norm topology of the continuous dual, the state space is closed. -/
 theorem isClosed_preimage_toWeakDual_stateSpace :
     IsClosed (StrongDual.toWeakDual ⁻¹' stateSpace A) := by
@@ -110,12 +131,21 @@ theorem mem_stateSpace_iff_exists_positiveLinearMap :
       StrongDual.toWeakDual (PositiveContinuousLinearMap.ofClass ω : A →L[ℂ] ℂ) = φ := by
   refine ⟨fun hφ => ?_, fun ⟨ω, hω, h⟩ =>
     h ▸ (PositiveContinuousLinearMap.ofClass ω).toWeakDual_mem_stateSpace_iff.2 hω⟩
-  let ω : A →ₚ[ℂ] ℂ := .mk₀ (toStrongDual φ : A →ₗ[ℂ] ℂ) fun _ => map_nonneg_of_mem_stateSpace hφ
+  let ω : A →ₚ[ℂ] ℂ := stateToPositiveLinearMap hφ
   have hω : (PositiveContinuousLinearMap.ofClass ω : A →L[ℂ] ℂ) = toStrongDual φ := by
-    -- `PositiveLinearMap.mk₀` has no evaluation lemma; it evaluates as `φ` by definition
-    ext
-    rfl
+    ext a
+    simp [ω]
   exact ⟨ω, hω ▸ norm_toStrongDual_of_mem_stateSpace hφ, by rw [hω, toWeakDual_toStrongDual]⟩
+
+/-- Every state of a C⋆-algebra preserves the involution: `φ (star a) = star (φ a)`. -/
+theorem map_star_of_mem_stateSpace (hφ : φ ∈ stateSpace A) (a : A) :
+    φ (star a) = star (φ a) :=
+  map_star (stateToPositiveLinearMap hφ) a
+
+/-- Every state sends self-adjoint elements to real (self-adjoint) scalars. -/
+theorem isSelfAdjoint_map_of_mem_stateSpace (hφ : φ ∈ stateSpace A) {a : A}
+    (ha : IsSelfAdjoint a) : IsSelfAdjoint (φ a) := by
+  rw [IsSelfAdjoint, ← map_star_of_mem_stateSpace hφ, ha.star_eq]
 
 /-- **Convexity of the state space.** Real convex combinations of states are states. -/
 theorem convex_stateSpace : Convex ℝ (stateSpace A) := by
@@ -213,13 +243,6 @@ theorem isCompact_stateSpace : IsCompact (stateSpace A) := by
     fun φ hφ => ?_
   simp [norm_toStrongDual_of_mem_stateSpace hφ]
 
-/-- **Existence of states.** A nonzero unital C⋆-algebra has a state. -/
-theorem stateSpace_nonempty [Nontrivial A] : (stateSpace A).Nonempty := by
-  -- by Hahn–Banach there is a functional of norm one attaining the norm `‖1‖ = 1` at `1`
-  obtain ⟨g, hg, hg1⟩ := exists_dual_vector ℂ (1 : A) (by simp)
-  refine ⟨StrongDual.toWeakDual g, mem_stateSpace_iff_norm_eq_one_and_map_one.2 ⟨hg, ?_⟩⟩
-  simpa using hg1
-
 /-- **Krein–Milman for states.** For unital `A`, the state space is the weak-* closed convex hull
 of its extreme points, the pure states. -/
 theorem closure_convexHull_extremePoints_stateSpace :
@@ -228,8 +251,10 @@ theorem closure_convexHull_extremePoints_stateSpace :
 
 /-- **Existence of pure states.** A nonzero unital C⋆-algebra has an extreme state. -/
 theorem extremePoints_stateSpace_nonempty [Nontrivial A] :
-    (extremePoints ℝ (stateSpace A)).Nonempty :=
-  isCompact_stateSpace.extremePoints_nonempty stateSpace_nonempty
+    (extremePoints ℝ (stateSpace A)).Nonempty := by
+  obtain ⟨g, hg, hg1⟩ := exists_dual_vector ℂ (1 : A) (by simp)
+  exact isCompact_stateSpace.extremePoints_nonempty ⟨StrongDual.toWeakDual g,
+    mem_stateSpace_iff_norm_eq_one_and_map_one.2 ⟨hg, by simpa using hg1⟩⟩
 
 /-- The only state of `ℂ` is the identity functional. -/
 theorem stateSpace_complex :

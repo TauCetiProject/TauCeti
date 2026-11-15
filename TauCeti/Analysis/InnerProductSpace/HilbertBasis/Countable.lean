@@ -12,19 +12,20 @@ import Mathlib.LinearAlgebra.Dimension.Finite
 /-!
 # Countable Hilbert bases and reindexing
 
-Any two distinct vectors of an orthonormal family sit at distance `√2` (`Orthonormal.norm_sub_eq`,
-`Orthonormal.dist_eq`), so open balls of radius `1 / 2` around them are pairwise disjoint. In a
-separable inner product space this forces every orthonormal family, and in particular every Hilbert
-basis, to have a countable index type (`Orthonormal.countable`, `HilbertBasis.countable`).
+This file provides countability, reindexing, and `ℓ²(ℕ, 𝕜)`-identification results for orthonormal
+families and Hilbert bases in separable inner product spaces:
 
-Transporting the coordinate representation along `LinearIsometryEquiv.lpCongrLeft` reindexes a
-Hilbert basis along any bijection of index types (`HilbertBasis.reindex`) without requiring
-completeness of the ambient space. The index type of a Hilbert basis is finite if and only if the
-space is finite-dimensional (`HilbertBasis.finite_iff`, `HilbertBasis.infinite_iff`). Combining
-Zorn's lemma (`exists_hilbertBasis`), countability, and reindexing shows that every infinite-
-dimensional separable complete inner product space admits a Hilbert basis indexed by `ℕ`
-(`TauCeti.exists_hilbertBasis_nat`) and is linearly isometric to `ℓ²(ℕ, 𝕜)`
-(`TauCeti.exists_linearIsometryEquiv_lp_nat`).
+* `Orthonormal.norm_sub_eq`, `Orthonormal.dist_eq`: distinct members of an orthonormal family sit at
+  norm and metric distance `√2`.
+* `Orthonormal.countable`, `HilbertBasis.countable`: in a separable inner product space, every
+  orthonormal family—and in particular every Hilbert basis—has a countable index type.
+* `HilbertBasis.reindex`: reindexes a Hilbert basis along any bijection of index types without
+  requiring completeness of the ambient space.
+* `HilbertBasis.finite_iff`: the index type of a Hilbert basis is finite if and only if the space is
+  finite-dimensional.
+* `TauCeti.nonempty_hilbertBasis_nat`, `TauCeti.nonempty_linearIsometryEquiv_lp_nat`: every
+  infinite-dimensional separable complete inner product space admits a Hilbert basis indexed by `ℕ`
+  and is linearly isometric to `ℓ²(ℕ, 𝕜)`.
 
 ## References
 
@@ -107,11 +108,11 @@ theorem reindex_trans (b : HilbertBasis ι 𝕜 E) (e : ι ≃ κ) (f : κ ≃ �
     (b.reindex e).reindex f = b.reindex (e.trans f) :=
   DFunLike.ext _ _ fun _ ↦ by simp
 
-theorem reindex_symm (b : HilbertBasis ι 𝕜 E) (e : ι ≃ κ) :
+theorem reindex_reindex_symm (b : HilbertBasis ι 𝕜 E) (e : ι ≃ κ) :
     (b.reindex e).reindex e.symm = b := by
   simp
 
-theorem reindex_symm_self (b : HilbertBasis κ 𝕜 E) (e : ι ≃ κ) :
+theorem reindex_symm_reindex (b : HilbertBasis κ 𝕜 E) (e : ι ≃ κ) :
     (b.reindex e.symm).reindex e = b := by
   simp
 
@@ -120,10 +121,6 @@ theorem finite_iff (b : HilbertBasis ι 𝕜 E) : Finite ι ↔ Module.Finite �
   refine ⟨fun _ ↦ ?_, fun _ ↦ b.orthonormal.linearIndependent.finite⟩
   cases nonempty_fintype ι
   exact Module.Finite.of_basis b.toOrthonormalBasis.toBasis
-
-/-- A Hilbert basis has an infinite index type if and only if the space is infinite-dimensional. -/
-theorem infinite_iff (b : HilbertBasis ι 𝕜 E) : Infinite ι ↔ ¬ Module.Finite 𝕜 E :=
-  not_finite_iff_infinite.symm.trans b.finite_iff.not
 
 end HilbertBasis
 
@@ -134,19 +131,19 @@ variable (𝕜 E : Type*) [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpac
 
 /-- Every infinite-dimensional separable complete inner product space admits a Hilbert basis indexed
 by `ℕ`. -/
-theorem exists_hilbertBasis_nat (hinf : ¬ Module.Finite 𝕜 E) :
+theorem nonempty_hilbertBasis_nat (hinf : ¬ Module.Finite 𝕜 E) :
     Nonempty (HilbertBasis ℕ 𝕜 E) := by
   obtain ⟨w, b, -⟩ := exists_hilbertBasis 𝕜 E
   have : Countable w := b.countable
-  have : Infinite w := b.infinite_iff.2 hinf
+  have : Infinite w := not_finite_iff_infinite.mp (b.finite_iff.not.mpr hinf)
   obtain ⟨_⟩ := nonempty_denumerable w
   exact ⟨b.reindex (Denumerable.eqv w)⟩
 
 /-- Every infinite-dimensional separable complete inner product space is linearly isometric to
 `ℓ²(ℕ, 𝕜)`. -/
-theorem exists_linearIsometryEquiv_lp_nat (hinf : ¬ Module.Finite 𝕜 E) :
+theorem nonempty_linearIsometryEquiv_lp_nat (hinf : ¬ Module.Finite 𝕜 E) :
     Nonempty (E ≃ₗᵢ[𝕜] lp (fun _ : ℕ ↦ 𝕜) 2) :=
-  let ⟨b⟩ := exists_hilbertBasis_nat 𝕜 E hinf
+  let ⟨b⟩ := nonempty_hilbertBasis_nat 𝕜 E hinf
   ⟨b.repr⟩
 
 end TauCeti

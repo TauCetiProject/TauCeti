@@ -37,9 +37,8 @@ and when `A` is separable and nonzero this representation can be realized on `�
   admits an injective nondegenerate representation on a separable Hilbert space in `A`'s universe.
 * `TauCeti.exists_injective_nondegenerate_representation_lp`,
   `TauCeti.exists_injective_starAlgHom_lp`: every nontrivial separable C⋆-algebra admits an
-  injective nondegenerate representation on `lp (fun _ : ℕ => ℂ) 2`, obtained by countably
-  amplifying the GNS representation of a faithful state and transporting along a Hilbert basis
-  indexed by `ℕ`.
+  injective nondegenerate (and, in the unital case, unital) `⋆`-representation on
+  `lp (fun _ : ℕ => ℂ) 2`.
 
 ## References
 
@@ -63,15 +62,6 @@ namespace TauCeti
 section UniversalGNS
 
 variable {A : Type u} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-
-/-- A state `φ ∈ stateSpace A` packaged as a `PositiveLinearMap` `A →ₚ[ℂ] ℂ`. -/
-def stateToPositiveLinearMap {φ : WeakDual ℂ A} (hφ : φ ∈ stateSpace A) : A →ₚ[ℂ] ℂ :=
-  .mk₀ (toStrongDual φ : A →ₗ[ℂ] ℂ) fun _ => map_nonneg_of_mem_stateSpace hφ
-
-@[simp]
-theorem stateToPositiveLinearMap_apply {φ : WeakDual ℂ A} (hφ : φ ∈ stateSpace A) (a : A) :
-    stateToPositiveLinearMap hφ a = φ a := by
-  rfl
 
 /-- The **universal GNS Hilbert space** of a C⋆-algebra `A`: the `ℓ²`-direct sum over all states
 `φ ∈ stateSpace A` of their GNS Hilbert spaces. When `A` is subsingleton, `stateSpace A = ∅` and
@@ -188,13 +178,13 @@ theorem exists_injective_nondegenerate_representation_lp (A : Type*)
   let H := lp (fun _ : ℕ => K) 2
   have : TopologicalSpace.SeparableSpace H := lp.separableSpace (by simp)
   have hinf : ¬ Module.Finite ℂ H := lp.not_finite (𝕜 := ℂ)
-  obtain ⟨e⟩ := exists_linearIsometryEquiv_lp_nat ℂ H hinf
+  obtain ⟨e⟩ := nonempty_linearIsometryEquiv_lp_nat ℂ H hinf
   let ρ_amp : A →⋆ₙₐ[ℂ] (H →L[ℂ] H) := ρ.ampliation ℕ
   have hamp_inj : Function.Injective ρ_amp := (ρ.ampliation_injective_iff (ι := ℕ)).2 hρ_inj
   have hamp_nondeg : ρ_amp.IsNondegenerate := hρ_nondeg.ampliation
   refine ⟨e.conjStarAlgEquiv.toNonUnitalStarAlgHom.comp ρ_amp,
     e.conjStarAlgEquiv.injective.comp hamp_inj, ?_⟩
-  exact (NonUnitalStarAlgHom.isNondegenerate_conjStarAlgEquiv_comp_iff e ρ_amp).2 hamp_nondeg
+  exact (e.isNondegenerate_conjStarAlgEquiv_comp_iff ρ_amp).2 hamp_nondeg
 
 /-- Every nontrivial separable unital C⋆-algebra `B` admits an injective unital `⋆`-representation
 on `lp (fun _ : ℕ => ℂ) 2`. -/

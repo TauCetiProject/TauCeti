@@ -37,7 +37,7 @@ with unitary multipliers `U_s` are obtained from nondegenerate representations o
   `NonUnitalStarAlgHom.IsNondegenerate.toStarAlgHom`:
   on a unital C⋆-algebra, nondegeneracy is equivalent to `ρ 1 = 1` and upgrades `ρ` to a unital
   `⋆`-homomorphism.
-* `NonUnitalStarAlgHom.isNondegenerate_conjStarAlgEquiv_comp_iff`: conjugation by a unitary
+* `LinearIsometryEquiv.isNondegenerate_conjStarAlgEquiv_comp_iff`: conjugation by a unitary
   equivalence preserves nondegeneracy.
 * `NonUnitalStarAlgHom.topologicalClosure_span_range_comp_eq`,
   `NonUnitalStarAlgHom.isNondegenerate_iff_dense_span_comp`: nondegeneracy can be checked on any
@@ -291,8 +291,8 @@ theorem isNondegenerate_iff_dense_span_comp {ι : Type*} {g : ι → A} (hg : De
 
 /-- Conjugating a representation by a linear isometric equivalence preserves nondegeneracy. -/
 @[simp]
-theorem isNondegenerate_conjStarAlgEquiv_comp_iff {K : Type*} [NormedAddCommGroup K]
-    [InnerProductSpace ℂ K] [CompleteSpace K] (e : H ≃ₗᵢ[ℂ] K)
+theorem _root_.LinearIsometryEquiv.isNondegenerate_conjStarAlgEquiv_comp_iff {K : Type*}
+    [NormedAddCommGroup K] [InnerProductSpace ℂ K] [CompleteSpace K] (e : H ≃ₗᵢ[ℂ] K)
     (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) :
     (e.conjStarAlgEquiv.toNonUnitalStarAlgHom.comp π).IsNondegenerate ↔ π.IsNondegenerate := by
   simp only [isNondegenerate_iff_forall_apply_eq_zero]

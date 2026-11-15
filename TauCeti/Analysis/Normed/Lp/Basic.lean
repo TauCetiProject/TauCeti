@@ -25,11 +25,15 @@ bounded by a geometric sequence `C rⁱ` with `0 ≤ r < 1` lies in every `ℓ�
 (`lp.norm_le_of_norm_le_geometric`). Membership in `ℓᵖ` is unchanged by a unit scalar factor
 (`IsUnit.memℓp_smul_iff`), and conversely, for `p ≠ 0` the geometric sequence `rⁱ`, or a nonzero
 multiple `C rⁱ` of it, lies in `ℓᵖ` exactly when `‖r‖ < 1`, or `‖r‖ = 1` and `p = ∞`
-(`TauCeti.memℓp_pow_iff`, `TauCeti.memℓp_const_mul_pow_iff`). Nonzero coordinate vectors are
-linearly independent (`lp.linearIndependent_single`, `lp.linearIndependent_single_one`), so over an
-infinite index type with nontrivial summands `lp E p` is not finitely generated (`lp.not_finite`),
-and vectors in the span of scalar coordinate vectors vanish outside the corresponding indices. These
-algebraic facts hold over normed rings at every exponent. In `ℓ²`, the squared norm of a finite sum
+(`TauCeti.memℓp_pow_iff`, `TauCeti.memℓp_const_mul_pow_iff`). Linearly independent families placed
+in distinct coordinates remain linearly independent (`lp.linearIndependent_single`,
+`lp.linearIndependent_single_one`), and vectors in the span of scalar coordinate vectors vanish
+outside the corresponding indices (`lp.apply_eq_zero_of_mem_span_single`); these algebraic facts
+hold over arbitrary normed rings at every exponent. Over a cancel-mul-zero normed ring, nonzero
+vectors in torsion-free fibers placed in distinct coordinates are linearly independent
+(`lp.linearIndependent_single_of_ne_zero`), so under the strong rank condition `lp E p` is not
+finitely generated over an infinite index type with nontrivial torsion-free summands
+(`lp.not_finite`). In `ℓ²`, the squared norm of a finite sum
 of single-coordinate vectors is the sum of the squared norms of its coordinates
 (`lp.norm_sum_single_sq`, and `lp.enorm_sum_single` for the extended norm). It follows that the
 operators `v ↦ (aᵢ v)ᵢ` from `F`
@@ -176,16 +180,26 @@ section Single
 
 variable [DecidableEq ι]
 
+/-- Linearly independent families placed in distinct coordinates of `lp` combine into a linearly
+independent family. -/
+theorem linearIndependent_single {ιs : ι → Type*} (v : ∀ j, ιs j → E j)
+    (hs : ∀ i, LinearIndependent 𝕜 (v i)) :
+    LinearIndependent 𝕜 fun ji : Σ j, ιs j ↦ lp.single p ji.1 (v ji.1 ji.2) := by
+  apply LinearIndependent.of_comp (lpSubmodule 𝕜 E p).subtype
+  have hcoe : (lpSubmodule 𝕜 E p).subtype ∘
+      (fun ji : Σ j, ιs j ↦ lp.single p ji.1 (v ji.1 ji.2)) =
+      fun ji ↦ Pi.single ji.1 (v ji.1 ji.2) := by
+    funext ⟨j, k⟩
+    exact lp.coeFn_single p j (v j k)
+  rw [hcoe]
+  exact Pi.linearIndependent_single v hs
+
 /-- The scalar coordinate vectors in `lp` are linearly independent. -/
 theorem linearIndependent_single_one :
     LinearIndependent 𝕜 (fun i : ι ↦ lp.single p i (1 : 𝕜)) := by
-  apply LinearIndependent.of_comp (lpSubmodule 𝕜 (fun _ : ι ↦ 𝕜) p).subtype
-  have hcoe : (lpSubmodule 𝕜 (fun _ : ι ↦ 𝕜) p).subtype ∘
-      (fun i : ι ↦ lp.single p i (1 : 𝕜)) = fun i ↦ Pi.single i (1 : 𝕜) := by
-    funext i
-    exact lp.coeFn_single p i 1
-  rw [hcoe]
-  exact Pi.linearIndependent_single_one ι 𝕜
+  rw [← linearIndependent_equiv (Equiv.sigmaPUnit ι)]
+  exact linearIndependent_single (fun (_ : ι) (_ : Unit) ↦ (1 : 𝕜))
+    <| by simp +contextual [Fintype.linearIndependent_iffₛ]
 
 /-- A vector in the span of a family of coordinate vectors vanishes outside their indices. -/
 theorem apply_eq_zero_of_mem_span_single {κ : Type*} (f : κ → ι) {x : ℓ^p(ι, 𝕜)}
@@ -201,29 +215,28 @@ theorem apply_eq_zero_of_mem_span_single {κ : Type*} (f : κ → ι) {x : ℓ^p
       (fun hij ↦ hi ⟨j, hij.symm⟩)
   simpa only [evalₗ_apply] using LinearMap.mem_ker.mp (hle hx)
 
-end Single
-
-/-- Nonzero vectors placed in distinct coordinates of `lp` are linearly independent. -/
-theorem linearIndependent_single [DecidableEq ι] [IsCancelMulZero 𝕜]
+/-- Over a cancel-mul-zero normed ring, nonzero vectors in torsion-free fibers placed in distinct
+coordinates of `lp` are linearly independent. -/
+theorem linearIndependent_single_of_ne_zero [IsCancelMulZero 𝕜]
     [∀ i, Module.IsTorsionFree 𝕜 (E i)] {v : ∀ i, E i} (hv : ∀ i, v i ≠ 0) :
     LinearIndependent 𝕜 (fun i : ι ↦ lp.single p i (v i)) := by
-  refine linearIndependent_iff'.2 fun s g hg i hi ↦ ?_
-  have hcoord := congr_arg (fun f : lp E p ↦ f i) hg
-  simp only [lp.coeFn_sum, Finset.sum_apply, lp.coeFn_smul, Pi.smul_apply, lp.coeFn_zero,
-    Pi.zero_apply] at hcoord
-  rw [Finset.sum_eq_single i
-    (fun j _ hji ↦ by rw [lp.single_apply_ne p j (v j) hji.symm, smul_zero])
-    (fun h ↦ absurd hi h), lp.single_apply_self] at hcoord
-  exact (smul_eq_zero.1 hcoord).resolve_right (hv i)
+  rw [← linearIndependent_equiv (Equiv.sigmaPUnit ι)]
+  exact linearIndependent_single (fun i (_ : Unit) ↦ v i) fun i ↦
+    .of_subsingleton' () fun r hr ↦ (smul_eq_zero.1 hr).resolve_right (hv i)
 
-/-- Over an infinite index type with nontrivial summands, `lp E p` is not finitely generated. -/
+end Single
+
+/-- Over a cancel-mul-zero normed ring satisfying the strong rank condition, `lp E p` is not
+finitely generated when the index type is infinite and every summand is nontrivial and
+torsion-free. -/
 theorem not_finite [IsCancelMulZero 𝕜] [StrongRankCondition 𝕜]
     [∀ i, Module.IsTorsionFree 𝕜 (E i)] [Infinite ι] [∀ i, Nontrivial (E i)] :
     ¬ Module.Finite 𝕜 (lp E p) := by
   classical
   intro hfin
   exact hfin.not_linearIndependent_of_infinite _
-    (linearIndependent_single (p := p) (𝕜 := 𝕜) fun i ↦ (exists_ne (0 : E i)).choose_spec)
+    (linearIndependent_single_of_ne_zero (p := p) (𝕜 := 𝕜) fun i ↦
+      (exists_ne (0 : E i)).choose_spec)
 
 /-- The square of the `ℓ²` norm of a finite sum of single-coordinate vectors is the sum of the
 squared norms of the coordinates. -/
