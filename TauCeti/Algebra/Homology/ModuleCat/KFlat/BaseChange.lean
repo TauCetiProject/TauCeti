@@ -5,14 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.Algebra.Homology.DerivedCategory.ExactFunctor
-public import Mathlib.CategoryTheory.Functor.Derived.Adjunction
+public import Mathlib.CategoryTheory.Localization.DerivabilityStructure.Derives
 public import TauCeti.Algebra.Homology.Adjunction
-public import TauCeti.Algebra.Homology.ModuleCat.KFlat.DerivedTensor
-import Mathlib.CategoryTheory.Functor.Derived.PointwiseRightDerived
-import TauCeti.Algebra.Category.ModuleCat.Monoidal.ChangeOfRings
-import TauCeti.Algebra.Homology.Bifunctor.TwoTermSupport
+public import TauCeti.Algebra.Homology.ModuleCat.ChangeOfRings
+public import TauCeti.Algebra.Homology.ModuleCat.KFlat.DerivabilityStructure
+import Mathlib.CategoryTheory.Functor.Derived.Adjunction
+import TauCeti.Algebra.Homology.ModuleCat.KFlat.Tensor
 
 /-!
 # Derived extension of scalars and its adjunction with restriction of scalars
@@ -36,9 +35,12 @@ provides:
 
 ## References
 
-* [The Stacks Project, *The Stacks Project*][stacks-project], Tags 064L, 06Y6, and 0GMT.
-* [Georges Maltsiniotis, *Le théorème de Quillen, d'adjonction des foncteurs dérivés,
-  revisité*][Maltsiniotis2007].
+* [The Stacks Project][stacks], Section 15.60 (Tag 064L) and Section 15.61 (Tags 06Y6 and 0GMT).
+* Georges Maltsiniotis, *Le théorème de Quillen, d'adjonction des foncteurs dérivés, revisité*,
+  C. R. Math. Acad. Sci. Paris 344 (2007), no. 9, 549–552.
+* Joël Riou, *Formalization of derived categories in Lean/mathlib*, Ann. Formaliz. Math. 1 (2025),
+  1–42, §5.3.4, and `CategoryTheory.Adjunction.derived` in
+  `Mathlib.CategoryTheory.Functor.Derived.Adjunction`.
 -/
 
 public section
@@ -52,40 +54,13 @@ open scoped MonoidalCategory
 
 namespace TauCeti
 
-/-- Ordinary extension of scalars along `f : R →+* S` applied degreewise to cochain complexes. -/
-abbrev complexBaseChange {R S : Type u} [CommRing R] [CommRing S] (f : R →+* S) :
-    CochainComplex (ModuleCat.{u} R) ℤ ⥤ CochainComplex (ModuleCat.{u} S) ℤ :=
-  (ModuleCat.extendScalars f).mapHomologicalComplex (ComplexShape.up ℤ)
-
 section BaseChangeQuasiIso
 
 variable {R S : Type u} [CommRing R] [CommRing S] (f : R →+* S)
 
-private def extendCompRestrictIso :
-    ModuleCat.extendScalars.{u, u, u} f ⋙ ModuleCat.restrictScalars.{u} f ≅
-      (MonoidalCategory.curriedTensor (ModuleCat.{u} R)).obj
-        ((ModuleCat.restrictScalars f).obj (𝟙_ (ModuleCat.{u} S))) :=
-  Functor.isoWhiskerLeft (ModuleCat.extendScalars f)
-    ((Functor.leftUnitor (ModuleCat.restrictScalars f)).symm ≪≫
-      Functor.isoWhiskerRight
-        (NatIso.ofComponents (fun M ↦ λ_ M) fun g ↦ MonoidalCategory.leftUnitor_naturality g).symm
-        (ModuleCat.restrictScalars f)) ≪≫
-    ModuleCat.extendScalarsCompTensorLeftIso f (𝟙_ (ModuleCat.{u} S))
-
-private def complexBaseChangeCompRestrictIso :
-    complexBaseChange f ⋙
-      (ModuleCat.restrictScalars.{u} f).mapHomologicalComplex (ComplexShape.up ℤ) ≅
-    (MonoidalCategory.curriedTensor (ModuleCat.{u} R)).mapBifunctorLeft
-      (ComplexShape.up ℤ) (ComplexShape.up ℤ)
-      ((HomologicalComplex.single (ModuleCat.{u} R) (ComplexShape.up ℤ) 0).obj
-        ((ModuleCat.restrictScalars f).obj (𝟙_ (ModuleCat.{u} S)))) :=
-  Functor.mapHomologicalComplexCompIso (extendCompRestrictIso f) (ComplexShape.up ℤ) ≪≫
-    ((MonoidalCategory.curriedTensor (ModuleCat.{u} R)).mapBifunctorSingleRowZeroNatIso
-      ((ModuleCat.restrictScalars f).obj (𝟙_ (ModuleCat.{u} S)))).symm
-
 /-- Degreewise scalar extension along `f : R →+* S` preserves quasi-isomorphisms between K-flat
 cochain complexes of `R`-modules. -/
-theorem quasiIso_complexBaseChange_map_of_isKFlat
+instance quasiIso_complexBaseChange_map_of_isKFlat
     {K L : CochainComplex (ModuleCat.{u} R) ℤ} [K.IsKFlat] [L.IsKFlat]
     (φ : K ⟶ L) [QuasiIso φ] :
     QuasiIso ((complexBaseChange f).map φ) := by
@@ -93,7 +68,7 @@ theorem quasiIso_complexBaseChange_map_of_isKFlat
   let P₀ : CochainComplex (ModuleCat.{u} R) ℤ :=
     (HomologicalComplex.single (ModuleCat.{u} R) (ComplexShape.up ℤ) 0).obj S₀
   have hP₀ : QuasiIso (tensorHom (𝟙 P₀) φ) := CochainComplex.quasiIso_id_tensorHom_of_isKFlat P₀ φ
-  let e := complexBaseChangeCompRestrictIso f
+  let e := complexBaseChangeCompRestrictScalarsIso f
   have hRes : QuasiIso (((ModuleCat.restrictScalars.{u} f).mapHomologicalComplex
       (ComplexShape.up ℤ)).map ((complexBaseChange f).map φ)) := by
     refine quasiIso_of_arrow_mk_iso (tensorHom (𝟙 P₀) φ)
@@ -112,9 +87,7 @@ theorem localizerMorphism_derives_complexBaseChange
   rw [LocalizerMorphism.Derives, CochainComplex.KFlat.localizerMorphism_functor]
   intro K L g hg
   have : QuasiIso g.hom := (CochainComplex.KFlat.quasiIso_iff g).1 hg
-  have : QuasiIso ((complexBaseChange f).map g.hom) :=
-    quasiIso_complexBaseChange_map_of_isKFlat f g.hom
-  simp only [Functor.comp_map, ObjectProperty.ι_map]
+  simp only [Functor.comp_map, ObjectProperty.ι_map, ObjectProperty.ι_obj]
   infer_instance
 
 end BaseChangeQuasiIso
@@ -200,13 +173,8 @@ def derivedExtendRestrictScalarsAdj
     Functor.isRightDerivedFunctor_of_inverts W_S (R' ⋙ G)
       ((Functor.associator DerivedCategory.Q R' G).symm ≪≫ Functor.isoWhiskerRight eR G)
   have hDerivesComp : (CochainComplex.KFlat.localizerMorphism (ModuleCat.{u} R)).Derives
-      ((complexBaseChange f ⋙ DerivedCategory.Q) ⋙ R') := by
-    intro K L g hg
-    have : IsIso (((CochainComplex.KFlat.localizerMorphism (ModuleCat.{u} R)).functor ⋙
-        (complexBaseChange f ⋙ DerivedCategory.Q)).map g) :=
-      localizerMorphism_derives_complexBaseChange f g hg
-    dsimp at this ⊢
-    infer_instance
+      ((complexBaseChange f ⋙ DerivedCategory.Q) ⋙ R') :=
+    MorphismProperty.IsInvertedBy.of_comp _ _ (localizerMorphism_derives_complexBaseChange f) R'
   have : (G ⋙ R').IsLeftDerivedFunctor
       ((Functor.associator _ _ _).inv ≫ Functor.whiskerRight α R') W_R := by
     refine hDerivesComp.isLeftDerivedFunctor_of_isIso _ fun P ↦ ?_

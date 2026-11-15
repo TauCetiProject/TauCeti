@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Localization.DerivabilityStructure.OfFunctorialResolutions
+import TauCeti.CategoryTheory.Localization.LocalizerMorphism
 
 /-!
 # Functorial left resolutions give left derivability structures
@@ -18,29 +19,32 @@ belong to `W₂`. Then:
   resolutions of each `X₂ : C₂` is connected;
 * when `Φ.functor` is fully faithful, `W₁ = W₂.inverseImage Φ.functor`, and `W₂` satisfies the
   two-out-of-three property, `Φ` induces an equivalence on localized categories;
-* under both sets of hypotheses, `Φ` is a left derivability structure.
+* under both sets of hypotheses (`Φ.functor` fully faithful, `W₁ = W₂.inverseImage Φ.functor`, and
+  `W₂` multiplicative with the two-out-of-three property), `Φ` is a left derivability structure.
 
 This provides the left-resolution counterpart to Joël Riou's right-resolution constructor in
 `Mathlib.CategoryTheory.Localization.DerivabilityStructure.OfFunctorialResolutions`.
 
 ## Main results
 
-* `CategoryTheory.LocalizerMorphism.isLocalizedEquivalence_iff_op`: a localizer morphism is a
-  localized equivalence if and only if its opposite is.
 * `CategoryTheory.LocalizerMorphism.hasLeftResolutions_arrow_of_functorial_resolutions`: functorial
   left resolutions supply left resolutions of arrows.
 * `CategoryTheory.LocalizerMorphism.isConnected_leftResolution_of_functorial_resolutions`: when
   `Φ.functor` is full and `W₂` is multiplicative, each left-resolution category is connected.
-* `CategoryTheory.LocalizerMorphism.isLocalizedEquivalence_of_functorial_left_resolutions`: a fully
-  faithful induced localizer morphism admitting functorial left resolutions is a localized
-  equivalence.
-* `CategoryTheory.LocalizerMorphism.isLeftDerivabilityStructure_of_functorial_resolutions`:
-  functorial left resolutions yield a left derivability structure.
+* `CategoryTheory.LocalizerMorphism.isLocalizedEquivalence_of_functorial_left_resolutions`: when
+  `W₂` satisfies the two-out-of-three property, a fully faithful localizer morphism with
+  `W₁ = W₂.inverseImage Φ.functor` admitting functorial left resolutions is a localized equivalence.
+* `CategoryTheory.LocalizerMorphism.isLeftDerivabilityStructure_of_functorial_resolutions`: when
+  `W₂` is multiplicative and satisfies the two-out-of-three property, a fully faithful localizer
+  morphism with `W₁ = W₂.inverseImage Φ.functor` admitting functorial left resolutions is a left
+  derivability structure.
 
 ## References
 
 * Bruno Kahn and Georges Maltsiniotis, *Structures de dérivabilité*, Adv. Math. 218 (2008),
   1286–1318.
+* Joël Riou, *Formalization of derived categories in Lean/mathlib*, Ann. Formaliz. Math. 1 (2025),
+  1–42.
 -/
 
 public section
@@ -50,19 +54,7 @@ namespace CategoryTheory.LocalizerMorphism
 variable {C₁ C₂ : Type*} [Category* C₁] [Category* C₂]
   {W₁ : MorphismProperty C₁} {W₂ : MorphismProperty C₂}
   (Φ : LocalizerMorphism W₁ W₂)
-
-/-- A localizer morphism induces an equivalence on localized categories if and only if its opposite
-localizer morphism does. -/
-lemma isLocalizedEquivalence_iff_op :
-    Φ.IsLocalizedEquivalence ↔ Φ.op.IsLocalizedEquivalence := by
-  refine ⟨fun _ ↦ inferInstance, fun _ ↦ ?_⟩
-  let G := Φ.localizedFunctor W₁.Q W₂.Q
-  let : CatCommSq Φ.op.functor W₁.Q.op W₂.Q.op G.op :=
-    ⟨NatIso.op (CatCommSq.iso Φ.functor W₁.Q W₂.Q G).symm⟩
-  have : G.op.IsEquivalence := Φ.op.isEquivalence W₁.Q.op W₂.Q.op G.op
-  exact ⟨G.op.asEquivalence.unop.isEquivalence_functor⟩
-
-variable {ρ : C₂ ⥤ C₁} (π : ρ ⋙ Φ.functor ⟶ 𝟭 C₂) (hπ : ∀ X₂, W₂ (π.app X₂))
+  {ρ : C₂ ⥤ C₁} (π : ρ ⋙ Φ.functor ⟶ 𝟭 C₂) (hπ : ∀ X₂, W₂ (π.app X₂))
 
 include hπ
 
@@ -87,9 +79,10 @@ lemma isConnected_leftResolution_of_functorial_resolutions
     intro R
     let R' : Φ.LeftResolution X₂ :=
       LeftResolution.mk (π.app (Φ.functor.obj R.X₁) ≫ R.w) (W₂.comp_mem _ _ (hπ _) R.hw)
+    -- `R'.X₁` is `ρ.obj (Φ.functor.obj R.X₁)`, and `@[simps]` on `Functor.comp`/`Functor.id`
+    -- identifies `(ρ ⋙ Φ.functor).obj` and `(𝟭 C₂).obj` on the domain and codomain of `π.app`.
     let f₁ : R' ⟶ R := LeftResolution.Hom.mk
-      (Φ.functor.preimage (show Φ.functor.obj R'.X₁ ⟶ Φ.functor.obj R.X₁ from
-        π.app (Φ.functor.obj R.X₁)))
+      (Φ.functor.preimage (X := R'.X₁) (Y := R.X₁) (π.app (Φ.functor.obj R.X₁)))
       (by simp [R'])
     let f₂ : R' ⟶ LeftResolution.mk (π.app X₂) (hπ X₂) := LeftResolution.Hom.mk
       (ρ.map R.w) (by
@@ -106,8 +99,9 @@ variable (hW₁ : W₁ = W₂.inverseImage Φ.functor)
 
 include hW₁
 
-/-- If `Φ` is a fully faithful localizer morphism with `W₁ = W₂.inverseImage Φ.functor` admitting
-functorial left resolutions, then `Φ` induces an equivalence on localized categories. -/
+/-- If `W₂` satisfies the two-out-of-three property and `Φ` is a fully faithful localizer morphism
+with `W₁ = W₂.inverseImage Φ.functor` admitting functorial left resolutions, then `Φ` induces an
+equivalence on localized categories. -/
 lemma isLocalizedEquivalence_of_functorial_left_resolutions :
     Φ.IsLocalizedEquivalence := by
   have hW₁' : W₁.op = W₂.op.inverseImage Φ.op.functor := by
@@ -117,8 +111,9 @@ lemma isLocalizedEquivalence_of_functorial_left_resolutions :
   exact Φ.op.isLocalizedEquivalence_of_functorial_right_resolutions (ρ := ρ.op) (NatTrans.op π)
     (fun X₂ ↦ hπ X₂.unop) hW₁'
 
-/-- A fully faithful localizer morphism with `W₁ = W₂.inverseImage Φ.functor` admitting functorial
-left resolutions is a left derivability structure. -/
+/-- If `W₂` is multiplicative and satisfies the two-out-of-three property, a fully faithful
+localizer morphism with `W₁ = W₂.inverseImage Φ.functor` admitting functorial left resolutions is a
+left derivability structure. -/
 lemma isLeftDerivabilityStructure_of_functorial_resolutions [W₂.IsMultiplicative] :
     Φ.IsLeftDerivabilityStructure := by
   have hW₁' : W₁.op = W₂.op.inverseImage Φ.op.functor := by
