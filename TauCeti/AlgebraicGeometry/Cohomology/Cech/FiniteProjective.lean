@@ -20,8 +20,9 @@ finitely many opens `U 0, …, U (N - 1)` whose nonempty finite intersections ar
 instance a finite affine open cover of a quasi-compact scheme with affine diagonal, and that the
 cohomology modules `Hⁿ(X, M)` are finitely generated over `R`, as they are for a coherent sheaf
 on a proper scheme. This file constructs a complex `P` of finitely generated projective
-`R`-modules, concentrated in degrees `0, …, N - 1`, such that for every ring map `R → R'`, with
-base change `Y = X ×_R R'` and projection `g : Y ⟶ X`,
+`R`-modules, concentrated in degrees `0, …, N - 1`, with a morphism `ψ` from `P` to the ordered
+Čech complex of `M` which remains a quasi-isomorphism after every extension of scalars, so that for
+every ring map `R → R'`, with base change `Y = X ×_R R'` and projection `g : Y ⟶ X`,
 
 `Hⁿ(Y, g^* M) ≅ Hⁿ(R' ⊗_R P)` for every `n`
 
@@ -47,10 +48,19 @@ complex of flat modules with finitely generated cohomology which computes the co
 base change of `M`, and Mumford's lemma replaces it by a finite projective complex compatibly with
 every base change.
 
+## Main definitions
+
+* `TauCeti.AlgebraicGeometry.orderedCechComplex`: the ordered Čech complex `Čₒ(U, M)` of
+  `R`-modules, extended to `ℤ`.
+
 ## Main results
 
+* `TauCeti.AlgebraicGeometry.nonempty_linearEquiv_homology_orderedCechComplex` and
+  `TauCeti.AlgebraicGeometry.nonempty_linearEquiv_homology_extendScalars_orderedCechComplex`:
+  `Čₒ(U, M)` computes the cohomology of `M`, and after extension of scalars to `R'` the
+  cohomology of its pullback to `X ×_R R'`.
 * `TauCeti.AlgebraicGeometry.exists_finite_projective_complex_cohomology_pullback`: the complex
-  `P` above.
+  `P` above, with the quasi-isomorphism `ψ : P ⟶ Čₒ(U, M)`.
 
 ## References
 
@@ -76,18 +86,13 @@ namespace TauCeti.AlgebraicGeometry
 variable {R : Type u} [CommRing R] {X : Scheme.{u}} [X.Over (Spec (.of R))] {ι : Type u}
   (U : ι → X.Opens) (M : X.Modules)
 
+variable (R) in
 /-- The ordered Čech complex of the `R`-modules of sections of `M` for an ordered family of opens
-`U`, extended from `ℕ` to `ℤ` by zero in negative degrees. -/
-private abbrev orderedCechComplex [LinearOrder ι] : CochainComplex (ModuleCat.{u} R) ℤ :=
+`U`, the complex of strictly increasing tuples of members of `U`, extended from `ℕ` to `ℤ` by zero
+in negative degrees. -/
+abbrev orderedCechComplex [LinearOrder ι] : CochainComplex (ModuleCat.{u} R) ℤ :=
   ((strictMonoCechComplexFunctor U).obj ((sectionsBasePresheafFunctor R).obj M)).extend
     embeddingUpNat
-
-/-- In negative degrees, the ordered Čech complex extended to `ℤ` is zero. -/
-private lemma isZero_orderedCechComplex_X_of_neg [LinearOrder ι] {i : ℤ} (hi : i < 0) :
-    IsZero ((orderedCechComplex (R := R) U M).X i) :=
-  HomologicalComplex.isZero_extend_X _ embeddingUpNat i fun n h ↦ by
-    rw [embeddingUpNat_f] at h
-    omega
 
 /-- The ordered Čech complex of a sheaf whose stalks are flat over `R`, for a finite family of
 opens with affine nonempty finite intersections, consists of flat `R`-modules: its terms are direct
@@ -95,9 +100,10 @@ summands of those of the Čech complex. -/
 private lemma flat_orderedCechComplex_X [LinearOrder ι] [Finite ι] [M.IsQuasicoherent]
     (hU : ∀ s : Finset ι, s.Nonempty → IsAffineOpen (s.inf U))
     (hM : ∀ x : X, Module.Flat R (M.presheaf.stalk x)) (i : ℤ) :
-    Module.Flat R ((orderedCechComplex (R := R) U M).X i) := by
+    Module.Flat R ((orderedCechComplex R U M).X i) := by
   rcases lt_or_ge i 0 with hi | hi
-  · have := ModuleCat.subsingleton_of_isZero (isZero_orderedCechComplex_X_of_neg (R := R) U M hi)
+  · have :=
+      ModuleCat.subsingleton_of_isZero ((orderedCechComplex R U M).isZero_of_isStrictlyGE 0 i hi)
     infer_instance
   obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le hi
   let P := (sectionsBasePresheafFunctor R).obj M
@@ -113,7 +119,7 @@ private lemma flat_orderedCechComplex_X [LinearOrder ι] [Finite ι] [M.IsQuasic
 
 /-- In degrees at least the number of members of `U`, the ordered Čech complex is zero. -/
 private lemma isStrictlyLE_orderedCechComplex [LinearOrder ι] [Finite ι] :
-    (orderedCechComplex (R := R) U M).IsStrictlyLE (Nat.card ι - 1) := by
+    (orderedCechComplex R U M).IsStrictlyLE (Nat.card ι - 1) := by
   rw [CochainComplex.isStrictlyLE_iff]
   intro i hi
   obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le (by omega : 0 ≤ i)
@@ -126,9 +132,9 @@ variable [Finite ι] (hU : ∀ s : Finset ι, s.Nonempty → IsAffineOpen (s.inf
 include hU hcover in
 /-- The cohomology of the ordered Čech complex of a quasi-coherent sheaf, for a finite cover with
 affine nonempty finite intersections, is the cohomology of the sheaf. -/
-private lemma nonempty_linearEquiv_homology_orderedCechComplex [LinearOrder ι]
+lemma nonempty_linearEquiv_homology_orderedCechComplex [LinearOrder ι]
     [M.IsQuasicoherent] (n : ℕ) :
-    Nonempty ((orderedCechComplex (R := R) U M).homology n ≃ₗ[R] Cohomology M n) :=
+    Nonempty ((orderedCechComplex R U M).homology n ≃ₗ[R] Cohomology M n) :=
   let P := (sectionsBasePresheafFunctor R).obj M
   ⟨(HomologicalComplex.extendHomologyIso _ embeddingUpNat (embeddingUpNat_f n) ≪≫
     ((strictMonoCechComplexHomotopyEquiv U P).toHomologyIso n).symm).toLinearEquiv ≪≫ₗ
@@ -138,13 +144,13 @@ include hU hcover in
 /-- After extension of scalars along any `R → R'`, the ordered Čech complex of a quasi-coherent
 sheaf, for a finite cover with affine nonempty finite intersections, computes the cohomology of
 the pullback of the sheaf to the base change `Y = X ×_R R'`. -/
-private lemma nonempty_linearEquiv_homology_extendScalars_orderedCechComplex [LinearOrder ι]
+lemma nonempty_linearEquiv_homology_extendScalars_orderedCechComplex [LinearOrder ι]
     [M.IsQuasicoherent] {R' : Type u} [CommRing R'] [Algebra R R'] {Y : Scheme.{u}}
     [Y.Over (Spec (.of R'))] {g : Y ⟶ X}
     (H : IsPullback g (Y ↘ Spec (.of R')) (X ↘ Spec (.of R))
       (Spec.map (CommRingCat.ofHom (algebraMap R R')))) (n : ℕ) :
     Nonempty ((((ModuleCat.extendScalars.{u, u, u} (algebraMap R R')).mapHomologicalComplex
-      _).obj (orderedCechComplex (R := R) U M)).homology n ≃ₗ[R']
+      _).obj (orderedCechComplex R U M)).homology n ≃ₗ[R']
         Cohomology ((Scheme.Modules.pullback g).obj M) n) := by
   let F := ModuleCat.extendScalars.{u, u, u} (algebraMap R R')
   let P := (sectionsBasePresheafFunctor R).obj M
@@ -154,7 +160,7 @@ private lemma nonempty_linearEquiv_homology_extendScalars_orderedCechComplex [Li
   -- `Hⁿ(R' ⊗ Čₒ(U, M)) ≅ Hⁿ(R' ⊗ Č(U, M)) ≅ Hⁿ(Y, g^* M)`, extension of scalars preserving the
   -- homotopy equivalence `Č(U, M) ≃ Čₒ(U, M)`.
   let O := (strictMonoCechComplexFunctor U).obj P
-  let e₁ : ((F.mapHomologicalComplex _).obj (orderedCechComplex U M)).homology n ≅
+  let e₁ : ((F.mapHomologicalComplex _).obj (orderedCechComplex R U M)).homology n ≅
       (((F.mapHomologicalComplex _).obj O).extend embeddingUpNat).homology n :=
     HomologicalComplex.homologyMapIso (HomologicalComplex.mapExtendIso F O embeddingUpNat) n
   let e₂ : (((F.mapHomologicalComplex _).obj O).extend embeddingUpNat).homology n ≅
@@ -168,39 +174,40 @@ private lemma nonempty_linearEquiv_homology_extendScalars_orderedCechComplex [Li
 include hU hcover in
 /-- **A finite projective complex computing the cohomology of every base change.** Let `R` be
 a Noetherian ring, `X` a scheme over `R` and `M` a quasi-coherent sheaf on `X` with stalks flat
-over `R`. Let `U` be a finite family of opens covering `X` whose nonempty finite intersections are
-affine, and suppose that every cohomology module `Hⁿ(X, M)` is finitely generated over `R`. Then
-there is a complex `P` of finitely generated projective `R`-modules, concentrated in degrees `0`
-to `N - 1` where `N` is the number of members of `U`, such that for every ring map `R → R'`, with
-base change `Y = X ×_R R'` given as a pullback square, `Hⁿ(Y, g^* M)` is the `n`-th cohomology of
-the complex `R' ⊗_R P` obtained by extension of scalars. -/
-theorem exists_finite_projective_complex_cohomology_pullback [IsNoetherianRing R]
+over `R`. Let `U` be a finite ordered family of opens covering `X` whose nonempty finite
+intersections are affine, and suppose that every cohomology module `Hⁿ(X, M)` is finitely
+generated over `R`. Then there is a complex `P` of finitely generated projective `R`-modules,
+concentrated in degrees `0` to `N - 1` where `N` is the number of members of `U`, with a morphism
+`ψ : P ⟶ Čₒ(U, M)` to the ordered Čech complex (`TauCeti.AlgebraicGeometry.orderedCechComplex`)
+which remains a quasi-isomorphism after extension of scalars along every ring map `R → R'`. In
+particular, for every base change `Y = X ×_R R'` given as a pullback square, `Hⁿ(Y, g^* M)` is the
+`n`-th cohomology of the complex `R' ⊗_R P` obtained by extension of scalars. -/
+theorem exists_finite_projective_complex_cohomology_pullback [LinearOrder ι] [IsNoetherianRing R]
     [M.IsQuasicoherent] (hM : ∀ x : X, Module.Flat R (M.presheaf.stalk x))
     (hfin : ∀ n, Module.Finite R (Cohomology M n)) :
-    ∃ P : CochainComplex (ModuleCat.{u} R) ℤ, P.IsStrictlyGE 0 ∧
-      P.IsStrictlyLE (Nat.card ι - 1) ∧
-      (∀ i, Module.Finite R (P.X i) ∧ Module.Projective R (P.X i)) ∧
+    ∃ (P : CochainComplex (ModuleCat.{u} R) ℤ) (ψ : P ⟶ orderedCechComplex R U M),
+      P.IsStrictlyGE 0 ∧ P.IsStrictlyLE (Nat.card ι - 1) ∧
+      (∀ i, Module.Finite R (P.X i) ∧ Module.Projective R (P.X i)) ∧ QuasiIso ψ ∧
+      (∀ (R' : Type u) [CommRing R'] (f : R →+* R'),
+        QuasiIso (((ModuleCat.extendScalars f).mapHomologicalComplex (.up ℤ)).map ψ)) ∧
       ∀ (R' : Type u) [CommRing R'] [Algebra R R'] (Y : Scheme.{u}) [Y.Over (Spec (.of R'))]
         (g : Y ⟶ X), IsPullback g (Y ↘ Spec (.of R')) (X ↘ Spec (.of R))
           (Spec.map (CommRingCat.ofHom (algebraMap R R'))) → ∀ n : ℕ,
         Nonempty ((((ModuleCat.extendScalars.{u, u, u} (algebraMap R R')).mapHomologicalComplex
           _).obj P).homology n ≃ₗ[R'] Cohomology ((Scheme.Modules.pullback g).obj M) n) := by
-  -- Order the cover, to form its ordered Čech complex.
-  let : LinearOrder ι := LinearOrder.lift' _ (Finite.equivFin ι).injective
-  let K := orderedCechComplex (R := R) U M
+  let K := orderedCechComplex R U M
   have := isStrictlyLE_orderedCechComplex (R := R) U M
   have hK (i : ℤ) : Module.Finite R (K.homology i) := by
     rcases lt_or_ge i 0 with hi | hi
     · have : Subsingleton (K.homology i) := ModuleCat.subsingleton_of_isZero
-        ((K.sc i).isZero_homology_of_isZero_X₂
-          (isZero_orderedCechComplex_X_of_neg (R := R) U M hi))
+        ((K.sc i).isZero_homology_of_isZero_X₂ (K.isZero_of_isStrictlyGE 0 i hi))
       exact Module.Finite.of_finite
     obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le hi
     obtain ⟨e⟩ := nonempty_linearEquiv_homology_orderedCechComplex (R := R) U M hU hcover n
     exact Module.Finite.equiv e.symm
-  obtain ⟨P, ψ, hP₀, hP₁, hP, -, hψ⟩ := CochainComplex.exists_quasiIso_finite_projective K 0
+  obtain ⟨P, ψ, hP₀, hP₁, hP, hψ₀, hψ⟩ := CochainComplex.exists_quasiIso_finite_projective K 0
     (Nat.card ι - 1) (flat_orderedCechComplex_X U M hU hM) hK
-  refine ⟨P, hP₀, hP₁, hP, fun R' _ _ Y _ g H n ↦ ?_⟩
+  refine ⟨P, ψ, hP₀, hP₁, hP, hψ₀, hψ, fun R' _ _ Y _ g H n ↦ ?_⟩
   have := hψ R' (algebraMap R R')
   obtain ⟨e⟩ := nonempty_linearEquiv_homology_extendScalars_orderedCechComplex U M hU hcover H n
   exact ⟨(asIso (HomologicalComplex.homologyMap

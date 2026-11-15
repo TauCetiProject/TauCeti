@@ -238,7 +238,11 @@ theorem extendScalarsAlgebraMapIso_hom_naturality {M N : ModuleCat.{w} R} (φ : 
       (extendScalarsAlgebraMapIso M).hom ≫ ofHom (φ.hom.baseChange S) := by
   let E := (restrictScalars (algebraMap R S)).obj (of S S)
   have : IsScalarTower R S E := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
-  -- both sides send `s ⊗ m` to `s ⊗ φ m`, by the defining formulas of the maps
+  -- Both sides send `s ⊗ m` to `s ⊗ φ m`. The ext lemma presents the tensor as an element of
+  -- `E ⊗[R] M`, whose `S`-module structure on `E` is not syntactically the `Module.compHom`
+  -- structure in `s ⊗ₜ[R, algebraMap R S] m`, so `ExtendScalars.map_tmul` and
+  -- `extendScalarsAlgebraMapIso_hom_tmul` do not rewrite it (restating it with `change` gives a
+  -- term that is not type-correct at instance transparency); the formulas hold by `rfl` instead.
   exact hom_ext (TensorProduct.AlgebraTensorModule.ext (A := S) (M := E) fun s m ↦ rfl)
 
 end AlgebraMap

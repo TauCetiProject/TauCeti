@@ -187,7 +187,8 @@ theorem upperSemicontinuous_finrank_cohomology_fiber [IsNoetherianRing R] [Compa
         (Spec.map (CommRingCat.ofHom (algebraMap R p.asIdeal.ResidueField))))).obj M) n) := by
   -- A finite affine open cover has affine finite intersections, as `X` has affine diagonal.
   let 𝒰 := X.affineCover.finiteSubcover
-  obtain ⟨P, -, -, hP, hPY⟩ := exists_finite_projective_complex_cohomology_pullback
+  let : LinearOrder 𝒰.I₀ := LinearOrder.lift' _ (Finite.equivFin 𝒰.I₀).injective
+  obtain ⟨P, -, -, -, hP, -, -, hPY⟩ := exists_finite_projective_complex_cohomology_pullback
     (fun i : 𝒰.I₀ ↦ (𝒰.f i).opensRange) M
     (fun s hs ↦ IsAffineOpen.finset_inf s hs fun i _ ↦ isAffineOpen_opensRange (𝒰.f i))
     𝒰.iSup_opensRange hM hfin

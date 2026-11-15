@@ -67,6 +67,8 @@ lemma mapXIso_hom_d (i j : Option ι) :
       F.map (d K i j) ≫ (mapXIso F K j).hom :=
   match i, j with
   | none, _ => by simp only [d_none_eq_zero, comp_zero, Functor.map_zero, zero_comp]
+  -- `mapXIso` is `Iso.refl` on `some _`, and `d` of either extension at `some _, some _` is the
+  -- differential of the complex, so both sides are `F.map (K.d _ _)` up to identities
   | some _, some _ => (Category.id_comp _).trans (Category.comp_id _).symm
   | some _, none => by simp only [d_none_eq_zero', comp_zero, Functor.map_zero, zero_comp]
 

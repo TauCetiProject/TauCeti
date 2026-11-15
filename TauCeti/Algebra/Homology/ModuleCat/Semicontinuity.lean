@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Homology.Additive
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
+public import TauCeti.LinearAlgebra.Submodule.Quotient
 public import TauCeti.RingTheory.Spectrum.Prime.Semicontinuity
 
 /-!
@@ -35,8 +36,6 @@ base changes `κ(p) ⊗_R K.X i` of the terms, whose homology is computed by ker
 
 ## Main results
 
-* `Submodule.mapMkQKerEquiv`: for linear maps `f` and `g` with `g ∘ f = 0`, the image of `ker g`
-  in the cokernel of `f` is `ker g` modulo the image of `f`.
 * `HomologicalComplex.nonempty_linearEquiv_homology_extendScalars`: the homology of `S ⊗_R K` as
   the image of the kernel of `S ⊗_R d` in the cokernel of the previous `S ⊗_R d`.
 * `HomologicalComplex.upperSemicontinuous_finrank_homology_extendScalars`: upper semicontinuity
@@ -55,31 +54,6 @@ noncomputable section
 open CategoryTheory Limits Module
 
 universe u
-
-namespace Submodule
-
-variable {R M₁ M₂ M₃ : Type*} [Ring R] [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂]
-  [Module R M₂] [AddCommGroup M₃] [Module R M₃]
-
-/-- For linear maps `f : M₁ → M₂` and `g : M₂ → M₃` with `g ∘ f = 0`, the image of `ker g` in the
-cokernel of `f` is the quotient of `ker g` by the image of `f`, that is by the range of the
-corestriction of `f` to `ker g`. Both describe the homology of `M₁ → M₂ → M₃`. -/
-def mapMkQKerEquiv (f : M₁ →ₗ[R] M₂) (g : M₂ →ₗ[R] M₃) (hfg : ∀ x, f x ∈ LinearMap.ker g) :
-    (LinearMap.ker g ⧸ LinearMap.range (f.codRestrict (LinearMap.ker g) hfg)) ≃ₗ[R]
-      (LinearMap.ker g).map (LinearMap.range f).mkQ :=
-  quotEquivOfEq _ _ (by
-      rw [LinearMap.range_codRestrict, LinearMap.ker_comp, ker_mkQ]) ≪≫ₗ
-    ((LinearMap.range f).mkQ ∘ₗ (LinearMap.ker g).subtype).quotKerEquivRange ≪≫ₗ
-      LinearEquiv.ofEq _ _ (by rw [LinearMap.range_comp, range_subtype])
-
-/-- `mapMkQKerEquiv` sends the class of `x ∈ ker g` to the class of `x` modulo the image of `f`. -/
-@[simp]
-lemma coe_mapMkQKerEquiv_mk (f : M₁ →ₗ[R] M₂) (g : M₂ →ₗ[R] M₃) (hfg : ∀ x, f x ∈ LinearMap.ker g)
-    (x : LinearMap.ker g) :
-    (mapMkQKerEquiv f g hfg (Quotient.mk x) : M₂ ⧸ LinearMap.range f) = Quotient.mk (x : M₂) := by
-  simp [mapMkQKerEquiv]
-
-end Submodule
 
 namespace HomologicalComplex
 
@@ -113,7 +87,7 @@ theorem nonempty_linearEquiv_homology_extendScalars (S : Type u) [CommRing S] [A
       (ModuleCat.extendScalarsAlgebraMapIso_hom_naturality (K.d j k)).symm
   exact ⟨(((F.mapHomologicalComplex c).obj K).homologyIsoSc' i j k hi hk ≪≫
     ShortComplex.homologyMapIso E ≪≫ T.moduleCatHomologyIso).toLinearEquiv ≪≫ₗ
-      Submodule.mapMkQKerEquiv _ _ _⟩
+      LinearMap.mapMkQKerEquiv _ _ _⟩
 
 /-- **Semicontinuity of fibre homology.** Let `K` be a complex of modules over a commutative ring
 `R` whose term in degree `j` is finite and whose term in the next degree is projective. Then the
