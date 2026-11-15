@@ -195,9 +195,10 @@ theorem d_mem_continuousCochain (hL : Continuous fun p : L × L ↦ ⁅p.1, p.2�
       rfl
     exact hg ▸ g.isLocallyConstant
 
-/-- Over a topological additive group `L`, `d R L M n` preserves continuous cochains whenever the
-bracket of `L` is continuous and every element of `M` is annihilated by a neighbourhood of zero. -/
-theorem d_mem_continuousCochain_of_nhds_zero [IsTopologicalAddGroup L]
+/-- When addition on `L` is separately continuous, `d R L M n` preserves continuous cochains
+whenever the bracket of `L` is continuous and every element of `M` is annihilated by a
+neighbourhood of zero. -/
+theorem d_mem_continuousCochain_of_nhds_zero [SeparatelyContinuousAdd L]
     (hL : Continuous fun p : L × L ↦ ⁅p.1, p.2⁆)
     (hM : ∀ m : M, ∀ᶠ x in 𝓝 (0 : L), ⁅x, m⁆ = 0) {n : ℕ} {ω : L [⋀^Fin n]→ₗ[R] M}
     (hω : ω ∈ continuousCochain R L M n) :
@@ -470,13 +471,11 @@ def continuousCohomologyEquiv (e : M ≃ₗ[R] M') (φ : L' ≃ₗ⁅R⁆ L)
     (continuousCohomologyMap e.symm.toLinearMap φ.symm.toLieHom
       (e.symm_lie_eq_of_lie_eq φ he) hφ' n)
     (by
-      have hp : φ.symm.toLieHom.comp φ.toLieHom = LieHom.id := by ext; simp
-      simpa [e.comp_symm, hp] using
+      simpa [e.comp_symm, φ.symm_comp] using
         continuousCohomologyMap_comp e.symm.toLinearMap e.toLinearMap
           φ.symm.toLieHom φ.toLieHom (e.symm_lie_eq_of_lie_eq φ he) he hφ' hφ n)
     (by
-      have hp : φ.toLieHom.comp φ.symm.toLieHom = LieHom.id := by ext; simp
-      simpa [e.symm_comp, hp] using
+      simpa [e.symm_comp, φ.comp_symm] using
         continuousCohomologyMap_comp e.toLinearMap e.symm.toLinearMap
           φ.toLieHom φ.symm.toLieHom he (e.symm_lie_eq_of_lie_eq φ he) hφ hφ' n)
 

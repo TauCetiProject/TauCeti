@@ -129,12 +129,10 @@ def cochainEquiv (e : M ≃ₗ[R] M') (φ : L' ≃ₗ⁅R⁆ L) (n : ℕ) :
   LinearEquiv.ofLinearMap (cochainMap e.toLinearMap φ.toLieHom n)
     (cochainMap e.symm.toLinearMap φ.symm.toLieHom n)
     (by
-      have hp : φ.symm.toLieHom.comp φ.toLieHom = LieHom.id := by ext; simp
-      simpa [e.comp_symm, hp] using
+      simpa [e.comp_symm, φ.symm_comp] using
         cochainMap_comp e.symm.toLinearMap e.toLinearMap φ.symm.toLieHom φ.toLieHom n)
     (by
-      have hp : φ.toLieHom.comp φ.symm.toLieHom = LieHom.id := by ext; simp
-      simpa [e.symm_comp, hp] using
+      simpa [e.symm_comp, φ.comp_symm] using
         cochainMap_comp e.toLinearMap e.symm.toLinearMap φ.toLieHom φ.symm.toLieHom n)
 
 @[simp]
@@ -290,12 +288,10 @@ noncomputable def cochainComplexIso (e : M ≃ₗ[R] M') (φ : L' ≃ₗ⁅R⁆ 
   inv := cochainComplexMap e.symm.toLinearMap φ.symm.toLieHom (e.symm_lie_eq_of_lie_eq φ he)
   hom_inv_id := by
     rw [cochainComplexMap_comp]
-    have hp : φ.toLieHom.comp φ.symm.toLieHom = LieHom.id := by ext; simp
-    simp [e.symm_comp, hp]
+    simp [e.symm_comp, φ.comp_symm]
   inv_hom_id := by
     rw [cochainComplexMap_comp]
-    have hp : φ.symm.toLieHom.comp φ.toLieHom = LieHom.id := by ext; simp
-    simp [e.comp_symm, hp]
+    simp [e.comp_symm, φ.symm_comp]
 
 @[simp]
 theorem cochainComplexIso_hom (e : M ≃ₗ[R] M') (φ : L' ≃ₗ⁅R⁆ L)
