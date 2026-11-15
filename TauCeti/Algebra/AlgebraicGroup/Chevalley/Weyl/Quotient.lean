@@ -10,7 +10,6 @@ import TauCeti.Algebra.AlgebraicGroup.Chevalley.RankOne
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Braid.Basic
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Braid.DoubleBond
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Orthogonal
-import TauCeti.LinearAlgebra.RootSystem.Coxeter.DynkinType
 import TauCeti.LinearAlgebra.RootSystem.Coxeter.Presentation
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Coefficient
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
@@ -144,7 +143,7 @@ private theorem simpleClass_liftable (hs : t ≠ .G2) :
   by_cases h : i = j
   · subst j
     simp only [D.simpleClass_mul_self, one_pow]
-  rcases cartanMatrix_pairs_of_ne_G2 hs h with
+  rcases cartanMatrix_eq_zero_and_eq_zero_or_of_ne_G2_of_ne hs h with
     ⟨hij, _⟩ | ⟨hij, hji⟩ | ⟨hij, hji⟩ | ⟨hij, hji⟩
   · rw [hij, zero_mul, coxeterOrder_zero, (D.simpleClass_commute A i j hij).mul_pow]
     simp only [pow_two, D.simpleClass_mul_self, one_mul]
