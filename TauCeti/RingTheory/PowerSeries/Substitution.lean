@@ -16,6 +16,7 @@ public import Mathlib.RingTheory.PowerSeries.Trunc
 import TauCeti.RingTheory.MvPowerSeries.Order
 -- Proof-only: algebra maps out of `R⟦X⟧` agree with `aeval` on polynomials.
 import TauCeti.RingTheory.PowerSeries.Evaluation
+import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 import Mathlib.RingTheory.PowerSeries.Inverse
 
 /-!
@@ -79,8 +80,8 @@ of a completed group algebra attached to two topological generators.
   series obtained by evaluating a finite truncation.
 * `PowerSeries.order_subst`: `ord (f (φ)) = ord φ * ord f` when `φ` has zero constant
   coefficient.
-* `PowerSeries.subst_eq_zero_iff`: substitution of a nonzero `φ` of zero constant coefficient
-  has trivial kernel.
+* `PowerSeries.subst_eq_zero_iff` and `PowerSeries.mvPowerSeries_subst_eq_zero_iff`: substitution
+  of a nonzero univariate or multivariate `φ` of zero constant coefficient has trivial kernel.
 * `PowerSeries.toNat_order_ne_zero`: such a `φ` has positive integer order.
 * `PowerSeries.transcendental_of_constantCoeff_eq_zero`: such a `φ` is transcendental over the
   coefficients.
@@ -255,6 +256,19 @@ theorem subst_eq_zero_iff (hφ : constantCoeff φ = 0) (hφ₀ : φ ≠ 0) {f : 
   have h₁ : φ.order ≠ ⊤ := order_eq_top.not.mpr hφ₀
   rw [← order_eq_top, ← order_eq_top (φ := f), order_subst hφ]
   exact WithTop.mul_eq_top_iff.trans (by tauto)
+
+/-- Substituting a nonzero multivariate power series `φ` of zero constant coefficient sends only
+`0` to `0`. -/
+theorem mvPowerSeries_subst_eq_zero_iff {σ : Type*} {φ : MvPowerSeries σ R}
+    (hφ : MvPowerSeries.constantCoeff φ = 0) (hφ₀ : φ ≠ 0) {f : R⟦X⟧} :
+    (f.subst φ : MvPowerSeries σ R) = 0 ↔ f = 0 := by
+  have hs : HasSubst φ := .of_constantCoeff_zero hφ
+  refine ⟨fun h ↦ by_contra fun hf ↦ ?_, fun h ↦ by rw [h, ← coe_substAlgHom hs, map_zero]⟩
+  rw [← X_pow_order_mul_divXPowOrder (f := f), subst_mul hs, subst_pow hs, subst_X hs] at h
+  refine mul_ne_zero (pow_ne_zero _ hφ₀) (fun hdiv ↦ ?_) h
+  have hc := congrArg MvPowerSeries.constantCoeff hdiv
+  rw [map_zero, constantCoeff_subst_of_constantCoeff_zero hφ, Algebra.algebraMap_self_apply] at hc
+  exact (constantCoeff_divXPowOrder_eq_zero_iff.not.mpr hf) hc
 
 /-- A nonzero power series `φ` of zero constant coefficient is transcendental over the
 coefficients: evaluating a polynomial at `φ` is substituting `φ` into it, which is injective. -/

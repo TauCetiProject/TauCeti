@@ -57,8 +57,11 @@ uniformities are shadowed, so the evaluation the statement is about is never re-
   every other to `0`, for an index type of any size.
 * `MvPowerSeries.ne_of_subst_eq_X_of_subst_eq_zero` : a substitution sending one series to `X` and
   another to `0` separates them.
-* `MvPowerSeries.subst_powerSeriesSubst` : substituting into the composite of a one-variable
-  series with a multivariate one is substituting into the inner series.
+* `MvPowerSeries.subst_powerSeriesSubst`,
+  `MvPowerSeries.subst_coordSpecialize_powerSeriesSubst_X_self` and
+  `MvPowerSeries.subst_coordSpecialize_powerSeriesSubst_X_of_ne` : substituting into the composite
+  of a one-variable series with a multivariate one is substituting into the inner series, so
+  coordinate specialization at `i` sends `f(Xᵢ)` to `f` and kills `f(Xⱼ)` for `j ≠ i`.
 * `MvPowerSeries.constantCoeff_subst_of_constantCoeff_zero` : substituting a family of series
   without constant term preserves the constant coefficient.
 * `MvPowerSeries.hasSubst_finTwo` : two substitutable series form a substitution family `![x, y]`
@@ -283,6 +286,22 @@ theorem subst_powerSeriesSubst {O : Type*} [CommRing O] {σ' τ' : Type*}
     (hg : PowerSeries.HasSubst g) (f : PowerSeries O) :
     subst b (PowerSeries.subst g f) = PowerSeries.subst (subst b g) f := by
   rw [PowerSeries.subst_def, PowerSeries.subst_def, subst_comp_subst_apply hg.const hb]
+
+/-- Coordinate specialization at `i` recovers `f` from `f(Xᵢ)`. -/
+@[simp]
+theorem subst_coordSpecialize_powerSeriesSubst_X_self {O : Type*} [CommRing O] {σ' : Type*}
+    (i : σ') (f : PowerSeries O) :
+    subst (coordSpecialize (O := O) i) (PowerSeries.subst (X i : MvPowerSeries σ' O) f) = f := by
+  rw [subst_powerSeriesSubst (hasSubst_coordSpecialize i) (.X i), subst_coordSpecialize_X_self,
+    PowerSeries.X_subst]
+
+/-- Coordinate specialization at `i` kills `f(Xⱼ)` for `j ≠ i` when `f` has zero constant
+coefficient. -/
+theorem subst_coordSpecialize_powerSeriesSubst_X_of_ne {O : Type*} [CommRing O] {σ' : Type*}
+    {i j : σ'} (h : j ≠ i) {f : PowerSeries O} (hf : PowerSeries.constantCoeff f = 0) :
+    subst (coordSpecialize (O := O) i) (PowerSeries.subst (X j : MvPowerSeries σ' O) f) = 0 := by
+  rw [subst_powerSeriesSubst (hasSubst_coordSpecialize i) (.X j), subst_coordSpecialize_X_of_ne h,
+    PowerSeries.subst_zero_of_constantCoeff_zero hf]
 
 /-- Substituting a family of series without constant term preserves the constant coefficient.
 
