@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Cell.CharacteristicHomotopy
-public import TauCeti.Topology.CWComplex.Abstract.FiberwiseCellAttachment
+public import TauCeti.Topology.CWComplex.Abstract.FiberwiseCell.ReattachmentInv
 
 /-!
 # Comparing families of Morse cell attachments over a compact parameter space
