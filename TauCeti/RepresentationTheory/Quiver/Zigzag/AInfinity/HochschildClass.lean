@@ -89,9 +89,8 @@ loop operation, a Hochschild cocycle
 (`TauCeti.hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra`), is not a coboundary
 (`TauCeti.not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_single` and
 `not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_single_of_walk`),
-and `HH^{4, -2}(Z, Z) ≠ 0`. In particular this holds for the affine `Dₙ` graphs with `n ≥ 5`
-(`TauCeti.not_hochschildVanishesAt_four_affineD`), as it does for the affine `D₄` graph
-(`TauCeti.not_hochschildVanishesAt_four_affineD4`); see
+and `HH^{4, -2}(Z, Z) ≠ 0`. In particular this holds for every affine `Dₙ` graph with `n ≥ 4`
+(`TauCeti.not_hochschildVanishesAt_four_affineD`); see
 `TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Affine.D.Basic` and
 `TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Affine.D.Four`.
 

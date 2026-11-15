@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Formal
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Obstruction
 import Mathlib.Tactic.LinearCombination
+import TauCeti.LinearAlgebra.TensorProduct.Basic
 
 /-!
 # Invariance of the first obstruction under `A∞` isomorphisms
@@ -395,29 +396,73 @@ private theorem obstruction_of_tprod_eq_hochschildDifferential_add_sum
     𝒜.obstruction ℋ ⟨n + 2, by omega⟩ (of R A ⟨n + 2, by omega⟩ (PiTensorProduct.tprod R x)) =
       ℋ.hochschildDifferential 0 (f.taylor - letter R A)
           (of R A ⟨n + 2, by omega⟩ (PiTensorProduct.tprod R x)) +
-        ∑ d ∈ Finset.Icc 2 n, ℋ.taylor (of R A ⟨2, two_pos⟩
+        ∑ d ∈ Finset.Icc 2 n, ℋ.taylor (of R A (2 : ℕ+)
           (PiTensorProduct.tprod R ![(f.taylor - letter R A) (subword R x 0 d),
             (f.taylor - letter R A) (subword R x d (n + 2 - d))])) := by
   set ψ := f.taylor - letter R A with hψdef
-  set z := of R A ⟨n + 2, by omega⟩ (PiTensorProduct.tprod R x)
+  set z := of R A ⟨n + 2, by omega⟩ (PiTensorProduct.tprod R x) with hzdef
+  set F := coalgHom R (letter R A + ψ) with hFdef
+  set D := coderiv R ψ with hDdef
   have hz : z ∈ filtration R A (n + 2) :=
     of_mem_filtration R A (k := ⟨n + 2, by omega⟩) le_rfl _
   have hψ₁ : ∀ w ∈ filtration R A 1, ψ w = 0 := fun w hw ↦ by
     rw [hψdef, LinearMap.sub_apply,
       AInfinityHom.taylor_apply_eq_letter_of_linearPart_eq_id hf w hw, sub_self]
-  have ht₂ := hℋ.taylor_comp_lengthProj_two hm
   have hℋz : ℋ.taylor z = 0 := by
-    rw [← ht₂, LinearMap.comp_apply,
+    rw [← hℋ.taylor_comp_lengthProj_two hm, LinearMap.comp_apply,
       lengthProj_of_of_ne R A (by simp only [ne_eq, Subtype.mk.injEq]; omega), map_zero]
   have key := LinearMap.congr_fun
     (f.taylor_eq_taylor_comp_coalgHom_sub_brace hG (ψ := ψ) (by rw [hψdef, add_sub_cancel])) z
   rw [LinearMap.sub_apply, LinearMap.comp_apply,
     brace_taylor_apply_eq_of_mem_filtration hψ₁ h (by rwa [Nat.add_comm 1 (n + 1)])] at key
-  have hquad : ℋ.taylor (coalgHom R (letter R A + ψ) z) - ℋ.taylor (coderiv R ψ z) =
-      ∑ d ∈ Finset.Icc 2 n, ℋ.taylor (of R A ⟨2, two_pos⟩
+  have ht : ℋ.taylor = TensorProduct.lift ℋ.mul ∘ₗ
+      TensorProduct.map (ℋ.grading.koszulTwist 1 ∘ₗ letter R A) (letter R A) ∘ₗ
+        deconcatenation R A := by
+    rw [ℋ.taylor_eq_of_m_eq_zero hm, (ℋ.isMinimal_def).1 hℋ, LinearMap.zero_comp, zero_add]
+  have hkill : letter R A ∘ₗ (F - LinearMap.id - D) = 0 := by
+    rw [LinearMap.comp_sub, LinearMap.comp_sub, hFdef, letter_comp_coalgHom, LinearMap.comp_id,
+      hDdef, letter_comp_coderiv]
+    abel
+  have hdiff : letter R A ∘ₗ (F - LinearMap.id) = ψ := by
+    rw [LinearMap.comp_sub, hFdef, letter_comp_coalgHom, LinearMap.comp_id, add_sub_cancel_left]
+  have hquad : ℋ.taylor (F z) - ℋ.taylor (D z) =
+      ∑ d ∈ Finset.Icc 2 n, ℋ.taylor (of R A (2 : ℕ+)
         (PiTensorProduct.tprod R ![ψ (subword R x 0 d), ψ (subword R x d (n + 2 - d))])) := by
-    rw [← map_sub, ← LinearMap.congr_fun ht₂ _, LinearMap.comp_apply,
-      lengthProj_two_coalgHom_letter_add_sub_coderiv_of_tprod hψ₁ hn x, map_sum]
+    have hsub : ℋ.taylor (F z) - ℋ.taylor (D z) = ℋ.taylor (F z - z - D z) := by
+      rw [map_sub, map_sub, hℋz, sub_zero]
+    have hdec : deconcatenation R A (F z - z - D z) =
+        TensorProduct.map (F - LinearMap.id - D) LinearMap.id (deconcatenation R A z) +
+          TensorProduct.map LinearMap.id (F - LinearMap.id - D) (deconcatenation R A z) +
+          TensorProduct.map (F - LinearMap.id) (F - LinearMap.id) (deconcatenation R A z) := by
+      rw [map_sub, map_sub, hFdef, (isCoalgHom_coalgHom _).deconcatenation_apply, ← hFdef,
+        hDdef, (isCoderivation_coderiv R ψ).deconcatenation_apply, ← hDdef]
+      exact TensorProduct.map_sub_sub_add_eq F D (deconcatenation R A z)
+    have hcomp (u v : ReducedTensorWords R A →ₗ[R] ReducedTensorWords R A) :
+        TensorProduct.map (ℋ.grading.koszulTwist 1 ∘ₗ letter R A) (letter R A)
+            (TensorProduct.map u v (deconcatenation R A z)) =
+          TensorProduct.map (ℋ.grading.koszulTwist 1 ∘ₗ (letter R A ∘ₗ u)) (letter R A ∘ₗ v)
+            (deconcatenation R A z) := by
+      rw [← LinearMap.comp_apply, ← TensorProduct.map_comp, LinearMap.comp_assoc]
+    have hstep : ℋ.taylor (F z - z - D z) =
+        TensorProduct.lift ℋ.mul
+          (TensorProduct.map (ℋ.grading.koszulTwist 1 ∘ₗ ψ) ψ (deconcatenation R A z)) := by
+      rw [ht, LinearMap.comp_apply, LinearMap.comp_apply, hdec]
+      congr 1
+      rw [map_add, map_add, hcomp, hcomp, hcomp, hkill, hdiff, LinearMap.comp_zero,
+        TensorProduct.map_zero_left, TensorProduct.map_zero_right, LinearMap.zero_apply,
+        zero_add, zero_add]
+    rw [hsub, hstep, hzdef, of_tprod_eq_subword R (by omega) x, deconcatenation_subword,
+      map_sum, map_sum]
+    refine (Finset.sum_subset (fun d hd ↦ Finset.mem_Ioo.2 (by have := Finset.mem_Icc.1 hd; omega))
+      fun d hd hnd ↦ ?_).symm.trans (Finset.sum_congr rfl fun d _ ↦ ?_)
+    · rw [Finset.mem_Ioo] at hd
+      rw [Finset.mem_Icc] at hnd
+      rw [TensorProduct.map_tmul, TensorProduct.lift.tmul, LinearMap.comp_apply]
+      rcases (by omega : d ≤ 1 ∨ n + 2 - d ≤ 1) with h1 | h1
+      · rw [hψ₁ _ (subword_mem_filtration R A x 0 h1), map_zero, map_zero, LinearMap.zero_apply]
+      · rw [hψ₁ _ (subword_mem_filtration R A x (0 + d) h1), map_zero]
+    · rw [TensorProduct.map_tmul, TensorProduct.lift.tmul, LinearMap.comp_apply, zero_add,
+        ℋ.mul_apply, ← ℋ.taylor_of_two]
   rw [obstruction_apply_of_mem_filtration h hz, hℋz, sub_zero, key,
     ℋ.hochschildDifferential_zero_apply, ← hquad]
   abel
@@ -440,7 +485,7 @@ theorem IsMinimal.exists_obstruction_of_tprod_eq_hochschildDifferential_add_sum_
         𝒜.obstruction ℋ ⟨n + 2, by omega⟩ (of R A ⟨n + 2, by omega⟩ (PiTensorProduct.tprod R x)) =
           ℋ.hochschildDifferential 0 ψ
               (of R A ⟨n + 2, by omega⟩ (PiTensorProduct.tprod R x)) +
-            ∑ d ∈ Finset.Icc 2 n, ℋ.taylor (of R A ⟨2, two_pos⟩
+            ∑ d ∈ Finset.Icc 2 n, ℋ.taylor (of R A (2 : ℕ+)
               (PiTensorProduct.tprod R ![ψ (subword R x 0 d),
                 ψ (subword R x d (n + 2 - d))])) := by
   have h𝒜 := hf.isMinimal_iff.2 hℋ

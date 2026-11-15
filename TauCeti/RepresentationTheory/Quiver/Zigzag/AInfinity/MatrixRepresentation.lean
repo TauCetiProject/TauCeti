@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.Affine.D
 public import Mathlib.Combinatorics.SimpleGraph.Bipartite
 public import TauCeti.LinearAlgebra.Matrix.Diagonal
 public import TauCeti.LinearAlgebra.Matrix.Kronecker.Basic
@@ -20,9 +19,9 @@ Let `Z` be the zigzag algebra of a finite simple graph `G` with no isolated vert
 length and regarded as an `A∞` algebra whose only operation is the product
 (`TauCeti.zigzagStrictAInfinityAlgebra`). This file turns a matrix representation of the signless
 preprojective algebra of a bipartite subgraph of `G` into Hochschild classes and non-formal loop
-deformations of `Z`: a closed walk whose matrix product has nonzero (or unit) trace has a loop
-operation which is not a Hochschild coboundary and, under the corresponding obstruction hypotheses,
-defines a minimal `A∞` deformation not isomorphic to `Z`.
+deformations of `Z`: a closed walk whose matrix product has nonzero (or unit, or non-even) trace has
+a loop operation which is not a Hochschild coboundary and, under the corresponding obstruction
+hypotheses, defines a minimal `A∞` deformation not isomorphic to `Z`.
 
 Let `f` be a copy of a bipartite graph `H` in `G`, not necessarily induced, and let `β x y` be
 matrices on the arrows of `H` satisfying the signless relations `∑_{y ∼ x} β y x * β x y = 0`.
@@ -56,28 +55,26 @@ of `Z` which obstruct its intrinsic formality.
 
 * `not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_of_trace_ne_zero` and
   `not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_of_trace_eq_one`:
-  the loop operation of the image of a closed walk of a bipartite subgraph with nonzero trace (or
-  integer trace one) is not a Hochschild coboundary.
+  the loop operation of the image of a closed walk of a bipartite subgraph with nonzero trace (or,
+  over every nontrivial commutative ring, integer trace one) is not a Hochschild coboundary.
 * `not_isFormal_zigzagLoopAInfinityAlgebra_of_trace_ne_zero` and
-  `not_isFormal_zigzagLoopAInfinityAlgebra_of_trace_eq_one`: over a `ℚ`-algebra, the corresponding
-  loop deformation is not formal in any arity `n + 2 ≥ 3`.
-* `not_isFormal_zigzagLoopAInfinityAlgebra_of_isUnit_trace_of_not_isUnit_two` and
-  `not_isFormal_zigzagLoopAInfinityAlgebra_of_trace_eq_one_of_not_isUnit_two`: when `(2 : k)` is not
-  a unit, the corresponding loop deformation is not formal in any even arity `2 r + 2 ≥ 4`.
+  `not_isFormal_zigzagLoopAInfinityAlgebra_of_trace_eq_one`: over a `ℚ`-algebra (respectively, over
+  every nontrivial `ℚ`-algebra for integer trace one), the corresponding loop deformation is not
+  formal in any arity `n + 2 ≥ 3`.
+* `not_isFormal_zigzagLoopAInfinityAlgebra_of_not_even_trace` and
+  `not_isFormal_zigzagLoopAInfinityAlgebra_of_trace_eq_one_of_not_isUnit_two`: in any even arity
+  `2 r + 2 ≥ 4`, the corresponding loop deformation is not formal whenever its trace is not even
+  (in particular, whenever the integer trace is one and `(2 : k)` is not a unit).
 * `not_isFormal_zigzagLoopAInfinityAlgebra_four_of_isUnit_trace` and
-  `not_isFormal_zigzagLoopAInfinityAlgebra_four_of_trace_eq_one`: in arity four, a unit trace gives
-  a non-formal loop deformation over every nontrivial commutative ring.
-* `not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra_of_isContained` and
-  `not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_isContained_D`: if `G` contains a copy
-  of an affine `Dₙ` diagram (`n ≥ 4`), then over every nontrivial commutative ring `HH^{4, -2}(Z)`
-  is nonzero and `Z` is not intrinsically formal.
+  `not_isFormal_zigzagLoopAInfinityAlgebra_four_of_trace_eq_one`: in arity four, a unit trace (or
+  integer trace one) gives a non-formal loop deformation over every nontrivial commutative ring.
 
 ## References
 
 * Y. Liu and Z. Wang, *A-infinity deformations of zigzag algebras via Ginzburg dg algebras*,
   https://arxiv.org/abs/2301.06757, Sections 3 and 4, for the comparison of zigzag Hochschild
   cohomology with the cyclic quotient of the preprojective algebra.
-* R. S. Huerfano and M. Khovanov, *A category for the adjoint representation*, Section 4, for the
+* R. S. Huerfano and M. Khovanov, *A category for the adjoint representation*, Section 6.1, for the
   quadratic dual of the zigzag algebra.
 -/
 
@@ -308,26 +305,25 @@ theorem not_isFormal_zigzagLoopAInfinityAlgebra_of_trace_eq_one [Nontrivial k] [
     (not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_of_trace_eq_one
       f hH β h₀ hβ hn hw htr)
 
-/-- **Even-arity non-formality from a matrix representation when `2` is not a unit.** When `(2 : k)`
-is not a unit (for example in characteristic `2` or over `ℤ`), a closed walk of even length
-`2 r + 2` (`r ≥ 1`) in a bipartite subgraph `H` whose matrix product has unit trace defines a
-non-formal loop deformation of the zigzag algebra of `G`. -/
-theorem not_isFormal_zigzagLoopAInfinityAlgebra_of_isUnit_trace_of_not_isUnit_two
-    (h2 : ¬IsUnit (2 : k)) (f : H.Copy G) (hH : H.IsBipartite) (β : W → W → Matrix m m k)
+/-- **Even-arity non-formality from a matrix representation with non-even trace.** A closed walk of
+even length `2 r + 2` (`r ≥ 1`) in a bipartite subgraph `H` whose matrix product has non-even trace
+defines a non-formal loop deformation of the zigzag algebra of `G`. -/
+theorem not_isFormal_zigzagLoopAInfinityAlgebra_of_not_even_trace
+    (f : H.Copy G) (hH : H.IsBipartite) (β : W → W → Matrix m m k)
     (hβ : ∀ x, ∑ y ∈ H.neighborFinset x, β y x * β x y = 0) {r : ℕ} (hr : 1 ≤ r)
     {w : Fin (2 * r + 2) → H.Dart} (hw : ∀ i, (w i).fst = (w (i + 1)).snd)
-    (htr : IsUnit (trace (List.ofFn fun t ↦ β (w t).fst (w t).snd).prod)) :
+    (htr : ¬Even (trace (List.ofFn fun t ↦ β (w t).fst (w t).snd).prod)) :
     ¬(zigzagLoopAInfinityAlgebra hns (Finsupp.single (fun t ↦ f.toHom.mapDart (w t)) (1 : k))
       (fst_eq_snd_of_mem_support_single (fun i ↦ congrArg f (hw i)) (1 : k))).IsFormal := by
   classical
   have := Fintype.ofFinite V
   obtain ⟨ε, hanti, hs, heval⟩ := exists_bipartite_sign_dartMatrix f hH β hw
-  refine not_isFormal_zigzagLoopAInfinityAlgebra_of_anticyclic_of_not_isUnit_two h2 hr
+  refine not_isFormal_zigzagLoopAInfinityAlgebra_of_anticyclic_of_not_even hr
     (dartMatrix (f.extendByZero β))
     (sum_dartMatrix_mul_dartMatrix_symm _ (f.sum_extendByZero_mul_extendByZero β hβ))
     (traceLinearMap _ k k ∘ₗ LinearMap.mulLeft k (diagonal ε ⊗ₖ 1)) hanti _ _ ?_
   simp only [LinearMap.comp_apply, LinearMap.mulLeft_apply, traceLinearMap_apply, heval]
-  rcases hs with h | h <;> simpa only [h, one_mul, neg_one_mul, IsUnit.neg_iff] using htr
+  rcases hs with h | h <;> simpa only [h, one_mul, neg_one_mul, even_neg] using htr
 
 omit [DecidableRel H.Adj] in
 /-- **Even-arity non-formality from an integer matrix representation when `2` is not a unit.** -/
@@ -339,14 +335,14 @@ theorem not_isFormal_zigzagLoopAInfinityAlgebra_of_trace_eq_one_of_not_isUnit_tw
     ¬(zigzagLoopAInfinityAlgebra hns (Finsupp.single (fun t ↦ f.toHom.mapDart (w t)) (1 : k))
       (fst_eq_snd_of_mem_support_single (fun i ↦ congrArg f (hw i)) (1 : k))).IsFormal := by
   classical
-  refine not_isFormal_zigzagLoopAInfinityAlgebra_of_isUnit_trace_of_not_isUnit_two h2 f hH
+  refine not_isFormal_zigzagLoopAInfinityAlgebra_of_not_even_trace f hH
     (fun x y ↦ (Int.castRingHom k).mapMatrix (β x y))
     (sum_mapMatrix_intCast_mul_mapMatrix_intCast k β h₀ hβ) hr hw ?_
   have hmap : (List.ofFn fun t ↦ (Int.castRingHom k).mapMatrix (β (w t).fst (w t).snd)) =
       (List.ofFn fun t ↦ β (w t).fst (w t).snd).map (Int.castRingHom k).mapMatrix :=
     (List.map_ofFn ..).symm
   rw [hmap, trace_list_prod_map_mapMatrix, htr, map_one]
-  exact isUnit_one
+  exact fun he ↦ h2 (isUnit_of_dvd_one he.two_dvd)
 
 /-- **Quartic non-formality from a matrix representation, over any nontrivial commutative ring.** A
 closed walk of length four in a bipartite subgraph `H` whose matrix product has unit trace defines a
@@ -415,75 +411,5 @@ theorem not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_trace_eq_one [N
     _ _
     (not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_of_trace_eq_one
       f hH β h₀ h hn hu htr)
-
-/-- **Graphs containing an affine `Dₙ` have `HH^{4, -2}` nonzero.** If a graph `G` with no isolated
-vertex contains a copy of the affine diagram `Dₙ` (`n ≥ 4`), not necessarily induced, then over
-every nontrivial commutative ring the Hochschild cohomology `HH^{4, -2}` of the strict zigzag
-algebra of `G` is nonzero: the loop operation of the closed walk `1 → 0 → 1 → (n - 1) → 1` at the
-image of the branch node `1` is a Hochschild cocycle which is not a coboundary. -/
-theorem not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra_of_isContained
-    [Nontrivial k] {n : ℕ}
-    (hn : 4 ≤ n) (hG : (AffineDynkinType.D n).graph.IsContained G) :
-    ¬(𝒵).HochschildVanishesAt ⟨4, by norm_num⟩ := by
-  obtain ⟨f⟩ := hG
-  have hnodes := AffineDynkinType.nodes_D n
-  let c : Fin (AffineDynkinType.D n).nodes := ⟨1, by omega⟩
-  let a : Fin (AffineDynkinType.D n).nodes := ⟨0, by omega⟩
-  let b : Fin (AffineDynkinType.D n).nodes := ⟨n - 1, by omega⟩
-  have h1n : 1 ≤ n - 2 := by omega
-  have h₁ : (AffineDynkinType.D n).graph.Adj c a :=
-    (AffineDynkinType.graph_D_adj hn).2 (Or.inr (Or.inl ⟨rfl, h1n⟩))
-  have h₂ : (AffineDynkinType.D n).graph.Adj c b :=
-    (AffineDynkinType.graph_D_adj hn).2 (Or.inr (Or.inr (Or.inl ⟨rfl, rfl⟩)))
-  refine not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_trace_ne_zero
-    (fun i j : Fin (AffineDynkinType.D n).nodes ↦ affineDMatrix k n i j)
-    (sum_affineDMatrix_mul_affineDMatrix k hn) f (AffineDynkinType.isBipartite_graph_D hn)
-    (n := 2) (by norm_num)
-    (u := ![⟨(b, c), h₂.symm⟩, ⟨(c, b), h₂⟩, ⟨(a, c), h₁.symm⟩, ⟨(c, a), h₁⟩])
-    (fun i ↦ by fin_cases i <;> rfl) ?_
-  have htr := trace_affineDMatrix_backtracks k hn
-  simp only [mul_assoc] at htr
-  simp [List.ofFn_succ, c, a, b, htr]
-
-/-- **A non-formal quartic loop deformation along a copy of an affine `Dₙ` diagram**, over every
-nontrivial commutative ring: the single closed walk `1 → 0 → 1 → (n - 1) → 1` at the image of the
-branch node `1` of `Dₙ` (`n ≥ 4`) defines a minimal, strictly unital `A∞` structure on the zigzag
-algebra of `G` which is not formal. -/
-theorem exists_not_isFormal_zigzagLoopAInfinityAlgebra_four_of_copy_D [Nontrivial k] {n : ℕ}
-    (hn : 4 ≤ n) (f : (AffineDynkinType.D n).graph.Copy G) :
-    ∃ (w : Fin 4 → G.Dart) (hw : ∀ i, (w i).fst = (w (i + 1)).snd),
-      ¬(zigzagLoopAInfinityAlgebra hns (Finsupp.single w (1 : k))
-        (fst_eq_snd_of_mem_support_single hw (1 : k))).IsFormal := by
-  have hnodes := AffineDynkinType.nodes_D n
-  let c : Fin (AffineDynkinType.D n).nodes := ⟨1, by omega⟩
-  let a : Fin (AffineDynkinType.D n).nodes := ⟨0, by omega⟩
-  let b : Fin (AffineDynkinType.D n).nodes := ⟨n - 1, by omega⟩
-  have h1n : 1 ≤ n - 2 := by omega
-  have h₁ : (AffineDynkinType.D n).graph.Adj c a :=
-    (AffineDynkinType.graph_D_adj hn).2 (Or.inr (Or.inl ⟨rfl, h1n⟩))
-  have h₂ : (AffineDynkinType.D n).graph.Adj c b :=
-    (AffineDynkinType.graph_D_adj hn).2 (Or.inr (Or.inr (Or.inl ⟨rfl, rfl⟩)))
-  let u : Fin 4 → (AffineDynkinType.D n).graph.Dart :=
-    ![⟨(b, c), h₂.symm⟩, ⟨(c, b), h₂⟩, ⟨(a, c), h₁.symm⟩, ⟨(c, a), h₁⟩]
-  have hu : ∀ i, (u i).fst = (u (i + 1)).snd := fun i ↦ by fin_cases i <;> rfl
-  refine ⟨fun t ↦ f.toHom.mapDart (u t), fun i ↦ congrArg f (hu i),
-    not_isFormal_zigzagLoopAInfinityAlgebra_four_of_isUnit_trace f
-      (AffineDynkinType.isBipartite_graph_D hn)
-      (fun i j : Fin (AffineDynkinType.D n).nodes ↦ affineDMatrix k n i j)
-      (sum_affineDMatrix_mul_affineDMatrix k hn) hu ?_⟩
-  have htr := trace_affineDMatrix_backtracks k hn
-  simp only [mul_assoc] at htr
-  simp [List.ofFn_succ, u, c, a, b, htr]
-
-/-- **Graphs containing an affine `Dₙ` have non-intrinsically-formal zigzag algebras**, over every
-nontrivial commutative ring. If a finite graph `G` with no isolated vertex contains a copy of the
-affine diagram `Dₙ` (`n ≥ 4`), not necessarily induced, then `𝒵` is not intrinsically formal. -/
-theorem not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_isContained_D
-    [Nontrivial k] {n : ℕ} (hn : 4 ≤ n) (hG : (AffineDynkinType.D n).graph.IsContained G) :
-    ¬(𝒵).IsIntrinsicallyFormal := by
-  obtain ⟨f⟩ := hG
-  obtain ⟨w, hw, hnf⟩ := exists_not_isFormal_zigzagLoopAInfinityAlgebra_four_of_copy_D
-    (k := k) (hns := hns) hn f
-  exact not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_not_isFormal hnf
 
 end TauCeti

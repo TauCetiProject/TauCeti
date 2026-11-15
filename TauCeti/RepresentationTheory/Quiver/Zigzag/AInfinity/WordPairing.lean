@@ -100,7 +100,7 @@ operation of a single closed walk `w` is not a coboundary as soon as
 
 ## References
 
-* R. S. Huerfano and M. Khovanov, *A category for the adjoint representation*, Section 4, for the
+* R. S. Huerfano and M. Khovanov, *A category for the adjoint representation*, Section 6.1, for the
   quadratic dual of the zigzag algebra.
 * Y. Liu and Z. Wang, *A-infinity deformations of zigzag algebras via Ginzburg dg algebras*,
   Sections 3 and 4, for the comparison of zigzag Hochschild cohomology with the cyclic quotient of
@@ -284,6 +284,43 @@ variable {B : Type*} [Semiring B] [Module k B]
 
 variable [Fintype G.Dart] [DecidableEq V]
 
+omit [Finite V] [Fintype G.Dart] [DecidableEq V] in
+/-- Moving the first dart to the end negates the product weight induced by an anticyclic linear
+functional `f` on `β : G.Dart → B`. -/
+theorem anticyclic_prod_ofFn_snoc {n : ℕ} (β : G.Dart → B) (f : B →ₗ[k] k)
+    (hf : ∀ (e : G.Dart) (y : B), f (y * β e) = -f (β e * y))
+    (u : Fin n → G.Dart) (e : G.Dart) :
+    f (List.ofFn fun t ↦ β ((Fin.snoc u e : Fin (n + 1) → G.Dart) t)).prod =
+      -f (List.ofFn fun t ↦ β ((Fin.cons e u : Fin (n + 1) → G.Dart) t)).prod := by
+  have hsnoc : (List.ofFn fun t ↦ β ((Fin.snoc u e : Fin (n + 1) → G.Dart) t)).prod =
+      (List.ofFn fun t ↦ β (u t)).prod * β e := by
+    rw [List.ofFn_succ', List.concat_eq_append, List.prod_append, List.prod_singleton]
+    simp
+  have hcons : (List.ofFn fun t ↦ β ((Fin.cons e u : Fin (n + 1) → G.Dart) t)).prod =
+      β e * (List.ofFn fun t ↦ β (u t)).prod := by
+    rw [List.ofFn_succ, List.prod_cons]
+    simp
+  rw [hsnoc, hcons, hf]
+
+omit [Finite V] in
+/-- When `β : G.Dart → B` satisfies the signless preprojective relation at every vertex, the
+product weight induced by any linear functional `f : B →ₗ[k] k` satisfies the signless relation in
+every consecutive pair of positions. -/
+theorem sum_apply_prod_ofFn_insertNth_insertNth {n : ℕ} (β : G.Dart → B)
+    (hβ : ∀ v : V, ∑ d : G.Dart with d.snd = v, β d * β d.symm = 0)
+    (f : B →ₗ[k] k) (p : Fin (n + 1)) (u : Fin n → G.Dart) (v : V) :
+    ∑ d : G.Dart with d.snd = v,
+      f (List.ofFn fun t ↦
+        β ((Fin.insertNth p.castSucc d (Fin.insertNth p d.symm u) : Fin (n + 2) → G.Dart) t)).prod =
+      0 := by
+  obtain ⟨L, R, h⟩ := List.exists_prod_ofFn_insertNth_insertNth β p u
+  simp_rw [h]
+  calc ∑ d : G.Dart with d.snd = v, f (L * β d * β d.symm * R)
+      = f (L * (∑ d : G.Dart with d.snd = v, β d * β d.symm) * R) := by
+        rw [Finset.mul_sum, Finset.sum_mul, map_sum]
+        simp only [mul_assoc]
+    _ = 0 := by rw [hβ, mul_zero, zero_mul, map_zero]
+
 /-- **Weights from an anticyclic functional.** Let `β` send each dart to an element of a semiring
 `B` with a `k`-module structure, such that the signless relation
 `∑_{d.snd = v} β d * β d.symm = 0` holds at every vertex `v`, and let `f` be a linear functional on
@@ -301,25 +338,9 @@ theorem zigzagWordPairing_hochschildDifferential_eq_zero_of_anticyclic {n : ℕ}
     (hφ : LinearMap.IsHomogeneous φ (gradedPiece ((𝒵).grading.shift 1))
       ((𝒵).grading.shift 1).piece 0) :
     zigzagWordPairing hns n (fun w ↦ f (List.ofFn fun t ↦ β (w t)).prod)
-      ((𝒵).hochschildDifferential 0 φ) = 0 := by
-  refine zigzagWordPairing_hochschildDifferential_eq_zero (fun u e ↦ ?_) (fun p u v ↦ ?_) hφ
-  · have hsnoc : (List.ofFn fun t ↦ β ((Fin.snoc u e : Fin (n + 2) → G.Dart) t)).prod =
-        (List.ofFn fun t ↦ β (u t)).prod * β e := by
-      rw [List.ofFn_succ' (n := n + 1), List.concat_eq_append, List.prod_append,
-        List.prod_singleton]
-      simp
-    have hcons : (List.ofFn fun t ↦ β ((Fin.cons e u : Fin (n + 2) → G.Dart) t)).prod =
-        β e * (List.ofFn fun t ↦ β (u t)).prod := by
-      rw [show (fun t ↦ β ((Fin.cons e u : Fin (n + 2) → G.Dart) t)) =
-          Fin.cons (β e) fun t ↦ β (u t) from Fin.comp_cons β e u, List.ofFn_cons, List.prod_cons]
-    rw [hsnoc, hcons, hf]
-  · obtain ⟨L, R, h⟩ := List.exists_prod_ofFn_insertNth_insertNth β p u
-    simp_rw [h]
-    calc ∑ d : G.Dart with d.snd = v, f (L * β d * β d.symm * R)
-        = f (L * (∑ d : G.Dart with d.snd = v, β d * β d.symm) * R) := by
-          rw [Finset.mul_sum, Finset.sum_mul, map_sum]
-          simp only [mul_assoc]
-      _ = 0 := by rw [hβ, mul_zero, zero_mul, map_zero]
+      ((𝒵).hochschildDifferential 0 φ) = 0 :=
+  zigzagWordPairing_hochschildDifferential_eq_zero
+    (anticyclic_prod_ofFn_snoc β f hf) (sum_apply_prod_ofFn_insertNth_insertNth β hβ f) hφ
 
 /-- **Higher loop operations detected by an anticyclic functional are not coboundaries.** Let `β`
 satisfy the signless relations `∑_{d.snd = v} β d * β d.symm = 0` and let `f` be a linear

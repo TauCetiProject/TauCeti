@@ -30,16 +30,17 @@ and to reach higher even arities:
   `TauCeti.not_isFormal_zigzagLoopAInfinityAlgebra_of_algebraRat`).
 * **Even-arity parity** (`TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Parity`): over every
   commutative ring, balanced quartic backtrack pairings and even-arity anticyclic word pairings send
-  the first obstruction of any formal minimal deformation into the ideal `2 k`. When `2` is not a
-  unit in `k`—in particular in characteristic `2` or over `ℤ`—any deformation on which such a
-  pairing takes a unit value is not formal
-  (`TauCeti.not_isFormal_zigzagLoopAInfinityAlgebra_of_not_isUnit_two_of_isUnit_zigzagWordPairing`,
-  `TauCeti.not_isFormal_zigzagLoopAInfinityAlgebra_of_anticyclic_of_not_isUnit_two`).
+  the first obstruction of any formal minimal deformation into the ideal `2 k`. Whenever such a
+  pairing takes a non-even value — for instance a unit when `2` is not a unit, such as in
+  characteristic `2` or over `ℤ` — the deformation is not formal
+  (`TauCeti.not_isFormal_zigzagLoopAInfinityAlgebra_of_not_even_sum_mul`,
+  `TauCeti.not_isFormal_zigzagLoopAInfinityAlgebra_of_anticyclic_of_not_even`).
 * **Unconditional quartic non-formality**: splitting on whether `(2 : k)` is a unit combines the
-  `Invertible (2 : k)` obstruction theorem with the `2 k` parity restriction, so any quartic loop
-  deformation on which a balanced backtrack pairing or anticyclic functional takes a unit value is
-  non-formal over **every** nontrivial commutative ring `k`
-  (`TauCeti.not_isFormal_zigzagLoopAInfinityAlgebra_of_isUnit_zigzagBacktrackPairing`,
+  `Invertible (2 : k)` obstruction theorem with the `2 k` parity restriction, so any minimal quartic
+  deformation on which a balanced backtrack pairing or anticyclic signless word pairing takes a unit
+  value is non-formal over **every** nontrivial commutative ring `k`
+  (`TauCeti.not_isFormal_of_isUnit_zigzagBacktrackPairing`,
+  `TauCeti.not_isFormal_of_isUnit_zigzagWordPairing_four`,
   `TauCeti.not_isFormal_zigzagLoopAInfinityAlgebra_of_anticyclic_four`).
 
 Applying the balanced backtrack pairings of
@@ -55,14 +56,14 @@ see `TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Affine.D.Four` and
 * `TauCeti.not_isFormal_zigzagLoopAInfinityAlgebra` and
   `TauCeti.not_isFormal_zigzagLoopAInfinityAlgebra_of_algebraRat`: coboundary criteria for
   non-formality in arity four when `2` is invertible and in every arity `n + 2` over a `ℚ`-algebra.
-* `TauCeti.not_isFormal_zigzagLoopAInfinityAlgebra_of_not_isUnit_two_of_isUnit_zigzagWordPairing`
-  and `TauCeti.not_isFormal_zigzagLoopAInfinityAlgebra_of_anticyclic_of_not_isUnit_two`: even-arity
-  non-formality when `(2 : k)` is not a unit and a word pairing or anticyclic functional evaluates
-  to a unit.
-* `TauCeti.not_isFormal_zigzagLoopAInfinityAlgebra_of_isUnit_zigzagBacktrackPairing` and
+* `TauCeti.not_isFormal_zigzagLoopAInfinityAlgebra_of_not_even_sum_mul` and
+  `TauCeti.not_isFormal_zigzagLoopAInfinityAlgebra_of_anticyclic_of_not_even`: even-arity
+  non-formality whenever a word pairing or anticyclic functional evaluates to a non-even element.
+* `TauCeti.not_isFormal_of_isUnit_zigzagBacktrackPairing`,
+  `TauCeti.not_isFormal_of_isUnit_zigzagWordPairing_four`, and
   `TauCeti.not_isFormal_zigzagLoopAInfinityAlgebra_of_anticyclic_four`: quartic non-formality over
-  every nontrivial commutative ring when a balanced backtrack pairing or anticyclic functional
-  evaluates to a unit.
+  every nontrivial commutative ring when a balanced backtrack pairing, anticyclic signless word
+  pairing, or anticyclic functional evaluates to a unit.
 * `TauCeti.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_not_isFormal`: if a loop
   deformation of any arity is not formal, then the strict zigzag algebra is not intrinsically
   formal.
@@ -142,19 +143,19 @@ theorem not_isFormal_zigzagLoopAInfinityAlgebra_of_algebraRat [Algebra ℚ k] {n
     (zigzagLoopAInfinityAlgebra_m_two_eq_zigzagStrictAInfinityAlgebra_m_two c hc)
     (fun r hr1 hr2 ↦ zigzagLoopAInfinityAlgebra_m_eq_zero c hc (by omega) (by omega)) hobs
 
-/-- **Even-arity non-formality when `2` is not a unit.** If `(2 : k)` is not a unit (for instance in
-characteristic `2` or over `ℤ`) and an anticyclic word pairing satisfying the signless relations
-evaluates to a unit on the coefficients `c` of a loop deformation of even arity `2 m + 2` (`m ≥ 1`),
-then the loop deformation is not formal. -/
-theorem not_isFormal_zigzagLoopAInfinityAlgebra_of_not_isUnit_two_of_isUnit_zigzagWordPairing
-    [Fintype G.Dart] [DecidableEq V] (h2 : ¬IsUnit (2 : k)) {m : ℕ} (hm : 1 ≤ m)
+/-- **Even-arity non-formality from a non-even word pairing.** If an anticyclic word pairing
+satisfying the signless relations evaluates to an element not in `2 k` (`¬Even (∑ w, a w * c w)`)
+on the coefficients `c` of a loop deformation of even arity `2 m + 2` (`m ≥ 1`), then the loop
+deformation is not formal. -/
+theorem not_isFormal_zigzagLoopAInfinityAlgebra_of_not_even_sum_mul
+    [Fintype G.Dart] [DecidableEq V] {m : ℕ} (hm : 1 ≤ m)
     {a : (Fin (2 * m + 2) → G.Dart) → k}
     (hrot : ∀ (u : Fin (2 * m + 1) → G.Dart) (e : G.Dart), a (Fin.snoc u e) = -a (Fin.cons e u))
     (hrel : ∀ (p : Fin (2 * m + 1)) (u : Fin (2 * m) → G.Dart) (v : V),
       ∑ d : G.Dart with d.snd = v, a (Fin.insertNth p.castSucc d (Fin.insertNth p d.symm u)) = 0)
     (c : (Fin (2 * m + 2) → G.Dart) →₀ k)
     (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd)
-    (hu : IsUnit (∑ w, a w * c w)) :
+    (hodd : ¬Even (∑ w, a w * c w)) :
     ¬(zigzagLoopAInfinityAlgebra hns c hc).IsFormal := fun hF ↦ by
   obtain ⟨y, hy⟩ := exists_zigzagWordPairing_obstruction_eq_two_mul_of_isFormal
     (isMinimal_zigzagLoopAInfinityAlgebra c hc)
@@ -162,52 +163,78 @@ theorem not_isFormal_zigzagLoopAInfinityAlgebra_of_not_isUnit_two_of_isUnit_zigz
     (zigzagLoopAInfinityAlgebra_m_two_eq_zigzagStrictAInfinityAlgebra_m_two c hc)
     (fun r hr1 hr2 ↦ zigzagLoopAInfinityAlgebra_m_eq_zero c hc (by omega) (by omega)) hF hrot hrel
   rw [zigzagWordPairing_obstruction (by omega : 1 ≤ 2 * m) a c hc] at hy
-  exact h2 (isUnit_of_dvd_unit ⟨y, hy⟩ (((Units.isUnit _).map (Int.castRingHom k)).mul hu))
+  have he := even_iff_exists_two_mul.2 ⟨y, hy⟩
+  rcases Int.units_eq_one_or (∏ i : Fin (2 * m + 2), ((2 * m + 1 - i : ℕ) : ℤ).negOnePow)
+    with hs | hs <;>
+    exact hodd (by simpa only [hs, Units.val_one, Units.val_neg, Int.cast_one, Int.cast_neg,
+      one_mul, neg_one_mul, even_neg] using he)
 
-/-- **Even-arity non-formality from an anticyclic functional when `2` is not a unit.** Let `β`
-satisfy the signless relations and let `f` be anticyclic on the `β e`. When `(2 : k)` is not a unit
-and `∑ w, f (β (w 0) ⋯ β (w (2 m + 1))) * c w` is a unit (`m ≥ 1`), the loop deformation with
+/-- **Even-arity non-formality from an anticyclic functional with non-even pairing.** Let `β`
+satisfy the signless relations and let `f` be anticyclic on the `β e`. When
+`∑ w, f (β (w 0) ⋯ β (w (2 m + 1))) * c w` is not even (`m ≥ 1`), the loop deformation with
 coefficients `c` is not formal. -/
-theorem not_isFormal_zigzagLoopAInfinityAlgebra_of_anticyclic_of_not_isUnit_two
+theorem not_isFormal_zigzagLoopAInfinityAlgebra_of_anticyclic_of_not_even
     [Fintype G.Dart] [DecidableEq V] {B : Type*} [Semiring B] [Module k B]
-    (h2 : ¬IsUnit (2 : k)) {m : ℕ} (hm : 1 ≤ m) (β : G.Dart → B)
+    {m : ℕ} (hm : 1 ≤ m) (β : G.Dart → B)
     (hβ : ∀ v : V, ∑ d : G.Dart with d.snd = v, β d * β d.symm = 0)
     (f : B →ₗ[k] k) (hf : ∀ (e : G.Dart) (y : B), f (y * β e) = -f (β e * y))
     (c : (Fin (2 * m + 2) → G.Dart) →₀ k)
     (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd)
-    (hu : IsUnit (∑ w, f (List.ofFn fun t ↦ β (w t)).prod * c w)) :
-    ¬(zigzagLoopAInfinityAlgebra hns c hc).IsFormal := fun hF ↦ by
-  obtain ⟨y, hy⟩ := exists_zigzagWordPairing_obstruction_eq_two_mul_of_anticyclic_of_isFormal
-    (m := m) (isMinimal_zigzagLoopAInfinityAlgebra c hc)
-    (zigzagLoopAInfinityAlgebra_grading_eq_zigzagStrictAInfinityAlgebra_grading c hc)
-    (zigzagLoopAInfinityAlgebra_m_two_eq_zigzagStrictAInfinityAlgebra_m_two c hc)
-    (fun r hr1 hr2 ↦ zigzagLoopAInfinityAlgebra_m_eq_zero c hc (by omega) (by omega)) hF β hβ f hf
-  rw [zigzagWordPairing_obstruction (by omega : 1 ≤ 2 * m) _ c hc] at hy
-  exact h2 (isUnit_of_dvd_unit ⟨y, hy⟩ (((Units.isUnit _).map (Int.castRingHom k)).mul hu))
+    (hodd : ¬Even (∑ w, f (List.ofFn fun t ↦ β (w t)).prod * c w)) :
+    ¬(zigzagLoopAInfinityAlgebra hns c hc).IsFormal :=
+  not_isFormal_zigzagLoopAInfinityAlgebra_of_not_even_sum_mul hm
+    (anticyclic_prod_ofFn_snoc β f hf) (sum_apply_prod_ofFn_insertNth_insertNth β hβ f)
+    c hc hodd
 
 /-- **Quartic non-formality from a balanced backtrack pairing, over any nontrivial commutative
-ring.** If a symmetric, head-preserving, balanced matrix `a` pairs the quartic obstruction of a loop
-deformation to a unit in `k`, then the loop deformation is not formal: when `2` is invertible its
-obstruction is not a Hochschild coboundary, and when `2` is not a unit its pairing cannot lie in
-`2 k`. -/
-theorem not_isFormal_zigzagLoopAInfinityAlgebra_of_isUnit_zigzagBacktrackPairing
-    [Nontrivial k] [Fintype G.Dart] {a : Matrix G.Dart G.Dart k} (ha : a.IsSymm)
+ring.** If `𝒜` is a minimal `A∞` algebra with the grading and binary operation of `𝒵` and `m₃ = 0`,
+and a symmetric, head-preserving, balanced matrix `a` pairs its quartic obstruction to a unit in
+`k`, then `𝒜` is not formal: when `2` is invertible its obstruction is not a Hochschild coboundary,
+and when `2` is not a unit its pairing cannot lie in `2 k`. -/
+theorem not_isFormal_of_isUnit_zigzagBacktrackPairing
+    [Nontrivial k] [Fintype G.Dart]
+    {𝒜 : AInfinityAlgebra k (nonisolatedZigzagQuotient k G)} (h𝒜 : 𝒜.IsMinimal)
+    (hG : 𝒜.grading = (𝒵).grading) (h₂ : 𝒜.m 2 = (𝒵).m 2) (h₃ : 𝒜.m 3 = 0)
+    {a : Matrix G.Dart G.Dart k} (ha : a.IsSymm)
     (hhead : ∀ d e, d.snd ≠ e.snd → a d e = 0) (hbal : ∀ e, ∑ d, a d e = a e.symm e.symm)
-    (c : (Fin 4 → G.Dart) →₀ k) (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd)
-    (hu : IsUnit (zigzagBacktrackPairing hns a
-      ((zigzagLoopAInfinityAlgebra hns c hc).obstruction 𝒵 ⟨4, by norm_num⟩))) :
-    ¬(zigzagLoopAInfinityAlgebra hns c hc).IsFormal := by
+    (hu : IsUnit (zigzagBacktrackPairing hns a (𝒜.obstruction 𝒵 ⟨4, by norm_num⟩))) :
+    ¬𝒜.IsFormal := by
   by_cases h2 : IsUnit (2 : k)
   · let _ := h2.invertible
-    exact not_isFormal_zigzagLoopAInfinityAlgebra c hc
-      (not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra ha hhead hbal
-        c hc (zigzagBacktrackPairing_obstruction (hns := hns) a c hc ▸ hu.ne_zero))
+    exact h𝒜.not_isFormal_of_not_exists_hochschildDifferential_eq_obstruction_four
+      isMinimal_zigzagStrictAInfinityAlgebra
+      (fun _ hn ↦ zigzagStrictAInfinityAlgebra_m_eq_zero (by omega)) hG h₂ h₃
+      fun ⟨φ, hφ, hφc⟩ ↦ hu.ne_zero
+        (hφc ▸ zigzagBacktrackPairing_hochschildDifferential_eq_zero ha hhead hbal hφ)
   · intro hF
     obtain ⟨y, hy⟩ := exists_zigzagBacktrackPairing_obstruction_eq_two_mul_of_isFormal
-      (isMinimal_zigzagLoopAInfinityAlgebra c hc)
-      (zigzagLoopAInfinityAlgebra_grading_eq_zigzagStrictAInfinityAlgebra_grading c hc)
-      (zigzagLoopAInfinityAlgebra_m_two_eq_zigzagStrictAInfinityAlgebra_m_two c hc)
-      (zigzagLoopAInfinityAlgebra_m_eq_zero c hc (by decide) (by decide)) hF ha hhead hbal
+      h𝒜 hG h₂ h₃ hF ha hhead hbal
+    exact h2 (isUnit_of_dvd_unit ⟨y, hy⟩ hu)
+
+/-- **Quartic non-formality from an anticyclic signless word pairing, over any nontrivial
+commutative ring.** If `𝒜` is a minimal `A∞` algebra with the grading and binary operation of `𝒵`
+and `m₃ = 0`, and anticyclic signless weights `a` pair its quartic obstruction to a unit in `k`,
+then `𝒜` is not formal: when `2` is invertible its obstruction is not a Hochschild coboundary, and
+when `2` is not a unit its pairing cannot lie in `2 k`. -/
+theorem not_isFormal_of_isUnit_zigzagWordPairing_four
+    [Nontrivial k] [Fintype G.Dart] [DecidableEq V]
+    {𝒜 : AInfinityAlgebra k (nonisolatedZigzagQuotient k G)} (h𝒜 : 𝒜.IsMinimal)
+    (hG : 𝒜.grading = (𝒵).grading) (h₂ : 𝒜.m 2 = (𝒵).m 2) (h₃ : 𝒜.m 3 = 0)
+    {a : (Fin 4 → G.Dart) → k}
+    (hrot : ∀ (u : Fin 3 → G.Dart) (e : G.Dart), a (Fin.snoc u e) = -a (Fin.cons e u))
+    (hrel : ∀ (p : Fin 3) (u : Fin 2 → G.Dart) (v : V),
+      ∑ d : G.Dart with d.snd = v, a (Fin.insertNth p.castSucc d (Fin.insertNth p d.symm u)) = 0)
+    (hu : IsUnit (zigzagWordPairing hns 2 a (𝒜.obstruction 𝒵 ⟨4, by norm_num⟩))) :
+    ¬𝒜.IsFormal := by
+  by_cases h2 : IsUnit (2 : k)
+  · let _ := h2.invertible
+    exact h𝒜.not_isFormal_of_not_exists_hochschildDifferential_eq_obstruction_four
+      isMinimal_zigzagStrictAInfinityAlgebra
+      (fun _ hn ↦ zigzagStrictAInfinityAlgebra_m_eq_zero (by omega)) hG h₂ h₃
+      (not_exists_hochschildDifferential_eq_of_zigzagWordPairing_ne_zero hrot hrel hu.ne_zero)
+  · intro hF
+    obtain ⟨y, hy⟩ := exists_zigzagWordPairing_obstruction_eq_two_mul_of_isFormal
+      h𝒜 hG h₂ (m := 1) (fun r hr1 hr2 ↦ (by omega : r = 3) ▸ h₃) hF hrot hrel
     exact h2 (isUnit_of_dvd_unit ⟨y, hy⟩ hu)
 
 /-- **Quartic non-formality from an anticyclic functional, over any nontrivial commutative ring.**
@@ -220,14 +247,16 @@ theorem not_isFormal_zigzagLoopAInfinityAlgebra_of_anticyclic_four
     (f : B →ₗ[k] k) (hf : ∀ (e : G.Dart) (y : B), f (y * β e) = -f (β e * y))
     (c : (Fin 4 → G.Dart) →₀ k) (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd)
     (hu : IsUnit (∑ w, f (List.ofFn fun t ↦ β (w t)).prod * c w)) :
-    ¬(zigzagLoopAInfinityAlgebra hns c hc).IsFormal := by
-  by_cases h2 : IsUnit (2 : k)
-  · let _ := h2.invertible
-    exact not_isFormal_zigzagLoopAInfinityAlgebra c hc
-      (not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_of_anticyclic
-        (n := 2) one_le_two β hβ f hf c hc hu.ne_zero)
-  · exact not_isFormal_zigzagLoopAInfinityAlgebra_of_anticyclic_of_not_isUnit_two
-      h2 (m := 1) le_rfl β hβ f hf c hc hu
+    ¬(zigzagLoopAInfinityAlgebra hns c hc).IsFormal :=
+  not_isFormal_of_isUnit_zigzagWordPairing_four
+    (isMinimal_zigzagLoopAInfinityAlgebra c hc)
+    (zigzagLoopAInfinityAlgebra_grading_eq_zigzagStrictAInfinityAlgebra_grading c hc)
+    (zigzagLoopAInfinityAlgebra_m_two_eq_zigzagStrictAInfinityAlgebra_m_two c hc)
+    (zigzagLoopAInfinityAlgebra_m_eq_zero c hc (by decide) (by decide))
+    (anticyclic_prod_ofFn_snoc β f hf) (sum_apply_prod_ofFn_insertNth_insertNth β hβ f)
+    (by
+      rw [zigzagWordPairing_obstruction (by decide : 1 ≤ 2) _ c hc]
+      exact ((Units.isUnit _).map (Int.castRingHom k)).mul hu)
 
 /-- **A non-formal loop deformation shows that the strict zigzag algebra is not intrinsically
 formal.** A loop deformation of any arity is a minimal `A∞` structure on the zigzag algebra with its
@@ -259,8 +288,12 @@ theorem not_isFormal_zigzagLoopAInfinityAlgebra_single [Nontrivial k]
   have := Fintype.ofFinite V
   obtain ⟨a, ha, hhead, hbal, h1⟩ := exists_zigzagBacktrackPairing_obstruction_single_eq_one
     (k := k) (hns := hns) hδ hv
-  exact not_isFormal_zigzagLoopAInfinityAlgebra_of_isUnit_zigzagBacktrackPairing
-    ha hhead hbal _ _ (h1.symm ▸ isUnit_one)
+  exact not_isFormal_of_isUnit_zigzagBacktrackPairing
+    (isMinimal_zigzagLoopAInfinityAlgebra _ _)
+    (zigzagLoopAInfinityAlgebra_grading_eq_zigzagStrictAInfinityAlgebra_grading _ _)
+    (zigzagLoopAInfinityAlgebra_m_two_eq_zigzagStrictAInfinityAlgebra_m_two _ _)
+    (zigzagLoopAInfinityAlgebra_m_eq_zero _ _ (by decide) (by decide))
+    ha hhead hbal (h1.symm ▸ isUnit_one)
 
 /-- **The zigzag algebra of a graph with a vertex of valency at least four is not intrinsically
 formal**, over every nontrivial commutative ring: when four distinct darts of `G` have a common
@@ -307,8 +340,12 @@ theorem not_isFormal_zigzagLoopAInfinityAlgebra_single_of_walk [Nontrivial k]
   have := Fintype.ofFinite V
   obtain ⟨a, ha, hhead, hbal, h1⟩ := exists_zigzagBacktrackPairing_obstruction_single_eq_one_of_walk
     (k := k) (hns := hns) hde hed hf₀ hdf hef hf hf' hfd hde' hd' he' hdf' hef'
-  exact not_isFormal_zigzagLoopAInfinityAlgebra_of_isUnit_zigzagBacktrackPairing
-    ha hhead hbal _ _ (h1.symm ▸ isUnit_one)
+  exact not_isFormal_of_isUnit_zigzagBacktrackPairing
+    (isMinimal_zigzagLoopAInfinityAlgebra _ _)
+    (zigzagLoopAInfinityAlgebra_grading_eq_zigzagStrictAInfinityAlgebra_grading _ _)
+    (zigzagLoopAInfinityAlgebra_m_two_eq_zigzagStrictAInfinityAlgebra_m_two _ _)
+    (zigzagLoopAInfinityAlgebra_m_eq_zero _ _ (by decide) (by decide))
+    ha hhead hbal (h1.symm ▸ isUnit_one)
 
 /-- **The zigzag algebra of a graph with two branch vertices joined by a suitable walk is not
 intrinsically formal**, over every nontrivial commutative ring. The hypotheses are those of
@@ -333,8 +370,8 @@ of `G`, each of degree at least three, are joined by a walk, then some `A∞` al
 algebra is the path-graded zigzag algebra is not formal. The detecting deformation is that of
 `TauCeti.not_isFormal_zigzagLoopAInfinityAlgebra_single_of_walk` along a path from `v` to `w`.
 Together with `TauCeti.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_four_le_degree`
-this covers every finite tree other than a path or a tree with at most one vertex of degree
-three. -/
+this covers every finite tree other than a tree of maximum degree at most three with at most one
+vertex of degree three. -/
 theorem not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_three_le_degree [Nontrivial k]
     {v w : V} [Fintype (G.neighborSet v)] [Fintype (G.neighborSet w)]
     (hvw : v ≠ w) (hr : G.Reachable v w) (hv : 3 ≤ G.degree v) (hw : 3 ≤ G.degree w) :

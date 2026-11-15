@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RepresentationTheory.Quiver.FiniteRepType.AffineSubgraph
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Affine.D.Basic
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Affine.E
-public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.Affine.Tree
 
 /-!
 # Higher Hochschild classes and non-intrinsic formality of non-Dynkin trees
@@ -19,7 +20,7 @@ isomorphic to the diagram of any valid Dynkin type (`Aₙ`, `Dₙ`, `E₆`, `E�
 contains a copy of an affine Dynkin diagram of type `Dₙ` (`n ≥ 4`), `E₆`, `E₇` or `E₈`.
 
 Combining this dichotomy with the loop deformations along affine subgraphs constructed in
-`TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.MatrixRepresentation` and
+`TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Affine.D.Basic` and
 `TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Affine.E`, this file establishes the non-ADE
 direction of Liu--Wang's intrinsic formality theorem for trees:
 
@@ -38,7 +39,7 @@ direction of Liu--Wang's intrinsic formality theorem for trees:
 ## References
 
 * Y. Liu and Z. Wang, *A-infinity deformations of zigzag algebras via Ginzburg dg algebras*,
-  https://arxiv.org/abs/2301.06757, Theorem 1.2 and Section 4.
+  https://arxiv.org/abs/2301.06757, Theorem 1.1 and Section 4.
 -/
 
 public section
@@ -102,7 +103,8 @@ private theorem exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_affineE [Nontr
   rcases hG.isContained_affineDynkinType_of_not_exists_dynkinType_iso hD with
     ⟨m, hm, ⟨f⟩⟩ | h | h | h
   · obtain ⟨w, hw, hnf⟩ :=
-      exists_not_isFormal_zigzagLoopAInfinityAlgebra_four_of_copy_D (k := k) (hns := hns) hm f
+      exists_not_isFormal_zigzagLoopAInfinityAlgebra_four_of_copy_affineD (k := k) (hns := hns)
+        hm f
     exact ⟨4, inferInstance, by simp, w, hw, hnf⟩
   · obtain ⟨f⟩ := h
     exact ⟨6, inferInstance, by simp, fun t ↦ f.toHom.mapDart (affineE6Walk t),
@@ -146,8 +148,9 @@ theorem exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_not_isUnit_two (h2 : �
 
 /-- **The zigzag algebra of a non-Dynkin tree is not intrinsically formal**, over every nontrivial
 `ℚ`-algebra: if a finite tree `G` with no isolated vertex is not isomorphic to the diagram of any
-valid Dynkin type, then some minimal `A∞` algebra whose cohomology algebra is the path-graded zigzag
-algebra of `G` is not formal. -/
+valid Dynkin type, then some `A∞` algebra whose cohomology algebra is the path-graded zigzag
+algebra of `G` is not formal (witnessed by a minimal single-walk loop deformation in
+`SimpleGraph.IsTree.exists_not_isFormal_zigzagLoopAInfinityAlgebra`). -/
 theorem not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra [Nontrivial k] [Algebra ℚ k]
     (hG : G.IsTree)
     (hD : ¬ ∃ t : DynkinType, t.Valid ∧ Nonempty (G ≃g diagramGraph t.cartanMatrix)) :

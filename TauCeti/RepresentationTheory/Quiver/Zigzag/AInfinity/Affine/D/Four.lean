@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.AffineDynkinType.Basic
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Backtrack
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.MatrixRepresentation
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.NonFormal
 
 /-!
@@ -48,9 +47,10 @@ coefficient one, is a Hochschild cocycle
 coboundary, since the centre has four distinct neighbours
 (`TauCeti.not_exists_hochschildDifferential_eq_obstruction_liuWangAffineD4Walk`); see
 `TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.HochschildClass`. In particular `HH^{4, -2}`
-of the affine `D₄` zigzag algebra is nonzero (`TauCeti.not_hochschildVanishesAt_four_affineD4`).
-Over every nontrivial commutative ring, the loop deformation of the single walk is moreover not
-formal, that is not `A∞` isomorphic to the strict zigzag algebra
+of the affine `D₄` zigzag algebra is nonzero (see `TauCeti.not_hochschildVanishesAt_four_affineD`
+in `TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Affine.D.Basic`). Over every nontrivial
+commutative ring, the loop deformation of the single walk is moreover not formal, that is not `A∞`
+isomorphic to the strict zigzag algebra
 (`TauCeti.not_isFormal_zigzagLoopAInfinityAlgebra_liuWangAffineD4Walk`), so the affine `D₄`
 zigzag algebra is not intrinsically formal (see `TauCeti.not_isIntrinsicallyFormal_affineD` in
 `TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Affine.D.Basic`).
@@ -75,9 +75,8 @@ zigzag algebra is not intrinsically formal (see `TauCeti.not_isIntrinsicallyForm
 * `TauCeti.exists_isIso_liuWangAffineD4AInfinityAlgebra` and
   `TauCeti.isFormal_liuWangAffineD4AInfinityAlgebra`: the algebra is `A∞` isomorphic to the strict
   zigzag algebra, and formal.
-* `TauCeti.not_exists_hochschildDifferential_eq_obstruction_liuWangAffineD4Walk` and
-  `TauCeti.not_hochschildVanishesAt_four_affineD4`: the loop operation of the walk alone is not a
-  Hochschild coboundary, so `HH^{4, -2}` of the affine `D₄` zigzag algebra is nonzero.
+* `TauCeti.not_exists_hochschildDifferential_eq_obstruction_liuWangAffineD4Walk`: the loop operation
+  of the walk alone is not a Hochschild coboundary.
 * `TauCeti.not_isFormal_zigzagLoopAInfinityAlgebra_liuWangAffineD4Walk`: over every nontrivial
   commutative ring, the loop deformation of the walk alone is not formal.
 
@@ -413,15 +412,6 @@ theorem not_exists_hochschildDifferential_eq_obstruction_liuWangAffineD4Walk [No
   rw [zigzagLoopAInfinityAlgebra_single_liuWangAffineD4Walk_eq]
   exact not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_single
     (by decide) (v := 1) (by decide)
-
-/-- **The quartic Hochschild cohomology `HH^{4, -2}` of the affine `D₄` zigzag algebra is
-nonzero**, over every nontrivial commutative ring: this is the case `G = D₄` of
-`TauCeti.not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra_of_isContained`. -/
-theorem not_hochschildVanishesAt_four_affineD4 [Nontrivial k] :
-    ¬(zigzagStrictAInfinityAlgebra k
-      (AffineDynkinType.exists_adj_graph (t := .D 4) (by decide))).HochschildVanishesAt
-        ⟨4, by norm_num⟩ :=
-  not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra_of_isContained le_rfl .rfl
 
 /-- **The loop operation of Liu--Wang's walk alone gives a non-formal deformation**, over every
 nontrivial commutative ring: the loop deformation with coefficient one on the single walk
