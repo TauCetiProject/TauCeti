@@ -5,33 +5,40 @@ Authors: Jon Crall, Claude Opus 5
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Resolvent
+public import TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjoint
 
 /-!
 # Maximality of self-adjoint partial operators
 
-A self-adjoint partial operator on a complex Hilbert space has no proper
-self-adjoint extension. Thus, inclusion of self-adjoint partial operators
-already implies equality.
+Taking the adjoint reverses extension order on densely defined partial linear maps
+(`LinearPMap.adjoint_antitone`). Consequently, a self-adjoint partial operator on a
+Hilbert space over an `RCLike` scalar field has no proper self-adjoint extension
+(`LinearPMap.eq_of_le_of_isSelfAdjoint`).
 
 Adapted from the Kitware DKPS formalization,
-`ForTauCeti/Analysis/InnerProductSpace/LinearPMap/SelfAdjointMaximal.lean`.
+`ForTauCeti/Analysis/InnerProductSpace/LinearPMap/SelfAdjointMaximal.lean`,
+and generalized from `ℂ` to arbitrary `RCLike` scalars.
 -/
 
 public section
 
 namespace LinearPMap
 
-variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+variable {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H]
+
+/-- Taking the adjoint reverses extension order on densely defined partial linear maps. -/
+theorem adjoint_antitone {F : Type*} [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+    {A B : H →ₗ.[𝕜] F} (hAB : A ≤ B) (hA : Dense (A.domain : Set H)) : B† ≤ A† :=
+  IsFormalAdjoint.le_adjoint hA fun x y => by
+    rw [hAB.2 (x := x) (y := ⟨x, hAB.1 x.2⟩) rfl]
+    exact (adjoint_isFormalAdjoint (hA.mono hAB.1)).symm ⟨x, hAB.1 x.2⟩ y
 
 /-- A self-adjoint partial operator cannot be properly extended to another
 self-adjoint partial operator. -/
-theorem eq_of_le_of_isSelfAdjoint {A B : H →ₗ.[ℂ] H}
-    (hA : IsSelfAdjoint A) (hB : IsSelfAdjoint B) (hAB : A ≤ B) : A = B := by
-  have hAi : Complex.I ∈ A.resolventSet :=
-    hA.mem_resolventSet_of_im_ne_zero (by simp)
-  have hBi : Complex.I ∈ B.resolventSet :=
-    hB.mem_resolventSet_of_im_ne_zero (by simp)
-  exact _root_.LinearPMap.eq_of_le_of_mem_resolventSet hAB hAi hBi
+theorem eq_of_le_of_isSelfAdjoint {A B : H →ₗ.[𝕜] H}
+    (hA : IsSelfAdjoint A) (hB : IsSelfAdjoint B) (hAB : A ≤ B) : A = B :=
+  le_antisymm hAB <| by
+    simpa [isSelfAdjoint_def.mp hA, isSelfAdjoint_def.mp hB] using
+      adjoint_antitone hAB hA.dense_domain
 
 end LinearPMap
