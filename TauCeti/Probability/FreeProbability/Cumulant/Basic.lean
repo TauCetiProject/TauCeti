@@ -88,6 +88,8 @@ traciality are never assumed. For `s = ∅` the cumulant
 * `TauCeti.partitionMoment_congr`, `TauCeti.partitionCumulant_congr` and
   `TauCeti.freeCumulant_congr` — block moments and cumulants depend only on the letters at the
   positions of `s`.
+* `TauCeti.map_partitionMoment`, `TauCeti.map_partitionCumulant` and `TauCeti.map_freeCumulant` —
+  applying a monoid or ring homomorphism pushes the functional forward.
 
 ## References
 
@@ -482,5 +484,30 @@ theorem freeCumulant_eq_of_orderIso (e : NoncrossingPartition s ≃o Noncrossing
   rw [freeCumulant_def, partitionCumulant_eq_of_orderIso φ e h, e.map_top, freeCumulant_def]
 
 end OrderIso
+
+section Map
+
+/-- Applying a monoid homomorphism to a block moment pushes the functional forward along it. -/
+theorem map_partitionMoment {S F : Type*} [CommMonoid R] [CommMonoid S] [Monoid A]
+    [FunLike F R S] [MonoidHomClass F R S] (g : F) (φ : A → R) (a : α → A) (P : Finpartition s) :
+    g (partitionMoment φ a P) = partitionMoment (g ∘ φ) a P := by
+  simp [partitionMoment_def, map_prod]
+
+/-- Applying a ring homomorphism to a partition cumulant pushes the functional forward along it. -/
+theorem map_partitionCumulant {S F : Type*} [CommRing R] [CommRing S] [Monoid A]
+    [FunLike F R S] [RingHomClass F R S] (g : F) (φ : A → R) (a : α → A)
+    (π : NoncrossingPartition s) :
+    g (partitionCumulant φ a π) = partitionCumulant (g ∘ φ) a π := by
+  refine congrFun (eq_partitionCumulant_of_forall_sum_Iic (g ∘ φ) a
+    (fun σ => g (partitionCumulant φ a σ)) fun σ => ?_) π
+  rw [← map_sum, sum_Iic_partitionCumulant, map_partitionMoment]
+
+/-- Applying a ring homomorphism to a free cumulant pushes the functional forward along it. -/
+theorem map_freeCumulant {S F : Type*} [CommRing R] [CommRing S] [Monoid A]
+    [FunLike F R S] [RingHomClass F R S] (g : F) (φ : A → R) (a : α → A) (s : Finset α) :
+    g (freeCumulant φ a s) = freeCumulant (g ∘ φ) a s := by
+  rw [freeCumulant_def, freeCumulant_def, map_partitionCumulant]
+
+end Map
 
 end TauCeti

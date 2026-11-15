@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.StarAlgebra.GNS.Bounded
 public import TauCeti.Probability.FreeProbability.FreeProduct.Positive
+import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
 
 /-!
 # The reduced C⋆-free product associated to states
@@ -18,7 +19,8 @@ preserve the prescribed states and are freely independent for the vacuum state, 
 cyclic orbit is dense.
 
 The construction allows nonfaithful factor states. In particular, no faithfulness of the
-vacuum state or injectivity of the factor maps is asserted here.
+vacuum state or injectivity of the factor maps is asserted here. When every factor state is
+tracial, the vacuum state is tracial on the reduced product (`state_mul_comm`).
 
 ## References
 
@@ -51,19 +53,20 @@ theorem continuous_leftMul (ψ : StarPositiveFunctional (LinearAlgebra.FreeProdu
 
 variable (φ : ∀ i, StarPositiveFunctional (A i)) (hφ : ∀ i, φ i 1 = 1)
 
-/-- The completed GNS Hilbert space of the algebraic free-product state. -/
-abbrev HilbertSpace := (freeProductPositiveFunctional φ hφ).HilbertGNS
+/-- The completed GNS Hilbert space of the algebraic free-product state. Defined as a
+semireducible `def` rather than `abbrev` so typeclass search on bounded operators never unfolds the
+algebraic free-product GNS quotient. -/
+@[expose]
+def HilbertSpace : Type _ := (freeProductPositiveFunctional φ hφ).HilbertGNS
 
--- Fix the operator carrier before invoking the general topological instances: inferring
--- it from their topology projections otherwise unfolds the algebraic GNS quotient.
-private instance : IsTopologicalRing (HilbertSpace φ hφ →L[ℂ] HilbertSpace φ hφ) :=
-  NonUnitalSeminormedRing.toIsTopologicalRing
-    (α := HilbertSpace φ hφ →L[ℂ] HilbertSpace φ hφ)
+instance : NormedAddCommGroup (HilbertSpace φ hφ) :=
+  inferInstanceAs (NormedAddCommGroup (freeProductPositiveFunctional φ hφ).HilbertGNS)
 
-private instance : ContinuousStar (HilbertSpace φ hφ →L[ℂ] HilbertSpace φ hφ) :=
-  ⟨(ContinuousLinearMap.adjoint :
-    (HilbertSpace φ hφ →L[ℂ] HilbertSpace φ hφ) ≃ₗᵢ⋆[ℂ]
-      (HilbertSpace φ hφ →L[ℂ] HilbertSpace φ hφ)).continuous⟩
+instance : InnerProductSpace ℂ (HilbertSpace φ hφ) :=
+  inferInstanceAs (InnerProductSpace ℂ (freeProductPositiveFunctional φ hφ).HilbertGNS)
+
+instance : CompleteSpace (HilbertSpace φ hφ) :=
+  inferInstanceAs (CompleteSpace (freeProductPositiveFunctional φ hφ).HilbertGNS)
 
 /-- The bounded left regular representation of the algebraic free product. -/
 def representation : LinearAlgebra.FreeProduct ℂ A →⋆ₐ[ℂ]
@@ -111,6 +114,22 @@ instance isClosed_algebra : IsClosed (algebra φ hφ : Set
 /-- The reduced algebra is complete in its inherited operator-norm uniformity. -/
 instance completeSpace : CompleteSpace (algebra φ hφ) :=
   (isClosed_algebra φ hφ).completeSpace_coe
+
+/-- Any closed complex star-closed subalgebraic subtype of `H →L[ℂ] H` inherits `StarOrderedRing`
+from the ambient C⋆-algebra. -/
+theorem starOrderedRing_subtype {H S : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
+    [CompleteSpace H] [SetLike S (H →L[ℂ] H)] [SubringClass S (H →L[ℂ] H)]
+    [SMulMemClass S ℂ (H →L[ℂ] H)] [StarMemClass S (H →L[ℂ] H)] (s : S)
+    [IsClosed (s : Set (H →L[ℂ] H))] : StarOrderedRing s := by
+  -- Mathlib records `StarModule ℂ` on `H →L[ℂ] H`; real scalars act through `ℂ`.
+  have : StarModule ℝ (H →L[ℂ] H) := ⟨fun r a => by
+    simp only [RCLike.real_smul_eq_coe_smul (K := ℂ), star_smul, RCLike.star_def,
+      RCLike.conj_ofReal, star_trivial]⟩
+  exact Subtype.starOrderedRing (𝕜 := ℂ) s
+
+/-- The reduced C⋆-free product is a `StarOrderedRing` under the inherited operator order. -/
+instance isStarOrderedRing_algebra : StarOrderedRing (algebra φ hφ) :=
+  starOrderedRing_subtype (algebra φ hφ)
 
 /-- Membership in the reduced algebra is membership in the closure of the represented range. -/
 theorem mem_algebra_iff (T : HilbertSpace φ hφ →L[ℂ] HilbertSpace φ hφ) :
@@ -189,7 +208,7 @@ def state : algebra φ hφ →ₚ[ℂ] ℂ :=
 theorem state_apply (T : algebra φ hφ) :
     state φ hφ T = ⟪vacuum φ hφ, (T : HilbertSpace φ hφ →L[ℂ] HilbertSpace φ hφ)
       (vacuum φ hφ)⟫_ℂ := by
-  exact (freeProductPositiveFunctional φ hφ).hilbertPositiveLinearMap_apply T
+  exact (freeProductPositiveFunctional φ hφ).hilbertPositiveLinearMap_apply T.1
 
 @[simp]
 theorem state_ofAlgebraic (a : LinearAlgebra.FreeProduct ℂ A) :
@@ -229,6 +248,40 @@ theorem denseRange_algebra_vacuum :
   apply (denseRange_representation_vacuum φ hφ).mono
   rintro _ ⟨a, rfl⟩
   exact ⟨ofAlgebraic φ hφ a, by simp only [coe_ofAlgebraic]⟩
+
+/-- The vacuum state is continuous on the reduced C⋆-free product. -/
+theorem continuous_state : Continuous (state φ hφ) := by
+  have h : (state φ hφ : algebra φ hφ → ℂ) = fun T : algebra φ hφ =>
+      ⟪vacuum φ hφ, (T : HilbertSpace φ hφ →L[ℂ] HilbertSpace φ hφ) (vacuum φ hφ)⟫_ℂ :=
+    funext (state_apply φ hφ)
+  rw [h]
+  exact continuous_const.inner ((ContinuousLinearMap.apply ℂ _ (vacuum φ hφ)).continuous.comp
+    continuous_subtype_val)
+
+/-- If each prescribed factor state is tracial, the vacuum state on the reduced C⋆-free product
+is tracial. -/
+theorem state_mul_comm (htr : ∀ i (a b : A i), φ i (a * b) = φ i (b * a))
+    (u v : algebra φ hφ) : state φ hφ (u * v) = state φ hφ (v * u) := by
+  have halg (x y : LinearAlgebra.FreeProduct ℂ A) :
+      state φ hφ (ofAlgebraic φ hφ x * ofAlgebraic φ hφ y) =
+        state φ hφ (ofAlgebraic φ hφ y * ofAlgebraic φ hφ x) :=
+    (congrArg (state φ hφ) (Subtype.ext (map_mul (representation φ hφ) x y)).symm).trans <|
+      (state_ofAlgebraic φ hφ (x * y)).trans <|
+      (freeProductPositiveFunctional_apply φ hφ (x * y)).trans <|
+      (freeProductExpectation_mul_comm _ hφ htr x y).trans <|
+      (freeProductPositiveFunctional_apply φ hφ (y * x)).symm.trans <|
+      (state_ofAlgebraic φ hφ (y * x)).symm.trans <|
+      congrArg (state φ hφ) (Subtype.ext (map_mul (representation φ hφ) y x))
+  have hleft (x : LinearAlgebra.FreeProduct ℂ A) :
+      state φ hφ (ofAlgebraic φ hφ x * v) = state φ hφ (v * ofAlgebraic φ hφ x) := by
+    refine congrFun ((denseRange_ofAlgebraic φ hφ).equalizer
+      ((continuous_state φ hφ).comp (continuous_const.mul continuous_id))
+      ((continuous_state φ hφ).comp (continuous_id.mul continuous_const)) ?_) v
+    exact funext (halg x)
+  refine congrFun ((denseRange_ofAlgebraic φ hφ).equalizer
+    ((continuous_state φ hφ).comp (continuous_id.mul continuous_const))
+    ((continuous_state φ hφ).comp (continuous_const.mul continuous_id)) ?_) u
+  exact funext hleft
 
 end ReducedFreeProduct
 end TauCeti

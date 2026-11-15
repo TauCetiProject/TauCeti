@@ -9,6 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 public import Mathlib.Analysis.CStarAlgebra.ContinuousMap
 public import Mathlib.Analysis.CStarAlgebra.PositiveLinearMap
 public import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
+public import Mathlib.MeasureTheory.Measure.Support
 public import Mathlib.Topology.ContinuousMap.ContinuousSqrt
 public import TauCeti.MeasureTheory.Integral.ContinuousMap
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
@@ -47,17 +48,22 @@ probability measures on `ℝ`.
 * `PositiveLinearMap.ofReal_integral_law`: `∫ f dμ_a = φ (cfc f a)`.
 * `PositiveLinearMap.eq_law_iff`: `μ_a` is the only finite measure on `ℝ` with this property for
   continuous `f`.
-* `PositiveLinearMap.law_compl_spectrum`: `μ_a` is concentrated on `spectrum ℝ a`.
+* `PositiveLinearMap.law_compl_spectrum`, `PositiveLinearMap.support_law_subset_spectrum`,
+  `PositiveLinearMap.isCompact_support_law`: `μ_a` is concentrated on `spectrum ℝ a`, so its
+  topological support is compact and contained in `spectrum ℝ a`.
 * `PositiveLinearMap.integrable_law`: every `f` continuous on `spectrum ℝ a` is `μ_a`-integrable.
 * `PositiveLinearMap.isProbabilityMeasure_law`: `μ_a` is a probability measure when `φ 1 = 1`.
 * `PositiveLinearMap.ofReal_integral_pow_law`: the moments of `μ_a` are `φ (a ^ n)`.
 * `PositiveLinearMap.law_cfc`, `PositiveLinearMap.law_aeval`,
-  `PositiveLinearMap.law_smul_add_algebraMap`: the law of `g(a)`, of `p(a)` for a real
-  polynomial `p`, and of `r • a + c` is the pushforward of `μ_a` along `g`, `p` and `x ↦ r x + c`.
+  `PositiveLinearMap.law_smul_add_algebraMap`, `PositiveLinearMap.law_algebraMap`,
+  `PositiveLinearMap.law_zero`: the law of `g(a)`, of `p(a)` for a real polynomial `p`, and of
+  `r • a + c` is the pushforward of `μ_a` along `g`, `p` and `x ↦ r x + c`, with scalar laws equal
+  to point masses when `φ 1 = 1`.
 * `PositiveLinearMap.eq_law_iff_forall_integral_pow`: a compactly supported finite measure is
   `μ_a` exactly when its moments are the `φ (a ^ n)`.
-* `PositiveLinearMap.law_eq_law_iff_forall_apply_pow`: two selfadjoint elements have the same law
-  exactly when they have the same moments.
+* `PositiveLinearMap.law_eq_law_iff_forall_apply_pow` and `PositiveLinearMap.law_map_starAlgHom`:
+  two selfadjoint elements have the same law exactly when they have the same moments; in
+  particular, unital star-algebra homomorphisms intertwining positive functionals preserve laws.
 * `PositiveLinearMap.law_integralPositiveLinearMap_realToRCLike`: in `C(X, ℂ)` for a compact
   space `X`, the law of a real function `g` with respect to integration against `ν` is the
   pushforward of `ν` along `g`.
@@ -161,6 +167,15 @@ theorem law_compl_spectrum (a : A) : law φ a (spectrum ℝ a)ᶜ = 0 := by
 theorem restrict_spectrum_law (a : A) : (law φ a).restrict (spectrum ℝ a) = law φ a :=
   Measure.restrict_eq_self_of_ae_mem (ae_iff.mpr (law_compl_spectrum φ a))
 
+/-- The topological support of the law `μ_a` is contained in `spectrum ℝ a`. -/
+theorem support_law_subset_spectrum (a : A) : (law φ a).support ⊆ spectrum ℝ a :=
+  Measure.support_subset_of_isClosed (spectrum.isClosed a) (ae_iff.mpr (law_compl_spectrum φ a))
+
+/-- The topological support of the law `μ_a` is compact. -/
+theorem isCompact_support_law (a : A) : IsCompact (law φ a).support :=
+  (ContinuousFunctionalCalculus.isCompact_spectrum a).of_isClosed_subset Measure.isClosed_support
+    (support_law_subset_spectrum φ a)
+
 /-- Every function continuous on the spectrum of `a` is integrable against the law `μ_a`. -/
 theorem integrable_law (a : A) (f : ℝ → ℝ)
     (hf : ContinuousOn f (spectrum ℝ a) := by cfc_cont_tac) : Integrable f (law φ a) := by
@@ -254,6 +269,16 @@ theorem law_smul_add_algebraMap (ha : IsSelfAdjoint a) (r c : ℝ) :
     law φ (r • a + algebraMap ℝ A c) = (law φ a).map (fun x ↦ r * x + c) := by
   rw [← cfc_const_mul_id r a, ← cfc_add_const c _ a, law_cfc φ ha (fun x ↦ r * x + c)]
 
+/-- With respect to a state, the law of a real scalar `c • 1` is the point mass at `c`. -/
+theorem law_algebraMap (hφ : φ 1 = 1) (c : ℝ) :
+    law φ (algebraMap ℝ A c) = Measure.dirac c := by
+  have : IsProbabilityMeasure (law φ (0 : A)) := isProbabilityMeasure_law φ hφ (.zero A)
+  simpa using law_smul_add_algebraMap φ (a := (0 : A)) (.zero A) 0 c
+
+/-- With respect to a state, the law of `0` is the point mass at `0`. -/
+theorem law_zero (hφ : φ 1 = 1) : law φ (0 : A) = Measure.dirac 0 := by
+  simpa using law_algebraMap φ hφ 0
+
 /-! ### Moment determinacy -/
 
 variable {φ} in
@@ -284,6 +309,14 @@ theorem law_eq_law_iff_forall_apply_pow {B : Type*} [CStarAlgebra B] [PartialOrd
   rw [eq_law_iff_forall_integral_pow hb (ContinuousFunctionalCalculus.isCompact_spectrum a)
     (law_compl_spectrum φ a)]
   simp_rw [ofReal_integral_pow_law φ ha]
+
+/-- A unital star-algebra homomorphism that intertwines two positive functionals preserves the law
+of every selfadjoint element. -/
+theorem law_map_starAlgHom {B F : Type*} [CStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
+    [FunLike F A B] [AlgHomClass F ℂ A B] [StarHomClass F A B] (ψ : B →ₚ[ℂ] ℂ) (π : F)
+    (hπ : ∀ x, ψ (π x) = φ x) (ha : IsSelfAdjoint a) :
+    law ψ (π a) = law φ a :=
+  (law_eq_law_iff_forall_apply_pow ψ φ (ha.map π) ha).2 fun n ↦ by rw [← map_pow, hπ]
 
 /-! ### Realization of compactly supported measures -/
 

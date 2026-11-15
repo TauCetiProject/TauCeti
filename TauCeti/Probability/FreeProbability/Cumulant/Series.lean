@@ -55,7 +55,10 @@ and the moment series determine each other.
   `TauCeti.freeCumulantSeries_eq_subst_substInvOfIsUnit` — the free cumulant series is the only
   solution of `C(z M(z)) = M(z)`, namely `C = M ∘ (z M)⁻¹`.
 * `TauCeti.freeCumulantSeries_congr` — equal moment series give equal free cumulant series, and
-  `TauCeti.freeCumulantSeries_eq_iff_momentSeries_eq` — conversely for normalised functionals.
+  `TauCeti.freeCumulantSeries_eq_iff_momentSeries_eq`, `TauCeti.rSeries_eq_iff_momentSeries_eq` —
+  conversely for normalised functionals.
+* `TauCeti.map_momentSeries`, `TauCeti.map_freeCumulantSeries` and `TauCeti.map_rSeries` —
+  mapping coefficients along a ring homomorphism pushes the functional forward.
 * `TauCeti.IsFreelyIndependent.rSeries_sum` and `TauCeti.IsFreelyIndependent.rSeries_add` — the
   R-series is additive on elements of freely independent subalgebras, with the element versions
   `TauCeti.IsFreelyIndependentElements.rSeries_sum` and
@@ -268,7 +271,45 @@ theorem freeCumulantSeries_eq_iff_momentSeries_eq (hφ : φ 1 = 1) {B : Type*} [
   rw [card_univ, Fintype.card_fin] at ha hb
   rw [coeff_momentSeries, coeff_momentSeries, ha, hb, h]
 
+/-- For normalised functionals, two elements have the same moment series exactly when they have the
+same R-series. -/
+theorem rSeries_eq_iff_momentSeries_eq (hφ : φ 1 = 1) {B : Type*} [Monoid B]
+    {ψ : B → R} {b : B} (hψ : ψ 1 = 1) :
+    rSeries φ a = rSeries ψ b ↔ momentSeries φ a = momentSeries ψ b := by
+  rw [← freeCumulantSeries_eq_iff_momentSeries_eq a hφ hψ]
+  refine ⟨fun h => ?_, fun h => ?_⟩
+  · rw [freeCumulantSeries_eq_one_add_X_mul_rSeries, freeCumulantSeries_eq_one_add_X_mul_rSeries, h]
+  · ext n
+    rw [← coeff_succ_freeCumulantSeries, ← coeff_succ_freeCumulantSeries, h]
+
 end Monoid
+
+section Map
+
+variable {S : Type*}
+
+/-- Mapping the coefficients of a moment series along a ring homomorphism pushes the functional
+forward along it. -/
+theorem map_momentSeries [Semiring S] [Monoid A] (g : R →+* S) (φ : A → R) (a : A) :
+    (momentSeries φ a).map g = momentSeries (g ∘ φ) a := by
+  ext n
+  simp
+
+/-- Mapping the coefficients of a free cumulant series along a ring homomorphism pushes the
+functional forward along it. -/
+theorem map_freeCumulantSeries [CommRing S] [Monoid A] (g : R →+* S) (φ : A → R) (a : A) :
+    (freeCumulantSeries φ a).map g = freeCumulantSeries (g ∘ φ) a := by
+  ext n
+  simp [map_freeCumulant]
+
+/-- Mapping the coefficients of an R-series along a ring homomorphism pushes the functional
+forward along it. -/
+theorem map_rSeries [CommRing S] [Monoid A] (g : R →+* S) (φ : A → R) (a : A) :
+    (rSeries φ a).map g = rSeries (g ∘ φ) a := by
+  ext n
+  simp [map_freeCumulant]
+
+end Map
 
 section Algebra
 
