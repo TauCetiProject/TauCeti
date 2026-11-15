@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Character
+public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.OfSquarefree
 import Mathlib.Tactic.NormNum.LegendreSymbol
 
 /-!
@@ -15,6 +16,10 @@ The primitive character `fundamentalDiscriminantChar D hD` is the Kronecker char
 `TauCeti.kroneckerChar` of `D`. At an odd natural number `n` its value is `jacobiSym D n`, including
 zero when `n` is not coprime to `D`. At even arguments the Jacobi symbol need not agree with the
 character.
+
+Since `fundamentalDiscriminant d` differs from `d` by `1` or `2²`, the Kronecker, Jacobi and
+Legendre symbols at odd arguments (and at odd primes) take the same value at
+`fundamentalDiscriminant d` and at `d`, including `0` at ramified odd primes.
 
 This file also identifies the characters of prime discriminants, including `-4`, `-3`, `8`,
 and `-8`, and proves multiplicativity in coprime fundamental discriminants.
@@ -33,6 +38,49 @@ theorem fundamentalDiscriminantChar_natCast_eq_jacobiSym {D : ℤ}
     (hD : Int.IsFundamentalDiscr D) {n : ℕ} (hn : Odd n) :
     fundamentalDiscriminantChar D hD (n : ℤ) = jacobiSym D n := by
   rw [fundamentalDiscriminantChar_intCast, kroneckerSym_eq_jacobiSym D hn]
+
+/-- At an odd integer `b`, `fundamentalDiscriminant d` and `d` have the same Kronecker symbol,
+since they differ by `1²` or `2²`, both coprime to `b`. -/
+theorem kroneckerSym_fundamentalDiscriminant (d : ℤ) {b : ℤ} (hb : Odd b) :
+    kroneckerSym (fundamentalDiscriminant d) b = kroneckerSym d b := by
+  obtain ⟨c, hc, hcd⟩ := exists_sq_mul_eq_fundamentalDiscriminant d
+  have hc0 : c ≠ 0 := by rcases hc with rfl | rfl <;> norm_num
+  have hcb : c.gcd b = 1 := by
+    rcases hc with rfl | rfl
+    · exact Int.gcd_one_left b
+    · exact Int.isCoprime_iff_gcd_eq_one.mp hb.isCoprime_two.symm
+  rw [← hcd, mul_comm, kroneckerSym_mul_sq hc0 hcb]
+
+/-- At an odd natural number `n`, `fundamentalDiscriminant d` and `d` have the same Jacobi symbol,
+including `0` when `n` shares an odd prime factor with `d`. -/
+theorem jacobiSym_fundamentalDiscriminant (d : ℤ) {n : ℕ} (hn : Odd n) :
+    jacobiSym (fundamentalDiscriminant d) n = jacobiSym d n := by
+  have hn' : Odd (n : ℤ) := by obtain ⟨k, rfl⟩ := hn; exact ⟨k, by push_cast; ring⟩
+  rw [← kroneckerSym_eq_jacobiSym _ hn, ← kroneckerSym_eq_jacobiSym _ hn,
+    kroneckerSym_fundamentalDiscriminant d hn']
+
+/-- At an odd prime `p`, `fundamentalDiscriminant d` and `d` have the same Legendre symbol,
+including `0` when `p` divides `d`. -/
+theorem legendreSym_fundamentalDiscriminant (d : ℤ) {p : ℕ} [Fact p.Prime] (hp : p ≠ 2) :
+    legendreSym p (fundamentalDiscriminant d) = legendreSym p d := by
+  rw [jacobiSym.legendreSym.to_jacobiSym, jacobiSym.legendreSym.to_jacobiSym,
+    jacobiSym_fundamentalDiscriminant d ((Fact.out : p.Prime).odd_of_ne_two hp)]
+
+/-- At an odd natural number `n`, the character of `fundamentalDiscriminant d` is the Jacobi
+symbol `jacobiSym d n`. -/
+theorem fundamentalDiscriminantChar_fundamentalDiscriminant_natCast_eq_jacobiSym {d : ℤ}
+    (hD : Int.IsFundamentalDiscr (fundamentalDiscriminant d)) {n : ℕ} (hn : Odd n) :
+    fundamentalDiscriminantChar (fundamentalDiscriminant d) hD (n : ℤ) = jacobiSym d n := by
+  rw [fundamentalDiscriminantChar_natCast_eq_jacobiSym hD hn,
+    jacobiSym_fundamentalDiscriminant d hn]
+
+/-- At an odd prime `p`, the character of `fundamentalDiscriminant d` is the Legendre symbol
+`legendreSym p d`, including `0` when `p ∣ d`. -/
+theorem fundamentalDiscriminantChar_fundamentalDiscriminant_natCast_eq_legendreSym {d : ℤ}
+    (hD : Int.IsFundamentalDiscr (fundamentalDiscriminant d)) {p : ℕ} [Fact p.Prime] (hp : p ≠ 2) :
+    fundamentalDiscriminantChar (fundamentalDiscriminant d) hD (p : ℤ) = legendreSym p d := by
+  rw [fundamentalDiscriminantChar_natCast_eq_legendreSym hD hp,
+    legendreSym_fundamentalDiscriminant d hp]
 
 -- Simplify these integer evaluations before reducing their casts.
 /-- A prime discriminant gives its previously defined prime-discriminant character. -/

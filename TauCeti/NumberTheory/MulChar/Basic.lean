@@ -36,8 +36,9 @@ Pushing a character along an injective ring homomorphism of the coefficients pre
 (`MulChar.orderOf_ringHomComp`).
 
 A quadratic character takes the value `1` or `-1` at every unit
-(`MulChar.IsQuadratic.apply_eq_one_or_eq_neg_one`). Quadratic characters are closed under
-multiplication (`MulChar.IsQuadratic.mul`), and hence a
+(`MulChar.IsQuadratic.apply_eq_one_or_eq_neg_one`), so when `2 = 0` in the coefficient ring every
+quadratic character is `1` (`MulChar.IsQuadratic.eq_one_of_two_eq_zero`). Quadratic characters are
+closed under multiplication (`MulChar.IsQuadratic.mul`), and hence a
 finite product of quadratic characters is quadratic (`MulChar.isQuadratic_prod`).
 -/
 
@@ -99,6 +100,17 @@ theorem IsQuadratic.apply_eq_one_or_eq_neg_one {M R : Type*} [CommMonoid M] [Com
   · exact Or.inl (h.trans (isUnit_zero_iff.mp (h ▸ ha.map χ)))
   · exact Or.inl h
   · exact Or.inr h
+
+/-- Over a ring in which `2 = 0`, every quadratic multiplicative character is `1`, since `-1 = 1`
+leaves `1` as the only unit value in `{0, 1, -1}`. -/
+theorem IsQuadratic.eq_one_of_two_eq_zero {M R : Type*} [CommMonoid M] [CommRing R]
+    {χ : MulChar M R} (hχ : χ.IsQuadratic) (h2 : (2 : R) = 0) : χ = 1 := by
+  refine ext fun u ↦ ?_
+  rw [one_apply u.isUnit]
+  rcases hχ.apply_eq_one_or_eq_neg_one u.isUnit with h | h
+  · exact h
+  · rw [h]
+    exact neg_eq_iff_add_eq_zero.mpr (one_add_one_eq_two.trans h2)
 
 /-- The product of two quadratic characters is quadratic. -/
 theorem IsQuadratic.mul {M R : Type*} [CommMonoid M] [CommRing R] {χ ψ : MulChar M R}

@@ -14,8 +14,9 @@ public import TauCeti.NumberTheory.MulChar.Basic
 # Quadratic Dirichlet characters under level changes and products, and at a prime level
 
 Being quadratic is preserved by lifting a Dirichlet character to a multiple of its level, and
-reflected by it when the target level is nonzero. Together with the fact that a product of
-quadratic multiplicative characters is quadratic (`MulChar.IsQuadratic.mul`, in
+reflected by it when the target level is nonzero; consequently a character of any level is
+quadratic if and only if its primitive character is quadratic. Together with the fact that a
+product of quadratic multiplicative characters is quadratic (`MulChar.IsQuadratic.mul`, in
 `TauCeti.NumberTheory.MulChar.Basic`), this shows that the product `χ.mul ψ` of characters of
 different levels, taken at their common level, is quadratic.
 
@@ -35,6 +36,9 @@ have absolute value one.
   level leaves it quadratic.
 * `DirichletCharacter.isQuadratic_changeLevel_iff`: at a nonzero target level, a lifted
   character is quadratic exactly when the original character is quadratic.
+* `MulChar.IsQuadratic.primitiveCharacter`,
+  `DirichletCharacter.isQuadratic_primitiveCharacter_iff`: a Dirichlet character of any level is
+  quadratic if and only if its primitive character is quadratic.
 * `DirichletCharacter.isQuadratic_mul`: the common-level product of two quadratic characters is
   quadratic.
 * `DirichletCharacter.isQuadratic_iff_eq_one_or_eq_quadraticChar`: at a prime level, the quadratic
@@ -79,6 +83,29 @@ theorem isQuadratic_changeLevel_iff {R : Type*} [CommRing R]
     rw [← ha.unit_spec, ← hu, ZMod.unitsMap_val]
     exact hv
   · exact Or.inl (MulChar.map_nonunit χ ha)
+
+/-- The primitive character of a quadratic Dirichlet character is quadratic, at every level
+including `0`. -/
+theorem _root_.MulChar.IsQuadratic.primitiveCharacter {R : Type*} [CommRing R]
+    {n : ℕ} {χ : DirichletCharacter R n} (hχ : χ.IsQuadratic) :
+    χ.primitiveCharacter.IsQuadratic := by
+  rcases eq_zero_or_neZero n with rfl | _
+  · have aux : ∀ {d : ℕ}, d = 0 → ∀ (h0 : d ∣ 0) (ψ : DirichletCharacter R d),
+        (changeLevel h0 ψ).IsQuadratic → ψ.IsQuadratic := by
+      rintro _ rfl h0 ψ hψ
+      rwa [changeLevel_self] at hψ
+    exact aux (conductor_eq_zero_iff_level_eq_zero.mpr rfl) χ.conductor_dvd_level
+      χ.primitiveCharacter (by rwa [changeLevel_primitiveCharacter])
+  · exact (isQuadratic_changeLevel_iff χ.conductor_dvd_level).mp
+      (by rwa [changeLevel_primitiveCharacter])
+
+/-- A Dirichlet character is quadratic if and only if its primitive character is quadratic. -/
+@[simp]
+theorem isQuadratic_primitiveCharacter_iff {R : Type*} [CommRing R]
+    {n : ℕ} (χ : DirichletCharacter R n) :
+    χ.primitiveCharacter.IsQuadratic ↔ χ.IsQuadratic :=
+  ⟨fun h ↦ χ.changeLevel_primitiveCharacter ▸ h.changeLevel χ.conductor_dvd_level,
+    MulChar.IsQuadratic.primitiveCharacter⟩
 
 /-- The product of two quadratic characters, taken at the least common multiple of their levels,
 is quadratic. -/

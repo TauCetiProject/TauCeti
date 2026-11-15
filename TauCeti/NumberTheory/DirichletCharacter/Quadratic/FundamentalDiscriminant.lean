@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.DirichletCharacter.LocalFactor
+public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.OfSquarefree
 public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Realization
 public import TauCeti.NumberTheory.Multiquadratic.Prime.Discriminants
 import TauCeti.NumberTheory.DirichletCharacter.Basic
@@ -15,35 +16,61 @@ import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Basic
 import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Values
 
 /-!
-# Primitive quadratic characters are Kronecker characters
+# The primitive discriminant of a quadratic Dirichlet character
 
-A primitive quadratic Dirichlet character `χ` of level `N ≠ 0` is the character of a fundamental
-discriminant: there is a fundamental discriminant `D` with `|D| = N` such that
-`χ n = fundamentalDiscriminantCharCast R D n` at every integer `n`, the left side read modulo `N`
-and the right side modulo `|D|`. When `2 ≠ 0` in the coefficient ring, `D` is `N` if `χ (-1) = 1`
-and `-N` otherwise. The principal character is included: it is primitive only at level `1`, where
-`D = 1`.
+Every quadratic Dirichlet character `χ` of nonzero level `N` over a commutative ring `R` agrees,
+at all integers coprime to `N`, with the scalar realization `fundamentalDiscriminantCharCast R D hD`
+of a unique fundamental discriminant `D` of absolute value `χ.conductor`
+(`DirichletCharacter.existsUnique_isFundamentalDiscr_apply_eq`). Explicitly, `D` is `χ.conductor`
+when `χ (-1) = 1` and `-χ.conductor` otherwise
+(`MulChar.IsQuadratic.isFundamentalDiscr_ite_conductor`,
+`MulChar.IsQuadratic.apply_eq_fundamentalDiscriminantCharCast_ite_conductor`). The principal
+character at any nonzero level corresponds to `D = 1`, and when `2 = 0` in `R` every quadratic
+character is principal so `D = 1` still holds without any characteristic assumption on `R`.
 
-The proof is local. At a prime power `p ^ k`, `k ≠ 0`, a primitive quadratic character is the
-Legendre character modulo `p` (so `k = 1`) when `p` is odd, and `χ₄`, `χ₈` or `χ₈'` (so `k = 2`
-or `k = 3`) when `p = 2`; in each case it is the character of a prime discriminant `p*`, `-4`, `8`
-or `-8` of absolute value `p ^ k`. The local factors of a primitive character are primitive, and
-the character of a product of prime discriminants at distinct primes is the product of their
-characters, so `D` is the product of the prime discriminants of the local factors.
+When `χ` is primitive (`χ.conductor = N`), the agreement holds at *all* integers, not only those
+coprime to `N` (`DirichletCharacter.IsPrimitive.exists_isFundamentalDiscr_apply_eq`,
+`DirichletCharacter.IsPrimitive.apply_eq_fundamentalDiscriminantCharCast_ite`). That primitive case
+is proved locally: at a prime power `p ^ k`, `k ≠ 0`, a primitive quadratic character is the
+Legendre character modulo `p` (`k = 1`, `P = p*`) for odd `p`, and `χ₄`, `χ₈` or `χ₈'` (`k = 2` or
+`3`, `P = -4`, `8` or `-8`) for `p = 2`, and `D` is the product of the prime discriminants of the
+local factors of `χ`. The general-level theorem then passes to `χ.primitiveCharacter`, which has
+the same conductor, quadraticity and value at `-1` as `χ`, and agrees with `χ` on integers coprime
+to `N`.
 
-The results hold for characters with values in any commutative ring.
+Writing `D = fundamentalDiscriminant d` for the unique squarefree radicand `d` of `D` (`d = D` when
+`D ≡ 1 (mod 4)` and `d = D / 4` otherwise), the character `χ_D` takes at every odd prime `p` the
+common value `legendreSym p D = legendreSym p d` (including `0` when `p ∣ D`), and `χ p` takes that
+value whenever `p ∤ N`. In particular, when `2 ≠ 0` in `R`, a value `χ p = -1` at an odd prime `p`
+implies that neither `D` nor `d` is a square modulo `p`.
 
 ## Main results
 
-* `DirichletCharacter.IsPrimitive.exists_isPrimeDiscriminant_apply_eq`: a primitive quadratic
-  character of level `p ^ k`, `k ≠ 0`, is the character of a prime discriminant of absolute
-  value `p ^ k`.
-* `DirichletCharacter.IsPrimitive.exists_isFundamentalDiscr_apply_eq`: a primitive quadratic
-  character of level `N ≠ 0` is the character of a fundamental discriminant of absolute
-  value `N`.
+* `DirichletCharacter.IsPrimitive.exists_isPrimeDiscriminant_apply_eq`,
+  `DirichletCharacter.IsPrimitive.exists_isFundamentalDiscr_apply_eq`,
+  `DirichletCharacter.IsPrimitive.existsUnique_isFundamentalDiscr_apply_eq`: primitive quadratic
+  characters of level `N ≠ 0` are Kronecker characters of a unique fundamental discriminant of
+  absolute value `N`.
 * `DirichletCharacter.IsPrimitive.isFundamentalDiscr_ite`,
-  `DirichletCharacter.IsPrimitive.apply_eq_fundamentalDiscriminantCharCast_ite`: when `2 ≠ 0`,
-  that fundamental discriminant is `χ (-1) N`.
+  `DirichletCharacter.IsPrimitive.apply_eq_fundamentalDiscriminantCharCast_ite`: for primitive
+  quadratic `χ` of level `N ≠ 0`, that discriminant is `N` if `χ (-1) = 1` and `-N` otherwise.
+* `DirichletCharacter.eq_ite_conductor_of_isFundamentalDiscr_of_apply_eq`: uniqueness of `D` from
+  `|D| = χ.conductor` and agreement on integers coprime to `N`.
+* `MulChar.IsQuadratic.isFundamentalDiscr_ite_conductor`,
+  `MulChar.IsQuadratic.apply_eq_fundamentalDiscriminantCharCast_ite_conductor`,
+  `MulChar.IsQuadratic.apply_eq_intCast_fundamentalDiscriminantChar_ite_conductor`: the explicit
+  discriminant and character values (both scalar-cast and integer-cast) for quadratic `χ` at any
+  level `N ≠ 0`.
+* `DirichletCharacter.existsUnique_isFundamentalDiscr_apply_eq`: existence and uniqueness of the
+  fundamental discriminant `D` of a quadratic Dirichlet character at any level `N ≠ 0`.
+* `DirichletCharacter.existsUnique_squarefree_apply_eq_fundamentalDiscriminantCharCast`: the
+  corresponding existence and uniqueness for the squarefree radicand `d` with
+  `D = fundamentalDiscriminant d`.
+* `DirichletCharacter.apply_natCast_eq_legendreSym_of_apply_eq`,
+  `DirichletCharacter.apply_natCast_eq_legendreSym_radicand_of_apply_eq`,
+  `DirichletCharacter.not_isSquare_of_apply_natCast_eq_neg_one`,
+  `DirichletCharacter.not_isSquare_radicand_of_apply_natCast_eq_neg_one`: the odd-prime Legendre
+  dictionary for `D` and `d`, and the nonsquare criterion modulo `p` from `χ p = -1`.
 
 ## References
 
@@ -164,45 +191,406 @@ theorem IsPrimitive.exists_isFundamentalDiscr_apply_eq {N : ℕ} [NeZero N]
     fundamentalDiscriminantCharCast_apply,
     fundamentalDiscriminantChar_apply_primeDiscriminant (hP p hp).1]
 
+/-! ### Uniqueness and the signed-conductor formula -/
+
+/-- Any fundamental discriminant `D` of absolute value `χ.conductor` whose character agrees with
+`χ` at all integers coprime to the level `N` equals `χ.conductor` when `χ (-1) = 1` and
+`-χ.conductor` otherwise. Both `N ≠ 0` and the quadraticity of `χ` follow from the hypotheses:
+when `2 ≠ 0` in `R` the sign is read off `χ (-1) = D.sign`, and when `2 = 0` in `R` the character
+`χ` is `1` so `|D| = 1` forces `D = 1`. -/
+theorem eq_ite_conductor_of_isFundamentalDiscr_of_apply_eq [DecidableEq R] {N : ℕ}
+    {χ : DirichletCharacter R N} {D : ℤ} (hD : Int.IsFundamentalDiscr D)
+    (habs : D.natAbs = χ.conductor)
+    (hval : ∀ n : ℤ, IsCoprime n N → χ n = fundamentalDiscriminantCharCast R D hD n) :
+    D = if χ (-1) = 1 then (χ.conductor : ℤ) else -χ.conductor := by
+  have : NeZero N := ⟨by
+    rintro rfl
+    rw [conductor_eq_zero_iff_level_eq_zero.mpr rfl] at habs
+    exact hD.ne_zero (Int.natAbs_eq_zero.mp habs)⟩
+  have hq : χ.IsQuadratic := fun a ↦ by
+    by_cases ha : IsUnit a
+    · have hcop : IsCoprime (a.val : ℤ) N :=
+        Nat.isCoprime_iff_coprime.mpr
+          ((ZMod.isUnit_iff_coprime a.val N).mp (by rwa [ZMod.natCast_zmod_val]))
+      have heq : χ a = fundamentalDiscriminantCharCast R D hD (a.val : ℤ) := by
+        simpa only [Int.cast_natCast, ZMod.natCast_zmod_val] using hval a.val hcop
+      rw [heq]
+      exact fundamentalDiscriminantCharCast_isQuadratic hD _
+    · exact Or.inl (MulChar.map_nonunit χ ha)
+  by_cases h2 : (2 : R) = 0
+  · obtain rfl : χ = 1 := hq.eq_one_of_two_eq_zero h2
+    rw [conductor_one] at habs ⊢
+    rw [ite_eq_left (MulChar.one_apply isUnit_one.neg)]
+    rcases Int.natAbs_eq_iff.mp habs with rfl | rfl
+    · rfl
+    · exact absurd hD (by decide)
+  · have : NeZero (2 : R) := ⟨h2⟩
+    have hsign : χ (-1) = D.sign := by
+      simpa [fundamentalDiscriminantChar_neg_one] using
+        hval (-1) (IsCoprime.neg_left isCoprime_one_left)
+    split_ifs with h1 <;> rw [hsign] at h1 <;> rcases hD.ne_zero.lt_or_gt with h | h
+    · rw [Int.sign_eq_neg_one_of_neg h, Int.cast_neg, Int.cast_one, neg_eq_iff_add_eq_zero,
+        one_add_one_eq_two] at h1
+      exact absurd h1 two_ne_zero
+    · omega
+    · omega
+    · rw [Int.sign_eq_one_of_pos h, Int.cast_one] at h1
+      exact absurd rfl h1
+
 section Sign
 
-variable [DecidableEq R] [NeZero (2 : R)] {N : ℕ} [NeZero N] {χ : DirichletCharacter R N}
+variable [DecidableEq R] {N : ℕ} [NeZero N] {χ : DirichletCharacter R N}
 
-/-- When `2 ≠ 0`, the fundamental discriminant of a primitive quadratic character `χ` of level `N`
-is `N` if `χ (-1) = 1` and `-N` otherwise, its sign being `χ (-1)`. -/
+/-- The fundamental discriminant of a primitive quadratic character `χ` of nonzero level `N` is
+`N` if `χ (-1) = 1` and `-N` otherwise. -/
 private theorem IsPrimitive.exists_eq_ite_apply_eq (hχ : χ.IsPrimitive) (hq : χ.IsQuadratic) :
     ∃ (D : ℤ) (hD : Int.IsFundamentalDiscr D), D = (if χ (-1) = 1 then (N : ℤ) else -N) ∧
       ∀ n : ℤ, χ n = fundamentalDiscriminantCharCast R D hD n := by
   obtain ⟨D, hD, hDN, hval⟩ := hχ.exists_isFundamentalDiscr_apply_eq hq
-  have hsign : χ (-1) = D.sign := by
-    simpa [fundamentalDiscriminantChar_neg_one] using hval (-1)
   refine ⟨D, hD, ?_, hval⟩
-  split_ifs with h1 <;> rw [hsign] at h1 <;> rcases hD.ne_zero.lt_or_gt with h | h
-  · rw [Int.sign_eq_neg_one_of_neg h, Int.cast_neg, Int.cast_one, neg_eq_iff_add_eq_zero,
-      one_add_one_eq_two] at h1
-    exact absurd h1 two_ne_zero
-  · omega
-  · omega
-  · rw [Int.sign_eq_one_of_pos h, Int.cast_one] at h1
-    exact absurd rfl h1
+  simpa only [(isPrimitive_def _).mp hχ] using
+    eq_ite_conductor_of_isFundamentalDiscr_of_apply_eq hD
+      (hDN.trans ((isPrimitive_def _).mp hχ).symm) (fun n _ ↦ hval n)
 
-/-- When `2 ≠ 0`, the integer `χ (-1) N`, that is `N` if `χ (-1) = 1` and `-N` otherwise, is a
-fundamental discriminant for every primitive quadratic character `χ` of level `N`. -/
+/-- The integer `N` if `χ (-1) = 1` and `-N` otherwise is a fundamental discriminant for every
+primitive quadratic character `χ` of nonzero level `N`. -/
 theorem IsPrimitive.isFundamentalDiscr_ite (hχ : χ.IsPrimitive) (hq : χ.IsQuadratic) :
     Int.IsFundamentalDiscr (if χ (-1) = 1 then (N : ℤ) else -N) := by
   obtain ⟨D, hD, rfl, -⟩ := hχ.exists_eq_ite_apply_eq hq
   exact hD
 
-/-- **Primitive quadratic characters are Kronecker characters, with their discriminant.** When
-`2 ≠ 0`, a primitive quadratic character `χ` of level `N` is the character of the fundamental
-discriminant `D = χ (-1) N`: `χ n = fundamentalDiscriminantCharCast R D n` at every integer `n`.
-For the principal character, primitive only at level `1`, this is `D = 1`. -/
+/-- **Primitive quadratic characters are Kronecker characters, with their discriminant.** A
+primitive quadratic character `χ` of nonzero level `N` is the character of the fundamental
+discriminant `D = N` if `χ (-1) = 1` and `-N` otherwise:
+`χ n = fundamentalDiscriminantCharCast R D n` at every integer `n`. For the principal character,
+primitive only at level `1`, this is `D = 1`. -/
 theorem IsPrimitive.apply_eq_fundamentalDiscriminantCharCast_ite (hχ : χ.IsPrimitive)
     (hq : χ.IsQuadratic) (n : ℤ) :
     χ n = fundamentalDiscriminantCharCast R _ (hχ.isFundamentalDiscr_ite hq) n := by
   obtain ⟨D, hD, rfl, hval⟩ := hχ.exists_eq_ite_apply_eq hq
   exact hval n
 
+/-- At an odd natural number `n`, a primitive quadratic character `χ` of nonzero level `N` takes
+the Jacobi-symbol value `jacobiSym D n`, including `0` when `n` is not coprime to `N`. -/
+theorem IsPrimitive.apply_natCast_eq_jacobiSym_ite (hχ : χ.IsPrimitive) (hq : χ.IsQuadratic)
+    {n : ℕ} (hn : _root_.Odd n) :
+    χ n = (jacobiSym (if χ (-1) = 1 then (N : ℤ) else -N) n : R) := by
+  have h := hχ.apply_eq_fundamentalDiscriminantCharCast_ite hq n
+  rwa [fundamentalDiscriminantCharCast_apply,
+    fundamentalDiscriminantChar_natCast_eq_jacobiSym _ hn, Int.cast_natCast] at h
+
+/-- At an odd prime `p`, a primitive quadratic character `χ` of nonzero level `N` takes the
+Legendre-symbol value `legendreSym p D`, including `0` when `p ∣ N`. -/
+theorem IsPrimitive.apply_natCast_eq_legendreSym_ite (hχ : χ.IsPrimitive) (hq : χ.IsQuadratic)
+    {p : ℕ} [Fact p.Prime] (hp2 : p ≠ 2) :
+    χ p = (legendreSym p (if χ (-1) = 1 then (N : ℤ) else -N) : R) := by
+  have h := hχ.apply_eq_fundamentalDiscriminantCharCast_ite hq p
+  rwa [fundamentalDiscriminantCharCast_apply,
+    fundamentalDiscriminantChar_natCast_eq_legendreSym _ hp2, Int.cast_natCast] at h
+
 end Sign
+
+/-- **Uniqueness of the discriminant of a primitive quadratic character.** A primitive quadratic
+character `χ` of nonzero level `N` agrees at all integers with the character of a unique
+fundamental discriminant `D` of absolute value `N`. -/
+theorem IsPrimitive.existsUnique_isFundamentalDiscr_apply_eq {N : ℕ} [NeZero N]
+    {χ : DirichletCharacter R N} (hχ : χ.IsPrimitive) (hq : χ.IsQuadratic) :
+    ∃! D : ℤ, ∃ hD : Int.IsFundamentalDiscr D, D.natAbs = N ∧
+      ∀ n : ℤ, χ n = fundamentalDiscriminantCharCast R D hD n := by
+  classical
+  refine ⟨if χ (-1) = 1 then (N : ℤ) else -N,
+    ⟨hχ.isFundamentalDiscr_ite hq, by split_ifs <;> simp,
+      hχ.apply_eq_fundamentalDiscriminantCharCast_ite hq⟩, ?_⟩
+  rintro D ⟨hD, habs, hval⟩
+  simpa only [(isPrimitive_def _).mp hχ] using
+    eq_ite_conductor_of_isFundamentalDiscr_of_apply_eq hD
+      (habs.trans ((isPrimitive_def _).mp hχ).symm) (fun n _ ↦ hval n)
+
+/-! ### Arbitrary positive levels -/
+
+end DirichletCharacter
+
+namespace MulChar.IsQuadratic
+
+open DirichletCharacter
+
+variable {R : Type*} [CommRing R] [DecidableEq R] {N : ℕ} [NeZero N] {χ : DirichletCharacter R N}
+
+/-- For every quadratic Dirichlet character `χ` of nonzero level `N`, the signed conductor
+(`χ.conductor` when `χ (-1) = 1` and `-χ.conductor` otherwise) is a fundamental discriminant. -/
+theorem isFundamentalDiscr_ite_conductor (hq : χ.IsQuadratic) :
+    Int.IsFundamentalDiscr (if χ (-1) = 1 then (χ.conductor : ℤ) else -χ.conductor) := by
+  have : NeZero χ.conductor := ⟨χ.conductor_ne_zero⟩
+  simpa only [primitiveCharacter_apply_neg_one] using
+    χ.primitiveCharacter_isPrimitive.isFundamentalDiscr_ite hq.primitiveCharacter
+
+/-- The primitive character of a quadratic Dirichlet character `χ` of nonzero level `N` agrees at
+every integer `n` with the character of its signed conductor. -/
+theorem primitiveCharacter_apply_eq_fundamentalDiscriminantCharCast_ite_conductor
+    (hq : χ.IsQuadratic) (n : ℤ) :
+    χ.primitiveCharacter n =
+      fundamentalDiscriminantCharCast R _ hq.isFundamentalDiscr_ite_conductor n := by
+  have : NeZero χ.conductor := ⟨χ.conductor_ne_zero⟩
+  have h := χ.primitiveCharacter_isPrimitive.apply_eq_fundamentalDiscriminantCharCast_ite
+    hq.primitiveCharacter n
+  generalize_proofs h1 at h
+  revert h1 h
+  rw [primitiveCharacter_apply_neg_one]
+  intro _ h
+  exact h
+
+/-- A quadratic Dirichlet character `χ` of nonzero level `N` agrees at every integer `n` coprime
+to `N` with the scalar realization of the character of its signed conductor. -/
+theorem apply_eq_fundamentalDiscriminantCharCast_ite_conductor
+    (hq : χ.IsQuadratic) {n : ℤ} (hn : IsCoprime n N) :
+    χ n = fundamentalDiscriminantCharCast R _ hq.isFundamentalDiscr_ite_conductor n := by
+  rw [← χ.primitiveCharacter_apply_of_isCoprime hn,
+    hq.primitiveCharacter_apply_eq_fundamentalDiscriminantCharCast_ite_conductor]
+
+/-- Integer-valued form of
+`MulChar.IsQuadratic.apply_eq_fundamentalDiscriminantCharCast_ite_conductor`: at every integer `n`
+coprime to `N`, `χ n` is the cast to `R` of `fundamentalDiscriminantChar D _ n`. -/
+theorem apply_eq_intCast_fundamentalDiscriminantChar_ite_conductor
+    (hq : χ.IsQuadratic) {n : ℤ} (hn : IsCoprime n N) :
+    χ n = (fundamentalDiscriminantChar _ hq.isFundamentalDiscr_ite_conductor n : R) := by
+  rw [hq.apply_eq_fundamentalDiscriminantCharCast_ite_conductor hn,
+    fundamentalDiscriminantCharCast_apply]
+
+/-- At every odd natural number `n`, including those sharing prime factors with the conductor,
+`χ.primitiveCharacter n` is the Jacobi symbol of the signed conductor of `χ`. -/
+theorem primitiveCharacter_apply_natCast_eq_jacobiSym_ite_conductor
+    (hq : χ.IsQuadratic) {n : ℕ} (hn : _root_.Odd n) :
+    χ.primitiveCharacter n =
+      (jacobiSym (if χ (-1) = 1 then (χ.conductor : ℤ) else -χ.conductor) n : R) := by
+  have h := hq.primitiveCharacter_apply_eq_fundamentalDiscriminantCharCast_ite_conductor n
+  rwa [fundamentalDiscriminantCharCast_apply,
+    fundamentalDiscriminantChar_natCast_eq_jacobiSym _ hn, Int.cast_natCast] at h
+
+/-- At every odd prime `p`, including primes dividing the conductor, `χ.primitiveCharacter p` is
+the Legendre symbol of the signed conductor of `χ` modulo `p`. -/
+theorem primitiveCharacter_apply_natCast_eq_legendreSym_ite_conductor
+    (hq : χ.IsQuadratic) {p : ℕ} [Fact p.Prime] (hp2 : p ≠ 2) :
+    χ.primitiveCharacter p =
+      (legendreSym p (if χ (-1) = 1 then (χ.conductor : ℤ) else -χ.conductor) : R) := by
+  have h := hq.primitiveCharacter_apply_eq_fundamentalDiscriminantCharCast_ite_conductor p
+  rwa [fundamentalDiscriminantCharCast_apply,
+    fundamentalDiscriminantChar_natCast_eq_legendreSym _ hp2, Int.cast_natCast] at h
+
+/-- At an odd natural number `n` coprime to `N`, a quadratic Dirichlet character `χ` of nonzero
+level `N` takes the Jacobi-symbol value of its signed conductor. -/
+theorem apply_natCast_eq_jacobiSym_ite_conductor (hq : χ.IsQuadratic)
+    {n : ℕ} (hn : _root_.Odd n) (hcop : n.Coprime N) :
+    χ n = (jacobiSym (if χ (-1) = 1 then (χ.conductor : ℤ) else -χ.conductor) n : R) := by
+  have h := hq.apply_eq_intCast_fundamentalDiscriminantChar_ite_conductor
+    (Nat.isCoprime_iff_coprime.mpr hcop)
+  rwa [fundamentalDiscriminantChar_natCast_eq_jacobiSym _ hn, Int.cast_natCast] at h
+
+/-- At an odd prime `p ∤ N`, a quadratic Dirichlet character `χ` of nonzero level `N` takes the
+Legendre-symbol value of its signed conductor modulo `p`. -/
+theorem apply_natCast_eq_legendreSym_ite_conductor (hq : χ.IsQuadratic)
+    {p : ℕ} [Fact p.Prime] (hp2 : p ≠ 2) (hpN : ¬ p ∣ N) :
+    χ p = (legendreSym p (if χ (-1) = 1 then (χ.conductor : ℤ) else -χ.conductor) : R) := by
+  have hcop : IsCoprime (p : ℤ) N :=
+    Nat.isCoprime_iff_coprime.mpr ((Fact.out : p.Prime).coprime_iff_not_dvd.mpr hpN)
+  have h := hq.apply_eq_intCast_fundamentalDiscriminantChar_ite_conductor hcop
+  rwa [fundamentalDiscriminantChar_natCast_eq_legendreSym _ hp2, Int.cast_natCast] at h
+
+end MulChar.IsQuadratic
+
+namespace DirichletCharacter
+
+variable {R : Type*} [CommRing R]
+
+/-- **Naturality of the signed conductor under `changeLevel`.** Lifting `χ` to a nonzero multiple
+`M` of its level preserves both `χ (-1)` and `χ.conductor`, hence preserves the signed conductor. -/
+theorem ite_conductor_changeLevel {S : Type*} [CommMonoidWithZero S] [DecidableEq S]
+    {N M : ℕ} [NeZero M] (hNM : N ∣ M) (χ : DirichletCharacter S N) :
+    (if changeLevel hNM χ (-1) = 1 then ((changeLevel hNM χ).conductor : ℤ)
+      else -(changeLevel hNM χ).conductor) =
+      if χ (-1) = 1 then (χ.conductor : ℤ) else -χ.conductor := by
+  rw [changeLevel_apply_neg_one, conductor_changeLevel]
+
+/-- **Naturality of coprime character agreement under `changeLevel`.** If `χ` agrees with
+`fundamentalDiscriminantCharCast R D hD` on integers coprime to `N`, then for `N ∣ M` its lift
+`changeLevel hNM χ` agrees with the same character on integers coprime to `M`. -/
+theorem changeLevel_apply_eq_fundamentalDiscriminantCharCast_of_apply_eq {N M : ℕ} (hNM : N ∣ M)
+    {χ : DirichletCharacter R N} {D : ℤ} (hD : Int.IsFundamentalDiscr D)
+    (hval : ∀ n : ℤ, IsCoprime n N → χ n = fundamentalDiscriminantCharCast R D hD n)
+    {n : ℤ} (hn : IsCoprime n M) :
+    changeLevel hNM χ n = fundamentalDiscriminantCharCast R D hD n := by
+  rw [changeLevel_eq_cast_of_dvd' χ hNM hn,
+    hval n (hn.of_isCoprime_of_dvd_right (Int.natCast_dvd_natCast.mpr hNM))]
+
+/-- **The primitive discriminant of a quadratic Dirichlet character.** Every quadratic Dirichlet
+character `χ` of nonzero level `N` over a commutative ring `R` agrees, at all integers coprime to
+`N`, with the scalar realization `fundamentalDiscriminantCharCast R D hD` of a unique fundamental
+discriminant `D` of absolute value `χ.conductor` (Montgomery–Vaughan, Theorem 9.13). The principal
+character corresponds to `D = 1`; in general `D` is `χ.conductor` when `χ (-1) = 1` and
+`-χ.conductor` otherwise. -/
+theorem existsUnique_isFundamentalDiscr_apply_eq {N : ℕ} [NeZero N]
+    {χ : DirichletCharacter R N} (hq : χ.IsQuadratic) :
+    ∃! D : ℤ, ∃ hD : Int.IsFundamentalDiscr D, D.natAbs = χ.conductor ∧
+      ∀ n : ℤ, IsCoprime n N → χ n = fundamentalDiscriminantCharCast R D hD n := by
+  classical
+  refine ⟨if χ (-1) = 1 then (χ.conductor : ℤ) else -χ.conductor,
+    ⟨hq.isFundamentalDiscr_ite_conductor, by split_ifs <;> simp,
+      fun _ hn ↦ hq.apply_eq_fundamentalDiscriminantCharCast_ite_conductor hn⟩, ?_⟩
+  rintro D ⟨hD, habs, hval⟩
+  exact eq_ite_conductor_of_isFundamentalDiscr_of_apply_eq hD habs hval
+
+/-! ### Squarefree radicands, odd primes, and nonsquares modulo `p` -/
+
+/-- **The primitive squarefree radicand of a quadratic Dirichlet character.** Every quadratic
+Dirichlet character `χ` of nonzero level `N` corresponds to a unique squarefree integer `d` such
+that `fundamentalDiscriminant d` has absolute value `χ.conductor` and its character agrees with `χ`
+at every integer coprime to `N`. -/
+theorem existsUnique_squarefree_apply_eq_fundamentalDiscriminantCharCast {N : ℕ} [NeZero N]
+    {χ : DirichletCharacter R N} (hq : χ.IsQuadratic) :
+    ∃! d : ℤ, ∃ hd : Squarefree d,
+      (fundamentalDiscriminant d).natAbs = χ.conductor ∧
+        ∀ n : ℤ, IsCoprime n N → χ n = fundamentalDiscriminantCharCast R
+          (fundamentalDiscriminant d) (isFundamentalDiscr_fundamentalDiscriminant hd) n := by
+  obtain ⟨D, ⟨hD, habs, hval⟩, huniq⟩ := χ.existsUnique_isFundamentalDiscr_apply_eq hq
+  obtain ⟨d, ⟨hd, rfl⟩, -⟩ := hD.existsUnique_squarefree_and_fundamentalDiscriminant_eq
+  refine ⟨d, ⟨hd, habs, hval⟩, fun d' ⟨hd', habs', hval'⟩ ↦
+    fundamentalDiscriminant_injective
+      (huniq _ ⟨isFundamentalDiscr_fundamentalDiscriminant hd', habs', hval'⟩)⟩
+
+/-- If `χ` agrees with `fundamentalDiscriminantCharCast R D hD` on integers coprime to `N`, then at
+every odd natural number `n` coprime to `N` its value is `jacobiSym D n`. -/
+theorem apply_natCast_eq_jacobiSym_of_apply_eq {N : ℕ} {χ : DirichletCharacter R N} {D : ℤ}
+    (hD : Int.IsFundamentalDiscr D)
+    (hval : ∀ n : ℤ, IsCoprime n N → χ n = fundamentalDiscriminantCharCast R D hD n)
+    {n : ℕ} (hn : _root_.Odd n) (hcop : n.Coprime N) :
+    χ n = (jacobiSym D n : R) := by
+  have h := hval n (Nat.isCoprime_iff_coprime.mpr hcop)
+  rwa [fundamentalDiscriminantCharCast_apply,
+    fundamentalDiscriminantChar_natCast_eq_jacobiSym hD hn, Int.cast_natCast] at h
+
+/-- Radicand form of `apply_natCast_eq_jacobiSym_of_apply_eq`: when
+`D = fundamentalDiscriminant d`, `χ n = jacobiSym d n` at every odd natural number `n` coprime to
+`N`. -/
+theorem apply_natCast_eq_jacobiSym_radicand_of_apply_eq {N : ℕ} {χ : DirichletCharacter R N}
+    {d : ℤ} (hD : Int.IsFundamentalDiscr (fundamentalDiscriminant d))
+    (hval : ∀ n : ℤ, IsCoprime n N →
+      χ n = fundamentalDiscriminantCharCast R (fundamentalDiscriminant d) hD n)
+    {n : ℕ} (hn : _root_.Odd n) (hcop : n.Coprime N) :
+    χ n = (jacobiSym d n : R) := by
+  rw [apply_natCast_eq_jacobiSym_of_apply_eq hD hval hn hcop,
+    jacobiSym_fundamentalDiscriminant d hn]
+
+/-- If `χ` agrees with `fundamentalDiscriminantCharCast R D hD` on integers coprime to `N`, then at
+every odd prime `p ∤ N` its value is `legendreSym p D`. -/
+theorem apply_natCast_eq_legendreSym_of_apply_eq {N : ℕ} {χ : DirichletCharacter R N} {D : ℤ}
+    (hD : Int.IsFundamentalDiscr D)
+    (hval : ∀ n : ℤ, IsCoprime n N → χ n = fundamentalDiscriminantCharCast R D hD n)
+    {p : ℕ} [Fact p.Prime] (hp2 : p ≠ 2) (hpN : ¬ p ∣ N) :
+    χ p = (legendreSym p D : R) := by
+  have hcop : IsCoprime (p : ℤ) N :=
+    Nat.isCoprime_iff_coprime.mpr ((Fact.out : p.Prime).coprime_iff_not_dvd.mpr hpN)
+  have h := hval p hcop
+  rwa [fundamentalDiscriminantCharCast_apply,
+    fundamentalDiscriminantChar_natCast_eq_legendreSym hD hp2, Int.cast_natCast] at h
+
+/-- **Odd-prime dictionary for the squarefree radicand.** If `χ` agrees on integers coprime to `N`
+with the character of `fundamentalDiscriminant d`, then at every odd prime `p ∤ N` its value is
+`legendreSym p d`. -/
+theorem apply_natCast_eq_legendreSym_radicand_of_apply_eq {N : ℕ} {χ : DirichletCharacter R N}
+    {d : ℤ} (hD : Int.IsFundamentalDiscr (fundamentalDiscriminant d))
+    (hval : ∀ n : ℤ, IsCoprime n N →
+      χ n = fundamentalDiscriminantCharCast R (fundamentalDiscriminant d) hD n)
+    {p : ℕ} [Fact p.Prime] (hp2 : p ≠ 2) (hpN : ¬ p ∣ N) :
+    χ p = (legendreSym p d : R) := by
+  rw [apply_natCast_eq_legendreSym_of_apply_eq hD hval hp2 hpN,
+    legendreSym_fundamentalDiscriminant d hp2]
+
+/-- **Nonsquare criterion for the discriminant `D`.** When `2 ≠ 0` in `R` and `χ` agrees on
+integers coprime to `N` with the character of `D`, a value `χ p = -1` at an odd prime `p` forces
+`p ∤ N` and `¬ IsSquare (D : ZMod p)`. -/
+theorem not_isSquare_of_apply_natCast_eq_neg_one [NeZero (2 : R)] {N : ℕ}
+    {χ : DirichletCharacter R N} {D : ℤ} (hD : Int.IsFundamentalDiscr D)
+    (hval : ∀ n : ℤ, IsCoprime n N → χ n = fundamentalDiscriminantCharCast R D hD n)
+    {p : ℕ} [Fact p.Prime] (hp2 : p ≠ 2) (hp : χ p = -1) :
+    ¬ IsSquare (D : ZMod p) := by
+  have : Nontrivial R := ⟨⟨2, 0, two_ne_zero⟩⟩
+  have hm1 : (-1 : R) ≠ 0 := neg_ne_zero.mpr one_ne_zero
+  have hcop : IsCoprime (p : ℤ) N :=
+    (χ.apply_ne_zero_iff p).mp (by simpa only [Int.cast_natCast, hp] using hm1)
+  have hpN : ¬ p ∣ N :=
+    (Fact.out : p.Prime).coprime_iff_not_dvd.mp (Nat.isCoprime_iff_coprime.mp hcop)
+  have hleg : (legendreSym p D : R) = -1 := by
+    rw [← apply_natCast_eq_legendreSym_of_apply_eq hD hval hp2 hpN, hp]
+  refine (legendreSym.eq_neg_one_iff p).mp ?_
+  by_cases h0 : (D : ZMod p) = 0
+  · rw [(legendreSym.eq_zero_iff p D).mpr h0, Int.cast_zero] at hleg
+    exact absurd hleg.symm hm1
+  · rcases legendreSym.eq_one_or_neg_one p h0 with h | h
+    · rw [h, Int.cast_one] at hleg
+      exact absurd (by linear_combination hleg : (2 : R) = 0) two_ne_zero
+    · exact h
+
+/-- **Nonsquare criterion for the squarefree radicand `d`.** When `2 ≠ 0` in `R` and `χ` agrees on
+integers coprime to `N` with the character of `fundamentalDiscriminant d`, a value `χ p = -1` at an
+odd prime `p` implies `¬ IsSquare (d : ZMod p)`. -/
+theorem not_isSquare_radicand_of_apply_natCast_eq_neg_one [NeZero (2 : R)] {N : ℕ}
+    {χ : DirichletCharacter R N} {d : ℤ} (hD : Int.IsFundamentalDiscr (fundamentalDiscriminant d))
+    (hval : ∀ n : ℤ, IsCoprime n N →
+      χ n = fundamentalDiscriminantCharCast R (fundamentalDiscriminant d) hD n)
+    {p : ℕ} [Fact p.Prime] (hp2 : p ≠ 2) (hp : χ p = -1) :
+    ¬ IsSquare (d : ZMod p) := by
+  rw [← legendreSym.eq_neg_one_iff p, ← legendreSym_fundamentalDiscriminant d hp2,
+    legendreSym.eq_neg_one_iff p]
+  exact not_isSquare_of_apply_natCast_eq_neg_one hD hval hp2 hp
+
+/-- Direct signed-conductor form of `not_isSquare_of_apply_natCast_eq_neg_one`: when `2 ≠ 0` in
+`R`, `χ` is quadratic, and `χ p = -1` at an odd prime `p`, the signed conductor of `χ` is not a
+square modulo `p`. -/
+theorem _root_.MulChar.IsQuadratic.not_isSquare_ite_conductor_of_apply_natCast_eq_neg_one
+    [DecidableEq R] [NeZero (2 : R)] {N : ℕ} {χ : DirichletCharacter R N}
+    (hq : χ.IsQuadratic) {p : ℕ} [Fact p.Prime] (hp2 : p ≠ 2) (hp : χ p = -1) :
+    ¬ IsSquare ((if χ (-1) = 1 then (χ.conductor : ℤ) else -χ.conductor : ℤ) : ZMod p) := by
+  have : Nontrivial R := ⟨⟨2, 0, two_ne_zero⟩⟩
+  have hm1 : (-1 : R) ≠ 0 := neg_ne_zero.mpr one_ne_zero
+  have hcop : IsCoprime (p : ℤ) N :=
+    (χ.apply_ne_zero_iff p).mp (by simpa only [Int.cast_natCast, hp] using hm1)
+  have : NeZero N := ⟨by
+    rintro rfl
+    exact (Fact.out : p.Prime).ne_one
+      (Nat.isUnit_iff.mp (Int.ofNat_isUnit.mp (isCoprime_zero_right.mp hcop)))⟩
+  exact not_isSquare_of_apply_natCast_eq_neg_one hq.isFundamentalDiscr_ite_conductor
+    (fun _ hn ↦ hq.apply_eq_fundamentalDiscriminantCharCast_ite_conductor hn) hp2 hp
+
+/-! ### Examples -/
+
+/-- `D = 12` has squarefree radicand `d = 3`, while `D = -4` has squarefree radicand `d = -1`. -/
+example : fundamentalDiscriminant 3 = 12 ∧ fundamentalDiscriminant (-1) = -4 := by
+  norm_num [fundamentalDiscriminant_def]
+
+/-- For `χ₄` lifted to level `12`, the conductor is `4`, `χ (-1) = -1`, so the primitive
+discriminant is `-4`; at `n = 3` (not coprime to `12`) the lifted character vanishes whereas
+`χ_{-4}(3) = -1`. -/
+example :
+    let χ : DirichletCharacter ℤ 12 := changeLevel (by decide : 4 ∣ 12) ZMod.χ₄
+    (if χ (-1) = 1 then (χ.conductor : ℤ) else -χ.conductor) = -4 ∧
+      χ (3 : ℤ) = 0 ∧
+      fundamentalDiscriminantChar (-4) isPrimeDiscriminant_neg_four.isFundamentalDiscr (3 : ℤ) =
+        -1 := by
+  refine ⟨?_, ?_, ?_⟩
+  · have hc : (changeLevel (by decide : 4 ∣ 12) ZMod.χ₄).conductor = 4 := by
+      rw [conductor_changeLevel]
+      exact conductor_eq_four_of_apply_one_ne_apply_three ZMod.χ₄ (by decide)
+    have hm1 : changeLevel (by decide : 4 ∣ 12) ZMod.χ₄ (-1) = -1 := by
+      rw [changeLevel_apply_neg_one]
+      decide
+    simp [hc, hm1]
+  · exact MulChar.map_nonunit _ (by decide)
+  · rw [fundamentalDiscriminantChar_neg_four]
+    decide
+
+/-- For the principal character at level `6`, the primitive discriminant is `1`. -/
+example :
+    let χ : DirichletCharacter ℤ 6 := 1
+    (if χ (-1) = 1 then (χ.conductor : ℤ) else -χ.conductor) = 1 := by
+  simp [conductor_one, MulChar.one_apply isUnit_one.neg]
 
 end DirichletCharacter
