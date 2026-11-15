@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Defs
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 
+import Mathlib.Tactic.FinCases
+
 /-!
 # The metric of a tame pair
 
@@ -25,6 +27,18 @@ strictly weaker `SymplecticForm.Tames` predicate, paralleling the compatible con
 the symmetric part is just twice the asymmetric metric `ω(·, J ·)`, which is recorded as the bridge
 `SymplecticForm.Compatible.symmetrizedBilinForm_apply`.
 
+On a finite-dimensional space, the **gradient for the symmetric metric**
+(`TauCeti.SymplecticForm.Tames.symmetrizedGradient`) sends `η` to the gradient of the linear form
+`ξ ↦ ω(ξ, η)` for the metric `gₛ / 2`: the unique vector `G η` with `gₛ(ξ, G η) = 2 ω(ξ, η)` for
+every `ξ`. This is the pointwise form of the gradient of the symplectic action functional, whose
+first variation along a loop `γ` pairs the variation `ξ` with `γ' - X_H` through `ω`
+(`TauCeti.SmoothTwoForm.IsNondegenerate.hasDerivAt_contractibleLoopAction_symmetrizedGradient`).
+For a compatible pair it is `-J`, and
+among tame pairs only for compatible ones: `gₛ(ξ, -J η) = ω(ξ, η) + ω(J ξ, J η)`. Tameness does not
+imply compatibility: on `ℝ⁴` with its standard symplectic form, the structure
+`(a, b, c, d) ↦ (c - b, a - d, -d, c)` is tame but not compatible, so its gradient is not `-J`
+(`TauCeti.SymplecticForm.exists_symmetrizedGradient_ne_neg`).
+
 ## Main declarations
 
 * `TauCeti.SymplecticForm.symmetrizedBilinForm`: the symmetric part `gₛ(v, w) = ω(v, J w) +
@@ -38,6 +52,14 @@ the symmetric part is just twice the asymmetric metric `ω(·, J ·)`, which is 
   pair as an `InnerProductSpace.Core ℝ V`.
 * `TauCeti.SymplecticForm.Tames.innerProductCore_inner_invariant`: the packaged inner product is
   `J`-invariant, `⟪J v, J w⟫ = ⟪v, w⟫`.
+* `TauCeti.SymplecticForm.Tames.symmetrizedGradient`: the gradient for the symmetric metric,
+  characterized by `TauCeti.SymplecticForm.Tames.symmetrizedGradient_eq_iff`.
+* `TauCeti.SymplecticForm.Compatible.symmetrizedGradient_apply`,
+  `TauCeti.SymplecticForm.Tames.symmetrizedGradient_eq_neg_iff`: the gradient is `-J` exactly for
+  compatible pairs.
+* `TauCeti.SymplecticForm.exists_tames_not_compatible`,
+  `TauCeti.SymplecticForm.exists_symmetrizedGradient_ne_neg`: a tame pair on `ℝ⁴` which is not
+  compatible, and whose gradient is not `-J`.
 
 The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Sections 2.1 and 2.5.
@@ -173,6 +195,153 @@ lemma symmetrizedBilinForm_apply (h : ω.Compatible J) (v w : V) :
   rw [SymplecticForm.symmetrizedBilinForm_apply, ← h.associatedBilinForm_apply_swap v w, two_mul]
 
 end Compatible
+
+/-! ### The gradient for the symmetric metric -/
+
+section Gradient
+
+variable [FiniteDimensional ℝ V]
+
+namespace Tames
+
+/-- The **gradient for the symmetric metric** of a tame pair: the linear map sending `η` to the
+gradient of the linear form `ξ ↦ ω(ξ, η)` for the metric `gₛ / 2`, that is, the unique vector
+`G η` with `gₛ(ξ, G η) = 2 ω(ξ, η)` for every `ξ`
+(`TauCeti.SymplecticForm.Tames.symmetrizedGradient_eq_iff`).
+
+For a compatible pair, `gₛ / 2` is the metric `ω(·, J ·)` and the gradient is `-J`
+(`TauCeti.SymplecticForm.Compatible.symmetrizedGradient_apply`); among tame pairs this
+characterizes compatibility (`TauCeti.SymplecticForm.Tames.symmetrizedGradient_eq_neg_iff`). -/
+noncomputable def symmetrizedGradient (h : ω.Tames J) : V →ₗ[ℝ] V :=
+  ((2 : ℝ) • ω.toBilinForm.flip).symmCompOfNondegenerate (ω.symmetrizedBilinForm J)
+    h.symmetrizedBilinForm_nondegenerate
+
+/-- The defining property of the gradient for the symmetric metric, with the gradient in the
+first argument: `gₛ(G η, ξ) = 2 ω(ξ, η)`. -/
+theorem symmetrizedBilinForm_symmetrizedGradient_left (h : ω.Tames J) (η ξ : V) :
+    ω.symmetrizedBilinForm J (h.symmetrizedGradient η) ξ = 2 * ω ξ η := by
+  rw [symmetrizedGradient, LinearMap.BilinForm.symmCompOfNondegenerate_left_apply]
+  simp
+
+/-- The defining property of the gradient for the symmetric metric:
+`gₛ(ξ, G η) = 2 ω(ξ, η)`. -/
+theorem symmetrizedBilinForm_symmetrizedGradient_right (h : ω.Tames J) (ξ η : V) :
+    ω.symmetrizedBilinForm J ξ (h.symmetrizedGradient η) = 2 * ω ξ η := by
+  have := h.symmetrizedBilinForm_symmetrizedGradient_left η ξ
+  rw [symmetrizedBilinForm_apply] at this ⊢
+  linarith
+
+/-- **Characterization of the gradient for the symmetric metric**: `G η = v` exactly when
+`gₛ(ξ, v) = 2 ω(ξ, η)` for every `ξ`. -/
+theorem symmetrizedGradient_eq_iff (h : ω.Tames J) {η v : V} :
+    h.symmetrizedGradient η = v ↔ ∀ ξ, ω.symmetrizedBilinForm J ξ v = 2 * ω ξ η := by
+  refine ⟨fun hv ξ ↦ hv ▸ h.symmetrizedBilinForm_symmetrizedGradient_right ξ η, fun hv ↦ ?_⟩
+  refine sub_eq_zero.1 (h.symmetrizedBilinForm_nondegenerate.2 _ fun ξ ↦ ?_)
+  rw [map_sub, hv ξ, h.symmetrizedBilinForm_symmetrizedGradient_right, sub_self]
+
+/-- The gradient for the symmetric metric vanishes only at zero. -/
+@[simp]
+theorem symmetrizedGradient_eq_zero_iff (h : ω.Tames J) {η : V} :
+    h.symmetrizedGradient η = 0 ↔ η = 0 := by
+  refine ⟨fun hη ↦ ω.separatingRight η fun ξ ↦ ?_, fun hη ↦ by rw [hη, map_zero]⟩
+  have := (h.symmetrizedGradient_eq_iff.1 hη) ξ
+  rw [map_zero] at this
+  exact (mul_eq_zero.1 this.symm).resolve_left two_ne_zero
+
+/-- The gradient for the symmetric metric is injective. -/
+theorem symmetrizedGradient_injective (h : ω.Tames J) :
+    Function.Injective h.symmetrizedGradient :=
+  (injective_iff_map_eq_zero _).2 fun _ ↦ h.symmetrizedGradient_eq_zero_iff.1
+
+end Tames
+
+/-- **For a compatible pair, the gradient for the symmetric metric is `-J`**: then
+`gₛ(ξ, -J η) = 2 ω(ξ, J (-J η)) = 2 ω(ξ, η)`. -/
+theorem Compatible.symmetrizedGradient_apply (h : ω.Compatible J) (η : V) :
+    h.tames.symmetrizedGradient η = -J η := by
+  refine h.tames.symmetrizedGradient_eq_iff.2 fun ξ ↦ ?_
+  rw [h.symmetrizedBilinForm_apply]
+  simp only [map_neg, AlmostComplexStructure.apply_apply, neg_neg]
+
+/-- **The gradient for the symmetric metric is `-J` exactly for compatible pairs.** For a tame pair,
+`gₛ(ξ, -J η) = ω(ξ, η) + ω(J ξ, J η)`, which is `2 ω(ξ, η)` for all `ξ` and `η` exactly when `ω`
+is `J`-invariant. -/
+theorem Tames.symmetrizedGradient_eq_neg_iff (h : ω.Tames J) :
+    h.symmetrizedGradient = -J.toLinearMap ↔ ω.Compatible J := by
+  refine ⟨fun hG ↦ Compatible.of_tames ((ω.invariant_iff J).2 fun v w ↦ ?_) h,
+    fun hc ↦ LinearMap.ext hc.symmetrizedGradient_apply⟩
+  have := (h.symmetrizedGradient_eq_iff.1 (LinearMap.congr_fun hG w)) v
+  simp only [LinearMap.neg_apply, symmetrizedBilinForm_apply, map_neg,
+    AlmostComplexStructure.apply_apply] at this
+  linarith [ω.neg_eq (J v) (J w)]
+
+end Gradient
+
+/-! ### A tame pair which is not compatible -/
+
+section Example
+
+/-- The linear map `(a, b, c, d) ↦ (c - b, a - d, -d, c)` of `ℝ⁴`. -/
+private def tameExampleLinearMap : (Fin 4 → ℝ) →ₗ[ℝ] Fin 4 → ℝ where
+  toFun v := ![v 2 - v 1, v 0 - v 3, -v 3, v 2]
+  map_add' u v := funext fun i ↦ by fin_cases i <;> simp <;> ring
+  map_smul' c v := funext fun i ↦ by fin_cases i <;> simp <;> ring
+
+/-- The almost complex structure `(a, b, c, d) ↦ (c - b, a - d, -d, c)` of `ℝ⁴`. -/
+private def tameExampleJ : AlmostComplexStructure (Fin 4 → ℝ) where
+  toLinearMap := tameExampleLinearMap
+  square_neg := LinearMap.ext fun v ↦ funext fun i ↦ by
+    fin_cases i
+    · simp [tameExampleLinearMap]
+      ring
+    all_goals simp [tameExampleLinearMap]
+
+/-- The standard symplectic form `a b' - b a' + c d' - d c'` of `ℝ⁴`. -/
+private def tameExampleForm : LinearMap.BilinForm ℝ (Fin 4 → ℝ) :=
+  LinearMap.mk₂ ℝ (fun u v ↦ u 0 * v 1 - u 1 * v 0 + u 2 * v 3 - u 3 * v 2)
+    (fun _ _ _ ↦ by simp only [Pi.add_apply]; ring)
+    (fun _ _ _ ↦ by simp only [Pi.smul_apply, smul_eq_mul]; ring)
+    (fun _ _ _ ↦ by simp only [Pi.add_apply]; ring)
+    (fun _ _ _ ↦ by simp only [Pi.smul_apply, smul_eq_mul]; ring)
+
+private theorem tameExampleForm_isAlt : tameExampleForm.IsAlt := fun v ↦ by
+  simp only [tameExampleForm, LinearMap.mk₂_apply]
+  ring
+
+private theorem tameExampleForm_apply_pos {v : Fin 4 → ℝ} (hv : v ≠ 0) :
+    0 < tameExampleForm v (tameExampleJ v) := by
+  have hpos : 0 < v 0 ^ 2 + v 1 ^ 2 + v 2 ^ 2 + v 3 ^ 2 := by
+    by_contra hle
+    refine hv (funext fun i ↦ ?_)
+    fin_cases i <;> simp <;> nlinarith [sq_nonneg (v 0), sq_nonneg (v 1), sq_nonneg (v 2),
+      sq_nonneg (v 3)]
+  simp only [tameExampleForm, tameExampleJ, tameExampleLinearMap, LinearMap.mk₂_apply]
+  simp
+  nlinarith [sq_nonneg (v 0 - v 3), sq_nonneg (v 1 - v 2)]
+
+/-- **A tame pair need not be compatible.** On `ℝ⁴` with the standard symplectic form
+`ω = a b' - b a' + c d' - d c'`, the almost complex structure
+`J (a, b, c, d) = (c - b, a - d, -d, c)` is tamed by `ω`, with
+`ω(v, J v) = a² + b² + c² + d² - a d - b c`, but `ω` is not `J`-invariant:
+`ω(J e₀, J e₂) = -1` while `ω(e₀, e₂) = 0`. -/
+theorem exists_tames_not_compatible :
+    ∃ (ω : SymplecticForm (Fin 4 → ℝ)) (J : AlmostComplexStructure (Fin 4 → ℝ)),
+      ω.Tames J ∧ ¬ ω.Compatible J := by
+  refine ⟨ofTames tameExampleForm tameExampleForm_isAlt fun v hv ↦ tameExampleForm_apply_pos hv,
+    tameExampleJ, tames_ofTames _ _, fun h ↦ ?_⟩
+  have := h.invariant_apply (Pi.single 0 1) (Pi.single 2 1)
+  simp [tameExampleForm, tameExampleJ, tameExampleLinearMap] at this
+
+/-- **For a merely tame pair the gradient for the symmetric metric need not be `-J`.** This is the
+pair of `TauCeti.SymplecticForm.exists_tames_not_compatible`, through
+`TauCeti.SymplecticForm.Tames.symmetrizedGradient_eq_neg_iff`. -/
+theorem exists_symmetrizedGradient_ne_neg :
+    ∃ (ω : SymplecticForm (Fin 4 → ℝ)) (J : AlmostComplexStructure (Fin 4 → ℝ)) (h : ω.Tames J),
+      h.symmetrizedGradient ≠ -J.toLinearMap := by
+  obtain ⟨ω, J, h, hc⟩ := exists_tames_not_compatible
+  exact ⟨ω, J, h, fun hG ↦ hc (h.symmetrizedGradient_eq_neg_iff.1 hG)⟩
+
+end Example
 
 end SymplecticForm
 
