@@ -311,6 +311,27 @@ theorem continuous_complexGaugeDirection (hp : Continuous fun w ↦ x w 2)
   fin_cases i
   exacts [h₀, h₁, h₂, h₃]
 
+/-- The complexified gauge action of a `Cⁿ⁺¹` function on a field with `Cⁿ` section coordinates
+is of class `Cⁿ`. -/
+theorem contDiff_complexGaugeDirection {n : WithTop ℕ∞} (hp : ContDiff ℝ n fun w ↦ x w 2)
+    (hq : ContDiff ℝ n fun w ↦ x w 3) (hh : ContDiff ℝ (n + 1) h) :
+    ContDiff ℝ n (complexGaugeDirection x h) := by
+  have hd (v : ℂ) : ContDiff ℝ n fun w ↦ fderiv ℝ h w v :=
+    (hh.fderiv_right le_rfl).clm_apply contDiff_const
+  have hh' : ContDiff ℝ n h := hh.of_le le_self_add
+  have hre : ContDiff ℝ n fun w ↦ (h w).re := reCLM.contDiff.comp hh'
+  have him : ContDiff ℝ n fun w ↦ (h w).im := imCLM.contDiff.comp hh'
+  refine contDiff_euclidean.mpr fun i ↦ ?_
+  fin_cases i
+  · simp only [Fin.zero_eta, Fin.isValue, complexGaugeDirection_apply_zero]
+    exact ((imCLM.contDiff.comp (hd 1)).neg).sub (reCLM.contDiff.comp (hd I))
+  · simp only [Fin.mk_one, Fin.isValue, complexGaugeDirection_apply_one]
+    exact (reCLM.contDiff.comp (hd 1)).sub (imCLM.contDiff.comp (hd I))
+  · simp only [Fin.reduceFinMk, Fin.isValue, complexGaugeDirection_apply_two]
+    exact (hre.mul hp).sub (him.mul hq)
+  · simp only [Fin.reduceFinMk, Fin.isValue, complexGaugeDirection_apply_three]
+    exact (hre.mul hq).add (him.mul hp)
+
 end Operator
 
 /-! ### Variations divisible by the section -/
