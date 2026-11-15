@@ -56,14 +56,14 @@ noncomputable def fiberChartedSpace (hn : 1 ≤ n) (b : B) :
     ChartedSpace (Fin (Module.finrank ℝ (EB × EF) - Module.finrank ℝ EB) → ℝ)
       {x : T // π₀ x = b} :=
   regularFiberChartedSpace hn (contMDiff_proj n F P IB IF)
-    BoundarylessManifold.isInteriorPoint (isRegularValue_proj b)
+    BoundarylessManifold.isInteriorPoint (isRegularValue_proj F P IB IF b)
 
 /-- The bundle-fibre atlas is the regular-fibre atlas of the projection. This equation
 allows reuse of the regular-fibre API without unfolding the bundle-fibre atlas. -/
 theorem fiberChartedSpace_eq_regularFiberChartedSpace (hn : 1 ≤ n) (b : B) :
     fiberChartedSpace F P IB IF hn b =
       regularFiberChartedSpace hn (contMDiff_proj n F P IB IF)
-        BoundarylessManifold.isInteriorPoint (isRegularValue_proj b) :=
+        BoundarylessManifold.isInteriorPoint (isRegularValue_proj F P IB IF b) :=
   (rfl)
 
 variable [IsManifold IF n F] [ContMDiffFiberBundle n F P IB IF]
@@ -76,7 +76,7 @@ theorem isManifold_fiber (hn : 1 ≤ n) (b : B) :
     letI := fiberChartedSpace F P IB IF hn b
     IsManifold K n {x : T // π₀ x = b} :=
   isManifold_regularFiber hn (contMDiff_proj n F P IB IF)
-    BoundarylessManifold.isInteriorPoint (isRegularValue_proj b)
+    BoundarylessManifold.isInteriorPoint (isRegularValue_proj F P IB IF b)
 
 variable (F P IB IF) in
 /-- The inclusion of a bundle fibre with its regular-fibre atlas is a smooth embedding. -/
@@ -85,7 +85,7 @@ theorem isSmoothEmbedding_coe_fiber (hn : 1 ≤ n) (b : B) :
     Manifold.IsSmoothEmbedding K (IB.prod IF) n
       (Subtype.val : {x : T // π₀ x = b} → T) :=
   isSmoothEmbedding_coe_regularFiber hn (contMDiff_proj n F P IB IF)
-    BoundarylessManifold.isInteriorPoint (isRegularValue_proj b)
+    BoundarylessManifold.isInteriorPoint (isRegularValue_proj F P IB IF b)
 
 variable (F P IB IF) in
 /-- The tangent image of a bundle-fibre inclusion is the kernel of the projection differential. -/
@@ -95,6 +95,6 @@ theorem range_mfderiv_coe_fiber (hn : 1 ≤ n) (b : B) :
       (mfderiv K (IB.prod IF) Subtype.val z).range =
         (mfderiv (IB.prod IF) IB π₀ z.1).ker :=
   range_mfderiv_coe_regularFiber hn (contMDiff_proj n F P IB IF)
-    BoundarylessManifold.isInteriorPoint (isRegularValue_proj b)
+    BoundarylessManifold.isInteriorPoint (isRegularValue_proj F P IB IF b)
 
 end TauCeti.ManifoldTotalSpace

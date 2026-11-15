@@ -76,14 +76,13 @@ theorem isSubmersion_proj :
       fun x : ManifoldTotalSpace F E ↦ ((homeomorph F E).symm x).proj :=
   (isSubmersionOfComplement_proj n F E IB IF).isSubmersion
 
+variable (IB IF) in
 omit [IsManifold IB n B] [IsManifold IF n F] [ContMDiffFiberBundle n F E IB IF] in
-/-- Every base point is a regular value of the bundle projection, including when its fibre is
-empty. Smoothness of the bundle's coordinate changes is not needed. -/
-theorem isRegularValue_proj (b : B) :
-    TauCeti.IsRegularValue (IB.prod IF) IB
-      (fun x : ManifoldTotalSpace F E ↦ ((homeomorph F E).symm x).proj) b := by
-  rw [TauCeti.isRegularValue_iff]
-  intro x _
+/-- Every point of the total space is a regular point of the bundle projection.
+Smoothness of the bundle's coordinate changes is not needed. -/
+theorem isRegularPoint_proj (x : ManifoldTotalSpace F E) :
+    TauCeti.IsRegularPoint (IB.prod IF) IB
+      (fun x : ManifoldTotalSpace F E ↦ ((homeomorph F E).symm x).proj) x := by
   obtain ⟨x, rfl⟩ := (homeomorph F E).surjective x
   let e := trivializationAt F E x.proj
   let s := fun b ↦ homeomorph F E (e.toOpenPartialHomeomorph.symm (b, (e x).2))
@@ -102,5 +101,15 @@ theorem isRegularValue_proj (b : B) :
   rw [Function.comp_def, hid.mfderiv, hsx] at hd
   refine TauCeti.isRegularPoint_iff.2 fun v ↦ ⟨mfderiv IB (IB.prod IF) s x.proj v, ?_⟩
   exact (DFunLike.congr_fun hd v).symm
+
+variable (F E IB IF) in
+omit [IsManifold IB n B] [IsManifold IF n F] [ContMDiffFiberBundle n F E IB IF] in
+/-- Every base point is a regular value of the bundle projection, including when its fibre is
+empty. Smoothness of the bundle's coordinate changes is not needed. -/
+theorem isRegularValue_proj (b : B) :
+    TauCeti.IsRegularValue (IB.prod IF) IB
+      (fun x : ManifoldTotalSpace F E ↦ ((homeomorph F E).symm x).proj) b := by
+  rw [TauCeti.isRegularValue_iff]
+  exact fun x _ ↦ isRegularPoint_proj IB IF x
 
 end TauCeti.ManifoldTotalSpace

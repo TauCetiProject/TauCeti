@@ -133,6 +133,34 @@ theorem totalSpaceMk_op_orbitDiffeomorph_symm_smul (p : P b) (x : {x : T // π�
   let := ManifoldTotalSpace.fiberChartedSpace G P IB IG hn b
   exact congrArg Subtype.val ((orbitDiffeomorph G IB IG hn p).apply_symm_apply x)
 
+/-- The inverse orbit coordinate is the unique group element carrying the origin to the point. -/
+theorem orbitDiffeomorph_symm_apply_eq_iff (p : P b) (x : {x : T // π₀ x = b}) (g : G) :
+    letI := ManifoldTotalSpace.fiberChartedSpace G P IB IG hn b
+    (orbitDiffeomorph G IB IG hn p).symm x = g ↔ ι ⟨b, op g • p⟩ = x.1 := by
+  constructor
+  · intro h
+    rw [← h]
+    exact totalSpaceMk_op_orbitDiffeomorph_symm_smul hn p x
+  · intro h
+    apply (orbitDiffeomorph G IB IG hn p).injective
+    apply Subtype.ext
+    simpa using h.symm
+
+/-- In any equivariant trivialization over the fibre, inverse orbit coordinates are the
+quotient of the origin and point coordinates. -/
+theorem orbitDiffeomorph_symm_apply_eq_of_mem_baseSet
+    {e : Trivialization G (Bundle.TotalSpace.proj : TotalSpace G P → B)} [e.IsEquivariant]
+    (hb : b ∈ e.baseSet) (p : P b) (x : {x : T // π₀ x = b}) :
+    letI := ManifoldTotalSpace.fiberChartedSpace G P IB IG hn b
+    (orbitDiffeomorph G IB IG hn p).symm x =
+      (e ⟨b, p⟩).2⁻¹ * (e ((ι).symm x.1)).2 := by
+  rcases x with ⟨x, hx⟩
+  obtain ⟨⟨b', q⟩, rfl⟩ := (ι).surjective x
+  simp only [Homeomorph.symm_apply_apply] at hx
+  subst b'
+  simpa only [orbitDiffeomorph_symm_apply, Homeomorph.symm_apply_apply] using
+    division_eq_of_mem_baseSet hb p q
+
 /-- Changing the origin to `p·a` left-multiplies inverse orbit coordinates by `a⁻¹`. -/
 @[simp]
 theorem orbitDiffeomorph_smul_symm_apply (p : P b) (a : G)
@@ -144,6 +172,7 @@ theorem orbitDiffeomorph_smul_symm_apply (p : P b) (a : G)
   simp
 
 /-- The inverse orbit coordinates intertwine the right action with right multiplication. -/
+@[simp]
 theorem orbitDiffeomorph_symm_apply_smul (p : P b)
     (x : {x : T // π₀ x = b}) (h : G) :
     letI := ManifoldTotalSpace.fiberChartedSpace G P IB IG hn b
