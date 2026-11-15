@@ -138,7 +138,7 @@ theorem nonempty_splitting_iff_exists_gauge (σ : S.Section) (hσ : σ 1 = 1) :
     · intro g h
       rw [← factorSetFun_gauge, gauge_sectionDiff]
       exact (s.toSection.factorSetFun_eq_one_iff).mpr (fun g h => map_mul s g h) g h
-  · rintro ⟨b, hb, h⟩
+  · rintro ⟨b, _, h⟩
     exact ⟨(σ.gauge b).splittingOfFactorSetEqOne (by
       intro g j
       rw [factorSetFun_gauge]

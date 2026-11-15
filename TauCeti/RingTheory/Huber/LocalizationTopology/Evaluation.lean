@@ -424,8 +424,9 @@ surjective.
 
 Over a Tate ring openness is not an independent hypothesis: it already follows from the
 surjectivity and continuity of the same map. The hypotheses are therefore exactly those of
-`TauCeti.Huber.PairOfDefinition.rationalEvalHom_surjective`, with `A` additionally Tate. -/
-theorem isOpenMap_rationalEvalHom [IsTateRing A] [(nhds (0 : A)).IsCountablyGenerated] {k : ℕ}
+`TauCeti.Huber.PairOfDefinition.rationalEvalHom_surjective`, with `A` additionally Tate; the
+countable basis of neighbourhoods of zero required there then holds automatically. -/
+theorem isOpenMap_rationalEvalHom [IsTateRing A] {k : ℕ}
     (t : Fin k → A) (ht : ∀ i, t i ∈ T) (hspan : Ideal.span (insert s (Set.range t)) = ⊤)
     (hTt : Set.range (fun y : ↥T ↦ (divBy (y : A) s : S))
       ⊆ Set.range fun i ↦ (divBy (t i) s : S)) :
@@ -465,8 +466,7 @@ This is the form Wedhorn's Definition 6.28 asks for, and the form
 `TauCeti.Huber.PairOfDefinition.rationalEvalHom_surjective`,
 `TauCeti.Huber.PairOfDefinition.continuous_rationalEvalHom` and
 `TauCeti.Huber.PairOfDefinition.isOpenMap_rationalEvalHom` with no further hypotheses. -/
-theorem isOpenQuotientMap_rationalEvalHom [IsTateRing A]
-    [(nhds (0 : A)).IsCountablyGenerated] {k : ℕ}
+theorem isOpenQuotientMap_rationalEvalHom [IsTateRing A] {k : ℕ}
     (t : Fin k → A) (ht : ∀ i, t i ∈ T) (hspan : Ideal.span (insert s (Set.range t)) = ⊤)
     (hTt : Set.range (fun y : ↥T ↦ (divBy (y : A) s : S))
       ⊆ Set.range fun i ↦ (divBy (t i) s : S)) :
@@ -498,7 +498,6 @@ weaker notion of Definition 6.29.
 Strict finite type is the hypothesis under which strong noetherianity descends from `A` to
 `A⟨T/s⟩`; `TauCeti.Huber.PairOfDefinition.isStronglyNoetherian_completion` is that consequence. -/
 theorem isStrictlyTopologicallyFiniteType_toCompletionLoc [IsTateRing A]
-    [(nhds (0 : A)).IsCountablyGenerated]
     (hspan : Ideal.span (insert s (T : Set A)) = ⊤) :
     letI := locUniformSpace P T s S hden
     letI := isUniformAddGroup_locUniformSpace P T s S hden

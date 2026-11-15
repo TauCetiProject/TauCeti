@@ -63,7 +63,7 @@ private theorem UpperJump.exists_cyclic_quotient {u : RamificationIndexDomain}
     apply (lowerJump_intCast_iff K L hi).1
     rw [← hψ]
     exact (lowerJump_inverseHerbrand_iff K L u).2 hu
-  obtain ⟨H, hsucc, hnot, hcyc⟩ := exists_isCyclic_quotient_of_lt hbreak
+  obtain ⟨H, hsucc, hnot, hcyc⟩ := exists_isCyclic_quotient_of_not_le hbreak.not_ge
   refine ⟨H, hcyc, ?_, fun v huv ↦ ?_⟩
   · simpa only [upperRamificationGroup_def, hψ, Subtype.coe_mk,
       lowerRamificationGroupReal_intCast] using hnot

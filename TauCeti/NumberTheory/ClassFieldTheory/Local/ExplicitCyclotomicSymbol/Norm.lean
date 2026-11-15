@@ -94,8 +94,8 @@ private theorem cyclotomicSymbol_norm_approx (p : ℕ) [Fact p.Prime] (m : ℕ) 
     exact h.trans_le (Padic.inv_natCast_le_norm_natCast m)
   · rw [haU]
     refine norm_pos_of_isTotallyPositive hY (isTotallyPositive_iff.mpr fun w hw ↦ ?_)
-    have h := mul_pos_of_infinitePlace_sub_lt hw (x := (Y : K)) (y := 1) (by simp)
-      ((hYinf w).trans_le hρ1)
+    have h := hw.mul_pos_of_apply_sub_lt (x := (Y : K)) (y := 1)
+      (((hYinf w).trans_le hρ1).trans_eq (map_one w).symm)
     simpa using h
 
 /-- **The explicit symbol at `p` kills local norms.** Let `M` be a finite extension of `ℚ_p` inside

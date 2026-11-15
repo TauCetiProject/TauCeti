@@ -26,10 +26,10 @@ coordinate. Like the level coordinates, it is the only `O`-algebra map sending `
 no continuity assumption: its projections to the finite levels are pinned down by the uniqueness
 of the level coordinates.
 
-Over a noetherian `O` it is an isomorphism, `completedCoordinateEquiv hp : O⟦T⟧ ≃ₐ[O] O[[ℤ_p]]`.
-It is injective because the level coordinates separate points, `⋂ₙ (ω_n) = 0`, and surjective
-because every compatible family of elements of the levels `O[ℤ/pⁿ]` comes from a series
-(`TauCeti.Iwasawa.range_iwasawaCoordinate`). For `O = ℤ_p` it is the power-series coordinate
+It is injective because the level coordinates separate points, `⋂ₙ (ω_n) = 0`. Over a noetherian
+`O` it is also surjective, because every compatible family of elements of the levels `O[ℤ/pⁿ]`
+comes from a series (`TauCeti.Iwasawa.range_iwasawaCoordinate`), so it is an isomorphism,
+`completedCoordinateEquiv hp : O⟦T⟧ ≃ₐ[O] O[[ℤ_p]]`. For `O = ℤ_p` it is the power-series coordinate
 `TauCeti.completedGroupAlgebra.powerSeriesCoordinate` attached to `γ`, constructed there by
 evaluating power series at the topologically nilpotent element `γ - 1`; the construction here
 needs no topology on `O`. A change of generator `γ ↦ γ ^ u` is the substitution
@@ -53,9 +53,9 @@ needs no topology on `O`. A change of generator `γ ↦ γ ^ u` is the substitut
   `(1 + T) ^ k ↦ γ ^ k`.
 * `TauCeti.Iwasawa.completedCoordinate_unique`: an `O`-algebra map `O⟦T⟧ → O[[ℤ_p]]` sending `T`
   to `γ - 1` is the completed coordinate.
-* `TauCeti.Iwasawa.completedCoordinate_injective`,
-  `TauCeti.Iwasawa.completedCoordinate_surjective`: over a noetherian `O` the completed
-  coordinate is bijective.
+* `TauCeti.Iwasawa.completedCoordinate_injective`: the completed coordinate is injective.
+* `TauCeti.Iwasawa.completedCoordinate_surjective`: over a noetherian `O` the completed
+  coordinate is surjective.
 * `TauCeti.Iwasawa.completedCoordinate_eq_powerSeriesCoordinate`,
   `TauCeti.Iwasawa.completedCoordinateEquiv_eq_powerSeriesCoordinate`: over `ℤ_p` it is the
   power-series coordinate attached to `γ`, as a map and as an isomorphism.
@@ -138,9 +138,8 @@ theorem completedCoordinate_unique
   all_goals rw [AlgHom.comp_apply, ← levelCoordinate_X hp n, ← towerProj_completedCoordinate]
   rw [hφ, completedCoordinate_X]
 
-/-- Over a noetherian `O`, the completed coordinate is injective: the level coordinates separate
-the points of `O⟦T⟧`. -/
-theorem completedCoordinate_injective [IsNoetherianRing O] :
+/-- The completed coordinate is injective: the level coordinates separate the points of `O⟦T⟧`. -/
+theorem completedCoordinate_injective :
     Function.Injective (completedCoordinate hp) := fun F G h ↦
   iwasawaCoordinate_injective hp <| funext fun n ↦ by
     simpa using congrArg (towerProj O (FiniteQuotientTower.padicTower p) n) h

@@ -106,12 +106,12 @@ theorem topFormOrientationAt_spec [IsManifold I 1 M] (hk : Module.finrank ℝ E 
     constructor
     · intro hd
       have hprod : b.det b₀ * φ x b < 0 := by rw [← hformula']; exact hn
-      rcases (mul_neg_iff.mp hprod) with ⟨hdetpos, hφneg⟩ | ⟨hdet, hφ⟩
+      rcases (mul_neg_iff.mp hprod) with ⟨hdetpos, _⟩ | ⟨_, hφ⟩
       · exact False.elim ((not_lt_of_ge (le_of_lt hdetpos)) hd)
       · exact hφ
     · intro hφ
       have hprod : b.det b₀ * φ x b < 0 := by rw [← hformula']; exact hn
-      rcases (mul_neg_iff.mp hprod) with ⟨hdetpos, hφneg⟩ | ⟨hdet, _⟩
+      rcases (mul_neg_iff.mp hprod) with ⟨_, hφneg⟩ | ⟨hdet, _⟩
       · exact False.elim ((not_lt_of_ge (le_of_lt hφ)) hφneg)
       · exact hdet
 

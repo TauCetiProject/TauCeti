@@ -28,6 +28,8 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   representatives.
 * `TauCeti.MulAction.exists_smul_out_eq`: every point of an orbit is a translate of the chosen
   representative `Quotient.out` of that orbit.
+* `TauCeti.MulAction.injOn_quotientMk_slice`: if the slice map `(g, s) ↦ g • σ s` is injective
+  on `G × U`, then distinct points of `U` lie in distinct orbits.
 * `TauCeti.MulAction.card_orbitRelQuotient_eq_one`: a pretransitive action on a nonempty type
   has exactly one orbit.
 * `TauCeti.MulAction.card_orbitRelQuotient_anti`: if there are finitely many `H`-orbits,
@@ -175,11 +177,8 @@ lemma MulAction.orbitRelQuotientBot_mk_eq_iff (x y : X) :
     (Quotient.mk'' x : MulAction.orbitRel.Quotient (⊥ : Subgroup G) X) =
         Quotient.mk'' y ↔
       x = y := by
-  constructor
-  · intro h
-    exact congrArg (MulAction.orbitRelQuotientBotEquiv (G := G) (X := X)) h
-  · intro h
-    rw [h]
+  rw [← MulAction.orbitRelQuotientBotEquiv_symm_apply,
+    ← MulAction.orbitRelQuotientBotEquiv_symm_apply, Equiv.apply_eq_iff_eq]
 
 /-- Orbit relations are monotone in the acting subgroup. -/
 lemma MulAction.orbitRel_le_of_subgroup_le {H K : Subgroup G} (hHK : H ≤ K) :
@@ -211,6 +210,17 @@ lemma MulAction.exists_smul_out_eq {y : X} {ω : MulAction.orbitRel.Quotient G X
     (h : (Quotient.mk'' y : MulAction.orbitRel.Quotient G X) = ω) : ∃ g : G, g • ω.out = y :=
   MulAction.mem_orbit_iff.1 <| MulAction.orbitRel.Quotient.orbit_eq_orbit_out ω Quotient.out_eq' ▸
     MulAction.orbitRel.Quotient.mem_orbit.2 h
+
+/-- **Slices meet each orbit at most once.** If the slice map `(g, s) ↦ g • σ s` is injective on
+`G × U`, then distinct points of `U` lie in distinct orbits. -/
+theorem MulAction.injOn_quotientMk_slice {S : Type*} {σ : S → X} {U : Set S}
+    (hinj : Set.InjOn (fun p : G × S ↦ p.1 • σ p.2) (Set.univ ×ˢ U)) :
+    Set.InjOn (fun s ↦ Quotient.mk (MulAction.orbitRel G X) (σ s)) U := by
+  intro s hs s' hs' hss'
+  obtain ⟨g, hg⟩ := Quotient.exact hss'
+  have h1 := hinj (x₁ := (g, s')) (x₂ := (1, s)) ⟨Set.mem_univ _, hs'⟩ ⟨Set.mem_univ _, hs⟩
+    (by simpa only [one_smul] using hg)
+  exact (Prod.ext_iff.1 h1).2.symm
 
 /-- **A pretransitive action on a nonempty type has one orbit.** This is Mathlib's
 `MulAction.pretransitive_iff_unique_quotient_of_nonempty` in counting form. -/
@@ -847,10 +857,8 @@ its composite with the orbit projection is `f`. -/
   /-- **Uniqueness of the descent**: a map out of the orbit space is the descent of `f` exactly
 when its composite with the orbit projection is `f`. -/]
 theorem MulAction.eq_orbitRelQuotientLift_iff {φ : MulAction.orbitRel.Quotient G X → Y} :
-    φ = MulAction.orbitRelQuotientLift f hf ↔ φ ∘ Quotient.mk (MulAction.orbitRel G X) = f := by
-  refine ⟨fun h ↦ h ▸ MulAction.orbitRelQuotientLift_comp_mk, fun h ↦ funext fun q ↦ ?_⟩
-  induction q using Quotient.inductionOn with
-  | h x => exact congrFun h x
+    φ = MulAction.orbitRelQuotientLift f hf ↔ φ ∘ Quotient.mk (MulAction.orbitRel G X) = f :=
+  (Quotient.mk_surjective.injective_comp_right.eq_iff' MulAction.orbitRelQuotientLift_comp_mk).symm
 
 /-- Postcomposing the descent of `f` with a map `h` gives the descent of `h ∘ f`. -/
 theorem MulAction.comp_orbitRelQuotientLift (h : Y → Z) :

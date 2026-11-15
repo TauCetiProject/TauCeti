@@ -51,7 +51,7 @@ is a finite-dimensional module over that triple: the raising and lowering vector
 
 An eigenvector for `-m` inside `W` has to lie in the summand `M_{-m α + χ} ⊓ N`, because `α^∨` acts
 on the summand `M_{k α + χ} ⊓ N` by `2 k + m` and these scalars are distinct
-(`TauCeti.biSup_inf_eigenspace_eq_self`). That summand is therefore nonzero, and
+(`Module.End.biSup_inf_genEigenspace_eq_of_mem`). That summand is therefore nonzero, and
 `-m α + χ = χ - χ(α^∨) α` is the reflection of `χ`.
 
 ## Main results
@@ -142,7 +142,7 @@ private theorem genWeightSpace_neg_zsmul_add_ne_bot (P : ℤ → Submodule K M) 
     intro k k' hkk'
     have : (2 : K) * k = 2 * k' := by simpa only [add_right_inj] using hkk'
     exact_mod_cast mul_left_cancel₀ (two_ne_zero (α := K)) this
-  have hloc := biSup_inf_eigenspace_eq_self (s := (Set.univ : Set ℤ)) _ P
+  have hloc := Module.End.biSup_inf_genEigenspace_eq_of_mem (s := (Set.univ : Set ℤ)) _ P
     (fun k ↦ χ (IsKilling.coroot α) + 2 * k) (fun j _ ↦ hPeig j) (Set.mem_univ (-m))
     fun j _ hj hcon ↦ hj (hginj hcon)
   have huP : u ∈ P (-m) := by
@@ -178,7 +178,7 @@ private theorem exists_int_apply_coroot_and_genWeightSpace_zsmul_add_ne_bot (hα
   obtain ⟨N, hNfg, hNst, hvN⟩ := mem_locallyFiniteSubmodule.1 hvlf
   -- the `α`-string of `χ`, truncated to `N`
   set P : ℤ → Submodule K M := fun k ↦ (genWeightSpace M (k • ⇑α + χ)).toSubmodule ⊓ N
-  set W : Submodule K M := ⨆ k : ℤ, P k with hWdef
+  set W : Submodule K M := ⨆ k : ℤ, P k
   have hWN : W ≤ N := iSup_le fun _ ↦ inf_le_right
   have hvP : v ∈ P 0 := ⟨by simpa using hvmem, hvN⟩
   -- a root vector shifts the string by its own root and preserves `N`, hence preserves `W`

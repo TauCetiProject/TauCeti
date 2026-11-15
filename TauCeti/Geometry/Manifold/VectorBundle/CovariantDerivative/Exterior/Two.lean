@@ -251,12 +251,12 @@ private theorem contMDiff_exteriorTwoAlternating [ContMDiffCovariantDerivative c
   have hXV (i : Fin 3) : CMDiff[e.baseSet] ∞ (T% (X i)) := by
     intro y hy
     exact ((e.contMDiffAt_symmL hy).clm_bundle_apply
-      (by rw [contMDiffAt_section]; exact contMDiffAt_const)).contMDiffWithinAt
+      (by rw [contMDiffAt_section_iff]; exact contMDiffAt_const)).contMDiffWithinAt
   have hS := contMDiffOn_exteriorTwoValue cov covT α e.open_baseSet X hXV
-  have hc := (contMDiffAt_totalSpace.1 (hS.contMDiffAt (e.open_baseSet.mem_nhds hx))).2
+  have hc := (contMDiffAt_totalSpace_iff.1 (hS.contMDiffAt (e.open_baseSet.mem_nhds hx))).2
   refine hc.congr_of_eventuallyEq ?_
   have hxV : x ∈ eV.baseSet := mem_baseSet_trivializationAt F V x
-  filter_upwards [e.open_baseSet.mem_nhds hx, eV.open_baseSet.mem_nhds hxV] with y hy hyV
+  filter_upwards [e.open_baseSet.mem_nhds hx, eV.open_baseSet.mem_nhds hxV] with y _ hyV
   simp only [ContinuousAlternatingMap.inCoordinates,
     ContinuousLinearMap.compContinuousAlternatingMap_coe,
     ContinuousAlternatingMap.compContinuousLinearMap_apply, exteriorTwoAlternating_apply,

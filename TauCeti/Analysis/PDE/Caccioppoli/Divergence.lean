@@ -98,7 +98,6 @@ private theorem two_div_mul_neg_inner_le (hlam : 0 < lam) (z w : ℝ)
   have hw : w ^ 2 = |w| ^ 2 := (sq_abs w).symm
   have hlhs : 2 / lam * -(z ^ 2 * ⟪f, g⟫_ℝ + 2 * (z * w) * ⟪f, q⟫_ℝ) ≤
       2 * z ^ 2 * s * ‖g‖ + 4 * |z| * |w| * s * ‖q‖ := by
-    have h2 : 0 < 2 / lam := by positivity
     calc 2 / lam * -(z ^ 2 * ⟪f, g⟫_ℝ + 2 * (z * w) * ⟪f, q⟫_ℝ)
         = 2 / lam * (z ^ 2 * -⟪f, g⟫_ℝ + 2 * -(z * w * ⟪f, q⟫_ℝ)) := by ring
       _ ≤ 2 / lam * (z ^ 2 * (lam * s * ‖g‖) + 2 * (|z| * |w| * (lam * s * ‖q‖))) := by
@@ -242,8 +241,6 @@ theorem exists_setIntegral_ball_norm_gradient_sq_le_sub_setAverage_divergence :
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
   set uB := W1p.restrictL hB u
   set m := ⨍ z in ball y (2 * ρ), W1p.value u z ∂mu
-  have hm : ⨍ z in (B : Set (EuclideanSpace ℝ ι)), W1p.value uB z ∂mu = m :=
-    average_congr (W1p.value_restrictL_ae hB u)
   -- `w = u - m` solves the same equation on `B`.
   set w : W1p mu B 2 := uB + W1p.const (-m)
   have hw : ∀ v : W1p0 mu B 2, energyFormH1 a 0 0 w (v : W1p mu B 2) =

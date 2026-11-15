@@ -25,11 +25,12 @@ public import Mathlib.GroupTheory.OrderOfElement
 
 Two finite-dimensional central simple `K`-algebras are **Brauer equivalent** when they become
 isomorphic after passing to matrix algebras over them (Mathlib's `IsBrauerEquivalent`), and
-`BrauerGroup K` is the quotient of `CSA K` by that relation. Mathlib defines that quotient and
-records making it a group as a TODO; `TauCeti/Algebra/BrauerGroup/Basic.lean` supplies the
-constructors, the two moves that leave a Brauer class unchanged, and the behaviour of `⊗[K]` under
-them, and `TauCeti/Algebra/BrauerGroup/Trivial.lean` supplies the class that will be the identity.
-This file assembles those pieces into the group.
+`BrauerGroup K` is the quotient of `CSA K` by that relation, as defined in Mathlib.
+`TauCeti/Algebra/BrauerGroup/Basic.lean` supplies the constructors, the two moves that leave a
+Brauer class unchanged, and the behaviour of `⊗[K]` under them, and
+`TauCeti/Algebra/BrauerGroup/Trivial.lean` supplies the class that will be the identity. This file
+assembles those pieces, equipping Mathlib's quotient `BrauerGroup K` with its commutative group
+structure induced by the tensor product.
 
 The multiplication is induced by the tensor product: it is well defined on classes because
 `TauCeti.isBrauerEquivalent_tensorProduct_congr` says `⊗[K]` respects Brauer equivalence, and
@@ -88,10 +89,6 @@ the classes *split* by the extension.
 
 ## References
 
-This is the second bullet of Layer 6 ("The Brauer group as a group") of the
-[semisimple algebras roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md),
-pinned there as `brauerCommGroup`, together with the Brauer-group half of its Hamilton-quaternion
-worked example. It also settles the first TODO of Mathlib's `Mathlib/Algebra/BrauerGroup/Defs.lean`.
 See P. Gille, T. Szamuely, *Central Simple Algebras and Galois Cohomology*, CUP (2006), §2.4, and
 R. S. Pierce, *Associative Algebras*, Springer GTM 88 (1982), Chapter 12.
 -/

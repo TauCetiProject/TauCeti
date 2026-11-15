@@ -185,12 +185,12 @@ open Classical in
 splitting of the dyadic localization `ℤ_2 ⊗[ℤ] L`
 (`TauCeti.IntegralLattice.dyadicJordanProfile_eq`); such a splitting exists whenever `L` is
 nondegenerate (`TauCeti.IntegralLattice.exists_isJordanSplitting_localIntegralForm`). If there is
-none, the profile is the empty profile. -/
+none, the profile is the zero profile. -/
 noncomputable def dyadicJordanProfile (L : IntegralLattice V) : DyadicJordanProfile :=
   if h : ∃ N, (L.localIntegralForm 2).IsJordanSplitting 2 N then
     h.choose_spec.dyadicJordanProfile (L.isSymm_localIntegralForm 2) two_ne_zero
       PadicInt.not_isUnit_two
-  else .empty
+  else 0
 
 /-- The dyadic profile of a lattice is the profile of any Jordan splitting of its dyadic
 localization. -/

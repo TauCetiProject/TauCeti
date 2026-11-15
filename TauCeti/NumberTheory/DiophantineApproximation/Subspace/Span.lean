@@ -18,7 +18,7 @@ of an approximation domain. Its finite-subset membership characterization is
 For independent forms, `TauCeti.NumberField.finite_image_approxSpan` shows that only finitely
 many spans occur over `Q ∈ [Q₁, Q₂]` when `Q₁ > 0`. It uses the domain finiteness results from
 `TauCeti.NumberTheory.DiophantineApproximation.Subspace.ApproximationDomain`:
-`TauCeti.NumberField.finite_approxDomain` gives finiteness at a single level `0 ≤ Q`, and
+`TauCeti.NumberField.finite_approxDomain` gives finiteness at a single level `Q`, and
 `TauCeti.NumberField.finite_biUnion_approxDomain` gives finiteness over the interval, using
 `TauCeti.NumberField.approxDomain_subset_abs` to compare with one fixed domain.
 This separates bounded levels from the asymptotic study of exceptional subspaces in the

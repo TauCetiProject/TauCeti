@@ -24,6 +24,9 @@ neighbourhood of a point has the germ there of a globally smooth map
 (`ContMDiffOn.exists_contMDiffMap_eventuallyEq`), with no paracompactness assumption.
 A smooth map on an open subset, extended arbitrarily outside it, stays smooth on that subset
 (`ContMDiffMap.contMDiffOn_extend`).
+A closed set inside an open set has a smooth `[0, 1]`-valued cutoff equal to one exactly on the
+closed set, with topological support in the open set
+(`IsClosed.exists_contMDiff_tsupport_subset_eq_one_iff`).
 Reference: M. Hirsch, *Differential Topology*, Chapter 2, §2, and Chapter 8, §1.
 -/
 
@@ -97,3 +100,19 @@ theorem IsClosed.exists_contMDiffMap_eqOn [SigmaCompactSpace M] {s U : Set M} (h
   by_contra hxW
   have hxs : x ∉ s := fun h ↦ hxW (hsW h)
   exact mem_support.mp hx (by simpa [hxs, hxW] using hG x)
+
+/-- **Smooth cutoffs.** A closed set inside an open set of a Hausdorff sigma-compact manifold has
+a smooth cutoff with values in `[0, 1]`, topological support in the open set, and equal to one
+exactly on the closed set. -/
+theorem IsClosed.exists_contMDiff_tsupport_subset_eq_one_iff [SigmaCompactSpace M] {A U : Set M}
+    (hA : IsClosed A) (hU : IsOpen U) (hAU : A ⊆ U) :
+    ∃ ρ : M → ℝ, ContMDiff I 𝓘(ℝ) ∞ ρ ∧ (∀ x, ρ x ∈ Icc 0 1) ∧ tsupport ρ ⊆ U ∧
+      ∀ x, x ∈ A ↔ ρ x = 1 := by
+  have : LocallyCompactSpace H := I.locallyCompactSpace
+  have : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace H M
+  -- Take Mathlib's cutoff with support an open `V` whose closure lies in `U`.
+  obtain ⟨V, hV, hAV, hVU⟩ := normal_exists_closure_subset hA hU hAU
+  obtain ⟨ρ, hsρ, hrange, hsupp, hone⟩ := exists_contMDiff_support_eq_eq_one_iff I hV hA hAV
+  refine ⟨ρ, hsρ, fun x ↦ hrange (mem_range_self x), ?_, hone⟩
+  rw [tsupport, hsupp]
+  exact hVU

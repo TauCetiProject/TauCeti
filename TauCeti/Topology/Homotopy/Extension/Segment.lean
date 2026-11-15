@@ -186,8 +186,8 @@ private theorem exists_control_segment [T2Space X] [ProperSpace E]
     linarith [norm_sub_le_segmentProj ℓ x y z]
   have hKt : K ⊆ e.target := fun z hz => hδt (hρlt (lt_of_le_of_lt hz.out one_lt_two))
   have hproj : Continuous (projIcc (0 : ℝ) 1 zero_le_one) := continuous_projIcc
-  refine ⟨⟨_, e.continuous_ite_source_of_eq_off_compact (hproj.comp hρ) hK hKt fun z hz =>
-    projIcc_eq_one.2 (le_of_lt (not_le.1 hz))⟩, fun z => ?_, fun z hz => ?_⟩
+  refine ⟨⟨_, e.continuous_ite_source_of_eq_off_compact (hproj.comp hρ).continuousOn hK hKt
+    fun z _ hz => projIcc_eq_one.2 (le_of_lt (not_le.1 hz))⟩, fun z => ?_, fun z hz => ?_⟩
   · rw [e.symm_image_eq_source_inter_preimage h]
     by_cases hzs : z ∈ e.source
     · have hδ' : 0 < 2 / δ := div_pos two_pos hδ

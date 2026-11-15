@@ -72,6 +72,26 @@ theorem contMDiffOn_normalExp_fiber
     ((f.tangentRange x hn)ᗮ.subtypeL.contDiff.contMDiff.contMDiffOn)
     (fun _ hv ↦ hv)
 
+/-- The normal exponential sends the zero orthogonal normal vector at `x` to `f x`. -/
+theorem normalExp_fiber_zero (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (x : M) :
+    f.normalExp (P := P) hn ⟨x, f.normalClass x hn ((0 : (f.tangentRange x hn)ᗮ) :
+      TangentSpace J (f x))⟩ = f x := by
+  rw [Submodule.coe_zero, map_zero]
+  exact f.normalExp_zeroSection (P := P) hn x
+
+/-- The normal exponential is smooth in the normal vector at zero, at each fixed base point. -/
+theorem contMDiffAt_normalExp_fiber_zero
+    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (x : M) :
+    ContMDiffAt 𝓘(ℝ, (f.tangentRange x hn)ᗮ) J ∞
+      (fun v : (f.tangentRange x hn)ᗮ ↦ f.normalExp (P := P) hn ⟨x, f.normalClass x hn v⟩) 0 := by
+  have hmem : (0 : (f.tangentRange x hn)ᗮ) ∈
+      {v : (f.tangentRange x hn)ᗮ |
+        (⟨x, f.normalClass x hn v⟩ : TotalSpace P (fun y ↦ f.NormalSpace y hn)) ∈
+          f.normalExpDomain hn} := by
+    simp
+  exact (f.contMDiffOn_normalExp_fiber (P := P) hn x).contMDiffAt
+    ((f.isOpen_normalExpDomain_fiber (P := P) hn x).mem_nhds hmem)
+
 /-- The vertical differential of the normal exponential along its zero section is the
 inclusion of the orthogonal normal space into the ambient tangent space. -/
 -- Not a simp lemma: the dependent target tangent space contains the coercion of the

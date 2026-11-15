@@ -409,13 +409,7 @@ theorem subst_toPowerSeries_eq_add_iff {g : PowerSeries R} :
   have hX (i : Fin 2) := PowerSeries.HasSubst.X (S := R) i
   refine ⟨fun h ↦ ⟨PowerSeries.coeff 1 g, ?_⟩, ?_⟩
   · have : HasUniqueDiv R := .of_isTorsionFree ℚ R
-    -- `g(0) = g(0) + g(0)`
-    have hg₀ : PowerSeries.constantCoeff g = 0 := by
-      have := congrArg constantCoeff h
-      rw [map_add, PowerSeries.constantCoeff_subst_of_constantCoeff_zero F.zero_constantCoeff,
-        PowerSeries.constantCoeff_subst_of_constantCoeff_zero (constantCoeff_X _),
-        PowerSeries.constantCoeff_subst_of_constantCoeff_zero (constantCoeff_X _)] at this
-      simpa using this
+    have hg₀ := TauCeti.FormalGroupHom.constantCoeff_eq_zero_of_additive h
     -- differentiate in `X` and set `X = 0`: `g'(T) · F_X(0, T) = g'(0)`
     have hd := congrArg (pderiv 0) h
     rw [map_add, PowerSeries.pderiv_subst hF, PowerSeries.pderiv_subst (hX 0),

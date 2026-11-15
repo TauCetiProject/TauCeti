@@ -80,7 +80,7 @@ private theorem exists_walk_avoiding_of_walk_deleteEdges
     ∃ q : G.Walk x y, ∀ e ∈ q.edges, e ∉ F := by
   induction p with
   | nil => exact ⟨.nil, by simp⟩
-  | @cons x y z h p ih =>
+  | @cons x y z h _ ih =>
     obtain ⟨hxy, hnot⟩ := SimpleGraph.deleteEdges_adj.mp h
     obtain ⟨e, he, heF⟩ := exists_isLink_notMem_of_notMem_blockedSimpleEdges F
       hxy hnot

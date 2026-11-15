@@ -21,8 +21,8 @@ weight and filtration-shift conventions needed by later Tate twists, it verifies
 opposed-filtration definition has the intended rank-one objects. Multiplication of integers
 polarizes it, so it also witnesses that the Hodge–Riemann relations are satisfiable.
 
-The convention follows the Hodge structures roadmap and standard Hodge-theory notation; see
-Voisin, *Hodge Theory and Complex Algebraic Geometry I*, §7.
+The convention follows standard Hodge-theory notation; see Voisin, *Hodge Theory and Complex
+Algebraic Geometry I*, §7.
 
 ## Main declarations
 

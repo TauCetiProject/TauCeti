@@ -393,7 +393,7 @@ private theorem exists_mixed_of_terminal_first
       (Grid.notMem_cIco_of_mem_insert_cIco_of_notMem_cIco hs hXnext hXb)
       (fun h => hXb (Grid.cIoo_subset_cIco_of_mem_cIco hs h)) (by rwa [hbot])
   · rcases (D.isRecutOfRightEqLeft_recut hcommon hone h1 h2).recut_geometry hone with
-      ⟨hrow, -, -, -, -, -, -, -, -⟩ | ⟨hrow, -, -, -, h2r, -, -, h2b, h2t⟩
+      ⟨hrow, -, -, -, -, -, -, -, -⟩ | ⟨_, -, -, -, h2r, -, -, h2b, h2t⟩
     · exact (hs (Grid.mem_cIco_of_mem_cIco_of_mem_cIoo hlow hrow)).elim
     · refine (hfalse _ (D.isRecut_recut hone h1 h2)
         (hasHexagonPiece_second_terminal C _ (h2r.trans hr) ?_ ?_)).elim
@@ -432,7 +432,7 @@ private theorem exists_mixed_of_initial_second
     · rw [hbot]
       exact Grid.notMem_cIco_of_mem_insert_cIco_of_notMem_cIco hs hXcol hXa
   · rcases (D.isRecutOfRightEqLeft_recut hcommon hone h1 h2).recut_geometry hone with
-      ⟨hrow, h1l, -, -, -, h1b, h1t, -, -⟩ | ⟨hrow, -, -, -, -, -, -, -, -⟩
+      ⟨_, h1l, -, -, -, h1b, h1t, -, -⟩ | ⟨hrow, -, -, -, -, -, -, -, -⟩
     · refine (hfalse _ (D.isRecut_recut hone h1 h2)
         (hasHexagonPiece_first_initial C _ (h1l.trans hr) ?_ ?_)).elim
       · rw [h1b, h1t]
@@ -469,7 +469,7 @@ private theorem exists_mixed_of_initial_first
       (by rwa [htop])
       (fun h => hXa (Grid.cIco_subset_cIco_of_mem_cIco hs h))
   · rcases (D.isRecutOfLeftEqRight_recut hcommon hone h1 h2).recut_geometry hone with
-      ⟨hrow, -, -, -, -, -, -, -, -⟩ | ⟨hrow, -, -, h2l, -, -, -, h2b, h2t⟩
+      ⟨hrow, -, -, -, -, -, -, -, -⟩ | ⟨_, -, -, h2l, -, -, -, h2b, h2t⟩
     · exact (hs (Grid.cIco_subset_of_mem_cIoo hrow
         (Grid.insert_cIco_subset_cIco hlow hup (Finset.mem_insert_self _ _)))).elim
     · obtain ⟨hA, hB⟩ := Grid.mem_cIco_and_mem_cIoo_of_mem_cIoo_of_mem_cIco hlow hup
@@ -512,7 +512,7 @@ private theorem exists_mixed_of_terminal_second
     · rw [htop]
       exact Grid.notMem_cIoo_of_mem_insert_cIco_of_notMem_cIco hs hXnext hXb
   · rcases (D.isRecutOfLeftEqRight_recut hcommon hone h1 h2).recut_geometry hone with
-      ⟨hrow, -, h1r, -, -, h1b, h1t, -, -⟩ | ⟨hrow, -, -, -, -, -, -, -, -⟩
+      ⟨_, -, h1r, -, -, h1b, h1t, -, -⟩ | ⟨hrow, -, -, -, -, -, -, -, -⟩
     · obtain ⟨hA, hB⟩ := Grid.mem_cIco_and_mem_cIoo_of_mem_cIoo_of_mem_cIco hlow hup
         (Grid.mem_cIco_of_mem_cIco_of_notMem_cIco_right
           (Grid.insert_cIco_subset_cIco hlow hup (Finset.mem_insert_self _ _)) hs)
@@ -550,7 +550,7 @@ private theorem exists_sameSide_of_initial_first
         D'.toRectangleDecomposition.IsRecut D := by
   have hrecut := D.isRecut_recut hone h1 h2
   rcases (D.isRecutOfRightEqLeft_recut hcommon hone h1 h2).recut_geometry hone with
-    ⟨hrow, -, -, h2l, -, -, -, h2b, h2t⟩ | ⟨hrow, h1l, -, h2l, -, h1b, h1t, h2b, h2t⟩
+    ⟨_, -, -, h2l, -, -, -, h2b, h2t⟩ | ⟨_, h1l, -, h2l, -, h1b, h1t, h2b, h2t⟩
   · refine (hfalse _ hrecut (hasHexagonPiece_second_initial C _ (h2l.trans hl) ?_ ?_)).elim
     · rw [h2b, h2t]
       exact hlow
@@ -594,7 +594,7 @@ private theorem exists_sameSide_of_terminal_second
   have hrecut := D.isRecut_recut hone h1 h2
   rw [D.second_bottom_eq_first_bottom_of_right_eq_left hcommon] at hlow
   rcases (D.isRecutOfRightEqLeft_recut hcommon hone h1 h2).recut_geometry hone with
-    ⟨hrow, -, h1r, -, h2r, h1b, h1t, h2b, h2t⟩ | ⟨hrow, -, h1r, -, -, h1b, h1t, -, -⟩
+    ⟨_, -, h1r, -, h2r, h1b, h1t, h2b, h2t⟩ | ⟨_, -, h1r, -, -, h1b, h1t, -, -⟩
   · by_cases hA : s' ∈ Grid.cIco D.first.top D.second.top
     · refine (hfalse _ hrecut (hasHexagonPiece_first_terminal C _ (h1r.trans hr) ?_ ?_)).elim
       · rw [h1b, h1t]
@@ -637,7 +637,7 @@ private theorem exists_sameSide_of_terminal_first
         D'.toRectangleDecomposition.IsRecut D := by
   have hrecut := D.isRecut_recut hone h1 h2
   rcases (D.isRecutOfLeftEqRight_recut hcommon hone h1 h2).recut_geometry hone with
-    ⟨hrow, -, -, -, h2r, -, -, h2b, h2t⟩ | ⟨hrow, -, h1r, -, h2r, h1b, h1t, h2b, h2t⟩
+    ⟨_, -, -, -, h2r, -, -, h2b, h2t⟩ | ⟨_, -, h1r, -, h2r, h1b, h1t, h2b, h2t⟩
   · refine (hfalse _ hrecut (hasHexagonPiece_second_terminal C _ (h2r.trans hr) ?_ ?_)).elim
     · rw [h2b, h2t]
       exact hlow
@@ -681,7 +681,7 @@ private theorem exists_sameSide_of_initial_second
   have hrecut := D.isRecut_recut hone h1 h2
   rw [D.second_top_eq_first_top_of_left_eq_right hcommon] at hlow hup
   rcases (D.isRecutOfLeftEqRight_recut hcommon hone h1 h2).recut_geometry hone with
-    ⟨hrow, h1l, -, h2l, -, h1b, h1t, h2b, h2t⟩ | ⟨hrow, h1l, -, -, -, h1b, h1t, -, -⟩
+    ⟨_, h1l, -, h2l, -, h1b, h1t, h2b, h2t⟩ | ⟨_, h1l, -, -, -, h1b, h1t, -, -⟩
   · by_cases hA : s' ∈ Grid.cIco D.second.bottom D.first.bottom
     · obtain ⟨hA1, hA2⟩ := Grid.mem_cIco_and_mem_cIoo_of_mem_cIoo_of_mem_cIco hlow hup hA
       refine (hfalse _ hrecut (hasHexagonPiece_first_initial C _ (h1l.trans hl) ?_ ?_)).elim

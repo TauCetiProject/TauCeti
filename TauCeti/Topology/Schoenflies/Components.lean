@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicTopology.Singular.JordanBrouwer
 public import TauCeti.Geometry.Manifold.LocallyFlat.Separation
 import Mathlib.Analysis.Normed.Module.Connected
+import Mathlib.Geometry.Manifold.Instances.Sphere
+import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 import TauCeti.Topology.ConnectedComponents
 
 /-!
@@ -28,7 +30,8 @@ generalized Schoenflies theorem, where `σ` has a bicollar `b : Sᵐ⁻¹ × ℝ
   and hold in every dimension.
 * The positive side `b (Sᵐ⁻¹ × (0, ∞))` of the bicollar lies in one component and the negative
   side `b (Sᵐ⁻¹ × (-∞, 0))` in the other
-  (`TauCeti.IsBicollar.disjoint_connectedComponentIn_compl_range`). That each side lies in a
+  (`TauCeti.IsBicollar.disjoint_connectedComponentIn_compl_range`). These components are open
+  and path connected (`TauCeti.IsBicollar.exists_connectedComponentIn_eq`). That each side lies in a
   single component holds for any bicollar of a preconnected space
   (`TauCeti.IsBicollar.image_subset_connectedComponentIn`).
 * The closure of each component `U` is `U ∪ Σ`, and its frontier is `Σ`
@@ -62,7 +65,7 @@ namespace TauCeti
 
 open Function Metric Module Set Topology
 
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {σ : sphere (0 : E) 1 → sphere (0 : F) 1}
 
 section Function
@@ -70,7 +73,7 @@ section Function
 variable {φ : sphere (0 : F) 1 → ℝ}
 
 /-- **The positive domain of a function vanishing exactly on an embedded sphere.** Let `σ` be a
-continuous injection of the unit sphere of a finite-dimensional real normed space `E` into the
+continuous injection of the unit sphere of a real normed space `E` into the
 unit sphere of a real normed space of dimension `dim E + 1`, and let `φ` be a continuous function
 vanishing exactly on the image of `σ` and taking a negative value. Then the set where `φ` is
 positive is the connected component of each of its points in the complement of that image. -/
@@ -89,7 +92,7 @@ theorem connectedComponentIn_compl_range_eq_setOf_pos (hEF : finrank ℝ F = fin
     ⟨z, hz⟩ hy
 
 /-- **The negative domain of a function vanishing exactly on an embedded sphere.** Let `σ` be a
-continuous injection of the unit sphere of a finite-dimensional real normed space `E` into the
+continuous injection of the unit sphere of a real normed space `E` into the
 unit sphere of a real normed space of dimension `dim E + 1`, and let `φ` be a continuous function
 vanishing exactly on the image of `σ` and taking a positive value. Then the set where `φ` is
 negative is the connected component of each of its points in the complement of that image. -/
@@ -114,14 +117,16 @@ namespace IsBicollar
 variable {b : sphere (0 : E) 1 × ℝ → sphere (0 : F) 1}
 
 /-- The two sides of a bicollar of a sphere `Sᵐ⁻¹` in `Sᵐ`, `m ≥ 2`, lie in two disjoint open
-sets covering the complement of its image, which are the two connected components of that
-complement. -/
-private theorem exists_connectedComponentIn_eq (hb : IsBicollar σ b)
+path-connected sets covering the complement of its image, which are the two connected
+components of that complement. -/
+theorem exists_connectedComponentIn_eq (hb : IsBicollar σ b)
     (hEF : finrank ℝ F = finrank ℝ E + 1) (hE : 1 < finrank ℝ E) :
     ∃ A B : Set (sphere (0 : F) 1), IsOpen A ∧ IsOpen B ∧ Disjoint A B ∧
-      (range σ)ᶜ = A ∪ B ∧ MapsTo b (univ ×ˢ Ioi 0) A ∧ MapsTo b (univ ×ˢ Iio 0) B ∧
+      (range σ)ᶜ = A ∪ B ∧ IsPathConnected A ∧ IsPathConnected B ∧
+      MapsTo b (univ ×ˢ Ioi 0) A ∧ MapsTo b (univ ×ˢ Iio 0) B ∧
       (∀ y ∈ A, connectedComponentIn (range σ)ᶜ y = A) ∧
       (∀ y ∈ B, connectedComponentIn (range σ)ᶜ y = B) := by
+  have : FiniteDimensional ℝ E := .of_finrank_pos (by omega)
   have : PreconnectedSpace (sphere (0 : E) 1) := Subtype.preconnectedSpace
     (isConnected_sphere (by rw [← finrank_eq_rank]; exact_mod_cast hE) 0 zero_le_one).2
   have : FiniteDimensional ℝ F := .of_finrank_pos (by omega)
@@ -135,11 +140,27 @@ private theorem exists_connectedComponentIn_eq (hb : IsBicollar σ b)
     (not_isPreconnected_compl_range_sphere hEF hb.continuous hb.injective)
   have hcard := natCard_connectedComponents_sphere_compl_range_eq_two hEF hb.continuous
     hb.injective
-  refine ⟨A, B, hA, hB, hAB, hcompl, hpos, hneg, fun y hy ↦ ?_, fun y hy ↦ ?_⟩
-  · exact connectedComponentIn_eq_of_natCard_eq_two hcard hA hB hAB hcompl.symm
-      ⟨_, hneg (x := (x, -1)) ⟨mem_univ x, by norm_num⟩⟩ hy
-  · exact connectedComponentIn_eq_of_natCard_eq_two hcard hB hA hAB.symm
-      (hcompl.trans (union_comm _ _)).symm ⟨_, hpos (x := (x, 1)) ⟨mem_univ x, by norm_num⟩⟩ hy
+  have hAx : b (x, 1) ∈ A := hpos ⟨mem_univ x, by norm_num⟩
+  have hBx : b (x, -1) ∈ B := hneg ⟨mem_univ x, by norm_num⟩
+  have hAc : ∀ y ∈ A, connectedComponentIn (range σ)ᶜ y = A := fun y hy ↦
+    connectedComponentIn_eq_of_natCard_eq_two hcard hA hB hAB hcompl.symm ⟨_, hBx⟩ hy
+  have hBc : ∀ y ∈ B, connectedComponentIn (range σ)ᶜ y = B := fun y hy ↦
+    connectedComponentIn_eq_of_natCard_eq_two hcard hB hA hAB.symm
+      (hcompl.trans (union_comm _ _)).symm ⟨_, hAx⟩ hy
+  -- Transport local path connectedness from the Euclidean sphere.
+  have : Fact (finrank ℝ (EuclideanSpace ℝ (Fin (finrank ℝ E + 1))) = finrank ℝ E + 1) :=
+    ⟨by simp⟩
+  have := ChartedSpace.locallyPathConnectedSpace (EuclideanSpace ℝ (Fin (finrank ℝ E)))
+    (sphere (0 : EuclideanSpace ℝ (Fin (finrank ℝ E + 1))) 1)
+  have := (sphereHomeomorphOfFinrankEq (F := F)
+    (E := EuclideanSpace ℝ (Fin (finrank ℝ E + 1))) (by simp [hEF])).locallyPathConnectedSpace
+  refine ⟨A, B, hA, hB, hAB, hcompl, ?_, ?_, hpos, hneg, hAc, hBc⟩
+  · apply hA.isConnected_iff_isPathConnected.1
+    rw [← hAc _ hAx]
+    exact isConnected_connectedComponentIn_iff.2 (hcompl.ge (Or.inl hAx))
+  · apply hB.isConnected_iff_isPathConnected.1
+    rw [← hBc _ hBx]
+    exact isConnected_connectedComponentIn_iff.2 (hcompl.ge (Or.inr hBx))
 
 variable (hb : IsBicollar σ b) (hEF : finrank ℝ F = finrank ℝ E + 1) (hE : 1 < finrank ℝ E)
 include hb hEF hE
@@ -153,7 +174,8 @@ theorem disjoint_connectedComponentIn_compl_range (x x' : sphere (0 : E) 1) {t t
     (ht : 0 < t) (ht' : t' < 0) :
     Disjoint (connectedComponentIn (range σ)ᶜ (b (x, t)))
       (connectedComponentIn (range σ)ᶜ (b (x', t'))) := by
-  obtain ⟨A, B, -, -, hAB, -, hpos, hneg, hAc, hBc⟩ := hb.exists_connectedComponentIn_eq hEF hE
+  obtain ⟨A, B, -, -, hAB, -, -, -, hpos, hneg, hAc, hBc⟩ :=
+    hb.exists_connectedComponentIn_eq hEF hE
   rw [hAc _ (hpos ⟨mem_univ x, mem_Ioi.2 ht⟩), hBc _ (hneg ⟨mem_univ x', mem_Iio.2 ht'⟩)]
   exact hAB
 
@@ -163,7 +185,7 @@ sphere `Sᵐ` of a real normed space of dimension `m + 1`. The closure of a conn
 the complement of the image of `σ` is that component together with the image of `σ`. -/
 theorem closure_connectedComponentIn_compl_range {y : sphere (0 : F) 1} (hy : y ∉ range σ) :
     closure (connectedComponentIn (range σ)ᶜ y) = connectedComponentIn (range σ)ᶜ y ∪ range σ := by
-  obtain ⟨A, B, hA, hB, hAB, hcompl, hpos, hneg, hAc, hBc⟩ :=
+  obtain ⟨A, B, hA, hB, hAB, hcompl, -, -, hpos, hneg, hAc, hBc⟩ :=
     hb.exists_connectedComponentIn_eq hEF hE
   rcases (hcompl ▸ hy : y ∈ A ∪ B) with hyA | hyB
   · rw [hAc y hyA]
@@ -177,7 +199,7 @@ sphere `Sᵐ` of a real normed space of dimension `m + 1`. The frontier of a con
 the complement of the image of `σ` is the image of `σ`. -/
 theorem frontier_connectedComponentIn_compl_range {y : sphere (0 : F) 1} (hy : y ∉ range σ) :
     frontier (connectedComponentIn (range σ)ᶜ y) = range σ := by
-  obtain ⟨A, B, hA, hB, hAB, hcompl, hpos, hneg, hAc, hBc⟩ :=
+  obtain ⟨A, B, hA, hB, hAB, hcompl, -, -, hpos, hneg, hAc, hBc⟩ :=
     hb.exists_connectedComponentIn_eq hEF hE
   rcases (hcompl ▸ hy : y ∈ A ∪ B) with hyA | hyB
   · rw [hAc y hyA]

@@ -22,8 +22,8 @@ discriminant, which is `fundamentalDiscriminant d`. Concretely:
 * for `p ∤ 2` (an odd prime up to sign), `p` is unramified iff `p ∤ d` — i.e. the ramified odd
   primes are exactly those dividing the radicand `d`.
 
-This is the finite-prime half of the Layer-1 ramified-prime behaviour of the multiquadratic
-roadmap. It combines Mathlib's `NumberField.not_dvd_discr_iff_isUnramifiedIn` with the quadratic
+This is the finite-prime half of the ramified-prime behaviour of quadratic fields. It combines
+Mathlib's `NumberField.not_dvd_discr_iff_isUnramifiedIn` with the quadratic
 discriminant computation `TauCeti.Multiquadratic.discr_eq_fundamentalDiscriminant`.
 
 The second half of the file counts the ramified primes. Writing `fundamentalDiscriminant d` as a

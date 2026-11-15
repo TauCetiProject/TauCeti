@@ -180,7 +180,7 @@ theorem hasDerivAt_toReal_pathELength_of_curveVelocity_ne_zero {a b : ℝ} (hab 
       (hfUV.of_le (by norm_num : (1 : ℕ∞ω) ≤ 2)).comp
         (contDiff_prodMk_right s).contMDiff.contMDiffOn (fun t ht ↦ ⟨hs, ht⟩)
     have hVs : Icc a b ⊆ V := by simpa only [uIcc_of_le hab] using hV
-    rw [hγs.pathELength_eq_ofReal_integral_norm_curveVelocityWithin hVo.uniqueMDiffOn hab hVs,
+    rw [hγs.pathELength_eq_ofReal_integral_norm_curveVelocityWithin hVs,
       ENNReal.toReal_ofReal (intervalIntegral.integral_nonneg hab (fun _ _ ↦ norm_nonneg _))]
     refine intervalIntegral.integral_congr fun t ht ↦ ?_
     rw [curveVelocityWithin_of_mem_nhds (hVo.mem_nhds (hV ht)), hLeq hs (hV ht)]

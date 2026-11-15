@@ -499,6 +499,32 @@ theorem card_storedClasses_le_passportSize (h : r.IsValidFor P) :
 
 end IsValidFor
 
+variable {r} in
+/-- A row storing a single triple `s`, written by its single cycle-notation entry, with orbit size
+one, is valid for every passport of `s` once its stored degree, partitions and genus are those
+of `s`. -/
+theorem isValidFor_of_triples_eq_singleton {P : PassportSpec n} {s : StoredTriple n}
+    {c : CycleNotationTriple n} (hdeg : r.deg = n) (horbitSize : r.orbitSize = 1)
+    (htriples : r.triples = [s]) (htriplesCyc : r.triplesCyc = [c]) (hc : s.IsCycleNotation c)
+    (hs : s.toTriple.IsConnected) (hP : PassportSpec.HasPassport ⟨s.toTriple, hs⟩ P)
+    (hlambdas : r.lambdas = s.toTriple.cycleData) (hg : r.g = s.toTriple.genus) :
+    r.IsValidFor P where
+  deg_eq := hdeg
+  orbitSize_eq := by
+    rw [storedEmbeddingCount_def, storedEmbeddingCount_eq_triplesLength, htriples, horbitSize,
+      List.length_singleton]
+  triples_ne_nil := htriples ▸ List.cons_ne_nil _ _
+  hasPassport t ht := by
+    obtain rfl := List.mem_singleton.mp (htriples ▸ ht)
+    exact ⟨hs, hP⟩
+  forall₂_isCycleNotation := htriples ▸ htriplesCyc ▸ .cons hc .nil
+  lambdas_eq := by
+    obtain ⟨-, h0, h1, hinf⟩ := (PassportSpec.hasPassport_iff _ P).mp hP
+    rw [hlambdas, ← h0, ← h1, ← hinf]
+  g_eq t ht := by
+    obtain rfl := List.mem_singleton.mp (htriples ▸ ht)
+    exact hg
+
 /-- Every connected triple is the stored triple of a formal row that is valid for its passport, so
 `TauCeti.PermutationTriple.LMFDB.BelyiRecord.IsValidFor` is not vacuous. The row carries
 placeholder data in the fields that validity leaves unconstrained: the base-field polynomial

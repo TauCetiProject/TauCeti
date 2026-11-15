@@ -11,7 +11,7 @@ public import TauCeti.NumberTheory.Multiquadratic.Prime.Discriminant.Splitting
 /-!
 # Complete splitting criteria for the first genus-field examples
 
-The multiquadratic roadmap's genus-field worked examples begin with
+The genus-field worked examples begin with
 `ℚ(√-5)`, whose prime-discriminant generators are `-4` and `5`, and
 `ℚ(√-21)`, whose prime-discriminant generators are `-4`, `-3`, and `-7`.
 The general prime-discriminant splitting theorem already gives the complete-splitting condition

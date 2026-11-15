@@ -391,13 +391,13 @@ theorem injective_comp_succAbove_of_eq {n : ℕ} {b : Fin (n + 1) → α} {p q :
   obtain rfl | hpq := eq_or_ne p q
   · exact hp
   intro x y hxy
-  have key (z : Fin (n + 1)) (hz : z ≠ q) :
+  have key (z : Fin (n + 1)) :
       (if z = p then q else z) ≠ p ∧ b (if z = p then q else z) = b z := by
     split_ifs with hzp
     · exact ⟨hpq.symm, hzp ▸ h.symm⟩
     · exact ⟨hzp, rfl⟩
-  have hx := key _ (succAbove_ne q x)
-  have hy := key _ (succAbove_ne q y)
+  have hx := key (q.succAbove x)
+  have hy := key (q.succAbove y)
   have := eq_of_injective_comp_succAbove hp hx.1 hy.1 (hx.2.trans (hxy.trans hy.2.symm))
   refine succAbove_right_injective (p := q) ?_
   split_ifs at this with h₁ h₂ h₂

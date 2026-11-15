@@ -261,6 +261,11 @@ theorem natCastValuation_lt_sub_one_mul_natCastValuation_ringChar_add_one
     exact Nat.mul_pos (Nat.sub_pos_of_lt hℓ.one_lt) (Nat.succ_pos _)
 
 variable (K) in
+/-- In characteristic zero, the residue characteristic of `K` is nonzero in `K`. -/
+theorem natCast_ringChar_residueField_ne_zero [CharZero K] : (ringChar 𝓀[K] : K) ≠ 0 :=
+  Nat.cast_ne_zero.mpr (CharP.char_is_prime 𝓀[K] _).ne_zero
+
+variable (K) in
 /-- The normalized valuation of a power of a natural number. -/
 @[simp]
 theorem natCastValuation_pow {n : ℕ} (k : ℕ) (hn : (n : K) ≠ 0) :

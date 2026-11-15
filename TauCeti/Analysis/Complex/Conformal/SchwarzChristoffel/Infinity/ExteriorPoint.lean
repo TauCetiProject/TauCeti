@@ -194,14 +194,14 @@ theorem exists_notMem_closure_image_schwarzChristoffelPrimitive_of_sum_lt_one
 
 /-- **The far-right band missed by an image with an end of opening `2π`.** Suppose the finite
 prevertices are integrable, the total exponent is `1`, and the logarithmic coefficient
-`C = ((∑ i, e i * a i) ^ 2 - ∑ i, e i * a i ^ 2) / 2` is negative. Then for each `δ > 0`,
-sufficiently far to the right, no point whose height lies strictly between `im c + π * C + δ`
-and `im c - δ` is in the closure of the image, where `c` is the quadratic constant at infinity.
-No simplicity or ordering assumption on the finite data is imposed. -/
+`C = ((∑ i, e i * a i) ^ 2 - ∑ i, e i * a i ^ 2) / 2`. Then for each `δ > 0`, sufficiently far
+to the right, no point whose height lies strictly between `im c + π * C + δ` and `im c - δ` is in
+the closure of the image, where `c` is the quadratic constant at infinity (the band is empty
+unless `C < 0`). No simplicity or ordering assumption on the finite data is imposed. -/
 theorem exists_forall_notMem_closure_image_schwarzChristoffelPrimitive_of_sum_eq_one
     (a e : ι → ℝ) (z₀ : UpperHalfPlane)
     (hfinite : ∀ j, -1 < ∑ i with a i = a j, e i) (hsum : ∑ i, e i = 1)
-    (hC : (∑ i, e i * a i) ^ 2 < ∑ i, e i * a i ^ 2) {δ : ℝ} (hδ : 0 < δ) :
+    {δ : ℝ} (hδ : 0 < δ) :
     ∃ R : ℝ, ∀ w : ℂ, R < w.re →
       (schwarzChristoffelQuadraticConstantAtInfinity a e z₀).im +
           Real.pi * (((∑ i, e i * a i) ^ 2 - ∑ i, e i * a i ^ 2) / 2) + δ < w.im →
@@ -211,7 +211,6 @@ theorem exists_forall_notMem_closure_image_schwarzChristoffelPrimitive_of_sum_eq
   set C : ℝ := (M ^ 2 - ∑ i, e i * a i ^ 2) / 2
   set c := schwarzChristoffelQuadraticConstantAtInfinity a e z₀
   set F := schwarzChristoffelPrimitive a e z₀
-  have hCneg : C < 0 := by simp only [C]; linarith
   have hQ (z : ℂ) : z ^ 2 / 2 - (∑ i, (e i : ℂ) * (a i : ℂ)) * z +
       ((∑ i, (e i : ℂ) * (a i : ℂ)) ^ 2 - ∑ i, (e i : ℂ) * (a i : ℂ) ^ 2) / 2 * log z =
       z ^ 2 / 2 - (M : ℂ) * z + (C : ℂ) * log z := by
@@ -226,7 +225,7 @@ theorem exists_forall_notMem_closure_image_schwarzChristoffelPrimitive_of_sum_eq
     exact h.mono fun z hz => mem_ball_iff_norm.mp hz
   rw [eventually_inf_principal, hasBasis_cobounded_norm.eventually_iff] at htail
   obtain ⟨A, _, htail⟩ := htail
-  obtain ⟨R₁, hR₁⟩ := exists_forall_im_quadratic_log_notMem_Ioo (M := M) hCneg (half_pos hδ)
+  obtain ⟨R₁, hR₁⟩ := exists_forall_im_quadratic_log_notMem_Ioo (M := M) (C := C) (half_pos hδ)
   obtain ⟨B, _, hB⟩ :=
     exists_norm_bound_schwarzChristoffelPrimitive_on_bounded_part a e z₀ hfinite (max A R₁)
   set R := max B (c.re + δ / 2 + 1 / 2)
@@ -267,7 +266,7 @@ theorem exists_notMem_closure_image_schwarzChristoffelPrimitive_of_sum_eq_one
   have hCneg : ((∑ i, e i * a i) ^ 2 - ∑ i, e i * a i ^ 2) / 2 < 0 := by linarith
   obtain ⟨R, hR⟩ :=
     exists_forall_notMem_closure_image_schwarzChristoffelPrimitive_of_sum_eq_one a e z₀
-      hfinite hsum hC (δ := -(Real.pi * (((∑ i, e i * a i) ^ 2 - ∑ i, e i * a i ^ 2) / 2)) / 4)
+      hfinite hsum (δ := -(Real.pi * (((∑ i, e i * a i) ^ 2 - ∑ i, e i * a i ^ 2) / 2)) / 4)
       (by nlinarith [Real.pi_pos])
   set C : ℝ := ((∑ i, e i * a i) ^ 2 - ∑ i, e i * a i ^ 2) / 2
   -- Take a far-right point halfway between the two outer heights.

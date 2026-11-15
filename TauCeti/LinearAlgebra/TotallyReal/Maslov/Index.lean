@@ -12,7 +12,7 @@ public import TauCeti.Topology.Circle.Degree
 /-!
 # The Maslov index of a loop of totally real subspaces
 
-Let `E` be a finite-dimensional complex normed space and `Λ` a loop of maximal totally real
+Let `E` be a complex normed space and `Λ` a loop of maximal totally real
 subspaces of `E` (`TauCeti.TotallyRealLoop`): a family `Λ : [0, 1] → Submodule ℝ E` with
 `Λ 0 = Λ 1` of the form `Λ t = A t L₀`, where `L₀` is maximal totally real and `A` is a continuous
 path of complex-linear automorphisms of `E`.
@@ -20,7 +20,9 @@ path of complex-linear automorphisms of `E`.
 Its **Maslov index** `μ(Λ)` (`TauCeti.TotallyRealLoop.maslovIndex`) is the degree
 (`Circle.degree`) of the loop of Maslov phases `t ↦ ρ(Λ 0, Λ t)` of the circle, read as a path
 (`TauCeti.TotallyRealLoop.maslovPhasePath`), where
-`ρ(L₀, A L₀) = det A / conj (det A)` is `TauCeti.IsMaximalTotallyReal.maslovPhase`.
+`ρ(L₀, A L₀) = det A / conj (det A)` is `TauCeti.IsMaximalTotallyReal.maslovPhase`. If `E` is
+infinite-dimensional every determinant is `1`, every phase is `1` and the index is `0`
+(`TauCeti.TotallyRealLoop.maslovIndex_of_not_finite`).
 
 * It does not depend on the reference subspace: for any maximal totally real `L₀` the phases
   `ρ(L₀, Λ t)` differ from `ρ(Λ 0, Λ t)` by the constant factor `ρ(L₀, Λ 0)`, so `μ(Λ)` is the
@@ -68,8 +70,7 @@ namespace TauCeti
 
 namespace TotallyRealLoop
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
-  (Λ : TotallyRealLoop E)
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] (Λ : TotallyRealLoop E)
 
 /-- Along a loop of maximal totally real subspaces, the Maslov phase relative to any fixed maximal
 totally real subspace varies continuously. -/
@@ -99,9 +100,16 @@ theorem maslovPhasePath_apply (t : I) :
   (rfl)
 
 /-- The **Maslov index** of a loop of maximal totally real subspaces: the degree of its loop of
-Maslov phases `t ↦ ρ(Λ 0, Λ t)` in the circle. -/
+Maslov phases `t ↦ ρ(Λ 0, Λ t)` in the circle. In an infinite-dimensional `E` every Maslov phase is
+the junk value `1`, so the index is `0` there. -/
 noncomputable def maslovIndex : ℤ :=
   Circle.degree Λ.maslovPhasePath
+
+/-- In an infinite-dimensional space the Maslov index of every loop is `0`. -/
+@[simp]
+theorem maslovIndex_of_not_finite (h : ¬ Module.Finite ℂ E) : Λ.maslovIndex = 0 :=
+  (Circle.degree_congr _ (Path.refl 1) fun t ↦ Circle.ext (by simp [h])).trans
+    (Circle.degree_refl 1)
 
 /-- The Maslov index read off a continuous angle function of the Maslov phases relative to an
 arbitrary maximal totally real reference subspace `L₀`: if `e^{i θ t} = ρ(L₀, Λ t)`, then

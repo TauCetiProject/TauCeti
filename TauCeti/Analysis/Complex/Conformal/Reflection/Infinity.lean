@@ -236,7 +236,7 @@ theorem tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_div_neg_inv
       |(g z).arg| = β * Real.pi / 2) :
     Tendsto (fun z : ℂ => z * logDeriv (deriv f) z)
       (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 ((β : ℂ) - 1)) := by
-  set s := Metric.ball (0 : ℂ) r ∩ upperHalfPlaneSet with hs_def
+  set s := Metric.ball (0 : ℂ) r ∩ upperHalfPlaneSet
   have hs : IsOpen s := Metric.isOpen_ball.inter isOpen_upperHalfPlaneSet
   have hball : MapsTo (starRingEnd ℂ) (Metric.ball (0 : ℂ) r) (Metric.ball 0 r) := fun z hz => by
     rw [Metric.mem_ball, ← map_zero (starRingEnd ℂ), Complex.dist_conj_conj]

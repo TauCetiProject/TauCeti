@@ -47,8 +47,6 @@ theorem bind_withDensity (rho : Measure A) (nu : Measure B) [SFinite rho] [SFini
       nu.withDensity (fun b ↦ ∫⁻ a, f a b ∂rho) := by
   have hkernel : Measurable fun a ↦ nu.withDensity (f a) :=
     measurable_withDensity hf
-  have hdensity : Measurable fun b ↦ ∫⁻ a, f a b ∂rho :=
-    hf.lintegral_prod_left
   ext s hs
   rw [bind_apply hs hkernel.aemeasurable, withDensity_apply _ hs]
   simp_rw [withDensity_apply _ hs]

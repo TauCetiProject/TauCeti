@@ -289,7 +289,7 @@ including the zero laws at invalid parameters. -/
 theorem nakagamiMeasure_map_const_mul (hc : 0 < c) :
     (nakagamiMeasure m Ω).map (fun x ↦ c * x) = nakagamiMeasure m (c ^ 2 * Ω) := by
   by_cases h : 0 < m ∧ 0 < Ω
-  · obtain ⟨hm, hΩ⟩ := h
+  · obtain ⟨_, _⟩ := h
     rw [nakagamiMeasure_eq_chiMeasure, chiMeasure_map_const_mul hc,
       nakagamiMeasure_eq_chiMeasure]
     congr 1

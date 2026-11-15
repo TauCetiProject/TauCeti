@@ -55,7 +55,6 @@ theorem eq_one_of_mem_Gamma1_of_smul_eq_self (hN : 4 ≤ N) (hγ : γ ∈ Gamma1
       ring
     have hnonneg : 0 ≤ 2 - (γ : Matrix (Fin 2) (Fin 2) ℤ).trace := by nlinarith
     have hlt : 2 - (γ : Matrix (Fin 2) (Fin 2) ℤ).trace < (N : ℤ) := by
-      have hN' : (4 : ℤ) ≤ N := by exact_mod_cast hN
       nlinarith
     have heq := Int.eq_zero_of_dvd_of_nonneg_of_lt hnonneg hlt hdiv
     nlinarith

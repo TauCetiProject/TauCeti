@@ -21,6 +21,7 @@ public import TauCeti.Topology.Covering.Quotient
 import Mathlib.Analysis.LocallyConvex.HahnBanach
 import TauCeti.Algebra.Module.ZLattice.Ker
 import TauCeti.Geometry.Manifold.Immersion.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Topology.Algebra.Module.DiscretePreimage
 
 /-!
@@ -115,6 +116,8 @@ The following results also have additive counterparts in the `AddSubgroup` names
 * `Submodule.instLieAddGroupOrbitRelQuotient`: the quotient of a locally compact normed space by a
   discrete submodule is a `C^n` additive Lie group; for `𝕜 = ℂ` and `n = ω` it is a complex Lie
   group.
+* `Submodule.mfderiv_orbitRelQuotient_mk_eq`: the derivative of the orbit projection is the same
+  at every representative of a class.
 * `Submodule.contMDiff_orbitRelQuotient_of_comp_mk`: a map of quotients by discrete submodules
   induced by a `C^n` map of the ambient spaces is `C^n`.
 * `Submodule.contMDiff_orbitRelQuotientMap`: a `C^n` semilinear map carrying `L` into `L'` induces
@@ -253,6 +256,27 @@ instance Submodule.instLieAddGroupOrbitRelQuotient :
   IsLocalDiffeomorph.lieAddGroup
     (AddMonoidHom.mk' (_root_.Quotient.mk (AddAction.orbitRel L E)) L.orbitRelQuotient_mk_add)
     TauCeti.isLocalDiffeomorph_addQuotientMk _root_.Quotient.mk_surjective
+
+variable {L} in
+/-- The derivative of the orbit projection `E → E ⧸ L` is the same at every representative of a
+class: translations by `L` have derivative the identity. -/
+theorem Submodule.mfderiv_orbitRelQuotient_mk_eq {z w : E}
+    (h : _root_.Quotient.mk (AddAction.orbitRel L E) z =
+      _root_.Quotient.mk (AddAction.orbitRel L E) w) (v : E) :
+    mfderiv 𝓘(𝕜, E) 𝓘(𝕜, E) (_root_.Quotient.mk (AddAction.orbitRel L E)) z v =
+      mfderiv 𝓘(𝕜, E) 𝓘(𝕜, E) (_root_.Quotient.mk (AddAction.orbitRel L E)) w v := by
+  obtain ⟨l, rfl⟩ := _root_.Quotient.exact h.symm
+  have hd := TauCeti.mfderiv_addQuotientMk_vadd_apply (I := 𝓘(𝕜, E)) (n := 1) one_ne_zero
+    ((TauCeti.isLocalDiffeomorph_addQuotientMk (I := 𝓘(𝕜, E)) (n := 1)
+      (l +ᵥ z)).mdifferentiableAt one_ne_zero) v
+  rw [← hd]
+  congr 1
+  have ht : (fun u : E ↦ l +ᵥ u) = fun u ↦ (l : E) + u :=
+    funext fun u ↦ by rw [Submodule.vadd_def, vadd_eq_add]
+  rw [ht, mfderiv_eq_fderiv, fderiv_const_add, fderiv_fun_id]
+  rw [ContinuousLinearMap.id_comp]
+  -- `fromTangentSpace z` is the identity of `E`, read as the tangent space at `z`.
+  exact NormedSpace.fromTangentSpace_symm_apply (𝕜 := 𝕜) ((l : E) + z) v
 
 variable {L} in
 /-- A map `g` of quotients by discrete submodules that is induced by a `C^n` map `f` of the ambient

@@ -154,7 +154,7 @@ private def cechComplexPushforwardIso (M : X.Modules) :
   -- the sections of `f_* M` over `V` are by definition the sections of `M` over `f⁻¹ V`
   (TauCeti.CategoryTheory.cechComplexCompIso (Opens.map f.base) U
     ((SheafOfModules.toSheaf X.ringCatSheaf).obj M).obj
-    fun _ a ↦ f.nonempty_pi_preimage_hom fun j ↦ U (a j)).symm
+    fun _ _ ↦ inferInstance).symm
 
 /-- The identification of Čech complexes `cechComplexPushforwardIso` is natural in `M`. -/
 private lemma cechComplexPushforwardIso_naturality {M N : X.Modules} (α : M ⟶ N) :
@@ -165,7 +165,7 @@ private lemma cechComplexPushforwardIso_naturality {M N : X.Modules} (α : M ⟶
         ((SheafOfModules.toSheaf X.ringCatSheaf).map α).hom :=
   (Iso.eq_inv_comp _).2 <| (Category.assoc _ _ _).symm.trans <| (Iso.comp_inv_eq _).2 <|
     (TauCeti.CategoryTheory.cechComplexFunctor_map_comp_cechComplexCompIso_hom (Opens.map f.base)
-      U _ (fun _ a ↦ f.nonempty_pi_preimage_hom fun j ↦ U (a j))
+      U _ (fun _ _ ↦ inferInstance)
       ((SheafOfModules.toSheaf X.ringCatSheaf).map α).hom).symm
 
 variable [IsAffineHom f] (hU : ∀ i, IsAffineOpen (U i))

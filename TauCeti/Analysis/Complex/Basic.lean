@@ -25,6 +25,9 @@ pseudo-hyperbolic expression.
 Inversion preserves the open right half-plane: `z⁻¹` has positive real part exactly when `z`
 does (`Complex.inv_re_pos`).
 
+The map `y ↦ r² / y` (inversion in the circle of radius `r` followed by conjugation) satisfies
+`‖conj x - r² / y‖ ≤ 3 ‖x - y‖` for `‖x‖ ≤ r ≤ ‖y‖` (`Complex.norm_conj_sub_sq_div_le`).
+
 The scalar Cayley expression `1 + (z - conj z) / (r - z)` has unit norm for real `r`.
 When `z ≠ r`, it is the quotient `(r - conj z) / (r - z)` of a complex number's conjugate
 by itself; at `z = r`, Lean's totalized inverse gives value one.
@@ -116,5 +119,37 @@ expressions and preserves norms. -/
 theorem norm_one_sub_conj_mul_comm (z w : ℂ) : ‖1 - conj w * z‖ = ‖1 - conj z * w‖ := by
   rw [← norm_conj]
   simp [mul_comm]
+
+
+/-- For a point `x` of the closed disc of radius `r` and a point `y` outside the open disc, the
+conjugate `conj x` is within `3 ‖x - y‖` of the point `r² / y`, the inversion of `y` in the circle
+of radius `r` followed by conjugation. -/
+theorem norm_conj_sub_sq_div_le {r : ℝ} (x y : ℂ)
+    (hx : ‖x‖ ≤ r) (hy : r ≤ ‖y‖) :
+    ‖conj x - (r : ℂ)^2/y‖ ≤ 3*‖x - y‖ := by
+  have hr : 0 ≤ r := (norm_nonneg x).trans hx
+  rcases eq_or_ne y 0 with rfl | hyne
+  · have hr0 : r = 0 := le_antisymm (by simpa using hy) hr
+    have hx0 : x = 0 := norm_le_zero_iff.mp (hr0 ▸ hx)
+    simp [hr0, hx0]
+  have hy0 : 0 < ‖y‖ := norm_pos_iff.mpr hyne
+  have heq : conj y - (r : ℂ)^2/y = (((‖y‖^2 - r^2 : ℝ) : ℂ))/y := by
+    apply (eq_div_iff hyne).mpr
+    rw [sub_mul, div_mul_cancel₀ _ hyne, conj_mul', ofReal_sub, ofReal_pow, ofReal_pow]
+  have hgap : ‖y‖-r ≤ ‖x - y‖ := by
+    have h := norm_le_norm_add_norm_sub x y
+    linarith
+  have htail : ‖conj y - (r : ℂ)^2/y‖ ≤ 2 * (‖y‖-r) := by
+    rw [heq, norm_div, norm_real, Real.norm_eq_abs,
+      abs_of_nonneg (by nlinarith : 0 ≤ ‖y‖^2 - r^2)]
+    apply (div_le_iff₀ hy0).mpr
+    nlinarith
+  calc
+    _ ≤ ‖conj x - conj y‖ + ‖conj y - (r : ℂ)^2/y‖ := by
+      simpa only [dist_eq_norm] using dist_triangle (conj x) (conj y) ((r : ℂ)^2/y)
+    _ ≤ ‖x - y‖ + 2 * (‖y‖-r) := by
+      rw [← map_sub, norm_conj]
+      exact add_le_add le_rfl htail
+    _ ≤ _ := by linarith
 
 end Complex

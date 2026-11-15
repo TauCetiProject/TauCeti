@@ -210,7 +210,6 @@ theorem coe_closedBallHemisphereMap_apply (x : closedBall (0 : F) 1) :
       2 * ‖(x : F)‖ := by
     rw [← Submodule.norm_coe]
     simp [norm_smul, ι.norm_map]
-  have h1 : (0 : ℝ) < 1 + ‖(x : F)‖ ^ 2 := by positivity
   rw [closedBallHemisphereMap, stereoInvFun_apply, hw]
   simp only [smul_smul, smul_add]
   congr 1 <;> congr 1 <;> field_simp <;> ring

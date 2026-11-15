@@ -210,7 +210,6 @@ theorem localMultiplicity_eq_zero_iff (hf : ∀ᶠ y in 𝓝 x, MDifferentiableA
   set c := chartAt ℂ x
   set c' := chartAt ℂ (f x)
   have hcx : x ∈ c.source := mem_chart_source ℂ x
-  have hc'fx : f x ∈ c'.source := mem_chart_source ℂ (f x)
   have hFs : AnalyticAt ℂ (fun z ↦ c' (f (c.symm z)) - c' (f x)) (c x) :=
     (analyticAt_chartAt_comp_comp_chartAt_symm hf).sub analyticAt_const
   -- The recentred representative vanishes at `c x`, so its order is nonzero, and it has

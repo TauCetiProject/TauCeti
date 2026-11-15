@@ -53,14 +53,14 @@ variable {𝕜 E F : Type*} [RCLike 𝕜]
 /-- The canonical polar partial isometry of a finite-dimensional linear map. It sends
 `|A| x` to `A x` and vanishes on `ker A`. -/
 def polarFactor (A : E →ₗ[𝕜] F) : E →ₗ[𝕜] F :=
-  letI := FiniteDimensional.complete 𝕜 E
-  letI := FiniteDimensional.complete 𝕜 F
+  letI := FiniteDimensional.completeSpace 𝕜 E
+  letI := FiniteDimensional.completeSpace 𝕜 F
   (A.toContinuousLinearMap.factorThru A.operatorAbs.toContinuousLinearMap).toLinearMap
 
 /-- The polar factor as a bounded operator is the canonical factor through the modulus. -/
 theorem toContinuousLinearMap_polarFactor (A : E →ₗ[𝕜] F) :
-    let := FiniteDimensional.complete 𝕜 E
-    let := FiniteDimensional.complete 𝕜 F
+    let := FiniteDimensional.completeSpace 𝕜 E
+    let := FiniteDimensional.completeSpace 𝕜 F
     A.polarFactor.toContinuousLinearMap =
       A.toContinuousLinearMap.factorThru A.operatorAbs.toContinuousLinearMap := by
   intros
@@ -71,8 +71,8 @@ theorem toContinuousLinearMap_polarFactor (A : E →ₗ[𝕜] F) :
 @[simp]
 theorem polarFactor_operatorAbs_apply (A : E →ₗ[𝕜] F) (x : E) :
     A.polarFactor (A.operatorAbs x) = A x := by
-  let := FiniteDimensional.complete 𝕜 E
-  let := FiniteDimensional.complete 𝕜 F
+  let := FiniteDimensional.completeSpace 𝕜 E
+  let := FiniteDimensional.completeSpace 𝕜 F
   rw [← coe_toContinuousLinearMap A.polarFactor, A.toContinuousLinearMap_polarFactor]
   exact ContinuousLinearMap.factorThru_apply_apply
     (T := A.toContinuousLinearMap) (A := A.operatorAbs.toContinuousLinearMap)
@@ -88,8 +88,8 @@ theorem polarFactor_comp_operatorAbs (A : E →ₗ[𝕜] F) :
 @[simp]
 theorem polarFactor_apply_of_mem_ker (A : E →ₗ[𝕜] F) {x : E} (hx : x ∈ A.ker) :
     A.polarFactor x = 0 := by
-  let := FiniteDimensional.complete 𝕜 E
-  let := FiniteDimensional.complete 𝕜 F
+  let := FiniteDimensional.completeSpace 𝕜 E
+  let := FiniteDimensional.completeSpace 𝕜 F
   rw [← coe_toContinuousLinearMap A.polarFactor, A.toContinuousLinearMap_polarFactor]
   apply ContinuousLinearMap.factorThru_apply_of_mem_orthogonal
     (T := A.toContinuousLinearMap) (A := A.operatorAbs.toContinuousLinearMap)
@@ -140,8 +140,8 @@ theorem range_polarFactor (A : E →ₗ[𝕜] F) : A.polarFactor.range = A.range
 polar factor, without assuming that the competing factor is a partial isometry. -/
 theorem eq_polarFactor (A : E →ₗ[𝕜] F) {V : E →ₗ[𝕜] F}
     (hV : V ∘ₗ A.operatorAbs = A) (hV₀ : ∀ x ∈ A.ker, V x = 0) : V = A.polarFactor := by
-  let := FiniteDimensional.complete 𝕜 E
-  let := FiniteDimensional.complete 𝕜 F
+  let := FiniteDimensional.completeSpace 𝕜 E
+  let := FiniteDimensional.completeSpace 𝕜 F
   apply toContinuousLinearMap.injective
   rw [A.toContinuousLinearMap_polarFactor]
   apply ContinuousLinearMap.eq_factorThru
@@ -172,8 +172,8 @@ modulus: `U† (A x) = |A| x`. -/
 @[simp]
 theorem adjoint_polarFactor_apply_apply (A : E →ₗ[𝕜] F) (x : E) :
     A.polarFactor.adjoint (A x) = A.operatorAbs x := by
-  let := FiniteDimensional.complete 𝕜 E
-  let := FiniteDimensional.complete 𝕜 F
+  let := FiniteDimensional.completeSpace 𝕜 E
+  let := FiniteDimensional.completeSpace 𝕜 F
   have h := ContinuousLinearMap.adjoint_factorThru_comp
     (T := A.toContinuousLinearMap) (A := A.operatorAbs.toContinuousLinearMap) (by simp)
   rw [← A.toContinuousLinearMap_polarFactor] at h

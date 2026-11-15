@@ -8,30 +8,30 @@ module
 public import Mathlib.Algebra.GroupWithZero.Range
 
 /-!
-# The embedding of a value-group quotient
+# The embedding of the value group with zero on nonzero elements
 
-For a monoid-with-zero homomorphism `f : A →*₀ B` into a commutative group with zero,
-`MonoidWithZeroHom.valueGroup.mk f r s hr hs` is the element `(f r)⁻¹ * f s` of the value group
-of `f`. This file records its image under the embedding `ValueGroup₀ f →*₀ B`.
+For a monoid-with-zero homomorphism `f : A →*₀ B` into a group with zero, the embedding
+`MonoidWithZeroHom.ValueGroup₀.embedding : ValueGroup₀ f →*₀ B` sends an element `x` of the
+value group `valueGroup f`, viewed in `ValueGroup₀ f`, to its underlying element of `B`.
+Together with `MonoidWithZeroHom.valueGroup.mk_eq_div`, `simp` evaluates the embedding on
+`valueGroup.mk f r s hr hs` as `f s / f r`.
 
 ## Main results
 
-* `MonoidWithZeroHom.ValueGroup₀.embedding_valueGroup_mk`: the embedding sends
-  `valueGroup.mk f r s hr hs` to `(f r)⁻¹ * f s`.
+* `MonoidWithZeroHom.ValueGroup₀.embedding_coe`: the embedding sends `x : valueGroup f`, viewed
+  in `ValueGroup₀ f`, to `((x : Bˣ) : B)`.
 -/
 
 public section
 
 namespace MonoidWithZeroHom.ValueGroup₀
 
-variable {A B : Type*} [MonoidWithZero A] [CommGroupWithZero B] {f : A →*₀ B}
+variable {A B : Type*} [MonoidWithZero A] [GroupWithZero B] {f : A →*₀ B}
 
-/-- The embedding of the value group into the codomain sends `valueGroup.mk f r s hr hs` to
-`(f r)⁻¹ * f s`. -/
+/-- The embedding of the value group with zero into the codomain sends an element `x` of the
+value group, viewed in `ValueGroup₀ f`, to its underlying element `((x : Bˣ) : B)`. -/
 @[simp]
-theorem embedding_valueGroup_mk (r s : A) (hr : f r ≠ 0) (hs : f s ≠ 0) :
-    embedding (valueGroup.mk f r s hr hs : ValueGroup₀ f) = (f r)⁻¹ * f s := by
-  rw [embedding_apply, WithZero.map'_coe, WithZero.recZeroCoe_coe]
-  simp [valueGroup.mk]
+theorem embedding_coe (x : valueGroup f) : embedding (x : ValueGroup₀ f) = ((x : Bˣ) : B) := by
+  simp [embedding_apply]
 
 end MonoidWithZeroHom.ValueGroup₀

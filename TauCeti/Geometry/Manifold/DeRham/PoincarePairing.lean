@@ -46,6 +46,8 @@ representative formula pairs it with the class of the constant function `1` to g
 * `TauCeti.poincarePairing`: the pairing `H^k_dR(M) → H^l_c(M) → ℝ`, the wedge product followed
   by integration (`TauCeti.poincarePairing_apply`), computed on classes by
   `TauCeti.poincarePairing_mk`.
+* `TauCeti.integralTopForm_wedge_self_eq_of_sub_mem_exactForms`: in even middle degree, the
+  integral `∫_M φ ∧ φ` of a compactly supported closed form depends only on its de Rham class.
 
 ## References
 
@@ -212,5 +214,32 @@ theorem poincarePairing_mk (o : Manifold.Orientation I M (Fin (k + l)))
       integralTopForm o (RoughForm.wedge (φ.1 : RoughForm I M ℝ k) ψ.1.1) := by
   rw [poincarePairing_apply, compactlySupportedDeRhamCohomology.wedge_mk,
     compactlySupportedDeRhamCohomology.integral_mk, SmoothForm.coe_wedge]
+
+/-- **The integral of a wedge square depends only on the de Rham class**: on an oriented
+boundaryless manifold of dimension `k + k` with `k` even, compactly supported closed `k`-forms
+`φ` and `ψ` whose difference is exact satisfy `∫_M ψ ∧ ψ = ∫_M φ ∧ φ`. The primitive of `ψ - φ`
+need not be compactly supported. For the curvature forms of two connections on a line bundle
+over a closed four-manifold, this is the independence of `∫_M F ∧ F` from the connection. -/
+theorem integralTopForm_wedge_self_eq_of_sub_mem_exactForms
+    (o : Manifold.Orientation I M (Fin (k + k))) (hk : Even k) {φ ψ : SmoothForm I M ℝ k}
+    (hφ : φ ∈ compactlySupportedClosedForms I M k)
+    (hψ : ψ ∈ compactlySupportedClosedForms I M k) (hψφ : ψ - φ ∈ exactForms I M k) :
+    integralTopForm o (RoughForm.wedge ψ.1 ψ.1) = integralTopForm o (RoughForm.wedge φ.1 φ.1) := by
+  -- Forms of even degree commute, so `ψ ∧ ψ - φ ∧ φ = (ψ - φ) ∧ ψ + (ψ - φ) ∧ φ`, which is
+  -- compactly supported exact.
+  have hsub : SmoothForm.wedge ψ ψ - SmoothForm.wedge φ φ =
+      SmoothForm.wedge (ψ - φ) ψ + SmoothForm.wedge (ψ - φ) φ := by
+    simp only [map_sub, LinearMap.sub_apply, SmoothForm.wedge_comm_of_even hk φ ψ]
+    abel
+  have hmk := (compactlySupportedDeRhamCohomology.mk_eq_mk_iff I (k + k)
+    ⟨_, SmoothForm.wedge_mem_compactlySupportedClosedForms
+      ((mem_compactlySupportedClosedForms I).mp hψ).2 hψ⟩
+    ⟨_, SmoothForm.wedge_mem_compactlySupportedClosedForms
+      ((mem_compactlySupportedClosedForms I).mp hφ).2 hφ⟩).mpr <| by
+      rw [hsub]
+      exact add_mem (SmoothForm.wedge_mem_exactCompactlySupportedForms_of_left_mem hψφ hψ)
+        (SmoothForm.wedge_mem_exactCompactlySupportedForms_of_left_mem hψφ hφ)
+  simpa [SmoothForm.coe_wedge] using
+    congrArg (compactlySupportedDeRhamCohomology.integral o) hmk
 
 end TauCeti

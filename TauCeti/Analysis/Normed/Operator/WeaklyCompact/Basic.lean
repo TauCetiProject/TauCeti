@@ -283,7 +283,7 @@ theorem IsWeaklyCompact.of_precomp [CompleteSpace F] {T : E →L[𝕜] F}
     rw [LinearMap.coe_range]
     exact (inclusionInDoubleDualLi 𝕜 (E := F)).isometry.isUniformInducing.isComplete_range.isClosed
   by_contra hΦ
-  obtain ⟨ψ, hψS, hψ⟩ := Submodule.exists_dual_forall_mem_eq_zero_ne_zero (𝕜 := 𝕜) hS
+  obtain ⟨ψ, hψS, hψ⟩ := Submodule.exists_dual_forall_mem_eq_zero_eq_one (𝕜 := 𝕜) hS
     (x := ContinuousLinearMap.precomp 𝕜 (ContinuousLinearMap.precomp 𝕜 T) Φ)
     (by simpa [S] using hΦ)
   obtain ⟨g, hg⟩ := hT.range_precomp_precomp_subset ⟨ψ, rfl⟩
@@ -295,7 +295,7 @@ theorem IsWeaklyCompact.of_precomp [CompleteSpace F] {T : E →L[𝕜] F}
     exact hψS _ (LinearMap.mem_range_self _ (T x))
   have h := congrArg (fun Ψ ↦ Ψ Φ) hg
   simp only [hg0, precomp_apply, comp_apply, map_zero] at h
-  exact hψ h.symm
+  exact one_ne_zero (hψ.symm.trans h.symm)
 
 /-- **Gantmacher's theorem.** An operator into a Banach space is weakly compact iff its adjoint
 is weakly compact. -/

@@ -40,7 +40,7 @@ theorem radical_map_radical {R S F : Type*} [CommSemiring R] [CommSemiring S]
 @[simp]
 theorem comap_pow_of_ringEquiv {R S : Type*} [CommSemiring R] [CommSemiring S]
     (I : Ideal R) (e : S ≃+* R) (n : ℕ) : (I ^ n).comap e = I.comap e ^ n := by
-  rw [← Ideal.map_symm, ← Ideal.map_symm, Ideal.map_pow]
+  rw [← map_symm, ← map_symm, Ideal.map_pow]
 
 /-- Extension along a bijective ring homomorphism preserves and reflects primality; compare
 `Ideal.isMaximal_map_iff_of_bijective`. -/
@@ -64,7 +64,7 @@ theorem map_sup_eq_top_of_coprime_comap {R S F : Type*} [Semiring R] [Semiring S
 theorem map_map_algebraMap {R A B F : Type*} [CommSemiring R] [Semiring A] [Semiring B]
     [Algebra R A] [Algebra R B] [FunLike F A B] [AlgHomClass F R A B] (φ : F) (I : Ideal R) :
     (I.map (algebraMap R A)).map φ = I.map (algebraMap R B) := by
-  rw [← (AlgHom.ofClass φ).comp_algebraMap, ← Ideal.map_map]
+  rw [← (AlgHom.ofClass φ).comp_algebraMap, ← map_map]
   rfl
 
 /-- A ring homomorphism `f` with `I ≤ J.comap f` maps `I ^ n` into `J ^ n`. -/
@@ -99,8 +99,8 @@ theorem map_eq_span_singleton_and_annihilator {A L L' : Type*} [CommSemiring A]
       𝔟.map (algebraMap A L) = (Ideal.span {e.symm a'}).annihilator := by
   have hmap (𝔠 : Ideal A) :
       𝔠.map (algebraMap A L) = (𝔠.map (algebraMap A L')).comap e.toRingEquiv := by
-    rw [← e.symm.toAlgHom.comp_algebraMap, ← Ideal.map_map, AlgEquiv.toRingHom_toAlgHom,
-      Ideal.map_comap_of_equiv, AlgEquiv.symm_toRingEquiv, RingEquiv.symm_symm]
+    rw [← e.symm.toAlgHom.comp_algebraMap, ← Ideal.map_map, toRingHom_toAlgHom,
+      Ideal.map_comap_of_equiv, symm_toRingEquiv, RingEquiv.symm_symm]
   have hspan : (Ideal.span {a'}).comap e.toRingEquiv = Ideal.span {e.symm a'} := by
     rw [← Ideal.map_symm, Ideal.map_span, Set.image_singleton]
     simp
@@ -108,7 +108,7 @@ theorem map_eq_span_singleton_and_annihilator {A L L' : Type*} [CommSemiring A]
   rw [hmap, h𝔟, ← hspan]
   ext x
   simp only [Ideal.mem_comap, Submodule.mem_annihilator, smul_eq_mul,
-    AlgEquiv.coe_toRingEquiv]
+    coe_toRingEquiv]
   constructor
   · intro hx y hy
     exact e.injective (by simpa only [map_mul, map_zero] using hx (e y) hy)

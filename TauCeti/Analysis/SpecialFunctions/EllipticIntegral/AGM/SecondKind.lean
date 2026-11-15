@@ -65,7 +65,6 @@ private theorem secondKindError_step {a b : ℝ} (hb : 0 < b) (hba : b ≤ a) :
   have ha := hb.trans_le hba
   have hsq := sq_sqrt_one_sub_sq_div hb.le hba
   have hk := sq_sqrt_one_sub_sq_lt_one (div_ne_zero hb.ne' ha.ne')
-  have hab : 0 < a + b := by positivity
   have hc : √(1 - (√(1 - (b / a) ^ 2)) ^ 2) = b / a := by
     rw [hsq, sub_sub_cancel, sqrt_sq (div_pos hb ha).le]
   have hq : √(1 - (√(a * b) / ((a + b) / 2)) ^ 2) = (1 - b / a) / (1 + b / a) := by

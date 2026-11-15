@@ -15,6 +15,7 @@ An inclusion of closed subgroups `P ⊆ Q` induces the projection `G/P ⟶ G/Q`.
 On defining Hopf ideals the inclusion is reversed: `J ≤ I` induces a map from the
 quotient by `I` to the quotient by `J`. We construct these maps both for the coset
 presheaves and for their fppf sheafifications, with identity and composition laws.
+Both maps commute with left translation by ground-ring-valued points.
 
 The sheaf projection is characterized by its composite with `G ⟶ G/P` and is fppf
 locally surjective, hence an epimorphism. This does not assert surjectivity on
@@ -165,6 +166,44 @@ instance fppfHomogeneousQuotientMap_isLocallySurjective (hJI : J ≤ I) :
       (fppfHomogeneousQuotientMap H hJI).hom :=
   Presheaf.isLocallySurjective_of_isLocallySurjective_fac
     (CommAlgCat.fppfTopology R) (fppfHomogeneousQuotientProjection_comp_map H hJI)
+
+/-- Subgroup-induced maps of coset presheaves commute with left translation. -/
+@[reassoc]
+theorem homogeneousQuotientPresheafTranslation_hom_comp_map (I : HopfIdeal R H)
+    {J : HopfIdeal R H} (hJI : J ≤ I)
+    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
+    (homogeneousQuotientPresheafTranslation H I g).hom ≫
+        homogeneousQuotientPresheafMap H hJI =
+      homogeneousQuotientPresheafMap H hJI ≫
+        (homogeneousQuotientPresheafTranslation H J g).hom := by
+  ext A q
+  induction q using homogeneousQuotientPresheaf_induction_on H I with
+  | h x => simp
+
+/-- Subgroup-induced projections of fppf quotients commute with translation. -/
+@[reassoc]
+theorem fppfHomogeneousQuotientTranslation_hom_comp_map (I : HopfIdeal R H)
+    {J : HopfIdeal R H} (hJI : J ≤ I)
+    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
+    (fppfHomogeneousQuotientTranslation H I g).hom ≫ fppfHomogeneousQuotientMap H hJI =
+      fppfHomogeneousQuotientMap H hJI ≫ (fppfHomogeneousQuotientTranslation H J g).hom := by
+  apply fppfHomogeneousQuotient_hom_ext
+  ext A ⟨(x : HopfAlgebra.points (R := R) (H := H) A.unop.unop)⟩
+  have hmap (y : HopfAlgebra.points (R := R) (H := H) A.unop.unop) :=
+    congrArg (fun f ↦ f.app A (ULift.up y))
+      (fppfHomogeneousQuotientProjection_comp_map H hJI)
+  simp only [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app,
+    ConcreteCategory.comp_apply, TypeCat.Fun.toFun_apply] at hmap ⊢
+  -- Compute on a projected point: translate, project to the larger subgroup, then translate.
+  calc
+    _ = (fppfHomogeneousQuotientMap H hJI).hom.app A
+        ((fppfHomogeneousQuotientProjection H I).app A
+          (ULift.up (HopfAlgebra.extendPoint H A.unop.unop g * x))) := by
+      rw [fppfHomogeneousQuotientTranslation_hom_app_projection]
+    _ = (fppfHomogeneousQuotientProjection H J).app A
+        (ULift.up (HopfAlgebra.extendPoint H A.unop.unop g * x)) := hmap _
+    _ = _ := by
+      rw [hmap, fppfHomogeneousQuotientTranslation_hom_app_projection]
 
 end
 

@@ -12,8 +12,9 @@ public import Mathlib.MeasureTheory.Integral.DominatedConvergence
 # Vanishing occupation of transient states
 
 If the probability of a positive-time return to `y` is less than one, visits to `y` are
-almost surely finite from every finite initial measure. Consequently the fraction of times
-`1, …, n` spent at `y` tends to zero, both almost surely and in expectation. The Green-function
+almost surely finite from every initial measure. Consequently the fraction of times
+`1, …, n` spent at `y` tends to zero almost surely, and in expectation from every finite initial
+measure. The Green-function
 identity also implies that the time-`n` mass of `y` tends to zero, without irreducibility or
 aperiodicity. No convergence in total variation to the zero measure is asserted.
 As a corollary, every positive-mass atom of a finite invariant measure is recurrent.
@@ -37,7 +38,8 @@ namespace MeasureTheory.Measure
 variable {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
   (ν : Measure α) [IsFiniteMeasure ν] (κ : Kernel α α) [IsMarkovKernel κ] {y : α}
 
-/-- **The occupation fraction of a transient state vanishes almost surely**, from every finite
+omit [IsFiniteMeasure ν] in
+/-- **The occupation fraction of a transient state vanishes almost surely**, from every
 initial measure. The count includes times `1` through `n`, not time zero. -/
 theorem ae_tendsto_visitCount_div_of_return_lt_one
     (hy : markovChainLaw (dirac y) κ
@@ -96,6 +98,7 @@ variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
   [MeasurableSingletonClass α] {P : Measure Ω} {ν : Measure α} [IsFiniteMeasure ν]
   {X : Ω → ℕ → α} {κ : Kernel α α} [IsMarkovKernel κ] {y : α}
 
+omit [IsFiniteMeasure ν] in
 /-- The transient-state occupation limit holds for every realization with the given path law. -/
 theorem ae_tendsto_visitCount_div_of_return_lt_one
     (hX : HasLaw X (markovChainLaw ν κ) P)

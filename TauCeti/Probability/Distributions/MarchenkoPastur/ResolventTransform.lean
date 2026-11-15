@@ -227,7 +227,7 @@ theorem eq_resolventTransform_marchenkoPastur_iff (hz : 0 < z.im) {w : ℂ} :
     resolventTransform_marchenkoPastur_quadratic_eq_zero
       (notMem_image_ofReal_of_im_ne_zero hz.ne')
   have hmim : 0 < m.im := im_resolventTransform_pos (IsProbabilityMeasure.ne_zero _) hz
-  refine ⟨fun h ↦ h ▸ ⟨hmim, hm⟩, fun ⟨hwim, hw⟩ ↦ ?_⟩
+  refine ⟨fun h ↦ h ▸ ⟨hmim, hm⟩, fun ⟨_, hw⟩ ↦ ?_⟩
   by_contra hne
   -- Any root `w ≠ m` obeys `w * (y * (z * m)) = 1`, while `Im (z * m) > 0`, forcing `Im w ≤ 0`.
   have hprod : w * ((y : ℂ) * (z * m)) = 1 := by

@@ -46,8 +46,9 @@ the pinned pairing is the classical dot product, `typeDWeight_dotProduct_coordin
 axiom of the datum reduces to a statement about `⬝ᵥ` on `ℤ ^ n`.
 
 The roots are indexed by `Fin (2 * n * (n - 1))` through `TauCeti.DynkinType.typeDRootEquiv`, whose
-first `n` values are the simple roots in Bourbaki order. That index type is the one Layer 6 pins
-for the type, since `(DynkinType.D n).numRoots` is `2 * n * (n - 1)` by definition.
+first `n` values are the simple roots in Bourbaki order. That index type is
+`Fin (DynkinType.D n).numRoots`, since `(DynkinType.D n).numRoots` is `2 * n * (n - 1)` by
+definition.
 
 Only the coroots are asked to span their lattice, and only that half is recorded, in
 `corootSpan_typeDSimplyConnectedRootDatum_eq_top`. The roots span the root lattice, which sits
@@ -82,8 +83,7 @@ The coordinates and the node numbering follow Bourbaki, *Lie Groups and Lie Alge
 `TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A` (#2594), whose type-agnostic
 scaffolding — the perfect pairing, the pinned support, the Cartan-type criterion and the coroot
 span — now lives in `TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Basic` and is shared
-with this file. This is the `Dₙ` branch of the target "a named datum per valid type" in Layer 6 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`.
+with this file.
 -/
 
 public section

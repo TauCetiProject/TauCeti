@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
+public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 import Mathlib.Geometry.Manifold.ContMDiff.Basic
 
 /-!
@@ -26,12 +27,21 @@ when the model `I` itself has a boundary.
 
 ## Main results
 
+* `OpenPartialHomeomorph.isOpen_extend_target_of_mem_atlas`: atlas charts of a boundaryless
+  C¹ manifold have open extended targets in the model vector space.
+
 * `OpenPartialHomeomorph.trans_interiorChart_symm_mem_maximalAtlas`: an open partial homeomorphism
   from a manifold to `E` that is `C^n` with `C^n` inverse, followed by the inverse of
   `I.interiorChart`, is a chart of the `C^n` maximal atlas.
 * `PartialDiffeomorph.trans_trans_interiorChart_symm_mem_maximalAtlas`: a partial diffeomorphism
   from a manifold to `E`, followed by a chart of the maximal atlas of `E` and by the inverse of
   `I.interiorChart`, is a chart of the `C^n` maximal atlas.
+
+## References
+
+* J. M. Lee, *Introduction to Smooth Manifolds*, second edition, Springer GTM 218 (2013),
+  Chapter 1 (Smooth Manifolds), section Smooth Structures, Proposition 1.17, pp.13–14.
+
 -/
 
 public section
@@ -44,6 +54,21 @@ open scoped Manifold ContDiff
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E H M : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H]
   {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- Every extended atlas chart of a boundaryless C¹ manifold has open target in its model space. -/
+theorem OpenPartialHomeomorph.isOpen_extend_target_of_mem_atlas
+    [IsManifold I 1 M] [BoundarylessManifold I M]
+    (c : OpenPartialHomeomorph M H) (hc : c ∈ atlas H M) :
+    IsOpen (c.extend I).target := by
+  apply isOpen_iff_mem_nhds.mpr
+  intro y hy
+  have hx : (c.extend I).symm y ∈ c.source := by
+    simpa only [OpenPartialHomeomorph.extend_source] using (c.extend I).map_target hy
+  have h := (ModelWithCorners.isInteriorPoint_iff_of_mem_atlas
+    (I := I) (n := 1) (by simp) hc hx).mp
+    (BoundarylessManifold.isInteriorPoint (I := I))
+  rw [(c.extend I).right_inv hy] at h
+  exact mem_interior_iff_mem_nhds.mp h
 
 namespace ModelWithCorners
 
