@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Connecting
+public import TauCeti.AlgebraicTopology.Singular.Excision
 public import TauCeti.AlgebraicTopology.Singular.Kunneth.Basic
 public import TauCeti.AlgebraicTopology.Singular.Relative
+import TauCeti.LinearAlgebra.TensorProduct.Separation
 
 /-!
 # The relative cross product and the relative Künneth theorem for singular homology
@@ -45,6 +47,18 @@ coefficients over a principal ideal domain, it is a split monomorphism
 (`TopCat.isSplitMono_singularHomologyKunnethRel`), so the relative cross product is injective
 (`TopCat.mono_singularHomologyCrossRel`).
 
+The last section compares `(E × Y, A × Y)` with the product taken modulo a second subspace
+`B ⊆ Y`. For open `A` and `B`, the exact sequence of the triple `(E × Y, A × Y ∪ E × B, A × Y)`
+and excision show that a class of `Hₙ(E × Y, A × Y)` vanishing in `Hₙ(E × Y, A × Y ∪ E × B)` comes
+from `Hₙ(E × B, A × B)` (`TopCat.exists_singularHomologyMap_ofSubsetMap_tensorHom_eq`). Over a
+field, or more generally where the relative Künneth theorem applies, the relative cross product
+`a × β` of a nonzero `a ∈ Hᵢ(E, A)` with a class `β ∈ Hⱼ(Y)` not coming from `B` does not come
+from `Hₙ(E × B, A × B)`
+(`TopCat.singularHomologyMap_ofSubsetMap_tensorHom_ne_singularHomologyCrossRel`,
+`TopCat.singularHomologyMap_ofSubsetMap_tensorHom_ne_singularHomologyCrossRel_of_field`). Together
+they compute localizations of cross products at a product of two closed sets, which is how classes
+living over the fundamental class of a product are detected.
+
 The chain-level constructions and the relative cross product are stated for coefficients in any
 abelian monoidal category with coproducts, as for the absolute Künneth map
 (`TopCat.singularHomologyKunneth`); only the splitting results are specific to modules over a
@@ -69,14 +83,21 @@ second factor, to the simplicial shuffle map, with the pair in the first factor.
 ## Main results
 
 * `TopCat.quasiIso_shuffleRel`: the relative Eilenberg–Zilber theorem.
-* `TopCat.shuffleRel_naturality`, `TopCat.singularHomologyCrossRel_naturality`: naturality in maps
-  of pairs `(X, B) ⟶ (X', B')` and in maps `Y ⟶ Y'`.
+* `TopCat.shuffleRel_naturality`, `TopCat.singularHomologyCrossRel_naturality`,
+  `TopCat.singularHomologyKunnethRel_naturality`: naturality in maps of pairs `(X, B) ⟶ (X', B')`
+  and in maps `Y ⟶ Y'`.
 * `TopCat.singularHomologyCross_comp_singularHomologyπ`: the absolute cross product followed by
   the map to relative homology is the relative cross product of the image of the first factor.
 * `TopCat.isIso_singularHomologyKunnethRel`: the relative Künneth theorem.
 * `TopCat.isSplitMono_singularHomologyKunnethRel`, `TopCat.mono_singularHomologyCrossRel`: the
   relative Künneth map is a split monomorphism, and the relative cross product injective, when the
   cycles split off.
+* `TopCat.exists_singularHomologyMap_ofSubsetMap_tensorHom_eq`: excision for a product modulo
+  `A × Y ∪ E × B`.
+* `TopCat.singularHomologyMap_ofSubsetMap_tensorHom_ne_singularHomologyCrossRel`,
+  `TopCat.singularHomologyMap_ofSubsetMap_tensorHom_ne_singularHomologyCrossRel_of_field`:
+  `a × β` does not come from `Hₙ(E × B, A × B)` when `a ≠ 0` and `β` does not come from `B`, for
+  instance over a field.
 
 ## References
 
@@ -382,6 +403,28 @@ theorem ι_singularHomologyKunnethRel (p q : ℕ) (h : p + q = n) :
   ι_homologyKunneth_assoc ((TopPair.ofSubset B).singularChainComplex R)
     ((toSSet.obj Y).chainComplex S) n p q h _
 
+/-- **Naturality of the relative Künneth map** in maps of pairs `(X, B) ⟶ (X', B')` and in maps
+`Y ⟶ Y'`: on each summand it is the naturality of the relative cross product. -/
+@[reassoc]
+theorem singularHomologyKunnethRel_naturality {X' Y' : TopCat.{w}} {B' : Set X'} (f : X ⟶ X')
+    (hf : Set.MapsTo f B B') (g : Y ⟶ Y')
+    [∀ p, PreservesColimitsOfShape WalkingParallelPair
+      (tensorLeft (((TopPair.ofSubset B').singularChainComplex R).homology p))]
+    [∀ q, PreservesColimitsOfShape WalkingParallelPair
+      (tensorRight (((toSSet.obj Y').chainComplex S).cycles q))]
+    [∀ q, PreservesColimitsOfShape WalkingParallelPair
+      (tensorRight (((toSSet.obj Y').chainComplex S).X ((ComplexShape.down ℕ).prev q)))] :
+    GradedObject.Monoidal.tensorHom
+        (fun p ↦ TopPair.singularHomologyMap (TopPair.ofSubsetMap f hf) R p)
+        (fun q ↦ ((singularHomologyFunctor _ q).obj S).map g) n ≫
+          singularHomologyKunnethRel X' Y' B' R S n =
+      singularHomologyKunnethRel X Y B R S n ≫ TopPair.singularHomologyMap
+        (TopPair.ofSubsetMap (f ⊗ₘ g) (mapsTo_tensorHom_preimage_fst f g hf)) (R ⊗ S) n := by
+  ext p q h
+  simp only [GradedObject.Monoidal.ι_tensorHom_assoc, ι_singularHomologyKunnethRel,
+    ι_singularHomologyKunnethRel_assoc]
+  exact singularHomologyCrossRel_naturality X Y B R S p q n h f hf g
+
 /-- The relative Künneth map is an isomorphism exactly when the algebraic Künneth map of the
 chain complexes `C(X, B; R)` and `C(Y; S)` is, since the relative shuffle map is a
 quasi-isomorphism. -/
@@ -457,5 +500,192 @@ instance mono_singularHomologyCrossRel (p q n : ℕ) (h : p + q = n) :
   ι_singularHomologyKunnethRel X Y B R S n p q h ▸ mono_comp _ _
 
 end Split
+
+section TwoSubspaces
+
+/-! ### Products modulo two subspaces -/
+
+open TauCeti
+
+variable {Λ : Type*} [Ring Λ] (R : ModuleCat.{w} Λ) {E Y : TopCat.{w}} {A : Set E} {B : Set Y}
+
+/-- **Excision for a product modulo two subspaces.** Let `A ⊆ E` and `B ⊆ Y` be open and let `Z` be
+the union `A × Y ∪ E × B` in `E × Y`. A class of `Hₙ(E × Y, A × Y)` which vanishes in
+`Hₙ(E × Y, Z)` comes from `Hₙ(E × B, A × B)`: by the exact sequence of the triple
+`(E × Y, Z, A × Y)` it comes from `Hₙ(Z, A × Y)`, which excision identifies with
+`Hₙ(E × B, A × B)`. -/
+theorem exists_singularHomologyMap_ofSubsetMap_tensorHom_eq (hA : IsOpen A) (hB : IsOpen B)
+    {Z : Set ↑(E ⊗ Y)} (hAZ : fst E Y ⁻¹' A ⊆ Z) (hBZ : snd E Y ⁻¹' B ⊆ Z)
+    (hZ : Z ⊆ fst E Y ⁻¹' A ∪ snd E Y ⁻¹' B) {n : ℕ}
+    {x : ((TopPair.ofSubset (fst E Y ⁻¹' A)).singularHomology R n : ModuleCat.{w} Λ)}
+    (hx : (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 (E ⊗ Y)) fun _ h ↦ hAZ h) R
+      n).hom x = 0) :
+    ∃ y, (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 E ⊗ₘ (TopPair.ofSubset B).map)
+      (mapsTo_tensorHom_preimage_fst _ _ fun _ hx ↦ hx)) R n).hom y = x := by
+  let T := TopTriple.ofSubset hAZ
+  -- By the exact sequence of the triple, `x` comes from `Hₙ(Z, A × Y)`.
+  have hT : TopTriple.totalToOuter.app T = TopPair.ofSubsetMap (𝟙 (E ⊗ Y)) fun _ h ↦ hAZ h :=
+    TopTriple.totalToOuter_app_ofSubset hAZ
+  have hx' : (TopPair.singularHomologyMap (TopTriple.totalToOuter.app T) R n).hom x = 0 := by
+    rw [hT]
+    exact hx
+  obtain ⟨y, rfl⟩ := (ShortComplex.moduleCat_exact_iff _).1 (T.singularHomology_exact_total R n) x
+    hx'
+  -- The inclusion `g : E × B → E × Y` maps `E × B` into `Z` and `A × B` into `A × Y`.
+  let g : E ⊗ TopCat.of B ⟶ E ⊗ Y := 𝟙 E ⊗ₘ (TopPair.ofSubset B).map
+  have hgA : Set.MapsTo g (fst E (TopCat.of B) ⁻¹' A) (fst E Y ⁻¹' A) :=
+    mapsTo_tensorHom_preimage_fst _ _ fun _ hx ↦ hx
+  have hgZ : ∀ x, g x ∈ Z := fun x ↦ hBZ x.2.2
+  let f : TopPair.ofSubset (fst E (TopCat.of B) ⁻¹' A) ⟶ TopTriple.innerPair.obj T :=
+    TopPair.ofHom (TopCat.ofHom ⟨Set.codRestrict g Z hgZ, g.hom.continuous.codRestrict hgZ⟩)
+      (TopCat.ofHom ⟨Set.MapsTo.restrict g _ _ hgA, g.hom.continuous.restrict hgA⟩) rfl
+  -- Excision: `A × Y` and `E × B` are open and cover `Z`, and `f` is onto `E × B`.
+  have : IsIso (TopPair.singularHomologyMap f R n) := by
+    refine TopPair.isIso_singularHomologyMap_of_open_cover R f ?_ ?_
+      (fun t : Bool ↦ bif t then Subtype.val ⁻¹' (fst E Y ⁻¹' A)
+        else Subtype.val ⁻¹' (snd E Y ⁻¹' B)) ?_ ?_ ?_ n
+    · exact (Topology.IsEmbedding.id.prodMap Topology.IsEmbedding.subtypeVal).codRestrict Z hgZ
+    · rintro x ⟨y, hy⟩
+      have hy' : y.1 = g x := congrArg Subtype.val hy
+      have hyA : y.1 ∈ fst E Y ⁻¹' A := y.2
+      rw [hy'] at hyA
+      exact ⟨⟨x, hyA⟩, rfl⟩
+    · rintro (_ | _)
+      · exact (hB.preimage (snd E Y).hom.continuous).preimage continuous_subtype_val
+      · exact (hA.preimage (fst E Y).hom.continuous).preimage continuous_subtype_val
+    · refine Set.eq_univ_of_forall fun z ↦ Set.mem_iUnion.2 ?_
+      rcases hZ z.2 with hz | hz
+      · exact ⟨true, hz⟩
+      · exact ⟨false, hz⟩
+    · rintro (_ | _)
+      · exact Or.inr fun z hz ↦ ⟨(z.1.1, ⟨z.1.2, hz⟩), rfl⟩
+      · exact Or.inl fun z hz ↦ ⟨⟨z.1, hz⟩, rfl⟩
+  obtain ⟨y₀, rfl⟩ := (ModuleCat.epi_iff_surjective _).1
+    (inferInstance : Epi (TopPair.singularHomologyMap f R n)) y
+  refine ⟨y₀, ?_⟩
+  -- Excision followed by the inclusion of the triple is the inclusion of pairs given by `g`.
+  have hfg : f ≫ TopTriple.innerToTotal.app T = TopPair.ofSubsetMap
+      (𝟙 E ⊗ₘ (TopPair.ofSubset B).map) (mapsTo_tensorHom_preimage_fst _ _ fun _ hx ↦ hx) := by
+    refine TopPair.hom_ext_of_fst _ ?_
+    rw [TopPair.Hom.fst_comp, TopTriple.innerToTotal_app_fst, TopPair.ofSubsetMap_fst]
+    exact ConcreteCategory.hom_ext _ _ fun _ ↦ rfl
+  rw [← hfg]
+  exact congrArg (fun φ ↦ φ.hom y₀)
+    (TopPair.singularHomologyMap_comp f R (TopTriple.innerToTotal.app T) n)
+
+end TwoSubspaces
+
+section NotFromSubspace
+
+variable {k : Type w} [CommRing k] (X Y : TopCat.{w}) (A : Set X) (B : Set Y)
+  (R S : ModuleCat.{w} k)
+
+/-- **Relative cross products with a class not coming from a subspace.** Let `a ∈ Hᵢ(X, A)` be
+nonzero and let `β ∈ Hⱼ(Y)` have nonzero image in `Hⱼ(Y, B)`, that is, not come from `B`. If the
+relative Künneth theorem holds for `(X, A) × B` and its map is injective for `(X, A) × Y`, and
+nonzero vectors of `Hᵢ(X, A)` and `Hⱼ(Y, B)` have nonzero tensor product, then the relative cross
+product `a × β ∈ Hₙ(X × Y, A × Y)` does not come from `Hₙ(X × B, A × B)`. By the Künneth theorem
+a class coming from `Hₙ(X × B, A × B)` lies in the image of `⨁ Hₚ(X, A) ⊗ H_q(B)`, which
+localizing the second factor at `(Y, B)` kills, whereas it sends `a × β` to `a ⊗ [β] ≠ 0`. -/
+theorem singularHomologyMap_ofSubsetMap_tensorHom_ne_singularHomologyCrossRel [NoZeroDivisors k]
+    [∀ m, IsSplitMono (((TopPair.ofSubset A).singularChainComplex R).iCycles m)]
+    [∀ m, IsSplitEpi (((TopPair.ofSubset A).singularChainComplex R).homologyπ m)]
+    [∀ m, IsSplitMono (((toSSet.obj (TopCat.of B)).chainComplex S).iCycles m)]
+    [∀ m, IsSplitEpi (((toSSet.obj (TopCat.of B)).chainComplex S).homologyπ m)]
+    [∀ m, IsSplitMono (((toSSet.obj Y).chainComplex S).iCycles m)] {i j n : ℕ} (h : i + j = n)
+    [Module.Projective k ((TopPair.ofSubset A).singularHomology R i : ModuleCat.{w} k)]
+    [Module.Projective k ((TopPair.ofSubset B).singularHomology S j : ModuleCat.{w} k)]
+    {a : ((TopPair.ofSubset A).singularHomology R i : ModuleCat.{w} k)}
+    {β : (((singularHomologyFunctor _ j).obj S).obj Y : ModuleCat.{w} k)} (ha : a ≠ 0)
+    (hβ : ((TopPair.ofSubset B).singularHomologyπ S j).hom β ≠ 0)
+    (y : ((TopPair.ofSubset (fst X (TopCat.of B) ⁻¹' A)).singularHomology (R ⊗ S) n :
+      ModuleCat.{w} k)) :
+    (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 X ⊗ₘ (TopPair.ofSubset B).map)
+      (mapsTo_tensorHom_preimage_fst _ _ fun _ hx ↦ hx)) (R ⊗ S) n).hom y ≠
+        (singularHomologyCrossRel X Y A R S i j n h).hom (a ⊗ₜ β) := by
+  intro hy
+  -- By the Künneth theorem for `X × B`, `y` is the image of a class `w` of `⨁ Hₚ(X, A) ⊗ H_q(B)`.
+  obtain ⟨w, rfl⟩ := (ModuleCat.epi_iff_surjective _).1
+    (inferInstance : Epi (singularHomologyKunnethRel X (TopCat.of B) A R S n)) y
+  have hA : Set.MapsTo (𝟙 X) A A := fun _ hx ↦ hx
+  -- `F` includes `⨁ Hₚ(X, A) ⊗ H_q(B)` into `⨁ Hₚ(X, A) ⊗ H_q(Y)`, and `Φ` maps the latter to
+  -- `⨁ Hₚ(X, A) ⊗ H_q(Y, B)`; their composite vanishes.
+  let F : GradedObject.Monoidal.tensorObj (fun m ↦ (TopPair.ofSubset A).singularHomology R m)
+        (fun m ↦ ((singularHomologyFunctor _ m).obj S).obj (TopCat.of B)) n ⟶
+      GradedObject.Monoidal.tensorObj (fun m ↦ (TopPair.ofSubset A).singularHomology R m)
+        (fun m ↦ ((singularHomologyFunctor _ m).obj S).obj Y) n :=
+    GradedObject.Monoidal.tensorHom
+      (fun m ↦ TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 X) hA) R m)
+      (fun m ↦ ((singularHomologyFunctor _ m).obj S).map (TopPair.ofSubset B).map) n
+  let Φ : GradedObject.Monoidal.tensorObj (fun m ↦ (TopPair.ofSubset A).singularHomology R m)
+        (fun m ↦ ((singularHomologyFunctor _ m).obj S).obj Y) n ⟶
+      GradedObject.Monoidal.tensorObj (fun m ↦ (TopPair.ofSubset A).singularHomology R m)
+        (fun m ↦ (TopPair.ofSubset B).singularHomology S m) n :=
+    GradedObject.Monoidal.tensorHom (fun m ↦ 𝟙 ((TopPair.ofSubset A).singularHomology R m))
+      (fun m ↦ (TopPair.ofSubset B).singularHomologyπ S m) n
+  have hFΦ : F ≫ Φ = 0 := GradedObject.Monoidal.tensorHom_comp_tensorHom_eq_zero _ _ _ _
+    (fun m ↦ (TopPair.ofSubset B).homologyMap_comp_singularHomologyπ S m) n
+  -- The Künneth map for `X × Y` is injective, so `a ⊗ β` is the image of `w` under `F`.
+  have heq : (GradedObject.Monoidal.ιTensorObj (fun m ↦ (TopPair.ofSubset A).singularHomology R m)
+      (fun m ↦ ((singularHomologyFunctor _ m).obj S).obj Y) i j n h).hom (a ⊗ₜ β) = F.hom w := by
+    have := isSplitMono_singularHomologyKunnethRel X Y A R S n
+    refine (ModuleCat.mono_iff_injective _).1
+      (inferInstance : Mono (singularHomologyKunnethRel X Y A R S n)) ?_
+    have e₁ := congrArg (fun φ ↦ φ.hom (a ⊗ₜ β)) (ι_singularHomologyKunnethRel X Y A R S n i j h)
+    have e₂ := congrArg (fun φ ↦ φ.hom w)
+      (singularHomologyKunnethRel_naturality X (TopCat.of B) A R S n (𝟙 X) hA
+        (TopPair.ofSubset B).map)
+    -- The equations compose up to the definitional unfolding of composites.
+    exact e₁.trans (hy.symm.trans e₂.symm)
+  -- Applying `Φ`, the summand `a ⊗ [β]` vanishes, which contradicts `a ≠ 0` and `[β] ≠ 0`.
+  have h₁ := congrArg (fun φ ↦ φ.hom w) hFΦ
+  simp only [ModuleCat.hom_zero, LinearMap.zero_apply] at h₁
+  have h₂ := congrArg (fun φ ↦ φ.hom (a ⊗ₜ β))
+    (GradedObject.Monoidal.ι_tensorHom (fun m ↦ 𝟙 ((TopPair.ofSubset A).singularHomology R m))
+      (fun m ↦ ((TopPair.ofSubset B).singularHomologyπ S m :
+        ((singularHomologyFunctor _ m).obj S).obj Y ⟶ _)) i j n h)
+  have hι := (ModuleCat.mono_iff_injective _).1 (inferInstance : Mono
+    (GradedObject.Monoidal.ιTensorObj (fun m ↦ (TopPair.ofSubset A).singularHomology R m)
+      (fun m ↦ (TopPair.ofSubset B).singularHomology S m) i j n h))
+  exact TauCeti.tmul_ne_zero ha hβ
+    (hι (h₂.symm.trans ((congrArg Φ.hom heq).trans (h₁.trans (map_zero _).symm))))
+
+end NotFromSubspace
+
+section Field
+
+variable {K : Type w} [Field K] (X Y : TopCat.{w}) (A : Set X) (B : Set Y)
+  (R S : ModuleCat.{w} K)
+
+/-- Over a field, the relative cross product `a × β ∈ Hₙ(X × Y, A × Y)` of a nonzero
+`a ∈ Hᵢ(X, A)` with a class `β ∈ Hⱼ(Y)` not coming from `B` does not come from
+`Hₙ(X × B, A × B)`: the Künneth hypotheses of
+`TopCat.singularHomologyMap_ofSubsetMap_tensorHom_ne_singularHomologyCrossRel` hold since all
+modules over a field are semisimple and free. -/
+theorem singularHomologyMap_ofSubsetMap_tensorHom_ne_singularHomologyCrossRel_of_field
+    {i j n : ℕ} (h : i + j = n)
+    {a : ((TopPair.ofSubset A).singularHomology R i : ModuleCat.{w} K)}
+    {β : (((singularHomologyFunctor _ j).obj S).obj Y : ModuleCat.{w} K)} (ha : a ≠ 0)
+    (hβ : ((TopPair.ofSubset B).singularHomologyπ S j).hom β ≠ 0)
+    (y : ((TopPair.ofSubset (fst X (TopCat.of B) ⁻¹' A)).singularHomology (R ⊗ S) n :
+      ModuleCat.{w} K)) :
+    (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 X ⊗ₘ (TopPair.ofSubset B).map)
+      (mapsTo_tensorHom_preimage_fst _ _ fun _ hx ↦ hx)) (R ⊗ S) n).hom y ≠
+        (singularHomologyCrossRel X Y A R S i j n h).hom (a ⊗ₜ β) :=
+  -- Over a field the cycles and the homology of the singular chain complexes split off. These
+  -- instances are provided by hand, since synthesizing them through the chain complexes times out.
+  have := fun m ↦ HomologicalComplex.isSplitMono_iCycles_of_isSemisimpleModule
+    ((TopPair.ofSubset A).singularChainComplex R) m
+  have := fun m ↦ HomologicalComplex.isSplitEpi_homologyπ_of_isSemisimpleModule
+    ((TopPair.ofSubset A).singularChainComplex R) m
+  have := fun m ↦ HomologicalComplex.isSplitMono_iCycles_of_isSemisimpleModule
+    ((toSSet.obj (TopCat.of B)).chainComplex S) m
+  have := fun m ↦ HomologicalComplex.isSplitEpi_homologyπ_of_isSemisimpleModule
+    ((toSSet.obj (TopCat.of B)).chainComplex S) m
+  have := fun m ↦ HomologicalComplex.isSplitMono_iCycles_of_isSemisimpleModule
+    ((toSSet.obj Y).chainComplex S) m
+  singularHomologyMap_ofSubsetMap_tensorHom_ne_singularHomologyCrossRel X Y A B R S h ha hβ y
+
+end Field
 
 end TopCat

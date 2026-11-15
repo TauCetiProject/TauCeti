@@ -47,6 +47,22 @@ needed for the statements below.
   homology is projective over a ring without zero divisors, the converse holds
   (`TauCeti.livesOverFundamentalClass_singularHomologyCross_iff`,
   `TauCeti.livesOverFundamentalClass_singularHomologyCross_iff_of_field`).
+* **Products of two maps.** For `p : E → M` and `q : Y → N`, the fibre of
+  `p × q : E × Y → M × N` over `(b, c)` is `p⁻¹(b) × q⁻¹(c)`. If `α × β` lives over the fundamental
+  class at `(b, c)`, then `α` lives over it at `b` and `β` at `c`
+  (`TauCeti.LivesOverFundamentalClass.left_of_singularHomologyCross_prodMap`,
+  `TauCeti.LivesOverFundamentalClass.right_of_singularHomologyCross_prodMap`). Over a field, and
+  with closed fibres, the converse holds
+  (`TauCeti.LivesOverFundamentalClass.singularHomologyCross_prodMap`,
+  `TauCeti.livesOverFundamentalClass_prodMap_singularHomologyCross_iff_of_field`). Write
+  `A = E ∖ p⁻¹(b)` and `B = Y ∖ q⁻¹(c)`. By excision, a class of `Hₙ(E × Y, A × Y)` dies in
+  `Hₙ(E × Y, A × Y ∪ E × B)` only if it comes from `Hₙ(E × B, A × B)`
+  (`TopCat.exists_singularHomologyMap_ofSubsetMap_tensorHom_eq`); by the relative Künneth
+  theorem the class `(loc α) × β` does not when `β` does not come from `B`
+  (`TopCat.singularHomologyMap_ofSubsetMap_tensorHom_ne_singularHomologyCrossRel_of_field`). This
+  is the
+  localization statement behind the source's Proposition 6.13 (products of manifolds abundant
+  with 2-spheres), with coefficients in a field.
 * **The trivial fibration.** For the identity of a compact oriented `n`-manifold `M` and integer
   coefficients, the localization of `Hₙ(M)` at a point is the map to the local homology
   `Hₙ(M, M ∖ {b})`, and the multiple `d • [M]` of the fundamental class lives over the
@@ -71,9 +87,10 @@ needed for the statements below.
 
 * J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Floer homology with DG coefficients.
   Applications to cotangent bundles*, arXiv:2404.07953, §2.4 (Definition 2.3, Example 2.4,
-  Lemma 2.9, Proposition 2.12) and §§5–6.
+  Lemma 2.9, Proposition 2.12) and §§5–6 (Proposition 6.13).
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
-  Section 3.3, local homology and fundamental classes.
+  Section 3.3, local homology and fundamental classes, and Section 3.B, the relative Künneth
+  formula.
 -/
 
 public section
@@ -318,6 +335,162 @@ theorem livesOverFundamentalClass_singularHomologyCross_iff_of_field {K : Type w
   livesOverFundamentalClass_singularHomologyCross_iff R S h
 
 end Cross
+
+section ProdMap
+
+/-! ### Products of two maps -/
+
+section Restriction
+
+variable {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
+  {E E' M M' : Type w} [TopologicalSpace E] [TopologicalSpace E']
+
+/-- **Localizing at a smaller fibre.** If the fibre of `p'` over `b'` lies in the fibre of `p`
+over `b`, the localization at the fibre of `p'` is the localization at the fibre of `p` followed by
+the restriction of local homology. -/
+@[reassoc]
+theorem fiberLocalization_comp_localHomologyRestriction {p : E → M} {p' : E → M'} {b : M}
+    {b' : M'} (h : p' ⁻¹' {b'} ⊆ p ⁻¹' {b}) (k : ℕ) :
+    fiberLocalization R p b k ≫ localHomologyRestriction R h k = fiberLocalization R p' b' k := by
+  rw [localHomologyRestriction_def]
+  exact TopPair.singularHomologyπ_comp_singularHomologyMap_ofSubsetMap_id R _ k
+
+/-- A map `σ : E' → E` missing the fibre of `p` over `b` is killed by the localization at that
+fibre: `σ_*` followed by `Hₖ(E) → Hₖ(E, E ∖ p⁻¹(b))` is zero. -/
+@[reassoc]
+theorem homologyMap_comp_fiberLocalization_eq_zero (σ : C(E', E)) {p : E → M} {b : M}
+    (hσ : ∀ x, p (σ x) ≠ b) (k : ℕ) :
+    SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom σ)) R k ≫ fiberLocalization R p b k = 0 := by
+  -- By naturality the composite is the localization of `E'` at the empty fibre of `p ∘ σ`,
+  -- whose target `Hₖ(E', E')` vanishes.
+  rw [homologyMap_comp_fiberLocalization R σ rfl b k]
+  have hz : IsZero (localHomology R ((p ∘ σ) ⁻¹' {b}) k) :=
+    TopPair.isZero_singularHomology_of_surjective_map _ R
+      (fun x ↦ ⟨(⟨x, fun h' ↦ hσ x (Set.mem_singleton_iff.1 (Set.mem_preimage.1 h'))⟩ :
+        ↥(((p ∘ σ) ⁻¹' {b})ᶜ : Set E')), rfl⟩) k
+  rw [hz.eq_of_tgt (fiberLocalization R (p ∘ σ) b k) 0, zero_comp]
+
+end Restriction
+
+variable {E Y M N : Type w} [TopologicalSpace E] [TopologicalSpace Y]
+
+section CommRing
+
+variable {k : Type w} [CommRing k] (R S : ModuleCat.{w} k)
+
+/-- If the cross product `α × β ∈ Hₙ(E × Y; R ⊗ S)` lives over the fundamental class at `(b, c)`
+for `p × q : E × Y → M × N`, then `α` lives over the fundamental class at `b` for `p`. -/
+theorem LivesOverFundamentalClass.left_of_singularHomologyCross_prodMap {p : E → M} {q : Y → N}
+    {b : M} {c : N} {i j n : ℕ} (h : i + j = n)
+    {α : ((TopCat.toSSet.obj (TopCat.of E)).homology R i : ModuleCat.{w} k)}
+    {β : ((TopCat.toSSet.obj (TopCat.of Y)).homology S j : ModuleCat.{w} k)}
+    (hαβ : LivesOverFundamentalClass (R ⊗ S) (Prod.map p q) (b, c)
+      ((TopCat.singularHomologyCross (TopCat.of E) (TopCat.of Y) R S i j n h).hom (α ⊗ₜ β))) :
+    LivesOverFundamentalClass R p b α := by
+  -- The fibre `p⁻¹(b) × q⁻¹(c)` lies in the fibre `p⁻¹(b) × Y` of `p ∘ fst`.
+  have hsub : Prod.map p q ⁻¹' {(b, c)} ⊆ (p ∘ Prod.fst) ⁻¹' {b} := fun x hx ↦ by
+    simp_all [Prod.ext_iff]
+  refine LivesOverFundamentalClass.of_singularHomologyCross (p := p) (b := b) (β := β) R S h
+    fun h₀ ↦ hαβ ?_
+  rw [← fiberLocalization_comp_localHomologyRestriction (R ⊗ S) hsub]
+  exact (congrArg (localHomologyRestriction (R ⊗ S) hsub n).hom h₀).trans (map_zero _)
+
+/-- If the cross product `α × β ∈ Hₙ(E × Y; R ⊗ S)` lives over the fundamental class at `(b, c)`
+for `p × q : E × Y → M × N`, then `β` lives over the fundamental class at `c` for `q`. -/
+theorem LivesOverFundamentalClass.right_of_singularHomologyCross_prodMap {p : E → M}
+    {q : Y → N} {b : M} {c : N} {i j n : ℕ} (h : i + j = n)
+    {α : ((TopCat.toSSet.obj (TopCat.of E)).homology R i : ModuleCat.{w} k)}
+    {β : ((TopCat.toSSet.obj (TopCat.of Y)).homology S j : ModuleCat.{w} k)}
+    (hαβ : LivesOverFundamentalClass (R ⊗ S) (Prod.map p q) (b, c)
+      ((TopCat.singularHomologyCross (TopCat.of E) (TopCat.of Y) R S i j n h).hom (α ⊗ₜ β))) :
+    LivesOverFundamentalClass S q c β := by
+  intro hβ
+  -- By the exact sequence of the pair `(Y, Y ∖ q⁻¹(c))`, `β` comes from `Y ∖ q⁻¹(c)`, so `α × β`
+  -- comes from `E × (Y ∖ q⁻¹(c))`, which misses the fibre over `(b, c)`.
+  let P := TopPair.ofSubset ((q ⁻¹' {c})ᶜ : Set (TopCat.of Y))
+  obtain ⟨β', rfl⟩ := (ShortComplex.moduleCat_exact_iff _).1
+    (P.singularHomology_exact_space S j) β hβ
+  apply hαβ
+  have key : (𝟙 _ ⊗ₘ ((AlgebraicTopology.singularHomologyFunctor _ j).obj S).map P.map) ≫
+      TopCat.singularHomologyCross (TopCat.of E) (TopCat.of Y) R S i j n h ≫
+        fiberLocalization (R ⊗ S) (Prod.map p q) (b, c) n = 0 := by
+    have hnat := TopCat.singularHomologyCross_naturality_assoc (𝟙 (TopCat.of E)) P.map R S i j n
+      h (fiberLocalization (R ⊗ S) (Prod.map p q) (b, c) n)
+    rw [CategoryTheory.Functor.map_id] at hnat
+    refine hnat.trans ?_
+    exact (_ ≫= homologyMap_comp_fiberLocalization_eq_zero (R ⊗ S)
+      (ContinuousMap.prodMap (ContinuousMap.id E)
+        (⟨Subtype.val, continuous_subtype_val⟩ : C(((q ⁻¹' {c})ᶜ : Set Y), Y)))
+      (p := Prod.map p q) (b := (b, c)) (fun x hx ↦ x.2.2 (congrArg Prod.snd hx :)) n).trans
+      comp_zero
+  have h₁ := congrArg (fun φ ↦ φ.hom (α ⊗ₜ β')) key
+  simp only [ModuleCat.hom_zero, LinearMap.zero_apply] at h₁
+  exact h₁
+
+end CommRing
+
+section Field
+
+variable {K : Type w} [Field K] (R S : ModuleCat.{w} K)
+
+/-- **Cross products living over the fundamental class of a product.** With coefficients in a
+field, if `α ∈ Hᵢ(E; R)` lives over the fundamental class at `b` for `p` and `β ∈ Hⱼ(Y; S)` lives
+over the fundamental class at `c` for `q`, and the two fibres are closed, then the cross product
+`α × β` lives over the fundamental class at `(b, c)` for `p × q : E × Y → M × N`. -/
+theorem LivesOverFundamentalClass.singularHomologyCross_prodMap {p : E → M} {q : Y → N} {b : M}
+    {c : N} (hp : IsClosed (p ⁻¹' {b})) (hq : IsClosed (q ⁻¹' {c})) {i j n : ℕ} (h : i + j = n)
+    {α : ((TopCat.toSSet.obj (TopCat.of E)).homology R i : ModuleCat.{w} K)}
+    {β : ((TopCat.toSSet.obj (TopCat.of Y)).homology S j : ModuleCat.{w} K)}
+    (hα : LivesOverFundamentalClass R p b α) (hβ : LivesOverFundamentalClass S q c β) :
+    LivesOverFundamentalClass (R ⊗ S) (Prod.map p q) (b, c)
+      ((TopCat.singularHomologyCross (TopCat.of E) (TopCat.of Y) R S i j n h).hom (α ⊗ₜ β)) := by
+  intro h₀
+  -- Write `A = E ∖ p⁻¹(b)` and `B = Y ∖ q⁻¹(c)`. In `E × Y` the complement `A × Y` of the fibre
+  -- of `p ∘ fst` lies in the complement `Z = A × Y ∪ E × B` of the fibre of `p × q`.
+  let A : Set (TopCat.of E) := (p ⁻¹' {b})ᶜ
+  let B : Set (TopCat.of Y) := (q ⁻¹' {c})ᶜ
+  let Z : Set (TopCat.of E ⊗ TopCat.of Y) := (Prod.map p q ⁻¹' {(b, c)})ᶜ
+  have hAZ : CartesianMonoidalCategory.fst (TopCat.of E) (TopCat.of Y) ⁻¹' A ⊆ Z :=
+    fun x hx hx' ↦ hx (congrArg Prod.fst hx' :)
+  have hBZ : CartesianMonoidalCategory.snd (TopCat.of E) (TopCat.of Y) ⁻¹' B ⊆ Z :=
+    fun x hx hx' ↦ hx (congrArg Prod.snd hx' :)
+  have hZ : Z ⊆ CartesianMonoidalCategory.fst (TopCat.of E) (TopCat.of Y) ⁻¹' A ∪
+      CartesianMonoidalCategory.snd (TopCat.of E) (TopCat.of Y) ⁻¹' B := fun x hx ↦ by
+    by_cases hb : p x.1 = b
+    · exact Or.inr fun hc ↦ hx (Prod.ext hb hc)
+    · exact Or.inl hb
+  -- `h₀` says that `α × β` vanishes in `Hₙ(E × Y, Z)`, so its image `(loc α) × β` in
+  -- `Hₙ(E × Y, A × Y)` comes from `Hₙ(E × B, A × B)`; the relative Künneth theorem rules this out.
+  obtain ⟨y, hy⟩ := TopCat.exists_singularHomologyMap_ofSubsetMap_tensorHom_eq (R ⊗ S)
+    hp.isOpen_compl hq.isOpen_compl hAZ hBZ hZ
+    ((congrArg (fun φ ↦ φ.hom
+      ((TopCat.singularHomologyCross (TopCat.of E) (TopCat.of Y) R S i j n h).hom (α ⊗ₜ β)))
+      (TopPair.singularHomologyπ_comp_singularHomologyMap_ofSubsetMap_id (R ⊗ S)
+        (X := TopCat.of E ⊗ TopCat.of Y) (S := Z) (fun _ hx ↦ hAZ hx) n)).trans h₀)
+  exact TopCat.singularHomologyMap_ofSubsetMap_tensorHom_ne_singularHomologyCrossRel_of_field _ _
+    A B R S h hα hβ y (hy.trans (congrArg (fun φ ↦ φ.hom (α ⊗ₜ β))
+      (TopCat.singularHomologyCross_comp_singularHomologyπ (TopCat.of E) (TopCat.of Y) A R S i j n
+        h)))
+
+/-- **Classes living over the fundamental class of a product.** With coefficients in a field and
+closed fibres, the cross product `α × β` lives over the fundamental class at `(b, c)` for
+`p × q : E × Y → M × N` if and only if `α` lives over the fundamental class at `b` for `p` and `β`
+lives over the fundamental class at `c` for `q`. -/
+theorem livesOverFundamentalClass_prodMap_singularHomologyCross_iff_of_field {p : E → M}
+    {q : Y → N} {b : M} {c : N} (hp : IsClosed (p ⁻¹' {b})) (hq : IsClosed (q ⁻¹' {c}))
+    {i j n : ℕ} (h : i + j = n)
+    {α : ((TopCat.toSSet.obj (TopCat.of E)).homology R i : ModuleCat.{w} K)}
+    {β : ((TopCat.toSSet.obj (TopCat.of Y)).homology S j : ModuleCat.{w} K)} :
+    LivesOverFundamentalClass (R ⊗ S) (Prod.map p q) (b, c)
+      ((TopCat.singularHomologyCross (TopCat.of E) (TopCat.of Y) R S i j n h).hom (α ⊗ₜ β)) ↔
+      LivesOverFundamentalClass R p b α ∧ LivesOverFundamentalClass S q c β :=
+  ⟨fun hαβ ↦ ⟨hαβ.left_of_singularHomologyCross_prodMap R S h,
+    hαβ.right_of_singularHomologyCross_prodMap R S h⟩,
+    fun ⟨hα, hβ⟩ ↦ hα.singularHomologyCross_prodMap R S hp hq h hβ⟩
+
+end Field
+
+end ProdMap
 
 namespace HomologicalOrientation
 
