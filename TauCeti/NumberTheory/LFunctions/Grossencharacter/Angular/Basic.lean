@@ -7,7 +7,6 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Inverse
-import TauCeti.NumberTheory.LFunctions.Grossencharacter.Compatibility
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.Basic
 import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Basic
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Basic
@@ -33,17 +32,13 @@ and `U ∩ F^× = (𝓞 F)ˣ` consists of the fourth roots of unity. Sending `y 
 `(z / ‖z‖) ^ (-4 * k)` at the complex coordinate `z` of `y` therefore descends to a continuous
 unramified character of `C_F`.
 
-By Hecke's unit relation (`Grossencharacter.compatibility`), the idelic archimedean component is
-the **inverse** of the ideal-side monomial: `angularGrossencharacter F k` has algebraic exponent
-`-2 * k` at `w.embedding` and `2 * k` at `conj w.embedding`. The two conjugate exponents sum to `0`
-(the character is unitary, with `idealShift = 0`) and differ by `-4 * k` (the complex angular
-frequency). At `α = 2 + i`, the ideal value is `((3 ± 4i) / 5) ^ (2 * k)`, which for `k ≠ 0` is
-nonreal and equals the inverse — not the value — of the archimedean monomial.
-
-For `k ≠ 0`, `angularGrossencharacter F k` has infinite order, admits no ray-class presentation at
-any modulus, and its unitary ideal weight is not an imaginary norm twist on good ideals because the
-conjugate ideals `(2 + i)` and `(2 - i)` share absolute norm `5` while taking non-real inverse
-values.
+Because the idelic archimedean component is the **inverse** of the ideal-side monomial,
+`angularGrossencharacter F k` has algebraic exponent `-2 * k` at `w.embedding` and `2 * k` at
+`conj w.embedding`. The two conjugate exponents sum to `0` (the character is unitary, with
+`idealShift = 0`) and differ by `-4 * k` (the complex angular frequency). For `k ≠ 0`,
+`angularGrossencharacter F k` has infinite order and admits no ray-class presentation at any
+modulus. The explicit evaluation at `(2 + i)` and absence of pure imaginary norm twists are
+developed in `TauCeti.NumberTheory.LFunctions.Grossencharacter.Angular.NormTwist`.
 
 ## Main definitions
 
@@ -66,11 +61,6 @@ values.
   `TauCeti.LFunctions.isFiniteOrder_toHeckeCharacter_angularGrossencharacter_iff`,
   `TauCeti.LFunctions.not_mem_range_ofRayClassCharacter_toHeckeCharacter_angularGrossencharacter`:
   injectivity in `k`, infinite order for `k ≠ 0`, and absence of ray-class presentations.
-* `TauCeti.LFunctions.im_unitaryWeight_angularGrossencharacter_two_add_toInteger_ne_zero`,
-  `TauCeti.LFunctions.unitaryWeight_angularGrossencharacter_two_add_toInteger_ne_prod`: the nonreal
-  sign check at `2 + i`.
-* `TauCeti.LFunctions.angularGrossencharacter_not_isNormTwist`: for `k ≠ 0`, the unitary ideal
-  weight is not a pure imaginary norm twist on its good ideals.
 
 ## References
 
@@ -93,14 +83,10 @@ section CyclotomicFourHelpers
 
 variable (F : Type*) [Field F] [NumberField F] [IsCyclotomicExtension {4} ℚ F]
 
-/-- Every infinite place of a fourth cyclotomic field is complex. -/
-private theorem isTotallyComplex_four : IsTotallyComplex F :=
-  GaussianRationals.isTotallyComplex
-    (IsCyclotomicExtension.zeta_spec 4 ℚ F).minpoly_toInteger_eq_X_sq_add_one
-
 /-- A fourth cyclotomic field has no real infinite places. -/
 private theorem isEmpty_realInfinitePlace_four : IsEmpty {w : InfinitePlace F // w.IsReal} :=
-  ⟨fun w ↦ InfinitePlace.not_isReal_iff_isComplex.mpr ((isTotallyComplex_four F).isComplex w.1) w.2⟩
+  ⟨fun w ↦ InfinitePlace.not_isReal_iff_isComplex.mpr
+    ((IsCyclotomicExtension.Rat.isTotallyComplex (n := 4) F (by norm_num)).isComplex w.1) w.2⟩
 
 /-- A fourth cyclotomic field has a unique infinite place, since `[F : ℚ] = 2` and `r₁ = 0`. -/
 private theorem subsingleton_infinitePlace_four : Subsingleton (InfinitePlace F) := by
@@ -116,7 +102,7 @@ private theorem subsingleton_infinitePlace_four : Subsingleton (InfinitePlace F)
 /-- The unique complex infinite place of `F`. -/
 private def angularPlace : {w : InfinitePlace F // w.IsComplex} :=
   let w := Classical.arbitrary (InfinitePlace F)
-  ⟨w, (isTotallyComplex_four F).isComplex w⟩
+  ⟨w, (IsCyclotomicExtension.Rat.isTotallyComplex (n := 4) F (by norm_num)).isComplex w⟩
 
 private theorem infinitePlace_eq_angularPlace (w : InfinitePlace F) :
     w = (angularPlace F).1 :=
@@ -239,11 +225,6 @@ private theorem norm_angularGenVal_of_ne_zero (k : ℤ) {α : 𝓞 F} (hα : α 
     norm_ne_zero_iff.mpr ((map_ne_zero _).mpr hαF)
   rw [div_self hz, one_zpow]
 
-omit [NumberField F] [IsCyclotomicExtension {4} ℚ F] in
-private theorem span_generator_four [IsPrincipalIdealRing (𝓞 F)] (I : Ideal (𝓞 F)) :
-    Ideal.span {Submodule.IsPrincipal.generator I} = I :=
-  Submodule.IsPrincipal.span_singleton_generator I
-
 /-- The completely multiplicative ideal weight on `Ideal (𝓞 F)` sending `(α)` to
 `(τ α / conj (τ α)) ^ (2 * k)`. -/
 private def angularIdealWeight (k : ℤ) : MultiplicativeIdealWeight F := by
@@ -253,19 +234,21 @@ private def angularIdealWeight (k : ℤ) : MultiplicativeIdealWeight F := by
         { toFun I := angularGenVal F k (Submodule.IsPrincipal.generator I)
           map_zero' := by
             have h0 : Submodule.IsPrincipal.generator (0 : Ideal (𝓞 F)) = 0 :=
-              Ideal.span_singleton_eq_bot.mp ((span_generator_four F _).trans Ideal.zero_eq_bot)
+              Ideal.span_singleton_eq_bot.mp
+                ((Ideal.span_singleton_generator _).trans Ideal.zero_eq_bot)
             rw [h0, angularGenVal_zero]
           map_one' := by
             have h1 : Ideal.span {Submodule.IsPrincipal.generator (1 : Ideal (𝓞 F))} =
                 Ideal.span {1} := by
-              rw [span_generator_four, Ideal.one_eq_top, Ideal.span_singleton_one]
+              rw [Ideal.span_singleton_generator, Ideal.one_eq_top, Ideal.span_singleton_one]
             rw [angularGenVal_eq_of_associated F k
               (Ideal.span_singleton_eq_span_singleton.mp h1), angularGenVal_one]
           map_mul' I J := by
             have hIJ : Ideal.span {Submodule.IsPrincipal.generator (I * J)} =
                 Ideal.span {Submodule.IsPrincipal.generator I *
                   Submodule.IsPrincipal.generator J} := by
-              simp only [← Ideal.span_singleton_mul_span_singleton, span_generator_four]
+              simp only [← Ideal.span_singleton_mul_span_singleton,
+                Ideal.span_singleton_generator]
             rw [angularGenVal_eq_of_associated F k
               (Ideal.span_singleton_eq_span_singleton.mp hIJ), angularGenVal_mul] }
       finite_setOf_apply_eq_zero := by
@@ -273,7 +256,7 @@ private def angularIdealWeight (k : ℤ) : MultiplicativeIdealWeight F := by
         have hgen0 : Submodule.IsPrincipal.generator v.asIdeal ≠ 0 := by
           intro h0
           apply v.ne_bot
-          rw [← span_generator_four F v.asIdeal, h0, Ideal.span_singleton_eq_bot]
+          rw [← Ideal.span_singleton_generator v.asIdeal, h0, Ideal.span_singleton_eq_bot]
         exact absurd hv (angularGenVal_ne_zero F k hgen0) }
 
 private theorem angularIdealWeight_span_singleton (k : ℤ) (α : 𝓞 F) :
@@ -282,22 +265,22 @@ private theorem angularIdealWeight_span_singleton (k : ℤ) (α : 𝓞 F) :
   change angularGenVal F k (Submodule.IsPrincipal.generator (Ideal.span {α})) =
     angularGenVal F k α
   exact angularGenVal_eq_of_associated F k
-    (Ideal.span_singleton_eq_span_singleton.mp (span_generator_four F (Ideal.span {α})))
+    (Ideal.span_singleton_eq_span_singleton.mp (Ideal.span_singleton_generator (Ideal.span {α})))
 
 private theorem angularIdealWeight_ne_zero (k : ℤ) {I : Ideal (𝓞 F)} (hI : I ≠ ⊥) :
     angularIdealWeight F k I ≠ 0 := by
   have : IsPrincipalIdealRing (𝓞 F) := isPrincipalIdealRing_ringOfIntegers_four F
-  rw [← span_generator_four F I, angularIdealWeight_span_singleton]
+  rw [← Ideal.span_singleton_generator I, angularIdealWeight_span_singleton]
   refine angularGenVal_ne_zero F k fun h0 ↦ hI ?_
-  rw [← span_generator_four F I, h0, Ideal.span_singleton_eq_bot]
+  rw [← Ideal.span_singleton_generator I, h0, Ideal.span_singleton_eq_bot]
 
 /-- The bundled `UnitaryIdealWeight F` of Hecke's `k`-th angular character. -/
 private def angularUnitaryWeight (k : ℤ) : UnitaryIdealWeight F :=
   ⟨angularIdealWeight F k, fun 𝔭 _ ↦ by
     have : IsPrincipalIdealRing (𝓞 F) := isPrincipalIdealRing_ringOfIntegers_four F
-    rw [← span_generator_four F 𝔭.asIdeal, angularIdealWeight_span_singleton]
+    rw [← Ideal.span_singleton_generator 𝔭.asIdeal, angularIdealWeight_span_singleton]
     refine norm_angularGenVal_of_ne_zero F k fun h0 ↦ 𝔭.ne_bot ?_
-    rw [← span_generator_four F 𝔭.asIdeal, h0, Ideal.span_singleton_eq_bot]⟩
+    rw [← Ideal.span_singleton_generator 𝔭.asIdeal, h0, Ideal.span_singleton_eq_bot]⟩
 
 end IdealWeight
 
@@ -533,8 +516,9 @@ private theorem inv_div_norm_inv_zpow_neg_four_mul (k : ℤ) {z : ℂ} (hz : z �
 private theorem exists_span_singleton_eq_asIdeal_four (v : HeightOneSpectrum (𝓞 F)) :
     ∃ π : 𝓞 F, π ≠ 0 ∧ Ideal.span {π} = v.asIdeal := by
   have : IsPrincipalIdealRing (𝓞 F) := isPrincipalIdealRing_ringOfIntegers_four F
-  refine ⟨Submodule.IsPrincipal.generator v.asIdeal, ?_, span_generator_four F v.asIdeal⟩
-  exact v.ne_zero_of_span_singleton_eq_pow (by rw [pow_one, span_generator_four F v.asIdeal])
+  refine ⟨Submodule.IsPrincipal.generator v.asIdeal, ?_, Ideal.span_singleton_generator v.asIdeal⟩
+  exact v.ne_zero_of_span_singleton_eq_pow
+    (by rw [pow_one, Ideal.span_singleton_generator v.asIdeal])
 
 /-- Evaluating `angularHeckeCharacter F k` at a uniformizer `u` of `v` gives the principal-ideal
 weight at `v.asIdeal`: multiplying `ofAdicCompletion v u` by `(unitEmbedding π)⁻¹` for a generator
@@ -605,7 +589,8 @@ private theorem infiniteComponent_eq_of_infinityType_eq_four {F : Type*} [Field 
     · exact (isEmpty_realInfinitePlace_four F).elim w'
     · exact congrFun hc w'
     · exact congrFun hk w'
-  have hw : w.IsComplex := (isTotallyComplex_four F).isComplex w
+  have hw : w.IsComplex :=
+    (IsCyclotomicExtension.Rat.isTotallyComplex (n := 4) F (by norm_num)).isComplex w
   have hc : χ.toHeckeCharacter.complexComponent ⟨w, hw⟩ =
       ψ.toHeckeCharacter.complexComponent ⟨w, hw⟩ := by
     rw [HeckeCharacter.complexComponent_eq, HeckeCharacter.complexComponent_eq, hcont]
@@ -737,23 +722,6 @@ theorem badPrimes_unitaryWeight_angularGrossencharacter (F : Type*) [Field F] [N
   ext v
   simp only [MultiplicativeIdealWeight.mem_badPrimes, Set.mem_empty_iff_false, iff_false]
   exact angularIdealWeight_ne_zero F k v.ne_bot
-
-/-- An integral ideal `I` of `𝓞 F` is good for `angularGrossencharacter F k` if and only if `I` is
-nonzero. -/
-@[simp]
-theorem isGood_unitaryWeight_angularGrossencharacter_iff {F : Type*} [Field F] [NumberField F]
-    [IsCyclotomicExtension {4} ℚ F] (k : ℤ) {I : Ideal (𝓞 F)} :
-    (angularGrossencharacter F k).unitaryWeight.1.IsGood I ↔ I ≠ ⊥ := by
-  rw [MultiplicativeIdealWeight.IsGood, badPrimes_unitaryWeight_angularGrossencharacter,
-    Ideal.isPrimeTo_iff]
-  simp
-
-/-- The unitary ideal weight of `angularGrossencharacter F k` is nonzero on every nonzero ideal. -/
-theorem unitaryWeight_angularGrossencharacter_ne_zero {F : Type*} [Field F] [NumberField F]
-    [IsCyclotomicExtension {4} ℚ F] (k : ℤ) {I : Ideal (𝓞 F)} (hI : I ≠ ⊥) :
-    (angularGrossencharacter F k).unitaryWeight.1 I ≠ 0 :=
-  ((angularGrossencharacter F k).unitaryWeight.1.apply_ne_zero_iff_isGood I).mpr
-    ((isGood_unitaryWeight_angularGrossencharacter_iff k).mpr hI)
 
 /-- `angularGrossencharacter F k` has idelic shift `0` (it is unitary). -/
 @[simp]
@@ -954,6 +922,7 @@ theorem angularGrossencharacter_injective (F : Type*) [Field F] [NumberField F]
     infinityType_angularGrossencharacter_embedding k (angularPlace F)] at hinj
   omega
 
+/-- Two angular Größencharaktere of `F` are equal if and only if their indices are equal. -/
 @[simp]
 theorem angularGrossencharacter_eq_iff {F : Type*} [Field F] [NumberField F]
     [IsCyclotomicExtension {4} ℚ F] {j k : ℤ} :
@@ -1010,223 +979,5 @@ theorem not_mem_range_ofRayClassCharacter_angularGrossencharacter (F : Type*) [F
       (congrArg Grossencharacter.toHeckeCharacter hη)⟩
 
 end InfiniteOrder
-
-/-! ### The `2 + i` nonreal sign check and absence of pure norm twists -/
-
-section TwoAddZetaAndNormTwist
-
-/-- Every positive integer power of `3 + 4i` has Gaussian integer coordinates congruent to `(3, 4)`
-modulo `5`, because `(3 + 4i) ^ 2 = -7 + 24i ≡ 3 + 4i (mod 5)`. -/
-private theorem exists_int_pow_three_add_four_I {n : ℕ} (hn : n ≠ 0) :
-    ∃ a b : ℤ, ((3 : ℂ) + 4 * Complex.I) ^ n = (a : ℂ) + (b : ℂ) * Complex.I ∧
-      a % 5 = 3 ∧ b % 5 = 4 := by
-  induction n with
-  | zero => exact absurd rfl hn
-  | succ m ih =>
-    rcases eq_or_ne m 0 with rfl | hm
-    · exact ⟨3, 4, by simp, by decide, by decide⟩
-    · obtain ⟨a, b, hpow, ha, hb⟩ := ih hm
-      refine ⟨3 * a - 4 * b, 4 * a + 3 * b, ?_, by omega, by omega⟩
-      rw [pow_succ, hpow]
-      push_cast
-      linear_combination (4 * (b : ℂ)) * Complex.I_sq
-
-/-- No nonzero integer power of `(3 + 4i) / 5` is real: its imaginary part is nonzero. -/
-private theorem im_three_add_four_I_div_five_zpow_ne_zero {m : ℤ} (hm : m ≠ 0) :
-    ((((3 : ℂ) + 4 * Complex.I) / 5) ^ m).im ≠ 0 := by
-  have hnat {n : ℕ} (hn : n ≠ 0) : ((((3 : ℂ) + 4 * Complex.I) / 5) ^ n).im ≠ 0 := by
-    obtain ⟨a, b, hpow, -, hb⟩ := exists_int_pow_three_add_four_I hn
-    have hb0 : (b : ℝ) ≠ 0 := by exact_mod_cast (show b ≠ 0 by omega)
-    have h5 : (5 : ℝ) ^ n ≠ 0 := pow_ne_zero n (by norm_num)
-    have hrew : (((3 : ℂ) + 4 * Complex.I) / 5) ^ n =
-        ((a : ℝ) / (5 : ℝ) ^ n : ℝ) + (((b : ℝ) / (5 : ℝ) ^ n : ℝ) : ℂ) * Complex.I := by
-      rw [div_pow, hpow]
-      push_cast
-      ring
-    have him : ((((3 : ℂ) + 4 * Complex.I) / 5) ^ n).im = (b : ℝ) / (5 : ℝ) ^ n := by
-      rw [hrew, Complex.add_im, Complex.ofReal_im, Complex.mul_I_im, Complex.ofReal_re, zero_add]
-    rw [him]
-    exact div_ne_zero hb0 h5
-  rcases Int.eq_nat_or_neg m with ⟨n, rfl | rfl⟩
-  · have hn : n ≠ 0 := by omega
-    simpa only [zpow_natCast] using hnat hn
-  · have hn : n ≠ 0 := by omega
-    rw [zpow_neg, zpow_natCast, Complex.inv_im]
-    intro him
-    rcases div_eq_zero_iff.mp him with hneg | hnsq
-    · exact hnat hn (neg_eq_zero.mp hneg)
-    · have hz0 : (((3 : ℂ) + 4 * Complex.I) / 5) ^ n = 0 := Complex.normSq_eq_zero.mp hnsq
-      exact hnat hn (by simp [hz0])
-
-/-- Under any embedding `τ : F →+* ℂ`, a primitive fourth root of unity `ζ ∈ F` maps to `i` or
-`-i`. -/
-private theorem embedding_toInteger_eq_I_or_neg_I {F : Type*} [Field F] [NumberField F]
-    {ζ : F} (hζ : IsPrimitiveRoot ζ 4) (τ : F →+* ℂ) :
-    τ (hζ.toInteger : F) = Complex.I ∨ τ (hζ.toInteger : F) = -Complex.I := by
-  have hz : algebraMap (𝓞 F) F hζ.toInteger = ζ := hζ.coe_toInteger
-  have hsq : (τ (hζ.toInteger : F)) ^ 2 = Complex.I ^ 2 := by
-    rw [Complex.I_sq, RingOfIntegers.coe_eq_algebraMap, hz, ← map_pow,
-      hζ.sq_eq_neg_one, map_neg, map_one]
-  exact sq_eq_sq_iff_eq_or_eq_neg.mp hsq
-
-private theorem norm_two_add_toInteger_of_four {F : Type*} [Field F] [NumberField F]
-    [IsCyclotomicExtension {4} ℚ F] {ζ : F} (hζ : IsPrimitiveRoot ζ 4) :
-    Algebra.norm ℤ ((2 : 𝓞 F) + hζ.toInteger) = 5 := by
-  simpa using hζ.norm_intCast_add_intCast_mul_toInteger_of_four 2 1
-
-private theorem two_add_toInteger_ne_zero_of_four {F : Type*} [Field F] [NumberField F]
-    [IsCyclotomicExtension {4} ℚ F] {ζ : F} (hζ : IsPrimitiveRoot ζ 4) :
-    (2 : 𝓞 F) + hζ.toInteger ≠ 0 := by
-  intro h0
-  have hnorm := norm_two_add_toInteger_of_four hζ
-  rw [h0, Algebra.norm_zero] at hnorm
-  omega
-
-private theorem unitaryWeight_angularGrossencharacter_apply_sq {F : Type*} [Field F]
-    [NumberField F] [IsCyclotomicExtension {4} ℚ F] (k : ℤ) (I : Ideal (𝓞 F)) :
-    ((angularGrossencharacter F k).unitaryWeight.1 I) ^ 2 =
-      (angularGrossencharacter F (2 * k)).unitaryWeight.1 I := by
-  have hp := congrArg Subtype.val (unitaryWeight_angularGrossencharacter_add F k k)
-  rw [UnitaryIdealWeight.val_mul, ← two_mul] at hp
-  simpa only [MultiplicativeIdealWeight.mul_apply, sq] using (DFunLike.congr_fun hp I).symm
-
-/-- **Value of `angularGrossencharacter F k` at `(2 + i)`**: for a primitive fourth root of unity
-`ζ ∈ F`, the unitary weight at `Ideal.span {2 + hζ.toInteger}` is `((3 + 4i) / 5) ^ (2 * k)` or
-`((3 + 4i) / 5) ^ (-(2 * k))` according to which square root of `-1` the chosen embedding
-selects. -/
-theorem unitaryWeight_angularGrossencharacter_two_add_toInteger {F : Type*} [Field F]
-    [NumberField F] [IsCyclotomicExtension {4} ℚ F] {ζ : F} (hζ : IsPrimitiveRoot ζ 4) (k : ℤ) :
-    (angularGrossencharacter F k).unitaryWeight.1 (Ideal.span {(2 : 𝓞 F) + hζ.toInteger}) =
-        (((3 : ℂ) + 4 * Complex.I) / 5) ^ (2 * k) ∨
-      (angularGrossencharacter F k).unitaryWeight.1 (Ideal.span {(2 : 𝓞 F) + hζ.toInteger}) =
-        (((3 : ℂ) + 4 * Complex.I) / 5) ^ (-(2 * k)) := by
-  rw [unitaryWeight_angularGrossencharacter_span_singleton k (angularPlace F)
-    (two_add_toInteger_ne_zero_of_four hζ)]
-  set τ := (angularPlace F).1.embedding
-  have h2I : (2 + Complex.I) / (2 - Complex.I) = ((3 : ℂ) + 4 * Complex.I) / 5 := by
-    have hne : (2 : ℂ) - Complex.I ≠ 0 := fun h ↦ by simpa using congrArg Complex.im h
-    rw [div_eq_div_iff hne (by norm_num)]
-    linear_combination 4 * Complex.I_sq
-  rcases embedding_toInteger_eq_I_or_neg_I hζ τ with hI | hnegI
-  · left
-    have hτα : τ (((2 : 𝓞 F) + hζ.toInteger : 𝓞 F) : F) = 2 + Complex.I := by
-      change τ (algebraMap (𝓞 F) F ((2 : 𝓞 F) + hζ.toInteger)) = 2 + Complex.I
-      rw [map_add, map_ofNat, map_add, map_ofNat, ← RingOfIntegers.coe_eq_algebraMap, hI]
-    have hconj : starRingEnd ℂ (2 + Complex.I) = 2 - Complex.I := by
-      rw [map_add, map_ofNat, Complex.conj_I, sub_eq_add_neg]
-    rw [hτα, hconj, h2I]
-  · right
-    have hτα : τ (((2 : 𝓞 F) + hζ.toInteger : 𝓞 F) : F) = 2 - Complex.I := by
-      change τ (algebraMap (𝓞 F) F ((2 : 𝓞 F) + hζ.toInteger)) = 2 - Complex.I
-      rw [map_add, map_ofNat, map_add, map_ofNat, ← RingOfIntegers.coe_eq_algebraMap, hnegI,
-        sub_eq_add_neg]
-    have hconj : starRingEnd ℂ (2 - Complex.I) = 2 + Complex.I := by
-      rw [map_sub, map_ofNat, Complex.conj_I, sub_neg_eq_add]
-    rw [hτα, hconj, show (2 - Complex.I) / (2 + Complex.I) = (((3 : ℂ) + 4 * Complex.I) / 5)⁻¹ by
-      rw [← h2I, inv_div], inv_zpow, ← zpow_neg]
-
-/-- **Nonreal value at `(2 + i)`**: for `k ≠ 0`, `angularGrossencharacter F k` takes a nonreal
-value at `(2 + hζ.toInteger)`. -/
-theorem im_unitaryWeight_angularGrossencharacter_two_add_toInteger_ne_zero {F : Type*} [Field F]
-    [NumberField F] [IsCyclotomicExtension {4} ℚ F] {ζ : F} (hζ : IsPrimitiveRoot ζ 4)
-    {k : ℤ} (hk : k ≠ 0) :
-    ((angularGrossencharacter F k).unitaryWeight.1
-      (Ideal.span {(2 : 𝓞 F) + hζ.toInteger})).im ≠ 0 := by
-  rcases unitaryWeight_angularGrossencharacter_two_add_toInteger hζ k with h | h <;> rw [h]
-  · exact im_three_add_four_I_div_five_zpow_ne_zero (mul_ne_zero two_ne_zero hk)
-  · exact im_three_add_four_I_div_five_zpow_ne_zero (neg_ne_zero.mpr (mul_ne_zero two_ne_zero hk))
-
-/-- **Sign check at `2 + i` (positive half)**: by Hecke's unit relation, the ideal value of
-`angularGrossencharacter F k` at `(2 + ζ)` equals the **inverse** of the archimedean monomial
-`∏ τ, τ(2 + ζ) ^ n_τ`. -/
-theorem unitaryWeight_angularGrossencharacter_two_add_toInteger_eq_inv_prod {F : Type*} [Field F]
-    [NumberField F] [IsCyclotomicExtension {4} ℚ F] {ζ : F} (hζ : IsPrimitiveRoot ζ 4) (k : ℤ) :
-    (angularGrossencharacter F k).unitaryWeight.1 (Ideal.span {(2 : 𝓞 F) + hζ.toInteger}) =
-      (∏ τ : F →+* ℂ, τ (2 + ζ) ^ (angularGrossencharacter F k).infinityType τ)⁻¹ := by
-  set α : 𝓞 F := (2 : 𝓞 F) + hζ.toInteger
-  have hαF : (algebraMap (𝓞 F) F α) ≠ 0 :=
-    (map_ne_zero_iff (algebraMap (𝓞 F) F) (IsFractionRing.injective (𝓞 F) F)).mpr
-      (two_add_toInteger_ne_zero_of_four hζ)
-  let x : Fˣ := Units.mk0 (algebraMap (𝓞 F) F α) hαF
-  have hcompat := (angularGrossencharacter F k).compatibility_inv x (isCongrOne_one x) α rfl
-  have hz : algebraMap (𝓞 F) F hζ.toInteger = ζ := hζ.coe_toInteger
-  have hxval : (x : F) = 2 + ζ := by
-    change algebraMap (𝓞 F) F ((2 : 𝓞 F) + hζ.toInteger) = 2 + ζ
-    rw [map_add, map_ofNat, hz]
-  simpa [idealShift_angularGrossencharacter, hxval] using hcompat
-
-/-- **Sign check at `2 + i` (negative half)**: for `k ≠ 0`, the ideal value of
-`angularGrossencharacter F k` at `(2 + ζ)` is **not** equal to the uninverted archimedean monomial
-`∏ τ, τ(2 + ζ) ^ n_τ`. -/
-theorem unitaryWeight_angularGrossencharacter_two_add_toInteger_ne_prod {F : Type*} [Field F]
-    [NumberField F] [IsCyclotomicExtension {4} ℚ F] {ζ : F} (hζ : IsPrimitiveRoot ζ 4)
-    {k : ℤ} (hk : k ≠ 0) :
-    (angularGrossencharacter F k).unitaryWeight.1 (Ideal.span {(2 : 𝓞 F) + hζ.toInteger}) ≠
-      ∏ τ : F →+* ℂ, τ (2 + ζ) ^ (angularGrossencharacter F k).infinityType τ := by
-  intro heq
-  have hinv := unitaryWeight_angularGrossencharacter_two_add_toInteger_eq_inv_prod hζ k
-  set wval :=
-    (angularGrossencharacter F k).unitaryWeight.1 (Ideal.span {(2 : 𝓞 F) + hζ.toInteger}) with hwval
-  have hw0 : wval ≠ 0 := fun h0 ↦
-    im_unitaryWeight_angularGrossencharacter_two_add_toInteger_ne_zero hζ hk
-      (by simpa [hwval] using congrArg Complex.im h0)
-  have hsq1 : wval ^ 2 = 1 := by
-    rw [sq, ← mul_inv_cancel₀ hw0]
-    exact congrArg (wval * ·) (hinv.trans (congrArg Inv.inv heq.symm))
-  have him2 : (wval ^ 2).im ≠ 0 := by
-    rw [hwval, unitaryWeight_angularGrossencharacter_apply_sq]
-    exact im_unitaryWeight_angularGrossencharacter_two_add_toInteger_ne_zero hζ
-      (mul_ne_zero two_ne_zero hk)
-  exact him2 (by rw [hsq1, Complex.one_im])
-
-/-- **For `k ≠ 0`, `angularGrossencharacter F k` is not an imaginary norm twist on good ideals.**
-The conjugate Gaussian primes `(2 + i)` and `(2 - i)` both have absolute norm `5` and multiply to
-`(5)`, on which the angular weight is `1`; a norm twist `N(I) ^ (u * i)` would assign them the same
-value `w`, forcing `w ^ 2 = 1`, whereas `w ^ 2 = ((3 ± 4i) / 5) ^ (4 * k)` is nonreal. -/
-theorem angularGrossencharacter_not_isNormTwist
-    (F : Type*) [Field F] [NumberField F] [IsCyclotomicExtension {4} ℚ F] {k : ℤ} (hk : k ≠ 0)
-    (u : ℝ) :
-    ¬ TauCeti.MultiplicativeIdealWeight.IsNormTwistOnGood
-      (angularGrossencharacter F k).unitaryWeight.1 u := by
-  intro htwist
-  have hζ := IsCyclotomicExtension.zeta_spec 4 ℚ F
-  set α : 𝓞 F := (2 : 𝓞 F) + hζ.toInteger
-  set β : 𝓞 F := (2 : 𝓞 F) - hζ.toInteger
-  have hNα : Ideal.absNorm (Ideal.span {α}) = 5 := by
-    exact_mod_cast (RingOfIntegers.natCast_absNorm_span_singleton_of_four α).trans
-      (norm_two_add_toInteger_of_four hζ)
-  have hNβ : Ideal.absNorm (Ideal.span {β}) = 5 := by
-    have hβ' : β = (2 : ℤ) + (-1 : ℤ) * hζ.toInteger := by simp [β, sub_eq_add_neg]
-    have hn : Algebra.norm ℤ β = 5 := by
-      rw [hβ', hζ.norm_intCast_add_intCast_mul_toInteger_of_four]; norm_num
-    exact_mod_cast (RingOfIntegers.natCast_absNorm_span_singleton_of_four β).trans hn
-  have hnormTwist := htwist.eq_normTwist (badPrimes_unitaryWeight_angularGrossencharacter F k)
-  have hαprime : Ideal.IsPrimeTo (Ideal.span {α}) ∅ :=
-    Ideal.isPrimeTo_iff.mpr ⟨Ideal.absNorm_eq_zero_iff.not.mp (by omega), fun _ hv ↦ hv.elim⟩
-  have hβprime : Ideal.IsPrimeTo (Ideal.span {β}) ∅ :=
-    Ideal.isPrimeTo_iff.mpr ⟨Ideal.absNorm_eq_zero_iff.not.mp (by omega), fun _ hv ↦ hv.elim⟩
-  have heqαβ : (angularGrossencharacter F k).unitaryWeight.1 (Ideal.span {α}) =
-      (angularGrossencharacter F k).unitaryWeight.1 (Ideal.span {β}) := by
-    rw [DFunLike.congr_fun hnormTwist (Ideal.span {α}),
-      DFunLike.congr_fun hnormTwist (Ideal.span {β}),
-      MultiplicativeIdealWeight.normTwist_apply, MultiplicativeIdealWeight.normTwist_apply,
-      MultiplicativeIdealWeight.ofBadPrimes_apply, MultiplicativeIdealWeight.ofBadPrimes_apply,
-      hNα, hNβ]
-    simp [hαprime, hβprime]
-  have hmul5 : α * β = (5 : 𝓞 F) := by
-    simp only [α, β]; linear_combination -hζ.toInteger_isPrimitiveRoot.sq_eq_neg_one
-  have hval5 : (angularGrossencharacter F k).unitaryWeight.1 (Ideal.span {(5 : 𝓞 F)}) = 1 := by
-    rw [unitaryWeight_angularGrossencharacter_span_singleton k (angularPlace F) (by norm_num),
-      RingOfIntegers.coe_eq_algebraMap, map_ofNat, map_ofNat, map_ofNat, div_self (by norm_num),
-      one_zpow]
-  have hsq1 : ((angularGrossencharacter F k).unitaryWeight.1 (Ideal.span {α})) ^ 2 = 1 := by
-    rw [sq, ← hval5, ← hmul5, ← Ideal.span_singleton_mul_span_singleton, map_mul, heqαβ]
-  have him2 : (((angularGrossencharacter F k).unitaryWeight.1 (Ideal.span {α})) ^ 2).im ≠ 0 := by
-    rw [unitaryWeight_angularGrossencharacter_apply_sq]
-    exact im_unitaryWeight_angularGrossencharacter_two_add_toInteger_ne_zero hζ
-      (mul_ne_zero two_ne_zero hk)
-  exact him2 (by rw [hsq1, Complex.one_im])
-
-end TwoAddZetaAndNormTwist
 
 end TauCeti.LFunctions
