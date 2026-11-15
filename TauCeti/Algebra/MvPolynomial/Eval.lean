@@ -28,6 +28,9 @@ Over a commutative ring, evaluation also respects congruences: if `d ∣ xᵢ - 
 * `MvPolynomial.pow_mul_eval_mem`: `c ^ T p(x)` lies in a subsemiring containing `c`, the
   coefficients of `p` and the `c xᵢ`, when `p` has total degree at most `T`.
 * `MvPolynomial.dvd_eval_sub_eval`: values at points congruent modulo `d` are congruent modulo `d`.
+* `MvPolynomial.eval₂_eq_zero_iff_of_subsingleton_addUnits`: in a zero-sum-free semiring without
+  zero divisors, `p.eval₂ f x = 0 ↔ p = 0` when the active coefficients and variables map to
+  nonzero elements.
 -/
 
 public section
@@ -65,5 +68,23 @@ theorem dvd_eval_sub_eval {R : Type*} [CommRing R] (p : MvPolynomial σ R) {d : 
       using 1
     simp only [map_mul, eval_X]
     ring
+
+/-- Evaluating a multivariate polynomial in a zero-sum-free commutative semiring without zero
+divisors yields zero if and only if the polynomial is zero, provided every support coefficient and
+every variable in the support of a monomial evaluate to nonzero elements. -/
+theorem eval₂_eq_zero_iff_of_subsingleton_addUnits {R : Type*} [CommSemiring R]
+    [NoZeroDivisors S] [Subsingleton (AddUnits S)] (p : MvPolynomial σ R) {f : R →+* S}
+    (hf : ∀ m ∈ p.support, f (p.coeff m) ≠ 0) {x : σ → S}
+    (hx : ∀ m ∈ p.support, ∀ i ∈ m.support, x i ≠ 0) :
+    p.eval₂ f x = 0 ↔ p = 0 := by
+  refine ⟨fun h => ?_, fun hp => by simp [hp]⟩
+  rw [eval₂_eq, Finset.sum_eq_zero_iff] at h
+  by_contra hp
+  obtain ⟨m, hm⟩ := support_nonempty.mpr hp
+  have hterm : f (p.coeff m) * ∏ i ∈ m.support, x i ^ m i = 0 := h m hm
+  rcases subsingleton_or_nontrivial S with hS | hS
+  · exact hf m hm (Subsingleton.elim _ _)
+  · exact mul_ne_zero (hf m hm)
+      (Finset.prod_ne_zero_iff.mpr fun i hi => pow_ne_zero _ (hx m hm i hi)) hterm
 
 end MvPolynomial
