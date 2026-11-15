@@ -46,7 +46,7 @@ it glues the sphere to the cylinder `p`.
 Concatenation of paths is associative up to a homotopy `Path.transAssocHomotopy`, continuous in
 the three paths, with traces `Path.transAssoc γ₁ γ₂ γ₃` (in `TauCeti.Topology.PathSpace.Prepend`).
 On the loop space `Ω X x` these traces are natural for products of path classes
-(`Path.pathHmul_pathHmul_comp_transAssoc`), again by
+(`HSpace.pathHmul_pathHmul_comp_transAssoc`), again by
 `FundamentalGroupoidFunctor.homotopicMapsNatIso`. For discs this says that placing three discs
 side by side does not depend on the bracketing, up to rebracketing their boundary loops.
 
@@ -294,10 +294,6 @@ theorem loopHmul_eq_comp_comp_inv_comp (ℓ : (⟨e⟩ : FundamentalGroupoid Y) 
   conv_lhs => rw [← IsIso.hom_inv_id_assoc D p]
   rw [← comp_loopHmul, loopHmul_eq_loop_comp]
 
-end HSpace
-
-namespace Path
-
 variable {X : Type*} [TopologicalSpace X] {x : X}
 
 /-- **Naturality of the associator of the loop space**: for path classes `pᵢ : γᵢ ⟶ γᵢ'` in the
@@ -308,9 +304,9 @@ theorem pathHmul_pathHmul_comp_transAssoc {γ₁ γ₂ γ₃ γ₁' γ₂' γ₃
     (p₁ : (⟨γ₁⟩ : FundamentalGroupoid (Path x x)) ⟶ ⟨γ₁'⟩)
     (p₂ : (⟨γ₂⟩ : FundamentalGroupoid (Path x x)) ⟶ ⟨γ₂'⟩)
     (p₃ : (⟨γ₃⟩ : FundamentalGroupoid (Path x x)) ⟶ ⟨γ₃'⟩) :
-    HSpace.pathHmul (HSpace.pathHmul p₁ p₂) p₃ ≫ transAssoc γ₁' γ₂' γ₃' =
-      transAssoc γ₁ γ₂ γ₃ ≫ HSpace.pathHmul p₁ (HSpace.pathHmul p₂ p₃) := by
-  have h := (FundamentalGroupoidFunctor.homotopicMapsNatIso transAssocHomotopy).naturality
+    pathHmul (pathHmul p₁ p₂) p₃ ≫ Path.transAssoc γ₁' γ₂' γ₃' =
+      Path.transAssoc γ₁ γ₂ γ₃ ≫ pathHmul p₁ (pathHmul p₂ p₃) := by
+  have h := (FundamentalGroupoidFunctor.homotopicMapsNatIso Path.transAssocHomotopy).naturality
     (X := ⟨(γ₁, γ₂, γ₃)⟩) (Y := ⟨(γ₁', γ₂', γ₃')⟩)
     (Path.Homotopic.prod p₁ (Path.Homotopic.prod p₂ p₃))
   simp only [FundamentalGroupoidFunctor.homotopicMapsNatIso_app] at h
@@ -320,7 +316,7 @@ theorem pathHmul_pathHmul_comp_transAssoc {γ₁ γ₂ γ₃ γ₁' γ₂' γ₃
   induction p₁ using Path.Homotopic.Quotient.ind with | mk p₁ =>
   induction p₂ using Path.Homotopic.Quotient.ind with | mk p₂ =>
   induction p₃ using Path.Homotopic.Quotient.ind with | mk p₃ =>
-  rw [transAssoc_def, transAssoc_def]
+  rw [Path.transAssoc_def, Path.transAssoc_def]
   exact h
 
-end Path
+end HSpace

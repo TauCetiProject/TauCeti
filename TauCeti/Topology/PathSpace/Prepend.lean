@@ -214,7 +214,10 @@ theorem transAssoc_refl :
   rw [FundamentalGroupoid.eqToHom_eq (by rw [refl_trans_refl, refl_trans_refl])]
   refine congrArg Path.Homotopic.Quotient.mk
     (Path.ext (funext fun θ => Path.ext (funext fun t => ?_)))
-  simp [ContinuousMap.Homotopy.evalAt, Homotopy.transAssoc, Homotopy.reparam]
+  simp only [coe_mk, Homotopy.evalAt, transAssocHomotopy_apply, Homotopy.transAssoc,
+    Homotopy.reparam, coe_toContinuousMap, refl_trans_refl, coe_symm_eq, refl_apply, coe_mk',
+    Homotopy.eval_apply, Homotopy.curry_apply, HomotopyWith.coe_toHomotopy, Homotopy.symm_apply,
+    Homotopy.cast_apply, cast_coe]
   -- What remains is the reparametrizing homotopy of the constant path, a structure literal
   -- whose value is `x` by definition.
   rfl

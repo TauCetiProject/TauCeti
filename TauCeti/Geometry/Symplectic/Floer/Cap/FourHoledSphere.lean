@@ -32,8 +32,8 @@ iterated gluing along the two pieces in either case.
   `γ₁ ⬝ (γ₂ ⬝ γ₃)`. If it is the four-holed sphere `W` followed by the associator
   `Path.transAssoc` of the loop space, then gluing along `W` is gluing along `Q'` and then along
   `Q` (`TauCeti.Floer.RawCap.glue₃_eq_pantsGlue_pantsGlue_right`). This is the naturality of the
-  associator (`Path.pathHmul_pathHmul_comp_transAssoc`), together with the fact that it is constant
-  at the constant loops (`Path.transAssoc_refl`).
+  associator (`HSpace.pathHmul_pathHmul_comp_transAssoc`), together with the fact that it is
+  constant at the constant loops (`Path.transAssoc_refl`).
 
 So the two broken configurations at the ends of a one-parameter family of four-holed spheres glue
 the same caps of the inputs to the same cap of the output, provided both represent the homotopy
@@ -162,7 +162,7 @@ theorem glue₃_eq_pantsGlue_pantsGlue_right
           HSpace.pathHmul (𝟙 _) (eqToHom (congrArg FundamentalGroupoid.mk HSpace.hmul_e_e)) ≫
           eqToHom (congrArg FundamentalGroupoid.mk HSpace.hmul_e_e) :=
         congrArg (W ≫ ·)
-          ((Path.pathHmul_pathHmul_comp_transAssoc_assoc _ _ _ _).trans (Category.assoc _ _ _))
+          ((HSpace.pathHmul_pathHmul_comp_transAssoc_assoc _ _ _ _).trans (Category.assoc _ _ _))
     _ = (W ≫ Path.transAssoc γ₁ γ₂ γ₃) ≫ HSpace.pathHmul D₁ (HSpace.pathHmul D₂ D₃) ≫
           HSpace.pathHmul (𝟙 _) (eqToHom (congrArg FundamentalGroupoid.mk HSpace.hmul_e_e)) ≫
           eqToHom (congrArg FundamentalGroupoid.mk HSpace.hmul_e_e) := (Category.assoc _ _ _).symm
