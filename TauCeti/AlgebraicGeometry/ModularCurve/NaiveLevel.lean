@@ -77,8 +77,12 @@ of `E[N]` is such an `H` (`EllipticCurveGeom.existsUnique_comp_torsionPairHom`),
 problem `[Γ(N)]` is relatively representable over every base (`ModuliProblem.gammaNaiveRelRepData`).
 Its representing schemes are open subschemes of `E[N] ×_S E[N]`, so they inherit from `E[N]` every
 property stable under base change and composition which open immersions have
-(`ModuliProblem.hasProperty_gammaNaiveRelRepData`), for instance local finite presentation, and
-étaleness (`ModuliProblem.hasProperty_etale_gammaNaiveRelRepData`).
+(`ModuliProblem.hasProperty_gammaNaiveRelRepData`), for instance local finite presentation.
+Étaleness is not inherited this way, since `E[N]` need not be étale where `N` is not invertible.
+Instead, the naive full-level locus lies over the open set `D(N)` of the base where `N` is
+invertible, because a naive `[Γ(N)]`-structure over a field forces `N` to be nonzero there. Over
+`D(N)` the scheme `E[N]` is étale, so `[Γ(N)]` is étale over `Ell/B` for every base `B`
+(`ModuliProblem.hasProperty_etale_gammaNaiveRelRepData`).
 
 **Finiteness and surjectivity where `N` is invertible.** When `N` is invertible on `B`, the
 representing schemes of `[Γ₁(N)]` and `[Γ(N)]` are also closed in `E[N]` and `E[N] ×_S E[N]`, so
