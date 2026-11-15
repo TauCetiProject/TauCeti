@@ -80,4 +80,19 @@ theorem two_mul_tau_toGridLink_torusLink {p q : ℕ} (h : (p + 1).Coprime (q + 1
   rw [IsKnot.tau_toGridLink]
   exact GridDiagram.two_mul_tau_torusLink h K
 
+/-- The knot presented by the standard `(p + 1, q + 1)` torus grid has `τ = -(pq / 2)`. -/
+theorem tau_toGridLink_torusLink {p q : ℕ} (h : (p + 1).Coprime (q + 1)) :
+    ((isKnot_toGridLink _).mpr ((GridDiagram.isKnot_torusLink_iff p q).mpr h)).tau K =
+      -(p * q / 2 : ℕ) := by
+  rw [IsKnot.tau_toGridLink]
+  exact GridDiagram.tau_torusLink h K
+
+/-- The absolute value of `τ` of the knot presented by the standard `(p + 1, q + 1)` torus grid is
+`pq / 2`. -/
+theorem natAbs_tau_toGridLink_torusLink {p q : ℕ} (h : (p + 1).Coprime (q + 1)) :
+    (((isKnot_toGridLink _).mpr ((GridDiagram.isKnot_torusLink_iff p q).mpr h)).tau K).natAbs =
+      p * q / 2 := by
+  rw [IsKnot.tau_toGridLink]
+  exact GridDiagram.natAbs_tau_torusLink h K
+
 end TauCeti.GridLink

@@ -7,6 +7,8 @@ module
 
 public import TauCeti.KnotTheory.Grid.CrossingChange.Grading
 public import TauCeti.KnotTheory.Grid.Homology.Commutation.Tau
+import TauCeti.KnotTheory.Grid.CrossingChange.Homotopy.Equation
+import TauCeti.KnotTheory.Grid.Homology.Transpose
 
 /-!
 # Crossing change maps and the invariant `τ`
@@ -28,20 +30,27 @@ interleave with `O_a` on the arc of column `b`, the crossing change maps are the
 `Φ` turning in the row of `O_a`, of Alexander degree `0`, and the commutation map `Ψ` of `G'`
 turning in the row of `X_b`, of Alexander degree `-1`
 (`GridDiagram.commutationBidegree_eq_zero_of_mem_columnArc` and
-`GridDiagram.commutationBidegree_eq_of_notMem_columnArc`). Ozsváth, Stipsicz and Szabó show that
-both composites are chain homotopic to multiplication by a variable, `ΨΦ` to `V_b` and `ΦΨ` to
-`V_a`, with hexagon-counting maps such as `GridDiagram.crossingChangeHomotopy` as the homotopies.
-Given two such homotopies, `τ(G) - 1 ≤ τ(G') ≤ τ(G)`
-(`GridDiagram.IsKnot.tau_swapColumns_mem_Icc_of_homotopy`). No assumption that `GH⁻` is non-torsion
-is needed here: the two composites show that `GH⁻(G)` and `GH⁻(G')` are torsion together, and then
-both invariants vanish. This is the inequality from which the bound of `|τ|` by the unknotting
-number follows.
+`GridDiagram.commutationBidegree_eq_of_notMem_columnArc`). By the hexagon chain homotopies of
+`CrossingChange/Homotopy/Equation.lean`, `ΨΦ` is chain homotopic to multiplication by `V_b` and
+`ΦΨ` to multiplication by `V_a`, giving `τ(G) - 1 ≤ τ(G') ≤ τ(G)`
+(`GridDiagram.IsKnot.tau_swapColumns_mem_Icc_of_mem_columnArc`), and in the opposite cyclic order
+`τ(G) ≤ τ(G') ≤ τ(G) + 1` (`GridDiagram.IsKnot.tau_swapColumns_mem_Icc_of_notMem_columnArc`). No
+assumption that `GH⁻` is non-torsion is needed: the two composites show that `GH⁻(G)` and
+`GH⁻(G')` are torsion together, and then both invariants vanish. Diagonal reflection extends the
+resulting bound `|τ(G') - τ(G)| ≤ 1` from column cross-commutations to row cross-commutations and
+hence to all cross-commutations (`GridDiagram.IsCrossCommutation.natAbs_tau_sub_le_one`).
 
 ## Main results
 
-* `TauCeti.GridDiagram.IsKnot.tau_swapColumns_mem_Icc_of_homotopy`: **the crossing change
-  inequality**, `τ(G) - 1 ≤ τ(G') ≤ τ(G)` across a crossing change whose two composites are chain
-  homotopic to multiplication by the variables of the exchanged columns.
+* `TauCeti.GridDiagram.IsKnot.tau_swapColumns_mem_Icc_of_homotopy`: the abstract crossing change
+  inequality `τ(G) - 1 ≤ τ(G') ≤ τ(G)` from given chain homotopies.
+* `TauCeti.GridDiagram.IsKnot.tau_swapColumns_mem_Icc_of_mem_columnArc` and
+  `TauCeti.GridDiagram.IsKnot.tau_swapColumns_mem_Icc_of_notMem_columnArc`: **the directional
+  crossing change inequalities** `τ(G) - 1 ≤ τ(G') ≤ τ(G)` and `τ(G) ≤ τ(G') ≤ τ(G) + 1` across
+  exchanging two adjacent interleaving columns.
+* `TauCeti.GridDiagram.IsKnot.natAbs_tau_swapColumns_sub_le_one` and
+  `TauCeti.GridDiagram.IsCrossCommutation.natAbs_tau_sub_le_one`: any cross-commutation of knot
+  grids changes `τ` by at most `1`.
 
 ## References
 
@@ -61,6 +70,8 @@ namespace TauCeti
 namespace GridDiagram
 
 namespace IsKnot
+
+section Homotopy
 
 variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot) (K : Type*) [CommRing K] [CharP K 2]
   (C : ColumnTurn n)
@@ -145,7 +156,86 @@ theorem tau_swapColumns_mem_Icc_of_homotopy
     rw [hΨ, tau_swapColumns_swapColumns hG K C, sub_neg_eq_add] at h₂
     exact ⟨by linarith, h₁⟩
 
+end Homotopy
+
+variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot) (K : Type*) [CommRing K] [CharP K 2]
+
+/-- **The crossing change inequality for `τ` when `O_a` lies on the arc of column `b`.** If the
+segments of the cyclically adjacent columns `a` and `finRotate n a` of a knot grid `G` interleave
+with `O_a` on the arc of column `finRotate n a`, then over any commutative ring of characteristic
+two, `τ(G) - 1 ≤ τ(G.swapColumns a (finRotate n a)) ≤ τ(G)`. -/
+theorem tau_swapColumns_mem_Icc_of_mem_columnArc {a : Fin n}
+    (h : G.ColumnsInterleaving a (finRotate n a))
+    (hO : G.O a ∈ G.columnArc (finRotate n a)) :
+    (hG.swapColumns a (finRotate n a)).tau K ∈ Set.Icc (hG.tau K - 1) (hG.tau K) := by
+  let C : ColumnTurn n := ⟨a, G.O a, h.ne⟩
+  refine hG.tau_swapColumns_mem_Icc_of_homotopy (C := C) h hO rfl
+    ⟨G.crossingChangeHomotopy K C (G.X (finRotate n a)),
+      unblockedDifferential_crossingChangeHomotopy_add_eq_of_mem_columnArc
+        (G := G) (C := C) (t := G.X (finRotate n a)) K h hO rfl rfl⟩
+    ⟨(G.swapColumns a (finRotate n a)).crossingChangeHomotopy K
+        (C.withTurnRow (G.X (finRotate n a))) (G.O a),
+      unblockedDifferential_crossingChangeHomotopy_add_eq_of_notMem_columnArc
+        (G := G.swapColumns a (finRotate n a))
+        (C := C.withTurnRow (G.X (finRotate n a))) (t := G.O a) K
+        ((columnsInterleaving_swapColumns G a (finRotate n a)).mpr h.symm)
+        (fun hO' => h.O_swapColumns_mem_columnArc_iff.mp hO' hO)
+        (by simp [C, swapColumns_X, GridState.swapColumns_apply])
+        (by simp [C, swapColumns_O, GridState.swapColumns_apply])⟩
+
+/-- **The crossing change inequality for `τ` when `O_a` lies off the arc of column `b`.** If the
+segments of the cyclically adjacent columns `a` and `finRotate n a` of a knot grid `G` interleave
+with `O_a` off the arc of column `finRotate n a`, then over any commutative ring of characteristic
+two, `τ(G) ≤ τ(G.swapColumns a (finRotate n a)) ≤ τ(G) + 1`. -/
+theorem tau_swapColumns_mem_Icc_of_notMem_columnArc {a : Fin n}
+    (h : G.ColumnsInterleaving a (finRotate n a))
+    (hO : G.O a ∉ G.columnArc (finRotate n a)) :
+    (hG.swapColumns a (finRotate n a)).tau K ∈ Set.Icc (hG.tau K) (hG.tau K + 1) := by
+  have hmem := (hG.swapColumns a (finRotate n a)).tau_swapColumns_mem_Icc_of_mem_columnArc K
+    ((columnsInterleaving_swapColumns G a (finRotate n a)).mpr h.symm)
+    (h.O_swapColumns_mem_columnArc_iff.mpr hO)
+  rw [tau_swapColumns_swapColumns hG K ⟨a, a, h.ne⟩] at hmem
+  exact ⟨by linarith [hmem.2], by linarith [hmem.1]⟩
+
+/-- Exchanging two cyclically adjacent interleaving columns of a knot grid changes `τ` by at most
+one. -/
+theorem natAbs_tau_swapColumns_sub_le_one {a : Fin n}
+    (h : G.ColumnsInterleaving a (finRotate n a)) :
+    ((hG.swapColumns a (finRotate n a)).tau K - hG.tau K).natAbs ≤ 1 := by
+  by_cases hO : G.O a ∈ G.columnArc (finRotate n a)
+  · obtain ⟨h₁, h₂⟩ := hG.tau_swapColumns_mem_Icc_of_mem_columnArc K h hO
+    omega
+  · obtain ⟨h₁, h₂⟩ := hG.tau_swapColumns_mem_Icc_of_notMem_columnArc K h hO
+    omega
+
 end IsKnot
+
+/-- A column cross-commutation between knot grids changes `τ` by at most one. -/
+theorem IsColumnCrossCommutation.natAbs_tau_sub_le_one {n : ℕ} {G G' : GridDiagram n}
+    (h : G.IsColumnCrossCommutation G') (hG : G.IsKnot) (hG' : G'.IsKnot)
+    (K : Type*) [CommRing K] [CharP K 2] :
+    (hG'.tau K - hG.tau K).natAbs ≤ 1 := by
+  obtain ⟨a, ha, rfl⟩ := (isColumnCrossCommutation_iff G G').mp h
+  exact hG.natAbs_tau_swapColumns_sub_le_one K ha
+
+/-- A row cross-commutation between knot grids changes `τ` by at most one, by diagonal reflection
+to a column cross-commutation. -/
+theorem IsRowCrossCommutation.natAbs_tau_sub_le_one {n : ℕ} {G G' : GridDiagram n}
+    (h : G.IsRowCrossCommutation G') (hG : G.IsKnot) (hG' : G'.IsKnot)
+    (K : Type*) [CommRing K] [CharP K 2] :
+    (hG'.tau K - hG.tau K).natAbs ≤ 1 := by
+  rw [(hG.unblockedHomologyIsomorphic_transpose K).tau_eq,
+    (hG'.unblockedHomologyIsomorphic_transpose K).tau_eq]
+  exact ((isColumnCrossCommutation_transpose G G').mpr h).natAbs_tau_sub_le_one
+    ((G.isKnot_transpose).mpr hG) ((G'.isKnot_transpose).mpr hG') K
+
+/-- Any cross-commutation, of rows or of columns, between knot grids changes `τ` by at most one. -/
+theorem IsCrossCommutation.natAbs_tau_sub_le_one {n : ℕ} {G G' : GridDiagram n}
+    (h : G.IsCrossCommutation G') (hG : G.IsKnot) (hG' : G'.IsKnot)
+    (K : Type*) [CommRing K] [CharP K 2] :
+    (hG'.tau K - hG.tau K).natAbs ≤ 1 :=
+  ((isCrossCommutation_iff G G').mp h).elim (fun h => h.natAbs_tau_sub_le_one hG hG' K)
+    (fun h => h.natAbs_tau_sub_le_one hG hG' K)
 
 end GridDiagram
 
