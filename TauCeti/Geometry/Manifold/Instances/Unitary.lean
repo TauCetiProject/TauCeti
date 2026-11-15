@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Lie.Subgroup.Embedded
 public import Mathlib.Geometry.Manifold.Instances.UnitsOfNormedAlgebra
-public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import Mathlib.Topology.Algebra.Star.Unitary
 import TauCeti.Topology.Algebra.Star.Unitary
 public import Mathlib.Geometry.Manifold.Immersion

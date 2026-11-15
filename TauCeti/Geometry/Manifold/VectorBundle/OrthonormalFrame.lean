@@ -602,37 +602,51 @@ def associatedBundleDiffeomorph :
       simp only [Homeomorph.coe_symm_toEquiv, associatedBundleHomeomorph_symm_apply]
       rw [trivializationAt_associatedBundle_snd hx, LinearIsometryEquiv.apply_symm_apply]
 
+/-- Coercion of `associatedBundleDiffeomorph` to a function agrees with
+`associatedBundleHomeomorph`. -/
 @[simp]
 theorem coe_associatedBundleDiffeomorph :
     ⇑(associatedBundleDiffeomorph n IB F E V) = associatedBundleHomeomorph ℝ F E V :=
   (rfl)
 
+/-- Coercion of `(associatedBundleDiffeomorph n IB F E V).symm` to a function agrees with
+`(associatedBundleHomeomorph ℝ F E V).symm`. -/
 @[simp]
 theorem coe_associatedBundleDiffeomorph_symm :
     ⇑(associatedBundleDiffeomorph n IB F E V).symm = (associatedBundleHomeomorph ℝ F E V).symm :=
   (rfl)
 
+/-- The underlying homeomorphism of `associatedBundleDiffeomorph` is
+`associatedBundleHomeomorph`. -/
 @[simp]
 theorem toHomeomorph_associatedBundleDiffeomorph :
     (associatedBundleDiffeomorph n IB F E V).toHomeomorph = associatedBundleHomeomorph ℝ F E V :=
   Homeomorph.ext fun _ ↦ rfl
 
+/-- `associatedBundleDiffeomorph` acts on each fibre by the linear isometric equivalence
+`associatedLinearIsometryEquiv`. -/
 theorem associatedBundleDiffeomorph_apply
     (u : TotalSpace V (AssociatedBundle (unitary (V →L[ℝ] V)) (Fiber ℝ F E V) V)) :
     associatedBundleDiffeomorph n IB F E V u =
       ⟨u.proj, associatedLinearIsometryEquiv ℝ F E V u.proj u.2⟩ :=
   associatedBundleHomeomorph_apply u
 
+/-- `(associatedBundleDiffeomorph n IB F E V).symm` acts on each fibre by the inverse linear
+isometric equivalence `(associatedLinearIsometryEquiv ℝ F E V ·).symm`. -/
 theorem associatedBundleDiffeomorph_symm_apply (x : TotalSpace F E) :
     (associatedBundleDiffeomorph n IB F E V).symm x =
       ⟨x.proj, (associatedLinearIsometryEquiv ℝ F E V x.proj).symm x.2⟩ :=
   associatedBundleHomeomorph_symm_apply x
 
+/-- Evaluating `associatedBundleDiffeomorph` on the class `[φ, v]` over `b` of an orthonormal
+frame `φ` and a model vector `v` applies `φ` to `v` in `E b`. -/
 theorem associatedBundleDiffeomorph_mk {b : B} (φ : Fiber ℝ F E V b) (v : V) :
     associatedBundleDiffeomorph n IB F E V ⟨b, AssociatedBundle.mk (unitary (V →L[ℝ] V)) φ v⟩ =
       ⟨b, φ.frame v⟩ :=
   associatedBundleHomeomorph_mk φ v
 
+/-- Evaluating `(associatedBundleDiffeomorph n IB F E V).symm` on `⟨b, w⟩` expresses `w : E b` in
+any orthonormal frame `φ` of `E b` as the class `[φ, φ⁻¹ w]` over `b`. -/
 theorem associatedBundleDiffeomorph_symm_mk_apply {b : B} (φ : Fiber ℝ F E V b) (w : E b) :
     (associatedBundleDiffeomorph n IB F E V).symm ⟨b, w⟩ =
       ⟨b, AssociatedBundle.mk (unitary (V →L[ℝ] V)) φ (φ.frame.symm w)⟩ :=
