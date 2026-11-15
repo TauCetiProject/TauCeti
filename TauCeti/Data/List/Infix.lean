@@ -12,7 +12,8 @@ public import Mathlib.Data.List.Infix
 
 Concatenating fewer copies of a list gives a prefix of concatenating more copies. A list which,
 followed by an entry `y`, begins with `k` copies of an entry `x ≠ y` itself begins with these `k`
-copies. A list with no entry in `l₁` that is an infix of `l₁ ++ l₂` is an infix of `l₂`.
+copies. A list with no entry in `l₁` that is an infix of `l₁ ++ l₂` is an infix of `l₂`. An
+injective map preserves and reflects infixes.
 -/
 
 public section
@@ -52,5 +53,10 @@ theorem IsInfix.of_infix_append_right {l l₁ l₂ : List α} (w : ∀ a ∈ l, 
       · exact nil_infix
       · exact absurd ((cons_prefix_cons.1 h).1 ▸ mem_cons_self) (w e' mem_cons_self)
     · exact ih (fun a ha ha' ↦ w a ha (mem_cons_of_mem _ ha')) h
+
+/-- An injective map preserves and reflects `List.IsInfix`. -/
+theorem map_isInfix_map_iff {β : Type*} {f : α → β} (hf : Function.Injective f) {l₁ l₂ : List α} :
+    l₁.map f <:+: l₂.map f ↔ l₁ <:+: l₂ :=
+  ⟨fun h ↦ by obtain ⟨l, hl, he⟩ := infix_map_iff.1 h; rwa [hf.list_map he], fun h ↦ h.map f⟩
 
 end List

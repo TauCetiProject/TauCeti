@@ -19,7 +19,8 @@ import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 Elementary facts about reduced words complementing `Mathlib.GroupTheory.FreeGroup.Reduce`:
 the formal inverse of a one-letter word, uniqueness of reduced representatives, reducedness of
 formal inverses and of words of constant sign, powers of a letter, compatibility of formal
-inversion with subwords and with factorisations splitting no occurrence of a word
+inversion with membership (`FreeGroup.mem_invRev_iff`), subwords, concatenation of lists of words
+(`FreeGroup.invRev_flatten`), and factorisations splitting no occurrence of a word
 (`FreeGroup.invRev_isUnsplit`), and reducedness of words `w u w⁻¹` in which no letter cancels at
 either join. The reduced word of a product `of a * of b` of two generators is
 `[(a, true), (b, true)]` (`FreeGroup.toWord_of_mul_of`).
@@ -94,6 +95,24 @@ theorem isReduced_of_forall_snd_eq :
   | a :: b :: w, _, h =>
     isReduced_cons_cons.2 ⟨fun _ ↦ (h a (by simp)).trans (h b (by simp)).symm,
       isReduced_of_forall_snd_eq fun x hx ↦ h x (List.mem_cons_of_mem _ hx)⟩
+
+/-- A signed letter belongs to the formal inverse of `u` if and only if the letter with opposite
+sign belongs to `u`. -/
+@[simp]
+theorem mem_invRev_iff {c : α × Bool} {u : List (α × Bool)} :
+    c ∈ invRev u ↔ (c.1, !c.2) ∈ u := by
+  refine ⟨fun hc ↦ ?_, fun hc ↦ ?_⟩
+  · obtain ⟨⟨a, e⟩, hd, rfl⟩ : ∃ d ∈ u, (d.1, !d.2) = c := by simpa [invRev] using hc
+    simpa using hd
+  · exact List.mem_reverse.2 (List.mem_map.2 ⟨(c.1, !c.2), hc, by simp⟩)
+
+/-- The formal inverse of the concatenation of a list of words is the concatenation of their formal
+inverses in the reverse order. -/
+theorem invRev_flatten (M : List (List (α × Bool))) :
+    invRev M.flatten = (M.map invRev).reverse.flatten := by
+  induction M with
+  | nil => rfl
+  | cons v M ih => simp [invRev_append, ih]
 
 /-- A word is a subword of another exactly when their formal inverses are. -/
 @[simp]

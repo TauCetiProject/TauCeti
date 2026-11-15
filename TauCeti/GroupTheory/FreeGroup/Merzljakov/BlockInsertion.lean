@@ -703,11 +703,8 @@ theorem suffix_of_suffix_blockInsert {u : List (α × Bool)}
   obtain ⟨s, hs⟩ := h
   have hpref : invRev u <+: blockInsert a b x m (invRev w) :=
     ⟨invRev s, by rw [← invRev_append, hs, blockInsert_invRev]⟩
-  have hu' : ∀ c ∈ invRev u, c.1 ≠ x := by
-    intro c hc
-    obtain ⟨d, hd, rfl⟩ : ∃ d ∈ u, (d.1, !d.2) = c := by simpa [invRev] using hc
-    exact hu d hd
-  obtain ⟨t, ht⟩ := prefix_of_prefix_blockInsert hpref hu'
+  obtain ⟨t, ht⟩ :=
+    prefix_of_prefix_blockInsert hpref fun c hc ↦ hu (c.1, !c.2) (mem_invRev_iff.1 hc)
   exact ⟨invRev t, by simpa [invRev_append] using congrArg invRev ht⟩
 
 private theorem prefix_flatten_of_prefix_map_blockInsert {u : List (α × Bool)}
@@ -734,22 +731,15 @@ private theorem prefix_flatten_of_prefix_map_blockInsert {u : List (α × Bool)}
 private theorem suffix_flatten_of_suffix_map_blockInsert {u : List (α × Bool)}
     {L : List (List (α × Bool))} (h : u <:+ (L.map (blockInsert a b x m)).flatten)
     (hu : ∀ c ∈ u, c.1 ≠ x) : u <:+ L.flatten := by
-  have hflat (M : List (List (α × Bool))) : invRev M.flatten = (M.map invRev).reverse.flatten := by
-    induction M with
-    | nil => rfl
-    | cons v M ih => simp [invRev_append, ih]
   obtain ⟨s, hs⟩ := h
   have hmap : ((L.map (blockInsert a b x m)).map invRev).reverse =
       (L.map invRev).reverse.map (blockInsert a b x m) := by
     induction L <;> simp [blockInsert_invRev]
   have hpref : invRev u <+: ((L.map invRev).reverse.map (blockInsert a b x m)).flatten :=
-    ⟨invRev s, by rw [← invRev_append, hs, hflat, hmap]⟩
-  have hu' : ∀ c ∈ invRev u, c.1 ≠ x := by
-    intro c hc
-    obtain ⟨d, hd, rfl⟩ : ∃ d ∈ u, (d.1, !d.2) = c := by simpa [invRev] using hc
-    exact hu d hd
-  obtain ⟨t, ht⟩ := prefix_flatten_of_prefix_map_blockInsert hpref hu'
-  exact ⟨invRev t, by simpa [invRev_append, ← hflat] using congrArg invRev ht⟩
+    ⟨invRev s, by rw [← invRev_append, hs, invRev_flatten, hmap]⟩
+  obtain ⟨t, ht⟩ :=
+    prefix_flatten_of_prefix_map_blockInsert hpref fun c hc ↦ hu (c.1, !c.2) (mem_invRev_iff.1 hc)
+  exact ⟨invRev t, by simpa [invRev_append, ← invRev_flatten] using congrArg invRev ht⟩
 
 /-- If a factorisation `L` splits no occurrence of a word `u` containing neither `x` nor `x⁻¹`,
 then neither does `L.map (blockInsert a b x m)`. -/
@@ -783,13 +773,6 @@ theorem isUnsplit_map_blockInsert {u : List (α × Bool)} {L : List (List (α ×
   have hu₁len := congrArg length hu₁
   simp only [length_append] at hs'len hu₁len hlen₁ hsplit hcut
   omega
-
-/-- If `[w₁, w₂]` splits no occurrence of a word `u` containing neither `x` nor `x⁻¹`, then
-neither does `[blockInsert a b x m w₁, blockInsert a b x m w₂]`. -/
-theorem isUnsplit_pair_blockInsert {u w₁ w₂ : List (α × Bool)}
-    (huw : u.IsUnsplit [w₁, w₂]) (hu : ∀ c ∈ u, c.1 ≠ x) :
-    u.IsUnsplit [blockInsert a b x m w₁, blockInsert a b x m w₂] :=
-  isUnsplit_map_blockInsert (L := [w₁, w₂]) huw hu
 
 /-- In the word `b a b a² b a³ b` the block `b a² b` occurs once, and the letter `x` is inserted
 before its last letter. -/

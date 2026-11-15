@@ -182,36 +182,6 @@ theorem isFormalSolution_normalClosure :
 
 section Merzljakov
 
-/-- For a free basis `b : FreeGroupBasis A G`, the free `G`-group `G[X]` is naturally isomorphic
-to `FreeGroup (X ⊕ A)`. -/
-private noncomputable def gxFreeGroupEquiv {A : Type*} (b : FreeGroupBasis A G) (X : Type*) :
-    GX G X ≃* FreeGroup (X ⊕ A) :=
-  MonoidHom.toMulEquiv
-    (Monoid.Coprod.lift (b.lift (of ∘ Sum.inr)) (FreeGroup.map Sum.inl))
-    (FreeGroup.lift (Sum.elim (inr ∘ of) (inl ∘ b)))
-    (hom_ext (b.ext_hom _ _ fun _ => by simp) (FreeGroup.ext_hom _ _ fun _ => by simp))
-    (FreeGroup.ext_hom _ _ fun z => by cases z <;> simp)
-
-@[simp]
-private theorem gxFreeGroupEquiv_inl_coe {A : Type*} (b : FreeGroupBasis A G) (X : Type*)
-    (c : A) : gxFreeGroupEquiv b X (inl (b c)) = of (Sum.inr c) := by
-  simp [gxFreeGroupEquiv]
-
-@[simp]
-private theorem gxFreeGroupEquiv_inr_of {A : Type*} (b : FreeGroupBasis A G) (X : Type*)
-    (x : X) : gxFreeGroupEquiv b X (inr (of x)) = of (Sum.inl x) := by
-  simp [gxFreeGroupEquiv]
-
-@[simp]
-private theorem gxFreeGroupEquiv_symm_of_inl {A : Type*} (b : FreeGroupBasis A G) (X : Type*)
-    (x : X) : (gxFreeGroupEquiv b X).symm (of (Sum.inl x)) = inr (of x) := by
-  simp [gxFreeGroupEquiv]
-
-@[simp]
-private theorem gxFreeGroupEquiv_symm_of_inr {A : Type*} (b : FreeGroupBasis A G) (X : Type*)
-    (c : A) : (gxFreeGroupEquiv b X).symm (of (Sum.inr c)) = inl (b c) := by
-  simp [gxFreeGroupEquiv]
-
 /-- **Merzljakov's theorem** (single equation): over a nonabelian free group `G`, if the positive
 sentence `∀ x₀ ∃ y₀ … ∀ x_{k-1} ∃ y_{k-1} (s(x, y) = 1)` holds in `G`, then `{s}` has a formal
 solution in `G[x₀, …, x_{k-1}]`. -/
@@ -225,8 +195,8 @@ theorem exists_isFormalSolution_singleton [IsFreeGroup G] (hG : ¬IsMulCommutati
   have : Nontrivial (IsFreeGroup.Generators G) := b.nontrivial_of_not_commute hg
   obtain ⟨a₀, b₀, hab₀⟩ := exists_pair_ne (IsFreeGroup.Generators G)
   obtain ⟨f, hf, hs⟩ := h.exists_skolem
-  let eX := gxFreeGroupEquiv b (Fin k)
-  let eXY := gxFreeGroupEquiv b (Fin k ⊕ Fin k)
+  let eX := GX.mulEquivFreeGroupSum b (Fin k)
+  let eXY := GX.mulEquivFreeGroupSum b (Fin k ⊕ Fin k)
   let f' : (Fin k → FreeGroup (IsFreeGroup.Generators G)) →
       Fin k → FreeGroup (IsFreeGroup.Generators G) :=
     fun x' i => b.repr (f (b.repr.symm ∘ x') i)
@@ -244,9 +214,8 @@ theorem exists_isFormalSolution_singleton [IsFreeGroup G] (hG : ¬IsMulCommutati
     simpa [hval] using DFunLike.congr_fun hhom s
   obtain ⟨y', hy', hw'⟩ := FreeGroup.exists_formalSolution_of_skolem hab₀ (eXY s) f' hf' hs'
   refine ⟨fun i => eX.symm (y' i), fun i => ?_, mem_V.2 ?_⟩
-  · refine Subgroup.closure_induction (p := fun u _ => eX.symm u ∈ GX.varSubgroup G (Set.Iic i))
-      ?_ (by simp) (fun _ _ _ _ h₁ h₂ => by simpa using mul_mem h₁ h₂)
-      (fun _ _ h₁ => by simpa using inv_mem h₁) (hy' i)
+  · refine (Subgroup.closure_le
+      (K := (GX.varSubgroup G (Set.Iic i)).comap eX.symm.toMonoidHom)).2 ?_ (hy' i)
     rintro _ (⟨c, rfl⟩ | ⟨j, hj, rfl⟩)
     · simp [eX]
     · simpa [eX] using GX.inr_of_mem_varSubgroup (G := G) hj
@@ -321,7 +290,8 @@ theorem exists_isFormalSolution [IsFreeGroup G] [Countable G] (hG : ¬IsMulCommu
   let b := IsFreeGroup.basis G
   have : Countable (IsFreeGroup.Generators G) := b.injective.countable
   exact exists_isFormalSolution_of_isEquationallyNoetherian hG
-    (isEquationallyNoetherian_of_freeGroupBasis inl (.ofRepr (gxFreeGroupEquiv b (Fin k)))) h
+    (isEquationallyNoetherian_of_freeGroupBasis inl
+      (.ofRepr (GX.mulEquivFreeGroupSum b (Fin k)))) h
 
 /-- **Merzljakov's theorem** for arbitrary systems over a countable nonabelian free group
 (equivalence, Kharlampovich–Myasnikov §4.4, Theorem 4): over a countable nonabelian free group `G`,
