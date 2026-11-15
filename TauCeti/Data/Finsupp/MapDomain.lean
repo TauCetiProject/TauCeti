@@ -15,9 +15,12 @@ import Mathlib.LinearAlgebra.Finsupp.Supported
 For an injective index map, pushing forward a finitely supported function is ordinary
 function extension by zero, over any additive commutative monoid. For an arbitrary index map `f`,
 the range of `Finsupp.mapDomain f` consists of the finitely supported functions vanishing outside
-the range of `f` (`Finsupp.mem_range_mapDomain_iff'`). Restricting to a predicate commutes with
-pushing forward along `f` when the predicate on the source is the pullback along `f` of a
-predicate on the target (`Finsupp.mapDomain_subtypeDomain`).
+the range of `f` (`Finsupp.mem_range_mapDomain_iff'`). More generally, evaluating a finitely
+supported sum of singletons `f.sum fun a m ↦ single (φ a) (ψ a m)` recovers `ψ a₀ (f a₀)` at
+`φ a₀` when `φ` is injective (`Finsupp.sum_single_apply_of_injective`) and vanishes outside the
+image of `f.support` (`Finsupp.sum_single_eq_zero_of_forall_ne`). Restricting to a predicate
+commutes with pushing forward along `f` when the predicate on the source is the pullback along `f`
+of a predicate on the target (`Finsupp.mapDomain_subtypeDomain`).
 
 Pushing forward along a strictly monotone map of linearly ordered indices preserves and reflects
 the strict and non-strict lexicographic orders, since the relabeled functions vanish off the image
@@ -27,6 +30,25 @@ and the order relabels the positions where they first differ.
 public section
 
 namespace Finsupp
+
+/-- Evaluating `f.sum fun a m ↦ single (φ a) (ψ a m)` at `φ a₀` for injective `φ` recovers
+`ψ a₀ (f a₀)` when `ψ a₀ 0 = 0`. -/
+theorem sum_single_apply_of_injective {α β M N : Type*} [Zero M] [AddCommMonoid N] (f : α →₀ M)
+    {φ : α → β} (hφ : Function.Injective φ) (ψ : α → M → N) {a₀ : α} (hψ : ψ a₀ 0 = 0) :
+    (f.sum fun a m ↦ single (φ a) (ψ a m)) (φ a₀) = ψ a₀ (f a₀) := by
+  classical
+  rw [sum_apply, Finsupp.sum]
+  by_cases ha₀ : a₀ ∈ f.support
+  · rw [Finset.sum_eq_single_of_mem a₀ ha₀ (fun _ _ hne ↦ single_eq_of_ne (hφ.ne hne.symm)),
+      single_eq_same]
+  · rw [Finset.sum_eq_zero fun a ha ↦ single_eq_of_ne (hφ.ne (by rintro rfl; exact ha₀ ha)),
+      notMem_support_iff.mp ha₀, hψ]
+/-- Evaluating `f.sum fun a m ↦ single (φ a) (ψ a m)` at `b` gives `0` when `φ a ≠ b` across
+`f.support`. -/
+theorem sum_single_eq_zero_of_forall_ne {α β M N : Type*} [Zero M] [AddCommMonoid N]
+    (f : α →₀ M) (φ : α → β) (ψ : α → M → N) {b : β} (hb : ∀ a ∈ f.support, φ a ≠ b) :
+    (f.sum fun a m ↦ single (φ a) (ψ a m)) b = 0 := by
+  rw [sum_apply, Finsupp.sum]; exact Finset.sum_eq_zero fun a ha ↦ single_eq_of_ne (hb a ha).symm
 
 /-- Pushing a finitely supported function along an injection extends its values by zero
 outside the image. -/

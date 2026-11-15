@@ -10,15 +10,15 @@ public import Mathlib.Algebra.Ring.Subring.Basic
 public import Mathlib.Algebra.Ring.Subsemiring.Pointwise
 public import Mathlib.Data.Finsupp.Basic
 public import TauCeti.Algebra.MvPolynomial.Laurent.Basic
-
 import Mathlib.Tactic.Ring
+import TauCeti.Data.Finsupp.MapDomain
 
 /-!
 # One-step skew Laurent exchange over a subsemiring
 
 For a subsemiring `C ≤ B` normalized by `x, E : Bˣ` with `(E : B) ∈ C` and unique left Laurent
 expansions `∑_m c_m * x^m`, let `y = E * x⁻¹` and `P_r = TauCeti.exchangeProduct x E r`. Over
-semirings without subtraction, `y` normalizes `C` with unique left Laurent expansions
+semirings, `y` normalizes `C` with unique left Laurent expansions
 (`Subsemiring.skewLaurentSum_mul_inv_injective`), `∑_m c_m * x^m ∈ C.laurentAdjoin y` iff
 `c_{-r} ∈ C * P_r` (`Subsemiring.mem_laurentAdjoin_mul_inv_iff`), and
 `C.laurentAdjoin x ⊓ C.laurentAdjoin y = C ⊔ Subsemiring.closure {x, y}` with unique positive normal
@@ -30,7 +30,6 @@ forms (`Subsemiring.laurentAdjoin_inf_laurentAdjoin_mul_inv`,
 * A. Berenstein, S. Fomin, and A. Zelevinsky, *Cluster algebras III*, Lemmas 4.1–4.2.
 * A. Berenstein and A. Zelevinsky, *Quantum cluster algebras*, Adv. Math. 195 (2005), §§5.2–5.3.
 -/
-
 public section
 
 open scoped Pointwise
@@ -47,6 +46,7 @@ def exchangeProduct : ℕ → G
     exchangeProduct x E (r + 1) = exchangeProduct x E r * ((x ^ r)⁻¹ * E * x ^ r) := (rfl)
 theorem exchangeProduct_one : exchangeProduct x E 1 = E := by simp [exchangeProduct]
 theorem exchangeProduct_two : exchangeProduct x E 2 = E * (x⁻¹ * E * x) := by simp [exchangeProduct]
+/-- Positive powers of `E * x⁻¹` factor on the left through `exchangeProduct x E r`. -/
 theorem mul_inv_pow_eq_exchangeProduct_mul_pow_inv (r : ℕ) :
     (E * x⁻¹) ^ r = exchangeProduct x E r * (x ^ r)⁻¹ := by
   induction r with
@@ -57,14 +57,15 @@ theorem mul_inv_pow_eq_exchangeProduct_mul_pow_inv (r : ℕ) :
 theorem mul_inv_zpow_natCast_eq_exchangeProduct_mul_zpow_neg (r : ℕ) :
     (E * x⁻¹) ^ (r : ℤ) = exchangeProduct x E r * x ^ (-(r : ℤ)) := by
   rw [zpow_natCast, mul_inv_pow_eq_exchangeProduct_mul_pow_inv, zpow_neg, zpow_natCast]
+/-- Twisted cocycle law for `exchangeProduct` under addition of lengths. -/
 theorem exchangeProduct_add (s t : ℕ) :
     exchangeProduct x E (s + t) =
       exchangeProduct x E s * ((x ^ s)⁻¹ * exchangeProduct x E t * x ^ s) := by
   induction t with
   | zero => simp
   | succ t ih =>
-    have hpow : x ^ (s + t) = x ^ t * x ^ s := by rw [add_comm, pow_add]
-    rw [Nat.add_succ, exchangeProduct_succ, ih, exchangeProduct_succ, hpow, mul_inv_rev]
+    rw [Nat.add_succ, exchangeProduct_succ, ih, exchangeProduct_succ,
+      (by rw [add_comm, pow_add] : x ^ (s + t) = x ^ t * x ^ s), mul_inv_rev]
     simp only [mul_assoc, mul_inv_cancel_left]
 theorem mul_inv_zpow_sub_mul_exchangeProduct (k N : ℕ) :
     (E * x⁻¹) ^ ((k : ℤ) - (N : ℤ)) * exchangeProduct x E N =
@@ -72,11 +73,12 @@ theorem mul_inv_zpow_sub_mul_exchangeProduct (k N : ℕ) :
   have hN : (E * x⁻¹) ^ (-(N : ℤ)) * exchangeProduct x E N = x ^ (N : ℤ) :=
     mul_left_cancel (a := (E * x⁻¹) ^ (N : ℤ)) <| by
       rw [← mul_assoc, ← zpow_add, add_neg_cancel, zpow_zero, one_mul,
-        mul_inv_zpow_natCast_eq_exchangeProduct_mul_zpow_neg, mul_assoc, ← zpow_add,
-        neg_add_cancel, zpow_zero, mul_one]
+        mul_inv_zpow_natCast_eq_exchangeProduct_mul_zpow_neg, mul_assoc, ← zpow_add, neg_add_cancel,
+        zpow_zero, mul_one]
   rw [sub_eq_add_neg, zpow_add, mul_assoc, hN,
     mul_inv_zpow_natCast_eq_exchangeProduct_mul_zpow_neg, mul_assoc, ← zpow_add, neg_add_eq_sub]
 end Group
+/-- When `x` commutes with `E`, `exchangeProduct x E r` reduces to `E ^ r`. -/
 theorem exchangeProduct_of_commute {G : Type*} [Group G] {x E : G} (h : Commute x E) (r : ℕ) :
     exchangeProduct x E r = E ^ r := by
   induction r with
@@ -98,20 +100,21 @@ theorem conjAct_zpow_smul_eq {C : Subsemiring B} {x : Bˣ} (hx : ConjAct.toConjA
   | zero => simp
   | succ _ hk => rw [zpow_add_one, map_mul, mul_smul, hx, hk]
   | pred _ hk => rw [zpow_sub_one, map_mul, mul_smul, conjAct_inv_smul_eq hx, hk]
+/-- If `x` and `E` normalize `C`, then the exchanged unit `E * x⁻¹` also normalizes `C`. -/
 theorem conjAct_mul_inv_smul_eq {C : Subsemiring B} {x E : Bˣ}
     (hx : ConjAct.toConjAct x • C = C) (hE : ConjAct.toConjAct E • C = C) :
     ConjAct.toConjAct (E * x⁻¹) • C = C := by
   rw [map_mul, mul_smul, conjAct_inv_smul_eq hx, hE]
 theorem conj_zpow_mem {C : Subsemiring B} {x : Bˣ} (hx : ConjAct.toConjAct x • C = C) (m : ℤ)
     {c : B} (hc : c ∈ C) : ((x ^ m : Bˣ) : B) * c * ((x ^ (-m) : Bˣ) : B) ∈ C := by
-  have hmem : ConjAct.toConjAct (x ^ m) • c ∈ C := by
-    rw [← conjAct_zpow_smul_eq hx m]; exact smul_mem_pointwise_smul _ _ _ hc
-  simpa [ConjAct.units_smul_def, zpow_neg] using hmem
+  simpa [ConjAct.units_smul_def, zpow_neg] using
+    (conjAct_zpow_smul_eq hx m ▸ smul_mem_pointwise_smul (ConjAct.toConjAct (x ^ m)) c C hc)
 theorem zpow_mul_eq_conj_mul_zpow (x : Bˣ) (m : ℤ) (c : B) :
     ((x ^ m : Bˣ) : B) * c =
       (((x ^ m : Bˣ) : B) * c * ((x ^ (-m) : Bˣ) : B)) * ((x ^ m : Bˣ) : B) := by
   rw [mul_assoc (((x ^ m : Bˣ) : B) * c), ← Units.val_mul, ← zpow_add, neg_add_cancel, zpow_zero,
     Units.val_one, mul_one]
+/-- When `x` normalizes `C` and `(E : B) ∈ C`, every twisted exchange product lies in `C`. -/
 theorem coe_exchangeProduct_mem {C : Subsemiring B} {x E : Bˣ}
     (hx : ConjAct.toConjAct x • C = C) (hEC : (E : B) ∈ C) (r : ℕ) :
     ((exchangeProduct x E r : Bˣ) : B) ∈ C := by
@@ -119,8 +122,8 @@ theorem coe_exchangeProduct_mem {C : Subsemiring B} {x E : Bˣ}
   | zero => simp [C.one_mem]
   | succ r ih =>
     rw [exchangeProduct_succ, Units.val_mul]
-    exact C.mul_mem ih (by
-      simpa [zpow_neg, zpow_natCast, mul_assoc] using conj_zpow_mem hx (-(r : ℤ)) hEC)
+    exact C.mul_mem ih
+      (by simpa [zpow_neg, zpow_natCast, mul_assoc] using conj_zpow_mem hx (-(r : ℤ)) hEC)
 /-- The subsemiring `C[x^{±1}] = C ⊔ Subsemiring.closure {x, x⁻¹}` generated by `C` and `x^{±1}`. -/
 def laurentAdjoin (C : Subsemiring B) (x : Bˣ) : Subsemiring B :=
   C ⊔ Subsemiring.closure {(x : B), ((x⁻¹ : Bˣ) : B)}
@@ -156,6 +159,8 @@ theorem skewLaurentSum_mem_laurentAdjoin (C : Subsemiring B) (x : Bˣ) (f : ℤ 
   | single m c =>
     rw [skewLaurentSum_single]
     exact mul_mem (C.le_laurentAdjoin x c.2) (C.coe_zpow_mem_laurentAdjoin x m)
+/-- When `x` normalizes `C`, finite left Laurent expansions span the entire Laurent extension
+`C.laurentAdjoin x`. -/
 theorem range_skewLaurentSum {C : Subsemiring B} {x : Bˣ} (hx : ConjAct.toConjAct x • C = C) :
     Set.range (C.skewLaurentSum x) = (C.laurentAdjoin x : Set B) := by
   refine Set.Subset.antisymm (by rintro _ ⟨f, rfl⟩; exact C.skewLaurentSum_mem_laurentAdjoin x f) ?_
@@ -178,21 +183,7 @@ theorem range_skewLaurentSum {C : Subsemiring B} {x : Bˣ} (hx : ConjAct.toConjA
   let S : Subsemiring B := { M with one_mem' := ⟨Finsupp.single 0 1, by simp⟩, mul_mem' := hmul }
   suffices C.laurentAdjoin x ≤ S from this
   refine sup_le (fun c hc ↦ ⟨Finsupp.single 0 ⟨c, hc⟩, by simp⟩) (closure_le.mpr ?_)
-  rintro b (rfl | rfl)
-  · exact ⟨Finsupp.single 1 1, by simp⟩
-  · exact ⟨Finsupp.single (-1) 1, by simp⟩
-private theorem finsupp_sum_single_apply_of_injective {α β M N : Type*} [AddCommMonoid M]
-    [AddCommMonoid N] (f : α →₀ M) {φ : α → β} (hφ : Function.Injective φ) (ψ : α → M → N)
-    (hψ : ∀ a, ψ a 0 = 0) (a₀ : α) :
-    (f.sum fun a m ↦ Finsupp.single (φ a) (ψ a m)) (φ a₀) = ψ a₀ (f a₀) := by
-  classical
-  rw [Finsupp.sum_apply, Finsupp.sum]
-  by_cases ha₀ : a₀ ∈ f.support
-  · rw [Finset.sum_eq_single_of_mem a₀ ha₀
-      (fun _ _ hne ↦ Finsupp.single_eq_of_ne (hφ.ne hne.symm)), Finsupp.single_eq_same]
-  · rw [Finset.sum_eq_zero fun a ha ↦
-      Finsupp.single_eq_of_ne (hφ.ne (by rintro rfl; exact ha₀ ha)),
-      Finsupp.notMem_support_iff.mp ha₀, hψ]
+  rintro _ (rfl | rfl); exacts [⟨Finsupp.single 1 1, by simp⟩, ⟨Finsupp.single (-1) 1, by simp⟩]
 /-- Evaluation of finite two-sided positive normal forms
 `(c₀, c⁺, c⁻) ↦ c₀ + ∑_r c⁺(r) * x^{r + 1} + ∑_r c⁻(r) * y^{r + 1}`. -/
 def exchangeNormalForm (C : Subsemiring B) (x y : B) : (C × (ℕ →₀ C) × (ℕ →₀ C)) →+ B where
@@ -217,28 +208,27 @@ theorem exchangeNormalForm_mem_sup_closure (C : Subsemiring B) (x y : B)
   refine S.add_mem (S.add_mem (hCS t.1.2) ?_) ?_
   · rw [Finsupp.sum]; exact S.sum_mem fun r _ ↦ S.mul_mem (hCS (t.2.1 r).2) (S.pow_mem hxS _)
   · rw [Finsupp.sum]; exact S.sum_mem fun r _ ↦ S.mul_mem (hCS (t.2.2 r).2) (S.pow_mem hyS _)
+/-- When `(E : B) ∈ C`, the positive subsemiring generated by `C`, `x`, and `E * x⁻¹` is contained
+in the intersection `C.laurentAdjoin x ⊓ C.laurentAdjoin (E * x⁻¹)`. -/
 theorem sup_closure_mul_inv_le_inf_laurentAdjoin {C : Subsemiring B} {x E : Bˣ}
     (hEC : (E : B) ∈ C) :
     C ⊔ Subsemiring.closure {(x : B), ((E * x⁻¹ : Bˣ) : B)} ≤
       C.laurentAdjoin x ⊓ C.laurentAdjoin (E * x⁻¹) := by
   refine le_inf (sup_le (C.le_laurentAdjoin x) <| closure_le.mpr ?_)
     (sup_le (C.le_laurentAdjoin (E * x⁻¹)) <| closure_le.mpr ?_)
-  · rintro b (rfl | rfl)
-    · exact C.coe_mem_laurentAdjoin x
-    · exact mul_mem (C.le_laurentAdjoin x hEC) (C.coe_inv_mem_laurentAdjoin x)
-  · rintro b (rfl | rfl)
+  · rintro _ (rfl | rfl); exacts [C.coe_mem_laurentAdjoin x,
+      mul_mem (C.le_laurentAdjoin x hEC) (C.coe_inv_mem_laurentAdjoin x)]
+  · rintro _ (rfl | rfl)
     · have hx_val : (x : B) = (((E * x⁻¹)⁻¹ : Bˣ) : B) * (E : B) := by
         rw [← Units.val_mul]; exact congrArg Units.val (by simp [mul_inv_rev])
-      rw [hx_val]
-      exact mul_mem (C.coe_inv_mem_laurentAdjoin (E * x⁻¹)) (C.le_laurentAdjoin (E * x⁻¹) hEC)
+      exact hx_val ▸ mul_mem (C.coe_inv_mem_laurentAdjoin (E * x⁻¹)) (C.le_laurentAdjoin _ hEC)
     · exact C.coe_mem_laurentAdjoin (E * x⁻¹)
 private theorem skewLaurentSum_mem_range_exchangeNormalForm {C : Subsemiring B} {x E : Bˣ}
     {f : ℤ →₀ C} (hd : ∀ r : ℕ, 0 < r →
       ∃ d : C, (f (-(r : ℤ)) : B) = (d : B) * ((exchangeProduct x E r : Bˣ) : B)) :
     C.skewLaurentSum x f ∈ Set.range (C.exchangeNormalForm (x : B) ((E * x⁻¹ : Bˣ) : B)) := by
   rw [← AddMonoidHom.coe_mrange, SetLike.mem_coe, skewLaurentSum_apply, Finsupp.sum]
-  refine (AddMonoidHom.mrange (C.exchangeNormalForm (x : B) ((E * x⁻¹ : Bˣ) : B))).sum_mem
-    fun m _ ↦ ?_
+  refine (AddMonoidHom.mrange _).sum_mem fun m _ ↦ ?_
   rcases lt_trichotomy m 0 with hm | rfl | hm
   · let r : ℕ := (-m - 1).toNat
     obtain ⟨d, hd_eq⟩ := hd (r + 1) (Nat.succ_pos r)
@@ -251,15 +241,12 @@ private theorem skewLaurentSum_mem_range_exchangeNormalForm {C : Subsemiring B} 
     refine ⟨(0, Finsupp.single r (f m), 0), ?_⟩
     rw [exchangeNormalForm_apply, (by omega : m = ((r + 1 : ℕ) : ℤ)), zpow_natCast,
       Units.val_pow_eq_pow_val, Finsupp.sum_single_index (zero_mul _)]; simp
-private theorem finsupp_sum_single_eq_zero_of_forall_ne {C : Type*} [AddCommMonoid C]
-    (f : ℕ →₀ C) (φ : ℕ → ℤ) (g : ℕ → C → C) {m : ℤ} (hm : ∀ r, φ r ≠ m) :
-    (f.sum fun r c ↦ Finsupp.single (φ r) (g r c)) m = 0 := by
-  rw [Finsupp.sum_apply, Finsupp.sum]
-  exact Finset.sum_eq_zero fun r _ ↦ Finsupp.single_eq_of_ne (hm r).symm
 section Uniqueness
 variable {C : Subsemiring B} {x E : Bˣ} (hx : ConjAct.toConjAct x • C = C) (hEC : (E : B) ∈ C)
   (hinj : Function.Injective (C.skewLaurentSum x))
 include hx hEC hinj
+/-- **Transfer of Laurent uniqueness**: if `x` normalizes `C`, `(E : B) ∈ C`, and
+`C.skewLaurentSum x` is injective, then `C.skewLaurentSum (E * x⁻¹)` is injective. -/
 theorem skewLaurentSum_mul_inv_injective : Function.Injective (C.skewLaurentSum (E * x⁻¹)) := by
   intro f₁ f₂ hfg; ext m₀; classical
   let N : ℕ := (f₁.support ∪ f₂.support ∪ {m₀}).sup fun m ↦ (-m).toNat
@@ -273,21 +260,19 @@ theorem skewLaurentSum_mul_inv_injective : Function.Injective (C.skewLaurentSum 
         C.skewLaurentSum (E * x⁻¹) f * (((E * x⁻¹) ^ (N : ℤ) : Bˣ) : B) := by
     rw [map_finsuppSum, skewLaurentSum_apply, Finsupp.sum, Finsupp.sum, Finset.sum_mul]
     refine Finset.sum_congr rfl fun m hm ↦ ?_
-    have hmN := Int.toNat_of_nonneg (hf m hm)
-    rw [skewLaurentSum_single]; dsimp only [p]
+    rw [skewLaurentSum_single]; dsimp only [p]; have := hf m hm
     rw [Subsemiring.coe_mul, mul_assoc ((f m : C) : B), ← Units.val_mul,
       (by omega : -(m + (N : ℤ)) = -((m + (N : ℤ)).toNat : ℤ)),
-      ← mul_inv_zpow_natCast_eq_exchangeProduct_mul_zpow_neg, hmN, zpow_add, Units.val_mul,
-      mul_assoc]
+      ← mul_inv_zpow_natCast_eq_exchangeProduct_mul_zpow_neg, Int.toNat_of_nonneg (hf m hm),
+      zpow_add, Units.val_mul, mul_assoc]
   have hΦ_eq : Φ f₁ = Φ f₂ := hinj <| by
     rw [hΦ f₁ fun m hm ↦ hN m (by simp [hm]), hΦ f₂ fun m hm ↦ hN m (by simp [hm]), hfg]
   have hinj_neg : Function.Injective fun m : ℤ ↦ -(m + (N : ℤ)) :=
     fun a b (h : -(a + (N : ℤ)) = -(b + (N : ℤ))) ↦ by omega
   have hcoeff := congrArg (fun g : ℤ →₀ C ↦ (g (-(m₀ + (N : ℤ))) : B)) hΦ_eq
   dsimp only [Φ] at hcoeff
-  rw [finsupp_sum_single_apply_of_injective f₁ hinj_neg (fun m c ↦ c * p m) (fun _ ↦ zero_mul _) m₀,
-    finsupp_sum_single_apply_of_injective f₂ hinj_neg (fun m c ↦ c * p m)
-      (fun _ ↦ zero_mul _) m₀] at hcoeff
+  rw [Finsupp.sum_single_apply_of_injective f₁ hinj_neg (fun m c ↦ c * p m) (zero_mul _),
+    Finsupp.sum_single_apply_of_injective f₂ hinj_neg (fun m c ↦ c * p m) (zero_mul _)] at hcoeff
   exact (Units.mul_left_inj (exchangeProduct x E (m₀ + (N : ℤ)).toNat)).mp hcoeff
 private theorem exists_mul_exchangeProduct_of_skewLaurentSum_eq {f g : ℤ →₀ C}
     (hg : C.skewLaurentSum x f = C.skewLaurentSum (E * x⁻¹) g) (r : ℕ) :
@@ -317,10 +302,9 @@ private theorem exists_mul_exchangeProduct_of_skewLaurentSum_eq {f g : ℤ →�
       Units.val_mul, mul_assoc]
   have hcoeff := congrArg (fun h : ℤ →₀ C ↦ (h (-(r : ℤ)) : B))
     (hinj (by rw [hf', hg', hg]) : f' = g')
-  rw [finsupp_sum_single_apply_of_injective f (fun _ _ h ↦ h)
-      (fun m c ↦ c * qL m) (fun _ ↦ zero_mul _) (-(r : ℤ)),
-    finsupp_sum_single_apply_of_injective g neg_injective
-      (fun n d ↦ d * qR n) (fun _ ↦ zero_mul _) (r : ℤ)] at hcoeff
+  dsimp only [f', g'] at hcoeff
+  rw [Finsupp.sum_single_apply_of_injective f (fun _ _ h ↦ h) _ (a₀ := -(r : ℤ)) (zero_mul _),
+    Finsupp.sum_single_apply_of_injective g neg_injective _ (a₀ := (r : ℤ)) (zero_mul _)] at hcoeff
   dsimp only [qL, qR, Subsemiring.coe_mul] at hcoeff
   let W : Bˣ := (x ^ r)⁻¹ * exchangeProduct x E N * x ^ r
   have hW : ((x ^ (-(r : ℤ)) : Bˣ) : B) * ((exchangeProduct x E N : Bˣ) : B) *
@@ -328,6 +312,8 @@ private theorem exists_mul_exchangeProduct_of_skewLaurentSum_eq {f g : ℤ →�
   rw [(by omega : (((r : ℤ) + (N : ℤ)).toNat : ℕ) = r + N), hW, exchangeProduct_add,
     Units.val_mul (exchangeProduct x E r) W, ← mul_assoc ((g (r : ℤ) : C) : B)] at hcoeff
   exact ⟨g (r : ℤ), (Units.mul_left_inj W).mp hcoeff⟩
+/-- **Uniqueness of positive exchange normal forms**: under normalization and Laurent uniqueness,
+`c₀ + ∑_r c⁺(r) x^{r+1} + ∑_r c⁻(r) (E x⁻¹)^{r+1}` uniquely determines `(c₀, c⁺, c⁻)`. -/
 theorem exchangeNormalForm_mul_inv_injective :
     Function.Injective (C.exchangeNormalForm (x : B) ((E * x⁻¹ : Bˣ) : B)) := by
   let P (r : ℕ) : C :=
@@ -348,24 +334,25 @@ theorem exchangeNormalForm_mul_inv_injective :
   have hp : Function.Injective fun r : ℕ ↦ ((r + 1 : ℕ) : ℤ) := fun _ _ h ↦ by dsimp at h; omega
   have hn : Function.Injective fun r : ℕ ↦ -((r + 1 : ℕ) : ℤ) := fun _ _ h ↦ by dsimp at h; omega
   have hpos0 (u : ℕ →₀ C) (m : ℤ) (hm : ∀ r : ℕ, ((r + 1 : ℕ) : ℤ) ≠ m) :=
-    finsupp_sum_single_eq_zero_of_forall_ne u (fun r ↦ ((r + 1 : ℕ) : ℤ)) (fun _ c ↦ c) hm
+    Finsupp.sum_single_eq_zero_of_forall_ne u (fun r ↦ ((r + 1 : ℕ) : ℤ)) (fun _ c ↦ c)
+      fun r _ ↦ hm r
   have hneg0 (u : ℕ →₀ C) (m : ℤ) (hm : ∀ r : ℕ, -((r + 1 : ℕ) : ℤ) ≠ m) :=
-    finsupp_sum_single_eq_zero_of_forall_ne u (fun r ↦ -((r + 1 : ℕ) : ℤ)) (fun r c ↦ c * P r) hm
-  intro t₁ t₂ ht
-  have hEq : nf t₁ = nf t₂ := hinj (by rw [hnf, hnf, ht])
+    Finsupp.sum_single_eq_zero_of_forall_ne u (fun r ↦ -((r + 1 : ℕ) : ℤ)) (fun r c ↦ c * P r)
+      fun r _ ↦ hm r
+  intro t₁ t₂ ht; have hEq : nf t₁ = nf t₂ := hinj (by rw [hnf, hnf, ht])
   refine Prod.ext ?_ (Prod.ext ?_ ?_)
   · simpa only [nf, Finsupp.add_apply, Finsupp.single_eq_same, hpos0 _ 0 (fun _ ↦ by omega),
       hneg0 _ 0 (fun _ ↦ by omega), add_zero] using congrArg (fun g : ℤ →₀ C ↦ g 0) hEq
   · ext s
     simpa only [nf, Finsupp.add_apply, Finsupp.single_eq_of_ne (by omega : ((s + 1 : ℕ) : ℤ) ≠ 0),
-      finsupp_sum_single_apply_of_injective _ hp (fun _ c ↦ c) (fun _ ↦ rfl) s,
+      Finsupp.sum_single_apply_of_injective _ hp (fun _ c ↦ c) (a₀ := s) rfl,
       hneg0 _ ((s + 1 : ℕ) : ℤ) (fun _ ↦ by omega), zero_add, add_zero] using
       congrArg (fun g : ℤ →₀ C ↦ (g ((s + 1 : ℕ) : ℤ) : B)) hEq
   · ext s
     have hs := congrArg (fun g : ℤ →₀ C ↦ (g (-((s + 1 : ℕ) : ℤ)) : B)) hEq
     simp only [nf, Finsupp.add_apply, Finsupp.single_eq_of_ne (by omega : -((s + 1 : ℕ) : ℤ) ≠ 0),
       hpos0 _ (-((s + 1 : ℕ) : ℤ)) (fun _ ↦ by omega),
-      finsupp_sum_single_apply_of_injective _ hn (fun r c ↦ c * P r) (fun _ ↦ zero_mul _) s,
+      Finsupp.sum_single_apply_of_injective _ hn (fun r c ↦ c * P r) (a₀ := s) (zero_mul _),
       zero_add, Subsemiring.coe_mul] at hs
     exact (Units.mul_left_inj (exchangeProduct x E (s + 1))).mp hs
 end Uniqueness
@@ -374,10 +361,12 @@ variable {C : Subsemiring B} {x E : Bˣ} (hx : ConjAct.toConjAct x • C = C)
   (hE : ConjAct.toConjAct E • C = C) (hEC : (E : B) ∈ C)
   (hinj : Function.Injective (C.skewLaurentSum x))
 include hx hE hEC hinj
+/-- **Laurent divisibility criterion**: under normalization and Laurent uniqueness,
+`∑_m f(m) * x^m ∈ C.laurentAdjoin (E * x⁻¹)` iff each `f(-r)` (`r > 0`) lies in
+`C * exchangeProduct x E r`. -/
 theorem mem_laurentAdjoin_mul_inv_iff (f : ℤ →₀ C) :
-    C.skewLaurentSum x f ∈ C.laurentAdjoin (E * x⁻¹) ↔
-      ∀ r : ℕ, 0 < r →
-        ∃ d : C, (f (-(r : ℤ)) : B) = (d : B) * ((exchangeProduct x E r : Bˣ) : B) := by
+    C.skewLaurentSum x f ∈ C.laurentAdjoin (E * x⁻¹) ↔ ∀ r : ℕ, 0 < r →
+      ∃ d : C, (f (-(r : ℤ)) : B) = (d : B) * ((exchangeProduct x E r : Bˣ) : B) := by
   refine ⟨fun hmem r _ ↦ ?_, fun hd ↦ ?_⟩
   · obtain ⟨g, hg⟩ : C.skewLaurentSum x f ∈ Set.range (C.skewLaurentSum (E * x⁻¹)) := by
       rwa [range_skewLaurentSum (conjAct_mul_inv_smul_eq hx hE)]
@@ -392,24 +381,30 @@ private theorem inf_subset_range_exchangeNormalForm :
   obtain ⟨f, rfl⟩ : b ∈ Set.range (C.skewLaurentSum x) := by rwa [range_skewLaurentSum hx]
   exact skewLaurentSum_mem_range_exchangeNormalForm
     ((mem_laurentAdjoin_mul_inv_iff hx hE hEC hinj f).mp hby)
+/-- **One-step Laurent intersection theorem**: under `ConjAct` normalization of `C` by `x` and `E`,
+`(E : B) ∈ C`, and injectivity of `C.skewLaurentSum x`, the intersection of `C.laurentAdjoin x` and
+`C.laurentAdjoin (E * x⁻¹)` is the positive subsemiring generated by `C`, `x`, and `E * x⁻¹`. -/
 theorem laurentAdjoin_inf_laurentAdjoin_mul_inv :
     C.laurentAdjoin x ⊓ C.laurentAdjoin (E * x⁻¹) =
       C ⊔ Subsemiring.closure {(x : B), ((E * x⁻¹ : Bˣ) : B)} := by
   refine le_antisymm (fun b hb ↦ ?_) (sup_closure_mul_inv_le_inf_laurentAdjoin hEC)
   obtain ⟨t, rfl⟩ := inf_subset_range_exchangeNormalForm hx hE hEC hinj hb
   exact C.exchangeNormalForm_mem_sup_closure _ _ t
+/-- Every element of `C ⊔ Subsemiring.closure {x, E * x⁻¹}` admits a two-sided positive exchange
+normal form under normalization and Laurent injectivity. -/
 theorem range_exchangeNormalForm_mul_inv :
     Set.range (C.exchangeNormalForm (x : B) ((E * x⁻¹ : Bˣ) : B)) =
-      ((C ⊔ Subsemiring.closure {(x : B), ((E * x⁻¹ : Bˣ) : B)} : Subsemiring B) : Set B) := by
-  refine Set.Subset.antisymm
-    (by rintro _ ⟨t, rfl⟩; exact C.exchangeNormalForm_mem_sup_closure _ _ t) ?_
-  rw [← laurentAdjoin_inf_laurentAdjoin_mul_inv hx hE hEC hinj]
-  exact inf_subset_range_exchangeNormalForm hx hE hEC hinj
+      ((C ⊔ Subsemiring.closure {(x : B), ((E * x⁻¹ : Bˣ) : B)} : Subsemiring B) : Set B) :=
+  Set.Subset.antisymm (by rintro _ ⟨t, rfl⟩; exact C.exchangeNormalForm_mem_sup_closure _ _ t)
+    (laurentAdjoin_inf_laurentAdjoin_mul_inv hx hE hEC hinj ▸
+      inf_subset_range_exchangeNormalForm hx hE hEC hinj)
 end MainExchange
 end Semiring
 end Subsemiring
 namespace Subring
 variable {B : Type*} [Ring B]
+/-- Joining a subring `S` with `Subring.closure s` agrees as a subsemiring with joining
+`S.toSubsemiring` and `Subsemiring.closure s`. -/
 @[simp] theorem toSubsemiring_sup_closure (S : Subring B) (s : Set B) :
     (S ⊔ Subring.closure s).toSubsemiring = S.toSubsemiring ⊔ Subsemiring.closure s := by
   refine le_antisymm ?_ (sup_le (fun _ hb ↦ (le_sup_left : S ≤ S ⊔ Subring.closure s) hb) <|
@@ -425,12 +420,15 @@ variable {B : Type*} [Ring B]
 /-- The subring `S[x^{±1}] = S ⊔ Subring.closure {x, x⁻¹}` generated by `S` and `x : Bˣ`. -/
 def laurentAdjoin (S : Subring B) (x : Bˣ) : Subring B :=
   S ⊔ Subring.closure {(x : B), ((x⁻¹ : Bˣ) : B)}
+/-- The underlying subsemiring of `S.laurentAdjoin x` is `S.toSubsemiring.laurentAdjoin x`. -/
 @[simp] theorem toSubsemiring_laurentAdjoin (S : Subring B) (x : Bˣ) :
     (S.laurentAdjoin x).toSubsemiring = S.toSubsemiring.laurentAdjoin x :=
   S.toSubsemiring_sup_closure _
 end Subring
 namespace TauCeti
-section Checks
+section Examples
+/-- Quantum `r = 2` exchange-product identity: if `x * z = v^2 • (z * x)` and `E = 1 + z`, then
+`exchangeProduct x E 2 = (1 + z) * (1 + v^{-2} • z)`. -/
 theorem exchangeProduct_two_of_quasiComm {R B : Type*} [CommSemiring R] [Semiring B] [Algebra R B]
     {v : Rˣ} {x E : Bˣ} {z : B}
     (hxz : (x : B) * z = algebraMap R B ((v ^ 2 : Rˣ) : R) * (z * (x : B)))
@@ -447,7 +445,67 @@ theorem exchangeProduct_two_of_quasiComm {R B : Type*} [CommSemiring R] [Semirin
     exact h2
   rw [exchangeProduct_two, Units.val_mul, Units.val_mul, Units.val_mul, hE]
   congr 1; rw [mul_add, mul_one, add_mul, Units.inv_mul, hconj]
-theorem two_mul_inv_exchange_check :
+private abbrev ExB := LaurentRing ℚ Unit
+private noncomputable abbrev exC : Subsemiring ExB := (algebraMap ℤ ExB).rangeS
+private noncomputable abbrev exX : ExBˣ := LaurentRing.unitX ()
+private noncomputable abbrev exTwo : ExBˣ :=
+  Units.map (algebraMap ℚ ExB).toMonoidHom (Units.mk0 2 (by norm_num))
+private theorem algebraMap_int_laurentRing_unit (z : ℤ) :
+    algebraMap ℤ ExB z = AddMonoidAlgebra.single 0 (z : ℚ) := by
+  rw [IsScalarTower.algebraMap_apply ℤ ℚ ExB, eq_intCast, Algebra.algebraMap_eq_smul_one,
+    AddMonoidAlgebra.one_def, AddMonoidAlgebra.smul_single', mul_one]
+private theorem skewLaurentSum_intRangeS_unitX_injective :
+    Function.Injective (exC.skewLaurentSum exX) := by
+  have heval (f : ℤ →₀ exC) (m : ℤ) :
+      (exC.skewLaurentSum exX f).coeff (Finsupp.single () m) = ((f m : exC) : ExB).coeff 0 := by
+    have hcoeff : (exC.skewLaurentSum exX f).coeff =
+        f.sum fun k c ↦ Finsupp.single (Finsupp.single () k) ((c : ExB).coeff 0) := by
+      rw [Subsemiring.skewLaurentSum_apply, Finsupp.sum, Finsupp.sum, AddMonoidAlgebra.coeff_sum]
+      refine Finset.sum_congr rfl fun k _ ↦ ?_
+      obtain ⟨z, hz⟩ := (f k).2
+      rw [← hz, algebraMap_int_laurentRing_unit z, LaurentRing.val_unitX_zpow () k,
+        AddMonoidAlgebra.single_mul_single, zero_add, mul_one]; simp
+    rw [hcoeff]
+    exact Finsupp.sum_single_apply_of_injective f (Finsupp.single_injective ())
+      (fun _ c ↦ (c : ExB).coeff 0) rfl
+  intro f₁ f₂ h; ext m
+  have hm := congrArg (fun p : ExB ↦ p.coeff (Finsupp.single () m)) h
+  rw [heval, heval] at hm
+  obtain ⟨z₁, hz₁⟩ := (f₁ m).2; obtain ⟨z₂, hz₂⟩ := (f₂ m).2
+  have hz : z₁ = z₂ := Int.cast_injective (α := ℚ)
+    (by rw [← hz₁, ← hz₂, algebraMap_int_laurentRing_unit, algebraMap_int_laurentRing_unit] at hm
+        simpa using hm)
+  rw [← hz₁, ← hz₂, hz]
+private theorem intCast_mul_zpow_neg_mem_laurentAdjoin_two_mul_inv_iff (a : ℤ) (s : ℕ)
+    (hs : 0 < s) :
+    (a : ExB) * ((exX ^ (-(s : ℤ)) : ExBˣ) : ExB) ∈ exC.laurentAdjoin (exTwo * exX⁻¹) ↔
+      ∃ z : ℤ, a = z * (2 : ℤ) ^ s := by
+  have hnorm (u : ExBˣ) : ConjAct.toConjAct u • exC = exC := by
+    ext; simp [Subsemiring.mem_smul_pointwise_iff_exists, ConjAct.units_smul_def, mul_comm,
+      mul_assoc]
+  have hE_val : (exTwo : ExB) = 2 := map_ofNat (algebraMap ℚ ExB) 2
+  have hP (r : ℕ) : ((exchangeProduct exX exTwo r : ExBˣ) : ExB) = (2 : ExB) ^ r := by
+    rw [exchangeProduct_of_commute (Commute.all exX exTwo), Units.val_pow_eq_pow_val, hE_val]
+  let ca : exC := ⟨(a : ExB), a, map_intCast _ a⟩
+  have hf : (a : ExB) * ((exX ^ (-(s : ℤ)) : ExBˣ) : ExB) =
+      exC.skewLaurentSum exX (Finsupp.single (-(s : ℤ)) ca) := by simp [ca]
+  rw [hf, Subsemiring.mem_laurentAdjoin_mul_inv_iff (hnorm exX) (hnorm exTwo)
+    ⟨2, by rw [map_ofNat, hE_val]⟩ skewLaurentSum_intRangeS_unitX_injective]
+  refine ⟨fun hall ↦ ?_, fun ⟨z, hz⟩ r _ ↦ ?_⟩
+  · obtain ⟨⟨_, z, rfl⟩, hz⟩ := hall s hs
+    rw [Finsupp.single_eq_same, hP] at hz
+    have hev := congrArg (LaurentRing.aeval (R := ℚ) fun _ : Unit ↦ (1 : ℚˣ)) hz
+    dsimp only [ca] at hev
+    rw [map_intCast, map_mul, eq_intCast, map_intCast, map_pow, map_ofNat] at hev
+    exact ⟨z, by exact_mod_cast hev⟩
+  · subst hz; by_cases hrs : r = s
+    · subst hrs; exact ⟨⟨(z : ExB), z, map_intCast _ z⟩, by
+        rw [Finsupp.single_eq_same, hP]; dsimp only [ca]; push_cast; rfl⟩
+    · exact ⟨0, by simp [Finsupp.single_eq_of_ne (by omega : -(r : ℤ) ≠ -(s : ℤ))]⟩
+/-- Concrete sharpness witness for `Subsemiring.mem_laurentAdjoin_mul_inv_iff` in `ℚ[x^{±1}]` over
+`C = ℤ` with `y = 2 * x⁻¹`: `2 * x⁻¹` and `4 * x⁻²` belong to `ℤ[x^{±1}] ⊓ ℤ[y^{±1}]`, whereas
+`x⁻¹` and `2 * x⁻²` fail `2^r`-divisibility and lie outside `ℤ[y^{±1}]`. -/
+theorem mem_and_notMem_laurentAdjoin_two_mul_inv :
     let B := LaurentRing ℚ Unit
     let C : Subsemiring B := (algebraMap ℤ B).rangeS
     let x : Bˣ := LaurentRing.unitX ()
@@ -457,66 +515,19 @@ theorem two_mul_inv_exchange_check :
       ((x⁻¹ : Bˣ) : B) ∉ C.laurentAdjoin (E * x⁻¹) ∧
       (2 : B) * ((x ^ (-2 : ℤ) : Bˣ) : B) ∉ C.laurentAdjoin (E * x⁻¹) := by
   intro B C x E
-  have halg (z : ℤ) : algebraMap ℤ B z = AddMonoidAlgebra.single 0 (z : ℚ) := by
-    rw [IsScalarTower.algebraMap_apply ℤ ℚ B, eq_intCast, Algebra.algebraMap_eq_smul_one,
-      AddMonoidAlgebra.one_def, AddMonoidAlgebra.smul_single', mul_one]
-  have hinj : Function.Injective (C.skewLaurentSum x) := by
-    intro f₁ f₂ h; ext m
-    have heval (f : ℤ →₀ C) :
-        AddMonoidAlgebra.coeff (C.skewLaurentSum x f) (Finsupp.single () m) =
-          AddMonoidAlgebra.coeff ((f m : C) : B) 0 := by
-      have hbody (k : ℤ) (c : C) : (c : B) * ((x ^ k : Bˣ) : B) =
-          AddMonoidAlgebra.single (Finsupp.single () k) (AddMonoidAlgebra.coeff (c : B) 0) := by
-        obtain ⟨z, hz⟩ := c.2
-        rw [← hz, halg z, LaurentRing.val_unitX_zpow () k, AddMonoidAlgebra.single_mul_single,
-          zero_add, mul_one]; simp
-      rw [Subsemiring.skewLaurentSum_apply, Finsupp.sum]; simp_rw [hbody]
-      rw [AddMonoidAlgebra.coeff_sum, ← Finsupp.lapply_apply (R := ℕ), map_sum]
-      by_cases hm_s : m ∈ f.support
-      · rw [Finset.sum_eq_single_of_mem m hm_s fun k _ hne ↦ by
-          simp [(Finsupp.single_injective ()).ne hne]]; simp
-      · rw [Finset.sum_eq_zero fun k hk ↦ by
-          simp [(Finsupp.single_injective ()).ne (fun hkm : k = m ↦ hm_s (hkm ▸ hk))],
-          Finsupp.notMem_support_iff.mp hm_s]; rfl
-    have hm := congrArg (fun p : B ↦ AddMonoidAlgebra.coeff p (Finsupp.single () m)) h
-    rw [heval, heval] at hm
-    obtain ⟨z₁, hz₁⟩ := (f₁ m).2; obtain ⟨z₂, hz₂⟩ := (f₂ m).2
-    have hz : z₁ = z₂ := Int.cast_injective (α := ℚ)
-      (by rw [← hz₁, ← hz₂, halg, halg] at hm; simpa using hm)
-    rw [← hz₁, ← hz₂, hz]
-  have hnorm (u : Bˣ) : ConjAct.toConjAct u • C = C := by
-    ext; simp [Subsemiring.mem_smul_pointwise_iff_exists, ConjAct.units_smul_def, mul_comm,
-      mul_assoc]
-  have hiff (a : ℤ) {s : ℕ} (hs : 0 < s) :
-      (a : B) * ((x ^ (-(s : ℤ)) : Bˣ) : B) ∈ C.laurentAdjoin (E * x⁻¹) ↔
-        ∃ z : ℤ, a = z * (2 : ℤ) ^ s := by
-    have hE_val : (E : B) = 2 := map_ofNat (algebraMap ℚ B) 2
-    have hP (r : ℕ) : ((exchangeProduct x E r : Bˣ) : B) = (2 : B) ^ r := by
-      rw [exchangeProduct_of_commute (Commute.all x E), Units.val_pow_eq_pow_val, hE_val]
-    let ca : C := ⟨(a : B), a, map_intCast _ a⟩
-    have hf : (a : B) * ((x ^ (-(s : ℤ)) : Bˣ) : B) =
-        C.skewLaurentSum x (Finsupp.single (-(s : ℤ)) ca) := by simp [ca]
-    rw [hf, Subsemiring.mem_laurentAdjoin_mul_inv_iff (hnorm x) (hnorm E)
-      ⟨2, by rw [map_ofNat, hE_val]⟩ hinj]
-    refine ⟨fun hall ↦ ?_, fun ⟨z, hz⟩ r _ ↦ ?_⟩
-    · obtain ⟨⟨_, z, rfl⟩, hz⟩ := hall s hs
-      rw [Finsupp.single_eq_same, hP] at hz
-      have hev := congrArg (LaurentRing.aeval (R := ℚ) fun _ : Unit ↦ (1 : ℚˣ)) hz
-      dsimp only [ca] at hev
-      rw [map_intCast, map_mul, eq_intCast, map_intCast, map_pow, map_ofNat] at hev
-      exact ⟨z, by exact_mod_cast hev⟩
-    · subst hz; by_cases hrs : r = s
-      · subst hrs; exact ⟨⟨(z : B), z, map_intCast _ z⟩, by
-          rw [Finsupp.single_eq_same, hP]; dsimp only [ca]; push_cast; rfl⟩
-      · exact ⟨0, by simp [Finsupp.single_eq_of_ne (by omega : -(r : ℤ) ≠ -(s : ℤ))]⟩
+  have hx1 : ((x⁻¹ : Bˣ) : B) = ((x ^ (-((1 : ℕ) : ℤ)) : Bˣ) : B) := by
+    rw [Nat.cast_one, zpow_neg_one]
   refine ⟨Subsemiring.mem_inf.mpr ⟨mul_mem (C.le_laurentAdjoin x ⟨2, map_ofNat _ 2⟩)
-      (C.coe_inv_mem_laurentAdjoin x), ?_⟩,
+      (C.coe_inv_mem_laurentAdjoin x), hx1 ▸
+        (intCast_mul_zpow_neg_mem_laurentAdjoin_two_mul_inv_iff 2 1 (by omega)).mpr ⟨1, rfl⟩⟩,
     Subsemiring.mem_inf.mpr ⟨mul_mem (C.le_laurentAdjoin x ⟨4, map_ofNat _ 4⟩)
-      (C.coe_zpow_mem_laurentAdjoin x (-2)), ?_⟩, ?_, ?_⟩
-  · simpa [zpow_neg_one] using (hiff 2 (s := 1) (by omega)).mpr ⟨1, rfl⟩
-  · simpa using (hiff 4 (s := 2) (by omega)).mpr ⟨1, rfl⟩
-  · intro h
-    obtain ⟨_, hz⟩ := (hiff 1 (s := 1) (by omega)).mp (by simpa [zpow_neg_one] using h); omega
-  · intro h; obtain ⟨_, hz⟩ := (hiff 2 (s := 2) (by omega)).mp (by simpa using h); omega
-end Checks
+      (C.coe_zpow_mem_laurentAdjoin x (-2)),
+        (intCast_mul_zpow_neg_mem_laurentAdjoin_two_mul_inv_iff 4 2 (by omega)).mpr ⟨1, rfl⟩⟩,
+    fun h ↦ ?_, fun h ↦ ?_⟩
+  · rw [hx1, ← one_mul ((x ^ (-((1 : ℕ) : ℤ)) : Bˣ) : B), ← Int.cast_one] at h
+    obtain ⟨_, hz⟩ :=
+      (intCast_mul_zpow_neg_mem_laurentAdjoin_two_mul_inv_iff 1 1 (by omega)).mp h; omega
+  · obtain ⟨_, hz⟩ :=
+      (intCast_mul_zpow_neg_mem_laurentAdjoin_two_mul_inv_iff 2 2 (by omega)).mp h; omega
+end Examples
 end TauCeti
