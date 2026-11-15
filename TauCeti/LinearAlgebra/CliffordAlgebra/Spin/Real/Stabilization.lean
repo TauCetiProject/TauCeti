@@ -76,6 +76,9 @@ coherences of both block-sum homomorphisms, as well as the kernel and quotient d
 * `TauCeti.realCliffordSpinBlockSum_assoc`: associativity coherence of the Spin block sum.
 * `TauCeti.spinGroupEquiv_realCliffordBlockSwapIsometry_realCliffordSpinBlockSum`: permutation
   coherence of the Spin block sum under swapping the two coordinate blocks.
+* `TauCeti.realCliffordFirstReflectionIsometry`: the involutive quadratic isometry
+  `v ↦ Fin.cons (-v 0) (Fin.tail v)` negating the first coordinate, whose Spin and
+  special-orthogonal automorphisms fix the image of first-coordinate stabilization.
 
 ## References
 
@@ -736,6 +739,88 @@ theorem
     spinGroupEquiv_realCliffordBlockSwapIsometry_realCliffordSpinBlockSum,
     spinToSpecialOrthogonal_realCliffordSpinBlockSum]
   simp only [Prod.swap_prod_mk]
+
+/-! ### First-coordinate reflection -/
+
+/-- **First-coordinate reflection isometry**: the involutive quadratic isometry of
+`realCliffordForm (n + 1) 0` negating the `0`-th coordinate and fixing all remaining coordinates.
+In the Pin group this corresponds to twisted conjugation by the unit vector `Pi.single 0 1`. -/
+def realCliffordFirstReflectionIsometry (n : ℕ) :
+    (realCliffordForm (n + 1) 0).IsometryEquiv (realCliffordForm (n + 1) 0) where
+  toFun v := Fin.cons (-v 0) (Fin.tail v)
+  invFun v := Fin.cons (-v 0) (Fin.tail v)
+  left_inv v := by
+    simp only [Fin.cons_zero, Fin.tail_cons, neg_neg, Fin.cons_self_tail]
+  right_inv v := by
+    simp only [Fin.cons_zero, Fin.tail_cons, neg_neg, Fin.cons_self_tail]
+  map_add' v w := by
+    ext i
+    refine Fin.cases ?_ (fun j ↦ ?_) i <;> simp [Fin.tail, add_comm]
+  map_smul' r v := by
+    ext i
+    refine Fin.cases ?_ (fun j ↦ ?_) i <;> simp [Fin.tail]
+  map_app' v := by
+    rw [realCliffordForm_apply, realCliffordForm_apply, Fin.sum_univ_succ, Fin.sum_univ_succ]
+    simp [Fin.tail]
+
+/-- Evaluating `realCliffordFirstReflectionIsometry` negates the `0`-th coordinate and keeps
+`Fin.tail`. -/
+@[simp]
+theorem realCliffordFirstReflectionIsometry_apply (n : ℕ) (v : Fin (n + 1) → ℝ) :
+    realCliffordFirstReflectionIsometry n v = Fin.cons (-v 0) (Fin.tail v) :=
+  (rfl)
+
+/-- `realCliffordFirstReflectionIsometry` is an involution. -/
+@[simp]
+theorem realCliffordFirstReflectionIsometry_symm (n : ℕ) :
+    (realCliffordFirstReflectionIsometry n).symm = realCliffordFirstReflectionIsometry n :=
+  (rfl)
+
+/-- First-coordinate reflection fixes the image of `realCliffordSpinFirstInclusionIsometry`. -/
+@[simp]
+theorem realCliffordFirstReflectionIsometry_comp_firstInclusionIsometry (n : ℕ) :
+    (realCliffordFirstReflectionIsometry n).toIsometry.comp
+        (realCliffordSpinFirstInclusionIsometry n) =
+      realCliffordSpinFirstInclusionIsometry n := by
+  ext v i
+  refine Fin.cases ?_ (fun j ↦ ?_) i <;> simp
+
+/-- First-coordinate reflection acts trivially via `spinGroupMap` on elements stabilized by
+`realCliffordSpinFirstInclusion`. -/
+@[simp]
+theorem spinGroupMap_realCliffordFirstReflectionIsometry_firstInclusion (n : ℕ)
+    (x : realCliffordSpinGroupZero n) :
+    (realCliffordFirstReflectionIsometry n).toIsometry.spinGroupMap
+        (realCliffordSpinFirstInclusion n x) =
+      realCliffordSpinFirstInclusion n x := by
+  rw [realCliffordSpinFirstInclusion_eq_spinGroupMap, Isometry.spinGroupMap_spinGroupMap,
+    realCliffordFirstReflectionIsometry_comp_firstInclusionIsometry]
+
+-- Not `@[simp]`: `IsometryEquiv.spinGroupEquiv_apply` rewrites the LHS to
+-- `spinGroupMap_realCliffordFirstReflectionIsometry_firstInclusion`.
+/-- The Spin automorphism induced by first-coordinate reflection fixes every element stabilized by
+`realCliffordSpinFirstInclusion`. -/
+theorem spinGroupEquiv_realCliffordFirstReflectionIsometry_firstInclusion (n : ℕ)
+    (x : realCliffordSpinGroupZero n) :
+    (realCliffordFirstReflectionIsometry n).spinGroupEquiv
+        (realCliffordSpinFirstInclusion n x) =
+      realCliffordSpinFirstInclusion n x := by
+  simp
+
+/-- Conjugating by first-coordinate reflection in `O(n + 1)` fixes every element stabilized by
+`realCliffordSpecialOrthogonalFirstInclusion`. -/
+@[simp]
+theorem specialOrthogonalGroupCongr_realCliffordFirstReflectionIsometry_firstInclusion (n : ℕ)
+    (g : specialOrthogonalGroup (realCliffordForm n 0)) :
+    (realCliffordFirstReflectionIsometry n).specialOrthogonalGroupCongr
+        (realCliffordSpecialOrthogonalFirstInclusion n g) =
+      realCliffordSpecialOrthogonalFirstInclusion n g := by
+  obtain ⟨x, rfl⟩ := spinToSpecialOrthogonal_surjective_of_posDef
+    (realCliffordForm n 0) (posDef_realCliffordForm_zero n) g
+  rw [← spinToSpecialOrthogonal_realCliffordSpinFirstInclusion,
+    IsometryEquiv.specialOrthogonalGroupCongr_spinToSpecialOrthogonal,
+    spinGroupEquiv_realCliffordFirstReflectionIsometry_firstInclusion,
+    spinToSpecialOrthogonal_realCliffordSpinFirstInclusion]
 
 end
 
