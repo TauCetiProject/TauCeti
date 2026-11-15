@@ -233,7 +233,7 @@ private theorem OrderLE.exists_norm_logDeriv_sub_logDeriv_divisorProductOne_le
       _ = _ := by ring
   -- Landau's lemma: `logDeriv f z` is the zero sum over `closedBall 0 (2 ‖z‖)` up to `O(√‖z‖)`.
   have hland := AnalyticOnNhd.norm_logDeriv_sub_finsum_divisor_half_le
-    (fun w _ ↦ hf.analyticAt w) hR hf0 hM (z := z) (by simp) hfz
+    (fun w _ ↦ hf.analyticAt w) hR hM (z := z) (by simp) hfz
   rw [show 4 * ‖z‖ / 2 = 2 * ‖z‖ by ring] at hland
   -- The tail: that finite sum is the paired series up to `2 √‖z‖ S`.
   have htail := norm_finsum_sub_tsum_le hf hf0 hsum hS hfz
