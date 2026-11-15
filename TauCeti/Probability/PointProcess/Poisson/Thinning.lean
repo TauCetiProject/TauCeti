@@ -56,14 +56,14 @@ public section
 
 noncomputable section
 
-open Function MeasureTheory ProbabilityTheory Set
+open MeasureTheory ProbabilityTheory Set
 open scoped ENNReal NNReal
 
 namespace TauCeti.Probability
 
 section MarkedProjection
 
-variable {Ω X E ι : Type*} [MeasurableSpace Ω] [MeasurableSpace X] [MeasurableSpace E]
+variable {Ω X E : Type*} [MeasurableSpace Ω] [MeasurableSpace X] [MeasurableSpace E]
   {P : Measure Ω} {Λ : Measure X} {κ : Kernel X E} {M : Ω → Measure (X × E)}
 
 /-- Restricting a Poisson random measure with composition-product intensity `Λ ⊗ₘ κ` to a
@@ -83,26 +83,6 @@ theorem IsPoissonRandomMeasure.map_fst_restrict_univ_prod_compProd [SFinite Λ] 
     IsPoissonRandomMeasure P (fun ω ↦ ((M ω).restrict (univ ×ˢ B)).map Prod.fst)
       (Λ.withDensity fun x ↦ κ x B) := by
   simpa using hM.map_fst_restrict_compProd (MeasurableSet.univ.prod hB)
-
-/-- For any Poisson random measure on `X × E` (with arbitrary intensity `Γ`), projecting the
-restrictions to pairwise-disjoint measurable subsets `A i` of `X × E` yields mutually independent
-random measures on `X`. -/
-theorem IsPoissonRandomMeasure.iIndepFun_map_fst_restrict {Γ : Measure (X × E)}
-    (hM : IsPoissonRandomMeasure P M Γ) {A : ι → Set (X × E)} (hA : ∀ i, MeasurableSet (A i))
-    (hd : Pairwise (Disjoint on A)) :
-    ProbabilityTheory.iIndepFun (fun i ω ↦ ((M ω).restrict (A i)).map Prod.fst) P :=
-  (hM.iIndepFun_restrict hA hd).comp
-    (fun _ μ ↦ μ.map Prod.fst) (fun _ ↦ Measure.measurable_map _ measurable_fst)
-
-/-- For any Poisson random measure on `X × E` (with arbitrary intensity `Γ`), projecting the
-restrictions to pairwise-disjoint measurable mark sets `B i` yields mutually independent random
-measures on `X`. -/
-theorem IsPoissonRandomMeasure.iIndepFun_map_fst_restrict_univ_prod {Γ : Measure (X × E)}
-    (hM : IsPoissonRandomMeasure P M Γ) {B : ι → Set E} (hB : ∀ i, MeasurableSet (B i))
-    (hd : Pairwise (Disjoint on B)) :
-    ProbabilityTheory.iIndepFun (fun i ω ↦ ((M ω).restrict (univ ×ˢ B i)).map Prod.fst) P :=
-  hM.iIndepFun_map_fst_restrict (fun i ↦ MeasurableSet.univ.prod (hB i))
-    (fun _ _ hij ↦ (hd hij).set_prod_right _ _)
 
 end MarkedProjection
 
@@ -306,8 +286,6 @@ theorem IsPoissonRandomMeasure.exists_bernoulli_thinning_smul_nnvolume {Ω : Typ
         ((((1 - unitInterval.toNNReal p) * r : ℝ≥0) : ℝ≥0∞) • nnvolume) ∧
       IndepFun (fun z ↦ z.2.1) (fun z ↦ z.2.2) (P ⊗ₘ η.comap N hN.measurable) ∧
       ∀ᵐ z ∂(P ⊗ₘ η.comap N hN.measurable), z.2.1 + z.2.2 = N z.1 := by
-  have : IsLocallyFiniteMeasure ((r : ℝ≥0∞) • nnvolume) :=
-    nnvolume.isLocallyFiniteMeasure_smul ENNReal.coe_ne_top
   obtain ⟨η, hη, h₁, h₂, hind, hadd⟩ := hN.exists_bernoulli_thinning p
   rw [smul_smul, ← ENNReal.coe_mul] at h₁ h₂
   exact ⟨η, hη, h₁, h₂, hind, hadd⟩

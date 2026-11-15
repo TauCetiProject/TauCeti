@@ -212,7 +212,7 @@ noncomputable def candidateGenusFieldOrdinaryClassGroupHom (hd : Squarefree d)
     (hnsq : ¬ IsSquare ((d : ℤ) : ℚ)) :
     (candidateGenusField hd ≃ₐ[candidateGenusFieldBase hd] candidateGenusField hd) →*
       Multiplicative
-        (TauCeti.ClassGroup.ElementaryTwoQuotient (𝓞 (candidateGenusFieldBase hd))) :=
+        (ClassGroup.ElementaryTwoQuotient (𝓞 (candidateGenusFieldBase hd))) :=
   (candidateGenusFieldOrdinaryClassGroupSignMap hd hnsq).toAddMonoidHom.toMultiplicative.comp
     (galoisGroupEquivCandidateGenusFieldRelative hd).toMonoidHom
 
@@ -275,7 +275,7 @@ noncomputable def autCandidateGenusFieldRealEquivElementaryTwoQuotient
     (candidateGenusFieldReal hd ≃ₐ[candidateGenusFieldBase hd]
       candidateGenusFieldReal hd) ≃*
         Multiplicative
-          (TauCeti.ClassGroup.ElementaryTwoQuotient
+          (ClassGroup.ElementaryTwoQuotient
             (𝓞 (candidateGenusFieldBase hd))) := by
   letI := candidateGenusFieldRealAlgebra hd hpos
   exact

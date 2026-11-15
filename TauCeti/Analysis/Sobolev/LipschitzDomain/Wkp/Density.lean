@@ -133,25 +133,12 @@ private theorem tendsto_chart_shift (e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] With
   rw [mul_zero] at h
   simpa using h.smul_const (chartNormal e)
 
-/-- The closure of the restrictions of whole-space test functions. -/
-private abbrev testClosure (mu : Measure (WithLp 2 (ℝ × E))) [mu.IsAddHaarMeasure]
-    (Ω : Opens (WithLp 2 (ℝ × E))) (p : ℝ≥0∞) [Fact (1 ≤ p)] (k : ℕ) :
-    Submodule ℝ (Wkp mu Ω p k) :=
-  (LinearMap.range ((Wkp.restrictL (le_top : Ω ≤ ⊤) k).toLinearMap ∘ₗ
-    Wkp.ofTestFunctionₗ (mu := mu) (p := p) k)).topologicalClosure
-
-private theorem mem_testClosure_iff {k : ℕ} {u : Wkp mu Ω p k} :
-    u ∈ testClosure mu Ω p k ↔ u ∈ closure (range fun psi : 𝓓((⊤ : Opens (WithLp 2 (ℝ × E))), ℝ) =>
-      Wkp.restrictL (le_top : Ω ≤ ⊤) k (Wkp.ofTestFunctionₗ (mu := mu) (p := p) k psi)) := by
-  rw [← SetLike.mem_coe, Submodule.topologicalClosure_coe, LinearMap.coe_range]
-  rfl
-
 /-- A piece with compact support inside `Ω` lies in the closure of test-function restrictions. -/
-private theorem mem_testClosure_of_subset (hp : p ≠ (∞ : ℝ≥0∞)) {K : Set (WithLp 2 (ℝ × E))}
-    (hK : IsCompact K) (hKΩ : K ⊆ Ω) (k : ℕ) (w : Wkp mu Ω p k)
+private theorem mem_restrictTestFunctionClosure_of_subset (hp : p ≠ (∞ : ℝ≥0∞))
+    {K : Set (WithLp 2 (ℝ × E))} (hK : IsCompact K) (hKΩ : K ⊆ Ω) (k : ℕ) (w : Wkp mu Ω p k)
     (hw : ∀ᵐ x ∂mu.restrict Ω, x ∉ K → Wkp.value k w x = 0) :
-    w ∈ testClosure mu Ω p k := by
-  rw [mem_testClosure_iff]
+    w ∈ Wkp.restrictTestFunctionClosure mu (le_top : Ω ≤ ⊤) p k := by
+  rw [Wkp.mem_restrictTestFunctionClosure_iff]
   obtain ⟨δ, hδ, hδΩ⟩ := hK.exists_cthickening_subset_open Ω.isOpen hKΩ
   let r : ℕ → ℝ := fun j => δ / 2 * (1 / ((j : ℝ) + 1))
   have hr : ∀ j, 0 < r j := fun j => by positivity
@@ -185,13 +172,13 @@ private theorem mem_testClosure_of_subset (hp : p ≠ (∞ : ℝ≥0∞)) {K : S
 
 /-- A piece supported in a boundary chart cylinder lies in the closure of test-function
 restrictions. -/
-private theorem mem_testClosure_of_chart (hp : p ≠ (∞ : ℝ≥0∞))
+private theorem mem_restrictTestFunctionClosure_of_chart (hp : p ≠ (∞ : ℝ≥0∞))
     {e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)} {φ : E → ℝ} {a b : ℝ}
     (hc : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzChartWith L e φ a b)
     {K : Set (WithLp 2 (ℝ × E))} (hK : IsCompact K) (hKC : K ⊆ e ⁻¹' normalCylinder a b)
     (k : ℕ) (w : Wkp mu Ω p k) (hw : ∀ᵐ x ∂mu.restrict Ω, x ∉ K → Wkp.value k w x = 0) :
-    w ∈ testClosure mu Ω p k := by
-  rw [mem_testClosure_iff]
+    w ∈ Wkp.restrictTestFunctionClosure mu (le_top : Ω ≤ ⊤) p k := by
+  rw [Wkp.mem_restrictTestFunctionClosure_iff]
   obtain ⟨δ, hδ, hδC⟩ := hK.exists_cthickening_subset_open
     ((isOpen_normalCylinder a b).preimage e.continuous) hKC
   let s : ℕ → ℝ := fun j => δ / 2 * (1 / ((j : ℝ) + 1))
@@ -230,7 +217,7 @@ theorem Wkp.denseRange_restrictL_ofTestFunctionₗ_top_of_isLipschitzDomainWith 
       Wkp.restrictL (le_top : Ω ≤ ⊤) k (Wkp.ofTestFunctionₗ (mu := mu) (p := p) k psi) := by
   classical
   intro u
-  rw [← mem_testClosure_iff]
+  rw [← Wkp.mem_restrictTestFunctionClosure_iff]
   obtain ⟨t, e, φ, a, b, ψ₀, ψ, hchart, ⟨hψ₀, -, hψ₀c, hψ₀Ω⟩, hψ, hsum⟩ :=
     hΩ.exists_contDiff_partitionOfUnity hb
   -- The interior piece `ψ₀ u` and the chart pieces `ψ x u`.
@@ -258,12 +245,13 @@ theorem Wkp.denseRange_restrictL_ofTestFunctionₗ_top_of_isLipschitzDomainWith 
     rw [← Finset.sum_mul, ← add_mul, Finset.sum_coe_sort t (fun x => ψ x y),
       hsum y (subset_closure hyΩ), one_mul]
   rw [hu]
-  refine Submodule.add_mem _ (mem_testClosure_of_subset hp hψ₀c hψ₀Ω k w₀ (hvanish hw₀))
+  refine Submodule.add_mem _ (mem_restrictTestFunctionClosure_of_subset hp hψ₀c hψ₀Ω k w₀
+      (hvanish hw₀))
     (Submodule.sum_mem _ fun x _ => ?_)
   obtain ⟨-, -, hc, _⟩ := hchart x x.2
   obtain ⟨-, -, hcpt, hts⟩ := hψ x x.2
-  refine mem_testClosure_of_chart hp hc hcpt (hts.trans (preimage_mono (normalCylinder_mono
-    ?_ le_rfl))) k (w x) (hvanish (hw x))
+  refine mem_restrictTestFunctionClosure_of_chart hp hc hcpt (hts.trans (preimage_mono
+    (normalCylinder_mono ?_ le_rfl))) k (w x) (hvanish (hw x))
   have : (0 : ℝ) ≤ 2 * L * b x := by
     have := hc.toIsLipschitzChart.radius_pos
     positivity
