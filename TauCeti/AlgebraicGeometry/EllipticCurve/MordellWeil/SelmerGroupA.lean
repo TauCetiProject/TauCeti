@@ -64,16 +64,10 @@ componentwise statement into one about `W.M` along the decomposition `modPowEqui
   the Selmer group of its factor.
 * `WeierstrassCurve.Affine.range_μ_le_selmerGroupA`: **Step 6**.
 
-## Roadmap
-
-`TauCetiRoadmap/EllipticCurves/README.md`, Layer 6 (Mordell–Weil), Step 6 of the weak
-Mordell–Weil theorem.
-
 ## Provenance
 
 Adapted, with the author's proofs, from Michael Stoll's `EllipticCurves` project
-(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, pinned by
-`TauCetiRoadmap/EllipticCurves/README.md` at `66889eada51a`),
+(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, at `66889eada51a`),
 `EllipticCurves/WeakMordellWeil.lean`, section `Selmer`. The source states the square
 classes as `Units.modPow`, a local abbreviation of its own; this repository carries a single
 spelling of square classes, `Mˣ ⧸ (powMonoidHom n).range`, so the statements are re-spelled to it

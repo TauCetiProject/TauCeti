@@ -95,26 +95,31 @@ theorem card_stabilizer_eq_card_inertia_mul_finSepDegree (p : Ideal R) [p.IsMaxi
 
 variable [IsDomain R] [IsDomain S] [Module.Finite R S] [Module.Flat R S]
 
+omit [Finite G] in
 /-- Over an imperfect residue field, the inertia group has order `e * fᵢ`, where `fᵢ` is the
 inseparable residue degree. -/
 theorem card_inertia_eq_ramificationIdxIn_mul_finInsepDegree (p : Ideal R) [p.IsMaximal]
     (P : Ideal S) [P.LiesOver p] [P.IsMaximal] :
     Nat.card (P.inertia G) =
       p.ramificationIdxIn S * Field.finInsepDegree (R ⧸ p) (S ⧸ P) := by
+  have := IsGaloisGroup.finite G R S
   have hcard := card_stabilizer_eq_card_inertia_mul_finSepDegree (G := G) p P
   rw [card_stabilizer_eq_ramificationIdxIn_mul_inertiaDegIn (G := G) p P,
     inertiaDegIn_eq_inertiaDeg p P G, inertiaDeg_eq_of_isMaximal p P,
     ← Field.finSepDegree_mul_finInsepDegree, mul_left_comm, mul_comm (Nat.card _)] at hcard
   exact (mul_left_cancel₀ (NeZero.ne _) hcard).symm
 
+omit [Finite G] in
 /-- Over an imperfect residue field, the inertia group has order `e * fᵢ`, stated using the
 ramification index of the upstairs ideal. -/
 theorem card_inertia_eq_ramificationIdx_mul_finInsepDegree (P : Ideal S) [P.IsMaximal] :
     Nat.card (P.inertia G) =
       P.ramificationIdx R * Field.finInsepDegree (R ⧸ P.under R) (S ⧸ P) := by
+  have := IsGaloisGroup.finite G R S
   rw [← ramificationIdxIn_eq_ramificationIdx (P.under R) P G]
   exact card_inertia_eq_ramificationIdxIn_mul_finInsepDegree (G := G) (P.under R) P
 
+omit [Finite G] in
 /-- If the residue extension is separable, the inertia group has order equal to the ramification
 index.  Unlike the standard perfect-residue-field form, this assumes separability only for the
 one residue extension in the statement. -/
@@ -125,11 +130,13 @@ theorem card_inertia_eq_ramificationIdxIn_of_isSeparable (p : Ideal R) [p.IsMaxi
   rw [card_inertia_eq_ramificationIdxIn_mul_finInsepDegree (G := G) p P,
     (isSeparable_iff_finInsepDegree_eq_one _ _).mp ‹_›, mul_one]
 
+omit [Finite G] in
 /-- If the residue extension is separable, the inertia group has order equal to the ramification
 index of the upstairs ideal. -/
 theorem card_inertia_eq_ramificationIdx_of_isSeparable (P : Ideal S) [P.IsMaximal]
     [Algebra.IsSeparable (R ⧸ P.under R) (S ⧸ P)] :
     Nat.card (P.inertia G) = P.ramificationIdx R := by
+  have := IsGaloisGroup.finite G R S
   rw [← ramificationIdxIn_eq_ramificationIdx (P.under R) P G]
   exact card_inertia_eq_ramificationIdxIn_of_isSeparable (G := G) (P.under R) P
 

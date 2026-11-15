@@ -78,7 +78,7 @@ theorem norm_sub_truncFinset_le (f : IsRestricted.subring (R := R) c) (s : Finse
     {ε : ℝ} (hε : 0 ≤ ε)
     (h : ∀ t ∉ s, ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) ≤ ε) :
     ‖f - polynomialToRestricted c (truncFinset R s (f : MvPowerSeries σ R))‖ ≤ ε := by
-  refine (norm_le_iff hε).mpr fun t ↦ ?_
+  refine norm_le_iff.mpr fun t ↦ ?_
   by_cases ht : t ∈ s
   · simp [coeff_truncFinset_of_mem _ ht, hε]
   · simpa [coeff_truncFinset_eq_zero _ ht] using h t ht

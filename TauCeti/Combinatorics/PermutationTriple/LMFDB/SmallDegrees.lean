@@ -215,7 +215,7 @@ theorem exists_isoClass_blockQuotient_eq {r : SmallDegreeRecord} (hr : r ∈ sma
   obtain ⟨B, hB, hBne, hmax, hcard, h0, h1⟩ := key
   have hB' := (r.triple.1.isBlockBool_eq_true_iff B).mp hB
   have hBne' : (B : Set (Fin r.degree)).Nonempty := Finset.coe_nonempty.mpr hBne
-  obtain ⟨e, he⟩ := exists_blockQuotient_eq_ofTwo_swap r.triple.2.isPretransitive hB' hBne'
+  obtain ⟨e, he⟩ := exists_blockQuotient_eq_ofTwo_swap r.triple.2.isPretransitive hB'
     (by rwa [Set.ncard_coe_finset]) (by rwa [← Finset.coe_image, Ne, Finset.coe_inj])
     (by rwa [← Finset.coe_image, Ne, Finset.coe_inj])
   -- The quotient is the triple of the record `2T1-2_2_1.1-a` itself.

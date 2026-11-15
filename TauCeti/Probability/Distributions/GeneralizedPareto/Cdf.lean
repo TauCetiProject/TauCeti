@@ -92,7 +92,7 @@ theorem cdf_generalizedParetoMeasure_eq (hs : 0 < s) (ξ x : ℝ) :
       else if 0 < 1 + ξ * x / s then 1 - (1 + ξ * x / s) ^ (-1 / ξ) else 1 := by
   split_ifs with hx hξ hw
   · exact cdf_generalizedParetoMeasure_of_nonpos hs ξ hx
-  · rw [hξ, generalizedParetoMeasure_zero hs, cdf_expMeasure_eq (inv_pos.mpr hs),
+  · rw [hξ, generalizedParetoMeasure_zero, cdf_expMeasure_eq (inv_pos.mpr hs),
       ite_eq_left (le_of_not_ge hx)]
     congr 2
     ring
@@ -119,7 +119,7 @@ theorem cdf_generalizedParetoMeasure_lt_one_iff (hs : 0 < s) (hx : 0 ≤ x) :
   · simp [cdf_generalizedParetoMeasure_of_nonpos hs ξ le_rfl, hs]
   by_cases hξ : ξ = 0
   · subst ξ
-    simp [generalizedParetoMeasure_zero hs, cdf_expMeasure_eq (inv_pos.mpr hs),
+    simp [generalizedParetoMeasure_zero, cdf_expMeasure_eq (inv_pos.mpr hs),
       hx.le, Real.exp_pos, hs]
   rw [cdf_generalizedParetoMeasure_eq hs]
   simp only [hx.not_ge, hξ, ↓reduceIte]

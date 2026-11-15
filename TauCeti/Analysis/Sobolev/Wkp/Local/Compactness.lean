@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Wkp.Restriction
 public import TauCeti.Analysis.Sobolev.GraphStep.LocalCompactness
-public import TauCeti.Analysis.Normed.Operator.Compact.Basic
+public import TauCeti.Analysis.Sobolev.Wkp.Compactness
 
 /-!
 # Local Rellich compactness at every Sobolev order
@@ -18,8 +18,9 @@ boundedness nor boundary regularity of the ambient open domain is required.
 
 The first-order theorem supplies compactness of the values. At every further graph step,
 finite-dimensional vector-valued local Rellich supplies compactness of the highest retained
-derivative field. The preceding Sobolev component is compact by induction. The native graph
-topology combines the two, giving compactness in the full lower-order Sobolev norm.
+derivative field. The preceding Sobolev component is compact by induction. The componentwise
+criterion `TauCeti.Wkp.isCompactOperator_of_isCompactOperator_lowerOrderL_iteratedGradientL`
+combines the two, giving compactness in the full lower-order Sobolev norm.
 
 ## References
 
@@ -40,42 +41,6 @@ open scoped ENNReal Topology
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega V : Opens E} {p : ENNReal} [Fact (1 ≤ p)]
-
-private theorem isCompactOperator_of_components {X : Type*}
-    [NormedAddCommGroup X] [NormedSpace ℝ X] (k : ℕ)
-    (T : X →L[ℝ] Wkp mu V p (k + 1))
-    (hlo : IsCompactOperator ((lowerOrderL k).comp T))
-    (hD : IsCompactOperator ((iteratedGradientL k).comp T)) : IsCompactOperator T := by
-  let J := (lowerOrderL (mu := mu) (Omega := V) (p := p) k).prod (iteratedGradientL k)
-  have hj : AntilipschitzWith 2 J := J.antilipschitz_of_bound fun u => by
-    have h := norm_le_norm_lowerOrder_add_norm_iteratedGradient k u
-    have hJu : J u = (lowerOrder k u, iteratedGradient k u) := by
-      dsimp only [J]
-      rw [ContinuousLinearMap.prod_apply, lowerOrderL_apply k u, iteratedGradientL_apply k u]
-    have h₁ : ‖lowerOrder k u‖ ≤ ‖J u‖ := by
-      rw [hJu, Prod.norm_def]
-      exact le_max_left _ _
-    have h₂ : ‖iteratedGradient k u‖ ≤ ‖J u‖ := by
-      rw [hJu, Prod.norm_def]
-      exact le_max_right _ _
-    norm_num only [NNReal.coe_ofNat]
-    linarith
-  have hJT : IsCompactOperator (J.comp T) := by
-    have heq : J.comp T =
-        (ContinuousLinearMap.inl ℝ _ _).comp ((lowerOrderL k).comp T) +
-          (ContinuousLinearMap.inr ℝ _ _).comp ((iteratedGradientL k).comp T) := by
-      apply ContinuousLinearMap.ext
-      intro u
-      simp [J]
-    rw [heq]
-    simpa only [FunLike.coe_add, ContinuousLinearMap.coe_comp] using
-      (hlo.clm_comp (ContinuousLinearMap.inl ℝ _ _)).add
-        (hD.clm_comp (ContinuousLinearMap.inr ℝ _ _))
-  apply (isCompactOperator_iff_totallyBounded_image_closedBall _ zero_lt_one).mpr
-  apply (totallyBounded_image_iff (hj.isUniformInducing J.uniformContinuous)).mp
-  simpa only [Set.image_image, ContinuousLinearMap.coe_coe,
-    ContinuousLinearMap.coe_comp, Function.comp_def] using
-    hJT.totallyBounded_image_closedBall 1
 
 /-- **Higher-order local Rellich compactness.** Restriction loses one derivative compactly
 on every relatively compact open subdomain for every `1 ≤ p ≤ ∞`. -/
@@ -102,7 +67,7 @@ theorem isCompactOperator_restrictL_lowerOrderL
       exact W1p.isCompactOperator_valueL_restrictL hVc hVO
   | succ k ih =>
       let T := (restrictL (mu := mu) (p := p) hV (k + 1)).comp (lowerOrderL (k + 1))
-      apply isCompactOperator_of_components k T
+      apply isCompactOperator_of_isCompactOperator_lowerOrderL_iteratedGradientL k T
       · have heq : (lowerOrderL k).comp T =
             ((restrictL hV k).comp (lowerOrderL k)).comp (lowerOrderL (k + 1)) := by
           apply ContinuousLinearMap.ext

@@ -17,6 +17,9 @@ time interval of radius `ρ²`. They are one on the smaller cylinder of spatial 
 `ρ / 2` and temporal radius `ρ² / 4`. One order-two parabolic Hölder norm bound works
 for every spatial and temporal center and every slab. Centering the time interval at
 the initial endpoint preserves the initial trace on the smaller spatial ball.
+Choosing such a cutoff for every point of a slab gives cutoffs centred at every point,
+one on the parabolic ball of radius `ρ / 2` about their centre and vanishing at parabolic
+distance at least `2 ρ`, as used to patch local estimates into global ones.
 
 The construction uses Mathlib's `ContDiffBump` on ordinary product space, with the
 time coordinate rescaled by `ρ`.
@@ -88,5 +91,37 @@ theorem exists_cutoff (hα : α ≤ 1) {ρ : ℝ} (hρ : 0 < ρ) :
   · refine ⟨fun p ↦ f (p.1 - z, p.2 - s), ?_, fun p ↦ hχ p⟩
     exact hf.comp ((contDiff_fst.sub contDiff_const).prodMk
       (contDiff_snd.sub contDiff_const))
+
+/-- **Cutoffs centred at every point of a slab.** For `α ≤ 1` and `ρ > 0` there is a constant
+`C` such that on every slab there are scalar maps `χ p`, one for each point `p`, with
+`‖χ p‖ ≤ C`, values in `[0, 1]`, equal to one on the parabolic ball of radius `ρ / 2` about `p`
+and vanishing at parabolic distance at least `2 ρ` from `p`. -/
+theorem exists_cutoff_family (hα : α ≤ 1) {ρ : ℝ} (hρ : 0 < ρ) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (a b : ℝ) (hab : a < b),
+      ∃ χ : slab (E := E) a b → ParabolicC2HolderSpace α E ℝ hab,
+        (∀ p, ‖χ p‖ ≤ C) ∧ (∀ p q, χ p q ∈ Icc 0 1) ∧
+        (∀ p, ∀ q ∈ ball p (ρ / 2), χ p q = 1) ∧
+        ∀ p q, 2 * ρ ≤ dist q p → χ p q = 0 := by
+  obtain ⟨C, hC, hχ⟩ := exists_cutoff (E := E) hα hρ
+  refine ⟨C, hC, fun a b hab ↦ ?_⟩
+  choose χ hnorm hmem hone hzero _ using fun p : slab (E := E) a b ↦
+    hχ (p : ParabolicSpaceTime E).space (p : ParabolicSpaceTime E).time a b hab
+  refine ⟨χ, hnorm, hmem, fun p q hq ↦ hone p q ?_ ?_, fun p q hq ↦ hzero p q ?_⟩
+  · -- Inside the parabolic ball of radius `ρ / 2`, the spatial distance is at most `ρ / 2` ...
+    exact (dist_space_le _ _).trans (mem_ball.1 hq).le
+  · -- ... and the time distance at most `ρ² / 4`.
+    have hs := (sqrt_abs_time_sub_le_dist (q : ParabolicSpaceTime E) p).trans (mem_ball.1 hq).le
+    have hτ := Real.sq_sqrt (abs_nonneg ((q : ParabolicSpaceTime E).time -
+      (p : ParabolicSpaceTime E).time))
+    nlinarith [Real.sqrt_nonneg |(q : ParabolicSpaceTime E).time -
+      (p : ParabolicSpaceTime E).time|]
+  · -- At parabolic distance at least `2 ρ`, either the spatial distance is at least `ρ` or the
+    -- time distance is at least `ρ²`.
+    rw [Subtype.dist_eq, dist_eq] at hq
+    by_contra! hlt
+    obtain ⟨hx, ht⟩ := hlt
+    have hs : √|(q : ParabolicSpaceTime E).time - (p : ParabolicSpaceTime E).time| < ρ :=
+      (Real.sqrt_lt' hρ).2 ht
+    linarith
 
 end TauCeti.ParabolicC2HolderSpace

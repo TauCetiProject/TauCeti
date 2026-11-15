@@ -70,6 +70,18 @@ theorem psumPart_isSymmetric [Fintype σ] {n : ℕ} (μ : n.Partition) :
 theorem isHomogeneous_psum [Fintype σ] (k : ℕ) : (psum σ R k).IsHomogeneous k :=
   IsHomogeneous.sum _ _ _ fun i _ => isHomogeneous_X_pow i k
 
+variable {R} in
+/-- **Stability of the power sums of positive degree**: setting the last of `d + 1` variables to
+zero turns `p_n` in `d + 1` variables into `p_n` in `d` variables. For `n = 0` this fails, as the
+zeroth power sum counts the variables.
+
+Not a `simp` lemma: `simp` rewrites `aeval` to `bind₁` by `MvPolynomial.aeval_eq_bind₁`, so this
+left-hand side is not in `simp`-normal form. -/
+theorem aeval_snoc_zero_psum (d : ℕ) {n : ℕ} (hn : n ≠ 0) :
+    aeval (Fin.snoc (X : Fin d → MvPolynomial (Fin d) R) 0) (psum (Fin (d + 1)) R n) =
+      psum (Fin d) R n := by
+  simp [psum, map_sum, Fin.sum_univ_castSucc, hn]
+
 /-- **A product of power sums is homogeneous**, of degree the number its partition partitions. -/
 theorem isHomogeneous_psumPart [Fintype σ] {n : ℕ} (μ : n.Partition) :
     (psumPart σ R μ).IsHomogeneous n := by

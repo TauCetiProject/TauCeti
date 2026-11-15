@@ -129,7 +129,7 @@ theorem exists_forall_inner_matrixCoeffLp_eq [IsAlgClosed 𝕜] (hunitary : IsUn
     (hf : f ∈ classFunctionLp 𝕜 𝕜 2 (haarProb G)) :
     ∃ c : 𝕜, ∀ v w : V, ⟪matrixCoeffLp π hπ v w, f⟫_𝕜 = c * ⟪w, v⟫_𝕜 := by
   classical
-  have _ : CompleteSpace V := FiniteDimensional.complete 𝕜 V
+  have _ : CompleteSpace V := FiniteDimensional.completeSpace 𝕜 V
   set e := stdOrthonormalBasis 𝕜 V
   -- The endomorphism representing the pairing `⟪(π)_{v,w}, f⟫` in its second vector.
   set T : V →ₗ[𝕜] V :=

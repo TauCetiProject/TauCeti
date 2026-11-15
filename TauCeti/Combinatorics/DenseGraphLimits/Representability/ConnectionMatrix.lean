@@ -67,9 +67,6 @@ a connection matrix on `ι` is a submatrix of one on `Fin (Fintype.card ι)` alo
   and 6.
 -/
 
--- Provenance: the names and signatures of the declarations below follow
--- `TauCetiRoadmap/DenseGraphLimits/Suggested.lean`.
-
 public section
 
 namespace TauCeti.DenseGraphLimits

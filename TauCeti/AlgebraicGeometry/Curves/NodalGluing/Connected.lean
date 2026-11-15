@@ -92,8 +92,8 @@ theorem connectedComponent_mk_eq_of_eqvGen {i j : ι}
       obtain ⟨f, rfl, rfl⟩ := hab
       exact iff_of_true ⟨d.fstPt f⟩ ⟨d.sndPt f⟩
     | refl a => rfl
-    | symm a b hab ih => exact ih.symm
-    | trans a b c hab hbc ih₁ ih₂ => exact ih₁.trans ih₂
+    | symm a b _ ih => exact ih.symm
+    | trans a b c _ _ ih₁ ih₂ => exact ih₁.trans ih₂
   induction h with
   | rel i j h =>
     obtain ⟨f, rfl, rfl⟩ := h
@@ -107,8 +107,8 @@ theorem connectedComponent_mk_eq_of_eqvGen {i j : ι}
         rw [sndPoint_def]
         exact connectedComponent_mk_eq d _ _ y
   | refl i => exact connectedComponent_mk_eq d i x y
-  | symm i j h ih => exact (ih y x).symm
-  | trans i j k h₁ h₂ ih₁ ih₂ =>
+  | symm i j _ ih => exact (ih y x).symm
+  | trans i j k h₁ _ ih₁ ih₂ =>
     have : Nonempty (X j) := (hn h₁).mp ⟨x⟩
     exact (ih₁ x (Classical.arbitrary (X j))).trans (ih₂ (Classical.arbitrary (X j)) y)
 

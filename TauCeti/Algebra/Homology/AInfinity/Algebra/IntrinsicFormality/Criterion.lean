@@ -141,7 +141,7 @@ private theorem exists_killingStage_succ (hℋ : ℋ.IsMinimal) (hm : ∀ n, 3 �
   refine ⟨⟨s.alg.gauge (-ψ) hφ hφ₁, by rw [gauge_grading, s.grading_eq],
     s.isMinimal.isMinimal_gauge hφ hφ₁,
     fun z hz ↦ s.isMinimal.taylor_gauge_apply_eq_of_hochschildDifferential s.grading_eq hφ hφ₁
-      (by omega) s.taylor_eq hφe hδ hz,
+      s.taylor_eq hφe hδ hz,
     s.hom.comp (s.alg.gaugeHom (-ψ) hφ hφ₁), ?_⟩, fun z hz ↦ ?_⟩
   · rw [AInfinityHom.linearPart_comp, linearPart_gaugeHom, s.linearPart_hom, LinearMap.id_comp]
   -- The gauge morphism is the identity on the words of length at most `k + 1`.

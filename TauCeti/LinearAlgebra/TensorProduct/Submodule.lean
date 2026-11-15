@@ -27,7 +27,8 @@ For submodules `p` and `q`, every element of `(p ⊔ q) ⊗[R] M` is the sum of 
 Multiplication of tensor products of submodules is compatible with multiplication in each
 factor (`Submodule.map₂_tmul_mul_le`). If a scalar extension is finitely generated, some finitely
 generated submodule of the original module already spans that scalar extension
-(`Submodule.exists_fg_baseChange_eq_top`).
+(`Submodule.exists_fg_baseChange_eq_top`). A linear map of scalar factors carries one scalar
+extension of a submodule into another (`Submodule.map_mem_baseChange`).
 -/
 
 public section
@@ -55,7 +56,7 @@ theorem rTensor_add_lTensor_rTensor_congr
           (LinearMap.rTensor A τ (TensorProduct.mapIncl P Q w)) := by
   induction w using TensorProduct.inductionOn with
   | tmul u v =>
-      simp only [TensorProduct.mapIncl, TensorProduct.map_tmul, Submodule.coe_subtype,
+      simp only [TensorProduct.mapIncl, TensorProduct.map_tmul, coe_subtype,
         LinearMap.rTensor_tmul, LinearMap.lTensor_tmul]
       rw [hP _ u.2, hQ _ v.2]
   | add u v hu hv =>
@@ -81,9 +82,27 @@ theorem baseChange_map (f : M →ₗ[R] N) (p : Submodule R M) :
 @[simp]
 theorem _root_.LinearMap.baseChange_range (f : M →ₗ[R] N) :
     (LinearMap.range f).baseChange A = LinearMap.range (f.baseChange A) := by
-  rw [← Submodule.map_top, baseChange_map, baseChange_top, Submodule.map_top]
+  rw [← map_top, baseChange_map, baseChange_top, map_top]
 
 end Map
+
+section ScalarMap
+
+variable {R M A B : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+  [Semiring A] [Semiring B] [Algebra R A] [Algebra R B]
+
+/-- A linear map of scalar factors carries the scalar extension of a submodule along `A` into its
+scalar extension along `B`. In particular, a scalar extension along `A` is stable under every
+linear endomorphism of `A`. -/
+theorem map_mem_baseChange (p : Submodule R M) (f : A →ₗ[R] B) {x : A ⊗[R] M}
+    (hx : x ∈ p.baseChange A) : TensorProduct.map f LinearMap.id x ∈ p.baseChange B := by
+  obtain ⟨y, rfl⟩ := hx
+  refine ⟨TensorProduct.map f LinearMap.id y, ?_⟩
+  induction y using TensorProduct.inductionOn with
+  | tmul a m => simp
+  | add y z hy hz => simp only [map_add, hy, hz]
+
+end ScalarMap
 
 section Finiteness
 
@@ -102,7 +121,7 @@ theorem exists_fg_baseChange_eq_top [Module.Finite A (A ⊗[R] M)] :
   rw [← hs, span_le]
   intro x hx
   obtain ⟨y, hy⟩ := hPs hx
-  rw [Submodule.baseChange, SetLike.mem_coe, LinearMap.mem_range]
+  rw [baseChange, SetLike.mem_coe, LinearMap.mem_range]
   refine ⟨y, ?_⟩
   rw [LinearMap.baseChange_eq_lTensor]
   exact hy
@@ -130,7 +149,7 @@ theorem exists_eq_rTensor_inclusion_add (p q : Submodule R N) (t : ↥(p ⊔ q) 
 
 /-- The image of `M ⊗[R] (I • J)` in `M ⊗[R] J` is contained in `I • (M ⊗[R] J)`. -/
 theorem _root_.LinearMap.range_lTensor_inclusion_smul_le (I : Ideal R) (J : Submodule R N) :
-    LinearMap.range ((inclusion (Submodule.smul_le_right : I • J ≤ J)).lTensor M) ≤
+    LinearMap.range ((inclusion (smul_le_right : I • J ≤ J)).lTensor M) ≤
       (I • ⊤ : Submodule R (M ⊗[R] J)) := by
   rintro _ ⟨u, rfl⟩
   induction u using TensorProduct.inductionOn with
@@ -141,7 +160,7 @@ theorem _root_.LinearMap.range_lTensor_inclusion_smul_le (I : Ideal R) (J : Subm
       rw [map_smul'', map_top, range_subtype]
       exact y.2
     obtain ⟨z, hz, hzy⟩ := hy
-    have hz' : inclusion Submodule.smul_le_right y = z := Subtype.ext hzy.symm
+    have hz' : inclusion smul_le_right y = z := Subtype.ext hzy.symm
     rw [LinearMap.lTensor_tmul, hz']
     have := mem_map_of_mem (f := TensorProduct.mk R M J m) hz
     rw [map_smul''] at this
@@ -149,7 +168,7 @@ theorem _root_.LinearMap.range_lTensor_inclusion_smul_le (I : Ideal R) (J : Subm
 
 /-- The image of `(I • J) ⊗[R] M` in `J ⊗[R] M` is contained in `I • (J ⊗[R] M)`. -/
 theorem _root_.LinearMap.range_rTensor_inclusion_smul_le (I : Ideal R) (J : Submodule R N) :
-    LinearMap.range ((inclusion (Submodule.smul_le_right : I • J ≤ J)).rTensor M) ≤
+    LinearMap.range ((inclusion (smul_le_right : I • J ≤ J)).rTensor M) ≤
       (I • ⊤ : Submodule R (J ⊗[R] M)) := by
   rintro _ ⟨u, rfl⟩
   -- Transport the left-hand statement along the symmetry of the tensor product.

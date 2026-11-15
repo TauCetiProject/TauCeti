@@ -17,10 +17,6 @@ made under the flatness hypothesis on the coalgebra: flatness makes
 `N ⊗ C → M ⊗ C` injective for the subtype map of a subcomodule `N ≤ M`, so the ambient
 coaction has a unique lift to `N ⊗ C`.
 
-This is Layer 1 infrastructure for the reductive-groups roadmap target "Comodules over a
-coalgebra/Hopf algebra": finite-dimensional subcomodules and categorical kernels need
-subcomodules to be usable as comodules in their own right.
-
 ## Main declarations
 
 * `TauCeti.Subcomodule.inducedCoact`: the coaction on the subtype of a subcomodule.
@@ -136,6 +132,12 @@ theorem subtype_toLinearMap : (Subcomodule.subtype N).toLinearMap = SMulMemClass
 @[simp]
 theorem subtype_apply (n : N) : Subcomodule.subtype N n = n :=
   (rfl)
+
+/-- The range of the subcomodule inclusion is its underlying submodule. -/
+theorem range_subtype_toLinearMap : LinearMap.range N.subtype.toLinearMap = N.toSubmodule := by
+  rw [subtype_toLinearMap]
+  -- The underlying submodule has the same carrier and linear inclusion.
+  exact Submodule.range_subtype N.toSubmodule
 
 end Subcomodule
 

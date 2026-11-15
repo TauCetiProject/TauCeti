@@ -51,8 +51,7 @@ public section
 
 namespace TauCeti.Huber
 
-variable {K : Type*} [NormedField K] [IsUltrametricDist K] [NonarchimedeanRing K]
-  [CompleteSpace K]
+variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
 
 /-- **The completed one-variable Tate algebra over a complete nonarchimedean field is a principal
 ideal ring.** This is transported from the restricted univariate series ring, where Weierstrass
@@ -60,7 +59,6 @@ division shows that every ideal has a generator. -/
 theorem isPrincipalIdealRing_restrictedMvPowerSeriesCompletion_one :
     IsPrincipalIdealRing (restrictedMvPowerSeriesCompletion 1 K) := by
   have := TauCeti.PowerSeries.isPrincipalIdealRing_isRestricted_subring (K := K) (c := 1)
-    zero_lt_one
   exact IsPrincipalIdealRing.of_surjective _
     (restrictedMvPowerSeriesCompletionOneEquiv (R := K)).symm.surjective
 

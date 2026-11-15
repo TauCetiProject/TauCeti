@@ -81,8 +81,6 @@ torus maps lies in the base change of the integral toral carrier; equality is no
 
 This is the base-change compatibility of the explicit Chevalley--Demazure construction; see
 R. W. Carter, *Simple Groups of Lie Type*, §4.4, and B. Conrad, *Reductive Group Schemes*, §1.
-It advances Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`. The resulting carrier over the
-prime field and its algebraic closure is consumed by milestone L0 of the CFSGStatement roadmap.
 
 The formal inputs are Tau Ceti's own coordinate base-change isomorphisms
 `GeneralLinear.coordinateHopfAlgebraBaseChangeIso`,
@@ -643,7 +641,7 @@ theorem kostantToralBaseChangePresentationIsoOfEq_hom_comp_weightTorusBaseChange
             (kostantWeightTorusToralCoordinateMapOfEq e h ρ M hM hnil b wt hJ) ≫
         (_root_.CommHopfAlgCat.ofHom
           (BialgHomClass.toBialgHom
-            (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv ℤ A
+            (MonoidAlgebra.scalarTensorBialgEquiv ℤ A
               (G := SplitTorus.characterGroup κ)))) =
       kostantWeightTorusToralBaseChangePresentationCoordinateMap e h ρ M hM hnil b wt A := by
   let _ : Epi (CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A n)
@@ -699,10 +697,10 @@ theorem pointsMulEquiv_kostantWeightTorusToralBaseChangeCoordinateMap [Fintype �
     congr 1
     -- The diagonalizable coordinate ring unfolds to a monoid algebra, exposing its basis
     -- character to the public scalar-tensor formula.
-    change (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv ℤ A)
+    change (MonoidAlgebra.scalarTensorBialgEquiv ℤ A)
       (1 ⊗ₜ[ℤ] MonoidAlgebra.single
         (Multiplicative.ofAdd (Finsupp.single j 1)) 1) = _
-    rw [TauCeti.MonoidAlgebra.scalarTensorBialgEquiv_tmul]
+    rw [MonoidAlgebra.scalarTensorBialgEquiv_tmul]
     simp
   rw [← hparam,
     GeneralLinear.pointsMulEquiv_quotientPointsHom_mapPointsFunctor_of_comp_baseChangeMap

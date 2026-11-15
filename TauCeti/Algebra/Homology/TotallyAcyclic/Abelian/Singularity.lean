@@ -46,6 +46,12 @@ vanishing of `δₘ ≫ f` descend to `δ₁ ≫ f = 0`, which says that `f` fac
 * `CategoryTheory.GorensteinProjective.fullyFaithfulToSingularityCategory`: **Chen's theorem**,
   the functor from the stable category of Gorenstein-projective objects to the singularity
   category is fully faithful.
+* `TauCeti.SingularityCategory.exists_iso_Q_obj_singleFunctor_of_isGorensteinProjective`: a
+  Gorenstein-projective object placed in any degree is isomorphic in the singularity category to a
+  cycle of its complete resolution placed in degree zero
+  (`TauCeti.SingularityCategory.nonempty_iso_Q_obj_singleFunctor_cycles`), so
+  `CategoryTheory.GorensteinProjective.mem_essImage_toSingularityCategory`: it lies in the essential
+  image of Chen's functor.
 
 ## References
 
@@ -328,6 +334,25 @@ theorem map_eq_zero_iff_of_isGorensteinProjective {G Y : C} (hG : isGorensteinPr
   · rw [hpq, Functor.map_comp, Functor.map_comp,
       (isZero_Q_obj_singleFunctor_obj hP).eq_of_src ((Q C).map _) 0, comp_zero]
 
+section Shift
+
+open _root_.DerivedCategory
+
+/-- **Gorenstein-projective objects in every degree**: in the singularity category, a
+Gorenstein-projective object placed in any degree is isomorphic to a Gorenstein-projective object
+placed in degree zero, namely a cycle of its complete resolution. -/
+theorem exists_iso_Q_obj_singleFunctor_of_isGorensteinProjective {G : C}
+    (hG : isGorensteinProjective C G) (n : ℤ) :
+    ∃ G' : C, isGorensteinProjective C G' ∧
+      Nonempty ((Q C).obj ((DerivedCategory.Bounded.singleFunctor C n).obj G) ≅
+        (Q C).obj ((DerivedCategory.Bounded.singleFunctor C 0).obj G')) := by
+  obtain ⟨P, hP, ⟨e⟩⟩ := (isGorensteinProjective_iff G).1 hG
+  obtain ⟨e'⟩ := nonempty_iso_Q_obj_singleFunctor_cycles hP.projective hP.acyclic n 0
+  exact ⟨P.cycles (0 - n), hP.isGorensteinProjective_cycles _,
+    ⟨(Q C).mapIso ((DerivedCategory.Bounded.singleFunctor C n).mapIso e.symm) ≪≫ e'⟩⟩
+
+end Shift
+
 end TauCeti.SingularityCategory
 
 namespace CategoryTheory.GorensteinProjective
@@ -443,5 +468,15 @@ instance : (toSingularityCategory C).Faithful where
 abelian category to its singularity category is fully faithful. -/
 noncomputable def fullyFaithfulToSingularityCategory : (toSingularityCategory C).FullyFaithful :=
   .ofFullyFaithful _
+
+variable {C} in
+/-- A Gorenstein-projective object placed in any degree lies in the essential image of Chen's
+functor (`TauCeti.SingularityCategory.exists_iso_Q_obj_singleFunctor_of_isGorensteinProjective`). -/
+theorem mem_essImage_toSingularityCategory {G : C} (hG : isGorensteinProjective C G) (n : ℤ) :
+    (toSingularityCategory C).essImage ((TauCeti.SingularityCategory.Q C).obj
+      ((DerivedCategory.Bounded.singleFunctor C n).obj G)) := by
+  obtain ⟨G', hG', ⟨e⟩⟩ :=
+    TauCeti.SingularityCategory.exists_iso_Q_obj_singleFunctor_of_isGorensteinProjective hG n
+  exact ⟨(exactStructure C).projectiveStableFunctor.obj ⟨G', hG'⟩, ⟨e.symm⟩⟩
 
 end CategoryTheory.GorensteinProjective

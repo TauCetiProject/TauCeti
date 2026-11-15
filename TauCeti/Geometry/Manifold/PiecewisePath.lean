@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.ContMDiff.Constructions
+public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
+public import TauCeti.Geometry.Manifold.ContMDiff.Prod
 
 /-!
 # Piecewise smooth paths in a manifold
@@ -34,6 +36,11 @@ bundled paths carrying irrelevant partition data.
   `TauCeti.Manifold.IsPiecewiseContMDiffOn.mono`: appending a `C^n` piece and restricting to a
   nondegenerate subinterval preserve piecewise `C^n` regularity.
 * `TauCeti.Manifold.IsPiecewiseContMDiffOn.trans`: glue adjacent piecewise restrictions.
+* `TauCeti.Manifold.IsPiecewiseContMDiffOn.congr`: piecewise `C^n` regularity on `[a, b]` only
+  depends on the values of the path on `[a, b]`.
+* `TauCeti.Manifold.eventually_isPiecewiseContMDiffOn_of_two_pieces`: the nearby curves of a
+  family of curves broken at one parameter, whose two pieces are jointly `C^k` along the central
+  curve for a natural number `k`, are piecewise `C^k`.
 * `TauCeti.Manifold.IsPiecewiseContMDiffOn.prodMk`: pair curves with possibly different
   witnessing partitions, obtaining a common smooth partition for both.
 
@@ -52,8 +59,8 @@ formalization, revision `24f32e4d600878bfaac6bc2f2f9324175571c321`, as used in
 
 public section
 
-open Set
-open scoped ContDiff Manifold
+open Filter Set
+open scoped ContDiff Manifold Topology
 
 noncomputable section
 
@@ -185,6 +192,41 @@ theorem IsPiecewiseContMDiffOn.mono (h : IsPiecewiseContMDiffOn I n γ a b) {s t
       · exact ih₂ s t hvs hst htw
       · exact (ih₁ s v hus hsv le_rfl).trans (ih₂ v t le_rfl hvt htw))
     s t has hst htb
+
+/-- Piecewise `C^n` regularity on `[a, b]` only depends on the values of the path on `[a, b]`. -/
+theorem IsPiecewiseContMDiffOn.congr {δ : ℝ → M} (h : IsPiecewiseContMDiffOn I n γ a b)
+    (he : EqOn δ γ (Icc a b)) : IsPiecewiseContMDiffOn I n δ a b :=
+  h.induction_on (P := fun u v ↦ EqOn δ γ (Icc u v) → IsPiecewiseContMDiffOn I n δ u v)
+    (fun _ _ huv hγ he ↦ .of_contMDiffOn huv (hγ.congr fun _ ht ↦ he ht))
+    (fun _ _ _ huv hvw ih₁ ih₂ he ↦ (ih₁ (he.mono (Icc_subset_Icc le_rfl hvw.le))).trans
+      (ih₂ (he.mono (Icc_subset_Icc huv.le le_rfl)))) he
+
+/-- Let `G₁` and `G₂` be two-parameter families of curves which are jointly `C^k`, for a natural
+number `k`, along their central curves on `[a, c]` and on `[c, b]` respectively, where
+`a < c < b`. If for parameters `q` near `0` the curve `F q` agrees with `G₁ q` on `[a, c]` and
+with `G₂ q` on `[c, b]`, then `F q` is piecewise `C^k` on `[a, b]` for `q` near `0`. -/
+theorem eventually_isPiecewiseContMDiffOn_of_two_pieces {k : ℕ} [IsManifold I k M]
+    {F G₁ G₂ : ℝ → ℝ → M} {c : ℝ} (hac : a < c) (hcb : c < b)
+    (hG₁ : ∀ t ∈ uIcc a c,
+      ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I k (fun z : ℝ × ℝ ↦ G₁ z.1 z.2) (0, t))
+    (hG₂ : ∀ t ∈ uIcc c b,
+      ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I k (fun z : ℝ × ℝ ↦ G₂ z.1 z.2) (0, t))
+    (hF : ∀ᶠ q in 𝓝 0, EqOn (F q) (G₁ q) (uIcc a c) ∧ EqOn (F q) (G₂ q) (uIcc c b)) :
+    ∀ᶠ q in 𝓝 0, IsPiecewiseContMDiffOn I k (F q) a b := by
+  obtain ⟨U₁, V₁, hU₁, -, h0U₁, hsub₁, hUV₁⟩ :=
+    TauCeti.exists_isOpen_prod_contMDiffOn isCompact_uIcc (by simp) hG₁
+  obtain ⟨U₂, V₂, hU₂, -, h0U₂, hsub₂, hUV₂⟩ :=
+    TauCeti.exists_isOpen_prod_contMDiffOn isCompact_uIcc (by simp) hG₂
+  filter_upwards [hU₁.mem_nhds h0U₁, hU₂.mem_nhds h0U₂, hF] with q hq₁ hq₂ hqF
+  have h₁ : ContMDiffOn 𝓘(ℝ, ℝ) I k (G₁ q) (Icc a c) :=
+    hUV₁.comp (contDiff_prodMk_right q).contMDiff.contMDiffOn
+      fun t ht ↦ ⟨hq₁, hsub₁ (by rwa [uIcc_of_le hac.le])⟩
+  have h₂ : ContMDiffOn 𝓘(ℝ, ℝ) I k (G₂ q) (Icc c b) :=
+    hUV₂.comp (contDiff_prodMk_right q).contMDiff.contMDiffOn
+      fun t ht ↦ ⟨hq₂, hsub₂ (by rwa [uIcc_of_le hcb.le])⟩
+  rw [uIcc_of_le hac.le, uIcc_of_le hcb.le] at hqF
+  exact ((IsPiecewiseContMDiffOn.of_contMDiffOn hac h₁).congr hqF.1).trans
+    ((IsPiecewiseContMDiffOn.of_contMDiffOn hcb h₂).congr hqF.2)
 
 variable
   {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']

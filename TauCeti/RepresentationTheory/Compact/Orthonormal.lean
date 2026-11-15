@@ -76,7 +76,7 @@ variable {𝕜 G ι : Type*} {V : ι → Type*} [RCLike 𝕜] [IsAlgClosed 𝕜]
   [∀ i, FiniteDimensional 𝕜 (V i)]
 
 local instance instCompleteSpaceOrthonormalSystem (i : ι) : CompleteSpace (V i) :=
-  FiniteDimensional.complete 𝕜 (V i)
+  FiniteDimensional.completeSpace 𝕜 (V i)
 
 variable (π : ∀ i, ContRepresentation 𝕜 G (V i)) (hπ : ∀ i, Continuous (π i))
 
@@ -118,6 +118,7 @@ theorem orthonormal_matrixCoeffLp {n : ι → ℕ} (hunitary : ∀ i, IsUnitary 
   · rw [(π i).schur_orthogonality (hπ i) (π j) (hπ j) (hunitary j) (hirr i) (hirr j) (hne hij)]
     simp [Sigma.ext_iff, hij]
 
+omit [∀ i, NormedSpace ℝ (V i)] [∀ i, SMulCommClass ℝ 𝕜 (V i)] in
 /-- **The irreducible characters are orthonormal.** The characters of a family of pairwise
 inequivalent finite-dimensional irreducible unitary representations of a compact group form an
 orthonormal system in `L²(G)`.

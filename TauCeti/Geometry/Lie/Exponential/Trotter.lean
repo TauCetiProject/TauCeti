@@ -13,8 +13,7 @@ public import TauCeti.Geometry.Lie.Interior
 
 This file proves a tangent-to-identity power limit for finite-dimensional real Lie groups and
 applies it to the product of two exponential curves. The resulting Trotter formula supplies the
-addition-closure input for the subgroup Lie algebra in Deliverable A, Layer 2 of the Lie-groups
-roadmap.
+addition-closure input for the Lie subalgebra of a closed subgroup.
 
 ## Main results
 
@@ -31,8 +30,6 @@ roadmap.
 
 * [H. Liu, *Notes for Lie Groups & Representations*](https://member.ipmu.jp/henry.liu/notes/f16-lie-groups.pdf),
   notes from Andrei Okounkov's Fall 2016 course, Proposition 2.4.3.
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 2, "The Lie subalgebra of a subgroup".
 -/
 
 public section
@@ -45,7 +42,6 @@ noncomputable section
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
-  [IsManifold I 1 G]
 
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 attribute [local instance] ContMDiffMul.boundarylessManifold
@@ -67,7 +63,7 @@ theorem tendsto_pow_div_of_hasDerivAt_mulInvariantLog [FiniteDimensional ℝ E]
   let _ : T2Space G := I.t2Space_of_lieGroup ∞
   dsimp only
   intro hf hlog t
-  let _ : CompleteSpace E := FiniteDimensional.complete ℝ E
+  let _ : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   have hseq : Tendsto (fun n : ℕ => n • (show E from mulInvariantLog (I := I) (G := G)
       (f (t / n)))) atTop (nhds (t • (show E from X))) :=
     (hlog.tendsto_nsmul_sub_add_div t).congr fun n => by

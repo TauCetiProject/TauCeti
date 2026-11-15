@@ -134,4 +134,12 @@ theorem Collapsible.contractibleSpace (h : Collapsible K)
     exact Realization.eq_vertex_of_support_eq A (r x).1 (mem_point.mp (r x).2)
   exact (contractible_iff_id_nullhomotopic X).mpr ⟨p, hend ▸ hR.homotopic⟩
 
+/-- The realization of a collapsible abstract simplicial complex is contractible. -/
+theorem Collapsible.contractibleSpace_realization
+    (h : Collapsible A.toPreAbstractSimplicialComplex) : ContractibleSpace (Realization A) := by
+  have huniv : {x : Realization A | x.1.support ∈ A.toPreAbstractSimplicialComplex} = univ :=
+    eq_univ_of_forall fun x => support_mem _ x
+  have := h.contractibleSpace le_rfl
+  exact ((Homeomorph.setCongr huniv).trans (Homeomorph.Set.univ _)).symm.contractibleSpace
+
 end PreAbstractSimplicialComplex

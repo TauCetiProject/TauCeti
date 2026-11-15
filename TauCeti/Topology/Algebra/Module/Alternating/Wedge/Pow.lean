@@ -37,6 +37,7 @@ Darboux basis this is the classical normalization of the symplectic volume form 
 
 * `ContinuousAlternatingMap.wedgePow_compContinuousLinearMap`: wedge powers commute with
   pullback along continuous linear maps.
+* `ContinuousAlternatingMap.wedgePow_smul`: `(c φ) ^ m = c ^ m φ ^ m`.
 * `ContinuousAlternatingMap.wedgePow_succ_apply_vecCons`: the power rule for inserting a vector
   into a wedge power of a two-form.
 * `ContinuousAlternatingMap.curryLeftTopological_wedgePow_succ_eq_zero`: a vector in the kernel
@@ -91,6 +92,16 @@ theorem wedgePow_compContinuousLinearMap {E' : Type*} [AddCommGroup E'] [Module 
   induction m with
   | zero => ext v; rfl
   | succ m ih => rw [wedgePow_succ, wedgePow_succ, pairedWedge_compContinuousLinearMap, ih]
+
+/-- Scalars come out of a wedge power raised to the number of factors: `(c φ) ^ m = c ^ m φ ^ m`. -/
+@[simp]
+theorem wedgePow_smul (c : ℝ) (φ : E [⋀^Fin k]→L[ℝ] ℝ) (m : ℕ) :
+    wedgePow (c • φ) m = (c ^ m) • wedgePow φ m := by
+  induction m with
+  | zero => rw [pow_zero, one_smul]; rfl
+  | succ m ih =>
+    rw [wedgePow_succ, wedgePow_succ, ih, pairedWedge_smul_left, pairedWedge_smul_right, smul_smul,
+      pow_succ]
 
 /-! ### The power rule for two-forms -/
 

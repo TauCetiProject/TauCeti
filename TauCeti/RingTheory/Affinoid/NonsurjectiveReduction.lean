@@ -239,7 +239,7 @@ theorem ker_restrictedSquareSubst (hϖ0 : ϖ ≠ 0) :
     refine (IsAffinoidAlgebra.isPowerBounded_iff_supSeminorm_le_one (K := K)
       (A := Tate (Fin 2) ⧸ I) hB).mpr ?_
     have h := isAffinoidAlgebra_tate.supSeminorm_map_le hB π ⟨X 0, isRestricted_X _ 0⟩
-    rw [← hx, hB.supSeminorm_pow x two_ne_zero, supSeminorm_eq_norm] at h
+    rw [← hx, supSeminorm_pow x two_ne_zero, supSeminorm_eq_norm] at h
     exact (pow_le_one_iff_of_nonneg (supSeminorm_nonneg x) two_ne_zero).mp (h.trans (by simp))
   let ψ := IsAffinoidAlgebra.restrictedLift (K := K) (B := Tate (Fin 2) ⧸ I)
     isAffinoidAlgebra_self hB

@@ -67,7 +67,7 @@ theorem card_aut_candidateGenusField_over_base_eq_card_narrowElementaryTwoQuotie
         (NumberField.NarrowClassGroup.ElementaryTwoQuotient (candidateGenusFieldBase hd)) := by
   have : NumberField (candidateGenusFieldBase hd) :=
     NumberField.of_intermediateField (candidateGenusFieldBase hd)
-  rw [card_aut_candidateGenusField_over_base hd hnsq,
+  rw [card_aut_candidateGenusField_over_base hd,
     NumberField.NarrowClassGroup.card_elementaryTwoQuotient_eq_two_pow_twoRank,
     card_genusPrimeDiscriminants_eq_ncard_ramifiedPrimes
       (minpoly_candidateGenusFieldBaseGen hd hnsq) (adjoin_candidateGenusFieldBaseGen_eq_top hd) hd,

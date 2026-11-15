@@ -145,10 +145,9 @@ theorem mem_riemannRochSpace_of_pow_mem {n : ℕ} {D E : Divisor k F}
   have hord := (mem_riemannRochSpace_iff_neg_le_ord (pow_ne_zero n h0)).mp hf P
   rw [P.ord_pow] at hord
   have := hDE P
-  rcases Nat.eq_zero_or_pos n with rfl | hn
+  rcases Nat.eq_zero_or_pos n with rfl | _
   · simp at hord this
     omega
-  have hn' : (0 : ℤ) < n := by exact_mod_cast hn
   nlinarith
 
 /-- Membership in `L(nP)` for a single place `P`: a nonzero function lies in `L(nP)` exactly when
@@ -495,12 +494,7 @@ private lemma finiteDimensional_and_finrank_le_of_le (hF : IsFunctionField k F) 
       exact hne (WeilDivisor.ext fun P ↦ le_antisymm (WeilDivisor.coeff_le_coeff hDE P) (hcon P))
     have hPdeg : 1 ≤ (P.degree : ℤ) := by
       exact_mod_cast P.one_le_degree_of_isFunctionField hF
-    have hstep : D + WeilDivisor.ofPoint P ≤ E := WeilDivisor.le_iff.mpr fun Q ↦ by
-      rcases eq_or_ne Q P with rfl | hQ
-      · rw [WeilDivisor.coeff_add, WeilDivisor.coeff_ofPoint_self]
-        omega
-      · rw [WeilDivisor.coeff_add, WeilDivisor.coeff_ofPoint_of_ne hQ, add_zero]
-        exact WeilDivisor.coeff_le_coeff hDE Q
+    have hstep : D + WeilDivisor.ofPoint P ≤ E := WeilDivisor.add_ofPoint_le_of_coeff_lt hDE hP
     have hdeg : Divisor.degree (D + WeilDivisor.ofPoint P) =
         Divisor.degree D + (P.degree : ℤ) := by
       rw [Divisor.degree_add, Divisor.degree_ofPoint]
@@ -685,5 +679,45 @@ theorem dim_add_le_one_add_dim_add_of_finrank_ker_eq_one (hF : IsFunctionField k
   rw [hker, Nat.add_comm] at hrank
   rw [← Divisor.dim_def B] at hrank
   omega
+
+namespace Place
+
+/-- If the Riemann--Roch dimensions of `(n - 1)P` and `nP` differ, there is a nonzero function
+with order exactly `-n` at `P` that is regular at every other place. -/
+theorem exists_ord_eq_neg_and_forall_ne_ord_nonneg_of_dim_lt
+    (P : Place k F) {n : ℕ}
+    (hdimlt : Divisor.dim (((n - 1 : ℕ) : ℤ) • WeilDivisor.ofPoint P) <
+      Divisor.dim ((n : ℤ) • WeilDivisor.ofPoint P)) :
+    ∃ x : F, x ≠ 0 ∧ P.ord x = -(n : ℤ) ∧ ∀ Q : Place k F, Q ≠ P → 0 ≤ Q.ord x := by
+  -- The strict inequality already forces `n` to be positive: for `n = 0` the two divisors agree.
+  have hnpos : 0 < n := by
+    rcases Nat.eq_zero_or_pos n with rfl | h
+    · simp at hdimlt
+    · exact h
+  let D : Divisor k F := (n : ℤ) • WeilDivisor.ofPoint P
+  let E : Divisor k F := ((n - 1 : ℕ) : ℤ) • WeilDivisor.ofPoint P
+  have hnsub : ((n - 1 : ℕ) : ℤ) = (n : ℤ) - 1 := by
+    omega
+  have hED : E ≤ D := by
+    refine WeilDivisor.le_iff.mpr fun Q ↦ ?_
+    rcases eq_or_ne Q P with rfl | hQP
+    · simp only [E, D, WeilDivisor.coeff_zsmul, WeilDivisor.coeff_ofPoint_self, mul_one,
+        hnsub]
+      omega
+    · simp [E, D, WeilDivisor.coeff_ofPoint_of_ne hQP]
+  have hfinranklt : Module.finrank k (riemannRochSpace E) <
+      Module.finrank k (riemannRochSpace D) := by
+    simpa only [← Divisor.dim_def, E, D] using hdimlt
+  have hlt : riemannRochSpace E < riemannRochSpace D :=
+    Submodule.lt_of_le_of_finrank_lt_finrank (riemannRochSpace_mono hED) hfinranklt
+  obtain ⟨x, hxD, hxE⟩ := IsConcreteLE.exists_of_lt hlt
+  have hx0 : x ≠ 0 := fun hx ↦ hxE (hx ▸ Submodule.zero_mem _)
+  have hEeq : E = D - WeilDivisor.ofPoint P := by
+    simp only [D, E, hnsub, sub_smul, one_smul]
+  have hord := Divisor.ord_eq_neg_coeff_of_not_mem_sub_ofPoint hxD (hEeq ▸ hxE)
+  refine ⟨x, hx0, ?_, ((mem_riemannRochSpace_zsmul_ofPoint_iff hx0).mp hxD).2⟩
+  simpa [D] using hord
+
+end Place
 
 end TauCeti

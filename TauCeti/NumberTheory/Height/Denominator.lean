@@ -76,7 +76,7 @@ theorem one_le_leadingCoeff_primitiveMinpoly_mul_house_pow_mul_norm {z : K} {w :
     have h := norm_coeff_zero_le_norm_mul_pow_of_roots_le hPmono (IsAlgClosed.splits P) hProots
       hwroot
     rwa [hPdeg] at h
-  have hcoeff0 : (primitiveMinpoly z).coeff 0 ≠ 0 := coeff_zero_primitiveMinpoly_ne_zero hz hz0
+  have hcoeff0 : (primitiveMinpoly z).coeff 0 ≠ 0 := coeff_zero_primitiveMinpoly_ne_zero hz0
   -- the constant term of `F_z` is a nonzero integer, so it has modulus at least `1`
   have hint_norm : (1 : ℝ) ≤ ‖((primitiveMinpoly z).coeff 0 : ℂ)‖ := by
     rw [Complex.norm_intCast]
@@ -115,7 +115,7 @@ theorem one_le_natDenominator_pow_mul_house_pow_mul_norm_of_mem_rootSet {z : K} 
   have h := one_le_leadingCoeff_primitiveMinpoly_mul_house_pow_mul_norm hz hz0 hw
   have hD : ((primitiveMinpoly z).leadingCoeff : ℝ) ≤
       (Algebra.natDenominator z : ℝ) ^ (minpoly ℚ z).natDegree := by
-    have hZ := leadingCoeff_primitiveMinpoly_le_natDenominator_pow hz
+    have hZ := leadingCoeff_primitiveMinpoly_le_natDenominator_pow z
     have hcast : ((primitiveMinpoly z).leadingCoeff : ℝ) ≤
         ((Algebra.natDenominator z : ℤ) : ℝ) ^ (minpoly ℚ z).natDegree := by
       exact_mod_cast hZ
@@ -145,8 +145,6 @@ theorem zpow_natDenominator_mul_zpow_house_le_norm {z : ℂ} (hz : IsAlgebraic �
   set d := (minpoly ℚ z).natDegree
   have hd1 : 1 ≤ d := minpoly.natDegree_pos hz.isIntegral
   have hDne : Algebra.natDenominator z ≠ 0 := Algebra.natDenominator_ne_zero_of_isAlgebraic_rat hz
-  have hD : (0 : ℝ) < (Algebra.natDenominator z : ℝ) := by
-    exact_mod_cast Nat.pos_of_ne_zero hDne
   have hh : (0 : ℝ) < house z :=
     lt_of_lt_of_le (norm_pos_iff.mpr hz0) (norm_le_house hz)
   have hpow : (0 : ℝ) < (Algebra.natDenominator z : ℝ) ^ d * house z ^ (d - 1) := by

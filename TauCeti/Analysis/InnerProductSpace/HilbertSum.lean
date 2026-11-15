@@ -21,13 +21,16 @@ This file proves that the adjoint of a direct sum is the direct sum of the adjoi
 `(⊕ T i)† = ⊕ (T i)†`. Together with the additive and multiplicative laws, this makes
 `T ↦ ⊕ T i` compatible with the star operation on bounded operators, so that direct sums of
 star representations are star representations; in particular `⊕ T i` is self-adjoint exactly when
-every summand is.
+every summand is. For the ampliation `lp.ampliation ι 2 T` of a single operator this reads
+`(⊕ T)† = ⊕ T†`, and its matrix coefficients are the sums `∑' i, ⟪η i, T (ξ i)⟫`.
 
 ## Main results
 
 * `lp.adjoint_mapCLM`: `(⊕ T i)† = ⊕ (T i)†`.
 * `lp.star_mapCLM`: the same identity for families of endomorphisms, stated with `star`.
 * `lp.isSelfAdjoint_mapCLM_iff`: `⊕ T i` is self-adjoint iff every `T i` is.
+* `lp.inner_ampliation_apply`, `lp.adjoint_ampliation`: matrix coefficients and adjoints of
+  ampliations.
 
 ## References
 
@@ -36,7 +39,7 @@ every summand is.
 
 public section
 
-open scoped ENNReal InnerProduct
+open scoped ENNReal InnerProduct InnerProductSpace lp
 
 namespace lp
 
@@ -65,5 +68,32 @@ theorem isSelfAdjoint_mapCLM_iff (T : ∀ i, E i →L[𝕜] E i) {K : ℝ} (hK :
     IsSelfAdjoint (mapCLM 2 T hK hTK) ↔ ∀ i, IsSelfAdjoint (T i) := by
   have hTK' : ∀ i, ‖star (T i)‖ ≤ K := fun i ↦ (norm_star (T i)).trans_le (hTK i)
   simp only [isSelfAdjoint_iff, star_mapCLM T hK hTK hK hTK', mapCLM_inj, funext_iff]
+
+section Ampliation
+
+variable {ι 𝕜 X Y : Type*} [RCLike 𝕜] [NormedAddCommGroup X] [InnerProductSpace 𝕜 X]
+  [NormedAddCommGroup Y] [InnerProductSpace 𝕜 Y]
+
+/-- The matrix coefficients of an ampliation are the sums of the matrix coefficients of the
+operator over the coordinates. -/
+theorem inner_ampliation_apply (T : X →L[𝕜] Y) (x : ℓ²(ι, X)) (y : ℓ²(ι, Y)) :
+    ⟪y, ampliation ι 2 T x⟫_𝕜 = ∑' i, ⟪y i, T (x i)⟫_𝕜 := by
+  simp [lp.inner_eq_tsum]
+
+variable [CompleteSpace X] [CompleteSpace Y]
+
+/-- **Adjoint of an ampliation.** `(⊕ T)† = ⊕ T†`. -/
+@[simp]
+theorem adjoint_ampliation (T : X →L[𝕜] Y) : (ampliation ι 2 T)† = ampliation ι 2 (T†) := by
+  rw [ampliation_eq_mapCLM, ampliation_eq_mapCLM]
+  exact adjoint_mapCLM (fun _ ↦ T) (norm_nonneg T) (fun _ ↦ le_rfl) (norm_nonneg (T†))
+    fun _ ↦ le_rfl
+
+/-- **Star of an ampliation.** `star (⊕ T) = ⊕ star T`. -/
+@[simp]
+theorem star_ampliation (T : X →L[𝕜] X) : star (ampliation ι 2 T) = ampliation ι 2 (star T) := by
+  simp only [ContinuousLinearMap.star_eq_adjoint, adjoint_ampliation]
+
+end Ampliation
 
 end lp

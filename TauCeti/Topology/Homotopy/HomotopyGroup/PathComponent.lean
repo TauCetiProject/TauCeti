@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.ContinuousMap.Sigma
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
+import TauCeti.Topology.Homotopy.GenLoop.Homotopic
 
 /-!
 # Homotopy groups only see the path component of the base point
@@ -15,7 +16,9 @@ In positive dimension a generalized loop `I^N → X` based at `x` takes all its 
 component of `x`, since the cube is path-connected and its boundary, which goes to `x`, is
 nonempty (`GenLoop.apply_mem_pathComponent`). So the map induced on `π_N(X, x)` by a continuous
 map depends only on its restriction to that path component
-(`HomotopyGroup.map_eq_of_eqOn_pathComponent`).
+(`HomotopyGroup.map_eq_of_eqOn_pathComponent`), and a subspace containing that path component
+has the same homotopy groups at `x`
+(`HomotopyGroup.bijective_map_subtypeVal_of_pathComponent_subset`).
 
 In particular, for a disjoint union `Σ i, X i` the inclusion of the summand `X i` induces
 bijections `π_N(X i, x) → π_N(Σ i, X i, ⟨i, x⟩)` in positive dimension
@@ -31,6 +34,8 @@ from one approximation for each path component.
   component of its base point.
 * `HomotopyGroup.map_eq_of_eqOn_pathComponent`: maps agreeing on the path component of the base
   point induce the same map on positive-dimensional homotopy groups.
+* `HomotopyGroup.bijective_map_subtypeVal_of_pathComponent_subset`: a subspace containing the path
+  component of the base point has the same positive-dimensional homotopy groups.
 * `HomotopyGroup.bijective_map_sigmaMk`: a summand of a disjoint union has the same
   positive-dimensional homotopy groups as the disjoint union.
 -/
@@ -74,6 +79,42 @@ theorem map_eq_of_eqOn_pathComponent [Nonempty N] {f g : C(X, Y)}
     map (N := N) f hf = map g hg :=
   funext fun a ↦ Quotient.inductionOn a fun p ↦
     congrArg _ (GenLoop.map_eq_of_eqOn_pathComponent h hf hg p)
+
+/-- **Homotopy groups of a subspace containing a path component.** In positive dimension, if a
+subspace `S` contains the path component of `x ∈ S`, its inclusion induces a bijection
+`π_N(S, x) → π_N(X, x)`: generalized loops based at `x`, and homotopies between them relative to
+the boundary of the cube, take their values in the path component of `x`. -/
+theorem bijective_map_subtypeVal_of_pathComponent_subset [Nonempty N] {S : Set X} {x : S}
+    {x' : X} (hS : pathComponent (x : X) ⊆ S) (hx : (x : X) = x') :
+    Function.Bijective (map (N := N) ⟨Subtype.val, continuous_subtype_val⟩ hx) := by
+  subst hx
+  obtain ⟨i⟩ := ‹Nonempty N›
+  have : PathConnectedSpace I :=
+    (Set.projIcc_surjective (zero_le_one : (0 : ℝ) ≤ 1)).pathConnectedSpace continuous_projIcc
+  -- A generalized loop at `x` corestricts to `S`.
+  let lift (p : Ω^ N X x) : Ω^ N S x :=
+    ⟨⟨fun t ↦ ⟨p t, hS (GenLoop.apply_mem_pathComponent p t)⟩, by fun_prop⟩,
+      fun t ht ↦ Subtype.ext (_root_.GenLoop.boundary p t ht)⟩
+  refine ⟨fun a b hab ↦ ?_, fun a ↦ ?_⟩
+  · induction a using Quotient.inductionOn with | h α => ?_
+    induction b using Quotient.inductionOn with | h β => ?_
+    rw [map_mk, map_mk] at hab
+    obtain ⟨H⟩ := Quotient.exact hab
+    -- Every value of the homotopy is joined to its value at a corner of the cube, which is `x`.
+    have hH (z : I × I^N) : H z ∈ S := by
+      have h0 : H (0, 0) = x :=
+        (H.eq_fst _ ⟨i, Or.inl rfl⟩).trans (_root_.GenLoop.boundary _ 0 ⟨i, Or.inl rfl⟩)
+      have h := (PathConnectedSpace.joined ((0 : I), (0 : I^N)) z).map H.continuous
+      rw [h0] at h
+      exact hS h
+    refine Quotient.sound (GenLoop.homotopic_of_continuousMap
+      ⟨fun z ↦ ⟨H z, hH z⟩, by fun_prop⟩ (fun t ↦ Subtype.ext ?_) (fun t ↦ Subtype.ext ?_)
+      fun s t ht ↦ Subtype.ext ?_)
+    · exact (H.apply_zero t).trans (GenLoop.map_apply _ _ α t)
+    · exact (H.apply_one t).trans (GenLoop.map_apply _ _ β t)
+    · exact (H.eq_fst s ht).trans (_root_.GenLoop.boundary _ t ht)
+  · induction a using Quotient.inductionOn with | h p => ?_
+    exact ⟨⟦lift p⟧, congrArg _ (_root_.GenLoop.ext _ _ fun t ↦ GenLoop.map_apply _ _ _ t)⟩
 
 section Sigma
 

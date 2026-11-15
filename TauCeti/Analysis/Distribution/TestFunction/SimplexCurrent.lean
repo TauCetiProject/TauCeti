@@ -175,7 +175,7 @@ theorem mass_simplexCurrent_le (Ω : Opens (EuclideanSpace ℝ (Fin p))) :
   rw [simplexCurrent_apply]
   calc ‖∫ x in fullSimplex p, ω x fun i ↦ EuclideanSpace.single i 1‖ₑ
       ≤ ∫⁻ x in fullSimplex p, ‖ω x fun i ↦ EuclideanSpace.single i 1‖ₑ :=
-        enorm_integral_le_lintegral_enorm _
+        eNorm_integral_le_lintegral_eNorm _
     _ ≤ ∫⁻ _ in fullSimplex p, 1 := lintegral_mono fun x ↦ by
         rw [← ofReal_norm, ENNReal.ofReal_le_one]
         exact ((ω x).le_opNorm _).trans (by simpa using hω x)
@@ -195,9 +195,9 @@ theorem isNormal_simplexCurrent (p : ℕ) (Ω : Opens (EuclideanSpace ℝ (Fin p
     rw [simplexCurrent_comp_extDerivCLM, FunLike.coe_sum]
     refine ne_top_of_le_ne_top (ENNReal.sum_ne_top.2 fun i _ ↦ ?_) (mass_sum_le _ _)
     rw [FunLike.coe_smul, mass_smul, ContinuousLinearMap.coe_comp]
-    refine ENNReal.mul_ne_top enorm_ne_top (ne_top_of_le_ne_top ?_
+    refine ENNReal.mul_ne_top eNorm_ne_top (ne_top_of_le_ne_top ?_
       (mass_comp_pullbackCLM_le _ (L := ‖(simplexMapAmbient (m := p) i.succAbove).contLinear‖₊)
-        fun x _ ↦ by rw [ContinuousAffineMap.fderiv, coe_nnnorm]))
+        fun x _ ↦ by rw [ContinuousAffineMap.fderiv, coe_nnNorm]))
     exact ENNReal.mul_ne_top (ENNReal.pow_ne_top ENNReal.coe_ne_top) (hT p ⊤)
 
 end TauCeti

@@ -171,6 +171,14 @@ theorem realOperator_of_nonpos (S : StronglyContinuousSemigroup X) {t : ℝ} (ht
     S.realOperator t = ContinuousLinearMap.id ℝ X := by
   rw [realOperator, Real.toNNReal_of_nonpos ht, S.map_zero]
 
+/-- The real-time operator at `t` is the one at the nonnegative part `max t 0`. -/
+@[simp]
+theorem realOperator_max_zero (S : StronglyContinuousSemigroup X) (t : ℝ) :
+    S.realOperator (max t 0) = S.realOperator t := by
+  rcases le_total t 0 with ht | ht
+  · rw [max_eq_right ht, S.realOperator_zero, S.realOperator_of_nonpos ht]
+  · rw [max_eq_left ht]
+
 /-- At a nonpositive real time the real-time operator fixes every vector. -/
 theorem realOperator_of_nonpos_apply (S : StronglyContinuousSemigroup X) {t : ℝ} (ht : t ≤ 0)
     (x : X) : S.realOperator t x = x := by
@@ -420,11 +428,14 @@ private theorem StronglyContinuousSemigroup.realOperator_continuousWithinAt_Icc
         rwa [Real.dist_0_eq_abs, abs_sub_comm, ← Real.dist_eq]
     _ = ε := mul_div_cancel₀ ε hC_pos.ne'
 
-/-- Strong continuity at every `t₀ ≥ 0` within the nonnegative half-line
-([EN] Prop. I.5.3, [Linares] Cor. 1). -/
+/-- Strong continuity at every `t₀` within the nonnegative half-line
+([EN] Prop. I.5.3, [Linares] Cor. 1). For `t₀ < 0` the statement holds trivially, since `t₀`
+lies outside the closure of the half-line. -/
 theorem StronglyContinuousSemigroup.realOperator_continuousWithinAt
-    (S : StronglyContinuousSemigroup X) (x : X) (t₀ : ℝ) (ht₀ : 0 ≤ t₀) :
+    (S : StronglyContinuousSemigroup X) (x : X) (t₀ : ℝ) :
     ContinuousWithinAt (fun t => S.realOperator t x) (Set.Ici 0) t₀ := by
+  rcases lt_or_ge t₀ 0 with ht₀ | ht₀
+  · exact continuousWithinAt_of_notMem_closure (by simpa [closure_Ici] using ht₀)
   rw [← Set.Icc_union_Ici_eq_Ici ht₀]
   exact (S.realOperator_continuousWithinAt_Icc x t₀).union
     (S.realOperator_continuousWithinAt_Ici x ht₀)
@@ -433,9 +444,8 @@ theorem StronglyContinuousSemigroup.realOperator_continuousWithinAt
 nonnegative half-line. -/
 theorem StronglyContinuousSemigroup.realOperator_continuousOn_Ici
     (S : StronglyContinuousSemigroup X) (x : X) :
-    ContinuousOn (fun t : ℝ => S.realOperator t x) (Set.Ici 0) := by
-  intro t ht
-  exact S.realOperator_continuousWithinAt x t ht
+    ContinuousOn (fun t : ℝ => S.realOperator t x) (Set.Ici 0) :=
+  fun t _ => S.realOperator_continuousWithinAt x t
 
 /-- The real-time orbit is continuous on all of `ℝ`, using the constant extension at negative
 times. -/

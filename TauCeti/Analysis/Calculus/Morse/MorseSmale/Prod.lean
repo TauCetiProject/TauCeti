@@ -74,18 +74,10 @@ theorem negativeGradientFlow_separatedSum_apply (hfd : Differentiable ℝ f)
       WithLp.toLp 2 (negativeGradientFlow f hf t z.fst, negativeGradientFlow g hg t z.snd) := by
   let γ : ℝ → WithLp 2 (E × F) := fun s ↦
     WithLp.toLp 2 (negativeGradientFlow f hf s z.fst, negativeGradientFlow g hg s z.snd)
-  have hγ : IsIntegralCurve γ fun _ y ↦ -∇ (separatedSum f g) y := by
-    intro s
-    have h₁ := (isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve z.fst s
-    have h₂ := (isNegativeGradient_negativeGradientFlow g hg).isIntegralCurve z.snd s
-    have h := (WithLp.prodContinuousLinearEquiv 2 ℝ E F).symm.hasFDerivAt.comp s
-      (h₁.hasFDerivAt.prodMk h₂.hasFDerivAt)
-    have h' : HasDerivAt γ _ s := h.hasDerivAt
-    convert h' using 1
-    beta_reduce
-    rw [gradient_separatedSum (hfd _) (hgd _)]
-    apply WithLp.ofLp_injective
-    ext <;> simp [γ]
+  have hγ : IsIntegralCurve γ fun _ y ↦ -∇ (separatedSum f g) y :=
+    ((isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve z.fst).separatedSum
+      ((isNegativeGradient_negativeGradientFlow g hg).isIntegralCurve z.snd) (fun _ ↦ hfd _)
+      (fun _ ↦ hgd _)
   have h0 : γ 0 = z := by
     apply WithLp.ofLp_injective
     ext <;> simp [γ]
@@ -163,7 +155,7 @@ theorem IsMorseSmale.separatedSum (hfs : ContDiff ℝ 2 f) (hgs : ContDiff ℝ 2
   have hfd := hfs.differentiable two_ne_zero
   have hgd := hgs.differentiable two_ne_zero
   refine IsMorseSmale.of_forall fun p q y hp hq ⟨hyu, hys⟩ ↦ ?_
-  rw [isNondegenerateCriticalPoint_separatedSum_iff hfs.contDiffAt hgs.contDiffAt] at hp hq
+  rw [isNondegenerateCriticalPoint_separatedSum_iff] at hp hq
   obtain ⟨hu₁, hu₂⟩ := (mem_unstableSet_separatedSum hfd hgd hf hg hh).1 hyu
   obtain ⟨hs₁, hs₂⟩ := (mem_stableSet_separatedSum hfd hgd hf hg hh).1 hys
   let e := (WithLp.prodContinuousLinearEquiv 2 ℝ E F).symm

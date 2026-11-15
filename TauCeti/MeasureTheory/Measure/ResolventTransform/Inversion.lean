@@ -106,7 +106,7 @@ theorem tendsto_intervalIntegral_im_resolventTransform {a b : ℝ} (hab : a < b)
   rw [← hlim]
   have heq : (fun η : ℝ => ∫ t, π⁻¹ * (Real.arctan ((b - t) / η) - Real.arctan ((a - t) / η)) ∂μ)
       =ᶠ[𝓝[>] 0] fun η => π⁻¹ * ∫ x in a..b, (resolventTransform μ (x + η * I)).im := by
-    filter_upwards [self_mem_nhdsWithin] with η hη
+    filter_upwards [self_mem_nhdsWithin] with η _
     rw [intervalIntegral_im_resolventTransform a b η, integral_const_mul]
   refine Tendsto.congr' heq
     (tendsto_integral_filter_of_dominated_convergence (fun _ => 1) ?_ ?_ (integrable_const 1) ?_)

@@ -10,7 +10,7 @@ public import TauCeti.Probability.Distributions.Gaussian.Density
 public import TauCeti.Probability.Moments.Covariance
 import Mathlib.Probability.Distributions.Gaussian.Fernique
 import TauCeti.Probability.Distributions.Gaussian.Transforms
-import TauCeti.Probability.Distributions.Mixture
+import TauCeti.Probability.Distributions.Mixture.Basic
 import TauCeti.Probability.Moments.Mixture
 
 /-!
@@ -67,7 +67,7 @@ theorem multivariateGaussianMixtureMeasure_def (p : StdSimplex ℝ≥0 κ)
 instance isProbabilityMeasure_multivariateGaussianMixtureMeasure (p : StdSimplex ℝ≥0 κ)
     (m : κ → EuclideanSpace ℝ ι) (S : κ → Matrix ι ι ℝ) :
     IsProbabilityMeasure (multivariateGaussianMixtureMeasure p m S) := by
-  exact isProbabilityMeasure_finiteMixtureMeasure fun _ ↦ inferInstance
+  exact isProbabilityMeasure_finiteMixtureMeasure
 
 /-- The multivariate Gaussian mixture is the categorical mixture of its Gaussian components. -/
 theorem multivariateGaussianMixtureMeasure_eq_bind [MeasurableSpace κ]

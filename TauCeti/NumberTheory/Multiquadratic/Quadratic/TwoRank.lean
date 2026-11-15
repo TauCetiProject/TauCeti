@@ -135,19 +135,53 @@ theorem narrowTwoRank_le_ncard_ramifiedPrimes_sub_one
   rw [← hcard]
   exact (Nat.pow_le_pow_iff_right (le_refl 2)).mp hpow
 
-/-- **The ambiguous class number bound.** For `K = ℚ(√d)` with `d` squarefree and `1 < |d|`, the
-`2`-rank of `Cl(𝓞 K)` is at most `t - 1`, where `t` is the number of rational primes ramifying in
-`K`.
+/-- **The `2`-rank formula for the Gaussian field.** For `K = ℚ(√-1)`, the `2`-rank of `Cl(𝓞 K)` is
+`t - 1 = 0`: the ring of integers is a principal ideal domain and only `2` ramifies. -/
+private theorem twoRank_eq_ncard_ramifiedPrimes_sub_one_of_eq_neg_one
+    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
+    (hgauss : d = -1) :
+    TauCeti.ClassGroup.twoRank (𝓞 K) = (ramifiedPrimes K).ncard - 1 := by
+  subst d
+  have hsf : Squarefree (-1 : ℤ) := isUnit_one.neg.squarefree
+  have hfin : Module.finrank ℚ K = 2 := NumberField.finrank_rat_eq_two hmin hgen
+  have hdisc : NumberField.discr K = -4 := by
+    simpa using NumberField.discr_eq_four_mul_of_mod_four_ne_one hmin hgen hsf (by norm_num)
+  have hpid : IsPrincipalIdealRing (𝓞 K) :=
+    TauCeti.NumberField.isPrincipalIdealRing_of_finrank_eq_two_of_natAbs_discr_le_nine hfin
+      (by rw [hdisc]; norm_num)
+  have hrank : TauCeti.ClassGroup.twoRank (𝓞 K) = 0 := by
+    have hclass : NumberField.classNumber K = 1 :=
+      NumberField.classNumber_eq_one_iff.mpr hpid
+    rw [TauCeti.ClassGroup.twoRank_def, ← TauCeti.twoRank_def]
+    apply TauCeti.twoRank_of_odd_card
+    rw [Nat.card_eq_fintype_card, ← NumberField.classNumber, hclass]
+    exact odd_one
+  have hram : ramifiedPrimes K = {2} := by
+    rw [← primeDiscriminantPrime_of_isEvenPrimeDiscriminant isEvenPrimeDiscriminant_neg_four]
+    apply ramifiedPrimes_eq_singleton (D := -4) isPrimeDiscriminant_neg_four
+    · rwa [primeDiscriminantRadicand_neg_four]
+    · exact hgen
+  rw [hrank, hram, Set.ncard_singleton]
 
-Forgetting total positivity is a surjection `Cl⁺(K) → Cl(K)`, so the ordinary `2`-rank is at most
-the narrow one, which `narrowTwoRank_le_ncard_ramifiedPrimes_sub_one` bounds by `t - 1`. For a real
-quadratic field the inequality can be strict: `ℚ(√3)` has `t = 2` and class number `1`. -/
+/-- **The ambiguous class number bound.** For `K = ℚ(√d)` with `d` squarefree, the `2`-rank of
+`Cl(𝓞 K)` is at most `t - 1`, where `t` is the number of rational primes ramifying in `K`.
+
+Forgetting total positivity is a surjection `Cl⁺(K) → Cl(K)`, so for `1 < |d|` the ordinary
+`2`-rank is at most the narrow one, which `narrowTwoRank_le_ncard_ramifiedPrimes_sub_one` bounds by
+`t - 1`; in the remaining case `d = -1`, the Gaussian field, the class group is trivial and only
+`2` ramifies. For a real quadratic field the inequality can be strict: `ℚ(√3)` has `t = 2` and
+class number `1`. -/
 theorem twoRank_le_ncard_ramifiedPrimes_sub_one
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
-    (hsf : Squarefree d) (hd : 1 < d.natAbs) :
-    TauCeti.ClassGroup.twoRank (𝓞 K) ≤ (ramifiedPrimes K).ncard - 1 :=
-  (NumberField.NarrowClassGroup.classGroupTwoRank_le_twoRank K).trans
-    (narrowTwoRank_le_ncard_ramifiedPrimes_sub_one hmin hgen hsf hd)
+    (hsf : Squarefree d) :
+    TauCeti.ClassGroup.twoRank (𝓞 K) ≤ (ramifiedPrimes K).ncard - 1 := by
+  by_cases hd : 1 < d.natAbs
+  · exact (NumberField.NarrowClassGroup.classGroupTwoRank_le_twoRank K).trans
+      (narrowTwoRank_le_ncard_ramifiedPrimes_sub_one hmin hgen hsf hd)
+  · have hne1 : d ≠ 1 := fun h =>
+      NumberField.not_isSquare_radicand hmin ⟨1, by rw [h]; norm_num⟩
+    have := hsf.ne_zero
+    exact (twoRank_eq_ncard_ramifiedPrimes_sub_one_of_eq_neg_one hmin hgen (by omega)).le
 
 /-- **The `2`-rank formula for an imaginary quadratic field.** For `K = ℚ(√d)` with `d < 0`
 squarefree, the `2`-rank of `Cl(𝓞 K)` is exactly `t - 1`, where `t` is the number of rational
@@ -159,31 +193,9 @@ theorem twoRank_eq_ncard_ramifiedPrimes_sub_one
   let _ : IsTotallyComplex K :=
     NumberField.isTotallyComplex_of_minpoly_eq_X_sq_sub_C_of_neg hmin hd
   by_cases hgauss : d = -1
-  · subst d
-    have hfin : Module.finrank ℚ K = 2 := NumberField.finrank_rat_eq_two hmin hgen
-    have hdisc : NumberField.discr K = -4 := by
-      simpa using NumberField.discr_eq_four_mul_of_mod_four_ne_one hmin hgen hsf (by norm_num)
-    have hpid : IsPrincipalIdealRing (𝓞 K) :=
-      TauCeti.NumberField.isPrincipalIdealRing_of_finrank_eq_two_of_natAbs_discr_le_nine hfin
-        (by rw [hdisc]; norm_num)
-    have hrank : TauCeti.ClassGroup.twoRank (𝓞 K) = 0 := by
-      have hclass : NumberField.classNumber K = 1 :=
-        NumberField.classNumber_eq_one_iff.mpr hpid
-      rw [TauCeti.ClassGroup.twoRank_def, ← TauCeti.twoRank_def]
-      apply TauCeti.twoRank_of_odd_card
-      rw [Nat.card_eq_fintype_card, ← NumberField.classNumber, hclass]
-      exact odd_one
-    have hram : ramifiedPrimes K = {2} := by
-      rw [← primeDiscriminantPrime_of_isEvenPrimeDiscriminant isEvenPrimeDiscriminant_neg_four]
-      apply ramifiedPrimes_eq_singleton (D := -4) isPrimeDiscriminant_neg_four
-      · rwa [primeDiscriminantRadicand_neg_four]
-      · exact hgen
-    rw [hrank, hram, Set.ncard_singleton]
-  · apply le_antisymm
-    · exact twoRank_le_ncard_ramifiedPrimes_sub_one hmin hgen hsf (by
-        have hdabs : (1 : ℤ) < |d| := by rw [abs_of_neg hd]; omega
-        rwa [Int.abs_eq_natAbs, Nat.one_lt_cast] at hdabs)
-    · exact ncard_ramifiedPrimes_sub_one_le_twoRank hmin hgen hsf (by omega)
+  · exact twoRank_eq_ncard_ramifiedPrimes_sub_one_of_eq_neg_one hmin hgen hgauss
+  · exact le_antisymm (twoRank_le_ncard_ramifiedPrimes_sub_one hmin hgen hsf)
+      (ncard_ramifiedPrimes_sub_one_le_twoRank hmin hgen hsf (by omega))
 
 /-! ### The narrow lower bound -/
 
@@ -194,10 +206,20 @@ theorem card_sub_one_le_narrowTwoRank {s : Finset ℤ}
     (hs : ∀ P ∈ s, IsPrimeDiscriminant P)
     (heven : ∀ P ∈ s, ∀ P' ∈ s, IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant P' → P = P')
     (hprod : ∏ P ∈ s, P = fundamentalDiscriminant d)
-    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
-    (hsf : Squarefree d) :
+    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
     s.card - 1 ≤ NumberField.NarrowClassGroup.twoRank K := by
   classical
+  -- A fundamental discriminant `fundamentalDiscriminant d` forces `d` to be squarefree.
+  have hsf : Squarefree d := by
+    have hfd : Int.IsFundamentalDiscr (fundamentalDiscriminant d) :=
+      hprod ▸ isFundamentalDiscr_prod (D := id) hs (Set.injOn_id _) heven
+    by_cases h4 : d % 4 = 1
+    · rw [fundamentalDiscriminant_of_mod_four_eq_one h4] at hfd
+      rcases Int.isFundamentalDiscr_iff_squarefree.mp hfd with ⟨_, h⟩ | ⟨h, -⟩
+      · exact h
+      · omega
+    · rw [fundamentalDiscriminant_of_mod_four_ne_one h4] at hfd
+      exact (Int.isFundamentalDiscr_four_mul.mp hfd).1
   rcases s.eq_empty_or_nonempty with rfl | hne
   · simp
   let _ : Nonempty ↥s := hne.to_subtype
@@ -229,7 +251,7 @@ theorem ncard_ramifiedPrimes_sub_one_le_narrowTwoRank
   obtain ⟨s, hs, heven, hprod⟩ :=
     (isFundamentalDiscr_fundamentalDiscriminant hsf).exists_finset_primeDiscriminant
   rw [ncard_ramifiedPrimes_eq_card hmin hgen hsf hs hprod]
-  exact card_sub_one_le_narrowTwoRank hs heven hprod hmin hgen hsf
+  exact card_sub_one_le_narrowTwoRank hs heven hprod hmin hgen
 
 /-- **The `2`-rank formula for the narrow class group of a quadratic field.** For `K = ℚ(√d)` with
 `d` squarefree, of either signature, the `2`-rank of `Cl⁺(K)` is exactly `t - 1`, where `t` is the

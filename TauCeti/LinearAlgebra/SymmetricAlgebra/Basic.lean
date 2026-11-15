@@ -11,13 +11,13 @@ public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basic
 # Generators of symmetric algebras
 
 The canonical map from a module over a commutative semiring into its symmetric algebra is
-injective, without a freeness assumption. Its main application is that an abelian Lie algebra
-embeds in its universal enveloping algebra, which is its symmetric algebra
-(`TauCeti.UniversalEnvelopingAlgebra.ι_injective_of_isLieAbelian`).
+injective, without a freeness assumption (`SymmetricAlgebra.ι_injective`). Its main application
+is that an abelian Lie algebra embeds in its universal enveloping algebra, which is its symmetric
+algebra (`TauCeti.UniversalEnvelopingAlgebra.ι_injective_of_isLieAbelian`).
 
-The canonical generators generate the symmetric algebra (`TauCeti.SymmetricAlgebra.adjoin_range_ι`),
+The canonical generators generate the symmetric algebra (`SymmetricAlgebra.adjoin_range_ι`),
 and so do the images of any spanning family
-(`TauCeti.SymmetricAlgebra.adjoin_range_ι_comp_eq_top_of_span_eq_top`).
+(`SymmetricAlgebra.adjoin_range_ι_comp_eq_top_of_span_eq_top`).
 
 For the symmetric algebra of the base semiring itself, the degree-one element `ι R R 1`
 generates the whole algebra. An algebra morphism whose range contains this element is therefore
@@ -32,52 +32,33 @@ to the generators (`SymmetricAlgebra.lift_symm_apply`).
 
 public section
 
-namespace TauCeti.SymmetricAlgebra
+namespace SymmetricAlgebra
 
-variable (R M : Type*) [CommSemiring R] [AddCommMonoid M] [Module R M]
+variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
 
+variable (R M) in
 /-- The canonical map into the symmetric algebra is injective for every module over a
 commutative semiring. -/
-theorem ι_injective : Function.Injective (_root_.SymmetricAlgebra.ι R M) := by
+theorem ι_injective : Function.Injective (ι R M) := by
   -- Adapted from Mathlib's `TensorAlgebra.ι_leftInverse`.
   let : Module Rᵐᵒᵖ M := Module.compHom _ ((RingHom.id R).fromOpposite mul_comm)
   have : IsCentralScalar R M := ⟨fun _ _ ↦ rfl⟩
   exact Function.LeftInverse.injective (g := (TrivSqZeroExt.sndHom R M).comp
-    (_root_.SymmetricAlgebra.lift (TrivSqZeroExt.inrHom R M)).toLinearMap) fun x ↦ by simp
+    (lift (TrivSqZeroExt.inrHom R M)).toLinearMap) fun x ↦ by simp
 
+variable (R M) in
 /-- The symmetric algebra is generated as an algebra by the image of the generator map. -/
-theorem adjoin_range_ι : _root_.Algebra.adjoin R (Set.range (SymmetricAlgebra.ι R M)) = ⊤ := by
-  apply top_unique
-  intro x hx
-  clear hx
-  induction x using _root_.SymmetricAlgebra.induction with
-  | algebraMap r => exact (_root_.Algebra.adjoin R _).algebraMap_mem r
-  | ι x => exact _root_.Algebra.subset_adjoin (Set.mem_range_self x)
-  | mul a b ha hb => exact (_root_.Algebra.adjoin R _).mul_mem ha hb
-  | add a b ha hb => exact (_root_.Algebra.adjoin R _).add_mem ha hb
+theorem adjoin_range_ι : Algebra.adjoin R (Set.range (ι R M)) = ⊤ :=
+  top_unique fun x _ ↦ SymmetricAlgebra.induction R M (algebraMap_mem _)
+    (fun m ↦ Algebra.subset_adjoin (Set.mem_range_self m)) (fun _ _ ↦ mul_mem)
+    (fun _ _ ↦ add_mem) x
 
-variable {R M} in
 /-- The images of a spanning family generate the symmetric algebra as an algebra. -/
 theorem adjoin_range_ι_comp_eq_top_of_span_eq_top {ι : Type*} (x : ι → M)
     (hx : Submodule.span R (Set.range x) = ⊤) :
-    _root_.Algebra.adjoin R (Set.range (SymmetricAlgebra.ι R M ∘ x)) = ⊤ := by
-  have hle : Submodule.span R (Set.range x) ≤
-      (_root_.Algebra.adjoin R (Set.range (SymmetricAlgebra.ι R M ∘ x))).toSubmodule.comap
-        (SymmetricAlgebra.ι R M) :=
-    Submodule.span_le.mpr <| by
-      rintro m ⟨i, rfl⟩
-      exact _root_.Algebra.subset_adjoin ⟨i, rfl⟩
-  apply top_unique
-  rw [← adjoin_range_ι R M]
-  exact _root_.Algebra.adjoin_le <| by
-    rintro p ⟨m, rfl⟩
-    exact hle (by rw [hx]; exact Submodule.mem_top)
-
-end TauCeti.SymmetricAlgebra
-
-namespace SymmetricAlgebra
-
-variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    Algebra.adjoin R (Set.range (SymmetricAlgebra.ι R M ∘ x)) = ⊤ := by
+  rw [Set.range_comp, ← Algebra.adjoin_span, Submodule.span_image, hx, Submodule.map_top,
+    LinearMap.coe_range, adjoin_range_ι]
 
 /-- A ring homomorphism out of a symmetric algebra is determined by its values on scalars and on
 generators. See note [partially-applied ext lemmas]. -/
@@ -108,15 +89,8 @@ range contains the degree-one generator. -/
 theorem surjective_of_ι_one_mem_range {R A : Type*} [CommSemiring R] [Semiring A]
     [Algebra R A] (f : A →ₐ[R] SymmetricAlgebra R R)
     (hgen : SymmetricAlgebra.ι R R 1 ∈ f.range) : Function.Surjective f := by
-  intro y
-  have hy : y ∈ f.range := by
-    induction y using SymmetricAlgebra.induction with
-    | algebraMap r => exact f.range.algebraMap_mem r
-    | ι r =>
-        simpa only [← map_smul, smul_eq_mul, mul_one] using
-          f.range.smul_mem hgen r
-    | mul y z hy hz => exact mul_mem hy hz
-    | add y z hy hz => exact add_mem hy hz
-  exact (AlgHom.mem_range _).mp hy
+  rw [← f.range_eq_top, eq_top_iff, ← SymmetricAlgebra.adjoin_range_ι, Algebra.adjoin_le_iff]
+  rintro _ ⟨r, rfl⟩
+  simpa only [SetLike.mem_coe, ← map_smul, smul_eq_mul, mul_one] using f.range.smul_mem hgen r
 
 end AlgHom

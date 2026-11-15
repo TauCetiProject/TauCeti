@@ -246,7 +246,8 @@ theorem pointTwistMap_app_apply_of_mem (D : WeilDivisor X) (x : X)
 
 
 /-- The divisor inclusion followed by the new-coefficient morphism is zero. -/
-private theorem divisorSheafMapOfLE_comp_pointTwistMap (D : WeilDivisor X) (x : X)
+@[reassoc (attr := simp)]
+theorem divisorSheafMapOfLE_comp_pointTwistMap (D : WeilDivisor X) (x : X)
     [∀ U : Opens X, Decidable (x ∈ U)] :
     divisorSheafMapOfLE (WeilDivisor.le_add_ofPoint D x) ≫ pointTwistMap D x = 0 := by
   apply CategoryTheory.Sheaf.hom_ext
@@ -524,8 +525,22 @@ theorem pointTwistSequence_g (D : WeilDivisor X) (x : X)
     eqToHom (pointTwistSequence_X₂ D x).symm ≫ (pointTwistSequence D x).g ≫
       eqToHom (pointTwistSequence_X₃ D x) = pointTwistMap D x := by rfl
 
+/-- Identify the point-twist sequence with its displayed divisor inclusion and coefficient
+morphism, so functors can use its maps without unfolding the sequence construction. -/
+def pointTwistSequenceIso (D : WeilDivisor X) (x : X)
+    [∀ U : Opens X, Decidable (x ∈ U)] :
+    pointTwistSequence D x ≅ ShortComplex.mk
+      (divisorSheafMapOfLE (WeilDivisor.le_add_ofPoint D x)) (pointTwistMap D x)
+      (divisorSheafMapOfLE_comp_pointTwistMap D x) :=
+  ShortComplex.isoMk (eqToIso (pointTwistSequence_X₁ D x))
+    (eqToIso (pointTwistSequence_X₂ D x)) (eqToIso (pointTwistSequence_X₃ D x))
+    (by simpa only [eqToIso.hom, Category.assoc, eqToHom_trans_assoc, eqToHom_trans,
+          eqToHom_refl, Category.id_comp] using congrArg (eqToHom (pointTwistSequence_X₁ D x) ≫ ·)
+            (pointTwistSequence_f D x).symm)
+    (by simpa only [eqToIso.hom, Category.assoc, eqToHom_trans_assoc, eqToHom_trans,
+          eqToHom_refl, Category.id_comp] using congrArg (eqToHom (pointTwistSequence_X₂ D x) ≫ ·)
+            (pointTwistSequence_g D x).symm)
+
 end LocalLifting
-
-
 
 end TauCeti.RiemannSurface

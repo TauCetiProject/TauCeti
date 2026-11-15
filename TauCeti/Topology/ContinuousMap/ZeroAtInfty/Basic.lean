@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.ContinuousMap.ZeroAtInfty
+import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # Scalar actions and pointwise norms on `C₀(α, β)`
@@ -23,8 +24,11 @@ needed for scalar actions beyond normed fields:
   on `C₀(α, β)` is the supremum of the pointwise norms;
 * `ZeroAtInftyContinuousMap.evalCLM`: evaluation at a point as a continuous linear map over an
   arbitrary semiring of scalars;
-* `ZeroAtInftyContinuousMap.compLeft`: a continuous linear map `u : E →L[R] F` with a uniform
-  bound `‖u x‖ ≤ C * ‖x‖` acts pointwise as a continuous linear map `C₀(α, E) →L[R] C₀(α, F)`;
+* `ZeroAtInftyContinuousMap.compLeftFamily`: a strongly continuous family `u : α → E →L[R] F` of
+  continuous linear maps with a uniform bound `‖u x e‖ ≤ C * ‖e‖` acts pointwise as a continuous
+  linear map `C₀(α, E) →L[R] C₀(α, F)`, by `f ↦ (x ↦ u x (f x))`;
+* `ZeroAtInftyContinuousMap.compLeft`: its constant case, the postcomposition with one continuous
+  linear map `u : E →L[R] F` with a uniform bound `‖u e‖ ≤ C * ‖e‖`;
 * `ZeroAtInftyContinuousMap.congrLeft`: a homeomorphism `α ≃ₜ β` induces a linear isometry
   equivalence `C₀(α, E) ≃ₗᵢ[R] C₀(β, E)`.
 
@@ -119,24 +123,58 @@ theorem norm_comp_toCocompactMap (f : C₀(β, E)) (e : α ≃ₜ β) :
 variable [Semiring R] [Module R E] [ContinuousConstSMul R E]
   [SeminormedAddCommGroup F] [Module R F] [ContinuousConstSMul R F]
 
-/-- **Pointwise action of a bounded coefficient map.** A continuous linear map
-`u : E →L[R] F` with a uniform bound `‖u x‖ ≤ C * ‖x‖` acts on `C₀(α, E)` by postcomposition,
-giving a continuous linear map `C₀(α, E) →L[R] C₀(α, F)`. -/
-def compLeft (u : E →L[R] F) (hu : ∃ C, ∀ x, ‖u x‖ ≤ C * ‖x‖) : C₀(α, E) →L[R] C₀(α, F) :=
+/-- **Pointwise action of a strongly continuous family.** A family `u : α → E →L[R] F` of
+continuous linear maps that is strongly continuous (`x ↦ u x e` is continuous for every `e`) and
+uniformly bounded by `‖u x e‖ ≤ C * ‖e‖` acts on `C₀(α, E)` by `f ↦ (x ↦ u x (f x))`, giving a
+continuous linear map `C₀(α, E) →L[R] C₀(α, F)`. Its constant case is `compLeft`. -/
+def compLeftFamily (u : α → E →L[R] F) (hu : ∀ e, Continuous fun x => u x e)
+    (hC : ∃ C, ∀ x e, ‖u x e‖ ≤ C * ‖e‖) : C₀(α, E) →L[R] C₀(α, F) :=
   let L : C₀(α, E) →ₗ[R] C₀(α, F) :=
     { toFun f :=
-        { toFun := u ∘ f
-          continuous_toFun := u.continuous.comp (map_continuous f)
-          zero_at_infty' := (u.continuous.tendsto' 0 0 (map_zero u)).comp (zero_at_infty f) }
+        { toFun x := u x (f x)
+          continuous_toFun := by
+            obtain ⟨C, hC⟩ := hC
+            exact AddMonoidHomClass.continuous_apply_of_bound hu hC (map_continuous f)
+          zero_at_infty' := by
+            obtain ⟨C, hC⟩ := hC
+            refine squeeze_zero_norm (fun x => hC x (f x)) ?_
+            simpa using (zero_at_infty f).norm.const_mul C }
       map_add' _ _ := by ext; simp
       map_smul' _ _ := by ext; simp }
   { L with
     cont := by
-      obtain ⟨C, hC⟩ := hu
+      obtain ⟨C, hC⟩ := hC
       refine AddMonoidHomClass.continuous_of_bound L (max C 0) fun f ↦
-        (norm_le (by positivity)).2 fun x ↦ (hC (f x)).trans ?_
+        (norm_le (by positivity)).2 fun x ↦ (hC x (f x)).trans ?_
       exact mul_le_mul (le_max_left C 0) (norm_coe_le_norm f x) (norm_nonneg _)
         (le_max_right C 0) }
+
+/-- `compLeftFamily u hu hC` applies `u x` at each point `x`. -/
+@[simp]
+theorem compLeftFamily_apply (u : α → E →L[R] F) (hu : ∀ e, Continuous fun x => u x e)
+    (hC : ∃ C, ∀ x e, ‖u x e‖ ≤ C * ‖e‖) (f : C₀(α, E)) (x : α) :
+    compLeftFamily u hu hC f x = u x (f x) := (rfl)
+
+/-- A uniform bound `C` for the family `u` is also a bound for its pointwise action. -/
+theorem norm_compLeftFamily_apply_le (u : α → E →L[R] F) (hu : ∀ e, Continuous fun x => u x e)
+    (hC : ∃ C, ∀ x e, ‖u x e‖ ≤ C * ‖e‖) {C : ℝ} (hCu : ∀ x e, ‖u x e‖ ≤ C * ‖e‖)
+    (f : C₀(α, E)) : ‖compLeftFamily u hu hC f‖ ≤ C * ‖f‖ := by
+  rcases le_or_gt 0 C with hC₀ | hC₀
+  · exact (norm_le (by positivity)).2 fun x ↦
+      (hCu x (f x)).trans (mul_le_mul_of_nonneg_left (norm_coe_le_norm f x) hC₀)
+  · have hf : ∀ x, ‖f x‖ = 0 := fun x ↦ by
+      have h1 := (norm_nonneg (u x (f x))).trans (hCu x (f x))
+      nlinarith [norm_nonneg (f x)]
+    have h0 : ‖f‖ = 0 := le_antisymm ((norm_le le_rfl).2 fun x ↦ (hf x).le) (norm_nonneg _)
+    rw [h0, mul_zero]
+    exact (norm_le le_rfl).2 fun x ↦ by simpa [hf x] using (hCu x (f x))
+
+/-- **Pointwise action of a bounded coefficient map.** A continuous linear map
+`u : E →L[R] F` with a uniform bound `‖u x‖ ≤ C * ‖x‖` acts on `C₀(α, E)` by postcomposition,
+giving a continuous linear map `C₀(α, E) →L[R] C₀(α, F)`: the constant case of
+`compLeftFamily`. -/
+def compLeft (u : E →L[R] F) (hu : ∃ C, ∀ x, ‖u x‖ ≤ C * ‖x‖) : C₀(α, E) →L[R] C₀(α, F) :=
+  compLeftFamily (fun _ => u) (fun _ => continuous_const) (hu.imp fun _ hC _ => hC)
 
 /-- `compLeft u hu` applies `u` pointwise. -/
 @[simp]
@@ -149,17 +187,16 @@ theorem compLeft_comp {G : Type*} [SeminormedAddCommGroup G] [Module R G] [Conti
     (hu : ∃ C, ∀ x, ‖u x‖ ≤ C * ‖x‖) (hvu : ∃ C, ∀ x, ‖v.comp u x‖ ≤ C * ‖x‖) :
     compLeft (α := α) (v.comp u) hvu = (compLeft v hv).comp (compLeft u hu) := (rfl)
 
-/-- A uniform bound `C ≥ 0` for `u` is also a uniform bound for its coordinatewise action. -/
-theorem norm_compLeft_apply_le (u : E →L[R] F) {C : ℝ} (hC₀ : 0 ≤ C)
+/-- A uniform bound `C` for `u` is also a uniform bound for its coordinatewise action. -/
+theorem norm_compLeft_apply_le (u : E →L[R] F) {C : ℝ}
     (hC : ∀ x, ‖u x‖ ≤ C * ‖x‖) (f : C₀(α, E)) : ‖compLeft u ⟨C, hC⟩ f‖ ≤ C * ‖f‖ :=
-  (norm_le (by positivity)).2 fun x ↦
-    (hC (f x)).trans (mul_le_mul_of_nonneg_left (norm_coe_le_norm f x) hC₀)
+  norm_compLeftFamily_apply_le _ _ _ (fun _ => hC) f
 
 /-- The coordinatewise action of a bounded coefficient map is itself uniformly bounded. -/
 theorem exists_norm_compLeft_apply_le (u : E →L[R] F) (hu : ∃ C, ∀ x, ‖u x‖ ≤ C * ‖x‖) :
     ∃ C, ∀ f : C₀(α, E), ‖compLeft u hu f‖ ≤ C * ‖f‖ := by
   obtain ⟨C, hC⟩ := hu
-  refine ⟨max C 0, norm_compLeft_apply_le u (le_max_right C 0) fun x ↦ ?_⟩
+  refine ⟨max C 0, norm_compLeft_apply_le u fun x ↦ ?_⟩
   exact (hC x).trans (mul_le_mul_of_nonneg_right (le_max_left C 0) (norm_nonneg x))
 
 variable (R E) in

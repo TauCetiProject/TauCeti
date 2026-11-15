@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Bipartition
+public import TauCeti.Combinatorics.Graph.Matching.Basic
 public import TauCeti.Combinatorics.Network.Menger.SetToSet
+import Mathlib.Algebra.GroupWithZero.Indicator
 
 /-!
 # Multiset capacitated matchings and Kőnig's theorem
@@ -31,11 +33,16 @@ graph are all allowed.
 
 * `Graph.IsCapacitatedMatching G b x`: the edge multiplicities `x` form a multiset capacitated
   matching for the vertex capacities `b`.
+* `Graph.matchingEquivUnitCapacitated`: in a loopless multigraph, ordinary matchings correspond to
+  unit-capacity multiset matchings through their characteristic functions.
 
 ## Main results
 
 * `Graph.IsCapacitatedMatching.sum_le_sum_of_isVertexCover`: **weak duality**, the size of a
   multiset capacitated matching is at most the weight of any vertex cover.
+* `Graph.IsCapacitatedMatching.isMatching`: in a loopless multigraph, the edges used by a multiset
+  capacitated matching for unit capacities form a matching, and a perfect one when every actual
+  vertex is used exactly once (`Graph.isPerfectMatching_of_sum_incidentEdges_eq_one`).
 * `Graph.IsBipartition.exists_isCapacitatedMatching_isVertexCover_sum_eq`: **Kőnig's theorem** for
   multiset capacitated matchings in bipartite multigraphs, in witness form.
 
@@ -87,6 +94,84 @@ theorem isCapacitatedMatching_def :
 theorem isCapacitatedMatching_zero : G.IsCapacitatedMatching b 0 :=
   fun _ ↦ by simp
 
+/-! ### Ordinary matchings as unit-capacity matchings -/
+
+/-- In a loopless multigraph, ordinary matchings are exactly unit-capacity multiset matchings
+whose multiplicities are the characteristic function of the selected edges. -/
+theorem isMatching_iff_isCapacitatedMatching_indicator [G.Loopless] (M : Set E(G)) :
+    G.IsMatching M ↔ G.IsCapacitatedMatching 1 (M.indicator 1) := by
+  rw [isMatching_def, isCapacitatedMatching_def]
+  have hmem {e : E(G)} (he : M.indicator (1 : E(G) → ℕ) e ≠ 0) : e ∈ M := by
+    by_contra h
+    exact he (Set.indicator_of_notMem h _)
+  constructor
+  · rintro ⟨-, h⟩ v
+    rw [Pi.one_apply, Finset.sum_le_one_iff]
+    intro e f he hf he0 hf0
+    obtain ⟨w, hw, hev⟩ := (mem_incidentEdges G).1 he
+    obtain ⟨z, hz, hfv⟩ := (mem_incidentEdges G).1 hf
+    rw [Finset.mem_singleton] at hw hz
+    subst w z
+    refine ⟨by_contra fun hef ↦ h e (hmem he0) f (hmem hf0) hef v ⟨hev, hfv⟩, ?_⟩
+    exact Set.indicator_of_mem (hmem he0) _
+  · intro h
+    refine ⟨fun e _ x ↦ G.not_isLoopAt e x, fun e he f hf hef v ⟨hev, hfv⟩ ↦ hef ?_⟩
+    let v' : V(G) := ⟨v, hev.vertex_mem⟩
+    have hv := h v'
+    rw [Pi.one_apply, Finset.sum_le_one_iff] at hv
+    refine (hv e f ((mem_incidentEdges G).2 ⟨v', by simp, hev⟩)
+      ((mem_incidentEdges G).2 ⟨v', by simp, hfv⟩) ?_ ?_).1 <;>
+      simp [Set.indicator_of_mem, *]
+
+/-- In a unit-capacity multiset matching, every actual edge has multiplicity at most one. -/
+theorem IsCapacitatedMatching.apply_le_one (hx : G.IsCapacitatedMatching 1 x) (e : E(G)) :
+    x e ≤ 1 := by
+  obtain ⟨u, v, huv⟩ := G.exists_isLink_of_mem_edgeSet e.2
+  let u' : V(G) := ⟨u, huv.left_mem⟩
+  have he : e ∈ G.incidentEdges {u'} :=
+    (mem_incidentEdges G).2 ⟨u', by simp, huv.inc_left⟩
+  exact (Finset.single_le_sum (fun _ _ ↦ Nat.zero_le _) he).trans (hx u')
+
+/-- The indicator of the edges of multiplicity one in a unit-capacity multiset matching recovers
+its multiplicities. -/
+theorem IsCapacitatedMatching.indicator_setOf_eq_one (hx : G.IsCapacitatedMatching 1 x) :
+    {e | x e = 1}.indicator 1 = x := by
+  funext e
+  by_cases h : x e = 1
+  · rw [Set.indicator_of_mem h, Pi.one_apply, h]
+  · rw [Set.indicator_of_notMem h]
+    have := hx.apply_le_one e
+    omega
+
+/-- A unit-capacity multiset matching on a loopless graph determines an ordinary matching by
+taking the edges of multiplicity one. -/
+theorem IsCapacitatedMatching.isMatching_setOf_eq_one [G.Loopless]
+    (hx : G.IsCapacitatedMatching 1 x) : G.IsMatching {e | x e = 1} := by
+  rw [isMatching_iff_isCapacitatedMatching_indicator, hx.indicator_setOf_eq_one]
+  exact hx
+
+/-- Ordinary matchings in a finite loopless multigraph are equivalent to unit-capacity multiset
+matchings. The equivalence retains each selected edge identity as multiplicity one. -/
+noncomputable def matchingEquivUnitCapacitated [G.Loopless] :
+    {M : Set E(G) // G.IsMatching M} ≃ {x : E(G) → ℕ // G.IsCapacitatedMatching 1 x} where
+  toFun M := ⟨M.1.indicator 1, (isMatching_iff_isCapacitatedMatching_indicator M.1).1 M.2⟩
+  invFun x := ⟨{e | x.1 e = 1}, x.2.isMatching_setOf_eq_one⟩
+  left_inv M := by
+    ext e
+    exact Set.indicator_eq_one_iff_mem ℕ
+  right_inv x := Subtype.ext x.2.indicator_setOf_eq_one
+
+@[simp]
+theorem matchingEquivUnitCapacitated_apply [G.Loopless] (M : {M : Set E(G) // G.IsMatching M}) :
+    (G.matchingEquivUnitCapacitated M : E(G) → ℕ) = M.1.indicator 1 :=
+  (rfl)
+
+@[simp]
+theorem matchingEquivUnitCapacitated_symm_apply [G.Loopless]
+    (x : {x : E(G) → ℕ // G.IsCapacitatedMatching 1 x}) :
+    (G.matchingEquivUnitCapacitated.symm x : Set E(G)) = {e | x.1 e = 1} :=
+  (rfl)
+
 namespace IsCapacitatedMatching
 
 /-- Lowering the multiplicities or raising the capacities preserves multiset capacitated matchings.
@@ -123,6 +208,104 @@ theorem sum_le_sum_of_isVertexCover (hx : G.IsCapacitatedMatching b x) {C : Fins
         (G.sum_sum_incidentEdges_eq_sum_sum_filter_inc C x).symm
     _ ≤ ∑ v ∈ C, b v := sum_le_sum fun v _ ↦ hx v
 
+/-- In a loopless multigraph, the edges used by a multiset capacitated matching for the unit
+capacities form a matching. -/
+theorem isMatching [G.Loopless] (hx : G.IsCapacitatedMatching 1 x) :
+    G.IsMatching {e | x e ≠ 0} := by
+  classical
+  refine isMatching_def.2 ⟨fun e _ v ↦ G.not_isLoopAt _ v, fun e he f hf hef v ⟨hev, hfv⟩ ↦ ?_⟩
+  -- Two distinct used edges at `v` would use `v` at least twice.
+  have := (sum_pair (f := x) hef).symm.trans_le <|
+    sum_le_sum_of_subset (f := x) (t := G.incidentEdges {⟨v, hev.vertex_mem⟩}) <| by
+      simp [insert_subset_iff, hev, hfv]
+  have := hx ⟨v, hev.vertex_mem⟩
+  simp only [Set.mem_ofPred_eq, Pi.one_apply] at he hf this
+  omega
+
+end IsCapacitatedMatching
+
+/-- In a loopless multigraph, if edge multiplicities `x` use every actual vertex exactly once, then
+the edges they use form a perfect matching. -/
+theorem isPerfectMatching_of_sum_incidentEdges_eq_one [G.Loopless]
+    (hx : ∀ v, ∑ e ∈ G.incidentEdges {v}, x e = 1) :
+    G.IsPerfectMatching {e | x e ≠ 0} := by
+  refine isPerfectMatching_def.2 ⟨IsCapacitatedMatching.isMatching fun v ↦ (hx v).le, fun v ↦ ?_⟩
+  obtain ⟨e, he, hxe⟩ := exists_ne_zero_of_sum_ne_zero ((hx v).trans_ne one_ne_zero)
+  exact ⟨e, hxe, by simpa using he⟩
+
+/-! ### Unit capacities and ordinary matchings -/
+
+namespace IsMatching
+
+/-- An ordinary matching, represented by a finite set of actual edges, is a multiset
+capacitated matching for unit vertex capacities when its selected edges have multiplicity one. -/
+theorem isCapacitatedMatching_indicator {M : Finset E(G)} (hM : G.IsMatching (M : Set E(G))) :
+    G.IsCapacitatedMatching (fun _ ↦ 1) ((M : Set E(G)).indicator fun _ ↦ 1) := by
+  classical
+  rw [isCapacitatedMatching_def]
+  intro x
+  calc
+    ∑ e ∈ G.incidentEdges {x}, (M : Set E(G)).indicator (fun _ ↦ 1) e =
+        ∑ e ∈ G.incidentEdges {x}, if e ∈ M then 1 else 0 :=
+      sum_congr rfl fun e _ ↦ Set.indicator_apply _ _ _
+    _ = ((G.incidentEdges {x}).filter (· ∈ M)).card :=
+      sum_boole (R := ℕ) (· ∈ M) (G.incidentEdges {x})
+    _ ≤ 1 := card_le_one.mpr fun e he f hf ↦ by
+      obtain ⟨heinc, heM⟩ := mem_filter.1 he
+      obtain ⟨hfinc, hfM⟩ := mem_filter.1 hf
+      obtain ⟨y, hy, hey⟩ := (mem_incidentEdges G).1 heinc
+      obtain ⟨z, hz, hfz⟩ := (mem_incidentEdges G).1 hfinc
+      exact hM.eq_of_inc heM hfM (Finset.mem_singleton.mp hy ▸ hey)
+        (Finset.mem_singleton.mp hz ▸ hfz)
+
+end IsMatching
+
+namespace IsCapacitatedMatching
+
+/-- The sum of the multiplicities in a unit-capacitated matching is the cardinality of its
+positive support. -/
+theorem sum_eq_card_support {x : E(G) → ℕ} (hx : G.IsCapacitatedMatching (fun _ ↦ 1) x) :
+    ∑ e, x e = (Finset.univ.filter fun e ↦ x e ≠ 0).card := by
+  classical
+  calc
+    ∑ e, x e = ∑ e, if x e ≠ 0 then 1 else 0 := sum_congr rfl fun e _ ↦ by
+      have hle := hx.apply_le_one e
+      split_ifs with he
+      · omega
+      · simpa using he
+    _ = (Finset.univ.filter fun e ↦ x e ≠ 0).card := by
+      exact sum_boole (R := ℕ) (fun e ↦ x e ≠ 0) univ
+
+/-- In a loopless graph, the positive support of a unit-capacitated matching is an ordinary
+matching. -/
+theorem support_isMatching {x : E(G) → ℕ} (hx : G.IsCapacitatedMatching (fun _ ↦ 1) x)
+    (hG : G.Loopless) : G.IsMatching ({e | x e ≠ 0} : Set E(G)) := by
+  classical
+  rw [isMatching_def]
+  refine ⟨fun e _ y ↦ hG.not_isLoopAt e y, fun e he f hf hef y hinc ↦ ?_⟩
+  have hey : e ∈ G.incidentEdges {⟨y, hinc.1.vertex_mem⟩} :=
+    (mem_incidentEdges G).2 ⟨⟨y, hinc.1.vertex_mem⟩, mem_singleton_self _, hinc.1⟩
+  have hfy : f ∈ G.incidentEdges {⟨y, hinc.1.vertex_mem⟩} :=
+    (mem_incidentEdges G).2 ⟨⟨y, hinc.1.vertex_mem⟩, mem_singleton_self _, hinc.2⟩
+  have hpair : ∑ a ∈ {e, f}, x a ≤ 1 :=
+    (sum_le_sum_of_subset (insert_subset_iff.2 ⟨hey, singleton_subset_iff.2 hfy⟩)).trans
+      (isCapacitatedMatching_def.1 hx ⟨y, hinc.1.vertex_mem⟩)
+  rw [sum_pair hef] at hpair
+  have he' : x e ≠ 0 := by simpa only [Set.mem_ofPred_eq] using he
+  have hf' : x f ≠ 0 := by simpa only [Set.mem_ofPred_eq] using hf
+  omega
+
+/-- The finite positive support of a unit-capacitated matching in a loopless graph is an
+ordinary matching. -/
+theorem supportFinset_isMatching {x : E(G) → ℕ}
+    (hx : G.IsCapacitatedMatching (fun _ ↦ 1) x) (hG : G.Loopless) :
+    G.IsMatching (↑(Finset.univ.filter fun e ↦ x e ≠ 0) : Set E(G)) := by
+  have hset : (↑(Finset.univ.filter fun e ↦ x e ≠ 0) : Set E(G)) = {e | x e ≠ 0} := by
+    ext
+    simp
+  rw [hset]
+  exact hx.support_isMatching hG
+
 end IsCapacitatedMatching
 
 /-! ### Kőnig's theorem -/
@@ -138,15 +321,13 @@ theorem IsBipartition.exists_isCapacitatedMatching_isVertexCover_sum_eq {L R : F
       G.IsVertexCover (C : Set V(G)) ∧ ∑ e, x e = ∑ v ∈ C, b v := by
   classical
   have := hLR.finite
-  -- One arrow for every actual edge, from its end in `L` to its end in `R`.
-  let Q (y z : V(G)) : Type v := {e : E(G) // G.IsLink e y z ∧ y ∈ L}
   obtain ⟨k, s, t, P, X, hs, ht, -, -, hP, hX, hk⟩ :=
-    exists_paths_setSeparator_sum_eq (Q := Q) b L R
+    exists_paths_setSeparator_sum_eq (Q := G.BipartiteHom L) b L R
   -- Every member of the packing joins `L` to `R`, so it traverses an arrow. Choose one, from
   -- `src i` to `tgt i`, along the edge `edge i`.
   have hst (i : Fin k) : s i ≠ t i := fun h ↦ disjoint_left.1 hLR.disjoint (hs i) (h ▸ ht i)
   have harrow (i : Fin k) : ∃ (y z : V(G)) (e : E(G)) (he : G.IsLink e y z ∧ y ∈ L),
-      (⟨y, z, e, he⟩ : Σ y z, Q y z) ∈ (P i).arrows := by
+      (⟨y, z, e, he⟩ : Σ y z, G.BipartiteHom L y z) ∈ (P i).arrows := by
     obtain ⟨⟨y, z, e, he⟩, h⟩ := List.exists_mem_of_ne_nil _ ((P i).arrows_ne_nil (hst i))
     exact ⟨y, z, e, he, h⟩
   choose src tgt edge hedge hf using harrow
@@ -165,10 +346,15 @@ theorem IsBipartition.exists_isCapacitatedMatching_isVertexCover_sum_eq {L R : F
     wlog hy : y ∈ L generalizing y z
     · exact (this z y he.symm (hLR.notMem_left_iff.1 hy |> hLR.mem_left_of_isLink he)).symm
     by_contra! h
+    let a : G.BipartiteHom L y z := ⟨⟨e, he.edge_mem⟩, he, hy⟩
+    let p : ArrowWalk (G.BipartiteHom L) y z :=
+      @ArrowWalk.cons _ _ y y z (ArrowWalk.nil y) a
     refine hX y hy z (hLR.mem_right_of_isLink he hy) <| reachableAvoiding_def.2
-      ⟨(ArrowWalk.nil y).cons ⟨⟨e, he.edge_mem⟩, he, hy⟩, fun w hw ↦ ?_⟩
-    simp only [ArrowWalk.vertices_cons, ArrowWalk.vertices_nil, List.concat_eq_append,
-      List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hw
+      ⟨p, fun w hw ↦ ?_⟩
+    have hp : p.vertices = [y, z] :=
+      (@ArrowWalk.vertices_cons _ (G.BipartiteHom L) y y z (ArrowWalk.nil y) a).trans rfl
+    rw [hp] at hw
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
     rcases hw with rfl | rfl
     exacts [h.1, h.2]
   · rw [hk, ← card_eq_sum_card_fiberwise (by simp), card_univ, Fintype.card_fin]

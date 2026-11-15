@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.Node.EtaleChart
 public import TauCeti.RingTheory.Smooth.CriticalSection
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
+import TauCeti.RingTheory.RingHom.Quotient
 
 /-!
 # Node charts at nondegenerate critical points
@@ -21,6 +22,9 @@ quadratic form need not split over the original residue field, and no characteri
 point above the original point, and sends both node coordinates into its prime ideal. The
 hypersurface equation and its chart have the same principal ideal, so the chart is an étale map
 from the node algebra to the quotient by the original equation `f`.
+`Module.Basis.exists_etale_quotient_nodeAlgebra_hom_of_critical` restates the chart in terms of
+the hypersurface `W ⧸ (f)` alone: the étale extension of the surface restricts to an étale
+neighbourhood of the given point of the hypersurface, which maps étale to the node chart.
 
 The construction combines `Module.Basis.exists_etale_eq_algebraMap_add_quadratic`, which
 centres the function along its critical section, with
@@ -115,5 +119,58 @@ theorem exists_etale_nodeAlgebra_hom_of_critical {A W : Type u} [CommRing A] [Co
     RingHom.ker_isPrime _, -h, s, t, φ, hPQ, ?_,
     RingHom.mem_ker.mpr hs, RingHom.mem_ker.mpr ht, heq, hφ₀, hφ₁, hφ⟩
   simpa only [hPQ, Ideal.mem_comap] using hf₀
+
+/-- **A hypersurface at a nondegenerate critical point is étale locally a node.** Let `W` be a
+smooth relative surface over `A` whose differentials have a basis, let `f ∈ W`, and let `P` be a
+prime of the hypersurface `W ⧸ (f)` at which `f` is critical with nondegenerate Hessian. Then there
+are an étale `A`-algebra `A'`, an étale `W ⧸ (f)`-algebra `T` which is an `A'`-algebra compatibly
+over `A`, a prime `Q` of `T` lying over `P`, an element `h ∈ A'`, and an étale `A'`-algebra map
+`A'[u, v] ⧸ (uv - h) → T` sending both coordinates into `Q`. -/
+theorem exists_etale_quotient_nodeAlgebra_hom_of_critical {A W : Type u} [CommRing A]
+    [CommRing W] [Algebra A W] [Algebra.Smooth A W] (bW : Basis (Fin 2) W Ω[W⁄A]) (f : W)
+    (P : Ideal (W ⧸ Ideal.span {f})) [P.IsPrime]
+    (hf : ∀ i, (bW.coord i).compDer (D A W) f ∈ P.comap (Ideal.Quotient.mk _))
+    (hdet : (TauCeti.hessian (fun i ↦ (bW.coord i).compDer (D A W)) f).det ∉
+      P.comap (Ideal.Quotient.mk _)) :
+    ∃ (A' : Type u) (_ : CommRing A') (_ : Algebra A A') (_ : Algebra.Etale A A')
+      (T : Type u) (_ : CommRing T) (_ : Algebra (W ⧸ Ideal.span {f}) T)
+      (_ : Algebra.Etale (W ⧸ Ideal.span {f}) T) (_ : Algebra A' T) (_ : Algebra A T)
+      (_ : IsScalarTower A (W ⧸ Ideal.span {f}) T) (_ : IsScalarTower A A' T) (Q : Ideal T)
+      (_ : Q.IsPrime) (h : A') (φ : TauCeti.NodeAlgebra A' h →ₐ[A'] T),
+      P = Q.comap (algebraMap _ T) ∧ φ (TauCeti.NodeAlgebra.coord h 0) ∈ Q ∧
+        φ (TauCeti.NodeAlgebra.coord h 1) ∈ Q ∧ φ.toRingHom.Etale := by
+  have hf₀ : f ∈ P.comap (Ideal.Quotient.mk _) := by
+    simp [Ideal.Quotient.eq_zero_iff_mem.2 (Ideal.mem_span_singleton_self f)]
+  obtain ⟨A', _, _, _, T, _, _, hWT, _, _, _, _, Q, _, h, s, t, φ, hPQ, hfQ, hs, ht, -,
+      hφ₀, hφ₁, hφ⟩ := bW.exists_etale_nodeAlgebra_hom_of_critical f _ hf₀ hf hdet
+  -- The étale extension `W → T` of the surface restricts to `W ⧸ (f) → T ⧸ (f)`.
+  let I : Ideal T := Ideal.span {algebraMap W T f}
+  have hI : (Ideal.span {f}).map (algebraMap W T) = I := by
+    rw [Ideal.map_span, Set.image_singleton]
+  let ψ : W ⧸ Ideal.span {f} →+* T ⧸ I :=
+    (Ideal.quotEquivOfEq hI).toRingHom.comp
+      (Ideal.quotientMap _ (algebraMap W T) Ideal.le_comap_map)
+  have hψ (w : W) : ψ (Ideal.Quotient.mk _ w) = Ideal.Quotient.mk I (algebraMap W T w) := by
+    simp only [ψ, RingHom.comp_apply, Ideal.quotientMap_mk, RingEquiv.toRingHom_eq_coe,
+      RingHom.coe_coe, Ideal.quotEquivOfEq_mk]
+  -- The prime `Q` descends to `T ⧸ (f)`.
+  have hIQ : I ≤ Q := Ideal.span_le.2 (Set.singleton_subset_iff.2 hfQ)
+  let : Algebra (W ⧸ Ideal.span {f}) (T ⧸ I) := ψ.toAlgebra
+  refine ⟨A', inferInstance, inferInstance, inferInstance, T ⧸ I, inferInstance, inferInstance,
+    RingHom.Etale.stableUnderComposition _ _
+      (RingHom.Etale.isStableUnderBaseChange.quotientMap _ _ (RingHom.etale_algebraMap.2 hWT))
+      (RingHom.Etale.of_bijective (Ideal.quotEquivOfEq hI).bijective),
+    inferInstance, inferInstance, .of_algebraMap_eq fun r ↦ ?_, inferInstance,
+    Q.map (Ideal.Quotient.mk I),
+    Ideal.map_isPrime_of_surjective Ideal.Quotient.mk_surjective (by rwa [Ideal.mk_ker]), h, φ,
+    ?_, by simpa [hφ₀] using Ideal.mem_map_of_mem _ hs,
+    by simpa [hφ₁] using Ideal.mem_map_of_mem _ ht, hφ⟩
+  · rw [RingHom.algebraMap_toAlgebra,
+      ← Ideal.Quotient.mk_algebraMap (R₁ := A) (I := Ideal.span {f}), hψ,
+      ← IsScalarTower.algebraMap_apply, Ideal.Quotient.mk_algebraMap]
+  · refine Ideal.comap_injective_of_surjective _ Ideal.Quotient.mk_surjective ?_
+    ext w
+    rw [hPQ, Ideal.mem_comap, Ideal.mem_comap, Ideal.mem_comap, RingHom.algebraMap_toAlgebra, hψ,
+      Ideal.mem_quotient_iff_mem hIQ]
 
 end Module.Basis

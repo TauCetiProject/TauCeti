@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Trace.HalfSpace
+public import TauCeti.Analysis.InnerProductSpace.HyperplaneReflection
 public import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.Analysis.Sobolev.WeakDeriv.MeasurePreserving
@@ -44,7 +45,9 @@ Dominated convergence then passes to the limit.
 * `TauCeti.normalLinearReflection`: the linear reflection `(t, y) ↦ (-t, y)`, which is Mathlib's
   `Submodule.reflection` in the hyperplane `{0} × E`.
 * `TauCeti.normalReflection`: the affine reflection `(t, y) ↦ (2a - t, y)` in `{a} × E`, with
-  its measure preservation and derivative.
+  its measure preservation and derivative. It is the special case of
+  `TauCeti.hyperplaneReflection` with normal `(1, 0)`
+  (`TauCeti.normalReflection_eq_hyperplaneReflection`).
 * `TauCeti.gradient_normalReflection_of_forall_eq_neg`: the gradient of a function odd under the
   normal reflection `ρ` satisfies `∇h (ρ x) = -R (∇h x)`, where `R` is the linear part of `ρ`.
 * `TauCeti.integrableOn_of_integrableOn_inter_normalHalfSpace` and
@@ -210,6 +213,16 @@ theorem normalReflection_eq_add (a : ℝ) :
   funext y
   simp [normalReflection, vadd_eq_add, add_comm]
 
+/-- The normal reflection in `{a} × E` is the reflection `TauCeti.hyperplaneReflection` in the
+affine hyperplane `{x | ⟪x, (1, 0)⟫ = a}`. -/
+theorem normalReflection_eq_hyperplaneReflection (a : ℝ) :
+    normalReflection E a = hyperplaneReflection (WithLp.toLp 2 ((1 : ℝ), (0 : E))) a := by
+  ext x
+  obtain ⟨⟨t, y⟩⟩ := x
+  rw [normalReflection_apply, hyperplaneReflection_apply]
+  simp [WithLp.prod_inner_apply, ← WithLp.toLp_smul, ← WithLp.toLp_sub]
+  ring
+
 /-- The derivative of the normal reflection is its linear part. -/
 theorem hasFDerivAt_normalReflection (a : ℝ) (x : WithLp 2 (ℝ × E)) :
     HasFDerivAt (normalReflection E a)
@@ -225,14 +238,28 @@ theorem contDiff_normalReflection (a : ℝ) {n : WithTop ℕ∞} :
   exact (normalLinearReflection E).toContinuousLinearEquiv.contDiff.add contDiff_const
 
 /-- **Gradients of odd functions.** Let `h` be odd under the reflection `ρ` in `{a} × E` on an
-open set `U`, that is `h (ρ x) = -h x` for `x ∈ U`. If `h` is differentiable at `ρ x`, then its
-gradient transforms by minus the linear part `R` of `ρ`: `∇h (ρ x) = -R (∇h x)`. The normal
+open set `U`, that is `h (ρ x) = -h x` for `x ∈ U`. Then its gradient transforms by minus the
+linear part `R` of `ρ`: `∇h (ρ x) = -R (∇h x)`. The normal
 component of `∇h` is therefore even under `ρ` and its tangential components are odd. -/
 theorem gradient_normalReflection_of_forall_eq_neg {a : ℝ} {U : Set (WithLp 2 (ℝ × E))}
     (hU : IsOpen U) {h : WithLp 2 (ℝ × E) → ℝ} (hodd : ∀ x ∈ U, h (normalReflection E a x) = -h x)
-    {x : WithLp 2 (ℝ × E)} (hx : x ∈ U) (hd : DifferentiableAt ℝ h (normalReflection E a x)) :
+    {x : WithLp 2 (ℝ × E)} (hx : x ∈ U) :
     ∇ h (normalReflection E a x) = -normalLinearReflection E (∇ h x) := by
   set R := normalLinearReflection E
+  by_cases hd : DifferentiableAt ℝ h (normalReflection E a x)
+  swap
+  · have hdx : ¬ DifferentiableAt ℝ h x := fun hdx => hd <| by
+      have heq : (fun y => h (normalReflection E a y)) =ᶠ[𝓝 x] -h :=
+        Filter.eventually_of_mem (hU.mem_nhds hx) hodd
+      have h1 : DifferentiableAt ℝ (fun y => h (normalReflection E a y)) x :=
+        (hdx.neg).congr_of_eventuallyEq heq
+      rw [← normalReflection_normalReflection a x] at h1
+      have h2 : DifferentiableAt ℝ
+          (fun y => h (normalReflection E a (normalReflection E a y))) (normalReflection E a x) :=
+        h1.comp (normalReflection E a x) (hasFDerivAt_normalReflection a _).differentiableAt
+      simpa only [normalReflection_normalReflection] using h2
+    simp only [gradient_eq_zero_of_not_differentiableAt hd,
+      gradient_eq_zero_of_not_differentiableAt hdx, map_zero, neg_zero]
   have hcomp : HasFDerivAt (fun y => h (normalReflection E a y))
       ((fderiv ℝ h (normalReflection E a x)).comp
         (R.toContinuousLinearEquiv : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E))) x :=
@@ -824,7 +851,7 @@ private theorem integral_add_comp_normalReflection_mul_inner {a : ℝ}
       inner ℝ (G x + normalLinearReflection E (G (ρ x))) d =
         inner ℝ (G x) d + ε * inner ℝ (G (ρ x)) d := by
     rw [inner_add_left, inner_normalLinearReflection_left_eq_right, hd, real_inner_smul_right]
-  set ψ : WithLp 2 (ℝ × E) → ℝ := fun x => φ (ρ x) with hψdef
+  set ψ : WithLp 2 (ℝ × E) → ℝ := fun x => φ (ρ x)
   have hψ : ContDiff ℝ ∞ ψ := hφ.comp (contDiff_normalReflection a)
   have hψc : HasCompactSupport ψ := hφc.comp_homeomorph ρ.toHomeomorph
   have J1 : Integrable fun x => φ x * inner ℝ (G x) d := by

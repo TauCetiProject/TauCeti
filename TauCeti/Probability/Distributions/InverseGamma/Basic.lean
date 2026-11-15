@@ -217,8 +217,14 @@ theorem indicator_Ioi_inverseGammaPDF (a r : ℝ) :
 /-- The inverse-gamma density is the Gamma density at the inverse point multiplied by the
 absolute Jacobian `x⁻²`. -/
 theorem inverseGammaPDFReal_eq_inv_sq_mul_gammaPDFReal
-    (ha : 0 < a) (hr : 0 < r) (hx : 0 < x) :
+    (ha : 0 < a) (hr : 0 < r) :
     inverseGammaPDFReal a r x = (x ^ 2)⁻¹ * gammaPDFReal a r x⁻¹ := by
+  rcases le_or_gt x 0 with hx | hx
+  · rw [inverseGammaPDFReal_of_nonpos hx, gammaPDFReal]
+    rcases hx.eq_or_lt with rfl | hneg
+    · simp
+    · rw [ite_eq_right (not_le.mpr (inv_lt_zero.mpr hneg))]
+      simp
   rw [inverseGammaPDFReal_of_pos ha hr hx, gammaPDFReal,
     ite_eq_left (inv_nonneg.mpr hx.le)]
   have hpow : x⁻¹ ^ (a - 1) = x ^ (1 - a) := by
@@ -246,7 +252,7 @@ private lemma ofReal_abs_inv_deriv_mul_inverseGammaPDF
         ENNReal.ofReal_mul (inv_nonneg.mpr (sq_nonneg x))]
     _ = ENNReal.ofReal
         ((x ^ 2)⁻¹ * (((x⁻¹) ^ 2)⁻¹ * gammaPDFReal a r x)) := by
-      rw [inverseGammaPDFReal_eq_inv_sq_mul_gammaPDFReal ha hr (inv_pos.mpr hx), inv_inv]
+      rw [inverseGammaPDFReal_eq_inv_sq_mul_gammaPDFReal ha hr, inv_inv]
     _ = ENNReal.ofReal (gammaPDFReal a r x) := by
       simp only [inv_pow, inv_inv, ← mul_assoc,
         inv_mul_cancel₀ (pow_ne_zero 2 hx.ne'), one_mul]

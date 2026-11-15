@@ -274,7 +274,6 @@ private theorem exists_le_apply_of_mem_wassersteinSubdifferential {ν : Wasserst
   obtain ⟨δ, hδ, hball⟩ := Metric.eventually_nhds_iff.1 (hξ.2.2 ε hε)
   set d := dist μ ν
   set t := min (min 1 ε) (δ / (d + 1)) / 2
-  have hd : 0 ≤ d := dist_nonneg
   have ht₀ : 0 < t := by positivity
   have ht₁ : t ≤ min (min 1 ε) (δ / (d + 1)) := half_le_self (by positivity)
   have htd : t * d < δ := by

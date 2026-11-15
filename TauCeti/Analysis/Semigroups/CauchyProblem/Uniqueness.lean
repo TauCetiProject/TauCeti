@@ -49,7 +49,7 @@ private theorem IsClassicalSolution.hasDerivWithinAt_interpolate
     exact hu.mem_domain hs
   have hfull := S.realOperator_hasDerivWithinAt_Ici ⟨u s, hdom⟩
     (sub_pos.mpr hst).le
-  rw [S.realOperator_generator_map (sub_pos.mpr hst).le ⟨u s, hdom⟩] at hfull
+  rw [S.realOperator_generator_map ⟨u s, hdom⟩] at hfull
   have hback : HasDerivWithinAt (fun r => S.realOperator (t - r) (u s))
       (-S.realOperator (t - s) a) (Ici s) s :=
     ((hfull.hasDerivAt (Ici_mem_nhds (sub_pos.mpr hst))).comp_const_sub t s).hasDerivWithinAt
@@ -58,8 +58,7 @@ private theorem IsClassicalSolution.hasDerivWithinAt_interpolate
   have htime : Tendsto (fun r : ℝ => t - r) (𝓝[>] s) (𝓝 (t - s)) :=
     ((continuous_sub_left t).tendsto s).mono_left nhdsWithin_le_nhds
   have hlim := S.tendsto_realOperator_apply htime
-    ((htime.eventually_const_lt (sub_pos.mpr hst)).mono fun _ h => h.le)
-    (sub_pos.mpr hst).le hquot
+    hquot
   have hsum := hlim.add hback
   rw [add_neg_cancel] at hsum
   refine hsum.congr fun r => ?_
@@ -71,7 +70,7 @@ theorem IsClassicalSolution.eq_realOperator {S : StronglyContinuousSemigroup X}
     {x : X} {u : ℝ → X} (hu : IsClassicalSolution S.generator x u) {t : ℝ} (ht : 0 ≤ t) :
     u t = S.realOperator t x := by
   have h := S.realOperator_apply_eq_of_hasDerivWithinAt_zero (f := fun s => t - s)
-    (continuous_sub_left t).continuousOn (fun s hs => sub_nonneg.mpr hs.2)
+    (continuous_sub_left t).continuousOn
     (hu.continuousOn.mono Icc_subset_Ici_self)
     (fun s hs => hu.hasDerivWithinAt_interpolate hs.1 hs.2) t (right_mem_Icc.mpr ht)
   simpa only [sub_self, sub_zero, S.realOperator_zero_apply, hu.apply_zero] using h

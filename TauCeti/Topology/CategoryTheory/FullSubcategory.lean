@@ -7,8 +7,9 @@ module
 
 public import Mathlib.CategoryTheory.Groupoid
 public import Mathlib.Combinatorics.Quiver.Subquiver
+public import Mathlib.CategoryTheory.ObjectProperty.ClosedUnderIsomorphisms
 public import Mathlib.CategoryTheory.ObjectProperty.FullSubcategory
-public import Mathlib.Topology.IsLocalHomeomorph
+public import TauCeti.Topology.IsLocalHomeomorph
 public import TauCeti.Topology.Maps.Proper.Basic
 public import TauCeti.Combinatorics.Quiver.Prefunctor
 
@@ -31,10 +32,20 @@ The hypotheses of a Hausdorff proper étale presentation pass to these restricti
 * when `U` is open, source and target remain local homeomorphisms
   (`TauCeti.isLocalHomeomorph_source_fullSubcategory`,
   `TauCeti.isLocalHomeomorph_target_fullSubcategory`), because the restricted total arrows form an
-  open subspace of the original ones (`TauCeti.isOpenEmbedding_total_fullSubcategory`).
+  open subspace of the original ones (`TauCeti.isOpenEmbedding_total_fullSubcategory`);
+* when `U` is saturated in a groupoid, that is `P` is closed under isomorphisms, source and target
+  remain local homeomorphisms without any openness of `U`
+  (`TauCeti.isLocalHomeomorph_source_fullSubcategory_of_isClosedUnderIsomorphisms`,
+  `TauCeti.isLocalHomeomorph_target_fullSubcategory_of_isClosedUnderIsomorphisms`), because the
+  restricted arrows are then the full preimage of `U` under source, or under target.
 
-No saturation of `U` is needed. All isotropy arrows at objects of `U` are kept, including those
-acting trivially, so the restriction does not discard ineffective isotropy.
+So a closed saturated restriction, such as the corner domain cut out by finitely many continuous
+arrow-invariant inequalities, is again a Hausdorff proper étale presentation, with closed
+subspaces of objects and arrows (`TauCeti.isClosedEmbedding_obj_fullSubcategory`,
+`TauCeti.isClosedEmbedding_total_fullSubcategory`).
+
+The open case needs no saturation of `U`. All isotropy arrows at objects of `U` are kept,
+including those acting trivially, so the restriction does not discard ineffective isotropy.
 
 ## References
 
@@ -62,6 +73,34 @@ theorem range_total_fullSubcategory :
   rw [← ha]
   exact ⟨a.left.property, a.right.property⟩
 
+/-- The objects of a full subcategory are exactly the ambient objects satisfying `P`. -/
+theorem range_obj_fullSubcategory :
+    range (ObjectProperty.FullSubcategory.obj : P.FullSubcategory → C) = {x | P x} := by
+  ext x
+  exact ⟨fun ⟨y, hy⟩ ↦ hy ▸ y.property, fun hx ↦ ⟨⟨x, hx⟩, rfl⟩⟩
+
+/-- For a property closed under isomorphisms of a groupoid, the total arrows of the full
+subcategory are exactly the ambient arrows whose source satisfies `P`. -/
+theorem range_total_fullSubcategory_eq_preimage_left [IsGroupoid C]
+    [P.IsClosedUnderIsomorphisms] :
+    range (fun a : Quiver.Total P.FullSubcategory ↦
+      (⟨a.left.obj, a.right.obj, a.hom.hom⟩ : Quiver.Total C)) =
+      Quiver.Total.left ⁻¹' {x | P x} := by
+  rw [range_total_fullSubcategory]
+  ext a
+  exact ⟨And.left, fun h ↦ ⟨h, P.prop_of_isIso a.hom h⟩⟩
+
+/-- For a property closed under isomorphisms of a groupoid, the total arrows of the full
+subcategory are exactly the ambient arrows whose target satisfies `P`. -/
+theorem range_total_fullSubcategory_eq_preimage_right [IsGroupoid C]
+    [P.IsClosedUnderIsomorphisms] :
+    range (fun a : Quiver.Total P.FullSubcategory ↦
+      (⟨a.left.obj, a.right.obj, a.hom.hom⟩ : Quiver.Total C)) =
+      Quiver.Total.right ⁻¹' {x | P x} := by
+  rw [range_total_fullSubcategory]
+  ext a
+  exact ⟨And.right, fun h ↦ ⟨P.prop_of_isIso (inv a.hom) h, h⟩⟩
+
 section Objects
 
 variable [TopologicalSpace C]
@@ -79,10 +118,12 @@ theorem isEmbedding_obj_fullSubcategory :
 /-- The objects of a full subcategory on an open set of objects form an open subspace. -/
 theorem isOpenEmbedding_obj_fullSubcategory (hP : IsOpen {x | P x}) :
     IsOpenEmbedding (ObjectProperty.FullSubcategory.obj : P.FullSubcategory → C) :=
-  ⟨isEmbedding_obj_fullSubcategory, by
-    convert hP
-    ext x
-    exact ⟨fun ⟨y, hy⟩ ↦ hy ▸ y.property, fun hx ↦ ⟨⟨x, hx⟩, rfl⟩⟩⟩
+  ⟨isEmbedding_obj_fullSubcategory, (range_obj_fullSubcategory (P := P)) ▸ hP⟩
+
+/-- The objects of a full subcategory on a closed set of objects form a closed subspace. -/
+theorem isClosedEmbedding_obj_fullSubcategory (hP : IsClosed {x | P x}) :
+    IsClosedEmbedding (ObjectProperty.FullSubcategory.obj : P.FullSubcategory → C) :=
+  ⟨isEmbedding_obj_fullSubcategory, (range_obj_fullSubcategory (P := P)) ▸ hP⟩
 
 /-- The objects of a full subcategory of a category with Hausdorff objects are Hausdorff. -/
 instance instT2SpaceFullSubcategory [T2Space C] : T2Space P.FullSubcategory :=
@@ -222,6 +263,40 @@ theorem isLocalHomeomorph_target_fullSubcategory (hP : IsOpen {x | P x})
     (ht.comp (isOpenEmbedding_total_fullSubcategory hP hs ht.continuous).isLocalHomeomorph)
     (isOpenEmbedding_obj_fullSubcategory hP).isLocalHomeomorph
     (continuous_target_fullSubcategory ht.continuous)
+
+/-- With continuous source and target, the total arrows of a full subcategory on a closed set of
+objects form a closed subspace of the ambient total arrows. -/
+theorem isClosedEmbedding_total_fullSubcategory (hP : IsClosed {x | P x})
+    (hs : Continuous (Quiver.Total.left : Quiver.Total C → C))
+    (ht : Continuous (Quiver.Total.right : Quiver.Total C → C)) :
+    IsClosedEmbedding (fun a : Quiver.Total P.FullSubcategory ↦
+      (⟨a.left.obj, a.right.obj, a.hom.hom⟩ : Quiver.Total C)) :=
+  ⟨isEmbedding_total_fullSubcategory, by
+    rw [range_total_fullSubcategory]
+    exact (hP.preimage hs).inter (hP.preimage ht)⟩
+
+/-- **Saturated restrictions are étale.** For a property of the objects of a groupoid closed
+under isomorphisms, the source of the full subcategory is a local homeomorphism when the ambient
+source is one. The set of objects need be neither open nor closed: the restricted arrows are the
+full preimage of that set under the source. -/
+theorem isLocalHomeomorph_source_fullSubcategory_of_isClosedUnderIsomorphisms [IsGroupoid C]
+    [P.IsClosedUnderIsomorphisms]
+    (hs : IsLocalHomeomorph (Quiver.Total.left : Quiver.Total C → C)) :
+    IsLocalHomeomorph
+      (Quiver.Total.left : Quiver.Total P.FullSubcategory → P.FullSubcategory) :=
+  hs.of_isEmbedding_of_range_eq isEmbedding_total_fullSubcategory isEmbedding_obj_fullSubcategory
+    rfl (by rw [range_total_fullSubcategory_eq_preimage_left, range_obj_fullSubcategory])
+
+/-- **Saturated restrictions are étale.** For a property of the objects of a groupoid closed
+under isomorphisms, the target of the full subcategory is a local homeomorphism when the ambient
+target is one. -/
+theorem isLocalHomeomorph_target_fullSubcategory_of_isClosedUnderIsomorphisms [IsGroupoid C]
+    [P.IsClosedUnderIsomorphisms]
+    (ht : IsLocalHomeomorph (Quiver.Total.right : Quiver.Total C → C)) :
+    IsLocalHomeomorph
+      (Quiver.Total.right : Quiver.Total P.FullSubcategory → P.FullSubcategory) :=
+  ht.of_isEmbedding_of_range_eq isEmbedding_total_fullSubcategory isEmbedding_obj_fullSubcategory
+    rfl (by rw [range_total_fullSubcategory_eq_preimage_right, range_obj_fullSubcategory])
 
 /-- The source-target map of a full subcategory is proper when the ambient source-target map
 is. No openness of the set of objects is needed. -/

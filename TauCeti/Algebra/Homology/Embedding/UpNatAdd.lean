@@ -27,10 +27,10 @@ namespace ComplexShape
 
 /-- The embedding `n ↦ n + k` of `ComplexShape.up ℕ` into itself: Mathlib's
 `ComplexShape.embeddingUp'Add 1 k`, since `ComplexShape.up ℕ` unfolds to `up' 1`. -/
-@[expose] def embeddingUpNatAdd (k : ℕ) : (ComplexShape.up ℕ).Embedding (ComplexShape.up ℕ) :=
+def embeddingUpNatAdd (k : ℕ) : (ComplexShape.up ℕ).Embedding (ComplexShape.up ℕ) :=
   embeddingUp'Add (1 : ℕ) k
 
-@[simp] lemma embeddingUpNatAdd_f (k n : ℕ) : (embeddingUpNatAdd k).f n = n + k := rfl
+@[simp] lemma embeddingUpNatAdd_f (k n : ℕ) : (embeddingUpNatAdd k).f n = n + k := (rfl)
 
 instance (k : ℕ) : (embeddingUpNatAdd k).IsRelIff :=
   inferInstanceAs (embeddingUp'Add (1 : ℕ) k).IsRelIff

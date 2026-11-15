@@ -48,6 +48,8 @@ side is included in the statement.
 
 ## References
 
+* M. Brown, *A proof of the generalized Schoenflies theorem*, Bull. Amer. Math. Soc. 66 (1960),
+  74–76.
 * M. Brown, *Locally flat imbeddings of topological manifolds*, Annals of Mathematics 75 (1962),
   331–341.
 * R. J. Daverman and G. A. Venema, *Embeddings in Manifolds*, Graduate Studies in Mathematics

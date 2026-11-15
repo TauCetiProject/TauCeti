@@ -67,9 +67,10 @@ theorem ker_coverMap :
   rw [coverMap, QuotientAddGroup.ker_map, AddSubgroup.comap_id, AddMonoidHom.map_zmultiples,
     QuotientAddGroup.mk'_apply]
 
-/-- For positive `p = k q` with `k` a positive integer, the kernel has `k` elements. -/
-theorem natCard_ker_coverMap [Fact (0 < p)] {k : ℕ} (hk : 0 < k) (hp : p = k * q) :
+/-- For positive `p = k q` with `k` a natural number, the kernel has `k` elements. -/
+theorem natCard_ker_coverMap [Fact (0 < p)] {k : ℕ} (hp : p = k * q) :
     Nat.card (coverMap h).ker = k := by
+  have hk : 0 < k := Nat.pos_of_ne_zero fun hk0 ↦ (Fact.out : 0 < p).ne' (by simp [hp, hk0])
   have hq : q = p / k := by
     rw [hp, mul_div_cancel_left₀ q (Nat.cast_ne_zero.mpr hk.ne')]
   rw [ker_coverMap, Nat.card_zmultiples, hq, addOrderOf_period_div hk]

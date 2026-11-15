@@ -27,7 +27,7 @@ controls the dimensions of the homology of `(X, B)` by those of `(A, B)` and `(X
   (`TauCeti.TopTriple.finite_singularHomology_totalPair`), and then
   `dim Hₙ(X, B) ≤ dim Hₙ(A, B) + dim Hₙ(X, A)`
   (`TauCeti.TopTriple.finrank_singularHomology_totalPair_le`);
-* when the homology of `(A, B)` and `(X, A)` is finite-dimensional in every degree, the
+* when the homology of `(A, B)` and `(X, A)` is finite-dimensional through degree `n`, the
   alternating sums `Sₙ(P) = dim Hₙ(P) - dim Hₙ₋₁(P) + ⋯ ± dim H₀(P)` satisfy
   `Sₙ(A, B) - Sₙ(X, B) + Sₙ(X, A) = dim im (Hₙ₊₁(X, A) ⟶ Hₙ(A, B))`
   (`TauCeti.TopTriple.sum_range_neg_one_pow_mul_finrank_singularHomology_eq`). Hence `Sₙ` is
@@ -37,7 +37,8 @@ controls the dimensions of the homology of `(X, B)` by those of `(A, B)` and `(X
   (`TauCeti.TopTriple.sum_range_neg_one_pow_mul_finrank_singularHomology_totalPair_eq`).
 
 Milnor derives the Morse inequalities from these two subadditivity properties, applied to the
-triples of sublevels of a Morse function.
+triples of sublevels of a Morse function; the filtration consequences are in
+`TauCeti.AlgebraicTopology.Singular.FilteredSpace.Finrank`.
 
 ## References
 
@@ -89,9 +90,9 @@ theorem finrank_singularHomology_totalPair_le (n : ℕ)
 
 /-- The dimension count along the long exact sequence of a triple, with the signs `(-1) ^ i` of
 `TauCeti.sum_range_neg_one_pow_finrank_eq_of_exact`. -/
-private lemma sum_range_neg_one_pow_mul_finrank_eq
-    [∀ n, Module.Finite k ((innerPair.obj T).singularHomology V n : ModuleCat k)]
-    [∀ n, Module.Finite k ((outerPair.obj T).singularHomology V n : ModuleCat k)] (n : ℕ) :
+private lemma sum_range_neg_one_pow_mul_finrank_eq (n : ℕ)
+    (hinner : ∀ i ≤ n, Module.Finite k ((innerPair.obj T).singularHomology V i : ModuleCat k))
+    (houter : ∀ i ≤ n, Module.Finite k ((outerPair.obj T).singularHomology V i : ModuleCat k)) :
     ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i *
         ((finrank k ((innerPair.obj T).singularHomology V i : ModuleCat k) : ℤ) -
           finrank k ((totalPair.obj T).singularHomology V i : ModuleCat k) +
@@ -110,14 +111,15 @@ private lemma sum_range_neg_one_pow_mul_finrank_eq
     (f := fun i ↦ (TopPair.singularHomologyMap (innerToTotal.app T) V i).hom)
     (g := fun i ↦ (TopPair.singularHomologyMap (totalToOuter.app T) V i).hom)
     (δ := fun i ↦ (T.singularHomologyδ V (i + 1) i rfl).hom) (T.exact_total V) hgδ hδf hg n
+    hinner houter
 
 /-- **The dimension count along the long exact sequence of a triple.** If the relative homology of
-`(A, B)` and of `(X, A)` is finite-dimensional in every degree, then the alternating sums through
-degree `n` satisfy `Sₙ(A, B) - Sₙ(X, B) + Sₙ(X, A) = dim im (Hₙ₊₁(X, A) ⟶ Hₙ(A, B))`, where
+`(A, B)` and of `(X, A)` is finite-dimensional through degree `n`, then the alternating sums
+through degree `n` satisfy `Sₙ(A, B) - Sₙ(X, B) + Sₙ(X, A) = dim im (Hₙ₊₁(X, A) ⟶ Hₙ(A, B))`, where
 `Sₙ(P) = dim Hₙ(P) - dim Hₙ₋₁(P) + ⋯ ± dim H₀(P)`. -/
-theorem sum_range_neg_one_pow_mul_finrank_singularHomology_eq
-    [∀ n, Module.Finite k ((innerPair.obj T).singularHomology V n : ModuleCat k)]
-    [∀ n, Module.Finite k ((outerPair.obj T).singularHomology V n : ModuleCat k)] (n : ℕ) :
+theorem sum_range_neg_one_pow_mul_finrank_singularHomology_eq (n : ℕ)
+    (hinner : ∀ i ≤ n, Module.Finite k ((innerPair.obj T).singularHomology V i : ModuleCat k))
+    (houter : ∀ i ≤ n, Module.Finite k ((outerPair.obj T).singularHomology V i : ModuleCat k)) :
     ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - i) *
         ((finrank k ((innerPair.obj T).singularHomology V i : ModuleCat k) : ℤ) -
           finrank k ((totalPair.obj T).singularHomology V i : ModuleCat k) +
@@ -125,15 +127,16 @@ theorem sum_range_neg_one_pow_mul_finrank_singularHomology_eq
       finrank k (LinearMap.range (T.singularHomologyδ V (n + 1) n rfl).hom) := by
   -- Pull the sign `(-1) ^ n` out of the sum, reducing to the identity with signs `(-1) ^ i`.
   -- The sign `(-1) ^ n` then appears squared.
-  rw [TauCeti.sum_range_neg_one_pow_sub_mul, T.sum_range_neg_one_pow_mul_finrank_eq V n,
-    ← mul_assoc, ← pow_add, Even.neg_one_pow ⟨n, rfl⟩, one_mul]
+  rw [TauCeti.sum_range_neg_one_pow_sub_mul,
+    T.sum_range_neg_one_pow_mul_finrank_eq V n hinner houter, ← mul_assoc, ← pow_add,
+    Even.neg_one_pow ⟨n, rfl⟩, one_mul]
 
 /-- **Subadditivity of the alternating sums along a triple.** If the relative homology of `(A, B)`
-and of `(X, A)` is finite-dimensional in every degree, then `Sₙ(X, B) ≤ Sₙ(A, B) + Sₙ(X, A)`,
+and of `(X, A)` is finite-dimensional through degree `n`, then `Sₙ(X, B) ≤ Sₙ(A, B) + Sₙ(X, A)`,
 where `Sₙ(P) = dim Hₙ(P) - dim Hₙ₋₁(P) + ⋯ ± dim H₀(P)`. -/
-theorem sum_range_neg_one_pow_mul_finrank_singularHomology_totalPair_le
-    [∀ n, Module.Finite k ((innerPair.obj T).singularHomology V n : ModuleCat k)]
-    [∀ n, Module.Finite k ((outerPair.obj T).singularHomology V n : ModuleCat k)] (n : ℕ) :
+theorem sum_range_neg_one_pow_mul_finrank_singularHomology_totalPair_le (n : ℕ)
+    (hinner : ∀ i ≤ n, Module.Finite k ((innerPair.obj T).singularHomology V i : ModuleCat k))
+    (houter : ∀ i ≤ n, Module.Finite k ((outerPair.obj T).singularHomology V i : ModuleCat k)) :
     ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - i) *
         finrank k ((totalPair.obj T).singularHomology V i : ModuleCat k) ≤
       ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - i) *
@@ -141,16 +144,16 @@ theorem sum_range_neg_one_pow_mul_finrank_singularHomology_totalPair_le
         ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - i) *
           finrank k ((outerPair.obj T).singularHomology V i : ModuleCat k) := by
   have h := (Nat.cast_nonneg _).trans
-    (T.sum_range_neg_one_pow_mul_finrank_singularHomology_eq V n).ge
+    (T.sum_range_neg_one_pow_mul_finrank_singularHomology_eq V n hinner houter).ge
   simp only [mul_add, mul_sub, Finset.sum_add_distrib, Finset.sum_sub_distrib] at h
   linarith
 
 /-- **Additivity of the alternating sums along a triple.** If the relative homology of `(A, B)`
-and of `(X, A)` is finite-dimensional in every degree and `Hₙ₊₁(X, A)` vanishes, then
+and of `(X, A)` is finite-dimensional through degree `n` and `Hₙ₊₁(X, A)` vanishes, then
 `∑ᵢ₌₀ⁿ (-1)ⁱ dim Hᵢ(X, B) = ∑ᵢ₌₀ⁿ (-1)ⁱ dim Hᵢ(A, B) + ∑ᵢ₌₀ⁿ (-1)ⁱ dim Hᵢ(X, A)`. -/
-theorem sum_range_neg_one_pow_mul_finrank_singularHomology_totalPair_eq
-    [∀ n, Module.Finite k ((innerPair.obj T).singularHomology V n : ModuleCat k)]
-    [∀ n, Module.Finite k ((outerPair.obj T).singularHomology V n : ModuleCat k)] (n : ℕ)
+theorem sum_range_neg_one_pow_mul_finrank_singularHomology_totalPair_eq (n : ℕ)
+    (hinner : ∀ i ≤ n, Module.Finite k ((innerPair.obj T).singularHomology V i : ModuleCat k))
+    (houter : ∀ i ≤ n, Module.Finite k ((outerPair.obj T).singularHomology V i : ModuleCat k))
     (hn : Limits.IsZero ((outerPair.obj T).singularHomology V (n + 1))) :
     ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i *
         finrank k ((totalPair.obj T).singularHomology V i : ModuleCat k) =
@@ -158,7 +161,7 @@ theorem sum_range_neg_one_pow_mul_finrank_singularHomology_totalPair_eq
           finrank k ((innerPair.obj T).singularHomology V i : ModuleCat k) +
         ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i *
           finrank k ((outerPair.obj T).singularHomology V i : ModuleCat k) := by
-  have h := T.sum_range_neg_one_pow_mul_finrank_eq V n
+  have h := T.sum_range_neg_one_pow_mul_finrank_eq V n hinner houter
   rw [hn.eq_of_src (T.singularHomologyδ V (n + 1) n rfl) 0, ModuleCat.hom_zero,
     LinearMap.range_zero, finrank_bot, Nat.cast_zero, mul_zero] at h
   simp only [mul_add, mul_sub, Finset.sum_add_distrib, Finset.sum_sub_distrib] at h

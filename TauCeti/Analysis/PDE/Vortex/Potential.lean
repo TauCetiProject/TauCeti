@@ -18,10 +18,11 @@ vortex equation gives the potential
 
 `∫ (|P|² / (1 + |P|²)) (exp(2w) - 1 - 2w)`.
 
-This file treats it as an extended nonnegative integral on real `L²(ℂ)`. It is weakly lower
-semicontinuous, including at functions where it is infinite, and finite on continuous
-compactly supported corrections. Thus passage to a weak limit does not lose the nonlinear
-potential in the variational existence argument. No minimizer or solution is constructed here.
+This file treats it as an extended nonnegative integral on real `L²(ℂ)`, for any measure on the
+plane. It is weakly lower semicontinuous, including at functions where it is infinite, and finite
+on continuous compactly supported corrections. Thus passage to a weak limit does not lose the
+nonlinear potential in the variational existence argument
+(`TauCeti.Vortex.exists_forall_sobolevReducedFunctional_le`).
 
 ## References
 
@@ -40,13 +41,15 @@ open scoped ENNReal
 namespace TauCeti.Vortex
 
 /-- The nonlinear potential of the background-subtracted vortex equation is weakly lower
-semicontinuous on real `L²(ℂ)`. No monicity, degree, or integrability assumption on the
+semicontinuous on real `L²(ℂ, μ)`, for every measure `μ` on the plane against which both the
+`L²` space and the potential are taken. No monicity, degree, or integrability assumption on the
 polynomial or on the potential is needed. -/
-theorem lowerSemicontinuous_lintegral_ofReal_mul_exp_sub_one_sub (P : Polynomial ℂ) :
-    LowerSemicontinuous (fun u : WeakSpace ℝ (Lp ℝ 2 (volume : Measure ℂ)) ↦
+theorem lowerSemicontinuous_lintegral_ofReal_mul_exp_sub_one_sub (P : Polynomial ℂ)
+    (μ : Measure ℂ) :
+    LowerSemicontinuous (fun u : WeakSpace ℝ (Lp ℝ 2 μ) ↦
       ∫⁻ z, ENNReal.ofReal (‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
-        (Real.exp (2 * ((toWeakSpace ℝ (Lp ℝ 2 (volume : Measure ℂ))).symm u z)) - 1 -
-          2 * ((toWeakSpace ℝ (Lp ℝ 2 (volume : Measure ℂ))).symm u z)))) := by
+        (Real.exp (2 * ((toWeakSpace ℝ (Lp ℝ 2 μ)).symm u z)) - 1 -
+          2 * ((toWeakSpace ℝ (Lp ℝ 2 μ)).symm u z))) ∂μ) := by
   let h : ℂ → ℝ := fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2)
   let Φ : ℝ → ℝ := fun t ↦ Real.exp (2 * t) - 1 - 2 * t
   have hh : Continuous h := by dsimp [h]; fun_prop (disch := intro z; positivity)
@@ -56,17 +59,17 @@ theorem lowerSemicontinuous_lintegral_ofReal_mul_exp_sub_one_sub (P : Polynomial
     simpa only [preimage_univ, Pi.sub_def, Function.comp_def, LinearMap.mulLeft_apply, Φ] using
       ((convexOn_exp.comp_linearMap (LinearMap.mulLeft ℝ (2 : ℝ))).sub
         (concaveOn_const (1 : ℝ) convex_univ)).sub hlin
-  have heq (u : Lp ℝ 2 (volume : Measure ℂ)) :
-      (∫⁻ z, ENNReal.ofReal (Φ (u z)) ∂(volume.withDensity (fun z ↦ ENNReal.ofReal (h z)))) =
-        ∫⁻ z, ENNReal.ofReal (h z * Φ (u z)) := by
-    have hmeas : AEMeasurable (fun z ↦ ENNReal.ofReal (Φ (u z))) volume :=
+  have heq (u : Lp ℝ 2 μ) :
+      (∫⁻ z, ENNReal.ofReal (Φ (u z)) ∂(μ.withDensity (fun z ↦ ENNReal.ofReal (h z)))) =
+        ∫⁻ z, ENNReal.ofReal (h z * Φ (u z)) ∂μ := by
+    have hmeas : AEMeasurable (fun z ↦ ENNReal.ofReal (Φ (u z))) μ :=
       aemeasurable_ofReal_comp_Lp Measure.AbsolutelyContinuous.rfl hΦ u
     rw [lintegral_withDensity_eq_lintegral_mul₀ hh.aemeasurable.ennreal_ofReal hmeas]
     apply lintegral_congr
     intro z
     rw [ENNReal.ofReal_mul (by dsimp [h]; positivity), Pi.mul_apply]
   have hlsc := lowerSemicontinuous_lintegral_ofReal_comp_toWeakSpace_symm (p := 2)
-    (withDensity_absolutelyContinuous volume (fun z ↦ ENNReal.ofReal (h z))) hΦ hconv
+    (withDensity_absolutelyContinuous μ (fun z ↦ ENNReal.ofReal (h z))) hΦ hconv
   simpa only [heq, h, Φ] using hlsc
 
 /-- Continuous compactly supported corrections have finite nonlinear vortex potential.

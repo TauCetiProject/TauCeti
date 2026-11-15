@@ -23,6 +23,7 @@ moments are recovered from stretched-exponential characteristic functions.
 * `TauCeti.integrableOn_rpow_neg_mul_one_sub_exp_neg_rpow`: integrability when the power in the
   exponential is larger than the singular exponent.
 * `TauCeti.integral_Ioi_rpow_neg_mul_one_sub_exp_neg_rpow`: the integral equals a Gamma value.
+* `TauCeti.integral_Ioi_rpow_neg_mul_one_sub_exp_neg_mul_rpow`: the corresponding scaled integral.
 -/
 
 public section
@@ -191,5 +192,25 @@ theorem integral_Ioi_rpow_neg_mul_one_sub_exp_neg_rpow {p q : ℝ} (hq : 0 < q) 
       simpa [mul_comm] using hsub
     _ = Real.Gamma (1 - q / p) / q := by
       field_simp [hp.ne', hq.ne']
+
+/-- For `0 < q < p` and `0 < s`, scaling the argument in the compensated exponential-power
+integral contributes a factor of `s ^ q`. -/
+theorem integral_Ioi_rpow_neg_mul_one_sub_exp_neg_mul_rpow {p q s : ℝ}
+    (hs : 0 < s) (hq : 0 < q) (hqp : q < p) :
+    ∫ x in Ioi (0 : ℝ), x ^ (-(q + 1)) * (1 - exp (-(s * x) ^ p)) =
+      s ^ q * (Real.Gamma (1 - q / p) / q) := by
+  have hscale (x : ℝ) (hx : x ∈ Ioi 0) :
+      x ^ (-(q + 1)) * (1 - exp (-(s * x) ^ p)) =
+        s ^ (q + 1) * ((s * x) ^ (-(q + 1)) * (1 - exp (-(s * x) ^ p))) := by
+    have hpow : x ^ (-(q + 1)) = s ^ (q + 1) * (s * x) ^ (-(q + 1)) := by
+      rw [Real.mul_rpow hs.le hx.le, ← mul_assoc, ← Real.rpow_add hs, add_neg_cancel,
+        Real.rpow_zero, one_mul]
+    rw [hpow]
+    ring
+  rw [setIntegral_congr_fun measurableSet_Ioi hscale, integral_const_mul,
+    integral_comp_mul_left_Ioi (fun u ↦ u ^ (-(q + 1)) * (1 - exp (-u ^ p))) 0 hs,
+    mul_zero, integral_Ioi_rpow_neg_mul_one_sub_exp_neg_rpow hq hqp, smul_eq_mul,
+    Real.rpow_add hs, Real.rpow_one]
+  field_simp
 
 end TauCeti

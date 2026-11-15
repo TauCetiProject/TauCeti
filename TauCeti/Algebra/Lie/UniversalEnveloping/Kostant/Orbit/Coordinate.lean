@@ -72,7 +72,7 @@ theorem existsUnique_highestWeightCoordinate
       exact ⟨n, Subtype.ext (Subtype.ext hn.symm)⟩
   let c := (LinearEquiv.ofBijective s hs).symm
   have hc (n : ℤ) : c (n • vW) = n := c.apply_symm_apply n
-  have hM : DirectSum.IsInternal W := b.isInternal_weightSublattice_orbitOfRep hv hve
+  have hM : DirectSum.IsInternal W := b.isInternal_weightSublattice_orbitOfRep hv
   -- Project the integral weight decomposition onto that line and read its coefficient.
   let d := (LinearEquiv.ofBijective (DirectSum.coeLinearMap W) hM).symm
   let f : M →ₗ[ℤ] ℤ := c.toLinearMap.comp

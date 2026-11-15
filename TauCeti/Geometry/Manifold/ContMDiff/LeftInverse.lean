@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Module.ContinuousInverse
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+import Mathlib.Geometry.Manifold.Algebra.LieGroup
 
 /-!
 # Smoothly varying left inverses
@@ -32,6 +33,10 @@ smoothly compatible.
 * `ContMDiffAt.exists_contMDiffAt_leftInverse`: `C^n` varying left inverses of a `C^n` family of
   operators whose member at `x₀` has a continuous left inverse.
 * `ContMDiffAt.of_clm_apply`: regularity can be tested after a smoothly varying split injection.
+* `ContMDiffOn.exists_isOpen_contMDiffOn_sub_comp_inverse_comp`: near a point where a left
+  inverse compresses a smooth family of operators to the identity, the projections of a fixed
+  covector annihilating the central member are smooth and nonzero, and the compression stays
+  invertible, on an open neighborhood.
 -/
 
 public section
@@ -88,3 +93,47 @@ theorem ContMDiffAt.of_clm_apply {A : M → G →L[𝕜'] F} {v : M → G} {x₀
   have hL' := (ContinuousLinearMap.restrictScalarsL 𝕜' F G 𝕜 𝕜).contDiff.comp_contMDiffAt hL
   exact (hL'.clm_apply hAv).congr_of_eventuallyEq
     (hLA.mono fun x hx ↦ (hx (v x)).symm)
+
+/-- Near a point where a smooth family of operators `A y : G → F` is compressed by a left inverse
+`P` to the identity and `a` is a covector killing `A x`, the covectors
+`a - a (A y) (P (A y))⁻¹ P` are smooth and nonzero, and the compression `P (A y)` is invertible,
+on an open neighborhood of `x` inside the domain of smoothness. They annihilate `A y` by
+`ContinuousLinearMap.sub_comp_inverse_comp_comp_eq_zero`. -/
+theorem ContMDiffOn.exists_isOpen_contMDiffOn_sub_comp_inverse_comp
+    {A : M → G →L[𝕜] F} {S : Set M}
+    (hA : ContMDiffOn I 𝓘(𝕜, G →L[𝕜] F) n A S) (hS : IsOpen S) {x : M} (hxS : x ∈ S)
+    {P : F →L[𝕜] G} (hP : LeftInverse P (A x)) {a : F →L[𝕜] 𝕜} (ha : a ≠ 0)
+    (haA : a ∘L A x = 0) :
+    ∃ W : Set M, IsOpen W ∧ x ∈ W ∧ W ⊆ S ∧
+      ContMDiffOn I 𝓘(𝕜, F →L[𝕜] 𝕜) n
+        (fun y ↦ a - a ∘L A y ∘L (P ∘L A y).inverse ∘L P) W ∧
+      ∀ y ∈ W, (P ∘L A y).IsInvertible ∧ a - a ∘L A y ∘L (P ∘L A y).inverse ∘L P ≠ 0 := by
+  -- The compressed frame is the identity at x, hence invertible on a neighborhood.
+  let Q : M → G →L[𝕜] G := fun y ↦ P ∘L A y
+  have hQ : ContMDiffOn I 𝓘(𝕜, G →L[𝕜] G) n Q S :=
+    contMDiffOn_const.clm_comp hA
+  have hQx : Q x = 1 := ContinuousLinearMap.ext hP
+  -- Project the annihilator at x to the annihilators of the nearby frame images.
+  let c : M → F →L[𝕜] 𝕜 := fun y ↦ a - a ∘L A y ∘L (Q y).inverse ∘L P
+  have hcx : c x = a := by
+    dsimp only [c]
+    rw [← ContinuousLinearMap.comp_assoc, ← ContinuousLinearMap.comp_assoc, haA]
+    simp
+  have hQunit : ∀ᶠ y in 𝓝 x, (Q y).IsInvertible := by
+    have hi : (Q x).IsInvertible := by
+      rw [hQx]
+      exact ⟨ContinuousLinearEquiv.refl 𝕜 _, rfl⟩
+    exact (hQ.continuousOn.continuousAt (hS.mem_nhds hxS)).tendsto.eventually hi.eventually_nhds
+  obtain ⟨W, hWQ, hW, hxW⟩ := eventually_nhds_iff.mp hQunit
+  have hc : ContMDiffOn I 𝓘(𝕜, F →L[𝕜] 𝕜) n c (S ∩ W) := by
+    apply contMDiffOn_const.sub
+    exact ((contMDiffOn_const.clm_comp (hA.mono Set.inter_subset_left)).clm_comp
+      (fun y hy ↦ (hWQ y hy.2).contDiffAt_map_inverse.comp_contMDiffWithinAt
+        ((hQ y hy.1).mono Set.inter_subset_left))).clm_comp contMDiffOn_const
+  have hcn : ∀ᶠ y in 𝓝 x, c y ≠ 0 :=
+    (hc.continuousOn.continuousAt ((hS.inter hW).mem_nhds ⟨hxS, hxW⟩)).eventually_ne
+      (by rwa [hcx])
+  obtain ⟨Z, hZc, hZ, hxZ⟩ := eventually_nhds_iff.mp hcn
+  exact ⟨S ∩ W ∩ Z, (hS.inter hW).inter hZ, ⟨⟨hxS, hxW⟩, hxZ⟩,
+    Set.inter_subset_left.trans Set.inter_subset_left,
+    hc.mono Set.inter_subset_left, fun y hy ↦ ⟨hWQ y hy.1.2, hZc y hy.2⟩⟩

@@ -30,7 +30,8 @@ morphisms from `γ` to the constant loop in the fundamental groupoid of `Ω X x`
   loop form a torsor under `π₂(X, x)`
   (`TauCeti.Floer.RawCap.instAddTorsor`, from `CategoryTheory.End.torsorRight`). Here
   `D' -ᵥ D` is the sphere obtained by running `D` backwards from the centre to `γ` and then
-  `D'` from `γ` back to the centre.
+  `D'` from `γ` back to the centre. If `π₂(X, x)` is trivial, as on an aspherical space, a loop
+  therefore has at most one raw cap.
 * A homotopy of loops `p` from `γ₁` to `γ₂`, which is a cylinder whose seam stays at `x`, glues
   to a cap `D` of `γ₂` and gives the cap `p ≫ D` of `γ₁`. This commutes with gluing spheres and
   preserves differences of caps (`TauCeti.Floer.RawCap.comp_vadd`,
@@ -50,7 +51,9 @@ lie in the joint kernel of `ω` and `c`. On a path-connected space every class o
 group `Γ = TauCeti.Floer.SphericalPeriodGroup ω c` is the class of a sphere at `x`. So the cap
 classes of a contractible loop form a torsor under `Γ`
 (`TauCeti.Floer.SphericalCapClass.instAddTorsor`), with
-`SphericalCapClass.mk D' -ᵥ SphericalCapClass.mk D` the class of the sphere `D' -ᵥ D`. The group
+`SphericalCapClass.mk D' -ᵥ SphericalCapClass.mk D` the class of the sphere `D' -ᵥ D`. When `Γ` is
+trivial, as on a symplectically aspherical target with first Chern class vanishing on spheres, a
+loop has at most one cap class, so capping carries no information. The group
 `Γ` does not depend on the base point. This gives one common coefficient group acting on the
 caps of all the contractible orbits of a Hamiltonian, whose based loops have different base
 points. Gluing a homotopy of loops descends to cap classes
@@ -177,6 +180,13 @@ instance instAddTorsor [Nonempty (RawCap γ)] : AddTorsor (Additive (π_ 2 X x))
     rw [vadd_def, vsub_def, toMul_ofMul, MulEquiv.symm_apply_apply, ← End.smul_right, sdiv_smul]
   vadd_vsub' a D := by
     rw [vadd_def, vsub_def, ← End.smul_right, smul_sdiv, MulEquiv.apply_symm_apply, ofMul_toMul]
+
+/-- **If `π₂(X, x)` is trivial, a loop has at most one raw cap**: two discs bounding it differ by a
+sphere, which is null-homotopic. This holds on aspherical spaces such as tori. -/
+instance [Subsingleton (π_ 2 X x)] : Subsingleton (RawCap γ) where
+  allEq D D' := by
+    have : Nonempty (RawCap γ) := ⟨D⟩
+    exact ((AddTorsor.subsingleton_iff (Additive (π_ 2 X x)) (RawCap γ)).1 inferInstance).elim D D'
 
 /-- Gluing a homotopy of loops to a cap commutes with gluing spheres at the centre. -/
 @[simp]
@@ -423,6 +433,16 @@ instance instAddTorsor [Nonempty (RawCap γ)] :
     obtain ⟨a, rfl⟩ := SphericalPeriodGroup.ofHomotopyGroup_surjective (ω := ω) (c := c) x g
     induction q using induction_on with
     | h D => rw [ofHomotopyGroup_vadd_mk, mk_vsub_mk, vadd_vsub]
+
+/-- **On a target with trivial period group a loop has at most one cap class**, for instance on a
+symplectically aspherical target whose first Chern class vanishes on spheres: any two cap classes
+differ by the trivial class. A contractible loop therefore has exactly one. -/
+instance [Subsingleton (SphericalPeriodGroup ω c)] : Subsingleton (SphericalCapClass ω c γ) where
+  allEq q q' := by
+    induction q using induction_on with | h D =>
+    have : Nonempty (RawCap γ) := ⟨D⟩
+    exact ((AddTorsor.subsingleton_iff (SphericalPeriodGroup ω c) (SphericalCapClass ω c γ)).1
+      inferInstance).elim _ q'
 
 /-- Gluing a homotopy commutes with recapping. -/
 @[simp]

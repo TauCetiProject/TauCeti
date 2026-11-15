@@ -39,7 +39,9 @@ the identity are read for the full coset space, which is what makes them match.
 The **width** of an orbit is the period of that action: the least `m > 0` with
 `x⁻¹ T ^ m x ∈ 𝒢` (`minimalPeriod_TSL_dvd_iff`, `cuspTranslationOrbitWidth_mk`). It is the
 classical width of the cusp `x⁻¹ ∞` when `-I ∈ 𝒢`, and otherwise that width or twice it, in step
-with the same convention.
+with the same convention. For `Γ ≤ SL(2, ℤ)` it is read on integral representatives by
+`cuspTranslationOrbitWidth_mk_dvd_iff`, and the width for an intersection `𝒢₁ ⊓ 𝒢₂` is the least
+common multiple of the two widths (`cuspTranslationOrbitWidth_mk_inf`).
 The widths sum to the index (`sum_cuspTranslationOrbitWidth`), and the orbit of the base coset —
 the cusp `∞` — has width `Subgroup.integerCuspWidth 𝒢`
 (`cuspTranslationOrbitWidth_mk_one`).
@@ -52,7 +54,7 @@ same order as the width-`m` expansion of the function it is built from
 (`qExpansion_one_galoisProd_order_eq`). The norm is the product of these Galois products over the
 orbits, so its order at `∞` is the sum of the orders of `f` at the cusp translation orbits.
 Nothing here divides by an order that could be `⊤`: each factor of a nonzero form is nonzero
-(`SlashInvariantForm.quotientFunc_ne_zero`), which is what the additivity of
+(`SlashInvariantForm.quotientFunc_eq_zero_iff`), which is what the additivity of
 `qExpansionOrderAtCusp` over products asks for.
 
 ## Main definitions
@@ -142,6 +144,22 @@ lemma quotientFunc_TSL_zpow_smul (f : F) (q : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮�
     slash_T_zpow_apply]
   norm_num
 
+/-- Integer translation of a coset does not change its constant term. -/
+lemma valueAtInfty_quotientFunc_TSL_zpow_smul (f : F) (q : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ) (j : ℤ) :
+    valueAtInfty (quotientFunc f (TSL ^ j • q)) = valueAtInfty (quotientFunc f q) := by
+  have hshift (r : ℝ) : Tendsto (fun τ : ℍ ↦ r +ᵥ τ) atImInfty atImInfty := by
+    simpa only [TauCeti.Matrix.GeneralLinearGroup.upperRightHom_smul] using
+      (tendsto_smul_atImInfty (g := Matrix.GeneralLinearGroup.upperRightHom r)
+        (by simp [Matrix.GeneralLinearGroup.upperRightHom_apply]))
+  have hmap : map (fun τ : ℍ ↦ (-j : ℝ) +ᵥ τ) atImInfty = atImInfty := by
+    have hid : (fun τ : ℍ ↦ (-j : ℝ) +ᵥ τ) ∘ (fun τ : ℍ ↦ (j : ℝ) +ᵥ τ) = id := by
+      ext τ
+      simp [vadd_vadd]
+    exact Filter.map_eq_of_inverse (fun τ : ℍ ↦ (j : ℝ) +ᵥ τ) hid (hshift _) (hshift _)
+  have hfun : quotientFunc f (TSL ^ j • q) = quotientFunc f q ∘ fun τ ↦ (-j : ℝ) +ᵥ τ :=
+    funext (quotientFunc_TSL_zpow_smul f q j)
+  rw [valueAtInfty, valueAtInfty, hfun, limUnder, limUnder, ← map_map, hmap]
+
 end Translate
 
 
@@ -197,6 +215,39 @@ lemma minimalPeriod_TSL_dvd_iff (x : 𝒮ℒ) (n : ℕ) :
     group
   rw [← MulAction.pow_smul_eq_iff_minimalPeriod_dvd, MulAction.Quotient.smul_mk, smul_eq_mul,
     QuotientGroup.eq, Subgroup.mem_subgroupOf, hconj, InvMemClass.coe_inv, Subgroup.inv_mem_iff]
+
+/-- For `Γ ≤ SL(2, ℤ)`, the width of the cusp translation orbit of the coset of `γ` (the cusp
+`γ⁻¹ ∞`) divides `m` exactly when `γ⁻¹ T ^ m γ ∈ Γ`. -/
+lemma cuspTranslationOrbitWidth_mk_dvd_iff {Γ : Subgroup SL(2, ℤ)} (γ : SL(2, ℤ)) (m : ℕ) :
+    cuspTranslationOrbitWidth
+        (⟦(QuotientGroup.mk ((Matrix.SpecialLinearGroup.mapGL ℝ).rangeRestrict γ) :
+          𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ)⟧ :
+            CuspTranslationOrbit (Γ : Subgroup (GL (Fin 2) ℝ))) ∣ m ↔
+      γ⁻¹ * ModularGroup.T ^ m * γ ∈ Γ := by
+  have hconj : (((((Matrix.SpecialLinearGroup.mapGL ℝ).rangeRestrict γ)⁻¹ * TSL ^ m *
+      (Matrix.SpecialLinearGroup.mapGL ℝ).rangeRestrict γ) : 𝒮ℒ) : GL (Fin 2) ℝ) =
+        Matrix.SpecialLinearGroup.mapGL ℝ (γ⁻¹ * ModularGroup.T ^ m * γ) := by
+    have hT : ((TSL ^ m : 𝒮ℒ) : GL (Fin 2) ℝ) =
+        Matrix.SpecialLinearGroup.mapGL ℝ (ModularGroup.T ^ m) := by
+      rw [← zpow_natCast, coe_TSL_zpow, zpow_natCast,
+        TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL]
+    simp only [InvMemClass.coe_inv, Subgroup.coe_mul, MonoidHom.coe_rangeRestrict, map_inv, hT,
+      map_mul]
+  rw [cuspTranslationOrbitWidth_mk, minimalPeriod_TSL_dvd_iff, hconj,
+    Subgroup.mem_map_iff_mem Matrix.SpecialLinearGroup.mapGL_injective]
+
+/-- **Widths of an intersection**: at every coset, the width of the cusp translation orbit for
+`𝒢₁ ⊓ 𝒢₂` is the least common multiple of the widths for `𝒢₁` and for `𝒢₂`. -/
+lemma cuspTranslationOrbitWidth_mk_inf (𝒢₁ 𝒢₂ : Subgroup (GL (Fin 2) ℝ)) (x : 𝒮ℒ) :
+    cuspTranslationOrbitWidth
+        (⟦(QuotientGroup.mk x : 𝒮ℒ ⧸ (𝒢₁ ⊓ 𝒢₂).subgroupOf 𝒮ℒ)⟧ : CuspTranslationOrbit (𝒢₁ ⊓ 𝒢₂)) =
+      (cuspTranslationOrbitWidth
+        (⟦(QuotientGroup.mk x : 𝒮ℒ ⧸ 𝒢₁.subgroupOf 𝒮ℒ)⟧ : CuspTranslationOrbit 𝒢₁)).lcm
+      (cuspTranslationOrbitWidth
+        (⟦(QuotientGroup.mk x : 𝒮ℒ ⧸ 𝒢₂.subgroupOf 𝒮ℒ)⟧ : CuspTranslationOrbit 𝒢₂)) :=
+  Nat.dvd_right_iff_eq.mp fun n ↦ by
+    simp only [cuspTranslationOrbitWidth_mk, Nat.lcm_dvd_iff, minimalPeriod_TSL_dvd_iff,
+      Subgroup.mem_inf]
 
 instance [𝒢.IsFiniteRelIndex 𝒮ℒ] (c : CuspTranslationOrbit 𝒢) :
     NeZero (cuspTranslationOrbitWidth c) :=
@@ -392,20 +443,6 @@ lemma tendsto_quotientFunc_valueAtInfty (f : F) (q : 𝒮ℒ ⧸ 𝒢.subgroupOf
     (h := (minimalPeriod (TSL • ·) q : ℝ))
     (f := quotientFunc (𝒢 := 𝒢) (ℋ := 𝒮ℒ) (k := k) f q) hw' hper hana
 
-/-- Integer translation of a coset does not change its constant term. -/
-lemma valueAtInfty_quotientFunc_TSL_zpow_smul (f : F)
-    (q : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ) (j : ℤ) :
-    valueAtInfty (quotientFunc f (TSL ^ j • q)) = valueAtInfty (quotientFunc f q) := by
-  have hshift : Tendsto (fun τ : ℍ ↦ (-j : ℝ) +ᵥ τ) atImInfty atImInfty := by
-    simpa only [TauCeti.Matrix.GeneralLinearGroup.upperRightHom_smul] using
-      (tendsto_smul_atImInfty (g := Matrix.GeneralLinearGroup.upperRightHom (-j : ℝ))
-        (by simp [Matrix.GeneralLinearGroup.upperRightHom_apply]))
-  have hlim := (tendsto_quotientFunc_valueAtInfty f q).comp hshift
-  have hlim' : Tendsto (quotientFunc f (TSL ^ j • q)) atImInfty
-      (𝓝 (valueAtInfty (quotientFunc f q))) :=
-    hlim.congr (fun τ ↦ (quotientFunc_TSL_zpow_smul f q j τ).symm)
-  exact tendsto_nhds_unique (tendsto_quotientFunc_valueAtInfty f _) hlim'
-
 private lemma analyticAt_cuspFunction_one_galoisProd (f : F) (c : CuspTranslationOrbit 𝒢) :
     AnalyticAt ℂ
       (cuspFunction 1 (galoisProd (cuspTranslationOrbitWidth c) (quotientFunc f c.out))) 0 :=
@@ -431,7 +468,7 @@ private lemma qExpansion_cuspTranslationOrbit_ne_zero {f : F} (hf : (⇑f : ℍ 
     (periodic_quotientFunc_out f c)
     (SlashInvariantForm.mdifferentiable_quotientFunc f _)
     (SlashInvariantForm.isBoundedAtImInfty_quotientFunc f _)).mp
-    (SlashInvariantForm.quotientFunc_ne_zero hf _)
+    ((SlashInvariantForm.quotientFunc_eq_zero_iff _).not.2 hf)
 
 omit [𝒢.IsFiniteRelIndex 𝒮ℒ] in
 /-- The period of the base coset is the integer cusp width of `𝒢`: both are characterised by
@@ -469,10 +506,14 @@ itself at the integer cusp width. -/
 
 /-- **The order of the norm at `∞` is the sum of the orders of `f` at the cusp translation
 orbits.** -/
-theorem qExpansionOrderAtCusp_one_norm_eq_sum_orderAtCuspTranslationOrbit (f : F)
-    (hf : (⇑f : ℍ → ℂ) ≠ 0) :
+theorem qExpansionOrderAtCusp_one_norm_eq_sum_orderAtCuspTranslationOrbit (f : F) :
     qExpansionOrderAtCusp 1 ⇑(_root_.ModularForm.norm 𝒮ℒ f) =
       ∑ c : CuspTranslationOrbit 𝒢, orderAtCuspTranslationOrbit f c := by
+  rcases eq_or_ne (⇑f : ℍ → ℂ) 0 with hf | hf
+  · -- the zero form: its norm and every coset factor are zero, with junk order `0`
+    have hq (c : CuspTranslationOrbit 𝒢) : quotientFunc f c.out = 0 :=
+      (SlashInvariantForm.quotientFunc_eq_zero_iff _).2 hf
+    simp [orderAtCuspTranslationOrbit, hq, (_root_.ModularForm.norm_eq_zero_iff 𝒮ℒ f).mpr hf]
   have hne : ∀ c : CuspTranslationOrbit 𝒢,
       analyticOrderAt (cuspFunction 1
         (galoisProd (cuspTranslationOrbitWidth c) (quotientFunc f c.out))) 0 ≠ ⊤ := fun c ↦ by
@@ -521,7 +562,7 @@ theorem valence_formula_finiteIndex (f : F) (hf : (⇑f : ℍ → ℂ) ≠ 0) :
           (orderAtCuspTranslationOrbit f c : ℚ) =
       (k : ℚ) * Nat.card (𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) / 12 := by
   rw [← valence_formula_finiteIndex_norm f hf,
-    qExpansionOrderAtCusp_one_norm_eq_sum_orderAtCuspTranslationOrbit f hf]
+    qExpansionOrderAtCusp_one_norm_eq_sum_orderAtCuspTranslationOrbit f]
   push_cast
   ring
 

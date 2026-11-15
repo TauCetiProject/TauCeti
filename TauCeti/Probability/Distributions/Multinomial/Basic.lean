@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Convex.ConvexSpace.Defs
 public import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
+import Mathlib.Topology.Instances.Nat
 
 /-!
 # The multinomial distribution
@@ -271,6 +272,15 @@ theorem measurable_multinomialToEuclidean :
     Measurable (multinomialToEuclidean (ι := ι)) :=
   (WithLp.measurable_toLp 2 (ι → ℝ)).comp
     (Measurable.of_eval fun i => measurable_from_nat.comp (measurable_pi_apply i))
+
+/-- Casting count vectors into Euclidean space is a closed embedding. In particular, closed
+sets of count vectors remain closed after casting, even when they are infinite. -/
+theorem isClosedEmbedding_multinomialToEuclidean :
+    Topology.IsClosedEmbedding (multinomialToEuclidean (ι := ι)) := by
+  convert (EuclideanSpace.equiv ι ℝ).symm.toHomeomorph.isClosedEmbedding.comp
+    (Topology.IsClosedEmbedding.piMap fun _ : ι => Nat.isClosedEmbedding_coe_real) using 1
+  ext k i
+  exact multinomialToEuclidean_apply k i
 
 /-- Casting count vectors into Euclidean space is a measurable embedding. -/
 theorem measurableEmbedding_multinomialToEuclidean [Finite ι] :

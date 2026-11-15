@@ -58,8 +58,9 @@ in its function field is computed on affine opens.
 * `TauCeti.AlgebraicGeometry.Scheme.quasiCompact_fromSpecStalk_genericPoint`: the generic point
   `Spec k(X) ⟶ X` of an integral scheme is quasi-compact.
 * `TauCeti.AlgebraicGeometry.Scheme.isFractionRing_app_fromSpecStalk_genericPoint`: on an integral
-  scheme, the sections of `Spec k(X)` over the preimage of a nonempty affine open `U` are a
-  fraction field of `Γ(X, U)`.
+  scheme, the sections of `Spec k(X)` over the preimage of an affine open `U` form the
+  localization of `Γ(X, U)` at its non-zero-divisors (`IsFractionRing`), a field when `U` is
+  nonempty.
 * `TauCeti.AlgebraicGeometry.Scheme.algEquivAppPreimageSpecExtension`: on an integral scheme, for
   a field extension `L` of `k(X)`, the sections of `Spec L` over the preimage of a nonempty open `U`
   along `Spec L ⟶ Spec k(X) ⟶ X` are `L`, as a `Γ(X, U)`-algebra.
@@ -177,17 +178,24 @@ instance quasiCompact_fromSpecStalk_genericPoint {X : Scheme.{u}} [IsIntegral X]
   ⟨fun _ _ _ ↦ (Set.toFinite _).isCompact⟩
 
 open CategoryTheory in
-/-- On an integral scheme `X`, the sections of `Spec k(X)` over the preimage of a nonempty affine
-open `U` under `Spec k(X) ⟶ X` are a fraction field of `Γ(X, U)`: the preimage is all of
-`Spec k(X)`, whose ring of global sections is `k(X)`. -/
+/-- On an integral scheme `X`, the sections of `Spec k(X)` over the preimage of an affine open `U`
+under `Spec k(X) ⟶ X` form the localization of `Γ(X, U)` at its non-zero-divisors
+(`IsFractionRing`): for nonempty `U` the preimage is all of `Spec k(X)`, whose ring of global
+sections is the field `k(X)`; if `U` is empty both rings are zero rings. -/
 theorem isFractionRing_app_fromSpecStalk_genericPoint {X : Scheme.{u}} [IsIntegral X]
-    {U : X.Opens} (hU : IsAffineOpen U) [Nonempty U] :
+    {U : X.Opens} (hU : IsAffineOpen U) :
     letI := ((X.fromSpecStalk (genericPoint X)).app U).hom.toAlgebra
     IsFractionRing Γ(X, U) Γ(Spec X.functionField, X.fromSpecStalk (genericPoint X) ⁻¹ᵁ U) := by
   set f := X.fromSpecStalk (genericPoint X)
   let := (f.app U).hom.toAlgebra
-  have hη : genericPoint X ∈ U :=
-    ((genericPoint_spec X).mem_open_set_iff U.isOpen).mpr (by simpa using ‹Nonempty U›)
+  by_cases hη : genericPoint X ∈ U
+  swap
+  · -- `U` is empty, so both rings of sections are zero rings.
+    have := subsingleton_of_genericPoint_notMem hη
+    have := subsingleton_preimage_of_genericPoint_notMem f hη
+    exact ⟨fun _ ↦ isUnit_of_subsingleton _, fun _ ↦ ⟨(0, 1), Subsingleton.elim _ _⟩,
+      fun _ ↦ ⟨1, Subsingleton.elim _ _⟩⟩
+  have : Nonempty U := ⟨⟨_, hη⟩⟩
   let ι := (Scheme.ΓSpecIso X.functionField).inv ≫
     (Spec X.functionField).presheaf.map (homOfLE (le_top : f ⁻¹ᵁ U ≤ ⊤)).op
   have := isIso_presheaf_map_fromSpecStalk_preimage_le_top hη

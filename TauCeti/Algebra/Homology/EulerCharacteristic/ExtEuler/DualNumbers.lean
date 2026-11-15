@@ -38,11 +38,6 @@ open CategoryTheory CategoryTheory.Abelian
 
 open scoped ModuleCat.Algebra
 
--- Provenance: that each `Extⁿ(S, S)` is finite-dimensional while eventual vanishing fails, so
--- that `χ(S, S)` is undefined and this pair must be rejected with no `finsum` value exposed, is
--- recorded in the Tau Ceti `GrothendieckEulerForms` roadmap blueprint, `README.md`, section
--- "The dual numbers".
-
 public section
 
 namespace TauCeti

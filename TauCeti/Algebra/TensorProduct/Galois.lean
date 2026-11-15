@@ -7,16 +7,27 @@ module
 
 public import Mathlib.FieldTheory.Galois.Infinite
 public import Mathlib.RingTheory.TensorProduct.Maps
-import Mathlib.RingTheory.Flat.Basic
+import Mathlib.LinearAlgebra.TensorProduct.RightExactness
+import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 import TauCeti.Algebra.TensorProduct.BaseChange
 import TauCeti.LinearAlgebra.TensorProduct.Basis
+import TauCeti.LinearAlgebra.TensorProduct.Submodule
 
 /-!
 # Galois invariants of a scalar extension
 
 For a Galois extension `L/k`, the elements of `L ⊗[k] A` fixed by the scalar-factor
 action are precisely the tensors `1 ⊗ a`. This identifies the original vector space inside its
-scalar extension, in arbitrary characteristic. An algebra morphism between scalar extensions
+scalar extension, in arbitrary characteristic.
+
+More generally, a subspace of `L ⊗[k] V` stable under the scalar-factor action is the scalar
+extension of a unique subspace of `V`, namely of the vectors `v` with `1 ⊗ v` in it. The proof
+reduces to the case of a stable subspace meeting the original space trivially, by passing to the
+quotient; such a subspace is zero, because a nonzero element with fewest nonzero coordinates can be
+normalized to be fixed. No finiteness of `L / k` or of `V` is required. Closed subgroups of an
+affine group over `k` are recovered from their scalar extensions in this way.
+
+An algebra morphism between scalar extensions
 therefore descends uniquely if and only if it commutes with the scalar-factor Galois action.
 This supplies the underlying algebra map for descent of coordinate bialgebra morphisms.
 
@@ -24,12 +35,17 @@ This supplies the underlying algebra map for descent of coordinate bialgebra mor
 
 * `TauCeti.GaloisDescent.tensorProduct_forall_map_eq_self_iff_exists_one_tmul_eq`: the fixed
   tensors are exactly those coming from the original vector space.
+* `Submodule.baseChange_comap_eq_of_forall_map_mem`: a Galois-stable subspace of a scalar
+  extension is the scalar extension of its intersection with the original space.
+* `Submodule.existsUnique_baseChange_eq_iff_forall_map_mem`: the subspaces arising by scalar
+  extension are exactly the Galois-stable ones, and each arises from a unique subspace.
 * `AlgHom.galoisDescend`: descent of an equivariant algebra morphism.
 * `AlgHom.existsUnique_map_eq_iff`: equivariance characterizes unique descent.
 
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), Appendix A.64.
+* A. Borel, *Linear Algebraic Groups*, 2nd ed. (1991), §AG.14.
 -/
 
 public section
@@ -68,6 +84,111 @@ theorem tensorProduct_forall_map_eq_self_iff_exists_one_tmul_eq (x : L ⊗[k] A)
     simp
 
 end TauCeti.GaloisDescent
+
+namespace Submodule
+
+open TauCeti.GaloisDescent
+
+variable {k L V : Type*} [Field k] [Field L] [Algebra k L]
+variable [AddCommGroup V] [Module k V] [IsGalois k L]
+
+/-- A Galois-stable subspace of a scalar extension containing no nonzero tensor `1 ⊗ v` is zero. -/
+private theorem eq_bot_of_forall_map_mem (W : Submodule L (L ⊗[k] V))
+    (hW : ∀ σ : L ≃ₐ[k] L, ∀ x ∈ W, TensorProduct.map σ.toLinearMap LinearMap.id x ∈ W)
+    (h : ∀ v : V, 1 ⊗ₜ[k] v ∈ W → v = 0) : W = ⊥ := by
+  classical
+  let c := (Module.Free.chooseBasis k V).baseChange L
+  by_contra hne
+  have hex : ∃ n, ∃ w ∈ W, w ≠ 0 ∧ (c.repr w).support.card = n := by
+    obtain ⟨w, hw, hw0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hne
+    exact ⟨_, w, hw, hw0, rfl⟩
+  -- Choose a nonzero element of `W` with the fewest nonzero coordinates.
+  obtain ⟨w, hw, hw0, hcard⟩ := Nat.find_spec hex
+  obtain ⟨i, hi⟩ : (c.repr w).support.Nonempty := by
+    rw [Finsupp.support_nonempty_iff]
+    exact (map_ne_zero_iff _ c.repr.injective).mpr hw0
+  have hwi : c.repr w i ≠ 0 := Finsupp.mem_support_iff.mp hi
+  -- Normalize its `i`-th coordinate to `1`.
+  set u := (c.repr w i)⁻¹ • w
+  have hu : u ∈ W := W.smul_mem _ hw
+  have hui : c.repr u i = 1 := by simp [u, inv_mul_cancel₀ hwi]
+  have hsupp : (c.repr u).support = (c.repr w).support := by
+    simp only [u, map_smul]
+    exact Finsupp.support_smul_eq (inv_ne_zero hwi)
+  -- A Galois translate of `u` differs from `u` by an element of `W` of smaller support, so it
+  -- agrees with `u`.
+  have hfix (σ : L ≃ₐ[k] L) : TensorProduct.map σ.toLinearMap LinearMap.id u = u := by
+    by_contra hne'
+    set d := TensorProduct.map σ.toLinearMap LinearMap.id u - u
+    have hrepr (j) : c.repr d j = σ (c.repr u j) - c.repr u j := by
+      simp only [d, map_sub, Finsupp.sub_apply, c, AlgEquiv.toLinearMap_apply,
+        ← (Module.Free.chooseBasis k V).map_baseChange_repr σ.toLinearMap]
+    have hsub : (c.repr d).support ⊂ (c.repr u).support := by
+      refine (Finset.ssubset_iff_of_subset fun j hj ↦ ?_).mpr ⟨i, by rwa [hsupp], ?_⟩
+      · rw [Finsupp.mem_support_iff] at hj ⊢
+        intro hu0
+        exact hj (by rw [hrepr, hu0, map_zero, sub_zero])
+      · rw [Finsupp.notMem_support_iff, hrepr, hui, map_one, sub_self]
+    have hmin := Nat.find_min' hex ⟨d, W.sub_mem (hW σ u hu) hu, sub_ne_zero.mpr hne', rfl⟩
+    have := Finset.card_lt_card hsub
+    rw [hsupp] at this
+    omega
+  -- Hence `u` is a fixed tensor `1 ⊗ v`, which forces `u = 0`.
+  obtain ⟨v, hv⟩ := (tensorProduct_forall_map_eq_self_iff_exists_one_tmul_eq u).mp hfix
+  rw [h v (hv ▸ hu), TensorProduct.tmul_zero] at hv
+  simp [← hv] at hui
+
+/-- **Galois descent of subspaces.** Along a Galois extension `L / k`, a subspace of `L ⊗[k] V`
+stable under the scalar-factor Galois action is the scalar extension of the subspace of `V`
+consisting of the vectors `v` with `1 ⊗ v` in it. -/
+theorem baseChange_comap_eq_of_forall_map_mem (W : Submodule L (L ⊗[k] V))
+    (hW : ∀ σ : L ≃ₐ[k] L, ∀ x ∈ W, TensorProduct.map σ.toLinearMap LinearMap.id x ∈ W) :
+    ((W.restrictScalars k).comap (TensorProduct.mk k L V 1)).baseChange L = W := by
+  set p := (W.restrictScalars k).comap (TensorProduct.mk k L V 1)
+  have hle : p.baseChange L ≤ W := baseChange_le_iff_le_comap.mpr le_rfl
+  refine le_antisymm hle fun x hx ↦ ?_
+  -- Pass to `L ⊗[k] (V ⧸ p)`, whose kernel from `L ⊗[k] V` is `p.baseChange L` by right
+  -- exactness, and where the image of `W` meets the original space trivially.
+  let f : L ⊗[k] V →ₗ[L] L ⊗[k] (V ⧸ p) := TensorProduct.AlgebraTensorModule.lTensor L L p.mkQ
+  have hf (y : L ⊗[k] V) : f y = p.mkQ.lTensor L y :=
+    congrFun (TensorProduct.AlgebraTensorModule.coe_lTensor (A := L) (M := L) p.mkQ) y
+  have hker {y : L ⊗[k] V} (hy : f y = 0) : y ∈ p.baseChange L := by
+    rw [hf, ← LinearMap.mem_ker, lTensor_mkQ] at hy
+    obtain ⟨z, rfl⟩ := hy
+    exact ⟨z, rfl⟩
+  have hcomm (σ : L ≃ₐ[k] L) (y : L ⊗[k] V) :
+      TensorProduct.map σ.toLinearMap LinearMap.id (f y) =
+        f (TensorProduct.map σ.toLinearMap LinearMap.id y) := by
+    induction y using TensorProduct.inductionOn with
+    | tmul a v => simp [hf]
+    | add y z hy hz => simp only [map_add, hy, hz]
+  have hbot : W.map f = ⊥ := by
+    refine eq_bot_of_forall_map_mem _ ?_ ?_
+    · rintro σ _ ⟨y, hy, rfl⟩
+      exact ⟨_, hW σ y hy, (hcomm σ y).symm⟩
+    · intro v ⟨y, hy, hyv⟩
+      obtain ⟨v, rfl⟩ := p.mkQ_surjective v
+      have hdiff : y - 1 ⊗ₜ[k] v ∈ W := hle (hker (by rw [map_sub, hyv]; simp [hf]))
+      have hv : 1 ⊗ₜ[k] v ∈ W := by simpa using W.sub_mem hy hdiff
+      exact (Submodule.Quotient.mk_eq_zero p).mpr hv
+  have hfx : f x ∈ W.map f := ⟨x, hx, rfl⟩
+  rw [hbot, Submodule.mem_bot] at hfx
+  exact hker hfx
+
+/-- Along a Galois extension `L / k`, a subspace of `L ⊗[k] V` is the scalar extension of a
+subspace of `V` exactly when it is stable under the scalar-factor Galois action, and that subspace
+of `V` is then unique. -/
+theorem existsUnique_baseChange_eq_iff_forall_map_mem (W : Submodule L (L ⊗[k] V)) :
+    (∃! p : Submodule k V, p.baseChange L = W) ↔
+      ∀ σ : L ≃ₐ[k] L, ∀ x ∈ W, TensorProduct.map σ.toLinearMap LinearMap.id x ∈ W := by
+  constructor
+  · rintro ⟨p, rfl, -⟩ σ x hx
+    exact p.map_mem_baseChange σ.toLinearMap hx
+  · intro hW
+    exact ⟨_, W.baseChange_comap_eq_of_forall_map_mem hW, fun p hp ↦
+      baseChange_injective (hp.trans (W.baseChange_comap_eq_of_forall_map_mem hW).symm)⟩
+
+end Submodule
 
 namespace AlgHom
 

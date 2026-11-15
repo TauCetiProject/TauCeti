@@ -25,12 +25,15 @@ and the resulting finite-horizon measure has total mass `T`.
 
 On a finite coordinate space `ι → ℝ`, permuting the coordinates and changing their signs
 preserves Lebesgue measure (`TauCeti.volume_preserving_signedPerm`).
+
+The Lebesgue measure of a finite union of pairwise disjoint intervals `Ι (a i) (b i)` is the sum of
+their lengths (`TauCeti.volume_biUnion_uIoc_eq_ofReal_sum`).
 -/
 
 public section
 
 open MeasureTheory Set
-open scoped ENNReal NNReal
+open scoped ENNReal NNReal Interval
 
 namespace NNReal
 
@@ -83,6 +86,17 @@ theorem volume_preserving_signedPerm {ι : Type*} [Fintype ι] (e : Equiv.Perm �
   exact hmul.comp
     (volume_preserving_arrowCongr' e.symm (MeasurableEquiv.refl ℝ) (MeasurePreserving.id _))
 
+/-- The measure of a finite union of pairwise disjoint intervals `Ι (a i) (b i)` is the sum of their
+lengths `max (a i) (b i) - min (a i) (b i)`. -/
+theorem volume_biUnion_uIoc_eq_ofReal_sum {ι : Type*} (I : Finset ι) (a b : ι → ℝ)
+    (h : (I : Set ι).PairwiseDisjoint fun i ↦ Ι (a i) (b i)) :
+    volume (⋃ i ∈ I, Ι (a i) (b i)) =
+      ENNReal.ofReal (∑ i ∈ I, (max (a i) (b i) - min (a i) (b i))) := by
+  rw [measure_biUnion_finset h fun _ _ ↦ measurableSet_uIoc,
+    ENNReal.ofReal_sum_of_nonneg fun i _ ↦ sub_nonneg.2 min_le_max]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [Real.volume_uIoc, ← max_sub_min_eq_abs', max_comm, min_comm]
+
 end TauCeti
 
 /-- An order-connected subset of `ℝ` of positive finite volume agrees almost everywhere with a
@@ -101,7 +115,8 @@ theorem Set.OrdConnected.exists_ae_eq_Ioo {I : Set ℝ} (hI : I.OrdConnected) (h
       exact hI.out hy hwI ⟨hz, hwz.le⟩
   have hsub := IsConnected.Ioo_csInf_csSup_subset ⟨⟨y, hy⟩, hI.isPreconnected⟩ hbdd.1 hbdd.2
   have hae : I =ᵐ[volume] Ioo (sInf I) (sSup I) :=
-    ((subset_Icc_csInf_csSup hbdd.1 hbdd.2).eventuallyLE.trans Ioo_ae_eq_Icc.symm.le).antisymm
-      hsub.eventuallyLE
+    ((subset_Icc_csInf_csSup hbdd.1 hbdd.2).eventuallySubset.trans
+        Ioo_ae_eq_Icc.symm.subset).antisymm
+      hsub.eventuallySubset
   refine ⟨sInf I, sSup I, lt_of_not_ge fun hle => h0 ?_, hae⟩
   rw [measure_congr hae, Ioo_eq_empty_of_le hle, measure_empty]

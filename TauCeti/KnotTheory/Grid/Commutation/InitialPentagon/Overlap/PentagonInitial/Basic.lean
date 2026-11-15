@@ -322,12 +322,10 @@ private theorem initialPentagonRectangleInitialSelfPartner_injective :
   have hD := G.initialPentagonRectangleInitialSelfPartner_isRecut C D
   have hF := G.initialPentagonRectangleInitialSelfPartner_isRecut C F
   rw [← h] at hF
-  obtain ⟨hcommonD, hcolD, hfirstD, hsecondD⟩ :=
+  obtain ⟨_, _, hfirstD, hsecondD⟩ :=
     G.initialPentagonRectangleInitialSelfSource_data C D.val D.property
-  obtain ⟨hcommonF, hcolF, hfirstF, hsecondF⟩ :=
+  obtain ⟨_, _, hfirstF, hsecondF⟩ :=
     G.initialPentagonRectangleInitialSelfSource_data C F.val F.property
-  have honeD :=
-    D.val.toGridRectangleDecomposition.hasOneCommonSide_of_left_eq_left_of_mem_cIoo hcommonD hcolD
   have hbackD := hD.symm hfirstD hsecondD
   have hbackF := hF.symm hfirstF hsecondF
   have hone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hbackD

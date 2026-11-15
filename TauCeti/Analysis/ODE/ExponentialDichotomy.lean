@@ -161,7 +161,7 @@ namespace IsIdempotentElem
 common constant `C` and rate `alpha`, then it has the projection-form bounds used by the
 Lyapunov--Perron construction. The common constant absorbs `C` and the operator norms of `P` and
 `1 - P`. -/
-theorem exists_projection_exponential_bounds (hP : IsIdempotentElem P) {C : ℝ} (hC : 0 < C)
+theorem exists_projection_exponential_bounds (hP : IsIdempotentElem P) {C : ℝ}
     (halpha : 0 < alpha)
     (hs : ∀ (t : ℝ), 0 ≤ t → ∀ w ∈ P.range,
       ‖exp (t • A) w‖ ≤ C * Real.exp (-alpha * t) * ‖w‖)
@@ -172,6 +172,24 @@ theorem exists_projection_exponential_bounds (hP : IsIdempotentElem P) {C : ℝ}
         ‖exp (t • A) (P v)‖ ≤ K * Real.exp (-rate * t) * ‖v‖) ∧
       (∀ t : ℝ, t ≤ 0 → ∀ v : X,
         ‖exp (t • A) (v - P v)‖ ≤ K * Real.exp (rate * t) * ‖v‖) := by
+  -- If `C` were not positive, the bounds at `t = 0` would force `X` to be trivial.
+  obtain hC | hX : 0 < C ∨ ∀ v : X, v = 0 := by
+    refine (lt_or_ge 0 C).imp_right fun hC v ↦ ?_
+    have hPv : ‖P v‖ = 0 := by
+      have := hs 0 le_rfl (P v) ⟨v, rfl⟩
+      simp only [zero_smul, NormedSpace.exp_zero, one_apply_eq_self,
+        mul_zero, Real.exp_zero, mul_one] at this
+      nlinarith [norm_nonneg (P v)]
+    have hvP : ‖v - P v‖ = 0 := by
+      have hPP : P (P v) = P v := by rw [← mul_apply_eq_comp, hP.eq]
+      have := hu 0 le_rfl (v - P v) (by simp [hPP])
+      simp only [zero_smul, NormedSpace.exp_zero, one_apply_eq_self,
+        mul_zero, Real.exp_zero, mul_one] at this
+      nlinarith [norm_nonneg (v - P v)]
+    exact (sub_eq_zero.mp (norm_eq_zero.mp hvP)).trans (norm_eq_zero.mp hPv)
+  swap
+  · refine ⟨1, ⟨alpha, halpha.le⟩, one_pos, by exact_mod_cast halpha, ?_, ?_⟩ <;>
+      intro t _ v <;> simp [hX v]
   let M : ℝ≥0 := ‖P‖₊ + ‖ContinuousLinearMap.id ℝ X - P‖₊ + 1
   let rate : ℝ≥0 := ⟨alpha, halpha.le⟩
   have hP_le : ‖P‖ ≤ (M : ℝ) := by

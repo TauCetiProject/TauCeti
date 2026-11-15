@@ -183,6 +183,31 @@ def latticeTheta (L : Submodule ℤ (mixedSpace K)) (y : realSpace K) : ℂ :=
 theorem latticeTheta_def (L : Submodule ℤ (mixedSpace K)) (y : realSpace K) :
     latticeTheta L y = ∑' x : L, archGaussian y x := (rfl)
 
+/-- The archimedean Gaussian is not summable over a non-discrete lattice: it is continuous with
+value `1` at `0`, but `0` is a limit of other lattice points. -/
+theorem not_summable_archGaussian_of_not_discreteTopology (L : Submodule ℤ (mixedSpace K))
+    (hL : ¬ DiscreteTopology L) (y : realSpace K) : ¬ Summable fun x : L ↦ archGaussian y x := by
+  intro hs
+  have hg : Continuous fun x : L ↦ archGaussian y x := by
+    simp only [archGaussian_apply]
+    fun_prop
+  have hne : (nhdsWithin (0 : L) {0}ᶜ).NeBot := by
+    rw [Filter.neBot_iff]
+    intro h
+    exact hL (discreteTopology_iff_isOpen_singleton_zero.2
+      ((isOpen_singleton_iff_punctured_nhds _).2 h))
+  have h1 : Filter.Tendsto (fun x : L ↦ archGaussian y x) (nhdsWithin (0 : L) {0}ᶜ) (nhds 1) := by
+    simpa using (hg.tendsto 0).mono_left nhdsWithin_le_nhds
+  have h2 : Filter.Tendsto (fun x : L ↦ archGaussian y x) (nhdsWithin (0 : L) {0}ᶜ) (nhds 0) :=
+    hs.tendsto_cofinite_zero.mono_left (nhdsNE_le_cofinite 0)
+  exact one_ne_zero (tendsto_nhds_unique h1 h2)
+
+/-- The theta series of a non-discrete lattice is `0`, by the convention for non-summable
+series. -/
+theorem latticeTheta_eq_zero_of_not_discreteTopology (L : Submodule ℤ (mixedSpace K))
+    (hL : ¬ DiscreteTopology L) (y : realSpace K) : latticeTheta L y = 0 :=
+  tsum_eq_zero_of_not_summable (not_summable_archGaussian_of_not_discreteTopology L hL y)
+
 /-- The zero lattice point supplies the constant term `1`. -/
 theorem latticeTheta_eq_one_add (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
     (y : realSpace K) (hy : ∀ w, 0 < y w) :
@@ -195,11 +220,14 @@ theorem latticeTheta_eq_one_add (L : Submodule ℤ (mixedSpace K)) [DiscreteTopo
     Equiv.subtypeEquivRight fun x ↦ by simp
   exact e.tsum_eq (fun x ↦ archGaussian y (x : L))
 
-/-- The theta series is dominated by its value at any smaller positive parameter, which is a
-positive real number. -/
-theorem norm_latticeTheta_le (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
+/-- The theta series is dominated by its value at any smaller positive parameter; for a discrete
+lattice that value is a positive real number, and for a non-discrete one both sides are `0`. -/
+theorem norm_latticeTheta_le (L : Submodule ℤ (mixedSpace K))
     {y y' : realSpace K} (hy' : ∀ w, 0 < y' w) (h : ∀ w, y' w ≤ y w) :
     ‖latticeTheta L y‖ ≤ ‖latticeTheta L y'‖ := by
+  by_cases hL : DiscreteTopology L
+  swap
+  · simp [latticeTheta_eq_zero_of_not_discreteTopology L hL]
   have hy : ∀ w, 0 < y w := fun w ↦ (hy' w).trans_le (h w)
   have hnorm : ‖latticeTheta L y'‖ = ∑' x : L, ‖archGaussian y' x‖ := by
     simp only [latticeTheta_def, archGaussian_apply, Complex.norm_real, Real.norm_eq_abs,
@@ -210,11 +238,17 @@ theorem norm_latticeTheta_le (L : Submodule ℤ (mixedSpace K)) [DiscreteTopolog
     ((summable_norm_archGaussian L y hy).tsum_le_tsum (fun x ↦ norm_archGaussian_le h x)
       (summable_norm_archGaussian L y' hy'))
 
-/-- The theta series of a discrete lattice is continuous at every positive parameter: on the
+/-- The theta series is continuous at every positive parameter: for a discrete lattice, on the
 parameters bounded below by a positive constant, its terms are dominated by the Gaussian at that
 constant. -/
-theorem continuousAt_latticeTheta (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
+theorem continuousAt_latticeTheta (L : Submodule ℤ (mixedSpace K))
     {y₀ : realSpace K} (hy₀ : ∀ w, 0 < y₀ w) : ContinuousAt (latticeTheta L) y₀ := by
+  by_cases hL : DiscreteTopology L
+  swap
+  · have hzero : latticeTheta L = fun _ ↦ (0 : ℂ) :=
+      funext (latticeTheta_eq_zero_of_not_discreteTopology L hL)
+    rw [hzero]
+    exact continuousAt_const
   obtain ⟨w₀, -, hw₀⟩ := Finset.exists_min_image Finset.univ y₀ Finset.univ_nonempty
   set δ := y₀ w₀ / 2
   have hδ : 0 < δ := half_pos (hy₀ w₀)

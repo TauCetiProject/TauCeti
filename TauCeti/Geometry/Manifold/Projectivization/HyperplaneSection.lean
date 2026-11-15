@@ -12,6 +12,7 @@ public import TauCeti.Topology.Algebra.Projectivization
 import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Geometry.Manifold.Complex.Compact
 import TauCeti.Topology.Algebra.Projectivization.ZeroLocus
+import TauCeti.Topology.Compactness.Compact
 
 /-!
 # Hyperplane sections meet every connected component
@@ -88,10 +89,7 @@ theorem exists_mem_connectedComponentIn_notMem_affineOpen {E G : Type*} [NormedA
       (isPreconnected_connectedComponentIn.subset_connectedComponentIn
         (mem_connectedComponentIn hL) fun x hx ↦ ⟨connectedComponentIn_subset X L hx, hsub x hx⟩)
   -- It is compact, being a connected component of the compact space `X`.
-  have : CompactSpace X := isCompact_iff_compactSpace.1 hX.isCompact
-  have hCc : IsCompact (connectedComponentIn X L) := by
-    rw [connectedComponentIn_eq_image hL]
-    exact isClosed_connectedComponent.isCompact.image continuous_subtype_val
+  have hCc : IsCompact (connectedComponentIn X L) := hX.isCompact.connectedComponentIn L
   -- Transport the component of `⟨L, hLY⟩` in `Y` to `Z` through the affine chart.
   let e : Y ≃ₜ Z := Projectivization.interAffineOpenHomeomorph hZ
   have : LocallyConnectedSpace G := I.toHomeomorph.locallyConnectedSpace

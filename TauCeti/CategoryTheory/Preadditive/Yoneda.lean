@@ -11,26 +11,35 @@ public import Mathlib.Algebra.Category.Grp.Preadditive
 public import Mathlib.Algebra.Homology.ShortComplex.Ab
 public import Mathlib.CategoryTheory.Abelian.FunctorCategory
 public import Mathlib.CategoryTheory.Limits.FunctorCategory.EpiMono
+public import Mathlib.CategoryTheory.ObjectProperty.FullSubcategory
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
+public import Mathlib.CategoryTheory.Preadditive.Projective.Basic
 public import Mathlib.CategoryTheory.Preadditive.Yoneda.Basic
 public import Mathlib.CategoryTheory.Yoneda
+
+import Mathlib.Algebra.Category.Grp.Limits
+import Mathlib.CategoryTheory.Limits.Preserves.FunctorCategory
 
 /-!
 # The preadditive Yoneda and coYoneda functors
 
 For a preadditive category `C`, the preadditive Yoneda embedding sends `Y : C` to the functor
-`(-, Y) : Cᵒᵖ ⥤ AddCommGrpCat`. This file records how it acts on morphisms, and four facts
-about it.
+`(-, Y) : Cᵒᵖ ⥤ AddCommGrpCat`. This file records how it acts on morphisms, four facts about
+it, and its restriction to a full subcategory.
 
 * The embedding is itself additive: `preadditiveYoneda.map (f + g)` is the sum of the images.
 * A natural transformation out of `(-, Y)` is determined by its value on `𝟙 Y`, by the Yoneda
   lemma. No additivity of the target functor is needed.
-* A morphism `(-, Y) ⟶ F` lifts along every epimorphism `(-, Y') ⟶ F` to the image of a morphism
-  `Y ⟶ Y'`. This is the form in which representable functors are projective that is used to
-  build presentations of finitely presented functors.
+* A morphism `(-, Y) ⟶ G` lifts along every epimorphism `F ⟶ G` out of an additive functor `F`.
+  So representable functors are projective among additive functors. In particular a morphism
+  `(-, Y) ⟶ F` lifts along every epimorphism `(-, Y') ⟶ F` to the image of a morphism `Y ⟶ Y'`,
+  which is the form used to build presentations of finitely presented functors.
 * A sequence `(-, W) ⟶ (-, Z) ⟶ F` whose first map is `(-, w)` is exact exactly when every
   morphism `z : V ⟶ Z` killed by the second map factors through `w`. So exactness at a
   representable functor is a factorization property in `C`.
+* For a property `P` of objects of `C`, restricting `(-, X)` along the inclusion of the full
+  subcategory of `P` gives a functor `X ↦ (-, X)|_P`, which agrees with `(-, Y)` on objects `Y` of
+  that subcategory and preserves epimorphisms when `P` consists of projective objects.
 
 Dually, for an object `M` with `Γ = End M`, the functor `Hom(M, -)` (Mathlib's
 `CategoryTheory.preadditiveCoyonedaObj M`) takes values in `Γᵐᵒᵖ`-modules. By the Yoneda
@@ -55,6 +64,8 @@ which is moreover additive.
 * `CategoryTheory.preadditiveYoneda_additive`: the preadditive Yoneda embedding is additive.
 * `CategoryTheory.preadditiveYoneda_obj_hom_ext`: morphisms out of `(-, Y)` agreeing on `𝟙 Y`
   are equal.
+* `CategoryTheory.exists_comp_eq_preadditiveYoneda_obj_of_epi`: lifting along an epimorphism out of
+  an additive functor.
 * `CategoryTheory.exists_preadditiveYoneda_map_comp_eq`: lifting along an epimorphism out of a
   representable functor.
 * `CategoryTheory.preadditiveCoyonedaObj_map_bijective_self`: `Hom(M, -)` is bijective on the
@@ -64,11 +75,17 @@ which is moreover additive.
 * `CategoryTheory.preadditiveYoneda_map_comp_preadditiveYonedaMap_eq_zero_iff`: the natural
   transformation `(-, X) ⟶ (G -, G X)` kills `(-, f)` exactly when `G` kills `f`.
 * `CategoryTheory.exact_preadditiveYoneda_map_iff`: exactness at a representable functor.
+* `CategoryTheory.preservesLimitsOfShape_preadditiveYoneda`: the embedding preserves small limits.
 * `CategoryTheory.Functor.CorepresentableBy.homEquiv_zero` and
   `CategoryTheory.Functor.CorepresentableBy.homEquiv_symm_zero`: the corepresentation and its
   inverse preserve zero.
 * `CategoryTheory.Functor.CorepresentableBy.homEquiv_symm_add`: the inverse of the
   corepresentation is additive.
+* `CategoryTheory.ObjectProperty.restrictedPreadditiveYoneda`: the functor `X ↦ (-, X)|_P`.
+* `CategoryTheory.ObjectProperty.preadditiveYonedaIsoRestricted`: on the full subcategory of `P`,
+  the functor `X ↦ (-, X)|_P` is the preadditive Yoneda embedding.
+* `CategoryTheory.ObjectProperty.epi_map_restrictedPreadditiveYoneda`: restriction to projective
+  objects preserves epimorphisms.
 -/
 
 public section
@@ -111,16 +128,36 @@ instance preadditiveYoneda_additive :
     ext Z (h : Z.unop ⟶ _)
     exact Preadditive.comp_add _ _ _ h f g
 
+/-- A morphism from a representable functor `(-, Y)` to `G` lifts along any epimorphism
+`F ⟶ G` out of an additive functor `F`. -/
+theorem exists_comp_eq_preadditiveYoneda_obj_of_epi {Y : C} {F G : Cᵒᵖ ⥤ AddCommGrpCat.{v}}
+    [F.Additive] (π : F ⟶ G) [Epi π] (α : preadditiveYoneda.obj Y ⟶ G) :
+    ∃ s : preadditiveYoneda.obj Y ⟶ F, s ≫ π = α := by
+  obtain ⟨x, hx⟩ :=
+    (AddCommGrpCat.epi_iff_surjective (π.app (op Y))).1 inferInstance (α.app (op Y) (𝟙 Y))
+  -- The Yoneda morphism of `x` sends `h : Z ⟶ Y` to `F(h) x`; it respects addition because `F`
+  -- is additive. Elements of `(-, Y)` at `Z` are morphisms `Z ⟶ Y`, but only up to unfolding
+  -- `preadditiveYoneda`, so the components are given on `Z.unop ⟶ Y` and naturality is
+  -- `F.map_comp` applied to `x`.
+  let s : preadditiveYoneda.obj Y ⟶ F :=
+    { app Z := AddCommGrpCat.ofHom (
+        { toFun h := F.map h.op x
+          map_zero' := by simp
+          map_add' a b := by simp } : (Z.unop ⟶ Y) →+ F.obj Z)
+      naturality Z Z' h := by
+        ext (a : Z.unop ⟶ Y)
+        exact ConcreteCategory.congr_hom (F.map_comp a.op h) x }
+  refine ⟨s, preadditiveYoneda_obj_hom_ext ?_⟩
+  exact (congrArg (π.app (op Y)) (by simp : F.map (𝟙 Y).op x = x)).trans hx
+
 /-- A morphism from a representable functor `(-, Y)` to `F` lifts along any epimorphism
 `(-, Y') ⟶ F`, and the lift is the image of a morphism `Y ⟶ Y'`. -/
 theorem exists_preadditiveYoneda_map_comp_eq {Y Y' : C} {F : Cᵒᵖ ⥤ AddCommGrpCat.{v}}
     (p : preadditiveYoneda.obj Y' ⟶ F) [Epi p] (α : preadditiveYoneda.obj Y ⟶ F) :
     ∃ u : Y ⟶ Y', preadditiveYoneda.map u ≫ p = α := by
-  obtain ⟨u, hu⟩ :=
-    (AddCommGrpCat.epi_iff_surjective (p.app (op Y))).1 inferInstance (α.app (op Y) (𝟙 Y))
-  refine ⟨u, preadditiveYoneda_obj_hom_ext ?_⟩
-  exact (congrArg (p.app (op Y))
-    ((preadditiveYoneda_map_app_apply u (op Y) (𝟙 Y)).trans (Category.id_comp u))).trans hu
+  obtain ⟨s, hs⟩ := exists_comp_eq_preadditiveYoneda_obj_of_epi p α
+  obtain ⟨u, rfl⟩ := preadditiveYoneda.map_surjective s
+  exact ⟨u, hs⟩
 
 /-- **Yoneda for `Hom(M, -)` as a `Γᵐᵒᵖ`-module, `Γ = End M`.** Composition identifies the
 morphisms `M ⟶ Y` with the `Γᵐᵒᵖ`-linear maps `Hom(M, M) → Hom(M, Y)`: a linear map `φ` is
@@ -201,17 +238,32 @@ theorem exact_preadditiveYoneda_map_iff {W Z : C} (w : W ⟶ Z) {F : Cᵒᵖ ⥤
   rw [← ShortComplex.exact_iff_isZero_homology]
   exact (key V.unop).2 (@H V.unop)
 
+/-- The Yoneda embedding `X ↦ (-, X)` into additive presheaves preserves small limits. -/
+instance preservesLimitsOfShape_preadditiveYoneda (J : Type*) [Category* J] [Small.{v} J] :
+    PreservesLimitsOfShape J (preadditiveYoneda : C ⥤ Cᵒᵖ ⥤ AddCommGrpCat.{v}) := by
+  -- Forgetting the group structure of the values gives the Yoneda embedding into presheaves of
+  -- sets, and the forgetful functor reflects small limits.
+  have : PreservesLimitsOfShape J ((preadditiveYoneda : C ⥤ Cᵒᵖ ⥤ AddCommGrpCat.{v}) ⋙
+      (Functor.whiskeringRight Cᵒᵖ AddCommGrpCat (Type v)).obj (forget AddCommGrpCat)) := by
+    rw [whiskering_preadditiveYoneda]
+    infer_instance
+  exact preservesLimitsOfShape_of_reflects_of_preserves _
+    ((Functor.whiskeringRight Cᵒᵖ AddCommGrpCat (Type v)).obj (forget AddCommGrpCat))
+
 namespace Functor.CorepresentableBy
 
 variable {G : C ⥤ AddCommGrpCat.{t}} [G.Additive]
   {P : C} (R : (G ⋙ forget AddCommGrpCat).CorepresentableBy P)
 
-/-- The corepresentation of an additive functor `G : C ⥤ Ab` sends the zero morphism to zero. -/
+omit [G.Additive] in
+/-- The corepresentation of a functor `G : C ⥤ Ab` sends the zero morphism to zero. -/
 lemma homEquiv_zero {X : C} : R.homEquiv (0 : P ⟶ X) = (0 : G.obj X) := by
-  rw [R.homEquiv_eq, Functor.comp_map, G.map_zero]
-  rfl
+  have h := R.homEquiv_comp (0 : X ⟶ X) (R.homEquiv.symm (0 : G.obj X))
+  rw [comp_zero, Equiv.apply_symm_apply] at h
+  exact h.trans (map_zero (G.map (0 : X ⟶ X)).hom)
 
-/-- The inverse of the corepresentation of an additive functor `G : C ⥤ Ab` sends zero to the zero
+omit [G.Additive] in
+/-- The inverse of the corepresentation of a functor `G : C ⥤ Ab` sends zero to the zero
 morphism. -/
 lemma homEquiv_symm_zero {X : C} : R.homEquiv.symm (0 : G.obj X) = 0 :=
   R.homEquiv.symm_apply_eq.2 R.homEquiv_zero.symm
@@ -226,5 +278,65 @@ lemma homEquiv_symm_add {X : C} (x y : G.obj X) :
   exact (congrArg₂ (· + ·) (h x) (h y)).symm
 
 end Functor.CorepresentableBy
+
+namespace ObjectProperty
+
+variable (P : ObjectProperty C)
+
+/-- The functor `X ↦ (-, X)|_P`, restricting the representable functor `(-, X)` to the full
+subcategory of `P`. It is exposed so that an element of `(-, X)|_P` at `Q` is a morphism
+`Q.obj ⟶ X`, which is what the statements of its application lemmas are about. -/
+@[expose] def restrictedPreadditiveYoneda : C ⥤ P.FullSubcategoryᵒᵖ ⥤ AddCommGrpCat.{v} :=
+  preadditiveYoneda ⋙ (Functor.whiskeringLeft _ _ _).obj P.ι.op
+
+/-- The natural transformation `(-, f)|_P` is postcomposition with `f`. -/
+@[simp]
+theorem restrictedPreadditiveYoneda_map_app_apply {X Y : C} (f : X ⟶ Y) (Q : P.FullSubcategoryᵒᵖ)
+    (g : Q.unop.obj ⟶ X) : (P.restrictedPreadditiveYoneda.map f).app Q g = g ≫ f :=
+  rfl
+
+/-- The functor `(-, X)|_P` acts on morphisms of `P` by precomposition. -/
+@[simp]
+theorem restrictedPreadditiveYoneda_obj_map_apply (X : C) {Q Q' : P.FullSubcategoryᵒᵖ}
+    (u : Q ⟶ Q') (g : Q.unop.obj ⟶ X) :
+    (P.restrictedPreadditiveYoneda.obj X).map u g = u.unop.hom ≫ g :=
+  rfl
+
+instance : P.restrictedPreadditiveYoneda.Additive :=
+  inferInstanceAs (preadditiveYoneda ⋙ _).Additive
+
+/-- On the full subcategory of `P`, the functor `X ↦ (-, X)|_P` is the preadditive Yoneda
+embedding. -/
+def preadditiveYonedaIsoRestricted : preadditiveYoneda ≅ P.ι ⋙ P.restrictedPreadditiveYoneda :=
+  NatIso.ofComponents (fun Y ↦ NatIso.ofComponents (fun Z ↦
+    (InducedCategory.homAddEquiv (F := FullSubcategory.obj)).toAddCommGrpIso))
+
+/-- The identification of `(-, Y)` with `(-, Y.obj)|_P` sends a morphism of the full subcategory to
+the underlying morphism of `C`. -/
+theorem preadditiveYonedaIsoRestricted_hom_app_app_apply (Y : P.FullSubcategory)
+    (Z : P.FullSubcategoryᵒᵖ) (g : Z.unop ⟶ Y) :
+    ((P.preadditiveYonedaIsoRestricted.hom.app Y).app Z) g = g.hom :=
+  (rfl)
+
+/-- The identification of `(-, Y)` with `(-, Y.obj)|_P` is natural in `Y`. -/
+theorem preadditiveYoneda_map_comp_preadditiveYonedaIsoRestricted_hom {X Y : P.FullSubcategory}
+    (f : X ⟶ Y) : preadditiveYoneda.map f ≫ P.preadditiveYonedaIsoRestricted.hom.app Y =
+      P.preadditiveYonedaIsoRestricted.hom.app X ≫ P.restrictedPreadditiveYoneda.map f.hom :=
+  P.preadditiveYonedaIsoRestricted.hom.naturality f
+
+variable {P}
+
+/-- Restriction to projective objects preserves epimorphisms. -/
+theorem epi_map_restrictedPreadditiveYoneda (hP : P ≤ isProjective C) {X Y : C} (π : X ⟶ Y)
+    [Epi π] : Epi (P.restrictedPreadditiveYoneda.map π) := by
+  rw [NatTrans.epi_iff_epi_app]
+  intro Q
+  rw [AddCommGrpCat.epi_iff_surjective]
+  intro (v : Q.unop.obj ⟶ Y)
+  have : Projective Q.unop.obj := hP _ Q.unop.property
+  exact ⟨Projective.factorThru (P := Q.unop.obj) v π,
+    Projective.factorThru_comp (P := Q.unop.obj) v π⟩
+
+end ObjectProperty
 
 end CategoryTheory

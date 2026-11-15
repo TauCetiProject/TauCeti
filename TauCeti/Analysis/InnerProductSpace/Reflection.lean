@@ -19,7 +19,11 @@ import Mathlib.Topology.MetricSpace.HausdorffDimension
 
 For a submodule `K` admitting an orthogonal projection, `Submodule.coe_reflection` expresses the
 reflection across `K`, as a bounded operator, as `2 P_K - 1`, and a linear isometry mapping `K`
-onto itself commutes with that reflection (`Submodule.reflection_apply_of_map_eq`).
+onto itself commutes with that reflection (`Submodule.reflection_apply_of_map_eq`). Two vectors of
+the same norm with a real inner product are exchanged by the reflection in the hyperplane
+orthogonal to their difference (`Submodule.reflection_sub_of_inner_comm`). In Euclidean
+space, the reflection in the axis spanned by a basis vector `eᵢ` keeps the `i`-th coordinate and
+negates the others (`EuclideanSpace.reflection_singleton_single_apply`).
 
 The remaining lemmas describe reflection across the hyperplane perpendicular to a vector in a real
 inner product space. They supply the reflection identities used by the half-space Green kernel,
@@ -115,7 +119,42 @@ theorem inner_reflection_orthogonal_of_mem (K : Submodule 𝕜 E) [K.HasOrthogon
     ← reflection_mem_subspace_orthogonal_precomplement_eq_neg hv, inner_neg_right,
     LinearIsometryEquiv.inner_map_map]
 
+/-- The reflection in the hyperplane orthogonal to `v - w` sends `v` to `w` when `v` and `w` have
+the same norm and a real inner product. This generalizes Mathlib's `Submodule.reflection_sub` from
+real inner product spaces to inner product spaces over `ℝ` or `ℂ`. -/
+theorem reflection_sub_of_inner_comm {v w : E} (h : ‖v‖ = ‖w‖)
+    (hvw : inner 𝕜 v w = inner 𝕜 w v) : (𝕜 ∙ (v - w))ᗮ.reflection v = w := by
+  set R : E ≃ₗᵢ[𝕜] E := (𝕜 ∙ (v - w))ᗮ.reflection
+  suffices R v + R v = w + w by
+    apply smul_right_injective E (by simp : (2 : 𝕜) ≠ 0)
+    simpa [two_smul] using this
+  have h₁ : R (v - w) = -(v - w) := reflection_orthogonalComplement_singleton_eq_neg _
+  have h₂ : R (v + w) = v + w := by
+    apply reflection_mem_subspace_eq_self
+    rw [mem_orthogonal_singleton_iff_inner_right]
+    simp [inner_add_right, inner_sub_left, inner_self_eq_norm_sq_to_K, h, hvw]
+  convert! congr($h₂ + $h₁) using 1
+  · simp
+  · abel
+
 end Submodule
+
+namespace EuclideanSpace
+
+/-- The reflection of Euclidean space in the coordinate axis spanned by the basis vector `eᵢ`
+keeps the `i`-th coordinate and negates all the others. -/
+@[simp]
+theorem reflection_singleton_single_apply {ι : Type*} [Fintype ι] [DecidableEq ι] (i : ι)
+    (w : EuclideanSpace ℝ ι) (j : ι) :
+    (ℝ ∙ EuclideanSpace.single i (1 : ℝ)).reflection w j = if j = i then w j else -w j := by
+  rw [Submodule.reflection_singleton_apply]
+  by_cases h : j = i
+  · subst h
+    simp [EuclideanSpace.inner_single_left]
+    ring
+  · simp [EuclideanSpace.inner_single_left, h]
+
+end EuclideanSpace
 
 namespace TauCeti
 

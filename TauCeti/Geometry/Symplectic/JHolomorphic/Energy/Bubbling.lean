@@ -94,6 +94,6 @@ theorem exists_pos_forall_exists_strictMono_finset_norm_fderiv_le
       ((ball_subset_ball (min_le_right _ _)).trans hrΩ)
   exact hn.trans (setIntegral_mono_set ((hint (φ n)).mono_set inter_subset_right)
     (ae_restrict_of_forall_mem (measurableSet_ball.inter hΩ.measurableSet)
-      fun _ _ ↦ sq_nonneg _) hsub.eventuallyLE)
+      fun _ _ ↦ sq_nonneg _) hsub.eventuallySubset)
 
 end TauCeti

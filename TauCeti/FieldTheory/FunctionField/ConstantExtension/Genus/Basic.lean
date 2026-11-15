@@ -322,11 +322,21 @@ variable (hF : IsFunctionField k F) (hF' : IsFunctionField k' F')
 include hdeg hdim
 
 /-- **The conorm of the canonical class is the canonical class** when the conorm preserves the
-degrees and Riemann–Roch dimensions of all divisors and the genus does not change: the canonical
-class is the class of degree `2g - 2` and dimension `g`. -/
+degrees and Riemann–Roch dimensions of all divisors (the genus then does not change): the
+canonical class is the class of degree `2g - 2` and dimension `g`. -/
 theorem conormClassGroup_canonicalClass_of_forall_dim_conorm_eq (hex : IsIntegrallyClosedIn k F)
-    (hex' : IsIntegrallyClosedIn k' F') (hg : genus k' F' = genus k F) :
+    (hex' : IsIntegrallyClosedIn k' F') :
     Divisor.conormClassGroup k' F' hF hF' (canonicalClass hF hex) = canonicalClass hF' hex' := by
+  -- in large degree both sides of Riemann--Roch are determined by the degree and dimension
+  have hg : genus k' F' = genus k F := by
+    obtain ⟨c, hc⟩ := exists_forall_dim_eq_degree_add_one_sub_genus hF hex
+    obtain ⟨c', hc'⟩ := exists_forall_dim_eq_degree_add_one_sub_genus hF' hex'
+    obtain ⟨P₀⟩ := Place.nonempty hF
+    obtain ⟨n, hn⟩ := Divisor.exists_le_degree_add_nsmul_ofPoint hF 0 P₀ (max c c')
+    have h₁ := hc _ ((le_max_left c c').trans hn)
+    have h₂ := hc' _ (hdeg _ ▸ (le_max_right c c').trans hn)
+    rw [hdim, hdeg] at h₂
+    omega
   obtain ⟨W, hW⟩ := (Place.orderSystem hF).divisorClass_surjective (canonicalClass hF hex)
   have hW' := (divisorClass_eq_canonicalClass_iff hF hex W).1 hW
   rw [← hW, Divisor.conormClassGroup_divisorClass, divisorClass_eq_canonicalClass_iff hF' hex',
@@ -370,7 +380,7 @@ theorem conormClassGroup_canonicalClass_of_constantCompositum_eq_top (hF : IsFun
         (hex.of_constantCompositum_eq_top h) :=
   conormClassGroup_canonicalClass_of_forall_dim_conorm_eq hF _
     (Divisor.degree_conorm_of_constantCompositum_eq_top hF hex h) (Divisor.dim_conorm hex h hF)
-    hex _ (genus_eq_genus_of_constantCompositum_eq_top hF hex h)
+    hex _
 
 /-- **The conorm is injective on divisor classes** (Stichtenoth, Theorem 3.6.3(f)):
 along a separable algebraic constant field extension of a function field with exact constants,

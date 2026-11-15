@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.Conformal.Jordan.Unbounded.LocallyConnect
 import TauCeti.Analysis.Complex.Conformal.LocalFrontier
 import TauCeti.Analysis.Complex.Conformal.UpperHalfPlane.LocallyConnectedBoundary
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
+import TauCeti.Analysis.Normed.Field.Inversion
 
 /-!
 # Boundary prevertices from an inverted coordinate
@@ -132,7 +133,7 @@ prescribed frontier point.
 The equality `hgr` is the boundary-surjectivity conclusion supplied by
 `TauCeti.exists_bijOn_upperHalfPlaneSet_of_locallyConnectedSpace_frontier_image_inv_sub`. -/
 theorem exists_injective_prevertices_of_inverted_boundary {U : Set ℂ} {q : ℂ}
-    (hUo : IsOpen U) (hq : q ∉ closure U) (hUb : ¬IsBounded U)
+    (hq : q ∉ closure U) (hUb : ¬IsBounded U)
     (hgc : ContinuousOn g {z : ℂ | 0 ≤ z.im})
     (hgf : EqOn g (fun z => (f z - q)⁻¹) upperHalfPlaneSet)
     (hgr : insert 0 (g '' {z : ℂ | z.im = 0}) =
@@ -146,7 +147,7 @@ theorem exists_injective_prevertices_of_inverted_boundary {U : Set ℂ} {q : ℂ
   have htarget (i : ι) : (v i - q)⁻¹ ∈ g '' {z : ℂ | z.im = 0} := by
     have hmem : (v i - q)⁻¹ ∈
         frontier ((fun z : ℂ => (z - q)⁻¹) '' U) := by
-      rw [frontier_image_inv_sub hUo hq hUb]
+      rw [frontier_image_inv_sub (fun h => hq (subset_closure h)) hUb]
       exact mem_insert_of_mem _ ⟨v i, hvU i, rfl⟩
     rw [← hgr, mem_insert_iff] at hmem
     exact hmem.resolve_left (inv_ne_zero (hvq i))
@@ -194,7 +195,7 @@ theorem subsingleton_inverted_boundary_fiber_of_isPreconnectedApproachAt {U : Se
   exact hw.image (κ := fun y => q + y⁻¹) (hinv hwq)
     (fun z hz => (hinv fun h => hqU (h ▸ hz)).continuousWithinAt)
     (continuousAt_const.add (continuousAt_inv₀ (inv_ne_zero (sub_ne_zero.mpr hwq))))
-    (by simp) fun z hz => by simp
+    (by simp) fun z _ => by simp
 
 /-- **The inverted coordinate is injective away from the accesses to infinity.** Let `U` be an
 unbounded open set with `q ∉ closure U`, and let `f`, `g = (f - q)⁻¹` be as supplied by
@@ -225,11 +226,11 @@ theorem injOn_inverted_boundary_of_isPreconnectedApproachAt {U : Set ℂ}
   -- a boundary value lies on the frontier of the open set `V`, so it is not an interior value
   have hmix {z z' : ℂ} (hz : z.im = 0) (hz' : 0 < z'.im) : g z ≠ g z' := fun h =>
     (hVo.frontier_eq ▸ hgfr hz).2 (h ▸ hgV hz')
-  rintro z ⟨hz, hgz⟩ z' ⟨hz', hgz'⟩ h
+  rintro z ⟨hz, hgz⟩ z' ⟨hz', _⟩ h
   rcases hz.eq_or_lt with hz | hz <;> rcases hz'.eq_or_lt with hz' | hz'
   · -- two real parameters: their common value is `(w - q)⁻¹` for a frontier point `w` of `U`
     have hmem := hgfr hz.symm
-    rw [frontier_image_inv_sub hUo hq hUb] at hmem
+    rw [frontier_image_inv_sub (fun h => hq (subset_closure h)) hUb] at hmem
     obtain ⟨w, hw, hwg⟩ := hmem.resolve_left hgz
     have hwq : w ≠ q := fun h => hq (h ▸ frontier_subset_closure hw)
     have hfib := subsingleton_inverted_boundary_fiber_of_isPreconnectedApproachAt hgc hgd hgf
@@ -266,8 +267,8 @@ theorem injOn_inverted_boundary_of_polygonal {ι : Type*} {e : ι → ℝ}
     fun w hw => ?_
   by_cases hv : ∃ i, w = v i
   · obtain ⟨i, rfl⟩ := hv
-    obtain ⟨ρ, hρ, b, hb, hU⟩ := hcorner i
-    exact isPreconnectedApproachAt_of_forall_mem_iff_abs_arg_lt hρ hb hU
+    obtain ⟨ρ, hρ, b, _, hU⟩ := hcorner i
+    exact isPreconnectedApproachAt_of_forall_mem_iff_abs_arg_lt hρ hU
   · obtain ⟨ρ, hρ, p, b, -, hU⟩ := hside w hw fun i hi => hv ⟨i, hi⟩
     exact isPreconnectedApproachAt_of_forall_mem_iff_im_div_pos hρ hU
 

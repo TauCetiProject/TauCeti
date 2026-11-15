@@ -37,28 +37,25 @@ point types: `Nat.card` and `Set.ncard` are defined without one. Finiteness none
 where it matters — `K` is finite, so the `K`-points are, and the fixed locus is in bijection with
 them — while the ambient `L`-point type may well be infinite.
 
-Layer 3 of `TauCetiRoadmap/EllipticCurves/README.md` fixes the fixed points of the `q`-power
-Frobenius as the model of record for the points over an extension in its zeta-function
-milestone, and asks for "the comparison with the base-change-to-a-chosen-extension model, and
-invariance of the count under the noncanonical field equivalences" as separate named lemmas.
-The two results below are that comparison, and the count it carries, for a single `q`-power
-step and an arbitrary extension `L / K`.
+For point counting over extensions of a finite field (the zeta function), the fixed points of the
+`q`-power Frobenius are the natural model of the points over an extension. The two results below
+compare that model with the base-change-to-a-chosen-extension model, and give the count it carries,
+for a single `q`-power step and an arbitrary extension `L / K`.
 
 ## Relation to the Frobenius isogeny
 
-`TauCetiRoadmap/EllipticCurves/README.md` Layer 3 warns that the equation-level Frobenius
-`(x, y) ↦ (x ^ q, y ^ q)` is a *private computation*, and that "Layer 1 is the sole public notion
-of isogeny". Accordingly **no Frobenius endomorphism of points is defined here.** Both statements
-are about Mathlib's `Affine.Point.map` applied to Mathlib's `FiniteField.frobeniusAlgHom`; no new
-notion is introduced that could compete with Layer 1's `TauCeti.Isogeny.frobeniusIsogeny`, already
-on `main`. The roadmap records that the two are to be identified by a named comparison lemma —
-"the Frobenius isogeny induces `(x, y) ↦ (x ^ q, y ^ q)` on points" — which is a separate
-milestone and is not attempted here.
+The equation-level Frobenius `(x, y) ↦ (x ^ q, y ^ q)` is a computation, not a public notion of
+isogeny: that role belongs to the Frobenius isogeny `TauCeti.Isogeny.frobeniusIsogeny`.
+Accordingly **no Frobenius endomorphism of points is defined here.** Both statements are about
+Mathlib's `Affine.Point.map` applied to Mathlib's `FiniteField.frobeniusAlgHom`; no new notion is
+introduced that could compete with `TauCeti.Isogeny.frobeniusIsogeny`. Identifying the two — the
+Frobenius isogeny induces `(x, y) ↦ (x ^ q, y ^ q)` on points — is a separate comparison
+statement and is not attempted here.
 
 ## Provenance
 
-Ported from the AINTLIB `HasseWeil` project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0, pinned by
-that roadmap at `dev/hasse-weil @ 513e83879e2f`),
+Ported from the AINTLIB `HasseWeil` project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0, at
+`dev/hasse-weil @ 513e83879e2f`),
 `HasseWeil/Curves/FrobeniusFixedPoint.lean` (repository path
 `projects/HasseWeil/HasseWeil/Curves/FrobeniusFixedPoint.lean`), declarations
 `geomFrobeniusPoint_fixed_iff_mem_range_includePointBC`,
@@ -79,8 +76,8 @@ source itself abandoned and are unreachable from its final chain; and the `_zero
 computation rules for both maps are Mathlib's `Affine.Point.map_zero` and `map_some`,
 while the two `_apply` lemmas unfold bundles this file does not build. The source's
 `oneSubGeomFrobHom` and its two kernel lemmas are likewise not reproduced: they bundle `1 - π` as
-an equation-level endomorphism, which is what the roadmap paragraph above forbids in a public
-statement, and their content is `sub_eq_zero` away from the fixed-point form kept here.
+an equation-level endomorphism, which the paragraph on the Frobenius isogeny above keeps out of
+public statements, and their content is `sub_eq_zero` away from the fixed-point form kept here.
 
 Changes from the source. `L` is an arbitrary field extension rather than `AlgebraicClosure K`, and
 no `Fintype` instance on the points is assumed, `Nat.card` and `Set.ncard` needing none. The

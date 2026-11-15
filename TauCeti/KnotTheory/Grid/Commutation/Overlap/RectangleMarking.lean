@@ -47,19 +47,10 @@ theorem disjoint_coveredSquares_XSet_rectangle_recutLeftEqLeft
     ⟨hcol', hEleft, hEright, _, hEbottom, hEtop⟩
   -- The recut rectangle covers neither swapped column. Repartition reduces its X-avoidance
   -- to that of the original rectangle and pentagon.
-  · have hne : D.rectangle.right ≠ finRotate n a :=
-      Grid.ne_right_of_mem_cIoo hcol'
-    have haTail : a ∈ Grid.cIco D.rectangle.right (finRotate n a) :=
-      Grid.self_mem_cIco_finRotate hne
-    have haNot : a ∉ Grid.cIco E.rectangle.left E.rectangle.right := by
+  · obtain ⟨haNot, hbNot⟩ : a ∉ Grid.cIco E.rectangle.left E.rectangle.right ∧
+        finRotate n a ∉ Grid.cIco E.rectangle.left E.rectangle.right := by
       rw [hEleft, hEright]
-      exact fun ha => (Finset.disjoint_left.mp
-        (Grid.disjoint_cIco_cIco_of_mem_cIoo hcol')) ha haTail
-    have hbNot : finRotate n a ∉ Grid.cIco E.rectangle.left E.rectangle.right := by
-      rw [hEleft, hEright]
-      intro hb
-      exact Grid.right_notMem_cIco D.rectangle.left (finRotate n a)
-        (Grid.mem_cIco_of_mem_cIco_of_mem_cIoo hb hcol')
+      exact Grid.notMem_cIco_of_mem_cIoo_finRotate hcol'
     have hEdisj : Disjoint E.rectangle.toGridRectangle.coveredSquares G.XSet := by
       rw [Finset.disjoint_left]
       intro p hp hpX

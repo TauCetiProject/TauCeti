@@ -18,7 +18,8 @@ unit vector by arbitrarily little. Restriction along a homomorphism preserves th
 Its failure is characterized by a finite quadratic lower bound on orbit displacements.
 For finite groups it is equivalent to the existence of a nonzero invariant vector, without
 unitarity or completeness assumptions. The quantitative averaging lemma also produces an
-invariant vector close to a vector whose entire orbit is close to it.
+invariant vector close to a vector whose entire orbit is close to it. Almost invariant vectors
+also have arbitrarily small total squared displacement on any finite set.
 
 These results provide the finite-group averaging step in the theory of property (T).
 The definition follows Anantharaman–Popa, *An Introduction to II₁ Factors*, Definition 14.1.1.
@@ -70,6 +71,26 @@ theorem HasAlmostInvariantVectors.restrict {K : Type*} [Monoid K]
   refine ⟨v, hv, fun g hg ↦ ?_⟩
   simpa only [restrict_apply_apply] using hF (f g) (Finset.mem_image_of_mem f hg)
 
+/-- Almost invariant vectors have arbitrarily small total squared displacement on any finite
+set. The vector is still required to have norm one. -/
+theorem HasAlmostInvariantVectors.exists_sum_norm_sq_lt
+    (hρ : ρ.HasAlmostInvariantVectors) (F : Finset G) {ε : ℝ} (hε : 0 < ε) :
+    ∃ v : V, ‖v‖ = 1 ∧ ∑ g ∈ F, ‖ρ g v - v‖ ^ 2 < ε := by
+  have hd : 0 < (F.card : ℝ) + 1 := by positivity
+  have hq : 0 < ε / (F.card + 1) := div_pos hε hd
+  obtain ⟨v, hv, hF⟩ := hρ F (Real.sqrt (ε / (F.card + 1))) (Real.sqrt_pos.2 hq)
+  refine ⟨v, hv, ?_⟩
+  have hsum : ∑ g ∈ F, ‖ρ g v - v‖ ^ 2 ≤ F.card * (ε / (F.card + 1)) := by
+    calc
+      _ ≤ ∑ _g ∈ F, ε / (F.card + 1) := by
+        apply Finset.sum_le_sum
+        intro g hg
+        exact (sq_lt_sq₀ (norm_nonneg _) (Real.sqrt_nonneg _)).2 (hF g hg) |>.le.trans
+          (Real.sq_sqrt hq.le).le
+      _ = _ := by simp
+  have hmul := (div_mul_cancel₀ ε hd.ne').symm
+  nlinarith
+
 end Definition
 
 section NormedSpace
@@ -111,23 +132,10 @@ theorem not_hasAlmostInvariantVectors_iff (ρ : ContRepresentation 𝕜 G V) :
       _ ≤ ∑ g ∈ F, ‖ρ g v - v‖ ^ 2 :=
         Finset.single_le_sum (fun i _ ↦ sq_nonneg ‖ρ i v - v‖) hg
   · rintro ⟨F, c, hc, hF⟩ hρ
-    have hn : 0 < (F.card : ℝ) + 1 := by positivity
-    have hε : 0 < Real.sqrt (c / (F.card + 1)) := Real.sqrt_pos.mpr (div_pos hc hn)
-    obtain ⟨v, hv, hmove⟩ := hρ F _ hε
-    have hsum : (∑ g ∈ F, ‖ρ g v - v‖ ^ 2) ≤ F.card * (c / (F.card + 1)) := by
-      calc
-        (∑ g ∈ F, ‖ρ g v - v‖ ^ 2) ≤
-            ∑ _g ∈ F, c / (F.card + 1) := by
-          apply Finset.sum_le_sum
-          intro g hg
-          have := pow_le_pow_left₀ (norm_nonneg _) (hmove g hg).le 2
-          simpa only [Real.sq_sqrt (div_nonneg hc.le hn.le)] using this
-        _ = _ := by simp
-    have hmul : c / (F.card + 1) * (F.card + 1) = c := div_mul_cancel₀ _ hn.ne'
-    have hpos : 0 < c / (F.card + 1) := div_pos hc hn
-    have := hF v
-    rw [hv, one_pow, mul_one] at this
-    nlinarith
+    obtain ⟨v, hv, hsmall⟩ := hρ.exists_sum_norm_sq_lt F hc
+    have hbound := hF v
+    rw [hv, one_pow, mul_one] at hbound
+    exact (not_lt_of_ge hbound) hsmall
 
 end NormedSpace
 

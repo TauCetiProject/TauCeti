@@ -367,23 +367,27 @@ theorem levelSliceHomeomorph_symm
   simp only [levelSliceHomeomorph, Homeomorph.symm_trans_apply, Homeomorph.symm_symm,
     Homeomorph.trans_apply]
 
-include hf hanti hex in
+include hanti hex in
 /-- **Following the flow is a bijection between level slices.** Sending a point of the slice
 `C ∩ {f = c}` to the point of its orbit on the level `c'` is a bijection onto `C ∩ {f = c'}`;
-this is `Flow.levelSliceHomeomorph` read on the underlying sets. -/
+no continuity of `f` is needed. -/
 theorem bijOn_flow_levelCrossingTime
     (hex' : ∀ x ∈ unstableSet φ p ∩ stableSet φ q, ∃ t, f (φ t x) = c') :
     BijOn (fun x ↦ φ (levelCrossingTime φ f c' x) x)
       ((unstableSet φ p ∩ stableSet φ q) ∩ {x | f x = c})
       ((unstableSet φ p ∩ stableSet φ q) ∩ {x | f x = c'}) := by
-  set e := levelSliceHomeomorph hf hanti hex hex'
-  have he (x) : (e x : X) = φ (levelCrossingTime φ f c' x) x := coe_levelSliceHomeomorph ..
-  refine ⟨fun x hx ↦ ?_, fun x hx x' hx' h ↦ ?_, fun y hy ↦ ?_⟩
-  · simpa only [he] using (e ⟨x, hx⟩).2
-  · exact congrArg Subtype.val (e.injective (a₁ := ⟨x, hx⟩) (a₂ := ⟨x', hx'⟩)
-      (Subtype.ext (by simpa only [he] using h)))
-  · exact ⟨e.symm ⟨y, hy⟩, (e.symm ⟨y, hy⟩).2,
-      by simpa only [he] using congrArg Subtype.val (e.apply_symm_apply ⟨y, hy⟩)⟩
+  refine ⟨fun x hx ↦ ⟨isInvariant_unstableSet_inter_stableSet φ p q _ hx.1,
+      apply_flow_levelCrossingTime (hex' x hx.1)⟩, fun x hx x' hx' h ↦ ?_, fun y hy ↦ ?_⟩
+  · have h' := congrArg (φ (-levelCrossingTime φ f c' x')) h
+    simp only [← φ.map_add, neg_add_cancel, φ.map_zero_apply] at h'
+    have hs : -levelCrossingTime φ f c' x' + levelCrossingTime φ f c' x = 0 :=
+      (hanti x hx.1).injective (by rw [h', φ.map_zero_apply]; exact hx'.2.trans hx.2.symm)
+    rw [hs, φ.map_zero_apply] at h'
+    exact h'
+  · obtain ⟨t, ht⟩ := hex y hy.1
+    refine ⟨φ t y, ⟨isInvariant_unstableSet_inter_stableSet φ p q _ hy.1, ht⟩, ?_⟩
+    exact (flow_levelCrossingTime_flow (hanti y hy.1) (s := 0)
+      (by rw [φ.map_zero_apply]; exact hy.2) t).trans (φ.map_zero_apply y)
 
 end Connecting
 

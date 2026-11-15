@@ -89,16 +89,21 @@ theorem convexOn_convexSection_add_linearMap (hu : ConvexOn ℝ Ω u) (L : E →
   ((hu.subset convexSection_subset (convex_convexSection hu)).add
     (L.convexOn (convex_convexSection hu))).add_const c
 
+/-- If `u y` lies above the plane through `(x, u x)` with slope `ℓ` (the supporting plane at `x`),
+then a section `convexSection Ω u x ℓ h` containing `y` has positive height `h`. -/
+theorem pos_of_mem_convexSection (hℓy : u x + (ℓ y - ℓ x) ≤ u y)
+    (hy : y ∈ convexSection Ω u x ℓ h) : 0 < h := by
+  have hb := hy.2
+  simp only [map_sub] at hb
+  linarith
+
 /-- A supporting slope gives a nonempty section exactly at positive heights. -/
 theorem convexSection_nonempty_iff (hx : x ∈ Ω)
     (hℓ : ∀ y ∈ Ω, u x + (ℓ y - ℓ x) ≤ u y) :
     (convexSection Ω u x ℓ h).Nonempty ↔ 0 < h := by
   constructor
   · rintro ⟨y, hy⟩
-    have := hℓ y hy.1
-    have hb := hy.2
-    simp only [map_sub] at hb
-    linarith
+    exact pos_of_mem_convexSection (hℓ y hy.1) hy
   · intro hh
     exact ⟨x, by simp [mem_convexSection_iff, hx, hh]⟩
 

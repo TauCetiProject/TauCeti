@@ -6,13 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Finsupp.Weight
-public import Mathlib.Data.Finsupp.Order
-public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import Mathlib.Algebra.Order.Ring.Int
 public import Mathlib.Topology.Separation.Basic
-import Mathlib.LinearAlgebra.Finsupp.Supported
-import Mathlib.Tactic.NormNum.Basic
-import Mathlib.Tactic.Ring
 
 /-!
 # Weil divisors as finite integer combinations of points
@@ -32,15 +27,17 @@ support is finite.
 ## Main definitions
 
 * `WeilDivisor X`: finite formal integer sums of points of `X`, with `coeff` and `ofPoint`.
-* `IsEffective`, `effectiveSubmonoid`: divisors with nonnegative coefficients.
+* Effective divisors are those with `0 ≤ D` in the coefficientwise order (`nonneg_iff`); they
+  form the submonoid `AddSubmonoid.nonneg (WeilDivisor X)`.
 * `pushforward`, `pullback`: change of the point set along a map, respectively an injective map.
 * `degree`, `weightedDegree`, `degreeZeroSubgroup`, `weightedDegreeZeroSubgroup`: the degrees and
   their kernels.
 * `pointDifference`, `weightedPointBaseDifference`: the divisors `[x] - [y]` and
   `[x] - w x • [x₀]`. The first has degree zero; the second has weighted degree zero when
   `w x₀ = 1`.
-* `weightedAbelJacobiDegreeZeroDivisor`: the degree-corrected representative of a divisor, valued
-  in `weightedDegreeZeroSubgroup w` (not in `WeilDivisor X`), for a base point with `w x₀ = 1`.
+* `weightedAbelJacobiDegreeZeroDivisor`: the degree-corrected representative of a divisor, as an
+  additive map to `weightedDegreeZeroSubgroup w` (not to `WeilDivisor X`), for a base point with
+  `w x₀ = 1`.
 * `pushforwardDegreeZero`, `pushforwardWeightedDegreeZero`: pushforward restricted to the
   degree-zero subgroups.
 
@@ -167,12 +164,8 @@ lemma coeff_nonneg {D : WeilDivisor X} (hD : 0 ≤ D) (x : X) : 0 ≤ coeff D x 
 /-- A nonzero effective divisor has some point with positive coefficient. -/
 lemma exists_pos_coeff_of_ne_zero {D : WeilDivisor X} (hD : 0 ≤ D) (hD0 : D ≠ 0) :
     ∃ x, 0 < coeff D x := by
-  classical
-  by_contra h
-  push Not at h
-  apply hD0
-  ext x
-  exact le_antisymm (h x) (coeff_nonneg hD x)
+  by_contra! h
+  exact hD0 (le_antisymm h hD)
 
 /-- The divisor of a single point is effective. -/
 @[simp]
@@ -194,13 +187,8 @@ lemma pushforward_apply (f : X → Y) (D : WeilDivisor X) :
 the fibre of `f` above `y`. -/
 lemma coeff_pushforward [DecidableEq Y] (f : X → Y) (D : WeilDivisor X) (y : Y) :
     coeff (pushforward f D) y = ∑ x ∈ D.support with f x = y, coeff D x := by
-  rcases em (y ∈ Set.range f) with ⟨x, rfl⟩ | hy
-  · simp [coeff, pushforward_apply, Finsupp.mapDomain_apply_eq_sum]
-  · rw [coeff, pushforward_apply, Finsupp.mapDomain_of_notMem_range]
-    · refine (Finset.sum_eq_zero fun x hx => ?_).symm
-      rw [Finset.mem_filter] at hx
-      exact (hy ⟨x, hx.2⟩).elim
-    · exact hy
+  simp [coeff, pushforward_apply, Finsupp.mapDomain, Finsupp.sum, Finsupp.single_apply,
+    Finset.sum_filter]
 
 lemma pushforward_zero (f : X → Y) : pushforward f (0 : WeilDivisor X) = 0 :=
   map_zero (pushforward f)
@@ -223,7 +211,7 @@ lemma domCongr_ofPoint (e : X ≃ Y) (x : X) :
   simp [ofPoint]
 
 @[simp]
-lemma pushforward_id : pushforward (fun x : X => x) = AddMonoidHom.id (WeilDivisor X) := by
+lemma pushforward_id : pushforward (id : X → X) = AddMonoidHom.id (WeilDivisor X) := by
   ext D x
   simp [pushforward, coeff]
 
@@ -234,12 +222,8 @@ lemma pushforward_comp (g : Y → Z) (f : X → Y) :
 
 /-- The pushforward of an effective divisor is effective. -/
 lemma pushforward_nonneg {D : WeilDivisor X} (hD : 0 ≤ D) (f : X → Y) :
-    0 ≤ pushforward f D := by
-  classical
-  rw [nonneg_iff]
-  intro y
-  rw [coeff_pushforward]
-  exact Finset.sum_nonneg fun x _ => coeff_nonneg hD x
+    0 ≤ pushforward f D :=
+  Finsupp.mapDomain_nonneg hD
 
 /-- Pull a formal divisor back along an injective map of point sets by reading its coefficients
 only at the points in the image.  For the inclusion of an open chart into a curve this is the
@@ -384,19 +368,13 @@ zero iff it is zero. -/
 lemma weightedDegree_eq_zero_iff_of_pos_on_support {w : X → ℤ}
     {D : WeilDivisor X} (hD : 0 ≤ D) (hw : ∀ x ∈ D.support, 0 < w x) :
     weightedDegree w D = 0 ↔ D = 0 := by
-  constructor
-  · intro hdeg
-    by_contra hD0
-    obtain ⟨x, hxpos⟩ := exists_pos_coeff_of_ne_zero hD hD0
-    have hxs : x ∈ D.support := Finsupp.mem_support_iff.mpr (ne_of_gt hxpos)
-    have hsum_pos : 0 < D.sum fun y n => n * w y := by
-      exact Finsupp.sum_pos'
-        (fun y hy => mul_nonneg (coeff_nonneg hD y) (le_of_lt (hw y hy)))
-        ⟨x, hxs, mul_pos hxpos (hw x hxs)⟩
-    rw [← weightedDegree_apply] at hsum_pos
-    exact (ne_of_gt hsum_pos) hdeg
-  · intro h
-    simp [h]
+  refine ⟨fun hdeg ↦ by_contra fun hD0 ↦ ?_, fun h ↦ by simp [h]⟩
+  obtain ⟨x, hxpos⟩ := exists_pos_coeff_of_ne_zero hD hD0
+  have hxs : x ∈ D.support := mem_support_iff.mpr hxpos.ne'
+  rw [weightedDegree_apply] at hdeg
+  exact (Finsupp.sum_pos' (g := fun y n ↦ n * w y)
+    (fun y hy ↦ mul_nonneg (coeff_nonneg hD y) (hw y hy).le)
+    ⟨x, hxs, mul_pos hxpos (hw x hxs)⟩).ne' hdeg
 
 /-- With strictly positive weights on the support, an effective divisor of weighted degree zero
 is zero. -/
@@ -432,12 +410,12 @@ lemma weightedDegree_one_eq_degree (D : WeilDivisor X) :
 
 /-- An effective divisor has nonnegative degree. -/
 lemma degree_nonneg {D : WeilDivisor X} (hD : 0 ≤ D) : 0 ≤ degree D := by
-  simpa [weightedDegree_one_eq_degree D] using
+  simpa using
     weightedDegree_nonneg (w := fun _ : X => (1 : ℤ)) (fun _ => zero_le_one) hD
 
 /-- An effective divisor has degree zero iff it is zero. -/
 lemma degree_eq_zero_iff {D : WeilDivisor X} (hD : 0 ≤ D) : degree D = 0 ↔ D = 0 := by
-  simpa [weightedDegree_one_eq_degree D] using
+  simpa using
     weightedDegree_eq_zero_iff_of_pos (w := fun _ : X => (1 : ℤ)) (fun _ => zero_lt_one) hD
 
 /-- An effective divisor of degree zero is zero. -/
@@ -447,7 +425,7 @@ lemma eq_zero_of_degree_eq_zero {D : WeilDivisor X} (hD : 0 ≤ D) (hdeg : degre
 
 /-- A nonzero effective divisor has positive degree. -/
 lemma degree_pos {D : WeilDivisor X} (hD : 0 ≤ D) (hD0 : D ≠ 0) : 0 < degree D := by
-  simpa [weightedDegree_one_eq_degree D] using
+  simpa using
     weightedDegree_pos_of_pos (w := fun _ : X => (1 : ℤ)) (fun _ => zero_lt_one) hD hD0
 
 /-- The subgroup of divisors of unweighted degree zero.
@@ -485,11 +463,11 @@ lemma pointDifference_self (x : X) : pointDifference x x = 0 := by
 @[simp]
 lemma pointDifference_add_pointDifference_cancel (x y z : X) :
     pointDifference x y + pointDifference y z = pointDifference x z := by
-  simp [pointDifference, sub_eq_add_neg, add_assoc, add_left_comm]
+  exact sub_add_sub_cancel _ _ _
 
 /-- Reversing a point difference negates it. -/
-lemma pointDifference_swap (x y : X) : pointDifference y x = -pointDifference x y := by
-  simp [pointDifference, sub_eq_add_neg, add_comm]
+lemma pointDifference_swap (x y : X) : pointDifference y x = -pointDifference x y :=
+  (neg_sub _ _).symm
 
 @[simp]
 lemma coeff_pointDifference_left (x y : X) :
@@ -509,14 +487,8 @@ lemma coeff_pointDifference [DecidableEq X] (x y z : X) :
 
 lemma support_pointDifference_subset [DecidableEq X] (x y : X) :
     (pointDifference x y).support ⊆ {x, y} := by
-  intro z hz
-  rw [Finset.mem_insert, Finset.mem_singleton]
-  by_contra hzy
-  push Not at hzy
-  have hx : z ≠ x := hzy.1
-  have hy : z ≠ y := hzy.2
-  exact (Finsupp.mem_support_iff.mp hz)
-    (by simp [pointDifference, ofPoint, Finsupp.single_eq_of_ne hx, Finsupp.single_eq_of_ne hy])
+  refine Finsupp.support_sub.trans ?_
+  rw [support_ofPoint, support_ofPoint, Finset.insert_eq]
 
 @[simp]
 lemma degree_pointDifference (x y : X) : degree (pointDifference x y) = 0 := by
@@ -534,8 +506,7 @@ lemma pointDifference_mem_degreeZeroSubgroup (x y : X) :
 @[simp]
 lemma pushforward_pointDifference (f : X → Y) (x y : X) :
     pushforward f (pointDifference x y) = pointDifference (f x) (f y) := by
-  rw [pointDifference, map_sub, pushforward_ofPoint, pushforward_ofPoint]
-  rfl
+  simp [pointDifference]
 
 /-- Pushforward as a homomorphism on unweighted degree-zero divisors. -/
 @[expose] noncomputable def pushforwardDegreeZero (f : X → Y) :
@@ -543,12 +514,8 @@ lemma pushforward_pointDifference (f : X → Y) (x y : X) :
   toFun D :=
     ⟨pushforward f D, by
       rw [mem_degreeZeroSubgroup, degree_pushforward, degree_coe_degreeZeroSubgroup]⟩
-  map_zero' := by
-    apply Subtype.ext
-    exact pushforward_zero f
-  map_add' D E := by
-    apply Subtype.ext
-    exact pushforward_add f D E
+  map_zero' := Subtype.ext (pushforward_zero f)
+  map_add' D E := Subtype.ext (pushforward_add f D E)
 
 @[simp]
 lemma pushforwardDegreeZero_apply (f : X → Y) (D : degreeZeroSubgroup X) :
@@ -557,7 +524,7 @@ lemma pushforwardDegreeZero_apply (f : X → Y) (D : degreeZeroSubgroup X) :
 
 @[simp]
 lemma pushforwardDegreeZero_id :
-    pushforwardDegreeZero (fun x : X => x) = AddMonoidHom.id (degreeZeroSubgroup X) := by
+    pushforwardDegreeZero (id : X → X) = AddMonoidHom.id (degreeZeroSubgroup X) := by
   ext D x
   simp
 
@@ -588,11 +555,15 @@ lemma weightedDegree_coe_weightedDegreeZeroSubgroup (w : X → ℤ)
 
 For a weight-one base point `x₀`, this is `D - weightedDegree(D) • [x₀]`, viewed as a
 weighted-degree-zero divisor. -/
-noncomputable def weightedAbelJacobiDegreeZeroDivisor (w : X → ℤ) {x₀ : X} (hx₀ : w x₀ = 1)
-    (D : WeilDivisor X) : weightedDegreeZeroSubgroup w :=
-  ⟨D - weightedDegree w D • ofPoint x₀, by
+noncomputable def weightedAbelJacobiDegreeZeroDivisor (w : X → ℤ) {x₀ : X} (hx₀ : w x₀ = 1) :
+    WeilDivisor X →+ weightedDegreeZeroSubgroup w where
+  toFun D := ⟨D - weightedDegree w D • ofPoint x₀, by
     rw [mem_weightedDegreeZeroSubgroup, map_sub, map_zsmul, weightedDegree_ofPoint, hx₀]
     simp⟩
+  map_zero' := Subtype.ext <| by simp
+  map_add' D E := Subtype.ext <| by
+    simp only [AddSubgroup.coe_add, map_add, add_zsmul]
+    exact add_sub_add_comm _ _ _ _
 
 @[simp]
 lemma coe_weightedAbelJacobiDegreeZeroDivisor (w : X → ℤ) {x₀ : X}
@@ -647,12 +618,9 @@ lemma coeff_weightedPointBaseDifference [DecidableEq X] (w : X → ℤ) (x₀ x 
 /-- The support of `[x] - w(x)[x₀]` is contained in `{x, x₀}`. -/
 lemma support_weightedPointBaseDifference_subset [DecidableEq X] (w : X → ℤ) (x₀ x : X) :
     (weightedPointBaseDifference w x₀ x).support ⊆ {x, x₀} := by
-  intro y hy
-  rw [Finset.mem_insert, Finset.mem_singleton]
-  by_contra hyx
-  push Not at hyx
-  exact Finsupp.mem_support_iff.mp hy (by
-    simp [weightedPointBaseDifference, ofPoint, hyx.1, hyx.2])
+  refine Finsupp.support_sub.trans ?_
+  rw [support_ofPoint, Finset.insert_eq]
+  exact Finset.union_subset_union_right (Finsupp.support_smul.trans (support_ofPoint x₀).subset)
 
 /-- If the base point has weight `1`, the divisor `[x₀] - w(x₀)[x₀]` is zero. -/
 lemma weightedPointBaseDifference_self {w : X → ℤ} {x₀ : X} (hx₀ : w x₀ = 1) :
@@ -663,8 +631,7 @@ lemma weightedPointBaseDifference_self {w : X → ℤ} {x₀ : X} (hx₀ : w x�
 @[simp]
 lemma weightedDegree_weightedPointBaseDifference (w : X → ℤ) (x₀ x : X) :
     weightedDegree w (weightedPointBaseDifference w x₀ x) = w x * (1 - w x₀) := by
-  simp [weightedPointBaseDifference]
-  ring
+  simp [weightedPointBaseDifference, mul_sub]
 
 /-- If the base point has weight `1`, then `[x] - w(x)[x₀]` has weighted degree zero. -/
 lemma weightedPointBaseDifference_mem_weightedDegreeZeroSubgroup {w : X → ℤ} {x₀ : X}
@@ -704,12 +671,8 @@ pulls back to the source weight. -/
     ⟨pushforward f D, by
       rw [mem_weightedDegreeZeroSubgroup, weightedDegree_pushforward]
       simp [Function.comp_def, hw]⟩
-  map_zero' := by
-    apply Subtype.ext
-    exact pushforward_zero f
-  map_add' D E := by
-    apply Subtype.ext
-    exact pushforward_add f D E
+  map_zero' := Subtype.ext (pushforward_zero f)
+  map_add' D E := Subtype.ext (pushforward_add f D E)
 
 @[simp]
 lemma pushforwardWeightedDegreeZero_apply (wX : X → ℤ) (wY : Y → ℤ) (f : X → Y)
@@ -719,7 +682,7 @@ lemma pushforwardWeightedDegreeZero_apply (wX : X → ℤ) (wY : Y → ℤ) (f :
 
 @[simp]
 lemma pushforwardWeightedDegreeZero_id (w : X → ℤ) :
-    pushforwardWeightedDegreeZero w w (fun x : X => x) (fun _ => rfl) =
+    pushforwardWeightedDegreeZero w w (id : X → X) (fun _ => rfl) =
       AddMonoidHom.id (weightedDegreeZeroSubgroup w) := by
   ext D x
   simp

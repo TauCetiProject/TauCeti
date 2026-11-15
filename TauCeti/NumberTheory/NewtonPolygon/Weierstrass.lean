@@ -92,7 +92,7 @@ theorem le_of_mem_newtonSlopes_of_isDistinguished {P : K[X]} {σ : ℝ}
     isSupportingLine_iff.mpr (PowerSeries.supportingValue_addValuation_coeff_eq_neg_logb_gaussNorm
       (P : K⟦X⟧) v hb hv hfn hP0).ge
   have hj_coeff : P.natDegree ∈ supportingFace (fun n => v ((P : K⟦X⟧).coeff n)) σ c :=
-    ((PowerSeries.isDistinguished_iff_isGreatest_supportingFace (P : K⟦X⟧) v hb hv hfn hP0
+    ((PowerSeries.isDistinguished_iff_isGreatest_supportingFace (P : K⟦X⟧) v hb hv hfn
       P.natDegree).mp hPd).1
   have henv := P.isLowerConvexEnvelope_newtonPolygon v
   have hc_poly : IsSupportingLine (P.newtonPolygon v) σ c := by
@@ -201,7 +201,7 @@ theorem isDistinguished_of_isFiniteFace {f : K⟦X⟧} {σ : ℝ} {l j : ℕ}
   have hc_eq : c = -Real.logb b (f.gaussNorm norm (b ^ σ)) := EReal.coe_injective <| by
     rw [← supportingValue_eq_coe_of_mem_supportingFace hc_coeff hj_coeff,
       supportingValue_addValuation_coeff_eq_neg_logb_gaussNorm f v hb hv hfn hf0]
-  rw [isDistinguished_iff_isGreatest_supportingFace f v hb hv hfn hf0, ← hc_eq]
+  rw [isDistinguished_iff_isGreatest_supportingFace f v hb hv hfn, ← hc_eq]
   exact ⟨hj_coeff, fun m hm => (Set.mem_Icc.mp (hset ▸ henv.supportingFace_subset hc_coeff hm)).2⟩
 
 /-- When `f` is distinguished of degree `j` at `b ^ σ`, slopes `τ > σ` contribute at most the
@@ -213,7 +213,7 @@ private theorem supportingValue_add_le_of_isDistinguished_of_lt {f : K⟦X⟧} {
   have hfn := hf.hasGaussNorm
   set cf := -Real.logb b (f.gaussNorm norm (b ^ σ))
   have hj_coeff :=
-    ((isDistinguished_iff_isGreatest_supportingFace f v hb hv hfn hf.ne_zero j).mp hf).1
+    ((isDistinguished_iff_isGreatest_supportingFace f v hb hv hfn j).mp hf).1
   have hcf : IsSupportingLine (fun k => v (f.coeff k)) σ cf :=
     isSupportingLine_iff.mpr (supportingValue_addValuation_coeff_eq_neg_logb_gaussNorm
       f v hb hv hfn hf.ne_zero).ge
@@ -288,10 +288,14 @@ private theorem supportingValue_newtonPolygon_eq_of_isUnit_subring {σ τ : ℝ}
 /-- At every slope `τ ≤ σ`, the supporting value of `f = u * P` is `v (u.coeff 0)` plus that of
 `P`. -/
 theorem supportingValue_newtonPolygon_eq_of_isUnit_mul {f : K⟦X⟧} {σ τ : ℝ} (hτσ : τ ≤ σ)
-    {u : IsRestricted.subring (R := K) (b ^ σ)} (hu : IsUnit u) {P : Polynomial K} (hP : P ≠ 0)
+    {u : IsRestricted.subring (R := K) (b ^ σ)} (hu : IsUnit u) {P : Polynomial K}
     (hmul : (u : K⟦X⟧) * (P : K⟦X⟧) = f) :
     supportingValue (f.newtonPolygon v) τ =
       (v ((u : K⟦X⟧).coeff 0)).toEReal + supportingValue (P.newtonPolygon v) τ := by
+  rcases eq_or_ne P 0 with rfl | hP
+  · rw [Polynomial.coe_zero, mul_zero] at hmul
+    rw [← hmul, newtonPolygon_zero, Polynomial.newtonPolygon_zero, supportingValue_top,
+      EReal.add_top_of_ne_bot (by simp)]
   have hb0 : 0 < b := zero_lt_one.trans hb
   have hcσ : 0 < b ^ σ := Real.rpow_pos_of_pos hb0 σ
   have hcτ : 0 < b ^ τ := Real.rpow_pos_of_pos hb0 τ
@@ -312,7 +316,7 @@ theorem supportingValue_newtonPolygon_eq_of_isUnit_mul {f : K⟦X⟧} {σ τ : �
 the unit. -/
 private theorem newtonPolygon_le_add_of_isUnit_mul {f : K⟦X⟧} {σ : ℝ} {j : ℕ}
     (hf : TauCeti.PowerSeries.IsDistinguished (b ^ σ) j f)
-    {u : IsRestricted.subring (R := K) (b ^ σ)} (hu : IsUnit u) {P : Polynomial K} (hP0 : P ≠ 0)
+    {u : IsRestricted.subring (R := K) (b ^ σ)} (hu : IsUnit u) {P : Polynomial K}
     (hmul : (u : K⟦X⟧) * (P : K⟦X⟧) = f) {n : ℕ} (hn : n ≤ j) {c₀ : ℝ}
     (hc₀ : v ((u : K⟦X⟧).coeff 0) = (c₀ : WithTop ℝ)) :
     (f.newtonPolygon v n).toEReal ≤ (P.newtonPolygon v n + (c₀ : WithTop ℝ)).toEReal := by
@@ -320,7 +324,7 @@ private theorem newtonPolygon_le_add_of_isUnit_mul {f : K⟦X⟧} {σ : ℝ} {j 
   have hstep (τ : ℝ) (hτσ : τ ≤ σ) :
       supportingValue (f.newtonPolygon v) τ + ((τ * n : ℝ) : EReal) ≤
         (P.newtonPolygon v n + (c₀ : WithTop ℝ)).toEReal := by
-    rw [supportingValue_newtonPolygon_eq_of_isUnit_mul v hb hv hτσ hu hP0 hmul, hc₀,
+    rw [supportingValue_newtonPolygon_eq_of_isUnit_mul v hb hv hτσ hu hmul, hc₀,
       WithTop.toEReal_coe, add_assoc]
     refine (add_le_add le_rfl (EReal.add_le_of_le_sub
       (supportingValue_le (P.newtonPolygon v) τ n))).trans ?_
@@ -350,7 +354,7 @@ private theorem add_le_newtonPolygon_of_isUnit_mul {f : K⟦X⟧} {σ : ℝ} {j 
       supportingValue_eq_coe_of_mem_supportingFace hline
         (by rw [mem_supportingFace, sub_add_cancel, WithTop.coe_untop₀_of_ne_top hPn])
     have hle_f := EReal.add_le_of_le_sub (supportingValue_le (f.newtonPolygon v) τ n)
-    rw [supportingValue_newtonPolygon_eq_of_isUnit_mul v hb hv hτσ hu hP0 hmul, hc₀,
+    rw [supportingValue_newtonPolygon_eq_of_isUnit_mul v hb hv hτσ hu hmul, hc₀,
       WithTop.toEReal_coe, hSP] at hle_f
     rw [← WithTop.coe_untop₀_of_ne_top hPn, ← WithTop.coe_add, WithTop.toEReal_coe]
     refine le_trans ?_ hle_f
@@ -387,7 +391,7 @@ theorem newtonPolygon_eq_add_of_isUnit_mul {f : K⟦X⟧} {σ : ℝ} {j : ℕ}
   rw [hc₀]
   refine le_antisymm (WithTop.toEReal_le_toEReal_iff.mp ?_)
     (WithTop.toEReal_le_toEReal_iff.mp ?_)
-  · exact newtonPolygon_le_add_of_isUnit_mul v hb hv hf hu hP0 hmul hn hc₀
+  · exact newtonPolygon_le_add_of_isUnit_mul v hb hv hf hu hmul hn hc₀
   · exact add_le_newtonPolygon_of_isUnit_mul v hb hv hu hP0 hPd hdeg hmul hn hc₀
 
 /-- The finite unit edges of `P` are precisely the finite unit edges of `f` strictly below `j`. -/

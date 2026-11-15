@@ -71,6 +71,21 @@ def covers(sparse_entry, path):
 
 
 class WorkflowPins(unittest.TestCase):
+    def test_stack_policy_regressions_use_production_tools(self):
+        pins = []
+        for workflow, job, name in (
+            ("stack-policy.yml", "enforce", "Prepare pinned shared tools"),
+            ("infrastructure-tests.yml", "python-tests", "Prepare stack-policy tools at the production pin"),
+        ):
+            with self.subTest(workflow=workflow):
+                step = next(s for s in workflow_jobs(workflow)[job]["steps"] if s.get("name") == name)
+                self.assertEqual(step["with"]["tools-repository"], "TauCetiProject/TauCetiTools")
+                match = re.fullmatch(
+                    r"TauCetiProject/TauCetiTools/\.github/actions/setup@([0-9a-f]{40})", step["uses"])
+                self.assertIsNotNone(match)
+                pins.extend((match[1], step["with"]["tools-ref"]))
+        self.assertEqual(len(set(pins)), 1, "production and regression tests select different stack-policy tools")
+
     def test_reusable_calls_and_action_share_one_sha(self):
         pin = action_pin()
         self.assertRegex(pin, r"^[0-9a-f]{40}$")

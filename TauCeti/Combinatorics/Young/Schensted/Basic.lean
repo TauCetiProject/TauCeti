@@ -169,6 +169,13 @@ theorem IsTableauRows.length_getD_succ_le {rows : List (List α)} (h : IsTableau
       | cons lower rows => simpa using habove.length_le
     | succ i => simpa using ih hrows i
 
+/-- Every row of a tableau below an empty row is empty. Rows beyond the last one are read as
+empty. -/
+theorem IsTableauRows.length_getD_eq_zero_of_le {rows : List (List α)} (h : IsTableauRows rows)
+    {k i : ℕ} (hk : (rows.getD k []).length = 0) (hki : k ≤ i) : (rows.getD i []).length = 0 :=
+  Nat.eq_zero_of_le_zero <| hk ▸
+    antitone_nat_of_succ_le (f := fun i ↦ (rows.getD i []).length) h.length_getD_succ_le hki
+
 /-- Each row of a tableau sits on top of the next one. Rows beyond the last one are read as
 empty. -/
 theorem IsTableauRows.isRowAbove_getD {rows : List (List α)} (h : IsTableauRows rows) (i : ℕ) :
@@ -263,7 +270,6 @@ def appendToRow (a : α) : ℕ → List (List α) → List (List α)
   | k + 1, row :: rows => row :: appendToRow a k rows
 
 /-- Appending to a row of the empty list of rows starts a new row. -/
-@[simp]
 theorem appendToRow_nil (a : α) (k : ℕ) : appendToRow a k [] = [[a]] := by cases k <;> rfl
 
 /-- Appending to row `0` appends the letter to the first row. -/
@@ -275,6 +281,17 @@ theorem appendToRow_zero_cons (a : α) (row : List α) (rows : List (List α)) :
 @[simp]
 theorem appendToRow_succ_cons (a : α) (k : ℕ) (row : List α) (rows : List (List α)) :
     appendToRow a (k + 1) (row :: rows) = row :: appendToRow a k rows := (rfl)
+
+/-- Appending to a row at or past the end of the list of rows starts a new last row. -/
+@[simp]
+theorem appendToRow_of_length_le (a : α) {s : ℕ} {rows : List (List α)} (hs : rows.length ≤ s) :
+    appendToRow a s rows = rows ++ [[a]] := by
+  induction rows generalizing s with
+  | nil => exact appendToRow_nil a s
+  | cons row rows ih =>
+    cases s with
+    | zero => simp at hs
+    | succ s => simp [appendToRow_succ_cons, ih (by simpa using hs)]
 
 /-- **The rows of `TauCeti.appendToRow a k`**: row `k` gains the letter `a` at its end, and every
 other row is unchanged. Rows beyond the last one are read as empty. -/
@@ -349,11 +366,17 @@ theorem findIdx?_mem_appendToRow_of_ne [DecidableEq α] {a b : α} (hab : b ≠ 
 /-- **Appending to a row preserves tableaux** when the new cell is a corner of the new shape and
 its entry fits: it is at least every entry of its row, and greater than the entry above it. -/
 theorem _root_.List.IsTableauRows.appendToRow [Preorder α] {rows : List (List α)}
-    (h : rows.IsTableauRows) {a : α} {k : ℕ} (hk : k ≤ rows.length)
+    (h : rows.IsTableauRows) {a : α} {k : ℕ}
     (hle : ∀ x ∈ rows.getD k [], x ≤ a)
     (habove : ∀ i, k = i + 1 → ∃ hlen : (rows.getD k []).length < (rows.getD i []).length,
       (rows.getD i [])[(rows.getD k []).length] < a) :
     (appendToRow a k rows).IsTableauRows := by
+  -- A cell strictly below the last row has no row above it to rest on.
+  have hk : k ≤ rows.length := by
+    by_contra hlt
+    obtain ⟨hlen, -⟩ := habove (k - 1) (by omega)
+    rw [List.getD_eq_default _ _ (by omega), List.getD_eq_default _ _ (by omega)] at hlen
+    simp at hlen
   induction rows generalizing k with
   | nil =>
     obtain rfl : k = 0 := by simpa using hk
@@ -368,8 +391,8 @@ theorem _root_.List.IsTableauRows.appendToRow [Preorder α] {rows : List (List �
         pairwise_singleton _ _, fun x hx y hy => by
           simpa [mem_singleton.mp hy] using hle x (by simpa using hx)⟩)
     | succ k =>
-      refine isTableauRows_cons.mpr ⟨hne, hs, ?_, ih hrows (by simpa using hk)
-        (by simpa using hle) fun i hi => by simpa using habove (i + 1) (by omega)⟩
+      refine isTableauRows_cons.mpr ⟨hne, hs, ?_, ih hrows (by simpa using hle)
+        (fun i hi => by simpa using habove (i + 1) (by omega)) (by simpa using hk)⟩
       cases k with
       | zero =>
         obtain ⟨hlen, hlt⟩ := habove 0 rfl
@@ -424,11 +447,11 @@ theorem dropLastOfRow_appendToRow (a : α) {k : ℕ} {rows : List (List α)}
       simpa [appendToRow, dropLastOfRow] using
         ih (fun h => hne (mem_cons_of_mem _ h)) (by simpa using hk)
 
-/-- **The rows of `TauCeti.dropLastOfRow k`** at a corner of a tableau: row `k` loses its last
-letter, and every other row is unchanged. Rows beyond the last one are read as empty. -/
-theorem getD_dropLastOfRow [Preorder α] {k : ℕ} {rows : List (List α)}
-    (h : rows.IsTableauRows) (hk : (rows.getD (k + 1) []).length < (rows.getD k []).length)
-    (i : ℕ) :
+/-- **The rows of `TauCeti.dropLastOfRow k`** at a nonempty row: row `k` loses its last letter, and
+every other row is unchanged, provided that deleting row `k` (when it has a single cell) shifts
+only empty rows. Rows beyond the last one are read as empty. -/
+theorem getD_dropLastOfRow {k : ℕ} {rows : List (List α)} (hk : 0 < (rows.getD k []).length)
+    (hz : (rows.getD k []).length = 1 → ∀ i, k < i → (rows.getD i []).length = 0) (i : ℕ) :
     (dropLastOfRow k rows).getD i [] =
       if i = k then (rows.getD k []).dropLast else rows.getD i [] := by
   induction rows generalizing k i with
@@ -437,13 +460,21 @@ theorem getD_dropLastOfRow [Preorder α] {k : ℕ} {rows : List (List α)}
     cases k with
     | zero =>
       by_cases hd : row.dropLast = []
-      · obtain rfl := h.eq_nil_of_dropLast_eq_nil (by simpa using hk) hd
-        cases i <;> simp [dropLastOfRow, hd]
+      · have h1 : row.length = 1 := by
+          have := congrArg length hd
+          rw [length_dropLast, length_nil] at this
+          simp only [getD_cons_zero] at hk
+          omega
+        have hzero (j : ℕ) : rows[j]?.getD [] = [] := by
+          simpa using hz (by simpa using h1) (j + 1) (by omega)
+        cases i <;> simp [dropLastOfRow, hd, hzero]
       · cases i <;> simp [dropLastOfRow, hd]
     | succ k =>
       cases i with
       | zero => simp [dropLastOfRow]
-      | succ i => simpa [dropLastOfRow] using ih h.tail (by simpa using hk) i
+      | succ i =>
+        simpa [dropLastOfRow] using ih (by simpa using hk)
+          (fun h j hj => by simpa using hz (by simpa using h) (j + 1) (by omega)) i
 
 /-- At a corner of a tableau, putting back the last letter of row `k` after removing it recovers
 the tableau. -/
@@ -703,12 +734,29 @@ private theorem rowInsert_appendToRow_and_rowInsertIndex_appendToRow {x k : α} 
 /-- **Insertion past a larger letter.** Let `k` be strictly larger than `x` and than every entry
 of `rows`, and append `k` to row `s`. Inserting `x` then gives the insertion of `x` into `rows`
 with `k` appended to row `s`, unless the insertion of `x` into `rows` ends in row `s`: in that
-case `x`'s bumping path displaces `k`, which moves to the end of row `s + 1`. -/
+case `x`'s bumping path displaces `k`, which moves to the end of row `s + 1`. A row `s` past the
+last row is read as the row just below it. -/
 theorem rowInsert_appendToRow {x k : α} {s : ℕ} {rows : List (List α)} (hx : x < k)
-    (h : ∀ z ∈ rows.flatten, z < k) (hs : s ≤ rows.length) :
+    (h : ∀ z ∈ rows.flatten, z < k) :
     rowInsert x (appendToRow k s rows) =
-      appendToRow k (if rowInsertIndex x rows = s then s + 1 else s) (rowInsert x rows) :=
-  (rowInsert_appendToRow_and_rowInsertIndex_appendToRow hx h hs).1
+      appendToRow k (if rowInsertIndex x rows = s then s + 1 else s) (rowInsert x rows) := by
+  by_cases hs : s ≤ rows.length
+  · exact (rowInsert_appendToRow_and_rowInsertIndex_appendToRow hx h hs).1
+  -- Past the last row, appending to row `s` starts a new row, exactly as for `s = rows.length`.
+  have hle := rowInsertIndex_le_length x rows
+  have hlen := length_rowInsert x rows
+  have h1 := (rowInsert_appendToRow_and_rowInsertIndex_appendToRow hx h (le_refl rows.length)).1
+  have hL : appendToRow k s rows = appendToRow k rows.length rows := by
+    rw [appendToRow_of_length_le k (by omega : rows.length ≤ s), appendToRow_of_length_le k le_rfl]
+  have hne : rowInsertIndex x rows ≠ s := by omega
+  have e₁ : appendToRow k s (rowInsert x rows) = rowInsert x rows ++ [[k]] :=
+    appendToRow_of_length_le k (by omega)
+  have e₂ : appendToRow k (if rowInsertIndex x rows = rows.length then rows.length + 1
+      else rows.length) (rowInsert x rows) = rowInsert x rows ++ [[k]] :=
+    appendToRow_of_length_le k (by split_ifs <;> omega)
+  rw [hL, h1, e₂]
+  simp only [hne, ↓reduceIte]
+  exact e₁.symm
 
 /-- **The new cell of an insertion past a larger letter.** In the situation of
 `TauCeti.rowInsert_appendToRow`, the new cell is in the same row as for the insertion of `x` into
@@ -1029,16 +1077,20 @@ theorem _root_.List.IsTableauRows.exists_forall_le_getLast?_getD_eq_some {Q : Li
   exact ⟨a, Nat.find hex, hmax, Nat.find_spec hex, fun i hi => Nat.find_min hex hi⟩
 
 /-- Reverse insertion from a corner of `P`, and removal of the last letter of the same row of a
-tableau `Q` of the same shape, give two tableaux of the same shape. -/
-theorem length_getD_reverseRowInsert_fst {α β : Type*} [Preorder α] [LinearOrder β]
-    {P : List (List β)} {Q : List (List α)} (hP : P.IsTableauRows) (hQ : Q.IsTableauRows)
+list of rows `Q` of the same shape, give two lists of rows of the same shape. -/
+theorem length_getD_reverseRowInsert_fst {α β : Type*} [LinearOrder β]
+    {P : List (List β)} {Q : List (List α)} (hP : P.IsTableauRows)
     (hshape : ∀ i, (P.getD i []).length = (Q.getD i []).length) {k : ℕ}
     (hk : (Q.getD (k + 1) []).length < (Q.getD k []).length) (i : ℕ) :
     ((reverseRowInsert k P).1.getD i []).length = ((dropLastOfRow k Q).getD i []).length := by
   obtain ⟨b, -, hins, hidx⟩ := rowInsert_reverseRowInsert hP (by rwa [hshape, hshape])
   have h1 := length_getD_rowInsert b (reverseRowInsert k P).1 i
   rw [hins, hidx, hshape] at h1
-  rw [getD_dropLastOfRow hQ hk i]
+  -- A single-cell row `k` forces all later rows to be empty, because `P` has the same shape.
+  have hz : (Q.getD k []).length = 1 → ∀ j, k < j → (Q.getD j []).length = 0 := fun h j hj ↦ by
+    rw [← hshape]
+    exact hP.length_getD_eq_zero_of_le (k := k + 1) (by rw [hshape]; omega) hj
+  rw [getD_dropLastOfRow (Nat.zero_lt_of_lt hk) hz i]
   split_ifs at h1 ⊢ with hik
   · subst hik
     rw [length_dropLast]

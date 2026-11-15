@@ -20,11 +20,13 @@ generator of an exponentially rescaled semigroup.
 
 * `Real.tendsto_mul_exp_mul_nhds_zero`: `c e^{a u} → c` as `u → 0`.
 * `Real.tendsto_exp_mul_sub_one_div`: `(e^{a t} - 1) / t → a` as `t → 0`, `t ≠ 0`.
+* `Real.isBigO_exp_comp_sub_one`: if `f → 0` and `f = O(g)` along a filter, then
+  `e^f - 1 = O(g)`.
 -/
 
 public section
 
-open Filter
+open Asymptotics Filter
 open scoped Topology
 
 namespace Real
@@ -40,5 +42,13 @@ theorem tendsto_mul_exp_mul_nhds_zero (c a : ℝ) :
 theorem tendsto_exp_mul_sub_one_div (a : ℝ) :
     Tendsto (fun t => (exp (a * t) - 1) / t) (𝓝[≠] 0) (𝓝 a) := by
   simpa [div_eq_inv_mul] using ((hasDerivAt_id (0 : ℝ)).const_mul a).exp.tendsto_slope_zero
+
+/-- If `f` tends to zero and `f = O(g)` along a filter, then `e^f - 1 = O(g)`: near zero,
+`e^u - 1 = O(u)` (`HasDerivAt.isBigO_sub` for `exp` at `0`). -/
+theorem isBigO_exp_comp_sub_one {α F : Type*} [Norm F] {l : Filter α} {f : α → ℝ} {g : α → F}
+    (hf : Tendsto f l (𝓝 0)) (hfg : f =O[l] g) : (fun x ↦ exp (f x) - 1) =O[l] g := by
+  have h := (hasDerivAt_exp 0).isBigO_sub.comp_tendsto hf
+  simp only [Function.comp_def, exp_zero, sub_zero] at h
+  exact h.trans hfg
 
 end Real

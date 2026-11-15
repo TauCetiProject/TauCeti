@@ -40,7 +40,7 @@ open _root_.Quiver PathAlgebra DoubledQuiver
 
 variable (k : Type*) [CommRing k] {n : ℕ}
 
-attribute [local instance] forkNeighborSetFintype
+attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
 
 section ForkGraph
 

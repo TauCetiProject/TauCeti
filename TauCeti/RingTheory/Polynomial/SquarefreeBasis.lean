@@ -192,10 +192,11 @@ theorem rootMultiplicity_map_eq (hB : F.IsSquarefreeBasis B) (hf : f ∈ F)
 
 end Multiplicity
 
-variable [IsDomain D] [IsGCDMonoid D]
+variable [IsGCDMonoid D]
 
 /-- The product of the members of a squarefree basis is squarefree. -/
 theorem squarefree_prod (hB : F.IsSquarefreeBasis B) : Squarefree (∏ b ∈ B, b) :=
+  have : IsCancelMulZero D := IsGCDMonoid.isCancelMulZero D
   Finset.squarefree_prod_of_pairwise_isCoprime
     (fun b hb b' hb' hne ↦ hB.isRelPrime b hb b' hb' hne) hB.squarefree
 
@@ -209,10 +210,14 @@ theorem squarefree_prod_map (K : Type*) [Field K] [Algebra D K] [IsFractionRing 
 nonzero discriminant. This includes the empty subfamily, whose product is `1`. -/
 theorem discr_prod_ne_zero [CharZero D] (hB : F.IsSquarefreeBasis B)
     {A : Finset D[X]} (hA : A ⊆ B) : (∏ b ∈ A, b).discr ≠ 0 :=
+  have : IsCancelMulZero D := IsGCDMonoid.isCancelMulZero D
+  have : IsDomain D := ⟨⟩
   (hB.squarefree_prod.squarefree_of_dvd (Finset.prod_dvd_prod_of_subset A B _ hA)).discr_ne_zero
 
 /-- In characteristic zero, the discriminant of a member of a squarefree basis is nonzero. -/
 theorem discr_ne_zero [CharZero D] (hB : F.IsSquarefreeBasis B) (hb : b ∈ B) : b.discr ≠ 0 :=
+  have : IsCancelMulZero D := IsGCDMonoid.isCancelMulZero D
+  have : IsDomain D := ⟨⟩
   (hB.squarefree b hb).discr_ne_zero
 
 /-- Distinct members of a squarefree basis are coprime over the fraction field. -/
@@ -222,7 +227,7 @@ theorem isCoprime_map (K : Type*) [Field K] [Algebra D K] [IsFractionRing D K]
   (hB.isRelPrime b hb b' hb' hne).map_fraction_map.isCoprime
 
 /-- The resultant of two distinct members of a squarefree basis is nonzero. -/
-theorem resultant_ne_zero (hB : F.IsSquarefreeBasis B) (hb : b ∈ B) (hb' : b' ∈ B)
+theorem resultant_ne_zero [IsDomain D] (hB : F.IsSquarefreeBasis B) (hb : b ∈ B) (hb' : b' ∈ B)
     (hne : b ≠ b') : resultant b b' ≠ 0 := by
   have hinj := IsFractionRing.injective D (FractionRing D)
   have h := Polynomial.resultant_ne_zero _ _ (hB.isCoprime_map (FractionRing D) hb hb' hne)

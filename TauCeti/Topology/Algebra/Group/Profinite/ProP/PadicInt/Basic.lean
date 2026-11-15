@@ -106,7 +106,7 @@ the kernel of reduction modulo `p ^ m`. It consists of the multiples of `p ^ m`
 (`mem_padicIntLevel_iff`), has index `p ^ m` (`index_padicIntLevel`), and the levels are cofinal
 among the open subgroups (`exists_padicIntLevel_le`). -/
 noncomputable def padicIntLevel : OpenNormalSubgroup (Multiplicative ℤ_[p]) :=
-  (openNormalSubgroupBot (Multiplicative (ZMod (p ^ m)))).comap
+  (⊥ : OpenNormalSubgroup (Multiplicative (ZMod (p ^ m)))).comap
     (PadicInt.toZModPow m).toAddMonoidHom.toMultiplicative
     (continuous_toMultiplicative_toZModPow p m)
 
@@ -114,14 +114,14 @@ noncomputable def padicIntLevel : OpenNormalSubgroup (Multiplicative ℤ_[p]) :=
 theorem padicIntLevel_toSubgroup :
     (padicIntLevel p m).toSubgroup =
       ((PadicInt.toZModPow (p := p) m).toAddMonoidHom.toMultiplicative).ker := by
-  rw [padicIntLevel, OpenNormalSubgroup.toSubgroup_comap, openNormalSubgroupBot_toSubgroup,
+  rw [padicIntLevel, OpenNormalSubgroup.toSubgroup_comap, OpenNormalSubgroup.toSubgroup_bot,
     MonoidHom.comap_bot]
 
 /-- The level `p ^ m` of `ℤ_p` consists of the multiples of `p ^ m`. -/
 @[simp]
 theorem mem_padicIntLevel_iff {x : Multiplicative ℤ_[p]} :
     x ∈ padicIntLevel p m ↔ (p : ℤ_[p]) ^ m ∣ x.toAdd := by
-  rw [padicIntLevel, OpenNormalSubgroup.mem_comap, mem_openNormalSubgroupBot,
+  rw [padicIntLevel, OpenNormalSubgroup.mem_comap, OpenNormalSubgroup.mem_bot,
     ← Ideal.mem_span_singleton, ← PadicInt.ker_toZModPow, RingHom.mem_ker]
   simp only [AddMonoidHom.coe_toMultiplicative, Function.comp_apply, ofAdd_eq_one,
     RingHom.toAddMonoidHom_eq_coe, AddMonoidHom.coe_ofClass]
@@ -129,7 +129,7 @@ theorem mem_padicIntLevel_iff {x : Multiplicative ℤ_[p]} :
 /-- The level `p ^ m` of `ℤ_p` has index `p ^ m`. -/
 @[simp]
 theorem index_padicIntLevel : (padicIntLevel p m).toSubgroup.index = p ^ m := by
-  rw [padicIntLevel, OpenNormalSubgroup.toSubgroup_comap, openNormalSubgroupBot_toSubgroup,
+  rw [padicIntLevel, OpenNormalSubgroup.toSubgroup_comap, OpenNormalSubgroup.toSubgroup_bot,
     Subgroup.index_comap_of_surjective ⊥ (surjective_toMultiplicative_toZModPow p m),
     Subgroup.index_bot, Nat.card_congr Multiplicative.toAdd, Nat.card_zmod]
 

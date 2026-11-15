@@ -40,12 +40,13 @@ the uniform root lattice by
 For `Dₙ` the labels are those of the glue alphabet: `(1, 0)`, `(0, 1)`, `(1, 1)` in `ℤ/2 × ℤ/2`
 for even `n`, and `2`, `1`, `3` in `ℤ/4` for odd `n`, name `v`, `s` and `c`.
 
-Two consequences hold uniformly, read off from attainment: half the shortest norm is the quadratic
-value of the label (`quadratic_glueAlphabet_eq_glueMinimum_div_two`), so a label is isotropic
-exactly when its shortest norm is an even integer, and only the zero label has shortest norm
-zero (`glueMinimum_eq_zero_iff`).  As a function of the printed Conway--Sloane label rather than
-of its class, the shortest norm is the computable `glueLabelMinimum`
-(`glueMinimum_glueLabelEquiv`).
+Two consequences hold uniformly.  Half the shortest norm is the quadratic value of the label
+(`quadratic_glueAlphabet_eq_glueMinimum_div_two`), so a label is isotropic exactly when its
+shortest norm is an even integer; this is a direct computation in the standard models of the
+glue alphabet, for every simply-laced type.  Only the zero label has shortest norm zero
+(`glueMinimum_eq_zero_iff`), which follows from attainment and so needs `Valid`.  As a function
+of the printed Conway--Sloane label rather than of its class, the shortest norm is the computable
+`glueLabelMinimum` (`glueMinimum_glueLabelEquiv`).
 
 For a glue word `w = (w_i)` of a finite family `t` of components, the coset of the orthogonal sum
 `⊥ i, (t i).rootLattice` named by `w` through `TauCeti.DynkinType.glueWordIsometry` has least norm
@@ -242,15 +243,146 @@ theorem glueMinimum_nonneg (t : DynkinType) (ht : t.IsSimplyLaced) (a : t.glueAl
   | F4 => exact absurd ht not_isSimplyLaced_F4
   | G2 => exact absurd ht not_isSimplyLaced_G2
 
-/-- **Half the shortest norm of a label is its quadratic value**: `q(a) = μ_t(a) / 2 mod ℤ`.  In
-particular a label is quadratically isotropic exactly when its shortest norm is an even
-integer. -/
-theorem quadratic_glueAlphabet_eq_glueMinimum_div_two (t : DynkinType) (hv : t.Valid)
-    (ht : t.IsSimplyLaced) (a : t.glueAlphabet ht) :
+/-- On `Aₙ`, `q(i) = i (n + 1 - i) / (2 (n + 1))` modulo `ℤ`. -/
+private theorem quadratic_glueAlphabet_eq_glueMinimum_div_two_A (n : ℕ)
+    (ht : (A n).IsSimplyLaced) (a : (A n).glueAlphabet ht) :
+    ((A n).glueAlphabet ht).quadratic a =
+      (((A n).glueMinimum ht a / 2 : ℚ) : AddCircle (1 : ℚ)) := by
+  -- The glue alphabet of `A n` is the standard model by `rfl` (`glueAlphabet_A`).
+  suffices h : ∀ a : ZMod (n + 1), (typeAStandardQuadraticModule n).quadratic a =
+      (((A n).glueMinimum ht a / 2 : ℚ) : AddCircle (1 : ℚ)) from h a
+  intro a
+  have ha : ((a.val : ℤ) : ZMod (n + 1)) = a := by exact_mod_cast ZMod.natCast_zmod_val a
+  conv_lhs => rw [← ha]
+  rw [typeAStandardQuadraticModule_quadratic_intCast, glueMinimum_A, ← sub_eq_zero,
+    ← AddCircle.coe_sub, AddCircle.coe_eq_zero_iff]
+  obtain ⟨c, hc⟩ := Int.even_mul_pred_self (a.val : ℤ)
+  refine ⟨c, ?_⟩
+  have hn : (n : ℚ) + 1 ≠ 0 := by positivity
+  have hc' : (a.val : ℚ) * ((a.val : ℚ) - 1) = c + c := by
+    exact_mod_cast hc
+  rw [zsmul_eq_mul]
+  push_cast
+  field_simp
+  linear_combination (-(n : ℚ) - 1) * hc'
+
+/-- On `Dₙ` with `n` even, `q(a) = μ(a) / 2` modulo `ℤ`: the quadratic values of the four classes
+of the Klein four model are `0`, `1/2`, `n/8`, `n/8`. -/
+private theorem quadratic_glueAlphabet_eq_glueMinimum_div_two_D_of_even (n : ℕ)
+    (ht : (D n).IsSimplyLaced) (hn : Even n)
+    (a : (D n).glueAlphabet ht) :
+    ((D n).glueAlphabet ht).quadratic a =
+      (((D n).glueMinimum ht a / 2 : ℚ) : AddCircle (1 : ℚ)) := by
+  obtain ⟨b, hb⟩ : ∃ b : ZMod 2 × ZMod 2,
+    FiniteQuadraticModule.Isometry.ofEq (glueAlphabet_D_of_even n ht hn) a = b := ⟨_, rfl⟩
+  rw [glueMinimum_D_of_even n ht hn a b hb,
+    ← (FiniteQuadraticModule.Isometry.ofEq (glueAlphabet_D_of_even n ht hn)).map_app a, hb]
+  obtain ⟨x, y⟩ := b
+  rcases (by decide : ∀ z : ZMod 2, z = 0 ∨ z = 1) x with rfl | rfl <;>
+    rcases (by decide : ∀ z : ZMod 2, z = 0 ∨ z = 1) y with rfl | rfl
+  · exact (QuadraticMap.map_zero _).trans (by simp)
+  · simp only [checkerboardStandardQuadraticModule_quadratic_zero_one, Prod.ext_iff, Prod.fst_zero,
+      Prod.snd_zero, one_ne_zero, and_false, ↓reduceIte, zero_ne_one, and_self]
+    congr 1
+    ring
+  · simp
+  · simp only [checkerboardStandardQuadraticModule_quadratic_one_one, Prod.ext_iff, Prod.fst_zero,
+      one_ne_zero, Prod.snd_zero, and_self, ↓reduceIte, and_false]
+    congr 1
+    ring
+
+/-- On `Dₙ` with `n` odd, `q(a) = μ(a) / 2` modulo `ℤ`: the quadratic values of the four classes
+of the cyclic model are `0`, `n/8`, `1/2`, `n/8`. -/
+private theorem quadratic_glueAlphabet_eq_glueMinimum_div_two_D_of_odd (n : ℕ)
+    (ht : (D n).IsSimplyLaced) (hn : Odd n)
+    (a : (D n).glueAlphabet ht) :
+    ((D n).glueAlphabet ht).quadratic a =
+      (((D n).glueMinimum ht a / 2 : ℚ) : AddCircle (1 : ℚ)) := by
+  obtain ⟨b, hb⟩ : ∃ b : ZMod 4,
+    FiniteQuadraticModule.Isometry.ofEq (glueAlphabet_D_of_odd n ht hn) a = b := ⟨_, rfl⟩
+  rw [glueMinimum_D_of_odd n ht hn a b hb,
+    ← (FiniteQuadraticModule.Isometry.ofEq (glueAlphabet_D_of_odd n ht hn)).map_app a, hb]
+  rcases (by decide : ∀ z : ZMod 4, z = 0 ∨ z = 1 ∨ z = 2 ∨ z = 3) b with rfl | rfl | rfl | rfl
+  · exact (QuadraticMap.map_zero _).trans (by simp)
+  · simp only [checkerboardCyclicQuadraticModule_quadratic_one, show (1 : ZMod 4) ≠ 0 by decide,
+      ↓reduceIte, show (1 : ZMod 4) ≠ 2 by decide]
+    congr 1
+    ring
+  · simp only [checkerboardCyclicQuadraticModule_quadratic_two n hn, one_div,
+      show (2 : ZMod 4) ≠ 0 by decide, ↓reduceIte]
+  · have h3 : (checkerboardCyclicQuadraticModule n).quadratic (3 : ZMod 4) =
+        (checkerboardCyclicQuadraticModule n).quadratic (1 : ZMod 4) := by
+      rw [show (3 : ZMod 4) = -1 by decide]
+      exact QuadraticMap.map_neg _ _
+    rw [h3, checkerboardCyclicQuadraticModule_quadratic_one]
+    simp only [show (3 : ZMod 4) ≠ 0 by decide, ↓reduceIte, show (3 : ZMod 4) ≠ 2 by decide]
+    congr 1
+    ring
+
+/-- On `E₆`, `q(a) = μ(a) / 2` modulo `ℤ`. -/
+private theorem quadratic_glueAlphabet_eq_glueMinimum_div_two_E6
+    (ht : E6.IsSimplyLaced) (a : E6.glueAlphabet ht) :
+    (E6.glueAlphabet ht).quadratic a =
+      ((E6.glueMinimum ht a / 2 : ℚ) : AddCircle (1 : ℚ)) := by
+  -- The glue alphabet of `E6` is the standard model by `rfl` (`glueAlphabet_E6`).
+  suffices h : ∀ a : ZMod 3, typeE₆StandardQuadraticModule.quadratic a =
+      ((E6.glueMinimum ht a / 2 : ℚ) : AddCircle (1 : ℚ)) from h a
+  intro a
+  rcases (by decide : ∀ z : ZMod 3, z = 0 ∨ z = 1 ∨ z = 2) a with rfl | rfl | rfl
+  · exact (QuadraticMap.map_zero _).trans (by simp)
+  · simp only [typeE₆StandardQuadraticModule_quadratic_one, glueMinimum_E6,
+      show (1 : ZMod 3) ≠ 0 by decide, ↓reduceIte]
+    congr 1
+    norm_num
+  · have h2 : typeE₆StandardQuadraticModule.quadratic (2 : ZMod 3) =
+        typeE₆StandardQuadraticModule.quadratic (1 : ZMod 3) := by
+      rw [show (2 : ZMod 3) = -1 by decide]
+      exact QuadraticMap.map_neg _ _
+    rw [h2, typeE₆StandardQuadraticModule_quadratic_one]
+    simp only [glueMinimum_E6, show (2 : ZMod 3) ≠ 0 by decide, ↓reduceIte]
+    congr 1
+    norm_num
+
+/-- On `E₇`, `q(a) = μ(a) / 2` modulo `ℤ`. -/
+private theorem quadratic_glueAlphabet_eq_glueMinimum_div_two_E7
+    (ht : E7.IsSimplyLaced) (a : E7.glueAlphabet ht) :
+    (E7.glueAlphabet ht).quadratic a =
+      ((E7.glueMinimum ht a / 2 : ℚ) : AddCircle (1 : ℚ)) := by
+  -- The glue alphabet of `E7` is the standard model by `rfl` (`glueAlphabet_E7`).
+  suffices h : ∀ a : ZMod 2, typeE₇StandardQuadraticModule.quadratic a =
+      ((E7.glueMinimum ht a / 2 : ℚ) : AddCircle (1 : ℚ)) from h a
+  intro a
+  rcases (by decide : ∀ z : ZMod 2, z = 0 ∨ z = 1) a with rfl | rfl
+  · exact (QuadraticMap.map_zero _).trans (by simp)
+  · simp only [typeE₇StandardQuadraticModule_quadratic_one, glueMinimum_E7,
+      show (1 : ZMod 2) ≠ 0 by decide, ↓reduceIte]
+    congr 1
+    norm_num
+
+/-- **Half the shortest norm of a label is its quadratic value**: `q(a) = μ_t(a) / 2 mod ℤ`, for
+every simply-laced type `t`.  In particular a label is quadratically isotropic exactly when its
+shortest norm is an even integer.  When `t` is valid, `μ_t(a)` is the shortest norm of the coset
+named by `a` (`isLeast_glueMinimum`). -/
+theorem quadratic_glueAlphabet_eq_glueMinimum_div_two (t : DynkinType) (ht : t.IsSimplyLaced)
+    (a : t.glueAlphabet ht) :
     (t.glueAlphabet ht).quadratic a = ((t.glueMinimum ht a / 2 : ℚ) : AddCircle (1 : ℚ)) := by
-  obtain ⟨x, hx, hxa⟩ := (t.isLeast_glueMinimum hv ht a).1
-  rw [← (t.glueAlphabetIsometry hv ht).map_app a, ← hx, discriminantQuadraticModule_quadratic,
-    discriminantQuadraticMap_mk, hxa]
+  -- The glue alphabets of `A n`, `E6` and `E7` are the standard models by `rfl`
+  -- (`glueAlphabet_A`, `glueAlphabet_E6`, `glueAlphabet_E7`), so `a` lies in the standard model.
+  cases t with
+  | A n => exact quadratic_glueAlphabet_eq_glueMinimum_div_two_A n ht a
+  | D n =>
+    rcases Nat.even_or_odd n with hn | hn
+    · exact quadratic_glueAlphabet_eq_glueMinimum_div_two_D_of_even n ht hn a
+    · exact quadratic_glueAlphabet_eq_glueMinimum_div_two_D_of_odd n ht hn a
+  | E6 => exact quadratic_glueAlphabet_eq_glueMinimum_div_two_E6 ht a
+  | E7 => exact quadratic_glueAlphabet_eq_glueMinimum_div_two_E7 ht a
+  | E8 =>
+    rw [Subsingleton.elim a 0, glueMinimum_E8, QuadraticMap.map_zero]
+    simp
+  | B n => exact absurd ht (not_isSimplyLaced_B n)
+  | C n => exact absurd ht (not_isSimplyLaced_C n)
+  | F4 => exact absurd ht not_isSimplyLaced_F4
+  | G2 => exact absurd ht not_isSimplyLaced_G2
 
 /-- The zero label has shortest norm `0`. -/
 @[simp]
@@ -383,17 +515,21 @@ theorem isLeast_sum_glueMinimum (w : ∀ i, (t i).glueAlphabet (ht i)) :
   rw [hw]
   exact isLeast_form_self_pi _ fun i ↦ (t i).isLeast_glueMinimum (hv i) (ht i) (w i)
 
-include hv in
 /-- **Half the shortest norm of a glue word is its quadratic value**:
-`q(w) = μ(w) / 2 mod ℤ`.  In particular a glue word is quadratically isotropic exactly when the
-sum of the shortest norms of its labels is an even integer. -/
+`q(w) = μ(w) / 2 mod ℤ`, for every family of simply-laced types.  In particular a glue word is
+quadratically isotropic exactly when the sum of the shortest norms of its labels is an even
+integer.  When the types are valid, `μ(w)` is the shortest norm of the coset named by `w`
+(`isLeast_sum_glueMinimum`). -/
 theorem quadratic_pi_glueAlphabet_eq_sum_glueMinimum_div_two
     (w : ∀ i, (t i).glueAlphabet (ht i)) :
     (FiniteQuadraticModule.pi fun i ↦ (t i).glueAlphabet (ht i)).quadratic w =
       (((∑ i, (t i).glueMinimum (ht i) (w i)) / 2 : ℚ) : AddCircle (1 : ℚ)) := by
-  obtain ⟨x, hx, hxw⟩ := (isLeast_sum_glueMinimum t hv ht w).1
-  rw [← (glueWordIsometry t ht hv).map_app w, ← hx, discriminantQuadraticModule_quadratic,
-    discriminantQuadraticMap_mk, hxw]
+  have hsum (f : ι → ℚ) :
+      ((∑ i, f i : ℚ) : AddCircle (1 : ℚ)) = ∑ i, ((f i : ℚ) : AddCircle (1 : ℚ)) :=
+    map_sum (QuotientAddGroup.mk' (AddSubgroup.zmultiples (1 : ℚ))) f Finset.univ
+  rw [FiniteQuadraticModule.pi_quadratic, Finset.sum_div, hsum]
+  exact Finset.sum_congr rfl fun i _ ↦
+    quadratic_glueAlphabet_eq_glueMinimum_div_two (t i) (ht i) (w i)
 
 include hv in
 /-- **Only the zero glue word has shortest norm zero.** -/

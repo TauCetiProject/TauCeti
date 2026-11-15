@@ -117,7 +117,7 @@ theorem mongeAmpereMeasure_eq_of_hasLaw (hf : Convex ℝ {p : E × ℝ | f p.1 �
     exact measure_eq_zero_iff_ae_notMem.1
       (hν (measure_setOf_exists_ne_mem_subdifferential_eq_zero ρ f))
   ext s hs
-  have hm := (nullMeasurableSet_subgradientImage hf hbot ρ hs).mono_ac hν
+  have hm := (nullMeasurableSet_subgradientImage hf ρ hs).mono_ac hν
   rw [mongeAmpereMeasure_apply ν hf hbot hν hs, ← hT.map_eq,
     map_apply₀ hT.aemeasurable (hT.map_eq ▸ hm)]
   -- Up to a `μ`-null set, `T x` is a subgradient at a point of `s ∩ D` exactly when `x ∈ s`.
@@ -213,7 +213,7 @@ theorem hasLaw_gradient_and_ae_ne_top_iff_mongeAmpereMeasure_eq_and_ae_mem_subgr
     -- `ν`-almost every point is the image of a point of `D` under the gradient.
     have hm : NullMeasurableSet (subgradientImage (innerₗ E) f (univ ∩ interior {x | f x ≠ ⊤}))
         (Measure.map (∇ fun x => (f x).toReal) μ) :=
-      hT.map_eq ▸ (nullMeasurableSet_subgradientImage hf hbot ρ MeasurableSet.univ).mono_ac hν
+      hT.map_eq ▸ (nullMeasurableSet_subgradientImage hf ρ MeasurableSet.univ).mono_ac hν
     rw [univ_inter] at hm
     rw [← hT.map_eq]
     refine (mem_ae_iff (s := subgradientImage (innerₗ E) f (interior {x | f x ≠ ⊤}))).2 ?_

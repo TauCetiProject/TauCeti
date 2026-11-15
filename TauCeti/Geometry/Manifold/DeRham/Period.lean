@@ -244,6 +244,14 @@ theorem pathClassIntegral_mk_eq_pathIntegral (hφ : IsSmoothForm I 1 φ)
   rw [pathClassIntegral_mk_eq_sub hφ hclosed hΓ fun t ↦ PrimitiveSpace.proj_graph (γ t)]
   simp [Γ]
 
+/-- Paths which agree pointwise have the same integral, even when their endpoints are written
+differently. -/
+theorem pathClassIntegral_mk_eq_of_apply_eq {x' y' : M} (γ : Path x y) (γ' : Path x' y')
+    (h : ∀ t, γ t = γ' t) : pathClassIntegral φ (.mk γ) = pathClassIntegral φ (.mk γ') := by
+  obtain rfl : x = x' := by simpa using h 0
+  obtain rfl : y = y' := by simpa using h 1
+  rw [Path.ext (funext h)]
+
 /-! ### Linearity in the form -/
 
 /-- Integration along path classes is linear in the closed `C¹` form. -/

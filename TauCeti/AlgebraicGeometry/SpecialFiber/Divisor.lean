@@ -29,7 +29,7 @@ noncomputable section
 
 open CategoryTheory AlgebraicGeometry IsLocalRing TauCeti.AlgebraicGeometry
 
-namespace TauCeti
+namespace AlgebraicGeometry.Scheme.Hom
 
 universe u
 
@@ -39,7 +39,7 @@ variable {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R)) [IsIntegral X] [IsNoethe
 /-- The nonnegative order of vanishing of the pullback of `π` at a codimension-one point. When
 the generic point maps away from the closed point and `π` is nonzero in the maximal ideal, this
 is the multiplicity of a special-fibre component, and it is zero away from the special fibre. -/
-noncomputable def _root_.AlgebraicGeometry.Scheme.Hom.specialFiberMultiplicity
+noncomputable def specialFiberMultiplicity
     (π : R) (x : CodimensionOnePoint X) : ℕ :=
   (X.ord (X.germToFunctionField ⊤
     (toBase.appTop ((Scheme.ΓSpecIso (.of R)).inv π))) x).toNat
@@ -47,7 +47,7 @@ noncomputable def _root_.AlgebraicGeometry.Scheme.Hom.specialFiberMultiplicity
 omit [IsLocalRing R] [Ring.DimensionLEOne R] in
 /-- The integer coercion of the special-fibre multiplicity is the order of vanishing of the
 pulled-back section. -/
-theorem _root_.AlgebraicGeometry.Scheme.Hom.specialFiberMultiplicity_coe
+theorem specialFiberMultiplicity_coe
     (π : R) (x : CodimensionOnePoint X) :
     (toBase.specialFiberMultiplicity π x : ℤ) = X.ord
       (X.germToFunctionField ⊤
@@ -57,7 +57,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.specialFiberMultiplicity_coe
 
 /-- At a codimension-one point of the special fibre, the pullback of a nonzero element of the
 maximal ideal has positive multiplicity. -/
-theorem _root_.AlgebraicGeometry.Scheme.Hom.specialFiberMultiplicity_pos
+theorem specialFiberMultiplicity_pos
     (hη : toBase (genericPoint X) ≠ closedPoint R) {π : R}
     (hπ : π ∈ maximalIdeal R) (hπ0 : π ≠ 0) (x : CodimensionOnePoint X)
     (hx : toBase x = closedPoint R) : 0 < toBase.specialFiberMultiplicity π x := by
@@ -66,7 +66,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.specialFiberMultiplicity_pos
   omega
 
 /-- The multiplicity is zero away from the special fibre. -/
-theorem _root_.AlgebraicGeometry.Scheme.Hom.specialFiberMultiplicity_eq_zero_of_ne
+theorem specialFiberMultiplicity_eq_zero_of_ne
     (hη : toBase (genericPoint X) ≠ closedPoint R) {π : R}
     (hπ : ¬ IsUnit π) (hπ0 : π ≠ 0) (x : CodimensionOnePoint X)
     (hx : toBase x ≠ closedPoint R) : toBase.specialFiberMultiplicity π x = 0 := by
@@ -79,7 +79,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.specialFiberMultiplicity_eq_zero_of_
 
 /-- The divisor of the pullback of `π` is the sum of its component multiplicities over the
 finite set of codimension-one points of the special fibre. -/
-theorem _root_.AlgebraicGeometry.Scheme.Hom.principalDivisor_eq_sum_specialFiber
+theorem principalDivisor_eq_sum_specialFiber
     (hη : toBase (genericPoint X) ≠ closedPoint R) {π : R}
     (hπ : π ∈ maximalIdeal R) (hπ0 : π ≠ 0) :
     (WeilDivisor.OrderSystem.ofScheme X).principalDivisor
@@ -101,11 +101,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.principalDivisor_eq_sum_specialFiber
   have heq : D = ∑ x ∈ (toBase.finite_setOf_base_eq_closedPoint hR hη).toFinset,
       (toBase.specialFiberMultiplicity π x : ℤ) • WeilDivisor.ofPoint x := by
     rw [WeilDivisor.eq_sum_coeff_smul_ofPoint D, hsupport]
-    refine Finset.sum_congr rfl fun x hx ↦ ?_
-    have hEff : 0 ≤ D :=
-      SchemeWeilDivisor.principalDivisor_ofMul_mk0_nonneg
-        (toBase.germToFunctionField_appTop_ne_zero hη hπ hπ0)
-    have hpos : 0 ≤ WeilDivisor.coeff D x := WeilDivisor.coeff_nonneg hEff x
+    refine Finset.sum_congr rfl fun x _ ↦ ?_
     have hord : WeilDivisor.coeff D x = X.ord
         (X.germToFunctionField ⊤
           (toBase.appTop ((Scheme.ΓSpecIso (.of R)).inv π))) x := by
@@ -114,4 +110,4 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.principalDivisor_eq_sum_specialFiber
     rw [Scheme.Hom.specialFiberMultiplicity_coe, hord]
   exact heq
 
-end TauCeti
+end AlgebraicGeometry.Scheme.Hom

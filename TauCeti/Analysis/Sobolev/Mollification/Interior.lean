@@ -81,6 +81,7 @@ theorem HasWeakFDerivOn.fderiv_indicator_convolution_right
           ℝ →L[ℝ] (E →L[ℝ] F) →L[ℝ] E →L[ℝ] F).flip, mu] rho) x :=
   (h.hasFDerivAt_indicator_convolution_right hu hU hp hq rho hrho hrho_cpt x hx).fderiv
 
+omit [SFinite mu] [IsLocallyFiniteMeasure mu] in
 /-- At any point `x` whose closed ball of radius `phi.rOut` lies in `Omega`, the mollification
 of the zero extension of `u` by the normalized bump has derivative the mollification of the
 zero extension of its weak derivative field `U`. -/
@@ -104,6 +105,7 @@ theorem HasWeakFDerivOn.hasFDerivAt_indicator_convolution_normed
   simpa only [Metric.mem_closedBall, dist_eq_norm, sub_sub_cancel_left, norm_neg,
     sub_zero] using hy
 
+omit [SFinite mu] [IsLocallyFiniteMeasure mu] in
 /-- At a point `x` with `closedBall x phi.rOut ⊆ Omega`, the Fréchet derivative of the
 mollification of the zero extension of `u` by the normalized bump equals the mollification
 of the zero extension of its weak derivative field `U`. -/

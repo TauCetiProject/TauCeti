@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRingsExact
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.HomologySequence
 public import TauCeti.Algebra.Homology.Linear
+public import TauCeti.Algebra.Homology.SquareZero.ShortExact
 public import TauCeti.KnotTheory.Grid.Homology.SimplyBlocked.Basic
 public import TauCeti.KnotTheory.Grid.Homology.Unblocked
 
@@ -55,6 +56,9 @@ state the two exactness assertions that involve that action using it.
 
 * `TauCeti.GridDiagram.simplyBlockedShortComplex_shortExact`: the sequence of complexes is short
   exact.
+* `TauCeti.GridDiagram.isShortExactDifferential_X_smul_simplyBlockedSpecialization`: the same
+  sequence as a short exact sequence of differential groups, for the unbundled five lemma of
+  `TauCeti.Algebra.Homology.SquareZero.ShortExact`.
 * `TauCeti.GridDiagram.exact_X_smul_simplyBlockedHomologyMap`,
   `TauCeti.GridDiagram.exact_simplyBlockedHomologyMap_δ` and
   `TauCeti.GridDiagram.exact_simplyBlockedHomologyδ_X_smul`: exactness of the long exact sequence
@@ -279,6 +283,22 @@ theorem simplyBlockedShortComplex_shortExact :
   HomologicalComplex.shortExact_of_degreewise_shortExact _ fun j =>
     ShortComplex.shortExact_of_iso (G.simplyBlockedShortComplexEvalIso R i j).symm
       (simplyBlockedShortComplexModule_shortExact R i)
+
+/-- The specialization sequence as a short exact sequence of differential groups
+`0 → GC⁻ --V_i--> GC⁻ → GC^ → 0` (`AddMonoidHom.IsShortExactDifferential`), the unbundled form
+consumed by the five lemma `AddMonoidHom.exists_mem_ker_sub_mem_range_of_exact`. -/
+theorem isShortExactDifferential_X_smul_simplyBlockedSpecialization :
+    AddMonoidHom.IsShortExactDifferential
+      (DistribSMul.toAddMonoidHom _ (MvPolynomial.X i : MvPolynomial (Fin n) R))
+      (simplyBlockedSpecialization R i).toAddMonoidHom (G.unblockedDifferential R).toAddMonoidHom
+      (G.unblockedDifferential R).toAddMonoidHom (G.simplyBlockedDifferential R i).toAddMonoidHom
+    where
+  square_zero c := LinearMap.congr_fun (G.unblockedDifferential_comp_self_eq_zero R) c
+  injective := X_smul_gridChainMinus_injective R i
+  exact := exact_X_smul_simplyBlockedSpecialization R i
+  surjective := simplyBlockedSpecialization_surjective R i
+  comm_left c := map_smul (G.unblockedDifferential R) _ c
+  comm_right c := simplyBlockedSpecialization_unblockedDifferential _ R i c
 
 /-! ### The long exact sequence -/
 

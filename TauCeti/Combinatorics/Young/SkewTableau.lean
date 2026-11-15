@@ -115,18 +115,20 @@ theorem ext {T T' : SkewSemistandardYoungTableau inner outer} (h : ∀ i j, T i 
     T = T' :=
   DFunLike.ext T T' fun i => funext (h i)
 
-/-- The entries of a skew tableau are weakly increasing along each row of the skew shape. -/
+/-- The entries of a skew tableau are weakly increasing along each row, up to the outer diagram. -/
 theorem row_weak (T : SkewSemistandardYoungTableau inner outer) {i j₁ j₂ : ℕ} (hj : j₁ < j₂)
-    (h₁ : (i, j₁) ∉ inner) (h₂ : (i, j₂) ∈ outer) : T i j₁ ≤ T i j₂ :=
-  T.row_weak' hj h₁ h₂
+    (h₂ : (i, j₂) ∈ outer) : T i j₁ ≤ T i j₂ := by
+  by_cases h₁ : (i, j₁) ∈ inner
+  · exact (T.zeros_inner' h₁).le.trans (Nat.zero_le _)
+  · exact T.row_weak' hj h₁ h₂
 
 /-- The entries of a skew tableau are weakly increasing along each row of the skew shape, stated
 for weakly ordered columns. -/
 theorem row_weak_of_le (T : SkewSemistandardYoungTableau inner outer) {i j₁ j₂ : ℕ}
-    (hj : j₁ ≤ j₂) (h₁ : (i, j₁) ∉ inner) (h₂ : (i, j₂) ∈ outer) : T i j₁ ≤ T i j₂ := by
+    (hj : j₁ ≤ j₂) (h₂ : (i, j₂) ∈ outer) : T i j₁ ≤ T i j₂ := by
   rcases hj.eq_or_lt with rfl | hj
   · exact le_rfl
-  · exact T.row_weak hj h₁ h₂
+  · exact T.row_weak hj h₂
 
 /-- The entries of a skew tableau are strictly increasing down each column of the skew shape. -/
 theorem col_strict (T : SkewSemistandardYoungTableau inner outer) {i₁ i₂ j : ℕ} (hi : i₁ < i₂)
@@ -276,8 +278,6 @@ than `x` exactly when `j` lies among the first `∑_{k < x} rowCount i k` cells 
 theorem apply_lt_iff (T : SkewSemistandardYoungTableau inner outer) {i j x : ℕ}
     (hi : inner.rowLen i ≤ j) (ho : j < outer.rowLen i) :
     T i j < x ↔ j - inner.rowLen i < ∑ k ∈ range x, T.rowCount i k := by
-  have hin : ∀ {j'}, inner.rowLen i ≤ j' → (i, j') ∉ inner := fun h hm =>
-    (YoungDiagram.mem_iff_lt_rowLen.mp hm).not_ge h
   have hout : (i, j) ∈ outer := YoungDiagram.mem_iff_lt_rowLen.mpr ho
   rw [sum_range_rowCount]
   constructor
@@ -287,7 +287,7 @@ theorem apply_lt_iff (T : SkewSemistandardYoungTableau inner outer) {i j x : ℕ
       intro j' hj'
       rw [mem_Ico] at hj'
       exact mem_filter.mpr ⟨mem_Ico.mpr ⟨hj'.1, by omega⟩,
-        (T.row_weak_of_le (by omega) (hin hj'.1) hout).trans_lt h⟩
+        (T.row_weak_of_le (by omega) hout).trans_lt h⟩
     have := card_le_card hsub
     rw [Nat.card_Ico] at this
     omega
@@ -298,7 +298,7 @@ theorem apply_lt_iff (T : SkewSemistandardYoungTableau inner outer) {i j x : ℕ
       intro j' hj'
       rw [mem_filter, mem_Ico] at hj'
       refine mem_Ico.mpr ⟨hj'.1.1, not_le.mp fun hj => ?_⟩
-      exact hx ((T.row_weak_of_le hj (hin hi)
+      exact hx ((T.row_weak_of_le hj
         (YoungDiagram.mem_iff_lt_rowLen.mpr hj'.1.2)).trans_lt hj'.2)
     have := card_le_card hsub
     rw [Nat.card_Ico] at this
@@ -576,7 +576,7 @@ def botEquiv (μ : YoungDiagram) :
     SkewSemistandardYoungTableau ⊥ μ ≃ SemistandardYoungTableau μ where
   toFun T :=
     { entry := T
-      row_weak' := fun hj h => T.row_weak hj (YoungDiagram.notMem_bot _) h
+      row_weak' := fun hj h => T.row_weak hj h
       col_strict' := fun hi h => T.col_strict hi (YoungDiagram.notMem_bot _) h
       zeros' := fun h => T.zeros h }
   invFun T :=

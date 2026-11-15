@@ -47,16 +47,24 @@ the same reason the count vanishes in every nonzero class of nonpositive area
 class (`TauCeti.configurationCount_eq_zero_of_isOfFinAddOrder`): a torsion class has zero area
 but is not the class of the empty configuration.
 
-With an intersection form `B` on `H`, under which compatible candidates have intersection
-number zero, a component `c` of a configuration in class `A` satisfies `A · c = l c (c · c)`
-(`TauCeti.apply_eq_mul_apply_self_of_mem_compatibleConfigurations`). This gives two further
-vanishing theorems. If `S` is an exceptional sphere, which other candidates meet nonnegatively
-and which counts only with multiplicity one, then the count vanishes in every class `A` with
-`A · S < -1`, that is, in every class that is not good
-(`TauCeti.configurationCount_eq_zero_of_apply_lt_neg_one`). If every candidate has nonnegative
-virtual dimension `d(c) = c · c - κ · c` and only candidates of nonnegative square count with
-higher multiplicity, then `d(A) = ∑ l c (d(c) + (l c - 1) c · c)`, so the count vanishes in
-classes of negative virtual dimension
+With an intersection form `B` on `H`, intersection numbers with the class of a configuration
+expand over its components (`TauCeti.apply_eq_sum_of_mem_compatibleConfigurations`). This gives
+two further vanishing theorems. If `S` is a candidate of self-intersection at least `-1`, such as
+an exceptional sphere, which other candidates meet nonnegatively, then `A · S ≥ l S (S · S)`
+(`TauCeti.mul_apply_self_le_apply_of_mem_compatibleConfigurations`), so `A · S ≥ -1` whenever
+`S` occurs at most once (`TauCeti.neg_one_le_apply_of_mem_compatibleConfigurations`). Hence if
+`S` counts only with multiplicity one, the count vanishes in every class `A` with `A · S < -1`,
+that is, in every class that is not good
+(`TauCeti.configurationCount_eq_zero_of_apply_lt_neg_one`). If compatible candidates have
+intersection number zero, a component `c` of a configuration in class `A` satisfies
+`A · c = l c (c · c)` (`TauCeti.apply_eq_mul_apply_self_of_mem_compatibleConfigurations`), so the
+virtual dimension `d(A) = A · A - κ · A` is `∑ l c (d(c) + (l c - 1) c · c)`. When the repeated
+components are square-zero and orthogonal to `κ`, like square-zero tori, this is the sum of
+`d(c)` over the components of multiplicity one. If every candidate has nonnegative virtual
+dimension and only candidates of nonnegative square occur with higher multiplicity, then
+`d(A) ≥ 0` (`TauCeti.apply_self_sub_apply_canonical_nonneg_of_mem_compatibleConfigurations`).
+Hence if only candidates of nonnegative square count with higher multiplicity, the count vanishes
+in classes of negative virtual dimension
 (`TauCeti.configurationCount_eq_zero_of_apply_self_sub_apply_canonical_neg`).
 
 On the ray of a class `A₀` that is not torsion, let `T` be a set of tori with classes
@@ -106,8 +114,13 @@ intersections are inputs here; the geometric theorems supplying them are separat
 * `TauCeti.apply_eq_sum_of_mem_compatibleConfigurations`,
   `TauCeti.apply_eq_sum_of_mem_compatibleConfigurations'`: the pairing of the class of a
   configuration with any class, in either slot, expanded over the components.
+* `TauCeti.mul_apply_self_le_apply_of_mem_compatibleConfigurations`,
+  `TauCeti.neg_one_le_apply_of_mem_compatibleConfigurations`: the bound at a candidate met
+  nonnegatively by all others.
 * `TauCeti.apply_eq_mul_apply_self_of_mem_compatibleConfigurations`,
-  `TauCeti.apply_self_sub_apply_canonical_eq_sum_of_mem_compatibleConfigurations`: intersection
+  `TauCeti.apply_self_sub_apply_canonical_eq_sum_of_mem_compatibleConfigurations`,
+  `TauCeti.apply_self_sub_apply_canonical_eq_sum_filter_of_mem_compatibleConfigurations`,
+  `TauCeti.apply_self_sub_apply_canonical_nonneg_of_mem_compatibleConfigurations`: intersection
   numbers and virtual dimension of the class of a configuration.
 * `TauCeti.configurationCount_eq_zero_of_apply_lt_neg_one`: vanishing in a class that is not
   good.
@@ -180,6 +193,13 @@ theorem compatibleConfigurations_eq_of_forall_support_subset (hts : t ⊆ s)
     (h : ∀ l ∈ compatibleConfigurations r cls s A, ↑l.support ⊆ t) :
     compatibleConfigurations r cls t A = compatibleConfigurations r cls s A :=
   (compatibleConfigurations_mono hts).antisymm fun l hl ↦ ⟨h l hl, hl.2⟩
+
+/-- The class of a configuration is the sum of the classes of its components, counted with
+multiplicity, indexed by the support. -/
+theorem sum_support_smul_eq_of_mem_compatibleConfigurations
+    (hl : l ∈ compatibleConfigurations r cls s A) :
+    ∑ c : l.support, l c • cls c = A := by
+  rw [← hl.2.2, Finsupp.linearCombination_apply, Finsupp.sum, ← Finset.sum_coe_sort l.support]
 
 section Area
 
@@ -424,15 +444,44 @@ theorem apply_eq_mul_apply_self_of_mem_compatibleConfigurations {c : ι}
     (hl.2.1 (Finset.mem_of_mem_erase hb) hc hbc), mul_zero]
 
 /-- If every candidate other than `S` meets `S` nonnegatively, as positivity of intersections
+gives for distinct pseudoholomorphic images, then the class of a configuration meets `S` at
+least `l S` times the self-intersection of `S`. -/
+theorem mul_apply_self_le_apply_of_mem_compatibleConfigurations {S : ι}
+    (hpos : ∀ c ∈ s, c ≠ S → 0 ≤ B (cls c) (cls S))
+    (hl : l ∈ compatibleConfigurations r cls s A) :
+    (l S : ℤ) * B (cls S) (cls S) ≤ B A (cls S) := by
+  classical
+  rw [apply_eq_sum_of_mem_compatibleConfigurations hl]
+  calc (l S : ℤ) * B (cls S) (cls S)
+      = ∑ c ∈ l.support, if c = S then (l c : ℤ) * B (cls c) (cls S) else 0 := by
+        rw [Finset.sum_ite_eq']
+        split_ifs with h
+        · rfl
+        · simp [Finsupp.notMem_support_iff.1 h]
+    _ ≤ ∑ c ∈ l.support, (l c : ℤ) * B (cls c) (cls S) := by
+        refine Finset.sum_le_sum fun c hc ↦ ?_
+        split_ifs with h
+        · exact le_rfl
+        · exact mul_nonneg (Int.natCast_nonneg _) (hpos c (hl.1 hc) h)
+
+/-- If every candidate other than `S` meets `S` nonnegatively, as positivity of intersections
 gives for distinct pseudoholomorphic images, then the class of a configuration not containing
 `S` meets `S` nonnegatively. -/
 theorem apply_nonneg_of_mem_compatibleConfigurations {S : ι}
     (hpos : ∀ c ∈ s, c ≠ S → 0 ≤ B (cls c) (cls S))
     (hl : l ∈ compatibleConfigurations r cls s A) (hS : l S = 0) : 0 ≤ B A (cls S) := by
-  rw [apply_eq_sum_of_mem_compatibleConfigurations hl]
-  refine Finset.sum_nonneg fun c hc ↦ mul_nonneg (Int.natCast_nonneg _) (hpos c (hl.1 hc) ?_)
-  rintro rfl
-  exact Finsupp.mem_support_iff.1 hc hS
+  simpa [hS] using mul_apply_self_le_apply_of_mem_compatibleConfigurations hpos hl
+
+/-- Let `S` be a candidate of self-intersection at least `-1`, such as a pseudoholomorphic
+exceptional sphere, which every other candidate meets nonnegatively. Then the class of a
+configuration in which `S` occurs at most once meets `S` at least `-1` times. -/
+theorem neg_one_le_apply_of_mem_compatibleConfigurations {S : ι}
+    (hpos : ∀ c ∈ s, c ≠ S → 0 ≤ B (cls c) (cls S)) (hS : -1 ≤ B (cls S) (cls S))
+    (hl : l ∈ compatibleConfigurations r cls s A) (hlS : l S ≤ 1) : -1 ≤ B A (cls S) := by
+  refine le_trans ?_ (mul_apply_self_le_apply_of_mem_compatibleConfigurations hpos hl)
+  interval_cases l S
+  · simp
+  · simpa using hS
 
 /-- The virtual dimension `d(A) = A · A - κ · A` of the class of a configuration whose compatible
 components have intersection number zero, as for disjoint images, is
@@ -449,31 +498,57 @@ theorem apply_self_sub_apply_canonical_eq_sum_of_mem_compatibleConfigurations
     (fun b hb hbc ↦ hr b hb c (hl.1 hc) hbc) hl hc]
   ring
 
+/-- If the components of a configuration occurring more than once have square zero and are
+orthogonal to `κ`, like the square-zero tori of Taubes's count, then the virtual dimension of the
+class of the configuration is the sum of the dimensions of its components of multiplicity one. -/
+theorem apply_self_sub_apply_canonical_eq_sum_filter_of_mem_compatibleConfigurations
+    (hr : ∀ a ∈ s, ∀ b ∈ s, a ≠ b → r a b → B (cls a) (cls b) = 0)
+    (hl : l ∈ compatibleConfigurations r cls s A) {κ : H}
+    (hrep : ∀ c, 1 < l c → B (cls c) (cls c) = 0 ∧ B κ (cls c) = 0) :
+    B A A - B κ A = ∑ c ∈ l.support with l c = 1, (B (cls c) (cls c) - B κ (cls c)) := by
+  rw [apply_self_sub_apply_canonical_eq_sum_of_mem_compatibleConfigurations hr hl κ,
+    Finset.sum_filter]
+  refine Finset.sum_congr rfl fun c hc ↦ ?_
+  split_ifs with h
+  · simp [h]
+  · obtain ⟨h₁, h₂⟩ := hrep c (by have := Finsupp.mem_support_iff.1 hc; omega)
+    simp [h₁, h₂]
+
+/-- If compatible candidates have intersection number zero, every candidate has nonnegative
+virtual dimension `d(c) = c · c - κ · c`, and the components of negative square occur at most
+once, then the class of the configuration has nonnegative virtual dimension. -/
+theorem apply_self_sub_apply_canonical_nonneg_of_mem_compatibleConfigurations
+    (hr : ∀ a ∈ s, ∀ b ∈ s, a ≠ b → r a b → B (cls a) (cls b) = 0)
+    (hl : l ∈ compatibleConfigurations r cls s A) {κ : H}
+    (hind : ∀ c ∈ s, 0 ≤ B (cls c) (cls c) - B κ (cls c))
+    (hmult : ∀ c, B (cls c) (cls c) < 0 → l c ≤ 1) : 0 ≤ B A A - B κ A := by
+  rw [apply_self_sub_apply_canonical_eq_sum_of_mem_compatibleConfigurations hr hl]
+  refine Finset.sum_nonneg fun c hc ↦ mul_nonneg (Int.natCast_nonneg _) ?_
+  have hd := hind c (hl.1 hc)
+  have hl0 := Finsupp.mem_support_iff.1 hc
+  rcases Nat.lt_or_ge (l c) 2 with h | h
+  · have h1 : l c = 1 := by omega
+    rw [h1, Nat.cast_one, one_mul]
+    exact hd
+  · have hsq : 0 ≤ B (cls c) (cls c) := not_lt.1 fun hneg ↦ by have := hmult c hneg; omega
+    nlinarith
+
 variable [CommSemiring R] {w : ι → ℕ → R}
 
 /-- **Vanishing in a bad class.** Let `S` be a candidate of self-intersection at least `-1`, such
-as an exceptional sphere, which every other candidate meets nonnegatively and compatible
-candidates do not meet, and which is counted only with multiplicity one: `w S k = 0` for
-`k ≥ 2`. If `A · S < -1`, that is, if `A` is not good, then the count in class `A`
-vanishes. -/
+as an exceptional sphere, which every other candidate meets nonnegatively, and which is counted
+only with multiplicity one: `w S k = 0` for `k ≥ 2`. If `A · S < -1`, that is, if `A` is not
+good, then the count in class `A` vanishes. -/
 theorem configurationCount_eq_zero_of_apply_lt_neg_one {S : ι}
-    (hr : ∀ c ∈ s, c ≠ S → r c S → B (cls c) (cls S) = 0)
     (hpos : ∀ c ∈ s, c ≠ S → 0 ≤ B (cls c) (cls S)) (hS : -1 ≤ B (cls S) (cls S))
     (hw : ∀ k, 2 ≤ k → w S k = 0) (hA : B A (cls S) < -1) :
     configurationCount r cls w s A = 0 := by
   rw [configurationCount_def]
   refine finsum_mem_eq_zero_of_forall_eq_zero fun l hl ↦ ?_
-  have hlS : l S ≠ 0 := fun h ↦
-    (apply_nonneg_of_mem_compatibleConfigurations hpos hl h).not_gt (by linarith)
-  have hSl : S ∈ l.support := Finsupp.mem_support_iff.2 hlS
-  have hA' := apply_eq_mul_apply_self_of_mem_compatibleConfigurations hr hl hSl
-  have h2 : 2 ≤ l S := by
-    by_contra h
-    have h1 : l S = 1 := by omega
-    rw [h1, Nat.cast_one, one_mul] at hA'
-    linarith
+  have hlS : 2 ≤ l S := not_lt.1 fun h ↦
+    hA.not_ge (neg_one_le_apply_of_mem_compatibleConfigurations hpos hS hl (by omega))
   rw [Finsupp.prod]
-  exact Finset.prod_eq_zero hSl (hw _ h2)
+  exact Finset.prod_eq_zero (Finsupp.mem_support_iff.2 (by omega)) (hw _ hlS)
 
 /-- **Vanishing in negative virtual dimension.** Suppose compatible candidates have intersection
 number zero, as for disjoint images, every candidate has nonnegative virtual dimension
@@ -489,18 +564,10 @@ theorem configurationCount_eq_zero_of_apply_self_sub_apply_canonical_neg {κ : H
   refine finsum_mem_eq_zero_of_forall_eq_zero fun l hl ↦ ?_
   rw [Finsupp.prod]
   by_contra hne
-  refine hA.not_ge ?_
-  rw [apply_self_sub_apply_canonical_eq_sum_of_mem_compatibleConfigurations hr hl]
-  refine Finset.sum_nonneg fun c hc ↦ mul_nonneg (Int.natCast_nonneg _) ?_
-  have hd := hind c (hl.1 hc)
-  have hl0 := Finsupp.mem_support_iff.1 hc
-  rcases Nat.lt_or_ge (l c) 2 with h | h
-  · have h1 : l c = 1 := by omega
-    rw [h1, Nat.cast_one, one_mul]
-    exact hd
-  · have hsq := hmult c (hl.1 hc) _ h fun hw ↦ hne (Finset.prod_eq_zero hc hw)
-    have h' : (2 : ℤ) ≤ l c := by exact_mod_cast h
-    nlinarith
+  refine hA.not_ge <| apply_self_sub_apply_canonical_nonneg_of_mem_compatibleConfigurations hr hl
+    hind fun c hc ↦ not_lt.1 fun h ↦ ?_
+  have hcs : c ∈ l.support := Finsupp.mem_support_iff.2 (by omega)
+  exact hc.not_ge (hmult c (hl.1 hcs) _ h fun hw ↦ hne (Finset.prod_eq_zero hcs hw))
 
 end Intersection
 

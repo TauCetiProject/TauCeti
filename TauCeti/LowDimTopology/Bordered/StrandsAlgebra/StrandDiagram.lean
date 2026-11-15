@@ -179,7 +179,9 @@ theorem mem_idOn {s : Finset α} {i j : α} : j ∈ idOn s i ↔ i = j ∧ i ∈
   rw [Option.mem_def, idOn_apply]
   split_ifs with h <;> simp [h]
 
-/-- The diagram with a single strand, from `i` up to `j`. -/
+/-- The strand diagram with a single strand, from `i` to `j ≥ i`. For `i < j` it is the basis
+element of the strands algebra that Lipshitz, Ozsváth and Thurston associate with the chord
+`[i, j]`; for `i = j` it is the identity diagram on `{i}` (`TauCeti.StrandDiagram.single_self`). -/
 def single (i j : α) (h : i ≤ j) : StrandDiagram α where
   toPEquiv := PEquiv.single i j
   le_of_mem' _ _ hk := by
@@ -193,6 +195,29 @@ theorem single_apply (i j : α) (h : i ≤ j) (k : α) :
 
 theorem mem_single {i j : α} {h : i ≤ j} {k l : α} : l ∈ single i j h k ↔ k = i ∧ l = j :=
   PEquiv.mem_single_iff _ _ _ _
+
+/-- A single horizontal strand is an identity diagram. -/
+@[simp]
+theorem single_self (i : α) : single i i le_rfl = idOn {i} := by
+  refine ext fun x ↦ ?_
+  by_cases hx : x = i <;> simp [hx]
+
+/-- A diagram with a single strand is not an identity diagram unless its strand is horizontal. -/
+theorem single_ne_idOn {i j : α} (h : i < j) (s : Finset α) : single i j h.le ≠ idOn s := by
+  intro he
+  have hi := congrArg (fun φ : StrandDiagram α ↦ φ i) he
+  by_cases hs : i ∈ s <;> simp [hs, h.ne'] at hi
+
+/-- Two single strands are equal exactly when they have the same ends. -/
+@[simp]
+theorem single_inj {i j i' j' : α} {h : i ≤ j} {h' : i' ≤ j'} :
+    single i j h = single i' j' h' ↔ i = i' ∧ j = j' := by
+  refine ⟨fun he ↦ ?_, fun ⟨hi, hj⟩ ↦ by subst hi hj; rfl⟩
+  have hi := congrArg (fun φ : StrandDiagram α ↦ φ i) he
+  by_cases hii : i = i'
+  · subst hii
+    simpa using hi
+  · simp [hii] at hi
 
 @[simp]
 theorem single_trans_single {i j k : α} (hij : i ≤ j) (hjk : j ≤ k) :
@@ -516,6 +541,8 @@ theorem composable_idOn_right_iff {s : Finset α} {φ : StrandDiagram α} :
   refine ⟨fun h ↦ by simpa using h.target_eq, fun h ↦ ⟨by simpa using h, ?_⟩⟩
   rw [trans_idOn_of_target_eq h, inversionCount_idOn, add_zero]
 
+/-! ### Diagrams with at most one strand -/
+
 @[simp]
 theorem source_single (i j : α) (h : i ≤ j) : (single i j h).source = {i} := by
   ext k
@@ -530,6 +557,13 @@ theorem target_single (i j : α) (h : i ≤ j) : (single i j h).target = {j} := 
   simp only [mem_single]
   exact ⟨fun ⟨_, _, hl⟩ ↦ hl, fun hl ↦ ⟨i, rfl, hl⟩⟩
 
+/-- A diagram with at most one strand has no crossing. -/
+theorem inversions_eq_empty_of_card_source_le_one {φ : StrandDiagram α} (h : #φ.source ≤ 1) :
+    φ.inversions = ∅ :=
+  Finset.eq_empty_of_forall_notMem fun _ hp ↦ (mem_inversions.1 hp).1.ne <|
+    Finset.card_le_one.1 h _ (fst_mem_source_of_mem_inversions hp) _
+      (snd_mem_source_of_mem_inversions hp)
+
 /-- A single strand has no crossing. -/
 @[simp]
 theorem inversionCount_single (i j : α) (h : i ≤ j) : (single i j h).inversionCount = 0 := by
@@ -539,10 +573,31 @@ theorem inversionCount_single (i j : α) (h : i ≤ j) : (single i j h).inversio
   rw [mem_single] at ha hb
   exact hlt.ne (ha.1.trans hb.1.symm)
 
+/-- Every diagram with exactly one strand is a single strand. -/
+theorem exists_eq_single_of_card_source_eq_one {φ : StrandDiagram α} (h : #φ.source = 1) :
+    ∃ i j, ∃ h : i ≤ j, φ = single i j h := by
+  obtain ⟨i, hi⟩ := Finset.card_eq_one.1 h
+  obtain ⟨j, hj⟩ := mem_source.1 (hi ▸ Finset.mem_singleton_self i : i ∈ φ.source)
+  refine ⟨i, j, φ.le_of_mem hj, ext fun x ↦ ?_⟩
+  rw [single_apply]
+  split_ifs with hx
+  · exact hx ▸ hj
+  · exact apply_eq_none_of_notMem_source (by rwa [hi, Finset.mem_singleton])
+
 /-- Two single strands meeting end to start are composable. -/
 theorem composable_single_single {i j k : α} (hij : i ≤ j) (hjk : j ≤ k) :
     (single i j hij).Composable (single j k hjk) :=
   composable_iff.2 ⟨by simp, by simp [single_trans_single]⟩
+
+/-- Two single strands are composable exactly when the first ends where the second starts; their
+concatenation then has no crossing. -/
+@[simp]
+theorem composable_single_single_iff {i j j' k : α} {h : i ≤ j} {h' : j' ≤ k} :
+    (single i j h).Composable (single j' k h') ↔ j = j' := by
+  refine ⟨fun hc ↦ by simpa using hc.target_eq, fun hj ↦ ?_⟩
+  subst hj
+  refine ⟨by simp, ?_⟩
+  rw [single_trans_single, inversionCount_single, inversionCount_single, inversionCount_single]
 
 end Finite
 

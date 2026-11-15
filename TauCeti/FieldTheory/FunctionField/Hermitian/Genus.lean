@@ -71,9 +71,7 @@ theorem isIntegrallyClosedIn (hq : 1 < q) (hchar : (q : K) = 0) : IsIntegrallyCl
   let := isScalarTower_ratFuncAlgebraOfTranscendental h.transcendental_y
   exact isIntegrallyClosedIn_of_pow_eq_of_gcd_ord_eq_one (IsFunctionField.ratFunc K) inferInstance
     (adjoin_eq_top_ratFunc_of_adjoin_pair_eq_top h.transcendental_y h.adjoin_eq_top)
-    h.rational_equation (by simp [hchar])
-    (RatFunc.algebraMap_ne_zero (radicand_squarefree hchar).ne_zero) (Place.infty K)
-    (radicand_gcd_ord_infty hq)
+    h.rational_equation (by simp [hchar]) (Place.infty K) (radicand_gcd_ord_infty hq)
 
 end RationalBase
 

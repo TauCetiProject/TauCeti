@@ -120,7 +120,7 @@ theorem weightTorusToBaseChangeCoordinateMap_surjective :
         (DiagonalizableGroup.coordinateRing A
           (SplitTorus.characterGroup (Fin 7))).obj :=
     _root_.CommHopfAlgCat.isoMk
-      (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv ℤ A
+      (MonoidAlgebra.scalarTensorBialgEquiv ℤ A
         (G := SplitTorus.characterGroup (Fin 7)))
   exact _root_.CommHopfAlgCat.baseChangeMap_surjective_of_iso (K := A)
     (H := CommHopfAlgCat.quotient

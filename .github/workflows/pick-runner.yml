@@ -3,13 +3,23 @@ name: pick-runner
 # Staging tries eligible dedicated machines before cloud-capacity discovery. Machines
 # advertise capacity through registered runners with class, permanent machine,
 # and ephemeral instance labels. Concurrent pickers can observe the same free slot.
+# The configured shared PR backlog can wait for busy online fleet runners.
 # Capacity observations are advisory. A partial Namespace count below its cap
 # cannot establish spare capacity; unknown pools retain native GitHub fallback.
 # Picker/control jobs do not count towards the build-job cap.
 # Preserve the repository API reserve for status and merge automation.
 on:
+  workflow_dispatch:
+    inputs:
+      control_smoke:
+        description: Verify both reserved queue-control guests
+        type: boolean
+        default: true
   workflow_call:
     inputs:
+      control_smoke:
+        type: boolean
+        default: false
       fleet-staging:
         description: Use staging preferences and eligible dedicated machines; takes precedence over fleet-pr
         type: boolean
@@ -19,30 +29,21 @@ on:
         type: boolean
         default: false
       pr-head:
-        description: Immutable 40-character PR head; empty disables dedicated PR placement and recovery
+        description: Immutable PR head carried by the caller; PR fleet placement uses the shared pool
         type: string
         default: ""
-      pr-number:
-        description: Ordinary PR whose manual local-test route should be checked before selection
-        type: number
-        default: 0
     secrets:
-      SELF_TESTED_APP_ID: { required: false }
-      SELF_TESTED_APP_KEY: { required: false }
       FLEET_READ_TOKEN: { required: false }
       TAUCETI_GITHUB_STATE_TOKEN: { required: false }
     outputs:
       hosted-slot:
         description: Native GitHub bulk-build concurrency slot, from 0 through 18
         value: ${{ jobs.pick.outputs.hosted-slot }}
-      skip-pr-build:
-        description: Eligible manual self-tested assertion for this exact PR head
-        value: ${{ jobs.pick.outputs.skip-pr-build }}
       runner:
         description: JSON runs-on target; callers must match attempt to their current github.run_attempt before using runner or pool
         value: ${{ jobs.pick.outputs.runner }}
       pool:
-        description: "Destination key: github, namespace, or a machine name from services.fleet; valid only for the matching attempt"
+        description: "Destination key: github, fleet, or a named machine preference; valid only for the matching attempt"
         value: ${{ jobs.pick.outputs.pool }}
       attempt:
         description: Picker's github.run_attempt; callers must compare it with their current attempt before using runner or pool
@@ -62,15 +63,14 @@ on:
 
 jobs:
   pick:
+    if: ${{ !inputs.control_smoke }}
     # Every picker must reach the fleet without first waiting for a GitHub build slot.
     # Keep control work small, high priority, and isolated to this workflow run.
-    # An operator can recover selection during a Namespace outage without a PR.
-    runs-on: ${{ vars.PICKER_GITHUB_FALLBACK == 'true' && 'ubuntu-24.04' || fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) }}
+    runs-on: ${{ inputs.fleet-staging && fromJSON('["self-hosted","linux","x64","tauceti-fleet-queue-control","fleet-74773fc7f54d4877add11d80113fe340"]') || 'ubuntu-24.04' }}
     timeout-minutes: 5
     continue-on-error: true
     outputs:
       hosted-slot: ${{ steps.hosted-slot.outputs.slot }}
-      skip-pr-build: ${{ steps.local-route.outputs.skip }}
       runner: ${{ steps.pick.outputs.runner }}
       pool: ${{ steps.pick.outputs.pool }}
       attempt: ${{ steps.pick.outputs.attempt }}
@@ -99,33 +99,12 @@ jobs:
           sparse-checkout-cone-mode: false
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@4d2579da7cdb5679ab523d281f61c73ffb502f75
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@64fa9015b1f2b8c02964938fc21615796ece60ce
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 4d2579da7cdb5679ab523d281f61c73ffb502f75
+          tools-ref: 64fa9015b1f2b8c02964938fc21615796ece60ce
           project-directory: .
-      - name: Read the allowlist using the existing organization App
-        id: team-token
-        if: inputs.pr-number > 0 && (contains(github.event.pull_request.labels.*.name, 'self-tested') || github.event.label.name == 'self-tested' || github.event_name == 'workflow_dispatch')
-        continue-on-error: true
-        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf
-        with:
-          app-id: ${{ secrets.SELF_TESTED_APP_ID }}
-          private-key: ${{ secrets.SELF_TESTED_APP_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: ${{ github.event.repository.name }}
-          permission-members: read
-      - name: Decide the manual PR route before runner selection
-        id: local-route
-        if: inputs.pr-number > 0 && (contains(github.event.pull_request.labels.*.name, 'self-tested') || github.event.label.name == 'self-tested' || github.event_name == 'workflow_dispatch')
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ github.token }}
-          SELF_TESTED_MERGE_BACKEND: ${{ vars.MERGE_BACKEND }}
-          TAUCETI_TEAM_TOKEN: ${{ steps.team-token.outputs.token }}
-        run: python3 -m tauceti_tools script self_tested.py --pr '${{ inputs.pr-number }}'
       - name: Select destination in configured preference order
-        if: steps.local-route.outputs.skip != 'true'
         id: pick
         env:
           GH_TOKEN: ${{ github.token }}
@@ -139,3 +118,24 @@ jobs:
           FLEET_RUNNER_GROUP_ID: ${{ vars.FLEET_RUNNER_GROUP_ID }}
           FLEET_READ_TOKEN: ${{ secrets.FLEET_READ_TOKEN }}
         run: python3 scripts/fleet_runner.py --route
+
+  queue-control-smoke:
+    if: ${{ inputs.control_smoke && github.event_name == 'workflow_dispatch' }}
+    strategy:
+      matrix:
+        slot: [1, 2]
+    runs-on:
+      - self-hosted
+      - linux
+      - x64
+      - tauceti-fleet-queue-control
+      - fleet-74773fc7f54d4877add11d80113fe340
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Check fresh reserved control capacity
+        run: |
+          printf 'Queue control runner=%s slot=%s\n' "$RUNNER_NAME" '${{ matrix.slot }}'
+          test ! -e .lake
+          ! mountpoint -q /cache

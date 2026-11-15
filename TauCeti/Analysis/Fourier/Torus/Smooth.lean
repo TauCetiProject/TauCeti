@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fourier.Torus.Decay
+import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Analysis.Calculus.SmoothSeries
 import TauCeti.Algebra.Module.ZLattice.Summable
 import TauCeti.Analysis.Fourier.Monomial
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
+import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
 import TauCeti.Topology.Instances.AddCircle.UnitAddTorus
 
 /-!
@@ -31,12 +33,19 @@ on the monomials, weighted by the Fourier coefficients of `f`; in particular `T`
 these values. These expansions are the input to the Fourier-series proof of the Schwartz kernel
 theorem.
 
+Conversely, a trigonometric series `∑ n, c n • mFourier n` whose coefficients decrease rapidly
+converges in every `C^N` norm, so it is a smooth function, with Fourier coefficients `c`.
+
 ## Main definitions
 
 * `TauCeti.UnitAddTorus.smoothFunctions d`: the smooth functions on `UnitAddTorus d`.
 * `TauCeti.UnitAddTorus.DerivBound N M f`: `M` bounds the derivatives of order at most `N` of the
   lift of `f`.
 * `TauCeti.UnitAddTorus.mFourierSmooth n`: the Fourier monomial `mFourier n` as a smooth function.
+* `TauCeti.UnitAddTorus.mFourierCoeffₗ n`: the `n`-th Fourier coefficient as a linear form on
+  smooth functions.
+* `UnitAddTorus.lineDeriv f w`: the derivative of a function `f` on `UnitAddTorus d` in the
+  direction `w : d → ℝ`.
 
 ## Main results
 
@@ -52,11 +61,19 @@ theorem.
   function remain summable after multiplication by any polynomial weight `(1 + R ‖n‖) ^ N`.
 * `TauCeti.UnitAddTorus.eventually_derivBound_sub_sum`: the Fourier series of a smooth function
   converges to it in every `C^N` norm.
+* `TauCeti.UnitAddTorus.eq_of_mFourierCoeff_eq`: a smooth function is determined by its Fourier
+  coefficients.
+* `TauCeti.UnitAddTorus.tsum_smul_mFourier_mem_smoothFunctions` and
+  `TauCeti.UnitAddTorus.tsum_smul_mFourier_mem_smoothFunctions_of_bounded`: a trigonometric series
+  with rapidly decreasing coefficients is a smooth function.
 * `LinearMap.hasSum_mFourierCoeff_smul_apply`: a continuous linear map applied to a
   smooth function `f` is the sum of its values on the Fourier monomials, weighted by the Fourier
   coefficients of `f`.
 * `TauCeti.UnitAddTorus.linearMap_eq_of_apply_mFourierSmooth_eq`: two continuous linear maps that
   agree on the Fourier monomials are equal.
+* `UnitAddTorus.lineDeriv_mem_smoothFunctions` and `UnitAddTorus.mFourierCoeff_lineDeriv`: the
+  directional derivatives of a smooth function are smooth, with Fourier coefficients multiplied by
+  `2πi ∑ i, n i * w i`.
 
 ## References
 
@@ -409,4 +426,167 @@ theorem linearMap_eq_of_apply_mFourierSmooth_eq {F : Type*} [NormedAddCommGroup 
   refine (T.hasSum_mFourierCoeff_smul_apply hT f).unique ?_
   simpa only [h] using T'.hasSum_mFourierCoeff_smul_apply hT' f
 
+/-! ### Fourier coefficients determine smooth functions -/
+
+/-- The Fourier series of a smooth function on the torus converges to it pointwise. -/
+theorem hasSum_mFourierCoeff_smul_mFourier {f : UnitAddTorus d → ℂ}
+    (hf : f ∈ smoothFunctions d) :
+    HasSum (fun n ↦ mFourierCoeff f n • ⇑(mFourier n)) f := by
+  have hsum : Summable fun n ↦ mFourierCoeff f n :=
+    Summable.of_norm <| by simpa using summable_norm_mFourierCoeff_mul_pow hf le_rfl 0
+  exact Pi.hasSum.2 (hasSum_mFourier_series_apply_of_summable
+    (f := ⟨f, continuous_of_mem_smoothFunctions hf⟩) hsum)
+
+/-- Two smooth functions on the torus with the same Fourier coefficients are equal. -/
+theorem eq_of_mFourierCoeff_eq {f g : UnitAddTorus d → ℂ} (hf : f ∈ smoothFunctions d)
+    (hg : g ∈ smoothFunctions d) (h : ∀ n, mFourierCoeff f n = mFourierCoeff g n) : f = g :=
+  (hasSum_mFourierCoeff_smul_mFourier hf).unique <| by
+    simpa only [h] using hasSum_mFourierCoeff_smul_mFourier hg
+
+/-! ### Smooth functions from rapidly decreasing coefficients -/
+
+/-- **Rapidly decreasing coefficients give a smooth function.** If `‖c n‖ * ‖n‖ ^ k` is summable
+for every `k`, then the trigonometric series `∑ n, c n • mFourier n` is a smooth function on the
+torus. -/
+theorem tsum_smul_mFourier_mem_smoothFunctions {c : (d → ℤ) → ℂ}
+    (hc : ∀ k : ℕ, Summable fun n ↦ ‖c n‖ * ‖n‖ ^ k) :
+    (fun z ↦ ∑' n, c n • mFourier n z) ∈ smoothFunctions d := by
+  rw [mem_smoothFunctions]
+  refine contDiff_tsum (fun n ↦ (contDiff_mFourier_coe n).const_smul (c n))
+    (v := fun k n ↦ ‖c n‖ * (2 * π * Fintype.card d * ‖n‖) ^ k) (fun k _ ↦ ?_)
+    fun k n x _ ↦ ?_
+  · exact ((hc k).mul_left ((2 * π * Fintype.card d) ^ k)).congr fun n ↦ by ring
+  · rw [iteratedFDeriv_const_smul_apply' ((contDiff_mFourier_coe n).contDiffAt.of_le
+      (mod_cast le_top)), norm_smul]
+    exact mul_le_mul_of_nonneg_left (norm_iteratedFDeriv_mFourier_le n k x) (norm_nonneg _)
+
+/-- **Rapidly decreasing coefficients give a smooth function**, under the classical hypothesis
+that `‖n‖ ^ k * ‖c n‖` is bounded for every `k`. -/
+theorem tsum_smul_mFourier_mem_smoothFunctions_of_bounded {c : (d → ℤ) → ℂ}
+    (hc : ∀ k : ℕ, ∃ C, ∀ n, ‖n‖ ^ k * ‖c n‖ ≤ C) :
+    (fun z ↦ ∑' n, c n • mFourier n z) ∈ smoothFunctions d := by
+  refine tsum_smul_mFourier_mem_smoothFunctions fun k ↦ ?_
+  set K := k + Fintype.card d + 1
+  obtain ⟨C₀, hC₀⟩ := hc 0
+  obtain ⟨C, hC⟩ := hc K
+  refine Summable.of_nonneg_of_le (fun n ↦ by positivity) (fun n ↦ ?_)
+    (summable_pi_int_inv_one_add_norm_pow.mul_left (2 ^ K * (C₀ + C)))
+  have hpow : (1 + ‖n‖) ^ K ≤ 2 ^ K * (1 + ‖n‖ ^ K) := by
+    calc (1 + ‖n‖) ^ K ≤ 2 ^ (K - 1) * (1 ^ K + ‖n‖ ^ K) := add_pow_le zero_le_one (norm_nonneg n) K
+      _ ≤ 2 ^ K * (1 + ‖n‖ ^ K) := by
+          rw [one_pow]
+          gcongr
+          exacts [one_le_two, Nat.sub_le K 1]
+  have h0 := hC₀ n
+  rw [pow_zero, one_mul] at h0
+  have hK : (1 + ‖n‖) ^ K * ‖c n‖ ≤ 2 ^ K * (C₀ + C) :=
+    calc (1 + ‖n‖) ^ K * ‖c n‖ ≤ 2 ^ K * (1 + ‖n‖ ^ K) * ‖c n‖ := by gcongr
+      _ = 2 ^ K * (‖c n‖ + ‖n‖ ^ K * ‖c n‖) := by ring
+      _ ≤ 2 ^ K * (C₀ + C) := by gcongr; exact hC n
+  rw [← div_eq_mul_inv, le_div_iff₀ (by positivity)]
+  calc ‖c n‖ * ‖n‖ ^ k * (1 + ‖n‖) ^ (Fintype.card d + 1)
+      ≤ ‖c n‖ * (1 + ‖n‖) ^ k * (1 + ‖n‖) ^ (Fintype.card d + 1) := by
+        gcongr; linarith [norm_nonneg n]
+    _ = (1 + ‖n‖) ^ K * ‖c n‖ := by ring
+    _ ≤ 2 ^ K * (C₀ + C) := hK
+
+/-! ### Fourier coefficients as linear forms -/
+
+/-- The `n`-th Fourier coefficient as a complex-linear form on the smooth functions. -/
+def mFourierCoeffₗ (n : d → ℤ) : smoothFunctions d →ₗ[ℂ] ℂ where
+  toFun f := mFourierCoeff (f : UnitAddTorus d → ℂ) n
+  map_add' f g := mFourierCoeff_add (integrable_of_mem_smoothFunctions f.2)
+    (integrable_of_mem_smoothFunctions g.2) n
+  map_smul' c _ := mFourierCoeff_smul c _ n
+
+@[simp]
+theorem mFourierCoeffₗ_apply (n : d → ℤ) (f : smoothFunctions d) :
+    mFourierCoeffₗ n f = mFourierCoeff (f : UnitAddTorus d → ℂ) n :=
+  (rfl)
+
+/-- The constant function `1 = mFourier 0` has mean `1`. -/
+theorem mFourierCoeffₗ_zero_mFourierSmooth_zero :
+    mFourierCoeffₗ (0 : d → ℤ) (mFourierSmooth 0) = 1 := by
+  classical
+  simp [mFourierCoeff_mFourier]
+
+/-- The constant function `1 = mFourier 0` is a nonzero smooth function. -/
+theorem mFourierSmooth_zero_ne_zero : mFourierSmooth (0 : d → ℤ) ≠ 0 := fun h ↦ by
+  have := congrArg (fun f : smoothFunctions d ↦ (f : UnitAddTorus d → ℂ) 0) h
+  simp [mFourier_zero] at this
+
 end TauCeti.UnitAddTorus
+
+namespace UnitAddTorus
+
+open TauCeti.UnitAddTorus
+
+variable {d : Type*} [Fintype d]
+
+/-! ### Directional derivatives on the torus -/
+
+/-- The derivative of a function `f` on the torus `UnitAddTorus d` in the direction `w : d → ℝ`:
+its value at `z` is the derivative at `0` of `t ↦ f (z + t w)`. -/
+def lineDeriv (f : UnitAddTorus d → ℂ) (w : d → ℝ) : UnitAddTorus d → ℂ :=
+  fun z ↦ deriv (fun t : ℝ ↦ f (z + fun i ↦ ((t * w i : ℝ) : UnitAddCircle))) 0
+
+omit [Fintype d] in
+/-- Along the line through the image of `x`, a function on the torus is its lift along the line
+through `x`. -/
+private theorem comp_line_eq (f : UnitAddTorus d → ℂ) (x w : d → ℝ) :
+    (fun t : ℝ ↦ f ((fun i ↦ (x i : UnitAddCircle)) + fun i ↦ ((t * w i : ℝ) : UnitAddCircle))) =
+      fun t ↦ (fun y : d → ℝ ↦ f fun i ↦ (y i : UnitAddCircle)) (x + t • w) := by
+  funext t
+  congr 1
+
+omit [Fintype d] in
+/-- At the image of `x`, the directional derivative of `f` is the derivative of its lift. -/
+theorem lineDeriv_coe [Finite d] {f : UnitAddTorus d → ℂ} (x w : d → ℝ)
+    (hf : DifferentiableAt ℝ (fun y : d → ℝ ↦ f fun i ↦ (y i : UnitAddCircle)) x) :
+    lineDeriv f w (fun i ↦ (x i : UnitAddCircle)) =
+      fderiv ℝ (fun y : d → ℝ ↦ f fun i ↦ (y i : UnitAddCircle)) x w := by
+  have := Fintype.ofFinite d
+  rw [lineDeriv, comp_line_eq]
+  exact hf.lineDeriv_eq_fderiv (v := w)
+
+omit [Fintype d] in
+/-- The directional derivatives of a constant function vanish. -/
+@[simp]
+theorem lineDeriv_const (c : ℂ) (w : d → ℝ) : lineDeriv (fun _ : UnitAddTorus d ↦ c) w = 0 := by
+  funext z
+  simp [lineDeriv]
+
+/-- For a smooth function, `t ↦ f (z + t w)` has derivative `lineDeriv f w z` at `0`. -/
+theorem hasDerivAt_lineDeriv {f : UnitAddTorus d → ℂ} (hf : f ∈ smoothFunctions d)
+    (w : d → ℝ) {z : UnitAddTorus d} :
+    HasDerivAt (fun t : ℝ ↦ f (z + fun i ↦ ((t * w i : ℝ) : UnitAddCircle))) (lineDeriv f w z)
+      0 := by
+  obtain ⟨x, rfl⟩ := surjective_coe z
+  refine DifferentiableAt.hasDerivAt ?_
+  rw [comp_line_eq]
+  exact DifferentiableAt.comp (g := fun y : d → ℝ ↦ f fun i ↦ (y i : UnitAddCircle))
+    (f := fun t : ℝ ↦ x + t • w) (0 : ℝ)
+    ((mem_smoothFunctions.1 hf).differentiable (by simp) _) (by fun_prop)
+
+/-- The directional derivatives of a smooth function are smooth. -/
+theorem lineDeriv_mem_smoothFunctions {f : UnitAddTorus d → ℂ} (hf : f ∈ smoothFunctions d)
+    (w : d → ℝ) : lineDeriv f w ∈ smoothFunctions d := by
+  have hF := mem_smoothFunctions.1 hf
+  rw [mem_smoothFunctions]
+  have h : (fun x : d → ℝ ↦ lineDeriv f w (fun i ↦ (x i : UnitAddCircle))) =
+      fun x ↦ fderiv ℝ (fun y : d → ℝ ↦ f fun i ↦ (y i : UnitAddCircle)) x w :=
+    funext fun x ↦ lineDeriv_coe x w (hF.differentiable (by simp) x)
+  rw [h]
+  exact (contDiff_infty_iff_fderiv.1 hF).2.clm_apply contDiff_const
+
+/-- **Fourier coefficients of a directional derivative.** The derivative of a smooth function in
+the direction `w` multiplies its `n`-th Fourier coefficient by `2πi ∑ i, n i * w i`. -/
+theorem mFourierCoeff_lineDeriv {f : UnitAddTorus d → ℂ} (hf : f ∈ smoothFunctions d)
+    (w : d → ℝ) (n : d → ℤ) :
+    mFourierCoeff (lineDeriv f w) n =
+      (2 * π * I * ∑ i, (n i : ℂ) * w i) * mFourierCoeff f n :=
+  mFourierCoeff_eq_smul_of_hasDerivAt (continuous_of_mem_smoothFunctions hf)
+    (continuous_of_mem_smoothFunctions (lineDeriv_mem_smoothFunctions hf w))
+    (fun _ ↦ hasDerivAt_lineDeriv hf w) n
+
+end UnitAddTorus

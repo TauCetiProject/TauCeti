@@ -65,6 +65,11 @@ again a division ring because the opposite of a local ring is local
 * `TauCeti.irreducibleMorphismSpace_residue_smul_eq` and
   `TauCeti.irreducibleMorphismSpace_residueOp_smul_eq`: the two residue actions are postcomposition
   and precomposition by a representative, on every element of the space.
+* `TauCeti.instIsScalarTowerResiduePostcomp` and `TauCeti.instIsScalarTowerResiduePrecomp`: over
+  a commutative base ring `k`, both residue actions are compatible with the scalars of `k`, so
+  `k → End Y / rad(End Y) → Irr(X, Y)` and its mirror image are scalar towers. This is what
+  compares dimensions over the residue rings with dimensions over `k`
+  (`TauCeti/CategoryTheory/Preadditive/Radical/Valuation.lean`).
 * `TauCeti.rank_irreducibleMorphismSpace_pos_iff`: **the target-side rank is positive exactly
   when an irreducible morphism exists** — the rank of the space of irreducible morphisms over the
   residue division ring of the target is positive exactly when there is an irreducible morphism
@@ -347,6 +352,61 @@ instance instSMulCommClassResidue :
     simpa using LinearMap.congr_fun (irreducibleMorphismPrecomp_comp_postcomp k X Y a.unop g) m
 
 end Residue
+
+/-! ### Compatibility with the base scalars -/
+
+section Scalars
+
+variable (k : Type*) [CommRing k] [Linear k C] (X Y : C)
+
+/-- Postcomposition by a scalar multiple of an endomorphism is the scalar multiple of the
+postcomposition. -/
+@[simp]
+theorem irreducibleMorphismPostcomp_smul (c : k) (g : End Y) :
+    irreducibleMorphismPostcomp k X Y (c • g) = c • irreducibleMorphismPostcomp k X Y g := by
+  ext f
+  simp only [irreducibleMorphismPostcomp_irreducibleMorphismMk, LinearMap.smul_apply,
+    ← map_smul (irreducibleMorphismMk k X Y)]
+  congr 1
+  ext
+  simp [End.smul_asHom]
+
+/-- Precomposition by a scalar multiple of an endomorphism is the scalar multiple of the
+precomposition. -/
+@[simp]
+theorem irreducibleMorphismPrecomp_smul (c : k) (a : End X) :
+    irreducibleMorphismPrecomp k X Y (c • a) = c • irreducibleMorphismPrecomp k X Y a := by
+  ext f
+  simp only [irreducibleMorphismPrecomp_irreducibleMorphismMk, LinearMap.smul_apply,
+    ← map_smul (irreducibleMorphismMk k X Y)]
+  congr 1
+  ext
+  simp [End.smul_asHom]
+
+/-- The residue action of the target is compatible with the base scalars: `k → F_Y → Irr(X, Y)`
+is a scalar tower. -/
+instance instIsScalarTowerResiduePostcomp :
+    IsScalarTower k (End Y ⧸ Ring.jacobson (End Y)) (irreducibleMorphismSpace k X Y) where
+  smul_assoc c G m := by
+    obtain ⟨g, rfl⟩ := Ideal.Quotient.mk_surjective G
+    rw [← Ideal.Quotient.mkₐ_eq_mk k, ← map_smul, Ideal.Quotient.mkₐ_eq_mk,
+      irreducibleMorphismSpace_residue_smul_eq,
+      irreducibleMorphismSpace_residue_smul_eq, irreducibleMorphismPostcomp_smul,
+      LinearMap.smul_apply]
+
+/-- The residue action of the source is compatible with the base scalars: `k → F_X → Irr(X, Y)`
+is a scalar tower. -/
+instance instIsScalarTowerResiduePrecomp :
+    IsScalarTower k ((End X)ᵐᵒᵖ ⧸ Ring.jacobson (End X)ᵐᵒᵖ)
+      (irreducibleMorphismSpace k X Y) where
+  smul_assoc c A m := by
+    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective A
+    rw [← Ideal.Quotient.mkₐ_eq_mk k, ← map_smul, Ideal.Quotient.mkₐ_eq_mk,
+      irreducibleMorphismSpace_residueOp_smul_eq,
+      irreducibleMorphismSpace_residueOp_smul_eq, MulOpposite.unop_smul,
+      irreducibleMorphismPrecomp_smul, LinearMap.smul_apply]
+
+end Scalars
 
 /-! ### The ranks over the residue division rings -/
 

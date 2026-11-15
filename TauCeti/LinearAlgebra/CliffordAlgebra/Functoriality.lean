@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
 public import Mathlib.LinearAlgebra.CliffordAlgebra.EvenEquiv
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Prod
+public import Mathlib.Basic.Real.Basic
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Star
 public import Mathlib.RingTheory.Flat.Basic
 
@@ -31,6 +32,8 @@ is faithful.
   twist fixes the base scalars, intertwining the generators along a quadratic isometry `f`
   intertwines every `a` with `map f a`; `CliffordAlgebra.comp_eq_map_comp_of_forall_ι` is the
   linear case.
+* `CliffordAlgebra.map_app_of_forall_ι`: a nonzero map of real Clifford modules intertwining the
+  generators along a map `f` forces `f` to preserve the quadratic forms.
 * `CliffordAlgebra.mul_eq_map_involute_mul_of_forall_ι`: an element that moves past each
   generator by an isometry `f` up to sign moves past every `a` by `map f ∘ involute`.
 * `CliffordAlgebra.map_evenOdd_equivOfIsometry` proves that an isometry equivalence preserves the
@@ -133,6 +136,32 @@ theorem comp_eq_map_comp_of_forall_ι {S : Type*} [CommRing S] [Algebra R S]
     (a : CliffordAlgebra Q₁) :
     U ∘ₗ ρ₁ a = ρ₂ (map f a) ∘ₗ U :=
   comp_eq_map_comp_of_forall_ιₛₗ (fun _ ↦ rfl) hU a
+
+/-- **A nonzero intertwiner forces an isometry**: if a map `U` of Clifford modules intertwines the
+generators along a map `f`, `U c(v) = c(f v) U`, and `U w ≠ 0` for some `w`, then
+`Q' (f v) = Q v` for every `v`, the condition `QuadraticMap.Isometry.map_app` for `f`. Indeed
+`c(f v)² U w = U c(v)² w`, that is `Q' (f v) • U w = Q v • U w`. -/
+theorem map_app_of_forall_ι {K W W' V V' : Type*} [CommRing K] [Algebra ℝ K] [AddCommGroup W]
+    [Module K W] [Module ℝ W] [IsScalarTower ℝ K W] [AddCommGroup W'] [Module K W'] [Module ℝ W']
+    [IsScalarTower ℝ K W'] [AddCommGroup V] [Module ℝ V] [AddCommGroup V']
+    [Module ℝ V'] {Q : QuadraticForm ℝ V} {Q' : QuadraticForm ℝ V'}
+    {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End K W} {ρ' : CliffordAlgebra Q' →ₐ[ℝ] Module.End K W'}
+    {f : V → V'} {U : W →ₗ[K] W'}
+    (hU : ∀ v, U ∘ₗ ρ (ι Q v) = ρ' (ι Q' (f v)) ∘ₗ U) {w : W} (hw : U w ≠ 0) (v : V) :
+    Q' (f v) = Q v := by
+  have h := LinearMap.congr_fun (hU v) (ρ (ι Q v) w)
+  have h₁ : ρ (ι Q v) (ρ (ι Q v) w) = Q v • w := by
+    rw [← mul_apply_eq_comp, ← map_mul, ι_sq_scalar, AlgHom.commutes,
+      Module.algebraMap_end_apply]
+  have h₂ : ρ' (ι Q' (f v)) (ρ' (ι Q' (f v)) (U w)) = Q' (f v) • U w := by
+    rw [← mul_apply_eq_comp, ← map_mul, ι_sq_scalar, AlgHom.commutes,
+      Module.algebraMap_end_apply]
+  have h₃ := LinearMap.congr_fun (hU v) w
+  simp only [LinearMap.comp_apply] at h h₃
+  rw [h₃, h₁, LinearMap.map_smul_of_tower, h₂] at h
+  have h' : (Q v - Q' (f v)) • U w = 0 := by rw [sub_smul, h, sub_self]
+  rw [smul_eq_zero, sub_eq_zero] at h'
+  exact (h'.resolve_right hw).symm
 
 /-- If an element `u` of a Clifford algebra moves past every generator by a quadratic isometry `f`
 of the same form, up to sign, `u * ι m = -(ι (f m) * u)`, then it moves past every Clifford

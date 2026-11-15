@@ -115,6 +115,20 @@ lemma twistedChainComplexπ_comp_twistedChainComplexMap :
         Q.twistedChainComplexπ L :=
   P.twistedChainComplexπ_comp_twistedChainComplexDesc _ _ _
 
+/-- In each degree, the relative twisted chain map sends the class of an ambient chain to the class
+of its image. -/
+@[simp]
+lemma twistedChainComplexMap_f_twistedChainComplexπ_f_apply {k : ℕ}
+    (c : ((LocalCoefficientSystem.pullback (Hom.fst f).hom).obj L).twistedChainComplex.X k) :
+    (twistedChainComplexMap f L).f k
+        ((P.twistedChainComplexπ ((LocalCoefficientSystem.pullback (Hom.fst f).hom).obj L)).f k
+          c) =
+      (Q.twistedChainComplexπ L).f k
+        ((LocalCoefficientSystem.twistedChainComplexMap (Hom.fst f) L).f k c) := by
+  rw [← ConcreteCategory.comp_apply, ← HomologicalComplex.comp_f,
+    twistedChainComplexπ_comp_twistedChainComplexMap, HomologicalComplex.comp_f,
+    ConcreteCategory.comp_apply]
+
 /-- Relative maps of pairs commute with a change of coefficients on the target pair. -/
 @[reassoc]
 lemma twistedChainComplexMap_naturality

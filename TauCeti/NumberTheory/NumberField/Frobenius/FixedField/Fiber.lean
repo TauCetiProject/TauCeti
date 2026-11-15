@@ -24,6 +24,9 @@ from `Ideal.eq_of_smul_eq_of_liesOver_under_fixedField`.
 
 * `Ideal.exists_isArithFrobAt_and_restrictScalars_eq`: a prime carrying `σ` has, over the
   fixed field, a relative Frobenius restricting to `σ`.
+* `Ideal.inertiaDeg_under_eq_one_and_isArithFrobAt_fixedField`: a relative Frobenius `τ` over the
+  fixed field restricting to a Frobenius over `K` gives residue degree one below and a relative
+  Frobenius.
 
 ## References
 
@@ -53,5 +56,19 @@ theorem exists_isArithFrobAt_and_restrictScalars_eq (Q : Ideal (𝓞 L)) [Q.IsPr
     (K := ↥(fixedField (Subgroup.zpowers σ))) Q hσ.ne_bot
   exact ⟨τ, hτ, NumberField.restrictScalars_eq_of_inertiaDeg_eq_one hσ hτ
     (inertiaDeg_under_fixedField_eq_one_of_isArithFrobAt Q hσ)⟩
+
+/-- Below a prime `Q` of `L` unramified over `K` at which `τ`, read over `K`, is an arithmetic
+Frobenius lies a prime of `E = L ^ ⟨σ⟩` of residue degree one over `K`, and `τ` is an arithmetic
+Frobenius at `Q` over `E`. -/
+theorem inertiaDeg_under_eq_one_and_isArithFrobAt_fixedField (Q : Ideal (𝓞 L)) [Q.IsPrime]
+    [Algebra.IsUnramifiedAt (𝓞 K) Q] (σ : L ≃ₐ[K] L)
+    (τ : L ≃ₐ[↥(fixedField (Subgroup.zpowers σ))] L)
+    (hQ : IsArithFrobAt (𝓞 K) (AlgEquiv.restrictScalars K τ) Q) :
+    (Q.under (𝓞 ↥(fixedField (Subgroup.zpowers σ)))).inertiaDeg (𝓞 K) = 1 ∧
+      IsArithFrobAt (𝓞 ↥(fixedField (Subgroup.zpowers σ))) τ Q := by
+  have hdeg := (inertiaDeg_under_fixedField_eq_one_iff Q _ hQ).2
+    (σ.restrictScalars_mem_zpowers τ)
+  exact ⟨hdeg, (NumberField.isArithFrobAt_iff_restrictScalars_eq_pow_inertiaDeg hQ τ).mpr
+    (by rw [hdeg, pow_one])⟩
 
 end Ideal

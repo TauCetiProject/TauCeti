@@ -41,6 +41,8 @@ leading examples are the Lie algebras `𝔲(n)` and `𝔰𝔲(n)` of skew-Hermit
 
 ## Main results
 
+* `LinearMap.liftBaseChange_complex_apply`: the canonical map `ℂ ⊗[ℝ] W → V` sends `u` to the image
+  of its real part plus `I` times the image of its imaginary part.
 * `LinearMap.mem_range_liftBaseChange_complex_iff`: the image of `ℂ ⊗[ℝ] W → V` consists of the
   vectors `f x + I • f y`.
 * `LinearMap.liftBaseChange_complex_injective_iff`: the map `ℂ ⊗[ℝ] W → V` is injective exactly
@@ -69,6 +71,14 @@ namespace LinearMap
 
 variable {V W : Type*} [AddCommGroup V] [Module ℂ V] [Module ℝ V] [IsScalarTower ℝ ℂ V]
   [AddCommGroup W] [Module ℝ W] (f : W →ₗ[ℝ] V)
+
+/-- The canonical extension to the complexification is the real-image plus `i` times the
+imaginary-image. This formula respects an independently given compatible real scalar action. -/
+theorem liftBaseChange_complex_apply (u : ℂ ⊗[ℝ] W) :
+    f.liftBaseChange ℂ u =
+      f (TauCeti.realPart W u) + Complex.I • f (TauCeti.imaginaryPart W u) := by
+  conv_lhs => rw [← TauCeti.one_tmul_realPart_add_I_tmul_imaginaryPart W u]
+  simp only [map_add, LinearMap.liftBaseChange_tmul, one_smul]
 
 /-- The image of the complexified map `ℂ ⊗[ℝ] W → V`, `c ⊗ₜ w ↦ c • f w`, consists of the
 vectors `f x + I • f y`. -/

@@ -79,7 +79,7 @@ theorem wrappedNormalAngleMeasure_eq_withDensity (hv : v ≠ 0) :
     wrappedNormalAngleMeasure m v = (volume.restrict (Ico (-π) π)).withDensity
       (fun t : ℝ ↦ ENNReal.ofReal (wrappedNormalPDFReal m v t / (2 * π))) := by
   rw [wrappedNormalAngleMeasure_def, wrappedNormalMeasure_eq_withDensity m hv,
-    AddCircle.map_coe_equivIco_withDensity_haarAddCircle (-π) (measurable_wrappedNormalPDF m v)]
+    AddCircle.map_coe_equivIco_withDensity_haarAddCircle (-π)]
   have hπ : -π + 2 * π = π := by ring
   rw [hπ]
   congr 1

@@ -86,16 +86,16 @@ theorem tendsto_yosidaLimit_of_norm_resolvent_pow_le {t : ℝ} (ht : 0 ≤ t) (x
       (𝓝 (yosidaLimit A t x)) :=
   tendsto_yosidaLimit_of_cauchySeq A t x <|
     (exp_yosidaApproximation_uniformCauchySeqOn_compact_of_norm_resolvent_pow_le hM hres hpow
-      hdense x ht).cauchySeq (Set.right_mem_Icc.mpr ht)
+      hdense x).cauchySeq (Set.right_mem_Icc.mpr ht)
 
 /-- Convergence of the Hille--Yosida approximations is uniform on every compact nonnegative time
 interval. -/
 theorem tendstoUniformlyOn_exp_yosidaApproximation_of_norm_resolvent_pow_le
-    (x : X) {T : ℝ} (hT : 0 ≤ T) :
+    (x : X) {T : ℝ} :
     TendstoUniformlyOn (fun lambda t : ℝ => exp (t • yosidaApproximation A lambda) x)
       (fun t : ℝ => yosidaLimit A t x) atTop (Set.Icc 0 T) :=
   (exp_yosidaApproximation_uniformCauchySeqOn_compact_of_norm_resolvent_pow_le hM hres hpow
-    hdense x hT).tendstoUniformlyOn_of_tendsto fun _t ht =>
+    hdense x).tendstoUniformlyOn_of_tendsto fun _t ht =>
       tendsto_yosidaLimit_of_norm_resolvent_pow_le hM hres hpow hdense ht.1 x
 
 omit hres hdense in
@@ -121,8 +121,8 @@ Hille--Yosida approximating semigroups. -/
 def hilleYosidaLimitSemigroup : StronglyContinuousSemigroup X :=
   yosidaLimitSemigroupOfTendsto
     (fun _t ht x => tendsto_yosidaLimit_of_norm_resolvent_pow_le hM hres hpow hdense ht x)
-    (fun x _T hT => tendstoUniformlyOn_exp_yosidaApproximation_of_norm_resolvent_pow_le
-      hM hres hpow hdense x hT)
+    (fun x _T _ => tendstoUniformlyOn_exp_yosidaApproximation_of_norm_resolvent_pow_le
+      hM hres hpow hdense x)
     (fun _t ht =>
       eventually_norm_exp_smul_yosidaApproximation_le_of_norm_resolvent_pow_le hM hpow ht)
 

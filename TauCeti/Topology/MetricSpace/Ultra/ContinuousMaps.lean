@@ -42,6 +42,7 @@ variable {α β : Type*} [TopologicalSpace α] [PseudoMetricSpace β] [Zero β]
 /-- The sup distance on continuous functions vanishing at infinity with values in an ultrametric
 space is ultrametric. -/
 instance instIsUltrametricDist [IsUltrametricDist β] : IsUltrametricDist C₀(α, β) where
-  dist_triangle_max f g h := IsUltrametricDist.dist_triangle_max f.toBCF g.toBCF h.toBCF
+  dist_triangle_max f g h := by
+    simpa only [dist_toBCF_eq_dist] using dist_triangle_max f.toBCF g.toBCF h.toBCF
 
 end ZeroAtInftyContinuousMap

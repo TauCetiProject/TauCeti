@@ -16,12 +16,15 @@ coordinate functionals of the basis, and is recovered from them as `φ = ∑ᵢ 
 Conversely, for a real test function `ψ` and a vector `v : F`, any continuous linear functional
 `f` on `F` sends the test function `ψ • v` to the multiple `f v • ψ`; in particular the components
 of `ψ • v` are the multiples `b.repr v i • ψ`. These identities reduce statements about
-`F`-valued test functions to statements about real-valued ones.
+`F`-valued test functions to statements about real-valued ones. Pointwise complex conjugation,
+postcomposition with `Complex.conjCLE`, is an involution on complex test functions.
 
 ## Main declarations
 
 * `TestFunction.postcompCLM_postcompCLM`: postcomposing with `L₁` and then with `L₂` is
   postcomposing with `L₂ ∘L L₁`.
+* `TestFunction.postcompCLM_conj_postcompCLM_conj`: conjugating a complex test function twice
+  gives it back.
 * `TestFunction.sum_postcompCLM_toSpanSingleton_coord`: an `F`-valued test function is the sum
   of its components in a basis, times the basis vectors.
 * `TestFunction.postcompCLM_postcompCLM_toSpanSingleton`: a continuous linear functional applied
@@ -56,6 +59,14 @@ theorem postcompCLM_postcompCLM {𝕜 : Type*} [NontriviallyNormedField 𝕜] [A
     (φ : 𝓓^{n}(Ω, F)) :
     postcompCLM L₂ (postcompCLM L₁ φ) = postcompCLM (L₂ ∘L L₁) φ :=
   rfl
+
+/-- Conjugating a complex test function twice gives it back. -/
+@[simp]
+theorem postcompCLM_conj_postcompCLM_conj (φ : 𝓓^{n}(Ω, ℂ)) :
+    postcompCLM (𝕜 := ℝ) Complex.conjCLE.toContinuousLinearMap
+      (postcompCLM (𝕜 := ℝ) Complex.conjCLE.toContinuousLinearMap φ) = φ := by
+  ext y
+  simp
 
 /-- An `F`-valued test function `φ` is the sum of its components `bᵢ* ∘ φ` in a basis `b` of `F`,
 each multiplied by the corresponding basis vector `bᵢ`. -/

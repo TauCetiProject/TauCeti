@@ -52,6 +52,8 @@ subalgebra they generate by `TauCeti.Lie.lieSubalgebraOfSubgroup_induction`.
   is abelian.
 * `TauCeti.Lie.isLieAbelian_of_isMulCommutative`: the Lie algebra of a commutative Lie group is
   abelian.
+* `TauCeti.Lie.isLieAbelian_groupLieAlgebra_of_isMulCommutative`: so is the tangent Lie algebra at
+  the identity of a boundaryless commutative Lie group.
 * `TauCeti.Lie.image_lieExp_lieSubalgebraOfSubgroup_of_isConnected`: a closed connected
   commutative subgroup is the exponential image of its Lie algebra.
 * `TauCeti.Lie.mem_centralizer_iff_forall_Ad_apply_eq_self`: an element centralizes a closed
@@ -182,6 +184,13 @@ instance isLieAbelian_of_isMulCommutative [IsMulCommutative G] :
       (mem_lieSubalgebraOfSubgroup_of_forall fun _ => Subgroup.mem_top _)
       (mem_lieSubalgebraOfSubgroup_of_forall fun _ => Subgroup.mem_top _)
 
+/-- **The tangent Lie algebra of a commutative Lie group is abelian.** This is
+`TauCeti.Lie.isLieAbelian_of_isMulCommutative`, transported to the tangent space at the identity
+along `leftInvariantDerivationLieEquivGroupLieAlgebra`. -/
+instance isLieAbelian_groupLieAlgebra_of_isMulCommutative [IsMulCommutative G]
+    [BoundarylessManifold I G] : IsLieAbelian (GroupLieAlgebra I G) :=
+  (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+    BoundarylessManifold.isInteriorPoint).surjective.isLieAbelian inferInstance
 
 /-- **A closed connected commutative subgroup is the exponential image of its Lie algebra.** -/
 theorem image_lieExp_lieSubalgebraOfSubgroup_of_isConnected {K : Subgroup G} [IsMulCommutative K]

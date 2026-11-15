@@ -57,6 +57,9 @@ category with homology the notion coincides with Mathlib's
   exact structure.
 * `TauCeti.IsKernelCokernelPair.biprod`: a direct sum of kernel–cokernel pairs is a
   kernel–cokernel pair.
+* `TauCeti.IsKernelCokernelPair.hasHomology`: with a zero object, a kernel–cokernel pair has
+  homology, with no balancedness or (co)completeness assumption, so it is short exact
+  (`TauCeti.IsKernelCokernelPair.shortExact`) in any exact category.
 * `TauCeti.isKernelCokernelPair_iff_shortExact`: in a balanced preadditive category the
   kernel–cokernel pairs among the short complexes with homology are exactly the short exact
   ones. These are the conflations of the canonical exact structure on an abelian category.
@@ -167,6 +170,42 @@ theorem eq_desc (h : IsKernelCokernelPair S) (k : S.X₂ ⟶ A) (hk : S.f ≫ k 
   rw [← cancel_epi S.g, hl, h.g_desc]
 
 end Factorizations
+
+open ZeroObject in
+/-- **A kernel–cokernel pair has homology** in a category with a zero object: the cycles are the
+first term, the opcycles are the last term, and the homology is zero. -/
+theorem hasHomology [HasZeroObject C] (h : IsKernelCokernelPair S) : S.HasHomology := by
+  have := h.mono_f
+  have := h.epi_g
+  have hlift : h.fIsKernel.lift (KernelFork.ofι S.f S.zero) = 𝟙 S.X₁ :=
+    Fork.IsLimit.hom_ext h.fIsKernel (by simp)
+  have hdesc : h.gIsCokernel.desc (CokernelCofork.ofπ S.g S.zero) = 𝟙 S.X₃ :=
+    Cofork.IsColimit.hom_ext h.gIsCokernel (by simp)
+  have hepi : Epi (h.fIsKernel.lift (KernelFork.ofι S.f S.zero)) := by
+    rw [hlift]; exact (inferInstance : Epi (𝟙 S.X₁))
+  have hmono : Mono (h.gIsCokernel.desc (CokernelCofork.ofπ S.g S.zero)) := by
+    rw [hdesc]; exact (inferInstance : Mono (𝟙 S.X₃))
+  exact .mk'
+    { left :=
+        { K := S.X₁
+          H := 0
+          i := S.f
+          π := 0
+          wi := S.zero
+          hi := h.fIsKernel
+          wπ := comp_zero
+          hπ := CokernelCofork.IsColimit.ofEpiOfIsZero _ hepi (isZero_zero C) }
+      right :=
+        { Q := S.X₃
+          H := 0
+          p := S.g
+          ι := 0
+          wp := S.zero
+          hp := h.gIsCokernel
+          wι := zero_comp
+          hι := KernelFork.IsLimit.ofMonoOfIsZero _ hmono (isZero_zero C) }
+      iso := Iso.refl _
+      comm := by simp }
 
 /-- Being a kernel–cokernel pair is invariant under isomorphism of short complexes; this is the
 closure property an exact structure demands of its class of conflations. -/

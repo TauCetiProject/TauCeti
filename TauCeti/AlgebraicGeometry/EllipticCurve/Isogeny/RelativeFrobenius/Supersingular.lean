@@ -105,7 +105,7 @@ private theorem separableDegree_mulByIntIsogenyOfNeZero_eq_one_of_isSupersingula
       (mod_cast expChar_ne_zero K p)).separableDegree = 1 := by
   set φ := mulByIntIsogenyOfNeZero W.toAffine (n := p) (mod_cast expChar_ne_zero K p)
   set Ω := AlgebraicClosure W.toAffine.FunctionField
-  have htors := (W.isSupersingular_iff_of_isAlgClosed (expChar_ne_zero K p) Ω).1 hW
+  have htors := (W.isSupersingular_iff_of_isAlgClosed Ω).1 hW
   -- Two embeddings over `[p]^* K(W)` move the generic point by a `p`-torsion point, which is zero.
   have : Subsingleton (Field.Emb φ.fieldPullback.fieldRange W.toAffine.FunctionField) := by
     refine ⟨fun σ τ ↦ AlgHom.restrictScalars_injective K
@@ -160,7 +160,7 @@ private theorem isSupersingular_of_separableDegree_verschiebungIsogeny_eq_one
     rw [← hcomp, separableDegree_comp, hsep, separableDegree_relativeFrobeniusIsogeny_map]
   -- That kernel is the `p`-torsion of `W` over the algebraic closure.
   rw [ker_mulByIntIsogeny_eq_torsionBy, Affine.baseChange_self] at hker
-  exact (W.isSupersingular_iff_of_isAlgClosed (expChar_ne_zero K p) (AlgebraicClosure K)).2 hker
+  exact (W.isSupersingular_iff_of_isAlgClosed (AlgebraicClosure K)).2 hker
 
 /-- **Supersingularity is pure inseparability of `[p]`**: `W` is supersingular exactly when
 multiplication by `p` has separable degree `1` (Silverman V.3.1). -/

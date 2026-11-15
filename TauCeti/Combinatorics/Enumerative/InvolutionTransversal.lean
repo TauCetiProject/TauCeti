@@ -67,9 +67,8 @@ structure IsInvolutionTransversal (f : α → α) (S T : Finset α) : Prop where
 namespace IsInvolutionTransversal
 
 /-- A transversal omits the partner of each of its elements. -/
-theorem map_notMem_of_mem (hT : IsInvolutionTransversal f S T) {a : α} (ha : a ∈ S)
-    (haT : a ∈ T) :
-    f a ∉ T := (hT.mem_iff_notMem a ha).1 haT
+theorem map_notMem_of_mem (hT : IsInvolutionTransversal f S T) {a : α} (ha : a ∈ T) :
+    f a ∉ T := (hT.mem_iff_notMem a (hT.subset ha)).1 ha
 
 /-- A transversal contains the partner of each element of `S` it omits. -/
 theorem map_mem_of_notMem (hT : IsInvolutionTransversal f S T) {a : α} (ha : a ∈ S)
@@ -99,7 +98,7 @@ theorem IsInvolutionTransversal.prod_mul_prod_comp (hT : IsInvolutionTransversal
   refine Finset.prod_nbij' f f (fun a ha => ?_) (fun a ha => ?_)
     (fun a ha => hinvol a (hT.subset ha)) (fun a ha => hinvol a (Finset.mem_sdiff.1 ha).1)
     fun _ _ => rfl
-  · exact Finset.mem_sdiff.2 ⟨hmaps a (hT.subset ha), hT.map_notMem_of_mem (hT.subset ha) ha⟩
+  · exact Finset.mem_sdiff.2 ⟨hmaps a (hT.subset ha), hT.map_notMem_of_mem ha⟩
   · exact hT.map_mem_of_notMem (Finset.mem_sdiff.1 ha).1 (Finset.mem_sdiff.1 ha).2
 
 /-- There are only finitely many transversals, since each is a subset of `S`. -/
@@ -166,7 +165,7 @@ private lemma setOf_isInvolutionTransversal_eq_image_union [DecidableEq α]
     by_cases haT : a ∈ T
     · have herase : T \ {a, f a} = T.erase a := by
         rw [Finset.sdiff_insert, Finset.sdiff_singleton_eq_erase,
-          Finset.erase_eq_of_notMem (hT.map_notMem_of_mem ha haT)]
+          Finset.erase_eq_of_notMem (hT.map_notMem_of_mem haT)]
       exact Or.inl ⟨_, isInvolutionTransversal_sdiff_pair hmaps hinvol ha hT, by
         rw [herase]; exact Finset.insert_erase haT⟩
     · have hfaT : f a ∈ T := hT.map_mem_of_notMem ha haT

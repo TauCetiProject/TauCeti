@@ -82,6 +82,8 @@ regular case.
 * `QuadraticMap.Anisotropic.radical_eq_bot`: an anisotropic quadratic map has trivial radical.
 * `QuadraticMap.Anisotropic.nondegenerate`: an anisotropic quadratic map is nondegenerate when
   `2` is invertible.
+* `QuadraticForm.anisotropic_of_finrank_le_one`: a nondegenerate quadratic form on a space of
+  dimension at most one is anisotropic.
 * `LinearMap.BilinMap.polarBilin_toQuadraticMap_of_flip`: the polar form of the quadratic form of a
   symmetric bilinear form `B` is `2 • B`.
 * `LinearMap.BilinForm.radical_toQuadraticMap`: the radical of the quadratic form of a symmetric
@@ -201,7 +203,7 @@ theorem nondegenerate_of_isCompl {Q : QuadraticMap R M P} {A B : Submodule R M}
     simpa only [polarBilin_apply_apply, LinearMap.zero_apply] using LinearMap.congr_fun hx y
   have ha0 : a = 0 := hAB_sep a ha fun b' hb' ↦ by
     simpa only [polar_add_left, hB.polar_eq_zero hb hb', add_zero] using hx' b'
-  have hb0 : b = 0 := hBA_sep b hb fun a' ha' ↦ by
+  have hb0 : b = 0 := hBA_sep b hb fun a' _ ↦ by
     simpa only [ha0, zero_add, polar_comm Q b a', polar_zero_left] using hx' a'
   simp [ha0, hb0]
 
@@ -619,6 +621,30 @@ theorem exists_orthogonal_anisotropic [NeZero (2 : K)]
     simpa only [B, QuadraticMap.polarBilin_apply_apply, QuadraticMap.polar_self, nsmul_eq_mul,
       Nat.cast_ofNat, mul_ne_zero_iff_left (NeZero.ne (2 : K))] using hz'
 
+/-- A nondegenerate quadratic space of dimension at least three has an anisotropic vector
+orthogonal to any given vector, isotropic or not. -/
+theorem exists_orthogonal_anisotropic_of_three_le_finrank [NeZero (2 : K)]
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hrank : 3 ≤ Module.finrank K V) (y : V) :
+    ∃ z : V, Q.IsOrtho z y ∧ Q z ≠ 0 := by
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
+  let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
+  let B : LinearMap.BilinForm K V := Q.polarBilin
+  have hB : B.Nondegenerate := (QuadraticMap.nondegenerate_polar_iff (Q := Q)).mpr hQ
+  by_contra! h
+  -- Otherwise the complement `y^⊥` is totally isotropic, so it lies in `y^⊥⊥ = K ∙ y`.
+  have hW : Q.IsTotallyIsotropic (B.orthogonal (K ∙ y)) :=
+    QuadraticMap.isTotallyIsotropic_iff.mpr fun w hw ↦ h w
+      (QuadraticMap.isOrtho_polarBilin.mp (hw y (Submodule.mem_span_singleton_self y))).symm
+  have hle : B.orthogonal (K ∙ y) ≤ K ∙ y := by
+    refine le_trans (fun w hw z hz ↦ ?_)
+      (B.orthogonal_orthogonal hB Q.isSymm_polarBilin.isRefl (K ∙ y)).le
+    exact hW.polar_eq_zero hz hw
+  have hy := finrank_span_le_card (R := K) ({y} : Set V)
+  have hmono := Submodule.finrank_mono hle
+  rw [B.finrank_orthogonal hB] at hmono
+  simp only [Set.toFinset_singleton, Finset.card_singleton] at hy
+  omega
+
 end QuadraticMap
 
 namespace QuadraticMap.Anisotropic
@@ -638,6 +664,31 @@ theorem nondegenerate [Invertible (2 : R)] {Q : QuadraticMap R M P}
   QuadraticMap.nondegenerate_iff_radical_eq_bot.mpr hQ.radical_eq_bot
 
 end QuadraticMap.Anisotropic
+
+namespace QuadraticForm
+
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+
+/-- A regular quadratic form on a space of dimension at most one is anisotropic. -/
+theorem anisotropic_of_finrank_le_one (Q : QuadraticForm K V)
+    (hQ : Q.Nondegenerate) (hV : Module.finrank K V ≤ 1) : Q.Anisotropic := by
+  obtain ⟨v, hv⟩ := finrank_le_one_iff.mp hV
+  intro x hx
+  obtain ⟨c, rfl⟩ := hv x
+  by_contra hc
+  have hc0 : c ≠ 0 := fun h => hc (by simp [h])
+  have hQv : Q v = 0 := by
+    rw [QuadraticMap.map_smul] at hx
+    simpa [hc0] using hx
+  have hrad : c • v ∈ Q.radical := by
+    rw [QuadraticMap.mem_radical_iff']
+    refine ⟨by simp [QuadraticMap.map_smul, hQv], fun n => ?_⟩
+    obtain ⟨d, rfl⟩ := hv n
+    simp [← add_smul, QuadraticMap.map_smul, hQv]
+  rw [hQ.radical_eq_bot, Submodule.mem_bot] at hrad
+  exact hc hrad
+
+end QuadraticForm
 
 namespace LinearMap
 

@@ -254,7 +254,7 @@ def cechComplexBaseChangeIso [Finite ι] (U : ι → X.Opens) (M : X.Modules)
   (cechComplexFunctorMapIso U _).app _ ≪≫
     asIso ((cechComplexFunctor U).map (sectionsPullbackExtend H.toCommSq M)) ≪≫
     (cechComplexCompIso (Opens.map g.base) U _
-      fun _ a ↦ g.nonempty_pi_preimage_hom fun j ↦ U (a j)).symm
+      fun _ _ ↦ inferInstance).symm
 
 /-- The factor indexed by `a` of the degree `n` component of `cechComplexBaseChangeIso` is the
 component `R' ⊗_R Γ(M, W) ⟶ Γ(g^* M, g⁻¹ W)` of `sectionsPullbackExtend` at the intersection
@@ -273,8 +273,7 @@ theorem cechComplexBaseChangeIso_hom_f_π [Finite ι] (U : ι → X.Opens) (M : 
           ((sectionsBasePresheafFunctor R').obj ((Scheme.Modules.pullback g).obj M)).map
             (homOfLE (g.preimage_finite_product fun j ↦ U (a j)).ge).op := by
   let Q := (sectionsBasePresheafFunctor R').obj ((Scheme.Modules.pullback g).obj M)
-  let E := cechComplexCompIso (Opens.map g.base) U Q fun _ a ↦
-    g.nonempty_pi_preimage_hom fun j ↦ U (a j)
+  let E := cechComplexCompIso (Opens.map g.base) U Q fun _ _ ↦ inferInstance
   let r := (homOfLE (g.preimage_finite_product fun j ↦ U (a j)).ge).op
   -- The restrictions between the equal opens `∏ g⁻¹ U (a j)` and `g⁻¹ ∏ U (a j)` are inverse.
   have hr : Q.map (Pi.lift fun j ↦ (Opens.map g.base).map (Pi.π (fun j ↦ U (a j)) j)).op ≫

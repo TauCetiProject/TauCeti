@@ -60,6 +60,7 @@ In the namespace `TauCeti.AlmostComplexStructure`:
 * `twoVectorContraction_apply_apply_of_lieMap_eq_zero`, `hermitianForm_apply_of_lieMap_eq_zero`:
   for an orthogonal `J` and a `J`-invariant `η`, the contraction by `η` commutes with `J` and
   `B(v, w) = η(v, J w)`.
+* `hermitianForm_lieMap`: every anti-`J`-invariant form `D_J ξ` has zero Hermitian part.
 * `abs_hermitianForm_apply_self_le_of_inner_kahlerForm_eq_zero`: `|B(v, v)| ≤ (‖η‖ / √2) ‖v‖²`
   for `η` orthogonal to `ω`.
 * `inner_kahlerForm_eq_zero_of_hodgeStar_eq_neg`: `ω` is orthogonal to every anti-self-dual form.
@@ -104,7 +105,11 @@ def hermitianForm (J : AlmostComplexStructure V) : ⋀[ℝ]^2 V →ₗ[ℝ] Line
 /-- The Hermitian part is `B(v, w) = (F(v, J w) + F(w, J v)) / 2`. -/
 theorem hermitianForm_apply (J : AlmostComplexStructure V) (F : ⋀[ℝ]^2 V) (v w : V) :
     J.hermitianForm F v w = (⟪F, ιMulti ℝ 2 ![v, J w]⟫ + ⟪F, ιMulti ℝ 2 ![w, J v]⟫) / 2 := by
-  simp [hermitianForm, QuadraticMap.associated_toQuadraticMap, inner_twoVectorContraction_apply]
+  simp only [hermitianForm, LinearMap.coe_comp, Function.comp_apply,
+    QuadraticMap.associated_apply, Module.End.smul_def,
+    QuadraticMap.half_moduleEnd_apply_eq_half_smul]
+  simp [invOf_eq_inv, LinearMap.BilinMap.toQuadraticMap_apply, inner_twoVectorContraction_apply,
+    map_add]
   ring
 
 /-- The quadratic form of the Hermitian part is `B(v, v) = F(v, J v)`. -/
@@ -157,6 +162,25 @@ theorem hermitianForm_apply_of_lieMap_eq_zero {J : AlmostComplexStructure V}
       inner_apply_left hJ, neg_neg]
   rw [hermitianForm_apply, h, add_self_div_two]
 
+/-- `D_J (v ∧ J w) + D_J (w ∧ J v) = 0`. -/
+private theorem lieMap_ιMulti_add_lieMap_ιMulti (J : AlmostComplexStructure V) (v w : V) :
+    lieMap 2 J.toLinearMap (ιMulti ℝ 2 ![v, J w]) +
+      lieMap 2 J.toLinearMap (ιMulti ℝ 2 ![w, J v]) = 0 := by
+  refine ext_inner_ιMulti_two fun a b ↦ ?_
+  simp only [lieMap_two_apply_ιMulti, inner_add_left, inner_ιMulti_two, inner_zero_left,
+    apply_apply, inner_neg_left]
+  ring
+
+/-- **Every anti-`J`-invariant form `D_J ξ` has zero Hermitian part**: `B(D_J ξ) = 0` for an
+orthogonal `J`, because `D_J` is skew-adjoint. -/
+theorem hermitianForm_lieMap {J : AlmostComplexStructure V} (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫)
+    (ξ : ⋀[ℝ]^2 V) : J.hermitianForm (lieMap 2 J.toLinearMap ξ) = 0 := by
+  ext v w
+  rw [hermitianForm_apply, inner_lieMap_left (inner_apply_left hJ),
+    inner_lieMap_left (inner_apply_left hJ), ← neg_add, ← inner_add_right,
+    lieMap_ιMulti_add_lieMap_ιMulti, inner_zero_right, neg_zero, zero_div, LinearMap.zero_apply,
+    LinearMap.zero_apply]
+
 /-- **The Hermitian part of a form orthogonal to `ω` is bounded by `‖μ‖ / √2`** in dimension
 four: if `⟪ω, μ⟫ = 0`, then `|B(v, v)| ≤ (‖μ‖ / √2) ‖v‖²`. This applies to every anti-self-dual
 `μ` (`inner_kahlerForm_eq_zero_of_hodgeStar_eq_neg`), for which the bound is sharp
@@ -171,9 +195,7 @@ theorem abs_hermitianForm_apply_self_le_of_inner_kahlerForm_eq_zero [Fact (finra
   set y := (2 : ℝ) • x - ‖v‖ ^ 2 • J.kahlerForm
   have hxω : ⟪x, J.kahlerForm⟫ = ‖v‖ ^ 2 := by
     rw [real_inner_comm, inner_kahlerForm_ιMulti hJ, hJ, real_inner_self_eq_norm_sq]
-  have hω : ‖J.kahlerForm‖ ^ 2 = 2 := by
-    rw [norm_kahlerForm_sq hJ, (Fact.out : finrank ℝ V = 4)]
-    norm_num
+  have hω : ‖J.kahlerForm‖ ^ 2 = 2 := norm_kahlerForm_sq_eq_two hJ
   have hx : ‖x‖ ^ 2 = ‖v‖ ^ 4 := norm_ιMulti_apply_sq hJ v
   have hy : ‖y‖ ^ 2 = (√2 * ‖v‖ ^ 2) ^ 2 := by
     simp only [y, norm_sub_sq_real, norm_smul, real_inner_smul_left, real_inner_smul_right,
@@ -247,11 +269,6 @@ anti-`J`-invariant self-dual part of `F` does not contribute. -/
 theorem hermitianForm_apply_eq (F : ⋀[ℝ]^2 V) (v w : V) :
     J.hermitianForm F v w = ⟪J.kahlerForm, F⟫ / 2 * ⟪v, w⟫ +
       ⟪(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F), ιMulti ℝ 2 ![v, J w]⟫ := by
-  -- `⟪ω, ⋆F⟫ = ⟪⋆ω, F⟫ = ⟪ω, F⟫`, so the self-dual part of `F` has the same `ω`-component.
-  have hω : ⟪J.kahlerForm, o.hodgeStar hkl F⟫ = ⟪J.kahlerForm, F⟫ := by
-    have h := o.isSymmetric_hodgeStar_of_even even_two hkl J.kahlerForm F
-    simp only [LinearEquiv.coe_coe] at h
-    rw [← h, hodgeStar_kahlerForm h₀ h₂ hkl he]
   have hF : F = (2⁻¹ : ℝ) • (F + o.hodgeStar hkl F) + (2⁻¹ : ℝ) • (F - o.hodgeStar hkl F) := by
     module
   conv_lhs => rw [hF]
@@ -260,7 +277,7 @@ theorem hermitianForm_apply_eq (F : ⋀[ℝ]^2 V) (v w : V) :
       (o.hodgeStar_smul_add_hodgeStar even_two hkl F),
     hermitianForm_apply_of_hodgeStar_eq_neg h₀ h₂ hkl he
       (o.hodgeStar_smul_sub_hodgeStar even_two hkl F),
-    real_inner_smul_right, inner_add_right, hω]
+    real_inner_smul_right, inner_add_right, inner_kahlerForm_hodgeStar h₀ h₂ hkl he]
   ring
 
 /-- For anti-self-dual `η`, `|η(v, J v)| ≤ (‖η‖ / √2) ‖v‖²`, since `η` is orthogonal to `ω`. -/
@@ -386,7 +403,6 @@ theorem forall_le_hermitianForm_apply_self_iff (F : ⋀[ℝ]^2 V) {C : ℝ} :
   have hle : ‖(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)‖ / √2 ≤ ⟪J.kahlerForm, F⟫ / 2 + C := by
     rw [div_le_iff₀ (by positivity), mul_comm]
     exact hC
-  have hv := sq_nonneg ‖v‖
   nlinarith [neg_abs_le (J.hermitianForm F v v - ⟪J.kahlerForm, F⟫ / 2 * ‖v‖ ^ 2)]
 
 end Four

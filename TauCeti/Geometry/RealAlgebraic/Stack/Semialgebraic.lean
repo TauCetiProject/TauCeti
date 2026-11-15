@@ -54,12 +54,10 @@ private lemma Delineation.biUnion_image_map_roots_toFinset_eq
       (p.map (MvPolynomial.map φ)).map (MvPolynomial.eval x) = p.map (eval₂Hom φ x) := by
     ext j
     simp [Polynomial.coeff_map, MvPolynomial.eval_map]
-  ext t
-  simp only [Finset.image_biUnion, hmap, Finset.mem_biUnion,
-    Multiset.mem_toFinset, Polynomial.mem_roots', Finset.mem_image, Finset.mem_univ,
-    true_and]
-  simpa only [mem_range, mem_ofPred_eq, Subtype.exists, exists_prop] using
-    (Set.ext_iff.1 (D.range_root x) t).symm
+  rw [Finset.image_biUnion]
+  simp_rw [hmap]
+  rw [← Finset.attach_biUnion, ← Finset.univ_eq_attach]
+  exact D.biUnion_roots_toFinset_eq x
 
 /-- A delineation of a finite polynomial family over a semialgebraic base is a semialgebraic
 stack. The family need not be closed under differentiation. Nullified members are allowed. -/
@@ -78,33 +76,17 @@ theorem Delineation.isSemialgebraicStack (hC : IsSemialgebraic C)
         y 0 ∈ G.biUnion (fun p ↦ (p.map (MvPolynomial.eval (Fin.tail y))).roots.toFinset) ∧
         {r ∈ G.biUnion (fun p ↦ (p.map (MvPolynomial.eval (Fin.tail y))).roots.toFinset) |
           r < y 0}.card = i.val} := by
-    ext y
-    simp only [mem_image_cylinder, mem_inter_iff, mem_ofPred_eq]
-    constructor
-    · rintro ⟨hy, hi⟩
-      refine ⟨hy, ?_⟩
-      rw [hroots ⟨Fin.tail y, hy⟩]
-      exact (mem_sectionSet_iff_mem_image_card_lt i _ (D.strictMono_root _)).1 hi
-    · rintro ⟨hy, hi⟩
-      refine ⟨hy, ?_⟩
-      rw [hroots ⟨Fin.tail y, hy⟩] at hi
-      exact (mem_sectionSet_iff_mem_image_card_lt i _ (D.strictMono_root _)).2 hi
+    exact image_cylinder_sectionSet_eq_setOf_mem_card_lt
+      (fun x ↦ G.biUnion (fun p ↦ (p.map (MvPolynomial.eval x)).roots.toFinset))
+      hroots D.strictMono_root i
   have hsector (j : Fin (D.count + 1)) : cylinder C '' sectorSet D.root j =
       {y : Fin (n + 1) → ℝ | Fin.tail y ∈ C} ∩ {y : Fin (n + 1) → ℝ |
         y 0 ∉ G.biUnion (fun p ↦ (p.map (MvPolynomial.eval (Fin.tail y))).roots.toFinset) ∧
         {r ∈ G.biUnion (fun p ↦ (p.map (MvPolynomial.eval (Fin.tail y))).roots.toFinset) |
           r < y 0}.card = j.val} := by
-    ext y
-    simp only [mem_image_cylinder, mem_inter_iff, mem_ofPred_eq]
-    constructor
-    · rintro ⟨hy, hj⟩
-      refine ⟨hy, ?_⟩
-      rw [hroots ⟨Fin.tail y, hy⟩]
-      exact (mem_sectorSet_iff_notMem_image_card_lt j _ (D.strictMono_root _)).1 hj
-    · rintro ⟨hy, hj⟩
-      refine ⟨hy, ?_⟩
-      rw [hroots ⟨Fin.tail y, hy⟩] at hj
-      exact (mem_sectorSet_iff_notMem_image_card_lt j _ (D.strictMono_root _)).2 hj
+    exact image_cylinder_sectorSet_eq_setOf_notMem_card_lt
+      (fun x ↦ G.biUnion (fun p ↦ (p.map (MvPolynomial.eval x)).roots.toFinset))
+      hroots D.strictMono_root j
   refine ⟨D.continuous_root, D.strictMono_root, fun i ↦ ?_, fun j ↦ ?_⟩
   · rw [hsection]
     exact hC.preimage_tail.inter (G.isSemialgebraic_setOf_mem_biUnion_roots_card_lt i.val)

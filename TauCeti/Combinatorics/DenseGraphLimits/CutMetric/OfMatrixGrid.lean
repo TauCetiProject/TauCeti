@@ -192,7 +192,7 @@ theorem cutDist_ofMatrix_le_two_mul_sum_tsub [IsProbabilityMeasure ν] [IsProbab
   -- The overlaid difference vanishes unless one of the two coordinates is mismatched.
   set B : Set ((κ × κ) × (κ × κ)) :=
     ((Set.diagonal κ)ᶜ ×ˢ (Set.univ : Set (κ × κ))) ∪
-      ((Set.univ : Set (κ × κ)) ×ˢ (Set.diagonal κ)ᶜ) with hB
+      ((Set.univ : Set (κ × κ)) ×ˢ (Set.diagonal κ)ᶜ)
   have hBmeas : MeasurableSet B := MeasurableSet.of_discrete
   have hle := abs_overlayDiff_ofMatrix_le_indicator (ν := ν) (ν' := ν') π b hb
   refine (cutDist_le _ _ hπ).trans ?_
@@ -313,29 +313,30 @@ theorem gridWeightMeasure_apply_singleton {n N : ℕ} (hN : 0 < N) (w : Fin n �
 multiples of `1 / N`.**  Rounding every weight but one down to the grid and letting the remaining
 vertex absorb the slack moves at most `n / N` of the mass, and each unit of moved mass costs at most
 two in cut distance. -/
-theorem exists_gridWeightMeasure_cutDist_le {n N : ℕ} [NeZero n] (hN : 0 < N)
+theorem exists_gridWeightMeasure_cutDist_le {n N : ℕ} (hN : 0 < N)
     (ν : Measure (Fin n)) [IsProbabilityMeasure ν] (b : Fin n → Fin n → Set.Icc (0 : ℝ) 1)
     (hb : ∀ i j, b i j = b j i) :
     ∃ (w : Fin n → ℕ) (hw : ∑ i, w i = N),
       cutDist (Graphon.ofMatrix ν b hb) (Graphon.ofMatrix (gridWeightMeasure hN w hw) b hb)
         ≤ 2 * (n : ℝ) / (N : ℝ) := by
+  obtain ⟨k₀⟩ := nonempty_of_isProbabilityMeasure ν
   have hN0 : (N : ℝ≥0∞) ≠ 0 := by exact_mod_cast hN.ne'
   have hNtop : (N : ℝ≥0∞) ≠ ⊤ := ENNReal.natCast_ne_top N
-  obtain ⟨w, hwsum, hle, hge⟩ := exists_nat_weights_of_sum_eq_one (Finset.mem_univ (0 : Fin n))
+  obtain ⟨w, hwsum, hle, hge⟩ := exists_nat_weights_of_sum_eq_one (Finset.mem_univ k₀)
     ν.sum_singleton_eq_one N
   refine ⟨w, hwsum, ?_⟩
   set ν' := gridWeightMeasure hN w hwsum with hν'
   have hweight : ∀ i, ν' {i} = (w i : ℝ≥0∞) / (N : ℝ≥0∞) := fun i => by
     rw [hν', gridWeightMeasure_apply_singleton]
   -- the rounded weights are dominated away from the absorbing vertex
-  have hdom : ∀ i, i ≠ (0 : Fin n) → ν' {i} ≤ ν {i} := fun i hi => by
+  have hdom : ∀ i, i ≠ k₀ → ν' {i} ≤ ν {i} := fun i hi => by
     rw [hweight i]
     exact ENNReal.div_le_of_le_mul' (hle i (Finset.mem_univ i) hi)
   -- every vertex loses at most one grid step of weight
   have hstep : ∀ i, ν {i} - ν' {i} ≤ (1 : ℝ≥0∞) / (N : ℝ≥0∞) := by
     intro i
-    rcases eq_or_ne i (0 : Fin n) with rfl | hi
-    · rw [tsub_eq_zero_of_le (le_of_sum_eq_of_forall_ne_le (Finset.mem_univ (0 : Fin n))
+    rcases eq_or_ne i k₀ with rfl | hi
+    · rw [tsub_eq_zero_of_le (le_of_sum_eq_of_forall_ne_le (Finset.mem_univ i)
         (ν.sum_singleton_eq_one.trans ν'.sum_singleton_eq_one.symm)
         (by rw [ν.sum_singleton_eq_one]; exact ENNReal.one_ne_top)
         fun k _ hk => hdom k hk)]

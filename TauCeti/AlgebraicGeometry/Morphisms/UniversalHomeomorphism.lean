@@ -20,6 +20,9 @@ This criterion applies to Frobenius without imposing finiteness or reducedness a
 
 ## References
 
+* [TauCetiProject/TauCeti#18102](https://github.com/TauCetiProject/TauCeti/pull/18102) by
+  @sqrt-of-2, whose class construction via `mk_iff`, universally-closed criterion, and
+  integrality proof via `isAffineHom_of_isInducing` this module follows.
 * The Stacks Project, [Tag 04DD](https://stacks.math.columbia.edu/tag/04DD), universal
   homeomorphisms.
 * The Stacks Project, [Tag 04DF](https://stacks.math.columbia.edu/tag/04DF), the integral

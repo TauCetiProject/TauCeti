@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Order.BigOperators.Group.LocallyFinite
 public import Mathlib.Algebra.Ring.NegOnePow
+import Mathlib.Algebra.Module.Basic
 import Mathlib.Tactic.Ring
 
 /-!
@@ -26,15 +27,19 @@ This file provides the cast to a ground ring of Mathlib's unit-valued sign chara
   factor is replaced by a two-term correction, telescopes.
 * `TauCeti.negOnePow_smul_eq_negOnePowCast_smul`: the unit-valued sign and its ground-ring cast
   induce the same scalar action on a module.
+* `TauCeti.map_negOnePowCast_smul`: additive homomorphisms commute with the ground-ring signs.
 * `TauCeti.negOnePow_smul_negOnePow_smul`: the unit-valued sign acts as an involution.
 * `Int.negOnePow_mul_one_sub`, `Int.negOnePow_mul_two_sub`: signs of quadratic products.
-* `Int.negOnePow_sub_sub_one`, `TauCeti.negOnePow_mul_negOnePow_of_even`: the parity
-  identities behind the sign cancellations of twisted differentials.
+* `Int.negOnePow_sub_sub_one`, `Int.negOnePow_eq_neg_of_odd_sub`,
+  `TauCeti.negOnePow_mul_negOnePow_of_even`: the parity identities behind the sign cancellations
+  of twisted differentials.
+* `TauCeti.negOnePow_smul_op_smul_negOnePow_smul_op_smul`: reassociating two right actions past
+  two signs.
 -/
 
 public section
 
-universe uR uA uI
+universe uR uA uI uM
 
 namespace TauCeti
 
@@ -87,6 +92,12 @@ variable {A : Type uA} [AddCommGroup A] [Module R A]
 theorem negOnePow_smul_eq_negOnePowCast_smul (e : ℤ) (a : A) :
     e.negOnePow • a = negOnePowCast R e • a := by
   rw [negOnePowCast, Units.smul_def, ← Int.cast_smul_eq_zsmul R]
+
+/-- Additive homomorphisms between modules commute with the ground-ring signs `(-1) ^ e`. -/
+theorem map_negOnePowCast_smul {B F : Type*} [AddCommGroup B] [Module R B] [FunLike F A B]
+    [AddMonoidHomClass F A B] (f : F) (e : ℤ) (a : A) :
+    f (negOnePowCast R e • a) = negOnePowCast R e • f a := by
+  simp only [← negOnePow_smul_eq_negOnePowCast_smul, Units.smul_def, map_zsmul]
 
 end
 
@@ -148,6 +159,13 @@ theorem _root_.Int.negOnePow_sub_sub_one (a b : ℤ) :
   rw [← Int.negOnePow_succ, Int.negOnePow_eq_iff]
   exact ⟨a - b - 1, by omega⟩
 
+/-- Two signs whose exponents differ by an odd integer are opposite. -/
+theorem _root_.Int.negOnePow_eq_neg_of_odd_sub {a b : ℤ} (h : Odd (a - b)) :
+    a.negOnePow = -b.negOnePow := by
+  rw [← Int.negOnePow_succ, Int.negOnePow_eq_iff]
+  obtain ⟨k, hk⟩ := h
+  exact ⟨k, by omega⟩
+
 /-- A product of two signs is the sign of any exponent congruent modulo two to the sum of their
 exponents. -/
 theorem negOnePow_mul_negOnePow_of_even {a b c : ℤ} (h : Even (a + b - c)) :
@@ -156,6 +174,25 @@ theorem negOnePow_mul_negOnePow_of_even {a b c : ℤ} (h : Even (a + b - c)) :
   exact h
 
 end Parity
+
+section OppositeAction
+
+variable {A : Type uA} {M : Type uM} [Monoid A] [AddCommGroup M] [DistribMulAction Aᵐᵒᵖ M]
+
+/-- Reassociating two right actions past two signs: when the shifts `n` and `m` add up to an odd
+integer, the two signs combine to a single opposite sign. -/
+theorem negOnePow_smul_op_smul_negOnePow_smul_op_smul {q n m : ℤ} (hnm : Odd (n + m))
+    (a b : A) (α : M) :
+    (q + n).negOnePow • (MulOpposite.op a • (q.negOnePow • (MulOpposite.op b • α))) =
+      -(m.negOnePow • (MulOpposite.op (b * a) • α)) := by
+  have hsign : (q + n).negOnePow * q.negOnePow = -m.negOnePow := by
+    rw [← Int.negOnePow_succ]
+    obtain ⟨k, hk⟩ := hnm
+    exact negOnePow_mul_negOnePow_of_even ⟨q + k - m, by omega⟩
+  rw [smul_comm (MulOpposite.op a) q.negOnePow, smul_smul, hsign, MulOpposite.op_mul, mul_smul,
+    Units.neg_smul]
+
+end OppositeAction
 
 section CommRing
 

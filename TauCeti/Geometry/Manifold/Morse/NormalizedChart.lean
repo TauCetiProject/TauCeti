@@ -12,7 +12,7 @@ public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Geometry.Manifold.Morse.Lemma
 public import TauCeti.Geometry.Manifold.Morse.ModelTransport
-import Mathlib.Analysis.Calculus.ContDiff.WithLp
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 
 /-!
 # Normalized Morse charts
@@ -281,6 +281,7 @@ theorem exists_pairwise_disjoint_normalized_morseCharts [T2Space M] {S : Set M} 
   exact (hdisj p.2 q.2 (Subtype.coe_injective.ne hpq)).mono
     ((hψ p).2.1.trans inter_subset_right) ((hψ q).2.1.trans inter_subset_right)
 
+omit [FiniteDimensional ℝ E] in
 /-- **The two-dimensional saddle normal form.** At a nondegenerate critical point of index one
 on a two-dimensional manifold, there are smooth Euclidean coordinates `(u, v)` centred at the
 point in which `f = f x - u² + v²` on the whole chart source. -/
@@ -294,6 +295,7 @@ theorem IsManifoldNondegenerateCriticalPoint.exists_twoDimensional_saddleChart
       x ∈ ψ.source ∧ ψ x = 0 ∧ ∀ y ∈ ψ.source,
         f y = f x - (ψ y (finCongr hdim.symm 0)) ^ 2 +
           (ψ y (finCongr hdim.symm 1)) ^ 2 := by
+  have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (by rw [hdim]; norm_num)
   obtain ⟨ψ, hxψ, hψx, hψ⟩ := h.exists_normalized_morseChart hf
   refine ⟨ψ, hxψ, hψx, fun y hy ↦ ?_⟩
   rw [hψ y hy, hindex, ← Equiv.sum_comp (finCongr hdim.symm)
@@ -301,6 +303,7 @@ theorem IsManifoldNondegenerateCriticalPoint.exists_twoDimensional_saddleChart
   norm_num [Fin.val_cast]
   ring
 
+omit [FiniteDimensional ℝ E] in
 /-- At a nondegenerate critical point whose Morse index is neither `0` nor `dim M`, there are two
 curves through the critical point, smooth near the parameter `0`, along which the function is
 strictly below, respectively strictly above, its critical value at every sufficiently small nonzero
@@ -313,63 +316,26 @@ theorem IsManifoldNondegenerateCriticalPoint.exists_saddleCurves
       (∀ᶠ t in 𝓝 0, ContMDiffAt 𝓘(ℝ) I ∞ γneg t) ∧ γneg 0 = x ∧
       (∀ᶠ t in 𝓝 0, ContMDiffAt 𝓘(ℝ) I ∞ γpos t) ∧ γpos 0 = x ∧
       ∀ᶠ t in 𝓝[≠] 0, f (γneg t) < f x ∧ f x < f (γpos t) := by
+  have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (hpos.trans hlt)
   obtain ⟨ψ, hxψ, hψx, hψ⟩ := h.exists_normalized_morseChart hf
   -- Pull back the first (negative) and last (positive) coordinate axes through the inverse chart.
   let i0 : Fin (Module.finrank ℝ E) := ⟨0, hpos.trans hlt⟩
   let i1 : Fin (Module.finrank ℝ E) := ⟨Module.finrank ℝ E - 1, by omega⟩
-  let uneg : ℝ → EuclideanSpace ℝ (Fin (Module.finrank ℝ E)) :=
-    fun t ↦ EuclideanSpace.single i0 t
-  let upos : ℝ → EuclideanSpace ℝ (Fin (Module.finrank ℝ E)) :=
-    fun t ↦ EuclideanSpace.single i1 t
-  let γneg : ℝ → M := fun t ↦ ψ.toOpenPartialHomeomorph.symm (uneg t)
-  let γpos : ℝ → M := fun t ↦ ψ.toOpenPartialHomeomorph.symm (upos t)
-  have haxis (i : Fin (Module.finrank ℝ E)) :
-      ContDiff ℝ ∞ fun t : ℝ ↦ EuclideanSpace.single i t := by
-    rw [contDiff_piLp]
-    intro j
-    simp only [PiLp.single_apply]
-    split_ifs <;> fun_prop
-  have huneg : ContDiff ℝ ∞ uneg := haxis i0
-  have hupos : ContDiff ℝ ∞ upos := haxis i1
-  have hzero : (0 : EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) ∈ ψ.target := by
-    simpa only [hψx] using ψ.map_source hxψ
-  have hinvzero : ψ.toOpenPartialHomeomorph.symm 0 = x := by
-    rw [← hψx]
-    exact ψ.left_inv hxψ
-  have huneg0 : uneg 0 = 0 := by simp [uneg]
-  have hupos0 : upos 0 = 0 := by simp [upos]
-  -- Openness of the chart target makes both inverse-chart curves valid near zero.
-  have hunegTarget : ∀ᶠ t in 𝓝 0, uneg t ∈ ψ.target := by
-    apply huneg.continuous.continuousAt
-    simpa only [huneg0] using ψ.open_target.mem_nhds hzero
-  have huposTarget : ∀ᶠ t in 𝓝 0, upos t ∈ ψ.target := by
-    apply hupos.continuous.continuousAt
-    simpa only [hupos0] using ψ.open_target.mem_nhds hzero
-  -- The inverse chart is smooth on its open target, so both curves are smooth near zero.
-  refine ⟨γneg, γpos,
-    hunegTarget.mono fun t ht ↦
-      (ψ.contMDiffOn_invFun.contMDiffAt (ψ.open_target.mem_nhds ht)).comp t
-        huneg.contMDiff.contMDiffAt,
-    by simp [γneg, huneg0, hinvzero],
-    huposTarget.mono fun t ht ↦
-      (ψ.contMDiffOn_invFun.contMDiffAt (ψ.open_target.mem_nhds ht)).comp t
-        hupos.contMDiff.contMDiffAt,
-    by simp [γpos, hupos0, hinvzero], ?_⟩
-  filter_upwards [hunegTarget.filter_mono nhdsWithin_le_nhds,
-    huposTarget.filter_mono nhdsWithin_le_nhds, self_mem_nhdsWithin] with t htn htp ht
-  have hsourceNeg : γneg t ∈ ψ.source := ψ.map_target htn
-  have hsourcePos : γpos t ∈ ψ.source := ψ.map_target htp
-  have hrightNeg : ψ (γneg t) = uneg t := ψ.right_inv htn
-  have hrightPos : ψ (γpos t) = upos t := ψ.right_inv htp
+  obtain ⟨γneg, hsmoothNeg, hneg0, hneg⟩ := ψ.exists_curve_single_axis hxψ hψx i0
+  obtain ⟨γpos, hsmoothPos, hpos0, hpos'⟩ := ψ.exists_curve_single_axis hxψ hψx i1
+  refine ⟨γneg, γpos, hsmoothNeg, hneg0, hsmoothPos, hpos0, ?_⟩
+  filter_upwards [hneg.filter_mono nhdsWithin_le_nhds, hpos'.filter_mono nhdsWithin_le_nhds,
+    self_mem_nhdsWithin] with t ⟨hsourceNeg, hrightNeg⟩
+    ⟨hsourcePos, hrightPos⟩ ht
   have ht0 : t ≠ 0 := by simpa only [mem_compl_iff, mem_singleton_iff] using ht
   -- On the two axes the normalized Morse equation reduces respectively to `-t²` and `t²`.
   constructor
   · rw [hψ (γneg t) hsourceNeg, hrightNeg]
-    simp [uneg, i0, EuclideanSpace.single, PiLp.single_apply, hpos]
+    simp [i0, EuclideanSpace.single, PiLp.single_apply, hpos]
     nlinarith [sq_pos_of_ne_zero ht0]
   · rw [hψ (γpos t) hsourcePos, hrightPos]
     have hle : ¬Module.finrank ℝ E - 1 < manifoldMorseIndex I f x := by omega
-    simp [upos, i1, EuclideanSpace.single, PiLp.single_apply, hle]
+    simp [i1, EuclideanSpace.single, PiLp.single_apply, hle]
     nlinarith [sq_pos_of_ne_zero ht0]
 
 /-- At a nondegenerate critical point of Morse index `0` of a function smooth near it, on a

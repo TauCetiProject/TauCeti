@@ -43,9 +43,10 @@ Probabilistic Number Theory*, Chapter II.1).
 * `TauCeti.LSeries.norm_mul_integral_le_of_bound`: uniformly bounded partial sums give the
   explicit bound `C * ‖s‖ / s.re` on `Re(s) > 0`.
 * `TauCeti.LSeries.exists_differentiableOn_eq_LSeries_sub_div_of_isBigO`: if instead the partial
-  sums are `κ n + O(n ^ r)` with `r ≤ 1`, then `LSeries f s - κ / (s - 1)` continues
-  holomorphically from `Re s > 1` to `Re s > r`. When `r < 1` this half-plane contains `s = 1`, so
-  there `LSeries f` has at most a simple pole, at `s = 1`, with residue `κ`.
+  sums are `κ n + O(n ^ r)` and `LSeries f` converges absolutely on `Re s > 1`, then
+  `LSeries f s - κ / (s - 1)` continues holomorphically from `Re s > 1` to `Re s > r`. When
+  `r < 1` this half-plane contains `s = 1`, so there `LSeries f` has at most a simple pole, at
+  `s = 1`, with residue `κ`.
 -/
 
 public section
@@ -137,7 +138,7 @@ theorem norm_mul_integral_le_of_bound (f : ℕ → ℂ) {C : ℝ}
   exact mul_le_mul_of_nonneg_left hbound (norm_nonneg _)
 
 /-- **Continuation of an L-series with its pole at `s = 1` removed.** If the partial sums
-`∑ k ∈ Icc 1 n, f k` are `κ n + O(n ^ r)` with `r ≤ 1` and `LSeries f` converges absolutely on
+`∑ k ∈ Icc 1 n, f k` are `κ n + O(n ^ r)` and `LSeries f` converges absolutely on
 `Re s > 1`, then there is a function holomorphic on the half-plane `Re s > r` that agrees with
 `LSeries f s - κ / (s - 1)` on `Re s > 1`. When `r < 1`, so that the half-plane contains `s = 1`,
 `LSeries f` therefore continues meromorphically to `Re s > r` with at most a simple pole, at
@@ -145,7 +146,6 @@ theorem norm_mul_integral_le_of_bound (f : ℕ → ℂ) {C : ℝ}
 
 `TauCeti.exists_differentiableOn_eq_dedekindZeta_sub` is the Dedekind-zeta instance. -/
 theorem exists_differentiableOn_eq_LSeries_sub_div_of_isBigO (f : ℕ → ℂ) (κ : ℂ) {r : ℝ}
-    (hr : r ≤ 1)
     (hO : (fun n : ℕ ↦ ∑ k ∈ Icc 1 n, f k - κ * n) =O[atTop] fun n ↦ (n : ℝ) ^ r)
     (hf : ∀ s : ℂ, 1 < s.re → LSeriesSummable f s) :
     ∃ G : ℂ → ℂ, DifferentiableOn ℂ G {s | r < s.re} ∧
@@ -165,15 +165,23 @@ theorem exists_differentiableOn_eq_LSeries_sub_div_of_isBigO (f : ℕ → ℂ) (
   -- Subtracting `κ` times the coefficients of the Riemann zeta function leaves partial sums
   -- `O(n ^ r)`, so the partial-summation integral of `f - κ` continues its `L`-series; add
   -- `κ (ζ(s) - 1/(s-1))`, which is entire (Mathlib's `riemannZeta₀`).
-  refine ⟨fun s ↦ s * (∫ t in Set.Ioi (1 : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, (f - κ • (1 : ℕ → ℂ)) k) *
-      (t : ℂ) ^ (-(s + 1))) + κ * riemannZeta₀ s,
+  -- The formula below is only used on `Re s > r`; elsewhere `G` is the required value itself.
+  set F : ℂ → ℂ := fun s ↦ s * (∫ t in Set.Ioi (1 : ℝ),
+      (∑ k ∈ Icc 1 ⌊t⌋₊, (f - κ • (1 : ℕ → ℂ)) k) * (t : ℂ) ^ (-(s + 1))) + κ * riemannZeta₀ s
+    with hF
+  have hdiff : DifferentiableOn ℂ F {s | r < s.re} :=
     (differentiableOn_mul_integral_of_isBigO _ hO').fun_add
-      (differentiable_riemannZeta₀.const_mul _).differentiableOn, fun s hs ↦ ?_⟩
+      (differentiable_riemannZeta₀.const_mul _).differentiableOn
+  refine ⟨fun s ↦ if r < s.re then F s else LSeries f s - κ / (s - 1),
+    hdiff.congr fun s (hs : r < s.re) ↦ by simp only [hs, ↓reduceIte], fun s hs ↦ ?_⟩
+  by_cases hrs : r < s.re
+  swap
+  · simp [hrs]
   have hs1 : LSeriesSummable (κ • (1 : ℕ → ℂ)) s :=
     LSeriesSummable.smul _ (LSeriesSummable_one_iff.mpr hs)
   have hs0 : s ≠ 1 := fun h ↦ by simp [h] at hs
-  dsimp only
-  rw [← LSeries_eq_mul_integral _ (le_max_right r 0) (max_lt (hr.trans_lt hs) (by linarith))
+  simp only [hrs, ↓reduceIte, hF]
+  rw [← LSeries_eq_mul_integral _ (le_max_right r 0) (max_lt hrs (by linarith))
       ((hf s hs).sub hs1) hO₀,
     LSeries_sub (hf s hs) hs1, LSeries_smul, LSeries_one_eq_riemannZeta hs,
     riemannZeta_eq_inv_sub_add hs0]

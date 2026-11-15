@@ -6,14 +6,35 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Comp
+public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Strong
 import TauCeti.Analysis.Calculus.ContDiff.FaaDiBruno
+import TauCeti.Topology.LocallyFinite.Basic
 public import TauCeti.Geometry.Manifold.ExtChartAt
 
 /-!
-# Restriction and locality in the manifold weak Whitney topology
+# Restriction and locality in the manifold Whitney topologies
 
 Restriction to an open source is continuous for the existing weak Whitney topology. Its
-coordinate derivatives agree with the ambient derivatives in inherited charts.
+coordinate derivatives agree with the ambient derivatives in inherited charts, so a compact chart
+`C^k` seminorm of a restricted map is the seminorm of the ambient map on the same coordinate set
+read in the ambient chart (`ContMDiffMap.chartCkSeminorm_restrict`).
+
+For the strong Whitney topology the situation is different, because a strong neighbourhood on an
+open subset `U` may impose tolerances tending to zero near the frontier of `U`, where the ambient
+manifold allows no such control. Restriction is continuous from the strong topology of `M` into
+the weak topology of `U` (`ContMDiffMap.continuous_restrict_manifoldStrongWhitney_weak`), and it is
+continuous for the two strong topologies when `U` is also closed
+(`ContMDiffMap.continuous_restrict_manifoldStrongWhitney`). In that case a locally finite family
+of compact coordinate sets of `U` stays locally finite in `M`, so every strong control on `U` is
+read as a strong control on `M` (`ContMDiffMap.StrongCkControl.ofOpens`), whose neighbourhood of
+`f` is exactly the preimage under restriction of the neighbourhood of the restriction of `f`.
+Without closedness restriction can fail to be continuous for the strong topologies; see
+`TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Examples.Restriction` for `(0, 1) ⊆ ℝ`.
+
+## References
+
+* M. Hirsch, *Differential Topology*, GTM 33, Chapter 2, §1, pp. 34–36, for the weak and strong
+  `C^r` topologies.
 -/
 
 public section
@@ -48,6 +69,20 @@ theorem restrict_apply (f : C^n⟮I, M; J, N⟯) (U : Opens M) (x : U) :
 theorem coe_restrict (f : C^n⟮I, M; J, N⟯) (U : Opens M) :
     (f.restrict U : U → N) = f ∘ Subtype.val := by
   rfl
+
+/-- The restriction of zero is zero. -/
+@[simp]
+theorem restrict_zero (U : Opens M) :
+    (0 : C^n⟮I, M; 𝓘(𝕜, F), F⟯).restrict U = 0 := by
+  ext x
+  simp
+
+/-- Restriction to an open subset commutes with subtraction. -/
+@[simp]
+theorem restrict_sub (f g : C^n⟮I, M; 𝓘(𝕜, F), F⟯) (U : Opens M) :
+    (f - g).restrict U = f.restrict U - g.restrict U := by
+  ext x
+  simp
 
 /-- Restriction to an open source is continuous for the native weak Whitney topologies. -/
 theorem continuous_restrict [IsManifold I n M] [IsManifold J n N] [LocallyCompactSpace E]
@@ -118,6 +153,29 @@ theorem iteratedFDerivWithin_eq_restrict_taylorComp [IsManifold I n M]
   rw [← ftaylorSeriesWithin_restrict_extChartAt f U y hv] at h
   simpa only [coe_restrict] using h
 
+/-- Convergence of the Taylor coefficients, computed in the inherited chart at `y`, of the
+restrictions `g p`, jointly with the point moved into that chart. -/
+private theorem tendsto_ftaylorSeriesWithin_restrict_extChartAt [IsManifold I n M]
+    [LocallyCompactSpace E] {P : Type*} {l : Filter P} {g : P → C^n⟮I, M; 𝓘(𝕜, F), F⟯}
+    {g₀ : C^n⟮I, M; 𝓘(𝕜, F), F⟯} (U : Opens M)
+    (hg : Tendsto (fun p ↦ (g p).restrict U) l (𝓝 (g₀.restrict U)))
+    (x : M) {z : E} (y : U)
+    (hv : extChartAt I (y : M) ((extChartAt I x).symm z) ∈ (extChartAt I y).target)
+    (hτ : Tendsto (fun w ↦ extChartAt I (y : M) ((extChartAt I x).symm w))
+      (𝓝[(extChartAt I x).target] z)
+      (𝓝[(extChartAt I y).target] extChartAt I (y : M) ((extChartAt I x).symm z)))
+    {k : ℕ} (hk : k ≤ n) :
+    Tendsto (fun q : P × E ↦ ftaylorSeriesWithin 𝕜
+      ((g q.1).restrict U ∘ (extChartAt I y).symm) (extChartAt I y).target
+        (extChartAt I (y : M) ((extChartAt I x).symm q.2)) k)
+      (l ×ˢ 𝓝[(extChartAt I x).target] z)
+      (𝓝 (ftaylorSeriesWithin 𝕜 ((g₀.restrict U) ∘ (extChartAt I y).symm)
+        (extChartAt I y).target (extChartAt I (y : M) ((extChartAt I x).symm z)) k)) := by
+  have h := (tendsto_iteratedFDerivWithin_extChartAt (f₀ := g₀.restrict U)
+    (y := (0 : F)) hv (by simp) hk).comp (hg.prodMap hτ)
+  simpa only [ftaylorSeriesWithin, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
+    Function.id_comp, Function.comp_def, Prod.map_fst, Prod.map_snd, id_eq] using h
+
 /-- Convergence of an open restriction controls every ambient chart derivative near a point in
 that open set, jointly with the source point. No regularity of the parameter is required. -/
 theorem tendsto_iteratedFDerivWithin_of_restrict [IsManifold I n M] [LocallyCompactSpace E]
@@ -141,34 +199,16 @@ theorem tendsto_iteratedFDerivWithin_of_restrict [IsManifold I n M] [LocallyComp
       simpa only [τ, mem_preimage, (extChartAt I (y : M)).left_inv hys, SetLike.mem_coe] using hy⟩
   have hτ : Tendsto τ (𝓝[(extChartAt I x).target] z) (𝓝[(extChartAt I y).target] τ z) :=
     U.tendsto_extChartAt_restrict x y hz hy hys
-  have hgl := hg.prodMap hτ
-  have hjg (k : ℕ) (hk : k ≤ m) :
-      Tendsto (fun q : P × E ↦ ftaylorSeriesWithin 𝕜
-        ((g q.1).restrict U ∘ (extChartAt I y).symm) (extChartAt I y).target (τ q.2) k)
-        (l ×ˢ 𝓝[(extChartAt I x).target] z)
-        (𝓝 (ftaylorSeriesWithin 𝕜 ((g₀.restrict U) ∘ (extChartAt I y).symm)
-          (extChartAt I y).target (τ z) k)) := by
-    have h := (tendsto_iteratedFDerivWithin_extChartAt (f₀ := g₀.restrict U)
-      (y := (0 : F)) hv (by simp) ((Nat.cast_le.mpr hk).trans hm)).comp hgl
-    simpa only [ftaylorSeriesWithin, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
-      Function.id_comp, Function.comp_def, Prod.map_fst, Prod.map_snd, id_eq] using h
-  have hidcoe : ((ContMDiffMap.id : C^n⟮I, M; I, M⟯) : M → M) = _root_.id := rfl
+  have hjg := fun k (hk : k ≤ m) ↦
+    tendsto_ftaylorSeriesWithin_restrict_extChartAt U hg x y hv hτ ((Nat.cast_le.mpr hk).trans hm)
   have hjp (k : ℕ) (hk : k ≤ m) :
       Tendsto (fun q : P × E ↦ ftaylorSeriesWithin 𝕜
         (extChartAt I (y : M) ∘ (extChartAt I x).symm) (extChartAt I x).target q.2 k)
         (l ×ˢ 𝓝[(extChartAt I x).target] z)
         (𝓝 (ftaylorSeriesWithin 𝕜 (extChartAt I (y : M) ∘ (extChartAt I x).symm)
-          (extChartAt I x).target z k)) := by
-    have hc : Tendsto (fun q : P × E ↦
-        ((ContMDiffMap.id : C^n⟮I, M; I, M⟯), q.2))
-        (l ×ˢ 𝓝[(extChartAt I x).target] z)
-        (𝓝 ContMDiffMap.id ×ˢ 𝓝[(extChartAt I x).target] z) :=
-      tendsto_const_nhds.prodMk tendsto_snd
-    have h := (tendsto_iteratedFDerivWithin_extChartAt
-      (f₀ := (ContMDiffMap.id : C^n⟮I, M; I, M⟯)) hz hys
-      ((Nat.cast_le.mpr hk).trans hm)).comp hc
-    simpa only [ftaylorSeriesWithin, hidcoe, Function.id_comp, Function.comp_def,
-      Prod.map_fst, Prod.map_snd, id_eq] using h
+          (extChartAt I x).target z k)) :=
+    (TauCeti.continuousWithinAt_ftaylorSeriesWithin_extChartAt_comp_symm x y hz hys (k := k)
+      ((Nat.cast_le.mpr hk).trans hm)).tendsto.comp tendsto_snd
   have hφ := continuousOn_extChartAt_symm (I := I) x z hz
   have hU : ∀ᶠ q : P × E in l ×ˢ 𝓝[(extChartAt I x).target] z,
       (extChartAt I x).symm q.2 ∈ U :=
@@ -225,5 +265,96 @@ theorem continuous_iff_forall_continuous_restrict [IsManifold I n M] [LocallyCom
   · intro hg i
     exact (continuous_restrict (U i)).comp hg
   · exact continuous_of_forall_continuous_restrict U hU
+
+/-! ### Compact chart seminorms and the strong Whitney topology -/
+
+/-- A compact chart `C^k` seminorm of a restriction is the ambient seminorm on the same coordinate
+set, read in the ambient chart at the same point. -/
+theorem chartCkSeminorm_restrict [IsManifold I n M] (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) (U : Opens M)
+    (x : U) (K : Compacts (extChartAt I x).target) (k : ℕ) (hk : k ≤ n) :
+    chartCkSeminorm x K k hk (f.restrict U) =
+      chartCkSeminorm (x : M)
+        (K.map (inclusion (U.extChartAt_target_subset x)) (continuous_inclusion _)) k hk f := by
+  apply le_antisymm
+  · refine (chartCkSeminorm_le_iff _ _ _ _ _ (apply_nonneg _ _)).mpr fun m hm z hz ↦ ?_
+    rw [chartIteratedFDeriv_restrict_apply]
+    refine (chartCkSeminorm_le_iff _ _ _ _ _ (apply_nonneg _ _)).mp le_rfl m hm _ ?_
+    rw [← SetLike.mem_coe, Compacts.coe_map]
+    exact ⟨z, hz, rfl⟩
+  · refine (chartCkSeminorm_le_iff _ _ _ _ _ (apply_nonneg _ _)).mpr ?_
+    rintro m hm _ ⟨z, hz, rfl⟩
+    have h := (chartCkSeminorm_le_iff x K k hk (f.restrict U) (apply_nonneg _ _)).mp le_rfl
+      m hm z hz
+    rwa [chartIteratedFDeriv_restrict_apply] at h
+
+namespace StrongCkControl
+
+/-- A strong control on an open subset `U` which is also closed, read as a strong control on the
+ambient manifold: the same compact coordinate sets, read in the ambient charts at the same points,
+with the same order and tolerances. Closedness of `U` keeps the family locally finite in the
+ambient manifold. -/
+def ofOpens {U : Opens M} (c : StrongCkControl I U n)
+    (hU : IsClosed (U : Set M)) : StrongCkControl I M n where
+  ι := c.ι
+  center i := c.center i
+  compact i := (c.compact i).map (inclusion (U.extChartAt_target_subset (c.center i)))
+    (continuous_inclusion _)
+  order := c.order
+  order_le := c.order_le
+  tolerance := c.tolerance
+  tolerance_pos := c.tolerance_pos
+  locallyFinite := by
+    -- The ambient points of each coordinate set are the images of its points in `U`.
+    have h (i : c.ι) : (extChartAt I (c.center i : M)).symm '' (Subtype.val ''
+        ((c.compact i).map (inclusion (U.extChartAt_target_subset (c.center i)))
+          (continuous_inclusion _) : Set (extChartAt I (c.center i : M)).target)) =
+        Subtype.val '' ((extChartAt I (c.center i)).symm '' (Subtype.val ''
+          (c.compact i : Set (extChartAt I (c.center i)).target))) := by
+      simp only [Compacts.coe_map, image_image]
+      exact image_congr fun z _ ↦ (U.coe_extChartAt_symm_apply _ z.2).symm
+    simp only [h]
+    exact LocallyFinite.image_of_isClosedMap c.locallyFinite hU.isClosedMap_subtype_val fun _ ↦
+      (subsingleton_singleton.preimage Subtype.val_injective).isCompact
+
+/-- The ambient neighbourhood of `f` of a strong control on a closed open subset is the preimage,
+under restriction, of the neighbourhood of the restriction of `f`. -/
+theorem ball_ofOpens [IsManifold I n M] {U : Opens M} (c : StrongCkControl I U n)
+    (hU : IsClosed (U : Set M)) (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) :
+    (c.ofOpens hU).ball f = (fun g ↦ g.restrict U) ⁻¹' c.ball (f.restrict U) := by
+  ext g
+  simp only [mem_preimage, mem_ball, ← restrict_sub, chartCkSeminorm_restrict]
+  -- The data of `c.ofOpens hU` are those of `c`, read in the ambient charts.
+  rfl
+
+end StrongCkControl
+
+section Strong
+
+variable [IsManifold I n M]
+
+/-- **Restriction to a clopen subset is continuous for the strong Whitney topologies.** The
+closedness hypothesis cannot be dropped: restriction from `ℝ` to `(0, 1)` is not continuous
+(`ContMDiffMap.not_continuous_restrict_Ioo_manifoldStrongWhitney`). -/
+theorem continuous_restrict_manifoldStrongWhitney (U : Opens M) (hU : IsClosed (U : Set M)) :
+    Continuous[manifoldStrongWhitneyTopology, manifoldStrongWhitneyTopology]
+      (fun f : C^n⟮I, M; 𝓘(𝕜, F), F⟯ ↦ f.restrict U) := by
+  let := (manifoldStrongWhitneyTopology : TopologicalSpace C^n⟮I, M; 𝓘(𝕜, F), F⟯)
+  let := (manifoldStrongWhitneyTopology : TopologicalSpace C^n⟮I, U; 𝓘(𝕜, F), F⟯)
+  refine continuous_iff_continuousAt.mpr fun f ↦ ?_
+  refine ((hasBasis_nhds_manifoldStrongWhitney f).tendsto_iff
+    (hasBasis_nhds_manifoldStrongWhitney (f.restrict U))).mpr fun c _ ↦ ⟨c.ofOpens hU, trivial,
+      fun g hg ↦ ?_⟩
+  rwa [c.ball_ofOpens hU f] at hg
+
+/-- **Restriction from the strong Whitney topology to the weak Whitney topology is continuous**,
+for every open subset. -/
+theorem continuous_restrict_manifoldStrongWhitney_weak [LocallyCompactSpace E]
+    (U : Opens M) :
+    Continuous[manifoldStrongWhitneyTopology, manifoldWeakWhitneyTopology]
+      (fun f : C^n⟮I, M; 𝓘(𝕜, F), F⟯ ↦ f.restrict U) :=
+  continuous_le_dom manifoldStrongWhitneyTopology_le_manifoldWeakWhitneyTopology
+    (continuous_restrict U)
+
+end Strong
 
 end ContMDiffMap

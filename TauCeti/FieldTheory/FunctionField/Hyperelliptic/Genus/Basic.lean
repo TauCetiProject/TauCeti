@@ -233,13 +233,13 @@ variable [FiniteDimensional (RatFunc k) F] [Algebra.IsSeparable (RatFunc k) F]
 
 /-- The ramification index of `y ^ 2 = f` over `k(x)`: `2` over the places where `f` has odd
 order, and `1` elsewhere. -/
-private theorem ramificationIdx_eq (h2 : (2 : k) ≠ 0) {f : k[X]} (hf : f ≠ 0) {y : F}
+private theorem ramificationIdx_eq (h2 : (2 : k) ≠ 0) {f : k[X]} {y : F}
     (hgen : (RatFunc k)⟮y⟯ = ⊤)
     (hy : y ^ 2 = algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) f)) (P' : Place k F) :
     Place.ramificationIdx (RatFunc k) P' =
       if (2 : ℤ) ∣ (P'.restrict k (RatFunc k)).ord (algebraMap k[X] (RatFunc k) f) then 1 else 2 :=
   Place.ramificationIdx_eq_of_pow_eq_of_prime k (RatFunc k) Nat.prime_two hgen hy
-    (by exact_mod_cast h2) (RatFunc.algebraMap_ne_zero hf)
+    (by exact_mod_cast h2)
 
 /-- Above the finite place of an irreducible factor of `f` lies a place of `F` with ramification
 index two. -/
@@ -254,7 +254,7 @@ private theorem exists_ramificationIdx_eq_two (h2 : (2 : k) ≠ 0) {f : k[X]} (h
     (Place.adicOfIrreducible hq)
   replace hP' : P'.restrict k (RatFunc k) = Place.adicOfIrreducible hq := hP'
   refine ⟨P', ?_⟩
-  rw [ramificationIdx_eq h2 hf.ne_zero hgen hy, hP',
+  rw [ramificationIdx_eq h2 hgen hy, hP',
     Place.ord_adicOfIrreducible_algebraMap_of_squarefree hq hf]
   norm_num [hqf]
 
@@ -266,9 +266,9 @@ private theorem conorm_branchDivisor (h2 : (2 : k) ≠ 0) {f : k[X]} (hf : Squar
       (2 : ℤ) • Divisor.different k F (IsFunctionField.ratFunc k) := by
   refine WeilDivisor.ext fun P' ↦ ?_
   rw [Divisor.coeff_conorm, coeff_branchDivisor hf, WeilDivisor.coeff_zsmul,
-    Divisor.coeff_different, ramificationIdx_eq h2 hf.ne_zero hgen hy,
+    Divisor.coeff_different, ramificationIdx_eq h2 hgen hy,
     Place.differentExponent_eq_of_pow_eq_of_prime k (RatFunc k) Nat.prime_two hgen hy
-      (by exact_mod_cast h2) (RatFunc.algebraMap_ne_zero hf.ne_zero)]
+      (by exact_mod_cast h2)]
   simp only [Nat.cast_ofNat]
   split_ifs <;> simp
 
@@ -283,7 +283,7 @@ theorem Place.one_lt_ramificationIdx_iff_of_sq_eq (h2 : (2 : k) ≠ 0) {f : k[X]
       P'.restrict k (RatFunc k) = Place.infty k ∧ Odd f.natDegree ∨
         ∃ (q : k[X]) (hq : Irreducible q),
           q ∣ f ∧ P'.restrict k (RatFunc k) = Place.adicOfIrreducible hq := by
-  rw [ramificationIdx_eq h2 hf.ne_zero hgen hy]
+  rw [ramificationIdx_eq h2 hgen hy]
   generalize P'.restrict k (RatFunc k) = P
   rcases Place.eq_infty_or_exists_eq_adicOfIrreducible P with rfl | ⟨q, hq, rfl⟩
   · simp only [Place.ord_infty, RatFunc.intDegree_polynomial, true_and,

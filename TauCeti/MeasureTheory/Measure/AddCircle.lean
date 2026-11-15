@@ -58,43 +58,54 @@ theorem map_coe_equivIco_volume (a : ℝ) :
   filter_upwards [ae_restrict_mem measurableSet_Ico] with x hx
   exact equivIco_coe_of_mem hx
 
-/-- A null-measurable set of the additive circle is null exactly when its preimage in `ℝ` is
-null. -/
-theorem volume_preimage_coe_eq_zero_iff {s : Set (AddCircle T)} (hs : NullMeasurableSet s) :
+/-- A set of the additive circle is null exactly when its preimage in `ℝ` is null. -/
+theorem volume_preimage_coe_eq_zero_iff {s : Set (AddCircle T)} :
     volume (((↑) : ℝ → AddCircle T) ⁻¹' s) = 0 ↔ volume s = 0 := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · rw [← (AddCircle.measurePreserving_mk T 0).measure_preimage hs]
-    exact nonpos_iff_eq_zero.1 (h ▸ Measure.restrict_apply_le _ _)
-  · -- The intervals `(k • T, k • T + T]` cover `ℝ`, and each meets the preimage in a null set.
-    refine measure_mono_null (t := ⋃ k : ℤ, ((↑) : ℝ → AddCircle T) ⁻¹' s ∩ Ioc (k • T) (k • T + T))
-      (fun x hx ↦ ?_) (measure_iUnion_null fun k ↦ ?_)
+  · -- the circle volume of `s` is the real volume of its lift to one period
+    -- `measurableEquivIoc T 0` has underlying equivalence `equivIoc T 0`
+    have hemb : MeasurableEmbedding (equivIoc T 0) := (measurableEquivIoc T 0).measurableEmbedding
+    have h1 := (measurePreserving_equivIoc (T := T) (a := 0)).measure_preimage_emb hemb
+      ((equivIoc T 0).symm ⁻¹' s)
+    rw [(MeasurableEmbedding.subtype_coe measurableSet_Ioc).comap_apply,
+      Equiv.preimage_symm_preimage] at h1
+    refine nonpos_iff_eq_zero.1 (h1.trans_le (h ▸ measure_mono ?_))
+    -- the inverse of `equivIoc` is the quotient map, so the lift of `y` is `y` itself
+    rintro _ ⟨y, hy, rfl⟩
+    exact hy
+  · -- cover by a measurable null set, then use that the intervals `(k • T, k • T + T]` cover `ℝ`
+    have hs : MeasurableSet (toMeasurable volume s) := measurableSet_toMeasurable _ _
+    have ht : volume (toMeasurable volume s) = 0 := by rwa [measure_toMeasurable]
+    refine measure_mono_null (Set.preimage_mono (subset_toMeasurable volume s)) ?_
+    refine measure_mono_null (t := ⋃ k : ℤ, ((↑) : ℝ → AddCircle T) ⁻¹' toMeasurable volume s ∩
+        Ioc (k • T) (k • T + T)) (fun x hx ↦ ?_) (measure_iUnion_null fun k ↦ ?_)
     · obtain ⟨k, hk⟩ := mem_iUnion.1 ((iUnion_Ioc_zsmul hT.out).symm ▸ mem_univ x)
       exact mem_iUnion.2 ⟨k, hx, by rwa [← add_one_zsmul]⟩
     · rw [← Measure.restrict_apply' measurableSet_Ioc,
-        (AddCircle.measurePreserving_mk T (k • T)).measure_preimage hs, h]
+        (AddCircle.measurePreserving_mk T (k • T)).measure_preimage hs.nullMeasurableSet, ht]
 
 /-- The real density in `[a, a + T)` of a Haar-weighted circle law is its lifted Haar
 density divided by `T`. -/
-theorem map_coe_equivIco_withDensity_haarAddCircle (a : ℝ)
-    {f : AddCircle T → ℝ≥0∞} (hf : Measurable f) :
+theorem map_coe_equivIco_withDensity_haarAddCircle (a : ℝ) {f : AddCircle T → ℝ≥0∞} :
     (haarAddCircle.withDensity f).map (fun θ ↦ (equivIco T a θ : ℝ)) =
       (volume.restrict (Ico a (a + T))).withDensity
         (fun x : ℝ ↦ (ENNReal.ofReal T)⁻¹ * f x) := by
-  have hmap : (volume.withDensity f).map (fun θ ↦ (equivIco T a θ : ℝ)) =
-      (volume.restrict (Ico a (a + T))).withDensity (fun x : ℝ ↦ f x) := by
-    refine Measure.map_withDensity_eq_withDensity (jac := fun _ ↦ 1)
-      (measurable_subtype_coe.comp (measurableEquivIco T a).measurable)
-      measurable_const (hf.comp AddCircle.measurable_mk') ?_ ?_
-    · simpa using map_coe_equivIco_volume (T := T) a
-    · exact ae_of_all _ fun θ ↦ by simp
+  have hemb : MeasurableEmbedding fun θ : AddCircle T ↦ (equivIco T a θ : ℝ) :=
+    (MeasurableEmbedding.subtype_coe measurableSet_Ico).comp
+      (measurableEquivIco T a).measurableEmbedding
   have hvol : (haarAddCircle : Measure (AddCircle T)) =
       (ENNReal.ofReal T)⁻¹ • volume := by
     rw [volume_eq_smul_haarAddCircle, smul_smul,
       ENNReal.inv_mul_cancel (ENNReal.ofReal_pos.mpr hT.out).ne'
         ENNReal.ofReal_ne_top, one_smul]
-  rw [hvol, withDensity_smul_measure, Measure.map_smul, hmap]
-  · exact (withDensity_smul _ (hf.comp AddCircle.measurable_mk')).symm
-  · exact (measurable_subtype_coe.comp (measurableEquivIco T a).measurable).aemeasurable
+  have hf : f = (fun x : ℝ ↦ f x) ∘ fun θ : AddCircle T ↦ (equivIco T a θ : ℝ) :=
+    funext fun θ ↦ by simp [coe_equivIco]
+  have key := hemb.map_withDensity_comp (μ := (volume : Measure (AddCircle T))) fun x : ℝ ↦ f x
+  rw [← hf, map_coe_equivIco_volume] at key
+  rw [hvol, withDensity_smul_measure, Measure.map_smul, key,
+    ← withDensity_smul' _ _ (ENNReal.inv_ne_top.2 (by simpa using hT.out))]
+  · rfl
+  · exact hemb.measurable.aemeasurable
 
 section Periodization
 

@@ -25,6 +25,13 @@ order one is divided by another such product.
 The coefficient of degree one of any finite product is the sum, over the factors, of the linear
 coefficient of that factor times the constant coefficients of the others.
 
+A product over a disjoint union `σ ⊕ τ`, whose factors come from two rings through coefficient
+maps, has its coefficients given by a convolution over the antidiagonal.
+
+Multiplying by a linear factor `X - a` shifts the coefficients: the coefficient of `(X - a) * q`
+in degree `m + 1` is `coeff m q - a * coeff (m + 1) q`, and its constant coefficient is
+`-(a * coeff 0 q)`.
+
 Factors congruent to `1` modulo `X ^ (n + 1)` do not change the coefficient of degree `n`.
 This also gives a finite-cutoff formula for products with many such factors.
 
@@ -39,8 +46,12 @@ product of such factors.
   `f i` has zero constant coefficient.
 * `PowerSeries.coeff_one_prod`: the linear coefficient of a finite product, a sum over the factors
   of the linear coefficient of one factor times the constant coefficients of the others.
+* `PowerSeries.coeff_succ_X_sub_C_mul` and `PowerSeries.coeff_zero_X_sub_C_mul`: the coefficients
+  of `(X - a) * q`.
 * `PowerSeries.coeff_prod_eq_coeff_prod_of_X_pow_dvd_sub_one`: factors congruent to `1` modulo
   `X ^ (n + 1)` do not affect the `n`-th coefficient of a finite product.
+* `PowerSeries.coeff_prod_sum_type`: the coefficients of a product over `σ ⊕ τ` of mapped factors
+  are a convolution over the antidiagonal.
 * `PowerSeries.coeff_one_prod_sum_one_sub_X_pow_mul_two`: twice the linear coefficient of
   `∏_{i ∈ s} ∑_{j < dᵢ} (1 - X) ^ j` is `-(∏ dᵢ) ∑ (dᵢ - 1)`.
 -/
@@ -89,6 +100,37 @@ theorem coeff_one_prod [DecidableEq ι] (s : Finset ι) (f : ι → R⟦X⟧) :
     rw [Finset.erase_insert_of_ne (ne_of_mem_of_not_mem hi ha).symm,
       Finset.prod_insert fun h ↦ ha (Finset.mem_of_mem_erase h)]
     ring
+
+/-- **The coefficients of a product over a disjoint union.** If the factors of a product over
+`σ ⊕ τ` are the images of power series `f i` and `g j` under coefficient maps `φ` and `ψ`, then
+the coefficient of `Xⁿ` is the convolution over the antidiagonal of the coefficients of
+`∏ i, f i` and of `∏ j, g j`. -/
+theorem coeff_prod_sum_type {A B : Type*} [CommSemiring A] [CommSemiring B] {σ τ : Type*}
+    [Fintype σ] [Fintype τ] (φ : A →+* R) (ψ : B →+* R) (f : σ → A⟦X⟧) (g : τ → B⟦X⟧)
+    (h : σ ⊕ τ → R⟦X⟧) (hf : ∀ i, h (.inl i) = map φ (f i)) (hg : ∀ j, h (.inr j) = map ψ (g j))
+    (n : ℕ) :
+    coeff n (∏ k, h k) = ∑ p ∈ Finset.antidiagonal n,
+      φ (coeff p.1 (∏ i, f i)) * ψ (coeff p.2 (∏ j, g j)) := by
+  simp only [Fintype.prod_sum_type, hf, hg, ← map_prod, coeff_mul, coeff_map]
+
+section Ring
+
+variable {R : Type*} [Ring R]
+
+/-- The coefficients of `(X - a) * q` in positive degree. This is the power series counterpart of
+`Polynomial.coeff_X_sub_C_mul`. -/
+@[simp]
+theorem coeff_succ_X_sub_C_mul (a : R) (q : R⟦X⟧) (m : ℕ) :
+    coeff (m + 1) ((X - C a) * q) = coeff m q - a * coeff (m + 1) q := by
+  rw [sub_mul, map_sub, coeff_succ_X_mul, coeff_C_mul]
+
+/-- The constant coefficient of `(X - a) * q`. It is not a `simp` lemma, since `simp` rewrites
+`coeff 0` to `constantCoeff`. -/
+theorem coeff_zero_X_sub_C_mul (a : R) (q : R⟦X⟧) :
+    coeff 0 ((X - C a) * q) = -(a * coeff 0 q) := by
+  rw [sub_mul, map_sub, coeff_zero_X_mul, coeff_C_mul, zero_sub]
+
+end Ring
 
 section CommRing
 

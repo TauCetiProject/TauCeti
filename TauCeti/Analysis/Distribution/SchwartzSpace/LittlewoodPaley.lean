@@ -45,8 +45,12 @@ partial sums of the Fourier multipliers `𝓕⁻ (ψⱼ • 𝓕 f)` are the low
 
 * `ContDiffBump.littlewoodPaleyPiece`: the Schwartz function `ψⱼ • m`.
 * `ContDiffBump.hasSum_littlewoodPaleyPiece`: the pieces sum to `m` away from the origin.
+* `ContDiffBump.inhomogeneousLittlewoodPaleySchwartz`: the piece `ψⱼ` of the inhomogeneous
+  partition, as a complex Schwartz function.
 * `ContDiffBump.exists_norm_iteratedFDeriv_littlewoodPaleyPiece_le`: the scale-invariant
   derivative bounds for the pieces of a symbol satisfying Mihlin's condition.
+* `SchwartzMap.exists_eqOn_annulus_of_contDiffOn`: a symbol smooth away from the origin agrees
+  with a Schwartz function on every annulus `1 ≤ ‖ξ‖ ≤ θ`.
 * `SchwartzMap.sum_fourierMultiplierCLM_inhomogeneousLittlewoodPaley_range`: the partial sums of
   the inhomogeneous Littlewood–Paley multipliers are the low-pass truncations.
 * `SchwartzMap.tendsto_sum_fourierMultiplierCLM_inhomogeneousLittlewoodPaley`: Littlewood–Paley
@@ -86,17 +90,11 @@ private lemma contDiff_littlewoodPaley_smul (hm : ContDiffOn ℝ ∞ m {0}ᶜ) (
   · exact (φ.contDiff_littlewoodPaley j).contDiffAt.smul
       (hm.contDiffAt (isOpen_compl_singleton.mem_nhds hξ))
 
-private lemma hasCompactSupport_littlewoodPaley_smul (j : ℤ) :
-    HasCompactSupport (fun ξ ↦ φ.littlewoodPaley j ξ • m ξ) :=
-  HasCompactSupport.intro (isCompact_closedBall (0 : E) (2 ^ j * φ.rOut)) fun ξ hξ ↦ by
-    rw [φ.littlewoodPaley_eq_zero_of_le_norm
-      (not_le.1 (by simpa [mem_closedBall_zero_iff] using hξ)).le, zero_smul]
-
 /-- The **Littlewood–Paley piece** `ψⱼ • m` of a function `m` smooth away from the origin, as a
 Schwartz function. It is supported in `closedBall 0 (2^j φ.rOut)`, and the pieces sum to `m` on
 `E \ {0}`. -/
 noncomputable def littlewoodPaleyPiece (hm : ContDiffOn ℝ ∞ m {0}ᶜ) (j : ℤ) : 𝓢(E, F) :=
-  (φ.hasCompactSupport_littlewoodPaley_smul j).toSchwartzMap
+  ((φ.hasCompactSupport_littlewoodPaley j).smul_right (f' := m)).toSchwartzMap
     (φ.contDiff_littlewoodPaley_smul hm j)
 
 /-- The values of the piece `ψⱼ • m`. -/
@@ -157,7 +155,6 @@ private lemma norm_iteratedFDeriv_littlewoodPaleyPiece_le (hm : ContDiffOn ℝ �
     ‖iteratedFDeriv ℝ k (φ.littlewoodPaleyPiece hm j) ξ‖ ≤
       (∑ i ∈ Finset.range (k + 1), (k.choose i : ℝ) * B i * (2 / φ.rIn) ^ (k - i)) * A /
         (2 ^ j) ^ k := by
-  have h2j : (0 : ℝ) < 2 ^ j := zpow_pos two_pos _
   have hC : 0 ≤ (∑ i ∈ Finset.range (k + 1), (k.choose i : ℝ) * B i * (2 / φ.rIn) ^ (k - i)) *
       A / (2 ^ j) ^ k := by
     have := φ.rIn_pos
@@ -223,11 +220,55 @@ theorem exists_norm_iteratedFDeriv_littlewoodPaleyPiece_le (N : ℕ) :
   gcongr
   exact Finset.single_le_sum (fun k _ ↦ hc0 k) (Finset.mem_range.2 (Nat.lt_succ_of_le hk))
 
+/-- The piece `ψⱼ` of the inhomogeneous Littlewood–Paley partition, as a complex Schwartz
+function: it is smooth and compactly supported. -/
+noncomputable def inhomogeneousLittlewoodPaleySchwartz (j : ℕ) : 𝓢(E, ℂ) :=
+  ((φ.hasCompactSupport_inhomogeneousLittlewoodPaley j).comp_left Complex.ofReal_zero).toSchwartzMap
+    (Complex.ofRealCLM.contDiff.comp (φ.contDiff_inhomogeneousLittlewoodPaley j))
+
+/-- The values of the Schwartz function `ψⱼ`. -/
+@[simp]
+theorem inhomogeneousLittlewoodPaleySchwartz_apply (j : ℕ) (ξ : E) :
+    φ.inhomogeneousLittlewoodPaleySchwartz j ξ = (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) :=
+  (rfl)
+
+/-- The Schwartz function `ψⱼ`, as a function. -/
+theorem coe_inhomogeneousLittlewoodPaleySchwartz (j : ℕ) :
+    ⇑(φ.inhomogeneousLittlewoodPaleySchwartz j) =
+      fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) :=
+  (rfl)
+
 end FiniteDimensional
 
 end ContDiffBump
 
 namespace SchwartzMap
+
+section NormedSpace
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- A function `m` smooth away from the origin agrees on the annulus `1 ≤ ‖ξ‖ ≤ θ` with a Schwartz
+function, namely a finite sum of its Littlewood–Paley pieces. -/
+theorem exists_eqOn_annulus_of_contDiffOn {m : E → F} (hm : ContDiffOn ℝ ∞ m {0}ᶜ) (θ : ℝ) :
+    ∃ σ : 𝓢(E, F), EqOn σ m {ξ | 1 ≤ ‖ξ‖ ∧ ‖ξ‖ ≤ θ} := by
+  let φ : ContDiffBump (0 : E) := ⟨1, 2, one_pos, one_lt_two⟩
+  have hφ : φ.rOut = 2 := rfl
+  obtain ⟨N, hN⟩ := pow_unbounded_of_one_lt θ (one_lt_two : (1 : ℝ) < 2)
+  refine ⟨∑ j ∈ Finset.Ioc (-1 : ℤ) N, φ.littlewoodPaleyPiece hm j, fun ξ hξ => ?_⟩
+  -- On the annulus the cutoff `φ (2^{-N} ·) - φ (2 ·)` is `1`.
+  have h1 : φ (((2 : ℝ) ^ (N : ℤ))⁻¹ • ξ) = 1 := by
+    refine φ.one_of_mem_closedBall (mem_closedBall_zero_iff.2 ?_)
+    rw [norm_smul, zpow_natCast, norm_inv, norm_pow, Real.norm_two]
+    exact inv_mul_le_one_of_le₀ (hξ.2.trans hN.le) (by positivity)
+  have h0 : φ (((2 : ℝ) ^ (-1 : ℤ))⁻¹ • ξ) = 0 := by
+    refine φ.zero_of_le_dist ?_
+    rw [dist_zero_right, norm_smul, zpow_neg_one, inv_inv, Real.norm_two, hφ]
+    linarith [hξ.1]
+  rw [sum_apply, φ.sum_littlewoodPaleyPiece_Ioc hm (by omega), h1, h0, sub_zero, one_smul]
+
+end NormedSpace
 
 open Filter Topology
 open FourierTransform

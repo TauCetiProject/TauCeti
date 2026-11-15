@@ -62,9 +62,10 @@ theorem apply_eq_integral_smul_of_lineDerivOp_eq_zero {T : 𝓓'(Ω, F)}
       ((η.continuous.integrable_of_hasCompactSupport η.hasCompactSupport).const_mul _),
       integral_const_mul, hηint]
     ring
-  obtain ⟨ψ, hψ, hcψ, hsψ, hdψ⟩ :=
-    g.contDiff.exists_contDiff_deriv_eq_of_integral_eq_zero hgs hgint
-  let χ : 𝓓(Ω, ℝ) := ⟨ψ, hψ, hcψ, hsψ.trans hab⟩
+  obtain ⟨ψ, hψ, hsψ, hdψ⟩ := g.contDiff.exists_contDiff_deriv_eq_of_integral_eq_zero hgs hgint
+  let χ : 𝓓(Ω, ℝ) := ⟨ψ, hψ,
+    isCompact_Icc.of_isClosed_subset (isClosed_tsupport ψ) (hsψ.trans Ioo_subset_Icc_self),
+    hsψ.trans hab⟩
   have hd : ∂_{(1 : ℝ)} χ = g := by
     ext x
     rw [TestFunction.lineDerivOp_one_apply_eq_deriv]

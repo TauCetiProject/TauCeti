@@ -62,20 +62,20 @@ open MeasureTheory Set Filter Topology _root_.intervalIntegral
 open scoped ContDiff
 
 /-- **The primitive of a mean-zero test function is a test function.** If `φ : ℝ → ℝ` is smooth
-with `tsupport φ ⊆ Ioo a b` and `∫ φ = 0`, then `φ` is the derivative of a smooth compactly
-supported function `ψ` with `tsupport ψ ⊆ Ioo a b`. -/
+with `tsupport φ ⊆ Ioo a b` and `∫ φ = 0`, then `φ` is the derivative of a smooth function `ψ` with
+`tsupport ψ ⊆ Ioo a b`. Such a `ψ` has compact support, since `Ioo a b` is bounded. -/
 theorem _root_.ContDiff.exists_contDiff_deriv_eq_of_integral_eq_zero {a b : ℝ} {φ : ℝ → ℝ}
     (hφ : ContDiff ℝ ∞ φ) (hφs : tsupport φ ⊆ Ioo a b) (hint : ∫ x, φ x = 0) :
-    ∃ ψ : ℝ → ℝ, ContDiff ℝ ∞ ψ ∧ HasCompactSupport ψ ∧ tsupport ψ ⊆ Ioo a b ∧ deriv ψ = φ := by
+    ∃ ψ : ℝ → ℝ, ContDiff ℝ ∞ ψ ∧ tsupport ψ ⊆ Ioo a b ∧ deriv ψ = φ := by
   have hφc : Continuous φ := hφ.continuous
   have hφ0 : ∀ x, x ∉ Ioo a b → φ x = 0 := fun x hx ↦
     image_eq_zero_of_notMem_tsupport fun h ↦ hx (hφs h)
   rcases le_or_gt b a with hba | hab
   · -- The interval is empty, so `φ = 0` and `ψ = 0` works.
     have hφ0' : φ = 0 := funext fun x ↦ hφ0 x (by simp [Ioo_eq_empty (not_lt.mpr hba)])
-    exact ⟨0, contDiff_const, HasCompactSupport.zero, by simp, by simp [hφ0']⟩
+    exact ⟨0, contDiff_const, by simp, by simp [hφ0']⟩
   -- The primitive of `φ` based at `a`.
-  set ψ : ℝ → ℝ := fun t ↦ ∫ s in a..t, φ s with hψ_def
+  set ψ : ℝ → ℝ := fun t ↦ ∫ s in a..t, φ s
   have hderiv : ∀ t, HasDerivAt ψ (φ t) t := fun t ↦
     integral_hasDerivAt_right (hφc.intervalIntegrable _ _) (hφc.stronglyMeasurableAtFilter _ _)
       hφc.continuousAt
@@ -89,31 +89,22 @@ theorem _root_.ContDiff.exists_contDiff_deriv_eq_of_integral_eq_zero {a b : ℝ}
     (notMem_tsupport_iff_eventuallyEq.mp fun h ↦ (hφs h).2.ne rfl)
   have hleft : ∀ t, t < a + εa → ψ t = 0 := fun t ht ↦
     integral_eq_zero_of_lt_add (fun x hx ↦ hφ0 x fun h ↦ h.1.not_ge hx) hφa ht
-  have hright : ∀ t, b - εb < t → ψ t = 0 := by
-    intro t ht
-    simp only [hψ_def]
-    rw [← integral_add_adjacent_intervals (hφc.intervalIntegrable a b)
-      (hφc.intervalIntegrable b t)]
-    have h₁ : ∫ s in a..b, φ s = 0 := by
+  have hright : ∀ t, b - εb < t → ψ t = 0 := fun t ht ↦ by
+    -- The integral over the whole interval is `∫ φ = 0`, and the integral from `t` to `b` vanishes
+    -- by the left-endpoint argument applied to `φ` reflected about `0`.
+    have hab0 : ∫ s in a..b, φ s = 0 := by
       rw [integral_of_le hab.le, setIntegral_eq_integral_of_forall_compl_eq_zero fun s hs ↦
         hφ0 s fun h ↦ hs (mem_Ioc.mpr ⟨h.1, h.2.le⟩), hint]
-    have h₂ : ∫ s in b..t, φ s = 0 := by
-      refine (integral_congr (g := fun _ ↦ (0 : ℝ)) fun s hs ↦ ?_).trans integral_zero
-      rcases le_or_gt b s with hbs | hbs
-      · exact hφ0 s fun h ↦ h.2.not_ge hbs
-      · have h1 : b - εb < s := lt_of_lt_of_le (lt_min (by linarith) ht) hs.1
-        refine hφb ?_
-        rw [Real.dist_eq, abs_of_neg (sub_neg.mpr hbs)]
-        linarith
-    rw [h₁, h₂, add_zero]
-  have hsupp : tsupport ψ ⊆ Icc (a + εa) (b - εb) := by
-    refine closure_minimal (fun t ht ↦ ⟨?_, ?_⟩) isClosed_Icc
-    · by_contra h
-      exact ht (hleft t (not_le.mp h))
-    · by_contra h
-      exact ht (hright t (not_le.mp h))
-  exact ⟨ψ, hψ, isCompact_Icc.of_isClosed_subset (isClosed_tsupport ψ) hsupp,
-    hsupp.trans fun t ht ↦ ⟨by linarith [ht.1], by linarith [ht.2]⟩, hψd⟩
+    have htb : ∫ s in t..b, φ s = 0 := by
+      rw [← neg_neg t, ← neg_neg b, ← integral_comp_neg]
+      exact integral_eq_zero_of_lt_add (fun x hx ↦ hφ0 _ fun h ↦ h.2.not_ge (le_neg.mp hx))
+        (fun y hy ↦ hφb (by rwa [← dist_neg_neg, neg_neg])) (by linarith)
+    have := integral_add_adjacent_intervals (hφc.intervalIntegrable (μ := volume) a t)
+      (hφc.intervalIntegrable t b)
+    rwa [htb, add_zero, hab0] at this
+  have hsupp : tsupport ψ ⊆ Icc (a + εa) (b - εb) := closure_minimal
+    (fun t ht ↦ ⟨not_lt.mp fun h ↦ ht (hleft t h), not_lt.mp fun h ↦ ht (hright t h)⟩) isClosed_Icc
+  exact ⟨ψ, hψ, hsupp.trans (Icc_subset_Ioo (lt_add_of_pos_right a hεa) (sub_lt_self b hεb)), hψd⟩
 
 end TauCeti
 
@@ -162,7 +153,7 @@ theorem exists_ae_eq_const_Ioo_of_integral_deriv_smul_eq_zero
       simp only [hφ_def]
       rw [integral_sub hgi (hρi.const_mul _), MeasureTheory.integral_const_mul, hρint, mul_one,
         sub_self]
-    obtain ⟨ψ, hψ, -, hψs, hψd⟩ := hφ.exists_contDiff_deriv_eq_of_integral_eq_zero hφs hφint
+    obtain ⟨ψ, hψ, hψs, hψd⟩ := hφ.exists_contDiff_deriv_eq_of_integral_eq_zero hφs hφint
     have h0 := h ψ hψ hψs
     rw [hψd] at h0
     simp only [hφ_def, sub_smul, mul_smul] at h0

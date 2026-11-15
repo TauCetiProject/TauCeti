@@ -52,7 +52,8 @@ partitions other than the finest and the coarsest, the partition
 `Finpartition.pairPartition` with one pair part and singletons elsewhere, the partition
 `Finpartition.splitPartition` into a subset and its complement, the position of the parts of
 `Finpartition.atomise`, and of its common refinements with other partitions, relative to the sets
-it cuts along, and the pullback `Finpartition.comap`
+it cuts along, together with the bound `Finpartition.card_parts_inf_atomise_le` on the number of
+parts of such a common refinement, and the pullback `Finpartition.comap`
 of a finite partition of the image `f '' s` to a finite partition of `s`, which is an order
 embedding whose image consists of the partitions coarser than the partition of `s` into the fibres
 of `f`, each of which is the pullback of its pushforward `Finpartition.pushforward`, a left inverse
@@ -354,7 +355,7 @@ theorem sum_apply_part_of_subset {M : Type*} [AddCommMonoid M] (P : Finpartition
   congr 2
   ext x
   simp only [Finset.mem_filter, Finset.mem_inter, and_congr_right_iff]
-  exact fun hx => P.part_eq_iff_mem hA
+  exact fun _ => P.part_eq_iff_mem hA
 
 /-- Summing a function of the part containing each point groups the points by part. -/
 theorem sum_apply_part {M : Type*} [AddCommMonoid M] (P : Finpartition s) (f : Finset α → M) :
@@ -809,6 +810,12 @@ theorem subset_or_disjoint_of_mem_inf_atomise {P : Finpartition s} {F : Finset (
     {t u : Finset α} (ht : t ∈ (P ⊓ atomise s F).parts) (hu : u ∈ F) : t ⊆ u ∨ Disjoint t u := by
   obtain ⟨T, hT, htT⟩ := (inf_le_right : P ⊓ atomise s F ≤ atomise s F) ht
   exact (subset_or_disjoint_of_mem_atomise hT hu).imp htT.trans (Disjoint.mono_left htT)
+
+/-- Cutting a partition along `F` and refining by the atoms gives at most `#P.parts * 2 ^ #F`
+parts. -/
+theorem card_parts_inf_atomise_le (P : Finpartition s) (F : Finset (Finset α)) :
+    #(P ⊓ atomise s F).parts ≤ #P.parts * 2 ^ #F :=
+  (card_parts_inf_le_mul P _).trans (Nat.mul_le_mul_left _ card_atomise_le)
 
 end Atomise
 
