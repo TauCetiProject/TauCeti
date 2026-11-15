@@ -379,7 +379,7 @@ private theorem exists_algebraMap_eq_of_laurentCoverDiff_mk_eq_zero (f : A) (a b
 quotients `laurentCoverLe` and `laurentCoverGe`, a pair of elements has equal restrictions to
 `laurentCoverOverlap` exactly when it is a pair of equal constants. The corresponding
 statement for the completed rational localisations is
-`TauCeti.ValuationSpectrum.laurentCover_exact`, and the one for the structure presheaf is
+`TauCeti.ValuationSpectrum.laurentCover_exact`, and the one for the presentation-limit presheaf is
 `TauCeti.ValuationSpectrum.exists_presentationLimitMap_eq_of_laurentCoverOpen`. -/
 theorem exact_algebraMap_laurentCoverDiff (f : A) :
     Function.Exact
