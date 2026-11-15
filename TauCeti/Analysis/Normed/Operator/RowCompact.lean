@@ -196,6 +196,13 @@ theorem IsRowCompact.add {u v : C₀(J, R) →L[R] C₀(I, R)} (hu : u.IsRowComp
   exact (norm_add_le _ _).trans
     (add_le_add (hu.norm_matrixCoeff_le_rowNorm i j) (hv.norm_matrixCoeff_le_rowNorm i j))
 
+/-- A finite sum of row-compact maps is row compact. -/
+theorem IsRowCompact.sum {ι : Type*} {s : Finset ι}
+    {f : ι → C₀(J, R) →L[R] C₀(I, R)} (hf : ∀ i ∈ s, (f i).IsRowCompact) :
+    (∑ i ∈ s, f i).IsRowCompact :=
+  Finset.sum_induction f (fun w : C₀(J, R) →L[R] C₀(I, R) ↦ w.IsRowCompact)
+    (fun _ _ ↦ IsRowCompact.add) isRowCompact_zero hf
+
 theorem IsRowCompact.neg {u : C₀(J, R) →L[R] C₀(I, R)} (hu : u.IsRowCompact) :
     (-u).IsRowCompact :=
   isRowCompact_of_norm_matrixCoeff_le hu.tendsto_rowNorm fun i j ↦ by

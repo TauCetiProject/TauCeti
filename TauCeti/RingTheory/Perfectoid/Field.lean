@@ -39,7 +39,8 @@ power of a norm. The proof of (i) iterates this, producing norms `‖ϖ‖ ^ (1 
 * `TauCeti.Perfectoid.isPerfectoidField_iff`: the characterisation by (i)–(iii).
 * `TauCeti.Perfectoid.isPerfectoidField_iff_isPerfectoidTateRing`: a complete ultrametric
   nontrivially normed field is a perfectoid field exactly when it is a perfectoid Tate ring.
-* `TauCeti.Perfectoid.IsPerfectoidField.norm_natCast_lt_one`: `‖p‖ < 1`.
+* `TauCeti.Perfectoid.IsPerfectoidField.norm_natCast_lt_one`: `‖p‖ < 1`, so `p` is topologically
+  nilpotent (`TauCeti.Perfectoid.IsPerfectoidField.fact_isTopologicallyNilpotent`).
 * `TauCeti.Perfectoid.IsPerfectoidField.exists_norm_natCast_le_norm_pow`: some `ϖ` with
   `0 < ‖ϖ‖ < 1` has `‖p‖ ≤ ‖ϖ‖ ^ p`.
 * `TauCeti.Perfectoid.IsPerfectoidField.exists_norm_pow_eq`: the value group is `p`-divisible.
@@ -112,6 +113,11 @@ theorem norm_natCast_lt_one : ‖(p : K)‖ < 1 := by
   · simp
   obtain ⟨ϖ, hϖ0, hϖ1, hpϖ⟩ := exists_norm_natCast_le_norm_pow p K
   exact hpϖ.trans_lt (pow_lt_one₀ hϖ0.le hϖ1 hp)
+
+/-- **In a perfectoid field `p` is topologically nilpotent**, since `‖p‖ < 1`. This is the standing
+hypothesis under which the tilt `TauCeti.Perfectoid.uniformTilt p K` is a ring. -/
+instance fact_isTopologicallyNilpotent : Fact (IsTopologicallyNilpotent (p : K)) :=
+  ⟨tendsto_pow_atTop_nhds_zero_of_norm_lt_one (norm_natCast_lt_one p K)⟩
 
 variable [Fact p.Prime]
 
