@@ -7,9 +7,15 @@ module
 
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.FiniteType
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Kernels
+public import TauCeti.AlgebraicGeometry.Modules.Restriction.FinitePresentation
 
 /-!
-# Finitely presented approximation on affine schemes
+# Finitely presented quasi-coherent modules and affine approximation
+
+A quasi-coherent `𝒪_X`-module is of finite presentation if and only if its sections over every
+affine open `U ⊆ X` form a finitely presented `Γ(X, U)`-module: on the spectrum of `Γ(X, U)` this is
+the equivalence between finitely presented modules and finitely presented tilde sheaves, and finite
+presentation descends along open covers.
 
 On an affine scheme `X`, let `N` be a quasi-coherent `𝒪_X`-module that is finitely presented over
 a quasi-compact open `V ⊆ X`. Then some finitely presented `𝒪_X`-module maps to `N` by a morphism
@@ -25,6 +31,10 @@ open immersions into quasi-compact quasi-separated schemes.
 
 ## Main declarations
 
+* `AlgebraicGeometry.Scheme.Modules.isFinitePresentation_of_finitePresentation_sections` and
+  `AlgebraicGeometry.Scheme.Modules.isFinitePresentation_iff_finitePresentation_sections`: a
+  quasi-coherent module is finitely presented if and only if its sections over every affine open are
+  finitely presented.
 * `AlgebraicGeometry.Scheme.Modules.isFiniteType_kernel_of_epi`: the kernel of a surjection from
   a quasi-coherent module of finite type onto a finitely presented module is of finite type.
 * `AlgebraicGeometry.Scheme.Modules.exists_isFinitePresentation_isIso_restrict`: the
@@ -32,8 +42,8 @@ open immersions into quasi-compact quasi-separated schemes.
 
 ## References
 
-* The Stacks Project, Section 28.23, the affine input of Lemmas 28.23.4 (Tag 01PI) and 28.23.5
-  (Tag 0G41).
+* The Stacks Project, Lemma 17.11.4 (Tag 01BP), Section 28.23, and the affine input of
+  Lemmas 28.23.4 (Tag 01PI) and 28.23.5 (Tag 0G41).
 -/
 
 public section
@@ -45,6 +55,40 @@ universe u
 namespace AlgebraicGeometry.Scheme.Modules
 
 variable {X : Scheme.{u}}
+
+/-- A quasi-coherent module whose sections over every affine open are finitely presented is of
+finite presentation. This is the converse of
+`Scheme.Modules.finitePresentation_sections_of_isAffineOpen`. -/
+theorem isFinitePresentation_of_finitePresentation_sections (K : X.Modules) [K.IsQuasicoherent]
+    (h : ∀ U : X.Opens, IsAffineOpen U → Module.FinitePresentation Γ(X, U) Γ(K, U)) :
+    K.IsFinitePresentation := by
+  refine isFinitePresentation_of_isFinitePresentation_restrict K (fun U : X.affineOpens ↦ U.1)
+    (iSup_affineOpens_eq_top X) fun U ↦ ?_
+  have hU := U.2
+  have : IsOpenImmersion hU.fromSpec := hU.isOpenImmersion_fromSpec
+  let L := K.restrict hU.fromSpec
+  have : L.IsQuasicoherent := inferInstance
+  have : Module.FinitePresentation Γ(X, U.1) Γ(K, U.1) := h U.1 hU
+  have : Module.FinitePresentation Γ(X, U.1) (moduleSpecΓFunctor.obj L) := by
+    -- `moduleSpecΓFunctor.obj L` and `Γ(L, ⊤)` share the same underlying type and scalar action,
+    -- while `fromSpecSectionsEquiv` is stated for `Γ(L, ⊤)`.
+    convert! Module.FinitePresentation.of_equiv (K.fromSpecSectionsEquiv hU)
+  have : L.IsFinitePresentation :=
+    (SheafOfModules.isFinitePresentation (Spec Γ(X, U.1)).ringCatSheaf).prop_of_iso
+      (@asIso _ _ _ _ L.fromTildeΓ (isIso_fromTildeΓ_of_isQuasicoherent L))
+      (TauCeti.AlgebraicGeometry.isFinitePresentation_tilde (moduleSpecΓFunctor.obj L))
+  exact (SheafOfModules.isFinitePresentation U.1.toScheme.ringCatSheaf).prop_of_iso
+    (((restrictFunctorComp hU.isoSpec.hom hU.fromSpec).app K).symm ≪≫
+      (restrictFunctorCongr hU.isoSpec_hom_fromSpec).app K)
+    (isFinitePresentation_restrict hU.isoSpec.hom L)
+
+/-- A quasi-coherent module is of finite presentation if and only if its sections over every affine
+open are finitely presented. -/
+theorem isFinitePresentation_iff_finitePresentation_sections (K : X.Modules) [K.IsQuasicoherent] :
+    K.IsFinitePresentation ↔
+      ∀ U : X.Opens, IsAffineOpen U → Module.FinitePresentation Γ(X, U) Γ(K, U) :=
+  ⟨fun _ U hU ↦ K.finitePresentation_sections_of_isAffineOpen U hU,
+    isFinitePresentation_of_finitePresentation_sections K⟩
 
 /-- The kernel of an epimorphism from a quasi-coherent module of finite type onto a finitely
 presented module is of finite type. -/
