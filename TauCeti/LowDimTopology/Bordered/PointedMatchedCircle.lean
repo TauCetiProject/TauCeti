@@ -287,6 +287,30 @@ def genusOne : PointedMatchedCircle 4 where
 theorem genusOne_matching : genusOne.matching = swap 0 2 * swap 1 3 :=
   (rfl)
 
+/-- The pair `{0, 2}` of the genus-one pointed matched circle. -/
+@[simp]
+theorem genusOne_pair_zero : genusOne.pair 0 = s(0, 2) := by
+  rw [pair_def, genusOne_matching]
+  decide
+
+/-- The pair `{1, 3}` of the genus-one pointed matched circle. -/
+@[simp]
+theorem genusOne_pair_one : genusOne.pair 1 = s(1, 3) := by
+  rw [pair_def, genusOne_matching]
+  decide
+
+/-- The pair `{0, 2}` of the genus-one pointed matched circle. -/
+@[simp]
+theorem genusOne_pair_two : genusOne.pair 2 = s(0, 2) := by
+  rw [pair_def, genusOne_matching]
+  decide
+
+/-- The pair `{1, 3}` of the genus-one pointed matched circle. -/
+@[simp]
+theorem genusOne_pair_three : genusOne.pair 3 = s(1, 3) := by
+  rw [pair_def, genusOne_matching]
+  decide
+
 /-- **The genus-one pointed matched circle is the only one with four points.** Of the three
 perfect matchings of four points, `{0, 1}, {2, 3}` and `{0, 3}, {1, 2}` do not interleave, and
 surgery along them gives three circles. -/

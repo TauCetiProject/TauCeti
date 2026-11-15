@@ -38,6 +38,8 @@ of the fundamental group, over which classical local systems are modules. Path-c
   (`TauCeti.groupAlgebraLoopChainCohomologyAlgEquiv_symm_apply`).
 * `TauCeti.bijective_cohomologyMap_loopChainToGroupAlgebraDGAlgHom`: for an aspherical space, the
   degree-zero truncation `C_*(Ω_b B; R) → R[π₁(B, b)]` is a quasi-isomorphism.
+* `TauCeti.exists_cubicalChainDifferential_eq_of_loopChainToGroupAlgebra_eq_zero`: for an
+  aspherical space, a cycle whose truncation vanishes is a boundary.
 
 ## References
 
@@ -160,5 +162,25 @@ theorem bijective_cohomologyMap_loopChainToGroupAlgebraDGAlgHom
   rw [← (Function.Bijective.of_comp_iff _
     (groupAlgebraLoopChainCohomologyAlgEquiv R hB).bijective), hcomp]
   exact (algEquivCohomologyOfZero _).bijective
+
+/-- **Over an aspherical space, a cycle of the loop chain algebra is a boundary as soon as its
+degree-zero truncation vanishes.** This is injectivity of the truncation
+`C_*(Ω_b B; R) → R[π₁(B, b)]` on cohomology, read on representatives. -/
+theorem exists_cubicalChainDifferential_eq_of_loopChainToGroupAlgebra_eq_zero
+    (hB : ∀ n : ℕ, Subsingleton (π_ (n + 2) B b)) {z : loopChainAlgebra B b R}
+    (hz : cubicalChainDifferential (MooreLoopSpace B b) R z = 0)
+    (hT : loopChainToGroupAlgebra B b R z = 0) :
+    ∃ w, cubicalChainDifferential (MooreLoopSpace B b) R w = z := by
+  set h := loopChain_isDGAlgebra B b R
+  have hc : (⟨z, h.mem_cycles.mpr hz⟩ : h.cycles) ∈ h.boundaries := by
+    rw [← h.quotientMk_eq_zero_iff]
+    set f := loopChainToGroupAlgebraDGAlgHom B b R
+    apply (bijective_cohomologyMap_loopChainToGroupAlgebraDGAlgHom R hB).injective
+    refine (DGAlgHom.cohomologyMap_mk f _).trans
+      (Eq.trans ?_ (map_zero f.cohomologyMap.toAlgHom).symm)
+    rw [IsDGAlgebra.quotientMk_eq_zero_iff, IsDGAlgebra.mem_boundaries,
+      DGAlgHom.cyclesMap_apply_coe, loopChainToGroupAlgebraDGAlgHom_apply, hT]
+    exact zero_mem _
+  exact h.mem_boundaries.mp hc
 
 end TauCeti
