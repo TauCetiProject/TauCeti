@@ -154,7 +154,6 @@ theorem abs_relDensityOn_sub_mul_card_le_card_sdiff (H : Colored3Graph κ V) (c 
   have hhigh := (card_le_card hsub).trans (card_union_le _ _)
   have h₀ := H.relDensityOn_nonneg c A
   have h₁ := H.relDensityOn_le_one c A
-  have hd : (0 : ℚ) ≤ #(B \ A) := Nat.cast_nonneg _
   rw [← abs_of_nonneg (Nat.cast_nonneg (α := ℚ) #B), ← abs_mul, sub_mul, hB, ← hcard, mul_add,
     hA, abs_le]
   have hlow' : (_ : ℚ) ≤ _ := Nat.cast_le.2 hlow

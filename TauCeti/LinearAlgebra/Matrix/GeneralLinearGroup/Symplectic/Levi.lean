@@ -52,11 +52,6 @@ alongside the upper- and lower-unipotent factors.
 
 * R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 5.2.
 * T. A. Springer, *Linear Algebraic Groups*, 2nd ed., §8.1.
-
-This advances the explicit type-`C` Chevalley--Demazure construction in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`.  The type-`C` branch of milestone L0 of
-`TauCetiRoadmap/CFSGStatement/README.md` consumes the resulting pinned carrier; the next carrier
-step is the field-valued symplectic generation theorem, whose Levi factor is supplied here.
 -/
 
 public section

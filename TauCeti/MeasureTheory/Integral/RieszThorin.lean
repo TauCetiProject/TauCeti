@@ -331,7 +331,7 @@ private theorem norm_integral_mul_le_of_eLpNorm_le_one (T : SimpleFunc α ℂ �
       _ ≤ (M * eLpNorm u s μ) * 1 := by gcongr; exact hT u
       _ ≤ M * 1 * 1 := by gcongr
       _ = M := by simp
-  exact_mod_cast enorm_le_coe.1 h
+  exact_mod_cast eNorm_le_coe.1 h
 
 /-- The pairing of the image of a fibre indicator of `f` with a fibre indicator of `g` is
 integrable, when `f` and `g` have norm at most one in the interpolation spaces. -/
@@ -654,14 +654,14 @@ private theorem eLpNorm_apply_toLp_le (T : Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 ν) {M
     · rw [hU g hg]
       exact (h₀ _ (SimpleFunc.integrable_toLp two_ne_zero ENNReal.ofNat_ne_top hg)).trans_eq
         (by rw [eLpNorm_congr_ae hg.coeFn_toLp])
-    · rw [SimpleFunc.eLpNorm_eq_top_of_not_memLp two_ne_zero ENNReal.ofNat_ne_top one_ne_zero
-        ENNReal.one_ne_top hg, ENNReal.mul_top (by exact_mod_cast hM₀)]
+    · rw [SimpleFunc.eLpNorm_eq_top_of_not_memLp one_ne_zero ENNReal.one_ne_top hg,
+        ENNReal.mul_top (by exact_mod_cast hM₀)]
       exact le_top
   · by_cases hg : MemLp g 2 μ
     · rw [hU g hg]
       exact (eLpNorm_apply_le_of_norm_le T h₁ _).trans_eq (by rw [eLpNorm_congr_ae hg.coeFn_toLp])
-    · rw [SimpleFunc.eLpNorm_eq_top_of_not_memLp two_ne_zero ENNReal.ofNat_ne_top two_ne_zero
-        ENNReal.ofNat_ne_top hg, ENNReal.mul_top (by exact_mod_cast hM₁)]
+    · rw [SimpleFunc.eLpNorm_eq_top_of_not_memLp two_ne_zero ENNReal.ofNat_ne_top hg,
+        ENNReal.mul_top (by exact_mod_cast hM₁)]
       exact le_top
 
 /-- **Interpolation between the `L¹ → L^∞` and `L² → L²` bounds.** Let `T` be a bounded operator
@@ -714,7 +714,7 @@ theorem eLpNorm_apply_le_rpow_mul_rpow_mul_eLpNorm (T : Lp ℂ 2 μ →L[ℂ] Lp
   have hptop : p ≠ ∞ := by
     rw [← ENNReal.inv_ne_zero, hp']
     exact (lt_of_lt_of_le (ENNReal.mul_pos (by simpa using hθ.1) (by simp)) le_add_self).ne'
-  exact eLpNorm_apply_le_of_forall_simpleFunc ENNReal.ofNat_ne_top T hp1 hptop ENNReal.coe_ne_top
+  exact eLpNorm_apply_le_of_forall_simpleFunc ENNReal.ofNat_ne_top T hp1 hptop
     (eLpNorm_apply_toLp_le T h₀ h₁ hθ hp' hq' hqtop) f hf
 
 end ContinuousLinearMap

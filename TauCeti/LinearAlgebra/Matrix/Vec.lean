@@ -22,6 +22,8 @@ For positive semidefinite `U` and `V`, this makes `trace (Tᵀ * U * T * V)` non
   without the transpose.
 * `Matrix.PosSemidef.trace_transpose_mul_mul_mul_nonneg`: nonnegativity of
   `trace (Tᵀ * U * T * V)` for positive semidefinite `U` and `V`.
+* `Matrix.eq_of_star_vec_dotProduct_mulVec_vec`: a matrix acting on column-stacked matrices is
+  determined by its sesquilinear form on column-stacked matrices.
 -/
 
 public section
@@ -54,5 +56,16 @@ theorem PosSemidef.trace_transpose_mul_mul_mul_nonneg {U : Matrix m m ℝ}
     0 ≤ (Tᵀ * U * T * V).trace := by
   simpa only [star_trivial, hV.isHermitian.isSymm.vec_dotProduct_kronecker_mulVec_vec] using
     (hV.kronecker hU).dotProduct_mulVec_nonneg T.vec
+
+/-- Two matrices acting on column-stacked matrices agree when their sesquilinear forms agree on
+all column-stacked matrices. -/
+theorem eq_of_star_vec_dotProduct_mulVec_vec [NonAssocSemiring R] [StarRing R]
+    {M N : Matrix (n × m) (p × l) R}
+    (h : ∀ (X : Matrix m n R) (Y : Matrix l p R),
+      star X.vec ⬝ᵥ M *ᵥ Y.vec = star X.vec ⬝ᵥ N *ᵥ Y.vec) :
+    M = N := by
+  classical
+  ext x y
+  simpa [Matrix.vec_single] using h (Matrix.single x.2 x.1 1) (Matrix.single y.2 y.1 1)
 
 end Matrix

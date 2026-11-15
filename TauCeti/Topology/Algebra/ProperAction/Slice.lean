@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.GroupAction.SubMulAction
-public import Mathlib.Topology.Algebra.ProperAction.Basic
+public import TauCeti.Topology.Algebra.ProperAction.Orbit
 
 /-!
 # Slices of proper actions of discrete groups
@@ -20,12 +20,13 @@ stabilizer of `x`, such that every element of `G` carrying a point of `U` into `
 fixing `x`, including those acting trivially on all of `U`.
 
 Two facts make this work. First, a proper action of a discrete group is properly discontinuous
-(`ProperSMul.properlyDiscontinuousSMul`), so stabilizers are finite. Second, properness excludes
-all other group elements near `(x, x)`: the image of the closed set of pairs `(g, y)` with
-`g • x ≠ x` under the closed map `(g, y) ↦ (g • y, y)` is closed and misses `(x, x)`, so some
-neighbourhood `U` of `x` has no such `g` moving a point of `U` into `U`
-(`ProperSMul.exists_nhds_image_smul_eq_self`). Intersecting the translates of a smaller open
-neighbourhood by the finitely many elements of the stabilizer makes it invariant.
+(`ProperSMul.properlyDiscontinuousSMul`), so stabilizers are finite. Second, for any proper
+action the elements moving a small neighbourhood of `x` to meet itself lie in any prescribed
+neighbourhood of the stabilizer (`ProperSMul.mem_nhdsSet_stabilizer_iff`). In a discrete group
+the stabilizer is itself open, so some neighbourhood `U` of `x` has no element outside the
+stabilizer moving a point of `U` into `U` (`ProperSMul.exists_nhds_image_smul_eq_self`).
+Intersecting the translates of a smaller open neighbourhood by the finitely many elements of the
+stabilizer makes it invariant.
 
 Mathlib proves the properly discontinuous version
 `ProperlyDiscontinuousSMul.exists_nhds_image_smul_eq_self` for locally compact Hausdorff spaces,
@@ -71,19 +72,9 @@ variable (G) in
 only by elements fixing `x`. No local compactness or separation of `X` is needed. -/
 theorem exists_nhds_image_smul_eq_self (x : X) :
     ∃ U ∈ 𝓝 x, ∀ g : G, ((g • ·) '' U ∩ U).Nonempty → g • x = x := by
-  let Φ : G × X → X × X := fun p => (p.1 • p.2, p.2)
-  have hΦ : IsClosedMap Φ := (ProperSMul.isProperMap_smul_pair (G := G) (X := X)).isClosedMap
-  -- The pairs with a label not fixing `x` form a closed set, since `G` is discrete.
-  have hclosed : IsClosed (Φ '' {p | p.1 • x ≠ x}) :=
-    hΦ _ ((isClosed_discrete {g : G | g • x ≠ x}).preimage continuous_fst)
-  have hx : (x, x) ∉ Φ '' {p | p.1 • x ≠ x} := by
-    rintro ⟨⟨g, y⟩, hg, hgy⟩
-    obtain ⟨h₁, rfl⟩ := Prod.ext_iff.mp hgy
-    exact hg h₁
-  obtain ⟨U, hU, V, hV, hUV⟩ := mem_nhds_prod_iff.mp (hclosed.isOpen_compl.mem_nhds hx)
-  refine ⟨U ∩ V, inter_mem hU hV, fun g ⟨_, ⟨y, hy, rfl⟩, hgy⟩ => ?_⟩
-  by_contra hg
-  exact hUV ⟨hgy.1, hy.2⟩ ⟨⟨g, y⟩, hg, rfl⟩
+  obtain ⟨U, hU, hUV⟩ := mem_nhdsSet_stabilizer_iff.mp
+    ((isOpen_discrete (stabilizer G x : Set G)).mem_nhdsSet.mpr subset_rfl)
+  exact ⟨U, hU, fun g hg ↦ hUV (by rwa [mem_ofPred_eq, ← image_smul])⟩
 
 variable (G) in
 /-- **Slices of proper actions of discrete groups.** Every neighbourhood `W` of `x` contains an

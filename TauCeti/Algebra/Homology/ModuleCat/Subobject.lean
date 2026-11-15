@@ -15,6 +15,8 @@ public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 
+import TauCeti.Algebra.Homology.HomologicalComplex.Subobject
+
 /-!
 # Factoring through subcomplexes of complexes of modules
 
@@ -49,22 +51,12 @@ variable {R : Type*} [Ring R] {ι : Type*} {c : ComplexShape ι}
 the inclusion of a subcomplex factors through it. -/
 theorem factors_of_forall_mem_range
     (h : ∀ n x, (g.f n).hom x ∈ LinearMap.range (S.arrow.f n).hom) : S.Factors g := by
-  have hinj (n : ι) : Function.Injective (S.arrow.f n).hom :=
+  refine (factors_iff_forall_exists_comp_arrow_f_eq S g).2 fun n ↦ ?_
+  have hinj : Function.Injective (S.arrow.f n).hom :=
     (ModuleCat.mono_iff_injective _).1 inferInstance
   -- The degreewise lift, through the isomorphism of `S` with the range of its inclusion.
-  let l (n : ι) : K.X n ⟶ (S : HomologicalComplex (ModuleCat R) c).X n := ModuleCat.ofHom
-    ((LinearEquiv.ofInjective _ (hinj n)).symm.toLinearMap ∘ₗ
-      (g.f n).hom.codRestrict _ (h n))
-  have hl (n : ι) : l n ≫ S.arrow.f n = g.f n :=
-    ModuleCat.hom_ext (LinearMap.ext fun x ↦ by simp [l])
-  let lift : K ⟶ (S : HomologicalComplex (ModuleCat R) c) :=
-    { f := l
-      comm' := fun i j _ ↦ by
-        rw [← cancel_mono (S.arrow.f j), Category.assoc, Category.assoc,
-          ← HomologicalComplex.Hom.comm, reassoc_of% (hl i), HomologicalComplex.Hom.comm, hl j] }
-  have e : lift ≫ S.arrow = g :=
-    HomologicalComplex.hom_ext _ _ hl
-  exact e ▸ Subobject.factors_comp_arrow lift
+  exact ⟨ModuleCat.ofHom ((LinearEquiv.ofInjective _ hinj).symm.toLinearMap ∘ₗ
+    (g.f n).hom.codRestrict _ (h n)), ModuleCat.hom_ext (LinearMap.ext fun x ↦ by simp)⟩
 
 /-- A morphism of complexes of modules factors through a subcomplex exactly when each of its
 components lands in the range of the corresponding component of the inclusion. -/

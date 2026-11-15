@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 public import TauCeti.Geometry.Manifold.Instances.Comap
+public import TauCeti.Geometry.Manifold.PullbackGroupoid
 
 /-!
 # Lie groups covered by local diffeomorphisms
@@ -28,6 +29,8 @@ This file also proves that the integer power maps of a `C^n` Lie group are `C^n`
   a surjective homomorphism which is a local diffeomorphism is a Lie group.
 * `IsLocalHomeomorph.lieGroup_chartedSpaceComap`,
   `IsLocalHomeomorph.lieAddGroup_chartedSpaceComap`: Lie-group structures for pulled-back charts.
+* `ContinuousMulEquiv.lieGroup_pullbackChartedSpace` transfers the Lie-group structure
+  to the charts pulled back along a continuous group isomorphism.
 * `TauCeti.contMDiff_zpow`, `TauCeti.contMDiff_zsmul`: integer powers, and integer multiples, in
   a Lie group are `C^n`.
 
@@ -110,6 +113,28 @@ theorem IsLocalHomeomorph.lieGroup_chartedSpaceComap (hp : IsLocalHomeomorph p)
           (hp.contMDiff_chartedSpaceComap (I := I) (n := n)).inv }
 
 end Comap
+
+section Pullback
+
+variable {A B : Type*} [TopologicalSpace A] [Group A]
+  [TopologicalSpace B] [Group B] [cB : ChartedSpace H B] [lieB : LieGroup I n B]
+
+/-- Pulling back the charts of a Lie group along a continuous multiplicative equivalence
+makes the source a Lie group over the same model. -/
+theorem ContinuousMulEquiv.lieGroup_pullbackChartedSpace (e : A ≃ₜ* B) :
+    let _ := e.toHomeomorph.pullbackChartedSpace (H := H)
+    LieGroup I n A := by
+  let _ := e.toHomeomorph.pullbackChartedSpace (H := H)
+  let _ := e.toHomeomorph.pullback_isManifold I n
+  let φ := e.toHomeomorph.pullbackDiffeomorph I n
+  have hφ : (φ.symm : B → A) = e.symm.toMulEquiv.toMonoidHom := by
+    rw [Homeomorph.coe_pullbackDiffeomorph_symm]
+    -- Both the homeomorphism and monoid-hom coercions retain the inverse function of `e`.
+    rfl
+  exact IsLocalDiffeomorph.lieGroup e.symm.toMulEquiv.toMonoidHom
+    (hφ ▸ φ.symm.isLocalDiffeomorph) e.symm.surjective
+
+end Pullback
 
 namespace TauCeti
 

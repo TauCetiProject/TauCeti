@@ -34,6 +34,8 @@ along-curve derivative.  Under a reparametrization `φ` the acceleration obeys t
 * `CovariantDerivative.accelerationWithin_of_mem_nhds`: on a neighbourhood of the parameter the
   acceleration within the set is the unrestricted one.
 * `CovariantDerivative.accelerationWithin_const`: a constant curve has zero acceleration.
+* `Filter.EventuallyEq.acceleration_eq` and `Filter.EventuallyEq.totalSpaceMk_acceleration_eq`:
+  the acceleration at `t` depends only on the germ of the curve at `t`.
 * `CovariantDerivative.accelerationWithin_eq_symmL`: **the acceleration in a chart**,
   `u'' + Γ (u', u')` read in an arbitrary chart around the current point.
 * `CovariantDerivative.accelerationWithin_eq_zero_iff`: the acceleration vanishes exactly when
@@ -198,6 +200,46 @@ theorem acceleration_comp {φ : 𝕜 → 𝕜} {t : 𝕜} (hφ : Differentiable 
 
 end Basic
 
+section Germ
+
+variable [IsManifold I 1 M] [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
+  (cov : _root_.CovariantDerivative I E (fun x : M ↦ TangentSpace I x)) {γ η : 𝕜 → M} {t : 𝕜}
+
+/-- Curves agreeing near a parameter have the same covariant acceleration there. No regularity of
+the curves is assumed. -/
+theorem _root_.Filter.EventuallyEq.acceleration_eq (h : γ =ᶠ[𝓝 t] η) :
+    acceleration cov γ t = acceleration cov η t := by
+  have hvel : ∀ᶠ u in 𝓝 t, curveVelocity I γ u = curveVelocity I η u := by
+    filter_upwards [h.eventually_nhds] with u hu
+    rw [curveVelocity_apply, curveVelocity_apply]
+    exact congrArg (fun L : TangentSpace 𝓘(𝕜, 𝕜) u →L[𝕜] TangentSpace I (γ u) ↦
+      L ((1 : 𝕜) : TangentSpace 𝓘(𝕜, 𝕜) u))
+      (Filter.EventuallyEq.mfderiv_eq (I := 𝓘(𝕜, 𝕜)) (I' := I) hu)
+  have hcoord (x : M) : sectionCoord (F := E) γ (curveVelocity I γ) x =ᶠ[𝓝 t]
+      sectionCoord (F := E) η (curveVelocity I η) x := by
+    filter_upwards [h, hvel] with u hu hv
+    rw [sectionCoord_apply, sectionCoord_apply, hv]
+    -- The two sides read the same vector in the trivialization at base points `γ u` and `η u`,
+    -- which agree by `hu`. To rewrite along `hu`, abstract the base point `y`: every fibre
+    -- `TangentSpace I y` is definitionally the model space `E`, so the fixed vector
+    -- `curveVelocity I η u` may be read at any base point.
+    exact congrArg (fun y : M ↦ (trivializationAt E (TangentSpace I) x).continuousLinearMapAt 𝕜 y
+      (show TangentSpace I y from curveVelocity I η u)) hu
+  rw [acceleration_def, acceleration_def, alongCurve_apply, alongCurve_apply,
+    alongCurveInChartWithin_apply, alongCurveInChartWithin_apply, h.self_of_nhds]
+  simp only [derivWithin_univ]
+  rw [(hcoord (η t)).deriv_eq, (hcoord (η t)).self_of_nhds, (h.fun_comp _).deriv_eq]
+
+/-- Curves agreeing near a parameter have the same covariant acceleration there, as points of the
+tangent bundle. Unlike `Filter.EventuallyEq.acceleration_eq`, this records that the two
+accelerations live in the same tangent space. -/
+theorem _root_.Filter.EventuallyEq.totalSpaceMk_acceleration_eq (h : γ =ᶠ[𝓝 t] η) :
+    TotalSpace.mk' E (γ t) (acceleration cov γ t) =
+      TotalSpace.mk' E (η t) (acceleration cov η t) :=
+  TotalSpace.ext h.self_of_nhds (heq_of_eq (h.acceleration_eq cov))
+
+end Germ
+
 section Chart
 
 variable [IsManifold I 2 M] [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
@@ -220,7 +262,7 @@ theorem accelerationWithin_eq_symmL {x : M} {s : Set 𝕜} {t : 𝕜} (hs : Uniq
             (derivWithin (extChartAt I x ∘ γ) s t) (derivWithin (extChartAt I x ∘ γ) s t)) := by
   have hγd : MDifferentiableOn 𝓘(𝕜, 𝕜) I γ s := hγ.mdifferentiableOn (by norm_num)
   rw [← alongCurveInChartWithin_curveVelocityWithin cov γ hγd ht hx,
-    symmL_alongCurveInChartWithin cov γ _ hx (hs t ht) (hγd t ht)
+    symmL_alongCurveInChartWithin cov γ _ hx (hγd t ht)
       (differentiableWithinAt_sectionCoord_curveVelocityWithin γ hs hγ ht
         (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))),
     accelerationWithin_def]

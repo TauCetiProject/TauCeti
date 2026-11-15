@@ -214,7 +214,6 @@ private theorem mem_testClosure_of_chart (hp : p ≠ (∞ : ℝ≥0∞))
     rwa [mul_zero, zero_div] at h
   refine Wkp.mem_closure_range_restrictL_ofTestFunctionₗ_top_of_shift hp hK hphi
     (tendsto_chart_shift e (δ := δ)) (fun j x hx => ?_) k w hw
-  have hrj : (phi j).rOut = r j := rfl
   have hsj : s j = δ / 2 * (1 / ((j : ℝ) + 1)) := rfl
   refine chart_ballCondition hc hδC ?_ (by linarith [hrs j, hsδ j]) (by linarith [hrs j, hsδ j])
     hx
@@ -261,7 +260,7 @@ theorem Wkp.denseRange_restrictL_ofTestFunctionₗ_top_of_isLipschitzDomainWith 
   rw [hu]
   refine Submodule.add_mem _ (mem_testClosure_of_subset hp hψ₀c hψ₀Ω k w₀ (hvanish hw₀))
     (Submodule.sum_mem _ fun x _ => ?_)
-  obtain ⟨-, -, hc, hab⟩ := hchart x x.2
+  obtain ⟨-, -, hc, _⟩ := hchart x x.2
   obtain ⟨-, -, hcpt, hts⟩ := hψ x x.2
   refine mem_testClosure_of_chart hp hc hcpt (hts.trans (preimage_mono (normalCylinder_mono
     ?_ le_rfl))) k (w x) (hvanish (hw x))

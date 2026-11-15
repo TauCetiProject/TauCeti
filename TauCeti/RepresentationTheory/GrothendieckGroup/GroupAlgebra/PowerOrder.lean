@@ -49,10 +49,11 @@ variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G]
 /-- A simple group-algebra module on which every group element acts with `p`-power order
 in characteristic `p` is isomorphic to the trivial line. -/
 theorem nonempty_linearEquiv_trivial_of_forall_pow_eq_one
-    (M : Type*) [AddCommGroup M] [Module k M] [Module k[G] M] [IsScalarTower k k[G] M]
-    [IsSimpleModule k[G] M]
+    (M : Type*) [AddCommGroup M] [Module k[G] M] [IsSimpleModule k[G] M]
     (hM : ∀ g : G, ∃ n : ℕ, ∀ x : M, MonoidAlgebra.single (g ^ p ^ n) (1 : k) • x = x) :
     Nonempty (M ≃ₗ[k[G]] (Representation.trivial k G k).asModule) := by
+  let := Module.restrictScalars k k[G] M
+  let := IsScalarTower.restrictScalars k k[G] M
   let ρ := Representation.ofModule' (k := k) (G := G) M
   have hρ : ρ.IsIrreducible := Representation.isIrreducible_ofModule'_iff M |>.mpr inferInstance
   have hpow : ∀ g : G, ∃ n : ℕ, ρ g ^ p ^ n = 1 := by
@@ -105,8 +106,6 @@ private theorem exactK0_quotient_eq_trivial_of_forall_pow_eq_one {X : Type u} [A
     (hpow : ∀ g : G, ∃ n : ℕ, ∀ x : X, MonoidAlgebra.single (g ^ p ^ n) (1 : k) • x = x) :
     (ExactK0.of (FGModuleCat.of k[G] (X ⧸ N)) : ExactK0 (finiteModulesExactStructure k[G])) =
       ExactK0.of (FGModuleCat.of k[G] (Representation.trivial k G k).asModule) := by
-  let := Module.restrictScalars k k[G] (X ⧸ N)
-  let := IsScalarTower.restrictScalars k k[G] (X ⧸ N)
   obtain ⟨e⟩ := nonempty_linearEquiv_trivial_of_forall_pow_eq_one p
     (ModuleCat.of k[G] (X ⧸ N)) (forall_pow_eq_one_quotient p N hpow)
   exact ExactK0.of_congr e.toFGModuleCatIso

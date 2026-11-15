@@ -76,7 +76,7 @@ theorem inGeneralPosition_embeddingsMatrix_col
       (τ : Ω →+* Ω).mapMatrix ((Algebra.embeddingsMatrix F Ω α).submatrix id e₀).transpose := by
     ext k i
     have hk : e k = τ • e₀ k := by
-      simpa [Function.Embedding.smul_apply] using (DFunLike.congr_fun hτ k).symm
+      simpa [smul_apply] using (DFunLike.congr_fun hτ k).symm
     simp [hk, Matrix.col]
   rw [hminor, ← RingHom.map_det, Matrix.det_transpose]
   exact (map_ne_zero _).mpr he₀

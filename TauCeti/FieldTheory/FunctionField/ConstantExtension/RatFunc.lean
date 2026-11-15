@@ -165,17 +165,16 @@ namespace Place
 variable [Algebra k k'] [Algebra (RatFunc k) (RatFunc k')]
 variable [IsScalarTower k (RatFunc k) (RatFunc k')] [Algebra.IsIntegral (RatFunc k) (RatFunc k')]
 
-/-- At the finite place of `q'`, the order of a nonzero polynomial `q` over `k` is the
+/-- At the finite place of `q'`, the order of a polynomial `q` over `k` is the
 multiplicity of `q'` in `q`, and it is also `e` times the order of `q` at the place below. -/
 private theorem multiplicity_map_eq_ramificationIdx_mul_ord
     (hX : algebraMap (RatFunc k) (RatFunc k') RatFunc.X = RatFunc.X) {q' : k'[X]}
-    (hq' : Irreducible q') {q : k[X]} (hq : q ≠ 0) :
+    (hq' : Irreducible q') {q : k[X]} :
     (multiplicity q' (q.map (algebraMap k k')) : ℤ) =
       ramificationIdx (RatFunc k) (adicOfIrreducible hq') *
         ((adicOfIrreducible hq').restrict k (RatFunc k)).ord (algebraMap k[X] (RatFunc k) q) := by
   rw [← ord_algebraMap_restrict, algebraMap_ratFunc_algebraMap_polynomial hX,
-    ord_adicOfIrreducible_algebraMap hq' ((Polynomial.map_ne_zero_iff
-      (algebraMap k k').injective).mpr hq)]
+    ord_adicOfIrreducible_algebraMap hq']
 
 /-- **A finite place of `k'(X)` lies over a finite place of `k(X)`**: `X` is regular at it. -/
 theorem restrict_adicOfIrreducible_ne_infty
@@ -196,7 +195,7 @@ theorem restrict_adicOfIrreducible_eq_iff
   have hfin : FiniteMultiplicity q' (q.map (algebraMap k k')) :=
     .of_not_isUnit hq'.not_isUnit ((Polynomial.map_ne_zero_iff
       (algebraMap k k').injective).mpr hq.ne_zero)
-  have h := multiplicity_map_eq_ramificationIdx_mul_ord hX hq' hq.ne_zero
+  have h := multiplicity_map_eq_ramificationIdx_mul_ord hX hq' (q := q)
   have he := ramificationIdx_pos (RatFunc k) (adicOfIrreducible hq')
   rw [← multiplicity_ne_zero hfin]
   constructor
@@ -242,7 +241,7 @@ theorem ramificationIdx_adicOfIrreducible_eq_multiplicity
     ramificationIdx (RatFunc k) (adicOfIrreducible hq') =
       multiplicity q' (q.map (algebraMap k k')) := by
   classical
-  have h := multiplicity_map_eq_ramificationIdx_mul_ord hX hq' hq.ne_zero
+  have h := multiplicity_map_eq_ramificationIdx_mul_ord hX hq' (q := q)
   rw [(restrict_adicOfIrreducible_eq_iff hX hq' hq).mpr hdvd,
     ord_adicOfIrreducible_algebraMap_irreducible hq hq, ite_eq_left (Associated.refl _)] at h
   omega

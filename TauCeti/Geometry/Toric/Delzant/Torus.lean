@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Instances.AddCircle.Defs
-public import TauCeti.Geometry.Toric.Algebraic.Lattice
+public import TauCeti.Geometry.Toric.Algebraic.Lattice.Basic
 public import TauCeti.Geometry.Toric.Delzant.Basic
 
 import Mathlib.Analysis.Convex.PathConnected
@@ -76,6 +76,8 @@ points.
   of the classes of real angles.
 * `TauCeti.Toric.eq_zero_of_mem_ker_facetTorusHom`: the kernel of `π` meets the coordinate
   subtorus of a lattice basis of normals trivially.
+* `TauCeti.Toric.IsIntegralLattice.isClosed_ker_facetTorusHom`: for an integral lattice, the
+  kernel of `π` is closed.
 * `TauCeti.Toric.mem_faceSubtorus_iff_exists_facetTorusHom_eq`: the face subtorus of `s` is the
   image under `π` of the angles supported on `s`.
 * `TauCeti.Toric.faceSubtorus_eq_bot_iff`, `TauCeti.Toric.faceSubtorus_eq_top_iff`: for a
@@ -256,6 +258,26 @@ theorem eq_zero_of_mem_ker_facetTorusHom (hi : IsIntegralLattice i) {s : Set ι}
   · rw [Pi.zero_apply, ← ht, hcoeff ⟨j, hj⟩, AddCircle.coe_eq_zero_iff]
     exact ⟨b.repr n ⟨j, hj⟩, by simp [mul_comm]⟩
   · exact hθs j hj
+
+/-! ### Closedness of the kernel -/
+
+section Closed
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {i : N →+ V}
+
+/-- **The kernel torus is closed.** For an integral lattice `i`, the kernel of the homomorphism
+`(ℝ / pℤ)^ι → V / p i(N)` is a closed subgroup; for `p ≠ 0` it is therefore a compact subgroup of
+the torus `(ℝ / pℤ)^ι`. -/
+theorem IsIntegralLattice.isClosed_ker_facetTorusHom (hi : IsIntegralLattice i) (u : ι → N)
+    (p : ℝ) : IsClosed ((facetTorusHom i u p).ker : Set (ι → AddCircle p)) := by
+  have h0 : IsClosed ({0} : Set (V ⧸ (p • i).range)) := by
+    rw [← (QuotientAddGroup.isQuotientMap_mk _).isClosed_preimage]
+    convert hi.isClosed_range_smul p using 1
+    ext v
+    simp [QuotientAddGroup.eq_zero_iff]
+  exact h0.preimage (continuous_facetTorusHom i u p)
+
+end Closed
 
 /-! ### Face subtori -/
 

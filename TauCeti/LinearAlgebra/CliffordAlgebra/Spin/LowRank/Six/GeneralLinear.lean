@@ -8,9 +8,7 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.EvenUnitary
 public import TauCeti.RepresentationTheory.Spin.Polarization.Split.Even
 public import TauCeti.RepresentationTheory.Spin.Structure
-public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Center
-import Mathlib.Algebra.Central.Matrix
 
 /-!
 # The even unitary group of a split six-dimensional quadratic space
@@ -27,11 +25,28 @@ four. In particular, the even unitary group of three rational hyperbolic planes 
 This file concerns the even unitary carrier; its Spin subgroup is the subgroup of
 determinant-one matrices, by `TauCeti.hyperbolicSixSpinEquivSpecialLinear`.
 
+## Main definitions
+
+* `AlgEquiv.evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix`: for a matrix-product model of the
+  even Clifford algebra, the even unitary group is isomorphic to the general linear group of the
+  first matrix factor.
+* `TauCeti.hyperbolicSixEvenEquivMatrixProd`: the matrix-product model of the even Clifford
+  algebra of three hyperbolic planes.
+* `TauCeti.hyperbolicSixEvenUnitaryEquivGeneralLinear`: the resulting isomorphism of the even
+  unitary group of three hyperbolic planes with `GL₄(K)`.
+
+## Main results
+
+* `TauCeti.coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_spinGroupToEvenUnitary_apply`:
+  for a polarized six-dimensional space, the matrix assigned to a Spin element in the half-spin
+  matrix-product model is the matrix of its even half-spin action (`spinPlusAction`) in the basis
+  `TauCeti.spinPlusFinBasisOfFinrankEqSix`.
+
 ## References
 
 * M.-A. Knus, A. Merkurjev, M. Rost and J.-P. Tignol, *The Book of Involutions* (1998), §15.
-* The half-spin matrix-product structure theorem in
-  `TauCeti/RepresentationTheory/Spin/Structure.lean`.
+* The half-spin matrix-product structure theorem
+  `TauCeti.SpinPolarizationData.evenCliffordEquivProdMatrix`.
 -/
 
 public section
@@ -236,14 +251,17 @@ variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
   {Q : QuadraticForm K V} {n : Type w} [Fintype n] [DecidableEq n] [Nonempty n]
   [Invertible (2 : K)]
 
+omit [Nonempty n] in
 /-- In a matrix-product model of a nondegenerate six-dimensional even Clifford algebra,
 reversal exchanges the two central idempotents. -/
 @[simp]
 theorem map_reverseEven_symm_one_zero_of_finrank_eq_six
     (e : even Q ≃ₐ[K] Matrix n n K × Matrix n n K)
     (hQ : Q.Nondegenerate) (hV : finrank K V = 6) :
-    e (reverseEven Q (e.symm (1, 0))) = (0, 1) :=
-  TauCeti.matrixProdReverse_one_zero hQ hV e
+    e (reverseEven Q (e.symm (1, 0))) = (0, 1) := by
+  rcases isEmpty_or_nonempty n with hn | hn
+  · exact Subsingleton.elim _ _
+  exact TauCeti.matrixProdReverse_one_zero hQ hV e
 
 /-- Projecting to the first matrix factor identifies the reverse-unitary group of a
 nondegenerate six-dimensional even Clifford algebra with the general linear group.

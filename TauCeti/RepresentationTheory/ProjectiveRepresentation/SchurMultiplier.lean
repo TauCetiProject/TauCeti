@@ -44,8 +44,8 @@ not need faithfulness being stated for an arbitrary module.
 `G` on the coefficients, whereas a projective representation carries none: its factor set takes
 values in the *central* `kˣ`. So the whole file runs under the trivial action
 `TauCeti.trivialMulDistribMulAction`, installed as a local instance exactly as in
-`TauCeti/RepresentationTheory/ProjectiveRepresentation/Extension.lean`. The roadmap spells the
-coefficient module `Rep.trivial ℤ G (Additive kˣ)`; `Rep.ofMulDistribMulAction G kˣ` for the
+`TauCeti/RepresentationTheory/ProjectiveRepresentation/Extension.lean`. The coefficient module
+could equally be written `Rep.trivial ℤ G (Additive kˣ)`; `Rep.ofMulDistribMulAction G kˣ` for the
 trivial action is that module, and it is the spelling that both Mathlib's multiplicative interface
 to `groupCohomology.cocycles₂` and `TauCeti.FactorSet.cohomologyClass` are stated in, so it is the
 one used here.
@@ -84,11 +84,6 @@ syntactically, and rewriting across the difference then fails.
   depends only on the class.
 
 ## References
-
-This is the Schur-multiplier target of Layer 7 of the
-[induction and restriction roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/RepresentationTheory/InductionRestriction/README.md),
-"projective representations, factor sets, and the Schur multiplier", whose `schurMultiplier` is the
-group defined here.
 
 * G. Karpilovsky, *Projective Representations of Finite Groups*, Marcel Dekker (1985), Ch. 1 and 3.
 * I. M. Isaacs, *Character Theory of Finite Groups*, AMS Chelsea (1976), Ch. 11.

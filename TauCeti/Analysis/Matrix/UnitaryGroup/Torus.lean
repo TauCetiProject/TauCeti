@@ -88,6 +88,12 @@ theorem coe_unitaryTorusHom (z : n → Circle) :
     (unitaryTorusHom n z : Matrix n n ℂ) = diagonal fun i => (z i : ℂ) :=
   (rfl)
 
+/-- The diagonal unitary matrix with all diagonal entries equal to `a` is the scalar matrix
+`a • 1`, so it lies in the centre of `U(n)`. -/
+theorem coe_unitaryTorusHom_const (a : Circle) :
+    (unitaryTorusHom n (fun _ ↦ a) : Matrix n n ℂ) = (a : ℂ) • 1 := by
+  rw [coe_unitaryTorusHom, smul_one_eq_diagonal]
+
 /-- As an invertible matrix, the diagonal unitary matrix with entries `z i` is the diagonal element
 of the general linear group with the entries `z i` viewed as units of `ℂ`. -/
 @[simp]

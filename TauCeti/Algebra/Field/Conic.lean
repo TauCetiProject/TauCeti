@@ -55,7 +55,7 @@ theorem exists_sq_add_sq_mul_eq_one {K : Type*} [Field K] [NeZero (2 : K)] (hK :
   have hp : (X * (1 - C δ * X ^ 2) * (1 + C δ * X ^ 2) : K[X]) ≠ 0 := by
     refine mul_ne_zero (mul_ne_zero X_ne_zero ?_) ?_ <;>
     · intro h
-      simpa using congrArg (coeff · 0) h
+      simpa using congrArg (fun p : K[X] ↦ p.coeff 0) h
   have hdeg : (X * (1 - C δ * X ^ 2) * (1 + C δ * X ^ 2) : K[X]).natDegree ≤ 5 := by
     compute_degree
   obtain ⟨t, ht⟩ := exists_eval_ne_zero_of_natDegree_lt_card _ hp <|

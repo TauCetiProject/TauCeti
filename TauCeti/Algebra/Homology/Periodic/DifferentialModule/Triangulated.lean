@@ -66,7 +66,6 @@ theorem stableConflationExact_onePeriodicComplexEquivalence_functor :
   (ExactStructure.split C).isConflationExact_onePeriodicComplexEquivalence_functor
     |>.stableConflationExact_of_equivalence
       (ExactStructure.split C).isConflationExact_onePeriodicComplexEquivalence_inverse
-      (hP)
 
 /-- Passing from one-periodic complexes to differential modules is stable conflation-exact for
 the componentwise split exact structures. -/
@@ -80,7 +79,6 @@ theorem stableConflationExact_onePeriodicComplexEquivalence_inverse :
   exact (ExactStructure.split C).isConflationExact_onePeriodicComplexEquivalence_inverse
     |>.stableConflationExact_of_equivalence (e := (onePeriodicComplexEquivalence C).symm)
       (ExactStructure.split C).isConflationExact_onePeriodicComplexEquivalence_functor
-      ExactStructure.differentialModule_split_isFrobenius
 
 /-- The equivalence between the split stable categories of differential modules and of
 one-periodic complexes induced by `TauCeti.DifferentialModule.onePeriodicComplexEquivalence`. -/

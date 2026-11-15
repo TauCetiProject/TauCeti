@@ -112,10 +112,10 @@ theorem continuous_wrappedNormalMeasure :
     Continuous fun p : AddCircle (2 * π) × ℝ≥0 ↦
       (wrappedNormalMeasure p.1 p.2).toProbabilityMeasure := by
   let P := (gaussianReal 0 1).toProbabilityMeasure
-  have h := P.continuous_map_of_forall_continuous
+  have h := P.continuous_map_of_ae_continuous
     (f := fun (p : AddCircle (2 * π) × ℝ≥0) (x : ℝ) ↦
       p.1 + ((√(p.2 : ℝ) * x : ℝ) : AddCircle (2 * π)))
-    (fun _ ↦ by fun_prop) (fun _ ↦ by fun_prop)
+    (fun _ ↦ by fun_prop) (ae_of_all _ fun _ ↦ by fun_prop)
   refine h.congr fun p ↦ ?_
   apply ProbabilityMeasure.toMeasure_injective
   simp only [ProbabilityMeasure.toMeasure_map, P, Measure.coe_toProbabilityMeasure,

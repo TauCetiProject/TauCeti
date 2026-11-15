@@ -177,6 +177,18 @@ theorem finrank_flag [StrongRankCondition R] (b : Basis (Fin n) R M) (k : Fin (n
   simp [Fintype.card_subtype, Fin.lt_def, Fin.card_filter_val_lt]
   omega
 
+/-- If `x` lies in the span of basis vectors `b (e j)` whose indices `e j` are all below `k`, then
+every index in the support of `b.repr x` is below `k`. -/
+theorem lt_of_mem_support_repr_of_mem_span_range {k : ℕ} (b : Basis (Fin n) R M)
+    (e : Fin k → Fin n) (he : ∀ j, (e j).val < k) {x : M}
+    (hx : x ∈ Submodule.span R (Set.range fun j ↦ b (e j))) {i : Fin n}
+    (hi : i ∈ (b.repr x).support) : i.val < k := by
+  have hsupp := b.repr_support_subset_of_mem_span (Set.range e)
+    (by simpa only [← Set.range_comp, Function.comp_def] using hx)
+  rcases hsupp hi with ⟨i', hi'⟩
+  rw [← hi']
+  exact he i'
+
 end Semiring
 
 section CommSemiring

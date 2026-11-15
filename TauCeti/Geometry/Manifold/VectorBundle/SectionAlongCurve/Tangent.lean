@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import TauCeti.Geometry.Manifold.MFDeriv.ContinuousLinearMap
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
+import Mathlib.Analysis.Calculus.Deriv.Mul
 
 /-!
 # Coordinates of tangent fields along curves

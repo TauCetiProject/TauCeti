@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.Killing.InvariantForm
 -- Non-public: these appear only inside proofs, never in the type of an exported declaration.
 import TauCeti.Algebra.Lie.BaseChange.Perfect
 import TauCeti.Algebra.Lie.Cochain
+import TauCeti.Algebra.Lie.Killing.Basic
 import TauCeti.Algebra.Lie.Killing.Perfect
 import TauCeti.Algebra.Lie.Whitehead
 
@@ -360,7 +361,7 @@ the multiples of the residue cocycle of the Killing form.** Here `L` is a finite
 algebra over an algebraically closed field of characteristic zero whose adjoint module is
 irreducible and whose Killing form is nondegenerate, for instance a simple Lie algebra. -/
 theorem exists_eq_smul_twoCocycleOfBilinear_killingForm_iff {K L : Type*} [Field K]
-    [IsAlgClosed K] [CharZero K] [LieRing L] [LieAlgebra K L] [FiniteDimensional K L]
+    [IsAlgClosed K] [CharZero K] [LieRing L] [LieAlgebra K L]
     [_root_.LieModule.IsIrreducible K L L] [IsKilling K L]
     (c : twoCocycle K (loopAlgebra K ℤ L) (TrivialLieModule K (loopAlgebra K ℤ L) K)) :
     (∃ t : K, c = t • twoCocycleOfBilinear K ℤ L (killingForm K L)
@@ -375,18 +376,19 @@ end Classification
 section Normalization
 
 variable {K A L : Type*} [Field K] [CharZero K] [AddCommMonoid A] [LieRing L] [LieAlgebra K L]
-  [FiniteDimensional K L] [IsKilling K L]
+  [IsKilling K L]
 
 /-- **Every 2-cocycle on a loop algebra agrees with a coboundary on constant loops.** Let `L` be a
-finite-dimensional Lie algebra with nondegenerate Killing form over a field of characteristic
-zero. For every 2-cocycle `c` with trivial coefficients on `loopAlgebra K A L` there is a 1-cochain
-`f` with `c(1 ⊗ x, a) = d₁₂ f (1 ⊗ x, a)` for all `x` and `a`, so that `c - d₁₂ f` vanishes
-whenever its first argument is a constant loop. -/
+Lie algebra with nondegenerate Killing form over a field of characteristic zero, which makes it
+finite-dimensional. For every 2-cocycle `c` with trivial coefficients on `loopAlgebra K A L` there
+is a 1-cochain `f` with `c(1 ⊗ x, a) = d₁₂ f (1 ⊗ x, a)` for all `x` and `a`, so that `c - d₁₂ f`
+vanishes whenever its first argument is a constant loop. -/
 theorem exists_apply_one_tmul_eq_d₁₂_apply
     (c : twoCocycle K (loopAlgebra K A L) (TrivialLieModule K (loopAlgebra K A L) K)) :
     ∃ f : oneCochain K (loopAlgebra K A L) (TrivialLieModule K (loopAlgebra K A L) K),
       ∀ (x : L) (a : loopAlgebra K A L), c.1 (1 ⊗ₜ x) a = d₁₂ K _ _ f (1 ⊗ₜ x) a := by
   set e := TrivialLieModule.equiv K (loopAlgebra K A L) K
+  have : FiniteDimensional K L := TauCeti.finite_of_isKilling (R := K) (L := L)
   -- Each mode block `x ↦ (y ↦ c(x_0, y_n))` is a 1-cocycle in the finite-dimensional coadjoint
   -- module, hence inner by Whitehead's first lemma, applied one mode at a time.
   have hblock (n : A) : ∃ φ : Module.Dual K L, ∀ x y : L, modeForm c.1 0 n x y = -φ ⁅x, y⁆ := by
@@ -450,14 +452,13 @@ end ResidueClass
 
 section SecondCohomology
 
-variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L] [FiniteDimensional K L]
-  [IsKilling K L]
+variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L] [IsKilling K L]
 
 /-- **Every 2-cocycle on a loop algebra is a residue cocycle up to a coboundary.** Let `L` be a
-finite-dimensional Lie algebra with nondegenerate Killing form over a field of characteristic zero,
-for instance a semisimple Lie algebra. Every 2-cocycle `c` with trivial coefficients on
-`loopAlgebra K ℤ L` is `c_Ψ + d₁₂ f` for an invariant symmetric form `Ψ` on `L` and a 1-cochain
-`f`. -/
+Lie algebra with nondegenerate Killing form over a field of characteristic zero, which makes it
+finite-dimensional, for instance a semisimple Lie algebra. Every 2-cocycle `c` with trivial
+coefficients on `loopAlgebra K ℤ L` is `c_Ψ + d₁₂ f` for an invariant symmetric form `Ψ` on `L` and
+a 1-cochain `f`. -/
 theorem exists_eq_twoCochainOfBilinear_add_d₁₂
     (c : twoCocycle K (loopAlgebra K ℤ L) (TrivialLieModule K (loopAlgebra K ℤ L) K)) :
     ∃ (Ψ : LinearMap.BilinForm K L) (_ : Ψ.lieInvariant L) (hΨs : Ψ.IsSymm)
@@ -475,15 +476,37 @@ theorem exists_eq_twoCochainOfBilinear_add_d₁₂
   exact ⟨Ψ, hΨ, hΨs, f, eq_add_of_add_neg_eq h⟩
 
 /-- **The second cohomology of a loop algebra is spanned by the residue class.** Let `L` be a
-finite-dimensional Lie algebra with nondegenerate Killing form over a field of characteristic
-zero, and `Ψ` an invariant symmetric form on `L` spanning the invariant forms. Then the 2-cocycles
-with trivial coefficients on `loopAlgebra K ℤ L` are exactly the sums of a multiple of the residue
-cocycle of `Ψ` and a coboundary. -/
-theorem twoCocycle_eq_span_sup_range_d₁₂ {Ψ : LinearMap.BilinForm K L} (hΨ : Ψ.lieInvariant L)
-    (hΨs : Ψ.IsSymm)
+Lie algebra with nondegenerate Killing form over a field of characteristic zero, which makes it
+finite-dimensional, and `Ψ` a symmetric form on `L` spanning the invariant forms, which makes `Ψ`
+invariant. Then the 2-cocycles with trivial coefficients on `loopAlgebra K ℤ L` are exactly the
+sums of a multiple of the residue cocycle of `Ψ` and a coboundary. -/
+theorem twoCocycle_eq_span_sup_range_d₁₂ {Ψ : LinearMap.BilinForm K L} (hΨs : Ψ.IsSymm)
     (hspan : ∀ Φ : LinearMap.BilinForm K L, Φ.lieInvariant L → ∃ t : K, Φ = t • Ψ) :
     twoCocycle K (loopAlgebra K ℤ L) (TrivialLieModule K (loopAlgebra K ℤ L) K) =
       (K ∙ twoCochainOfBilinear K ℤ L Ψ hΨs) ⊔ LinearMap.range (d₁₂ K _ _) := by
+  -- `Ψ` is invariant, since the Killing form is a multiple of it.
+  have hΨ : Ψ.lieInvariant L := by
+    obtain ⟨t, ht⟩ := hspan _ (_root_.LieModule.traceForm_lieInvariant K L L)
+    by_cases h0 : t = 0
+    · -- the Killing form vanishes, so it is nondegenerate only on the trivial algebra
+      have : Subsingleton L := by
+        refine subsingleton_of_forall_eq 0 fun x ↦ ?_
+        refine (LieAlgebra.IsKilling.killingForm_nondegenerate K L).1 x fun y ↦ ?_
+        -- `killingForm K L` is an abbreviation for the trace form `traceForm K L L` of the adjoint
+        -- representation, so the goal is that trace form applied to `x` and `y`.
+        change LieModule.traceForm K L L x y = 0
+        rw [ht, h0]
+        simp
+      intro x y z
+      rw [Subsingleton.elim ⁅x, y⁆ 0, Subsingleton.elim y 0]
+      simp
+    · have : Ψ = t⁻¹ • LieModule.traceForm K L L := by
+        rw [ht, smul_smul, inv_mul_cancel₀ h0, one_smul]
+      rw [this]
+      intro x y z
+      simp only [LinearMap.smul_apply, smul_eq_mul]
+      rw [LieModule.traceForm_lieInvariant K L L x y z]
+      ring
   refine le_antisymm (fun c hc ↦ ?_) (sup_le ?_ range_d₁₂_le_twoCocycle)
   · obtain ⟨Φ, hΦ, hΦs, f, hcf⟩ := exists_eq_twoCochainOfBilinear_add_d₁₂ ⟨c, hc⟩
     obtain ⟨t, rfl⟩ := hspan Φ hΦ
@@ -506,7 +529,8 @@ theorem twoCocycle_eq_span_killingForm_sup_range_d₁₂ [IsAlgClosed K]
       (K ∙ twoCochainOfBilinear K ℤ L (killingForm K L)
         (LinearMap.BilinForm.isSymm_iff.mpr (_root_.LieModule.traceForm_isSymm K L L))) ⊔
         LinearMap.range (d₁₂ K _ _) :=
-  twoCocycle_eq_span_sup_range_d₁₂ (_root_.LieModule.traceForm_lieInvariant K L L) _
+  have := TauCeti.finite_of_isKilling (R := K) (L := L)
+  twoCocycle_eq_span_sup_range_d₁₂ _
     (fun _ hΦ => TauCeti.LieAlgebra.exists_eq_smul_killingForm hΦ)
 
 end SecondCohomology

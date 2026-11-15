@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Lp.Diagonal.Basic
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.MinMax
+import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Compact
 
 /-!
 # Approximation numbers of infinite diagonal operators
@@ -55,7 +56,6 @@ theorem singularValue_diagonalCLM (d : ℓ^∞(ℕ, 𝕜))
       exact apply_eq_zero_of_mem_span_single (fun j : Fin (n + 1) ↦ (j : ℕ)) hx
         (by
           rintro ⟨j, hj⟩
-          have hjlt := j.isLt
           simp only at hj
           omega)
     exact_mod_cast (diagonalCLM (p := p) d).le_singularValue_of_linearIndependent hv (fun x hx ↦ by
@@ -68,13 +68,13 @@ theorem singularValue_diagonalCLM (d : ℓ^∞(ℕ, 𝕜))
               mul_le_mul_of_nonneg_right (hd hi) (norm_nonneg (x i))
           · simp [hsupp x hx i hi])
 
-/-- The approximation numbers of a diagonal operator tend to zero when its decreasing
-coefficient magnitudes do. -/
+/-- The approximation numbers of a diagonal operator tend to zero when its coefficient
+magnitudes do. -/
 theorem tendsto_singularValue_diagonalCLM (d : ℓ^∞(ℕ, 𝕜))
-    (hd : Antitone fun i ↦ ‖d i‖) (h0 : Tendsto (fun i ↦ ‖d i‖) atTop (𝓝 0)) :
+    (h0 : Tendsto (fun i ↦ ‖d i‖) atTop (𝓝 0)) :
     Tendsto (fun n ↦ (diagonalCLM (p := p) d).singularValue n) atTop (𝓝 0) := by
-  simpa only [singularValue_diagonalCLM d hd, ← NNReal.tendsto_coe, NNReal.coe_zero,
-    coe_nnnorm] using h0
+  exact ContinuousLinearMap.tendsto_singularValue_nhds_zero_iff.2
+    ⟨_, rank_diagonalTruncation_range_le d, tendsto_diagonalTruncation_range d h0⟩
 
 /-- For decreasing diagonal magnitudes, retaining the first `n` coordinates attains the
 approximation number at index `n`. -/

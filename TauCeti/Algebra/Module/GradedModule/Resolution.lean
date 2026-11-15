@@ -82,7 +82,7 @@ universe uk uA uM w
 
 variable {k : Type uk} {A : Type uA} [CommRing k] [Ring A] [Algebra k A]
 variable (𝒜 : ℤ → Submodule k A) [GradedAlgebra 𝒜]
-variable {M : Type uM} [AddCommGroup M] [Module k M] [Module A M] (G : InternalGrading k M)
+variable {M : Type uM} [AddCommGroup M] [Module k M] [Module A M] (G : InternalGrading k M ℤ)
 
 /-- A **graded projective resolution** of the graded `𝒜`-module `(M, G)`: projective graded
 `𝒜`-modules `X n`, degree-zero homogeneous `𝒜`-linear differentials `d n : X (n + 1) ⟶ X n` and
@@ -96,7 +96,7 @@ structure GradedProjectiveResolution where
   [moduleBase (n : ℕ) : Module k (X n)]
   [isScalarTower (n : ℕ) : IsScalarTower k A (X n)]
   /-- The internal grading of the term in homological degree `n`. -/
-  grading (n : ℕ) : InternalGrading k (X n)
+  grading (n : ℕ) : InternalGrading k (X n) ℤ
   [gradedSMul (n : ℕ) : SetLike.GradedSMul 𝒜 (grading n).piece]
   /-- Every term is a projective `𝒜`-module. -/
   projective (n : ℕ) : Module.Projective A (X n)
@@ -183,7 +183,7 @@ variable {𝒜}
 variable {ι : Type ui} {N : ι → Type uN}
   [∀ i, AddCommGroup (N i)] [∀ i, Module k (N i)] [∀ i, Module A (N i)]
   [∀ i, IsScalarTower k A (N i)]
-  (G : ∀ i, InternalGrading k (N i)) [∀ i, SetLike.GradedSMul 𝒜 (G i).piece]
+  (G : ∀ i, InternalGrading k (N i) ℤ) [∀ i, SetLike.GradedSMul 𝒜 (G i).piece]
   (r : ∀ i, GradedProjectiveResolution.{uk, uA, uN, uX} 𝒜 (G i))
 
 /-- The componentwise direct sum of a family of graded projective resolutions. Its terms,
@@ -209,8 +209,8 @@ noncomputable abbrev directSum :
       rw [DirectSum.lmap_apply]
       simpa using (r i).isHomogeneous_π.map_mem (hx i)
   surjective_π := (DirectSum.lmap_surjective _).2 fun i ↦ (r i).surjective_π
-  exact_d_π := Function.Exact.directSum fun i ↦ (r i).exact_d_π
-  exact_d_d n := Function.Exact.directSum fun i ↦ (r i).exact_d_d n
+  exact_d_π := DirectSum.exact_lmap_iff.mpr fun i ↦ (r i).exact_d_π
+  exact_d_d n := DirectSum.exact_lmap_iff.mpr fun i ↦ (r i).exact_d_d n
 
 omit [GradedAlgebra 𝒜] [∀ i, IsScalarTower k A (N i)]
   [∀ i, SetLike.GradedSMul 𝒜 (G i).piece] in

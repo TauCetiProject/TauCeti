@@ -44,7 +44,7 @@ relators rather than about the geometry behind them. Accordingly no statement be
 system: `TauCeti.serreH`, `TauCeti.serreE` and `TauCeti.serreF` are named after the free generators
 `Hᵢ`, `Eᵢ`, `Fᵢ` they are the images of, and reading them as a coroot and a pair of simple root
 vectors of a split semisimple Lie algebra needs the identification of the presented algebra with
-one, which is not proved here (see the Roadmap section below).
+one, which is not proved here (see the Applications section below).
 
 ## Main definitions
 
@@ -81,18 +81,15 @@ one, which is not proved here (see the Roadmap section below).
 * `TauCeti.lieSpan_serreE_union_serreF_eq_top`: the raising and lowering generators alone generate
   the presented algebra.
 
-## Roadmap
+## Applications
 
-This is a prerequisite for the Chevalley--Demazure construction, Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`, which builds the split reductive group scheme over `ℤ`
-of a pinned root datum from a Chevalley basis and the Kostant `ℤ`-form of the enveloping algebra of
-the corresponding split semisimple Lie algebra. The Serre presentation of the pinned Cartan matrix
-is the explicit carrier of that Lie algebra, and the generators named here are the ones a Chevalley
-basis of it starts from. Consumed in turn by milestone L0 of
-`TauCetiRoadmap/CFSGStatement/README.md`. The presentation theorem identifying the presented algebra
-with a concrete split semisimple Lie algebra is a separate target, Layer 7 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`; it consumes `TauCeti.serreLift`
-to build its comparison map, and is not begun here.
+The Chevalley--Demazure construction builds the split reductive group scheme over `ℤ` of a pinned
+root datum from a Chevalley basis and the Kostant `ℤ`-form of the enveloping algebra of the
+corresponding split semisimple Lie algebra. The Serre presentation of the pinned Cartan matrix is
+the explicit carrier of that Lie algebra, and the generators named here are the ones a Chevalley
+basis of it starts from. The presentation theorem identifying the presented algebra with a concrete
+split semisimple Lie algebra uses `TauCeti.serreLift` to build its comparison map, and is not
+proved here.
 
 ## References
 
@@ -652,9 +649,10 @@ theorem linearIndependent_serreH (h : IsSerreSystem R CM H E F)
 /-- Two homomorphisms out of `Matrix.ToLieAlgebra R CM` agreeing on the generators are equal. -/
 @[ext]
 theorem serre_hom_ext {g₁ g₂ : Matrix.ToLieAlgebra R CM →ₗ⁅R⁆ L}
-    (hH : ∀ i, g₁ (serreH R CM i) = g₂ (serreH R CM i))
     (hE : ∀ i, g₁ (serreE R CM i) = g₂ (serreE R CM i))
     (hF : ∀ i, g₁ (serreF R CM i) = g₂ (serreF R CM i)) : g₁ = g₂ := by
+  have hH : ∀ i, g₁ (serreH R CM i) = g₂ (serreH R CM i) := fun i => by
+    rw [← lie_serreE_serreF_self, LieHom.map_lie, LieHom.map_lie, hE, hF]
   have hcomp : g₁.comp (serreMk R CM) = g₂.comp (serreMk R CM) := by
     refine FreeLieAlgebra.hom_ext fun g => ?_
     cases g with
@@ -667,19 +665,17 @@ theorem serre_hom_ext {g₁ g₂ : Matrix.ToLieAlgebra R CM →ₗ⁅R⁆ L}
 /-- Two equivalences out of `Matrix.ToLieAlgebra R CM` agreeing on the generators are equal. -/
 @[ext]
 theorem serre_equiv_ext {g₁ g₂ : Matrix.ToLieAlgebra R CM ≃ₗ⁅R⁆ L}
-    (hH : ∀ i, g₁ (serreH R CM i) = g₂ (serreH R CM i))
     (hE : ∀ i, g₁ (serreE R CM i) = g₂ (serreE R CM i))
     (hF : ∀ i, g₁ (serreF R CM i) = g₂ (serreF R CM i)) : g₁ = g₂ :=
   LieEquiv.ext fun x =>
-    DFunLike.congr_fun (serre_hom_ext (g₁ := g₁.toLieHom) (g₂ := g₂.toLieHom) hH hE hF) x
+    DFunLike.congr_fun (serre_hom_ext (g₁ := g₁.toLieHom) (g₂ := g₂.toLieHom) hE hF) x
 
 /-- `TauCeti.serreLift` is the unique homomorphism sending the generators to a given Serre
 system. -/
 theorem eq_serreLift {h : IsSerreSystem R CM H E F} {g : Matrix.ToLieAlgebra R CM →ₗ⁅R⁆ L}
-    (hH : ∀ i, g (serreH R CM i) = H i) (hE : ∀ i, g (serreE R CM i) = E i)
-    (hF : ∀ i, g (serreF R CM i) = F i) : g = serreLift h :=
-  serre_hom_ext (fun i => by rw [hH, serreLift_serreH]) (fun i => by rw [hE, serreLift_serreE])
-    fun i => by rw [hF, serreLift_serreF]
+    (hE : ∀ i, g (serreE R CM i) = E i) (hF : ∀ i, g (serreF R CM i) = F i) :
+    g = serreLift h :=
+  serre_hom_ext (fun i => by rw [hE, serreLift_serreE]) fun i => by rw [hF, serreLift_serreF]
 
 /-- A Serre system whose raising and lowering families generate the ambient Lie algebra presents
 it: the homomorphism it determines is surjective. -/
@@ -698,7 +694,7 @@ identity. -/
 @[simp]
 theorem serreLift_eq_id :
     serreLift (isSerreSystem_serre R CM) = LieHom.id :=
-  serre_hom_ext (fun i => by simp) (fun i => by simp) fun i => by simp
+  serre_hom_ext (fun i => by simp) fun i => by simp
 
 /-- The generators `TauCeti.serreH`, `TauCeti.serreE` and `TauCeti.serreF` generate
 `Matrix.ToLieAlgebra R CM` as a Lie subalgebra. -/

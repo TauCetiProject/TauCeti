@@ -17,7 +17,7 @@ space is null for every normalization of additive Haar measure.
 
 public section
 
-namespace MeasureTheory
+namespace MeasureTheory.Measure
 
 /-- A set of smaller Hausdorff dimension than its ambient real normed space is null for every
 additive Haar measure. -/
@@ -28,9 +28,7 @@ theorem addHaar_eq_zero_of_dimH_lt_finrank {E : Type*} [NormedAddCommGroup E]
   -- the hypothesis forces `finrank ℝ E > 0`, so `E` is finite-dimensional
   have : FiniteDimensional ℝ E :=
     Module.finite_of_finrank_pos (Nat.cast_pos.mp (zero_le.trans_lt hs))
-  have hμ : μ ≪ μH[(Module.finrank ℝ E : ℝ)] :=
-    Measure.absolutelyContinuous_isAddHaarMeasure μ _
-  apply measure_zero_of_dimH_lt (d := (Module.finrank ℝ E : NNReal)) hμ
-  simpa only [ENNReal.coe_natCast] using hs
+  have hμ : μ ≪ μH[(Module.finrank ℝ E : ℝ)] := absolutelyContinuous_isAddHaarMeasure μ _
+  exact measure_zero_of_dimH_lt (d := (Module.finrank ℝ E : NNReal)) hμ (mod_cast hs)
 
-end MeasureTheory
+end MeasureTheory.Measure

@@ -46,8 +46,10 @@ multiplication. Composition of the action is multiplication of gauges
 (`TauCeti.Vortex.gaugeTransform_mul`), so `G_(k+1)` acts on `A_m^k`; the action is bundled as a
 `MulAction` instance, with the order condition supplied as `Fact (1 < k)`.
 
-No topology or Banach Lie group charts on `G_s` are constructed here, and neither continuity nor
-smoothness of the action is asserted.
+The file `TauCeti.Analysis.PDE.Vortex.FramedGauge.Exponential` shows that the exponential
+`f ↦ exp (i f)` maps continuous real `H^s` phases injectively into `G_s`, and that its image
+contains an `H^s` ball around the identity. No topology or Banach Lie group charts on `G_s` are
+constructed here, and neither continuity nor smoothness of the action is asserted.
 
 ## Main definitions
 
@@ -63,8 +65,8 @@ smoothness of the action is asserted.
   infinity.
 * `TauCeti.Vortex.mem_sobolevGaugeGroup_inf_framedGaugeGroup`: the smooth subgroup of `G_s` is
   `G_s ⊓ framedGaugeGroup`.
-* `TauCeti.Vortex.mem_sobolevGaugeGroup_of_hasCompactSupport`,
-  `TauCeti.Vortex.exp_mem_sobolevGaugeGroup`: compactly supported smooth gauges lie in `G_s`.
+* `TauCeti.Vortex.mem_sobolevGaugeGroup_of_hasCompactSupport`: compactly supported smooth gauges
+  lie in `G_s`.
 * `TauCeti.Vortex.contDiff_of_mem_sobolevGaugeGroup`: elements of `G_s` are `C^k` for
   `s > k + 1`.
 * `TauCeti.Vortex.differentiable_of_mem_sobolevGaugeGroup`: elements of `G_s` are differentiable
@@ -211,14 +213,6 @@ theorem mem_sobolevGaugeGroup_of_hasCompactSupport {s : ℝ} (hs : 1 < s) {u : �
       (hc.comp_left (g := im) zero_im) s using 1
     ext z
     simp
-
-/-- A smooth compactly supported phase `f` gives the gauge `exp (i f)` in every `G_s`. -/
-theorem exp_mem_sobolevGaugeGroup {s : ℝ} (hs : 1 < s) {f : ℂ → ℝ} (hf : ContDiff ℝ ∞ f)
-    (hc : HasCompactSupport f) : (fun w ↦ Circle.exp (f w)) ∈ sobolevGaugeGroup hs := by
-  refine mem_sobolevGaugeGroup_of_hasCompactSupport hs ?_ ?_
-  · exact ((mem_framedGaugeGroup _).1 (exp_mem_framedGaugeGroup hf hc.is_zero_at_infty)).1
-  · simpa only [Function.comp_def, Circle.coe_exp] using
-      hc.comp_left (g := fun t : ℝ ↦ Complex.exp (t * I) - 1) (by simp)
 
 /-- **Sobolev gauges are `C^k`.** For `s > k + 1`, every element of `G_s` is of class `C^k`, by
 the Sobolev embedding of `H^s(ℂ)` into `C^k`. In particular the elements of `G_(s+1)`, `s > 1`, are

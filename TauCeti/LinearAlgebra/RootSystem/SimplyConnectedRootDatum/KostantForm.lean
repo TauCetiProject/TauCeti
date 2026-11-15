@@ -102,15 +102,14 @@ not claimed. This file is the numbered input those later steps consume.
   Proc. Amer. Math. Soc. **145** (2017), 3233--3247.
 * J. C. Jantzen, *Representations of Algebraic Groups*, II.1.
 
-Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md` asks for the split reductive group scheme
-over `ℤ` to be constructed "via a Chevalley basis and the Kostant `ℤ`-form of the enveloping
-algebra". The concrete Geck matrix carrier is used here because its defining faithful
-representation supplies the module on which the root subgroups will act. The separate
-`TauCeti.serreKostantForm` is the presentation-level simple-generator form used to study the
-symmetries before passing to this concrete carrier. No comparison between those two forms is yet
-proved; such a comparison is required before presentation-level results are transported here, and
-the two forms are not intended to define independent group schemes. The consumer of the assembled
-pinned construction is milestone L0 of `TauCetiRoadmap/CFSGStatement/README.md`.
+Chevalley's construction builds the split reductive group scheme over `ℤ` from a Chevalley basis and
+the Kostant `ℤ`-form of the enveloping algebra; the group scheme itself is not formalised here. The
+concrete Geck matrix carrier is used here because its defining faithful representation supplies the
+module on which the root subgroups will act. The separate `TauCeti.serreKostantForm` is the
+presentation-level simple-generator form used to study the symmetries before passing to this
+concrete carrier. No comparison between those two forms is yet proved; such a comparison is required
+before presentation-level results are transported here, and the two forms are not intended to define
+independent group schemes.
 -/
 
 public section

@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.EnergyForm.Sobolev
 public import TauCeti.Analysis.Sobolev.W1p.Extension
 public import TauCeti.Analysis.Sobolev.W1p.Restriction
 import TauCeti.Analysis.Distribution.TestFunction.Integral
+import TauCeti.Analysis.PDE.DirichletProblem
 
 /-!
 # The energy form under restriction to a smaller domain
@@ -27,6 +28,9 @@ integrability hypotheses on `Ω`.
   extension `v₀ ∈ H¹₀(Ω)`.
 * `TauCeti.PDE.energyFormH1_extendByZeroL`: `a(u₀, v₀) = a(u, v)` for `u, v ∈ H¹₀(U)` with zero
   extensions `u₀, v₀ ∈ H¹₀(Ω)`.
+* `TauCeti.PDE.energyFormH1_extendByZeroL_left`: `a(u₀, w) = a(u, w|_U)` for `u ∈ H¹₀(U)` with
+  zero extension `u₀ ∈ H¹₀(Ω)` and any `w ∈ H¹(Ω)`.
+* `TauCeti.PDE.isCoercive_energyFormH1L0_of_domain_le`: coercivity passes to smaller domains.
 * `TauCeti.PDE.energyFormH1_restrictL_nonpos`: weak subsolutions restrict to weak subsolutions.
 * `TauCeti.PDE.energyFormH1_restrictL_nonneg`: weak supersolutions restrict to weak
   supersolutions.
@@ -53,6 +57,9 @@ integrability hypotheses on `Ω`.
   `v ∈ H¹₀(B)`, with no integrability of `f` on all of `Ω`.
 * `TauCeti.PDE.inner_toLp_gradient_ofTestFunctionₗ`: the test-function case,
   `⟪G - c, ∇φ⟫_{L²(B)} = ∫_B ⟨G, ∇φ⟩`.
+* `TauCeti.PDE.forall_energyFormH1_restrictL_top_eq_setIntegral`: if `v ∈ H¹(ℝⁿ)` solves `Δv = G`
+  weakly, tested against compactly supported smooth functions, and `G = -F` on an open `Ω` with
+  `F ∈ L²(Ω)`, then `v|_Ω` solves `-Δv = F` weakly on `Ω`, tested against `H¹₀(Ω)`.
 -/
 
 public section
@@ -68,6 +75,27 @@ namespace PDE
 variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
   {Omega U : Opens (EuclideanSpace ℝ ι)}
 
+/-- The jet field of the zero extension of `v ∈ H¹₀(U)` to `Ω ⊇ U` is the zero extension of the
+jet field of `v`. -/
+private theorem jetField_extendByZeroL_ae (hU : U ≤ Omega) (v : W1p0 mu U 2) :
+    jetField (W1p0.extendByZeroL hU v : W1p mu Omega 2) =ᵐ[mu.restrict Omega]
+      (U : Set (EuclideanSpace ℝ ι)).indicator (jetField (v : W1p mu U 2)) := by
+  have hUm := U.isOpen.measurableSet
+  have hUO : (U : Set (EuclideanSpace ℝ ι)) ⊆ Omega := SetLike.coe_subset_coe.mpr hU
+  filter_upwards [coeFn_extendByZeroLpₗᵢ ℝ hUm hUO (W1p.value (v : W1p mu U 2)),
+    coeFn_extendByZeroLpₗᵢ ℝ hUm hUO (W1p.gradient (v : W1p mu U 2))] with x hx hy
+  rw [jetField_apply, W1p0.value_extendByZeroL, W1p0.gradient_extendByZeroL, hx, hy]
+  by_cases hxU : x ∈ (U : Set (EuclideanSpace ℝ ι))
+  · rw [indicator_of_mem hxU, indicator_of_mem hxU, indicator_of_mem hxU, jetField_apply]
+  · rw [indicator_of_notMem hxU, indicator_of_notMem hxU, indicator_of_notMem hxU]
+    rfl
+
+/-- On `U ⊆ Ω`, the jet field of the restriction `w|_U` of `w ∈ H¹(Ω)` is that of `w`. -/
+private theorem jetField_restrictL_ae (hU : U ≤ Omega) (w : W1p mu Omega 2) :
+    jetField (W1p.restrictL hU w) =ᵐ[mu.restrict U] jetField w := by
+  filter_upwards [W1p.value_restrictL_ae hU w, W1p.gradient_restrictL_ae hU w] with x hx hy
+  rw [jetField_apply, jetField_apply, hx, hy]
+
 /-- **The energy form of a restriction.** For open sets `U ⊆ Ω`, `u ∈ H¹(Ω)` and `v ∈ H¹₀(U)`,
 the energy form on `U` of the restriction `u|_U` against `v` equals the energy form on `Ω` of `u`
 against the zero extension of `v`. -/
@@ -78,20 +106,8 @@ theorem energyFormH1_restrictL (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
       energyFormH1 a b c u (W1p0.extendByZeroL hU v : W1p mu Omega 2) := by
   have hUm := U.isOpen.measurableSet
   have hUO : (U : Set (EuclideanSpace ℝ ι)) ⊆ Omega := SetLike.coe_subset_coe.mpr hU
-  -- The jet field of the zero extension is the zero extension of the jet field.
-  have hjet : jetField (W1p0.extendByZeroL hU v : W1p mu Omega 2) =ᵐ[mu.restrict Omega]
-      (U : Set (EuclideanSpace ℝ ι)).indicator (jetField (v : W1p mu U 2)) := by
-    filter_upwards [coeFn_extendByZeroLpₗᵢ ℝ hUm hUO (W1p.value (v : W1p mu U 2)),
-      coeFn_extendByZeroLpₗᵢ ℝ hUm hUO (W1p.gradient (v : W1p mu U 2))] with x hx hy
-    rw [jetField_apply, W1p0.value_extendByZeroL, W1p0.gradient_extendByZeroL, hx, hy]
-    by_cases hxU : x ∈ (U : Set (EuclideanSpace ℝ ι))
-    · rw [indicator_of_mem hxU, indicator_of_mem hxU, indicator_of_mem hxU, jetField_apply]
-    · rw [indicator_of_notMem hxU, indicator_of_notMem hxU, indicator_of_notMem hxU]
-      rfl
-  -- On `U`, the jet field of the restriction is that of `u`.
-  have hjetU : jetField (W1p.restrictL hU u) =ᵐ[mu.restrict U] jetField u := by
-    filter_upwards [W1p.value_restrictL_ae hU u, W1p.gradient_restrictL_ae hU u] with x hx hy
-    rw [jetField_apply, jetField_apply, hx, hy]
+  have hjet := jetField_extendByZeroL_ae (mu := mu) hU v
+  have hjetU := jetField_restrictL_ae hU u
   rw [energyFormH1_def, energyFormH1_def]
   calc ∫ x in U, energyIntegrand (a x) (b x) (c x) (jetField (W1p.restrictL hU u) x)
           (jetField (v : W1p mu U 2) x) ∂mu
@@ -120,6 +136,50 @@ theorem energyFormH1_extendByZeroL (a : EuclideanSpace ℝ ι → Matrix ι ι �
   have h := energyFormH1_restrictL a b c hU (W1p0.extendByZeroL hU u : W1p mu Omega 2) v
   rw [W1p0.restrictL_extendByZeroL] at h
   exact h.symm
+
+/-- **The energy form of a zero extension against an arbitrary function.** For open sets
+`U ⊆ Ω`, `u ∈ H¹₀(U)` and `w ∈ H¹(Ω)`, the energy form on `Ω` of the zero extension of `u`
+against `w` equals the energy form on `U` of `u` against the restriction `w|_U`: the jet of the
+extension vanishes off `U`, and the energy density is linear in it. -/
+theorem energyFormH1_extendByZeroL_left (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
+    (b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) (c : EuclideanSpace ℝ ι → ℝ) (hU : U ≤ Omega)
+    (u : W1p0 mu U 2) (w : W1p mu Omega 2) :
+    energyFormH1 a b c (W1p0.extendByZeroL hU u : W1p mu Omega 2) w =
+      energyFormH1 a b c (u : W1p mu U 2) (W1p.restrictL hU w) := by
+  have hUm := U.isOpen.measurableSet
+  have hUO : (U : Set (EuclideanSpace ℝ ι)) ⊆ Omega := SetLike.coe_subset_coe.mpr hU
+  have hjet := jetField_extendByZeroL_ae (mu := mu) hU u
+  have hjetU := jetField_restrictL_ae hU w
+  rw [energyFormH1_def, energyFormH1_def]
+  calc ∫ x in Omega, energyIntegrand (a x) (b x) (c x)
+          (jetField (W1p0.extendByZeroL hU u : W1p mu Omega 2) x) (jetField w x) ∂mu
+      = ∫ x in Omega, (U : Set (EuclideanSpace ℝ ι)).indicator (fun x => energyIntegrand (a x)
+          (b x) (c x) (jetField (u : W1p mu U 2) x) (jetField w x)) x ∂mu := by
+        refine integral_congr_ae ?_
+        filter_upwards [hjet] with x hx
+        by_cases hxU : x ∈ (U : Set (EuclideanSpace ℝ ι))
+        · rw [hx, indicator_of_mem hxU, indicator_of_mem hxU]
+        · rw [hx, indicator_of_notMem hxU, indicator_of_notMem hxU, map_zero, zero_apply]
+    _ = ∫ x in U, energyIntegrand (a x) (b x) (c x) (jetField (u : W1p mu U 2) x)
+          (jetField w x) ∂mu := by
+        rw [integral_indicator hUm, Measure.restrict_restrict hUm, inter_eq_left.2 hUO]
+    _ = ∫ x in U, energyIntegrand (a x) (b x) (c x) (jetField (u : W1p mu U 2) x)
+          (jetField (W1p.restrictL hU w) x) ∂mu :=
+        integral_congr_ae (by filter_upwards [hjetU] with x hx; rw [hx])
+
+/-- **Coercivity passes to smaller domains.** Zero extension preserves both the Sobolev norm
+and the energy, so the same coercivity constant works on every smaller open set. -/
+theorem isCoercive_energyFormH1L0_of_domain_le {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ}
+    (hU : U ≤ Omega)
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) :
+    IsCoercive (energyFormH1L0
+      (hcoeff.mono_measure (Measure.restrict_mono (SetLike.coe_subset_coe.mpr hU) le_rfl))) := by
+  obtain ⟨C, hC, hbound⟩ := hcoercive
+  refine ⟨C, hC, fun u ↦ ?_⟩
+  simpa only [W1p0.norm_extendByZeroL, energyFormH1L0_apply, energyFormH1_extendByZeroL]
+    using hbound (W1p0.extendByZeroL hU u)
 
 /-- **Weak subsolutions restrict to weak subsolutions.** If `u ∈ H¹(Ω)` satisfies `a(u, v) ≤ 0`
 for every nonnegative `v ∈ H¹₀(Ω)`, then for every open `U ⊆ Ω` its restriction `u|_U` satisfies
@@ -280,7 +340,7 @@ theorem energyFormH1_restrictL_eq_neg_setIntegral_inner {a : EuclideanSpace ℝ 
 section Transfer
 
 open InnerProductSpace
-open scoped Distributions Gradient InnerProductSpace
+open scoped ContDiff Distributions Gradient InnerProductSpace
 
 /-- Subtracting a constant `c` from a square-integrable field `G` on `B` does not change its
 pairing with gradients of test functions on `B`. -/
@@ -410,6 +470,50 @@ theorem forall_energyFormH1_restrictL_eq_setIntegral {B : Opens (EuclideanSpace 
     ← setIntegral_eq_integral_of_forall_compl_eq_zero hsupp]
   exact integral_congr_ae ((W1p.value_ofTestFunctionₗ_ae (p := 2) φ).mono fun x hx => by
     simp only [hx])
+
+/-- **Global weak solutions of Poisson's equation restrict to weak solutions.** If `v ∈ H¹(ℝⁿ)`
+solves `Δv = G` weakly, tested against compactly supported smooth functions, and `G` agrees on an
+open set `Ω` with `-F` for some `F ∈ L²(Ω)`, then the restriction of `v` to `Ω` is a weak solution
+of `-Δv = F` on `Ω`, tested against `H¹₀(Ω)`. -/
+theorem forall_energyFormH1_restrictL_top_eq_setIntegral [DecidableEq ι] {v : W1p mu ⊤ 2}
+    {G F : EuclideanSpace ℝ ι → ℝ} (hF : MemLp F 2 (mu.restrict Omega))
+    (hGF : G =ᵐ[mu.restrict Omega] fun x => -F x)
+    (hv : ∀ φ : EuclideanSpace ℝ ι → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ →
+      (∫ x, ⟪W1p.gradient v x, ∇ φ x⟫_ℝ ∂mu) + ∫ x, G x * φ x ∂mu = 0) :
+    ∀ w : W1p0 mu Omega 2, energyFormH1 (fun _ => 1) 0 0 (W1p.restrictL le_top v)
+      (w : W1p mu Omega 2) = ∫ x in Omega, F x * W1p.value (w : W1p mu Omega 2) x ∂mu := by
+  have hcoeff := memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega) 1
+  intro w
+  refine ((forall_energyFormH1_eq_setIntegral_iff_forall_testFunction hcoeff (hF.toLp F)
+    (W1p.restrictL le_top v)).2 (fun φ => ?_) w).trans (integral_congr_ae ?_)
+  · -- Both sides vanish off the support of `φ`, which lies in `Ω`.
+    have hglob := hv φ φ.contDiff φ.hasCompactSupport
+    have e2 : ∫ x in Omega, G x * φ x ∂mu = ∫ x, G x * φ x ∂mu :=
+      setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by
+        simp [φ.zero_on_compl hx]
+    rw [← φ.setIntegral_inner_gradient_eq_integral_inner_gradient (W1p.gradient v)
+      φ.tsupport_subset, ← e2] at hglob
+    rw [energyFormH1_zero_zero_eq_setIntegral]
+    have h1 : ∫ x in Omega, (matrixBilinearForm ((fun _ => (1 : Matrix ι ι ℝ)) x))
+        (W1p.gradient (W1p.ofTestFunctionₗ mu Omega 2 φ) x)
+        (W1p.gradient (W1p.restrictL (show Omega ≤ ⊤ from le_top) v) x) ∂mu =
+        ∫ x in Omega, ⟪W1p.gradient v x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu := by
+      refine integral_congr_ae ?_
+      filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) 2 φ,
+        W1p.gradient_restrictL_ae (show Omega ≤ ⊤ from le_top) v] with x hx hx'
+      rw [W1p.gradient_ofTestFunctionₗ, hx, hx', matrixBilinearForm_one_apply,
+        real_inner_comm]
+      exact ((EuclideanSpace.inner_eq_star_dotProduct _ _).trans (dotProduct_comm _ _)).symm
+    have h2 : ∫ x in Omega, G x * φ x ∂mu = -∫ x in Omega, (hF.toLp F) x * φ x ∂mu := by
+      rw [← integral_neg]
+      refine integral_congr_ae ?_
+      filter_upwards [hGF, hF.coeFn_toLp] with x hx hx'
+      rw [hx, hx']
+      ring
+    rw [h1]
+    linarith
+  · filter_upwards [hF.coeFn_toLp] with x hx
+    rw [hx]
 
 end Transfer
 

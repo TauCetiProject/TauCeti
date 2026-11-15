@@ -117,9 +117,9 @@ theorem windingNumber_triangleCurve_eq_one {c p q z : ℂ} (hdet : 0 < triangleD
   obtain ⟨h₁, h₂, h₃⟩ := interior_edge_heights hdet hz
   have havoid : z ∉ segment ℝ c p ∪ segment ℝ p q ∪ segment ℝ q c := by
     rintro ((h | h) | h)
-    exacts [TauCeti.notMem_segment_of_im_div_sub_pos h₁ h,
-      TauCeti.notMem_segment_of_im_div_sub_pos h₂ h,
-      TauCeti.notMem_segment_of_im_div_sub_pos h₃ h]
+    exacts [TauCeti.notMem_segment_of_im_div_sub_ne_zero h₁.ne' h,
+      TauCeti.notMem_segment_of_im_div_sub_ne_zero h₂.ne' h,
+      TauCeti.notMem_segment_of_im_div_sub_ne_zero h₃.ne' h]
   obtain ⟨n, hn⟩ := AbsolutelyContinuousOnInterval.exists_int_windingNumber
     (absolutelyContinuousOnInterval_triangleCurve c p q)
     (by simp) (by simpa only [uIcc_of_le (by norm_num : (0 : ℝ) ≤ 3), image_triangleCurve]
@@ -168,9 +168,9 @@ theorem windingNumber_triangleCurve_eq_neg_one {c p q z : ℂ} (hdet : triangleD
   obtain ⟨h₁, h₂, h₃⟩ := interior_edge_heights hdet' hz'
   have havoid' : z ∉ segment ℝ c q ∪ segment ℝ q p ∪ segment ℝ p c := by
     rintro ((h | h) | h)
-    exacts [TauCeti.notMem_segment_of_im_div_sub_pos h₁ h,
-      TauCeti.notMem_segment_of_im_div_sub_pos h₂ h,
-      TauCeti.notMem_segment_of_im_div_sub_pos h₃ h]
+    exacts [TauCeti.notMem_segment_of_im_div_sub_ne_zero h₁.ne' h,
+      TauCeti.notMem_segment_of_im_div_sub_ne_zero h₂.ne' h,
+      TauCeti.notMem_segment_of_im_div_sub_ne_zero h₃.ne' h]
   have havoid : z ∉ segment ℝ c p ∪ segment ℝ p q ∪ segment ℝ q c := by
     rwa [← triangle_edges_swap]
   rw [windingNumber_triangleCurve_swap havoid, windingNumber_triangleCurve_eq_one hdet' hz']

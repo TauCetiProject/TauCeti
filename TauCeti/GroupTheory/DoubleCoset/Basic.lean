@@ -25,6 +25,9 @@ multiplication by `H` and with the quotient `G ⧸ K`.
 * `DoubleCoset.mul_mem_doubleCoset_iff`: membership in `HaK` is invariant under left
   multiplication by `H`.
 * `DoubleCoset.mem_doubleCoset_of_quotient_eq`: recognising `HxK` from an equation in `G ⧸ K`.
+* `DoubleCoset.doubleCoset_mul_subset_mul_doubleCoset`: the double coset `H (r w) K` of a product
+  lies in the product `(H r L) (L w K)` of double cosets, for arbitrary sets `H`, `K` and any set
+  `L` containing `1`, in any monoid.
 
 The left-coset decomposition `DoubleCoset.doubleCoset_eq_iUnion_leftCosets` is vendored from
 mathlib4 PR [#41253](https://github.com/leanprover-community/mathlib4/pull/41253)
@@ -81,5 +84,17 @@ lemma mem_doubleCoset_of_quotient_eq {H : Set G} {K : Subgroup G} {w x l : G} (h
     (h : (w : G ⧸ K) = ((l * x : G) : G ⧸ K)) : w ∈ doubleCoset x H K :=
   mem_doubleCoset.mpr ⟨l, hl, (l * x)⁻¹ * w, QuotientGroup.eq.mp h.symm,
     (mul_inv_cancel_left _ _).symm⟩
+
+/-- The double coset of a product occurs in the product of the corresponding double cosets, along
+any set `C` containing `1`. -/
+theorem doubleCoset_mul_subset_mul_doubleCoset {M : Type*} [Monoid M] (B C D : Set M) (hC : 1 ∈ C)
+    (r w : M) :
+    doubleCoset (r * w) B D ⊆ doubleCoset r B C * doubleCoset w C D := by
+  rintro x hx
+  obtain ⟨b₁, hb₁, b₂, hb₂, rfl⟩ := mem_doubleCoset.mp hx
+  refine ⟨b₁ * r, ?_, w * b₂, ?_, ?_⟩
+  · exact mem_doubleCoset.mpr ⟨b₁, hb₁, 1, hC, by simp⟩
+  · exact mem_doubleCoset.mpr ⟨1, hC, b₂, hb₂, by simp⟩
+  · simp only [mul_assoc]
 
 end DoubleCoset

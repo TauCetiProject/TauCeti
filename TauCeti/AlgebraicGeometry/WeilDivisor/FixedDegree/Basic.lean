@@ -244,7 +244,7 @@ lemma coe_pushforward (f : X → Y) (D : EffectiveDivisorOfDegree X d) :
 /-- Pushing forward along the identity function is the identity on fixed-degree divisors. -/
 @[simp]
 lemma pushforward_id (D : EffectiveDivisorOfDegree X d) :
-    D.pushforward (fun x : X => x) = D := by
+    D.pushforward (id : X → X) = D := by
   ext
   rw [coe_pushforward, WeilDivisor.pushforward_id]
   rfl

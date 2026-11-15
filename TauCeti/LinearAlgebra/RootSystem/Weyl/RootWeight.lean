@@ -147,7 +147,7 @@ theorem exists_pos_of_mem_closure_range_cartanMatrix_row [P.IsRootSystem] (b : P
     ∃ k, 0 < χ k := by
   classical
   obtain ⟨n, hn, rfl⟩ :=
-    AddSubsemigroup.exists_nonneg_linearCombination_eq_of_mem_closure_range hχ
+    AddSubsemigroup.exists_nonneg_linearCombination_eq_of_mem_closure_range ℤ hχ
   have hn0 : (n : b.support → ℤ) ≠ 0 := fun h ↦
     b.linearIndependent_cartanMatrix_row.zero_notMem_closure_range <| by
       rwa [Finsupp.coe_eq_zero.1 h, map_zero] at hχ
@@ -175,10 +175,10 @@ private theorem exists_eq_nsmul_cartanMatrix_row_of_neg_reflection [P.IsRootSyst
     ∃ m : ℕ, 0 < m ∧ χ = m • b.cartanMatrix.row k := by
   classical
   obtain ⟨n, hn, rfl⟩ :=
-    AddSubsemigroup.exists_nonneg_linearCombination_eq_of_mem_closure_range hC
+    AddSubsemigroup.exists_nonneg_linearCombination_eq_of_mem_closure_range ℤ hC
   set χ := Finsupp.linearCombination ℤ b.cartanMatrix.row n with hχ
   obtain ⟨n', hn', hn'eq⟩ :=
-    AddSubsemigroup.exists_nonneg_linearCombination_eq_of_mem_closure_range hneg
+    AddSubsemigroup.exists_nonneg_linearCombination_eq_of_mem_closure_range ℤ hneg
   have hlc : Finsupp.linearCombination ℤ b.cartanMatrix.row (n - Finsupp.single k (χ k)) =
       χ - χ k • b.cartanMatrix.row k := by
     rw [map_sub, Finsupp.linearCombination_single]
@@ -217,7 +217,7 @@ private theorem exists_eq_nsmul_pairingIn_of_mem_closure [P.IsRootSystem] (b : P
     ∃ (j : ι) (m : ℕ), 0 < m ∧ χ = m • fun k : b.support ↦ P.pairingIn ℤ j k := by
   classical
   obtain ⟨n, hn, rfl⟩ :=
-    AddSubsemigroup.exists_nonneg_linearCombination_eq_of_mem_closure_range hC
+    AddSubsemigroup.exists_nonneg_linearCombination_eq_of_mem_closure_range ℤ hC
   suffices ∀ (N : ℕ) (n : b.support →₀ ℤ), (∀ j, 0 ≤ n j) → ∑ j, n j = N →
       Q (Finsupp.linearCombination ℤ b.cartanMatrix.row n) →
       Finsupp.linearCombination ℤ b.cartanMatrix.row n ∈
@@ -228,7 +228,7 @@ private theorem exists_eq_nsmul_pairingIn_of_mem_closure [P.IsRootSystem] (b : P
   intro N
   induction N using Nat.strong_induction_on with
   | _ N ih =>
-  intro n hn hN hQ hC
+  intro n _ hN hQ hC
   set χ := Finsupp.linearCombination ℤ b.cartanMatrix.row n
   have hinj := b.linearIndependent_cartanMatrix_row.finsuppLinearCombination_injective
   obtain ⟨k, hk⟩ := b.exists_pos_of_mem_closure_range_cartanMatrix_row hC
@@ -238,7 +238,7 @@ private theorem exists_eq_nsmul_pairingIn_of_mem_closure [P.IsRootSystem] (b : P
   rcases hsign _ (hrefl χ k hQ) with hpos | hneg
   · -- The reflected weight is again positive, of smaller height, and `χ` is its reflection.
     obtain ⟨n', hn', hn'eq⟩ :=
-      AddSubsemigroup.exists_nonneg_linearCombination_eq_of_mem_closure_range hpos
+      AddSubsemigroup.exists_nonneg_linearCombination_eq_of_mem_closure_range ℤ hpos
     rw [← hlc] at hn'eq
     obtain rfl := hinj hn'eq
     have hsum : ∑ j, (n - Finsupp.single k (χ k)) j = N - χ k := by

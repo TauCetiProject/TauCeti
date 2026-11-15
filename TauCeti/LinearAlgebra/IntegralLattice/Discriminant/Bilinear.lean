@@ -42,7 +42,6 @@ The pairing `b_L` is `B(x, y) mod ℤ`; the even-lattice refinement
 
 * V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, §1.1.
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layers 2 and 3.
 -/
 
 public section

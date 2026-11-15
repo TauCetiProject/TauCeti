@@ -300,9 +300,6 @@ theorem JointlyExchangeable.iCondIndepFun_offDiagonalPairs
     MeasurableSpace.comap (fun x => (x p.1, x p.1.swap)) (inferInstanceAs (MeasurableSpace (α × α)))
   have hm' : m' ≤ (MeasurableSpace.pi : MeasurableSpace (ℕ × ℕ → α)) :=
     (Set.measurable_restrict (X := fun _ : ℕ × ℕ => α) H).comap_le
-  have hm (p : V₂) : m p ≤ (MeasurableSpace.pi : MeasurableSpace (ℕ × ℕ → α)) :=
-    ((measurable_pi_apply (X := fun _ : ℕ × ℕ => α) p.1).prodMk
-      (measurable_pi_apply (X := fun _ : ℕ × ℕ => α) p.1.swap)).comap_le
   apply (iCondIndepFun_iff_iCondIndep (mΩ := MeasurableSpace.pi) m' hm'
     (fun _ : V₂ => inferInstance) (fun p : V₂ => fun x : ℕ × ℕ → α => (x p.1, x p.1.swap)) ρ).2
   apply iCondIndep_of_condIndep_compl (mΩ := MeasurableSpace.pi) hm'

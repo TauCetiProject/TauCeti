@@ -236,8 +236,8 @@ private lemma exists_iso_contractTail_contractTail (c : G.Vertex → α)
   have hmark₂ : (G.contractTail hv₁).numMarkings ⟨v₂, hne.symm⟩ ≤ 1 := by
     rw [numMarkings_contractTail, ite_eq_right hatt₁]
     omega
-  have ha₁ := coe_attachment_contractTail hv₂ hv₁ hne hatt₁ hval₁
-  have ha₂ := coe_attachment_contractTail hv₁ hv₂ hne.symm hatt₂ hval₂
+  have ha₁ := coe_attachment_contractTail hv₂ hv₁ hne hval₁
+  have ha₂ := coe_attachment_contractTail hv₁ hv₂ hne.symm hval₂
   refine ⟨_, _,
     .contractTail _ ((G.contractTail hv₁).isRationalTail_iff.mpr ⟨hg₂, hval₂⟩) hmark₂ hc₂,
     .contractTail _ ((G.contractTail hv₂).isRationalTail_iff.mpr ⟨hg₁, hval₁⟩) hmark₁ hc₁,
@@ -292,7 +292,7 @@ private lemma exists_iso_contractTail_contractBridge_of_ne (c : G.Vertex → α)
     fun _ ↦ congrArg c (Iso.coe_coe_ofSubtypeSubtype_vertexEquiv_apply ..)⟩
   · cases e with
     | none =>
-      simpa using (sym2_coe_bridgeNeighbor_contractTail hv₁ hv₂ hne.symm hnb hval₂).symm
+      simpa using (sym2_coe_bridgeNeighbor_contractTail hv₁ hv₂ hne.symm hval₂).symm
     | some e => simp
   · by_cases h₁ : G.marking i = v₁ <;>
       simp [Subtype.ext_iff, h₁, ha]
@@ -315,7 +315,7 @@ private lemma exists_iso_contractTail_contractBridge_of_eq (c : G.Vertex → α)
     obtain ⟨k, hk⟩ := exists_eq_halfEdgeOfValenceEqTwo hv₂ (h := (e, i.rev)) h'
     refine ⟨k, ?_⟩
     rw [← endpoint_halfEdgeOfValenceEqTwo_rev, hk, Fin.rev_rev, he]
-  have hk' := bridgeNeighbor_rev_ne hv₂ hloop₂ hv₁ hk
+  have hk' := bridgeNeighbor_rev_ne hv₂ hv₁ hk
   have hval₂ : (G.contractTail hv₁).valence ⟨v₂, hne.symm⟩ = 1 := by
     have := valence_contractTail hv₁ v₂ hne.symm
     rw [ite_eq_left hatt] at this

@@ -35,7 +35,7 @@ one at scale `2`, has `ε = 1` and `N = 1 + 2 + 0 - 1 = 2`.
 * `TauCeti.DyadicJordanProfile.instAdd`: the sum of two profiles, the profile of an orthogonal
   sum.
 * `TauCeti.DyadicJordanProfile.instAddCommMonoid`: profiles form a commutative monoid under this
-  sum, with the empty profile `TauCeti.DyadicJordanProfile.instZero` as zero.
+  sum, with the profile `0` of no constituents as zero.
 
 ## Main results
 
@@ -83,21 +83,7 @@ theorem add_ranks : (P + Q).ranks = P.ranks + Q.ranks := (rfl)
 @[simp]
 theorem add_typeI : (P + Q).typeI = P.typeI ∪ Q.typeI := (rfl)
 
-/-- The zero profile is the empty profile, the profile of the zero lattice. -/
-instance instZero : Zero DyadicJordanProfile := ⟨empty⟩
-
-/-- The zero profile is the empty profile. -/
-theorem zero_def : (0 : DyadicJordanProfile) = empty := (rfl)
-
-/-- The zero profile has no constituents. -/
-@[simp]
-theorem zero_ranks : (0 : DyadicJordanProfile).ranks = 0 := empty_ranks
-
-/-- The zero profile has no type-I scales. -/
-@[simp]
-theorem zero_typeI : (0 : DyadicJordanProfile).typeI = ∅ := empty_typeI
-
-/-- Profiles form a commutative monoid under orthogonal sum, with the empty profile as zero. -/
+/-- Profiles form a commutative monoid under orthogonal sum, with the zero profile as zero. -/
 noncomputable instance instAddCommMonoid : AddCommMonoid DyadicJordanProfile where
   add_assoc P Q R := by ext <;> simp [add_assoc, Finset.union_assoc]
   zero_add P := by ext <;> simp

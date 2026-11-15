@@ -68,7 +68,7 @@ finite-dimensional space which is `C^n`, `n ≠ 0`, at a regular point `x` sends
 of `x` onto the neighbourhoods of its value. -/
 theorem IsRegularPoint.map_nhds_eq (hreg : IsRegularPoint I 𝓘(𝕜, V) F x)
     (hF : ContMDiffAt I 𝓘(𝕜, V) n F x) (hn : n ≠ 0) : map F (𝓝 x) = 𝓝 (F x) := by
-  have : CompleteSpace V := FiniteDimensional.complete 𝕜 V
+  have : CompleteSpace V := FiniteDimensional.completeSpace 𝕜 V
   set e := extChartAt I x
   have hFc := hF.contDiffAt_comp_extChartAt_symm
   have hmap := (hFc.hasStrictFDerivAt_fderiv hn).map_nhds_eq_of_surj
@@ -89,7 +89,7 @@ theorem IsRegularPoint.exists_eventuallyEq_comp_of_ker_mfderiv_le
     (hg : ContMDiffAt I 𝓘(𝕜, W) n g x) (hn : n ≠ 0)
     (hFg : ∀ᶠ y in 𝓝 x, (mfderiv I 𝓘(𝕜, V) F y).ker ≤ (mfderiv I 𝓘(𝕜, W) g y).ker) :
     ∃ h : V → W, ContDiffAt 𝕜 n h (F x) ∧ g =ᶠ[𝓝 x] h ∘ F := by
-  have : CompleteSpace V := FiniteDimensional.complete 𝕜 V
+  have : CompleteSpace V := FiniteDimensional.completeSpace 𝕜 V
   set e := extChartAt I x
   have hFc := hF.contDiffAt_comp_extChartAt_symm
   have hgc := hg.contDiffAt_comp_extChartAt_symm

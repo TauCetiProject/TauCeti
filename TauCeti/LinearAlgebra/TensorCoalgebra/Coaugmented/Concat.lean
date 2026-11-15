@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Coalgebra.Comodule.Cofree
+public import TauCeti.Algebra.Coalgebra.Comodule.Cofree.Basic
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Coaugmented.Prepend
 
 /-!
@@ -108,7 +108,7 @@ theorem cofreeLift_comp_tmulConcat {N : Type uN} [AddCommGroup N] [Module R N]
   | add s t hs ht => simp only [map_add, TensorProduct.tmul_add, hs, ht]
 
 /-- Concatenation behind an element of degree `q` raises the total degree by `q`. -/
-theorem isHomogeneous_tmulConcat (G : InternalGrading R A) (H : InternalGrading R X) {q : ℤ}
+theorem isHomogeneous_tmulConcat (G : InternalGrading R A ℤ) (H : InternalGrading R X ℤ) {q : ℤ}
     {x : X} (hx : x ∈ H.piece q) :
     LinearMap.IsHomogeneous (tmulConcat R A X x) (G.tensorProduct (grading G)).piece
       (H.tensorProduct (grading G)).piece q := by
@@ -194,10 +194,13 @@ theorem concatLetter_subword {N : ℕ} (y : Fin N → A) {a l k : ℕ} (h : a + 
 
 /-- Concatenating the block of length `j` at `a`, a letter `e`, and the block of length `k` that
 starts `d` letters after the first block ends replaces those `d` letters by `e`. -/
-theorem concatLetter_eq_splice {N : ℕ} (y : Fin N → A) {a j d k : ℕ} (e : A) (hd : 0 < d)
-    (h : a + j + d + k ≤ N) :
+theorem concatLetter_eq_splice {N : ℕ} (y : Fin N → A) {a j d k : ℕ} (e : A) (hd : 0 < d) :
     concatLetter R A ((subword R y a j ⊗ₜ e) ⊗ₜ subword R y (a + j + d) k) =
       ReducedTensorWords.splice R y a (j + d + k) j d e := by
+  by_cases h : a + j + d + k ≤ N
+  swap
+  · rw [subword_eq_zero_of_lt_add R y (a := a + j + d) (by omega), TensorProduct.tmul_zero,
+      map_zero, ReducedTensorWords.splice_eq_zero_of_length_lt_add R y e (by omega)]
   rw [subword_eq_of_tprod R y (by omega), subword_eq_of_tprod R y h,
     ReducedTensorWords.splice_eq_of_tprod R y e hd (by omega) (by omega)]
   dsimp only
@@ -253,7 +256,7 @@ variable {R : Type uR} {A : Type uA} [CommRing R] [AddCommGroup A] [Module R A]
 
 /-- Concatenating words of total degrees `D` and `E` around a letter of degree `p` gives a word
 of total degree `D + p + E`. -/
-theorem concatLetter_mem_gradedPiece {G : InternalGrading R A} {D p E : ℤ}
+theorem concatLetter_mem_gradedPiece {G : InternalGrading R A ℤ} {D p E : ℤ}
     {w v : TensorWords R A} {x : A} (hw : w ∈ gradedPiece G D) (hx : x ∈ G.piece p)
     (hv : v ∈ gradedPiece G E) :
     concatLetter R A ((w ⊗ₜ x) ⊗ₜ v) ∈ ReducedTensorWords.gradedPiece G (D + p + E) := by
@@ -296,7 +299,7 @@ theorem concatLetter_mem_gradedPiece {G : InternalGrading R A} {D p E : ℤ}
 /-- Concatenation around a letter preserves total degrees: it is homogeneous of degree zero from
 the tensor-product grading of `Tᶜ(A) ⊗ A ⊗ Tᶜ(A)` to the total-letter-degree grading of the
 reduced words. -/
-theorem isHomogeneous_concatLetter (G : InternalGrading R A) :
+theorem isHomogeneous_concatLetter (G : InternalGrading R A ℤ) :
     LinearMap.IsHomogeneous (concatLetter R A)
       (((grading G).tensorProduct G).tensorProduct (grading G)).piece
       (ReducedTensorWords.gradedPiece G) 0 := by

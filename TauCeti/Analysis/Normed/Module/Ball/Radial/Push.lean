@@ -29,9 +29,15 @@ cell by cell, that the skeleta of a CW complex form good pairs.
 
 * `TauCeti.radialPush`: the straight-line homotopy from the identity to
   `r⁻¹ • TauCeti.radialRetraction r`.
+* `TauCeti.radialPush_eq_smul`: it rescales each vector along its ray, by a factor depending only
+  on the time and the norm.
 * `TauCeti.norm_radialPush`: its norm is the linear interpolation of the endpoint norms.
 * `TauCeti.norm_le_norm_radialPush` and `TauCeti.norm_radialPush_le_one`: on the closed unit
   ball it does not decrease norms and stays in the ball.
+* `TauCeti.radialPush_of_le_norm`: outside the ball of radius `r` it scales by the interpolation
+  from `1` to `‖y‖⁻¹`, and `TauCeti.radialPush_one_of_le_norm`: it ends there at the radial
+  projection to the unit sphere.
+* `TauCeti.inv_norm_smul_radialPush`: for `r > 0` it moves every vector along its ray.
 * `TauCeti.radialPush_of_norm_eq_one`: it fixes the unit sphere.
 * `TauCeti.norm_radialPush_one`: at the end it sends the shell `r ≤ ‖y‖` to the unit sphere.
 
@@ -64,6 +70,11 @@ theorem radialPush_zero (r : ℝ) (y : E) : radialPush r 0 y = y := by
 theorem radialPush_one (r : ℝ) (y : E) : radialPush r 1 y = r⁻¹ • radialRetraction r y := by
   simp [radialPush]
 
+/-- The radial push rescales `y` along its ray, by a factor depending only on `t` and `‖y‖`. -/
+theorem radialPush_eq_smul (r : ℝ) (t : I) (y : E) :
+    radialPush r t y = (1 - (t : ℝ) + (t : ℝ) * (r⁻¹ * min 1 (r / ‖y‖))) • y := by
+  rw [radialPush, radialRetraction_def, smul_smul, smul_smul, ← mul_assoc, ← add_smul]
+
 /-- On a vector of seminorm zero, the radial push contracts linearly to zero. -/
 @[simp]
 theorem radialPush_of_norm_eq_zero (hy : ‖y‖ = 0) (t : I) :
@@ -76,6 +87,33 @@ interpolation from `1` to `r⁻¹`. -/
 theorem radialPush_of_norm_pos_of_norm_le (hy0 : 0 < ‖y‖) (hyr : ‖y‖ ≤ r) (t : I) :
     radialPush r t y = (1 - (t : ℝ) + (t : ℝ) * r⁻¹) • y := by
   simp [radialPush, hy0, hyr, smul_smul, ← add_smul]
+
+/-- On a vector of norm at least `r > 0`, the radial push scales by the linear interpolation
+from `1` to `‖y‖⁻¹`. -/
+theorem radialPush_of_le_norm (hr : 0 < r) (hy : r ≤ ‖y‖) (t : I) :
+    radialPush r t y = (1 - (t : ℝ) + (t : ℝ) * ‖y‖⁻¹) • y := by
+  rw [radialPush, radialRetraction_of_le_norm hy, smul_smul, smul_smul, ← add_smul]
+  congr 1
+  field_simp
+
+/-- At the end, the radial push sends a vector of norm at least `r > 0` to its radial projection
+on the unit sphere. -/
+theorem radialPush_one_of_le_norm (hr : 0 < r) (hy : r ≤ ‖y‖) : radialPush r 1 y = ‖y‖⁻¹ • y := by
+  simp [radialPush_of_le_norm hr hy]
+
+/-- For `r > 0` the radial push moves every vector along its ray: its radial projection does not
+change. -/
+theorem inv_norm_smul_radialPush (hr : 0 < r) (t : I) :
+    ‖radialPush r t y‖⁻¹ • radialPush r t y = ‖y‖⁻¹ • y := by
+  rcases (norm_nonneg y).eq_or_lt' with hy | hy
+  · simp [norm_smul, hy]
+  have hk : 0 < r⁻¹ * min 1 (r / ‖y‖) := by positivity
+  have hc : 0 < 1 - (t : ℝ) + (t : ℝ) * (r⁻¹ * min 1 (r / ‖y‖)) := by
+    rcases t.2.1.eq_or_lt with h | h
+    · simp [← h]
+    · nlinarith [mul_pos h hk, t.2.2]
+  rw [radialPush_eq_smul, norm_smul, Real.norm_of_nonneg hc.le, smul_smul, mul_inv,
+    mul_right_comm, inv_mul_cancel₀ hc.ne', one_mul]
 
 theorem continuous_radialPush (hr : 0 ≤ r) : Continuous fun p : I × E ↦ radialPush r p.1 p.2 :=
   ((continuous_const.sub (continuous_subtype_val.comp continuous_fst)).smul
@@ -103,16 +141,32 @@ theorem norm_le_norm_radialPush (hr : 0 < r) (hr1 : r ≤ 1) (t : I) (hy : ‖y�
   rw [norm_radialPush hr.le]
   nlinarith [t.2.1]
 
-/-- For every nonnegative radius, `TauCeti.radialPush` maps the closed unit ball into itself. -/
-theorem norm_radialPush_le_one (hr : 0 ≤ r) (t : I) (hy : ‖y‖ ≤ 1) :
-    ‖radialPush r t y‖ ≤ 1 := by
-  have h : r⁻¹ * min ‖y‖ r ≤ 1 := by
-    rcases hr.eq_or_lt with rfl | hr
-    · simp
-    · rw [inv_mul_le_iff₀ hr, mul_one]
-      exact min_le_right _ _
-  rw [norm_radialPush hr]
-  nlinarith [t.2.1, t.2.2, norm_nonneg y]
+/-- For every radius, `TauCeti.radialPush` maps the closed unit ball into itself. -/
+theorem norm_radialPush_le_one (t : I) (hy : ‖y‖ ≤ 1) : ‖radialPush r t y‖ ≤ 1 := by
+  rcases le_or_gt 0 r with hr | hr
+  · have h : r⁻¹ * min ‖y‖ r ≤ 1 := by
+      rcases hr.eq_or_lt with rfl | hr
+      · simp
+      · rw [inv_mul_le_iff₀ hr, mul_one]
+        exact min_le_right _ _
+    rw [norm_radialPush hr]
+    nlinarith [t.2.1, t.2.2, norm_nonneg y]
+  · rcases eq_or_ne ‖y‖ 0 with hy0 | hy0
+    · rw [radialPush_of_norm_eq_zero hy0, norm_smul_of_nonneg (sub_nonneg.mpr t.2.2), hy0]
+      simp
+    · have hy0' : 0 < ‖y‖ := lt_of_le_of_ne (norm_nonneg y) hy0.symm
+      have hpush : r⁻¹ • radialRetraction r y = ‖y‖⁻¹ • y := by
+        rw [radialRetraction_of_le_norm (hr.le.trans (norm_nonneg y)), smul_smul]
+        congr 1
+        have := hr.ne
+        field_simp
+      rw [radialPush, hpush]
+      calc ‖(1 - (t : ℝ)) • y + (t : ℝ) • ‖y‖⁻¹ • y‖
+          ≤ ‖(1 - (t : ℝ)) • y‖ + ‖(t : ℝ) • ‖y‖⁻¹ • y‖ := norm_add_le _ _
+        _ = (1 - (t : ℝ)) * ‖y‖ + (t : ℝ) := by
+          rw [norm_smul_of_nonneg (sub_nonneg.mpr t.2.2), norm_smul_of_nonneg t.2.1,
+            norm_smul_of_nonneg (inv_nonneg.mpr hy0'.le), inv_mul_cancel₀ hy0, mul_one]
+        _ ≤ 1 := by nlinarith [t.2.1, t.2.2]
 
 /-- `TauCeti.radialPush` fixes the unit sphere. -/
 theorem radialPush_of_norm_eq_one (hr : 0 < r) (hr1 : r ≤ 1) (t : I) (hy : ‖y‖ = 1) :

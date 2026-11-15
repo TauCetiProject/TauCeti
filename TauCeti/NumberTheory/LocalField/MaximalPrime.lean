@@ -83,7 +83,8 @@ noncomputable instance algebraValuationSubringMaximalPrime :
     Algebra 𝒪[K] ((maximalPrime L).valuation L).valuationSubring :=
   (((algebraMap K L).comp (algebraMap 𝒪[K] K)).codRestrict _ fun r ↦
     (by
-      rw [valuationSubring_valuation_maximalPrime, ← coe_algebraMap_integerRing]
+      rw [valuationSubring_valuation_maximalPrime,
+        ← Valuation.HasExtension.val_algebraMap (vA := valuation L)]
       exact (algebraMap 𝒪[K] 𝒪[L] r).2 :
         algebraMap K L r ∈ ((maximalPrime L).valuation L).valuationSubring)).toAlgebra
 

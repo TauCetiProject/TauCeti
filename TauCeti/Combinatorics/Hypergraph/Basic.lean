@@ -67,7 +67,8 @@ open Finset
 namespace TauCeti
 
 /-- An **`r`-uniform hypergraph** on `V`: a finite set of unordered edges, each an `r`-element
-finset of vertices. -/
+finset of vertices. It is determined by its edges (`UniformHypergraph.ext`). -/
+@[ext]
 structure UniformHypergraph (r : ℕ) (V : Type*) where
   /-- The edges. -/
   edges : Finset (Finset V)
@@ -77,13 +78,6 @@ structure UniformHypergraph (r : ℕ) (V : Type*) where
 namespace UniformHypergraph
 
 variable {r : ℕ} {V : Type*}
-
-/-- A uniform hypergraph is determined by its edges. -/
-@[ext]
-theorem ext {H G : UniformHypergraph r V} (h : H.edges = G.edges) : H = G := by
-  cases H
-  cases G
-  congr
 
 /-- The edges form an `r`-sized family of finsets, so Mathlib's `Set.Sized` API applies to them. -/
 theorem sized_edges (H : UniformHypergraph r V) : (H.edges : Set (Finset V)).Sized r :=
@@ -111,8 +105,7 @@ theorem toHypergraph_edgeSet (H : UniformHypergraph r V) :
 @[simp]
 theorem coe_mem_toHypergraph_edgeSet {H : UniformHypergraph r V} {e : Finset V} :
     (e : Set V) ∈ H.toHypergraph.edgeSet ↔ e ∈ H.edges := by
-  rw [toHypergraph_edgeSet]
-  exact ⟨fun ⟨f, hf, hfe⟩ => Finset.coe_injective hfe ▸ hf, fun he => ⟨e, he, rfl⟩⟩
+  simp [toHypergraph_edgeSet]
 
 /-! ### Empty and complete hypergraphs -/
 
@@ -163,7 +156,7 @@ theorem edgeDensity_def [Fintype V] (H : UniformHypergraph r V) :
 
 /-- The edge density is nonnegative. -/
 theorem edgeDensity_nonneg [Fintype V] (H : UniformHypergraph r V) : 0 ≤ H.edgeDensity := by
-  unfold edgeDensity
+  rw [edgeDensity_def]
   positivity
 
 /-- The edge density is at most `1`. -/
@@ -179,8 +172,7 @@ theorem edgeDensity_empty [Fintype V] : (empty r V).edgeDensity = 0 := by
 /-- The complete hypergraph has density `1` when there are possible edges, `r ≤ card V`. -/
 theorem edgeDensity_complete [Fintype V] (hr : r ≤ Fintype.card V) :
     (complete r V).edgeDensity = 1 := by
-  rw [edgeDensity, card_edges_complete]
-  exact div_self (by exact_mod_cast (Nat.choose_pos hr).ne')
+  simp [edgeDensity_def, card_edges_complete, (Nat.choose_pos hr).ne']
 
 /-- With no possible edges, `card V < r`, every density is `0`. -/
 theorem edgeDensity_eq_zero_of_card_lt [Fintype V] (H : UniformHypergraph r V)
@@ -241,10 +233,8 @@ theorem blockDensity_complete [Fintype V] {s : Finset V} (hs : r ≤ #s) :
     (complete r V).blockDensity s = 1 := by
   have hfilter : (complete r V).edges.filter (· ⊆ s) = s.powersetCard r := by
     ext e
-    simp only [Finset.mem_filter, mem_edges_complete, Finset.mem_powersetCard]
-    exact and_comm
-  rw [blockDensity_def, hfilter, Finset.card_powersetCard]
-  exact div_self (by exact_mod_cast (Nat.choose_pos hs).ne')
+    simp [Finset.mem_powersetCard, and_comm]
+  simp [blockDensity_def, hfilter, (Nat.choose_pos hs).ne']
 
 /-- On the whole vertex type, the block density is the edge density. -/
 @[simp]
@@ -262,8 +252,8 @@ section IsHom
 variable {U W : Type*} [DecidableEq V]
 
 /-- A vertex map `f : U → V` is a **homomorphism** from `F` to `H` when the image of every edge of
-`F` is an edge of `H`. Both have `r` vertices, so `f` is injective on every edge of `F`
-(`IsHom.injOn`). -/
+`F` is an edge of `H`. An edge of `F` and its image both have `r` vertices, so `f` is injective
+on every edge of `F` (`IsHom.injOn`). -/
 def IsHom (F : UniformHypergraph r U) (H : UniformHypergraph r V) (f : U → V) : Prop :=
   ∀ e ∈ F.edges, e.image f ∈ H.edges
 
@@ -363,10 +353,8 @@ in `G`. -/
 theorem _root_.SimpleGraph.insert_mem_toUniformHypergraph_edges {u v : V} :
     {u, v} ∈ G.toUniformHypergraph.edges ↔ G.Adj u v := by
   rw [SimpleGraph.mem_toUniformHypergraph_edges, SimpleGraph.isNClique_iff, coe_pair,
-    SimpleGraph.isClique_pair]
-  refine ⟨fun ⟨hadj, hcard⟩ ↦ hadj ?_, fun h ↦ ⟨fun _ ↦ h, card_pair h.ne⟩⟩
-  rintro rfl
-  simp at hcard
+    SimpleGraph.isClique_pair, card_pair_eq_two_iff]
+  exact ⟨fun ⟨hadj, hne⟩ ↦ hadj hne, fun h ↦ ⟨fun _ ↦ h, h.ne⟩⟩
 
 variable {U : Type*} [Fintype U] [DecidableEq U] {F : SimpleGraph U} [DecidableRel F.Adj]
 
@@ -376,11 +364,9 @@ theorem _root_.SimpleGraph.isHom_toUniformHypergraph_iff {f : U → V} :
     F.toUniformHypergraph.IsHom G.toUniformHypergraph f ↔
       ∀ a b, F.Adj a b → G.Adj (f a) (f b) := by
   refine ⟨fun h a b hab ↦ ?_, fun h ↦ UniformHypergraph.isHom_iff.2 fun e he ↦ ?_⟩
-  · have hmem := h.image_mem (SimpleGraph.insert_mem_toUniformHypergraph_edges.2 hab)
-    rwa [image_insert, image_singleton, SimpleGraph.insert_mem_toUniformHypergraph_edges] at hmem
+  · simpa using h.image_mem (SimpleGraph.insert_mem_toUniformHypergraph_edges.2 hab)
   · obtain ⟨a, b, -, rfl⟩ := card_eq_two.1 (F.toUniformHypergraph.edge_card e he)
-    rw [image_insert, image_singleton, SimpleGraph.insert_mem_toUniformHypergraph_edges]
-    exact h a b (SimpleGraph.insert_mem_toUniformHypergraph_edges.1 he)
+    simpa using h a b (SimpleGraph.insert_mem_toUniformHypergraph_edges.1 he)
 
 end SimpleGraph
 

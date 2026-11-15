@@ -47,7 +47,7 @@ theorem exists_formula_iff_exists_constants (hA : A.FormationClosed)
   let := hσ.fintype
   choose k χ d hχ hd using fun x : σ => mem_instances.1 (hσA x.property)
   -- Enumerate all constants in the instances and in the prescribed tuple without repetitions.
-  obtain ⟨m, b, s, hs⟩ := TauCeti.exists_embedding_fin_comp_eq
+  obtain ⟨m, b, s, hs, -⟩ := TauCeti.exists_embedding_fin_comp_eq
     (Sum.elim c fun p : (x : σ) × Fin (k x) => d p.1 p.2)
   let f : Fin n → Fin m := s ∘ Sum.inl
   let g (x : σ) (i : Fin (k x)) : Fin m := s (Sum.inr ⟨x, i⟩)

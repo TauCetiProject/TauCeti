@@ -104,12 +104,11 @@ private theorem exists_ae_measureReal_inter_ball_rpow_le
   have hD : 0 ≤ deriv m ρ := (monotone_measureReal_inter_ball μ s x).deriv_nonneg
   -- At the reduced boundary, `P(s; ball x ρ) ≤ |Dχ_s| (closedBall x ρ) ≤ t m'(ρ)`.
   have hP : perimeter μ ⟨ball x ρ, isOpen_ball⟩ s ≤ t * ENNReal.ofReal (deriv m ρ) := by
-    rw [perimeter_def, ← variationMeasure_preimage_coe hu hfin (U := ⟨ball x ρ, isOpen_ball⟩)
-      fun y hy => hρΩ (ball_subset_closedBall hy)]
-    refine (measure_mono (preimage_mono ball_subset_closedBall)).trans
+    refine (perimeter_ball_le_variationMeasure_closedBall hu hfin
+      (ball_subset_closedBall.trans hρΩ)).trans
       ((hε₂t ⟨hρ.1, hρ.2.trans_le (min_le_right _ _)⟩).trans ?_)
     gcongr
-    exact enorm_setIntegral_polarDensity_closedBall_le_of_hasDerivWithinAt hu hfin hs hρΩ
+    exact enorm_setIntegral_polarDensity_closedBall_le_of_hasDerivWithinAt hs hρΩ
       hdiff.hasDerivAt.hasDerivWithinAt
   have hfin' : μ (s ∩ ball x ρ) ≠ ∞ :=
     measure_ne_top_of_subset inter_subset_right measure_ball_lt_top.ne
@@ -147,7 +146,7 @@ private theorem eventually_ofReal_le_mul_measure_inter_ball_rpow_of_nullMeasurab
     ((monotone_measureReal_inter_ball μ s x).monotoneOn _) measureReal_nonneg
     (fun ρ hρ => ENNReal.toReal_pos (measure_inter_ball_pos hx hρ.1).ne'
       (measure_ne_top_of_subset inter_subset_right measure_ball_lt_top.ne))
-    (inv_pos.2 hn) NNReal.zero_le_coe
+    NNReal.zero_le_coe
     (h.mono fun ρ hρ hρr => hρ ⟨hρr.1, hρr.2.trans hr.2⟩)
   rw [← ofReal_measureReal hfin, ENNReal.ofReal_rpow_of_nonneg measureReal_nonneg (by positivity),
     ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul NNReal.zero_le_coe]
@@ -265,15 +264,10 @@ theorem eventually_ofReal_pow_le_mul_variationMeasure_closedBall
       ((1 + t) * finrank ℝ E * eLpNormLESNormFDerivOneConst μ p : ℝ≥0) ^ (finrank ℝ E - 1) *
         ENNReal.ofReal (2 ^ (finrank ℝ E + 1) / μ.real (ball 0 1) ^ (finrank ℝ E : ℝ)⁻¹) *
           variationMeasure μ Ω (s.indicator 1) (((↑) : Ω → E) ⁻¹' closedBall x r) := by
-  obtain ⟨hu, hfin⟩ := locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary hx
-  obtain ⟨ε, hε, hεΩ⟩ :=
-    nhds_basis_closedBall.mem_iff.1 (Ω.isOpen.mem_nhds (reducedBoundary_subset hx))
-  filter_upwards [eventually_ofReal_pow_le_mul_perimeter_ball hp hx ht, Ioo_mem_nhdsGT hε]
-    with r h hr
-  refine h.trans (mul_le_mul_right ?_ _)
-  rw [perimeter_def, ← variationMeasure_preimage_coe hu hfin (U := ⟨ball x r, isOpen_ball⟩)
-    fun y hy => hεΩ (closedBall_subset_closedBall hr.2.le (ball_subset_closedBall hy))]
-  exact measure_mono (preimage_mono ball_subset_closedBall)
+  filter_upwards [eventually_ofReal_pow_le_mul_perimeter_ball hp hx ht,
+    eventually_perimeter_ball_le_variationMeasure_closedBall_of_mem_reducedBoundary hx]
+    with r h hP
+  exact h.trans (mul_le_mul_right hP _)
 
 /-- **The reduced boundary lies in the essential boundary.** Let `E` have dimension `n ≥ 2` and
 let `μ` be an additive Haar measure. At a point of the reduced boundary of `s` in an open set `Ω`,

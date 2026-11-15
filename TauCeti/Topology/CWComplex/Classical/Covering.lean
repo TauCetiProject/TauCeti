@@ -13,6 +13,7 @@ public import TauCeti.Topology.CWComplex.Classical.FiniteCWType
 public import TauCeti.Topology.CWComplex.Classical.Map
 public import TauCeti.Topology.Covering.Convex
 public import TauCeti.Topology.SeparatedMap
+import TauCeti.SetTheory.Cardinal.Finite
 import TauCeti.Topology.CWComplex.Comparison
 import TauCeti.Topology.Covering.Pullback
 
@@ -97,7 +98,7 @@ private abbrev CoverCell (n : ℕ) : Type u := Σ i : cell C n, p ⁻¹' {map n 
 
 variable (C) in
 private theorem finite_coverCell [RelCWComplex.FiniteType C]
-    (hfin : ∀ b, Finite ↥(p ⁻¹' {b})) (n : ℕ) :
+    (_ : ∀ b, Finite ↥(p ⁻¹' {b})) (n : ℕ) :
     _root_.Finite (CoverCell p C n) :=
   have : _root_.Finite (cell C n) := FiniteType.finite_cell n
   inferInstance
@@ -470,19 +471,19 @@ theorem nat_card_cell_preimage [RelCWComplex.FiniteType C] (hfin : ∀ b, Finite
   have := Fintype.ofFinite (cell C n)
   rw [Nat.card_congr (cellPreimageEquiv C hp n), Nat.card_sigma, finsum_eq_sum_of_fintype]
 
-/-- **Cells of a `d`-sheeted cover.** If every fibre of `p` over `C` has `d` points, the lift of `C`
-along `p` has `d` times as many `n`-cells as `C`. -/
-theorem nat_card_cell_preimage_of_card_fiber [RelCWComplex.FiniteType C]
-    (hfin : ∀ b, Finite ↥(p ⁻¹' {b})) {d : ℕ}
+/-- **Cells of a cover with fibres of cardinality `d`.** If every fibre of `p` over `C` has
+`Nat.card` equal to `d`, then `Nat.card` of the `n`-cells of the lift of `C` along `p` is `d` times
+`Nat.card` of the `n`-cells of `C`. For finite fibres and finitely many `n`-cells this says that
+the lift has `d` times as many `n`-cells as `C` (a `d`-sheeted cover); otherwise `Nat.card` is the
+junk value `0` on infinite types, and the equation holds with both sides `0`. -/
+theorem nat_card_cell_preimage_of_card_fiber {d : ℕ}
     (hd : ∀ b ∈ C, Nat.card ↥(p ⁻¹' {b}) = d) :
     letI := cwComplexPreimage C hp
     Nat.card (cell (p ⁻¹' C) n) = d * Nat.card (cell C n) := by
-  have : _root_.Finite (cell C n) := FiniteType.finite_cell n
-  have := Fintype.ofFinite (cell C n)
   have hc (i : cell C n) : Nat.card ↥(p ⁻¹' {map n i 0}) = d :=
     hd _ (closedCell_subset_complex n i (map_zero_mem_closedCell n i))
-  rw [nat_card_cell_preimage C hp hfin, finsum_eq_sum_of_fintype]
-  simp [hc, mul_comm]
+  rw [Nat.card_congr (cellPreimageEquiv C hp n)]
+  exact Nat.card_sigma_of_forall_card_eq hc
 
 end Structure
 

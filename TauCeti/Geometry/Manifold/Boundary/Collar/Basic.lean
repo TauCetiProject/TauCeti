@@ -22,9 +22,9 @@ structure, a diffeomorphism.  The characteristic lemmas record both coordinate p
 identify the zero slice, so later collar constructions do not need to unfold the coordinate
 implementation.
 
-This is the standard-model prerequisite for the collar-neighbourhood target in Layer 1 of the
-GeometricTopology roadmap.  The global collar theorem requires patching these local product
-coordinates on an arbitrary manifold and is not proved here.
+This is the standard-model step towards the collar-neighbourhood theorem.  The global collar
+theorem requires patching these local product coordinates on an arbitrary manifold and is not
+proved here.
 
 ## Main definitions
 

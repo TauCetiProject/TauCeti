@@ -76,11 +76,13 @@ theorem intervalIntegral_floor_exp_mul_cexp_neg_mul (a : ℕ → ℂ) {n : ℕ} 
   rw [Real.floor_exp_eq_of_mem_Ioo ht]
 
 /-- The step function `t ↦ a ⌊exp t⌋₊` times `exp (-z t)` is interval integrable on each step
-`[log n, log (n + 1)]`, `n ≠ 0`, where it agrees with `a n exp (-z t)` away from the
-endpoints. -/
-theorem intervalIntegrable_floor_exp_mul_cexp_neg_mul (a : ℕ → ℂ) {n : ℕ} (hn : n ≠ 0)
+`[log n, log (n + 1)]`, where for `n ≠ 0` it agrees with `a n exp (-z t)` away from the
+endpoints (and for `n = 0` the interval is degenerate). -/
+theorem intervalIntegrable_floor_exp_mul_cexp_neg_mul (a : ℕ → ℂ) (n : ℕ)
     (z : ℂ) : IntervalIntegrable (fun t : ℝ ↦ a ⌊Real.exp t⌋₊ * cexp (-z * t)) volume
       (Real.log n) (Real.log (n + 1)) := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
   have hn' : (0 : ℝ) < n := Nat.cast_pos.mpr (Nat.pos_of_ne_zero hn)
   refine ((by fun_prop : Continuous fun t : ℝ ↦ a n * cexp (-z * t)).intervalIntegrable
     _ _).congr_uIoo fun t ht ↦ ?_
@@ -97,12 +99,11 @@ theorem intervalIntegral_floor_exp_mul_cexp_neg_mul_log_succ (a : ℕ → ℂ) (
   have h := intervalIntegral.sum_integral_adjacent_intervals
     (f := fun t : ℝ ↦ a ⌊Real.exp t⌋₊ * cexp (-z * t)) (μ := volume)
     (a := fun k : ℕ ↦ Real.log (k + 1)) (n := N) fun k _ ↦ by
-      simpa using intervalIntegrable_floor_exp_mul_cexp_neg_mul a k.succ_ne_zero z
+      simpa using intervalIntegrable_floor_exp_mul_cexp_neg_mul a k.succ z
   simp only [Nat.cast_zero, zero_add, Real.log_one] at h
   rw [← h, Finset.sum_range_succ', LSeries.term_zero, stepCorrectionTerm_zero, Pi.zero_apply,
     add_zero, add_zero]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
-  have hk : ((k + 1 : ℕ) : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr k.succ_ne_zero
   have h₁ := intervalIntegral_floor_exp_mul_cexp_neg_mul a k.succ_ne_zero z
   push_cast at h₁ ⊢
   rw [h₁, LSeries.term_of_ne_zero k.succ_ne_zero, stepCorrectionTerm_of_ne_zero a k.succ_ne_zero,

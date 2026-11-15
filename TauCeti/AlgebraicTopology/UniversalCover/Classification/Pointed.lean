@@ -23,8 +23,9 @@ total spaces, the recovered subgroup determines the pointed cover:
 * if the two recovered subgroups are *equal*, that map is a homeomorphism over `X`.
 
 This is the faithful-and-full half of the correspondence between pointed connected covers of
-`(X, x)` and subgroups of `π₁(X, x)`; the remaining half is the construction, from a subgroup
-`H`, of a cover recovering `H`, which is a separate milestone. Nothing here needs `X` itself to
+`(X, x)` and subgroups of `π₁(X, x)`; the remaining half, the construction from a subgroup `H`
+of a cover recovering `H`, is the quotient of the universal cover by `H`
+(`TauCeti.UniversalCover.range_mapOfEq_subgroupQuotientProj`). Nothing here needs `X` itself to
 be path-connected, locally path-connected or semilocally simply connected: those hypotheses are
 what make the correspondence *onto*, not what makes it injective.
 

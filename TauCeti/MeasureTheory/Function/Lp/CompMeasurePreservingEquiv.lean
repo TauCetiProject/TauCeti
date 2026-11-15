@@ -10,7 +10,7 @@ public import Mathlib.MeasureTheory.Function.LpSpace.ContinuousFunctions
 import Mathlib.MeasureTheory.Function.FactorsThrough
 
 /-!
-# Ranges and isometric equivalences of measure-preserving `L^p` pullbacks
+# Positivity, ranges and isometric equivalences of measure-preserving `L^p` pullbacks
 
 Mathlib turns a measure-preserving map `f : α → β` into a linear isometry
 `MeasureTheory.Lp.compMeasurePreservingₗᵢ : Lp E p μb →ₗᵢ[𝕜] Lp E p μ`, but stops there: there is
@@ -30,7 +30,11 @@ one-sided inverse has that inverse on both sides.
 
 * `MeasureTheory.Lp.compMeasurePreservingₗᵢ_apply` is the application lemma for Mathlib's
   linear isometry. Mathlib's `@[simps!]` generates only `compMeasurePreservingₗᵢ_apply_coe`,
-  which unfolds one level too far to rewrite with.
+  which unfolds one level too far to rewrite with. `MeasureTheory.Lp.coe_compMeasurePreservingₗᵢ`
+  is its unapplied form, for statements about the map itself.
+* `MeasureTheory.Lp.compMeasurePreserving_monotone` and
+  `MeasureTheory.Lp.compMeasurePreserving_nonneg`: for ordered values, precomposition is monotone
+  and hence positive, since the order on `Lp` is almost everywhere pointwise.
 * `MeasureTheory.Lp.exists_compMeasurePreservingₗᵢ_eq_of_stronglyMeasurable_comap` factors
   a comap-measurable `Lp` function through any measure-preserving map, for complete value spaces.
 * `MeasureTheory.Lp.mem_range_compMeasurePreservingₗᵢ_iff` characterizes its range by
@@ -67,6 +71,22 @@ theorem leftInverse_compMeasurePreserving (hf : MeasurePreserving f μ μb)
   rw [compMeasurePreserving_val, AEEqFun.compMeasurePreserving_congr _ _ measurable_id hfg,
     AEEqFun.compMeasurePreserving_id]
 
+/-- For ordered values, precomposition by a measure-preserving map is monotone on `Lp`. -/
+theorem compMeasurePreserving_monotone [PartialOrder E] (hf : MeasurePreserving f μ μb) :
+    Monotone (compMeasurePreserving (E := E) (p := p) f hf) := by
+  intro g h hgh
+  rw [← coeFn_le] at hgh ⊢
+  filter_upwards [hf.quasiMeasurePreserving.tendsto_ae hgh, coeFn_compMeasurePreserving g hf,
+    coeFn_compMeasurePreserving h hf] with x hx hg hh
+  rw [hg, hh]
+  exact hx
+
+/-- For ordered values, precomposition by a measure-preserving map sends nonnegative `Lp`
+classes to nonnegative ones. -/
+theorem compMeasurePreserving_nonneg [PartialOrder E] (hf : MeasurePreserving f μ μb)
+    {g : Lp E p μb} (hg : 0 ≤ g) : 0 ≤ compMeasurePreserving f hf g := by
+  simpa only [map_zero] using compMeasurePreserving_monotone hf hg
+
 variable (𝕜 : Type*) [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] [Fact (1 ≤ p)]
 
 /-- The application lemma for `MeasureTheory.Lp.compMeasurePreservingₗᵢ`.
@@ -78,6 +98,17 @@ usable. This states the map itself. -/
 theorem compMeasurePreservingₗᵢ_apply (hf : MeasurePreserving f μ μb) (x : Lp E p μb) :
     compMeasurePreservingₗᵢ 𝕜 f hf x = compMeasurePreserving f hf x :=
   rfl
+
+/-- The map underlying `MeasureTheory.Lp.compMeasurePreservingₗᵢ` is
+`MeasureTheory.Lp.compMeasurePreserving`: the unapplied form of
+`MeasureTheory.Lp.compMeasurePreservingₗᵢ_apply`, for statements about the map itself, such as
+its monotonicity or its fixed points. Together with Mathlib's simp lemma
+`LinearIsometry.coe_toContinuousLinearMap` it also normalizes the continuous linear map the
+isometry induces. -/
+@[simp]
+theorem coe_compMeasurePreservingₗᵢ (hf : MeasurePreserving f μ μb) :
+    ⇑(compMeasurePreservingₗᵢ 𝕜 f hf : Lp E p μb →ₗᵢ[𝕜] Lp E p μ) = compMeasurePreserving f hf :=
+  funext (compMeasurePreservingₗᵢ_apply 𝕜 hf)
 
 section CompleteSpace
 

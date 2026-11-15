@@ -14,7 +14,8 @@ import Mathlib.Order.Setoid.Partition
 
 A step graphon is specified by a measurable finite partition of its probability carrier and a
 symmetric matrix of values in `[0, 1]`, indexed by the parts.  The resulting graphon is constant
-on every rectangle cut out by the partition.
+on every rectangle cut out by the partition.  Step graphons carry the block averages
+`stepGraphonAvg` and the output of Frieze--Kannan weak regularity.
 
 The definition uses Mathlib's `Finpartition` directly.  Its value is written as a finite sum of
 indicators of the measurable rectangles.  Pairwise disjointness and coverage of the partition
@@ -41,9 +42,6 @@ measurability immediate and does not choose a distinguished index for each point
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 2 — the block-constant
-  `stepGraphon`, which is the carrier for `stepGraphonAvg` and the Frieze--Kannan weak regularity
-  output.
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), §9.2.
 -/
 

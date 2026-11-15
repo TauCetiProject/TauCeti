@@ -37,6 +37,8 @@ a doubly (twisted) periodic map are used.
   a translated strip `[c + L, d + L] × I` and the original one, when `f (z + (L, 0)) ≤ M z`.
 * `TauCeti.setIntegral_rect_le_mul_of_forall_setIntegral_le`: an inequality between the integrals
   over the vertical segments `{s} × [a₂, b₂]` integrates to the same inequality over the rectangle.
+* `TauCeti.setIntegral_rect_le_mul_of_forall_setIntegral_le_symm`: the same for the horizontal
+  segments `[a₁, b₁] × {t}`.
 * `TauCeti.neg_mul_setIntegral_le_setIntegral_deriv_mul`: for a monotone `C¹` profile `β` and
   `-B(t) ≤ f`, the lower bound `-(β(b₁) - β(a₁)) ∫ B ≤ ∫∫ β'(s) f`.
 -/
@@ -47,7 +49,7 @@ open Set MeasureTheory
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {a₁ b₁ a₂ b₂ : ℝ}
 
 /-- **The fundamental theorem of calculus in the first coordinate.** The integral of a continuous
@@ -57,6 +59,9 @@ theorem setIntegral_rect_eq_setIntegral_sub_of_hasDerivAt_fst {Φ φ : ℝ × �
     (hφ : Continuous φ) (hΦ : ∀ s t, HasDerivAt (fun s ↦ Φ (s, t)) (φ (s, t)) s)
     (hab : a₁ ≤ b₁) :
     ∫ z in Icc a₁ b₁ ×ˢ Icc a₂ b₂, φ z = ∫ t in Icc a₂ b₂, (Φ (b₁, t) - Φ (a₁, t)) := by
+  by_cases hE : CompleteSpace E
+  swap
+  · simp [integral_of_not_completeSpace hE]
   have hint : Integrable φ ((volume.restrict (Icc a₁ b₁)).prod (volume.restrict (Icc a₂ b₂))) := by
     rw [Measure.prod_restrict, ← Measure.volume_eq_prod]
     exact hφ.continuousOn.integrableOn_compact (isCompact_Icc.prod isCompact_Icc)
@@ -84,6 +89,9 @@ theorem setIntegral_rect_eq_setIntegral_sub_of_hasDerivAt_snd {Φ φ : ℝ × �
     (hφ : Continuous φ) (hΦ : ∀ s t, HasDerivAt (fun t ↦ Φ (s, t)) (φ (s, t)) t)
     (hab : a₂ ≤ b₂) :
     ∫ z in Icc a₁ b₁ ×ˢ Icc a₂ b₂, φ z = ∫ s in Icc a₁ b₁, (Φ (s, b₂) - Φ (s, a₂)) := by
+  by_cases hE : CompleteSpace E
+  swap
+  · simp [integral_of_not_completeSpace hE]
   have hint : Integrable φ ((volume.restrict (Icc a₁ b₁)).prod (volume.restrict (Icc a₂ b₂))) := by
     rw [Measure.prod_restrict, ← Measure.volume_eq_prod]
     exact hφ.continuousOn.integrableOn_compact (isCompact_Icc.prod isCompact_Icc)
@@ -163,6 +171,24 @@ theorem setIntegral_rect_le_mul_of_forall_setIntegral_le {f g : ℝ × ℝ → �
     exact h.integral_prod_left
   rw [Measure.volume_eq_prod, setIntegral_prod _ hf, setIntegral_prod _ hg, ← integral_const_mul]
   exact setIntegral_mono_on (hslice hf) ((hslice hg).const_mul c) measurableSet_Icc h
+
+/-- **Integrating a slicewise inequality, horizontal slices.** If `f` and `g` are integrable over
+the rectangle `[a₁, b₁] × [a₂, b₂]` and, for every `t ∈ [a₂, b₂]`, the integral of `f (·, t)` over
+`[a₁, b₁]` is at most `c` times that of `g (·, t)`, then the integral of `f` over the rectangle is
+at most `c` times that of `g`. -/
+theorem setIntegral_rect_le_mul_of_forall_setIntegral_le_symm {f g : ℝ × ℝ → ℝ} {c : ℝ}
+    (hf : IntegrableOn f (Icc a₁ b₁ ×ˢ Icc a₂ b₂)) (hg : IntegrableOn g (Icc a₁ b₁ ×ˢ Icc a₂ b₂))
+    (h : ∀ t ∈ Icc a₂ b₂, ∫ s in Icc a₁ b₁, f (s, t) ≤ c * ∫ s in Icc a₁ b₁, g (s, t)) :
+    ∫ z in Icc a₁ b₁ ×ˢ Icc a₂ b₂, f z ≤ c * ∫ z in Icc a₁ b₁ ×ˢ Icc a₂ b₂, g z := by
+  -- Fubini, integrating first over the horizontal segments and then in `t`.
+  have hprod {k : ℝ × ℝ → ℝ} (hk : IntegrableOn k (Icc a₁ b₁ ×ˢ Icc a₂ b₂)) :
+      Integrable k ((volume.restrict (Icc a₁ b₁)).prod (volume.restrict (Icc a₂ b₂))) := by
+    rw [Measure.prod_restrict, ← Measure.volume_eq_prod]
+    exact hk
+  rw [Measure.volume_eq_prod, ← Measure.prod_restrict, integral_prod_symm _ (hprod hf),
+    integral_prod_symm _ (hprod hg), ← integral_const_mul]
+  exact setIntegral_mono_on (hprod hf).integral_prod_right
+    ((hprod hg).integral_prod_right.const_mul c) measurableSet_Icc h
 
 /-- **The integrated curvature bound of a monotone profile.** Let `β` be a monotone `C¹` profile
 and `f` a function continuous on `[a₁, b₁] × [a₂, b₂]` with `-B(t) ≤ f` there, for a function `B`

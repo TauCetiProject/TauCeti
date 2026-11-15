@@ -82,10 +82,10 @@ section AddValuation
 
 variable {R : Type*} [CommRing R] {v : AddValuation R (WithTop ℝ)}
 
-/-- If only zero has infinite valuation, the finite slopes of `∏ (X - α)`, over a multiset of
-elements `α`, are the negated valuations `-v α` of the nonzero `α`, with multiplicity. -/
-theorem newtonSlopes_multiset_prod_X_sub_C [DecidableEq R] (hv : ∀ x, v x = ⊤ → x = 0)
-    (s : Multiset R) :
+/-- If every nonzero element of a multiset has finite valuation, the finite slopes of
+`∏ (X - α)` are the negated valuations `-v α` of its nonzero elements, with multiplicity. -/
+theorem newtonSlopes_multiset_prod_X_sub_C [DecidableEq R] (s : Multiset R)
+    (hv : ∀ α ∈ s, α ≠ 0 → v α ≠ ⊤) :
     (s.map (X - C ·)).prod.newtonSlopes v =
       (s.filter (· ≠ 0)).map fun α => -(v α).untop₀ := by
   induction s using Multiset.induction_on with
@@ -94,10 +94,11 @@ theorem newtonSlopes_multiset_prod_X_sub_C [DecidableEq R] (hv : ∀ x, v x = �
     rw [Multiset.map_cons, Multiset.prod_cons,
       newtonSlopes_mul _ _ v ((monic_X_sub_C a).newtonPolygon_ne_top v)
         ((monic_multiset_prod_of_monic _ _ fun α _ => monic_X_sub_C α).newtonPolygon_ne_top v),
-      ih]
+      ih (fun α hα => hv α (Multiset.mem_cons_of_mem hα))]
     by_cases ha : a = 0
     · simp [ha, ← monomial_one_one_eq_X]
-    · simp [newtonSlopes_X_sub_C v (mt (hv a) ha), ha, Multiset.singleton_add]
+    · simp [newtonSlopes_X_sub_C v (hv a (Multiset.mem_cons_self a s) ha), ha,
+        Multiset.singleton_add]
 
 /-- If only zero has infinite valuation, the negated valuation `-v α` of a nonzero root `α` of a
 nonzero polynomial is one of its finite slopes. The polynomial need not split. -/
@@ -132,7 +133,7 @@ theorem newtonSlopes_eq_map_roots [DecidableEq R] (hv : ∀ x, v x = ⊤ → x =
   · simp
   conv_lhs => rw [hf.eq_prod_roots]
   rw [newtonSlopes_C_mul _ v (mt (hv _) (leadingCoeff_ne_zero.mpr hf₀)),
-    newtonSlopes_multiset_prod_X_sub_C hv]
+    newtonSlopes_multiset_prod_X_sub_C _ (fun α _ hα => mt (hv α) hα)]
 
 /-- If `f` splits over a valued extension `L` whose valuation `w` restricts to `v`, and only
 zero has infinite valuation in `L`, the finite slopes of `f` are the negated valuations `-w α`

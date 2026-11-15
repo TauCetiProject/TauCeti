@@ -70,7 +70,7 @@ def rowSubset (I : Finset (Fin n)) : GTPattern n where
     rw [ite_eq_right_iff]
     omega
   interlacing' := by
-    intro c j hcj hj
+    intro c j _ hj
     have h := card_filter_castSucc_lt_succ I ⟨j, hj⟩
     simp only [Fin.lt_def, Fin.val_castSucc, Fin.val_succ] at h
     split_ifs at h <;> constructor <;> split_ifs <;> omega
@@ -135,7 +135,7 @@ theorem rowSubset_injective : Function.Injective (rowSubset (n := n)) := by
 /-- In a pattern with entries in `{0, 1}`, row `j` is `(1, …, 1, 0, …, 0)`: an informative entry
 is `1` exactly when it lies before the number of ones of its row. -/
 private theorem eq_one_iff_lt_card {Q : GTPattern n} (hQ : ∀ i j, Q i j = 0 ∨ Q i j = 1)
-    {c j : ℕ} (hc : c < j) (hj : j ≤ n) : Q c j = 1 ↔ c < #{c ∈ range j | Q c j = 1} := by
+    {c j : ℕ} (hc : c < j) : Q c j = 1 ↔ c < #{c ∈ range j | Q c j = 1} := by
   have hcard : #{c ∈ range j | Q c j = 1} = #{i : Fin j | Q i j = 1} := by
     rw [← card_map Fin.valEmbedding, map_filter' _ Fin.valEmbedding, Fin.map_valEmbedding_univ,
       ← Nat.Iio_eq_range]
@@ -145,7 +145,7 @@ private theorem eq_one_iff_lt_card {Q : GTPattern n} (hQ : ∀ i j, Q i j = 0 �
   -- The entries equal to `1` form an initial segment of the row, since the row decreases.
   refine (Fin.lt_card_filter_univ_iff_apply_of_imp (j := ⟨c, hc⟩) (fun i : Fin j => Q i j = 1)
     fun c' c hcc' h1 => ?_).symm
-  have := Q.entry_anti hj hcc' c'.2
+  have := Q.entry_anti hcc' c'.2
   rcases hQ c j with h | h <;> omega
 
 /-- A pattern with entries in `{0, 1}` is a row-subset pattern.  The rows of `I` are those at
@@ -154,9 +154,9 @@ private theorem exists_eq_rowSubset {Q : GTPattern n} (hQ : ∀ i j, Q i j = 0 �
     ∃ I : Finset (Fin n), Q = rowSubset I := by
   -- `k j` is the number of ones in row `j`, and row `j` is `(1, …, 1, 0, …, 0)`.
   obtain ⟨k, hk⟩ : ∃ k : ℕ → ℕ, ∀ j, k j = #{c ∈ range j | Q c j = 1} := ⟨_, fun _ => rfl⟩
-  have hrow : ∀ {c j}, c < j → j ≤ n → (Q c j = 1 ↔ c < k j) := fun hc hj => by
+  have hrow : ∀ {c j}, c < j → (Q c j = 1 ↔ c < k j) := fun hc => by
     rw [hk]
-    exact eq_one_iff_lt_card hQ hc hj
+    exact eq_one_iff_lt_card hQ hc
   have hk_le : ∀ j, k j ≤ j := fun j => by
     rw [hk]
     exact (card_filter_le _ _).trans (card_range j).le
@@ -165,20 +165,20 @@ private theorem exists_eq_rowSubset {Q : GTPattern n} (hQ : ∀ i j, Q i j = 0 �
     have := hk_le j
     rcases Nat.eq_zero_or_pos (k j) with h0 | hpos
     · omega
-    have h1 : Q (k j - 1) j = 1 := (hrow (by omega) hj.le).2 (by omega)
+    have h1 : Q (k j - 1) j = 1 := (hrow (by omega)).2 (by omega)
     have h2 := Q.entry_le_entry_succ_row (i := k j - 1) (by omega) hj
     have h3 : Q (k j - 1) (j + 1) = 1 := by rcases hQ (k j - 1) (j + 1) with h | h <;> omega
-    have := (hrow (j := j + 1) (by omega) (by omega)).1 h3
+    have := (hrow (j := j + 1) (by omega)).1 h3
     omega
   have hk_succ : ∀ j, j < n → k (j + 1) ≤ k j + 1 := fun j hj => by
     have := hk_le (j + 1)
     by_cases hlt : k (j + 1) ≤ 1
     · omega
     have h1 : Q (k (j + 1) - 2 + 1) (j + 1) = 1 :=
-      (hrow (j := j + 1) (by omega) (by omega)).2 (by omega)
+      (hrow (j := j + 1) (by omega)).2 (by omega)
     have h2 := Q.entry_succ_succ_le_entry (i := k (j + 1) - 2) hj
     have h3 : Q (k (j + 1) - 2) j = 1 := by rcases hQ (k (j + 1) - 2) j with h | h <;> omega
-    have := (hrow (by omega) hj.le).1 h3
+    have := (hrow (by omega)).1 h3
     omega
   -- The rows of `I` are those at which the count increases, so `k j` of them lie below `j`.
   obtain ⟨I, hI⟩ : ∃ I : Finset (Fin n), ∀ r, r ∈ I ↔ k (r.val + 1) = k r.val + 1 :=
@@ -201,10 +201,10 @@ private theorem exists_eq_rowSubset {Q : GTPattern n} (hQ : ∀ i j, Q i j = 0 �
   · rw [hcount j hj]
     by_cases hcj : c < j
     · split_ifs with h'
-      · exact (hrow hcj hj).2 h'.2
+      · exact (hrow hcj).2 h'.2
       · rcases hQ c j with h | h
         · exact h
-        · exact absurd ⟨hj, (hrow hcj hj).1 h⟩ h'
+        · exact absurd ⟨hj, (hrow hcj).1 h⟩ h'
     · rw [Q.entry_eq_zero (Or.inr (by omega)), ite_eq_right (by have := hk_le j; omega)]
   · rw [Q.entry_eq_zero (Or.inl (by omega)), ite_eq_right (by omega)]
 

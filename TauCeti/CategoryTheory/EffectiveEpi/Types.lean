@@ -38,7 +38,7 @@ noncomputable def effectiveEpiFamilyStructOfSurjective (hπ : ∀ b, ∃ a x, π
     have hb := (hπ (π a x)).choose_spec.choose_spec
     exact ConcreteCategory.congr_hom (h _ _ (homOfElement (hπ (π a x)).choose_spec.choose)
       (homOfElement x) (ConcreteCategory.hom_ext _ _ fun _ ↦ hb)) PUnit.unit
-  uniq {W} e h m hm := by
+  uniq {W} e _ m hm := by
     ext b
     have hb := (hπ b).choose_spec.choose_spec
     simp only [← hm]

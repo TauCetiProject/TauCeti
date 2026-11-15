@@ -125,7 +125,7 @@ theorem mem_homogeneousUnitDegrees_iff {d : ι} :
     d ∈ homogeneousUnitDegrees 𝒜 ↔ ∃ u : Aˣ, (u : A) ∈ 𝒜 d := by
   refine ⟨fun h ↦ ?_, fun ⟨u, hu⟩ ↦ mem_homogeneousUnitDegrees_of_mem hu⟩
   induction h using AddSubgroup.closure_induction with
-  | mem d hd => exact hd
+  | mem _ hd => exact hd
   | zero => exact ⟨1, SetLike.one_mem_graded 𝒜⟩
   | add d e _ _ hd he =>
     obtain ⟨u, hu⟩ := hd

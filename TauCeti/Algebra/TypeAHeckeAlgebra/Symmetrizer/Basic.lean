@@ -38,7 +38,11 @@ open CoxeterSystem
 
 variable {R : Type*} [CommRing R] {q : Rˣ} {n : ℕ}
 variable {W : Type*} [Group W] (cs : CoxeterSystem (CoxeterMatrix.A (n - 1)) W)
-variable (J : Set (Fin (n - 1))) [Finite (cs.parabolic J)]
+variable (J : Set (Fin (n - 1)))
+
+section Finite
+
+variable [Finite (cs.parabolic J)]
 
 /-- The parabolic weighted sum `C_J(a) = ∑ w ∈ W_J, a ^ length w • T_w`.
 At `a = q` this is the q-symmetrizer, and at `a = -q⁻¹` the q-antisymmetrizer. -/
@@ -200,9 +204,15 @@ theorem parabolicEigenSum_mul_Tw {a : R} (ha : a * a = ((q : R) - ↑q⁻¹) * a
     rw [parabolicEigenSum_mul_T cs J ha (hJ i (by simp)), smul_mul_assoc,
       ih (fun j hj ↦ hJ j (by simp [hj])), smul_smul, pow_succ, mul_comm a]
 
+end Finite
+
+section Fintype
+
+variable [Fintype (cs.parabolic J)]
+
 /-- **Quasi-idempotence.** The scalar is the parabolic length generating function evaluated
 at `a²`. This identity remains valid when that scalar vanishes. -/
-theorem parabolicEigenSum_mul_self [Fintype (cs.parabolic J)] {a : R}
+theorem parabolicEigenSum_mul_self {a : R}
     (ha : a * a = ((q : R) - ↑q⁻¹) * a + 1) :
     parabolicEigenSum (q := q) cs J a * parabolicEigenSum cs J a =
       (∑ w : cs.parabolic J, a ^ (2 * cs.length w)) • parabolicEigenSum cs J a := by
@@ -213,7 +223,7 @@ theorem parabolicEigenSum_mul_self [Fintype (cs.parabolic J)] {a : R}
   rw [Finset.sum_smul]
 
 /-- Dividing by a unit quasi-idempotence scalar gives an idempotent. -/
-theorem isIdempotentElem_smul_parabolicEigenSum [Fintype (cs.parabolic J)] {a : R}
+theorem isIdempotentElem_smul_parabolicEigenSum {a : R}
     (ha : a * a = ((q : R) - ↑q⁻¹) * a + 1)
     (h : IsUnit (∑ w : cs.parabolic J, a ^ (2 * cs.length w))) :
     IsIdempotentElem ((↑h.unit⁻¹ : R) • parabolicEigenSum (q := q) cs J a) := by
@@ -221,7 +231,7 @@ theorem isIdempotentElem_smul_parabolicEigenSum [Fintype (cs.parabolic J)] {a : 
     smul_smul, smul_smul, mul_assoc, h.val_inv_mul, mul_one]
 
 /-- The row q-symmetrizer has quasi-idempotence scalar `∑ w ∈ W_J, q ^ (2 * length w)`. -/
-theorem parabolicEigenSum_q_mul_self [Fintype (cs.parabolic J)] :
+theorem parabolicEigenSum_q_mul_self :
     parabolicEigenSum cs J (q : R) * parabolicEigenSum cs J (q : R) =
       (∑ w : cs.parabolic J, (q : R) ^ (2 * cs.length w)) •
         parabolicEigenSum (q := q) cs J (q : R) := by
@@ -230,7 +240,7 @@ theorem parabolicEigenSum_q_mul_self [Fintype (cs.parabolic J)] :
 
 /-- The column q-antisymmetrizer has quasi-idempotence scalar
 `∑ w ∈ W_J, q⁻¹ ^ (2 * length w)`. -/
-theorem parabolicEigenSum_neg_inv_mul_self [Fintype (cs.parabolic J)] :
+theorem parabolicEigenSum_neg_inv_mul_self :
     parabolicEigenSum cs J (-(↑q⁻¹ : R)) * parabolicEigenSum cs J (-(↑q⁻¹ : R)) =
       (∑ w : cs.parabolic J, (↑q⁻¹ : R) ^ (2 * cs.length w)) •
         parabolicEigenSum (q := q) cs J (-(↑q⁻¹ : R)) := by
@@ -238,6 +248,8 @@ theorem parabolicEigenSum_neg_inv_mul_self [Fintype (cs.parabolic J)] :
       ((q : R) - ↑q⁻¹) * (-(↑q⁻¹ : R)) + 1 := by simp [sub_mul]
   rw [parabolicEigenSum_mul_self cs J ha]
   simp [pow_mul]
+
+end Fintype
 
 /-- The full weighted sum has quasi-idempotence scalar indexed by the original Coxeter
 carrier, rather than by the full parabolic subgroup subtype. -/

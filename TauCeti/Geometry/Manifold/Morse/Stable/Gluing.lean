@@ -80,7 +80,6 @@ parameters, whose split coordinates are strictly differentiable at `0` with deri
 such that the expanding component of `ψ'` is invertible. -/
 theorem IsMorseSmale.exists_unstableSet_level_param {hX : IsAdaptedPseudoGradient f X}
     (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) {p : M}
-    (hp : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0) (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0)
     (hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f x + 1)
     (φ : MorseChart E f x) (hy : y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet x)
     (hyφ : y ∈ φ.toChart.source)
@@ -95,7 +94,8 @@ theorem IsMorseSmale.exists_unstableSet_level_param {hX : IsAdaptedPseudoGradien
       ∀ V ∈ 𝓝 (0 : F), ∀ᶠ w in 𝓝 y, w ∈ hX.flow.unstableSet p → f w = f y →
         ∃ z ∈ V, ι z = w := by
   have hpx : p ≠ x := by rintro rfl; omega
-  obtain ⟨L, q, -, hyq, hq, hs⟩ := hX.exists_isSliceChart_unstableSet hf hp hy.1
+  obtain ⟨L, q, -, hyq, hq, hs⟩ :=
+    hX.exists_isSliceChart_unstableSet hf (hX.mfderiv_eq_zero_of_mem_unstableSet hy.1) hy.1
   set P := WithLp.sndL 2 ℝ ({i // φ.weight i = 1} → ℝ) ({i // ¬φ.weight i = 1} → ℝ) ∘L
     (φ.splitCoordL : E →L[ℝ] _)
   have hPs : Function.Surjective P := fun b ↦ by
@@ -109,8 +109,8 @@ theorem IsMorseSmale.exists_unstableSet_level_param {hX : IsAdaptedPseudoGradien
       hy.2)
   obtain ⟨F, ι, ι', hι0, hι, hιs, hd, hinv, hexh⟩ :=
     exists_param_inter_preimage_of_span_mtangentConeAt_sup_eq_top (by simp) hq hs hyq hy.1 hy.2
-      isOpen_univ (mem_univ y) hf.contMDiff.contMDiffOn (h.span_mtangentConeAt_sup_eq_top hp hx hy)
-      (by rw [hX.finrank_span_mtangentConeAt_unstableSet hf hp hy.1, φ.finrank_snd_splitCoord,
+      isOpen_univ (mem_univ y) hf.contMDiff.contMDiffOn (h.span_mtangentConeAt_sup_eq_top hy)
+      (by rw [hX.finrank_span_mtangentConeAt_unstableSet hf hy.1, φ.finrank_snd_splitCoord,
         hind]) hX0 hX0'
       (hX.mvfderiv_apply_lt_zero y
         (hX.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet hpx hy)).ne
@@ -129,7 +129,6 @@ parameters, whose split coordinates are strictly differentiable at `0` with deri
 such that the contracting component of `ψ'` is invertible. -/
 theorem IsMorseSmale.exists_stableSet_level_param {hX : IsAdaptedPseudoGradient f X}
     (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) {r : M}
-    (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) (hr : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f r = 0)
     (hind : manifoldMorseIndex 𝓘(ℝ, E) f x = manifoldMorseIndex 𝓘(ℝ, E) f r + 1)
     (φ : MorseChart E f x) (hy : y ∈ hX.flow.unstableSet x ∩ hX.flow.stableSet r)
     (hyφ : y ∈ φ.toChart.source)
@@ -144,8 +143,8 @@ theorem IsMorseSmale.exists_stableSet_level_param {hX : IsAdaptedPseudoGradient 
       ∀ V ∈ 𝓝 (0 : F), ∀ᶠ w in 𝓝 y, w ∈ hX.flow.stableSet r → f w = f y →
         ∃ z ∈ V, ι z = w := by
   have hxr : x ≠ r := by rintro rfl; omega
-  have hfd : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f := hf.contMDiff.mdifferentiable (by simp)
-  obtain ⟨L, q, -, hyq, hq, hs⟩ := hX.exists_isSliceChart_stableSet hfd hr hy.2
+  obtain ⟨L, q, -, hyq, hq, hs⟩ :=
+    hX.exists_isSliceChart_stableSet (hX.mfderiv_eq_zero_of_mem_stableSet hy.2) hy.2
   set P := WithLp.fstL 2 ℝ ({i // φ.weight i = 1} → ℝ) ({i // ¬φ.weight i = 1} → ℝ) ∘L
     (φ.splitCoordL : E →L[ℝ] _)
   have hPs : Function.Surjective P := fun b ↦ by
@@ -157,12 +156,12 @@ theorem IsMorseSmale.exists_stableSet_level_param {hX : IsAdaptedPseudoGradient 
   have hX0' : X y ∈ Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet x) y) :=
     Submodule.subset_span (hX.mem_mtangentConeAt_of_isInvariant
       (hX.flow.isInvariant_unstableSet x) hy.1)
-  have hdim := hX.finrank_span_mtangentConeAt_stableSet_add_manifoldMorseIndex hfd hr hy.2
+  have hdim := hX.finrank_span_mtangentConeAt_stableSet_add_manifoldMorseIndex hy.2
   have hdimφ := φ.finrank_fst_splitCoord_add_manifoldMorseIndex
   obtain ⟨F, ι, ι', hι0, hι, hιs, hd, hinv, hexh⟩ :=
     exists_param_inter_preimage_of_span_mtangentConeAt_sup_eq_top (by simp) hq hs hyq hy.2 hy.1
       isOpen_univ (mem_univ y) hf.contMDiff.contMDiffOn
-      (by rw [sup_comm]; exact h.span_mtangentConeAt_sup_eq_top hx hr hy) (by omega) hX0 hX0'
+      (by rw [sup_comm]; exact h.span_mtangentConeAt_sup_eq_top hy) (by omega) hX0 hX0'
       (hX.mvfderiv_apply_lt_zero y
         (hX.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet hxr hy)).ne
       φ.mem_maximalAtlas hyφ hPs (by simpa [P] using hloc)
@@ -193,8 +192,6 @@ field `z ↦ (-wᵢ zᵢ)ᵢ` in `φ`, model orbits that stay in a box inside th
 pseudo-gradient (`TauCeti.IsAdaptedPseudoGradient.flow_splitExitTime`). -/
 theorem IsMorseSmale.exists_homeomorph_closure_splitGluingPairs {hX : IsAdaptedPseudoGradient f X}
     (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) {p r y₁ y₂ : M}
-    (hp : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0) (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0)
-    (hr : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f r = 0)
     (hpx : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f x + 1)
     (hxr : manifoldMorseIndex 𝓘(ℝ, E) f x = manifoldMorseIndex 𝓘(ℝ, E) f r + 1)
     (φ : MorseChart E f x)
@@ -238,9 +235,9 @@ theorem IsMorseSmale.exists_homeomorph_closure_splitGluingPairs {hX : IsAdaptedP
   set Φ : M → WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)) :=
     fun w ↦ φ.splitCoord (φ.coord (φ.toChart w))
   obtain ⟨F₁, ι₁, ψ', hι₁0, hι₁, hι₁s, hψ, hψ', hexh₁⟩ :=
-    h.exists_unstableSet_level_param hf hp hx hpx φ hy₁ hy₁φ hloc₁
+    h.exists_unstableSet_level_param hf hpx φ hy₁ hy₁φ hloc₁
   obtain ⟨F₂, ι₂, χ', hι₂0, hι₂, hι₂s, hχ, hχ', hexh₂⟩ :=
-    h.exists_stableSet_level_param hf hx hr hxr φ hy₂ hy₂φ hloc₂
+    h.exists_stableSet_level_param hf hxr φ hy₂ hy₂φ hloc₂
   -- The broken pair: `y₁` lies on the stable set of `x` and `y₂` on its unstable set.
   have hψ₀ : Φ (ι₁ 0) = WithLp.toLp 2 ((Φ y₁).fst, 0) := by
     rw [hι₁0, ← hloc₁.self_of_nhds hy₁.2]

@@ -36,8 +36,19 @@ cokernel of `f^*` have the dimensions of the cokernel and kernel of `f`
 `LinearMap.finrank_quotient_range_dualMap`), so `f^*` has index minus that of `f`.
 
 This identifies the determinant line of the algebraic dual map `f^*`, on full algebraic duals
-over a field, with that of `f`. The comparison for the adjoint of a Fredholm operator between
-Banach or Hilbert spaces, on topological duals, is not provided here.
+over a field, with that of `f`.
+
+A map `g` whose kernel and cokernel are copies of the cokernel and kernel of `f` themselves,
+rather than of their duals, has instead the dual determinant line: identifications
+`e₁ : ker g ≃ coker f` and `e₂ : coker g ≃ ker f` give
+
+`det g = det (ker g) ⊗ (det (coker g))^* ≃ det (coker f) ⊗ (det (ker f))^* ≃ (det f)^*`
+
+(`LinearMap.detLineEquivDualOfKerCoker`), under which `x ⊗ ψ` pairs with `u ⊗ φ` to
+`φ (e₁ x) * ψ (e₂⁻¹ u)`. The pairing is symmetric in `f` and `g`, and for bijective maps it is the
+pairing of `K` with itself. The Hilbert space adjoint of a Fredholm operator is the case in
+point: its kernel is the orthogonal complement of the range, a copy of the cokernel
+(`ContinuousLinearMap.detLineAdjointEquivDual`).
 
 ## Main declarations
 
@@ -45,6 +56,11 @@ Banach or Hilbert spaces, on topological duals, is not provided here.
   `TauCeti.detLineDualEquiv_ιMulti_ιMulti`.
 * `LinearMap.detLineDualMapEquiv`: the isomorphism `det f^* ≃ det f`, with value
   `LinearMap.smul_detLineDualMapEquiv_tmul`.
+* `LinearMap.detLineEquivDualOfKerCoker`: the isomorphism `det g ≃ (det f)^*` for
+  `ker g ≃ coker f` and `coker g ≃ ker f`, with value
+  `LinearMap.detLineEquivDualOfKerCoker_tmul_tmul`, symmetry
+  `LinearMap.detLineEquivDualOfKerCoker_symm_symm_apply` and bijective case
+  `LinearMap.detLineEquivDualOfKerCoker_apply_detLineEquivOfBijective_symm_one`.
 
 ## References
 
@@ -190,5 +206,84 @@ theorem smul_detLineDualMapEquiv_tmul [FiniteDimensional K (ker f)]
     (exteriorPower.ιMulti K _ u)
   rw [← detLineCokerDualMapEquiv_ιMulti, detLineDualMapEquiv_tmul, hker,
     TensorProduct.smul_tmul', hcoker, ← TensorProduct.smul_tmul']
+
+section KerCoker
+
+variable {K : Type*} [Field K] {M N P Q : Type*} [AddCommGroup M] [Module K M]
+  [AddCommGroup N] [Module K N] [AddCommGroup P] [Module K P] [AddCommGroup Q] [Module K Q]
+  {f : M →ₗ[K] N} {g : P →ₗ[K] Q} [FiniteDimensional K (ker f)]
+  [FiniteDimensional K (N ⧸ range f)]
+
+/-- **Determinant lines of maps exchanging kernel and cokernel.** If the kernel of `g` is
+identified with the cokernel of `f` (`e₁`) and the cokernel of `g` with the kernel of `f` (`e₂`),
+the determinant line `det g = det (ker g) ⊗ (det (coker g))^*` is identified with the dual of
+`det f = det (ker f) ⊗ (det (coker f))^*`: `x ⊗ ψ` pairs with `u ⊗ φ` to `φ (e₁ x) * ψ (e₂⁻¹ u)`,
+with `e₁` and `e₂⁻¹` acting on determinant lines
+(`LinearMap.detLineEquivDualOfKerCoker_tmul_tmul`). For the Hilbert space adjoint `g = f†` of a
+Fredholm operator, whose kernel is the orthogonal complement of the range of `f`, this is the
+comparison `det f† ≃ (det f)^*` (`ContinuousLinearMap.detLineAdjointEquivDual`). -/
+def detLineEquivDualOfKerCoker (e₁ : ker g ≃ₗ[K] N ⧸ range f) (e₂ : (Q ⧸ range g) ≃ₗ[K] ker f) :
+    g.detLine ≃ₗ[K] Dual K f.detLine :=
+  (TensorProduct.congr (LinearEquiv.detLineCongr e₁)
+      (LinearEquiv.detLineCongr e₂).symm.dualMap).trans <|
+    (TensorProduct.comm K _ _).trans <|
+      (TensorProduct.congr (LinearEquiv.refl K _) (evalEquiv K _)).trans
+        (dualDistribEquiv K _ _)
+
+/-- `LinearMap.detLineEquivDualOfKerCoker` pairs `x ⊗ ψ` with `u ⊗ φ` to `φ (e₁ x) * ψ (e₂⁻¹ u)`. -/
+@[simp]
+theorem detLineEquivDualOfKerCoker_tmul_tmul (e₁ : ker g ≃ₗ[K] N ⧸ range f)
+    (e₂ : (Q ⧸ range g) ≃ₗ[K] ker f) (x : TauCeti.detLine K (ker g))
+    (ψ : Dual K (TauCeti.detLine K (Q ⧸ range g))) (u : TauCeti.detLine K (ker f))
+    (φ : Dual K (TauCeti.detLine K (N ⧸ range f))) :
+    detLineEquivDualOfKerCoker e₁ e₂ (x ⊗ₜ ψ) (u ⊗ₜ φ) =
+      φ (LinearEquiv.detLineCongr e₁ x) * ψ (LinearEquiv.detLineCongr e₂.symm u) := by
+  simp [detLineEquivDualOfKerCoker]
+
+/-- **The pairing is symmetric.** Exchanging the roles of `f` and `g`, with the inverse
+identifications, pairs `det f` with `det g` by the same values. -/
+theorem detLineEquivDualOfKerCoker_symm_symm_apply [FiniteDimensional K (ker g)]
+    [FiniteDimensional K (Q ⧸ range g)] (e₁ : ker g ≃ₗ[K] N ⧸ range f)
+    (e₂ : (Q ⧸ range g) ≃ₗ[K] ker f) (a : g.detLine) (b : f.detLine) :
+    detLineEquivDualOfKerCoker e₂.symm e₁.symm b a = detLineEquivDualOfKerCoker e₁ e₂ a b := by
+  induction a using TensorProduct.inductionOn with
+  | add a a' ha ha' => rw [map_add, map_add, LinearMap.add_apply, ha, ha']
+  | tmul x ψ =>
+    induction b using TensorProduct.inductionOn with
+    | add b b' hb hb' => rw [map_add, LinearMap.add_apply, map_add, hb, hb']
+    | tmul u φ =>
+      rw [detLineEquivDualOfKerCoker_tmul_tmul, detLineEquivDualOfKerCoker_tmul_tmul,
+        LinearEquiv.symm_symm, mul_comm]
+
+/-- **The bijective case.** When `f` and `g` are bijective, their determinant lines are
+identified with `K` (`LinearMap.detLineEquivOfBijective`), and through these identifications
+`LinearMap.detLineEquivDualOfKerCoker` is the identification of `K` with its dual: it pairs the
+generators `1` of both lines to `1`. -/
+theorem detLineEquivDualOfKerCoker_apply_detLineEquivOfBijective_symm_one
+    (e₁ : ker g ≃ₗ[K] N ⧸ range f) (e₂ : (Q ⧸ range g) ≃ₗ[K] ker f) (hf : Function.Bijective f)
+    (hg : Function.Bijective g) (a : g.detLine) :
+    detLineEquivDualOfKerCoker e₁ e₂ a ((detLineEquivOfBijective hf).symm 1) =
+      detLineEquivOfBijective hg a := by
+  have hcf : finrank K (N ⧸ range f) = 0 :=
+    have := Submodule.Quotient.subsingleton_iff.mpr (range_eq_top.mpr hf.2)
+    finrank_zero_of_subsingleton
+  have hcg : finrank K (Q ⧸ range g) = 0 :=
+    have := Submodule.Quotient.subsingleton_iff.mpr (range_eq_top.mpr hg.2)
+    finrank_zero_of_subsingleton
+  -- Both sides are linear in `a`, and `g.detLine` is spanned by `(detLineEquivOfBijective hg)⁻¹ 1`,
+  -- the tensor of the empty exterior product of the kernel with a functional taking the value `1`
+  -- on the empty exterior product of the cokernel; the same holds for `f`.
+  obtain ⟨c, rfl⟩ : ∃ c : K, c • (detLineEquivOfBijective hg).symm 1 = a :=
+    ⟨detLineEquivOfBijective hg a, by rw [← map_smul, smul_eq_mul, mul_one,
+      LinearEquiv.symm_apply_apply]⟩
+  rw [map_smul, map_smul, LinearMap.smul_apply, LinearEquiv.apply_symm_apply,
+    detLineEquivOfBijective_symm_one hg 0 (TauCeti.detLineEquivOfFinrankEqZero hcg).toLinearMap 0
+      (TauCeti.detLineEquivOfFinrankEqZero_ιMulti hcg _),
+    detLineEquivOfBijective_symm_one hf 0 (TauCeti.detLineEquivOfFinrankEqZero hcf).toLinearMap 0
+      (TauCeti.detLineEquivOfFinrankEqZero_ιMulti hcf _),
+    detLineEquivDualOfKerCoker_tmul_tmul]
+  simp [TauCeti.detLineEquivOfFinrankEqZero_ιMulti]
+
+end KerCoker
 
 end LinearMap

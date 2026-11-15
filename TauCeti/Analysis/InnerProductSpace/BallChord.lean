@@ -193,7 +193,7 @@ def hemisphereChord :
   left_inv q := by
     obtain ⟨⟨⟨x, hx⟩, hxp⟩, ⟨t, ht⟩⟩ := q
     have hx' : ‖x‖ = 1 := mem_sphere_zero_iff_norm.1 hx
-    have hy : ‖chordPoint p x t‖ ^ 2 - ⟪chordPoint p x t, (p : E)⟫ ^ 2 < 1 := by
+    have _ : ‖chordPoint p x t‖ ^ 2 - ⟪chordPoint p x t, (p : E)⟫ ^ 2 < 1 := by
       rw [norm_chordPoint_sq p hx', inner_chordPoint]
       nlinarith [mul_pos hxp hxp]
     -- The half-length of the chord through `chordPoint p x t` is the height of `x`.

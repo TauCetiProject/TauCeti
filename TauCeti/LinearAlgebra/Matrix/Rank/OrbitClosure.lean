@@ -192,13 +192,12 @@ private theorem rank_pow_add_sum_min_len {Y : Matrix n n K} {ι : Type*} [Fintyp
   rw [rank, ← toLin'_apply', toLin'_pow, ← c.finrank_ker_pow,
     LinearMap.finrank_range_add_finrank_ker, Module.finrank_fintype_fun_eq_card]
 
-/-- If the ranks of the powers of `Y` are at most those of `X`, and strictly smaller for some
-power, then there are distinct chains `len j ≤ len i` of `Y` such that the inequality is strict
-for every power `k` with `len j ≤ k ≤ len i`. -/
+/-- If the rank of some power of `Y` is strictly smaller than that of the same power of `X`, then
+there are distinct chains `len j ≤ len i` of `Y` such that the inequality is strict for every power
+`k` with `len j ≤ k ≤ len i`. -/
 private theorem exists_ne_forall_rank_pow_lt {X Y : Matrix n n K} {ι κ : Type*} [Finite ι]
     [Finite κ] (b : Module.End.JordanChainBasis (toLin' X) κ)
-    (c : Module.End.JordanChainBasis (toLin' Y) ι) (h : ∀ k, (Y ^ k).rank ≤ (X ^ k).rank)
-    (hlt : ∃ k, (Y ^ k).rank < (X ^ k).rank) :
+    (c : Module.End.JordanChainBasis (toLin' Y) ι) (hlt : ∃ k, (Y ^ k).rank < (X ^ k).rank) :
     ∃ i j, i ≠ j ∧ c.len j ≤ c.len i ∧
       ∀ k, c.len j ≤ k → k ≤ c.len i → (Y ^ k).rank < (X ^ k).rank := by
   cases nonempty_fintype ι
@@ -208,7 +207,6 @@ private theorem exists_ne_forall_rank_pow_lt {X Y : Matrix n n K} {ι κ : Type*
   obtain ⟨i, -, j, -, hij, hji, hlt⟩ := Finset.exists_ne_forall_sum_min_lt
     (s := Finset.univ) (t := Finset.univ) (a := c.len) (b := b.len)
     (by rw [← b.finrank_eq_sum_len, ← c.finrank_eq_sum_len])
-    (fun k => by have := h k; have := hb k; have := hc k; omega)
     (by
       obtain ⟨k, hk⟩ := hlt
       exact ⟨k, by have := hb k; have := hc k; omega⟩)
@@ -250,7 +248,7 @@ theorem mem_of_forall_rank_pow_le {X : Matrix n n K} (hX : IsNilpotent X)
     rw [b.finrank_ker_pow, c.finrank_ker_pow]
     omega
   -- Otherwise a box move on the Jordan type of `Y` keeps the ranks at most those of `X`.
-  obtain ⟨i, j, hij, hji, hlt⟩ := exists_ne_forall_rank_pow_lt b c h <| by
+  obtain ⟨i, j, hij, hji, hlt⟩ := exists_ne_forall_rank_pow_lt b c <| by
     push Not at heq
     obtain ⟨k, hk⟩ := heq
     exact ⟨k, lt_of_le_of_ne (h k) hk⟩

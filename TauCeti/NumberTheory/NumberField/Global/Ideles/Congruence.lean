@@ -225,11 +225,23 @@ namespace ideleCongruenceSubgroup
 
 variable {𝔪 : Modulus K} {x : IdeleGroup (𝓞 K) K}
 
+/-- **An idele of the congruence subgroup is congruent to one at every finite place**: its
+`v`-component minus one has valuation at most `exp (-(𝔪.exponent v))`.  At a divisor of the finite
+part this is the defining congruence; away from it the exponent is zero, and the bound says that
+the component minus one is integral, which holds because the component is a unit there. -/
 theorem valued_ideleFiniteCoord_sub_one_le (hx : x ∈ ideleCongruenceSubgroup 𝔪)
-    {v : HeightOneSpectrum (𝓞 K)} (hv : v.asIdeal ∣ 𝔪.finitePart) :
+    {v : HeightOneSpectrum (𝓞 K)} :
     Valued.v ((v.ideleFiniteCoord x : v.adicCompletion K) - 1) ≤
-      WithZero.exp (-(𝔪.exponent v : ℤ)) :=
-  (mem_ideleCongruenceSubgroup_iff.mp hx).2.1 v hv
+      WithZero.exp (-(𝔪.exponent v : ℤ)) := by
+  by_cases hv : v.asIdeal ∣ 𝔪.finitePart
+  · exact (mem_ideleCongruenceSubgroup_iff.mp hx).2.1 v hv
+  · have he : 𝔪.exponent v = 0 := by
+      by_contra he
+      exact hv ((Modulus.mem_support_iff 𝔪 v).mp
+        ((Modulus.mem_support_iff_exponent_ne_zero 𝔪 v).mpr he))
+    rw [he, Nat.cast_zero, neg_zero, WithZero.exp_zero]
+    exact (Valuation.map_sub _ _ _).trans
+      (max_le ((mem_ideleCongruenceSubgroup_iff.mp hx).1 v hv).le (Valuation.map_one _).le)
 
 theorem extensionEmbeddingOfIsReal_pos (hx : x ∈ ideleCongruenceSubgroup 𝔪)
     {w : {w : InfinitePlace K // w.IsReal}} (hw : w ∈ 𝔪.infinitePart) :
@@ -244,7 +256,7 @@ theorem valued_ideleFiniteCoord_eq_one (hx : x ∈ ideleCongruenceSubgroup 𝔪)
     (v : HeightOneSpectrum (𝓞 K)) :
     Valued.v (v.ideleFiniteCoord x : v.adicCompletion K) = 1 := by
   by_cases hv : v.asIdeal ∣ 𝔪.finitePart
-  · exact 𝔪.valued_eq_one_of_valued_sub_one_le hv (valued_ideleFiniteCoord_sub_one_le hx hv)
+  · exact 𝔪.valued_eq_one_of_valued_sub_one_le hv (valued_ideleFiniteCoord_sub_one_le hx)
   · exact (mem_ideleCongruenceSubgroup_iff.mp hx).1 v hv
 
 /-- **The finite components of a congruence idele are integral**: at every finite place `v`, the
@@ -260,13 +272,12 @@ this is the integrality of the component. -/
 theorem valued_snd_sub_one_le_of_pow_dvd (hx : x ∈ ideleCongruenceSubgroup 𝔪)
     {v : HeightOneSpectrum (𝓞 K)} {n : ℕ} (hn : v.asIdeal ^ n ∣ 𝔪.finitePart) :
     Valued.v ((x : 𝔸[K]).2 v - 1) ≤ WithZero.exp (-(n : ℤ)) := by
-  rcases Nat.eq_zero_or_pos n with rfl | hn0
+  rcases Nat.eq_zero_or_pos n with rfl | _
   · have h := sub_mem (snd_mem_adicCompletionIntegers hx v) (one_mem (v.adicCompletionIntegers K))
     rw [mem_adicCompletionIntegers] at h
     simpa using h
   · rw [← coe_ideleFiniteCoord]
-    refine (valued_ideleFiniteCoord_sub_one_le hx ((dvd_pow_self _ hn0.ne').trans hn)).trans
-      (WithZero.exp_le_exp.mpr ?_)
+    refine (valued_ideleFiniteCoord_sub_one_le hx).trans (WithZero.exp_le_exp.mpr ?_)
     have := (𝔪.pow_dvd_finitePart_iff_le_exponent v).mp hn
     omega
 
@@ -288,17 +299,9 @@ filtration**: at every finite place `v`, the coordinate of an idele of
 theorem ideleCongruenceSubgroup.ideleFiniteCoord_mem_unitFiltration {𝔪 : Modulus K}
     {x : IdeleGroup (𝓞 K) K} (hx : x ∈ ideleCongruenceSubgroup 𝔪) (v : HeightOneSpectrum (𝓞 K)) :
     v.ideleFiniteCoord x ∈ TauCeti.unitFiltration (v.adicCompletion K) (𝔪.exponent v) := by
-  have hunit := ideleCongruenceSubgroup.valued_ideleFiniteCoord_eq_one hx v
   rw [HeightOneSpectrum.mem_unitFiltration_adicCompletion_iff]
-  refine ⟨hunit, ?_⟩
-  by_cases hv : v.asIdeal ∣ 𝔪.finitePart
-  · exact ideleCongruenceSubgroup.valued_ideleFiniteCoord_sub_one_le hx hv
-  · have he : 𝔪.exponent v = 0 := by
-      by_contra he
-      exact hv ((Modulus.mem_support_iff 𝔪 v).mp
-        ((Modulus.mem_support_iff_exponent_ne_zero 𝔪 v).mpr he))
-    rw [he, Nat.cast_zero, neg_zero, WithZero.exp_zero]
-    exact (Valuation.map_sub _ _ _).trans (max_le hunit.le (Valuation.map_one _).le)
+  exact ⟨ideleCongruenceSubgroup.valued_ideleFiniteCoord_eq_one hx v,
+    ideleCongruenceSubgroup.valued_ideleFiniteCoord_sub_one_le hx⟩
 
 /-- **An idele concentrated at one finite place lies in the congruence subgroup exactly when its
 component lies in the prescribed step of the unit filtration.**  For `u ∈ K_vˣ`, the idele with
@@ -408,7 +411,7 @@ theorem isOpen_ideleCongruenceSubgroup (𝔪 : Modulus K) :
   have hAopen : IsOpen A := isOpen_setOf_congruenceConditions 𝔪
   have hmemA : ∀ x ∈ ideleCongruenceSubgroup 𝔪, (x : 𝔸[K]) ∈ A := by
     intro x hx
-    refine ⟨FiniteAdeleRing.mem_integralAdeles.mpr fun v ↦ ?_, fun v hv ↦ ?_, fun w hw ↦ ?_⟩
+    refine ⟨FiniteAdeleRing.mem_integralAdeles.mpr fun v ↦ ?_, fun v _ ↦ ?_, fun w hw ↦ ?_⟩
     · exact ideleCongruenceSubgroup.snd_mem_adicCompletionIntegers hx v
     · exact ideleCongruenceSubgroup.valued_snd_sub_one_le_of_pow_dvd hx
         (𝔪.pow_exponent_dvd_finitePart v)
@@ -453,7 +456,7 @@ theorem unitEmbedding_mem_ideleCongrOneSubgroup_iff {𝔪 : Modulus K} {x : Kˣ}
         InfinitePlace.embedding_of_isReal w.2 (x : K) := by
     intro w
     rw [InfinitePlace.ideleInfiniteCoord_unitEmbedding]
-    simp
+    simp [NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe]
   simp only [mem_ideleCongrOneSubgroup_iff, valued_ideleFiniteCoord_unitEmbedding_sub_one, hinf,
     isCongrOne_iff]
 
@@ -590,7 +593,7 @@ theorem ideleCongruenceSubgroup_gcd (𝔪 𝔫 : Modulus K) :
       · exact extensionEmbeddingOfIsReal_pos_of_mem_inter hx hw
           (not_not.mp fun h𝔫 ↦ hwT (hmemT.mpr ⟨hw, h𝔫⟩))
   · -- The components of `y` satisfy the conditions of `𝔫`.
-    refine mem_ideleCongruenceSubgroup_iff.mpr ⟨fun v _ ↦ ?_, fun v hv ↦ ?_, fun w hw ↦ ?_⟩
+    refine mem_ideleCongruenceSubgroup_iff.mpr ⟨fun v _ ↦ ?_, fun v _ ↦ ?_, fun w hw ↦ ?_⟩
     · rw [hyf]
       split_ifs
       · exact hunit v

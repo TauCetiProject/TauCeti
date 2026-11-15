@@ -11,6 +11,8 @@ public import TauCeti.LinearAlgebra.LinearIndependent.Algebra
 public import TauCeti.RingTheory.AlgebraTower
 public import TauCeti.RingTheory.Algebraic.LinearIndependent
 
+import TauCeti.Algebra.Algebra.Subalgebra.Adjoin
+
 /-!
 # Relative degrees under linearly disjoint base change
 
@@ -77,14 +79,38 @@ theorem _root_.IntermediateField.extendScalars_sup_right_eq_adjoin (A D : Interm
     IntermediateField.restrictScalars_adjoin_eq_sup, sup_comm,
     IntermediateField.adjoin_self]
 
-/-- An algebraic extension linearly disjoint from `D` has the same degree after adjoining `D`. -/
+open IntermediateField in
+/-- If `A` is linearly disjoint from a field `D` over `k`, the rank of `A` over `k` is at most the
+rank of the intermediate field `D[A]` over `D`; no algebraicity is assumed. -/
+theorem _root_.IntermediateField.LinearDisjoint.rank_left_le_adjoin_rank
+    {A : IntermediateField k L} {D : Type*} [Field D] [Algebra k D] [Algebra D L]
+    [IsScalarTower k D L] (hAD : A.LinearDisjoint D) :
+    Module.rank k A ≤ Module.rank D (adjoin D (A : Set L)) := by
+  -- The ring `Algebra.adjoin D A` has the same rank over `D` as over the image of `D` in `L`,
+  -- namely the rank of `A` over `k`, and it is contained in the field `D[A]`.
+  refine (Subalgebra.LinearDisjoint.adjoin_rank_eq_rank_left hAD).symm.le.trans
+    ((TauCeti.rank_adjoin_eq_rank_adjoin_range (k := k) (A : Set L)).symm.le.trans ?_)
+  rw [← Subalgebra.rank_toSubmodule]
+  exact Submodule.rank_mono (Subalgebra.toSubmodule.monotone
+    (IntermediateField.algebra_adjoin_le_adjoin D _))
+
+open IntermediateField in
+/-- An extension linearly disjoint from `D` has the same degree after adjoining `D`. When `A` is
+not algebraic over `k` both degrees are `0`, because the rank of `D[A]` over `D` is at least the
+rank of `A` over `k`. -/
 theorem _root_.IntermediateField.relfinrank_sup_right_eq_finrank_of_linearDisjoint
-    (A D : IntermediateField k L) [Algebra.IsAlgebraic k A] (hAD : A.LinearDisjoint D) :
+    (A D : IntermediateField k L) (hAD : A.LinearDisjoint D) :
     IntermediateField.relfinrank D (A ⊔ D) =
       Module.finrank k A := by
   rw [IntermediateField.relfinrank_eq_finrank_of_le (le_sup_right : D ≤ A ⊔ D),
     IntermediateField.extendScalars_sup_right_eq_adjoin]
-  exact congrArg Cardinal.toNat hAD.adjoin_rank_eq_rank_left_of_isAlgebraic_left
+  by_cases hA : Algebra.IsAlgebraic k A
+  · exact congrArg Cardinal.toNat hAD.adjoin_rank_eq_rank_left_of_isAlgebraic_left
+  · have hk : ¬ Module.Finite k A := fun hf ↦ hA (Algebra.IsAlgebraic.of_finite k A)
+    rw [Module.finrank_of_not_finite hk]
+    refine Module.finrank_of_not_finite fun hfin ↦ hk ?_
+    exact Module.rank_lt_aleph0_iff.1
+      (hAD.rank_left_le_adjoin_rank.trans_lt (Module.rank_lt_aleph0 D _))
 
 /-- **The compositum with an algebraic extension is a span.** If `A` is algebraic over `k`, the
 compositum `A ⊔ D` is the `A`-span of `D`: it is the ring `A[D]`, and `D` is closed under
@@ -263,8 +289,7 @@ theorem _root_.IntermediateField.LinearDisjoint.linearIndependent_adjoin_algebra
     exact hspan.symm
   have hli : LinearIndependent S (algebraMap F E ∘ c) := by
     apply LinearIndependent.of_smul_of_span_eq_top (b := w) (hb := hw)
-    convert (linearIndependent_equiv' (Equiv.prodComm ι _) (g := fun p : ι × _ ↦
-      algebraMap F E (b p.2 • c p.1)) rfl).mpr hprod using 1
+    convert hprod using 1
     ext p
     simp [Algebra.smul_def, IsScalarTower.algebraMap_apply C F E, w]
   exact (LinearIndependent.iff_fractionRing S

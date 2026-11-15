@@ -30,11 +30,9 @@ maps assemble into a bifunctor on `FGComoduleCat`.
 
 ## References
 
-This is finite-category infrastructure for Layer 1 of the Tau Ceti reductive-groups roadmap,
-`ReductiveGroups/README.md` in TauCetiRoadmap, specifically the requested rigid monoidal
-category of finite-dimensional comodules. It packages the diagonal comodule constructed in
-`TauCeti.Algebra.Coalgebra.Comodule.TensorProduct` and reuses Mathlib's finite-generation
-instance for tensor products.
+This file packages the diagonal comodule constructed in
+`TauCeti.Algebra.Coalgebra.Comodule.TensorProduct` and reuses Mathlib's finite-generation instance
+for tensor products.
 -/
 
 public section
@@ -146,8 +144,8 @@ variable (R C)
 /-- Tensor product as a bifunctor on finitely generated right comodules.
 
 It sends `(M, N)` to the finite diagonal comodule `M ⊗ N` and a pair of morphisms `(f, g)`
-to `f ⊗ g`. This is the tensor bifunctor underlying the future monoidal structure on
-`FGComoduleCat`. -/
+to `f ⊗ g`. These are the tensor products of objects and of morphisms in the monoidal structure
+on `FGComoduleCat` from `TauCeti.Algebra.Coalgebra.Comodule.Finite.Monoidal`. -/
 @[expose]
 noncomputable def tensorBifunctor :
     FGComoduleCat.{u, v, w} R C × FGComoduleCat.{u, v, w} R C ⥤

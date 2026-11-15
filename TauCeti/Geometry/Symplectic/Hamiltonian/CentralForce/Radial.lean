@@ -330,7 +330,7 @@ theorem radialProjection_circularMotion (m : ℝ) {r₀ : ℝ} (hr₀ : 0 ≤ r�
     (hu : ‖u‖ = 1) (hw : ‖w‖ = 1) (huw : ⟪u, w⟫_ℝ = 0) (t : ℝ) :
     radialProjection (circularMotion m r₀ ω u w t) = (r₀, 0) := by
   have h : ‖Real.cos (ω * t) • u + Real.sin (ω * t) • w‖ = 1 := by
-    simpa using norm_smul_add_smul_eq_one_of_sq_add_sq (𝕜 := ℝ) hu hw (by simpa using huw)
+    simpa using (norm_smul_add_smul_eq_one_iff (𝕜 := ℝ) hu hw (by simpa using huw)).2
       (Real.cos_sq_add_sin_sq (ω * t))
   simp only [circularMotion, radialProjection, radialMomentum, norm_smul, h, Real.norm_eq_abs,
     abs_of_nonneg hr₀, mul_one, Prod.mk.injEq, true_and]
@@ -346,11 +346,11 @@ theorem sq_sub_inner_sq_circularMotion (m r₀ ω : ℝ) {u w : V} (hu : ‖u‖
       (m * r₀ ^ 2 * ω) ^ 2 := by
   have huw' : RCLike.re ⟪u, w⟫_ℝ = 0 := by simpa using huw
   have h₁ : ‖Real.cos (ω * t) • u + Real.sin (ω * t) • w‖ = 1 := by
-    simpa using norm_smul_add_smul_eq_one_of_sq_add_sq (𝕜 := ℝ) hu hw huw'
+    simpa using (norm_smul_add_smul_eq_one_iff (𝕜 := ℝ) hu hw huw').2
       (Real.cos_sq_add_sin_sq (ω * t))
   have h₂ : ‖-Real.sin (ω * t) • u + Real.cos (ω * t) • w‖ = 1 := by
-    simpa using norm_smul_add_smul_eq_one_of_sq_add_sq (𝕜 := ℝ) hu hw huw'
-      (γ := -Real.sin (ω * t)) (σ := Real.cos (ω * t))
+    simpa using (norm_smul_add_smul_eq_one_iff (𝕜 := ℝ) hu hw huw'
+      (γ := -Real.sin (ω * t)) (σ := Real.cos (ω * t))).2
       (by rw [neg_sq]; exact Real.sin_sq_add_cos_sq (ω * t))
   simp only [circularMotion, norm_smul, h₁, h₂, Real.norm_eq_abs, mul_one, mul_pow, sq_abs,
     inner_smul_left, inner_smul_right, inner_add_left, inner_add_right, real_inner_self_eq_norm_sq,
@@ -457,13 +457,13 @@ theorem fderiv_radialProjection_hamiltonianVectorField_centralForceHamiltonian {
     ring
 
 /-- **Radial reduction of central-force motion.** Let `γ` be an integral curve of the Hamiltonian
-vector field of a central-force Hamiltonian on a preconnected open set `s` of times, avoiding the
+vector field of a central-force Hamiltonian on a preconnected set `s` of times, avoiding the
 collision set, with `U` differentiable along it. If `ℓ²` is the squared angular momentum
 `‖q‖² ‖p‖² - ⟪q, p⟫²` of `γ` at one time `t₀ ∈ s`, then `t ↦ (‖q(t)‖, p_r(t))` is an integral curve
 on `s` of the Hamiltonian vector field of the reduced Hamiltonian
 `H_ℓ(r, p_r) = p_r² / (2m) + U_ℓ(r)`. -/
 theorem hasDerivAt_radialProjection_comp {m ℓ : ℝ} {U : ℝ → ℝ} {γ : ℝ → V × V} {s : Set ℝ}
-    (hs : IsOpen s) (hs' : IsPreconnected s)
+    (hs : IsPreconnected s)
     (hγ : ∀ t ∈ s, HasDerivAt γ
       ((stdSymplecticForm (V := V)).hamiltonianVectorField (centralForceHamiltonian m U) (γ t)) t)
     (hq : ∀ t ∈ s, (γ t).1 ≠ 0) (hU : ∀ t ∈ s, DifferentiableAt ℝ U ‖(γ t).1‖) {t₀ : ℝ}
@@ -476,7 +476,7 @@ theorem hasDerivAt_radialProjection_comp {m ℓ : ℝ} {U : ℝ → ℝ} {γ : �
   have h := ((hasFDerivAt_radialProjection (hq t ht)).comp_hasDerivAt t (hγ t ht))
   rwa [← (hasFDerivAt_radialProjection (hq t ht)).fderiv,
     fderiv_radialProjection_hamiltonianVectorField_centralForceHamiltonian (hU t ht).hasDerivAt
-      (hq t ht) (hℓ.trans (sq_sub_inner_sq_eq_of_hasDerivAt hs hs' hγ hq hU ht₀ ht).symm)] at h
+      (hq t ht) (hℓ.trans (sq_sub_inner_sq_eq_of_hasDerivAt hs hγ ht₀ ht).symm)] at h
 
 /-! ### Circular orbits -/
 

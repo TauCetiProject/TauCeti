@@ -71,9 +71,6 @@ weaker theorem, not a differently-named one.
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/Exchangeability/README.md`, **Layer 6** (the mixture-of-product-measures
-  form with `π` the unique law of `ν`) and **Layer 8** (the affine correspondence). This file adds
-  no new mathematics to either; it connects the objects those bullets produce.
 * Olav Kallenberg, *Probabilistic Symmetries and Invariance Principles*, Springer, 2005,
   Chapter 1, Theorem 1.1.
 -/

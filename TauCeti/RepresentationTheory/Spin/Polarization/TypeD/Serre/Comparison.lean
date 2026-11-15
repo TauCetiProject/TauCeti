@@ -63,9 +63,6 @@ theorem typeDQuadraticEquiv_comp_serreRepresentation (hn : 4 ≤ n) (hline : P.l
   · intro i
     apply Subtype.ext
     simp
-  · intro i
-    apply Subtype.ext
-    simp
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
@@ -80,9 +77,6 @@ theorem typeDSpinSerreRepresentation_eq_comp_serreRepresentation
     P.typeDSpinSerreRepresentation b hn =
       (P.typeDSpinLieRep b hline).comp (TypeDStd.serreRepresentation n hn) := by
   apply TauCeti.serre_hom_ext
-  · intro i
-    rw [P.typeDSpinSerreRepresentation_serreH]
-    simp
   · intro i
     rw [P.typeDSpinSerreRepresentation_serreE]
     simp

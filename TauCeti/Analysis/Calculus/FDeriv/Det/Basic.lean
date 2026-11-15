@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.FDeriv.Analytic
 public import Mathlib.Analysis.Matrix.Normed
 public import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
+import TauCeti.Analysis.Matrix.Normed
 import Mathlib.Analysis.Calculus.ContDiff.CPolynomial
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Analysis.Calculus.Deriv.Mul
@@ -26,7 +27,7 @@ row replacements, or equivalently Jacobi's adjugate formula:
 At an invertible matrix this is `det A * trace (A⁻¹ * H)`, and at the identity it is `trace H`.
 The matrix determinant is smooth, the matrix index may be empty, and none of the matrix
 results require the field to be complete. The determinant of a continuous linear endomorphism
-of a finite-dimensional normed space is also smooth; this result assumes a complete field.
+of a normed space is also smooth; this result assumes a complete field.
 
 The multilinear proof generalizes the real determinant calculus in the
 [KLS formalization](https://github.com/human-ai-mathematics/kls-lean/blob/9cde7938fc09cd017519c7c8a498bee99c12f717/formalization/FunctionalInequalities/Analysis/Matrix/DeterminantDerivative.lean).
@@ -40,7 +41,8 @@ The normed structure on matrices is Mathlib's `L∞` operator norm, available th
 
 * `Matrix.contDiff_det`: the matrix determinant is smooth without scalar completeness.
 * `ContinuousLinearMap.contDiff_det`: the determinant of a continuous linear endomorphism
-  of a finite-dimensional normed space is smooth over a complete field.
+  of a normed space is smooth over a complete field (it is the constant `1` in infinite
+  dimension).
 * `Matrix.differentiable_det`: the determinant is differentiable at every matrix.
 * `Matrix.fderiv_det_eq_sum_updateRow`: its differential is the sum of row replacements.
 * `Matrix.fderiv_det_updateRow`: the row-replacement formula for a field with one row fixed.
@@ -70,10 +72,9 @@ private noncomputable def detMultilinear :
 /-- The determinant is smooth, including at singular matrices. -/
 @[fun_prop]
 theorem contDiff_det {r : ℕ∞ω} : ContDiff 𝕜 r (det : Matrix n n 𝕜 → 𝕜) := by
-  -- The underlying function of this row-family map is definitionally the identity.
-  let L : Matrix n n 𝕜 →L[𝕜] (n → n → 𝕜) :=
-    { (Matrix.ofLinearEquiv 𝕜).symm.toLinearMap with cont := by exact continuous_id }
-  exact (detMultilinear (n := n) (𝕜 := 𝕜)).contDiff.comp L.contDiff
+  have h := (detMultilinear (n := n) (𝕜 := 𝕜)).contDiff.comp
+    (ofContinuousLinearEquiv 𝕜 : (n → n → 𝕜) ≃L[𝕜] Matrix n n 𝕜).symm.contDiff (n := r)
+  rwa [coe_ofContinuousLinearEquiv_symm] at h
 
 /-- The determinant is differentiable at every matrix over a nontrivially normed field. -/
 theorem differentiable_det : Differentiable 𝕜 (det : Matrix n n 𝕜 → 𝕜) :=
@@ -124,14 +125,9 @@ theorem fderiv_det_updateRow
   rw [he]
   -- Transport the Pi-norm row derivative to the matrix operator norm before composing with det.
   let rowsToMatrix : (n → n → 𝕜) →L[𝕜] Matrix n n 𝕜 :=
-    { toLinearMap := (Matrix.ofLinearEquiv 𝕜).toLinearMap
-      cont := by
-        simpa only [LinearMap.toFun_eq_coe, LinearEquiv.coe_toLinearMap,
-          Matrix.coe_ofLinearEquiv, id_eq] using
-          (continuous_id : Continuous (fun M : n → n → 𝕜 ↦ M)).matrixOf }
-  have rowsToMatrix_apply (M : n → n → 𝕜) : rowsToMatrix M = Matrix.of M := by
-    simpa only [LinearEquiv.coe_toLinearMap, Matrix.coe_ofLinearEquiv] using
-      congrFun (ContinuousLinearMap.coe_mk' (Matrix.ofLinearEquiv 𝕜).toLinearMap _) M
+    (Matrix.ofContinuousLinearEquiv 𝕜).toContinuousLinearMap
+  have rowsToMatrix_apply (M : n → n → 𝕜) : rowsToMatrix M = Matrix.of M :=
+    congrFun (Matrix.coe_ofContinuousLinearEquiv 𝕜) M
   have hMatrix := rowsToMatrix.hasFDerivAt.comp x hD
   have hdetComp :=
     (Matrix.differentiable_det (rowsToMatrix (B x))).hasFDerivAt.comp x hMatrix
@@ -227,10 +223,15 @@ namespace ContinuousLinearMap
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E] [CompleteSpace 𝕜]
 
-/-- The determinant of an endomorphism of a finite-dimensional normed space is smooth. -/
+omit [FiniteDimensional 𝕜 E] in
+/-- The determinant of an endomorphism of a normed space is smooth. Over an infinite-dimensional
+space it is the constant `1` by convention. -/
 @[fun_prop]
 theorem contDiff_det {r : ℕ∞ω} :
     ContDiff 𝕜 r (fun f : E →L[𝕜] E ↦ LinearMap.det (f : E →ₗ[𝕜] E)) := by
+  by_cases hE : FiniteDimensional 𝕜 E
+  swap
+  · simpa [LinearMap.det_eq_one_of_not_module_finite hE] using contDiff_const
   let b := Module.finBasis 𝕜 E
   let L : (E →L[𝕜] E) →L[𝕜] Matrix (Fin (Module.finrank 𝕜 E))
       (Fin (Module.finrank 𝕜 E)) 𝕜 :=

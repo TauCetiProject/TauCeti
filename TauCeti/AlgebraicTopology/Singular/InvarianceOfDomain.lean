@@ -148,6 +148,22 @@ private theorem isOpen_image_ball (hEF : finrank ℝ E = finrank ℝ F) {f : E �
     (hinj.comp ha_inj.injOn ha_maps)
   rwa [image_comp, ha_ball] at this
 
+/-- **Invariance of domain for normed spaces.** If `f` is continuous and injective on an open set
+`V` of a finite-dimensional real normed space, with values in a normed space of the same
+dimension, then `f '' V` is open. -/
+private theorem isOpen_image_of_continuousOn_of_injOn (hEF : finrank ℝ E = finrank ℝ F)
+    {f : E → F} {V : Set E} (hV : IsOpen V) (hf : ContinuousOn f V) (hinj : InjOn f V) :
+    IsOpen (f '' V) := by
+  rw [isOpen_iff_mem_nhds]
+  rintro _ ⟨x, hx, rfl⟩
+  obtain ⟨ε, hε, hεV⟩ := Metric.isOpen_iff.1 hV x hx
+  have hball : closedBall x (ε / 2) ⊆ V :=
+    (closedBall_subset_ball (half_lt_self hε)).trans hεV
+  exact Filter.mem_of_superset
+    ((isOpen_image_ball hEF (half_pos hε) (hf.mono hball) (hinj.mono hball)).mem_nhds
+      ⟨x, mem_ball_self (half_pos hε), rfl⟩)
+    (image_mono (ball_subset_closedBall.trans hball))
+
 end TauCeti
 
 variable {E F M N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -191,19 +207,15 @@ theorem IsOpen.image_of_continuousOn_of_injOn {f : M → N} {U : Set M} (hU : Is
   have hginj : InjOn g (φ '' W) := fun y hy z hz hyz ↦
     φ.symm.injOn (φ.symm_source ▸ hVt hy) (φ.symm_source ▸ hVt hz) <|
       hinj (hVW hy).2.1 (hVW hz).2.1 (ψ.injOn (hVW hy).2.2 (hVW hz).2.2 hyz)
-  -- A closed ball around `φ x` in `φ '' W` has open image under `g`.
-  obtain ⟨ε, hε, hεV⟩ := Metric.isOpen_iff.1 hV (φ x) ⟨x, hxW, rfl⟩
-  have hball : closedBall (φ x) (ε / 2) ⊆ φ '' W :=
-    (closedBall_subset_ball (half_lt_self hε)).trans hεV
-  have hO := TauCeti.isOpen_image_ball hEF (half_pos hε) (hg.mono hball) (hginj.mono hball)
-  have hOt : g '' ball (φ x) (ε / 2) ⊆ ψ.target := by
+  have hO := TauCeti.isOpen_image_of_continuousOn_of_injOn hEF hV hg hginj
+  have hOt : g '' (φ '' W) ⊆ ψ.target := by
     rintro _ ⟨y, hy, rfl⟩
-    exact ψ.map_source (hVW (hball (ball_subset_closedBall hy))).2.2
+    exact ψ.map_source (hVW hy).2.2
   refine Filter.mem_of_superset ((ψ.symm.isOpen_image_of_subset_source hO
-    (ψ.symm_source ▸ hOt)).mem_nhds ⟨g (φ x), ⟨φ x, mem_ball_self (half_pos hε), rfl⟩, ?_⟩) ?_
+    (ψ.symm_source ▸ hOt)).mem_nhds ⟨g (φ x), ⟨φ x, ⟨x, hxW, rfl⟩, rfl⟩, ?_⟩) ?_
   · simp [g, φ.left_inv (mem_chart_source E x), ψ.left_inv (mem_chart_source F (f x))]
   · rintro _ ⟨_, ⟨y, hy, rfl⟩, rfl⟩
-    have hyW := hVW (hball (ball_subset_closedBall hy))
+    have hyW := hVW hy
     exact ⟨φ.symm y, hyW.2.1, (ψ.left_inv hyW.2.2).symm⟩
 
 omit [FiniteDimensional ℝ E] in
@@ -255,23 +267,15 @@ omit [FiniteDimensional ℝ E] in
 interior points. -/
 private theorem coe_apply_mem_interior (e : A ≃ₜ B) (hEF : finrank ℝ E = finrank ℝ F) {x : A}
     (hx : (x : M) ∈ interior A) : (e x : N) ∈ interior B := by
-  classical
-  -- Extend `e` arbitrarily off `A`; on the interior of `A` it is continuous and injective.
-  let g : M → N := fun y ↦ if hy : y ∈ A then e ⟨y, hy⟩ else e x
-  have hgA (y : A) : g y = e y := by simp [g]
-  have hg : ContinuousOn g (interior A) := by
-    rw [continuousOn_iff_continuous_domRestrict]
-    convert (continuous_subtype_val.comp e.continuous).comp
-      (continuous_inclusion (interior_subset (s := A))) using 1
-    ext y
-    exact hgA ⟨y, interior_subset y.2⟩
-  have hginj : InjOn g (interior A) := fun y hy z hz hyz ↦ by
-    have := hgA ⟨y, interior_subset hy⟩ ▸ hgA ⟨z, interior_subset hz⟩ ▸ hyz
-    exact congrArg Subtype.val (e.injective (Subtype.ext this))
-  refine interior_maximal ?_ (isOpen_interior.image_of_continuousOn_of_injOn hg hginj hEF)
-    ⟨x, hx, hgA x⟩
-  rintro _ ⟨y, hy, rfl⟩
-  exact hgA ⟨y, interior_subset hy⟩ ▸ (e _).2
+  -- On the open submanifold `interior A`, `e` is a continuous injection into `N`.
+  let U : TopologicalSpace.Opens M := ⟨interior A, isOpen_interior⟩
+  let g : U → N := fun y ↦ e ⟨y, interior_subset y.2⟩
+  have hg : Continuous g :=
+    continuous_subtype_val.comp (e.continuous.comp (continuous_inclusion interior_subset))
+  have hginj : Injective g := fun y z hyz ↦
+    Subtype.ext (Subtype.mk.inj (e.injective (Subtype.ext hyz)))
+  exact interior_maximal (by rintro _ ⟨y, rfl⟩; exact (e _).2)
+    (hg.isOpenEmbedding_of_injective hginj hEF).isOpen_range ⟨⟨x, hx⟩, rfl⟩
 
 /-- **Invariance of interior points.** Let `A` and `B` be homeomorphic subsets of topological
 manifolds without boundary, charted on finite-dimensional real normed spaces of the same

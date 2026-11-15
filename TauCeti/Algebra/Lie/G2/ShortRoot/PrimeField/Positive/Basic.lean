@@ -243,7 +243,7 @@ theorem geometricallyConnected_coordinateHopfAlgebra :
     geometricallyConnectedCommHopfAlgProperty (ZMod 3) coordinateHopfAlgebra := by
   apply geometricallyConnectedCommHopfAlgProperty_commonKernelQuotient_of_geometricallyConnected
     generator
-  rintro (i | ⟨⟩)
+  rintro (_ | ⟨⟩)
   · exact AdditiveGroup.geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra (ZMod 3)
   · exact DiagonalizableGroup.geometricallyConnected_coordinateRing (ZMod 3)
       (SplitTorus.characterGroup (Fin 2))
