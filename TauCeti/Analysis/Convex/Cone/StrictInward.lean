@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Module.Convex
 public import Mathlib.Analysis.Convex.Topology
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
+import Mathlib.Analysis.Calculus.TangentCone.Real
 import Mathlib.Analysis.LocallyConvex.Separation
 import Mathlib.Tactic.Module
 import Mathlib.Tactic.FunProp
@@ -24,8 +25,11 @@ this excludes directions tangent to the boundary of a half-space.
 For convex sets and base points in the set, membership is equivalent to reaching an interior
 point along the positive ray.
 The cone is open and convex, is invariant under positive scaling, and has ball estimates uniform
-near each admissible point and vector. These estimates supply the local geometric input for
-constructing strictly inward vector fields on models with corners.
+near each admissible point and vector (hence along any relatively continuous vector field). Any
+convex set admitting a strictly inward vector has nonempty interior, so its open intersections
+enjoy unique differentiability (`Convex.uniqueDiffOn_inter_of_mem_strictInwardCone`). These
+estimates supply the local geometric input for constructing strictly inward vector fields and
+their forward semiflows on models with corners.
 
 A derivative of dense range of a map into a convex set with nonempty interior sends strictly
 inward directions to strictly inward directions
@@ -192,6 +196,32 @@ theorem Convex.exists_uniform_ball_subset_of_mem_strictInwardCone (hs : Convex �
   obtain ⟨δ, hδ, h⟩ := add_smul_mem_interior_of_mem_strictInwardCone hv
   exact hs.exists_uniform_ball_subset_of_add_smul_mem_interior
     (by positivity : 0 < δ / 2) (h (δ / 2) ⟨by positivity, by linarith⟩)
+
+/-- If `X` is continuous within `u` at `x` and `X x ∈ strictInwardCone s x` for a convex set `s`,
+then uniform inward ball estimates hold for `X` at all points of `s` sufficiently close to `x`
+within `u`. -/
+theorem Convex.exists_uniform_ball_subset_of_continuousWithinAt {u : Set E} (hs : Convex ℝ s)
+    {X : E → E} (hv : X x ∈ strictInwardCone s x) (hX : ContinuousWithinAt X u x) :
+    ∃ ε > 0, ∃ δ > 0, ∀ᶠ y in 𝓝[u] x, y ∈ s →
+      ∀ t ∈ Ioo (0 : ℝ) δ, ball (y + t • X y) (ε * t) ⊆ s := by
+  obtain ⟨ε, hε, δ, hδ, hev⟩ := hs.exists_uniform_ball_subset_of_mem_strictInwardCone hv
+  exact ⟨ε, hε, δ, hδ, (continuousWithinAt_id.prodMk hX).eventually hev⟩
+
+/-- If `X` is continuous within `u` at `x` and `X x ∈ strictInwardCone s x` for a convex set `s`,
+then `X y ∈ strictInwardCone s y` for all `y ∈ s` sufficiently close to `x` within `u`. -/
+theorem Convex.eventually_mem_strictInwardCone_of_continuousWithinAt {u : Set E} (hs : Convex ℝ s)
+    {X : E → E} (hv : X x ∈ strictInwardCone s x) (hX : ContinuousWithinAt X u x) :
+    ∀ᶠ y in 𝓝[u] x, y ∈ s → X y ∈ strictInwardCone s y := by
+  obtain ⟨ε, hε, δ, hδ, hev⟩ := hs.exists_uniform_ball_subset_of_continuousWithinAt hv hX
+  exact hev.mono fun _ hy hys ↦ ⟨ε, hε, δ, hδ, hy hys⟩
+
+/-- If a convex set `s` admits a strictly inward vector at any point, then `u ∩ s` has unique
+derivatives for every open set `u`. -/
+theorem Convex.uniqueDiffOn_inter_of_mem_strictInwardCone {u : Set E} (hs : Convex ℝ s)
+    (hu : IsOpen u) (hv : v ∈ strictInwardCone s x) : UniqueDiffOn ℝ (u ∩ s) := by
+  obtain ⟨δ, hδ, h⟩ := add_smul_mem_interior_of_mem_strictInwardCone hv
+  exact inter_comm s u ▸
+    (uniqueDiffOn_convex hs ⟨_, h (δ / 2) ⟨half_pos hδ, half_lt_self hδ⟩⟩).inter hu
 
 /-- Every interior anchor supplies a strictly inward vector at every point of a convex set. -/
 theorem Convex.sub_mem_strictInwardCone (hs : Convex ℝ s) (hx : x ∈ s)
