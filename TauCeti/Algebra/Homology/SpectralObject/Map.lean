@@ -32,9 +32,9 @@ spectral sequences induced by `φ`.
 
 * `CategoryTheory.Abelian.SpectralObject.EMap_id`, `EMap_comp`: functoriality.
 * `CategoryTheory.Abelian.SpectralObject.map_EMap`: compatibility with `X.map`.
-* `CategoryTheory.Abelian.SpectralObject.EMap_EIsoH_hom`: on `E^n(𝟙, f, 𝟙) ≅ H^n(f)`, the map
-  `EMap φ` is the component of `φ`.
 * `CategoryTheory.Abelian.SpectralObject.d_EMap`: compatibility with the differentials.
+* `CategoryTheory.Abelian.SpectralObject.EMap_comp_EIsoH_hom`: on the objects `E^n(𝟙, f, 𝟙)`,
+  identified with `H^n(f)`, `EMap φ` is the component of `φ` at `f`.
 
 ## References
 
@@ -207,24 +207,6 @@ lemma πE_EMap :
 
 end Cycles
 
-section EIsoH
-
-variable {i j : ι} (f : i ⟶ j) (n₀ n₁ n₂ : ℤ) (hn₁ : n₀ + 1 = n₁) (hn₂ : n₁ + 1 = n₂)
-
-/-- Through Mathlib's identifications `EIsoH` of `E^{n₁}(𝟙 i, f, 𝟙 j)` with `H^{n₁}(f)`, the map
-`EMap φ` is the component of `φ` at `f`. -/
-@[reassoc]
-lemma EMap_EIsoH_hom :
-    EMap φ (𝟙 i) f (𝟙 j) n₀ n₁ n₂ hn₁ hn₂ ≫ (Y.EIsoH f n₀ n₁ n₂ hn₁ hn₂).hom =
-      (X.EIsoH f n₀ n₁ n₂ hn₁ hn₂).hom ≫ (φ.hom n₁).app (mk₁ f) := by
-  rw [← cancel_epi (X.πE (𝟙 i) f (𝟙 j) n₀ n₁ n₂ hn₁ hn₂), πE_EMap_assoc,
-    Y.πE_EIsoH_hom f n₀ n₁ n₂ hn₁ hn₂, X.πE_EIsoH_hom_assoc f n₀ n₁ n₂ hn₁ hn₂,
-    ← cancel_epi (X.cyclesIsoH f n₁ n₂ hn₂).inv, Iso.inv_hom_id_assoc,
-    X.cyclesIsoH_inv f n₁ n₂ hn₂, toCycles_cyclesMapOfHom_assoc, ← Y.cyclesIsoH_inv f n₁ n₂ hn₂,
-    Iso.inv_hom_id, Category.comp_id]
-
-end EIsoH
-
 section Opcycles
 
 section
@@ -319,5 +301,23 @@ lemma d_EMap :
     toCycles_cyclesMapOfHom_assoc]
 
 end Differentials
+
+section FirstPage
+
+variable {i₀ i₁ : ι} (f : i₀ ⟶ i₁) (n₀ n₁ n₂ : ℤ) (hn₁ : n₀ + 1 = n₁) (hn₂ : n₁ + 1 = n₂)
+
+/-- On the objects `E^n(𝟙, f, 𝟙)`, identified with `H^n(f)` by Mathlib's `EIsoH`, the map `EMap`
+induced by a morphism of spectral objects is its component at `f`. -/
+@[reassoc]
+lemma EMap_comp_EIsoH_hom :
+    EMap φ (𝟙 i₀) f (𝟙 i₁) n₀ n₁ n₂ hn₁ hn₂ ≫ (Y.EIsoH f n₀ n₁ n₂ hn₁ hn₂).hom =
+      (X.EIsoH f n₀ n₁ n₂ hn₁ hn₂).hom ≫ (φ.hom n₁).app (mk₁ f) := by
+  rw [← cancel_epi (X.toCycles (𝟙 i₀) f f (Category.id_comp f) n₁ ≫
+    X.πE (𝟙 i₀) f (𝟙 i₁) n₀ n₁ n₂ hn₁ hn₂)]
+  simp only [Category.assoc, πE_EMap_assoc, πE_EIsoH_hom, πE_EIsoH_hom_assoc,
+    toCycles_cyclesMapOfHom_assoc, cyclesIsoH_inv_hom_id, cyclesIsoH_inv_hom_id_assoc,
+    Category.comp_id]
+
+end FirstPage
 
 end CategoryTheory.Abelian.SpectralObject

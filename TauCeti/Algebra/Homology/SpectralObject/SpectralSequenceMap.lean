@@ -39,9 +39,8 @@ which is functorial in `φ`.
   next page.
 * `CategoryTheory.Abelian.SpectralObject.spectralSequenceMap_id`,
   `CategoryTheory.Abelian.SpectralObject.spectralSequenceMap_comp`: functoriality.
-* `spectralSequencePageXMap_comp_spectralSequenceFirstPageXIso_hom`:
-  on the first page, identified with objects `H^n(f)` by `spectralSequenceFirstPageXIso`, the
-  morphism of pages is the component of `φ`.
+* `spectralSequencePageXMap_comp_spectralSequenceFirstPageXIso_hom`: on the first page, identified
+  with objects `H^n(f)`, the morphism is the component of `φ`.
 
 ## Implementation notes
 
@@ -283,9 +282,10 @@ section FirstPage
 
 variable [data.HasFirstPageComputation]
 
-/-- **The morphism of spectral sequences on the first page.** Through the identifications
-`spectralSequenceFirstPageXIso` of the objects of the first page `r₀` with objects `H^n(f)`, the
-morphism of first pages induced by `φ` is the component of `φ` at `f`. -/
+/-- **The morphism of spectral sequences on the first page.** On the first page, whose objects are
+identified with objects `H^n(f)` of the spectral objects by Mathlib's
+`spectralSequenceFirstPageXIso`, the morphism of spectral sequences induced by `φ` is the
+component of `φ` on `H^n(f)`. -/
 @[reassoc]
 lemma spectralSequencePageXMap_comp_spectralSequenceFirstPageXIso_hom (pq : κ) (i₁ i₂ : ι)
     (hi₁ : i₁ = data.i₁ pq) (hi₂ : i₂ = data.i₂ pq) (n : ℤ) (hn : n = data.deg pq) :
@@ -293,12 +293,12 @@ lemma spectralSequencePageXMap_comp_spectralSequenceFirstPageXIso_hom (pq : κ) 
         (Y.spectralSequenceFirstPageXIso data pq i₁ i₂ hi₁ hi₂ n hn).hom =
       (X.spectralSequenceFirstPageXIso data pq i₁ i₂ hi₁ hi₂ n hn).hom ≫
         (φ.hom n).app (mk₁ (homOfLE (data.le₁₂' pq hi₁ hi₂))) := by
-  rw [X.spectralSequenceFirstPageXIso_hom data pq i₁ i₂ hi₁ hi₂ (n - 1) n (n + 1) hn,
-    Y.spectralSequenceFirstPageXIso_hom data pq i₁ i₂ hi₁ hi₂ (n - 1) n (n + 1) hn,
-    Category.assoc, ← EMap_EIsoH_hom, ← spectralSequencePageXIso_hom_comp_EMap_assoc]
-  -- On the first page `i₀ = i₁` and `i₂ = i₃`, and the morphisms `homOfLE` of these equalities in
-  -- the preorder `ι` are the identities by proof irrelevance.
-  rfl
+  rw [spectralSequenceFirstPageXIso_hom _ _ _ _ _ _ _ (n - 1) n (n + 1) hn,
+    spectralSequenceFirstPageXIso_hom _ _ _ _ _ _ _ (n - 1) n (n + 1) hn,
+    ← spectralSequencePageXIso_hom_comp_EMap_assoc, Category.assoc]
+  -- The outer indices of the first page are `i₁` and `i₂` themselves, and the morphisms
+  -- `homOfLE` between equal indices are the identities only up to definitional unfolding.
+  exact congrArg (_ ≫ ·) (EMap_comp_EIsoH_hom φ _ _ _ _ _ _)
 
 end FirstPage
 
