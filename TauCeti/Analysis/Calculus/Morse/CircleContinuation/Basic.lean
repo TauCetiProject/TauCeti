@@ -90,6 +90,14 @@ theorem circleContinuationSlope_def (δ : ℝ) (r : ℝ → ℝ) (t θ : ℝ) :
 theorem circleContinuationField_apply (δ : ℝ) (r : ℝ → ℝ) (θ t : ℝ) :
     circleContinuationField δ r (θ, t) = (2 * δ * sin (2 * (θ - r t)), t * (1 - t ^ 2)) := (rfl)
 
+@[simp]
+theorem circleContinuationField_fst (δ : ℝ) (r : ℝ → ℝ) (x : ℝ × ℝ) :
+    (circleContinuationField δ r x).1 = 2 * δ * sin (2 * (x.1 - r x.2)) := (rfl)
+
+@[simp]
+theorem circleContinuationField_snd (δ : ℝ) (r : ℝ → ℝ) (x : ℝ × ℝ) :
+    (circleContinuationField δ r x).2 = x.2 * (1 - x.2 ^ 2) := (rfl)
+
 /-- The coefficient `t (1 - t²)` of `∂_t` is positive for `0 < t < 1`. -/
 private theorem baseSpeed_pos {t : ℝ} (h₀ : 0 < t) (h₁ : t < 1) : 0 < t * (1 - t ^ 2) := by
   have : t ^ 2 < 1 := by nlinarith

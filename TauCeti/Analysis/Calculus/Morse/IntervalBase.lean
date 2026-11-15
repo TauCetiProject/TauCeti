@@ -57,6 +57,8 @@ bijective.
   `TauCeti.morseIndex_intervalBasePotential_neg_one`: the critical points are `-1`, `0` and `1`.
 * `TauCeti.intervalBaseOrbit` and `TauCeti.isIntegralCurve_intervalBaseOrbit`: a trajectory from
   `0` to `1`, the flow line through `1 / √2` (`TauCeti.intervalBaseOrbit_eq_intervalBaseFlow`).
+* `TauCeti.strictMono_intervalBaseOrbit` and `TauCeti.lipschitzWith_intervalBaseOrbit`: for
+  `C > 0` the trajectory `q` is strictly increasing, and it is `|C|`-Lipschitz.
 * `TauCeti.intervalBaseTimeCoordinate` and
   `TauCeti.intervalBaseTimeCoordinate_intervalBaseOrbit`: the coordinate `U` with `U(q(s)) = C s`.
 * `TauCeti.bijOn_intervalBaseTimeCoordinate` and
@@ -468,6 +470,15 @@ theorem hasDerivAt_intervalBaseOrbit (C s : ℝ) :
   rw [funext (intervalBaseOrbit_eq_intervalBaseFlow C)]
   exact hasDerivAt_intervalBaseFlow C s inv_sqrt_two_mem_Icc
 
+/-- The trajectory `q` is `|C|`-Lipschitz, since its speed `C q (1 - q²)` is at most `|C|`. -/
+theorem lipschitzWith_intervalBaseOrbit (C : ℝ) : LipschitzWith ‖C‖₊ (intervalBaseOrbit C) := by
+  refine lipschitzWith_of_nnNorm_deriv_le
+    (fun s ↦ (hasDerivAt_intervalBaseOrbit C s).differentiableAt) fun s ↦ ?_
+  obtain ⟨h₀, h₁⟩ := intervalBaseOrbit_mem_Ioo C s
+  rw [(hasDerivAt_intervalBaseOrbit C s).deriv, ← NNReal.coe_le_coe, coe_nnNorm, coe_nnNorm,
+    Real.norm_eq_abs, Real.norm_eq_abs, mul_assoc, abs_mul]
+  refine mul_le_of_le_one_right (abs_nonneg C) (abs_le.2 ⟨?_, ?_⟩) <;> nlinarith
+
 theorem tendsto_intervalBaseOrbit_atBot (hC : 0 < C) :
     Tendsto (intervalBaseOrbit C) atBot (𝓝 0) := by
   rw [funext (intervalBaseOrbit_eq_intervalBaseFlow C)]
@@ -552,6 +563,15 @@ theorem strictMonoOn_intervalBaseTimeCoordinate :
   have hlog' := Real.log_lt_log h1 (by nlinarith [hx.1] : 1 - y ^ 2 < 1 - x ^ 2)
   rw [intervalBaseTimeCoordinate, intervalBaseTimeCoordinate]
   linarith
+
+/-- For `C > 0` the trajectory `q` is strictly increasing, since the time coordinate is strictly
+increasing on `(0, 1)` and equals `C s` along `q`. -/
+theorem strictMono_intervalBaseOrbit (hC : 0 < C) : StrictMono (intervalBaseOrbit C) := by
+  intro s s' hs
+  rw [← strictMonoOn_intervalBaseTimeCoordinate.lt_iff_lt (intervalBaseOrbit_mem_Ioo C s)
+    (intervalBaseOrbit_mem_Ioo C s'), intervalBaseTimeCoordinate_intervalBaseOrbit,
+    intervalBaseTimeCoordinate_intervalBaseOrbit]
+  exact mul_lt_mul_of_pos_left hs hC
 
 /-- The trajectory `q` at unit rate inverts the time coordinate on `(0, 1)`. -/
 @[simp]
