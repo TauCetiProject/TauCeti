@@ -142,7 +142,7 @@ variable {C : Type*} [Category* C] {P : MorphismProperty C} [P.HasOfPostcompProp
 def iteratedSliceForward : CategoryTheory.Over U ⥤ P.Over ⊤ U.left where
   obj V := Over.mk ⊤ V.hom.left
     (P.of_postcomp V.hom.left U.hom U.prop ((Over.w V.hom).symm ▸ V.left.prop))
-  map f := Over.homMk f.left.left (by rw [← CategoryTheory.Over.w f]; rfl)
+  map f := Over.homMk f.left.left (congrArg (·.left) (CategoryTheory.Over.w f))
 
 @[simp]
 lemma iteratedSliceForward_obj_left (V : CategoryTheory.Over U) :

@@ -85,10 +85,6 @@ namespace TauCeti.AlgebraicGeometry.Scheme
 
 variable {S : Scheme.{u}} (Λ : Type u) [Ring Λ]
 
-instance hasSheafCompose_forget_moduleCat :
-    (smallEtaleTopology S).HasSheafCompose (CategoryTheory.forget (ModuleCat.{u} Λ)) :=
-  inferInstance
-
 section Stalk
 
 variable {Ω : Type u} [Field Ω] [IsSepClosed Ω] (s : Spec (.of Ω) ⟶ S)

@@ -7,11 +7,18 @@ module
 
 public import Mathlib.AlgebraicGeometry.Sites.Etale
 public import Mathlib.CategoryTheory.Sites.Equivalence
-public import TauCeti.AlgebraicGeometry.Sites.Etale.TopologicalInvariance
+public import TauCeti.AlgebraicGeometry.Morphisms.Etale.Basic
 public import TauCeti.CategoryTheory.MorphismProperty.Over
 
 /-!
-# Localization of the small étale site at an étale scheme
+# Functoriality and localization of the small étale site
+
+For any morphism of schemes `f : X ⟶ Y`, base change defines a functor
+`f.smallEtaleBaseChange : Y.Etale ⥤ X.Etale` sending `V ⟶ Y` to `V ×_Y X ⟶ X`, compatible with
+identities and composition up to natural isomorphism (`smallEtaleBaseChangeId`,
+`smallEtaleBaseChangeComp`). When `j : X ⟶ Y` is étale, postcomposition defines a functor
+`j.smallEtaleMap : X.Etale ⥤ Y.Etale` left adjoint to `j.smallEtaleBaseChange`
+(`j.smallEtaleMapPullbackAdj`).
 
 For a scheme `S` and an étale `S`-scheme `U : S.Etale`, any morphism `V ⟶ U` in `S.Etale` has an
 étale underlying morphism `V.left ⟶ U.left` by right cancellation of étale morphisms, and
@@ -25,9 +32,8 @@ Consequently:
 * For any coefficient category `A`, sheaves on the localized site `(Over U, (smallEtaleTopology
   S).over U)` are equivalent to étale sheaves on `U.left`
   (`AlgebraicGeometry.Scheme.Etale.overSheafEquiv`).
-* For an étale morphism `j : X ⟶ Y`, postcomposition `j.smallEtaleMap : X.Etale ⥤ Y.Etale` is left
-  adjoint to `j.smallEtaleBaseChange : Y.Etale ⥤ X.Etale` (`j.smallEtaleMapPullbackAdj`), and is
-  both continuous and cocontinuous for the small étale topologies.
+* For an étale morphism `j : X ⟶ Y`, postcomposition `j.smallEtaleMap : X.Etale ⥤ Y.Etale` is both
+  continuous and cocontinuous for the small étale topologies.
 * Restricting an étale sheaf `F` on `S` to `Over U` and transporting across `U.overSheafEquiv A`
   agrees naturally with `U.hom.smallEtaleMap.sheafPushforwardContinuous`
   (`AlgebraicGeometry.Scheme.Etale.overPullbackCompOverSheafEquivIso`).
@@ -78,11 +84,31 @@ lemma smallEtaleMap_map_left (j : X ⟶ Y) [Etale j] {V W : X.Etale} (g : V ⟶ 
 noncomputable def smallEtaleMapId (X : Scheme.{u}) : smallEtaleMap (𝟙 X) ≅ 𝟭 X.Etale :=
   MorphismProperty.Over.mapId ⊤ X
 
+@[simp]
+lemma smallEtaleMapId_hom_app_left (X : Scheme.{u}) (W : X.Etale) :
+    ((smallEtaleMapId X).hom.app W).left = 𝟙 W.left :=
+  (rfl)
+
+@[simp]
+lemma smallEtaleMapId_inv_app_left (X : Scheme.{u}) (W : X.Etale) :
+    ((smallEtaleMapId X).inv.app W).left = 𝟙 W.left :=
+  (rfl)
+
 /-- Postcomposition along a composite of étale morphisms is the composite of the postcomposition
 functors. -/
 noncomputable def smallEtaleMapComp (j : X ⟶ Y) (k : Y ⟶ Z) [Etale j] [Etale k] :
     (j ≫ k).smallEtaleMap ≅ j.smallEtaleMap ⋙ k.smallEtaleMap :=
   MorphismProperty.Over.mapComp ⊤ ‹Etale j› ‹Etale k›
+
+@[simp]
+lemma smallEtaleMapComp_hom_app_left (j : X ⟶ Y) (k : Y ⟶ Z) [Etale j] [Etale k] (W : X.Etale) :
+    ((smallEtaleMapComp j k).hom.app W).left = 𝟙 W.left :=
+  (rfl)
+
+@[simp]
+lemma smallEtaleMapComp_inv_app_left (j : X ⟶ Y) (k : Y ⟶ Z) [Etale j] [Etale k] (W : X.Etale) :
+    ((smallEtaleMapComp j k).inv.app W).left = 𝟙 W.left :=
+  (rfl)
 
 /-- Equal étale morphisms induce naturally isomorphic postcomposition functors on small étale
 sites. -/
@@ -90,11 +116,119 @@ noncomputable def smallEtaleMapCongr {j j' : X ⟶ Y} (h : j = j') [Etale j] [Et
     j.smallEtaleMap ≅ j'.smallEtaleMap :=
   MorphismProperty.Over.mapCongr ⊤ h ‹Etale j›
 
+@[simp]
+lemma smallEtaleMapCongr_hom_app_left {j j' : X ⟶ Y} (h : j = j') [Etale j] [Etale j']
+    (W : X.Etale) :
+    ((smallEtaleMapCongr h).hom.app W).left = 𝟙 W.left :=
+  (rfl)
+
+@[simp]
+lemma smallEtaleMapCongr_inv_app_left {j j' : X ⟶ Y} (h : j = j') [Etale j] [Etale j']
+    (W : X.Etale) :
+    ((smallEtaleMapCongr h).inv.app W).left = 𝟙 W.left :=
+  (rfl)
+
+/-- Base change along `f : X ⟶ Y`, from schemes étale over `Y` to schemes étale over `X`: an étale
+`V ⟶ Y` is sent to `V ×_Y X ⟶ X`. -/
+-- The body is exposed so `(f.smallEtaleBaseChange.obj V).left` and `.hom` reduce in dependent
+-- morphism types.
+@[expose]
+noncomputable def smallEtaleBaseChange (f : X ⟶ Y) : Y.Etale ⥤ X.Etale :=
+  MorphismProperty.Over.pullback @Etale ⊤ f
+
+@[simp]
+lemma smallEtaleBaseChange_obj_left (f : X ⟶ Y) (V : Y.Etale) :
+    (f.smallEtaleBaseChange.obj V).left = pullback V.hom f :=
+  (rfl)
+
+@[simp]
+lemma smallEtaleBaseChange_obj_hom (f : X ⟶ Y) (V : Y.Etale) :
+    (f.smallEtaleBaseChange.obj V).hom = pullback.snd V.hom f :=
+  (rfl)
+
+@[simp]
+lemma smallEtaleBaseChange_map_left (f : X ⟶ Y) {V W : Y.Etale} (g : V ⟶ W) :
+    (f.smallEtaleBaseChange.map g).left =
+      pullback.lift (pullback.fst V.hom f ≫ g.left) (pullback.snd V.hom f)
+        (by simp [pullback.condition]) :=
+  (rfl)
+
+/-- On underlying schemes, `f.smallEtaleBaseChange.map g` is `pullback.map` along `g.left` and
+`𝟙 X`. -/
+lemma smallEtaleBaseChange_map_left_eq_pullback_map (f : X ⟶ Y) {V W : Y.Etale} (g : V ⟶ W) :
+    (f.smallEtaleBaseChange.map g).left =
+      pullback.map V.hom f W.hom f g.left (𝟙 X) (𝟙 Y) (by simp) (by simp) := by
+  rw [smallEtaleBaseChange_map_left]
+  change (_ : pullback V.hom f ⟶ pullback W.hom f) = _
+  ext <;> simp
+
+/-- On underlying schemes over `X`, `smallEtaleBaseChange f` is base change along `f`. -/
+noncomputable def smallEtaleBaseChangeCompForgetIso (f : X ⟶ Y) :
+    f.smallEtaleBaseChange ⋙ Etale.forget X ≅ Etale.forget Y ⋙ CategoryTheory.Over.pullback f :=
+  Iso.refl _
+
 /-- For an étale morphism `j : X ⟶ Y`, postcomposition `j.smallEtaleMap` is left adjoint to base
 change `j.smallEtaleBaseChange`. -/
 noncomputable def smallEtaleMapPullbackAdj (j : X ⟶ Y) [Etale j] :
     j.smallEtaleMap ⊣ j.smallEtaleBaseChange :=
   MorphismProperty.Over.mapPullbackAdj @Etale ⊤ j ‹Etale j› trivial
+
+/-- Base change along `𝟙 X` on small étale sites is naturally isomorphic to `𝟭 X.Etale`. -/
+noncomputable def smallEtaleBaseChangeId (X : Scheme.{u}) :
+    smallEtaleBaseChange (𝟙 X) ≅ 𝟭 X.Etale :=
+  conjugateIsoEquiv (smallEtaleMapPullbackAdj (𝟙 X)) .id (smallEtaleMapId X).symm
+
+@[simp]
+lemma smallEtaleBaseChangeId_hom_app_left (X : Scheme.{u}) (V : X.Etale) :
+    ((smallEtaleBaseChangeId X).hom.app V).left = pullback.fst V.hom (𝟙 X) :=
+  Category.id_comp _
+
+@[simp]
+lemma smallEtaleBaseChangeId_inv_app_left (X : Scheme.{u}) (V : X.Etale) :
+    ((smallEtaleBaseChangeId X).inv.app V).left =
+      pullback.lift (𝟙 V.left) V.hom (Category.comp_id V.hom) :=
+  have h₁ : ((smallEtaleBaseChangeId X).inv.app V).left ≫ pullback.fst V.hom (𝟙 X) = 𝟙 V.left :=
+    smallEtaleBaseChangeId_hom_app_left X V ▸
+      congrArg (·.left) ((smallEtaleBaseChangeId X).inv_hom_id_app V)
+  have h₂ : ((smallEtaleBaseChangeId X).inv.app V).left ≫ pullback.snd V.hom (𝟙 X) = V.hom :=
+    MorphismProperty.Over.w ((smallEtaleBaseChangeId X).inv.app V)
+  pullback.hom_ext (h₁.trans (pullback.lift_fst _ _ _).symm)
+    (h₂.trans (pullback.lift_snd _ _ _).symm)
+
+/-- Base change along `f ≫ g` on small étale sites is naturally isomorphic to base change along `g`
+followed by base change along `f`. -/
+noncomputable def smallEtaleBaseChangeComp (f : X ⟶ Y) (g : Y ⟶ Z) :
+    (f ≫ g).smallEtaleBaseChange ≅ g.smallEtaleBaseChange ⋙ f.smallEtaleBaseChange :=
+  MorphismProperty.Over.pullbackComp f g
+
+@[simp]
+lemma smallEtaleBaseChangeComp_hom_app_left (f : X ⟶ Y) (g : Y ⟶ Z) (V : Z.Etale) :
+    ((smallEtaleBaseChangeComp f g).hom.app V).left =
+      (pullbackLeftPullbackSndIso V.hom g f).inv := by
+  change (pullback.congrHom rfl rfl ≪≫ (pullbackLeftPullbackSndIso V.hom g f).symm).hom = _
+  simp
+
+@[simp]
+lemma smallEtaleBaseChangeComp_inv_app_left (f : X ⟶ Y) (g : Y ⟶ Z) (V : Z.Etale) :
+    ((smallEtaleBaseChangeComp f g).inv.app V).left =
+      (pullbackLeftPullbackSndIso V.hom g f).hom := by
+  change (pullback.congrHom rfl rfl ≪≫ (pullbackLeftPullbackSndIso V.hom g f).symm).inv = _
+  simp
+
+/-- Equal scheme morphisms induce naturally isomorphic base change functors on small étale sites. -/
+noncomputable def smallEtaleBaseChangeCongr {f f' : X ⟶ Y} (h : f = f') :
+    f.smallEtaleBaseChange ≅ f'.smallEtaleBaseChange :=
+  MorphismProperty.Over.pullbackCongr h
+
+@[simp]
+lemma smallEtaleBaseChangeCongr_hom_app_left {f f' : X ⟶ Y} (h : f = f') (V : Y.Etale) :
+    ((smallEtaleBaseChangeCongr h).hom.app V).left = (pullback.congrHom rfl h).hom :=
+  (rfl)
+
+@[simp]
+lemma smallEtaleBaseChangeCongr_inv_app_left {f f' : X ⟶ Y} (h : f = f') (V : Y.Etale) :
+    ((smallEtaleBaseChangeCongr h).inv.app V).left = (pullback.congrHom rfl h).inv :=
+  (rfl)
 
 /-- Postcomposition along an étale morphism preserves covering sieves of the small étale
 topology. -/
@@ -172,7 +306,8 @@ instance isDenseSubsite_iteratedSliceEquiv_inverse :
     rw [Sieve.functorPushforward_ofArrows, GrothendieckTopology.mem_over_iff,
       Sieve.overEquiv_ofArrows, ofArrows_mem_smallEtaleTopology_iff,
       ofArrows_mem_smallEtaleTopology_iff]
-    rfl
+    simp_rw [iteratedSliceEquiv_inverse_map_left_left]
+    exact Iff.rfl
 
 /-- Sheaves on the localized small étale site `(Over U, (smallEtaleTopology S).over U)` are
 equivalent to sheaves on the small étale site of `U.left`. -/

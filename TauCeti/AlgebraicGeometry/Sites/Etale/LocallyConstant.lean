@@ -126,22 +126,37 @@ theorem isLocallyConstantIn_smallEtaleTopology_iff
       hR.symm ▸ Sieve.ofArrows_mk V g (idx s)
     exact (F.locallyConstantSieve_smallEtaleTopology_iff P (g (idx s))).mp hmem
 
+/-- **Stability of locally constant étale sheaves under base change.** For a morphism of schemes
+`f : X ⟶ Y` such that `f_*` and `(pullback.fst v f)_*` (for étale `v : V ⟶ Y`) admit left adjoints,
+`f.smallEtalePullback A` sends locally constant étale sheaves with values in `P` on `Y` to locally
+constant étale sheaves with values in `P` on `X`. -/
+theorem IsLocallyConstantIn.smallEtalePullback {P : ObjectProperty A}
+    {X Y : Scheme.{u}} {F : Sheaf (smallEtaleTopology Y) A}
+    (hF : F.IsLocallyConstantIn (smallEtaleTopology Y) P) (f : X ⟶ Y)
+    [(f.smallEtalePushforward A).IsRightAdjoint]
+    [∀ {V : Scheme.{u}} (v : V ⟶ Y) [Etale v],
+      ((pullback.fst v f).smallEtalePushforward A).IsRightAdjoint] :
+    ((f.smallEtalePullback A).obj F).IsLocallyConstantIn (smallEtaleTopology X) P := by
+  obtain ⟨ι, U, u, _, hu, h⟩ := (F.isLocallyConstantIn_smallEtaleTopology_iff P).mp hF
+  refine .of_etaleCover (fun i ↦ pullback.snd (u i) f) ?_ fun i ↦ ?_
+  · simp_rw [Scheme.Pullback.range_snd, ← Set.preimage_iUnion, hu, Set.preimage_univ]
+  · obtain ⟨M, hM, ⟨e⟩⟩ := h i
+    have := Hom.isRightAdjoint_smallEtalePushforward_comp (pullback.snd (u i) f) f A
+    have := Hom.isRightAdjoint_smallEtalePushforward_comp (pullback.fst (u i) f) (u i) A
+    exact ⟨M, hM,
+      ⟨((Hom.smallEtalePullbackComp (pullback.snd (u i) f) f A).app F).symm ≪≫
+        (Hom.smallEtalePullbackCongr pullback.condition.symm A).app F ≪≫
+        (Hom.smallEtalePullbackComp (pullback.fst (u i) f) (u i) A).app F ≪≫
+        ((pullback.fst (u i) f).smallEtalePullback A).mapIso e ≪≫
+        (pullback.fst (u i) f).smallEtalePullbackConstantSheafIso A M⟩⟩
+
 /-- Pulling back a locally constant étale sheaf along an étale morphism preserves local constancy
 (without requiring sheaf inverse images along arbitrary non-étale morphisms). -/
 theorem IsLocallyConstantIn.smallEtalePullback_of_etale {P : ObjectProperty A}
     {X Y : Scheme.{u}} {F : Sheaf (smallEtaleTopology Y) A}
     (hF : F.IsLocallyConstantIn (smallEtaleTopology Y) P) (j : X ⟶ Y) [Etale j] :
-    ((j.smallEtalePullback A).obj F).IsLocallyConstantIn (smallEtaleTopology X) P := by
-  obtain ⟨ι, U, u, _, hu, h⟩ := (F.isLocallyConstantIn_smallEtaleTopology_iff P).mp hF
-  refine .of_etaleCover (fun i ↦ pullback.snd (u i) j) ?_ fun i ↦ ?_
-  · simp_rw [Scheme.Pullback.range_snd, ← Set.preimage_iUnion, hu, Set.preimage_univ]
-  · obtain ⟨M, hM, ⟨e⟩⟩ := h i
-    exact ⟨M, hM,
-      ⟨((Hom.smallEtalePullbackComp (pullback.snd (u i) j) j A).app F).symm ≪≫
-        (Hom.smallEtalePullbackCongr pullback.condition.symm A).app F ≪≫
-        (Hom.smallEtalePullbackComp (pullback.fst (u i) j) (u i) A).app F ≪≫
-        ((pullback.fst (u i) j).smallEtalePullback A).mapIso e ≪≫
-        (pullback.fst (u i) j).smallEtalePullbackConstantSheafIso A M⟩⟩
+    ((j.smallEtalePullback A).obj F).IsLocallyConstantIn (smallEtaleTopology X) P :=
+  hF.smallEtalePullback j
 
 /-- **Étale descent for locally constant sheaves.** An étale sheaf `F` on `S` is locally constant
 with values in `P` if and only if its inverse images along a jointly surjective family of étale
@@ -185,32 +200,5 @@ theorem isLocallyConstantIn_smallEtaleTopology_iff_of_openCover
   F.isLocallyConstantIn_smallEtaleTopology_iff_of_etaleCover P 𝒰.f 𝒰.iUnion_range
 
 end EtaleCharacterization
-
-section BaseChange
-
-variable {A : Type*} [Category* A]
-  [∀ X : Scheme.{u}, HasWeakSheafify (smallEtaleTopology X) A]
-  [∀ {W Z : Scheme.{u}} (g : W ⟶ Z), (g.smallEtalePushforward A).IsRightAdjoint]
-  {P : ObjectProperty A}
-
-/-- **Stability of locally constant étale sheaves under base change.** For any morphism of schemes
-`f : X ⟶ Y`, `f.smallEtalePullback A` sends locally constant étale sheaves with values in `P` on `Y`
-to locally constant étale sheaves with values in `P` on `X`. -/
-theorem IsLocallyConstantIn.smallEtalePullback {X Y : Scheme.{u}}
-    {F : Sheaf (smallEtaleTopology Y) A} (hF : F.IsLocallyConstantIn (smallEtaleTopology Y) P)
-    (f : X ⟶ Y) :
-    ((f.smallEtalePullback A).obj F).IsLocallyConstantIn (smallEtaleTopology X) P := by
-  obtain ⟨ι, U, u, _, hu, h⟩ := (F.isLocallyConstantIn_smallEtaleTopology_iff P).mp hF
-  refine .of_etaleCover (fun i ↦ pullback.snd (u i) f) ?_ fun i ↦ ?_
-  · simp_rw [Scheme.Pullback.range_snd, ← Set.preimage_iUnion, hu, Set.preimage_univ]
-  · obtain ⟨M, hM, ⟨e⟩⟩ := h i
-    exact ⟨M, hM,
-      ⟨((Hom.smallEtalePullbackComp (pullback.snd (u i) f) f A).app F).symm ≪≫
-        (Hom.smallEtalePullbackCongr pullback.condition.symm A).app F ≪≫
-        (Hom.smallEtalePullbackComp (pullback.fst (u i) f) (u i) A).app F ≪≫
-        ((pullback.fst (u i) f).smallEtalePullback A).mapIso e ≪≫
-        (pullback.fst (u i) f).smallEtalePullbackConstantSheafIso A M⟩⟩
-
-end BaseChange
 
 end CategoryTheory.Sheaf

@@ -45,8 +45,9 @@ We establish the main properties of `f.smallEtalePullback A`:
 * **Geometric stalks and exactness**: for a geometric point `s : Spec Ω ⟶ X`,
   `f^* ⋙ (pointSmallEtale s).sheafFiber ≅ (pointSmallEtale (s ≫ f)).sheafFiber`
   (`smallEtalePullbackCompSheafFiberIso`). Since geometric points form a conservative family on
-  `X.Etale` and stalks preserve finite limits, `f.smallEtalePullback A` preserves finite limits
-  (`preservesFiniteLimits_smallEtalePullback`).
+  `X.Etale`, for concrete coefficient categories `A` such as `Type u` or `ModuleCat.{u} Λ` where
+  stalks preserve finite limits and `HasSheafCompose` holds for `forget A` (under the hypotheses of
+  `preservesFiniteLimits_smallEtalePullback`), `f.smallEtalePullback A` preserves finite limits.
 
 ## References
 
@@ -68,40 +69,7 @@ namespace Hom
 
 section BaseChange
 
-variable {X Y Z : Scheme.{u}}
-
-@[simp]
-lemma smallEtaleBaseChange_obj_left (f : X ⟶ Y) (V : Y.Etale) :
-    (f.smallEtaleBaseChange.obj V).left = pullback V.hom f :=
-  (rfl)
-
-@[simp]
-lemma smallEtaleBaseChange_obj_hom (f : X ⟶ Y) (V : Y.Etale) :
-    (f.smallEtaleBaseChange.obj V).hom = pullback.snd V.hom f :=
-  (rfl)
-
-@[simp]
-lemma smallEtaleBaseChange_map_left (f : X ⟶ Y) {V W : Y.Etale} (g : V ⟶ W) :
-    (f.smallEtaleBaseChange.map g).left =
-      pullback.lift (pullback.fst V.hom f ≫ g.left) (pullback.snd V.hom f)
-        (by simp [pullback.condition]) :=
-  (rfl)
-
-/-- Base change along `𝟙 X` on small étale sites is naturally isomorphic to `𝟭 X.Etale`. -/
-noncomputable def smallEtaleBaseChangeId (X : Scheme.{u}) :
-    smallEtaleBaseChange (𝟙 X) ≅ 𝟭 X.Etale :=
-  conjugateIsoEquiv (smallEtaleMapPullbackAdj (𝟙 X)) .id (smallEtaleMapId X).symm
-
-/-- Base change along `f ≫ g` on small étale sites is naturally isomorphic to base change along `g`
-followed by base change along `f`. -/
-noncomputable def smallEtaleBaseChangeComp (f : X ⟶ Y) (g : Y ⟶ Z) :
-    (f ≫ g).smallEtaleBaseChange ≅ g.smallEtaleBaseChange ⋙ f.smallEtaleBaseChange :=
-  MorphismProperty.Over.pullbackComp f g
-
-/-- Equal scheme morphisms induce naturally isomorphic base change functors on small étale sites. -/
-noncomputable def smallEtaleBaseChangeCongr {f f' : X ⟶ Y} (h : f = f') :
-    f.smallEtaleBaseChange ≅ f'.smallEtaleBaseChange :=
-  MorphismProperty.Over.pullbackCongr h
+variable {X Y : Scheme.{u}}
 
 instance preservesFiniteLimits_smallEtaleBaseChange (f : X ⟶ Y) :
     PreservesFiniteLimits f.smallEtaleBaseChange := by
@@ -125,26 +93,15 @@ lemma coverPreserving_smallEtaleBaseChange (f : X ⟶ Y) :
   cover_preserve {W R} hR := by
     obtain ⟨ι, V, g, rfl⟩ := R.exists_eq_ofArrows
     rw [Sieve.functorPushforward_ofArrows, ofArrows_mem_smallEtaleTopology_iff]
-    have hmap (i : ι) : (f.smallEtaleBaseChange.map (g i)).left =
-        pullback.map (V i).hom f W.hom f (g i).left (𝟙 X) (𝟙 Y)
-          ((Category.comp_id _).trans (CategoryTheory.Over.w ((Etale.forget Y).map (g i))).symm)
-          ((Category.comp_id _).trans (Category.id_comp _).symm) :=
-      pullback.hom_ext
-        ((pullback.lift_fst _ _ _).trans (pullback.lift_fst _ _ _).symm)
-        ((pullback.lift_snd _ _ _).trans
-          ((Category.comp_id _).symm.trans (pullback.lift_snd _ _ _).symm))
     refine Set.eq_univ_of_forall fun z ↦ ?_
     have hz : pullback.fst W.hom f z ∈ ⋃ i, Set.range (g i).left := by
       rw [(ofArrows_mem_smallEtaleTopology_iff g).mp hR]
       trivial
     obtain ⟨_, ⟨i, rfl⟩, y, hy⟩ := hz
     refine Set.mem_iUnion.mpr ⟨i, ?_⟩
-    have hmem : z ∈ Set.range (pullback.map (V i).hom f W.hom f (g i).left (𝟙 X) (𝟙 Y)
-        ((Category.comp_id _).trans (CategoryTheory.Over.w ((Etale.forget Y).map (g i))).symm)
-        ((Category.comp_id _).trans (Category.id_comp _).symm)) :=
-      (Scheme.Pullback.range_map _ _ _ _ _ _ (𝟙 Y) _ _).symm ▸
-        ⟨⟨y, hy⟩, pullback.snd W.hom f z, rfl⟩
-    exact hmap i ▸ hmem
+    rw [f.smallEtaleBaseChange_map_left_eq_pullback_map (g i)]
+    exact (Scheme.Pullback.range_map _ _ _ _ _ _ (𝟙 Y) _ _).symm.subset
+      ⟨⟨y, hy⟩, pullback.snd W.hom f z, rfl⟩
 
 /-- Base change of étale schemes along `f : X ⟶ Y` is continuous for the small étale topologies. -/
 instance isContinuous_smallEtaleBaseChange (f : X ⟶ Y) :
@@ -230,6 +187,22 @@ instance isRightAdjoint_smallEtalePushforward_of_etale (j : X ⟶ Y) [Etale j]
     (j.smallEtalePushforward A).IsRightAdjoint :=
   j.smallEtaleMapPullbackAdj.isRightAdjoint_sheafPushforwardContinuous A
     (smallEtaleTopology X) (smallEtaleTopology Y)
+
+/-- If `f_*` and `g_*` both admit left adjoints on small étale sheaves, then so does
+`(f ≫ g)_*`. -/
+lemma isRightAdjoint_smallEtalePushforward_comp (f : X ⟶ Y) (g : Y ⟶ Z)
+    (A : Type*) [Category* A]
+    [(f.smallEtalePushforward A).IsRightAdjoint]
+    [(g.smallEtalePushforward A).IsRightAdjoint] :
+    ((f ≫ g).smallEtalePushforward A).IsRightAdjoint := by
+  have := Functor.isContinuous_comp
+    g.smallEtaleBaseChange f.smallEtaleBaseChange
+    (smallEtaleTopology Z) (smallEtaleTopology Y) (smallEtaleTopology X)
+  have := Functor.isRightAdjoint_sheafPushforwardContinuous_comp
+    g.smallEtaleBaseChange f.smallEtaleBaseChange A
+    (smallEtaleTopology Z) (smallEtaleTopology Y) (smallEtaleTopology X)
+  exact Functor.isRightAdjoint_sheafPushforwardContinuous_of_iso
+    (smallEtaleBaseChangeComp f g).symm A (smallEtaleTopology Z) (smallEtaleTopology X)
 
 /-- Inverse image `f^*` of sheaves on the small étale site along `f : X ⟶ Y`, left adjoint to
 `f.smallEtalePushforward A`. -/
@@ -334,11 +307,10 @@ noncomputable def pointSmallEtaleFiberCompIso {Ω : Type u} [Field Ω] [IsSepClo
     (fun V ↦ Equiv.toIso
       { toFun (φ : CategoryTheory.Over.mk s ⟶
             (Etale.forget X).obj (f.smallEtaleBaseChange.obj V)) :=
-          CategoryTheory.Over.homMk (φ.left ≫ pullback.fst V.hom f)
-            ((Category.assoc φ.left (pullback.fst V.hom f) V.hom).trans
-              ((congrArg (φ.left ≫ ·) pullback.condition).trans
-                ((Category.assoc φ.left (pullback.snd V.hom f) f).symm.trans
-                  (congrArg (· ≫ f) (CategoryTheory.Over.w φ)))))
+          let φ' : Spec (.of Ω) ⟶ pullback V.hom f := φ.left
+          have hφ : φ' ≫ pullback.snd V.hom f = s := CategoryTheory.Over.w φ
+          CategoryTheory.Over.homMk (φ' ≫ pullback.fst V.hom f)
+            (by simp [← hφ, pullback.condition])
         invFun (ψ : CategoryTheory.Over.mk (s ≫ f) ⟶ (Etale.forget Y).obj V) :=
           CategoryTheory.Over.homMk
             (pullback.lift ψ.left s (CategoryTheory.Over.w ψ)) (pullback.lift_snd _ _ _)
@@ -346,10 +318,31 @@ noncomputable def pointSmallEtaleFiberCompIso {Ω : Type u} [Field Ω] [IsSepClo
           (pullback.hom_ext (pullback.lift_fst _ _ _)
             ((pullback.lift_snd _ _ _).trans (CategoryTheory.Over.w φ).symm))
         right_inv _ := CategoryTheory.Over.OverMorphism.ext (pullback.lift_fst _ _ _) })
-    (fun {V W} g ↦ ConcreteCategory.hom_ext _ _ fun φ ↦ CategoryTheory.Over.OverMorphism.ext
-      ((Category.assoc (CategoryTheory.Over.Hom.left φ) _ (pullback.fst W.hom f)).trans
-        ((congrArg (CategoryTheory.Over.Hom.left φ ≫ ·) (pullback.lift_fst _ _ _)).trans
-          (Category.assoc (CategoryTheory.Over.Hom.left φ) (pullback.fst V.hom f) g.left).symm)))
+    (fun {V W} g ↦ by
+      ext φ
+      let φ' : Spec (.of Ω) ⟶ pullback V.hom f := φ.left
+      let g' : pullback V.hom f ⟶ pullback W.hom f := (f.smallEtaleBaseChange.map g).left
+      have hg' : g' ≫ pullback.fst W.hom f = pullback.fst V.hom f ≫ g.left :=
+        pullback.lift_fst _ _ _
+      exact CategoryTheory.Over.OverMorphism.ext
+        (show (φ' ≫ g') ≫ pullback.fst W.hom f = (φ' ≫ pullback.fst V.hom f) ≫ g.left by
+          simp [hg']))
+
+@[simp]
+lemma pointSmallEtaleFiberCompIso_hom_app_left {Ω : Type u} [Field Ω] [IsSepClosed Ω]
+    (s : Spec (.of Ω) ⟶ X) (V : Y.Etale)
+    (φ : (f.smallEtaleBaseChange ⋙ (pointSmallEtale s).fiber).obj V) :
+    dsimp% ((f.pointSmallEtaleFiberCompIso s).hom.app V φ).left =
+      φ.left ≫ pullback.fst V.hom f :=
+  (rfl)
+
+@[simp]
+lemma pointSmallEtaleFiberCompIso_inv_app_left {Ω : Type u} [Field Ω] [IsSepClosed Ω]
+    (s : Spec (.of Ω) ⟶ X) (V : Y.Etale)
+    (ψ : (pointSmallEtale (s ≫ f)).fiber.obj V) :
+    dsimp% ((f.pointSmallEtaleFiberCompIso s).inv.app V ψ).left =
+      pullback.lift ψ.left s (CategoryTheory.Over.w ψ) :=
+  (rfl)
 
 /-- The inverse image of the point `pointSmallEtale s` of `X.Etale` along `f.smallEtaleBaseChange`
 is isomorphic to `pointSmallEtale (s ≫ f)`. -/
