@@ -35,9 +35,10 @@ commute with arbitrary tensor products, this map need not be an isomorphism in g
 When `O` is finitely generated and projective over `R`, a finite dual basis from
 `TauCeti.exists_sum_dual_smul_eq` supplies a levelwise inverse, upgrading the comparison to an
 `O`-algebra isomorphism `scalarTensorEquiv R O Γ : O ⊗[R] R[[Γ]] ≃ₐ[O] O[[Γ]]`.
-When `O` carries the `R`-module topology and admits a finite `R`-basis `b`, taking `b`-coordinates
-of levelwise coefficients yields a topological additive isomorphism
-`coordContinuousAddEquiv Γ b : O[[Γ]] ≃ₜ+ (ι → R[[Γ]])` for the inverse-limit topologies.
+When `O` admits a finite `R`-basis `b`, taking `b`-coordinates of levelwise coefficients yields an
+additive isomorphism `coordAddEquiv Γ b : O[[Γ]] ≃+ (ι → R[[Γ]])`, which upgrades to a topological
+additive isomorphism `coordContinuousAddEquiv Γ b : O[[Γ]] ≃ₜ+ (ι → R[[Γ]])` for the inverse-limit
+topologies when `R` is a topological ring and `O` carries the `R`-module topology.
 
 ## Main definitions
 
@@ -50,9 +51,10 @@ of levelwise coefficients yields a topological additive isomorphism
   `O ⊗[R] R[[Γ]] →ₐ[O] O[[Γ]]`.
 * `TauCeti.completedGroupAlgebra.scalarTensorEquiv`: the `O`-algebra isomorphism
   `O ⊗[R] R[[Γ]] ≃ₐ[O] O[[Γ]]` for finite projective `O` over `R`.
-* `TauCeti.completedGroupAlgebra.coordContinuousAddEquiv`: the topological additive equivalence
-  `O[[Γ]] ≃ₜ+ (ι → R[[Γ]])` attached to a finite `R`-basis of `O` when `O` carries the `R`-module
-  topology.
+* `TauCeti.completedGroupAlgebra.coordAddEquiv`,
+  `TauCeti.completedGroupAlgebra.coordContinuousAddEquiv`: the additive equivalence
+  `O[[Γ]] ≃+ (ι → R[[Γ]])` attached to a finite `R`-basis of `O`, upgraded to
+  `O[[Γ]] ≃ₜ+ (ι → R[[Γ]])` when `O` carries the `R`-module topology.
 
 ## Main results
 
@@ -179,11 +181,7 @@ variable {R S T : Type*} [CommRing R] [CommRing S] [CommRing T]
 def mapRingHom (f : R →+* S) : completedGroupAlgebra R Γ →+* completedGroupAlgebra S Γ where
   __ := mapAddMonoidHom Γ (f : R →+ S)
   map_one' := by simp
-  map_mul' x y := ext fun U ↦ by
-    have hmap (a : MonoidAlgebra R (Γ ⧸ U.toSubgroup)) :
-        MonoidAlgebra.map (f : R →+ S) a = MonoidAlgebra.mapRingHom (Γ ⧸ U.toSubgroup) f a :=
-      MonoidAlgebra.coeff_injective <| Finsupp.ext fun g ↦ by simp
-    simp [proj_mapAddMonoidHom, hmap]
+  map_mul' x y := ext fun U ↦ by simp [proj_mapAddMonoidHom]
 
 variable {Γ}
 
@@ -200,10 +198,9 @@ projection of `x`. -/
 theorem proj_mapRingHom (f : R →+* S) (U : OpenNormalSubgroup Γ)
     (x : completedGroupAlgebra R Γ) :
     proj S Γ U (mapRingHom Γ f x) =
-      MonoidAlgebra.mapRingHom (Γ ⧸ U.toSubgroup) f (proj R Γ U x) :=
-  MonoidAlgebra.coeff_injective <| Finsupp.ext fun g ↦ by
-    rw [← AddMonoidHom.coe_ofClass (mapRingHom Γ f), toAddMonoidHom_mapRingHom,
-      coeff_proj_mapAddMonoidHom, AddMonoidHom.coe_ofClass f, MonoidAlgebra.coeff_mapRingHom]
+      MonoidAlgebra.mapRingHom (Γ ⧸ U.toSubgroup) f (proj R Γ U x) := by
+  rw [← AddMonoidHom.coe_ofClass (mapRingHom Γ f), toAddMonoidHom_mapRingHom,
+    proj_mapAddMonoidHom, ← MonoidAlgebra.coe_mapRingHom]
 
 /-- Every coefficient of `mapRingHom Γ f x` is `f` applied to the corresponding coefficient of
 `x`. -/
@@ -258,12 +255,18 @@ variable (Γ) in
 /-- A ring isomorphism `e : R ≃+* S` induces a ring isomorphism `R[[Γ]] ≃+* S[[Γ]]`. -/
 def mapRingEquiv (e : R ≃+* S) :
     completedGroupAlgebra R Γ ≃+* completedGroupAlgebra S Γ :=
-  RingEquiv.ofRingHom (mapRingHom Γ e.toRingHom) (mapRingHom Γ e.symm.toRingHom)
+  RingEquiv.ofRingHom (mapRingHom Γ (e : R →+* S)) (mapRingHom Γ (e.symm : S →+* R))
     (by simp [← mapRingHom_comp]) (by simp [← mapRingHom_comp])
 
 @[simp]
 theorem coe_mapRingEquiv (e : R ≃+* S) :
-    ⇑(mapRingEquiv Γ e) = mapRingHom Γ e.toRingHom :=
+    ⇑(mapRingEquiv Γ e) = mapRingHom Γ (e : R →+* S) :=
+  (rfl)
+
+@[simp]
+theorem toRingHom_mapRingEquiv (e : R ≃+* S) :
+    (mapRingEquiv Γ e : completedGroupAlgebra R Γ →+* completedGroupAlgebra S Γ) =
+      mapRingHom Γ (e : R →+* S) :=
   (rfl)
 
 @[simp]
@@ -272,9 +275,18 @@ theorem mapRingEquiv_symm (e : R ≃+* S) :
   (rfl)
 
 @[simp]
+theorem mapRingEquiv_refl :
+    mapRingEquiv Γ (RingEquiv.refl R) = RingEquiv.refl (completedGroupAlgebra R Γ) :=
+  RingEquiv.ext fun x ↦ by simp
+
+@[simp]
+theorem mapRingEquiv_trans (e₁ : R ≃+* S) (e₂ : S ≃+* T) :
+    mapRingEquiv Γ (e₁.trans e₂) = (mapRingEquiv Γ e₁).trans (mapRingEquiv Γ e₂) :=
+  RingEquiv.ext fun x ↦ by simp
+
 theorem mapRingEquiv_of (e : R ≃+* S) (γ : Γ) :
     mapRingEquiv Γ e (of R Γ γ) = of S Γ γ :=
-  mapRingHom_of e.toRingHom γ
+  mapRingHom_of (e : R →+* S) γ
 
 end RingHom
 
@@ -288,30 +300,24 @@ variable (R O : Type*) [CommRing R] [CommRing O] [Algebra R O]
 construct this map. -/
 def scalarTensorAlgHom :
     O ⊗[R] completedGroupAlgebra R Γ →ₐ[O] completedGroupAlgebra O Γ :=
-  letI : Module R (completedGroupAlgebra O Γ) :=
-    Module.compHom (completedGroupAlgebra O Γ) (algebraMap R O)
+  letI : Algebra R (completedGroupAlgebra O Γ) :=
+    Algebra.restrictScalars R O (completedGroupAlgebra O Γ)
   letI : IsScalarTower R O (completedGroupAlgebra O Γ) :=
-    IsScalarTower.of_compHom R O (completedGroupAlgebra O Γ)
-  let mapLin : completedGroupAlgebra R Γ →ₗ[R] completedGroupAlgebra O Γ :=
-    { toFun := mapRingHom Γ (algebraMap R O)
-      map_add' := map_add _
-      map_smul' := fun r x ↦ mapRingHom_smul (algebraMap R O) r x }
-  Algebra.TensorProduct.algHomOfLinearMapTensorProduct
-    (LinearMap.liftBaseChange O mapLin)
-    (fun a₁ a₂ x₁ x₂ ↦ by
-      simp only [LinearMap.liftBaseChange_tmul, mapLin, LinearMap.coe_mk, AddHom.coe_mk]
-      rw [Algebra.smul_def, Algebra.smul_def, Algebra.smul_def, map_mul, map_mul]
-      simp only [mul_assoc]
-      congr 1
-      rw [← mul_assoc, Algebra.commutes a₂, mul_assoc])
-    (by simp [mapLin])
+    IsScalarTower.restrictScalars R O (completedGroupAlgebra O Γ)
+  AlgHom.liftEquiv R O (completedGroupAlgebra R Γ) (completedGroupAlgebra O Γ)
+    { mapRingHom Γ (algebraMap R O) with commutes' := mapRingHom_algebraMap (algebraMap R O) }
 
 variable {R O Γ}
 
 @[simp]
 theorem scalarTensorAlgHom_tmul (a : O) (x : completedGroupAlgebra R Γ) :
     scalarTensorAlgHom R O Γ (a ⊗ₜ[R] x) = a • mapRingHom Γ (algebraMap R O) x :=
-  (rfl)
+  letI : Algebra R (completedGroupAlgebra O Γ) :=
+    Algebra.restrictScalars R O (completedGroupAlgebra O Γ)
+  letI : IsScalarTower R O (completedGroupAlgebra O Γ) :=
+    IsScalarTower.restrictScalars R O (completedGroupAlgebra O Γ)
+  AlgHom.liftEquiv_tmul
+    { mapRingHom Γ (algebraMap R O) with commutes' := mapRingHom_algebraMap (algebraMap R O) } a x
 
 theorem scalarTensorAlgHom_tmul_of (a : O) (γ : Γ) :
     scalarTensorAlgHom R O Γ (a ⊗ₜ[R] of R Γ γ) = a • of O Γ γ := by
@@ -439,14 +445,13 @@ end Projective
 
 section Coordinates
 
-variable (Γ) {ι : Type*} (b : Module.Basis ι R O)
-  [TopologicalSpace R] [IsTopologicalRing R] [TopologicalSpace O] [IsModuleTopology R O]
+variable {ι : Type*} (b : Module.Basis ι R O)
 
-/-- Given a finite `R`-basis `b` of `O`, when `O` carries the `R`-module topology, taking the
-`b`-coordinates of every levelwise coefficient identifies `O[[Γ]]` with `ι → R[[Γ]]` as a
-topological additive group. -/
-def coordContinuousAddEquiv [Finite ι] :
-    completedGroupAlgebra O Γ ≃ₜ+ (ι → completedGroupAlgebra R Γ) where
+variable (Γ) in
+/-- Given a finite `R`-basis `b` of `O`, taking the `b`-coordinates of every levelwise coefficient
+identifies `O[[Γ]]` with `ι → R[[Γ]]` as an additive group. -/
+def coordAddEquiv [Finite ι] :
+    completedGroupAlgebra O Γ ≃+ (ι → completedGroupAlgebra R Γ) where
   toFun y i := mapAddMonoidHom Γ (b.coord i).toAddMonoidHom y
   invFun c :=
     let _ := Fintype.ofFinite ι
@@ -466,6 +471,32 @@ def coordContinuousAddEquiv [Finite ι] :
     let _ := Fintype.ofFinite ι
     exact funext fun i ↦ by simp [b.repr_self]
   map_add' x y := funext fun i ↦ map_add _ x y
+
+@[simp]
+theorem coordAddEquiv_apply [Finite ι]
+    (y : completedGroupAlgebra O Γ) (i : ι) :
+    coordAddEquiv Γ b y i = mapAddMonoidHom Γ (b.coord i).toAddMonoidHom y :=
+  (rfl)
+
+@[simp]
+theorem coordAddEquiv_symm_apply [Fintype ι]
+    (c : ι → completedGroupAlgebra R Γ) :
+    (coordAddEquiv Γ b).symm c =
+      ∑ i : ι, b i • mapRingHom Γ (algebraMap R O) (c i) := by
+  simp only [coordAddEquiv, AddEquiv.symm_apply_eq]
+  ext i
+  classical
+  simp [b.repr_self]
+
+variable [TopologicalSpace R] [IsTopologicalRing R] [TopologicalSpace O] [IsModuleTopology R O]
+
+variable (Γ) in
+/-- Given a finite `R`-basis `b` of `O`, when `O` carries the `R`-module topology, taking the
+`b`-coordinates of every levelwise coefficient identifies `O[[Γ]]` with `ι → R[[Γ]]` as a
+topological additive group. -/
+def coordContinuousAddEquiv [Finite ι] :
+    completedGroupAlgebra O Γ ≃ₜ+ (ι → completedGroupAlgebra R Γ) where
+  __ := coordAddEquiv Γ b
   continuous_toFun := continuous_pi fun i ↦
     continuous_mapAddMonoidHom (IsModuleTopology.continuous_of_linearMap (b.coord i))
   continuous_invFun := by
@@ -473,7 +504,8 @@ def coordContinuousAddEquiv [Finite ι] :
     have := IsModuleTopology.toContinuousSMul R O
     let _ := Fintype.ofFinite ι
     refine continuous_iff.mpr fun U q ↦ ?_
-    simp only [map_sum, MonoidAlgebra.coeff_sum, Finsupp.finsetSum_apply, map_smul,
+    simp only [AddEquiv.invFun_eq_symm, coordAddEquiv_symm_apply, map_sum,
+      MonoidAlgebra.coeff_sum, Finsupp.finsetSum_apply, map_smul,
       MonoidAlgebra.coeff_smul_apply, coeff_proj_mapRingHom, smul_eq_mul]
     have hcomm : ∀ x : O, ∀ r : R, x * algebraMap R O r = r • x :=
       fun x r ↦ by rw [Algebra.smul_def, mul_comm]
@@ -481,7 +513,12 @@ def coordContinuousAddEquiv [Finite ι] :
     exact continuous_finsetSum _ fun i _ ↦
       ((continuous_coeff_proj R Γ U q).comp (continuous_apply i)).smul continuous_const
 
-variable {Γ}
+@[simp]
+theorem toAddEquiv_coordContinuousAddEquiv [Finite ι] :
+    (coordContinuousAddEquiv Γ b :
+      completedGroupAlgebra O Γ ≃+ (ι → completedGroupAlgebra R Γ)) =
+        coordAddEquiv Γ b :=
+  (rfl)
 
 @[simp]
 theorem coordContinuousAddEquiv_apply [Finite ι]
@@ -494,10 +531,9 @@ theorem coordContinuousAddEquiv_symm_apply [Fintype ι]
     (c : ι → completedGroupAlgebra R Γ) :
     (coordContinuousAddEquiv Γ b).symm c =
       ∑ i : ι, b i • mapRingHom Γ (algebraMap R O) (c i) := by
-  simp only [coordContinuousAddEquiv, ContinuousAddEquiv.symm_apply_eq]
+  rw [ContinuousAddEquiv.symm_apply_eq, ← coordAddEquiv_symm_apply]
   ext i
-  classical
-  simp [b.repr_self]
+  rw [coordContinuousAddEquiv_apply, ← coordAddEquiv_apply, AddEquiv.apply_symm_apply]
 
 end Coordinates
 

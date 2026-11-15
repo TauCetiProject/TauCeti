@@ -57,9 +57,9 @@ Every hypothesis on `O` is necessary:
   in `O ⊗[R] D(X, R)` while mapping to `0` in `D(X, O)`.
 
 On a compact group `Γ`, `baseChangeAlgEquiv` intertwines `toCompletedGroupAlgebra` with
-`completedGroupAlgebra.scalarTensorEquiv`, transferring surjectivity, bijectivity, and the
-weak-topology homeomorphism from `R` to `O`. On a profinite space `X`, `baseChange` also commutes
-with `extendCoefficients` into the unit ball of a complete ultrametric field
+`completedGroupAlgebra.scalarTensorEquiv`, transferring injectivity, surjectivity, bijectivity, and
+the weak-topology homeomorphism from `R` to `O`. On a profinite space `X`, `baseChange` also
+commutes with `extendCoefficients` into the unit ball of a complete ultrametric field
 (`extendCoefficients_baseChange_tmul`).
 
 ## Main definitions
@@ -87,9 +87,10 @@ with `extendCoefficients` into the unit ball of a complete ultrametric field
   a finite `R`-basis of `O` and `mapCoeff`.
 * `AbstractMeasure.exists_baseChange_algEquiv`: existence of the convolution `O`-algebra base
   change isomorphism over a compact base ring `R` for Hausdorff `O` with `ContinuousSMul R O`.
-* `AbstractMeasure.toCompletedGroupAlgebra_surjective_of_surjective`,
+* `AbstractMeasure.toCompletedGroupAlgebra_injective_of_injective`,
+  `AbstractMeasure.toCompletedGroupAlgebra_surjective_of_surjective`,
   `AbstractMeasure.isHomeomorph_toCompletedGroupAlgebra_weak_of_isHomeomorph`: transfer of
-  surjectivity and weak-topology homeomorphism for `toCompletedGroupAlgebra`.
+  injectivity, surjectivity, and weak-topology homeomorphism for `toCompletedGroupAlgebra`.
 * `AbstractMeasure.extendCoefficients_extendScalars`,
   `AbstractMeasure.extendCoefficients_baseChange_tmul`,
   `AbstractMeasure.extendCoefficients_eq_sum_of_basis`: compatibility with `extendCoefficients` on
@@ -425,11 +426,6 @@ theorem baseChange_self :
   ext μ
   simp
 
-/-- Distinct scalar multiples of a Dirac measure remain distinct after base change. -/
-theorem baseChange_tmul_dirac_ne {a b : O} (hab : a ≠ b) (x : X) :
-    baseChange R O (a ⊗ₜ[R] dirac R x) ≠ baseChange R O (b ⊗ₜ[R] dirac R x) := by
-  simpa using hab
-
 end TopologicalSpace
 
 section Monoid
@@ -482,6 +478,13 @@ theorem extendScalars_mul (μ ν : D(G, R)) :
   (eq_extendScalars_of_apply_comp fun f ↦ by
     rw [mul_apply, convolveFunRight_extendScalars_comp, extendScalars_apply_comp, mul_apply]).symm
 
+@[simp]
+theorem extendScalars_algebraMap (r : R) :
+    extendScalars R O (algebraMap R D(G, R) r) =
+      algebraMap O D(G, O) (algebraMap R O r) := by
+  rw [Algebra.algebraMap_eq_smul_one, Algebra.algebraMap_eq_smul_one, map_smulₛₗ,
+    extendScalars_one]
+
 variable (R O) in
 /-- Scalar extension on a locally compact monoid, bundled as a ring homomorphism
 `D(G, R) →+* D(G, O)`. -/
@@ -497,26 +500,27 @@ theorem coe_extendScalarsRingHom :
     ⇑(extendScalarsRingHom R O (G := G)) = extendScalars R O :=
   (rfl)
 
-@[simp]
 theorem extendScalarsRingHom_algebraMap (r : R) :
     extendScalarsRingHom R O (algebraMap R D(G, R) r) =
-      algebraMap O D(G, O) (algebraMap R O r) := by
-  rw [Algebra.algebraMap_eq_smul_one, Algebra.algebraMap_eq_smul_one, coe_extendScalarsRingHom,
-    map_smulₛₗ, extendScalars_one]
+      algebraMap O D(G, O) (algebraMap R O r) :=
+  extendScalars_algebraMap r
 
 variable (R O) in
 /-- **Convolution-algebra base change of abstract measures.** On a locally compact topological
 monoid `G`, when `O` carries the `R`-module topology and is finitely generated and projective over
 `R`, `baseChangeAlgEquiv R O` identifies `O ⊗[R] D(G, R)` with `D(G, O)` as an `O`-algebra. -/
 def baseChangeAlgEquiv : O ⊗[R] D(G, R) ≃ₐ[O] D(G, O) :=
-  Algebra.TensorProduct.algEquivOfLinearEquivTensorProduct (baseChange R O)
-    (fun a₁ a₂ μ₁ μ₂ ↦ by
-      simp only [baseChange_tmul]
-      rw [Algebra.smul_def, Algebra.smul_def, Algebra.smul_def, extendScalars_mul, map_mul]
-      simp only [mul_assoc]
-      congr 1
-      rw [← mul_assoc, Algebra.commutes a₂, mul_assoc])
-    (by simp)
+  letI : Algebra R D(G, O) := Algebra.restrictScalars R O D(G, O)
+  letI : IsScalarTower R O D(G, O) := IsScalarTower.restrictScalars R O D(G, O)
+  let φ : O ⊗[R] D(G, R) →ₐ[O] D(G, O) :=
+    AlgHom.liftEquiv R O D(G, R) D(G, O)
+      { extendScalarsRingHom R O with commutes' := extendScalarsRingHom_algebraMap }
+  have hφ : ⇑(baseChange R O (X := G)) = ⇑φ :=
+    DFunLike.coe_injective.eq_iff.mpr <|
+      TensorProduct.AlgebraTensorModule.ext fun a μ ↦ by simp
+  AlgEquiv.ofLinearEquiv (baseChange R O)
+    (by rw [hφ]; exact φ.map_one)
+    (fun x y ↦ by simp only [hφ, map_mul])
 
 @[simp]
 theorem toLinearEquiv_baseChangeAlgEquiv :
@@ -529,6 +533,10 @@ theorem coe_baseChangeAlgEquiv :
   (rfl)
 
 @[simp]
+theorem coe_baseChangeAlgEquiv_symm :
+    ⇑(baseChangeAlgEquiv R O (G := G)).symm = (baseChange R O).symm := by
+  rw [← AlgEquiv.coe_symm_toLinearEquiv, toLinearEquiv_baseChangeAlgEquiv]
+
 theorem baseChangeAlgEquiv_tmul (a : O) (μ : D(G, R)) :
     baseChangeAlgEquiv R O (a ⊗ₜ[R] μ) = a • extendScalars R O μ :=
   baseChange_tmul a μ
@@ -537,12 +545,10 @@ theorem baseChangeAlgEquiv_tmul_dirac (a : O) (x : G) :
     baseChangeAlgEquiv R O (a ⊗ₜ[R] dirac R x) = a • dirac O x :=
   baseChange_tmul_dirac a x
 
-@[simp]
 theorem baseChangeAlgEquiv_symm_extendScalars (μ : D(G, R)) :
     (baseChangeAlgEquiv R O).symm (extendScalars R O μ) = 1 ⊗ₜ[R] μ :=
   baseChange_symm_extendScalars μ
 
-@[simp]
 theorem baseChangeAlgEquiv_symm_dirac (x : G) :
     (baseChangeAlgEquiv R O).symm (dirac O x) = 1 ⊗ₜ[R] dirac R x :=
   baseChange_symm_dirac x
@@ -606,6 +612,33 @@ theorem toCompletedGroupAlgebra_baseChangeAlgEquiv (z : O ⊗[R] D(Γ, R)) :
   | add z₁ z₂ hz₁ hz₂ =>
     rw [map_add, map_add, map_add, map_add, hz₁, hz₂]
 
+omit [Module.Projective R O] [Module.Finite R O] in
+/-- `toCompletedGroupAlgebra` intertwines `mapCoeff ℓ` on measures with
+`completedGroupAlgebra.mapAddMonoidHom` along `ℓ`. -/
+@[simp]
+theorem toCompletedGroupAlgebra_mapCoeff (ℓ : O →ₗ[R] R) (ν : D(Γ, O)) :
+    toCompletedGroupAlgebra (mapCoeff ℓ ν) =
+      completedGroupAlgebra.mapAddMonoidHom Γ ℓ.toAddMonoidHom (toCompletedGroupAlgebra ν) := by
+  ext U q
+  simp
+
+/-- If `toCompletedGroupAlgebra : D(Γ, R) →ₐ[R] R[[Γ]]` is injective, then so is
+`toCompletedGroupAlgebra : D(Γ, O) →ₐ[O] O[[Γ]]` for any finite projective `R`-algebra `O` carrying
+the `R`-module topology. -/
+theorem toCompletedGroupAlgebra_injective_of_injective
+    (hi : Function.Injective
+      (toCompletedGroupAlgebra : D(Γ, R) →ₐ[R] completedGroupAlgebra R Γ)) :
+    Function.Injective
+      (toCompletedGroupAlgebra : D(Γ, O) →ₐ[O] completedGroupAlgebra O Γ) := by
+  obtain ⟨n, b, φ, hsum⟩ := TauCeti.exists_sum_dual_smul_eq (R := R) (M := O)
+  intro ν₁ ν₂ h
+  refine ext_comp_algebraMap R O fun f ↦ ?_
+  have hφ (i : Fin n) : mapCoeff (φ i) ν₁ = mapCoeff (φ i) ν₂ :=
+    hi <| by rw [toCompletedGroupAlgebra_mapCoeff, toCompletedGroupAlgebra_mapCoeff, h]
+  rw [← hsum (ν₁ _), ← hsum (ν₂ _)]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [← mapCoeff_apply, ← mapCoeff_apply, hφ i]
+
 /-- If `toCompletedGroupAlgebra : D(Γ, R) →ₐ[R] R[[Γ]]` is surjective, then so is
 `toCompletedGroupAlgebra : D(Γ, O) →ₐ[O] O[[Γ]]` for any finite projective `R`-algebra `O` carrying
 the `R`-module topology. -/
@@ -621,6 +654,7 @@ theorem toCompletedGroupAlgebra_surjective_of_surjective
   refine ⟨baseChangeAlgEquiv R O z, ?_⟩
   rw [toCompletedGroupAlgebra_baseChangeAlgEquiv, hz, AlgEquiv.apply_symm_apply]
 
+variable (O) in
 /-- If `toCompletedGroupAlgebra : D(Γ, R) →ₐ[R] R[[Γ]]` is bijective, then
 `toCompletedGroupAlgebra : D(Γ, O) →ₐ[O] O[[Γ]]` is an `O`-algebra isomorphism. -/
 def completedGroupAlgebraEquivOfBijective
@@ -628,37 +662,49 @@ def completedGroupAlgebraEquivOfBijective
       (toCompletedGroupAlgebra : D(Γ, R) →ₐ[R] completedGroupAlgebra R Γ)) :
     D(Γ, O) ≃ₐ[O] completedGroupAlgebra O Γ :=
   AlgEquiv.ofBijective toCompletedGroupAlgebra
-    ⟨fun μ₁ μ₂ h ↦ (baseChangeAlgEquiv R O).symm.injective <| by
-        let eO : O ⊗[R] D(Γ, R) ≃ₐ[O] O ⊗[R] completedGroupAlgebra R Γ :=
-          Algebra.TensorProduct.congr (.refl : O ≃ₐ[O] O)
-            (AlgEquiv.ofBijective toCompletedGroupAlgebra hb)
-        have heO : ⇑(Algebra.TensorProduct.map (AlgHom.id O O)
-            (toCompletedGroupAlgebra : D(Γ, R) →ₐ[R] completedGroupAlgebra R Γ)) = ⇑eO :=
-          funext fun z ↦ by simp [eO]
-        apply eO.injective
-        apply (completedGroupAlgebra.scalarTensorEquiv R O Γ).injective
-        rw [← congrFun heO, ← congrFun heO, ← toCompletedGroupAlgebra_baseChangeAlgEquiv,
-          ← toCompletedGroupAlgebra_baseChangeAlgEquiv, AlgEquiv.apply_symm_apply,
-          AlgEquiv.apply_symm_apply, h],
+    ⟨toCompletedGroupAlgebra_injective_of_injective hb.1,
       toCompletedGroupAlgebra_surjective_of_surjective hb.2⟩
 
 @[simp]
+theorem coe_completedGroupAlgebraEquivOfBijective
+    (hb : Function.Bijective
+      (toCompletedGroupAlgebra : D(Γ, R) →ₐ[R] completedGroupAlgebra R Γ)) :
+    ⇑(completedGroupAlgebraEquivOfBijective O hb) =
+      (toCompletedGroupAlgebra : D(Γ, O) →ₐ[O] completedGroupAlgebra O Γ) :=
+  (rfl)
+
+@[simp]
+theorem toAlgHom_completedGroupAlgebraEquivOfBijective
+    (hb : Function.Bijective
+      (toCompletedGroupAlgebra : D(Γ, R) →ₐ[R] completedGroupAlgebra R Γ)) :
+    (completedGroupAlgebraEquivOfBijective O hb).toAlgHom = toCompletedGroupAlgebra :=
+  (rfl)
+
 theorem completedGroupAlgebraEquivOfBijective_apply
     (hb : Function.Bijective
       (toCompletedGroupAlgebra : D(Γ, R) →ₐ[R] completedGroupAlgebra R Γ))
     (μ : D(Γ, O)) :
-    completedGroupAlgebraEquivOfBijective hb μ = toCompletedGroupAlgebra μ :=
-  AlgEquiv.ofBijective_apply _ _ _
+    completedGroupAlgebraEquivOfBijective O hb μ = toCompletedGroupAlgebra μ :=
+  (rfl)
 
-omit [Module.Projective R O] [Module.Finite R O] in
-/-- `toCompletedGroupAlgebra` intertwines `mapCoeff ℓ` on measures with
-`completedGroupAlgebra.mapAddMonoidHom` along `ℓ`. -/
 @[simp]
-theorem toCompletedGroupAlgebra_mapCoeff (ℓ : O →ₗ[R] R) (ν : D(Γ, O)) :
-    toCompletedGroupAlgebra (mapCoeff ℓ ν) =
-      completedGroupAlgebra.mapAddMonoidHom Γ ℓ.toAddMonoidHom (toCompletedGroupAlgebra ν) := by
-  ext U q
+theorem completedGroupAlgebraEquivOfBijective_symm_toCompletedGroupAlgebra
+    (hb : Function.Bijective
+      (toCompletedGroupAlgebra : D(Γ, R) →ₐ[R] completedGroupAlgebra R Γ))
+    (ν : D(Γ, O)) :
+    (completedGroupAlgebraEquivOfBijective O hb).symm (toCompletedGroupAlgebra ν) = ν := by
+  apply (completedGroupAlgebraEquivOfBijective O hb).injective
   simp
+
+@[simp]
+theorem completedGroupAlgebraEquivOfBijective_symm_of
+    (hb : Function.Bijective
+      (toCompletedGroupAlgebra : D(Γ, R) →ₐ[R] completedGroupAlgebra R Γ))
+    (γ : Γ) :
+    (completedGroupAlgebraEquivOfBijective O hb).symm (completedGroupAlgebra.of O Γ γ) =
+      dirac O γ := by
+  rw [← toCompletedGroupAlgebra_dirac,
+    completedGroupAlgebraEquivOfBijective_symm_toCompletedGroupAlgebra]
 
 omit [Module.Projective R O] [Module.Finite R O] in
 private theorem apply_eq_sum_of_dual_of_leftInverse
@@ -732,7 +778,7 @@ theorem isHomeomorph_toCompletedGroupAlgebra_weak_of_isHomeomorph
   have hind : IsInducing
       (toCompletedGroupAlgebra : D(Γ, O) →ₐ[O] completedGroupAlgebra O Γ) :=
     ⟨le_antisymm (continuous_iff_le_induced.mp continuous_toCompletedGroupAlgebra) hle⟩
-  have hbij := (completedGroupAlgebraEquivOfBijective (R := R) (O := O) hh.bijective).bijective
+  have hbij := (completedGroupAlgebraEquivOfBijective O hh.bijective).bijective
   exact isHomeomorph_iff_isEmbedding_surjective.mpr ⟨⟨hind, hbij.1⟩, hbij.2⟩
 
 end Normed
@@ -811,7 +857,7 @@ example (O : Type*) [NormedCommRing O] [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[
       baseChangeAlgEquiv ℤ_[p] O (a ⊗ₜ[ℤ_[p]] dirac ℤ_[p] x) ≠
         baseChangeAlgEquiv ℤ_[p] O (b ⊗ₜ[ℤ_[p]] dirac ℤ_[p] x) := by
   let := TauCeti.isModuleTopology_of_finite_of_compactSpace (R := ℤ_[p]) (M := O)
-  exact ⟨by simp, baseChange_tmul_dirac_ne hab x⟩
+  exact ⟨by simp, by simpa using hab⟩
 
 -- Comparison `D(Γ, O) ≃ₐ[O] O[[Γ]]` and weak-topology homeomorphism for profinite `Γ` over `ℤ_[p]`.
 example (O : Type*) [NormedCommRing O] [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O]
@@ -820,7 +866,7 @@ example (O : Type*) [NormedCommRing O] [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[
       @IsHomeomorph _ _ (WeakTopology (X := Γ) (R := O) (E := O)) _
         (toCompletedGroupAlgebra : D(Γ, O) →ₐ[O] completedGroupAlgebra O Γ) := by
   let := TauCeti.isModuleTopology_of_finite_of_compactSpace (R := ℤ_[p]) (M := O)
-  exact ⟨⟨completedGroupAlgebraEquivOfBijective (R := ℤ_[p]) (O := O)
+  exact ⟨⟨completedGroupAlgebraEquivOfBijective (R := ℤ_[p]) O
       ⟨toCompletedGroupAlgebra_injective, toCompletedGroupAlgebra_surjective⟩⟩,
     isHomeomorph_toCompletedGroupAlgebra_weak_of_isHomeomorph
       (isHomeomorph_toCompletedGroupAlgebra_weak (Γ := Γ) (p := p))⟩
