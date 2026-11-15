@@ -79,10 +79,9 @@ private theorem exists_T_pow_smul_eq_laurentExpansion (hex : (⨆ n, M n) = ⊤)
       add_mem' := by
         rintro y z ⟨k, p, hp⟩ ⟨l, q, hq⟩
         refine ⟨k + l, X M h1 ^ l * p + X M h1 ^ k * q, ?_⟩
-        rw [Subalgebra.coe_add, Subalgebra.coe_mul, Subalgebra.coe_mul, Subalgebra.coe_pow,
-          Subalgebra.coe_pow, coe_X, map_add, laurentExpansion_X_pow_mul,
-          laurentExpansion_X_pow_mul, ← hp, ← hq, smul_smul, smul_smul, smul_add, Nat.cast_add,
-          T_add, mul_comm (T k : R[T;T⁻¹])]
+        simp only [Subalgebra.coe_add, Subalgebra.coe_mul, Subalgebra.coe_pow, coe_X, map_add,
+          laurentExpansion_X_pow_mul, ← hp, ← hq, smul_smul, smul_add, Nat.cast_add, T_add]
+        rw [mul_comm (T k : R[T;T⁻¹])]
       zero_mem' := ⟨0, 0, by simp⟩
       smul_mem' := by
         rintro f y ⟨k, p, hp⟩
@@ -146,9 +145,8 @@ private theorem baseChangeLaurentAlgHom_tmul (f : R[T;T⁻¹]) (p : coeffSubalge
     baseChangeLaurentAlgHom M h1 (f ⊗ₜ[R[X]] p) = f • laurentExpansion R B p := by
   let := algebra M h1
   rw [baseChangeLaurentAlgHom, Algebra.TensorProduct.lift_tmul,
-    Algebra.TensorProduct.includeLeft_apply, laurentParamAlgHom_apply]
-  conv_lhs => rw [← Algebra.algebraMap_self_apply f, ← Algebra.TensorProduct.algebraMap_apply]
-  exact (Algebra.smul_def _ _).symm
+    Algebra.TensorProduct.includeLeft_apply, laurentParamAlgHom_apply,
+    Algebra.TensorProduct.tmul_one_mul_eq_smul]
 
 private theorem baseChangeLaurentAlgHom_bijective (hex : (⨆ n, M n) = ⊤) :
     letI := algebra M h1

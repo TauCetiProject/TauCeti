@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Laurent
+public import Mathlib.LinearAlgebra.DirectSum.Finsupp
 public import Mathlib.RingTheory.TensorProduct.Basic
 
 /-!
@@ -21,12 +22,16 @@ is inverted.
 ## Main definitions
 
 * `TauCeti.laurentExpansion`: the algebra map `B[X] → R[T;T⁻¹] ⊗[R] B`.
+* `TauCeti.laurentTensorCoeff`: the coefficients `R[T;T⁻¹] ⊗[R] B ≃ ℤ →₀ B` of an element of the
+  constant family.
 
 ## Main results
 
 * `TauCeti.laurentExpansion_monomial`: the expansion sends `b Xⁿ` to `Tⁿ ⊗ b`.
 * `TauCeti.laurentExpansion_map_algebraMap_mul`: polynomials with scalar coefficients act
   through `Polynomial.toLaurent`.
+* `TauCeti.laurentTensorCoeff_laurentExpansion`: the coefficient of `Tⁿ` of the expansion of `p`
+  is the coefficient of `Xⁿ` of `p`.
 * `TauCeti.laurentExpansion_injective`: the expansion is injective.
 -/
 
@@ -34,6 +39,17 @@ public section
 
 open Polynomial LaurentPolynomial
 open scoped TensorProduct
+
+namespace Algebra.TensorProduct
+
+variable {R A B : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A] [Semiring B]
+  [Algebra R B]
+
+/-- Multiplying by `a ⊗ 1` is the scalar action of `a` on `A ⊗[R] B`. -/
+theorem tmul_one_mul_eq_smul (a : A) (y : A ⊗[R] B) : (a ⊗ₜ[R] (1 : B)) * y = a • y := by
+  rw [Algebra.smul_def, algebraMap_apply, Algebra.algebraMap_self_apply]
+
+end Algebra.TensorProduct
 
 namespace TauCeti
 
@@ -57,6 +73,11 @@ theorem laurentExpansion_monomial (n : ℕ) (b : B) :
   rw [laurentExpansion, eval₂AlgHom_apply, eval₂_monomial]
   simp [Algebra.TensorProduct.tmul_pow, T_pow]
 
+/-- The Laurent expansion sends a constant `b` to `1 ⊗ b`. -/
+@[simp]
+theorem laurentExpansion_C (b : B) : laurentExpansion R B (C b) = 1 ⊗ₜ b := by
+  rw [← monomial_zero_left, laurentExpansion_monomial, Nat.cast_zero, T_zero]
+
 /-- The Laurent expansion sends the variable `X` to `T ⊗ 1`. -/
 @[simp]
 theorem laurentExpansion_X : laurentExpansion R B X = T 1 ⊗ₜ 1 := by
@@ -76,10 +97,7 @@ corresponding Laurent polynomial. -/
 theorem laurentExpansion_map_algebraMap_mul (g : R[X]) (p : B[X]) :
     laurentExpansion R B (g.map (algebraMap R B) * p) =
       toLaurent g • laurentExpansion R B p := by
-  rw [map_mul, laurentExpansion_map_algebraMap]
-  conv_lhs => rw [← Algebra.algebraMap_self_apply (toLaurent g),
-    ← Algebra.TensorProduct.algebraMap_apply]
-  exact (Algebra.smul_def _ _).symm
+  rw [map_mul, laurentExpansion_map_algebraMap, Algebra.TensorProduct.tmul_one_mul_eq_smul]
 
 /-- Multiplying by `Xᵏ` multiplies the Laurent expansion by `Tᵏ`. -/
 theorem laurentExpansion_X_pow_mul (k : ℕ) (p : B[X]) :
@@ -87,27 +105,32 @@ theorem laurentExpansion_X_pow_mul (k : ℕ) (p : B[X]) :
       (T k : R[T;T⁻¹]) • laurentExpansion R B p := by
   simpa using laurentExpansion_map_algebraMap_mul ((Polynomial.X : R[X]) ^ k) p
 
-/-- Reading off the coefficient of `Tⁿ` of an element of `R[T;T⁻¹] ⊗[R] B`. -/
-private noncomputable def coeffT (n : ℤ) : R[T;T⁻¹] ⊗[R] B →ₗ[R] B :=
-  TensorProduct.lid R B ∘ₗ
-    ((Finsupp.lapply n ∘ₗ (AddMonoidAlgebra.coeffLinearEquiv R).toLinearMap).rTensor B)
+variable (R B) in
+/-- The coefficients of an element of the constant family `R[T;T⁻¹] ⊗[R] B`: the coefficient of
+`Tⁿ` in `∑ Tⁿ ⊗ bₙ` is `bₙ`. -/
+noncomputable def laurentTensorCoeff : R[T;T⁻¹] ⊗[R] B ≃ₗ[R] ℤ →₀ B :=
+  (AddMonoidAlgebra.coeffLinearEquiv R).rTensor B ≪≫ₗ TensorProduct.finsuppScalarLeft R B ℤ
 
-private theorem coeffT_laurentExpansion (p : B[X]) (n : ℕ) :
-    coeffT n (laurentExpansion R B p) = p.coeff n := by
+/-- The coefficient of `Tⁿ` in `f ⊗ b` is the coefficient of `Tⁿ` in `f` times `b`. -/
+@[simp]
+theorem laurentTensorCoeff_tmul_apply (f : R[T;T⁻¹]) (b : B) (n : ℤ) :
+    laurentTensorCoeff R B (f ⊗ₜ b) n = f.coeff n • b := by
+  simp [laurentTensorCoeff]
+
+/-- The coefficient of `Tⁿ` of the Laurent expansion of `p` is the coefficient of `Xⁿ` of `p`. -/
+@[simp]
+theorem laurentTensorCoeff_laurentExpansion (p : B[X]) (n : ℕ) :
+    laurentTensorCoeff R B (laurentExpansion R B p) n = p.coeff n := by
   induction p using Polynomial.induction_on' with
   | add p q hp hq => simp [hp, hq]
   | monomial m b =>
-    simp only [laurentExpansion_monomial, coeffT, LinearMap.coe_comp, Function.comp_apply,
-      LinearMap.rTensor_tmul, coeff_monomial]
-    by_cases h : m = n
-    · subst h
-      simp
-    · simp [h]
+    rw [laurentExpansion_monomial, laurentTensorCoeff_tmul_apply, T_apply, coeff_monomial]
+    split_ifs <;> simp_all
 
-/-- The Laurent expansion is injective: the coefficient of `Tⁿ` of the expansion of `p` is the
-coefficient of `Xⁿ` of `p`. -/
+/-- The Laurent expansion is injective. -/
 theorem laurentExpansion_injective : Function.Injective (laurentExpansion R B) := fun p q h ↦
   AddMonoidAlgebra.ext <| Finsupp.ext fun n ↦ by
-    rw [← coeffT_laurentExpansion (R := R) p n, ← coeffT_laurentExpansion (R := R) q n, h]
+    rw [← laurentTensorCoeff_laurentExpansion (R := R) p n,
+      ← laurentTensorCoeff_laurentExpansion (R := R) q n, h]
 
 end TauCeti
