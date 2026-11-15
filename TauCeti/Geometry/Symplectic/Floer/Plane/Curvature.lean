@@ -8,10 +8,10 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Plane.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Pullback
 public import TauCeti.Geometry.Symplectic.Floer.Manifold
-import TauCeti.Analysis.Complex.RealChart.Periodic
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import Mathlib.Geometry.Manifold.ContMDiff.Constructions
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Periodic
 
 /-!
 # The curvature and the energy identity of the perturbation on a PSS plane
@@ -419,6 +419,19 @@ private theorem measurableSet_image_endPiece (p : PSSPlane) (R : ℝ) :
       one_ne_zero w).hasFDerivAt.hasFDerivWithinAt)
     ((injOn_realChart p).mono (prod_mono (subset_univ _) subset_rfl))
 
+/-- By periodicity, the integral of `H(t)` along the circle `s = c` of the end may be taken over
+`t ∈ [0, 1]` instead of `[-1/2, 1/2]`. -/
+private theorem intervalIntegral_realChart {X : Type*} {H : ℝ → X → ℝ} (hH : Periodic H 1)
+    (u : ℝ × ℝ → X) (c : ℝ) :
+    ∫ t in (-1 / 2 : ℝ)..1 / 2, H t (u (realChart p.cylindricalEndLift (c, t))) =
+      ∫ t in (0 : ℝ)..1, H t (u (Complex.equivRealProdCLM
+        (p.cylindricalEndLift (↑c + ↑t * Complex.I)))) := by
+  have hper : Periodic (fun t : ℝ ↦ H t (u (Complex.equivRealProdCLM
+      (p.cylindricalEndLift (↑c + ↑t * Complex.I))))) 1 := fun t ↦ by
+    simp only [p.periodic_cylindricalEndLift c t, hH t]
+  simp only [realChart_apply, Complex.equivRealProdCLM_symm_apply]
+  exact hper.intervalIntegral_neg_div_two_eq
+
 /-- In end coordinates, the curvature of the perturbation along `u`, times the Jacobian of the end
 lift, is `ε β'(ε s - 1) H(t)`. -/
 private theorem det_mul_hamiltonianCurvature_realChart (ω : SmoothTwoForm I M) (hH : Periodic H 1)
@@ -795,8 +808,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pssPlanePerturbation_closedB
     setIntegral_congr_fun hDAm fun z hz ↦ (hpole hz).1,
     setIntegral_eq_zero_of_forall_eq_zero fun z hz ↦ (hpole hz).2,
     hω.integral_floerEnergyDensity_image_endPiece hH hHs hu hR (hED.mono_set hAD)
-      (hRD.mono_set hAD),
-    TauCeti.Complex.intervalIntegral_realChart_eq_of_periodic (p.periodic_cylindricalEndLift _) hH]
+      (hRD.mono_set hAD), intervalIntegral_realChart hH]
   ring
 
 /-- **The topological energy of a solution bounds its integrated curvature.** If `u` solves the

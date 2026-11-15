@@ -6,118 +6,141 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.ThricePuncturedSphere.EndCoordinate
+public import TauCeti.Analysis.Complex.RealChart
 
 /-!
-# Truncations of spheres with moving input ends
+# The truncation of a sphere with moving input ends
 
-A sphere with moving input ends has finitely many input punctures `c i` of `ℂ`, with scales `a i`,
-and an output puncture at `∞`. In end coordinates `z = s + i t` the input `i` is given by the end
-lift `z ↦ c i + a i φ₀(z)` with `φ₀(z) = exp (-2πz) / 2`, and the output by the end lift
-`φ_∞(z) = 2 exp (-2πz)` of the thrice-punctured sphere.
+A sphere with moving input ends is the Riemann sphere with input punctures at points `c i` of `ℂ`
+and an output puncture at `∞`. The input end `i` is the image of the end lift
+`z ↦ c i + a i φ₀(z)` of the end of `0` of the thrice-punctured sphere, scaled by `a i ≠ 0`, and
+the output end is the end lift `φ_∞` of `∞`. A point with longitudinal coordinate `s` on the input
+end `i` lies at distance `‖a i‖ exp (-2πs) / 2` from `c i`
+(`TauCeti.ThricePuncturedSphere.norm_add_mul_cylindricalEndLift_sub`).
 
-The *truncation* `TauCeti.ThricePuncturedSphere.puncturedSphereTruncation c a R` is the closed disc
-`‖w‖ ≤ 2 exp (2πR)` with the open discs `‖w - c i‖ < ‖a i‖ exp (-2πR) / 2` removed
-(`TauCeti.ThricePuncturedSphere.puncturedSphereTruncation_eq_closedBall_sdiff_iUnion_ball`): the
-part of the sphere where `s ≤ R` on every input end and `-s ≤ R` on the output end. It is compact,
-increases with `R` and exhausts the punctured plane. For the inputs `0` and `1` with scales `1` and
-`-1` it is the truncation of the thrice-punctured sphere
-(`TauCeti.ThricePuncturedSphere.puncturedSphereTruncation_eq_truncation`). It contains the bands
-`1 ≤ s ≤ R` of the input ends and `-R ≤ s ≤ -1` of the output end, and every point of it near a
-puncture comes from such a band
-(`TauCeti.ThricePuncturedSphere.exists_add_mul_cylindricalEndLift_zero_eq`,
-`TauCeti.ThricePuncturedSphere.exists_cylindricalEndLift_inf_eq`).
+This file defines the truncation `Σ_R` of such a sphere, cut along the circle `s = R` of every input
+end and the circle `s = -R` of the output end. It is the compact domain over which the Floer
+energy and curvature integrals of maps from a sphere with moving input ends are taken, and the
+sphere minus its punctures is the increasing union of the `Σ_R`, so integrals over it are limits
+as `R → ∞`. For centers `0, 1` and scales `1, -1` it is the truncation `S_R` of the
+thrice-punctured sphere.
 
-## References
+The perturbation data on such a sphere are cut off by `β(±s - 1)` on the ends, so they vanish
+where `±s ≤ 1`. The file therefore places the parts `1 ≤ s ≤ R` of the input ends and
+`-R ≤ s ≤ -1` of the output end in `Σ_R`, under the hypotheses that the discs
+`‖w - c i‖ < ‖a i‖ / 2` are pairwise disjoint and lie in the disc `‖w‖ ≤ 2 exp (2π)`.
+Conversely, a point of `Σ_R` close to `c i`, or far from `0`, lies on one of these parts, so `Σ_R`
+splits into these end pieces and a core where the cut-off data vanish.
 
-* P. Seidel, *Fukaya categories and Picard–Lefschetz theory*, EMS (2008), Sections 9 and 10, on
-  families of punctured discs with strip-like ends.
+## Main definitions and results
+
+In the namespace `TauCeti.ThricePuncturedSphere`:
+
+* `puncturedSphereTruncation`: the truncation `Σ_R`, with `mem_puncturedSphereTruncation`,
+  `isCompact_puncturedSphereTruncation` and `ne_of_mem_puncturedSphereTruncation`. It increases
+  with `R` (`puncturedSphereTruncation_mono`), exhausts the sphere minus its punctures
+  (`iUnion_puncturedSphereTruncation`), and specializes to the truncation of the thrice-punctured
+  sphere (`puncturedSphereTruncation_eq_truncation`).
+* `hasDerivAt_add_mul_cylindricalEndLift`: the complex derivative of the end lift of an input end.
+* `injOn_add_mul_cylindricalEndLift` and `injOn_realChart_add_mul_cylindricalEndLift`: the end
+  lift of an input end is injective on every horizontal strip of height one.
+* `add_mul_cylindricalEndLift_mem_puncturedSphereTruncation` and
+  `cylindricalEndLift_inf_mem_puncturedSphereTruncation`: the end pieces lie in `Σ_R`.
+* `exists_add_mul_cylindricalEndLift_eq`: the converse for the input ends; for the output end it
+  is `Puncture.exists_cylindricalEndLift_inf_eq`.
+* `add_mul_cylindricalEndLift_ne`: a point with `s > 0` on an input end is no center.
 -/
 
 public section
 
-open Set Real Filter Topology
+open Set Real Filter
+open scoped Topology
 
 namespace TauCeti.ThricePuncturedSphere
 
 open Puncture
+open TauCeti.Complex (realChart injOn_realChart)
 
 variable {ι : Type*} {c a : ι → ℂ} {R : ℝ}
 
-/-- The **truncation of a sphere with moving input ends** at height `R`: the closed disc
-`‖w‖ ≤ 2 exp (2πR)` with the open discs `‖w - c i‖ < ‖a i‖ exp (-2πR) / 2` about the input
-punctures removed. In the end coordinates of the input `i` it is bounded by the circle `s = R`, and
-in those of the output by the circle `s = -R`. -/
-def puncturedSphereTruncation (c a : ι → ℂ) (R : ℝ) : Set ℂ :=
-  {w | ‖w‖ ≤ 2 * Real.exp (2 * π * R) ∧ ∀ i, ‖a i‖ * Real.exp (-(2 * π * R)) / 2 ≤ ‖w - c i‖}
+/-- For a nonzero scale `a`, the radius `‖a‖ exp (-2π) / 2` of the disc around the center
+containing the part `s ≥ 1` of an input end is strictly less than `‖a‖ / 2`. -/
+theorem norm_mul_exp_neg_two_pi_div_two_lt {a : ℂ} (ha : a ≠ 0) :
+    ‖a‖ * Real.exp (-(2 * π)) / 2 < ‖a‖ / 2 := by
+  have := norm_pos_iff.2 ha
+  have : Real.exp (-(2 * π)) < 1 := Real.exp_lt_one_iff.2 (by linarith [Real.pi_pos])
+  nlinarith
 
+/-- **The truncation of a sphere with moving input ends.** For input ends with centers `c i` and
+scales `a i`, the part of the plane cut off along the circle `s = R` of every input end and the
+circle `s = -R` of the output end at `∞`: the points at distance at least `‖a i‖ exp (-2πR) / 2`
+from every center `c i`, in the disc `‖w‖ ≤ 2 exp (2πR)`. -/
+def puncturedSphereTruncation (c a : ι → ℂ) (R : ℝ) : Set ℂ :=
+  {w | (∀ i, ‖a i‖ * Real.exp (-(2 * π * R)) / 2 ≤ ‖w - c i‖) ∧ ‖w‖ ≤ 2 * Real.exp (2 * π * R)}
+
+/-- Membership in the truncation `Σ_R` of a sphere with moving input ends. -/
 @[simp]
 theorem mem_puncturedSphereTruncation {w : ℂ} :
     w ∈ puncturedSphereTruncation c a R ↔
-      ‖w‖ ≤ 2 * Real.exp (2 * π * R) ∧ ∀ i, ‖a i‖ * Real.exp (-(2 * π * R)) / 2 ≤ ‖w - c i‖ :=
+      (∀ i, ‖a i‖ * Real.exp (-(2 * π * R)) / 2 ≤ ‖w - c i‖) ∧ ‖w‖ ≤ 2 * Real.exp (2 * π * R) :=
   Iff.rfl
 
-/-- The truncation is a closed disc with finitely many open discs about the input punctures
-removed. -/
-theorem puncturedSphereTruncation_eq_closedBall_sdiff_iUnion_ball (c a : ι → ℂ) (R : ℝ) :
-    puncturedSphereTruncation c a R = Metric.closedBall 0 (2 * Real.exp (2 * π * R)) \
-      ⋃ i, Metric.ball (c i) (‖a i‖ * Real.exp (-(2 * π * R)) / 2) := by
-  ext w
-  simp [dist_eq_norm]
+/-- The truncation of a sphere with moving input ends is compact. -/
+theorem isCompact_puncturedSphereTruncation (c a : ι → ℂ) (R : ℝ) :
+    IsCompact (puncturedSphereTruncation c a R) := by
+  refine (isCompact_closedBall (0 : ℂ) (2 * Real.exp (2 * π * R))).of_isClosed_subset ?_
+    fun w hw ↦ by simpa using hw.2
+  simp only [puncturedSphereTruncation, ofPred_and, ofPred_forall]
+  exact (isClosed_iInter fun i ↦ isClosed_le continuous_const (by fun_prop)).inter
+    (isClosed_le (by fun_prop) continuous_const)
 
-/-- The truncation of the sphere with the input ends `0` and `1`, with scales `1` and `-1`, is the
-truncation of the thrice-punctured sphere. -/
+/-- The truncations of a sphere with moving input ends increase with the cutoff. -/
+theorem puncturedSphereTruncation_mono : Monotone (puncturedSphereTruncation c a) :=
+  fun R R' hRR' w hw ↦ ⟨fun i ↦ le_trans (by gcongr) (hw.1 i), hw.2.trans (by gcongr)⟩
+
+/-- For the centers `0, 1` and the scales `1, -1`, the truncation of a sphere with moving input
+ends is the truncation `S_R` of the thrice-punctured sphere. -/
+@[simp]
 theorem puncturedSphereTruncation_eq_truncation (R : ℝ) :
     puncturedSphereTruncation ![0, 1] ![1, -1] R = truncation R := by
   ext w
-  simp [truncation_eq, Fin.forall_fin_two]
-  tauto
+  simp [truncation_eq, Fin.forall_fin_two, and_assoc]
 
-/-- The truncations increase with the height. -/
-theorem puncturedSphereTruncation_mono (c a : ι → ℂ) : Monotone (puncturedSphereTruncation c a) :=
-  fun R R' hRR' w hw ↦ ⟨hw.1.trans (by gcongr), fun i ↦ le_trans (by gcongr) (hw.2 i)⟩
-
-/-- The truncation is compact. -/
-theorem isCompact_puncturedSphereTruncation (c a : ι → ℂ) (R : ℝ) :
-    IsCompact (puncturedSphereTruncation c a R) := by
-  have hclosed : IsClosed (puncturedSphereTruncation c a R) := by
-    simp only [puncturedSphereTruncation, ofPred_and, ofPred_forall]
-    exact (isClosed_le continuous_norm continuous_const).inter
-      (isClosed_iInter fun i ↦
-        isClosed_le continuous_const (continuous_id.sub continuous_const).norm)
-  exact (isCompact_closedBall (0 : ℂ) (2 * Real.exp (2 * π * R))).of_isClosed_subset hclosed
-    fun w hw ↦ by simpa using hw.1
-
-/-- The truncation avoids the input punctures. -/
+/-- For nonzero scales, the truncation avoids the centers of the input ends. -/
 theorem ne_of_mem_puncturedSphereTruncation {i : ι} (ha : a i ≠ 0) {w : ℂ}
     (hw : w ∈ puncturedSphereTruncation c a R) : w ≠ c i := by
   rintro rfl
-  have h := hw.2 i
-  rw [sub_self, norm_zero] at h
-  have : 0 < ‖a i‖ * Real.exp (-(2 * π * R)) / 2 := by
+  have h := hw.1 i
+  have hpos : 0 < ‖a i‖ * Real.exp (-(2 * π * R)) / 2 := by
     have := norm_pos_iff.2 ha
     positivity
+  rw [sub_self, norm_zero] at h
   linarith
 
-/-- The truncations exhaust the plane with the input punctures removed. -/
+/-- For finitely many input ends with nonzero scales, the truncations exhaust the sphere minus
+its punctures: the plane minus the centers of the input ends. -/
 theorem iUnion_puncturedSphereTruncation [Finite ι] (ha : ∀ i, a i ≠ 0) :
-    ⋃ R, puncturedSphereTruncation c a R = {w : ℂ | ∀ i, w ≠ c i} := by
+    ⋃ R, puncturedSphereTruncation c a R = {w | ∀ i, w ≠ c i} := by
   ext w
   simp only [mem_iUnion, mem_ofPred_eq]
-  refine ⟨fun ⟨R, hw⟩ i ↦ ne_of_mem_puncturedSphereTruncation (ha i) hw, fun hw ↦ ?_⟩
-  have h2π : Tendsto (fun R : ℝ ↦ 2 * π * R) atTop atTop :=
-    tendsto_id.const_mul_atTop (by positivity)
-  have hout : ∀ᶠ R in atTop, ‖w‖ ≤ 2 * Real.exp (2 * π * R) :=
-    ((Real.tendsto_exp_atTop.comp h2π).const_mul_atTop two_pos).eventually_ge_atTop ‖w‖
-  have hin : ∀ᶠ R in atTop, ∀ i, ‖a i‖ * Real.exp (-(2 * π * R)) / 2 ≤ ‖w - c i‖ := by
-    refine eventually_all.2 fun i ↦ ?_
+  refine ⟨fun ⟨R, hR⟩ i ↦ ne_of_mem_puncturedSphereTruncation (ha i) hR, fun hw ↦ ?_⟩
+  have hexp : Tendsto (fun R : ℝ ↦ 2 * π * R) atTop atTop :=
+    tendsto_id.const_mul_atTop Real.two_pi_pos
+  -- Near each center the radius `‖a i‖ exp (-2πR) / 2` tends to `0`, and the outer radius
+  -- `2 exp (2πR)` tends to `∞`.
+  have hin (i : ι) : ∀ᶠ R in atTop, ‖a i‖ * Real.exp (-(2 * π * R)) / 2 ≤ ‖w - c i‖ := by
     have h : Tendsto (fun R : ℝ ↦ ‖a i‖ * Real.exp (-(2 * π * R)) / 2) atTop (𝓝 0) := by
-      simpa using ((Real.tendsto_exp_neg_atTop_nhds_zero.comp h2π).const_mul ‖a i‖).div_const 2
-    exact h.eventually (ge_mem_nhds (norm_pos_iff.2 (sub_ne_zero.2 (hw i))))
-  exact (hout.and hin).exists
+      simpa using ((Real.tendsto_exp_neg_atTop_nhds_zero.comp hexp).const_mul ‖a i‖).div_const 2
+    exact (h.eventually (gt_mem_nhds (norm_pos_iff.2 (sub_ne_zero.2 (hw i))))).mono
+      fun _ ↦ le_of_lt
+  have hout : ∀ᶠ R in atTop, ‖w‖ ≤ 2 * Real.exp (2 * π * R) :=
+    ((Real.tendsto_exp_atTop.comp hexp).const_mul_atTop two_pos).eventually_ge_atTop ‖w‖
+  obtain ⟨R, hR⟩ := ((eventually_all.2 hin).and hout).exists
+  exact ⟨R, hR⟩
 
-/-- The input end lift `z ↦ c + a φ₀(z)` sends `z` to a point at distance
-`‖a‖ exp (-2π Re z) / 2` from its center `c`. -/
-theorem norm_add_mul_cylindricalEndLift_zero_sub (c a z : ℂ) :
+/-- A point of the input end with center `c` and scale `a`, at longitudinal coordinate `s`, lies
+at distance `‖a‖ exp (-2πs) / 2` from the center. -/
+theorem norm_add_mul_cylindricalEndLift_sub (c a z : ℂ) :
     ‖c + a * zero.cylindricalEndLift z - c‖ = ‖a‖ * Real.exp (-(2 * π * z.re)) / 2 := by
   have h := norm_cylindricalEndLift_sub_endCenter zero z
   rw [endCenter_zero, sub_zero, endScale_zero] at h
@@ -125,88 +148,120 @@ theorem norm_add_mul_cylindricalEndLift_zero_sub (c a z : ℂ) :
   norm_num
   ring
 
-/-- The image of the band `1 ≤ s ≤ R` of an input end lies in the truncation. -/
-theorem add_mul_cylindricalEndLift_zero_mem_puncturedSphereTruncation
+/-- The end lift `z ↦ c + a φ₀(z)` of an input end has complex derivative `a φ₀'(z)`. -/
+theorem hasDerivAt_add_mul_cylindricalEndLift (c a w : ℂ) :
+    HasDerivAt (fun z ↦ c + a * zero.cylindricalEndLift z)
+      (a * deriv zero.cylindricalEndLift w) w :=
+  ((zero.hasDerivAt_cylindricalEndLift _).differentiableAt.hasDerivAt.const_mul a).const_add c
+
+/-- If the discs `‖w - c i‖ < ‖a i‖ / 2` are pairwise disjoint and lie in the disc
+`‖w‖ ≤ 2 exp (2π)`, then the part `1 ≤ s ≤ R` of every input end lies in the truncation `Σ_R`. -/
+theorem add_mul_cylindricalEndLift_mem_puncturedSphereTruncation
     (hsep : Pairwise fun i j => ‖a i‖ / 2 + ‖a j‖ / 2 ≤ ‖c i - c j‖)
-    (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π)) {i : ι} {z : ℂ} (h₁ : 1 ≤ z.re)
-    (hR : z.re ≤ R) : c i + a i * zero.cylindricalEndLift z ∈ puncturedSphereTruncation c a R := by
+    (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π)) {i : ι} {z : ℂ}
+    (h₁ : 1 ≤ z.re) (h₂ : z.re ≤ R) :
+    c i + a i * zero.cylindricalEndLift z ∈ puncturedSphereTruncation c a R := by
   set w := c i + a i * zero.cylindricalEndLift z
+  have hd := norm_add_mul_cylindricalEndLift_sub (c i) (a i) z
   have hπ := Real.pi_pos
-  have hn := norm_add_mul_cylindricalEndLift_zero_sub (c i) (a i) z
-  have he₁ : Real.exp (-(2 * π * z.re)) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith)
-  have heR : Real.exp (-(2 * π * R)) ≤ Real.exp (-(2 * π * z.re)) :=
+  have hR₁ : Real.exp (-(2 * π * R)) ≤ Real.exp (-(2 * π * z.re)) :=
     Real.exp_le_exp.2 (by nlinarith)
-  have hwi : ‖w - c i‖ ≤ ‖a i‖ / 2 := by
-    rw [hn]
-    nlinarith [norm_nonneg (a i)]
-  refine ⟨?_, fun j => ?_⟩
-  · have h₂ : Real.exp (2 * π) ≤ Real.exp (2 * π * R) := Real.exp_le_exp.2 (by nlinarith)
-    linarith [hout i, norm_le_norm_add_norm_sub' w (c i)]
+  have hR₂ : Real.exp (-(2 * π * z.re)) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith)
+  have hR₄ : Real.exp (2 * π) ≤ Real.exp (2 * π * R) := Real.exp_le_exp.2 (by nlinarith)
+  have hai := norm_nonneg (a i)
+  have hdi : ‖w - c i‖ ≤ ‖a i‖ / 2 := by rw [hd]; nlinarith
+  refine ⟨fun j ↦ ?_, ?_⟩
   · rcases eq_or_ne j i with rfl | hji
-    · rw [hn]
-      nlinarith [norm_nonneg (a j)]
-    · have h₁ := hsep hji.symm
-      have h₂ : ‖c i - c j‖ ≤ ‖w - c i‖ + ‖w - c j‖ := by
-        simpa only [dist_eq_norm] using dist_triangle_left (c i) (c j) w
-      nlinarith [norm_nonneg (a j)]
+    · rw [hd]
+      gcongr
+    · have h := hsep hji.symm
+      have htri : ‖c i - c j‖ ≤ ‖w - c i‖ + ‖w - c j‖ := by
+        simpa [norm_sub_rev] using norm_sub_le (c i - w) (c j - w)
+      have : ‖a j‖ * Real.exp (-(2 * π * R)) ≤ ‖a j‖ :=
+        mul_le_of_le_one_right (norm_nonneg _) (Real.exp_le_one_iff.2 (by nlinarith))
+      linarith
+  · have htri : ‖w‖ ≤ ‖c i‖ + ‖w - c i‖ := by simpa using norm_add_le (c i) (w - c i)
+    linarith [hout i]
 
-/-- The image of the band `-R ≤ s ≤ -1` of the output end lies in the truncation. -/
+/-- If the discs `‖w - c i‖ < ‖a i‖ / 2` lie in the disc `‖w‖ ≤ 2 exp (2π)`, then the part
+`-R ≤ s ≤ -1` of the output end lies in the truncation `Σ_R`. -/
 theorem cylindricalEndLift_inf_mem_puncturedSphereTruncation
-    (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π)) {z : ℂ} (hR : -R ≤ z.re)
-    (h₁ : z.re ≤ -1) : inf.cylindricalEndLift z ∈ puncturedSphereTruncation c a R := by
+    (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π)) {z : ℂ} (h₁ : -R ≤ z.re)
+    (h₂ : z.re ≤ -1) :
+    inf.cylindricalEndLift z ∈ puncturedSphereTruncation c a R := by
+  have hd := norm_cylindricalEndLift_sub_endCenter inf z
+  rw [endCenter_inf, sub_zero, endScale_inf, Complex.norm_ofNat] at hd
   have hπ := Real.pi_pos
-  have hn := norm_cylindricalEndLift_sub_endCenter inf z
-  rw [endCenter_inf, sub_zero, endScale_inf, Complex.norm_ofNat] at hn
-  have h₂ : Real.exp (2 * π) ≤ Real.exp (-(2 * π * z.re)) := Real.exp_le_exp.2 (by nlinarith)
-  refine ⟨?_, fun i => ?_⟩
-  · rw [hn]
-    have : Real.exp (-(2 * π * z.re)) ≤ Real.exp (2 * π * R) := Real.exp_le_exp.2 (by nlinarith)
-    linarith
-  · have heR : Real.exp (-(2 * π * R)) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith)
-    have h₃ := norm_sub_norm_le (inf.cylindricalEndLift z) (c i)
-    nlinarith [hout i, norm_nonneg (a i)]
+  have hlow : 2 * Real.exp (2 * π) ≤ ‖inf.cylindricalEndLift z‖ :=
+    two_mul_exp_le_norm_cylindricalEndLift_inf (R := 1) (by linarith) |>.trans_eq' (by ring_nf)
+  refine ⟨fun i ↦ ?_, ?_⟩
+  · have htri : ‖inf.cylindricalEndLift z‖ ≤ ‖c i‖ + ‖inf.cylindricalEndLift z - c i‖ := by
+      simpa using norm_add_le (c i) (inf.cylindricalEndLift z - c i)
+    have : ‖a i‖ * Real.exp (-(2 * π * R)) ≤ ‖a i‖ :=
+      mul_le_of_le_one_right (norm_nonneg _) (Real.exp_le_one_iff.2 (by nlinarith))
+    linarith [hout i]
+  · rw [hd]
+    gcongr
+    nlinarith
 
-/-- A point of the truncation in the disc `‖w - c‖ ≤ ‖a‖ exp (-2π) / 2` of the input end with
-center `c` and scale `a` is the image of a point of the rectangle `[1, R] × [-1/2, 1/2)`. -/
-theorem exists_add_mul_cylindricalEndLift_zero_eq {c a w : ℂ} (ha : a ≠ 0) {R : ℝ}
-    (hw₀ : ‖a‖ * Real.exp (-(2 * π * R)) / 2 ≤ ‖w - c‖)
-    (hw₁ : ‖w - c‖ ≤ ‖a‖ * Real.exp (-(2 * π)) / 2) :
-    ∃ z : ℂ, (z.re ∈ Icc 1 R ∧ z.im ∈ Ico (-1 / 2 : ℝ) (1 / 2)) ∧
+/-- For a nonzero scale `a`, a point at distance between `‖a‖ exp (-2πR) / 2` and
+`‖a‖ exp (-2πr) / 2` from `c` is the image of a point with `r ≤ s ≤ R` and `t ∈ [-1/2, 1/2)` on the
+input end with center `c` and scale `a`. -/
+theorem exists_add_mul_cylindricalEndLift_eq {r : ℝ} {c a w : ℂ} (ha : a ≠ 0)
+    (h₁ : ‖a‖ * Real.exp (-(2 * π * R)) / 2 ≤ ‖w - c‖)
+    (h₂ : ‖w - c‖ ≤ ‖a‖ * Real.exp (-(2 * π * r)) / 2) :
+    ∃ z : ℂ, z.re ∈ Icc r R ∧ z.im ∈ Ico (-1 / 2 : ℝ) (1 / 2) ∧
       c + a * zero.cylindricalEndLift z = w := by
-  have hna := norm_pos_iff.2 ha
-  set w' := (w - c) / a
-  have hw' : ‖w'‖ = ‖w - c‖ / ‖a‖ := norm_div _ _
-  have hw'₀ : 0 < ‖w'‖ := by
-    rw [hw']
-    have : 0 < ‖a‖ * Real.exp (-(2 * π * R)) / 2 := by positivity
-    exact div_pos (by linarith) hna
-  have hw'0 : w' ≠ zero.endCenter := by
+  have hapos := norm_pos_iff.2 ha
+  set ζ := (w - c) / a
+  have hζn : ‖ζ‖ = ‖w - c‖ / ‖a‖ := norm_div _ _
+  have hζ : ζ ≠ zero.endCenter := by
     rw [endCenter_zero]
-    exact norm_pos_iff.1 hw'₀
-  refine ⟨zero.endCoord w', ⟨⟨?_, ?_⟩, zero.im_endCoord_mem_Ico w'⟩, ?_⟩
-  · refine le_re_endCoord_of_norm_sub_endCenter_le (by decide) hw'0 ?_
-    rw [endCenter_zero, sub_zero, hw', div_le_iff₀ hna, mul_one]
+    intro h
+    rw [h, norm_zero, eq_comm, div_eq_zero_iff] at hζn
+    have : 0 < ‖a‖ * Real.exp (-(2 * π * R)) / 2 := by positivity
+    rcases hζn with h | h <;> linarith
+  refine ⟨zero.endCoord ζ, ⟨?_, ?_⟩, zero.im_endCoord_mem_Ico ζ, ?_⟩
+  · refine le_re_endCoord_of_norm_sub_endCenter_le (by decide) hζ ?_
+    rw [endCenter_zero, sub_zero, hζn, div_le_iff₀ hapos]
     linarith
-  · rw [re_endCoord_le_iff (by decide) hw'0, endCenter_zero, sub_zero, hw', le_div_iff₀ hna]
+  · refine (re_endCoord_le_iff (by decide) hζ).2 ?_
+    rw [endCenter_zero, sub_zero, hζn, le_div_iff₀ hapos]
     linarith
-  · rw [zero.cylindricalEndLift_endCoord hw'0, mul_div_cancel₀ _ ha, add_sub_cancel]
+  · rw [cylindricalEndLift_endCoord zero hζ, mul_div_cancel₀ _ ha, add_sub_cancel]
 
-/-- A point of the truncation off the disc `‖w‖ < 2 exp (2π)` is the image under the output end
-lift of a point of the rectangle `[-R, -1] × [-1/2, 1/2)`. -/
-theorem exists_cylindricalEndLift_inf_eq {w : ℂ} {R : ℝ}
-    (hw₀ : 2 * Real.exp (2 * π) ≤ ‖w‖) (hw₁ : ‖w‖ ≤ 2 * Real.exp (2 * π * R)) :
-    ∃ z : ℂ, (z.re ∈ Icc (-R) (-1) ∧ z.im ∈ Ico (-1 / 2 : ℝ) (1 / 2)) ∧
-      inf.cylindricalEndLift z = w := by
-  have hR : 0 ≤ R := by
-    have h := Real.exp_le_exp.1 (by linarith : Real.exp (2 * π) ≤ Real.exp (2 * π * R))
-    nlinarith [Real.pi_pos]
-  have hw0 : 0 < ‖w‖ := lt_of_lt_of_le (by positivity) hw₀
-  have hw : w ≠ inf.endCenter := by
-    rw [endCenter_inf]
-    exact norm_pos_iff.1 hw0
-  refine ⟨inf.endCoord w, ⟨⟨?_, ?_⟩, inf.im_endCoord_mem_Ico w⟩,
-    inf.cylindricalEndLift_endCoord hw⟩
-  · linarith [neg_re_endCoord_inf_le hR hw₁]
-  · exact re_endCoord_inf_le_neg (by rwa [mul_one])
+/-- If the discs `‖w - c i‖ < ‖a i‖ / 2` are pairwise disjoint, then a point with `s > 0` on an
+input end with nonzero scale is not the center of any input end. -/
+theorem add_mul_cylindricalEndLift_ne
+    (hsep : Pairwise fun i j => ‖a i‖ / 2 + ‖a j‖ / 2 ≤ ‖c i - c j‖) {i : ι} (ha : a i ≠ 0)
+    {z : ℂ} (hz : 0 < z.re) (j : ι) : c i + a i * zero.cylindricalEndLift z ≠ c j := by
+  have hd := norm_add_mul_cylindricalEndLift_sub (c i) (a i) z
+  have hapos := norm_pos_iff.2 ha
+  have hlt : ‖a i‖ * Real.exp (-(2 * π * z.re)) / 2 < ‖a i‖ / 2 := by
+    have : Real.exp (-(2 * π * z.re)) < 1 := Real.exp_lt_one_iff.2 (by nlinarith [Real.pi_pos])
+    nlinarith
+  intro h
+  rcases eq_or_ne j i with rfl | hji
+  · rw [h, sub_self, norm_zero] at hd
+    have : 0 < ‖a j‖ * Real.exp (-(2 * π * z.re)) / 2 := by positivity
+    linarith
+  · rw [h] at hd
+    have := hsep hji
+    linarith [norm_nonneg (a j), norm_sub_rev (c j) (c i)]
+
+/-- The end lift `z ↦ c + a φ₀(z)` of an input end with nonzero scale `a` is injective on every
+horizontal strip `t₀ ≤ Im z < t₀ + 1`. -/
+theorem injOn_add_mul_cylindricalEndLift {c a : ℂ} (ha : a ≠ 0) (t₀ : ℝ) :
+    InjOn (fun z ↦ c + a * zero.cylindricalEndLift z) {z | z.im ∈ Ico t₀ (t₀ + 1)} :=
+  fun _ hp _ hq h ↦ zero.injOn_cylindricalEndLift t₀ hp hq <| by
+    simpa only [add_right_inj, mul_right_inj' ha] using h
+
+/-- The end lift `z ↦ c + a φ₀(z)` of an input end with nonzero scale `a`, in real coordinates, is
+injective on every horizontal strip `S × [t₀, t₀ + 1)`. -/
+theorem injOn_realChart_add_mul_cylindricalEndLift {c a : ℂ} (ha : a ≠ 0) {S : Set ℝ} {t₀ : ℝ} :
+    InjOn (realChart fun z ↦ c + a * zero.cylindricalEndLift z) (S ×ˢ Ico t₀ (t₀ + 1)) :=
+  injOn_realChart <| (injOn_add_mul_cylindricalEndLift ha t₀).mono <| by
+    rintro _ ⟨p, hp, rfl⟩
+    simpa using hp.2
 
 end TauCeti.ThricePuncturedSphere
