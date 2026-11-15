@@ -35,6 +35,9 @@ strictly increasing factors. `Nat.injOn_add_divisorsAntidiagonal_filter_lt` and
 `Int.isSquare_sq_sub_four_mul_iff_exists_mem_divisorsAntidiagonal` identify those factor pairs
 by their sum and by a positive square discriminant.
 
+For radical `P`, `Nat.pairwiseDisjoint_divisors_pow_filter_dvd` states that the families of
+divisors of `d ^ M` divisible by `d` are pairwise disjoint as `d` ranges over the divisors of `P`.
+
 `TauCeti.nontrivialDivisorEquiv` identifies divisors greater than one with the subtype of
 `N.divisors` omitting the unit divisor.
 -/

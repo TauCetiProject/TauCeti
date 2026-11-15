@@ -18,8 +18,8 @@ The finite-prime argument is adapted from Arend Mellendijk's PNT+ Selberg bounds
 
 ## Main results
 
-* `MonoidHom.prod_sum_positive_prime_powers` expands finite prime-power sums over a squarefree
-  integer, in an arbitrary commutative semiring and including exponent zero.
+* `BoundingSieve.selbergTerms_le_of_prime_le` compares supported coefficients when the prime
+  densities increase.
 * `BoundingSieve.sum_nu_le_sum_selbergTerms` bounds the density sum for completely multiplicative
   densities, at every real cutoff.
 * `BoundingSieve.sum_inv_le_sum_selbergTerms` and `BoundingSieve.log_le_sum_selbergTerms` use only
@@ -41,21 +41,33 @@ open scoped ArithmeticFunction.zeta
 
 namespace BoundingSieve
 
+private def nuHom (s : BoundingSieve)
+    (hMul : ∀ a b, s.nu (a * b) = s.nu a * s.nu b) : ℕ →* ℝ :=
+  { toFun := s.nu, map_one' := s.nu_mult.1, map_mul' := hMul }
+
+@[simp] private theorem nuHom_apply (s : BoundingSieve)
+    (hMul : ∀ a b, s.nu (a * b) = s.nu a * s.nu b) (n : ℕ) :
+    nuHom s hMul n = s.nu n := (rfl)
+
+private theorem nu_bounds_of_mem_primeFactors (s : BoundingSieve) {d p : ℕ}
+    (hd : d ∣ s.prodPrimes) (hp : p ∈ d.primeFactors) : 0 < s.nu p ∧ s.nu p < 1 := by
+  have hpP := (Nat.dvd_of_mem_primeFactors hp).trans hd
+  exact ⟨s.nu_pos_of_dvd_prodPrimes hpP,
+    s.nu_lt_one_of_dvd_prodPrimes hpP (prime_of_mem_primeFactors hp).ne_one⟩
+
 private theorem nu_nonneg_of_dvd_pow (s : BoundingSieve)
     (hMul : ∀ a b, s.nu (a * b) = s.nu a * s.nu b) {n M : ℕ}
     (hn : n ∣ s.prodPrimes ^ M) : 0 ≤ s.nu n := by
-  let F : ℕ →* ℝ := { toFun := s.nu, map_one' := s.nu_mult.1, map_mul' := hMul }
   have hn0 : n ≠ 0 := ne_zero_of_dvd_ne_zero
     (pow_ne_zero M s.prodPrimes_ne_zero) hn
   rw [s.nu_mult.multiplicative_factorization _ hn0,
     prod_factorization_eq_prod_primeFactors]
   apply Finset.prod_nonneg
   intro p hp
-  change 0 ≤ F (p ^ n.factorization p)
-  rw [map_pow]
+  rw [← nuHom_apply s hMul, map_pow, nuHom_apply]
   apply pow_nonneg
   have hpp := prime_of_mem_primeFactors hp
-  exact (s.nu_pos_of_prime p hpp
+  exact (s.nu_pos_of_dvd_prodPrimes
     (hpp.dvd_of_dvd_pow ((Nat.dvd_of_mem_primeFactors hp).trans hn))).le
 
 private theorem mem_prime_support_partition (s : BoundingSieve) (z : ℝ)
@@ -108,17 +120,14 @@ private theorem sum_divisors_prime_support_le_terms (s : BoundingSieve)
     (hMul : ∀ a b, s.nu (a * b) = s.nu a * s.nu b) (k d : ℕ)
     (hd : d ∣ s.prodPrimes) :
     ∑ m ∈ (d ^ (k + 1)).divisors.filter (d ∣ ·), s.nu m ≤ s.selbergTerms d := by
-  let F : ℕ →* ℝ := { toFun := s.nu, map_one' := s.nu_mult.1, map_mul' := hMul }
   have hdsq := s.squarefree_of_dvd_prodPrimes hd
-  change ∑ m ∈ (d ^ (k + 1)).divisors.filter (d ∣ ·), F m ≤ _
-  rw [← MonoidHom.prod_sum_positive_prime_powers F (k + 1) d hdsq, selbergTerms_apply]
-  apply MonoidHom.prod_sum_prime_powers_le F (k + 1) d hdsq
-  · intro p hp
-    exact (s.nu_pos_of_prime p (prime_of_mem_primeFactors hp)
-      ((Nat.dvd_of_mem_primeFactors hp).trans hd)).le
-  · intro p hp
-    exact s.nu_lt_one_of_prime p (prime_of_mem_primeFactors hp)
-      ((Nat.dvd_of_mem_primeFactors hp).trans hd)
+  simp_rw [← nuHom_apply s hMul]
+  rw [← MonoidHom.prod_sum_Icc_pow_eq_sum_divisors_pow_filter_dvd
+    (nuHom s hMul) (k + 1) d hdsq, selbergTerms_apply]
+  simpa only [nuHom_apply] using
+    (nuHom s hMul).prod_sum_Icc_pow_le (k + 1) d hdsq
+      (fun p hp ↦ (nu_bounds_of_mem_primeFactors s hd hp).1.le)
+      (fun p hp ↦ (nu_bounds_of_mem_primeFactors s hd hp).2)
 
 /-- Complete multiplicativity compares the density sum with the finite Selberg normalizer.
 The cutoff is an arbitrary real number; negative cutoffs give empty sums. -/
@@ -155,6 +164,12 @@ private noncomputable def reciprocalDensity (s : BoundingSieve) : BoundingSieve 
       intro p hp _
       exact inv_lt_one_of_one_lt₀ (by exact_mod_cast hp.one_lt) }
 
+@[simp] private theorem reciprocalDensity_nu_apply (s : BoundingSieve) (n : ℕ) :
+    (reciprocalDensity s).nu n = (n : ℝ)⁻¹ := (rfl)
+
+@[simp] private theorem reciprocalDensity_prodPrimes (s : BoundingSieve) :
+    (reciprocalDensity s).prodPrimes = s.prodPrimes := (rfl)
+
 /-- On squarefree sieve-supported indices, increasing nonnegative prime densities increases
 `selbergTerms`. The comparison density need not have the same prime support. -/
 theorem selbergTerms_le_of_prime_le (s t : BoundingSieve) (d : ℕ)
@@ -170,15 +185,12 @@ theorem selbergTerms_le_of_prime_le (s t : BoundingSieve) (d : ℕ)
   · intro p hp
     exact div_nonneg (ht p hp)
       (sub_nonneg.mpr ((hnu p hp).trans
-        (s.nu_lt_one_of_prime p (prime_of_mem_primeFactors hp)
-          ((Nat.dvd_of_mem_primeFactors hp).trans hs)).le))
+        (nu_bounds_of_mem_primeFactors s hs hp).2.le))
   · intro p hp
     exact div_le_div₀
-      (s.nu_pos_of_prime p (prime_of_mem_primeFactors hp)
-        ((Nat.dvd_of_mem_primeFactors hp).trans hs)).le
+      (nu_bounds_of_mem_primeFactors s hs hp).1.le
       (hnu p hp)
-      (sub_pos.mpr (s.nu_lt_one_of_prime p (prime_of_mem_primeFactors hp)
-        ((Nat.dvd_of_mem_primeFactors hp).trans hs)))
+      (sub_pos.mpr (nu_bounds_of_mem_primeFactors s hs hp).2)
       (sub_le_sub_left (hnu p hp) 1)
 
 /-- Prime densities at least `1 / p` give a harmonic lower bound for the normalizer.
@@ -190,16 +202,25 @@ theorem sum_inv_le_sum_selbergTerms (s : BoundingSieve) (z : ℝ)
       ∑ d ∈ s.prodPrimes.divisors, if (d : ℝ) ≤ z then s.selbergTerms d else 0 := by
   let t := reciprocalDensity s
   calc
-    _ = ∑ m ∈ Icc 1 ⌊z⌋₊, t.nu m := rfl
+    _ = ∑ m ∈ Icc 1 ⌊z⌋₊, t.nu m := by
+      simp only [t, reciprocalDensity_nu_apply]
     _ ≤ ∑ d ∈ t.prodPrimes.divisors, if (d : ℝ) ≤ z then t.selbergTerms d else 0 :=
-      sum_nu_le_sum_selbergTerms t z hP (by intro a b; simp [t, reciprocalDensity, mul_comm])
+      sum_nu_le_sum_selbergTerms t z
+        (by simpa only [t, reciprocalDensity_prodPrimes] using hP)
+        (by intro a b; simp only [t, reciprocalDensity_nu_apply, Nat.cast_mul, mul_inv_rev];
+            exact mul_comm _ _)
     _ ≤ _ := by
+      rw [show t.prodPrimes = s.prodPrimes by
+        simp only [t, reciprocalDensity_prodPrimes]]
       apply Finset.sum_le_sum
       intro d hd
       split_ifs with hdz
       · apply selbergTerms_le_of_prime_le s t d (Nat.dvd_of_mem_divisors hd)
-          (by intro p _; exact inv_nonneg.mpr (Nat.cast_nonneg p))
+          (by intro p _; rw [show t.nu p = (p : ℝ)⁻¹ by
+                simp only [t, reciprocalDensity_nu_apply]]
+              exact inv_nonneg.mpr (Nat.cast_nonneg p))
         intro p hp
+        rw [show t.nu p = (p : ℝ)⁻¹ by simp only [t, reciprocalDensity_nu_apply]]
         apply hnu p (prime_of_mem_primeFactors hp)
         have hpd : (p : ℝ) ≤ d := by exact_mod_cast Nat.le_of_mem_primeFactors hp
         exact hpd.trans hdz

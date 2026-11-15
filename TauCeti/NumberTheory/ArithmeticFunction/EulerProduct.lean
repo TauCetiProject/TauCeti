@@ -29,9 +29,9 @@ namespace ArithmeticFunction
 
 /-- The divisor sum of a multiplicative function over a power of a squarefree integer
 factors into finite sums over the powers of its primes. -/
-theorem sum_divisors_power_eq_product {R : Type*} [CommSemiring R]
-    (f : ArithmeticFunction R)
-    (hf : f.IsMultiplicative) (d k : ℕ) (hd : Squarefree d) :
+theorem IsMultiplicative.sum_divisors_pow_eq_prod_primeFactors
+    {R : Type*} [CommSemiring R] {f : ArithmeticFunction R} (hf : f.IsMultiplicative)
+    (d k : ℕ) (hd : Squarefree d) :
     ∑ m ∈ (d ^ k).divisors, f m =
       ∏ p ∈ d.primeFactors, ∑ i ∈ Finset.range (k + 1), f (p ^ i) := by
   have hmult : (f * (ζ : ArithmeticFunction R)).IsMultiplicative :=
@@ -58,7 +58,7 @@ end ArithmeticFunction
 namespace MonoidHom
 
 /-- A finite geometric product over the prime support of a squarefree integer. -/
-theorem prod_sum_positive_prime_powers {R : Type*} [CommSemiring R]
+theorem prod_sum_Icc_pow_eq_sum_divisors_pow_filter_dvd {R : Type*} [CommSemiring R]
     (F : ℕ →* R) (M d : ℕ) (hd : Squarefree d) :
     ∏ p ∈ d.primeFactors, ∑ j ∈ Icc 1 M, F (p ^ j) =
       ∑ m ∈ (d ^ M).divisors.filter (d ∣ ·), F m := by
@@ -98,7 +98,7 @@ theorem prod_sum_positive_prime_powers {R : Type*} [CommSemiring R]
           exact Finset.prod_congr rfl hpowers
         _ = F d * ∑ m ∈ (d ^ k).divisors, F m := by
           rw [← map_prod F, Nat.prod_primeFactors_of_squarefree hd,
-            ← ArithmeticFunction.sum_divisors_power_eq_product f hf d k hd, hsum]
+            ← hf.sum_divisors_pow_eq_prod_primeFactors d k hd, hsum]
         _ = _ := by
           rw [pow_succ, mul_comm (d ^ k) d,
             Nat.sum_divisors_filter_dvd (dvd_mul_right d (d ^ k)) F,
@@ -106,7 +106,7 @@ theorem prod_sum_positive_prime_powers {R : Type*} [CommSemiring R]
           simp only [map_mul, Finset.mul_sum]
 
 /-- A finite Euler product of geometric sums is bounded by the corresponding infinite factors. -/
-theorem prod_sum_prime_powers_le {R : Type*} [Field R] [LinearOrder R]
+theorem prod_sum_Icc_pow_le {R : Type*} [Field R] [LinearOrder R]
     [IsStrictOrderedRing R] (F : ℕ →* R) (M d : ℕ) (hd : Squarefree d)
     (hF : ∀ p ∈ d.primeFactors, 0 ≤ F p) (hFlt : ∀ p ∈ d.primeFactors, F p < 1) :
     ∏ p ∈ d.primeFactors, ∑ j ∈ Icc 1 M, F (p ^ j) ≤
