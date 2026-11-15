@@ -303,19 +303,30 @@ open scoped ENNReal TauCeti
 private def component {X : Type*} [EMetricSpace X] (p : X) : Opens X :=
   ⟨Metric.eball p ∞, Metric.isOpen_eball⟩
 
+@[simp]
+private theorem coe_component {X : Type*} [EMetricSpace X] (p : X) :
+    (component p : Set X) = Metric.eball p ∞ :=
+  rfl
+
+@[simp]
+private theorem mem_component_iff {X : Type*} [EMetricSpace X] {p x : X} :
+    x ∈ component p ↔ edist x p < ⊤ := by
+  rw [← SetLike.mem_coe, coe_component, Metric.mem_eball]
+
 private theorem mem_component {X : Type*} [EMetricSpace X] (p : X) : p ∈ component p :=
-  Metric.mem_eball_self ENNReal.zero_lt_top
+  mem_component_iff.2 (by simp)
 
 /-- The metric of a finite-distance component. It is built with `EMetricSpace.toMetricSpace`
 rather than taken from `TauCeti.instMetricSpaceEBallTop`, so that its topology unfolds reducibly
 to the subtype topology carrying the charts of the open subset. -/
 private instance {X : Type*} [EMetricSpace X] (p : X) : MetricSpace (component p) :=
   EMetricSpace.toMetricSpace fun x y ↦ ((edist_triangle_right (x : X) y p).trans_lt
-    (ENNReal.add_lt_top.2 ⟨x.2, y.2⟩)).ne
+    (ENNReal.add_lt_top.2 ⟨mem_component_iff.1 x.2, mem_component_iff.1 y.2⟩)).ne
 
 /-- A finite-distance component of a complete space is complete. -/
 private instance {X : Type*} [EMetricSpace X] [CompleteSpace X] (p : X) :
     CompleteSpace (component p) :=
+  -- The subtype of `component p` is that of `Metric.eball p ∞` (`coe_component`).
   TauCeti.instCompleteSpaceEBallTop p
 
 variable
@@ -328,23 +339,28 @@ variable
 private instance (p : M) : IsRiemannianManifold I (component p) := by
   refine ⟨fun x y ↦ ((component p).riemannianEDist_open_eq_edist_of_eball_subset x y ?_
     (edist_lt_top x y)).symm⟩
-  rw [TauCeti.eball_top_eq_of_edist_ne_top x.2.ne]
-  exact subset_rfl
+  rw [coe_component, TauCeti.eball_top_eq_of_edist_ne_top (mem_component_iff.1 x.2).ne]
 
 variable {N : Type*} [EMetricSpace N] {f : M → N}
 
 /-- A distance-preserving map restricts to the finite-distance components of `p` and `f p`. -/
 private def componentMap (hf : Isometry f) (p : M) : component p → component (f p) :=
-  fun x ↦ ⟨f x, by
-    change edist (f x) (f p) < ⊤
-    rw [hf.edist_eq]
-    exact x.2⟩
+  fun x ↦ ⟨f x, by rw [mem_component_iff, hf.edist_eq]; exact mem_component_iff.1 x.2⟩
+
+@[simp]
+private theorem coe_componentMap (hf : Isometry f) (p : M) (x : component p) :
+    (componentMap hf p x : N) = f x :=
+  rfl
+
+private theorem val_comp_componentMap (hf : Isometry f) (p : M) :
+    Subtype.val ∘ componentMap hf p = f ∘ Subtype.val :=
+  funext (coe_componentMap hf p)
 
 /-- The restriction of a distance-preserving map to finite-distance components preserves
 distances. -/
 private theorem isometry_componentMap (hf : Isometry f) (p : M) :
     Isometry (componentMap hf p) :=
-  fun x y ↦ hf.edist_eq x y
+  fun x y ↦ by simp only [Subtype.edist_eq, coe_componentMap, hf.edist_eq]
 
 end Component
 
@@ -373,25 +389,27 @@ Riemannian distances, and the target is complete; no connectedness, completeness
 surjectivity is needed on the source. -/
 theorem contMDiff (hf : Isometry f) : ContMDiff I J ∞ f := by
   intro p
-  have h : ContMDiffAt I J ∞ (f ∘ Subtype.val) (⟨p, mem_component p⟩ : component p) :=
+  have h : ContMDiffAt I J ∞ (Subtype.val ∘ componentMap hf p)
+      (⟨p, mem_component p⟩ : component p) :=
     (contMDiff_subtype_val.comp (isometry_componentMap hf p).contMDiff_of_metricSpace) _
+  rw [val_comp_componentMap] at h
   exact contMDiffAt_subtype_iff.1 h
 
 /-- **The differential of a distance-preserving map preserves inner products.** -/
 theorem inner_mfderiv (hf : Isometry f) (p : M) (v w : TangentSpace I p) :
     inner ℝ (mfderiv I J f p v) (mfderiv I J f p w) = inner ℝ v w := by
   set x : component p := ⟨p, mem_component p⟩
-  have hcomp : Subtype.val ∘ componentMap hf p = f ∘ Subtype.val := rfl
-  have h := (isometry_componentMap hf p).inner_mfderiv_of_metricSpace (I := I) (J := J) x v w
+  have hcomp := val_comp_componentMap hf p
+  set e := tangentSpaceOpenEquiv (I := I) x
+  have h := (isometry_componentMap hf p).inner_mfderiv_of_metricSpace (I := I) (J := J) x
+    (e.symm v) (e.symm w)
   -- Inner products on the components are those of `M` and `N`, and the differential of the
   -- restriction of `f` is that of `f`.
-  have e₁ := inner_tangentSpace_open (I := J) (component (f p)) (componentMap hf p x)
-    (mfderiv I J (componentMap hf p) x v) (mfderiv I J (componentMap hf p) x w)
-  have e₂ := inner_tangentSpace_open (I := I) (component p) x v w
-  rw [tangentSpaceOpenEquiv_mfderiv_apply (x := x) hcomp v,
-    tangentSpaceOpenEquiv_mfderiv_apply (x := x) hcomp w] at e₁
-  rw [tangentSpaceOpenEquiv_apply (I := I) x v, tangentSpaceOpenEquiv_apply (I := I) x w] at e₁ e₂
-  exact e₁.symm.trans (h.trans e₂)
+  rw [inner_tangentSpace_open (I := J), inner_tangentSpace_open (I := I),
+    tangentSpaceOpenEquiv_mfderiv_apply hcomp, tangentSpaceOpenEquiv_mfderiv_apply hcomp,
+    e.apply_symm_apply, e.apply_symm_apply] at h
+  -- `RiemannianBundle` installs `RiemannianBundle.g.inner` as the fibre `Inner.inner`.
+  exact h
 
 /-- The differential of a distance-preserving map preserves norms. -/
 theorem norm_mfderiv (hf : Isometry f) (p : M) (v : TangentSpace I p) :
@@ -465,10 +483,12 @@ theorem toRiemannianIsometry_refl [CompleteSpace M] :
   rw [coe_toRiemannianIsometry, TauCeti.RiemannianIsometry.refl_apply]
   rfl
 
-/-- The smooth Riemannian isometry of the inverse is the inverse smooth Riemannian isometry. -/
+/-- The smooth Riemannian isometry of the inverse is the inverse smooth Riemannian isometry. The
+completeness of `M` it needs is transferred from `N` by `e`. -/
 @[simp]
-theorem toRiemannianIsometry_symm [CompleteSpace M] (e : M ≃ᵢ N) :
-    (e.toRiemannianIsometry I J).symm = e.symm.toRiemannianIsometry J I := by
+theorem toRiemannianIsometry_symm (e : M ≃ᵢ N) :
+    haveI : CompleteSpace M := e.completeSpace
+    e.symm.toRiemannianIsometry J I = (e.toRiemannianIsometry I J).symm := by
   ext x
   simp
 
@@ -479,17 +499,65 @@ variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimension
   [IsContMDiffRiemannianBundle K ∞ G (fun z : P ↦ TangentSpace K z)] [IsRiemannianManifold K P]
   [CompleteSpace P]
 
+omit [CompleteSpace N] in
 /-- The smooth Riemannian isometry of a composite is the composite of the smooth Riemannian
-isometries. -/
+isometries. The completeness of `N` it needs is transferred from `P` by `e₂`. -/
 theorem toRiemannianIsometry_trans (e₁ : M ≃ᵢ N) (e₂ : N ≃ᵢ P) :
+    haveI : CompleteSpace N := e₂.completeSpace
     (e₁.trans e₂).toRiemannianIsometry I K =
       (e₁.toRiemannianIsometry I J).trans (e₂.toRiemannianIsometry J K) := by
   ext x
   simp
 
+/-- The smooth Riemannian isometry of the unit of `M ≃ᵢ M` is the unit of `Isom I M`. -/
+@[simp]
+theorem toRiemannianIsometry_one [CompleteSpace M] :
+    (1 : M ≃ᵢ M).toRiemannianIsometry I I = 1 :=
+  toRiemannianIsometry_refl I
+
+/-- The smooth Riemannian isometry of a product in `M ≃ᵢ M` is the product in `Isom I M`. -/
+@[simp]
+theorem toRiemannianIsometry_mul [CompleteSpace M] (e₁ e₂ : M ≃ᵢ M) :
+    (e₁ * e₂).toRiemannianIsometry I I =
+      e₁.toRiemannianIsometry I I * e₂.toRiemannianIsometry I I :=
+  toRiemannianIsometry_trans I I I e₂ e₁
+
+/-- The smooth Riemannian isometry of an inverse in `M ≃ᵢ M` is the inverse in `Isom I M`. -/
+@[simp]
+theorem toRiemannianIsometry_inv [CompleteSpace M] (e : M ≃ᵢ M) :
+    e⁻¹.toRiemannianIsometry I I = (e.toRiemannianIsometry I I)⁻¹ :=
+  toRiemannianIsometry_symm I I e
+
 end IsometryEquiv
 
 namespace TauCeti.RiemannianIsometry
+
+section Group
+
+variable
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [PseudoEMetricSpace M] [ChartedSpace H M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsRiemannianManifold I M]
+
+/-- The metric equivalence of the unit of `Isom I M` is the unit of `M ≃ᵢ M`. -/
+@[simp]
+theorem toIsometryEquiv_one : ((1 : Isom I M) : M ≃ᵢ M) = 1 :=
+  toIsometryEquiv_refl
+
+/-- The metric equivalence of a product in `Isom I M` is the product in `M ≃ᵢ M`. -/
+@[simp]
+theorem toIsometryEquiv_mul (Φ Ψ : Isom I M) :
+    ((Φ * Ψ : Isom I M) : M ≃ᵢ M) = (Φ : M ≃ᵢ M) * (Ψ : M ≃ᵢ M) :=
+  toIsometryEquiv_trans Ψ Φ
+
+/-- The metric equivalence of an inverse in `Isom I M` is the inverse in `M ≃ᵢ M`. -/
+@[simp]
+theorem toIsometryEquiv_inv (Φ : Isom I M) :
+    ((Φ⁻¹ : Isom I M) : M ≃ᵢ M) = (Φ : M ≃ᵢ M)⁻¹ :=
+  toIsometryEquiv_symm Φ
+
+end Group
 
 variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -528,7 +596,7 @@ def isometryEquivMulEquiv : Isom I M ≃* (M ≃ᵢ M) where
   invFun e := e.toRiemannianIsometry I I
   left_inv := toRiemannianIsometry_toIsometryEquiv
   right_inv := IsometryEquiv.toIsometryEquiv_toRiemannianIsometry I I
-  map_mul' Φ Ψ := toIsometryEquiv_trans Ψ Φ
+  map_mul' := toIsometryEquiv_mul
 
 /-- The isomorphism of isometry groups forgets the smooth structure. -/
 @[simp]
