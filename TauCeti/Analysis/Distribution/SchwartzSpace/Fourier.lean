@@ -55,6 +55,7 @@ For a Schwartz function `φ` and a nonzero `ε`, the *cut-off exponential*
 * `SchwartzMap.fourierMultiplierCLM_one_add_norm_sq`: the Bessel multiplier of order `2` is
   `1 - (2π)⁻² Δ`.
 * `SchwartzMap.fourierInv_apply_eq_fourier_neg`: `𝓕⁻ f x = 𝓕 f (-x)`.
+* `SchwartzMap.integral_fourier_eq`: `∫ 𝓕 f = f 0`.
 * `SchwartzMap.fourier_smulLeftCLM_fourierInv_eq`: `𝓕 (g • 𝓕⁻ f) = 𝓕⁻ (g (-·) • 𝓕 f)`.
 * `SchwartzMap.integral_bilin_fourierMultiplierCLM_eq`: the transpose of a Fourier multiplier for
   bilinear pairings has the reflected symbol, `∫ M (T_g f) h = ∫ M f (T_{g (-·)} h)`.
@@ -135,6 +136,13 @@ theorem fourierMultiplierCLM_add {g₁ g₂ : E → 𝕜} (hg₁ : g₁.HasTempe
 point. This is the Schwartz-space form of Mathlib's `Real.fourierInv_eq_fourier_neg`. -/
 theorem fourierInv_apply_eq_fourier_neg (f : 𝓢(E, F)) (x : E) : 𝓕⁻ f x = 𝓕 f (-x) := by
   simp [fourierInv_apply_eq]
+
+/-- The integral of the Fourier transform of a Schwartz function is its value at `0`, by Fourier
+inversion. -/
+theorem integral_fourier_eq [CompleteSpace F] (f : 𝓢(E, F)) : ∫ ξ, 𝓕 f ξ = f 0 := by
+  have h : 𝓕⁻ (𝓕 f) = f := FourierTransform.fourierInv_fourier_eq f
+  rw [← congrArg (· (0 : E)) h, fourierInv_coe, Real.fourierInv_eq]
+  simp
 
 /-- Exchanging the two Fourier transforms in `𝓕 (g • 𝓕⁻ f)` reflects the symbol: it is the
 Fourier multiplier `𝓕⁻ (g (-ξ) • 𝓕 f)`. This is the identity behind the transpose of a Fourier
