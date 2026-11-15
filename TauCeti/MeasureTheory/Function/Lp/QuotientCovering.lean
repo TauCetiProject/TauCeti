@@ -10,7 +10,7 @@ public import Mathlib.Topology.Covering.Quotient
 public import TauCeti.MeasureTheory.Function.Lp.Precomposition
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.Basic
-import TauCeti.MeasureTheory.Group.Action
+import TauCeti.MeasureTheory.Group.CountableAction
 
 /-!
 # `Lᵖ` functions on the base of a quotient covering
