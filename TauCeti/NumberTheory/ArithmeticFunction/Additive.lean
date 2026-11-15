@@ -49,7 +49,9 @@ coprime products. -/
 structure IsAdditive {A : Type*} [Zero A] [Add A] (f : ArithmeticFunction A) : Prop
     extends IsAdditiveOnCoprime f where
   /-- The value at one vanishes. -/
-  @[simp] map_one : f 1 = 0
+  map_one : f 1 = 0
+
+attribute [simp] IsAdditive.map_one
 
 /-- Left cancellation forces the value at one to vanish, so the coprime-product law is normalized.
 No associativity or commutativity of addition is needed. -/
