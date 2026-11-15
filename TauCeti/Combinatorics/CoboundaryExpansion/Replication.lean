@@ -13,9 +13,9 @@ public import TauCeti.Combinatorics.Optimization.Replication
 
 For a cochain `α` on the complete two-complex `complete V` and a finite type `ι`, the balanced
 replication `α.replicate ι` is the cochain on `complete (V ×ₗ ι)` that reads every pair of
-vertices through the cluster projection `x ↦ (ofLex x).1`. Each vertex `i : V` becomes the cluster
-`{i} ×ₗ ι`, edges inside a cluster carry `α i i = 1`, and every edge from cluster `i` to cluster
-`j ≠ i` carries `α i j`.
+vertices through the cluster projection `x ↦ (ofLex x).1` (a special case of the pullback
+`Cochain.comapComplete`). Each vertex `i : V` becomes the cluster `{i} ×ₗ ι`, edges inside a
+cluster carry `α i i = 1`, and every edge from cluster `i` to cluster `j ≠ i` carries `α i j`.
 
 With the lexicographic order on `V ×ₗ ι` and for every group norm `ℓ` (no conjugation invariance
 is needed):
@@ -56,48 +56,44 @@ variable {V G : Type*} [Group G] [Fintype V]
 
 /-! ### The replicated cochain -/
 
-/-- The balanced replication of a cochain on `complete V` along a finite type `ι`: the cochain on
-`complete (V ×ₗ ι)` whose value on `(x, y)` is the value of `α` on the clusters `(ofLex x).1` and
-`(ofLex y).1`. Edges inside a cluster carry `1`. -/
+/-- The balanced replication of a cochain on `complete V` along a finite type `ι`: the pullback of
+`α` to `complete (V ×ₗ ι)` along the cluster projection `x ↦ (ofLex x).1`. Edges inside a cluster
+carry `1`. -/
 def replicate (α : Cochain (complete V) G) (ι : Type*) [Fintype ι] :
-    Cochain (complete (V ×ₗ ι)) G where
-  toFun x y := α (ofLex x).1 (ofLex y).1
-  inv_symm x y _ := α.apply_swap (ofLex x).1 (ofLex y).1
-  apply_eq_one_of_not_adj' x y hxy := by
-    obtain rfl : x = y := not_ne_iff.mp (mt (adj_complete x y).mpr hxy); simp
+    Cochain (complete (V ×ₗ ι)) G :=
+  α.comapComplete fun x => (ofLex x).1
 
 variable {ι : Type*} [Fintype ι]
 
 @[simp, grind =] theorem replicate_apply (α : Cochain (complete V) G) (x y : V ×ₗ ι) :
-    α.replicate ι x y = α (ofLex x).1 (ofLex y).1 := (rfl)
+    α.replicate ι x y = α (ofLex x).1 (ofLex y).1 :=
+  comapComplete_apply α _ x y
 
-@[simp] theorem replicate_one : (1 : Cochain (complete V) G).replicate ι = 1 := by ext x y _; rfl
+@[simp] theorem replicate_one : (1 : Cochain (complete V) G).replicate ι = 1 :=
+  comapComplete_one _
 
 /-- Replication intertwines the gauge action with pulling gauges back along the cluster
 projection. -/
 @[simp] theorem replicate_smul (β : V → G) (α : Cochain (complete V) G) :
-    (β • α).replicate ι = (fun x : V ×ₗ ι => β (ofLex x).1) • α.replicate ι := by
-  ext x y _; simp
+    (β • α).replicate ι = (fun x : V ×ₗ ι => β (ofLex x).1) • α.replicate ι :=
+  comapComplete_smul β α _
 
 @[simp, grind =] theorem holonomy_replicate (α : Cochain (complete V) G) (x y z : V ×ₗ ι) :
-    (α.replicate ι).holonomy x y z = α.holonomy (ofLex x).1 (ofLex y).1 (ofLex z).1 := by
-  simp [holonomy_def]
+    (α.replicate ι).holonomy x y z = α.holonomy (ofLex x).1 (ofLex y).1 (ofLex z).1 :=
+  holonomy_comapComplete α _ x y z
 
 /-- With at least one vertex per cluster, the replication of `α` is a coboundary exactly when `α`
 is one. -/
 @[simp] theorem isCoboundary_replicate_iff [Nonempty ι] (α : Cochain (complete V) G) :
-    (α.replicate ι).IsCoboundary ↔ α.IsCoboundary := by
-  simp only [isCoboundary_complete, replicate_apply]
-  refine ⟨fun ⟨β, hβ⟩ => ?_, fun ⟨β, hβ⟩ => ⟨fun x => β (ofLex x).1, fun x y => hβ _ _⟩⟩
-  obtain ⟨a⟩ := ‹Nonempty ι›
-  exact ⟨fun i => β (toLex (i, a)), fun i j => hβ (toLex (i, a)) (toLex (j, a))⟩
+    (α.replicate ι).IsCoboundary ↔ α.IsCoboundary :=
+  α.isCoboundary_comapComplete_iff fun i => ⟨toLex (i, Classical.arbitrary ι), rfl⟩
 
 /-! ### Defect -/
 
 variable [LinearOrder V] [LinearOrder ι]
 
 /-- Balanced replication multiplies the defect by `(Fintype.card ι) ^ 3`, for every group norm. -/
-theorem defect_replicate (ℓ : GroupNorm G) (α : Cochain (complete V) G) :
+@[simp] theorem defect_replicate (ℓ : GroupNorm G) (α : Cochain (complete V) G) :
     (α.replicate ι).defect ℓ = (Fintype.card ι : ℝ) ^ 3 * α.defect ℓ := by
   rw [defect_complete, defect_complete]
   simp only [holonomy_replicate]
@@ -108,7 +104,7 @@ theorem defect_replicate (ℓ : GroupNorm G) (α : Cochain (complete V) G) :
 
 /-- Balanced replication multiplies the gauge distance by `(Fintype.card ι) ^ 2`, for every group
 norm, even when no optimal gauge exists. -/
-theorem gaugeDist_replicate (ℓ : GroupNorm G) (α : Cochain (complete V) G) :
+@[simp] theorem gaugeDist_replicate (ℓ : GroupNorm G) (α : Cochain (complete V) G) :
     (α.replicate ι).gaugeDist ℓ = (Fintype.card ι : ℝ) ^ 2 * α.gaugeDist ℓ := by
   set E : Finset (V × V) := {p : V × V | p.1 < p.2}
   -- Reindex gauges on `V ×ₗ ι` as families of gauges on the clusters.
@@ -140,7 +136,7 @@ theorem defect_div_gaugeDist_replicate (ℓ : GroupNorm G) (α : Cochain (comple
 
 /-- The replication of `α` has positive gauge distance exactly when `ι` is nonempty and `α` has
 positive gauge distance. -/
-@[simp] theorem gaugeDist_replicate_pos_iff (ℓ : GroupNorm G) (α : Cochain (complete V) G) :
+theorem gaugeDist_replicate_pos_iff (ℓ : GroupNorm G) (α : Cochain (complete V) G) :
     0 < (α.replicate ι).gaugeDist ℓ ↔ Nonempty ι ∧ 0 < α.gaugeDist ℓ := by
   rw [gaugeDist_replicate, ← Fintype.card_pos_iff]
   constructor
