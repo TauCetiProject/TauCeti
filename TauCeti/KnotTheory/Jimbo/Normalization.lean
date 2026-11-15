@@ -94,6 +94,16 @@ theorem jimboTrace_one (q : Rˣ) :
     jimboTrace (N := N) ⟨n, 1⟩ q = (∑ a : Fin N, jimboWeight q a) ^ (n + 1) := by
   simp [jimboTrace_def]
 
+/-- Adding an uncrossed strand multiplies the writhe-normalized Jimbo trace by the quantum
+dimension. -/
+@[simp]
+theorem jimboTrace_strandIncl (q : Rˣ) (b : BraidGroup (n + 1)) :
+    jimboTrace (N := N) ⟨n + 1, BraidGroup.strandIncl b⟩ q =
+      (∑ a : Fin N, jimboWeight q a) * jimboTrace (N := N) ⟨n, b⟩ q := by
+  rw [jimboTrace_def, jimboTrace_def, BraidGroup.exponentSum_strandIncl,
+    jimboWeightedTrace_strandIncl]
+  ring
+
 /-- The writhe-normalized Jimbo trace satisfies the oriented HOMFLY skein relation
 with `a = q ^ N` and `z = q - q⁻¹`, in any braid context. -/
 theorem jimboTrace_skein (q : Rˣ) (b c : BraidGroup (n + 1)) (i : Fin n) :
