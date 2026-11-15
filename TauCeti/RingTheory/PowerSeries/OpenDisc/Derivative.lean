@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.PowerSeries.Derivative
-public import TauCeti.RingTheory.PowerSeries.OpenDisc.Map
 public import TauCeti.RingTheory.PowerSeries.OpenDisc.Rescale
 
 /-!
@@ -24,10 +23,11 @@ Over a normed commutative ring `R`, the first Hasse derivative upgrades to an `R
 derivatives by `k ! • hasseDeriv k f = derivative^[k] f`, and having kernel reduced to scalar
 constants when `R` has no additive torsion (`[HasUniqueDiv R]`).
 
-Over an ultrametric normed ring, `hasseDeriv k` and `derivative` satisfy the closed-disc Cauchy
-estimates `‖restrict r (hasseDeriv k f)‖ ≤ r⁻ᵏ ‖restrict r f‖` and
-`‖restrict r (derivative f)‖ ≤ r⁻¹ ‖restrict r f‖` at every radius `0 < r < R₀`, making them
-uniformly continuous for the Gauss uniformity. Over a complete ultrametric normed commutative
+Over an ultrametric normed ring, `hasseDeriv k` satisfies the closed-disc Cauchy estimate
+`‖restrict r (hasseDeriv k f)‖ ≤ r⁻ᵏ ‖restrict r f‖` at every radius `0 < r < R₀` and is
+uniformly continuous for the Gauss uniformity; when `R` is also commutative, `derivative` satisfies
+`‖restrict r (derivative f)‖ ≤ r⁻¹ ‖restrict r f‖` and is likewise uniformly continuous. Over a
+complete ultrametric normed commutative
 ring, derivatives commute with Taylor translation, intertwine with rescaling and affine coordinate
 changes by the appropriate power of the scaling factor, and satisfy the **chain rule for analytic
 substitution**:
@@ -115,7 +115,7 @@ theorem hasseDeriv_polynomialHom (k : ℕ) (p : Polynomial R) :
   Subtype.ext (by simp)
 
 /-- Positive Hasse derivatives vanish on `1`. -/
-theorem hasseDeriv_one_right {k : ℕ} (hk : 0 < k) :
+theorem hasseDeriv_apply_one {k : ℕ} (hk : 0 < k) :
     hasseDeriv k (1 : OnOpenDisc.subring R R₀) = 0 :=
   Subtype.ext <| by simpa using PowerSeries.hasseDeriv_C (R := R) hk 1
 
@@ -173,21 +173,13 @@ theorem norm_restrict_hasseDeriv_le (r : Set.Ioo (0 : ℝ) R₀) (k : ℕ)
 /-- Hasse derivatives on an open disc are uniformly continuous for the Gauss uniformity. -/
 theorem uniformContinuous_hasseDeriv (k : ℕ) :
     UniformContinuous (hasseDeriv (R := R) (R₀ := R₀) k) := by
-  refine uniformContinuous_iff.mpr fun r ↦ ?_
-  let ψ : IsRestricted.subring (R := R) (r : ℝ) →+ IsRestricted.subring (R := R) (r : ℝ) :=
-    AddMonoidHom.mk' (fun g ↦ ⟨PowerSeries.hasseDeriv k g,
-        PowerSeries.IsRestricted.hasseDeriv g.2 k⟩)
-      (fun g₁ g₂ ↦ Subtype.ext (map_add (PowerSeries.hasseDeriv k) (g₁ : R⟦X⟧) g₂))
-  have hψ (g : IsRestricted.subring (R := R) (r : ℝ)) :
-      ‖ψ g‖ ≤ (r : ℝ)⁻¹ ^ k * ‖g‖ := by
-    rw [norm_eq_gaussNorm, norm_eq_gaussNorm]
-    dsimp only [ψ, AddMonoidHom.mk'_apply]
-    exact PowerSeries.gaussNorm_hasseDeriv_le (R := R) r.2.1 (hasGaussNorm_of_isRestricted g.2) k
-  have hcomp : (fun f ↦ restrict r (hasseDeriv k f)) = ψ ∘ restrict r :=
-    funext fun f ↦ Subtype.ext (by simp [ψ])
-  rw [hcomp]
-  exact (AddMonoidHomClass.lipschitz_of_bound ψ ((r : ℝ)⁻¹ ^ k) hψ).uniformContinuous.comp
-    (uniformContinuous_restrict r)
+  refine uniformContinuous_iff.mpr fun r ↦
+    uniformContinuous_of_continuousAt_zero
+      ((restrict (R := R) r).toAddMonoidHom.comp (hasseDeriv k).toAddMonoidHom) ?_
+  rw [ContinuousAt, map_zero]
+  exact squeeze_zero_norm (norm_restrict_hasseDeriv_le r k) <| by
+    simpa using (((uniformContinuous_restrict (R := R) r).continuous.tendsto 0).norm.const_mul
+      ((r : ℝ)⁻¹ ^ k))
 
 /-- Hasse derivatives on an open disc are continuous for the Gauss topology. -/
 @[continuity]
@@ -364,41 +356,12 @@ theorem derivative_analyticSubst [Fact (0 < S₀)] (g : OnOpenDisc.subring R S�
     (f : OnOpenDisc.subring R R₀) :
     derivative (analyticSubst g hg f) =
       analyticSubst g hg (derivative f) * derivative g := by
-  set Φ := analyticSubst g hg
-  -- The series satisfying the chain rule form an `R`-subalgebra of `OnOpenDisc.subring R R₀`.
-  let E : Subalgebra R (OnOpenDisc.subring R R₀) :=
-    { carrier := {h | derivative (Φ h) = Φ (derivative h) * derivative g}
-      mul_mem' := fun {f₁ f₂} hf₁ hf₂ ↦ by
-        simp only [Set.mem_ofPred_eq, map_mul, Derivation.leibniz, smul_eq_mul,
-          map_add] at hf₁ hf₂ ⊢
-        rw [hf₁, hf₂]
-        ring
-      add_mem' := fun {f₁ f₂} hf₁ hf₂ ↦ by
-        simp only [Set.mem_ofPred_eq, map_add, add_mul] at hf₁ hf₂ ⊢
-        rw [hf₁, hf₂]
-      algebraMap_mem' := fun a ↦ by
-        simp [Φ, Derivation.map_algebraMap] }
-  have hmem {h : OnOpenDisc.subring R R₀} :
-      h ∈ E ↔ derivative (Φ h) = Φ (derivative h) * derivative g := Iff.rfl
-  have hX : (OnOpenDisc.polynomialHom Polynomial.X : OnOpenDisc.subring R R₀) ∈ E := by
-    simp [hmem, Φ]
-  have hpoly (p : Polynomial R) : OnOpenDisc.polynomialHom (R₀ := R₀) p ∈ E := by
-    induction p using Polynomial.induction_on with
-    | C a =>
-      rw [OnOpenDisc.polynomialHom_C]
-      exact E.algebraMap_mem a
-    | add p q hp hq =>
-      simpa only [map_add] using E.add_mem hp hq
-    | monomial n a _ =>
-      rw [map_mul, map_pow, OnOpenDisc.polynomialHom_C]
-      exact E.mul_mem (E.algebraMap_mem a) (E.pow_mem hX (n + 1))
-  -- Both sides are continuous into the Hausdorff space `OnOpenDisc.subring R S₀` and agree on
-  -- the dense image of polynomials.
   refine congrFun (Continuous.ext_on denseRange_polynomialHom
     (continuous_derivative.comp (continuous_analyticSubst g hg))
     (((continuous_analyticSubst g hg).comp continuous_derivative).mul continuous_const) ?_) f
   rintro _ ⟨p, rfl⟩
-  simpa [Φ] using hmem.mp (hpoly p)
+  simp only [Pi.mul_apply, Function.comp_apply, analyticSubst_polynomialHom,
+    derivative_polynomialHom, Derivation.map_aeval, smul_eq_mul]
 
 end ChainRule
 

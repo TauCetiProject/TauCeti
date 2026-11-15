@@ -24,7 +24,8 @@ Over ultrametric rings, `mapHom` satisfies the bound
 `‖restrict r (mapHom φ hφ f)‖ ≤ C * ‖restrict r f‖` on every smaller positive closed disc, so it is
 uniformly continuous for the open-disc Gauss uniformities, and is a uniform embedding when `φ`
 preserves norms. Over complete commutative ultrametric rings it commutes with point evaluation,
-Taylor translation, and analytic substitution.
+with Taylor translation when `‖φ a‖ < R₀`, and with analytic substitution when the mapped inner
+series satisfies `∀ s, ‖restrict s (mapHom φ hφ g)‖ < R₀` (for instance when `C ≤ 1`).
 
 ## Main definitions
 
@@ -33,13 +34,15 @@ Taylor translation, and analytic substitution.
 
 ## Main results
 
-* `TauCeti.PowerSeries.OnOpenDisc.mapHom_injective_iff` and
-  `TauCeti.PowerSeries.OnOpenDisc.mapHom_surjective`: injectivity characterization and surjectivity
-  along strict surjections.
-* `TauCeti.PowerSeries.OnOpenDisc.norm_restrict_mapHom_le`,
+* `TauCeti.PowerSeries.OnOpenDisc.mapHom_injective_iff`,
+  `TauCeti.PowerSeries.OnOpenDisc.mapHom_surjective`, and
+  `TauCeti.PowerSeries.OnOpenDisc.radiusHom_mapHom`: injectivity characterization, surjectivity
+  along strict surjections, and naturality with radius restriction.
+* `TauCeti.PowerSeries.OnOpenDisc.mapHom_ofIsRestricted`,
+  `TauCeti.PowerSeries.OnOpenDisc.norm_restrict_mapHom_le`,
   `TauCeti.PowerSeries.OnOpenDisc.uniformContinuous_mapHom`, and
-  `TauCeti.PowerSeries.OnOpenDisc.isUniformEmbedding_mapHom`: closed-disc Gauss bounds, uniform
-  continuity, and uniform embeddings from norm-preserving maps.
+  `TauCeti.PowerSeries.OnOpenDisc.isUniformEmbedding_mapHom`: compatibility with `ofIsRestricted`,
+  closed-disc Gauss bounds, uniform continuity, and uniform embeddings from norm-preserving maps.
 * `TauCeti.PowerSeries.OnOpenDisc.evalAt_mapHom`, `TauCeti.PowerSeries.OnOpenDisc.mapHom_taylorHom`,
   and `TauCeti.PowerSeries.OnOpenDisc.mapHom_analyticSubst`: compatibility with point evaluation,
   Taylor translation, and analytic substitution.
@@ -130,6 +133,12 @@ theorem mapHom_polynomialHom (p : Polynomial R) :
       OnOpenDisc.polynomialHom (Polynomial.map φ p) :=
   Subtype.ext <| PowerSeries.ext fun _ ↦ by simp
 
+/-- Open-disc radius restriction commutes with bounded coefficient maps. -/
+@[simp]
+theorem radiusHom_mapHom {R₁ : ℝ} (h : R₁ ≤ R₀) (f : OnOpenDisc.subring R R₀) :
+    radiusHom h (mapHom φ hφ f) = mapHom φ hφ (radiusHom h f) :=
+  Subtype.ext (by simp)
+
 /-- **Coefficientwise bounded lifts on an open disc.** If every element of `S` lifts along `φ`
 with norm bounded by `C'`, then every open-disc series over `S` lifts to an open-disc series over
 `R` with the same coefficientwise norm bound. Neither ultrametricity nor completeness is needed. -/
@@ -190,6 +199,17 @@ theorem restrict_mapHom (r : Set.Ioo (0 : ℝ) R₀) (f : OnOpenDisc.subring R R
   apply Subtype.ext
   rw [coe_restrict, coe_mapHom, TauCeti.PowerSeries.coe_restrictedMap_powerSeries, coe_restrict]
 
+/-- Bounded coefficient maps commute with the closed-to-open-disc inclusion `ofIsRestricted` via
+`restrictedMap`. -/
+@[simp]
+theorem mapHom_ofIsRestricted (f : IsRestricted.subring (R := R) R₀) :
+    mapHom φ hφ (ofIsRestricted f) =
+      ofIsRestricted (TauCeti.MvPowerSeries.restrictedMap φ hφ f) :=
+  Subtype.ext <| (coe_mapHom φ hφ _).trans <|
+    (congrArg (PowerSeries.map φ) (coe_ofIsRestricted f)).trans <|
+      (TauCeti.PowerSeries.coe_restrictedMap_powerSeries φ hφ f).symm.trans
+        (coe_ofIsRestricted _).symm
+
 /-- On every smaller positive closed disc, `mapHom φ hφ` multiplies the Gauss norm by at
 most `C`. -/
 theorem norm_restrict_mapHom_le (r : Set.Ioo (0 : ℝ) R₀) (f : OnOpenDisc.subring R R₀) :
@@ -236,11 +256,13 @@ theorem isUniformInducing_mapHom (hφ' : ∀ x, ‖φ x‖ = ‖x‖) :
     have hfun : Function.eval r ∘ ψ = θ r ∘ Function.eval r := rfl
     rw [hfun, UniformSpace.comap_comap]
     exact congrArg (UniformSpace.comap (Function.eval r)) (hθ r).comap_uniformSpace
-  have hcomp : restrictFamily ∘ mapHom (R₀ := R₀) φ hφ = ψ ∘ restrictFamily := by
-    funext f r
-    dsimp [ψ, θ]
-    rw [restrictFamily_apply, restrictFamily_apply, restrict_mapHom]
-    rfl
+  have hcomp : restrictFamily ∘ mapHom (R₀ := R₀) φ hφ = ψ ∘ restrictFamily :=
+    funext fun f ↦ funext fun r ↦ Subtype.ext <|
+      (congrArg Subtype.val (restrictFamily_apply (mapHom φ hφ f) r)).trans <|
+        (coe_restrict r _).trans <| (coe_mapHom φ hφ f).trans <|
+          (congrArg (PowerSeries.map φ) (coe_restrict r f)).symm.trans <|
+            (TauCeti.PowerSeries.coe_restrictedMap_powerSeries φ hφ (restrict r f)).symm.trans <|
+              congrArg (fun x ↦ (θ r x : S⟦X⟧)) (restrictFamily_apply f r).symm
   exact IsUniformInducing.of_comp (uniformContinuous_mapHom φ hφ)
     isUniformInducing_restrictFamily.uniformContinuous
     (hcomp ▸ hψ.comp isUniformInducing_restrictFamily)
@@ -268,7 +290,8 @@ theorem evalAt_mapHom {a : R} (ha : ‖a‖ < R₀) (f : OnOpenDisc.subring R R�
   (OnOpenDisc.mem_subring.mp f.2).evalAt_map φ
     (AddMonoidHomClass.continuous_of_bound φ C hφ) ha
 
-/-- **Bounded coefficient maps commute with Taylor translation** on an open disc. -/
+/-- **Bounded coefficient maps commute with Taylor translation** on an open disc whenever the
+mapped centre satisfies `‖φ a‖ < R₀` (for instance when `C ≤ 1`). -/
 theorem mapHom_taylorHom {a : R} (ha : ‖a‖ < R₀) (hφa : ‖φ a‖ < R₀)
     (f : OnOpenDisc.subring R R₀) :
     mapHom φ hφ (taylorHom ha f) = taylorHom hφa (mapHom φ hφ f) := by

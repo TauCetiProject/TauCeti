@@ -80,23 +80,24 @@ theorem OnOpenDisc.hasSum_evalAt (hf : f.OnOpenDisc R₀) (hb : ‖b‖ < R₀) 
     HasSum (fun n ↦ coeff n f • b ^ n) (f.evalAt b) :=
   hasSum_evalAt_of_summable_norm (hf.summable_norm_smul_pow hb)
 
-/-- Evaluation of series on an open disc commutes with continuous algebra homomorphisms:
-`ψ (f(b)) = f(ψ b)`. -/
-theorem OnOpenDisc.map_evalAt {B F : Type*} [Semiring B] [Algebra R B] [TopologicalSpace B]
-    [T2Space B] [FunLike F A B] [AlgHomClass F R A B] (hf : f.OnOpenDisc R₀) (ψ : F)
-    (hψ : Continuous ψ) (hb : ‖b‖ < R₀) : ψ (f.evalAt b) = f.evalAt (ψ b) := by
-  rw [← ((hf.hasSum_evalAt hb).map ψ hψ).tsum_eq, evalAt_def]
-  simp [map_smul, map_pow]
-
 /-- Evaluation of series on an open disc commutes with continuous ring homomorphisms intertwining
 scalar multiplication along `φ : R →+* S`: `ψ (f(b)) = (map φ f)(ψ b)`. -/
-theorem OnOpenDisc.map_evalAt_of_smul {S B : Type*} [CommSemiring S] [Semiring B] [Algebra S B]
-    [TopologicalSpace B] [T2Space B] (hf : f.OnOpenDisc R₀) (φ : R →+* S) (ψ : A →+* B)
+theorem OnOpenDisc.map_evalAt_of_smul {S B F : Type*} [CommSemiring S] [Semiring B] [Algebra S B]
+    [TopologicalSpace B] [T2Space B] [FunLike F A B] [RingHomClass F A B]
+    (hf : f.OnOpenDisc R₀) (φ : R →+* S) (ψ : F)
     (hψ : Continuous ψ) (hsmul : ∀ (r : R) (x : A), ψ (r • x) = φ r • ψ x)
     (hb : ‖b‖ < R₀) :
     ψ (f.evalAt b) = (PowerSeries.map φ f).evalAt (ψ b) := by
   rw [← ((hf.hasSum_evalAt hb).map ψ hψ).tsum_eq, evalAt_def]
   simp [hsmul, map_pow]
+
+/-- Evaluation of series on an open disc commutes with continuous algebra homomorphisms:
+`ψ (f(b)) = f(ψ b)`. -/
+theorem OnOpenDisc.map_evalAt {B F : Type*} [Semiring B] [Algebra R B] [TopologicalSpace B]
+    [T2Space B] [FunLike F A B] [AlgHomClass F R A B] (hf : f.OnOpenDisc R₀) (ψ : F)
+    (hψ : Continuous ψ) (hb : ‖b‖ < R₀) : ψ (f.evalAt b) = f.evalAt (ψ b) := by
+  simpa only [PowerSeries.map_id, id_eq] using
+    hf.map_evalAt_of_smul (RingHom.id R) ψ hψ (map_smul ψ) hb
 
 /-- Evaluation of series on an open disc commutes with continuous coefficient homomorphisms:
 `(map φ f)(φ a) = φ (f(a))`. -/

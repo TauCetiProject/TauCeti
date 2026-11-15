@@ -216,6 +216,7 @@ variable {R₁ : ℝ}
 
 /-- Restricting to a closed disc inside `R₁` after `radiusHom h` is restricting directly from
 `R₀`. -/
+@[simp]
 theorem restrict_radiusHom (h : R₁ ≤ R₀) (r : Set.Ioo (0 : ℝ) R₁)
     (f : OnOpenDisc.subring R R₀) :
     restrict r (radiusHom h f) = restrict ⟨r, r.2.1, r.2.2.trans_le h⟩ f :=
@@ -252,11 +253,25 @@ theorem coe_ofIsRestricted (f : IsRestricted.subring (R := R) R₀) :
     (ofIsRestricted f : R⟦X⟧) = f :=
   Subring.coe_inclusion _ f
 
+/-- Inclusion of restricted series into the open-disc subring is injective. -/
+theorem ofIsRestricted_injective :
+    Function.Injective (ofIsRestricted (R := R) (R₀ := R₀)) :=
+  Subring.inclusion_injective _
+
 /-- `ofIsRestricted` fixes scalar constants from any base algebra. -/
 @[simp]
 theorem ofIsRestricted_algebraMap {S : Type*} [CommSemiring S] [Algebra S R] (s : S) :
     ofIsRestricted (algebraMap S (IsRestricted.subring (R := R) R₀) s) =
       algebraMap S (OnOpenDisc.subring R R₀) s :=
+  Subtype.ext (by simp)
+
+/-- Including a polynomial into the closed-disc algebra at `R₀` and then into the open-disc
+algebra agrees with `OnOpenDisc.polynomialHom`. -/
+@[simp]
+theorem ofIsRestricted_polynomialToRestricted {S : Type*} [NormedCommRing S]
+    [IsUltrametricDist S] (p : Polynomial S) :
+    ofIsRestricted (TauCeti.PowerSeries.polynomialToRestricted R₀ p) =
+      OnOpenDisc.polynomialHom p :=
   Subtype.ext (by simp)
 
 /-- Inclusion of series restricted at `R₀` into series on the open disc of radius `R₀`, bundled as
@@ -274,7 +289,7 @@ theorem ofIsRestrictedAlgHom_apply (S : Type*) [CommSemiring S] [Algebra S R]
 
 /-- Forgetting `S`-linearity of `ofIsRestrictedAlgHom` gives `ofIsRestricted`. -/
 @[simp]
-theorem coe_ofIsRestrictedAlgHom_ringHom (S : Type*) [CommSemiring S] [Algebra S R] :
+theorem toRingHom_ofIsRestrictedAlgHom (S : Type*) [CommSemiring S] [Algebra S R] :
     (ofIsRestrictedAlgHom (R := R) (R₀ := R₀) S :
       IsRestricted.subring (R := R) R₀ →+* OnOpenDisc.subring R R₀) = ofIsRestricted := (rfl)
 
@@ -287,35 +302,36 @@ theorem restrict_ofIsRestricted (r : Set.Ioo (0 : ℝ) R₀)
       TauCeti.PowerSeries.restrictedRadiusHom r.2.1.le r.2.2.le f :=
   Subtype.ext (by simp)
 
-private theorem restrict_ofIsRestricted_eq_mv (r : Set.Ioo (0 : ℝ) R₀)
+/-- Including a smaller closed-disc restriction `restrict r f` back into the open disc of radius
+`r` restricts `f` along `r ≤ R₀`. -/
+@[simp]
+theorem ofIsRestricted_restrict (r : Set.Ioo (0 : ℝ) R₀) (f : OnOpenDisc.subring R R₀) :
+    ofIsRestricted (restrict r f) = radiusHom r.2.2.le f :=
+  Subtype.ext (by simp)
+
+/-- Open-disc radius restriction commutes with `ofIsRestricted` via `restrictedRadiusHom`. -/
+theorem radiusHom_ofIsRestricted (h0 : 0 ≤ R₁) (h : R₁ ≤ R₀)
     (f : IsRestricted.subring (R := R) R₀) :
-    restrict r (ofIsRestricted f) =
-      TauCeti.MvPowerSeries.restrictedRadiusHom (R := R)
-        (r := fun _ : Unit ↦ (r : ℝ)) (s := fun _ : Unit ↦ R₀)
-        (fun _ ↦ r.2.1.le) (fun _ ↦ r.2.2.le) f :=
-  Subtype.ext <| (coe_restrict r (ofIsRestricted f)).trans <| (coe_ofIsRestricted f).trans
-    (TauCeti.MvPowerSeries.coe_restrictedRadiusHom (fun _ : Unit ↦ r.2.1.le)
-      (fun _ ↦ r.2.2.le) f).symm
+    radiusHom h (ofIsRestricted f) =
+      ofIsRestricted (TauCeti.PowerSeries.restrictedRadiusHom h0 h f) :=
+  Subtype.ext (by simp)
 
 /-- Every smaller-radius Gauss norm of `ofIsRestricted f` is bounded by the Gauss norm of `f` at
 `R₀`. -/
 theorem norm_restrict_ofIsRestricted_le [Fact (0 < R₀)] (r : Set.Ioo (0 : ℝ) R₀)
     (f : IsRestricted.subring (R := R) R₀) :
     ‖restrict r (ofIsRestricted f)‖ ≤ ‖f‖ := by
-  rw [restrict_ofIsRestricted_eq_mv]
-  exact TauCeti.MvPowerSeries.norm_restrictedRadiusHom_le
-    (r := fun _ : Unit ↦ (r : ℝ)) (s := fun _ : Unit ↦ R₀)
-    (fun _ ↦ r.2.1.le) (fun _ ↦ r.2.2.le) f
+  rw [restrict_ofIsRestricted]
+  exact TauCeti.PowerSeries.norm_restrictedRadiusHom_le r.2.1.le r.2.2.le f
 
 /-- The inclusion from the boundary closed-disc algebra into the open-disc algebra is uniformly
 continuous. -/
 theorem uniformContinuous_ofIsRestricted [Fact (0 < R₀)] :
     UniformContinuous (ofIsRestricted (R := R) (R₀ := R₀)) := by
   refine uniformContinuous_iff.mpr fun r ↦ ?_
-  simp_rw [restrict_ofIsRestricted_eq_mv]
-  exact (TauCeti.MvPowerSeries.lipschitzWith_restrictedRadiusHom (R := R)
-    (r := fun _ : Unit ↦ (r : ℝ)) (s := fun _ : Unit ↦ R₀)
-    (fun _ ↦ r.2.1.le) (fun _ ↦ r.2.2.le)).uniformContinuous
+  simp_rw [restrict_ofIsRestricted]
+  exact (TauCeti.PowerSeries.lipschitzWith_restrictedRadiusHom
+    r.2.1.le r.2.2.le).uniformContinuous
 
 /-- The inclusion from the boundary closed-disc algebra into the open-disc algebra is
 continuous. -/

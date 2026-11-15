@@ -431,7 +431,7 @@ theorem OnOpenDisc.polynomialAlgHom_apply (p : Polynomial R) :
 /-- Forgetting the `R`-linearity of `OnOpenDisc.polynomialAlgHom` gives
 `OnOpenDisc.polynomialHom`. -/
 @[simp]
-theorem OnOpenDisc.coe_polynomialAlgHom_ringHom :
+theorem OnOpenDisc.toRingHom_polynomialAlgHom :
     (OnOpenDisc.polynomialAlgHom (R := R) (R₀ := R₀) :
       Polynomial R →+* OnOpenDisc.subring R R₀) = OnOpenDisc.polynomialHom := (rfl)
 
@@ -527,6 +527,11 @@ theorem coe_radiusHom (h : R₁ ≤ R₀) (f : OnOpenDisc.subring R R₀) :
     (radiusHom h f : R⟦X⟧) = f :=
   Subring.coe_inclusion _ f
 
+/-- Radius restriction on open discs is injective. -/
+theorem radiusHom_injective (h : R₁ ≤ R₀) :
+    Function.Injective (radiusHom (R := R) h) :=
+  Subring.inclusion_injective _
+
 /-- Restricting an open disc to itself is the identity. -/
 @[simp]
 theorem radiusHom_self : radiusHom (R := R) (le_refl R₀) = RingHom.id _ :=
@@ -536,6 +541,12 @@ theorem radiusHom_self : radiusHom (R := R) (le_refl R₀) = RingHom.id _ :=
 theorem radiusHom_comp_radiusHom (h₁ : R₁ ≤ R₀) (h₂ : R₂ ≤ R₁) :
     (radiusHom (R := R) h₂).comp (radiusHom h₁) = radiusHom (h₂.trans h₁) :=
   RingHom.ext fun _ ↦ rfl
+
+/-- Applying two open-disc radius restrictions in turn restricts directly. -/
+@[simp]
+theorem radiusHom_radiusHom (h₁ : R₁ ≤ R₀) (h₂ : R₂ ≤ R₁) (f : OnOpenDisc.subring R R₀) :
+    radiusHom h₂ (radiusHom h₁ f) = radiusHom (h₂.trans h₁) f :=
+  DFunLike.congr_fun (radiusHom_comp_radiusHom h₁ h₂) f
 
 /-- Radius restriction commutes with the inclusion of polynomials. -/
 @[simp]
@@ -565,7 +576,7 @@ theorem radiusAlgHom_apply (S : Type*) [CommSemiring S] [Algebra S R] (h : R₁ 
 
 /-- Forgetting `S`-linearity of `radiusAlgHom` gives `radiusHom`. -/
 @[simp]
-theorem coe_radiusAlgHom_ringHom (S : Type*) [CommSemiring S] [Algebra S R] (h : R₁ ≤ R₀) :
+theorem toRingHom_radiusAlgHom (S : Type*) [CommSemiring S] [Algebra S R] (h : R₁ ≤ R₀) :
     (radiusAlgHom (R := R) S h : OnOpenDisc.subring R R₀ →+* OnOpenDisc.subring R R₁) =
       radiusHom h := (rfl)
 

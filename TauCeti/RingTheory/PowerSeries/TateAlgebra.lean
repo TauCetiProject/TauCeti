@@ -197,12 +197,27 @@ theorem coe_restrictedRadiusHom (f : PowerSeries.IsRestricted.subring (R := R) s
     (restrictedRadiusHom hr hrs f : PowerSeries R) = f :=
   TauCeti.MvPowerSeries.coe_restrictedRadiusHom (fun _ : Unit ↦ hr) (fun _ ↦ hrs) f
 
+/-- Radius restriction is contractive for the positive-radius Gauss norms. -/
+theorem norm_restrictedRadiusHom_le [Fact (0 < r)] [Fact (0 < s)]
+    (f : PowerSeries.IsRestricted.subring (R := R) s) :
+    ‖restrictedRadiusHom hr hrs f‖ ≤ ‖f‖ := by
+  refine norm_le_iff.mpr fun n ↦ ?_
+  rw [coe_restrictedRadiusHom]
+  exact (mul_le_mul_of_nonneg_left (pow_le_pow_left₀ hr hrs n) (norm_nonneg _)).trans
+    (norm_coeff_mul_pow_le f n)
+
+/-- Radius restriction is `1`-Lipschitz for the positive-radius Gauss norms. -/
+theorem lipschitzWith_restrictedRadiusHom [Fact (0 < r)] [Fact (0 < s)] :
+    LipschitzWith 1 (restrictedRadiusHom (R := R) hr hrs) := by
+  simpa only [Real.toNNReal_one] using
+    AddMonoidHomClass.lipschitz_of_bound (restrictedRadiusHom (R := R) hr hrs) 1
+      (fun f ↦ by simpa only [one_mul] using norm_restrictedRadiusHom_le hr hrs f)
+
 /-- Radius restriction is continuous for the positive-radius Gauss norms. -/
 @[continuity]
 theorem continuous_restrictedRadiusHom [Fact (0 < r)] [Fact (0 < s)] :
     Continuous (restrictedRadiusHom (R := R) hr hrs) :=
-  TauCeti.MvPowerSeries.continuous_restrictedRadiusHom
-    (r := fun _ : Unit ↦ r) (s := fun _ : Unit ↦ s) (fun _ ↦ hr) (fun _ ↦ hrs)
+  (lipschitzWith_restrictedRadiusHom hr hrs).continuous
 
 end Radius
 

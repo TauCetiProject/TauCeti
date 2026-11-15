@@ -55,6 +55,8 @@ contains `0`.
 * `TauCeti.add_ne_zero_of_norm_lt` -- `z + a ≠ 0` when `‖a‖ < ‖z‖`.
 * `TauCeti.nonneg_of_forall_norm_lt` -- a constant bound on `‖f x‖` over a ball of positive radius
   is nonnegative.
+* `TauCeti.norm_mul_lt_of_lt_of_mul_le` -- `‖u‖ * s < R₀` from `0 < R₀`, `s < S₀`, and
+  `‖u‖ * S₀ ≤ R₀`.
 -/
 
 public section
@@ -144,5 +146,14 @@ theorem nonneg_of_forall_norm_lt {E F 𝓕 : Type*} [SeminormedAddGroup E] [Semi
     [FunLike 𝓕 E F] (f : 𝓕) {δ B : ℝ} (hδ : 0 < δ) (hf : ∀ x : E, ‖x‖ < δ → ‖f x‖ ≤ B) :
     0 ≤ B :=
   (norm_nonneg _).trans <| hf 0 (by simpa using hδ)
+
+/-- If `0 < R₀`, `s < S₀`, and `‖u‖ * S₀ ≤ R₀`, then `‖u‖ * s < R₀`, including the case
+`‖u‖ = 0`. -/
+theorem norm_mul_lt_of_lt_of_mul_le {E : Type*} [SeminormedAddGroup E] {u : E}
+    {s S₀ R₀ : ℝ} (hR₀ : 0 < R₀) (hs : s < S₀) (hu : ‖u‖ * S₀ ≤ R₀) :
+    ‖u‖ * s < R₀ := by
+  rcases (norm_nonneg u).eq_or_lt with hu0 | hu0
+  · simpa [← hu0] using hR₀
+  · exact (mul_lt_mul_of_pos_left hs hu0).trans_le hu
 
 end TauCeti
