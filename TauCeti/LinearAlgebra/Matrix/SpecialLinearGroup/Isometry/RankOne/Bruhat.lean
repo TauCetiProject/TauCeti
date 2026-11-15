@@ -262,15 +262,13 @@ def torus (R : Type*) [CommRing R] (σ : R →+* R) (hσ : Function.Involutive �
     Rˣ →* (typeAGraphConjugator 2 R : Matrix (Fin 3) (Fin 3) R).specialIsometryGroup σ :=
   (torusSL R σ).codRestrict
     ((typeAGraphConjugator 2 R : Matrix (Fin 3) (Fin 3) R).specialIsometryGroup σ) fun t ↦ by
-      have h1 : (t : R) * ((t⁻¹ : Rˣ) : R) = 1 := t.mul_inv
-      have h2 : σ (t : R) * σ ((t⁻¹ : Rˣ) : R) = 1 := by
-        rw [← map_mul, h1, map_one]
       rw [Matrix.mem_specialIsometryGroup_iff, coe_typeAGraphConjugator_two]
       ext i j
       fin_cases i <;> fin_cases j <;>
         simp [Matrix.mul_apply, Matrix.diagonal_apply, hσ (t : R), hσ ((t⁻¹ : Rˣ) : R)]
-      · linear_combination h2
-      · linear_combination σ (t : R) * σ ((t⁻¹ : Rˣ) : R) * h1 + h2
+      · linear_combination map_mul_eq_one σ t.mul_inv
+      · linear_combination σ (t : R) * σ ((t⁻¹ : Rˣ) : R) * t.mul_inv +
+          map_mul_eq_one σ t.mul_inv
 
 /-- The matrix of `torus R σ hσ t` is `diag(t, t⁻¹ σ(t), σ(t⁻¹))`. -/
 @[simp]
@@ -331,16 +329,10 @@ theorem torus_mul_unipotentHom_unitaryMk_mul_inv (hσ : Function.Involutive σ) 
         (torus R σ hσ t)⁻¹ =
       unipotentHom R σ (HeisenbergGroup.unitaryMk σ hσ
         ((t : R) ^ 2 * σ ((t⁻¹ : Rˣ) : R) * x) ((t : R) * σ (t : R) * z) (by
-          have h1 : (t : R) * ((t⁻¹ : Rˣ) : R) = 1 := t.mul_inv
-          have h2 : σ (t : R) * σ ((t⁻¹ : Rˣ) : R) = 1 := by
-            rw [← map_mul, h1, map_one]
           simp only [map_mul, map_pow, hσ (t : R), hσ ((t⁻¹ : Rˣ) : R)]
           linear_combination (t : R) * σ (t : R) * hz -
-            (t : R) * σ (t : R) * x * σ x * h2 -
-            (t : R) * (σ (t : R)) ^ 2 * σ ((t⁻¹ : Rˣ) : R) * x * σ x * h1)) := by
-  have h1 : (t : R) * ((t⁻¹ : Rˣ) : R) = 1 := t.mul_inv
-  have h2 : σ (t : R) * σ ((t⁻¹ : Rˣ) : R) = 1 := by
-    rw [← map_mul, h1, map_one]
+            (t : R) * σ (t : R) * x * σ x * map_mul_eq_one σ t.mul_inv -
+            (t : R) * (σ (t : R)) ^ 2 * σ ((t⁻¹ : Rˣ) : R) * x * σ x * t.mul_inv)) := by
   rw [← (torus R σ hσ).map_inv t]
   apply Subtype.ext
   apply Matrix.SpecialLinearGroup.ext
@@ -352,9 +344,9 @@ theorem torus_mul_unipotentHom_unitaryMk_mul_inv (hσ : Function.Involutive σ) 
       hσ ((t⁻¹ : Rˣ) : R)]
   · ring
   · ring
-  · linear_combination σ (t : R) * σ ((t⁻¹ : Rˣ) : R) * h1 + h2
+  · linear_combination σ (t : R) * σ ((t⁻¹ : Rˣ) : R) * t.mul_inv + map_mul_eq_one σ t.mul_inv
   · ring
-  · linear_combination h2
+  · linear_combination map_mul_eq_one σ t.mul_inv
 
 /-- The diagonal torus normalizes the unipotent subgroup. -/
 theorem range_torus_le_normalizer_unipotentSubgroup (hσ : Function.Involutive σ) :
@@ -395,15 +387,15 @@ theorem mem_borelSubgroup_iff
     {g : (typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ} :
     g ∈ borelSubgroup K σ ↔
       ((g : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 2 0 = 0 := by
-  rw [mem_borelSubgroup_iff_smul_infinity, eq_infinity_iff, SubMulAction.val_smul,
-    coe_infinity, Subgroup.smul_def, Projectivization.smul_mk,
-    Projectivization.mk_mem_affineOpen_iff, not_not, Matrix.SpecialLinearGroup.smul_def,
-    smul_eq_mulVec]
-  simp [Matrix.mulVec, dotProduct, Fin.sum_univ_three]
+  have h2 : ((g : Matrix.SpecialLinearGroup (Fin 3) K) • (![1, 0, 0] : Fin 3 → K)) 2 =
+      ((g : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 2 0 := by
+    simp [Matrix.SpecialLinearGroup.smul_def, smul_eq_mulVec, Matrix.mulVec, dotProduct,
+      Fin.sum_univ_three]
+  simp [mem_borelSubgroup_iff_smul_infinity, eq_infinity_iff, coe_infinity, Subgroup.smul_def, h2]
 
 /-- Every element of the Borel subgroup also has vanishing `(1, 0)` entry, by isotropy of the
 first column. -/
-theorem apply_one_zero_of_mem_borelSubgroup
+theorem apply_one_zero_eq_zero_of_mem_borelSubgroup
     {g : (typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ}
     (hg : g ∈ borelSubgroup K σ) :
     ((g : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 1 0 = 0 := by
@@ -420,7 +412,7 @@ theorem apply_zero_zero_ne_zero_of_mem_borelSubgroup
     (hg : g ∈ borelSubgroup K σ) :
     ((g : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 0 0 ≠ 0 := by
   intro hg00
-  have hg10 := apply_one_zero_of_mem_borelSubgroup hg
+  have hg10 := apply_one_zero_eq_zero_of_mem_borelSubgroup hg
   have hg20 := mem_borelSubgroup_iff.mp hg
   have hdet := g.1.prop
   rw [Matrix.det_fin_three, hg00, hg10, hg20] at hdet
@@ -484,7 +476,7 @@ theorem exists_torus_mul_unipotent_of_mem_borelSubgroup (hσ : Function.Involuti
   let t : Kˣ := Units.mk0 _ (apply_zero_zero_ne_zero_of_mem_borelSubgroup hg)
   let u := (torus K σ hσ t)⁻¹ * g
   refine ⟨t, u, mem_unipotentSubgroup_iff.mpr ?_, mul_inv_cancel_left _ _⟩
-  have hg10 := apply_one_zero_of_mem_borelSubgroup hg
+  have hg10 := apply_one_zero_eq_zero_of_mem_borelSubgroup hg
   have hg20 := mem_borelSubgroup_iff.mp hg
   have hu00 : ((u : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 0 0 = 1 := by
     simp [u, t, ← map_inv, inv_mul_cancel₀ (apply_zero_zero_ne_zero_of_mem_borelSubgroup hg)]
