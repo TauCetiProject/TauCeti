@@ -55,7 +55,7 @@ in norm for every starting index `N`.
   numerators `aₙ` and partial denominators `bₙ` of DLMF 8.9.1 (`1`-indexed).
 * `Complex.tricomiContFrac a z` — the generalized continued fraction (`GenContFract ℂ`) with head
   `0` and stream `n ↦ ⟨a_{n + 1}, b_{n + 1}⟩`.
-* `Complex.tricomiContFracNorm a n` — the normalization factors `dₙ`.
+* `Complex.tricomiContFracScale a n` — the scaling factors `dₙ`.
 * `Complex.tricomiContFracSolution a z` — the explicit Kummer sequence solving the three-term
   recurrence of `tricomiContFrac a z`.
 
@@ -340,71 +340,71 @@ theorem tendsto_tricomiContFrac_zero_right_convs {a : ℂ} (ha : ∀ k : ℕ, a 
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hn
   exact (tricomiContFrac_zero_right_convs_succ ha k).symm
 
-/-! ### Normalization factors and partial-numerator products -/
+/-! ### Scaling factors and partial-numerator products -/
 
-/-- The normalization factors `dₙ` in the explicit Kummer solution `Complex.tricomiContFracSolution`
+/-- The scaling factors `dₙ` in the explicit Kummer solution `Complex.tricomiContFracSolution`
 of the three-term recurrence of DLMF 8.9.1: `d₁ = 1`, `d_{2k} = (a + 1)_{k - 1} (k - 1)!` for
 `k ≥ 1`, and `d_{2k + 1} = (a + 1)_{k - 1} k!` for `k ≥ 1`. -/
-def tricomiContFracNorm (a : ℂ) (n : ℕ) : ℂ :=
+def tricomiContFracScale (a : ℂ) (n : ℕ) : ℂ :=
   (ascPochhammer ℂ ((n - 2) / 2)).eval (a + 1) * (((n - 1) / 2)! : ℂ)
 
-/-- Unfolding `tricomiContFracNorm`. -/
-theorem tricomiContFracNorm_def (a : ℂ) (n : ℕ) :
-    tricomiContFracNorm a n =
+/-- Unfolding `tricomiContFracScale`. -/
+theorem tricomiContFracScale_def (a : ℂ) (n : ℕ) :
+    tricomiContFracScale a n =
       (ascPochhammer ℂ ((n - 2) / 2)).eval (a + 1) * (((n - 1) / 2)! : ℂ) := (rfl)
 
-/-- `tricomiContFracNorm a 1 = 1`. -/
+/-- `tricomiContFracScale a 1 = 1`. -/
 @[simp]
-theorem tricomiContFracNorm_one (a : ℂ) : tricomiContFracNorm a 1 = 1 := by
-  simp [tricomiContFracNorm_def]
+theorem tricomiContFracScale_one (a : ℂ) : tricomiContFracScale a 1 = 1 := by
+  simp [tricomiContFracScale_def]
 
-/-- `tricomiContFracNorm a 2 = 1`. -/
+/-- `tricomiContFracScale a 2 = 1`. -/
 @[simp]
-theorem tricomiContFracNorm_two (a : ℂ) : tricomiContFracNorm a 2 = 1 := by
-  simp [tricomiContFracNorm_def]
+theorem tricomiContFracScale_two (a : ℂ) : tricomiContFracScale a 2 = 1 := by
+  simp [tricomiContFracScale_def]
 
-/-- `tricomiContFracNorm a 3 = 1`. -/
+/-- `tricomiContFracScale a 3 = 1`. -/
 @[simp]
-theorem tricomiContFracNorm_three (a : ℂ) : tricomiContFracNorm a 3 = 1 := by
-  simp [tricomiContFracNorm_def]
+theorem tricomiContFracScale_three (a : ℂ) : tricomiContFracScale a 3 = 1 := by
+  simp [tricomiContFracScale_def]
 
 /-- At even index `2k` (`k ≥ 1`), `d_{2k} = (a + 1)_{k - 1} (k - 1)!`. -/
-theorem tricomiContFracNorm_two_mul (a : ℂ) {k : ℕ} (hk : 1 ≤ k) :
-    tricomiContFracNorm a (2 * k) =
+theorem tricomiContFracScale_two_mul (a : ℂ) {k : ℕ} (hk : 1 ≤ k) :
+    tricomiContFracScale a (2 * k) =
       (ascPochhammer ℂ (k - 1)).eval (a + 1) * ((k - 1)! : ℂ) := by
   have h1 : (2 * k - 2) / 2 = k - 1 := by omega
   have h2 : (2 * k - 1) / 2 = k - 1 := by omega
-  rw [tricomiContFracNorm_def, h1, h2]
+  rw [tricomiContFracScale_def, h1, h2]
 
 /-- At odd index `2k + 1`, `d_{2k + 1} = (a + 1)_{k - 1} k!`. -/
-theorem tricomiContFracNorm_two_mul_add_one (a : ℂ) (k : ℕ) :
-    tricomiContFracNorm a (2 * k + 1) =
+theorem tricomiContFracScale_two_mul_add_one (a : ℂ) (k : ℕ) :
+    tricomiContFracScale a (2 * k + 1) =
       (ascPochhammer ℂ (k - 1)).eval (a + 1) * (k ! : ℂ) := by
   have h1 : (2 * k + 1 - 2) / 2 = k - 1 := by omega
   have h2 : (2 * k + 1 - 1) / 2 = k := by omega
-  rw [tricomiContFracNorm_def, h1, h2]
+  rw [tricomiContFracScale_def, h1, h2]
 
 /-- Step relation `d_{2k + 1} = k * d_{2k}` for `k ≥ 1`. -/
-theorem tricomiContFracNorm_two_mul_add_one_eq_mul (a : ℂ) {k : ℕ} (hk : 1 ≤ k) :
-    tricomiContFracNorm a (2 * k + 1) = k * tricomiContFracNorm a (2 * k) := by
+theorem tricomiContFracScale_two_mul_add_one_eq_mul (a : ℂ) {k : ℕ} (hk : 1 ≤ k) :
+    tricomiContFracScale a (2 * k + 1) = k * tricomiContFracScale a (2 * k) := by
   obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le' hk
-  rw [tricomiContFracNorm_two_mul_add_one, tricomiContFracNorm_two_mul a hk, Nat.add_sub_cancel,
+  rw [tricomiContFracScale_two_mul_add_one, tricomiContFracScale_two_mul a hk, Nat.add_sub_cancel,
     Nat.factorial_succ, Nat.cast_mul]
   push_cast
   ring
 
 /-- Step relation `d_{2(k + 1)} = (a + k) * d_{2k + 1}` for `k ≥ 1`. -/
-theorem tricomiContFracNorm_two_mul_succ_eq_mul (a : ℂ) {k : ℕ} (hk : 1 ≤ k) :
-    tricomiContFracNorm a (2 * (k + 1)) = (a + k) * tricomiContFracNorm a (2 * k + 1) := by
+theorem tricomiContFracScale_two_mul_succ_eq_mul (a : ℂ) {k : ℕ} (hk : 1 ≤ k) :
+    tricomiContFracScale a (2 * (k + 1)) = (a + k) * tricomiContFracScale a (2 * k + 1) := by
   obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le' hk
-  rw [tricomiContFracNorm_two_mul a (by omega), tricomiContFracNorm_two_mul_add_one,
+  rw [tricomiContFracScale_two_mul a (by omega), tricomiContFracScale_two_mul_add_one,
     show j + 1 + 1 - 1 = j + 1 by omega, Nat.add_sub_cancel, ascPochhammer_succ_eval]
   push_cast
   ring
 
-/-- For `a ∉ {-1, -2, …}`, every normalization factor `dₙ` is nonzero. -/
-theorem tricomiContFracNorm_ne_zero {a : ℂ} (ha : ∀ k : ℕ, a ≠ -(k + 1 : ℂ)) (n : ℕ) :
-    tricomiContFracNorm a n ≠ 0 :=
+/-- For `a ∉ {-1, -2, …}`, every scaling factor `dₙ` is nonzero. -/
+theorem tricomiContFracScale_ne_zero {a : ℂ} (ha : ∀ k : ℕ, a ≠ -(k + 1 : ℂ)) (n : ℕ) :
+    tricomiContFracScale a n ≠ 0 :=
   mul_ne_zero (ascPochhammer_eval_add_one_ne_zero ha _)
     (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _))
 
@@ -435,7 +435,7 @@ theorem prod_Icc_tricomiContFracPartNum_ne_zero {a z : ℂ}
 `∏_{j = 1}^m a_j = (-1)^{⌊m / 2⌋} z^{m - 1} d_m`. -/
 theorem prod_Icc_tricomiContFracPartNum (a z : ℂ) {m : ℕ} (hm : 1 ≤ m) :
     ∏ j ∈ Icc 1 m, tricomiContFracPartNum a z j =
-      (-1) ^ (m / 2) * z ^ (m - 1) * tricomiContFracNorm a m := by
+      (-1) ^ (m / 2) * z ^ (m - 1) * tricomiContFracScale a m := by
   induction m, hm using Nat.le_induction with
   | base => simp
   | succ m hm ih =>
@@ -443,7 +443,7 @@ theorem prod_Icc_tricomiContFracPartNum (a z : ℂ) {m : ℕ} (hm : 1 ≤ m) :
     rcases m.even_or_odd' with ⟨k, rfl | rfl⟩
     · have hk : 1 ≤ k := by omega
       rw [tricomiContFracPartNum_two_mul_add_one a z hk,
-        tricomiContFracNorm_two_mul_add_one_eq_mul a hk,
+        tricomiContFracScale_two_mul_add_one_eq_mul a hk,
         show (2 * k + 1) / 2 = k by omega, show (2 * k) / 2 = k by omega,
         show 2 * k + 1 - 1 = (2 * k - 1) + 1 by omega, pow_succ]
       ring
@@ -451,7 +451,7 @@ theorem prod_Icc_tricomiContFracPartNum (a z : ℂ) {m : ℕ} (hm : 1 ≤ m) :
       · simp
       · rw [show 2 * k + 1 + 1 = 2 * (k + 1) by ring,
           tricomiContFracPartNum_two_mul a z (by omega),
-          tricomiContFracNorm_two_mul_succ_eq_mul a hk,
+          tricomiContFracScale_two_mul_succ_eq_mul a hk,
           show (2 * (k + 1)) / 2 = k + 1 by omega, show (2 * k + 1) / 2 = k by omega,
           show 2 * (k + 1) - 1 = 2 * k + 1 by omega, show 2 * k + 1 - 1 = 2 * k by omega]
         push_cast
@@ -464,7 +464,7 @@ theorem prod_Icc_tricomiContFracPartNum (a z : ℂ) {m : ℕ} (hm : 1 ≤ m) :
 `f(0) = 1` and `f(m) = (-1)^{⌈m / 2⌉} Γ(a + 1) z^{m - 1} d_m 𝐌(⌈m / 2⌉, a + m, z)` for `m ≥ 1`. -/
 def tricomiContFracSolution (a z : ℂ) : ℕ → ℂ
   | 0 => 1
-  | m + 1 => (-1) ^ ((m + 2) / 2) * Gamma (a + 1) * z ^ m * tricomiContFracNorm a (m + 1) *
+  | m + 1 => (-1) ^ ((m + 2) / 2) * Gamma (a + 1) * z ^ m * tricomiContFracScale a (m + 1) *
       regularizedHGFun {(((m + 2) / 2 : ℕ) : ℂ)} {a + (m + 1 : ℕ)} z
 
 /-- `tricomiContFracSolution a z 0 = 1`. -/
@@ -474,7 +474,7 @@ theorem tricomiContFracSolution_zero (a z : ℂ) : tricomiContFracSolution a z 0
 /-- Unfolding `tricomiContFracSolution` at `m + 1`. -/
 theorem tricomiContFracSolution_succ_def (a z : ℂ) (m : ℕ) :
     tricomiContFracSolution a z (m + 1) =
-      (-1) ^ ((m + 2) / 2) * Gamma (a + 1) * z ^ m * tricomiContFracNorm a (m + 1) *
+      (-1) ^ ((m + 2) / 2) * Gamma (a + 1) * z ^ m * tricomiContFracScale a (m + 1) *
         regularizedHGFun {(((m + 2) / 2 : ℕ) : ℂ)} {a + (m + 1 : ℕ)} z := (rfl)
 
 /-- `f(1) = -Γ(a + 1) 𝐌(1, a + 1, z)`. -/
@@ -487,13 +487,13 @@ theorem tricomiContFracSolution_one (a z : ℂ) :
 theorem tricomiContFracSolution_two (a z : ℂ) :
     tricomiContFracSolution a z 2 = -Gamma (a + 1) * z * regularizedHGFun {1} {a + 2} z := by
   rw [tricomiContFracSolution_succ_def]
-  simp only [Nat.reduceAdd, Nat.reduceDiv, pow_one, neg_mul, one_mul, tricomiContFracNorm_two,
+  simp only [Nat.reduceAdd, Nat.reduceDiv, pow_one, neg_mul, one_mul, tricomiContFracScale_two,
     mul_one, Nat.cast_one, Nat.cast_ofNat]
 
 /-- Evaluation of `tricomiContFracSolution` at even positive index `2k` (`k ≥ 1`). -/
 theorem tricomiContFracSolution_two_mul (a z : ℂ) {k : ℕ} (hk : 1 ≤ k) :
     tricomiContFracSolution a z (2 * k) =
-      (-1) ^ k * Gamma (a + 1) * z ^ (2 * k - 1) * tricomiContFracNorm a (2 * k) *
+      (-1) ^ k * Gamma (a + 1) * z ^ (2 * k - 1) * tricomiContFracScale a (2 * k) *
         regularizedHGFun {(k : ℂ)} {a + (2 * k : ℕ)} z := by
   obtain ⟨m, hm⟩ := Nat.exists_eq_add_of_le' (show 1 ≤ 2 * k by omega)
   rw [hm, tricomiContFracSolution_succ_def]
@@ -504,7 +504,7 @@ theorem tricomiContFracSolution_two_mul (a z : ℂ) {k : ℕ} (hk : 1 ≤ k) :
 /-- Evaluation of `tricomiContFracSolution` at odd index `2k + 1`. -/
 theorem tricomiContFracSolution_two_mul_add_one (a z : ℂ) (k : ℕ) :
     tricomiContFracSolution a z (2 * k + 1) =
-      (-1) ^ (k + 1) * Gamma (a + 1) * z ^ (2 * k) * tricomiContFracNorm a (2 * k + 1) *
+      (-1) ^ (k + 1) * Gamma (a + 1) * z ^ (2 * k) * tricomiContFracScale a (2 * k + 1) *
         regularizedHGFun {((k + 1 : ℕ) : ℂ)} {a + (2 * k + 1 : ℕ)} z := by
   rw [tricomiContFracSolution_succ_def]
   have h1 : (2 * k + 2) / 2 = k + 1 := by omega
@@ -557,7 +557,7 @@ private theorem tricomiContFracSolution_add_one_two_mul (a z : ℂ) {k : ℕ} (h
   · have hM := regularizedHGFun_singleton_eq_mul_add_mul 1 (a + 1) z
     rw [tricomiContFracSolution_two_mul_add_one a z 1, tricomiContFracSolution_two,
       tricomiContFracSolution_one, tricomiContFracPartDen_of_two_le a (by norm_num),
-      tricomiContFracPartNum_two, tricomiContFracNorm_three]
+      tricomiContFracPartNum_two, tricomiContFracScale_three]
     push_cast
     rw [show (1 : ℂ) + 1 = 2 by norm_num, show a + 1 + 1 = a + 2 by ring,
       show a + 1 + 2 = a + 3 by ring] at hM
@@ -578,15 +578,15 @@ private theorem tricomiContFracSolution_add_one_two_mul (a z : ℂ) {k : ℕ} (h
       tricomiContFracSolution_two_mul_add_one a z m,
       tricomiContFracPartDen_of_two_le a (by omega),
       tricomiContFracPartNum_two_mul a z (by omega),
-      tricomiContFracNorm_two_mul_add_one_eq_mul a (by omega),
-      tricomiContFracNorm_two_mul_succ_eq_mul a hm,
+      tricomiContFracScale_two_mul_add_one_eq_mul a (by omega),
+      tricomiContFracScale_two_mul_succ_eq_mul a hm,
       show a + ((2 * (m + 1) : ℕ) : ℂ) - 1 = a + (2 * m + 1 : ℕ) by push_cast; ring,
       show a + ((m + 1 : ℕ) : ℂ) - 1 = a + m by push_cast; ring,
       show z ^ (2 * (m + 1)) = z * (z * z ^ (2 * m)) by
         rw [show 2 * (m + 1) = 2 * m + 1 + 1 by ring, pow_succ', pow_succ'],
       pow_succ' z (2 * m), pow_succ (-1 : ℂ) (m + 1)]
     linear_combination ((-1 : ℂ) ^ (m + 1) * Gamma (a + 1) * (z * z ^ (2 * m)) *
-      (a + m) * tricomiContFracNorm a (2 * m + 1)) * hM
+      (a + m) * tricomiContFracScale a (2 * m + 1)) * hM
 
 /-- Odd-index step of the three-term recurrence:
 `f(2k + 2) = b_{2k + 1} f(2k + 1) + a_{2k + 1} f(2k)`
@@ -610,13 +610,13 @@ private theorem tricomiContFracSolution_add_one_two_mul_add_one (a z : ℂ) {k :
     tricomiContFracSolution_two_mul a z hk,
     tricomiContFracPartDen_of_two_le a (by omega),
     tricomiContFracPartNum_two_mul_add_one a z hk,
-    tricomiContFracNorm_two_mul_succ_eq_mul a hk,
-    tricomiContFracNorm_two_mul_add_one_eq_mul a hk,
+    tricomiContFracScale_two_mul_succ_eq_mul a hk,
+    tricomiContFracScale_two_mul_add_one_eq_mul a hk,
     show 2 * (k + 1) - 1 = 2 * k + 1 by omega,
     show a + ((2 * k + 1 : ℕ) : ℂ) - 1 = a + (2 * k : ℕ) by push_cast; ring,
     hzpow, hzpow', pow_succ (-1 : ℂ) k]
   linear_combination ((-1 : ℂ) ^ k * Gamma (a + 1) * (z * z ^ (2 * k - 1)) *
-    (k : ℂ) * tricomiContFracNorm a (2 * k)) * hM
+    (k : ℂ) * tricomiContFracScale a (2 * k)) * hM
 
 /-- Three-term recurrence `f(n + 1) = b_n f(n) + a_n f(n - 1)` for `n ≥ 2`, holding unconditionally
 for all complex `a` and `z` (since `Γ(a + 1)` factors out of all three terms). -/
@@ -696,10 +696,10 @@ theorem eventually_tricomiContFracSolution_ne_zero {a z : ℂ}
   · have hk1 : 1 ≤ k := by omega
     rw [tricomiContFracSolution_two_mul a z hk1]
     exact mul_ne_zero (mul_ne_zero (mul_ne_zero (mul_ne_zero (pow_ne_zero _ (by norm_num)) hG)
-      (pow_ne_zero _ hz)) (tricomiContFracNorm_ne_zero ha _)) (hK₁ k (by omega))
+      (pow_ne_zero _ hz)) (tricomiContFracScale_ne_zero ha _)) (hK₁ k (by omega))
   · rw [tricomiContFracSolution_two_mul_add_one]
     exact mul_ne_zero (mul_ne_zero (mul_ne_zero (mul_ne_zero (pow_ne_zero _ (by norm_num)) hG)
-      (pow_ne_zero _ hz)) (tricomiContFracNorm_ne_zero ha _)) (hK₂ k (by omega))
+      (pow_ne_zero _ hz)) (tricomiContFracScale_ne_zero ha _)) (hK₂ k (by omega))
 
 /-- The `m`-th summand `(-1)^m (∏_{j=1}^m a_j) / (f(m) f(m + 1))` of the reduction-of-order series
 for `tricomiContFrac a z`. -/
@@ -763,14 +763,14 @@ private theorem neg_tricomiContFracSolution_div_even {a z : ℂ}
         z * (a + k) * regularizedHGFun {((k + 1 : ℕ) : ℂ)} {a + (2 * (k + 1) : ℕ)} z /
           regularizedHGFun {(k : ℂ)} {a + (2 * k : ℕ)} z := by
     have hG := Gamma_add_one_ne_zero_of_ne_neg_succ ha
-    have hd := tricomiContFracNorm_ne_zero ha (2 * k)
+    have hd := tricomiContFracScale_ne_zero ha (2 * k)
     have hknz : (k : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
     have hzpow0 : z ^ (2 * k - 1) ≠ 0 := pow_ne_zero _ hz
     have hp1 : (-1 : ℂ) ^ k ≠ 0 := pow_ne_zero _ (by norm_num)
     rw [show 2 * k + 2 = 2 * (k + 1) by ring, tricomiContFracSolution_two_mul a z (by omega),
       tricomiContFracSolution_two_mul a z hk1, tricomiContFracPartNum_two_mul_add_one a z hk1,
-      tricomiContFracNorm_two_mul_succ_eq_mul a hk1,
-      tricomiContFracNorm_two_mul_add_one_eq_mul a hk1,
+      tricomiContFracScale_two_mul_succ_eq_mul a hk1,
+      tricomiContFracScale_two_mul_add_one_eq_mul a hk1,
       show 2 * (k + 1) - 1 = (2 * k - 1) + 2 by omega, pow_add z (2 * k - 1) 2, sq,
       pow_succ (-1 : ℂ) k]
     by_cases hM : regularizedHGFun {(k : ℂ)} {a + (2 * k : ℕ)} z = 0
@@ -804,7 +804,7 @@ private theorem neg_tricomiContFracSolution_div_odd {a z : ℂ}
           regularizedHGFun {((k + 1 + 1 : ℕ) : ℂ)} {a + (2 * (k + 1) + 1 : ℕ)} z /
           regularizedHGFun {((k + 1 : ℕ) : ℂ)} {a + (2 * k + 1 : ℕ)} z := by
     have hG := Gamma_add_one_ne_zero_of_ne_neg_succ ha
-    have hd := tricomiContFracNorm_ne_zero ha (2 * k + 1)
+    have hd := tricomiContFracScale_ne_zero ha (2 * k + 1)
     have hzpow0 : z ^ (2 * k) ≠ 0 := pow_ne_zero _ hz
     have hp1 : (-1 : ℂ) ^ (k + 1) ≠ 0 := pow_ne_zero _ (by norm_num)
     have hak : a + k ≠ 0 := fun h ↦ ha (k - 1) (by
@@ -815,12 +815,12 @@ private theorem neg_tricomiContFracSolution_div_odd {a z : ℂ}
       tricomiContFracSolution_two_mul_add_one a z k,
       show 2 * k + 1 + 1 = 2 * (k + 1) by ring,
       tricomiContFracPartNum_two_mul a z (by omega),
-      tricomiContFracNorm_two_mul_add_one_eq_mul a (by omega),
-      tricomiContFracNorm_two_mul_succ_eq_mul a hk1,
+      tricomiContFracScale_two_mul_add_one_eq_mul a (by omega),
+      tricomiContFracScale_two_mul_succ_eq_mul a hk1,
       show 2 * (k + 1) = 2 * k + 2 by ring, pow_add z (2 * k) 2, sq,
       pow_succ (-1 : ℂ) (k + 1),
-      show ((k + 1 : ℕ) : ℂ) * ((a + k) * tricomiContFracNorm a (2 * k + 1)) =
-        (k + 1 : ℂ) * ((a + k) * tricomiContFracNorm a (2 * k + 1)) by push_cast; ring,
+      show ((k + 1 : ℕ) : ℂ) * ((a + k) * tricomiContFracScale a (2 * k + 1)) =
+        (k + 1 : ℂ) * ((a + k) * tricomiContFracScale a (2 * k + 1)) by push_cast; ring,
       show a + ((k + 1 : ℕ) : ℂ) - 1 = a + k by push_cast; ring]
     by_cases hM : regularizedHGFun {((k + 1 : ℕ) : ℂ)} {a + (2 * k + 1 : ℕ)} z = 0
     · rw [hM]; simp
