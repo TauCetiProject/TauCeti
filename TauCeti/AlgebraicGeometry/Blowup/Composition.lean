@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.Blowup.Product
 import Mathlib.RingTheory.Finiteness.Ideal
-import Mathlib.RingTheory.Localization.Ideal
 import TauCeti.AlgebraicGeometry.Blowup.BaseChange
 import TauCeti.AlgebraicGeometry.Blowup.Restriction
 import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
@@ -37,8 +36,10 @@ namely for the product centre `K = I * K₁`.
    both `E₁.comap b₂` (`IsEffectiveCartier.comap_blowupToBase`) and `J.comap b₂` are effective
    Cartier, so `(I * K₁).comap (b₂ ≫ b₁)` is effective Cartier and `b₂ ≫ b₁` lifts to
    `Bl_{I * K₁} X`. By uniqueness of lifts to blowups, the two morphisms are mutually inverse
-   (`blowupCompIso`). Moreover, if `V(I)` avoids an open `U ⊆ X` and `V(J)` avoids `b₁⁻¹(U)`, then
-   `b₁` is already an isomorphism over `U`, which forces `V(I * K₁)` to avoid `U` as well.
+   (`blowupCompIso`). Moreover, away from `V(I)` the first blowup `b₁` is an isomorphism, so the
+   support `V(I * K₁)` equals `V(I) ∪ b₁(V(J))` (`coe_support_mul_of_comap_blowupToBase_eq`); in
+   particular `V(I * K₁)` avoids a subset `s ⊆ X` if and only if `V(I)` avoids `s` and `V(J)`
+   avoids `b₁⁻¹(s)` (`disjoint_support_mul_of_comap_blowupToBase_eq_iff`).
 
 2. *Clearing denominators on an affine blowup.* For a finitely generated ideal `I ≤ R` and an
    ideal sheaf `J` of finite type on `Proj R[It]`, finitely many charts `Spec R[I/aᵢ]` cover
@@ -55,12 +56,13 @@ namely for the product centre `K = I * K₁`.
 
 3. *Global quasi-compact, affine, and locally Noetherian bases.* On a quasi-compact scheme `X`,
    finitely many affine charts `Spec Γ(X, V) ⟶ X` cover `X`. Since `b₁` is proper for finite-type
-   `I`, schematic images commute with restriction to `V`
-   (`comap_map_of_isPullback_of_isOpenImmersion`), so choosing `d` above the bounds on each `V`
-   gives `K₁ = (I.comap b₁ ^ d * J).map b₁` with `K₁.comap b₁ = I.comap b₁ ^ d * J`
+   `I`, schematic images commute with flat base change along `Spec Γ(X, V) ⟶ X`
+   (`comap_map_of_isPullback_of_flat`), so choosing `d` above the bounds on each `V` gives
+   `K₁ = (I.comap b₁ ^ d * J).map b₁` with `K₁.comap b₁ = I.comap b₁ ^ d * J`
    (`exists_comap_map_blowupToBase_eq`). Combining this with `blowupCompIso` yields
-   `exists_blowup_comp_of_compactSpace`, the finite-type refinement `exists_blowup_comp_of_isAffine`
-   over any affine base, and `exists_blowup_comp` on any quasi-compact locally Noetherian scheme.
+   `exists_blowup_comp_of_compactSpace` (including properness of `K.blowupToBase`), the finite-type
+   centre refinement `exists_blowup_comp_of_isAffine` over any affine base, and `exists_blowup_comp`
+   on any quasi-compact locally Noetherian scheme.
 
 ## Main definitions
 
@@ -74,6 +76,10 @@ namely for the product centre `K = I * K₁`.
 
 ## Main results
 
+* `AlgebraicGeometry.Scheme.IdealSheafData.coe_support_mul_of_comap_blowupToBase_eq`,
+  `AlgebraicGeometry.Scheme.IdealSheafData.disjoint_support_mul_of_comap_blowupToBase_eq_iff`: when
+  `K₁.comap b₁ = I.comap b₁ ^ d * J`, the support of `I * K₁` is `V(I) ∪ b₁(V(J))`, so `V(I * K₁)`
+  is disjoint from `s` iff `V(I)` is disjoint from `s` and `V(J)` is disjoint from `b₁⁻¹(s)`.
 * `TauCeti.AlgebraicGeometry.exists_fg_ideal_comap_toSpecCoeff_eq`: over `Spec R`, for finitely
   generated `I` and finite-type `J`, every sufficiently large `d` admits a finitely generated ideal
   `K₀ ≤ R` pulling back to `I.comap π ^ d * J`.
@@ -83,10 +89,10 @@ namely for the product centre `K = I * K₁`.
   image identity `((I.comap b₁ ^ d * J).map b₁).comap b₁ = I.comap b₁ ^ d * J` on a quasi-compact
   scheme for finite-type `I` and `J`.
 * `AlgebraicGeometry.Scheme.IdealSheafData.exists_blowup_comp_of_compactSpace`: composition of two
-  blowups along finite-type centres avoiding an open `U` on a quasi-compact scheme.
+  blowups along finite-type centres avoiding an open `U` on a quasi-compact scheme is isomorphic
+  over `X` to a proper blowup avoiding `U`.
 * `AlgebraicGeometry.Scheme.IdealSheafData.exists_blowup_comp_of_isAffine`: over an affine scheme
-  (without Noetherianity), the composite centre can be chosen of finite type, hence with proper
-  blowup.
+  (without Noetherianity), the composite centre can be chosen of finite type.
 * `AlgebraicGeometry.Scheme.IdealSheafData.exists_blowup_comp`: on a quasi-compact locally
   Noetherian scheme, the composite of any two blowups avoiding `U` is isomorphic over `X` to a
   proper blowup avoiding `U`.
@@ -116,7 +122,7 @@ variable {X : Scheme.{u}} {I K₁ : X.IdealSheafData} {J : I.blowup.IdealSheafDa
 
 /-- When `K₁` pulls back on `Bl_I X` to `I.comap b₁ ^ d * J`, the product centre `I * K₁` pulls
 back along `b₂ ≫ b₁ : Bl_J (Bl_I X) ⟶ X` to an effective Cartier divisor. -/
-theorem isEffectiveCartier_comap_blowupToBase_comp_of_comap_eq
+theorem isEffectiveCartier_comap_mul_blowupToBase_comp_of_comap_eq
     (hK₁ : K₁.comap I.blowupToBase = I.comap I.blowupToBase ^ d * J) :
     ((I * K₁).comap (J.blowupToBase ≫ I.blowupToBase)).IsEffectiveCartier := by
   have hI : ((I.comap I.blowupToBase).comap J.blowupToBase).IsEffectiveCartier :=
@@ -144,7 +150,7 @@ theorem isEffectiveCartier_comap_blowupMulFst_of_comap_eq
 def blowupCompHom (hK₁ : K₁.comap I.blowupToBase = I.comap I.blowupToBase ^ d * J) :
     J.blowup ⟶ (I * K₁).blowup :=
   (I * K₁).blowupLift (J.blowupToBase ≫ I.blowupToBase)
-    (isEffectiveCartier_comap_blowupToBase_comp_of_comap_eq hK₁)
+    (isEffectiveCartier_comap_mul_blowupToBase_comp_of_comap_eq hK₁)
 
 /-- **The inverse comparison for a composite blowup.** When
 `K₁.comap I.blowupToBase = I.comap I.blowupToBase ^ d * J`, the first-factor projection
@@ -221,38 +227,82 @@ theorem blowupCompIso_inv (hK₁ : K₁.comap I.blowupToBase = I.comap I.blowupT
     (blowupCompIso hK₁).inv = blowupCompInv hK₁ :=
   (rfl)
 
-/-- If `V(I)` avoids an open `U ⊆ X` and `V(J)` avoids `b₁⁻¹(U)`, then for any `K₁` satisfying
-`K₁.comap b₁ = I.comap b₁ ^ d * J`, the product centre `V(I * K₁)` still avoids `U`: over `U`, the
-first blowup `b₁` is an isomorphism, so every point of `U` lifts to `b₁⁻¹(U)`. -/
-theorem disjoint_support_mul_of_comap_blowupToBase_eq
-    (hK₁ : K₁.comap I.blowupToBase = I.comap I.blowupToBase ^ d * J) (U : X.Opens)
-    (hIU : Disjoint (U : Set X) (I.support : Set X))
-    (hJU : Disjoint (I.blowupToBase ⁻¹' (U : Set X)) (J.support : Set I.blowup)) :
-    Disjoint (U : Set X) ((I * K₁).support : Set X) := by
-  have := I.isIso_blowupToBase_restrict_of_disjoint_support hIU
-  rw [support_mul, Closeds.coe_sup, Set.disjoint_union_right]
-  refine ⟨hIU, Set.disjoint_left.mpr fun x hxU hxK₁ ↦ ?_⟩
-  let xU : U.toScheme := ⟨x, hxU⟩
-  let z : (I.blowupToBase ⁻¹ᵁ U).toScheme := inv (I.blowupToBase ∣_ U) xU
-  have hz : I.blowupToBase z.1 = x := by
-    have h₁ : ((I.blowupToBase ∣_ U) ≫ U.ι) z = U.ι xU :=
-      (Scheme.Hom.comp_apply (inv (I.blowupToBase ∣_ U))
-        ((I.blowupToBase ∣_ U) ≫ U.ι) xU).symm.trans
-        (congrFun (congrArg (fun f : U.toScheme ⟶ X ↦ ⇑f)
-          (IsIso.inv_hom_id_assoc (I.blowupToBase ∣_ U) U.ι)) xU)
-    rwa [morphismRestrict_ι, Scheme.Hom.comp_apply] at h₁
-  have hzK : z.1 ∈ ((K₁.comap I.blowupToBase).support : Set I.blowup) := by
-    rw [support_comap, Closeds.coe_preimage, Set.mem_preimage, hz]
-    exact hxK₁
-  rw [hK₁, support_mul, Closeds.coe_sup] at hzK
-  rcases hzK with hzI | hzJ
-  · cases d with
-    | zero =>
-      simp only [pow_zero, one_eq_top, support_top, Closeds.coe_bot, Set.mem_empty_iff_false] at hzI
-    | succ n =>
-      rw [support_pow_succ, support_comap, Closeds.coe_preimage, Set.mem_preimage, hz] at hzI
-      exact Set.disjoint_left.mp hIU hxU hzI
-  · exact Set.disjoint_left.mp hJU z.2 hzJ
+/-- The forward composite-blowup comparison is an isomorphism. -/
+instance isIso_blowupCompHom
+    (hK₁ : K₁.comap I.blowupToBase = I.comap I.blowupToBase ^ d * J) :
+    IsIso (blowupCompHom hK₁) :=
+  ⟨blowupCompInv hK₁, blowupCompHom_blowupCompInv hK₁, blowupCompInv_blowupCompHom hK₁⟩
+
+/-- The inverse composite-blowup comparison is an isomorphism. -/
+instance isIso_blowupCompInv
+    (hK₁ : K₁.comap I.blowupToBase = I.comap I.blowupToBase ^ d * J) :
+    IsIso (blowupCompInv hK₁) :=
+  ⟨blowupCompHom hK₁, blowupCompInv_blowupCompHom hK₁, blowupCompHom_blowupCompInv hK₁⟩
+
+/-- The categorical inverse of `blowupCompHom` is `blowupCompInv`. -/
+@[simp]
+theorem inv_blowupCompHom
+    (hK₁ : K₁.comap I.blowupToBase = I.comap I.blowupToBase ^ d * J) :
+    inv (blowupCompHom hK₁) = blowupCompInv hK₁ :=
+  (IsIso.eq_inv_of_hom_inv_id (blowupCompHom_blowupCompInv hK₁)).symm
+
+/-- The categorical inverse of `blowupCompInv` is `blowupCompHom`. -/
+@[simp]
+theorem inv_blowupCompInv
+    (hK₁ : K₁.comap I.blowupToBase = I.comap I.blowupToBase ^ d * J) :
+    inv (blowupCompInv hK₁) = blowupCompHom hK₁ :=
+  (IsIso.eq_inv_of_hom_inv_id (blowupCompInv_blowupCompHom hK₁)).symm
+
+/-- When `K₁.comap b₁ = I.comap b₁ ^ d * J`, the support of the product centre `I * K₁` is the
+union of `V(I)` and the image under `b₁` of `V(J)`: away from `V(I)`, the first blowup `b₁` is an
+isomorphism, so every point of `V(K₁) \ V(I)` lifts to a point of `V(J)`. -/
+theorem coe_support_mul_of_comap_blowupToBase_eq
+    (hK₁ : K₁.comap I.blowupToBase = I.comap I.blowupToBase ^ d * J) :
+    ((I * K₁).support : Set X) =
+      (I.support : Set X) ∪ I.blowupToBase '' (J.support : Set I.blowup) := by
+  rw [support_mul, Closeds.coe_sup]
+  ext x
+  refine ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
+  · rcases hx with hxI | hxK₁
+    · exact Or.inl hxI
+    · by_cases hxI : x ∈ (I.support : Set X)
+      · exact Or.inl hxI
+      · have hxU : x ∈ I.support.compl := hxI
+        obtain ⟨z, hz⟩ := (I.blowupToBase ∣_ I.support.compl).surjective ⟨x, hxU⟩
+        have hz' : I.blowupToBase z.1 = x :=
+          (morphismRestrict_base_coe _ _ z).symm.trans (congrArg Subtype.val hz)
+        have hzK : z.1 ∈ ((K₁.comap I.blowupToBase).support : Set I.blowup) := by
+          rw [support_comap, Closeds.coe_preimage, Set.mem_preimage, hz']
+          exact hxK₁
+        rw [hK₁, support_mul, Closeds.coe_sup] at hzK
+        rcases hzK with hzI | hzJ
+        · cases d with
+          | zero =>
+            simp only [pow_zero, one_eq_top, support_top, Closeds.coe_bot,
+              Set.mem_empty_iff_false] at hzI
+          | succ n =>
+            rw [support_pow_succ, support_comap, Closeds.coe_preimage,
+              Set.mem_preimage, hz'] at hzI
+            exact (hxI hzI).elim
+        · exact Or.inr ⟨z.1, hzJ, hz'⟩
+  · rcases hx with hxI | ⟨z, hzJ, rfl⟩
+    · exact Or.inl hxI
+    · have hzK : z ∈ ((K₁.comap I.blowupToBase).support : Set I.blowup) := by
+        rw [hK₁, support_mul, Closeds.coe_sup]
+        exact Or.inr hzJ
+      rw [support_comap, Closeds.coe_preimage, Set.mem_preimage] at hzK
+      exact Or.inr hzK
+
+/-- For any `s : Set X` and `K₁` satisfying `K₁.comap b₁ = I.comap b₁ ^ d * J`, the product centre
+`V(I * K₁)` is disjoint from `s` if and only if `V(I)` is disjoint from `s` and `V(J)` is disjoint
+from `b₁⁻¹(s)`. -/
+theorem disjoint_support_mul_of_comap_blowupToBase_eq_iff {s : Set X}
+    (hK₁ : K₁.comap I.blowupToBase = I.comap I.blowupToBase ^ d * J) :
+    Disjoint s ((I * K₁).support : Set X) ↔
+      Disjoint s (I.support : Set X) ∧
+        Disjoint (I.blowupToBase ⁻¹' s) (J.support : Set I.blowup) := by
+  rw [coe_support_mul_of_comap_blowupToBase_eq hK₁, Set.disjoint_union_right,
+    Set.disjoint_image_right]
 
 end AlgebraicGeometry.Scheme.IdealSheafData
 
@@ -261,62 +311,6 @@ end AlgebraicGeometry.Scheme.IdealSheafData
 namespace TauCeti.AlgebraicGeometry
 
 open _root_.AlgebraicGeometry Scheme.IdealSheafData
-
-/-- Two ideal sheaves on `Y` are equal as soon as their pullbacks agree along open immersions
-whose ranges cover `Y`. -/
-private theorem ext_of_comap_iSup_opensRange_eq_top {Y : Scheme.{u}} {M₁ M₂ : Y.IdealSheafData}
-    {ι : Type*} {Z : ι → Scheme.{u}} (u : ∀ i, Z i ⟶ Y) [hu_open : ∀ i, IsOpenImmersion (u i)]
-    (hu : ⨆ i, (u i).opensRange = ⊤) (h : ∀ i, M₁.comap (u i) = M₂.comap (u i)) :
-    M₁ = M₂ := by
-  refine ext_of_comap_openCover (Y.openCoverOfIsOpenCover (fun i ↦ (u i).opensRange) hu)
-    fun i ↦ ?_
-  have := hu_open i
-  change M₁.comap (u i).opensRange.ι = M₂.comap (u i).opensRange.ι
-  rw [← (u i).isoOpensRange_inv_comp, comap_comp, h i, ← comap_comp]
-
-/-- On `Spec B`, if the ideal sheaf of `N₁` lies in that of `N₂` over the basic open `D(g)`,
-then every element of `N₁` is multiplied into `N₂` by some power of `g`. -/
-private theorem exists_pow_mul_mem_of_comap_basicOpen_le {B : CommRingCat.{u}} {N₁ N₂ : Ideal B}
-    (g : B)
-    (hle : (ofIdealTop (N₁.map (Scheme.ΓSpecIso B).inv.hom)).comap
-        ((Spec B).basicOpen ((Scheme.ΓSpecIso B).inv g)).ι ≤
-      (ofIdealTop (N₂.map (Scheme.ΓSpecIso B).inv.hom)).comap
-        ((Spec B).basicOpen ((Scheme.ΓSpecIso B).inv g)).ι)
-    {z : B} (hz : z ∈ N₁) :
-    ∃ k : ℕ, g ^ k * z ∈ N₂ := by
-  let topB : (Spec B).affineOpens := ⟨⊤, isAffineOpen_top (Spec B)⟩
-  let g' : Γ(Spec B, topB.1) := (Scheme.ΓSpecIso B).inv g
-  set M₁ := ofIdealTop (N₁.map (Scheme.ΓSpecIso B).inv.hom)
-  set M₂ := ofIdealTop (N₂.map (Scheme.ΓSpecIso B).inv.hom)
-  let V : (Spec B).affineOpens := (Spec B).affineBasicOpen g'
-  have hV : M₁.ideal V ≤ M₂.ideal V := by
-    have htop : M₁.comap V.1.ι ≤ M₂.comap V.1.ι := hle
-    rw [comap_ι_eq_ofIdealTop M₁ V, comap_ι_eq_ofIdealTop M₂ V,
-      ← equivOfIsAffine_symm_apply, ← equivOfIsAffine_symm_apply, map_le_map_iff] at htop
-    simpa only [Ideal.map_map, ← CommRingCat.hom_comp, Iso.inv_hom_id, CommRingCat.hom_id,
-      Ideal.map_id] using Ideal.map_mono (f := V.1.topIso.hom.hom) htop
-  let ρ := (Spec B).presheaf.map (homOfLE ((Spec B).basicOpen_le g')).op
-  let : Algebra Γ(Spec B, topB.1) Γ(Spec B, (Spec B).basicOpen g') := ρ.hom.toAlgebra
-  have : IsLocalization.Away g' Γ(Spec B, (Spec B).basicOpen g') :=
-    topB.2.isLocalization_basicOpen g'
-  have hmap_le : (M₁.ideal topB).map ρ.hom ≤ (M₂.ideal topB).map ρ.hom :=
-    (M₁.map_ideal_basicOpen topB g').trans_le (hV.trans_eq (M₂.map_ideal_basicOpen topB g').symm)
-  have hz_top : (Scheme.ΓSpecIso B).inv z ∈ M₁.ideal topB := by
-    simpa only [M₁, topB, ofIdealTop_ideal, homOfLE_refl, op_id, CategoryTheory.Functor.map_id,
-      CommRingCat.hom_id, Ideal.map_id] using Ideal.mem_map_of_mem _ hz
-  have hmem : algebraMap Γ(Spec B, topB.1) Γ(Spec B, (Spec B).basicOpen g')
-      ((Scheme.ΓSpecIso B).inv z) ∈
-      (M₂.ideal topB).map (algebraMap Γ(Spec B, topB.1) Γ(Spec B, (Spec B).basicOpen g')) :=
-    hmap_le (Ideal.mem_map_of_mem ρ.hom hz_top)
-  obtain ⟨_, ⟨k, rfl⟩, hk⟩ :=
-    (IsLocalization.algebraMap_mem_map_algebraMap_iff (Submonoid.powers g') _ _ _).mp hmem
-  have hk' : g' ^ k * (Scheme.ΓSpecIso B).inv z ∈ N₂.map (Scheme.ΓSpecIso B).inv.hom := by
-    simpa only [M₂, topB, ofIdealTop_ideal, homOfLE_refl, op_id, CategoryTheory.Functor.map_id,
-      CommRingCat.hom_id, Ideal.map_id] using hk
-  have hk'' := Ideal.mem_map_of_mem (Scheme.ΓSpecIso B).hom.hom hk'
-  refine ⟨k, ?_⟩
-  simpa only [map_mul, map_pow, Iso.inv_hom_id_apply, Ideal.map_map, ← CommRingCat.hom_comp,
-    Iso.inv_hom_id, CommRingCat.hom_id, Ideal.map_id, g'] using hk''
 
 section AffineBlowupCharts
 
@@ -334,17 +328,8 @@ finitely generated. -/
 private theorem chartIdeal_fg {a : R} (ha : a ∈ I) (J : (Proj (grade I)).IdealSheafData)
     (hJ : ∀ W : (Proj (grade I)).affineOpens, (J.ideal W).FG) :
     (chartIdeal ha J).FG := by
-  let ι := affineBlowupι (Localization.Away a) ha
-  have htop_eq : equivOfIsAffine (J.comap ι) =
-      (J.ideal ⟨ι ''ᵁ ⊤, (isAffineOpen_top _).image_of_isOpenImmersion ι⟩).map
-        (ι.appIso ⊤).hom.hom :=
-    (equivOfIsAffine_apply _).trans <|
-      (ideal_comap_of_isOpenImmersion J ι ⟨⊤, isAffineOpen_top _⟩).trans
-        (Ideal.comap_symm (ι.appIso ⊤).commRingCatIsoToRingEquiv)
-  have htop : (equivOfIsAffine (J.comap ι)).FG := by
-    rw [htop_eq]
-    exact Ideal.FG.map (hJ _) _
-  exact Ideal.FG.map htop _
+  rw [chartIdeal, equivOfIsAffine_apply]
+  exact Ideal.FG.map (fg_ideal_comap_of_isOpenImmersion J hJ _ ⟨⊤, isAffineOpen_top _⟩) _
 
 /-- On the chart `Spec R[I/a]`, the ideal sheaf `I.comap π ^ d * J` is generated by
 `a ^ d * chartIdeal ha J`. -/
@@ -404,7 +389,7 @@ private theorem exists_fin_clear_chartIdeal {a : R} (ha : a ∈ I)
 /-- On `B_b = R[I/b]`, if `(a / b) ^ k` multiplies `c` into `b ^ m * J_b`, then `a ^ (d - m) * c`
 lands in `b ^ d * J_b` for every `d ≥ m + k`. -/
 private theorem algebraMap_pow_sub_mul_mem_of_divBy_pow_mul_mem {a b : R} (ha : a ∈ I)
-    (hb : b ∈ I) {J_b : Ideal (I.affineBlowup b (Localization.Away b))} {m k : ℕ} {c : R}
+    {J_b : Ideal (I.affineBlowup b (Localization.Away b))} {m k : ℕ} {c : R}
     (hk : (⟨TauCeti.Localization.divBy a b, Ideal.divBy_mem_affineBlowup ha⟩ :
         I.affineBlowup b (Localization.Away b)) ^ k *
       algebraMap R _ c ∈ Ideal.span {algebraMap R _ b ^ m} * J_b)
@@ -427,9 +412,7 @@ private theorem algebraMap_pow_sub_mul_mem_of_divBy_pow_mul_mem {a b : R} (ha : 
   have har : algebraMap R (I.affineBlowup b (Localization.Away b)) (a ^ (d - (m + k))) ∈
       Ideal.span {algebraMap R _ b ^ (d - (m + k))} := by
     rw [← Ideal.span_singleton_pow, map_pow]
-    refine Ideal.pow_mem_pow ?_ _
-    rw [← Ideal.map_algebraMap_affineBlowup (S := Localization.Away b) hb]
-    exact Ideal.mem_map_of_mem _ ha
+    exact Ideal.pow_mem_pow (Ideal.mem_span_singleton.mpr ⟨g, hbg.symm⟩) _
   have hprod := Ideal.mul_mem_mul har hkc
   rw [← mul_assoc, Ideal.span_singleton_mul_span_singleton, ← pow_add,
     Nat.sub_add_cancel hd] at hprod
@@ -453,7 +436,7 @@ private theorem exists_pow_mul_mem_chartIdeal_other {a b : R} (ha : a ∈ I) (hb
   let ιb := affineBlowupι (Localization.Away b) hb
   let Bb := CommRingCat.of (I.affineBlowup b (Localization.Away b))
   let g : Bb := ⟨TauCeti.Localization.divBy a b, Ideal.divBy_mem_affineBlowup ha⟩
-  let g' := (Scheme.ΓSpecIso Bb).inv g
+  let U : (Spec Bb).Opens := PrimeSpectrum.basicOpen g
   set Lc := (ofIdealTop ((Ideal.span {c}).map (Scheme.ΓSpecIso (.of R)).inv.hom)).comap
     (Proj.toSpecCoeff (grade I))
   set M := (ofIdealTop (I.map (Scheme.ΓSpecIso (.of R)).inv.hom)).comap
@@ -469,25 +452,22 @@ private theorem exists_pow_mul_mem_chartIdeal_other {a b : R} (ha : a ∈ I) (hb
     rw [hLc ha, comap_affineBlowupι_pow_mul_eq ha J m, ← equivOfIsAffine_symm_apply,
       ← equivOfIsAffine_symm_apply, map_le_map_iff]
     exact Ideal.map_mono (Ideal.span_le.mpr (Set.singleton_subset_iff.mpr hc))
-  have hrange : Set.range (((Spec Bb).basicOpen g').ι ≫ ιb) ⊆ Set.range ιa := by
-    have hbasic : (Spec Bb).basicOpen g' = ιb ⁻¹ᵁ ιa.opensRange :=
-      (basicOpen_eq_of_affine g).trans <|
-        (affineBlowupι_preimage_basicOpen (Localization.Away b) hb ha).symm.trans
-          (congrArg (ιb ⁻¹ᵁ ·) (opensRange_affineBlowupι (Localization.Away a) ha).symm)
+  have hrange : Set.range (U.ι ≫ ιb) ⊆ Set.range ιa := by
+    have hbasic : U = ιb ⁻¹ᵁ ιa.opensRange :=
+      (affineBlowupι_preimage_basicOpen (Localization.Away b) hb ha).symm.trans
+        (congrArg (ιb ⁻¹ᵁ ·) (opensRange_affineBlowupι (Localization.Away a) ha).symm)
     rintro _ ⟨y, rfl⟩
     have hy : y.1 ∈ ιb ⁻¹ᵁ ιa.opensRange := hbasic ▸ y.2
     exact hy
-  have hle_b : (Lc.comap ιb).comap ((Spec Bb).basicOpen g').ι ≤
-      (M.comap ιb).comap ((Spec Bb).basicOpen g').ι := by
-    let u := IsOpenImmersion.lift ιa (((Spec Bb).basicOpen g').ι ≫ ιb) hrange
-    have hfac : u ≫ ιa = ((Spec Bb).basicOpen g').ι ≫ ιb :=
-      IsOpenImmersion.lift_fac _ _ hrange
+  have hle_b : (Lc.comap ιb).comap U.ι ≤ (M.comap ιb).comap U.ι := by
+    let u := IsOpenImmersion.lift ιa (U.ι ≫ ιb) hrange
+    have hfac : u ≫ ιa = U.ι ≫ ιb := IsOpenImmersion.lift_fac _ _ hrange
     have hle_u : (Lc.comap ιa).comap u ≤ (M.comap ιa).comap u := comap_mono u hle_a
     simpa only [← comap_comp, hfac] using hle_u
   rw [hLc hb, comap_affineBlowupι_pow_mul_eq hb J m] at hle_b
   obtain ⟨k, hk⟩ := exists_pow_mul_mem_of_comap_basicOpen_le g hle_b
     (Ideal.mem_span_singleton_self _)
-  exact ⟨k, fun d hd ↦ algebraMap_pow_sub_mul_mem_of_divBy_pow_mul_mem ha hb hk hd⟩
+  exact ⟨k, fun d hd ↦ algebraMap_pow_sub_mul_mem_of_divBy_pow_mul_mem ha hk hd⟩
 
 /-- **Clearing denominators on `Proj R[It]`.** Let `I` be a finitely generated ideal of `R` and let
 `J` be an ideal sheaf of finite type on `Proj R[It]`. Then for every sufficiently large `d : ℕ`
@@ -562,34 +542,12 @@ open TauCeti.AlgebraicGeometry
 
 variable {X : Scheme.{u}}
 
-/-- Pulling a finite-type ideal sheaf back along an open immersion preserves finite generation on
-affine opens. -/
-private theorem fg_ideal_comap_of_isOpenImmersion {Y Z : Scheme.{u}} (J : Y.IdealSheafData)
-    (hJ : ∀ W : Y.affineOpens, (J.ideal W).FG) (f : Z ⟶ Y) [IsOpenImmersion f]
-    (W : Z.affineOpens) : ((J.comap f).ideal W).FG := by
-  let W' : Y.affineOpens := ⟨f ''ᵁ W.1, W.2.image_of_isOpenImmersion f⟩
-  have heq : (J.comap f).ideal W = (J.ideal W').map (f.appIso W.1).hom.hom :=
-    (ideal_comap_of_isOpenImmersion J f W).trans
-      (Ideal.comap_symm (f.appIso W.1).commRingCatIsoToRingEquiv)
-  rw [heq]
-  exact Ideal.FG.map (hJ W') (f.appIso W.1).hom.hom
-
-/-- `comap_blowupChart_comap_blowupToBase` written with `Spec (.of Γ(X, U))`, matching
-`exists_fg_ideal_comap_toSpecCoeff_eq` and `exists_comap_map_toSpecCoeff_eq` syntactically. -/
-private theorem comap_blowupChart_comap_blowupToBase' (I : X.IdealSheafData)
-    {U : X.Opens} (hU : IsAffineOpen U) :
-    (I.comap I.blowupToBase).comap (I.blowupChart hU) =
-      (ofIdealTop ((I.ideal ⟨U, hU⟩).map (Scheme.ΓSpecIso (.of Γ(X, U))).inv.hom)).comap
-        (Proj.toSpecCoeff (grade (I.ideal ⟨U, hU⟩))) :=
-  I.comap_blowupChart_comap_blowupToBase hU
-
 /-- Over a single affine open `V ⊆ X`, pushing `I.comap b₁ ^ d * J` forward along a quasi-compact
 blowup `b₁ = I.blowupToBase` and pulling back agrees on `I.blowupChart hV` for all sufficiently
 large `d`. -/
 private theorem exists_comap_map_blowupToBase_comap_blowupChart_eq (I : X.IdealSheafData)
-    [QuasiCompact I.blowupToBase] {V : X.Opens} (hV : IsAffineOpen V)
-    (hIV : (I.ideal ⟨V, hV⟩).FG) (J : I.blowup.IdealSheafData)
-    (hJ : ∀ W : I.blowup.affineOpens, (J.ideal W).FG) :
+    [QuasiCompact I.blowupToBase] {V : X.Opens} (hV : IsAffineOpen V) (hIV : (I.ideal ⟨V, hV⟩).FG)
+    (J : I.blowup.IdealSheafData) (hJ : ∀ W : I.blowup.affineOpens, (J.ideal W).FG) :
     ∃ N : ℕ, ∀ d : ℕ, N ≤ d →
       (((I.comap I.blowupToBase ^ d * J).map I.blowupToBase).comap I.blowupToBase).comap
           (I.blowupChart hV) =
@@ -604,22 +562,11 @@ private theorem exists_comap_map_blowupToBase_comap_blowupChart_eq (I : X.IdealS
           (Proj.toSpecCoeff (grade (I.ideal ⟨V, hV⟩)))).comap
             (Proj.toSpecCoeff (grade (I.ideal ⟨V, hV⟩))) := by
     rw [← comap_comp, blowupChart_blowupToBase, comap_comp,
-      M.comap_map_of_isPullback_of_isOpenImmersion hV.fromSpec
+      M.comap_map_of_isPullback_of_flat hV.fromSpec
         (I.isPullback_blowupChart_fromSpec hV)]
-  have hM : M.comap (I.blowupChart hV) =
-      (ofIdealTop ((I.ideal ⟨V, hV⟩).map (Scheme.ΓSpecIso (.of Γ(X, V))).inv.hom)).comap
-        (Proj.toSpecCoeff (grade (I.ideal ⟨V, hV⟩))) ^ d * J.comap (I.blowupChart hV) := by
-    rw [comap_mul, comap_pow, I.comap_blowupChart_comap_blowupToBase' hV]
-  have hN' :
-      (((ofIdealTop ((I.ideal ⟨V, hV⟩).map (Scheme.ΓSpecIso (.of Γ(X, V))).inv.hom)).comap
-          (Proj.toSpecCoeff (grade (I.ideal ⟨V, hV⟩))) ^ d * J.comap (I.blowupChart hV)).map
-        (Proj.toSpecCoeff (grade (I.ideal ⟨V, hV⟩)) : _ ⟶ Spec Γ(X, V))).comap
-          (Proj.toSpecCoeff (grade (I.ideal ⟨V, hV⟩)) : _ ⟶ Spec Γ(X, V)) =
-      (ofIdealTop ((I.ideal ⟨V, hV⟩).map (Scheme.ΓSpecIso (.of Γ(X, V))).inv.hom)).comap
-        (Proj.toSpecCoeff (grade (I.ideal ⟨V, hV⟩))) ^ d * J.comap (I.blowupChart hV) :=
-    hN d hd
-  rw [hLHS, hM]
-  exact hN'
+  rw [hLHS, comap_mul, comap_pow, I.comap_blowupChart_comap_blowupToBase hV]
+  -- Peel the outer congruence layers so `CommRingCat.of Γ(X, V) = Γ(X, V)` closes instantaneously.
+  convert hN d hd using 5
 
 /-- **Global schematic image identity for blowups.** On a quasi-compact scheme `X`, let `I` be an
 ideal sheaf of finite type on `X` and `J` an ideal sheaf of finite type on `Bl_I X`. Then for
@@ -635,47 +582,47 @@ theorem exists_comap_map_blowupToBase_eq [CompactSpace X] (I : X.IdealSheafData)
   obtain ⟨s, hs⟩ := isCompact_univ.elim_finite_subcover
     (fun V : X.affineOpens ↦ (V.1 : Set X)) (fun V ↦ V.1.isOpen) (by
       rw [← Opens.coe_top, ← iSup_affineOpens_eq_top X, Opens.coe_iSup])
+  -- `X.affineOpens` is `{U : X.Opens | IsAffineOpen U}`, so `V.1.2 : IsAffineOpen V.1.1`.
+  have hV (V : s) : IsAffineOpen V.1.1 := V.1.2
   choose N hN using fun V : s ↦
-    exists_comap_map_blowupToBase_comap_blowupChart_eq I (show IsAffineOpen V.1.1 from V.1.2)
-      (hI V.1) J hJ
+    exists_comap_map_blowupToBase_comap_blowupChart_eq I (hV V) (hI V.1) J hJ
   refine ⟨Finset.univ.sup N, fun d hd ↦ ?_⟩
-  have hcover :
-      ⨆ V : s, (I.blowupChart (show IsAffineOpen V.1.1 from V.1.2)).opensRange = ⊤ := by
+  have hcover : ⨆ V : s, (I.blowupChart (hV V)).opensRange = ⊤ := by
     rw [eq_top_iff]
     intro y _
     obtain ⟨V, hVs, hyV⟩ := Set.mem_iUnion₂.mp (hs (Set.mem_univ (I.blowupToBase y)))
     refine Opens.mem_iSup.mpr ⟨⟨V, hVs⟩, ?_⟩
     rw [opensRange_blowupChart]
     exact hyV
-  exact ext_of_comap_iSup_opensRange_eq_top
-    (fun V : s ↦ I.blowupChart (show IsAffineOpen V.1.1 from V.1.2)) hcover fun V ↦
+  exact ext_of_comap_iSup_opensRange_eq_top (fun V : s ↦ I.blowupChart (hV V)) hcover fun V ↦
     hN V d ((Finset.le_sup (Finset.mem_univ V)).trans hd)
 
 /-- **Composition of blowups on a quasi-compact scheme.** Let `X` be a quasi-compact scheme, `I` a
 finite-type ideal sheaf on `X` avoiding an open `U`, and `J` a finite-type ideal sheaf on `Bl_I X`
 avoiding `b₁⁻¹(U)`. Then there exist an ideal sheaf `K` on `X` avoiding `U` and an isomorphism
-`J.blowup ≅ K.blowup` over `X`, and `K.blowupToBase` is an isomorphism over `U`. -/
+`J.blowup ≅ K.blowup` over `X` such that `K.blowupToBase` is proper and restricts to an isomorphism
+over `U`. -/
 theorem exists_blowup_comp_of_compactSpace [CompactSpace X] (I : X.IdealSheafData)
     (hI : ∀ V : X.affineOpens, (I.ideal V).FG) (J : I.blowup.IdealSheafData)
     (hJ : ∀ W : I.blowup.affineOpens, (J.ideal W).FG) (U : X.Opens)
     (hIU : Disjoint (U : Set X) (I.support : Set X))
     (hJU : Disjoint (I.blowupToBase ⁻¹' (U : Set X)) (J.support : Set I.blowup)) :
     ∃ (K : X.IdealSheafData) (e : J.blowup ≅ K.blowup),
-      Disjoint (U : Set X) (K.support : Set X) ∧ IsIso (K.blowupToBase ∣_ U) ∧
+      IsProper K.blowupToBase ∧ Disjoint (U : Set X) (K.support : Set X) ∧
+        IsIso (K.blowupToBase ∣_ U) ∧
         e.hom ≫ K.blowupToBase = J.blowupToBase ≫ I.blowupToBase := by
+  have := I.isProper_blowupToBase hI
+  have := J.isProper_blowupToBase hJ
   obtain ⟨N, hN⟩ := I.exists_comap_map_blowupToBase_eq hI J hJ
-  have hK₁ := hN N le_rfl
-  have hdisj := disjoint_support_mul_of_comap_blowupToBase_eq hK₁ U hIU hJU
-  exact ⟨_, blowupCompIso hK₁, hdisj,
-    (_ : X.IdealSheafData).isIso_blowupToBase_restrict_of_disjoint_support hdisj,
+  set K₁ := (I.comap I.blowupToBase ^ N * J).map I.blowupToBase
+  have hK₁ : K₁.comap I.blowupToBase = I.comap I.blowupToBase ^ N * J := hN N le_rfl
+  have hdisj := (disjoint_support_mul_of_comap_blowupToBase_eq_iff hK₁).mpr ⟨hIU, hJU⟩
+  have hproper : IsProper (I * K₁).blowupToBase := by
+    rw [(blowupCompIso hK₁).eq_inv_comp.mpr (blowupCompHom_blowupToBase hK₁)]
+    infer_instance
+  exact ⟨I * K₁, blowupCompIso hK₁, hproper, hdisj,
+    (I * K₁).isIso_blowupToBase_restrict_of_disjoint_support hdisj,
     blowupCompHom_blowupToBase hK₁⟩
-
-/-- Pulling back along an isomorphism of schemes is injective on ideal sheaves. -/
-private theorem eq_of_comap_eq_of_isIso {Y Z : Scheme.{u}} {M₁ M₂ : Y.IdealSheafData}
-    (f : Z ⟶ Y) [IsIso f] (h : M₁.comap f = M₂.comap f) : M₁ = M₂ := by
-  calc
-    M₁ = (M₁.comap f).comap (inv f) := by rw [← comap_comp, IsIso.inv_hom_id, comap_id]
-    _ = M₂ := by rw [h, ← comap_comp, IsIso.inv_hom_id, comap_id]
 
 /-- Over an affine open `V ⊆ X`, if `I(V)` is finitely generated and `J` is of finite type on
 `Bl_I X`, some `N : ℕ` and finitely generated `K₀ ≤ Γ(X, V)` pull back on `I.blowupChart hV` to
@@ -691,18 +638,13 @@ private theorem exists_fg_ideal_comap_blowupChart_eq (I : X.IdealSheafData)
     (fg_ideal_comap_of_isOpenImmersion J hJ (I.blowupChart hV))
   obtain ⟨K₀, hK₀fg, hK₀⟩ := hN N le_rfl
   refine ⟨N, K₀, hK₀fg, ?_⟩
-  have hK₀' :
-      (ofIdealTop (K₀.map (Scheme.ΓSpecIso Γ(X, V)).inv.hom)).comap
-          (Proj.toSpecCoeff (grade (I.ideal ⟨V, hV⟩))) =
-        (ofIdealTop ((I.ideal ⟨V, hV⟩).map (Scheme.ΓSpecIso (.of Γ(X, V))).inv.hom)).comap
-          (Proj.toSpecCoeff (grade (I.ideal ⟨V, hV⟩))) ^ N * J.comap (I.blowupChart hV) :=
-    hK₀
-  rw [comap_mul, comap_pow, I.comap_blowupChart_comap_blowupToBase' hV, hK₀']
+  rw [comap_mul, comap_pow, I.comap_blowupChart_comap_blowupToBase hV]
+  convert hK₀ using 3
 
 /-- **Composition of finite-type blowups over an affine scheme.** When `X` is affine (with no
 Noetherian assumption), the composite of two blowups along finite-type centres avoiding `U` is
-isomorphic over `X` to the blowup along a *finite-type* centre `K` avoiding `U`; in particular
-`K.blowupToBase` is proper. -/
+isomorphic over `X` to the blowup along a *finite-type* centre `K` avoiding `U` (and hence with
+proper blowup morphism). -/
 theorem exists_blowup_comp_of_isAffine [IsAffine X] (I : X.IdealSheafData)
     (hI : ∀ V : X.affineOpens, (I.ideal V).FG) (J : I.blowup.IdealSheafData)
     (hJ : ∀ W : I.blowup.affineOpens, (J.ideal W).FG) (U : X.Opens)
@@ -717,24 +659,22 @@ theorem exists_blowup_comp_of_isAffine [IsAffine X] (I : X.IdealSheafData)
     rw [opensRange_blowupChart, Scheme.Hom.preimage_top]
   obtain ⟨N, K₀, hK₀fg, hK₀⟩ :=
     exists_fg_ideal_comap_blowupChart_eq I (isAffineOpen_top X) (hI ⟨⊤, isAffineOpen_top X⟩) J hJ
-  let K₁ : X.IdealSheafData :=
-    ofIdealTop ((K₀.map (Scheme.ΓSpecIso Γ(X, (⊤ : X.Opens))).inv.hom).map X.isoSpec.hom.appTop.hom)
+  let K₁ : X.IdealSheafData := ofIdealTop K₀
   have hLHS :
       (K₁.comap I.blowupToBase).comap (I.blowupChart (isAffineOpen_top X)) =
         (ofIdealTop (K₀.map (Scheme.ΓSpecIso Γ(X, (⊤ : X.Opens))).inv.hom)).comap
           (Proj.toSpecCoeff (grade (I.ideal ⟨⊤, isAffineOpen_top X⟩))) := by
-    have hK₁_def : K₁ =
-        (ofIdealTop (K₀.map (Scheme.ΓSpecIso Γ(X, (⊤ : X.Opens))).inv.hom)).comap
-          X.isoSpec.hom :=
-      (comap_ofIdealTop _ _).symm
-    rw [hK₁_def, ← comap_comp, ← comap_comp, blowupChart_blowupToBase, Category.assoc,
-      IsAffineOpen.fromSpec_top, Iso.inv_hom_id, Category.comp_id]
+    rw [← comap_comp, blowupChart_blowupToBase, comap_comp, comap_fromSpec_eq_ofIdealTop]
+    have htop : K₁.ideal ⟨⊤, isAffineOpen_top X⟩ = K₀ := by
+      simpa only [K₁, ← equivOfIsAffine_apply, ← equivOfIsAffine_symm_apply] using
+        equivOfIsAffine.apply_symm_apply K₀
+    rw [htop]
   have hK₁_eq : K₁.comap I.blowupToBase = I.comap I.blowupToBase ^ N * J :=
     eq_of_comap_eq_of_isIso (I.blowupChart (isAffineOpen_top X)) (hLHS.trans hK₀)
   have hKfg (V : X.affineOpens) : ((I * K₁).ideal V).FG := by
     rw [ideal_mul, Pi.mul_apply, ofIdealTop_ideal]
-    exact (hI V).mul (Ideal.FG.map (Ideal.FG.map (Ideal.FG.map hK₀fg _) _) _)
-  have hdisj := disjoint_support_mul_of_comap_blowupToBase_eq hK₁_eq U hIU hJU
+    exact (hI V).mul (Ideal.FG.map hK₀fg _)
+  have hdisj := (disjoint_support_mul_of_comap_blowupToBase_eq_iff hK₁_eq).mpr ⟨hIU, hJU⟩
   exact ⟨I * K₁, blowupCompIso hK₁_eq, hKfg, (I * K₁).isProper_blowupToBase hKfg, hdisj,
     (I * K₁).isIso_blowupToBase_restrict_of_disjoint_support hdisj,
     blowupCompHom_blowupToBase hK₁_eq⟩
@@ -759,7 +699,6 @@ theorem exists_blowup_comp [CompactSpace X] [IsLocallyNoetherian X] (I : X.Ideal
   have hJfg (W : I.blowup.affineOpens) : (J.ideal W).FG := by
     have := IsLocallyNoetherian.component_noetherian W
     exact IsNoetherian.noetherian _
-  obtain ⟨K, e, hKU, hKiso, he⟩ := I.exists_blowup_comp_of_compactSpace hIfg J hJfg U hIU hJU
-  exact ⟨K, e, inferInstance, hKU, hKiso, he⟩
+  exact I.exists_blowup_comp_of_compactSpace hIfg J hJfg U hIU hJU
 
 end AlgebraicGeometry.Scheme.IdealSheafData

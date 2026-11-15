@@ -79,6 +79,8 @@ of an ideal on a module, complementing `Mathlib/RingTheory/Ideal/Operations.lean
 * `Subalgebra.toSubmodule_sup_pow_restrictScalars_eq_top`: if a subalgebra and a principal left
   ideal additively span the ambient algebra, and the subalgebra contains a generator of the
   ideal, then the same holds with the ideal replaced by any power.
+* `Ideal.span_setOf_mul_eq_mul_eq_top`: if `I * J` is generated as a left ideal by `c` in a ring,
+  the elements `u` with `u * c = a * b` for some `a ∈ I` and `b ∈ J` generate the unit left ideal.
 -/
 
 public section
@@ -560,6 +562,22 @@ theorem Ideal.span_pair_sq_eq_span_singleton_of_isCoprime {R : Type u} [CommSemi
     have h := add_mem (Ideal.mul_mem_left _ u (Ideal.pow_mem_pow hzI 2))
       (Ideal.mul_mem_left _ v (Ideal.pow_mem_pow hxI 2))
     rwa [← hz, ← Ideal.span_singleton_le_iff_mem] at h
+
+/-- If `I * J` is generated as a left ideal by `c` in a ring `R`, the elements `u` with
+`u * c = a * b` for some `a ∈ I` and `b ∈ J` generate the unit left ideal. -/
+theorem Ideal.span_setOf_mul_eq_mul_eq_top {R : Type*} [Ring R] {I J : Ideal R} {c : R}
+    (hIJ : I * J = Ideal.span {c}) :
+    Ideal.span {u : R | ∃ a ∈ I, ∃ b ∈ J, u * c = a * b} = ⊤ := by
+  set S := Ideal.span {u : R | ∃ a ∈ I, ∃ b ∈ J, u * c = a * b}
+  have hle : I * J ≤ S.map (LinearMap.mulRight R c) :=
+    Submodule.mul_le.mpr fun a ha b hb ↦ by
+      obtain ⟨u, hu⟩ := Ideal.mem_span_singleton'.mp (hIJ ▸ Ideal.mul_mem_mul ha hb)
+      exact ⟨u, Ideal.subset_span ⟨a, ha, b, hb, hu⟩, hu⟩
+  obtain ⟨z, hz, hzc⟩ := hle (hIJ ▸ Ideal.mem_span_singleton_self c)
+  rw [LinearMap.mulRight_apply] at hzc
+  have h1z : 1 - z ∈ S := Ideal.subset_span ⟨0, I.zero_mem, 0, J.zero_mem, by
+    rw [sub_mul, one_mul, hzc, sub_self, mul_zero]⟩
+  exact (Ideal.eq_top_iff_one _).mpr (add_sub_cancel z 1 ▸ S.add_mem hz h1z)
 
 namespace Subalgebra
 

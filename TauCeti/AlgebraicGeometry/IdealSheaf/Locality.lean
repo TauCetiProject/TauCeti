@@ -11,10 +11,12 @@ import TauCeti.AlgebraicGeometry.Scheme.Opens
 /-!
 # Locality of ideal sheaf data
 
-An ideal sheaf is determined by its pullbacks to an open cover. This lets affine
-computations of ideal sheaves, such as Fitting ideals, be glued on an arbitrary scheme.
-For a morphism `f : X ⟶ Y`, it suffices to compare pullbacks along affine charts of `X`
-mapping into affine opens of `Y` (`ext_of_comap_fromSpec_over`).
+An ideal sheaf is determined by its pullbacks to an open cover
+(`IdealSheafData.ext_of_comap_openCover`), or along any family of open immersions whose ranges
+cover the scheme (`IdealSheafData.ext_of_comap_iSup_opensRange_eq_top`). This lets affine
+computations of ideal sheaves, such as Fitting ideals, be glued on an arbitrary scheme. For a
+morphism `f : X ⟶ Y`, it suffices to compare pullbacks along affine charts of `X` mapping into
+affine opens of `Y` (`ext_of_comap_fromSpec_over`).
 
 Vanishing of the sections of an ideal sheaf under a morphism also passes to smaller affine opens
 (`AlgebraicGeometry.Scheme.IdealSheafData.ideal_le_ker_appLE_of_le`), so it can be checked
@@ -76,6 +78,17 @@ theorem IdealSheafData.ext_of_comap_openCover
     (h : ∀ i, I.comap (𝒰.f i) = J.comap (𝒰.f i)) : I = J := by
   rw [← I.iInf_map_comap_openCover 𝒰, ← J.iInf_map_comap_openCover 𝒰]
   simp only [h]
+
+/-- Ideal sheaves on `X` are equal as soon as their pullbacks agree along open immersions whose
+ranges cover `X`. -/
+theorem IdealSheafData.ext_of_comap_iSup_opensRange_eq_top {I J : X.IdealSheafData}
+    {ι : Type*} {Z : ι → Scheme.{u}} (u : ∀ i, Z i ⟶ X) [∀ i, IsOpenImmersion (u i)]
+    (hu : ⨆ i, (u i).opensRange = ⊤) (h : ∀ i, I.comap (u i) = J.comap (u i)) :
+    I = J := by
+  refine ext_of_comap_openCover (X.openCoverOfIsOpenCover (fun i ↦ (u i).opensRange) hu) ?_
+  dsimp only [Scheme.openCoverOfIsOpenCover]
+  intro i
+  rw [← (u i).isoOpensRange_inv_comp, comap_comp, h i, ← comap_comp]
 
 /-- An ideal sheaf `I` on `Y` lies in the kernel of a quasi-compact morphism `f : X ⟶ Y` if and
 only if it lies in the kernel of `𝒰.f a ≫ f` for every member `a` of an open cover `𝒰` of `X`. -/
