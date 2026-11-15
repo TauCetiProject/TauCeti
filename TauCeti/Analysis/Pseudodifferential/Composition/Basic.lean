@@ -115,36 +115,39 @@ section Leibniz
 
 /-- **Symbol estimates from the Leibniz rules.** Let `F a b hb` be a family of smooth functions of
 the position and the frequency, indexed by a symbol `a` of order `m'` and a symbol `b` of order
-`m` with compact spatial support, which satisfies the Leibniz rules
-`∂ (F a b) = F (∂a) b + F a (∂b)` for the position and the frequency derivatives. Let `P` be a
-predicate on the symbols `a` that is stable under the position and frequency derivatives. If every
-member with `P a` is bounded by `C ⟨ξ⟩ ^ (m' + m - s)` for positions in a set `K`, then so is every
-mixed derivative `∂_x^α ∂_ξ^β (F a b)`, with the weight `⟨ξ⟩ ^ (m' + m - s - |β|)`: each frequency
-derivative falls on one of the two symbols and lowers its order by one.
+`m` satisfying `Q b`, which satisfies the Leibniz rules
+`∂ (F a b) = F (∂a) b + F a (∂b)` for the position and the frequency derivatives. Let `P` and `Q`
+be predicates on symbols stable under the position and frequency derivatives. If every
+member with `P a` and `Q b` is bounded by `C ⟨ξ⟩ ^ (m' + m - s)` for positions in a set `K`, then
+so is every mixed derivative `∂_x^α ∂_ξ^β (F a b)`, with the weight `⟨ξ⟩ ^ (m' + m - s - |β|)`:
+each frequency derivative falls on one of the two symbols and lowers its order by one.
 
-Taking `P` trivial and `K` compact gives the local symbol estimates, and taking for `P` the
-estimates uniform in the position (`Symbol.IsUniform`) and `K = univ` gives uniform ones. -/
+Taking `P` trivial and `K` compact gives the local symbol estimates, and taking `P = IsUniform` and
+`K = univ` gives uniform ones, for `Q = HasCompactSpatialSupport` or `Q = IsUniform`. -/
 theorem exists_norm_mixedDeriv_le_of_leibniz (s : ℝ) (P : ∀ {m' : ℝ}, Symbol n W U m' → Prop)
     (hPspatial : ∀ {m' : ℝ} {a : Symbol n W U m'}, P a → ∀ j, P (spatialDeriv j a))
     (hPfrequency : ∀ {m' : ℝ} {a : Symbol n W U m'}, P a → ∀ j, P (frequencyDeriv j a))
-    (F : ∀ {m m' : ℝ}, Symbol n W U m' → (b : Symbol n V W m) → b.HasCompactSpatialSupport →
+    (Q : ∀ {m : ℝ}, Symbol n V W m → Prop)
+    (hQspatial : ∀ {m : ℝ} {b : Symbol n V W m}, Q b → ∀ j, Q (spatialDeriv j b))
+    (hQfrequency : ∀ {m : ℝ} {b : Symbol n V W m}, Q b → ∀ j, Q (frequencyDeriv j b))
+    (F : ∀ {m m' : ℝ}, Symbol n W U m' → (b : Symbol n V W m) → Q b →
       CoordinateSpace n × CoordinateSpace n → V →L[ℂ] U)
     (hF : ∀ {m m' : ℝ} (a : Symbol n W U m') {b : Symbol n V W m}
-      (hb : b.HasCompactSpatialSupport), ContDiff ℝ ∞ (F a b hb))
+      (hb : Q b), ContDiff ℝ ∞ (F a b hb))
     (hspatial : ∀ {m m' : ℝ} (a : Symbol n W U m') {b : Symbol n V W m}
-      (hb : b.HasCompactSpatialSupport) (j : Fin n) (x ξ : CoordinateSpace n),
+      (hb : Q b) (j : Fin n) (x ξ : CoordinateSpace n),
         coordinateDeriv [j] (fun y ↦ F a b hb (y, ξ)) x =
-          F (spatialDeriv j a) b hb (x, ξ) + F a (spatialDeriv j b) (hb.spatialDeriv j) (x, ξ))
+          F (spatialDeriv j a) b hb (x, ξ) + F a (spatialDeriv j b) (hQspatial hb j) (x, ξ))
     (hfrequency : ∀ {m m' : ℝ} (a : Symbol n W U m') {b : Symbol n V W m}
-      (hb : b.HasCompactSpatialSupport) (j : Fin n) (x ξ : CoordinateSpace n),
+      (hb : Q b) (j : Fin n) (x ξ : CoordinateSpace n),
         coordinateDeriv [j] (fun η ↦ F a b hb (x, η)) ξ =
           F (frequencyDeriv j a) b hb (x, ξ) +
-            F a (frequencyDeriv j b) (hb.frequencyDeriv j) (x, ξ))
+            F a (frequencyDeriv j b) (hQfrequency hb j) (x, ξ))
     {K : Set (CoordinateSpace n)}
     (hbound : ∀ {m m' : ℝ} (a : Symbol n W U m'), P a → ∀ {b : Symbol n V W m}
-      (hb : b.HasCompactSpatialSupport),
+      (hb : Q b),
         ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖F a b hb (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - s) / 2))
-    (a : Symbol n W U m') (ha : P a) {b : Symbol n V W m} (hb : b.HasCompactSpatialSupport)
+    (a : Symbol n W U m') (ha : P a) {b : Symbol n V W m} (hb : Q b)
     (α β : List (Fin n)) :
     ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
       ‖mixedDeriv α β (F a b hb) x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - s - β.length) / 2) := by
@@ -161,11 +164,11 @@ theorem exists_norm_mixedDeriv_le_of_leibniz (s : ℝ) (P : ∀ {m' : ℝ}, Symb
       · simp at hD
       · obtain ⟨C₁, hC₁0, hC₁⟩ := ih (spatialDeriv j a) (hPspatial ha j) hb α' []
           (by simpa using hD)
-        obtain ⟨C₂, hC₂0, hC₂⟩ := ih a ha (hb.spatialDeriv j) α' [] (by simpa using hD)
+        obtain ⟨C₂, hC₂0, hC₂⟩ := ih a ha (hQspatial hb j) α' [] (by simpa using hD)
         refine ⟨C₁ + C₂, add_nonneg hC₁0 hC₂0, fun x hx ξ ↦ ?_⟩
         have hfun : (fun q : CoordinateSpace n × CoordinateSpace n ↦
             coordinateDeriv [j] (fun y ↦ F a b hb (y, q.2)) q.1) =
-              F (spatialDeriv j a) b hb + F a (spatialDeriv j b) (hb.spatialDeriv j) :=
+              F (spatialDeriv j a) b hb + F a (spatialDeriv j b) (hQspatial hb j) :=
           funext fun q ↦ hspatial a hb j q.1 q.2
         rw [← mixedDeriv_coordinateDeriv_fst (hF a hb), hfun]
         exact norm_mixedDeriv_add_le (hF _ hb) (hF a _) (hC₁ x hx ξ) (hC₂ x hx ξ)
@@ -173,11 +176,11 @@ theorem exists_norm_mixedDeriv_le_of_leibniz (s : ℝ) (P : ∀ {m' : ℝ}, Symb
         simp only [List.length_append, List.length_singleton] at hD
         omega
       obtain ⟨C₁, hC₁0, hC₁⟩ := ih (frequencyDeriv j a) (hPfrequency ha j) hb α β' hlen
-      obtain ⟨C₂, hC₂0, hC₂⟩ := ih a ha (hb.frequencyDeriv j) α β' hlen
+      obtain ⟨C₂, hC₂0, hC₂⟩ := ih a ha (hQfrequency hb j) α β' hlen
       refine ⟨C₁ + C₂, add_nonneg hC₁0 hC₂0, fun x hx ξ ↦ ?_⟩
       have hfun : (fun q : CoordinateSpace n × CoordinateSpace n ↦
           coordinateDeriv [j] (fun η ↦ F a b hb (q.1, η)) q.2) =
-            F (frequencyDeriv j a) b hb + F a (frequencyDeriv j b) (hb.frequencyDeriv j) :=
+            F (frequencyDeriv j a) b hb + F a (frequencyDeriv j b) (hQfrequency hb j) :=
         funext fun q ↦ hfrequency a hb j q.1 q.2
       have e₁ : (m' - 1 + m - s - β'.length) / 2 = (m' + m - s - (β' ++ [j]).length) / 2 := by
         simp only [List.length_append, List.length_singleton, Nat.cast_add, Nat.cast_one]
@@ -679,6 +682,7 @@ private theorem exists_bound_compCoeff (P : ∀ {m' : ℝ}, Symbol n W U m' → 
     ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
       ‖mixedDeriv α β (compCoeff a b) x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - β.length) / 2) := by
   simpa only [sub_zero] using exists_norm_mixedDeriv_le_of_leibniz 0 P hPspatial hPfrequency
+    HasCompactSpatialSupport (fun hb j ↦ hb.spatialDeriv j) (fun hb j ↦ hb.frequencyDeriv j)
     (fun a b _ ↦ compCoeff a b)
     (fun _ _ hb ↦ contDiff_compCoeff hb) (fun _ _ hb ↦ coordinateDeriv_fst_compCoeff hb)
     (fun _ _ hb ↦ coordinateDeriv_snd_compCoeff hb)
