@@ -43,6 +43,9 @@ Lipschitz test function.
 
 ## Main results
 
+* `TauCeti.integral_bilinear_fderiv_right_eq_neg_left_of_hasCompactSupport`: integration by parts
+  `∫ B f (∂_w g) = -∫ B (∂_w f) g` against a compactly supported `C¹` map `g`, for `f` that is
+  `C¹` near the support of `g`.
 * `TauCeti.integral_bilinear_fderiv_apply_eq_neg_integral_fderiv_fderiv_apply`: integration by
   parts `∫ B (∂_v f) (∂_w g) = -∫ B (∂_w ∂_v f) g` against a compactly supported map `g`, for `f`
   that is `C²` near the support of `g`.
@@ -82,6 +85,34 @@ variable {E V W : Type*}
     [FiniteDimensional ℝ E]
   [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup W] [NormedSpace ℝ W]
   {μ : Measure E} [μ.IsAddHaarMeasure] {u : E → V}
+
+/-- **Integration by parts against a compactly supported map.** For a continuous bilinear map `B`,
+a compactly supported `C¹` map `g` and a map `f` that is `C¹` at every point of the support of `g`,
+integrating by parts in the direction `w` gives `∫ B f (∂_w g) = -∫ B (∂_w f) g`. Nothing is
+assumed about `f` away from the support of `g`. -/
+theorem integral_bilinear_fderiv_right_eq_neg_left_of_hasCompactSupport {V' : Type*}
+    [NormedAddCommGroup V'] [NormedSpace ℝ V'] (B : V →L[ℝ] V' →L[ℝ] W) {f : E → V}
+    {g : E → V'} (hf : ∀ x ∈ tsupport g, ContDiffAt ℝ 1 f x) (hg : ContDiff ℝ 1 g)
+    (hsupp : HasCompactSupport g) (w : E) :
+    ∫ x, B (f x) (fderiv ℝ g x w) ∂μ = -∫ x, B (fderiv ℝ f x w) (g x) ∂μ := by
+  -- Each integrand is continuous on the compact support of `g` and vanishes off it.
+  have hint (F : E → W) (hF : ∀ x ∈ tsupport g, ContinuousAt F x)
+      (h0 : ∀ x ∉ tsupport g, F x = 0) : Integrable F μ :=
+    (ContinuousOn.integrableOn_compact hsupp fun x hx ↦
+      (hF x hx).continuousWithinAt).integrable_of_forall_notMem_eq_zero h0
+  have hdf (x : E) (hx : x ∈ tsupport g) : ContinuousAt (fun y ↦ fderiv ℝ f y w) x :=
+    ((hf x hx).continuousAt_fderiv one_ne_zero).clm_apply continuousAt_const
+  have hdg : Continuous fun y ↦ fderiv ℝ g y w :=
+    (hg.continuous_fderiv one_ne_zero).clm_apply continuous_const
+  exact integral_bilinear_fderiv_right_eq_neg_left_of_integrable
+    (hint _ (fun x hx ↦ (B.continuous.continuousAt.comp (hdf x hx)).clm_apply
+      hg.continuous.continuousAt) fun x hx ↦ by simp [image_eq_zero_of_notMem_tsupport hx])
+    (hint _ (fun x hx ↦ (B.continuous.continuousAt.comp (hf x hx).continuousAt).clm_apply
+      hdg.continuousAt) fun x hx ↦ by simp [fderiv_of_notMem_tsupport ℝ hx])
+    (hint _ (fun x hx ↦ (B.continuous.continuousAt.comp (hf x hx).continuousAt).clm_apply
+      hg.continuous.continuousAt) fun x hx ↦ by simp [image_eq_zero_of_notMem_tsupport hx])
+    (fun x hx ↦ (hf x hx).differentiableAt one_ne_zero)
+    fun x _ ↦ hg.differentiable one_ne_zero x
 
 /-- **Integration by parts against a directional derivative.** For a continuous bilinear map `B`,
 a compactly supported `C¹` map `g` and a map `f` that is `C²` at every point of the support of
