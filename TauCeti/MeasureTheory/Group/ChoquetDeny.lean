@@ -104,7 +104,7 @@ private lemma apply_le_apply_sub_of_mem_support {h : E → ℝ} {C : ℝ} (hC : 
     | zero => exact ⟨z, by simp⟩
     | succ n ih =>
       obtain ⟨t, ht, hzt⟩ := TauCeti.MeasureTheory.exists_mem_sub_div_lt_of_sub_lt_integral
-        (hgint z) (.of_forall fun t ↦ hgM (z - t)) (hgh z ▸ hz) measurableSet_ball hp
+        (hgint z) (.of_forall fun t ↦ hgM (z - t)) (hgh z ▸ hz) hp
       rw [pow_succ, ← mul_assoc, mul_div_cancel_right₀ _ hp.ne'] at hzt
       obtain ⟨w, hw⟩ := ih (z - t) hzt
       have hzst : dist (z - s) (z - t) < r := by
