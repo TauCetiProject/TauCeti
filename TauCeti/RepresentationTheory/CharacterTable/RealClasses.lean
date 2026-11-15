@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.CharacterTable.VirtualCharacter
+import TauCeti.SetTheory.Cardinal.Finite
 
 /-!
 # Real conjugacy classes and inversion-invariant rows of the character table
@@ -137,7 +138,7 @@ end Rows
 
 section Columns
 
-variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [IsAlgClosed k]
+variable {k : Type u} {G : Type v} [Field k] [Group G] [IsAlgClosed k]
   [Invertible (Nat.card G : k)]
 
 open scoped Classical in
@@ -168,7 +169,7 @@ private theorem natCast_card_subtype {α : Type*} [Fintype α] (p : α → Prop)
 
 open ClassFunction
 
-variable (k : Type u) (G : Type v) [Field k] [CharZero k] [Group G] [Finite G] [IsAlgClosed k]
+variable (k : Type u) (G : Type v) [Field k] [CharZero k] [Group G] [IsAlgClosed k]
   [Invertible (Nat.card G : k)]
 
 omit [CharZero k] in
@@ -224,6 +225,7 @@ private theorem sum_ite_forall_characterTable_inv_eq_sum_ite_isRealClass
         (if ∀ C : ConjClasses G, characterTable k G i C⁻¹ = characterTable k G i C then
           (1 : k) else 0) =
       ∑ C : ConjClasses G, (if IsRealClass C then (1 : k) else 0) := by
+  have := finite_of_neZero_natCast_natCard k G
   let _ : Fintype G := Fintype.ofFinite G
   calc ∑ i : Fin (Nat.card (ConjClasses G)),
         (if ∀ C : ConjClasses G, characterTable k G i C⁻¹ = characterTable k G i C then
@@ -256,6 +258,7 @@ theorem card_inversionInvariant_eq_card_realClasses :
         ∀ C : ConjClasses G, characterTable k G i C⁻¹ = characterTable k G i C} =
       Nat.card {C : ConjClasses G // IsRealClass C} := by
   classical
+  have := finite_of_neZero_natCast_natCard k G
   let _ : Fintype (ConjClasses G) := Fintype.ofFinite (ConjClasses G)
   refine Nat.cast_injective (R := k) ?_
   rw [natCast_card_subtype _ k, natCast_card_subtype _ k]
@@ -266,7 +269,7 @@ classes.**
 
 A row of `TauCeti.characterTable ℂ G` is fixed by complex conjugation exactly when it is fixed by
 inverting the class, because conjugating a character value inverts the group element. -/
-theorem card_realValued_eq_card_realClasses (G : Type v) [Group G] [Finite G] :
+theorem card_realValued_eq_card_realClasses (G : Type v) [Group G] [Invertible (Nat.card G : ℂ)] :
     Nat.card {i : Fin (Nat.card (ConjClasses G)) //
         ∀ C : ConjClasses G, (starRingEnd ℂ) (characterTable ℂ G i C) = characterTable ℂ G i C} =
       Nat.card {C : ConjClasses G // IsRealClass C} := by
