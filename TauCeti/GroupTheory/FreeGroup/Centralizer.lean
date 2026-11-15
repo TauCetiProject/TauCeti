@@ -28,8 +28,8 @@ free basis.
 Write the reduced word of `u ≠ 1` as `c ++ v ++ c⁻¹` with `v` cyclically reduced; the reduced
 word of `u ^ m` is then `c ++ vᵐ ++ c⁻¹` for `m ≥ 1`. If the reduced words of large powers of `u`
 and of `u'` agree on a long enough prefix, reading the common prefix past both conjugators shows
-`u ^ |v'| = u' ^ |v|`; since commutation is transitive on nontrivial elements, `u` and `u'`
-commute.
+`u ^ |v'| = u' ^ |v|`; since roots are unique in a free group, commuting with a nonzero power is
+commuting with its base, so `u` and `u'` commute.
 
 ## Main results
 
@@ -205,7 +205,8 @@ private theorem mk_take_toWord_pow_add {u : FreeGroup α} (hu : u ≠ 1) {n j m 
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hc
   obtain ⟨d, rfl⟩ : ∃ d, m = j + d :=
     Nat.exists_eq_add_of_le (Nat.le_of_mul_le_mul_right (by nlinarith) hv)
-  have hw := toWord_pow_add u (show j + d ≠ 0 by omega)
+  have hw := toWord_pow_add u (j := j) (d := d) (by omega)
+  have hw' := toWord_pow_add u (j := d) (d := j) (by omega)
   have hu' : u = mk (conjugator u.toWord) * mk (reduceCyclically u.toWord) *
       (mk (conjugator u.toWord))⁻¹ := by
     rw [inv_mk, mul_mk, mul_mk, conj_conjugator_reduceCyclically, mk_toWord]
@@ -224,9 +225,7 @@ private theorem mk_take_toWord_pow_add {u : FreeGroup α} (hu : u ≠ 1) {n j m 
       List.take_append_of_le_length hk, List.append_assoc]
   have hshort : (u ^ (j + d)).toWord.take (c.length + k) =
       c ++ (List.replicate d v).flatten.take k := by
-    rw [hw, List.take_length_add_append, ← List.append_assoc, ← List.flatten_append,
-      ← List.replicate_add, Nat.add_comm j d, List.replicate_add, List.flatten_append,
-      List.append_assoc, List.take_append_of_le_length hk]
+    rw [Nat.add_comm j d, hw', List.take_length_add_append, List.take_append_of_le_length hk]
   rw [hlong, hshort]
   simp only [← mul_mk, ← pow_mk, hu', conj_pow]
   group
@@ -261,11 +260,8 @@ theorem commute_of_take_toWord_pow_eq {u v : FreeGroup α} {L : ℕ}
   have h₁ := mk_take_toWord_pow_add hu (n := n) (j := q) (m := L) (by omega) (by nlinarith)
   have h₂ := mk_take_toWord_pow_add hv (n := n) (j := p) (m := L) (by omega) (by nlinarith)
   rw [htake (by nlinarith), htake (by omega), Nat.mul_comm q p] at h₁
-  have hpow : u ^ q = v ^ p := mul_right_cancel (h₁.symm.trans h₂)
-  have hq0 : u ^ q ≠ 1 := fun h1 => by
-    have := (IsMulTorsionFree.pow_right_inj hu).1 (h1.trans (pow_zero u).symm)
-    omega
-  exact IsFreeGroup.commute_of_commute hq0 (Commute.self_pow u q)
-    (hpow ▸ (Commute.self_pow v p).symm)
+  rw [← Commute.pow_left_iff hq.ne', ← Commute.pow_right_iff hp.ne',
+    mul_right_cancel (h₁.symm.trans h₂)]
+  exact Commute.refl _
 
 end FreeGroup

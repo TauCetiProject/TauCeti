@@ -19,7 +19,8 @@ cyclically reduced is decidable.
 If the reduced word of `x ≠ 1` is `c ++ v ++ c⁻¹` with `v` cyclically reduced, then the reduced
 word of `x ^ m` is `c ++ vᵐ ++ c⁻¹` for `m ≥ 1`. Its first `L` letters therefore do not depend on
 `m ≥ L` (`FreeGroup.take_toWord_pow_of_le`): they are the first `L` letters of the attracting ray
-`c ++ v ++ v ++ ⋯` of `x`.
+`c ++ v ++ v ++ ⋯` of `x`. In particular, the reduced word of `x ^ m` has at least `m` letters
+(`FreeGroup.length_take_toWord_pow`).
 -/
 
 public section
@@ -115,6 +116,13 @@ theorem take_toWord_pow_of_le (x : FreeGroup α) {L m : ℕ} (h : L ≤ m) :
   rcases Nat.eq_zero_or_pos L with rfl | hL
   · simp
   rw [take_toWord_pow hx h (by omega), take_toWord_pow hx le_rfl (by omega)]
+
+/-- For `x ≠ 1` and `L ≤ m`, the reduced word of `x ^ m` has at least `L` letters. -/
+theorem length_take_toWord_pow {x : FreeGroup α} (hx : x ≠ 1) {L m : ℕ} (h : L ≤ m) :
+    ((x ^ m).toWord.take L).length = L := by
+  rcases Nat.eq_zero_or_pos L with rfl | hL
+  · simp
+  rw [take_toWord_pow hx h (by omega), List.length_take, Nat.min_eq_left (le_length_ray hx L)]
 
 end Prefix
 

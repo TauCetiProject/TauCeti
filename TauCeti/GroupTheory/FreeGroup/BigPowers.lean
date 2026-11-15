@@ -57,28 +57,15 @@ variable {α : Type*} [DecidableEq α]
 
 section PingPong
 
-private theorem le_length_toWord_pow {u : FreeGroup α} (hu : u ≠ 1) (m : ℕ) :
-    m ≤ (u ^ m).toWord.length := by
-  rcases Nat.eq_zero_or_pos m with rfl | hm
-  · simp
-  have h := norm_pow_eq u hm
-  rw [norm] at h
-  nlinarith [length_reduceCyclically_toWord_pos_iff.2 hu]
-
-private theorem length_take_toWord_pow {u : FreeGroup α} (hu : u ≠ 1) (L : ℕ) :
-    ((u ^ L).toWord.take L).length = L := by
-  rw [length_take, Nat.min_eq_left (le_length_toWord_pow hu L)]
-
 /-- The ping-pong step: if the reduced word of `g` does not begin with the first `L` letters of
 the reduced word of `u⁻ᴸ`, then the reduced word of `u ^ e * g` begins with the first `L` letters
 of the reduced word of `uᴸ`, for every `e ≥ 2L`. -/
 private theorem take_toWord_pow_prefix_toWord_pow_mul {u g : FreeGroup α} (hu : u ≠ 1)
     {L e : ℕ} (he : 2 * L ≤ e) (hg : ¬(u⁻¹ ^ L).toWord.take L <+: g.toWord) :
     (u ^ L).toWord.take L <+: (u ^ e * g).toWord := by
-  rcases Nat.eq_zero_or_pos L with rfl | hL
-  · simp at hg
   set x := (u ^ e).toWord
-  have hx : L + L ≤ x.length := (le_length_toWord_pow hu e).trans' (by omega)
+  have hx : L + L ≤ x.length :=
+    (length_take_toWord_pow hu (by omega : L + L ≤ e)).ge.trans (length_take_le' _ _)
   -- The formal inverse of `drop L x` begins with the first `L` letters of the word of `u⁻ᴸ`.
   have hinv : invRev x = invRev (x.drop L) ++ invRev (x.take L) := by
     rw [← invRev_append, take_append_drop]
@@ -93,18 +80,16 @@ private theorem take_toWord_pow_prefix_toWord_pow_mul {u g : FreeGroup α} (hu :
 /-- The ping-pong argument: if for consecutive entries the reduced words of `u_i⁻ᴸ` and
 `u_{i+1}ᴸ` differ in their first `L` letters, then the reduced word of a product of powers with
 exponents at least `2L` begins with the first `L` letters of the reduced word of `u₀ᴸ`. -/
-private theorem take_toWord_pow_prefix_toWord_prod {L : ℕ} (hL : 0 < L) :
+private theorem take_toWord_pow_prefix_toWord_prod {L : ℕ} :
     ∀ {k : ℕ} (u : Fin (k + 1) → FreeGroup α) (e : Fin (k + 1) → ℕ), (∀ i, u i ≠ 1) →
       (∀ i, 2 * L ≤ e i) →
       (∀ i : Fin k, ((u i.castSucc)⁻¹ ^ L).toWord.take L ≠ (u i.succ ^ L).toWord.take L) →
       (u 0 ^ L).toWord.take L <+: (List.ofFn fun i => u i ^ e i).prod.toWord
-  | 0, u, e, hu, he, _ => by
-    simpa using take_toWord_pow_prefix_toWord_pow_mul (g := 1) (hu 0) (he 0) (by
-      rw [toWord_one, prefix_nil, ← length_eq_zero_iff,
-        length_take_toWord_pow (inv_ne_one.2 (hu 0))]
-      omega)
+  | 0, u, e, _, he, _ => by
+    rw [← take_toWord_pow_of_le (u 0) ((Nat.le_mul_of_pos_left L two_pos).trans (he 0))]
+    simpa using take_prefix L (u 0 ^ e 0).toWord
   | k + 1, u, e, hu, he, hne => by
-    have ih := take_toWord_pow_prefix_toWord_prod hL (fun i => u i.succ) (fun i => e i.succ)
+    have ih := take_toWord_pow_prefix_toWord_prod (fun i => u i.succ) (fun i => e i.succ)
       (fun i => hu _) (fun i => he _) (fun i => by
         simp only [Fin.succ_castSucc]
         exact hne i.succ)
@@ -112,8 +97,8 @@ private theorem take_toWord_pow_prefix_toWord_prod {L : ℕ} (hL : 0 < L) :
     refine take_toWord_pow_prefix_toWord_pow_mul (hu 0) (he 0) fun h => hne 0 ?_
     -- Two prefixes of the same word with the same length `L` are equal.
     refine (prefix_of_prefix_length_le h ih ?_).eq_of_length ?_ <;>
-      simp only [length_take_toWord_pow (inv_ne_one.2 (hu _)), length_take_toWord_pow (hu _),
-        le_refl]
+      simp only [length_take_toWord_pow (inv_ne_one.2 (hu _)) le_rfl,
+        length_take_toWord_pow (hu _) le_rfl, le_refl]
 
 end PingPong
 
@@ -132,9 +117,10 @@ theorem isBP : Group.IsBP (FreeGroup α) := by
     ⟨_, fun L hL h => hcomm i (Commute.inv_left_iff.1 (commute_of_take_toWord_pow_eq hL h))⟩
   choose N₀ hN₀ using hsep
   refine ⟨2 * (Finset.univ.sup N₀ + 1), fun e he h1 => ?_⟩
-  have := take_toWord_pow_prefix_toWord_prod (Nat.succ_pos _) u e hu he
+  have := take_toWord_pow_prefix_toWord_prod u e hu he
     (fun i => hN₀ i _ ((Finset.le_sup (Finset.mem_univ i)).trans (Nat.le_succ _)))
-  rw [h1, toWord_one, prefix_nil, ← length_eq_zero_iff, length_take_toWord_pow (hu 0)] at this
+  rw [h1, toWord_one, prefix_nil, ← length_eq_zero_iff, length_take_toWord_pow (hu 0) le_rfl]
+    at this
   omega
 
 end FreeGroup

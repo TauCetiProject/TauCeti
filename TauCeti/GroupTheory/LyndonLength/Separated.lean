@@ -34,8 +34,8 @@ as the stabilization of the cancellation, which is the form given here.
   function along a homomorphism.
 * `TauCeti.LyndonLength.isSeparated_inv_inv_iff`, `TauCeti.LyndonLength.IsSeparated.pow_left`,
   `TauCeti.LyndonLength.IsSeparated.pow_right`: separation under inverses and powers.
-* `TauCeti.LyndonLength.IsFree.isSeparated_inv_right_iff`,
-  `TauCeti.LyndonLength.IsFree.isSeparated_inv_left_iff`: for a free Lyndon length function, an
+* `TauCeti.LyndonLength.IsFree.isSeparated_self_inv_iff`,
+  `TauCeti.LyndonLength.IsFree.isSeparated_inv_self_iff`: for a free Lyndon length function, an
   element and its inverse are separated only when the element is the identity.
 
 ## References
@@ -125,7 +125,7 @@ theorem IsSeparated.pow_right {l : LyndonLength G Λ} {u v : G} (h : l.IsSeparat
 
 /-- For a free Lyndon length function, an element is separated from its inverse only when it is
 the identity. -/
-theorem IsFree.isSeparated_inv_right_iff {l : LyndonLength G Λ} (hl : l.IsFree) {u : G} :
+theorem IsFree.isSeparated_self_inv_iff {l : LyndonLength G Λ} (hl : l.IsFree) {u : G} :
     l.IsSeparated u u⁻¹ ↔ u = 1 := by
   refine ⟨fun ⟨r, hr⟩ => by_contra fun hu => ?_, fun h => h ▸ isSeparated_one_left l _⟩
   -- At `m = n`, the cancellation in `uᵐ u⁻ᵐ` is `l (uᵐ)`, which would be constant for `m ≥ r`.
@@ -138,8 +138,8 @@ theorem IsFree.isSeparated_inv_right_iff {l : LyndonLength G Λ} (hl : l.IsFree)
 
 /-- For a free Lyndon length function, the inverse of an element is separated from the element
 only when the element is the identity. -/
-theorem IsFree.isSeparated_inv_left_iff {l : LyndonLength G Λ} (hl : l.IsFree) {u : G} :
+theorem IsFree.isSeparated_inv_self_iff {l : LyndonLength G Λ} (hl : l.IsFree) {u : G} :
     l.IsSeparated u⁻¹ u ↔ u = 1 := by
-  simpa using hl.isSeparated_inv_right_iff (u := u⁻¹)
+  simpa using hl.isSeparated_self_inv_iff (u := u⁻¹)
 
 end TauCeti.LyndonLength
