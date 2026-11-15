@@ -12,9 +12,7 @@ import TauCeti.Analysis.Complex.CanonicalFactor
 import TauCeti.Analysis.Complex.JensenFormula
 import TauCeti.Analysis.Complex.AbsMax
 import TauCeti.Analysis.Complex.BorelCaratheodory
-import TauCeti.Analysis.Complex.BranchLogRoot
 import TauCeti.Analysis.Complex.DivisorFactorization
-import TauCeti.Analysis.Convex.SimplyConnected
 
 /-!
 # Landau's local logarithmic-derivative lemma
@@ -46,9 +44,9 @@ point are counted by Jensen's formula, and the remaining part of `logDeriv f` is
 `AnalyticOnNhd.exists_eq_finprod_zpow_mul` writes `f = P G`, removing the inner-disc zeros.
 For arbitrary radii, multiply `G` by the numerators of `Complex.canonicalFactor`; their circle
 norm agrees with that of `P`, and their central norm dominates it. The maximum modulus principle
-transfers the relative bound to this product. `TauCeti.exists_differentiableOn_eqOn_exp_comp`
-provides a logarithm, normalized by subtracting its value at `z₀`, and
-`Complex.norm_deriv_le_of_forall_mem_ball_re_le` bounds its derivative.
+transfers the relative bound to this product.
+`Complex.norm_logDeriv_le_of_relative_norm_bound` bounds its logarithmic derivative using
+a normalized holomorphic logarithm and the Borel–Carathéodory derivative estimate.
 `Function.FactorizedRational.logDeriv_eq_finsum` identifies the divisor contribution;
 `AnalyticOnNhd.sum_divisor_le_log_div_log` bounds the reflected-factor error. If `2 r ≤ R`, the
 ordinary factors of `P` already dominate their central values on the outer sphere, and the
@@ -82,56 +80,6 @@ variable {f : ℂ → ℂ} {z₀ : ℂ} {r R : ℝ}
 
 open Complex
 open scoped ComplexConjugate
-
--- The boundary bound and a nonzero value force a nonzero central value, even at radius zero.
-private lemma ne_zero_center_of_boundary_bound {z : ℂ} {M : ℝ}
-    (hf : AnalyticOnNhd ℂ f (closedBall z₀ R))
-    (hM : ∀ w ∈ sphere z₀ R, ‖f w‖ ≤ M * ‖f z₀‖)
-    (hz : z ∈ closedBall z₀ R) (hfz : f z ≠ 0) : f z₀ ≠ 0 := by
-  intro hzero
-  have hbound := Complex.norm_le_of_forall_mem_frontier_norm_le isBounded_closedBall
-    (by apply DifferentiableOn.diffContOnCl
-        simpa only [closure_closedBall] using hf.differentiableOn)
-    (fun w hw ↦ hM w (frontier_closedBall_subset_sphere hw)) (subset_closure hz)
-  rw [hzero, norm_zero, mul_zero] at hbound
-  exact hfz (norm_eq_zero.mp (le_antisymm hbound (norm_nonneg _)))
-
--- Normalize a logarithm at the centre once, then apply the real-part derivative estimate.
-private lemma norm_logDeriv_le_of_relative_norm_bound {B : ℂ → ℂ} {z : ℂ} {M : ℝ}
-    (hB : AnalyticOnNhd ℂ B (closedBall z₀ r))
-    (hB0 : ∀ w ∈ closedBall z₀ r, B w ≠ 0)
-    (hM : ∀ w ∈ closedBall z₀ r, ‖B w‖ ≤ M * ‖B z₀‖)
-    (hz : ‖z - z₀‖ < r) :
-    ‖logDeriv B z‖ ≤ 4 * (r + ‖z - z₀‖) / (r - ‖z - z₀‖) ^ 2 * Real.log M := by
-  have hr : 0 < r := (norm_nonneg _).trans_lt hz
-  have hzb : z ∈ ball z₀ r := by rwa [mem_ball, dist_eq_norm]
-  have hBz₀ : B z₀ ≠ 0 := hB0 z₀ (mem_closedBall_self hr.le)
-  have hMpos : 0 < M := by
-    have hc := hM z₀ (mem_closedBall_self hr.le)
-    have hn := norm_pos_iff.mpr hBz₀
-    nlinarith
-  obtain ⟨L, hLd, hL⟩ := TauCeti.exists_differentiableOn_eqOn_exp_comp (U := ball z₀ r)
-    ((convex_ball z₀ r).isSimplyConnected ⟨z₀, mem_ball_self hr⟩) isOpen_ball
-    ((hB.differentiableOn.mono ball_subset_closedBall).div_const (B z₀))
-    (fun ⟨w, hw, h0⟩ ↦ div_ne_zero (hB0 w (ball_subset_closedBall hw)) hBz₀ h0)
-  let H : ℂ → ℂ := fun w ↦ L w - L z₀
-  have hre (w : ℂ) (hw : w ∈ ball z₀ r) : (H w).re ≤ Real.log M := by
-    have hexp : exp (H w) = B w / B z₀ := by
-      have h₁ := hL hw
-      have h₂ := hL (mem_ball_self hr)
-      simp only [Function.comp_apply, div_self hBz₀] at h₁ h₂
-      simp [H, Complex.exp_sub, h₁, h₂]
-    rw [Real.le_log_iff_exp_le hMpos, ← Complex.norm_exp, hexp, norm_div,
-      div_le_iff₀ (norm_pos_iff.2 hBz₀)]
-    exact hM w (ball_subset_closedBall hw)
-  have hlogB : deriv H z = logDeriv B z := by
-    simp only [H, deriv_sub_const]
-    rw [TauCeti.deriv_eq_logDeriv_of_eqOn_exp_comp isOpen_ball hLd hL hzb]
-    simp only [div_eq_mul_inv]
-    exact logDeriv_mul_const z _ (inv_ne_zero hBz₀)
-  rw [← hlogB]
-  exact Complex.norm_deriv_le_of_forall_mem_ball_re_le (hLd.sub_const _)
-    (sub_self _) hre hz
 
 -- Remove the inner-disc zeros and identify the remaining logarithmic derivative once.
 private lemma exists_factor_logDeriv_eq {z : ℂ}
@@ -256,7 +204,8 @@ private lemma exists_reflected_cofactor {z : ℂ} {M : ℝ}
   have hR : 0 < R := hr.trans hrR
   have hz₀R := mem_closedBall_self hR.le (x := z₀)
   have hzR : z ∈ closedBall z₀ R := by simpa [mem_closedBall, dist_eq_norm] using hz.le.trans hrR.le
-  have hz₀ := ne_zero_center_of_boundary_bound hf hM hzR hfz
+  have hz₀ := DiffContOnCl.ne_zero_center_of_boundary_bound
+    (hf.differentiableOn.diffContOnCl_ball Subset.rfl) hM hzR hfz
   have hM1 : 1 ≤ M :=
     (hf.differentiableOn.diffContOnCl_ball Subset.rfl).one_le_of_forall_mem_sphere_norm_le_mul
       hR hz₀ hM
@@ -316,7 +265,10 @@ theorem norm_logDeriv_sub_finsum_divisor_le {f : ℂ → ℂ} {z₀ z : ℂ} {r 
     ring
   rw [hlogf]
   exact (norm_sub_le _ _).trans
-    ((add_le_add (norm_logDeriv_le_of_relative_norm_bound hB hB0 hBM hz) hQB).trans_eq (by ring))
+    ((add_le_add (Complex.norm_logDeriv_le_of_relative_norm_bound
+      (hB.differentiableOn.mono ball_subset_closedBall)
+      (fun w hw ↦ hB0 w (ball_subset_closedBall hw))
+      (fun w hw ↦ hBM w (ball_subset_closedBall hw)) hz) hQB).trans_eq (by ring))
 
 /-- **Landau's local logarithmic-derivative lemma.** Let `f` be analytic on `closedBall z₀ R`
 with `‖f w‖ ≤ M ‖f z₀‖` on `sphere z₀ R`, and let `2 r ≤ R`. At every `z` with
@@ -362,9 +314,12 @@ theorem norm_logDeriv_sub_finsum_divisor_le_of_two_mul_le (hf : AnalyticOnNhd �
     · rw [← hfPG u (sphere_subset_closedBall hu), ← hfPG z₀ hz₀R]
       exact hM u hu
   rw [hlogf]
-  exact norm_logDeriv_le_of_relative_norm_bound
-    (hG.mono (closedBall_subset_closedBall (by linarith))) hG0
-    (fun w hw ↦ hGle w (closedBall_subset_closedBall (by linarith) hw)) hz
+  exact Complex.norm_logDeriv_le_of_relative_norm_bound
+    (hG.differentiableOn.mono (ball_subset_closedBall.trans
+      (closedBall_subset_closedBall (by linarith))))
+    (fun w hw ↦ hG0 w (ball_subset_closedBall hw))
+    (fun w hw ↦ hGle w (closedBall_subset_closedBall (by linarith)
+      (ball_subset_closedBall hw))) hz
 
 /-- **Landau's local logarithmic-derivative lemma** in the classical normalization. Let `f` be
 analytic on `closedBall z₀ R` with `0 < R` and `‖f w‖ ≤ M ‖f z₀‖` on `sphere z₀ R`.
@@ -377,7 +332,8 @@ theorem norm_logDeriv_sub_finsum_divisor_half_le (hf : AnalyticOnNhd ℂ f (clos
     {z : ℂ} (hz : ‖z - z₀‖ ≤ R / 4) (hfz : f z ≠ 0) :
     ‖logDeriv f z - ∑ᶠ ρ, (divisor f (closedBall z₀ (R / 2)) ρ : ℂ) / (z - ρ)‖ ≤
       48 / R * Real.log M := by
-  have hz₀ := ne_zero_center_of_boundary_bound hf hM
+  have hz₀ := DiffContOnCl.ne_zero_center_of_boundary_bound
+    (hf.differentiableOn.diffContOnCl_ball Subset.rfl) hM
     (by simpa [mem_closedBall, dist_eq_norm] using hz.trans (by linarith : R / 4 ≤ R)) hfz
   have hM1 : 1 ≤ M :=
     (hf.differentiableOn.diffContOnCl_ball Subset.rfl).one_le_of_forall_mem_sphere_norm_le_mul
