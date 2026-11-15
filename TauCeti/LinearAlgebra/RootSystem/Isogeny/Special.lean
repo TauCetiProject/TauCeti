@@ -97,7 +97,8 @@ These are the special isogenies in characteristics two and three at the level of
 group-scheme isogeny `τ` is built from them. A `TauCeti.SuzukiReeIndex` selects `τ_X` and takes
 odd powers of it, with its exponent convention stated against
 `TauCeti.DynkinType.IsLongSimpleRoot` and the length permutations pinned in
-`TauCeti/LinearAlgebra/RootSystem/DiagramPermutations.lean`. The three types here are all there
+`TauCeti/LinearAlgebra/RootSystem/DiagramPermutations/Basic.lean`.
+The three types here are all there
 is, since `TauCeti.DynkinType.exists_isSpecialNodePerm_iff` shows that no other valid Dynkin type
 admits a length-exchanging node permutation at all.
 
