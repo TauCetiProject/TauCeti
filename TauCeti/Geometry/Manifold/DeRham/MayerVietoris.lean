@@ -74,6 +74,11 @@ the glued form restricting to `dα` and `dβ` is the differential of a function 
 * `TauCeti.deRhamCohomology.mayerVietorisδ_const` and
   `TauCeti.deRhamCohomology.ker_mayerVietorisδ_zero`: the connecting map kills constant classes,
   and in degree zero, for preconnected `U` and `V`, nothing else.
+* `TauCeti.deRhamCohomology.exact_mayerVietoris₁`,
+  `TauCeti.deRhamCohomology.exact_mayerVietoris₂`,
+  `TauCeti.deRhamCohomology.exact_mayerVietoris₃`, and
+  `TauCeti.deRhamCohomology.injective_mayerVietoris_zero`: exactness of the Mayer–Vietoris long
+  exact sequence of de Rham cohomology in unbundled `Function.Exact` form.
 
 ## References
 
@@ -721,6 +726,60 @@ theorem ker_mayerVietorisδ_zero (U V : Opens M) [PreconnectedSpace U] [Preconne
     mpullback_inclusion_apply]
   -- Both inclusions of `x` into `U ⊔ V` are the same point, so the values of `g` cancel.
   exact sub_sub_sub_cancel_right _ _ _
+
+/-- Exactness of the Mayer–Vietoris sequence at `H^{k+1}(U ⊔ V)`. -/
+theorem exact_mayerVietoris₁ (U V : Opens M) (k : ℕ) :
+    Function.Exact (mayerVietorisδ I U V k)
+      ((map (I := I) (I' := I) (Opens.inclusion (le_sup_left : U ≤ U ⊔ V))
+          (contMDiff_inclusion _) (k + 1)).prod
+        (map (I := I) (I' := I) (Opens.inclusion (le_sup_right : V ≤ U ⊔ V))
+          (contMDiff_inclusion _) (k + 1))) := by
+  have h := HomologicalComplex.moduleCat_biprod_homology_exact₁
+    (mayerVietorisShortComplex_shortExact (I := I) U V) k (k + 1) rfl
+  rwa [deRhamComplex.homologyMap_map, deRhamComplex.homologyMap_map, ModuleCat.hom_ofHom,
+    ModuleCat.hom_ofHom] at h
+
+/-- Exactness of the Mayer–Vietoris sequence at `H^k(U) × H^k(V)`. -/
+theorem exact_mayerVietoris₂ (U V : Opens M) (k : ℕ) :
+    Function.Exact
+      ((map (I := I) (I' := I) (Opens.inclusion (le_sup_left : U ≤ U ⊔ V))
+          (contMDiff_inclusion _) k).prod
+        (map (I := I) (I' := I) (Opens.inclusion (le_sup_right : V ≤ U ⊔ V))
+          (contMDiff_inclusion _) k))
+      ((map (I := I) (I' := I) (Opens.inclusion (inf_le_left : U ⊓ V ≤ U))
+          (contMDiff_inclusion _) k).coprod
+        (-map (I := I) (I' := I) (Opens.inclusion (inf_le_right : U ⊓ V ≤ V))
+          (contMDiff_inclusion _) k)) := by
+  simpa only [deRhamComplex.homologyMap_map, HomologicalComplex.homologyMap_neg, ModuleCat.hom_neg,
+    ModuleCat.hom_ofHom] using
+    HomologicalComplex.moduleCat_biprod_homology_exact₂
+      (mayerVietorisShortComplex_shortExact (I := I) U V) k
+
+/-- Exactness of the Mayer–Vietoris sequence at `H^k(U ⊓ V)`. -/
+theorem exact_mayerVietoris₃ (U V : Opens M) (k : ℕ) :
+    Function.Exact
+      ((map (I := I) (I' := I) (Opens.inclusion (inf_le_left : U ⊓ V ≤ U))
+          (contMDiff_inclusion _) k).coprod
+        (-map (I := I) (I' := I) (Opens.inclusion (inf_le_right : U ⊓ V ≤ V))
+          (contMDiff_inclusion _) k))
+      (mayerVietorisδ I U V k) := by
+  have h := HomologicalComplex.moduleCat_biprod_homology_exact₃
+    (mayerVietorisShortComplex_shortExact (I := I) U V) k (k + 1) rfl
+  rwa [deRhamComplex.homologyMap_map, HomologicalComplex.homologyMap_neg,
+    deRhamComplex.homologyMap_map, ModuleCat.hom_neg, ModuleCat.hom_ofHom,
+    ModuleCat.hom_ofHom] at h
+
+/-- Injectivity of the Mayer–Vietoris restriction map `H⁰(U ⊔ V) → H⁰(U) × H⁰(V)`. -/
+theorem injective_mayerVietoris_zero (U V : Opens M) :
+    Function.Injective
+      ((map (I := I) (I' := I) (Opens.inclusion (le_sup_left : U ≤ U ⊔ V))
+          (contMDiff_inclusion _) 0).prod
+        (map (I := I) (I' := I) (Opens.inclusion (le_sup_right : V ≤ U ⊔ V))
+          (contMDiff_inclusion _) 0)) := by
+  simpa only [deRhamComplex.homologyMap_map, ModuleCat.hom_ofHom] using
+    HomologicalComplex.moduleCat_biprod_homology_injective_of_not_rel
+      (mayerVietorisShortComplex_shortExact (I := I) U V) 0 fun i (h : i + 1 = 0) ↦
+        Nat.succ_ne_zero i h
 
 end deRhamCohomology
 
