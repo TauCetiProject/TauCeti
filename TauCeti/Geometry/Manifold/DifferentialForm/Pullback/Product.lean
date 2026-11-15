@@ -98,6 +98,7 @@ theorem eq_mpullback_snd_of_interior_eq_zero {G : Type*} [TopologicalSpace G]
 /-- Let `G` be a manifold modelled on `ℝ`. The pullback of a form on `M` along the second
 projection `G × M → M` has vanishing contraction with `∂ₛ = (1, 0)`, since the projection kills
 `∂ₛ`. -/
+@[simp]
 theorem interior_mpullback_snd_eq_zero {G : Type*} [TopologicalSpace G] [ChartedSpace ℝ G]
     (β : RoughForm I M F (k + 1)) :
     (mpullback (𝓘(ℝ, ℝ).prod I) I (Prod.snd : G × M → M) β).interior
