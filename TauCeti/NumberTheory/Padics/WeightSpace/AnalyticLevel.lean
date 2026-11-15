@@ -34,8 +34,8 @@ multiplicative ultrametric norm the following are equivalent:
 The first equivalence is `TauCeti.norm_one_add_pow_sub_one_lt_iff` applied to `t = T_κ`, since
 `κ(γ ^ (p ^ j)) = (1 + T_κ) ^ (p ^ j)`; the second is Amice's criterion
 `TauCeti.AnalyticStage.exists_eval_eq_addChar_iff` for additive characters. The results here are
-stated in the logarithmic coordinate; the expansion of `κ` itself on the discs `a + pʰℤ_p` of
-`ℤ_pˣ` is not constructed in this file.
+stated in the logarithmic coordinate; the expansion of `κ` itself on the discs `a + pʰℤ_p` is
+constructed in `TauCeti.NumberTheory.Padics.WeightSpace.DiscExpansion`.
 
 For field-valued weights, `‖T_κ‖ < 1` and `r_j → 1`, so every weight satisfies these conditions at
 all large levels (`TauCeti.WeightSpace.eventually_norm_coord_lt_amiceRadius`). For locally algebraic
