@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.BaseChange
+public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.LowRank
 public import TauCeti.LinearAlgebra.QuadraticForm.Witt.Clifford
 public import TauCeti.LinearAlgebra.QuadraticForm.Witt.FundamentalIdeal
 public import TauCeti.RingTheory.Ideal.Operations
@@ -15,6 +16,9 @@ public import TauCeti.RingTheory.Ideal.Operations
 
 Scalar extension preserves the hyperbolic class, so the Witt index cannot decrease under a field
 extension.  It is unchanged when the anisotropic part remains anisotropic after base change.
+That hypothesis cannot be dropped: a diagonal plane `⟨a, b⟩` with `-ab` a square in `L` but not in
+`K` is anisotropic over `K` and hyperbolic over `L`, so its anisotropic part does not commute with
+base change.
 It also induces ring homomorphisms on Witt-Grothendieck and Witt rings that preserve dimension
 modulo two and every power of the fundamental ideal, and that push the signed discriminant and the
 Clifford invariant of a Witt class forward to the extension field.
@@ -25,6 +29,8 @@ Clifford invariant of a Witt class forward to the extension field.
 * `TauCeti.RegularFormClass.wittIndex_le_wittIndex_baseChange`: the Witt index cannot decrease.
 * `TauCeti.RegularFormClass.wittIndex_baseChange_eq_iff`: the index is unchanged exactly when the
   extended anisotropic part is anisotropic.
+* `TauCeti.RegularFormClass.anisotropicPart_baseChange_mk_binary_ne`: the anisotropic part of a
+  plane that becomes hyperbolic does not commute with base change.
 * `QuadraticForm.wittIndex_le_wittIndex_baseChange`: the corresponding inequality for a regular
   quadratic form.
 * `QuadraticForm.wittIndex_baseChange_eq_iff`: the corresponding equivalence for a regular
@@ -112,6 +118,33 @@ theorem RegularFormClass.wittIndex_baseChange_eq_iff (c : RegularFormClass K) :
   · intro ha
     have hzero := RegularFormClass.wittIndex_eq_zero_iff.mpr ha
     omega
+
+section Binary
+
+variable [Invertible (2 : L)]
+
+/-- **The anisotropic part does not commute with base change in general.** If `-ab` is not a
+square in `K` but becomes one in `L`, the extension of the anisotropic plane `⟨a, b⟩` is
+hyperbolic: its anisotropic part is zero, while the extension of the anisotropic part of `⟨a, b⟩`
+is a plane. The anisotropy hypothesis of `TauCeti.RegularFormClass.anisotropicPart_baseChange` is
+therefore needed. -/
+theorem RegularFormClass.anisotropicPart_baseChange_mk_binary_ne {a b : Kˣ}
+    (hK : ¬IsSquare (-(a * b)))
+    (hL : IsSquare (-(algebraMap K L (a * b)))) :
+    RegularFormClass.anisotropicPart
+        (RegularFormClass.baseChange L (Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩)) ≠
+      RegularFormClass.baseChange L
+        (RegularFormClass.anisotropicPart (Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩)) := by
+  replace hL : IsSquare
+      (-(Units.map (algebraMap K L).toMonoidHom a * Units.map (algebraMap K L).toMonoidHom b)) :=
+    Units.isSquare_coe_iff.mp (by simpa using hL)
+  rw [RegularFormClass.anisotropicPart_mk_binary_of_not_isSquare hK,
+    RegularFormClass.baseChange_mk_binary,
+    RegularFormClass.anisotropicPart_mk_binary_of_isSquare hL]
+  intro h
+  simpa using congrArg RegularFormClass.rank h
+
+end Binary
 
 end TauCeti
 

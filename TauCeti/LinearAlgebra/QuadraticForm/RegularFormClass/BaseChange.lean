@@ -52,6 +52,7 @@ extension, in particular to the completions of a number field.
   identity, and iterated scalar extension along a tower is scalar extension along the composite.
 * `TauCeti.RegularFormClass.baseChange_hyperbolicClass`: scalar extension preserves the hyperbolic
   class.
+* `TauCeti.RegularFormClass.baseChange_mk_binary`: scalar extension of a diagonal plane.
 * `QuadraticForm.formClass_baseChange`: the class of an extended form is the extension of its
   class.
 * `QuadraticForm.discr_formClass_baseChange_eq_zero`: a form acquires square discriminant over a
@@ -275,6 +276,17 @@ theorem RegularFormClass.baseChange_mk (p : RegularFormPresentation K) :
     RegularFormClass.baseChange L (Quotient.mk (regularFormSetoid K) p) =
       Quotient.mk (regularFormSetoid L) (RegularFormPresentation.baseChange L p) :=
   (rfl)
+
+variable (L) in
+/-- Scalar extension of a diagonal plane `⟨a, b⟩` is the plane on the images of `a` and `b`. -/
+theorem RegularFormClass.baseChange_mk_binary (a b : Kˣ) :
+    RegularFormClass.baseChange L (Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩) =
+      Quotient.mk (regularFormSetoid L)
+        ⟨2, ![Units.map (algebraMap K L).toMonoidHom a,
+          Units.map (algebraMap K L).toMonoidHom b]⟩ := by
+  rw [RegularFormClass.baseChange_mk]
+  refine congrArg _ (RegularFormPresentation.ext rfl fun i ↦ ?_)
+  fin_cases i <;> rfl
 
 section DiagonalDescent
 

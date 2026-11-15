@@ -23,7 +23,9 @@ regular forms on finite-dimensional spaces of the same dimension. Use either the
 equality of the rank, discriminant, and Hasse invariant, together with the bound `n ≤ 3`.
 
 The file also records isotropy in rank two: a regular binary form is isotropic exactly when its
-discriminant is the class of `-1`, that is, exactly when it is a hyperbolic plane. Through the
+discriminant is the class of `-1`, that is, exactly when it is a hyperbolic plane. For a diagonal
+plane `⟨a, b⟩` this reads: `⟨a, b⟩` is hyperbolic, with Witt index `1` and zero anisotropic part,
+when `-ab` is a square, and anisotropic, with Witt index `0`, otherwise. Through the
 isotropy of `⟨-c⟩ ⊥ q`, this describes the units represented by a form `q` of rank one: they are
 the units in its discriminant square class.
 
@@ -40,6 +42,14 @@ the units in its discriminant square class.
 * `TauCeti.RegularFormClass.not_anisotropic_iff_discr_eq_neg_one_of_rank_eq_two`,
   `QuadraticForm.not_anisotropic_iff_discr_eq_neg_one_of_finrank_eq_two`: a regular binary form
   is isotropic exactly when its discriminant is the class of `-1`.
+* `TauCeti.RegularFormClass.anisotropic_mk_binary_iff`,
+  `TauCeti.RegularFormClass.mk_binary_eq_hyperbolicClass_iff`: the plane `⟨a, b⟩` is anisotropic
+  exactly when `-ab` is not a square, and hyperbolic exactly when it is.
+* `TauCeti.RegularFormClass.wittIndex_mk_binary_of_isSquare`,
+  `TauCeti.RegularFormClass.wittIndex_mk_binary_of_not_isSquare`,
+  `TauCeti.RegularFormClass.anisotropicPart_mk_binary_of_isSquare`,
+  `TauCeti.RegularFormClass.anisotropicPart_mk_binary_of_not_isSquare`: the Witt index and the
+  anisotropic part of `⟨a, b⟩`.
 * `QuadraticForm.mem_unitValueSet_iff_squareClass_eq_discr_of_finrank_eq_one`: a regular form of
   dimension one represents exactly the units in its discriminant square class.
 
@@ -139,6 +149,44 @@ theorem not_anisotropic_iff_discr_eq_neg_one_of_rank_eq_two {x : RegularFormClas
     exact discr_hyperbolicClass
   · rw [eq_hyperbolicClass_of_rank_eq_two_of_discr_eq_neg_one hx h]
     simpa using not_anisotropic_hyperbolicClass_add (0 : RegularFormClass K)
+
+/-- **Isotropy of a diagonal plane.** The class of `⟨a, b⟩` is anisotropic exactly when `-ab` is
+not a square. -/
+theorem anisotropic_mk_binary_iff (a b : Kˣ) :
+    Anisotropic (Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩) ↔ ¬IsSquare (-(a * b)) := by
+  rw [← not_iff_not, not_not, not_anisotropic_iff_discr_eq_neg_one_of_rank_eq_two (rank_mk _),
+    discr_mk, squareClass_eq_iff_isSquare_mul]
+  simp [Fin.prod_univ_two]
+
+/-- **Hyperbolicity of a diagonal plane.** The class of `⟨a, b⟩` is the hyperbolic class exactly
+when `-ab` is a square. -/
+theorem mk_binary_eq_hyperbolicClass_iff (a b : Kˣ) :
+    Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩ = hyperbolicClass K ↔ IsSquare (-(a * b)) := by
+  rw [← not_not (a := IsSquare _), ← anisotropic_mk_binary_iff]
+  refine ⟨fun h hani => ?_, eq_hyperbolicClass_of_rank_eq_two_of_not_anisotropic (rank_mk _)⟩
+  rw [h] at hani
+  exact not_anisotropic_hyperbolicClass_add 0 (by rwa [add_zero])
+
+/-- The Witt index of `⟨a, b⟩` is `1` when `-ab` is a square. -/
+theorem wittIndex_mk_binary_of_isSquare {a b : Kˣ} (h : IsSquare (-(a * b))) :
+    wittIndex (Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩) = 1 := by
+  rw [(mk_binary_eq_hyperbolicClass_iff a b).mpr h, wittIndex_hyperbolicClass]
+
+/-- The anisotropic part of `⟨a, b⟩` is zero when `-ab` is a square. -/
+theorem anisotropicPart_mk_binary_of_isSquare {a b : Kˣ} (h : IsSquare (-(a * b))) :
+    anisotropicPart (Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩) = 0 := by
+  rw [(mk_binary_eq_hyperbolicClass_iff a b).mpr h, anisotropicPart_hyperbolicClass]
+
+/-- The Witt index of `⟨a, b⟩` is `0` when `-ab` is not a square. -/
+theorem wittIndex_mk_binary_of_not_isSquare {a b : Kˣ} (h : ¬IsSquare (-(a * b))) :
+    wittIndex (Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩) = 0 :=
+  wittIndex_eq_zero_iff.mpr ((anisotropic_mk_binary_iff a b).mpr h)
+
+/-- The class of `⟨a, b⟩` is its own anisotropic part when `-ab` is not a square. -/
+theorem anisotropicPart_mk_binary_of_not_isSquare {a b : Kˣ} (h : ¬IsSquare (-(a * b))) :
+    anisotropicPart (Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩) =
+      Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩ :=
+  anisotropicPart_eq_self ((anisotropic_mk_binary_iff a b).mpr h)
 
 end RegularFormClass
 
