@@ -46,7 +46,8 @@ decays rapidly, and the remaining terms are controlled by the rapid decay of `a_
   `Distribution.localFourier_eq_complexPairing_mul_modulate`: the localized Fourier transform as
   the pairing with a modulated test function.
 * `Distribution.exists_norm_localFourier_le`: the localized Fourier transform of a distribution
-  grows at most polynomially.
+  grows at most polynomially, with a degree that is uniform over the cutoffs supported in a fixed
+  compact set (`Distribution.exists_forall_norm_localFourier_le`).
 * `Distribution.exists_hasSum_localFourier_of_eq_mul`: the localized Fourier transform with
   cutoff `φ g` is a rapidly decreasing superposition of translates of the one with cutoff `φ`.
 * `Distribution.exists_one_add_norm_pow_mul_norm_localFourier_le_of_eq_mul`: decay of each order
@@ -55,6 +56,10 @@ decays rapidly, and the remaining terms are controlled by the rapid decay of `a_
 * `Distribution.IsMicrolocallySmoothAt.exists_nhds_cone`: at a point of microlocal smoothness
   there are a neighbourhood `U` of `x` and an open cone `Γ` around `ξ` such that every cutoff
   supported in `U` has localized Fourier transform rapidly decreasing on `Γ`.
+* `Distribution.exists_isOpen_cone_forall_decay_of_isCompact`: the same holds uniformly over a
+  compact set `K` of points of microlocal smoothness: there is an open `W ⊇ K` such that it holds
+  for every cutoff supported in `W ∪ (dsupport T)ᶜ`, that is, whose support meets the support of
+  `T` only inside `W`.
 * `Distribution.IsMicrolocallySmoothAt.add`, `Distribution.waveFrontSet_add_subset`,
   `Distribution.waveFrontSet_sub_subset`, `Distribution.waveFrontSet_sum_subset`: the wave front
   set of a sum lies in the union of the wave front sets.
@@ -121,25 +126,39 @@ theorem localFourier_eq_complexPairing_mul_modulate (T : 𝓓'(Ω, ℂ)) {φ ψ 
   ring
 
 omit [FiniteDimensional ℝ E] in
-/-- **Polynomial growth of the localized Fourier transform.** For a complex distribution `T` and a
-complex test function `φ`, the localized Fourier transform `η ↦ T (φ e_η)` is bounded by
-`C (1 + ‖η‖) ^ k` for some `C` and `k`. -/
-theorem exists_norm_localFourier_le (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) :
-    ∃ (C : ℝ) (k : ℕ), ∀ η, ‖T.localFourier φ η‖ ≤ C * (1 + ‖η‖) ^ k := by
-  let K : Compacts E := ⟨tsupport φ, φ.hasCompactSupport⟩
-  have hKΩ : (K : Set E) ⊆ Ω := φ.tsupport_subset
-  let φK : 𝓓_{K}(E, ℂ) :=
-    ContDiffMapSupportedIn.of_support_subset φ.contDiff (subset_tsupport _)
+/-- **Polynomial growth of the localized Fourier transform, uniformly in the cutoff.** For a
+complex distribution `T` and a compact set `K ⊆ Ω` there is a degree `k` such that for every
+complex test function `φ` supported in `K`, the localized Fourier transform `η ↦ T (φ e_η)` is
+bounded by `C (1 + ‖η‖) ^ k` for some `C`. -/
+theorem exists_forall_norm_localFourier_le (T : 𝓓'(Ω, ℂ)) {K : Compacts E}
+    (hKΩ : (K : Set E) ⊆ Ω) :
+    ∃ k : ℕ, ∀ φ : 𝓓(Ω, ℂ), tsupport φ ⊆ K →
+      ∃ C : ℝ, ∀ η, ‖T.localFourier φ η‖ ≤ C * (1 + ‖η‖) ^ k := by
   let Λ : 𝓓_{K}(E, ℂ) →L[ℂ] ℂ := T.complexPairing ∘L ofSupportedInCLM ℂ hKΩ
-  -- The modulations of `φ` grow polynomially in every continuous seminorm.
-  obtain ⟨C, k, hC⟩ := φK.exists_seminorm_modulate_le ((normSeminorm ℂ ℂ).comp Λ.toLinearMap)
-    (continuous_norm.comp Λ.continuous)
-  refine ⟨C, k, fun η ↦ ?_⟩
+  -- The modulations of a cutoff grow polynomially in every continuous seminorm.
+  obtain ⟨k, hk⟩ := ContDiffMapSupportedIn.exists_seminorm_modulate_le
+    ((normSeminorm ℂ ℂ).comp Λ.toLinearMap) (continuous_norm.comp Λ.continuous)
+  refine ⟨k, fun φ hφ ↦ ?_⟩
+  let φK : 𝓓_{K}(E, ℂ) :=
+    ContDiffMapSupportedIn.of_support_subset φ.contDiff ((subset_tsupport _).trans hφ)
+  obtain ⟨C, hC⟩ := hk φK
+  refine ⟨C, fun η ↦ ?_⟩
   have h : T.localFourier φ η = Λ (φK.modulate (-η)) := by
     rw [ContinuousLinearMap.comp_apply, coe_ofSupportedInCLM]
     exact localFourier_eq_complexPairing_modulate T hKΩ
       (fun _ ↦ by simp [φK, ContDiffMapSupportedIn.coe_of_support_subset]) η
   simpa [h] using hC (-η)
+
+omit [FiniteDimensional ℝ E] in
+/-- **Polynomial growth of the localized Fourier transform.** For a complex distribution `T` and a
+complex test function `φ`, the localized Fourier transform `η ↦ T (φ e_η)` is bounded by
+`C (1 + ‖η‖) ^ k` for some `C` and `k`. -/
+theorem exists_norm_localFourier_le (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) :
+    ∃ (C : ℝ) (k : ℕ), ∀ η, ‖T.localFourier φ η‖ ≤ C * (1 + ‖η‖) ^ k := by
+  obtain ⟨k, hk⟩ := exists_forall_norm_localFourier_le T
+    (K := ⟨tsupport φ, φ.hasCompactSupport⟩) φ.tsupport_subset
+  obtain ⟨C, hC⟩ := hk φ subset_rfl
+  exact ⟨C, k, hC⟩
 
 /-- **The localized Fourier transform of a smooth multiple.** If the cutoff `ψ` is `φ g` with `g`
 smooth on `Ω`, then there are a subgroup `L` of `E` and rapidly decreasing coefficients `a : L → ℂ`
@@ -257,6 +276,56 @@ theorem IsMicrolocallySmoothAt.exists_nhds_cone {T : 𝓓'(Ω, ℂ)} {x ξ : E}
   obtain ⟨g, hg, hψg⟩ := hUφ ψ hψ
   exact exists_one_add_norm_pow_mul_norm_localFourier_le_of_eq_mul hg.contDiffOn hψg hc hΓ'
     (hdecay N)
+
+/-- **Uniform decay over a compact set.** If `T` is microlocally smooth at `(x, ξ)` for every `x` in
+a compact set `K`, then there are an open set `W` containing `K` and an open cone `Γ` containing
+`ξ` such that every cutoff `ψ` supported in `W ∪ (dsupport T)ᶜ`, that is, whose support meets the
+support of `T` only inside `W`, has localized Fourier transform rapidly decreasing on `Γ`. -/
+theorem exists_isOpen_cone_forall_decay_of_isCompact {T : 𝓓'(Ω, ℂ)} {K : Set E} {ξ : E}
+    (hK : IsCompact K) (h : ∀ x ∈ K, T.IsMicrolocallySmoothAt x ξ) :
+    ∃ W : Set E, IsOpen W ∧ K ⊆ W ∧ ∃ Γ : Set E, IsOpen Γ ∧ ξ ∈ Γ ∧
+      (∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) ∧
+      ∀ ψ : 𝓓(Ω, ℂ), tsupport ψ ⊆ W ∪ (dsupport T)ᶜ →
+        ∀ N : ℕ, ∃ C, ∀ η ∈ Γ, (1 + ‖η‖) ^ N * ‖T.localFourier ψ η‖ ≤ C := by
+  -- Finitely many of the neighbourhoods given by `exists_nhds_cone` cover `K`.
+  choose U hU Γ hΓ hξΓ hcone hdecay using fun x : K ↦ (h x x.2).exists_nhds_cone
+  obtain ⟨t, ht⟩ := hK.elim_finite_subcover (fun x : K ↦ interior (U x))
+    (fun _ ↦ isOpen_interior) fun x hx ↦
+      mem_iUnion.2 ⟨⟨x, hx⟩, mem_interior_iff_mem_nhds.2 (hU ⟨x, hx⟩)⟩
+  refine ⟨⋃ x ∈ t, interior (U x), isOpen_biUnion fun _ _ ↦ isOpen_interior, ht, ⋂ x ∈ t, Γ x,
+    isOpen_biInter_finset fun x _ ↦ hΓ x, mem_iInter₂.2 fun x _ ↦ hξΓ x,
+    fun s hs η hη ↦ mem_iInter₂.2 fun x hx ↦ hcone x s hs η (mem_iInter₂.1 hη x hx),
+    fun ψ hψ N ↦ ?_⟩
+  -- Split `ψ` into pieces supported in these neighbourhoods and one piece off the support of `T`.
+  let V : Option t → Set E := fun i ↦ i.elim (dsupport T)ᶜ fun x ↦ interior (U x)
+  have hV : ∀ i, IsOpen (V i) := by
+    rintro (_ | x)
+    exacts [isClosed_dsupport.isOpen_compl, isOpen_interior]
+  have hcover : tsupport ψ ⊆ ⋃ i, V i := fun z hz ↦ by
+    rcases hψ hz with hz | hz
+    · obtain ⟨x, hx, hzx⟩ := mem_iUnion₂.1 hz
+      exact mem_iUnion.2 ⟨some ⟨x, hx⟩, hzx⟩
+    · exact mem_iUnion.2 ⟨none, hz⟩
+  obtain ⟨s, ψs, hψs, hsum, -⟩ := ψ.exists_sum_subordinate V hV hcover
+  have hpiece (i : s) :
+      ∃ C, ∀ η ∈ ⋂ x ∈ t, Γ x, (1 + ‖η‖) ^ N * ‖T.localFourier (ψs i) η‖ ≤ C := by
+    obtain ⟨i, hi⟩ := i
+    cases i with
+    | none => exact ⟨0, fun η _ ↦ by
+        simp [localFourier_eq_zero_of_disjoint_dsupport
+          (disjoint_left.2 fun _ hz ↦ hψs ⟨none, hi⟩ hz)]⟩
+    | some x =>
+      obtain ⟨C, hC⟩ := hdecay x (ψs ⟨some x, hi⟩) ((hψs _).trans interior_subset) N
+      exact ⟨C, fun η hη ↦ hC η (mem_iInter₂.1 hη x x.2)⟩
+  choose C hC using hpiece
+  refine ⟨∑ i, C i, fun η hη ↦ ?_⟩
+  rw [← hsum, localFourier_sum_cutoff]
+  calc (1 + ‖η‖) ^ N * ‖∑ i, T.localFourier (ψs i) η‖
+      ≤ ∑ i, (1 + ‖η‖) ^ N * ‖T.localFourier (ψs i) η‖ := by
+        rw [← Finset.mul_sum]
+        gcongr
+        exact norm_sum_le _ _
+    _ ≤ ∑ i, C i := Finset.sum_le_sum fun i _ ↦ hC i η hη
 
 /-- The sum of two distributions microlocally smooth at `(x, ξ)` is microlocally smooth there. -/
 theorem IsMicrolocallySmoothAt.add {S T : 𝓓'(Ω, ℂ)} {x ξ : E}
