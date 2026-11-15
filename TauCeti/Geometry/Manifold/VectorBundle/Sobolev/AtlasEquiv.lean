@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Chart
+public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ContMDiffSection
 import Mathlib.Analysis.Normed.Operator.Banach
 import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Measure
 
@@ -54,12 +55,12 @@ gives the corresponding transfer property and hence the atlas independence at th
 
 * `TauCeti.SobolevSection.chartValueL_changeAtlas_ae`: the chart data of `changeAtlas h w` are the
   readings in `A'` of any section of `w`.
-* `TauCeti.SobolevSection.exists_norm_le`: when sections transfer in both directions the norms of
-  the two atlases are equivalent.
+* `TauCeti.SobolevSection.exists_norm_changeAtlas_le`: when sections transfer in both directions the
+  norms of the two atlases are equivalent.
 * `TauCeti.SobolevSection.transfersTo_of_le_one`: the transfer property for surfaces at orders
   `k ≤ 1`.
-* `TauCeti.SobolevSection.exists_norm_le_of_le_one`: for surfaces and orders `k ≤ 1` the norms of
-  two finite bundle atlases are equivalent.
+* `TauCeti.SobolevSection.exists_norm_changeAtlas_le_of_le_one`: for surfaces and orders `k ≤ 1`
+  the norms of two finite bundle atlases are equivalent.
 
 ## References
 
@@ -148,13 +149,15 @@ private def changeAtlasₗ (h : TransfersTo A A' μ p k) :
   map_add' w w' := by
     obtain ⟨s, hs⟩ := exists_ae_eq_coord w
     obtain ⟨t, ht⟩ := exists_ae_eq_coord w'
-    exact eq_of_ae_eq_coord (chartValueL_changeAtlasAux_ae h (chartValueL_add_ae hs ht))
-      (chartValueL_add_ae (chartValueL_changeAtlasAux_ae h hs)
-        (chartValueL_changeAtlasAux_ae h ht))
+    exact eq_of_ae_eq_coord
+      (chartValueL_changeAtlasAux_ae h fun i ↦ chartValueL_add_ae (hs i) (ht i))
+      fun i' ↦ chartValueL_add_ae (chartValueL_changeAtlasAux_ae h hs i')
+        (chartValueL_changeAtlasAux_ae h ht i')
   map_smul' c w := by
     obtain ⟨s, hs⟩ := exists_ae_eq_coord w
-    exact eq_of_ae_eq_coord (chartValueL_changeAtlasAux_ae h (chartValueL_smul_ae c hs))
-      (chartValueL_smul_ae c (chartValueL_changeAtlasAux_ae h hs))
+    exact eq_of_ae_eq_coord
+      (chartValueL_changeAtlasAux_ae h fun i ↦ chartValueL_smul_ae c (hs i))
+      fun i' ↦ chartValueL_smul_ae c (chartValueL_changeAtlasAux_ae h hs i')
 
 /-- **The graph of the change of atlas is closed.** If `w m → w` in `W^{k,p}(V)` for `A` and the
 corresponding elements for `A'` converge to `v`, then in each chart of `A'` the chart data of `v`
@@ -224,8 +227,8 @@ theorem chartValueL_changeAtlas_ae (h : TransfersTo A A' μ p k) {w : SobolevSec
       =ᵐ[μ.restrict (A'.image i')] A'.coord i' s :=
   chartValueL_changeAtlasAux_ae h hs i'
 
-/-- **Characterization of the change of atlas.** An element `w'` for `A'` is the image of `w`
-exactly when its chart data are the readings of a section of `w`. -/
+/-- **Identification of the change of atlas.** An element `w'` for `A'` whose chart data are the
+readings in the charts of `A'` of a section of `w` is the image of `w`. -/
 theorem changeAtlas_eq_of_ae_eq_coord (h : TransfersTo A A' μ p k) {w : SobolevSection A μ p k}
     {w' : SobolevSection A' μ p k} {s : ∀ x, V x}
     (hs : ∀ i, A.sectionChartData.chartValueL μ p k i w =ᵐ[μ.restrict (A.image i)] A.coord i s)
@@ -234,11 +237,16 @@ theorem changeAtlas_eq_of_ae_eq_coord (h : TransfersTo A A' μ p k) {w : Sobolev
     changeAtlas h w = w' :=
   eq_of_ae_eq_coord (chartValueL_changeAtlas_ae h hs) hs'
 
-@[simp]
-theorem changeAtlas_refl (w : SobolevSection A μ p k) :
+theorem changeAtlas_refl_apply (w : SobolevSection A μ p k) :
     changeAtlas (transfersTo_refl (A := A) (μ := μ) (p := p) (k := k)) w = w := by
   obtain ⟨s, hs⟩ := exists_ae_eq_coord w
   exact changeAtlas_eq_of_ae_eq_coord _ hs hs
+
+@[simp]
+theorem changeAtlas_refl :
+    changeAtlas (transfersTo_refl (A := A) (μ := μ) (p := p) (k := k)) =
+      ContinuousLinearMap.id ℝ _ :=
+  ContinuousLinearMap.ext changeAtlas_refl_apply
 
 @[simp]
 theorem changeAtlas_changeAtlas {A'' : FiniteBundleAtlas E M F V} (h : TransfersTo A A' μ p k)
@@ -254,14 +262,47 @@ theorem changeAtlas_comp {A'' : FiniteBundleAtlas E M F V} (h : TransfersTo A A'
     (changeAtlas h').comp (changeAtlas h) = changeAtlas (h.trans h') :=
   ContinuousLinearMap.ext (changeAtlas_changeAtlas h h')
 
+/-- The change of atlas is injective: two sections with the same readings almost everywhere in the
+charts of `A'` have the same readings almost everywhere in the charts of `A`. -/
+theorem changeAtlas_injective (h : TransfersTo A A' μ p k) :
+    Function.Injective (changeAtlas h) := by
+  intro w v hwv
+  obtain ⟨s, hs⟩ := exists_ae_eq_coord w
+  obtain ⟨t, ht⟩ := exists_ae_eq_coord v
+  have hst := A'.coord_ae_eq_of_coord_ae_eq A fun i' ↦
+    (chartValueL_changeAtlas_ae h hs i').symm.trans (hwv ▸ chartValueL_changeAtlas_ae h ht i')
+  exact eq_of_ae_eq_coord hs fun i ↦ (ht i).trans (hst i).symm
+
+/-- The change of atlas commutes with forgetting the highest derivative. -/
+theorem lowerOrderL_changeAtlas (h : TransfersTo A A' μ p (k + 1)) (h₀ : TransfersTo A A' μ p k)
+    (w : SobolevSection A μ p (k + 1)) :
+    A'.sectionChartData.lowerOrderL μ p k (changeAtlas h w) =
+      changeAtlas h₀ (A.sectionChartData.lowerOrderL μ p k w) := by
+  obtain ⟨s, hs⟩ := exists_ae_eq_coord w
+  refine eq_of_ae_eq_coord (s := s) (fun i' ↦ ?_) (chartValueL_changeAtlas_ae h₀ fun i ↦ ?_)
+  · rw [SectionChartData.chartValueL_coe_lowerOrderL]
+    exact chartValueL_changeAtlas_ae h hs i'
+  · rw [SectionChartData.chartValueL_coe_lowerOrderL]
+    exact hs i
+
+/-- The change of atlas sends the Sobolev section of a `Cᵏ` section for `A` to the Sobolev section
+of the same `Cᵏ` section for `A'`. -/
+@[simp]
+theorem changeAtlas_ofContMDiffSection [IsManifold 𝓘(ℝ, E) k M]
+    [ContMDiffVectorBundle k F V 𝓘(ℝ, E)] (h : TransfersTo A A' μ p k)
+    (s : Cₛ^k⟮𝓘(ℝ, E); F, V⟯) :
+    changeAtlas h (ofContMDiffSection A μ p k s) = ofContMDiffSection A' μ p k s :=
+  changeAtlas_eq_of_ae_eq_coord h (chartValueL_ofContMDiffSection_ae A μ p k s)
+    (chartValueL_ofContMDiffSection_ae A' μ p k s)
+
 /-- **Independence of the atlas.** If sections transfer between `A` and `A'` in both directions,
 the Sobolev spaces of sections for the two atlases are isomorphic Banach spaces, an element
 corresponding to the element with the same section. In particular their norms are equivalent. -/
 def atlasEquiv (h : TransfersTo A A' μ p k) (h' : TransfersTo A' A μ p k) :
     SobolevSection A μ p k ≃L[ℝ] SobolevSection A' μ p k :=
   ContinuousLinearEquiv.equivOfInverse (changeAtlas h) (changeAtlas h')
-    (fun w ↦ (changeAtlas_changeAtlas h h' w).trans (changeAtlas_refl w))
-    (fun w ↦ (changeAtlas_changeAtlas h' h w).trans (changeAtlas_refl w))
+    (fun w ↦ (changeAtlas_changeAtlas h h' w).trans (changeAtlas_refl_apply w))
+    (fun w ↦ (changeAtlas_changeAtlas h' h w).trans (changeAtlas_refl_apply w))
 
 @[simp]
 theorem atlasEquiv_apply (h : TransfersTo A A' μ p k) (h' : TransfersTo A' A μ p k)
@@ -281,7 +322,7 @@ theorem atlasEquiv_symm (h : TransfersTo A A' μ p k) (h' : TransfersTo A' A μ 
 theorem atlasEquiv_refl :
     atlasEquiv (transfersTo_refl (A := A) (μ := μ) (p := p) (k := k)) transfersTo_refl =
       ContinuousLinearEquiv.refl ℝ _ :=
-  ContinuousLinearEquiv.ext (funext changeAtlas_refl)
+  ContinuousLinearEquiv.ext (funext changeAtlas_refl_apply)
 
 @[simp]
 theorem atlasEquiv_trans {A'' : FiniteBundleAtlas E M F V} (h₁ : TransfersTo A A' μ p k)
@@ -291,19 +332,20 @@ theorem atlasEquiv_trans {A'' : FiniteBundleAtlas E M F V} (h₁ : TransfersTo A
   ContinuousLinearEquiv.ext (funext (changeAtlas_changeAtlas h₁ h₂))
 
 /-- **Equivalence of norms.** If sections transfer between `A` and `A'` in both directions, the
-norms of the Sobolev spaces of sections for the two atlases are equivalent: there is a constant `C`
-bounding the norm of each element by `C` times the norm of the element of the other atlas with the
-same section. -/
-theorem exists_norm_le (h : TransfersTo A A' μ p k) (h' : TransfersTo A' A μ p k) :
-    ∃ C : ℝ, ∀ w : SobolevSection A μ p k,
+norms of the Sobolev spaces of sections for the two atlases are equivalent: there is a positive
+constant `C` bounding the norm of each element by `C` times the norm of the element of the other
+atlas with the same section. -/
+theorem exists_norm_changeAtlas_le (h : TransfersTo A A' μ p k) (h' : TransfersTo A' A μ p k) :
+    ∃ C : ℝ, 0 < C ∧ ∀ w : SobolevSection A μ p k,
       ‖changeAtlas h w‖ ≤ C * ‖w‖ ∧ ‖w‖ ≤ C * ‖changeAtlas h w‖ := by
   set T := changeAtlas h
   set S := changeAtlas h'
-  refine ⟨max ‖T‖ ‖S‖, fun w ↦ ⟨(T.le_opNorm w).trans
-    (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg w)), ?_⟩⟩
-  calc ‖w‖ = ‖S (T w)‖ := by rw [(changeAtlas_changeAtlas _ _ w).trans (changeAtlas_refl w)]
+  refine ⟨max 1 (max ‖T‖ ‖S‖), lt_max_of_lt_left one_pos, fun w ↦ ⟨(T.le_opNorm w).trans
+    (mul_le_mul_of_nonneg_right (le_max_of_le_right (le_max_left _ _)) (norm_nonneg w)), ?_⟩⟩
+  calc ‖w‖ = ‖S (T w)‖ := by rw [(changeAtlas_changeAtlas _ _ w).trans (changeAtlas_refl_apply w)]
     _ ≤ ‖S‖ * ‖T w‖ := S.le_opNorm _
-    _ ≤ max ‖T‖ ‖S‖ * ‖T w‖ := mul_le_mul_of_nonneg_right (le_max_right _ _) (norm_nonneg _)
+    _ ≤ max 1 (max ‖T‖ ‖S‖) * ‖T w‖ :=
+      mul_le_mul_of_nonneg_right (le_max_of_le_right (le_max_right _ _)) (norm_nonneg _)
 
 end SobolevSection
 
@@ -331,13 +373,14 @@ theorem transfersTo_of_le_one (hk : k ≤ 1) (A A' : FiniteBundleAtlas ℂ M F V
     fun i ↦ by simpa only [funext (A.coord_def i s)] using memWkpLoc_coord w hs i
 
 /-- **Equivalence of norms at orders at most one over surfaces.** The norms of `W^{k,p}(V)`,
-`k ≤ 1`, for two finite bundle atlases are equivalent: there is a constant `C` bounding the norm
-of each element by `C` times the norm of the element of the other atlas with the same section. -/
-theorem exists_norm_le_of_le_one (hk : k ≤ 1) (A A' : FiniteBundleAtlas ℂ M F V) :
-    ∃ C : ℝ, ∀ w : SobolevSection A volume p k,
+`k ≤ 1`, for two finite bundle atlases are equivalent: there is a positive constant `C` bounding
+the norm of each element by `C` times the norm of the element of the other atlas with the same
+section. -/
+theorem exists_norm_changeAtlas_le_of_le_one (hk : k ≤ 1) (A A' : FiniteBundleAtlas ℂ M F V) :
+    ∃ C : ℝ, 0 < C ∧ ∀ w : SobolevSection A volume p k,
       ‖changeAtlas (transfersTo_of_le_one hk A A') w‖ ≤ C * ‖w‖ ∧
         ‖w‖ ≤ C * ‖changeAtlas (transfersTo_of_le_one hk A A') w‖ :=
-  exists_norm_le (transfersTo_of_le_one hk A A') (transfersTo_of_le_one hk A' A)
+  exists_norm_changeAtlas_le (transfersTo_of_le_one hk A A') (transfersTo_of_le_one hk A' A)
 
 end SobolevSection
 
