@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
-public import Mathlib.RingTheory.IntegralDomain
-public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.FinTwo
+public import TauCeti.LinearAlgebra.Matrix.DotProduct
+public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.FinTwo.Cyclic
 public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Frame
 
 /-!
@@ -20,31 +19,28 @@ commutative ring. If `p` is a unit vector with a unit vector `u` orthogonal to i
 with columns `u`, `p ⨯₃ u` and `p` carries `e₂` to `p`, and conjugating by it identifies `SO(2, R)`
 with the stabilizer of `p`.
 
-Over a field in which `2 ≠ 0` every unit vector has an orthogonal unit vector: the reflection
-exchanging a suitable standard basis vector `eᵢ` with `p` carries another one to such a vector.
-Over an integral domain in which `2 ≠ 0`, `SO(2)` embeds into the units of an algebraically closed
-field through `!![a, b; -b, a] ↦ a + i b`, so its finite subgroups are cyclic. After passing to
-such a field and normalizing, the identification above applies to any `p` with `p ⬝ᵥ p ≠ 0`, so
-every finite group of rotations fixing such a vector is cyclic. Over `ℝ`, or any ordered ring,
-this holds for every nonzero `p`. These stabilizers are the pole stabilizers in Klein's
-classification of the finite rotation groups of `ℝ³`.
+Over a field in which `2 ≠ 0` every unit vector has an orthogonal unit vector
+(`TauCeti.exists_dotProduct_self_eq_one_dotProduct_eq_zero`), and over an integral domain in which
+`2 ≠ 0` the finite subgroups of `SO(2)` are cyclic
+(`TauCeti.Matrix.SpecialOrthogonalGroup.isCyclic_of_injective_specialOrthogonalGroup_fin_two`).
+After passing to the algebraic closure of the fraction field and normalizing, the identification
+above applies to any `p` with `p ⬝ᵥ p ≠ 0`, so every finite group of rotations fixing such a vector
+is cyclic. Over `ℝ`, or any linearly ordered commutative ring, this holds for every nonzero `p`.
+These stabilizers are the pole stabilizers in Klein's classification of the finite rotation groups
+of `ℝ³`.
 
 ## Main declarations
 
-* `TauCeti.Matrix.SpecialOrthogonalGroup.mem_stabilizer_iff_mulVec_eq_self`: membership in the
-  stabilizer of a vector under the natural action of `SO(n)`.
+* `TauCeti.Matrix.SpecialOrthogonalGroup.mem_stabilizer_single_two_iff`: a rotation fixes the last
+  standard basis vector `e₂` exactly when its third column and third row are `e₂`.
 * `TauCeti.Matrix.SpecialOrthogonalGroup.equivLastStabilizer`: `SO(2, R)` is the stabilizer of the
   last standard basis vector in `SO(3, R)`, through `A ↦ diag(A, 1)`.
 * `TauCeti.Matrix.SpecialOrthogonalGroup.equivStabilizer`: `SO(2, R)` is the stabilizer of a unit
   vector `p` with an orthogonal unit vector `u`, through conjugation by the frame `(u, p ⨯₃ u, p)`.
-* `TauCeti.Matrix.SpecialOrthogonalGroup.exists_dotProduct_self_eq_one_dotProduct_eq_zero`: over
-  a field in which `2 ≠ 0`, every unit vector has an orthogonal unit vector.
-* `TauCeti.Matrix.SpecialOrthogonalGroup.isCyclic_of_injective_specialOrthogonalGroup_fin_two`:
-  a finite group embedding into `SO(2, R)` is cyclic.
 * `TauCeti.Matrix.SpecialOrthogonalGroup.isCyclic_stabilizer`: a finite stabilizer of a vector `p`
   with `p ⬝ᵥ p ≠ 0` in a group of rotations is cyclic.
-* `TauCeti.Matrix.SpecialOrthogonalGroup.isCyclic_stabilizer_of_ne_zero`: over an ordered ring,
-  such as `ℝ`, a finite stabilizer of a nonzero vector is cyclic.
+* `TauCeti.Matrix.SpecialOrthogonalGroup.isCyclic_stabilizer_of_ne_zero`: over a linearly ordered
+  commutative ring, such as `ℝ`, a finite stabilizer of a nonzero vector is cyclic.
 
 ## References
 
@@ -62,12 +58,6 @@ attribute [local instance] starRingOfComm
 
 variable {R : Type*} [CommRing R]
 
-/-- An element of `SO(n)` fixes a vector exactly when its matrix does. -/
-theorem mem_stabilizer_iff_mulVec_eq_self {n : Type*} [Fintype n] [DecidableEq n] {v : n → R}
-    {g : specialOrthogonalGroup n R} :
-    g ∈ stabilizer (specialOrthogonalGroup n R) v ↔ (g : Matrix n n R) *ᵥ v = v := by
-  rw [MulAction.mem_stabilizer_iff, Submonoid.smul_def, smul_eq_mulVec]
-
 /-! ### The stabilizer of the last standard basis vector -/
 
 /-- The block matrix `diag(A, 1)` of a rotation `A` of `R²` is a rotation of `R³`. -/
@@ -80,21 +70,26 @@ private theorem blockDiag_mem (A : specialOrthogonalGroup (Fin 2) R) :
     Fin.forall_fin_succ, vecHead, vecTail, det_fin_three]
   grind
 
-/-- A rotation of `R³` fixing `e₂` has third column and third row `e₂`. -/
-private theorem entries_of_mem_stabilizer {g : specialOrthogonalGroup (Fin 3) R}
-    (hg : g ∈ stabilizer (specialOrthogonalGroup (Fin 3) R) (Pi.single 2 1 : Fin 3 → R)) :
-    (g : Matrix (Fin 3) (Fin 3) R) 0 2 = 0 ∧ (g : Matrix (Fin 3) (Fin 3) R) 1 2 = 0 ∧
-      (g : Matrix (Fin 3) (Fin 3) R) 2 2 = 1 ∧ (g : Matrix (Fin 3) (Fin 3) R) 2 0 = 0 ∧
-      (g : Matrix (Fin 3) (Fin 3) R) 2 1 = 0 := by
-  have hcol := mem_stabilizer_iff_mulVec_eq_self.mp hg
-  -- An orthogonal matrix fixing a vector has transpose fixing it too.
-  have hrow : (g : Matrix (Fin 3) (Fin 3) R)ᵀ *ᵥ Pi.single 2 1 = Pi.single 2 1 := by
-    conv_lhs => rw [← hcol]
-    rw [mulVec_mulVec, (mem_orthogonalGroup_iff' _ _).mp
-      (mem_specialOrthogonalGroup_iff.mp g.2).1, one_mulVec]
-  rw [mulVec_single_one] at hcol hrow
-  exact ⟨by simpa using congrFun hcol 0, by simpa using congrFun hcol 1,
-    by simpa using congrFun hcol 2, by simpa using congrFun hrow 0, by simpa using congrFun hrow 1⟩
+/-- **A rotation of `R³` fixes `e₂` exactly when its third column and third row are `e₂`.** -/
+theorem mem_stabilizer_single_two_iff {g : specialOrthogonalGroup (Fin 3) R} :
+    g ∈ stabilizer (specialOrthogonalGroup (Fin 3) R) (Pi.single 2 1 : Fin 3 → R) ↔
+      (g : Matrix (Fin 3) (Fin 3) R) 0 2 = 0 ∧ (g : Matrix (Fin 3) (Fin 3) R) 1 2 = 0 ∧
+        (g : Matrix (Fin 3) (Fin 3) R) 2 2 = 1 ∧ (g : Matrix (Fin 3) (Fin 3) R) 2 0 = 0 ∧
+        (g : Matrix (Fin 3) (Fin 3) R) 2 1 = 0 := by
+  rw [Matrix.SpecialOrthogonalGroup.mem_stabilizer_iff_mulVec_eq_self]
+  refine ⟨fun hcol ↦ ?_, fun ⟨h02, h12, h22, _, _⟩ ↦ ?_⟩
+  · -- An orthogonal matrix fixing a vector has transpose fixing it too.
+    have hrow : (g : Matrix (Fin 3) (Fin 3) R)ᵀ *ᵥ Pi.single 2 1 = Pi.single 2 1 := by
+      conv_lhs => rw [← hcol]
+      rw [mulVec_mulVec, (mem_orthogonalGroup_iff' _ _).mp
+        (mem_specialOrthogonalGroup_iff.mp g.2).1, one_mulVec]
+    rw [mulVec_single_one] at hcol hrow
+    exact ⟨by simpa using congrFun hcol 0, by simpa using congrFun hcol 1,
+      by simpa using congrFun hcol 2, by simpa using congrFun hrow 0,
+      by simpa using congrFun hrow 1⟩
+  · rw [mulVec_single_one]
+    ext i
+    fin_cases i <;> simp [h02, h12, h22]
 
 /-- The upper left `2 × 2` block of a rotation of `R³` fixing `e₂` is a rotation of `R²`. -/
 private theorem block_mem {g : specialOrthogonalGroup (Fin 3) R}
@@ -102,7 +97,7 @@ private theorem block_mem {g : specialOrthogonalGroup (Fin 3) R}
     !![(g : Matrix (Fin 3) (Fin 3) R) 0 0, (g : Matrix (Fin 3) (Fin 3) R) 0 1;
       (g : Matrix (Fin 3) (Fin 3) R) 1 0, (g : Matrix (Fin 3) (Fin 3) R) 1 1] ∈
       specialOrthogonalGroup (Fin 2) R := by
-  obtain ⟨h02, h12, h22, -, -⟩ := entries_of_mem_stabilizer hg
+  obtain ⟨h02, h12, h22, -, -⟩ := mem_stabilizer_single_two_iff.mp hg
   obtain ⟨hO, hdet⟩ := mem_specialOrthogonalGroup_iff.mp g.2
   have hO' := (mem_orthogonalGroup_iff _ _).mp hO
   -- The first two rows are orthonormal, and the block has determinant one.
@@ -124,15 +119,13 @@ commutative ring: a rotation `A` of `R²` corresponds to the block matrix `diag(
 def equivLastStabilizer :
     specialOrthogonalGroup (Fin 2) R ≃* stabilizer (specialOrthogonalGroup (Fin 3) R)
       (Pi.single 2 1 : Fin 3 → R) where
-  toFun A := ⟨⟨_, blockDiag_mem A⟩, mem_stabilizer_iff_mulVec_eq_self.mpr <| by
-    ext i
-    fin_cases i <;> simp [mulVec, dotProduct, Fin.sum_univ_three]⟩
+  toFun A := ⟨⟨_, blockDiag_mem A⟩, mem_stabilizer_single_two_iff.mpr <| by simp⟩
   invFun g := ⟨_, block_mem g.2⟩
   left_inv A := by
     ext i j
     fin_cases i <;> fin_cases j <;> simp
   right_inv g := by
-    obtain ⟨h02, h12, h22, h20, h21⟩ := entries_of_mem_stabilizer g.2
+    obtain ⟨h02, h12, h22, h20, h21⟩ := mem_stabilizer_single_two_iff.mp g.2
     ext i j
     fin_cases i <;> fin_cases j <;> simp [h02, h12, h22, h20, h21]
   map_mul' A B := by
@@ -165,21 +158,6 @@ section Frame
 
 variable {p u : Fin 3 → R}
 
-/-- For orthonormal `p` and `u`, the frame matrix with columns `u`, `p ⨯₃ u` and `p` is a
-rotation. -/
-private theorem ofFrame_cross_mem (hp : p ⬝ᵥ p = 1) (hu : u ⬝ᵥ u = 1) (hpu : p ⬝ᵥ u = 0) :
-    ofFrame u (p ⨯₃ u) ∈ specialOrthogonalGroup (Fin 3) R := by
-  refine ofFrame_mem_iff.mpr ⟨hu, ?_, dot_cross_self p u⟩
-  rw [cross_dot_cross, hp, hu, hpu, dotProduct_comm u p, hpu]
-  ring
-
-/-- The third vector of the frame `(u, p ⨯₃ u, u ⨯₃ (p ⨯₃ u))` is `p`, for orthonormal `p`
-and `u`. -/
-private theorem ofFrame_cross_mulVec_single_two (hu : u ⬝ᵥ u = 1) (hpu : p ⬝ᵥ u = 0) :
-    ofFrame u (p ⨯₃ u) *ᵥ Pi.single 2 1 = p := by
-  rw [mulVec_single_one, ofFrame_col_two, cross_cross_eq_smul_sub_smul', hu, hpu, one_smul,
-    zero_smul, sub_zero]
-
 /-- **`SO(2, R)` is the stabilizer of a unit vector `p` in `SO(3, R)`**, given a unit vector `u`
 orthogonal to `p`: a rotation `A` of the plane corresponds to the rotation acting by `A` in the
 oriented orthonormal basis `(u, p ⨯₃ u)` of the plane orthogonal to `p`. -/
@@ -198,10 +176,7 @@ theorem coe_equivStabilizer_apply (hp : p ⬝ᵥ p = 1) (hu : u ⬝ᵥ u = 1) (h
       ofFrame u (p ⨯₃ u) *
         ((equivLastStabilizer A : specialOrthogonalGroup (Fin 3) R) : Matrix (Fin 3) (Fin 3) R) *
         (ofFrame u (p ⨯₃ u))ᵀ := by
-  -- The star operation of `starRingOfComm` is trivial, so the inverse is the transpose.
-  have : TrivialStar R := ⟨fun _ ↦ rfl⟩
-  simp [equivStabilizer, stabilizerEquivStabilizer_apply, ← Matrix.star_eq_inv,
-    star_eq_conjTranspose, conjTranspose_eq_transpose_of_trivial]
+  simp [equivStabilizer, stabilizerEquivStabilizer_apply, Matrix.SpecialOrthogonalGroup.coe_inv]
 
 /-- The rotation of the plane attached to a rotation `g` fixing `p` is the matrix whose columns
 are the coordinates of `g u` and `g (p ⨯₃ u)` in the orthonormal basis `(u, p ⨯₃ u)`. -/
@@ -213,71 +188,14 @@ theorem coe_equivStabilizer_symm_apply (hp : p ⬝ᵥ p = 1) (hu : u ⬝ᵥ u = 
         u ⬝ᵥ (g : Matrix (Fin 3) (Fin 3) R) *ᵥ (p ⨯₃ u);
         (p ⨯₃ u) ⬝ᵥ (g : Matrix (Fin 3) (Fin 3) R) *ᵥ u,
         (p ⨯₃ u) ⬝ᵥ (g : Matrix (Fin 3) (Fin 3) R) *ᵥ (p ⨯₃ u)] := by
-  -- The star operation of `starRingOfComm` is trivial, so the inverse is the transpose.
-  have : TrivialStar R := ⟨fun _ ↦ rfl⟩
   simp only [equivStabilizer, MulEquiv.symm_trans_apply, coe_equivLastStabilizer_symm_apply,
     stabilizerEquivStabilizer_symm_apply, MulAut.conj_apply, Submonoid.coe_mul,
-    ← Matrix.star_eq_inv, specialUnitaryGroup.coe_star, star_eq_conjTranspose,
-    conjTranspose_eq_transpose_of_trivial]
+    Matrix.SpecialOrthogonalGroup.coe_inv, inv_inv]
   ext i j
   fin_cases i <;> fin_cases j <;>
     simp [Matrix.mul_apply, mulVec, dotProduct, Fin.sum_univ_three, ofFrame_apply] <;> ring
 
 end Frame
-
-/-- Over a field in which `2 ≠ 0`, **every unit vector of the three-dimensional space has an
-orthogonal unit vector**, so it is the third vector of an oriented orthonormal frame. -/
-theorem exists_dotProduct_self_eq_one_dotProduct_eq_zero {K : Type*} [Field K] [NeZero (2 : K)]
-    {p : Fin 3 → K} (hp : p ⬝ᵥ p = 1) : ∃ u, u ⬝ᵥ u = 1 ∧ p ⬝ᵥ u = 0 := by
-  -- Some coordinate satisfies `p i ≠ 1`, as otherwise `p ⬝ᵥ p = 3`.
-  obtain ⟨i, hi⟩ : ∃ i, p i ≠ 1 := by
-    by_contra! h
-    rw [dotProduct, Fin.sum_univ_three, h 0, h 1, h 2] at hp
-    exact two_ne_zero (by linear_combination hp : (2 : K) = 0)
-  obtain ⟨j, hj⟩ := exists_ne i
-  have hi' : 1 - p i ≠ 0 := sub_ne_zero.mpr hi.symm
-  -- The reflection exchanging `eᵢ` and `p` sends `eⱼ` to a unit vector orthogonal to `p`.
-  refine ⟨Pi.single j 1 + (p j / (1 - p i)) • (Pi.single i 1 - p), ?_, ?_⟩
-  · simp only [dotProduct_add, add_dotProduct, dotProduct_smul, smul_dotProduct, dotProduct_sub,
-      sub_dotProduct]
-    simp only [single_one_dotProduct, dotProduct_single_one, Pi.single_eq_same,
-      Pi.single_eq_of_ne hj, Pi.single_eq_of_ne hj.symm, hp, smul_eq_mul]
-    field_simp
-    ring
-  · simp only [dotProduct_add, dotProduct_smul, dotProduct_sub, dotProduct_single_one, hp,
-      smul_eq_mul]
-    field_simp
-    ring
-
-variable (R) in
-/-- The embedding of an integral domain into the algebraic closure of its fraction field. -/
-private noncomputable abbrev toAlgebraicClosure [IsDomain R] :
-    R →+* AlgebraicClosure (FractionRing R) :=
-  (algebraMap (FractionRing R) _).comp (algebraMap R (FractionRing R))
-
-private theorem toAlgebraicClosure_injective [IsDomain R] :
-    Function.Injective (toAlgebraicClosure R) :=
-  (algebraMap (FractionRing R) _).injective.comp (IsFractionRing.injective R (FractionRing R))
-
-private theorem toAlgebraicClosure_two_ne_zero [IsDomain R] [NeZero (2 : R)] :
-    (2 : AlgebraicClosure (FractionRing R)) ≠ 0 := by
-  rw [← map_ofNat (toAlgebraicClosure R) 2, ← map_zero (toAlgebraicClosure R)]
-  exact toAlgebraicClosure_injective.ne two_ne_zero
-
-/-- Over an integral domain in which `2 ≠ 0`, **a finite group embedding into `SO(2)` is
-cyclic**: `!![a, b; -b, a] ↦ a + i b` embeds `SO(2)` into the units of an algebraically closed
-field containing a square root `i` of `-1`. -/
-theorem isCyclic_of_injective_specialOrthogonalGroup_fin_two [IsDomain R] [NeZero (2 : R)]
-    {G : Type*} [Group G] [Finite G] (f : G →* specialOrthogonalGroup (Fin 2) R)
-    (hf : Function.Injective f) : IsCyclic G := by
-  let L := AlgebraicClosure (FractionRing R)
-  obtain ⟨i, hi⟩ := IsAlgClosed.exists_pow_nat_eq (-1 : L) two_pos
-  let e := Matrix.SpecialOrthogonalGroup.finTwoMulEquivUnits i 2⁻¹ hi
-    (mul_inv_cancel₀ toAlgebraicClosure_two_ne_zero)
-  refine isCyclic_of_injective_ringHom ((Units.coeHom L).comp
-    (e.toMonoidHom.comp ((Matrix.SpecialOrthogonalGroup.map (toAlgebraicClosure R)).comp f))) ?_
-  exact Units.val_injective.comp (e.injective.comp
-    ((Matrix.SpecialOrthogonalGroup.map_injective toAlgebraicClosure_injective).comp hf))
 
 /-- **A finite stabilizer of a vector `p` with `p ⬝ᵥ p ≠ 0` in a group of rotations is cyclic**,
 over an integral domain in which `2 ≠ 0`. After passing to an algebraically closed field and
@@ -286,9 +204,13 @@ theorem isCyclic_stabilizer [IsDomain R] [NeZero (2 : R)]
     (H : Subgroup (specialOrthogonalGroup (Fin 3) R)) {p : Fin 3 → R} (hp : p ⬝ᵥ p ≠ 0)
     [Finite (stabilizer H p)] : IsCyclic (stabilizer H p) := by
   let L := AlgebraicClosure (FractionRing R)
-  set φ := toAlgebraicClosure R
-  have hφ : Function.Injective φ := toAlgebraicClosure_injective
-  have : NeZero (2 : L) := ⟨toAlgebraicClosure_two_ne_zero⟩
+  have hφ : Function.Injective (algebraMap R L) := by
+    rw [IsScalarTower.algebraMap_eq R (FractionRing R)]
+    exact (algebraMap (FractionRing R) L).injective.comp (IsFractionRing.injective R _)
+  set φ := algebraMap R L
+  have : NeZero (2 : L) := ⟨by
+    rw [← map_ofNat φ 2, ← map_zero φ]
+    exact hφ.ne two_ne_zero⟩
   -- Normalize the image `p'` of `p` in `L³` to a unit vector `q`, and choose `u` orthogonal to it.
   set p' : Fin 3 → L := φ ∘ p
   have hp' : p' ⬝ᵥ p' ≠ 0 := by
@@ -298,14 +220,14 @@ theorem isCyclic_stabilizer [IsDomain R] [NeZero (2 : R)]
   have hq : (c • p') ⬝ᵥ (c • p') = 1 := by
     rw [smul_dotProduct, dotProduct_smul, smul_eq_mul, smul_eq_mul, ← mul_assoc, ← sq, hc,
       inv_mul_cancel₀ hp']
-  obtain ⟨u, hu, hqu⟩ := exists_dotProduct_self_eq_one_dotProduct_eq_zero hq
+  obtain ⟨u, hu, hqu⟩ := TauCeti.exists_dotProduct_self_eq_one_dotProduct_eq_zero hq
   -- An element of the stabilizer, with entries mapped to `L`, fixes `q`.
   have hfix (g : stabilizer H p) : Matrix.SpecialOrthogonalGroup.map φ (g : H) ∈
       stabilizer (specialOrthogonalGroup (Fin 3) L) (c • p') := by
     have hg : ((g : H) : Matrix (Fin 3) (Fin 3) R) *ᵥ p = p := by
       have := MulAction.mem_stabilizer_iff.mp g.2
       rwa [Subgroup.smul_def, Submonoid.smul_def, smul_eq_mulVec] at this
-    rw [mem_stabilizer_iff_mulVec_eq_self, mulVec_smul,
+    rw [Matrix.SpecialOrthogonalGroup.mem_stabilizer_iff_mulVec_eq_self, mulVec_smul,
       Matrix.SpecialOrthogonalGroup.coe_map]
     congr 1
     ext j
@@ -319,8 +241,8 @@ theorem isCyclic_stabilizer [IsDomain R] [NeZero (2 : R)]
   exact Subtype.ext <| Subtype.ext <| Matrix.SpecialOrthogonalGroup.map_injective hφ <|
     congrArg Subtype.val hgh
 
-/-- Over an ordered commutative ring, such as `ℝ`, **a finite stabilizer of a nonzero vector in a
-group of rotations is cyclic.** -/
+/-- Over a linearly ordered commutative ring, such as `ℝ`, **a finite stabilizer of a nonzero
+vector in a group of rotations is cyclic.** -/
 theorem isCyclic_stabilizer_of_ne_zero [LinearOrder R] [IsStrictOrderedRing R]
     (H : Subgroup (specialOrthogonalGroup (Fin 3) R)) {p : Fin 3 → R} (hp : p ≠ 0)
     [Finite (stabilizer H p)] : IsCyclic (stabilizer H p) :=
