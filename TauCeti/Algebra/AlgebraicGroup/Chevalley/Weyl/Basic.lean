@@ -72,6 +72,13 @@ theorem weylElement_mem_weylSubgroup (A : Type v) [CommRing A] (i : Fin t.rank) 
     D.weylElement (t.simpleIndex ht i) A 1 ∈ D.weylSubgroup A :=
   Subgroup.subset_closure (Or.inr ⟨i, rfl⟩)
 
+/-- A word in the pinned simple Weyl representatives belongs to `D.weylSubgroup A`. -/
+theorem weylWord_mem_weylSubgroup (A : Type v) [CommRing A] (l : List (Fin t.rank)) :
+    (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod ∈ D.weylSubgroup A :=
+  (D.weylSubgroup A).list_prod_mem fun _ hg => by
+    obtain ⟨i, _, rfl⟩ := List.mem_map.mp hg
+    exact D.weylElement_mem_weylSubgroup A i
+
 private theorem isSl2Triple_representation (i : Fin t.rank) :
     IsSl2Triple
       (D.representation (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).h i)))
@@ -317,6 +324,31 @@ theorem weylProjection_weylElement (k : Type v) [Field k] (i : Fin t.rank) :
     (by simpa only [RealizesWeyl, map_weylElement, map_one] using
       D.weylElement_conj_weightTorus (AlgebraicClosure k) i)
 
+private theorem weylWord_cons_mk (A : Type v) [CommRing A] (i : Fin t.rank)
+    (l : List (Fin t.rank)) :
+    (⟨((i :: l).map fun j => D.weylElement (t.simpleIndex ht j) A 1).prod,
+        D.weylWord_mem_weylSubgroup A (i :: l)⟩ : D.weylSubgroup A) =
+      ⟨D.weylElement (t.simpleIndex ht i) A 1, D.weylElement_mem_weylSubgroup A i⟩ *
+        ⟨(l.map fun j => D.weylElement (t.simpleIndex ht j) A 1).prod,
+          D.weylWord_mem_weylSubgroup A l⟩ :=
+  Subtype.ext (by simp [List.map_cons, List.prod_cons])
+
+/-- Over any field `k`, `weylProjection` sends a word in the pinned simple Weyl representatives
+to the Weyl element spelled by that word. -/
+@[simp]
+theorem weylProjection_weylWord (k : Type v) [Field k] (l : List (Fin t.rank)) :
+    D.weylProjection k ⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) k 1).prod,
+      D.weylWord_mem_weylSubgroup k l⟩ = t.geckWeylWordProd ht l := by
+  induction l with
+  | nil =>
+    have h1 : (⟨(([].map fun i => D.weylElement (t.simpleIndex ht i) k 1).prod),
+        D.weylWord_mem_weylSubgroup k []⟩ : D.weylSubgroup k) = 1 :=
+      Subtype.ext (by simp)
+    rw [h1, map_one, geckWeylWordProd_nil]
+  | cons i l ih =>
+    rw [D.weylWord_cons_mk k i l, map_mul, D.weylProjection_weylElement k i, ih,
+      geckWeylWordProd_cons]
+
 private theorem rootSubgroupPoints_simpleIndex_ofAdd_one_ne_one_field
     (k : Type v) [Field k] (i : Fin t.rank) :
     D.rootSubgroupPoints (t.simpleIndex ht i) k (Multiplicative.ofAdd 1) ≠ 1 := by
@@ -375,17 +407,9 @@ theorem rootSubgroupPoints_ofAdd_one_ne_one
 simple reflections. -/
 theorem weylProjection_surjective (k : Type v) [Field k] :
     Function.Surjective (D.weylProjection k) := by
-  have hword (l : List (Fin t.rank)) :
-      ∃ g : D.weylSubgroup k, D.weylProjection k g = t.geckWeylWordProd ht l := by
-    induction l with
-    | nil => exact ⟨1, by simp⟩
-    | cons i l ih =>
-      obtain ⟨g, hg⟩ := ih
-      exact ⟨⟨D.weylElement (t.simpleIndex ht i) k 1,
-        D.weylElement_mem_weylSubgroup k i⟩ * g, by simp [hg]⟩
   intro w
   obtain ⟨l, rfl⟩ := t.geckWeylWordProd_surjective ht w
-  exact hword l
+  exact ⟨⟨_, D.weylWord_mem_weylSubgroup k l⟩, D.weylProjection_weylWord k l⟩
 
 /-- The kernel consists of those points that commute with all represented full-weight torus
 points. Identifying these points with the actual torus is a separate assertion. -/

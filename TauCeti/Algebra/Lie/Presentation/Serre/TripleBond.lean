@@ -26,10 +26,13 @@ characteristic. The matrix convention is `⁅H i, E j⁆ = CM i j • E j`.
 
 The formulas use the root-string calculations in
 `TauCeti.Algebra.Lie.Sl2.Weyl.WeightThree`, as the double-bond formulas use `WeightTwo`.
-For the braid relation, conjugation by the five-letter alternating word fixes the other
-root pair: the middle step fixes the intermediate root vector `⁅E j, ⁅E j, E i⁆⁆` because
-it is centralized by both `E i` and `F i`, and signed exchange transports the raising
-calculation to the lowering operator.
+Following the braid proof of `IsSerreSystem.weylUnit_braid_of_cartan_eq_neg_two` in
+`TauCeti.Algebra.Lie.Presentation.Serre.DoubleBond`, conjugation by the five-letter
+alternating word fixes the other root pair: the middle step fixes the intermediate root vector
+`⁅E j, ⁅E j, E i⁆⁆` because it is centralized by both `E i` and `F i`, signed exchange
+transports the raising calculation to the lowering operator, and functoriality of the
+nilpotent exponential (`commute_weylUnit_of_conj_eq`) upgrades conjugation fixation to unit
+commutation.
 
 ## References
 
@@ -115,12 +118,12 @@ private theorem weylUnit_conj_quintuple_E_of_tripleBond (hs : IsSerreSystem ℚ 
     (hi : H i ≠ 0) (hj : H j ≠ 0)
     (hEi : IsNilpotent (E i)) (hFi : IsNilpotent (F i))
     (hEj : IsNilpotent (E j)) (hFj : IsNilpotent (F j)) :
-    (weylUnit hEi hFi * weylUnit hEj hFj * weylUnit hEi hFi *
-        weylUnit hEj hFj * weylUnit hEi hFi).conjAlgEquiv ℚ (E j) = E j := by
-  let a := weylUnit hEi hFi
-  let b := weylUnit hEj hFj
+    Units.conjAlgEquiv ℚ (weylUnit hEi hFi * weylUnit hEj hFj * weylUnit hEi hFi *
+        weylUnit hEj hFj * weylUnit hEi hFi) (E j) = E j := by
+  set a := weylUnit hEi hFi
+  set b := weylUnit hEj hFj
   have maplie (u : Aˣ) (x y : A) :
-      u.conjAlgEquiv ℚ ⁅x, y⁆ = ⁅u.conjAlgEquiv ℚ x, u.conjAlgEquiv ℚ y⁆ := by
+      Units.conjAlgEquiv ℚ u ⁅x, y⁆ = ⁅Units.conjAlgEquiv ℚ u x, Units.conjAlgEquiv ℚ u y⁆ := by
     simp only [Ring.lie_def, map_sub, map_mul]
   have hne : i ≠ j := by rintro rfl; omega
   let y₁ := ⁅E j, E i⁆
@@ -136,27 +139,25 @@ private theorem weylUnit_conj_quintuple_E_of_tripleBond (hs : IsSerreSystem ℚ 
   have hf₃ : ⁅F j, y₃⁆ = (3 : ℚ) • y₂ := by
     convert ht.lie_f_pow_succ_toEnd_e hweight hlower 2 using 1 <;>
       norm_num [y₁, y₂, y₃, pow_succ', mul_apply_eq_comp]
-  have haEj : a.conjAlgEquiv ℚ (E j) = -y₁ := by
+  have haEj : Units.conjAlgEquiv ℚ a (E j) = -y₁ := by
     rw [Units.conjAlgEquiv_apply, hs.weylUnit_conj_E_of_cartan_eq_neg_one hii hij hEi hFi,
       ← lie_skew (E i) (E j)]
-  have hbEj : b.conjAlgEquiv ℚ (E j) = -F j := hs.conjAlgEquiv_weylUnit_e hjj hj hEj hFj
-  have hby₁ : b.conjAlgEquiv ℚ y₁ = -(2⁻¹ : ℚ) • y₂ := by
-    rw [maplie, hbEj, b.conjAlgEquiv_apply ℚ (E i),
+  have hbEj : Units.conjAlgEquiv ℚ b (E j) = -F j := hs.conjAlgEquiv_weylUnit_e hjj hj hEj hFj
+  have hby₁ : Units.conjAlgEquiv ℚ b y₁ = -(2⁻¹ : ℚ) • y₂ := by
+    rw [maplie, hbEj, Units.conjAlgEquiv_apply ℚ b (E i),
       hs.weylUnit_conj_of_cartan_eq_neg_three hjj hji hEj hFj,
       neg_lie, lie_smul, hf₃, smul_smul]
     norm_num
-  have hay₂ : a.conjAlgEquiv ℚ y₂ = y₂ := by
+  have hay₂ : Units.conjAlgEquiv ℚ a y₂ = y₂ := by
     simpa only [Units.conjAlgEquiv_apply] using
       hs.weylUnit_conj_middle_of_tripleBond hii hij hi hEi hFi
-  have hby₂ : b.conjAlgEquiv ℚ y₂ = (2 : ℚ) • y₁ := by
+  have hby₂ : Units.conjAlgEquiv ℚ b y₂ = (2 : ℚ) • y₁ := by
     rw [maplie, hbEj, hby₁, neg_lie, lie_smul, hf₂, ← neg_smul, smul_smul]
     norm_num
-  have hay₁ : a.conjAlgEquiv ℚ y₁ = E j := by
+  have hay₁ : Units.conjAlgEquiv ℚ a y₁ = E j := by
     rw [maplie, haEj, hs.conjAlgEquiv_weylUnit_e hii hi hEi hFi, neg_lie, lie_neg, neg_neg,
       hs.lie_lie_E_E_F_of_ne hne.symm, hij, neg_one_smul, neg_neg]
-  simp only [Units.conjAlgEquiv_mul, AlgEquiv.mul_apply]
-  change a.conjAlgEquiv ℚ (b.conjAlgEquiv ℚ (a.conjAlgEquiv ℚ
-    (b.conjAlgEquiv ℚ (a.conjAlgEquiv ℚ (E j))))) = E j
+  simp only [map_mul, AlgEquiv.mul_apply]
   rw [haEj, map_neg, hby₁, ← neg_smul, neg_neg, map_smul, hay₂, map_smul, hby₂, smul_smul]
   norm_num [hay₁]
 
@@ -180,13 +181,13 @@ theorem weylUnit_braid_of_cartan_eq_neg_three (hs : IsSerreSystem ℚ CM H E F)
   have hi : H i ≠ 0 := fun hi0 => hj (hs.H_eq_zero_of_H_eq_zero hi0 (by omega))
   let a := weylUnit hEi hFi
   let b := weylUnit hEj hFj
-  have hE : (a * b * a * b * a).conjAlgEquiv ℚ (E j) = E j :=
+  have hE : Units.conjAlgEquiv ℚ (a * b * a * b * a) (E j) = E j :=
     hs.weylUnit_conj_quintuple_E_of_tripleBond hii hjj hij hji hi hj hEi hFi hEj hFj
   -- Signed exchange preserves each Weyl conjugation, transporting the fixed-point identity to F j.
-  have hF : (a * b * a * b * a).conjAlgEquiv ℚ (F j) = F j := by
+  have hF : Units.conjAlgEquiv ℚ (a * b * a * b * a) (F j) = F j := by
     have h := hs.neg_swap.weylUnit_conj_quintuple_E_of_tripleBond hii hjj hij hji
       (neg_ne_zero.mpr hi) (neg_ne_zero.mpr hj) hFi.neg hEi.neg hFj.neg hEj.neg
-    simp only [Units.conjAlgEquiv_mul, hs.conjAlgEquiv_weylUnit_neg hii hi hEi hFi,
+    simp only [map_mul, hs.conjAlgEquiv_weylUnit_neg hii hi hEi hFi,
       hs.conjAlgEquiv_weylUnit_neg hjj hj hEj hFj, map_neg, neg_inj] at h ⊢
     exact h
   simpa only [a, b, mul_assoc] using

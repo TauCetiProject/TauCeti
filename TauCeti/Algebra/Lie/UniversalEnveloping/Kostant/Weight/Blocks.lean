@@ -48,19 +48,21 @@ variable [AddCommGroup D] [LinearOrder D]
 /-- The equivalence numbering the distinct weights of `wt` by decreasing `degree`. Weights of
 equal degree are ordered by an arbitrary finite numbering. -/
 noncomputable def orderedWeightBlockEquiv (degree : (κ → ℤ) →+ D)
-    (wt : η → κ → ℤ) : Set.range wt ≃ Fin (Nat.card (Set.range wt)) := by
+    (wt : η → κ → ℤ) : Set.range wt ≃ Fin (Set.range wt).ncard := by
   classical
   letI := Fintype.ofFinite (Set.range wt)
   exact (orderedWeightIndexEquiv degree (fun μ : Set.range wt => μ.val)).trans
-    (finCongr (Nat.card_eq_fintype_card (α := Set.range wt)).symm)
+    (finCongr ((Nat.card_eq_fintype_card (α := Set.range wt)).symm.trans
+      (Nat.card_coe_set_eq (Set.range wt))))
 
 /-- The weight-space block containing a basis index, with distinct weights numbered by decreasing
 `degree`. Weights of equal degree are ordered by an arbitrary finite numbering. -/
 noncomputable def orderedWeightBlock (degree : (κ → ℤ) →+ D) (wt : η → κ → ℤ)
-    (x : η) : Fin (Nat.card (Set.range wt)) :=
+    (x : η) : Fin (Set.range wt).ncard :=
   orderedWeightBlockEquiv degree wt ⟨wt x, ⟨x, rfl⟩⟩
 
 /-- Applying `orderedWeightBlockEquiv` to the range element of `wt x` gives `orderedWeightBlock`. -/
+@[simp]
 theorem orderedWeightBlockEquiv_apply_mk (degree : (κ → ℤ) →+ D) (wt : η → κ → ℤ)
     (x : η) (hx : wt x ∈ Set.range wt) :
     orderedWeightBlockEquiv degree wt ⟨wt x, hx⟩ = orderedWeightBlock degree wt x :=

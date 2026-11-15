@@ -546,8 +546,8 @@ theorem conj_weylUnit {E' F' : A} (u : Aˣ) (hE : IsNilpotent E) (hF : IsNilpote
     (hE' : IsNilpotent E') (hF' : IsNilpotent F')
     (huE : (u : A) * E * (↑u⁻¹ : A) = E') (huF : (u : A) * F * (↑u⁻¹ : A) = F') :
     u * weylUnit hE hF * u⁻¹ = weylUnit hE' hF' := by
-  let d : A →+* A := (u.conjAlgEquiv ℚ).toRingHom
-  have hd (x : A) : d x = (u : A) * x * (↑u⁻¹ : A) := u.conjAlgEquiv_apply ℚ x
+  let d : A →+* A := (Units.conjAlgEquiv ℚ u).toRingHom
+  have hd (x : A) : d x = (u : A) * x * (↑u⁻¹ : A) := Units.conjAlgEquiv_apply ℚ u x
   apply Units.ext
   calc
     ((u * weylUnit hE hF * u⁻¹ : Aˣ) : A) = d (weylUnit hE hF : A) := by
@@ -556,17 +556,11 @@ theorem conj_weylUnit {E' F' : A} (u : Aˣ) (hE : IsNilpotent E) (hF : IsNilpote
       simp only [coe_weylUnit, map_mul, hE.map_exp d, hF.neg.map_exp d, map_neg,
         hd E, hd F, huE, huF]
 
-/-- If conjugation by a unit `u` fixes `E` and `F`, then it fixes `weylUnit hE hF`. -/
-theorem conj_weylUnit_eq_self (u : Aˣ) (hE : IsNilpotent E) (hF : IsNilpotent F)
-    (huE : (u : A) * E * (↑u⁻¹ : A) = E) (huF : (u : A) * F * (↑u⁻¹ : A) = F) :
-    u * weylUnit hE hF * u⁻¹ = weylUnit hE hF :=
-  conj_weylUnit u hE hF hE hF huE huF
-
 /-- If conjugation by a unit `u` fixes `E` and `F`, then `u` commutes with `weylUnit hE hF`. -/
 theorem commute_weylUnit_of_conj_eq (u : Aˣ) (hE : IsNilpotent E) (hF : IsNilpotent F)
     (huE : (u : A) * E * (↑u⁻¹ : A) = E) (huF : (u : A) * F * (↑u⁻¹ : A) = F) :
     Commute u (weylUnit hE hF) :=
-  mul_inv_eq_iff_eq_mul.mp (conj_weylUnit_eq_self u hE hF huE huF)
+  mul_inv_eq_iff_eq_mul.mp (conj_weylUnit u hE hF hE hF huE huF)
 
 variable {K : Type*} [CommRing K] [Algebra K A]
 

@@ -59,7 +59,7 @@ theorem weylUnit_eq_one_of_H_eq_zero (hs : IsSerreSystem ℚ CM H E F) {i j : B}
 to `-F i`. -/
 theorem conjAlgEquiv_weylUnit_e (hs : IsSerreSystem ℚ CM H E F) {i : B}
     (hii : CM i i = 2) (hi : H i ≠ 0) (hE : IsNilpotent (E i)) (hF : IsNilpotent (F i)) :
-    (weylUnit hE hF).conjAlgEquiv ℚ (E i) = -F i := by
+    Units.conjAlgEquiv ℚ (weylUnit hE hF) (E i) = -F i := by
   simpa only [Units.conjAlgEquiv_apply, coe_weylUnit, coe_inv_weylUnit] using
     weylUnit_conj_e (hs.isSl2Triple hii hi) hE hF
 
@@ -67,7 +67,7 @@ theorem conjAlgEquiv_weylUnit_e (hs : IsSerreSystem ℚ CM H E F) {i : B}
 to `-E i`. -/
 theorem conjAlgEquiv_weylUnit_f (hs : IsSerreSystem ℚ CM H E F) {i : B}
     (hii : CM i i = 2) (hi : H i ≠ 0) (hE : IsNilpotent (E i)) (hF : IsNilpotent (F i)) :
-    (weylUnit hE hF).conjAlgEquiv ℚ (F i) = -E i := by
+    Units.conjAlgEquiv ℚ (weylUnit hE hF) (F i) = -E i := by
   simpa only [Units.conjAlgEquiv_apply, coe_weylUnit, coe_inv_weylUnit] using
     weylUnit_conj_f (hs.isSl2Triple hii hi) hE hF
 
@@ -75,7 +75,7 @@ theorem conjAlgEquiv_weylUnit_f (hs : IsSerreSystem ℚ CM H E F) {i : B}
 pinned Weyl unit at any nondegenerate node of a Serre system with `CM i i = 2`. -/
 theorem conjAlgEquiv_weylUnit_neg (hs : IsSerreSystem ℚ CM H E F) {i : B}
     (hii : CM i i = 2) (hi : H i ≠ 0) (hE : IsNilpotent (E i)) (hF : IsNilpotent (F i)) :
-    (weylUnit hF.neg hE.neg).conjAlgEquiv ℚ = (weylUnit hE hF).conjAlgEquiv ℚ := by
+    Units.conjAlgEquiv ℚ (weylUnit hF.neg hE.neg) = Units.conjAlgEquiv ℚ (weylUnit hE hF) := by
   ext x
   simpa only [Units.conjAlgEquiv_apply] using
     (hs.isSl2Triple hii hi).weylUnit_neg_symm_conj hE hF x
@@ -130,21 +130,21 @@ theorem weylUnit_braid_of_cartan_eq_neg_one (hs : IsSerreSystem ℚ CM H E F)
   let b := weylUnit hEj hFj
   have hne : i ≠ j := by rintro rfl; omega
   have maplie (u : Aˣ) (x y : A) :
-      u.conjAlgEquiv ℚ ⁅x, y⁆ = ⁅u.conjAlgEquiv ℚ x, u.conjAlgEquiv ℚ y⁆ := by
+      Units.conjAlgEquiv ℚ u ⁅x, y⁆ = ⁅Units.conjAlgEquiv ℚ u x, Units.conjAlgEquiv ℚ u y⁆ := by
     simp only [Ring.lie_def, map_sub, map_mul]
   -- Conjugation by b * a takes the j-th raising and lowering operators to the i-th ones.
-  have hE : (b * a).conjAlgEquiv ℚ (E j) = E i := by
-    rw [Units.conjAlgEquiv_mul, AlgEquiv.mul_apply, a.conjAlgEquiv_apply ℚ,
+  have hE : Units.conjAlgEquiv ℚ (b * a) (E j) = E i := by
+    rw [map_mul, AlgEquiv.mul_apply, Units.conjAlgEquiv_apply ℚ a,
       hs.weylUnit_conj_E_of_cartan_eq_neg_one hii hij hEi hFi, maplie,
-      b.conjAlgEquiv_apply ℚ (E i),
+      Units.conjAlgEquiv_apply ℚ b (E i),
       hs.weylUnit_conj_E_of_cartan_eq_neg_one hjj hji hEj hFj,
       hs.conjAlgEquiv_weylUnit_e hjj hj hEj hFj, ← lie_skew (E j) (E i)]
     simpa only [neg_lie, lie_neg, neg_neg, hji, neg_one_zsmul] using
       hs.lie_lie_E_E_F_of_ne hne
-  have hF : (b * a).conjAlgEquiv ℚ (F j) = F i := by
-    rw [Units.conjAlgEquiv_mul, AlgEquiv.mul_apply, a.conjAlgEquiv_apply ℚ,
+  have hF : Units.conjAlgEquiv ℚ (b * a) (F j) = F i := by
+    rw [map_mul, AlgEquiv.mul_apply, Units.conjAlgEquiv_apply ℚ a,
       hs.weylUnit_conj_F_of_cartan_eq_neg_one hii hij hEi hFi, map_neg, maplie,
-      b.conjAlgEquiv_apply ℚ (F i),
+      Units.conjAlgEquiv_apply ℚ b (F i),
       hs.weylUnit_conj_F_of_cartan_eq_neg_one hjj hji hEj hFj,
       hs.conjAlgEquiv_weylUnit_f hjj hj hEj hFj, ← lie_skew (F j) (F i)]
     simpa only [neg_lie, lie_neg, neg_neg, hji, neg_one_zsmul] using
