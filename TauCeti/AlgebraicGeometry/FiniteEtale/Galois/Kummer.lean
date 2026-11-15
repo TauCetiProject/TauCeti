@@ -36,7 +36,7 @@ homomorphism to the prime-to-`p` Tate module of `Ω`
 
 `π₁(Spec R, x) →ₜ* lim_{(m, p) = 1} μ_m(Ω) = ℤ̂^{(p')}(1)`.
 
-When the Kummer covers are connected over a connected base, `π₁` acts transitively on their
+When the Kummer covers are connected over a preconnected base, `π₁` acts transitively on their
 fibres, so the Kummer characters and the Tate character are surjective. For `R = K[T, T⁻¹]`,
 `t = T` and `K` algebraically closed of characteristic exponent `p`, the Kummer covers are the
 power maps `z ↦ z ^ m` of `𝔾_m` over `K`, and the Tate character is the monodromy of the tower of
@@ -59,7 +59,7 @@ these covers.
   constant, so continuous for the discrete topology on `μ_n(Ω)`.
 * `TauCeti.FiniteEtaleScheme.kummerCharacter_surjective`,
   `TauCeti.FiniteEtaleScheme.kummerTateCharacter_surjective`: surjectivity for connected Kummer
-  covers over a connected base.
+  covers over a preconnected base.
 
 ## References
 
@@ -170,11 +170,14 @@ theorem isLocallyConstant_kummerCharacter :
   filter_upwards [hy.eventually_eq σ] with τ hτ
   rw [kummerCharacter_eq_iff t hn hμ y, hτ, kummerCoverFiberEquiv_smul]
 
-/-- **Surjectivity of the Kummer character.** If the base is connected and the Kummer cover is
+/-- **Surjectivity of the Kummer character.** If the base is preconnected and the Kummer cover is
 connected, the fundamental group acts transitively on its geometric fibre, so every `n`-th root of
 unity of `Ω` is a value of the Kummer character. -/
-theorem kummerCharacter_surjective [ConnectedSpace (Spec R)] [IsConnected (kummerCover t n hn)] :
+theorem kummerCharacter_surjective [PreconnectedSpace (Spec R)] [IsConnected (kummerCover t n hn)] :
     Function.Surjective (kummerCharacter t hn hμ) := by
+  -- `Spec R` is nonempty, since `R` maps to the field `Ω`.
+  have := (algebraMap R Ω).domain_nontrivial
+  have : ConnectedSpace (Spec R) := { toNonempty := inferInstanceAs (Nonempty (PrimeSpectrum R)) }
   intro ζ
   obtain ⟨y⟩ := nonempty_fiber_kummerCover t (Ω := Ω) hn
   set e := kummerCoverFiberEquiv t Ω n hn
@@ -206,21 +209,21 @@ noncomputable def kummerTateCharacter :
 
 /-- The components of the Tate-module-valued Kummer character are the Kummer characters. -/
 @[simp]
-theorem proj_kummerTateCharacter (m : {m : ℕ // m ≠ 0 ∧ m.Coprime p})
+theorem proj_kummerTateCharacter_apply (m : {m : ℕ // m ≠ 0 ∧ m.Coprime p})
     (σ : Aut (fiber (Spec.map (CommRingCat.ofHom (algebraMap R Ω))))) :
     PrimeToPTateModule.proj m (kummerTateCharacter t p hn hμ σ) =
       kummerCharacter t (hn m) (hμ m) σ :=
   PrimeToPTateModule.proj_lift _ _ m σ
 
-/-- **Surjectivity of the Tate-module-valued Kummer character.** If the base is connected and the
+/-- **Surjectivity of the Tate-module-valued Kummer character.** If the base is preconnected and the
 Kummer covers of all nonzero orders prime to `p` are connected, the Tate-module-valued Kummer
 character maps the profinite group `π₁(Spec R, x)` onto the prime-to-`p` Tate module of `Ω`. -/
-theorem kummerTateCharacter_surjective [ConnectedSpace (Spec R)]
+theorem kummerTateCharacter_surjective [PreconnectedSpace (Spec R)]
     [∀ m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}, IsConnected (kummerCover t m (hn m))] :
     Function.Surjective (kummerTateCharacter t p hn hμ) :=
   PrimeToPTateModule.surjective_of_forall_surjective_proj (kummerTateCharacter t p hn hμ).continuous
     fun m ↦ by
-      simpa only [proj_kummerTateCharacter] using kummerCharacter_surjective t (hn m) (hμ m)
+      simpa only [proj_kummerTateCharacter_apply] using kummerCharacter_surjective t (hn m) (hμ m)
 
 end Tate
 
