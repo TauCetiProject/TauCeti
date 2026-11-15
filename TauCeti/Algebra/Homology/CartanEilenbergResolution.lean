@@ -266,7 +266,12 @@ variable (K : ChainComplex C ℕ)
 
 /-- **The Cartan–Eilenberg resolution of a chain complex.** Its row `p` is the cover of the
 `p`-th successive kernel, and its differential `p + 1 ⟶ p` maps the cover of the `(p + 1)`-st
-kernel onto that kernel, which sits inside the cover of the `p`-th kernel. -/
+kernel onto that kernel, which sits inside the cover of the `p`-th kernel.
+
+Weibel's Definition 5.7.1 also asks that the boundaries and the cycles of the rows form projective
+resolutions of the boundaries and cycles of `K`. Those conditions hold for this construction too,
+since each short exact sequence `0 ⟶ ker ⟶ cover M ⟶ M ⟶ 0` is exact on boundaries and cycles
+and the cover has projective boundaries and cycles, but they are not proved in this file. -/
 def cartanEilenbergResolution : ChainComplex (ChainComplex C ℕ) ℕ :=
   ChainComplex.of (fun p => cover (kernels K p))
     (fun p => coverπ (kernels K (p + 1)) ≫ kernelsι K p)
