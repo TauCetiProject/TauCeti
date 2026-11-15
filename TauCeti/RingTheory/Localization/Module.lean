@@ -248,3 +248,17 @@ theorem localizedQuotSMulTopEquiv_mk (a : R) (S : Submonoid R) (m : M) (s : S) :
     ← Submodule.Quotient.mk_smul, hs]
 
 end TauCeti
+
+/-- The localization of the map `r ↦ r • m` is the map `a ↦ a • f m`. -/
+@[simp]
+theorem IsLocalizedModule.map_toSpanSingleton {R M : Type*} [CommSemiring R] [AddCommMonoid M]
+    [Module R M] (S : Submonoid R) (Rₛ : Type*) [CommSemiring Rₛ]
+    [Algebra R Rₛ] [IsLocalization S Rₛ]
+    {Mₛ : Type*} [AddCommMonoid Mₛ] [Module R Mₛ] [Module Rₛ Mₛ] [IsScalarTower R Rₛ Mₛ]
+    (f : M →ₗ[R] Mₛ) [IsLocalizedModule S f] (m : M) :
+    IsLocalizedModule.map S (Algebra.linearMap R Rₛ) f (LinearMap.toSpanSingleton R M m) =
+      (LinearMap.toSpanSingleton Rₛ Mₛ (f m)).restrictScalars R := by
+  refine IsLocalizedModule.linearMap_ext S (Algebra.linearMap R Rₛ) f ?_
+  rw [IsLocalizedModule.map_comp]
+  ext
+  simp
