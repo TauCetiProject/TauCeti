@@ -27,6 +27,11 @@ point of `{q} × k`, then `Φ p` tends to `Φ q` uniformly on `k` as `p` tends t
   convergent parameter family, for a jointly continuous family.
 * `IsCompact.tendstoUniformlyOn_of_continuousAt`: uniform convergence on a compact set as the
   parameter tends to `q`, for a family jointly continuous at every point of the fibre over `q`.
+* `IsCompact.uniformEquicontinuousOn_of_equicontinuousOn`: the set version of
+  `CompactSpace.uniformEquicontinuous_of_equicontinuous`.
+* `IsCompact.uniformEquicontinuousOn_of_continuousOn_prod`: a family jointly continuous on `s ×ˢ k`
+  for compact `s` and `k` is uniformly equicontinuous on `s`, with no uniform structure needed on
+  the parameter space of `k`.
 -/
 
 public section
@@ -66,5 +71,25 @@ theorem tendstoUniformlyOn_of_continuousAt {α β γ : Type*} [TopologicalSpace 
       (continuousAt_const.prodMk continuousAt_snd)
   filter_upwards [hq (mem_nhds_left _ hv), hΦ x hx (mem_nhds_left _ hv)] with z h₁ h₂
   exact hvu (SetRel.prodMk_mem_comp (hvsymm h₁) h₂)
+
+/-- An equicontinuous family on a compact subset of a uniform space is uniformly equicontinuous on
+that subset. -/
+theorem uniformEquicontinuousOn_of_equicontinuousOn {ι α β : Type*} [UniformSpace α]
+    [UniformSpace β] {F : ι → α → β} {s : Set α} (hs : IsCompact s)
+    (hF : EquicontinuousOn F s) : UniformEquicontinuousOn F s := by
+  rw [equicontinuousOn_iff_continuousOn] at hF
+  rw [uniformEquicontinuousOn_iff_uniformContinuousOn]
+  exact hs.uniformContinuousOn_of_continuous hF
+
+/-- A family `Φ : α → β → γ` jointly continuous on `s ×ˢ k`, with `s` compact in a uniform space
+and `k` compact in a topological space, is uniformly equicontinuous on `s` uniformly in `k`. -/
+theorem uniformEquicontinuousOn_of_continuousOn_prod {α β γ : Type*} [UniformSpace α]
+    [TopologicalSpace β] [UniformSpace γ] {Φ : α → β → γ} {s : Set α} {k : Set β}
+    (hs : IsCompact s) (hk : IsCompact k) (hΦ : ContinuousOn (Function.uncurry Φ) (s ×ˢ k)) :
+    UniformEquicontinuousOn (fun (y : k) x ↦ Φ x y) s := by
+  refine hs.uniformEquicontinuousOn_of_equicontinuousOn fun x hx u hu ↦ ?_
+  obtain ⟨v, hv, hvu⟩ := hk.mem_uniformity_of_prod hΦ hx (symm_le_uniformity hu)
+  filter_upwards [hv] with x' hx' y
+  exact hvu x' hx' y.1 y.2
 
 end IsCompact

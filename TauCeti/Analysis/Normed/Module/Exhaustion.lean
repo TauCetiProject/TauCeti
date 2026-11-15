@@ -29,6 +29,11 @@ a point of `Ωᶜ` by a short segment avoiding it.
 
 ## Main declarations
 
+* `TauCeti.closedBall_sdiff_thickening_subset_interior`: decreasing the thickening radius and
+  increasing the ball radius places one stage inside the interior of the next.
+* `IsOpen.iUnion_closedBall_sdiff_thickening` and
+  `IsOpen.exists_subset_interior_closedBall_sdiff_thickening`: the explicit stages exhaust `Ω` and
+  their interiors cover every compact subset of `Ω`.
 * `IsOpen.isFilledIn_closedBall_sdiff_thickening`: a closed ball with a thickening of `Ωᶜ`
   removed is filled in `Ω`.
 * `IsOpen.exists_isFilledIn_compact_exhaustion`: an open set in a proper real normed space has a
@@ -43,6 +48,60 @@ a point of `Ωᶜ` by a short segment avoiding it.
 public section
 
 open Metric Set
+
+section PseudoMetricSpace
+
+variable {X : Type*} [PseudoMetricSpace X]
+
+/-- **Strict nesting of ball-minus-thickening stages.** Increasing the ball radius from `r` to `R`
+and shrinking the thickening radius from `δ₁` to `δ₂ > 0` places `closedBall a r \ thickening δ₁ s`
+inside the interior of `closedBall a R \ thickening δ₂ s`. -/
+theorem TauCeti.closedBall_sdiff_thickening_subset_interior (a : X) {r R δ₁ δ₂ : ℝ} (hrR : r < R)
+    (hδ₂ : 0 < δ₂) (hδ : δ₂ < δ₁) (s : Set X) :
+    closedBall a r \ thickening δ₁ s ⊆ interior (closedBall a R \ thickening δ₂ s) := by
+  have hopen : IsOpen (ball a R \ cthickening δ₂ s) := isOpen_ball.sdiff isClosed_cthickening
+  refine Subset.trans ?_ (hopen.subset_interior_iff.mpr
+    (sdiff_subset_sdiff ball_subset_closedBall (thickening_subset_cthickening δ₂ s)))
+  rintro x ⟨hx₁, hx₂⟩
+  exact ⟨mem_ball.mpr ((mem_closedBall.mp hx₁).trans_lt hrR),
+    fun h => hx₂ (cthickening_subset_thickening' (hδ₂.trans hδ) hδ s h)⟩
+
+/-- **Exhaustion of an open set by explicit ball-minus-thickening stages.** Every open set `Ω` in a
+pseudometric space is the union of `closedBall a (n + 1) \ thickening (n + 1)⁻¹ Ωᶜ` over `n : ℕ`. -/
+theorem IsOpen.iUnion_closedBall_sdiff_thickening {Ω : Set X} (hΩ : IsOpen Ω) (a : X) :
+    (⋃ n : ℕ, closedBall a (n + 1) \ thickening (n + 1 : ℝ)⁻¹ Ωᶜ) = Ω := by
+  refine Subset.antisymm (iUnion_subset fun n x hx => ?_) fun x hx => ?_
+  · by_contra hxΩ
+    exact hx.2 (self_subset_thickening (by positivity) _ hxΩ)
+  · obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp hΩ x hx
+    obtain ⟨n, hn⟩ := exists_nat_ge (max (dist x a) ε⁻¹)
+    have hn₁ : dist x a ≤ n := (le_max_left _ _).trans hn
+    have hn₂ : ε⁻¹ < n + 1 := ((le_max_right _ _).trans hn).trans_lt (by linarith)
+    refine mem_iUnion.mpr ⟨n, mem_closedBall.mpr (by linarith), fun h => ?_⟩
+    obtain ⟨y, hy, hxy⟩ := mem_thickening_iff.mp h
+    refine hy (hball ?_)
+    rw [mem_ball, dist_comm]
+    exact hxy.trans (inv_lt_of_inv_lt₀ hε hn₂)
+
+/-- **Compact cofinality of the explicit exhaustion stages.** Every compact subset `K` of an open
+set `Ω` lies in the interior of `closedBall a (n + 1) \ thickening (n + 1)⁻¹ Ωᶜ` for some `n`. -/
+theorem IsOpen.exists_subset_interior_closedBall_sdiff_thickening {Ω K : Set X} (hΩ : IsOpen Ω)
+    (hK : IsCompact K) (hKΩ : K ⊆ Ω) (a : X) :
+    ∃ n : ℕ, K ⊆ interior (closedBall a (n + 1) \ thickening (n + 1 : ℝ)⁻¹ Ωᶜ) := by
+  let U : ℕ → Set X := fun n => interior (closedBall a (n + 1) \ thickening (n + 1 : ℝ)⁻¹ Ωᶜ)
+  have hmono : Monotone U := monotone_nat_of_le_succ fun n => interior_mono <|
+    sdiff_subset_sdiff (closedBall_subset_closedBall (by push_cast; linarith))
+      (thickening_mono (inv_anti₀ (by positivity) (by push_cast; linarith)) Ωᶜ)
+  have hcover : K ⊆ ⋃ n, U n := by
+    refine hKΩ.trans ?_
+    rw [← hΩ.iUnion_closedBall_sdiff_thickening a]
+    refine iUnion_subset fun n => Subset.trans ?_ (subset_iUnion U (n + 1))
+    simpa only [U, Nat.cast_add, Nat.cast_one] using
+      TauCeti.closedBall_sdiff_thickening_subset_interior a (by linarith) (by positivity)
+        (inv_strictAnti₀ (by positivity) (by linarith)) Ωᶜ
+  exact hK.elim_directed_cover U (fun _ => isOpen_interior) hcover hmono.directed_le
+
+end PseudoMetricSpace
 
 section Exhaustion
 
@@ -86,33 +145,12 @@ component of `Ω \ K n` is relatively compact in `Ω`. -/
 theorem IsOpen.exists_isFilledIn_compact_exhaustion {Ω : Set E} (hΩ : IsOpen Ω) :
     ∃ K : ℕ → Set E, (∀ n, IsCompact (K n)) ∧ (∀ n, K n ⊆ interior (K (n + 1))) ∧
       ⋃ n, K n = Ω ∧ ∀ n, IsFilledIn (K n) Ω := by
-  set K : ℕ → Set E := fun n => closedBall 0 (n + 1) \ thickening (n + 1 : ℝ)⁻¹ Ωᶜ
-  have hKcpt : ∀ n, IsCompact (K n) := fun n => (isCompact_closedBall _ _).diff isOpen_thickening
-  have hKΩ : ∀ n, K n ⊆ Ω := fun n x hx => by
-    by_contra hxΩ
-    exact hx.2 (self_subset_thickening (by positivity) _ hxΩ)
-  refine ⟨K, hKcpt, fun n => ?_, ?_, fun n => ?_⟩
-  · -- `K n` lies in the open set `ball 0 (n + 2) \ cthickening (n + 2)⁻¹ Ωᶜ ⊆ K (n + 1)`.
-    have hopen : IsOpen (ball (0 : E) (n + 1 + 1) \ cthickening (n + 1 + 1 : ℝ)⁻¹ Ωᶜ) :=
-      isOpen_ball.sdiff isClosed_cthickening
-    refine Subset.trans ?_ (hopen.subset_interior_iff.mpr ?_)
-    · rintro x ⟨hx₁, hx₂⟩
-      refine ⟨mem_ball_zero_iff.mpr ((mem_closedBall_zero_iff.mp hx₁).trans_lt (by linarith)),
-        fun h => hx₂ (cthickening_subset_thickening' (by positivity) ?_ _ h)⟩
-      gcongr
-      linarith
-    · simp only [K, Nat.cast_add, Nat.cast_one]
-      exact sdiff_subset_sdiff ball_subset_closedBall (thickening_subset_cthickening _ _)
-  · refine Subset.antisymm (iUnion_subset hKΩ) fun x hx => ?_
-    obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp hΩ x hx
-    obtain ⟨n, hn⟩ := exists_nat_ge (max ‖x‖ ε⁻¹)
-    have hn₁ : ‖x‖ ≤ n := (le_max_left _ _).trans hn
-    have hn₂ : ε⁻¹ < n + 1 := ((le_max_right _ _).trans hn).trans_lt (by linarith)
-    refine mem_iUnion.mpr ⟨n, mem_closedBall_zero_iff.mpr (by linarith), fun h => ?_⟩
-    obtain ⟨y, hy, hxy⟩ := mem_thickening_iff.mp h
-    refine hy (hball ?_)
-    rw [mem_ball, dist_comm]
-    exact hxy.trans (inv_lt_of_inv_lt₀ hε hn₂)
-  · exact hΩ.isFilledIn_closedBall_sdiff_thickening 0 (by positivity) (by positivity)
+  refine ⟨fun n => closedBall 0 (n + 1) \ thickening (n + 1 : ℝ)⁻¹ Ωᶜ,
+    fun n => (isCompact_closedBall _ _).diff isOpen_thickening, fun n => ?_,
+    hΩ.iUnion_closedBall_sdiff_thickening 0,
+    fun n => hΩ.isFilledIn_closedBall_sdiff_thickening 0 (by positivity) (by positivity)⟩
+  simpa only [Nat.cast_add, Nat.cast_one] using
+    closedBall_sdiff_thickening_subset_interior 0 (by linarith) (by positivity)
+      (inv_strictAnti₀ (by positivity) (by linarith)) Ωᶜ
 
 end Exhaustion
