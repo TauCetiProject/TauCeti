@@ -18,10 +18,6 @@ primitive fourth root of unity modulo `5`.
 ## Main definitions
 
 * `TauCeti.quaternionGroupTwoDixonPrimeData`: Dixon prime data for `QuaternionGroup 2`.
-
-## References
-
-* The roadmap `RepresentationTheory/CharacterTheory`, Layer 6, "Certified Dixon prime data".
 -/
 
 public section

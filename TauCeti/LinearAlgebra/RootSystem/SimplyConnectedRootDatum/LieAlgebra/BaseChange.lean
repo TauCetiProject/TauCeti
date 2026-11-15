@@ -48,8 +48,7 @@ characteristic enters only afterwards, when the resulting integral data is base 
 
 The matrix construction is M. Geck, *On the construction of semisimple Lie algebras and Chevalley
 groups*, Proc. Amer. Math. Soc. **145** (2017), 3233--3247. This is a prerequisite for the explicit
-Chevalley--Demazure construction in Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`, consumed
-by milestone L0 of `TauCetiRoadmap/CFSGStatement/README.md`.
+Chevalley--Demazure construction.
 -/
 
 public section

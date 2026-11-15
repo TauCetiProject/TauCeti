@@ -126,11 +126,11 @@ theorem reverse_swapHorizontal (φ : StrandDiagram α) (a b : α) :
   simp only [toDual_inj, ne_eq]
   -- A strand from `j` to `i` other than the moved one avoids `a` and `b` at both of its ends.
   constructor
-  · rintro (⟨rfl, rfl⟩ | ⟨hja, hjb, hi⟩)
+  · rintro (⟨rfl, rfl⟩ | ⟨hja, _, hi⟩)
     · exact Or.inl ⟨rfl, rfl⟩
     · exact Or.inr ⟨fun hia ↦ hja (φ.eq_of_mem_of_mem (hia ▸ hi) h.mem),
         fun hib ↦ h.notMem_target (mem_target.2 ⟨j, hib ▸ hi⟩), hi⟩
-  · rintro (⟨rfl, rfl⟩ | ⟨hia, hib, hi⟩)
+  · rintro (⟨rfl, rfl⟩ | ⟨hia, _, hi⟩)
     · exact Or.inl ⟨rfl, rfl⟩
     · exact Or.inr ⟨fun hja ↦ hia (Option.mem_unique (hja ▸ hi) h.mem),
         fun hjb ↦ h.notMem_source (mem_source.2 ⟨i, hjb ▸ hi⟩), hi⟩

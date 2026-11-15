@@ -14,7 +14,9 @@ public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Comap
 An equivariant nonunital coefficient homomorphism induces a nonunital star-algebra
 homomorphism of full crossed products. On compactly supported coefficients it acts pointwise.
 The induced maps preserve identities and composition, and pulling back a covariant pair
-commutes with its extended integrated form.
+commutes with its extended integrated form; in particular, an extended integrated form vanishes
+on the range of the induced map precisely when the coefficient representation vanishes on the
+range of the coefficient map.
 
 We use the full-seminorm estimate `Hom.fullSeminorm_convolutionMap_le` to extend the
 compact-support map by continuity. Both coefficient algebras lie in the same universe, so the
@@ -28,8 +30,7 @@ No nondegeneracy, unitality, separability or global σ-finiteness is assumed.
 * `TauCeti.CStarAction.Hom.fullCrossedProductMap_id` and
   `TauCeti.CStarAction.Hom.fullCrossedProductMap_comp`: the functor laws.
 * `TauCeti.CStarAction.CovariantRepresentation.integratedFull_fullCrossedProductMap_apply`:
-  compatibility with
-  integration of covariant pairs.
+  compatibility with integration of covariant pairs.
 
 ## References
 
@@ -96,6 +97,34 @@ theorem fullCrossedProductMap_comp (ψ : Hom β γ) :
   ext f
   simp
 
+open scoped CStarAlgebra in
+/-- A closed nonunital star subalgebra of `FullCrossedProduct β μ` contains the range of
+`φ.fullCrossedProductMap μ` precisely when it contains the image of every compactly supported
+element under `φ.convolutionMap μ`. -/
+theorem range_fullCrossedProductMap_le_iff
+    {J : NonUnitalStarSubalgebra ℂ (FullCrossedProduct β μ)}
+    (hJ : IsClosed (J : Set (FullCrossedProduct β μ))) :
+    (φ.fullCrossedProductMap μ).range ≤ J ↔
+      ∀ f : ConvolutionAlgebra α μ, of β μ (φ.convolutionMap μ f) ∈ J := by
+  refine ⟨fun h f => h ((φ.fullCrossedProductMap μ).mem_range.2
+      ⟨of α μ f, φ.fullCrossedProductMap_of μ f⟩),
+    fun h y hy => ?_⟩
+  obtain ⟨x, rfl⟩ := (φ.fullCrossedProductMap μ).mem_range.1 hy
+  clear hy
+  induction x using FullCrossedProduct.induction_on with
+  | hp => exact hJ.preimage (map_continuous (φ.fullCrossedProductMap μ))
+  | ih f => simpa only [Set.mem_preimage, SetLike.mem_coe, fullCrossedProductMap_of] using h f
+
+/-- The range of `φ.fullCrossedProductMap μ` is contained in the topological closure of the
+compactly supported elements coming from `φ.convolutionMap μ`. -/
+theorem range_fullCrossedProductMap_le_topologicalClosure :
+    (φ.fullCrossedProductMap μ).range ≤
+      ((of β μ).comp (φ.convolutionMap μ)).range.topologicalClosure :=
+  (φ.range_fullCrossedProductMap_le_iff μ
+    ((of β μ).comp (φ.convolutionMap μ)).range.isClosed_topologicalClosure).2 fun f =>
+    NonUnitalStarSubalgebra.le_topologicalClosure _
+      (((of β μ).comp (φ.convolutionMap μ)).mem_range.2 ⟨f, rfl⟩)
+
 end Hom
 
 namespace CovariantRepresentation
@@ -120,6 +149,25 @@ the integrated form of the pulled-back pair. -/
 theorem integratedFull_fullCrossedProductMap_apply (x : FullCrossedProduct α μ) :
     P.integratedFull μ (φ.fullCrossedProductMap μ x) = (P.comap φ).integratedFull μ x :=
   DFunLike.congr_fun (P.integratedFull_comp_fullCrossedProductMap μ φ) x
+
+/-- An extended integrated form vanishes after `φ.fullCrossedProductMap μ` precisely when the
+coefficient representation vanishes on the range of `φ`. -/
+theorem integratedFull_comp_fullCrossedProductMap_eq_zero_iff :
+    (P.integratedFull μ).comp (φ.fullCrossedProductMap μ) = 0 ↔
+      ∀ a, P.coefficient (φ a) = 0 := by
+  rw [P.integratedFull_comp_fullCrossedProductMap μ φ, integratedFull_eq_zero_iff,
+    NonUnitalStarAlgHom.ext_iff]
+  simp only [comap_coefficient, NonUnitalStarAlgHom.comp_apply, Hom.coe_toNonUnitalStarAlgHom,
+    NonUnitalStarAlgHom.zero_apply]
+
+/-- An extended integrated form vanishes on the range of `φ.fullCrossedProductMap μ` precisely
+when the coefficient representation vanishes on the range of `φ`. -/
+theorem forall_mem_range_fullCrossedProductMap_integratedFull_eq_zero_iff :
+    (∀ y ∈ (φ.fullCrossedProductMap μ).range, P.integratedFull μ y = 0) ↔
+      ∀ a, P.coefficient (φ a) = 0 := by
+  rw [← P.integratedFull_comp_fullCrossedProductMap_eq_zero_iff μ φ, NonUnitalStarAlgHom.ext_iff]
+  simp only [NonUnitalStarAlgHom.mem_range, forall_exists_index, forall_apply_eq_imp_iff,
+    NonUnitalStarAlgHom.comp_apply, NonUnitalStarAlgHom.zero_apply]
 
 end CovariantRepresentation
 

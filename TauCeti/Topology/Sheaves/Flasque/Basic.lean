@@ -46,10 +46,8 @@ which `TauCeti/CategoryTheory/Sites/SheafCohomology/FreeYoneda.lean` enters: an 
 subsets induces a monomorphism of the free abelian sheaves they generate, and `Hom(-, I)` turns it
 into the restriction map of `I`.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer B, "coherent sheaves and
-cohomology `Hⁱ(X, ℱ)`: acyclicity of affines, …, vanishing above dimension": it is the first
-acyclicity theorem of the lane, and the acyclic skyscraper sheaves are the coefficients in which
-the Riemann-Roch induction over the points of a divisor reads the additivity of
+The acyclic skyscraper sheaves are the coefficients in which a Riemann-Roch induction over the
+points of a divisor reads the additivity of the Euler characteristic of
 `TauCeti/AlgebraicGeometry/Cohomology/EulerCharacteristic.lean`.
 
 No formalization is vendored: flasqueness, the surjectivity of sections out of a flasque

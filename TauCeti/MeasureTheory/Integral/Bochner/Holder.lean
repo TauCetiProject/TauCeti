@@ -70,7 +70,7 @@ theorem norm_integral_smul_le_eLpNorm_mul_eLpNorm_mul_measureReal_rpow {f : Ω �
       rw [setIntegral_eq_integral_of_ae_compl_eq_zero (hwA.mono fun x hx hxA => by
         simp [hx hxA])]
     _ ≤ eLpNorm (f • w) 1 (μ.restrict A) :=
-      (enorm_integral_le_lintegral_enorm _).trans lintegral_enorm_le_eLpNorm_one
+      (eNorm_integral_le_lintegral_eNorm _).trans lintegral_eNorm_le_eLpNorm_one
     _ ≤ eLpNorm (f • w) p (μ.restrict A) * μ A ^ (1 - (r : ℝ)⁻¹ - (s : ℝ)⁻¹) := by
       refine (eLpNorm_le_eLpNorm_mul_rpow_measure_univ_of_pos hp1 one_pos).trans_eq ?_
       rw [Measure.restrict_apply_univ, hp]

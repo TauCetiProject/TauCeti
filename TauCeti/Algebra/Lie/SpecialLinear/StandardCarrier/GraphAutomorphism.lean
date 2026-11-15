@@ -43,9 +43,7 @@ invariant. The automorphism therefore descends to the quotient.
 * R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex Characters*, §1.15.
 * R. Steinberg, *Lectures on Chevalley Groups*, §10.
 
-This advances the Pinnings and Chevalley--Demazure construction targets in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`. It supplies the graph part of the Steinberg map needed
-by milestone L1 of `TauCetiRoadmap/CFSGStatement/README.md` for the twisted family `²A_r(q)`.
+This supplies the graph part of the Steinberg map of the twisted family `²A_r(q)`.
 -/
 
 public section

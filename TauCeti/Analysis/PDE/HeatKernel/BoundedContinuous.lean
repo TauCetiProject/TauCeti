@@ -80,7 +80,7 @@ theorem norm_iteratedFDeriv_heatCauchyPotentialBCF_le {t : ℝ} (ht : 0 < t)
     ‖iteratedFDeriv ℝ m (heatCauchyPotentialBCF t g) x‖ ≤
       (∫ z, ‖iteratedFDeriv ℝ m (heatKernel t : E → ℝ) z‖) * ‖g‖ := by
   rw [coe_heatCauchyPotentialBCF_of_pos ht]
-  exact norm_iteratedFDeriv_heatKernel_convolution_le ht g.continuous.aestronglyMeasurable
+  exact norm_iteratedFDeriv_heatKernel_convolution_le ht
     (ae_of_all _ g.norm_coe_le_norm) m x
 
 /-- Heat regularization at positive time is Lipschitz, even for merely bounded continuous data.
@@ -90,12 +90,11 @@ theorem lipschitzWith_heatCauchyPotentialBCF {t : ℝ} (ht : 0 < t) (g : E →�
       mul_nonneg (integral_nonneg fun _ => norm_nonneg _) (norm_nonneg _)⟩
       (heatCauchyPotentialBCF t g) := by
   rw [coe_heatCauchyPotentialBCF_of_pos ht]
-  apply lipschitzWith_of_nnnorm_fderiv_le
-    ((contDiff_heatKernel_convolution ht g.continuous.aestronglyMeasurable
-      (ae_of_all _ g.norm_coe_le_norm)).differentiable (by simp))
+  apply lipschitzWith_of_nnNorm_fderiv_le
+    ((contDiff_heatKernel_convolution ht (ae_of_all _ g.norm_coe_le_norm)).differentiable (by simp))
   intro x
   have hbound := norm_iteratedFDeriv_heatKernel_convolution_le ht
-    g.continuous.aestronglyMeasurable (ae_of_all _ g.norm_coe_le_norm) 1 x
+    (ae_of_all _ g.norm_coe_le_norm) 1 x
   rw [norm_iteratedFDeriv_one] at hbound
   exact_mod_cast hbound
 

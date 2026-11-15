@@ -154,6 +154,7 @@ variable {𝕂 : Type*} [RCLike 𝕂] {F : Type*} [NormedAddCommGroup F] [Normed
   {Y : Type*} [TopologicalSpace Y] [ChartedSpace G Y]
   [IsManifold K n X] [IsManifold K' n Y] [BoundarylessManifold K X]
 
+omit [FiniteDimensional 𝕂 F] in
 /-- A smooth embedding of a boundaryless manifold into a manifold modelled on a space of the same
 finite dimension is a local diffeomorphism. -/
 theorem isLocalDiffeomorph (f : SmoothEmbedding K K' n X Y)

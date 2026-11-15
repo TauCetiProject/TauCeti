@@ -46,9 +46,6 @@ operators through which the general linear group acts.
 
 ## References
 
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 8, “The double centralizer (image-level)”: the centralizer of the symmetric-group image in
-  `End((ℂᵈ)^{⊗n})` is the image of `ℂ[GLₔ]`, whose spanning half is the identification proved here.
 * W. Fulton and J. Harris, *Representation Theory: A First Course*, Lecture 6, and Appendix B.1 for
   the polarization argument.
 -/

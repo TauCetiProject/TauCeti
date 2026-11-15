@@ -243,7 +243,7 @@ theorem _root_.LiouvilleWith.simultaneous_infinite {p w ξ : ℝ} (h : Liouville
   rw [← Nat.frequently_atTop_iff_infinite]
   refine ((eventually_gt_atTop 0).and_frequently
     (h.frequently_lt_rpow_neg hpw)).mono fun q hq ↦ ?_
-  obtain ⟨hq0, m, hne, hm⟩ := hq
+  obtain ⟨hq0, m, _, hm⟩ := hq
   have hq' : (0 : ℝ) < q := Nat.cast_pos.2 hq0
   refine ⟨hq0, ![m], fun i ↦ ?_⟩
   have heq : |(q : ℝ) * ξ - m| = q * |ξ - (m : ℝ) / q| := by

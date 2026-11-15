@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Geometry.Toric.Algebraic.Lattice
+public import TauCeti.Geometry.Toric.Algebraic.Lattice.Basic
 public import Mathlib.Data.Rat.Cast.Order
 
 /-!
@@ -111,6 +111,16 @@ theorem exists_rat_apply (hf : IsRationalFunctional h f) (n : N) :
     ∃ q : ℚ, f (i n) = (q : ℝ) := by
   obtain ⟨q, m, rfl⟩ := hf
   exact ⟨q * (m n : ℚ), by simp⟩
+
+/-- A rational functional has the same kernel as an integral character's real
+extension. The zero functional is allowed, using the zero character. -/
+theorem exists_ker_eq_ker_realCharacter (hf : IsRationalFunctional h f) :
+    ∃ m : N →+ ℤ, f.ker = (h.realCharacter m).ker := by
+  obtain ⟨q, m, rfl⟩ := hf
+  by_cases hq : q = 0
+  · refine ⟨0, ?_⟩
+    simp [hq]
+  · exact ⟨m.toAddMonoidHom, LinearMap.ker_smul _ (q : ℝ) (by exact_mod_cast hq)⟩
 
 section Maps
 

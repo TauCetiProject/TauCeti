@@ -60,7 +60,7 @@ variable {𝕜 G V : Type*} [RCLike 𝕜] [IsAlgClosed 𝕜] [Group G] [Topologi
   [FiniteDimensional 𝕜 V]
 
 local instance instCompleteSpaceSchurAverage : CompleteSpace V :=
-  FiniteDimensional.complete 𝕜 V
+  FiniteDimensional.completeSpace 𝕜 V
 
 variable (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
 
@@ -89,7 +89,7 @@ variable {𝕜 G V : Type*} [RCLike 𝕜] [IsAlgClosed 𝕜] [Group G] [Topologi
   [FiniteDimensional 𝕜 V]
 
 local instance instCompleteSpaceSchurOrthogonality : CompleteSpace V :=
-  FiniteDimensional.complete 𝕜 V
+  FiniteDimensional.completeSpace 𝕜 V
 
 variable (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
 

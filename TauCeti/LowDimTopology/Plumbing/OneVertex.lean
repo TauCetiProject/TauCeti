@@ -330,7 +330,7 @@ theorem latticeHomologyCycleMap_bijective_of_unique (h : P.IsNegativeDefinite)
   -- Injectivity is the `U`-tower of `latticeHomologyCycleMap_injective`; surjectivity holds
   -- because every cycle is a chain of lattice points and every lattice point is a `U`-multiple
   -- of a minimal-weight one.
-  obtain ⟨x₀, hx₀⟩ := P.exists_characteristicWeight_eq_sInfCharacteristicWeight h k
+  obtain ⟨x₀, hx₀⟩ := P.exists_characteristicWeight_eq_sInfCharacteristicWeight k
   refine ⟨P.latticeHomologyCycleMap_injective h k c hc hone,
     P.latticeHomologyCycleMap_surjective k c hc fun z hz => ⟨P.latticeAugmentation k z, ?_⟩⟩
   have hz₀ := sub_augmentation_smul_single_mem_range_of_unique P k h hx₀ hz
@@ -418,7 +418,7 @@ noncomputable def coefficientEquivOneVertexPlumbingLatticeHomology {w : ℤ} (hw
     (k : (oneVertexPlumbing w).characteristicVectors) :
     PlumbingCoefficient ≃ₗ[PlumbingCoefficient] (oneVertexPlumbing w).latticeHomology k :=
   let h := isNegativeDefinite_oneVertexPlumbing hw
-  let e := (oneVertexPlumbing w).exists_cycle_latticeAugmentation_eq_one h k
+  let e := (oneVertexPlumbing w).exists_cycle_latticeAugmentation_eq_one k
   PlumbingGraph.coefficientEquivLatticeHomologyOfUnique _ k h e.choose e.choose_spec.1
     e.choose_spec.2
 

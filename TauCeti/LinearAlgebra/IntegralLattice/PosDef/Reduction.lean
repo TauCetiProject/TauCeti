@@ -263,7 +263,7 @@ private theorem two_mul_integralNorm_le (hL : L.IsPosSemidef)
     2 * L.integralNorm (b i) ≤
       L.successiveMinimum i + max (L.successiveMinimum i : ℤ) (i ^ 2 * K) := by
   set s := Finset.Iio i
-  have hμ : (0 : ℤ) ≤ L.successiveMinimum i := Int.natCast_nonneg _
+  have _ : (0 : ℤ) ≤ L.successiveMinimum i := Int.natCast_nonneg _
   -- A vector `y` of norm at most `λᵢ` outside the span of `b 0, …, b (i - 1)`, and the rounding
   -- `d • v = y - S` of `y`, where `b 0, …, b (i - 1), v` extends to a basis.
   obtain ⟨y, hy, hyspan⟩ := L.exists_integralNorm_le_successiveMinimum_not_mem_span i

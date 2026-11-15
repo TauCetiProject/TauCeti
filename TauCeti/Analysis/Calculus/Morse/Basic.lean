@@ -120,8 +120,6 @@ twice differentiable point is `ContDiffAt.isSymmSndFDerivAt`.
   M. Schwarz, *Morse Homology*, Birkhäuser, 1993, Chapter 1, for the nondegeneracy condition in
   Banach and Hilbert generality used here, namely invertibility of the second derivative as a map
   into the dual space.
-* [Heegaard Floer homology roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HeegaardFloer/README.md),
-  Lane M, "Morse homology".
 -/
 
 public section

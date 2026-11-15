@@ -33,6 +33,11 @@ These are the comparisons behind the order of growth of an entire function.
 As `h → 0⁺`, every multiple `A * h ^ θ` of a positive power falls below any positive constant.
 This is how polynomial rates in a small scale `h` become inequalities for all small `h`.
 
+## Families bounded by integer powers
+
+A family whose norms are bounded by `r ^ g a`, with `1 < r` and integer exponents `g a → -∞`,
+tends to zero. This is how valuation bounds on coefficients give convergence of series.
+
 ## Comparing exponents
 
 If `(n + 1) ^ a ≤ C (n + 1) ^ b` for every natural number `n`, then `a ≤ b`: a power with a
@@ -120,6 +125,16 @@ theorem isBigO_norm_pow_exp_norm_rpow (n : ℕ) {b : ℝ} (hb : 0 < b) :
     filter_upwards [eventually_ge_atTop 0] with x hx
     rw [Function.comp_apply, ← Real.rpow_mul hx, mul_div_cancel₀ _ hb.ne', Real.rpow_natCast]
   exact h.comp_tendsto tendsto_norm_cobounded_atTop
+
+/-- A family whose norms are bounded by `r ^ g a`, with `1 < r` and integer exponents `g a`
+tending to `-∞`, tends to zero. -/
+theorem tendsto_zero_of_norm_le_zpow {α F : Type*} [SeminormedAddGroup F] {l : Filter α}
+    {f : α → F} {r : ℝ} (hr : 1 < r) {g : α → ℤ} (hf : ∀ a, ‖f a‖ ≤ r ^ g a)
+    (hg : Tendsto g l atBot) : Tendsto f l (𝓝 0) := by
+  refine squeeze_zero_norm hf ?_
+  have h := (tendsto_rpow_atBot_of_base_gt_one r hr).comp
+    ((tendsto_intCast_atBot_iff (R := ℝ)).2 hg)
+  simpa [Function.comp_def, Real.rpow_intCast] using h
 
 /-- If `(n + 1) ^ a ≤ C (n + 1) ^ b` for every natural number `n`, then `a ≤ b`. -/
 theorem le_of_forall_rpow_le_mul_rpow {a b C : ℝ}

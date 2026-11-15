@@ -196,7 +196,7 @@ theorem finite_injuryStages_and_ncard_le (e : ℕ) :
 theorem finite_monitoredInjuryEvents_and_ncard_le (e : ℕ) :
     (monitoredInjuryEvents stage monitoredSide restraint e).Finite ∧
       (monitoredInjuryEvents stage monitoredSide restraint e).ncard ≤ 2 ^ e - 1 := by
-  obtain ⟨hfin_set, hle_set⟩ := finite_injurySet_and_ncard_le e
+  obtain ⟨-, hle_set⟩ := finite_injurySet_and_ncard_le e
   have hinj : Set.InjOn (fun p : Bool × ℕ × ℕ => p.2.2)
       (monitoredInjuryEvents stage monitoredSide restraint e) := fun _ h₁ _ h₂ hx => by
     rw [mem_monitoredInjuryEvents] at h₁ h₂

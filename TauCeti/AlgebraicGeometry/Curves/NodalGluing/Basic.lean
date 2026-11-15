@@ -259,11 +259,11 @@ theorem eq_of_flagRel_of_flagRel (d : FlagPairData ι Flag X) {x y z : Σ i, X i
   obtain ⟨f, hf⟩ := (flagRel_def d x y).mp h₁
   obtain ⟨g, hg⟩ := (flagRel_def d y z).mp h₂
   rcases hf with ⟨hxf, hyf⟩ | ⟨hxf, hyf⟩
-  · rcases hg with ⟨hyg, hzg⟩ | ⟨hyg, hzg⟩
+  · rcases hg with ⟨hyg, _⟩ | ⟨hyg, hzg⟩
     · exact absurd (hyf.symm.trans hyg) (fun h => fstPoint_ne_sndPoint d g f h.symm)
     · have hfg : f = g := eq_of_flagPoint_mem d (p := y) (Or.inr hyf) (Or.inr hyg)
       exact hxf.trans ((congrArg (fun f => fstPoint d f) hfg).trans hzg.symm)
-  · rcases hg with ⟨hyg, hzg⟩ | ⟨hyg, hzg⟩
+  · rcases hg with ⟨hyg, hzg⟩ | ⟨hyg, _⟩
     · have hfg : f = g := eq_of_flagPoint_mem d (p := y) (Or.inl hyf) (Or.inl hyg)
       exact hxf.trans ((congrArg (fun f => sndPoint d f) hfg).trans hzg.symm)
     · exact absurd (hyf.symm.trans hyg) (fstPoint_ne_sndPoint d f g)

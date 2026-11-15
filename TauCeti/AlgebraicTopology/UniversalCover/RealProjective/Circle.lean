@@ -17,7 +17,9 @@ public import TauCeti.Geometry.Sphere.Circle
 For `n = 1`, real projective space `RP¹` is homeomorphic to the complex unit circle `Circle` via
 the map sending the antipodal class of a unit vector `(x₀, x₁) ∈ S¹ ⊆ ℝ²`, identified with
 `z = x₀ + i x₁`, to `z² ∈ Circle`. The map is well-defined because `(-z)² = z²`, and is a
-continuous bijection from a compact space to a Hausdorff space, hence a homeomorphism.
+continuous bijection from a compact space to a Hausdorff space, hence a homeomorphism. It is
+used to compute `π₁(RP¹)` in
+`TauCeti.AlgebraicTopology.UniversalCover.RealProjective.FundamentalGroup.Line`.
 
 ## Main declarations
 
@@ -33,11 +35,6 @@ continuous bijection from a compact space to a Hausdorff space, hence a homeomor
 * `TauCeti.RealProjectiveSpace.Line.toCircle_basepoint`: `toCircle` sends `basepoint` to `1`.
 * `Projectivization.lineHomeomorphCircle`: the projective line `ℙ ℝ (Fin 2 → ℝ)` as the circle,
   `[x : y] ↦ (x + i y)² / (x² + y²)`.
-
-## References
-
-This supports the `n = 1` case of `π₁(RPⁿ)` in `TauCetiRoadmap/UniversalCovers/README.md`, Stage 4,
-item 13.
 -/
 
 public section
@@ -157,7 +154,6 @@ theorem coe_lineHomeomorphCircle_mk (w : Fin 2 → ℝ) (hw : w ≠ 0) :
       (w 0 + w 1 * Complex.I) ^ 2 / (w 0 ^ 2 + w 1 ^ 2 : ℝ) := by
   have hn : ‖WithLp.toLp 2 w‖ ^ 2 = w 0 ^ 2 + w 1 ^ 2 := by
     rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_two]
-  have hn0 : ‖WithLp.toLp 2 w‖ ≠ 0 := by simpa using hw
   simp only [lineHomeomorphCircle, Homeomorph.trans_apply,
     RealProjectiveSpace.homeomorphProjectivization_symm_mk_eq_normalize,
     RealProjectiveSpace.Line.homeomorphCircle_apply, RealProjectiveSpace.Line.toCircle_apply_mk,

@@ -1,13 +1,8 @@
 name: PR status
 
-# Keeps every PR's status label and its Zulip post current, reconciling in batches.
+# Keeps every PR's status label current, reconciling in batches.
 #
-# This used to be three per-event workflows (pr-labels.yml's per-event jobs, zulip-pr.yml and
-# zulip-pr-status.yml): one GitHub-hosted job for every label, comment, push and build event on every
-# PR, over a thousand an hour, each spending most of its short life on setup. Those jobs competed with
-# PR builds for the organisation's twenty GitHub-hosted slots.
-#
-# Now the events only wake this workflow. Its concurrency group is global, and GitHub admits one run
+# PR events wake this workflow. Its concurrency group is global, and GitHub admits one run
 # at a time and keeps only the newest waiting run, cancelling the others before they take a runner.
 # Each fresh scan reconciles every PR touched since its saved watermark
 # (scripts/pr_status/batch.py), so an event whose own run was collapsed away is still covered by the
@@ -54,7 +49,7 @@ jobs:
             && (contains(github.event.comment.body, 'tauceti-scoreboard')
                 || contains(github.event.changes.body.from, 'tauceti-scoreboard')))
       )
-    runs-on: ${{ fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) }}
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     # On the job, not the workflow: a workflow-level group admits runs before the `if` above is
     # evaluated, so an irrelevant event could displace the one pending run that mattered and then
@@ -97,10 +92,10 @@ jobs:
             .github/actions/checkout-merge-policy
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@4d2579da7cdb5679ab523d281f61c73ffb502f75
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@a94bf58e6032630c65da1a61a989bfb985ad8cd0
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 4d2579da7cdb5679ab523d281f61c73ffb502f75
+          tools-ref: a94bf58e6032630c65da1a61a989bfb985ad8cd0
           project-directory: .
       - name: Checkout the pinned merge policy (read-only)
         uses: ./.github/actions/checkout-merge-policy
@@ -160,16 +155,12 @@ jobs:
           print("since=" + t.strftime("%Y-%m-%dT%H:%M:%SZ"))
           EOF
 
-      - name: Reconcile labels and Zulip posts
+      - name: Reconcile PR status labels
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           SELF_TESTED_MERGE_BACKEND: ${{ vars.MERGE_BACKEND }}
-          SELF_TESTED_TEAM_TOKEN: ${{ steps.app-token.outputs.token }}
           SELF_TESTED_WRITE_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          ZULIP_API_KEY: ${{ secrets.ZULIP_API_KEY }}
-          ZULIP_EMAIL: ${{ secrets.ZULIP_EMAIL }}
-          ZULIP_SITE: https://leanprover.zulipchat.com
           SINCE: ${{ steps.since.outputs.since }}
           # The event's own PR, when its payload names one, goes first.
           PR: ${{ github.event.pull_request.number || github.event.issue.number || github.event.workflow_run.pull_requests[0].number }}

@@ -67,11 +67,9 @@ The group of node permutations that the construction consumes is
 
 ## References
 
-The diagram automorphism attached to a symmetry of a pinned root datum is Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`: "Pinnings ... This is what makes 'the' graph
-automorphism well defined, so it is data, not a property", and it is the "isomorphism of root data"
-that the isomorphism theorem for pinned groups there lifts to a group scheme. Its consumer is
-milestone L1 of `TauCetiRoadmap/CFSGStatement/README.md`, the graph-twisted Steinberg maps. See
+The pinning is what makes the graph automorphism attached to a diagram symmetry well defined, so
+it is data rather than a property. It is the isomorphism of root data that the isomorphism theorem
+for pinned groups lifts to a group scheme, and it enters the graph-twisted Steinberg maps. See
 R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex Characters*, §1.15, and
 N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Ch. VI, §4.
 -/

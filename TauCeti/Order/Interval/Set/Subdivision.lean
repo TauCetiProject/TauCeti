@@ -53,6 +53,16 @@ theorem exists_lt_mem_Ioc_of_mem_Ioc {α : Type*} [LinearOrder α] {τ : ℕ →
       exact ⟨j, hj.trans (Nat.lt_succ_self n), htj⟩
     · exact ⟨n, Nat.lt_succ_self n, lt_of_not_ge htn, ht.2⟩
 
+/-- Distinct successive cells of a sequence monotone up to `n` cannot contain the same point.
+Repeated entries of the sequence are allowed. -/
+theorem _root_.MonotoneOn.notMem_Ioc_of_mem_Ioc_of_ne {α : Type*} [Preorder α] {τ : ℕ → α}
+    {n i j : ℕ} {t : α} (hτ : MonotoneOn τ (Iic n)) (hi : i < n) (hj : j < n)
+    (hij : i ≠ j) (ht : t ∈ Ioc (τ j) (τ (j + 1))) : t ∉ Ioc (τ i) (τ (i + 1)) := by
+  intro hit
+  rcases lt_or_gt_of_ne hij with hij | hij
+  · exact (hit.2.trans (hτ (hij.trans hj) hj.le hij)).not_gt ht.1
+  · exact (ht.2.trans (hτ (hij.trans hi) hi.le hij)).not_gt hit.1
+
 /-- If `s 0 ≤ c < d ≤ s (Fin.last N)` and no point of the family `s` lies strictly between `c` and
 `d`, then `[c, d]` lies in a single cell `[s i.castSucc, s i.succ]`. -/
 theorem exists_Icc_subset_Icc_castSucc_succ {α : Type*} [LinearOrder α] {N : ℕ}

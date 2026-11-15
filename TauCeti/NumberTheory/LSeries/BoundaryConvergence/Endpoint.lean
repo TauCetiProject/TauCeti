@@ -104,7 +104,6 @@ theorem intervalIntegral_floor_exp_mul_cexp_neg_mul_log_succ (a : ℕ → ℂ) (
   rw [← h, Finset.sum_range_succ', LSeries.term_zero, stepCorrectionTerm_zero, Pi.zero_apply,
     add_zero, add_zero]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
-  have hk : ((k + 1 : ℕ) : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr k.succ_ne_zero
   have h₁ := intervalIntegral_floor_exp_mul_cexp_neg_mul a k.succ_ne_zero z
   push_cast at h₁ ⊢
   rw [h₁, LSeries.term_of_ne_zero k.succ_ne_zero, stepCorrectionTerm_of_ne_zero a k.succ_ne_zero,

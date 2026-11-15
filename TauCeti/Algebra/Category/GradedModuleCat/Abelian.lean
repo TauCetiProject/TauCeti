@@ -134,7 +134,7 @@ section Cokernel
 
 /-- The grading of the quotient of `N` by the image of `f`, whose degree-`p` piece is the image
 of `Nₚ`. -/
-noncomputable def cokernelGrading : InternalGrading k (N ⧸ LinearMap.range f.hom) :=
+noncomputable def cokernelGrading : InternalGrading k (N ⧸ LinearMap.range f.hom) ℤ :=
   N.grading.quotient (LinearMap.range f.hom) f.isHomogeneous.isHomogeneous_range
 
 /-- An element of the quotient of `N` by the image of `f` has degree `p` exactly when it is the

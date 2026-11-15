@@ -209,7 +209,6 @@ theorem exists_pos_forall_fderiv_perturb_eq_zero_iff (hfs : ContDiff ℝ 1 f)
     have hcard : (0 : ℝ) < Fintype.card ι * max C 0 + 1 := by positivity
     have h3 : ‖s‖ * (Fintype.card ι * max C 0 + 1) < m := by
       rwa [lt_div_iff₀ hcard] at hs
-    have h4 : 0 ≤ (Fintype.card ι * max C 0 : ℝ) := by positivity
     nlinarith [hmA x hx, norm_nonneg s]
   · -- Off the supports the perturbation agrees with `f` near `x`.
     have hev : perturb f h s =ᶠ[𝓝 x] f :=

@@ -38,7 +38,7 @@ attached to an integer weight on each coordinate.
 
 The construction is the scheme-level realization of `TauCeti.basisWeightTorus`. In particular,
 when `wt` is the weight function of a finite free admissible lattice, it supplies the split-torus
-morphism in the pinned Chevalley--Demazure construction of Layer 9 of the ReductiveGroups roadmap.
+morphism in the pinned Chevalley--Demazure construction.
 No faithfulness is asserted: an arbitrary weight family may have a common kernel.
 
 ## Main declarations

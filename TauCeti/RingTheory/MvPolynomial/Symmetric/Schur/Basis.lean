@@ -80,9 +80,6 @@ is defined in `TauCeti/RingTheory/MvPolynomial/Symmetric/Homogeneous.lean`.
   Sections 2 and 6: the monomial symmetric functions are a basis, the Kostka matrix is
   unitriangular for the dominance order, and hence the Schur functions are a basis.
 * R. P. Stanley, *Enumerative Combinatorics*, Volume 2, §7.10.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 7, "The Schur functions are a `ℤ`-basis of the symmetric functions; `msymm`-to-`schurPoly`
-  change of basis is the Kostka matrix `Kλμ`".
 -/
 
 public section

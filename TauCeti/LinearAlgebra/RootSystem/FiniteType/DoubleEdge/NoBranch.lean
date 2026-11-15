@@ -38,8 +38,8 @@ classification of the double-edge case into the `B`, `C`, and `F₄` shapes.
 
 ## References
 
-This is the multiple-edge extraction step in Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`.  The affine-diagram exclusion is the
+This is the multiple-edge extraction step in the classification of finite-type Cartan matrices.
+The affine-diagram exclusion is the
 argument in J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, Section
 11.4, and N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Chapter VI, Section 4.
 -/

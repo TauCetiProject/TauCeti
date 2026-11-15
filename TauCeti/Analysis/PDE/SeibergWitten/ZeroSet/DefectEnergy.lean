@@ -165,7 +165,6 @@ theorem ofReal_mul_measure_le_setLIntegral_of_eq_zero {μ : Measure E} {C r ρ :
   rw [← setLIntegral_const]
   refine setLIntegral_mono' measurableSet_closedBall fun y hy ↦ ENNReal.ofReal_le_ofReal ?_
   have := inv_two_le_one_sub_norm_sq_sub_norm_sq_of_eq_zero hC hr hrC hρ hα hmod hβ hgrad h₀ hy
-  have hr₀ : 0 ≤ r := zero_le_one.trans hr
   calc r / 8 = r / 4 * 2⁻¹ := by ring
     _ ≤ r / 4 * |1 - ‖α y‖ ^ 2 - ‖β y‖ ^ 2| := by
       gcongr
@@ -188,7 +187,6 @@ theorem ofReal_mul_measure_ball_le_setLIntegral_of_eq_zero {μ : Measure E} [μ.
     (h₀ : α x₀ = 0) :
     ENNReal.ofReal (r / 8 * ρ ^ finrank ℝ E) * μ (ball 0 1) ≤
       ∫⁻ y in closedBall x₀ ρ, ENNReal.ofReal (r / 4 * |1 - ‖α y‖ ^ 2 - ‖β y‖ ^ 2|) ∂μ := by
-  have hr₀ : 0 ≤ r := zero_le_one.trans hr
   refine le_of_eq_of_le ?_
     (ofReal_mul_measure_le_setLIntegral_of_eq_zero (μ := μ) hC hr hrC hρ hα hmod hβ hgrad h₀)
   rw [Measure.addHaar_closedBall μ x₀ hρ₀, ← mul_assoc,

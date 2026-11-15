@@ -93,9 +93,6 @@ namespace TauCeti
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
--- Provenance: the declaration sequence follows the human-authored specification in
--- `TauCetiRoadmap/LocalFieldsRamification/Suggested.lean`, and the additive normalization of the
--- valuation is the convention fixed in that directory's `README.md`.
 variable (K) in
 /-- The unit filtration `U(K,i)` of a nonarchimedean local field `K`: the units of `𝒪[K]` that
 are congruent to `1` modulo `𝓂[K] ^ i`, viewed inside `Kˣ`. The depth-zero step is included in

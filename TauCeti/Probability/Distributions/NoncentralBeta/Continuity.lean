@@ -72,9 +72,6 @@ theorem continuous_integral_pow_noncentralBetaMeasure (n : ℕ) :
         ((q.1 : ℝ) + j + i) / ((q.1 : ℝ) + j + (q.2.1 : ℝ) + i) ≤ 1 := by
       apply (div_le_one (by positivity)).2
       linarith
-    have hprod₀ : 0 ≤ ∏ i ∈ Finset.range n,
-        ((q.1 : ℝ) + j + i) / ((q.1 : ℝ) + j + (q.2.1 : ℝ) + i) :=
-      Finset.prod_nonneg fun i _ ↦ hratio₀ i
     have hprod₁ : (∏ i ∈ Finset.range n,
         ((q.1 : ℝ) + j + i) / ((q.1 : ℝ) + j + (q.2.1 : ℝ) + i)) ≤ 1 :=
       Finset.prod_le_one₀ (fun i _ ↦ hratio₀ i) (fun i _ ↦ hratio₁ i)

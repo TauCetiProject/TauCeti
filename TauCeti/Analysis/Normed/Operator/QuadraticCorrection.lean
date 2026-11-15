@@ -186,8 +186,6 @@ theorem exists_mem_range_norm_le_add_add_eq_zero [CompleteSpace E] (hN0 : N 0 = 
     (hδ : 2 * C * ‖e‖ ≤ δ) (he : 2 * C ^ 2 * L * ‖e‖ < 1) :
     ∃ x ∈ range Q, ‖x‖ ≤ 2 * C * ‖e‖ ∧ e + D x + N x = 0 := by
   set R : ℝ := 2 * C * ‖e‖ with hR
-  have hC : (0 : ℝ) ≤ C := C.2
-  have hL : (0 : ℝ) ≤ L := L.2
   have hR0 : 0 ≤ R := by positivity
   have hball : closedBall (0 : E) R ⊆ closedBall 0 δ := closedBall_subset_closedBall hδ
   set T : E → E := fun x ↦ -Q (e + N x) with hT

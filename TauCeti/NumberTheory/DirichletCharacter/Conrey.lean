@@ -111,7 +111,7 @@ theorem conreyGenerator_three : conreyGenerator 3 = 2 := by
   rw [htot] at h
   -- Neither `0` nor `1` has order `6` modulo `9`.
   by_contra hlt
-  interval_cases hg : conreyGenerator 3
+  interval_cases _ : conreyGenerator 3
   · rw [Nat.cast_zero, orderOf_eq_zero_iff'.mpr fun n hn ↦ by rw [zero_pow hn.ne']; decide] at h
     exact absurd h (by norm_num)
   · rw [Nat.cast_one, orderOf_one] at h

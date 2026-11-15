@@ -132,4 +132,16 @@ theorem norm_factorial_mul (k : ℕ) :
   push_cast
   ring
 
+/-- The factorial weights at a fixed division scale are submultiplicative under addition.
+This controls Cauchy products of factorial-weighted moment sequences. -/
+theorem norm_factorial_div_add_le (d i j : ℕ) :
+    ‖(((i + j) / d)! : ℚ_[p])‖ ≤ ‖((i / d)! : ℚ_[p])‖ * ‖((j / d)! : ℚ_[p])‖ := by
+  obtain ⟨k, hk⟩ := (Nat.factorial_mul_factorial_dvd_factorial_add (i / d) (j / d)).trans
+    (Nat.factorial_dvd_factorial Nat.div_add_div_le_add_div)
+  have hcast : (((i + j) / d)! : ℚ_[p]) = (i / d)! * (j / d)! * (k : ℚ_[p]) := by
+    exact_mod_cast hk
+  rw [hcast, norm_mul, norm_mul]
+  exact mul_le_of_le_one_right (by positivity)
+    (by simpa using norm_int_le_one (p := p) (k : ℤ))
+
 end Padic

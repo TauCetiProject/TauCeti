@@ -40,20 +40,18 @@ setting the rest of the Huber development works in; the uniform hypotheses on `A
 with completeness.
 
 Consequently `TauCeti.Huber.restrictedMvPowerSeriesCompletion k A` collapses:
-`TauCeti.Huber.restrictedMvPowerSeriesCompletionEquiv` identifies `A⟨X₁,…,Xₖ⟩` with the
-plain restricted-series ring — the "comparison with the usual completed restricted
-power-series algebra" milestone of roadmap Layer 0.5. Its hypotheses are completeness and
-Hausdorffness of that ring itself rather than of `A`, which the instances here supply over a
-complete Hausdorff base and which hold over a discrete base too, so that the comparison also
-covers `TauCeti.Huber.IsStronglyNoetherian.of_discreteTopology`. It is packaged twice over
-one and the same underlying map — as that ring isomorphism and as the `A`-algebra equivalence
+`TauCeti.Huber.restrictedMvPowerSeriesCompletionEquiv` identifies `A⟨X₁,…,Xₖ⟩` with the plain
+restricted-series ring. Its hypotheses are completeness and Hausdorffness of that ring itself rather
+than of `A`, which the instances here supply over a complete Hausdorff base and which hold over a
+discrete base too, so that the comparison also covers
+`TauCeti.Huber.IsStronglyNoetherian.of_discreteTopology`. It is packaged twice over one and the same
+underlying map — as that ring isomorphism and as the `A`-algebra equivalence
 `TauCeti.Huber.restrictedMvPowerSeriesCompletionAlgEquiv`, the two tied together by
 `TauCeti.Huber.coe_restrictedMvPowerSeriesCompletionAlgEquiv` and
-`TauCeti.Huber.coe_restrictedMvPowerSeriesCompletionAlgEquiv_symm` — and both it and its
-inverse are uniformly continuous, hence continuous by `UniformContinuous.continuous`. Nothing
-in that block is special to restricted series: every declaration in it specializes a generic
-statement about `UniformSpace.Completion.completeRingEquivSelf` proved in
-`TauCeti.Topology.Algebra.UniformRing`.
+`TauCeti.Huber.coe_restrictedMvPowerSeriesCompletionAlgEquiv_symm` — and both it and its inverse are
+uniformly continuous, hence continuous by `UniformContinuous.continuous`. Nothing in that block is
+special to restricted series: every declaration in it specializes a generic statement about
+`UniformSpace.Completion.completeRingEquivSelf` proved in `TauCeti.Topology.Algebra.UniformRing`.
 
 Three steps are named as `private` lemmas rather than exported as API. That the subring's
 uniformity is the one its subgroup basis induces is definitional, and is named so that the
@@ -94,11 +92,11 @@ specialisations are discharged with.
 
 ## Provenance
 
-AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0) is the roadmap's designated prior
-formalisation for this row. At commit `2baa76f742bdb4fb8ee323fabba41203bd390e08` its file
-`projects/AdicSpaces/Adic spaces/RestrictedPowerSeries.lean` states nothing about
-completeness, Hausdorffness, or the completion of the restricted-series ring, so there was
-nothing to port here; nothing was copied.
+AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0) is a prior formalisation of this material. At
+commit `2baa76f742bdb4fb8ee323fabba41203bd390e08` its file
+`projects/AdicSpaces/Adic spaces/RestrictedPowerSeries.lean` states nothing about completeness,
+Hausdorffness, or the completion of the restricted-series ring, so there was nothing to port here;
+nothing was copied.
 
 ## References
 
@@ -283,9 +281,8 @@ variable {k : ℕ} {A : Type*} [CommRing A] [TopologicalSpace A] [Nonarchimedean
   [T0Space (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight)]
 
 variable (k A) in
-/-- **The comparison equivalence of roadmap Layer 0.5**: when the plain restricted-series ring
-is complete and Hausdorff, the completed restricted power-series algebra `A⟨X₁,…,Xₖ⟩` is that
-ring. -/
+/-- **The comparison equivalence**: when the plain restricted-series ring is complete and Hausdorff,
+the completed restricted power-series algebra `A⟨X₁,…,Xₖ⟩` is that ring. -/
 noncomputable def restrictedMvPowerSeriesCompletionEquiv :
     restrictedMvPowerSeriesCompletion k A ≃+*
       weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight :=

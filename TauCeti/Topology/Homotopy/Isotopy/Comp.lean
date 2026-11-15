@@ -13,17 +13,14 @@ public import TauCeti.Topology.Homotopy.Isotopy.Basic
 An isotopy is a homotopy through topological embeddings. This file records that the isotopy
 relation is *natural*: composing on either side with a
 topological embedding carries an isotopy to an isotopy, and so an isotopy relation to an
-isotopy relation. These are the closure properties the geometric-topology roadmap
-(`TauCetiRoadmap/GeometricTopology/README.md`) asks the general isotopy notion to carry
-before specialising to smooth embeddings `S¹ ↪ M`: they mirror, for `TauCeti.Isotopy`, the
-composition lemmas Mathlib provides for `IsEmbedding` (`Topology.IsEmbedding.comp`) and for
-homotopy (`ContinuousMap.Homotopy.comp`, `ContinuousMap.Homotopy.compContinuousMap`), which
-this file reuses for the underlying homotopies.
+isotopy relation. These closure properties mirror, for `TauCeti.Isotopy`, the composition
+lemmas Mathlib provides for `IsEmbedding` (`Topology.IsEmbedding.comp`) and for homotopy
+(`ContinuousMap.Homotopy.comp`, `ContinuousMap.Homotopy.compContinuousMap`), which this file
+reuses for the underlying homotopies.
 
-The two-sided generality (an embedding on either side, not merely a homeomorphism) is what
-the roadmap's layer-2 closure properties for locally flat embeddings will consume: a
-submanifold inclusion postcomposes, a chart or open embedding precomposes, and the isotopy
-survives both.
+The composing maps are arbitrary embeddings on either side, not merely homeomorphisms: for
+example, an isotopy survives postcomposition with a submanifold inclusion and precomposition
+with a chart or open embedding.
 
 ## Main definitions
 
