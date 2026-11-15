@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.PDE.Vortex.LogVariation
 public import TauCeti.Analysis.PDE.Vortex.PrincipalPart
 public import TauCeti.Analysis.PDE.Vortex.TranslationKernel
+import TauCeti.Analysis.Meromorphic.PrincipalPart
+import TauCeti.Analysis.PDE.Vortex.KernelExistence
 import TauCeti.Analysis.Complex.Wirtinger.DolbeaultLemma
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
@@ -52,8 +54,16 @@ real dimension two (`finrank_gaugeFixedKernel_eq_two_of_card_eq_one`), the dimen
 `Sym¹ ℂ = ℂ`. The degree-one framed forms are `range_covariantTranslationLinearMap` and
 `finrank_gaugeFixedKernel_eq_two`.
 
-For divisors of degree at least two, the lower bound `2 |D|` needs kernel elements that move the
-zeros independently, which are not constructed here.
+**The dimension `2 |D|`.** For a smooth field, every principal part of `δα / α` is realized: for
+each zero `a` of `α`, each order `j` below its multiplicity and each `c ∈ ℂ` there is a kernel
+element with `δα / α = c / (w - a)^(j+1) + ξ`, `ξ` smooth
+(`TauCeti.Vortex.exists_gaugeFixedOperator_eq_zero_sectionValue_eq_mul_div_pow_add`). Taking
+`c ∈ {1, i}` gives `2 |D|` kernel elements, and they are linearly independent: in a vanishing real
+combination the polar terms sum to a continuous function off the zeros, so their coefficients
+vanish (`TauCeti.eq_zero_of_sum_div_sub_pow_eq`). With the upper bound, the kernel has real
+dimension exactly `2 |D|` (`finrank_gaugeFixedKernel_eq_two_mul_card`), and `2m` at a smooth
+framed degree-`m` vortex (`finrank_gaugeFixedKernel_eq_two_mul`), the real dimension of the
+divisor space `Sym^m ℂ`. This holds in every degree, collisions of zeros included.
 
 ## Main results
 
@@ -74,6 +84,9 @@ zeros independently, which are not constructed here.
   `TauCeti.Vortex.range_covariantTranslationLinearMap` and
   `TauCeti.Vortex.finrank_gaugeFixedKernel_eq_two`: for a single zero, in particular in degree
   one, the kernel consists exactly of the covariant translations and has real dimension two.
+* `TauCeti.Vortex.finrank_gaugeFixedKernel_eq_two_mul_card` and
+  `TauCeti.Vortex.finrank_gaugeFixedKernel_eq_two_mul`: at a smooth field the kernel has real
+  dimension exactly `2 |D|`, and `2m` in the framed degree-`m` case.
 
 ## References
 
@@ -87,7 +100,7 @@ public section
 namespace TauCeti.Vortex
 
 open Complex Filter MeasureTheory Module
-open scoped Topology
+open scoped Topology ContDiff
 
 variable {μ : Measure ℂ} [μ.IsAddHaarMeasure] {x : ℂ → EuclideanSpace ℝ (Fin 4)}
   {D : Multiset ℂ} {V : Submodule ℝ (ℂ → EuclideanSpace ℝ (Fin 4))}
@@ -341,5 +354,114 @@ theorem finrank_gaugeFixedKernel_eq_two : finrank ℝ (gaugeFixedKernel x) = 2 :
     (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe₁) hD D.2
 
 end Translations
+
+/-! ### The real dimension `2 |D|` -/
+
+section ZeroModes
+
+variable (hx : ContDiff ℝ ∞ x) (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0)
+  (hlim : Tendsto (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+  (hD : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z)
+
+include hx hhol hlim hD
+
+/-- For a point `⟨a, j⟩` of the divisor `D` and `c ∈ ℂ`, a kernel element of `L_x` whose section
+variation is `δα = α (c / (w - a)^(j+1) + ξ)` off `a`, for a continuous function `ξ`. -/
+private theorem exists_mem_gaugeFixedKernel_sectionValue_eq (i : D.ToType) (c : ℂ) :
+    ∃ y ∈ gaugeFixedKernel x, ∃ ξ : ℂ → ℂ, Continuous ξ ∧ ∀ w, w ≠ i.1 →
+      sectionValue y w = sectionValue x w * (c / (w - i.1) ^ ((i.2 : ℕ) + 1) + ξ w) := by
+  have hxi (k : Fin 4) : ContDiff ℝ ∞ fun w ↦ x w k := contDiff_euclidean.1 hx k
+  obtain ⟨n, v, hv, hv₀, hvf⟩ := exists_contDiffAt_sectionValue_eq_pow_mul (k := ⊤) le_top
+    (hxi 0) (hxi 1) ((hxi 2).differentiable (by simp)) ((hxi 3).differentiable (by simp)) hhol
+    hD.exists_ne_zero i.1
+  obtain ⟨v', hv', hv₀', hvf'⟩ := isZeroMultiplicity_iff.1 hD i.1
+  have hn : D.count i.1 = n := eq_of_eventually_sub_pow_mul_eq hv' hv₀' hv.continuousAt hv₀ (by
+    filter_upwards [hvf, hvf'] with w hw hw'
+    rw [← hw, ← hw'])
+  obtain ⟨y, hy, hy₂, hker, ξ, hξ, hyξ⟩ :=
+    exists_gaugeFixedOperator_eq_zero_sectionValue_eq_mul_div_pow_add hx hhol hlim hv hvf
+      (i.2.isLt.trans_eq hn) c
+  exact ⟨y, mem_gaugeFixedKernel.2 ⟨hy.of_le (by simp), hy₂, hker⟩, ξ, hξ.continuous, hyξ⟩
+
+/-- **Kernel elements with independent principal parts.** Choose, for each point `⟨a, j⟩` of `D`
+and each `c ∈ {1, i}`, a kernel element of `L_x` with `δα / α = c / (w - a)^(j+1) + ξ`, `ξ`
+continuous. These `2 |D|` kernel elements are linearly independent over `ℝ`: in a vanishing real
+combination, the polar terms at each point `a` of `D` form a polynomial in `(w - a)⁻¹` without
+constant term that agrees near `a` with a function continuous at `a`, so its coefficients vanish
+(`TauCeti.eq_zero_of_sum_div_sub_pow_eq`). -/
+private theorem exists_linearIndependent :
+    ∃ f : D.ToType × Fin 2 → gaugeFixedKernel x, LinearIndependent ℝ f := by
+  choose y hy ξ hξ hyξ using fun p : D.ToType × Fin 2 ↦
+    exists_mem_gaugeFixedKernel_sectionValue_eq hx hhol hlim hD p.1 (![1, I] p.2)
+  refine ⟨fun p ↦ ⟨y p, hy p⟩, Fintype.linearIndependent_iff.2 fun g hg ↦ ?_⟩
+  -- The complex coefficient of the pole at each point of `D`.
+  set c : D.ToType → ℂ := fun i ↦ g (i, 0) + g (i, 1) * I
+  suffices hc : ∀ i, c i = 0 by
+    rintro ⟨i, b⟩
+    have h := hc i
+    simp only [c, Complex.ext_iff, add_re, ofReal_re, mul_re, I_re, mul_zero, ofReal_im, I_im,
+      mul_one, sub_self, add_zero, zero_re, add_im, mul_im, zero_add, zero_im] at h
+    fin_cases b
+    exacts [h.1, h.2]
+  -- Off the zeros of `α`, the polar terms of the combination sum to a continuous function.
+  refine congrFun (eq_zero_of_sum_div_sub_pow_eq (g := fun w ↦ -∑ p, (g p : ℂ) * ξ p w)
+    (fun _ _ ↦ (continuous_finsetSum _ fun p _ ↦ continuous_const.mul (hξ p)).neg.continuousAt)
+    fun w hw ↦ ?_)
+  have hαw : sectionValue x w ≠ 0 := fun h ↦ hw (Multiset.count_pos.1 (hD.pos_iff.2 h))
+  have hne (i : D.ToType) : w ≠ i.1 := fun h ↦ hw (h ▸ Multiset.coe_mem)
+  have h0 := congrArg (fun F ↦ sectionValue F w) (congrArg Subtype.val hg)
+  simp only [Submodule.coe_sum, Submodule.coe_smul, sectionValue_sum, sectionValue_smul,
+    ZeroMemClass.coe_zero, sectionValue_zero] at h0
+  rw [Finset.sum_congr rfl fun p _ ↦ by rw [hyξ p w (hne p.1)]] at h0
+  have key : ∑ p : D.ToType × Fin 2, (g p : ℂ) * (sectionValue x w *
+      (![1, I] p.2 / (w - p.1.1) ^ ((p.1.2 : ℕ) + 1) + ξ p w)) =
+      sectionValue x w * (∑ i, c i / (w - i.1) ^ ((i.2 : ℕ) + 1) + ∑ p, (g p : ℂ) * ξ p w) := by
+    simp only [Fintype.sum_prod_type, Fin.sum_univ_two, mul_add, Finset.mul_sum,
+      ← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    simp only [c, Matrix.cons_val_zero, Matrix.cons_val_one]
+    ring
+  rw [key] at h0
+  exact eq_neg_of_add_eq_zero_left ((mul_eq_zero.1 h0).resolve_left hαw)
+
+/-- **The kernel of `L_x` has real dimension at least `2 |D|`.** At a smooth field with vanishing
+holomorphicity rows and `|α|² → 1` at infinity, whose section has zero divisor `D`, the
+kernel elements with prescribed principal parts of
+`TauCeti.Vortex.exists_gaugeFixedOperator_eq_zero_sectionValue_eq_mul_div_pow_add` span a
+subspace of real dimension `2 |D|`. -/
+private theorem two_mul_card_le_finrank_gaugeFixedKernel :
+    2 * Multiset.card D ≤ finrank ℝ (gaugeFixedKernel x) := by
+  have := finiteDimensional_of_gaugeFixedOperator_eq_zero (μ := volume) (hx.of_le (by simp))
+    hhol hlim hD fun _ ↦ mem_gaugeFixedKernel.1
+  obtain ⟨f, hf⟩ := exists_linearIndependent hx hhol hlim hD
+  simpa [Multiset.card_coe, mul_comm] using hf.fintype_card_le_finrank
+
+/-- **The kernel of `L_x` has real dimension `2 |D|`.** Let `x` be a smooth field with vanishing
+holomorphicity rows `∂bar_a α = 0` and `|α|² → 1` at infinity, whose section has zero divisor
+`D`. Then the `C²` square-integrable kernel of the gauge-fixed operator `L_x` has real dimension
+twice the degree of `D`, the real dimension of the space of principal parts of `δα / α` at the
+zeros of `α`. -/
+theorem finrank_gaugeFixedKernel_eq_two_mul_card :
+    finrank ℝ (gaugeFixedKernel x) = 2 * Multiset.card D :=
+  (finrank_le_two_mul_card_of_gaugeFixedOperator_eq_zero (μ := volume) (hx.of_le (by simp)) hhol
+    hlim hD fun _ ↦ mem_gaugeFixedKernel.1).antisymm
+    (two_mul_card_le_finrank_gaugeFixedKernel hx hhol hlim hD)
+
+end ZeroModes
+
+/-- **The kernel of `L_x` at a framed vortex has real dimension `2m`.** At a smooth field with
+vanishing holomorphicity rows and the degree-`m` end framing `α(z) (z / |z|)⁻ᵐ → 1`, in
+particular at a smooth framed degree-`m` vortex, the `C²` square-integrable kernel of the
+gauge-fixed operator `L_x` has real dimension `2m`, the real dimension of the divisor space
+`Sym^m ℂ`. -/
+theorem finrank_gaugeFixedKernel_eq_two_mul {m : ℕ} (hx : ContDiff ℝ ∞ x)
+    (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0)
+    (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1)) :
+    finrank ℝ (gaugeFixedKernel x) = 2 * m := by
+  have hxi (k : Fin 4) : ContDiff ℝ ∞ fun w ↦ x w k := contDiff_euclidean.1 hx k
+  obtain ⟨D, hD⟩ := exists_sym_isZeroMultiplicity_sectionValue (k := ⊤) le_top (hxi 0) (hxi 1)
+    ((hxi 2).differentiable (by simp)) ((hxi 3).differentiable (by simp)) hhol hframe
+  rw [finrank_gaugeFixedKernel_eq_two_mul_card hx hhol
+    (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe) hD, Sym.card_coe]
 
 end TauCeti.Vortex
