@@ -222,26 +222,32 @@ theorem MeasureTheory.integral_comp_comm_of_addMonoidHomClass {G X E F : Type*} 
   AddMonoidHom.integral_comp_comm (T : E →+ F) (map_continuous T) hf
 
 /-- The integral of a function taking values almost everywhere in a closed subspace lies in that
-subspace. No integrability is assumed: the integral of a non-integrable function is `0`. -/
-theorem Submodule.integral_mem {X E : Type*} [MeasurableSpace X] {μ : Measure X}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] {A : Submodule ℝ E} (hA : IsClosed (A : Set E))
+subspace. The subspace may be a submodule over any ring `R` acting compatibly with `ℝ`, such as a
+complex subspace. No integrability is assumed: the integral of a non-integrable function is
+`0`. -/
+theorem Submodule.integral_mem {X E R : Type*} [MeasurableSpace X] {μ : Measure X}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [Semiring R] [Module R E] [SMul ℝ R]
+    [IsScalarTower ℝ R E] {A : Submodule R E} (hA : IsClosed (A : Set E))
     {f : X → E} (hf : ∀ᵐ x ∂μ, f x ∈ A) : ∫ x, f x ∂μ ∈ A := by
-  -- As an instance, closedness of `A` gives the normed group structure on `E ⧸ A`.
-  have := hA
+  -- Work with the real subspace underlying `A`, which has the same elements.
+  rw [← A.restrictScalars_mem ℝ]
+  set B := A.restrictScalars ℝ
+  -- As an instance, closedness of `B` gives the normed group structure on `E ⧸ B`.
+  have : IsClosed (B : Set E) := by rwa [Submodule.coe_restrictScalars]
   by_cases hE : CompleteSpace E
   swap
   · rw [integral_of_not_completeSpace hE]
-    exact A.zero_mem
+    exact B.zero_mem
   by_cases hfi : Integrable f μ
   swap
   · rw [integral_undef hfi]
-    exact A.zero_mem
-  -- The quotient map to the normed space `E ⧸ A` kills `f` almost everywhere, hence its integral.
+    exact B.zero_mem
+  -- The quotient map to the normed space `E ⧸ B` kills `f` almost everywhere, hence its integral.
   rw [← Submodule.Quotient.mk_eq_zero, ← Submodule.mkQ_apply, ← Submodule.mkQL_apply,
-    ← A.mkQL.integral_comp_comm hfi]
+    ← B.mkQL.integral_comp_comm hfi]
   exact integral_eq_zero_of_ae <| hf.mono fun x hx ↦ by
     simpa only [Submodule.mkQL_apply, Submodule.mkQ_apply, Pi.zero_apply,
-      Submodule.Quotient.mk_eq_zero] using hx
+      Submodule.Quotient.mk_eq_zero, B, Submodule.restrictScalars_mem] using hx
 
 /-- The integral of `g • f`, for a multiplier bounded by `K` on a set containing the support of
 the integrable function `f`, is at most `K ∫ ‖f‖`. -/

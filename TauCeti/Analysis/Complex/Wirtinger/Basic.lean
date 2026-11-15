@@ -65,6 +65,8 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
   derivatives of a `C^(m+1)` map are `C^m`; in particular the conjugate one is continuous for a
   `C¹` map (`ContDiff.continuous_conjWirtingerDeriv_apply`).
 * `TauCeti.conjWirtingerDeriv_of_notMem_tsupport`: `\bar∂g` vanishes off the topological support.
+  `TauCeti.tsupport_conjWirtingerDeriv_apply_subset` and
+  `HasCompactSupport.conjWirtingerDeriv_apply` bound the support of `\bar∂g` in a fixed direction.
 * `DifferentiableAt.conjWirtingerDeriv_eq_zero`, `DifferentiableAt.wirtingerDeriv_eq_fderiv`:
   for complex differentiable `g`, `\bar∂g = 0` and `∂g` is the complex derivative.
 * `TauCeti.wirtingerDeriv_const_smul`, `TauCeti.conjWirtingerDeriv_const_smul`: `∂` and `\bar∂`
@@ -312,6 +314,19 @@ theorem conjWirtingerDeriv_of_notMem_tsupport {g : V → W} {x : V} (hx : x ∉ 
     conjWirtingerDeriv g x = 0 := by
   ext v
   simp [conjWirtingerDeriv_apply, fderiv_of_notMem_tsupport ℝ hx]
+
+/-- The conjugate Wirtinger derivative in a fixed direction is supported in the topological
+support of the function. -/
+theorem tsupport_conjWirtingerDeriv_apply_subset (g : V → W) (v : V) :
+    tsupport (fun x ↦ conjWirtingerDeriv g x v) ⊆ tsupport g :=
+  closure_minimal (fun _ hx ↦ by_contra fun hxg ↦
+    hx (by simp [conjWirtingerDeriv_of_notMem_tsupport hxg])) (isClosed_tsupport g)
+
+/-- The conjugate Wirtinger derivative in a fixed direction of a compactly supported function is
+compactly supported. -/
+theorem _root_.HasCompactSupport.conjWirtingerDeriv_apply {g : V → W} (hg : HasCompactSupport g)
+    (v : V) : HasCompactSupport fun x ↦ conjWirtingerDeriv g x v :=
+  hg.mono' ((subset_tsupport _).trans (tsupport_conjWirtingerDeriv_apply_subset g v))
 
 /-- For complex differentiable `g`, the conjugate Wirtinger derivative vanishes: this is the
 Cauchy–Riemann equation `\bar∂g = 0`. -/
