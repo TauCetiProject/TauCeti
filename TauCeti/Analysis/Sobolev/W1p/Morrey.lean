@@ -104,7 +104,6 @@ theorem W1p.exists_holderWith_ae_eq_value (hp : (finrank ℝ E : ℝ≥0) < p)
   set T := W1p.ofTestFunctionₗ mu ⊤ (p : ℝ≥0∞)
   have htop : mu.restrict ((⊤ : Opens E) : Set E) = mu := by
     simp only [Opens.coe_top, Measure.restrict_univ]
-  have hα : 0 < α := tsub_pos_of_lt ((div_lt_one (zero_le.trans_lt hp)).2 hp)
   -- Morrey's inequality for a single test function, with its Sobolev gradient norm.
   have hmorrey (phi : 𝓓((⊤ : Opens E), ℝ)) (x y : E) :
       edist (phi x) (phi y) ≤
@@ -146,7 +145,7 @@ theorem W1p.exists_holderWith_ae_eq_value (hp : (finrank ℝ E : ℝ≥0) < p)
       ENNReal.rpow_ne_top_of_nonneg (NNReal.coe_nonneg _) (edist_ne_top x y)
     exact le_of_tendsto_of_tendsto' (hx.edist hy) (ENNReal.Tendsto.mul_const hgrad (Or.inr hd))
       fun k => hmorrey (phi (ns k)) x y
-  obtain ⟨g, hg, hgA⟩ := hholder.extend_of_dense hα (mu.dense_of_ae hA)
+  obtain ⟨g, hg, hgA⟩ := hholder.extend_of_dense (mu.dense_of_ae hA)
   refine ⟨g, hg, ?_⟩
   filter_upwards [hA] with x hx using hgA hx
 
