@@ -53,7 +53,11 @@ The same absorption gives `L¹` bounds on a measurable set `S` of finite measure
 (`TauCeti.SeibergWitten.setLIntegral_enorm_le_of_norm_le`), and in particular the vacuum defect
 satisfies `r ∫_S w₊ ≤ 2 L + 2 (C / r) μ(S)`
 (`TauCeti.SeibergWitten.mul_setIntegral_max_one_sub_le`). These bound the curvature `|F_a|` in
-`L¹` independently of `r`.
+`L¹` independently of `r`. The modulus defect itself obeys the same bound,
+`r ∫_S |1 - |α|²| ≤ 2 L + 2 (C / r) μ(S)`, from the pointwise bound
+`|1 - |α|²| ≤ 2 |1 - |ψ|²| + 2 C / r²`
+(`TauCeti.SeibergWitten.mul_setIntegral_abs_one_sub_le`,
+`TauCeti.SeibergWitten.abs_one_sub_le_two_mul_abs_sub_add`), so `∫_S |1 - |α|²| = O(h²)`.
 
 The fields are functions on an arbitrary measure space with values in arbitrary normed groups,
 and the hypotheses are the displayed estimates, so the results apply in a coordinate chart and
@@ -94,6 +98,20 @@ theorem max_one_sub_le_two_mul_abs_sub_add {s t : ℝ} (hC : 0 ≤ C) (hr : 2 * 
     have := mul_le_mul_of_nonneg_right hCr h
     have := le_abs_self (1 - s - t)
     linarith
+
+/-- **The modulus defect is controlled by the spinor defect.** Let `s = |α|²` and `t = |β|² ≥ 0`,
+and suppose `t ≤ (C / r) w₊ + C / r²` for the vacuum defect `w₊ = max (1 - s) 0`. If `0 ≤ C` and
+`2 C ≤ r`, then `|1 - s| ≤ 2 |1 - s - t| + 2 C / r²`. -/
+theorem abs_one_sub_le_two_mul_abs_sub_add {s t : ℝ} (hC : 0 ≤ C) (hr : 2 * C ≤ r)
+    (ht₀ : 0 ≤ t) (ht : t ≤ C / r * max (1 - s) 0 + C / r ^ 2) :
+    |1 - s| ≤ 2 * |1 - s - t| + 2 * (C / r ^ 2) := by
+  have hw := max_one_sub_le_two_mul_abs_sub_add hC hr ht
+  -- Since `C / r ≤ 1 / 2`, the `β` bound gives `t ≤ |1 - s - t| + 2 C / r²`.
+  have hCr : C / r ≤ 1 / 2 := div_le_of_le_mul₀ (by linarith) (by norm_num) (by linarith)
+  have := mul_le_mul_of_nonneg_right hCr (le_max_right (1 - s) 0)
+  have h : |1 - s| ≤ |1 - s - t| + t := by
+    simpa [abs_of_nonneg ht₀] using abs_add_le (1 - s - t) t
+  linarith
 
 /-- **The integrated coarse bound.** Let `(α, β)` satisfy the `L¹` defect bound
 `r ∫ |1 - |α|² - |β|²| ≤ C` and, almost everywhere, `|β|² ≤ (C / r) w₊ + C / r²` with
@@ -212,6 +230,37 @@ theorem mul_setIntegral_max_one_sub_le (hS : MeasurableSet S) (hμS : μ S ≠ �
         simp only [N]
         field_simp
         ring
+
+/-- **`L¹` bound on the modulus defect.** Let `s = |α|²` and `t = |β|² ≥ 0` on a measurable set
+`S` of finite measure, with `t ≤ (C / r) w₊ + C / r²` on `S` for `w₊ = max (1 - s) 0`, `0 ≤ C` and
+`2 C ≤ r`. If the spinor defect `1 - s - t` is integrable on `S` with `r ∫_S |1 - s - t| ≤ L`, then
+`r ∫_S |1 - s| ≤ 2 L + 2 (C / r) μ(S)`. -/
+theorem mul_setIntegral_abs_one_sub_le (hS : MeasurableSet S) (hμS : μ S ≠ ⊤) (hC : 0 ≤ C)
+    (hr : 2 * C ≤ r) (hd : IntegrableOn (fun x ↦ 1 - s x - t x) S μ) (ht₀ : ∀ x ∈ S, 0 ≤ t x)
+    (ht : ∀ x ∈ S, t x ≤ C / r * max (1 - s x) 0 + C / r ^ 2)
+    (hL : r * ∫ x in S, |1 - s x - t x| ∂μ ≤ L) :
+    r * ∫ x in S, |1 - s x| ∂μ ≤ 2 * L + 2 * (C / r) * μ.real S := by
+  have hr₀ : 0 ≤ r := by linarith
+  have hrC : r * (C / r ^ 2) = C / r := by
+    rcases eq_or_ne r 0 with h | h
+    · simp [h]
+    · field_simp
+  -- Integrate the pointwise bound `|1 - s| ≤ 2 |1 - s - t| + 2 C / r²` over `S`.
+  have hg : IntegrableOn (fun x ↦ 2 * |1 - s x - t x| + 2 * (C / r ^ 2)) S μ :=
+    (hd.abs.const_mul 2).add (integrableOn_const hμS)
+  have hle : ∫ x in S, |1 - s x| ∂μ ≤ ∫ x in S, (2 * |1 - s x - t x| + 2 * (C / r ^ 2)) ∂μ :=
+    integral_mono_of_nonneg (.of_forall fun _ ↦ abs_nonneg _) hg <|
+      (ae_restrict_iff' hS).2 (.of_forall fun x hx ↦
+        abs_one_sub_le_two_mul_abs_sub_add hC hr (ht₀ x hx) (ht x hx))
+  rw [integral_add (hd.abs.const_mul 2) (integrableOn_const hμS), integral_const_mul,
+    setIntegral_const, smul_eq_mul] at hle
+  calc r * ∫ x in S, |1 - s x| ∂μ
+      ≤ r * (2 * ∫ x in S, |1 - s x - t x| ∂μ + μ.real S * (2 * (C / r ^ 2))) :=
+        mul_le_mul_of_nonneg_left hle hr₀
+    _ = 2 * (r * ∫ x in S, |1 - s x - t x| ∂μ) + 2 * (r * (C / r ^ 2)) * μ.real S := by ring
+    _ ≤ 2 * L + 2 * (C / r) * μ.real S := by
+        rw [hrC]
+        linarith
 
 end SetIntegral
 
