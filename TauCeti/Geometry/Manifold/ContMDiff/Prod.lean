@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.ContMDiff.Defs
+public import Mathlib.Geometry.Manifold.MFDeriv.Defs
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
+import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 
 /-!
@@ -14,7 +16,7 @@ import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 
 Mathlib equips a product of model vector spaces both with the product of their self-models and
 with the self-model of the product. This file provides the `C^n` bridge between those
-definitionally distinct presentations.
+definitionally distinct presentations, and the corresponding bridge for derivatives.
 
 These bridges are useful when transporting `C^n` and `C^n`-on-a-set statements between product
 chart coordinates and the self-model of the product model space.
@@ -28,6 +30,9 @@ compact slice `{x} × K` is `C^n` on a product of open neighbourhoods of `x` and
   for the product of the self-models if and only if it is `C^n` for the self-model of the product.
 * `contMDiffOn_prod_modelWithCornersSelf_iff`, `contMDiffAt_prod_modelWithCornersSelf_iff`: the
   same bridge for `C^n` maps on a set and at a point.
+* `mfderiv_prod_modelWithCornersSelf_apply`: for the product of the self-models, the manifold
+  derivative of a map from a product of model vector spaces into a model vector space is its
+  Fréchet derivative.
 * `TauCeti.contMDiff_prod_prod_modelWithCornersSelf_iff`,
   `TauCeti.contMDiffOn_prod_prod_modelWithCornersSelf_iff`,
   `TauCeti.contMDiffAt_prod_prod_modelWithCornersSelf_iff`: the same bridge on the left factor of
@@ -70,6 +75,17 @@ theorem contMDiffAt_prod_modelWithCornersSelf_iff {x : E₁ × E₂} :
     ContMDiffAt (𝓘(𝕜, E₁).prod 𝓘(𝕜, E₂)) I' n f x ↔
       ContMDiffAt 𝓘(𝕜, E₁ × E₂) I' n f x := by
   rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
+
+/-- For the product of the self-models, the manifold derivative of a map from a product of model
+vector spaces into a model vector space is its Fréchet derivative. -/
+theorem mfderiv_prod_modelWithCornersSelf_apply {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] (g : E₁ × E₂ → F) (p v : E₁ × E₂) :
+    mfderiv (𝓘(𝕜, E₁).prod 𝓘(𝕜, E₂)) 𝓘(𝕜, F) g p v = fderiv 𝕜 g p v := by
+  have h : mfderiv 𝓘(𝕜, E₁ × E₂) 𝓘(𝕜, F) g p v = fderiv 𝕜 g p v := by
+    rw [mfderiv_eq_fderiv]
+    -- The tangent identifications of the model spaces are the identity.
+    rfl
+  rw [← h, modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
 
 namespace TauCeti
 
