@@ -9,11 +9,18 @@ public import Mathlib.Analysis.Convex.Measure
 
 import Mathlib.Analysis.Normed.Affine.AddTorsorBases
 import TauCeti.Algebra.Order.Field.Basic
+import TauCeti.Analysis.Convex.Topology
 import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Analysis.Normed.Module.Convex
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # Measure of convex sets
+
+In a Hausdorff finite-dimensional real topological vector space carrying a measure positive on
+nonempty open sets, an open set contained almost everywhere in a convex set lies in its interior
+(`IsOpen.subset_interior_of_ae_le`): positivity on open sets puts the open set in the closure of
+the convex set, and in finite dimension `interior (closure s) = interior s`.
 
 The frontier of a convex set in a finite-dimensional real normed space is null for any additive
 Haar measure (`Convex.addHaar_frontier`). Consequently, almost every point of the set is in its
@@ -54,6 +61,16 @@ Mathlib's `Convex.addHaar_frontier` ensures that taking this closure changes onl
 public section
 
 open MeasureTheory MeasureTheory.Measure Set Metric Module
+
+/-- In a Hausdorff finite-dimensional real topological vector space, an open set contained almost
+everywhere in a convex set for a measure positive on nonempty open sets lies in its interior.
+Neither set need be measurable. -/
+theorem IsOpen.subset_interior_of_ae_le {E : Type*} [AddCommGroup E] [Module ℝ E]
+    [TopologicalSpace E] [IsTopologicalAddGroup E] [ContinuousSMul ℝ E] [T2Space E]
+    [FiniteDimensional ℝ E] [MeasurableSpace E] {μ : Measure E} [μ.IsOpenPosMeasure]
+    {U s : Set E} (hU : IsOpen U) (hs : Convex ℝ s) (hUs : U ≤ᵐ[μ] s) :
+    U ⊆ interior s :=
+  hs.interior_closure ▸ interior_maximal (hU.subset_closure_of_ae_le hUs) hU
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [IsAddHaarMeasure μ] {s : Set E}
