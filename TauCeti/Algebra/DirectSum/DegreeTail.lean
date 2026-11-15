@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mathlib.Algebra.DirectSum.Decomposition
+public import TauCeti.Algebra.DirectSum.Internal
 
 /-!
 # Degree tails in an internal direct sum
@@ -13,13 +13,18 @@ public import Mathlib.Algebra.DirectSum.Decomposition
 An integer-valued function on the indices defines a decreasing family of
 submodules, formed by summing components above each natural cutoff. Membership
 means that all components below the cutoff vanish, so these tails are separated.
-The degree function need not be additive and the module need not be free.
+The degree function need not be additive and the module need not be free. An injective linear
+map preserving homogeneous components reflects degree tails, so tails can be compared through
+homogeneous embeddings.
 
 ## Attribution
 
 Adapted from `Mei/Algebra/DirectSum/Degree/Basic.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
-`3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca` (Apache 2.0). Original copyright and author credit
+`3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca` (Apache 2.0). The comparison of degree tails along an
+injective homogeneous map, `LinearMap.comap_degreeTail_eq_of_injective`, is adapted from
+`Mei/Algebra/DirectSum/Degree/Map.lean` in the same repository, commit
+`9cf969cdee9748087aae45dbf4888a130890655c` (Apache 2.0). Original copyright and author credit
 are retained.
 -/
 
@@ -101,3 +106,26 @@ theorem iInf_degreeTail_eq_bot : (⨅ n : ℕ, degreeTail ℳ d n) = ⊥ := by
     _root_.DirectSum.zero_apply, ZeroMemClass.coe_zero] using hi
 
 end TauCeti.DirectSum
+
+namespace LinearMap
+
+variable {R M N ι : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+  [AddCommMonoid N] [Module R N] [DecidableEq ι]
+
+/-- The preimage of a degree tail under an injective linear map preserving homogeneous components
+is the corresponding degree tail of the source. -/
+theorem comap_degreeTail_eq_of_injective (f : M →ₗ[R] N)
+    (ℳ : ι → Submodule R M) [DirectSum.Decomposition ℳ]
+    (𝓝 : ι → Submodule R N) [DirectSum.Decomposition 𝓝]
+    (hf : Function.Injective f) (hhom : ∀ i x, x ∈ ℳ i → f x ∈ 𝓝 i) (d : ι → ℤ) (k : ℕ) :
+    (TauCeti.DirectSum.degreeTail 𝓝 d k).comap f = TauCeti.DirectSum.degreeTail ℳ d k := by
+  ext x
+  simp only [Submodule.mem_comap, TauCeti.DirectSum.mem_degreeTail_iff]
+  have hproj (i : ι) : f (DirectSum.decompose ℳ x i : M) =
+      (DirectSum.decompose 𝓝 (f x) i : N) :=
+    DirectSum.map_decompose_shift ℳ 𝓝 f.toAddMonoidHom _root_.id Function.injective_id hhom i x
+  refine ⟨fun hx i hi => hf ?_, fun hx i hi => ?_⟩
+  · rw [hproj, hx i hi, map_zero]
+  · rw [← hproj, hx i hi, map_zero]
+
+end LinearMap

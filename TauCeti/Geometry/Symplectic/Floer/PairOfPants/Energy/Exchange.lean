@@ -55,6 +55,18 @@ pair of pants, the constant can be replaced by the one-sided constant
 Hamiltonians (`SymplecticForm.hamiltonianAction_le_add_add_sub_sum_of_exchangePerturbation`,
 `SymplecticForm.le_add_add_sub_sum_of_tendsto_hamiltonianAction_exchangePerturbation`).
 
+The truncations with recentred output end increase with `R` and exhaust `S`, so for a Floer
+solution whose boundary actions converge to `a_q` monotone convergence gives the energy over the
+whole of `S`,
+
+`E(u) = a_0 + a_1 - a_∞ - ∫_S R_{K_c}(u)`
+
+(`SymplecticForm.lintegral_floerEnergyDensity_exchangePerturbation_eq`). In particular the energy
+is finite and at most `a_0 + a_1 - a_∞ + B₀ + B₁ + B_∞`, uniformly in `c ∈ [0, 1]`
+(`SymplecticForm.lintegral_floerEnergyDensity_exchangePerturbation_le`, with the one-sided form
+`SymplecticForm.lintegral_floerEnergyDensity_exchangePerturbation_le_sub_sum`). This is the
+energy bound with which Gromov–Floer compactness applies to the solutions of the whole family.
+
 The same identities hold for a map `u` which is `C¹` on `S`, with values in a finite-dimensional
 manifold `M` carrying a nondegenerate two-form `ω`, such as a closed symplectic manifold. There the
 actions of the boundary loops are not defined without caps, and the identity is stated, as for the
@@ -1095,6 +1107,34 @@ theorem abs_integral_floerEnergyDensity_exchangePerturbation_exchangeTruncation_
   rw [hS, integral_hamiltonianCurvature_exchangePerturbation_eq ω hH hHs hc₀ hc₁]
   exact abs_setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_le ω hH hHs hB _ _
 
+/-- **The curvature lower bound along the input-exchange family.** If `u` is continuous on
+`S = ℂ ∖ {0, 1}` and `h_q` are functions of time, integrable over one period, with `h_q ≤ H_q` on
+the input ends and `H_∞ ≤ h_∞` on the output end, then for every `c ∈ [0, 1]` the integrated
+curvature of `K_c` along `u` over `S` is at least `∫₀¹ h_0 + ∫₀¹ h_1 - ∫₀¹ h_∞`. -/
+theorem sum_mul_integral_le_setIntegral_hamiltonianCurvature_exchangePerturbation
+    (ω : SymplecticForm V) (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
+    {h : Puncture → ℝ → ℝ} (hh : ∀ q, IntervalIntegrable (h q) volume 0 1)
+    (hhH : ∀ q t x, q.endSign * h q t ≤ q.endSign * H q t x) (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1)
+    {u : ℝ × ℝ → V}
+    (hu : ContinuousOn u {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1}) :
+    ∑ q, q.endSign * ∫ t in (0 : ℝ)..1, h q t ≤
+      ∫ z in {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+          Complex.equivRealProdCLM.symm z ≠ 1}, ω.hamiltonianCurvature
+        (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I)
+        z (u z) := by
+  -- The curvature along `u` is the curvature of the pair-of-pants datum along `u ∘ Φ_c`.
+  have hv : ContinuousOn (u ∘ exchangeMap c) thricePuncturedSphereReal :=
+    hu.comp (contDiff_exchangeMap c).continuous.continuousOn
+      fun w hw ↦ (exchangeMap_mem_iff hc₀ hc₁ w).2 hw
+  have hS : {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1} = thricePuncturedSphereReal :=
+    Set.ext fun _ ↦ mem_thricePuncturedSphereReal_iff.symm
+  have hcurv := sum_mul_integral_le_setIntegral_hamiltonianCurvature_pairOfPantsPerturbation
+    ω hH hHs hh hhH (u := u ∘ exchangeMap c) (by rwa [hS])
+  rwa [hS, ← integral_hamiltonianCurvature_exchangePerturbation_eq ω hH hHs hc₀ hc₁] at hcurv
+
 /-- **The one-sided action bound along the input-exchange family.** Let `u` be a map which is
 `C²` on `S = ℂ ∖ {0, 1}` and solves the Floer equation `(du - X_K)^{0,1} = 0` for the member
 `c ∈ [0, 1]` of the input-exchange family, with almost complex structures `J(z)` tamed by `ω`, on
@@ -1131,17 +1171,10 @@ theorem hamiltonianAction_le_add_add_sub_sum_of_exchangePerturbation (ω : Sympl
   have hE := setIntegral_nonneg (μ := volume) ((isClosed_exchangeTruncation c R).preimage
     Complex.equivRealProdCLM.symm.continuous).measurableSet fun z hz ↦
       ω.floerEnergyDensity_nonneg (hJ z hz) (hfloer z hz)
-  -- The curvature along `u` is the curvature of the pair-of-pants datum along `u ∘ Φ_c`.
-  have hv : ContDiffOn ℝ 2 (u ∘ exchangeMap c) thricePuncturedSphereReal :=
-    hu.comp (contDiff_exchangeMap c).contDiffOn fun w hw ↦ (exchangeMap_mem_iff hc₀ hc₁ w).2 hw
-  have hcurv := sum_mul_integral_le_setIntegral_hamiltonianCurvature_pairOfPantsPerturbation
-    ω hH hHs hh hhH hv.continuousOn
-  have hS : {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
-      Complex.equivRealProdCLM.symm z ≠ 1} = thricePuncturedSphereReal :=
-    Set.ext fun _ ↦ mem_thricePuncturedSphereReal_iff.symm
-  rw [hS, ← integral_hamiltonianCurvature_exchangePerturbation_eq ω hH hHs hc₀ hc₁] at hcurv
-  rw [integral_floerEnergyDensity_exchangePerturbation_exchangeTruncation ω hH hHs hc₀ hc₁ hu hR,
-    hS] at hE
+  have hcurv := sum_mul_integral_le_setIntegral_hamiltonianCurvature_exchangePerturbation
+    ω hH hHs hh hhH hc₀ hc₁ hu.continuousOn
+  rw [integral_floerEnergyDensity_exchangePerturbation_exchangeTruncation ω hH hHs hc₀ hc₁ hu hR]
+    at hE
   linarith
 
 /-- **The action bound along the input-exchange family.** Let `K_c` be the member `c ∈ [0, 1]`
@@ -1249,6 +1282,170 @@ theorem le_add_add_sum_of_tendsto_hamiltonianAction_exchangePerturbation
       (↑c + inf.cylindricalEndLift (↑(-R) + ↑t * Complex.I))))) atTop (𝓝 (a inf))) :
     a inf ≤ a zero + a one + ∑ q, B q := by
   have h := le_add_add_sub_sum_of_tendsto_hamiltonianAction_exchangePerturbation ω hH hHs
+    (h := fun q _ ↦ -(q.endSign * B q)) (fun _ ↦ intervalIntegrable_const)
+    (endSign_mul_neg_endSign_mul_le hB) hc₀ hc₁ hu hJ hfloer ha₀ ha₁ ha
+  rwa [sum_endSign_mul_integral_neg_endSign_mul, sub_neg_eq_add] at h
+
+/-! ### The energy over the whole pair of pants -/
+
+/-- **The energy along the input-exchange family.** Let `K_c` be the member `c ∈ [0, 1]` of the
+input-exchange family of period-one `C¹` Hamiltonians `H_q`, and let `u` be a map which is `C²` on
+`S = ℂ ∖ {0, 1}` and solves the Floer equation `(du - X_K)^{0,1} = 0` for `K_c` on `S`, for almost
+complex structures `J(z)` tamed by `ω`. If the actions of the input loops
+`ℓ_q(t) = u(φ_q(R + i t))` and of the output loop `ℓ^c_∞(t) = u(c + φ_∞(-R + i t))` converge to
+`a_q` as `R → ∞`, then the energy of `u` over `S` is
+
+`E(u) = a_0 + a_1 - a_∞ - ∫_S R_{K_c}(u)`.
+
+In particular the energy is finite. -/
+theorem lintegral_floerEnergyDensity_exchangePerturbation_eq (ω : SymplecticForm V)
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (hc₀ : 0 ≤ c)
+    (hc₁ : c ≤ 1) {u : ℝ × ℝ → V}
+    (hu : ContDiffOn ℝ 2 u {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1})
+    {J : ℝ × ℝ → AlmostComplexStructure V}
+    (hJ : ∀ z ∈ {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1}, ω.Tames (J z))
+    (hfloer : ∀ z ∈ {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1}, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+        (J z) (ω.perturbedFDeriv
+          (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I)
+          u z : ℝ × ℝ →ₗ[ℝ] V))
+    {a : Puncture → ℝ}
+    (ha₀ : Tendsto (fun R : ℝ ↦ ω.hamiltonianAction (H zero) (fun t ↦ u (Complex.equivRealProdCLM
+      (zero.cylindricalEndLift (↑R + ↑t * Complex.I))))) atTop (𝓝 (a zero)))
+    (ha₁ : Tendsto (fun R : ℝ ↦ ω.hamiltonianAction (H one) (fun t ↦ u (Complex.equivRealProdCLM
+      (one.cylindricalEndLift (↑R + ↑t * Complex.I))))) atTop (𝓝 (a one)))
+    (ha : Tendsto (fun R : ℝ ↦ ω.hamiltonianAction (H inf) (fun t ↦ u (Complex.equivRealProdCLM
+      (↑c + inf.cylindricalEndLift (↑(-R) + ↑t * Complex.I))))) atTop (𝓝 (a inf))) :
+    ∫⁻ z in {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+        Complex.equivRealProdCLM.symm z ≠ 1}, ENNReal.ofReal (ω.floerEnergyDensity
+          (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I)
+          u z) =
+      ENNReal.ofReal (a zero + a one - a inf -
+        ∫ z in {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+            Complex.equivRealProdCLM.symm z ≠ 1}, ω.hamiltonianCurvature
+          (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I)
+          z (u z)) := by
+  set e : ℝ × ℝ → ℝ := ω.floerEnergyDensity
+    (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
+    (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I) u
+  set T : ℝ → Set (ℝ × ℝ) := fun R ↦ Complex.equivRealProdCLM.symm ⁻¹' exchangeTruncation c R
+  have hTS (R : ℝ) : T R ⊆ thricePuncturedSphereReal := fun z hz ↦ exchangeTruncation_subset c R hz
+  have hKc (v : ℂ) : ContDiffOn ℝ 1
+      (uncurry fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x v)
+      (thricePuncturedSphereReal ×ˢ univ) :=
+    fun p hp ↦ (contDiffAt_uncurry_exchangePerturbation hH hHs c hp.1 p.2 v).contDiffWithinAt
+  have he : ContinuousOn e thricePuncturedSphereReal :=
+    ω.continuousOn_floerEnergyDensity isOpen_thricePuncturedSphereReal (hu.of_le one_le_two)
+      (hKc 1) (hKc Complex.I)
+  -- The lower integrals over `T R` are the measures of `T R` for the density `ofReal ∘ e`, and the
+  -- truncations increase to `S`, so these measures converge to the energy over `S`.
+  have hTm (R : ℝ) : MeasurableSet (T R) :=
+    ((isClosed_exchangeTruncation c R).preimage
+      Complex.equivRealProdCLM.symm.continuous).measurableSet
+  have hU : ⋃ R, T R = thricePuncturedSphereReal := by
+    ext z
+    simp only [T, ← preimage_iUnion, iUnion_exchangeTruncation, mem_preimage, mem_ofPred_eq,
+      mem_thricePuncturedSphereReal_iff]
+  have hlim := tendsto_measure_iUnion_atTop
+    (μ := volume.withDensity fun z ↦ ENNReal.ofReal (e z)) (s := T)
+    fun R R' hRR' ↦ preimage_mono (exchangeTruncation_mono c hRR')
+  rw [hU, withDensity_apply _ isOpen_thricePuncturedSphereReal.measurableSet] at hlim
+  refine tendsto_nhds_unique hlim ?_
+  -- On `T R`, `R ≥ 2`, the energy is the change of action minus the curvature over `S`.
+  refine ((ENNReal.continuous_ofReal.tendsto _).comp
+    (((ha₀.add ha₁).sub ha).sub_const _)).congr' ?_
+  filter_upwards [eventually_ge_atTop 2] with R hR
+  have hTc : IsCompact (T R) :=
+    Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
+      (isCompact_exchangeTruncation c R)
+  simp only [Function.comp_apply]
+  rw [withDensity_apply _ (hTm R), ← ofReal_integral_eq_lintegral_ofReal
+    ((he.mono (hTS R)).integrableOn_compact hTc)
+    (ae_restrict_of_forall_mem (hTm R) fun z hz ↦
+      ω.floerEnergyDensity_nonneg (hJ z (hTS R hz)) (hfloer z (hTS R hz))),
+    integral_floerEnergyDensity_exchangePerturbation_exchangeTruncation ω hH hHs hc₀ hc₁ hu hR]
+
+/-- **The one-sided energy bound along the input-exchange family.** Under the hypotheses of
+`SymplecticForm.lintegral_floerEnergyDensity_exchangePerturbation_eq`, if `h_q` are functions of
+time, integrable over one period, with `h_q ≤ H_q` on the input ends and `H_∞ ≤ h_∞` on the output
+end, then the energy of `u` over `S` satisfies
+
+`E(u) ≤ a_0 + a_1 - a_∞ - ∫₀¹ h_0 - ∫₀¹ h_1 + ∫₀¹ h_∞`,
+
+with a constant that does not depend on `c`. -/
+theorem lintegral_floerEnergyDensity_exchangePerturbation_le_sub_sum (ω : SymplecticForm V)
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
+    {h : Puncture → ℝ → ℝ} (hh : ∀ q, IntervalIntegrable (h q) volume 0 1)
+    (hhH : ∀ q t x, q.endSign * h q t ≤ q.endSign * H q t x) (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1)
+    {u : ℝ × ℝ → V}
+    (hu : ContDiffOn ℝ 2 u {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1})
+    {J : ℝ × ℝ → AlmostComplexStructure V}
+    (hJ : ∀ z ∈ {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1}, ω.Tames (J z))
+    (hfloer : ∀ z ∈ {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1}, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+        (J z) (ω.perturbedFDeriv
+          (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I)
+          u z : ℝ × ℝ →ₗ[ℝ] V))
+    {a : Puncture → ℝ}
+    (ha₀ : Tendsto (fun R : ℝ ↦ ω.hamiltonianAction (H zero) (fun t ↦ u (Complex.equivRealProdCLM
+      (zero.cylindricalEndLift (↑R + ↑t * Complex.I))))) atTop (𝓝 (a zero)))
+    (ha₁ : Tendsto (fun R : ℝ ↦ ω.hamiltonianAction (H one) (fun t ↦ u (Complex.equivRealProdCLM
+      (one.cylindricalEndLift (↑R + ↑t * Complex.I))))) atTop (𝓝 (a one)))
+    (ha : Tendsto (fun R : ℝ ↦ ω.hamiltonianAction (H inf) (fun t ↦ u (Complex.equivRealProdCLM
+      (↑c + inf.cylindricalEndLift (↑(-R) + ↑t * Complex.I))))) atTop (𝓝 (a inf))) :
+    ∫⁻ z in {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+        Complex.equivRealProdCLM.symm z ≠ 1}, ENNReal.ofReal (ω.floerEnergyDensity
+          (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I)
+          u z) ≤
+      ENNReal.ofReal (a zero + a one - a inf - ∑ q, q.endSign * ∫ t in (0 : ℝ)..1, h q t) := by
+  rw [lintegral_floerEnergyDensity_exchangePerturbation_eq ω hH hHs hc₀ hc₁ hu hJ hfloer ha₀ ha₁
+    ha]
+  exact ENNReal.ofReal_le_ofReal (sub_le_sub_left
+    (sum_mul_integral_le_setIntegral_hamiltonianCurvature_exchangePerturbation
+      ω hH hHs hh hhH hc₀ hc₁ hu.continuousOn) _)
+
+/-- **The energy bound along the input-exchange family.** Under the hypotheses of
+`SymplecticForm.lintegral_floerEnergyDensity_exchangePerturbation_eq`, if moreover `|H_q| ≤ B_q`,
+then the energy of `u` over `S` is at most `a_0 + a_1 - a_∞ + B_0 + B_1 + B_∞`, uniformly in
+`c ∈ [0, 1]`. -/
+theorem lintegral_floerEnergyDensity_exchangePerturbation_le (ω : SymplecticForm V)
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
+    {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1)
+    {u : ℝ × ℝ → V}
+    (hu : ContDiffOn ℝ 2 u {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1})
+    {J : ℝ × ℝ → AlmostComplexStructure V}
+    (hJ : ∀ z ∈ {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1}, ω.Tames (J z))
+    (hfloer : ∀ z ∈ {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1}, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+        (J z) (ω.perturbedFDeriv
+          (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I)
+          u z : ℝ × ℝ →ₗ[ℝ] V))
+    {a : Puncture → ℝ}
+    (ha₀ : Tendsto (fun R : ℝ ↦ ω.hamiltonianAction (H zero) (fun t ↦ u (Complex.equivRealProdCLM
+      (zero.cylindricalEndLift (↑R + ↑t * Complex.I))))) atTop (𝓝 (a zero)))
+    (ha₁ : Tendsto (fun R : ℝ ↦ ω.hamiltonianAction (H one) (fun t ↦ u (Complex.equivRealProdCLM
+      (one.cylindricalEndLift (↑R + ↑t * Complex.I))))) atTop (𝓝 (a one)))
+    (ha : Tendsto (fun R : ℝ ↦ ω.hamiltonianAction (H inf) (fun t ↦ u (Complex.equivRealProdCLM
+      (↑c + inf.cylindricalEndLift (↑(-R) + ↑t * Complex.I))))) atTop (𝓝 (a inf))) :
+    ∫⁻ z in {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+        Complex.equivRealProdCLM.symm z ≠ 1}, ENNReal.ofReal (ω.floerEnergyDensity
+          (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I)
+          u z) ≤
+      ENNReal.ofReal (a zero + a one - a inf + ∑ q, B q) := by
+  have h := lintegral_floerEnergyDensity_exchangePerturbation_le_sub_sum ω hH hHs
     (h := fun q _ ↦ -(q.endSign * B q)) (fun _ ↦ intervalIntegrable_const)
     (endSign_mul_neg_endSign_mul_le hB) hc₀ hc₁ hu hJ hfloer ha₀ ha₁ ha
   rwa [sum_endSign_mul_integral_neg_endSign_mul, sub_neg_eq_add] at h

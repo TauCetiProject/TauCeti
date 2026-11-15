@@ -34,7 +34,9 @@ bounded by the circle `s = -R` of the recentred output end, with the parts `s > 
 ends removed. It is a compact subset of `S`
 (`TauCeti.ThricePuncturedSphere.isCompact_exchangeTruncation`,
 `TauCeti.ThricePuncturedSphere.exchangeTruncation_subset`), and for `c = 0` it is the truncation
-`S_R` (`TauCeti.ThricePuncturedSphere.exchangeTruncation_zero`).
+`S_R` (`TauCeti.ThricePuncturedSphere.exchangeTruncation_zero`). These truncations increase with
+`R` and exhaust `S` (`TauCeti.ThricePuncturedSphere.exchangeTruncation_mono`,
+`TauCeti.ThricePuncturedSphere.iUnion_exchangeTruncation`).
 
 ## References
 
@@ -178,5 +180,31 @@ theorem exchangeTruncation_subset (c R : ℝ) : exchangeTruncation c R ⊆ {w | 
   obtain ⟨h₀, h₁, -⟩ := mem_exchangeTruncation.1 hw
   have hr : 0 < Real.exp (-(2 * π * R)) / 2 := by positivity
   exact ⟨fun h ↦ by simp [h] at h₀; linarith, fun h ↦ by simp [h] at h₁; linarith⟩
+
+/-- The truncations with recentred output end increase with the cutoff. -/
+theorem exchangeTruncation_mono (c : ℝ) : Monotone (exchangeTruncation c) := by
+  intro R R' hRR' w hw
+  obtain ⟨h₀, h₁, hc⟩ := mem_exchangeTruncation.1 hw
+  have hπ : 2 * π * R ≤ 2 * π * R' := by gcongr
+  have hin : Real.exp (-(2 * π * R')) ≤ Real.exp (-(2 * π * R)) := Real.exp_le_exp.2 (by linarith)
+  have hout : Real.exp (2 * π * R) ≤ Real.exp (2 * π * R') := Real.exp_le_exp.2 hπ
+  exact mem_exchangeTruncation.2 ⟨by linarith, by linarith, by linarith⟩
+
+/-- The truncations with recentred output end exhaust the thrice-punctured sphere
+`S = ℂ ∖ {0, 1}`. -/
+theorem iUnion_exchangeTruncation (c : ℝ) :
+    ⋃ R, exchangeTruncation c R = {w : ℂ | w ≠ 0 ∧ w ≠ 1} := by
+  refine Set.Subset.antisymm (Set.iUnion_subset (exchangeTruncation_subset c)) ?_
+  rintro w ⟨h₀, h₁⟩
+  have hR : Filter.Tendsto (fun R : ℝ ↦ 2 * π * R) Filter.atTop Filter.atTop :=
+    Filter.tendsto_id.const_mul_atTop (by positivity)
+  have hin : Filter.Tendsto (fun R : ℝ ↦ Real.exp (-(2 * π * R)) / 2) Filter.atTop
+      (nhds 0) := by
+    simpa using (Real.tendsto_exp_neg_atTop_nhds_zero.comp hR).div_const 2
+  have hout := ((Real.tendsto_exp_atTop.comp hR).const_mul_atTop two_pos).eventually_ge_atTop
+    ‖w - c‖
+  obtain ⟨R, hR₀, hR₁, hRc⟩ := ((hin.eventually (ge_mem_nhds (norm_pos_iff.2 h₀))).and
+    ((hin.eventually (ge_mem_nhds (norm_pos_iff.2 (sub_ne_zero.2 h₁)))).and hout)).exists
+  exact Set.mem_iUnion.2 ⟨R, mem_exchangeTruncation.2 ⟨hR₀, hR₁, hRc⟩⟩
 
 end TauCeti.ThricePuncturedSphere

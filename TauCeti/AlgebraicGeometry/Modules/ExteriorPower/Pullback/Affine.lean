@@ -98,7 +98,7 @@ private lemma pullback_tildeExteriorPowerIso_hom_apply (n : ℕ) (M : ModuleCat.
   refine (congrArg (fun t ↦ C (K ((adj.unit.app
     ((SheafOfModules.exteriorPower (Spec R).sheaf n).obj (tilde M))).val.app (op ⊤) t)))
     (tildeExteriorPowerIso_hom_toOpen_mk n M ⊤ m)).trans ?_
-  have hw := TauCeti.SheafOfModules.pullbackExteriorPowerComparison_app_val_app_unit_mk
+  have hw := SheafOfModules.pullbackExteriorPowerComparison_app_val_app_unit_mk
     adj n (tilde M) (op ⊤) (fun i ↦ tilde.toOpen M ⊤ (m i))
   rw [← Scheme.Modules.pullbackExteriorPowerComparison_eq] at hw
   refine (congrArg C hw).trans ?_
