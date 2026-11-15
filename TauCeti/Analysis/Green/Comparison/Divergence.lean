@@ -118,7 +118,7 @@ theorem integral_rectangle_flux_eq_trace {a b c e : ℝ} (hab : a < b) (hce : c 
         LinearMap.trace ℝ ℂ (fderiv ℝ F z).toLinearMap := by
     rw [← harea]
     apply setIntegral_congr_fun (measurableSet_verticalRegion continuousOn_const continuousOn_const)
-    intro z hz
+    intro z _
     dsimp only
     rw [heq]
     simp only [T, Complex.measurableEquivRealProd_apply,

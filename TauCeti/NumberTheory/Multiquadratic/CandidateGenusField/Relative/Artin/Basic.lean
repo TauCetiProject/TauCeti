@@ -208,7 +208,7 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius
             hdiv).symm.trans
             ((natCast_dvd_primeDiscriminant_iff (hs P₀ hP₀) (Fact.out : q.Prime)).mp hdiv₀))
       apply Subtype.ext
-      apply eq_of_sum_eq_of_forall_ne x.val y.val _ P haway
+      refine eq_of_sum_eq_of_forall_ne ?_ haway
       exact (mem_candidateGenusFieldRelativeSignSubmodule_iff hd x.val).mp x.property |>.trans
         ((mem_candidateGenusFieldRelativeSignSubmodule_iff hd y.val).mp y.property).symm
     · apply Subtype.ext

@@ -71,7 +71,7 @@ open Filter Topology TauCeti.Huber
 
 namespace TauCeti.Perfectoid.PseudoUniformizerRoots
 
-variable {p : ℕ} [NeZero p] {R : Type*} [CommRing R] [TopologicalSpace R] [IsTopologicalRing R]
+variable {p : ℕ} {R : Type*} [CommRing R] [TopologicalSpace R] [IsTopologicalRing R]
   [IsHuberRing R] [IsUniform R] (ϖ : PseudoUniformizerRoots p R)
 
 /-- The norm datum `(R°, ϖ, 1/2)` of a uniform Huber ring with a pseudouniformiser with compatible
@@ -122,6 +122,8 @@ theorem isPowMul_gauge : IsPowMul ϖ.gauge :=
 theorem isNonarchimedean_gauge : IsNonarchimedean ϖ.gauge :=
   isNonarchimedean_spectralSeminorm _
 
+variable [NeZero p]
+
 /-- **Scaling by the roots.** Multiplication by `ϖ ^ (m / p ^ n)` scales the spectral gauge
 exactly by `2 ^ (-(m / p ^ n))`. -/
 @[simp]
@@ -159,12 +161,15 @@ theorem gauge_root_mul (n : ℕ) (x : R) :
     ϖ.gauge (ϖ.root n * x) = 2 ^ (-(1 / (p : ℝ) ^ n)) * ϖ.gauge x := by
   simpa using ϖ.gauge_zpow_mul 1 n x
 
+omit [NeZero p] in
 /-- Multiplication by `ϖ` halves the spectral gauge. Its priority lets it fire before
 `gauge_root_mul`, which would leave `2 ^ (-1)`. -/
 @[simp high]
 theorem gauge_root_zero_mul (x : R) : ϖ.gauge (ϖ.root 0 * x) = 1 / 2 * ϖ.gauge x := by
-  simp [Real.rpow_neg_one]
+  rw [gauge_eq_spectralSeminorm, ← coe_unitRoot, ← normDatum_pseudoUniformizer,
+    spectralSeminorm_pseudoUniformizer_mul, normDatum_radius]
 
+omit [NeZero p] in
 /-- The spectral gauge takes values at most one on the powers of an element of gauge at most
 one. -/
 private theorem gauge_pow_le_one {x : R} (hx : ϖ.gauge x ≤ 1) (k : ℕ) : ϖ.gauge (x ^ k) ≤ 1 := by
@@ -173,11 +178,13 @@ private theorem gauge_pow_le_one {x : R} (hx : ϖ.gauge x ≤ 1) (k : ℕ) : ϖ.
   · rw [ϖ.isPowMul_gauge _ hk]
     exact pow_le_one₀ (apply_nonneg _ _) hx
 
+omit [NeZero p] in
 /-- **The open unit ball of the spectral gauge is `R°°`**: `|x|_ϖ < 1` exactly when `x` is
 topologically nilpotent. -/
 theorem gauge_lt_one_iff {x : R} : ϖ.gauge x < 1 ↔ IsTopologicallyNilpotent x :=
   spectralSeminorm_lt_one_iff _
 
+omit [NeZero p] in
 /-- **The closed unit ball of the spectral gauge is `R°`.** -/
 theorem gauge_le_one_iff {x : R} : ϖ.gauge x ≤ 1 ↔ x ∈ powerBoundedSubring R := by
   refine ⟨fun hx ↦ ?_, fun hx ↦
@@ -210,15 +217,22 @@ theorem gauge_lt_rpow_iff {x : R} (m : ℤ) (n : ℕ) :
   rw [Real.rpow_neg zero_le_two, ← one_div, lt_div_iff₀' (by positivity),
     ← gauge_zpow_neg_mul, gauge_lt_one_iff]
 
+omit [NeZero p] in
 /-- An element of spectral gauge at most `2 ^ (-k)` has Tate norm at most `2 ^ (-k)` for the
 norm datum `(R°, ϖ, 1/2)`. -/
 private theorem tateNorm_le_of_gauge_le {x : R} {k : ℕ} (hx : ϖ.gauge x ≤ (1 / 2) ^ k) :
     tateNorm ϖ.normDatum x ≤ (1 / 2) ^ k := by
-  have h := (ϖ.gauge_le_rpow_iff k 0).mp (by
-    simpa [Real.rpow_neg, Real.rpow_natCast] using hx)
+  have h : ((ϖ.normDatum.pseudoUniformizer ^ (-(k : ℤ)) : Rˣ) : R) * x ∈
+      powerBoundedSubring R := by
+    rw [← gauge_le_one_iff, gauge_eq_spectralSeminorm, spectralSeminorm_zpow_mul,
+      normDatum_radius, ← gauge_eq_spectralSeminorm, _root_.zpow_neg, _root_.zpow_natCast, one_div,
+      inv_pow, inv_inv]
+    calc (2 : ℝ) ^ k * ϖ.gauge x ≤ 2 ^ k * (1 / 2) ^ k := by gcongr
+      _ = 1 := by rw [← mul_pow]; norm_num
   rw [← ϖ.normDatum_radius, ← zpow_natCast, tateNorm_le_zpow_iff]
-  simpa [zpow_def] using h
+  exact h
 
+omit [NeZero p] in
 /-- **The spectral gauge defines the topology**: its open balls about zero are a neighbourhood
 basis of zero. -/
 theorem gauge_hasBasis_nhds_zero :
@@ -238,6 +252,7 @@ theorem hasBasis_nhds_zero_zpow_mul_mem :
   refine ⟨(k, 0), trivial, fun x hx ↦ ((ϖ.gauge_le_rpow_iff k 0).mpr hx).trans_lt ?_⟩
   simpa [Real.rpow_neg, Real.rpow_natCast] using hk
 
+omit [NeZero p] in
 /-- **The spectral gauge is a norm on a Hausdorff ring.** -/
 @[simp]
 theorem gauge_eq_zero_iff [T1Space R] {x : R} : ϖ.gauge x = 0 ↔ x = 0 := by
@@ -249,11 +264,13 @@ theorem gauge_eq_zero_iff [T1Space R] {x : R} : ϖ.gauge x = 0 ↔ x = 0 := by
       (apply_nonneg _ _)
   simpa using (tateNorm_eq_zero_iff ϖ.normDatum).mp h
 
+omit [NeZero p] in
 /-- In a nonzero Hausdorff ring the spectral gauge takes the value one at one. -/
 @[simp]
 theorem gauge_one [T1Space R] [Nontrivial R] : ϖ.gauge 1 = 1 :=
   spectralSeminorm_one _
 
+omit [NeZero p] in
 /-- In a nonzero Hausdorff ring the spectral gauge is power-multiplicative at every exponent:
 `|x ^ n|_ϖ = |x|_ϖ ^ n`. -/
 @[simp]
@@ -275,6 +292,7 @@ theorem gauge_root [T1Space R] [Nontrivial R] (n : ℕ) :
     ϖ.gauge (ϖ.root n) = 2 ^ (-(1 / (p : ℝ) ^ n)) := by
   simpa using ϖ.gauge_root_mul n 1
 
+omit [NeZero p] in
 /-- **Normalisation**: in a nonzero Hausdorff ring, `|ϖ|_ϖ = 1 / 2`. Its priority lets it fire
 before `gauge_root`, which would leave `2 ^ (-1)`. -/
 @[simp high]

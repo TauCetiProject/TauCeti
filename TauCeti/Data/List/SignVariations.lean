@@ -47,8 +47,8 @@ theorem firstSign_cons_of_ne_zero {a : R} (l : List R) (ha : a ≠ 0) :
 /-- Prepending an entry `a` adds one sign variation exactly when its sign is
 opposite the sign of the next surviving entry. -/
 theorem signVariations_cons {a : R} (l : List R) :
-    List.signVariations (a :: l) =
-      (if SignType.sign a * firstSign l = -1 then 1 else 0) + List.signVariations l := by
+    signVariations (a :: l) =
+      (if SignType.sign a * firstSign l = -1 then 1 else 0) + signVariations l := by
   by_cases ha : a = 0
   · subst a
     simp
@@ -57,9 +57,9 @@ theorem signVariations_cons {a : R} (l : List R) :
     | cons b l ih =>
       by_cases hb : b = 0
       · subst b
-        simpa only [List.signVariations_cons_zero_cons, List.signVariations_zero_cons,
+        simpa only [signVariations_cons_zero_cons, signVariations_zero_cons,
           firstSign_zero_cons] using ih
-      · rw [firstSign_cons_of_ne_zero l hb, List.signVariations_cons_cons_of_ne_zero l ha hb]
+      · rw [firstSign_cons_of_ne_zero l hb, signVariations_cons_cons_of_ne_zero l ha hb]
         have ha' : SignType.sign a ≠ 0 := by simpa using ha
         have hb' : SignType.sign b ≠ 0 := by simpa using hb
         have h : (if SignType.sign a = SignType.sign b then (0 : ℕ) else 1) =
@@ -96,7 +96,7 @@ theorem firstSign_append (l₁ l₂ : List R) :
 
 /-- A list whose entries all vanish has no sign variations. -/
 theorem signVariations_eq_zero_of_forall_eq_zero {l : List R} (h : ∀ x ∈ l, x = 0) :
-    List.signVariations l = 0 := by
+    signVariations l = 0 := by
   induction l with
   | nil => simp
   | cons a l ih =>
@@ -146,9 +146,9 @@ theorem lastSign_eq_zero_iff_firstSign_eq_zero {l : List R} :
 last nonzero entry of the first list and the first nonzero entry of the second
 have opposite signs. -/
 theorem signVariations_append (l₁ l₂ : List R) :
-    List.signVariations (l₁ ++ l₂) =
-      List.signVariations l₁ + (if lastSign l₁ * firstSign l₂ = -1 then 1 else 0) +
-        List.signVariations l₂ := by
+    signVariations (l₁ ++ l₂) =
+      signVariations l₁ + (if lastSign l₁ * firstSign l₂ = -1 then 1 else 0) +
+        signVariations l₂ := by
   induction l₁ with
   | nil => simp
   | cons a l ih =>
@@ -163,7 +163,7 @@ theorem signVariations_append (l₁ l₂ : List R) :
 /-- Reversing a list does not change its sign variations. -/
 @[simp]
 theorem signVariations_reverse (l : List R) :
-    List.signVariations l.reverse = List.signVariations l := by
+    signVariations l.reverse = signVariations l := by
   induction l with
   | nil => simp
   | cons a l ih =>
@@ -172,8 +172,8 @@ theorem signVariations_reverse (l : List R) :
 
 /-- The sign variations of a list split at any nonzero entry. -/
 theorem signVariations_append_cons_of_ne_zero (l₁ l₂ : List R) {a : R} (ha : a ≠ 0) :
-    List.signVariations (l₁ ++ a :: l₂) =
-      List.signVariations (l₁ ++ [a]) + List.signVariations (a :: l₂) := by
+    signVariations (l₁ ++ a :: l₂) =
+      signVariations (l₁ ++ [a]) + signVariations (a :: l₂) := by
   rw [signVariations_append, signVariations_append, firstSign_cons_of_ne_zero _ ha,
     firstSign_singleton, signVariations_singleton, add_zero]
 
@@ -186,7 +186,7 @@ variable {R : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R]
 /-- Multiplying every entry on the left by a nonzero constant preserves the sign
 variations. -/
 theorem signVariations_map_mul_left (l : List R) {c : R} (hc : c ≠ 0) :
-    List.signVariations (l.map (c * ·)) = List.signVariations l := by
+    signVariations (l.map (c * ·)) = signVariations l := by
   rcases hc.lt_or_gt with hc | hc
   · exact signVariations_map_of_sign_eq_neg (fun x => by rw [sign_mul, sign_neg hc, neg_one_mul]) l
   · exact signVariations_map (fun x => by rw [sign_mul, sign_pos hc, one_mul]) l
@@ -194,7 +194,7 @@ theorem signVariations_map_mul_left (l : List R) {c : R} (hc : c ≠ 0) :
 /-- Multiplying every entry of a list of signs on the left by a nonzero sign preserves the sign
 variations. -/
 theorem signVariations_map_signType_mul_left (l : List SignType) {s : SignType} (hs : s ≠ 0) :
-    List.signVariations (l.map (s * ·)) = List.signVariations l := by
+    signVariations (l.map (s * ·)) = signVariations l := by
   cases s
   · exact absurd rfl hs
   · exact signVariations_map_of_sign_eq_neg (by decide) l

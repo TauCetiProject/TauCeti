@@ -46,7 +46,7 @@ namespace TauCeti
 open Set Topology
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
-  [T2Space X] [T1Space Y] {C : Set X} {g : C → Y}
+  [T1Space Y] {C : Set X} {g : C → Y}
 
 /-- **A preconnected interiorless fibre of a map from a Jordan curve is a subsingleton.** Let `C`
 be a Jordan curve and `g : C → Y` a continuous map to a `T₁` space. If the fibre of `g` over `y` is

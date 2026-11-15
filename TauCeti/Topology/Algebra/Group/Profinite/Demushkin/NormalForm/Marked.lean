@@ -210,7 +210,7 @@ theorem isDemushkin_marked_of_q_two_even_unitsPlusMinus (hG : IsDemushkin 2 G)
     (by omega) ha₂ (by omega)
   have hrank := demushkinRank_presentedProP_demushkinWordTwoEven ha₂ (by omega) hH
   obtain ⟨e⟩ := hG.nonempty_continuousMulEquiv_of_even_demushkinRank_of_range_eq_unitsPlusMinus hH
-    hrank.symm heven (by omega) hf hrange
+    hrank.symm heven hf hrange
     (range_demushkinCharacter_eq_unitsPlusMinus_of_equiv_demushkinWordTwoEven hH hf heven
       (by omega) ha' (ContinuousMulEquiv.refl _))
   obtain ⟨hsecond, hfourth, htrivial⟩ :=
@@ -243,7 +243,7 @@ theorem isDemushkin_marked_of_q_two_even_twisted (hG : IsDemushkin 2 G)
   obtain ⟨e₁⟩ :=
     hG.exists_continuousMulEquiv_presentedProP_demushkinWordNeTwo_of_range_eq heven hg hw hrange
   obtain ⟨e₂⟩ := nonempty_continuousMulEquiv_presentedProP_demushkinWordTwoEven_of_not_dvd heven
-    (by omega) hg hag hag' hgf
+    hg hag hag' hgf
   obtain ⟨hsecond, hfourth, htrivial⟩ :=
     demushkinCharacter_apply_equiv_symm_of_equiv_demushkinWordTwoEven hG
       ((dvd_pow_self 2 (by omega : g ≠ 0)).trans hag) (by omega) heven (by omega)

@@ -21,11 +21,6 @@ commutator quotient, followed by left multiplication by `exp x`.
 * `TauCeti.Lie.expFDeriv_eq_exp_mul_banachDexpFactor`: the bundled operator formula.
 * `TauCeti.Lie.fderiv_exp_eq_exp_mul_banachDexpFactor`: the corresponding `fderiv` formula.
 * `TauCeti.Lie.fderiv_exp_apply_eq_exp_mul_integral`: the pointwise integral formula.
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 1, "The conjugation formulas".
 -/
 
 public section

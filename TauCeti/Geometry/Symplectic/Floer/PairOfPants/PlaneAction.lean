@@ -181,8 +181,8 @@ private theorem abs_integral_hamiltonianCurvature_le (ω : SymplecticForm V) (hH
         (fun z x ↦ negativePlanePerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z)| ≤ B := by
   rw [← ENNReal.ofReal_le_ofReal_iff ((abs_nonneg _).trans (hB 0 0)),
-    ← Real.enorm_eq_ofReal_abs]
-  exact (enorm_integral_le_lintegral_enorm _).trans
+    ← Real.eNorm_eq_ofReal_abs]
+  exact (eNorm_integral_le_lintegral_eNorm _).trans
     (lintegral_enorm_hamiltonianCurvature_negativePlanePerturbation_le ω hH hHs hB u)
 
 /-- **The energy identity on discs of the negative plane, in terms of the action.** Let `K` be

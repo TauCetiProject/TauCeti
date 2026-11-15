@@ -58,10 +58,8 @@ submodule of a finite module over a Noetherian ring is finite.
 
 ## Provenance
 
-Roadmap: EllipticCurves, the Layers 0-1 target *Function-field foundations and isogenies*
-(`TauCetiRoadmap/EllipticCurves/README.md:1096`), through the support module
-`RingTheory/IntegralClosure/NormalizationFinite`. The mathematics is the second paragraph of the
-proof of Stacks, Lemma 10.161.13 (tag 032O), with its "some details omitted" spelled out.
+The mathematics is the second paragraph of the proof of Stacks, Lemma 10.161.13 (tag 032O), with
+its "some details omitted" spelled out.
 -/
 
 public section

@@ -235,7 +235,7 @@ theorem exists_pathELength_le_mul_sqrt_maximalIntegralCurve_neg_mgradient
     have hsub : Icc t (t + 1) ⊆ maximalIntegralCurveInterval (-mgradient I f) x :=
       fun s hs ↦ hx ((hT T le_rfl).2.trans (ht.trans hs.1))
     refine ((contMDiffOn_maximalIntegralCurve_neg_mgradient hf).pathELength_le_ofReal_sqrt_energy
-      isOpen_maximalIntegralCurveInterval.uniqueMDiffOn htt hsub).trans ?_
+      hsub).trans ?_
     rw [energy_maximalIntegralCurve_neg_mgradient hf (by rwa [uIcc_of_le htt]),
       add_sub_cancel_left]
     have := he0 (t + 1) (ht.trans htt)
@@ -258,7 +258,6 @@ theorem exists_pathELength_le_mul_sqrt_maximalIntegralCurve_neg_mgradient
     | succ n ih =>
       intro t ht
       have ht1 : t + 1 ∈ Ici T := le_add_of_le_of_nonneg ht zero_le_one
-      have hn : (0 : ℝ) ≤ n := Nat.cast_nonneg n
       rw [← Manifold.pathELength_add (b := t + 1) (by linarith) (by push_cast; linarith)]
       calc Manifold.pathELength I γ t (t + 1) + Manifold.pathELength I γ (t + 1) (t + ↑(n + 1))
           ≤ ENNReal.ofReal √(e t) + ENNReal.ofReal (K * √(e (t + 1))) := by

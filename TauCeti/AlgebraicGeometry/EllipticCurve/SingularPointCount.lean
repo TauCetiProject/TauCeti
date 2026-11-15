@@ -188,7 +188,8 @@ private theorem card_equation_add_card_rootSet_of_isSingular_zero [Finite F]
   have hroot : Nat.card ((tangentQuadratic W).rootSet F) =
       Nat.card {t : F // t ^ 2 + W.a₁ * t - W.a₂ = 0} := by
     refine Nat.card_congr (Equiv.subtypeEquivRight fun t ↦ ?_)
-    have h0 : tangentQuadratic W ≠ 0 := fun h0 ↦ by simpa using congrArg (coeff · 2) h0
+    have h0 : tangentQuadratic W ≠ 0 := fun h0 ↦ by
+      simpa using congrArg (fun p : F[X] ↦ p.coeff 2) h0
     rw [mem_rootSet, and_iff_right h0]
     simp [sub_eq_add_neg]
   have h1 : Nat.card {p : S // p.1.1 = 0} = 1 :=

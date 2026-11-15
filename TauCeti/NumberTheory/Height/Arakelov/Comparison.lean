@@ -53,7 +53,11 @@ open Height Module NumberField
 
 namespace TauCeti
 
-variable {K : Type*} [Field K] {ι : Type*} [Finite ι]
+variable {K : Type*} [Field K] {ι : Type*}
+
+section FiniteIndex
+
+variable [Finite ι]
 
 -- The two local estimates below are the comparison of the sup and Euclidean norms on `ℂ^ι`,
 -- stated directly for the embedded tuple and the place, as they enter the height formulas.
@@ -162,13 +166,44 @@ theorem height2_le_sqrt_natCard_mul_absoluteProjectiveTupleHeight (y : ι → K)
       rw [Real.mul_rpow (by positivity) (mulHeight_pos y).le, ← Real.rpow_natCast,
         ← Real.rpow_mul (Real.sqrt_nonneg _), mul_one_div_cancel hD, Real.rpow_one, one_div]
 
+/-- The logarithmic form of `mulHeight_le_arakelovMulHeight`. -/
+theorem logHeight_le_arakelovLogHeight (y : ι → K) : logHeight y ≤ arakelovLogHeight y := by
+  rw [logHeight_eq_log_mulHeight, arakelovLogHeight_eq_log_arakelovMulHeight]
+  exact Real.log_le_log (mulHeight_pos y) (mulHeight_le_arakelovMulHeight y)
+
+/-- The logarithmic form of `arakelovMulHeight_le_sqrt_natCard_pow_mul_mulHeight`: the relative
+logarithmic Euclidean height exceeds the logarithmic sup height by at most
+`[K : ℚ] / 2 · log #ι`. -/
+theorem arakelovLogHeight_le_mul_log_natCard_add_logHeight (y : ι → K) :
+    arakelovLogHeight y ≤ finrank ℚ K / 2 * Real.log (Nat.card ι) + logHeight y := by
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · rw [Subsingleton.elim y 0, Nat.card_of_isEmpty, Nat.cast_zero, Real.log_zero]
+    simp
+  have hc : 0 < √(Nat.card ι) := Real.sqrt_pos.mpr (Nat.cast_pos.mpr Nat.card_pos)
+  rw [arakelovLogHeight_eq_log_arakelovMulHeight]
+  calc
+    Real.log (arakelovMulHeight y) ≤ Real.log (√(Nat.card ι) ^ finrank ℚ K * mulHeight y) :=
+      Real.log_le_log (arakelovMulHeight_pos y)
+        (arakelovMulHeight_le_sqrt_natCard_pow_mul_mulHeight y)
+    _ = finrank ℚ K / 2 * Real.log (Nat.card ι) + logHeight y := by
+      rw [Real.log_mul (pow_pos hc _).ne' (mulHeight_pos y).ne', Real.log_pow,
+        Real.log_sqrt (Nat.cast_nonneg _), logHeight_eq_log_mulHeight]
+      ring
+
+end FiniteIndex
+
+section FintypeIndex
+
+variable [NumberField K]
+
 /-- A nonzero tuple of algebraic integers whose embedding at every infinite place has Euclidean
 norm at most `c` has relative Euclidean projective height at most `c ^ [K : ℚ]`. -/
 theorem arakelovMulHeight_le_pow_finrank_of_forall_le [Fintype ι] {y : ι → 𝓞 K} (hy : y ≠ 0)
     {c : ℝ} (hc : ∀ w : InfinitePlace K, √(∑ i, ‖w.embedding (y i)‖ ^ 2) ≤ c) :
     arakelovMulHeight (fun i ↦ (y i : K)) ≤ c ^ finrank ℚ K := by
-  obtain rfl : ‹Fintype ι› = Fintype.ofFinite ι := Subsingleton.elim _ _
+  have hF : ‹Fintype ι› = Fintype.ofFinite ι := Subsingleton.elim _ _
   have hy' : (fun i ↦ (y i : K)) ≠ 0 := mt RingOfIntegers.coe_tuple_eq_zero_iff.mp hy
+  rw [hF] at hc ⊢
   rw [arakelovMulHeight_eq hy', ← InfinitePlace.sum_mult_eq, ← Finset.prod_pow_eq_pow_sum]
   refine (mul_le_of_le_one_right (Finset.prod_nonneg fun w _ ↦ by positivity)
     (NumberField.finprod_iSup_finitePlace_le_one y)).trans ?_
@@ -195,28 +230,6 @@ theorem height2_le_of_forall_le [Fintype ι] {y : ι → 𝓞 K} {c : ℝ}
           (arakelovMulHeight_le_pow_finrank_of_forall_le hy hc) (by positivity)
     _ = c := by rw [one_div, Real.pow_rpow_inv_natCast hc0 finrank_pos.ne']
 
-/-- The logarithmic form of `mulHeight_le_arakelovMulHeight`. -/
-theorem logHeight_le_arakelovLogHeight (y : ι → K) : logHeight y ≤ arakelovLogHeight y := by
-  rw [logHeight_eq_log_mulHeight, arakelovLogHeight_eq_log_arakelovMulHeight]
-  exact Real.log_le_log (mulHeight_pos y) (mulHeight_le_arakelovMulHeight y)
-
-/-- The logarithmic form of `arakelovMulHeight_le_sqrt_natCard_pow_mul_mulHeight`: the relative
-logarithmic Euclidean height exceeds the logarithmic sup height by at most
-`[K : ℚ] / 2 · log #ι`. -/
-theorem arakelovLogHeight_le_mul_log_natCard_add_logHeight (y : ι → K) :
-    arakelovLogHeight y ≤ finrank ℚ K / 2 * Real.log (Nat.card ι) + logHeight y := by
-  rcases isEmpty_or_nonempty ι with hι | hι
-  · rw [Subsingleton.elim y 0, Nat.card_of_isEmpty, Nat.cast_zero, Real.log_zero]
-    simp
-  have hc : 0 < √(Nat.card ι) := Real.sqrt_pos.mpr (Nat.cast_pos.mpr Nat.card_pos)
-  rw [arakelovLogHeight_eq_log_arakelovMulHeight]
-  calc
-    Real.log (arakelovMulHeight y) ≤ Real.log (√(Nat.card ι) ^ finrank ℚ K * mulHeight y) :=
-      Real.log_le_log (arakelovMulHeight_pos y)
-        (arakelovMulHeight_le_sqrt_natCard_pow_mul_mulHeight y)
-    _ = finrank ℚ K / 2 * Real.log (Nat.card ι) + logHeight y := by
-      rw [Real.log_mul (pow_pos hc _).ne' (mulHeight_pos y).ne', Real.log_pow,
-        Real.log_sqrt (Nat.cast_nonneg _), logHeight_eq_log_mulHeight]
-      ring
+end FintypeIndex
 
 end TauCeti

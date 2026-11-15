@@ -96,42 +96,34 @@ theorem zeroSectionTangentEquiv_symm_inr (b : B) (v : V b) :
       (mem_baseSet_trivializationAt F V b)]
   exact (one_smul 𝕜 _).symm
 
-variable [IsManifold I 1 B] [ContMDiffVectorBundle 1 F V I]
-
 /-- In preferred tangent coordinates, the differential of the zero section is the first
 summand inclusion. -/
 theorem mfderiv_zeroSection (b : B) :
     mfderiv I (I.prod 𝓘(𝕜, F)) (zeroSection F V) b =
       ContinuousLinearMap.inl 𝕜 (TangentSpace I b) F := by
-  have hcoord : (extChartAt (I.prod 𝓘(𝕜, F)) (zeroSection F V b)) ∘ zeroSection F V
-      =ᶠ[𝓝 b] fun y ↦ (extChartAt I b y, (0 : F)) := by
-    filter_upwards [(trivializationAt F V b).open_baseSet.mem_nhds
-      (mem_baseSet_trivializationAt F V b)] with y hy
-    simp only [Function.comp_apply, FiberBundle.extChartAt, zeroSection,
-      PartialEquiv.trans_apply, PartialEquiv.prod_coe,
-      PartialEquiv.refl_coe, id_eq]
+  -- In the preferred charts the zero section is the first summand inclusion.
+  have key : ∀ y ∈ (extChartAt I b).target,
+      (extChartAt I b).symm y ∈ (trivializationAt F V b).baseSet →
+      writtenInExtChartAt I (I.prod 𝓘(𝕜, F)) b (zeroSection F V) y =
+        ContinuousLinearMap.inl 𝕜 E F y := by
+    intro y hy hs
+    have h0 := (trivializationAt F V b).zeroSection 𝕜 hs
+    simp only [writtenInExtChartAt, Function.comp_apply, FiberBundle.extChartAt,
+      PartialEquiv.trans_apply, PartialEquiv.prod_coe, PartialEquiv.refl_coe, id_eq]
     -- The partial equivalence and the trivialization have the same underlying function.
-    exact congrArg (fun q : B × F ↦ (extChartAt I b q.1, q.2))
-      ((trivializationAt F V b).zeroSection 𝕜 hy)
-  have hchain := mfderiv_comp b
-    (mdifferentiableAt_extChartAt (I := I.prod 𝓘(𝕜, F)) (mem_chart_source _ _))
-    (mdifferentiableAt_zeroSection 𝕜 V (IB := I))
-  -- The chart and bundle tangent spaces use the same model with different dependent types.
-  -- `erw` lets the chain rule identify those model spaces when cancelling the chart derivative.
-  erw [mfderiv_extChartAt_self, ContinuousLinearMap.id_comp] at hchain
-  have hpair : mfderiv I 𝓘(𝕜, E × F) (fun y ↦ (extChartAt I b y, (0 : F))) b =
-      ContinuousLinearMap.inl 𝕜 (TangentSpace I b) F := by
-    have hp := mfderiv_comp (I := I) (I' := 𝓘(𝕜, E)) (I'' := 𝓘(𝕜, E × F)) b
-      (f := extChartAt I b) (g := ContinuousLinearMap.inl 𝕜 E F)
-      (ContinuousLinearMap.inl 𝕜 E F).mdifferentiableAt
-      (mdifferentiableAt_extChartAt (x := b) (mem_chart_source _ _))
-    erw [ContinuousLinearMap.mfderiv_eq, mfderiv_extChartAt_self,
-      ContinuousLinearMap.comp_id] at hp
-    exact hp
-  erw [hcoord.mfderiv_eq, hpair] at hchain
-  -- The congruence rule inserts the identity transport between the two vector-space
-  -- tangent types. It acts identically on the preferred coordinates.
-  exact hchain.symm
+    change (extChartAt I b ((trivializationAt F V b) (zeroSection F V _)).1,
+      ((trivializationAt F V b) (zeroSection F V _)).2) = _
+    rw [h0]
+    exact Prod.ext ((extChartAt I b).right_inv hy) rfl
+  have hb : (extChartAt I b).symm (extChartAt I b b) ∈ (trivializationAt F V b).baseSet := by
+    rw [extChartAt_to_inv]
+    exact mem_baseSet_trivializationAt F V b
+  refine HasMFDerivAt.mfderiv ⟨(Trivialization.continuous_zeroSection 𝕜 (E := V)).continuousAt, ?_⟩
+  refine (ContinuousLinearMap.inl 𝕜 E F).hasFDerivAt.hasFDerivWithinAt.congr_of_eventuallyEq
+    ?_ (key _ (mem_extChartAt_target b) hb)
+  filter_upwards [extChartAt_target_mem_nhdsWithin_of_mem (I := I) (mem_extChartAt_target b),
+    nhdsWithin_le_nhds ((continuousAt_extChartAt_symm b).eventually
+      ((trivializationAt F V b).open_baseSet.mem_nhds hb))] with y hy hs using key y hy hs
 
 /-- The differential of the zero section is the horizontal summand of the canonical
 splitting. -/

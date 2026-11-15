@@ -84,7 +84,6 @@ theorem hasContinuousLogOn_sub_div_sub_compl_closure (hCc : IsPreconnected C)
   -- after inversion the Borsuk map is affine, with its only zero in `A`
   have hzero : 0 ∉ (fun w => 1 + (q - p) * w) '' Aᶜ := by
     rintro ⟨w, hwA, hw0⟩
-    have hpq' : q - p ≠ 0 := sub_ne_zero.mpr hpq.symm
     have hw : w = (p - q)⁻¹ := eq_inv_of_mul_eq_one_left (by linear_combination -hw0)
     exact hwA ⟨by simpa [hw] using sub_ne_zero.mpr hpq, by simpa [hw] using hpC⟩
   obtain ⟨L, hLd, hL⟩ := Contour.exists_differentiableOn_eqOn_exp_comp_of_filledHull_subset

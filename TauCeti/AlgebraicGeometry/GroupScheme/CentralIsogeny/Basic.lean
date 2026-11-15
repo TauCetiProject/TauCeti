@@ -42,8 +42,6 @@ central kernel and that every isogeny out of a commutative group scheme is centr
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), §18.a.
-
-This supplies the central-isogeny interface required by Layer 6 of the ReductiveGroups roadmap.
 -/
 
 public section

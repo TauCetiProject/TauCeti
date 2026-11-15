@@ -6,13 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.ZLattice.SuccessiveMinima
-public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.MixedImage
-import TauCeti.Analysis.Convex.Gauge
+public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.ModuleCovolume
+public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.ReducedBasis
+import Mathlib.Analysis.Convex.Measure
+import TauCeti.Analysis.Convex.Gauge.Basic
+import TauCeti.Analysis.Convex.Topology
 import TauCeti.LinearAlgebra.Dimension.Submodule
 import TauCeti.LinearAlgebra.LinearIndependent.Extraction.Basic
+import TauCeti.NumberTheory.GeometryOfNumbers.MinkowskiSecond
 
 /-!
-# Successive minima over a number field
+# Successive minima and Minkowski's second theorem over a number field
 
 Let `K` be a number field of degree `d`, let `ι` be a finite type, and let `Λ` be an
 `𝓞 K`-submodule of `ι → K` whose mixed image `Λ.mixedImage` is a full lattice in
@@ -26,15 +30,40 @@ These are the minima of Bombieri and Gubler's adelic geometry of numbers, stated
 lattice `Λ.mixedImage` of rank `d * #ι` instead of in the adèles. Writing `μ` for the minima over
 `K` and `λ` for the real minima of `Λ.mixedImage` (`ZLattice.successiveMinNat`), this file proves
 that the minima over `K` are attained, all by a single family of `#ι` vectors independent over
-`K`, and compares them with the real minima:
+`K`, compares them with the real minima, and deduces Minkowski's second theorem over `K`.
+
+Without any balancedness assumption on `B`:
 
 ```text
-λ l  ≤  μ l  ≤  λ (d * l)        (l < #ι).
+λ l  ≤  μ l  ≤  λ (d * l)        (l < #ι),
 ```
 
-The first inequality holds because vectors independent over `K` have images independent over
-`ℝ`; the second extracts, from `d * #ι` real-independent lattice vectors realizing the real minima,
-`#ι` vectors independent over `K` (`TauCeti.exists_linearIndependent_comp_finrank_mul`).
+so in particular `μ 0 = λ 0` when `ι` is nonempty
+(`Submodule.successiveMinimum_zero_eq_successiveMin_mixedImage`).
+The first inequality holds because vectors independent over `K` have images independent over `ℝ`;
+the second extracts, from `d * #ι` real-independent lattice vectors realizing the real minima,
+`#ι` vectors independent over `K` (`TauCeti.exists_linearIndependent_comp_finrank_mul`). When `B`
+is moreover balanced at every infinite place (`∀ z ∈ B, ∀ a, (∀ w, normAtPlace w a ≤ 1) →
+(fun i ↦ a * z i) ∈ B`), multiplying `l + 1` `K`-independent vectors of `Λ` by
+`reducedIntegralBasis K` gives `d * (l + 1)` `ℝ`-independent vectors in `Λ.mixedImage`
+(`NumberField.mixedEmbedding.linearIndependent_real_mixedEmbedding_mul`), yielding
+
+```text
+λ (d * (l + 1) - 1)  ≤  c_K * μ l        (l < #ι),
+```
+
+where `c_K = integralBasisHouse K ≤ max 1 (d / 2) * √|discr K|` and `c_ℚ = 1`. Combining these
+blockwise comparisons with Minkowski's second theorem over `ℝ` yields **Minkowski's second theorem
+over `K`**:
+
+```text
+2 ^ (d n) / ((d n)! · c_K ^ (d n)) · covolume Λ.mixedImage μ
+  ≤ (∏ l, μ l ^ d) · μ B
+  ≤ 2 ^ (d n) · covolume Λ.mixedImage μ,
+```
+
+where `n = #ι`, the upper bound holds for any compact symmetric convex set `B`, and the lower bound
+holds for any compact convex neighbourhood `B` of `0` balanced at every infinite place.
 
 ## Main definitions
 
@@ -43,22 +72,27 @@ The first inequality holds because vectors independent over `K` have images inde
 
 ## Main results
 
-* `Submodule.successiveMinimum_of_card_le`: the minima vanish from `#ι` on.
+* `Submodule.successiveMinimum_of_card_le` and `Submodule.successiveMinimum_smul`: the minima
+  vanish from `#ι` on and scale inversely with positive dilations of `B`.
 * `Submodule.finite_setOf_gauge_le`: only finitely many vectors of `Λ` have image of bounded
   gauge.
 * `Submodule.successiveMinimum_le_iff`: below `#ι` and for `t > 0`, `μ l ≤ t` exactly when
   `t • B` contains the images of `l + 1` vectors of `Λ` independent over `K`; in particular each
   minimum is attained.
-* `Submodule.successiveMinimum_pos`, `Submodule.monotoneOn_successiveMinimum`: below `#ι` the
-  minima are positive and nondecreasing.
+* `Submodule.successiveMinimum_pos`, `Submodule.monotoneOn_successiveMinimum`,
+  `Submodule.successiveMinimum_antitone_body`, `Submodule.successiveMinimum_antitone_lattice`:
+  positivity and monotonicity properties below `#ι`.
 * `Submodule.exists_linearIndependent_mem_smul_successiveMinimum`: there are `#ι` vectors of
   `Λ`, independent over `K`, the `l`-th of them with image in `μ l • B`.
-* `Submodule.successiveMin_mixedImage_le` and
-  `Submodule.successiveMinimum_le_successiveMin_mixedImage`: `λ l ≤ μ l ≤ λ (d * l)`.
-* `Submodule.finrank_span_setOf_mem`: the rank of the lattice points in a positive dilate
-  is the number of successive minima at most the dilation factor.
-* `Submodule.span_setOf_mem_eq_span_image`: any family realizing the minima spans those
-  lattice points with its initial segment of that rank.
+* `Submodule.successiveMin_mixedImage_le`,
+  `Submodule.successiveMinimum_le_successiveMin_mixedImage`,
+  `Submodule.successiveMinimum_zero_eq_successiveMin_mixedImage`, and
+  `Submodule.successiveMin_mixedImage_le_mul`: comparisons between `μ` and `λ`.
+* `Submodule.finrank_span_setOf_mem` and `Submodule.span_setOf_mem_eq_span_image`: the rank and
+  initial-segment span of the lattice points in a positive dilate.
+* `Submodule.prod_successiveMinimum_pow_mul_measure_le_two_pow_mul_covolume` and
+  `Submodule.two_pow_div_factorial_mul_covolume_le_prod_successiveMinimum_pow_mul_measure`
+  (together with their `measureReal` counterparts): Minkowski's second theorem over `K`.
 
 ## Implementation notes
 
@@ -73,18 +107,21 @@ existence of admissible dilations need no comparison with the real minima: a ful
 ## References
 
 * E. Bombieri and W. Gubler, *Heights in Diophantine Geometry*, Cambridge University Press, 2006,
-  Appendix C.2, Definition C.2.9.
+  Appendix C.2, Definition C.2.9, Remark C.2.10, and Theorem C.2.11.
 * J. W. S. Cassels, *An Introduction to the Geometry of Numbers*, Springer, 1959, Chapter VIII.
-* The definition and the proofs adapt `DiophantineApproximation/FieldMinima.lean` of
-  R. Stephan's `Subspace-Theorems` formalization (Apache 2.0),
-  <https://github.com/rwst/Subspace-Theorems>, to the real successive minima
+* W. M. Schmidt, *Diophantine Approximation*, Lecture Notes in Mathematics **785**, Springer, 1980,
+  Chapter IV.
+* The definition and the proofs of attainment and basic comparisons adapt
+  `DiophantineApproximation/FieldMinima.lean` of R. Stephan's `Subspace-Theorems` formalization
+  (Apache 2.0), <https://github.com/rwst/Subspace-Theorems>, to the real successive minima
   `ZLattice.successiveMin` of Tau Ceti.
 -/
 
 public section
 
-open Module NumberField NumberField.mixedEmbedding
-open scoped Pointwise
+open MeasureTheory Module NumberField NumberField.InfinitePlace NumberField.mixedEmbedding
+  TauCeti.NumberField
+open scoped Pointwise Topology
 
 namespace Submodule
 
@@ -124,6 +161,17 @@ theorem successiveMinimum_le {B : Set (ι → mixedSpace K)} {t : ℝ} (ht : 0 <
     (hxB : ∀ k, (fun j ↦ mixedEmbedding K (x k j)) ∈ t • B) :
     successiveMinimum Λ B l ≤ t :=
   csInf_le ⟨0, fun _ hs ↦ hs.1.le⟩ ⟨ht, x, hx, fun k ↦ ⟨hxΛ k, hxB k⟩⟩
+
+/-- Dilating `B` by `c > 0` divides every successive minimum over `K` by `c`. -/
+theorem successiveMinimum_smul (Λ : Submodule (𝓞 K) (ι → K)) (B : Set (ι → mixedSpace K))
+    {c : ℝ} (hc : 0 < c) (l : ℕ) :
+    successiveMinimum Λ (c • B) l = successiveMinimum Λ B l / c := by
+  rw [successiveMinimum_def, successiveMinimum_def, div_eq_inv_mul, ← smul_eq_mul,
+    ← Real.sInf_smul_of_nonneg (inv_nonneg.2 hc.le)]
+  congr 1
+  ext t
+  simp only [Set.mem_smul_set_iff_inv_smul_mem₀ (inv_ne_zero hc.ne'), inv_inv, smul_eq_mul,
+    Set.mem_ofPred_eq, smul_smul, mul_comm t c, mul_pos_iff_of_pos_left hc]
 
 /-- From `#ι` on the successive minima over `K` vanish: `ι → K` holds no `#ι + 1` vectors
 independent over `K`. -/
@@ -269,6 +317,32 @@ theorem monotoneOn_successiveMinimum [DiscreteTopology Λ.mixedImage]
     fun k ↦ (hxB _).2
 
 open scoped Classical in
+/-- **Enlarging the body decreases the successive minima over `K`.** -/
+theorem successiveMinimum_antitone_body (Λ : Submodule (𝓞 K) (ι → K))
+    [DiscreteTopology Λ.mixedImage] [IsZLattice ℝ Λ.mixedImage]
+    {B : ConvexBody (ι → mixedSpace K)}
+    (hB : 0 ∈ interior (B : Set (ι → mixedSpace K)))
+    {B' : Set (ι → mixedSpace K)} (hBB' : (B : Set (ι → mixedSpace K)) ⊆ B')
+    (hl : l < Fintype.card ι) :
+    successiveMinimum Λ B' l ≤ successiveMinimum Λ B l := by
+  have hpos := successiveMinimum_pos (Λ := Λ) hB hl
+  obtain ⟨x, hx, hxB⟩ := (successiveMinimum_le_iff (Λ := Λ) hB hl hpos).1 le_rfl
+  exact successiveMinimum_le hpos hx (fun k ↦ (hxB k).1)
+    fun k ↦ Set.smul_set_mono hBB' (hxB k).2
+
+open scoped Classical in
+/-- **Enlarging the `𝓞 K`-submodule decreases the successive minima over `K`.** -/
+theorem successiveMinimum_antitone_lattice (Λ : Submodule (𝓞 K) (ι → K))
+    [DiscreteTopology Λ.mixedImage] [IsZLattice ℝ Λ.mixedImage]
+    {B : ConvexBody (ι → mixedSpace K)}
+    (hB : 0 ∈ interior (B : Set (ι → mixedSpace K)))
+    {Λ' : Submodule (𝓞 K) (ι → K)} (hΛ : Λ ≤ Λ') (hl : l < Fintype.card ι) :
+    successiveMinimum Λ' B l ≤ successiveMinimum Λ B l := by
+  have hpos := successiveMinimum_pos (Λ := Λ) hB hl
+  obtain ⟨x, hx, hxB⟩ := (successiveMinimum_le_iff (Λ := Λ) hB hl hpos).1 le_rfl
+  exact successiveMinimum_le hpos hx (fun k ↦ hΛ (hxB k).1) fun k ↦ (hxB k).2
+
+open scoped Classical in
 /-- **The successive minima over `K` are attained by one family**: there are `#ι` vectors of `Λ`,
 linearly independent over `K`, the `l`-th of which has its image in `μ l • B`. -/
 theorem exists_linearIndependent_mem_smul_successiveMinimum
@@ -358,6 +432,72 @@ theorem successiveMinimum_le_successiveMin_mixedImage
   exact hk.trans (Nat.mul_le_mul_left _ (Nat.lt_succ_iff.1 k.isLt))
 
 open scoped Classical in
+/-- **Bombieri–Gubler Remark C.2.10**: when `ι` is nonempty, the zeroth successive minimum over `K`
+equals the zeroth real successive minimum of `Λ.mixedImage`, without symmetry or balancedness. -/
+theorem successiveMinimum_zero_eq_successiveMin_mixedImage [Nonempty ι]
+    (Λ : Submodule (𝓞 K) (ι → K)) [DiscreteTopology Λ.mixedImage]
+    [IsZLattice ℝ Λ.mixedImage] {B : ConvexBody (ι → mixedSpace K)}
+    (hB : 0 ∈ interior (B : Set (ι → mixedSpace K))) :
+    successiveMinimum Λ B 0 = ZLattice.successiveMinNat Λ.mixedImage B 0 := by
+  refine le_antisymm ?_ (successiveMin_mixedImage_le hB Fintype.card_pos)
+  simpa using successiveMinimum_le_successiveMin_mixedImage (Λ := Λ) hB Fintype.card_pos
+
+open scoped Classical in
+/-- **Upper bound on the `(d * (l + 1) - 1)`-th real successive minimum**: if `0 ∈ interior B`,
+`B` is balanced at every infinite place (`∀ z ∈ B, ∀ a, (∀ w, normAtPlace w a ≤ 1) →
+(fun i ↦ a * z i) ∈ B`), and `l < Fintype.card ι`, then the `([K : ℚ] * (l + 1) - 1)`-th real
+successive minimum of `Λ.mixedImage` is at most
+`integralBasisHouse K * successiveMinimum Λ B l`. -/
+theorem successiveMin_mixedImage_le_mul (Λ : Submodule (𝓞 K) (ι → K))
+    [DiscreteTopology Λ.mixedImage] [IsZLattice ℝ Λ.mixedImage]
+    {B : ConvexBody (ι → mixedSpace K)}
+    (hB : 0 ∈ interior (B : Set (ι → mixedSpace K)))
+    (hBbal : ∀ z ∈ B, ∀ a : mixedSpace K, (∀ w, normAtPlace w a ≤ 1) → (fun i ↦ a * z i) ∈ B)
+    (hl : l < Fintype.card ι) :
+    ZLattice.successiveMinNat Λ.mixedImage B (finrank ℚ K * (l + 1) - 1) ≤
+      integralBasisHouse K * successiveMinimum Λ B l := by
+  have ht := successiveMinimum_pos (Λ := Λ) hB hl
+  obtain ⟨v, hv, hvΛB⟩ := (successiveMinimum_le_iff (Λ := Λ) hB hl ht).1 le_rfl
+  set cK := integralBasisHouse K
+  have hcK : 0 < cK := integralBasisHouse_pos
+  have hd_pos : 0 < finrank ℚ K * (l + 1) := Nat.mul_pos Module.finrank_pos (Nat.succ_pos l)
+  have hlt : finrank ℚ K * (l + 1) - 1 < finrank ℝ (ι → mixedSpace K) := by
+    rw [mixedEmbedding.finrank_pi]
+    have hle : finrank ℚ K * (l + 1) ≤ finrank ℚ K * Fintype.card ι := Nat.mul_le_mul_left _ hl
+    omega
+  -- Index the `[K : ℚ] * (l + 1)` products of `reducedIntegralBasis K` and `v` by `Fin`.
+  have hsub : finrank ℚ K * (l + 1) - 1 + 1 = finrank ℚ K * (l + 1) := Nat.sub_add_cancel hd_pos
+  let e : Fin (finrank ℚ K * (l + 1) - 1 + 1) ≃ Fin (finrank ℚ K) × Fin (l + 1) :=
+    (finCongr hsub).trans finProdFinEquiv.symm
+  let w : Fin (finrank ℚ K * (l + 1) - 1 + 1) → ι → mixedSpace K := fun m i ↦
+    mixedEmbedding K ((reducedIntegralBasis K (e m).1 : K) * v (e m).2 i)
+  have hw_lin : LinearIndependent ℝ w :=
+    (linearIndependent_real_mixedEmbedding_mul
+      (linearIndependent_real_mixedEmbedding_reducedIntegralBasis K) hv).comp e e.injective
+  have hw_mem (m : Fin (finrank ℚ K * (l + 1) - 1 + 1)) : w m ∈ Λ.mixedImage := by
+    refine mem_mixedImage.2 ⟨reducedIntegralBasis K (e m).1 • v (e m).2,
+      Λ.smul_mem _ (hvΛB (e m).2).1, ?_⟩
+    ext1 i
+    simp [w, Algebra.smul_def]
+  -- Rescale by `cK⁻¹` and apply placewise balancedness to keep each `w m` in the dilated body.
+  have hw_body (m : Fin (finrank ℚ K * (l + 1) - 1 + 1)) :
+      w m ∈ (cK * successiveMinimum Λ B l) • (B : Set (ι → mixedSpace K)) := by
+    rcases (hvΛB (e m).2).2 with ⟨z, hz, hzv⟩
+    set a : mixedSpace K := cK⁻¹ • mixedEmbedding K (reducedIntegralBasis K (e m).1 : K)
+    have ha (u : InfinitePlace K) : normAtPlace u a ≤ 1 := by
+      rw [normAtPlace_smul, abs_of_pos (inv_pos.2 hcK)]
+      have hub := normAtPlace_mixedEmbedding_reducedIntegralBasis_le u (e m).1
+      exact (mul_le_mul_of_nonneg_left hub (inv_nonneg.2 hcK.le)).trans_eq
+        (inv_mul_cancel₀ hcK.ne')
+    refine ⟨fun i ↦ a * z i, hBbal z hz a ha, ?_⟩
+    ext1 i
+    have hzi' : successiveMinimum Λ B l • z i = mixedEmbedding K (v (e m).2 i) := by
+      simpa using congr_fun hzv i
+    simp [w, a, map_mul, ← hzi', mul_comm cK, mul_smul, hcK.ne']
+  rw [ZLattice.successiveMinNat_of_lt _ _ hlt]
+  exact ZLattice.successiveMin_le (mul_pos hcK ht).le hw_lin hw_mem hw_body
+
+open scoped Classical in
 /-- A positive dilate contains lattice points spanning more than `l` dimensions exactly when
 its dilation factor is at least the `l`-th successive minimum. -/
 theorem successiveMinimum_le_iff_lt_finrank_span [DiscreteTopology Λ.mixedImage]
@@ -430,5 +570,217 @@ example [DiscreteTopology Λ.mixedImage] [IsZLattice ℝ Λ.mixedImage]
   (successiveMinimum_le_iff_lt_finrank_span hB hl (successiveMinimum_pos hB hl)).1 le_rfl
 
 end Lattice
+
+section MinkowskiSecond
+
+variable {K : Type*} [Field K] [NumberField K] {ι : Type*} [Fintype ι]
+
+/-- Equivalence `Fin (card ι) × Fin [K : ℚ] ≃ Fin (finrank ℝ (ι → mixedSpace K))` sending `(l, r)`
+to `[K : ℚ] * l + r`. -/
+private noncomputable def blockIndexEquiv :
+    Fin (Fintype.card ι) × Fin (finrank ℚ K) ≃ Fin (finrank ℝ (ι → mixedSpace K)) :=
+  finProdFinEquiv.trans (finCongr (by rw [mul_comm, mixedEmbedding.finrank_pi]))
+
+private theorem coe_blockIndexEquiv (l : Fin (Fintype.card ι)) (r : Fin (finrank ℚ K)) :
+    (blockIndexEquiv (l, r) : ℕ) = finrank ℚ K * (l : ℕ) + (r : ℕ) := by
+  simp [blockIndexEquiv, add_comm]
+
+private theorem prod_pow_finrank_eq (g : Fin (Fintype.card ι) → ℝ) :
+    ∏ l, g l ^ finrank ℚ K =
+      ∏ p : Fin (Fintype.card ι) × Fin (finrank ℚ K), g p.1 := by
+  rw [Fintype.prod_prod_type]
+  simp
+
+open scoped Classical in
+/-- Block-product lower bound on `∏ m, ZLattice.successiveMin Λ.mixedImage B m` in terms of the
+`[K : ℚ]`-th powers of `Λ.successiveMinimum B`. -/
+private theorem prod_successiveMinimum_pow_le_prod_successiveMin
+    (Λ : Submodule (𝓞 K) (ι → K)) [DiscreteTopology Λ.mixedImage] [IsZLattice ℝ Λ.mixedImage]
+    {B : ConvexBody (ι → mixedSpace K)}
+    (hB0 : (0 : ι → mixedSpace K) ∈ interior (B : Set (ι → mixedSpace K))) :
+    ∏ l : Fin (Fintype.card ι), Λ.successiveMinimum B l ^ finrank ℚ K ≤
+      ∏ m, ZLattice.successiveMin Λ.mixedImage B m := by
+  rw [prod_pow_finrank_eq, ← Equiv.prod_comp (blockIndexEquiv (K := K) (ι := ι))]
+  refine Finset.prod_le_prod₀ (fun p _ ↦ Λ.successiveMinimum_nonneg B p.1) fun ⟨l, r⟩ _ ↦ ?_
+  have hdl : finrank ℚ K * (l : ℕ) < finrank ℝ (ι → mixedSpace K) := by
+    rw [mixedEmbedding.finrank_pi]
+    exact Nat.mul_lt_mul_of_pos_left l.isLt Module.finrank_pos
+  refine (successiveMinimum_le_successiveMin_mixedImage (Λ := Λ) hB0 l.isLt).trans ?_
+  rw [ZLattice.successiveMinNat_of_lt _ _ hdl]
+  refine ZLattice.monotone_successiveMin Λ.mixedImage hB0 (Fin.le_def.2 ?_)
+  simp only [coe_blockIndexEquiv]
+  exact Nat.le_add_right _ _
+
+open scoped Classical in
+/-- Block-product upper bound on `∏ m, ZLattice.successiveMin Λ.mixedImage B m` for a body balanced
+at every infinite place. -/
+private theorem prod_successiveMin_le_integralBasisHouse_pow_mul_prod
+    (Λ : Submodule (𝓞 K) (ι → K)) [DiscreteTopology Λ.mixedImage] [IsZLattice ℝ Λ.mixedImage]
+    {B : ConvexBody (ι → mixedSpace K)}
+    (hB0 : (0 : ι → mixedSpace K) ∈ interior (B : Set (ι → mixedSpace K)))
+    (hBbal : ∀ z ∈ B, ∀ a : mixedSpace K, (∀ w, normAtPlace w a ≤ 1) →
+      (fun i ↦ a * z i) ∈ B) :
+    ∏ m, ZLattice.successiveMin Λ.mixedImage B m ≤
+      integralBasisHouse K ^ (finrank ℚ K * Fintype.card ι) *
+        ∏ l : Fin (Fintype.card ι), Λ.successiveMinimum B l ^ finrank ℚ K := by
+  have hpow : integralBasisHouse K ^ (finrank ℚ K * Fintype.card ι) *
+      ∏ l : Fin (Fintype.card ι), Λ.successiveMinimum B l ^ finrank ℚ K =
+      ∏ l : Fin (Fintype.card ι),
+        (integralBasisHouse K * Λ.successiveMinimum B l) ^ finrank ℚ K := by
+    simp_rw [mul_pow, Finset.prod_mul_distrib, Finset.prod_const, Finset.card_fin, ← pow_mul]
+  rw [hpow, prod_pow_finrank_eq, ← Equiv.prod_comp (blockIndexEquiv (K := K) (ι := ι))]
+  refine Finset.prod_le_prod₀ (fun _ _ ↦ ZLattice.successiveMin_nonneg _ _ _) fun ⟨l, r⟩ _ ↦ ?_
+  have hlt : finrank ℚ K * ((l : ℕ) + 1) - 1 < finrank ℝ (ι → mixedSpace K) := by
+    rw [mixedEmbedding.finrank_pi]
+    have hd_pos : 0 < finrank ℚ K * ((l : ℕ) + 1) :=
+      Nat.mul_pos Module.finrank_pos (Nat.succ_pos _)
+    have hle : finrank ℚ K * ((l : ℕ) + 1) ≤ finrank ℚ K * Fintype.card ι :=
+      Nat.mul_le_mul_left _ l.isLt
+    omega
+  refine (ZLattice.monotone_successiveMin Λ.mixedImage hB0 (a := blockIndexEquiv (l, r))
+    (b := ⟨finrank ℚ K * ((l : ℕ) + 1) - 1, hlt⟩) (Fin.le_def.2 ?_)).trans ?_
+  · simp only [coe_blockIndexEquiv]
+    have hr : (r : ℕ) + 1 ≤ finrank ℚ K := r.isLt
+    have hmul : finrank ℚ K * ((l : ℕ) + 1) = finrank ℚ K * (l : ℕ) + finrank ℚ K :=
+      Nat.mul_succ _ _
+    omega
+  · rw [← ZLattice.successiveMinNat_of_lt _ _ hlt]
+    exact Λ.successiveMin_mixedImage_le_mul hB0 hBbal l.isLt
+
+open scoped Classical in
+/-- **Minkowski's second theorem over `K`, upper bound** (`ENNReal` measure form; Bombieri–Gubler
+Theorem C.2.11, upper inequality): for a full `𝓞 K`-lattice `Λ` in `ι → K`, an additive Haar
+measure `μ` on `ι → mixedSpace K`, and a compact symmetric convex set `B`,
+`(∏ l, μ l ^ [K : ℚ]) * μ B ≤ 2 ^ ([K : ℚ] * card ι) * covolume Λ.mixedImage μ`. -/
+theorem prod_successiveMinimum_pow_mul_measure_le_two_pow_mul_covolume
+    (Λ : Submodule (𝓞 K) (ι → K)) [DiscreteTopology Λ.mixedImage] [IsZLattice ℝ Λ.mixedImage]
+    (μ : Measure (ι → mixedSpace K) := by volume_tac) [μ.IsAddHaarMeasure]
+    {B : Set (ι → mixedSpace K)} (hBc : Convex ℝ B) (hBk : IsCompact B)
+    (hBs : ∀ z ∈ B, -z ∈ B) :
+    ENNReal.ofReal (∏ l : Fin (Fintype.card ι), Λ.successiveMinimum B l ^ finrank ℚ K) * μ B ≤
+      2 ^ (finrank ℚ K * Fintype.card ι) *
+        ENNReal.ofReal (ZLattice.covolume Λ.mixedImage μ) := by
+  rcases (interior B).eq_empty_or_nonempty with hempty | hne
+  · rw [← measure_interior_of_null_frontier (hBc.addHaar_frontier μ), hempty]
+    simp
+  let Bbody : ConvexBody (ι → mixedSpace K) := ⟨B, hBc, hBk, hne.mono interior_subset⟩
+  have hB0 : (0 : ι → mixedSpace K) ∈ interior (Bbody : Set (ι → mixedSpace K)) :=
+    hBc.zero_mem_interior_of_symmetric hBs hne
+  have hprod := Λ.prod_successiveMinimum_pow_le_prod_successiveMin hB0
+  calc ENNReal.ofReal (∏ l : Fin (Fintype.card ι), Λ.successiveMinimum B l ^ finrank ℚ K) * μ B
+      ≤ ENNReal.ofReal (∏ m, ZLattice.successiveMin Λ.mixedImage Bbody m) * μ B := by
+        gcongr
+        exact hprod
+      _ ≤ 2 ^ finrank ℝ (ι → mixedSpace K) *
+          ENNReal.ofReal (ZLattice.covolume Λ.mixedImage μ) :=
+        ZLattice.prod_successiveMin_mul_measure_le_two_pow_mul_covolume Λ.mixedImage μ hBs
+      _ = 2 ^ (finrank ℚ K * Fintype.card ι) *
+          ENNReal.ofReal (ZLattice.covolume Λ.mixedImage μ) := by rw [mixedEmbedding.finrank_pi]
+
+open scoped Classical in
+/-- **Minkowski's second theorem over `K`, upper bound** (`ℝ`-valued measure form):
+`(∏ l, μ l ^ [K : ℚ]) * μ.real B ≤ 2 ^ ([K : ℚ] * card ι) * covolume Λ.mixedImage μ`. -/
+theorem prod_successiveMinimum_pow_mul_measureReal_le_two_pow_mul_covolume
+    (Λ : Submodule (𝓞 K) (ι → K)) [DiscreteTopology Λ.mixedImage] [IsZLattice ℝ Λ.mixedImage]
+    (μ : Measure (ι → mixedSpace K) := by volume_tac) [μ.IsAddHaarMeasure]
+    {B : Set (ι → mixedSpace K)} (hBc : Convex ℝ B) (hBk : IsCompact B)
+    (hBs : ∀ z ∈ B, -z ∈ B) :
+    (∏ l : Fin (Fintype.card ι), Λ.successiveMinimum B l ^ finrank ℚ K) * μ.real B ≤
+      2 ^ (finrank ℚ K * Fintype.card ι) * ZLattice.covolume Λ.mixedImage μ := by
+  have h := ENNReal.toReal_mono (by finiteness)
+    (Λ.prod_successiveMinimum_pow_mul_measure_le_two_pow_mul_covolume μ hBc hBk hBs)
+  have hnn : 0 ≤ ∏ l : Fin (Fintype.card ι), Λ.successiveMinimum B l ^ finrank ℚ K :=
+    Finset.prod_nonneg fun l _ ↦ pow_nonneg (Λ.successiveMinimum_nonneg B l) _
+  rwa [ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.toReal_ofReal hnn,
+    ENNReal.toReal_ofReal (ZLattice.covolume_pos Λ.mixedImage μ).le, ENNReal.toReal_pow,
+    ENNReal.toReal_ofNat, ← measureReal_def] at h
+
+open scoped Classical in
+/-- **Minkowski's second theorem over `K`, lower bound** (`ENNReal` measure form; Bombieri–Gubler
+Theorem C.2.11, lower inequality): for a full `𝓞 K`-lattice `Λ` in `ι → K`, an additive Haar
+measure `μ` on `ι → mixedSpace K`, and a compact convex neighbourhood `B` of `0` balanced at every
+infinite place,
+`2 ^ N / (N! · c_K ^ N) * covolume Λ.mixedImage μ ≤ (∏ l, μ l ^ [K : ℚ]) * μ B`,
+where `N = [K : ℚ] * card ι` and `c_K = integralBasisHouse K`. -/
+theorem two_pow_div_factorial_mul_covolume_le_prod_successiveMinimum_pow_mul_measure
+    (Λ : Submodule (𝓞 K) (ι → K)) [DiscreteTopology Λ.mixedImage] [IsZLattice ℝ Λ.mixedImage]
+    (μ : Measure (ι → mixedSpace K) := by volume_tac) [μ.IsAddHaarMeasure]
+    {B : Set (ι → mixedSpace K)} (hBc : Convex ℝ B) (hBk : IsCompact B) (hB0 : B ∈ 𝓝 0)
+    (hBbal : ∀ z ∈ B, ∀ a : mixedSpace K, (∀ w, normAtPlace w a ≤ 1) → (fun i ↦ a * z i) ∈ B) :
+    ENNReal.ofReal ((2 : ℝ) ^ (finrank ℚ K * Fintype.card ι) /
+        (((finrank ℚ K * Fintype.card ι).factorial : ℝ) *
+          integralBasisHouse K ^ (finrank ℚ K * Fintype.card ι)) *
+        ZLattice.covolume Λ.mixedImage μ) ≤
+      ENNReal.ofReal (∏ l : Fin (Fintype.card ι), Λ.successiveMinimum B l ^ finrank ℚ K) *
+        μ B := by
+  let Bbody : ConvexBody (ι → mixedSpace K) := ⟨B, hBc, hBk, ⟨0, mem_of_mem_nhds hB0⟩⟩
+  have hBint : (0 : ι → mixedSpace K) ∈ interior (Bbody : Set (ι → mixedSpace K)) :=
+    mem_interior_iff_mem_nhds.2 hB0
+  have hBs : ∀ z ∈ B, -z ∈ B := fun z hz ↦ by
+    simpa [Pi.neg_def] using hBbal z hz (-1) fun w ↦ by simp [normAtPlace_neg]
+  set N := finrank ℚ K * Fintype.card ι
+  have hN : finrank ℝ (ι → mixedSpace K) = N := mixedEmbedding.finrank_pi
+  have hcK : 0 < integralBasisHouse K ^ N := pow_pos integralBasisHouse_pos N
+  have hprod := Λ.prod_successiveMin_le_integralBasisHouse_pow_mul_prod hBint hBbal
+  have hmink := ZLattice.two_pow_div_factorial_mul_covolume_le_prod_successiveMin_mul_measure
+    Λ.mixedImage μ hBint hBs
+  rw [← ENNReal.mul_le_mul_iff_right (ENNReal.ofReal_pos.2 hcK).ne' ENNReal.ofReal_ne_top]
+  calc ENNReal.ofReal (integralBasisHouse K ^ N) *
+        ENNReal.ofReal ((2 : ℝ) ^ N / ((N.factorial : ℝ) * integralBasisHouse K ^ N) *
+          ZLattice.covolume Λ.mixedImage μ)
+      = ENNReal.ofReal ((2 : ℝ) ^ finrank ℝ (ι → mixedSpace K) /
+          (finrank ℝ (ι → mixedSpace K)).factorial * ZLattice.covolume Λ.mixedImage μ) := by
+          rw [hN, ← ENNReal.ofReal_mul hcK.le]
+          congr 1
+          field_simp [hcK.ne']
+    _ ≤ ENNReal.ofReal (∏ m, ZLattice.successiveMin Λ.mixedImage Bbody m) * μ B := hmink
+    _ ≤ ENNReal.ofReal (integralBasisHouse K ^ N *
+          ∏ l : Fin (Fintype.card ι), Λ.successiveMinimum B l ^ finrank ℚ K) * μ B := by
+          gcongr
+          exact hprod
+    _ = ENNReal.ofReal (integralBasisHouse K ^ N) *
+          (ENNReal.ofReal (∏ l : Fin (Fintype.card ι), Λ.successiveMinimum B l ^ finrank ℚ K) *
+            μ B) := by
+          rw [ENNReal.ofReal_mul hcK.le, mul_assoc]
+
+open scoped Classical in
+/-- **Minkowski's second theorem over `K`, lower bound** (`ℝ`-valued measure form): for a compact
+convex neighbourhood `B` of `0` balanced at every infinite place,
+`2 ^ N / (N! · c_K ^ N) * covolume Λ.mixedImage μ ≤ (∏ l, μ l ^ [K : ℚ]) * μ.real B`. -/
+theorem two_pow_div_factorial_mul_covolume_le_prod_successiveMinimum_pow_mul_measureReal
+    (Λ : Submodule (𝓞 K) (ι → K)) [DiscreteTopology Λ.mixedImage] [IsZLattice ℝ Λ.mixedImage]
+    (μ : Measure (ι → mixedSpace K) := by volume_tac) [μ.IsAddHaarMeasure]
+    {B : Set (ι → mixedSpace K)} (hBc : Convex ℝ B) (hBk : IsCompact B) (hB0 : B ∈ 𝓝 0)
+    (hBbal : ∀ z ∈ B, ∀ a : mixedSpace K, (∀ w, normAtPlace w a ≤ 1) → (fun i ↦ a * z i) ∈ B) :
+    (2 : ℝ) ^ (finrank ℚ K * Fintype.card ι) /
+        (((finrank ℚ K * Fintype.card ι).factorial : ℝ) *
+          integralBasisHouse K ^ (finrank ℚ K * Fintype.card ι)) *
+        ZLattice.covolume Λ.mixedImage μ ≤
+      (∏ l : Fin (Fintype.card ι), Λ.successiveMinimum B l ^ finrank ℚ K) * μ.real B := by
+  have h := ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hBk.measure_lt_top.ne)
+    (Λ.two_pow_div_factorial_mul_covolume_le_prod_successiveMinimum_pow_mul_measure
+      μ hBc hBk hB0 hBbal)
+  have hnn : 0 ≤ ∏ l : Fin (Fintype.card ι), Λ.successiveMinimum B l ^ finrank ℚ K :=
+    Finset.prod_nonneg fun l _ ↦ pow_nonneg (Λ.successiveMinimum_nonneg B l) _
+  have hcK : 0 < integralBasisHouse K := integralBasisHouse_pos
+  rwa [ENNReal.toReal_mul, ENNReal.toReal_ofReal hnn, ENNReal.toReal_ofReal
+    (mul_nonneg (by positivity) (ZLattice.covolume_pos Λ.mixedImage μ).le),
+    ← measureReal_def] at h
+
+open scoped Classical in
+-- Over `ℚ`, `integralBasisHouse ℚ = 1`, so the lower bound in Minkowski's second theorem over `ℚ`
+-- recovers the classical constant `2 ^ n / n!` without loss.
+example {ι : Type*} [Fintype ι] (Λ : Submodule (𝓞 ℚ) (ι → ℚ))
+    [DiscreteTopology Λ.mixedImage] [IsZLattice ℝ Λ.mixedImage]
+    {B : Set (ι → mixedSpace ℚ)} (hBc : Convex ℝ B) (hBk : IsCompact B) (hB0 : B ∈ 𝓝 0)
+    (hBbal : ∀ z ∈ B, ∀ a : mixedSpace ℚ, (∀ w, normAtPlace w a ≤ 1) → (fun i ↦ a * z i) ∈ B) :
+    (2 : ℝ) ^ Fintype.card ι / (Fintype.card ι).factorial *
+        ZLattice.covolume Λ.mixedImage ≤
+      (∏ l : Fin (Fintype.card ι), Λ.successiveMinimum B l) * volume.real B := by
+  simpa [Module.finrank_self, integralBasisHouse_rat] using
+    Λ.two_pow_div_factorial_mul_covolume_le_prod_successiveMinimum_pow_mul_measureReal
+      volume hBc hBk hB0 hBbal
+
+end MinkowskiSecond
 
 end Submodule

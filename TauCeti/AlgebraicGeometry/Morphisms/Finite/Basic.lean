@@ -26,9 +26,9 @@ If `g : Y ⟶ S` is moreover flat and locally of finite presentation (finite loc
 sections `Γ(Y, g⁻¹ U)` over an affine open `U` of `S` form a projective `Γ(S, U)`-module
 (`AlgebraicGeometry.Scheme.Hom.projective_app`).
 
-Finite, flat and locally finitely presented morphisms each respect isomorphisms
-(`TauCeti.isFinite_respectsIso`, `TauCeti.flat_respectsIso` and
-`TauCeti.locallyOfFinitePresentation_respectsIso`).
+Finite, flat, locally finite type and locally finitely presented morphisms each respect
+isomorphisms (`TauCeti.isFinite_respectsIso`, `TauCeti.flat_respectsIso`,
+`TauCeti.locallyOfFiniteType_respectsIso` and `TauCeti.locallyOfFinitePresentation_respectsIso`).
 -/
 
 public section
@@ -80,6 +80,12 @@ instance isFinite_respectsIso :
 /-- Flat morphisms of schemes respect isomorphisms. -/
 instance flat_respectsIso :
     MorphismProperty.RespectsIso (@Flat : MorphismProperty Scheme.{u}) :=
+  MorphismProperty.respectsIso_of_isStableUnderComposition
+    (fun _ _ f (_ : IsIso f) ↦ inferInstance)
+
+/-- Morphisms of schemes locally of finite type respect isomorphisms. -/
+instance locallyOfFiniteType_respectsIso :
+    MorphismProperty.RespectsIso (@LocallyOfFiniteType : MorphismProperty Scheme.{u}) :=
   MorphismProperty.respectsIso_of_isStableUnderComposition
     (fun _ _ f (_ : IsIso f) ↦ inferInstance)
 

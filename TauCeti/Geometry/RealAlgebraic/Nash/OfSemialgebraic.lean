@@ -46,7 +46,7 @@ theorem IsSemialgebraicOn.exists_ne_zero_polynomial_relation {σ : Type*}
       ∀ x ∈ s, (P.map (eval x)).eval (f x) = 0 := by
   have hint : interior (Equiv.sumArrowEquivProdArrow σ Unit ℝ ⁻¹'
       s.graphOn (fun x (_ : Unit) ↦ f x)) = ∅ := by
-    rw [← coe_sumArrowHomeomorphProdArrow, ← Homeomorph.preimage_interior,
+    rw [← Homeomorph.coe_sumArrowHomeomorphProdArrow, ← Homeomorph.preimage_interior,
       interior_graphOn, preimage_empty]
   obtain ⟨p, hp, hrel⟩ := hf.graph.exists_ne_zero_polynomial_of_interior_eq_empty hint
   let k : σ ⊕ Unit → Option σ := Sum.elim some (fun _ ↦ none)

@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Functoriality
 public import TauCeti.Algebra.AlgebraicGroup.FiniteType.CommHopfAlgCat
 public import TauCeti.Algebra.Category.CommGrpCat.FiniteGeneration
 public import TauCeti.Algebra.Bialgebra.MonoidAlgebra.GroupLike
+import TauCeti.Algebra.MonoidAlgebra.MapDomain
 
 /-!
 # Finite-type diagonalizable groups
@@ -131,12 +132,7 @@ theorem coordinateMap_surjective_of_surjective {G H : FGCommGrpCat.{v}} (φ : G 
     Function.Surjective
       (FiniteTypeCommHopfAlgCat.toBialgHom (coordinateMap R φ)) := by
   rw [toBialgHom_coordinateMap]
-  intro y
-  obtain ⟨x, hx⟩ := Finsupp.mapDomain_surjective (M := R) hφ y.coeff
-  refine ⟨MonoidAlgebra.ofCoeff x, ?_⟩
-  unfold MonoidAlgebra.mapDomainBialgHom
-  apply MonoidAlgebra.coeff_injective
-  exact hx
+  exact MonoidAlgebra.mapDomain_surjective hφ
 
 /-- Recover the character-group homomorphism that induces a morphism between coordinate
 Hopf algebras of finite-type diagonalizable groups over a base with connected prime

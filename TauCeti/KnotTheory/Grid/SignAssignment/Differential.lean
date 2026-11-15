@@ -158,7 +158,7 @@ theorem sum_signedUnblockedCoefficient_mul_signedUnblockedCoefficient_eq_zero
     · rw [he] at h₂
       exact absurd h₂ (Finset.notMem_empty _)
   refine G.sum_unblockedDecompositions_eq_zero hzx _ (fun D hD h => ?_)
-    (fun D hD hone hfirst hsecond => ?_)
+    (fun D _ hone hfirst hsecond => ?_)
   · obtain ⟨h₁, h₂⟩ := hmem D hD
     refine hcancel D _ (S.signOf_mul_signOf_eq_neg h₁ h₂ (D.isEmpty_commute_first h h₁ h₂)
       (D.isEmpty_commute_second h h₁ h₂) (D.commute_ne h) ?_)

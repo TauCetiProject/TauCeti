@@ -19,8 +19,7 @@ import TauCeti.NumberTheory.NumberField.Quadratic.TotalRamification
 # The class number of `ℚ(√-21)`
 
 This file proves that the imaginary quadratic field `ℚ(√-21)` has class number `4`, completing
-the class-number calculation in the second genus-field worked example of the multiquadratic
-roadmap.
+the class-number calculation in the genus-field worked example for `ℚ(√-21)`.
 
 Minkowski's theorem gives every ideal class an integral representative of norm less than `6`.
 Norms `2` and `3` give the unique primes above the ramified rational primes `2` and `3`; an ideal

@@ -210,6 +210,17 @@ theorem isOrtho_realCliffordForm_single {p q : ℕ} {i j : Fin (p + q)} (hij : i
       simp [hki]
     · simp [hki, hkj]
 
+/-- The polar form of the signature form against a coordinate vector:
+`polar Q x (a eᵢ) = 2 wᵢ a xᵢ`, where `wᵢ` is the signature weight of the coordinate. -/
+theorem polar_realCliffordForm_single (p q : ℕ) (x : Fin (p + q) → ℝ) (i : Fin (p + q))
+    (a : ℝ) :
+    QuadraticMap.polar (realCliffordForm p q) x (Pi.single i a) =
+      2 * realCliffordWeight p q i * a * x i := by
+  simp only [QuadraticMap.polar, realCliffordForm_apply, Pi.add_apply, ← Finset.sum_sub_distrib]
+  rw [Finset.sum_eq_single i (fun j _ hj => by simp [hj]) (by simp)]
+  simp
+  ring
+
 /-- The coordinate basis is orthogonal for the polar form of the signature form. -/
 theorem isOrthoᵢ_associated_realCliffordForm (p q : ℕ) :
     (QuadraticMap.associated (realCliffordForm p q)).IsOrthoᵢ (Pi.basisFun ℝ (Fin (p + q))) :=
@@ -222,6 +233,18 @@ theorem isOrthoᵢ_associated_realCliffordForm (p q : ℕ) :
 theorem realCliffordForm_zero_single_one (n : ℕ) (i : Fin n) :
     realCliffordForm n 0 (Pi.single i 1) = 1 := by
   rw [realCliffordForm_apply_single, realCliffordWeight_of_lt i.isLt, one_pow, mul_one]
+
+/-- Every coordinate unit vector among the first `p` coordinates has value one for the real
+Clifford form of signature `(p, q)`. -/
+theorem realCliffordForm_single_one_of_lt {p q : ℕ} {i : Fin (p + q)} (hi : (i : ℕ) < p) :
+    realCliffordForm p q (Pi.single i 1) = 1 := by
+  rw [realCliffordForm_apply_single, realCliffordWeight_of_lt hi, one_pow, mul_one]
+
+/-- Every coordinate unit vector among the last `q` coordinates has value `-1` for the real
+Clifford form of signature `(p, q)`. -/
+theorem realCliffordForm_single_one_of_le {p q : ℕ} {i : Fin (p + q)} (hi : p ≤ (i : ℕ)) :
+    realCliffordForm p q (Pi.single i 1) = -1 := by
+  rw [realCliffordForm_apply_single, realCliffordWeight_of_le hi, one_pow, mul_one]
 
 /-- The real Clifford algebra of signature `(p, q)` has dimension `2 ^ (p + q)`, as every Clifford
 algebra of a space of that dimension does. This is the count that forces the surjections built

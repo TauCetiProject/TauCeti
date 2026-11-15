@@ -271,7 +271,7 @@ theorem alongCurveInChartWithin_pullback {x : M} {s : Set 𝕜} {t : 𝕜} {w : 
   -- The two summands of the coordinate formula are the readings of the flat frame derivative and
   -- of the Christoffel form, whose sum is the covariant derivative.
   rw [alongCurveInChartWithin_apply, derivWithin_sectionCoord_pullback γ b X hy hu hγ hX,
-    derivWithin_extChartAt_comp γ hy hu hγ, christoffelMap_apply b hcov hy, sectionCoord_apply,
+    derivWithin_extChartAt_comp γ hy hu hγ, christoffelMap_apply b hcov, sectionCoord_apply,
     e.symmL_continuousLinearMapAt (R := 𝕜) hy, e.symmL_continuousLinearMapAt (R := 𝕜) hy,
     ← map_add, covariantDerivative_eq_add_christoffelForm b hcov hy hX,
     add_apply]

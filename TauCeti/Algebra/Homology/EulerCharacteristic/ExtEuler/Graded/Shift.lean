@@ -49,13 +49,20 @@ witness it needs is the one this file constructs from it.
 
 ## Main results
 
-* `TauCeti.IsGradedEulerAdmissible.shiftTarget` and
-  `TauCeti.IsGradedEulerAdmissible.shiftSource`: graded Euler-admissibility is preserved by the
-  grading shift in either variable; `TauCeti.IsGradedEulerAdmissible.shiftTargetInverse` and
-  `TauCeti.IsGradedEulerAdmissible.shiftSourceInverse` are the same for the inverse shift.
-* `TauCeti.IsGradedEulerAdmissible.shiftObj` and
-  `TauCeti.IsGradedEulerAdmissible.shiftObjTarget`: for graded modules, admissibility is
-  preserved by any integer internal shift of the source or of the target.
+* `TauCeti.IsGradedEulerAdmissible.shiftTarget`,
+  `TauCeti.IsGradedEulerAdmissible.shiftSource`,
+  `TauCeti.IsSlicewiseEulerAdmissible.shiftTarget`, and
+  `TauCeti.IsSlicewiseEulerAdmissible.shiftSource`: graded and slicewise Euler-admissibility are
+  preserved by the grading shift in either variable;
+  `TauCeti.IsGradedEulerAdmissible.shiftTargetInverse`,
+  `TauCeti.IsGradedEulerAdmissible.shiftSourceInverse`,
+  `TauCeti.IsSlicewiseEulerAdmissible.shiftTargetInverse`, and
+  `TauCeti.IsSlicewiseEulerAdmissible.shiftSourceInverse` are the same for the inverse shift.
+* `TauCeti.IsGradedEulerAdmissible.shiftObj`,
+  `TauCeti.IsGradedEulerAdmissible.shiftObjTarget`,
+  `TauCeti.IsSlicewiseEulerAdmissible.shiftObj`, and
+  `TauCeti.IsSlicewiseEulerAdmissible.shiftObjTarget`: for graded modules, graded and slicewise
+  admissibility are preserved by any integer internal shift of the source or of the target.
 * `TauCeti.gradedExtEuler_shiftTarget`: `χ_q(X, Y{1}) = q · χ_q(X, Y)`.
 * `TauCeti.gradedExtEuler_shiftSource`: `χ_q(X{1}, Y) = q⁻¹ · χ_q(X, Y)`.
 * `TauCeti.gradedExtEuler_shiftTargetInverse` and
@@ -184,6 +191,19 @@ theorem IsGradedEulerAdmissible.shiftTarget (h : IsGradedEulerAdmissible.{w} k e
 theorem IsGradedEulerAdmissible.shiftTargetInverse (h : IsGradedEulerAdmissible.{w} k e X Y) :
     IsGradedEulerAdmissible.{w} k e X (e.inverse.obj Y) :=
   ⟨h.internallyFinite.shiftTargetInverse, h.bounded.shiftTargetInverse⟩
+
+/-- Slicewise Euler-admissibility is preserved by shifting the target. -/
+theorem IsSlicewiseEulerAdmissible.shiftTarget (h : IsSlicewiseEulerAdmissible.{w} k e X Y) :
+    IsSlicewiseEulerAdmissible.{w} k e X (e.functor.obj Y) :=
+  ⟨fun j ↦ (h.isEulerAdmissible (j + 1)).congr fun n ↦
+    (gradedExtShiftTargetEquiv k e X Y n j).symm⟩
+
+/-- Slicewise Euler-admissibility is preserved by the inverse shift of the target. -/
+theorem IsSlicewiseEulerAdmissible.shiftTargetInverse
+    (h : IsSlicewiseEulerAdmissible.{w} k e X Y) :
+    IsSlicewiseEulerAdmissible.{w} k e X (e.inverse.obj Y) :=
+  ⟨fun j ↦ (h.isEulerAdmissible (j - 1)).congr fun n ↦
+    (gradedExtShiftTargetInverseEquiv k e X Y n j).symm⟩
 
 /-- Shifting the target multiplies the graded `Ext` dimension in one cohomological degree by
 `q`. -/
@@ -352,6 +372,19 @@ theorem IsGradedEulerAdmissible.shiftSourceInverse (h : IsGradedEulerAdmissible.
     IsGradedEulerAdmissible.{w} k e (e.inverse.obj X) Y :=
   ⟨h.internallyFinite.shiftSourceInverse, h.bounded.shiftSourceInverse⟩
 
+/-- Slicewise Euler-admissibility is preserved by shifting the source. -/
+theorem IsSlicewiseEulerAdmissible.shiftSource (h : IsSlicewiseEulerAdmissible.{w} k e X Y) :
+    IsSlicewiseEulerAdmissible.{w} k e (e.functor.obj X) Y :=
+  ⟨fun j ↦ (h.isEulerAdmissible (j - 1)).congr fun n ↦
+    (gradedExtShiftSourceEquiv k e X Y n j).symm⟩
+
+/-- Slicewise Euler-admissibility is preserved by the inverse shift of the source. -/
+theorem IsSlicewiseEulerAdmissible.shiftSourceInverse
+    (h : IsSlicewiseEulerAdmissible.{w} k e X Y) :
+    IsSlicewiseEulerAdmissible.{w} k e (e.inverse.obj X) Y :=
+  ⟨fun j ↦ (h.isEulerAdmissible (j + 1)).congr fun n ↦
+    (gradedExtShiftSourceInverseEquiv k e X Y n j).symm⟩
+
 /-- Shifting the source multiplies the graded `Ext` dimension in one cohomological degree by
 `q⁻¹`. -/
 theorem gradedExtDimension_shiftSource {n : ℕ}
@@ -400,33 +433,31 @@ section CommRing
 variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
   {𝒜 : ℤ → Submodule k A} [HasExt.{w} (GradedModuleCat.{v} 𝒜)]
 
+/-- Bigraded `Ext` in internal degree `j` is a subsingleton if and only if ordinary `Ext` into the
+explicit internal shift `Y{j}` is a subsingleton. -/
+theorem GradedModuleCat.subsingleton_gradedExt_iff_subsingleton_ext_shiftObj
+    {X Y : GradedModuleCat.{v} 𝒜} {n : ℕ} {j : ℤ} :
+    Subsingleton (GradedExt.{w} (GradedModuleCat.shift 𝒜) X Y n j) ↔
+      Subsingleton (Ext.{w} X (Y.shiftObj j) n) :=
+  (extAddEquivOfIso (Iso.refl X)
+    ((GradedModuleCat.shiftPowIso 𝒜 j).app Y) n).toEquiv.subsingleton_congr
+
 /-- Any integer internal shift of a source preserves a uniform cohomological bound on its
 graded Ext groups. -/
 theorem IsGradedExtBoundedBy.shiftObj {X Y : GradedModuleCat.{v} 𝒜} {N : ℕ}
     (h : IsGradedExtBoundedBy.{w} (GradedModuleCat.shift 𝒜) X Y N) (d : ℤ) :
-    IsGradedExtBoundedBy.{w} (GradedModuleCat.shift 𝒜) (X.shiftObj d) Y N := by
-  induction d using Int.induction_on with
-  | zero =>
-      exact h.of_iso ((GradedModuleCat.shiftFunctorZeroIso 𝒜).app X).symm (Iso.refl Y)
-  | succ n ih =>
-      exact ih.shiftSource.of_iso ((GradedModuleCat.shiftFunctorAddIso 𝒜 n 1).app X)
-        (Iso.refl Y)
-  | pred n ih =>
-      exact ih.shiftSourceInverse.of_iso
-        ((GradedModuleCat.shiftFunctorAddIso 𝒜 (- (n : ℤ)) (-1)).app X) (Iso.refl Y)
+    IsGradedExtBoundedBy.{w} (GradedModuleCat.shift 𝒜) (X.shiftObj d) Y N :=
+  X.shiftObj_induction (fun M ↦ IsGradedExtBoundedBy.{w} (GradedModuleCat.shift 𝒜) M Y N)
+    (fun _ _ hM i ↦ hM.of_iso i (Iso.refl Y))
+    (fun _ hM ↦ hM.shiftSource) (fun _ hM ↦ hM.shiftSourceInverse) h d
 
 /-- An arbitrary internal shift of the target preserves a fixed cohomological bound. -/
 theorem IsGradedExtBoundedBy.shiftObjTarget {X Y : GradedModuleCat.{v} 𝒜} {N : ℕ}
     (h : IsGradedExtBoundedBy.{w} (GradedModuleCat.shift 𝒜) X Y N) (d : ℤ) :
-    IsGradedExtBoundedBy.{w} (GradedModuleCat.shift 𝒜) X (Y.shiftObj d) N := by
-  induction d using Int.induction_on with
-  | zero =>
-      exact h.of_iso (Iso.refl X) ((GradedModuleCat.shiftFunctorZeroIso 𝒜).app Y).symm
-  | succ n ih =>
-      exact ih.shiftTarget.of_iso (Iso.refl X) ((GradedModuleCat.shiftFunctorAddIso 𝒜 n 1).app Y)
-  | pred n ih =>
-      exact ih.shiftTargetInverse.of_iso (Iso.refl X)
-        ((GradedModuleCat.shiftFunctorAddIso 𝒜 (- (n : ℤ)) (-1)).app Y)
+    IsGradedExtBoundedBy.{w} (GradedModuleCat.shift 𝒜) X (Y.shiftObj d) N :=
+  Y.shiftObj_induction (fun M ↦ IsGradedExtBoundedBy.{w} (GradedModuleCat.shift 𝒜) X M N)
+    (fun _ _ hM j ↦ hM.of_iso (Iso.refl X) j)
+    (fun _ hM ↦ hM.shiftTarget) (fun _ hM ↦ hM.shiftTargetInverse) h d
 
 end CommRing
 
@@ -437,32 +468,39 @@ variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
 No boundedness or positivity hypothesis on the algebra grading is needed. -/
 theorem IsGradedEulerAdmissible.shiftObj {X Y : GradedModuleCat.{v} 𝒜}
     (h : IsGradedEulerAdmissible.{w} k (GradedModuleCat.shift 𝒜) X Y) (d : ℤ) :
-    IsGradedEulerAdmissible.{w} k (GradedModuleCat.shift 𝒜) (X.shiftObj d) Y := by
-  induction d using Int.induction_on with
-  | zero =>
-      exact h.of_iso k ((GradedModuleCat.shiftFunctorZeroIso 𝒜).app X).symm (Iso.refl Y)
-  | succ n ih =>
-      have hs := ih.shiftSource
-      exact hs.of_iso k ((GradedModuleCat.shiftFunctorAddIso 𝒜 n 1).app X) (Iso.refl Y)
-  | pred n ih =>
-      have hs := ih.shiftSourceInverse
-      exact hs.of_iso k ((GradedModuleCat.shiftFunctorAddIso 𝒜 (- (n : ℤ)) (-1)).app X)
-        (Iso.refl Y)
+    IsGradedEulerAdmissible.{w} k (GradedModuleCat.shift 𝒜) (X.shiftObj d) Y :=
+  X.shiftObj_induction (fun M ↦ IsGradedEulerAdmissible.{w} k (GradedModuleCat.shift 𝒜) M Y)
+    (fun _ _ hM i ↦ hM.of_iso k i (Iso.refl Y))
+    (fun _ hM ↦ hM.shiftSource) (fun _ hM ↦ hM.shiftSourceInverse) h d
 
 /-- Any integer internal shift of the target of an Euler-admissible pair remains
 Euler-admissible. This is the target counterpart of
 `TauCeti.IsGradedEulerAdmissible.shiftObj`. -/
 theorem IsGradedEulerAdmissible.shiftObjTarget {X Y : GradedModuleCat.{v} 𝒜}
     (h : IsGradedEulerAdmissible.{w} k (GradedModuleCat.shift 𝒜) X Y) (d : ℤ) :
-    IsGradedEulerAdmissible.{w} k (GradedModuleCat.shift 𝒜) X (Y.shiftObj d) := by
-  induction d using Int.induction_on with
-  | zero =>
-      exact h.of_iso k (Iso.refl X) ((GradedModuleCat.shiftFunctorZeroIso 𝒜).app Y).symm
-  | succ n ih =>
-      exact ih.shiftTarget.of_iso k (Iso.refl X) ((GradedModuleCat.shiftFunctorAddIso 𝒜 n 1).app Y)
-  | pred n ih =>
-      exact ih.shiftTargetInverse.of_iso k (Iso.refl X)
-        ((GradedModuleCat.shiftFunctorAddIso 𝒜 (- (n : ℤ)) (-1)).app Y)
+    IsGradedEulerAdmissible.{w} k (GradedModuleCat.shift 𝒜) X (Y.shiftObj d) :=
+  Y.shiftObj_induction (fun M ↦ IsGradedEulerAdmissible.{w} k (GradedModuleCat.shift 𝒜) X M)
+    (fun _ _ hM j ↦ hM.of_iso k (Iso.refl X) j)
+    (fun _ hM ↦ hM.shiftTarget) (fun _ hM ↦ hM.shiftTargetInverse) h d
+
+/-- Any integer internal shift of a slicewise Euler-admissible source remains slicewise
+Euler-admissible. -/
+theorem IsSlicewiseEulerAdmissible.shiftObj {X Y : GradedModuleCat.{v} 𝒜}
+    (h : IsSlicewiseEulerAdmissible.{w} k (GradedModuleCat.shift 𝒜) X Y) (d : ℤ) :
+    IsSlicewiseEulerAdmissible.{w} k (GradedModuleCat.shift 𝒜) (X.shiftObj d) Y :=
+  X.shiftObj_induction (fun M ↦ IsSlicewiseEulerAdmissible.{w} k (GradedModuleCat.shift 𝒜) M Y)
+    (fun _ _ hM i ↦ hM.of_iso i (Iso.refl Y))
+    (fun _ hM ↦ hM.shiftSource) (fun _ hM ↦ hM.shiftSourceInverse) h d
+
+/-- Any integer internal shift of the target of a slicewise Euler-admissible pair remains
+slicewise Euler-admissible. This is the target counterpart of
+`TauCeti.IsSlicewiseEulerAdmissible.shiftObj`. -/
+theorem IsSlicewiseEulerAdmissible.shiftObjTarget {X Y : GradedModuleCat.{v} 𝒜}
+    (h : IsSlicewiseEulerAdmissible.{w} k (GradedModuleCat.shift 𝒜) X Y) (d : ℤ) :
+    IsSlicewiseEulerAdmissible.{w} k (GradedModuleCat.shift 𝒜) X (Y.shiftObj d) :=
+  Y.shiftObj_induction (fun M ↦ IsSlicewiseEulerAdmissible.{w} k (GradedModuleCat.shift 𝒜) X M)
+    (fun _ _ hM j ↦ hM.of_iso (Iso.refl X) j)
+    (fun _ hM ↦ hM.shiftTarget) (fun _ hM ↦ hM.shiftTargetInverse) h d
 
 end GradedModules
 

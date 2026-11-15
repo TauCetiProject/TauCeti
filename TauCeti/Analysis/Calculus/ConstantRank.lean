@@ -122,7 +122,7 @@ theorem ContDiffOn.exists_openPartialHomeomorph_comp_eq_fderiv_comp (hf : ContDi
       ContDiffOn 𝕂 n ψ ψ.source ∧ ContDiffOn 𝕂 n ψ.symm ψ.target ∧
       MapsTo f φ.source ψ.source ∧ ∀ x ∈ φ.source, ψ (f x) = fderiv 𝕂 f a (φ x) := by
   have hn0 : n ≠ 0 := by rintro rfl; exact absurd hn (by simp)
-  have : CompleteSpace E := FiniteDimensional.complete 𝕂 E
+  have : CompleteSpace E := FiniteDimensional.completeSpace 𝕂 E
   have hfd : ∀ x ∈ s, HasFDerivAt f (fderiv 𝕂 f x) x := fun x hx ↦
     ((hf.differentiableOn hn0).differentiableAt (hs.mem_nhds hx)).hasFDerivAt
   set L := fderiv 𝕂 f a

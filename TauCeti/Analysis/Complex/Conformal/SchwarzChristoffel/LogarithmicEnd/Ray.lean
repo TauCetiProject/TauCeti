@@ -223,7 +223,7 @@ theorem schwarzChristoffelBoundary_image_Ioo_eq_range_of_endpoint_sums_eq_neg_on
   -- The two opposite rays have the same origin and together exhaust the affine line.
   ext w
   constructor
-  · rintro (⟨t, ht, rfl⟩ | ⟨t, ht, rfl⟩)
+  · rintro (⟨t, _, rfl⟩ | ⟨t, _, rfl⟩)
     · exact ⟨-t, by simp [sub_eq_add_neg]⟩
     · exact ⟨t, rfl⟩
   · rintro ⟨t, rfl⟩

@@ -17,11 +17,10 @@ import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 A *ring of integral elements* of a Huber ring `A` is an open subring `A⁺` which is integrally
 closed in `A` and consists of power-bounded elements, and a *Huber pair* `(A, A⁺)` is a Huber
 ring together with such a subring. Huber pairs are the affine objects of the theory: the adic
-spectrum of the next layer is built from one.
+spectrum `Spa(A, A⁺)` is built from one.
 
-A Huber ring has many rings of integral elements, so `A⁺` is carried as data rather than
-selected by a typeclass; this is the roadmap's standing convention that the plus ring is
-explicit.
+A Huber ring has many rings of integral elements, so `A⁺` is carried as explicit data rather
+than selected by a typeclass.
 
 ## Main definitions
 
@@ -63,12 +62,10 @@ explicit.
 
 ## Provenance
 
-The shape of these declarations follows the roadmap's own prototype in
-`TauCetiRoadmap/AdicSpaces/Suggested.lean`, which fixes the design choice that the plus ring is
-explicit data rather than a typeclass, and the selection of results follows AINTLIB's
-`AffinoidRings.lean`; neither's proofs were used. That AINTLIB file was also consulted for the
-quotient-pair construction and its universal property. Its quotient uses the same integral closure
-of the image plus ring; this file bundles the construction with the current Tau Ceti Huber-pair API.
+The selection of results follows AINTLIB's `AffinoidRings.lean`; its proofs were not used. That
+AINTLIB file was also consulted for the quotient-pair construction and its universal property. Its
+quotient uses the same integral closure of the image plus ring; this file bundles the construction
+with the current Tau Ceti Huber-pair API.
 
 ## References
 

@@ -19,10 +19,8 @@ levels. This file defines the multiplicity, the map `mulMap` sending a pair of r
 to the mixed double coset of their product, and the uniqueness lemmas for the fibres of the
 multiplicity.
 
-Vendored from the in-review mathlib4 PR
-[#41254](https://github.com/leanprover-community/mathlib4/pull/41254) (Chris Birkbeck), per the
-ModularForms roadmap's dependency policy; migrate to Mathlib and delete this file when that
-stack merges.
+Vendored from mathlib4 PR
+[#41254](https://github.com/leanprover-community/mathlib4/pull/41254) (Chris Birkbeck).
 
 ## Main definitions
 

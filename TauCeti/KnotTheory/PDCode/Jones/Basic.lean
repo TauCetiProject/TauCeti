@@ -11,8 +11,8 @@ public import TauCeti.KnotTheory.PDCode.Oriented.ClaspInsertion
 public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.Circle.Basic
 public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.Two.Basic
 public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.Two.Circles
-public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.One
-public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.Three
+public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.One.Basic
+public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.Three.Basic
 public import TauCeti.KnotTheory.PDCode.RotateCrossing
 public import TauCeti.KnotTheory.PDCode.Trefoil
 

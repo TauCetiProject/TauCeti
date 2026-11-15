@@ -314,6 +314,20 @@ theorem repr_mul_apply [Fintype (StrandDiagram α)] (x y : StrandsAlgebra R α)
     by_cases h' : φ.trans ψ = χ <;> simp [h, h']
   · simp [h]
 
+/-- A diagram with a nonzero coefficient in a product is the composite of two composable diagrams
+with nonzero coefficients in the factors. -/
+theorem exists_of_repr_mul_ne_zero {x y : StrandsAlgebra R α} {χ : StrandDiagram α}
+    (h : (basis R α).repr (x * y) χ ≠ 0) :
+    ∃ φ ψ, φ.Composable ψ ∧ φ.trans ψ = χ ∧ (basis R α).repr x φ ≠ 0 ∧
+      (basis R α).repr y ψ ≠ 0 := by
+  have := Fintype.ofFinite (StrandDiagram α)
+  rw [repr_mul_apply] at h
+  obtain ⟨φ, -, hφ⟩ := Finset.exists_ne_zero_of_sum_ne_zero h
+  obtain ⟨ψ, -, hψ⟩ := Finset.exists_ne_zero_of_sum_ne_zero hφ
+  rw [ne_eq, ite_eq_right_iff, not_imp] at hψ
+  obtain ⟨⟨hc, rfl⟩, hψ⟩ := hψ
+  exact ⟨φ, ψ, hc, rfl, left_ne_zero_of_mul hψ, right_ne_zero_of_mul hψ⟩
+
 end StrandsAlgebra
 
 end TauCeti

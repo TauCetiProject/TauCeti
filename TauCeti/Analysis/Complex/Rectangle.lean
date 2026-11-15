@@ -21,9 +21,11 @@ rectangles.
   vertical segments as `×ℂ` products.
 * `Complex.frontier_rectangle`, `Complex.interior_rectangle`: the frontier of a rectangle is the
   union of its four edges, and its interior is the open rectangle.
+* `Complex.mem_rectangle_iff`: membership in a rectangle given by its lower left and upper right
+  corners.
 * `Complex.mem_Ioo_reProdIm_of_mem_rectangle`: a point of the rectangle off its frontier lies in
   the open rectangle.
-* `Complex.isClosed_rectangle`, `Complex.convex_rectangle`.
+* `Complex.isClosed_rectangle`, `Complex.isCompact_rectangle`, `Complex.convex_rectangle`.
 * `Complex.smul_integral_lineMap_of_im_eq`, `Complex.smul_integral_lineMap_of_re_eq`: the contour
   integral along a horizontal or vertical segment, parametrized over `[0, 1]`, as a real interval
   integral over the real or imaginary parts.
@@ -83,6 +85,12 @@ theorem interior_rectangle (hre : z.re ≤ w.re) (him : z.im ≤ w.im) :
     interior (Rectangle z w) = Ioo z.re w.re ×ℂ Ioo z.im w.im := by
   rw [Rectangle, interior_reProdIm, uIcc_of_le hre, uIcc_of_le him, interior_Icc, interior_Icc]
 
+/-- When `z` is the lower left corner, membership in the rectangle with opposite corners `z` and
+`w` is a pair of bounds on the real and imaginary parts. -/
+theorem mem_rectangle_iff (hre : z.re ≤ w.re) (him : z.im ≤ w.im) {s : ℂ} :
+    s ∈ Rectangle z w ↔ (z.re ≤ s.re ∧ s.re ≤ w.re) ∧ (z.im ≤ s.im ∧ s.im ≤ w.im) := by
+  rw [Rectangle, mem_reProdIm, uIcc_of_le hre, uIcc_of_le him, mem_Icc, mem_Icc]
+
 /-- A point of the closed rectangle that is not on its frontier lies in the open rectangle. -/
 theorem mem_Ioo_reProdIm_of_mem_rectangle (hre : z.re ≤ w.re) (him : z.im ≤ w.im)
     {s : ℂ} (hs : s ∈ Rectangle z w) (hfr : s ∉ frontier (Rectangle z w)) :
@@ -93,6 +101,10 @@ theorem mem_Ioo_reProdIm_of_mem_rectangle (hre : z.re ≤ w.re) (him : z.im ≤ 
 /-- The closed rectangle is closed. -/
 theorem isClosed_rectangle (z w : ℂ) : IsClosed (Rectangle z w) :=
   isClosed_uIcc.reProdIm isClosed_uIcc
+
+/-- The closed rectangle is compact. -/
+theorem isCompact_rectangle (z w : ℂ) : IsCompact (Rectangle z w) :=
+  isCompact_uIcc.reProdIm isCompact_uIcc
 
 /-- The closed rectangle is convex. -/
 theorem convex_rectangle (z w : ℂ) : Convex ℝ (Rectangle z w) := by

@@ -31,6 +31,10 @@ precomposition with the derivative of that map.
   injective derivative.
 * `TauCeti.fderiv_comp_eq_zero_iff_of_isInvertible`: `b` is a critical point of `f ∘ φ` exactly
   when `φ b` is a critical point of `f`, if the differential of `φ` at `b` is invertible.
+* `ContinuousLinearMap.fderiv_comp_right_of_rightInverse`,
+  `ContinuousLinearMap.fderiv_comp_left_of_leftInverse`: the chain rule for precomposition with a
+  split surjection and postcomposition with a split injection, with no differentiability
+  assumption.
 * `TauCeti.fderiv_comp_add_smul`: the derivative of `w ↦ f (c + a • w)` is `a` times that of `f`
   at `c + a • w`.
 -/
@@ -88,6 +92,43 @@ differentiability of `f`. -/
 theorem fderiv_comp_add_smul (f : E → F) (c : E) (a : 𝕜) (w : E) :
     fderiv 𝕜 (fun w ↦ f (c + a • w)) w = a • fderiv 𝕜 f (c + a • w) := by
   rw [_root_.fderiv_comp_smul (f := fun y ↦ f (c + y)), fderiv_comp_add_left]
+
+/-- For a continuous linear map `g` with a continuous linear right inverse `s`, the derivative of
+`h ∘ g` at `x` is the derivative of `h` at `g x` composed with `g`, for every `h` (no
+differentiability assumption). -/
+theorem _root_.ContinuousLinearMap.fderiv_comp_right_of_rightInverse (g : G →L[𝕜] E) (s : E →L[𝕜] G)
+    (hgs : Function.RightInverse s g) (h : E → F) (x : G) :
+    fderiv 𝕜 (h ∘ g) x = (fderiv 𝕜 h (g x)).comp g := by
+  by_cases hd : DifferentiableAt 𝕜 h (g x)
+  · rw [fderiv_comp x hd g.differentiableAt, g.fderiv]
+  · have hnd : ¬ DifferentiableAt 𝕜 (h ∘ g) x := fun hd' ↦ hd (by
+      have hx : (fun u ↦ s u + (x - s (g x))) (g x) = x := by simp
+      have hcomp : h = (h ∘ g) ∘ fun u ↦ s u + (x - s (g x)) := by
+        funext u
+        simp [hgs _]
+      have := (hx ▸ hd').comp (g x)
+        (by fun_prop : DifferentiableAt 𝕜 (fun u ↦ s u + (x - s (g x))) (g x))
+      rwa [← hcomp] at this)
+    rw [fderiv_zero_of_not_differentiableAt hnd, fderiv_zero_of_not_differentiableAt hd]
+    simp
+
+/-- For a continuous linear map `Φ` with a continuous linear left inverse `Ψ`, the derivative of
+`Φ ∘ k` at `y` is `Φ` composed with the derivative of `k` at `y`, for every `k` (no
+differentiability assumption). -/
+theorem _root_.ContinuousLinearMap.fderiv_comp_left_of_leftInverse {X : Type*}
+    [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+    (Φ : E →L[𝕜] F) (Ψ : F →L[𝕜] E) (hΨΦ : Function.LeftInverse Ψ Φ) (k : X → E) (y : X) :
+    fderiv 𝕜 (Φ ∘ k) y = Φ.comp (fderiv 𝕜 k y) := by
+  by_cases hd : DifferentiableAt 𝕜 k y
+  · rw [fderiv_comp y Φ.differentiableAt hd, Φ.fderiv]
+  · have hnd : ¬ DifferentiableAt 𝕜 (Φ ∘ k) y := fun hd' ↦ hd (by
+      have : k = Ψ ∘ (Φ ∘ k) := by
+        funext u
+        simp [hΨΦ _]
+      rw [this]
+      exact Ψ.differentiableAt.comp y hd')
+    rw [fderiv_zero_of_not_differentiableAt hnd, fderiv_zero_of_not_differentiableAt hd]
+    simp
 
 end TauCeti
 

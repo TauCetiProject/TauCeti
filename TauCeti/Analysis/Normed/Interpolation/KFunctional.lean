@@ -154,7 +154,6 @@ theorem kFunctional_le_max_mul (hs : 0 < s) (ht : 0 ≤ t) (u : C.SumSpace) :
 theorem min_mul_kFunctional_le (hs : 0 < s) (ht : 0 ≤ t) (u : C.SumSpace) :
     min 1 (t / s) * C.kFunctional s u ≤ C.kFunctional t u := by
   refine (le_kFunctional_iff ht).2 fun x₀ x₁ h => ?_
-  have h₀ : 0 ≤ min 1 (t / s) := le_min zero_le_one (by positivity)
   have h₁ : min 1 (t / s) ≤ 1 := min_le_left _ _
   have h₂ : min 1 (t / s) ≤ t / s := min_le_right _ _
   calc min 1 (t / s) * C.kFunctional s u ≤ min 1 (t / s) * (‖x₀‖ + s * ‖x₁‖) := by

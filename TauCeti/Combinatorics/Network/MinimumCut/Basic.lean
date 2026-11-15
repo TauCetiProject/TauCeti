@@ -496,6 +496,18 @@ theorem isMinimum_singleton_iff_pairMinimumValue_eq {s t : V} {S : Finset V} :
   · exact isMinimum_singleton_iff.mpr ⟨hs, ht, fun T hsT htT ↦
       heq.le.trans (pairMinimumValue_le f hsT htT)⟩
 
+/-- Relabelling vertices preserves pairwise minimum cut values, including the zero diagonal
+convention. -/
+theorem pairMinimumValue_map [Finite W] (e : V ≃ W) (g : Finset W → K)
+    (hfg : ∀ S, g (S.map e.toEmbedding) = f S) (s t : V) :
+    pairMinimumValue g (e s) (e t) = pairMinimumValue f s t := by
+  classical
+  by_cases hst : s = t
+  · subst t
+    simp
+  · rw [pairMinimumValue_of_ne g (e.injective.ne hst), pairMinimumValue_of_ne f hst]
+    simpa using minimumValue_map e hfg (disjoint_singleton.mpr hst)
+
 /-- **Ultrametric inequality** for minimum cut values: every cut separating `s` from `t`
 separates `s` from `v` or `v` from `t`. The intermediate vertex `v` is arbitrary. -/
 theorem min_pairMinimumValue_le {s t : V} (hst : s ≠ t) (v : V) :

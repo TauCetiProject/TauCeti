@@ -102,11 +102,11 @@ private theorem exists_add_beltramiOperator_eq (hα : 0 < α) (hα1 : α < 1) (h
     ∃ k, μ + beltramiOperator hα hα1 hr μ k = k ∧ ‖k‖ ≤ 2 * ‖μ‖ := by
   set A := beltramiOperator hα hα1 hr μ
   have hK : ‖A‖₊ < 1 := by
-    rw [← NNReal.coe_lt_coe, coe_nnnorm, NNReal.coe_one]
+    rw [← NNReal.coe_lt_coe, coe_nnNorm, NNReal.coe_one]
     linarith
   have hΦ : ContractingWith ‖A‖₊ fun k ↦ μ + A k :=
     ⟨hK, LipschitzWith.of_dist_le_mul fun k₁ k₂ ↦ by
-      rw [dist_eq_norm, dist_eq_norm, add_sub_add_left_eq_sub, ← map_sub, coe_nnnorm]
+      rw [dist_eq_norm, dist_eq_norm, add_sub_add_left_eq_sub, ← map_sub, coe_nnNorm]
       exact A.le_opNorm _⟩
   set k := ContractingWith.fixedPoint _ hΦ
   have hfix : μ + A k = k := ContractingWith.fixedPoint_isFixedPt hΦ
@@ -243,7 +243,7 @@ theorem exists_conjWirtingerDeriv_eq_mul_wirtingerDeriv (hα : 0 < α) (hα1 : �
   · -- `D ψ(z) = id + D T(z)` is a small perturbation of the identity, so it is invertible.
     have hlt : ‖fderiv ℝ T z‖₊ < ‖((ContinuousLinearEquiv.refl ℝ ℂ).symm : ℂ →L[ℝ] ℂ)‖₊⁻¹ := by
       rw [ContinuousLinearEquiv.refl_symm, ContinuousLinearEquiv.coe_refl,
-        ContinuousLinearMap.nnnorm_id, inv_one, ← NNReal.coe_lt_coe, coe_nnnorm, NNReal.coe_one]
+        ContinuousLinearMap.nnNorm_id, inv_one, ← NNReal.coe_lt_coe, coe_nnNorm, NNReal.coe_one]
       refine (hDT' z hz).trans_lt ?_
       nlinarith [norm_nonneg μ, mul_nonneg hb (mul_nonneg hD (norm_nonneg μ))]
     obtain ⟨L, hL⟩ := ContinuousLinearMap.isInvertible_of_norm_sub_lt

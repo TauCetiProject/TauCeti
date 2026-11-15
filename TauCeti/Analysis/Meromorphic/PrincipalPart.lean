@@ -201,7 +201,8 @@ def principalPart : meromorphicGerms 𝕜 a →ₗ[𝕜] 𝕜[X] where
     obtain ⟨hP, g, hg, hgφ⟩ := (exists_principalPart (c • φ)).choose_spec
     obtain ⟨hP₁, g₁, hg₁, hgφ₁⟩ := (exists_principalPart φ).choose_spec
     refine eq_of_coe_sub_evalInvSub_eq (Q := c • (exists_principalPart φ).choose)
-      hP (by rw [coeff_smul, hP₁, smul_zero]) hg (hg₁.const_smul (c := c)) hgφ ?_
+      hP (by rw [AddMonoidAlgebra.coeff_smul_apply, hP₁, smul_zero]) hg (hg₁.const_smul (c := c))
+      hgφ ?_
     have heval : evalInvSub a (c • (exists_principalPart φ).choose) =
         c • evalInvSub a (exists_principalPart φ).choose := by
       apply Subtype.ext

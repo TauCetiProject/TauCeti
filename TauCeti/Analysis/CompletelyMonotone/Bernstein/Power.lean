@@ -19,9 +19,8 @@ negative power of `TauCeti.isCompletelyMonotoneOnIoi_rpow_neg`, since `s - 1 = -
 `1 - s ≥ 0`.
 
 Feeding this into `TauCeti.IsContinuousCompletelyMonotoneOnIoi.comp_isBernsteinFunction` produces
-the stretched exponentials `t ↦ e^{-x t^s}`. These are the acceptance example the
-`OneParameterSemigroups` roadmap asks the composition closure to deliver. The endpoint `s = 1`
-recovers the exponential `t ↦ e^{-x t}` and `s = 0` the constant `t ↦ e^{-x}`.
+the stretched exponentials `t ↦ e^{-x t^s}`. The endpoint `s = 1` recovers the exponential
+`t ↦ e^{-x t}` and `s = 0` the constant `t ↦ e^{-x}`.
 
 ## Main declarations
 

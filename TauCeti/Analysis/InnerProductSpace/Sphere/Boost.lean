@@ -330,12 +330,21 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 /-- Rotating the direction of `v` to that of `w` by a linear isometry `e` that moves the point `x`
 to `y`, the boost toward `-y` of rapidity `log (‖w‖ / ‖v‖)` then carries `e v` at `e x` to `w`. -/
 theorem fderiv_sphereBoost_log_apply_eq (e : E →ₗᵢ[ℝ] F) {x v : E} {y w : F} (hy : ‖-y‖ = 1)
-    (hv : v ≠ 0) (hw : w ≠ 0) (hex : e x = y) (hxv : ⟪x, v⟫ = 0)
+    (hex : e x = y) (hxv : ⟪x, v⟫ = 0)
     (hev : e (‖v‖⁻¹ • v) = ‖w‖⁻¹ • w) :
     fderiv ℝ (sphereBoost (-y) (Real.log (‖w‖ / ‖v‖))) (e x) (e v) = w := by
   have hperp : ⟪e v, -y⟫ = 0 := by
     rw [inner_neg_right, ← hex, LinearIsometry.inner_map_map, real_inner_comm, hxv,
       neg_zero]
+  rcases eq_or_ne v 0 with rfl | hv
+  · -- `w = 0` as well, and both sides vanish
+    obtain rfl : w = 0 := by simpa [eq_comm] using hev
+    simp
+  have hw : w ≠ 0 := by
+    rintro rfl
+    simp only [norm_zero, inv_zero, zero_smul, map_smul, smul_eq_zero, inv_eq_zero,
+      norm_eq_zero] at hev
+    exact hv (hev.elim (fun h => h) fun h => e.injective (h.trans (map_zero e).symm))
   have hxy : e x = - -y := by rw [hex, neg_neg]
   rw [hxy, fderiv_sphereBoost_neg_self_apply hy _ hperp, Real.exp_log (by positivity)]
   rw [← LinearIsometry.norm_map e v]

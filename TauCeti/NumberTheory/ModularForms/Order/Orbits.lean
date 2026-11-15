@@ -243,8 +243,8 @@ image-indexed `∑ᶠ` to the whole orbit space. Instantiated at that lemma's or
 over the *closed* `𝒟`, which holds the elliptic points `i` and `ρ` (`‖i‖ = ‖ρ‖ = 1`), whereas that
 lemma confines its divisor set to the *open* `𝒟ᵒ`. For a form of nonzero order at `i` or `ρ` the
 two demands cannot both hold — those are exactly the points the valence formula weights by `1/2`
-and `1/3` instead of counting into the divisor sum. Reaching the roadmap's non-elliptic orbit
-space still needs separate treatment of the elliptic orbits. -/
+and `1/3` instead of counting into the divisor sum. Reaching the non-elliptic orbit space still
+needs separate treatment of the elliptic orbits. -/
 lemma orderOfVanishingOnOrbit_eq_zero_of_notMem [SlashInvariantFormClass F 𝒮ℒ k]
     {S : Set (MulAction.orbitRel.Quotient SL(2, ℤ) ℍ)}
     (hS : ∀ p ∈ 𝒟, orderOfVanishingAt f p ≠ 0 →

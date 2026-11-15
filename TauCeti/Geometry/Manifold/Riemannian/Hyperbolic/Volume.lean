@@ -97,14 +97,23 @@ theorem hypVolumeOfMetric_eq_of_isometry
 
 /-- Mostow rigidity identifies the total volumes of any two bundled hyperbolic metrics. -/
 theorem hypVolumeOfMetric_eq_of_mostow [BoundarylessManifold I M]
-    (hConn : ConnectedSpace M)
     (hdim : 3 ≤ Module.finrank ℝ E)
     (h : IsMostowRigid (I := I) (M := M))
     (g g' : HyperbolicMetric (I := I) (M := M)) :
     hypVolumeOfMetric (I := I) g = hypVolumeOfMetric (I := I) g' := by
-  let _ : ConnectedSpace M := hConn
-  obtain ⟨Φ⟩ := h.isometry (hdim := hdim) g g'
-  exact hypVolumeOfMetric_eq_of_isometry g g' Φ
+  rcases isEmpty_or_nonempty M with hM | hM
+  · have h0 (g : HyperbolicMetric (I := I) (M := M)) : hypVolumeOfMetric (I := I) g = 0 := by
+      unfold hypVolumeOfMetric
+      let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨g.metric.toRiemannianMetric⟩
+      let _ : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+        IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
+          (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)
+      rw [riemannianTotalVolume_def, Set.univ_eq_empty_iff.mpr hM, MeasureTheory.measureReal_empty]
+    rw [h0, h0]
+  · let _ : ConnectedSpace M := ⟨hM⟩
+    obtain ⟨Φ⟩ := h.isometry (hdim := hdim) g g'
+    exact hypVolumeOfMetric_eq_of_isometry g g' Φ
 
 /-! ### Metric-independent hyperbolic volume -/
 
@@ -129,17 +138,17 @@ theorem hypVolume_nonneg (h : IsHyperbolic (I := I) (M := M)) :
   rw [hypVolume_def]
   exact hypVolumeOfMetric_nonneg (Classical.choice (isHyperbolic_iff.mp h))
 
-/-- On a closed connected manifold of dimension at least three, Mostow rigidity makes
-hyperbolic volume independent of the metric chosen in its definition. -/
+/-- On a closed manifold of dimension at least three, Mostow rigidity makes hyperbolic volume
+independent of the metric chosen in its definition. Connectedness is needed only to apply Mostow
+rigidity: an empty manifold has volume `0` for every metric. -/
 theorem hypVolume_eq_hypVolumeOfMetric [BoundarylessManifold I M]
-    (hConn : ConnectedSpace M)
     (hdim : 3 ≤ Module.finrank ℝ E)
     (hMostow : IsMostowRigid (I := I) (M := M))
     (h : IsHyperbolic (I := I) (M := M))
     (g : HyperbolicMetric (I := I) (M := M)) :
     hypVolume (I := I) h = hypVolumeOfMetric (I := I) g := by
   rw [hypVolume_def]
-  exact hypVolumeOfMetric_eq_of_mostow hConn hdim hMostow
+  exact hypVolumeOfMetric_eq_of_mostow hdim hMostow
     (Classical.choice (isHyperbolic_iff.mp h)) g
 
 end TauCeti

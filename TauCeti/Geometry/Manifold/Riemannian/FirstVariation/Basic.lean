@@ -103,7 +103,6 @@ private theorem inner_mfderiv_fst_snd_eq_inner_variationField_curveVelocity {t :
   rw [variationField_eq_mfderiv hf, curveVelocity_eq_mfderiv_snd hf]
 
 variable [FiniteDimensional ℝ E] [IsManifold I 2 M]
-  [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
 
 /-- **The integrand of the first variation.** At a parameter `t` where the family is `C²`, half

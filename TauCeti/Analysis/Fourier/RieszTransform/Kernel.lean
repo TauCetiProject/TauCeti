@@ -170,7 +170,6 @@ private theorem abs_inner_mul_pow_sub_pow_div_le (v : E) (n : ℕ)
         rw [mul_pow, show (4 : ℝ) ^ (n + 1) = 2 ^ (n + 1) * 2 ^ (n + 1) by
           rw [← mul_pow]; norm_num]
         have : (2 : ℝ) ^ n ≤ 2 ^ (n + 1) := pow_le_pow_right₀ one_le_two n.le_succ
-        have h0 : 0 ≤ ‖v‖ * ‖a - b‖ * ‖a‖ ^ (n + 1) * ‖b‖ ^ (n + 1) := by positivity
         nlinarith [mul_le_mul_of_nonneg_left this
           (by positivity : 0 ≤ ((n : ℝ) + 1) * 2 ^ (n + 1) * (‖v‖ * ‖a - b‖ * ‖a‖ ^ (n + 1) *
             ‖b‖ ^ (n + 1)))]
@@ -717,13 +716,13 @@ theorem ae_rieszTransform_eq_integral (v : E) (f : Lp F 2 (volume : Measure E)) 
     integral_congr_ae (hff'.mono fun y hy ↦ by simp only [hy])]
   exact hx k ⟨mem_closedBall_zero_iff.2 hk₁, fun h ↦ hxδ (thickening_mono hk₂ s h)⟩
 
-/-- **The Riesz transforms are of weak type `(1, 1)`.** In dimension `n ≥ 1` there is a constant
-`A` with `t · |{x | ‖R_v f x‖ > t}| ≤ A ‖f‖₁` for every `f ∈ L²` and every `t`. For `v ≠ 0` and
+/-- **The Riesz transforms are of weak type `(1, 1)`.** There is a constant `A` with
+`t · |{x | ‖R_v f x‖ > t}| ≤ A ‖f‖₁` for every `f ∈ L²` and every `t`. For `v ≠ 0` and
 nonzero `F`, the Riesz transform is not bounded on `L¹`; this is the endpoint substitute. It
 follows from the Calderón–Zygmund theorem, since `R_v` is bounded on `L²` and its kernel
 `K_v(x - y)` satisfies the size and smoothness estimates `abs_rieszKernel_le` and
 `abs_rieszKernel_sub_le`. -/
-theorem exists_mul_volume_lt_enorm_rieszTransform_le [Nontrivial E] (v : E) :
+theorem exists_mul_volume_lt_enorm_rieszTransform_le (v : E) :
     ∃ A : ℝ≥0, ∀ (f : Lp F 2 (volume : Measure E)) (t : ℝ≥0∞),
       t * volume {x | t < ‖rieszTransform F v f x‖ₑ} ≤ A * ∫⁻ x, ‖f x‖ₑ := by
   set n := finrank ℝ E
@@ -738,7 +737,7 @@ theorem exists_mul_volume_lt_enorm_rieszTransform_le [Nontrivial E] (v : E) :
     rw [norm_smul, Real.norm_eq_abs]
     exact mul_le_of_le_one_right (abs_nonneg _) ContinuousLinearMap.norm_id_le
   have hsize : ∀ x y, x ≠ y → ‖k x y‖ ≤ (c * ‖v‖).toNNReal * dist x y ^ (-(n : ℝ)) :=
-    fun x y hxy ↦ by
+    fun x y _ ↦ by
       rw [Real.coe_toNNReal _ (by positivity), Real.rpow_neg dist_nonneg, Real.rpow_natCast,
         dist_eq_norm, ← div_eq_mul_inv]
       exact (hk x y).trans (abs_rieszKernel_le v _)

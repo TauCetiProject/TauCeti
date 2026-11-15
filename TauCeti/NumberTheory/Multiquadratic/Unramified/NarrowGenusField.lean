@@ -35,14 +35,14 @@ For every squarefree `d` which is not a rational square,
 `isNarrowGenusField_candidateGenusField` assembles the already-established finite-prime
 ramification and maximality theorems. Thus the prime-discriminant compositum is the narrow genus
 field in both signatures. This supplies the field side needed for the real quadratic narrow
-`2`-rank formula in Layer 3 of the Multiquadratic roadmap; identifying its relative Galois group
-with the elementary-two quotient of the narrow class group remains downstream.
+`2`-rank formula; its relative Galois group is identified with the elementary-two quotient of the
+narrow class group by `autCandidateGenusFieldEquivNarrowElementaryTwoQuotient`.
 
 ## Provenance
 
 The universal-property packaging and uniqueness argument are the finite-place counterparts of the
 everywhere-unramified `IsGenusField` developed in TauCeti pull request #5041. This file supplies
-the narrow variant which the roadmap requires separately for real quadratic fields.
+the narrow variant, which differs from the ordinary one only for real quadratic fields.
 
 ## References
 

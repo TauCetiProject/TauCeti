@@ -117,6 +117,19 @@ theorem oscillatorActionAngle_eq_of_coe_eq {θ θ' : ℝ} (h : (θ : Real.Angle)
   have hc : Real.cos θ = Real.cos θ' := by rw [← Real.Angle.cos_coe, h, Real.Angle.cos_coe]
   simp [oscillatorActionAngle_apply, hs, hc]
 
+/-- The parametrization vanishes where the action is nonpositive, or where `m ν` is nonpositive,
+since then one of the two square roots is `0`. -/
+theorem oscillatorActionAngle_eq_zero (y : ℝ × ℝ) (h : y.2 ≤ 0 ∨ m * ν ≤ 0) :
+    oscillatorActionAngle m ν y = 0 := by
+  rcases h with h | h
+  · simp [oscillatorActionAngle_apply, Real.sqrt_eq_zero_of_nonpos (by linarith : 2 * y.2 ≤ 0)]
+  · simp [oscillatorActionAngle_apply, Real.sqrt_eq_zero_of_nonpos h]
+
+/-- The parametrization vanishes unless both the action and `m ν` are positive. -/
+theorem oscillatorActionAngle_eq_zero_of_not (y : ℝ × ℝ) (h : ¬(0 < y.2 ∧ 0 < m * ν)) :
+    oscillatorActionAngle m ν y = 0 :=
+  oscillatorActionAngle_eq_zero y ((not_and_or.1 h).imp not_lt.1 not_lt.1)
+
 /-- At a fixed action `I`, the action–angle parametrization is `2π`-periodic in the angle. -/
 theorem periodic_oscillatorActionAngle (m ν I : ℝ) :
     Function.Periodic (fun θ : ℝ ↦ oscillatorActionAngle m ν (θ, I)) (2 * π) :=
@@ -151,14 +164,22 @@ theorem contDiffOn_oscillatorActionAngle :
 /-- The derivative of the action–angle parametrization at a point of positive action. Writing
 `r = √(2I)` and `c = √(m ν)`, it sends `(δθ, δI)` to
 `(δθ r cos θ / c + δI sin θ / (r c), -δθ c r sin θ + δI c cos θ / r)`. -/
-theorem hasFDerivAt_oscillatorActionAngle (hm : 0 < m) (hν : 0 < ν) {y : ℝ × ℝ} (hI : 0 < y.2) :
+theorem hasFDerivAt_oscillatorActionAngle (m ν : ℝ) {y : ℝ × ℝ} (hI : 0 < y.2) :
     HasFDerivAt (oscillatorActionAngle m ν)
       (((√(2 * y.2) * Real.cos y.1 / √(m * ν)) • fst ℝ ℝ ℝ +
           (Real.sin y.1 / (√(2 * y.2) * √(m * ν))) • snd ℝ ℝ ℝ).prod
         ((-(√(m * ν) * √(2 * y.2) * Real.sin y.1)) • fst ℝ ℝ ℝ +
           (√(m * ν) * Real.cos y.1 / √(2 * y.2)) • snd ℝ ℝ ℝ)) y := by
-  have hr0 : √(2 * y.2) ≠ 0 := by positivity
-  have hc0 : √(m * ν) ≠ 0 := by positivity
+  by_cases hmν : 0 < m * ν
+  swap
+  · have hc : √(m * ν) = 0 := Real.sqrt_eq_zero_of_nonpos (not_lt.1 hmν)
+    have h0 : oscillatorActionAngle m ν = fun _ ↦ 0 :=
+      funext fun z ↦ oscillatorActionAngle_eq_zero z (.inr (not_lt.1 hmν))
+    rw [h0]
+    convert hasFDerivAt_const (0 : ℝ × ℝ) y using 1
+    rw [hc]
+    ext <;> simp
+  have hc0 : √(m * ν) ≠ 0 := (Real.sqrt_pos.2 hmν).ne'
   have hsqrt : HasFDerivAt (fun z : ℝ × ℝ ↦ √(2 * z.2))
       ((1 / (2 * √(2 * y.2))) • ((2 : ℝ) • snd ℝ ℝ ℝ)) y :=
     ((hasFDerivAt_snd (p := y)).const_mul (2 : ℝ)).sqrt (mul_pos two_pos hI).ne'
@@ -178,7 +199,7 @@ theorem stdSymplecticForm_fderiv_oscillatorActionAngle (hm : 0 < m) (hν : 0 < �
       stdSymplecticForm u v := by
   have hr0 : √(2 * y.2) ≠ 0 := by positivity
   have hc0 : √(m * ν) ≠ 0 := by positivity
-  rw [(hasFDerivAt_oscillatorActionAngle hm hν hI).fderiv]
+  rw [(hasFDerivAt_oscillatorActionAngle m ν hI).fderiv]
   simp only [stdSymplecticForm_apply, RCLike.inner_apply, RCLike.conj_to_real,
     ContinuousLinearMap.prod_apply, add_apply, smul_apply, coe_fst', coe_snd', smul_eq_mul]
   field_simp
@@ -205,44 +226,75 @@ theorem isLocalDiffeomorphAt_oscillatorActionAngle (hm : 0 < m) (hν : 0 < ν)
   -- The self-model tangent equivalences act as identities; `ofBijective` retains L's map.
   rfl
 
-/-- **The Hamiltonian vector field is `ν ∂_θ`**: at a point of positive action, the derivative of
-the parametrization sends `(ν, 0)` to the Hamiltonian vector field of the energy. -/
-theorem fderiv_oscillatorActionAngle_apply_frequency (hm : 0 < m) (hν : 0 < ν) {y : ℝ × ℝ}
-    (hI : 0 < y.2) :
+/-- Where the parametrization vanishes along the horizontal line through `y`, its derivative
+vanishes in the `θ`-direction. -/
+private theorem fderiv_oscillatorActionAngle_apply_frequency_of_eq_zero {y : ℝ × ℝ}
+    (hz : ∀ a : ℝ, oscillatorActionAngle m ν (a, y.2) = 0) :
+    fderiv ℝ (oscillatorActionAngle m ν) y (ν, 0) = 0 := by
+  by_cases hd : DifferentiableAt ℝ (oscillatorActionAngle m ν) y
+  · have hcurve : HasDerivAt (fun s : ℝ ↦ (y.1 + ν * s, y.2)) (ν, 0) 0 := by
+      simpa only [mul_one] using
+        (((hasDerivAt_id' (0 : ℝ)).const_mul ν).const_add y.1).prodMk (hasDerivAt_const 0 y.2)
+    have hd' : HasFDerivAt (oscillatorActionAngle m ν) (fderiv ℝ (oscillatorActionAngle m ν) y)
+        (y.1 + ν * 0, y.2) := by simpa using hd.hasFDerivAt
+    have h1 := hd'.comp_hasDerivAt (0 : ℝ) hcurve
+    have h2 : (oscillatorActionAngle m ν ∘ fun s : ℝ ↦ (y.1 + ν * s, y.2)) = fun _ ↦ 0 :=
+      funext fun s ↦ hz _
+    rw [h2] at h1
+    exact h1.unique (hasDerivAt_const _ _)
+  · simp [fderiv_zero_of_not_differentiableAt hd]
+
+/-- **The Hamiltonian vector field is `ν ∂_θ`**: the derivative of the parametrization sends
+`(ν, 0)` to the Hamiltonian vector field of the energy. This is the interesting case at a point of
+positive action; where the parametrization vanishes identically along the `θ`-direction, both sides
+are `0`. -/
+theorem fderiv_oscillatorActionAngle_apply_frequency (m ν : ℝ) (y : ℝ × ℝ) :
     fderiv ℝ (oscillatorActionAngle m ν) y (ν, 0) =
       (stdSymplecticForm (V := ℝ)).hamiltonianVectorField (oscillatorHamiltonian m ν)
         (oscillatorActionAngle m ν y) := by
-  have hc : √(m * ν) ^ 2 = m * ν := sq_sqrt (by positivity)
-  have hc0 : √(m * ν) ≠ 0 := by positivity
-  rw [(hasFDerivAt_oscillatorActionAngle hm hν hI).fderiv,
-    stdSymplecticForm_hamiltonianVectorField_oscillatorHamiltonian, oscillatorActionAngle_apply]
-  ext
-  · simp
-    field_simp
-    linear_combination -Real.cos y.1 * hc
-  · simp
-    field_simp
-    linear_combination Real.sin y.1 * hc
+  by_cases h : 0 < y.2 ∧ 0 < m * ν
+  · obtain ⟨hI, hmν⟩ := h
+    have hc : √(m * ν) ^ 2 = m * ν := sq_sqrt hmν.le
+    have hc0 : √(m * ν) ≠ 0 := (Real.sqrt_pos.2 hmν).ne'
+    have hm0 : m ≠ 0 := left_ne_zero_of_mul hmν.ne'
+    have hν0 : ν ≠ 0 := right_ne_zero_of_mul hmν.ne'
+    rw [(hasFDerivAt_oscillatorActionAngle m ν hI).fderiv,
+      stdSymplecticForm_hamiltonianVectorField_oscillatorHamiltonian, oscillatorActionAngle_apply]
+    ext
+    · simp
+      field_simp
+      linear_combination -Real.cos y.1 * hc
+    · simp
+      field_simp
+      linear_combination Real.sin y.1 * hc
+  · have hz (a : ℝ) : oscillatorActionAngle m ν (a, y.2) = 0 :=
+      oscillatorActionAngle_eq_zero_of_not _ h
+    have hy : oscillatorActionAngle m ν y = 0 := hz y.1
+    rw [hy, stdSymplecticForm_hamiltonianVectorField_oscillatorHamiltonian]
+    simp only [Prod.snd_zero, mul_zero, neg_zero, zero_div, Prod.fst_zero, Prod.mk_zero_zero]
+    exact fderiv_oscillatorActionAngle_apply_frequency_of_eq_zero hz
 
-/-- **Uniform rotation of the angle solves Hamilton's equations**: for `I ≥ 0`, the curve
-`t ↦ (θ + ν t, I)` in action–angle coordinates is an integral curve of the Hamiltonian vector
-field of the energy. For `I = 0` it is the constant curve at the equilibrium at the origin. -/
-theorem hasDerivAt_oscillatorActionAngle (hm : 0 < m) (hν : 0 < ν) (θ : ℝ) {I : ℝ} (hI : 0 ≤ I)
-    (t : ℝ) :
+/-- **Uniform rotation of the angle solves Hamilton's equations**: the curve `t ↦ (θ + ν t, I)`
+in action–angle coordinates is an integral curve of the Hamiltonian vector field of the energy. For
+`I = 0` it is the constant curve at the equilibrium at the origin, and so it is, by convention,
+whenever `I ≤ 0` or `m ν ≤ 0`, where the parametrization vanishes. -/
+theorem hasDerivAt_oscillatorActionAngle (m ν θ I t : ℝ) :
     HasDerivAt (fun s ↦ oscillatorActionAngle m ν (θ + ν * s, I))
       ((stdSymplecticForm (V := ℝ)).hamiltonianVectorField (oscillatorHamiltonian m ν)
         (oscillatorActionAngle m ν (θ + ν * t, I))) t := by
-  rcases hI.eq_or_lt with rfl | hI
-  · have h0 (s : ℝ) : oscillatorActionAngle m ν (s, 0) = 0 := by
-      simp [oscillatorActionAngle_apply]
+  by_cases h : 0 < I ∧ 0 < m * ν
+  swap
+  · have h0 (s : ℝ) : oscillatorActionAngle m ν (s, I) = 0 :=
+      oscillatorActionAngle_eq_zero_of_not _ h
     simp only [h0, stdSymplecticForm_hamiltonianVectorField_oscillatorHamiltonian, Prod.fst_zero,
       Prod.snd_zero, zero_div, mul_zero, neg_zero, Prod.mk_zero_zero]
     exact hasDerivAt_const t 0
+  obtain ⟨hI, -⟩ := h
   have hcurve : HasDerivAt (fun s : ℝ ↦ (θ + ν * s, I)) (ν, 0) t := by
     simpa only [mul_one] using
       (((hasDerivAt_id' t).const_mul ν).const_add θ).prodMk (hasDerivAt_const t I)
-  have hψ := hasFDerivAt_oscillatorActionAngle hm hν (y := (θ + ν * t, I)) hI
-  rw [← fderiv_oscillatorActionAngle_apply_frequency hm hν (y := (θ + ν * t, I)) hI, hψ.fderiv]
+  have hψ := hasFDerivAt_oscillatorActionAngle m ν (y := (θ + ν * t, I)) hI
+  rw [← fderiv_oscillatorActionAngle_apply_frequency m ν, hψ.fderiv]
   exact hψ.comp_hasDerivAt t hcurve
 
 /-! ### Action and angle of a point -/
@@ -328,18 +380,27 @@ theorem oscillatorActionAngle_oscillatorAction (hm : 0 < m) (hν : 0 < ν) {x : 
   rw [oscillatorActionAngle_apply, hcos, hsin, mul_assoc, hre, div_mul_eq_mul_div, him]
   ext <;> simp [oscillatorComplex] <;> field_simp
 
-/-- **Off the origin, a point determines its action and its angle.** Two points of positive
-action have the same image exactly when their actions agree and their angles agree modulo
-`2π`. -/
+/-- **Off the origin, a point determines its action and its angle.** A point `y` of positive
+action has the same image as another point `y'` exactly when their actions agree and their angles
+agree modulo `2π`. -/
 theorem oscillatorActionAngle_eq_oscillatorActionAngle_iff (hm : 0 < m) (hν : 0 < ν)
-    {y y' : ℝ × ℝ} (hI : 0 < y.2) (hI' : 0 < y'.2) :
+    {y y' : ℝ × ℝ} (hI : 0 < y.2) :
     oscillatorActionAngle m ν y = oscillatorActionAngle m ν y' ↔
       y.2 = y'.2 ∧ (y.1 : Real.Angle) = y'.1 := by
-  refine ⟨fun h ↦ ⟨?_, ?_⟩, fun ⟨h₂, h₁⟩ ↦ ?_⟩
-  · rw [← oscillatorAction_oscillatorActionAngle hm hν hI.le, h,
-      oscillatorAction_oscillatorActionAngle hm hν hI'.le]
-  · rw [← oscillatorAngle_oscillatorActionAngle hm hν hI, h,
-      oscillatorAngle_oscillatorActionAngle hm hν hI']
+  refine ⟨fun h ↦ ?_, fun ⟨h₂, h₁⟩ ↦ ?_⟩
+  · -- The image of `y` is nonzero, so `y'` has positive action too.
+    have hI' : 0 < y'.2 := by
+      by_contra hneg
+      have h0 := oscillatorActionAngle_eq_zero (m := m) (ν := ν) y' (.inl (not_lt.1 hneg))
+      have := oscillatorAction_oscillatorActionAngle hm hν hI.le
+      rw [h, h0] at this
+      simp [oscillatorAction_apply, oscillatorHamiltonian_apply] at this
+      exact hI.ne' this.symm
+    refine ⟨?_, ?_⟩
+    · rw [← oscillatorAction_oscillatorActionAngle hm hν hI.le, h,
+        oscillatorAction_oscillatorActionAngle hm hν hI'.le]
+    · rw [← oscillatorAngle_oscillatorActionAngle hm hν hI, h,
+        oscillatorAngle_oscillatorActionAngle hm hν hI']
   · rw [← Prod.mk.eta (p := y), ← Prod.mk.eta (p := y'), h₂,
       oscillatorActionAngle_eq_of_coe_eq h₁]
 
@@ -366,7 +427,7 @@ theorem oscillatorActionAngle_add_eq_self_iff (hm : 0 < m) (hν : 0 < ν) (θ : 
     (hI : 0 < I) (t : ℝ) :
     oscillatorActionAngle m ν (θ + ν * t, I) = oscillatorActionAngle m ν (θ, I) ↔
       t ∈ AddSubgroup.zmultiples (2 * π / ν) := by
-  rw [oscillatorActionAngle_eq_oscillatorActionAngle_iff hm hν hI hI, Real.Angle.coe_add,
+  rw [oscillatorActionAngle_eq_oscillatorActionAngle_iff hm hν hI, Real.Angle.coe_add,
     add_eq_left, Real.Angle.coe_eq_zero_iff, AddSubgroup.mem_zmultiples_iff]
   simp only [true_and, zsmul_eq_mul]
   refine exists_congr fun n ↦ ?_
@@ -455,7 +516,7 @@ theorem injective_oscillatorTorusEmbedding (hm : ∀ i, 0 < m i) (hν : ∀ i, 0
   have hab := congrFun hab i
   rw [oscillatorTorusEmbedding_apply_of_coe_eq hα, oscillatorTorusEmbedding_apply_of_coe_eq hβ]
     at hab
-  have h := ((oscillatorActionAngle_eq_oscillatorActionAngle_iff (hm i) (hν i) (hI i) (hI i)).1
+  have h := ((oscillatorActionAngle_eq_oscillatorActionAngle_iff (hm i) (hν i) (hI i)).1
     hab).2
   rw [← sub_eq_zero, ← Real.Angle.coe_sub, Real.Angle.coe_eq_zero_iff] at h
   rw [← hα, ← hβ, ← sub_eq_zero, ← AddCircle.coe_sub, AddCircle.coe_eq_zero_iff]

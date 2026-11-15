@@ -69,7 +69,7 @@ namespace TauCeti.Contour.Cycle
 variable {A : Type*} [NormedRing A] [NormedAlgebra ℂ A] [CompleteSpace A] {a : A} {Γ : Cycle}
 
 /-- The resolvent of `a` is continuous on the trace of a cycle avoiding the spectrum. -/
-private theorem continuousOn_resolvent (hΓ : IsIn Γ (resolventSet ℂ a)) :
+theorem continuousOn_resolvent (hΓ : IsIn Γ (resolventSet ℂ a)) :
     ContinuousOn (resolvent a) (trace Γ) :=
   (spectrum.differentiableOn_resolvent a).continuousOn.mono (isIn_iff.mp hΓ)
 
