@@ -21,8 +21,9 @@ at `1` is not assumed.
 
 Realizing `D` as the discriminant of `QuadraticAlgebra ℚ D 0`
 (`QuadraticAlgebra.discr_eq_iff_isFundamentalDiscr`) transfers the analytic class-number and
-golden-ratio regulator lower bound of `TauCeti.NumberField.Quadratic.DedekindZeta` directly to
-every fundamental discriminant `D ≠ 1` (`[NeZero D.natAbs]`): `2 log φ / √|D| ≤ Re L(1, χ_D)`.
+golden-ratio regulator lower bound of `TauCeti.NumberTheory.NumberField.Quadratic.DedekindZeta`
+directly to every fundamental discriminant `D ≠ 1` (`[NeZero D.natAbs]`):
+`2 log φ / √|D| ≤ Re L(1, χ_D)`.
 
 ## Main results
 

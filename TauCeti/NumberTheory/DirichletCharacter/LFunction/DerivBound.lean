@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Bounds
+import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Complex.ExponentialBounds
+import Mathlib.Analysis.Complex.RealDeriv
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import Mathlib.NumberTheory.LSeries.Nonvanishing
 import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.NumberTheory.DirichletCharacter.Basic
 
@@ -30,23 +33,28 @@ representation
 
 on the whole half-plane `Re(s) > 0`, without any zero-free hypothesis. Estimating `(1, N]` and
 `(N, ∞)` separately bounds `‖L'(s, χ)‖` throughout `Re(s) > 0` with an explicit `N ^ (1 - Re(s))`
-dependence and yields the uniform real-segment bound `‖L'(σ, χ)‖ ≤ 81 (log N) ^ 2` for
-`σ ∈ [1 - 1 / log N, 1]`.
+dependence, yields the uniform real-segment bound `‖L'(σ, χ)‖ ≤ 81 (log N) ^ 2` for
+`σ ∈ [1 - 1 / log N, 1]`, and combines with nonvanishing on `Re(s) ≥ 1` and the mean value theorem
+to give `Re L(1, χ) / (81 (log N) ^ 2) ≤ 1 - β` for every real zero `β` of `L(s, χ)`.
 
 ## Main results
 
-* `DirichletCharacter.hasDerivAt_LFunction_of_re_pos` and
-  `DirichletCharacter.deriv_LFunction_eq_integral`: integral representation of `L'(s, χ)` on
-  `Re(s) > 0` for `χ ≠ 1`.
+* `DirichletCharacter.hasDerivAt_LFunction_of_re_pos`,
+  `DirichletCharacter.deriv_LFunction_eq_integral`, and
+  `DirichletCharacter.integrableOn_sum_Icc_mul_one_sub_mul_log_mul_cpow`: integral representation
+  and absolute integrability of `L'(s, χ)` on `Re(s) > 0` for `χ ≠ 1`.
 * `DirichletCharacter.norm_deriv_LFunction_le_of_re_pos`: explicit right-half-plane bound for
   `‖L'(s, χ)‖` when `χ ≠ 1` and `Re(s) > 0`.
 * `DirichletCharacter.norm_deriv_LFunction_le_mul_log_sq`: uniform bound
   `‖L'(σ, χ)‖ ≤ 81 * (log N) ^ 2` for `χ ≠ 1` and `σ ∈ [1 - 1 / log N, 1]`.
+* `DirichletCharacter.LFunction_one_re_div_log_sq_le_one_sub_of_LFunction_eq_zero`:
+  unconditional real-zero separation `Re L(1, χ) / (81 (log N) ^ 2) ≤ 1 - β` for any real zero `β`
+  of any nonprincipal character `χ` of nonzero level `N`.
 
 ## References
 
 * D. Koukoulopoulos, *The Distribution of Prime Numbers*, Graduate Studies in Mathematics 203,
-  American Mathematical Society, 2019, Lemma 11.2, p. 113.
+  American Mathematical Society, 2019, Lemma 11.2, p. 113, and (12.11), p. 124.
 -/
 
 public section
@@ -79,17 +87,15 @@ theorem deriv_LFunction_eq_integral (hχ : χ ≠ 1) {s : ℂ} (hs : 0 < s.re) :
         (∑ k ∈ Icc 1 ⌊t⌋₊, χ k) * (1 - s * Real.log t) * (t : ℂ) ^ (-(s + 1)) :=
   (χ.hasDerivAt_LFunction_of_re_pos hχ hs).deriv
 
-private lemma integrableOn_deriv_integrand (hχ : χ ≠ 1) {s : ℂ} (hs : 0 < s.re) :
+/-- For a nonprincipal character `χ` of nonzero level `N` and `Re(s) > 0`, the derivative integrand
+`t ↦ (∑_{k=1}^{⌊t⌋₊} χ(k)) (1 - s log t) t ^ (-(s + 1))` appearing in
+`deriv_LFunction_eq_integral` is integrable on `(1, ∞)`. -/
+theorem integrableOn_sum_Icc_mul_one_sub_mul_log_mul_cpow (hχ : χ ≠ 1) {s : ℂ} (hs : 0 < s.re) :
     IntegrableOn
       (fun t : ℝ ↦ (∑ k ∈ Icc 1 ⌊t⌋₊, χ k) * (1 - s * Real.log t) * (t : ℂ) ^ (-(s + 1)))
-      (Set.Ioi 1) := by
-  have hO : (fun n : ℕ ↦ ∑ k ∈ Icc 1 n, χ k) =O[atTop] fun n ↦ (n : ℝ) ^ (0 : ℝ) := by
-    simpa only [Real.rpow_zero] using χ.isBigO_sum_Icc_one hχ
-  refine ((TauCeti.LSeries.integrableOn_sum_mul_cpow_of_isBigO _ hO hs).sub
-    ((TauCeti.LSeries.integrableOn_sum_mul_log_mul_cpow_of_isBigO _ hO hs).const_mul s)).congr_fun
-    (fun t _ ↦ ?_) measurableSet_Ioi
-  simp only [Pi.sub_apply]
-  ring
+      (Set.Ioi 1) :=
+  TauCeti.LSeries.integrableOn_sum_mul_one_sub_mul_log_mul_cpow_of_isBigO _
+    (by simpa only [Real.rpow_zero] using χ.isBigO_sum_Icc_one hχ) hs
 
 /-- Initial-range estimate on `(1, N]`, using the trivial partial-sum bound `‖∑_{k≤t} χ(k)‖ ≤ t`. -/
 private lemma norm_integral_Ioc_le (hχ : χ ≠ 1) {s : ℂ} :
@@ -212,7 +218,7 @@ theorem norm_deriv_LFunction_le_of_re_pos (hχ : χ ≠ 1) {s : ℂ} (hs : 0 < s
         (N : ℝ) ^ (1 - s.re) * ((1 + ‖s‖ * Real.log N) / s.re + ‖s‖ / s.re ^ 2) := by
   have hN3 := χ.three_le_level_of_ne_one hχ
   have hN1 : (1 : ℝ) ≤ N := by exact_mod_cast (by omega : 1 ≤ N)
-  have hint := χ.integrableOn_deriv_integrand hχ hs
+  have hint := χ.integrableOn_sum_Icc_mul_one_sub_mul_log_mul_cpow hχ hs
   rw [χ.deriv_LFunction_eq_integral hχ hs, ← Set.Ioc_union_Ioi_eq_Ioi hN1,
     setIntegral_union Set.Ioc_disjoint_Ioi_same measurableSet_Ioi
       (hint.mono_set Set.Ioc_subset_Ioi_self) (hint.mono_set (Set.Ioi_subset_Ioi hN1))]
@@ -260,5 +266,47 @@ theorem norm_deriv_LFunction_le_mul_log_sq (hχ : χ ≠ 1) {σ : ℝ}
   have h_tail : (N : ℝ) ^ (1 - σ) * (2 * (1 / σ) + Real.log N) ≤ 75 * Real.log N ^ 2 := by
     nlinarith [sq_nonneg (Real.log N - 1)]
   linarith
+
+/-- **Unconditional real-zero separation from `L(1, χ)`** (Koukoulopoulos, (12.11)). For any
+nonprincipal character `χ` of nonzero level `N` (not necessarily primitive or quadratic) and any
+real zero `β` of `L(s, χ)`, `Re L(1, χ) / (81 (log N) ^ 2) ≤ 1 - β`. -/
+theorem LFunction_one_re_div_log_sq_le_one_sub_of_LFunction_eq_zero
+    (hχ : χ ≠ 1) {β : ℝ} (hβ : χ.LFunction β = 0) :
+    (χ.LFunction 1).re / (81 * Real.log N ^ 2) ≤ 1 - β := by
+  have hβ1 : β < 1 :=
+    not_le.mp fun h ↦ χ.LFunction_ne_zero_of_one_le_re (.inl hχ) (by simpa using h) hβ
+  have hN3 : (3 : ℝ) ≤ N := by exact_mod_cast χ.three_le_level_of_ne_one hχ
+  have hL1 : 1 < Real.log N :=
+    (by linarith [Real.log_three_gt_d9] : (1 : ℝ) < Real.log 3).trans_le
+      (Real.log_le_log (by norm_num) hN3)
+  have : 0 < Real.log N := zero_lt_one.trans hL1
+  rcases le_or_gt (1 - 1 / Real.log N) β with hnear | hfar
+  · -- Near `1`, apply Lagrange's mean value theorem to `σ ↦ Re L(σ, χ)` on `[β, 1]`.
+    have hf' (σ : ℝ) :
+        HasDerivAt (fun x : ℝ ↦ (χ.LFunction x).re) (deriv χ.LFunction σ).re σ :=
+      reCLM.hasFDerivAt.comp_hasDerivAt σ
+        ((differentiable_LFunction hχ).differentiableAt.hasDerivAt.comp_ofReal)
+    have hfc : ContinuousOn (fun x : ℝ ↦ (χ.LFunction x).re) (Set.Icc β 1) :=
+      fun x _ ↦ (hf' x).continuousAt.continuousWithinAt
+    obtain ⟨c, hc, hslope⟩ := exists_hasDerivAt_eq_slope
+      (fun x : ℝ ↦ (χ.LFunction x).re) (fun x : ℝ ↦ (deriv χ.LFunction x).re)
+      hβ1 hfc (fun x _ ↦ hf' x)
+    have hc_le : (deriv χ.LFunction c).re ≤ 81 * Real.log N ^ 2 :=
+      (Complex.re_le_norm _).trans
+        (χ.norm_deriv_LFunction_le_mul_log_sq hχ (hnear.trans hc.1.le) hc.2.le)
+    rw [ofReal_one, hβ, zero_re, sub_zero] at hslope
+    rw [div_le_iff₀ (by positivity)]
+    have hmul := (div_le_iff₀ (sub_pos.mpr hβ1)).mp (hslope ▸ hc_le)
+    linarith
+  · -- Left of `1 - 1 / log N`, use `Re L(1, χ) ≤ 1 + log N ≤ 81 log N`.
+    calc
+      (χ.LFunction 1).re / (81 * Real.log N ^ 2)
+          ≤ (1 + Real.log N) / (81 * Real.log N ^ 2) :=
+        div_le_div_of_nonneg_right
+          ((Complex.re_le_norm _).trans (χ.norm_LFunction_one_le_one_add_log hχ)) (by positivity)
+      _ ≤ 81 * Real.log N / (81 * Real.log N ^ 2) :=
+        div_le_div_of_nonneg_right (by linarith) (by positivity)
+      _ = 1 / Real.log N := by field_simp
+      _ ≤ 1 - β := by linarith
 
 end DirichletCharacter

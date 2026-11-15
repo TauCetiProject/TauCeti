@@ -39,10 +39,11 @@ Probabilistic Number Theory*, Chapter II.1).
 * `TauCeti.LSeries.differentiableOn_mul_integral_of_isBigO`: under the bound `A(n) = O(n ^ r)`,
   the function `s ↦ s * ∫ t in Set.Ioi 1, A(⌊t⌋₊) * t ^ (-(s + 1))` is
   complex-differentiable on `{s | r < s.re}`.
-* `TauCeti.LSeries.integrableOn_sum_mul_cpow_of_isBigO` and
-  `TauCeti.LSeries.integrableOn_sum_mul_log_mul_cpow_of_isBigO`: under the same bound, both the
-  partial-summation integral and its `log t`-weighted companion converge absolutely on
-  `{s | r < s.re}`.
+* `TauCeti.LSeries.integrableOn_sum_mul_cpow_of_isBigO`,
+  `TauCeti.LSeries.integrableOn_sum_mul_log_mul_cpow_of_isBigO`, and
+  `TauCeti.LSeries.integrableOn_sum_mul_one_sub_mul_log_mul_cpow_of_isBigO`: under the same bound,
+  the partial-summation integral, its `log t`-weighted companion, and the derivative integrand all
+  converge absolutely on `{s | r < s.re}`.
 * `TauCeti.LSeries.hasDerivAt_mul_integral_of_isBigO`: under the same bound, the complex derivative
   of `z ↦ z * ∫ t in Set.Ioi 1, A(⌊t⌋₊) * t ^ (-(z + 1))` at `s` (`r < s.re`) is
   `∫ t in Set.Ioi 1, A(⌊t⌋₊) * (1 - s * log t) * t ^ (-(s + 1))`.
@@ -99,6 +100,20 @@ theorem integrableOn_sum_mul_log_mul_cpow_of_isBigO (f : ℕ → ℂ) {r : ℝ}
   integrableOn_mul_log_mul_cpow_of_isBigO
     ((locallyIntegrableOn_sum_Icc_natFloor f 1).mono_set (Set.Ici_subset_Ici.mpr zero_le_one))
     hO.comp_natFloor_rpow hs
+
+/-- If the partial sums `∑ k ∈ Icc 1 n, f k` are `O(n ^ r)`, the derivative integrand
+`t ↦ (∑ k ∈ Icc 1 ⌊t⌋₊, f k) * (1 - s * log t) * t ^ (-(s + 1))` appearing in
+`hasDerivAt_mul_integral_of_isBigO` is integrable on `(1, ∞)` for `r < Re s`. -/
+theorem integrableOn_sum_mul_one_sub_mul_log_mul_cpow_of_isBigO (f : ℕ → ℂ) {r : ℝ}
+    (hO : (fun n ↦ ∑ k ∈ Icc 1 n, f k) =O[atTop] fun n ↦ (n : ℝ) ^ r) {s : ℂ} (hs : r < s.re) :
+    IntegrableOn
+      (fun t : ℝ ↦ (∑ k ∈ Icc 1 ⌊t⌋₊, f k) * (1 - s * Real.log t) * (t : ℂ) ^ (-(s + 1)))
+      (Set.Ioi 1) := by
+  refine ((integrableOn_sum_mul_cpow_of_isBigO f hO hs).sub
+    ((integrableOn_sum_mul_log_mul_cpow_of_isBigO f hO hs).const_mul s)).congr_fun
+    (fun t _ ↦ ?_) measurableSet_Ioi
+  simp only [Pi.sub_apply]
+  ring
 
 /-- **Derivative of the partial-summation continuation.** If the partial sums
 `∑ k ∈ Icc 1 n, f k` are `O(n ^ r)`, then on the half-plane `r < Re s` the complex derivative of

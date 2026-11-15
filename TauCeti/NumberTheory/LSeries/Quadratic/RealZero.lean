@@ -9,10 +9,6 @@ public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 public import Mathlib.NumberTheory.Real.GoldenRatio
 public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.OfSquarefree
 public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Realization
-import Mathlib.Analysis.Calculus.Deriv.MeanValue
-import Mathlib.Analysis.Complex.ExponentialBounds
-import Mathlib.Analysis.Complex.RealDeriv
-import Mathlib.NumberTheory.LSeries.Nonvanishing
 import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.DerivBound
 import TauCeti.NumberTheory.DirichletCharacter.Quadratic.FundamentalDiscriminant
@@ -29,25 +25,20 @@ zero-distance bounds valid for **every** primitive nonprincipal quadratic charac
 `N ≥ 3`.
 
 Throughout, `N` is a nonzero level (`[NeZero N]`) and `DirichletCharacter.LFunction` is the analytic
-continuation of `L(s, χ)`. For any nonprincipal complex character `χ` of level `N` (neither
-primitivity nor quadraticity is needed), nonvanishing on `Re(s) ≥ 1`, the near-one derivative bound
-`‖L'(σ, χ)‖ ≤ 81 (log N) ^ 2` on `[1 - 1 / log N, 1]`, and the boundary bound
-`‖L(1, χ)‖ ≤ 1 + log N` give the unconditional separation
-`Re L(1, χ) / (81 (log N) ^ 2) ≤ 1 - β` for every real zero `β` of `L(s, χ)`.
-
-When `χ` is primitive (`χ.IsPrimitive`, so the level `N` equals `χ.conductor`) and quadratic, `χ`
-coincides with the Kronecker character of a fundamental discriminant `D ≠ 1` with `|D| = N`. The
-quadratic class-number formula and the sharp golden-ratio regulator bound `log φ ≤ R_K` then supply
-`2 log φ / √N ≤ Re L(1, χ)`, yielding explicit effective zero-distance bounds in terms of the
-conductor `N`, a fundamental discriminant `D ≠ 1`, or a squarefree radicand `d ≠ 1`.
+continuation of `L(s, χ)`. When `χ` is primitive (`χ.IsPrimitive`, so the level `N` equals
+`χ.conductor`) and quadratic, `χ` coincides with the Kronecker character of a fundamental
+discriminant `D ≠ 1` with `|D| = N`. The quadratic class-number formula and the sharp golden-ratio
+regulator bound `log φ ≤ R_K` supply `2 log φ / √N ≤ Re L(1, χ)`. Combining this with the general
+nonprincipal real-zero separation `Re L(1, χ) / (81 (log N) ^ 2) ≤ 1 - β` from
+`DirichletCharacter.LFunction_one_re_div_log_sq_le_one_sub_of_LFunction_eq_zero`
+(`TauCeti.NumberTheory.DirichletCharacter.LFunction.DerivBound`) yields explicit effective
+zero-distance bounds in terms of the conductor `N`, a fundamental discriminant `D ≠ 1`, or a
+squarefree radicand `d ≠ 1`.
 
 ## Main results
 
 * `DirichletCharacter.two_mul_log_goldenRatio_div_sqrt_le_LFunction_one_re`:
   `2 log φ / √N ≤ Re L(1, χ)` for primitive nonprincipal quadratic `χ` of level `N`.
-* `DirichletCharacter.LFunction_one_re_div_log_sq_le_one_sub_of_LFunction_eq_zero`:
-  `Re L(1, χ) / (81 (log N) ^ 2) ≤ 1 - β` for any real zero `β` of any nonprincipal character `χ`
-  of nonzero level `N`.
 * `DirichletCharacter.div_sqrt_mul_log_sq_le_one_sub_of_LFunction_eq_zero`:
   `2 log φ / (81 √N (log N) ^ 2) ≤ 1 - β` for primitive nonprincipal quadratic `χ`.
 * `DirichletCharacter.mul_rpow_neg_half_sub_le_one_sub_of_LFunction_eq_zero` and
@@ -62,15 +53,14 @@ conductor `N`, a fundamental discriminant `D ≠ 1`, or a squarefree radicand `d
 
 * P. Koymans and C. Pagano, *On Stevenhagen's conjecture*, §7.2, proof of Proposition 7.6, p. 62.
 * D. Koukoulopoulos, *The Distribution of Prime Numbers*, Graduate Studies in Mathematics 203,
-  American Mathematical Society, 2019, Lemma 11.2, p. 113, and (12.11)–(12.12), p. 124.
+  American Mathematical Society, 2019, (12.12), p. 124.
 * M. A. Bennett, G. Martin, K. O'Bryant, and A. Rechnitzer, *Explicit bounds for primes in
   arithmetic progressions*, Illinois J. Math. 62 (2018), Lemma 6.3, pp. 491–492.
 -/
 
 public section
 
-open Complex
-open scoped ComplexOrder Real
+open scoped Real
 
 namespace DirichletCharacter
 
@@ -92,48 +82,6 @@ theorem two_mul_log_goldenRatio_div_sqrt_le_LFunction_one_re
   rw [hχ_eq, Nat.cast_natAbs, Int.cast_abs]
   exact TauCeti.Multiquadratic.two_mul_log_goldenRatio_div_sqrt_le_LFunction_one_re hD hD1
 
-/-- **Unconditional real-zero separation from `L(1, χ)`** (Koukoulopoulos, (12.11)). For any
-nonprincipal character `χ` of nonzero level `N` (not necessarily primitive or quadratic) and any
-real zero `β` of `L(s, χ)`, `Re L(1, χ) / (81 (log N) ^ 2) ≤ 1 - β`. -/
-theorem LFunction_one_re_div_log_sq_le_one_sub_of_LFunction_eq_zero
-    (hχ : χ ≠ 1) {β : ℝ} (hβ : χ.LFunction β = 0) :
-    (χ.LFunction 1).re / (81 * Real.log N ^ 2) ≤ 1 - β := by
-  have hβ1 : β < 1 :=
-    not_le.mp fun h ↦ χ.LFunction_ne_zero_of_one_le_re (.inl hχ) (by simpa using h) hβ
-  have hN3 : (3 : ℝ) ≤ N := by exact_mod_cast χ.three_le_level_of_ne_one hχ
-  have hL1 : 1 < Real.log N :=
-    (by linarith [Real.log_three_gt_d9] : (1 : ℝ) < Real.log 3).trans_le
-      (Real.log_le_log (by norm_num) hN3)
-  have : 0 < Real.log N := zero_lt_one.trans hL1
-  rcases le_or_gt (1 - 1 / Real.log N) β with hnear | hfar
-  · -- Near `1`, apply Lagrange's mean value theorem to `σ ↦ Re L(σ, χ)` on `[β, 1]`.
-    have hf' (σ : ℝ) :
-        HasDerivAt (fun x : ℝ ↦ (χ.LFunction x).re) (deriv χ.LFunction σ).re σ :=
-      reCLM.hasFDerivAt.comp_hasDerivAt σ
-        ((differentiable_LFunction hχ).differentiableAt.hasDerivAt.comp_ofReal)
-    have hfc : ContinuousOn (fun x : ℝ ↦ (χ.LFunction x).re) (Set.Icc β 1) :=
-      fun x _ ↦ (hf' x).continuousAt.continuousWithinAt
-    obtain ⟨c, hc, hslope⟩ := exists_hasDerivAt_eq_slope
-      (fun x : ℝ ↦ (χ.LFunction x).re) (fun x : ℝ ↦ (deriv χ.LFunction x).re)
-      hβ1 hfc (fun x _ ↦ hf' x)
-    have hc_le : (deriv χ.LFunction c).re ≤ 81 * Real.log N ^ 2 :=
-      (Complex.re_le_norm _).trans
-        (χ.norm_deriv_LFunction_le_mul_log_sq hχ (hnear.trans hc.1.le) hc.2.le)
-    rw [ofReal_one, hβ, zero_re, sub_zero] at hslope
-    rw [div_le_iff₀ (by positivity)]
-    have hmul := (div_le_iff₀ (sub_pos.mpr hβ1)).mp (hslope ▸ hc_le)
-    linarith
-  · -- Left of `1 - 1 / log N`, use `Re L(1, χ) ≤ 1 + log N ≤ 81 log N`.
-    calc
-      (χ.LFunction 1).re / (81 * Real.log N ^ 2)
-          ≤ (1 + Real.log N) / (81 * Real.log N ^ 2) :=
-        div_le_div_of_nonneg_right
-          ((Complex.re_le_norm _).trans (χ.norm_LFunction_one_le_one_add_log hχ)) (by positivity)
-      _ ≤ 81 * Real.log N / (81 * Real.log N ^ 2) :=
-        div_le_div_of_nonneg_right (by linarith) (by positivity)
-      _ = 1 / Real.log N := by field_simp
-      _ ≤ 1 - β := by linarith
-
 /-- **Effective logarithmic-square real-zero gap for primitive quadratic characters**
 (Koukoulopoulos, (12.12)). Every real zero `β` of a primitive nonprincipal quadratic character `χ`
 of nonzero level `N` satisfies `2 log φ / (81 √N (log N) ^ 2) ≤ 1 - β`. -/
@@ -147,7 +95,7 @@ theorem div_sqrt_mul_log_sq_le_one_sub_of_LFunction_eq_zero
     _ ≤ (χ.LFunction 1).re / (81 * Real.log N ^ 2) :=
       div_le_div_of_nonneg_right
         (two_mul_log_goldenRatio_div_sqrt_le_LFunction_one_re hprim hq hχ) (by positivity)
-    _ ≤ 1 - β := LFunction_one_re_div_log_sq_le_one_sub_of_LFunction_eq_zero hχ hβ
+    _ ≤ 1 - β := χ.LFunction_one_re_div_log_sq_le_one_sub_of_LFunction_eq_zero hχ hβ
 
 /-- **Effective `N ^ (-1/2 - ε)` distance of a quadratic real zero from one.** For every primitive
 nonprincipal quadratic character `χ` of nonzero level `N`, every `ε > 0`, and every real zero `β`
