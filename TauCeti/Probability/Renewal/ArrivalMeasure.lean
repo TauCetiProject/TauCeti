@@ -228,11 +228,11 @@ theorem ae_renewalArrivalMeasure_Ioc_eq_of_expMeasure {r : ℝ≥0}
 /-- The natural counts of exponential renewal arrivals on `(0,t]` have the Poisson law.
 Taking the natural floor of the real mass only changes the count on a null set. -/
 theorem hasLaw_renewalArrivalMeasure_Ioc_poissonMeasure {r : ℝ≥0}
-    (hT : ∀ n, Measurable (T n)) (hindep : iIndepFun T P)
+    (hindep : iIndepFun T P)
     (hlaw : ∀ n, HasLaw (fun ω => (T n ω : ℝ)) (expMeasure r) P) (t : ℝ≥0) :
     HasLaw (fun ω => ⌊(renewalArrivalMeasure T ω (Ioc 0 t)).toReal⌋₊)
       (poissonMeasure (r * t)) P := by
-  apply (hasLaw_renewalCountNat_poissonMeasure hT hindep hlaw t).congr
+  apply (hasLaw_renewalCountNat_poissonMeasure hindep hlaw t).congr
   filter_upwards [ae_renewalArrivalMeasure_Ioc_eq_of_expMeasure hindep hlaw] with ω hω
   simp [hω t]
 

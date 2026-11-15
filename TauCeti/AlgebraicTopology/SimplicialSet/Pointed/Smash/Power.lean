@@ -646,6 +646,17 @@ noncomputable def smashPowFunctorMap {Y : PointedSSet.{u}} (f : X ⟶ Y) :
 lemma smashPowFunctorMap_app {Y : PointedSSet.{u}} (f : X ⟶ Y) (k : FiniteBijection) :
     (smashPowFunctorMap f).app k = smashPowMap f (Fin k.len) := (rfl)
 
+@[simp]
+lemma smashPowFunctorMap_id : smashPowFunctorMap (𝟙 X) = 𝟙 (smashPowFunctor X) := by
+  ext k
+  simp
+
+@[simp]
+lemma smashPowFunctorMap_comp {Y Z : PointedSSet.{u}} (f : X ⟶ Y) (g : Y ⟶ Z) :
+    smashPowFunctorMap (f ≫ g) = smashPowFunctorMap f ≫ smashPowFunctorMap g := by
+  ext k
+  simp
+
 /-- Applying a based map in every coordinate is compatible with block concatenation and with the
 identifications `S⁰ ≅ X^∧0`. -/
 instance {Y : PointedSSet.{u}} (f : X ⟶ Y) : NatTrans.IsMonoidal (smashPowFunctorMap f) where

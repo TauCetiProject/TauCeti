@@ -17,11 +17,12 @@ multivariate polynomials, and Gröbner bases of an ideal, and proves that remain
 a Gröbner basis decide ideal membership.
 
 * `MonomialOrder.IsRemainder m f B r`: `r` is a remainder of `f` on division by `B`, i.e.
-  `f = ∑ g_b * b + r` where each product `g_b * b` has degree at most that of `f`, and no monomial
+  `f = ∑ g_b * b + r` where `deg b + deg g_b ≤ deg f` for each `b`, and no monomial
   of `r` is divisible by the leading monomial of a nonzero `b ∈ B`. The degree condition is
-  stated with `MonomialOrder.withBotDegree`, so that the zero polynomial has degree `⊥`, and as
-  the inequality `deg b + deg g_b ≤ deg f`; the remainder condition only concerns divisibility,
-  not a comparison of degrees.
+  stated with `MonomialOrder.withBotDegree`, so that the zero polynomial has degree `⊥`. It bounds
+  the sum of the degrees of the two factors, which over a ring with zero divisors is stronger than
+  bounding the degree of the product `g_b * b`; the remainder condition only concerns
+  divisibility, not a comparison of degrees.
 * `MonomialOrder.IsGroebnerBasis m G I`: `G` is a subset of the ideal `I` whose leading terms
   span the same ideal as the leading terms of all elements of `I`.
 

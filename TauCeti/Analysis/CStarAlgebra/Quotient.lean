@@ -93,8 +93,15 @@ theorem mk_smul_complex (c : ℂ) (a : A) : mk I (c • a) = c • mk I a := by
   rw [← submoduleQuotientMk_toSubmodule_eq_mk, ← submoduleQuotientMk_toSubmodule_eq_mk]
   exact Submodule.Quotient.mk_smul I.toSubmodule c a
 
-noncomputable instance instNormedSpaceComplex : NormedSpace ℂ (A ⧸ I) :=
-  Submodule.Quotient.normedSpace I.toSubmodule ℂ
+noncomputable instance instNormedSpaceComplex : NormedSpace ℂ (A ⧸ I) where
+  norm_smul_le := (Submodule.Quotient.normedSpace I.toSubmodule ℂ).norm_smul_le
+
+-- Verify that the normed-space module agrees with `instModuleComplex` at instance transparency,
+-- so that instance search finds the normed scalar classes on `A ⧸ I`.
+example : (instNormedSpaceComplex I).toModule = instModuleComplex I := by
+  with_reducible_and_instances rfl
+
+example : NormSMulClass ℂ (A ⧸ I) := inferInstance
 
 instance instIsScalarTowerComplex : IsScalarTower ℂ (A ⧸ I) (A ⧸ I) where
   smul_assoc c x y := by

@@ -10,7 +10,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Analysis.Calculus.Rademacher
-import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.MeasureTheory.Function.LocallyIntegrable
 
@@ -95,15 +95,7 @@ theorem integral_bilinear_fderiv_apply_eq_neg_integral_fderiv_fderiv_apply {V' :
     ∫ x, B (fderiv ℝ f x v) (fderiv ℝ g x w) ∂μ =
       -∫ x, B (fderiv ℝ (fderiv ℝ f) x w v) (g x) ∂μ := by
   -- A globally `C²` map `F` agreeing with `f` near the support of `g`.
-  obtain ⟨F, hF, hFf⟩ : ∃ F : E → V, ContDiff ℝ 2 F ∧ ∀ x ∈ tsupport g, F =ᶠ[𝓝 x] f := by
-    have hU : IsOpen {x | ContDiffAt ℝ 2 f x} :=
-      isOpen_iff_mem_nhds.2 fun x hx ↦ ContDiffAt.eventually hx (by simp)
-    obtain ⟨χ, hχ, -, hχ1, -, hχs⟩ := hsupp.exists_contDiff_cutoff_eventuallyEq_one hU hf
-    refine ⟨fun x ↦ χ x • f x, ContDiffOn.contDiff_smul_of_tsupport_subset
-      (fun x hx ↦ ContDiffAt.contDiffWithinAt hx) hU (hχ.of_le (by simp)).contDiffOn hχs,
-      fun x hx ↦ ?_⟩
-    filter_upwards [hχ1 x hx] with y hy
-    simp [hy]
+  obtain ⟨F, hF, -, hFf⟩ := hsupp.isCompact.exists_contDiff_eventuallyEq 2 hf
   -- Off the support of `g` both integrands vanish, and on it `F` and `f` have the same derivatives.
   have hFf₁ : ∀ x, B (fderiv ℝ F x v) (fderiv ℝ g x w) = B (fderiv ℝ f x v) (fderiv ℝ g x w) :=
     fun x ↦ by
