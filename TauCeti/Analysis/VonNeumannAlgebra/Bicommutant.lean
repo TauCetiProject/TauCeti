@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.WeakOperatorTopology
 public import TauCeti.Analysis.VonNeumannAlgebra.Density
 public import TauCeti.Analysis.LocallyConvex.WeakOperatorTopology
 public import TauCeti.Analysis.InnerProductSpace.WeakOperatorTopology.Compact
+public import TauCeti.Analysis.InnerProductSpace.StrongStarTopology
 
 /-!
 # The bicommutant theorem
@@ -35,6 +36,14 @@ elements of the algebra are the self-adjoint elements of the double commutant. T
 applies the weak-operator continuous map `A ↦ 2⁻¹ • (A + A⋆)` to the bicommutant theorem; the
 strong form follows because the self-adjoint part is convex, so its two closures agree. This is
 the density statement used in the proof of the Kaplansky density theorem.
+
+On a complex Hilbert space the strong-star closure is the double commutant as well
+(`StarSubalgebra.closure_image_strongStar_ofCLM`), on the type copy
+`TauCeti.ContinuousLinearMapStrongStar`. Strong-star closedness of the double commutant follows
+from weak operator closedness. For the converse, the strong-star and strong topologies agree on
+self-adjoint operators, so the strong-star closure of the self-adjoint part of the algebra is the
+self-adjoint part of the double commutant; a general element of the double commutant is then
+recovered from its real and imaginary parts.
 
 ## References
 
@@ -187,6 +196,108 @@ theorem double_commutant_iff_isClosed_image_toPointwiseConvergenceCLM
   exact (Set.image_injective.mpr
     ContinuousLinearMap.toPointwiseConvergenceCLM_injective).eq_iff.symm
 
+section StrongStar
+
+open TauCeti
+
+/-- The strong-star closure of the self-adjoint part of a unital star subalgebra is the
+self-adjoint part of its double commutant. -/
+theorem closure_image_strongStar_ofCLM_inter_selfAdjoint [NormedSpace ℝ H] [IsScalarTower ℝ 𝕜 H]
+    (S : StarSubalgebra 𝕜 (H →L[𝕜] H)) :
+    closure (ContinuousLinearMapStrongStar.ofCLM ''
+      ((S : Set (H →L[𝕜] H)) ∩ selfAdjoint (H →L[𝕜] H))) =
+      ContinuousLinearMapStrongStar.ofCLM ''
+        ((S : Set (H →L[𝕜] H)).centralizer.centralizer ∩ selfAdjoint (H →L[𝕜] H)) := by
+  -- Adjoints on the strong-star copy are computed on the underlying operators.
+  have hsa {x : H →L[𝕜] H} : IsSelfAdjoint (ContinuousLinearMapStrongStar.ofCLM x) ↔
+      IsSelfAdjoint x :=
+    ContinuousLinearMapStrongStar.ofCLM_injective.eq_iff
+  have hs : ∀ B ∈ ContinuousLinearMapStrongStar.ofCLM ''
+      ((S : Set (H →L[𝕜] H)) ∩ selfAdjoint (H →L[𝕜] H)), IsStarNormal B.toCLM := by
+    rintro _ ⟨b, hb, rfl⟩
+    exact hb.2.isStarNormal
+  ext A
+  obtain ⟨x, rfl⟩ : ∃ x, ContinuousLinearMapStrongStar.ofCLM x = A := ⟨A.toCLM, rfl⟩
+  rw [ContinuousLinearMapStrongStar.ofCLM_injective.mem_set_image]
+  -- On self-adjoint operators the strong-star and strong closures agree.
+  have key (hx : IsSelfAdjoint x) : ContinuousLinearMapStrongStar.ofCLM x ∈ closure
+      (ContinuousLinearMapStrongStar.ofCLM '' ((S : Set (H →L[𝕜] H)) ∩ selfAdjoint (H →L[𝕜] H)))
+        ↔ x ∈ (S : Set (H →L[𝕜] H)).centralizer.centralizer := by
+    rw [ContinuousLinearMapStrongStar.mem_closure_iff_of_isStarNormal hs hx.isStarNormal]
+    simp only [Set.image_image]
+    rw [S.closure_image_toPointwiseConvergenceCLM_inter_selfAdjoint,
+      ContinuousLinearMap.toPointwiseConvergenceCLM_injective.mem_set_image]
+    exact ⟨And.left, fun h ↦ ⟨h, hx⟩⟩
+  refine ⟨fun h ↦ ?_, fun h ↦ (key h.2).2 h.1⟩
+  have hx : IsSelfAdjoint x := hsa.mp <| closure_minimal (t := {B | IsSelfAdjoint B})
+    (by rintro _ ⟨b, hb, rfl⟩; exact hsa.mpr hb.2) (isClosed_eq continuous_star continuous_id) h
+  exact ⟨(key hx).1 h, hx⟩
+
+end StrongStar
+
+section StrongStarComplex
+
+variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+
+open TauCeti ComplexStarModule
+
+/-- The strong-star closure of a unital star subalgebra of operators on a complex Hilbert space is
+its double commutant. -/
+theorem closure_image_strongStar_ofCLM (S : StarSubalgebra ℂ (H →L[ℂ] H)) :
+    closure (ContinuousLinearMapStrongStar.ofCLM '' (S : Set (H →L[ℂ] H))) =
+      ContinuousLinearMapStrongStar.ofCLM '' (S : Set (H →L[ℂ] H)).centralizer.centralizer := by
+  have hclosed : IsClosed (ContinuousLinearMapStrongStar.ofCLM ''
+      (S : Set (H →L[ℂ] H)).centralizer.centralizer) := by
+    -- The preimage is along the continuous identity to the WOT copy.
+    convert ((S : Set (H →L[ℂ] H)).centralizer.isClosed_image_ofCLM_centralizer).preimage
+      ContinuousLinearMapStrongStar.continuous_toWOT using 1
+    ext A
+    rw [Set.mem_preimage, ContinuousLinearMapWOT.ofCLM_injective.mem_set_image]
+    exact ⟨by rintro ⟨x, hx, rfl⟩; exact hx, fun hA ↦ ⟨A.toCLM, hA, rfl⟩⟩
+  refine subset_antisymm
+    (closure_minimal (Set.image_mono Set.subset_centralizer_centralizer) hclosed) ?_
+  -- The closure is a complex subspace `V` of the strong-star copy.
+  let e := (ContinuousLinearMapStrongStar.linearEquiv ℂ (𝕜 := ℂ) (E := H) (F := H)).symm
+  let V := (S.toSubalgebra.toSubmodule.map e.toLinearMap).topologicalClosure
+  have hV : (V : Set (ContinuousLinearMapStrongStar ℂ H H)) =
+      closure (ContinuousLinearMapStrongStar.ofCLM '' (S : Set (H →L[ℂ] H))) := by
+    have he : ⇑e = ContinuousLinearMapStrongStar.ofCLM :=
+      funext (ContinuousLinearMapStrongStar.linearEquiv_symm_apply ℂ)
+    simp [V, Submodule.topologicalClosure_coe, he]
+  -- It contains the self-adjoint elements of `S''`.
+  have hsa {a : H →L[ℂ] H} (ha : a ∈ (S : Set (H →L[ℂ] H)).centralizer.centralizer)
+      (has : IsSelfAdjoint a) : e a ∈ V := by
+    rw [← SetLike.mem_coe, hV]
+    refine closure_mono (Set.image_mono (Set.inter_subset_left (t := selfAdjoint (H →L[ℂ] H)))) ?_
+    rw [S.closure_image_strongStar_ofCLM_inter_selfAdjoint]
+    exact ⟨a, ⟨ha, has⟩, rfl⟩
+  -- Split a general element of `S''` into its real and imaginary parts, which lie in `S''`.
+  let T := StarSubalgebra.centralizer ℂ (StarSubalgebra.centralizer ℂ (S : Set (H →L[ℂ] H)) :
+    Set (H →L[ℂ] H))
+  have hT : (T : Set (H →L[ℂ] H)) = (S : Set (H →L[ℂ] H)).centralizer.centralizer := by
+    rw [StarSubalgebra.coe_centralizer_centralizer, StarMemClass.star_coe_eq, Set.union_self]
+  rintro _ ⟨x, hx, rfl⟩
+  rw [← hT] at hx
+  have hre : (ℜ x : H →L[ℂ] H) ∈ T := by
+    rw [realPart_apply_coe, ← Complex.coe_smul]
+    exact T.smul_mem (add_mem hx (star_mem hx)) _
+  have him : (ℑ x : H →L[ℂ] H) ∈ T := by
+    rw [imaginaryPart_apply_coe, ← Complex.coe_smul]
+    exact T.smul_mem (T.smul_mem (sub_mem hx (star_mem hx)) _) _
+  rw [← hV, SetLike.mem_coe, ← realPart_add_I_smul_imaginaryPart x,
+    ← ContinuousLinearMapStrongStar.linearEquiv_symm_apply ℂ, map_add, map_smul]
+  exact add_mem (hsa (hT ▸ hre) (ℜ x).2) (V.smul_mem _ (hsa (hT ▸ him) (ℑ x).2))
+
+/-- A unital star subalgebra of operators on a complex Hilbert space equals its double commutant
+if and only if it is strong-star closed. -/
+theorem double_commutant_iff_isClosed_image_strongStar_ofCLM (S : StarSubalgebra ℂ (H →L[ℂ] H)) :
+    (S : Set (H →L[ℂ] H)).centralizer.centralizer = S ↔
+      IsClosed (ContinuousLinearMapStrongStar.ofCLM '' (S : Set (H →L[ℂ] H))) := by
+  rw [← closure_eq_iff_isClosed, S.closure_image_strongStar_ofCLM]
+  exact (Set.image_injective.mpr ContinuousLinearMapStrongStar.ofCLM_injective).eq_iff.symm
+
+end StrongStarComplex
+
 end StarSubalgebra
 
 namespace VonNeumannAlgebra
@@ -231,6 +342,21 @@ theorem image_toPointwiseConvergenceCLM_adjoin_eq_closure (s : Set (H →L[ℂ] 
       closure (ContinuousLinearMap.toPointwiseConvergenceCLM ℂ (RingHom.id ℂ) H H ''
         (StarAlgebra.adjoin ℂ s : Set (H →L[ℂ] H))) := by
   rw [StarSubalgebra.closure_image_toPointwiseConvergenceCLM, ← adjoin_starAlgebraAdjoin,
+    coe_adjoin_of_star_subset (StarMemClass.star_coe_eq _).subset]
+
+/-- A concrete von Neumann algebra is strong-star closed. -/
+theorem isClosed_image_strongStar_ofCLM (M : VonNeumannAlgebra H) :
+    IsClosed (TauCeti.ContinuousLinearMapStrongStar.ofCLM '' (M : Set (H →L[ℂ] H))) :=
+  M.toStarSubalgebra.double_commutant_iff_isClosed_image_strongStar_ofCLM.mp
+    M.centralizer_centralizer
+
+/-- The von Neumann algebra generated by `s` is the strong-star closure of the star algebra
+generated by `s`. -/
+theorem image_strongStar_ofCLM_adjoin_eq_closure (s : Set (H →L[ℂ] H)) :
+    TauCeti.ContinuousLinearMapStrongStar.ofCLM '' (adjoin s : Set (H →L[ℂ] H)) =
+      closure (TauCeti.ContinuousLinearMapStrongStar.ofCLM ''
+        (StarAlgebra.adjoin ℂ s : Set (H →L[ℂ] H))) := by
+  rw [StarSubalgebra.closure_image_strongStar_ofCLM, ← adjoin_starAlgebraAdjoin,
     coe_adjoin_of_star_subset (StarMemClass.star_coe_eq _).subset]
 
 end VonNeumannAlgebra
