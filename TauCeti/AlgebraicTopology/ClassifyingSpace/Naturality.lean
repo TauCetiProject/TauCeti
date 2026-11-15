@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.CellMap
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.StandardResolution
+import TauCeti.RepresentationTheory.Rep.Res
 
 /-!
 # Naturality of the join-to-standard comparison
@@ -107,6 +108,20 @@ theorem universalGSpaceChainMap_comp {K : Type u} [Group K] (ψ : H →* K) (φ 
     (universalGSpaceCellMulActionHom_comp ψ φ n)).trans
     (MulActionHom.toRepRes_comp (ψ.universalGSpaceCellMulActionHom n)
       (φ.universalGSpaceCellMulActionHom n))
+
+/-- The ordered join chain map induced by a group homomorphism preserves augmentation onto the
+trivial representation. -/
+@[reassoc]
+theorem universalGSpaceChainMap_comp_augmentation (φ : G →* H) :
+    φ.universalGSpaceChainMap ≫
+        ((Rep.resFunctor φ).mapHomologicalComplex _).map (universalGSpaceAugmentation k H) ≫
+        (HomologicalComplex.singleMapHomologicalComplex (Rep.resFunctor φ) _ 0).hom.app
+          (Rep.trivial k H k) =
+      universalGSpaceAugmentation k G := by
+  apply HomologicalComplex.to_single_hom_ext
+  simpa [Rep.resMap_id_hom] using
+    MulActionHom.toRepRes_comp_permutationAugmentation (k := k)
+      (φ.universalGSpaceCellMulActionHom 0)
 
 end Ring
 

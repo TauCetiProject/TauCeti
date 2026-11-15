@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Cellular.Map
 public import TauCeti.RepresentationTheory.Rep.HomologicalComplex
+import TauCeti.RepresentationTheory.Rep.Res
 
 /-!
 # Cellular chains with a monoid action
@@ -224,18 +225,10 @@ def cellularActionComplexMap :
         (eqToHom (cellularActionComplex_X C' ρ' hcell' hone' hmul' R n).symm)
   comm' i j hij := by
     subst i
-    have hX : ∀ m, cellularActionComplex_X C ρ hcell hone hmul R m = rfl :=
-      fun _ ↦ Subsingleton.elim _ _
-    have hX' : ∀ m, cellularActionComplex_X C' ρ' hcell' hone' hmul' R m = rfl :=
-      fun _ ↦ Subsingleton.elim _ _
-    rw [Functor.mapHomologicalComplex_obj_d, cellularActionComplex_d, cellularActionComplex_d,
-      hX (j + 1), hX j, hX' (j + 1), hX' j]
-    unfold cellularActionComplex
-    have hid : ∀ X : Rep.{u} R H, Rep.resMap φ (𝟙 X) = 𝟙 _ := fun _ ↦ rfl
-    simp only [eqToHom_refl, Category.id_comp, Category.comp_id]
-    rw [hid, hid, Category.comp_id, Category.comp_id]
-    exact cellularActionRepresentationMap_comp_differential C ρ hcell hone hmul
-      C' ρ' hcell' hone' hmul' hf hequiv R j
+    simp only [Functor.mapHomologicalComplex_obj_d, cellularActionComplex_d,
+      Rep.resMap_comp, Rep.resMap_eqToHom, Category.assoc, eqToHom_trans_assoc,
+      eqToHom_refl, Category.id_comp,
+      cellularActionRepresentationMap_comp_differential_assoc]
 
 /-- Components of the equivariant cellular chain map are the degreewise representation maps,
 up to the canonical term transports. -/
@@ -263,13 +256,10 @@ theorem cellularActionComplexForget₂Iso_hom_naturality :
   simp only [HomologicalComplex.comp_f, cellularChainComplexMap_f,
     cellularActionComplexForget₂Iso_hom_f, Functor.mapHomologicalComplex_map_f,
     cellularActionComplexMap_f, HomologicalComplex.repResForget₂Iso_hom_f,
-    Functor.map_comp, eqToHom_map, Category.assoc, Category.comp_id,
-    eqToHom_trans_assoc, eqToHom_trans]
-  unfold cellularActionComplex
-  simp only [eqToHom_refl, Category.comp_id, Rep.forget₂_moduleCat_map,
-    cellularActionRepresentationMap_hom_toLinearMap, ModuleCat.ofHom_hom,
-    Rep.resMap_hom_toLinearMap, Rep.hom_id]
-  rfl
+    Functor.map_comp, Rep.resMap_eqToHom, eqToHom_map, Category.assoc,
+    Category.comp_id, eqToHom_trans_assoc, eqToHom_trans]
+  simp only [Rep.forget₂_moduleCat_map,
+    cellularActionRepresentationMap_hom_toLinearMap, ModuleCat.ofHom_hom]
 
 /-- Inverse form of forgetful compatibility for an equivariant cellular chain map. -/
 @[reassoc]
@@ -281,11 +271,9 @@ theorem cellularActionComplexForget₂Iso_inv_naturality :
       (cellularActionComplexForget₂Iso C' ρ' hcell' hone' hmul' R).inv =
     (cellularActionComplexForget₂Iso C ρ hcell hone hmul R).inv ≫
       cellularChainComplexMap C C' hf (ModuleCat.of R R) := by
-  rw [← cancel_epi (cellularActionComplexForget₂Iso C ρ hcell hone hmul R).hom,
-    ← cancel_mono (cellularActionComplexForget₂Iso C' ρ' hcell' hone' hmul' R).hom]
-  simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id, Iso.hom_inv_id_assoc]
-  exact (cellularActionComplexForget₂Iso_hom_naturality C ρ hcell hone hmul
-    C' ρ' hcell' hone' hmul' hf hequiv R).symm
+  rw [← Category.assoc]
+  exact (CommSq.mk (cellularActionComplexForget₂Iso_hom_naturality C ρ hcell hone hmul
+    C' ρ' hcell' hone' hmul' hf hequiv R)).vert_inv.w
 
 /-- Equal equivariant cellular maps induce the same morphism on cellular representations,
 regardless of the cellularity and equivariance proofs. -/
@@ -405,8 +393,9 @@ theorem cellularActionComplexMap_comp
   simp only [cellularActionComplexMap_f,
     cellularActionRepresentationMap_comp C ρ hcell hone hmul C' ρ' hcell' hone' hmul'
       C'' ρ'' hcell'' hone'' hmul'' hf hequiv hg hgequiv hfg hfg_equiv R n,
-    HomologicalComplex.comp_f, Functor.mapHomologicalComplex_map_f, Category.assoc]
-  rfl
+    HomologicalComplex.comp_f, Functor.mapHomologicalComplex_map_f,
+    Rep.resMap_comp, Rep.resMap_eqToHom, Category.assoc, eqToHom_trans_assoc,
+    eqToHom_refl, Category.id_comp]
 
 end Functoriality
 

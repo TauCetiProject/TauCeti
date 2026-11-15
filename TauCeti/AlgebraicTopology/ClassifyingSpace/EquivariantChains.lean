@@ -207,7 +207,7 @@ theorem universalGSpaceCellularComplexIso_inv_f (n : ℕ) :
 isomorphism with the underlying module-level comparison
 `universalGSpaceCellularChainComplexIso`. -/
 @[reassoc]
-theorem universalGSpaceCellularComplexForget₂Iso_hom_comp_map_hom :
+theorem universalGSpaceCellularComplexForget₂Iso_hom_comp_map_cellularComplexIso_hom :
     (universalGSpaceCellularComplexForget₂Iso k G).hom ≫
         ((forget₂ (Rep k G) (ModuleCat k)).mapHomologicalComplex _).map
           (universalGSpaceCellularComplexIso k G).hom =
@@ -220,13 +220,14 @@ theorem universalGSpaceCellularComplexForget₂Iso_hom_comp_map_hom :
   rw [Functor.map_comp, eqToHom_map, eqToHom_trans_assoc]
   simp only [Rep.forget₂_moduleCat_map, universalGSpaceCellularRepIso_hom_toLinearMap]
 
-/-- Isomorphism form of `universalGSpaceCellularComplexForget₂Iso_hom_comp_map_hom`. -/
-theorem universalGSpaceCellularComplexForget₂Iso_trans_mapIso :
+/-- Isomorphism form of
+`universalGSpaceCellularComplexForget₂Iso_hom_comp_map_cellularComplexIso_hom`. -/
+theorem universalGSpaceCellularComplexForget₂Iso_trans_mapIso_cellularComplexIso :
     universalGSpaceCellularComplexForget₂Iso k G ≪≫
         ((forget₂ (Rep k G) (ModuleCat k)).mapHomologicalComplex _).mapIso
           (universalGSpaceCellularComplexIso k G) =
       universalGSpaceCellularChainComplexIso k G :=
-  Iso.ext (universalGSpaceCellularComplexForget₂Iso_hom_comp_map_hom k G)
+  Iso.ext (universalGSpaceCellularComplexForget₂Iso_hom_comp_map_cellularComplexIso_hom k G)
 
 end ChainComplex
 
@@ -475,9 +476,8 @@ theorem universalGSpaceCellularRepresentationMap_comp {K : Type u} [Group K]
     (IsCellular.comp _ _ φ.isCellular_universalGSpaceCellularMap
       ψ.isCellular_universalGSpaceCellularMap)
     (fun g ↦ by
-      rw [φ.universalGSpaceCellularTranslation_comp_universalGSpaceCellularMap_assoc,
-        ψ.universalGSpaceCellularTranslation_comp_universalGSpaceCellularMap]
-      rfl)]
+      rw [← universalGSpaceCellularMap_comp]
+      exact (ψ.comp φ).universalGSpaceCellularTranslation_comp_universalGSpaceCellularMap g)]
   exact cellularActionRepresentationMap_comp _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ k n
 
 /-- The equivariant chain map on geometric cellular chains of Milnor's join induced by a
@@ -529,9 +529,8 @@ theorem universalGSpaceCellularComplexMap_comp {K : Type u} [Group K]
     (IsCellular.comp _ _ φ.isCellular_universalGSpaceCellularMap
       ψ.isCellular_universalGSpaceCellularMap)
     (fun g ↦ by
-      rw [φ.universalGSpaceCellularTranslation_comp_universalGSpaceCellularMap_assoc,
-        ψ.universalGSpaceCellularTranslation_comp_universalGSpaceCellularMap]
-      rfl)]
+      rw [← universalGSpaceCellularMap_comp]
+      exact (ψ.comp φ).universalGSpaceCellularTranslation_comp_universalGSpaceCellularMap g)]
   exact cellularActionComplexMap_comp _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ k
 
 /-- Forgetting the translation action intertwines the equivariant cellular chain map with the

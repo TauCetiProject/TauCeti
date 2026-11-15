@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.EquivariantChains
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Naturality
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.CWComplex.Naturality
+import TauCeti.RepresentationTheory.Rep.Res
 
 /-!
 # Geometric naturality of the Milnor join resolution
@@ -21,12 +22,13 @@ dimension and orientation.
 
 Composing this equivariant identification with the explicit join-to-bar map gives the chain
 homotopy equivalence `TauCeti.universalGSpaceCellularRepStandardHomotopyEquiv` in `Rep k G`
-from geometric cellular chains to Mathlib's standard complex, whose forward map is natural along
-every group homomorphism
+from geometric cellular chains to Mathlib's standard complex, whose forward map commutes strictly
+as a chain map along every group homomorphism
 (`MonoidHom.universalGSpaceCellularRepStandardHomotopyEquiv_hom_naturality`), with target actions
-restricted along `φ`. Only the forward comparison is natural in this generality: for a
-noninjective homomorphism, restricted target representations need not remain projective over `G`,
-and the bar-to-join homotopy inverse is not natural.
+restricted along `φ`. Strict chain-map naturality is established here only for this explicit
+forward comparison and is not asserted for the chosen homotopy inverse `.inv` constructed via
+`ProjectiveResolution.lift` (though `Rep.resFunctor φ`, being additive, preserves the homotopy
+equivalence itself via `Functor.mapHomotopyEquiv`).
 
 The underlying module-level naturality square is the instance of
 `SimplicialMap.cellularChainComplexRealizationIso_hom_naturality` for the relabelling
@@ -116,9 +118,9 @@ theorem universalGSpaceCellularComplexIso_hom_naturality (φ : G →* H) :
   rw [← cancel_epi (universalGSpaceCellularComplexForget₂Iso k G).hom,
     ← cancel_mono ((universalGSpaceChainComplex k H).repResForget₂Iso φ).hom]
   simp only [Functor.map_comp, Category.assoc,
-    universalGSpaceCellularComplexForget₂Iso_hom_comp_map_hom_assoc]
+    universalGSpaceCellularComplexForget₂Iso_hom_comp_map_cellularComplexIso_hom_assoc]
   rw [← φ.universalGSpaceCellularChainComplexIso_naturality,
-    ← universalGSpaceCellularComplexForget₂Iso_hom_comp_map_hom k H,
+    ← universalGSpaceCellularComplexForget₂Iso_hom_comp_map_cellularComplexIso_hom k H,
     φ.universalGSpaceCellularComplexForget₂Iso_naturality_assoc]
   congr 2
   simpa only [HomologicalComplex.repResForget₂Iso_def, Iso.app_hom, Functor.comp_map] using
@@ -134,19 +136,11 @@ theorem universalGSpaceCellularComplexIso_inv_naturality (φ : G →* H) :
     φ.universalGSpaceChainMap (k := k) ≫
         ((Rep.resFunctor φ).mapHomologicalComplex _).map
           (universalGSpaceCellularComplexIso k H).inv =
-      (universalGSpaceCellularComplexIso k G).inv ≫ φ.universalGSpaceCellularComplexMap := by
-  have hinv :
-      ((Rep.resFunctor φ).mapHomologicalComplex _).map
-          (universalGSpaceCellularComplexIso k H).inv ≫
-        ((Rep.resFunctor φ).mapHomologicalComplex _).map
-          (universalGSpaceCellularComplexIso k H).hom = 𝟙 _ :=
-    (((Rep.resFunctor φ).mapHomologicalComplex _).mapIso
-      (universalGSpaceCellularComplexIso k H)).inv_hom_id
-  rw [← cancel_epi (universalGSpaceCellularComplexIso k G).hom,
-    ← cancel_mono (((Rep.resFunctor φ).mapHomologicalComplex _).map
-      (universalGSpaceCellularComplexIso k H).hom),
-    Category.assoc, Category.assoc, hinv, Category.comp_id, Iso.hom_inv_id_assoc]
-  exact (φ.universalGSpaceCellularComplexIso_hom_naturality (k := k)).symm
+      (universalGSpaceCellularComplexIso k G).inv ≫ φ.universalGSpaceCellularComplexMap :=
+  (CommSq.vert_inv (g := universalGSpaceCellularComplexIso k G)
+    (h := ((Rep.resFunctor φ).mapHomologicalComplex _).mapIso
+      (universalGSpaceCellularComplexIso k H))
+    ⟨φ.universalGSpaceCellularComplexIso_hom_naturality (k := k)⟩).w
 
 /-- Degreewise equivariant naturality of the cellular-to-ordered representation isomorphism. -/
 @[reassoc]
@@ -161,10 +155,7 @@ theorem universalGSpaceCellularRepIso_hom_naturality (φ : G →* H) (n : ℕ) :
     universalGSpaceCellularComplexIso_hom_f, universalGSpaceCellularComplexIso_hom_f,
     universalGSpaceChainMap_f] at h
   dsimp only [Functor.mapHomologicalComplex_obj_X, universalGSpaceChainComplex_X] at h
-  have hmap : ∀ {A B C : Rep k H} (f : A ⟶ B) (g : B ⟶ C),
-      Rep.resMap φ f ≫ Rep.resMap φ g = Rep.resMap φ (f ≫ g) :=
-    fun f g ↦ ((Rep.resFunctor φ).map_comp f g).symm
-  rw [Category.assoc, Category.assoc, hmap, eqToHom_trans_assoc, eqToHom_refl,
+  rw [Category.assoc, Category.assoc, ← Rep.resMap_comp, eqToHom_trans_assoc, eqToHom_refl,
     Category.id_comp, Category.assoc] at h
   exact (cancel_epi (eqToHom (universalGSpaceCellularComplex_X k G n))).mp h
 
@@ -174,33 +165,10 @@ theorem universalGSpaceCellularRepIso_inv_naturality (φ : G →* H) (n : ℕ) :
     φ.universalGSpaceChainHom (k := k) n ≫
         (Rep.resFunctor φ).map (universalGSpaceCellularRepIso k H n).inv =
       (universalGSpaceCellularRepIso k G n).inv ≫
-        φ.universalGSpaceCellularRepresentationMap n := by
-  let e := (Rep.resFunctor φ).mapIso (universalGSpaceCellularRepIso k H n)
-  have : Mono ((Rep.resFunctor φ).map (universalGSpaceCellularRepIso k H n).hom) :=
-    inferInstanceAs (Mono e.hom)
-  have hinv :
-      (Rep.resFunctor φ).map (universalGSpaceCellularRepIso k H n).inv ≫
-        (Rep.resFunctor φ).map (universalGSpaceCellularRepIso k H n).hom = 𝟙 _ :=
-    e.inv_hom_id
-  rw [← cancel_epi (universalGSpaceCellularRepIso k G n).hom,
-    ← cancel_mono ((Rep.resFunctor φ).map (universalGSpaceCellularRepIso k H n).hom),
-    Category.assoc, Category.assoc, hinv, Category.comp_id, Iso.hom_inv_id_assoc]
-  exact (φ.universalGSpaceCellularRepIso_hom_naturality (k := k) n).symm
-
-/-- The ordered join chain map induced by a group homomorphism preserves augmentation onto the
-trivial representation. -/
-@[reassoc]
-theorem universalGSpaceChainMap_comp_augmentation (φ : G →* H) :
-    φ.universalGSpaceChainMap ≫
-        ((Rep.resFunctor φ).mapHomologicalComplex _).map (universalGSpaceAugmentation k H) ≫
-        (HomologicalComplex.singleMapHomologicalComplex (Rep.resFunctor φ) _ 0).hom.app
-          (Rep.trivial k H k) =
-      universalGSpaceAugmentation k G := by
-  apply HomologicalComplex.to_single_hom_ext
-  have hid : Rep.resMap φ (𝟙 (Rep.trivial k H k)) = 𝟙 _ := rfl
-  simpa [hid] using
-    MulActionHom.toRepRes_comp_permutationAugmentation (k := k)
-      (φ.universalGSpaceCellMulActionHom 0)
+        φ.universalGSpaceCellularRepresentationMap n :=
+  (CommSq.vert_inv (g := universalGSpaceCellularRepIso k G n)
+    (h := (Rep.resFunctor φ).mapIso (universalGSpaceCellularRepIso k H n))
+    ⟨φ.universalGSpaceCellularRepIso_hom_naturality (k := k) n⟩).w
 
 /-- The equivariant geometric cellular chain map preserves augmentation onto the trivial
 representation. -/
@@ -275,7 +243,7 @@ theorem universalGSpaceCellularComplexForget₂Iso_hom_comp_map_repStandardHomot
           (universalGSpaceCellularRepStandardHomotopyEquiv k G).hom =
       (universalGSpaceCellularStandardHomotopyEquiv k G).hom := by
   simp only [universalGSpaceCellularRepStandardHomotopyEquiv_hom, Functor.map_comp,
-    universalGSpaceCellularComplexForget₂Iso_hom_comp_map_hom_assoc,
+    universalGSpaceCellularComplexForget₂Iso_hom_comp_map_cellularComplexIso_hom_assoc,
     universalGSpaceCellularStandardHomotopyEquiv_hom]
 
 /-- Forgetting the translation action intertwines the inverse equivariant bar-to-cellular
@@ -287,18 +255,12 @@ theorem map_universalGSpaceCellularRepStandardHomotopyEquiv_inv_comp_forget₂Is
       (universalGSpaceCellularComplexForget₂Iso k G).inv =
       (universalGSpaceCellularStandardHomotopyEquiv k G).inv := by
   let F := (forget₂ (Rep k G) (ModuleCat k)).mapHomologicalComplex (ComplexShape.down ℕ)
-  have hinv :
-      F.map (universalGSpaceCellularComplexIso k G).inv =
-        (universalGSpaceCellularChainComplexIso k G).inv ≫
-          (universalGSpaceCellularComplexForget₂Iso k G).hom := by
-    rw [← cancel_epi (universalGSpaceCellularChainComplexIso k G).hom, Iso.hom_inv_id_assoc,
-      ← universalGSpaceCellularComplexForget₂Iso_hom_comp_map_hom, Category.assoc,
-      ← F.map_comp, Iso.hom_inv_id, F.map_id, Category.comp_id]
-  rw [← cancel_mono (universalGSpaceCellularComplexForget₂Iso k G).hom]
-  simp only [universalGSpaceCellularRepStandardHomotopyEquiv_inv,
-    universalGSpaceCellularStandardHomotopyEquiv_inv, Category.assoc,
-    Iso.inv_hom_id, Category.comp_id]
-  exact (F.map_comp _ _).trans (congrArg (F.map _ ≫ ·) hinv)
+  have hinv := congrArg Iso.inv
+    (universalGSpaceCellularComplexForget₂Iso_trans_mapIso_cellularComplexIso k G)
+  simp only [Iso.trans_inv, Functor.mapIso_inv] at hinv
+  rw [universalGSpaceCellularRepStandardHomotopyEquiv_inv,
+    universalGSpaceCellularStandardHomotopyEquiv_inv]
+  exact (F.map_comp_assoc _ _ _).trans (congrArg (F.map _ ≫ ·) hinv)
 
 end TauCeti
 
@@ -331,10 +293,8 @@ theorem universalGSpaceCellularStandardHomotopyEquiv_hom_naturality (φ : G →*
 /-- **Change-of-group naturality of the equivariant geometric cellular-to-bar comparison.**
 For every group homomorphism `φ : G →* H` (including noninjective ones), the forward map of
 `universalGSpaceCellularRepStandardHomotopyEquiv` intertwines the geometric cellular chain map
-induced by `φ.universalGSpaceCellularMap` with `φ.standardComplexMap` as chain maps in `Rep k G`.
-Only the forward comparison is natural in this generality: for a noninjective homomorphism,
-restricted target representations need not remain projective over `G`, and the bar-to-join
-homotopy inverse is not natural. -/
+induced by `φ.universalGSpaceCellularMap` with `φ.standardComplexMap` as chain maps in
+`Rep k G`. -/
 @[reassoc]
 theorem universalGSpaceCellularRepStandardHomotopyEquiv_hom_naturality (φ : G →* H) :
     φ.universalGSpaceCellularComplexMap ≫
