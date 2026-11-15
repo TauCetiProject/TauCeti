@@ -327,13 +327,13 @@ theorem disjointUnion_le_disjointUnion [LE K] {f f' : Assignment Q K}
     restrictRight_disjointUnion]
 
 @[simp]
-theorem zero_le_disjointUnion [Zero K] [LE K] {f : Assignment Q K} {g : Assignment R K} :
+theorem disjointUnion_nonneg [Zero K] [LE K] {f : Assignment Q K} {g : Assignment R K} :
     0 ≤ f.disjointUnion g ↔ 0 ≤ f ∧ 0 ≤ g := by
   simp only [le_iff_restrictLeft_restrictRight, restrictLeft_zero, restrictRight_zero,
     restrictLeft_disjointUnion, restrictRight_disjointUnion]
 
 @[simp]
-theorem disjointUnion_le_zero [Zero K] [LE K] {f : Assignment Q K} {g : Assignment R K} :
+theorem disjointUnion_nonpos [Zero K] [LE K] {f : Assignment Q K} {g : Assignment R K} :
     f.disjointUnion g ≤ 0 ↔ f ≤ 0 ∧ g ≤ 0 := by
   simp only [le_iff_restrictLeft_restrictRight, restrictLeft_zero, restrictRight_zero,
     restrictLeft_disjointUnion, restrictRight_disjointUnion]
