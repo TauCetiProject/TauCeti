@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.CyclicalMonotonicity
 public import TauCeti.MeasureTheory.OptimalTransport.Existence.Basic
 import TauCeti.MeasureTheory.OptimalTransport.Stability
+import TauCeti.Topology.Order.OrderClosed
 
 /-!
 # Existence of couplings with cyclically monotone support
@@ -49,24 +50,6 @@ open scoped ENNReal Topology
 
 namespace TauCeti
 
-private theorem tendsto_uncurry_clamp {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
-    {c : X × Y → ℝ} (hc : Continuous c) (z : X × Y) :
-    Tendsto (Function.uncurry fun (k : ℕ) w ↦ max (-(k : ℝ)) (min (c w) k))
-      (atTop ×ˢ 𝓝 z) (𝓝 (c z)) := by
-  refine ((hc.tendsto z).comp tendsto_snd).congr' ?_
-  have hW : {w : X × Y | |c w - c z| < 1} ∈ 𝓝 z :=
-    isOpen_lt (hc.sub continuous_const).abs continuous_const |>.mem_nhds (by simp)
-  filter_upwards [(eventually_ge_atTop (⌈|c z|⌉₊ + 1)).prod_mk hW] with ⟨k, w⟩ ⟨hk, hw⟩
-  have hk' : |c z| + 1 ≤ (k : ℝ) := by
-    have hceil : |c z| ≤ ⌈|c z|⌉₊ := Nat.le_ceil _
-    have hnat : (⌈|c z|⌉₊ + 1 : ℝ) ≤ k := by exact_mod_cast hk
-    linarith
-  have hcw : |c w| < (k : ℝ) := by
-    have htri := abs_sub_abs_le_abs_sub (c w) (c z)
-    linarith [abs_lt.1 hw]
-  obtain ⟨hlo, hhi⟩ := abs_lt.1 hcw
-  simp only [Function.uncurry, Function.comp_apply, min_eq_left hhi.le, max_eq_right hlo.le]
-
 variable {X Y : Type*} [TopologicalSpace X] [PolishSpace X] [MeasurableSpace X] [BorelSpace X]
   [TopologicalSpace Y] [PolishSpace Y] [MeasurableSpace Y] [BorelSpace Y]
 
@@ -107,9 +90,12 @@ theorem exists_isCoupling_isCyclicallyMonotone_support (μ : Measure X) [IsProba
     (Frequently.of_forall (f := atTop) fun k ↦ (hπs k).toIsCoupling)
   obtain ⟨U, hUle, hUtend⟩ := mapClusterPt_iff_ultrafilter.mp hcl
   have : (U : Filter ℕ).NeBot := U.neBot
-  exact ⟨p.toMeasure, hpK, isCyclicallyMonotone_support_of_tendsto hUtend
-    (Eventually.of_forall hcm) fun z ↦
-      (tendsto_uncurry_clamp hc z).mono_left (Filter.prod_mono_left _ hUle)⟩
+  refine ⟨p.toMeasure, hpK, isCyclicallyMonotone_support_of_tendsto hUtend
+    (Eventually.of_forall hcm) fun z ↦ ?_⟩
+  have hcast : Tendsto (fun q : ℕ × (X × Y) ↦ (q.1 : ℝ)) (U ×ˢ 𝓝 z) atTop :=
+    tendsto_natCast_atTop_atTop.comp (tendsto_fst.mono_left (Filter.prod_mono_left _ hUle))
+  exact (tendsto_neg_atTop_atBot.comp hcast).atBot_max
+    (((hc.tendsto z).comp tendsto_snd).min_atTop hcast)
 
 /-- **Existence of an optimal coupling with cyclically monotone support.** On Polish Borel spaces,
 for any continuous nonnegative cost `c : X × Y → ℝ` and any two probability measures `μ` and `ν`,
