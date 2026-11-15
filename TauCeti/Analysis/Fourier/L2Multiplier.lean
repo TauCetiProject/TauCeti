@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Fourier.LpSpace
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Convolution
 public import TauCeti.MeasureTheory.Function.Lp.Convolution
+import TauCeti.Analysis.Convolution.Young
 import TauCeti.Analysis.Fourier.Convolution
 import TauCeti.Analysis.Fourier.LpSpace
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
@@ -55,6 +56,8 @@ defined, it agrees with Mathlib's multipliers.
 * `SchwartzMap.coeFn_fourierMultiplierCLM_toLp`: for a Schwartz symbol `σ`, `T_σ` is
   convolution with the Schwartz kernel `𝓕⁻ σ`, that is `T_σ f x = ∫ 𝓕⁻ σ (x - y) • f y` for
   almost every `x`. On Schwartz functions this is `SchwartzMap.fourierMultiplierCLM_eq_convolution`.
+* `SchwartzMap.eLpNorm_fourierMultiplierCLM_toLp_le`: Young's inequality for it,
+  `‖T_σ f‖_p ≤ ‖𝓕⁻ σ‖₁ ‖f‖_p` for `1 ≤ p ≤ ∞`.
 * `TauCeti.convolutionLp_eq_fourierMultiplierCLM`: convolution with an integrable kernel `k` is
   the multiplier whose symbol is the Fourier transform of `k`, and
   `TauCeti.coeFn_fourier_convolutionLp`, its Fourier-side form `𝓕 (k ⋆ f) = 𝓕 k • 𝓕 f`.
@@ -323,6 +326,23 @@ theorem _root_.SchwartzMap.coeFn_fourierMultiplierCLM_toLp (σ : 𝓢(E, ℂ))
   simp only [Function.comp_apply, hxs, ← hpair]
   exact ((((lsmul ℂ ℂ).lpPairing volume 2 2 ((hK x).toLp _)).continuous.tendsto f).comp hu).comp
     hns.tendsto_atTop
+
+/-- **`Lᵖ` bound for an `L²` multiplier with Schwartz symbol.** For `1 ≤ p ≤ ∞` the multiplier
+with a Schwartz symbol `σ` satisfies `‖T_σ f‖_p ≤ ‖𝓕⁻ σ‖₁ ‖f‖_p` for every `f ∈ L²`, since `T_σ` is
+convolution with `𝓕⁻ σ`. On Schwartz functions this is
+`SchwartzMap.eLpNorm_fourierMultiplierCLM_le`. -/
+theorem _root_.SchwartzMap.eLpNorm_fourierMultiplierCLM_toLp_le (σ : 𝓢(E, ℂ))
+    (f : Lp F 2 (volume : Measure E)) {p : ℝ≥0∞} (hp : 1 ≤ p) :
+    eLpNorm (fourierMultiplierCLM F (σ.toLp ∞) f) p volume ≤
+      eLpNorm (𝓕⁻ (σ : E → ℂ)) 1 volume * eLpNorm f p volume := by
+  have h : fourierMultiplierCLM F (σ.toLp ∞) f =ᵐ[volume]
+      convolution (𝓕⁻ (σ : E → ℂ)) (f : E → F) (lsmul ℂ ℂ) volume := by
+    filter_upwards [σ.coeFn_fourierMultiplierCLM_toLp f] with x hx
+    rw [hx, convolution_lsmul_swap, SchwartzMap.fourierInv_coe]
+  rw [eLpNorm_congr_ae h, ← SchwartzMap.fourierInv_coe]
+  refine (eLpNorm_convolution_le _ (𝓕⁻ σ).continuous.aestronglyMeasurable
+    (Lp.aestronglyMeasurable f) hp).trans ?_
+  grw [opENorm_lsmul_le, one_mul]
 
 /-- If the symbols `m i` are eventually bounded in `L^∞` uniformly in `i` along a countably
 generated filter `l` and converge to `m₀` almost everywhere along `l`, then

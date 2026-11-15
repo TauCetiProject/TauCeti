@@ -50,6 +50,9 @@ Hardy–Littlewood–Sobolev fails, needs the Keel–Tao argument instead.
 
 ## Main declarations
 
+* `TauCeti.exists_lintegral_lintegral_enorm_inner_le`: the bilinear estimate
+  `∫∫ |⟪F(s), T(s, t) G(t)⟫| ds dt ≤ C A ‖F‖_{L^{q'} L^{r'}} ‖G‖_{L^{q'} L^{r'}}` for any two-time
+  family `T(s, t)` decaying like `A |s - t| ^ (-2 / q)` from `L^{r'}` to `L^r`.
 * `TauCeti.exists_lintegral_lintegral_enorm_inner_adjoint_le`: the bilinear `TT*` estimate
   `∫∫ |⟪U(s)* F(s), U(t)* G(t)⟫| ds dt ≤ C A ‖F‖_{L^{q'} L^{r'}} ‖G‖_{L^{q'} L^{r'}}`.
 * `TauCeti.exists_enorm_integral_adjoint_le`: the dual homogeneous estimate
@@ -74,23 +77,101 @@ open scoped ENNReal NNReal InnerProductSpace InnerProduct
 namespace TauCeti
 
 variable {𝕜 X E H : Type*} [RCLike 𝕜] {mX : MeasurableSpace X} {μ : Measure X}
-  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
   [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H]
   {r r' : ℝ≥0∞} [r'.HolderConjugate r]
 
-/-- A single time pairing: Hölder's inequality in space and the decay of `U(s) U(t)*` bound
-`|⟪U(s)* f, U(t)* g⟫|` by `A |s - t| ^ (-γ) ‖f‖_{r'} ‖g‖_{r'}`. -/
-private theorem enorm_inner_adjoint_le {U : ℝ → H →L[𝕜] Lp E 2 μ} {A : ℝ≥0∞} {γ : ℝ}
-    (hU : ∀ s t, s ≠ t → ∀ g : Lp E 2 μ,
-      eLpNorm (U s (((U t)†) g)) r μ ≤ A * ‖s - t‖ₑ ^ (-γ) * eLpNorm g r' μ)
+/-- A single pairing: Hölder's inequality in space and the decay of `T(s, t)` bound
+`|⟪f, T(s, t) g⟫|` by `A |s - t| ^ (-γ) ‖f‖_{r'} ‖g‖_{r'}`. -/
+private theorem enorm_inner_le {T : ℝ → ℝ → Lp E 2 μ → Lp E 2 μ} {A : ℝ≥0∞} {γ : ℝ}
+    (hT : ∀ s t, s ≠ t → ∀ g : Lp E 2 μ,
+      eLpNorm (T s t g) r μ ≤ A * ‖s - t‖ₑ ^ (-γ) * eLpNorm g r' μ)
     {s t : ℝ} (hst : s ≠ t) (f g : Lp E 2 μ) :
-    ‖⟪((U s)†) f, ((U t)†) g⟫_𝕜‖ₑ ≤ A * ‖s - t‖ₑ ^ (-γ) * eLpNorm f r' μ * eLpNorm g r' μ := by
-  rw [ContinuousLinearMap.adjoint_inner_left, L2.inner_def]
-  calc _ ≤ eLpNorm f r' μ * eLpNorm (U s (((U t)†) g)) r μ := enorm_integral_inner_le
+    ‖⟪f, T s t g⟫_𝕜‖ₑ ≤ A * ‖s - t‖ₑ ^ (-γ) * eLpNorm f r' μ * eLpNorm g r' μ := by
+  rw [L2.inner_def]
+  calc _ ≤ eLpNorm f r' μ * eLpNorm (T s t g) r μ := enorm_integral_inner_le
     _ ≤ eLpNorm f r' μ * (A * ‖s - t‖ₑ ^ (-γ) * eLpNorm g r' μ) := by
         gcongr
-        exact hU s t hst g
+        exact hT s t hst g
     _ = _ := by ring
+
+/-- **The bilinear estimate for a decaying two-time family.** Let `2 < q < ∞` with Hölder
+conjugate `p`, and let `T(s, t)` act on `L²(X, μ)` with decay from `L^{r'}` to `L^r`,
+`‖T(s, t) g‖_r ≤ A |s - t| ^ (-2 / q) ‖g‖_{r'}` for `s ≠ t`. Then for almost everywhere strongly
+measurable `F, G : ℝ → L²(X, μ)`,
+
+`∫∫ |⟪F(s), T(s, t) G(t)⟫| ds dt ≤ C A ‖F‖_{L^p L^{r'}} ‖G‖_{L^p L^{r'}}`,
+
+with `C` independent of the family `T`, of `A` and of `F` and `G`. The time pairings
+`T(s, t) = U(s) U(t)*` of the `TT*` argument are one instance
+(`TauCeti.exists_lintegral_lintegral_enorm_inner_adjoint_le`); Duhamel kernels such as
+`T(s, t) = W(s - t) P` for a propagator `W` and a fixed operator `P` are another. Since the
+integrand is the absolute value of the pairing, the same bound holds for the integral over any
+part of the `(s, t)` plane, such as `s < t`. -/
+theorem exists_lintegral_lintegral_enorm_inner_le {p q : ℝ≥0} (hq : 2 < q)
+    (hpq : p.HolderConjugate q) :
+    ∃ C : ℝ≥0, ∀ (T : ℝ → ℝ → Lp E 2 μ → Lp E 2 μ) (A : ℝ≥0∞),
+      (∀ s t, s ≠ t → ∀ g : Lp E 2 μ,
+        eLpNorm (T s t g) r μ ≤ A * ‖s - t‖ₑ ^ (-(2 / q : ℝ)) * eLpNorm g r' μ) →
+      ∀ F G : ℝ → Lp E 2 μ, AEStronglyMeasurable F → AEStronglyMeasurable G →
+        ∫⁻ s, ∫⁻ t, ‖⟪F s, T s t (G t)⟫_𝕜‖ₑ ≤
+          C * A * eLpNorm (fun s ↦ eLpNorm (F s) r' μ) p *
+            eLpNorm (fun t ↦ eLpNorm (G t) r' μ) p := by
+  have hq0 : (0 : ℝ) < q := by exact_mod_cast zero_lt_two.trans hq
+  have hp : 1 < p := hpq.lt
+  -- The time exponents fit the Hardy–Littlewood–Sobolev inequality of order `1 - 2 / q` on `ℝ`.
+  have hpq' : (q : ℝ)⁻¹ = (p : ℝ)⁻¹ - (1 - 2 / q) / Module.finrank ℝ ℝ := by
+    have h := hpq.coe.inv_add_inv_eq_one
+    rw [Module.finrank_self, Nat.cast_one, div_one]
+    field_simp at h ⊢
+    linarith
+  obtain ⟨C, hC⟩ := exists_eLpNorm_rieszPotential_le (F := ℝ≥0∞) (volume : Measure ℝ)
+    (α := 1 - 2 / q) (by rw [sub_pos, div_lt_one hq0]; exact_mod_cast hq) hp hpq'
+  refine ⟨C, fun T A hT F G hF hG => ?_⟩
+  set a := fun s ↦ eLpNorm (F s) r' μ
+  set b := fun t ↦ eLpNorm (G t) r' μ
+  have ha : AEMeasurable a := hF.aemeasurable_eLpNorm_Lp .rfl r'
+  have hb : AEMeasurable b := hG.aemeasurable_eLpNorm_Lp .rfl r'
+  set I := rieszPotential volume (1 - 2 / q) b
+  have hI : AEMeasurable I := aemeasurable_rieszPotential (by simpa using hb)
+  -- For each `s`, the integral over `t` is bounded by the fractional integral of `b` at `s`.
+  have hinner (s : ℝ) : ∫⁻ t, ‖⟪F s, T s t (G t)⟫_𝕜‖ₑ ≤ A * a s * I s := by
+    have hk : AEMeasurable fun t : ℝ ↦ ‖s - t‖ₑ ^ (-(2 / q : ℝ)) * b t :=
+      (by fun_prop : Measurable fun t : ℝ ↦ ‖s - t‖ₑ ^ (-(2 / q : ℝ))).aemeasurable.mul hb
+    calc ∫⁻ t, ‖⟪F s, T s t (G t)⟫_𝕜‖ₑ
+        ≤ ∫⁻ t, A * a s * (‖s - t‖ₑ ^ (-(2 / q : ℝ)) * b t) := by
+          -- The diagonal `t = s` is a null set.
+          refine lintegral_mono_ae ?_
+          filter_upwards [ae_iff.2 (by simp : volume {t : ℝ | ¬ t ≠ s} = 0)] with t ht
+          calc _ ≤ A * ‖s - t‖ₑ ^ (-(2 / q : ℝ)) * a s * b t :=
+                enorm_inner_le hT (Ne.symm ht) _ _
+            _ = _ := by ring
+      _ = A * a s * I s := by
+          rw [lintegral_const_mul'' _ hk]
+          congr 1
+          simp only [I, rieszPotential_def, eNorm_eq_self, Module.finrank_self]
+          refine lintegral_congr fun t ↦ ?_
+          congr 2
+          push_cast
+          ring
+  -- Hölder's inequality in time, then Hardy–Littlewood–Sobolev.
+  calc ∫⁻ s, ∫⁻ t, ‖⟪F s, T s t (G t)⟫_𝕜‖ₑ
+      ≤ ∫⁻ s, A * (a s * I s) := lintegral_mono fun s ↦ (hinner s).trans_eq (mul_assoc _ _ _)
+    _ = A * ∫⁻ s, a s * I s := lintegral_const_mul'' _ (ha.mul hI)
+    _ ≤ A * (eLpNorm a p * eLpNorm I q) := by
+        gcongr
+        have h := ENNReal.lintegral_mul_le_Lp_mul_Lq volume hpq.coe ha hI
+        rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal (by positivity) ENNReal.coe_ne_top
+            ha.aestronglyMeasurable,
+          eLpNorm_eq_lintegral_rpow_eNorm_toReal (by positivity) ENNReal.coe_ne_top
+            hI.aestronglyMeasurable]
+        simpa only [eNorm_eq_self, ENNReal.coe_toReal, Pi.mul_apply] using h
+    _ ≤ A * (eLpNorm a p * (C * eLpNorm b p)) := by
+        gcongr
+        exact hC b
+    _ = _ := by ring
+
+variable [CompleteSpace E]
 
 /-- **The bilinear `TT*` estimate.** Let `2 < q < ∞` with Hölder conjugate `p`, and let
 `U(t) : H → L²(X, μ)` be bounded operators whose time pairings decay from `L^{r'}` to `L^r`,
@@ -111,59 +192,11 @@ theorem exists_lintegral_lintegral_enorm_inner_adjoint_le {p q : ℝ≥0} (hq : 
         ∫⁻ s, ∫⁻ t, ‖⟪((U s)†) (F s), ((U t)†) (G t)⟫_𝕜‖ₑ ≤
           C * A * eLpNorm (fun s ↦ eLpNorm (F s) r' μ) p *
             eLpNorm (fun t ↦ eLpNorm (G t) r' μ) p := by
-  have hq0 : (0 : ℝ) < q := by exact_mod_cast zero_lt_two.trans hq
-  have hp : 1 < p := hpq.lt
-  -- The time exponents fit the Hardy–Littlewood–Sobolev inequality of order `1 - 2 / q` on `ℝ`.
-  have hpq' : (q : ℝ)⁻¹ = (p : ℝ)⁻¹ - (1 - 2 / q) / Module.finrank ℝ ℝ := by
-    have h := hpq.coe.inv_add_inv_eq_one
-    rw [Module.finrank_self, Nat.cast_one, div_one]
-    field_simp at h ⊢
-    linarith
-  obtain ⟨C, hC⟩ := exists_eLpNorm_rieszPotential_le (F := ℝ≥0∞) (volume : Measure ℝ)
-    (α := 1 - 2 / q) (by rw [sub_pos, div_lt_one hq0]; exact_mod_cast hq) hp hpq'
+  obtain ⟨C, hC⟩ := exists_lintegral_lintegral_enorm_inner_le (𝕜 := 𝕜) (E := E) (μ := μ)
+    (r := r) (r' := r') hq hpq
   refine ⟨C, fun U A hU F G hF hG => ?_⟩
-  set a := fun s ↦ eLpNorm (F s) r' μ
-  set b := fun t ↦ eLpNorm (G t) r' μ
-  have ha : AEMeasurable a := hF.aemeasurable_eLpNorm_Lp .rfl r'
-  have hb : AEMeasurable b := hG.aemeasurable_eLpNorm_Lp .rfl r'
-  set I := rieszPotential volume (1 - 2 / q) b
-  have hI : AEMeasurable I := aemeasurable_rieszPotential (by simpa using hb)
-  -- For each `s`, the integral over `t` is bounded by the fractional integral of `b` at `s`.
-  have hinner (s : ℝ) : ∫⁻ t, ‖⟪((U s)†) (F s), ((U t)†) (G t)⟫_𝕜‖ₑ ≤ A * a s * I s := by
-    have hk : AEMeasurable fun t : ℝ ↦ ‖s - t‖ₑ ^ (-(2 / q : ℝ)) * b t :=
-      (by fun_prop : Measurable fun t : ℝ ↦ ‖s - t‖ₑ ^ (-(2 / q : ℝ))).aemeasurable.mul hb
-    calc ∫⁻ t, ‖⟪((U s)†) (F s), ((U t)†) (G t)⟫_𝕜‖ₑ
-        ≤ ∫⁻ t, A * a s * (‖s - t‖ₑ ^ (-(2 / q : ℝ)) * b t) := by
-          -- The diagonal `t = s` is a null set.
-          refine lintegral_mono_ae ?_
-          filter_upwards [ae_iff.2 (by simp : volume {t : ℝ | ¬ t ≠ s} = 0)] with t ht
-          calc _ ≤ A * ‖s - t‖ₑ ^ (-(2 / q : ℝ)) * a s * b t :=
-                enorm_inner_adjoint_le hU (Ne.symm ht) _ _
-            _ = _ := by ring
-      _ = A * a s * I s := by
-          rw [lintegral_const_mul'' _ hk]
-          congr 1
-          simp only [I, rieszPotential_def, eNorm_eq_self, Module.finrank_self]
-          refine lintegral_congr fun t ↦ ?_
-          congr 2
-          push_cast
-          ring
-  -- Hölder's inequality in time, then Hardy–Littlewood–Sobolev.
-  calc ∫⁻ s, ∫⁻ t, ‖⟪((U s)†) (F s), ((U t)†) (G t)⟫_𝕜‖ₑ
-      ≤ ∫⁻ s, A * (a s * I s) := lintegral_mono fun s ↦ (hinner s).trans_eq (mul_assoc _ _ _)
-    _ = A * ∫⁻ s, a s * I s := lintegral_const_mul'' _ (ha.mul hI)
-    _ ≤ A * (eLpNorm a p * eLpNorm I q) := by
-        gcongr
-        have h := ENNReal.lintegral_mul_le_Lp_mul_Lq volume hpq.coe ha hI
-        rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal (by positivity) ENNReal.coe_ne_top
-            ha.aestronglyMeasurable,
-          eLpNorm_eq_lintegral_rpow_eNorm_toReal (by positivity) ENNReal.coe_ne_top
-            hI.aestronglyMeasurable]
-        simpa only [eNorm_eq_self, ENNReal.coe_toReal, Pi.mul_apply] using h
-    _ ≤ A * (eLpNorm a p * (C * eLpNorm b p)) := by
-        gcongr
-        exact hC b
-    _ = _ := by ring
+  simp_rw [ContinuousLinearMap.adjoint_inner_left]
+  exact hC (fun s t g ↦ U s (((U t)†) g)) A hU F G hF hG
 
 variable [NormedSpace ℝ H]
 

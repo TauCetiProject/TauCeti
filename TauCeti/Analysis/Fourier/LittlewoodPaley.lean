@@ -13,8 +13,10 @@ import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.BandLimited
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
+import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.Duality
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.Star
 import TauCeti.MeasureTheory.Function.Lp.One
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
@@ -81,6 +83,14 @@ which Cauchy–Schwarz for the banded double sum (`ENNReal.tsum_sum_Ico_mul_le`)
 (`MeasureTheory.Lp.tendsto_sum_fourierMultiplierCLM_inhomogeneousLittlewoodPaley`), and Hölder's
 inequality and the first inequality at the exponent `q` give
 `|⟪f, g⟫| ≤ 2 L C_q ‖S f‖_p ‖g‖_q`.
+
+## Homogeneous blocks
+
+For the homogeneous cutoffs `ψⱼ = φ.littlewoodPaley j`, `j ∈ ℤ`, the last section records the
+elementary bounds on the multipliers `Pⱼ` with symbols `ψⱼ`: they are bounded on every `Lᵖ`,
+`1 ≤ p ≤ ∞`, uniformly in `j` (`ContDiffBump.exists_eLpNorm_fourierMultiplierCLM_le`), have norm
+at most `1` on `L²` (`ContDiffBump.norm_fourierMultiplierCLM_le_one`), and vanish in dimension `0`
+(`ContDiffBump.fourierMultiplierCLM_eq_zero_of_finrank_eq_zero`).
 
 ## References
 
@@ -807,3 +817,70 @@ theorem exists_eLpNorm_le_mul_eLpNorm_tsum_enorm_fourierMultiplierCLM_sq_rpow [N
         ring
 
 end TauCeti
+
+/-! ### Homogeneous Littlewood–Paley multipliers -/
+
+namespace ContDiffBump
+
+variable {V F : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+  [MeasurableSpace V] [BorelSpace V] [NormedAddCommGroup F] [InnerProductSpace ℂ F]
+  [CompleteSpace F] (φ : ContDiffBump (0 : V))
+
+/-- **The homogeneous Littlewood–Paley multipliers are bounded on `Lᵖ`, uniformly in `j`.** Let
+`Pⱼ` be the `L²` multiplier with the cutoff `ψⱼ = φ.littlewoodPaley j`. There is `K` such that
+`‖Pⱼ f‖_p ≤ K ‖f‖_p` for every `j ∈ ℤ`, every `1 ≤ p ≤ ∞` and every `f ∈ L²`. The multiplier `Pⱼ`
+is convolution with `𝓕⁻ ψⱼ`, and `‖𝓕⁻ ψⱼ‖₁ = ‖𝓕⁻ ψ₀‖₁` because `ψⱼ` is `ψ₀` rescaled. -/
+theorem exists_eLpNorm_fourierMultiplierCLM_le :
+    ∃ K : ℝ≥0, ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure V)),
+      m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) → ∀ {p : ℝ≥0∞}, 1 ≤ p →
+      ∀ f : Lp F 2 (volume : Measure V),
+      eLpNorm (Lp.fourierMultiplierCLM F m f) p volume ≤ K * eLpNorm f p volume := by
+  -- The cutoffs `ψᵢ` as complex Schwartz functions.
+  set ψ : ℤ → 𝓢(V, ℂ) := fun i ↦
+    φ.littlewoodPaleyPiece (m := fun _ : V ↦ (1 : ℂ)) contDiffOn_const i
+  have hψ (i : ℤ) (ξ : V) : ψ i ξ = φ.littlewoodPaley i ξ := by
+    simp [ψ, Complex.real_smul]
+  refine ⟨(∫ x, ‖𝓕⁻ (ψ 0 : V → ℂ) x‖).toNNReal, fun j m hm p hp f ↦ ?_⟩
+  have hmψ : m = (ψ j).toLp ∞ := by
+    apply Lp.ext
+    filter_upwards [hm, (ψ j).coeFn_toLp ∞] with ξ h₁ h₂
+    rw [h₁, h₂, hψ]
+  -- `𝓕⁻ ψⱼ` has the same `L¹` norm as `𝓕⁻ ψ₀`.
+  have hscale : ∫ x, ‖𝓕⁻ (ψ j : V → ℂ) x‖ = ∫ x, ‖𝓕⁻ (ψ 0 : V → ℂ) x‖ := by
+    have hσ : (ψ j : V → ℂ) = fun ξ ↦ (ψ 0 : V → ℂ) (((2 : ℝ) ^ j)⁻¹ • ξ) := by
+      funext ξ
+      rw [hψ, hψ, littlewoodPaley_apply_eq_littlewoodPaley_zero_apply φ j ξ]
+    rw [hσ]
+    exact TauCeti.integral_norm_fourierInv_comp_smul _ (inv_ne_zero (zpow_ne_zero j two_ne_zero))
+  have hKi : Integrable (𝓕⁻ (ψ j : V → ℂ)) volume := by
+    rw [← SchwartzMap.fourierInv_coe]
+    exact (𝓕⁻ (ψ j)).integrable
+  rw [hmψ]
+  refine ((ψ j).eLpNorm_fourierMultiplierCLM_toLp_le f hp).trans_eq ?_
+  rw [eLpNorm_one_eq_lintegral_eNorm hKi.aestronglyMeasurable,
+    ← ofReal_integral_norm_eq_lintegral_eNorm hKi, hscale, ENNReal.ofNNReal_toNNReal]
+
+/-- In dimension `0` the space is a point, where `ψⱼ` vanishes, so `Pⱼ = 0`. -/
+theorem fourierMultiplierCLM_eq_zero_of_finrank_eq_zero (hV : Module.finrank ℝ V = 0) {j : ℤ}
+    {m : Lp ℂ ∞ (volume : Measure V)}
+    (hm : m =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) :
+    Lp.fourierMultiplierCLM F m = 0 := by
+  have : Subsingleton V := Module.finrank_zero_iff.1 hV
+  have hm0 : m =ᵐ[volume] fun _ ↦ (0 : ℂ) := by
+    filter_upwards [hm] with ξ h
+    rw [h, Subsingleton.elim ξ 0, φ.littlewoodPaley_eq_zero_of_norm_le (by
+      rw [norm_zero]; exact (mul_pos (zpow_pos two_pos _) φ.rIn_pos).le), Complex.ofReal_zero]
+  rw [Lp.fourierMultiplierCLM_of_ae_eq_const hm0]
+  ext1 f
+  simp
+
+/-- `|ψⱼ| ≤ 1`, so `‖Pⱼ‖ ≤ 1` on `L²`. -/
+theorem norm_fourierMultiplierCLM_le_one {j : ℤ} {m : Lp ℂ ∞ (volume : Measure V)}
+    (hm : m =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) :
+    ‖Lp.fourierMultiplierCLM (E := V) F m‖ ≤ 1 := by
+  refine (Lp.norm_fourierMultiplierCLM_le m).trans (Lp.norm_top_le_of_ae_bound zero_le_one ?_)
+  filter_upwards [hm] with ξ h
+  rw [h, Complex.norm_real, Real.norm_eq_abs]
+  exact φ.abs_littlewoodPaley_le_one j ξ
+
+end ContDiffBump
