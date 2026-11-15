@@ -10,16 +10,20 @@ public import TauCeti.NumberTheory.IntegralLattice.Binary.Orientation
 public import TauCeti.NumberTheory.IntegralLattice.Binary.Examples
 
 /-!
-# The hyperbolic plane's principal split proper class
+# Split proper classes of binary lattices
 
-Every orientation of a binary lattice with primitive discriminant one gives the principal
-proper class of the split product order. In particular the existing hyperbolic plane has
-this class. The primitive norm form also defines a class in the primitive split quotient,
-whose forgetful image is the existing oriented proper class; for `a` coprime to `s`, it is the
-class of the triangular form `sxy + ay²` exactly when some basis of the given orientation has norm
-form `c (sxy + ay²)`, where `c` is the content of the lattice. For the hyperbolic plane this
-is the triangular principal class with coefficients `1, 1`, the composition identity, and its module
-is the unit module over the actual product order. No number-field order is used.
+Let `L` be a binary lattice whose primitive discriminant is `s²` for a nonzero natural number `s`.
+Each orientation of `L` makes its primitive norm form a class `binarySplitProperClass` in the
+primitive split quotient `SplitProperClass s`, whose forgetful image is the existing oriented
+proper class. For `a` coprime to `s`, this split class is the class of the triangular form
+`sxy + ay²` exactly when some basis of the given orientation has norm form `c (sxy + ay²)`,
+where `c` is the content of `L`.
+
+The case `s = 1` is primitive discriminant one: every orientation of such a lattice gives the
+principal proper class of the split product order. In particular the existing hyperbolic plane
+has this class; its split class is the triangular principal class with coefficients `1, 1`, the
+composition identity, and its module is the unit module over the actual product order. No
+number-field order is used.
 
 ## References
 
