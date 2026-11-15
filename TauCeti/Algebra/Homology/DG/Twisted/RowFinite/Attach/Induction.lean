@@ -622,7 +622,11 @@ theorem exists_rowFiniteTwistingCocycle_of_forall_exists (hM : IsDGLeftModule h 
       exact Sum.inr_injective hyx ▸ hy
     · rintro (e | x) hx
       exacts [e.elim, ⟨x, hF x hx, rfl⟩]
-  refine ⟨m, c, fun x y hy ↦ hlt x y (by simpa [m] using hy), hc, hcN, hcsub, fun x ↦ ?_,
+  -- The rows of `m` have the coefficients of the rows of `mX` on the cells.
+  have hrow (x y : G) (hy : y ∈ (m.m x).support) : Sum.inr y ∈ (mX.m (Sum.inr x)).support := by
+    rw [Finsupp.mem_support_iff, RowFiniteTwistingCocycle.comap_m_apply] at hy
+    exact Finsupp.mem_support_iff.2 hy
+  refine ⟨m, c, fun x y hy ↦ hlt x y (hrow x y hy), hc, hcN, hcsub, fun x ↦ ?_,
     fun n ↦ ?_, ?_⟩
   · have := hom x
     rwa [← mX.mapDomain_comap_m (he := Sum.inr_injective)

@@ -926,7 +926,9 @@ theorem forall_exists_rowFiniteTwistedDifferential_eq_iff_of_mapDomain_image {P'
       ∃ u : P →₀ A, ↑u.support ⊆ S ∧ Finsupp.mapDomain φ u = f := by
     refine ⟨Finsupp.comapDomain φ f hφ.injOn, fun x hx ↦ ?_,
       Finsupp.mapDomain_comapDomain _ hφ _ (hf.trans (Set.image_subset_range _ _))⟩
-    obtain ⟨y, hy, hyx⟩ := hf (show φ x ∈ (f.support : Set P') by simpa using hx)
+    -- The coefficient of the restricted vector at `x` is that of `f` at `φ x`.
+    rw [Finset.mem_coe, Finsupp.mem_support_iff, Finsupp.comapDomain_apply] at hx
+    obtain ⟨y, hy, hyx⟩ := hf (Finsupp.mem_support_iff.2 hx)
     exact hφ hyx ▸ hy
   have hsupp {u : P →₀ A} (hu : ↑u.support ⊆ S) :
       ↑(Finsupp.mapDomain φ u).support ⊆ φ '' S := fun y hy ↦ by
