@@ -134,33 +134,6 @@ end ContinuousMap.IsWeakHomotopyEquivalence
 
 /-! ### Local coefficients -/
 
-namespace TauCeti
-
-open LocalCoefficientSystem
-
-/-- **The inclusion of a subspace with vanishing relative homotopy sets induces a
-quasi-isomorphism of singular chains with local coefficients.** If every point of `X` is joined by
-a path to a point of `A`, and the relative homotopy set `π_{n+1}(X, A, a)` is trivial for every
-`n` and every `a ∈ A`, then for every local coefficient system `L` on `X` the inclusion of `A`
-induces a quasi-isomorphism from the singular chains of `A` with coefficients in `L|_A` to those of
-`X` with coefficients in `L`. It is the simplicial counterpart of
-`TauCeti.quasiIso_normalizedTwistedCubicalChainComplexMap_subtypeVal_of_relHomotopyGroup`. -/
-theorem quasiIso_twistedChainComplexMap_subtypeVal_of_relHomotopyGroup
-    {R : Type u} [Ring R] {X : TopCat.{v}} {A : Set X} (h₀ : ∀ x : X, ∃ a ∈ A, Joined x a)
-    (h : ∀ (n : ℕ) (a : A), Subsingleton (RelHomotopyGroup (Fin n) ⟨TopPair.ofSubset A, a⟩))
-    (L : LocalCoefficientSystem.{u, v, v} R X) :
-    QuasiIso (twistedChainComplexMap (TopCat.ofHom (ContinuousMap.subtypeVal A)) L) := by
-  let i : TopCat.of A ⟶ X := TopCat.ofHom (ContinuousMap.subtypeVal A)
-  have : QuasiIso (normalizedTwistedCubicalChainComplexMap i.hom L) :=
-    quasiIso_normalizedTwistedCubicalChainComplexMap_subtypeVal_of_relHomotopyGroup h₀ h L
-  have h' := twistedCubicalToSingularMap_naturality i L
-  have : QuasiIso (normalizedTwistedCubicalChainComplexMap i.hom L ≫
-      twistedCubicalToSingularMap L) := inferInstance
-  rw [h'] at this
-  exact quasiIso_of_comp_left (twistedCubicalToSingularMap _) _
-
-end TauCeti
-
 namespace ContinuousMap.IsWeakHomotopyEquivalence
 
 open LocalCoefficientSystem
