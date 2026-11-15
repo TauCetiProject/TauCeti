@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Distribution.TestFunction.Divergence
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
-public import Mathlib.MeasureTheory.Function.L1Space.AEEqFun
 import TauCeti.Analysis.Distribution.TestFunction.NormDuality
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
@@ -50,10 +49,12 @@ For `u` not locally integrable on `Ω` the integrals in the supremum may be Math
   continuity in the open set.
 * `TauCeti.totalVariationOn_iSup_le_tsum`, `TauCeti.totalVariationOn_sup_le` and
   `TauCeti.totalVariationOn_sup_of_disjoint`: countable subadditivity in the open set, by a smooth
-  partition of unity, and additivity on disjoint open sets. These make the total variation the
-  restriction to open sets of a measure (`TauCeti.variationMeasure`).
+  partition of unity, and additivity on disjoint open sets. For `u` locally integrable on `Ω` of
+  locally finite variation, these make the total variation the restriction to open sets of a
+  measure (`TauCeti.variationMeasure`).
 * `TauCeti.totalVariationOn_neg`, `TauCeti.totalVariationOn_smul` and
-  `TauCeti.totalVariationOn_add_le`: the total variation is a seminorm.
+  `TauCeti.totalVariationOn_add_le`: the total variation is an extended (`[0, ∞]`-valued)
+  seminorm, subadditive on locally integrable functions.
 * `TauCeti.totalVariationOn_add_const` and `TauCeti.totalVariationOn_const`: against an additive
   Haar measure, constants have no variation.
 * `TauCeti.totalVariationOn_le_liminf_of_tendsto_integral` and
