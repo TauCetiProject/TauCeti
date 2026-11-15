@@ -42,25 +42,6 @@ variable {L L' : Type*} [LieRing L] [LieAlgebra ℚ L] [LieRing L'] [LieAlgebra 
   (ρ' : _root_.UniversalEnvelopingAlgebra ℚ L' →ₐ[ℚ] Module.End ℚ V)
   (hM' : ∀ u ∈ kostantForm e' h', ∀ m ∈ M, ρ' u m ∈ M)
 
-/-- The represented root coordinate map depends only on its rational operator and integral
-lattice, not on the Lie algebra or generator presentation producing that operator. -/
-theorem kostantRootSubgroupCoordinateMap_eq_of_operator_eq
-    (i : I) (i' : I')
-    (hnil : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
-    (hnil' : IsNilpotent (ρ' (_root_.UniversalEnvelopingAlgebra.ι ℚ (e' i'))))
-    (hop : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) =
-      ρ' (_root_.UniversalEnvelopingAlgebra.ι ℚ (e' i'))) :
-    kostantRootSubgroupCoordinateMap e h ρ M hM i hnil b =
-      kostantRootSubgroupCoordinateMap e' h' ρ' M hM' i' hnil' b := by
-  apply CommHopfAlgCat.hom_ext
-  apply BialgHom.coe_toAlgHom_injective
-  apply GeneralLinear.coordinateHopfAlgebra_algHom_ext ℤ n
-  intro r s
-  simp only [BialgHom.coe_toAlgHom]
-  rw [kostantRootSubgroupCoordinateMap_X, kostantRootSubgroupCoordinateMap_X]
-  simp only [Comodule.coefficientMatrix_apply, Comodule.matrixCoefficient_def,
-    kostantRootSubgroupComodule_coact, hop]
-
 /-- Equality of rational root operators gives the same exponential matrix over every
 commutative value ring, not just over the rational field. -/
 theorem kostantRootSubgroupMatrix_eq_of_operator_eq

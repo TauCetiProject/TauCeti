@@ -122,11 +122,14 @@ theorem kostantRootSubgroup_def :
 /-- Two represented root subgroups on the same integral lattice have the same coordinate
 morphism if their rational root operators agree, even when the source Lie algebras differ. -/
 theorem kostantRootSubgroupCoordinateMap_eq_of_operator_eq
+    (b : Module.Basis (Fin n) ℤ M)
     {L' : Type*} [LieRing L'] [LieAlgebra ℚ L'] {I' κ' : Type*}
     (e' : I' → L') (h' : κ' → L')
     (ρ' : _root_.UniversalEnvelopingAlgebra ℚ L' →ₐ[ℚ] Module.End ℚ V)
     (hM' : ∀ u ∈ kostantForm e' h', ∀ m ∈ M, ρ' u m ∈ M)
-    (i' : I') (hnil' : IsNilpotent (ρ' (_root_.UniversalEnvelopingAlgebra.ι ℚ (e' i'))))
+    (i : I) (i' : I')
+    (hnil : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
+    (hnil' : IsNilpotent (ρ' (_root_.UniversalEnvelopingAlgebra.ι ℚ (e' i'))))
     (hop : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) =
       ρ' (_root_.UniversalEnvelopingAlgebra.ι ℚ (e' i'))) :
     kostantRootSubgroupCoordinateMap e h ρ M hM i hnil b =
