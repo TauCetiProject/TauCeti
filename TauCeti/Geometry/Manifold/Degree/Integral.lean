@@ -249,11 +249,11 @@ private theorem mpullback_eq_sum_indicator_smul {s : Finset M} {f : M → N}
   rw [Finset.sum_apply]
   by_cases hz : ∃ x, z ∈ (e x).source
   · obtain ⟨x, hx⟩ := hz
-    rw [Finset.sum_eq_single x (fun x' _ hx' ↦ by
-      simp only [indicator_of_notMem fun h ↦ (hdisj hx').le_bot ⟨h, hx⟩, zero_smul]) (by simp)]
-    simp only [indicator_of_mem hx, one_smul]
+    rw [Finset.sum_eq_single x (fun x' _ hx' ↦
+      indicator_smul_of_notMem fun h ↦ (hdisj hx').le_bot ⟨h, hx⟩) (by simp)]
+    exact (indicator_smul_of_mem hx).symm
   · simp only [not_exists] at hz
-    rw [Finset.sum_eq_zero fun x _ ↦ by simp only [indicator_of_notMem (hz x), zero_smul]]
+    rw [Finset.sum_eq_zero fun x _ ↦ indicator_smul_of_notMem (hz x)]
     refine mpullback_apply_eq_zero (image_eq_zero_of_notMem_tsupport fun hfz ↦ ?_)
     obtain ⟨x, hx⟩ := mem_iUnion.mp (hVs (hφV hfz))
     exact hz x hx
