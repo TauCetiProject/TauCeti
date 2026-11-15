@@ -59,6 +59,9 @@ what the charts of a gauge group modelled on `H^s` require.
   complex constant `c`, `exp (c f) - 1` is an `L²` function in `H^s`.
 * `TemperedDistribution.exp_mul_sub_one_mem_realSobolevFunctions`: for a real `f ∈ H^s` and a
   real constant `c`, the real function `exp (c f) - 1` lies in `H^s`.
+* `TemperedDistribution.exp_mul_sub_one_sub_mul_mem_realSobolevFunctions`,
+  `TemperedDistribution.exp_mul_sub_one_sub_mul_mem_realSobolevFunctions_zero`: the quadratic
+  remainder `exp (c f) - 1 - c f` lies in `H^s` with `f`, and in `H^0 = L²` when `|c f| ≤ 1`.
 * `TemperedDistribution.exists_memSobolev_ae_eq_log_one_add`: for an `L²` function `U ∈ H^s`
   with `C ‖U‖_{H^s} < 1`, `log (1 + U)` is an `L²` function in `H^s`.
 * `TemperedDistribution.cos_sub_one_mem_realSobolevFunctions`,
@@ -180,6 +183,30 @@ theorem exp_mul_sub_one_mem_realSobolevFunctions {s : ℝ} (hs : finrank ℝ E <
   refine mem_realSobolevFunctions_of_ae_eq_ofReal hvs ?_
   filter_upwards [hv] with x hx
   rw [hx, Complex.ofReal_sub, Complex.ofReal_exp, Complex.ofReal_mul, Complex.ofReal_one]
+
+/-- **The quadratic remainder of the real exponential, `s > n / 2`.** For a real `f ∈ H^s` and a
+real constant `c`, the function `exp (c f) - 1 - c f` lies in `H^s`. -/
+theorem exp_mul_sub_one_sub_mul_mem_realSobolevFunctions {s : ℝ} (hs : finrank ℝ E < 2 * s)
+    {f : E → ℝ} (hf : f ∈ realSobolevFunctions E s 2) (c : ℝ) :
+    (fun x ↦ Real.exp (c * f x) - 1 - c * f x) ∈ realSobolevFunctions E s 2 :=
+  sub_mem (exp_mul_sub_one_mem_realSobolevFunctions hs hf c) (Submodule.smul_mem _ c hf)
+
+/-- **The quadratic remainder of the real exponential of a bounded `L²` function.** For a real
+`f ∈ H^0 = L²` and a real constant `c` with `|c f| ≤ 1`, the function `exp (c f) - 1 - c f` lies in
+`H^0`, since it is bounded by `(c f)² ≤ |c f|`. -/
+theorem exp_mul_sub_one_sub_mul_mem_realSobolevFunctions_zero {f : E → ℝ}
+    (hf : f ∈ realSobolevFunctions E 0 2) {c : ℝ} (hbd : ∀ x, |c * f x| ≤ 1) :
+    (fun x ↦ Real.exp (c * f x) - 1 - c * f x) ∈ realSobolevFunctions E 0 2 := by
+  rw [mem_realSobolevFunctions_zero_iff] at hf ⊢
+  have hcf := hf.const_mul c
+  have hm : AEStronglyMeasurable (fun x ↦ Real.exp (c * f x) - 1 - c * f x) volume :=
+    ((Real.continuous_exp.comp_aestronglyMeasurable hcf.aestronglyMeasurable).sub
+      aestronglyMeasurable_const).sub hcf.aestronglyMeasurable
+  refine hcf.of_le hm (.of_forall fun x ↦ ?_)
+  rw [Real.norm_eq_abs, Real.norm_eq_abs]
+  calc |Real.exp (c * f x) - 1 - c * f x| ≤ (c * f x) ^ 2 := Real.abs_exp_sub_one_sub_id_le (hbd x)
+    _ = |c * f x| * |c * f x| := by rw [sq, abs_mul_abs_self]
+    _ ≤ |c * f x| := mul_le_of_le_one_left (abs_nonneg _) (hbd x)
 
 /-- **The logarithm of `1 + U` for small `U ∈ H^s`, `s > n / 2`.** There is a constant `C`,
 depending only on `s` and `E`, such that for an `L²` function `U ∈ H^s` with `C ‖U‖_{H^s} < 1`, the

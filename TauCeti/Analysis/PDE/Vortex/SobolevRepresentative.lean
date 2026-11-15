@@ -300,33 +300,21 @@ private theorem hasCompactSupport_cutoffLogModulus_remainder (b : ContDiffBump (
   ring
 
 /-- **The nonlinearity lies in `H^(2n)` with `g`.** For `g` with `|g| ≤ 1 / 2`, the function
-`exp (2g) - 1 - 2g` lies in `H^(2n)` whenever `g` does: for `n = 0` because
-`|exp (2g) - 1 - 2g| ≤ 4 g² ≤ 2 |g|` and `g` is square integrable, and for `n ≥ 1` by the
-exponential on the Sobolev algebra. -/
+`exp (2g) - 1 - 2g` lies in `H^(2n)` whenever `g` does: for `n = 0` because `g` is bounded
+(`TemperedDistribution.exp_mul_sub_one_sub_mul_mem_realSobolevFunctions_zero`), and for `n ≥ 1`
+by the exponential on the Sobolev algebra
+(`TemperedDistribution.exp_mul_sub_one_sub_mul_mem_realSobolevFunctions`). -/
 private theorem exp_two_mul_sub_one_sub_mem_realSobolevFunctions {g : ℂ → ℝ}
     (hbd : ∀ z, |g z| ≤ 1 / 2) {n : ℕ} (hn : g ∈ realSobolevFunctions ℂ (2 * n) 2) :
     (fun z ↦ Real.exp (2 * g z) - 1 - 2 * g z) ∈ realSobolevFunctions ℂ (2 * n) 2 := by
-  have hL := memLp_of_mem_realSobolevFunctions hn
   rcases Nat.eq_zero_or_pos n with rfl | hpos
-  · rw [Nat.cast_zero, mul_zero, mem_realSobolevFunctions_zero_iff]
-    have h2g := hL.aestronglyMeasurable.const_mul 2
-    have hm : AEStronglyMeasurable (fun z ↦ Real.exp (2 * g z) - 1 - 2 * g z) volume :=
-      ((Real.continuous_exp.comp_aestronglyMeasurable h2g).sub aestronglyMeasurable_const).sub h2g
-    refine (hL.norm.const_mul 2).of_le hm (.of_forall fun z ↦ ?_)
-    have h := Real.abs_exp_sub_one_sub_id_le (x := 2 * g z) (by
+  · rw [Nat.cast_zero, mul_zero] at hn ⊢
+    exact exp_mul_sub_one_sub_mul_mem_realSobolevFunctions_zero hn fun z ↦ by
       rw [abs_mul, abs_two]
-      linarith [hbd z])
-    rw [Real.norm_eq_abs, Real.norm_eq_abs, Real.norm_eq_abs,
-      abs_of_nonneg (by positivity : 0 ≤ 2 * |g z|)]
-    calc |Real.exp (2 * g z) - 1 - 2 * g z| ≤ (2 * g z) ^ 2 := h
-      _ = 4 * |g z| * |g z| := by rw [mul_pow, ← sq_abs (g z)]; ring
-      _ ≤ 2 * |g z| := by nlinarith [abs_nonneg (g z), hbd z]
-  · have hs : Module.finrank ℝ ℂ < 2 * (2 * (n : ℝ)) := by
-      refine finrank_real_complex_lt_two_mul ?_
-      have : (1 : ℝ) ≤ n := by exact_mod_cast hpos
-      linarith
-    exact sub_mem (exp_mul_sub_one_mem_realSobolevFunctions hs hn 2)
-      (Submodule.smul_mem _ (2 : ℝ) hn)
+      linarith [hbd z]
+  · have : (1 : ℝ) ≤ n := by exact_mod_cast hpos
+    exact exp_mul_sub_one_sub_mul_mem_realSobolevFunctions
+      (finrank_real_complex_lt_two_mul (by linarith)) hn 2
 
 /-- **The cut-off logarithmic modulus lies in every Sobolev space.** It is square integrable,
 since `g² ≤ 1 - |α|²`, and the elliptic regularity of `-Δ + 1 / 4` raises its order by two at
