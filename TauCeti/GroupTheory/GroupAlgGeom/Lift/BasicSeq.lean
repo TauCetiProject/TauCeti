@@ -9,6 +9,7 @@ public import TauCeti.GroupTheory.GroupAlgGeom.Lift.BasicAut
 public import TauCeti.GroupTheory.GroupAlgGeom.Quadratic.Basic
 public import TauCeti.Data.Sum.Basic
 import TauCeti.Data.List.ProdOfFn
+import TauCeti.GroupTheory.GroupAlgGeom.ChangeOfCoordinates
 import Mathlib.GroupTheory.Commutator.Basic
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Data.List.GetD
@@ -24,9 +25,12 @@ atom and the first commutator, then for each commutator the automorphisms `yᵢ 
 `xᵢ ↦ yᵢ xᵢ`, `yᵢ ↦ xᵢ yᵢ` and the automorphism of this commutator and the next one. It has
 `K(m, n)` terms, where `K(m, n) = m + 4n - 1` for `m, n ≠ 0`, `K(0, n) = 4n - 1` and
 `K(m, 0) = m - 1`. The automorphisms `φ_{j,p}` are the products of powers of the terms of the
-sequence, continued periodically. Composing a solution of a quadratic equation with the
-`φ_{j,p}` produces the families of solutions that are used to lift equations to the coordinate
-group of the quadratic equation.
+sequence, continued periodically. Composing a point `v` of a quadratic equation with the
+`φ_{j,p}` gives the points `φ_{j,p} v` of [IFT], §7.4 (`twistPoint`): its value at a variable `x`
+is the value at `v` of the word `φ_{j,p}(x)`. Since the `φ_{j,p}` fix the coefficients and the
+left side of the equation, these points are solutions exactly when `v` is, and the `φ_{j,p}`
+preserve the radical of the equation. For a solution `v`, they form the families of solutions
+that are used to lift equations to the coordinate group of the quadratic equation.
 
 ## Order of the atoms
 
@@ -56,6 +60,9 @@ automorphism `γ_j^{p_j}` is applied first: `z^{φ_j} = (z^{γ_j^{p_j}})^{φ_{j-
 [IFT], Lemma 44). In `MulAut (G[X])`, where `(f * g) w = f (g w)`, this is the product
 `γ₁ ^ p₁ * ⋯ * γ_j ^ p_j`, which is how `phi` is defined.
 
+On points the order is reversed: the point `φ_{j,p} v` is obtained from `v` by composing first
+with `γ₁ ^ p₁` and last with `γ_j ^ p_j` (`twistPoint_concat`).
+
 ## Main definitions
 
 * `TauCeti.GroupAlgGeom.Lift.basicWordSeq`: the basic sequence of the word `S₀`.
@@ -63,6 +70,7 @@ automorphism `γ_j^{p_j}` is applied first: `z^{φ_j} = (z^{γ_j^{p_j}})^{φ_{j-
   equation.
 * `TauCeti.GroupAlgGeom.Lift.phi`: the products `φ_{j,p}` of powers of the terms of a sequence,
   continued periodically.
+* `TauCeti.GroupAlgGeom.Lift.twistPoint`: the point `φ_{j,p} v`.
 
 ## Main results
 
@@ -74,13 +82,19 @@ automorphism `γ_j^{p_j}` is applied first: `z^{φ_j} = (z^{γ_j^{p_j}})^{φ_{j-
   sequence of a standard orientable quadratic equation fix its left side.
 * `TauCeti.GroupAlgGeom.Lift.phi_basicSeq_toWord`: the automorphisms `φ_{j,p}` fix the left side
   of the equation.
-* `TauCeti.GroupAlgGeom.Lift.wordMap_phi_basicSeq_mem_V_iff`: the automorphisms `φ_{j,p}` permute
-  the solutions of the equation.
+* `TauCeti.GroupAlgGeom.Lift.phi_basicSeq_mem_Rad_iff`: the automorphisms `φ_{j,p}` preserve the
+  radical of the equation.
+* `TauCeti.GroupAlgGeom.Lift.eval_twistPoint`: evaluating at `φ_{j,p} v` is evaluating at `v`
+  after applying `φ_{j,p}`.
+* `TauCeti.GroupAlgGeom.Lift.twistPoint_append_of_dvd`: the points `φ_{j,p} v` are periodic in `p`
+  with period the length of the basic sequence.
+* `TauCeti.GroupAlgGeom.Lift.twistPoint_mem_V_iff`: the point `φ_{j,p} v` is a solution of the
+  equation exactly when `v` is.
 
 ## References
 
 * [IFT] O. Kharlampovich, A. Myasnikov, *Implicit function theorem over free groups*, J. Algebra
-  290 (2005), §7.1, Lemma 41 and Notation 42.
+  290 (2005), §7.1, Lemma 41 and Notation 42, and §7.4.
 * [LIFT] O. Kharlampovich, A. Myasnikov, *Algebraic geometry over free groups: lifting solutions
   into generic points*, Contemp. Math. 378 (2005), §4.
 -/
@@ -474,23 +488,15 @@ theorem wordMap_mem_V_iff_of_mem_basicSeq (hγ : γ ∈ basicSeq S hS) (v : X �
     (eval_wordMap (ι := ι) (.ofMulEquiv γ fun g => apply_inl_of_mem_basicSeq hS hγ g) v) S.toWord
   simp_all [apply_toWord_of_mem_basicSeq hS hγ]
 
-/-- For a standard orientable quadratic equation `S = 1`, the value of the left side of `S` at the
-point `x ↦ (φ_{j,p} x)(v)` is its value at `v`. -/
-@[simp]
-theorem eval_wordMap_phi_basicSeq_toWord (p : List ℕ) (v : X → H) :
-    eval ι (wordMap ι (fun x => phi (basicSeq S hS) p (inr (.of x))) v) S.toWord =
-      eval ι v S.toWord := by
-  have h := DFunLike.congr_fun
-    (eval_wordMap (ι := ι) (.ofMulEquiv (phi (basicSeq S hS) p) (phi_basicSeq_inl hS p)) v)
-    S.toWord
-  simp_all
-
-/-- The automorphisms `φ_{j,p}` of a standard orientable quadratic equation `S = 1` permute the
-solutions of `S = 1`: a point `v` is a solution exactly when the point `x ↦ (φ_{j,p} x)(v)` is. -/
-theorem wordMap_phi_basicSeq_mem_V_iff (p : List ℕ) (v : X → H) :
-    wordMap ι (fun x => phi (basicSeq S hS) p (inr (.of x))) v ∈ V ι {S.toWord} ↔
-      v ∈ V ι {S.toWord} := by
-  simp
+/-- The automorphisms `φ_{j,p}` of a standard orientable quadratic equation `S = 1` preserve the
+radical of `S`: an element vanishes on every solution of `S` exactly when its image under
+`φ_{j,p}` does. -/
+theorem phi_basicSeq_mem_Rad_iff (p : List ℕ) {w : GX G X} :
+    phi (basicSeq S hS) p w ∈ Rad ι {S.toWord} ↔ w ∈ Rad ι {S.toWord} := by
+  have h := Rad_image_mulEquiv ι (phi (basicSeq S hS) p) (phi_basicSeq_inl hS p) {S.toWord}
+  rw [Set.image_singleton, phi_basicSeq_toWord] at h
+  conv_lhs => rw [h]
+  exact Subgroup.mem_map_iff_mem (phi (basicSeq S hS) p).injective
 
 /-- The basic sequence of `∏ᵢ₌₁ⁿ [xᵢ, yᵢ] = 1` has `4n - 1` terms. -/
 @[simp]
@@ -513,11 +519,108 @@ theorem length_basicSeq_orientableCoeff (hnm : 0 < n + m)
 
 end Standard
 
+/-! ### Twist points -/
+
+section TwistPoint
+
+variable {H K : Type*} [Group H] [Group K] (ι : G →* H) (S : Quadratic.Standard G X)
+  (hS : S.IsOrientable)
+
+/-- The point `φ_{j,p} v` of [IFT], §7.4, for a point `v` of a standard orientable quadratic
+equation `S = 1` and a tuple `p = (p₁, …, p_j)` of exponents: the composite of `v` with the
+automorphism `φ_{j,p}` of the basic sequence of `S`. Its value at a variable `x` is the value at
+`v` of the word `φ_{j,p}(x)`. -/
+noncomputable def twistPoint (v : X → H) (p : List ℕ) : X → H :=
+  wordMap ι (fun x => phi (basicSeq S hS) p (inr (.of x))) v
+
+theorem twistPoint_def (v : X → H) (p : List ℕ) : twistPoint ι S hS v p =
+    wordMap ι (fun x => phi (basicSeq S hS) p (inr (.of x))) v := (rfl)
+
+/-- The value of the point `φ_{j,p} v` at a variable `x` is the value at `v` of the word
+`φ_{j,p}(x)`. -/
+@[simp]
+theorem twistPoint_apply (v : X → H) (p : List ℕ) (x : X) :
+    twistPoint ι S hS v p x = eval ι v (phi (basicSeq S hS) p (inr (.of x))) := by
+  simp [twistPoint_def]
+
+/-- With no exponents, `φ_{0,()}` is the identity and the point `φ_{0,()} v` is `v`. -/
+@[simp]
+theorem twistPoint_nil (v : X → H) : twistPoint ι S hS v [] = v := by
+  simp [twistPoint_def]
+
+/-- With all exponents zero, the point `φ_{j,p} v` is `v`. -/
+@[simp]
+theorem twistPoint_replicate_zero (v : X → H) (j : ℕ) :
+    twistPoint ι S hS v (List.replicate j 0) = v := by
+  simp [twistPoint_def]
+
+/-- Evaluating at the point `φ_{j,p} v` is evaluating at `v` after applying `φ_{j,p}`. -/
+@[simp]
+theorem eval_twistPoint (v : X → H) (p : List ℕ) (w : GX G X) :
+    eval ι (twistPoint ι S hS v p) w = eval ι v (phi (basicSeq S hS) p w) := by
+  have h := DFunLike.congr_fun
+    (eval_wordMap (ι := ι) (.ofMulEquiv (phi (basicSeq S hS) p) (phi_basicSeq_inl hS p)) v) w
+  simpa [twistPoint_def] using h
+
+/-- The point `φ_{j+1,p} v` is the point `φ_{j,p} v` composed with `γ_{j+1} ^ p_{j+1}`, the
+indices of the basic sequence being read modulo its length: on points, `γ₁ ^ p₁` acts first. -/
+theorem twistPoint_concat (v : X → H) (p : List ℕ) (e : ℕ) : twistPoint ι S hS v (p ++ [e]) =
+    wordMap ι (fun x => ((basicSeq S hS).getD (p.length % (basicSeq S hS).length) 1 ^ e)
+      (inr (.of x))) (twistPoint ι S hS v p) := by
+  funext x
+  simp
+
+/-- The points `φ_{j,p} v` are periodic in `p`: if the length of `p` is a multiple of the length
+`K` of the basic sequence, then the point of `p` followed by `q` is the point `φ_{l,q} θ` of the
+point `θ = φ_{j,p} v`. -/
+theorem twistPoint_append_of_dvd (v : X → H) {p : List ℕ} (h : (basicSeq S hS).length ∣ p.length)
+    (q : List ℕ) : twistPoint ι S hS v (p ++ q) = twistPoint ι S hS (twistPoint ι S hS v p) q := by
+  funext x
+  simp [phi_append_of_dvd _ h]
+
+/-- A homomorphism `f : H → K` carries the point `φ_{j,p} v` to the point `φ_{j,p} (f ∘ v)` over
+the coefficient homomorphism `f ∘ ι`. -/
+theorem hom_comp_twistPoint {F : Type*} [FunLike F H K] [MonoidHomClass F H K] (f : F)
+    (v : X → H) (p : List ℕ) :
+    f ∘ twistPoint ι S hS v p = twistPoint ((f : H →* K).comp ι) S hS (f ∘ v) p := by
+  funext x
+  simp [hom_eval]
+
+/-- A `G`-homomorphism `φ` carries the point `φ_{j,p} v` to the point `φ_{j,p} (φ ∘ v)`. -/
+@[simp]
+theorem comp_twistPoint {ιK : G →* K} (φ : GHom ι ιK) (v : X → H) (p : List ℕ) :
+    φ ∘ twistPoint ι S hS v p = twistPoint ιK S hS (φ ∘ v) p := by
+  funext x
+  simp
+
+variable {ι S}
+
+/-- The point `φ_{j,p} v` is a solution of `S` exactly when `v` is. -/
+theorem twistPoint_mem_V_iff {v : X → H} (p : List ℕ) :
+    twistPoint ι S hS v p ∈ V ι {S.toWord} ↔ v ∈ V ι {S.toWord} := by
+  simp
+
+/-- The points `φ_{j,p} v` obtained from a solution `v` of `S` are solutions of `S`. -/
+theorem twistPoint_mem_V {v : X → H} (hv : v ∈ V ι {S.toWord}) (p : List ℕ) :
+    twistPoint ι S hS v p ∈ V ι {S.toWord} :=
+  (twistPoint_mem_V_iff hS p).2 hv
+
+end TwistPoint
+
 /-! ### Examples -/
 
 section Examples
 
 open Quadratic.Standard
+
+/-- For the equation `∏ᵢ₌₁ⁿ [xᵢ, yᵢ] = 1`, the point `φ_{1,(e)} v` takes the value `v(x₁) ^ e v(y₁)`
+at `y₁`: the first basic automorphism is `y₁ ↦ x₁ y₁`. -/
+theorem twistPoint_orientable_singleton_apply_y {H : Type*} [Group H] (ι : G →* H) {n : ℕ}
+    (hn : 0 < n) {x y : Fin n → X} (inj : (Sum.elim x y).Injective) (v : X → H) (e : ℕ) :
+    twistPoint ι (orientable n hn x y inj) (isOrientable_orientable hn inj) v [e] (y ⟨0, hn⟩) =
+      v (x ⟨0, hn⟩) ^ e * v (y ⟨0, hn⟩) := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hn.ne'
+  simp [basicSeq_orientable, basicWordSeq_def, List.ofFn_succ]
 
 variable {x y : Fin 2 → X} (inj : (Sum.elim x y).Injective)
 

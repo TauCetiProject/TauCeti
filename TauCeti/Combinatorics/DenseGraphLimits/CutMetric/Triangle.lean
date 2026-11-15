@@ -54,7 +54,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory Set TauCeti.MeasureTheory
+open MeasureTheory Set
 
 namespace TauCeti
 
@@ -88,8 +88,8 @@ private theorem exists_isCoupling_cutNorm_overlayDiff_le_of_glue
     Measure.isProbabilityMeasure_of_map (measurable_id.prodMap measurable_fst).aemeasurable
   let π₁₃ : Measure (Ω₁ × Ω₃) := γ.map (Prod.map id Prod.snd)
   have hπ₁₃ : IsCoupling π₁₃ μ₁ μ₃ :=
-    ⟨(TauCeti.Measure.fst_map_prodMap_id_snd hleft).trans hπ₁₂.fst_eq,
-      (TauCeti.Measure.snd_map_prodMap_id_snd hright).trans hπ₂₃.snd_eq⟩
+    ⟨(Measure.fst_map_prodMap_id_snd hleft).trans hπ₁₂.fst_eq,
+      (Measure.snd_map_prodMap_id_snd hright).trans hπ₂₃.snd_eq⟩
   let _ := hπ₁₃.isProbabilityMeasure
   have hmp12 : MeasurePreserving (fun p : Ω₁ × Ω₂ × Ω₃ => (p.1, p.2.1)) γ π₁₂ :=
     ⟨measurable_id.prodMap measurable_fst, hleft⟩
@@ -139,8 +139,7 @@ private theorem cutDist_triangle_of_countable_middle [Countable Ω₂]
       (lt_add_of_pos_right _ (half_pos hε))
   let _ := hπ₂₃.isFiniteMeasure
   obtain ⟨γ, hleft, hright⟩ :=
-    TauCeti.MeasureTheory.exists_glue_of_countable_middle π₁₂ π₂₃
-      (hπ₁₂.snd_eq.trans hπ₂₃.fst_eq.symm)
+    π₁₂.exists_glue_of_countable_middle π₂₃ (hπ₁₂.snd_eq.trans hπ₂₃.fst_eq.symm)
   obtain ⟨π₁₃, hπ₁₃, hnorm13⟩ :=
     exists_isCoupling_cutNorm_overlayDiff_le_of_glue U W X hπ₁₂ hπ₂₃ hleft hright
   calc

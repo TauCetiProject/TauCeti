@@ -236,7 +236,7 @@ noncomputable def stableModuleLoopLoopCyclicModuleRootPowIso :
         ((stableModuleFunctor _).obj (cyclicModule (AdjoinRoot.root (X ^ n : R[X]) ^ i)))) ≅
       (stableModuleFunctor _).obj (cyclicModule (AdjoinRoot.root (X ^ n : R[X]) ^ i)) :=
   stableModuleLoopLoopCyclicModuleIso AdjoinRoot.root_X_pow_pow_mul_eq_zero_iff
-    AdjoinRoot.root_X_pow_sub_pow_mul_eq_zero_iff
+    AdjoinRoot.root_X_pow_pow_sub_mul_eq_zero_iff
 
 variable (n) in
 /-- Over `R[X]/(X ^ n)`, the module `M_n = A ⧸ (x ^ n)`, which is the free module `A` since
