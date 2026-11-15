@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.BrauerAlgebra.Generation
 public import TauCeti.Combinatorics.Brauer.SkewWeight
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Symplectic.Crossing
+import TauCeti.Algebra.BigOperators.Pi
+import TauCeti.Combinatorics.Brauer.Relations
 import TauCeti.LinearAlgebra.SymplecticGroup
 
 /-!
@@ -333,28 +335,6 @@ private theorem sum_J_mul_symplecticArcWeight_update {u v : Fin d → l ⊕ l} {
             exact Finset.sum_congr rfl fun y _ => by ring
       _ = Matrix.J l k (v j₁) (v j₂) := by simp [hrow]
 
-/-- Summing over strand labellings agreeing with `v` outside `{a, b}` (`a ≠ b`) is summing over the
-two free labels at `a` and `b`. -/
-private theorem sum_ite_eq_off_pair {α : Type*} [Fintype α] [DecidableEq α] {a b : Fin d}
-    (hab : a ≠ b) (v : Fin d → α) (F : (Fin d → α) → k) :
-    (∑ m : Fin d → α, if ∀ r, r ≠ a → r ≠ b → v r = m r then F m else 0) =
-      ∑ x : α, ∑ y : α, F (Function.update (Function.update v a x) b y) := by
-  let e : α × α ≃ {m : Fin d → α // ∀ r, r ≠ a → r ≠ b → v r = m r} :=
-    { toFun p := ⟨Function.update (Function.update v a p.1) b p.2, fun r hra hrb => by
-        simp [hra, hrb]⟩
-      invFun m := (m.1 a, m.1 b)
-      left_inv p := by simp [hab]
-      right_inv m := Subtype.ext <| funext fun r => by
-        rcases eq_or_ne r b with rfl | hrb
-        · simp
-        rcases eq_or_ne r a with rfl | hra
-        · simp [hab]
-        · simpa [hra, hrb] using m.2 r hra hrb }
-  rw [← Finset.sum_filter,
-    Finset.sum_subtype (p := fun m => ∀ r, r ≠ a → r ≠ b → v r = m r) _ (fun _ => by simp),
-    ← e.sum_comp, Fintype.sum_prod_type]
-  rfl
-
 /-- Multiplying on the left by a permutation diagram matrix composes the diagram without loops. -/
 private theorem symplecticActionMatrix_permToBrauer_mul (σ : Equiv.Perm (Fin d))
     (D : BrauerDiagram d) :
@@ -404,7 +384,7 @@ private theorem symplecticActionMatrix_capCup_mul_of_cup {a b : Fin d} (hab : a 
     rfl
   rw [Matrix.mul_apply]
   simp_rw [symplecticActionMatrix_capCup k hab, symplecticActionMatrix_apply, ite_mul, zero_mul]
-  rw [sum_ite_eq_off_pair k hab v]
+  rw [Fintype.sum_ite_eq_off_pair hab v]
   have hsum : (∑ x : l ⊕ l, ∑ y : l ⊕ l,
       -(Matrix.J l k x y * Matrix.J l k (v a) (v b)) *
         (((Equiv.Perm.sign π : ℤ) : k) * Matrix.J l k x y * P)) =
@@ -493,7 +473,7 @@ private theorem symplecticActionMatrix_capCup_mul_of_not_cup {a b : Fin d} (hab 
     ring
   rw [Matrix.mul_apply]
   simp_rw [symplecticActionMatrix_capCup k hab, symplecticActionMatrix_apply, ite_mul, zero_mul]
-  rw [sum_ite_eq_off_pair k hab v]
+  rw [Fintype.sum_ite_eq_off_pair hab v]
   simp only [Function.update_self, Function.update_of_ne hab, hfactor]
   have hpull : (∑ x : l ⊕ l, ∑ y : l ⊕ l,
       -(Matrix.J l k x y * Matrix.J l k (v a) (v b)) *
