@@ -16,7 +16,8 @@ factors. These facts support induction by successively removing prime-power bloc
 divisor `n ∣ m`, the `p`-free parts are related by `m / n * ordCompl[p] n =
 ordCompl[p] m * p ^ (v_p(m) - v_p(n))`, which is how a power map `x ↦ x ^ (m / n)` between groups
 of roots of unity acts on their `p`-primary parts. For a prime `p`, a divisor of `p * k` with the
-same `p`-free part as `k` either divides `k` or is `p * k`. The product of any set of prime
+same `p`-free part as `k` either divides `k` or is `p * k`, and every natural number that is not a
+power of `p` has a prime divisor distinct from `p`. The product of any set of prime
 factors of `n` divides `n`, and for `n ≠ 0` a number is coprime to the product of all the prime
 factors of `n` exactly when it is coprime to `n`. Monomial products of an injective family of
 primes (or fixed positive powers of their casts in characteristic zero) are injective on finitely
@@ -103,6 +104,20 @@ theorem Prime.eq_mul_of_dvd_mul_of_not_dvd_of_ordCompl_eq {p d k : ℕ} (hp : p.
   rw [← ordProj_mul_ordCompl_eq_self d p, h, ← ordProj_mul_ordCompl_eq_self (p * k) p,
     ordCompl_mul, hpk, show d.factorization p = k.factorization p + 1 by omega]
   simp [hp.factorization_self, Nat.div_self hp.pos]
+
+/-- Every natural number not of the form `p ^ k` has a prime divisor distinct from `p`. -/
+theorem exists_prime_ne_and_dvd {p n : ℕ} (hnp : ∀ k, p ^ k ≠ n) :
+    ∃ q, q.Prime ∧ q ≠ p ∧ q ∣ n := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · rcases eq_or_ne p 2 with rfl | hp2
+    · exact ⟨3, prime_three, by decide, dvd_zero 3⟩
+    · exact ⟨2, prime_two, hp2.symm, dvd_zero 2⟩
+  rcases eq_or_ne p 1 with rfl | hp1
+  · obtain ⟨q, hq, hqn⟩ := exists_prime_and_dvd (by simpa using (hnp 0).symm)
+    exact ⟨q, hq, hq.ne_one, hqn⟩
+  · obtain ⟨e, m, hpm, rfl⟩ := exists_eq_pow_mul_and_not_dvd hn p hp1
+    obtain ⟨q, hq, hqm⟩ := exists_prime_and_dvd (n := m) fun hm ↦ hnp e (by simp [hm])
+    exact ⟨q, hq, fun hqp ↦ hpm (hqp ▸ hqm), dvd_mul_of_dvd_right hqm _⟩
 
 end Nat
 

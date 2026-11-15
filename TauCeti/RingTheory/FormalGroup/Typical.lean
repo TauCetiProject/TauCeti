@@ -37,8 +37,6 @@ is already `p`-typical this coordinate is `1` and `F.pTypicalFormalGroup p hunit
 
 ## Main definitions
 
-* `TauCeti.FormalCoordinate.toCurve`: view a formal coordinate `φ` as a curve on a formal group
-  law `F`.
 * `FormalGroup.IsPTypical`: the predicate that a commutative formal group law `F` has `p`-typical
   tautological curve.
 * `FormalGroup.pTypicalCoordinate`: Cartier's strict formal coordinate `(ε_p T)(X)`.
@@ -55,8 +53,8 @@ is already `p`-typical this coordinate is `1` and `F.pTypicalFormalGroup p hunit
   `FormalGroup.isPTypical_iff_exists_eq_hazewinkelFormalGroup`: over a `ℚ`-algebra with `p` prime,
   `p`-typical commutative formal group laws are those whose logarithm is supported in degrees `p^n`,
   and are classified by Hazewinkel's formal group laws.
-* `FormalGroup.isPTypical_universalHazewinkelIntegralFormalGroup` and
-  `FormalGroup.isPTypical_hazewinkelIntegralFormalGroup`: Hazewinkel's integral polynomial law and
+* `TauCeti.isPTypical_universalHazewinkelIntegralFormalGroup` and
+  `TauCeti.isPTypical_hazewinkelIntegralFormalGroup`: Hazewinkel's integral polynomial law and
   all of its specializations are `p`-typical over arbitrary commutative rings.
 * `FormalGroup.isPTypical_pTypicalFormalGroup`, `FormalGroup.pTypicalFormalGroup_eq_self_iff`, and
   `FormalGroup.coeff_log_pTypicalFormalGroup`: Cartier's canonical coordinate change produces a
@@ -76,52 +74,9 @@ is already `p`-typical this coordinate is `1` and `F.pTypicalFormalGroup p hunit
 
 public section
 
-namespace TauCeti.FormalCoordinate
-
-variable {R S : Type*} [CommRing R] [CommRing S]
-
-/-- View a formal coordinate `φ` as a curve on a formal group law `F`. -/
-def toCurve (φ : FormalCoordinate R) (F : FormalGroup R) : F.Curve where
-  toPowerSeries := φ.toPowerSeries
-  constantCoeff_toPowerSeries := φ.constantCoeff_toPowerSeries
-
-/-- Viewing a formal coordinate as a curve preserves the underlying power series. -/
-@[simp]
-theorem toPowerSeries_toCurve (φ : FormalCoordinate R) (F : FormalGroup R) :
-    (φ.toCurve F).toPowerSeries = φ.toPowerSeries :=
-  (rfl)
-
-/-- The identity coordinate `1` corresponds to the tautological curve `T`. -/
-@[simp]
-theorem one_toCurve (F : FormalGroup R) :
-    (1 : FormalCoordinate R).toCurve F = F.tautologicalCurve :=
-  FormalGroup.Curve.ext (by simp)
-
-/-- Base change of curves commutes with viewing a formal coordinate as a curve. -/
-@[simp]
-theorem map_toCurve (f : R →+* S) (φ : FormalCoordinate R) (F : FormalGroup R) :
-    FormalGroup.Curve.map f (φ.toCurve F) = (map f φ).toCurve (F.map f) :=
-  FormalGroup.Curve.ext (by simp)
-
-end TauCeti.FormalCoordinate
-
 namespace FormalGroup
 
 variable {R S : Type*} [CommRing R] [CommRing S]
-
-/-- The forward homomorphism of `smulIso φ F` sends the tautological curve of `F` to `φ` viewed as
-a curve on `φ • F`. -/
-theorem smulIso_toHom_mapCurve_tautologicalCurve (φ : TauCeti.FormalCoordinate R)
-    (F : FormalGroup R) :
-    (smulIso φ F).toHom.mapCurve F.tautologicalCurve = φ.toCurve (φ • F) :=
-  Curve.ext (by simp)
-
-/-- The inverse homomorphism of `smulIso φ F` sends the tautological curve of `φ • F` to `φ⁻¹`
-viewed as a curve on `F`. -/
-theorem smulIso_invHom_mapCurve_tautologicalCurve (φ : TauCeti.FormalCoordinate R)
-    (F : FormalGroup R) :
-    (smulIso φ F).invHom.mapCurve (φ • F).tautologicalCurve = φ⁻¹.toCurve F :=
-  Curve.ext (by simp)
 
 /-! ### `p`-typical formal group laws -/
 
@@ -194,8 +149,7 @@ theorem isPTypical_map_iff_of_injective {F : FormalGroup R} [F.IsComm] {φ : R �
 theorem isPTypical_smul_iff (φ : TauCeti.FormalCoordinate R) (F : FormalGroup R) [F.IsComm]
     (p : ℕ) :
     (φ • F).IsPTypical p ↔ (φ⁻¹.toCurve F).IsPTypical p := by
-  rw [IsPTypical, ← (smulIso φ F).symm.curveEquiv_isPTypical_iff (φ • F).tautologicalCurve p,
-    TauCeti.FormalGroupIso.curveEquiv_symm, TauCeti.FormalGroupIso.curveEquiv_symm_apply,
+  rw [IsPTypical, ← (smulIso φ F).isPTypical_invHom_mapCurve_iff,
     smulIso_invHom_mapCurve_tautologicalCurve]
 
 /-- Transporting `F` along `φ⁻¹` produces a `p`-typical formal group law if and only if `φ` is a
@@ -222,13 +176,42 @@ theorem isPTypical_iff_forall_coeff_log_eq_zero [Algebra ℚ R] (F : FormalGroup
   simpa [IsPTypical, PowerSeries.X_subst] using
     Curve.isPTypical_iff_forall_coeff_subst_log_eq_zero (γ := F.tautologicalCurve) hp
 
+end FormalGroup
+
+namespace TauCeti
+
+variable {R : Type*} [CommRing R]
+
 /-- Over a `ℚ`-algebra, for `p` prime, Hazewinkel's formal group law is `p`-typical. -/
 @[simp]
 theorem isPTypical_hazewinkelFormalGroup [Algebra ℚ R] {p : ℕ} (hp : p.Prime) (v : ℕ+ → R) :
-    (TauCeti.hazewinkelFormalGroup p v).IsPTypical p := by
-  rw [isPTypical_iff_forall_coeff_log_eq_zero _ hp]
+    (hazewinkelFormalGroup p v).IsPTypical p := by
+  rw [FormalGroup.isPTypical_iff_forall_coeff_log_eq_zero _ hp]
   intro k hk
-  rw [TauCeti.log_hazewinkelFormalGroup, TauCeti.coeff_hazewinkelLog_eq_zero v hk]
+  rw [log_hazewinkelFormalGroup, coeff_hazewinkelLog_eq_zero v hk]
+
+/-- Hazewinkel's universal integral formal group law over `ℤ[v₁, v₂, …]` is `p`-typical. -/
+@[simp]
+theorem isPTypical_universalHazewinkelIntegralFormalGroup (p : ℕ) [Fact p.Prime] :
+    (universalHazewinkelIntegralFormalGroup p).IsPTypical p := by
+  rw [← FormalGroup.isPTypical_map_iff_of_injective
+      (MvPolynomial.map_injective (Int.castRingHom ℚ) Int.cast_injective),
+    FormalGroup.isPTypical_congr (map_intCast_universalHazewinkelIntegralFormalGroup p)]
+  exact isPTypical_hazewinkelFormalGroup Fact.out MvPolynomial.X
+
+/-- Every specialization of Hazewinkel's integral formal group law over an arbitrary commutative
+ring is `p`-typical. -/
+@[simp]
+theorem isPTypical_hazewinkelIntegralFormalGroup (p : ℕ) [Fact p.Prime] (v : ℕ+ → R) :
+    (hazewinkelIntegralFormalGroup p v).IsPTypical p := by
+  rw [FormalGroup.isPTypical_congr (hazewinkelIntegralFormalGroup_def p v)]
+  exact (isPTypical_universalHazewinkelIntegralFormalGroup p).map _
+
+end TauCeti
+
+namespace FormalGroup
+
+variable {R S : Type*} [CommRing R] [CommRing S]
 
 /-- Over a `ℚ`-algebra, for `p` prime, every `p`-typical commutative formal group law is
 Hazewinkel's formal group law for a unique family of generators `v`. -/
@@ -243,24 +226,7 @@ theorem isPTypical_iff_exists_eq_hazewinkelFormalGroup [Algebra ℚ R] (F : Form
     {p : ℕ} (hp : p.Prime) :
     F.IsPTypical p ↔ ∃ v : ℕ+ → R, F = TauCeti.hazewinkelFormalGroup p v :=
   ⟨fun hF ↦ (hF.existsUnique_eq_hazewinkelFormalGroup hp).exists,
-    fun ⟨v, hv⟩ ↦ hv ▸ isPTypical_hazewinkelFormalGroup hp v⟩
-
-/-- Hazewinkel's universal integral formal group law over `ℤ[v₁, v₂, …]` is `p`-typical. -/
-@[simp]
-theorem isPTypical_universalHazewinkelIntegralFormalGroup (p : ℕ) [Fact p.Prime] :
-    (TauCeti.universalHazewinkelIntegralFormalGroup p).IsPTypical p := by
-  rw [← isPTypical_map_iff_of_injective
-      (MvPolynomial.map_injective (Int.castRingHom ℚ) Int.cast_injective),
-    isPTypical_congr (TauCeti.map_intCast_universalHazewinkelIntegralFormalGroup p)]
-  exact isPTypical_hazewinkelFormalGroup Fact.out MvPolynomial.X
-
-/-- Every specialization of Hazewinkel's integral formal group law over an arbitrary commutative
-ring is `p`-typical. -/
-@[simp]
-theorem isPTypical_hazewinkelIntegralFormalGroup (p : ℕ) [Fact p.Prime] (v : ℕ+ → R) :
-    (TauCeti.hazewinkelIntegralFormalGroup p v).IsPTypical p := by
-  rw [isPTypical_congr (TauCeti.hazewinkelIntegralFormalGroup_def p v)]
-  exact (isPTypical_universalHazewinkelIntegralFormalGroup p).map _
+    fun ⟨v, hv⟩ ↦ hv ▸ TauCeti.isPTypical_hazewinkelFormalGroup hp v⟩
 
 /-! ### Cartier's canonical `p`-typicalization of a commutative formal group law -/
 
@@ -293,7 +259,7 @@ theorem toCurve_pTypicalCoordinate (p : ℕ)
     (hunit : ∀ ⦃q : ℕ⦄, q.Prime → q ≠ p → IsUnit (q : R)) :
     (F.pTypicalCoordinate p hunit).toCurve F =
       F.pTypicalProjectorCurve p hunit F.tautologicalCurve :=
-  Curve.ext rfl
+  Curve.ext (by simp)
 
 /-- Cartier's `p`-typical coordinate has linear coefficient `1`. -/
 theorem coeff_one_pTypicalCoordinate (p : ℕ)
@@ -329,10 +295,8 @@ theorem pTypicalCoordinate_eq_one (p : ℕ)
 theorem pTypicalCoordinate_eq_one_iff (p : ℕ)
     (hunit : ∀ ⦃q : ℕ⦄, q.Prime → q ≠ p → IsUnit (q : R)) :
     F.pTypicalCoordinate p hunit = 1 ↔ F.IsPTypical p := by
-  refine ⟨fun h ↦ ?_, F.pTypicalCoordinate_eq_one p hunit⟩
-  have hcurve := congrArg (fun φ : TauCeti.FormalCoordinate R ↦ φ.toCurve F) h
-  rw [toCurve_pTypicalCoordinate, TauCeti.FormalCoordinate.one_toCurve] at hcurve
-  exact (F.pTypicalProjectorCurve_eq_self_iff p hunit F.tautologicalCurve).mp hcurve
+  rw [← TauCeti.FormalCoordinate.toCurve_inj F, toCurve_pTypicalCoordinate,
+    TauCeti.FormalCoordinate.toCurve_one, pTypicalProjectorCurve_eq_self_iff, isPTypical_def]
 
 /-- Base change commutes with Cartier's `p`-typical coordinate. -/
 theorem map_pTypicalCoordinate (φ : R →+* S) (p : ℕ)
@@ -391,6 +355,7 @@ theorem pTypicalIso_invHom_toPowerSeries (p : ℕ)
   rw [pTypicalIso, smulIso_invHom_toPowerSeries, inv_inv]
 
 /-- The canonical `p`-typicalization `F.pTypicalFormalGroup p hunit` is `p`-typical. -/
+@[simp]
 theorem isPTypical_pTypicalFormalGroup (p : ℕ)
     (hunit : ∀ ⦃q : ℕ⦄, q.Prime → q ≠ p → IsUnit (q : R)) :
     (F.pTypicalFormalGroup p hunit).IsPTypical p := by
@@ -410,6 +375,14 @@ theorem pTypicalFormalGroup_eq_self_iff (p : ℕ)
     F.pTypicalFormalGroup p hunit = F ↔ F.IsPTypical p :=
   ⟨fun h ↦ (isPTypical_congr h).mp (F.isPTypical_pTypicalFormalGroup p hunit),
     F.pTypicalFormalGroup_eq_self p hunit⟩
+
+/-- Cartier's `p`-typical coordinate on an already `p`-typicalized formal group law is `1`. -/
+@[simp]
+theorem pTypicalCoordinate_pTypicalFormalGroup (p : ℕ)
+    (hunit : ∀ ⦃q : ℕ⦄, q.Prime → q ≠ p → IsUnit (q : R)) :
+    (F.pTypicalFormalGroup p hunit).pTypicalCoordinate p hunit = 1 :=
+  (F.pTypicalFormalGroup p hunit).pTypicalCoordinate_eq_one p hunit
+    (F.isPTypical_pTypicalFormalGroup p hunit)
 
 /-- Canonical `p`-typicalization of formal group laws is idempotent. -/
 @[simp]

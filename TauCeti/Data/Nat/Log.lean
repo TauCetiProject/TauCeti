@@ -8,15 +8,18 @@ module
 public import Mathlib.Data.Nat.Log
 
 /-!
-# Integer logarithms of base-`b` digit extensions
+# Integer logarithms of products and base-`b` digit extensions
 
 Appending a base-`b` digit `e < b` to a positive natural number `n` raises its integer logarithm
 by one: `Nat.log b (b * n + e) = Nat.log b n + 1`. This complements Mathlib's `Nat.log_mul_base`,
-which is the case `e = 0` with the factors in the other order.
+which is the case `e = 0` with the factors in the other order. For a nonzero base `b`, multiplying
+`m` by `b ^ k` preserves whether `m` is an exact power of `b` witnessed by `Nat.log b`.
 
 ## Main results
 
 * `TauCeti.Nat.log_mul_add`: `Nat.log b (b * n + e) = Nat.log b n + 1` for `n ≠ 0` and `e < b`.
+* `Nat.pow_log_mul_eq_iff`: for `b ≠ 0`, `b ^ Nat.log b (b ^ k * m) = b ^ k * m ↔
+  b ^ Nat.log b m = m`.
 -/
 
 public section
@@ -32,3 +35,24 @@ theorem log_mul_add {b n e : ℕ} (hb : 1 < b) (hn : n ≠ 0) (he : e < b) :
   simp
 
 end TauCeti.Nat
+
+namespace Nat
+
+/-- For a nonzero base `b`, `b ^ k * m` equals `b ^ Nat.log b (b ^ k * m)` if and only if `m`
+equals `b ^ Nat.log b m`. -/
+theorem pow_log_mul_eq_iff {b : ℕ} (hb : b ≠ 0) (k m : ℕ) :
+    b ^ Nat.log b (b ^ k * m) = b ^ k * m ↔ b ^ Nat.log b m = m := by
+  rcases eq_or_ne b 1 with rfl | hb1
+  · simp
+  have hb' : 1 < b := by omega
+  refine ⟨fun h ↦ ?_, fun hm ↦ by rw [← hm, ← Nat.pow_add, log_pow hb', Nat.pow_add, hm]⟩
+  rcases eq_or_ne m 0 with rfl | hm0
+  · simp at h
+  · have hle : k ≤ log b (b ^ k * m) :=
+      le_log_of_pow_le hb' (Nat.le_mul_of_pos_right _ (Nat.pos_of_ne_zero hm0))
+    have heq : b ^ (log b (b ^ k * m) - k) = m := by
+      apply Nat.mul_left_cancel (Nat.pow_pos (Nat.pos_of_ne_zero hb))
+      rw [← Nat.pow_add, Nat.add_sub_of_le hle, h]
+    rw [← heq, log_pow hb', heq]
+
+end Nat
