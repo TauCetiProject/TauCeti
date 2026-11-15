@@ -26,9 +26,9 @@ Although `B.dualForm hB` depends on `B` on central weights outside the root span
 whenever at least one argument lies in the root span (or root lattice `R.rootLattice`) are
 completely independent of the choice of nondegenerate standard invariant form `B`
 (`dualForm_eq_of_mem_rootSpan_left`). Moreover, `B.dualForm hB` is invariant under every simple
-reflection `sᵢ(μ) = μ - μ(hᵢ) • αᵢ` (`Module.reflection (R.eval_coroot_root_self i)`), which takes
-the metric form `sᵢ(μ) = μ - (2 (μ, αᵢ) / (αᵢ, αᵢ)) • αᵢ`, and `B.form.toDual hB` intertwines the
-simple reflections on `H` and `Module.Dual K H`.
+reflection `sᵢ(μ) = μ - μ(hᵢ) • αᵢ` (`Module.reflection`), which takes the metric form
+`sᵢ(μ) = μ - (2 (μ, αᵢ) / (αᵢ, αᵢ)) • αᵢ`, and `B.form.toDual hB` intertwines the simple
+reflections on `H` and `Module.Dual K H`.
 
 Finally, over a strict ordered field (`ℚ` or `ℝ`), for dominant weights `μ, λ` with `R.RootLE μ λ`
 and `μ ≠ λ` and any weight `ρ` with `ρ(hᵢ) > 0` for all `i`, one has strict norm separation
@@ -42,6 +42,8 @@ Weyl–Kac character formula.
   form on `Module.Dual K H`.
 * `TauCeti.CartanRealization.InvariantForm.toDualIsometryEquiv`: `B.form.toDual hB` bundled as an
   isometric equivalence `B.form.IsometryEquiv (B.dualForm hB)`.
+* `TauCeti.CartanRealization.InvariantForm.dualReflectionIsometryEquiv`: simple reflections on
+  `Module.Dual K H` bundled as isometric equivalences of `B.dualForm hB`.
 
 ## Main results
 
@@ -202,19 +204,37 @@ theorem dualForm_eq_of_mem_rootLattice_right {B₁ B₂ : InvariantForm A R}
 /-! ### Invariance under simple reflections on `Dual K H` -/
 
 /-- `B.dualForm hB` is invariant under the simple reflection `μ ↦ μ - μ(hᵢ) • αᵢ`
-(`Module.reflection (R.eval_coroot_root_self i)`). -/
-theorem isOrthogonal_dualForm_reflection (i : I) :
-    (B.dualForm hB).IsOrthogonal (Module.reflection (R.eval_coroot_root_self i)) := by
+(`Module.reflection`). -/
+theorem isOrthogonal_dualForm_reflection (i : I)
+    (h : Dual.eval K H (R.coroot i) (R.root i) = 2 := by simp) :
+    (B.dualForm hB).IsOrthogonal (Module.reflection h) := by
   intro μ ν
+  have h' : R.root i (R.coroot i) = 2 := h
   simp only [Module.reflection_apply, Dual.eval_apply, map_sub, map_smul, LinearMap.sub_apply,
-    LinearMap.smul_apply, smul_eq_mul, B.dualForm_root_left, B.dualForm_root_right,
-    R.root_coroot_self i]
+    LinearMap.smul_apply, smul_eq_mul, B.dualForm_root_left, B.dualForm_root_right, h']
   ring
+
+/-- The simple reflection on `Dual K H` bundled as an isometric equivalence of `B.dualForm hB`. -/
+noncomputable def dualReflectionIsometryEquiv (i : I) :
+    (B.dualForm hB).IsometryEquiv (B.dualForm hB) :=
+  { Module.reflection (f := Dual.eval K H (R.coroot i)) (x := R.root i) (by simp) with
+    map_app' := B.isOrthogonal_dualForm_reflection hB i }
+
+theorem dualReflectionIsometryEquiv_toLinearEquiv (i : I)
+    (h : Dual.eval K H (R.coroot i) (R.root i) = 2 := by simp) :
+    (B.dualReflectionIsometryEquiv hB i).toLinearEquiv = Module.reflection h :=
+  (rfl)
+
+@[simp]
+theorem dualReflectionIsometryEquiv_apply (i : I) (μ : Dual K H) :
+    B.dualReflectionIsometryEquiv hB i μ = μ - μ (R.coroot i) • R.root i :=
+  (rfl)
 
 /-- Metric formula for the simple reflection on `Dual K H`:
 `sᵢ(μ) = μ - (2 (μ, αᵢ) / (αᵢ, αᵢ)) • αᵢ`. -/
-theorem reflection_dual_apply_eq_sub_dualForm (i : I) (μ : Dual K H) :
-    Module.reflection (R.eval_coroot_root_self i) μ =
+theorem reflection_dual_apply_eq_sub_dualForm (i : I) (μ : Dual K H)
+    (h : Dual.eval K H (R.coroot i) (R.root i) = 2 := by simp) :
+    Module.reflection h μ =
       μ - (2 * B.dualForm hB μ (R.root i) / B.dualForm hB (R.root i) (R.root i)) • R.root i := by
   have hd : (2 : K) * A.symmetrizer i ≠ 0 :=
     mul_ne_zero two_ne_zero (Nat.cast_ne_zero.mpr (A.symmetrizer_ne_zero i))
@@ -224,9 +244,11 @@ theorem reflection_dual_apply_eq_sub_dualForm (i : I) (μ : Dual K H) :
 
 /-- `B.form.toDual hB` intertwines the simple reflection on `H` with the simple reflection on
 `Dual K H`. -/
-theorem toDual_reflection (i : I) (x : H) :
-    B.form.toDual hB (Module.reflection (R.root_coroot_self i) x) =
-      Module.reflection (R.eval_coroot_root_self i) (B.form.toDual hB x) := by
+theorem toDual_reflection (i : I) (x : H)
+    (h₁ : R.root i (R.coroot i) = 2 := by simp)
+    (h₂ : Dual.eval K H (R.coroot i) (R.root i) = 2 := by simp) :
+    B.form.toDual hB (Module.reflection h₁ x) =
+      Module.reflection h₂ (B.form.toDual hB x) := by
   rw [Module.reflection_apply, Module.reflection_apply, Dual.eval_apply,
     LinearMap.BilinForm.toDual_def, B.form_coroot_right, map_sub, map_smul, B.toDual_coroot,
     smul_smul, div_eq_mul_inv]

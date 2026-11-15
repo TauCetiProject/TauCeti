@@ -82,23 +82,6 @@ open scoped Matrix
 
 namespace TauCeti.CartanRealization
 
-section DiagonalPairing
-
-variable {I K H : Type*} [Field K] [AddCommGroup H] [Module K H] {A : SymmetrizableDatum I}
-  (R : CartanRealization (A.cartan.map (Int.cast : ℤ → K)) H)
-
-/-- Each simple root evaluates to `2` on its own simple coroot, supplying the reflection hypothesis
-for `Module.reflection` on `H`. -/
-theorem root_coroot_self (i : I) : R.root i (R.coroot i) = 2 := by
-  simp
-
-/-- Evaluation at the `i`-th simple coroot sends the `i`-th simple root to `2`, supplying the
-reflection hypothesis for `Module.reflection` on `Module.Dual K H`. -/
-theorem eval_coroot_root_self (i : I) : Dual.eval K H (R.coroot i) (R.root i) = 2 :=
-  R.root_coroot_self i
-
-end DiagonalPairing
-
 /-- A **standard invariant bilinear form** on a Cartan realization `R` of a symmetrizable datum `A`
 over a characteristic-zero field `K`: a symmetric bilinear form on `H` satisfying
 `form (R.coroot i) h = R.root i h / A.symmetrizer i` for all `i : I` and `h : H`. -/
@@ -289,25 +272,28 @@ theorem form_corootMap_right [Fintype I] (h : H) (c : I → K) :
 /-! ### Invariance under simple reflections on `H` -/
 
 /-- Every standard invariant form is preserved by the simple reflection
-`h ↦ h - αᵢ(h) • hᵢ` (`Module.reflection (R.root_coroot_self i)`). -/
-theorem isOrthogonal_reflection (i : I) :
-    B.form.IsOrthogonal (Module.reflection (R.root_coroot_self i)) := by
+`x ↦ x - αᵢ(x) • hᵢ` (`Module.reflection`). -/
+theorem isOrthogonal_reflection (i : I) (h : R.root i (R.coroot i) = 2 := by simp) :
+    B.form.IsOrthogonal (Module.reflection h) := by
   intro x y
   simp only [Module.reflection_apply, map_sub, map_smul, LinearMap.sub_apply, LinearMap.smul_apply,
-    smul_eq_mul, B.form_coroot, B.form_coroot_right, R.root_coroot_self i, div_eq_mul_inv]
+    smul_eq_mul, B.form_coroot, B.form_coroot_right, h, div_eq_mul_inv]
   ring
 
 /-- The simple reflection on `H` bundled as an isometric equivalence of `B.form`. -/
 noncomputable def reflectionIsometryEquiv (i : I) : B.form.IsometryEquiv B.form :=
-  { Module.reflection (R.root_coroot_self i) with map_app' := B.isOrthogonal_reflection i }
+  { Module.reflection (f := R.root i) (x := R.coroot i) (by simp) with
+    map_app' := B.isOrthogonal_reflection i }
+
+theorem reflectionIsometryEquiv_toLinearEquiv (i : I)
+    (h : R.root i (R.coroot i) = 2 := by simp) :
+    (B.reflectionIsometryEquiv i).toLinearEquiv = Module.reflection h :=
+  (rfl)
 
 @[simp]
-theorem reflectionIsometryEquiv_toLinearEquiv (i : I) :
-    (B.reflectionIsometryEquiv i).toLinearEquiv = Module.reflection (R.root_coroot_self i) := (rfl)
-
-@[simp]
-theorem reflectionIsometryEquiv_apply (i : I) (h : H) :
-    B.reflectionIsometryEquiv i h = Module.reflection (R.root_coroot_self i) h := (rfl)
+theorem reflectionIsometryEquiv_apply (i : I) (x : H) :
+    B.reflectionIsometryEquiv i x = x - R.root i x • R.coroot i :=
+  (rfl)
 
 /-! ### Transport and restriction -/
 
@@ -361,61 +347,63 @@ end Basic
 
 section OfCompl
 
-section Fintype
+variable {I K H : Type*} [Field K] [AddCommGroup H] [Module K H]
 
-variable {I K H : Type*} [Fintype I] [Field K] [AddCommGroup H] [Module K H]
-
-/-- Equivalence `(I → K) ≃ₗ[K] R.corootSpan` induced by `R.corootMap`. -/
-private noncomputable def corootEquiv {A : Matrix I I K} (R : CartanRealization A H) :
-    (I → K) ≃ₗ[K] R.corootSpan :=
-  (LinearEquiv.ofInjective R.corootMap R.corootMap_injective).trans
-    (LinearEquiv.ofEq _ _ R.range_corootMap)
-
-/-- Coordinate projection `H →ₗ[K] (I → K)` onto `R.corootSpan` along a complement `W`. -/
+/-- Coordinate projection `H →ₗ[K] (I →₀ K)` onto `R.corootSpan` along a complement `W`. -/
 private noncomputable def corootProj {A : Matrix I I K} (R : CartanRealization A H)
-    {W : Submodule K H} (hW : IsCompl R.corootSpan W) : H →ₗ[K] (I → K) :=
-  (corootEquiv R).symm.toLinearMap ∘ₗ R.corootSpan.projectionOnto W hW
+    {W : Submodule K H} (hW : IsCompl R.corootSpan W) : H →ₗ[K] (I →₀ K) :=
+  R.coroot_linearIndependent.repr ∘ₗ
+    (LinearEquiv.ofEq _ _ R.corootSpan_def).toLinearMap ∘ₗ
+    R.corootSpan.projectionOnto W hW
 
-private theorem corootMap_corootProj {A : Matrix I I K} (R : CartanRealization A H)
+private theorem linearCombination_corootProj {A : Matrix I I K} (R : CartanRealization A H)
     {W : Submodule K H} (hW : IsCompl R.corootSpan W) (x : H) :
-    R.corootMap (corootProj R hW x) = R.corootSpan.projection W hW x := by
-  simp [corootProj, corootEquiv]
+    Finsupp.linearCombination K R.coroot (corootProj R hW x) =
+      R.corootSpan.projection W hW x := by
+  simp [corootProj]
 
-private theorem corootProj_coroot {A : Matrix I I K} [DecidableEq I] (R : CartanRealization A H)
+private theorem corootProj_coroot {A : Matrix I I K} (R : CartanRealization A H)
     {W : Submodule K H} (hW : IsCompl R.corootSpan W) (i : I) :
-    corootProj R hW (R.coroot i) = Pi.single i 1 := by
-  apply R.corootMap_injective
-  rw [corootMap_corootProj,
-    Submodule.projection_apply_of_mem_left hW (R.coroot_mem_corootSpan i),
-    R.corootMap_single, one_smul]
+    corootProj R hW (R.coroot i) = Finsupp.single i 1 := by
+  refine R.coroot_linearIndependent.repr_eq_single i _ ?_
+  simp [Submodule.projection_apply_of_mem_left hW (R.coroot_mem_corootSpan i)]
 
 private theorem corootProj_of_mem_right {A : Matrix I I K} (R : CartanRealization A H)
     {W : Submodule K H} (hW : IsCompl R.corootSpan W) {w : H} (hw : w ∈ W) :
     corootProj R hW w = 0 := by
-  apply R.corootMap_injective
-  rw [corootMap_corootProj, Submodule.projection_apply_of_mem_right hW hw, map_zero]
+  simp [corootProj, Submodule.projectionOnto_apply_of_mem_right hW hw]
 
 /-- One-sided bilinear helper `Φ(x, y) = ∑ᵢ (corootProj x i / d i) * αᵢ(y)` used to build
 `ofCompl`. -/
 private noncomputable def corootHalfForm (A : SymmetrizableDatum I)
     (R : CartanRealization (A.cartan.map (Int.cast : ℤ → K)) H)
     {W : Submodule K H} (hW : IsCompl R.corootSpan W) : LinearMap.BilinForm K H :=
-  ∑ i, (LinearMap.proj i ∘ₗ corootProj R hW).smulRight ((A.symmetrizer i : K)⁻¹ • R.root i)
+  Finsupp.linearCombination K (fun i ↦ (A.symmetrizer i : K)⁻¹ • R.root i) ∘ₗ corootProj R hW
 
 private theorem corootHalfForm_apply (A : SymmetrizableDatum I)
     (R : CartanRealization (A.cartan.map (Int.cast : ℤ → K)) H)
     {W : Submodule K H} (hW : IsCompl R.corootSpan W) (x y : H) :
     corootHalfForm A R hW x y =
-      ∑ i, (corootProj R hW x i / A.symmetrizer i) * R.root i y := by
-  simp [corootHalfForm, div_eq_mul_inv, mul_assoc]
+      (corootProj R hW x).sum fun i c ↦ (c / A.symmetrizer i) * R.root i y := by
+  simp [corootHalfForm, Finsupp.linearCombination_apply, Finsupp.sum, LinearMap.sum_apply,
+    div_eq_mul_inv, mul_assoc]
 
-private theorem corootHalfForm_corootMap_symm [CharZero K] (A : SymmetrizableDatum I)
+private theorem corootHalfForm_of_mem_right (A : SymmetrizableDatum I)
+    (R : CartanRealization (A.cartan.map (Int.cast : ℤ → K)) H)
+    {W : Submodule K H} (hW : IsCompl R.corootSpan W) {w : H} (hw : w ∈ W) :
+    corootHalfForm A R hW w = 0 := by
+  simp [corootHalfForm, corootProj_of_mem_right R hW hw]
+
+private theorem corootHalfForm_projection_symm [CharZero K] (A : SymmetrizableDatum I)
     (R : CartanRealization (A.cartan.map (Int.cast : ℤ → K)) H)
     {W : Submodule K H} (hW : IsCompl R.corootSpan W) (x y : H) :
-    corootHalfForm A R hW x (R.corootMap (corootProj R hW y)) =
-      corootHalfForm A R hW y (R.corootMap (corootProj R hW x)) := by
-  simp only [corootHalfForm_apply, corootMap_apply, map_sum, map_smul, smul_eq_mul, root_coroot,
-    Matrix.map_apply, Finset.mul_sum]
+    corootHalfForm A R hW x (R.corootSpan.projection W hW y) =
+      corootHalfForm A R hW y (R.corootSpan.projection W hW x) := by
+  rw [← linearCombination_corootProj R hW y, ← linearCombination_corootProj R hW x]
+  set cx := corootProj R hW x
+  set cy := corootProj R hW y
+  simp only [corootHalfForm_apply, Finsupp.linearCombination_apply, Finsupp.sum, map_sum, map_smul,
+    smul_eq_mul, root_coroot, Matrix.map_apply, Finset.mul_sum]
   rw [Finset.sum_comm]
   refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
   have hd_i : (A.symmetrizer i : K) ≠ 0 := Nat.cast_ne_zero.mpr (A.symmetrizer_ne_zero i)
@@ -426,13 +414,10 @@ private theorem corootHalfForm_corootMap_symm [CharZero K] (A : SymmetrizableDat
     rw [div_eq_div_iff hd_j hd_i]
     linear_combination hsymm
   calc
-    corootProj R hW y j * (corootProj R hW x i / A.symmetrizer i * A.cartan j i) =
-        corootProj R hW x i * corootProj R hW y j * ((A.cartan j i : K) / A.symmetrizer i) := by
-      ring
-    _ = corootProj R hW x i * corootProj R hW y j * ((A.cartan i j : K) / A.symmetrizer j) := by
-      rw [← hdiv]
-    _ = corootProj R hW x i * (corootProj R hW y j / A.symmetrizer j * A.cartan i j) := by
-      ring
+    cy j * (cx i / A.symmetrizer i * A.cartan j i) =
+        cx i * cy j * ((A.cartan j i : K) / A.symmetrizer i) := by ring
+    _ = cx i * cy j * ((A.cartan i j : K) / A.symmetrizer j) := by rw [← hdiv]
+    _ = cx i * (cy j / A.symmetrizer j * A.cartan i j) := by ring
 
 /-- Kac's standard invariant form associated to a choice of complement `W` to `R.corootSpan`:
 on `x = h₁ + w₁` and `y = h₂ + w₂` (`h₁, h₂ ∈ R.corootSpan`, `w₁, w₂ ∈ W`), it satisfies
@@ -444,17 +429,15 @@ noncomputable def ofCompl [CharZero K] (A : SymmetrizableDatum I)
     (corootHalfForm A R hW).comp LinearMap.id (R.corootSpan.projection W hW)
   isSymm := ⟨fun x y ↦ by
     simp only [LinearMap.sub_apply, LinearMap.add_apply, LinearMap.flip_apply,
-      LinearMap.BilinForm.comp_apply, LinearMap.id_apply, ← corootMap_corootProj]
-    rw [corootHalfForm_corootMap_symm]
+      LinearMap.BilinForm.comp_apply, LinearMap.id_apply]
+    rw [corootHalfForm_projection_symm]
     ring⟩
   form_coroot i y := by
-    have hsym := corootHalfForm_corootMap_symm A R hW y (R.coroot i)
-    rw [corootMap_corootProj, corootMap_corootProj,
-      Submodule.projection_apply_of_mem_left hW (R.coroot_mem_corootSpan i)] at hsym
+    have hsym := corootHalfForm_projection_symm A R hW y (R.coroot i)
+    rw [Submodule.projection_apply_of_mem_left hW (R.coroot_mem_corootSpan i)] at hsym
     simp only [LinearMap.sub_apply, LinearMap.add_apply, LinearMap.flip_apply,
       LinearMap.BilinForm.comp_apply, LinearMap.id_apply, hsym, add_sub_cancel_right]
-    classical
-    simp [corootHalfForm_apply, corootProj_coroot, Pi.single_apply, div_eq_inv_mul]
+    simp [corootHalfForm, corootProj_coroot, div_eq_inv_mul]
 
 section
 
@@ -465,8 +448,7 @@ variable [CharZero K] {A : SymmetrizableDatum I}
 theorem ofCompl_form_eq_zero {W : Submodule K H} (hW : IsCompl R.corootSpan W) {w₁ w₂ : H}
     (hw₁ : w₁ ∈ W) (hw₂ : w₂ ∈ W) :
     (ofCompl A R hW).form w₁ w₂ = 0 := by
-  simp [ofCompl, corootHalfForm_apply, corootProj_of_mem_right R hW hw₁,
-    corootProj_of_mem_right R hW hw₂]
+  simp [ofCompl, corootHalfForm_of_mem_right A R hW hw₁, corootHalfForm_of_mem_right A R hW hw₂]
 
 /-- The restriction of `(ofCompl A R hW).form` to the chosen complement `W` is zero. -/
 @[simp]
@@ -507,7 +489,7 @@ theorem cartanCenter_inf_le_ker_ofCompl {W : Submodule K H} (hW : IsCompl R.coro
     R.cartanCenter ⊓ W ≤ LinearMap.ker (ofCompl A R hW).form := by
   rintro x ⟨hxc, hxw⟩
   rw [LinearMap.mem_ker]; ext y
-  simp [ofCompl, corootHalfForm_apply, corootProj_of_mem_right R hW hxw,
+  simp [ofCompl, corootHalfForm_of_mem_right A R hW hxw, corootHalfForm_apply,
     (R.mem_cartanCenter_iff x).mp hxc]
 
 /-- If the chosen complement `W` meets `R.cartanCenter` nontrivially, Kac's complement form
@@ -521,7 +503,7 @@ theorem not_nondegenerate_ofCompl_of_cartanCenter_inf_ne_bot {W : Submodule K H}
 /-- Whenever `2 * |I| < finrank K H` (for example `A₁` enlarged to `ℚ³`), every complement `W` to
 `R.corootSpan` meets `R.cartanCenter` nontrivially, so Kac's complement construction `ofCompl` is
 degenerate for **every** choice of `W`. -/
-theorem not_nondegenerate_ofCompl_of_two_mul_card_lt_finrank [FiniteDimensional K H]
+theorem not_nondegenerate_ofCompl_of_two_mul_card_lt_finrank [Fintype I] [FiniteDimensional K H]
     {W : Submodule K H} (hW : IsCompl R.corootSpan W)
     (hdim : 2 * Fintype.card I < finrank K H) :
     ¬ (ofCompl A R hW).form.Nondegenerate := by
@@ -537,16 +519,13 @@ theorem not_nondegenerate_ofCompl_of_two_mul_card_lt_finrank [FiniteDimensional 
 
 end
 
-end Fintype
-
-/-- Every Cartan realization of a finite symmetrizable datum over a characteristic-zero field
-admits at least one standard invariant form (by choosing any complement to `R.corootSpan`). -/
-theorem nonempty {I K H : Type*} [Finite I] [Field K] [CharZero K] [AddCommGroup H] [Module K H]
-    (A : SymmetrizableDatum I) (R : CartanRealization (A.cartan.map (Int.cast : ℤ → K)) H) :
-    Nonempty (InvariantForm A R) := by
-  let := Fintype.ofFinite I
-  obtain ⟨_, hW⟩ := Submodule.exists_isCompl R.corootSpan
-  exact ⟨ofCompl A R hW⟩
+/-- Every Cartan realization of a symmetrizable datum over a characteristic-zero field admits at
+least one standard invariant form (by choosing any complement to `R.corootSpan`). -/
+theorem nonempty [CharZero K] (A : SymmetrizableDatum I)
+    (R : CartanRealization (A.cartan.map (Int.cast : ℤ → K)) H) :
+    Nonempty (InvariantForm A R) :=
+  let ⟨_, hW⟩ := Submodule.exists_isCompl R.corootSpan
+  ⟨ofCompl A R hW⟩
 
 end OfCompl
 

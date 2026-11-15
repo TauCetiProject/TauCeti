@@ -201,6 +201,48 @@ private theorem form_complShiftMap_compl (B : InvariantForm A R) (hR : R.IsMinim
     simp [Submodule.coe_projectionOnto_apply, Submodule.projection_eq_self_sub_projection hW.symm]
   simp [complShiftMap, hproj, LinearMap.BilinForm.restrict_apply]
 
+private theorem form_add_complShiftMap (B : InvariantForm A R) (hR : R.IsMinimal)
+    {W : Submodule K H} (hW : IsCompl R.corootSpan W) (x y : H) :
+    B.form (x + B.complShiftMap hR hW x) (y + B.complShiftMap hR hW y) =
+      (ofCompl A R hW).form x y := by
+  set δx := B.complShiftMap hR hW x
+  set δy := B.complShiftMap hR hW y
+  set hx := R.corootSpan.projection W hW x
+  set hy := R.corootSpan.projection W hW y
+  have hhx : hx ∈ R.corootSpan := Submodule.projection_apply_mem hW x
+  have hhy : hy ∈ R.corootSpan := Submodule.projection_apply_mem hW y
+  set wx : W := ⟨x - hx, Submodule.sub_projection_mem hW x⟩
+  set wy : W := ⟨y - hy, Submodule.sub_projection_mem hW y⟩
+  have hcx : δx ∈ R.cartanCenter ⊓ R.corootSpan := B.complShiftMap_mem hR hW x
+  have hcy : δy ∈ R.cartanCenter ⊓ R.corootSpan := B.complShiftMap_mem hR hW y
+  have hpair_xy : B.form δx wy = -(2 : K)⁻¹ * B.form wx wy :=
+    B.form_complShiftMap_compl hR hW x wy
+  have hpair_yx : B.form wx δy = -(2 : K)⁻¹ * B.form wx wy := by
+    rw [B.isSymm.eq, B.form_complShiftMap_compl hR hW y wx, B.isSymm.eq (wy : H) (wx : H)]
+  obtain ⟨ux, hux⟩ : ∃ u : H, u = (wx : H) + δx := ⟨_, rfl⟩
+  obtain ⟨uy, huy⟩ : ∃ u : H, u = (wy : H) + δy := ⟨_, rfl⟩
+  have hw_orth : B.form ux uy = 0 := by
+    simp only [hux, huy, map_add, LinearMap.add_apply]
+    rw [hpair_xy, hpair_yx, B.form_eq_zero_of_mem_cartanCenter_inf_corootSpan hcx hcy]
+    have h2 : (2 : K) ≠ 0 := two_ne_zero
+    field_simp [h2]; ring
+  have h_hx_uy : B.form hx uy = (ofCompl A R hW).form hx wy := by
+    rw [huy, map_add, B.form_eq_zero_of_mem_corootSpan_of_mem_cartanCenter hhx hcy.1, add_zero,
+      form_eq_of_mem_corootSpan_left B (ofCompl A R hW) hhx]
+  have h_ux_hy : B.form ux hy = (ofCompl A R hW).form wx hy := by
+    rw [hux, map_add, LinearMap.add_apply,
+      B.form_eq_zero_of_mem_cartanCenter_of_mem_corootSpan hcx.1 hhy, add_zero,
+      form_eq_of_mem_corootSpan_right B (ofCompl A R hW) _ hhy]
+  have hx1 : x = hx + wx := (add_sub_cancel hx x).symm
+  have hy1 : y = hy + wy := (add_sub_cancel hy y).symm
+  have hx2 : x + δx = hx + ux := by rw [hux, ← add_assoc, ← hx1]
+  have hy2 : y + δy = hy + uy := by rw [huy, ← add_assoc, ← hy1]
+  conv_lhs => rw [hx2, hy2]
+  conv_rhs => rw [hx1, hy1]
+  simp only [map_add, LinearMap.add_apply]
+  rw [hw_orth, h_hx_uy, h_ux_hy, form_eq_of_mem_corootSpan_left B (ofCompl A R hW) hhx,
+    ofCompl_form_eq_zero hW wx.2 wy.2]
+
 /-- On a minimal realization, any standard invariant form `B` is isometric to `ofCompl A R hW`
 via an explicit nilpotent shear `x ↦ x + δ(x)` fixing `R.corootSpan` pointwise and shifting `W` by
 values in `R.cartanCenter ⊓ R.corootSpan`. -/
@@ -217,44 +259,7 @@ noncomputable def ofComplIsometryEquiv (B : InvariantForm A R) (hR : R.IsMinimal
   right_inv x := by
     dsimp only
     rw [map_sub, B.complShiftMap_comp_self hR hW, sub_zero, sub_add_cancel]
-  map_app' x y := by
-    set δx := B.complShiftMap hR hW x
-    set δy := B.complShiftMap hR hW y
-    set hx := R.corootSpan.projection W hW x
-    set hy := R.corootSpan.projection W hW y
-    have hhx : hx ∈ R.corootSpan := Submodule.projection_apply_mem hW x
-    have hhy : hy ∈ R.corootSpan := Submodule.projection_apply_mem hW y
-    set wx : W := ⟨x - hx, Submodule.sub_projection_mem hW x⟩
-    set wy : W := ⟨y - hy, Submodule.sub_projection_mem hW y⟩
-    have hcx : δx ∈ R.cartanCenter ⊓ R.corootSpan := B.complShiftMap_mem hR hW x
-    have hcy : δy ∈ R.cartanCenter ⊓ R.corootSpan := B.complShiftMap_mem hR hW y
-    have hpair_xy : B.form δx wy = -(2 : K)⁻¹ * B.form wx wy :=
-      B.form_complShiftMap_compl hR hW x wy
-    have hpair_yx : B.form wx δy = -(2 : K)⁻¹ * B.form wx wy := by
-      rw [B.isSymm.eq, B.form_complShiftMap_compl hR hW y wx, B.isSymm.eq (wy : H) (wx : H)]
-    obtain ⟨ux, hux⟩ : ∃ u : H, u = (wx : H) + δx := ⟨_, rfl⟩
-    obtain ⟨uy, huy⟩ : ∃ u : H, u = (wy : H) + δy := ⟨_, rfl⟩
-    have hw_orth : B.form ux uy = 0 := by
-      simp only [hux, huy, map_add, LinearMap.add_apply]
-      rw [hpair_xy, hpair_yx, B.form_eq_zero_of_mem_cartanCenter_inf_corootSpan hcx hcy]
-      have h2 : (2 : K) ≠ 0 := two_ne_zero
-      field_simp [h2]; ring
-    have h_hx_uy : B.form hx uy = (ofCompl A R hW).form hx wy := by
-      rw [huy, map_add, B.form_eq_zero_of_mem_corootSpan_of_mem_cartanCenter hhx hcy.1, add_zero,
-        form_eq_of_mem_corootSpan_left B (ofCompl A R hW) hhx]
-    have h_ux_hy : B.form ux hy = (ofCompl A R hW).form wx hy := by
-      rw [hux, map_add, LinearMap.add_apply,
-        B.form_eq_zero_of_mem_cartanCenter_of_mem_corootSpan hcx.1 hhy, add_zero,
-        form_eq_of_mem_corootSpan_right B (ofCompl A R hW) _ hhy]
-    have hx1 : x = hx + wx := (add_sub_cancel hx x).symm
-    have hy1 : y = hy + wy := (add_sub_cancel hy y).symm
-    have hx2 : x + δx = hx + ux := by rw [hux, ← add_assoc, ← hx1]
-    have hy2 : y + δy = hy + uy := by rw [huy, ← add_assoc, ← hy1]
-    conv_lhs => rw [hx2, hy2]
-    conv_rhs => rw [hx1, hy1]
-    simp only [map_add, LinearMap.add_apply]
-    rw [hw_orth, h_hx_uy, h_ux_hy, form_eq_of_mem_corootSpan_left B (ofCompl A R hW) hhx,
-      ofCompl_form_eq_zero hW wx.2 wy.2]
+  map_app' := B.form_add_complShiftMap hR hW
 
 private theorem ofComplIsometryEquiv_apply_eq (B : InvariantForm A R) (hR : R.IsMinimal)
     {W : Submodule K H} (hW : IsCompl R.corootSpan W) (x : H) :
@@ -451,26 +456,33 @@ theorem nondegenerate_extendOfIsCompl_iff {M Z : Submodule K H} {hc : R.corootSp
       BM.form.Nondegenerate ∧ Φ.Nondegenerate := by
   simp [extendOfIsCompl_form]
 
+/-- Diagonal bilinear form with identity Gram matrix in `Module.finBasis K V`. -/
+private noncomputable def finBasisUnitForm (K V : Type*) [Field K] [AddCommGroup V] [Module K V]
+    [FiniteDimensional K V] : LinearMap.BilinForm K V :=
+  Matrix.toBilin (Module.finBasis K V) 1
+
+private theorem isSymm_finBasisUnitForm {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
+    [FiniteDimensional K V] : (finBasisUnitForm K V).IsSymm := by
+  simp [finBasisUnitForm]
+
+private theorem nondegenerate_finBasisUnitForm {K V : Type*} [Field K] [AddCommGroup V]
+    [Module K V] [FiniteDimensional K V] : (finBasisUnitForm K V).Nondegenerate := by
+  rw [finBasisUnitForm, LinearMap.BilinForm.nondegenerate_iff_det_ne_zero (Module.finBasis K V),
+    LinearMap.BilinForm.toMatrix_toBilin, Matrix.det_one]
+  exact one_ne_zero
+
 /-- Every finite-dimensional realization of a finite symmetrizable datum over a characteristic-zero
 field admits a **nondegenerate** standard invariant form. -/
 theorem exists_nondegenerate [Finite I] [FiniteDimensional K H] (A : SymmetrizableDatum I)
     (R : CartanRealization (A.cartan.map (Int.cast : ℤ → K)) H) :
     ∃ B : InvariantForm A R, B.form.Nondegenerate := by
-  classical
   let := Fintype.ofFinite I
   obtain ⟨M, Z, hc, hs, hMmin, hMZ, hZ⟩ := R.exists_isMinimal_restrict_isCompl
   obtain ⟨W, hW⟩ := Submodule.exists_isCompl (R.restrict M hc hs).corootSpan
   let BM := ofCompl A (R.restrict M hc hs) hW
-  let bZ := Module.finBasis K Z
-  let Φ : LinearMap.BilinForm K Z := Matrix.toBilin bZ 1
-  have hΦsymm : Φ.IsSymm := by simp [Φ]
-  have hΦnd : Φ.Nondegenerate := by
-    rw [LinearMap.BilinForm.nondegenerate_iff_det_ne_zero bZ, LinearMap.BilinForm.toMatrix_toBilin,
-      Matrix.det_one]
-    exact one_ne_zero
-  exact ⟨BM.extendOfIsCompl hMZ hZ hΦsymm,
-    (BM.nondegenerate_extendOfIsCompl_iff hMZ hZ hΦsymm).mpr
-      ⟨BM.nondegenerate_of_isMinimal hMmin, hΦnd⟩⟩
+  exact ⟨BM.extendOfIsCompl hMZ hZ isSymm_finBasisUnitForm,
+    (BM.nondegenerate_extendOfIsCompl_iff hMZ hZ isSymm_finBasisUnitForm).mpr
+      ⟨BM.nondegenerate_of_isMinimal hMmin, nondegenerate_finBasisUnitForm⟩⟩
 
 end
 
@@ -515,7 +527,6 @@ theorem exists_nondegenerate_not_isometryEquiv_of_not_isMinimal
     (hR : ¬ R.IsMinimal) :
     ∃ B₁ B₂ : InvariantForm A R, B₁.form.Nondegenerate ∧ B₂.form.Nondegenerate ∧
       ¬ ∃ e : B₁.form.IsometryEquiv B₂.form, R.map e.toLinearEquiv = R := by
-  classical
   obtain ⟨M, Z, hc, hs, hMmin, hMZ, hZ⟩ := R.exists_isMinimal_restrict_isCompl
   -- Non-minimality forces the central complement `Z` to have positive dimension.
   have hZpos : 0 < finrank K Z := by
@@ -527,41 +538,33 @@ theorem exists_nondegenerate_not_isometryEquiv_of_not_isMinimal
     omega
   obtain ⟨W, hW⟩ := Submodule.exists_isCompl (R.restrict M hc hs).corootSpan
   let BM := ofCompl A (R.restrict M hc hs) hW
-  let bZ := Module.finBasis K Z
-  let Φ : LinearMap.BilinForm K Z := Matrix.toBilin bZ 1
-  have hΦsymm : Φ.IsSymm := by simp [Φ]
-  have hΦnd : Φ.Nondegenerate := by
-    rw [LinearMap.BilinForm.nondegenerate_iff_det_ne_zero bZ, LinearMap.BilinForm.toMatrix_toBilin,
-      Matrix.det_one]
-    exact one_ne_zero
-  let B₁ := BM.extendOfIsCompl hMZ hZ hΦsymm
-  let B₂ := BM.extendOfIsCompl hMZ hZ hΦsymm.neg
+  let B₁ := BM.extendOfIsCompl hMZ hZ (isSymm_finBasisUnitForm (K := K) (V := Z))
+  let B₂ := BM.extendOfIsCompl hMZ hZ (isSymm_finBasisUnitForm (K := K) (V := Z)).neg
   refine ⟨B₁, B₂,
-    (BM.nondegenerate_extendOfIsCompl_iff hMZ hZ hΦsymm).mpr
-      ⟨BM.nondegenerate_of_isMinimal hMmin, hΦnd⟩,
-    (BM.nondegenerate_extendOfIsCompl_iff hMZ hZ hΦsymm.neg).mpr
-      ⟨BM.nondegenerate_of_isMinimal hMmin, TauCeti.BilinForm.nondegenerate_neg_iff.mpr hΦnd⟩,
-    ?_⟩
-  rintro ⟨e, he⟩
-  let z₀ : Z := bZ ⟨0, hZpos⟩
+    (BM.nondegenerate_extendOfIsCompl_iff hMZ hZ _).mpr
+      ⟨BM.nondegenerate_of_isMinimal hMmin, nondegenerate_finBasisUnitForm⟩,
+    (BM.nondegenerate_extendOfIsCompl_iff hMZ hZ _).mpr
+      ⟨BM.nondegenerate_of_isMinimal hMmin,
+        TauCeti.BilinForm.nondegenerate_neg_iff.mpr nondegenerate_finBasisUnitForm⟩,
+    fun ⟨e, he⟩ ↦ ?_⟩
+  let z₀ : Z := Module.finBasis K Z ⟨0, hZpos⟩
   have hz₀_val : B₁.form (z₀ : H) (z₀ : H) = 1 := by
-    rw [BM.extendOfIsCompl_apply_right hMZ hZ hΦsymm,
-      ← LinearMap.BilinForm.toMatrix_apply bZ Φ ⟨0, hZpos⟩ ⟨0, hZpos⟩,
+    rw [BM.extendOfIsCompl_apply_right hMZ hZ, finBasisUnitForm,
+      ← LinearMap.BilinForm.toMatrix_apply (Module.finBasis K Z) _ ⟨0, hZpos⟩ ⟨0, hZpos⟩,
       LinearMap.BilinForm.toMatrix_toBilin]
     rfl
   have hez₀ : e (z₀ : H) ∈ R.cartanCenter := by
     have hmem : e (z₀ : H) ∈ R.cartanCenter.map e.toLinearEquiv.toLinearMap :=
       Submodule.mem_map_of_mem (hZ z₀.2)
     rwa [← R.cartanCenter_map e.toLinearEquiv, he] at hmem
-  have hΨ_nonpos (z : Z) : (-Φ) z z ≤ 0 := by
+  have hΨ_nonpos (z : Z) : (-finBasisUnitForm K Z) z z ≤ 0 := by
     rw [LinearMap.neg_apply, LinearMap.neg_apply, Left.neg_nonpos_iff]
-    simp only [Φ, Matrix.toBilin_apply, Matrix.one_apply, mul_ite, ite_mul, mul_one, mul_zero,
-      zero_mul, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte]
-    exact Finset.sum_nonneg fun i _ ↦ mul_self_nonneg _
+    simp only [finBasisUnitForm, Matrix.toBilin_apply, Matrix.one_apply, mul_ite, ite_mul, mul_one,
+      mul_zero, zero_mul, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte]
+    exact Finset.sum_nonneg fun _ _ ↦ mul_self_nonneg _
   have hB₂_nonpos : B₂.form (e (z₀ : H)) (e (z₀ : H)) ≤ 0 :=
-    BM.extendOfIsCompl_self_nonpos_of_mem_cartanCenter hMmin hMZ hZ hΦsymm.neg hΨ_nonpos hez₀
-  have hiso : B₂.form (e (z₀ : H)) (e (z₀ : H)) = 1 := (e.map_app z₀ z₀).trans hz₀_val
-  linarith
+    BM.extendOfIsCompl_self_nonpos_of_mem_cartanCenter hMmin hMZ hZ _ hΨ_nonpos hez₀
+  linarith [(e.map_app z₀ z₀).trans hz₀_val]
 
 end CentralEnlargement
 
