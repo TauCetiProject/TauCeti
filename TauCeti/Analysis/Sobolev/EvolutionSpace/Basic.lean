@@ -11,6 +11,7 @@ public import Mathlib.Topology.ContinuousMap.Compact
 import Mathlib.Analysis.Normed.Operator.Banach
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import Mathlib.Topology.Order.ProjIcc
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # The energy space of a Gelfand triple
@@ -212,12 +213,8 @@ theorem mk_value_timeDeriv (u : EvolutionSpace ι a b) :
 private theorem norm_timeDeriv_eq (u : EvolutionSpace ι a b) :
     ‖timeDeriv u‖ = ‖WeakDerivStep.weakFDeriv (mu := volume)
       (Omega := ⟨Ioo a b, isOpen_Ioo⟩) (evolutionBaseL ι a b) u‖ := by
-  rw [Lp.norm_def, Lp.norm_def]
-  congr 1
-  apply eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _) (Lp.aestronglyMeasurable _)
-  filter_upwards [timeDeriv_apply_ae u] with t ht
-  rw [ht, ← ContinuousLinearMap.toSpanSingletonLIE_symm_apply]
-  exact LinearIsometryEquiv.norm_map _ _
+  rw [timeDeriv, timeDerivL, ContinuousLinearMap.comp_apply, WeakDerivStep.weakFDerivL_apply]
+  exact ContinuousLinearMap.norm_apply_one_compLpL_apply _
 
 /-- Convergence in the energy space is equivalent to convergence of the value and the
 dual-valued weak time derivative in their respective `L²` spaces. -/

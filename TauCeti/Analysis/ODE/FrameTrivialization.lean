@@ -8,25 +8,32 @@ module
 public import Mathlib.Algebra.Ring.Periodic
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.Deriv.Basic
-public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 import Mathlib.Analysis.Calculus.ContDiff.Operations
-import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Mul
-import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 
 /-!
 # Frame trivialization of nonautonomous linear ODEs
 
-For a differentiable path of invertible continuous linear maps `Φ : ℝ → F →L[ℝ] V`, pulling back
-`ξ' - S_t ξ` along `ξ(t) = Φ(t) ζ(t)` replaces `S : ℝ → V →L[ℝ] V` by
-`S_Φ(t) = Φ(t)⁻¹ (S(t) Φ(t) - Φ'(t))` (`TauCeti.trivializedCoeff`). Applying `Φ` intertwines
+To analyze a nonautonomous linear ODE `ξ' = S_t ξ` on a Banach space `V` using operators defined on
+a fixed model space `F` (such as Fourier-series Sobolev spaces on the circle), a moving frame
+`Φ : ℝ → F →L[ℝ] V` pulls paths `ξ(t) = Φ(t) ζ(t)` back to `F` at the cost of a connection term
+`-Φ(t)⁻¹ Φ'(t)`, replacing `S : ℝ → V →L[ℝ] V` by the trivialized coefficient
+`S_Φ(t) = Φ(t)⁻¹ (S(t) Φ(t) - Φ'(t))` (`TauCeti.trivializedCoeff`). This feeds symplectic frame
+preservation in `TauCeti/Geometry/Symplectic/FrameTrivialization.lean` and the trivialization of
+linearized Hamiltonian Floer operators in
+`TauCeti/Geometry/Symplectic/Floer/AsymptoticOperator/Trivialization.lean`.
+
+When `Φ` and `ζ` are differentiable at `t` and `Φ t` is invertible, `Φ t` intertwines
 `ζ' - S_Φ(t) ζ` with `ξ' - S_t ξ` (`deriv_clm_apply_sub_eq_apply_deriv_sub_trivializedCoeff`,
-`hasDerivAt_clm_apply_iff_hasDerivAt_trivializedCoeff`), preserves continuity and periodicity
-(`continuous_trivializedCoeff`, `periodic_trivializedCoeff`), and maps shifts `S_t - δ • K_t`
-intertwining `Complex.I • ·` to `S_Φ(t) - δ • (I • id)` (`trivializedCoeff_sub_smul`), adapting
-`TauCeti.frameConnection` in `TauCeti/Geometry/Symplectic/JHolomorphic/OrbitTorus/`.
+`hasDerivAt_clm_apply_iff_hasDerivAt_trivializedCoeff`). Moreover, `trivializedCoeff Φ S` is
+continuous when `F` is complete, `Φ` is `C¹` with invertible values, and `S` is continuous
+(`continuous_trivializedCoeff`), inherits `T`-periodicity from `Φ` and `S`
+(`periodic_trivializedCoeff`), and maps perturbations `S_t - δ • K_t` intertwining a model operator
+`K₀` through `Φ t` to `S_Φ(t) - δ • K₀` (`trivializedCoeff_sub_smul`). Adapts
+`TauCeti.frameConnection`
+(`TauCeti/Geometry/Symplectic/JHolomorphic/OrbitTorus/Trivialization.lean`).
 
 ## References
 
@@ -37,11 +44,9 @@ public section
 
 noncomputable section
 
-open Complex ContinuousLinearMap Function
+open ContinuousLinearMap Function
 
 namespace TauCeti
-
-section RealFrame
 
 variable {F V : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup V]
   [NormedSpace ℝ V]
@@ -72,7 +77,9 @@ theorem trivializedCoeff_const_equiv (e : F ≃L[ℝ] V) (S : ℝ → V →L[ℝ
       (e.symm : V →L[ℝ] F) ∘L S t ∘L (e : F →L[ℝ] V) :=
   ContinuousLinearMap.ext fun _ ↦ by simp [trivializedCoeff_apply]
 
-/-- **Pulling back `ξ' - S_t ξ` along a differentiable frame.** -/
+/-- **Pulling back `ξ' - S_t ξ` along a differentiable frame:** if `Φ` and `ζ` are differentiable at
+`t` and `Φ t` is invertible, `Φ t` maps `deriv ζ t - trivializedCoeff Φ S t (ζ t)` to
+`deriv (fun r ↦ Φ r (ζ r)) t - S t (Φ t (ζ t))`. -/
 theorem deriv_clm_apply_sub_eq_apply_deriv_sub_trivializedCoeff {Φ : ℝ → F →L[ℝ] V}
     {S : ℝ → V →L[ℝ] V} {ζ : ℝ → F} {t : ℝ} (hΦd : DifferentiableAt ℝ Φ t)
     (hΦ : (Φ t).IsInvertible) (hζ : DifferentiableAt ℝ ζ t) :
@@ -82,8 +89,9 @@ theorem deriv_clm_apply_sub_eq_apply_deriv_sub_trivializedCoeff {Φ : ℝ → F 
     hΦ.self_apply_inverse]
   abel
 
-/-- **Classical ODE correspondence under a frame:** `r ↦ Φ r (ζ r)` solves `ξ' = S_t ξ` at `t` iff
-`ζ` solves `ζ' = S_Φ(t) ζ` at `t`. -/
+/-- **Classical ODE correspondence under a frame:** when `Φ` and `ζ` are differentiable at `t` and
+`Φ t` is invertible, `r ↦ Φ r (ζ r)` solves `ξ' = S_t ξ` at `t` iff `ζ` solves `ζ' = S_Φ(t) ζ` at
+`t`. -/
 theorem hasDerivAt_clm_apply_iff_hasDerivAt_trivializedCoeff {Φ : ℝ → F →L[ℝ] V}
     {S : ℝ → V →L[ℝ] V} {ζ : ℝ → F} {t : ℝ} (hΦd : DifferentiableAt ℝ Φ t)
     (hΦ : (Φ t).IsInvertible) (hζ : DifferentiableAt ℝ ζ t) :
@@ -98,8 +106,8 @@ theorem hasDerivAt_clm_apply_iff_hasDerivAt_trivializedCoeff {Φ : ℝ → F →
   · rw [trivializedCoeff_apply, hΦ.self_apply_inverse]
     abel
 
-/-- If `Φ` is `C¹` with invertible values and `S` is continuous, `trivializedCoeff Φ S` is
-continuous. -/
+/-- If `F` is complete, `Φ` is `C¹` with invertible values, and `S` is continuous,
+`trivializedCoeff Φ S` is continuous. -/
 theorem continuous_trivializedCoeff [CompleteSpace F] {Φ : ℝ → F →L[ℝ] V} {S : ℝ → V →L[ℝ] V}
     (hΦ : ContDiff ℝ 1 Φ) (hinv : ∀ t, (Φ t).IsInvertible) (hS : Continuous S) :
     Continuous (trivializedCoeff Φ S) := by
@@ -113,23 +121,13 @@ theorem periodic_trivializedCoeff {Φ : ℝ → F →L[ℝ] V} {S : ℝ → V �
     (hΦ : Periodic Φ T) (hS : Periodic S T) : Periodic (trivializedCoeff Φ S) T := fun t ↦ by
   simp only [trivializedCoeff_def, hΦ t, hS t, hΦ.deriv t]
 
-end RealFrame
-
-section ComplexFrame
-
-variable {F V : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [NormedAddCommGroup V]
-  [NormedSpace ℝ V]
-
-/-- **Weight-shift compatibility:** subtracting `δ • K_t` from `S_t`, where `K_t` intertwines with
-`I • ·` through `Φ_t`, subtracts `δ • (I • id)` from `trivializedCoeff Φ S`. -/
-theorem trivializedCoeff_sub_smul {Φ : ℝ → F →L[ℝ] V} {S K : ℝ → V →L[ℝ] V} {t : ℝ}
-    (hΦ : (Φ t).IsInvertible) (hK : ∀ v, K t (Φ t v) = Φ t (I • v)) (δ : ℝ) :
-    trivializedCoeff Φ (fun r ↦ S r - δ • K r) t =
-      trivializedCoeff Φ S t - δ • (I • ContinuousLinearMap.id ℝ F) := by
+/-- **Perturbation compatibility:** subtracting `δ • K_t` from `S_t`, where `K_t` intertwines with
+`K₀` through an invertible frame value `Φ t`, subtracts `δ • K₀` from `trivializedCoeff Φ S t`. -/
+theorem trivializedCoeff_sub_smul {Φ : ℝ → F →L[ℝ] V} {S K : ℝ → V →L[ℝ] V} {K₀ : F →L[ℝ] F}
+    {t : ℝ} (hΦ : (Φ t).IsInvertible) (hK : ∀ v, K t (Φ t v) = Φ t (K₀ v)) (δ : ℝ) :
+    trivializedCoeff Φ (fun r ↦ S r - δ • K r) t = trivializedCoeff Φ S t - δ • K₀ := by
   ext v
-  simp only [trivializedCoeff_apply, sub_apply, smul_apply, ContinuousLinearMap.id_apply, hK,
-    sub_right_comm _ (δ • Φ t (I • v)), map_sub, map_smul, hΦ.inverse_apply_self]
-
-end ComplexFrame
+  simp only [trivializedCoeff_apply, sub_apply, smul_apply, hK, sub_right_comm _ (δ • Φ t (K₀ v)),
+    map_sub, map_smul, hΦ.inverse_apply_self]
 
 end TauCeti

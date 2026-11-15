@@ -78,10 +78,11 @@ bounds.
   bounded by `C` multiplies its norm by at most `C`.
 * `MeasureTheory.MemLp.eLpNorm_rpow_toReal_eq_enorm_integral`: for `0 < q < ∞`, the `q`-th power of
   the `L^q` norm of `f` is the norm of the integral of `‖f‖ ^ q`.
-* `LinearIsometry.norm_compLp` and `LinearIsometry.norm_compLpL`: post-composing an `Lᵖ` function
-  with a linear isometry preserves its `Lᵖ` norm.
-* `ContinuousLinearMap.norm_apply_one_compLp` and `ContinuousLinearMap.norm_apply_one_compLpL`:
-  evaluating an `Lᵖ` family of linear maps `𝕜 →L[𝕜] E` at `1` preserves its `Lᵖ` norm.
+* `LinearIsometry.norm_compLp` and `LinearIsometry.norm_compLpL_apply`: post-composing an `Lᵖ`
+  function with a semilinear isometry preserves its `Lᵖ` norm.
+* `ContinuousLinearMap.norm_apply_one_compLp` and
+  `ContinuousLinearMap.norm_apply_one_compLpL_apply`: evaluating an `Lᵖ` family of linear maps
+  `𝕜 →L[𝕜] E` at `1` preserves its `Lᵖ` norm.
 -/
 
 public section
@@ -479,7 +480,7 @@ theorem norm_compLp (L : E →ₛₗᵢ[σ] F) (f : Lp E p μ) :
 /-- Post-composing an `Lᵖ` function with a semilinear isometry via `compLpL` preserves its `Lᵖ`
 norm. -/
 @[simp]
-theorem norm_compLpL [Fact (1 ≤ p)] (L : E →ₛₗᵢ[σ] F) (f : Lp E p μ) :
+theorem norm_compLpL_apply [Fact (1 ≤ p)] (L : E →ₛₗᵢ[σ] F) (f : Lp E p μ) :
     ‖L.toContinuousLinearMap.compLpL p μ f‖ = ‖f‖ :=
   L.norm_compLp f
 
@@ -504,7 +505,7 @@ theorem norm_apply_one_compLp (f : Lp (𝕜 →L[𝕜] E) p μ) :
 /-- Pointwise evaluation at `1 : 𝕜` via `compLpL` on `Lp (𝕜 →L[𝕜] E) p μ` preserves the `Lᵖ`
 norm. -/
 @[simp]
-theorem norm_apply_one_compLpL [Fact (1 ≤ p)] (f : Lp (𝕜 →L[𝕜] E) p μ) :
+theorem norm_apply_one_compLpL_apply [Fact (1 ≤ p)] (f : Lp (𝕜 →L[𝕜] E) p μ) :
     ‖(ContinuousLinearMap.apply 𝕜 E (1 : 𝕜)).compLpL p μ f‖ = ‖f‖ :=
   norm_apply_one_compLp f
 

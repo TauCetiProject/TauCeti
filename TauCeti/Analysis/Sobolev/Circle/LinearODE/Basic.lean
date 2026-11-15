@@ -67,10 +67,8 @@ comparing weak and classical derivatives
   `ζ' = S ζ` has no nonzero continuous periodic solution.
 * `TauCeti.CircleSobolev.isFredholm_I_smul_loopOperator`,
   `TauCeti.CircleSobolev.index_I_smul_loopOperator`,
-  `TauCeti.CircleSobolev.isInvertible_I_smul_loopOperator_iff`,
-  `TauCeti.CircleSobolev.norm_inverse_I_smul_loopOperator`,
-  `TauCeti.CircleSobolev.I_smul_loopOperator_sub_smul_const_I`: Fredholmness, index zero,
-  invertibility, inverse norm, and constant-`I` loop shift of `I • loopOperator T S`.
+  `TauCeti.CircleSobolev.I_smul_loopOperator_sub_smul_const_I`: Fredholmness, index zero, and
+  constant-`I` loop shift of `I • loopOperator T S`.
 
 ## References
 
@@ -267,26 +265,6 @@ theorem isFredholm_I_smul_loopOperator (S : C(AddCircle T, E →L[ℝ] E)) :
 theorem index_I_smul_loopOperator (S : C(AddCircle T, E →L[ℝ] E)) :
     (I • loopOperator T S).index = 0 := by
   rw [← Complex.smulIEquiv_comp, ContinuousLinearMap.index_equiv_comp, index_loopOperator]
-
-/-- `I • loopOperator T S` is invertible if and only if `loopOperator T S` is invertible. -/
-@[simp]
-theorem isInvertible_I_smul_loopOperator_iff (S : C(AddCircle T, E →L[ℝ] E)) :
-    (I • loopOperator T S).IsInvertible ↔ (loopOperator T S).IsInvertible := by
-  rw [← Complex.smulIEquiv_comp, ContinuousLinearMap.isInvertible_equiv_comp]
-
-/-- `I • loopOperator T S` and `loopOperator T S` have equal inverse norms. -/
-@[simp]
-theorem norm_inverse_I_smul_loopOperator (S : C(AddCircle T, E →L[ℝ] E)) :
-    ‖(I • loopOperator T S).inverse‖ = ‖(loopOperator T S).inverse‖ := by
-  let e : CircleSobolev 0 E ≃ₗᵢ[ℝ] CircleSobolev 0 E :=
-    ⟨(Complex.smulIEquiv (CircleSobolev 0 E)).symm.toLinearEquiv, fun y ↦ by simp [norm_smul]⟩
-  have he :
-      ((Complex.smulIEquiv (CircleSobolev 0 E)).symm :
-        CircleSobolev 0 E →L[ℝ] CircleSobolev 0 E) = (e : _ →L[ℝ] _) := by
-    ext y
-    simp [e]
-  rw [← Complex.smulIEquiv_comp, ContinuousLinearMap.inverse_equiv_comp, he]
-  exact (loopOperator T S).inverse.opNorm_comp_linearIsometryEquiv e
 
 /-- Subtracting the constant complex-structure loop `δ • (I • id)` from `S` subtracts `δ • ι` from
 the asymptotic loop operator `I • loopOperator T S`. -/

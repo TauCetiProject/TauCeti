@@ -111,15 +111,8 @@ theorem norm_trajectoryOperator_le (A : Lp (F →L[ℝ] F) ∞ (mu.restrict Omeg
   let base := ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))
   have hd : ‖(ContinuousLinearMap.apply ℝ F (1 : ℝ)).compLp
       (weakFDeriv base u)‖ ≤ ‖u‖ := by
-    have heval : ‖ContinuousLinearMap.apply ℝ F (1 : ℝ)‖ ≤ 1 := by
-      apply ContinuousLinearMap.opNorm_le_bound _ zero_le_one
-      intro T
-      simpa using T.le_opNorm (1 : ℝ)
-    calc
-      _ ≤ ‖ContinuousLinearMap.apply ℝ F (1 : ℝ)‖ * ‖weakFDeriv base u‖ :=
-        ContinuousLinearMap.norm_compLp_le _ _
-      _ ≤ 1 * ‖weakFDeriv base u‖ := by gcongr
-      _ ≤ ‖u‖ := by simpa using norm_weakFDeriv_le base u
+    rw [ContinuousLinearMap.norm_apply_one_compLp]
+    exact norm_weakFDeriv_le base u
   have hA : ‖(ContinuousLinearMap.id ℝ (F →L[ℝ] F)).holder p A
       (prev base u)‖ ≤ ‖A‖ * ‖u‖ := by
     calc

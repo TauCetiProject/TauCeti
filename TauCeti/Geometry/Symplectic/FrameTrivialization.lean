@@ -13,11 +13,14 @@ import Mathlib.Analysis.Calculus.Deriv.Mul
 /-!
 # Preservation of infinitesimal symplecticity under frame trivialization
 
-Along a differentiable path of invertible symplectic frames `Φ : ℝ → F →L[ℝ] V` pulling `ω` back to
-`Im ⟪·, ·⟫` on a complex inner product space `F`, differentiating `ω(Φ(t) v, Φ(t) w)` cancels the
-connection term `Φ(t)⁻¹ Φ'(t)`, so `TauCeti.trivializedCoeff Φ S t` is infinitesimally symplectic
-on `F` whenever `S t` is for `ω` (`TauCeti.SymplecticForm.im_inner_trivializedCoeff_add_eq_zero`).
-Adapts `TauCeti.isSymmetric_frameConnection`
+Pulling a linearized symplectic or Hamiltonian ODE on `(V, ω)` back along a moving symplectic frame
+`Φ : ℝ → F →L[ℝ] V` into a complex inner product model `(F, Im ⟪·, ·⟫)` adds the connection term
+`-Φ(t)⁻¹ Φ'(t)` to the trivialized coefficient `TauCeti.trivializedCoeff Φ S t`, yet preserves
+infinitesimal symplecticity (`TauCeti.SymplecticForm.im_inner_trivializedCoeff_add_eq_zero`). This
+supplies the `H⁰`-symmetry hypothesis required by the circle Sobolev and stationary cylinder
+operators in `TauCeti/Geometry/Symplectic/Floer/AsymptoticOperator/Trivialization.lean` and
+`TauCeti/Geometry/Symplectic/Floer/AsymptoticOperator/Cylinder.lean`. Adapts
+`TauCeti.isSymmetric_frameConnection`
 (`TauCeti/Geometry/Symplectic/JHolomorphic/OrbitTorus/Trivialization.lean`).
 
 ## References
@@ -34,8 +37,9 @@ namespace TauCeti.SymplecticForm
 variable {F V : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F]
   [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
-/-- **Preservation of infinitesimal symplecticity.** If `Φ` pulls `ω` back to `Im ⟪·, ·⟫` on `F`,
-`trivializedCoeff Φ S t` is infinitesimally symplectic whenever `S t` is for `ω`. -/
+/-- **Preservation of infinitesimal symplecticity:** if `Φ` is differentiable with invertible value
+at `t` and pulls `ω` back to `Im ⟪·, ·⟫` on `F`, then `trivializedCoeff Φ S t` is infinitesimally
+symplectic on `F` whenever `S t` is infinitesimally symplectic for `ω`. -/
 theorem im_inner_trivializedCoeff_add_eq_zero (ω : SymplecticForm V) {Φ : ℝ → F →L[ℝ] V}
     {S : ℝ → V →L[ℝ] V} {t : ℝ} (hΦd : DifferentiableAt ℝ Φ t) (hΦ : (Φ t).IsInvertible)
     (hω : ∀ r v w, ω (Φ r v) (Φ r w) = (inner ℂ v w).im)

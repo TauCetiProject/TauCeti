@@ -31,9 +31,9 @@ product space `F` (`ω₀(v, w) = Im ⟪v, w⟫`). Pulling back `S_t = dX_{H_t}(
    (`exists_pos_isInvertible_cylinderOperator_sub_smul_norm_inverse_le_of_trivializedCoeff`,
    `eventually_isInvertible_cylinderOperator_sub_smul_of_trivializedCoeff`).
 
-Specializing to the identity frame on `(F, ω)` gives frame-free theorems in
-`TauCeti.SymplecticForm`, complementing `isInvertible_loopOperator_of_isNondegenerateFixedPt` and
-`eventually_isInvertible_loopOperator_sub_smul`
+Specializing to the identity frame on `(F, ω)` with `ω(v, w) = Im ⟪v, w⟫` gives frame-free theorems
+in `TauCeti.SymplecticForm`, complementing `isInvertible_loopOperator_iff_isNondegenerateFixedPt`
+and `eventually_isInvertible_loopOperator_sub_smul`
 (`TauCeti/Geometry/Symplectic/Floer/AsymptoticOperator.lean`).
 
 ## References
@@ -71,8 +71,11 @@ theorem injective_cylinderOperator_of_trivializedCoeff (ω : SymplecticForm V) {
   CircleSobolev.injective_cylinderOperator 1
     (ω.im_inner_apply_add_eq_zero_of_trivializedCoeff hH hΦd hΦ hω hS)
 
-/-- **Stationary cylinder invertibility equivalence in a `1`-periodic symplectic frame:**
-`cylinderOperator 1 S` is invertible iff `x(0)` is a nondegenerate fixed point of the flow. -/
+/-- **Stationary cylinder invertibility equivalence in a `1`-periodic symplectic frame:** along a
+`1`-periodic orbit `x` of a `1`-periodic, jointly `C²` Hamiltonian `H` with globally Lipschitz
+suspended vector field, in a differentiable invertible `1`-periodic symplectic frame `Φ`,
+`CircleSobolev.cylinderOperator 1 S` is invertible iff `x(0)` is a nondegenerate fixed point of the
+time-one flow. -/
 theorem isInvertible_cylinderOperator_iff_isNondegenerateFixedPt_of_trivializedCoeff
     (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
     (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H)) (hH : ContDiff ℝ 2 (uncurry H))
@@ -90,8 +93,11 @@ theorem isInvertible_cylinderOperator_iff_isNondegenerateFixedPt_of_trivializedC
     (ω.isInvertible_loopOperator_iff_isNondegenerateFixedPt_of_trivializedCoeff hX hH hHp hx hxp
       hΦd hΦp hΦ hS)
 
-/-- **Stationary cylinder Fredholm equivalence in a `1`-periodic symplectic frame:**
-`cylinderOperator 1 S` is Fredholm iff `x(0)` is a nondegenerate fixed point of the flow. -/
+/-- **Stationary cylinder Fredholm equivalence in a `1`-periodic symplectic frame:** along a
+`1`-periodic orbit `x` of a `1`-periodic, jointly `C²` Hamiltonian `H` with globally Lipschitz
+suspended vector field, in a differentiable invertible `1`-periodic symplectic frame `Φ`,
+`CircleSobolev.cylinderOperator 1 S` is Fredholm iff `x(0)` is a nondegenerate fixed point of the
+time-one flow. -/
 theorem isFredholm_cylinderOperator_iff_isNondegenerateFixedPt_of_trivializedCoeff
     (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
     (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H)) (hH : ContDiff ℝ 2 (uncurry H))
@@ -109,8 +115,10 @@ theorem isFredholm_cylinderOperator_iff_isNondegenerateFixedPt_of_trivializedCoe
     (ω.isInvertible_loopOperator_iff_isNondegenerateFixedPt_of_trivializedCoeff hX hH hHp hx hxp
       hΦd hΦp hΦ hS)
 
-/-- **Uniform perturbed cylinder inverses at a nondegenerate orbit:** for any `Jc`,
-`cylinderOperator 1 (S - δ • Jc)` has inverse norm at most `C` for `|δ| ≤ ε`. -/
+/-- **Uniform perturbed cylinder inverses at a nondegenerate orbit:** in a differentiable invertible
+`1`-periodic symplectic frame along a nondegenerate `1`-periodic orbit of a `1`-periodic, jointly
+`C²` Hamiltonian with globally Lipschitz suspended vector field, for any `Jc`,
+`CircleSobolev.cylinderOperator 1 (S - δ • Jc)` has inverse norm at most `C` for `|δ| ≤ ε`. -/
 theorem exists_pos_isInvertible_cylinderOperator_sub_smul_norm_inverse_le_of_trivializedCoeff
     (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
     (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H)) (hH : ContDiff ℝ 2 (uncurry H))
@@ -135,7 +143,8 @@ theorem exists_pos_isInvertible_cylinderOperator_sub_smul_norm_inverse_le_of_tri
         hX hH hHp hx hxp hΦd hΦp hΦ hS).2 hnd)
   exact ⟨ε, hε, C, hC, fun δ hδ ↦ h () rfl δ hδ⟩
 
-/-- Filter form of perturbed cylinder invertibility in a `1`-periodic symplectic frame. -/
+/-- Filter form of perturbed cylinder invertibility in a differentiable invertible `1`-periodic
+symplectic frame along a nondegenerate `1`-periodic orbit. -/
 theorem eventually_isInvertible_cylinderOperator_sub_smul_of_trivializedCoeff
     (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
     (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H)) (hH : ContDiff ℝ 2 (uncurry H))
@@ -171,7 +180,10 @@ theorem injective_cylinderOperator (ω : SymplecticForm F) (hω : ∀ v w, ω v 
     (differentiable_const _) (fun _ ↦ isInvertible_equiv (f := ContinuousLinearEquiv.refl ℝ F))
     (fun _ ↦ hω) fun t ↦ by simp [hS t]
 
-/-- **Frame-free stationary cylinder invertibility equivalence** along a `1`-periodic orbit `x`. -/
+/-- **Frame-free stationary cylinder invertibility equivalence:** on `(F, ω)` with
+`ω(v, w) = Im ⟪v, w⟫`, along a `1`-periodic orbit `x` of a `1`-periodic, jointly `C²` Hamiltonian
+`H` with globally Lipschitz suspended vector field, `CircleSobolev.cylinderOperator 1 S` is
+invertible iff `x(0)` is a nondegenerate fixed point of the time-one flow. -/
 theorem isInvertible_cylinderOperator_iff_isNondegenerateFixedPt (ω : SymplecticForm F)
     (hω : ∀ v w, ω v w = (inner ℂ v w).im) {H : ℝ → F → ℝ} {K : ℝ≥0}
     (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H)) (hH : ContDiff ℝ 2 (uncurry H))
@@ -186,7 +198,10 @@ theorem isInvertible_cylinderOperator_iff_isNondegenerateFixedPt (ω : Symplecti
     (fun _ ↦ rfl) (fun _ ↦ isInvertible_equiv (f := ContinuousLinearEquiv.refl ℝ F)) (fun _ ↦ hω)
     fun t ↦ by simp [hS t]
 
-/-- **Frame-free stationary cylinder Fredholm equivalence** along a `1`-periodic orbit `x`. -/
+/-- **Frame-free stationary cylinder Fredholm equivalence:** on `(F, ω)` with
+`ω(v, w) = Im ⟪v, w⟫`, along a `1`-periodic orbit `x` of a `1`-periodic, jointly `C²` Hamiltonian
+`H` with globally Lipschitz suspended vector field, `CircleSobolev.cylinderOperator 1 S` is
+Fredholm iff `x(0)` is a nondegenerate fixed point of the time-one flow. -/
 theorem isFredholm_cylinderOperator_iff_isNondegenerateFixedPt (ω : SymplecticForm F)
     (hω : ∀ v w, ω v w = (inner ℂ v w).im) {H : ℝ → F → ℝ} {K : ℝ≥0}
     (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H)) (hH : ContDiff ℝ 2 (uncurry H))
@@ -201,7 +216,10 @@ theorem isFredholm_cylinderOperator_iff_isNondegenerateFixedPt (ω : SymplecticF
     (fun _ ↦ rfl) (fun _ ↦ isInvertible_equiv (f := ContinuousLinearEquiv.refl ℝ F)) (fun _ ↦ hω)
     fun t ↦ by simp [hS t]
 
-/-- **Frame-free uniform perturbed cylinder inverses** along a nondegenerate `1`-periodic orbit. -/
+/-- **Frame-free uniform perturbed cylinder inverses:** on `(F, ω)` with `ω(v, w) = Im ⟪v, w⟫`,
+along a nondegenerate `1`-periodic orbit of a `1`-periodic, jointly `C²` Hamiltonian with globally
+Lipschitz suspended vector field, `CircleSobolev.cylinderOperator 1 (S - δ • Jc)` has uniformly
+bounded inverse for small `|δ|`. -/
 theorem exists_pos_isInvertible_cylinderOperator_sub_smul_norm_inverse_le_of_isNondegenerateFixedPt
     (ω : SymplecticForm F) (hω : ∀ v w, ω v w = (inner ℂ v w).im) {H : ℝ → F → ℝ} {K : ℝ≥0}
     (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H)) (hH : ContDiff ℝ 2 (uncurry H))
@@ -219,7 +237,8 @@ theorem exists_pos_isInvertible_cylinderOperator_sub_smul_norm_inverse_le_of_isN
     (fun _ ↦ rfl) (fun _ ↦ isInvertible_equiv (f := ContinuousLinearEquiv.refl ℝ F)) (fun _ ↦ hω)
     (fun t ↦ by simp [hS t]) Jc
 
-/-- Filter form of frame-free perturbed cylinder invertibility for `δ` near `0`. -/
+/-- Filter form of frame-free perturbed cylinder invertibility on `(F, ω)` with
+`ω(v, w) = Im ⟪v, w⟫` along a nondegenerate `1`-periodic orbit for `δ` near `0`. -/
 theorem eventually_isInvertible_cylinderOperator_sub_smul (ω : SymplecticForm F)
     (hω : ∀ v w, ω v w = (inner ℂ v w).im) {H : ℝ → F → ℝ} {K : ℝ≥0}
     (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H)) (hH : ContDiff ℝ 2 (uncurry H))

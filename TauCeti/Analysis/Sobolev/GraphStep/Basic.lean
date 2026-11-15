@@ -527,11 +527,21 @@ theorem prev_mkLine (base : X →L[ℝ] Lp F p (mu.restrict Omega)) (x : X)
     prev base (mkLine base x g h) = x :=
   prev_mk _ _ _ _
 
+/-- The weak Fréchet derivative of `mkLine base x g h` pushes `g` forward along
+`ContinuousLinearMap.toSpanSingletonLIE ℝ F`. -/
+@[simp]
+theorem weakFDeriv_mkLine (base : X →L[ℝ] Lp F p (mu.restrict Omega)) (x : X)
+    (g : Lp F p (mu.restrict Omega)) (h : HasWeakLineDerivOn mu Omega (base x) g 1) :
+    weakFDeriv base (mkLine base x g h) =
+      (ContinuousLinearMap.toSpanSingletonLIE ℝ F).toLinearIsometry.toContinuousLinearMap.compLp
+        g :=
+  weakFDeriv_mk _ _ _ _
+
 /-- Evaluating `weakFDeriv` of `mkLine base x g h` at `1` recovers `g` almost everywhere. -/
 theorem weakFDeriv_mkLine_apply_one_ae (base : X →L[ℝ] Lp F p (mu.restrict Omega)) (x : X)
     (g : Lp F p (mu.restrict Omega)) (h : HasWeakLineDerivOn mu Omega (base x) g 1) :
     (fun s ↦ weakFDeriv base (mkLine base x g h) s 1) =ᵐ[mu.restrict Omega] g := by
-  rw [mkLine, weakFDeriv_mk]
+  rw [weakFDeriv_mkLine]
   filter_upwards [(ContinuousLinearMap.toSpanSingletonLIE ℝ F)
     |>.toLinearIsometry.toContinuousLinearMap.coeFn_compLp g] with s hs
   simp [hs]

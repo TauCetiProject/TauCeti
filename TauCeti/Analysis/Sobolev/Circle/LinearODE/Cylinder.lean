@@ -8,27 +8,30 @@ module
 public import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain
 public import TauCeti.Analysis.Sobolev.Circle.LinearODE.Eigenbasis
 import TauCeti.Analysis.Normed.Operator.CompactFamily
+import TauCeti.Analysis.Normed.Operator.ComplexSmulI
 
 /-!
 # The stationary cylinder operator over periodic circle Sobolev spaces
 
-For a finite-dimensional complex normed space `E` and `S : C(AddCircle T, E →L[ℝ] E)` (`T > 0`),
-`ι = (CircleSobolev.inclusion zero_le_one).restrictScalars ℝ` defines the common-domain Sobolev
-space `WeakDerivStep volume ⊤ 2 (ι.compLpL 2 (volume.restrict (⊤ : Opens ℝ)))`, i.e.
-`L²(ℝ, H¹(AddCircle T, E)) ∩ W^{1,2}(ℝ, H⁰(AddCircle T, E))`. Combining `ι` with
-`I • CircleSobolev.loopOperator T S` via `TauCeti.WeakDerivStep.domainTrajectoryOperator` realizes
-`∂s ∘ ι + I • L_S` as `TauCeti.CircleSobolev.cylinderOperator T S` (`cylinderOperator_sub`,
-`cylinderOperator_sub_smul_const_I`). When `F` is a finite-dimensional complex inner product space
-and `S` is infinitesimally symplectic (`Im ⟪S t v, w⟫ + Im ⟪v, S t w⟫ = 0`), `I • loopOperator T S`
-is `ι`-symmetric and Fredholm of index zero (`real_inner_I_smul_loopOperator_comm`,
-`isFredholm_I_smul_loopOperator`, `index_I_smul_loopOperator`), so `CommonDomain.lean` yields:
+In a unitary frame on a finite-dimensional complex space `E`, the linearized Cauchy–Riemann /
+stationary Hamiltonian Floer operator on the infinite cylinder `ℝ × AddCircle T` (`T > 0`) takes
+the autonomous form `∂s + I (∂t - S_t)` for a continuous loop `S : C(AddCircle T, E →L[ℝ] E)`.
+Feeding the Sobolev inclusion `ι = (CircleSobolev.inclusion zero_le_one).restrictScalars ℝ :
+H¹(AddCircle T, E) →L[ℝ] H⁰(AddCircle T, E)` and `I • CircleSobolev.loopOperator T S` into
+`TauCeti.WeakDerivStep.domainTrajectoryOperator` gives its `W^{1,2}` realization
+`TauCeti.CircleSobolev.cylinderOperator T S` on
+`L²(ℝ, H¹(AddCircle T, E)) ∩ W^{1,2}(ℝ, H⁰(AddCircle T, E))`. Perturbations `S - δ • J` encode
+conjugation by exponential weights `e^{±δ s}` on cylindrical ends, feeding the symplectic orbit
+realization in `TauCeti/Geometry/Symplectic/Floer/AsymptoticOperator/Cylinder.lean`.
 
-* **Injectivity and equivalences.** `cylinderOperator T S` is injective
+When `F` is a finite-dimensional complex inner product space and `S` is infinitesimally symplectic
+(`Im ⟪S t v, w⟫ + Im ⟪v, S t w⟫ = 0`), `I • loopOperator T S` is `ι`-symmetric and Fredholm of
+index zero, so `CommonDomain.lean` yields:
+
+* **Injectivity and equivalences.** `cylinderOperator T S` is unconditionally injective
   (`injective_cylinderOperator`), and its closed range, Fredholmness, and invertibility are each
   equivalent to invertibility of `loopOperator T S` and absence of nonzero `T`-periodic solutions
-  of `ζ' = S ζ` (`isClosed_range_cylinderOperator_iff_isInvertible_loopOperator`,
-  `isFredholm_cylinderOperator_iff_isInvertible_loopOperator`,
-  `isInvertible_cylinderOperator_iff_isInvertible_loopOperator`,
+  of `ζ' = S ζ` (`isInvertible_cylinderOperator_iff_isInvertible_loopOperator`,
   `isInvertible_cylinderOperator_iff`).
 * **Pythagorean identity and bounds.** `‖cylinderOperator T S u‖² = ‖(ι ∘ u)'‖² + ‖(I • L_S) ∘ u‖²`
   (`norm_cylinderOperator_sq`), `‖(cylinderOperator T S).inverse‖ ≤ √(1 + ‖(loopOperator T S)⁻¹‖²)`
@@ -38,10 +41,9 @@ is `ι`-symmetric and Fredholm of index zero (`real_inner_I_smul_loopOperator_co
   `S p`, `cylinderOperator T (S p - δ • J p)` has uniformly bounded inverse for small `|δ|`
   (`exists_pos_isInvertible_cylinderOperator_sub_smul_norm_inverse_le`,
   `exists_pos_isInvertible_cylinderOperator_sub_smul_norm_inverse_le_of_isInvertible_loopOperator`,
-  adapting `TauCeti/Analysis/Sobolev/Circle/LinearODE/Family.lean`), and eigenmodes
-  `I • L_S a = λ • ι a` intertwine `cylinderOperator T S` with `w' + λ w`
-  (`cylinderOperator_smulRightBaseW1pL_ae_of_I_smul_loopOperator_eq_smul`,
-  `compLpL_innerSL_cylinderOperator_ae_of_I_smul_loopOperator_eq_smul`).
+  adapting `TauCeti.CircleSobolev.exists_pos_isInvertible_loopOperator_sub_smul_norm_inverse_le` in
+  `TauCeti/Analysis/Sobolev/Circle/LinearODE/Family.lean`), and eigenmodes intertwine
+  `cylinderOperator T S` with `w' + λ w`.
 
 ## References
 
@@ -207,7 +209,7 @@ theorem isClosed_range_cylinderOperator_iff_isInvertible_loopOperator
   rw [cylinderOperator, WeakDerivStep.isClosed_range_domainTrajectoryOperator_iff
     (inclusion_injective zero_le_one) (real_inner_I_smul_loopOperator_comm T S hS)
     (isFredholm_I_smul_loopOperator T S) (index_I_smul_loopOperator T S),
-    isInvertible_I_smul_loopOperator_iff]
+    ContinuousLinearMap.isInvertible_I_smul_iff]
 
 /-- **Invertibility equivalence:** for infinitesimally symplectic `S`, `cylinderOperator T S` is
 invertible iff `loopOperator T S` is invertible. -/
@@ -217,7 +219,7 @@ theorem isInvertible_cylinderOperator_iff_isInvertible_loopOperator {S : C(AddCi
   rw [cylinderOperator, WeakDerivStep.isInvertible_domainTrajectoryOperator_iff
     (inclusion_injective zero_le_one) (real_inner_I_smul_loopOperator_comm T S hS)
     (isFredholm_I_smul_loopOperator T S) (index_I_smul_loopOperator T S),
-    isInvertible_I_smul_loopOperator_iff]
+    ContinuousLinearMap.isInvertible_I_smul_iff]
 
 /-- **Fredholm equivalence:** for infinitesimally symplectic `S`, `cylinderOperator T S` is Fredholm
 iff `loopOperator T S` is invertible. -/
@@ -227,7 +229,7 @@ theorem isFredholm_cylinderOperator_iff_isInvertible_loopOperator {S : C(AddCirc
   rw [cylinderOperator, WeakDerivStep.isFredholm_domainTrajectoryOperator_iff
     (inclusion_injective zero_le_one) (real_inner_I_smul_loopOperator_comm T S hS)
     (isFredholm_I_smul_loopOperator T S) (index_I_smul_loopOperator T S),
-    isInvertible_I_smul_loopOperator_iff]
+    ContinuousLinearMap.isInvertible_I_smul_iff]
 
 /-- **Classical ODE criterion:** for infinitesimally symplectic `S`, `cylinderOperator T S` is
 invertible iff `ζ' = S ζ` has no nonzero continuous `T`-periodic solution. -/
@@ -244,7 +246,7 @@ theorem index_cylinderOperator {S : C(AddCircle T, F →L[ℝ] F)}
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0)
     (hL : (loopOperator T S).IsInvertible) : (cylinderOperator T S).index = 0 :=
   WeakDerivStep.index_domainTrajectoryOperator (real_inner_I_smul_loopOperator_comm T S hS)
-    ((isInvertible_I_smul_loopOperator_iff T S).2 hL)
+    ((ContinuousLinearMap.isInvertible_I_smul_iff _).2 hL)
 
 /-- **Inverse norm bound:**
 `‖(cylinderOperator T S).inverse‖ ≤ √(1 + ‖(loopOperator T S).inverse‖²)` for infinitesimally
@@ -253,10 +255,11 @@ theorem norm_inverse_cylinderOperator_le {S : C(AddCircle T, F →L[ℝ] F)}
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0)
     (hL : (loopOperator T S).IsInvertible) :
     ‖(cylinderOperator T S).inverse‖ ≤ √(1 + ‖(loopOperator T S).inverse‖ ^ 2) := by
-  simpa only [cylinderOperator, norm_inverse_I_smul_loopOperator] using
+  simpa only [cylinderOperator, ContinuousLinearMap.norm_inverse_I_smul] using
     WeakDerivStep.norm_inverse_domainTrajectoryOperator_le
       (ι := (inclusion (E := F) zero_le_one).restrictScalars ℝ)
-      (real_inner_I_smul_loopOperator_comm T S hS) ((isInvertible_I_smul_loopOperator_iff T S).2 hL)
+      (real_inner_I_smul_loopOperator_comm T S hS)
+      ((ContinuousLinearMap.isInvertible_I_smul_iff _).2 hL)
 
 /-- **Spectral-gap `L²` bound:** if `S` is infinitesimally symplectic and
 `c ‖ι a‖ ≤ ‖loopOperator T S a‖` (`c > 0`), then
@@ -290,7 +293,9 @@ theorem
   exists_pos_isInvertible_cylinderOperator_sub_smul_norm_inverse_le T hK S J hS hJ fun p hp ↦
     (isInvertible_cylinderOperator_iff_isInvertible_loopOperator T (hSymm p hp)).2 (hinv p hp)
 
-/-- **Eigenmode projection on the cylinder** along `I • loopOperator T S a = λ • ι a`. -/
+/-- **Eigenmode projection on the cylinder:** for infinitesimally symplectic `S` and an eigenmode
+`I • loopOperator T S a = λ • ι a`, projecting `cylinderOperator T S u` onto `ι a` yields
+`s ↦ w'(s) + λ w(s)` almost everywhere for `w(s) = ⟪ι a, (ι ∘ u)(s)⟫_ℝ`. -/
 theorem compLpL_innerSL_cylinderOperator_ae_of_I_smul_loopOperator_eq_smul
     {S : C(AddCircle T, F →L[ℝ] F)}
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0)

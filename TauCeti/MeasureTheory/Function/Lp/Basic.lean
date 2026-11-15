@@ -21,7 +21,7 @@ composition and identity laws for `ContinuousLinearMap.compLp` and `ContinuousLi
 * `MeasureTheory.MemLp.toLp_finsetSum'`: `hsum.toLp (∑ i ∈ s, f i) = ∑ i ∈ s, (hf i).toLp (f i)`.
 * `MeasureTheory.MemLp.toLp_finsetSum`:
   `hsum.toLp (fun x ↦ ∑ i ∈ s, f i x) = ∑ i ∈ s, (hf i).toLp (f i)`.
-* `ContinuousLinearMap.comp_compLp`, `ContinuousLinearMap.comp_compLpL`,
+* `ContinuousLinearMap.compLp_compLp`, `ContinuousLinearMap.compLpL_comp_compLpL`,
   `ContinuousLinearMap.compLpL_compLpL`: composition laws for `compLp` and `compLpL`.
 * `ContinuousLinearMap.id_compLp`, `ContinuousLinearMap.id_compLpL`: identity laws for `compLp` and
   `compLpL`.
@@ -56,29 +56,44 @@ namespace ContinuousLinearMap
 
 open MeasureTheory
 
-variable {α E F G 𝕜 : Type*} {_ : MeasurableSpace α} {μ : Measure α} {p : ℝ≥0∞}
-  [NormedAddCommGroup E] [NormedAddCommGroup F] [NormedAddCommGroup G]
-  [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E] [NormedSpace 𝕜 F] [NormedSpace 𝕜 G]
+section Comp
 
-/-- Composing `Lp` pushforwards of continuous linear maps agrees with the pushforward of their
+variable {α E F G 𝕜₁ 𝕜₂ 𝕜₃ : Type*} {_ : MeasurableSpace α} {μ : Measure α} {p : ℝ≥0∞}
+  [NormedAddCommGroup E] [NormedAddCommGroup F] [NormedAddCommGroup G]
+  [NontriviallyNormedField 𝕜₁] [NontriviallyNormedField 𝕜₂] [NontriviallyNormedField 𝕜₃]
+  [NormedSpace 𝕜₁ E] [NormedSpace 𝕜₂ F] [NormedSpace 𝕜₃ G]
+  {σ₁₂ : 𝕜₁ →+* 𝕜₂} {σ₂₃ : 𝕜₂ →+* 𝕜₃} {σ₁₃ : 𝕜₁ →+* 𝕜₃}
+  [RingHomCompTriple σ₁₂ σ₂₃ σ₁₃] [RingHomIsometric σ₁₂] [RingHomIsometric σ₂₃]
+  [RingHomIsometric σ₁₃]
+
+/-- Composing `Lp` pushforwards of continuous semilinear maps agrees with the pushforward of their
 composition. -/
-theorem comp_compLp (L : F →L[𝕜] G) (M : E →L[𝕜] F) (f : Lp E p μ) :
+theorem compLp_compLp (L : F →SL[σ₂₃] G) (M : E →SL[σ₁₂] F) (f : Lp E p μ) :
     L.compLp (M.compLp f) = (L.comp M).compLp f := by
   ext1
   filter_upwards [L.coeFn_compLp (M.compLp f), M.coeFn_compLp f, (L.comp M).coeFn_compLp f] with
     x hx1 hx2 hx3
   rw [hx1, hx2, hx3, comp_apply]
 
-/-- Composing `compLpL` operators agrees with `compLpL` of the composed operator. -/
-theorem comp_compLpL [Fact (1 ≤ p)] (L : F →L[𝕜] G) (M : E →L[𝕜] F) :
+/-- Composing `compLpL` operators agrees with `compLpL` of the composed continuous semilinear
+operator. -/
+theorem compLpL_comp_compLpL [Fact (1 ≤ p)] (L : F →SL[σ₂₃] G) (M : E →SL[σ₁₂] F) :
     (L.compLpL p μ).comp (M.compLpL p μ) = (L.comp M).compLpL p μ := by
   ext1 f
-  exact L.comp_compLp M f
+  exact L.compLp_compLp M f
 
-/-- Applying `compLpL` in succession agrees with `compLpL` of the composed operator. -/
-theorem compLpL_compLpL [Fact (1 ≤ p)] (L : F →L[𝕜] G) (M : E →L[𝕜] F) (f : Lp E p μ) :
+/-- Applying `compLpL` in succession agrees with `compLpL` of the composed continuous semilinear
+operator. -/
+theorem compLpL_compLpL [Fact (1 ≤ p)] (L : F →SL[σ₂₃] G) (M : E →SL[σ₁₂] F) (f : Lp E p μ) :
     L.compLpL p μ (M.compLpL p μ f) = (L.comp M).compLpL p μ f :=
-  L.comp_compLp M f
+  L.compLp_compLp M f
+
+end Comp
+
+section Id
+
+variable {α E 𝕜 : Type*} {_ : MeasurableSpace α} {μ : Measure α} {p : ℝ≥0∞}
+  [NormedAddCommGroup E] [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E]
 
 /-- Pushing an `Lp` function forward along the identity map returns it unchanged. -/
 @[simp]
@@ -92,5 +107,7 @@ theorem id_compLpL [Fact (1 ≤ p)] :
     (ContinuousLinearMap.id 𝕜 E).compLpL p μ = ContinuousLinearMap.id 𝕜 (Lp E p μ) := by
   ext1 f
   exact id_compLp f
+
+end Id
 
 end ContinuousLinearMap
