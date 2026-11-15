@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.LaxMilgram
+public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 import TauCeti.Analysis.InnerProductSpace.Coercive
 
 /-!
@@ -34,7 +35,7 @@ Over `RCLike` scalars, `InnerProductSpace.continuousLinearMapOfBilin B` is inver
   continuous linear map `j : V →L[𝕜] H` into a seminormed inner-product space `H`, the `𝕜`-linear
   `H`-forcing map `H →L[𝕜] V` of norm at most `c⁻¹ * ‖j‖` solving `B u v = ⟪h, j v⟫_𝕜` and the
   induced bounded operator `j ∘ formSolutionMap : H →L[𝕜] H` of norm at most `c⁻¹ * ‖j‖ ^ 2`,
-  which is symmetric (and self-adjoint when `H` is complete) whenever `B` is Hermitian.
+  which is symmetric (and self-adjoint when `H` is a Hilbert space) whenever `B` is Hermitian.
 
 At `𝕜 = ℝ`, `IsCoercive.continuousLinearEquivOfBilin_eq` and
 `IsCoercive.solutionOfFunctional_eq` identify the `RCLike` constructions with their real
@@ -48,8 +49,9 @@ counterparts.
 * `InnerProductSpace.solutionOfFunctional`: conjugate-linear dual-forcing solution map over
   `RCLike` scalars, with norm bound `c⁻¹`.
 * `InnerProductSpace.formSolutionMap` and `InnerProductSpace.formSolutionOperator`: `𝕜`-linear
-  `H`-forcing solution map and induced operator on `H`, with norm bounds, Hermitian symmetry,
-  positivity, and injectivity under dense range.
+  `H`-forcing solution map and induced operator on `H`, with norm bounds, compactness under compact
+  `j`, Hermitian symmetry, nonnegativity of the real part of its quadratic form, injectivity on
+  normed `H` under dense range, and dense range on a Hilbert space `H`.
 
 ## References
 
@@ -200,6 +202,20 @@ theorem re_apply_self_nonneg_of_coercive (B : V →L⋆[𝕜] V →L[𝕜] 𝕜)
 
 end SeminormedSesq
 
+section NormedSesq
+
+variable {𝕜 V : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+
+/-- A vector where the diagonal real part of a coercive sesquilinear form (`0 < c`) is
+nonpositive is zero. -/
+theorem eq_zero_of_re_apply_self_nonpos_of_coercive (B : V →L⋆[𝕜] V →L[𝕜] 𝕜) {c : ℝ} (hc : 0 < c)
+    (hB : ∀ u, c * ‖u‖ ^ 2 ≤ RCLike.re (B u u)) {u : V} (hu : RCLike.re (B u u) ≤ 0) :
+    u = 0 :=
+  norm_eq_zero.mp <| (pow_eq_zero_iff two_ne_zero).mp <|
+    le_antisymm (nonpos_of_mul_nonpos_right ((hB u).trans hu) hc) (sq_nonneg _)
+
+end NormedSesq
+
 section Complete
 
 variable {𝕜 V : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [CompleteSpace V]
@@ -226,11 +242,7 @@ sesquilinear form `B` with `c * ‖u‖ ^ 2 ≤ re (B u u)` (`0 < c`) upgrades
 `continuousLinearMapOfBilin B` to a continuous `𝕜`-linear equivalence `V ≃L[𝕜] V`. -/
 def continuousLinearEquivOfBilin (B : V →L⋆[𝕜] V →L[𝕜] 𝕜) {c : ℝ} (hc : 0 < c)
     (hB : ∀ u, c * ‖u‖ ^ 2 ≤ RCLike.re (B u u)) : V ≃L[𝕜] V :=
-  let hunit := isUnit_continuousLinearMapOfBilin_of_coercive B hc hB
-  ContinuousLinearEquiv.equivOfInverse (continuousLinearMapOfBilin B)
-    (↑hunit.unit⁻¹ : V →L[𝕜] V)
-    (fun x => ContinuousLinearMap.ext_iff.mp hunit.val_inv_mul x)
-    (fun x => ContinuousLinearMap.ext_iff.mp hunit.mul_val_inv x)
+  ContinuousLinearEquiv.ofUnit (isUnit_continuousLinearMapOfBilin_of_coercive B hc hB).unit
 
 /-- The underlying continuous linear map of `continuousLinearEquivOfBilin` is
 `continuousLinearMapOfBilin B`. -/
@@ -240,12 +252,13 @@ theorem toContinuousLinearMap_continuousLinearEquivOfBilin (B : V →L⋆[𝕜] 
     (continuousLinearEquivOfBilin B hc hB : V →L[𝕜] V) = continuousLinearMapOfBilin B :=
   (rfl)
 
-/-- The sesquilinear Lax--Milgram equivalence is independent of the choice of coercivity constant
-and witness. -/
-theorem continuousLinearEquivOfBilin_congr (B : V →L⋆[𝕜] V →L[𝕜] 𝕜) {c₁ c₂ : ℝ}
-    (hc₁ : 0 < c₁) (hB₁ : ∀ u, c₁ * ‖u‖ ^ 2 ≤ RCLike.re (B u u))
-    (hc₂ : 0 < c₂) (hB₂ : ∀ u, c₂ * ‖u‖ ^ 2 ≤ RCLike.re (B u u)) :
-    continuousLinearEquivOfBilin B hc₁ hB₁ = continuousLinearEquivOfBilin B hc₂ hB₂ := by
+/-- The sesquilinear Lax--Milgram equivalence depends only on the form `B`, not on the choice of
+coercivity constant or witness. -/
+theorem continuousLinearEquivOfBilin_congr {B₁ B₂ : V →L⋆[𝕜] V →L[𝕜] 𝕜} (hB : B₁ = B₂)
+    {c₁ c₂ : ℝ} (hc₁ : 0 < c₁) (hB₁ : ∀ u, c₁ * ‖u‖ ^ 2 ≤ RCLike.re (B₁ u u))
+    (hc₂ : 0 < c₂) (hB₂ : ∀ u, c₂ * ‖u‖ ^ 2 ≤ RCLike.re (B₂ u u)) :
+    continuousLinearEquivOfBilin B₁ hc₁ hB₁ = continuousLinearEquivOfBilin B₂ hc₂ hB₂ := by
+  subst hB
   ext
   rfl
 
@@ -305,13 +318,15 @@ theorem solutionOfFunctional_apply (B : V →L⋆[𝕜] V →L[𝕜] 𝕜) {c : 
       (continuousLinearEquivOfBilin B hc hB).symm ((toDual 𝕜 V).symm ℓ) :=
   (rfl)
 
-/-- `solutionOfFunctional` is independent of the choice of coercivity constant and witness. -/
-theorem solutionOfFunctional_congr (B : V →L⋆[𝕜] V →L[𝕜] 𝕜) {c₁ c₂ : ℝ}
-    (hc₁ : 0 < c₁) (hB₁ : ∀ u, c₁ * ‖u‖ ^ 2 ≤ RCLike.re (B u u))
-    (hc₂ : 0 < c₂) (hB₂ : ∀ u, c₂ * ‖u‖ ^ 2 ≤ RCLike.re (B u u)) :
-    solutionOfFunctional B hc₁ hB₁ = solutionOfFunctional B hc₂ hB₂ := by
+/-- `solutionOfFunctional` depends only on the form `B`, not on the choice of coercivity constant
+or witness. -/
+theorem solutionOfFunctional_congr {B₁ B₂ : V →L⋆[𝕜] V →L[𝕜] 𝕜} (hB : B₁ = B₂) {c₁ c₂ : ℝ}
+    (hc₁ : 0 < c₁) (hB₁ : ∀ u, c₁ * ‖u‖ ^ 2 ≤ RCLike.re (B₁ u u))
+    (hc₂ : 0 < c₂) (hB₂ : ∀ u, c₂ * ‖u‖ ^ 2 ≤ RCLike.re (B₂ u u)) :
+    solutionOfFunctional B₁ hc₁ hB₁ = solutionOfFunctional B₂ hc₂ hB₂ := by
+  subst hB
   ext ℓ
-  simp only [solutionOfFunctional_apply, continuousLinearEquivOfBilin_congr B hc₁ hB₁ hc₂ hB₂]
+  simp only [solutionOfFunctional_apply, continuousLinearEquivOfBilin_congr rfl hc₁ hB₁ hc₂ hB₂]
 
 /-- On `toDual 𝕜 V f`, `solutionOfFunctional` agrees with the inverse Lax--Milgram equivalence. -/
 @[simp]
@@ -321,12 +336,19 @@ theorem solutionOfFunctional_toDual (B : V →L⋆[𝕜] V →L[𝕜] 𝕜) {c :
       (continuousLinearEquivOfBilin B hc hB).symm f := by
   simp [solutionOfFunctional_apply]
 
-/-- **Variational equation of `solutionOfFunctional`.** -/
+/-- Applying `B` to `solutionOfFunctional B hc hB ℓ` recovers the forcing functional `ℓ`. -/
 @[simp]
+theorem apply_solutionOfFunctional (B : V →L⋆[𝕜] V →L[𝕜] 𝕜) {c : ℝ} (hc : 0 < c)
+    (hB : ∀ u, c * ‖u‖ ^ 2 ≤ RCLike.re (B u u)) (ℓ : StrongDual 𝕜 V) :
+    B (solutionOfFunctional B hc hB ℓ) = ℓ := by
+  ext v
+  rw [solutionOfFunctional_apply, apply_continuousLinearEquivOfBilin_symm, toDual_symm_apply]
+
+/-- **Variational equation of `solutionOfFunctional`.** -/
 theorem apply_solutionOfFunctional_eq (B : V →L⋆[𝕜] V →L[𝕜] 𝕜) {c : ℝ} (hc : 0 < c)
     (hB : ∀ u, c * ‖u‖ ^ 2 ≤ RCLike.re (B u u)) (ℓ : StrongDual 𝕜 V) (v : V) :
     B (solutionOfFunctional B hc hB ℓ) v = ℓ v := by
-  rw [solutionOfFunctional_apply, apply_continuousLinearEquivOfBilin_symm, toDual_symm_apply]
+  rw [apply_solutionOfFunctional]
 
 /-- Uniqueness of the solution of `B u v = ℓ v` for a continuous linear functional `ℓ`. -/
 theorem eq_solutionOfFunctional (B : V →L⋆[𝕜] V →L[𝕜] 𝕜) {c : ℝ} (hc : 0 < c)
@@ -335,6 +357,13 @@ theorem eq_solutionOfFunctional (B : V →L⋆[𝕜] V →L[𝕜] 𝕜) {c : ℝ
     u = solutionOfFunctional B hc hB ℓ := by
   rw [solutionOfFunctional_apply]
   exact eq_continuousLinearEquivOfBilin_symm B hc hB fun v => by rw [hu v, toDual_symm_apply]
+
+/-- Solving against the functional `B u` recovers `u`. -/
+@[simp]
+theorem solutionOfFunctional_bilin (B : V →L⋆[𝕜] V →L[𝕜] 𝕜) {c : ℝ} (hc : 0 < c)
+    (hB : ∀ u, c * ‖u‖ ^ 2 ≤ RCLike.re (B u u)) (u : V) :
+    solutionOfFunctional B hc hB (B u) = u :=
+  (eq_solutionOfFunctional B hc hB fun _ => rfl).symm
 
 /-- **Sesquilinear Lax--Milgram existence and uniqueness** for arbitrary continuous linear
 functionals over `RCLike` scalars. -/
@@ -381,20 +410,22 @@ theorem formSolutionMap_apply (B : V →L⋆[𝕜] V →L[𝕜] 𝕜) {c : ℝ} 
       solutionOfFunctional B hc hB (ContinuousLinearMap.toSesqForm j h) :=
   (rfl)
 
-/-- `formSolutionMap` is independent of the choice of coercivity constant and witness. -/
-theorem formSolutionMap_congr (B : V →L⋆[𝕜] V →L[𝕜] 𝕜) {c₁ c₂ : ℝ}
-    (hc₁ : 0 < c₁) (hB₁ : ∀ u, c₁ * ‖u‖ ^ 2 ≤ RCLike.re (B u u))
-    (hc₂ : 0 < c₂) (hB₂ : ∀ u, c₂ * ‖u‖ ^ 2 ≤ RCLike.re (B u u)) (j : V →L[𝕜] H) :
-    formSolutionMap B hc₁ hB₁ j = formSolutionMap B hc₂ hB₂ j := by
+/-- `formSolutionMap` depends only on the form `B`, not on the choice of coercivity constant or
+witness. -/
+theorem formSolutionMap_congr {B₁ B₂ : V →L⋆[𝕜] V →L[𝕜] 𝕜} (hB : B₁ = B₂) {c₁ c₂ : ℝ}
+    (hc₁ : 0 < c₁) (hB₁ : ∀ u, c₁ * ‖u‖ ^ 2 ≤ RCLike.re (B₁ u u))
+    (hc₂ : 0 < c₂) (hB₂ : ∀ u, c₂ * ‖u‖ ^ 2 ≤ RCLike.re (B₂ u u)) (j : V →L[𝕜] H) :
+    formSolutionMap B₁ hc₁ hB₁ j = formSolutionMap B₂ hc₂ hB₂ j := by
+  subst hB
   ext h
-  simp only [formSolutionMap_apply, solutionOfFunctional_congr B hc₁ hB₁ hc₂ hB₂]
+  simp only [formSolutionMap_apply, solutionOfFunctional_congr rfl hc₁ hB₁ hc₂ hB₂]
 
 /-- **The variational equation solved by `formSolutionMap`.** -/
 @[simp]
 theorem apply_formSolutionMap (B : V →L⋆[𝕜] V →L[𝕜] 𝕜) {c : ℝ} (hc : 0 < c)
     (hB : ∀ u, c * ‖u‖ ^ 2 ≤ RCLike.re (B u u)) (j : V →L[𝕜] H) (h : H) (v : V) :
     B (formSolutionMap B hc hB j h) v = ⟪h, j v⟫_𝕜 := by
-  simp only [formSolutionMap_apply, apply_solutionOfFunctional_eq,
+  simp only [formSolutionMap_apply, apply_solutionOfFunctional,
     ContinuousLinearMap.toSesqForm_apply_coe, ContinuousLinearMap.comp_apply, innerSL_apply_apply]
 
 /-- Uniqueness of the solution of `B u v = ⟪h, j v⟫_𝕜`. -/
@@ -445,13 +476,15 @@ theorem formSolutionOperator_eq_comp (B : V →L⋆[𝕜] V →L[𝕜] 𝕜) {c 
     formSolutionOperator B hc hB j = j.comp (formSolutionMap B hc hB j) :=
   (rfl)
 
-/-- `formSolutionOperator` is independent of the choice of coercivity constant and witness. -/
-theorem formSolutionOperator_congr (B : V →L⋆[𝕜] V →L[𝕜] 𝕜) {c₁ c₂ : ℝ}
-    (hc₁ : 0 < c₁) (hB₁ : ∀ u, c₁ * ‖u‖ ^ 2 ≤ RCLike.re (B u u))
-    (hc₂ : 0 < c₂) (hB₂ : ∀ u, c₂ * ‖u‖ ^ 2 ≤ RCLike.re (B u u)) (j : V →L[𝕜] H) :
-    formSolutionOperator B hc₁ hB₁ j = formSolutionOperator B hc₂ hB₂ j := by
+/-- `formSolutionOperator` depends only on the form `B`, not on the choice of coercivity constant
+or witness. -/
+theorem formSolutionOperator_congr {B₁ B₂ : V →L⋆[𝕜] V →L[𝕜] 𝕜} (hB : B₁ = B₂) {c₁ c₂ : ℝ}
+    (hc₁ : 0 < c₁) (hB₁ : ∀ u, c₁ * ‖u‖ ^ 2 ≤ RCLike.re (B₁ u u))
+    (hc₂ : 0 < c₂) (hB₂ : ∀ u, c₂ * ‖u‖ ^ 2 ≤ RCLike.re (B₂ u u)) (j : V →L[𝕜] H) :
+    formSolutionOperator B₁ hc₁ hB₁ j = formSolutionOperator B₂ hc₂ hB₂ j := by
+  subst hB
   ext h
-  simp only [formSolutionOperator_apply, formSolutionMap_congr B hc₁ hB₁ hc₂ hB₂ j]
+  simp only [formSolutionOperator_apply, formSolutionMap_congr rfl hc₁ hB₁ hc₂ hB₂ j]
 
 /-- Operator-norm bound `‖formSolutionOperator B hc hB j‖ ≤ c⁻¹ * ‖j‖ ^ 2`. -/
 theorem norm_formSolutionOperator_le (B : V →L⋆[𝕜] V →L[𝕜] 𝕜) {c : ℝ} (hc : 0 < c)
@@ -464,6 +497,13 @@ theorem norm_formSolutionOperator_le (B : V →L⋆[𝕜] V →L[𝕜] 𝕜) {c 
           gcongr
           exact norm_formSolutionMap_le B hc hB j
     _ = c⁻¹ * ‖j‖ ^ 2 := by ring
+
+/-- When `j : V →L[𝕜] H` is a compact operator, `formSolutionOperator B hc hB j` is compact. -/
+theorem isCompactOperator_formSolutionOperator (B : V →L⋆[𝕜] V →L[𝕜] 𝕜) {c : ℝ} (hc : 0 < c)
+    (hB : ∀ u, c * ‖u‖ ^ 2 ≤ RCLike.re (B u u)) {j : V →L[𝕜] H} (hj : IsCompactOperator j) :
+    IsCompactOperator (formSolutionOperator B hc hB j) := by
+  rw [formSolutionOperator_eq_comp]
+  exact hj.comp_clm _
 
 /-- The quadratic form of `formSolutionOperator` equals the energy of the variational solution. -/
 theorem inner_formSolutionOperator_self (B : V →L⋆[𝕜] V →L[𝕜] 𝕜) {c : ℝ} (hc : 0 < c)
@@ -495,6 +535,19 @@ theorem isSymmetric_formSolutionOperator (B : V →L⋆[𝕜] V →L[𝕜] 𝕜)
           (hHermitian _ _).symm
     _ = ⟪x, j (formSolutionMap B hc hB j y)⟫_𝕜 := apply_formSolutionMap B hc hB j x _
 
+/-- The quadratic form of `formSolutionOperator` vanishes at `h` if and only if
+`formSolutionOperator` kills `h`. -/
+@[simp]
+theorem inner_formSolutionOperator_self_eq_zero_iff (B : V →L⋆[𝕜] V →L[𝕜] 𝕜) {c : ℝ}
+    (hc : 0 < c) (hB : ∀ u, c * ‖u‖ ^ 2 ≤ RCLike.re (B u u)) (j : V →L[𝕜] H) (h : H) :
+    ⟪h, formSolutionOperator B hc hB j h⟫_𝕜 = 0 ↔
+      formSolutionOperator B hc hB j h = 0 := by
+  refine ⟨fun h0 => ?_, fun h0 => by rw [h0, inner_zero_right]⟩
+  rw [inner_formSolutionOperator_self] at h0
+  have hu : formSolutionMap B hc hB j h = 0 :=
+    eq_zero_of_re_apply_self_nonpos_of_coercive B hc hB (by rw [h0, map_zero])
+  rw [formSolutionOperator_apply, hu, map_zero]
+
 /-- The solution operator kills precisely the vectors orthogonal to the range of `j`. -/
 theorem formSolutionOperator_apply_eq_zero_iff (B : V →L⋆[𝕜] V →L[𝕜] 𝕜) {c : ℝ} (hc : 0 < c)
     (hB : ∀ u, c * ‖u‖ ^ 2 ≤ RCLike.re (B u u)) (j : V →L[𝕜] H) (h : H) :
@@ -502,13 +555,11 @@ theorem formSolutionOperator_apply_eq_zero_iff (B : V →L⋆[𝕜] V →L[𝕜]
   constructor
   · intro hzero v
     have hself : B (formSolutionMap B hc hB j h) (formSolutionMap B hc hB j h) = 0 := by
-      rw [← inner_formSolutionOperator_self, hzero, inner_zero_right]
-    have hle := hB (formSolutionMap B hc hB j h)
-    rw [hself, map_zero] at hle
-    have hu0 : formSolutionMap B hc hB j h = 0 :=
-      norm_eq_zero.mp ((pow_eq_zero_iff two_ne_zero).mp
-        (le_antisymm (nonpos_of_mul_nonpos_right hle hc) (sq_nonneg _)))
-    rw [← apply_formSolutionMap B hc hB j h v, hu0, map_zero, zero_apply]
+      rw [← inner_formSolutionOperator_self,
+        (inner_formSolutionOperator_self_eq_zero_iff B hc hB j h).mpr hzero]
+    have hu : formSolutionMap B hc hB j h = 0 :=
+      eq_zero_of_re_apply_self_nonpos_of_coercive B hc hB (by rw [hself, map_zero])
+    rw [← apply_formSolutionMap B hc hB j h v, hu, map_zero, zero_apply]
   · intro horth
     have hsol : (0 : V) = formSolutionMap B hc hB j h :=
       eq_formSolutionMap B hc hB j fun v => by rw [horth v, map_zero, zero_apply]
@@ -528,6 +579,21 @@ theorem formSolutionOperator_injective (B : V →L⋆[𝕜] V →L[𝕜] 𝕜) {
   have hsub : formSolutionOperator B hc hB j (h₁ - h₂) = 0 := by rw [map_sub, hh, sub_self]
   exact sub_eq_zero.mp (hdense.eq_zero_of_inner_left 𝕜
     ((formSolutionOperator_apply_eq_zero_iff B hc hB j (h₁ - h₂)).mp hsub))
+
+/-- On a Hilbert space `H`, `formSolutionOperator` has dense range whenever `j` has dense
+range. -/
+theorem denseRange_formSolutionOperator [CompleteSpace H] (B : V →L⋆[𝕜] V →L[𝕜] 𝕜) {c : ℝ}
+    (hc : 0 < c) (hB : ∀ u, c * ‖u‖ ^ 2 ≤ RCLike.re (B u u)) {j : V →L[𝕜] H}
+    (hdense : DenseRange j) :
+    DenseRange (formSolutionOperator B hc hB j) := by
+  change Dense (((formSolutionOperator B hc hB j : H →ₗ[𝕜] H).range : Submodule 𝕜 H) : Set H)
+  rw [Submodule.dense_iff_topologicalClosure_eq_top, Submodule.topologicalClosure_eq_top_iff,
+    Submodule.eq_bot_iff]
+  intro h hh
+  have h0 : ⟪h, formSolutionOperator B hc hB j h⟫_𝕜 = 0 :=
+    Submodule.inner_left_of_mem_orthogonal (LinearMap.mem_range_self _ h) hh
+  exact formSolutionOperator_injective B hc hB hdense <|
+    ((inner_formSolutionOperator_self_eq_zero_iff B hc hB j h).mp h0).trans (map_zero _).symm
 
 /-- On a complete Hilbert space `H`, the solution operator of a Hermitian coercive form is
 bounded self-adjoint. -/

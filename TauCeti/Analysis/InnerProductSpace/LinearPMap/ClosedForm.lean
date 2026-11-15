@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.LaxMilgram
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjointMaximal
 public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Compact
+import TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjoint
 import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Characterization
 
 /-!
@@ -26,9 +27,10 @@ of all pairs `(x, h) ∈ H × H` for which some `u : V` satisfies `j u = x` and
 `∀ v : V, q u v = ⟪h, j v⟫_𝕜`:
 
 * the definition of `closedFormDomain` and `closedFormOperator`, its graph characterization, its
-  formal self-adjointness when `q` is Hermitian, and its semibounded lower bound require neither
-  completeness of `V` or `H` nor an inner product on `V` nor any coercivity witness, so the
-  operator is canonically independent of `(ω, c)`;
+  formal self-adjointness when `q` is Hermitian, its maximality uniqueness against self-adjoint
+  restrictions when `H` is complete (`TauCeti.eq_closedFormOperator_of_isSelfAdjoint`), and its
+  semibounded lower bound require neither completeness of `V` nor an inner product on `V` nor any
+  coercivity witness, so the operator is canonically independent of `(ω, c)`;
 * for every shift `α ≥ ω`, the shifted form `q_α(u, v) = q u v + α ⟪j u, j v⟫_𝕜`
   (`TauCeti.shiftedForm`) is `c`-coercive on `V`, and its `H`-forcing Lax--Milgram solution
   operator `S_α` inverts `A + α I` on `H`, placing `-α` in the resolvent set of `A` with
@@ -36,41 +38,44 @@ of all pairs `(x, h) ∈ H × H` for which some `u : V` satisfies `j u = x` and
   resolvent whenever `j` is a compact operator, without assuming `q` is Hermitian);
 * when `q` is Hermitian (`∀ u v, q u v = star (q v u)`), `A` is symmetric and `A + α I` is
   surjective, so the real-shift self-adjointness criterion
-  (`LinearPMap.IsFormalAdjoint.isSelfAdjoint_of_surjective_add_smul`) makes `A` self-adjoint,
-  maximality (`LinearPMap.eq_of_le_of_isSelfAdjoint`) makes `A` the unique self-adjoint operator
-  satisfying the form identity on its domain (`TauCeti.eq_closedFormOperator_of_isSelfAdjoint`),
-  and `TauCeti.existsUnique_selfAdjoint_of_closed_form` packages existence and uniqueness.
+  (`LinearPMap.IsFormalAdjoint.isSelfAdjoint_of_surjective_add_smul`) makes `A` self-adjoint, and
+  `TauCeti.existsUnique_selfAdjoint_of_closed_form` packages existence and uniqueness.
 
 ## Main declarations
 
 * `TauCeti.closedFormDomain` and `TauCeti.closedFormOperator`: the domain and partial linear
   operator attached to `(j, q)`, characterized by `TauCeti.mem_graph_closedFormOperator_iff`,
   `TauCeti.eq_closedFormOperator_of_mem_graph_iff`, `TauCeti.closedFormOperator_apply_eq`, and
-  `TauCeti.apply_closedFormOperator`.
-* `TauCeti.isFormalAdjoint_closedFormOperator` and
-  `TauCeti.neg_mul_norm_sq_le_re_inner_closedFormOperator`: symmetry for Hermitian forms and
-  semibounded lower bounds.
+  `TauCeti.inner_closedFormOperator`.
+* `TauCeti.isFormalAdjoint_closedFormOperator`, `TauCeti.eq_closedFormOperator_of_isSelfAdjoint`,
+  and `TauCeti.neg_mul_norm_sq_le_re_inner_closedFormOperator`: symmetry and maximal-symmetry
+  uniqueness for Hermitian forms, and semibounded lower bounds.
 * `TauCeti.shiftedForm`: the shifted sesquilinear form `q + α ⟪j ·, j ·⟫_𝕜`, with
-  `TauCeti.coercive_shiftedForm` and `TauCeti.shiftedForm_hermitian`.
-* `TauCeti.isResolventAt_closedFormOperator_neg_ofReal`,
+  `TauCeti.shiftedForm_zero`, `TauCeti.shiftedForm_shiftedForm`,
+  `TauCeti.mul_norm_sq_le_re_shiftedForm_self`, `TauCeti.shiftedForm_eq_star`,
+  `TauCeti.closedFormDomain_shiftedForm`, and `TauCeti.closedFormOperator_shiftedForm`.
+* `TauCeti.range_formSolutionOperator_shiftedForm`,
+  `TauCeti.formSolutionOperator_shiftedForm_mem_domain`,
+  `TauCeti.closedFormOperator_formSolutionOperator_shiftedForm`,
+  `TauCeti.formSolutionOperator_shiftedForm_apply_add_smul`,
+  `TauCeti.isResolventAt_closedFormOperator_neg_ofReal`,
   `TauCeti.neg_ofReal_mem_resolventSet_closedFormOperator`,
   `TauCeti.resolvent_closedFormOperator_neg_ofReal`, `TauCeti.isClosed_closedFormOperator`,
   `TauCeti.dense_domain_closedFormOperator`, and
-  `TauCeti.hasCompactResolvent_closedFormOperator`: resolvent, closedness, density, and compact
-  resolvent of `closedFormOperator` without assuming `q` is Hermitian.
-* `TauCeti.isSelfAdjoint_closedFormOperator`,
-  `TauCeti.exists_selfAdjoint_shifted_inverse_of_closed_form`,
-  `TauCeti.exists_compact_selfAdjoint_shifted_inverse_of_closed_form`,
-  `TauCeti.eq_closedFormOperator_of_isSelfAdjoint`, and
-  `TauCeti.existsUnique_selfAdjoint_of_closed_form`: self-adjointness, shifted inverse, and
-  uniqueness for Hermitian closed forms.
+  `TauCeti.hasCompactResolvent_closedFormOperator`: range, domain/action/left-inverse normal forms,
+  resolvent, closedness, density, and compact resolvent of `closedFormOperator` without assuming
+  `q` is Hermitian.
+* `TauCeti.isSelfAdjoint_closedFormOperator` and
+  `TauCeti.existsUnique_selfAdjoint_of_closed_form`: self-adjointness and unique operator
+  representation for Hermitian closed forms.
 
 ## References
 
 * G. Teschl, *Mathematical Methods in Quantum Mechanics*, 2nd ed., AMS (2014), §2.2, Theorem 2.13.
 * T. Kato, *Perturbation Theory for Linear Operators*, Springer (1995), Chapter VI, §2.1,
   Theorem 2.1.
-* J. K. Hunter, *Applied Analysis*, World Scientific (2001), §4.8 and Theorem 4.25.
+* J. K. Hunter, *Notes on Partial Differential Equations*, Chapter 4, §4.8 and §4.10
+  (Theorem 4.25).
 -/
 
 public section
@@ -179,11 +184,11 @@ theorem closedFormOperator_apply_eq (j : V →L[𝕜] H) (hj : Function.Injectiv
   closedFormRep_eq j hj hdense q x hx hu
 
 /-- **Form identity of `closedFormOperator`.** If `j u = x` for `x` in the domain, then
-`q u v = ⟪A x, j v⟫_𝕜` for all `v : V`. -/
-theorem apply_closedFormOperator (j : V →L[𝕜] H) (hj : Function.Injective j)
+`⟪A x, j v⟫_𝕜 = q u v` for all `v : V`. -/
+theorem inner_closedFormOperator (j : V →L[𝕜] H) (hj : Function.Injective j)
     (hdense : DenseRange j) (q : V →L⋆[𝕜] V →L[𝕜] 𝕜)
     {x : (closedFormOperator j hj hdense q).domain} {u : V} (hx : j u = x) (v : V) :
-    q u v = ⟪closedFormOperator j hj hdense q x, j v⟫_𝕜 := by
+    ⟪closedFormOperator j hj hdense q x, j v⟫_𝕜 = q u v := by
   obtain ⟨u', hx', h, hh⟩ := x.2
   have hu : u = u' := hj (hx.trans hx'.symm)
   rw [closedFormOperator_apply_eq j hj hdense q hx' hh, hu, hh v]
@@ -198,7 +203,7 @@ theorem mem_graph_closedFormOperator_iff (j : V →L[𝕜] H) (hj : Function.Inj
   constructor
   · rintro ⟨x, rfl, rfl⟩
     obtain ⟨u, hx, _⟩ := x.2
-    exact ⟨u, hx, apply_closedFormOperator j hj hdense q hx⟩
+    exact ⟨u, hx, fun v => (inner_closedFormOperator j hj hdense q hx v).symm⟩
   · rintro ⟨u, rfl, hu⟩
     have hmem := apply_mem_domain_closedFormOperator j hj hdense q hu
     exact ⟨⟨j u, hmem⟩, rfl, closedFormOperator_apply_eq j hj hdense q (x := ⟨j u, hmem⟩) rfl hu⟩
@@ -226,12 +231,28 @@ theorem isFormalAdjoint_closedFormOperator (j : V →L[𝕜] H) (hj : Function.I
   calc
     ⟪closedFormOperator j hj hdense q x, (y : H)⟫_𝕜
         = ⟪closedFormOperator j hj hdense q x, j w⟫_𝕜 := by rw [hy]
-    _ = q u w := (apply_closedFormOperator j hj hdense q hx w).symm
+    _ = q u w := inner_closedFormOperator j hj hdense q hx w
     _ = star (q w u) := hHermitian u w
     _ = star ⟪closedFormOperator j hj hdense q y, j u⟫_𝕜 := by
-          rw [apply_closedFormOperator j hj hdense q hy u]
+          rw [inner_closedFormOperator j hj hdense q hy u]
     _ = ⟪j u, closedFormOperator j hj hdense q y⟫_𝕜 := inner_conj_symm _ _
     _ = ⟪(x : H), closedFormOperator j hj hdense q y⟫_𝕜 := by rw [hx]
+
+/-- **Maximality uniqueness of `closedFormOperator`.** Any self-adjoint partial linear operator `T`
+on a Hilbert space `H` whose domain vectors come from `V` via `j` and satisfy
+`q u v = ⟪T x, j v⟫_𝕜` is already equal to `closedFormOperator j hj hdense q` (without assuming
+the reverse graph inclusion, an inner product or completeness on `V`, or coercivity). -/
+theorem eq_closedFormOperator_of_isSelfAdjoint [CompleteSpace H] (j : V →L[𝕜] H)
+    (hj : Function.Injective j) (hdense : DenseRange j) (q : V →L⋆[𝕜] V →L[𝕜] 𝕜)
+    (hHermitian : ∀ u v, q u v = star (q v u)) {T : H →ₗ.[𝕜] H} (hT : IsSelfAdjoint T)
+    (hrep : ∀ x : T.domain, ∃ u : V, j u = (x : H) ∧ ∀ v : V, q u v = ⟪T x, j v⟫_𝕜) :
+    T = closedFormOperator j hj hdense q := by
+  refine LinearPMap.eq_of_le_of_isFormalAdjoint hT
+    (isFormalAdjoint_closedFormOperator j hj hdense q hHermitian)
+    (LinearPMap.le_of_le_graph ?_)
+  rintro ⟨a, b⟩ hab
+  obtain ⟨x, rfl, rfl⟩ := (LinearPMap.mem_graph_iff T).mp hab
+  exact (mem_graph_closedFormOperator_iff j hj hdense q).mpr (hrep x)
 
 /-- If `γ * ‖j u‖ ^ 2 ≤ re (q u u)` on `V`, then `closedFormOperator` is bounded below by `γ` on
 its domain. -/
@@ -241,8 +262,8 @@ theorem mul_norm_sq_le_re_inner_closedFormOperator (j : V →L[𝕜] H) (hj : Fu
     (x : (closedFormOperator j hj hdense q).domain) :
     γ * ‖(x : H)‖ ^ 2 ≤ RCLike.re ⟪closedFormOperator j hj hdense q x, (x : H)⟫_𝕜 := by
   obtain ⟨u, hx, _⟩ := x.2
-  have h := apply_closedFormOperator j hj hdense q hx u
-  rw [← hx, ← congrArg RCLike.re h]
+  have h := inner_closedFormOperator j hj hdense q hx u
+  rw [← hx, congrArg RCLike.re h]
   exact hγ u
 
 /-- A shifted coercivity bound `c * ‖u‖ ^ 2 ≤ re (q u u) + ω * ‖j u‖ ^ 2` (`0 ≤ c`) gives the
@@ -275,21 +296,35 @@ theorem shiftedForm_apply (j : V →L[𝕜] H) (q : V →L⋆[𝕜] V →L[𝕜]
     shiftedForm j q α u v = q u v + (α : 𝕜) * ⟪j u, j v⟫_𝕜 :=
   (rfl)
 
+/-- Shifting `q` by `0` leaves `q` unchanged. -/
+@[simp]
+theorem shiftedForm_zero (j : V →L[𝕜] H) (q : V →L⋆[𝕜] V →L[𝕜] 𝕜) :
+    shiftedForm j q 0 = q := by
+  ext u v
+  simp
+
+/-- Iterated scalar shifts of `q` add their shift parameters. -/
+@[simp]
+theorem shiftedForm_shiftedForm (j : V →L[𝕜] H) (q : V →L⋆[𝕜] V →L[𝕜] 𝕜) (α β : ℝ) :
+    shiftedForm j (shiftedForm j q α) β = shiftedForm j q (α + β) := by
+  ext u v
+  simp [add_mul, add_assoc]
+
 /-- Diagonal real part of `shiftedForm`: `re (q_α u u) = re (q u u) + α * ‖j u‖ ^ 2`. -/
 theorem re_shiftedForm_self (j : V →L[𝕜] H) (q : V →L⋆[𝕜] V →L[𝕜] 𝕜) (α : ℝ) (u : V) :
     RCLike.re (shiftedForm j q α u u) = RCLike.re (q u u) + α * ‖j u‖ ^ 2 := by
   rw [shiftedForm_apply, map_add, RCLike.re_ofReal_mul, inner_self_eq_norm_sq]
 
-/-- Shifting a Hermitian form by a real multiple of `⟪j ·, j ·⟫_𝕜` preserves Hermiticity. -/
-theorem shiftedForm_hermitian (j : V →L[𝕜] H) {q : V →L⋆[𝕜] V →L[𝕜] 𝕜}
+/-- Shifting a Hermitian form by a real multiple of `⟪j ·, j ·⟫_𝕜` preserves conjugate symmetry. -/
+theorem shiftedForm_eq_star (j : V →L[𝕜] H) {q : V →L⋆[𝕜] V →L[𝕜] 𝕜}
     (hHermitian : ∀ u v, q u v = star (q v u)) (α : ℝ) (u v : V) :
     shiftedForm j q α u v = star (shiftedForm j q α v u) := by
   rw [shiftedForm_apply, shiftedForm_apply, star_add, star_mul', ← hHermitian u v]
   simp only [RCLike.star_def, RCLike.conj_ofReal, inner_conj_symm]
 
-/-- If `c * ‖u‖ ^ 2 ≤ re (q u u) + ω * ‖j u‖ ^ 2` and `ω ≤ α`, then `shiftedForm j q α` is
-`c`-coercive. -/
-theorem coercive_shiftedForm (j : V →L[𝕜] H) {q : V →L⋆[𝕜] V →L[𝕜] 𝕜} {ω α c : ℝ}
+/-- If `c * ‖u‖ ^ 2 ≤ re (q u u) + ω * ‖j u‖ ^ 2` and `ω ≤ α`, then `shiftedForm j q α`
+dominates `c * ‖u‖ ^ 2` on the diagonal. -/
+theorem mul_norm_sq_le_re_shiftedForm_self (j : V →L[𝕜] H) {q : V →L⋆[𝕜] V →L[𝕜] 𝕜} {ω α c : ℝ}
     (hα : ω ≤ α) (hcoercive : ∀ u, c * ‖u‖ ^ 2 ≤ RCLike.re (q u u) + ω * ‖j u‖ ^ 2) (u : V) :
     c * ‖u‖ ^ 2 ≤ RCLike.re (shiftedForm j q α u u) := by
   rw [re_shiftedForm_self]
@@ -299,6 +334,45 @@ theorem coercive_shiftedForm (j : V →L[𝕜] H) {q : V →L⋆[𝕜] V →L[�
 
 end ShiftedForm
 
+section ShiftedOperator
+
+variable {𝕜 V H : Type*} [RCLike 𝕜] [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
+  [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
+
+/-- Shifting `q` by a real multiple of `⟪j ·, j ·⟫_𝕜` leaves `closedFormDomain` unchanged. -/
+@[simp]
+theorem closedFormDomain_shiftedForm (j : V →L[𝕜] H) (q : V →L⋆[𝕜] V →L[𝕜] 𝕜) (α : ℝ) :
+    closedFormDomain j (shiftedForm j q α) = closedFormDomain j q := by
+  ext x
+  simp only [mem_closedFormDomain_iff, shiftedForm_apply]
+  refine exists_congr fun u => and_congr_right fun _ => ⟨?_, ?_⟩
+  · rintro ⟨h, hh⟩
+    refine ⟨h - (α : 𝕜) • j u, fun v => ?_⟩
+    rw [inner_sub_left, inner_smul_left, RCLike.conj_ofReal, ← hh v]
+    ring
+  · rintro ⟨h, hh⟩
+    refine ⟨h + (α : 𝕜) • j u, fun v => ?_⟩
+    rw [inner_add_left, inner_smul_left, RCLike.conj_ofReal, hh v]
+
+/-- Shifting `q` by `α` shifts `closedFormOperator` by `+(α : 𝕜) • I`, i.e.
+`LinearPMap.subScalar _ (-(α : 𝕜))`. -/
+theorem closedFormOperator_shiftedForm (j : V →L[𝕜] H) (hj : Function.Injective j)
+    (hdense : DenseRange j) (q : V →L⋆[𝕜] V →L[𝕜] 𝕜) (α : ℝ) :
+    closedFormOperator j hj hdense (shiftedForm j q α) =
+      LinearPMap.subScalar (closedFormOperator j hj hdense q) (-(α : 𝕜)) := by
+  refine LinearPMap.ext (by simp) fun x hx₁ hx₂ => ?_
+  let x₀ : (closedFormOperator j hj hdense q).domain :=
+    ⟨x, (LinearPMap.subScalar_domain (closedFormOperator j hj hdense q) (-(α : 𝕜))).symm ▸ hx₂⟩
+  obtain ⟨u, hu, _⟩ := x₀.2
+  rw [LinearPMap.subScalar_apply]
+  change closedFormOperator j hj hdense (shiftedForm j q α) ⟨x, hx₁⟩ =
+    closedFormOperator j hj hdense q x₀ - (-(α : 𝕜)) • x
+  refine closedFormOperator_apply_eq j hj hdense (shiftedForm j q α) (u := u) hu fun v => ?_
+  rw [shiftedForm_apply, ← inner_closedFormOperator j hj hdense q hu v,
+    _root_.neg_smul, sub_neg_eq_add, inner_add_left, inner_smul_left, RCLike.conj_ofReal, hu]
+
+end ShiftedOperator
+
 /-! ### Resolvent, closedness, density, and self-adjointness -/
 
 section Representation
@@ -307,34 +381,67 @@ variable {𝕜 V H : Type*} [RCLike 𝕜]
   [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [CompleteSpace V]
   [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
 
+private theorem apply_formSolutionMap_shiftedForm (j : V →L[𝕜] H) (q : V →L⋆[𝕜] V →L[𝕜] 𝕜)
+    {α c : ℝ} (hc : 0 < c)
+    (hcoer : ∀ u, c * ‖u‖ ^ 2 ≤ RCLike.re (shiftedForm j q α u u)) (h : H) (v : V) :
+    q (InnerProductSpace.formSolutionMap (shiftedForm j q α) hc hcoer j h) v =
+      ⟪h - (α : 𝕜) • InnerProductSpace.formSolutionOperator (shiftedForm j q α) hc hcoer j h,
+        j v⟫_𝕜 := by
+  have hsol := InnerProductSpace.apply_formSolutionMap (shiftedForm j q α) hc hcoer j h v
+  rw [shiftedForm_apply] at hsol
+  rw [InnerProductSpace.formSolutionOperator_apply, inner_sub_left, inner_smul_left,
+    RCLike.conj_ofReal, ← hsol]
+  ring
+
+/-- The range of the `H`-forcing solution operator of `shiftedForm j q α` is
+`closedFormDomain j q`. -/
+@[simp]
+theorem range_formSolutionOperator_shiftedForm (j : V →L[𝕜] H) (q : V →L⋆[𝕜] V →L[𝕜] 𝕜)
+    {α c : ℝ} (hc : 0 < c)
+    (hcoer : ∀ u, c * ‖u‖ ^ 2 ≤ RCLike.re (shiftedForm j q α u u)) :
+    LinearMap.range
+      (InnerProductSpace.formSolutionOperator (shiftedForm j q α) hc hcoer j : H →ₗ[𝕜] H) =
+      closedFormDomain j q := by
+  refine le_antisymm ?_ ?_
+  · rintro _ ⟨h, rfl⟩
+    exact ⟨_, (InnerProductSpace.formSolutionOperator_apply _ hc hcoer j h).symm, _,
+      apply_formSolutionMap_shiftedForm j q hc hcoer h⟩
+  · rintro x ⟨u, rfl, h₀, hu⟩
+    refine ⟨h₀ + (α : 𝕜) • j u, ?_⟩
+    have hsol : u = InnerProductSpace.formSolutionMap (shiftedForm j q α) hc hcoer j
+        (h₀ + (α : 𝕜) • j u) :=
+      InnerProductSpace.eq_formSolutionMap (shiftedForm j q α) hc hcoer j fun v => by
+        rw [shiftedForm_apply, hu v, inner_add_left, inner_smul_left, RCLike.conj_ofReal]
+    simp only [ContinuousLinearMap.coe_coe, InnerProductSpace.formSolutionOperator_apply, ← hsol]
+
 /-- The `H`-forcing solution operator of `shiftedForm j q α` maps `H` into the domain of
-`closedFormOperator` and right-inverts `A + α I`. -/
+`closedFormOperator`. -/
 theorem formSolutionOperator_shiftedForm_mem_domain (j : V →L[𝕜] H) (hj : Function.Injective j)
     (hdense : DenseRange j) (q : V →L⋆[𝕜] V →L[𝕜] 𝕜) {α c : ℝ} (hc : 0 < c)
     (hcoer : ∀ u, c * ‖u‖ ^ 2 ≤ RCLike.re (shiftedForm j q α u u)) (h : H) :
-    ∃ hmem : InnerProductSpace.formSolutionOperator (shiftedForm j q α) hc hcoer j h ∈
-        (closedFormOperator j hj hdense q).domain,
-      closedFormOperator j hj hdense q ⟨_, hmem⟩ +
-        (α : 𝕜) • InnerProductSpace.formSolutionOperator (shiftedForm j q α) hc hcoer j h = h := by
-  set u := InnerProductSpace.formSolutionMap (shiftedForm j q α) hc hcoer j h
-  have hq : ∀ v : V, q u v = ⟪h - (α : 𝕜) • j u, j v⟫_𝕜 := fun v => by
-    have hsol := InnerProductSpace.apply_formSolutionMap (shiftedForm j q α) hc hcoer j h v
-    rw [shiftedForm_apply] at hsol
-    rw [inner_sub_left, inner_smul_left, RCLike.conj_ofReal, ← hsol]
-    ring
-  have hmem : InnerProductSpace.formSolutionOperator (shiftedForm j q α) hc hcoer j h ∈
+    InnerProductSpace.formSolutionOperator (shiftedForm j q α) hc hcoer j h ∈
       (closedFormOperator j hj hdense q).domain := by
-    rw [InnerProductSpace.formSolutionOperator_apply]
-    exact apply_mem_domain_closedFormOperator j hj hdense q hq
-  refine ⟨hmem, ?_⟩
-  have hju : j u = (⟨InnerProductSpace.formSolutionOperator (shiftedForm j q α) hc hcoer j h,
-      hmem⟩ : (closedFormOperator j hj hdense q).domain) :=
+  rw [domain_closedFormOperator, ← range_formSolutionOperator_shiftedForm j q hc hcoer]
+  exact LinearMap.mem_range_self _ h
+
+/-- Action of `closedFormOperator` on an element in the image of the `H`-forcing solution operator
+of `shiftedForm j q α`. -/
+@[simp]
+theorem closedFormOperator_formSolutionOperator_shiftedForm (j : V →L[𝕜] H)
+    (hj : Function.Injective j) (hdense : DenseRange j) (q : V →L⋆[𝕜] V →L[𝕜] 𝕜) {α c : ℝ}
+    (hc : 0 < c) (hcoer : ∀ u, c * ‖u‖ ^ 2 ≤ RCLike.re (shiftedForm j q α u u)) (h : H)
+    (hx : InnerProductSpace.formSolutionOperator (shiftedForm j q α) hc hcoer j h ∈
+      (closedFormOperator j hj hdense q).domain) :
+    closedFormOperator j hj hdense q
+      ⟨InnerProductSpace.formSolutionOperator (shiftedForm j q α) hc hcoer j h, hx⟩ =
+      h - (α : 𝕜) • InnerProductSpace.formSolutionOperator (shiftedForm j q α) hc hcoer j h :=
+  closedFormOperator_apply_eq j hj hdense q
     (InnerProductSpace.formSolutionOperator_apply (shiftedForm j q α) hc hcoer j h).symm
-  rw [closedFormOperator_apply_eq j hj hdense q hju hq,
-    InnerProductSpace.formSolutionOperator_apply, sub_add_cancel]
+    (apply_formSolutionMap_shiftedForm j q hc hcoer h)
 
 /-- The `H`-forcing solution operator of `shiftedForm j q α` left-inverts `A + α I` on the domain
 of `closedFormOperator`. -/
+@[simp]
 theorem formSolutionOperator_shiftedForm_apply_add_smul (j : V →L[𝕜] H)
     (hj : Function.Injective j) (hdense : DenseRange j) (q : V →L⋆[𝕜] V →L[𝕜] 𝕜) {α c : ℝ}
     (hc : 0 < c) (hcoer : ∀ u, c * ‖u‖ ^ 2 ≤ RCLike.re (shiftedForm j q α u u))
@@ -345,7 +452,7 @@ theorem formSolutionOperator_shiftedForm_apply_add_smul (j : V →L[𝕜] H)
   have hsol : u = InnerProductSpace.formSolutionMap (shiftedForm j q α) hc hcoer j
       (closedFormOperator j hj hdense q x + (α : 𝕜) • (x : H)) := by
     refine InnerProductSpace.eq_formSolutionMap (shiftedForm j q α) hc hcoer j fun v => ?_
-    rw [shiftedForm_apply, apply_closedFormOperator j hj hdense q hx v, inner_add_left,
+    rw [shiftedForm_apply, ← inner_closedFormOperator j hj hdense q hx v, inner_add_left,
       inner_smul_left, RCLike.conj_ofReal, ← hx]
   rw [InnerProductSpace.formSolutionOperator_apply, ← hsol, hx]
 
@@ -357,27 +464,17 @@ theorem isResolventAt_closedFormOperator_neg_ofReal (j : V →L[𝕜] H) (hj : F
     (hcoer : ∀ u, c * ‖u‖ ^ 2 ≤ RCLike.re (shiftedForm j q α u u)) :
     LinearPMap.IsResolventAt (closedFormOperator j hj hdense q) (-(α : 𝕜))
       (-InnerProductSpace.formSolutionOperator (shiftedForm j q α) hc hcoer j) := by
-  set A := closedFormOperator j hj hdense q
-  set S := InnerProductSpace.formSolutionOperator (shiftedForm j q α) hc hcoer j
-  have hmem (y : H) : (-S) y ∈ A.domain := by
-    rw [neg_apply, ← S.map_neg]
-    exact (formSolutionOperator_shiftedForm_mem_domain j hj hdense q hc hcoer (-y)).1
-  refine ⟨hmem, fun y => ?_, fun x => ?_⟩
-  · obtain ⟨hm, hinv⟩ :=
-      formSolutionOperator_shiftedForm_mem_domain j hj hdense q hc hcoer (-y)
-    have hA : A ⟨(-S) y, hmem y⟩ = A ⟨S (-y), hm⟩ :=
-      congrArg A (Subtype.ext (by dsimp only; rw [neg_apply, ← S.map_neg]))
-    calc
-      (-(α : 𝕜)) • (-S) y - A ⟨(-S) y, hmem y⟩
-          = -(A ⟨S (-y), hm⟩ + (α : 𝕜) • S (-y)) := by
-            rw [hA, neg_apply, ← S.map_neg, neg_smul]
-            abel
-      _ = y := by rw [hinv, neg_neg]
-  · have hshift : (-(α : 𝕜)) • (x : H) - A x = -(A x + (α : 𝕜) • (x : H)) := by
-      rw [neg_smul]
+  refine LinearPMap.isResolventAt_iff_surjective_and_apply_smul_sub.mpr ⟨?_, fun x => ?_⟩
+  · refine ((closedFormOperator j hj hdense q).surjective_neg_smul_sub_iff_surjective_add_smul
+      (α : 𝕜)).mpr fun y => ?_
+    exact ⟨⟨_, formSolutionOperator_shiftedForm_mem_domain j hj hdense q hc hcoer y⟩, by simp⟩
+  · have hshift :
+        (-(α : 𝕜)) • (x : H) - closedFormOperator j hj hdense q x =
+          -(closedFormOperator j hj hdense q x + (α : 𝕜) • (x : H)) := by
+      rw [_root_.neg_smul]
       abel
-    rw [hshift, neg_apply, S.map_neg, neg_neg]
-    exact formSolutionOperator_shiftedForm_apply_add_smul j hj hdense q hc hcoer x
+    rw [hshift, neg_apply, map_neg, neg_neg,
+      formSolutionOperator_shiftedForm_apply_add_smul]
 
 /-- Every shift `-α` with `ω ≤ α` lies in the resolvent set of `closedFormOperator`. -/
 theorem neg_ofReal_mem_resolventSet_closedFormOperator (j : V →L[𝕜] H) (hj : Function.Injective j)
@@ -385,7 +482,7 @@ theorem neg_ofReal_mem_resolventSet_closedFormOperator (j : V →L[𝕜] H) (hj 
     (hcoercive : ∀ u, c * ‖u‖ ^ 2 ≤ RCLike.re (q u u) + ω * ‖j u‖ ^ 2) :
     (-(α : 𝕜)) ∈ (closedFormOperator j hj hdense q).resolventSet :=
   (isResolventAt_closedFormOperator_neg_ofReal j hj hdense q hc
-    (coercive_shiftedForm j hα hcoercive)).mem_resolventSet
+    (mul_norm_sq_le_re_shiftedForm_self j hα hcoercive)).mem_resolventSet
 
 /-- Formula for the resolvent of `closedFormOperator` at `-(α : 𝕜)`. -/
 theorem resolvent_closedFormOperator_neg_ofReal (j : V →L[𝕜] H) (hj : Function.Injective j)
@@ -393,10 +490,10 @@ theorem resolvent_closedFormOperator_neg_ofReal (j : V →L[𝕜] H) (hj : Funct
     (hcoercive : ∀ u, c * ‖u‖ ^ 2 ≤ RCLike.re (q u u) + ω * ‖j u‖ ^ 2) :
     (closedFormOperator j hj hdense q).resolvent (-(α : 𝕜)) =
       -InnerProductSpace.formSolutionOperator (shiftedForm j q α) hc
-        (coercive_shiftedForm j hα hcoercive) j :=
+        (mul_norm_sq_le_re_shiftedForm_self j hα hcoercive) j :=
   LinearPMap.resolvent_eq_of_isResolventAt
     (isResolventAt_closedFormOperator_neg_ofReal j hj hdense q hc
-      (coercive_shiftedForm j hα hcoercive))
+      (mul_norm_sq_le_re_shiftedForm_self j hα hcoercive))
 
 /-- Norm bound `‖R(-α)‖ ≤ c⁻¹ * ‖j‖ ^ 2` on the resolvent of `closedFormOperator`. -/
 theorem norm_resolvent_closedFormOperator_neg_ofReal_le (j : V →L[𝕜] H)
@@ -425,9 +522,8 @@ theorem hasCompactResolvent_closedFormOperator {j : V →L[𝕜] H} (hj : Functi
     (closedFormOperator j hj hdense q).HasCompactResolvent := by
   refine LinearPMap.HasCompactResolvent.of_isCompactOperator_resolvent
     (neg_ofReal_mem_resolventSet_closedFormOperator j hj hdense q hc le_rfl hcoercive) ?_
-  rw [resolvent_closedFormOperator_neg_ofReal j hj hdense q hc le_rfl hcoercive,
-    InnerProductSpace.formSolutionOperator_eq_comp]
-  exact (hcompact.comp_clm _).neg
+  rw [resolvent_closedFormOperator_neg_ofReal j hj hdense q hc le_rfl hcoercive]
+  exact (InnerProductSpace.isCompactOperator_formSolutionOperator _ hc _ hcompact).neg
 
 section CompleteTarget
 
@@ -439,21 +535,9 @@ theorem dense_domain_closedFormOperator (j : V →L[𝕜] H) (hj : Function.Inje
     (hdense : DenseRange j) (q : V →L⋆[𝕜] V →L[𝕜] 𝕜) {α c : ℝ} (hc : 0 < c)
     (hcoercive : ∀ u, c * ‖u‖ ^ 2 ≤ RCLike.re (q u u) + α * ‖j u‖ ^ 2) :
     Dense ((closedFormOperator j hj hdense q).domain : Set H) := by
-  have hcoer := coercive_shiftedForm j le_rfl hcoercive
-  rw [Submodule.dense_iff_topologicalClosure_eq_top, Submodule.topologicalClosure_eq_top_iff,
-    Submodule.eq_bot_iff]
-  intro w hw
-  obtain ⟨hmem, _⟩ := formSolutionOperator_shiftedForm_mem_domain j hj hdense q hc hcoer w
-  have horth : ⟪w, InnerProductSpace.formSolutionOperator (shiftedForm j q α) hc hcoer j w⟫_𝕜 =
-      0 := Submodule.inner_left_of_mem_orthogonal hmem hw
-  rw [InnerProductSpace.inner_formSolutionOperator_self] at horth
-  have hle := hcoer (InnerProductSpace.formSolutionMap (shiftedForm j q α) hc hcoer j w)
-  rw [horth, map_zero] at hle
-  have hu0 : InnerProductSpace.formSolutionMap (shiftedForm j q α) hc hcoer j w = 0 :=
-    norm_eq_zero.mp ((pow_eq_zero_iff two_ne_zero).mp
-      (le_antisymm (nonpos_of_mul_nonpos_right hle hc) (sq_nonneg _)))
-  refine InnerProductSpace.formSolutionOperator_injective (shiftedForm j q α) hc hcoer hdense ?_
-  rw [InnerProductSpace.formSolutionOperator_apply, hu0, map_zero, map_zero]
+  have hcoer := mul_norm_sq_le_re_shiftedForm_self j le_rfl hcoercive
+  exact (InnerProductSpace.denseRange_formSolutionOperator (shiftedForm j q α) hc hcoer hdense).mono
+    (Set.range_subset_iff.mpr (formSolutionOperator_shiftedForm_mem_domain j hj hdense q hc hcoer))
 
 /-- **First representation theorem: self-adjointness.** For a Hermitian bounded sesquilinear form
 `q` with a shifted coercivity bound, `closedFormOperator` is self-adjoint. -/
@@ -462,74 +546,10 @@ theorem isSelfAdjoint_closedFormOperator (j : V →L[𝕜] H) (hj : Function.Inj
     (hHermitian : ∀ u v, q u v = star (q v u)) {α c : ℝ} (hc : 0 < c)
     (hcoercive : ∀ u, c * ‖u‖ ^ 2 ≤ RCLike.re (q u u) + α * ‖j u‖ ^ 2) :
     IsSelfAdjoint (closedFormOperator j hj hdense q) := by
-  refine (isFormalAdjoint_closedFormOperator j hj hdense q
-    hHermitian).isSelfAdjoint_of_surjective_add_smul (α := α) fun h => ?_
-  obtain ⟨hmem, hinv⟩ := formSolutionOperator_shiftedForm_mem_domain j hj hdense q hc
-    (coercive_shiftedForm j le_rfl hcoercive) h
-  exact ⟨⟨_, hmem⟩, hinv⟩
-
-/-- **Shifted bounded self-adjoint inverse of a closed-form operator.** For any partial linear
-operator `A` whose graph is the closed-form relation of `(j, q)` and any shift `α ≥ ω`, `A + α I`
-has a bounded self-adjoint two-sided inverse `S_α : H →L[𝕜] H`. -/
-theorem exists_selfAdjoint_shifted_inverse_of_closed_form (j : V →L[𝕜] H)
-    (hj : Function.Injective j) (hdense : DenseRange j) (q : V →L⋆[𝕜] V →L[𝕜] 𝕜)
-    (hHermitian : ∀ u v, q u v = star (q v u)) {ω α c : ℝ} (hc : 0 < c) (hα : ω ≤ α)
-    (hcoercive : ∀ u, c * ‖u‖ ^ 2 ≤ RCLike.re (q u u) + ω * ‖j u‖ ^ 2)
-    (A : H →ₗ.[𝕜] H)
-    (hA : ∀ x f : H, (x, f) ∈ A.graph ↔
-      ∃ u : V, j u = x ∧ ∀ v : V, q u v = ⟪f, j v⟫_𝕜) :
-    ∃ S : H →L[𝕜] H, IsSelfAdjoint S ∧
-      (∀ h : H, ∃ hS : S h ∈ A.domain, A ⟨S h, hS⟩ + (α : 𝕜) • S h = h) ∧
-      ∀ x : A.domain, S (A x + (α : 𝕜) • (x : H)) = x := by
-  obtain rfl := eq_closedFormOperator_of_mem_graph_iff j hj hdense q hA
-  have hcoer := coercive_shiftedForm j hα hcoercive
-  refine ⟨InnerProductSpace.formSolutionOperator (shiftedForm j q α) hc hcoer j,
-    InnerProductSpace.isSelfAdjoint_formSolutionOperator (shiftedForm j q α) hc hcoer j
-      (shiftedForm_hermitian j hHermitian α),
-    formSolutionOperator_shiftedForm_mem_domain j hj hdense q hc hcoer,
-    formSolutionOperator_shiftedForm_apply_add_smul j hj hdense q hc hcoer⟩
-
-/-- **Compact shifted self-adjoint inverse of a compact closed-form pair.** When `j` is also
-compact, the bounded self-adjoint inverse `S_α` of `A + α I` is a compact operator. -/
-theorem exists_compact_selfAdjoint_shifted_inverse_of_closed_form {j : V →L[𝕜] H}
-    (hj : Function.Injective j) (hdense : DenseRange j) (hcompact : IsCompactOperator j)
-    (q : V →L⋆[𝕜] V →L[𝕜] 𝕜) (hHermitian : ∀ u v, q u v = star (q v u))
-    {ω α c : ℝ} (hc : 0 < c) (hα : ω ≤ α)
-    (hcoercive : ∀ u, c * ‖u‖ ^ 2 ≤ RCLike.re (q u u) + ω * ‖j u‖ ^ 2)
-    (A : H →ₗ.[𝕜] H)
-    (hA : ∀ x f : H, (x, f) ∈ A.graph ↔
-      ∃ u : V, j u = x ∧ ∀ v : V, q u v = ⟪f, j v⟫_𝕜) :
-    ∃ S : H →L[𝕜] H, IsCompactOperator S ∧ IsSelfAdjoint S ∧
-      (∀ h : H, ∃ hS : S h ∈ A.domain, A ⟨S h, hS⟩ + (α : 𝕜) • S h = h) ∧
-      ∀ x : A.domain, S (A x + (α : 𝕜) • (x : H)) = x := by
-  obtain rfl := eq_closedFormOperator_of_mem_graph_iff j hj hdense q hA
-  have hcoer := coercive_shiftedForm j hα hcoercive
-  have hcomp : IsCompactOperator
-      (InnerProductSpace.formSolutionOperator (shiftedForm j q α) hc hcoer j) := by
-    rw [InnerProductSpace.formSolutionOperator_eq_comp]
-    exact hcompact.comp_clm _
-  refine ⟨InnerProductSpace.formSolutionOperator (shiftedForm j q α) hc hcoer j, hcomp,
-    InnerProductSpace.isSelfAdjoint_formSolutionOperator (shiftedForm j q α) hc hcoer j
-      (shiftedForm_hermitian j hHermitian α),
-    formSolutionOperator_shiftedForm_mem_domain j hj hdense q hc hcoer,
-    formSolutionOperator_shiftedForm_apply_add_smul j hj hdense q hc hcoer⟩
-
-/-- **Maximality uniqueness of `closedFormOperator`.** Any self-adjoint partial linear operator `T`
-whose domain vectors come from `V` via `j` and satisfy `q u v = ⟪T x, j v⟫_𝕜` is already equal to
-`closedFormOperator j hj hdense q` (without assuming the reverse graph inclusion). -/
-theorem eq_closedFormOperator_of_isSelfAdjoint (j : V →L[𝕜] H) (hj : Function.Injective j)
-    (hdense : DenseRange j) (q : V →L⋆[𝕜] V →L[𝕜] 𝕜)
-    (hHermitian : ∀ u v, q u v = star (q v u)) {α c : ℝ} (hc : 0 < c)
-    (hcoercive : ∀ u, c * ‖u‖ ^ 2 ≤ RCLike.re (q u u) + α * ‖j u‖ ^ 2)
-    {T : H →ₗ.[𝕜] H} (hT : IsSelfAdjoint T)
-    (hrep : ∀ x : T.domain, ∃ u : V, j u = (x : H) ∧ ∀ v : V, q u v = ⟪T x, j v⟫_𝕜) :
-    T = closedFormOperator j hj hdense q := by
-  refine LinearPMap.eq_of_le_of_isSelfAdjoint hT
-    (isSelfAdjoint_closedFormOperator j hj hdense q hHermitian hc hcoercive)
-    (LinearPMap.le_of_le_graph ?_)
-  rintro ⟨a, b⟩ hab
-  obtain ⟨x, rfl, rfl⟩ := (LinearPMap.mem_graph_iff T).mp hab
-  exact (mem_graph_closedFormOperator_iff j hj hdense q).mpr (hrep x)
+  have hcoer := mul_norm_sq_le_re_shiftedForm_self j le_rfl hcoercive
+  exact (isFormalAdjoint_closedFormOperator j hj hdense q
+    hHermitian).isSelfAdjoint_of_surjective_add_smul (RCLike.ofReal_im α) fun h =>
+    ⟨⟨_, formSolutionOperator_shiftedForm_mem_domain j hj hdense q hc hcoer h⟩, by simp⟩
 
 end CompleteTarget
 
