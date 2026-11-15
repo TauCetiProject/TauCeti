@@ -31,6 +31,8 @@ integrability hypotheses on `Ω`.
 * `TauCeti.PDE.energyFormH1_extendByZeroL_left`: `a(u₀, w) = a(u, w|_U)` for `u ∈ H¹₀(U)` with
   zero extension `u₀ ∈ H¹₀(Ω)` and any `w ∈ H¹(Ω)`.
 * `TauCeti.PDE.isCoercive_energyFormH1L0_of_domain_le`: coercivity passes to smaller domains.
+* `TauCeti.PDE.energyFormH1_restrictL_le_setIntegral`: weak subsolutions of `L u ≤ f` restrict to
+  weak subsolutions of the same inequality.
 * `TauCeti.PDE.energyFormH1_restrictL_nonpos`: weak subsolutions restrict to weak subsolutions.
 * `TauCeti.PDE.energyFormH1_restrictL_nonneg`: weak supersolutions restrict to weak
   supersolutions.
@@ -181,19 +183,43 @@ theorem isCoercive_energyFormH1L0_of_domain_le {a : EuclideanSpace ℝ ι → Ma
   simpa only [W1p0.norm_extendByZeroL, energyFormH1L0_apply, energyFormH1_extendByZeroL]
     using hbound (W1p0.extendByZeroL hU u)
 
-/-- **Weak subsolutions restrict to weak subsolutions.** If `u ∈ H¹(Ω)` satisfies `a(u, v) ≤ 0`
-for every nonnegative `v ∈ H¹₀(Ω)`, then for every open `U ⊆ Ω` its restriction `u|_U` satisfies
-`a(u|_U, v) ≤ 0` for every nonnegative `v ∈ H¹₀(U)`. -/
-theorem energyFormH1_restrictL_nonpos {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+/-- Testing a function on `Ω` against the zero extension of `v ∈ H¹₀(U)` is testing it against `v`
+on `U`: `∫_Ω f v₀ = ∫_U f v`. No integrability of `f` is needed, since both sides are the same
+integral of a function vanishing off `U`. -/
+private theorem setIntegral_mul_value_extendByZeroL (hU : U ≤ Omega)
+    (f : EuclideanSpace ℝ ι → ℝ) (v : W1p0 mu U 2) :
+    ∫ x in Omega, f x * W1p.value (W1p0.extendByZeroL hU v : W1p mu Omega 2) x ∂mu =
+      ∫ x in U, f x * W1p.value (v : W1p mu U 2) x ∂mu := by
+  have hUm := U.isOpen.measurableSet
+  have hUO : (U : Set (EuclideanSpace ℝ ι)) ⊆ Omega := SetLike.coe_subset_coe.mpr hU
+  rw [W1p0.value_extendByZeroL]
+  calc ∫ x in Omega, f x * extendByZeroLpₗᵢ ℝ mu hUm hUO (W1p.value (v : W1p mu U 2)) x ∂mu
+      = ∫ x in Omega, (U : Set (EuclideanSpace ℝ ι)).indicator
+          (fun x => f x * W1p.value (v : W1p mu U 2) x) x ∂mu := by
+        refine integral_congr_ae ?_
+        filter_upwards [coeFn_extendByZeroLpₗᵢ ℝ hUm hUO (W1p.value (v : W1p mu U 2))] with x hx
+        rw [hx]
+        by_cases hxU : x ∈ (U : Set (EuclideanSpace ℝ ι))
+        · rw [indicator_of_mem hxU, indicator_of_mem hxU]
+        · rw [indicator_of_notMem hxU, indicator_of_notMem hxU, mul_zero]
+    _ = ∫ x in U, f x * W1p.value (v : W1p mu U 2) x ∂mu := by
+        rw [integral_indicator hUm, Measure.restrict_restrict hUm, inter_eq_left.2 hUO]
+
+/-- **Weak subsolutions with a right-hand side restrict.** If `u ∈ H¹(Ω)` satisfies
+`a(u, v) ≤ ∫_Ω f v` for every nonnegative `v ∈ H¹₀(Ω)`, then for every open `U ⊆ Ω` its
+restriction `u|_U` satisfies `a(u|_U, v) ≤ ∫_U f v` for every nonnegative `v ∈ H¹₀(U)`. -/
+theorem energyFormH1_restrictL_le_setIntegral {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
     {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ} (hU : U ≤ Omega)
-    {u : W1p mu Omega 2}
+    {u : W1p mu Omega 2} {f : EuclideanSpace ℝ ι → ℝ}
     (hu : ∀ v : W1p0 mu Omega 2,
       (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
-        energyFormH1 a b c u (v : W1p mu Omega 2) ≤ 0)
+        energyFormH1 a b c u (v : W1p mu Omega 2) ≤
+          ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu)
     (v : W1p0 mu U 2) (hv : ∀ᵐ x ∂mu.restrict U, 0 ≤ W1p.value (v : W1p mu U 2) x) :
-    energyFormH1 a b c (W1p.restrictL hU u) (v : W1p mu U 2) ≤ 0 := by
+    energyFormH1 a b c (W1p.restrictL hU u) (v : W1p mu U 2) ≤
+      ∫ x in U, f x * W1p.value (v : W1p mu U 2) x ∂mu := by
   have hUm := U.isOpen.measurableSet
-  rw [energyFormH1_restrictL]
+  rw [energyFormH1_restrictL, ← setIntegral_mul_value_extendByZeroL hU]
   refine hu _ ?_
   rw [W1p0.value_extendByZeroL]
   filter_upwards [coeFn_extendByZeroLpₗᵢ ℝ hUm (SetLike.coe_subset_coe.mpr hU)
@@ -204,6 +230,21 @@ theorem energyFormH1_restrictL_nonpos {a : EuclideanSpace ℝ ι → Matrix ι �
   · rw [indicator_of_mem hxU]
     exact hxv hxU
   · rw [indicator_of_notMem hxU]
+
+/-- **Weak subsolutions restrict to weak subsolutions.** If `u ∈ H¹(Ω)` satisfies `a(u, v) ≤ 0`
+for every nonnegative `v ∈ H¹₀(Ω)`, then for every open `U ⊆ Ω` its restriction `u|_U` satisfies
+`a(u|_U, v) ≤ 0` for every nonnegative `v ∈ H¹₀(U)`. This is the case `f = 0` of
+`TauCeti.PDE.energyFormH1_restrictL_le_setIntegral`. -/
+theorem energyFormH1_restrictL_nonpos {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ} (hU : U ≤ Omega)
+    {u : W1p mu Omega 2}
+    (hu : ∀ v : W1p0 mu Omega 2,
+      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
+        energyFormH1 a b c u (v : W1p mu Omega 2) ≤ 0)
+    (v : W1p0 mu U 2) (hv : ∀ᵐ x ∂mu.restrict U, 0 ≤ W1p.value (v : W1p mu U 2) x) :
+    energyFormH1 a b c (W1p.restrictL hU u) (v : W1p mu U 2) ≤ 0 := by
+  simpa using energyFormH1_restrictL_le_setIntegral hU (f := 0)
+    (fun v hv => by simpa using hu v hv) v hv
 
 /-- **Weak supersolutions restrict to weak supersolutions.** If `u ∈ H¹(Ω)` satisfies
 `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`, then for every open `U ⊆ Ω` its restriction
@@ -262,20 +303,7 @@ theorem energyFormH1_restrictL_eq_setIntegral {a : EuclideanSpace ℝ ι → Mat
     (v : W1p0 mu U 2) :
     energyFormH1 a b c (W1p.restrictL hU u) (v : W1p mu U 2) =
       ∫ x in U, f x * W1p.value (v : W1p mu U 2) x ∂mu := by
-  have hUm := U.isOpen.measurableSet
-  have hUO : (U : Set (EuclideanSpace ℝ ι)) ⊆ Omega := SetLike.coe_subset_coe.mpr hU
-  rw [energyFormH1_restrictL, hu, W1p0.value_extendByZeroL]
-  calc ∫ x in Omega, f x * extendByZeroLpₗᵢ ℝ mu hUm hUO (W1p.value (v : W1p mu U 2)) x ∂mu
-      = ∫ x in Omega, (U : Set (EuclideanSpace ℝ ι)).indicator
-          (fun x => f x * W1p.value (v : W1p mu U 2) x) x ∂mu := by
-        refine integral_congr_ae ?_
-        filter_upwards [coeFn_extendByZeroLpₗᵢ ℝ hUm hUO (W1p.value (v : W1p mu U 2))] with x hx
-        rw [hx]
-        by_cases hxU : x ∈ (U : Set (EuclideanSpace ℝ ι))
-        · rw [indicator_of_mem hxU, indicator_of_mem hxU]
-        · rw [indicator_of_notMem hxU, indicator_of_notMem hxU, mul_zero]
-    _ = ∫ x in U, f x * W1p.value (v : W1p mu U 2) x ∂mu := by
-        rw [integral_indicator hUm, Measure.restrict_restrict hUm, inter_eq_left.2 hUO]
+  rw [energyFormH1_restrictL, hu, setIntegral_mul_value_extendByZeroL]
 
 /-- If `a'` agrees with `a` on an open `U ≤ Ω`, is essentially bounded on `U`, `b, c ∈ L∞(Ω)`, and
 `u ∈ H¹(Ω)` solves the equation with coefficients `a, b, c` and right-hand side `f`, then the
