@@ -86,7 +86,7 @@ theorem natAbs_dvd_of_adjoin_sqrt_le_cyclotomic {n m : ℕ} [NeZero n] {K : Type
   have hcond :=
     (IsCyclotomicExtension.Rat.mem_intermediateFieldEquivSubgroupChar_iff_conductor_dvd
       n K ℂ F hmn χ).mp hχ
-  rwa [DirichletCharacter.conductor_ringHomComp _ _ Int.cast_injective,
+  rwa [DirichletCharacter.conductor_ringHomComp _ _ Int.cast_injective.injOn,
     DirichletCharacter.conductor_changeLevel, isPrimitive_fundamentalDiscriminantChar hD] at hcond
 
 variable {L : Type*} [Field L] [CharZero L] {m : ℕ} {ζ : L}

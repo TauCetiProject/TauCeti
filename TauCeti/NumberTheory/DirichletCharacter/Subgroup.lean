@@ -168,14 +168,14 @@ theorem dirichletConductor_map_ringHomComp (Y : Subgroup (DirichletCharacter R n
     intro ψ hψ
     obtain ⟨χ, hχ, rfl⟩ := hψ
     simpa only [MulChar.ringHomCompHom_apply,
-      DirichletCharacter.conductor_ringHomComp χ f hf] using
+      DirichletCharacter.conductor_ringHomComp χ f hf.injOn] using
       Y.conductor_dvd_dirichletConductor hχ
   · rw [dirichletConductor_dvd_iff]
     intro χ hχ
     have h := (Y.map (MulChar.ringHomCompHom f)).conductor_dvd_dirichletConductor
       (Subgroup.mem_map_of_mem (MulChar.ringHomCompHom f) hχ)
     simpa only [MulChar.ringHomCompHom_apply,
-      DirichletCharacter.conductor_ringHomComp χ f hf] using h
+      DirichletCharacter.conductor_ringHomComp χ f hf.injOn] using h
 
 end RingHom
 

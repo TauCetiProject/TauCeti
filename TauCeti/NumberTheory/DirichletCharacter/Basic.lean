@@ -47,7 +47,9 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
   `DirichletCharacter.changeLevel_ringHomComp_intCast_apply`: the value of a lifted integer-valued
   character at an integer prime to the new level.
 * `DirichletCharacter.apply_intCast_eq_of_forall_isCoprime`: characters of equal levels agreeing
-  at the integers prime to the level agree at every integer.
+  at the integers prime to the level agree at every integer, and
+  `DirichletCharacter.changeLevel_eq_changeLevel_of_forall_isCoprime`: characters agreeing at
+  integers coprime to a common multiple of their levels have equal lifts there.
 * `DirichletCharacter.one_natCast`: the trivial character modulo `N` is `1` at the natural numbers
   prime to `N` and `0` at the others.
 * `DirichletCharacter.apply_eq_one_of_conductor_dvd`: a character is `1` at every integer prime
@@ -60,8 +62,10 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
   read off the values of the Kronecker symbol at odd arguments.
 * `DirichletCharacter.changeLevel_trans_mul_toUnitHom`: raising a product of characters through an
   intermediate level, read on unit homomorphisms.
-* `DirichletCharacter.changeLevel_apply_neg_one`, `DirichletCharacter.even_changeLevel_iff`:
-  changing the level preserves the value at `-1`, hence parity.
+* `DirichletCharacter.changeLevel_apply_neg_one`,
+  `DirichletCharacter.primitiveCharacter_apply_neg_one`, `DirichletCharacter.even_changeLevel_iff`:
+  changing the level or passing to the primitive character preserves the value at `-1`, hence
+  parity.
 * `DirichletCharacter.conductor_eq_prime_pow_of_emod_eq_of_apply_ne_apply`: a primitivity
   criterion at a prime-power level, obtained by comparing values on congruent units, and its
   specialisations `DirichletCharacter.conductor_eq_four_of_apply_one_ne_apply_three` and
@@ -314,6 +318,17 @@ theorem apply_intCast_eq_of_forall_isCoprime {R : Type*} [CommMonoidWithZero R] 
     rw [χ.map_nonunit (by rwa [ZMod.isUnit_intCast_iff_isCoprime, isCoprime_comm]),
       ψ.map_nonunit (by rwa [ZMod.isUnit_intCast_iff_isCoprime, isCoprime_comm])]
 
+/-- Two Dirichlet characters that agree at every integer coprime to a common multiple `L` of their
+levels have equal lifts to level `L`. -/
+theorem changeLevel_eq_changeLevel_of_forall_isCoprime {R : Type*} [CommMonoidWithZero R]
+    {N M L : ℕ} (hNL : N ∣ L) (hML : M ∣ L) {χ : DirichletCharacter R N}
+    {ψ : DirichletCharacter R M} (h : ∀ n : ℤ, IsCoprime n L → χ n = ψ n) :
+    changeLevel hNL χ = changeLevel hML ψ := by
+  refine MulChar.ext' fun x ↦ ?_
+  obtain ⟨n, rfl⟩ := ZMod.intCast_surjective x
+  refine apply_intCast_eq_of_forall_isCoprime rfl (fun m hm ↦ ?_) n
+  rw [changeLevel_eq_cast_of_dvd' χ hNL hm, changeLevel_eq_cast_of_dvd' ψ hML hm, h m hm]
+
 /-- **The trivial character at a natural number.** The trivial character modulo `N` is `1` at the
 natural numbers prime to `N` and `0` at the others. -/
 theorem one_natCast {R : Type*} [CommMonoidWithZero R] {N : ℕ} (n : ℕ) :
@@ -397,6 +412,12 @@ theorem changeLevel_trans_mul_toUnitHom {R : Type*} [CommMonoidWithZero R] {a b 
 theorem changeLevel_apply_neg_one {R : Type*} [CommMonoidWithZero R] {d n : ℕ} (h : d ∣ n)
     (χ : DirichletCharacter R d) : changeLevel h χ (-1) = χ (-1) := by
   simpa using changeLevel_eq_cast_of_dvd' χ h (a := -1) (IsCoprime.neg_left isCoprime_one_left)
+
+/-- The primitive character of a Dirichlet character takes the same value at `-1`. -/
+@[simp]
+theorem primitiveCharacter_apply_neg_one {R : Type*} [CommMonoidWithZero R] {N : ℕ}
+    (χ : DirichletCharacter R N) : χ.primitiveCharacter (-1) = χ (-1) := by
+  conv_rhs => rw [← χ.changeLevel_primitiveCharacter, changeLevel_apply_neg_one]
 
 /-- **Changing the level preserves parity**: the value at `-1` of a Dirichlet character is the
 value at `-1` of its lift to any multiple level. -/

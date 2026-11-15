@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.MulChar.Basic
+import Mathlib.Algebra.CharP.Basic
 
 /-!
 # Basic facts about multiplicative characters
@@ -38,9 +39,12 @@ Pushing a character along an injective ring homomorphism of the coefficients pre
 
 A quadratic character takes the value `1` or `-1` at every unit
 (`MulChar.IsQuadratic.apply_eq_one_or_eq_neg_one`), so when `2 = 0` in the coefficient ring every
-quadratic character is trivial (`MulChar.IsQuadratic.eq_one_of_two_eq_zero`). Quadratic characters
-are closed under multiplication (`MulChar.IsQuadratic.mul`), and hence a finite product of quadratic
-characters is quadratic (`MulChar.isQuadratic_prod`).
+quadratic character is trivial (`MulChar.IsQuadratic.eq_one_of_two_eq_zero`), while any ring
+homomorphism into a ring with `2 ≠ 0` is injective on the range of a quadratic character
+(`MulChar.IsQuadratic.injOn_range`) and preserves triviality
+(`MulChar.IsQuadratic.ringHomComp_eq_one_iff`). Quadratic characters are closed under multiplication
+(`MulChar.IsQuadratic.mul`), and hence a finite product of quadratic characters is quadratic
+(`MulChar.isQuadratic_prod`).
 -/
 
 public section
@@ -123,6 +127,35 @@ theorem IsQuadratic.eq_one_of_two_eq_zero {M R : Type*} [CommMonoid M] [CommRing
   · exact h
   · rw [h, neg_eq_iff_add_eq_zero, one_add_one_eq_two]
     exact h2
+
+/-- Any ring homomorphism into a ring where `2 ≠ 0` is injective on the range of a quadratic
+character. -/
+theorem IsQuadratic.injOn_range {M R R' : Type*} [CommMonoid M] [CommRing R] [CommRing R']
+    [NeZero (2 : R')] {χ : MulChar M R} (hχ : χ.IsQuadratic) (f : R →+* R') :
+    Set.InjOn f (Set.range χ) := by
+  have : Nontrivial R' := nontrivial_of_ne 2 0 (NeZero.ne (2 : R'))
+  have hchar : ringChar R' ≠ 2 := fun h ↦
+    NeZero.ne (2 : R') (by simpa using (ringChar.spec R' 2).mpr (h ▸ dvd_rfl))
+  have hex (a : M) : ∃ s ∈ ({0, 1, -1} : Set ℤ), χ a = s := by
+    rcases hχ a with h | h | h
+    · exact ⟨0, by simp, by simpa using h⟩
+    · exact ⟨1, by simp, by simpa using h⟩
+    · exact ⟨-1, by simp, by simpa using h⟩
+  rintro _ ⟨a, rfl⟩ _ ⟨b, rfl⟩ h
+  obtain ⟨s, hs, ha⟩ := hex a
+  obtain ⟨t, ht, hb⟩ := hex b
+  have hst : (s : R') = (t : R') := by simpa [ha, hb] using h
+  rw [ha, hb, Int.cast_injOn_of_ringChar_ne_two hchar hs ht hst]
+
+/-- Pushing a quadratic character along any ring homomorphism into a ring where `2 ≠ 0` gives the
+trivial character if and only if the original character is trivial. -/
+theorem IsQuadratic.ringHomComp_eq_one_iff {M R R' : Type*} [CommMonoid M] [CommRing R]
+    [CommRing R'] [NeZero (2 : R')] {χ : MulChar M R} (hχ : χ.IsQuadratic) (f : R →+* R') :
+    χ.ringHomComp f = 1 ↔ χ = 1 := by
+  simp only [eq_one_iff, ringHomComp_apply]
+  exact forall_congr' fun u ↦
+    ⟨fun h ↦ hχ.injOn_range f ⟨u, rfl⟩ ⟨1, map_one χ⟩ (h.trans (map_one f).symm),
+      fun h ↦ by rw [h, map_one]⟩
 
 /-- The product of two quadratic characters is quadratic. -/
 theorem IsQuadratic.mul {M R : Type*} [CommMonoid M] [CommRing R] {χ ψ : MulChar M R}

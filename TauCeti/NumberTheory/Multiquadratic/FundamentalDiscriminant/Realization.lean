@@ -40,6 +40,16 @@ noncomputable def fundamentalDiscriminantCharCast (R : Type*) [CommRing R]
     fundamentalDiscriminantCharCast R D hD a = (fundamentalDiscriminantChar D hD a : R) :=
   (rfl)
 
+/-- Two equal fundamental discriminants give equal scalar-realized character values at every
+integer. -/
+theorem fundamentalDiscriminantCharCast_congr {R : Type*} [CommRing R] {D₁ D₂ : ℤ}
+    (hD₁ : Int.IsFundamentalDiscr D₁) (hD₂ : Int.IsFundamentalDiscr D₂) (h : D₁ = D₂)
+    (n : ℤ) :
+    fundamentalDiscriminantCharCast R D₁ hD₁ n =
+      fundamentalDiscriminantCharCast R D₂ hD₂ n := by
+  subst h
+  rfl
+
 /-- Over `ℤ`, `fundamentalDiscriminantCharCast` is `fundamentalDiscriminantChar` itself. -/
 @[simp] theorem fundamentalDiscriminantCharCast_int (hD : Int.IsFundamentalDiscr D) :
     fundamentalDiscriminantCharCast ℤ D hD = fundamentalDiscriminantChar D hD := by
@@ -82,38 +92,27 @@ theorem factorsThrough_fundamentalDiscriminantCharCast_iff (hD : Int.IsFundament
     (fundamentalDiscriminantCharCast R D hD).FactorsThrough d ↔
       (fundamentalDiscriminantChar D hD).FactorsThrough d := by
   have := hD.neZero_natAbs
-  by_cases hd : d ∣ D.natAbs
-  · rw [factorsThrough_iff_ker_unitsMap hd, factorsThrough_iff_ker_unitsMap hd]
-    suffices (fundamentalDiscriminantCharCast R D hD).toUnitHom.ker =
-        (fundamentalDiscriminantChar D hD).toUnitHom.ker by rw [this]
-    ext u
-    simp only [MonoidHom.mem_ker, Units.ext_iff, MulChar.coe_toUnitHom, Units.val_one,
-      fundamentalDiscriminantCharCast_apply]
-    rcases (fundamentalDiscriminantChar_isQuadratic hD).apply_eq_one_or_eq_neg_one u.isUnit with
-      hu | hu
-    · simp [hu]
-    · rw [hu, Int.cast_neg, Int.cast_one]
-      refine iff_of_false (fun h ↦ NeZero.ne (2 : R) ?_) (by norm_num)
-      rwa [neg_eq_iff_add_eq_zero, one_add_one_eq_two] at h
-  · exact iff_of_false (mt FactorsThrough.dvd hd) (mt FactorsThrough.dvd hd)
+  exact (fundamentalDiscriminantChar_isQuadratic hD).factorsThrough_ringHomComp_iff _
 
 /-- When `2 ≠ 0` in `R`, the realized character has conductor `|D|`. -/
 @[simp] theorem conductor_fundamentalDiscriminantCharCast (hD : Int.IsFundamentalDiscr D) :
-    (fundamentalDiscriminantCharCast R D hD).conductor = D.natAbs := by
-  have hcond : (fundamentalDiscriminantCharCast R D hD).conductor =
-      (fundamentalDiscriminantChar D hD).conductor :=
-    congrArg sInf (Set.ext fun _ ↦ factorsThrough_fundamentalDiscriminantCharCast_iff hD)
-  exact hcond.trans ((isPrimitive_def _).mp (isPrimitive_fundamentalDiscriminantChar hD))
+    (fundamentalDiscriminantCharCast R D hD).conductor = D.natAbs :=
+  ((fundamentalDiscriminantChar_isQuadratic hD).conductor_ringHomComp _).trans
+    ((isPrimitive_def _).mp (isPrimitive_fundamentalDiscriminantChar hD))
 
 /-- When `2 ≠ 0` in `R`, the scalar realization is primitive at its actual level `|D|`. -/
 theorem isPrimitive_fundamentalDiscriminantCharCast (hD : Int.IsFundamentalDiscr D) :
     (fundamentalDiscriminantCharCast R D hD).IsPrimitive :=
-  (isPrimitive_def _).mpr (conductor_fundamentalDiscriminantCharCast hD)
+  ((fundamentalDiscriminantChar_isQuadratic hD).isPrimitive_ringHomComp_iff _).mpr
+    (isPrimitive_fundamentalDiscriminantChar hD)
 
 /-- When `2 ≠ 0` in `R`, the scalar realization is principal if and only if `D = 1`. -/
 @[simp] theorem fundamentalDiscriminantCharCast_eq_one_iff (hD : Int.IsFundamentalDiscr D) :
     fundamentalDiscriminantCharCast R D hD = 1 ↔ D = 1 := by
   have := hD.neZero_natAbs
-  rw [eq_one_iff_conductor_eq_one, conductor_fundamentalDiscriminantCharCast, hD.natAbs_eq_one_iff]
+  rw [fundamentalDiscriminantCharCast,
+    (fundamentalDiscriminantChar_isQuadratic hD).ringHomComp_eq_one_iff,
+    eq_one_iff_conductor_eq_one,
+    (isPrimitive_def _).mp (isPrimitive_fundamentalDiscriminantChar hD), hD.natAbs_eq_one_iff]
 
 end TauCeti.Multiquadratic

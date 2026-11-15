@@ -173,7 +173,7 @@ theorem gaussSumOfPrimitiveRoot_sq (χ : DirichletCharacter ℤ N) (hχ : IsPrim
     gaussSumOfPrimitiveRoot χ hζ ^ 2 =
       (χ.ringHomComp (Int.castRingHom L)) (-1) * Fintype.card (ZMod N) := by
   apply gaussSum_sq_of_isPrimitive_of_isQuadratic
-  · exact (isPrimitive_ringHomComp_iff χ (Int.castRingHom L) Int.cast_injective).mpr hχ
+  · exact (isPrimitive_ringHomComp_iff χ (Int.castRingHom L) Int.cast_injective.injOn).mpr hχ
   · exact hquad.comp _
   · exact AddChar.zmodChar_primitive_of_primitive_root N hζ
 
@@ -214,7 +214,7 @@ theorem gaussSumOfPrimitiveRoot_ne_zero (χ : DirichletCharacter ℤ N)
     rw [ZMod.card]
     exact Nat.cast_ne_zero.mpr (NeZero.ne N)
   have hχL : IsPrimitive χL :=
-    (isPrimitive_ringHomComp_iff χ (Int.castRingHom L) Int.cast_injective).mpr hχ
+    (isPrimitive_ringHomComp_iff χ (Int.castRingHom L) Int.cast_injective.injOn).mpr hχ
   have he : e.IsPrimitive := AddChar.zmodChar_primitive_of_primitive_root N hζ
   intro hzero
   have hprod := gaussSum_mul_gaussSum_inv_eq_card_of_isPrimitive hχL he

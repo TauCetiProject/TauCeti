@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Character
 public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.OfSquarefree
 import Mathlib.Tactic.NormNum.LegendreSymbol
+import TauCeti.Algebra.Group.Even
 
 /-!
 # Values of fundamental-discriminant characters
@@ -82,17 +83,7 @@ theorem isSquare_fundamentalDiscriminant_zmod_iff (d : ℤ) {n : ℕ} (hn : Odd 
     rcases hc with rfl | rfl
     · simp
     · exact (ZMod.isUnit_intCast_iff_isCoprime 2 n).mpr hn.natCast.isCoprime_two
-  obtain ⟨u, hu⟩ := hu
-  have h1 : (c : ZMod n) * (↑u⁻¹ : ZMod n) = 1 := by
-    rw [← hu, ← Units.val_mul, mul_inv_cancel, Units.val_one]
-  rw [← hcd, Int.cast_mul, Int.cast_pow]
-  refine ⟨fun ⟨y, hy⟩ ↦ ⟨(↑u⁻¹ : ZMod n) * y, ?_⟩,
-    fun ⟨x, hx⟩ ↦ ⟨(c : ZMod n) * x, by rw [hx]; ring⟩⟩
-  calc
-    (d : ZMod n) = ((c : ZMod n) * (↑u⁻¹ : ZMod n)) ^ 2 * (d : ZMod n) := by
-      rw [h1, one_pow, one_mul]
-    _ = (↑u⁻¹ : ZMod n) ^ 2 * ((c : ZMod n) ^ 2 * (d : ZMod n)) := by ring
-    _ = ((↑u⁻¹ : ZMod n) * y) * ((↑u⁻¹ : ZMod n) * y) := by rw [hy]; ring
+  rw [← hcd, Int.cast_mul, Int.cast_pow, hu.isSquare_sq_mul_iff]
 
 /-- Modulo any odd natural number `n`, the radicand of a fundamental discriminant `D` is a square
 in `ZMod n` if and only if `D` is. -/
@@ -120,13 +111,21 @@ theorem fundamentalDiscriminantChar_natCast_eq_legendreSym_radicand {D : ℤ}
   rw [fundamentalDiscriminantChar_natCast_eq_legendreSym hD hp2,
     legendreSym_fundamentalDiscriminantRadicand hD hp2]
 
-/-- For a squarefree integer `d` and an odd prime `p`, the character of
-`fundamentalDiscriminant d` at `p` is `legendreSym p d`, including `0` when `p ∣ d`. -/
+/-- At an odd natural number `n`, the character of `fundamentalDiscriminant d` equals
+`jacobiSym d n`, including `0` when `n` is not coprime to `fundamentalDiscriminant d`. -/
+theorem fundamentalDiscriminantChar_fundamentalDiscriminant_natCast_eq_jacobiSym
+    {d : ℤ} (hD : Int.IsFundamentalDiscr (fundamentalDiscriminant d)) {n : ℕ} (hn : Odd n) :
+    fundamentalDiscriminantChar (fundamentalDiscriminant d) hD (n : ℤ) = jacobiSym d n := by
+  rw [fundamentalDiscriminantChar_natCast_eq_jacobiSym hD hn,
+    jacobiSym_fundamentalDiscriminant d hn]
+
+/-- At an odd prime `p`, the character of `fundamentalDiscriminant d` equals `legendreSym p d`,
+including `0` when `p ∣ d`. -/
 theorem fundamentalDiscriminantChar_fundamentalDiscriminant_natCast_eq_legendreSym
-    {d : ℤ} (hd : Squarefree d) {p : ℕ} [Fact p.Prime] (hp2 : p ≠ 2) :
-    fundamentalDiscriminantChar (fundamentalDiscriminant d)
-      (isFundamentalDiscr_fundamentalDiscriminant hd) (p : ℤ) = legendreSym p d := by
-  rw [fundamentalDiscriminantChar_natCast_eq_legendreSym _ hp2,
+    {d : ℤ} (hD : Int.IsFundamentalDiscr (fundamentalDiscriminant d)) {p : ℕ} [Fact p.Prime]
+    (hp2 : p ≠ 2) :
+    fundamentalDiscriminantChar (fundamentalDiscriminant d) hD (p : ℤ) = legendreSym p d := by
+  rw [fundamentalDiscriminantChar_natCast_eq_legendreSym hD hp2,
     legendreSym_fundamentalDiscriminant d hp2]
 
 -- Simplify these integer evaluations before reducing their casts.
