@@ -34,12 +34,12 @@ The topology is induced by `u ↦ u - 1 ∈ H^s(ℂ)`, so it is that of the dist
 (`TauCeti.Vortex.SobolevTopologicalGaugeGroup.isEmbedding_subOne`). The product law is polynomial,
 and continuous for the `H^s` norm because pointwise multiplication is a continuous bilinear map on
 `H^s(ℂ)`, `s > 1` (`BesselPotentialSpace.mulCLM`). Inversion is continuous without discussing
-complex conjugation on `H^s`: the coordinate `u⁻¹ - 1` is a locally Lipschitz function of `u - 1`,
-and only the algebra structure of `H^s(ℂ)` enters. The element `w = u⁻¹ - 1` is the quasi-inverse
-of `h = u - 1`, `h + w + h w = 0`. If `c`, `w₀` are the coordinates of `v`, `v⁻¹`, and `δ`, `ε`
-are the differences of the coordinates of `u, v` and of `u⁻¹, v⁻¹`, the quasi-inverse relations
-give `ε + c ε = X` with `X = -δ - δ w`, and multiplying by the quasi-inverse `1 + w₀` of `1 + c`
-gives `ε = X + w₀ X`.
+complex conjugation on `H^s`: near each `v`, the distance `‖u⁻¹ - v⁻¹‖_{H^s}` is bounded linearly
+in `‖u - v‖_{H^s}`, and only the algebra structure of `H^s(ℂ)` enters. The element `w = u⁻¹ - 1`
+is the quasi-inverse of `h = u - 1`, `h + w + h w = 0`. If `c`, `w₀` are the coordinates of `v`,
+`v⁻¹`, and `δ`, `ε` are the differences of the coordinates of `u, v` and of `u⁻¹, v⁻¹`, the
+quasi-inverse relations give `ε + c ε = X` with `X = -δ - δ w`, and multiplying by `1 + w₀`, the
+inverse of `1 + c` coming from the quasi-inverse `w₀` of `c`, gives `ε = X + w₀ X`.
 
 ## Main definitions
 
@@ -55,8 +55,9 @@ gives `ε = X + w₀ X`.
   function of `u⁻¹ - 1` is `conj u - 1`.
 * `TauCeti.Vortex.SobolevTopologicalGaugeGroup.subOne_inv`: `u⁻¹ - 1` is the quasi-inverse of
   `u - 1` in `H^s(ℂ)`.
-* `TauCeti.Vortex.SobolevTopologicalGaugeGroup.norm_subOne_inv_sub_le`: `u⁻¹ - 1` is a locally
-  Lipschitz function of `u - 1` for the `H^s` norm.
+* `TauCeti.Vortex.SobolevTopologicalGaugeGroup.norm_subOne_inv_sub_le`: a Lipschitz bound for
+  inversion at a point `v`: `‖u⁻¹ - v⁻¹‖_{H^s} ≤ 2 K² ‖u - v‖_{H^s}` once `‖u - v‖_{H^s}` is small
+  compared with `K = 1 + M ‖v⁻¹ - 1‖_{H^s}`.
 * `TauCeti.Vortex.SobolevTopologicalGaugeGroup.tendsto_subOne_inv`: if `u - 1` converges in
   `H^s(ℂ)`, then so does `u⁻¹ - 1`.
 * `TauCeti.Vortex.SobolevTopologicalGaugeGroup.isEmbedding_subOne`: the topology of `G_s` is
@@ -185,9 +186,10 @@ theorem subOne_inv (u : SobolevTopologicalGaugeGroup hs) :
   rw [mul_inv_cancel, subOne_one] at h
   linear_combination (norm := module) -h
 
-/-- **Inversion in `G_s` is locally Lipschitz for the `H^s` distance.** Let `M` be the norm of the
-multiplication of `H^s(ℂ)` and `K = 1 + M ‖v⁻¹ - 1‖_{H^s}`. If `2 K M ‖u - v‖_{H^s} ≤ 1`, then
-`‖u⁻¹ - v⁻¹‖_{H^s} ≤ 2 K² ‖u - v‖_{H^s}`. -/
+/-- **A Lipschitz bound for inversion in `G_s` at `v`, for the `H^s` distance.** Let `M` be the
+norm of the multiplication of `H^s(ℂ)` and `K = 1 + M ‖v⁻¹ - 1‖_{H^s}`. If
+`2 K M ‖u - v‖_{H^s} ≤ 1`, then `‖u⁻¹ - v⁻¹‖_{H^s} ≤ 2 K² ‖u - v‖_{H^s}`. The radius and the
+constant depend on `v`. -/
 theorem norm_subOne_inv_sub_le {u v : SobolevTopologicalGaugeGroup hs}
     (h : 2 * (1 + ‖mulCLM (finrank_real_complex_lt_two_mul hs)‖ * ‖subOne v⁻¹‖) *
       ‖mulCLM (finrank_real_complex_lt_two_mul hs)‖ * ‖subOne u - subOne v‖ ≤ 1) :
@@ -207,7 +209,7 @@ theorem norm_subOne_inv_sub_le {u v : SobolevTopologicalGaugeGroup hs}
   set δ := subOne u - c
   set ε := w - w₀
   set X := -δ - B δ w
-  -- `ε` solves `ε + c ε = X`; multiplying by `1 + w₀`, the quasi-inverse of `1 + c`, gives
+  -- `ε` solves `ε + c ε = X`; multiplying by `1 + w₀`, the inverse of `1 + c`, gives
   -- `ε = X + w₀ X`.
   have key₁ : ε + B c ε = X := by
     simp only [ε, X, δ, map_sub, sub_apply]
