@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.Positive
 public import Mathlib.Analysis.InnerProductSpace.Spectrum
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
 public import TauCeti.Analysis.InnerProductSpace.BasisSpan
+public import TauCeti.Analysis.InnerProductSpace.Symmetric.Basic
 public import TauCeti.Data.Fin.Tuple.Sort
 public import TauCeti.LinearAlgebra.Eigenspace.Anticommute
 import Mathlib.LinearAlgebra.Eigenspace.ContinuousLinearMap
@@ -78,6 +79,8 @@ nonzero eigenvalue, which is the form the eigenvalue problem of an elliptic oper
 * `finrank_positiveSpectralSubspace_eq_finrank_negativeSpectralSubspace_of_anticommute`, in the
   same namespace: in that case the positive and negative spectral subspaces have the same
   dimension.
+* `LinearMap.IsSymmetric.eigenvalues_neg`: the ordered eigenvalues of `-T` are the negated
+  eigenvalues of `T` in reverse order.
 * `LinearMap.IsPositive.det_nonneg`: a positive operator on a finite-dimensional space has
   nonnegative determinant, the product of its eigenvalues.
 * `LinearMap.IsPositive.abs_det_neg`: on a real space, `|det (-S)| = det S` for positive `S`.
@@ -524,6 +527,30 @@ theorem finrank_positiveSpectralSubspace_eq_finrank_negativeSpectralSubspace_of_
     fun j hj ↦ ⟨j.rev, ?_, Fin.rev_rev j⟩
   · simpa [hT.eigenvalues_rev_of_anticommute hn e h] using hi
   · simpa [hT.eigenvalues_rev_of_anticommute hn e h] using hj
+
+open Finset in
+/-- The decreasingly ordered eigenvalues of `-T` are the negatives of those of `T` in reverse
+order: the `i`-th largest eigenvalue of `-T` is minus the `i`-th smallest eigenvalue of `T`. -/
+theorem eigenvalues_neg (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n) (i : Fin n) :
+    hT.neg.eigenvalues hn i = -hT.eigenvalues hn i.rev := by
+  classical
+  -- Both tuples are decreasing, and `-T` has eigenspace `E_{-μ}(T)` at `μ`, so every value
+  -- occurs in them equally often.
+  have hgev : (fun j ↦ -hT.eigenvalues hn j.rev) = hT.neg.eigenvalues hn := by
+    refine Antitone.eq_of_card_filter_eq
+      (fun j k hjk ↦ neg_le_neg (hT.eigenvalues_antitone hn (Fin.rev_le_rev.2 hjk)))
+      (hT.neg.eigenvalues_antitone hn) fun μ ↦ ?_
+    have hspace : eigenspace (-T) (μ : 𝕜) = eigenspace T ((-μ : ℝ) : 𝕜) := by
+      ext x
+      simp
+    have h₁ := hT.neg.card_filter_eigenvalues_eq hn (μ : 𝕜)
+    have h₂ := hT.card_filter_eigenvalues_eq hn ((-μ : ℝ) : 𝕜)
+    simp only [RCLike.ofReal_inj] at h₁ h₂
+    rw [h₁, hspace, ← h₂]
+    refine card_equiv Fin.revPerm fun j ↦ ?_
+    simp only [mem_filter, mem_univ, true_and, Fin.revPerm_apply]
+    constructor <;> intro hj <;> linarith
+  exact (congrFun hgev i).symm
 
 end LinearMap.IsSymmetric
 
