@@ -42,6 +42,8 @@ theorem). Those two facts are not proved here: only the inclusion of `N` in the 
 * `TauCeti.CommHopfAlgCat.liftCoinvariants` and
   `TauCeti.CommHopfAlgCat.exists_comp_coinvariantsι_iff`: the universal property of the
   projection.
+* `TauCeti.CommHopfAlgCat.coinvariantsIsoOfEq`: canonical isomorphism between coinvariant Hopf
+  algebras of equal normal Hopf ideals.
 
 ## References
 
@@ -168,6 +170,45 @@ through the coinvariants exactly when its kernel Hopf ideal is contained in `I`.
 theorem exists_comp_coinvariantsι_iff (hI : I.IsNormal) (f : K ⟶ H) :
     (∃ g : K ⟶ coinvariants hI, g ≫ coinvariantsι hI = f) ↔ kernelHopfIdeal f ≤ I := by
   rw [exists_comp_hopfSubalgebraι_iff, HopfIdeal.forall_hom_mem_coinvariants_iff]
+
+/-- Equal normal Hopf ideals define canonically isomorphic coinvariant Hopf algebras, compatibly
+with their coordinate inclusions into `H`. -/
+noncomputable def coinvariantsIsoOfEq {J : HopfIdeal R H}
+    [Module.Flat R J.coinvariants] [Module.Flat R (H ⧸ Subalgebra.toSubmodule J.coinvariants)]
+    (hI : I.IsNormal) (hJ : J.IsNormal) (hIJ : I = J) :
+    coinvariants hI ≅ coinvariants hJ where
+  hom := liftCoinvariants hJ (coinvariantsι hI)
+    ((kernelHopfIdeal_coinvariantsι_le hI).trans hIJ.le)
+  inv := liftCoinvariants hI (coinvariantsι hJ)
+    ((kernelHopfIdeal_coinvariantsι_le hJ).trans hIJ.ge)
+  hom_inv_id := by
+    refine (liftCoinvariants_unique hI (coinvariantsι hI) (kernelHopfIdeal_coinvariantsι_le hI) _
+      ?_).trans (liftCoinvariants_unique hI (coinvariantsι hI)
+        (kernelHopfIdeal_coinvariantsι_le hI) (𝟙 _) (Category.id_comp _)).symm
+    simp
+  inv_hom_id := by
+    refine (liftCoinvariants_unique hJ (coinvariantsι hJ) (kernelHopfIdeal_coinvariantsι_le hJ) _
+      ?_).trans (liftCoinvariants_unique hJ (coinvariantsι hJ)
+        (kernelHopfIdeal_coinvariantsι_le hJ) (𝟙 _) (Category.id_comp _)).symm
+    simp
+
+/-- The forward coinvariant comparison along an equality of normal Hopf ideals commutes with the
+quotient coordinate inclusions. -/
+@[reassoc (attr := simp)]
+theorem coinvariantsIsoOfEq_hom_comp_coinvariantsι {J : HopfIdeal R H}
+    [Module.Flat R J.coinvariants] [Module.Flat R (H ⧸ Subalgebra.toSubmodule J.coinvariants)]
+    (hI : I.IsNormal) (hJ : J.IsNormal) (hIJ : I = J) :
+    (coinvariantsIsoOfEq hI hJ hIJ).hom ≫ coinvariantsι hJ = coinvariantsι hI := by
+  simp [coinvariantsIsoOfEq]
+
+/-- The inverse coinvariant comparison along an equality of normal Hopf ideals commutes with the
+quotient coordinate inclusions. -/
+@[reassoc (attr := simp)]
+theorem coinvariantsIsoOfEq_inv_comp_coinvariantsι {J : HopfIdeal R H}
+    [Module.Flat R J.coinvariants] [Module.Flat R (H ⧸ Subalgebra.toSubmodule J.coinvariants)]
+    (hI : I.IsNormal) (hJ : J.IsNormal) (hIJ : I = J) :
+    (coinvariantsIsoOfEq hI hJ hIJ).inv ≫ coinvariantsι hI = coinvariantsι hJ := by
+  simp [coinvariantsIsoOfEq]
 
 end CommHopfAlgCat
 

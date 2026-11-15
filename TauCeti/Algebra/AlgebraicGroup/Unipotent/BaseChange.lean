@@ -8,36 +8,49 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Faithful.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.Faithful
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Reduced
+import Mathlib.RingTheory.Etale.Descent
+import Mathlib.RingTheory.TensorProduct.Finite
+import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.BaseChange
+import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.Naturality
 import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.PointAction
 import TauCeti.RingTheory.Smooth.GeometricallyReduced
 
 /-!
 # Geometric unipotence under base change
 
-Let `H` be the coordinate Hopf algebra of a smooth unipotent affine group over a field `k`.
-For every field extension `K / k`, the scalar extension `K ⊗[k] H` is again smooth unipotent.
+Let `H` be the coordinate Hopf algebra of a finite-type affine group over a field `k`. For every
+field extension `K / k`, the scalar extension `K ⊗[k] H` is smooth unipotent if and only if `H` is
+smooth unipotent.
 
-Choose a faithful finite-dimensional `H`-comodule and extend it to `K`. Its coordinate morphism
-remains surjective, hence the extended comodule is faithful. The universal coefficient matrix of
-the extended comodule is obtained from the original one by scalar extension. Its characteristic
-polynomial therefore remains a power of `X - 1`, and the faithful-representation criterion
-detects unipotence of every geometric point of the base-changed group.
+For preservation, choose a faithful finite-dimensional `H`-comodule and extend it to `K`. Its
+coordinate morphism remains surjective, hence the extended comodule is faithful. The universal
+coefficient matrix of the extended comodule is obtained from the original one by scalar extension.
+Its characteristic polynomial therefore remains a power of `X - 1`, and the faithful-representation
+criterion detects unipotence of every geometric point of the base-changed group.
+
+For reflection, smoothness descends along the faithfully flat extension `k → K`. On points, an
+embedding of `AlgebraicClosure k` into `AlgebraicClosure K` identifies each geometric point of `H`
+with the restriction of a geometric point of `K ⊗[k] H`, and cancelling the intermediate tensor
+factor intertwines the action of that restriction on any finitely generated `H`-comodule with the
+action of the extended point on the base-changed comodule.
 
 ## Main declarations
 
+* `TauCeti.HopfAlgebra.IsUnipotentPoint.of_baseChangePointsMulEquiv`: unipotence of a point
+  descends from its base-changed counterpart.
+* `TauCeti.geometricallyUnipotentPointsCommHopfAlgProperty.of_baseChange`: geometric-point
+  unipotence is reflected by arbitrary field extension.
 * `TauCeti.smoothUnipotentCommHopfAlgProperty.baseChange`: smooth geometric unipotence is
   preserved by arbitrary field extension.
-* `TauCeti.smoothUnipotentCommHopfAlgProperty.of_baseChange_of_surjective`: it is reflected
-  by surjective maps of ground fields.
+* `TauCeti.smoothUnipotentCommHopfAlgProperty.of_baseChange`: smooth geometric unipotence is
+  reflected by arbitrary field extension.
+* `TauCeti.smoothUnipotentCommHopfAlgProperty.baseChange_iff`: smooth geometric unipotence is
+  invariant under arbitrary field extension.
 
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 14.5.
 * A. Borel, *Linear Algebraic Groups*, Section 15.4.
-
-This supplies scalar-extension preservation for the unipotent radical. Descent along a
-surjective field map uses inverse scalar extension, as in
-`TauCeti.Algebra.AlgebraicGroup.Torus.AlgebraicallyClosed`.
 -/
 
 public section
@@ -47,9 +60,69 @@ open scoped TensorProduct
 
 namespace TauCeti
 
-universe u
+universe u v w
 
 noncomputable section
+
+namespace HopfAlgebra
+
+variable {k K : Type u} {H : Type v} {A : Type w}
+variable [CommSemiring k] [CommSemiring K] [Algebra k K]
+variable [Semiring H] [_root_.HopfAlgebra k H]
+variable [CommRing A] [Algebra k A] [Algebra K A] [IsScalarTower k K A]
+
+/-- If the base-changed counterpart of a `K`-algebra-valued point of `H` is unipotent, then the
+point itself is unipotent. -/
+theorem IsUnipotentPoint.of_baseChangePointsMulEquiv {g : WithConv (H →ₐ[k] A)}
+    (hg : IsUnipotentPoint (AlgHom.baseChangePointsMulEquiv (K := K) g)) :
+    IsUnipotentPoint g := by
+  rw [isUnipotentPoint_def] at hg ⊢
+  intro M
+  let _ := Comodule.baseChange (R := k) (H := H) (M := M) K
+  let MK : FGComoduleCat.{u, max u v, u} K (K ⊗[k] H) :=
+    FGComoduleCat.of (R := K) (C := K ⊗[k] H) (K ⊗[k] M)
+  let e : (A ⊗[K] ↑MK) ≃ₗ[A] (A ⊗[k] M) :=
+    TensorProduct.AlgebraTensorModule.cancelBaseChange k K A A M
+  have heq : LinearMap.GeneralLinearGroup.congrLinearEquiv e
+      (LinearMap.GeneralLinearGroup.ofLinearEquiv
+        (Comodule.pointsAction MK (AlgHom.baseChangePointsMulEquiv (K := K) g))) =
+      LinearMap.GeneralLinearGroup.ofLinearEquiv (Comodule.pointsAction M g) := by
+    apply Units.ext
+    apply LinearMap.ext
+    intro x
+    obtain ⟨y, rfl⟩ := e.surjective x
+    have h := LinearMap.congr_fun
+      (Comodule.cancelBaseChange_comp_endOfPoint_baseChangePointsMulEquiv
+        (M := M) (K := K) g) y
+    simp only [LinearMap.GeneralLinearGroup.congrLinearEquiv_apply,
+      LinearMap.GeneralLinearGroup.coe_ofLinearEquiv, LinearEquiv.trans_apply,
+      LinearEquiv.symm_apply_apply, LinearMap.GeneralLinearGroup.coe_toLinearEquiv]
+    rw [← LinearEquiv.coe_toLinearMap (Comodule.pointsAction MK _),
+      ← LinearEquiv.coe_toLinearMap (Comodule.pointsAction M g),
+      Comodule.pointsAction_toLinearMap, Comodule.pointsAction_toLinearMap]
+    simpa [e] using h
+  rw [← heq, LinearMap.GeneralLinearGroup.isUnipotent_congrLinearEquiv_iff]
+  exact hg MK
+
+end HopfAlgebra
+
+namespace geometricallyUnipotentPointsCommHopfAlgProperty
+
+variable {k K : Type u} [Field k] [Field K] [Algebra k K]
+
+/-- Geometric-point unipotence is reflected by arbitrary extension of the ground field. -/
+theorem of_baseChange (H : CommHopfAlgCat.{v} k)
+    (hH : geometricallyUnipotentPointsCommHopfAlgProperty K
+      (CommHopfAlgCat.baseChange (K := K) H)) :
+    geometricallyUnipotentPointsCommHopfAlgProperty k H := by
+  rw [geometricallyUnipotentPointsCommHopfAlgProperty_iff] at hH ⊢
+  let ι : AlgebraicClosure k →ₐ[k] AlgebraicClosure K := IsAlgClosed.lift
+  intro g
+  rw [← HopfAlgebra.isUnipotentPoint_toConv_comp_iff g ι]
+  exact HopfAlgebra.IsUnipotentPoint.of_baseChangePointsMulEquiv (K := K)
+    (hH (AlgHom.baseChangePointsMulEquiv (K := K) (toConv (ι.comp g.ofConv))))
+
+end geometricallyUnipotentPointsCommHopfAlgProperty
 
 open geometricallyUnipotentPointsCommHopfAlgProperty
 
@@ -110,26 +183,25 @@ theorem baseChange (H : FiniteTypeCommHopfAlgCat.{u, u} k)
     MK (Comodule.IsFaithful.baseChange (K := K) hM) g).2
   exact Comodule.isUnipotent_pointsAction_of_coefficientMatrix_charpoly_eq g bK hCK
 
-/-- Smooth geometric unipotence descends along a surjective map of ground fields.
-Such an extension only changes the presentation of the base field. -/
-theorem of_baseChange_of_surjective (H : FiniteTypeCommHopfAlgCat.{u, u} k)
-    (h : Function.Surjective (algebraMap k K))
+/-- Smooth geometric unipotence is reflected by arbitrary extension of the ground field. -/
+theorem of_baseChange (H : FiniteTypeCommHopfAlgCat.{u, u} k)
     (hH : smoothUnipotentCommHopfAlgProperty K
       (FiniteTypeCommHopfAlgCat.baseChange (K := K) H)) :
     smoothUnipotentCommHopfAlgProperty k H := by
-  let e : k ≃ₐ[k] K := AlgEquiv.ofBijective (Algebra.ofId k K)
-    ⟨(algebraMap k K).injective, h⟩
-  let _ : Algebra K k := e.symm.toRingHom.toAlgebra
-  let _ : IsScalarTower k K k :=
-    IsScalarTower.of_algebraMap_eq fun x ↦ (e.symm.commutes x).symm
-  let j : FiniteTypeCommHopfAlgCat.baseChange (K := k) H ≅ H :=
-    ObjectProperty.isoMk _
-      (_root_.CommHopfAlgCat.isoMk (_root_.Bialgebra.TensorProduct.lid k H.obj))
-  let i : FiniteTypeCommHopfAlgCat.baseChange (K := k)
-      (FiniteTypeCommHopfAlgCat.baseChange (K := K) H) ≅ H :=
-    FiniteTypeCommHopfAlgCat.baseChangeTowerIso (E := K) k k H ≪≫ j
-  exact (smoothUnipotentCommHopfAlgProperty k).prop_of_iso i
-    (hH.baseChange (FiniteTypeCommHopfAlgCat.baseChange (K := K) H))
+  obtain ⟨hsmooth, hunip⟩ := (smoothUnipotentCommHopfAlgProperty_iff K _).mp hH
+  let _ : Algebra.Smooth K (K ⊗[k] H.obj) := hsmooth
+  rw [smoothUnipotentCommHopfAlgProperty_iff]
+  exact ⟨Algebra.Smooth.of_smooth_tensorProduct_of_faithfullyFlat K,
+    (geometricallyUnipotentPointsCommHopfAlgProperty_iff k H.obj).mp <|
+      geometricallyUnipotentPointsCommHopfAlgProperty.of_baseChange H.obj <|
+        (geometricallyUnipotentPointsCommHopfAlgProperty_iff K _).mpr hunip⟩
+
+/-- Smooth geometric unipotence is invariant under arbitrary extension of the ground field. -/
+theorem baseChange_iff (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
+    smoothUnipotentCommHopfAlgProperty K
+        (FiniteTypeCommHopfAlgCat.baseChange (K := K) H) ↔
+      smoothUnipotentCommHopfAlgProperty k H :=
+  ⟨of_baseChange H, baseChange H⟩
 
 end smoothUnipotentCommHopfAlgProperty
 
