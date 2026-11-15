@@ -29,6 +29,8 @@ Over an acyclic quiver the vertex simples are the only simple modules:
 `TauCeti.exists_iso_vertexSimpleModule_of_simple` transports the classification of simple
 representations along the same equivalence. Together with the resolution it reduces statements
 about all simple path algebra modules, such as Euler-admissibility, to the vertex simples.
+Without acyclicity, `TauCeti.nonempty_iso_vertexSimpleModule_of_generator` recognizes any module
+spanned over `k` by a nonzero vertex-`i` vector killed by every arrow as isomorphic to `Sᵢ`.
 -/
 
 public section
@@ -69,6 +71,54 @@ theorem exists_iso_vertexSimpleModule_of_simple (hQ : Quiver.IsAcyclic Q)
   have := simple_obj (quiverRepFunctor k Q) M
   obtain ⟨i, ⟨e⟩⟩ := exists_iso_simpleRep_of_simple hQ ((quiverRepFunctor k Q).obj M)
   exact ⟨i, ⟨(quiverRepFunctor k Q).preimageIso (e ≪≫ (vertexSimpleModuleIso k Q i).symm)⟩⟩
+
+variable {k Q} in
+/-- **A path-algebra module spanned over `k` by a nonzero vertex-`i` vector killed by every arrow
+is isomorphic to the vertex simple `Sᵢ`.** No acyclicity hypothesis on `Q` is required. -/
+theorem nonempty_iso_vertexSimpleModule_of_generator {M : ModuleCat (pathAlgebra k Q)} {i : Q}
+    (x : M) (hx0 : x ≠ 0) (hxi : (PathAlgebra.vertexIdempotent k i : pathAlgebra k Q) • x = x)
+    (hspan : ∀ y : M, ∃ c : k, c • x = y)
+    (harrow : ∀ {s t : Q} (a : s ⟶ t), (PathAlgebra.ofArrow a : pathAlgebra k Q) • x = 0) :
+    Nonempty (M ≅ vertexSimpleModule k Q i) := by
+  have harrow_all {s t : Q} (a : s ⟶ t) (y : M) :
+      (PathAlgebra.ofArrow a : pathAlgebra k Q) • y = 0 := by
+    obtain ⟨c, rfl⟩ := hspan y
+    rw [smul_comm, harrow a, smul_zero]
+  let x₀ : ((quiverRepFunctor k Q).obj M).obj ((Paths.of Q).obj i) :=
+    ⟨x, mem_vertexComponent_iff_smul_eq_self.mpr hxi⟩
+  have hx : ∀ {a : Q} (p : Quiver.Path i a), p.length ≠ 0 →
+      ((quiverRepFunctor k Q).obj M).map p x₀ = 0 := by
+    intro a p hp
+    cases p with
+    | nil => exact absurd rfl hp
+    | cons q b =>
+      apply Subtype.ext
+      exact ((coe_pathMap_apply k M (q.cons b) x₀).trans <| by
+        rw [← PathAlgebra.ofArrow_mul_ofPath, mul_smul, harrow_all]).trans
+        (Submodule.coe_zero (p := vertexComponent k M a)).symm
+  have hx₀_ne : x₀ ≠ 0 := fun h ↦ hx0 (congrArg Subtype.val h)
+  have hspan₀ : Submodule.span k
+      ({x₀} : Set (((quiverRepFunctor k Q).obj M).obj ((Paths.of Q).obj i))) = ⊤ := by
+    rw [eq_top_iff]
+    rintro y -
+    obtain ⟨c, hc⟩ := hspan y.val
+    have hyx : c • x₀ = y := Subtype.ext hc
+    exact hyx ▸ Submodule.smul_mem _ c (Submodule.mem_span_singleton_self x₀)
+  have hzero : ∀ a : Q, a ≠ i → IsZero (((quiverRepFunctor k Q).obj M).obj a) := by
+    intro a ha
+    rw [quiverRepFunctor_obj, quiverRepOfModule_obj, ModuleCat.isZero_iff_subsingleton]
+    refine subsingleton_of_forall_eq 0 fun ⟨y, hy⟩ ↦ Subtype.ext ?_
+    obtain ⟨c, rfl⟩ := hspan y
+    calc ↑(⟨c • x, hy⟩ : vertexComponent k M a)
+        = (PathAlgebra.vertexIdempotent k a : pathAlgebra k Q) • (c • x) :=
+          (mem_vertexComponent_iff_smul_eq_self.mp hy).symm
+      _ = c • ((PathAlgebra.vertexIdempotent k a * PathAlgebra.vertexIdempotent k i :
+            pathAlgebra k Q) • x) := by rw [smul_comm, mul_smul, hxi]
+      _ = 0 := by
+        rw [PathAlgebra.vertexIdempotent_mul_vertexIdempotent_of_ne ha, zero_smul, smul_zero]
+  have := isIso_simpleRepHom x₀ hx hx₀_ne hspan₀ hzero
+  exact ⟨(quiverRepFunctor k Q).preimageIso
+    ((asIso (simpleRepHom x₀ hx)).symm ≪≫ (vertexSimpleModuleIso k Q i).symm)⟩
 
 variable {Q}
 
