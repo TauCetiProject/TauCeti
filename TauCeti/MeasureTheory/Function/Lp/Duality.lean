@@ -363,6 +363,18 @@ theorem AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_inner_le {H : T
     hh'.aestronglyMeasurable
     (ae_of_all _ fun x => tendsto_indicator_spanningSets_inter_norm_le h' x)
 
+/-- Scaling `g` by the reciprocal of its `L^q` norm gives a function of `L^q` norm at most one. When
+`‖g‖_q` is `0` or `∞` the scalar is `0`. -/
+theorem eLpNorm_inv_toReal_eLpNorm_smul_le_one {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] (g : α → E) (q : ℝ≥0∞) :
+    eLpNorm ((((eLpNorm g q μ).toReal⁻¹ : ℝ) : 𝕜) • g) q μ ≤ 1 := by
+  rcases (ENNReal.toReal_nonneg (a := eLpNorm g q μ)).eq_or_lt with h0 | hpos
+  · simp [← h0]
+  have hg : eLpNorm g q μ ≠ ∞ := (ENNReal.toReal_pos_iff.1 hpos).2.ne
+  rw [eLpNorm_const_smul, ← ofReal_norm, RCLike.norm_ofReal, abs_of_pos (inv_pos.2 hpos),
+    ENNReal.ofReal_inv_of_pos hpos, ENNReal.ofReal_toReal hg]
+  exact ENNReal.inv_mul_le_one _
+
 /-- **Norming by normalized test functions.** On a σ-finite measure space, let `q < ∞` and `q'` be
 Hölder conjugate. If an almost everywhere strongly measurable `h` with values in an inner product
 space satisfies `‖∫ ⟪g, h⟫‖ ≤ C` for every strongly measurable bounded `g` vanishing off a set of
@@ -404,10 +416,7 @@ theorem AEStronglyMeasurable.eLpNorm_le_of_forall_norm_integral_inner_le {H : Ty
   -- test against the normalized function `g' / ‖g'‖_{q'}`
   set k : ℝ := (eLpNorm g' q' μ).toReal with hk_def
   have hk : 0 < k := ENNReal.toReal_pos hc0 hc
-  have hn : eLpNorm (((k⁻¹ : ℝ) : 𝕜) • g') q' μ ≤ 1 := by
-    rw [eLpNorm_const_smul, ← ofReal_norm, RCLike.norm_ofReal, abs_of_pos (inv_pos.2 hk),
-      ENNReal.ofReal_inv_of_pos hk, hk_def, ENNReal.ofReal_toReal hc]
-    exact ENNReal.inv_mul_le_one _
+  have hn : eLpNorm (((k⁻¹ : ℝ) : 𝕜) • g') q' μ ≤ 1 := eLpNorm_inv_toReal_eLpNorm_smul_le_one g' q'
   have hb := hC _ s' (hg'.const_smul _) hs' (fun x hx => by simp [hg's x hx])
     (hg'top.const_smul _) hn
   simp_rw [Pi.smul_apply, inner_smul_left, integral_const_mul, RCLike.conj_ofReal, norm_mul,

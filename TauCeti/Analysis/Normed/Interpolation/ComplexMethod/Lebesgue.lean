@@ -251,11 +251,8 @@ private theorem exists_toSum_simpleFunc [Fact (1 ≤ p)] (hθ : θ ∈ Ioo 0 1)
     rw [hg, FunLike.coe_smul]
     exact (SimpleFunc.memLp_of_finite_measure_preimage p₁ hfin).const_smul _
   have hgnorm : eLpNorm g p μ ≤ 1 := by
-    rw [hg, FunLike.coe_smul, eLpNorm_const_smul, ← ofReal_norm, norm_inv,
-      norm_real, Real.norm_of_nonneg hNpos.le, hN, Lp.norm_toLp,
-      ENNReal.ofReal_inv_of_pos (by simpa [hN, Lp.norm_toLp] using hNpos),
-      ENNReal.ofReal_toReal (hf.eLpNorm_lt_top.ne)]
-    exact ENNReal.inv_mul_le_one _
+    rw [hg, FunLike.coe_smul, hN, Lp.norm_toLp, ← ofReal_inv]
+    exact eLpNorm_inv_toReal_eLpNorm_smul_le_one _ p
   obtain ⟨u, hu, hun⟩ := exists_toSum_eq_fstToSum_of_eLpNorm_le_one hθ hp hg₀ hg₁ hgnorm
   refine ⟨(N : ℂ) • u, ?_, ?_⟩
   · rw [map_smul, map_smul, hu, sumSpaceEmbed_fstToSum, lebesgue_embed₀, ← map_smul,
@@ -330,8 +327,8 @@ private theorem exists_ofLp_eq_sumSpaceEmbed_toSum_top
       (lebesgue ℂ E μ ∞ ∞).sndToSum f₁ = ComplexMethodSpace.toSum u) :
       L1AddLinfty.ofLp (f₀ + f₁) =
         (lebesgue ℂ E μ ∞ ∞).sumSpaceEmbed (ComplexMethodSpace.toSum u) := by
-    rw [← h, map_add, map_add, sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum, lebesgue_embed₀,
-      lebesgue_embed₁]
+    rw [← h]
+    exact ofLp_eq_lebesgue_sumSpaceEmbed_iff.2 (Lp.coeFn_add f₀ f₁)
   obtain ⟨f₀, f₁, h⟩ := (lebesgue ℂ E μ ∞ ∞).exists_fstToSum_add_sndToSum_eq
     (ComplexMethodSpace.toSum u)
   refine ⟨f₀ + f₁, key f₀ f₁ h, le_of_forall_pos_lt_add fun ε hε => ?_⟩
@@ -695,12 +692,8 @@ private theorem exists_ofLp_eq_sumSpaceEmbed_toSum_of_ne_top [SigmaFinite μ] [F
         hgn).trans_lt htr
   have hmem : MemLp (fun x => f₀ x + f₁ x) p μ := memLp_iff.2 (hle.trans_lt ENNReal.ofReal_lt_top)
   refine ⟨hmem.toLp _, ?_, ?_⟩
-  · rw [← hdec, map_add, sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum, lebesgue_embed₀,
-      lebesgue_embed₁]
-    refine (l1Linfty ℂ E μ).sumSpaceEmbed_injective ?_
-    rw [map_add, L1AddLinfty.sumSpaceEmbed_ofLp, L1AddLinfty.sumSpaceEmbed_ofLp,
-      L1AddLinfty.sumSpaceEmbed_ofLp]
-    exact ((L1AddLinfty.lpToAmbient_add_lpToAmbient_eq_iff ℂ).2 hmem.coeFn_toLp.symm).symm
+  · rw [← hdec]
+    exact ofLp_eq_lebesgue_sumSpaceEmbed_iff.2 hmem.coeFn_toLp
   · rw [Lp.norm_toLp]
     exact ENNReal.toReal_le_of_le_ofReal (norm_nonneg _) hle
 
@@ -803,11 +796,7 @@ theorem coeFn_lebesgueEquiv_ae_eq_add_iff (u : (lebesgue ℂ E μ p₀ p₁).Com
     ⇑(lebesgueEquiv hθ hp u) =ᵐ[μ] ⇑f₀ + ⇑f₁ ↔
       toSum u = (lebesgue ℂ E μ p₀ p₁).fstToSum f₀ + (lebesgue ℂ E μ p₀ p₁).sndToSum f₁ := by
   rw [← (lebesgue ℂ E μ p₀ p₁).sumSpaceEmbed_injective.eq_iff, ← ofLp_lebesgueEquiv hθ hp,
-    map_add, sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum, lebesgue_embed₀, lebesgue_embed₁,
-    ← (l1Linfty ℂ E μ).sumSpaceEmbed_injective.eq_iff, map_add, L1AddLinfty.sumSpaceEmbed_ofLp,
-    L1AddLinfty.sumSpaceEmbed_ofLp, L1AddLinfty.sumSpaceEmbed_ofLp]
-  exact ⟨fun h => ((L1AddLinfty.lpToAmbient_add_lpToAmbient_eq_iff ℂ).2 h.symm).symm,
-    fun h => ((L1AddLinfty.lpToAmbient_add_lpToAmbient_eq_iff ℂ).1 h.symm).symm⟩
+    ofLp_eq_lebesgue_sumSpaceEmbed_iff]
 
 /-- `lebesgueEquiv` sends the class of an element of the intersection `L^{p₀} ∩ L^{p₁}` to its
 function. -/

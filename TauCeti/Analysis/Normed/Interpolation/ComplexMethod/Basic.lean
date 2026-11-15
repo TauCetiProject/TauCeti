@@ -744,6 +744,40 @@ private theorem exists_toSum_eq_and_norm_le_of_le {θ : ℝ} (hθ : θ ∈ Icc 0
     simpa using (this.tendsto 0).mono_left nhdsWithin_le_nhds
   exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall hnorm)
 
+/-- `ComplexMethodSpace.exists_toSum_eq_and_norm_le` for strictly positive bounds `M₀` and `M₁`,
+for any `u` over `F θ`: multiplying `F` by `scaleFactor M₀ M₁` brings both boundary bounds down to
+`1`, and the factor has norm `M₀ ^ (θ - 1) * M₁ ^ (-θ)` at `θ`. -/
+private theorem norm_le_of_toSum_eq_of_pos {θ : ℝ} (hθ : θ ∈ Icc 0 1) {F : ℂ → C.SumSpace}
+    (hF : DiffContOnCl ℂ F (verticalStrip 0 1))
+    (hB : Bornology.IsBounded (F '' verticalClosedStrip 0 1)) {G₀ : ℝ → X₀} {G₁ : ℝ → X₁}
+    (hG₀ : Continuous G₀) (hG₁ : Continuous G₁) (hF₀ : ∀ t : ℝ, F (t * I) = C.fstToSum (G₀ t))
+    (hF₁ : ∀ t : ℝ, F (1 + t * I) = C.sndToSum (G₁ t)) {M₀ M₁ : ℝ} (hM₀pos : 0 < M₀)
+    (hM₁pos : 0 < M₁) (hM₀ : ∀ t, ‖G₀ t‖ ≤ M₀) (hM₁ : ∀ t, ‖G₁ t‖ ≤ M₁)
+    {u : C.ComplexMethodSpace θ} (hu : toSum u = F θ) : ‖u‖ ≤ M₀ ^ (1 - θ) * M₁ ^ θ := by
+  obtain ⟨K, hK⟩ := isBounded_iff_forall_norm_le.1 hB
+  have hs := differentiable_scaleFactor M₀ M₁
+  obtain ⟨v, hv, hvn⟩ := exists_toSum_eq_and_norm_le_of_le hθ
+    (F := fun z => scaleFactor M₀ M₁ z • F z) (hs.diffContOnCl.smul hF)
+    (isBounded_iff_forall_norm_le.2 ⟨Real.exp (|Real.log M₀| + |Real.log M₁|) * K, by
+      rintro _ ⟨z, hz, rfl⟩
+      exact (norm_smul _ _).trans_le (mul_le_mul (norm_scaleFactor_le hz)
+        (hK _ (mem_image_of_mem F hz)) (norm_nonneg _) (Real.exp_pos _).le)⟩)
+    (G₀ := fun t => scaleFactor M₀ M₁ (t * I) • G₀ t)
+    (G₁ := fun t => scaleFactor M₀ M₁ (1 + t * I) • G₁ t)
+    ((hs.continuous.comp (by fun_prop)).smul hG₀) ((hs.continuous.comp (by fun_prop)).smul hG₁)
+    (fun t => by simp [hF₀]) (fun t => by simp [hF₁]) (M := 1)
+    (fun t => by
+      rw [norm_smul, norm_scaleFactor_mul_I hM₀pos, inv_mul_le_iff₀ hM₀pos, mul_one]
+      exact hM₀ t)
+    (fun t => by
+      rw [norm_smul, norm_scaleFactor_one_add_mul_I hM₁pos, inv_mul_le_iff₀ hM₁pos, mul_one]
+      exact hM₁ t)
+  rw [ext (hv.trans (by rw [map_smul, hu])), norm_smul] at hvn
+  calc ‖u‖ = ‖scaleFactor M₀ M₁ θ‖ * (M₀ ^ (1 - θ) * M₁ ^ θ) * ‖u‖ := by
+        rw [norm_scaleFactor_mul_rpow hM₀pos hM₁pos, one_mul]
+    _ = M₀ ^ (1 - θ) * M₁ ^ θ * (‖scaleFactor M₀ M₁ θ‖ * ‖u‖) := by ring
+    _ ≤ M₀ ^ (1 - θ) * M₁ ^ θ := mul_le_of_le_one_right (by positivity) hvn
+
 /-- **Bounded boundary values.** Let `F` be holomorphic on the open strip `0 < re z < 1`,
 continuous and bounded on the closed strip, with values `F (t * I) = G₀ t ∈ X₀` and
 `F (1 + t * I) = G₁ t ∈ X₁` on the boundary lines, where `G₀` and `G₁` are continuous and bounded
@@ -760,35 +794,14 @@ theorem exists_toSum_eq_and_norm_le {θ : ℝ} (hθ : θ ∈ Icc 0 1) {F : ℂ �
   obtain ⟨u, hu, -⟩ := exists_toSum_eq_and_norm_le_of_le hθ hF hB hG₀ hG₁ hF₀ hF₁
     (fun t => (hM₀ t).trans (le_max_left M₀ M₁)) (fun t => (hM₁ t).trans (le_max_right M₀ M₁))
   refine ⟨u, hu, ?_⟩
-  obtain ⟨K, hK⟩ := isBounded_iff_forall_norm_le.1 hB
-  -- multiplying by `scaleFactor (M₀ + ε) (M₁ + ε)` brings both boundary bounds down to `1`
-  simpa using le_rpow_mul_rpow_mul_of_forall_pos (c := 1) hθ fun ε hε => by
-    have hε₀ : 0 < M₀ + ε := by linarith [(norm_nonneg _).trans (hM₀ 0)]
-    have hε₁ : 0 < M₁ + ε := by linarith [(norm_nonneg _).trans (hM₁ 0)]
-    have hs := differentiable_scaleFactor (M₀ + ε) (M₁ + ε)
-    obtain ⟨v, hv, hvn⟩ := exists_toSum_eq_and_norm_le_of_le hθ
-      (F := fun z => scaleFactor (M₀ + ε) (M₁ + ε) z • F z) (hs.diffContOnCl.smul hF)
-      (isBounded_iff_forall_norm_le.2 ⟨Real.exp (|Real.log (M₀ + ε)| + |Real.log (M₁ + ε)|) * K,
-        by
-          rintro _ ⟨z, hz, rfl⟩
-          exact (norm_smul _ _).trans_le (mul_le_mul (norm_scaleFactor_le hz)
-            (hK _ (mem_image_of_mem F hz)) (norm_nonneg _) (Real.exp_pos _).le)⟩)
-      (G₀ := fun t => scaleFactor (M₀ + ε) (M₁ + ε) (t * I) • G₀ t)
-      (G₁ := fun t => scaleFactor (M₀ + ε) (M₁ + ε) (1 + t * I) • G₁ t)
-      ((hs.continuous.comp (by fun_prop)).smul hG₀) ((hs.continuous.comp (by fun_prop)).smul hG₁)
-      (fun t => by simp [hF₀]) (fun t => by simp [hF₁]) (M := 1)
-      (fun t => by
-        rw [norm_smul, norm_scaleFactor_mul_I hε₀, inv_mul_le_iff₀ hε₀, mul_one]
-        linarith [hM₀ t])
-      (fun t => by
-        rw [norm_smul, norm_scaleFactor_one_add_mul_I hε₁, inv_mul_le_iff₀ hε₁, mul_one]
-        linarith [hM₁ t])
-    rw [ext (hv.trans (by rw [map_smul, hu])), norm_smul] at hvn
-    calc ‖u‖ = ‖scaleFactor (M₀ + ε) (M₁ + ε) θ‖ * ((M₀ + ε) ^ (1 - θ) * (M₁ + ε) ^ θ) * ‖u‖ := by
-          rw [norm_scaleFactor_mul_rpow hε₀ hε₁, one_mul]
-      _ = (M₀ + ε) ^ (1 - θ) * (M₁ + ε) ^ θ * (‖scaleFactor (M₀ + ε) (M₁ + ε) θ‖ * ‖u‖) := by
-          ring
-      _ ≤ (M₀ + ε) ^ (1 - θ) * (M₁ + ε) ^ θ * 1 := by gcongr
+  have h₀ : 0 ≤ M₀ := (norm_nonneg _).trans (hM₀ 0)
+  have h₁ : 0 ≤ M₁ := (norm_nonneg _).trans (hM₁ 0)
+  -- apply the bound for the positive constants `M₀ + ε`, `M₁ + ε` and let `ε → 0`
+  rw [← mul_one (M₀ ^ (1 - θ) * M₁ ^ θ)]
+  exact le_rpow_mul_rpow_mul_of_forall_pos hθ fun ε hε =>
+    (norm_le_of_toSum_eq_of_pos hθ hF hB hG₀ hG₁ hF₀ hF₁ (by linarith) (by linarith)
+      (fun t => (hM₀ t).trans (by linarith)) (fun t => (hM₁ t).trans (by linarith)) hu).trans_eq
+      (mul_one _).symm
 
 variable (θ : ℝ) in
 /-- The inclusion of the intersection `X₀ ∩ X₁` into `[X₀, X₁]_θ`, the class of the admissible
