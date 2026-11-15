@@ -61,7 +61,7 @@ theorem Integrable.eVariationOn_integral_Iic_le (hf : Integrable f μ) :
       edist (∫ s in Iic (u (i + 1)), f s ∂μ) (∫ s in Iic (u i), f s ∂μ) ≤
         ENNReal.ofReal ((∫ s in Iic (u (i + 1)), ‖f s‖ ∂μ) -
           ∫ s in Iic (u i), ‖f s‖ ∂μ) := by
-    rw [edist_eq_enorm_sub, ← ofReal_norm, ← setIntegral_sdiff measurableSet_Iic
+    rw [eDist_eq_eNorm_sub, ← ofReal_norm, ← setIntegral_sdiff measurableSet_Iic
       hf.integrableOn (Iic_subset_Iic.mpr (hu (Nat.le_succ i))),
       ← setIntegral_sdiff measurableSet_Iic hf.norm.integrableOn
         (Iic_subset_Iic.mpr (hu (Nat.le_succ i)))]

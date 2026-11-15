@@ -100,7 +100,7 @@ theorem exists_pointNorm_eq_norm (f : T) : ∃ x : MaximalSpectrum T, pointNorm 
   have : IsUltrametricDist E :=
     IsUltrametricDist.isUltrametricDist_of_isNonarchimedean_norm fun a b ↦
       isNonarchimedean_spectralNorm (K := K) (L := E) a b
-  have : CompleteSpace E := FiniteDimensional.complete K E
+  have : CompleteSpace E := FiniteDimensional.completeSpace K E
   have hφ (r : K) : ‖algebraMap K E r‖ = ‖r‖ := norm_algebraMap' E r
   have hmE : ‖(m : E)‖ = 1 := by rw [← map_natCast (algebraMap K E), hφ, hm]
   obtain ⟨x, hx, -, hfx⟩ := exists_norm_restrictedEval₂_eq_norm (algebraMap K E) hφ

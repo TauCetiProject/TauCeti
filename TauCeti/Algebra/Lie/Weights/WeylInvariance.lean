@@ -41,7 +41,7 @@ The argument, for a root `α` and a linear form `χ`, runs as follows.
   that it is stable under `eₐ` and `fₐ`.
 * Inside the string the coroot `α^∨` separates the weights: it acts on `M_{k α + χ}` by
   `2k + χ(α^∨)`, and these scalars are distinct, so each summand of the string is recovered from a
-  single eigenspace of `α^∨` (`TauCeti.biSup_inf_eigenspace_eq_self`).
+  single eigenspace of `α^∨` (`Module.End.biSup_inf_genEigenspace_eq_of_mem`).
 * The `sl₂` engine says the `c`- and `(-c)`-eigenspaces of the Cartan element have equal dimension
   on the string. Reading that back through the previous step turns it into the equality of the
   multiplicities at `k α + χ` and at `(-k - χ(α^∨)) α + χ`, whose `k = 0` case is the reflection
@@ -62,7 +62,8 @@ it fails, neither form is a weight and both multiplicities are zero, by
 * `TauCeti.finrank_weightSpace_weylGroup_smul`: **Weyl invariance.** The multiplicity function on
   the dual `Module.Dual K H` is invariant under the whole Weyl group of
   `LieAlgebra.IsKilling.rootSystem H`, and `TauCeti.weightSpace_weylGroup_smul_eq_bot_iff` records
-  the resulting stability of the set of weights.
+  the resulting stability of the set of weights, and
+  `TauCeti.genWeightSpace_weylGroup_smul_ne_bot_of_ne_bot` states it for generalized weight spaces.
 
 ## References
 
@@ -142,8 +143,8 @@ private theorem chainSl2LieSubmodule_toSubmodule (ht : IsSl2Triple h e f) (he : 
 /-- **A weight space of a cut-off string is an eigenspace of the coroot on the string.** The coroot
 `α^∨` acts on `M_{j α + χ}` by the scalar `2 j + n`, where `n = χ(α^∨)`, and these scalars are
 distinct along the string; so each summand of the string is exactly the corresponding eigenspace of
-the restriction of `α^∨` to the string (`TauCeti.biSup_inf_eigenspace_eq_self`), and in particular
-has its dimension. -/
+the restriction of `α^∨` to the string (`Module.End.biSup_inf_genEigenspace_eq_of_mem`), and in
+particular has its dimension. -/
 private theorem finrank_weightSpace_eq_finrank_eigenspace_restrict {n : ℤ} (hα : α.IsNonZero)
     (hn : χ (IsKilling.coroot α) = (n : K)) {N : Submodule K M}
     (hN : N = (genWeightSpaceChain M (⇑α) χ p q).toSubmodule)
@@ -171,7 +172,7 @@ private theorem finrank_weightSpace_eq_finrank_eigenspace_restrict {n : ℤ} (h�
     simp only [genWeightSpace_eq_weightSpace, LieSubmodule.iSup_toSubmodule]
   rw [← Submodule.finrank_map_subtype_eq (genWeightSpaceChain M (⇑α) χ p q).toSubmodule,
     ← Submodule.inf_genEigenspace A _ hA, hNsup,
-    biSup_inf_eigenspace_eq_self (s := Set.Ioo p q) A
+    Module.End.biSup_inf_genEigenspace_eq_of_mem (s := Set.Ioo p q) A
       (fun i ↦ (weightSpace M (i • ⇑α + χ)).toSubmodule) g
       (fun i (_ : i ∈ Set.Ioo p q) m hm ↦ hWle i hm) hj
       fun i _ hij ↦ fun hcon ↦ hij (hginj hcon),
@@ -338,6 +339,16 @@ Weyl group is. -/
     weightSpace M ⇑(w • χ) = ⊥ ↔ weightSpace M ⇑χ = ⊥ := by
   rw [weightSpace_eq_bot_iff_finrank_eq_zero, weightSpace_eq_bot_iff_finrank_eq_zero,
     finrank_weightSpace_weylGroup_smul]
+
+/-- **The weights of a finite-dimensional module are stable under the Weyl group**, stated for
+generalized weight spaces: if a linear form is a weight of `M`, so is each of its Weyl translates.
+This is `TauCeti.weightSpace_weylGroup_smul_eq_bot_iff`, read through
+`TauCeti.genWeightSpace_eq_weightSpace`. -/
+theorem genWeightSpace_weylGroup_smul_ne_bot_of_ne_bot (w : (IsKilling.rootSystem H).weylGroup)
+    {χ : Dual K H} (h : genWeightSpace M (χ : H → K) ≠ ⊥) :
+    genWeightSpace M ((w • χ : Dual K H) : H → K) ≠ ⊥ := by
+  rw [genWeightSpace_eq_weightSpace] at h ⊢
+  exact fun hbot ↦ h ((weightSpace_weylGroup_smul_eq_bot_iff w χ).mp hbot)
 
 end Killing
 

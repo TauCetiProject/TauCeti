@@ -123,7 +123,7 @@ theorem gaussNorm_X_sub_C (hc : 0 ≤ c) (b : R) :
   refine le_antisymm ?_ (max_le ?_ ?_)
   · obtain ⟨i, hi⟩ := exists_eq_gaussNorm v c (X - C b)
     rw [hi]
-    rcases i with _ | (_ | i) <;> simp [coeff_sub, coeff_X]
+    rcases i with _ | (_ | i) <;> simp [coeff_X]
   · have h := le_gaussNorm v (X - C b) hc 1
     simp only [coeff_sub] at h
     simpa using h

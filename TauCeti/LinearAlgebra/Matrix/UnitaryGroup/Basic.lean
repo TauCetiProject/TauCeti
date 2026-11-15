@@ -12,9 +12,9 @@ public import Mathlib.LinearAlgebra.UnitaryGroup
 # Coordinate action of unitary matrices
 
 `Matrix.UnitaryGroup.toLinearEquiv_apply` describes the linear equivalence associated to a unitary
-matrix by its matrix-vector action, and `Matrix.permMatrix_mem_unitaryGroup` records that
-permutation matrices are unitary. Accordingly `Matrix.permutationUnitary` is
-`Matrix.permMatrixHom` with values in the unitary group.
+matrix by its matrix-vector action, and `Matrix.permMatrix_mem_unitary` records that
+permutation matrices over a possibly noncommutative star semiring are unitary. Accordingly
+`Matrix.permutationUnitary` is `Matrix.permMatrixHom` with values in the unitary matrices.
 
 `Matrix.conjTranspose_mul_mul_mem_unitary` transfers unitarity along a possibly rectangular
 matrix whose conjugate transpose is a two-sided inverse.
@@ -67,22 +67,22 @@ theorem diagonal_update_one_mem_unitary_iff {n α : Type*} [Fintype n] [Decidabl
     diagonal (Function.update (1 : n → α) i a) ∈ unitary (Matrix n n α) ↔ a ∈ unitary α := by
   simp [Pi.mem_unitary_iff, Function.forall_update_iff]
 
-variable {R : Type u} [CommRing R] [StarRing R]
+variable {R : Type u} [Semiring R] [StarRing R]
 variable {n : Type v} [Fintype n] [DecidableEq n]
 
 /-- A permutation matrix is unitary: its conjugate transpose is the permutation matrix of the
 inverse permutation. -/
-theorem permMatrix_mem_unitaryGroup (σ : Equiv.Perm n) :
-    σ.permMatrix R ∈ unitaryGroup n R := by
-  rw [mem_unitaryGroup_iff, star_eq_conjTranspose, conjTranspose_permMatrix, ← permMatrix_mul,
-    inv_mul_cancel, permMatrix_one]
+@[simp]
+theorem permMatrix_mem_unitary (σ : Equiv.Perm n) :
+    σ.permMatrix R ∈ unitary (Matrix n n R) := by
+  simp [Unitary.mem_iff, star_eq_conjTranspose, ← permMatrix_mul]
 
 /-- A permutation as a unitary matrix: `permutationUnitary σ` is the permutation matrix of `σ⁻¹`,
 which makes this a homomorphism with Mathlib's convention for multiplication in `Equiv.Perm`. -/
-def permutationUnitary : Equiv.Perm n →* unitaryGroup n R :=
+def permutationUnitary : Equiv.Perm n →* unitary (Matrix n n R) :=
   (permMatrixHom (R := R)).codRestrict _ fun σ => by
     rw [permMatrixHom_apply]
-    exact permMatrix_mem_unitaryGroup σ⁻¹
+    exact permMatrix_mem_unitary σ⁻¹
 
 /-- The matrix underlying `permutationUnitary σ` is the permutation matrix of `σ⁻¹`. -/
 @[simp]

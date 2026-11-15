@@ -107,7 +107,7 @@ theorem totallyBounded_of_integrable_totalVariationOn_le {F : (E → ℝ) → E 
     rw [hx]
     exact hsupp u hu x hxL
   · rintro f ⟨u, hu, hf⟩
-    rw [eLpNorm_congr_ae hf, eLpNorm_one_eq_lintegral_enorm (hint u hu).aestronglyMeasurable]
+    rw [eLpNorm_congr_ae hf, eLpNorm_one_eq_lintegral_eNorm (hint u hu).aestronglyMeasurable]
     exact hnorm u hu
   · intro ε hε
     obtain ⟨δ, hδ, hδε⟩ := ENNReal.exists_nnreal_pos_mul_lt hB hε.ne'
@@ -117,13 +117,13 @@ theorem totallyBounded_of_integrable_totalVariationOn_le {F : (E → ℝ) → E 
     have hinc : (fun x => f (x + h) - f x) =ᵐ[μ] fun x => F u (x + h) - F u x := by
       filter_upwards [hfh, hf] with x h₁ h₂
       rw [h₁, h₂]
-    rw [eLpNorm_congr_ae hinc, eLpNorm_one_eq_lintegral_enorm
+    rw [eLpNorm_congr_ae hinc, eLpNorm_one_eq_lintegral_eNorm
       (f := fun x => F u (x + h) - F u x)
       (((hint u hu).comp_add_right h).sub (hint u hu)).aestronglyMeasurable]
     refine (lintegral_enorm_comp_add_sub_le_mul_totalVariationOn
       (hint u hu).locallyIntegrable h).trans ?_
     refine (mul_le_mul' ?_ (hvar u hu)).trans hδε.le
-    exact enorm_le_coe.mpr (by exact_mod_cast hh.le)
+    exact eNorm_le_coe.mpr (by exact_mod_cast hh.le)
 
 /-- **Compactness of families of bounded variation.** Let `S` be a family of functions on `Ω`
 that is bounded in `L¹(Ω)` and in variation on `Ω`: `∫_Ω |u| ≤ M` and `|Du|(Ω) ≤ M` for every
@@ -213,7 +213,7 @@ theorem exists_subseq_tendsto_setLIntegral_enorm_sub_of_totalVariationOn_le {u :
   refine ⟨v, (locallyIntegrableOn_iff Ω.isOpen.isLocallyClosed).2 fun K hKΩ hK =>
     memLp_one_iff_integrable.1 (hv K hK hKΩ), φ, hφ, fun K hK hKΩ =>
       (hlim K hK hKΩ).congr fun j => ?_⟩
-  rw [eLpNorm_one_eq_lintegral_enorm ((hint _ K hK hKΩ).aestronglyMeasurable.sub
+  rw [eLpNorm_one_eq_lintegral_eNorm ((hint _ K hK hKΩ).aestronglyMeasurable.sub
     (hv K hK hKΩ).aestronglyMeasurable)]
   simp only [Pi.sub_apply]
 
@@ -241,7 +241,7 @@ theorem exists_subseq_tendsto_measure_symmDiff_inter_of_perimeter_le {s : ℕ �
     refine ⟨⟨V, hV⟩, hKV, (subset_closure.trans hVU).trans hUΩ,
       M + (μ (closure V)).toNNReal, fun n => ⟨?_, ?_⟩⟩
     · calc ∫⁻ x in V, ‖(s n).indicator (1 : E → ℝ) x‖ₑ ∂μ ≤ ∫⁻ _ in V, 1 ∂μ :=
-            lintegral_mono fun x => (enorm_indicator_le_enorm_self _ x).trans (by simp)
+            lintegral_mono fun x => (eNorm_indicator_le_eNorm_self _ x).trans (by simp)
         _ ≤ (μ (closure V)).toNNReal := by
             rw [setLIntegral_one, ENNReal.coe_toNNReal hVc.measure_lt_top.ne]
             exact measure_mono subset_closure
@@ -263,7 +263,7 @@ theorem exists_subseq_tendsto_measure_symmDiff_inter_of_perimeter_le {s : ℕ �
   have hpt (x : E) : (s (φ j) ∆ {x | 1 / 2 < w x}).indicator 1 x ≤
       2 * ‖(s (φ j)).indicator (1 : E → ℝ) x - w x‖ₑ := by
     have key {r : ℝ} (hr : 1 / 2 ≤ |r|) : (1 : ℝ≥0∞) ≤ 2 * ‖r‖ₑ := by
-      rw [Real.enorm_eq_ofReal_abs, ← ENNReal.ofReal_ofNat 2, ← ENNReal.ofReal_mul (by norm_num),
+      rw [Real.eNorm_eq_ofReal_abs, ← ENNReal.ofReal_ofNat 2, ← ENNReal.ofReal_mul (by norm_num),
         ENNReal.one_le_ofReal]
       linarith
     by_cases h₁ : x ∈ s (φ j) <;> by_cases h₂ : 1 / 2 < w x

@@ -1,0 +1,122 @@
+# Canonical, human-owned project configuration. No credentials belong here.
+schema_version = 2
+
+[project]
+name = "TauCeti"
+branch = "main"
+codeowners = ["@TauCetiProject/humans"]
+
+[repositories]
+content = {forge = "forgejo", name = "TauCetiProject/TauCeti"}
+roadmap = "TauCetiProject/TauCetiRoadmap"
+review = "TauCetiProject/TauCetiReview"
+# Enable and create these repositories when choosing the corresponding extras.
+data = "TauCetiProject/TauCetiData"
+ci = "TauCetiProject/TauCetiCI"
+claims = "TauCetiProject/tauceti-claims"
+
+[lean]
+roots = ["TauCeti"]
+root_module = "empty"
+
+[roadmap]
+active_dir = "TauCetiRoadmap"
+completed_dir = "Completed"
+
+# Select full commit SHAs before installing the core workflows.
+# Discover a version with: gh api repos/TauCetiProject/TauCetiTools/commits/main --jq .sha
+
+[merge]
+backend = "bors"
+checks = ["build", "bump-guard", "scope"]
+
+[[upstreams]]
+repo = "leanprover-community/mathlib4"
+package = "mathlib"
+branch = "master"
+update = true
+overlap = true
+upstream_destination = true
+
+# Everything below is optional. Run doctor --extras to continue beyond core.
+[features]
+archives = true
+ci_archive = true
+claims = true
+docs = true
+progress = true
+zulip = true
+fleet = true
+security_audit = true
+
+[services.github_state]
+mode = "hosted"
+url = "https://github-state.taucetiproject.org" # off | hosted | custom
+
+[services.bors]
+mode = "hosted"
+url = "https://bors.taucetiproject.org"
+repository_id = 1 # hosted supplies Neon only; YOU operate the runtime
+deployment = "cloudflare"
+
+# Registered runners in the approved group define live fleet membership and CI classes.
+# Adding, replacing or draining hosts needs no project machine-ID list. The Namespace ceiling
+# counts queued/running builds; simultaneous picker decisions can exceed it briefly.
+[services.fleet]
+mode = "hosted"
+url = "https://fleet.taucetiproject.org"
+namespace_build_cap = 20
+pr_order = ["github", "fleet", "namespace"]
+staging_order = ["tauchonki2"]
+
+# Staging is reserved for these hosts; other membership comes from the registered runners.
+[services.fleet.machines.chungus2]
+machine_id = "2ef87dd35cf74820a7a3b26e8820dcc5"
+
+[services.fleet.machines.tauchonki2]
+machine_id = "74773fc7f54d4877add11d80113fe340"
+
+[services.cache]
+mode = "hosted"
+name = "tauceti-public"
+domain = "cache.taucetiproject.org"
+artifact_url = "https://cache.taucetiproject.org/artifacts"
+revision_url = "https://cache.taucetiproject.org/revisions"
+
+artifact_write_url = "https://ec2169bdf033f56b009956d4b64ba8ef.r2.cloudflarestorage.com/tauceti-cache/artifacts"
+
+revision_write_url = "https://ec2169bdf033f56b009956d4b64ba8ef.r2.cloudflarestorage.com/tauceti-cache/revisions"
+
+# Outputs the queue's repair worker publishes after a green repair build, under the chain tip's
+# revision (R2 bucket tauceti-repair). Staging CI fetches them for the staging head, the queue's
+# other candidate tips and the base before building; Lake rebuilds whatever differs and the
+# audits run as usual. Public, read-only here.
+[services.repair_cache]
+mode = "hosted"
+name = "tauceti-repair"
+url = "https://repair-cache.taucetiproject.org"
+
+[publication]
+docs_url = "https://taucetiproject.github.io/TauCeti/docs"
+zulip_site = "https://leanprover.zulipchat.com"
+zulip_channel = "Tau Ceti"
+zulip_topic = "Progress logs"
+
+[tools.tools]
+repo="TauCetiProject/TauCetiTools"
+ref="5d49641d46901054a68f78d900cbcb968b8538db"
+[tools.review]
+repo="TauCetiProject/TauCetiReview"
+ref="6b07b400ba129a0f2771d2d315a410f72d462244"
+[tools.progress]
+repo="TauCetiProject/TauCetiProgress"
+ref="047029660478ea2af4ad8cdfe0c88db0d5d1ca29"
+
+# Source-candidate CI only: ordinary builds keep the root tauceti.toml.
+[forges.forgejo]
+kind = "forgejo"
+url = "https://git.taucetiproject.org"
+
+[ci]
+backend = "github-actions"
+repository = "TauCetiProject/TauCeti"

@@ -37,7 +37,8 @@ first statement does not extend to `|c| < 1`.
 
 ## Main statements
 
-* `ZLattice.smul_eq_comap`: for `c ≠ 0`, `c • L` is the pullback of `L` along `c⁻¹ • ·`.
+* `ZLattice.smul_eq_comap`: for `c ≠ 0`, `c • L` is the pullback of `L` along `c⁻¹ • ·`, for real
+  scalars and for any division ring of scalars commuting with them, such as `ℂ`.
 * `ZLattice.basisSmul`: for `c ≠ 0`, a `ℤ`-basis `b` of `L` gives the `ℤ`-basis `c • b` of `c • L`.
 * `ZLattice.exists_forall_ne_zero_lt_norm`: scaling up the integer span of a basis gives full
   lattices all of whose nonzero vectors are longer than a prescribed bound.
@@ -107,9 +108,14 @@ section Normed
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] (L : Submodule ℤ E)
 
-/-- For `c ≠ 0`, the scaled lattice `c • L` is the pullback of `L` along the linear automorphism
-`x ↦ c⁻¹ • x`. -/
-theorem smul_eq_comap {c : ℝ} (hc : c ≠ 0) :
+section Scalar
+
+variable {𝕜 : Type*} [DivisionRing 𝕜] [Module 𝕜 E] [ContinuousConstSMul 𝕜 E] [SMulCommClass 𝕜 ℝ E]
+
+/-- For `c ≠ 0`, the scaled lattice `c • L` is the pullback of `L` along the real-linear
+automorphism `x ↦ c⁻¹ • x`. The scalar `c` may lie in any division ring acting continuously on `E`
+and commuting with the real scalars, such as `ℝ` itself or `ℂ` acting on a complex space. -/
+theorem smul_eq_comap {c : 𝕜} (hc : c ≠ 0) :
     c • L = ZLattice.comap ℝ L
       (ContinuousLinearEquiv.smulLeft (Units.mk0 c hc)⁻¹ : E ≃L[ℝ] E).toLinearMap := by
   ext x
@@ -118,15 +124,18 @@ theorem smul_eq_comap {c : ℝ} (hc : c ≠ 0) :
   simp [Units.smul_def]
 
 /-- Scaling a discrete lattice by a nonzero scalar gives a discrete lattice. -/
-instance [DiscreteTopology L] (c : ℝ) [NeZero c] : DiscreteTopology (c • L : Submodule ℤ E) := by
+instance [DiscreteTopology L] (c : 𝕜) [NeZero c] : DiscreteTopology (c • L : Submodule ℤ E) := by
   rw [smul_eq_comap L (NeZero.ne c)]
   infer_instance
 
 /-- Scaling a full lattice by a nonzero scalar gives a full lattice. -/
-instance [DiscreteTopology L] [IsZLattice ℝ L] (c : ℝ) [NeZero c] : IsZLattice ℝ (c • L) where
+instance [DiscreteTopology L] [IsZLattice ℝ L] (c : 𝕜) [NeZero c] :
+    IsZLattice ℝ (c • L : Submodule ℤ E) where
   span_top := by
     rw [smul_eq_comap L (NeZero.ne c)]
     exact IsZLattice.span_top
+
+end Scalar
 
 section Basis
 
@@ -346,20 +355,29 @@ theorem IsIntegral.card_discriminantGroup_sqrt_smul (h : IsIntegral L) {m : ℕ}
   rw [← (h.sqrt_smul m).det_eq_card_discriminantGroup, det_sqrt_smul L,
     h.det_eq_card_discriminantGroup, Nat.cast_mul, Nat.cast_pow]
 
-/-- In positive dimension, scaling a full integral lattice by `c` with `1 < |c|` never gives a
-unimodular lattice: the determinant becomes `c²ⁿ det L > 1`. -/
+omit [MeasurableSpace E] [BorelSpace E] [DiscreteTopology L] [IsZLattice ℝ L] in
+/-- In positive dimension, scaling an integral lattice by `c` with `1 < |c|` never gives a
+unimodular lattice: if `c • L` is unimodular then `L` is full, and the determinant becomes
+`c²ⁿ det L > 1`. -/
 theorem IsIntegral.not_isUnimodular_smul [Nontrivial E] (h : IsIntegral L) {c : ℝ}
     (hc : 1 < |c|) : ¬ IsUnimodular (c • L) := by
+  borelize E
+  have := h.discreteTopology
   have hc0 : c ≠ 0 := abs_pos.mp (one_pos.trans hc)
   have : NeZero c := ⟨hc0⟩
   intro hu
+  -- A unimodular lattice spans the space, and `c • L` spans no more than `L` does.
+  have : IsZLattice ℝ L := ⟨top_unique <| by
+    rw [← hu.span_eq_top, coe_pointwise_smul]
+    exact Submodule.span_smul_le _ c⟩
   have hdet := hu.det_eq_one
   rw [det_smul L, pow_mul, ← sq_abs, ← pow_mul] at hdet
   have hlt : 1 < |c| ^ (2 * finrank ℝ E) :=
     one_lt_pow₀ hc (mul_ne_zero two_ne_zero finrank_pos.ne')
   nlinarith [h.one_le_det]
 
-/-- In positive dimension, scaling a full integral lattice by `√m` for a natural number `m > 1`
+omit [MeasurableSpace E] [BorelSpace E] [DiscreteTopology L] [IsZLattice ℝ L] in
+/-- In positive dimension, scaling an integral lattice by `√m` for a natural number `m > 1`
 never gives a unimodular lattice. For instance `√2 • E₈` is even and integral but not
 unimodular. -/
 theorem IsIntegral.not_isUnimodular_sqrt_smul [Nontrivial E] (h : IsIntegral L) {m : ℕ}
@@ -368,10 +386,14 @@ theorem IsIntegral.not_isUnimodular_sqrt_smul [Nontrivial E] (h : IsIntegral L) 
     rw [abs_of_nonneg (Real.sqrt_nonneg _), Real.lt_sqrt zero_le_one, one_pow]
     exact_mod_cast hm
 
+omit [MeasurableSpace E] [BorelSpace E] [DiscreteTopology L] [IsZLattice ℝ L] in
 /-- In positive dimension, scaling a unimodular lattice by `c` with `|c| ≠ 1` never gives a
 unimodular lattice. -/
 theorem IsUnimodular.not_isUnimodular_smul [Nontrivial E] (h : IsUnimodular L) {c : ℝ}
     (hc : |c| ≠ 1) : ¬ IsUnimodular (c • L) := by
+  borelize E
+  have := h.isIntegral.discreteTopology
+  have : IsZLattice ℝ L := ⟨h.span_eq_top⟩
   intro hu
   rcases eq_or_ne c 0 with rfl | hc0
   · -- The lattice `0 • L` is zero, and the dual of the zero lattice is the whole space.

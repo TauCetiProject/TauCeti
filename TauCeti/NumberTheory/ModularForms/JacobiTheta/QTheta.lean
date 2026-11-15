@@ -11,7 +11,7 @@ import Mathlib.Topology.Algebra.Module.Cardinality
 import TauCeti.Algebra.Ring.Periodic
 import TauCeti.Analysis.Analytic.ExtractZeros
 import TauCeti.Analysis.Complex.UpperHalfPlane.PeriodPair
-import TauCeti.Analysis.SpecialFunctions.Elliptic.PeriodPair
+import TauCeti.Analysis.SpecialFunctions.Elliptic.Period.Pair
 import TauCeti.NumberTheory.ModularForms.DedekindEta.Basic
 
 /-!
