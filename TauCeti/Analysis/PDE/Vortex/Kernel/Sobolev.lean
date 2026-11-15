@@ -53,8 +53,8 @@ All declarations are in the `TauCeti.Vortex` namespace:
   derivatives through order `3`.
 * `mem_gaugeFixedWeakKernel_iff_forall_contDiff`: equivalence of weak-kernel membership against
   `C_c^∞` and `C_c^n` (`1 ≤ n ≤ ∞`) test fields.
-* `finrank_gaugeFixedWeakKernel_eq_two_mul_card`, `finrank_gaugeFixedWeakKernel`: the weak `L²`
-  kernel has real dimension `2 |D|`, and `2m` under degree-`m` end framing.
+* `finrank_gaugeFixedWeakKernel_eq_two_mul_card`, `finrank_gaugeFixedWeakKernel_eq_two_mul`: the
+  weak `L²` kernel has real dimension `2 |D|`, and `2m` under degree-`m` end framing.
 * `mem_sobolevFields_of_mem_gaugeFixedKernel`, `mem_gaugeFixedKernel_iff_mem_sobolevFields`:
   every kernel element lies in `H^s` for all `s : ℝ`, so the kernel is independent of `s`.
 * `finrank_gaugeFixedKernel_of_mem_framedFieldSpace`,
@@ -70,9 +70,7 @@ All declarations are in the `TauCeti.Vortex` namespace:
 * T. M. Samols, *Vortex scattering*, Comm. Math. Phys. 145 (1992), 149–179, §3.
 -/
 
-public section
-
-noncomputable section
+public noncomputable section
 
 namespace TauCeti.Vortex
 
@@ -293,13 +291,14 @@ theorem finrank_gaugeFixedWeakKernel_eq_two_mul_card {x : ℂ → EuclideanSpace
 smooth field with bounded derivatives through order `3`, satisfying `∂bar_a α = 0` and the
 degree-`m` end framing `α(z) (z / |z|)⁻ᵐ → 1`. Then `gaugeFixedWeakKernel hx.continuous` has real
 dimension `2m`. -/
-theorem finrank_gaugeFixedWeakKernel {m : ℕ} {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+theorem finrank_gaugeFixedWeakKernel_eq_two_mul {m : ℕ} {x : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hx : ContDiff ℝ ∞ x)
     (hbound : ∀ i, ∀ n ≤ 3, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
     (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0)
     (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1)) :
     Module.finrank ℝ (gaugeFixedWeakKernel hx.continuous) = 2 * m := by
-  rw [← (gaugeFixedKernelWeakEquiv hx hbound).finrank_eq, finrank_gaugeFixedKernel hx hhol hframe]
+  rw [← (gaugeFixedKernelWeakEquiv hx hbound).finrank_eq,
+    finrank_gaugeFixedKernel_eq_two_mul hx hhol hframe]
 
 /-! ### Independence of the Sobolev scale -/
 
@@ -378,7 +377,8 @@ theorem finrank_gaugeFixedKernel_of_mem_framedFieldSpace {f : ContDiffBump (0 : 
     (hx : x ∈ framedFieldSpace f m s) (hxs : ContDiff ℝ ∞ x)
     (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0) :
     Module.finrank ℝ (gaugeFixedKernel x) = 2 * m :=
-  finrank_gaugeFixedKernel hxs hhol (tendsto_sectionValue_mul_inv_pow hs hx hxs.continuous)
+  finrank_gaugeFixedKernel_eq_two_mul hxs hhol
+    (tendsto_sectionValue_mul_inv_pow hs hx hxs.continuous)
 
 /-- At any smooth field `x ∈ framedFieldSpace f m s`, `s > 4`, satisfying `∂bar_a α = 0`, the weak
 `L²` kernel `gaugeFixedWeakKernel hxs.continuous` is finite dimensional. -/
@@ -402,7 +402,7 @@ theorem finrank_gaugeFixedWeakKernel_of_mem_framedFieldSpace {f : ContDiffBump (
     (hx : x ∈ framedFieldSpace f m s) (hxs : ContDiff ℝ ∞ x)
     (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0) :
     Module.finrank ℝ (gaugeFixedWeakKernel hxs.continuous) = 2 * m := by
-  refine finrank_gaugeFixedWeakKernel hxs (fun i n hn ↦ ?_) hhol
+  refine finrank_gaugeFixedWeakKernel_eq_two_mul hxs (fun i n hn ↦ ?_) hhol
     (tendsto_sectionValue_mul_inv_pow (by linarith) hx hxs.continuous)
   have hns : (n : ℝ) + 1 < s := by
     have : (n : ℝ) ≤ 3 := by exact_mod_cast hn

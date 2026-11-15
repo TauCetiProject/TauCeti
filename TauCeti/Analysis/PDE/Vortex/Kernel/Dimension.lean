@@ -59,8 +59,8 @@ This file determines the kernel of the gauge-fixed operator `L_x = d₀* ⊕ d�
    element of `gaugeFixedKernel x` is smooth (`TauCeti.Vortex.contDiff_of_mem_gaugeFixedKernel`),
    and `gaugeFixedKernel x` has real dimension `2 |D|` (`2m` in framing degree `m`:
    `TauCeti.Vortex.finrank_gaugeFixedKernel_eq_two_mul_card`,
-   `TauCeti.Vortex.finrank_gaugeFixedKernel`). Only the holomorphicity rows of the vortex equation
-   are used.
+   `TauCeti.Vortex.finrank_gaugeFixedKernel_eq_two_mul`). Only the holomorphicity rows of the vortex
+   equation are used.
 
 The comparison of `gaugeFixedKernel x` with the Sobolev and weak `L²` kernels is in
 `TauCeti.Analysis.PDE.Vortex.Kernel.Sobolev`.
@@ -92,8 +92,8 @@ The comparison of `gaugeFixedKernel x` with the Sobolev and weak `L²` kernels i
 * `TauCeti.Vortex.contDiff_of_mem_gaugeFixedKernel`: at a smooth field with `∂bar_a α = 0` and
   `|α|² → 1`, every element of `gaugeFixedKernel x` is smooth.
 * `TauCeti.Vortex.finrank_gaugeFixedKernel_eq_two_mul_card` and
-  `TauCeti.Vortex.finrank_gaugeFixedKernel`: `gaugeFixedKernel x` has real dimension `2 |D|`, hence
-  `2m` under the degree-`m` end framing.
+  `TauCeti.Vortex.finrank_gaugeFixedKernel_eq_two_mul`: `gaugeFixedKernel x` has real dimension
+  `2 |D|`, hence `2m` under the degree-`m` end framing.
 
 ## References
 
@@ -448,19 +448,6 @@ private theorem exists_differentiable_eq_pow_mul_exp_neg_mul_sectionValue
     rw [← hford z', funext hfF,
       analyticOrderAt_fun_mul (hmon z') (hF.analyticAt z'), hpow0, zero_add]
 
-private theorem exists_contDiffAt_sectionValue_eq_pow_count_mul (hx : ContDiff ℝ ∞ x)
-    (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0)
-    (hD : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z) (z : ℂ) :
-    ∃ v : ℂ → ℂ, ContDiffAt ℝ ∞ v z ∧ v z ≠ 0 ∧
-      sectionValue x =ᶠ[𝓝 z] fun w ↦ (w - z) ^ D.count z * v w := by
-  choose N v hv hv₀ hvf using fun z' ↦
-    exists_contDiffAt_sectionValue_eq_pow_mul (k := ⊤) (by simp) (contDiff_euclidean.1 hx 0)
-      (contDiff_euclidean.1 hx 1) ((contDiff_euclidean.1 hx 2).differentiable (by simp))
-      ((contDiff_euclidean.1 hx 3).differentiable (by simp)) hhol hD.exists_ne_zero z'
-  have hNz : N z = D.count z := congrFun ((isZeroMultiplicity_iff.2 fun z' ↦
-    ⟨v z', (hv z').continuousAt, hv₀ z', hvf z'⟩).unique hD) z
-  exact ⟨v z, hv z, hv₀ z, hNz ▸ hvf z⟩
-
 /-- A single-pole kernel element of order `D.count z - m` at `z` realizes any prescribed `m`-th
 derivative `d` at `z`, while all lower derivatives at `z` and all principal parts at `z' ≠ z`
 vanish. -/
@@ -478,13 +465,15 @@ private theorem exists_mem_smoothGaugeFixedKernel_triangular (hx : ContDiff ℝ 
   set j := D.count z - 1 - m
   have hj : j < D.count z := by omega
   have hmj : D.count z - 1 - j = m := by omega
+  have hxi (i : Fin 4) : ContDiff ℝ ∞ fun w ↦ x w i := contDiff_euclidean.1 hx i
   obtain ⟨F, hF, hfF, hFz, hFne⟩ := exists_differentiable_eq_pow_mul_exp_neg_mul_sectionValue
-    ((contDiff_euclidean.1 hx 2).differentiable (by simp))
-    ((contDiff_euclidean.1 hx 3).differentiable (by simp)) hhol hD hν hνeq hj
+    ((hxi 2).differentiable (by simp)) ((hxi 3).differentiable (by simp)) hhol hD hν hνeq hj
   rw [hmj] at hFz
   obtain ⟨hFz_lt, hFz_ne⟩ :=
     (analyticOrderAt_eq_nat_iff_iteratedDeriv_eq_zero (hF.analyticAt z)).1 hFz
-  obtain ⟨v, hv, -, hvf⟩ := exists_contDiffAt_sectionValue_eq_pow_count_mul hx hhol hD z
+  obtain ⟨v, hv, -, hvf⟩ := exists_contDiffAt_sectionValue_eq_pow_mul_of_order (k := ⊤) le_top
+    (hxi 0) (hxi 1) ((hxi 2).differentiable (by simp)) ((hxi 3).differentiable (by simp)) hhol
+    (isZeroMultiplicity_iff.1 hD z)
   set c : ℂ := d / iteratedDeriv m F z
   obtain ⟨y, hy, hy₂, hyk, ξ, hξ, hyξ⟩ :=
     exists_gaugeFixedOperator_eq_zero_sectionValue_eq_mul_div_pow_add hx hhol hlim hv hvf hj c
@@ -744,10 +733,10 @@ theorem finrank_gaugeFixedKernel_eq_two_mul_card (hx : ContDiff ℝ ∞ x)
 smooth field satisfying the holomorphicity rows `∂bar_a α = 0` and the degree-`m` end framing
 `α(z) (z / |z|)⁻ᵐ → 1`. Then `gaugeFixedKernel x` has real dimension `2m`, the real dimension of
 the divisor space `Sym^m ℂ`. -/
-theorem finrank_gaugeFixedKernel {m : ℕ} (hx : ContDiff ℝ ∞ x)
+theorem finrank_gaugeFixedKernel_eq_two_mul {m : ℕ} (hx : ContDiff ℝ ∞ x)
     (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0)
     (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1)) :
-    Module.finrank ℝ (gaugeFixedKernel x) = 2 * m := by
+    finrank ℝ (gaugeFixedKernel x) = 2 * m := by
   have hx₂ : ContDiff ℝ 2 x := hx.of_le (by simp)
   obtain ⟨D, hD⟩ := exists_sym_isZeroMultiplicity_sectionValue (k := 2) (by norm_num)
     (contDiff_euclidean.1 hx₂ 0) (contDiff_euclidean.1 hx₂ 1)
