@@ -13,7 +13,7 @@ public import TauCeti.Analysis.InnerProductSpace.SingularValues
 public import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 public import TauCeti.Analysis.InnerProductSpace.Positive.Basic
 import TauCeti.Algebra.Order.BigOperators.Sum.ByParts
-import TauCeti.Data.Fin.Basic
+import TauCeti.Algebra.BigOperators.Finset.PartialSum
 
 /-!
 # Ky Fan sums of singular values
@@ -551,14 +551,13 @@ theorem sum_re_inner_apply_self_le_sum_eigenvalues (hT : T.IsSymmetric) (hn : fi
 
 /-- **Ky Fan's maximum principle**: for a symmetric `T` on an `n`-dimensional space and `k ≤ n`,
 the sum `λ₀ + ⋯ + λₖ₋₁` of the `k` largest eigenvalues of `T` is the largest value of
-`∑ᵢ re ⟪T wᵢ, wᵢ⟫` over orthonormal families `(wᵢ)` with `k` members, attained by the leading
-eigenvectors. -/
+`∑ᵢ re ⟪T wᵢ, wᵢ⟫` over orthonormal families `(wᵢ)` with `k` members. -/
 theorem isGreatest_sum_re_inner_apply_self (hT : T.IsSymmetric) (hn : finrank 𝕜 E = n) {k : ℕ}
     (hk : k ≤ n) :
     IsGreatest {s | ∃ w : Fin k → E, Orthonormal 𝕜 w ∧ ∑ i, RCLike.re ⟪T (w i), w i⟫ = s}
       (∑ j ∈ univ.filter fun j : Fin n ↦ (j : ℕ) < k, hT.eigenvalues hn j) := by
   refine ⟨⟨_, (hT.eigenvectorBasis hn).orthonormal.comp _ (Fin.castLE_injective hk), ?_⟩, ?_⟩
-  · rw [Fin.sum_filter_val_lt_eq_sum_castLE hk]
+  · rw [← TauCeti.prefixSum_def, TauCeti.prefixSum_eq_sum_castLE hk]
     exact sum_congr rfl fun i _ ↦ hT.re_inner_apply_eigenvectorBasis hn _
   · rintro _ ⟨w, hw, rfl⟩
     simpa using hT.sum_re_inner_apply_self_le_sum_eigenvalues hn hw
@@ -574,8 +573,7 @@ theorem sum_eigenvalues_rev_le_sum_re_inner_apply_self (hT : T.IsSymmetric)
 
 /-- **Ky Fan's minimum principle**: for a symmetric `T` on an `n`-dimensional space and `k ≤ n`,
 the sum `λₙ₋₁ + ⋯ + λₙ₋ₖ` of the `k` smallest eigenvalues of `T` is the least value of
-`∑ᵢ re ⟪T wᵢ, wᵢ⟫` over orthonormal families `(wᵢ)` with `k` members, attained by the
-eigenvectors of those eigenvalues. -/
+`∑ᵢ re ⟪T wᵢ, wᵢ⟫` over orthonormal families `(wᵢ)` with `k` members. -/
 theorem isLeast_sum_re_inner_apply_self (hT : T.IsSymmetric) (hn : finrank 𝕜 E = n) {k : ℕ}
     (hk : k ≤ n) :
     IsLeast {s | ∃ w : Fin k → E, Orthonormal 𝕜 w ∧ ∑ i, RCLike.re ⟪T (w i), w i⟫ = s}
@@ -583,7 +581,7 @@ theorem isLeast_sum_re_inner_apply_self (hT : T.IsSymmetric) (hn : finrank 𝕜 
   refine ⟨⟨fun i ↦ hT.eigenvectorBasis hn (Fin.castLE hk i).rev,
     (hT.eigenvectorBasis hn).orthonormal.comp _ (Fin.rev_injective.comp (Fin.castLE_injective hk)),
     ?_⟩, ?_⟩
-  · rw [Fin.sum_filter_val_lt_eq_sum_castLE hk]
+  · rw [← TauCeti.prefixSum_def, TauCeti.prefixSum_eq_sum_castLE hk]
     exact sum_congr rfl fun i _ ↦ hT.re_inner_apply_eigenvectorBasis hn _
   · rintro _ ⟨w, hw, rfl⟩
     simpa using hT.sum_eigenvalues_rev_le_sum_re_inner_apply_self hn hw

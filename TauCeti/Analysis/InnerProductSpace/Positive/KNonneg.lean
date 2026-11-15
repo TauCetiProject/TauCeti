@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.KyFan
 import TauCeti.Analysis.InnerProductSpace.LinearIsometry
-import TauCeti.Data.Fin.Basic
+import TauCeti.Algebra.BigOperators.Fin
+import TauCeti.Algebra.BigOperators.Finset.PartialSum
 
 /-!
 # `k`-nonnegative and `k`-positive operators
@@ -15,15 +16,17 @@ import TauCeti.Data.Fin.Basic
 An operator `T` on an inner product space is **`k`-nonnegative** (`LinearMap.IsKNonneg`) when
 its diagonal entries along any orthonormal family of `k` vectors have nonnegative sum,
 `0 ≤ ∑ᵢ re ⟪T wᵢ, wᵢ⟫`, and **`k`-positive** (`LinearMap.IsKPos`) when that sum is always
-positive. For `k = 1` and symmetric `T` this is ordinary positivity. The condition interpolates
-between positivity and nonnegativity of the trace: by Ky Fan's minimum principle a symmetric
-`T` on an `n`-dimensional space with `k ≤ n` is `k`-nonnegative exactly when the sum of its `k`
-smallest eigenvalues is nonnegative (`LinearMap.IsSymmetric.isKNonneg_iff_sum_eigenvalues_nonneg`),
-and equivalently when the compression of `T` to every `k`-dimensional subspace has nonnegative
-trace (`LinearMap.isKNonneg_iff_forall_re_trace_nonneg`).
+positive. For `k = 1` and symmetric `T` this is ordinary positivity. Any operator `T` is
+`k`-nonnegative exactly when its compression to every `k`-dimensional subspace has trace with
+nonnegative real part (`LinearMap.isKNonneg_iff_forall_re_trace_nonneg`). The condition
+interpolates between positivity and nonnegativity of the trace: by Ky Fan's minimum principle a
+symmetric `T` on an `n`-dimensional space is `k`-nonnegative, for `k ≤ n`, exactly when the sum of
+its `k` smallest eigenvalues is nonnegative
+(`LinearMap.IsSymmetric.isKNonneg_iff_sum_eigenvalues_nonneg`).
 
 The case `k = 2` is the curvature condition of Böhm and Wilking: a curvature operator on the
-bivectors `Λ²V` is `2`-nonnegative when the sum of its two smallest eigenvalues is nonnegative.
+bivectors `Λ²V` of a space `V` of dimension at least `3` is `2`-nonnegative when the sum of its two
+smallest eigenvalues is nonnegative.
 In dimension three this is nonnegativity of the Ricci curvature. Operators that are
 `k`-nonnegative form a closed convex cone, invariant under conjugation by linear isometries,
 and `k`-nonnegativity implies `m`-nonnegativity for `1 ≤ k ≤ m`
@@ -33,6 +36,8 @@ and `k`-nonnegativity implies `m`-nonnegativity for `1 ≤ k ≤ m`
 
 * `LinearMap.IsKNonneg`, `LinearMap.IsKPos`: the two conditions.
 * `LinearMap.IsKNonneg.mono`, `LinearMap.IsKPos.mono`: monotonicity in `k`.
+* `LinearMap.isKNonneg_one_iff`, `LinearMap.isKPos_one_iff`: `1`-nonnegativity and
+  `1`-positivity as conditions on the quadratic form.
 * `LinearMap.isPositive_iff_isSymmetric_and_isKNonneg_one`: positivity is `1`-nonnegativity of
   a symmetric operator.
 * `LinearMap.IsSymmetric.isKNonneg_iff_sum_eigenvalues_nonneg`,
@@ -124,37 +129,49 @@ theorem isKNonneg_zero_right (T : E →ₗ[𝕜] E) : T.IsKNonneg 0 :=
 theorem not_isKPos_zero_right (T : E →ₗ[𝕜] E) : ¬T.IsKPos 0 :=
   fun h ↦ by simpa using h Fin.elim0 ⟨fun i ↦ i.elim0, fun i ↦ i.elim0⟩
 
+/-- A nonzero vector `x` is `‖x‖` times a unit vector `u`, so its diagonal entry is `‖x‖ ^ 2` times
+the diagonal entry along the orthonormal family consisting of `u`. -/
+private theorem exists_orthonormal_re_inner_eq {x : E} (hx : x ≠ 0) :
+    ∃ w : Fin 1 → E, Orthonormal 𝕜 w ∧
+      RCLike.re ⟪T x, x⟫ = ‖x‖ ^ 2 * RCLike.re ⟪T (w 0), w 0⟫ := by
+  set u := (‖x‖⁻¹ : 𝕜) • x
+  have hxu : x = (‖x‖ : 𝕜) • u := by
+    simp [u, smul_smul, norm_ne_zero_iff.2 hx]
+  refine ⟨fun _ ↦ u, ⟨fun _ ↦ norm_smul_inv_norm hx,
+    fun i j hij ↦ absurd (Subsingleton.elim i j) hij⟩, ?_⟩
+  conv_lhs => rw [hxu]
+  simp [inner_smul_left, inner_smul_right]
+  ring
+
 /-- `1`-nonnegativity is nonnegativity of the quadratic form `x ↦ re ⟪T x, x⟫`. -/
 theorem isKNonneg_one_iff : T.IsKNonneg 1 ↔ ∀ x, 0 ≤ RCLike.re ⟪T x, x⟫ := by
   refine ⟨fun h x ↦ ?_, fun h w _ ↦ by simpa using h (w 0)⟩
   rcases eq_or_ne x 0 with rfl | hx
   · simp
-  -- `x` is `‖x‖` times a unit vector `u`, so its diagonal entry is `‖x‖ ^ 2` times that of `u`.
-  set u := (‖x‖⁻¹ : 𝕜) • x
-  have hu : Orthonormal 𝕜 fun _ : Fin 1 ↦ u :=
-    ⟨fun _ ↦ norm_smul_inv_norm hx, fun i j hij ↦ absurd (Subsingleton.elim i j) hij⟩
-  have hxu : x = (‖x‖ : 𝕜) • u := by
-    simp [u, smul_smul, norm_ne_zero_iff.2 hx]
-  have hscale : RCLike.re ⟪T x, x⟫ = ‖x‖ ^ 2 * RCLike.re ⟪T u, u⟫ := by
-    conv_lhs => rw [hxu]
-    simp [inner_smul_left, inner_smul_right]
-    ring
+  obtain ⟨w, hw, hscale⟩ := exists_orthonormal_re_inner_eq (T := T) hx
   rw [hscale]
-  exact mul_nonneg (sq_nonneg _) (by simpa using h _ hu)
+  exact mul_nonneg (sq_nonneg _) (by simpa using h w hw)
+
+/-- `1`-positivity is positivity of the quadratic form `x ↦ re ⟪T x, x⟫` on nonzero vectors. -/
+theorem isKPos_one_iff : T.IsKPos 1 ↔ ∀ x, x ≠ 0 → 0 < RCLike.re ⟪T x, x⟫ := by
+  refine ⟨fun h x hx ↦ ?_, fun h w hw ↦ by simpa using h (w 0) (hw.ne_zero 0)⟩
+  obtain ⟨w, hw, hscale⟩ := exists_orthonormal_re_inner_eq (T := T) hx
+  rw [hscale]
+  exact mul_pos (by positivity) (by simpa using h w hw)
 
 /-- A positive operator is `k`-nonnegative for every `k`. -/
 theorem IsPositive.isKNonneg (hT : T.IsPositive) (k : ℕ) : T.IsKNonneg k :=
   fun _ _ ↦ sum_nonneg fun _ _ ↦ hT.re_inner_nonneg_left _
 
-/-- A symmetric operator is positive exactly when it is `1`-nonnegative. -/
+/-- An operator is positive exactly when it is symmetric and `1`-nonnegative. -/
 theorem isPositive_iff_isSymmetric_and_isKNonneg_one :
     T.IsPositive ↔ T.IsSymmetric ∧ T.IsKNonneg 1 := by
   rw [isKNonneg_one_iff, IsPositive]
 
-/-- A `k`-nonnegative operator with `k ≠ 0` is `(k + 1)`-nonnegative: averaging over the `k + 1`
-ways to drop one vector from an orthonormal family of `k + 1` vectors. -/
+/-- A `k`-nonnegative operator with `k ≠ 0` is `(k + 1)`-nonnegative. -/
 theorem IsKNonneg.succ (h : T.IsKNonneg k) (hk : k ≠ 0) : T.IsKNonneg (k + 1) := by
   intro w hw
+  -- Average over the `k + 1` ways to drop one vector from the orthonormal family `w`.
   have hsum := Fin.sum_sum_succAbove (k := k) fun i ↦ RCLike.re ⟪T (w i), w i⟫
   rw [nsmul_eq_mul] at hsum
   have hk' : (0 : ℝ) < k := by positivity
@@ -189,6 +206,7 @@ theorem IsKPos.mono (h : T.IsKPos k) (hkm : k ≤ m) : T.IsKPos m := by
 /-! ### The cone of `k`-nonnegative operators -/
 
 /-- The zero operator is `k`-nonnegative. -/
+@[simp]
 protected theorem IsKNonneg.zero (k : ℕ) : (0 : E →ₗ[𝕜] E).IsKNonneg k :=
   fun _ _ ↦ by simp
 
@@ -200,6 +218,10 @@ protected theorem IsKNonneg.add (hT : T.IsKNonneg k) (hS : S.IsKNonneg k) : (T +
 theorem IsKPos.add_isKNonneg (hT : T.IsKPos k) (hS : S.IsKNonneg k) : (T + S).IsKPos k :=
   fun w hw ↦ by
     simpa [inner_add_left, sum_add_distrib] using add_pos_of_pos_of_nonneg (hT w hw) (hS w hw)
+
+/-- The sum of two `k`-positive operators is `k`-positive. -/
+protected theorem IsKPos.add (hT : T.IsKPos k) (hS : S.IsKPos k) : (T + S).IsKPos k :=
+  hT.add_isKNonneg hS.isKNonneg
 
 /-- A nonnegative real multiple of a `k`-nonnegative operator is `k`-nonnegative. -/
 theorem IsKNonneg.smul (hT : T.IsKNonneg k) {c : ℝ} (hc : 0 ≤ c) : ((c : 𝕜) • T).IsKNonneg k :=
@@ -313,22 +335,22 @@ theorem isKPos_iff_sum_eigenvalues_pos (hT : T.IsSymmetric) (hn : finrank 𝕜 E
   obtain ⟨⟨w, hw, hsum⟩, hle⟩ := hT.isLeast_sum_re_inner_apply_self hn hk
   exact ⟨fun h ↦ hsum ▸ h w hw, fun h w' hw' ↦ h.trans_le (hle ⟨w', hw', rfl⟩)⟩
 
-/-- A symmetric operator on a space of dimension `n + 2` is `2`-nonnegative exactly when the sum of
-its two smallest eigenvalues is nonnegative. -/
-theorem isKNonneg_two_iff (hT : T.IsSymmetric) (hn : finrank 𝕜 E = n + 2) :
+/-- A symmetric operator on a space of dimension `n ≥ 2` is `2`-nonnegative exactly when the sum
+`λₙ₋₁ + λₙ₋₂` of its two smallest eigenvalues is nonnegative. -/
+theorem isKNonneg_two_iff (hT : T.IsSymmetric) (hn : finrank 𝕜 E = n) (h2 : 2 ≤ n) :
     T.IsKNonneg 2 ↔
-      0 ≤ hT.eigenvalues hn (Fin.last (n + 1)) + hT.eigenvalues hn (Fin.last n).castSucc := by
-  rw [hT.isKNonneg_iff_sum_eigenvalues_nonneg hn le_add_self,
-    Fin.sum_filter_val_lt_eq_sum_castLE le_add_self, Fin.sum_univ_two]
+      0 ≤ hT.eigenvalues hn ⟨n - 1, by omega⟩ + hT.eigenvalues hn ⟨n - 2, by omega⟩ := by
+  rw [hT.isKNonneg_iff_sum_eigenvalues_nonneg hn h2, ← TauCeti.prefixSum_def,
+    TauCeti.prefixSum_eq_sum_castLE h2, Fin.sum_univ_two]
   rfl
 
-/-- A symmetric operator on a space of dimension `n + 2` is `2`-positive exactly when the sum of
-its two smallest eigenvalues is positive. -/
-theorem isKPos_two_iff (hT : T.IsSymmetric) (hn : finrank 𝕜 E = n + 2) :
+/-- A symmetric operator on a space of dimension `n ≥ 2` is `2`-positive exactly when the sum
+`λₙ₋₁ + λₙ₋₂` of its two smallest eigenvalues is positive. -/
+theorem isKPos_two_iff (hT : T.IsSymmetric) (hn : finrank 𝕜 E = n) (h2 : 2 ≤ n) :
     T.IsKPos 2 ↔
-      0 < hT.eigenvalues hn (Fin.last (n + 1)) + hT.eigenvalues hn (Fin.last n).castSucc := by
-  rw [hT.isKPos_iff_sum_eigenvalues_pos hn le_add_self,
-    Fin.sum_filter_val_lt_eq_sum_castLE le_add_self, Fin.sum_univ_two]
+      0 < hT.eigenvalues hn ⟨n - 1, by omega⟩ + hT.eigenvalues hn ⟨n - 2, by omega⟩ := by
+  rw [hT.isKPos_iff_sum_eigenvalues_pos hn h2, ← TauCeti.prefixSum_def,
+    TauCeti.prefixSum_eq_sum_castLE h2, Fin.sum_univ_two]
   rfl
 
 end IsSymmetric
