@@ -39,9 +39,9 @@ on the target group of the homomorphism.
   group, with additive versions on `OpenAddSubgroup`.
 * `Subgroup.isCompact_of_isOpen_of_subset`, `OpenSubgroup.isCompact_of_subset`,
   `OpenSubgroup.isCompact_of_le`, `OpenSubgroup.isCompact_inf_left`,
-  `OpenSubgroup.isCompact_inf_right`, `OpenSubgroup.compactSpace_of_isCompact`, and
-  `OpenSubgroup.directedOn_isCompact_le`: compactness of open subgroups contained in compact sets,
-  preservation under intersection, and downward-directedness below a fixed open subgroup.
+  `OpenSubgroup.isCompact_inf_right`, and `OpenSubgroup.directedOn_isCompact_le`: compactness of
+  open subgroups contained in compact sets, preservation under intersection, and
+  downward-directedness below a fixed open subgroup.
 * `OpenSubgroup.instUniqueOfSubsingleton`, `OpenSubgroup.isCompact_top_of_subsingleton`, and
   `OpenSubgroup.nhds_one_hasBasis_eq_top`: a subsingleton topological group has `{⊤}` as its
   singleton compact open subgroup basis.
@@ -142,13 +142,6 @@ is compact. -/]
 theorem isCompact_inf_right [SeparatelyContinuousMul G] {U V : OpenSubgroup G}
     (hV : IsCompact (V : Set G)) : IsCompact ((U ⊓ V : OpenSubgroup G) : Set G) :=
   isCompact_of_le inf_le_right hV
-
-/-- A compact open subgroup is a `CompactSpace` in the subspace topology. -/
-@[to_additive /-- A compact open additive subgroup is a `CompactSpace` in the subspace
-topology. -/]
-theorem compactSpace_of_isCompact (U : OpenSubgroup G) (hU : IsCompact (U : Set G)) :
-    CompactSpace U :=
-  isCompact_iff_compactSpace.mp hU
 
 /-- The compact open subgroups contained in a fixed open subgroup `U₀` form a downward-directed
 family (that is, a directed family under reverse inclusion `≥`). -/

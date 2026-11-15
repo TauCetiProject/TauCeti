@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Pointwise.Stabilizer
 public import Mathlib.Topology.Algebra.Group.Pointwise
+public import Mathlib.Topology.Algebra.OpenSubgroup
+import TauCeti.Topology.Algebra.Group.OpenSubgroup.Basic
 
 /-!
-# Closures, closed images, and pointwise quotients
+# Closures, closed images, pointwise quotients, and compact-open stabilizers
 
 Mathlib relates `closure` to a pointwise product when one factor is *open* — `IsOpen.mul_closure`
 and its neighbours in `Mathlib/Topology/Algebra/Group/Pointwise.lean` — and to a pointwise scalar
@@ -27,6 +30,13 @@ In a weakly locally compact topological group, intersecting a compact identity n
 Mathlib's `exists_closed_nhds_one_inv_eq_mul_subset` yields a closed, compact, symmetric identity
 neighbourhood inside any given identity neighbourhood.
 
+Applying `IsCompact.exists_isOpen_superset_mul_subset` to `{1} * C ⊆ C` for a compact open subset
+`C` yields a symmetric open identity neighbourhood stabilizing `C` under left translation, so the
+left translation stabilizer `MulAction.stabilizer G C` is an open subgroup
+(`MulAction.stabilizerOpenSubgroup`). When `C` is nonempty, picking `a ∈ C` bounds the stabilizer
+inside the compact quotient `C / {a}` and makes it compact; when `1 ∈ C`, the stabilizer lies inside
+`C`.
+
 ## Main results
 
 * `TauCeti.closure_div_closure_subset`, with its additive form
@@ -40,6 +50,14 @@ neighbourhood inside any given identity neighbourhood.
   contains `V * K` for an open superset `V` of `A`. Outer regularity arguments use it to thicken
   an arbitrary set to an open one.
 * `IsClosed.div_right_of_isCompact`, with its additive form `IsClosed.sub_right_of_isCompact`.
+* `MulAction.stabilizer_subset_of_one_mem`, `MulAction.isOpen_stabilizer_of_isCompact_of_isOpen`,
+  `MulAction.stabilizerOpenSubgroup`, and `MulAction.isCompact_stabilizer` (with additive
+  counterparts in `AddAction`): openness, packaging as an `OpenSubgroup`, containment in `C`, and
+  compactness of the left translation stabilizer of a compact open subset `C`.
+
+## References
+
+* L. Kramer, *Locally Compact Groups*, Lemma 1.41, pp. 17–18.
 -/
 
 public section
@@ -127,5 +145,98 @@ theorem IsClosed.div_right_of_isCompact {G : Type*} [TopologicalSpace G] [Group 
     IsClosed (t / s) := by
   rw [div_eq_mul_inv]
   exact ht.mul_right_of_isCompact hs.inv
+
+/-! ### Left translation stabilizer of a compact open subset -/
+
+namespace MulAction
+
+section Group
+
+variable {G : Type*} [Group G] {C : Set G}
+
+/-- If `1 ∈ C`, the left translation stabilizer `{g : G | g • C = C}` is contained in `C`. -/
+@[to_additive /-- If `0 ∈ C`, the left translation stabilizer `{g : G | g +ᵥ C = C}` is contained
+in `C`. -/]
+theorem stabilizer_subset_of_one_mem (h1 : (1 : G) ∈ C) :
+    (stabilizer G C : Set G) ⊆ C := fun g hg ↦ by
+  simpa only [smul_eq_mul, mul_one] using (mem_stabilizer_set.mp hg 1).mpr h1
+
+end Group
+
+section TopologicalGroup
+
+variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] {C : Set G}
+
+/-- **Kramer, Lemma 1.41 (openness):** the left translation stabilizer `{g : G | g • C = C}` of a
+compact open subset `C` of a topological group is open. Neither `T2Space G` nor `1 ∈ C` is
+required. -/
+@[to_additive /-- **Kramer, Lemma 1.41 (openness):** the translation stabilizer
+`{g : G | g +ᵥ C = C}` of a compact open subset `C` of a topological additive group is open.
+Neither `T2Space G` nor `0 ∈ C` is required. -/]
+theorem isOpen_stabilizer_of_isCompact_of_isOpen (hC : IsCompact C) (hCo : IsOpen C) :
+    IsOpen (stabilizer G C : Set G) := by
+  obtain ⟨V, hVo, h1V, hVC⟩ :=
+    hC.exists_isOpen_superset_mul_subset hCo (by simp : ({(1 : G)} : Set G) * C ⊆ C)
+  have h1 : (1 : G) ∈ V := h1V (mem_singleton 1)
+  have hW_mem : V ∩ V⁻¹ ∈ 𝓝 (1 : G) :=
+    (hVo.inter hVo.inv).mem_nhds ⟨h1, by simpa using h1⟩
+  refine (stabilizer G C).isOpen_of_mem_nhds (Filter.mem_of_superset hW_mem ?_)
+  rintro g ⟨hgV, hginvV⟩
+  have hsub : ∀ {x : G}, x ∈ V → x • C ⊆ C := fun hx ↦ by
+    rintro _ ⟨c, hc, rfl⟩
+    exact hVC ⟨_, hx, c, hc, rfl⟩
+  exact mem_stabilizer_iff.mpr <| Subset.antisymm (hsub hgV) fun c hc ↦ by
+    simpa using smul_mem_smul_set (a := g) (hsub (mem_inv.mp hginvV) (smul_mem_smul_set hc))
+
+/-- Package the left translation stabilizer `MulAction.stabilizer G C` of a compact open subset `C`
+of a topological group as an `OpenSubgroup G`. -/
+@[to_additive /-- Package the translation stabilizer `AddAction.stabilizer G C` of a compact open
+subset `C` of a topological additive group as an `OpenAddSubgroup G`. -/]
+def stabilizerOpenSubgroup (hC : IsCompact C) (hCo : IsOpen C) : OpenSubgroup G :=
+  ⟨stabilizer G C, isOpen_stabilizer_of_isCompact_of_isOpen hC hCo⟩
+
+@[to_additive (attr := simp)]
+theorem toSubgroup_stabilizerOpenSubgroup (hC : IsCompact C) (hCo : IsOpen C) :
+    (stabilizerOpenSubgroup hC hCo).toSubgroup = stabilizer G C :=
+  (rfl)
+
+@[to_additive (attr := simp)]
+theorem coe_stabilizerOpenSubgroup (hC : IsCompact C) (hCo : IsOpen C) :
+    ((stabilizerOpenSubgroup hC hCo : OpenSubgroup G) : Set G) = stabilizer G C :=
+  (rfl)
+
+@[to_additive (attr := simp)]
+theorem mem_stabilizerOpenSubgroup (hC : IsCompact C) (hCo : IsOpen C) {g : G} :
+    g ∈ stabilizerOpenSubgroup hC hCo ↔ g • C = C :=
+  Iff.rfl
+
+/-- The left translation stabilizer of a compact open subgroup, viewed as a subset, is the open
+subgroup itself. -/
+@[to_additive (attr := simp) /-- The translation stabilizer of a compact open additive subgroup,
+viewed as a subset, is the open additive subgroup itself. -/]
+theorem stabilizerOpenSubgroup_coe {U : OpenSubgroup G} (hU : IsCompact (U : Set G)) :
+    stabilizerOpenSubgroup hU U.isOpen = U :=
+  OpenSubgroup.toSubgroup_injective (stabilizer_subgroup U.toSubgroup)
+
+/-- When `1 ∈ C`, `stabilizerOpenSubgroup hC hCo` is contained in `C`. -/
+@[to_additive /-- When `0 ∈ C`, `stabilizerOpenAddSubgroup hC hCo` is contained in `C`. -/]
+theorem coe_stabilizerOpenSubgroup_subset (hC : IsCompact C) (hCo : IsOpen C) (h1 : (1 : G) ∈ C) :
+    ((stabilizerOpenSubgroup hC hCo : OpenSubgroup G) : Set G) ⊆ C :=
+  stabilizer_subset_of_one_mem h1
+
+/-- **Kramer, Lemma 1.41 (compactness):** the left translation stabilizer of a nonempty compact
+open subset `C` of a topological group is compact. -/
+@[to_additive /-- **Kramer, Lemma 1.41 (compactness):** the translation stabilizer of a nonempty
+compact open subset `C` of a topological additive group is compact. -/]
+theorem isCompact_stabilizer (hC : IsCompact C) (hCo : IsOpen C) (hne : C.Nonempty) :
+    IsCompact (stabilizer G C : Set G) := by
+  obtain ⟨a, ha⟩ := hne
+  refine (stabilizerOpenSubgroup hC hCo).isCompact_of_subset ?_ (stabilizer_subset_div_right ha)
+  rw [div_eq_mul_inv]
+  exact hC.mul isCompact_singleton.inv
+
+end TopologicalGroup
+
+end MulAction
 
 end

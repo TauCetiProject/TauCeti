@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Pointwise.Stabilizer
 public import Mathlib.Data.List.TFAE
-public import Mathlib.Topology.Algebra.Category.ProfiniteGrp.Basic
 public import Mathlib.Topology.Algebra.Nonarchimedean.Basic
 public import Mathlib.Topology.Algebra.Nonarchimedean.TotallyDisconnected
 public import Mathlib.Topology.Separation.Regular
@@ -24,41 +22,22 @@ equivalent both to being locally compact and `NonarchimedeanGroup` (every identi
 contains an open subgroup) and to having a neighbourhood basis at `1` consisting of compact open
 subgroups.
 
-The bridge from clopen subsets to open subgroups is the left translation stabilizer
-`MulAction.stabilizer G C` of a compact open subset `C ⊆ G`. Because `{1} * C = C` and `C` is
-compact and open, `IsCompact.exists_isOpen_superset_mul_subset` supplies a symmetric open identity
-neighbourhood `W` with `W * C ⊆ C`; applying this inclusion to inverses gives `w • C = C` for all
-`w ∈ W`, so `MulAction.stabilizer G C` is an open subgroup. When `C` is nonempty, picking `a ∈ C`
-bounds the stabilizer inside the compact quotient `C / {a}`, and closedness of open subgroups makes
-the stabilizer compact; when `1 ∈ C`, the stabilizer lies directly inside `C`.
-
 In a weakly locally compact zero-dimensional topological group (which includes every locally
 compact totally disconnected topological group, since `TotallyDisconnectedSpace` implies `T₁` and
 topological groups are completely regular), every identity neighbourhood contains a compact clopen
-identity neighbourhood, and its left translation stabilizer is a compact open subgroup inside it.
+identity neighbourhood `C`, and its left translation stabilizer `MulAction.stabilizerOpenSubgroup`
+(from `TauCeti.Topology.Algebra.Group.Pointwise`) is an open subgroup contained in `C`.
 This registers `NonarchimedeanGroup G` as a typeclass instance, generalizing the compact case in
 `TauCeti.Topology.Algebra.Nonarchimedean.Profinite`.
 
 Once `G` is weakly locally compact and nonarchimedean, intersecting any identity neighbourhood
 with a compact identity neighbourhood produces a basis of compact open subgroups at `1`, and those
 contained in a fixed open subgroup `U₀` form a nonempty cofinal downward-directed family (directed
-under reverse inclusion via `⊓`). Every compact open subgroup of a totally disconnected topological
-group is profinite (`CompactSpace`, `TotallyDisconnectedSpace`, `T2Space`, `NonarchimedeanGroup`,
-and bundled as `ProfiniteGrp`).
-
-## Main definitions
-
-* `MulAction.stabilizerOpenSubgroup` (and `AddAction.stabilizerOpenAddSubgroup`): the left
-  translation stabilizer `MulAction.stabilizer G C` of a compact open subset `C : Set G` packaged
-  as an `OpenSubgroup G`.
-* `OpenSubgroup.toProfiniteGrp` (and `OpenAddSubgroup.toProfiniteAddGrp`): a compact open subgroup
-  of a totally disconnected topological group bundled as an object of `ProfiniteGrp`.
+under reverse inclusion via `⊓`). Compact totally disconnected open subgroups are bundled as
+objects of `ProfiniteGrp` in `TauCeti.Topology.Algebra.Group.OpenSubgroup.Profinite`.
 
 ## Main results
 
-* `MulAction.isOpen_stabilizer_of_isCompact`, `MulAction.isCompact_stabilizer`, and
-  `MulAction.stabilizer_subset_of_one_mem`: openness, compactness, and containment in `C` of the
-  left translation stabilizer of a compact open subset `C`.
 * `IsTopologicalGroup.nonarchimedeanGroup_of_weaklyLocallyCompactSpace`: a weakly locally compact
   zero-dimensional topological group is nonarchimedean; in particular every locally compact totally
   disconnected topological group is automatically an instance of `NonarchimedeanGroup`.
@@ -86,129 +65,7 @@ and bundled as `ProfiniteGrp`).
 public section
 
 open Filter Set
-open scoped Pointwise Topology
-
-/-! ### Compact open subgroups as profinite groups -/
-
-namespace OpenSubgroup
-
-variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [TotallyDisconnectedSpace G]
-
-/-- View a compact open subgroup of a totally disconnected topological group as a bundled
-profinite group `ProfiniteGrp`. -/
-@[to_additive /-- View a compact open additive subgroup of a totally disconnected topological
-additive group as a bundled profinite additive group `ProfiniteAddGrp`. -/]
-def toProfiniteGrp (K : OpenSubgroup G) (hK : IsCompact (K : Set G)) : ProfiniteGrp :=
-  letI : CompactSpace K := K.compactSpace_of_isCompact hK
-  ProfiniteGrp.of K
-
-@[to_additive (attr := simp)]
-theorem coe_toProfiniteGrp (K : OpenSubgroup G) (hK : IsCompact (K : Set G)) :
-    (K.toProfiniteGrp hK : Type _) = K :=
-  (rfl)
-
-end OpenSubgroup
-
-/-! ### Left translation stabilizer of a compact open subset -/
-
-namespace MulAction
-
-section Group
-
-variable {G : Type*} [Group G] {C : Set G}
-
-/-- If `1 ∈ C`, the left translation stabilizer `{g : G | g • C = C}` is contained in `C`. -/
-@[to_additive /-- If `0 ∈ C`, the left translation stabilizer `{g : G | g +ᵥ C = C}` is contained
-in `C`. -/]
-theorem stabilizer_subset_of_one_mem (h1 : (1 : G) ∈ C) :
-    (stabilizer G C : Set G) ⊆ C := fun g hg ↦ by
-  simpa only [smul_eq_mul, mul_one] using (mem_stabilizer_set.mp hg 1).mpr h1
-
-end Group
-
-section TopologicalGroup
-
-variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] {C : Set G}
-
-/-- **Kramer, Lemma 1.41 (openness):** the left translation stabilizer `{g : G | g • C = C}` of a
-compact open subset `C` of a topological group is open. Neither `T2Space G` nor `1 ∈ C` is
-required. -/
-@[to_additive /-- **Kramer, Lemma 1.41 (openness):** the translation stabilizer
-`{g : G | g +ᵥ C = C}` of a compact open subset `C` of a topological additive group is open.
-Neither `T2Space G` nor `0 ∈ C` is required. -/]
-theorem isOpen_stabilizer_of_isCompact (hC : IsCompact C) (hCo : IsOpen C) :
-    IsOpen (stabilizer G C : Set G) := by
-  obtain ⟨V, hVo, h1V, hVC⟩ :=
-    hC.exists_isOpen_superset_mul_subset hCo (by simp : ({(1 : G)} : Set G) * C ⊆ C)
-  have h1 : (1 : G) ∈ V := h1V (mem_singleton 1)
-  have hW_mem : V ∩ V⁻¹ ∈ 𝓝 (1 : G) :=
-    (hVo.inter hVo.inv).mem_nhds ⟨h1, by simpa using h1⟩
-  refine (stabilizer G C).isOpen_of_mem_nhds (mem_of_superset hW_mem ?_)
-  rintro g ⟨hgV, hginvV⟩
-  have hsub : ∀ {x : G}, x ∈ V → x • C ⊆ C := fun hx ↦ by
-    rintro _ ⟨c, hc, rfl⟩
-    exact hVC ⟨_, hx, c, hc, rfl⟩
-  exact mem_stabilizer_iff.mpr <| Subset.antisymm (hsub hgV) fun c hc ↦ by
-    simpa using smul_mem_smul_set (a := g) (hsub (mem_inv.mp hginvV) (smul_mem_smul_set hc))
-
-/-- Package the left translation stabilizer `MulAction.stabilizer G C` of a compact open subset `C`
-of a topological group as an `OpenSubgroup G`. -/
-@[to_additive /-- Package the translation stabilizer `AddAction.stabilizer G C` of a compact open
-subset `C` of a topological additive group as an `OpenAddSubgroup G`. -/]
-def stabilizerOpenSubgroup (hC : IsCompact C) (hCo : IsOpen C) : OpenSubgroup G :=
-  ⟨stabilizer G C, isOpen_stabilizer_of_isCompact hC hCo⟩
-
-@[to_additive (attr := simp)]
-theorem toSubgroup_stabilizerOpenSubgroup (hC : IsCompact C) (hCo : IsOpen C) :
-    (stabilizerOpenSubgroup hC hCo).toSubgroup = stabilizer G C :=
-  (rfl)
-
-@[to_additive (attr := simp)]
-theorem coe_stabilizerOpenSubgroup (hC : IsCompact C) (hCo : IsOpen C) :
-    ((stabilizerOpenSubgroup hC hCo : OpenSubgroup G) : Set G) = stabilizer G C :=
-  (rfl)
-
-@[to_additive (attr := simp)]
-theorem mem_stabilizerOpenSubgroup (hC : IsCompact C) (hCo : IsOpen C) {g : G} :
-    g ∈ stabilizerOpenSubgroup hC hCo ↔ g • C = C :=
-  Iff.rfl
-
-/-- The left translation stabilizer of a compact open subgroup, viewed as a subset, is the open
-subgroup itself. -/
-@[to_additive (attr := simp) /-- The translation stabilizer of a compact open additive subgroup,
-viewed as a subset, is the open additive subgroup itself. -/]
-theorem stabilizerOpenSubgroup_coe {U : OpenSubgroup G} (hU : IsCompact (U : Set G)) :
-    stabilizerOpenSubgroup hU U.isOpen = U :=
-  OpenSubgroup.toSubgroup_injective (stabilizer_subgroup U.toSubgroup)
-
-/-- When `1 ∈ C`, `stabilizerOpenSubgroup hC hCo` is contained in `C`. -/
-@[to_additive /-- When `0 ∈ C`, `stabilizerOpenAddSubgroup hC hCo` is contained in `C`. -/]
-theorem coe_stabilizerOpenSubgroup_subset (hC : IsCompact C) (hCo : IsOpen C) (h1 : (1 : G) ∈ C) :
-    ((stabilizerOpenSubgroup hC hCo : OpenSubgroup G) : Set G) ⊆ C :=
-  stabilizer_subset_of_one_mem h1
-
-/-- **Kramer, Lemma 1.41 (compactness):** the left translation stabilizer of a nonempty compact
-open subset `C` of a topological group is compact. -/
-@[to_additive /-- **Kramer, Lemma 1.41 (compactness):** the translation stabilizer of a nonempty
-compact open subset `C` of a topological additive group is compact. -/]
-theorem isCompact_stabilizer (hC : IsCompact C) (hCo : IsOpen C) (hne : C.Nonempty) :
-    IsCompact (stabilizer G C : Set G) := by
-  obtain ⟨a, ha⟩ := hne
-  refine (stabilizerOpenSubgroup hC hCo).isCompact_of_subset ?_ (stabilizer_subset_div_right ha)
-  rw [div_eq_mul_inv]
-  exact hC.mul isCompact_singleton.inv
-
-/-- When `1 ∈ C`, `stabilizerOpenSubgroup hC hCo` is compact. -/
-@[to_additive /-- When `0 ∈ C`, `stabilizerOpenAddSubgroup hC hCo` is compact. -/]
-theorem isCompact_stabilizerOpenSubgroup_of_one_mem (hC : IsCompact C) (hCo : IsOpen C)
-    (h1 : (1 : G) ∈ C) :
-    IsCompact ((stabilizerOpenSubgroup hC hCo : OpenSubgroup G) : Set G) :=
-  isCompact_stabilizer hC hCo ⟨1, h1⟩
-
-end TopologicalGroup
-
-end MulAction
+open scoped Topology
 
 /-! ### Nonarchimedean structure and compact-open neighbourhood bases -/
 

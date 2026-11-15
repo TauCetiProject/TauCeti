@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.NumberTheory.Padics.PadicIntegers
-public import TauCeti.Topology.Algebra.Nonarchimedean.LocallyProfinite
+public import TauCeti.Topology.Algebra.Group.Pointwise
 import Mathlib.NumberTheory.Padics.ProperSpace
 
 /-!

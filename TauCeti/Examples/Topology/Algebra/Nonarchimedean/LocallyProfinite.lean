@@ -9,8 +9,10 @@ import Mathlib.Analysis.Normed.Module.Basic
 import Mathlib.NumberTheory.Padics.ProperSpace
 import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.NumberTheory.Padics.OpenAddSubgroup
+import TauCeti.Topology.Algebra.Group.OpenSubgroup.Profinite
 import TauCeti.Topology.Algebra.Group.Perm
 import TauCeti.Topology.Algebra.Group.Preconnected
+import TauCeti.Topology.Algebra.Nonarchimedean.LocallyProfinite
 
 /-!
 # Examples and counterexamples for Van Dantzig's theorem
@@ -44,6 +46,9 @@ example : LocallyCompactSpace ℚ_[2] ∧ TotallyDisconnectedSpace ℚ_[2] :=
   ⟨inferInstance, inferInstance⟩
 
 example : NonarchimedeanAddGroup ℚ_[2] := inferInstance
+
+noncomputable example : ProfiniteAddGrp :=
+  (Padic.zpowOpenAddSubgroup 2 0).toProfiniteAddGrp (Padic.isCompact_zpowOpenAddSubgroup 0)
 
 example :
     AddAction.stabilizer ℚ_[2] (PadicInt.subring 2 : Set ℚ_[2]) =
@@ -108,6 +113,17 @@ example :
           ((MulAction.mem_stabilizer_iff.mp hg) ▸ smul_mem_smul_set (by simp))
   exact ⟨hbot, by simp [hbot]⟩
 
+example :
+    let C : Set (Equiv.Perm (Fin 3)) := {1, Equiv.swap 0 1, Equiv.swap 0 2}
+    (MulAction.stabilizerOpenSubgroup (Set.toFinite C).isCompact (isOpen_discrete C)).toSubgroup =
+        MulAction.stabilizer (Equiv.Perm (Fin 3)) C ∧
+      ((MulAction.stabilizerOpenSubgroup (Set.toFinite C).isCompact (isOpen_discrete C) :
+        OpenSubgroup (Equiv.Perm (Fin 3))) : Set (Equiv.Perm (Fin 3))) =
+          MulAction.stabilizer (Equiv.Perm (Fin 3)) C ∧
+      ((1 : Equiv.Perm (Fin 3)) ∈
+        MulAction.stabilizerOpenSubgroup (Set.toFinite C).isCompact (isOpen_discrete C)) := by
+  simp
+
 end PermFin3
 
 /-! ### The trivial group `Unit` -/
@@ -118,6 +134,13 @@ example : Unique (OpenSubgroup Unit) := inferInstance
 
 example : IsCompact ((⊤ : OpenSubgroup Unit) : Set Unit) :=
   OpenSubgroup.isCompact_top_of_subsingleton
+
+example : ((⊤ : OpenSubgroup Unit).toProfiniteGrp
+    OpenSubgroup.isCompact_top_of_subsingleton : Type) = (⊤ : OpenSubgroup Unit) ∧
+    MulAction.stabilizerOpenSubgroup
+      (OpenSubgroup.isCompact_top_of_subsingleton (G := Unit)) (⊤ : OpenSubgroup Unit).isOpen =
+        (⊤ : OpenSubgroup Unit) := by
+  simp
 
 example :
     (𝓝 (1 : Unit)).HasBasis (fun K : OpenSubgroup Unit ↦ K = ⊤) fun K ↦ (K : Set Unit) :=
