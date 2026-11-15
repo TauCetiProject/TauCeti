@@ -137,7 +137,10 @@ private lemma norm_logDeriv_le_of_relative_norm_bound {B : ℂ → ℂ} {z : ℂ
 private lemma exists_factor_logDeriv_eq {z : ℂ}
     (hf : AnalyticOnNhd ℂ f (closedBall z₀ R)) (hrR : r ≤ R)
     (hz : ‖z - z₀‖ < r) (hfz : f z ≠ 0) :
-    ∃ G : ℂ → ℂ, AnalyticOnNhd ℂ G (closedBall z₀ R) ∧
+    let D := divisor f (closedBall z₀ r)
+    ∃ (G : ℂ → ℂ) (hfin : D.support.Finite), (∀ ρ, 0 ≤ D ρ) ∧
+      (∀ w : ℂ, (∏ᶠ ρ, (· - ρ) ^ D ρ) w = ∏ ρ ∈ hfin.toFinset, (w - ρ) ^ D ρ) ∧
+      AnalyticOnNhd ℂ G (closedBall z₀ R) ∧
       (∀ w ∈ closedBall z₀ r, G w ≠ 0) ∧
       (∀ w ∈ closedBall z₀ R,
         f w = (∏ᶠ ρ, (· - ρ) ^ divisor f (closedBall z₀ r) ρ) w * G w) ∧
@@ -150,10 +153,10 @@ private lemma exists_factor_logDeriv_eq {z : ℂ}
   have hzR : z ∈ ball z₀ R := ball_subset_ball hrR hzb
   obtain ⟨G, hG, hG0, hfG⟩ := hf.exists_eq_finprod_zpow_mul hR hrR
     ⟨z, ball_subset_closedBall hzR, hfz⟩
-  refine ⟨G, hG, hG0, hfG, ?_⟩
   let D := divisor f (closedBall z₀ r)
   have hfin : D.support.Finite := D.finiteSupport (isCompact_closedBall _ _)
   have hD (ρ : ℂ) : 0 ≤ D ρ := (hf.mono (closedBall_subset_closedBall hrR)).divisor_nonneg ρ
+  refine ⟨G, hfin, hD, Function.FactorizedRational.finprod_apply_eq_prod hfin, hG, hG0, hfG, ?_⟩
   let P : ℂ → ℂ := ∏ᶠ ρ, (· - ρ) ^ D ρ
   have hDz : D z = 0 := (hf z (ball_subset_closedBall hzR)).divisor_apply_eq_zero hfz
   have hPz : P z ≠ 0 := Function.FactorizedRational.ne_zero hDz
@@ -169,16 +172,15 @@ private lemma exists_factor_logDeriv_eq {z : ℂ}
 -- Sum the logarithmic derivatives of the finite reflected product with integer multiplicities.
 private lemma norm_logDeriv_reflected_prod_le {S : Finset ℂ} {n : ℂ → ℤ} {z : ℂ}
     (hrR : r < R) (hn : ∀ ρ ∈ S, 0 ≤ n ρ)
-    (hρnorm : ∀ ρ ∈ S, ‖ρ - z₀‖ ≤ r) (hz : ‖z - z₀‖ < r) :
+    (hρnorm : ∀ ρ ∈ S, ‖ρ - z₀‖ ≤ r) (hz : ‖z - z₀‖ ≤ r) :
     ‖logDeriv (fun w : ℂ ↦ ∏ ρ ∈ S,
-      (((R : ℂ) ^ 2 - conj (ρ - z₀) * (w - z₀)) / (R : ℂ)) ^ n ρ) z‖ ≤
+      (canonicalFactorNumerator R (ρ - z₀) (w - z₀)) ^ n ρ) z‖ ≤
       (∑ ρ ∈ S, (n ρ : ℝ)) * (r / (R ^ 2 - r * ‖z - z₀‖)) := by
-  have hr : 0 < r := (norm_nonneg _).trans_lt hz
-  let q (ρ w : ℂ) := ((R : ℂ) ^ 2 - conj (ρ - z₀) * (w - z₀)) / (R : ℂ)
-  have hq (ρ : ℂ) : Differentiable ℂ (q ρ) := by dsimp [q]; fun_prop
+  let q (ρ w : ℂ) := canonicalFactorNumerator R (ρ - z₀) (w - z₀)
+  have hq (ρ : ℂ) : Differentiable ℂ (q ρ) :=
+    (differentiable_canonicalFactorNumerator R (ρ - z₀)).comp (differentiable_id.sub_const z₀)
   have hq0 (ρ : ℂ) (hρ : ρ ∈ S) : q ρ z ≠ 0 :=
-    div_ne_zero (norm_pos_iff.mp (norm_canonicalFactor_numerator_pos hrR (hρnorm ρ hρ)
-      (hz.le.trans hrR.le))) (Complex.ofReal_ne_zero.mpr (hr.trans hrR).ne')
+    canonicalFactorNumerator_ne_zero ((hρnorm ρ hρ).trans_lt hrR) (hz.trans hrR.le)
   rw [logDeriv_fun_prod (f := fun ρ (w : ℂ) ↦ q ρ w ^ n ρ)
     (fun ρ hρ ↦ zpow_ne_zero _ (hq0 ρ hρ))
     (fun ρ hρ ↦ ((hq ρ) z).zpow (.inr (hn ρ hρ)))]
@@ -188,30 +190,31 @@ private lemma norm_logDeriv_reflected_prod_le {S : Finset ℂ} {n : ℂ → ℤ}
   apply Finset.sum_le_sum
   intro ρ hρ
   rw [norm_mul, Complex.norm_intCast, abs_of_nonneg (Int.cast_nonneg (hn ρ hρ))]
-  exact mul_le_mul_of_nonneg_left
-    (norm_logDeriv_canonicalFactor_numerator_le hrR (hρnorm ρ hρ) hz)
-    (Int.cast_nonneg (hn ρ hρ))
+  apply mul_le_mul_of_nonneg_left _ (Int.cast_nonneg (hn ρ hρ))
+  simpa only [q, canonicalFactorNumerator_apply] using
+    norm_logDeriv_canonicalFactor_numerator_le hrR (hρnorm ρ hρ) hz
 
 -- Package the reflected product's analytic, boundary, central and logarithmic-derivative data.
 private lemma exists_reflected_prod {S : Finset ℂ} {n : ℂ → ℤ} {z : ℂ}
     (hrR : r < R) (hn : ∀ ρ ∈ S, 0 ≤ n ρ)
-    (hρnorm : ∀ ρ ∈ S, ‖ρ - z₀‖ ≤ r) (hz : ‖z - z₀‖ < r) :
+    (hρnorm : ∀ ρ ∈ S, ‖ρ - z₀‖ ≤ r) (hz : ‖z - z₀‖ ≤ r) :
     ∃ Q : ℂ → ℂ, Differentiable ℂ Q ∧
       (∀ w ∈ closedBall z₀ R, Q w ≠ 0) ∧
       (∀ w ∈ sphere z₀ R, ‖Q w‖ = ‖∏ ρ ∈ S, (w - ρ) ^ n ρ‖) ∧
       ‖∏ ρ ∈ S, (z₀ - ρ) ^ n ρ‖ ≤ ‖Q z₀‖ ∧
       ‖logDeriv Q z‖ ≤ (∑ ρ ∈ S, (n ρ : ℝ)) *
         (r / (R ^ 2 - r * ‖z - z₀‖)) := by
-  have hr : 0 < r := (norm_nonneg _).trans_lt hz
-  have hR : 0 < R := hr.trans hrR
+  have hr : 0 ≤ r := (norm_nonneg _).trans hz
+  have hR : 0 < R := hr.trans_lt hrR
   have hRne : (R : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hR.ne'
-  let q (ρ w : ℂ) := ((R : ℂ) ^ 2 - conj (ρ - z₀) * (w - z₀)) / (R : ℂ)
+  let q (ρ w : ℂ) := canonicalFactorNumerator R (ρ - z₀) (w - z₀)
   let Q (w : ℂ) := ∏ ρ ∈ S, q ρ w ^ n ρ
-  have hq (ρ : ℂ) : Differentiable ℂ (q ρ) := by dsimp [q]; fun_prop
+  have hq (ρ : ℂ) : Differentiable ℂ (q ρ) :=
+    (differentiable_canonicalFactorNumerator R (ρ - z₀)).comp (differentiable_id.sub_const z₀)
   have hq0 (ρ w : ℂ) (hρ : ρ ∈ S) (hw : w ∈ closedBall z₀ R) : q ρ w ≠ 0 :=
-    div_ne_zero (norm_pos_iff.mp (norm_canonicalFactor_numerator_pos hrR (hρnorm ρ hρ)
-      (by simpa [mem_closedBall, dist_eq_norm] using hw))) hRne
-  refine ⟨Q, ?_, ?_, ?_, ?_, norm_logDeriv_reflected_prod_le hrR hn hρnorm hz⟩
+    canonicalFactorNumerator_ne_zero ((hρnorm ρ hρ).trans_lt hrR)
+      (by simpa [mem_closedBall, dist_eq_norm] using hw)
+  refine ⟨Q, ?_, ?_, ?_, ?_, ?_⟩
   · intro w
     exact DifferentiableAt.fun_finsetProd fun ρ hρ ↦ ((hq ρ) w).zpow (.inr (hn ρ hρ))
   · exact fun w hw ↦ Finset.prod_ne_zero_iff.mpr fun ρ hρ ↦ zpow_ne_zero _ (hq0 ρ w hρ hw)
@@ -224,14 +227,16 @@ private lemma exists_reflected_prod {S : Finset ℂ} {n : ℂ → ℤ} {z : ℂ}
       (by simpa [mem_sphere, dist_eq_norm] using hw)
     have heq : w - z₀ - (ρ - z₀) = w - ρ := by ring
     rw [heq] at h
-    exact h
+    simpa only [q, canonicalFactorNumerator_apply] using h
   · simp only [Q, norm_prod, norm_zpow]
     refine Finset.prod_le_prod₀ (fun _ _ ↦ by positivity) fun ρ hρ ↦ ?_
-    simp only [q, sub_self, mul_zero, sub_zero, pow_two, mul_div_cancel_right₀ _ hRne,
+    simp only [q, canonicalFactorNumerator_apply, sub_self, mul_zero, sub_zero, pow_two,
+      mul_div_cancel_right₀ _ hRne,
       Complex.norm_real, Real.norm_eq_abs, abs_of_pos hR]
     apply zpow_le_zpow_left₀ (hn ρ hρ) (norm_nonneg _)
     rw [norm_sub_rev]
     exact (hρnorm ρ hρ).trans hrR.le
+  · simpa only [Q, q] using norm_logDeriv_reflected_prod_le hrR hn hρnorm hz
 
 -- Multiply the zero-free cofactor by the reflected product and transfer the boundary bound.
 private lemma exists_reflected_cofactor {z : ℂ} {M : ℝ}
@@ -244,7 +249,9 @@ private lemma exists_reflected_cofactor {z : ℂ} {M : ℝ}
       logDeriv f z - ∑ᶠ ρ, (divisor f (closedBall z₀ r) ρ : ℂ) / (z - ρ) =
         logDeriv B z - logDeriv Q z ∧
       ‖logDeriv Q z‖ ≤ ((∑ᶠ ρ, divisor f (closedBall z₀ r) ρ : ℤ) : ℝ) *
-        (r / (R ^ 2 - r * ‖z - z₀‖)) := by
+        (r / (R ^ 2 - r * ‖z - z₀‖)) ∧
+      ((∑ᶠ ρ, divisor f (closedBall z₀ r) ρ : ℤ) : ℝ) ≤
+        Real.log M / Real.log (R / r) := by
   have hr : 0 < r := (norm_nonneg _).trans_lt hz
   have hR : 0 < R := hr.trans hrR
   have hz₀R := mem_closedBall_self hR.le (x := z₀)
@@ -253,22 +260,18 @@ private lemma exists_reflected_cofactor {z : ℂ} {M : ℝ}
   have hM1 : 1 ≤ M :=
     (hf.differentiableOn.diffContOnCl_ball Subset.rfl).one_le_of_forall_mem_sphere_norm_le_mul
       hR hz₀ hM
-  obtain ⟨G, hG, hG0, hfG, hlogf⟩ := exists_factor_logDeriv_eq hf hrR.le hz hfz
+  obtain ⟨G, hfin, hD, hPs, hG, hG0, hfG, hlogf⟩ :=
+    exists_factor_logDeriv_eq hf hrR.le hz hfz
   let D := divisor f (closedBall z₀ r)
-  have hfin : D.support.Finite := D.finiteSupport (isCompact_closedBall _ _)
-  have hD (ρ : ℂ) : 0 ≤ D ρ := (hf.mono (closedBall_subset_closedBall hrR.le)).divisor_nonneg ρ
   obtain ⟨Q, hQ, hQ0, hQouter, hPcenter, hQbound⟩ := exists_reflected_prod (n := D) hrR
     (fun ρ _ ↦ hD ρ) (S := hfin.toFinset)
-    (fun ρ hρ ↦ by simpa [dist_eq_norm] using D.supportWithinDomain (hfin.mem_toFinset.1 hρ)) hz
-  let P : ℂ → ℂ := ∏ᶠ ρ, (· - ρ) ^ D ρ
-  have hPs (w : ℂ) : P w = ∏ ρ ∈ hfin.toFinset, (w - ρ) ^ D ρ :=
-    Function.FactorizedRational.finprod_apply_eq_prod hfin w
+    (fun ρ hρ ↦ by simpa [dist_eq_norm] using D.supportWithinDomain (hfin.mem_toFinset.1 hρ)) hz.le
   let B : ℂ → ℂ := G * Q
   have hBa : AnalyticOnNhd ℂ B (closedBall z₀ R) := fun w hw ↦ (hG w hw).mul (hQ.analyticAt w)
   have hB0 : ∀ w ∈ closedBall z₀ r, B w ≠ 0 :=
     fun w hw ↦ mul_ne_zero (hG0 w hw) (hQ0 w (closedBall_subset_closedBall hrR.le hw))
   have hcenter : ‖f z₀‖ ≤ ‖B z₀‖ := by
-    rw [hfG z₀ hz₀R, show (∏ᶠ ρ, (· - ρ) ^ D ρ) z₀ = P z₀ from rfl, hPs, norm_mul]
+    rw [hfG z₀ hz₀R, hPs, norm_mul]
     exact (mul_le_mul_of_nonneg_right hPcenter (norm_nonneg _)).trans_eq (by simp [B, mul_comm])
   have hBbound (w : ℂ) (hw : w ∈ closedBall z₀ R) : ‖B w‖ ≤ M * ‖B z₀‖ := by
     refine Complex.norm_le_of_forall_mem_frontier_norm_le isBounded_closedBall
@@ -277,13 +280,13 @@ private lemma exists_reflected_cofactor {z : ℂ} {M : ℝ}
       (fun u hu ↦ ?_) (subset_closure hw)
     have hu' := frontier_closedBall_subset_sphere hu
     have heq : ‖B u‖ = ‖f u‖ := by
-      rw [hfG u (sphere_subset_closedBall hu'), ← show P u = (∏ᶠ ρ, (· - ρ) ^ D ρ) u from rfl,
-        hPs, norm_mul]
-      simp only [B, Pi.mul_apply, norm_mul, hQouter u hu', mul_comm]
+      rw [hfG u (sphere_subset_closedBall hu'), hPs, norm_mul]
+      simp only [B, D, Pi.mul_apply, norm_mul, hQouter u hu', mul_comm]
     rw [heq]
     exact (hM u hu').trans (mul_le_mul_of_nonneg_left hcenter (by linarith))
   refine ⟨B, Q, hBa.mono (closedBall_subset_closedBall hrR.le), hB0,
-    fun w hw ↦ hBbound w (closedBall_subset_closedBall hrR.le hw), ?_, ?_⟩
+    fun w hw ↦ hBbound w (closedBall_subset_closedBall hrR.le hw), ?_, ?_,
+    hf.sum_divisor_le_log_div_log hr hrR hz₀ hM⟩
   · rw [hlogf, show logDeriv B z = logDeriv G z + logDeriv Q z from
       logDeriv_mul z (hG0 z (by simpa [mem_closedBall, dist_eq_norm] using hz.le))
         (hQ0 z hzR) (hG z hzR).differentiableAt (hQ z)]
@@ -303,13 +306,9 @@ theorem norm_logDeriv_sub_finsum_divisor_le {f : ℂ → ℂ} {z₀ z : ℂ} {r 
       (4 * (r + ‖z - z₀‖) / (r - ‖z - z₀‖) ^ 2 +
         r / ((R ^ 2 - r * ‖z - z₀‖) * Real.log (R / r))) * Real.log M := by
   have hr : 0 < r := (norm_nonneg _).trans_lt hz
-  obtain ⟨B, Q, hB, hB0, hBM, hlogf, hQbound⟩ := exists_reflected_cofactor hf hrR hM hz hfz
-  have hden : 0 < R ^ 2 - r * ‖z - z₀‖ := by
-    have : r * ‖z - z₀‖ < r * r := mul_lt_mul_of_pos_left hz hr
-    nlinarith [hr.trans hrR]
-  have hz₀ := ne_zero_center_of_boundary_bound hf hM
-    (by simpa [mem_closedBall, dist_eq_norm] using hz.le.trans hrR.le) hfz
-  have hN := hf.sum_divisor_le_log_div_log hr hrR hz₀ hM
+  obtain ⟨B, Q, hB, hB0, hBM, hlogf, hQbound, hN⟩ :=
+    exists_reflected_cofactor hf hrR hM hz hfz
+  have hden := sq_sub_mul_norm_pos (hr.trans hrR) hrR (hz.le.trans hrR.le)
   have hQB : ‖logDeriv Q z‖ ≤
       (r / ((R ^ 2 - r * ‖z - z₀‖) * Real.log (R / r))) * Real.log M := by
     refine hQbound.trans ((mul_le_mul_of_nonneg_right hN (div_nonneg hr.le hden.le)).trans_eq ?_)
@@ -335,17 +334,12 @@ theorem norm_logDeriv_sub_finsum_divisor_le_of_two_mul_le (hf : AnalyticOnNhd �
   have hz₀R : z₀ ∈ closedBall z₀ R := mem_closedBall_self hR.le
   -- Factor `f = P G` on `closedBall z₀ R`, with `P` the product over the zeros in
   -- `closedBall z₀ r` and `G` zero-free there.
-  obtain ⟨G, hG, hG0, hfG, hlogf⟩ := exists_factor_logDeriv_eq hf
+  obtain ⟨G, hfin, hD', hPs, hG, hG0, hfG, hlogf⟩ := exists_factor_logDeriv_eq hf
     (by linarith) hz hfz
   set D' := divisor f (closedBall z₀ r)
-  have hfin : D'.support.Finite := D'.finiteSupport (isCompact_closedBall _ _)
-  have hD' (ρ : ℂ) : 0 ≤ D' ρ :=
-    (hf.mono (closedBall_subset_closedBall (by linarith))).divisor_nonneg ρ
   set P : ℂ → ℂ := ∏ᶠ ρ, (· - ρ) ^ D' ρ
   have hfPG (w : ℂ) (hw : w ∈ closedBall z₀ R) : f w = P w * G w := by
     simpa only [P, D'] using hfG w hw
-  have hPs (w : ℂ) : P w = ∏ ρ ∈ hfin.toFinset, (w - ρ) ^ D' ρ :=
-    Function.FactorizedRational.finprod_apply_eq_prod hfin w
   -- On the outer sphere each factor of `P` is at least as large as at the centre, so the maximum
   -- modulus principle bounds `G` by `M ‖G z₀‖`.
   have hdist (w : ℂ) (hw : w ∈ sphere z₀ R) (ρ : ℂ) (hρ : ρ ∈ hfin.toFinset) :
