@@ -370,16 +370,18 @@ theorem exists_pos_eventually_norm_sub_add_norm_fderiv_sub_le_exp_endChart_of_cy
   obtain ⟨κ₁, hκ₁, A₁, h₁⟩ :=
     exists_pos_eventually_norm_fderiv_comp_positiveEndChart_sub_le_exp_of_cylindrical hKH
       hH hHs hu hB huB hfloer hE q hW hJq hJqper hBW hJqt hJ hL hyper hy hndy hconv
-  refine ⟨y, hyper, hy, min κ₀ κ₁, lt_min hκ₀ hκ₁, max A₀ 0 + max A₁ 0, ?_⟩
-  filter_upwards [h₀, h₁, eventually_ge_atTop 0] with s hs₀ hs₁ hs t
-  -- Both bounds hold with the slower rate.
-  have hle {A κ : ℝ} (hκ : min κ₀ κ₁ ≤ κ) :
-      A * Real.exp (-(κ * s)) ≤ max A 0 * Real.exp (-(min κ₀ κ₁ * s)) :=
-    mul_le_mul (le_max_left _ _) (Real.exp_le_exp.2 (neg_le_neg
-      (mul_le_mul_of_nonneg_right hκ hs))) (Real.exp_pos _).le (le_max_right _ _)
-  rw [norm_fderiv_comp_endChart_sub_smulRight, add_mul]
-  exact add_le_add ((hs₀ t).trans (hle (min_le_left _ _)))
-    ((hs₁ _).trans (hle (min_le_right _ _)))
+  -- Both bounds hold with one rate and one constant, so their sum is bounded by twice it.
+  obtain ⟨κ, hκ, A, h⟩ := exists_pos_eventually_forall_le_mul_exp (ι := Bool)
+    (f := fun b s t ↦ bif b then
+      ‖fderiv ℝ (u ∘ endChart q) (q.endSign * s, t) -
+        (ContinuousLinearMap.snd ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorField (H q t) (y t))‖
+      else ‖u (endChart q (q.endSign * s, t)) - y t‖)
+    (Bool.forall_bool.2 ⟨⟨κ₀, hκ₀, A₀, h₀⟩, ⟨κ₁, hκ₁, A₁, h₁.mono fun s hs t ↦ by
+      rw [Bool.cond_true, norm_fderiv_comp_endChart_sub_smulRight]
+      exact hs _⟩⟩)
+  refine ⟨y, hyper, hy, κ, hκ, A + A, h.mono fun s hs t ↦ ?_⟩
+  rw [add_mul]
+  exact add_le_add (hs false t) (hs true t)
 
 /-- **The ends of a Floer pair of pants with cylindrical ends converge exponentially.** Let `K` be
 equal to `H_q(t) dt` beyond `T₀` on each end `q`, for `1`-periodic `C³` Hamiltonians `H_q`, and
