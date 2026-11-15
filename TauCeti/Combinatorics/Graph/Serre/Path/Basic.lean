@@ -66,6 +66,20 @@ theorem Path.weight_eq_prod_map_darts {M : Type*} [Monoid M] (f : Γ.E → M) {a
   | nil => simp
   | cons p e ih => simp [ih]
 
+/-- Two dart weights that agree on the darts of a path agree along it. -/
+theorem Path.weight_congr {M : Type*} [Monoid M] {f g : Γ.E → M} {a b : Γ.V} (p : Γ.Path a b)
+    (h : ∀ e ∈ Path.darts Γ p, f e = g e) :
+    p.weight (fun {i j} (e : @Quiver.Hom Γ.V Γ.toQuiver i j) => f e.1) =
+      p.weight (fun {i j} (e : @Quiver.Hom Γ.V Γ.toQuiver i j) => g e.1) := by
+  rw [Path.weight_eq_prod_map_darts, Path.weight_eq_prod_map_darts, List.map_congr_left h]
+
+/-- A dart weight that is trivial on the darts of a path is trivial along it. -/
+theorem Path.weight_eq_one {M : Type*} [Monoid M] {f : Γ.E → M} {a b : Γ.V} (p : Γ.Path a b)
+    (h : ∀ e ∈ Path.darts Γ p, f e = 1) :
+    p.weight (fun {i j} (e : @Quiver.Hom Γ.V Γ.toQuiver i j) => f e.1) = 1 := by
+  rw [Path.weight_eq_prod_map_darts]
+  exact List.prod_eq_one (by simpa using h)
+
 /-- A path traverses as many darts as its length. -/
 @[simp] theorem Path.length_darts {a b : Γ.V} (p : Γ.Path a b) :
     (Path.darts Γ p).length = p.length := by
