@@ -170,14 +170,11 @@ noncomputable def specialFiberHomeomorph :
 lemma coe_specialFiberHomeomorph_apply (x : (specialFiber R toBase).left) :
     ((specialFiberHomeomorph R toBase x : ↥(toBase ⁻¹' {closedPoint R})) : X) =
       specialFiberι R toBase x :=
-  (congrArg Subtype.val (Homeomorph.trans_apply
-    (specialFiberIsoFiberClosedPoint (.of R) toBase).hom.homeomorph
-    (toBase.fiberHomeo (closedPoint R)) x)).trans <|
-    (toBase.fiberHomeo_apply (closedPoint R) _).trans <|
-    (congrArg (toBase.fiberι (closedPoint R))
-      ((specialFiberIsoFiberClosedPoint (.of R) toBase).hom.homeomorph_apply x)).trans <|
-    (Scheme.Hom.comp_apply (specialFiberIsoFiberClosedPoint (.of R) toBase).hom
-      (toBase.fiberι (closedPoint R)) x).symm.trans <|
+  let φ := (specialFiberIsoFiberClosedPoint (.of R) toBase).hom
+  (congrArg Subtype.val (Homeomorph.trans_apply φ.homeomorph (toBase.fiberHomeo (closedPoint R))
+    x)).trans <| (toBase.fiberHomeo_apply (closedPoint R) _).trans <|
+    (congrArg (toBase.fiberι (closedPoint R)) (φ.homeomorph_apply x)).trans <|
+    (Scheme.Hom.comp_apply φ (toBase.fiberι (closedPoint R)) x).symm.trans <|
     congr($(specialFiberIsoFiberClosedPoint_hom_fiberι (.of R) toBase) x)
 
 /-- The special fibre is nonempty if and only if some point of `X` lies over the closed point. -/
@@ -185,23 +182,19 @@ theorem nonempty_specialFiber_iff :
     Nonempty (specialFiber R toBase).left ↔ (toBase ⁻¹' {closedPoint R}).Nonempty :=
   (specialFiberHomeomorph R toBase).nonempty_congr.trans Set.nonempty_coe_sort
 
-/-- The special fibre is preconnected if and only if the preimage of the closed point is
-preconnected. -/
+/-- The special fibre is preconnected iff the preimage of the closed point is preconnected. -/
 theorem preconnectedSpace_specialFiber_iff :
     PreconnectedSpace (specialFiber R toBase).left ↔
       _root_.IsPreconnected (toBase ⁻¹' {closedPoint R}) :=
+  let e := specialFiberHomeomorph R toBase
   ⟨fun _ ↦ _root_.isPreconnected_iff_preconnectedSpace.mpr <|
-      (specialFiberHomeomorph R toBase).surjective.denseRange.preconnectedSpace
-        (specialFiberHomeomorph R toBase).continuous,
-    fun h ↦
-      have := Subtype.preconnectedSpace h
-      (specialFiberHomeomorph R toBase).symm.surjective.denseRange.preconnectedSpace
-        (specialFiberHomeomorph R toBase).symm.continuous⟩
+      e.surjective.denseRange.preconnectedSpace e.continuous,
+    fun h ↦ letI := Subtype.preconnectedSpace h
+      e.symm.surjective.denseRange.preconnectedSpace e.symm.continuous⟩
 
 /-- The special fibre is connected if and only if the preimage of the closed point is connected. -/
 theorem connectedSpace_specialFiber_iff :
-    ConnectedSpace (specialFiber R toBase).left ↔
-      _root_.IsConnected (toBase ⁻¹' {closedPoint R}) :=
+    ConnectedSpace (specialFiber R toBase).left ↔ _root_.IsConnected (toBase ⁻¹' {closedPoint R}) :=
   (specialFiberHomeomorph R toBase).connectedSpace_iff.trans
     _root_.isConnected_iff_connectedSpace.symm
 

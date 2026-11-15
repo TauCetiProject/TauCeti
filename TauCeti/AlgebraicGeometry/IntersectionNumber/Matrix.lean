@@ -150,6 +150,31 @@ include hX
 
 omit [Ring.DimensionLEOne R] [IsIntegral X] [IsNoetherian X]
   [TauCeti.AlgebraicGeometry.IsRegular X] in
+/-- For a scheme `X` proper over a local ring `R` with all points of codimension at most two, the
+structure-sheaf cohomology of the reduced closure of any codimension-one point in the special fibre
+is finite-dimensional over `ResidueField R` in every degree. -/
+theorem finiteDimensional_cohomology_trivial_subscheme_closure_singleton
+    {η : CodimensionOnePoint X} (hη' : toBase η = closedPoint R) (n : ℕ) :
+    letI := subschemeOverResidueField
+      (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hη')
+    FiniteDimensional (ResidueField R) (Cohomology (InvertibleSheaf.trivial
+      (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme).obj n) := by
+  let hI := toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hη'
+  let := subschemeOverResidueField hI
+  have := isProper_subschemeOverResidueField hI
+  have hdim := (relativeDimensionLE_iff_of_field _).mp
+    (toBase.relativeDimensionLE_subscheme_vanishingIdeal_closure_singleton hX
+      (fun h ↦ one_ne_zero (η.2.symm.trans (coheight_eq_zero.mpr h))) hη')
+  let Y := (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme
+  let L := InvertibleSheaf.trivial Y
+  have : TauCeti.SheafOfModules.IsInvertible (R := Y.ringCatSheaf) L.obj := L.property
+  let F : _root_.SheafOfModules Y.ringCatSheaf := L.obj
+  have : L.obj.IsFiniteType := inferInstanceAs F.IsFiniteType
+  exact Scheme.Modules.finiteDimensional_cohomology_of_topologicalKrullDim_le_one
+    (ResidueField R) hdim L.obj n
+
+omit [Ring.DimensionLEOne R] [IsIntegral X] [IsNoetherian X]
+  [TauCeti.AlgebraicGeometry.IsRegular X] in
 /-- The hypotheses on a component of the special fibre under which its intersection numbers are
 computed by `TauCeti.AlgebraicGeometry.LineBundleClass`: it is a proper curve over the residue field
 with finite-dimensional `H⁰` and `H¹` of its structure sheaf. -/
@@ -164,29 +189,12 @@ private theorem component_hypotheses {η : CodimensionOnePoint X} (hη' : toBase
       FiniteDimensional (ResidueField R) (Cohomology (InvertibleSheaf.trivial
         (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme).obj 0) ∧
       FiniteDimensional (ResidueField R) (Cohomology (InvertibleSheaf.trivial
-        (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme).obj 1) := by
-  let := subschemeOverResidueField
-    (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hη')
-  have : IsProper ((vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme ↘
-      Spec (.of (ResidueField R))) := isProper_subschemeOverResidueField _
-  have hrel : TauCeti.AlgebraicGeometry.RelativeDimensionLE 1
-      ((vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme ↘
-        Spec (.of (ResidueField R))) :=
+        (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme).obj 1) :=
+  ⟨isProper_subschemeOverResidueField _,
     toBase.relativeDimensionLE_subscheme_vanishingIdeal_closure_singleton hX
-      (fun h ↦ one_ne_zero (η.2.symm.trans (coheight_eq_zero.mpr h))) hη'
-  have hdim : topologicalKrullDim
-      (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme ≤ 1 :=
-    (relativeDimensionLE_iff_of_field _).mp hrel
-  let Y := (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme
-  let L := InvertibleSheaf.trivial Y
-  have : TauCeti.SheafOfModules.IsInvertible (R := Y.ringCatSheaf) L.obj := L.property
-  let F : _root_.SheafOfModules Y.ringCatSheaf := L.obj
-  have : L.obj.IsFiniteType := inferInstanceAs F.IsFiniteType
-  exact ⟨inferInstance, hrel,
-    Scheme.Modules.finiteDimensional_cohomology_of_topologicalKrullDim_le_one
-      (ResidueField R) hdim L.obj 0,
-    Scheme.Modules.finiteDimensional_cohomology_of_topologicalKrullDim_le_one
-      (ResidueField R) hdim L.obj 1⟩
+      (fun h ↦ one_ne_zero (η.2.symm.trans (coheight_eq_zero.mpr h))) hη',
+    toBase.finiteDimensional_cohomology_trivial_subscheme_closure_singleton hX hη' 0,
+    toBase.finiteDimensional_cohomology_trivial_subscheme_closure_singleton hX hη' 1⟩
 
 /-- **The intersection matrix kills the multiplicities.** Let `X` be a regular Noetherian integral
 scheme, proper and flat over a local ring `R` of dimension at most one whose maximal ideal is
