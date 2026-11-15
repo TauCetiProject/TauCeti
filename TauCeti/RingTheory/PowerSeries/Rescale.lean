@@ -25,6 +25,8 @@ formal group is analysed deep inside the maximal ideal of a discrete valuation r
 ## Main results
 
 * `PowerSeries.rescale_C`: rescaling the variable fixes constant power series.
+* `PowerSeries.constantCoeff_rescale`: rescaling the variable keeps the constant coefficient.
+* `PowerSeries.constantCoeff_evalNegHom`: negating the variable keeps the constant coefficient.
 * `PowerSeries.exists_rescale_eq_C_mul`: `f(c X) = a c · g(X)` with `g(X) = X + ⋯` when `f` has no
   constant term and its linear coefficient `a` divides `c`.
 * `PowerSeries.coeff_multiset_prod_rescale_C_mul_rescale`: replacing `Q(t)` by `a Q(b t)`
@@ -42,6 +44,19 @@ theorem rescale_C {R : Type*} [CommSemiring R] (a b : R) :
   ext n
   rw [coeff_rescale, coeff_C]
   split_ifs with h <;> simp [h]
+
+/-- Rescaling the variable does not change the constant coefficient. -/
+@[simp]
+theorem constantCoeff_rescale {R : Type*} [CommSemiring R] (a : R) (f : R⟦X⟧) :
+    constantCoeff (rescale a f) = constantCoeff f := by
+  rw [← coeff_zero_eq_constantCoeff_apply, coeff_rescale]
+  simp
+
+/-- Negating the power-series variable does not change the constant coefficient. -/
+@[simp]
+theorem constantCoeff_evalNegHom {R : Type*} [CommRing R] (f : R⟦X⟧) :
+    constantCoeff (evalNegHom f) = constantCoeff f := by
+  rw [evalNegHom, constantCoeff_rescale]
 
 /-- A series without constant term, rescaled by a multiple `c` of its linear coefficient `a`, is
 `a c` times a series of the form `X + ⋯`: `f(c X) = a c · g(X)`. -/

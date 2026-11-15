@@ -76,6 +76,9 @@ of an iterated weighted derivative as a factorial-scaled coefficient after subst
 * `PowerSeries.mul_coeff_val_zpow_neg_add_coeff_val_zpow_neg_sub_one_mul_derivative_eq_zero`:
   for a unit `u : R⟦X⟧ˣ` over a commutative ring and `e, k ≥ 1`,
   `(e : R) * coeff (e * k) (u ^ (-k)) + coeff (e * k - 1) (u ^ (-k - 1) * u') = 0`.
+* `PowerSeries.eq_of_mul_derivative_eq_mul`: over a commutative ring with `HasUniqueDiv`, a series
+  `P` solving `u * d⁄dX P = w * P` for `u` with non-zero-divisor constant coefficient is uniquely
+  determined by `constantCoeff P`.
 -/
 
 public section
@@ -239,6 +242,40 @@ theorem mul_coeff_val_zpow_neg_add_coeff_val_zpow_neg_sub_one_mul_derivative_eq_
   simpa [nsmul_eq_mul, hm, coeff_succ_X_mul] using
     nsmul_coeff_val_inv_pow_succ_add_coeff_X_mul_val_inv_pow_add_two_mul_derivative_eq_zero
       u e n
+
+/-- Over a commutative ring with unique division by positive integers, a formal power series `P`
+solving `u * d⁄dX P = w * P`, where `constantCoeff u` is not a zero divisor, is uniquely
+determined by its constant coefficient. -/
+theorem eq_of_mul_derivative_eq_mul [HasUniqueDiv R] {u P Q w : R⟦X⟧}
+    (hu : constantCoeff u ∈ nonZeroDivisors R)
+    (hc : constantCoeff P = constantCoeff Q) (hP : u * d⁄dX P = w * P)
+    (hQ : u * d⁄dX Q = w * Q) : P = Q := by
+  suffices hD : P - Q = 0 from sub_eq_zero.mp hD
+  set D := P - Q
+  have hD₀ : constantCoeff D = 0 := by rw [map_sub, hc, sub_self]
+  have hdeq : u * d⁄dX D = w * D := by rw [map_sub, mul_sub, mul_sub, hP, hQ]
+  ext n
+  rw [map_zero]
+  induction n using Nat.strong_induction_on with
+  | _ n ih =>
+    rcases n with _ | m
+    · simpa [coeff_zero_eq_constantCoeff_apply] using hD₀
+    · have hm := congrArg (coeff m) hdeq
+      have hrhs : coeff m (w * D) = 0 :=
+        (coeff_mul m w D).trans <| Finset.sum_eq_zero fun p hp => by
+          rw [Finset.mem_antidiagonal] at hp; rw [ih p.2 (by omega), mul_zero]
+      have hlhs : coeff m (u * d⁄dX D) = (m + 1) • (constantCoeff u * coeff (m + 1) D) := by
+        rw [coeff_mul, Finset.sum_eq_single (0, m)]
+        · simp only [coeff_zero_eq_constantCoeff_apply, coeff_derivative, nsmul_eq_mul]
+          push_cast; ring
+        · intro p hp hne
+          rw [Finset.mem_antidiagonal] at hp
+          have hp0 : p.1 ≠ 0 ∨ p.2 ≠ m := not_and_or.mp (by simpa [Prod.ext_iff] using hne)
+          rw [coeff_derivative, ih (p.2 + 1) (by omega), zero_mul, mul_zero]
+        · simp
+      rw [hlhs, hrhs] at hm
+      exact (mul_left_mem_nonZeroDivisors_eq_zero_iff hu).mp
+        (nsmul_right_injective m.succ_ne_zero (hm.trans (smul_zero _).symm))
 
 end CommRing
 
