@@ -392,6 +392,12 @@ theorem cast_rfl {n : ℕ} (c : NormalizedCubicalChain X R n) : cast R rfl c = c
   induction c using Submodule.Quotient.induction_on with
   | H c => simp
 
+/-- Reindexing the class of a cube is the class of the reindexed cube. -/
+@[simp]
+theorem cast_ofCube {n m : ℕ} (h : n = m) (c : SingularCube X n) :
+    cast R h (ofCube X R c) = ofCube X R (SingularCube.cast h c) := by
+  rw [ofCube_def, cast_mk, CubicalChain.cast_single, ← ofCube_def]
+
 /-- Reindexing commutes with the push-forward. -/
 theorem map_cast (f : C(X, Y)) {n m : ℕ} (h : n = m) (c : NormalizedCubicalChain X R n) :
     map R f m (cast R h c) = cast R h (map R f n c) := by
