@@ -6,25 +6,27 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Analytic.Basic
+public import Mathlib.Analysis.Calculus.DSlope
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+public import Mathlib.MeasureTheory.Integral.CircleIntegral
 public import Mathlib.NumberTheory.BernoulliPolynomials
 import Mathlib.Analysis.Analytic.Constructions
-import Mathlib.Analysis.Calculus.DSlope
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
-import Mathlib.Analysis.Calculus.FDeriv.Prod
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import TauCeti.Analysis.Analytic.IteratedDeriv
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
+import TauCeti.Analysis.SpecialFunctions.Exp.DividedDifference
 
 /-!
 # Exponential-Bernoulli kernel and uniform Taylor remainder for Hurwitz continuation
 
 The Mellin-Laplace integrand for the complex Hurwitz zeta function involves the generating kernel
 `F_c(z) = z * exp (-c * z) / (1 - exp (-z))`, extended across `z = 0` by `F_c(0) = 1` via
-`dslope (fun w => 1 - exp (-w)) 0`. Because `1 - exp (-z)` vanishes only at integer multiples of
-`2 * π * I`, the divided slope has no zeros in the open disc `Metric.ball 0 (2 * π)`, so
+`dslope Complex.exp 0 (-z)`. Because `1 - exp (-z)` vanishes only at integer multiples of
+`2 * π * I`, `dslope Complex.exp 0 (-z)` has no zeros in the open disc `Metric.ball 0 (2 * π)`, so
 `(c, z) ↦ hurwitzKernel c z` is jointly analytic on `Set.univ ×ˢ Metric.ball 0 (2 * π)`.
 
 Multiplying by `exp z - 1` yields `hurwitzKernel c z * (exp z - 1) = z * exp ((1 - c) * z)`.
@@ -46,9 +48,11 @@ jointly analytic on `Set.univ ×ˢ Metric.ball 0 2`. Compactness then gives Tayl
   `iteratedDeriv n (hurwitzKernel c) 0` with `(-1) ^ n * B_n(c)`.
 * `TauCeti.hurwitzTaylorQuot` and `TauCeti.hurwitzKernel_sub_sum_eq_pow_mul_hurwitzTaylorQuot`:
   jointly analytic Cauchy remainder quotient and exact Taylor decomposition on `Metric.ball 0 2`.
-* `TauCeti.exists_norm_iteratedDeriv_hurwitzKernel_sub_sum_le` and
-  `TauCeti.exists_norm_hurwitzKernel_sub_sum_le`: compact-uniform Taylor remainder estimates on
-  `[0, 1]`.
+* `TauCeti.exists_norm_iteratedDeriv_hurwitzTaylorQuot_le`,
+  `TauCeti.exists_norm_hurwitzTaylorQuot_le`,
+  `TauCeti.exists_norm_iteratedDeriv_hurwitzKernel_sub_sum_le`, and
+  `TauCeti.exists_norm_hurwitzKernel_sub_sum_le`: compact-uniform Taylor quotient and remainder
+  estimates on `[0, 1]`.
 
 ## References
 
@@ -64,73 +68,55 @@ open scoped Topology Real
 
 namespace TauCeti
 
-/-- The entire divided difference `(1 - exp (-z)) / z` at `z = 0`, taking value `1` at `0`. -/
-private noncomputable def expSlope (z : ℂ) : ℂ :=
-  dslope (fun w : ℂ => 1 - Complex.exp (-w)) 0 z
-
-private theorem expSlope_zero : expSlope 0 = 1 := by
-  rw [expSlope, dslope_same]
-  have hd : HasDerivAt (fun w : ℂ => 1 - Complex.exp (-w)) 1 0 := by
-    simpa using ((hasDerivAt_id (0 : ℂ)).neg.cexp).const_sub 1
-  exact hd.deriv
-
-private theorem mul_expSlope (z : ℂ) : z * expSlope z = 1 - Complex.exp (-z) := by
-  simpa [expSlope] using sub_smul_dslope (fun w : ℂ => 1 - Complex.exp (-w)) 0 z
-
-private theorem expSlope_ne_zero {z : ℂ} (hz : z ∈ ball (0 : ℂ) (2 * π)) :
-    expSlope z ≠ 0 := by
-  rcases eq_or_ne z 0 with rfl | hzne
-  · rw [expSlope_zero]; exact one_ne_zero
-  · intro h0
-    have hmul := mul_expSlope z
-    rw [h0, mul_zero] at hmul
-    obtain ⟨k, hk⟩ := Complex.exp_eq_one_iff.mp (sub_eq_zero.mp hmul.symm).symm
-    rcases eq_or_ne k 0 with rfl | hkne
-    · simp only [Int.cast_zero, zero_mul, neg_eq_zero] at hk
-      exact hzne hk
-    · have hk1 : (1 : ℝ) ≤ ‖(k : ℂ)‖ := by
-        rw [Complex.norm_intCast]; exact_mod_cast Int.one_le_abs hkne
-      have hn := congrArg norm hk
-      rw [norm_neg, norm_mul, norm_mul, norm_mul, Complex.norm_ofNat, Complex.norm_real,
-        Real.norm_of_nonneg Real.pi_pos.le, Complex.norm_I, mul_one] at hn
-      have hlt : ‖z‖ < 2 * π := by simpa using hz
-      nlinarith [Real.pi_pos]
-
 /-- The exponential-Bernoulli generating kernel `z * exp (-c * z) / (1 - exp (-z))`, extended
-across `z = 0` by `hurwitzKernel c 0 = 1`. -/
+across `z = 0` by `hurwitzKernel c 0 = 1` via `dslope Complex.exp 0 (-z)`. -/
 noncomputable def hurwitzKernel (c z : ℂ) : ℂ :=
-  Complex.exp (-c * z) / expSlope z
+  Complex.exp (-c * z) / dslope Complex.exp 0 (-z)
+
+/-- Defining equation for `hurwitzKernel`. -/
+theorem hurwitzKernel_def (c z : ℂ) :
+    hurwitzKernel c z = Complex.exp (-c * z) / dslope Complex.exp 0 (-z) := (rfl)
 
 @[simp]
-theorem hurwitzKernel_zero (c : ℂ) : hurwitzKernel c 0 = 1 := by
-  simp [hurwitzKernel, expSlope_zero]
+theorem hurwitzKernel_zero_right (c : ℂ) : hurwitzKernel c 0 = 1 := by
+  simp [hurwitzKernel]
 
 /-- Away from `z = 0`, `hurwitzKernel c z` equals `z * exp (-c * z) / (1 - exp (-z))`. -/
 theorem hurwitzKernel_of_ne_zero (c : ℂ) {z : ℂ} (hz : z ≠ 0) :
     hurwitzKernel c z = z * Complex.exp (-c * z) / (1 - Complex.exp (-z)) := by
-  rw [hurwitzKernel, ← mul_expSlope z, mul_div_mul_left _ _ hz]
+  have hmul : z * dslope Complex.exp 0 (-z) = 1 - Complex.exp (-z) := by
+    have h := sub_smul_dslope Complex.exp 0 (-z)
+    rw [sub_zero, smul_eq_mul, Complex.exp_zero] at h
+    linear_combination -h
+  rw [hurwitzKernel, ← hmul, mul_div_mul_left _ _ hz]
 
 /-- On `Metric.ball 0 (2 * π)`, `hurwitzKernel c z * (exp z - 1) = z * exp ((1 - c) * z)`. -/
 theorem hurwitzKernel_mul_exp_sub_one (c : ℂ) {z : ℂ} (hz : z ∈ ball (0 : ℂ) (2 * π)) :
     hurwitzKernel c z * (Complex.exp z - 1) = z * Complex.exp ((1 - c) * z) := by
-  have hq : expSlope z ≠ 0 := expSlope_ne_zero hz
+  have hq : dslope Complex.exp 0 (-z) ≠ 0 := Complex.dslope_exp_ne_zero (by simpa using hz)
+  have hmul : z * dslope Complex.exp 0 (-z) = 1 - Complex.exp (-z) := by
+    have h := sub_smul_dslope Complex.exp 0 (-z)
+    rw [sub_zero, smul_eq_mul, Complex.exp_zero] at h
+    linear_combination -h
   have hexp : Complex.exp z - 1 = Complex.exp z * (1 - Complex.exp (-z)) := by
     rw [mul_sub, mul_one, ← Complex.exp_add, add_neg_cancel, Complex.exp_zero]
   have hadd : Complex.exp (-c * z) * Complex.exp z = Complex.exp ((1 - c) * z) := by
     rw [← Complex.exp_add]; congr 1; ring
-  rw [hurwitzKernel, hexp, ← mul_expSlope z, div_eq_mul_inv]
-  calc Complex.exp (-c * z) * (expSlope z)⁻¹ * (Complex.exp z * (z * expSlope z))
-      = z * (Complex.exp (-c * z) * Complex.exp z) * (expSlope z * (expSlope z)⁻¹) := by ring
+  rw [hurwitzKernel, hexp, ← hmul, div_eq_mul_inv]
+  calc Complex.exp (-c * z) * (dslope Complex.exp 0 (-z))⁻¹ *
+          (Complex.exp z * (z * dslope Complex.exp 0 (-z)))
+      = z * (Complex.exp (-c * z) * Complex.exp z) *
+          (dslope Complex.exp 0 (-z) * (dslope Complex.exp 0 (-z))⁻¹) := by ring
     _ = z * Complex.exp ((1 - c) * z) := by rw [hadd, mul_inv_cancel₀ hq, mul_one]
 
 /-- `(c, z) ↦ hurwitzKernel c z` is jointly analytic on `Set.univ ×ˢ Metric.ball 0 (2 * π)`. -/
 theorem analyticOnNhd_hurwitzKernel :
     AnalyticOnNhd ℂ (fun p : ℂ × ℂ => hurwitzKernel p.1 p.2)
-      (univ ×ˢ ball 0 (2 * π)) := fun p hp => by
-  have hslope : AnalyticOnNhd ℂ (fun w : ℂ => 1 - Complex.exp (-w)) univ :=
-    fun _ _ => analyticAt_const.sub analyticAt_id.neg.cexp
-  exact (((analyticAt_fst.neg).mul analyticAt_snd).cexp).div
-    (((hslope.dslope (s := univ) 0) p.2 trivial).comp analyticAt_snd) (expSlope_ne_zero hp.2)
+      (univ ×ˢ ball 0 (2 * π)) := fun p hp =>
+  (((analyticAt_fst.neg).mul analyticAt_snd).cexp).div
+    (AnalyticAt.comp (g := dslope Complex.exp 0) (f := fun p : ℂ × ℂ => -p.2)
+      (((analyticOnNhd_cexp (u := univ)).dslope 0) (-p.2) trivial) analyticAt_snd.neg)
+    (Complex.dslope_exp_ne_zero (by simpa using hp.2))
 
 /-- For fixed `c : ℂ`, `hurwitzKernel c` is analytic on `Metric.ball 0 (2 * π)`. -/
 theorem analyticOnNhd_hurwitzKernel_right (c : ℂ) :
@@ -164,6 +150,7 @@ theorem hurwitzBernoulliCoeff_zero (c : ℂ) : hurwitzBernoulliCoeff 0 c = 1 := 
 
 /-- The linear Bernoulli Taylor coefficient is `hurwitzBernoulliCoeff 1 c = 1 / 2 - c`, pinning
 the `B_1(c) = c - 1 / 2` sign convention. -/
+@[simp]
 theorem hurwitzBernoulliCoeff_one (c : ℂ) : hurwitzBernoulliCoeff 1 c = 1 / 2 - c := by
   rw [hurwitzBernoulliCoeff, Polynomial.bernoulli_one]
   simp only [pow_one, Nat.factorial_one, Nat.cast_one, div_one, map_sub, Polynomial.aeval_X,
@@ -184,78 +171,59 @@ theorem hurwitzBernoulliCoeff_two (c : ℂ) :
   rw [hurwitzBernoulliCoeff, hb2]
   simp only [even_two, Even.neg_pow, one_pow, one_mul, Nat.factorial_two, Nat.cast_ofNat]
 
+private theorem iteratedDeriv_hurwitzKernel_zero_eq_aeval_one_sub (m : ℕ) (c : ℂ) :
+    iteratedDeriv m (hurwitzKernel c) 0 =
+      Polynomial.aeval (1 - c) (Polynomial.bernoulli m) := by
+  induction m using Nat.strong_induction_on with
+  | ind m ih =>
+    have heq : (fun z => hurwitzKernel c z * (Complex.exp z - 1)) =ᶠ[𝓝 0]
+        fun z => z * Complex.exp ((1 - c) * z) :=
+      eventually_of_mem (ball_mem_nhds 0 Real.two_pi_pos)
+        fun z hz => hurwitzKernel_mul_exp_sub_one c hz
+    have hderiv := heq.iteratedDeriv_eq (m + 1)
+    -- Evaluate the `(m + 1)`-st derivative of `z * exp ((1 - c) * z)` at `0` by Leibniz.
+    have hrhs : iteratedDeriv (m + 1) (fun z : ℂ => z * Complex.exp ((1 - c) * z)) 0 =
+        (m + 1 : ℂ) * (1 - c) ^ m := by
+      rw [iteratedDeriv_fun_mul (by fun_prop) (by fun_prop)]
+      simp [iteratedDeriv_fun_id_zero, iteratedDeriv_cexp_const_mul]
+    -- Expand the LHS by Leibniz and compare with `Polynomial.sum_bernoulli m`.
+    have hf : ContDiffAt ℂ (m + 1) (hurwitzKernel c) 0 :=
+      (analyticOnNhd_hurwitzKernel_right c 0 (mem_ball_self Real.two_pi_pos)).contDiffAt
+    have hg : ContDiffAt ℂ (m + 1) (fun z : ℂ => Complex.exp z - 1) 0 := by fun_prop
+    rw [hrhs, iteratedDeriv_fun_mul hf hg, Finset.sum_range_succ] at hderiv
+    have hterms : ∀ k ∈ Finset.range (m + 1),
+        ((m + 1).choose k : ℂ) * iteratedDeriv k (hurwitzKernel c) 0 *
+          iteratedDeriv (m + 1 - k) (fun z : ℂ => Complex.exp z - 1) 0 =
+        ((m + 1).choose k : ℂ) * iteratedDeriv k (hurwitzKernel c) 0 := fun k hk => by
+      have hne : m + 1 - k ≠ 0 := by have := Finset.mem_range.mp hk; omega
+      have hexp : iteratedDeriv (m + 1 - k) Complex.exp 0 = 1 := by
+        rw [iteratedDeriv_eq_iterate, Complex.iter_deriv_exp, Complex.exp_zero]
+      rw [iteratedDeriv_fun_sub (by fun_prop) (by fun_prop), hexp, iteratedDeriv_const]
+      simp [hne]
+    have hlast : (m + 1).choose (m + 1) * iteratedDeriv (m + 1) (hurwitzKernel c) 0 *
+        iteratedDeriv (m + 1 - (m + 1)) (fun z : ℂ => Complex.exp z - 1) 0 = 0 := by simp
+    rw [hlast, add_zero, Finset.sum_congr rfl hterms, Finset.sum_range_succ] at hderiv
+    have hbern := congrArg (Polynomial.aeval (1 - c)) (Polynomial.sum_bernoulli m)
+    simp only [map_sum, Algebra.smul_def, map_mul, AlgHom.commutes, eq_ratCast,
+      Rat.cast_natCast, Rat.cast_add, Rat.cast_one, Polynomial.aeval_monomial] at hbern
+    rw [Finset.sum_range_succ] at hbern
+    have hprev : ∑ k ∈ Finset.range m,
+          ((m + 1).choose k : ℂ) * iteratedDeriv k (hurwitzKernel c) 0 =
+        ∑ k ∈ Finset.range m,
+          ((m + 1).choose k : ℂ) * Polynomial.aeval (1 - c) (Polynomial.bernoulli k) :=
+      Finset.sum_congr rfl fun k hk => by rw [ih k (Finset.mem_range.mp hk)]
+    have hm1 : ((m + 1).choose m : ℂ) = (m + 1 : ℂ) := by
+      exact_mod_cast Nat.choose_succ_self_right m
+    rw [hprev, hm1] at hderiv
+    rw [hm1] at hbern
+    apply mul_left_cancel₀ (by exact_mod_cast Nat.succ_ne_zero m : (m + 1 : ℂ) ≠ 0)
+    linear_combination hderiv - hbern
+
 /-- The `n`-th derivative of `hurwitzKernel c` at `0` is `(-1) ^ n * B_n(c)`. -/
 theorem iteratedDeriv_hurwitzKernel_zero (n : ℕ) (c : ℂ) :
     iteratedDeriv n (hurwitzKernel c) 0 =
       (-1 : ℂ) ^ n * Polynomial.aeval c (Polynomial.bernoulli n) := by
-  have hrec : ∀ m : ℕ,
-      iteratedDeriv m (hurwitzKernel c) 0 =
-        Polynomial.aeval (1 - c) (Polynomial.bernoulli m) := by
-    intro m
-    induction m using Nat.strong_induction_on with
-    | ind m ih =>
-      have heq : (fun z => hurwitzKernel c z * (Complex.exp z - 1)) =ᶠ[𝓝 0]
-          fun z => z * Complex.exp ((1 - c) * z) :=
-        eventually_of_mem (ball_mem_nhds 0 Real.two_pi_pos)
-          fun z hz => hurwitzKernel_mul_exp_sub_one c hz
-      have hderiv := heq.iteratedDeriv_eq (m + 1)
-      -- Evaluate the `(m + 1)`-st derivative of `z * exp ((1 - c) * z)` at `0` by Leibniz.
-      have hrhs : iteratedDeriv (m + 1) (fun z : ℂ => z * Complex.exp ((1 - c) * z)) 0 =
-          (m + 1 : ℂ) * (1 - c) ^ m := by
-        have hf1 : ContDiffAt ℂ (m + 1) (fun z : ℂ => z) 0 := contDiff_id.contDiffAt
-        have hg1 : ContDiffAt ℂ (m + 1) (fun z : ℂ => Complex.exp ((1 - c) * z)) 0 :=
-          (Complex.contDiff_exp.comp (contDiff_const.mul contDiff_id)).contDiffAt
-        rw [iteratedDeriv_fun_mul hf1 hg1]
-        have hsum : ∀ j ∈ Finset.range (m + 2),
-            (m + 1).choose j * iteratedDeriv j (fun z : ℂ => z) 0 *
-              iteratedDeriv (m + 1 - j) (fun z : ℂ => Complex.exp ((1 - c) * z)) 0 =
-            if j = 1 then (m + 1 : ℂ) * (1 - c) ^ m else 0 := fun j _ => by
-          rcases j with _ | _ | j
-          · simp
-          · simp [iteratedDeriv_cexp_const_mul]
-          · have hid1 : deriv (fun z : ℂ => z) = fun _ => 1 := funext fun _ => deriv_id _
-            have h2 : iteratedDeriv (j + 2) (fun z : ℂ => z) 0 = 0 := by
-              rw [iteratedDeriv_succ', hid1, iteratedDeriv_const]; simp
-            simp [h2]
-        rw [Finset.sum_congr rfl hsum, Finset.sum_ite_eq' (Finset.range (m + 2)) 1]; simp
-      -- Expand the LHS by Leibniz and compare with `Polynomial.sum_bernoulli m`.
-      have hf : ContDiffAt ℂ (m + 1) (hurwitzKernel c) 0 :=
-        (analyticOnNhd_hurwitzKernel_right c 0 (mem_ball_self Real.two_pi_pos)).contDiffAt
-      have hg : ContDiffAt ℂ (m + 1) (fun z : ℂ => Complex.exp z - 1) 0 :=
-        (Complex.contDiff_exp.sub contDiff_const).contDiffAt
-      rw [hrhs, iteratedDeriv_fun_mul hf hg, Finset.sum_range_succ] at hderiv
-      have hterms : ∀ k ∈ Finset.range (m + 1),
-          ((m + 1).choose k : ℂ) * iteratedDeriv k (hurwitzKernel c) 0 *
-            iteratedDeriv (m + 1 - k) (fun z : ℂ => Complex.exp z - 1) 0 =
-          ((m + 1).choose k : ℂ) * iteratedDeriv k (hurwitzKernel c) 0 := fun k hk => by
-        have hlt : k < m + 1 := Finset.mem_range.mp hk
-        have hsub : (fun z : ℂ => Complex.exp z - 1) = fun z => Complex.exp z + (-1 : ℂ) := rfl
-        have hexp1 : iteratedDeriv (m + 1 - k) (fun z : ℂ => Complex.exp z + (-1)) 0 = 1 := by
-          rw [iteratedDeriv_fun_add Complex.contDiff_exp.contDiffAt contDiffAt_const,
-            iteratedDeriv_eq_iterate, Complex.iter_deriv_exp, Complex.exp_zero,
-            iteratedDeriv_const]
-          have hne : m + 1 - k ≠ 0 := by omega
-          simp [hne]
-        rw [hsub, hexp1, mul_one]
-      have hlast : (m + 1).choose (m + 1) * iteratedDeriv (m + 1) (hurwitzKernel c) 0 *
-          iteratedDeriv (m + 1 - (m + 1)) (fun z : ℂ => Complex.exp z - 1) 0 = 0 := by simp
-      rw [hlast, add_zero, Finset.sum_congr rfl hterms, Finset.sum_range_succ] at hderiv
-      have hbern := congrArg (Polynomial.aeval (1 - c)) (Polynomial.sum_bernoulli m)
-      simp only [map_sum, Algebra.smul_def, map_mul, AlgHom.commutes, eq_ratCast,
-        Rat.cast_natCast, Rat.cast_add, Rat.cast_one, Polynomial.aeval_monomial] at hbern
-      rw [Finset.sum_range_succ] at hbern
-      have hprev : ∑ k ∈ Finset.range m,
-            ((m + 1).choose k : ℂ) * iteratedDeriv k (hurwitzKernel c) 0 =
-          ∑ k ∈ Finset.range m,
-            ((m + 1).choose k : ℂ) * Polynomial.aeval (1 - c) (Polynomial.bernoulli k) :=
-        Finset.sum_congr rfl fun k hk => by rw [ih k (Finset.mem_range.mp hk)]
-      have hm1 : ((m + 1).choose m : ℂ) = (m + 1 : ℂ) := by
-        exact_mod_cast Nat.choose_succ_self_right m
-      rw [hprev, hm1] at hderiv
-      rw [hm1] at hbern
-      apply mul_left_cancel₀ (by exact_mod_cast Nat.succ_ne_zero m : (m + 1 : ℂ) ≠ 0)
-      linear_combination hderiv - hbern
-  rw [hrec n]
+  rw [iteratedDeriv_hurwitzKernel_zero_eq_aeval_one_sub]
   simpa [Polynomial.aeval_comp, Algebra.smul_def] using
     congrArg (Polynomial.aeval c) (Polynomial.bernoulli_comp_one_sub_X n)
 
@@ -263,6 +231,11 @@ theorem iteratedDeriv_hurwitzKernel_zero (n : ℕ) (c : ℂ) :
 `|ζ| = 2`: `(2 * π * I)⁻¹ * ∮ ζ in C(0, 2), hurwitzKernel c ζ / (ζ ^ (M + 1) * (ζ - z))`. -/
 noncomputable def hurwitzTaylorQuot (M : ℕ) (c z : ℂ) : ℂ :=
   (2 * π * I)⁻¹ * ∮ ζ in C(0, 2), hurwitzKernel c ζ / (ζ ^ (M + 1) * (ζ - z))
+
+/-- Defining equation for `hurwitzTaylorQuot`. -/
+theorem hurwitzTaylorQuot_def (M : ℕ) (c z : ℂ) :
+    hurwitzTaylorQuot M c z =
+      (2 * π * I)⁻¹ * ∮ ζ in C(0, 2), hurwitzKernel c ζ / (ζ ^ (M + 1) * (ζ - z)) := (rfl)
 
 private theorem sphere_two_sub_ne_zero {ζ z : ℂ} (hζ : ζ ∈ sphere (0 : ℂ) 2)
     (hz : z ∈ ball (0 : ℂ) 2) : ζ - z ≠ 0 := fun h0 => by
@@ -275,6 +248,12 @@ private theorem closedBall_two_subset_ball_two_pi :
     closedBall (0 : ℂ) 2 ⊆ ball (0 : ℂ) (2 * π) := fun _ hζ => by
   rw [mem_ball_zero_iff]
   linarith [mem_closedBall_zero_iff.mp hζ, Real.two_le_pi]
+
+private theorem continuousOn_hurwitzKernel_sphere (c : ℂ) :
+    ContinuousOn (hurwitzKernel c) (sphere (0 : ℂ) 2) := fun ζ hζ =>
+  (analyticOnNhd_hurwitzKernel_right c ζ
+    (closedBall_two_subset_ball_two_pi (sphere_subset_closedBall hζ))).continuousAt
+    |>.continuousWithinAt
 
 /-- `(c, z) ↦ hurwitzTaylorQuot M c z` is jointly analytic on `Set.univ ×ˢ Metric.ball 0 2`. -/
 theorem analyticOnNhd_hurwitzTaylorQuot (M : ℕ) :
@@ -330,30 +309,23 @@ theorem hurwitzKernel_sub_sum_eq_pow_mul_hurwitzTaylorQuot (M : ℕ) (c : ℂ) {
       |>.two_pi_i_inv_smul_circleIntegral_sub_inv_smul (f := hurwitzKernel c) hz).symm
   have hint_k : ∀ k ∈ Finset.range (M + 1),
       CircleIntegrable (fun ζ => z ^ k / ζ ^ (k + 1) * hurwitzKernel c ζ) 0 2 := fun k _ =>
-    ContinuousOn.circleIntegrable zero_le_two fun ζ hζ =>
-      ((continuousAt_const.div (continuousAt_id.pow (k + 1))
-        (pow_ne_zero _ (ne_of_mem_sphere hζ two_ne_zero))).mul
-          (analyticOnNhd_hurwitzKernel_right c ζ
-            (closedBall_two_subset_ball_two_pi
-              (sphere_subset_closedBall hζ))).continuousAt).continuousWithinAt
+    ContinuousOn.circleIntegrable zero_le_two <|
+      (continuousOn_const.div (continuousOn_id.pow (k + 1))
+        fun _ hζ => pow_ne_zero _ (ne_of_mem_sphere hζ two_ne_zero)).mul
+        (continuousOn_hurwitzKernel_sphere c)
   have hsum : (∑ k ∈ Finset.range (M + 1), hurwitzBernoulliCoeff k c * z ^ k) =
       (2 * π * I)⁻¹ * ∮ ζ in C(0, 2),
         (∑ k ∈ Finset.range (M + 1), z ^ k / ζ ^ (k + 1) * hurwitzKernel c ζ) := by
     rw [circleIntegral.integral_fun_sum hint_k, Finset.mul_sum]
     exact Finset.sum_congr rfl fun k _ => (cauchy_coeff_hurwitzKernel k c z).symm
   have hint1 : CircleIntegrable (fun ζ => (ζ - z)⁻¹ * hurwitzKernel c ζ) 0 2 :=
-    ContinuousOn.circleIntegrable zero_le_two fun ζ hζ =>
-      (((continuousAt_id.sub continuousAt_const).inv₀ (sphere_two_sub_ne_zero hζ hz)).mul
-        (analyticOnNhd_hurwitzKernel_right c ζ
-          (closedBall_two_subset_ball_two_pi
-            (sphere_subset_closedBall hζ))).continuousAt).continuousWithinAt
+    ContinuousOn.circleIntegrable zero_le_two <|
+      ((continuousOn_id.sub continuousOn_const).inv₀ fun _ hζ => sphere_two_sub_ne_zero hζ hz).mul
+        (continuousOn_hurwitzKernel_sphere c)
   have hint2 : CircleIntegrable
       (fun ζ => ∑ k ∈ Finset.range (M + 1), z ^ k / ζ ^ (k + 1) * hurwitzKernel c ζ) 0 2 := by
-    have h := CircleIntegrable.sum (Finset.range (M + 1)) hint_k
-    have heq : (∑ i ∈ Finset.range (M + 1), fun ζ => z ^ i / ζ ^ (i + 1) * hurwitzKernel c ζ) =
-        fun ζ => ∑ k ∈ Finset.range (M + 1), z ^ k / ζ ^ (k + 1) * hurwitzKernel c ζ :=
-      funext fun ζ => Finset.sum_apply ζ _ _
-    rwa [heq] at h
+    convert CircleIntegrable.sum (Finset.range (M + 1)) hint_k with ζ
+    simp [Finset.sum_apply]
   rw [hcauchy, hsum, ← mul_sub, ← circleIntegral.integral_sub hint1 hint2, hurwitzTaylorQuot,
     mul_left_comm (z ^ (M + 1)), ← smul_eq_mul (a := z ^ (M + 1)), ← circleIntegral.integral_smul]
   congr 1
@@ -373,21 +345,17 @@ theorem hurwitzTaylorQuot_eq_add_mul_succ (M : ℕ) (c : ℂ) {z : ℂ} (hz : z 
     hurwitzTaylorQuot M c z =
       hurwitzBernoulliCoeff (M + 1) c + z * hurwitzTaylorQuot (M + 1) c z := by
   have hint1 : CircleIntegrable (fun ζ => (1 : ℂ) / ζ ^ (M + 2) * hurwitzKernel c ζ) 0 2 :=
-    ContinuousOn.circleIntegrable zero_le_two fun ζ hζ =>
-      ((continuousAt_const.div (continuousAt_id.pow (M + 2))
-        (pow_ne_zero _ (ne_of_mem_sphere hζ two_ne_zero))).mul
-          (analyticOnNhd_hurwitzKernel_right c ζ
-            (closedBall_two_subset_ball_two_pi
-              (sphere_subset_closedBall hζ))).continuousAt).continuousWithinAt
+    ContinuousOn.circleIntegrable zero_le_two <|
+      (continuousOn_const.div (continuousOn_id.pow (M + 2))
+        fun _ hζ => pow_ne_zero _ (ne_of_mem_sphere hζ two_ne_zero)).mul
+        (continuousOn_hurwitzKernel_sphere c)
   have hint2 : CircleIntegrable
       (fun ζ => z * (hurwitzKernel c ζ / (ζ ^ (M + 2) * (ζ - z)))) 0 2 :=
-    ContinuousOn.circleIntegrable zero_le_two fun ζ hζ =>
-      (continuousAt_const.mul ((analyticOnNhd_hurwitzKernel_right c ζ
-        (closedBall_two_subset_ball_two_pi
-          (sphere_subset_closedBall hζ))).continuousAt.div
-          ((continuousAt_id.pow (M + 2)).mul (continuousAt_id.sub continuousAt_const))
-          (mul_ne_zero (pow_ne_zero _ (ne_of_mem_sphere hζ two_ne_zero))
-            (sphere_two_sub_ne_zero hζ hz)))).continuousWithinAt
+    ContinuousOn.circleIntegrable zero_le_two <|
+      continuousOn_const.mul ((continuousOn_hurwitzKernel_sphere c).div
+        ((continuousOn_id.pow (M + 2)).mul (continuousOn_id.sub continuousOn_const))
+        fun _ hζ => mul_ne_zero (pow_ne_zero _ (ne_of_mem_sphere hζ two_ne_zero))
+          (sphere_two_sub_ne_zero hζ hz))
   have h1 := cauchy_coeff_hurwitzKernel (M + 1) c 1
   simp only [one_pow, mul_one] at h1
   have hpull : z * ((2 * π * I)⁻¹ *
@@ -402,35 +370,51 @@ theorem hurwitzTaylorQuot_eq_add_mul_succ (M : ℕ) (c : ℂ) {z : ℂ} (hz : z 
   have hsub : ζ - z ≠ 0 := sphere_two_sub_ne_zero hζ hz
   rw [pow_succ ζ (M + 1)]; field_simp; ring
 
+/-- At `z = 0`, the order-`M` Taylor remainder quotient equals the next Taylor coefficient
+`hurwitzBernoulliCoeff (M + 1) c`. -/
+@[simp]
+theorem hurwitzTaylorQuot_zero_right (M : ℕ) (c : ℂ) :
+    hurwitzTaylorQuot M c 0 = hurwitzBernoulliCoeff (M + 1) c := by
+  simpa using hurwitzTaylorQuot_eq_add_mul_succ M c (mem_ball_self two_pos)
+
 /-- `(c, z) ↦ iteratedDeriv d (fun w => hurwitzTaylorQuot M w z) c` is jointly analytic on
 `Set.univ ×ˢ Metric.ball 0 2`. -/
 theorem analyticOnNhd_iteratedDeriv_hurwitzTaylorQuot (M d : ℕ) :
     AnalyticOnNhd ℂ
       (fun p : ℂ × ℂ => iteratedDeriv d (fun w => hurwitzTaylorQuot M w p.2) p.1)
-      (univ ×ˢ ball 0 2) := by
-  let U : Set (ℂ × ℂ) := univ ×ˢ ball 0 2
-  have hU : IsOpen U := isOpen_univ.prod isOpen_ball
-  have hstep : ∀ (k : ℕ) {G : ℂ × ℂ → ℂ}, AnalyticOnNhd ℂ G U →
-      AnalyticOnNhd ℂ (fun p : ℂ × ℂ => iteratedDeriv k (fun w => G (w, p.2)) p.1) U := by
-    intro k
-    induction k with
-    | zero => intro G hG; simpa using hG
-    | succ k ih =>
-      intro G hG
-      let G' : ℂ × ℂ → ℂ := fun p => (fderiv ℂ G p) (1, 0)
-      have hG' : AnalyticOnNhd ℂ G' U := fun p hp =>
-        ((ContinuousLinearMap.apply ℂ ℂ ((1 : ℂ), (0 : ℂ))).analyticAt _).comp
-          (hG p hp).fderiv
-      refine (ih hG').congr hU fun p hp => ?_
-      rw [iteratedDeriv_succ']
-      have hopen : {w : ℂ | (w, p.2) ∈ U} ∈ 𝓝 p.1 :=
-        (hU.preimage (continuous_id.prodMk continuous_const)).mem_nhds hp
-      have heq : deriv (fun w => G (w, p.2)) =ᶠ[𝓝 p.1] fun w => G' (w, p.2) := by
-        filter_upwards [hopen] with w hw
-        exact (((hG (w, p.2) hw).differentiableAt.hasFDerivAt.comp w
-          (hasFDerivAt_prodMk_left w p.2)).hasDerivAt).deriv
-      exact heq.symm.iteratedDeriv_eq k
-  exact hstep d (analyticOnNhd_hurwitzTaylorQuot M)
+      (univ ×ˢ ball 0 2) := fun p hp => by
+  have hswap : AnalyticAt ℂ (fun q : ℂ × ℂ => hurwitzTaylorQuot M q.2 q.1) (p.2, p.1) :=
+    AnalyticAt.comp (g := fun r : ℂ × ℂ => hurwitzTaylorQuot M r.1 r.2)
+      (f := fun q : ℂ × ℂ => (q.2, q.1))
+      (analyticOnNhd_hurwitzTaylorQuot M (p.1, p.2) hp) (analyticAt_snd.prod analyticAt_fst)
+  exact AnalyticAt.comp
+    (g := fun q : ℂ × ℂ => iteratedDeriv d (fun w => hurwitzTaylorQuot M w q.1) q.2)
+    (f := fun r : ℂ × ℂ => (r.2, r.1))
+    (hswap.iteratedDeriv_snd d) (analyticAt_snd.prod analyticAt_fst)
+
+private theorem ofReal_mem_ball_two {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
+    (t : ℂ) ∈ ball (0 : ℂ) 2 := by
+  rw [mem_ball_zero_iff, Complex.norm_real, Real.norm_of_nonneg ht.1]; linarith [ht.2]
+
+/-- Compact-uniform bound on `[0, 1]` for the `d`-th `c`-derivative of `hurwitzTaylorQuot M`. -/
+theorem exists_norm_iteratedDeriv_hurwitzTaylorQuot_le {K : Set ℂ} (hK : IsCompact K)
+    (M d : ℕ) :
+    ∃ B ≥ 0, ∀ c ∈ K, ∀ t ∈ Icc (0 : ℝ) 1,
+      ‖iteratedDeriv d (fun w => hurwitzTaylorQuot M w t) c‖ ≤ B := by
+  let S : Set (ℂ × ℂ) := K ×ˢ (Complex.ofReal '' Icc (0 : ℝ) 1)
+  have hS_comp : IsCompact S := hK.prod (isCompact_Icc.image continuous_ofReal)
+  have hS_sub : S ⊆ univ ×ˢ ball 0 2 := by
+    rintro ⟨_, _⟩ ⟨_, t, ht, rfl⟩; exact ⟨trivial, ofReal_mem_ball_two ht⟩
+  obtain ⟨B, hB⟩ := hS_comp.exists_bound_of_continuousOn
+    ((analyticOnNhd_iteratedDeriv_hurwitzTaylorQuot M d).continuousOn.mono hS_sub)
+  exact ⟨max B 0, le_max_right _ _, fun c hc t ht =>
+    (hB (c, t) ⟨hc, t, ht, rfl⟩).trans (le_max_left _ _)⟩
+
+/-- Compact-uniform bound on `[0, 1]` for `hurwitzTaylorQuot M c t`. -/
+theorem exists_norm_hurwitzTaylorQuot_le {K : Set ℂ} (hK : IsCompact K) (M : ℕ) :
+    ∃ B ≥ 0, ∀ c ∈ K, ∀ t ∈ Icc (0 : ℝ) 1, ‖hurwitzTaylorQuot M c t‖ ≤ B := by
+  obtain ⟨B, hB0, hB⟩ := exists_norm_iteratedDeriv_hurwitzTaylorQuot_le hK M 0
+  exact ⟨B, hB0, fun c hc t ht => by simpa using hB c hc t ht⟩
 
 /-- Compact-uniform Taylor remainder estimate on `[0, 1]` after any fixed order `d` of
 differentiation in the parameter `c`. -/
@@ -441,23 +425,15 @@ theorem exists_norm_iteratedDeriv_hurwitzKernel_sub_sum_le {K : Set ℂ} (hK : I
           (fun w => hurwitzKernel w t -
             ∑ k ∈ Finset.range (M + 1), hurwitzBernoulliCoeff k w * (t : ℂ) ^ k) c‖ ≤
         C * t ^ (M + 1) := by
-  let S : Set (ℂ × ℂ) := K ×ˢ (Complex.ofReal '' Icc (0 : ℝ) 1)
-  have hS_comp : IsCompact S := hK.prod (isCompact_Icc.image continuous_ofReal)
-  have hball_Icc : ∀ t ∈ Icc (0 : ℝ) 1, (t : ℂ) ∈ ball (0 : ℂ) 2 := fun t ht => by
-    rw [mem_ball_zero_iff, Complex.norm_real, Real.norm_of_nonneg ht.1]; linarith [ht.2]
-  have hS_sub : S ⊆ univ ×ˢ ball 0 2 := by
-    rintro ⟨_, _⟩ ⟨_, t, ht, rfl⟩; exact ⟨trivial, hball_Icc t ht⟩
-  obtain ⟨B, hB⟩ := hS_comp.exists_bound_of_continuousOn
-    ((analyticOnNhd_iteratedDeriv_hurwitzTaylorQuot M d).continuousOn.mono hS_sub)
-  refine ⟨max B 0, le_max_right _ _, fun c hc t ht => ?_⟩
+  obtain ⟨B, hB0, hB⟩ := exists_norm_iteratedDeriv_hurwitzTaylorQuot_le hK M d
+  refine ⟨B, hB0, fun c hc t ht => ?_⟩
   have hfun : (fun w => hurwitzKernel w t -
         ∑ k ∈ Finset.range (M + 1), hurwitzBernoulliCoeff k w * (t : ℂ) ^ k) =
       fun w => (t : ℂ) ^ (M + 1) * hurwitzTaylorQuot M w t :=
-    funext fun w => hurwitzKernel_sub_sum_eq_pow_mul_hurwitzTaylorQuot M w (hball_Icc t ht)
+    funext fun w => hurwitzKernel_sub_sum_eq_pow_mul_hurwitzTaylorQuot M w (ofReal_mem_ball_two ht)
   rw [hfun, iteratedDeriv_const_mul_field, norm_mul, norm_pow, Complex.norm_real,
     Real.norm_of_nonneg ht.1, mul_comm]
-  exact mul_le_mul_of_nonneg_right ((hB (c, t) ⟨hc, t, ht, rfl⟩).trans (le_max_left _ _))
-    (pow_nonneg ht.1 _)
+  exact mul_le_mul_of_nonneg_right (hB c hc t ht) (pow_nonneg ht.1 _)
 
 /-- Compact-uniform Taylor remainder estimate on `[0, 1]` for `hurwitzKernel c t`. -/
 theorem exists_norm_hurwitzKernel_sub_sum_le {K : Set ℂ} (hK : IsCompact K) (M : ℕ) :

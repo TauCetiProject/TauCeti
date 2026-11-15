@@ -11,12 +11,16 @@ public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
 /-!
-# Positive divided differences of the real exponential
+# Divided differences of the real and complex exponential
 
-The divided difference of the exponential is the integral of the exponential along the segment
+The divided difference of the real exponential is the integral of the exponential along the segment
 between its arguments. In particular it is strictly positive, including when the arguments
-coincide. It is jointly real analytic, including on the diagonal. These divided differences
-are the scalar coefficients in the derivative of the matrix exponential at a Hermitian matrix.
+coincide, and jointly real analytic, including on the diagonal. These divided differences are the
+scalar coefficients in the derivative of the matrix exponential at a Hermitian matrix.
+
+Over `ℂ`, `dslope Complex.exp a b = Complex.exp a * dslope Complex.exp 0 (b - a)` is entire in `b`
+and nonvanishing on `Metric.ball a (2 * π)`, since the nonzero roots of `exp z = 1` lie at distance
+at least `2 * π` from the origin.
 -/
 
 public section
@@ -70,3 +74,45 @@ theorem contDiff_dslope_exp (m : ℕ∞ω) :
   exact dslope_exp_eq_exp_mul_dslope_zero p.1 p.2
 
 end Real
+
+namespace Complex
+
+/-- Translating the complex exponential divided difference to zero extracts the factor `exp a`. -/
+theorem dslope_exp_eq_exp_mul_dslope_zero (a b : ℂ) :
+    dslope exp a b = exp a * dslope exp 0 (b - a) := by
+  by_cases hab : b = a
+  · simp [hab]
+  · have hsub : b - a ≠ 0 := sub_ne_zero.mpr hab
+    rw [dslope_of_ne _ hab, dslope_of_ne _ hsub, slope_def_field, slope_def_field]
+    simp only [sub_zero, exp_zero]
+    rw [← mul_div_assoc, mul_sub, mul_one, ← exp_add, add_sub_cancel]
+
+/-- The divided difference `dslope Complex.exp a` is entire for every basepoint `a : ℂ`. -/
+@[fun_prop]
+theorem differentiable_dslope_exp (a : ℂ) : Differentiable ℂ (dslope exp a) :=
+  differentiableOn_univ.mp ((analyticOnNhd_cexp (u := Set.univ)).dslope a).differentiableOn
+
+/-- On `Metric.ball a (2 * π)`, the divided difference `dslope Complex.exp a b` does not vanish. -/
+theorem dslope_exp_ne_zero {a b : ℂ} (h : b ∈ Metric.ball a (2 * Real.pi)) :
+    dslope exp a b ≠ 0 := by
+  rw [dslope_exp_eq_exp_mul_dslope_zero]
+  refine mul_ne_zero (exp_ne_zero a) ?_
+  set z := b - a
+  rcases eq_or_ne z 0 with hz0 | hzne
+  · simp [hz0]
+  · intro h0
+    have hmul := sub_smul_dslope exp 0 z
+    rw [sub_zero, smul_eq_mul, h0, mul_zero, exp_zero, eq_comm, sub_eq_zero] at hmul
+    obtain ⟨k, hk⟩ := exp_eq_one_iff.mp hmul
+    rcases eq_or_ne k 0 with rfl | hkne
+    · simp only [Int.cast_zero, zero_mul] at hk
+      exact hzne hk
+    · have hk1 : (1 : ℝ) ≤ ‖(k : ℂ)‖ := by
+        rw [norm_intCast]; exact_mod_cast Int.one_le_abs hkne
+      have hn := congrArg norm hk
+      rw [norm_mul, norm_mul, norm_mul, norm_ofNat, norm_real,
+        Real.norm_of_nonneg Real.pi_pos.le, norm_I, mul_one] at hn
+      have hlt : ‖z‖ < 2 * Real.pi := by simpa [z, dist_eq_norm] using h
+      nlinarith [Real.pi_pos]
+
+end Complex

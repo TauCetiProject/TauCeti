@@ -43,9 +43,11 @@ distinguished boundary is the torus `T(c, R)` of Mathlib's `torusIntegral`.
   `∯ z in T(c, R), (∏ i, (z i - w i))⁻¹ • f z = (2πi)ⁿ • f w`.
   `DifferentiableOn.torusIntegral_prod_sub_inv_smul` is the case of a jointly differentiable `f`.
 * `ContinuousOn.analyticAt_of_differentiableAt_update`,
-  `ContinuousOn.analyticOnNhd_of_differentiableAt_update`: **Osgood's lemma.** A function on
-  `ι → ℂ`, for a finite type `ι`, which is continuous on an open set and complex differentiable in
-  each variable separately there is analytic on it.
+  `ContinuousOn.analyticOnNhd_of_differentiableAt_update`,
+  `ContinuousOn.analyticAt_of_differentiableAt_prod`,
+  `ContinuousOn.analyticOnNhd_of_differentiableAt_prod`: **Osgood's lemma.** A function on
+  `ι → ℂ` (for a finite type `ι`) or `ℂ × ℂ` which is continuous on an open set and complex
+  differentiable in each variable separately there is analytic on it.
 * `TauCeti.analyticOnNhd_iff_continuousOn_and_differentiableAt_update`: on an open subset of
   `ι → ℂ`, analyticity is equivalent to continuity together with separate complex
   differentiability.
@@ -326,6 +328,35 @@ theorem analyticOnNhd_iff_continuousOn_and_differentiableAt_update (hs : IsOpen 
       ∀ y ∈ s, ∀ i, DifferentiableAt ℂ (fun x => f (update y i x)) (y i) :=
   ⟨fun h => ⟨h.continuousOn, fun y hy i => (h y hy).differentiableAt.comp_update i⟩,
     fun h => h.1.analyticOnNhd_of_differentiableAt_update hs h.2⟩
+
+/-- **Osgood's lemma on `ℂ × ℂ`.** A function on `ℂ × ℂ` which is continuous on a neighbourhood of
+a point and complex differentiable in each coordinate separately on that neighbourhood is analytic
+at the point. -/
+theorem _root_.ContinuousOn.analyticAt_of_differentiableAt_prod {f : ℂ × ℂ → E}
+    {s : Set (ℂ × ℂ)} {p : ℂ × ℂ} (hc : ContinuousOn f s) (hs : s ∈ 𝓝 p)
+    (hd₁ : ∀ q ∈ s, DifferentiableAt ℂ (fun x => f (x, q.2)) q.1)
+    (hd₂ : ∀ q ∈ s, DifferentiableAt ℂ (fun y => f (q.1, y)) q.2) :
+    AnalyticAt ℂ f p := by
+  let φ : (Fin 2 → ℂ) → ℂ × ℂ := fun w => (w 0, w 1)
+  have hφ : Continuous φ := (continuous_apply 0).prodMk (continuous_apply 1)
+  have han : AnalyticAt ℂ (f ∘ φ) ![p.1, p.2] := by
+    refine (hc.comp hφ.continuousOn (mapsTo_preimage φ s)).analyticAt_of_differentiableAt_update
+      (hφ.continuousAt.preimage_mem_nhds (by simpa [φ] using hs)) fun w hw i => ?_
+    fin_cases i
+    · simpa [φ] using hd₁ (φ w) hw
+    · simpa [φ] using hd₂ (φ w) hw
+  have hpi : AnalyticAt ℂ (fun q : ℂ × ℂ => ![q.1, q.2]) p :=
+    analyticAt_pi_iff.mpr fun i => by fin_cases i; exacts [analyticAt_fst, analyticAt_snd]
+  exact han.comp_of_eq hpi rfl
+
+/-- **Osgood's lemma on `ℂ × ℂ`.** A function on `ℂ × ℂ` which is continuous on an open set and
+complex differentiable in each coordinate separately on it is analytic on it. -/
+theorem _root_.ContinuousOn.analyticOnNhd_of_differentiableAt_prod {f : ℂ × ℂ → E}
+    {s : Set (ℂ × ℂ)} (hc : ContinuousOn f s) (hs : IsOpen s)
+    (hd₁ : ∀ q ∈ s, DifferentiableAt ℂ (fun x => f (x, q.2)) q.1)
+    (hd₂ : ∀ q ∈ s, DifferentiableAt ℂ (fun y => f (q.1, y)) q.2) :
+    AnalyticOnNhd ℂ f s :=
+  fun _p hp => hc.analyticAt_of_differentiableAt_prod (hs.mem_nhds hp) hd₁ hd₂
 
 end Osgood
 
