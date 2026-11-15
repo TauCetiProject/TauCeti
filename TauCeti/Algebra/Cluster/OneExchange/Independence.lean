@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.Submonoid.MulAction
 public import TauCeti.LinearAlgebra.LinearIndependent.Powers
 public import Mathlib.Algebra.Ring.Subsemiring.Basic
 import Mathlib.Tactic.Group
@@ -133,10 +134,6 @@ end TauCeti
 namespace TauCeti
 
 variable {B S : Type*} [Semiring B] [SetLike S B] [SubsemiringClass S B] (C : S) (x E : Bˣ)
-
-/-- An element of a `SetLike` subtype acts by its coercion to the ambient type. -/
-private theorem SetLike.coe_smul {B S α : Type*} [SetLike S B] [SMul B α]
-    (C : S) (c : C) (a : α) : c • a = (c : B) • a := rfl
 
 /-- Independence of natural powers of `x` implies independence of natural powers of
 `E * x⁻¹`, with left coefficients in `C`. The numerator need only be a unit in the
