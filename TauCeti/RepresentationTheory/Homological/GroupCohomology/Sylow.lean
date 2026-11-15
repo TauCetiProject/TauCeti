@@ -26,7 +26,7 @@ for every prime `p` dividing the order of `G`, `Hⁿ(P, A)` vanishes for some Sy
   `Hⁿ(G, A)` killed by a power of `p` and by restriction to a finite-index Sylow `p`-subgroup is
   zero.
 * `TauCeti.groupCohomology.map_sylow_injective_of_isAddPGroup`,
-  `TauCeti.groupCohomology.map_sylow_eq_zero_iff_of_isAddPGroup`: restriction to a finite-index
+  `groupCohomology.map_sylow_eq_zero_iff_of_isAddPGroup`: restriction to a finite-index
   Sylow `p`-subgroup is injective in every degree when the additive group of `A` is a `p`-group.
 * `TauCeti.groupCohomology.eq_zero_of_map_sylow_eq_zero`: an element of `Hⁿ⁺¹(G, A)` for finite
   `G` whose restriction to a Sylow `p`-subgroup vanishes for every prime `p` is zero.
@@ -79,15 +79,6 @@ theorem map_sylow_injective_of_isAddPGroup
   map_subtype_injective_of_bijective_nsmul (P : Subgroup G) A
     (hA.nsmulEquiv' (Sylow.not_dvd_index P)).bijective n
 
-/-- For a representation whose underlying additive group is a `p`-group, a cohomology class in any
-degree `n` vanishes on a finite-index Sylow `p`-subgroup if and only if it vanishes on the whole
-group. Neither `G` nor `A` need be finite. -/
-theorem map_sylow_eq_zero_iff_of_isAddPGroup
-    {p : ℕ} [Fact p.Prime] (hA : IsAddPGroup p A) (P : Sylow p G)
-    [(P : Subgroup G).FiniteIndex] (x : groupCohomology A n) :
-    map (P : Subgroup G).subtype (𝟙 (res (P : Subgroup G).subtype A)) n x = 0 ↔ x = 0 :=
-  map_eq_zero_iff _ (map_sylow_injective_of_isAddPGroup A n hA P)
-
 variable [Finite G]
 
 /-- **Restriction to the Sylow subgroups is jointly injective** (Milne II 1.33): an element of
@@ -131,3 +122,16 @@ theorem isZero_of_isZero_sylow (h : ∀ (p : ℕ) [Fact p.Prime], p ∣ Nat.card
   exact ModuleCat.isZero_of_subsingleton _
 
 end TauCeti.groupCohomology
+
+namespace groupCohomology
+
+/-- For a representation whose underlying additive group is a `p`-group, a cohomology class in any
+degree `n` vanishes on a finite-index Sylow `p`-subgroup if and only if it vanishes on the whole
+group. Neither `G` nor `A` need be finite. -/
+theorem map_sylow_eq_zero_iff_of_isAddPGroup {A : Rep k G} {n : ℕ}
+    {p : ℕ} [Fact p.Prime] (hA : IsAddPGroup p A) (P : Sylow p G)
+    [(P : Subgroup G).FiniteIndex] (x : groupCohomology A n) :
+    map (P : Subgroup G).subtype (𝟙 (res (P : Subgroup G).subtype A)) n x = 0 ↔ x = 0 :=
+  map_eq_zero_iff _ (TauCeti.groupCohomology.map_sylow_injective_of_isAddPGroup A n hA P)
+
+end groupCohomology
