@@ -10,6 +10,7 @@ permissions:
   contents: read
   actions: write
   pull-requests: read
+  statuses: read
 jobs:
   cleanup:
     if: >-
@@ -32,24 +33,14 @@ jobs:
           sparse-checkout: tauceti.toml
           sparse-checkout-cone-mode: false
           persist-credentials: false
-      - uses: TauCetiProject/TauCetiTools/.github/actions/setup@ce0abe6625bc39cf1fbf61e8f32b5514515b5af0
+      - uses: TauCetiProject/TauCetiTools/.github/actions/setup@2e715e060777c57cb634987090139964547b6fc8
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: ce0abe6625bc39cf1fbf61e8f32b5514515b5af0
+          tools-ref: 2e715e060777c57cb634987090139964547b6fc8
           project-directory: .
-      - name: Select existing CI read credentials
-        id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@ce0abe6625bc39cf1fbf61e8f32b5514515b5af0
-        with:
-          owner: ${{ github.repository_owner }}
-          repository: ${{ github.event.repository.name }}
-          workflow-token: ${{ github.token }}
-          read-app-id: ${{ secrets.CI_READ_APP_ID }}
-          read-app-private-key: ${{ secrets.CI_READ_APP_PRIVATE_KEY }}
       - name: Cancel only builds whose live PR state makes them obsolete
         env:
           GH_TOKEN: ${{ github.token }}
-          GH_READ_TOKEN: ${{ steps.ci-api.outputs.read-token }}
           PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr }}
           STATUS_CONTEXT: ${{ github.event.context }}
         run: |
