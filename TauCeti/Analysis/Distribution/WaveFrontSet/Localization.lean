@@ -55,6 +55,8 @@ decays rapidly, and the remaining terms are controlled by the rapid decay of `a_
 * `Distribution.IsMicrolocallySmoothAt.exists_nhds_cone`: at a point of microlocal smoothness
   there are a neighbourhood `U` of `x` and an open cone `Γ` around `ξ` such that every cutoff
   supported in `U` has localized Fourier transform rapidly decreasing on `Γ`.
+* `Distribution.exists_isOpen_cone_of_forall_isMicrolocallySmoothAt`: the same uniformly over a
+  compact set of points at which `T` is microlocally smooth in a fixed direction.
 * `Distribution.IsMicrolocallySmoothAt.add`, `Distribution.waveFrontSet_add_subset`,
   `Distribution.waveFrontSet_sub_subset`, `Distribution.waveFrontSet_sum_subset`: the wave front
   set of a sum lies in the union of the wave front sets.
@@ -257,6 +259,58 @@ theorem IsMicrolocallySmoothAt.exists_nhds_cone {T : 𝓓'(Ω, ℂ)} {x ξ : E}
   obtain ⟨g, hg, hψg⟩ := hUφ ψ hψ
   exact exists_one_add_norm_pow_mul_norm_localFourier_le_of_eq_mul hg.contDiffOn hψg hc hΓ'
     (hdecay N)
+
+/-- **Uniformity over a compact set of points.** If `T` is microlocally smooth at `(x, ξ)` for
+every `x` in a compact set `K`, then there are an open set `U ⊇ K` and an open cone `Γ` containing
+`ξ` such that every cutoff `ψ` whose support meets the support of `T` only inside `U` has localized
+Fourier transform rapidly decreasing on `Γ`. -/
+theorem exists_isOpen_cone_of_forall_isMicrolocallySmoothAt {T : 𝓓'(Ω, ℂ)} {K : Set E}
+    (hK : IsCompact K) {ξ : E} (h : ∀ x ∈ K, T.IsMicrolocallySmoothAt x ξ) :
+    ∃ U, IsOpen U ∧ K ⊆ U ∧ ∃ Γ : Set E, IsOpen Γ ∧ ξ ∈ Γ ∧
+      (∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) ∧
+      ∀ ψ : 𝓓(Ω, ℂ), tsupport ψ ∩ dsupport T ⊆ U →
+        ∀ N : ℕ, ∃ C, ∀ η ∈ Γ, (1 + ‖η‖) ^ N * ‖T.localFourier ψ η‖ ≤ C := by
+  classical
+  -- Each point of `K` has a neighbourhood and a cone with uniform decay; finitely many suffice.
+  choose V hV Γ hΓ hξΓ hcone hdecay using fun x : K ↦ (h x x.2).exists_nhds_cone
+  obtain ⟨t, hKt⟩ := hK.elim_finite_subcover (fun x : K ↦ interior (V x))
+    (fun _ ↦ isOpen_interior) fun x hx ↦
+      mem_iUnion.2 ⟨⟨x, hx⟩, mem_interior_iff_mem_nhds.2 (hV ⟨x, hx⟩)⟩
+  refine ⟨⋃ i ∈ t, interior (V i), isOpen_biUnion fun _ _ ↦ isOpen_interior, hKt,
+    ⋂ i ∈ t, Γ i, isOpen_biInter_finset fun i _ ↦ hΓ i, mem_iInter₂.2 fun i _ ↦ hξΓ i,
+    fun s hs η hη ↦ mem_iInter₂.2 fun i hi ↦ hcone i s hs η (mem_iInter₂.1 hη i hi),
+    fun ψ hψ N ↦ ?_⟩
+  -- Split `ψ` into pieces supported off the support of `T` or in one of the neighbourhoods.
+  let W : Option t → Set E := fun j ↦ j.elim (dsupport T)ᶜ fun i ↦ interior (V i)
+  have hW : ∀ j, IsOpen (W j) := by
+    rintro (_ | i)
+    exacts [isClosed_dsupport.isOpen_compl, isOpen_interior]
+  have hcover : tsupport ψ ⊆ ⋃ j, W j := by
+    intro x hx
+    by_cases hxT : x ∈ dsupport T
+    · obtain ⟨i, hi, hxi⟩ := mem_iUnion₂.1 (hψ ⟨hx, hxT⟩)
+      exact mem_iUnion.2 ⟨some ⟨i, hi⟩, hxi⟩
+    · exact mem_iUnion.2 ⟨none, hxT⟩
+  obtain ⟨s, φ, hφW, hφψ, -⟩ := exists_sum_subordinate ψ W hW hcover
+  have hpiece (j : s) : ∃ C, ∀ η ∈ ⋂ i ∈ t, Γ i,
+      (1 + ‖η‖) ^ N * ‖T.localFourier (φ j) η‖ ≤ C := by
+    obtain ⟨_ | ⟨i, hi⟩, hj⟩ := j
+    · -- A piece supported off the support of `T` has vanishing localized Fourier transform.
+      refine ⟨0, fun η _ ↦ ?_⟩
+      rw [localFourier_eq_zero_of_disjoint (subset_compl_iff_disjoint_right.1 (hφW _)) η]
+      simp
+    · have hφi : tsupport (φ ⟨some ⟨i, hi⟩, hj⟩) ⊆ interior (V i) := hφW _
+      obtain ⟨C, hC⟩ := hdecay i _ (hφi.trans interior_subset) N
+      exact ⟨C, fun η hη ↦ hC η (mem_iInter₂.1 hη i hi)⟩
+  choose C hC using hpiece
+  refine ⟨∑ j, C j, fun η hη ↦ ?_⟩
+  rw [← hφψ, localFourier_sum_cutoff]
+  calc (1 + ‖η‖) ^ N * ‖∑ j, T.localFourier (φ j) η‖
+      ≤ ∑ j, (1 + ‖η‖) ^ N * ‖T.localFourier (φ j) η‖ := by
+        rw [← Finset.mul_sum]
+        gcongr
+        exact norm_sum_le _ _
+    _ ≤ ∑ j, C j := Finset.sum_le_sum fun j _ ↦ hC j η hη
 
 /-- The sum of two distributions microlocally smooth at `(x, ξ)` is microlocally smooth there. -/
 theorem IsMicrolocallySmoothAt.add {S T : 𝓓'(Ω, ℂ)} {x ξ : E}
