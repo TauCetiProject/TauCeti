@@ -52,8 +52,6 @@ these covers.
 
 ## Main results
 
-* `TauCeti.FiniteEtaleScheme.exists_fiber_map_kummerCoverDeck_eq`: when every `n`-th root of unity
-  of `Ω` comes from `R`, the deck transformations act transitively on the geometric fibre.
 * `TauCeti.FiniteEtaleScheme.kummerCoverFiberEquiv_smul`,
   `TauCeti.FiniteEtaleScheme.kummerCharacter_eq_iff`: the defining property of the Kummer character.
 * `TauCeti.FiniteEtaleScheme.kummerCharacter_pow_div`: compatibility with the power maps.
@@ -82,44 +80,6 @@ variable {R : CommRingCat.{u}} (t : Rˣ) {Ω : Type u} [Field Ω] [IsSepClosed �
 section Character
 
 variable {n : ℕ} (hn : IsUnit (n : R))
-
-/-- The geometric fibre of a Kummer cover is nonempty: the separably closed field `Ω` contains an
-`n`-th root of the image of `t`, since `n` is invertible in `Ω`. -/
-theorem nonempty_fiber_kummerCover :
-    Nonempty ((fiber (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))).obj (kummerCover t n hn)) :=
-  haveI : NeZero (n : Ω) := ⟨by simpa using (hn.map (algebraMap R Ω)).ne_zero⟩
-  have ⟨ω, hω⟩ := IsSepClosed.exists_pow_nat_eq (algebraMap R Ω t) n
-  ⟨(kummerCoverFiberEquiv t Ω n hn).symm ⟨ω, hω⟩⟩
-
-/-- The `n`-th roots of `t` in `Ω` attached to points of the geometric fibre are nonzero. -/
-private theorem kummerCoverFiberEquiv_ne_zero
-    (y : (fiber (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))).obj (kummerCover t n hn)) :
-    (kummerCoverFiberEquiv t Ω n hn y : Ω) ≠ 0 := by
-  intro h
-  have := (kummerCoverFiberEquiv t Ω n hn y).2
-  rw [h, zero_pow (by rintro rfl; simpa using hn.map (algebraMap R Ω))] at this
-  exact (t.isUnit.map (algebraMap R Ω)).ne_zero this.symm
-
-/-- If every `n`-th root of unity of `Ω` comes from an `n`-th root of unity of `R`, the deck
-transformations of the Kummer cover act transitively on its geometric fibre: any two `n`-th roots
-of `t` in `Ω` differ by an `n`-th root of unity of `R`. -/
-theorem exists_fiber_map_kummerCoverDeck_eq
-    (hμ : Function.Surjective (restrictRootsOfUnity (algebraMap R Ω) n))
-    (y y' : (fiber (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))).obj (kummerCover t n hn)) :
-    ∃ ζ : rootsOfUnity n R, (fiber (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))).map
-      (kummerCoverDeck t hn ζ).hom y = y' := by
-  set e := kummerCoverFiberEquiv t Ω n hn
-  have hy := kummerCoverFiberEquiv_ne_zero t hn y
-  -- The quotient of the two roots of `t` is an `n`-th root of unity of `Ω`.
-  have hω : Units.mk0 ((e y' : Ω) / e y) (div_ne_zero
-      (kummerCoverFiberEquiv_ne_zero t hn y') hy) ∈ rootsOfUnity n Ω := by
-    rw [mem_rootsOfUnity, Units.ext_iff, Units.val_pow_eq_pow_val, Units.val_mk0, div_pow,
-      (e y').2, (e y).2, div_self (t.isUnit.map (algebraMap R Ω)).ne_zero, Units.val_one]
-  obtain ⟨ζ, hζ⟩ := hμ ⟨_, hω⟩
-  refine ⟨ζ, e.injective (Subtype.ext ?_)⟩
-  have hζ' : algebraMap R Ω (ζ : Rˣ) = (e y' : Ω) / e y := by
-    simpa using congr(((($hζ : rootsOfUnity n Ω) : Ωˣ) : Ω))
-  rw [kummerCoverFiberEquiv_map_kummerCoverDeck, hζ', div_mul_cancel₀ _ hy]
 
 variable {t hn} in
 /-- Two roots of unity that multiply a nonzero `n`-th root of `t` to the same element agree. -/
