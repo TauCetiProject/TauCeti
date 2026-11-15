@@ -8,7 +8,6 @@ module
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
 public import TauCeti.Analysis.CStarAlgebra.Module.Action
 public import TauCeti.Analysis.CStarAlgebra.Module.AdjointPair
-public import TauCeti.Analysis.CStarAlgebra.Module.Full
 public import TauCeti.Analysis.CStarAlgebra.Quotient
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
 
@@ -46,17 +45,15 @@ approximate unit of `J` in the other. Together with positivity of the quotient `
 
 Note that we do not register a global `PartialOrder (A ⧸ J)` instance (which would conflict with
 `Quotient.instPreorderQuotient` in `Mathlib/Order/Quotient.lean`); scalar multiplication, inner
-products, the quotient norm formula, functoriality, and inner-ideal pushforward require no order on
-`A ⧸ J`, while `CStarModule` instances accept any `[PartialOrder (A ⧸ J)] [StarOrderedRing (A ⧸ J)]`
-(such as `CStarAlgebra.spectralOrder (A ⧸ J)`).
+products, the quotient norm formula, and functoriality require no order on `A ⧸ J`, while
+`CStarModule` instances accept any `[PartialOrder (A ⧸ J)] [StarOrderedRing (A ⧸ J)]` (such as
+`CStarAlgebra.spectralOrder (A ⧸ J)`).
 
 Finally, we establish functoriality in `E` (`CStarModule.quotientMapCLM`, including contractive
 operator-norm bounds, isometricity under inner-product preservation, and descent of adjoint pairs)
-and in `J` (`CStarModule.quotientFactorCLM`, intertwining `factorStarAlgHom`), as well as full
-compatibility with `innerIdeal` and `IsFull` (`idealSubmodule_eq_top_iff`,
-`idealSubmodule_innerIdeal`, `idealSubmodule_eq_bot_iff`, `idealSubmodule_inf`,
-`idealSubmodule_sup`, `innerIdeal_quotient`, `isFull_quotient_iff`, and self-module identifications
-`idealSubmodule_self` and `idealSubmodule_op_self`).
+and in `J` (`CStarModule.quotientFactorCLM`, intertwining `factorStarAlgHom`). Compatibility with
+`innerIdeal`, `IsFull`, and self-modules is established in
+`TauCeti.Analysis.CStarAlgebra.Module.Full`.
 
 ## Main declarations
 
@@ -71,10 +68,6 @@ compatibility with `innerIdeal` and `IsFull` (`idealSubmodule_eq_top_iff`,
   Hilbert `(A ⧸ J)`-module structures on `E ⧸ idealSubmodule J E` and `E ⧸ idealSubmodule J.op E`.
 * `CStarModule.quotientMapCLM` and `CStarModule.quotientFactorCLM`: functoriality of `E ⧸ E J` in
   `E` and in `J`.
-* `CStarModule.innerIdeal_quotient`, `CStarModule.rightInnerIdeal_quotient`,
-  `CStarModule.isFull_quotient_iff`, `CStarModule.idealSubmodule_eq_top_iff`,
-  `CStarModule.idealSubmodule_innerIdeal`, and `CStarModule.idealSubmodule_eq_bot_iff`:
-  compatibility between quotients, inner-product ideals, and fullness.
 
 ## References
 
@@ -870,209 +863,5 @@ theorem quotientMapCLM_op_smul {E F : Type*}
   quotientMapCLM_smul J.op T hT (TwoSidedIdeal.Quotient.opEquiv J q) v
 
 end FunctorialityCStarModule
-
-/-! ### Compatibility of `idealSubmodule`, `innerIdeal`, `IsFull`, and self-modules -/
-
-section Compatibility
-
-variable {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-
-section Module
-
-variable [NormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E] [CStarModule A E]
-
-/-- For a closed ideal `J`, `E J = E` if and only if `innerIdeal A E ≤ J`. -/
-theorem idealSubmodule_eq_top_iff {J : TwoSidedIdeal A} [IsClosed (J : Set A)] :
-    idealSubmodule J E = ⊤ ↔ innerIdeal A E ≤ J := by
-  rw [Submodule.eq_top_iff', innerIdeal_le_iff]
-  exact forall_congr' fun _ => mem_idealSubmodule_iff
-
-/-- Every Hilbert `A`-module is nondegenerate over its own inner-product ideal:
-`E (innerIdeal A E) = E`. -/
-@[simp]
-theorem idealSubmodule_innerIdeal : idealSubmodule (innerIdeal A E) E = ⊤ :=
-  idealSubmodule_eq_top_iff.mpr le_rfl
-
-/-- For a closed ideal `J`, `E J = ⊥` if and only if `innerIdeal A E ⊓ J = ⊥`. -/
-theorem idealSubmodule_eq_bot_iff {J : TwoSidedIdeal A} [IsClosed (J : Set A)] :
-    idealSubmodule J E = ⊥ ↔ innerIdeal A E ⊓ J = ⊥ := by
-  refine ⟨fun h => le_antisymm (fun a ha => ?_) bot_le, fun h => ?_⟩
-  · rw [TwoSidedIdeal.mem_inf] at ha
-    obtain ⟨haI, haJ⟩ := ha
-    -- Since `a ∈ J` and `E J = ⊥`, `a` annihilates `E`, hence left-annihilates `innerIdeal A E`.
-    have hann_inner : (innerSubmodule A E : Set A) ⊆ {b : A | a * b = 0} := by
-      let mulLeftLM : A →ₗ[ℂ] A :=
-        { toFun := (a * ·)
-          map_add' := mul_add a
-          map_smul' := fun c b => mul_smul_comm c a b }
-      have hle : innerSubmodule A E ≤ LinearMap.ker mulLeftLM := by
-        rw [innerSubmodule_le_iff]
-        intro x y
-        change a * inner A x y = 0
-        rw [← inner_op_smul_right]
-        have hay : a • y = 0 := by
-          have hmem : a • y ∈ (⊥ : Submodule ℂ E) := h ▸ smul_mem_idealSubmodule haJ y
-          rwa [Submodule.mem_bot] at hmem
-        rw [hay, inner_zero_right]
-      exact fun b hb => hle hb
-    have hclosed_ker : IsClosed {b : A | a * b = 0} :=
-      isClosed_eq (continuous_const_mul a) continuous_const
-    have hann_ideal : ∀ b ∈ innerIdeal A E, a * b = 0 := fun b hb =>
-      closure_minimal hann_inner hclosed_ker (mem_innerIdeal_iff.mp hb)
-    have hstar : star a ∈ innerIdeal A E := (innerIdeal A E).star_mem_of_isClosed haI
-    rw [TwoSidedIdeal.mem_bot]
-    exact mul_star_self_eq_zero.mp (hann_ideal (star a) hstar)
-  · rw [eq_bot_iff]
-    intro x hx
-    rw [Submodule.mem_bot, ← inner_self (A := A), ← TwoSidedIdeal.mem_bot, ← h,
-      TwoSidedIdeal.mem_inf]
-    exact ⟨inner_mem_innerIdeal x x, mem_idealSubmodule_iff.mp hx⟩
-
-/-- `E J` depends on the closed ideal `J` only through `innerIdeal A E ⊓ J`. -/
-@[simp]
-theorem idealSubmodule_inf_innerIdeal (J : TwoSidedIdeal A) [IsClosed (J : Set A)] :
-    idealSubmodule (innerIdeal A E ⊓ J) E = idealSubmodule J E := by
-  rw [idealSubmodule_inf, idealSubmodule_innerIdeal, top_inf_eq]
-
-/-- Viewing `E` as a Hilbert module over `innerIdeal A E`, the submodule attached to
-`J ∩ innerIdeal A E` (`TwoSidedIdeal.comap (innerIdeal A E).starAlgHom J`) coincides with
-`idealSubmodule J E`. -/
-theorem idealSubmodule_comap_innerIdeal (J : TwoSidedIdeal A) [IsClosed (J : Set A)] :
-    idealSubmodule (TwoSidedIdeal.comap (innerIdeal A E).starAlgHom J) E =
-      idealSubmodule J E := by
-  have : IsClosed
-      (TwoSidedIdeal.comap (innerIdeal A E).starAlgHom J : Set (innerIdeal A E)) :=
-    TwoSidedIdeal.isClosed_comap (innerIdeal A E).isometry_starAlgHom.continuous J
-  ext x
-  rw [mem_idealSubmodule_iff, TwoSidedIdeal.mem_comap, TwoSidedIdeal.starAlgHom_apply,
-    coe_inner_innerIdeal, mem_idealSubmodule_iff]
-
-/-- The inner-product ideal of the quotient module `E ⧸ idealSubmodule J E` over `A ⧸ J` is the
-pushforward of `innerIdeal A E` along the quotient map `mk J : A →ₙ+* A ⧸ J` (which is already
-closed by `TwoSidedIdeal.isClosed_map_mk`). -/
-@[simp]
-theorem innerIdeal_quotient (J : TwoSidedIdeal A) [IsClosed (J : Set A)] :
-    innerIdeal (A ⧸ J) (E ⧸ idealSubmodule J E) =
-      TwoSidedIdeal.map (TwoSidedIdeal.Quotient.mk J) (innerIdeal A E) := by
-  refine le_antisymm ?_ ?_
-  · rw [innerIdeal_le_iff_inner]
-    intro u v
-    obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ u
-    obtain ⟨y, rfl⟩ := Submodule.Quotient.mk_surjective _ v
-    rw [inner_mk_mk,
-      TwoSidedIdeal.mem_map_of_surjective (TwoSidedIdeal.Quotient.mk_surjective J)]
-    exact ⟨inner A x y, inner_mem_innerIdeal x y, rfl⟩
-  · rw [TwoSidedIdeal.map_le_iff_le_comap]
-    have : IsClosed
-        (TwoSidedIdeal.comap (TwoSidedIdeal.Quotient.mk J)
-          (innerIdeal (A ⧸ J) (E ⧸ idealSubmodule J E)) : Set A) :=
-      TwoSidedIdeal.isClosed_comap (TwoSidedIdeal.Quotient.continuous_mk J) _
-    rw [innerIdeal_le_iff_inner]
-    intro x y
-    rw [TwoSidedIdeal.mem_comap, ← inner_mk_mk J x y]
-    exact inner_mem_innerIdeal _ _
-
-/-- The quotient module `E ⧸ idealSubmodule J E` is full over `A ⧸ J` if and only if
-`innerIdeal A E ⊔ J = ⊤`. -/
-theorem isFull_quotient_iff (J : TwoSidedIdeal A) [IsClosed (J : Set A)] :
-    IsFull (A ⧸ J) (E ⧸ idealSubmodule J E) ↔ innerIdeal A E ⊔ J = ⊤ := by
-  rw [isFull_iff_innerIdeal_eq_top, innerIdeal_quotient, TwoSidedIdeal.map_mk_eq_top_iff]
-
-/-- Every quotient of a full Hilbert `A`-module by a closed two-sided ideal is full over `A ⧸ J`.
--/
-theorem IsFull.quotient (h : IsFull A E) (J : TwoSidedIdeal A) [IsClosed (J : Set A)] :
-    IsFull (A ⧸ J) (E ⧸ idealSubmodule J E) := by
-  rw [isFull_quotient_iff, isFull_iff_innerIdeal_eq_top.mp h, top_sup_eq]
-
-end Module
-
-section RightModule
-
-variable [NormedAddCommGroup E] [NormedSpace ℂ E] [SMul Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E]
-
-/-- Right-module form: for a closed ideal `J` of `A`, `idealSubmodule J.op E = ⊤` if and only if
-`rightInnerIdeal A E ≤ J`. -/
-theorem idealSubmodule_op_eq_top_iff {J : TwoSidedIdeal A} [IsClosed (J : Set A)] :
-    idealSubmodule J.op E = ⊤ ↔ rightInnerIdeal A E ≤ J := by
-  rw [idealSubmodule_eq_top_iff, ← op_rightInnerIdeal]
-  exact TwoSidedIdeal.opOrderIso.le_iff_le
-
-theorem idealSubmodule_op_rightInnerIdeal :
-    idealSubmodule (rightInnerIdeal A E).op E = ⊤ :=
-  idealSubmodule_op_eq_top_iff.mpr le_rfl
-
-/-- Right-module form: for a closed ideal `J` of `A`, `idealSubmodule J.op E = ⊥` if and only if
-`rightInnerIdeal A E ⊓ J = ⊥`. -/
-theorem idealSubmodule_op_eq_bot_iff {J : TwoSidedIdeal A} [IsClosed (J : Set A)] :
-    idealSubmodule J.op E = ⊥ ↔ rightInnerIdeal A E ⊓ J = ⊥ := by
-  rw [idealSubmodule_eq_bot_iff, ← op_rightInnerIdeal]
-  change TwoSidedIdeal.opOrderIso (rightInnerIdeal A E) ⊓ TwoSidedIdeal.opOrderIso J = ⊥ ↔ _
-  rw [← map_inf TwoSidedIdeal.opOrderIso, ← map_bot TwoSidedIdeal.opOrderIso,
-    TwoSidedIdeal.opOrderIso.injective.eq_iff]
-
-/-- Right-module form: `rightInnerIdeal (A ⧸ J) (E ⧸ idealSubmodule J.op E)` is the pushforward of
-`rightInnerIdeal A E` along `mk J : A →ₙ+* A ⧸ J`. -/
-@[simp]
-theorem rightInnerIdeal_quotient (J : TwoSidedIdeal A) [IsClosed (J : Set A)] :
-    rightInnerIdeal (A ⧸ J) (E ⧸ idealSubmodule J.op E) =
-      TwoSidedIdeal.map (TwoSidedIdeal.Quotient.mk J) (rightInnerIdeal A E) := by
-  refine le_antisymm ?_ ?_
-  · rw [rightInnerIdeal_le_iff_inner]
-    intro u v
-    obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ u
-    obtain ⟨y, rfl⟩ := Submodule.Quotient.mk_surjective _ v
-    rw [unop_inner_mk_mk,
-      TwoSidedIdeal.mem_map_of_surjective (TwoSidedIdeal.Quotient.mk_surjective J)]
-    exact ⟨unop (inner Aᵐᵒᵖ x y), unop_inner_mem_rightInnerIdeal x y, rfl⟩
-  · rw [TwoSidedIdeal.map_le_iff_le_comap]
-    have : IsClosed
-        (TwoSidedIdeal.comap (TwoSidedIdeal.Quotient.mk J)
-          (rightInnerIdeal (A ⧸ J) (E ⧸ idealSubmodule J.op E)) : Set A) :=
-      TwoSidedIdeal.isClosed_comap (TwoSidedIdeal.Quotient.continuous_mk J) _
-    rw [rightInnerIdeal_le_iff_inner]
-    intro x y
-    rw [TwoSidedIdeal.mem_comap, ← unop_inner_mk_mk J x y]
-    exact unop_inner_mem_rightInnerIdeal _ _
-
-/-- Right-module form: `E ⧸ idealSubmodule J.op E` is full as a right Hilbert `(A ⧸ J)`-module if
-and only if `rightInnerIdeal A E ⊔ J = ⊤`. -/
-theorem isFull_quotient_mulOpposite_iff (J : TwoSidedIdeal A) [IsClosed (J : Set A)] :
-    IsFull (A ⧸ J)ᵐᵒᵖ (E ⧸ idealSubmodule J.op E) ↔ rightInnerIdeal A E ⊔ J = ⊤ := by
-  rw [isFull_mulOpposite_iff, rightInnerIdeal_quotient, TwoSidedIdeal.map_mk_eq_top_iff]
-
-theorem IsFull.quotient_mulOpposite (h : IsFull Aᵐᵒᵖ E) (J : TwoSidedIdeal A)
-    [IsClosed (J : Set A)] :
-    IsFull (A ⧸ J)ᵐᵒᵖ (E ⧸ idealSubmodule J.op E) := by
-  rw [isFull_quotient_mulOpposite_iff, isFull_mulOpposite_iff.mp h, top_sup_eq]
-
-end RightModule
-
-section Self
-
-variable (J : TwoSidedIdeal A) [IsClosed (J : Set A)]
-
-/-- For `A` viewed as a left Hilbert module over itself, `idealSubmodule J A` is `J.toSubmodule`.
--/
-theorem idealSubmodule_self : idealSubmodule J A = J.toSubmodule := by
-  refine le_antisymm ?_ ?_
-  · exact (idealSubmodule_le_iff J.isClosed_toSubmodule).mpr fun a ha x =>
-      J.mul_mem_right a x ha
-  · intro a ha
-    rw [mem_idealSubmodule_iff, WithCStarModule.inner_def]
-    exact J.mul_mem_right a (star a) ha
-
-/-- For `A` viewed as a right Hilbert module over itself (`CStarModule Aᵐᵒᵖ A`),
-`idealSubmodule J.op A` is `J.toSubmodule`. -/
-theorem idealSubmodule_op_self : idealSubmodule J.op A = J.toSubmodule := by
-  refine le_antisymm ?_ ?_
-  · exact (idealSubmodule_le_iff J.isClosed_toSubmodule).mpr fun u hu x =>
-      J.mul_mem_left x u.unop (TwoSidedIdeal.mem_op_iff.mp hu)
-  · intro a ha
-    rw [mem_idealSubmodule_op_iff, unop_inner_mulOpposite]
-    exact J.mul_mem_left (star a) a ha
-
-end Self
-
-end Compatibility
 
 end CStarModule
