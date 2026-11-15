@@ -31,6 +31,8 @@ of `a`.
   for exponents `a` and `b` supported on the variables of `P` and of `Q`.
 * `MvPolynomial.vars_rename_subset_Ioi`: if `f` sends every variable of `a` above `i`, then
   every variable of `rename f a` lies above `i`.
+* `MvPolynomial.exists_rename_eq_of_vars_subset_range'`: a polynomial whose variables all lie in
+  the range of `f` is the renaming along `f` of a polynomial, with no injectivity assumption on `f`.
 * `Polynomial.vars_toMvPolynomial_subset`: a one-variable polynomial placed in the coordinate `i`
   involves at most the variable `i`.
 -/
@@ -64,6 +66,17 @@ theorem vars_rename_subset_Ioi {τ : Type*} [Preorder τ] [LocallyFiniteOrderTop
     (rename f a).vars ⊆ Ioi i := by
   classical
   exact (vars_rename f a).trans (image_subset_iff.2 fun j hj ↦ mem_Ioi.2 (h j hj))
+
+/-- A polynomial whose variables all lie in the range of `f` is the renaming along `f` of a
+polynomial. Unlike `MvPolynomial.exists_rename_eq_of_vars_subset_range`, this needs no
+injectivity of `f`. -/
+theorem exists_rename_eq_of_vars_subset_range' {τ : Type*} (p : MvPolynomial σ R) (f : τ → σ)
+    (hf : ↑p.vars ⊆ Set.range f) : ∃ q : MvPolynomial τ R, rename f q = p := by
+  rw [coe_vars_subset_iff, AlgHom.mem_range] at hf
+  obtain ⟨q, hq⟩ := hf
+  refine ⟨rename (fun x : Set.range f ↦ x.2.choose) q, ?_⟩
+  rw [rename_rename, ← hq]
+  exact congrArg (fun f ↦ rename f q) (funext fun x ↦ x.2.choose_spec)
 
 end MvPolynomial
 

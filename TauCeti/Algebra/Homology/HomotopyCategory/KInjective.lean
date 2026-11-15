@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.HomologicalComplexLimits
+public import Mathlib.Algebra.Homology.Double
 public import Mathlib.Algebra.Homology.HomotopyCategory.DegreewiseSplit
 public import Mathlib.Algebra.Homology.HomotopyCategory.KInjective
 public import TauCeti.Algebra.Homology.LinearHomComplex.Cohomology
@@ -54,15 +54,18 @@ variable {C : Type*} [Category* C] [Abelian C]
 
 /-- **Products of K-injective complexes are K-injective.** If `c` is a product of a family of
 K-injective cochain complexes, then its cone point is K-injective. -/
-theorem isKInjective_of_isLimit_fan {J : Type*} [HasProductsOfShape J C]
+theorem isKInjective_of_isLimit_fan {J : Type*}
     {X : J → CochainComplex C ℤ} {c : Fan X} (hc : IsLimit c) [∀ j, (X j).IsKInjective] :
     c.pt.IsKInjective where
   nonempty_homotopy_zero {K} f hK := by
     -- Each component `f ≫ c.proj j` is null-homotopic, and the homotopies are assembled degreewise
     -- using that every term of `c.pt` is the product of the corresponding terms of the `X j`.
     let h (j : J) : Homotopy (f ≫ c.proj j) 0 := IsKInjective.homotopyZero _ hK
+    -- the evaluation functors preserve the limit, as each `eval q ⋙ coyoneda.obj (op Y)` is
+    -- corepresentable and the coyoneda functors preserve limits
     let hc' (q : ℤ) : IsLimit ((HomologicalComplex.eval C _ q).mapCone c) :=
-      isLimitOfPreserves _ hc
+      coyonedaJointlyReflectsLimits _ _ fun ⟨Y⟩ ↦
+        isLimitOfPreserves (HomologicalComplex.eval C _ q ⋙ coyoneda.obj ⟨Y⟩) hc
     let hom (p q : ℤ) : K.X p ⟶ c.pt.X q :=
       (hc' q).lift ⟨K.X p, Discrete.natTrans fun j ↦ (h j.as).hom p q⟩
     have hom_proj (p q : ℤ) (j : J) : hom p q ≫ (c.π.app ⟨j⟩).f q = (h j).hom p q :=

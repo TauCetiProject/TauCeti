@@ -466,7 +466,8 @@ theorem sectionRingProjIso_hom_over (hF : IsFunctionField k F) (z : Fˣ) :
       sectionRingProjInfinityChartIso_inv_ι, Category.assoc, Proj.awayι_toSpecCoeff,
       ← Spec.map_comp, ← CommRingCat.ofHom_comp]
     congr 2
-    exact (sectionRingAwayGeneratorEquiv hF z).toAlgHom.comp_algebraMap.symm
+    refine RingHom.ext fun x => ?_
+    exact ((sectionRingAwayGeneratorEquiv hF z).commutes x).symm
 
 end AlgebraicGeometry.twoChartModel
 

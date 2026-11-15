@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Serre.Reduction
+public import TauCeti.Combinatorics.Graph.Serre.Tree
 
 /-!
 # The reduced path group of a Serre graph
@@ -13,7 +13,8 @@ public import TauCeti.Combinatorics.Graph.Serre.Reduction
 At a vertex of a Serre graph, reduced closed paths form a group. Multiplication concatenates
 paths and removes adjacent inverse darts; inversion reverses a path. The normal form identifies
 this group with backtrack-homotopy classes of closed paths. This is the path model to be compared
-with a spanning-tree presentation of the fundamental group of a graph.
+with a spanning-tree presentation of the fundamental group of a graph. The reduced path groups of
+an acyclic graph are trivial.
 
 ## References
 
@@ -182,5 +183,12 @@ theorem lift_apply {G : Type*} [Group G] (wt : Γ.E → G)
 
 end
 end PathGroup
+
+variable {Γ} in
+/-- The reduced path groups of an acyclic graph are trivial: the only reduced closed path is
+the empty one. -/
+theorem IsAcyclic.subsingleton_pathGroup (h : Γ.IsAcyclic) (v : Γ.V) :
+    Subsingleton (PathGroup Γ v) :=
+  ⟨fun p q => PathGroup.ext <| h.eq_of_isReduced p.isReduced q.isReduced⟩
 
 end TauCeti.SerreGraph

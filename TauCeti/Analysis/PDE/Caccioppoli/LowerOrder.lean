@@ -235,7 +235,7 @@ theorem
     MemLp.of_bilin (inner ℝ) 1 (memLp_top_of_bound hb beta
       (ae_restrict_of_forall_mem Omega.isOpen.measurableSet hb_bound)) (Lp.memLp _)
       continuous_inner
-      (.of_forall fun x => by simpa using nnnorm_inner_le_nnnorm (b x) (W1p.gradient u x))
+      (.of_forall fun x => by simpa using nnNorm_inner_le_nnNorm (b x) (W1p.gradient u x))
   have hC : MemLp (fun x => c x * W1p.value u x) 2 (mu.restrict Omega) :=
     (memLp_top_of_bound hc gamma (ae_restrict_of_forall_mem Omega.isOpen.measurableSet
       hc_bound)).fun_mul (Lp.memLp _)

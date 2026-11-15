@@ -65,11 +65,7 @@ theorem weylUnit_conj_of_cartan_eq_neg_two (hs : IsSerreSystem ℚ CM H E F)
   have hne : j ≠ i := ne_of_apply_ne (CM i) (by omega)
   have hlower : ⁅F i, E j⁆ = 0 := by
     rw [← lie_skew, hs.lie_E_F_of_ne j i hne, neg_zero]
-  have hthird : ⁅E i, ⁅E i, ⁅E i, E j⁆⁆⁆ = 0 := by
-    have hz := hs.ad_pow_lie_E_E i j
-    norm_num [hij] at hz
-    simpa only [pow_succ, pow_zero, one_mul, mul_apply_eq_comp, ad_apply] using hz
-  exact ht.weylUnit_conj_of_lie_eq_neg_two_smul hE hF hweight hlower hthird
+  exact ht.weylUnit_conj_of_lie_eq_neg_two_smul hE hF hweight hlower
 
 /-- At a directed Cartan entry minus two, the pinned Weyl unit carries the lowering
 generator to one half of its second lowering bracket. -/
