@@ -51,8 +51,8 @@ curve through `1` with the constant `C`; the latter involves no inversion.
   inverse family.
 * `HasDerivAt.clm_inverse_apply_of_completeSpace`: the Banach-space specialization acting on a
   vector curve.
-* `ContDiffAt.inverse` and `ContDiff.inverse`: the ring inverse of a `C^n` family of units
-  is `C^n`.
+* `ContDiffAt.inverse`, `ContDiffOn.inverse` and `ContDiff.inverse`: the ring inverse of a `C^n`
+  family of units is `C^n`.
 * `DifferentiableAt.deriv_eq_mul_sub_mul_of_mul_eq_mul`: a family `K` with `K t * P t = P t * C`
   and `P` of velocity `Z` through `1` has velocity `Z * C - C * Z` at that point.
 
@@ -318,6 +318,14 @@ theorem ContDiffAt.inverse {f : X → R} {x : X} (hf : ContDiffAt 𝕜 n f x)
   have hi := contDiffAt_ringInverse (n := n) 𝕜 u
   rw [hu] at hi
   exact hi.comp x hf
+
+/-- The ring inverse of a `C^n` family is `C^n` on any set where the family takes unit values. -/
+theorem ContDiffOn.inverse {f : X → R} {s : Set X} (hf : ContDiffOn 𝕜 n f s)
+    (hfu : ∀ x ∈ s, IsUnit (f x)) : ContDiffOn 𝕜 n (fun y => Ring.inverse (f y)) s := fun x hx => by
+  obtain ⟨u, hu⟩ := hfu x hx
+  have hi := contDiffAt_ringInverse (n := n) 𝕜 u
+  rw [hu] at hi
+  exact hi.comp_contDiffWithinAt x (hf x hx)
 
 /-- The ring inverse of a `C^n` family of units is `C^n`. -/
 theorem ContDiff.inverse {f : X → R} (hf : ContDiff 𝕜 n f) (hfu : ∀ x, IsUnit (f x)) :

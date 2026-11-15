@@ -119,20 +119,30 @@ theorem ContDiff.contDiff_hadamardFactor_of_succ
   exact (hd.contDiff_segmentAverage intervalIntegrable_const x).comp (by fun_prop)
 
 /-- First-order Taylor expansion along a segment, with its coefficient bundled as a continuous
-linear map. -/
-theorem ContDiff.sub_eq_hadamardFactor_apply [CompleteSpace F]
-    (f : E → F) (hf : ContDiff ℝ 1 f) (x y : E) :
+linear map, for a map that is `C¹` near every point of the segment from `x` to `y`. -/
+theorem sub_eq_hadamardFactor_apply [CompleteSpace F] (f : E → F) {x y : E}
+    (hf : ∀ z ∈ segment ℝ x y, ContDiffAt ℝ 1 f z) :
     f y - f x = hadamardFactor f x y (y - x) := by
-  have hTaylor := map_add_eq_sum_add_integral_iteratedFDeriv (n := 0) (x := x) (y := y - x)
-    (fun _ _ ↦ hf.contDiffAt)
+  have hseg (t : ℝ) (ht : t ∈ Set.Icc (0 : ℝ) 1) : ContDiffAt ℝ 1 f (x + t • (y - x)) :=
+    hf _ (by rw [segment_eq_image']; exact ⟨t, ht, rfl⟩)
+  have hTaylor := map_add_eq_sum_add_integral_iteratedFDeriv (n := 0) (x := x) (y := y - x) hseg
   have hIntegrable : IntervalIntegrable (fun t : ℝ ↦ fderiv ℝ f (x + t • (y - x)))
       volume 0 1 := by
-    apply Continuous.intervalIntegrable
-    exact (hf.fderiv_right (m := 0) (by norm_num)).continuous.comp (by fun_prop)
+    refine ContinuousOn.intervalIntegrable fun t ht ↦ ?_
+    rw [Set.uIcc_of_le zero_le_one] at ht
+    exact ((hseg t ht).fderiv_right (m := 0) (by norm_num)).continuousAt.comp_continuousWithinAt
+      (f := fun t : ℝ ↦ x + t • (y - x)) (by fun_prop)
   rw [hadamardFactor, segmentAverage]
   simp only [one_smul]
   rw [ContinuousLinearMap.intervalIntegral_apply hIntegrable (y - x)]
   simpa [sub_eq_iff_eq_add, add_comm] using hTaylor
+
+/-- First-order Taylor expansion along a segment, with its coefficient bundled as a continuous
+linear map. -/
+theorem ContDiff.sub_eq_hadamardFactor_apply [CompleteSpace F]
+    (f : E → F) (hf : ContDiff ℝ 1 f) (x y : E) :
+    f y - f x = hadamardFactor f x y (y - x) :=
+  _root_.sub_eq_hadamardFactor_apply f fun _ _ ↦ hf.contDiffAt
 
 /-- For a smooth function, the averaged derivative in Hadamard's factorization depends smoothly on
 the endpoint. -/
@@ -141,23 +151,40 @@ theorem ContDiff.contDiff_hadamardFactor (f : E → F)
     (x : E) : ContDiff ℝ ∞ (hadamardFactor f x) := by
   simpa using ContDiff.contDiff_hadamardFactor_of_succ (⊤ : ℕ∞) f (by simpa using hf) x
 
-/-- The averaged derivatives of a jointly `C¹` family of maps `f p` along segments whose endpoints
-depend continuously on `p ∈ S` depend continuously on `p ∈ S`. -/
-theorem ContDiff.continuousOn_hadamardFactor {P : Type*} [NormedAddCommGroup P]
-    [NormedSpace ℝ P] {f : P → E → F} (hf : ContDiff ℝ 1 fun q : P × E ↦ f q.1 q.2)
-    {a b : P → E} {S : Set P} (ha : ContinuousOn a S) (hb : ContinuousOn b S) :
+/-- The averaged derivatives of a family of maps `f p` along segments whose endpoints depend
+continuously on `p ∈ S` depend continuously on `p ∈ S`, when `(p, x) ↦ f p x` is `C¹` near every
+point `(p, x)` with `p ∈ S` and `x` on the segment from `a p` to `b p`. -/
+theorem continuousOn_hadamardFactor {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
+    {f : P → E → F} {a b : P → E} {S : Set P}
+    (hf : ∀ p ∈ S, ∀ x ∈ segment ℝ (a p) (b p), ContDiffAt ℝ 1 (Function.uncurry f) (p, x))
+    (ha : ContinuousOn a S) (hb : ContinuousOn b S) :
     ContinuousOn (fun p ↦ hadamardFactor (f p) (a p) (b p)) S := by
-  -- the derivative of `y ↦ f p (x + y)` at `y`, jointly in `(p, x)` and `y`
-  have hg : ContDiff ℝ 0 (fun q : (P × E) × E ↦ fderiv ℝ (f q.1.1) (q.1.2 + q.2)) :=
-    ContDiff.fderiv (f := fun q : (P × E) × E ↦ f q.1.1)
-      (hf.comp (contDiff_fst.fst.fst.prodMk contDiff_snd)) (contDiff_fst.snd.add contDiff_snd)
-      (by norm_num)
-  have hav := hg.contDiff_segmentAverage_param (w := fun _ ↦ 1) intervalIntegrable_const 0
+  -- the derivative of `f p` at `x` is continuous in `(p, x)` near each point of the segments
+  have hd (p : P) (hp : p ∈ S) (t : I) : ContinuousAt (fun q : P × E ↦ fderiv ℝ (f q.1) q.2)
+      (p, a p + (t : ℝ) • (b p - a p)) := by
+    have h := hf p hp (a p + (t : ℝ) • (b p - a p))
+      (by rw [segment_eq_image']; exact ⟨t, t.2, rfl⟩)
+    exact (ContDiffAt.fderiv (f := fun q : P × E ↦ f q.1) (g := Prod.snd) (m := 0) (n := 1)
+      (h.comp ((p, a p + (t : ℝ) • (b p - a p)), a p + (t : ℝ) • (b p - a p))
+        (contDiffAt_fst.fst.prodMk contDiffAt_snd)) contDiffAt_snd (by norm_num)).continuousAt
+  have ha' : ContinuousOn (fun q : P × I ↦ a q.1) (S ×ˢ Set.univ) :=
+    ha.comp continuousOn_fst fun q hq ↦ hq.1
+  have hb' : ContinuousOn (fun q : P × I ↦ b q.1) (S ×ˢ Set.univ) :=
+    hb.comp continuousOn_fst fun q hq ↦ hq.1
+  have hφ : ContinuousOn (fun q : P × I ↦ (q.1, a q.1 + (q.2 : ℝ) • (b q.1 - a q.1)))
+      (S ×ˢ Set.univ) :=
+    continuousOn_fst.prodMk
+      (ha'.add ((continuous_subtype_val.comp continuous_snd).continuousOn.smul (hb'.sub ha')))
+  have hc : ContinuousOn (Function.uncurry fun p (t : I) ↦
+      fderiv ℝ (f p) (a p + (t : ℝ) • (b p - a p))) (S ×ˢ Set.univ) := fun q hq ↦
+    (hd q.1 hq.1 q.2).comp_continuousWithinAt
+      (f := fun q : P × I ↦ (q.1, a q.1 + (q.2 : ℝ) • (b q.1 - a q.1))) (hφ q hq)
   have heq (p : P) : hadamardFactor (f p) (a p) (b p) =
-      segmentAverage (fun _ ↦ 1) (fun y ↦ fderiv ℝ (f p) (a p + y)) 0 (b p - a p) := by
-    simp [hadamardFactor, segmentAverage]
+      ∫ t : I, fderiv ℝ (f p) (a p + (t : ℝ) • (b p - a p)) := by
+    simp [hadamardFactor, segmentAverage, TauCeti.intervalIntegral_eq_integral_unitInterval]
   simp only [heq]
-  exact hav.continuous.comp_continuousOn ((continuousOn_id.prodMk ha).prodMk (hb.sub ha))
+  exact continuousOn_integral_of_compact_support isCompact_univ hc
+    fun _ _ _ h ↦ absurd (Set.mem_univ _) h
 
 namespace TauCeti
 

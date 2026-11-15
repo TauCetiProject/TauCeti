@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.Similarity
 public import TauCeti.Analysis.Complex.CauchyRiemann.StandardFrame
-import Mathlib.Analysis.Calculus.ContDiff.Operations
+import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Geometry.Symplectic.Complex.Module.Conjugacy
 
 /-!
@@ -31,27 +31,34 @@ map `η = Φ⁻¹ ξ`. Expanding `ξ = Φ η` by the product rule gives
 `∂ₛξ + J ∂ₜξ + C ξ = Φ (∂ₛη + i ∂ₜη + C' η)`,  `C' = Φ⁻¹(∂ₛΦ + J ∂ₜΦ + C Φ)`
 
 (`TauCeti.frameCoeff`), a classical equation for `η` with the standard structure and a measurable,
-locally bounded coefficient (`TauCeti.contDiffOn_and_eq_zero_frameCoeff`,
-`TauCeti.aestronglyMeasurable_frameCoeff_and_bounded`). Hence `η`, and with it `ξ = Φ η`, has a
+locally bounded coefficient (`TauCeti.fderiv_clm_apply_add_eq_apply_add_frameCoeff`,
+`TauCeti.aestronglyMeasurable_frameCoeff`, `TauCeti.exists_eventually_norm_frameCoeff_le`).
+Hence `η`, and with it `ξ = Φ η`, has a
 similarity factorization at every point of `Ω`
 (`TauCeti.hasSimilarityFactorizationAt_of_contDiffOn_of_comp_eq_neg_id`), for `ξ` with values in a
 finite-dimensional complex normed space.
 
 For values in a finite-dimensional *real* normed space `E`, as for maps into a symplectic vector
-space, any real-linear isomorphism `ℂⁿ ≃ E` transports the equation to `ℂⁿ`. One exists because
-`J(z₀)` is a complex structure on `E`
+space, any real-linear isomorphism `e : E ≃ W` with a finite-dimensional complex normed space
+transports the equation to `W`, so `e ∘ ξ` has a similarity factorization at every point of `Ω`
+(`TauCeti.hasSimilarityFactorizationAt_apply_of_contDiffOn_of_comp_eq_neg_id`).
+Such an `e` exists, with `W = ℂⁿ`, because `J(z₀)` is a complex structure on `E`
 (`ContinuousLinearMap.exists_continuousLinearEquiv_euclideanSpace_comp_eq_comp_I_smul`); its
 intertwining property is not needed, since the reduction to the case `J = i` is made by the standard
-frame inside `TauCeti.hasSimilarityFactorizationAt_of_contDiffOn_of_comp_eq_neg_id`. Unique
-continuation follows: on a connected open set, a solution vanishing on a nonempty open subset
-vanishes identically (`TauCeti.eqOn_zero_of_contDiffOn_of_comp_eq_neg_id_of_eqOn_zero`).
+frame. Unique continuation follows on a connected open set: a solution vanishing on a nonempty open
+subset, or to infinite order at one point, vanishes identically, and the zeros of a solution that is
+not identically zero are isolated.
 
 ## Main results
 
 * `TauCeti.hasSimilarityFactorizationAt_of_contDiffOn_of_comp_eq_neg_id`: the similarity
   factorization of classical solutions for a `C¹` complex structure.
-* `TauCeti.eqOn_zero_of_contDiffOn_of_comp_eq_neg_id_of_eqOn_zero`: unique continuation for
-  classical solutions with values in a finite-dimensional real normed space.
+* `TauCeti.hasSimilarityFactorizationAt_apply_of_contDiffOn_of_comp_eq_neg_id`:
+  its transport to solutions with values in a finite-dimensional real normed space.
+* `TauCeti.eqOn_zero_of_contDiffOn_of_comp_eq_neg_id_of_eqOn_zero`,
+  `TauCeti.eqOn_zero_of_contDiffOn_of_comp_eq_neg_id_of_forall_isBigO` and
+  `TauCeti.setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn_of_comp_eq_neg_id`: unique continuation
+  from an open set and from a zero of infinite order, and isolated zeros, for such solutions.
 
 ## References
 
@@ -90,13 +97,29 @@ theorem hasSimilarityFactorizationAt_of_contDiffOn_of_comp_eq_neg_id (hΩ : IsOp
     exists_ball_isUnit_standardFrame (Φ₁ := Φ₁) hΩ hz₀ hJ.continuousOn (hJsq z₀ hz₀)
   set B := ball z₀ r
   have hΦB : ContDiffOn ℝ 1 Φ B := (contDiffOn_standardFrame hJ).mono hrΩ
-  obtain ⟨hηd, heqη⟩ := contDiffOn_and_eq_zero_frameCoeff isOpen_ball hΦB hu
-    (fun z hz ↦ comp_standardFrame (hJsq z (hrΩ hz)) (hJsq z₀ hz₀) hΦ₁) (hξ.mono hrΩ)
-    fun z hz ↦ heq z (hrΩ hz)
-  have hξη : EqOn ξ (fun z ↦ Φ z (Ring.inverse (Φ z) (ξ z))) B := fun z hz ↦ by
+  have hDΦB : ContinuousOn (fderiv ℝ Φ) B := hΦB.continuousOn_fderiv_of_isOpen isOpen_ball le_rfl
+  -- `ξ = Φ η` on `B` for the `C¹` map `η = Φ⁻¹ ξ`
+  set η : ℂ → V := fun z ↦ Ring.inverse (Φ z) (ξ z)
+  have hηd : ContDiffOn ℝ 1 η B := (hΦB.inverse hu).clm_apply (hξ.mono hrΩ)
+  have hξη : EqOn ξ (fun z ↦ Φ z (η z)) B := fun z hz ↦ by
     simpa using (congr($(Ring.mul_inverse_cancel _ (hu z hz)) (ξ z))).symm
-  obtain ⟨hC'm, hC'b⟩ := aestronglyMeasurable_frameCoeff_and_bounded isOpen_ball hrΩ hΦB
-    (hJ.continuousOn.mono hrΩ) hu hCm hCb
+  have heqη (z : ℂ) (hz : z ∈ B) :
+      fderiv ℝ η z 1 + I • fderiv ℝ η z I + frameCoeff J C Φ (fderiv ℝ Φ) z (η z) = 0 := by
+    have hzB : B ∈ 𝓝 z := isOpen_ball.mem_nhds hz
+    have hξz : ξ z = Φ z (η z) := hξη hz
+    have h := fderiv_clm_apply_add_eq_apply_add_frameCoeff (C := C)
+      ((hΦB.contDiffAt hzB).differentiableAt one_ne_zero)
+      ((hηd.contDiffAt hzB).differentiableAt one_ne_zero) (hu z hz)
+      (comp_standardFrame (hJsq z (hrΩ hz)) (hJsq z₀ hz₀) hΦ₁)
+    rw [← (eventuallyEq_of_mem hzB hξη).fderiv_eq, ← hξz, heq z (hrΩ hz)] at h
+    exact (ContinuousLinearMap.isUnit_iff_bijective.1 (hu z hz)).1
+      (h.symm.trans (map_zero _).symm)
+  have hC'm := aestronglyMeasurable_frameCoeff isOpen_ball.measurableSet hΦB.continuousOn hDΦB
+    (hJ.continuousOn.mono hrΩ) hu (hCm.mono_measure (Measure.restrict_mono hrΩ le_rfl))
+  have hC'b (z : ℂ) (hz : z ∈ B) :=
+    exists_eventually_norm_frameCoeff_le (hΦB.continuousOn.continuousAt (isOpen_ball.mem_nhds hz))
+      (hDΦB.continuousAt (isOpen_ball.mem_nhds hz))
+      (hJ.continuousOn.continuousAt (hΩ.mem_nhds (hrΩ hz))) (hu z hz) (hCb z (hrΩ hz))
   have hfac := (hasSimilarityFactorizationAt_of_contDiffOn isOpen_ball hηd hC'm hC'b heqη
     (mem_ball_self hr)).clm_apply ((hΦB.continuousOn).continuousAt (ball_mem_nhds z₀ hr))
       (isUnit_standardFrame_self (hJsq z₀ hz₀))
@@ -109,33 +132,29 @@ end Complex
 
 section Real
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E W : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup W] [NormedSpace ℂ W] [FiniteDimensional ℂ W]
   {Ω : Set ℂ} {ξ : ℂ → E} {J C : ℂ → E →L[ℝ] E}
 
-/-- **Unique continuation for a variable complex structure.** Let `ξ` be of class `C¹` on a
-connected open set `Ω ⊆ ℂ`, with values in a finite-dimensional real normed space `E`, and solve
-`∂ₛξ + J ∂ₜξ + C ξ = 0` on `Ω`, for a `C¹` field `J` of real-linear maps with `J(z)² = -1` and a
-measurable, locally bounded field `C` of real-linear maps. If `ξ` vanishes on a nonempty open
-subset of `Ω`, it vanishes on `Ω`. -/
-theorem eqOn_zero_of_contDiffOn_of_comp_eq_neg_id_of_eqOn_zero (hΩ : IsOpen Ω)
-    (hΩc : IsPreconnected Ω) (hξ : ContDiffOn ℝ 1 ξ Ω) (hJ : ContDiffOn ℝ 1 J Ω)
+omit [FiniteDimensional ℝ E] in
+/-- **The similarity principle for a variable complex structure**, for classical solutions with
+values in a real vector space. Let `ξ` be of class `C¹` on an open set `Ω ⊆ ℂ`, with values in a
+finite-dimensional real normed space `E`, and solve `∂ₛξ + J ∂ₜξ + C ξ = 0` on `Ω`, for a `C¹`
+field `J` of real-linear maps with `J(z)² = -1` and a measurable, locally bounded field `C` of
+real-linear maps. For every real-linear isomorphism `e` of `E` with a finite-dimensional complex
+normed space, `e ∘ ξ` has a similarity factorization at every point of `Ω`. -/
+theorem hasSimilarityFactorizationAt_apply_of_contDiffOn_of_comp_eq_neg_id
+    (e : E ≃L[ℝ] W) (hΩ : IsOpen Ω) (hξ : ContDiffOn ℝ 1 ξ Ω) (hJ : ContDiffOn ℝ 1 J Ω)
     (hJsq : ∀ z ∈ Ω, J z ∘L J z = -ContinuousLinearMap.id ℝ E)
     (hCm : AEStronglyMeasurable C (volume.restrict Ω))
     (hCb : ∀ z ∈ Ω, ∃ M, ∀ᶠ w in 𝓝 z, ‖C w‖ ≤ M)
-    (heq : ∀ z ∈ Ω, fderiv ℝ ξ z 1 + J z (fderiv ℝ ξ z I) + C z (ξ z) = 0) {U : Set ℂ}
-    (hU : IsOpen U) (hUne : U.Nonempty) (hUΩ : U ⊆ Ω) (h₀ : EqOn ξ 0 U) : EqOn ξ 0 Ω := by
-  obtain ⟨z₀, hz₀⟩ := hUne
-  -- any real-linear isomorphism `ℂⁿ ≃ E` transports the equation to a complex coordinate space
-  obtain ⟨n, Φ₁, -⟩ :=
-    ContinuousLinearMap.exists_continuousLinearEquiv_euclideanSpace_comp_eq_comp_I_smul (J z₀)
-      (hJsq z₀ (hUΩ hz₀))
-  set W := EuclideanSpace ℂ (Fin n)
-  set T : (E →L[ℝ] E) ≃L[ℝ] (W →L[ℝ] W) := Φ₁.symm.arrowCongr Φ₁.symm
-  have hT (A : E →L[ℝ] E) (w : W) : T A w = Φ₁.symm (A (Φ₁ w)) := by simp [T]
-  set ξ' : ℂ → W := fun z ↦ Φ₁.symm (ξ z)
-  have hfd (z : ℂ) : fderiv ℝ ξ' z = (Φ₁.symm : E →L[ℝ] W) ∘L fderiv ℝ ξ z :=
-    Φ₁.symm.comp_fderiv
-  have hξ' : ContDiffOn ℝ 1 ξ' Ω := Φ₁.symm.contDiff.comp_contDiffOn hξ
+    (heq : ∀ z ∈ Ω, fderiv ℝ ξ z 1 + J z (fderiv ℝ ξ z I) + C z (ξ z) = 0) {z₀ : ℂ}
+    (hz₀ : z₀ ∈ Ω) : HasSimilarityFactorizationAt (fun z ↦ e (ξ z)) z₀ := by
+  set T : (E →L[ℝ] E) ≃L[ℝ] (W →L[ℝ] W) := e.arrowCongr e
+  have hT (A : E →L[ℝ] E) (w : W) : T A w = e (A (e.symm w)) := by simp [T]
+  set ξ' : ℂ → W := fun z ↦ e (ξ z)
+  have hfd (z : ℂ) : fderiv ℝ ξ' z = (e : E →L[ℝ] W) ∘L fderiv ℝ ξ z := e.comp_fderiv
+  have hξ' : ContDiffOn ℝ 1 ξ' Ω := e.contDiff.comp_contDiffOn hξ
   have hJ' : ContDiffOn ℝ 1 (fun z ↦ T (J z)) Ω := T.contDiff.comp_contDiffOn hJ
   have hJsq' : ∀ z ∈ Ω, T (J z) ∘L T (J z) = -ContinuousLinearMap.id ℝ W := fun z hz ↦ by
     have h (v : E) : J z (J z v) = -v := congr($(hJsq z hz) v)
@@ -150,13 +169,74 @@ theorem eqOn_zero_of_contDiffOn_of_comp_eq_neg_id_of_eqOn_zero (hΩ : IsOpen Ω)
   have heq' : ∀ z ∈ Ω, fderiv ℝ ξ' z 1 + T (J z) (fderiv ℝ ξ' z I) + T (C z) (ξ' z) = 0 :=
     fun z hz ↦ by
       simp only [hfd, comp_apply, ContinuousLinearEquiv.coe_coe, hT]
-      simp only [ξ', ContinuousLinearEquiv.apply_symm_apply, ← map_add, heq z hz, map_zero]
-  have hzero : EqOn ξ' 0 Ω := eqOn_zero_of_hasSimilarityFactorizationAt_of_eqOn_zero hΩ hΩc
-    hξ'.continuousOn (fun z hz _ ↦ hasSimilarityFactorizationAt_of_contDiffOn_of_comp_eq_neg_id
-      hΩ hξ' hJ' hJsq' hCm' hCb' heq' hz) hU ⟨z₀, hz₀⟩ hUΩ
-      (fun z hz ↦ by simp [ξ', h₀ hz])
+      simp only [ξ', ContinuousLinearEquiv.symm_apply_apply, ← map_add, heq z hz, map_zero]
+  exact hasSimilarityFactorizationAt_of_contDiffOn_of_comp_eq_neg_id hΩ hξ' hJ' hJsq' hCm' hCb'
+    heq' hz₀
+
+/-- **Unique continuation for a variable complex structure.** Let `ξ` be of class `C¹` on a
+connected open set `Ω ⊆ ℂ`, with values in a finite-dimensional real normed space `E`, and solve
+`∂ₛξ + J ∂ₜξ + C ξ = 0` on `Ω`, for a `C¹` field `J` of real-linear maps with `J(z)² = -1` and a
+measurable, locally bounded field `C` of real-linear maps. If `ξ` vanishes on a nonempty open
+subset of `Ω`, it vanishes on `Ω`. -/
+theorem eqOn_zero_of_contDiffOn_of_comp_eq_neg_id_of_eqOn_zero (hΩ : IsOpen Ω)
+    (hΩc : IsPreconnected Ω) (hξ : ContDiffOn ℝ 1 ξ Ω) (hJ : ContDiffOn ℝ 1 J Ω)
+    (hJsq : ∀ z ∈ Ω, J z ∘L J z = -ContinuousLinearMap.id ℝ E)
+    (hCm : AEStronglyMeasurable C (volume.restrict Ω))
+    (hCb : ∀ z ∈ Ω, ∃ M, ∀ᶠ w in 𝓝 z, ‖C w‖ ≤ M)
+    (heq : ∀ z ∈ Ω, fderiv ℝ ξ z 1 + J z (fderiv ℝ ξ z I) + C z (ξ z) = 0) {U : Set ℂ}
+    (hU : IsOpen U) (hUne : U.Nonempty) (hUΩ : U ⊆ Ω) (h₀ : EqOn ξ 0 U) : EqOn ξ 0 Ω := by
+  obtain ⟨z₀, hz₀⟩ := hUne
+  -- any real-linear isomorphism `E ≃ ℂⁿ` transports the equation to a complex coordinate space
+  obtain ⟨n, Φ₁, -⟩ :=
+    (J z₀).exists_continuousLinearEquiv_euclideanSpace_comp_eq_comp_I_smul (hJsq z₀ (hUΩ hz₀))
+  have h := eqOn_zero_of_hasSimilarityFactorizationAt_of_eqOn_zero (ξ := fun z ↦ Φ₁.symm (ξ z))
+    hΩ hΩc (Φ₁.symm.continuous.comp_continuousOn hξ.continuousOn)
+    (fun z hz _ ↦ hasSimilarityFactorizationAt_apply_of_contDiffOn_of_comp_eq_neg_id Φ₁.symm
+      hΩ hξ hJ hJsq hCm hCb heq hz) hU ⟨z₀, hz₀⟩ hUΩ (fun z hz ↦ by simp [h₀ hz])
   intro z hz
-  simpa [ξ'] using hzero hz
+  simpa using h hz
+
+/-- **Unique continuation from a zero of infinite order** for a variable complex structure. Let
+`ξ` be of class `C¹` on a connected open set `Ω ⊆ ℂ`, with values in a finite-dimensional real
+normed space `E`, and solve `∂ₛξ + J ∂ₜξ + C ξ = 0` on `Ω`, for a `C¹` field `J` of real-linear
+maps with `J(z)² = -1` and a measurable, locally bounded field `C` of real-linear maps. If
+`ξ = O((z - z₀)ⁿ)` near a point `z₀ ∈ Ω` for every `n`, then `ξ` vanishes on `Ω`. -/
+theorem eqOn_zero_of_contDiffOn_of_comp_eq_neg_id_of_forall_isBigO (hΩ : IsOpen Ω)
+    (hΩc : IsPreconnected Ω) (hξ : ContDiffOn ℝ 1 ξ Ω) (hJ : ContDiffOn ℝ 1 J Ω)
+    (hJsq : ∀ z ∈ Ω, J z ∘L J z = -ContinuousLinearMap.id ℝ E)
+    (hCm : AEStronglyMeasurable C (volume.restrict Ω))
+    (hCb : ∀ z ∈ Ω, ∃ M, ∀ᶠ w in 𝓝 z, ‖C w‖ ≤ M)
+    (heq : ∀ z ∈ Ω, fderiv ℝ ξ z 1 + J z (fderiv ℝ ξ z I) + C z (ξ z) = 0) {z₀ : ℂ}
+    (hz₀ : z₀ ∈ Ω) (h₀ : ∀ n : ℕ, ξ =O[𝓝 z₀] fun z ↦ (z - z₀) ^ n) : EqOn ξ 0 Ω := by
+  obtain ⟨n, Φ₁, -⟩ :=
+    (J z₀).exists_continuousLinearEquiv_euclideanSpace_comp_eq_comp_I_smul (hJsq z₀ hz₀)
+  have h := eqOn_zero_of_hasSimilarityFactorizationAt_of_forall_isBigO
+    (ξ := fun z ↦ Φ₁.symm (ξ z)) hΩ hΩc (Φ₁.symm.continuous.comp_continuousOn hξ.continuousOn)
+    (fun z hz _ ↦ hasSimilarityFactorizationAt_apply_of_contDiffOn_of_comp_eq_neg_id Φ₁.symm
+      hΩ hξ hJ hJsq hCm hCb heq hz) hz₀
+    fun k ↦ ((Φ₁.symm : E →L[ℝ] EuclideanSpace ℂ (Fin n)).isBigO_comp ξ (𝓝 z₀)).trans (h₀ k)
+  intro z hz
+  simpa using h hz
+
+/-- **Isolated zeros** for a variable complex structure. Let `ξ` be of class `C¹` on a connected
+open set `Ω ⊆ ℂ`, with values in a finite-dimensional real normed space `E`, and solve
+`∂ₛξ + J ∂ₜξ + C ξ = 0` on `Ω`, for a `C¹` field `J` of real-linear maps with `J(z)² = -1` and a
+measurable, locally bounded field `C` of real-linear maps. If `ξ` is not identically zero on `Ω`,
+its zeros form a discrete subset of `Ω`. -/
+theorem setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn_of_comp_eq_neg_id (hΩ : IsOpen Ω)
+    (hΩc : IsPreconnected Ω) (hξ : ContDiffOn ℝ 1 ξ Ω) (hJ : ContDiffOn ℝ 1 J Ω)
+    (hJsq : ∀ z ∈ Ω, J z ∘L J z = -ContinuousLinearMap.id ℝ E)
+    (hCm : AEStronglyMeasurable C (volume.restrict Ω))
+    (hCb : ∀ z ∈ Ω, ∃ M, ∀ᶠ w in 𝓝 z, ‖C w‖ ≤ M)
+    (heq : ∀ z ∈ Ω, fderiv ℝ ξ z 1 + J z (fderiv ℝ ξ z I) + C z (ξ z) = 0)
+    (hne : ∃ z ∈ Ω, ξ z ≠ 0) : {z | ξ z ≠ 0} ∈ codiscreteWithin Ω := by
+  have ⟨z₀, hz₀, _⟩ := hne
+  obtain ⟨n, Φ₁, -⟩ :=
+    (J z₀).exists_continuousLinearEquiv_euclideanSpace_comp_eq_comp_I_smul (hJsq z₀ hz₀)
+  simpa using setOf_ne_zero_mem_codiscreteWithin_of_hasSimilarityFactorizationAt
+    (ξ := fun z ↦ Φ₁.symm (ξ z)) hΩ hΩc (Φ₁.symm.continuous.comp_continuousOn hξ.continuousOn)
+    (fun z hz _ ↦ hasSimilarityFactorizationAt_apply_of_contDiffOn_of_comp_eq_neg_id Φ₁.symm
+      hΩ hξ hJ hJsq hCm hCb heq hz) (by simpa using hne)
 
 end Real
 
