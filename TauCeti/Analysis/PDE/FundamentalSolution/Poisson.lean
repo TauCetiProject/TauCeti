@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Potential
@@ -14,18 +15,19 @@ import TauCeti.Analysis.PDE.FundamentalSolution.Planar.Potential
 /-!
 # Poisson's equation with compactly supported data
 
-Let `E` be a finite-dimensional real inner product space of dimension `d ≥ 2`. This file shows
-that Poisson's equation `Δu = g` has a solution `u` of class `C^k` on all of `E` for every `C^k`
-function `g` with compact support, `2 ≤ k ≤ ∞`, and deduces that `Δu = f` can be solved near any
-compact subset `K` of an open set `Ω` on which `f` is `C^k`.
+Let `E` be a nontrivial finite-dimensional real inner product space of dimension `d`. This file
+shows that Poisson's equation `Δu = g` has a solution `u` of class `C^k` on all of `E` for every
+`C^k` function `g` with compact support, `2 ≤ k ≤ ∞`, and deduces that `Δu = f` can be solved near
+any compact subset `K` of an open set `Ω` on which `f` is `C^k`.
 
-A solution is obtained as minus the Newtonian potential of `g`. The potentials are constructed on
-the model spaces `EuclideanSpace ℝ (Fin d)` (`TauCeti.laplacian_newtonianKernel_convolution`, for
-`d ≥ 3`) and `ℂ` (`TauCeti.laplacian_planarNewtonianKernel_convolution`, for `d = 2`), and they
-are transported to `E` along a linear isometry, which commutes with the Laplacian
-(`TauCeti.laplacian_comp_linearIsometryEquiv_right`). For the local statement, `f` is first
-replaced by a compactly supported `C^k` function equal to it near `K`
-(`ContDiffOn.exists_contDiff_eventuallyEq_on_isCompact`).
+For `d ≥ 2`, a solution is obtained as minus the Newtonian potential of `g`. The potentials are
+constructed on the model spaces `EuclideanSpace ℝ (Fin d)`
+(`TauCeti.laplacian_newtonianKernel_convolution`, for `d ≥ 3`) and `ℂ`
+(`TauCeti.laplacian_planarNewtonianKernel_convolution`, for `d = 2`). For `d = 1`, a solution is
+a double primitive of `g` on `ℝ`. These solutions are transported to `E` along a linear isometry,
+which commutes with the Laplacian (`TauCeti.laplacian_comp_linearIsometryEquiv_right`). For the
+local statement, `f` is first replaced by a compactly supported `C^k` function equal to it near
+`K` (`ContDiffOn.exists_contDiff_eventuallyEq_on_isCompact`).
 
 Local solutions of this kind are the building blocks of the solution of `Δv = f` on an arbitrary
 open set `Ω` along a compact exhaustion
@@ -53,6 +55,24 @@ open scoped Convolution
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
 
+/-- A primitive of a `C^k` function on `ℝ` is `C^(k+1)`, with derivative the function. -/
+private theorem contDiff_add_one_integral {k : ℕ∞} {g : ℝ → F} (hg : ContDiff ℝ k g) :
+    ContDiff ℝ (k + 1) (fun x ↦ ∫ t in (0 : ℝ)..x, g t) ∧
+      deriv (fun x ↦ ∫ t in (0 : ℝ)..x, g t) = g := by
+  have hd : deriv (fun x ↦ ∫ t in (0 : ℝ)..x, g t) = g :=
+    funext (hg.continuous.deriv_integral g 0)
+  exact ⟨contDiff_succ_iff_deriv.2 ⟨fun x ↦ (hg.continuous.integral_hasStrictDerivAt 0 x)
+    |>.hasDerivAt.differentiableAt, by simp, by rwa [hd]⟩, hd⟩
+
+/-- On `ℝ`, every `C^k` function is the Laplacian, that is the second derivative, of a `C^k`
+function. -/
+private theorem exists_contDiff_laplacian_eq_real {k : ℕ∞} {g : ℝ → F} (hg : ContDiff ℝ k g) :
+    ∃ u : ℝ → F, ContDiff ℝ k u ∧ Δ u = g := by
+  obtain ⟨hG, hG'⟩ := contDiff_add_one_integral hg
+  obtain ⟨hu, hu'⟩ := contDiff_add_one_integral hG
+  refine ⟨_, hu.of_le (by norm_cast; exact le_self_add.trans le_self_add), funext fun x ↦ ?_⟩
+  rw [laplacian_eq_iteratedDeriv_real, iteratedDeriv_succ, iteratedDeriv_one, hu', hG']
+
 omit [CompleteSpace F] in
 /-- Solvability of `Δu = g` for compactly supported `C^k` data transfers along a linear isometry
 `E ≃ E'`. -/
@@ -69,13 +89,20 @@ private theorem exists_contDiff_laplacian_eq_of_linearIsometryEquiv {E' : Type*}
   ext x
   simp
 
-/-- **Poisson's equation with compactly supported data.** In a finite-dimensional real inner
-product space of dimension at least two, every `C^k` function `g` with compact support,
-`2 ≤ k ≤ ∞`, is the Laplacian of a `C^k` function on the whole space. -/
-theorem exists_contDiff_laplacian_eq_of_hasCompactSupport (hE : 2 ≤ Module.finrank ℝ E)
-    {k : ℕ∞} (hk : 2 ≤ k) {g : E → F} (hg : ContDiff ℝ k g) (hc : HasCompactSupport g) :
+/-- **Poisson's equation with compactly supported data.** In a nontrivial finite-dimensional real
+inner product space, every `C^k` function `g` with compact support, `2 ≤ k ≤ ∞`, is the Laplacian
+of a `C^k` function on the whole space. -/
+theorem exists_contDiff_laplacian_eq_of_hasCompactSupport [Nontrivial E] {k : ℕ∞} (hk : 2 ≤ k)
+    {g : E → F} (hg : ContDiff ℝ k g) (hc : HasCompactSupport g) :
     ∃ u : E → F, ContDiff ℝ k u ∧ Δ u = g := by
   have hk' : (2 : WithTop ℕ∞) ≤ k := WithTop.coe_le_coe.2 hk
+  obtain hE1 | hE := lt_or_ge (Module.finrank ℝ E) 2
+  · -- Dimension one: transport a double primitive from `ℝ`.
+    have hE1 : Module.finrank ℝ E = 1 := by have := Module.finrank_pos (R := ℝ) (M := E); omega
+    exact exists_contDiff_laplacian_eq_of_linearIsometryEquiv
+      (((stdOrthonormalBasis ℝ E).reindex (finCongr hE1)).repr.trans
+        (OrthonormalBasis.singleton (Fin 1) ℝ).repr.symm)
+      (fun _ hg' _ ↦ exists_contDiff_laplacian_eq_real hg') hg hc
   rcases hE.eq_or_lt with hE2 | hE3
   · -- Dimension two: transport the planar Newtonian potential from `ℂ`.
     refine exists_contDiff_laplacian_eq_of_linearIsometryEquiv
@@ -91,16 +118,16 @@ theorem exists_contDiff_laplacian_eq_of_hasCompactSupport (hE : 2 ≤ Module.fin
       (contDiff_newtonianKernel_convolution hg' hc').neg, ?_⟩
     rw [laplacian_neg, laplacian_newtonianKernel_convolution hE3 (hg'.of_le hk') hc', neg_neg]
 
-/-- **Local solvability of Poisson's equation.** In a finite-dimensional real inner product space
-of dimension at least two, let `f` be of class `C^k`, `2 ≤ k ≤ ∞`, on an open set `Ω`, and let
+/-- **Local solvability of Poisson's equation.** In a nontrivial finite-dimensional real inner
+product space, let `f` be of class `C^k`, `2 ≤ k ≤ ∞`, on an open set `Ω`, and let
 `K ⊆ Ω` be compact. Then some `C^k` function `u` on the whole space satisfies `Δu = f` on a
 neighbourhood of `K`. -/
-theorem exists_contDiff_laplacian_eventuallyEq_nhdsSet (hE : 2 ≤ Module.finrank ℝ E) {k : ℕ∞}
+theorem exists_contDiff_laplacian_eventuallyEq_nhdsSet [Nontrivial E] {k : ℕ∞}
     (hk : 2 ≤ k) {Ω K : Set E} (hΩ : IsOpen Ω) (hK : IsCompact K) (hKΩ : K ⊆ Ω) {f : E → F}
     (hf : ContDiffOn ℝ k f Ω) :
     ∃ u : E → F, ContDiff ℝ k u ∧ Δ u =ᶠ[𝓝ˢ K] f := by
   obtain ⟨g, hg, hgc, -, -, hgf⟩ := hf.exists_contDiff_eventuallyEq_on_isCompact hK hΩ hKΩ
-  obtain ⟨u, hu, hΔ⟩ := exists_contDiff_laplacian_eq_of_hasCompactSupport hE hk hg hgc
+  obtain ⟨u, hu, hΔ⟩ := exists_contDiff_laplacian_eq_of_hasCompactSupport hk hg hgc
   exact ⟨u, hu, hΔ ▸ eventually_nhdsSet_iff_forall.2 hgf⟩
 
 end TauCeti
