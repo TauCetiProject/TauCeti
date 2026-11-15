@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Borel
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Elementary
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Weyl
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.BigCell.Triangular
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Blocks
@@ -19,8 +18,7 @@ import TauCeti.LinearAlgebra.Matrix.Diagonal
 For a Chevalley datum `D` over any commutative ring `A`, the pinned simple Weyl representatives
 satisfy `nᵢ(1)² = αᵢ∨(-1) ∈ T_D(A)` and normalize the actual torus `T_D(A)`. Consequently every
 element of `D.weylSubgroup A` decomposes as a positive word in the pinned simple Weyl
-representatives followed by an actual torus point. Moreover, the join of `D.borelSubgroup A` and
-`D.weylSubgroup A` is the extended elementary subgroup `D.extendedElementarySubgroup A`.
+representatives followed by an actual torus point.
 
 Over any field `K`, combining this word decomposition with weight-space block unitriangularity of
 `D.positivePoints K` and the Weyl-word block `LDU` criterion shows that `D.positivePoints K`
@@ -115,64 +113,6 @@ theorem mem_weylSubgroup_iff_exists_list_prod_mul_torusPoints {g : D.points A} :
     exact mul_mem (D.list_prod_map_weylElement_mem_weylSubgroup A l)
       (D.torusPoints_mem_weylSubgroup A s)
 
-/-- The Borel-type subgroup is contained in the extended elementary subgroup over every
-commutative ring. -/
-theorem borelSubgroup_le_extendedElementarySubgroup :
-    D.borelSubgroup A ≤ D.extendedElementarySubgroup A := by
-  rw [D.borelSubgroup_le_iff]
-  refine ⟨fun γ _ u => D.elementarySubgroup_le_extendedElementarySubgroup A
-    (D.rootSubgroupPoints_mem_elementarySubgroup A γ u),
-    D.torusPoints_mem_extendedElementarySubgroup A⟩
-
-/-- The Weyl subgroup is contained in the extended elementary subgroup over every commutative
-ring. -/
-theorem weylSubgroup_le_extendedElementarySubgroup :
-    D.weylSubgroup A ≤ D.extendedElementarySubgroup A := by
-  rw [D.weylSubgroup_def, Subgroup.closure_le]
-  rintro g (⟨s, rfl⟩ | ⟨i, rfl⟩)
-  · exact D.torusPoints_mem_extendedElementarySubgroup A s
-  · dsimp only
-    apply D.elementarySubgroup_le_extendedElementarySubgroup A
-    rw [D.weylElement_def]
-    exact mul_mem (mul_mem (D.rootSubgroupPoints_mem_elementarySubgroup A _ _)
-      (D.rootSubgroupPoints_mem_elementarySubgroup A _ _))
-      (D.rootSubgroupPoints_mem_elementarySubgroup A _ _)
-
-/-- The Borel-type subgroup and the Weyl subgroup together generate the extended elementary
-subgroup over every commutative ring. -/
-@[simp]
-theorem borelSubgroup_sup_weylSubgroup_eq_extendedElementarySubgroup :
-    D.borelSubgroup A ⊔ D.weylSubgroup A = D.extendedElementarySubgroup A := by
-  apply le_antisymm
-  · exact sup_le (D.borelSubgroup_le_extendedElementarySubgroup A)
-      (D.weylSubgroup_le_extendedElementarySubgroup A)
-  · rw [D.extendedElementarySubgroup_def]
-    refine sup_le ?_ ((D.range_torusPoints_le_borelSubgroup A).trans le_sup_left)
-    rw [D.elementarySubgroup_eq_closure_simpleRootPair, Subgroup.closure_le]
-    rintro g hg
-    obtain ⟨i, hi⟩ := Set.mem_iUnion.mp hg
-    rcases hi with ⟨u, rfl⟩ | ⟨u, rfl⟩
-    · exact Subgroup.mem_sup_left (D.positivePoints_le_borelSubgroup A
-        (D.rootSubgroupPoints_mem_positivePoints A (simpleIndex_mem_posRoots i) u))
-    · let ε : ℤˣ := t.chevalleyWeylSign ht (t.simpleIndex ht i) (t.simpleIndex ht i)
-      have hε : ((ε : ℤ) : A) * ((ε : ℤ) : A) = 1 := by
-        rcases Int.units_eq_one_or ε with h | h <;> simp [h]
-      have hconj := D.weylElement_conj_rootSubgroupPoints i (t.simpleIndex ht i) A
-        (((ε : ℤ) : A) * toAdd u)
-      have hu : D.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).reflectionPerm
-          (t.simpleIndex ht i) (t.simpleIndex ht i)) A u =
-          D.weylElement (t.simpleIndex ht i) A 1 *
-            D.rootSubgroupPoints (t.simpleIndex ht i) A
-              (ofAdd (((ε : ℤ) : A) * toAdd u)) *
-            (D.weylElement (t.simpleIndex ht i) A 1)⁻¹ := by
-        rw [hconj, ← mul_assoc, hε, one_mul, ofAdd_toAdd]
-      rw [hu]
-      exact mul_mem
-        (mul_mem (Subgroup.mem_sup_right (D.weylElement_mem_weylSubgroup A i))
-          (Subgroup.mem_sup_left (D.positivePoints_le_borelSubgroup A
-            (D.rootSubgroupPoints_mem_positivePoints A (simpleIndex_mem_posRoots i) _))))
-        (inv_mem (Subgroup.mem_sup_right (D.weylElement_mem_weylSubgroup A i)))
-
 /-- Over any nontrivial commutative ring, if a product of pinned simple Weyl representatives
 equals an actual torus point times a positive point, then the Weyl word evaluates to `1` in the
 Weyl group. -/
@@ -182,10 +122,11 @@ theorem geckWeylWordProd_eq_one_of_list_prod_eq_torusPoints_mul_positive [Nontri
     (h : (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod =
       D.torusPoints A s * u) :
     t.geckWeylWordProd ht l = 1 := by
-  rw [← D.exists_blockLDU_weylWord_iff l A D.weightBlockEquiv]
-  have hfun : (fun j => D.weightBlockEquiv ⟨D.weight j, Set.mem_range_self j⟩) =
-      orderedWeightBlock (t.weightDegree ht) D.weight :=
-    funext D.weightBlockEquiv_weight
+  rw [← D.exists_blockLDU_weylWord_iff l A (weightBlockEquiv (t.weightDegree ht) D.weight)]
+  have hfun :
+      (fun j => weightBlockEquiv (t.weightDegree ht) D.weight ⟨D.weight j, Set.mem_range_self j⟩) =
+        orderedWeightBlock (t.weightDegree ht) D.weight :=
+    funext fun j => weightBlockEquiv_mk (t.weightDegree ht) D.weight j
   let Nmat : Matrix (Fin D.dim) (Fin D.dim) A :=
     ((D.torusPoints A s : Matrix.GeneralLinearGroup (Fin D.dim) A) :
       Matrix (Fin D.dim) (Fin D.dim) A)
@@ -201,7 +142,7 @@ theorem geckWeylWordProd_eq_one_of_list_prod_eq_torusPoints_mul_positive [Nontri
   · rw [hNdiag]
     exact Matrix.blockTriangular_diagonal _
   · rw [hfun]
-    exact D.blockUnitriangular_orderedWeightBlock_of_mem_positivePoints hu
+    exact D.blockUnitriangular_of_mem_positivePoints A hu
   · exact (Matrix.isUnit_iff_isUnit_det Nmat).mp
       (D.torusPoints A s : Matrix.GeneralLinearGroup (Fin D.dim) A).isUnit
   · rw [one_mul]
@@ -260,27 +201,16 @@ private theorem eq_one_of_mem_positivePoints_of_weylProjection_eq_one
     (hproj : D.weylProjection K ⟨u, huW⟩ = 1) : u = 1 := by
   -- Block unitriangularity handles equal-weight blocks; torus-character separation over the
   -- algebraic closure forces distinct-weight entries to vanish.
-  have hbu := D.blockUnitriangular_orderedWeightBlock_of_mem_positivePoints huP
   apply Subtype.ext
   apply Units.ext
   ext i j
   by_cases hwt : D.weight i = D.weight j
-  · exact hbu.apply_of_eq
-      ((orderedWeightBlock_eq_iff (t.weightDegree ht) D.weight).mpr hwt)
+  · exact D.coe_apply_eq_one_apply_of_mem_positivePoints_of_weight_eq K huP hwt
   · have hij : i ≠ j := fun h => hwt (congrArg D.weight h)
     rw [Subgroup.coe_one, Units.val_one, Matrix.one_apply_ne hij]
     apply (algebraMap K (AlgebraicClosure K)).injective
     rw [map_zero]
-    have hne_char :
-        weightChar (AlgebraicClosure K) (D.weight i) ≠
-          weightChar (AlgebraicClosure K) (D.weight j) :=
-      fun h => hwt (weightChar_injective h)
-    have hexists : ∃ s'' : Fin t.rank → (AlgebraicClosure K)ˣ,
-        torusCharacter s'' (D.weight i) ≠ torusCharacter s'' (D.weight j) := by
-      by_contra hforall
-      push Not at hforall
-      exact hne_char (MonoidHom.ext fun s'' => by simpa only [weightChar_apply] using hforall s'')
-    obtain ⟨s'', hs''⟩ := hexists
+    obtain ⟨s'', hs''⟩ := exists_torusCharacter_ne (K := AlgebraicClosure K) hwt
     have hconj := (D.weylProjection_eq_iff K ⟨u, huW⟩ 1).mp hproj s''
     rw [map_one, MulAut.one_apply, mul_inv_eq_iff_eq_mul] at hconj
     have hcomm : Commute
@@ -290,8 +220,7 @@ private theorem eq_one_of_mem_positivePoints_of_weylProjection_eq_one
           Matrix.GeneralLinearGroup (Fin D.dim) (AlgebraicClosure K)) :
           Matrix (Fin D.dim) (Fin D.dim) (AlgebraicClosure K)) := by
       rw [Commute, SemiconjBy]
-      have hmat := congrArg Units.val hconj.symm
-      simpa only [Units.val_mul, diagGL_coe] using hmat
+      simpa only [Units.val_mul, diagGL_coe] using congrArg Units.val hconj.symm
     simpa only [Matrix.GeneralLinearGroup.map_apply] using
       apply_eq_zero_of_commute_diagonal hcomm (fun h => hs'' (Units.ext h))
 

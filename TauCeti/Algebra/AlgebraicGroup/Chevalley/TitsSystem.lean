@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Bruhat.Generation
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Borel
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Root
 public import TauCeti.GroupTheory.TitsSystem.Comap
@@ -333,7 +334,7 @@ noncomputable def titsSystem : TitsSystem (D.extendedElementarySubgroup K) where
       MonoidHom.closure_preimage_eq_of_injective (D.extendedElementarySubgroup K).subtype
         (D.extendedElementarySubgroup K).subtype_injective,
       Subgroup.closure_union, (D.borelSubgroup K).closure_eq, (D.weylSubgroup K).closure_eq,
-      D.borelSubgroup_sup_weylSubgroup_eq_extendedElementarySubgroup K, Subgroup.comap_subtype,
+      D.borelSubgroup_sup_weylSubgroup K, Subgroup.comap_subtype,
       Subgroup.subgroupOf_self]
     rw [Subgroup.coe_subtype, Subtype.range_coe]
     exact Set.union_subset (D.borelSubgroup_le_extendedElementarySubgroup K)
