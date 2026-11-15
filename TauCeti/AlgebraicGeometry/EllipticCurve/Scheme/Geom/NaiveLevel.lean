@@ -33,10 +33,11 @@ For `A = ℤ/Nℤ` with `N ≠ 0` such a homomorphism is an `S`-point `P` of `E[
 (`EllipticCurveGeom.isFiberwiseInjective_zmod_iff`). For `A = (ℤ/Nℤ)²` it is a pair `(P, Q)` of
 `S`-points of `E[N]` none of whose combinations `aP + bQ` with `(a, b) ≠ 0` meets the zero section
 (`EllipticCurveGeom.isFiberwiseInjective_zmod_prod_iff`), that is, a basis of the `N`-torsion in
-every geometric fibre in which `N` is invertible. Such a pair exists only where `N` is invertible:
-if `φ : (ℤ/Nℤ)² →* E(S)` is injective on every fibre, then `N` is nonzero in every residue field
-of `S` (`EllipticCurveGeom.IsFiberwiseInjective.natCast_residueField_ne_zero`), because over a
-field in which `N` vanishes `E[N]` has fewer than `N²` points
+every geometric fibre in which `N` is invertible. For `N ≠ 0`, such a pair exists only where `N` is
+invertible: if `φ : (ℤ/Nℤ)² →* E(S)` is injective on every fibre, then `N` is nonzero in every
+residue field of `S`
+(`EllipticCurveGeom.IsFiberwiseInjective.natCast_residueField_ne_zero`), because over a field in
+which `N` vanishes `E[N]` has fewer than `N²` points
 (`EllipticCurveGeom.natCast_ne_zero_of_injective`). Over a separably closed field in which `N` is
 invertible, the injective homomorphisms `(ℤ/Nℤ)² →* E(K)` are exactly those with image `E[N](K)`
 (`EllipticCurveGeom.isFiberwiseInjective_iff_range_eq_ker`), every elliptic curve there has
@@ -100,8 +101,8 @@ The group law on points of `E` is written multiplicatively, following `EllipticC
   point.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.natCast_ne_zero_of_injective` and
   `TauCeti.AlgebraicGeometry.EllipticCurveGeom.IsFiberwiseInjective.natCast_residueField_ne_zero`:
-  a naive `[Γ(N)]`-structure over a field forces `N ≠ 0` there, so one over a scheme `S` forces
-  `N` to be nonzero in every residue field of `S`.
+  for `N ≠ 0`, a naive `[Γ(N)]`-structure over a field forces `N` to be nonzero in that field, so
+  one over a scheme `S` forces `N` to be nonzero in every residue field of `S`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isFiberwiseInjective_iff_range_eq_ker`: over a
   separably closed field in which `N` is invertible, the naive `[Γ(N)]`-structures are the bases of
   `E[N](K)`.
@@ -460,14 +461,15 @@ theorem isFiberwiseInjective_zmod_three_prod_iff
   simp only [map_one, map_inv, hom_inv_left]
   exact and_congr_right fun _ ↦ and_congr_right fun _ ↦ and_comm
 
-/-! ### Naive `[Γ(N)]`-structures exist only where `N` is invertible -/
+/-! ### For `N ≠ 0`, naive `[Γ(N)]`-structures exist only where `N` is invertible -/
 
 section NatCast
 
 variable {N : ℕ} [NeZero N]
 
-/-- **A naive `[Γ(N)]`-structure over a field forces `N ≠ 0` there.** If an elliptic curve `E`
-over a field `K` has an injective homomorphism `φ : (ℤ/Nℤ)² →* E(K)`, then `N` is nonzero in `K`:
+/-- **A naive `[Γ(N)]`-structure over a field forces `N` to be nonzero in that field.** For
+`N ≠ 0`, if an elliptic curve `E` over a field `K` has an injective homomorphism
+`φ : (ℤ/Nℤ)² →* E(K)`, then `N` is nonzero in `K`:
 `φ` takes values in the `N`-torsion `E[N](K)` (`range_le_ker_mulBy`), which has fewer than `N²`
 points when `N` vanishes in `K` (`natCard_torsion_lt`). -/
 theorem natCast_ne_zero_of_injective {K : Type u} [Field K] (E : EllipticCurveGeom (Spec (.of K)))
@@ -487,10 +489,10 @@ theorem natCast_ne_zero_of_injective {K : Type u} [Field K] (E : EllipticCurveGe
     simp [sq]
   exact hlt.not_ge (hA ▸ hle)
 
-/-- **Naive `[Γ(N)]`-structures exist only where `N` is invertible.** If a homomorphism
-`φ : (ℤ/Nℤ)² →* E(S)` is injective on every fibre of an elliptic curve `E` over a scheme `S`, then
-`N` is nonzero in the residue field of every point `s` of `S`: on the fibre of `E` over `κ(s)` the
-homomorphism stays injective (`isFiberwiseInjective_iff_forall_residueField`), so
+/-- **For `N ≠ 0`, naive `[Γ(N)]`-structures exist only where `N` is invertible.** If a
+homomorphism `φ : (ℤ/Nℤ)² →* E(S)` is injective on every fibre of an elliptic curve `E` over a
+scheme `S`, then `N` is nonzero in the residue field of every point `s` of `S`: on the fibre of `E`
+over `κ(s)` the homomorphism stays injective (`isFiberwiseInjective_iff_forall_residueField`), so
 `natCast_ne_zero_of_injective` applies. -/
 theorem IsFiberwiseInjective.natCast_residueField_ne_zero
     {φ : Multiplicative (ZMod N × ZMod N) →* (𝟙_ (Over S) ⟶ Over.mk E.structureMap)}

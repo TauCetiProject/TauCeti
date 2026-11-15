@@ -79,10 +79,10 @@ Its representing schemes are open subschemes of `E[N] ×_S E[N]`, so they inheri
 property stable under base change and composition which open immersions have
 (`ModuliProblem.hasProperty_gammaNaiveRelRepData`), for instance local finite presentation.
 Étaleness is not inherited this way, since `E[N]` need not be étale where `N` is not invertible.
-Instead, the naive full-level locus lies over the open set `D(N)` of the base where `N` is
-invertible, because a naive `[Γ(N)]`-structure forces `N` to be nonzero in every residue field
-(`EllipticCurveGeom.IsFiberwiseInjective.natCast_residueField_ne_zero`). Over `D(N)` the scheme
-`E[N]` is étale, so `[Γ(N)]` is étale over `Ell/B` for every base `B`
+Instead, for `N ≠ 0` the naive full-level locus lies over the open set `D(N)` of the base where
+`N` is invertible, because a naive `[Γ(N)]`-structure forces `N` to be nonzero in every residue
+field (`EllipticCurveGeom.IsFiberwiseInjective.natCast_residueField_ne_zero`). Over `D(N)` the
+scheme `E[N]` is étale, so `[Γ(N)]` is étale over `Ell/B` for every base `B`
 (`ModuliProblem.hasProperty_etale_gammaNaiveRelRepData`).
 
 **Finiteness and surjectivity where `N` is invertible.** When `N` is invertible on `B`, the
@@ -152,8 +152,8 @@ field of the base, the `N`-torsion of an elliptic curve is `(ℤ/Nℤ)²`, so ev
   and composition and holding for open immersions.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.hasProperty_etale_gammaOneNaiveRelRepData` and
   `TauCeti.AlgebraicGeometry.ModuliProblem.hasProperty_etale_gammaNaiveRelRepData`: the naive
-  problem `[Γ₁(N)]` is étale over `Ell/B` if `N` is invertible on `B`, and `[Γ(N)]` is étale over
-  every `B`.
+  problem `[Γ₁(N)]` is étale over `Ell/B` if `N` is invertible on `B`, and, for `N ≠ 0`, `[Γ(N)]` is
+  étale over every `B`.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.hasProperty_isFinite_gammaOneNaiveRelRepData` and
   `TauCeti.AlgebraicGeometry.ModuliProblem.hasProperty_isFinite_gammaNaiveRelRepData`: if `N` is
   invertible on `B`, the naive problems `[Γ₁(N)]` and `[Γ(N)]` are finite over `Ell/B`.
@@ -826,8 +826,8 @@ theorem hasProperty_locallyOfFinitePresentation_gammaNaiveRelRepData :
     (gammaNaiveRelRepData (B := B) (N := N)).HasProperty @LocallyOfFinitePresentation :=
   hasProperty_gammaNaiveRelRepData (fun _ _ _ _ ↦ inferInstance) fun _ ↦ inferInstance
 
-/-- **The naive moduli problem `[Γ(N)]` is étale over `Ell/B`**, over every base `B`: a naive
-`[Γ(N)]`-structure forces `N` to be invertible
+/-- **The naive moduli problem `[Γ(N)]` is étale over `Ell/B`** for `N ≠ 0`, over every base `B`:
+a naive `[Γ(N)]`-structure forces `N` to be invertible
 (`EllipticCurveGeom.IsFiberwiseInjective.natCast_residueField_ne_zero`), so each representing
 scheme lies over the open set where `N` is invertible, where it is étale as an open subscheme of
 `E[N] ×_S E[N]`. -/
