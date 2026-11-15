@@ -33,7 +33,7 @@ circles carry no incidence data and are recorded as a finite type.
 * `TauCeti.ClosedWeb.inDegree`, `TauCeti.ClosedWeb.outDegree`, `TauCeti.ClosedWeb.IsMerge`,
   `TauCeti.ClosedWeb.IsSplit`: the orientation pattern at a vertex.
 * `TauCeti.ClosedWeb.IsNilvalent`: webs without vertices, which consist only of circles.
-* `TauCeti.ClosedWeb.circles`, the empty web `∅`, `TauCeti.ClosedWeb.disjUnion`, the reversal
+* `TauCeti.ClosedWeb.circles`, the empty web `∅`, `TauCeti.ClosedWeb.disjointUnion`, the reversal
   `TauCeti.ClosedWeb.reverse` of interval orientations, and the mirror
   `TauCeti.ClosedWeb.mirror` reversing every cyclic order.
 * `TauCeti.ClosedWeb.Iso`: isomorphisms of webs, with the unit, associativity and symmetry
@@ -64,7 +64,7 @@ namespace TauCeti
 
 open Equiv Function
 
-universe u
+universe u v w x
 
 /-- An unlabelled closed web: finitely many trivalent vertices, oriented interval edges and
 vertex-free circles. The two ends of every interval edge are recorded separately, each end lies at
@@ -87,7 +87,7 @@ structure ClosedWeb : Type (u + 1) where
   /-- The cyclic order of the ends around each vertex. -/
   rot : Perm End
   /-- Every end is the source end or the target end of exactly one edge, and not both. -/
-  bijective_sumElim : Bijective (Sum.elim srcEnd tgtEnd)
+  sumElim_bijective : Bijective (Sum.elim srcEnd tgtEnd)
   /-- The ends at a vertex form exactly one cycle of the rotation. -/
   vertex_eq_vertex_iff {x y : End} : vertex x = vertex y ↔ rot.SameCycle x y
   /-- Every vertex has three ends. -/
@@ -110,39 +110,40 @@ variable (W : ClosedWeb.{u})
 /-! ### Ends of edges -/
 
 /-- The ends of a web are the source ends and the target ends of its edges. -/
-noncomputable def endsEquiv : W.Edge ⊕ W.Edge ≃ W.End :=
-  Equiv.ofBijective _ W.bijective_sumElim
+noncomputable def endsEquiv : W.Edge ⊕ W.Edge ≃ W.End := Equiv.ofBijective _ W.sumElim_bijective
 
 /-- The left copy of the edges gives the source ends. -/
-@[simp]
-theorem endsEquiv_inl (e : W.Edge) : W.endsEquiv (.inl e) = W.srcEnd e := (rfl)
+@[simp] theorem endsEquiv_inl (e : W.Edge) : W.endsEquiv (.inl e) = W.srcEnd e := (rfl)
 
 /-- The right copy of the edges gives the target ends. -/
-@[simp]
-theorem endsEquiv_inr (e : W.Edge) : W.endsEquiv (.inr e) = W.tgtEnd e := (rfl)
+@[simp] theorem endsEquiv_inr (e : W.Edge) : W.endsEquiv (.inr e) = W.tgtEnd e := (rfl)
+
+/-- The source end of an edge comes from the left copy of the edges. -/
+@[simp] theorem endsEquiv_symm_srcEnd (e : W.Edge) : W.endsEquiv.symm (W.srcEnd e) = .inl e :=
+  W.endsEquiv.symm_apply_eq.2 (W.endsEquiv_inl e).symm
+
+/-- The target end of an edge comes from the right copy of the edges. -/
+@[simp] theorem endsEquiv_symm_tgtEnd (e : W.Edge) : W.endsEquiv.symm (W.tgtEnd e) = .inr e :=
+  W.endsEquiv.symm_apply_eq.2 (W.endsEquiv_inr e).symm
 
 /-- Distinct edges have distinct source ends. -/
-theorem srcEnd_injective : Injective W.srcEnd :=
-  W.bijective_sumElim.1.comp Sum.inl_injective
+theorem srcEnd_injective : Injective W.srcEnd := W.sumElim_bijective.1.comp Sum.inl_injective
 
 /-- Distinct edges have distinct target ends. -/
-theorem tgtEnd_injective : Injective W.tgtEnd :=
-  W.bijective_sumElim.1.comp Sum.inr_injective
+theorem tgtEnd_injective : Injective W.tgtEnd := W.sumElim_bijective.1.comp Sum.inr_injective
 
 /-- Two edges have the same source end exactly when they are equal. -/
-@[simp]
-theorem srcEnd_inj {e e' : W.Edge} : W.srcEnd e = W.srcEnd e' ↔ e = e' :=
+@[simp] theorem srcEnd_inj {e e' : W.Edge} : W.srcEnd e = W.srcEnd e' ↔ e = e' :=
   W.srcEnd_injective.eq_iff
 
 /-- Two edges have the same target end exactly when they are equal. -/
-@[simp]
-theorem tgtEnd_inj {e e' : W.Edge} : W.tgtEnd e = W.tgtEnd e' ↔ e = e' :=
+@[simp] theorem tgtEnd_inj {e e' : W.Edge} : W.tgtEnd e = W.tgtEnd e' ↔ e = e' :=
   W.tgtEnd_injective.eq_iff
 
 /-- A source end is never a target end. In particular the two ends of an interval loop, which lie
 at the same vertex, are different ends. -/
 theorem srcEnd_ne_tgtEnd (e e' : W.Edge) : W.srcEnd e ≠ W.tgtEnd e' :=
-  fun h ↦ Sum.inl_ne_inr (W.bijective_sumElim.1 (a₁ := .inl e) (a₂ := .inr e') h)
+  fun h ↦ Sum.inl_ne_inr (W.sumElim_bijective.1 (a₁ := .inl e) (a₂ := .inr e') h)
 
 /-- Every end is a source end or a target end. -/
 theorem exists_srcEnd_eq_or_exists_tgtEnd_eq (x : W.End) :
@@ -176,26 +177,23 @@ theorem three_mul_card_vertex : 3 * Nat.card W.Vertex = 2 * Nat.card W.Edge := b
 /-! ### The cyclic order at a vertex -/
 
 /-- The rotation keeps every end at its vertex. -/
-@[simp]
-theorem vertex_rot (x : W.End) : W.vertex (W.rot x) = W.vertex x :=
+@[simp] theorem vertex_rot (x : W.End) : W.vertex (W.rot x) = W.vertex x :=
   W.vertex_eq_vertex_iff.2 (Perm.SameCycle.refl _ _ |>.apply_left)
 
 /-- The inverse rotation keeps every end at its vertex. -/
-@[simp]
-theorem vertex_rot_symm (x : W.End) : W.vertex (W.rot.symm x) = W.vertex x := by
+@[simp] theorem vertex_rot_symm (x : W.End) : W.vertex (W.rot.symm x) = W.vertex x := by
   rw [← W.vertex_rot, Equiv.apply_symm_apply]
 
 /-- The rotation is a three-cycle at every end: the cycle through an end consists of the three
 ends at its vertex. -/
-theorem minimalPeriod_rot (x : W.End) : minimalPeriod W.rot x = 3 := by
+@[simp] theorem minimalPeriod_rot (x : W.End) : minimalPeriod W.rot x = 3 := by
   rw [← Perm.ncard_setOf_sameCycle, ← W.card_fiber_vertex (W.vertex x),
     ← Nat.card_coe_set_eq]
   exact Nat.card_congr (Equiv.subtypeEquivRight fun y ↦
     ⟨fun h ↦ (W.vertex_eq_vertex_iff.2 h).symm, fun h ↦ W.vertex_eq_vertex_iff.1 h.symm⟩)
 
 /-- Rotating three times around a vertex returns to the starting end. -/
-@[simp]
-theorem rot_rot_rot (x : W.End) : W.rot (W.rot (W.rot x)) = x := by
+@[simp] theorem rot_rot_rot (x : W.End) : W.rot (W.rot (W.rot x)) = x := by
   simpa [W.minimalPeriod_rot] using iterate_minimalPeriod (f := W.rot) (x := x)
 
 /-- No end is fixed by the rotation. -/
@@ -222,12 +220,10 @@ theorem vertex_eq_vertex_iff_eq_or_eq_or_eq {x y : W.End} :
 /-! ### Merge and split vertices -/
 
 /-- The number of edges finishing at a vertex. -/
-noncomputable def inDegree (v : W.Vertex) : ℕ :=
-  Nat.card {e // W.vertex (W.tgtEnd e) = v}
+noncomputable def inDegree (v : W.Vertex) : ℕ := Nat.card {e // W.vertex (W.tgtEnd e) = v}
 
 /-- The number of edges starting at a vertex. -/
-noncomputable def outDegree (v : W.Vertex) : ℕ :=
-  Nat.card {e // W.vertex (W.srcEnd e) = v}
+noncomputable def outDegree (v : W.Vertex) : ℕ := Nat.card {e // W.vertex (W.srcEnd e) = v}
 
 /-- The in-degree counts the edges whose target end lies at the vertex. -/
 theorem inDegree_def (v : W.Vertex) :
@@ -297,6 +293,18 @@ theorem isSplit_iff_not_isMerge (v : W.Vertex) : W.IsSplit v ↔ ¬W.IsMerge v :
   rw [isMerge_iff, isSplit_iff]
   omega
 
+/-- A vertex is a merge exactly when it is not a split. -/
+theorem isMerge_iff_not_isSplit (v : W.Vertex) : W.IsMerge v ↔ ¬W.IsSplit v := by
+  rw [isSplit_iff_not_isMerge, not_not]
+
+/-- A vertex that is not a merge is a split. -/
+@[simp] theorem not_isMerge (v : W.Vertex) : ¬W.IsMerge v ↔ W.IsSplit v :=
+  (W.isSplit_iff_not_isMerge v).symm
+
+/-- A vertex that is not a split is a merge. -/
+@[simp] theorem not_isSplit (v : W.Vertex) : ¬W.IsSplit v ↔ W.IsMerge v :=
+  (W.isMerge_iff_not_isSplit v).symm
+
 /-! ### Nilvalent webs -/
 
 /-- A web is nilvalent when it has no vertices; it then consists of vertex-free circles only. -/
@@ -327,7 +335,7 @@ def circles (C : Type u) [Finite C] : ClosedWeb.{u} where
   tgtEnd := PEmpty.elim
   vertex := PEmpty.elim
   rot := Equiv.refl _
-  bijective_sumElim := ⟨fun x ↦ x.elim (fun e ↦ e.elim) (fun e ↦ e.elim), fun x ↦ x.elim⟩
+  sumElim_bijective := ⟨fun x ↦ x.elim (fun e ↦ e.elim) (fun e ↦ e.elim), fun x ↦ x.elim⟩
   vertex_eq_vertex_iff {x} := x.elim
   card_fiber_vertex v := v.elim
   exists_vertex_srcEnd_eq v := v.elim
@@ -342,11 +350,11 @@ instance : EmptyCollection ClosedWeb.{u} := ⟨circles PEmpty⟩
 theorem empty_eq_circles : (∅ : ClosedWeb.{u}) = circles PEmpty := (rfl)
 
 /-- A web of circles is nilvalent. -/
-theorem isNilvalent_circles (C : Type u) [Finite C] : (circles C).IsNilvalent :=
+@[simp] theorem isNilvalent_circles (C : Type u) [Finite C] : (circles C).IsNilvalent :=
   inferInstanceAs (IsEmpty PEmpty)
 
 /-- The empty web is nilvalent. -/
-theorem isNilvalent_empty : (∅ : ClosedWeb.{u}).IsNilvalent := isNilvalent_circles _
+@[simp] theorem isNilvalent_empty : (∅ : ClosedWeb.{u}).IsNilvalent := isNilvalent_circles _
 
 /-- The reversed web `Wʳ`: every interval edge is traversed in the opposite direction, so source
 and target ends are exchanged; the cyclic orders are unchanged. -/
@@ -360,11 +368,11 @@ def reverse : ClosedWeb.{u} where
   tgtEnd := W.srcEnd
   vertex := W.vertex
   rot := W.rot
-  bijective_sumElim := by
+  sumElim_bijective := by
     have h : Sum.elim W.tgtEnd W.srcEnd = Sum.elim W.srcEnd W.tgtEnd ∘ Sum.swap := by
       ext (e | e) <;> rfl
     rw [h]
-    exact W.bijective_sumElim.comp (Equiv.sumComm _ _).bijective
+    exact W.sumElim_bijective.comp (Equiv.sumComm _ _).bijective
   vertex_eq_vertex_iff := W.vertex_eq_vertex_iff
   card_fiber_vertex := W.card_fiber_vertex
   exists_vertex_srcEnd_eq := W.exists_vertex_tgtEnd_eq
@@ -384,7 +392,7 @@ def mirror : ClosedWeb.{u} where
   tgtEnd := W.tgtEnd
   vertex := W.vertex
   rot := W.rot⁻¹
-  bijective_sumElim := W.bijective_sumElim
+  sumElim_bijective := W.sumElim_bijective
   vertex_eq_vertex_iff := W.vertex_eq_vertex_iff.trans Perm.sameCycle_inv.symm
   card_fiber_vertex := W.card_fiber_vertex
   exists_vertex_srcEnd_eq := W.exists_vertex_srcEnd_eq
@@ -449,6 +457,24 @@ theorem mirror_reverse : W.reverse.mirror = W.mirror.reverse := (rfl)
 /-- Mirroring keeps split vertices. -/
 @[simp] theorem isSplit_mirror (v : W.Vertex) : W.mirror.IsSplit v ↔ W.IsSplit v := Iff.rfl
 
+/-- Reversal keeps nilvalence. -/
+@[simp] theorem isNilvalent_reverse : W.reverse.IsNilvalent ↔ W.IsNilvalent := Iff.rfl
+
+/-- Mirroring keeps nilvalence. -/
+@[simp] theorem isNilvalent_mirror : W.mirror.IsNilvalent ↔ W.IsNilvalent := Iff.rfl
+
+/-- A web of circles is its own reversal. -/
+@[simp] theorem reverse_circles (C : Type u) [Finite C] : (circles C).reverse = circles C := (rfl)
+
+/-- A web of circles is its own mirror. -/
+@[simp] theorem mirror_circles (C : Type u) [Finite C] : (circles C).mirror = circles C := (rfl)
+
+/-- The empty web is its own reversal. -/
+@[simp] theorem reverse_empty : (∅ : ClosedWeb.{u}).reverse = ∅ := (rfl)
+
+/-- The empty web is its own mirror. -/
+@[simp] theorem mirror_empty : (∅ : ClosedWeb.{u}).mirror = ∅ := (rfl)
+
 /-- The mirror changes the cyclic order at every end: on the three ends `a, b, c = rot b` at a
 vertex, the rotation sends `a` to `b` while the mirrored rotation sends `a` to `c`. -/
 theorem mirror_rot_ne (x : W.End) : W.mirror.rot x ≠ W.rot x :=
@@ -456,7 +482,7 @@ theorem mirror_rot_ne (x : W.End) : W.mirror.rot x ≠ W.rot x :=
 
 /-- The disjoint union of two webs. -/
 @[expose]
-def disjUnion (W₁ W₂ : ClosedWeb.{u}) : ClosedWeb.{u} where
+def disjointUnion (W₁ W₂ : ClosedWeb.{u}) : ClosedWeb.{u} where
   Vertex := W₁.Vertex ⊕ W₂.Vertex
   Edge := W₁.Edge ⊕ W₂.Edge
   End := W₁.End ⊕ W₂.End
@@ -465,13 +491,13 @@ def disjUnion (W₁ W₂ : ClosedWeb.{u}) : ClosedWeb.{u} where
   tgtEnd := Sum.map W₁.tgtEnd W₂.tgtEnd
   vertex := Sum.map W₁.vertex W₂.vertex
   rot := Perm.sumCongr W₁.rot W₂.rot
-  bijective_sumElim := by
+  sumElim_bijective := by
     have h : Sum.elim (Sum.map W₁.srcEnd W₂.srcEnd) (Sum.map W₁.tgtEnd W₂.tgtEnd) =
         Sum.map (Sum.elim W₁.srcEnd W₁.tgtEnd) (Sum.elim W₂.srcEnd W₂.tgtEnd) ∘
           Equiv.sumSumSumComm _ _ _ _ := by
       ext ((e | e) | (e | e)) <;> rfl
     rw [h]
-    exact (W₁.bijective_sumElim.sumMap W₂.bijective_sumElim).comp (Equiv.bijective _)
+    exact (W₁.sumElim_bijective.sumMap W₂.sumElim_bijective).comp (Equiv.bijective _)
   vertex_eq_vertex_iff {x y} := by
     rcases x with x | x <;> rcases y with y | y
     · simpa using W₁.vertex_eq_vertex_iff
@@ -490,45 +516,85 @@ def disjUnion (W₁ W₂ : ClosedWeb.{u}) : ClosedWeb.{u} where
   finite_edge := inferInstanceAs (Finite (W₁.Edge ⊕ W₂.Edge))
   finite_circle := inferInstanceAs (Finite (W₁.Circle ⊕ W₂.Circle))
 
-section disjUnion
+section disjointUnion
 
 variable (W₁ W₂ : ClosedWeb.{u})
 
 /-- The source ends of a disjoint union are those of its pieces. -/
-@[simp] theorem disjUnion_srcEnd :
-    (W₁.disjUnion W₂).srcEnd = Sum.map W₁.srcEnd W₂.srcEnd := (rfl)
+@[simp] theorem disjointUnion_srcEnd :
+    (W₁.disjointUnion W₂).srcEnd = Sum.map W₁.srcEnd W₂.srcEnd := (rfl)
 
 /-- The target ends of a disjoint union are those of its pieces. -/
-@[simp] theorem disjUnion_tgtEnd :
-    (W₁.disjUnion W₂).tgtEnd = Sum.map W₁.tgtEnd W₂.tgtEnd := (rfl)
+@[simp] theorem disjointUnion_tgtEnd :
+    (W₁.disjointUnion W₂).tgtEnd = Sum.map W₁.tgtEnd W₂.tgtEnd := (rfl)
 
 /-- Each end of a disjoint union lies at its vertex in its own piece. -/
-@[simp] theorem disjUnion_vertex :
-    (W₁.disjUnion W₂).vertex = Sum.map W₁.vertex W₂.vertex := (rfl)
+@[simp] theorem disjointUnion_vertex :
+    (W₁.disjointUnion W₂).vertex = Sum.map W₁.vertex W₂.vertex := (rfl)
 
 /-- The rotation of a disjoint union rotates each piece separately. -/
-@[simp] theorem disjUnion_rot :
-    (W₁.disjUnion W₂).rot = Perm.sumCongr W₁.rot W₂.rot := (rfl)
+@[simp] theorem disjointUnion_rot : (W₁.disjointUnion W₂).rot = Perm.sumCongr W₁.rot W₂.rot := (rfl)
 
 /-- Reversal distributes over disjoint union. -/
-theorem reverse_disjUnion : (W₁.disjUnion W₂).reverse = W₁.reverse.disjUnion W₂.reverse := (rfl)
+theorem reverse_disjointUnion :
+    (W₁.disjointUnion W₂).reverse = W₁.reverse.disjointUnion W₂.reverse := (rfl)
 
 /-- Mirroring distributes over disjoint union. -/
-theorem mirror_disjUnion : (W₁.disjUnion W₂).mirror = W₁.mirror.disjUnion W₂.mirror := (rfl)
+theorem mirror_disjointUnion :
+    (W₁.disjointUnion W₂).mirror = W₁.mirror.disjointUnion W₂.mirror := (rfl)
 
 /-- A disjoint union is nilvalent exactly when both pieces are. -/
-@[simp] theorem isNilvalent_disjUnion :
-    (W₁.disjUnion W₂).IsNilvalent ↔ W₁.IsNilvalent ∧ W₂.IsNilvalent :=
-  isEmpty_sum
+@[simp] theorem isNilvalent_disjointUnion :
+    (W₁.disjointUnion W₂).IsNilvalent ↔ W₁.IsNilvalent ∧ W₂.IsNilvalent := isEmpty_sum
 
-end disjUnion
+/-- The in-degree of a vertex of the first piece of a disjoint union is its in-degree there. -/
+@[simp] theorem inDegree_disjointUnion_inl (v : W₁.Vertex) :
+    (W₁.disjointUnion W₂).inDegree (.inl v) = W₁.inDegree v := by
+  simp [inDegree, disjointUnion, Nat.card_congr Equiv.subtypeSum]
+
+/-- The in-degree of a vertex of the second piece of a disjoint union is its in-degree there. -/
+@[simp] theorem inDegree_disjointUnion_inr (v : W₂.Vertex) :
+    (W₁.disjointUnion W₂).inDegree (.inr v) = W₂.inDegree v := by
+  simp [inDegree, disjointUnion, Nat.card_congr Equiv.subtypeSum]
+
+/-- The out-degree of a vertex of the first piece of a disjoint union is its out-degree there. -/
+@[simp] theorem outDegree_disjointUnion_inl (v : W₁.Vertex) :
+    (W₁.disjointUnion W₂).outDegree (.inl v) = W₁.outDegree v := by
+  simp [outDegree, disjointUnion, Nat.card_congr Equiv.subtypeSum]
+
+/-- The out-degree of a vertex of the second piece of a disjoint union is its out-degree there. -/
+@[simp] theorem outDegree_disjointUnion_inr (v : W₂.Vertex) :
+    (W₁.disjointUnion W₂).outDegree (.inr v) = W₂.outDegree v := by
+  simp [outDegree, disjointUnion, Nat.card_congr Equiv.subtypeSum]
+
+/-- A vertex of the first piece is a merge in the disjoint union exactly when it is one there. -/
+@[simp] theorem isMerge_disjointUnion_inl (v : W₁.Vertex) :
+    (W₁.disjointUnion W₂).IsMerge (.inl v) ↔ W₁.IsMerge v :=
+  iff_of_eq (congrArg (· = 2) (inDegree_disjointUnion_inl W₁ W₂ v))
+
+/-- A vertex of the second piece is a merge in the disjoint union exactly when it is one there. -/
+@[simp] theorem isMerge_disjointUnion_inr (v : W₂.Vertex) :
+    (W₁.disjointUnion W₂).IsMerge (.inr v) ↔ W₂.IsMerge v :=
+  iff_of_eq (congrArg (· = 2) (inDegree_disjointUnion_inr W₁ W₂ v))
+
+/-- A vertex of the first piece is a split in the disjoint union exactly when it is one there. -/
+@[simp] theorem isSplit_disjointUnion_inl (v : W₁.Vertex) :
+    (W₁.disjointUnion W₂).IsSplit (.inl v) ↔ W₁.IsSplit v :=
+  iff_of_eq (congrArg (· = 2) (outDegree_disjointUnion_inl W₁ W₂ v))
+
+/-- A vertex of the second piece is a split in the disjoint union exactly when it is one there. -/
+@[simp] theorem isSplit_disjointUnion_inr (v : W₂.Vertex) :
+    (W₁.disjointUnion W₂).IsSplit (.inr v) ↔ W₂.IsSplit v :=
+  iff_of_eq (congrArg (· = 2) (outDegree_disjointUnion_inr W₁ W₂ v))
+
+end disjointUnion
 
 /-! ### Isomorphisms -/
 
 /-- An isomorphism of closed webs: bijections of vertices, interval edges, edge ends and circles
 that preserve the source and target ends of every edge, the vertex of every end and the cyclic
 orders. -/
-structure Iso (W₁ W₂ : ClosedWeb.{u}) where
+structure Iso (W₁ : ClosedWeb.{u}) (W₂ : ClosedWeb.{v}) where
   /-- The bijection of vertices. -/
   vertexEquiv : W₁.Vertex ≃ W₂.Vertex
   /-- The bijection of interval edges. -/
@@ -550,7 +616,7 @@ attribute [simp] Iso.map_srcEnd Iso.map_tgtEnd Iso.map_vertex Iso.map_rot
 
 namespace Iso
 
-variable {W₁ W₂ W₃ W₄ : ClosedWeb.{u}}
+variable {W₁ : ClosedWeb.{u}} {W₂ : ClosedWeb.{v}} {W₃ : ClosedWeb.{w}} {W₄ : ClosedWeb.{x}}
 
 /-- The identity isomorphism. -/
 @[expose, refl, simps]
@@ -625,33 +691,75 @@ theorem ext {f g : W₁.Iso W₂} (hedge : f.edgeEquiv = g.edgeEquiv)
 theorem trans_assoc (f : W₁.Iso W₂) (g : W₂.Iso W₃) (h : W₃.Iso W₄) :
     (f.trans g).trans h = f.trans (g.trans h) := (rfl)
 
+/-- The inverse of the identity is the identity. -/
+@[simp] theorem refl_symm (W : ClosedWeb.{u}) : (refl W).symm = refl W := (rfl)
+
+/-- The inverse of a composite is the composite of the inverses in the opposite order. -/
+@[simp] theorem symm_trans (f : W₁.Iso W₂) (g : W₂.Iso W₃) :
+    (f.trans g).symm = g.symm.trans f.symm := (rfl)
+
+/-- An isomorphism preserves the inverse rotations. -/
+@[simp] theorem map_rot_symm (f : W₁.Iso W₂) (x : W₁.End) :
+    W₂.rot.symm (f.endEquiv x) = f.endEquiv (W₁.rot.symm x) := by
+  rw [Equiv.symm_apply_eq, map_rot, Equiv.apply_symm_apply]
+
+/-- The inverse of an isomorphism preserves source ends. -/
+@[simp] theorem srcEnd_edgeEquiv_symm (f : W₁.Iso W₂) (e : W₂.Edge) :
+    W₁.srcEnd (f.edgeEquiv.symm e) = f.endEquiv.symm (W₂.srcEnd e) := f.symm.map_srcEnd e
+
+/-- The inverse of an isomorphism preserves target ends. -/
+@[simp] theorem tgtEnd_edgeEquiv_symm (f : W₁.Iso W₂) (e : W₂.Edge) :
+    W₁.tgtEnd (f.edgeEquiv.symm e) = f.endEquiv.symm (W₂.tgtEnd e) := f.symm.map_tgtEnd e
+
+/-- The inverse of an isomorphism preserves the vertex of every end. -/
+@[simp] theorem vertex_endEquiv_symm (f : W₁.Iso W₂) (x : W₂.End) :
+    W₁.vertex (f.endEquiv.symm x) = f.vertexEquiv.symm (W₂.vertex x) := f.symm.map_vertex x
+
+/-- The inverse of an isomorphism preserves the rotations. -/
+@[simp] theorem rot_endEquiv_symm (f : W₁.Iso W₂) (x : W₂.End) :
+    W₁.rot (f.endEquiv.symm x) = f.endEquiv.symm (W₂.rot x) := f.symm.map_rot x
+
+/-- The inverse of an isomorphism preserves the inverse rotations. -/
+@[simp] theorem rot_symm_endEquiv_symm (f : W₁.Iso W₂) (x : W₂.End) :
+    W₁.rot.symm (f.endEquiv.symm x) = f.endEquiv.symm (W₂.rot.symm x) := f.symm.map_rot_symm x
+
 /-- An isomorphism preserves the number of edges finishing at each vertex. -/
-@[simp]
-theorem inDegree_vertexEquiv (f : W₁.Iso W₂) (v : W₁.Vertex) :
+@[simp] theorem inDegree_vertexEquiv (f : W₁.Iso W₂) (v : W₁.Vertex) :
     W₂.inDegree (f.vertexEquiv v) = W₁.inDegree v :=
   (Nat.card_congr (f.edgeEquiv.subtypeEquiv fun _ ↦ by simp)).symm
 
 /-- An isomorphism preserves the number of edges starting at each vertex. -/
-@[simp]
-theorem outDegree_vertexEquiv (f : W₁.Iso W₂) (v : W₁.Vertex) :
+@[simp] theorem outDegree_vertexEquiv (f : W₁.Iso W₂) (v : W₁.Vertex) :
     W₂.outDegree (f.vertexEquiv v) = W₁.outDegree v :=
   (Nat.card_congr (f.edgeEquiv.subtypeEquiv fun _ ↦ by simp)).symm
 
 /-- An isomorphism maps merge vertices to merge vertices. -/
-@[simp]
-theorem isMerge_vertexEquiv (f : W₁.Iso W₂) (v : W₁.Vertex) :
-    W₂.IsMerge (f.vertexEquiv v) ↔ W₁.IsMerge v := by
-  simp [isMerge_iff]
+@[simp] theorem isMerge_vertexEquiv (f : W₁.Iso W₂) (v : W₁.Vertex) :
+    W₂.IsMerge (f.vertexEquiv v) ↔ W₁.IsMerge v := by simp [isMerge_iff]
 
 /-- An isomorphism maps split vertices to split vertices. -/
-@[simp]
-theorem isSplit_vertexEquiv (f : W₁.Iso W₂) (v : W₁.Vertex) :
-    W₂.IsSplit (f.vertexEquiv v) ↔ W₁.IsSplit v := by
-  simp [isSplit_iff]
+@[simp] theorem isSplit_vertexEquiv (f : W₁.Iso W₂) (v : W₁.Vertex) :
+    W₂.IsSplit (f.vertexEquiv v) ↔ W₁.IsSplit v := by simp [isSplit_iff]
 
 /-- Isomorphic webs are nilvalent together. -/
 theorem isNilvalent_iff (f : W₁.Iso W₂) : W₁.IsNilvalent ↔ W₂.IsNilvalent :=
   f.vertexEquiv.isEmpty_congr
+
+/-- The inverse of an isomorphism preserves the number of edges finishing at each vertex. -/
+@[simp] theorem inDegree_vertexEquiv_symm (f : W₁.Iso W₂) (v : W₂.Vertex) :
+    W₁.inDegree (f.vertexEquiv.symm v) = W₂.inDegree v := f.symm.inDegree_vertexEquiv v
+
+/-- The inverse of an isomorphism preserves the number of edges starting at each vertex. -/
+@[simp] theorem outDegree_vertexEquiv_symm (f : W₁.Iso W₂) (v : W₂.Vertex) :
+    W₁.outDegree (f.vertexEquiv.symm v) = W₂.outDegree v := f.symm.outDegree_vertexEquiv v
+
+/-- The inverse of an isomorphism maps merge vertices to merge vertices. -/
+@[simp] theorem isMerge_vertexEquiv_symm (f : W₁.Iso W₂) (v : W₂.Vertex) :
+    W₁.IsMerge (f.vertexEquiv.symm v) ↔ W₂.IsMerge v := f.symm.isMerge_vertexEquiv v
+
+/-- The inverse of an isomorphism maps split vertices to split vertices. -/
+@[simp] theorem isSplit_vertexEquiv_symm (f : W₁.Iso W₂) (v : W₂.Vertex) :
+    W₁.IsSplit (f.vertexEquiv.symm v) ↔ W₂.IsSplit v := f.symm.isSplit_vertexEquiv v
 
 /-- Reversal of an isomorphism: the same bijections are an isomorphism of the reversed webs. -/
 @[expose, simps]
@@ -675,12 +783,12 @@ def mirror (f : W₁.Iso W₂) : W₁.mirror.Iso W₂.mirror where
   map_srcEnd := f.map_srcEnd
   map_tgtEnd := f.map_tgtEnd
   map_vertex := f.map_vertex
-  map_rot x := Perm.inv_eq_iff_eq.2 <|
-    (congrArg f.endEquiv (W₁.rot.apply_symm_apply x)).symm.trans (f.map_rot _).symm
+  map_rot := f.map_rot_symm
 
 /-- The disjoint union of two isomorphisms. -/
 @[expose, simps]
-def disjUnion (f : W₁.Iso W₂) (g : W₃.Iso W₄) : (W₁.disjUnion W₃).Iso (W₂.disjUnion W₄) where
+def disjointUnion {W₁ W₃ : ClosedWeb.{u}} {W₂ W₄ : ClosedWeb.{v}} (f : W₁.Iso W₂) (g : W₃.Iso W₄) :
+    (W₁.disjointUnion W₃).Iso (W₂.disjointUnion W₄) where
   vertexEquiv := f.vertexEquiv.sumCongr g.vertexEquiv
   edgeEquiv := f.edgeEquiv.sumCongr g.edgeEquiv
   endEquiv := f.endEquiv.sumCongr g.endEquiv
@@ -698,11 +806,45 @@ def disjUnion (f : W₁.Iso W₂) (g : W₃.Iso W₄) : (W₁.disjUnion W₃).Is
     | .inl x => congrArg Sum.inl (f.map_rot x)
     | .inr x => congrArg Sum.inr (g.map_rot x)
 
-variable (W₁ W₂ W₃)
+/-- Reversal of the identity is the identity. -/
+@[simp] theorem reverse_refl (W : ClosedWeb.{u}) : (refl W).reverse = refl W.reverse := (rfl)
+
+/-- Reversal commutes with inverses. -/
+@[simp] theorem reverse_symm (f : W₁.Iso W₂) : f.reverse.symm = f.symm.reverse := (rfl)
+
+/-- Reversal commutes with composition. -/
+@[simp] theorem reverse_trans (f : W₁.Iso W₂) (g : W₂.Iso W₃) :
+    f.reverse.trans g.reverse = (f.trans g).reverse := (rfl)
+
+/-- The mirror of the identity is the identity. -/
+@[simp] theorem mirror_refl (W : ClosedWeb.{u}) : (refl W).mirror = refl W.mirror := (rfl)
+
+/-- Mirroring commutes with inverses. -/
+@[simp] theorem mirror_symm (f : W₁.Iso W₂) : f.mirror.symm = f.symm.mirror := (rfl)
+
+/-- Mirroring commutes with composition. -/
+@[simp] theorem mirror_trans (f : W₁.Iso W₂) (g : W₂.Iso W₃) :
+    f.mirror.trans g.mirror = (f.trans g).mirror := (rfl)
+
+/-- The disjoint union of identities is the identity. -/
+@[simp] theorem disjointUnion_refl (W₁ W₂ : ClosedWeb.{u}) :
+    (refl W₁).disjointUnion (refl W₂) = refl _ := by ext (e | e) <;> rfl
+
+/-- The inverse of a disjoint union of isomorphisms is the disjoint union of the inverses. -/
+@[simp] theorem disjointUnion_symm {W₁ W₃ : ClosedWeb.{u}} {W₂ W₄ : ClosedWeb.{v}} (f : W₁.Iso W₂)
+    (g : W₃.Iso W₄) : (f.disjointUnion g).symm = f.symm.disjointUnion g.symm := (rfl)
+
+/-- Disjoint union of isomorphisms commutes with composition. -/
+@[simp] theorem disjointUnion_trans {W₁ W₄ : ClosedWeb.{u}} {W₂ W₅ : ClosedWeb.{v}}
+    {W₃ W₆ : ClosedWeb.{w}} (f : W₁.Iso W₂) (f' : W₂.Iso W₃) (g : W₄.Iso W₅) (g' : W₅.Iso W₆) :
+    (f.disjointUnion g).trans (f'.disjointUnion g') = (f.trans f').disjointUnion (g.trans g') := by
+  ext (e | e) <;> rfl
+
+variable (W₁ W₂ W₃ : ClosedWeb.{u})
 
 /-- The empty web is a left unit for disjoint union. -/
 @[expose, simps]
-def emptyDisjUnion : ((∅ : ClosedWeb.{u}).disjUnion W₁).Iso W₁ where
+def emptyDisjointUnion : ((∅ : ClosedWeb.{u}).disjointUnion W₁).Iso W₁ where
   vertexEquiv := Equiv.emptySum PEmpty W₁.Vertex
   edgeEquiv := Equiv.emptySum PEmpty W₁.Edge
   endEquiv := Equiv.emptySum PEmpty W₁.End
@@ -714,7 +856,7 @@ def emptyDisjUnion : ((∅ : ClosedWeb.{u}).disjUnion W₁).Iso W₁ where
 
 /-- The empty web is a right unit for disjoint union. -/
 @[expose, simps]
-def disjUnionEmpty : (W₁.disjUnion (∅ : ClosedWeb.{u})).Iso W₁ where
+def disjointUnionEmpty : (W₁.disjointUnion (∅ : ClosedWeb.{u})).Iso W₁ where
   vertexEquiv := Equiv.sumEmpty W₁.Vertex PEmpty
   edgeEquiv := Equiv.sumEmpty W₁.Edge PEmpty
   endEquiv := Equiv.sumEmpty W₁.End PEmpty
@@ -726,7 +868,8 @@ def disjUnionEmpty : (W₁.disjUnion (∅ : ClosedWeb.{u})).Iso W₁ where
 
 /-- Disjoint union is associative. -/
 @[expose, simps]
-def disjUnionAssoc : ((W₁.disjUnion W₂).disjUnion W₃).Iso (W₁.disjUnion (W₂.disjUnion W₃)) where
+def disjointUnionAssoc :
+    ((W₁.disjointUnion W₂).disjointUnion W₃).Iso (W₁.disjointUnion (W₂.disjointUnion W₃)) where
   vertexEquiv := Equiv.sumAssoc _ _ _
   edgeEquiv := Equiv.sumAssoc _ _ _
   endEquiv := Equiv.sumAssoc _ _ _
@@ -738,7 +881,7 @@ def disjUnionAssoc : ((W₁.disjUnion W₂).disjUnion W₃).Iso (W₁.disjUnion 
 
 /-- Disjoint union is commutative. -/
 @[expose, simps]
-def disjUnionComm : (W₁.disjUnion W₂).Iso (W₂.disjUnion W₁) where
+def disjointUnionComm : (W₁.disjointUnion W₂).Iso (W₂.disjointUnion W₁) where
   vertexEquiv := Equiv.sumComm _ _
   edgeEquiv := Equiv.sumComm _ _
   endEquiv := Equiv.sumComm _ _
@@ -749,18 +892,21 @@ def disjUnionComm : (W₁.disjUnion W₂).Iso (W₂.disjUnion W₁) where
   map_rot := by rintro (x | x) <;> rfl
 
 /-- Swapping the two pieces of a disjoint union twice is the identity. -/
+@[simp] theorem disjointUnionComm_trans_disjointUnionComm :
+    (disjointUnionComm W₁ W₂).trans (disjointUnionComm W₂ W₁) = refl _ := by ext (e | e) <;> rfl
+
+/-- The inverse of the swap of the two pieces of a disjoint union is the swap back. -/
 @[simp]
-theorem disjUnionComm_trans_disjUnionComm :
-    (disjUnionComm W₁ W₂).trans (disjUnionComm W₂ W₁) = refl _ := by
+theorem disjointUnionComm_symm : (disjointUnionComm W₁ W₂).symm = disjointUnionComm W₂ W₁ := by
   ext (e | e) <;> rfl
 
 /-- A bijection of circles is an isomorphism of the corresponding nilvalent webs. -/
 @[expose, simps]
-def circles {C C' : Type u} [Finite C] [Finite C'] (e : C ≃ C') :
+def circles {C : Type u} {C' : Type v} [Finite C] [Finite C'] (e : C ≃ C') :
     (ClosedWeb.circles C).Iso (ClosedWeb.circles C') where
-  vertexEquiv := .refl _
-  edgeEquiv := .refl _
-  endEquiv := .refl _
+  vertexEquiv := Equiv.equivPEmpty PEmpty
+  edgeEquiv := Equiv.equivPEmpty PEmpty
+  endEquiv := Equiv.equivPEmpty PEmpty
   circleEquiv := e
   map_srcEnd x := x.elim
   map_tgtEnd x := x.elim
@@ -785,12 +931,12 @@ def IsNilvalent.isoCircles {W : ClosedWeb.{u}} (h : W.IsNilvalent) : W.Iso (circ
     map_rot := isEmptyElim }
 
 /-- Two webs of circles are isomorphic exactly when they have the same number of circles. -/
-theorem nonempty_iso_circles_iff {C C' : Type u} [Finite C] [Finite C'] :
+theorem nonempty_iso_circles_iff {C : Type u} {C' : Type v} [Finite C] [Finite C'] :
     Nonempty ((circles C).Iso (circles C')) ↔ Nat.card C = Nat.card C' :=
   ⟨fun ⟨f⟩ ↦ Nat.card_congr f.circleEquiv, fun h ↦ ⟨Iso.circles (Finite.card_eq.1 h).some⟩⟩
 
 /-- Nilvalent webs are classified up to isomorphism by their number of circles. -/
-theorem IsNilvalent.nonempty_iso_iff {W₁ W₂ : ClosedWeb.{u}} (h₁ : W₁.IsNilvalent)
+theorem IsNilvalent.nonempty_iso_iff {W₁ : ClosedWeb.{u}} {W₂ : ClosedWeb.{v}} (h₁ : W₁.IsNilvalent)
     (h₂ : W₂.IsNilvalent) : Nonempty (W₁.Iso W₂) ↔ Nat.card W₁.Circle = Nat.card W₂.Circle :=
   ⟨fun ⟨f⟩ ↦ Nat.card_congr f.circleEquiv, fun h ↦
     ⟨h₁.isoCircles.trans ((nonempty_iso_circles_iff.2 h).some.trans h₂.isoCircles.symm)⟩⟩
@@ -798,17 +944,16 @@ theorem IsNilvalent.nonempty_iso_iff {W₁ W₂ : ClosedWeb.{u}} (h₁ : W₁.Is
 /-- The empty web and a single circle are different webs: both are nilvalent, but only the second
 has a circle. -/
 theorem not_nonempty_iso_empty_circles_punit :
-    ¬Nonempty ((∅ : ClosedWeb.{u}).Iso (circles PUnit)) := by
+    ¬Nonempty ((∅ : ClosedWeb.{u}).Iso (circles PUnit.{v + 1})) := by
   rw [empty_eq_circles, nonempty_iso_circles_iff]
   simp
 
 /-! ### The theta web -/
 
-/-- The planar theta web: two vertices joined by three interval edges. Edges `0` and `1` run from
-vertex `0` to vertex `1` and edge `2` runs back, so vertex `0` is a split and vertex `1` a merge.
-The source end of an edge is `Sum.inl` and its target end `Sum.inr`. The cyclic orders
-`(0, 1, 2)` at vertex `0` and `(0, 2, 1)` at vertex `1` are those of the planar theta graph, whose
-ribbon graph has three faces. -/
+/-- A theta web: two vertices joined by three interval edges. Edges `0` and `1` run from vertex `0`
+to vertex `1` and edge `2` runs back, so vertex `0` is a split and vertex `1` a merge. The source
+end of an edge is `Sum.inl` and its target end `Sum.inr`. The rotation cycles through the ends of
+edges `0`, `1`, `2` at vertex `0` and through the ends of edges `0`, `2`, `1` at vertex `1`. -/
 abbrev theta : ClosedWeb.{0} where
   Vertex := Fin 2
   Edge := Fin 3
@@ -822,7 +967,7 @@ abbrev theta : ClosedWeb.{0} where
     letI y : Fin 3 → Fin 3 ⊕ Fin 3 := Sum.inr
     (Equiv.swap (x 0) (x 1) * Equiv.swap (x 1) (y 2)) *
       (Equiv.swap (y 0) (x 2) * Equiv.swap (x 2) (y 1))
-  bijective_sumElim := by rw [Sum.elim_inl_inr]; exact bijective_id
+  sumElim_bijective := by rw [Sum.elim_inl_inr]; exact bijective_id
   vertex_eq_vertex_iff {x y} := by
     refine ⟨fun h ↦ ?_, fun h ↦ h.apply_eq_of_apply_eq fun z ↦ by revert z; decide⟩
     rcases x with x | x <;> rcases y with y | y <;> fin_cases x <;> fin_cases y <;>
@@ -841,12 +986,12 @@ abbrev theta : ClosedWeb.{0} where
   finite_circle := inferInstanceAs (Finite PEmpty)
 
 /-- The first vertex of the theta web is a split. -/
-theorem isSplit_theta_zero : theta.IsSplit 0 := by
+@[simp] theorem isSplit_theta_zero : theta.IsSplit 0 := by
   rw [isSplit_iff, outDegree_def, Nat.card_eq_fintype_card]
   decide
 
 /-- The second vertex of the theta web is a merge. -/
-theorem isMerge_theta_one : theta.IsMerge 1 := by
+@[simp] theorem isMerge_theta_one : theta.IsMerge 1 := by
   rw [isMerge_iff, inDegree_def, Nat.card_eq_fintype_card]
   decide
 
