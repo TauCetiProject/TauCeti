@@ -62,13 +62,12 @@ open scoped ENNReal
 
 /--
 For a probability measure, `1 - μ sᶜ ≤ μ s`, with no measurability assumption
-on `s`: subadditivity gives `1 = μ (s ∪ sᶜ) ≤ μ s + μ sᶜ`.
+on `s`: this is `μ univ ≤ μ s + μ sᶜ` (`MeasureTheory.measure_univ_le_add_compl`) with
+`μ univ = 1`.
 -/
 theorem one_sub_measure_compl_le {Ω : Type*} [MeasurableSpace Ω] (μ : Measure Ω)
     [IsProbabilityMeasure μ] (s : Set Ω) : 1 - μ sᶜ ≤ μ s :=
-  tsub_le_iff_right.mpr <| by
-    calc (1 : ℝ≥0∞) = μ (s ∪ sᶜ) := by rw [Set.union_compl_self, measure_univ]
-      _ ≤ μ s + μ sᶜ := measure_union_le _ _
+  tsub_le_iff_right.mpr (by simpa using measure_univ_le_add_compl (μ := μ) s)
 
 /-- A probability measure on a space with measurable singletons is determined by its values on
 singletons when those have total mass one, even if the space is uncountable. -/

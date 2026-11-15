@@ -14,7 +14,7 @@ public import TauCeti.MeasureTheory.Integral.PiSystem
 public import TauCeti.MeasureTheory.Function.Lp.Basic
 import Mathlib.Analysis.Normed.Affine.MazurUlam
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
-import TauCeti.Algebra.Order.Ring.PosPartSq
+import TauCeti.Algebra.Order.Ring.PosPart.Sq
 
 /-!
 # Inner products of square-integrable functions
