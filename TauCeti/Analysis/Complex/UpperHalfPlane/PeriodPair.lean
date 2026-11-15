@@ -91,6 +91,8 @@ every lattice is a rescaling of `ℤ τ + ℤ` for some `τ` in the upper half-p
   the lattice.
 * `UpperHalfPlane.lattice_periodPair_smul`: the lattice of `γ z` is `(c z + d)⁻¹ (ℤ z + ℤ)`, as a
   rescaled period pair.
+* `UpperHalfPlane.intCast_mul_add_intCast_eq_zero_iff`: `z` and `1` are linearly independent
+  over `ℤ`.
 * `PeriodPair.exists_lattice_eq_smul_periodPair`: every lattice is homothetic to `ℤ τ + ℤ`.
 * `PeriodPair.lattice_smul_eq_self_of_pow_eq_one`: if a primitive `n`-th root of unity preserves a
   lattice, so does every `n`-th root of unity.
@@ -148,6 +150,19 @@ lemma intCast_comp_eq_zero_of_div_mem_lattice_periodPair {N : ℕ} [NeZero N] {b
   ext i
   fin_cases i <;> simpa [ZMod.intCast_zmod_eq_zero_iff_dvd]
 
+/-- A division point `(b₀ z + b₁) / N` lies in the lattice `ℤ z + ℤ` if `b ≡ 0 mod N`. -/
+lemma div_mem_lattice_periodPair_of_intCast_comp_eq_zero {N : ℕ} {b : Fin 2 → ℤ} (z : ℍ)
+    (h : ((↑) : ℤ → ZMod N) ∘ b = 0) : ((b 0 : ℂ) * z + b 1) / N ∈ z.periodPair.lattice := by
+  obtain ⟨k₀, hk₀⟩ := (ZMod.intCast_zmod_eq_zero_iff_dvd _ N).mp (congrFun h 0)
+  obtain ⟨k₁, hk₁⟩ := (ZMod.intCast_zmod_eq_zero_iff_dvd _ N).mp (congrFun h 1)
+  rcases eq_or_ne (N : ℂ) 0 with hN | hN
+  · rw [hN, div_zero]
+    exact zero_mem _
+  convert intCast_mul_add_intCast_mem_lattice_periodPair z k₀ k₁ using 1
+  rw [hk₀, hk₁, div_eq_iff hN]
+  push_cast
+  ring
+
 /-- The integer pairs parametrize the lattice of `z.periodPair` by `y ↦ y₀ z + y₁`. -/
 private def latticeEquiv (z : ℍ) : (Fin 2 → ℤ) ≃ z.periodPair.lattice :=
   (finTwoArrowEquiv ℤ).trans z.periodPair.latticeEquivProd.symm.toEquiv
@@ -204,7 +219,7 @@ lemma div_denom_mem_lattice_periodPair_smul_iff (γ : SL(2, ℤ)) (z : ℍ) (x :
     have h' := intCast_mul_smul_add_intCast γ z ![m, n]
     simp only [Matrix.cons_val_zero, Matrix.cons_val_one, periodPair_ω₁, periodPair_ω₂,
       mul_one] at h' hmn
-    rw [hmn, div_left_inj' hD] at h'
+    rw [hmn, div_left_inj₀ hD] at h'
     rw [h']
     exact intCast_mul_add_intCast_mem_lattice_periodPair z _ _
   · intro h
@@ -774,6 +789,63 @@ lemma lattice_periodPair_smul (γ : SL(2, ℤ)) (z : ℍ) :
   have hx : x = ((u⁻¹ : ℂˣ) : ℂ) * (u * x) := by simp
   rw [hx, PeriodPair.mul_mem_lattice_smul_iff, ← div_denom_mem_lattice_periodPair_smul_iff γ z]
   simp [u, mul_div_cancel_left₀ _ (denom_ne_zero γ z)]
+
+/-- An integer combination `m z + n` of `z ∈ ℍ` and `1` vanishes only if `m = n = 0`. -/
+lemma intCast_mul_add_intCast_eq_zero_iff {z : ℍ} {m n : ℤ} :
+    (m : ℂ) * z + n = 0 ↔ m = 0 ∧ n = 0 := by
+  refine ⟨fun h ↦ ?_, fun ⟨hm, hn⟩ ↦ by simp [hm, hn]⟩
+  have := LinearIndependent.pair_iff.mp z.periodPair.indep m n (by
+    simpa [Complex.real_smul] using h)
+  exact_mod_cast this
+
+/-- **Homothetic lattices `ℤ z + ℤ` are related by `SL(2, ℤ)`**: if `ℤ z' + ℤ = c (ℤ z + ℤ)`, then
+`z = γ z'` for some `γ ∈ SL(2, ℤ)` with `c = c_γ z' + d_γ`. This is the converse of
+`UpperHalfPlane.lattice_periodPair_smul`. -/
+theorem exists_smul_eq_and_denom_eq_of_lattice_periodPair_eq {z z' : ℍ} {c : ℂˣ}
+    (h : z'.periodPair.lattice = (c • z.periodPair).lattice) :
+    ∃ γ : SL(2, ℤ), γ • z' = z ∧ denom γ z' = c := by
+  have hc₀ : (c : ℂ) ≠ 0 := c.ne_zero
+  -- `c z` and `c` lie in `ℤ z' + ℤ`, and `z'` and `1` lie in `c (ℤ z + ℤ)`.
+  obtain ⟨a, b, hab⟩ := mem_lattice.mp (h ▸ (c • z.periodPair).ω₁_mem_lattice)
+  obtain ⟨c', d, hcd⟩ := mem_lattice.mp (h ▸ (c • z.periodPair).ω₂_mem_lattice)
+  obtain ⟨e, f, hef⟩ := mem_lattice.mp (h ▸ z'.periodPair.ω₁_mem_lattice)
+  obtain ⟨g, k, hgk⟩ := mem_lattice.mp (h ▸ z'.periodPair.ω₂_mem_lattice)
+  simp only [periodPair_ω₁, periodPair_ω₂, PeriodPair.smul_ω₁, PeriodPair.smul_ω₂, mul_one]
+    at hab hcd hef hgk
+  -- The two integer matrices are mutually inverse, so `a d - b c' = ± 1`.
+  obtain ⟨h₁, h₂⟩ := (intCast_mul_add_intCast_eq_zero_iff (z := z')
+    (m := e * a + f * c' - 1) (n := e * b + f * d)).mp (by
+      push_cast; linear_combination e * hab + f * hcd + hef)
+  obtain ⟨-, h₄⟩ := (intCast_mul_add_intCast_eq_zero_iff (z := z')
+    (m := g * a + k * c') (n := g * b + k * d - 1)).mp (by
+      push_cast; linear_combination g * hab + k * hcd + hgk)
+  have hdet : (a * d - b * c') * (e * k - f * g) = 1 := by
+    linear_combination (g * b + k * d) * h₁ + h₄ - (g * a + k * c') * h₂
+  -- Imaginary parts in `c z = a z' + b` and `c = c' z' + d` give `Im z |c|² = (a d - b c') Im z'`.
+  have hre₁ := congrArg Complex.re hab
+  have him₁ := congrArg Complex.im hab
+  have hre₂ := congrArg Complex.re hcd
+  have him₂ := congrArg Complex.im hcd
+  simp only [add_re, add_im, mul_re, mul_im, intCast_re, intCast_im, zero_mul, sub_zero,
+    add_zero, coe_re, coe_im] at hre₁ him₁ hre₂ him₂
+  have key : z.im * Complex.normSq c = ((a * d - b * c' : ℤ) : ℝ) * z'.im := by
+    rw [Complex.normSq_apply]
+    push_cast
+    linear_combination (a * z'.re + b) * him₂ - (c : ℂ).re * him₁ + (c : ℂ).im * hre₁ -
+      (a * z'.im) * hre₂
+  have hpos : 0 < a * d - b * c' := by
+    have : (0 : ℝ) < ((a * d - b * c' : ℤ) : ℝ) * z'.im := by
+      rw [← key]
+      exact mul_pos z.im_pos (Complex.normSq_pos.mpr hc₀)
+    exact_mod_cast pos_of_mul_pos_left this z'.im_pos.le
+  let γ : SL(2, ℤ) := ⟨!![a, b; c', d], by
+    rw [Matrix.det_fin_two_of]; exact Int.eq_one_of_mul_eq_one_right hpos.le hdet⟩
+  have hden : denom γ z' = c := by
+    rw [ModularGroup.denom_apply]
+    simpa [γ] using hcd
+  refine ⟨γ, UpperHalfPlane.ext ?_, hden⟩
+  rw [coe_specialLinearGroup_apply]
+  simpa [γ, hcd, mul_div_cancel_left₀ _ hc₀] using congrArg (· / (c : ℂ)) hab
 
 /-- The lattice `ℤ i + ℤ` is preserved by multiplication by `i`. -/
 lemma lattice_I_smul_periodPair_I :

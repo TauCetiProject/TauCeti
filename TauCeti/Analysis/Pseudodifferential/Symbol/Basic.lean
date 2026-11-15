@@ -435,6 +435,10 @@ theorem IsUniform.smul {a : Symbol n V W m} (ha : a.IsUniform) (c : ℂ) : (c �
 theorem isUniform_zero : (0 : Symbol n V W m).IsUniform :=
   fun _ _ => ⟨0, le_rfl, fun x ξ => by simp⟩
 
+theorem IsUniform.sum {ι : Type*} {s : Finset ι} {a : ι → Symbol n V W m}
+    (ha : ∀ i ∈ s, (a i).IsUniform) : (∑ i ∈ s, a i).IsUniform :=
+  Finset.sum_induction _ IsUniform (fun _ _ => IsUniform.add) isUniform_zero ha
+
 theorem hasCompactSpatialSupport_zero : (0 : Symbol n V W m).HasCompactSpatialSupport :=
   ⟨∅, isCompact_empty, fun _ _ _ => rfl⟩
 
@@ -780,8 +784,7 @@ def frequencyLaplacianPow : (N : ℕ) → {m : ℝ} → Symbol n V W m →ₗ[�
 
 @[simp]
 theorem coefficient_frequencyLaplacianPow_zero (a : Symbol n V W m) :
-    (frequencyLaplacianPow 0 a).coefficient = a.coefficient := by
-  simp [frequencyLaplacianPow]
+    (frequencyLaplacianPow 0 a).coefficient = a.coefficient := by simp [frequencyLaplacianPow]
 
 theorem coefficient_frequencyLaplacianPow_succ (N : ℕ) (a : Symbol n V W m) :
     (frequencyLaplacianPow (N + 1) a).coefficient =
@@ -825,8 +828,7 @@ section Spatial
 
 /-- The order-zero weight with no frequency derivative is `1`. -/
 private theorem rpow_weight_zero (ξ : CoordinateSpace n) :
-    (1 + ‖ξ‖ ^ 2) ^ (((0 : ℝ) - ([] : List (Fin n)).length) / 2) = 1 := by
-  simp
+    (1 + ‖ξ‖ ^ 2) ^ (((0 : ℝ) - ([] : List (Fin n)).length) / 2) = 1 := by simp
 
 /-- A smooth frequency-independent coefficient `a(x, ξ) = f(x)`, the symbol of multiplication by
 `f`, is a symbol of order `0`. -/
@@ -1248,6 +1250,12 @@ theorem isSmoothing_iff_forall_exists_bound {a : Symbol n V W m} :
   obtain ⟨b, hb⟩ := h m'
   exact hb ▸ b.exists_bound K hK α β
 
+/-- A symbol is smoothing iff for every `N` its coefficient is that of a symbol of order `m - N`. -/
+theorem isSmoothing_iff_forall_nat {a : Symbol n V W m} :
+    a.IsSmoothing ↔ ∀ N : ℕ, ∃ b : Symbol n V W (m - N), b.coefficient = a.coefficient := by
+  refine ⟨fun h N => h _, fun h m' => (h ⌈m - m'⌉₊).elim fun b hb => ?_⟩
+  exact ⟨inclusion (by linarith [Nat.le_ceil (m - m')]) b, by rw [coefficient_inclusion, hb]⟩
+
 @[simp]
 theorem isSmoothing_zero : (0 : Symbol n V W m).IsSmoothing :=
   fun _ => ⟨0, rfl⟩
@@ -1454,8 +1462,7 @@ private theorem commute_of_coefficient_map_compL_flip_eq {a : Symbol n V V m} {T
     {p : CoordinateSpace n × CoordinateSpace n}
     (h : (a.map (((ContinuousLinearMap.compL ℂ V V V).flip T).restrictScalars ℝ)).coefficient p =
       (a.map ((ContinuousLinearMap.compL ℂ V V V T).restrictScalars ℝ)).coefficient p) :
-    Commute (a.coefficient p) T := by
-  simpa [commute_iff_eq, ContinuousLinearMap.mul_def] using h
+    Commute (a.coefficient p) T := by simpa [commute_iff_eq, ContinuousLinearMap.mul_def] using h
 
 /-- If every value of a symbol commutes with an operator `T`, so does every value of its spatial
 derivatives. -/

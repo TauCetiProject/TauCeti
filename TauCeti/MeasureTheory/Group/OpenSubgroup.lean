@@ -57,9 +57,11 @@ This file develops five families of results for `(H, μ.comap ((↑) : H → G))
 
 ## Main results
 
-* `OpenSubgroup.instIsMulLeftInvariantComap`, `OpenSubgroup.instIsHaarMeasureComap`,
-  `OpenSubgroup.instRegularComap`, `OpenSubgroup.instInnerRegularCompactLTTopComap`: invariant,
-  Haar, and regular measure instances on `μ.comap ((↑) : H → G)`.
+* `OpenSubgroup.instIsHaarMeasureComap`, `OpenSubgroup.instRegularComap`,
+  `OpenSubgroup.instInnerRegularCompactLTTopComap`: Haar and regular measure instances on
+  `μ.comap ((↑) : H → G)`; its left and right invariance are the instances
+  `Measure.isMulLeftInvariant_comap_subtype` and `Measure.isMulRightInvariant_comap_subtype`,
+  which hold for every subgroup.
 * `OpenSubgroup.sigmaFinite_comap`, `OpenSubgroup.innerRegular_comap`: σ-finiteness and inner
   regularity of `μ.comap ((↑) : H → G)` when `IsSigmaCompact (H : Set G)`.
 * `OpenSubgroup.modularCharacter_eq`:

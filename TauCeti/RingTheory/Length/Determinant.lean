@@ -215,7 +215,7 @@ theorem _root_.LinearMap.ordFrac_det_eq_coe_of_length_eq (φ : V →ₗ[K] V) (M
     push_cast
     rfl
   have h := congrArg (Ring.ordFrac A) hdet
-  rw [Ring.ordFrac_eq_ord A hD, ← map_pow, map_mul, Ring.ordFrac_eq_ord A (pow_ne_zero _ hc),
+  rw [Ring.ordFrac_eq_ord A, ← map_pow, map_mul, Ring.ordFrac_eq_ord A,
     Ring.ordMonoidWithZeroHom_eq_coe A (mem_nonZeroDivisors_of_ne_zero hD) hlen,
     Ring.ordMonoidWithZeroHom_eq_coe A (mem_nonZeroDivisors_of_ne_zero (pow_ne_zero _ hc)) hcr] at h
   refine mul_left_cancel₀ (WithZero.coe_ne_zero (a := Multiplicative.ofAdd ((r * k : ℕ) : ℤ)))

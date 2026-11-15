@@ -78,7 +78,10 @@ families of operators.
   (`TauCeti.Symbol.HasCompactSpatialSupport.continuous_fourier_slice`), differentiability in `ξ`
   with the Fourier transform of `∂_ξ a` as derivative
   (`TauCeti.Symbol.HasCompactSpatialSupport.hasFDerivAt_fourier_slice`,
-  `TauCeti.Symbol.HasCompactSpatialSupport.coordinateDeriv_fourier_slice`), and
+  `TauCeti.Symbol.HasCompactSpatialSupport.coordinateDeriv_fourier_slice`), smoothness in `ξ`
+  with the symbol estimates `‖D_ξ^k â(η, ξ)‖ ≤ C ⟨ξ⟩ ^ (m - k) ⟨η⟩ ^ (-r)`
+  (`TauCeti.Symbol.HasCompactSpatialSupport.contDiff_fourier_slice`,
+  `TauCeti.Symbol.HasCompactSpatialSupport.exists_norm_iteratedFDeriv_fourier_slice_le`), and
   `(∂_{x_j} a)^(η, ξ) = 2πi ηⱼ â(η, ξ)`
   (`TauCeti.Symbol.HasCompactSpatialSupport.fourier_spatialDeriv_slice`).
 * `TauCeti.Symbol.HasCompactSpatialSupport.fourier_quantizeSchwartzValue`: the Fourier transform
@@ -119,6 +122,8 @@ families of operators.
 * `TauCeti.Symbol.IsSmoothing.exists_continuousLinearMap_toDistr_quantizeSobolev_eq`: a smoothing
   symbol with compact spatial support quantizes, on every `H^t`, to a bounded operator
   `H^r → H^s` for arbitrary orders `r` and `s`.
+* `TauCeti.Symbol.IsSmoothing.memSobolev_toDistr_quantizeSobolev`: such a symbol quantizes every
+  element of `H^s` into `H^t` for all real `s` and `t`.
 
 ## References
 
@@ -387,6 +392,74 @@ theorem HasCompactSpatialSupport.coordinateDeriv_fourier_slice (ha : a.HasCompac
     Real.fourier_eq]
   simp only [Circle.smul_def, coefficient_frequencyDeriv, coordinateDeriv_cons,
     coordinateDeriv_nil]
+
+/-- **Smoothness in the frequency.** The Fourier transform `â(η, ξ)` of the position slice of a
+symbol with compact spatial support is smooth in the frequency `ξ`. -/
+theorem HasCompactSpatialSupport.contDiff_fourier_slice (ha : a.HasCompactSpatialSupport)
+    (η : CoordinateSpace n) :
+    ContDiff ℝ ∞ fun ξ ↦ 𝓕 (fun y ↦ a.coefficient (y, ξ)) η := by
+  refine contDiff_infty.2 fun k ↦ ?_
+  induction k generalizing m with
+  | zero =>
+    rw [Nat.cast_zero, contDiff_zero]
+    -- Elaborating the composition first, without the expected type, avoids unfolding `𝓕`.
+    have hc := ha.continuous_fourier_slice.comp (Continuous.prodMk_right (X := CoordinateSpace n) η)
+    exact hc
+  | succ k ih =>
+    -- The derivative is `v ↦ ∑ⱼ vⱼ (∂_{ξⱼ} a)^(η, ξ)`, built from the slices of the frequency
+    -- derivatives, which are `C^k` by induction.
+    set D : CoordinateSpace n → CoordinateSpace n →L[ℝ] (V →L[ℂ] W) := fun ξ ↦
+      ∑ j, (EuclideanSpace.proj j : CoordinateSpace n →L[ℝ] ℝ).smulRight
+        (𝓕 (fun y ↦ (Symbol.frequencyDeriv j a).coefficient (y, ξ)) η)
+    rw [Nat.cast_succ]
+    refine contDiff_succ_iff_hasFDerivAt.2 ⟨D, ?_, fun ξ ↦ ?_⟩
+    · exact ContDiff.sum fun j _ ↦
+        contDiff_const.smulRight (ih (ha.frequencyDeriv j))
+    · convert ha.hasFDerivAt_fourier_slice η ξ using 1
+      refine ContinuousLinearMap.coe_injective
+        ((EuclideanSpace.basisFun (Fin n) ℝ).toBasis.ext fun j ↦ ?_)
+      have h := ha.coordinateDeriv_fourier_slice j η ξ
+      rw [coordinateDeriv_cons, coordinateDeriv_nil,
+        (ha.hasFDerivAt_fourier_slice η ξ).fderiv] at h
+      simp [D, h, EuclideanSpace.proj, Finset.sum_apply]
+
+/-- **Frequency derivatives of `â`.** For a symbol `a` of order `m` with compact spatial support,
+the coordinate derivative of `ξ ↦ â(η, ξ)` along a word `w` satisfies
+`‖∂_ξ^w â(η, ξ)‖ ≤ C ⟨ξ⟩ ^ (m - |w|) ⟨η⟩ ^ (-r)`, for every `r`. -/
+theorem HasCompactSpatialSupport.exists_norm_coordinateDeriv_fourier_slice_le
+    (ha : a.HasCompactSpatialSupport) (w : List (Fin n)) (r : ℝ) :
+    ∃ C, 0 ≤ C ∧ ∀ η ξ : CoordinateSpace n,
+      ‖coordinateDeriv w (fun ξ ↦ 𝓕 (fun y ↦ a.coefficient (y, ξ)) η) ξ‖ ≤
+        C * (1 + ‖ξ‖ ^ 2) ^ ((m - w.length) / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
+  induction w using List.reverseRecOn generalizing m with
+  | nil => simpa using ha.exists_norm_fourier_slice_le r
+  | append_singleton w j ih =>
+    obtain ⟨C, hC0, hC⟩ := ih (ha.frequencyDeriv j)
+    refine ⟨C, hC0, fun η ξ ↦ ?_⟩
+    have hd : coordinateDeriv [j] (fun ξ ↦ 𝓕 (fun y ↦ a.coefficient (y, ξ)) η) =
+        fun ξ ↦ 𝓕 (fun y ↦ (Symbol.frequencyDeriv j a).coefficient (y, ξ)) η :=
+      funext (ha.coordinateDeriv_fourier_slice j η)
+    rw [coordinateDeriv_append, hd]
+    convert hC η ξ using 4
+    rw [List.length_append, List.length_singleton]
+    push_cast
+    ring
+
+/-- **Fréchet derivatives of `â` in the frequency.** For a symbol `a` of order `m` with compact
+spatial support, `‖D_ξ^k â(η, ξ)‖ ≤ C ⟨ξ⟩ ^ (m - k) ⟨η⟩ ^ (-r)`, for every `k` and `r`. -/
+theorem HasCompactSpatialSupport.exists_norm_iteratedFDeriv_fourier_slice_le
+    (ha : a.HasCompactSpatialSupport) (k : ℕ) (r : ℝ) :
+    ∃ C, 0 ≤ C ∧ ∀ η ξ : CoordinateSpace n,
+      ‖iteratedFDeriv ℝ k (fun ξ ↦ 𝓕 (fun y ↦ a.coefficient (y, ξ)) η) ξ‖ ≤
+        C * (1 + ‖ξ‖ ^ 2) ^ ((m - k) / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
+  choose C hC0 hC using fun w : Fin k → Fin n ↦
+    ha.exists_norm_coordinateDeriv_fourier_slice_le (List.ofFn w) r
+  refine ⟨∑ w, C w, Finset.sum_nonneg fun w _ ↦ hC0 w, fun η ξ ↦ ?_⟩
+  refine (norm_iteratedFDeriv_le_sum_coordinateDeriv
+    ((ha.contDiff_fourier_slice η).of_le (mod_cast le_top)) ξ).trans ?_
+  rw [Finset.sum_mul, Finset.sum_mul]
+  refine Finset.sum_le_sum fun w _ ↦ ?_
+  simpa using hC w η ξ
 
 end Decay
 
@@ -841,8 +914,6 @@ theorem quantizeSobolev_add {b : Symbol n V W m} (ha : a.HasCompactSpatialSuppor
   refine BesselPotentialSpace.continuousLinearMap_ext (p := 2) ENNReal.ofNat_ne_top fun u ↦
     BesselPotentialSpace.ext ?_
   ext φ
-  obtain ⟨C, -, hC⟩ := isUniform_iff.mp ha.isUniform [] []
-  obtain ⟨C', -, hC'⟩ := isUniform_iff.mp hb.isUniform [] []
   have hia : Integrable fun x ↦ φ x • quantizeSchwartzValue a.coefficient u x :=
     (ha.integrable_quantizeSchwartzValue u).smul_of_top_right (φ.memLp ⊤)
   have hib : Integrable fun x ↦ φ x • quantizeSchwartzValue b.coefficient u x :=
@@ -852,10 +923,7 @@ theorem quantizeSobolev_add {b : Symbol n V W m} (ha : a.HasCompactSpatialSuppor
   rw [← integral_add hia hib]
   refine integral_congr_ae (.of_forall fun x ↦ ?_)
   dsimp only
-  rw [coefficient_add, quantizeSchwartzValue_add_left
-    (a.continuous_coefficient_slice x).aestronglyMeasurable (fun ξ ↦ by simpa using hC x ξ)
-    (b.continuous_coefficient_slice x).aestronglyMeasurable (fun ξ ↦ by simpa using hC' x ξ),
-    smul_add]
+  rw [coefficient_add, quantizeSchwartzValue_coefficient_add, smul_add]
 
 /-- The operator `Op(a) : H^s → H^{s - m}` is homogeneous in the symbol. -/
 theorem quantizeSobolev_smul (ha : a.HasCompactSpatialSupport) (c : ℂ)
@@ -1050,6 +1118,17 @@ theorem quantizeSobolev_ofSpatial_smul {ψ : 𝓢(CoordinateSpace n, ℂ)} (hψ 
     BesselPotentialSpace.toDistr_smulLeftCLM, SchwartzMap.toDistr_toBesselPotentialSpaceCLM,
     smulLeftCLM_toTemperedDistributionCLM_eq, SchwartzMap.toTemperedDistributionCLM_apply_apply,
     SchwartzMap.smulLeftCLM_apply_apply ψ.hasTemperateGrowth]
+
+/-- **Smoothing operators gain every order of regularity.** For a smoothing symbol `a` with compact
+spatial support, the quantization `Op(a) u` of any `u ∈ H^s` lies in `H^t` for every real `t`. -/
+theorem IsSmoothing.memSobolev_toDistr_quantizeSobolev (ha : a.IsSmoothing)
+    (hc : a.HasCompactSpatialSupport) (s t : ℝ) (u : H^{s}(CoordinateSpace n, V)) :
+    MemSobolev t 2 (a.quantizeSobolev hc s u).toDistr := by
+  -- A symbol of order `s - t` with the same coefficient maps `H^s` into `H^t`.
+  obtain ⟨b, hb⟩ := isSmoothing_iff.mp ha (s - t)
+  have hbc := hc.of_coefficient_eq hb
+  rw [toDistr_quantizeSobolev_congr hb.symm hc hbc (v := u) rfl]
+  simpa only [sub_sub_cancel] using (b.quantizeSobolev hbc s u).memSobolev_toDistr
 
 end Sobolev
 
