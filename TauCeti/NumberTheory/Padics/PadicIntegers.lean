@@ -85,6 +85,8 @@ calculation for first continuous cohomology with trivial integer coefficients.
 * `Padic.inv_natCast_le_norm_natCast`: the `p`-adic norm of a natural number `m` is at least
   `1 / m`.
 * `Padic.norm_natCast_eq_zpow`: the `p`-adic norm of a positive integer `m` is `p ^ (-v_p(m))`.
+* `Padic.exists_forall_norm_pow_mul_le_one`: a single power of `p` carries a finite family of
+  `p`-adic numbers into `ℤ_[p]`.
 * `PadicInt.compactSpace_units`, `PadicInt.totallyDisconnectedSpace_units`: `ℤ_[p]ˣ` is a
   profinite group.
 
@@ -372,6 +374,18 @@ theorem norm_natCast_eq_zpow {m : ℕ} (hm : m ≠ 0) :
     ‖(m : ℚ_[p])‖ = (p : ℝ) ^ (-(padicValNat p m : ℤ)) := by
   rw [Nat.padicValNat_def, Padic.norm_eq_zpow_neg_valuation (by exact_mod_cast hm),
     Padic.valuation_natCast]
+
+/-- **Clearing `p`-adic denominators.** A single power `p ^ k` carries every member of a finite
+family of `p`-adic numbers into the unit ball, that is, into `ℤ_[p]`. -/
+theorem exists_forall_norm_pow_mul_le_one {ι : Type*} [Finite ι] (x : ι → ℚ_[p]) :
+    ∃ k : ℕ, ∀ i, ‖(p : ℚ_[p]) ^ k * x i‖ ≤ 1 := by
+  have := Fintype.ofFinite ι
+  obtain ⟨k, hk⟩ := pow_unbounded_of_one_lt (∑ i, ‖x i‖)
+    (Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt : (1 : ℝ) < p)
+  refine ⟨k, fun i ↦ ?_⟩
+  rw [norm_mul, norm_pow, Padic.norm_p, inv_pow,
+    inv_mul_le_iff₀ (pow_pos (Nat.cast_pos.mpr (Fact.out : p.Prime).pos) k), mul_one]
+  exact (Finset.single_le_sum (fun j _ ↦ norm_nonneg (x j)) (Finset.mem_univ i)).trans hk.le
 
 end Padic
 
