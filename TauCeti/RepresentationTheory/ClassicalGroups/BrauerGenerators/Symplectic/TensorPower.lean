@@ -81,11 +81,14 @@ matrix coefficients of an arc, which read the arc through the form, therefore ca
 
 ## Main definitions
 
+* `TauCeti.symplecticTensorPowerBasis`: the monomial basis of `⨂[k]^d ((Fin n ⊕ Fin n) → k)`.
 * `TauCeti.symplecticCupCapAt`: the symplectic Brauer generator `e i j` on the `d`-th tensor power
   of `k^{2n}`.
 
 ## Main results
 
+* `Matrix.toMatrix_piTensorProductMap_symplecticTensorPowerBasis`: in the symplectic monomial
+  basis, a matrix `A` acting in every tensor factor has matrix `A.kroneckerPower (Fin d)`.
 * `TauCeti.symplecticCupCapAt_tprod`: the value of the generator on a pure tensor at distinct
   strands, the invariant form of the two chosen factors times the cup re-expanding those slots.
 * `TauCeti.symplecticCupCapAt_tprod_single`: the same on a monomial tensor of standard basis
@@ -123,6 +126,43 @@ open scoped TensorProduct
 universe u
 
 namespace TauCeti
+
+/-! ### The monomial basis of the symplectic tensor power -/
+
+section Basis
+
+variable (k : Type u) [CommSemiring k] (n d : ℕ)
+
+/-- **The monomial basis** of the `d`-th tensor power of `(Fin n ⊕ Fin n) → k`: the basis vector at
+`u : Fin d → Fin n ⊕ Fin n` is the pure tensor of standard basis vectors `Pi.single (u i) 1`. -/
+noncomputable def symplecticTensorPowerBasis :
+    Module.Basis (Fin d → Fin n ⊕ Fin n) k (⨂[k]^d ((Fin n ⊕ Fin n) → k)) :=
+  Basis.piTensorProduct fun _ => Pi.basisFun k (Fin n ⊕ Fin n)
+
+/-- Defining equation of `TauCeti.symplecticTensorPowerBasis` via `Basis.piTensorProduct`. -/
+theorem symplecticTensorPowerBasis_def :
+    symplecticTensorPowerBasis k n d =
+      Basis.piTensorProduct fun _ : Fin d => Pi.basisFun k (Fin n ⊕ Fin n) := (rfl)
+
+/-- A monomial basis vector of `⨂[k]^d ((Fin n ⊕ Fin n) → k)` is the pure tensor of standard basis
+vectors `Pi.single (u i) 1`. -/
+@[simp]
+theorem symplecticTensorPowerBasis_apply (u : Fin d → Fin n ⊕ Fin n) :
+    symplecticTensorPowerBasis k n d u =
+      PiTensorProduct.tprod k fun i => Pi.single (u i) (1 : k) := by
+  rw [symplecticTensorPowerBasis, Basis.piTensorProduct_apply]
+  simp
+
+/-- **The matrix of `A^{⊗d}` in the symplectic monomial basis is the Kronecker power of `A`.** -/
+theorem _root_.Matrix.toMatrix_piTensorProductMap_symplecticTensorPowerBasis {k : Type u}
+    [CommSemiring k] {n d : ℕ} (A : Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) k) :
+    LinearMap.toMatrix (symplecticTensorPowerBasis k n d) (symplecticTensorPowerBasis k n d)
+        (PiTensorProduct.map fun _ : Fin d => A.mulVecLin) =
+      A.kroneckerPower (Fin d) := by
+  rw [symplecticTensorPowerBasis_def]
+  exact A.toMatrix_piTensorProductMap_mulVecLin
+
+end Basis
 
 variable (k : Type u) (n d : ℕ) [CommRing k]
 

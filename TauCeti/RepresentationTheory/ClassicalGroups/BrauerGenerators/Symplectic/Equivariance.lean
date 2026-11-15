@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Symplectic.Action
-import Mathlib.Data.Fintype.EquivFin
-import TauCeti.LinearAlgebra.SymplecticGroup
 import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Symplectic.TwoStrands
 
 /-!
@@ -191,8 +189,9 @@ theorem range_brauerActionSymp_two_eq_centralizer_of_charZero {K : Type u} [Fiel
     (n : ℕ) :
     (brauerActionSymp K n 2).range =
       Subalgebra.centralizer K (Set.range ((stdSymplecticRep K n).tensorPower 2)) := by
-  rw [range_brauerActionSymp_two,
-    adjoin_symplecticCrossing_symplecticCupCap_eq_centralizer_of_charZero]
+  refine range_brauerActionSymp_two_eq_centralizer n ⟨Units.mk0 2 two_ne_zero, fun m hm _ h => ?_⟩
+  exact (Nat.one_lt_two_pow hm.ne').ne'
+    (Nat.cast_injective (R := K) (by simpa using congrArg Units.val h))
 
 end TwoStrands
 

@@ -10,6 +10,8 @@ public import TauCeti.Combinatorics.Brauer.SkewWeight
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Symplectic.Crossing
 import TauCeti.Algebra.BigOperators.Pi
 import TauCeti.Combinatorics.Brauer.Relations
+-- The entrywise identities for `Matrix.J` the matrix loop rule below contracts with;
+-- `Symplectic.Crossing`'s import is non-public.
 import TauCeti.LinearAlgebra.SymplecticGroup
 
 /-!
@@ -49,7 +51,6 @@ and at `d = 2` it specialises to `TauCeti.symplecticCrossing` and `TauCeti.sympl
   to an input labelling `u` and an output labelling `v` of `d` strands in `l ⊕ l`.
 * `TauCeti.BrauerDiagram.symplecticActionMatrix`: the matrix of a Brauer diagram acting on the
   `d`-th tensor power of `(l ⊕ l) → k` in the monomial basis.
-* `TauCeti.symplecticTensorPowerBasis`: the monomial basis of `⨂[k]^d ((Fin n ⊕ Fin n) → k)`.
 * `TauCeti.brauerActionSymp`: the algebra action of `B_d(-2n)` on `⨂[k]^d ((Fin n ⊕ Fin n) → k)`.
 
 ## Main results
@@ -528,41 +529,6 @@ theorem symplecticActionMatrix_mul (D₁ D₂ : BrauerDiagram d) :
 end Mul
 
 end BrauerDiagram
-
-/-! ### The monomial basis of the symplectic tensor power -/
-
-section Basis
-
-variable (k : Type u) [CommSemiring k] (n d : ℕ)
-
-/-- **The monomial basis** of the `d`-th tensor power of `(Fin n ⊕ Fin n) → k`: the basis vector at
-`u : Fin d → Fin n ⊕ Fin n` is the pure tensor of standard basis vectors `Pi.single (u i) 1`. -/
-noncomputable def symplecticTensorPowerBasis :
-    Module.Basis (Fin d → Fin n ⊕ Fin n) k (⨂[k]^d ((Fin n ⊕ Fin n) → k)) :=
-  Basis.piTensorProduct fun _ => Pi.basisFun k (Fin n ⊕ Fin n)
-
-/-- Defining equation of `TauCeti.symplecticTensorPowerBasis` via `Basis.piTensorProduct`. -/
-theorem symplecticTensorPowerBasis_def :
-    symplecticTensorPowerBasis k n d =
-      Basis.piTensorProduct fun _ : Fin d => Pi.basisFun k (Fin n ⊕ Fin n) := (rfl)
-
-@[simp]
-theorem symplecticTensorPowerBasis_apply (u : Fin d → Fin n ⊕ Fin n) :
-    symplecticTensorPowerBasis k n d u =
-      PiTensorProduct.tprod k fun i => Pi.single (u i) (1 : k) := by
-  rw [symplecticTensorPowerBasis, Basis.piTensorProduct_apply]
-  simp
-
-/-- **The matrix of `A^{⊗d}` in the symplectic monomial basis is the Kronecker power of `A`.** -/
-theorem _root_.Matrix.toMatrix_piTensorProductMap_symplecticTensorPowerBasis {k : Type u}
-    [CommSemiring k] {n d : ℕ} (A : Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) k) :
-    LinearMap.toMatrix (symplecticTensorPowerBasis k n d) (symplecticTensorPowerBasis k n d)
-        (PiTensorProduct.map fun _ : Fin d => A.mulVecLin) =
-      A.kroneckerPower (Fin d) := by
-  rw [symplecticTensorPowerBasis_def]
-  exact A.toMatrix_piTensorProductMap_mulVecLin
-
-end Basis
 
 /-! ### The Brauer algebra action on the symplectic tensor power -/
 
