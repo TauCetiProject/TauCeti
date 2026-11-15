@@ -60,8 +60,8 @@ plateau, built from two smooth transitions, is equal to `1` on `[a + δ, b - δ]
   half-line.
 * `Real.smoothTransition.exists_forall_norm_deriv_le` and
   `Real.smoothTransition.exists_forall_norm_deriv_deriv_le`: the first two derivatives are bounded.
-* `Real.smoothTransition.abs_deriv_mul_mul_le`: `|ψ'(a t) (a y)| ≤ M C` when `M` bounds `ψ'`
-  and `|y| ≤ C |t|`.
+* `Real.smoothTransition.abs_deriv_mul_mul_le`: `|ψ'(a t) (a y)| ≤ M C` when `M` bounds `ψ'`,
+  `0 ≤ C` and `|y| ≤ C |t|`.
 * `Real.smoothTransition.integral_deriv`: the derivative has integral one.
 * `Real.smoothTransition.setIntegral_Icc_deriv`, `Real.smoothTransition.setIntegral_deriv_le_one`:
   its integral over an interval containing `[0, 1]` is one, and over any set at most one.
@@ -171,7 +171,7 @@ theorem exists_forall_norm_deriv_deriv_le :
     hasCompactSupport_deriv.deriv
 
 /-- A bound for the error term of a smooth transition rescaled by `a`: if `M` bounds the
-derivative of the smooth transition function `ψ` and `|y| ≤ C |t|`, then
+derivative of the smooth transition function `ψ`, `0 ≤ C` and `|y| ≤ C |t|`, then
 `|ψ'(a t) (a y)| ≤ M C`. The factor `a y` only matters where `0 ≤ a t ≤ 1`, the support of
 `ψ'`, and there `|a y| ≤ C |a t| ≤ C`. -/
 theorem abs_deriv_mul_mul_le {M C a t y : ℝ} (hM : ∀ t, ‖deriv smoothTransition t‖ ≤ M)
