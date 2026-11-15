@@ -157,7 +157,7 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   (b : OrthonormalBasis (Fin 4) ℝ V)
 
 /-- The reordered frame `(b₂, b₁, -b₀, b₃)`, along which the quaternion coordinates `coordVec` of
-the compact model become the complex coordinates `b.complexCoords`. -/
+the compact model become the complex coordinates `b.complexCoords 2`. -/
 private def quaternionFrame : OrthonormalBasis (Fin 4) ℝ V :=
   OrthonormalBasis.mk (v := ![b 2, b 1, -b 0, b 3])
     (by
@@ -181,9 +181,9 @@ variable {Q : QuadraticForm ℝ V} (hQ : ∀ v, Q v = -‖v‖ ^ 2)
 
 private theorem quaternionFrame_negRealCliffordFormIsometryEquiv_coordVec (z : Fin 2 → ℂ) :
     b.quaternionFrame.negRealCliffordFormIsometryEquiv hQ (coordVec z) =
-      b.complexCoords.symm z := by
+      (b.complexCoords 2).symm z := by
   rw [negRealCliffordFormIsometryEquiv_apply, quaternionFrame, OrthonormalBasis.coe_mk,
-    Fin.sum_univ_four, complexCoords_symm_apply]
+    Fin.sum_univ_four, complexCoords_two_symm_apply]
   simp [coordVec]
   abel
 
@@ -192,7 +192,7 @@ variable (hQ₀ : Q ≠ 0)
 /-- **The `Spinᶜ` lift of `U(2)`.** For an orthonormal frame `b` of a four-dimensional space with
 `Q v = -‖v‖²`, the homomorphism `U(2) → Spinᶜ(Q)` lifting `g ↦ (g, det g)` along
 `Spinᶜ(Q) → SO(Q) × U(1)`, where `g` acts on `V` through the complex coordinates
-`b.complexCoords` (`complexCoords_toSpecialOrthogonal_spinCUnitary_apply`, `det_spinCUnitary`).
+`b.complexCoords 2` (`complexCoords_toSpecialOrthogonal_spinCUnitary_apply`, `det_spinCUnitary`).
 It is the only such homomorphism (`eq_spinCUnitary`). -/
 def spinCUnitary : unitaryGroup (Fin 2) ℂ →* spinCGroup Q hQ₀ :=
   (b.quaternionFrame.realSpinCGroupHom hQ (nondegenerate_realCliffordForm 4 0).ne_zero hQ₀).comp
@@ -201,10 +201,10 @@ def spinCUnitary : unitaryGroup (Fin 2) ℂ →* spinCGroup Q hQ₀ :=
 /-- **The rotation of `spinCUnitary g` is `g`** in the complex coordinates of the frame. -/
 theorem complexCoords_toSpecialOrthogonal_spinCUnitary_apply (g : unitaryGroup (Fin 2) ℂ)
     (v : V) :
-    b.complexCoords
+    b.complexCoords 2
         ((spinCGroup.toSpecialOrthogonal Q hQ₀ (b.spinCUnitary hQ hQ₀ g) : V ≃ₗ[ℝ] V) v) =
-      (g : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ b.complexCoords v := by
-  obtain ⟨z, rfl⟩ := b.complexCoords.symm.surjective v
+      (g : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ b.complexCoords 2 v := by
+  obtain ⟨z, rfl⟩ := (b.complexCoords 2).symm.surjective v
   obtain ⟨p, rfl⟩ := Quaternion.unitaryProdCircleToUnitaryGroup_surjective g
   rw [← quaternionFrame_negRealCliffordFormIsometryEquiv_coordVec b hQ, spinCUnitary,
     MonoidHom.comp_apply, toSpecialOrthogonal_realSpinCGroupHom_apply, realSpinCUnitary_apply,
@@ -224,9 +224,9 @@ theorem det_spinCUnitary (g : unitaryGroup (Fin 2) ℂ) :
 matrices in the complex coordinates of `b` and whose determinant character is `det` is
 `b.spinCUnitary`. -/
 theorem eq_spinCUnitary {φ : unitaryGroup (Fin 2) ℂ →* spinCGroup Q hQ₀}
-    (hrot : ∀ g v, b.complexCoords
+    (hrot : ∀ g v, b.complexCoords 2
         ((spinCGroup.toSpecialOrthogonal Q hQ₀ (φ g) : V ≃ₗ[ℝ] V) v) =
-      (g : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ b.complexCoords v)
+      (g : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ b.complexCoords 2 v)
     (hdet : ∀ g, spinCGroup.det Q hQ₀ (φ g) = UnitaryGroup.detCircle g) :
     φ = b.spinCUnitary hQ hQ₀ := by
   have : FiniteDimensional ℝ V := b.toBasis.finiteDimensional_of_finite
@@ -235,7 +235,7 @@ theorem eq_spinCUnitary {φ : unitaryGroup (Fin 2) ℂ →* spinCGroup Q hQ₀}
     UnitaryGroup.isSquare (MonoidHom.ext fun g => ?_)
   rw [MonoidHom.comp_apply, MonoidHom.comp_apply, MonoidHom.prod_apply, MonoidHom.prod_apply, hdet,
     det_spinCUnitary]
-  refine Prod.ext (Subtype.ext (LinearEquiv.ext fun v => b.complexCoords.injective ?_)) rfl
+  refine Prod.ext (Subtype.ext (LinearEquiv.ext fun v => (b.complexCoords 2).injective ?_)) rfl
   rw [hrot, complexCoords_toSpecialOrthogonal_spinCUnitary_apply]
 
 /-- **Comparison with the lift of the plane rotations.** The lift of the unitary matrix
