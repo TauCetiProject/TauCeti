@@ -77,7 +77,10 @@ Two constructions are developed, together with strict units.
   `m₂(m₁ m, ι s) = m₁ (m₂(m, ι s))`. So `m₂(·, ι s)` is a projection when `ι s` is idempotent, and
   twisting by `β` with `β * ι s = β` preserves its fixed points. The matrix module of a strictly
   unital module is strictly unital for the diagonal matrices of units
-  (`TauCeti.UngradedAInfinityRightModule.IsStrictlyUnital.matrix`).
+  (`TauCeti.UngradedAInfinityRightModule.IsStrictlyUnital.matrix`). Along a matrix `β`, the
+  `z`-component of the twisted differential is fixed by `m₂(·, ι s)` as soon as `ι s` is a right
+  unit for the column `z` of `β` and fixes the `z`-component of the input; see
+  `TauCeti.UngradedAInfinityRightModule.IsStrictlyUnital.act_one_matrix_twistedDifferential_apply`.
 
 Twisting the matrix module by the coefficient matrix of a type `D` structure gives the box tensor
 product of bordered Heegaard Floer homology; see `TauCeti.LowDimTopology.Bordered.TypeA`.
@@ -661,30 +664,20 @@ noncomputable def matrix :
 theorem matrix_act : (Mm.matrix X).act = Mm.matrixAct X :=
   (rfl)
 
+/-- The `z`-component of the operation `m₂(φ, F)` of the matrix module is
+`∑ x, m₂(φ x, F x z)`. -/
+theorem matrixAct_one_apply (F : Matrix X X A) (φ : X → M) (z : X) :
+    Mm.matrixAct X 1 (fun _ => F) φ z = ∑ x, Mm.act 1 (fun _ => F x z) (φ x) := by
+  rw [matrixAct_apply, Fintype.sum_finTwoArrow]
+  simp only [Fin.last, Fin.mk_one, Matrix.cons_val_one, Matrix.cons_val_zero, Fin.castSucc_zero,
+    Fin.succ_zero_eq_one, Fin.fin_one_eq_zero, Finset.sum_ite_eq', Finset.mem_univ, ite_true]
+
 /-- The operation `m₂` of the matrix module along a diagonal matrix acts componentwise. -/
 theorem matrixAct_one_diagonal_apply (v : X → A) (φ : X → M) (z : X) :
     Mm.matrixAct X 1 (fun _ => Matrix.diagonal v) φ z = Mm.act 1 (fun _ => v z) (φ z) := by
-  rw [matrixAct_apply, ← (piFinTwoEquiv fun _ => X).symm.sum_comp, Fintype.sum_prod_type,
-    Finset.sum_eq_single z]
-  · rw [Finset.sum_eq_single z]
-    · split_ifs with h
-      · congr 2
-        funext l
-        rw [Fin.fin_one_eq_zero l]
-        simp
-      · simp at h
-    · intro y _ hy
-      simp [hy]
-    · simp
-  · intro y _ hy
-    refine Finset.sum_eq_zero fun y' _ => ?_
-    split_ifs with h
-    · have h' : y' = z := by simpa using h
-      subst h'
-      rw [(Mm.act 1).map_coord_zero 0 (by simp [Matrix.diagonal_apply_ne _ hy]),
-        LinearMap.zero_apply]
-    · rfl
-  · simp
+  rw [matrixAct_one_apply, Fintype.sum_eq_single z fun x hx => by
+    rw [Matrix.diagonal_apply_ne _ hx, (Mm.act 1).map_coord_zero 0 rfl, LinearMap.zero_apply],
+    Matrix.diagonal_apply_eq]
 
 variable {S : Type*} {ι : S → A} {Mm}
 
@@ -705,27 +698,34 @@ theorem IsStrictlyUnital.matrix (hMm : Mm.IsStrictlyUnital ι) :
   · rfl
 
 /-- **Twisting the matrix module preserves the summands of the units.** For a strictly unital
-module over a ring of characteristic two whose units are cycles, let `e` assign a unit `ι (e x)`
-to each `x`, and let the columns of `β` satisfy `β x y * ι (e y) = β x y`. If each component of a
-row vector `φ` satisfies `m₂(φ x, ι (e x)) = φ x`, so does each component of `∂^β φ`. -/
+module over a ring of characteristic two, let the unit `ι s` be a cycle and a right unit for the
+column `z` of `β`, `β y z * ι s = β y z`. If `m₂(φ z, ι s) = φ z`, then also the `z`-component of
+`∂^β φ` is fixed by `m₂(·, ι s)`: the term of length zero commutes with `m₂(·, ι s)` by
+`TauCeti.UngradedAInfinityRightModule.act_one_act_zero`, and along every path ending at `z` the
+others are fixed by `TauCeti.UngradedAInfinityRightModule.IsStrictlyUnital.act_one_act`. -/
 theorem IsStrictlyUnital.act_one_matrix_twistedDifferential_apply [CharP R 2]
-    (hMm : Mm.IsStrictlyUnital ι) (hι : ∀ s, d (ι s) = 0) {e : X → S} {β : Matrix X X A}
-    (hβ : ∀ x y, β x y * ι (e y) = β x y) {φ : X → M}
-    (hφ : ∀ x, Mm.act 1 (fun _ => ι (e x)) (φ x) = φ x) (z : X) :
-    Mm.act 1 (fun _ => ι (e z)) ((Mm.matrix X).twistedDifferential β φ z) =
+    (hMm : Mm.IsStrictlyUnital ι) {s : S} (hs : d (ι s) = 0) {β : Matrix X X A} {z : X}
+    (hβ : ∀ y, β y z * ι s = β y z) {φ : X → M} (hφ : Mm.act 1 (fun _ => ι s) (φ z) = φ z) :
+    Mm.act 1 (fun _ => ι s) ((Mm.matrix X).twistedDifferential β φ z) =
       (Mm.matrix X).twistedDifferential β φ z := by
-  have hP (ψ : X → M) (y : X) :
-      (Mm.matrix X).act 1 (fun _ => Matrix.diagonal fun x => ι (e x)) ψ y =
-        Mm.act 1 (fun _ => ι (e y)) (ψ y) :=
-    Mm.matrixAct_one_diagonal_apply X _ ψ y
-  rw [← hP]
-  refine congrFun ((hMm.matrix X).act_one_twistedDifferential (s := e) ?_ ?_ ?_) z
-  · rw [LinearMap.mapMatrix_apply, Matrix.diagonal_map (map_zero d)]
-    simp [hι]
-  · ext x y
-    rw [Matrix.mul_diagonal]
-    exact hβ x y
-  · exact funext fun x => (hP φ x).trans (hφ x)
+  rw [twistedDifferential_def]
+  by_cases hfin : (Function.support fun n => (Mm.matrix X).act n fun _ => β).Finite
+  · rw [finsum_eq_sum _ hfin, LinearMap.sum_apply, Finset.sum_apply, map_sum]
+    refine Finset.sum_congr rfl fun n _ => ?_
+    rw [matrix_act, matrixAct_apply, map_sum]
+    refine Finset.sum_congr rfl fun x _ => ?_
+    split_ifs with hx
+    · cases n with
+      | zero =>
+        rw [Fin.last_zero] at hx
+        subst hx
+        rw [Mm.act_one_act_zero hs, hφ]
+      | succ n =>
+        have h := hβ (x (Fin.last n).castSucc)
+        rw [← hx, ← Fin.succ_last] at h
+        rw [hMm.act_one_act hs, h, Function.update_eq_self]
+    · exact map_zero _
+  · rw [finsum_of_infinite_support hfin, LinearMap.zero_apply, Pi.zero_apply, map_zero]
 
 end Matrix
 

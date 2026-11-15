@@ -38,6 +38,9 @@ coordinate parameterization across all isogeny types and characteristics.
   `TauCeti.DynkinType.ChevalleyDatum.positivePointsProd_surjective`: ordered positive-root products
   along a duplicate-free positive-root list are injective, and surjective when the list covers all
   positive roots.
+* `TauCeti.DynkinType.ChevalleyDatum.map_positivePointsEquiv` and
+  `TauCeti.DynkinType.ChevalleyDatum.positivePointsEquiv_symm_map`: positive-root coordinates
+  commute with scalar change along any ring homomorphism.
 * `TauCeti.DynkinType.ChevalleyDatum.card_positivePoints`: the cardinality of `D.positivePoints A`
   is `Nat.card A ^ (posRoots (t.rationalRootSystem ht) (t.rationalBase ht)).ncard`.
 
@@ -202,6 +205,22 @@ theorem map_positivePointsEquiv (l : List (Fin t.numRoots)) (hl : l.Nodup)
       (D.positivePointsEquiv l hl hcover B (f ∘ u) : D.points B) :=
   D.map_positivePointsProd (fun γ hγ => (hcover γ).mp hγ) f
     (fun γ => u ⟨γ.1, (hcover γ.1).mp γ.2⟩)
+
+/-- Extracting positive-root coordinates after scalar change applies the ring homomorphism
+coordinatewise. In particular, coordinates are natural under reduction modulo an ideal. -/
+@[simp]
+theorem positivePointsEquiv_symm_map (l : List (Fin t.numRoots)) (hl : l.Nodup)
+    (hcover : ∀ γ, γ ∈ l ↔ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
+    {A : Type v} {B : Type v'} [CommRing A] [CommRing B] (f : A →+* B)
+    (g : D.positivePoints A) :
+    (D.positivePointsEquiv l hl hcover B).symm
+        ⟨((D.pointsPresentation A).map (D.pointsPresentation B) f) (g : D.points A),
+          D.map_positivePoints_le f (Subgroup.mem_map.mpr ⟨g, g.2, rfl⟩)⟩ =
+      f ∘ (D.positivePointsEquiv l hl hcover A).symm g := by
+  apply (D.positivePointsEquiv l hl hcover B).injective
+  rw [Equiv.apply_symm_apply]
+  apply Subtype.ext
+  rw [← D.map_positivePointsEquiv l hl hcover f, Equiv.apply_symm_apply]
 
 /-- Zero positive-root coordinates map to the identity element of `D.positivePoints A`. -/
 @[simp]
