@@ -12,6 +12,7 @@ public import Mathlib.Analysis.RCLike.Basic
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Smooth families of diffeomorphisms have jointly smooth inverses
@@ -29,10 +30,10 @@ derivative is invertible (`ContDiffOn.parametric_invFunOn_of_injective_fderiv`,
 
 The proof applies the inverse function theorem to the graph map `Φ (p, x) = (p, g (p, x))`. Its
 derivative `(v, w) ↦ (v, dg (v, w))` is block triangular, with the identity and the slice
-derivative on the diagonal, so it is invertible (`ContinuousLinearEquiv.skewProd`). The map `Φ` is
-injective on `S`, so its inverse on `Φ '' S` is `C^n` by
-`IsLocalDiffeomorphOn.contMDiffOn_invFunOn`, and the inverses of the slices are its second
-coordinate.
+derivative on the diagonal, so it is invertible
+(`ContinuousLinearMap.isInvertible_iff_of_fst_comp_eq`). The map `Φ` is injective on `S`, so its
+inverse on `Φ '' S` is `C^n` by `IsLocalDiffeomorphOn.contMDiffOn_invFunOn`, and the inverses of
+the slices are its second coordinate.
 
 ## Main results
 
@@ -86,15 +87,15 @@ theorem ContDiffOn.parametric_invFunOn [CompleteSpace E] {g : P × E → F} {S :
     have hslice : fderiv 𝕂 (fun y ↦ g (p, y)) x =
         (fderiv 𝕂 g (p, x)).comp (ContinuousLinearMap.inr 𝕂 P E) :=
       (hgd.comp x (hasFDerivAt_prodMk_right p x)).fderiv
-    obtain ⟨e, he⟩ := hinv (p, x) hq
-    have he' (w : E) : e w = fderiv 𝕂 g (p, x) (0, w) := by
-      rw [← ContinuousLinearEquiv.coe_coe, he, hslice]
-      rfl
-    refine TauCeti.isLocalDiffeomorphAt_of_fderiv_eq hΦ hS hq hn
-      (e := (ContinuousLinearEquiv.refl 𝕂 P).skewProd e
-        ((fderiv 𝕂 g (p, x)).comp (ContinuousLinearMap.inl 𝕂 P E))) ?_
-    rw [hΦd.fderiv]
-    ext v <;> simp [he', ← Prod.zero_eq_mk]
+    have hfst : ContinuousLinearMap.fst 𝕂 P F ∘L fderiv 𝕂 Φ (p, x) =
+        ContinuousLinearMap.fst 𝕂 P E := by
+      rw [hΦd.fderiv]
+      ext <;> simp
+    obtain ⟨e, he⟩ := (ContinuousLinearMap.isInvertible_iff_of_fst_comp_eq hfst).2 <| by
+      convert hinv (p, x) hq using 1
+      rw [hΦd.fderiv, hslice]
+      ext; simp
+    exact TauCeti.isLocalDiffeomorphAt_of_fderiv_eq hΦ hS hq hn he
   have hinvC : ContDiffOn 𝕂 n (invFunOn Φ S) (Φ '' S) :=
     contMDiffOn_iff_contDiffOn.1 (hΦloc.contMDiffOn_invFunOn hS hΦinj)
   refine (contDiff_snd.comp_contDiffOn hinvC).congr fun q hq ↦ ?_
