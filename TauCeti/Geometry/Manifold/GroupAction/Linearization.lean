@@ -21,7 +21,9 @@ A finite group acting by `C^n` maps on a boundaryless Banach manifold admits an 
 on their entire domains. In finite-dimensional real inner product spaces the target can be
 chosen to be an invariant ball for an averaged inner product, inside any prescribed
 neighbourhood of the fixed point. `ContRepresentation.mulActionOpens` restricts the linear
-action to any invariant open subset, with its inclusion formula and smoothness theorem.
+action to any invariant open subset, with its inclusion formula, smoothness theorem, and
+identifications of both its germ kernel and its global action kernel with the representation
+kernel.
 
 This upgrades topological linearization to smooth local models. No faithfulness is required:
 the linear representation has exactly the original ineffective germ kernel.
@@ -76,6 +78,61 @@ theorem contMDiffConstSMul_mulActionOpens (σ : ContRepresentation 𝕜 G E)
   apply (TauCeti.ContMDiff.subtypeVal_comp_iff B _).mp
   simpa only [Function.comp_def, val_mulActionOpens_smul] using
     (σ g).contDiff.contMDiff.comp (contMDiff_subtype_val (I := 𝓘(𝕜, E)) (n := n))
+
+section Group
+
+variable {𝕜 G E : Type*} [NontriviallyNormedField 𝕜] [Group G]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- At any point of an invariant open subset `B`, an element acts as the identity near that point
+if and only if its linear operator is the identity on the whole ambient space. -/
+theorem mem_germKernel_mulActionOpens_iff (σ : ContRepresentation 𝕜 G E)
+    (B : TopologicalSpace.Opens E) (hB : ∀ g : G, ∀ v ∈ B, σ g v ∈ B) (v : B) {g : G} :
+    letI := σ.mulActionOpens B hB
+    g ∈ TauCeti.MulAction.germKernel G v ↔ σ g = 1 := by
+  let _ := σ.mulActionOpens B hB
+  rw [TauCeti.MulAction.mem_germKernel]
+  refine ⟨fun hg ↦ ?_, fun h ↦ Filter.Eventually.of_forall fun w ↦
+    Subtype.ext ((σ.val_mulActionOpens_smul B hB g w).trans (by simp [h]))⟩
+  obtain ⟨U, hUsub, hUopen, hvU⟩ := mem_nhds_iff.mp hg
+  have hsub : (Subtype.val : B → E) '' U ⊆
+      LinearMap.eqLocus ((σ g : E →L[𝕜] E) : E →ₗ[𝕜] E) LinearMap.id := by
+    rintro _ ⟨w, hwU, rfl⟩
+    exact LinearMap.mem_eqLocus.mpr
+      ((σ.val_mulActionOpens_smul B hB g w).symm.trans (congrArg Subtype.val (hUsub hwU)))
+  have hne : ((Subtype.val : B → E) '' U).Nonempty := ⟨v.val, v, hvU, rfl⟩
+  have htop := Submodule.eq_top_of_nonempty_interior' _
+    (hne.mono (interior_maximal hsub (B.isOpenEmbedding'.isOpenMap U hUopen)))
+  exact ContinuousLinearMap.coe_injective (LinearMap.eqLocus_eq_top.mp htop)
+
+/-- At every point of an invariant open subset, the germ kernel of the restricted linear action is
+the kernel of the representation. -/
+theorem germKernel_mulActionOpens (σ : ContRepresentation 𝕜 G E)
+    (B : TopologicalSpace.Opens E) (hB : ∀ g : G, ∀ v ∈ B, σ g v ∈ B) (v : B) :
+    letI := σ.mulActionOpens B hB
+    TauCeti.MulAction.germKernel G v = σ.toMonoidHom.ker := by
+  let _ := σ.mulActionOpens B hB
+  ext g
+  exact (σ.mem_germKernel_mulActionOpens_iff B hB v).trans MonoidHom.mem_ker.symm
+
+/-- On a nonempty invariant open subset, the global action kernel of the restricted linear action
+is the kernel of the representation. -/
+theorem ker_toPermHom_mulActionOpens (σ : ContRepresentation 𝕜 G E)
+    (B : TopologicalSpace.Opens E) (hB : ∀ g : G, ∀ v ∈ B, σ g v ∈ B)
+    (hne : (B : Set E).Nonempty) :
+    letI := σ.mulActionOpens B hB
+    (MulAction.toPermHom G B).ker = σ.toMonoidHom.ker := by
+  let _ := σ.mulActionOpens B hB
+  obtain ⟨u, hu⟩ := hne
+  refine le_antisymm
+    ((TauCeti.MulAction.ker_toPermHom_le_germKernel ⟨u, hu⟩).trans
+      (σ.germKernel_mulActionOpens B hB ⟨u, hu⟩).le) fun g hg ↦ ?_
+  have hσg : σ g = 1 := MonoidHom.mem_ker.mp hg
+  rw [MonoidHom.mem_ker]
+  ext w : 2
+  exact (σ.val_mulActionOpens_smul B hB g w).trans (by simp [hσg])
+
+end Group
 
 end ContRepresentation
 

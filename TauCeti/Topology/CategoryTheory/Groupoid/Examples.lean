@@ -9,6 +9,7 @@ public import TauCeti.Topology.CategoryTheory.Groupoid.Basic
 public import TauCeti.CategoryTheory.Codiscrete
 public import Mathlib.CategoryTheory.SingleObj
 public import Mathlib.Topology.Algebra.Group.Basic
+public import Mathlib.Topology.Maps.Proper.Basic
 
 /-!
 # Unit, pair and one-object topological groupoids
@@ -16,7 +17,8 @@ public import Mathlib.Topology.Algebra.Group.Basic
 The native categories `Discrete X`, `Codiscrete X` and `SingleObj G` become topological
 groupoids with arrow spaces homeomorphic to `X`, `X × X` and `G`, respectively. In particular,
 a discrete *category* on a space does not replace the topology of that space by the discrete
-topology.
+topology. For `Discrete X`, source and target are homeomorphisms (hence local homeomorphisms),
+and when `X` is Hausdorff the source-target map embeds into the closed diagonal and is proper.
 
 Pair-groupoid arrow coordinates are (target, source). Its composable pairs are homeomorphic
 to triples (final, middle, initial), and composition discards the middle coordinate. For a
@@ -126,6 +128,52 @@ theorem composablePairsHomeomorph_apply
 theorem composablePairsHomeomorph_symm_apply (x : X) :
     (composablePairsHomeomorph X).symm x =
       ⟨((arrowHomeomorph X).symm x, (arrowHomeomorph X).symm x), by simp⟩ := (rfl)
+
+/-- Objects of the unit groupoid on a Hausdorff space are Hausdorff. -/
+instance instT2SpaceObjects [T2Space X] : T2Space (Discrete X) :=
+  (objectHomeomorph X).symm.t2Space
+
+/-- Total arrows of the unit groupoid on a Hausdorff space are Hausdorff. -/
+instance instT2SpaceArrows [T2Space X] : T2Space (Quiver.Total (Discrete X)) :=
+  (arrowHomeomorph X).symm.t2Space
+
+/-- The source map of the unit groupoid is a homeomorphism. -/
+theorem isHomeomorph_source :
+    IsHomeomorph (Quiver.Total.left : Quiver.Total (Discrete X) → Discrete X) :=
+  ((arrowHomeomorph X).trans (objectHomeomorph X).symm).isHomeomorph
+
+/-- The source map of the unit groupoid is a local homeomorphism. -/
+theorem isLocalHomeomorph_source :
+    IsLocalHomeomorph (Quiver.Total.left : Quiver.Total (Discrete X) → Discrete X) :=
+  ((arrowHomeomorph X).trans (objectHomeomorph X).symm).isLocalHomeomorph
+
+/-- The target map of the unit groupoid is a homeomorphism. -/
+theorem isHomeomorph_target :
+    IsHomeomorph (Quiver.Total.right : Quiver.Total (Discrete X) → Discrete X) := by
+  convert isHomeomorph_source X using 1
+  funext a
+  exact (Discrete.ext (Discrete.eq_of_hom a.hom)).symm
+
+/-- The target map of the unit groupoid is a local homeomorphism. -/
+theorem isLocalHomeomorph_target :
+    IsLocalHomeomorph (Quiver.Total.right : Quiver.Total (Discrete X) → Discrete X) :=
+  (IsTopologicalGroupoid.isLocalHomeomorph_source_iff_target (Discrete X)).mp
+    (isLocalHomeomorph_source X)
+
+/-- On a Hausdorff space, the source-target map of the unit groupoid is proper. -/
+theorem isProperMap_source_target [T2Space X] :
+    IsProperMap fun a : Quiver.Total (Discrete X) ↦ (a.left, a.right) := by
+  have hemb : IsEmbedding fun y : Discrete X ↦ (y, y) :=
+    .of_comp (continuous_id.prodMk continuous_id) continuous_fst .id
+  have hdiag : IsClosedEmbedding fun y : Discrete X ↦ (y, y) :=
+    ⟨hemb, by
+      convert isClosed_diagonal (X := Discrete X) using 1
+      ext ⟨y₁, y₂⟩
+      simp [Set.mem_diagonal_iff, eq_comm]⟩
+  convert hdiag.isProperMap.comp
+      ((arrowHomeomorph X).trans (objectHomeomorph X).symm).isProperMap using 1
+  funext a
+  exact Prod.ext rfl (Discrete.ext (Discrete.eq_of_hom a.hom)).symm
 
 end UnitGroupoid
 

@@ -8,21 +8,27 @@ module
 public import TauCeti.Geometry.Manifold.Etale.Basic
 public import TauCeti.Geometry.Manifold.GroupAction.Linearization
 public import TauCeti.CategoryTheory.Groupoid.ActionCategory.Map
+public import TauCeti.Topology.CategoryTheory.Groupoid.Effective.Basic
 
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.Topology.CategoryTheory.ActionGroupoid.Effective
 
 /-!
 # Linear-ball charts of proper étale groupoids
 
 Near each object of a proper étale groupoid, the full groupoid is presented by its finite
-isotropy group acting linearly on a ball for an invariant inner product. The comparison is
-fully faithful, its object map is an open embedding and a local diffeomorphism, and each
-labelled arrow section is also an open embedding and a local diffeomorphism. The object
-image can be chosen inside any prescribed neighbourhood.
+isotropy group acting linearly on a preconnected ball for an invariant inner product. The
+comparison is fully faithful, its object map is an open embedding and a local diffeomorphism, and
+each labelled arrow section is also an open embedding and a local diffeomorphism. The object image
+can be chosen inside any prescribed neighbourhood.
 
 `TauCeti.exists_linear_ball_isotropy_chart` combines the smooth local isotropy action with
 smooth Bochner linearization. It retains the original isotropy labels at the centre, even
-when their linear actions coincide. No effectiveness hypothesis is imposed.
+when their linear actions coincide, and identifies ineffective isotropy loops at the centre with
+both the kernel of the derivative representation `σ` and the elements acting trivially on the ball
+`B`. In a topological groupoid, `TauCeti.ineffectiveKernel_eq_ker_of_linear_isotropy_chart`
+records the resulting subgroup equalities
+`ineffectiveKernel hs x = σ.toMonoidHom.ker = (MulAction.toPermHom (Aut x) B).ker`.
 
 ## References
 
@@ -38,6 +44,42 @@ open scoped Manifold ContDiff
 
 namespace TauCeti
 
+section IneffectiveKernel
+
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {C : Type*} [Groupoid C] [TopologicalSpace C] [TopologicalSpace (Quiver.Total C)]
+  [IsTopologicalGroupoid C]
+
+/-- In any linear isotropy chart around `x : C` whose labelled arrow sections are open embeddings
+and send `(g, z)` to `g` at `x`, the ineffective kernel of `C` at `x` equals both the kernel of the
+linear representation `σ` and the global action kernel on `B`. -/
+theorem ineffectiveKernel_eq_ker_of_linear_isotropy_chart
+    (hs : IsLocalHomeomorph (Quiver.Total.left : Quiver.Total C → C))
+    {x : C} (σ : ContRepresentation 𝕜 (Aut x) E) (B : TopologicalSpace.Opens E)
+    (hpres : ∀ g : Aut x, ∀ v ∈ B, σ g v ∈ B) [MulAction (Aut x) B]
+    (hval : ∀ g : Aut x, ∀ v : B, (g • v : B).val = σ g v)
+    {f : B → C} (hf : Function.Injective f) {z : B} {F : ActionCategory (Aut x) B ⥤ C}
+    (hobj : ∀ a, F.obj a = f a.back)
+    (hopen : ∀ g : Aut x, IsOpenEmbedding fun v : B ↦
+      (⟨_, _, F.map ((ActionCategory.totalEquiv (Aut x) B).symm (g, v)).hom⟩ : Quiver.Total C))
+    (hcentre : ∀ g : Aut x,
+      (⟨_, _, F.map ((ActionCategory.totalEquiv (Aut x) B).symm (g, z)).hom⟩ : Quiver.Total C) =
+        ⟨x, x, g.asIso.hom⟩) :
+    ineffectiveKernel hs x = σ.toMonoidHom.ker ∧
+      ineffectiveKernel hs x = (MulAction.toPermHom (Aut x) B).ker := by
+  have hact_eq : ‹MulAction (Aut x) B› = σ.mulActionOpens B hpres := by
+    ext g v
+    exact (hval g v).trans (σ.val_mulActionOpens_smul B hpres g v).symm
+  have h1 : ineffectiveKernel hs x = σ.toMonoidHom.ker := by
+    rw [ineffectiveKernel_eq_germKernel hs hf hobj hopen hcentre, hact_eq]
+    exact σ.germKernel_mulActionOpens B hpres z
+  have h2 : (MulAction.toPermHom (Aut x) B).ker = σ.toMonoidHom.ker := by
+    rw [hact_eq]
+    exact σ.ker_toPermHom_mulActionOpens B hpres ⟨z.1, z.2⟩
+  exact ⟨h1, h1.trans h2.symm⟩
+
+end IneffectiveKernel
+
 variable {E H : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
@@ -47,10 +89,11 @@ variable {E H : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- **Retained-arrow linear-ball charts.** Every object of a proper étale real groupoid has,
 inside any prescribed neighbourhood, a fully faithful linear-ball action chart of its full
-finite isotropy group. The object and labelled-arrow maps are open embeddings and local
-`C^n` diffeomorphisms. At the origin the arrow labelled `g` is the original arrow `g`,
-including ineffective isotropy. The squared radius is measured with the orbit-sum inner
-product. -/
+finite isotropy group on a preconnected ball. The object and labelled-arrow maps are open
+embeddings and local `C^n` diffeomorphisms. At the origin the arrow labelled `g` is the original
+arrow `g`, including ineffective isotropy, and an isotropy element `g` is ineffective at `x`
+precisely when `σ g = 1`, equivalently when `g` fixes every point of `B`. The squared radius is
+measured with the orbit-sum inner product. -/
 theorem exists_linear_ball_isotropy_chart [T2Space (Quiver.Total C)]
     (hp : IsProperMap fun a : Quiver.Total C ↦ (a.left, a.right))
     (hs : IsLocalDiffeomorph J I n (Quiver.Total.left : Quiver.Total C → C))
@@ -64,7 +107,7 @@ theorem exists_linear_ball_isotropy_chart [T2Space (Quiver.Total C)]
       (_ : MulAction (Aut x) B) (f : B → C) (z : B)
       (F : ActionCategory (Aut x) B ⥤ C),
       0 < c ∧ (B : Set E) = σ.toRepresentation.sumOfConjugatesInnerSublevel c ∧
-      (z : E) = 0 ∧ f z = x ∧
+      PreconnectedSpace B ∧ (z : E) = 0 ∧ f z = x ∧
       (∀ g : Aut x, ∀ v : B, (g • v : B).val = σ g v) ∧
       ContMDiffConstSMul 𝓘(ℝ, E) n (Aut x) B ∧
       IsOpenEmbedding f ∧ IsLocalDiffeomorph 𝓘(ℝ, E) I n f ∧ range f ⊆ s ∧
@@ -75,9 +118,12 @@ theorem exists_linear_ball_isotropy_chart [T2Space (Quiver.Total C)]
       (∀ g : Aut x, IsLocalDiffeomorph 𝓘(ℝ, E) J n fun v : B ↦
         (⟨_, _, F.map ((ActionCategory.totalEquiv (Aut x) B).symm (g, v)).hom⟩ :
           Quiver.Total C)) ∧
-      ∀ g : Aut x,
+      (∀ g : Aut x,
         (⟨_, _, F.map ((ActionCategory.totalEquiv (Aut x) B).symm (g, z)).hom⟩ :
-          Quiver.Total C) = ⟨x, x, g.asIso.hom⟩ := by
+          Quiver.Total C) = ⟨x, x, g.asIso.hom⟩) ∧
+      (∀ g : Aut x,
+        (⟨x, x, g.asIso.hom⟩ : Quiver.Total C) ∈ ineffectiveArrows C ↔ σ g = 1) ∧
+      ∀ g : Aut x, σ g = 1 ↔ ∀ v : B, g • v = v := by
   classical
   have := finite_aut_of_proper_source_target hp hs.isLocalHomeomorph x
   let ι : Fintype (Aut x) := Fintype.ofFinite (Aut x)
@@ -89,10 +135,14 @@ theorem exists_linear_ball_isotropy_chart [T2Space (Quiver.Total C)]
   have : F₀.Faithful := hfaithful
   have hneigh : (Subtype.val : U → C) ⁻¹' s ∈ 𝓝 (⟨x, hxU⟩ : U) :=
     continuous_subtype_val.continuousAt.preimage_mem_nhds hsx
-  obtain ⟨σ, e, c, hcpos, hxe, hezero, hes, het, -, he, hei, hequiv, -⟩ :=
+  obtain ⟨σ, e, c, hcpos, hxe, hezero, hes, het, hconn, he, hei, hequiv, -⟩ :=
     exists_equivariant_contMDiff_chart_target_eq_sumOfConjugatesInnerSublevel
       (fun g ↦ hsmul.contMDiff_const_smul g) hn hfix hneigh
   let B : TopologicalSpace.Opens E := ⟨e.target, e.open_target⟩
+  have hBconn : PreconnectedSpace B := by
+    apply isPreconnected_iff_preconnectedSpace.mp
+    simpa only [B, TopologicalSpace.Opens.coe_mk, ← e.image_source_eq_target] using
+      hconn.image e e.continuousOn
   -- Restrict the linear representation to its invariant ball, retaining every group label.
   have hpres (g : Aut x) (v : E) (hv : v ∈ e.target) : σ g v ∈ e.target := by
     rw [het] at hv ⊢
@@ -115,24 +165,37 @@ theorem exists_linear_ball_isotropy_chart [T2Space (Quiver.Total C)]
     exact congrArg F₀.toPrefunctor.mapTotal
       (ActionCategory.mapTotal_totalEquiv_symm (MonoidHom.id (Aut x)) f g v)
   have hsmoothB := σ.contMDiffConstSMul_mulActionOpens B hpres n
-  refine ⟨ι, σ, c, B, actB, (fun v ↦ (f v : C)), z, F, hcpos, het, rfl,
+  have hFobj (a : ActionCategory (Aut x) B) : F.obj a = (f a.back : C) :=
+    (hobj (A.obj a)).trans
+      (congrArg Subtype.val (ActionCategory.back_map_obj (MonoidHom.id (Aut x)) f a))
+  have hFopen (g : Aut x) : IsOpenEmbedding fun v : B ↦
+      (⟨_, _, F.map ((ActionCategory.totalEquiv (Aut x) B).symm (g, v)).hom⟩ :
+        Quiver.Total C) := by
+    simp only [hlabel]
+    exact (hopen g).comp hfopen
+  have hFcentre (g : Aut x) :
+      (⟨_, _, F.map ((ActionCategory.totalEquiv (Aut x) B).symm (g, z)).hom⟩ :
+        Quiver.Total C) = ⟨x, x, g.asIso.hom⟩ := by
+    rw [hlabel, hfz]
+    exact hcentre g
+  refine ⟨ι, σ, c, B, actB, (fun v ↦ (f v : C)), z, F, hcpos, het, hBconn, rfl,
     congrArg Subtype.val hfz, σ.val_mulActionOpens_smul B hpres, hsmoothB,
     U.isOpenEmbedding'.comp hfopen,
     (fun v ↦ (hfdiff v).comp (hg := isLocalDiffeomorph_subtype_val (f v))), ?_,
-    (fun a ↦ (hobj (A.obj a)).trans
-      (congrArg Subtype.val
-        (ActionCategory.back_map_obj (MonoidHom.id (Aut x)) f a))),
-    inferInstance, inferInstance, ?_, ?_, ?_⟩
+    hFobj, inferInstance, inferInstance, hFopen, ?_, hFcentre, ?_, ?_⟩
   · rintro _ ⟨v, rfl⟩
     exact hes (hf v ▸ e.map_target v.2)
   · intro g
     simp only [hlabel]
-    exact (hopen g).comp hfopen
-  · intro g
-    simp only [hlabel]
     exact fun v ↦ (hfdiff v).comp (hg := harrow g (f v))
   · intro g
-    rw [hlabel, hfz]
-    exact hcentre g
+    exact (mem_ineffectiveArrows_centre_iff_mem_germKernel
+      (U.isOpenEmbedding'.comp hfopen).injective hFobj hFopen hFcentre g).trans
+      (σ.mem_germKernel_mulActionOpens_iff B hpres z)
+  · intro g
+    have hker := σ.ker_toPermHom_mulActionOpens B hpres ⟨z.1, z.2⟩
+    exact MonoidHom.mem_ker.symm.trans (by
+      rw [← hker, MonoidHom.mem_ker, Equiv.ext_iff]
+      rfl)
 
 end TauCeti
