@@ -47,9 +47,9 @@ above the critical value; in dimension two this is the index-one saddle model
   normalized Morse chart with source inside a prescribed neighbourhood of the critical point.
 * `TauCeti.exists_pairwise_disjoint_normalized_morseCharts`: normalized Morse charts with pairwise
   disjoint sources at finitely many nondegenerate critical points of a Hausdorff manifold.
-* `TauCeti.IsManifoldNondegenerateCriticalPoint.exists_twoDimensional_saddleChart`: the
+* `TauCeti.IsManifoldNondegenerateCriticalPoint.exists_saddle_chart_of_finrank_eq_two`: the
   index-one normal form in dimension two.
-* `TauCeti.IsManifoldNondegenerateCriticalPoint.exists_saddleCurves`: curves through a critical
+* `TauCeti.IsManifoldNondegenerateCriticalPoint.exists_saddle_curves`: curves through a critical
   point of index strictly between `0` and `dim M`, smooth near it, along which the function is
   below and above its critical value.
 * `TauCeti.IsManifoldNondegenerateCriticalPoint.eventually_lt_of_manifoldMorseIndex_eq_zero` and
@@ -285,7 +285,7 @@ omit [FiniteDimensional ℝ E] in
 /-- **The two-dimensional saddle normal form.** At a nondegenerate critical point of index one
 on a two-dimensional manifold, there are smooth Euclidean coordinates `(u, v)` centred at the
 point in which `f = f x - u² + v²` on the whole chart source. -/
-theorem IsManifoldNondegenerateCriticalPoint.exists_twoDimensional_saddleChart
+theorem IsManifoldNondegenerateCriticalPoint.exists_saddle_chart_of_finrank_eq_two
     (hf : ∀ᶠ y in 𝓝 x, ContMDiffAt I 𝓘(ℝ) ∞ f y)
     (h : IsManifoldNondegenerateCriticalPoint I f x) (hdim : Module.finrank ℝ E = 2)
     (hindex : manifoldMorseIndex I f x = 1) :
@@ -308,7 +308,7 @@ omit [FiniteDimensional ℝ E] in
 curves through the critical point, smooth near the parameter `0`, along which the function is
 strictly below, respectively strictly above, its critical value at every sufficiently small nonzero
 parameter. The curves are defined on all of `ℝ`. -/
-theorem IsManifoldNondegenerateCriticalPoint.exists_saddleCurves
+theorem IsManifoldNondegenerateCriticalPoint.exists_saddle_curves
     (hf : ∀ᶠ y in 𝓝 x, ContMDiffAt I 𝓘(ℝ) ∞ f y)
     (h : IsManifoldNondegenerateCriticalPoint I f x) (hpos : 0 < manifoldMorseIndex I f x)
     (hlt : manifoldMorseIndex I f x < Module.finrank ℝ E) :

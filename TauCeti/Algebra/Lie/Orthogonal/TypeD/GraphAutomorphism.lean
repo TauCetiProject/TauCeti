@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Permutation
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Root.Generators
-public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations
+public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic
 
 /-!
 # The native type-D graph involution
