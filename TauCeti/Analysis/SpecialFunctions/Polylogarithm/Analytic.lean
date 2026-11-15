@@ -20,8 +20,10 @@ import TauCeti.Analysis.SpecialFunctions.Polylogarithm.RadialIntegrand
 
 Every principal polylogarithm `TauCeti.Polylog.polylog n` (`n : ℤ`) is complex analytic on the
 cut plane `{z : ℂ | 1 - z ∈ Complex.slitPlane} = ℂ ∖ [1, ∞)` and satisfies the Euler differential
-recursion `z * deriv (polylog (n + 1)) z = polylog n z` together with the recursive radial-integral
-identity `polylog (n + 1) z = ∫ t in 0..1, polylog n (t * z) / t`.
+recursion `z * deriv (polylog (n + 1)) z = polylog n z` (equivalently
+`z * deriv (polylog n) z = polylog (n - 1) z`) together with the recursive radial-integral
+identity `polylog (n + 1) z = ∫ t in 0..1, polylog n (t * z) / t` (equivalently
+`polylog n z = ∫ t in 0..1, polylog (n - 1) (t * z) / t`).
 
 These results provide the principal single-valued branch of the polylogarithm tower off `[1, ∞)`
 and the differential equation `(d/dz) Li_{n+1}(z) = Li_n(z) / z` (`z ≠ 0`) governing coherent
@@ -35,17 +37,18 @@ analytic continuation, monodromy, and functional equations of higher polylogarit
   `TauCeti.Polylog.continuousOn_polylog`, and `TauCeti.Polylog.continuousAt_polylog`: complex
   differentiability and continuity on the cut plane.
 * `TauCeti.Polylog.hasDerivAt_polylog_one`, `TauCeti.Polylog.deriv_polylog_one`,
+  `TauCeti.Polylog.intervalIntegrable_neg_log_pow_div_one_sub_mul`,
   `TauCeti.Polylog.hasDerivAt_polylog_nat_add_two`, and
   `TauCeti.Polylog.deriv_polylog_nat_add_two`: derivatives of weights `1` and `k + 2` on the cut
   plane.
-* `TauCeti.Polylog.mul_deriv_polylog_add_one`: the Euler differential recursion
-  `z * deriv (polylog (n + 1)) z = polylog n z` for all `n : ℤ` and `1 - z ∈ Complex.slitPlane`,
-  including `z = 0`.
-* `TauCeti.Polylog.hasDerivAt_polylog_add_one` and `TauCeti.Polylog.deriv_polylog_add_one`: the
-  quotient derivative `polylog n z / z` at nonzero points of the cut plane.
-* `TauCeti.Polylog.intervalIntegrable_polylog_mul_div` and
-  `TauCeti.Polylog.polylog_add_one_eq_integral`: the recursive radial-integral identity
-  `polylog (n + 1) z = ∫ t in 0..1, polylog n (t * z) / t` on the cut plane.
+* `TauCeti.Polylog.mul_deriv_polylog_add_one` and `TauCeti.Polylog.mul_deriv_polylog`: the Euler
+  differential recursion on `{z : ℂ | 1 - z ∈ Complex.slitPlane}`, including `z = 0`.
+* `TauCeti.Polylog.hasDerivAt_polylog_add_one`, `TauCeti.Polylog.deriv_polylog_add_one`,
+  `TauCeti.Polylog.hasDerivAt_polylog`, and `TauCeti.Polylog.deriv_polylog`: the quotient
+  derivative at nonzero points of the cut plane.
+* `TauCeti.Polylog.intervalIntegrable_polylog_mul_div`,
+  `TauCeti.Polylog.polylog_add_one_eq_integral`, and `TauCeti.Polylog.polylog_eq_integral`: the
+  recursive radial-integral identity on the cut plane.
 
 ## References
 
@@ -74,64 +77,44 @@ theorem deriv_polylog_one {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane) :
     deriv (polylog 1) z = (1 - z)⁻¹ :=
   (hasDerivAt_polylog_one hz).deriv
 
-/-- For every `k : ℕ` and `z` in the cut plane, `t ↦ (-log t) ^ k / (1 - t z)` is interval
-integrable on `[0, 1]`. -/
-theorem intervalIntegrable_neg_log_pow_div_one_sub_mul (k : ℕ) {z : ℂ}
+/-- Parametric differentiation of the raw weight-`(k + 2)` radial integral on the cut plane,
+yielding both interval integrability of the differentiated kernel and `HasDerivAt` of the
+integral. -/
+private lemma intervalIntegrable_and_hasDerivAt_radialIntegrand (k : ℕ) {z : ℂ}
     (hz : 1 - z ∈ Complex.slitPlane) :
     IntervalIntegrable
-      (fun t : ℝ ↦ ((-Real.log t : ℝ) : ℂ) ^ k / (1 - (t : ℂ) * z)) volume 0 1 := by
-  obtain ⟨δ, hδ, hδz⟩ := exists_le_norm_one_sub_ofReal_mul isCompact_singleton
-    (singleton_subset_iff.mpr hz)
-  refine ((TauCeti.intervalIntegrable_log_pow k).norm.const_mul δ⁻¹).mono_fun'
-    (by fun_prop : Measurable _).aestronglyMeasurable
-    (ae_restrict_of_forall_mem measurableSet_uIoc fun t ht ↦ ?_)
-  rw [uIoc_of_le zero_le_one] at ht
-  dsimp only
-  rw [norm_div, norm_pow, Complex.norm_real, Real.norm_eq_abs, abs_neg, Real.norm_eq_abs, abs_pow,
-    div_eq_inv_mul]
-  gcongr
-  exact hδz z (mem_singleton z) t (Ioc_subset_Icc_self ht)
-
-/-- Integral representation for the complex derivative of `polylog (k + 2)` on the cut plane. -/
-theorem hasDerivAt_polylog_nat_add_two (k : ℕ) {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane) :
-    HasDerivAt (polylog (k + 2 : ℕ))
-      ((Nat.factorial k : ℂ)⁻¹ *
-        ∫ t : ℝ in 0..1, ((-Real.log t : ℝ) : ℂ) ^ k / (1 - (t : ℂ) * z)) z := by
-  have hopen : IsOpen {w : ℂ | 1 - w ∈ Complex.slitPlane} :=
-    Complex.isOpen_slitPlane.preimage (continuous_const.sub continuous_id)
+      (fun t : ℝ ↦ ((-Real.log t : ℝ) : ℂ) ^ k / (1 - (t : ℂ) * z)) volume 0 1 ∧
+    HasDerivAt
+      (fun x : ℂ ↦ ∫ t : ℝ in 0..1,
+        ((-Real.log t : ℝ) : ℂ) ^ k * (-Complex.log (1 - (t : ℂ) * x)) / (t : ℂ))
+      (∫ t : ℝ in 0..1, ((-Real.log t : ℝ) : ℂ) ^ k / (1 - (t : ℂ) * z)) z := by
   obtain ⟨r, hr, hball⟩ :=
-    Metric.nhds_basis_closedBall.mem_iff.mp (hopen.mem_nhds hz)
+    Metric.nhds_basis_closedBall.mem_iff.mp (TauCeti.isOpen_setOf_one_sub_mem_slitPlane.mem_nhds hz)
   obtain ⟨δ, hδ, hδball⟩ :=
     exists_le_norm_one_sub_ofReal_mul (isCompact_closedBall z r) hball
   set F : ℂ → ℝ → ℂ := fun x t ↦
     ((-Real.log t : ℝ) : ℂ) ^ k * (-Complex.log (1 - (t : ℂ) * x)) / (t : ℂ)
   set F' : ℂ → ℝ → ℂ := fun x t ↦
     ((-Real.log t : ℝ) : ℂ) ^ k / (1 - (t : ℂ) * x)
-  have hparam := intervalIntegral.hasDerivAt_integral_of_dominated_loc_of_deriv_le
+  refine intervalIntegral.hasDerivAt_integral_of_dominated_loc_of_deriv_le
     (F := F) (F' := F') (s := closedBall z r) (bound := fun t : ℝ ↦ δ⁻¹ * ‖Real.log t ^ k‖)
     (closedBall_mem_nhds z hr)
     (Eventually.of_forall fun x ↦ (by fun_prop : Measurable (F x)).aestronglyMeasurable)
     (intervalIntegrable_radialIntegrand k z)
     (by fun_prop : Measurable (F' z)).aestronglyMeasurable
     ?_ ((TauCeti.intervalIntegrable_log_pow k).norm.const_mul δ⁻¹) ?_
-  · have hd := hparam.2.const_mul (Nat.factorial k : ℂ)⁻¹
-    have hfn : (fun x : ℂ ↦ (Nat.factorial k : ℂ)⁻¹ * ∫ t : ℝ in 0..1, F x t) =
-        polylog (k + 2 : ℕ) :=
-      funext fun x ↦ (polylog_nat_add_two k x).symm
-    rwa [hfn] at hd
   · refine ae_of_all _ fun t ht x hx ↦ ?_
     rw [uIoc_of_le zero_le_one] at ht
-    dsimp only [F']
-    rw [norm_div, norm_pow, Complex.norm_real, Real.norm_eq_abs, abs_neg, Real.norm_eq_abs, abs_pow,
-      div_eq_inv_mul]
+    have hnorm : ‖F' x t‖ = ‖1 - (t : ℂ) * x‖⁻¹ * ‖Real.log t ^ k‖ := by
+      simp [F', div_eq_inv_mul]
+    rw [hnorm]
     gcongr
     exact hδball x hx t (Ioc_subset_Icc_self ht)
   · refine ae_of_all _ fun t ht x hx ↦ ?_
     rw [uIoc_of_le zero_le_one] at ht
     have ht0 : (t : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr ht.1.ne'
-    have htx : 1 - (t : ℂ) * x ∈ Complex.slitPlane := by
-      simpa [mul_comm] using
-        Complex.one_sub_mul_ofReal_mem_slitPlane (hball hx) (Ioc_subset_Icc_self ht)
+    have htx : 1 - (t : ℂ) * x ∈ Complex.slitPlane :=
+      TauCeti.one_sub_ofReal_mul_mem_slitPlane (hball hx) (Ioc_subset_Icc_self ht)
     have hlog : HasDerivAt (fun w : ℂ ↦ -Complex.log (1 - (t : ℂ) * w))
         ((t : ℂ) / (1 - (t : ℂ) * x)) x := by
       have hd := (((hasDerivAt_const x (1 : ℂ)).sub
@@ -141,6 +124,28 @@ theorem hasDerivAt_polylog_nat_add_two (k : ℕ) {z : ℂ} (hz : 1 - z ∈ Compl
     refine hmul.congr_deriv ?_
     dsimp only [F']
     field_simp [ht0]
+
+/-- For every `k : ℕ` and `z` in the cut plane, `t ↦ (-log t) ^ k / (1 - t z)` is interval
+integrable on `[0, 1]`. -/
+theorem intervalIntegrable_neg_log_pow_div_one_sub_mul (k : ℕ) {z : ℂ}
+    (hz : 1 - z ∈ Complex.slitPlane) :
+    IntervalIntegrable
+      (fun t : ℝ ↦ ((-Real.log t : ℝ) : ℂ) ^ k / (1 - (t : ℂ) * z)) volume 0 1 :=
+  (intervalIntegrable_and_hasDerivAt_radialIntegrand k hz).1
+
+/-- Integral representation for the complex derivative of `polylog (k + 2)` on the cut plane. -/
+theorem hasDerivAt_polylog_nat_add_two (k : ℕ) {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane) :
+    HasDerivAt (polylog (k + 2 : ℕ))
+      ((Nat.factorial k : ℂ)⁻¹ *
+        ∫ t : ℝ in 0..1, ((-Real.log t : ℝ) : ℂ) ^ k / (1 - (t : ℂ) * z)) z := by
+  have hd := (intervalIntegrable_and_hasDerivAt_radialIntegrand k hz).2.const_mul
+    (Nat.factorial k : ℂ)⁻¹
+  have hfn :
+      (fun x : ℂ ↦ (Nat.factorial k : ℂ)⁻¹ * ∫ t : ℝ in 0..1,
+        ((-Real.log t : ℝ) : ℂ) ^ k * (-Complex.log (1 - (t : ℂ) * x)) / (t : ℂ)) =
+      polylog (k + 2 : ℕ) :=
+    funext fun x ↦ (polylog_nat_add_two k x).symm
+  rwa [hfn] at hd
 
 /-- Integral formula for `deriv (polylog (k + 2)) z` on the cut plane. -/
 theorem deriv_polylog_nat_add_two (k : ℕ) {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane) :
@@ -153,8 +158,6 @@ theorem deriv_polylog_nat_add_two (k : ℕ) {z : ℂ} (hz : 1 - z ∈ Complex.sl
 `{z : ℂ | 1 - z ∈ Complex.slitPlane}`. -/
 theorem analyticOnNhd_polylog (n : ℤ) :
     AnalyticOnNhd ℂ (polylog n) {z : ℂ | 1 - z ∈ Complex.slitPlane} := by
-  have hopen : IsOpen {z : ℂ | 1 - z ∈ Complex.slitPlane} :=
-    Complex.isOpen_slitPlane.preimage (continuous_const.sub continuous_id)
   have hnot1 : {z : ℂ | 1 - z ∈ Complex.slitPlane} ⊆ {z : ℂ | z ≠ 1} := by
     rintro z hz rfl
     simp at hz
@@ -162,9 +165,11 @@ theorem analyticOnNhd_polylog (n : ℤ) :
   | ofNat m =>
     rcases m with _ | _ | k
     · exact (analyticOnNhd_polylog_neg_nat 0).mono hnot1
-    · refine DifferentiableOn.analyticOnNhd (fun z hz ↦ ?_) hopen
+    · refine DifferentiableOn.analyticOnNhd (fun z hz ↦ ?_)
+        TauCeti.isOpen_setOf_one_sub_mem_slitPlane
       exact (hasDerivAt_polylog_one hz).differentiableAt.differentiableWithinAt
-    · refine DifferentiableOn.analyticOnNhd (fun z hz ↦ ?_) hopen
+    · refine DifferentiableOn.analyticOnNhd (fun z hz ↦ ?_)
+        TauCeti.isOpen_setOf_one_sub_mem_slitPlane
       exact (hasDerivAt_polylog_nat_add_two k hz).differentiableAt.differentiableWithinAt
   | negSucc r =>
     simpa [Int.negSucc_eq] using (analyticOnNhd_polylog_neg_nat (r + 1)).mono hnot1
@@ -207,24 +212,30 @@ theorem mul_deriv_polylog_add_one (n : ℤ) {z : ℂ} (hz : 1 - z ∈ Complex.sl
     analyticOnNhd_polylog n
   have h0 : (0 : ℂ) ∈ {w : ℂ | 1 - w ∈ Complex.slitPlane} := by
     simp [Complex.one_mem_slitPlane]
-  have hstar : StarConvex ℝ (0 : ℂ) {w : ℂ | 1 - w ∈ Complex.slitPlane} := by
-    intro w hw a b _ hb hab
-    simpa [Complex.real_smul, mul_comm] using
-      Complex.one_sub_mul_ofReal_mem_slitPlane hw ⟨hb, by linarith⟩
-  have hconn : IsPreconnected {w : ℂ | 1 - w ∈ Complex.slitPlane} :=
-    (hstar.isPathConnected h0).isConnected.isPreconnected
   have hev : (fun w : ℂ ↦ w * deriv (polylog (n + 1)) w) =ᶠ[𝓝 (0 : ℂ)] polylog n := by
     filter_upwards [ball_mem_nhds (0 : ℂ) zero_lt_one] with w hw
     rw [mem_ball_zero_iff] at hw
-    rw [deriv_polylog_add_one_tsum n hw, ← tsum_mul_left, polylog_eq_tsum n hw]
+    rw [deriv_polylog_add_one_eq_tsum n hw, ← tsum_mul_left, polylog_eq_tsum n hw]
     refine tsum_congr fun k ↦ ?_
     rw [pow_succ', mul_div_assoc']
-  exact han₁.eqOn_of_preconnected_of_eventuallyEq han₂ hconn h0 hev hz
+  exact han₁.eqOn_of_preconnected_of_eventuallyEq han₂
+    TauCeti.isPreconnected_setOf_one_sub_mem_slitPlane h0 hev hz
+
+/-- Unshifted Euler differential recursion `z * deriv (polylog n) z = polylog (n - 1) z` on the
+cut plane `{z : ℂ | 1 - z ∈ Complex.slitPlane}`, including at `z = 0`. -/
+theorem mul_deriv_polylog (n : ℤ) {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane) :
+    z * deriv (polylog n) z = polylog (n - 1) z := by
+  simpa using mul_deriv_polylog_add_one (n - 1) hz
 
 /-- At any nonzero point of the cut plane, `deriv (polylog (n + 1)) z = polylog n z / z`. -/
 theorem deriv_polylog_add_one (n : ℤ) {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane) (hz0 : z ≠ 0) :
     deriv (polylog (n + 1)) z = polylog n z / z := by
   rw [← mul_deriv_polylog_add_one n hz, mul_div_cancel_left₀ _ hz0]
+
+/-- At any nonzero point of the cut plane, `deriv (polylog n) z = polylog (n - 1) z / z`. -/
+theorem deriv_polylog (n : ℤ) {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane) (hz0 : z ≠ 0) :
+    deriv (polylog n) z = polylog (n - 1) z / z := by
+  simpa using deriv_polylog_add_one (n - 1) hz hz0
 
 /-- At any nonzero point of the cut plane, `polylog (n + 1)` has complex derivative
 `polylog n z / z`. -/
@@ -234,14 +245,20 @@ theorem hasDerivAt_polylog_add_one (n : ℤ) {z : ℂ} (hz : 1 - z ∈ Complex.s
   rw [← deriv_polylog_add_one n hz hz0]
   exact (differentiableAt_polylog (n + 1) hz).hasDerivAt
 
+/-- At any nonzero point of the cut plane, `polylog n` has complex derivative
+`polylog (n - 1) z / z`. -/
+theorem hasDerivAt_polylog (n : ℤ) {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane) (hz0 : z ≠ 0) :
+    HasDerivAt (polylog n) (polylog (n - 1) z / z) z := by
+  simpa using hasDerivAt_polylog_add_one (n - 1) hz hz0
+
 private lemma continuousOn_mul_deriv_polylog_add_one (n : ℤ) {z : ℂ}
     (hz : 1 - z ∈ Complex.slitPlane) :
     ContinuousOn (fun t : ℝ ↦ z * deriv (polylog (n + 1)) ((t : ℂ) * z)) (uIcc 0 1) := by
   rw [uIcc_of_le zero_le_one]
   refine continuousOn_const.mul ?_
-  refine (analyticOnNhd_polylog (n + 1)).deriv.continuousOn.comp
-    (Complex.continuous_ofReal.continuousOn.mul continuousOn_const) fun t ht ↦ ?_
-  simpa [mul_comm] using Complex.one_sub_mul_ofReal_mem_slitPlane hz ht
+  exact (analyticOnNhd_polylog (n + 1)).deriv.continuousOn.comp
+    (Complex.continuous_ofReal.continuousOn.mul continuousOn_const) fun t ht ↦
+      TauCeti.one_sub_ofReal_mul_mem_slitPlane hz ht
 
 private lemma eqOn_polylog_mul_div_uIoc (n : ℤ) {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane) :
     EqOn (fun t : ℝ ↦ z * deriv (polylog (n + 1)) ((t : ℂ) * z))
@@ -249,8 +266,8 @@ private lemma eqOn_polylog_mul_div_uIoc (n : ℤ) {z : ℂ} (hz : 1 - z ∈ Comp
   intro t ht
   rw [uIoc_of_le zero_le_one] at ht
   have ht0 : (t : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr ht.1.ne'
-  have htz : 1 - (t : ℂ) * z ∈ Complex.slitPlane := by
-    simpa [mul_comm] using Complex.one_sub_mul_ofReal_mem_slitPlane hz (Ioc_subset_Icc_self ht)
+  have htz : 1 - (t : ℂ) * z ∈ Complex.slitPlane :=
+    TauCeti.one_sub_ofReal_mul_mem_slitPlane hz (Ioc_subset_Icc_self ht)
   dsimp only
   rw [← mul_deriv_polylog_add_one n htz]
   field_simp [ht0]
@@ -272,8 +289,8 @@ theorem polylog_add_one_eq_integral (n : ℤ) {z : ℂ} (hz : 1 - z ∈ Complex.
         (z * deriv (polylog (n + 1)) ((t : ℂ) * z)) t := by
     intro t ht
     rw [uIcc_of_le zero_le_one] at ht
-    have htz : 1 - (t : ℂ) * z ∈ Complex.slitPlane := by
-      simpa [mul_comm] using Complex.one_sub_mul_ofReal_mem_slitPlane hz ht
+    have htz : 1 - (t : ℂ) * z ∈ Complex.slitPlane :=
+      TauCeti.one_sub_ofReal_mul_mem_slitPlane hz ht
     have hinner : HasDerivAt (fun s : ℝ ↦ (s : ℂ) * z) z t := by
       simpa using (Complex.ofRealCLM.hasDerivAt (x := t)).mul_const z
     simpa only [Function.comp_def, smul_eq_mul] using
@@ -283,5 +300,11 @@ theorem polylog_add_one_eq_integral (n : ℤ) {z : ℂ} (hz : 1 - z ∈ Complex.
     intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv
       (continuousOn_mul_deriv_polylog_add_one n hz).intervalIntegrable]
   simp
+
+/-- Unshifted recursive radial-integral identity: for every integer weight `n` and every `z` in
+the cut plane, `polylog n z = ∫ t in 0..1, polylog (n - 1) (t * z) / t`. -/
+theorem polylog_eq_integral (n : ℤ) {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane) :
+    polylog n z = ∫ t : ℝ in 0..1, polylog (n - 1) ((t : ℂ) * z) / (t : ℂ) := by
+  simpa using polylog_add_one_eq_integral (n - 1) hz
 
 end TauCeti.Polylog

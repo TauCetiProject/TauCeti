@@ -22,7 +22,9 @@ points in the right half-plane lies in the slit plane as well, and positive real
 it.
 
 Translating a point of the slit plane by a nonnegative real number keeps it in the slit plane,
-and translating a point of `slitPlane ∪ {0}` by a positive one lands in the slit plane.
+and translating a point of `slitPlane ∪ {0}` by a positive one lands in the slit plane. Scaling `z`
+by `t ∈ [0, 1]` preserves `1 - z ∈ slitPlane`, so the shifted cut plane
+`{z : ℂ | 1 - z ∈ slitPlane}` is open, star-convex at `0`, and preconnected.
 The module also records a locally uniform lower bound for the distance from a point of the slit
 plane to the closed negative half-axis. This bound locally dominates slit-plane kernels and thus
 supports differentiation and holomorphy arguments for parameter-dependent Stieltjes integrals.
@@ -38,7 +40,10 @@ is a principal logarithm.
 
 ## Main declarations
 
-* `Complex.one_sub_mul_ofReal_mem_slitPlane`
+* `Complex.one_sub_mul_ofReal_mem_slitPlane`, `TauCeti.one_sub_ofReal_mul_mem_slitPlane`
+* `TauCeti.isOpen_setOf_one_sub_mem_slitPlane`,
+  `TauCeti.starConvex_zero_setOf_one_sub_mem_slitPlane`,
+  `TauCeti.isPreconnected_setOf_one_sub_mem_slitPlane`
 * `TauCeti.div_sub_mem_slitPlane_of_dist_lt_dist`, `TauCeti.one_add_div_mem_slitPlane`
 * `TauCeti.mem_slitPlane_of_norm_one_sub_lt_one_add`,
   `TauCeti.div_mem_slitPlane_of_norm_sub_lt_add`
@@ -300,5 +305,32 @@ theorem one_sub_mul_ofReal_mem_slitPlane {z : ℂ} (hz : 1 - z ∈ slitPlane)
   ring
 
 end Complex
+
+namespace TauCeti
+
+/-- Scaling `z` on the left by a real number in `[0, 1]` preserves slit-plane membership of
+`1 - z`. -/
+theorem one_sub_ofReal_mul_mem_slitPlane {z : ℂ} (hz : 1 - z ∈ slitPlane)
+    {t : ℝ} (ht : t ∈ Set.Icc 0 1) : 1 - (t : ℂ) * z ∈ slitPlane := by
+  simpa only [mul_comm] using one_sub_mul_ofReal_mem_slitPlane hz ht
+
+/-- The shifted cut plane `{z : ℂ | 1 - z ∈ slitPlane}` is open. -/
+theorem isOpen_setOf_one_sub_mem_slitPlane : IsOpen {z : ℂ | 1 - z ∈ slitPlane} :=
+  isOpen_slitPlane.preimage (continuous_const.sub continuous_id)
+
+/-- The shifted cut plane `{z : ℂ | 1 - z ∈ slitPlane}` is star-convex at `0`. -/
+theorem starConvex_zero_setOf_one_sub_mem_slitPlane :
+    StarConvex ℝ (0 : ℂ) {z : ℂ | 1 - z ∈ slitPlane} := by
+  intro z hz a b ha hb hab
+  simpa only [smul_zero, zero_add, real_smul, Set.mem_ofPred_eq] using
+    one_sub_ofReal_mul_mem_slitPlane hz ⟨hb, by linarith⟩
+
+/-- The shifted cut plane `{z : ℂ | 1 - z ∈ slitPlane}` is preconnected. -/
+theorem isPreconnected_setOf_one_sub_mem_slitPlane :
+    IsPreconnected {z : ℂ | 1 - z ∈ slitPlane} :=
+  (starConvex_zero_setOf_one_sub_mem_slitPlane.isPathConnected
+    (by simp [one_mem_slitPlane])).isConnected.isPreconnected
+
+end TauCeti
 
 end
