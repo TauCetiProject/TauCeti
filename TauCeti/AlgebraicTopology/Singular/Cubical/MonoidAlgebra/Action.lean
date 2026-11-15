@@ -274,6 +274,18 @@ theorem cubicalChainModule.induction_on {motive : cubicalChainModule Y G R → P
   | of n c => exact lof n c
   | add a b ha hb => exact add _ _ ha hb
 
+/-- An empty space has no cubical chains. -/
+instance [IsEmpty Y] : Subsingleton (cubicalChainModule Y G R) :=
+  subsingleton_of_forall_eq 0 fun m ↦ by
+    induction m using cubicalChainModule.induction_on with
+    | add m m' hm hm' => rw [hm, hm', add_zero]
+    | lof n c =>
+      induction c using NormalizedCubicalChain.induction_on with
+      | zero => exact map_zero _
+      | add c c' ih ih' => rw [map_add, ih, ih', add_zero]
+      | smul r c ih => rw [map_smul, ih, smul_zero]
+      | ofCube c => exact isEmptyElim (c 0)
+
 /-- The linear map given by homogeneous parts, on a homogeneous chain. -/
 @[simp]
 theorem cubicalChainModuleDesc_lof {N : Type*} [AddCommMonoid N] [Module R N]
