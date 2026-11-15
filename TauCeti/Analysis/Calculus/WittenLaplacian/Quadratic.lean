@@ -57,7 +57,9 @@ Each summand `|aᵢ| (2kᵢ + 1) ± aᵢ` is `0` or at least `2 |aᵢ|`. So `μ 
 nonzero and `t > 0`, `μ(k, s) = 0` exactly when `k = 0` and `s` is the set of indices with
 `aᵢ < 0` (`TauCeti.diagonalQuadraticWittenEigenvalue_eq_zero_iff`): the ground state is a
 multiple of the Gaussian `e^{-t ∑ᵢ |aᵢ| xᵢ² / 2} dx^s`
-(`TauCeti.diagonalQuadraticWittenEigenform_zero_apply`), a form whose degree is the Morse index.
+(`TauCeti.diagonalQuadraticWittenEigenform_zero_apply`), a form whose degree is the Morse index;
+its squared length is `π^{-n/2} e^{-t ∑ᵢ |aᵢ| xᵢ²}`
+(`TauCeti.sum_diagonalQuadraticWittenEigenform_zero_apply_sq`).
 Every other Hermite eigenform has `μ(k, s)` at least `2t minᵢ |aᵢ|`
 (`TauCeti.two_mul_mul_le_diagonalQuadraticWittenEigenvalue`), a gap growing linearly in `t`. For
 the standard model `f = -|x⁻|² + |x⁺|²` all `|aᵢ|` are `2`, the ground state is a multiple of
@@ -294,6 +296,21 @@ theorem diagonalQuadraticWittenEigenform_zero_apply (a : ι → ℝ) {t : ℝ} (
   congr 2
   rw [Finset.mul_sum, ← Finset.sum_neg_distrib, Finset.sum_div]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
+  ring
+
+/-- The squared length of the ground state `Ψ_{0,s}` is the Gaussian
+`|Ψ_{0,s}(x)|² = π^{-n/2} e^{-t ∑ᵢ |aᵢ| xᵢ²}`, with `n` the dimension. -/
+theorem sum_diagonalQuadraticWittenEigenform_zero_apply_sq (a : ι → ℝ) {t : ℝ} (ht : 0 ≤ t)
+    (s : Finset ι) (x : ι → ℝ) :
+    ∑ s', diagonalQuadraticWittenEigenform a t 0 s x s' ^ 2 =
+      Real.exp (-(t * ∑ i, |a i| * x i ^ 2)) / √Real.pi ^ Fintype.card ι := by
+  rw [diagonalQuadraticWittenEigenform_zero_apply a ht]
+  simp only [Pi.smul_apply, Pi.single_apply, smul_eq_mul, mul_ite, mul_one, mul_zero, ite_pow,
+    zero_pow two_ne_zero, Finset.sum_ite_eq', Finset.mem_univ, ite_true, div_pow, ← pow_mul,
+    ← Real.exp_nat_mul]
+  rw [mul_comm (Fintype.card ι) 2, pow_mul, Real.sq_sqrt (Real.sqrt_nonneg _)]
+  congr 2
+  push_cast
   ring
 
 end Eigenvalue

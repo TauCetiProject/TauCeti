@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Analysis.Calculus.WittenLaplacian.Basic
+import Mathlib.Analysis.Calculus.FDeriv.Pow
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
@@ -36,6 +37,22 @@ terms cancel after summing `Jₐ Δ_t (Jₐ φ)` over `a`, and
 quadratic form of `Δ_t` along a partition of unity, at the cost of the bounded potential
 `∑ₐ |∇Jₐ|²`, which does not depend on `t`
 (`TauCeti.integral_sum_euclideanWittenLaplacian_mul_eq`).
+
+For a single compactly supported cutoff `J` and a form `φ` that need not have compact support, an
+integration by parts of the first-order term gives instead
+
+`∫ ⟨Δ_t (J φ), J φ⟩ = ∫ J² ⟨Δ_t φ, φ⟩ + ∫ |∇J|² |φ|²`
+
+(`TauCeti.integral_sum_euclideanWittenLaplacian_smul_mul_eq`). Applied to an eigenform `φ`, such as
+a Gaussian ground state of the harmonic-oscillator model, it computes the energy of the cut-off form
+`J φ` exactly.
+
+Since `Δ_t` is local (`TauCeti.euclideanWittenLaplacian_eventuallyEq`), its quadratic form has no
+cross terms between forms with disjoint supports
+(`TauCeti.integral_sum_euclideanWittenLaplacian_sum_mul_sum_eq`). So a bound
+`∫ ⟨Δ_t φₐ, φₐ⟩ ≤ l ∫ |φₐ|²` for each of finitely many such forms persists on their span
+(`TauCeti.integral_sum_euclideanWittenLaplacian_sum_smul_mul_le`). This is how quasimodes localized
+at different critical points combine.
 
 **The lower bound away from the critical points.** The fibre endomorphism of the frame formula
 is `t² |df|² + t ∑_{i,j} Hess f(∂ᵢ, ∂ⱼ) ⁅εᵢ, ιⱼ⁆`, and each `⁅εᵢ, ιⱼ⁆` has quadratic form bounded by
@@ -68,6 +85,12 @@ itself is not carried out here.
 * `TauCeti.sum_smul_euclideanWittenLaplacian_smul_apply`: the pointwise IMS localization formula.
 * `TauCeti.integral_sum_euclideanWittenLaplacian_mul_eq`: the IMS localization formula for the
   quadratic form of `Δ_t`.
+* `TauCeti.integral_sum_euclideanWittenLaplacian_smul_mul_eq`: the localization formula for a single
+  cutoff applied to a form without compact support.
+* `TauCeti.integral_sum_euclideanWittenLaplacian_sum_mul_sum_eq` and
+  `TauCeti.integral_sum_euclideanWittenLaplacian_sum_smul_mul_le`: the quadratic form of `Δ_t`
+  splits over forms with disjoint supports, so a common bound on their Rayleigh quotients holds on
+  their span.
 * `TauCeti.sum_sum_neg_fderiv_fderiv_mul_add_mul_sum_sq_le_sum_euclideanWittenLaplacian_mul`: the
   pointwise lower bound for `⟨Δ_t φ, φ⟩`.
 * `TauCeti.integral_mul_sum_sq_le_integral_sum_euclideanWittenLaplacian_mul` and
@@ -246,6 +269,128 @@ theorem integral_sum_euclideanWittenLaplacian_mul_eq {α : Type*} {A : Finset α
   rw [← integral_finsetSum A hint, integral_congr_ae (Eventually.of_forall hpt), integral_add hP hQ,
     add_sub_cancel_right]
 
+omit [LinearOrder ι] in
+/-- The scalar identity behind the localization formula for a single cutoff: the pairing of
+`J L - 2 ∑ᵢ gᵢ Dᵢ - (∑ᵢ hᵢ) φ` with `J φ` is `J² ⟨L, φ⟩ + (∑ᵢ gᵢ²) |φ|²` minus the sum over `i` of
+the derivatives `(gᵢ² + J hᵢ) |φ|² + J gᵢ ∑ₛ 2 φₛ Dᵢₛ` of `J gᵢ |φ|²`. -/
+private theorem sum_sub_mul_mul_eq (J : ℝ) (L φ : Finset ι → ℝ) (g h : ι → ℝ)
+    (D : ι → Finset ι → ℝ) :
+    ∑ s, (J * L s - 2 * ∑ i, g i * D i s - (∑ i, h i) * φ s) * (J * φ s) =
+      J ^ 2 * ∑ s, L s * φ s + (∑ i, g i ^ 2) * ∑ s, φ s ^ 2 -
+        ∑ i, ((g i ^ 2 + J * h i) * (∑ s, φ s ^ 2) + J * g i * ∑ s, 2 * φ s * D i s) := by
+  have e₁ : ∑ s, (∑ i, g i * D i s) * (J * φ s) = J * ∑ i, g i * ∑ s, φ s * D i s := by
+    simp only [Finset.mul_sum, Finset.sum_mul]
+    rw [Finset.sum_comm]
+    exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun s _ ↦ by ring
+  have e₂ : ∀ i, (g i ^ 2 + J * h i) * (∑ s, φ s ^ 2) + J * g i * ∑ s, 2 * φ s * D i s =
+      g i ^ 2 * (∑ s, φ s ^ 2) + J * (∑ s, φ s ^ 2) * h i + 2 * J * (g i * ∑ s, φ s * D i s) :=
+    fun i ↦ by
+      rw [show ∑ s, 2 * φ s * D i s = 2 * ∑ s, φ s * D i s from by
+        rw [Finset.mul_sum]
+        exact Finset.sum_congr rfl fun s _ ↦ by ring]
+      ring
+  calc _ = ∑ s, (J ^ 2 * (L s * φ s) - 2 * ((∑ i, g i * D i s) * (J * φ s)) -
+          J * (∑ i, h i) * φ s ^ 2) := Finset.sum_congr rfl fun s _ ↦ by ring
+    _ = J ^ 2 * ∑ s, L s * φ s - 2 * ∑ s, (∑ i, g i * D i s) * (J * φ s) -
+          J * (∑ i, h i) * ∑ s, φ s ^ 2 := by
+        rw [Finset.sum_sub_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum, ← Finset.mul_sum,
+          ← Finset.mul_sum]
+    _ = _ := by
+        rw [e₁, Finset.sum_congr rfl fun i _ ↦ e₂ i, Finset.sum_add_distrib, Finset.sum_add_distrib,
+          ← Finset.sum_mul, ← Finset.mul_sum, ← Finset.mul_sum]
+        ring
+
+omit [LinearOrder ι] in
+/-- The derivative of `y ↦ J y ∂_v J y |φ y|²` in the direction `v`. -/
+private theorem fderiv_mul_fderiv_apply_mul_sum_sq_apply {J : (ι → ℝ) → ℝ}
+    {φ : (ι → ℝ) → Finset ι → ℝ} {x : ι → ℝ} (hJ : ContDiffAt ℝ 2 J x)
+    (hφ : DifferentiableAt ℝ φ x) (v : ι → ℝ) :
+    fderiv ℝ (fun y ↦ J y * fderiv ℝ J y v * ∑ s, φ y s ^ 2) x v =
+      (fderiv ℝ J x v ^ 2 + J x * fderiv ℝ (fderiv ℝ J) x v v) * ∑ s, φ x s ^ 2 +
+        J x * fderiv ℝ J x v * ∑ s, 2 * φ x s * fderiv ℝ φ x v s := by
+  have hJ₁ : HasFDerivAt J (fderiv ℝ J x) x := (hJ.differentiableAt (by norm_num)).hasFDerivAt
+  have hJ₂ : HasFDerivAt (fun y ↦ fderiv ℝ J y v) ((fderiv ℝ (fderiv ℝ J) x).flip v) x := by
+    have h := ((hJ.fderiv_right (m := 1) (by norm_num)).differentiableAt
+      (by norm_num)).hasFDerivAt.clm_apply (hasFDerivAt_const v x)
+    simpa using h
+  have hq : HasFDerivAt (fun y ↦ ∑ s, φ y s ^ 2)
+      (∑ s, (2 * φ x s) • (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Finset ι ↦ ℝ) s).comp
+        (fderiv ℝ φ x)) x := by
+    refine HasFDerivAt.fun_sum fun s _ ↦ ?_
+    have hs : HasFDerivAt (fun y ↦ φ y s)
+        ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Finset ι ↦ ℝ) s).comp (fderiv ℝ φ x)) x :=
+      (hasFDerivAt_apply (𝕜 := ℝ) s (φ x)).comp x hφ.hasFDerivAt
+    refine (hs.pow 2).congr_fderiv ?_
+    ext w
+    simp
+  rw [((hJ₁.fun_mul hJ₂).fun_mul hq).fderiv]
+  simp only [add_apply, smul_apply, smul_eq_mul,
+    ContinuousLinearMap.flip_apply, sum_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.proj_apply]
+  ring
+
+/-- **The localization formula for a single cutoff.** Let `J` be a compactly supported `C²`
+function, `φ` a `C²` form that need not have compact support, and `f` a function that is `C²` at
+every point of the support of `J`. Then
+
+`∫ ⟨Δ_t (J φ), J φ⟩ = ∫ J² ⟨Δ_t φ, φ⟩ + ∫ |∇J|² |φ|²`.
+
+The localization error `∫ |∇J|² |φ|²` does not depend on `t`. When `φ` is an eigenform of `Δ_t`
+it measures how far the cut-off form `J φ` is from being one. -/
+theorem integral_sum_euclideanWittenLaplacian_smul_mul_eq {f J : (ι → ℝ) → ℝ}
+    {φ : (ι → ℝ) → Finset ι → ℝ} (hf : ∀ x ∈ tsupport J, ContDiffAt ℝ 2 f x)
+    (hJ : ContDiff ℝ 2 J) (hJc : HasCompactSupport J) (hφ : ContDiff ℝ 2 φ) (t : ℝ) :
+    ∫ x, ∑ s, euclideanWittenLaplacian f t (J • φ) x s * (J • φ) x s =
+      (∫ x, J x ^ 2 * ∑ s, euclideanWittenLaplacian f t φ x s * φ x s) +
+        ∫ x, (∑ i, fderiv ℝ J x (Pi.single i 1) ^ 2) * ∑ s, φ x s ^ 2 := by
+  -- The divergence terms `∂ᵢ (J ∂ᵢJ |φ|²)`, whose integrals vanish.
+  set u : ι → (ι → ℝ) → ℝ := fun i y ↦ J y * fderiv ℝ J y (Pi.single i 1) * ∑ s, φ y s ^ 2
+  have hu : ∀ i, ContDiff ℝ 1 (u i) := fun i ↦
+    ((hJ.of_le (by norm_num)).mul ((hJ.fderiv_right (m := 1) (by norm_num)).clm_apply
+      contDiff_const)).mul (ContDiff.sum fun s _ ↦
+        ((contDiff_pi.1 hφ s).of_le (by norm_num)).pow 2)
+  have huc : ∀ i, HasCompactSupport (u i) := fun i ↦
+    (hJc.mul_right (f' := fun y ↦ fderiv ℝ J y (Pi.single i 1))).mul_right
+  have hpt : ∀ x, ∑ s, euclideanWittenLaplacian f t (J • φ) x s * (J • φ) x s =
+      J x ^ 2 * ∑ s, euclideanWittenLaplacian f t φ x s * φ x s +
+        (∑ i, fderiv ℝ J x (Pi.single i 1) ^ 2) * ∑ s, φ x s ^ 2 -
+          ∑ i, fderiv ℝ (u i) x (Pi.single i 1) := by
+    intro x
+    by_cases hx : x ∈ tsupport J
+    · simp only [u, fderiv_mul_fderiv_apply_mul_sum_sq_apply hJ.contDiffAt
+        (hφ.differentiable (by norm_num) x),
+        euclideanWittenLaplacian_smul_apply (hf x hx) hJ.contDiffAt hφ.contDiffAt t,
+        Pi.smul_apply', Pi.sub_apply, Pi.smul_apply, Finset.sum_apply, smul_eq_mul]
+      exact sum_sub_mul_mul_eq _ _ _ _ _ _
+    · have hu0 : ∀ i, fderiv ℝ (u i) x = 0 := fun i ↦ fderiv_of_notMem_tsupport ℝ fun h ↦ hx <|
+        (tsupport_mul_subset_left.trans tsupport_mul_subset_left) h
+      simp [image_eq_zero_of_notMem_tsupport hx, fderiv_of_notMem_tsupport ℝ hx, hu0]
+  have hA : Integrable fun x ↦ J x ^ 2 * ∑ s, euclideanWittenLaplacian f t φ x s * φ x s := by
+    have h := (hJ.continuous.smul (hJ.continuous.smul hφ.continuous))
+      |>.integrable_sum_mul_of_continuousOn (μ := volume) (s := Finset.univ)
+        (g := euclideanWittenLaplacian f t φ) hJc.smul_right
+      (by exact tsupport_smul_subset_left J (J • φ)) fun x hx ↦
+        (continuousAt_euclideanWittenLaplacian (hf x hx) hφ.contDiffAt t).continuousWithinAt
+    refine h.congr (Eventually.of_forall fun x ↦ ?_)
+    simp only [Pi.smul_apply', Pi.smul_apply, smul_eq_mul, Finset.mul_sum]
+    exact Finset.sum_congr rfl fun s _ ↦ by ring
+  have hB : Integrable fun x ↦ (∑ i, fderiv ℝ J x (Pi.single i 1) ^ 2) * ∑ s, φ x s ^ 2 := by
+    refine Continuous.integrable_of_hasCompactSupport ((continuous_finsetSum _ fun i _ ↦
+      ((hJ.continuous_fderiv (by norm_num)).clm_apply continuous_const).pow 2).mul
+        (continuous_finsetSum _ fun s _ ↦ ((continuous_apply s).comp hφ.continuous).pow 2))
+      (hJc.mono' fun x hx ↦ ?_)
+    by_contra h
+    exact hx (by simp [fderiv_of_notMem_tsupport ℝ h])
+  have hD : ∀ i, Integrable fun x ↦ fderiv ℝ (u i) x (Pi.single i 1) := fun i ↦
+    integrable_fderiv_apply_of_hasCompactSupport (hu i) (huc i) _
+  have hAB : Integrable fun x ↦ J x ^ 2 * ∑ s, euclideanWittenLaplacian f t φ x s * φ x s +
+      (∑ i, fderiv ℝ J x (Pi.single i 1) ^ 2) * ∑ s, φ x s ^ 2 := hA.add hB
+  have hDs : Integrable fun x ↦ ∑ i, fderiv ℝ (u i) x (Pi.single i 1) :=
+    integrable_finsetSum _ fun i _ ↦ hD i
+  rw [integral_congr_ae (Eventually.of_forall hpt), integral_sub hAB hDs,
+    integral_finsetSum _ fun i _ ↦ hD i, integral_add hA hB]
+  simp [integral_fderiv_apply_eq_zero_of_hasCompactSupport (hu _) (huc _)]
+
 /-! ### The lower bound away from the critical points -/
 
 omit [LinearOrder ι] in
@@ -386,5 +531,105 @@ theorem mul_integral_sum_sq_le_integral_sum_euclideanWittenLaplacian_mul {f : (�
   have := hc x hx
   have := hh x hx
   gcongr
+
+
+/-! ### Forms with disjoint supports -/
+
+/-- **The quadratic form of `Δ_t` on forms with disjoint supports.** For a finite family of
+compactly supported `C²` forms `φₐ` with pairwise disjoint supports, and `f` that is `C²` at every
+point of these supports, `∫ ⟨Δ_t (∑ₐ φₐ), ∑ₐ φₐ⟩ = ∑ₐ ∫ ⟨Δ_t φₐ, φₐ⟩`: as `Δ_t` is local, the
+cross terms vanish. -/
+theorem integral_sum_euclideanWittenLaplacian_sum_mul_sum_eq {α : Type*} {A : Finset α}
+    {f : (ι → ℝ) → ℝ} {φ : α → (ι → ℝ) → Finset ι → ℝ}
+    (hf : ∀ a ∈ A, ∀ x ∈ tsupport (φ a), ContDiffAt ℝ 2 f x) (hφ : ∀ a ∈ A, ContDiff ℝ 2 (φ a))
+    (hφc : ∀ a ∈ A, HasCompactSupport (φ a))
+    (hdisj : (A : Set α).PairwiseDisjoint fun a ↦ tsupport (φ a)) (t : ℝ) :
+    ∫ x, ∑ s, euclideanWittenLaplacian f t (∑ a ∈ A, φ a) x s * (∑ a ∈ A, φ a) x s =
+      ∑ a ∈ A, ∫ x, ∑ s, euclideanWittenLaplacian f t (φ a) x s * φ a x s := by
+  have hpt : ∀ x, ∑ s, euclideanWittenLaplacian f t (∑ a ∈ A, φ a) x s * (∑ a ∈ A, φ a) x s =
+      ∑ a ∈ A, ∑ s, euclideanWittenLaplacian f t (φ a) x s * φ a x s := by
+    intro x
+    by_cases h : ∃ a ∈ A, x ∈ tsupport (φ a)
+    · obtain ⟨a, ha, hx⟩ := h
+      have hsum := Finset.sum_eventuallyEq_of_pairwiseDisjoint_tsupport hdisj ha hx
+      rw [(euclideanWittenLaplacian_eventuallyEq (EventuallyEq.refl _ f) hsum t).eq_of_nhds,
+        hsum.eq_of_nhds, Finset.sum_eq_single_of_mem a ha fun b hb hba ↦ ?_]
+      have hxb : x ∉ tsupport (φ b) := fun hxb ↦
+        Set.disjoint_left.1 (hdisj ha hb (Ne.symm hba)) hx hxb
+      simp [image_eq_zero_of_notMem_tsupport hxb]
+    · simp only [not_exists, not_and] at h
+      have h0 : ∀ a ∈ A, φ a x = 0 := fun a ha ↦ image_eq_zero_of_notMem_tsupport (h a ha)
+      have hx0 : (∑ a ∈ A, φ a) x = 0 := by
+        rw [Finset.sum_apply]
+        exact Finset.sum_eq_zero h0
+      rw [hx0, Finset.sum_eq_zero fun a ha ↦ Finset.sum_eq_zero fun s _ ↦ by simp [h0 a ha]]
+      simp
+  rw [integral_congr_ae (Eventually.of_forall hpt), integral_finsetSum _ fun a ha ↦ ?_]
+  exact (hφ a ha).continuous.integrable_sum_mul_of_continuousOn (hφc a ha) subset_rfl fun x hx ↦
+    (continuousAt_euclideanWittenLaplacian (hf a ha x hx) (hφ a ha).contDiffAt t).continuousWithinAt
+
+omit [LinearOrder ι] in
+/-- The squared length of a sum of forms with pairwise disjoint supports is the sum of their
+squared lengths, pointwise. -/
+private theorem sum_sum_apply_sq_eq_of_pairwiseDisjoint {α : Type*} {A : Finset α}
+    {φ : α → (ι → ℝ) → Finset ι → ℝ} (hdisj : (A : Set α).PairwiseDisjoint fun a ↦ tsupport (φ a))
+    (x : ι → ℝ) :
+    ∑ s, (∑ a ∈ A, φ a) x s ^ 2 = ∑ a ∈ A, ∑ s, φ a x s ^ 2 := by
+  by_cases h : ∃ a ∈ A, x ∈ tsupport (φ a)
+  · obtain ⟨a, ha, hx⟩ := h
+    rw [(Finset.sum_eventuallyEq_of_pairwiseDisjoint_tsupport hdisj ha hx).eq_of_nhds,
+      Finset.sum_eq_single_of_mem a ha fun b hb hba ↦ ?_]
+    have hxb : x ∉ tsupport (φ b) := fun hxb ↦
+      Set.disjoint_left.1 (hdisj ha hb (Ne.symm hba)) hx hxb
+    simp [image_eq_zero_of_notMem_tsupport hxb]
+  · simp only [not_exists, not_and] at h
+    have h0 : ∀ a ∈ A, φ a x = 0 := fun a ha ↦ image_eq_zero_of_notMem_tsupport (h a ha)
+    have hx0 : (∑ a ∈ A, φ a) x = 0 := by
+      rw [Finset.sum_apply]
+      exact Finset.sum_eq_zero h0
+    rw [hx0, Finset.sum_eq_zero fun a ha ↦ Finset.sum_eq_zero fun s _ ↦ by simp [h0 a ha]]
+    simp
+
+/-- **Rayleigh quotients on the span of forms with disjoint supports.** Let `φₐ` be finitely many
+compactly supported `C²` forms with pairwise disjoint supports, and `f` a function that is `C²` at
+every point of these supports, such that each `φₐ` has Rayleigh quotient at most `l`:
+`∫ ⟨Δ_t φₐ, φₐ⟩ ≤ l ∫ |φₐ|²`. Then every linear combination `ψ = ∑ₐ wₐ φₐ` satisfies
+`∫ ⟨Δ_t ψ, ψ⟩ ≤ l ∫ |ψ|²`. -/
+theorem integral_sum_euclideanWittenLaplacian_sum_smul_mul_le {α : Type*} {A : Finset α}
+    {f : (ι → ℝ) → ℝ} {φ : α → (ι → ℝ) → Finset ι → ℝ}
+    (hf : ∀ a ∈ A, ∀ x ∈ tsupport (φ a), ContDiffAt ℝ 2 f x) (hφ : ∀ a ∈ A, ContDiff ℝ 2 (φ a))
+    (hφc : ∀ a ∈ A, HasCompactSupport (φ a))
+    (hdisj : (A : Set α).PairwiseDisjoint fun a ↦ tsupport (φ a)) {t l : ℝ}
+    (hl : ∀ a ∈ A, ∫ x, ∑ s, euclideanWittenLaplacian f t (φ a) x s * φ a x s ≤
+      l * ∫ x, ∑ s, φ a x s ^ 2) (w : α → ℝ) :
+    ∫ x, ∑ s, euclideanWittenLaplacian f t (∑ a ∈ A, w a • φ a) x s *
+        (∑ a ∈ A, w a • φ a) x s ≤
+      l * ∫ x, ∑ s, (∑ a ∈ A, w a • φ a) x s ^ 2 := by
+  have hdisj' : (A : Set α).PairwiseDisjoint fun a ↦ tsupport (w a • φ a) :=
+    hdisj.mono fun a ↦ tsupport_smul_subset_right (fun _ ↦ w a) (φ a)
+  have hsq : ∀ a ∈ A, Integrable fun x ↦ ∑ s, φ a x s ^ 2 := fun a ha ↦
+    (hφ a ha).continuous.integrable_mul_sum_sq_of_continuousOn (h := fun _ ↦ (1 : ℝ)) (hφc a ha)
+      subset_rfl continuousOn_const |>.congr (Eventually.of_forall fun x ↦ one_mul _)
+  rw [integral_sum_euclideanWittenLaplacian_sum_mul_sum_eq (φ := fun a ↦ w a • φ a)
+      (fun a ha x hx ↦ hf a ha x (tsupport_smul_subset_right (fun _ ↦ w a) (φ a) hx))
+      (fun a ha ↦ (hφ a ha).const_smul (w a)) (fun a ha ↦ (hφc a ha).smul_left) hdisj' t,
+    integral_congr_ae (Eventually.of_forall (sum_sum_apply_sq_eq_of_pairwiseDisjoint hdisj')),
+    integral_finsetSum _ fun a ha ↦ (hsq a ha).const_mul (w a ^ 2) |>.congr
+      (Eventually.of_forall fun x ↦ by simp [Finset.mul_sum, mul_pow]), Finset.mul_sum]
+  refine Finset.sum_le_sum fun a ha ↦ ?_
+  have e₁ : ∫ x, ∑ s, euclideanWittenLaplacian f t (w a • φ a) x s * (w a • φ a) x s =
+      w a ^ 2 * ∫ x, ∑ s, euclideanWittenLaplacian f t (φ a) x s * φ a x s := by
+    rw [← integral_const_mul]
+    congr 1
+    funext x
+    simp only [euclideanWittenLaplacian_const_smul, Pi.smul_apply, smul_eq_mul, Finset.mul_sum]
+    exact Finset.sum_congr rfl fun s _ ↦ by ring
+  have e₂ : ∫ x, ∑ s, (w a • φ a) x s ^ 2 = w a ^ 2 * ∫ x, ∑ s, φ a x s ^ 2 := by
+    rw [← integral_const_mul]
+    congr 1
+    funext x
+    simp only [Pi.smul_apply, smul_eq_mul, Finset.mul_sum, mul_pow]
+  rw [e₁, e₂, mul_left_comm]
+  exact mul_le_mul_of_nonneg_left (hl a ha) (sq_nonneg _)
 
 end TauCeti
