@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Group.Integral
-public import TauCeti.Analysis.Pseudodifferential.Symbol.Integral
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Topology
 public import TauCeti.RepresentationTheory.Continuous.LinHom
+import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import TauCeti.RepresentationTheory.Continuous.Bounded
 
 /-!
 # Averaging symbols over a compact group
@@ -21,14 +23,18 @@ coefficient
 
 `(x, ξ) ↦ ∫ σW(g) ∘ a(x, ξ) ∘ σV(g)⁻¹ dμ(g)`.
 
-It is the integral `TauCeti.Symbol.integral` of the compact family of conjugates
-`g ↦ σW(g) ∘ a ∘ σV(g)⁻¹` under the Hom representation `ContRepresentation.linHom`, so it is
-again a symbol of order `m`. Its seminorms are controlled by those of `a` and the bounds of the
-representations (`TauCeti.Symbol.seminorm_average_le`), so it is a continuous linear map
-(`TauCeti.Symbol.averageCLM`). It commutes with all derivatives and preserves compact spatial
-support, uniform estimates and smoothing.
+It is the image `TauCeti.Symbol.map` of `a` under the averaged operator
+`T ↦ ∫ σW(g) ∘ T ∘ σV(g)⁻¹ dμ(g)`, a continuous linear map on `V →L[ℂ] W` whose norm is at most
+the product of the bounds of the representations. So it is again a symbol of order `m`, and by
+the `Symbol.map` API it commutes with all derivatives and preserves compact spatial support and
+uniform estimates; it also preserves smoothing. Its seminorms are controlled by those of `a` and
+the bounds of the representations (`TauCeti.Symbol.seminorm_average_le`), so averaging is a
+continuous linear map on symbols (`TauCeti.Symbol.averageCLM`). For the normalized Haar measure
+the averaged operator is `ContRepresentation.averageOperator` after the inversion `g ↦ g⁻¹`; here
+`μ` is any probability measure.
 
-For a left-invariant measure its coefficients are invariant under conjugation by the action
+For a left-invariant measure (with measurable left multiplication, as for the Borel σ-algebra)
+its coefficients are invariant under conjugation by the action
 (`TauCeti.Symbol.comp_coefficient_average_comp`), that is, they intertwine `σV` and `σW`. If
 `V →L[ℂ] W` is complete, the average fixes the invariant symbols
 (`TauCeti.Symbol.average_eq_self`); this uses completeness because Mathlib's Bochner integral in
@@ -73,23 +79,6 @@ section Conj
 
 variable {G : Type*} [Group G] (σV : ContRepresentation ℂ G V) (σW : ContRepresentation ℂ G W)
 
-/-- The conjugate `σW(g) ∘ a ∘ σV(g)⁻¹` of a symbol. -/
-private def conj (a : Symbol n V W m) (g : G) : Symbol n V W m :=
-  a.map ((σV.linHom σW g).restrictScalars ℝ)
-
-private theorem coefficient_conj (a : Symbol n V W m) (g : G)
-    (p : CoordinateSpace n × CoordinateSpace n) :
-    (conj σV σW a g).coefficient p = σW g ∘L a.coefficient p ∘L σV g⁻¹ := by
-  rw [conj, coefficient_map, ContinuousLinearMap.coe_restrictScalars',
-    ContRepresentation.linHom_apply]
-
-private theorem mixedDeriv_conj (a : Symbol n V W m) (g : G) (α β : List (Fin n))
-    (x ξ : CoordinateSpace n) :
-    mixedDeriv α β (conj σV σW a g).coefficient x ξ =
-      σW g ∘L mixedDeriv α β a.coefficient x ξ ∘L σV g⁻¹ := by
-  rw [conj, mixedDeriv_map, ContinuousLinearMap.coe_restrictScalars',
-    ContRepresentation.linHom_apply]
-
 private theorem norm_conj_le (T : V →L[ℂ] W) (g : G) :
     ‖σW g ∘L T ∘L σV g⁻¹‖ ≤ ‖σW g‖ * ‖σV g⁻¹‖ * ‖T‖ :=
   calc ‖σW g ∘L T ∘L σV g⁻¹‖
@@ -98,49 +87,20 @@ private theorem norm_conj_le (T : V →L[ℂ] W) (g : G) :
           (mul_le_mul_of_nonneg_left (ContinuousLinearMap.opNorm_comp_le _ _) (norm_nonneg _))
     _ = _ := by ring
 
-variable [TopologicalSpace G] [IsTopologicalGroup G] (hσV : Continuous σV)
-  (hσW : Continuous σW)
+variable [MeasurableSpace G] (μ : Measure G) [IsProbabilityMeasure μ]
 
-include hσV hσW in
-/-- The spatial jets of the conjugates are jointly continuous in the group element and the
-position-frequency variables. -/
-private theorem continuous_iteratedFDeriv_conj (a : Symbol n V W m) (k : ℕ) :
-    Continuous fun q : G × (CoordinateSpace n × CoordinateSpace n) =>
-      iteratedFDeriv ℝ k (conj σV σW a q.1).coefficient q.2 := by
-  have h (q : G × (CoordinateSpace n × CoordinateSpace n)) :
-      iteratedFDeriv ℝ k (conj σV σW a q.1).coefficient q.2 =
-        ((σV.linHom σW q.1).restrictScalars ℝ).compContinuousMultilinearMap
-          (iteratedFDeriv ℝ k a.coefficient q.2) := by
-    rw [conj, iteratedFDeriv_map]
-  refine Continuous.congr ?_ fun q => (h q).symm
-  exact (isBoundedBilinearMap_compMultilinear (𝕜 := ℝ)
-    (E := fun _ : Fin k => CoordinateSpace n × CoordinateSpace n)).continuous.comp
-    ((((ContinuousLinearMap.restrictScalarsIsometry ℂ (V →L[ℂ] W) (V →L[ℂ] W) ℝ ℝ).continuous.comp
-      (σV.continuous_linHom σW hσV hσW)).comp continuous_fst).prodMk
-      ((a.contDiff_coefficient.continuous_iteratedFDeriv (by exact_mod_cast le_top)).comp
-        continuous_snd))
-
-omit [IsTopologicalGroup G] in
-include hσV hσW in
-/-- The symbol estimates of the conjugates hold uniformly in the group element. -/
-private theorem exists_bound_conj [CompactSpace G] (a : Symbol n V W m)
-    (K : Set (CoordinateSpace n)) (hK : IsCompact K) (α β : List (Fin n)) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ g : G, ∀ x ∈ K, ∀ ξ,
-      ‖mixedDeriv α β (conj σV σW a g).coefficient x ξ‖ ≤
-        C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
-  obtain ⟨A, hA⟩ := (HasCompactSupport.of_compactSpace ⇑σW).exists_bound_of_continuous hσW
-  obtain ⟨B, hB⟩ := (HasCompactSupport.of_compactSpace ⇑σV).exists_bound_of_continuous hσV
+/-- If the representations are bounded by `A` and `B`, averaging the conjugates of `T` multiplies
+its norm by at most `A B`. -/
+private theorem norm_integral_conj_le {A B : ℝ} (hA : ∀ g, ‖σW g‖ ≤ A) (hB : ∀ g, ‖σV g‖ ≤ B)
+    (T : V →L[ℂ] W) : ‖∫ g, σW g ∘L T ∘L σV g⁻¹ ∂μ‖ ≤ A * B * ‖T‖ := by
   have hA0 : 0 ≤ A := (norm_nonneg _).trans (hA 1)
-  have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 1)
-  obtain ⟨C, hC0, hC⟩ := a.exists_bound K hK α β
-  refine ⟨A * B * C, by positivity, fun g x hx ξ => ?_⟩
-  rw [mixedDeriv_conj, mul_assoc]
-  exact (norm_conj_le σV σW _ g).trans (by gcongr; exacts [hA g, hB g⁻¹, hC x hx ξ])
+  simpa using norm_integral_le_of_norm_le_const (μ := μ) (.of_forall fun g =>
+    (norm_conj_le σV σW T g).trans (by gcongr; exacts [hA g, hB g⁻¹]))
 
 end Conj
 
 variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
-  [MeasurableSpace G] [BorelSpace G] (μ : Measure G) [IsProbabilityMeasure μ]
+  [MeasurableSpace G] [OpensMeasurableSpace G] (μ : Measure G) [IsProbabilityMeasure μ]
   (σV : ContRepresentation ℂ G V) (hσV : Continuous σV)
   (σW : ContRepresentation ℂ G W) (hσW : Continuous σW)
 
@@ -152,17 +112,36 @@ private theorem integrable_conj (T : V →L[ℂ] W) :
   simp only [ContRepresentation.linHom_apply] at hc
   exact hc.integrable_of_hasCompactSupport (.of_compactSpace _)
 
+/-- The average `T ↦ ∫ σW(g) ∘ T ∘ σV(g)⁻¹ dμ(g)` of the coefficient operators, as a continuous
+linear map. -/
+private def coefficientAverage : (V →L[ℂ] W) →L[ℂ] V →L[ℂ] W :=
+  LinearMap.mkContinuousOfExistsBound
+    { toFun T := ∫ g, σW g ∘L T ∘L σV g⁻¹ ∂μ
+      map_add' S T := by
+        simpa [ContinuousLinearMap.add_comp, ContinuousLinearMap.comp_add] using
+          integral_add (integrable_conj μ σV hσV σW hσW S) (integrable_conj μ σV hσV σW hσW T)
+      map_smul' c T := by
+        simpa [ContinuousLinearMap.smul_comp, ContinuousLinearMap.comp_smul] using
+          integral_smul c fun g => σW g ∘L T ∘L σV g⁻¹ }
+    (by
+      obtain ⟨A, -, hA⟩ := σW.exists_norm_le_of_compactSpace hσW
+      obtain ⟨B, -, hB⟩ := σV.exists_norm_le_of_compactSpace hσV
+      exact ⟨A * B, norm_integral_conj_le σV σW μ hA hB⟩)
+
+private theorem coefficientAverage_apply (T : V →L[ℂ] W) :
+    coefficientAverage μ σV hσV σW hσW T = ∫ g, σW g ∘L T ∘L σV g⁻¹ ∂μ :=
+  (rfl)
+
 /-- The average `∫ σW(g) ∘ a ∘ σV(g)⁻¹ dμ(g)` of a symbol over a compact group `G` with a
 probability measure `μ`, for representations `σV` and `σW` of `G` on the fibres `V` and `W` that
 are continuous for the operator norm; a symbol of the same order. -/
 def average (a : Symbol n V W m) : Symbol n V W m :=
-  integral μ (conj σV σW a) (continuous_iteratedFDeriv_conj σV σW hσV hσW a)
-    (exists_bound_conj σV σW hσV hσW a)
+  a.map ((coefficientAverage μ σV hσV σW hσW).restrictScalars ℝ)
 
 @[simp]
 theorem coefficient_average (a : Symbol n V W m) (p : CoordinateSpace n × CoordinateSpace n) :
     (average μ σV hσV σW hσW a).coefficient p = ∫ g, σW g ∘L a.coefficient p ∘L σV g⁻¹ ∂μ := by
-  simp only [average, coefficient_integral, coefficient_conj]
+  rw [average, coefficient_map, ContinuousLinearMap.coe_restrictScalars', coefficientAverage_apply]
 
 /-- The coefficients of the average, evaluated at a vector. -/
 theorem coefficient_average_apply (a : Symbol n V W m)
@@ -176,12 +155,7 @@ theorem coefficient_average_apply (a : Symbol n V W m)
 theorem mixedDeriv_average (a : Symbol n V W m) (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
     mixedDeriv α β (average μ σV hσV σW hσW a).coefficient x ξ =
       ∫ g, σW g ∘L mixedDeriv α β a.coefficient x ξ ∘L σV g⁻¹ ∂μ := by
-  have h : (average μ σV hσV σW hσW a).coefficient =
-      fun p => ∫ g, (conj σV σW a g).coefficient p ∂μ :=
-    funext fun p => by rw [average, coefficient_integral]
-  rw [h, mixedDeriv_integral_of_continuous_jets μ _
-    (continuous_iteratedFDeriv_conj σV σW hσV hσW a)]
-  simp only [mixedDeriv_conj]
+  rw [average, mixedDeriv_map, ContinuousLinearMap.coe_restrictScalars', coefficientAverage_apply]
 
 /-- The mixed derivatives of the average, evaluated at a vector. -/
 theorem mixedDeriv_average_apply (a : Symbol n V W m) (α β : List (Fin n))
@@ -194,23 +168,15 @@ theorem mixedDeriv_average_apply (a : Symbol n V W m) (α β : List (Fin n))
 /-- Spatial derivatives commute with averaging. -/
 @[simp]
 theorem spatialDeriv_average (j : Fin n) (a : Symbol n V W m) :
-    spatialDeriv j (average μ σV hσV σW hσW a) = average μ σV hσV σW hσW (spatialDeriv j a) :=
-  Symbol.ext (funext fun ⟨x, ξ⟩ => by
-    rw [← mixedDeriv_nil_nil (spatialDeriv j _).coefficient, mixedDeriv_spatialDeriv,
-      mixedDeriv_average, ← mixedDeriv_nil_nil (average μ σV hσV σW hσW _).coefficient,
-      mixedDeriv_average]
-    simp only [mixedDeriv_spatialDeriv, List.nil_append])
+    spatialDeriv j (average μ σV hσV σW hσW a) = average μ σV hσV σW hσW (spatialDeriv j a) := by
+  rw [average, average, spatialDeriv_map]
 
 /-- Frequency derivatives commute with averaging. -/
 @[simp]
 theorem frequencyDeriv_average (j : Fin n) (a : Symbol n V W m) :
     frequencyDeriv j (average μ σV hσV σW hσW a) =
-      average μ σV hσV σW hσW (frequencyDeriv j a) :=
-  Symbol.ext (funext fun ⟨x, ξ⟩ => by
-    rw [← mixedDeriv_nil_nil (frequencyDeriv j _).coefficient, mixedDeriv_frequencyDeriv,
-      mixedDeriv_average, ← mixedDeriv_nil_nil (average μ σV hσV σW hσW _).coefficient,
-      mixedDeriv_average]
-    simp only [mixedDeriv_frequencyDeriv, List.nil_append])
+      average μ σV hσV σW hσW (frequencyDeriv j a) := by
+  rw [average, average, frequencyDeriv_map]
 
 @[simp]
 theorem average_zero : average μ σV hσV σW hσW (0 : Symbol n V W m) = 0 :=
@@ -220,16 +186,14 @@ theorem average_zero : average μ σV hσV σW hσW (0 : Symbol n V W m) = 0 :=
 theorem average_add (a b : Symbol n V W m) :
     average μ σV hσV σW hσW (a + b) = average μ σV hσV σW hσW a + average μ σV hσV σW hσW b := by
   refine Symbol.ext (funext fun p => ?_)
-  simpa [ContinuousLinearMap.add_comp, ContinuousLinearMap.comp_add] using
-    MeasureTheory.integral_add (integrable_conj μ σV hσV σW hσW (a.coefficient p))
-      (integrable_conj μ σV hσV σW hσW (b.coefficient p))
+  simp only [average, coefficient_map, coefficient_add, Pi.add_apply, map_add]
 
 @[simp]
 theorem average_smul (c : ℂ) (a : Symbol n V W m) :
     average μ σV hσV σW hσW (c • a) = c • average μ σV hσV σW hσW a := by
   refine Symbol.ext (funext fun p => ?_)
-  simpa [ContinuousLinearMap.smul_comp, ContinuousLinearMap.comp_smul] using
-    MeasureTheory.integral_smul c fun g => σW g ∘L a.coefficient p ∘L σV g⁻¹
+  simp only [average, coefficient_map, coefficient_smul, Pi.smul_apply,
+    ContinuousLinearMap.coe_restrictScalars', map_smul]
 
 /-- Averaging commutes with the order inclusions. -/
 @[simp]
@@ -244,22 +208,16 @@ theorem seminorm_average_le (a : Symbol n V W m) {K : Compacts (CoordinateSpace 
     Symbol.seminorm K α β (average μ σV hσV σW hσW a) ≤ A * B * Symbol.seminorm K α β a := by
   have hA0 : 0 ≤ A := (norm_nonneg _).trans (hA 1)
   have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 1)
-  refine seminorm_integral_le_of_probability μ (conj σV σW a)
-    (continuous_iteratedFDeriv_conj σV σW hσV hσW a) (exists_bound_conj σV σW hσV hσW a) K α β
-    (by positivity) fun g => seminorm_le_bound K α β _ (by positivity) fun x hx ξ => ?_
-  rw [mixedDeriv_conj]
-  calc ‖σW g ∘L mixedDeriv α β a.coefficient x ξ ∘L σV g⁻¹‖
-      ≤ ‖σW g‖ * ‖σV g⁻¹‖ * ‖mixedDeriv α β a.coefficient x ξ‖ := norm_conj_le σV σW _ g
-    _ ≤ A * B * (Symbol.seminorm K α β a * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2)) := by
-        gcongr
-        exacts [hA g, hB g⁻¹, le_seminorm K α β a hx ξ]
-    _ = _ := by ring
+  refine seminorm_le_bound K α β _ (by positivity) fun x hx ξ => ?_
+  rw [mixedDeriv_average, mul_assoc (A * B)]
+  exact (norm_integral_conj_le σV σW μ hA hB _).trans
+    (mul_le_mul_of_nonneg_left (le_seminorm K α β a hx ξ) (by positivity))
 
 /-- Averaging is continuous in the symbol topology. -/
 @[continuity, fun_prop]
 theorem continuous_average : Continuous (average (n := n) (m := m) μ σV hσV σW hσW) := by
-  obtain ⟨A, hA⟩ := (HasCompactSupport.of_compactSpace ⇑σW).exists_bound_of_continuous hσW
-  obtain ⟨B, hB⟩ := (HasCompactSupport.of_compactSpace ⇑σV).exists_bound_of_continuous hσV
+  obtain ⟨A, -, hA⟩ := σW.exists_norm_le_of_compactSpace hσW
+  obtain ⟨B, -, hB⟩ := σV.exists_norm_le_of_compactSpace hσV
   let L : Symbol n V W m →ₗ[ℂ] Symbol n V W m :=
     { toFun := average μ σV hσV σW hσW
       map_add' := average_add μ σV hσV σW hσW
@@ -297,20 +255,14 @@ theorem average_sum {ι : Type*} (s : Finset ι) (a : ι → Symbol n V W m) :
 theorem HasCompactSpatialSupport.average {a : Symbol n V W m}
     (ha : a.HasCompactSpatialSupport) :
     (Symbol.average μ σV hσV σW hσW a).HasCompactSpatialSupport := by
-  obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.1 ha
-  exact hasCompactSpatialSupport_iff.2 ⟨K, hK, fun x hx ξ => by simp [hKa x hx ξ]⟩
+  rw [Symbol.average]
+  exact ha.map _
 
 /-- Averaging preserves symbol estimates that are uniform in the position. -/
 theorem IsUniform.average {a : Symbol n V W m} (ha : a.IsUniform) :
     (Symbol.average μ σV hσV σW hσW a).IsUniform := by
-  obtain ⟨A, hA⟩ := (HasCompactSupport.of_compactSpace ⇑σW).exists_bound_of_continuous hσW
-  obtain ⟨B, hB⟩ := (HasCompactSupport.of_compactSpace ⇑σV).exists_bound_of_continuous hσV
-  have hAB : 0 ≤ A * B := mul_nonneg ((norm_nonneg _).trans (hA 1)) ((norm_nonneg _).trans (hB 1))
-  refine isUniform_iff_bddAbove_seminorm.2 fun α β => ?_
-  obtain ⟨C, hC⟩ := isUniform_iff_bddAbove_seminorm.1 ha α β
-  exact ⟨A * B * C, Set.forall_mem_range.2 fun K =>
-    (seminorm_average_le μ σV hσV σW hσW a hA hB).trans
-      (mul_le_mul_of_nonneg_left (hC ⟨K, rfl⟩) hAB)⟩
+  rw [Symbol.average]
+  exact ha.map _
 
 /-- Averaging preserves smoothing symbols. -/
 theorem IsSmoothing.average {a : Symbol n V W m} (ha : a.IsSmoothing) :
@@ -320,8 +272,8 @@ theorem IsSmoothing.average {a : Symbol n V W m} (ha : a.IsSmoothing) :
 
 /-- **The average is invariant.** For a left-invariant measure, conjugating the coefficients of the
 average by the action of any `h ∈ G` returns them. -/
-theorem comp_coefficient_average_comp [μ.IsMulLeftInvariant] (a : Symbol n V W m) (h : G)
-    (p : CoordinateSpace n × CoordinateSpace n) :
+theorem comp_coefficient_average_comp [MeasurableMul G] [μ.IsMulLeftInvariant] (a : Symbol n V W m)
+    (h : G) (p : CoordinateSpace n × CoordinateSpace n) :
     σW h ∘L (average μ σV hσV σW hσW a).coefficient p ∘L σV h⁻¹ =
       (average μ σV hσV σW hσW a).coefficient p := by
   by_cases hC : CompleteSpace (V →L[ℂ] W)
@@ -337,8 +289,8 @@ theorem comp_coefficient_average_comp [μ.IsMulLeftInvariant] (a : Symbol n V W 
 
 /-- For a left-invariant measure, the coefficients of the average intertwine the
 representations. -/
-theorem coefficient_average_comp [μ.IsMulLeftInvariant] (a : Symbol n V W m) (h : G)
-    (p : CoordinateSpace n × CoordinateSpace n) :
+theorem coefficient_average_comp [MeasurableMul G] [μ.IsMulLeftInvariant] (a : Symbol n V W m)
+    (h : G) (p : CoordinateSpace n × CoordinateSpace n) :
     (average μ σV hσV σW hσW a).coefficient p ∘L σV h =
       σW h ∘L (average μ σV hσV σW hσW a).coefficient p :=
   (σV.linHom_apply_eq_self_iff_isIntertwining σW _).1
@@ -361,7 +313,7 @@ theorem average_eq_self_of_comp [CompleteSpace (V →L[ℂ] W)] (a : Symbol n V 
 /-- For a left-invariant probability measure, such as the normalized Haar measure, averaging is
 idempotent. -/
 @[simp]
-theorem average_average [μ.IsMulLeftInvariant] (a : Symbol n V W m) :
+theorem average_average [MeasurableMul G] [μ.IsMulLeftInvariant] (a : Symbol n V W m) :
     average μ σV hσV σW hσW (average μ σV hσV σW hσW a) = average μ σV hσV σW hσW a := by
   by_cases hC : CompleteSpace (V →L[ℂ] W)
   · exact average_eq_self μ σV hσV σW hσW _ (comp_coefficient_average_comp μ σV hσV σW hσW a)

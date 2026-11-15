@@ -12,6 +12,7 @@ public import Mathlib.Analysis.InnerProductSpace.Positive
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.RepresentationTheory.Compact.BilinearForm
+import TauCeti.RepresentationTheory.Continuous.Bounded
 
 /-!
 # Weyl's unitarian trick
@@ -83,8 +84,7 @@ because `G` is compact and `π` is continuous. Only the seminormed-space structu
 so this is stated before the inner product enters. -/
 theorem exists_pos_mul_norm_le_norm_map (π : ContRepresentation 𝕜 G V) (hπ : Continuous π) :
     ∃ c : ℝ, 0 < c ∧ ∀ (g : G) (v : V), c * ‖v‖ ≤ ‖π g v‖ := by
-  obtain ⟨M, hM⟩ := isCompact_univ.exists_bound_of_continuousOn (f := fun g : G ↦ π g)
-    hπ.continuousOn
+  obtain ⟨M, -, hM⟩ := π.exists_norm_le_of_compactSpace hπ
   set M' := max M 1
   have hM'pos : 0 < M' := lt_of_lt_of_le zero_lt_one (le_max_right _ _)
   refine ⟨M'⁻¹, inv_pos.mpr hM'pos, fun g v ↦ ?_⟩
@@ -93,7 +93,7 @@ theorem exists_pos_mul_norm_le_norm_map (π : ContRepresentation 𝕜 G V) (hπ 
     calc ‖v‖ = ‖π g⁻¹ (π g v)‖ := by rw [hcancel]
       _ ≤ ‖π g⁻¹‖ * ‖π g v‖ := (π g⁻¹).le_opNorm _
       _ ≤ M' * ‖π g v‖ :=
-        mul_le_mul_of_nonneg_right ((hM g⁻¹ (Set.mem_univ _)).trans (le_max_left _ _))
+        mul_le_mul_of_nonneg_right ((hM g⁻¹).trans (le_max_left _ _))
           (norm_nonneg _)
   rw [inv_mul_le_iff₀ hM'pos]
   exact hstep
