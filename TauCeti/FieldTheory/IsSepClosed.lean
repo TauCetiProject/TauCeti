@@ -13,7 +13,7 @@ import Mathlib.Algebra.QuadraticDiscriminant
 # Separably closed fields
 
 Supplements to Mathlib's `IsSepClosed` and `IsSepClosure` for domain algebras, quadratics,
-and towers of field extensions.
+towers of field extensions, and transport along ring isomorphisms.
 
 ## Separable elements in domain algebras
 
@@ -29,7 +29,7 @@ is when `2 = 0` and `b = 0`; away from that case the equation has a root in the 
 
 Both halves are already available. Where `2 ≠ 0` the quadratic formula applies as soon as the
 discriminant is a square, and a separably closed field supplies square roots
-(`IsSepClosed.exists_eq_mul_self`). Where `2 = 0` the polynomial `a X² + b X + c` with `b ≠ 0` is
+(`IsSepClosed.isSquare`). Where `2 = 0` the polynomial `a X² + b X + c` with `b ≠ 0` is
 separable, and `IsSepClosed.exists_root_C_mul_X_pow_add_C_mul_X_add_C` is exactly that case.
 
 The excluded case is genuinely excluded: over an imperfect separably closed field of
@@ -50,9 +50,12 @@ its conclusion, so instance search could not find it.
 
 * `IsSeparable.mem_bot_of_isSepClosed`: a separable element of a domain algebra belongs to the
   bottom subalgebra.
-* `TauCeti.exists_quadratic_eq_zero_of_isSepClosed`
+* `TauCeti.exists_quadratic_eq_zero_of_isSepClosed`: a quadratic `a X² + b X + c` with `a ≠ 0`
+  and `2 ≠ 0 ∨ b ≠ 0` has a root in a separably closed field.
 * `TauCeti.isSepClosure_tower_top`: `IsSepClosure K E` implies `IsSepClosure L E` for every
   intermediate extension `L`.
+* `SeparableClosure.neZero_two`: `2` stays nonzero in `SeparableClosure K`.
+* `IsSepClosed.of_ringEquiv`: separable closedness transfers along ring isomorphisms.
 -/
 
 public section
@@ -66,6 +69,19 @@ theorem IsSeparable.mem_bot_of_isSepClosed {K A : Type*} [Field K] [IsSepClosed 
   exact minpoly.mem_range_of_degree_eq_one K x <|
     IsSepClosed.degree_eq_one_of_irreducible K (minpoly.irreducible hx.isIntegral) hx
 
+/-- `2` stays nonzero in the separable closure of a field in which it is nonzero, since the
+algebra map is injective. -/
+instance SeparableClosure.neZero_two {K : Type*} [Field K] [NeZero (2 : K)] :
+    NeZero (2 : SeparableClosure K) := by
+  simpa using NeZero.of_faithfulSMul K (SeparableClosure K) 2
+
+/-- Separable closedness transfers along a ring isomorphism of fields. -/
+theorem IsSepClosed.of_ringEquiv {k K : Type*} [Field k] [Field K] [IsSepClosed k]
+    (e : k ≃+* K) : IsSepClosed K where
+  splits_of_separable p hp := by
+    simpa [Polynomial.map_map] using
+      IsSepClosed.splits_domain (f := (e : k →+* K)) _ (hp.map (f := (e.symm : K →+* k)))
+
 namespace TauCeti
 
 /-- **A quadratic with a nonvanishing derivative has a root in a separably closed field.** The
@@ -75,12 +91,12 @@ no solution over an imperfect separably closed field of characteristic `2`. -/
 theorem exists_quadratic_eq_zero_of_isSepClosed {K : Type*} [Field K] [IsSepClosed K] {a : K}
     (ha : a ≠ 0) (b c : K) (h : (2 : K) ≠ 0 ∨ b ≠ 0) :
     ∃ x : K, a * (x * x) + b * x + c = 0 := by
-  by_cases h2 : (2 : K) = 0
-  · obtain ⟨x, hx⟩ := IsSepClosed.exists_root_C_mul_X_pow_add_C_mul_X_add_C (n := 2) a b c
-      (by exact_mod_cast h2) le_rfl (h.resolve_left (not_not_intro h2))
-    exact ⟨x, by linear_combination hx⟩
+  rcases ne_or_eq (2 : K) 0 with h2 | h2
   · have : NeZero (2 : K) := ⟨h2⟩
-    exact exists_quadratic_eq_zero ha (IsSepClosed.exists_eq_mul_self (discrim a b c))
+    exact exists_quadratic_eq_zero ha (IsSepClosed.isSquare _)
+  · obtain ⟨x, hx⟩ := IsSepClosed.exists_root_C_mul_X_pow_add_C_mul_X_add_C (n := 2) a b c
+      (mod_cast h2) le_rfl (h.resolve_left (· h2))
+    exact ⟨x, by linear_combination hx⟩
 
 /-- **A separable closure of `K` is a separable closure of every intermediate extension `L`**:
 separable closedness is a property of the field alone, and separability over `K` implies

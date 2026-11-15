@@ -16,10 +16,9 @@ principal value unchanged, so the winding number and null-homology are invariant
 reindexes the excision radius by the order-isomorphism `ε ↦ ε / ‖c‖`, so no principal-value
 existence hypothesis is needed.
 
-These lemmas are bookkeeping for the roadmap's curve and cycle layer. The geometry of the
-generalized winding number is local at a crossing or sector; after translating the crossing point
-to the origin, finite-decomposition arguments also rescale the local model before applying the
-sector computation.
+These lemmas are bookkeeping for curves and cycles. The geometry of the generalized winding number
+is local at a crossing or sector; after translating the crossing point to the origin,
+finite-decomposition arguments also rescale the local model before applying the sector computation.
 
 ## Main results
 
@@ -35,8 +34,8 @@ sector computation.
 
 ## Provenance
 
-This is routine API around the Hungerbühler--Wasem generalized winding number from the contour
-integration roadmap; no formal source is vendored.
+This is routine API around the Hungerbühler--Wasem generalized winding number; no formal source is
+vendored.
 -/
 
 public section

@@ -25,6 +25,8 @@ it is supplied by `Ideal.isOpen_of_isMaximal_of_isOpen_isTopologicallyNilpotent`
 
 * `TauCeti.ValuationSpectrum.exists_mem_spa_supp_eq` : Proposition 7.51 — an open prime ideal
   is the support of a point of the adic spectrum.
+* `TauCeti.ValuationSpectrum.eq_trivialSection_of_supp_eq` : conversely, the only point of
+  `Spa(A, A)` supported on a maximal ideal is its trivial valuation.
 * `TauCeti.ValuationSpectrum.isUnit_of_forall_not_vle_zero` : Proposition 7.52(2) — if no point
   of `Spa(A, A⁺)` vanishes on `f`, then `f` is a unit.
 * `TauCeti.ValuationSpectrum.span_eq_top_of_forall_mem_spa_exists_not_vle_zero` : the converse
@@ -61,6 +63,30 @@ theorem exists_mem_spa_supp_eq (Aplus : Subring A) (𝔭 : Ideal A) [𝔭.IsPrim
     (h𝔭 : IsOpen (𝔭 : Set A)) : ∃ v ∈ spa Aplus, supp v = 𝔭 := by
   refine ⟨trivialSection ⟨𝔭, ‹_›⟩, (trivialSection_mem_spa_iff Aplus _).mpr h𝔭, ?_⟩
   rw [← suppFun_asIdeal, suppFun_trivialSection]
+
+/-- **A point of `Spa(A, A)` supported on a maximal ideal is the trivial valuation there.** Such
+a point is at most `1` on all of `A`, hence trivial on the residue field: an element outside the
+maximal ideal is invertible modulo it, and two values at most `1` with product `1` are both `1`.
+-/
+theorem eq_trivialSection_of_supp_eq {v : Spv A} (hv : v ∈ spa (⊤ : Subring A))
+    (p : PrimeSpectrum A) (hp : p.asIdeal.IsMaximal) (hsupp : v.supp = p.asIdeal) :
+    v = trivialSection p := by
+  have hle (a : A) : v.valuation a ≤ 1 := valuation_le_one_of_mem_spa hv trivial
+  have hzero {a : A} (ha : a ∈ p.asIdeal) : v.valuation a = 0 := by
+    rwa [← hsupp, supp_eq_valuation_supp, Valuation.mem_supp_iff] at ha
+  have hone {a : A} (ha : a ∉ p.asIdeal) : v.valuation a = 1 := by
+    obtain ⟨b, i, hi, hab⟩ := hp.exists_inv ha
+    have hi' : i ∈ v.valuation.supp := by rwa [← supp_eq_valuation_supp, hsupp]
+    have h1 : v.valuation a * v.valuation b = 1 := by
+      rw [← map_mul, mul_comm, ← Valuation.map_add_supp _ _ hi', hab, map_one]
+    exact (hle a).antisymm (not_lt.mp fun hlt ↦ (mul_lt_one_of_lt_of_le hlt (hle b)).ne h1)
+  refine ext' fun x y ↦ ?_
+  rw [trivialSection_vle_iff, ← valuation_le_iff]
+  by_cases hx : x ∈ p.asIdeal
+  · simp [hx, hzero hx]
+  by_cases hy : y ∈ p.asIdeal
+  · simp [hx, hy, hone hx, hzero hy]
+  · simp [hy, hone hy, hle]
 
 /-- **The converse half of Wedhorn Corollary 7.53.** If every maximal ideal of `A` is open and
 every point of `Spa(A, A⁺)` is nonzero on some member of `T`, then `T` generates the unit ideal.

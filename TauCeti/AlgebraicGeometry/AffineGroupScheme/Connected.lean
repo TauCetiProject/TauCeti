@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Geometrically.Connected
 public import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
 public import TauCeti.AlgebraicGeometry.AffineGroupScheme.FiniteType
+public import TauCeti.AlgebraicGeometry.Geometrically.Connected
 
 /-!
 # Geometric connectedness of affine group schemes
@@ -30,8 +31,7 @@ scheme-theoretic `GeometricallyConnected` predicate on its Hopf spectrum.
 
 * J. S. Milne, *Algebraic Groups* (2017), §2.a.
 
-This is the geometric-connectedness prerequisite for Layer 3, "Identity component and component
-group", of the ReductiveGroups roadmap.
+This is the geometric-connectedness prerequisite for the identity component and the component group.
 -/
 
 public section
@@ -44,10 +44,6 @@ namespace TauCeti
 open AlgebraicGeometry
 
 universe u
-
-private instance geometricallyConnected_respectsIso :
-    MorphismProperty.RespectsIso @GeometricallyConnected :=
-  MorphismProperty.IsStableUnderBaseChange.respectsIso
 
 /-- The object property on affine group schemes selecting those whose structural morphism is
 geometrically connected. -/

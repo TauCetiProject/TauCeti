@@ -15,9 +15,12 @@ public import TauCeti.RingTheory.KrullSchmidt.Indecomposable
 
 Over a ring with semisimple radical quotient, a projective module with local
 endomorphism ring and coatomic submodule lattice has simple head `P / J P`. In particular this
-holds for indecomposable projective modules of finite length. Every surjection from such a module
-onto a simple module
-has kernel `J P` and is a projective cover. Thus its simple quotient is unique up to isomorphism.
+holds for indecomposable projective modules of finite length. Every nonzero map from a module
+with simple head into a semisimple module has kernel `J P`. A surjection from such a projective
+module with coatomic submodule lattice onto any nonzero module is a projective cover.
+Its nonzero semisimple quotients are necessarily simple and unique up to isomorphism. Without any
+hypothesis on the ring, every proper submodule of a projective module with local endomorphism ring
+lies in its radical.
 
 The locality argument uses `Ideal.endMapQ`: projectivity makes reduction of endomorphisms
 surjective, so the endomorphism ring of the head is local as well.
@@ -36,13 +39,39 @@ namespace TauCeti
 variable {R P S : Type*} [Ring R] [AddCommGroup P] [Module R P]
   [AddCommGroup S] [Module R S]
 
+/-- **Every proper submodule of a projective module with local endomorphism ring lies in its
+radical.** -/
+theorem le_jacobson_of_ne_top_of_isLocalRing_end [Module.Projective R P]
+    [IsLocalRing (Module.End R P)] {N : Submodule R P} (hN : N ≠ ⊤) : N ≤ Module.jacobson R P := by
+  -- If `N` is not contained in a maximal submodule `K`, then `N` maps onto `P / K`, and
+  -- projectivity gives `φ : P ⟶ N ⊆ P` agreeing with the identity modulo `K`. By locality `φ` or
+  -- `1 - φ` is invertible; the first forces `N = P`, the second `K = P`.
+  refine le_sInf fun K hK ↦ ?_
+  by_contra hNK
+  have hsup : N ⊔ K = ⊤ := hK.2 _ (lt_of_le_of_ne le_sup_right fun h ↦ hNK (h ▸ le_sup_left))
+  have hsurj : Function.Surjective (K.mkQ ∘ₗ N.subtype) := by
+    rw [← LinearMap.range_eq_top, LinearMap.range_comp, Submodule.range_subtype,
+      Submodule.map_mkQ_eq_top, sup_comm, hsup]
+  obtain ⟨h, hh⟩ := Module.projective_lifting_property _ K.mkQ hsurj
+  let φ : Module.End R P := N.subtype ∘ₗ h
+  have hφ (x : P) : (1 - φ) x ∈ K := by
+    rw [← Submodule.Quotient.mk_eq_zero]
+    simpa [φ, sub_eq_zero] using LinearMap.congr_fun hh.symm x
+  rcases IsLocalRing.isUnit_or_isUnit_one_sub_self φ with hu | hu
+  · refine hN (Submodule.eq_top_iff'.2 fun x ↦ ?_)
+    obtain ⟨y, rfl⟩ := (Module.End.isUnit_iff φ).1 hu |>.2 x
+    exact (h y).2
+  · refine hK.1 (Submodule.eq_top_iff'.2 fun x ↦ ?_)
+    obtain ⟨y, rfl⟩ := (Module.End.isUnit_iff _).1 hu |>.2 x
+    exact hφ y
+
 /-- A projective module with local endomorphism ring and coatomic submodule lattice has
 simple head, provided the ring's radical quotient is semisimple. -/
 theorem isSimpleModule_quotient_jacobson_smul_top_of_isLocalRing_end
     [IsSemisimpleRing (R ⧸ Ring.jacobson R)] [IsCoatomic (Submodule R P)]
     [Module.Projective R P] [IsLocalRing (Module.End R P)] :
     IsSimpleModule R (P ⧸ Ring.jacobson R • (⊤ : Submodule R P)) := by
-  have := nontrivial_of_isLocalRing_end (A := R) (M := P)
+  have := nontrivial_of_nontrivial_end (R := R) (M := P)
   have : Nontrivial (P ⧸ Ring.jacobson R • (⊤ : Submodule R P)) :=
     Submodule.Quotient.nontrivial_iff.mpr (Submodule.jacobson_smul_lt_top ⊤).ne
   have := isSemisimpleModule_quotient_smul_top R (Ring.jacobson R) P
@@ -61,30 +90,35 @@ theorem IsIndecomposableModule.isSimpleModule_quotient_jacobson_smul_top
   have := isLocalRing_end_of_isIndecomposable hfin hP
   exact isSimpleModule_quotient_jacobson_smul_top_of_isLocalRing_end
 
-/-- If a module has simple head, every surjection onto a simple module has kernel exactly
-`J P`. This identifies all its simple quotients with its head. -/
-theorem ker_eq_jacobson_smul_top_of_surjective
+/-- If a module has simple head, every nonzero map into a semisimple module has kernel exactly
+`J P`. In particular, this identifies all its nonzero semisimple quotients with its head. -/
+theorem ker_eq_jacobson_smul_top_of_ne_zero
     [IsSimpleModule R (P ⧸ Ring.jacobson R • (⊤ : Submodule R P))]
-    [IsSimpleModule R S] {f : P →ₗ[R] S} (hf : Function.Surjective f) :
+    [IsSemisimpleModule R S] {f : P →ₗ[R] S} (hf : f ≠ 0) :
     LinearMap.ker f = Ring.jacobson R • (⊤ : Submodule R P) := by
   let N := Ring.jacobson R • (⊤ : Submodule R P)
   have hle : N ≤ LinearMap.ker f :=
     (Ring.jacobson_smul_top_le R P).trans (IsSemisimpleModule.jacobson_le_ker R R P S f)
   have hN : IsCoatom N := isSimpleModule_iff_isCoatom.mp inferInstance
-  exact (hN.le_iff_eq (LinearMap.isCoatom_ker_of_surjective hf).ne_top).mp hle
+  exact (hN.le_iff_eq (LinearMap.ker_eq_top.not.mpr hf)).mp hle
 
 /-- A surjection from a projective module with simple head and coatomic submodule lattice
-onto a simple module is a projective cover. -/
+onto any nonzero module is a projective cover. -/
 theorem isProjectiveCover_of_isSimpleModule_quotient_jacobson_smul_top
     [IsCoatomic (Submodule R P)] [Module.Projective R P]
     [IsSimpleModule R (P ⧸ Ring.jacobson R • (⊤ : Submodule R P))]
-    [IsSimpleModule R S] {f : P →ₗ[R] S} (hf : Function.Surjective f) :
+    [Nontrivial S] {f : P →ₗ[R] S} (hf : Function.Surjective f) :
     IsProjectiveCover f where
   projective := inferInstance
   surjective := hf
   isSuperfluous_ker := by
-    rw [ker_eq_jacobson_smul_top_of_surjective hf]
-    exact isSuperfluous_of_le_jacobson (Ring.jacobson_smul_top_le R P)
+    have hJ := isSuperfluous_of_le_jacobson (Ring.jacobson_smul_top_le R P)
+    have hcoatom : IsCoatom (Ring.jacobson R • (⊤ : Submodule R P)) :=
+      isSimpleModule_iff_isCoatom.mp inferInstance
+    have hsup : Ring.jacobson R • (⊤ : Submodule R P) ⊔ LinearMap.ker f ≠ ⊤ := fun h ↦
+      (LinearMap.ker_eq_top.not.mpr (LinearMap.ne_zero_of_surjective hf))
+        (hJ.eq_top_of_sup_eq_top h)
+    exact hJ.mono (le_sup_right.trans ((hcoatom.le_iff_eq hsup).mp le_sup_left).le)
 
 /-- A projective cover of a simple module is indecomposable. No finiteness or assumption on
 the radical of the ring is needed. -/

@@ -40,9 +40,6 @@ pointwise kernel.
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), §18.a.
-
-This supplies the isomorphism-invariance needed by the central-isogeny, simply-connected and
-adjoint-form targets in Layer 6 of the ReductiveGroups roadmap.
 -/
 
 public section
@@ -130,7 +127,7 @@ end IsIsogeny
 /-- Central isogenies are invariant under pre- and postcomposition with isomorphisms. -/
 instance centralIsogenies_respectsIso : (centralIsogenies k).RespectsIso := by
   rw [centralIsogenies_eq]
-  exact MorphismProperty.RespectsIso.inf (isogenies k)
+  exact MorphismProperty.RespectsIso.inf (isogenies (Spec (CommRingCat.of k)))
     (hasCentralKernel (Spec (CommRingCat.of k)))
 
 end Isogeny

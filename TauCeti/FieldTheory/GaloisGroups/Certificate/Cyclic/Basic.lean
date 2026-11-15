@@ -121,7 +121,7 @@ theorem _root_.Polynomial.irreducible_X5_add_X4_sub_4X3_sub_3X2_add_3X_add_1_zmo
   · have hdegree : (X ^ 5 + X ^ 4 + X ^ 2 + X + 1 : (ZMod 2)[X]).natDegree = 5 := by
       compute_degree!
     have horder : orderOf (ZMod.unitOfCoprime 2 (by decide : Nat.Coprime 2 31)) = 5 := by
-      apply orderOf_eq_of_pow_and_pow_div_prime (by decide)
+      apply orderOf_eq_of_pow_and_pow_div_prime
       · apply Units.ext
         decide
       · intro p hp hpdvd

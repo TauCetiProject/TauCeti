@@ -141,7 +141,7 @@ theorem circleMap_crossingCapSweep_endpoints (hL_L : L_L ≠ 0) (hL_R : L_R ≠ 
 parameters tend independently to `t₀`, `crossingCapSweep` tends to the negative crossing angle.
 Thus for a small window it chooses the local representative of the endpoint angle, not a cap with
 an additional full turn. -/
-theorem tendsto_crossingCapSweep (h_at : γ t₀ = s) (hL_L : L_L ≠ 0) (hL_R : L_R ≠ 0)
+theorem tendsto_crossingCapSweep (h_at : γ t₀ = s)
     (h_deriv_L : HasDerivWithinAt γ L_L (Iio t₀) t₀)
     (h_deriv_R : HasDerivWithinAt γ L_R (Ioi t₀) t₀) :
     Tendsto (fun p : ℝ × ℝ => crossingCapSweep γ t₀ L_R L_L
@@ -151,8 +151,8 @@ theorem tendsto_crossingCapSweep (h_at : γ t₀ = s) (hL_L : L_L ≠ 0) (hL_R :
     tendsto_fst
   have hsnd : Tendsto (fun p : ℝ × ℝ => p.2) ((𝓝[<] t₀) ×ˢ (𝓝[>] t₀)) (𝓝[>] t₀) :=
     tendsto_snd
-  have hleft := (tendsto_arg_neg_tangent_div_chord_nhdsLT h_at hL_L h_deriv_L).comp hfst
-  have hright := (tendsto_arg_chord_div_tangent_nhdsGT h_at hL_R h_deriv_R).comp hsnd
+  have hleft := (tendsto_arg_neg_tangent_div_chord_nhdsLT h_at h_deriv_L).comp hfst
+  have hright := (tendsto_arg_chord_div_tangent_nhdsGT h_at h_deriv_R).comp hsnd
   simpa only [crossingCapSweep, Function.comp_apply, zero_add, zero_sub] using
     (hleft.add hright).sub tendsto_const_nhds
 

@@ -42,11 +42,8 @@ theorem euler_four_squares (Q : QuadraticMap R M N) (a b c d : R) (x y z w : M) 
     Q (a • x - b • y - c • z - d • w) + Q (a • y + b • x + c • w - d • z) +
       Q (a • z - b • w + c • x + d • y) + Q (a • w + b • z - c • y + d • x) =
       (a ^ 2 + b ^ 2 + c ^ 2 + d ^ 2) • (Q x + Q y + Q z + Q w) := by
-  have hadd (u v : M) : Q (u + v) = Q u + Q v + polar Q u v := by rw [polar]; abel
-  have hsub (u v : M) : Q (u - v) = Q u + Q v - polar Q u v := by
-    rw [sub_eq_add_neg, hadd, polar_neg_right, QuadraticMap.map_neg]; abel
-  simp only [hadd, hsub, polar_add_left, polar_sub_left, polar_smul_left, polar_smul_right,
-    QuadraticMap.map_smul]
+  simp only [sub_eq_add_neg, QuadraticMap.map_add (⇑Q), QuadraticMap.map_neg, polar_add_left,
+    polar_neg_left, polar_neg_right, polar_smul_left, polar_smul_right, QuadraticMap.map_smul]
   -- Put every cross term in the form `polar Q u v` with `u` before `v` in `x, y, z, w`.
   rw [polar_comm Q y x, polar_comm Q z x, polar_comm Q w x, polar_comm Q z y, polar_comm Q w y,
     polar_comm Q w z]

@@ -393,7 +393,7 @@ noncomputable def toAdamsCompletion :
   map_d' a := Subtype.ext <| PowerSeries.ext fun n => by
     rw [coeff_adamsCompletionDifferential, GradedAlgHom.coe_mk]
     simp only [AlgHom.coe_codRestrict, coeff_gradedComponentSeries]
-    exact DirectSum.map_decompose_shift 𝒜 𝒜 d id Function.injective_id
+    exact DirectSum.map_decompose_shift 𝒜 𝒜 d.toAddMonoidHom id Function.injective_id
       (fun n _ hx => hd n hx) n a
 
 @[simp]

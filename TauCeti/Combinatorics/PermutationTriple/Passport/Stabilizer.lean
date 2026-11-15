@@ -61,15 +61,13 @@ theorem card_orbit_generatingTriple_mul_card_centralizer_eq_card_normalizer
   let C := Subgroup.centralizer (P.G : Set (Perm (Fin n)))
   let : Fintype N := Fintype.ofFinite N
   have h := MulAction.card_orbit_mul_card_stabilizer_eq_card_group N g
-  have hcard : Nat.card (C.subgroupOf N) = Nat.card C :=
-    Nat.card_congr (Subgroup.subgroupOfEquivOfLe (Subgroup.centralizer_le_normalizer
-      (P.G : Set (Perm (Fin n))))).toEquiv
   have hstab : Nat.card (MulAction.stabilizer N g) = Nat.card C := by
     calc
       _ = Nat.card (C.subgroupOf N) :=
         congrArg (fun H : Subgroup N => Nat.card H)
           (stabilizer_generatingTriple_eq_centralizer_subgroupOf P g)
-      _ = Nat.card C := hcard
+      _ = Nat.card C := Nat.card_congr (Subgroup.subgroupOfEquivOfLe
+        (Subgroup.centralizer_le_normalizer (P.G : Set (Perm (Fin n))))).toEquiv
   have h' : Nat.card (MulAction.orbit N g) * Nat.card (MulAction.stabilizer N g) =
       Nat.card N := by simpa only [Nat.card_eq_fintype_card] using h
   simpa only [hstab] using h'

@@ -122,7 +122,7 @@ theorem isEssentialMono_simpleRepToIndecInjRep {i : Q}
     (h : ∀ p : Quiver.Path i i, p = Quiver.Path.nil) :
     IsEssentialMono (simpleRepToIndecInjRep k i) where
   mono := inferInstance
-  mono_of_comp_mono g hg := by
+  mono_of_mono_comp g hg := by
     have := isSplitMono_of_mono_simpleRepToIndecInjRep_comp k h g hg
     infer_instance
 

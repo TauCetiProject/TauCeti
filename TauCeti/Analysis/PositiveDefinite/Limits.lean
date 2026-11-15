@@ -18,11 +18,10 @@ This file derives pointwise- and locally-uniform-limit closure for
 `TauCeti.IsPositiveDefinite`, the positive-definite function predicate on an involutive additive
 monoid, from Mathlib's closedness theorem for the cone of positive-semidefinite matrices.
 
-This is the limit-closure item from Part C of the `OneParameterSemigroups` roadmap. The result is
-about positive-definiteness alone for pointwise limits; as the roadmap notes, continuity needs an
-additional hypothesis. Mathlib's `TendstoLocallyUniformly.continuous` provides continuity of a
-locally uniform limit when the approximating functions are frequently continuous, while this file
-provides the positive-definiteness conclusion.
+The result is about positive-definiteness alone for pointwise limits; continuity needs an additional
+hypothesis. Mathlib's `TendstoLocallyUniformly.continuous` provides continuity of a locally uniform
+limit when the approximating functions are frequently continuous, while this file provides the
+positive-definiteness conclusion.
 
 ## Main declarations
 
@@ -61,7 +60,7 @@ theorem of_tendsto {ι : Type*} {l : Filter ι} [NeBot l] {F : ι → M → ℂ}
     (hlim : ∀ x : M, Tendsto (fun i => F i x) l (𝓝 (G x))) :
     IsPositiveDefinite G :=
   of_posSemidef <|
-    Matrix.posSemidef_is_closed.mem_of_tendsto
+    isClosed_setOfPred_posSemidef.mem_of_tendsto
       (tendsto_pi_nhds.2 fun a => tendsto_pi_nhds.2 fun b => hlim (a + star b))
       (hF.mono fun _ hi => hi.posSemidef)
 

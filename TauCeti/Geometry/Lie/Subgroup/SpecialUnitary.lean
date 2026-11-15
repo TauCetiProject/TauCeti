@@ -104,6 +104,18 @@ theorem unitsLieAlgebraLieEquiv_symm_mem_GLSpecialUnitary_lieSubalgebra_iff (A :
     unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_mem_sl,
     LieAlgebra.SpecialLinear.mem_sl_iff]
 
+/-- The matrix coordinates of an element of the Lie algebra of the special unitary group are
+trace-free, that is, they lie in the special linear Lie algebra `LieAlgebra.SpecialLinear.sl`. -/
+theorem unitsLieAlgebraLieEquiv_coe_mem_sl
+    (X : lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n 𝕜))
+      (GLSpecialUnitary n 𝕜 : Subgroup (Matrix n n 𝕜)ˣ)) :
+    unitsLieAlgebraLieEquiv (R := Matrix n n 𝕜) (X : LeftInvariantDerivation _ _) ∈
+      LieAlgebra.SpecialLinear.sl n 𝕜 := by
+  have hX := X.2
+  rw [← (unitsLieAlgebraLieEquiv (R := Matrix n n 𝕜)).symm_apply_apply X.1,
+    unitsLieAlgebraLieEquiv_symm_mem_GLSpecialUnitary_lieSubalgebra_iff] at hX
+  exact LieAlgebra.SpecialLinear.mem_sl_iff.2 hX.2
+
 /-- Over `ℝ` the special unitary group is Mathlib's special orthogonal group, and its Lie algebra
 is the orthogonal Lie algebra `LieAlgebra.Orthogonal.so n ℝ`: the trace of a skew-symmetric matrix
 is its own negative, so the determinant condition contributed nothing. -/

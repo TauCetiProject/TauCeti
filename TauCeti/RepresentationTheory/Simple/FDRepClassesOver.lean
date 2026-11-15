@@ -81,7 +81,7 @@ def mk (U : FDRep k H) [hU : Simple U] (h : U.LiesOver φ V) : SimpleFDRepClasse
 /-- Two simple representations lying over `V` have the same class exactly when they are
 isomorphic. -/
 @[simp]
-theorem mk_eq_mk_iff (U U' : FDRep k H) [hU : Simple U] [hU' : Simple U']
+theorem mk_eq_mk_iff (U U' : FDRep k H) [Simple U] [Simple U']
     (h : U.LiesOver φ V) (h' : U'.LiesOver φ V) : mk U h = mk U' h' ↔ Nonempty (U ≅ U') :=
   ObjectProperty.toSkeleton_eq_toSkeleton_iff_nonempty_iso (simpleLiesOver φ V) _ _
 

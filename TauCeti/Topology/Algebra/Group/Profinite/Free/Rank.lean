@@ -208,13 +208,18 @@ theorem frattiniQuotientBasis_apply (x : X) :
       Additive.ofMul (QuotientGroup.mk' (proPFrattini p (freeProP p X)) (of x)) :=
   Module.Basis.mk_apply _ _ x
 
-/-- The Frattini quotient of the free pro-`p` group on a finite type `X` has dimension
-`Nat.card X` over `𝔽_p`. -/
+omit [Finite X] in
+/-- The Frattini quotient of the free pro-`p` group on a type `X` has dimension `Nat.card X` over
+`𝔽_p`: for infinite `X` both sides are `0`, as the quotient is not finite-dimensional. -/
 @[simp]
 theorem finrank_quotient_proPFrattini :
     Module.finrank (ZMod p) (Additive (freeProP p X ⧸ proPFrattini p (freeProP p X))) =
-      Nat.card X :=
-  Module.finrank_eq_nat_card_basis (frattiniQuotientBasis p X)
+      Nat.card X := by
+  by_cases hX : Finite X
+  · exact Module.finrank_eq_nat_card_basis (frattiniQuotientBasis p X)
+  · rw [not_finite_iff_infinite] at hX
+    simpa only [Nat.card_eq_zero_of_infinite] using
+      (linearIndependent_frattiniQuotient_of p X).finrank_eq_zero_of_infinite
 
 /-! ### The dual basis of the generators -/
 
@@ -400,15 +405,15 @@ theorem mk_lt_topologicalGeneratorRank_freeProP [Infinite X] :
   rw [topologicalGeneratorRank_freeProP_of_infinite]
   exact Cardinal.cantor' #X (by exact_mod_cast (Fact.out : p.Prime).one_lt)
 
-variable [Finite X]
-
-/-- **The free pro-`p` group on a finite type `X` has topological generator rank `Nat.card X`**,
-in natural-number form. -/
+/-- **The free pro-`p` group on a type `X` has topological generator rank `Nat.card X`**, in
+natural-number form, assuming that it is topologically finitely generated. -/
 @[simp]
 theorem topologicalGeneratorRankNat_freeProP (h : IsTopologicallyFinitelyGenerated (freeProP p X)) :
     topologicalGeneratorRankNat (freeProP p X) h = Nat.card X := by
   rw [(isProP_freeProP p X).topologicalGeneratorRankNat_eq_finrank_quotient_proPFrattini h,
     freeProP.finrank_quotient_proPFrattini]
+
+variable [Finite X]
 
 /-- **The free pro-`p` group on a finite type `X` has topological generator rank `#X`**, in
 cardinal form. -/

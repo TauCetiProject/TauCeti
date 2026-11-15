@@ -12,9 +12,8 @@ import Mathlib.Tactic.Abel
 /-!
 # Principal divisors and the divisor class group of an order system
 
-This file adds the next piece of the Jacobian roadmap's Layer A on top of the formal Weil
-divisor group: **principal divisors**, the **divisor class group** `Cl(X)`, and the abstract
-degree-zero subgroup `Pic⁰`.
+This file adds, on top of the formal Weil divisor group, **principal divisors**, the **divisor class
+group** `Cl(X)`, and the abstract degree-zero subgroup `Pic⁰`.
 
 The geometric input is packaged as an `OrderSystem`: a family of `ℤ`-valued order-of-vanishing
 homomorphisms `ord x : G →+ ℤ` indexed by the points `X`, with the finiteness condition that
@@ -38,19 +37,16 @@ From this data we build:
   here as the hypothesis `IsWeightedDegreeZero`), the weighted degree descends to the class
   group, and `Pic⁰` is the kernel of that descended weighted degree.
 
-This advances the Layer A roadmap item "principal divisors" and constructs the abstract
-"`Pic⁰ X = ker deg` (as an abstract group, with the geometric degree supplied as a weight)" of
-`TauCetiRoadmap/JacobianChallenge/README.md`. It builds only the divisor-class side `Cl(X)` of
-the later "`Cl(X) ≅ Pic X`" comparison: the Picard group and the equivalence to it are not
-constructed here, but are later geometric work, before the Picard functor and Picard scheme
-exist. The geometric `ord_x` (residue-field valuations of a function field) and the proof that
-a principal divisor has weighted degree zero are later geometric constructions; here both are
-abstracted to the data of an `OrderSystem`, a weight function, and the predicate
-`IsWeightedDegreeZero`.
+The abstract `Pic⁰` is the kernel of the degree, with the geometric degree supplied as a weight.
+This file builds only the divisor-class side `Cl(X)` of the comparison `Cl(X) ≅ Pic X`: the Picard
+group and the equivalence to it are not constructed here. Nor are the geometric `ord_x`
+(residue-field valuations of a function field) and the proof that a principal divisor has weighted
+degree zero; both are abstracted to the data of an `OrderSystem`, a weight function, and the
+predicate `IsWeightedDegreeZero`.
 
-No external mathematics is vendored. This reuses Tau Ceti's existing `WeilDivisor` API and
-Mathlib's `Finsupp.ofSupportFinite` (to assemble a finitely supported function from
-coordinatewise data) and `QuotientAddGroup` quotient machinery.
+No external mathematics is vendored. This reuses Tau Ceti's `WeilDivisor` API and Mathlib's
+`Finsupp.ofSupportFinite` (to assemble a finitely supported function from coordinatewise data) and
+`QuotientAddGroup` quotient machinery.
 -/
 
 public section
@@ -293,8 +289,8 @@ lemma weightedDegree_eq_of_linearlyEquivalent (w : X → ℤ) (h : S.IsWeightedD
   rw [← weightedDegreeClass_divisorClass w h D,
     S.divisorClass_eq_iff.mpr hDE, weightedDegreeClass_divisorClass]
 
-/-- The weighted-degree-zero part of the divisor class group, the abstract `Pic⁰` of the
-Jacobian roadmap: the kernel of the weighted degree map on divisor classes. -/
+/-- The weighted-degree-zero part of the divisor class group, the abstract `Pic⁰`: the kernel of the
+weighted degree map on divisor classes. -/
 @[expose] noncomputable def picZero (w : X → ℤ) (h : S.IsWeightedDegreeZero w) :
     AddSubgroup S.ClassGroup :=
   (weightedDegreeClass w h).ker

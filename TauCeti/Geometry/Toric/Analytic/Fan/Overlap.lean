@@ -73,7 +73,7 @@ theorem isOpenEmbedding_analyticOverlapRight (hΦ : Φ.IsRegular) (σ τ : Φ.co
   exact Φ.isOpenEmbedding_analyticAffineChartDiagram_map hΦ _
 
 /-- The open overlap locus in the first affine chart. -/
-def analyticOverlapOpens (σ τ : Φ.cones) : TopologicalSpace.Opens
+noncomputable def analyticOverlapOpens (σ τ : Φ.cones) : TopologicalSpace.Opens
     ((Φ.analyticAffineChartDiagram).obj σ) :=
   ⟨Set.range (Φ.analyticOverlapLeft σ τ),
     (Φ.isOpenEmbedding_analyticOverlapLeft hΦ σ τ).isOpen_range⟩

@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 public import TauCeti.KnotTheory.Grid.Differential.Square.Support
 public import TauCeti.KnotTheory.Grid.Rectangle.Swap
+public import TauCeti.KnotTheory.Grid.TwoStepDecomposition
 
 /-!
 # Two-step rectangle decompositions
@@ -17,22 +17,22 @@ intermediate grid state and a second rectangle from that state to `z`. This file
 factorization as `GridRectangleDecomposition`, the shared object on which the disjoint,
 overlapping and annular cases of the square-zero argument all operate.
 
-Such a factorization is determined by the ordered side columns of its two rectangles: the
-intermediate state is the source with the first pair of columns swapped, and an oriented rectangle
-between two given states is determined by its side columns.
+Such a factorization is determined by the ordered side columns of its first rectangle and the
+initial side column of its second rectangle: the intermediate state is the source with the first
+pair of columns swapped, and an oriented rectangle between two given states is determined by its
+initial side column.
 
 ## Main definitions
 
-* `TauCeti.GridRectangleDecomposition`: two composable oriented grid rectangles.
-* `TauCeti.GridRectangleDecomposition.decompositionsOf`: composable pairs drawn from any family
-  of finite rectangle sets.
+* `TauCeti.GridRectangleDecomposition`: two composable oriented grid rectangles, the two-step
+  decomposition `TauCeti.GridTwoStepDecomposition` with both steps rectangles.
 
 ## Main results
 
 * `TauCeti.GridRectangleDecomposition.ext`: a decomposition is determined by the ordered side
-  columns of its two rectangles.
-* `TauCeti.GridRectangleDecomposition.sides_injective`: the same statement as
-  injectivity of the ordered quadruple of side columns.
+  columns of its first rectangle and the initial side column of its second rectangle.
+* `TauCeti.GridRectangleDecomposition.sides_injective`: the ordered quadruple of side columns
+  determines the decomposition, a corollary of `ext`.
 * `TauCeti.GridRectangleDecomposition.target_apply_of_notMem_sideColumns`: away from the four
   side columns the target of a decomposition agrees with its source.
 * `TauCeti.GridRectangleDecomposition.transpose` and `transposeEquiv`: diagonal reflection of
@@ -40,6 +40,9 @@ between two given states is determined by its side columns.
   original and transposed endpoint states.
 * `TauCeti.GridRectangleDecomposition.target_mem_twoStepColumnSwapNeighbors`: the target of a
   decomposition is reached from its source by two nontrivial column transpositions.
+* `TauCeti.GridRectangleDecomposition.sides_of_middle_eq_swapRows`: when the intermediate state
+  swaps two rows of the source, the side columns of both rectangles are read off from the rows of
+  their corners.
 
 ## References
 
@@ -53,26 +56,21 @@ namespace TauCeti
 
 /-- A decomposition of a two-step rectangle domain from `x` to `z` through an intermediate grid
 state. -/
-structure GridRectangleDecomposition {n : ℕ} (x z : GridState n) where
-  /-- The grid state between the two rectangle moves. -/
-  middle : GridState n
-  /-- The first oriented rectangle, from the source to the intermediate state. -/
-  first : GridRectangleBetween x middle
-  /-- The second oriented rectangle, from the intermediate state to the target. -/
-  second : GridRectangleBetween middle z
+abbrev GridRectangleDecomposition {n : ℕ} (x z : GridState n) :=
+  GridTwoStepDecomposition GridRectangleBetween GridRectangleBetween x z
 
 namespace GridRectangleDecomposition
 
 variable {n : ℕ} {x z : GridState n}
 
-/-- Two rectangle decompositions are equal when their ordered side columns agree: the first pair
-already determines the intermediate state. -/
+/-- Two rectangle decompositions are equal when the side columns of their first rectangles and
+the initial side columns of their second rectangles agree: the first pair already determines the
+intermediate state, and the initial side column then determines the second rectangle. -/
 @[ext]
 theorem ext {D E : GridRectangleDecomposition x z}
     (hfirstLeft : D.first.left = E.first.left)
     (hfirstRight : D.first.right = E.first.right)
-    (hsecondLeft : D.second.left = E.second.left)
-    (hsecondRight : D.second.right = E.second.right) : D = E := by
+    (hsecondLeft : D.second.left = E.second.left) : D = E := by
   have hmiddle : D.middle = E.middle := by
     rw [D.first.target_eq_swapColumns, hfirstLeft, hfirstRight,
       ← E.first.target_eq_swapColumns]
@@ -86,7 +84,7 @@ theorem ext {D E : GridRectangleDecomposition x z}
             GridRectangleBetween.ext hfirstLeft hfirstRight
           subst Efirst
           have hsecond : Dsecond = Esecond :=
-            GridRectangleBetween.ext hsecondLeft hsecondRight
+            GridRectangleBetween.left_injective hsecondLeft
           subst Esecond
           rfl
 
@@ -97,7 +95,7 @@ theorem sides_injective (x z : GridState n) :
       (D.first.left, D.first.right, D.second.left, D.second.right) := by
   intro D E h
   simp only [Prod.mk.injEq] at h
-  exact ext h.1 h.2.1 h.2.2.1 h.2.2.2
+  exact ext h.1 h.2.1 h.2.2.1
 
 /-- Two-step rectangle decompositions between fixed states have decidable equality: such a
 decomposition is determined by its four side columns. -/
@@ -267,54 +265,22 @@ theorem target_mem_twoStepColumnSwapNeighbors (D : GridRectangleDecomposition x 
       GridState.mem_columnSwapNeighbors.mpr
         ⟨D.second.left, D.second.right, D.second.left_ne_right, D.second.target_eq_swapColumns⟩⟩
 
-private def decompositionSigmaEquiv (x z : GridState n) :
-    GridRectangleDecomposition x z ≃
-      (Σ y : GridState n,
-        Σ _first : GridRectangleBetween x y, GridRectangleBetween y z) where
-  toFun D := ⟨D.middle, D.first, D.second⟩
-  invFun D := ⟨D.1, D.2.1, D.2.2⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-
-/-- The finite set of two-step decompositions whose two rectangles belong to a prescribed family
-of finite rectangle sets. -/
-noncomputable def decompositionsOf
-    (S : ∀ u v : GridState n, Finset (GridRectangleBetween u v))
-    (x z : GridState n) : Finset (GridRectangleDecomposition x z) :=
-  (((Finset.univ : Finset (GridState n)).sigma fun y =>
-      (S x y).sigma fun _first => S y z).map
-    (decompositionSigmaEquiv x z).symm.toEmbedding)
-
-/-- A decomposition belongs to `decompositionsOf S` exactly when each rectangle belongs to the
-corresponding set in `S`. -/
-@[simp]
-theorem mem_decompositionsOf
-    (S : ∀ u v : GridState n, Finset (GridRectangleBetween u v))
-    (x z : GridState n) (D : GridRectangleDecomposition x z) :
-    D ∈ decompositionsOf S x z ↔
-      D.first ∈ S x D.middle ∧ D.second ∈ S D.middle z := by
-  classical
-  simp [decompositionsOf, decompositionSigmaEquiv]
-
-/-- The cardinality of `decompositionsOf S x z` is the sum, over intermediate states, of the
-product of the two rectangle-set cardinalities. -/
-theorem card_decompositionsOf
-    (S : ∀ u v : GridState n, Finset (GridRectangleBetween u v))
-    (x z : GridState n) :
-    (decompositionsOf S x z).card = ∑ y, (S x y).card * (S y z).card := by
-  classical
-  simp [decompositionsOf, Finset.card_sigma]
-
-/-- Summing over `decompositionsOf` is the corresponding iterated sum over the intermediate state
-and the two selected rectangles. -/
-theorem sum_decompositionsOf {M : Type*} [AddCommMonoid M]
-    (S : ∀ u v : GridState n, Finset (GridRectangleBetween u v))
-    (x z : GridState n)
-    (w : ∀ y, GridRectangleBetween x y → GridRectangleBetween y z → M) :
-    ∑ D ∈ decompositionsOf S x z, w D.middle D.first D.second =
-      ∑ y, ∑ r₁ ∈ S x y, ∑ r₂ ∈ S y z, w y r₁ r₂ := by
-  classical
-  simp [decompositionsOf, decompositionSigmaEquiv, Finset.sum_sigma']
+/-- The side columns of a decomposition whose intermediate state swaps two rows of the source,
+read off from the rows of its corners. -/
+theorem sides_of_middle_eq_swapRows {E : GridRectangleDecomposition x z}
+    {a b c d e f : Fin n} (hmiddle : E.middle = x.swapRows (x a) (x b))
+    (hfirstBottom : E.first.bottom = x c) (hfirstTop : E.first.top = x d)
+    (hsecondBottom : E.second.bottom = x e) (hsecondTop : E.second.top = x f) :
+    E.first.left = c ∧ E.first.right = d ∧
+      E.second.left = Equiv.swap a b e ∧ E.second.right = Equiv.swap a b f := by
+  rw [← GridState.swapColumns_eq_swapRows] at hmiddle
+  refine ⟨x.toPerm.injective hfirstBottom, x.toPerm.injective hfirstTop,
+    GridState.eq_swap_of_swapColumns_apply_eq (x := x) ?_,
+    GridState.eq_swap_of_swapColumns_apply_eq (x := x) ?_⟩
+  · rw [← hmiddle]
+    exact hsecondBottom
+  · rw [← hmiddle]
+    exact hsecondTop
 
 end GridRectangleDecomposition
 

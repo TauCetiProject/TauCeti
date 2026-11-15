@@ -1,0 +1,350 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Extension
+
+/-!
+# The decomposition group of an infinite place acts on the completion
+
+Let `L/K` be an extension of number fields, `v` an infinite place of `K`, and `w` an infinite
+place of `L` above `v`. An automorphism `σ ∈ Aut(L/K)` carries `w` to the place `σ • w`, and it
+is an isometry from `L` with the absolute value `w` to `L` with the absolute value `σ • w`
+(`apply_eq_of_eq_smul`). It therefore extends by continuity to an isomorphism of completions
+`L_w ≃ₐ[K_v] L_{σ • w}`, `completionCongr`. Restricted to the stabilizer of `w`, its
+decomposition group, this gives
+
+```text
+decompositionHom v w : MulAction.stabilizer (L ≃ₐ[K] L) w →* (L_w ≃ₐ[K_v] L_w).
+```
+
+When `L/K` is Galois this homomorphism is an isomorphism, `decompositionEquiv`: the
+decomposition group of `w` *is* the Galois group of `L_w/K_v`. Injectivity is density of `L` in
+`L_w`; surjectivity is a count. The decomposition group has one element when `w` is unramified
+over `K` and two when it is ramified, which is the local degree `[L_w : K_v]`, and a finite
+extension of fields has at most `[L_w : K_v]` automorphisms.
+
+The target place of `completionCongr` is an arbitrary `w'` together with the equation
+`w' = σ • w`, so that no transport along an equality of places is needed. Both completions carry
+Mathlib's `K_v`-algebra structure `AbsoluteValue.Completion.algebraOfLiesOver`, used here as a
+local instance.
+
+These are the archimedean counterparts of `IsDedekindDomain.HeightOneSpectrum.completionCongr`,
+`IsDedekindDomain.HeightOneSpectrum.decompositionHom` and
+`IsDedekindDomain.HeightOneSpectrum.decompositionEquiv` at the finite places. Like them, they
+are what identifies the units of `K_v ⊗[K] L ≃ ∏_{w ∣ v} L_w` with a representation coinduced
+from the decomposition group.
+
+## Main definitions
+
+* `NumberField.InfinitePlace.completionCongr`: the isomorphism `L_w ≃ₐ[K_v] L_{w'}` induced by
+  `σ` when `w' = σ • w`.
+* `NumberField.InfinitePlace.decompositionHom`: the action of the decomposition group of `w` on
+  `L_w`.
+* `NumberField.InfinitePlace.decompositionEquiv`: that action, as an isomorphism onto the local
+  Galois group, when `L/K` is Galois.
+
+## Main results
+
+* `NumberField.InfinitePlace.toRingEquiv_completionCongr`,
+  `NumberField.InfinitePlace.completionCongr_algebraMap`,
+  `NumberField.InfinitePlace.norm_completionCongr`, and
+  `NumberField.InfinitePlace.eq_completionCongr_of_continuous`: `completionCongr` lifts
+  `AbsoluteValue.Completion.congr`, preserves the norm, and extends `σ` uniquely among continuous
+  maps.
+* `NumberField.InfinitePlace.decompositionHom_injective`: the decomposition group embeds into
+  `Aut(L_w/K_v)`, and `restrictNormalHom_restrictScalarsHom_decompositionHom` says that restricting
+  its action back to `L` recovers the automorphism.
+* `NumberField.InfinitePlace.stabilizer_eq_bot_of_adjoin_eq_top`: the decomposition group is
+  trivial when `L` is generated over `K` by elements whose images in `L_w` come from `K_v`; for
+  `L/K` Galois the local degree is then one
+  (`NumberField.InfinitePlace.finrank_completion_eq_one_of_adjoin_eq_top`).
+* `NumberField.InfinitePlace.card_stabilizer_eq_finrank_completion`: for `L/K` Galois the
+  decomposition group has `[L_w : K_v]` elements.
+* `NumberField.InfinitePlace.finrank_completion_eq_ite`: for `L/K` Galois, `[L_w : K_v]` is `1`
+  or `2` according as `v` is unramified in `L` or not.
+* `NumberField.InfinitePlace.decompositionHom_surjective`: for `L/K` Galois every
+  `K_v`-automorphism of `L_w` comes from the decomposition group.
+* `NumberField.InfinitePlace.isGalois_completion`: `L_w/K_v` is Galois.
+
+## References
+
+* [J. Neukirch, *Algebraic Number Theory*][Neukirch1992], Chapter II, §8 and §9.
+-/
+
+public section
+noncomputable section
+
+open Module
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
+
+namespace NumberField.InfinitePlace
+
+variable {K L : Type*} [Field K] [Field L] [Algebra K L]
+
+/-- An automorphism `σ` of `L/K` carries the absolute value `w` to the absolute value `w'` when
+`w' = σ • w`. -/
+theorem apply_eq_of_eq_smul (σ : L ≃ₐ[K] L) {w w' : InfinitePlace L} (h : w' = σ • w) (x : L) :
+    w' (σ x) = w x := by
+  subst h
+  simp
+
+/-- The Galois action on the places of `L` preserves the places above a place `v` of `K`. -/
+instance liesOver_smul (v : InfinitePlace K) (σ : L ≃ₐ[K] L) (w : InfinitePlace L)
+    [w.LiesOver v] : (σ • w).LiesOver v := by
+  have h : (σ • w).comap (algebraMap K L) = v := by
+    rw [comap_smul, ← LiesOver.comap_eq w v]
+    congr 1
+    ext x
+    simp
+  exact ⟨congrArg Subtype.val h⟩
+
+variable (v : InfinitePlace K)
+
+/-- The isomorphism of completions `L_w ≃ₐ[K_v] L_{w'}` induced by an automorphism `σ` of `L/K`
+carrying `w` to `w'`: the continuous extension of `σ`. -/
+def completionCongr (σ : L ≃ₐ[K] L) {w w' : InfinitePlace L} [w.LiesOver v] [w'.LiesOver v]
+    (h : w' = σ • w) : w.Completion ≃ₐ[v.Completion] w'.Completion :=
+  AlgEquiv.ofRingEquiv
+    (f := AbsoluteValue.Completion.congr σ.toRingEquiv (apply_eq_of_eq_smul σ h)) fun a ↦ by
+    -- both sides are continuous in `a`, and `σ` fixes the image of `K`
+    induction a using AbsoluteValue.Completion.induction_on with
+    | hp =>
+      exact isClosed_eq
+        ((AbsoluteValue.Completion.continuous_congr _).comp
+          (continuous_algebraMap v.Completion w.Completion))
+        (continuous_algebraMap v.Completion w'.Completion)
+    | ih a =>
+      rw [AbsoluteValue.Completion.algebraMap_apply_of_liesOver,
+        AbsoluteValue.Completion.algebraMap_apply_of_liesOver, AbsoluteValue.Completion.map_coe,
+        AbsoluteValue.Completion.map_coe, AbsoluteValue.Completion.congr_coe]
+      congr 2
+      apply WithAbs.ofAbs_injective
+      simp
+
+variable {v}
+
+section completionCongr
+
+variable {w w' : InfinitePlace L} [w.LiesOver v] [w'.LiesOver v]
+
+/-- The ring isomorphism underlying `completionCongr` is `AbsoluteValue.Completion.congr`. -/
+@[simp]
+theorem toRingEquiv_completionCongr (σ : L ≃ₐ[K] L) (h : w' = σ • w) :
+    (completionCongr v σ h).toRingEquiv =
+      AbsoluteValue.Completion.congr σ.toRingEquiv (apply_eq_of_eq_smul σ h) :=
+  (rfl)
+
+/-- `completionCongr v σ h` extends `σ`. -/
+@[simp]
+theorem completionCongr_algebraMap (σ : L ≃ₐ[K] L) (h : w' = σ • w) (x : L) :
+    completionCongr v σ h (x : w.Completion) = (σ x : w'.Completion) :=
+  AbsoluteValue.Completion.congr_coe (apply_eq_of_eq_smul σ h) (WithAbs.toAbs w.1 x)
+
+/-- `completionCongr` preserves the norm. -/
+@[simp]
+theorem norm_completionCongr (σ : L ≃ₐ[K] L) (h : w' = σ • w) (x : w.Completion) :
+    ‖completionCongr v σ h x‖ = ‖x‖ :=
+  AbsoluteValue.Completion.norm_congr (apply_eq_of_eq_smul σ h) x
+
+variable (v) in
+/-- `completionCongr` is continuous. -/
+@[continuity, fun_prop]
+theorem continuous_completionCongr (σ : L ≃ₐ[K] L) (h : w' = σ • w) :
+    Continuous (completionCongr v σ h) :=
+  AbsoluteValue.Completion.continuous_congr (apply_eq_of_eq_smul σ h)
+
+variable (v) in
+/-- The inverse of `completionCongr` is continuous. -/
+@[continuity, fun_prop]
+theorem continuous_completionCongr_symm (σ : L ≃ₐ[K] L) (h : w' = σ • w) :
+    Continuous (completionCongr v σ h).symm :=
+  AbsoluteValue.Completion.continuous_congr_symm (apply_eq_of_eq_smul σ h)
+
+/-- `completionCongr` is the only continuous map `L_w → L_{w'}` extending `σ`. -/
+theorem eq_completionCongr_of_continuous (σ : L ≃ₐ[K] L) (h : w' = σ • w)
+    {f : w.Completion → w'.Completion} (hf : Continuous f)
+    (hfL : ∀ x : L, f (algebraMap L w.Completion x) = algebraMap L w'.Completion (σ x)) :
+    f = completionCongr v σ h := by
+  rw [← AlgEquiv.coe_toRingEquiv, toRingEquiv_completionCongr]
+  exact AbsoluteValue.Completion.eq_congr_of_continuous (apply_eq_of_eq_smul σ h) hf hfL
+
+/-- `completionCongr` of the identity is the identity. -/
+@[simp]
+theorem completionCongr_one :
+    completionCongr (w := w) (w' := w) v (1 : L ≃ₐ[K] L) (by simp) = AlgEquiv.refl :=
+  AlgEquiv.toRingEquiv_injective (AbsoluteValue.Completion.congr_refl _)
+
+/-- `completionCongr` is multiplicative: transporting along `σ` and then along `τ` is
+transporting along `τ * σ`. -/
+@[simp]
+theorem completionCongr_trans {w'' : InfinitePlace L} [w''.LiesOver v]
+    (σ τ : L ≃ₐ[K] L) (hσ : w' = σ • w) (hτ : w'' = τ • w') :
+    (completionCongr v σ hσ).trans (completionCongr v τ hτ) =
+      completionCongr v (τ * σ) (by rw [hτ, hσ, mul_smul]) :=
+  AlgEquiv.toRingEquiv_injective (AbsoluteValue.Completion.congr_trans _ _)
+
+/-- Pointwise composition of `completionCongr`. -/
+@[simp]
+theorem completionCongr_trans_apply {w'' : InfinitePlace L} [w''.LiesOver v]
+    (σ τ : L ≃ₐ[K] L) (hσ : w' = σ • w) (hτ : w'' = τ • w') (x : w.Completion) :
+    completionCongr v τ hτ (completionCongr v σ hσ x) =
+      completionCongr v (τ * σ) (by rw [hτ, hσ, mul_smul]) x :=
+  DFunLike.congr_fun (completionCongr_trans σ τ hσ hτ) x
+
+/-- The inverse of `completionCongr v σ h` is `completionCongr` of `σ⁻¹`. -/
+@[simp]
+theorem completionCongr_symm (σ : L ≃ₐ[K] L) (h : w' = σ • w) :
+    (completionCongr v σ h).symm = completionCongr v σ⁻¹ (by rw [h, inv_smul_smul]) :=
+  AlgEquiv.toRingEquiv_injective (AbsoluteValue.Completion.congr_symm _)
+
+end completionCongr
+
+variable (v) (w : InfinitePlace L) [w.LiesOver v]
+
+/-- The action of the decomposition group of `w` on the completion `L_w`: each element of the
+stabilizer of `w` extends by continuity to a `K_v`-algebra automorphism of `L_w`. -/
+def decompositionHom :
+    MulAction.stabilizer (L ≃ₐ[K] L) w →* (w.Completion ≃ₐ[v.Completion] w.Completion) where
+  toFun τ := completionCongr v (τ : L ≃ₐ[K] L) (MulAction.mem_stabilizer_iff.mp τ.2).symm
+  map_one' := completionCongr_one
+  map_mul' σ τ := (completionCongr_trans (τ : L ≃ₐ[K] L) (σ : L ≃ₐ[K] L)
+      (MulAction.mem_stabilizer_iff.mp τ.2).symm
+      (MulAction.mem_stabilizer_iff.mp σ.2).symm).symm
+
+variable {v w}
+
+/-- An element of the decomposition group acts on `L_w` by `completionCongr`. -/
+theorem decompositionHom_apply (τ : MulAction.stabilizer (L ≃ₐ[K] L) w) :
+    decompositionHom v w τ =
+      completionCongr v (τ : L ≃ₐ[K] L) (MulAction.mem_stabilizer_iff.mp τ.2).symm :=
+  (rfl)
+
+/-- The defining property of `decompositionHom`: on `L` it is the action of the automorphism. -/
+@[simp]
+theorem decompositionHom_algebraMap (τ : MulAction.stabilizer (L ≃ₐ[K] L) w) (x : L) :
+    decompositionHom v w τ (x : w.Completion) = ((τ : L ≃ₐ[K] L) x : w.Completion) := by
+  rw [decompositionHom_apply, completionCongr_algebraMap]
+
+/-- Restricting the action of an element of the decomposition group on `L_w` back to `L` recovers
+the element: composing `decompositionHom` with restriction `Aut(L_w/K_v) → Aut(L/K)` recovers the
+inclusion of the decomposition subgroup into `Aut(L/K)`. -/
+@[simp]
+theorem restrictNormalHom_restrictScalarsHom_decompositionHom [Normal K L]
+    (τ : MulAction.stabilizer (L ≃ₐ[K] L) w) :
+    (AlgEquiv.restrictNormalHom L).comp (AlgEquiv.restrictScalarsHom K) (decompositionHom v w τ) =
+      τ := by
+  ext x
+  refine (algebraMap L w.Completion).injective <|
+    (AlgEquiv.restrictNormal_commutes ((decompositionHom v w τ).restrictScalars K) L x).trans ?_
+  rw [AlgEquiv.restrictScalars_apply, Completion.algebraMap_apply_eq_coe,
+    Completion.algebraMap_apply_eq_coe, decompositionHom_algebraMap]
+
+variable (v w) in
+/-- The decomposition group of `w` acts faithfully on `L_w`. -/
+theorem decompositionHom_injective : Function.Injective (decompositionHom v w) := by
+  rw [injective_iff_map_eq_one]
+  intro τ hτ
+  ext x
+  have := congr($hτ (x : w.Completion))
+  rw [decompositionHom_algebraMap, AlgEquiv.one_apply, ← Completion.algebraMap_apply_eq_coe,
+    ← Completion.algebraMap_apply_eq_coe] at this
+  exact (algebraMap L w.Completion).injective this
+
+/-- An element of the decomposition group of `w` fixes every `x ∈ L` whose image in `L_w` comes
+from `K_v`: its action on `L_w` is `K_v`-linear and extends its action on `L`. -/
+theorem apply_eq_self_of_algebraMap_mem_range (τ : MulAction.stabilizer (L ≃ₐ[K] L) w) {x : L}
+    (hx : algebraMap L w.Completion x ∈ (algebraMap v.Completion w.Completion).range) :
+    (τ : L ≃ₐ[K] L) x = x := by
+  obtain ⟨c, hc⟩ := hx
+  apply (algebraMap L w.Completion).injective
+  rw [Completion.algebraMap_apply_eq_coe, Completion.algebraMap_apply_eq_coe,
+    ← decompositionHom_algebraMap (v := v), ← Completion.algebraMap_apply_eq_coe, ← hc,
+    AlgEquiv.commutes]
+
+/-- **The decomposition group is trivial when `L` is generated by elements of `K_v`.** If `L` is
+generated over `K` by elements whose images in `L_w` come from `K_v`, then the decomposition group
+of `w` is trivial. -/
+theorem stabilizer_eq_bot_of_adjoin_eq_top {s : Set L} (hs : IntermediateField.adjoin K s = ⊤)
+    (h : ∀ x ∈ s, algebraMap L w.Completion x ∈ (algebraMap v.Completion w.Completion).range) :
+    MulAction.stabilizer (L ≃ₐ[K] L) w = ⊥ := by
+  rw [eq_bot_iff, ← IntermediateField.fixingSubgroup_top, ← hs,
+    ← IntermediateField.le_fixedField_iff_le_fixingSubgroup, IntermediateField.adjoin_le_iff]
+  exact fun x hx τ ↦ apply_eq_self_of_algebraMap_mem_range τ (h x hx)
+
+variable (v w) in
+/-- **A completion at an infinite place is Galois.** The local extension `L_w/K_v` at an infinite
+place `w` of `L` is a Galois extension. -/
+-- `L_w/K_v` is `ℝ/ℝ`, `ℂ/ℂ` or `ℂ/ℝ`: of degree one, or quadratic in characteristic zero.
+theorem isGalois_completion : IsGalois v.Completion w.Completion := by
+  rcases w.isUnramified_or_isRamified K with hw | hw
+  · exact (AlgEquiv.ofBijective (Algebra.ofId v.Completion w.Completion)
+      (Module.Free.bijective_algebraMap_of_finrank_eq_one
+        (IsUnramified.finrank_eq_one v hw))).transfer_galois.mp (IsGalois.self _)
+  · have : Algebra.IsQuadraticExtension v.Completion w.Completion :=
+      ⟨IsRamified.finrank_eq_two v hw⟩
+    have : CharZero v.Completion := RingHom.charZero (Completion.extensionEmbedding v)
+    infer_instance
+
+/-! ### The decomposition group is the local Galois group -/
+
+section IsGalois
+
+variable (v w) [IsGalois K L]
+
+/-- **The decomposition group of `w` has order the local degree.** For `L/K` Galois the
+decomposition group of `w` has one element when `w` is unramified over `K` and two when it is
+ramified, and that is the degree of `L_w` over `K_v`. -/
+theorem card_stabilizer_eq_finrank_completion :
+    Nat.card (MulAction.stabilizer (L ≃ₐ[K] L) w) = finrank v.Completion w.Completion := by
+  classical
+  rw [card_stabilizer]
+  split_ifs with hw
+  · exact (IsUnramified.finrank_eq_one v hw).symm
+  · exact (IsRamified.finrank_eq_two v hw).symm
+
+/-- **Local degree one.** If the Galois extension `L/K` is generated by elements whose images in
+`L_w` come from `K_v`, then `L_w = K_v`: the local degree `[L_w : K_v]` is one. -/
+theorem finrank_completion_eq_one_of_adjoin_eq_top {s : Set L}
+    (hs : IntermediateField.adjoin K s = ⊤)
+    (h : ∀ x ∈ s, algebraMap L w.Completion x ∈ (algebraMap v.Completion w.Completion).range) :
+    finrank v.Completion w.Completion = 1 := by
+  rw [← card_stabilizer_eq_finrank_completion v w, stabilizer_eq_bot_of_adjoin_eq_top hs h,
+    Subgroup.card_bot]
+
+/-- **The local degree at an infinite place.** For `L/K` Galois, `[L_w : K_v]` is `1` when `v` is
+unramified in `L` and `2` otherwise. -/
+theorem finrank_completion_eq_ite [Decidable (v.IsUnramifiedIn L)] :
+    finrank v.Completion w.Completion = if v.IsUnramifiedIn L then 1 else 2 := by
+  have hv : v.IsUnramifiedIn L ↔ w.IsUnramified K := LiesOver.comap_eq w v ▸ isUnramifiedIn_comap
+  split_ifs with h
+  · exact IsUnramified.finrank_eq_one v (hv.mp h)
+  · exact IsRamified.finrank_eq_two v (mt hv.mpr h)
+
+/-- **The decomposition group of `w` exhausts `Aut(L_w/K_v)`.** For `L/K` Galois every
+`K_v`-algebra automorphism of `L_w` is the continuous extension of an automorphism of `L/K`
+stabilizing `w`. -/
+-- The decomposition group has `[L_w : K_v]` elements and a finite extension of fields has at
+-- most that many automorphisms, so the injection of the previous lemma is already onto.
+theorem decompositionHom_surjective : Function.Surjective (decompositionHom v w) := by
+  refine ((Nat.bijective_iff_injective_and_card (decompositionHom v w)).mpr
+    ⟨decompositionHom_injective v w, le_antisymm ?_ ?_⟩).surjective
+  · exact Nat.card_le_card_of_injective _ (decompositionHom_injective v w)
+  · rw [card_stabilizer_eq_finrank_completion v w]
+    exact Nat.card_eq_fintype_card.trans_le AlgEquiv.card_le
+
+/-- **The decomposition group of `w` is the Galois group of `L_w/K_v`.** -/
+def decompositionEquiv :
+    MulAction.stabilizer (L ≃ₐ[K] L) w ≃* (w.Completion ≃ₐ[v.Completion] w.Completion) :=
+  MulEquiv.ofBijective (decompositionHom v w)
+    ⟨decompositionHom_injective v w, decompositionHom_surjective v w⟩
+
+@[simp]
+theorem coe_decompositionEquiv : ⇑(decompositionEquiv v w) = decompositionHom v w := (rfl)
+
+end IsGalois
+
+end NumberField.InfinitePlace

@@ -28,7 +28,7 @@ the exact hypothesis the higher-order antiderivative asymptotics
 ## Provenance
 
 New to the raw-curve development: the AINTLIB `LeanModularForms` flatness structure
-(`IsFlatOfOrder`) is indexed by the tangent, so no forcing step was needed there; the roadmap's
+(`IsFlatOfOrder`) is indexed by the tangent, so no forcing step was needed there; Tau Ceti's
 `Contour.FlatOfOrder` quantifies its witness directions existentially, and this file supplies
 the bridge. The forcing argument is the standard one: the curve leaves `t₀` tangent to `L`, so a
 line it hugs to first order can only be `ℝ • L`. See N. Hungerbühler, M. Wasem, *Non-integer
@@ -93,7 +93,7 @@ private theorem abs_im_mul_conj_div_le_of_isLittleO {γ : ℝ → ℂ} {t₀ : �
       fun t => ‖γ t - γ t₀‖ ^ n)
     (h_deriv : HasDerivWithinAt γ L (Ioi t₀) t₀) {ε : ℝ} (hε : 0 < ε) :
     |(L * starRingEnd ℂ v).im| / ‖v‖ ≤ ε := by
-  set c : ℝ := |(L * starRingEnd ℂ v).im| / ‖v‖ with hc_def
+  set c : ℝ := |(L * starRingEnd ℂ v).im| / ‖v‖ with _
   have herr : (fun t => γ t - γ t₀ - (t - t₀) • L) =o[𝓝[>] t₀] (fun t => t - t₀) :=
     hasDerivWithinAt_iff_isLittleO.mp h_deriv
   obtain ⟨C, hC, h_pow⟩ := eventually_norm_sub_pow_le_of_hasDerivWithinAt hn h_deriv
@@ -186,11 +186,11 @@ private theorem tangentDeviation_isLittleO_of_im_mul_conj_eq_zero {γ : ℝ → 
       fun t => ‖γ t - γ t₀‖ ^ n) :
     (fun t => ‖tangentDeviation (γ t - γ t₀) L‖) =o[l]
       fun t => ‖γ t - γ t₀‖ ^ n := by
-  obtain ⟨cc, hcc⟩ := exists_real_smul_of_im_mul_conj_eq_zero hv h_im
+  obtain ⟨cc, hcc⟩ := (im_mul_conj_eq_zero_iff_exists_real_smul hv).1 h_im
   have hcc_ne : cc ≠ 0 := fun h0 => hL (by rw [hcc, h0, zero_smul])
   have hkey : ∀ t, ‖tangentDeviation (γ t - γ t₀) L‖ =
       |((γ t - γ t₀) * star v).im| / ‖v‖ := fun t => by
-    rw [hcc, norm_tangentDeviation_smul_real hcc_ne hv, norm_tangentDeviation hv,
+    rw [hcc, tangentDeviation_real_smul_right hcc_ne, norm_tangentDeviation hv,
       Complex.star_def]
   exact h_dev.congr' (Filter.Eventually.of_forall fun t => (hkey t).symm) Filter.EventuallyEq.rfl
 
@@ -203,7 +203,7 @@ theorem FlatOfOrder.tangentDeviation_isLittleO_right {γ : ℝ → ℂ} {t₀ : 
     (h_deriv : HasDerivWithinAt γ L (Ioi t₀) t₀) :
     (fun t => ‖tangentDeviation (γ t - γ t₀) L‖) =o[𝓝[>] t₀]
       fun t => ‖γ t - γ t₀‖ ^ n := by
-  obtain ⟨vp, vm, hvp, hvm, hr, -⟩ := flatOfOrder_iff.mp hflat
+  obtain ⟨vp, vm, hvp, _, hr, -⟩ := flatOfOrder_iff.mp hflat
   exact tangentDeviation_isLittleO_of_im_mul_conj_eq_zero hvp hL
     (im_mul_conj_eq_zero_of_flat_right hvp hn hr h_deriv) hr
 
@@ -214,7 +214,7 @@ theorem FlatOfOrder.tangentDeviation_isLittleO_left {γ : ℝ → ℂ} {t₀ : �
     (h_deriv : HasDerivWithinAt γ L (Iio t₀) t₀) :
     (fun t => ‖tangentDeviation (γ t - γ t₀) L‖) =o[𝓝[<] t₀]
       fun t => ‖γ t - γ t₀‖ ^ n := by
-  obtain ⟨vp, vm, hvp, hvm, -, hl⟩ := flatOfOrder_iff.mp hflat
+  obtain ⟨vp, vm, _, hvm, -, hl⟩ := flatOfOrder_iff.mp hflat
   exact tangentDeviation_isLittleO_of_im_mul_conj_eq_zero hvm hL
     (im_mul_conj_eq_zero_of_flat_left hvm hn hl h_deriv) hl
 

@@ -63,10 +63,10 @@ theorem le_topologicalGeneratorRankNat_absoluteGaloisGroup
   have : CharZero K := charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
   let L := CyclotomicField p K
   have : FiniteDimensional K L := IsCyclotomicExtension.finiteDimensional {p} K L
-  let := finiteExtensionValuativeRel K L
-  let := finiteExtensionNormedFieldTopology K L
+  let := algebraicExtensionValuativeRel K L
+  let := algebraicExtensionNormedFieldTopology K L
   have := finiteExtension_isNonarchimedeanLocalField K L
-  have := finiteExtension_valuativeExtension K L
+  have := algebraicExtension_valuativeExtension K L
   have := ValuativeExtension.trans ℚ_[p] K L
   have hmu : ∃ ζ : L, IsPrimitiveRoot ζ p :=
     ⟨IsCyclotomicExtension.zeta p K L, IsCyclotomicExtension.zeta_spec p K L⟩
@@ -87,7 +87,10 @@ theorem le_topologicalGeneratorRankNat_absoluteGaloisGroup
   -- `d(G_L(p)) = [L : ℚ_p] + 2 = Nm + 2` and `d(G_L(p)) ≤ d(G_L)`.
   have hpro := topologicalGeneratorRankNat_le_of_surjective
     (absoluteGaloisGroupProPQuotientMap p L).toMonoidHom
-    (absoluteGaloisGroupProPQuotientMap p L).continuous QuotientGroup.mk_surjective hL
+    (absoluteGaloisGroupProPQuotientMap p L).continuous (by
+      intro x
+      obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective x
+      exact ⟨g, Subgroup.quotientMkContinuousMonoidHom_apply _ g⟩) hL
   rw [topologicalGeneratorRankNat_absoluteGaloisGroupProP_of_mu p L _ hmu,
     ← Module.finrank_mul_finrank ℚ_[p] K L] at hpro
   -- `Nm + 2 ≤ 1 + m (d(G_K) - 1)` forces `N + 2 ≤ d(G_K)`.

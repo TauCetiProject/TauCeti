@@ -42,15 +42,8 @@ def onePointMulPerm (p : ℕ) {d : ℕ} (hdp : Nat.Coprime d p) :
 /-- **The value of `TauCeti.onePointMulPerm` at an affine point**: it multiplies by `d`. -/
 @[simp]
 lemma onePointMulPerm_coe (p : ℕ) {d : ℕ} (hdp : Nat.Coprime d p) (x : ZMod p) :
-    onePointMulPerm p hdp ((x : ZMod p) : OnePoint (ZMod p)) =
-      (((d : ZMod p) * x : ZMod p) : OnePoint (ZMod p)) := by
-  -- `OnePoint (ZMod p)` is `Option (ZMod p)` by definition but is a plain `def`, so it does not
-  -- unfold at reducible transparency: `Equiv.optionCongr_apply` does not match an application
-  -- typed at `OnePoint`, and neither `simp [onePointMulPerm]` nor a rewrite with it closes the
-  -- goal. `change` restates the value at the definitional unfolding, where `mulLeft` evaluates.
-  change ((((ZMod.unitOfCoprime d hdp : (ZMod p)ˣ) : ZMod p) * x : ZMod p) :
-      OnePoint (ZMod p)) = _
-  rw [ZMod.coe_unitOfCoprime]
+    onePointMulPerm p hdp (x : OnePoint (ZMod p)) = ((d * x : ZMod p) : OnePoint (ZMod p)) :=
+  (rfl)
 
 /-- **`TauCeti.onePointMulPerm` fixes the point at infinity.** -/
 @[simp]

@@ -65,7 +65,7 @@ theorem moduleFinite_quotient_pow_of_isIntegral {d : ℕ} (e : Fin d → L)
     (n : ℕ) : Module.Finite R (U ⧸ I ^ n) := by
   exact moduleFinite_of_isIntegral_of_span_eq_top R L R e he
     (Ideal.Quotient.mkₐ R (I ^ n)) Ideal.Quotient.mk_surjective
-    fun i ↦ isIntegral_quotient_pow_of_isIntegral_quotient _ (hI i) n
+    fun i ↦ isIntegral_quotient_pow_of_isIntegral_quotient (hI i) n
 
 /-- Every power of a two-sided ideal with module-finite quotient has module-finite quotient,
 provided the Lie algebra is module-finite. The coefficient ring need not be a field or

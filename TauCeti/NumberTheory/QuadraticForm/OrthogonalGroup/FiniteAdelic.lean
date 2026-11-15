@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Kernel
 public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
 public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.CompactOpen
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Projection
+public import TauCeti.Topology.Algebra.RestrictedProduct.Congr.Right
 public import TauCeti.Topology.Algebra.RestrictedProduct.Map
 
 /-!
@@ -35,6 +36,11 @@ finite adelic isometries whose every component has determinant one: a proper iso
 nondegenerate form on a nonzero space, the kernel of `Spin(V)(𝔸_f) → SO(V)(𝔸_f)` consists of the
 finite adeles whose every component is `1` or `-1`.
 
+Local isometries `Q ⊗ ℚ_p ≃ Q' ⊗ ℚ_p` which carry the reference subgroups onto one another at
+almost every prime identify the finite adelic groups of `Q` and `Q'` through
+`TauCeti.restrictedProductCongrRight`, and these identifications intertwine the componentwise
+projections `Spin → SO → O`.
+
 ## Main definitions
 
 * `TauCeti.QuadraticMap.OrthogonalCompactOpens.finiteAdelicOrthogonal`,
@@ -50,6 +56,9 @@ finite adeles whose every component is `1` or `-1`.
   adelic `SO` in adelic `O` is cut out by the determinant at every prime.
 * `OrthogonalCompactOpens.mem_ker_finiteAdelicSpinToSpecialOrthogonal_iff`: the kernel of adelic
   `Spin → SO` is the componentwise `±1`.
+* `OrthogonalCompactOpens.restrictedProductCongrRight_finiteAdelicSpinToSpecialOrthogonal` and
+  `OrthogonalCompactOpens.finiteAdelicSpecialOrthogonalToOrthogonal_restrictedProductCongrRight`:
+  local isometric transport commutes with the componentwise projections.
 
 ## References
 
@@ -195,10 +204,10 @@ theorem mem_range_finiteAdelicSpecialOrthogonalToOrthogonal_iff (x : U.finiteAde
     · ext p : 1
       exact (U.finiteAdelicSpecialOrthogonalToOrthogonal_apply _ p).trans (hy p)
 
-/-- For a nondegenerate form on a nonzero space, a finite adelic Spin element projects to the
+/-- For a nondegenerate form, a finite adelic Spin element projects to the
 identity of `SO(V)(𝔸_f)` exactly when each of its components is `1` or `-1` in the local Clifford
 algebra. -/
-theorem mem_ker_finiteAdelicSpinToSpecialOrthogonal_iff [FiniteDimensional ℚ V] [Nontrivial V]
+theorem mem_ker_finiteAdelicSpinToSpecialOrthogonal_iff [FiniteDimensional ℚ V]
     (hQ : Q.Nondegenerate)
     (x : U.finiteAdelicSpin) :
     x ∈ U.finiteAdelicSpinToSpecialOrthogonal.ker ↔
@@ -207,12 +216,19 @@ theorem mem_ker_finiteAdelicSpinToSpecialOrthogonal_iff [FiniteDimensional ℚ V
           ((x p : spinGroup (Q.baseChange ℚ_[p])) : CliffordAlgebra (Q.baseChange ℚ_[p])) = -1 := by
   rw [MonoidHom.mem_ker, RestrictedProduct.ext_iff]
   refine forall_congr' fun p ↦ ?_
+  rw [finiteAdelicSpinToSpecialOrthogonal_apply, RestrictedProduct.one_apply,
+    ← MonoidHom.mem_ker]
+  rcases subsingleton_or_nontrivial V with hV | hV
+  · have : Subsingleton (ℚ_[p] ⊗[ℚ] V) := inferInstance
+    have hx : x p = 1 :=
+      (CliffordAlgebra.spinToSpecialOrthogonal_bijective_of_subsingleton
+        (Q.baseChange ℚ_[p])).injective (Subsingleton.elim _ _)
+    simp only [hx, OneMemClass.coe_one, true_or, iff_true]
+    exact Subsingleton.elim _ _
   have : Nontrivial (ℚ_[p] ⊗[ℚ] V) := Module.nontrivial_of_finrank_pos <| by
     rw [Module.finrank_baseChange]
     exact Module.finrank_pos
   have hQp : (Q.baseChange ℚ_[p]).Nondegenerate := _root_.QuadraticForm.Nondegenerate.baseChange hQ
-  rw [finiteAdelicSpinToSpecialOrthogonal_apply, RestrictedProduct.one_apply,
-    ← MonoidHom.mem_ker]
   refine (CliffordAlgebra.mem_ker_spinToSpecialOrthogonal_iff _ hQp _).trans ?_
   constructor
   · rintro (hx | hx)
@@ -227,6 +243,53 @@ theorem mem_ker_finiteAdelicSpinToSpecialOrthogonal_iff [FiniteDimensional ℚ V
     · right
       apply Subtype.ext
       simpa only [CliffordAlgebra.spinGroup.coe_negOne] using hx
+
+/-! ### Transport along local isometries -/
+
+section Congr
+
+open Filter
+
+variable {W : Type*} [AddCommGroup W] [Module ℚ W] {Q' : QuadraticForm ℚ W}
+  (U' : OrthogonalCompactOpens Q')
+  (e : ∀ p : Nat.Primes, (Q.baseChange ℚ_[p]).IsometryEquiv (Q'.baseChange ℚ_[p]))
+
+/-- Local isometric transport of finite adelic points intertwines the adelic Spin projections. -/
+@[simp]
+theorem restrictedProductCongrRight_finiteAdelicSpinToSpecialOrthogonal
+    (hs : ∀ᶠ p in cofinite, Set.BijOn (e p).spinGroupEquiv (U.spin p) (U'.spin p))
+    (hso : ∀ᶠ p in cofinite, Set.BijOn (e p).specialOrthogonalGroupCongr
+      (U.specialOrthogonal p) (U'.specialOrthogonal p))
+    (x : U.finiteAdelicSpin) :
+    restrictedProductCongrRight U.specialOrthogonal U'.specialOrthogonal
+        (fun p ↦ (e p).specialOrthogonalGroupCongr) hso
+        (U.finiteAdelicSpinToSpecialOrthogonal x) =
+      U'.finiteAdelicSpinToSpecialOrthogonal
+        (restrictedProductCongrRight U.spin U'.spin (fun p ↦ (e p).spinGroupEquiv) hs x) := by
+  ext p : 1
+  simp only [restrictedProductCongrRight_apply, finiteAdelicSpinToSpecialOrthogonal_apply]
+  exact (e p).specialOrthogonalGroupCongr_spinToSpecialOrthogonal (x p)
+
+/-- Local isometric transport of finite adelic points intertwines the adelic inclusions of `SO`
+into `O`. -/
+@[simp]
+theorem finiteAdelicSpecialOrthogonalToOrthogonal_restrictedProductCongrRight
+    (he : ∀ᶠ p in cofinite, Set.BijOn (e p).orthogonalGroupCongr
+      (U.orthogonal p) (U'.orthogonal p))
+    (hso : ∀ᶠ p in cofinite, Set.BijOn (e p).specialOrthogonalGroupCongr
+      (U.specialOrthogonal p) (U'.specialOrthogonal p))
+    (g : U.finiteAdelicSpecialOrthogonal) :
+    U'.finiteAdelicSpecialOrthogonalToOrthogonal
+        (restrictedProductCongrRight U.specialOrthogonal U'.specialOrthogonal
+          (fun p ↦ (e p).specialOrthogonalGroupCongr) hso g) =
+      restrictedProductCongrRight U.orthogonal U'.orthogonal
+        (fun p ↦ (e p).orthogonalGroupCongr) he
+        (U.finiteAdelicSpecialOrthogonalToOrthogonal g) := by
+  ext p : 1
+  simp only [restrictedProductCongrRight_apply, finiteAdelicSpecialOrthogonalToOrthogonal_apply]
+  exact (e p).specialOrthogonalToOrthogonal_specialOrthogonalGroupCongr (g p)
+
+end Congr
 
 end OrthogonalCompactOpens
 

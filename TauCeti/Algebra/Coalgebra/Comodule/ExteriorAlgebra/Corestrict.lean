@@ -45,7 +45,7 @@ theorem exteriorAlgebraCoact_corestrict (f : H →ₐc[R] K) :
   ext m
   simp only [AlgHom.comp_toLinearMap, LinearMap.comp_apply,
     AlgHom.toLinearMap_apply, exteriorAlgebraCoact_ι, corestrict_coact_apply,
-    ExteriorAlgebra.map_id_rTensor_ι]
+    Algebra.TensorProduct.map_rTensor_eq_rTensor_lTensor, AlgHom.toLinearMap_id, LinearMap.id_comp]
   rfl
 
 /-- Restricting the exterior-algebra representation agrees with taking the exterior

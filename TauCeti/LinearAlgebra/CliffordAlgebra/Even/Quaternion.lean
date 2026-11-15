@@ -23,6 +23,19 @@ The construction composes `TauCeti.CliffordAlgebra.evenProdSMulSqEquiv` with Mat
 `CliffordAlgebraQuaternion.equiv`, and uses Mathlib's unit-weight diagonalization for arbitrary
 forms. The symbols need not be squares, so the model includes nonsplit quaternion algebras.
 
+For the sum of three squares, the generic diagonal model is identified with the Hamilton
+quaternions. Compatible pure-quaternion coordinates identify the original quadratic space with
+the pure Hamilton norm form.
+
+## Main results
+
+* `CliffordAlgebra.evenWeightedSumSquaresThreeQuaternionEquiv` models a diagonal ternary even
+  Clifford algebra by a quaternion algebra.
+* `CliffordAlgebra.evenHamiltonEquivWeightedSumSquaresOne` specializes this model to the Hamilton
+  quaternions for the sum of three squares.
+* `CliffordAlgebra.pureHamiltonEquivWeightedSumSquaresOne` gives compatible pure-quaternion
+  coordinates for the underlying quadratic space.
+
 ## References
 
 * M.-A. Knus, A. Merkurjev, M. Rost and J.-P. Tignol, *The Book of Involutions* (1998), §15.
@@ -32,6 +45,7 @@ public section
 
 open scoped Quaternion
 open CliffordAlgebra
+open QuadraticMap TauCeti
 
 namespace CliffordAlgebra
 
@@ -184,6 +198,156 @@ theorem evenWeightedSumSquaresThreeQuaternionEquiv_reverseEven_mul_self (a b : R
           ℍ[R, -(↑c⁻¹ : R) * a, 0, -(↑c⁻¹ : R) * b]) := by
   rw [map_mul, evenWeightedSumSquaresThreeQuaternionEquiv_reverseEven,
     QuaternionAlgebra.star_mul_self]
+
+/-! ### The Hamilton model of the sum of three squares -/
+
+private abbrev hamiltonOneSymbol : R := -(↑(1 : Rˣ)⁻¹ : R) * 1
+
+private def hamiltonOneSymbolToHamiltonBasis :
+    QuaternionAlgebra.Basis ℍ[R] (hamiltonOneSymbol (R := R)) (0 : R)
+      (hamiltonOneSymbol (R := R)) where
+  i := ⟨0, 1, 0, 0⟩
+  j := ⟨0, 0, 1, 0⟩
+  k := ⟨0, 0, 0, 1⟩
+  i_mul_i := by ext <;> simp [hamiltonOneSymbol]
+  j_mul_j := by ext <;> simp [hamiltonOneSymbol]
+  i_mul_j := by ext <;> simp
+  j_mul_i := by ext <;> simp
+
+private def hamiltonToHamiltonOneSymbolBasis :
+    QuaternionAlgebra.Basis
+      ℍ[R,hamiltonOneSymbol (R := R),0,hamiltonOneSymbol (R := R)]
+      (-1 : R) (0 : R) (-1 : R) where
+  i := ⟨0, 1, 0, 0⟩
+  j := ⟨0, 0, 1, 0⟩
+  k := ⟨0, 0, 0, 1⟩
+  i_mul_i := by ext <;> simp [hamiltonOneSymbol]
+  j_mul_j := by ext <;> simp [hamiltonOneSymbol]
+  i_mul_j := by ext <;> simp
+  j_mul_i := by ext <;> simp
+
+/-- The coordinate-preserving identification between the quaternion symbol produced by the
+ternary Clifford model at coefficients `1, 1, 1` and the Hamilton quaternions. -/
+private def hamiltonOneSymbolEquivHamilton :
+    ℍ[R,hamiltonOneSymbol (R := R),0,hamiltonOneSymbol (R := R)] ≃ₐ[R] ℍ[R] :=
+  AlgEquiv.ofAlgHom (hamiltonOneSymbolToHamiltonBasis (R := R)).liftHom
+    (hamiltonToHamiltonOneSymbolBasis (R := R)).liftHom
+    (by
+      apply QuaternionAlgebra.hom_ext <;> ext <;>
+        simp [QuaternionAlgebra.Basis.lift, hamiltonOneSymbolToHamiltonBasis,
+          hamiltonToHamiltonOneSymbolBasis])
+    (by
+      apply QuaternionAlgebra.hom_ext <;> ext <;>
+        simp [QuaternionAlgebra.Basis.lift, hamiltonOneSymbolToHamiltonBasis,
+          hamiltonToHamiltonOneSymbolBasis])
+
+private theorem hamiltonOneSymbolEquivHamilton_apply
+    (q : ℍ[R,hamiltonOneSymbol (R := R),0,hamiltonOneSymbol (R := R)]) :
+    hamiltonOneSymbolEquivHamilton q = ⟨q.re, q.imI, q.imJ, q.imK⟩ := by
+  ext <;> simp [hamiltonOneSymbolEquivHamilton, hamiltonOneSymbolToHamiltonBasis,
+    QuaternionAlgebra.Basis.lift]
+
+private theorem hamiltonOneSymbolEquivHamilton_star
+    (q : ℍ[R,hamiltonOneSymbol (R := R),0,hamiltonOneSymbol (R := R)]) :
+    hamiltonOneSymbolEquivHamilton (star q) = star (hamiltonOneSymbolEquivHamilton q) := by
+  rw [hamiltonOneSymbolEquivHamilton_apply, hamiltonOneSymbolEquivHamilton_apply]
+  rfl
+
+/-- The even Clifford algebra of the sum of three squares is canonically the Hamilton quaternion
+algebra. -/
+noncomputable def evenHamiltonEquivWeightedSumSquaresOne :
+    even (weightedSumSquares R ![(1 : R), 1, 1]) ≃ₐ[R] ℍ[R] :=
+  (evenWeightedSumSquaresThreeQuaternionEquiv (1 : R) 1 (1 : Rˣ)).trans
+    hamiltonOneSymbolEquivHamilton
+
+/-- The Hamilton coordinates of a product of two generators in the even Clifford algebra of the
+sum of three squares. -/
+theorem evenHamiltonEquivWeightedSumSquaresOne_ι (x y : Fin 3 → R) :
+    evenHamiltonEquivWeightedSumSquaresOne
+        ((even.ι (weightedSumSquares R ![(1 : R), 1, 1])).bilin x y) =
+      -((⟨x 2, x 0, x 1, 0⟩ : ℍ[R]) * ⟨-y 2, y 0, y 1, 0⟩) := by
+  -- Expose the defining composite so the generic ternary-coordinate theorem applies.
+  change hamiltonOneSymbolEquivHamilton
+      (evenWeightedSumSquaresThreeQuaternionEquiv (1 : R) 1 (1 : Rˣ)
+        ((even.ι (weightedSumSquares R ![(1 : R), 1, 1])).bilin x y)) = _
+  have h := evenWeightedSumSquaresThreeQuaternionEquiv_ι
+    (R := R) (1 : R) 1 (1 : Rˣ) x y
+  change evenWeightedSumSquaresThreeQuaternionEquiv (1 : R) 1 (1 : Rˣ)
+      ((even.ι (weightedSumSquares R ![(1 : R), 1, 1])).bilin x y) = _ at h
+  rw [h, hamiltonOneSymbolEquivHamilton_apply]
+  ext <;> simp [QuaternionAlgebra.mk_mul_mk]
+
+/-- The inverse Hamilton model writes a quaternion in the scalar and standard bivector basis. -/
+@[simp]
+theorem evenHamiltonEquivWeightedSumSquaresOne_symm_mk (r i j k : R) :
+    evenHamiltonEquivWeightedSumSquaresOne.symm (⟨r, i, j, k⟩ : ℍ[R]) =
+      algebraMap R _ r +
+        (-i) • (even.ι (weightedSumSquares R ![(1 : R), 1, 1])).bilin
+          (Pi.single 2 1) (Pi.single 0 1) +
+        (-j) • (even.ι (weightedSumSquares R ![(1 : R), 1, 1])).bilin
+          (Pi.single 2 1) (Pi.single 1 1) +
+        (-k) • (even.ι (weightedSumSquares R ![(1 : R), 1, 1])).bilin
+          (Pi.single 0 1) (Pi.single 1 1) := by
+  apply evenHamiltonEquivWeightedSumSquaresOne.injective
+  simp only [AlgEquiv.apply_symm_apply, map_add, map_smul, AlgEquiv.commutes,
+    evenHamiltonEquivWeightedSumSquaresOne_ι]
+  ext <;> simp [QuaternionAlgebra.mk_mul_mk]
+
+/-- The canonical Hamilton model carries Clifford reversal to quaternion conjugation. -/
+@[simp]
+theorem evenHamiltonEquivWeightedSumSquaresOne_reverseEven
+    (x : even (weightedSumSquares R ![(1 : R), 1, 1])) :
+    evenHamiltonEquivWeightedSumSquaresOne (reverseEven _ x) =
+      star (evenHamiltonEquivWeightedSumSquaresOne x) := by
+  -- Expose the defining composite to transport reversal through its two factors.
+  change hamiltonOneSymbolEquivHamilton
+      (evenWeightedSumSquaresThreeQuaternionEquiv (1 : R) 1 (1 : Rˣ) (reverseEven _ x)) =
+    star (hamiltonOneSymbolEquivHamilton
+      (evenWeightedSumSquaresThreeQuaternionEquiv (1 : R) 1 (1 : Rˣ) x))
+  rw [evenWeightedSumSquaresThreeQuaternionEquiv_reverseEven,
+    hamiltonOneSymbolEquivHamilton_star]
+
+/-- In the canonical Hamilton model, the reverse norm is the quaternion norm-square. -/
+theorem evenHamiltonEquivWeightedSumSquaresOne_reverseEven_mul_self
+    (x : even (weightedSumSquares R ![(1 : R), 1, 1])) :
+    evenHamiltonEquivWeightedSumSquaresOne (reverseEven _ x * x) =
+      Quaternion.normSq (evenHamiltonEquivWeightedSumSquaresOne x) := by
+  rw [map_mul, evenHamiltonEquivWeightedSumSquaresOne_reverseEven,
+    Quaternion.star_mul_self]
+
+/-- The sum-of-three-squares quadratic space in the coordinates compatible with the canonical
+Hamilton even-Clifford model. Its image is the pure Hamilton quaternions. -/
+noncomputable def pureHamiltonEquivWeightedSumSquaresOne :
+    (weightedSumSquares R ![(1 : R), 1, 1]).IsometryEquiv
+      (QuaternionAlgebra.pureNormForm (-1 : R) (-1 : R)) where
+  toFun v := ⟨⟨0, -v 1, v 0, -v 2⟩, by simp⟩
+  invFun q := ![(q : ℍ[R]).imJ, -(q : ℍ[R]).imI, -(q : ℍ[R]).imK]
+  left_inv v := by ext i; fin_cases i <;> simp
+  right_inv q := by
+    apply Subtype.ext
+    have hre : (q : ℍ[R]).re = 0 := q.2
+    ext <;> simp [hre]
+  map_add' _ _ := by apply Subtype.ext; ext <;> simp <;> abel
+  map_smul' _ _ := by apply Subtype.ext; ext <;> simp
+  map_app' v := by
+    rw [QuaternionAlgebra.pureNormForm_apply_coordinates]
+    simp [weightedSumSquares_apply, Fin.sum_univ_three]
+    ring
+
+/-- The pure Hamilton quaternion corresponding to a vector in the sum-of-three-squares model. -/
+@[simp]
+theorem coe_pureHamiltonEquivWeightedSumSquaresOne_apply (v : Fin 3 → R) :
+    (pureHamiltonEquivWeightedSumSquaresOne v : ℍ[R]) =
+      ⟨0, -v 1, v 0, -v 2⟩ := by
+  rfl
+
+/-- The vector coordinates recovered from a pure Hamilton quaternion. -/
+@[simp]
+theorem pureHamiltonEquivWeightedSumSquaresOne_symm_apply
+    (q : LinearMap.ker (QuaternionAlgebra.reₗ (-1 : R) (0 : R) (-1 : R))) :
+    pureHamiltonEquivWeightedSumSquaresOne.symm q =
+      ![(q : ℍ[R]).imJ, -(q : ℍ[R]).imI, -(q : ℍ[R]).imK] := by
+  rfl
 
 section Field
 

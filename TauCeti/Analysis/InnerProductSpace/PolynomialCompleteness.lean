@@ -35,7 +35,7 @@ orthogonal family satisfies. Requiring `degree` rather than `natDegree` matters 
 * `TauCeti.memLp_two_bareNormalized` — the normalized-family `MemLp` obligation, discharged from
   that same exponential moment so callers need not repeat it.
 * `TauCeti.orthogonal_span_range_bareNormalizedLp_eq_bot_of_span_eq_top` — the completeness input
-  of the B2 bridge, from spanning alone.
+  of `TauCeti.hilbertBasisOfWeightedMeasure`, from spanning alone.
 * `TauCeti.orthogonal_span_range_bareNormalizedLp_eq_bot` — its exact-degree specialization.
 -/
 
@@ -98,7 +98,7 @@ private theorem integral_algebraMap_eval_mul_eq_zero_of_span_eq_top {ν : Measur
     exact hfam n
   simpa [F] using LinearMap.congr_fun hF q
 
-/-- **Roadmap B1 → B2 bridge: completeness of a spanning polynomial family.**
+/-- **Completeness of a spanning polynomial family.**
 
 If the weighted measure `w·μ` carries one finite exponential moment and `p` spans `ℝ[X]`, then the
 normalized polynomials span a dense subspace of `L²(w·μ)` — the orthogonal complement of their span
@@ -117,7 +117,7 @@ theorem orthogonal_span_range_bareNormalizedLp_eq_bot_of_span_eq_top {μ : Measu
       fun n => memLp_two_bareNormalized (𝕜 := 𝕜) hexp p c n) :
     (Submodule.span 𝕜 (Set.range
       (bareNormalizedLp (𝕜 := 𝕜) (fun n x => (p n).eval x) w c hmem)))ᗮ = ⊥ := by
-  set ν : Measure ℝ := μ.withDensity (fun x => ENNReal.ofReal (w x)) with hνdef
+  set ν : Measure ℝ := μ.withDensity (fun x => ENNReal.ofReal (w x))
   rw [Submodule.eq_bot_iff]
   intro G hG
   -- Integrability of `q · G` for every polynomial `q`, by Cauchy–Schwarz.

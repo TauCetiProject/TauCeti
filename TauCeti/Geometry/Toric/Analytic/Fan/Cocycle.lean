@@ -41,7 +41,7 @@ theorem exists_analyticTripleOverlap (σ τ υ : Φ.cones)
   obtain ⟨b, hb⟩ := (Φ.mem_analyticOverlapOpens hΦ σ υ x).mp hυ
   rw [Φ.analyticOverlapLeft_def] at ha hb
   let F := Φ.analyticAffineChartDiagram
-  obtain ⟨ρ, f, g, w, hfw, hgw⟩ :=
+  obtain ⟨ρ, f, g, w, hfw, _⟩ :=
     (Φ.isLocallyDirected_analyticAffineChartDiagram hΦ).cond
       (homOfLE inf_le_left : σ ⊓ τ ⟶ σ)
       (homOfLE inf_le_left : σ ⊓ υ ⟶ σ) a b (ha.trans hb.symm)

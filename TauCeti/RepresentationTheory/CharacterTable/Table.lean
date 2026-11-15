@@ -9,7 +9,8 @@ public import TauCeti.RepresentationTheory.CharacterTable.Completeness
 public import TauCeti.RepresentationTheory.CharacterTable.Degree
 -- `FDRep.character_mem_irreducibleCharacters` is stated for a simple object of `FDRep k G`.
 public import TauCeti.RepresentationTheory.Simple.Basic
-import TauCeti.RepresentationTheory.FDRep
+import TauCeti.SetTheory.Cardinal.Finite
+import TauCeti.RepresentationTheory.FDRep.Basic
 -- Non-public: irreducibility transports along an equivariant linear equivalence, used to move an
 -- irreducible representation onto a coordinate space.
 import TauCeti.RepresentationTheory.Irreducible
@@ -55,12 +56,12 @@ take their familiar Hermitian form, because inversion conjugates character value
 * `TauCeti.card_inv_mul_sum_characterTable_mul_characterTable_inv` and
   `TauCeti.card_inv_mul_sum_characterTable_mul_conj`: **first (row) orthogonality**, over `k` and in
   its Hermitian form over `ℂ`; `TauCeti.card_inv_mul_sum_card_conjClass_mul_characterTable_mul_conj`
-  is the latter summed one column at a time, the form in which the roadmap's specification of a
-  character table asks for it;
+  is the latter summed one column at a time, the form in which `TauCeti.IsCharacterTableSpec` asks
+  for it;
   `TauCeti.characterPairing_ofCharacter_irreducibleRepresentation_orthonormal` is the same relation
   phrased as orthonormality for the character pairing.
 * `TauCeti.exists_irreducibleCharacter_eq_one`: the trivial character is a row of the table, and
-  in characteristic zero every other row is nonconstant
+  every other row is nonconstant
   (`TauCeti.exists_irreducibleCharacter_ne_characterDegree`).
 * `TauCeti.card_conjClass_mul_sum_characterTable_mul_characterTable_inv` and
   `TauCeti.sum_characterTable_mul_conj`: **second (column) orthogonality**, over `k` and in its
@@ -83,18 +84,13 @@ set free of a universe parameter beyond those of `k` and `G`. Nothing is lost:
 The rows are indexed by `Fin (Nat.card (ConjClasses G))` rather than by a bare `Fin r`, so that the
 squareness of the table is visible in its type.
 
-The roadmap pins the character table over `ℂ`. Everything holds over any algebraically closed field
-in which `|G|` is invertible except the Hermitian refinements, which are stated over `ℂ`, and the
-divisibility of the degrees by `|G|`, which additionally assumes `CharZero k`. So the table is
-defined over such a `k`, and `TauCeti.characterTable ℂ G` is the pinned object.
+Everything holds over any algebraically closed field in which `|G|` is invertible except the
+Hermitian refinements, which are stated over `ℂ`, and the divisibility of the degrees by `|G|`,
+which additionally assumes `CharZero k`. So the table is defined over such a `k`, and
+`TauCeti.characterTable ℂ G` is the classical complex character table.
 
 ## References
 
-This is Layer 3 of the
-[character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md):
-the character table as an object, with its second orthogonality relation
-(`char_column_orthogonality` in that roadmap's `Suggested.lean`) and the degrees in its
-identity-class column.
 See I. M. Isaacs, *Character Theory of Finite Groups* (1976), Chapter 2, or J.-P. Serre, *Linear
 Representations of Finite Groups* (1977), Section 2.5.
 -/
@@ -157,7 +153,7 @@ theorem _root_.FDRep.character_mem_irreducibleCharacters (X : FDRep k G)
   have := FDRep.isIrreducible_of_simple X
   TauCeti.character_mem_irreducibleCharacters X.ρ
 
-variable [Finite G] [IsAlgClosed k] [Invertible (Nat.card G : k)]
+variable [IsAlgClosed k] [Invertible (Nat.card G : k)]
 
 variable (k G)
 
@@ -167,6 +163,7 @@ distinct because they are linearly independent, and every irreducible character 
 theorem nonempty_equiv_conjClasses_irreducibleCharacters :
     Nonempty (ConjClasses G ≃ irreducibleCharacters k G) := by
   have : NeZero (Nat.card G : k) := ⟨Invertible.ne_zero _⟩
+  have := finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   obtain ⟨d, ρ, hirr, hind, -⟩ := exists_irreducible_family_conjClasses k G
   have := hirr
   have hmem : ∀ C, (ρ C).character ∈ irreducibleCharacters k G := fun C => ⟨d C, ρ C, hirr C, rfl⟩
@@ -180,9 +177,10 @@ theorem nonempty_equiv_conjClasses_irreducibleCharacters :
     exact ⟨C, Subtype.ext (_root_.Representation.char_iso e).symm⟩
 
 instance : Finite (irreducibleCharacters k G) :=
+  have := finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   Finite.of_equiv _ (nonempty_equiv_conjClasses_irreducibleCharacters k G).some
 
-/-- **A finite group has as many irreducible characters as conjugacy classes.** -/
+/-- **A group with invertible order has as many irreducible characters as conjugacy classes.** -/
 theorem card_irreducibleCharacters :
     Nat.card (irreducibleCharacters k G) = Nat.card (ConjClasses G) :=
   (Nat.card_congr (nonempty_equiv_conjClasses_irreducibleCharacters k G).some).symm
@@ -191,8 +189,7 @@ end Set
 
 section Enumeration
 
-variable (k : Type u) (G : Type v) [Field k] [Group G] [Finite G] [IsAlgClosed k]
-  [Invertible (Nat.card G : k)]
+variable (k : Type u) (G : Type v) [Field k] [Group G] [IsAlgClosed k] [Invertible (Nat.card G : k)]
 
 /-- An enumeration of the irreducible characters of `G` by `Fin (Nat.card (ConjClasses G))`, chosen
 once and for all; it indexes the rows of the character table. -/
@@ -298,40 +295,20 @@ a Wedderburn presentation of `k[G]` up to a relabelling of the blocks; the squar
 dimensions add up to the dimension `|G|` of `k[G]`. -/
 theorem sum_characterDegree_sq_eq_card :
     ∑ i : Fin (Nat.card (ConjClasses G)), characterDegree k i ^ 2 = Nat.card G := by
-  classical
-  have : NeZero (Nat.card G : k) := ⟨Invertible.ne_zero _⟩
-  let _ : Fintype (ConjClasses G) := Fintype.ofFinite (ConjClasses G)
-  obtain ⟨d, ρ, hirr, hind, hsum⟩ := exists_irreducible_family_conjClasses k G
-  have := hirr
-  choose C hC using fun i : Fin (Nat.card (ConjClasses G)) =>
-    ClassFunction.exists_nonempty_equiv ρ hind rfl (irreducibleRepresentation k i)
-  have hdeg : ∀ i, characterDegree k i ^ 2 = d (C i) ^ 2 := fun i => by
-    have := (hC i).some.toLinearEquiv.finrank_eq
-    simp only [Module.finrank_fin_fun] at this
-    rw [this]
-  have hinj : Function.Injective C := by
-    intro i j hij
-    by_contra hne
-    have e : (irreducibleRepresentation k i).Equiv (ρ (C j)) := hij ▸ (hC i).some
-    exact (pairwise_isEmpty_equiv_irreducibleRepresentation k hne).elim
-      (e.trans (hC j).some.symm)
-  have hbij : Function.Bijective C :=
-    (Fintype.bijective_iff_injective_and_card C).2
-      ⟨hinj, by rw [Fintype.card_fin, Fintype.card_eq_nat_card]⟩
-  rw [← hsum, finsum_eq_sum_of_fintype]
-  exact Fintype.sum_bijective C hbij _ _ hdeg
+  have := finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
+  simpa using sum_finrank_sq_eq_card (irreducibleRepresentation k)
+    (pairwise_isEmpty_equiv_irreducibleRepresentation k) (by simp)
 
 /-- **The degree of an irreducible character divides the order of the group.** -/
 theorem characterDegree_dvd_card [CharZero k] (i : Fin (Nat.card (ConjClasses G))) :
     characterDegree k i ∣ Nat.card G := by
-  simpa using Representation.finrank_dvd_card (irreducibleRepresentation k i)
+  simpa using (irreducibleRepresentation k i).finrank_dvd_card
 
 end Enumeration
 
 section Table
 
-variable (k : Type u) (G : Type v) [Field k] [Group G] [Finite G] [IsAlgClosed k]
-  [Invertible (Nat.card G : k)]
+variable (k : Type u) (G : Type v) [Field k] [Group G] [IsAlgClosed k] [Invertible (Nat.card G : k)]
 
 /-- **The character table of `G`**: the square matrix whose `(i, C)` entry is the value of the
 `i`-th irreducible character of `G` on the conjugacy class `C`.
@@ -369,6 +346,7 @@ them as `G` has conjugacy classes, which is the dimension of the space of class 
 are linearly independent. -/
 noncomputable def basisIrreducibleCharacter :
     Module.Basis (Fin (Nat.card (ConjClasses G))) k (ClassFunction k G) :=
+  have := finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   ClassFunction.basisOfIrreducibleCharacters (irreducibleRepresentation k)
     (pairwise_isEmpty_equiv_irreducibleRepresentation k) (by simp)
 
@@ -377,6 +355,7 @@ variable {k G}
 @[simp]
 theorem basisIrreducibleCharacter_apply (i : Fin (Nat.card (ConjClasses G))) (g : G) :
     (basisIrreducibleCharacter k G i).1 g = irreducibleCharacter k i g := by
+  have := finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   rw [basisIrreducibleCharacter, ClassFunction.basisOfIrreducibleCharacters_apply,
     ClassFunction.ofCharacter_apply, character_irreducibleRepresentation]
 
@@ -433,28 +412,27 @@ end RowOrthogonality
 
 section Nonconstant
 
-variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [IsAlgClosed k] [CharZero k]
+variable {k : Type u} {G : Type v} [Field k] [Group G] [IsAlgClosed k]
+  [Invertible (Nat.card G : k)]
 
-/-- **A nontrivial irreducible character is not constant.** Over an algebraically closed field of
-characteristic zero, if `i₀` indexes the trivial character, the constant function `1`, and
+/-- **A nontrivial irreducible character is not constant.** Over an algebraically closed field in
+which `|G|` is invertible, if `i₀` indexes the trivial character, the constant function `1`, and
 `i ≠ i₀`, then the `i`-th irreducible character takes somewhere a value other than its degree,
 which is its value `χᵢ(1)` at the identity (`TauCeti.irreducibleCharacter_one`).
 `TauCeti.exists_irreducibleCharacter_eq_one` supplies such an index `i₀`. -/
 theorem exists_irreducibleCharacter_ne_characterDegree {i₀ i : Fin (Nat.card (ConjClasses G))}
     (hi₀ : irreducibleCharacter k i₀ = fun _ : G => (1 : k)) (hne : i ≠ i₀) :
     ∃ g : G, irreducibleCharacter k i g ≠ characterDegree k i := by
-  let _ : Fintype G := Fintype.ofFinite G
-  let _ : Invertible (Nat.card G : k) := invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
   by_contra! htriv
-  -- row orthogonality of `χᵢ` against the trivial character: `χᵢ(1) = 0`
-  simpa [htriv, hi₀, hne, (characterDegree_pos k i).ne'] using
-    card_inv_mul_sum_characterTable_mul_characterTable_inv (k := k) i i₀
+  -- `χᵢ = χᵢ(1) • χᵢ₀` would be a linear relation between distinct irreducible characters
+  exact hne <| linearIndependent_irreducibleCharacter.eq_of_smul_apply_eq_smul_apply 1
+    (characterDegree k i : k) i i₀ one_ne_zero (by ext g; simp [hi₀, htriv g])
 
 end Nonconstant
 
 section ColumnOrthogonality
 
-variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [IsAlgClosed k]
+variable {k : Type u} {G : Type v} [Field k] [Group G] [IsAlgClosed k]
   [Invertible (Nat.card G : k)]
 
 open scoped Classical in
@@ -466,6 +444,7 @@ theorem card_conjClass_mul_sum_characterTable_mul_characterTable_inv (g h : G) :
         ∑ i : Fin (Nat.card (ConjClasses G)),
           characterTable k G i (ConjClasses.mk g) * characterTable k G i (ConjClasses.mk h⁻¹) =
       if IsConj g h then (Nat.card G : k) else 0 := by
+  have := finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   let _ : Fintype G := Fintype.ofFinite G
   simpa using ClassFunction.card_conjClass_mul_sum_char_mul_char_inv
     (fun i : Fin (Nat.card (ConjClasses G)) => irreducibleRepresentation k i)
@@ -477,6 +456,7 @@ theorem sum_characterTable_mul_characterTable_inv (g h : G) :
     ∑ i : Fin (Nat.card (ConjClasses G)),
         characterTable k G i (ConjClasses.mk g) * characterTable k G i (ConjClasses.mk h⁻¹) =
       if IsConj g h then (Nat.card G : k) / Nat.card (ConjClasses.mk g).carrier else 0 := by
+  have := finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   let _ : Fintype G := Fintype.ofFinite G
   simpa using ClassFunction.sum_char_mul_char_inv
     (fun i : Fin (Nat.card (ConjClasses G)) => irreducibleRepresentation k i)
@@ -519,12 +499,13 @@ end ColumnOrthogonality
 
 section Complex
 
-variable {G : Type v} [Group G] [Finite G]
+variable {G : Type v} [Group G] [Invertible (Nat.card G : ℂ)]
 
 /-- **Complex conjugation of an irreducible character value inverts the group element.** -/
 @[simp]
 theorem conj_irreducibleCharacter (i : Fin (Nat.card (ConjClasses G))) (g : G) :
     (starRingEnd ℂ) (irreducibleCharacter ℂ i g) = irreducibleCharacter ℂ i g⁻¹ := by
+  have := finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : ℂ))
   rw [← character_irreducibleRepresentation ℂ i]
   exact Representation.conj_char _ g
 
@@ -557,9 +538,8 @@ theorem card_inv_mul_sum_characterTable_mul_conj [Fintype G]
 
 /-- **First (row) orthogonality over `ℂ`, summed one column at a time**: the Hermitian pairing of
 two rows of the complex character table, collected over the conjugacy classes with the class sizes
-as weights. This is the shape in which the roadmap's specification of a character table asks for row
-orthonormality; `TauCeti.card_inv_mul_sum_characterTable_mul_conj` is the same statement summed over
-the group.
+as weights. This is the shape in which `TauCeti.IsCharacterTableSpec` asks for row orthonormality;
+`TauCeti.card_inv_mul_sum_characterTable_mul_conj` is the same statement summed over the group.
 
 The enumeration of the conjugacy classes is an explicit `Fintype` argument rather than a classical
 one, so that the statement is about whichever enumeration the caller has in hand; a caller with
@@ -569,6 +549,7 @@ theorem card_inv_mul_sum_card_conjClass_mul_characterTable_mul_conj [Fintype (Co
     (Nat.card G : ℂ)⁻¹ * ∑ C : ConjClasses G, (Nat.card C.carrier : ℂ) *
         characterTable ℂ G i C * (starRingEnd ℂ) (characterTable ℂ G j C) =
       if i = j then 1 else 0 := by
+  have := finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : ℂ))
   let _ : Fintype G := Fintype.ofFinite G
   rw [← card_inv_mul_sum_characterTable_mul_conj i j]
   congr 1

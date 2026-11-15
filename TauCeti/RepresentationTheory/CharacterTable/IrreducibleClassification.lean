@@ -7,8 +7,11 @@ module
 
 public import TauCeti.RepresentationTheory.CharacterTable.BlockRepresentation
 public import TauCeti.RepresentationTheory.CharacterTable.Completeness
+public import TauCeti.RepresentationTheory.CharacterTable.Table
 public import TauCeti.RingTheory.Semisimple.Wedderburn.Blocks
 import Mathlib.RingTheory.SimpleRing.Matrix
+import TauCeti.RepresentationTheory.AsModule
+import TauCeti.RepresentationTheory.OfModule
 
 /-!
 # The Wedderburn blocks of `k[G]` classify its irreducible representations
@@ -16,15 +19,15 @@ import Mathlib.RingTheory.SimpleRing.Matrix
 A Wedderburn presentation `e : k[G] ≃ₐ[k] Π i, Matₙᵢ(k)` of a finite group algebra over an
 algebraically closed field carries an irreducible representation on each block, and distinct blocks
 carry inequivalent ones (`TauCeti/RepresentationTheory/CharacterTable/BlockRepresentation.lean`).
-This file supplies the missing half, that the list is **complete**: every finite-dimensional
-irreducible representation of `G` over `k` is equivalent to a block representation. The block index
+This file supplies the missing half, that the list is **complete**: every irreducible
+representation of `G` over `k` is equivalent to a block representation. The block index
 is therefore a faithful index of the irreducible representations up to equivalence, and everything
 read off a presentation — first of all the multiset of degrees `nᵢ` — is an invariant of `G`.
 
 Completeness is not a new argument: a family of pairwise inequivalent irreducibles indexed by as
 many indices as `G` has conjugacy classes already exhausts the irreducibles
 (`TauCeti.ClassFunction.exists_nonempty_equiv`), and a presentation has exactly that many blocks
-(`TauCeti.card_eq_card_conjClasses_of_algEquiv_pi_matrix`). What was missing was the assembly, and
+(`AlgEquiv.card_eq_card_conjClasses_of_pi_matrix`). What was missing was the assembly, and
 the invariance statements it unlocks.
 
 ## Main results
@@ -40,6 +43,11 @@ the invariance statements it unlocks.
   presentation**, in the form that each degree occurs equally often in the two.
 * `AlgEquiv.nonempty_equiv_index_simpleSubmoduleClasses`: the block index is in bijection with the
   isomorphism classes of simple `k[G]`-modules.
+* `Representation.existsUnique_nonempty_equiv_irreducibleRepresentation`: every irreducible
+  representation, with carrier in any universe, is equivalent to exactly one of the chosen
+  irreducible models `Zᵢ = TauCeti.irreducibleRepresentation k i`.
+* `TauCeti.existsUnique_nonempty_linearEquiv_irreducibleRepresentation`: the same lookup for simple
+  `k[G]`-modules. This is the lookup assigning its class to a simple summand of a representation.
 
 ## Implementation notes
 
@@ -81,17 +89,8 @@ variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [IsAlgClosed k
   [Invertible (Nat.card G : k)] {ι : Type w} [Finite ι] {d : ι → ℕ} [∀ i, NeZero (d i)]
   (e : k[G] ≃ₐ[k] Π i, Matrix (Fin (d i)) (Fin (d i)) k)
 
-omit [IsAlgClosed k] [Invertible (Nat.card G : k)] in
-include e in
-/-- The `Nat.card` spelling of `TauCeti.card_eq_card_conjClasses_of_algEquiv_pi_matrix`, which is
-the shape `TauCeti.ClassFunction.exists_nonempty_equiv` asks for. -/
-private theorem natCard_eq_card_conjClasses : Nat.card ι = Nat.card (ConjClasses G) := by
-  let _ := Fintype.ofFinite ι
-  rw [Nat.card_eq_fintype_card]
-  exact card_eq_card_conjClasses_of_algEquiv_pi_matrix e
-
 /-- **The Wedderburn blocks are a complete list of the irreducible representations.** Every
-finite-dimensional irreducible representation of `G` over an algebraically closed field whose
+irreducible representation of `G` over an algebraically closed field whose
 characteristic does not divide `|G|` is equivalent to the representation carried by one of the
 blocks of any Wedderburn presentation of `k[G]`.
 
@@ -99,17 +98,18 @@ Together with `TauCeti.isIrreducible_blockRepresentation` and
 `TauCeti.isEmpty_equiv_blockRepresentation` this makes the block index a faithful index of the
 irreducible representations up to equivalence. -/
 theorem exists_nonempty_equiv_blockRepresentation {W : Type w'} [AddCommGroup W] [Module k W]
-    [FiniteDimensional k W] (σ : Representation k G W) [σ.IsIrreducible] :
+    (σ : Representation k G W) [σ.IsIrreducible] :
     ∃ i, Nonempty (σ.Equiv (blockRepresentation e i)) := by
   have : ∀ i, (blockRepresentation e i).IsIrreducible := fun i =>
     isIrreducible_blockRepresentation e i
   exact ClassFunction.exists_nonempty_equiv (blockRepresentation e)
-    (fun _ _ hij => isEmpty_equiv_blockRepresentation e hij) (natCard_eq_card_conjClasses e) σ
+    (fun _ _ hij => isEmpty_equiv_blockRepresentation e hij)
+    e.card_eq_card_conjClasses_of_pi_matrix σ
 
 include e in
 /-- **The dimension of an irreducible representation is one of the Wedderburn degrees.** -/
 theorem exists_degree_eq_finrank {W : Type w'} [AddCommGroup W] [Module k W]
-    [FiniteDimensional k W] (σ : Representation k G W) [σ.IsIrreducible] :
+    (σ : Representation k G W) [σ.IsIrreducible] :
     ∃ i, d i = Module.finrank k W := by
   obtain ⟨i, ⟨φ⟩⟩ := exists_nonempty_equiv_blockRepresentation e σ
   refine ⟨i, ?_⟩
@@ -158,27 +158,15 @@ theorem exists_equiv_blockRepresentation :
       Nonempty ((blockRepresentation e i).Equiv (blockRepresentation e' (σ i))) := by
   have : ∀ i, (blockRepresentation e i).IsIrreducible := fun i =>
     isIrreducible_blockRepresentation e i
-  -- Match each block of `e` with the block of `e'` carrying an equivalent representation.
-  choose f hf using fun i =>
-    exists_nonempty_equiv_blockRepresentation e' (blockRepresentation e i)
-  -- Distinct blocks of `e` carry inequivalent representations, so the matching is injective.
-  have hinj : Function.Injective f := by
-    intro i j hij
-    by_contra hne
-    have hφ := hf i
-    rw [hij] at hφ
-    obtain ⟨φ⟩ := hφ
-    obtain ⟨ψ⟩ := hf j
-    exact (isEmpty_equiv_blockRepresentation e hne).elim (φ.trans ψ.symm)
-  let _ := Fintype.ofFinite ι
-  let _ := Fintype.ofFinite ι'
-  -- Both index sets have as many members as `G` has conjugacy classes, so it is a bijection.
-  have hcard : Fintype.card ι = Fintype.card ι' := by
-    rw [card_eq_card_conjClasses_of_algEquiv_pi_matrix e,
-      card_eq_card_conjClasses_of_algEquiv_pi_matrix e']
-  have hbij : Function.Bijective f := (Fintype.bijective_iff_injective_and_card f).2 ⟨hinj, hcard⟩
-  refine ⟨Equiv.ofBijective f hbij, fun i => ⟨?_, hf i⟩⟩
-  obtain ⟨φ⟩ := hf i
+  have : ∀ j, (blockRepresentation e' j).IsIrreducible := fun j =>
+    isIrreducible_blockRepresentation e' j
+  -- Both families are complete families of irreducibles, so they are relabellings of each other.
+  obtain ⟨σ, hσ⟩ := ClassFunction.exists_equiv_nonempty_equiv (blockRepresentation e)
+    (fun _ _ h => isEmpty_equiv_blockRepresentation e h) e.card_eq_card_conjClasses_of_pi_matrix
+    (blockRepresentation e') (fun _ _ h => isEmpty_equiv_blockRepresentation e' h)
+    e'.card_eq_card_conjClasses_of_pi_matrix
+  refine ⟨σ, fun i => ⟨?_, hσ i⟩⟩
+  obtain ⟨φ⟩ := hσ i
   have hrank := φ.toLinearEquiv.finrank_eq
   rwa [Module.finrank_fin_fun, Module.finrank_fin_fun] at hrank
 
@@ -199,5 +187,43 @@ theorem natCard_degree_fiber_eq (n : ℕ) :
   exact Nat.card_congr (Equiv.subtypeEquiv σ fun i => by rw [(hσ i).1])
 
 end Uniqueness
+
+section Models
+
+variable (k : Type u) (G : Type v) [Field k] [IsAlgClosed k] [Group G] [Finite G]
+  [Invertible (Nat.card G : k)]
+
+variable {k G} in
+/-- **Every irreducible representation is one of the chosen irreducible models**, and only one:
+for an irreducible `ρ` there is exactly one row `i` of the character table with `ρ ≃ Zᵢ`. The
+carrier of `ρ` may lie in any universe, not only in that of `k`. -/
+theorem _root_.Representation.existsUnique_nonempty_equiv_irreducibleRepresentation {V : Type w}
+    [AddCommGroup V] [Module k V] (ρ : Representation k G V) [ρ.IsIrreducible] :
+    ∃! i : Fin (Nat.card (ConjClasses G)), Nonempty (ρ.Equiv (irreducibleRepresentation k i)) := by
+  obtain ⟨i, ⟨φ⟩⟩ := ClassFunction.exists_nonempty_equiv (irreducibleRepresentation k)
+    (pairwise_isEmpty_equiv_irreducibleRepresentation k) (by simp) ρ
+  exact ⟨i, ⟨φ⟩, fun j ⟨ψ⟩ ↦ (Representation.nonempty_equiv_iff_eq _
+    (pairwise_isEmpty_equiv_irreducibleRepresentation k)).mp ⟨ψ.symm.trans φ⟩⟩
+
+/-- **Every simple `k[G]`-module is one of the chosen irreducible models**, and only one: for a
+simple `k[G]`-module `N` there is exactly one row `i` of the character table with `N ≅ Zᵢ` as
+`k[G]`-modules. The module `N` may lie in any universe, not only in that of `k`. -/
+theorem existsUnique_nonempty_linearEquiv_irreducibleRepresentation (N : Type w) [AddCommGroup N]
+    [Module k[G] N] [IsSimpleModule k[G] N] :
+    ∃! i : Fin (Nat.card (ConjClasses G)),
+      Nonempty (N ≃ₗ[k[G]] (irreducibleRepresentation k i).asModule) := by
+  -- View `N` as a representation through the scalars restricted along `k → k[G]`.
+  let _ : Module k N := Module.compHom N (algebraMap k k[G])
+  have : IsScalarTower k k[G] N := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
+  have : (_root_.Representation.ofModule' (k := k) (G := G) N).IsIrreducible :=
+    (Representation.isIrreducible_ofModule'_iff N).mpr inferInstance
+  let eN := (Representation.ofModule'AsModuleEquiv (k := k) (G := G) N).symm
+  refine (existsUnique_congr fun i ↦ ?_).mp
+    (_root_.Representation.existsUnique_nonempty_equiv_irreducibleRepresentation
+      (_root_.Representation.ofModule' (k := k) (G := G) N))
+  rw [Representation.nonempty_equiv_iff]
+  exact ⟨fun ⟨e⟩ ↦ ⟨eN ≪≫ₗ e⟩, fun ⟨e⟩ ↦ ⟨eN.symm ≪≫ₗ e⟩⟩
+
+end Models
 
 end TauCeti

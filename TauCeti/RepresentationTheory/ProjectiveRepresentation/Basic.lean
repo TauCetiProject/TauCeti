@@ -137,8 +137,7 @@ theorem rescale (h : IsProjectiveRep ρ α) (c : G → kˣ) (hc : c 1 = 1) :
     { cocycle g₁ g₂ g₃ := by
         rw [← mul_assoc g₁ g₂ g₃]
         exact rescale_cocycle_aux (h.isFactorSet.cocycle g₁ g₂ g₃)
-      one_left g := by simp [hc, h.isFactorSet.one_left]
-      one_right g := by simp [hc, h.isFactorSet.one_right] }
+      one_left g := by simp [hc, h.isFactorSet.one_left] }
   map_one := by
     refine LinearEquiv.ext fun x ↦ ?_
     rw [LinearEquiv.trans_apply, LinearEquiv.smulOfUnit_apply, h.map_one, hc]
@@ -188,7 +187,7 @@ theorem tensorProduct {V' : Type*} [AddCommMonoid V'] [Module k V'] {ρ' : G →
     calc TensorProduct.congr (ρ g₁) (ρ' g₁) (TensorProduct.congr (ρ g₂) (ρ' g₂) x)
         = TensorProduct.map ((ρ g₁ : V →ₗ[k] V) * (ρ g₂ : V →ₗ[k] V))
             ((ρ' g₁ : V' →ₗ[k] V') * (ρ' g₂ : V' →ₗ[k] V')) x := by
-          rw [← LinearEquiv.mul_apply, ← TensorProduct.congr_mul, ← LinearEquiv.coe_toLinearMap,
+          rw [← mul_apply_eq_comp, ← TensorProduct.congr_mul, ← LinearEquiv.coe_toLinearMap,
             TensorProduct.toLinearMap_congr, LinearEquiv.coe_toLinearMap_mul,
             LinearEquiv.coe_toLinearMap_mul]
       _ = TensorProduct.map ((α g₁ g₂ : k) • (ρ (g₁ * g₂) : V →ₗ[k] V))
@@ -253,12 +252,6 @@ theorem of_map_one_mul_apply (h₁ : ρ 1 = 1)
         obtain ⟨y, rfl⟩ := (ρ g).surjective x
         have hy := h₂ 1 g y
         rw [h₁, one_mul] at hy
-        simpa [Units.smul_def] using hy.symm
-      one_right g := by
-        refine FaithfulSMul.eq_of_smul_eq_smul fun x : V ↦ ?_
-        obtain ⟨y, rfl⟩ := (ρ g).surjective x
-        have hy := h₂ g 1 y
-        rw [h₁, mul_one] at hy
         simpa [Units.smul_def] using hy.symm }
   map_one := h₁
   mul_apply := h₂

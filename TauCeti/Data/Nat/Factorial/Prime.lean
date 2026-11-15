@@ -5,29 +5,31 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Nat.Prime.Factorial
+public import Mathlib.Data.Nat.Multiplicity
 
 /-!
-# Prime divisibility of factorials
+# Prime squares dividing factorials
 
 ## Main results
 
-* `Nat.Prime.not_sq_dvd_factorial`: a prime occurs only once in its own factorial.
+* `Nat.Prime.sq_dvd_factorial_iff`: the square of a prime `p` divides `n!` if and only if
+  `2 * p ≤ n`.
 
-Since `p!` is the order of the permutation group on `p` points, this bound also shows that
-`p ^ 2` cannot divide the order of any of its subgroups. This supplies the divisibility bound
-used in the Sylow step of Jordan's theorem.
+This is the square analogue of Mathlib's `Nat.Prime.dvd_factorial`. In particular `p ^ 2` does
+not divide `p!`, the order of the permutation group on `p` points, so it does not divide the
+order of any of its subgroups.
 -/
 
 public section
 
 namespace Nat.Prime
 
-/-- A prime occurs only once in its own factorial. -/
-theorem not_sq_dvd_factorial {p : ℕ} (hp : p.Prime) : ¬ p ^ 2 ∣ p.factorial := by
-  intro h
-  rw [← Nat.mul_factorial_pred hp.ne_zero, pow_two] at h
-  have := hp.dvd_factorial.1 (Nat.dvd_of_mul_dvd_mul_left hp.pos h)
-  exact (Nat.not_le_of_gt (Nat.sub_lt hp.pos (by omega))) this
+/-- The square of a prime `p` divides `n!` if and only if `2 * p ≤ n`. -/
+theorem sq_dvd_factorial_iff {p n : ℕ} (hp : p.Prime) : p ^ 2 ∣ n ! ↔ 2 * p ≤ n := by
+  have h2p : 2 * p ≤ p ^ 2 := by rw [sq]; exact Nat.mul_le_mul_right _ hp.two_le
+  rcases lt_or_ge n (p ^ 2) with hn | hn
+  · rw [hp.pow_dvd_factorial_iff (Nat.log_lt_of_lt_pow' two_ne_zero hn)]
+    simp [Nat.le_div_iff_mul_le hp.pos]
+  · exact iff_of_true (Nat.dvd_factorial (pow_pos hp.pos 2) hn) (h2p.trans hn)
 
 end Nat.Prime

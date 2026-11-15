@@ -25,12 +25,6 @@ The proof is a direct computation from Tau Ceti's Moebius derivative
 `hasDerivAt_unitDiscMoebiusFormula` and the Pythagorean identity
 `‖1 - conj a * z‖ ^ 2 - ‖z - a‖ ^ 2 = (1 - ‖z‖ ^ 2) * (1 - ‖a‖ ^ 2)`, which forces the metric
 factors to cancel exactly rather than merely bound one another.
-
-This advances the conformal-mapping roadmap's **L2 Schwarz--Pick / disc-automorphism** target
-(`TauCetiRoadmap/ConformalMapping/README.md`: the hyperbolic/Poincaré metric on `𝔻` and the
-automorphism group `Aut(𝔻)`).  As with the rest of the L0--L3 conformal-mapping material it is
-coordinated with the upstream Mathlib RMT effort leanprover-community/mathlib4#33505 and should
-be refactored to upstream API if that work lands a human-curated Schwarz--Pick theorem.
 -/
 
 public section
@@ -50,7 +44,7 @@ private lemma poincare_defect_quotient {a : ℂ} (ha : ‖a‖ < 1) {z : ℂ} (h
         / (1 - ‖(z - a) / (1 - (starRingEnd ℂ) a * z)‖ ^ 2)
       = 1 / (1 - ‖z‖ ^ 2) := by
   have hDpos : (0 : ℝ) < ‖(1 : ℂ) - (starRingEnd ℂ) a * z‖ :=
-    norm_one_sub_conj_mul_pos_of_norm_lt_one hz ha
+    norm_one_sub_conj_mul_pos_of_norm_le_one_of_norm_lt_one hz.le ha
   have hDne : ‖(1 : ℂ) - (starRingEnd ℂ) a * z‖ ≠ 0 := hDpos.ne'
   have hD_pos : (0 : ℝ) < ‖(1 : ℂ) - (starRingEnd ℂ) a * z‖ ^ 2 := pow_pos hDpos 2
   have hz_pos : (0 : ℝ) < 1 - ‖z‖ ^ 2 := one_sub_sq_norm_pos_of_norm_lt_one hz
@@ -77,7 +71,7 @@ theorem norm_deriv_div_one_sub_norm_sq_unitDiscStandardAutomorphismFormula_of_no
         / (1 - ‖u * ((z - a) / (1 - (starRingEnd ℂ) a * z))‖ ^ 2)
       = 1 / (1 - ‖z‖ ^ 2) := by
   have hden : (1 : ℂ) - (starRingEnd ℂ) a * z ≠ 0 :=
-    one_sub_conj_mul_ne_zero_of_norm_lt_one hz ha
+    one_sub_conj_mul_ne_zero_of_norm_le_one_of_norm_lt_one hz.le ha
   have hA := (hasDerivAt_unitDiscMoebiusFormula a z hden).const_mul u
   rw [hA.deriv, norm_mul, norm_mul, hu, one_mul, one_mul]
   exact poincare_defect_quotient ha hz

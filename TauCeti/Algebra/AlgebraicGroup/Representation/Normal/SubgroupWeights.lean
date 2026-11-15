@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Conjugation
 public import TauCeti.Algebra.AlgebraicGroup.Representation.PointConjugation
 public import TauCeti.Algebra.Bialgebra.GroupLike.Map
+public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Comul
 public import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
 public import TauCeti.Algebra.Coalgebra.Comodule.Weight.Space
 public import TauCeti.Algebra.Coalgebra.Subcomodule.PointSeparation
@@ -20,7 +21,8 @@ Let `H` be the coordinate Hopf algebra of an affine group `G`, let the Hopf idea
 closed subgroup `N`, and let `V` be a representation of `G`. A character of `N` is a group-like
 element `χ` of `H ⧸ I`, and the `χ`-weight space of `V` consists of the vectors on which `N` acts
 through `χ`: those whose coaction, restricted to `N`, is `v ↦ v ⊗ χ`. Characters and weight spaces
-are scheme-theoretic, so nonreduced subgroups such as `μ_p` are allowed.
+are scheme-theoretic, so nonreduced subgroups such as `μ_p` are allowed. Matrix coefficients
+of a weight vector are right semi-invariants with the same character.
 
 A rational point `g` of `G` normalizing `N` restricts to an automorphism of `N`, whose coordinate
 map is a bialgebra endomorphism of `H ⧸ I`. Acting by `g` carries the `χ`-weight space into the
@@ -93,6 +95,21 @@ theorem mem_weightSpace {χ : GroupLike R (H ⧸ I.toIdeal)} {v : V} :
     Comodule.Corestrict (Bialgebra.Quotient.mkBialgHom I.toIdeal).toCoalgHom
   _root_.GroupLike.mem_weightSpace
 
+/-- A matrix coefficient of a subgroup weight vector is a right semi-invariant, with the
+same subgroup character. -/
+theorem map_comul_matrixCoefficient_of_mem_weightSpace
+    (I : HopfIdeal R H) (χ : GroupLike R (H ⧸ I.toIdeal))
+    {m : V} (hm : m ∈ I.weightSpace V χ) (φ : Module.Dual R V) :
+    TensorProduct.map LinearMap.id (Ideal.Quotient.mkₐ R I.toIdeal).toLinearMap
+        (Coalgebra.comul (R := R) (Comodule.matrixCoefficient (C := H) φ m)) =
+      Comodule.matrixCoefficient (C := H) φ m ⊗ₜ[R] χ.val := by
+  rw [Comodule.comul_matrixCoefficient]
+  have h := congrArg
+    (TensorProduct.map (Comodule.matrixCoefficientLinear (C := H) φ) LinearMap.id)
+    (mem_weightSpace.mp hm)
+  simpa only [TensorProduct.map_map, LinearMap.id_comp, LinearMap.comp_id,
+    TensorProduct.map_tmul, LinearMap.id_apply, Comodule.matrixCoefficientLinear_apply] using h
+
 /-- A weight vector of a closed subgroup is detected by the universal point of the subgroup, the
 quotient map `H → H ⧸ I`, even over a nonreduced base ring. -/
 theorem mem_weightSpace_iff_endOfPoint (χ : GroupLike R (H ⧸ I.toIdeal)) (v : V) :
@@ -125,8 +142,8 @@ theorem basePointsRepresentation_mem_weightSpace (g : WithConv (H →ₐ[R] R))
     (hg : I ≤ I.conjugate g⁻¹) {χ : GroupLike R (H ⧸ I.toIdeal)} {v : V}
     (hv : v ∈ I.weightSpace V χ) :
     Comodule.basePointsRepresentation (H := H) V g v ∈
-      I.weightSpace V (GroupLike.map (I.quotientPointConjugation g⁻¹ hg) χ) := by
-  rw [mem_weightSpace_iff_endOfPoint, GroupLike.val_map]
+      I.weightSpace V (BialgHom.mapGroupLike (I.quotientPointConjugation g⁻¹ hg) χ) := by
+  rw [mem_weightSpace_iff_endOfPoint, BialgHom.val_mapGroupLike]
   apply Comodule.endOfPoint_one_tmul_basePointsRepresentation_of_conj
   have hσ : (Ideal.Quotient.mkₐ R I.toIdeal).comp (HopfAlgebra.pointConjugationAlgHom g⁻¹) =
       (I.quotientPointConjugation g⁻¹ hg : H ⧸ I.toIdeal →ₐ[R] H ⧸ I.toIdeal).comp
@@ -153,7 +170,7 @@ theorem IsNormal.map_basePointsRepresentation_weightSpace (hI : I.IsNormal)
     (g : WithConv (H →ₐ[R] R)) (χ : GroupLike R (H ⧸ I.toIdeal)) :
     (I.weightSpace V χ).map (Comodule.basePointsRepresentation (H := H) V g) =
       I.weightSpace V
-        (GroupLike.map (I.quotientPointConjugation g⁻¹ (hI.le_conjugate g⁻¹)) χ) := by
+        (BialgHom.mapGroupLike (I.quotientPointConjugation g⁻¹ (hI.le_conjugate g⁻¹)) χ) := by
   refine le_antisymm ?_ fun v hv ↦ ⟨Comodule.basePointsRepresentation (H := H) V g⁻¹ v, ?_,
     Representation.self_inv_apply _ g v⟩
   · rintro _ ⟨v, hv, rfl⟩
@@ -165,9 +182,9 @@ theorem IsNormal.map_basePointsRepresentation_weightSpace (hI : I.IsNormal)
       rw [quotientPointConjugation_mk, quotientPointConjugation_mk, ← AlgHom.comp_apply,
         ← HopfAlgebra.pointConjugationAlgHom_mul, mul_inv_cancel,
         HopfAlgebra.pointConjugationAlgHom_one, AlgHom.id_apply]
-    have hχ : GroupLike.map (I.quotientPointConjugation g⁻¹⁻¹ (hI.le_conjugate _))
-        (GroupLike.map (I.quotientPointConjugation g⁻¹ (hI.le_conjugate _)) χ) = χ :=
-      _root_.GroupLike.val_injective (by simp only [GroupLike.val_map, hcomp])
+    have hχ : BialgHom.mapGroupLike (I.quotientPointConjugation g⁻¹⁻¹ (hI.le_conjugate _))
+        (BialgHom.mapGroupLike (I.quotientPointConjugation g⁻¹ (hI.le_conjugate _)) χ) = χ :=
+      _root_.GroupLike.val_injective (by simp only [BialgHom.val_mapGroupLike, hcomp])
     have hv' := basePointsRepresentation_mem_weightSpace g⁻¹ (hI.le_conjugate _) hv
     rw [hχ] at hv'
     exact hv'

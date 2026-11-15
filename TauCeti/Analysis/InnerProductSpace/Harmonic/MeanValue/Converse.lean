@@ -27,7 +27,8 @@ is harmonic, as in Perron's method for the Dirichlet problem.
 ## The argument
 
 The first ingredient is the **maximum principle for the sub-mean-value property**
-(`TauCeti.le_of_le_setAverage_ball_le_frontier`, in `TauCeti.MeasureTheory.Integral.SubMeanValue`):
+(`IsCompact.le_of_le_setAverage_ball_le_frontier`, in
+`TauCeti.MeasureTheory.Integral.SubMeanValue`):
 if `u` is continuous on a compact set `K` and `u x ≤ ⨍ y in ball x r, u y ∂μ` for arbitrarily
 small `r` at every interior point `x`, then `u` is bounded on `K` by its bounds on `frontier K`.
 
@@ -98,10 +99,10 @@ theorem harmonicOnNhd_of_setAverage_ball_eq {U : Set E} (hU : IsOpen U) (hu : Co
   have hK := isCompact_closedBall x r
   have hfr : frontier (closedBall x r) = sphere x r := frontier_closedBall x hr.ne'
   have hwc : ContinuousOn (u - h) (closedBall x r) := huK.sub hhc
-  have hle := le_of_le_setAverage_ball_le_frontier (μ := μ) hK (m := 0) hwc
+  have hle := hK.le_of_le_setAverage_ball_le_frontier (μ := μ) (m := 0) hwc
     (fun y hy ↦ (hmean' y hy).mono fun _ h ↦ h.ge)
     (fun y hy ↦ by rw [hfr] at hy; simp [hhu hy])
-  have hge := ge_of_setAverage_ball_le_ge_frontier (μ := μ) hK (m := 0) hwc
+  have hge := hK.ge_of_setAverage_ball_le_ge_frontier (μ := μ) (m := 0) hwc
     (fun y hy ↦ (hmean' y hy).mono fun _ h ↦ h.le)
     (fun y hy ↦ by rw [hfr] at hy; simp [hhu hy])
   have heq : u =ᶠ[𝓝 x] h := eventually_of_mem (ball_mem_nhds x hr) fun y hy ↦

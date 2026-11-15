@@ -165,6 +165,14 @@ theorem integral_id_map_multinomialToEuclidean_multinomialMeasure (n : ℕ)
   simp
   ring
 
+/-- The mean of a multinomial cell count, cast to `ℝ`, is `n pᵢ`. -/
+@[simp]
+theorem integral_cast_apply_multinomialMeasure (n : ℕ) (p : StdSimplex NNReal ι) (i : ι) :
+    ∫ k : ι → ℕ, (k i : ℝ) ∂multinomialMeasure n p = (n : ℝ) * p.weights i := by
+  rw [integral_of_hasLaw_binomial (hasLaw_multinomial_apply n p i)]
+  simp
+  ring
+
 /-- The variance of a coordinate of the Euclidean multinomial law is `n pᵢ (1 - pᵢ)`. -/
 @[simp]
 theorem variance_eval_map_multinomialToEuclidean_multinomialMeasure (n : ℕ)
@@ -219,6 +227,17 @@ theorem covariance_eval_map_multinomialToEuclidean_multinomialMeasure
   · rw [covariance_eval_map_multinomialToEuclidean_multinomialMeasure_of_ne n p hij]
     simp [Matrix.diagonal_apply_ne _ hij]
     ring
+
+open scoped Classical in
+/-- The covariance of multinomial cell counts, cast to `ℝ`, is `n (pᵢ δᵢⱼ - pᵢ pⱼ)`. -/
+@[simp]
+theorem covariance_cast_apply_multinomialMeasure (n : ℕ) (p : StdSimplex NNReal ι) (i j : ι) :
+    cov[fun k : ι → ℕ ↦ (k i : ℝ), fun k ↦ (k j : ℝ); multinomialMeasure n p] =
+      (n : ℝ) * ((if i = j then (p.weights i : ℝ) else 0) -
+        p.weights i * p.weights j) := by
+  have h := covariance_eval_map_multinomialToEuclidean_multinomialMeasure n p i j
+  rw [covariance_map (by fun_prop) (by fun_prop) (by fun_prop)] at h
+  simpa [Function.comp_def, multinomialToEuclidean_apply, Matrix.diagonal_apply] using h
 
 open scoped Classical in
 /-- The covariance matrix of the Euclidean multinomial law is

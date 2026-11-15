@@ -16,8 +16,8 @@ commute, then all of their reconstructed Jordan factors commute across the two d
 and the semisimple and unipotent parts of their product are the corresponding products.
 
 The proof checks the linear result in every finite-dimensional comodule and then uses Tannakian
-reconstruction to separate points. This compatibility completes a standard structural property
-of the pointwise Jordan decomposition constructed in Layer 4 of the ReductiveGroups roadmap.
+reconstruction to separate points. This compatibility is a standard structural property of the
+pointwise Jordan decomposition.
 
 ## Main declarations
 

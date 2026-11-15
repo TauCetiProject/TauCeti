@@ -102,7 +102,8 @@ theorem abs_primeIdealZetaSum_sub_sum_primeIdealZetaSum_frobeniusPrimeSet_le (hs
         ∑ C : ConjClasses (L ≃ₐ[K] L), (frobeniusPrimeSet K L C).primeIdealZetaSum s| ≤
       (ramifiedPrimes K L).card := by
   rw [sum_primeIdealZetaSum_frobeniusPrimeSet K L hsum, abs_of_nonneg <| sub_nonneg.2 <|
-    Set.primeIdealZetaSum_compl_le_univ_of_finite (ramifiedPrimes K L).finite_toSet s,
+    Set.primeIdealZetaSum_compl_le_univ <| (ramifiedPrimes K L).finite_toSet.summable
+      fun 𝔭 : HeightOneSpectrum (𝓞 K) ↦ (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s),
     ← Set.ncard_coe_finset (ramifiedPrimes K L)]
   exact Set.primeIdealZetaSum_univ_sub_compl_le_ncard_of_finite (ramifiedPrimes K L).finite_toSet hs
 

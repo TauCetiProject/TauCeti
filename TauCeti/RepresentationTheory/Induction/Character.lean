@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.Coset.Basic
 public import TauCeti.LinearAlgebra.Trace.Pi
 public import TauCeti.RepresentationTheory.Induction.ClassFunction
 public import TauCeti.RepresentationTheory.Induction.FiniteDimensional.Basic
@@ -29,6 +30,9 @@ subgroup order.
 * `TauCeti.character_ind` rewrites the coset sum as an average over the whole group when the
   subgroup order is invertible in the coefficient field; it is the specialization of
   `Subgroup.indClassFun_eq_natCard_inv_mul_sum` to a character.
+* `TauCeti.character_indFDRep_mulEquiv`: induced characters are natural under a group isomorphism
+  carrying one finite-index subgroup onto another; it is the specialization of
+  `Subgroup.indClassFun_mulEquiv` to a character.
 
 ## References
 
@@ -48,20 +52,6 @@ namespace Rep
 variable {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgroup G}
 
 private abbrev RightCosets (S : Subgroup G) := Quotient (QuotientGroup.rightRel S)
-
-/-- The right-to-left-coset equivalence sends the right coset of `x` to the left coset of
-`x⁻¹`. Mathlib does not currently expose a computation lemma for this equivalence, so keep
-the necessary unfolding of its `Quotient.map'` implementation isolated here. -/
-private theorem quotientRightRelEquivQuotientLeftRel_mk (S : Subgroup G) (x : G) :
-    QuotientGroup.quotientRightRelEquivQuotientLeftRel S (Quotient.mk'' x) =
-      QuotientGroup.mk x⁻¹ := by
-  change @Quotient.map' G G (QuotientGroup.rightRel S) (QuotientGroup.leftRel S)
-    (fun y => y⁻¹) (fun a b => by
-      rw [QuotientGroup.leftRel_apply, QuotientGroup.rightRel_apply]
-      exact fun h => (congrArg (· ∈ S) (by simp)).mp (S.inv_mem h))
-      (@Quotient.mk'' G (QuotientGroup.rightRel S) x) =
-      @Quotient.mk'' G (QuotientGroup.leftRel S) x⁻¹
-  apply Quotient.map'_mk''
 
 /-- A character is a class function, so `Function.indTerm` applies to it. -/
 private theorem character_mem_classFunction {V : Type u} [AddCommGroup V] [Module k V]
@@ -90,13 +80,19 @@ private theorem trace_ind_eq_sum_rightCosets [S.FiniteIndex] [Fintype (RightCose
     rw [indSubtypeEquivPi_ρ_apply]
     exact congrArg (A.ρ (rightCosetFactor (S := S) (q.out * g)))
       (congrFun he (Quotient.mk'' (q.out * g)))
-  rw [LinearMap.trace_pi_of_apply_eq
-    (T := e.conj ((Rep.ind S.subtype A).ρ g))
-    (σ := fun q => Quotient.mk'' (q.out * g))
-    (f := fun q => A.ρ (rightCosetFactor (S := S) (q.out * g))) hT]
+  rw [LinearMap.trace_pi]
   apply Finset.sum_congr rfl
   intro q _
-  by_cases hq : Quotient.mk'' (q.out * g) = q <;> simp [hq]
+  have hblock :
+      LinearMap.proj q ∘ₗ e.conj ((Rep.ind S.subtype A).ρ g) ∘ₗ
+        LinearMap.single k (fun _ : RightCosets S => A) q =
+      if Quotient.mk'' (q.out * g) = q then
+        A.ρ (rightCosetFactor (S := S) (q.out * g)) else 0 := by
+    ext a
+    simp only [LinearMap.comp_apply, LinearMap.proj_apply, LinearMap.single_apply, hT]
+    by_cases hq : Quotient.mk'' (q.out * g) = q <;> simp [hq]
+  rw [hblock]
+  split_ifs <;> simp
 
 open scoped Classical in
 /-- The trace computation expressed as the standard character summand, still indexed by right
@@ -191,12 +187,8 @@ theorem character_indFDRep_sum_quotient {k : Type u} {G : Type v} [Field k] [Gro
       apply Fintype.sum_equiv e
       intro q
       refine Function.indTerm_eq_of_mk_eq _ (Rep.character_mem_classFunction A'.ρ) _ _ _ ?_
-      have heq : e q = QuotientGroup.mk q.out⁻¹ := by
-        calc
-          e q = e (Quotient.mk'' q.out) :=
-            congrArg e (Quotient.out_eq' q).symm
-          _ = QuotientGroup.mk q.out⁻¹ :=
-            Rep.quotientRightRelEquivQuotientLeftRel_mk S q.out
+      have heq : e q = QuotientGroup.mk q.out⁻¹ :=
+        QuotientGroup.quotientRightRelEquivQuotientLeftRel_apply q
       exact heq.symm.trans (Quotient.out_eq' (e q)).symm
     _ = _ := by
       apply Finset.sum_congr rfl
@@ -256,6 +248,22 @@ theorem character_ind [Fintype G] (hS : IsUnit (Nat.card S : k)) (A : FDRep k S)
   rw [← Subgroup.indClassFun_ofFDRep_character S A]
   exact Subgroup.indClassFun_eq_natCard_inv_mul_sum S hS
     (ClassFunction.mem_iff.mpr fun s t => A.char_conj s t) g
+
+/-- **Induced characters are natural under group isomorphisms.** If `φ : G ≃* G'` carries the
+finite-index subgroup `S` onto `S'` and the characters of `A` and `A'` agree along `φ`, then so do
+the characters of the induced representations. The subgroup `S'` then has finite index too. -/
+theorem character_indFDRep_mulEquiv [S.FiniteIndex] {G' : Type*} [Group G'] {S' : Subgroup G'}
+    (φ : G ≃* G') (hφ : ∀ g, φ g ∈ S' ↔ g ∈ S) (A : FDRep k S) (A' : FDRep k S')
+    (hA : ∀ s : S, A'.character ⟨φ s, (hφ s).2 s.2⟩ = A.character s) (g : G) :
+    haveI : S'.FiniteIndex := @Subgroup.finiteIndex_of_finite_quotient _ _ S'
+      (Finite.of_surjective _ (Subgroup.mk_mulEquiv_out_bijective φ hφ).surjective)
+    (indFDRep (k := k) (G := G') A').character (φ g) =
+      (indFDRep (k := k) (G := G) A).character g := by
+  have : S'.FiniteIndex := @Subgroup.finiteIndex_of_finite_quotient _ _ S'
+    (Finite.of_surjective _ (Subgroup.mk_mulEquiv_out_bijective φ hφ).surjective)
+  rw [← Subgroup.indClassFun_ofFDRep_character, ← Subgroup.indClassFun_ofFDRep_character,
+    Subgroup.indClassFun_mulEquiv S φ hφ A'.char_conj]
+  simp only [hA]
 
 end ClassFun
 

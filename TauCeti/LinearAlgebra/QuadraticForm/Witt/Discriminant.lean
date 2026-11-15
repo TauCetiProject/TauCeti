@@ -249,7 +249,7 @@ private theorem exists_sub_oneFoldPfisterClass_mem_sq {x : WittRing K}
       exact zero_mem _⟩
   | zero =>
     exact ⟨1, by simp, by simp⟩
-  | add x y hx hy ihx ihy =>
+  | add x y hx _ ihx ihy =>
     obtain ⟨a, ha, hxa⟩ := ihx
     obtain ⟨b, hb, hyb⟩ := ihy
     refine ⟨a * b, ?_, ?_⟩

@@ -212,7 +212,8 @@ theorem isLipschitzParametrizable_frontier_rayFundamentalDomain (𝔪 : Modulus 
     Bornology.isBounded_iUnion.2 fun q ↦ isBounded_unitSMul_normLeOne _
   have hAfr : TauCeti.IsLipschitzParametrizable (finrank ℝ (mixedSpace K) - 1) (frontier A) :=
     .mono (.iUnion fun q ↦ isLipschitzParametrizable_frontier_unitSMul_normLeOne _)
-      (frontier_iUnion_subset _)
+      (by simpa using Set.finite_univ.frontier_biUnion_subset fun q ↦
+            rayUnitRepresentative 𝔪 q • normLeOne K)
   exact .mono (.union (.mono hAfr Set.inter_subset_left)
     (isLipschitzParametrizable_closure_inter_frontier_posRegion 𝔪 hAbdd))
     (frontier_inter_subset A (posRegion 𝔪))

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Polynomial.Subresultant.Polynomial
-public import TauCeti.RingTheory.Polynomial.Subresultant.DegreeDrop.Basic
+public import TauCeti.RingTheory.Polynomial.Subresultant.DegreeDrop.Polynomial
 public import TauCeti.RingTheory.Polynomial.Subresultant.Signed
 import TauCeti.Algebra.Polynomial.OfFn
 import TauCeti.Data.Nat.Choose.Basic
@@ -26,6 +26,8 @@ terminal principal index. Division with remainder requires a field; the divisor 
 remainder may be zero. The principal-coefficient recurrences require the index to lie
 at or below both the remainder bound and the divisor degree. Strictly between the
 degree of the remainder and the degree of the divisor, the principal coefficients vanish.
+The polynomial subresultants also satisfy an exact Euclidean recurrence, with explicit
+endpoint multiples and vanishing inside degree gaps.
 For the signed principal coefficients, one step of the signed remainder sequence
 `p, q, -(p % q)` multiplies the coefficients at or below the remainder bound by a common
 factor independent of the index.
@@ -33,7 +35,7 @@ factor independent of the index.
 ## References
 
 S. Basu, R. Pollack, and M.-F. Roy, *Algorithms in Real Algebraic Geometry*,
-second edition, Chapter 4 (subresultants and polynomial remainder sequences).
+second edition, Chapters 4 and 8 (subresultants and polynomial remainder sequences).
 -/
 
 public section
@@ -111,29 +113,34 @@ private theorem subresultantCoeffMatrix_add_mul {p q a : R[X]} {m n j : ℕ}
       rw [mul_add, mul_assoc, add_comm]
 
 /-- Adding a multiple of the right input preserves every fixed-bound coefficient minor.
-The multiplier's degree plus the right bound must not exceed the left bound. -/
+The multiplier's degree plus the right bound must not exceed the left bound; the left input
+needs no degree bound, as only its coefficients up to the left bound are read. -/
 theorem _root_.Polynomial.subresultantCoeff_add_mul_left {p q a : R[X]} {m n j : ℕ}
-    (hp : p.natDegree ≤ m) (hq : q.natDegree ≤ n)
-    (ha : a.natDegree + n ≤ m) (k : ℕ) :
+    (hq : q.natDegree ≤ n) (ha : a.natDegree + n ≤ m) (k : ℕ) :
     subresultantCoeff (p + a * q) q m n j k = subresultantCoeff p q m n j k := by
-  simp [subresultantCoeff_def, subresultantCoeffMatrix_add_mul hp hq ha,
-    Matrix.det_mul, det_reductionShear]
+  have hp' : (p.reductum (m + 1)).natDegree ≤ m := Nat.lt_succ_iff.mp (natDegree_reductum_lt p m)
+  have hcongr : ∀ i ≤ m, (p + a * q).coeff i = (p.reductum (m + 1) + a * q).coeff i := by
+    intro i hi
+    simp [coeff_reductum, Nat.lt_succ_of_le hi]
+  rw [subresultantCoeff_def, subresultantCoeff_def,
+    subresultantCoeffMatrix_congr_left hcongr,
+    subresultantCoeffMatrix_congr_left (p := p) (p' := p.reductum (m + 1))
+      (fun i hi => by simp [coeff_reductum, Nat.lt_succ_of_le hi])]
+  simp [subresultantCoeffMatrix_add_mul hp' hq ha, Matrix.det_mul, det_reductionShear]
 
 /-- Polynomial reduction preserves principal coefficients, including the terminal index. -/
 theorem _root_.Polynomial.psc_add_mul_left {p q a : R[X]} {m n j : ℕ}
-    (hp : p.natDegree ≤ m) (hq : q.natDegree ≤ n)
-    (ha : a.natDegree + n ≤ m) :
+    (hq : q.natDegree ≤ n) (ha : a.natDegree + n ≤ m) :
     psc (p + a * q) q m n j = psc p q m n j := by
   simpa only [subresultantCoeff_self] using
-    subresultantCoeff_add_mul_left (j := j) hp hq ha j
+    subresultantCoeff_add_mul_left (j := j) hq ha j
 
 /-- Polynomial reduction preserves the fixed-bound subresultant polynomial. -/
 theorem _root_.Polynomial.subresultant_add_mul_left {p q a : R[X]} {m n j : ℕ}
-    (hp : p.natDegree ≤ m) (hq : q.natDegree ≤ n)
-    (ha : a.natDegree + n ≤ m) :
+    (hq : q.natDegree ≤ n) (ha : a.natDegree + n ≤ m) :
     subresultant (p + a * q) q m n j = subresultant p q m n j := by
   ext k
-  simp only [coeff_subresultant, subresultantCoeff_add_mul_left hp hq ha]
+  simp only [coeff_subresultant, subresultantCoeff_add_mul_left hq ha]
 
 section Field
 
@@ -161,7 +168,7 @@ theorem _root_.Polynomial.subresultantCoeff_mod_left {p q : K[X]} {m j : ℕ}
     have heq : p + -(p / q) * q = p % q := by
       rw [EuclideanDomain.mod_eq_sub_mul_div]
       ring
-    simpa only [heq] using subresultantCoeff_add_mul_left hp le_rfl ha k
+    simpa only [heq] using subresultantCoeff_add_mul_left (p := p) (j := j) le_rfl ha k
   · have hmod : p % q = p :=
       (mod_eq_self_iff hq).mpr (degree_lt_degree (by omega))
     rw [hmod]
@@ -191,7 +198,7 @@ theorem _root_.Polynomial.psc_eq_sign_mul_leadingCoeff_pow_mul_psc_mod {p q : K[
       (-1) ^ ((m - j) * (q.natDegree - j)) * q.leadingCoeff ^ (m - r) *
         psc q (p % q) q.natDegree r j := by
   rw [← psc_mod_left hp,
-    psc_eq_sign_mul_coeff_pow_mul_of_left_degree_drop hr le_rfl hrm hjr hjq,
+    psc_eq_sign_mul_coeff_pow_mul_of_left_degree_drop hr hrm hjr hjq,
     psc_comm (p % q) q r q.natDegree j, coeff_natDegree]
   have hgap : m - j = (m - r) + (r - j) := by omega
   rw [hgap, add_mul, pow_add]
@@ -224,7 +231,7 @@ theorem _root_.Polynomial.psc_eq_zero_of_natDegree_mod_lt {p q : K[X]} {m j : �
     (hjm : j ≤ m) :
     psc p q m q.natDegree j = 0 := by
   rw [← psc_mod_left hp,
-    psc_eq_sign_mul_coeff_pow_mul_of_left_degree_drop hrj.le le_rfl hjm le_rfl hjq.le,
+    psc_eq_sign_mul_coeff_pow_mul_of_left_degree_drop hrj.le hjm le_rfl hjq.le,
     psc_left_bound, coeff_eq_zero_of_natDegree_lt hrj, zero_pow (by omega), mul_zero]
 
 /-- One step of the signed remainder sequence multiplies the signed principal coefficients by a
@@ -255,11 +262,91 @@ theorem _root_.Polynomial.signedPsc_eq_mul_signedPsc_neg_mod {p q : K[X]} {m r j
 /-- The signed principal coefficients vanish at the indices strictly between the degree of the
 remainder `p % q` and the degree of `q`. -/
 theorem _root_.Polynomial.signedPsc_eq_zero_of_natDegree_mod_lt {p q : K[X]} {m j : ℕ}
-    (hp : p.natDegree ≤ m) (hrj : (p % q).natDegree < j) (hjq : j < q.natDegree)
-    (hjm : j ≤ m) :
+    (hp : p.natDegree ≤ m) (hrj : (p % q).natDegree < j) (hjq : j < q.natDegree) :
     signedPsc p q m q.natDegree j = 0 := by
-  rw [signedPsc_of_le p q (le_min hjm hjq.le), psc_eq_zero_of_natDegree_mod_lt hp hrj hjq hjm,
-    mul_zero]
+  by_cases hjm : j ≤ m
+  · rw [signedPsc_of_le p q (le_min hjm hjq.le), psc_eq_zero_of_natDegree_mod_lt hp hrj hjq hjm,
+      mul_zero]
+  · rw [signedPsc_of_lt p q (by omega)]
+    split_ifs <;> first | rfl | omega
+
+/-! ### One Euclidean step -/
+
+/-- A Euclidean step for subresultant polynomials. Below the remainder bound `r`, the
+subresultant of `(p, q)` is that of `(q, p % q)` times `± q.leadingCoeff ^ (m - r)`. -/
+theorem _root_.Polynomial.subresultant_eq_C_mul_subresultant_mod {p q : K[X]} {m r j : ℕ}
+    (hp : p.natDegree ≤ m) (hr : (p % q).natDegree ≤ r) (hrm : r ≤ m)
+    (hj : j < r) :
+    subresultant p q m q.natDegree j =
+      C ((-1) ^ ((m - j) * (q.natDegree - j)) * q.leadingCoeff ^ (m - r)) *
+        subresultant q (p % q) q.natDegree r j := by
+  rw [← subresultant_mod_left hp,
+    subresultant_eq_C_sign_mul_coeff_pow_mul_of_left_degree_drop hr hrm hj,
+    subresultant_comm (p % q) q r q.natDegree j, coeff_natDegree, ← mul_assoc, ← C_mul]
+  congr 2
+  have hmj : m - j = (m - r) + (r - j) := by omega
+  rw [hmj, add_mul, pow_add]
+  ring
+
+/-- The Euclidean step for the signed remainder `-(p % q)`, the next entry of the signed
+remainder sequence. Negating the remainder adds the sign of its `q.natDegree - j` columns. -/
+theorem _root_.Polynomial.subresultant_eq_C_mul_subresultant_neg_mod {p q : K[X]} {m r j : ℕ}
+    (hp : p.natDegree ≤ m) (hr : (p % q).natDegree ≤ r) (hrm : r ≤ m)
+    (hj : j < r) :
+    subresultant p q m q.natDegree j =
+      C ((-1) ^ ((m - j + 1) * (q.natDegree - j)) * q.leadingCoeff ^ (m - r)) *
+        subresultant q (-(p % q)) q.natDegree r j := by
+  have hneg : -(p % q) = C (-1) * (p % q) := by simp
+  have hsq : ((-1 : K) ^ (q.natDegree - j)) ^ 2 = 1 := by
+    rw [← pow_mul, mul_comm, pow_mul, neg_one_sq, one_pow]
+  rw [hneg, subresultant_C_mul_right, subresultant_eq_C_mul_subresultant_mod hp hr hrm hj,
+    ← mul_assoc, ← C_mul, add_mul, one_mul, pow_add]
+  congr 2
+  linear_combination -((-1 : K) ^ ((m - j) * (q.natDegree - j)) * q.leadingCoeff ^ (m - r)) * hsq
+
+/-! ### The degree gap -/
+
+/-- From the degree of the remainder up to `q.natDegree - 1`, the subresultant of `(p, q)` is an
+explicit multiple of the remainder `p % q`. -/
+theorem _root_.Polynomial.subresultant_eq_C_mul_mod {p q : K[X]} {m j : ℕ}
+    (hp : p.natDegree ≤ m) (hr : (p % q).natDegree ≤ j) (hjq : j < q.natDegree)
+    (hjm : j < m) :
+    subresultant p q m q.natDegree j =
+      C ((-1) ^ ((m - j) * (q.natDegree - j)) * q.leadingCoeff ^ (m - j) *
+        (p % q).coeff j ^ (q.natDegree - j - 1)) * (p % q) := by
+  rw [← subresultant_mod_left hp, subresultant_left_bound_of_degree_drop hr hjq hjm,
+    coeff_natDegree]
+
+/-- The subresultant at index `q.natDegree - 1` is `(-q.leadingCoeff) ^ (m + 1 - q.natDegree)`
+times the remainder `p % q`. -/
+theorem _root_.Polynomial.subresultant_natDegree_sub_one {p q : K[X]} {m : ℕ}
+    (hp : p.natDegree ≤ m) (hqm : q.natDegree ≤ m) :
+    subresultant p q m q.natDegree (q.natDegree - 1) =
+      C ((-q.leadingCoeff) ^ (m + 1 - q.natDegree)) * (p % q) := by
+  rcases Nat.eq_zero_or_pos q.natDegree with hq0 | hq
+  · rw [hq0, Nat.zero_sub, subresultant_eq_zero_of_min_le _ _ _ _ _ (by omega)]
+    by_cases hq' : q = 0
+    · subst hq'
+      simp
+    · rw [eq_C_of_natDegree_eq_zero hq0, EuclideanDomain.mod_eq_zero.mpr]
+      · simp
+      · refine (isUnit_C.mpr (isUnit_iff_ne_zero.mpr fun h => hq' ?_)).dvd
+        rw [eq_C_of_natDegree_eq_zero hq0, h, C_0]
+  have hm : m - (q.natDegree - 1) = m + 1 - q.natDegree := by omega
+  have hq1 : q.natDegree - (q.natDegree - 1) = 1 := by omega
+  rw [subresultant_eq_C_mul_mod hp (Nat.le_sub_one_of_lt (natDegree_mod_lt p hq.ne')) (by omega)
+    (by omega), hm, hq1, Nat.sub_self, pow_zero, mul_one, mul_one, neg_pow q.leadingCoeff]
+
+/-- Strictly inside the degree gap, between the degree of the remainder and
+`q.natDegree - 1`, the subresultants of `(p, q)` vanish. This includes every index below
+`q.natDegree - 1` when `q` divides `p`. -/
+theorem _root_.Polynomial.subresultant_eq_zero_of_degree_mod_lt {p q : K[X]} {m j : ℕ}
+    (hp : p.natDegree ≤ m) (hr : (p % q).degree < j) (hjq : j + 1 < q.natDegree) :
+    subresultant p q m q.natDegree j = 0 := by
+  by_cases hjm : j < m
+  · rw [subresultant_eq_C_mul_mod hp (natDegree_le_of_degree_le hr.le) (by omega) hjm,
+      coeff_eq_zero_of_degree_lt hr, zero_pow (by omega), mul_zero, C_0, zero_mul]
+  · exact subresultant_eq_zero_of_min_le _ _ _ _ _ (by omega)
 
 end Field
 

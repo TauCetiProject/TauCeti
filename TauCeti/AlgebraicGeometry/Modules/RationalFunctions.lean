@@ -56,6 +56,9 @@ condition and the `𝒪_X`-module structure automatic.
   `TauCeti.AlgebraicGeometry.Scheme.subsingleton_rationalFunctions`, the sections over an empty
   open subset vanish; together these give
   `TauCeti.AlgebraicGeometry.Scheme.isFlasque_rationalFunctions`;
+* `TauCeti.AlgebraicGeometry.Scheme.rationalFunctionsHom`, the morphism extending compatible
+  linear maps on nonempty opens, with its computation rule `rationalFunctionsHom_app` and
+  injectivity criterion `rationalFunctionsHom_app_injective`;
 * `TauCeti.AlgebraicGeometry.Scheme.rationalFunctionsMul`, multiplication by a rational function
   as an endomorphism of `𝒦_X`, obtained by pushing forward multiplication by the corresponding
   global function on `Spec K(X)`; `rationalFunctionsEquiv_rationalFunctionsMul_app` identifies it
@@ -289,9 +292,66 @@ theorem rationalFunctionsEquiv_map {U V : X.Opens} [Nonempty U] [Nonempty V] (i 
   rw [rationalFunctionsEquiv_apply, rationalFunctionsSectionsEquiv_map,
     rationalFunctionsRingEquiv_map, rationalFunctionsEquiv_apply]
 
-/-- The restriction maps of `𝒦_X` between nonempty open subsets are bijective. -/
-theorem rationalFunctions_map_bijective {U V : X.Opens} [Nonempty U] [Nonempty V] (i : U ⟶ V) :
+section Hom
+
+variable (M : X.Modules)
+  (app : ∀ (U : X.Opens) [Nonempty U],
+    M.val.obj (op U) ⟶ (rationalFunctions X).val.obj (op U))
+  (happ : ∀ {U V : X.Opens} [Nonempty U] [Nonempty V] (i : V ⟶ U) (s : Γ(M, U)),
+    app V (M.presheaf.map i.op s) = (rationalFunctions X).presheaf.map i.op (app U s))
+
+/-- Compatible linear maps to rational functions on nonempty opens extend to a morphism of
+module sheaves. On the empty open the component is the unique map to the zero module. -/
+def rationalFunctionsHom : M ⟶ rationalFunctions X := by
+  classical
+  refine
+    { val :=
+      { app := fun U ↦ if hU : Nonempty U.unop then
+          letI := hU
+          app U.unop
+        else 0
+        naturality := ?_ } }
+  intro U V i
+  by_cases hV : Nonempty V.unop
+  · let := hV
+    have hU : Nonempty U.unop := ⟨⟨(Classical.choice hV).1,
+      i.unop.le (Classical.choice hV).2⟩⟩
+    let := hU
+    simp only [dite_eq_left hU, dite_eq_left hV]
+    ext s
+    exact happ i.unop s
+  · ext s
+    exact TopCat.Presheaf.section_ext
+      ⟨(rationalFunctions X).presheaf, (rationalFunctions X).isSheaf⟩
+      V.unop _ _ fun x hx ↦ (hV ⟨⟨x, hx⟩⟩).elim
+
+/-- The extension agrees with the supplied linear map on every nonempty open. -/
+@[simp]
+theorem rationalFunctionsHom_app (U : X.Opens) [Nonempty U] (s : Γ(M, U)) :
+    (rationalFunctionsHom M app happ).app U s = app U s := by
+  simp only [rationalFunctionsHom, Scheme.Modules.Hom.app,
+    dite_eq_left (inferInstance : Nonempty U)]
+  rfl
+
+/-- Injectivity on nonempty opens implies injectivity of the extended morphism on all opens. -/
+theorem rationalFunctionsHom_app_injective
+    (hinj : ∀ (U : X.Opens) [Nonempty U], Function.Injective (app U)) (U : X.Opens) :
+    Function.Injective ((rationalFunctionsHom M app happ).app U) := by
+  intro s s' h
+  by_cases hU : Nonempty U
+  · let := hU
+    rw [rationalFunctionsHom_app, rationalFunctionsHom_app] at h
+    exact hinj U h
+  · exact TopCat.Presheaf.section_ext ⟨M.presheaf, M.isSheaf⟩
+      U s s' fun x hx ↦ (hU ⟨⟨x, hx⟩⟩).elim
+
+end Hom
+
+/-- The restriction maps of `𝒦_X` to a nonempty open subset are bijective. -/
+theorem rationalFunctions_map_bijective {U V : X.Opens} [Nonempty U] (i : U ⟶ V) :
     Function.Bijective ((rationalFunctions X).presheaf.map i.op) := by
+  have : Nonempty V :=
+    ⟨⟨(Classical.arbitrary U : U).1, leOfHom i (Classical.arbitrary U : U).2⟩⟩
   constructor
   · intro a b hab
     refine (rationalFunctionsEquiv V).injective ?_
@@ -301,14 +361,13 @@ theorem rationalFunctions_map_bijective {U V : X.Opens} [Nonempty U] [Nonempty V
     refine (rationalFunctionsEquiv U).injective ?_
     rw [rationalFunctionsEquiv_map, LinearEquiv.apply_symm_apply]
 
-/-- The restriction maps of `𝒦_X` between nonempty open subsets are isomorphisms. -/
-instance isIso_rationalFunctions_map {U V : X.Opens} [Nonempty U] [Nonempty V] (i : U ⟶ V) :
+/-- The restriction maps of `𝒦_X` to a nonempty open subset are isomorphisms. -/
+instance isIso_rationalFunctions_map {U V : X.Opens} [Nonempty U] (i : U ⟶ V) :
     IsIso ((rationalFunctions X).presheaf.map i.op) :=
   (ConcreteCategory.isIso_iff_bijective _).mpr (rationalFunctions_map_bijective i)
 
-/-- The restriction maps of the ring sheaf `𝒦_X` between nonempty open subsets are bijective. -/
-theorem rationalFunctionsRing_map_bijective {U V : X.Opens} [Nonempty U] [Nonempty V]
-    (i : U ⟶ V) :
+/-- The restriction maps of the ring sheaf `𝒦_X` to a nonempty open subset are bijective. -/
+theorem rationalFunctionsRing_map_bijective {U V : X.Opens} [Nonempty U] (i : U ⟶ V) :
     Function.Bijective ((rationalFunctionsRing X).presheaf.map i.op) := by
   have h : ⇑((rationalFunctionsRing X).presheaf.map i.op) =
       rationalFunctionsSectionsEquiv X U ∘ (rationalFunctions X).presheaf.map i.op ∘
@@ -320,9 +379,9 @@ theorem rationalFunctionsRing_map_bijective {U V : X.Opens} [Nonempty U] [Nonemp
   exact (rationalFunctionsSectionsEquiv X U).bijective.comp
     ((rationalFunctions_map_bijective i).comp (rationalFunctionsSectionsEquiv X V).symm.bijective)
 
-/-- The restriction maps of the ring sheaf `𝒦_X` between nonempty open subsets are
+/-- The restriction maps of the ring sheaf `𝒦_X` to a nonempty open subset are
 isomorphisms. -/
-instance isIso_rationalFunctionsRing_map {U V : X.Opens} [Nonempty U] [Nonempty V] (i : U ⟶ V) :
+instance isIso_rationalFunctionsRing_map {U V : X.Opens} [Nonempty U] (i : U ⟶ V) :
     IsIso ((rationalFunctionsRing X).presheaf.map i.op) :=
   (ConcreteCategory.isIso_iff_bijective _).mpr (rationalFunctionsRing_map_bijective i)
 
@@ -377,6 +436,13 @@ theorem rationalFunctionsEquiv_toRationalFunctions_app (U : X.Opens) [Nonempty U
     rationalFunctionsEquiv U (Scheme.Modules.Hom.app (toRationalFunctions X) U r) =
       X.germToFunctionField U r := by
   exact ConcreteCategory.congr_hom (app_comp_functionFieldSectionsIso U) r
+
+/-- The inclusion `𝒪_X ⟶ 𝒦_X` commutes with the restriction maps. -/
+theorem toRationalFunctions_app_map {U V : X.Opens} (i : V ⟶ U) (r : Γ(X, U)) :
+    Scheme.Modules.Hom.app (toRationalFunctions X) V (X.presheaf.map i.op r) =
+      (rationalFunctions X).presheaf.map i.op
+        (Scheme.Modules.Hom.app (toRationalFunctions X) U r) :=
+  PresheafOfModules.naturality_apply (toRationalFunctions X).val i.op r
 
 /-- A morphism from the structure sheaf to rational functions is multiplication by the
 rational function obtained by evaluating the global section `1`. -/
@@ -592,7 +658,15 @@ lemma rationalFunctionsMul_inv_app_rationalFunctionsMul_app (g : X.functionField
 
 end Mul
 
-variable [IsIntegral X]
+end Scheme
+
+namespace Scheme
+
+/-! On an integral scheme `IrreducibleSpace X` is automatic
+(`AlgebraicGeometry.irreducibleSpace_of_isIntegral`), so the statements below assume only
+integrality. -/
+
+variable {X : Scheme.{u}} [IsIntegral X]
 
 /-- The inclusion `𝒪_X ⟶ 𝒦_X` is injective on sections over every open subset: over a nonempty
 one because the germ map to the function field of an integral scheme is injective, and over an
@@ -624,7 +698,7 @@ theorem exists_germToFunctionField_eq_of_forall_mem_range {U : X.Opens} [Nonempt
   -- The generic point lies in every nonempty open subset, so germs there see every overlap.
   have hgen : ∀ V : X.Opens, Nonempty V → genericPoint X ∈ V := fun V _ ↦ genericPoint_mem V
   -- Every point of `U` has a neighbourhood inside `U` on which `f` is regular.
-  have key : ∀ y : U, ∃ V : X.Opens, ∃ _ : (y : X) ∈ V, ∃ hV : V ≤ U,
+  have key : ∀ y : U, ∃ V : X.Opens, ∃ _ : (y : X) ∈ V, ∃ _ : V ≤ U,
       ∃ s : Γ(X, V), X.presheaf.germ V (genericPoint X) (hgen V ⟨⟨(y : X), ‹_›⟩⟩) s = f := by
     intro y
     obtain ⟨g, hgf⟩ := hf y y.2

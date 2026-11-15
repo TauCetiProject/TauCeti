@@ -78,10 +78,8 @@ universe-polymorphic, is specialized to that universe here.
 * D. Gorenstein, R. Lyons and R. Solomon, *The Classification of the Finite Simple Groups*, for the
   small-field convention that indexes the twisted type-`A` family by `q` rather than by `q ^ 2`.
 
-This advances the "Pinnings" and "points over an algebraically closed field" targets in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`. Its consumer is milestone L1 of
-`TauCetiRoadmap/CFSGStatement/README.md`, which sets the `²A` Steinberg map to `γ₂ ∘ Frob_q` and
-requires exactly `γ₂ ^ 2 = 1` together with the commutation of `γ₂` with `Frob_q`.
+The Steinberg map of the twisted family `²A_r(q)` has the form `γ ∘ Frob_q`, with `γ` an
+involution commuting with `Frob_q`.
 -/
 
 public section

@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Homotopy.HomotopyGroup
+public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
+public import TauCeti.Topology.Homotopy.Cube.Basic
 
 /-!
 # Radial coordinates on the cube
@@ -26,7 +28,18 @@ exactly on the boundary (`TauCeti.cubeRadius_eq_one_iff`). Radial rescaling by a
 `TauCeti.cubeScale`, defined with `Set.projIcc` so that it is total and jointly continuous, and
 it multiplies the radius by `s` as long as the result still fits in the cube
 (`TauCeti.cubeRadius_cubeScale`). In particular a point of radius `r > 0` is scaled by `1 / r`
-onto the boundary, which is what makes the collar constructions glue continuously.
+onto the boundary, which is what makes the collar constructions glue continuously. Pushing up
+and then rescaling also contracts the open box `{1} × I^N ∪ I × ∂I^N` of `I × I^N` onto the
+centre of its top face (`TauCeti.openBoxContraction`), for any index type, and moving the top
+face along straight lines contracts it onto any point of its top face
+(`TauCeti.openBoxContractionTo`).
+
+The radius is also the sup norm of the image of a cube point under the affine homeomorphism
+`TauCeti.cubeHomeomorphClosedBall` of the cube onto the closed unit ball of `N → ℝ`
+(`TauCeti.norm_cubeHomeomorphClosedBall`), so that homeomorphism carries the boundary of the cube
+onto the unit sphere (`TauCeti.norm_cubeHomeomorphClosedBall_eq_one_iff`). For `N = Fin (n + 1)`,
+splitting off the first coordinate identifies the closed unit ball with the cube `I × I^(Fin n)`
+(`TauCeti.closedBallHomeomorphProd`), and its unit sphere with `TauCeti.Cube.prodBoundary`.
 
 ## Main declarations
 
@@ -36,11 +49,15 @@ onto the boundary, which is what makes the collar constructions glue continuousl
   with equality exactly on `Cube.boundary N`.
 * `TauCeti.cubeScale`: radial rescaling of a cube point, and `TauCeti.cubeRadius_cubeScale`: it
   scales the radius.
-
-## References
-
-This supplies the cube geometry behind the base-point-change isomorphisms of higher homotopy
-groups requested in `TauCetiRoadmap/UniversalCovers/README.md`, Stage 3, item 9.
+* `TauCeti.openBoxContraction`: the contraction of the open box of `I × I^N` onto the centre of
+  its top face, which keeps the open box inside itself (`TauCeti.openBoxContraction_mem_openBox`).
+* `TauCeti.openBoxContractionTo`: the contraction of the open box onto an arbitrary point `(1, c)`
+  of its top face, which keeps each face `t j = c j` of the cube inside itself
+  (`TauCeti.openBoxContractionTo_update`).
+* `TauCeti.norm_cubeHomeomorphClosedBall_eq_one_iff`: the cube homeomorphism onto the closed unit
+  ball of the sup norm carries `Cube.boundary N` onto the unit sphere.
+* `TauCeti.closedBallHomeomorphProd`: the closed unit ball of the sup norm on `Fin (n + 1) → ℝ` is
+  homeomorphic to `I × I^(Fin n)`, carrying the unit sphere onto `Cube.prodBoundary (Fin n)`.
 -/
 
 public section
@@ -80,6 +97,125 @@ theorem cubeScale_one (z : I^N) : cubeScale 1 z = z := by
   simp only [cubeScale]
   rw [Set.coe_projIcc, max_eq_right (by simp; linarith), min_eq_right (by linarith)]
   ring
+
+/-- Rescaling by `0` collapses the cube onto its centre. -/
+@[simp]
+theorem cubeScale_zero (z : I^N) : cubeScale 0 z = cubeCenter := by
+  funext i
+  apply Subtype.ext
+  simp only [cubeScale, cubeCenter, mul_zero, add_zero]
+  rw [Set.coe_projIcc]
+  norm_num
+
+/-! ### Contracting the open box -/
+
+/-- The contraction of the open box `{1} × I^N ∪ I × ∂I^N` of the cube `I × I^N` to the centre
+`(1, c)` of its top face: up to time `1 / 2` it pushes every point up to the top face, and after
+that it shrinks the top face onto its centre. -/
+def openBoxContraction (t : I) (z : I × I^N) : I × I^N :=
+  (Set.projIcc 0 1 zero_le_one ((z.1 : ℝ) + 2 * t), cubeScale (min 1 (2 - 2 * (t : ℝ))) z.2)
+
+/-- The contraction of the open box is jointly continuous in time and space. -/
+theorem continuous_openBoxContraction :
+    Continuous fun q : I × (I × I^N) ↦ openBoxContraction q.1 q.2 :=
+  (continuous_projIcc.comp' (by fun_prop)).prodMk (continuous_cubeScale.comp
+    ((continuous_const.min (continuous_const.sub (continuous_const.mul
+      (continuous_subtype_val.comp continuous_fst)))).prodMk (continuous_snd.comp continuous_snd)))
+
+/-- At time `0` the contraction of the open box is the identity. -/
+@[simp]
+theorem openBoxContraction_zero (z : I × I^N) : openBoxContraction 0 z = z := by
+  ext1
+  · simp [openBoxContraction]
+  · norm_num [openBoxContraction]
+
+/-- At time `1` the contraction of the open box is constant at the centre of the top face. -/
+@[simp]
+theorem openBoxContraction_one (z : I × I^N) :
+    openBoxContraction 1 z = (1, cubeCenter) := by
+  ext1
+  · exact projIcc_eq_one.2 (by simp; linarith [z.1.2.1])
+  · norm_num [openBoxContraction]
+
+/-- The contraction keeps the open box `{1} × I^N ∪ I × ∂I^N` inside itself. -/
+theorem openBoxContraction_mem_openBox {z : I × I^N} (hz : z.1 = 1 ∨ z.2 ∈ Cube.boundary N)
+    (t : I) : (openBoxContraction t z).1 = 1 ∨ (openBoxContraction t z).2 ∈ Cube.boundary N := by
+  by_cases ht : (t : ℝ) ≤ 1 / 2
+  · rcases hz with hz | hz
+    · exact .inl (projIcc_eq_one.2 (by simp [hz]; linarith [t.2.1]))
+    · exact .inr (by rwa [openBoxContraction, min_eq_left (by linarith), cubeScale_one])
+  · exact .inl (projIcc_eq_one.2 (by linarith [z.1.2.1]))
+
+/-- The contraction keeps the open box `{1} × I^N ∪ I × ∂I^N` inside the boundary of the cube. -/
+theorem openBoxContraction_mem_prodBoundary {z : I × I^N} (hz : z.1 = 1 ∨ z.2 ∈ Cube.boundary N)
+    (t : I) : openBoxContraction t z ∈ Cube.prodBoundary N :=
+  Cube.mk_mem_prodBoundary (openBoxContraction_mem_openBox hz t)
+
+/-- The contraction of the open box `{1} × I^N ∪ I × ∂I^N` of `I × I^N` onto the point `(1, c)` of
+its top face: up to time `1 / 2` it pushes every point up to the top face, and after that it moves
+the top face along straight lines onto `c`. Unlike `TauCeti.openBoxContraction`, which aims at the
+centre of the top face, it keeps each face `t j = c j` of the cube through `(1, c)` inside
+itself (`TauCeti.openBoxContractionTo_update`), which is what lets the deformations of two maps
+sharing such a face be glued. -/
+def openBoxContractionTo (c : I^N) (t : I) (w : I × I^N) : I × I^N :=
+  (Set.projIcc 0 1 zero_le_one ((w.1 : ℝ) + 2 * t),
+    fun i ↦ Set.projIcc 0 1 zero_le_one ((w.2 i : ℝ) + max 0 (2 * (t : ℝ) - 1) * (c i - w.2 i)))
+
+/-- The contraction of the open box onto `(1, c)` is jointly continuous in time and space. -/
+theorem continuous_openBoxContractionTo (c : I^N) :
+    Continuous fun q : I × (I × I^N) ↦ openBoxContractionTo c q.1 q.2 :=
+  (continuous_projIcc.comp (by fun_prop)).prodMk
+    (continuous_pi fun _ ↦ continuous_projIcc.comp (by fun_prop))
+
+/-- At time `0` the contraction of the open box onto `(1, c)` is the identity. -/
+@[simp]
+theorem openBoxContractionTo_zero (c : I^N) (w : I × I^N) :
+    openBoxContractionTo c 0 w = w := by
+  ext1
+  · simp [openBoxContractionTo]
+  · funext i
+    simp [openBoxContractionTo]
+
+/-- At time `1` the contraction of the open box onto `(1, c)` is constant at `(1, c)`. -/
+@[simp]
+theorem openBoxContractionTo_one (c : I^N) (w : I × I^N) :
+    openBoxContractionTo c 1 w = (1, c) := by
+  ext1
+  · exact projIcc_eq_one.2 (by simp; linarith [w.1.2.1])
+  · funext i
+    simp only [openBoxContractionTo, Set.Icc.coe_one]
+    rw [show (w.2 i : ℝ) + max 0 (2 * 1 - 1) * (c i - w.2 i) = c i by norm_num, Set.projIcc_val]
+
+/-- The contraction onto `(1, c)` keeps the open box `{1} × I^N ∪ I × ∂I^N` inside the boundary of
+the cube. -/
+theorem openBoxContractionTo_mem_prodBoundary (c : I^N) {w : I × I^N}
+    (hw : w.1 = 1 ∨ w.2 ∈ Cube.boundary N) (t : I) :
+    openBoxContractionTo c t w ∈ Cube.prodBoundary N := by
+  refine Cube.mk_mem_prodBoundary ?_
+  by_cases ht : (t : ℝ) ≤ 1 / 2
+  · rcases hw with hw | hw
+    · exact .inl (projIcc_eq_one.2 (by simp [hw]; linarith [t.2.1]))
+    · refine .inr ?_
+      have : max (0 : ℝ) (2 * t - 1) = 0 := max_eq_left (by linarith)
+      simpa [openBoxContractionTo, this] using hw
+  · exact .inl (projIcc_eq_one.2 (by linarith [w.1.2.1]))
+
+/-- The contraction onto `(1, c)` keeps the face `t j = c j` inside itself, acting there as the
+contraction onto any point with the same coordinates outside `j`. -/
+theorem openBoxContractionTo_update [DecidableEq N] (c : I^N) (j : N) (e : I) (t : I)
+    (s : I) (z : I^N) :
+    openBoxContractionTo (Function.update c j e) t (s, Function.update z j e) =
+      ((openBoxContractionTo c t (s, z)).1,
+        Function.update (openBoxContractionTo c t (s, z)).2 j e) := by
+  ext1
+  · rfl
+  · funext i
+    by_cases hij : i = j
+    · subst hij
+      simp [openBoxContractionTo]
+    · simp [openBoxContractionTo, Function.update_of_ne hij]
+
+/-! ### The `sup` radius -/
 
 variable [Fintype N]
 
@@ -190,5 +326,65 @@ theorem cubeRadius_cubeScale {s : ℝ} (hs : 0 ≤ s) {z : I^N} (h : s * cubeRad
     intro i
     rw [dist_apply_cubeCenter, le_div_iff₀' hs0, ← key i, ← dist_apply_cubeCenter]
     exact dist_le_pi_dist _ _ i
+
+
+/-! ### The cube as the closed unit ball of the sup norm -/
+
+/-- The radius of a cube point is the sup norm of its image under the affine homeomorphism
+`TauCeti.cubeHomeomorphClosedBall` onto the closed unit ball: coordinatewise,
+`|2 * t - 1| = 2 * |t - 1 / 2|`. -/
+theorem norm_cubeHomeomorphClosedBall (y : I^N) :
+    ‖(cubeHomeomorphClosedBall N y : N → ℝ)‖ = cubeRadius y := by
+  have hcoord (i : N) :
+      ‖(cubeHomeomorphClosedBall N y : N → ℝ) i‖ = 2 * dist (y i) ((cubeCenter : I^N) i) := by
+    rw [coe_cubeHomeomorphClosedBall_apply, dist_apply_cubeCenter, Real.norm_eq_abs,
+      ← abs_two, ← abs_mul, abs_two]
+    congr 1
+    ring
+  refine le_antisymm ((pi_norm_le_iff_of_nonneg (cubeRadius_nonneg y)).2 fun i ↦ ?_) ?_
+  · rw [hcoord, cubeRadius_def]
+    gcongr
+    exact dist_le_pi_dist y cubeCenter i
+  · rw [cubeRadius_def, ← le_div_iff₀' two_pos, dist_pi_le_iff (by positivity)]
+    intro i
+    rw [le_div_iff₀' two_pos, ← hcoord]
+    exact norm_le_pi_norm _ i
+
+/-- The homeomorphism `TauCeti.cubeHomeomorphClosedBall` sends a cube point to the unit sphere of
+the sup norm exactly when it lies on the boundary of the cube. -/
+theorem norm_cubeHomeomorphClosedBall_eq_one_iff (y : I^N) :
+    ‖(cubeHomeomorphClosedBall N y : N → ℝ)‖ = 1 ↔ y ∈ Cube.boundary N := by
+  rw [norm_cubeHomeomorphClosedBall, cubeRadius_eq_one_iff]
+
+/-- The closed unit ball of the sup norm on `Fin (n + 1) → ℝ` is the cube `I × I^(Fin n)`, through
+the affine homeomorphism `TauCeti.cubeHomeomorphClosedBall` followed by splitting off the first
+coordinate. -/
+def closedBallHomeomorphProd (n : ℕ) :
+    Metric.closedBall (0 : Fin (n + 1) → ℝ) 1 ≃ₜ I × I^(Fin n) :=
+  (cubeHomeomorphClosedBall (Fin (n + 1))).symm.trans (cubeSplitHomeomorph n)
+
+@[simp]
+theorem closedBallHomeomorphProd_apply {n : ℕ} (x : Metric.closedBall (0 : Fin (n + 1) → ℝ) 1) :
+    closedBallHomeomorphProd n x = ((cubeHomeomorphClosedBall (Fin (n + 1))).symm x 0,
+      Fin.tail ((cubeHomeomorphClosedBall (Fin (n + 1))).symm x)) :=
+  cubeSplitHomeomorph_apply _
+
+@[simp]
+theorem closedBallHomeomorphProd_symm_apply {n : ℕ} (q : I × I^(Fin n)) :
+    (closedBallHomeomorphProd n).symm q =
+      cubeHomeomorphClosedBall (Fin (n + 1)) (Fin.cons q.1 q.2) :=
+  congrArg _ (cubeSplitHomeomorph_symm_apply q)
+
+/-- `TauCeti.closedBallHomeomorphProd` carries the unit sphere onto the boundary of
+`I × I^(Fin n)`. -/
+theorem closedBallHomeomorphProd_mem_prodBoundary_iff {n : ℕ}
+    (x : Metric.closedBall (0 : Fin (n + 1) → ℝ) 1) :
+    closedBallHomeomorphProd n x ∈ Cube.prodBoundary (Fin n) ↔
+      (x : Fin (n + 1) → ℝ) ∈ Metric.sphere 0 1 := by
+  have hx : ‖(x : Fin (n + 1) → ℝ)‖ = 1 ↔
+      (cubeHomeomorphClosedBall (Fin (n + 1))).symm x ∈ Cube.boundary (Fin (n + 1)) := by
+    rw [← norm_cubeHomeomorphClosedBall_eq_one_iff, Homeomorph.apply_symm_apply]
+  rw [mem_sphere_zero_iff_norm, hx, closedBallHomeomorphProd, Homeomorph.trans_apply,
+    cubeSplitHomeomorph_mem_prodBoundary_iff]
 
 end TauCeti

@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Cohomology.ConstantField
 public import TauCeti.AlgebraicGeometry.Cohomology.EulerCharacteristic
+public import TauCeti.AlgebraicGeometry.Cohomology.FieldTower
 public import TauCeti.AlgebraicGeometry.LineBundle.Class
 
 /-!
@@ -38,7 +40,14 @@ that it is additive.
   `H⁰` and `H¹`;
 * `LineBundleClass.eulerDegree` descends the invariant to isomorphism classes of line bundles;
 * `LineBundleClass.eulerDegree_mk` and `LineBundleClass.eulerDegree_one` are its representative
-  and normalization formulas.
+  and normalization formulas;
+* `InvertibleSheaf.eulerDegree_eq_finrank_mul` and `LineBundleClass.eulerDegree_eq_finrank_mul`
+  state that, for a scheme over a field `κ` regarded as a scheme over a subfield `k`, the degree
+  over `k` is `[κ : k]` times the degree over `κ`;
+* `InvertibleSheaf.finrank_cohomology_zero_trivial_dvd_eulerDegree` and
+  `LineBundleClass.finrank_cohomology_zero_trivial_dvd_eulerDegree` state that, when the global
+  functions of `X` form a field `κ`, its degree `[κ : k] = dim_k H⁰(X, 𝒪_X)` over `k` divides the
+  degree of every line bundle.
 
 The formula is the rearrangement of Riemann--Roch for curves; see Hartshorne, *Algebraic
 Geometry*, Chapter IV, Section 1.
@@ -139,6 +148,67 @@ lemma eulerDegree_one : eulerDegree k (1 : LineBundleClass X) = 0 := by
   rw [← mk_trivial, eulerDegree_mk, InvertibleSheaf.eulerDegree_trivial]
 
 end LineBundleClass
+
+section FieldTower
+
+variable {k κ : Type u} [Field k] [Field κ] [Algebra k κ]
+  {X : Scheme.{u}} [X.Over (Spec (.of k))] [X.Over (Spec (.of κ))]
+
+namespace InvertibleSheaf
+
+/-- **The degree over a tower of fields.** If the structure morphism of `X` to `Spec k` factors
+through `Spec κ`, then the degree over `k` of an invertible sheaf on `X` is `[κ : k]` times its
+degree over `κ`. -/
+theorem eulerDegree_eq_finrank_mul
+    (h : (X ↘ Spec (.of κ)) ≫ Spec.map (CommRingCat.ofHom (algebraMap k κ)) =
+      (X ↘ Spec (.of k))) (L : InvertibleSheaf X) :
+    L.eulerDegree k = finrank k κ * L.eulerDegree κ := by
+  rw [eulerDegree_def, eulerDegree_def, Scheme.Modules.eulerCharBelow_eq_finrank_mul h,
+    Scheme.Modules.eulerCharBelow_eq_finrank_mul h, mul_sub]
+
+end InvertibleSheaf
+
+namespace LineBundleClass
+
+/-- **The degree over a tower of fields.** If the structure morphism of `X` to `Spec k` factors
+through `Spec κ`, then the degree over `k` of a line-bundle class on `X` is `[κ : k]` times its
+degree over `κ`. -/
+theorem eulerDegree_eq_finrank_mul
+    (h : (X ↘ Spec (.of κ)) ≫ Spec.map (CommRingCat.ofHom (algebraMap k κ)) =
+      (X ↘ Spec (.of k))) (a : LineBundleClass X) :
+    eulerDegree k a = finrank k κ * eulerDegree κ a := by
+  obtain ⟨L, rfl⟩ := mk_surjective a
+  rw [eulerDegree_mk, eulerDegree_mk, InvertibleSheaf.eulerDegree_eq_finrank_mul h]
+
+end LineBundleClass
+
+end FieldTower
+
+section ConstantField
+
+variable (k : Type u) [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))]
+
+/-- If the global functions of a scheme `X` over a field `k` form a field `κ`, then
+`[κ : k] = dim_k H⁰(X, 𝒪_X)` divides the degree over `k` of every invertible sheaf on `X`. -/
+theorem InvertibleSheaf.finrank_cohomology_zero_trivial_dvd_eulerDegree (hX : IsField Γ(X, ⊤))
+    (L : InvertibleSheaf X) :
+    (finrank k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 0) : ℤ) ∣
+      L.eulerDegree k := by
+  rw [InvertibleSheaf.eulerDegree_def]
+  exact (Scheme.Modules.finrank_cohomology_zero_trivial_dvd_eulerCharBelow k hX L.obj 2).sub
+    (Scheme.Modules.finrank_cohomology_zero_trivial_dvd_eulerCharBelow k hX _ 2)
+
+/-- If the global functions of a scheme `X` over a field `k` form a field `κ`, then
+`[κ : k] = dim_k H⁰(X, 𝒪_X)` divides the degree over `k` of every line-bundle class on `X`. -/
+theorem LineBundleClass.finrank_cohomology_zero_trivial_dvd_eulerDegree (hX : IsField Γ(X, ⊤))
+    (a : LineBundleClass X) :
+    (finrank k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 0) : ℤ) ∣
+      eulerDegree k a := by
+  obtain ⟨L, rfl⟩ := mk_surjective a
+  rw [eulerDegree_mk]
+  exact L.finrank_cohomology_zero_trivial_dvd_eulerDegree k hX
+
+end ConstantField
 
 end
 

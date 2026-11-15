@@ -159,7 +159,6 @@ theorem commutatorElement_kostantRootSubgroupToGenerated_of_lie_lie_eq
     {i j k l : I} {c d : ℤ}
     (hij : ⁅e i, e j⁆ = c • e k) (hiij : ⁅e i, ⁅e i, e j⁆⁆ = (2 * d) • e l)
     (hil : ⁅e i, e l⁆ = 0) (hjk : ⁅e j, e k⁆ = 0) (hjl : ⁅e j, e l⁆ = 0)
-    (hkl : ⁅e k, e l⁆ = 0)
     (p q r s : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
       (AdditiveGroup.groupScheme ℤ).X)
     (hr : Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A r) =
@@ -179,7 +178,7 @@ theorem commutatorElement_kostantRootSubgroupToGenerated_of_lie_lie_eq
   apply (GeneralLinear.schemePointsMulEquiv n A).injective
   simpa only [map_commutatorElement, map_mul] using
     commutatorElement_schemePointsMulEquiv_kostantRootSubgroup_of_lie_lie_eq
-      e h ρ M hM b A hij hiij hil hjk hjl hkl
+      e h ρ M hM b A hij hiij hil hjk hjl
         (hnil i) (hnil j) (hnil k) (hnil l) p q r s hr hs
 
 /-- The multiply-laced Chevalley commutator relation inside the generated group scheme, with
@@ -188,7 +187,6 @@ theorem commutatorElement_kostantRootSubgroupToGenerated_of_lie_lie_eq'
     {i j k l : I} {c d : ℤ}
     (hij : ⁅e i, e j⁆ = c • e k) (hiij : ⁅e i, ⁅e i, e j⁆⁆ = (2 * d) • e l)
     (hil : ⁅e i, e l⁆ = 0) (hjk : ⁅e j, e k⁆ = 0) (hjl : ⁅e j, e l⁆ = 0)
-    (hkl : ⁅e k, e l⁆ = 0)
     (p q : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
       (AdditiveGroup.groupScheme ℤ).X) :
     ⁅p ≫ (kostantRootSubgroupToGenerated e h ρ M hM hnil b i).hom.hom,
@@ -204,7 +202,7 @@ theorem commutatorElement_kostantRootSubgroupToGenerated_of_lie_lie_eq'
               Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A q)))) ≫
         (kostantRootSubgroupToGenerated e h ρ M hM hnil b l).hom.hom) :=
   commutatorElement_kostantRootSubgroupToGenerated_of_lie_lie_eq
-    e h ρ M hM b hnil A hij hiij hil hjk hjl hkl p q _ _
+    e h ρ M hM b hnil A hij hiij hil hjk hjl p q _ _
       (congrArg Multiplicative.toAdd
         ((AdditiveGroup.schemePointsMulEquiv A).apply_symm_apply _))
       (congrArg Multiplicative.toAdd

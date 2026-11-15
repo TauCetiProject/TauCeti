@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Ideal.Nilpotent
 public import Mathlib.RingTheory.Localization.Defs
 public import Mathlib.RingTheory.Finiteness.Ideal
+import Mathlib.RingTheory.Noetherian.Nilpotent
 import Mathlib.Tactic.NoncommRing
 import TauCeti.RingTheory.Ideal.PowerStabilization
 
@@ -24,9 +24,10 @@ localisation nor the submonoid.
 
 Only these implications are proved here, and only under `I.FG`; the converses are not stated.
 
-The nilpotence step is not about localisation at all and lives in
-`TauCeti.RingTheory.Ideal.Nilpotent` as `Ideal.exists_pow_map_eq_bot`. Localisation enters here,
-to turn "the image of `I ^ n` is zero" into an annihilator lying in `1 + I`.
+The nilpotence step is not about localisation at all: the image of `I` is finitely generated and
+lies in the nilradical, so Mathlib's `Ideal.FG.isNilpotent_iff_le_nilradical` makes it nilpotent.
+Localisation enters only afterwards, to turn "the image of `I ^ n` is zero" into an annihilator
+lying in `1 + I`.
 
 ## Main results
 
@@ -80,13 +81,16 @@ theorem exists_mem_oneAdd_forall_mul_eq_zero (hfg : I.FG)
     (hprime : ∀ P : Ideal C, P.IsPrime → I.map (algebraMap B C) ≤ P) :
     ∃ (n : ℕ) (s : B), s ∈ oneAdd I ∧ ∀ x ∈ I ^ n, s * x = 0 := by
   classical
-  obtain ⟨n, hn⟩ := exists_pow_map_eq_bot (algebraMap B C) hfg hprime
+  -- the image of `I` lies in the nilradical and is finitely generated, hence nilpotent
+  obtain ⟨n, hn⟩ := (hfg.map (algebraMap B C)).isNilpotent_iff_le_nilradical.mpr <| by
+    rw [nilradical_eq_sInf]
+    exact le_sInf hprime
   -- every element of `I ^ n` maps to zero
   have hzero : ∀ x ∈ I ^ n, algebraMap B C x = 0 := by
     intro x hx
     have : algebraMap B C x ∈ (I ^ n).map (algebraMap B C) :=
       Ideal.mem_map_of_mem _ hx
-    rwa [Ideal.map_pow, hn, Ideal.mem_bot] at this
+    rwa [Ideal.map_pow, hn, Ideal.zero_eq_bot, Ideal.mem_bot] at this
   -- a finite generating set for `I ^ n`
   obtain ⟨T, hT⟩ := (hfg.pow : (I ^ n).FG)
   -- an annihilator in `1 + I` for each generator

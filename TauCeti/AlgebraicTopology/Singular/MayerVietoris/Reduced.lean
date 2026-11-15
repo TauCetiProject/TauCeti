@@ -7,6 +7,10 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.MayerVietoris.Basic
 public import TauCeti.AlgebraicTopology.Singular.Contractible
+public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Basic
+
+import Mathlib.Algebra.Category.ModuleCat.Biproducts
+import TauCeti.Algebra.Category.ModuleCat.Biproducts
 
 /-!
 # The reduced Mayer–Vietoris connecting morphism
@@ -14,9 +18,9 @@ public import TauCeti.AlgebraicTopology.Singular.Contractible
 Let `U` and `V` be open subsets of a topological space `X` with `U ∪ V = X`. The Mayer–Vietoris
 connecting morphism `Hₖ₊₁(X) ⟶ Hₖ(U ∩ V)` lands in the reduced homology of `U ∩ V`: in degree
 zero, it is killed by the map to `H₀(U)`, which commutes with the augmentations. The resulting
-morphism `TopCat.reducedMayerVietorisδ` is natural in maps of covered spaces, and it is an
-isomorphism as soon as the reduced homology of `U` and of `V` vanishes in degrees `k` and `k + 1`,
-in particular when `U` and `V` are contractible.
+morphism `TopCat.reducedMayerVietorisδ` is natural in maps of covered spaces. It is an epimorphism
+as soon as the reduced homology of `U` and of `V` vanishes in degree `k`, and an isomorphism as soon
+as it vanishes in degrees `k` and `k + 1`, in particular when `U` and `V` are contractible.
 
 This is the form in which the Mayer–Vietoris sequence computes the homology of a sphere from its
 cover by the complements of two antipodal points.
@@ -28,14 +32,20 @@ Coefficients are an object `R` of an abelian category with coproducts.
 * `TopCat.reducedMayerVietorisδ`: the connecting morphism `Hₖ₊₁(X) ⟶ H_redₖ(U ∩ V)`.
 * `TopCat.reducedMayerVietorisδ_comp_ι`: it lifts the Mayer–Vietoris connecting morphism.
 * `TopCat.reducedMayerVietorisδ_naturality`: naturality in maps of covered spaces.
+* `TopCat.epi_reducedMayerVietorisδ`: it is an epimorphism when `U` and `V` have vanishing
+  reduced homology in its target degree.
 * `TopCat.isIso_reducedMayerVietorisδ`: it is an isomorphism when `U` and `V` have vanishing
   reduced homology in the two adjacent degrees; `TopCat.isIso_reducedMayerVietorisδ_of_contractible`
   specializes this to contractible `U` and `V`.
-* `TopCat.eq_zero_of_comp_reducedSingularHomologyFunctor_map_inclusion`: for open subsets `A`
-  and `B` of a space with `H_redₖ₊₁(A ∪ B) = 0`, a class of `A ∩ B` in degree `k` vanishing in
-  `A` and in `B` is zero, by exactness of the Mayer–Vietoris sequence at `Hₖ(A ∩ B)`.
+* `TopCat.eq_zero_of_comp_reducedSingularHomologyFunctor_map_inclusion_of_union_eq_univ`: for an
+  open cover `X = U ∪ V` with `H_redₖ₊₁(X) = 0`, a class of `U ∩ V` in degree `k` vanishing in `U`
+  and in `V` is zero, by exactness of the Mayer–Vietoris sequence at `Hₖ(U ∩ V)`.
+* `TopCat.eq_zero_of_comp_reducedSingularHomologyFunctor_map_inclusion`: the transport of the
+  previous result to arbitrary open subsets `A` and `B` of a space with `H_redₖ₊₁(A ∪ B) = 0`.
 * `TopCat.reducedMayerVietorisIsoOfIsZero`: for open subsets `A` and `B` of a space with vanishing
   reduced homology in degrees `k` and `k + 1`, the isomorphism `H_redₖ₊₁(A ∪ B) ≅ H_redₖ(A ∩ B)`.
+* `TauCeti.bijective_singularHomologyMap_inclusion_prod_neg`: for an open cover `X = U ∪ V` with
+  `Hₙ₊₁(X) = Hₙ₊₂(X) = 0`, the map `(i_U, -i_V)` on `Hₙ₊₁` is bijective.
 
 ## References
 
@@ -98,6 +108,42 @@ lemma reducedMayerVietorisδ_comp_ι (k : ℕ) :
   | zero => simp [reducedMayerVietorisδ]
   | succ k => simp [reducedMayerVietorisδ, ← reducedSingularHomologySuccIso_hom]
 
+/-- **The reduced Mayer–Vietoris connecting morphism is an epimorphism when both open sets are
+acyclic in its target degree**: if the reduced homology of `U` and of `V` vanishes in degree `k`,
+then `Hₖ₊₁(X) ⟶ H_redₖ(U ∩ V)` is an epimorphism. -/
+theorem epi_reducedMayerVietorisδ {k : ℕ}
+    (hU₀ : IsZero ((reducedSingularHomologyFunctor R k).obj (of U)))
+    (hV₀ : IsZero ((reducedSingularHomologyFunctor R k).obj (of V))) :
+    Epi (reducedMayerVietorisδ R hU hV hUV k) := by
+  -- Exactness at `Hₖ(U ∩ V)` identifies the image of the connecting morphism with the cycles of
+  -- the map to `Hₖ(U) ⊞ Hₖ(V)`. The inclusion of reduced homology lands in these cycles, as the
+  -- reduced homology of `U` and of `V` vanishes, and it is then an isomorphism onto them.
+  let S := ShortComplex.mk _ _ (mayerVietorisδ_toBiprod R hU hV hUV (k + 1) k)
+  -- The inclusion of reduced homology, with its target written as the homology of the singular
+  -- simplicial set, the form in which the Mayer–Vietoris sequence is stated.
+  let ι : (reducedSingularHomologyFunctor R k).obj (of ↥(U ∩ V)) ⟶ S.X₂ :=
+    (reducedSingularHomologyι R k).app (of ↥(U ∩ V))
+  have hι : ι ≫ S.g = 0 := by
+    refine biprod.hom_ext _ _ ?_ ?_
+    · rw [Category.assoc, SSet.mayerVietorisToBiprod_fst, zero_comp]
+      exact ((reducedSingularHomologyι R k).naturality _).symm.trans
+        ((hU₀.eq_of_tgt _ 0 =≫ _).trans zero_comp)
+    · rw [Category.assoc, SSet.mayerVietorisToBiprod_snd, Preadditive.comp_neg, zero_comp,
+        neg_eq_zero]
+      exact ((reducedSingularHomologyι R k).naturality _).symm.trans
+        ((hV₀.eq_of_tgt _ 0 =≫ _).trans zero_comp)
+  have : Mono ι := inferInstanceAs (Mono ((reducedSingularHomologyι R k).app _))
+  have : Mono (S.liftCycles ι hι) := mono_of_mono_fac (S.liftCycles_i ι hι)
+  have hδ : reducedMayerVietorisδ R hU hV hUV k ≫ S.liftCycles ι hι = S.toCycles := by
+    rw [← cancel_mono S.iCycles, Category.assoc, S.liftCycles_i, S.toCycles_i]
+    exact reducedMayerVietorisδ_comp_ι R hU hV hUV k
+  have : Epi S.toCycles := (mayerVietoris_exact₁ R hU hV hUV (k + 1) k).epi_toCycles
+  have : Epi (S.liftCycles ι hι) := epi_of_epi_fac hδ
+  have : IsIso (S.liftCycles ι hι) := isIso_of_mono_of_epi _
+  rw [← Category.comp_id (reducedMayerVietorisδ R hU hV hUV k),
+    ← IsIso.hom_inv_id (S.liftCycles ι hι), ← Category.assoc, hδ]
+  infer_instance
+
 /-- **The reduced Mayer–Vietoris connecting morphism is an isomorphism when both open sets are
 acyclic in the adjacent degrees**: if the reduced homology of `U` and of `V` vanishes in degrees
 `k` and `k + 1`, then `Hₖ₊₁(X) ⟶ H_redₖ(U ∩ V)` is an isomorphism. -/
@@ -107,43 +153,18 @@ theorem isIso_reducedMayerVietorisδ {k : ℕ}
     (hU₀ : IsZero ((reducedSingularHomologyFunctor R k).obj (of U)))
     (hV₀ : IsZero ((reducedSingularHomologyFunctor R k).obj (of V))) :
     IsIso (reducedMayerVietorisδ R hU hV hUV k) := by
-  -- Exactness at `Hₖ₊₁(X)` makes the connecting morphism a monomorphism, since
-  -- `Hₖ₊₁(U) ⊞ Hₖ₊₁(V)` vanishes; exactness at `Hₖ(U ∩ V)` then exhibits it as a kernel of the
-  -- map to `Hₖ(U) ⊞ Hₖ(V)`, through which the inclusion of reduced homology factors.
+  -- Exactness at `Hₖ₊₁(X)` makes the Mayer–Vietoris connecting morphism a monomorphism, since
+  -- `Hₖ₊₁(U) ⊞ Hₖ₊₁(V)` vanishes; the reduced connecting morphism is a factor of it.
   have hB : IsZero ((toSSet.obj (of U)).homology R (k + 1) ⊞
       (toSSet.obj (of V)).homology R (k + 1)) :=
     (biprod_isZero_iff _ _).2 ⟨hU₁.of_iso ((reducedSingularHomologySuccIso R k).app _).symm,
       hV₁.of_iso ((reducedSingularHomologySuccIso R k).app _).symm⟩
-  have hmono : Mono (δ R hU hV hUV k) :=
+  have : Mono (δ R hU hV hUV k) :=
     (mayerVietoris_exact₃ R hU hV hUV (k + 1) k).mono_g (hB.eq_of_src _ _)
-  -- The inclusion of reduced homology, with its target written as the homology of the singular
-  -- simplicial set, the form in which the Mayer–Vietoris sequence is stated.
-  let ι : (reducedSingularHomologyFunctor R k).obj (of ↥(U ∩ V)) ⟶
-      (toSSet.obj (of ↥(U ∩ V))).homology R k :=
-    (reducedSingularHomologyι R k).app (of ↥(U ∩ V))
-  have hι : ι ≫ SSet.mayerVietorisToBiprod R
-        (toSSet.map (ofHom (ContinuousMap.inclusion (Set.inter_subset_left (t := V)))))
-        (toSSet.map (ofHom (ContinuousMap.inclusion (Set.inter_subset_right (s := U))))) k = 0 := by
-    refine biprod.hom_ext _ _ ?_ ?_
-    · rw [Category.assoc, SSet.mayerVietorisToBiprod_fst, zero_comp]
-      exact ((reducedSingularHomologyι R k).naturality _).symm.trans
-        ((hU₀.eq_of_tgt _ 0 =≫ _).trans zero_comp)
-    · rw [Category.assoc, SSet.mayerVietorisToBiprod_snd, Preadditive.comp_neg, zero_comp,
-        neg_eq_zero]
-      exact ((reducedSingularHomologyι R k).naturality _).symm.trans
-        ((hV₀.eq_of_tgt _ 0 =≫ _).trans zero_comp)
-  have hS := mayerVietoris_exact₁ R hU hV hUV (k + 1) k
-  have : Mono (ShortComplex.mk _ _ (mayerVietorisδ_toBiprod R hU hV hUV (k + 1) k)).f := hmono
-  obtain ⟨m, hm⟩ := KernelFork.IsLimit.lift' hS.fIsKernel _ hι
-  -- The inclusion of the kernel fork `KernelFork.ofι δ _` is `δ`, by definition.
-  replace hm : m ≫ mayerVietorisδ R hU hV hUV (k + 1) k = ι := hm
-  refine ⟨m, ?_, ?_⟩
-  · rw [← cancel_mono (δ R hU hV hUV k), Category.assoc]
-    exact (reducedMayerVietorisδ R hU hV hUV k ≫= hm).trans
-      ((reducedMayerVietorisδ_comp_ι R hU hV hUV k).trans (Category.id_comp _).symm)
-  · rw [← cancel_mono ((reducedSingularHomologyι R k).app (of ↥(U ∩ V))), Category.assoc]
-    exact (m ≫= reducedMayerVietorisδ_comp_ι R hU hV hUV k).trans
-      (hm.trans (Category.id_comp _).symm)
+  have : Mono (reducedMayerVietorisδ R hU hV hUV k) :=
+    mono_of_mono_fac (reducedMayerVietorisδ_comp_ι R hU hV hUV k)
+  have := epi_reducedMayerVietorisδ R hU hV hUV hU₀ hV₀
+  exact isIso_of_mono_of_epi _
 
 /-- The reduced Mayer–Vietoris connecting morphism of an open cover by two contractible sets is an
 isomorphism in every degree. -/
@@ -171,6 +192,45 @@ lemma reducedMayerVietorisδ_naturality (k : ℕ) :
     (reducedSingularHomologyι R k).naturality, reducedMayerVietorisδ_comp_ι_assoc,
     Category.assoc, reducedMayerVietorisδ_comp_ι]
   exact mayerVietorisδ_naturality R hU hV hUV hU' hV' hUV' f hfU hfV (k + 1) k
+
+open Set in
+include hU hV hUV in
+/-- **Injectivity in the Mayer–Vietoris sequence for an open cover.** Let `U` and `V` be open
+subsets covering a space `X` whose reduced homology vanishes in degree `k + 1`. Then a (generalized)
+reduced homology class of `U ∩ V` in degree `k` that vanishes both in `U` and in `V` is zero. -/
+theorem eq_zero_of_comp_reducedSingularHomologyFunctor_map_inclusion_of_union_eq_univ {k : ℕ}
+    (hk : IsZero ((reducedSingularHomologyFunctor R (k + 1)).obj X)) {P : C}
+    (x : P ⟶ (reducedSingularHomologyFunctor R k).obj (of ↥(U ∩ V)))
+    (hxU : x ≫ (reducedSingularHomologyFunctor R k).map
+      (ofHom (ContinuousMap.inclusion (Set.inter_subset_left (s := U) (t := V)))) = 0)
+    (hxV : x ≫ (reducedSingularHomologyFunctor R k).map
+      (ofHom (ContinuousMap.inclusion (Set.inter_subset_right (s := U) (t := V)))) = 0) :
+    x = 0 := by
+  -- Exactness at `Hₖ(U ∩ V)`: the connecting morphism starts at `Hₖ₊₁(X) = 0`, so the map to
+  -- `Hₖ(U) ⊞ Hₖ(V)` is a monomorphism, and so is its composite with the inclusion of reduced
+  -- homology.
+  have hmono := (mayerVietoris_exact₁ R hU hV hUV (k + 1) k).mono_g
+    ((hk.of_iso ((reducedSingularHomologySuccIso R k).app _).symm).eq_of_src _ _)
+  -- The inclusion of reduced homology, with its target written as the homology of the singular
+  -- simplicial set, the form in which the Mayer–Vietoris sequence is stated.
+  let ι : (reducedSingularHomologyFunctor R k).obj (of ↥(U ∩ V)) ⟶
+      (toSSet.obj (of ↥(U ∩ V))).homology R k :=
+    (reducedSingularHomologyι R k).app (of ↥(U ∩ V))
+  let g := SSet.mayerVietorisToBiprod R
+    (toSSet.map (ofHom (ContinuousMap.inclusion (inter_subset_left (s := U) (t := V)))))
+    (toSSet.map (ofHom (ContinuousMap.inclusion (inter_subset_right (s := U) (t := V))))) k
+  have hx : (x ≫ ι) ≫ g = 0 := by
+    refine biprod.hom_ext _ _ ?_ ?_
+    · simp only [g, Category.assoc, SSet.mayerVietorisToBiprod_fst, zero_comp]
+      exact (x ≫= ((reducedSingularHomologyι R k).naturality _).symm).trans
+        (((reassoc_of% hxU) _).trans zero_comp)
+    · simp only [g, Category.assoc, SSet.mayerVietorisToBiprod_snd, Preadditive.comp_neg,
+        zero_comp, neg_eq_zero]
+      exact (x ≫= ((reducedSingularHomologyι R k).naturality _).symm).trans
+        (((reassoc_of% hxV) _).trans zero_comp)
+  have : Mono ι := inferInstanceAs (Mono ((reducedSingularHomologyι R k).app _))
+  have : Mono g := hmono
+  rw [← cancel_mono ι, zero_comp, ← cancel_mono g, hx, zero_comp]
 
 open Set Topology in
 /-- **Injectivity in the Mayer–Vietoris sequence.** Let `A` and `B` be open subsets of a space,
@@ -210,7 +270,7 @@ theorem eq_zero_of_comp_reducedSingularHomologyFunctor_map_inclusion {Y : TopCat
     rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply]
     dsimp only [iU, iUV]
     rw [isoOfHomeo_hom, isoOfHomeo_hom]
-    simp only [ConcreteCategory.hom_ofHom, ContinuousMap.coe_coe,
+    simp only [ConcreteCategory.hom_ofHom, ContinuousMap.coe_ofClass,
       IsEmbedding.homeomorphOfSubsetRange_apply_coe, ContinuousMap.inclusion_apply_coe, U, V, eU]
     -- `U ∩ V` is `Subtype.val ⁻¹' (A ∩ B)` by `Set.preimage_inter`, which holds by definition.
     exact (IsEmbedding.homeomorphOfSubsetRange_apply_coe (s := A ∩ B) _ _ x).symm
@@ -220,7 +280,7 @@ theorem eq_zero_of_comp_reducedSingularHomologyFunctor_map_inclusion {Y : TopCat
     rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply]
     dsimp only [iV, iUV]
     rw [isoOfHomeo_hom, isoOfHomeo_hom]
-    simp only [ConcreteCategory.hom_ofHom, ContinuousMap.coe_coe,
+    simp only [ConcreteCategory.hom_ofHom, ContinuousMap.coe_ofClass,
       IsEmbedding.homeomorphOfSubsetRange_apply_coe, ContinuousMap.inclusion_apply_coe, U, V, eV]
     -- `U ∩ V` is `Subtype.val ⁻¹' (A ∩ B)` by `Set.preimage_inter`, which holds by definition.
     exact (IsEmbedding.homeomorphOfSubsetRange_apply_coe (s := A ∩ B) _ _ x).symm
@@ -238,39 +298,8 @@ theorem eq_zero_of_comp_reducedSingularHomologyFunctor_map_inclusion {Y : TopCat
       (ofHom (ContinuousMap.inclusion (inter_subset_right (s := U) (t := V)))) = 0 := by
     rw [← cancel_mono ((reducedSingularHomologyFunctor R k).map iV.hom), Category.assoc,
       ← Functor.map_comp, sqV, Functor.map_comp, ← Category.assoc, hxB, zero_comp]
-  -- Exactness at `Hₖ(U ∩ V)`: the connecting morphism starts at `Hₖ₊₁(A ∪ B) = 0`, so the map to
-  -- `Hₖ(U) ⊞ Hₖ(V)` is a monomorphism, and so is its composite with the inclusion of reduced
-  -- homology.
-  have hmono := (mayerVietoris_exact₁ R hU hV hUV (k + 1) k).mono_g
-    ((hk.of_iso ((reducedSingularHomologySuccIso R k).app _).symm).eq_of_src _ _)
-  -- The inclusion of reduced homology, with its target written as the homology of the singular
-  -- simplicial set, the form in which the Mayer–Vietoris sequence is stated.
-  let ι : (reducedSingularHomologyFunctor R k).obj (of ↥(U ∩ V)) ⟶
-      (toSSet.obj (of ↥(U ∩ V))).homology R k :=
-    (reducedSingularHomologyι R k).app (of ↥(U ∩ V))
-  have hx : (x ≫ ι) ≫ SSet.mayerVietorisToBiprod R
-        (toSSet.map (ofHom (ContinuousMap.inclusion (inter_subset_left (s := U) (t := V)))))
-        (toSSet.map (ofHom (ContinuousMap.inclusion (inter_subset_right (s := U) (t := V))))) k =
-      0 := by
-    refine biprod.hom_ext _ _ ?_ ?_
-    · simp only [Category.assoc, SSet.mayerVietorisToBiprod_fst, zero_comp]
-      exact (x ≫= ((reducedSingularHomologyι R k).naturality _).symm).trans
-        (((reassoc_of% hxU) _).trans zero_comp)
-    · simp only [Category.assoc, SSet.mayerVietorisToBiprod_snd, Preadditive.comp_neg, zero_comp,
-        neg_eq_zero]
-      exact (x ≫= ((reducedSingularHomologyι R k).naturality _).symm).trans
-        (((reassoc_of% hxV) _).trans zero_comp)
-  have : Mono ι := inferInstanceAs (Mono ((reducedSingularHomologyι R k).app _))
-  have : Mono (SSet.mayerVietorisToBiprod R
-      (toSSet.map (ofHom (ContinuousMap.inclusion (inter_subset_left (s := U) (t := V)))))
-      (toSSet.map (ofHom (ContinuousMap.inclusion (inter_subset_right (s := U) (t := V))))) k) :=
-    hmono
-  have hx0 : x = 0 := by
-    rw [← cancel_mono ι, zero_comp, ← cancel_mono (SSet.mayerVietorisToBiprod R
-      (toSSet.map (ofHom (ContinuousMap.inclusion (inter_subset_left (s := U) (t := V)))))
-      (toSSet.map (ofHom (ContinuousMap.inclusion (inter_subset_right (s := U) (t := V))))) k),
-      hx, zero_comp]
-  rw [hx0, zero_comp]
+  rw [eq_zero_of_comp_reducedSingularHomologyFunctor_map_inclusion_of_union_eq_univ R hU hV hUV
+    hk x hxU hxV, zero_comp]
 
 open Set Topology in
 /-- **The reduced Mayer–Vietoris isomorphism of two acyclic open sets.** Let `A` and `B` be open
@@ -314,3 +343,43 @@ def reducedMayerVietorisIsoOfIsZero {Y : TopCat.{w}} {A B D E : Set Y} (hA : IsO
     (reducedSingularHomologyFunctor R k).mapIso iAB
 
 end TopCat
+
+namespace TauCeti
+
+open Set Function
+open ContinuousMap (singularHomologyMap)
+
+/-- For an open cover `X = U ∪ V` of a space whose reduced homology vanishes in degrees `n + 1`
+and `n + 2`, the map `Hₙ₊₁(U ∩ V) → Hₙ₊₁(U) × Hₙ₊₁(V)` given by the first inclusion and the
+negative of the second is bijective. -/
+theorem bijective_singularHomologyMap_inclusion_prod_neg {k : Type w} [Ring k] {n : ℕ}
+    {X : Type w} [TopologicalSpace X] {U V : Set X} (hU : IsOpen U) (hV : IsOpen V)
+    (hUV : U ∪ V = univ)
+    (h₁ : IsZero ((reducedSingularHomologyFunctor (ModuleCat.of k k) (n + 1)).obj (TopCat.of X)))
+    (h₂ : IsZero ((reducedSingularHomologyFunctor (ModuleCat.of k k) (n + 2)).obj (TopCat.of X))) :
+    Bijective fun x ↦
+      (singularHomologyMap k (n + 1) (ContinuousMap.inclusion (inter_subset_left (t := V))) x,
+        -singularHomologyMap k (n + 1)
+          (ContinuousMap.inclusion (inter_subset_right (s := U))) x) := by
+  rw [reducedSingularHomologyFunctor_succ] at h₁ h₂
+  have hiso := TopCat.isIso_mayerVietorisToBiprod_of_isZero (X := TopCat.of X)
+    (ModuleCat.of k k) hU hV hUV (n + 1) h₂ h₁
+  set M := SSet.mayerVietorisToBiprod (ModuleCat.of k k)
+      (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.inclusion (inter_subset_left (t := V)))))
+      (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.inclusion (inter_subset_right (s := U)))))
+      (n + 1)
+  -- Read the biproduct `Hₙ₊₁(U) ⊞ Hₙ₊₁(V)` as the product module, where elements have
+  -- coordinates.
+  set P := M ≫ (ModuleCat.biprodIsoProd _ _).hom
+  have hP : Bijective P.hom := ConcreteCategory.bijective_of_isIso P
+  have hP_eq : ⇑P.hom = fun x ↦
+      (singularHomologyMap k (n + 1) (ContinuousMap.inclusion (inter_subset_left (t := V))) x,
+        -singularHomologyMap k (n + 1)
+          (ContinuousMap.inclusion (inter_subset_right (s := U))) x) := by
+    funext x
+    rw [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.biprodIsoProd_hom_apply]
+    exact Prod.ext (ConcreteCategory.congr_hom (SSet.mayerVietorisToBiprod_fst ..) x)
+      (ConcreteCategory.congr_hom (SSet.mayerVietorisToBiprod_snd ..) x)
+  rwa [hP_eq] at hP
+
+end TauCeti

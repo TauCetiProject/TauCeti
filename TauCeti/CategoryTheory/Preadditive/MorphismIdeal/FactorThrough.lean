@@ -120,7 +120,7 @@ theorem factorsThrough_of_mem_factorIdeal [HasBinaryBiproducts C] [P.Nonempty]
     [P.IsClosedUnderBinaryProducts]
     (hf : f ∈ (factorIdeal P).hom X Y) : FactorsThrough P f := by
   induction hf using AddSubgroup.closure_induction with
-  | mem f hf => exact hf
+  | mem _ hf => exact hf
   | zero => exact FactorsThrough.zero P X Y
   | add f g _ _ hf hg => exact hf.add hg
   | neg f _ hf => exact hf.neg

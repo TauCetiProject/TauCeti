@@ -22,25 +22,25 @@ K ⊗[k] SymmetricAlgebra k M ≃ₐc[K] SymmetricAlgebra K (K ⊗[k] M).
 The equivalence preserves the counit and comultiplication and is characterized in both directions
 on pure-tensor generators.
 
-This supplies the coordinate-bialgebra calculation used by the additive-group worked example in
-the ReductiveGroups roadmap's Layer 0 base-change milestone.
+In rank one this is the coordinate-bialgebra calculation behind base change of the additive
+group, in `TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.BaseChange`.
 
 ## Main declarations
 
-* `TauCeti.SymmetricAlgebra.scalarTensorBialgEquiv`: scalar extension of a symmetric bialgebra is
+* `SymmetricAlgebra.scalarTensorBialgEquiv`: scalar extension of a symmetric bialgebra is
   the symmetric bialgebra on the scalar-extended module.
-* `TauCeti.SymmetricAlgebra.scalarTensorBialgEquiv_tmul_ι`: the equivalence on pure-tensor
+* `SymmetricAlgebra.scalarTensorBialgEquiv_tmul_ι`: the equivalence on pure-tensor
   generators.
-* `TauCeti.SymmetricAlgebra.scalarTensorBialgEquiv_symm_ι_tmul`: the inverse on pure-tensor
+* `SymmetricAlgebra.scalarTensorBialgEquiv_symm_ι_tmul`: the inverse on pure-tensor
   generators.
-* `TauCeti.SymmetricAlgebra.scalarTensorBialgEquiv_tmul_one`: the equivalence on scalar copies.
+* `SymmetricAlgebra.scalarTensorBialgEquiv_tmul_one`: the equivalence on scalar copies.
 
 * `LinearMap.scalarTensorBialgEquiv_comp_map`: naturality under linear maps.
 
 ## References
 
 The construction follows W. C. Waterhouse, *Introduction to Affine Group Schemes*, §1. It uses
-Mathlib's `AlgHom.liftEquiv`, `_root_.SymmetricAlgebra.lift`, and
+Mathlib's `AlgHom.liftEquiv`, `SymmetricAlgebra.lift`, and
 `BialgEquiv.ofAlgEquiv`, together with the bialgebra structures from
 `Mathlib.RingTheory.Bialgebra.SymmetricAlgebra` and
 `Mathlib.RingTheory.Bialgebra.TensorProduct`.
@@ -50,7 +50,7 @@ public section
 
 open scoped TensorProduct
 
-namespace TauCeti
+namespace SymmetricAlgebra
 
 universe u v w
 
@@ -60,73 +60,60 @@ variable [AddCommMonoid M] [Module k M]
 
 /-- The algebra map from the symmetric algebra on the scalar-extended module back to the scalar
 extension of the original symmetric algebra. -/
-private noncomputable def symmetricAlgebraToScalarTensor :
-    _root_.SymmetricAlgebra K (K ⊗[k] M) →ₐ[K]
-      K ⊗[k] _root_.SymmetricAlgebra k M :=
-  _root_.SymmetricAlgebra.lift <|
-    LinearMap.baseChange K (_root_.SymmetricAlgebra.ι k M)
-
-namespace SymmetricAlgebra
+private noncomputable def toScalarTensor :
+    SymmetricAlgebra K (K ⊗[k] M) →ₐ[K] K ⊗[k] SymmetricAlgebra k M :=
+  lift <| LinearMap.baseChange K (ι k M)
 
 /-- The algebra map from the scalar extension of the symmetric algebra to the symmetric algebra
 on the scalar-extended module. -/
 private noncomputable def fromScalarTensor :
-    K ⊗[k] _root_.SymmetricAlgebra k M →ₐ[K]
-      _root_.SymmetricAlgebra K (K ⊗[k] M) :=
-  AlgHom.liftEquiv k K (_root_.SymmetricAlgebra k M)
-      (_root_.SymmetricAlgebra K (K ⊗[k] M)) <|
-    _root_.SymmetricAlgebra.lift <|
-      (_root_.SymmetricAlgebra.ι K (K ⊗[k] M)).restrictScalars k ∘ₗ
-        TensorProduct.mk k K M 1
+    K ⊗[k] SymmetricAlgebra k M →ₐ[K] SymmetricAlgebra K (K ⊗[k] M) :=
+  AlgHom.liftEquiv k K (SymmetricAlgebra k M) (SymmetricAlgebra K (K ⊗[k] M)) <|
+    lift <| (ι K (K ⊗[k] M)).restrictScalars k ∘ₗ TensorProduct.mk k K M 1
 
 @[simp]
 private theorem fromScalarTensor_tmul_ι (s : K) (m : M) :
-    fromScalarTensor (k := k) (K := K) (M := M)
-        (s ⊗ₜ[k] _root_.SymmetricAlgebra.ι k M m) =
-      _root_.SymmetricAlgebra.ι K (K ⊗[k] M) (s ⊗ₜ[k] m) := by
-  simp only [fromScalarTensor, AlgHom.liftEquiv_tmul,
-    _root_.SymmetricAlgebra.lift_ι_apply, LinearMap.comp_apply,
+    fromScalarTensor (k := k) (K := K) (M := M) (s ⊗ₜ[k] ι k M m) =
+      ι K (K ⊗[k] M) (s ⊗ₜ[k] m) := by
+  simp only [fromScalarTensor, AlgHom.liftEquiv_tmul, lift_ι_apply, LinearMap.comp_apply,
     LinearMap.coe_restrictScalars, TensorProduct.mk_apply]
   rw [← map_smul, TensorProduct.smul_tmul']
   simp only [smul_eq_mul, mul_one]
 
 @[simp]
 private theorem toScalarTensor_ι_tmul (s : K) (m : M) :
-    symmetricAlgebraToScalarTensor (k := k) (K := K) (M := M)
-        (_root_.SymmetricAlgebra.ι K (K ⊗[k] M) (s ⊗ₜ[k] m)) =
-      s ⊗ₜ[k] _root_.SymmetricAlgebra.ι k M m := by
-  simp [symmetricAlgebraToScalarTensor]
+    toScalarTensor (k := k) (K := K) (M := M) (ι K (K ⊗[k] M) (s ⊗ₜ[k] m)) =
+      s ⊗ₜ[k] ι k M m := by
+  simp [toScalarTensor]
 
 private theorem toScalarTensor_comp_fromScalarTensor :
-    (symmetricAlgebraToScalarTensor (k := k) (K := K) (M := M)).comp
+    (toScalarTensor (k := k) (K := K) (M := M)).comp
         (fromScalarTensor (k := k) (K := K) (M := M)) = AlgHom.id K _ := by
   apply Algebra.TensorProduct.ext
   · apply AlgHom.ext
     intro s
-    simp [fromScalarTensor, symmetricAlgebraToScalarTensor, Algebra.smul_def,
+    simp [fromScalarTensor, toScalarTensor, Algebra.smul_def,
       Algebra.TensorProduct.algebraMap_apply]
-  · apply _root_.SymmetricAlgebra.algHom_ext
+  · apply algHom_ext
     apply LinearMap.ext
     intro m
     have h :
-        symmetricAlgebraToScalarTensor (k := k) (K := K) (M := M)
-            (fromScalarTensor (k := k) (K := K) (M := M)
-              (1 ⊗ₜ[k] _root_.SymmetricAlgebra.ι k M m)) =
-          1 ⊗ₜ[k] _root_.SymmetricAlgebra.ι k M m := by
+        toScalarTensor (k := k) (K := K) (M := M)
+            (fromScalarTensor (k := k) (K := K) (M := M) (1 ⊗ₜ[k] ι k M m)) =
+          1 ⊗ₜ[k] ι k M m := by
       rw [fromScalarTensor_tmul_ι, toScalarTensor_ι_tmul]
     exact h
 
 private theorem fromScalarTensor_comp_toScalarTensor :
     (fromScalarTensor (k := k) (K := K) (M := M)).comp
-        (symmetricAlgebraToScalarTensor (k := k) (K := K) (M := M)) = AlgHom.id K _ := by
-  apply _root_.SymmetricAlgebra.algHom_ext
+        (toScalarTensor (k := k) (K := K) (M := M)) = AlgHom.id K _ := by
+  apply algHom_ext
   apply LinearMap.ext
   intro z
   suffices h :
       fromScalarTensor (k := k) (K := K) (M := M)
-          (symmetricAlgebraToScalarTensor (k := k) (K := K) (M := M)
-            (_root_.SymmetricAlgebra.ι K (K ⊗[k] M) z)) =
-        _root_.SymmetricAlgebra.ι K (K ⊗[k] M) z by
+          (toScalarTensor (k := k) (K := K) (M := M) (ι K (K ⊗[k] M) z)) =
+        ι K (K ⊗[k] M) z by
     exact h
   induction z using TensorProduct.inductionOn with
   | add x y hx hy => simpa using congrArg₂ (· + ·) hx hy
@@ -134,55 +121,46 @@ private theorem fromScalarTensor_comp_toScalarTensor :
 
 /-- The underlying algebra equivalence for scalar extension of a symmetric algebra. -/
 private noncomputable def scalarTensorAlgEquiv :
-    K ⊗[k] _root_.SymmetricAlgebra k M ≃ₐ[K]
-      _root_.SymmetricAlgebra K (K ⊗[k] M) :=
+    K ⊗[k] SymmetricAlgebra k M ≃ₐ[K] SymmetricAlgebra K (K ⊗[k] M) :=
   AlgEquiv.ofAlgHom
     (fromScalarTensor (k := k) (K := K) (M := M))
-    (symmetricAlgebraToScalarTensor (k := k) (K := K) (M := M))
+    (toScalarTensor (k := k) (K := K) (M := M))
     (fromScalarTensor_comp_toScalarTensor (k := k) (K := K) (M := M))
     (toScalarTensor_comp_fromScalarTensor (k := k) (K := K) (M := M))
 
 @[simp]
 private theorem scalarTensorAlgEquiv_tmul_ι (s : K) (m : M) :
-    scalarTensorAlgEquiv (k := k) (K := K) (M := M)
-        (s ⊗ₜ[k] _root_.SymmetricAlgebra.ι k M m) =
-      _root_.SymmetricAlgebra.ι K (K ⊗[k] M) (s ⊗ₜ[k] m) :=
+    scalarTensorAlgEquiv (k := k) (K := K) (M := M) (s ⊗ₜ[k] ι k M m) =
+      ι K (K ⊗[k] M) (s ⊗ₜ[k] m) :=
   fromScalarTensor_tmul_ι (k := k) (K := K) (M := M) s m
 
 private theorem scalarTensorAlgEquiv_counit_tmul_ι (m : M) :
-    (Bialgebra.counitAlgHom K (_root_.SymmetricAlgebra K (K ⊗[k] M)))
-        (scalarTensorAlgEquiv (k := k) (K := K) (M := M)
-          (1 ⊗ₜ[k] _root_.SymmetricAlgebra.ι k M m)) =
-      (Bialgebra.counitAlgHom K (K ⊗[k] _root_.SymmetricAlgebra k M))
-        (1 ⊗ₜ[k] _root_.SymmetricAlgebra.ι k M m) := by
-  rw [scalarTensorAlgEquiv_tmul_ι]
-  rw [_root_.SymmetricAlgebra.counitAlgHom_eq]
-  simpa using _root_.SymmetricAlgebra.algebraMapInv_ι
-    (R := K) (M := K ⊗[k] M) (1 ⊗ₜ[k] m)
+    (Bialgebra.counitAlgHom K (SymmetricAlgebra K (K ⊗[k] M)))
+        (scalarTensorAlgEquiv (k := k) (K := K) (M := M) (1 ⊗ₜ[k] ι k M m)) =
+      (Bialgebra.counitAlgHom K (K ⊗[k] SymmetricAlgebra k M)) (1 ⊗ₜ[k] ι k M m) := by
+  rw [scalarTensorAlgEquiv_tmul_ι, counitAlgHom_eq]
+  simpa using algebraMapInv_ι (R := K) (M := K ⊗[k] M) (1 ⊗ₜ[k] m)
 
 private theorem scalarTensorAlgEquiv_counit_comp :
-    (Bialgebra.counitAlgHom K (_root_.SymmetricAlgebra K (K ⊗[k] M))).comp
+    (Bialgebra.counitAlgHom K (SymmetricAlgebra K (K ⊗[k] M))).comp
         (scalarTensorAlgEquiv (k := k) (K := K) (M := M)).toAlgHom =
-      Bialgebra.counitAlgHom K (K ⊗[k] _root_.SymmetricAlgebra k M) := by
+      Bialgebra.counitAlgHom K (K ⊗[k] SymmetricAlgebra k M) := by
   apply Algebra.TensorProduct.ext
   · apply AlgHom.ext
     intro s
     have hs :
-        (Algebra.TensorProduct.includeLeft :
-            K →ₐ[K] K ⊗[k] _root_.SymmetricAlgebra k M) s =
-          algebraMap K (K ⊗[k] _root_.SymmetricAlgebra k M) s := by
+        (Algebra.TensorProduct.includeLeft : K →ₐ[K] K ⊗[k] SymmetricAlgebra k M) s =
+          algebraMap K (K ⊗[k] SymmetricAlgebra k M) s := by
       rw [Algebra.TensorProduct.includeLeft_apply,
         Algebra.TensorProduct.algebraMap_apply, Algebra.algebraMap_self_apply]
     simp only [AlgHom.comp_apply]
     rw [hs]
     exact (congrArg
-        (Bialgebra.counitAlgHom K (_root_.SymmetricAlgebra K (K ⊗[k] M)))
+        (Bialgebra.counitAlgHom K (SymmetricAlgebra K (K ⊗[k] M)))
         (AlgEquiv.commutes (scalarTensorAlgEquiv (k := k) (K := K) (M := M)) s)).trans <|
-      (AlgHom.commutes (Bialgebra.counitAlgHom K
-        (_root_.SymmetricAlgebra K (K ⊗[k] M))) s).trans <|
-      (AlgHom.commutes (Bialgebra.counitAlgHom K
-        (K ⊗[k] _root_.SymmetricAlgebra k M)) s).symm
-  · apply _root_.SymmetricAlgebra.algHom_ext
+      (AlgHom.commutes (Bialgebra.counitAlgHom K (SymmetricAlgebra K (K ⊗[k] M))) s).trans <|
+      (AlgHom.commutes (Bialgebra.counitAlgHom K (K ⊗[k] SymmetricAlgebra k M)) s).symm
+  · apply algHom_ext
     apply LinearMap.ext
     intro m
     exact scalarTensorAlgEquiv_counit_tmul_ι (k := k) (K := K) (M := M) m
@@ -191,43 +169,37 @@ private theorem scalarTensorAlgEquiv_comul_tmul_ι (m : M) :
     (Algebra.TensorProduct.map
         (scalarTensorAlgEquiv (k := k) (K := K) (M := M)).toAlgHom
         (scalarTensorAlgEquiv (k := k) (K := K) (M := M)).toAlgHom)
-        (Coalgebra.comul (R := K) (A := K ⊗[k] _root_.SymmetricAlgebra k M)
-          (1 ⊗ₜ[k] _root_.SymmetricAlgebra.ι k M m)) =
-      Coalgebra.comul (R := K) (A := _root_.SymmetricAlgebra K (K ⊗[k] M))
-        (scalarTensorAlgEquiv (k := k) (K := K) (M := M)
-          (1 ⊗ₜ[k] _root_.SymmetricAlgebra.ι k M m)) := by
-  rw [scalarTensorAlgEquiv_tmul_ι]
-  rw [TensorProduct.comul_tmul, Bialgebra.comul_one, _root_.SymmetricAlgebra.comul_ι]
+        (Coalgebra.comul (R := K) (A := K ⊗[k] SymmetricAlgebra k M) (1 ⊗ₜ[k] ι k M m)) =
+      Coalgebra.comul (R := K) (A := SymmetricAlgebra K (K ⊗[k] M))
+        (scalarTensorAlgEquiv (k := k) (K := K) (M := M) (1 ⊗ₜ[k] ι k M m)) := by
+  rw [scalarTensorAlgEquiv_tmul_ι, TensorProduct.comul_tmul, Bialgebra.comul_one, comul_ι]
   simp only [TensorProduct.tmul_add, map_add, Algebra.TensorProduct.one_def,
     TensorProduct.AlgebraTensorModule.tensorTensorTensorComm_tmul,
     Algebra.TensorProduct.map_tmul]
   have hι :
-      (scalarTensorAlgEquiv (k := k) (K := K) (M := M)).toAlgHom
-          (1 ⊗ₜ[k] _root_.SymmetricAlgebra.ι k M m) =
-        _root_.SymmetricAlgebra.ι K (K ⊗[k] M) (1 ⊗ₜ[k] m) := by
+      (scalarTensorAlgEquiv (k := k) (K := K) (M := M)).toAlgHom (1 ⊗ₜ[k] ι k M m) =
+        ι K (K ⊗[k] M) (1 ⊗ₜ[k] m) := by
     simpa only [AlgEquiv.coe_toAlgHom] using
       scalarTensorAlgEquiv_tmul_ι (k := k) (K := K) (M := M) 1 m
   have h_one :
-      (scalarTensorAlgEquiv (k := k) (K := K) (M := M)).toAlgHom
-          (1 ⊗ₜ[k] 1) = 1 := by
+      (scalarTensorAlgEquiv (k := k) (K := K) (M := M)).toAlgHom (1 ⊗ₜ[k] 1) = 1 := by
     simpa only [Algebra.TensorProduct.one_def] using
       map_one (scalarTensorAlgEquiv (k := k) (K := K) (M := M)).toAlgHom
-  rw [hι, h_one, _root_.SymmetricAlgebra.comul_ι]
+  rw [hι, h_one, comul_ι]
 
 private theorem scalarTensorAlgEquiv_map_comp_comul :
     (Algebra.TensorProduct.map
         (scalarTensorAlgEquiv (k := k) (K := K) (M := M)).toAlgHom
         (scalarTensorAlgEquiv (k := k) (K := K) (M := M)).toAlgHom).comp
-        (Bialgebra.comulAlgHom K (K ⊗[k] _root_.SymmetricAlgebra k M)) =
-      (Bialgebra.comulAlgHom K (_root_.SymmetricAlgebra K (K ⊗[k] M))).comp
+        (Bialgebra.comulAlgHom K (K ⊗[k] SymmetricAlgebra k M)) =
+      (Bialgebra.comulAlgHom K (SymmetricAlgebra K (K ⊗[k] M))).comp
         (scalarTensorAlgEquiv (k := k) (K := K) (M := M)).toAlgHom := by
   apply Algebra.TensorProduct.ext
   · apply AlgHom.ext
     intro s
     have hs :
-        (Algebra.TensorProduct.includeLeft :
-            K →ₐ[K] K ⊗[k] _root_.SymmetricAlgebra k M) s =
-          algebraMap K (K ⊗[k] _root_.SymmetricAlgebra k M) s := by
+        (Algebra.TensorProduct.includeLeft : K →ₐ[K] K ⊗[k] SymmetricAlgebra k M) s =
+          algebraMap K (K ⊗[k] SymmetricAlgebra k M) s := by
       rw [Algebra.TensorProduct.includeLeft_apply,
         Algebra.TensorProduct.algebraMap_apply, Algebra.algebraMap_self_apply]
     simp only [AlgHom.comp_apply]
@@ -236,17 +208,14 @@ private theorem scalarTensorAlgEquiv_map_comp_comul :
         (Algebra.TensorProduct.map
           (scalarTensorAlgEquiv (k := k) (K := K) (M := M)).toAlgHom
           (scalarTensorAlgEquiv (k := k) (K := K) (M := M)).toAlgHom)
-        (AlgHom.commutes (Bialgebra.comulAlgHom K
-          (K ⊗[k] _root_.SymmetricAlgebra k M)) s)).trans <|
+        (AlgHom.commutes (Bialgebra.comulAlgHom K (K ⊗[k] SymmetricAlgebra k M)) s)).trans <|
       (AlgHom.commutes (Algebra.TensorProduct.map
         (scalarTensorAlgEquiv (k := k) (K := K) (M := M)).toAlgHom
         (scalarTensorAlgEquiv (k := k) (K := K) (M := M)).toAlgHom) s).trans <|
-      (AlgHom.commutes (Bialgebra.comulAlgHom K
-        (_root_.SymmetricAlgebra K (K ⊗[k] M))) s).symm.trans <|
-      congrArg (Bialgebra.comulAlgHom K
-        (_root_.SymmetricAlgebra K (K ⊗[k] M)))
+      (AlgHom.commutes (Bialgebra.comulAlgHom K (SymmetricAlgebra K (K ⊗[k] M))) s).symm.trans <|
+      congrArg (Bialgebra.comulAlgHom K (SymmetricAlgebra K (K ⊗[k] M)))
         (AlgEquiv.commutes (scalarTensorAlgEquiv (k := k) (K := K) (M := M)) s).symm
-  · apply _root_.SymmetricAlgebra.algHom_ext
+  · apply algHom_ext
     apply LinearMap.ext
     intro m
     exact scalarTensorAlgEquiv_comul_tmul_ι (k := k) (K := K) (M := M) m
@@ -256,8 +225,7 @@ private theorem scalarTensorAlgEquiv_map_comp_comul :
 The equivalence sends `s ⊗ ι(m)` to the generator `ι(s ⊗ m)` of the symmetric algebra on the
 scalar-extended module. -/
 noncomputable def scalarTensorBialgEquiv :
-    K ⊗[k] _root_.SymmetricAlgebra k M ≃ₐc[K]
-      _root_.SymmetricAlgebra K (K ⊗[k] M) :=
+    K ⊗[k] SymmetricAlgebra k M ≃ₐc[K] SymmetricAlgebra K (K ⊗[k] M) :=
   BialgEquiv.ofAlgEquiv (scalarTensorAlgEquiv (k := k) (K := K) (M := M))
     (scalarTensorAlgEquiv_counit_comp (k := k) (K := K) (M := M))
     (scalarTensorAlgEquiv_map_comp_comul (k := k) (K := K) (M := M))
@@ -265,18 +233,16 @@ noncomputable def scalarTensorBialgEquiv :
 /-- The scalar-extension equivalence sends `s ⊗ ι(m)` to `ι(s ⊗ m)`. -/
 @[simp]
 theorem scalarTensorBialgEquiv_tmul_ι (s : K) (m : M) :
-    scalarTensorBialgEquiv (k := k) (K := K) (M := M)
-        (s ⊗ₜ[k] _root_.SymmetricAlgebra.ι k M m) =
-      _root_.SymmetricAlgebra.ι K (K ⊗[k] M) (s ⊗ₜ[k] m) :=
+    scalarTensorBialgEquiv (k := k) (K := K) (M := M) (s ⊗ₜ[k] ι k M m) =
+      ι K (K ⊗[k] M) (s ⊗ₜ[k] m) :=
   scalarTensorAlgEquiv_tmul_ι (k := k) (K := K) (M := M) s m
 
 /-- The inverse scalar-extension equivalence sends the generator indexed by `s ⊗ m` to
 `s ⊗ ι(m)`. -/
 @[simp]
 theorem scalarTensorBialgEquiv_symm_ι_tmul (s : K) (m : M) :
-    (scalarTensorBialgEquiv (k := k) (K := K) (M := M)).symm
-      (_root_.SymmetricAlgebra.ι K (K ⊗[k] M) (s ⊗ₜ[k] m)) =
-      s ⊗ₜ[k] _root_.SymmetricAlgebra.ι k M m := by
+    (scalarTensorBialgEquiv (k := k) (K := K) (M := M)).symm (ι K (K ⊗[k] M) (s ⊗ₜ[k] m)) =
+      s ⊗ₜ[k] ι k M m := by
   rw [← scalarTensorBialgEquiv_tmul_ι]
   exact BialgEquiv.symm_apply_apply _ _
 
@@ -284,24 +250,20 @@ theorem scalarTensorBialgEquiv_symm_ι_tmul (s : K) (m : M) :
 @[simp]
 theorem scalarTensorBialgEquiv_tmul_one (s : K) :
     scalarTensorBialgEquiv (k := k) (K := K) (M := M) (s ⊗ₜ[k] 1) =
-      algebraMap K (_root_.SymmetricAlgebra K (K ⊗[k] M)) s := by
+      algebraMap K (SymmetricAlgebra K (K ⊗[k] M)) s := by
   calc
     _ = scalarTensorBialgEquiv (k := k) (K := K) (M := M)
-        (algebraMap K (K ⊗[k] _root_.SymmetricAlgebra k M) s) := by
-      rw [Algebra.TensorProduct.algebraMap_apply]
-      rw [Algebra.algebraMap_self_apply]
+        (algebraMap K (K ⊗[k] SymmetricAlgebra k M) s) := by
+      rw [Algebra.TensorProduct.algebraMap_apply, Algebra.algebraMap_self_apply]
     _ = _ := AlgEquiv.commutes
       (scalarTensorBialgEquiv (k := k) (K := K) (M := M) :
-        (K ⊗[k] _root_.SymmetricAlgebra k M) ≃ₐ[K]
-          _root_.SymmetricAlgebra K (K ⊗[k] M)) s
+        (K ⊗[k] SymmetricAlgebra k M) ≃ₐ[K] SymmetricAlgebra K (K ⊗[k] M)) s
 
 end SymmetricAlgebra
 
-end TauCeti
-
 namespace LinearMap
 
-open TauCeti.SymmetricAlgebra
+open SymmetricAlgebra
 
 variable {R S M : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
   [AddCommMonoid M] [Module R M]

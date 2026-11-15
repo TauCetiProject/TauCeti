@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.LocalDiffeomorph
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 
 /-!
 # Charts pulled back along a local homeomorphism
@@ -24,6 +24,9 @@ The transition maps of the pulled-back atlas are restrictions of transition maps
 pulled-back charts form a `C^n` manifold whenever `B` is one, and `p` is then a `C^n` local
 diffeomorphism. A map into `M` is `C^n` exactly when it is continuous and its composite with `p` is
 `C^n`: in the pulled-back charts the two composites have the same coordinate expression.
+Conversely, any `C^n` manifold structure on `M` for which `p` is a `C^n` local diffeomorphism is
+compatible with the pulled-back charts, since a continuous map into `M` is `C^n` whenever its
+composite with a `C^n` local diffeomorphism is.
 
 ## Main definitions
 
@@ -37,6 +40,8 @@ diffeomorphism. A map into `M` is `C^n` exactly when it is continuous and its co
   continuous and its composite with `p` is `C^n`; also in `Within`, `At` and `On` forms.
 * `IsLocalHomeomorph.isLocalDiffeomorph_chartedSpaceComap`: `p` is a `C^n` local diffeomorphism
   for the pulled-back charts.
+* `IsLocalHomeomorph.compatible_chartedSpaceComap`: any `C^n` manifold structure on `M` for which
+  `p` is a `C^n` local diffeomorphism is compatible with the pulled-back charts.
 
 ## References
 
@@ -182,5 +187,27 @@ theorem isLocalDiffeomorph_chartedSpaceComap :
       contMDiffOn_toFun := hp.contMDiff_chartedSpaceComap.contMDiffOn
       contMDiffOn_invFun := hL }
   exact Φ.isLocalDiffeomorphAt I I n hp.self_mem_localInverseAt_target
+
+/-- Any `C^n` manifold structure on the source of a local homeomorphism `p` onto a `C^n` manifold,
+for which `p` is a `C^n` local diffeomorphism, is compatible with the charts pulled back along `p`.
+So the pulled-back structure is the only such structure, up to equivalence of atlases. -/
+theorem compatible_chartedSpaceComap [IsManifold I n B] [c : ChartedSpace H M] [IsManifold I n M]
+    (hpc : IsLocalDiffeomorph I I n p) :
+    ∀ e ∈ c.atlas, ∀ e' ∈ (hp.chartedSpaceComap (H := H)).atlas,
+      e.symm.trans e' ∈ contDiffGroupoid n I := by
+  rintro e he _ ⟨x, rfl⟩
+  set a := (hp.localInverseAt x).symm.trans (chartAt H (p x))
+  have hpmap : MapsTo p a.source (chartAt H (p x)).source := by
+    intro y hy
+    simpa [a] using hy.2
+  have ha : ContMDiffOn I I n a a.source :=
+    (contMDiffOn_chart.comp hpc.contMDiff.contMDiffOn hpmap).congr fun y _ ↦ by simp [a]
+  have hatarget : a.target ⊆ (chartAt H (p x)).target := fun _ hz ↦ hz.1
+  have hcomp : ContMDiffOn I I n (p ∘ a.symm) a.target :=
+    (contMDiffOn_chart_symm.mono hatarget).congr fun z hz ↦ by
+      simpa [a] using hp.apply_localInverseAt_of_mem hz.2
+  have ha_symm : ContMDiffOn I I n a.symm a.target :=
+    hcomp.of_comp_isLocalDiffeomorph hpc a.symm.continuousOn
+  exact (a.mem_maximalAtlas_of_contMDiffOn ha ha_symm e he).2
 
 end IsLocalHomeomorph

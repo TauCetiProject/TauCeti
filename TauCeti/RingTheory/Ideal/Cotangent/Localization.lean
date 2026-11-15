@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
 public import Mathlib.RingTheory.Ideal.Cotangent
+public import Mathlib.RingTheory.RegularLocalRing.Defs
 
 /-!
 # Cotangent spaces and localization at a maximal ideal
@@ -14,12 +15,12 @@ public import Mathlib.RingTheory.Ideal.Cotangent
 Let `p` be a maximal ideal of a commutative ring `R`, and let `Rₚ` be a localization of `R` at
 `p`. The map from `R` to `Rₚ` identifies the cotangent space `p / p²` with the cotangent space
 `pRₚ / (pRₚ)²` of the local ring `Rₚ`. This file constructs that identification and proves that
-it is semilinear for the canonical equivalence between the two residue fields.
+it is semilinear for the canonical equivalence between the two residue fields. So the two
+cotangent spaces have the same dimension, and when `Rₚ` is Noetherian its regularity can be read
+off from the dimension of `p / p²` over `R / p`.
 
-This is the localization bridge needed to compare the augmentation-ideal model of the tangent
-space of an affine group with the Zariski tangent space of its spectrum at the identity. That
-comparison is a prerequisite for the smoothness and dimension tools in Layer 2 of the
-ReductiveGroups roadmap.
+This is the localization bridge used to compare the augmentation-ideal model of the tangent
+space of an affine group with the Zariski tangent space of its spectrum at the identity.
 
 ## Main declarations
 
@@ -27,6 +28,10 @@ ReductiveGroups roadmap.
   space.
 * `Ideal.cotangentLocalizationEquiv_smul`: the equivalence is semilinear for the canonical
   residue-field equivalence.
+* `Ideal.finrank_cotangent_eq_finrank_cotangentSpace`: the two cotangent spaces have the same
+  dimension over their residue fields.
+* `Ideal.isRegularLocalRing_iff_finrank_cotangent`: a Noetherian `Rₚ` is regular exactly when
+  `p / p²` has dimension `dim Rₚ`.
 
 ## References
 
@@ -39,79 +44,76 @@ open IsLocalRing
 
 namespace Ideal
 
-attribute [local instance] Ideal.Quotient.field
+variable {R : Type*} [CommRing R] (p : Ideal R) [p.IsMaximal]
+variable (Rₚ : Type*) [CommRing Rₚ] [Algebra R Rₚ] [IsLocalization.AtPrime Rₚ p] [IsLocalRing Rₚ]
 
-variable {R Rₚ : Type*} [CommRing R]
-variable (p : Ideal R) [p.IsMaximal]
-variable [CommRing Rₚ] [Algebra R Rₚ] [IsLocalization.AtPrime Rₚ p]
+private theorem le_comap_maximalIdeal : p ≤ (maximalIdeal Rₚ).comap (Algebra.ofId R Rₚ) :=
+  (IsLocalization.AtPrime.under_maximalIdeal Rₚ p).ge
 
-/-- The quotient-ring localization equivalence restricted to the cotangent ideals. -/
-private noncomputable def cotangentLocalizationIdealEquiv :
-    letI := IsLocalization.AtPrime.isLocalRing Rₚ p
-    p.cotangentIdeal ≃ₗ[R] (maximalIdeal Rₚ).cotangentIdeal := by
-  letI := IsLocalization.AtPrime.isLocalRing Rₚ p
-  let e := (IsLocalization.AtPrime.equivQuotMaximalIdealPow p Rₚ 2).toLinearEquiv
-  exact e.ofSubmodules (p.cotangentIdeal.restrictScalars R)
-    ((maximalIdeal Rₚ).cotangentIdeal.restrictScalars R) (by
-    ext z
-    rw [Submodule.mem_map_equiv]
-    obtain ⟨x, hx⟩ := Ideal.Quotient.mk_surjective (e.symm z)
-    rw [← e.apply_symm_apply z, e.symm_apply_apply, ← hx]
-    -- `mem_map_equiv` leaves membership through `e`; expose its underlying quotient
-    -- equivalence so that the public representative lemma can rewrite it.
-    change (Ideal.Quotient.mk (p ^ 2) x ∈ p.cotangentIdeal) ↔
-      (IsLocalization.AtPrime.equivQuotMaximalIdealPow p Rₚ 2
-        (Ideal.Quotient.mk (p ^ 2) x) ∈ (maximalIdeal Rₚ).cotangentIdeal)
-    rw [IsLocalization.AtPrime.equivQuotMaximalIdealPow_apply_mk,
-      Ideal.mk_mem_cotangentIdeal, Ideal.mk_mem_cotangentIdeal,
-      ← Ideal.mem_under, IsLocalization.AtPrime.under_maximalIdeal Rₚ p])
+/-- The cotangent map `p / p² → pRₚ / (pRₚ)²` induced by localization is bijective. -/
+private theorem mapCotangent_algebraMap_bijective :
+    Function.Bijective (p.mapCotangent (maximalIdeal Rₚ) (Algebra.ofId R Rₚ)
+      (le_comap_maximalIdeal p Rₚ)) := by
+  constructor
+  · rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
+    intro a ha
+    obtain ⟨x, rfl⟩ := p.toCotangent_surjective a
+    rw [mapCotangent_toCotangent, toCotangent_eq_zero] at ha
+    rw [toCotangent_eq_zero, ← IsLocalization.AtPrime.under_maximalIdeal_pow p Rₚ 2]
+    exact ha
+  · intro a
+    obtain ⟨⟨z, hz⟩, rfl⟩ := (maximalIdeal Rₚ).toCotangent_surjective a
+    obtain ⟨y, hy⟩ := (IsLocalization.AtPrime.equivQuotMaximalIdealPow p Rₚ 2).surjective
+      (Ideal.Quotient.mk _ z)
+    obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective y
+    rw [IsLocalization.AtPrime.equivQuotMaximalIdealPow_apply_mk, Ideal.Quotient.eq] at hy
+    have hx : x ∈ p := by
+      rw [← IsLocalization.AtPrime.to_map_mem_maximal_iff Rₚ p x]
+      simpa using add_mem (Ideal.pow_le_self two_ne_zero hy) hz
+    exact ⟨p.toCotangent ⟨x, hx⟩, (toCotangent_eq _).2 hy⟩
 
 /-- The canonical linear equivalence `p / p² ≃ pRₚ / (pRₚ)²` induced by localization. -/
 noncomputable def cotangentLocalizationEquiv :
-    letI := IsLocalization.AtPrime.isLocalRing Rₚ p
-    p.Cotangent ≃ₗ[R] (maximalIdeal Rₚ).Cotangent := by
-  letI := IsLocalization.AtPrime.isLocalRing Rₚ p
-  exact p.cotangentEquivIdeal |>.trans <|
-    (cotangentLocalizationIdealEquiv p).trans <|
-      (maximalIdeal Rₚ).cotangentEquivIdeal.symm.restrictScalars R
+    p.Cotangent ≃ₗ[R] (maximalIdeal Rₚ).Cotangent :=
+  .ofBijective _ (mapCotangent_algebraMap_bijective p Rₚ)
 
 /-- On a class represented by `x ∈ p`, the cotangent localization equivalence is induced by the
 ring localization map. -/
 @[simp]
 theorem cotangentLocalizationEquiv_toCotangent (x : p) :
-    letI := IsLocalization.AtPrime.isLocalRing Rₚ p
-    cotangentLocalizationEquiv p (p.toCotangent x) =
+    cotangentLocalizationEquiv p Rₚ (p.toCotangent x) =
       (maximalIdeal Rₚ).toCotangent
-        ⟨algebraMap R Rₚ x, by
-          rw [← Ideal.mem_under, IsLocalization.AtPrime.under_maximalIdeal Rₚ p]
-          exact x.2⟩ := by
-  let _ := IsLocalization.AtPrime.isLocalRing Rₚ p
-  rw [cotangentLocalizationEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
-    LinearEquiv.restrictScalars_apply]
-  apply (maximalIdeal Rₚ).cotangentEquivIdeal.injective
-  rw [LinearEquiv.apply_symm_apply]
-  apply Subtype.ext
-  simp only [cotangentLocalizationIdealEquiv]
-  -- The restricted `ofSubmodules` equivalence and `cotangentEquivIdeal` compute on their
-  -- underlying quotient classes; expose those classes for the public representative lemma.
-  change (IsLocalization.AtPrime.equivQuotMaximalIdealPow p Rₚ 2)
-      (Ideal.Quotient.mk _ x) = Ideal.Quotient.mk _ (algebraMap R Rₚ x)
-  exact IsLocalization.AtPrime.equivQuotMaximalIdealPow_apply_mk p Rₚ 2 x
+        ⟨algebraMap R Rₚ x, (IsLocalization.AtPrime.to_map_mem_maximal_iff Rₚ p x).2 x.2⟩ :=
+  (rfl)
 
 /-- The cotangent localization equivalence is semilinear for the canonical equivalence between
 the residue field `R / p` and the residue field of `Rₚ`. -/
 @[simp]
 theorem cotangentLocalizationEquiv_smul (r : R ⧸ p) (x : p.Cotangent) :
-    letI := IsLocalization.AtPrime.isLocalRing Rₚ p
-    cotangentLocalizationEquiv (Rₚ := Rₚ) p (r • x) =
-      IsLocalization.AtPrime.equivQuotMaximalIdeal p Rₚ r •
-        cotangentLocalizationEquiv (Rₚ := Rₚ) p x := by
-  let _ := IsLocalization.AtPrime.isLocalRing Rₚ p
+    cotangentLocalizationEquiv p Rₚ (r • x) =
+      IsLocalization.AtPrime.equivQuotMaximalIdeal p Rₚ r • cotangentLocalizationEquiv p Rₚ x := by
   obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective r
-  rw [IsLocalization.AtPrime.equivQuotMaximalIdeal_apply_mk]
-  rw [← Ideal.Quotient.algebraMap_eq, IsScalarTower.algebraMap_smul,
-    ← Ideal.Quotient.algebraMap_eq, IsScalarTower.algebraMap_smul]
-  rw [IsScalarTower.algebraMap_smul Rₚ]
-  exact map_smul (cotangentLocalizationEquiv (Rₚ := Rₚ) p) r x
+  simp [← Ideal.Quotient.algebraMap_eq,
+    IsScalarTower.algebraMap_apply R Rₚ (Rₚ ⧸ maximalIdeal Rₚ)]
+
+/-- Localization at a maximal ideal `p` preserves the dimension of the cotangent space: `p / p²`
+over `R / p` has the dimension of the cotangent space of `Rₚ` over its residue field. -/
+theorem finrank_cotangent_eq_finrank_cotangentSpace :
+    Module.finrank (R ⧸ p) p.Cotangent =
+      Module.finrank (IsLocalRing.ResidueField Rₚ) (CotangentSpace Rₚ) := by
+  have h := lift_rank_eq_of_equiv_equiv (R' := IsLocalRing.ResidueField Rₚ)
+    (M' := CotangentSpace Rₚ) (IsLocalization.AtPrime.equivQuotMaximalIdeal p Rₚ)
+    (cotangentLocalizationEquiv p Rₚ).toAddEquiv
+    (IsLocalization.AtPrime.equivQuotMaximalIdeal p Rₚ).bijective
+    (cotangentLocalizationEquiv_smul p Rₚ)
+  rw [Module.finrank, Module.finrank, ← Cardinal.toNat_lift, h, Cardinal.toNat_lift]
+
+/-- A Noetherian localization `Rₚ` at a maximal ideal `p` is a regular local ring if and only if
+`p / p²` has dimension `dim Rₚ` over `R / p`. -/
+theorem isRegularLocalRing_iff_finrank_cotangent [IsNoetherianRing Rₚ] :
+    IsRegularLocalRing Rₚ ↔
+      (Module.finrank (R ⧸ p) p.Cotangent : WithBot ℕ∞) = ringKrullDim Rₚ := by
+  rw [IsRegularLocalRing.iff_finrank_cotangentSpace,
+    finrank_cotangent_eq_finrank_cotangentSpace p Rₚ]
 
 end Ideal

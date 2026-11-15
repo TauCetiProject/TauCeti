@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Convex.SimplicialComplex.AffineIndependentUnion
 public import Mathlib.Analysis.Convex.Combination
 public import Mathlib.Topology.UniformSpace.Real
+public import Mathlib.Topology.UnitInterval
 import Mathlib.Analysis.Convex.Topology
 import Mathlib.Topology.Separation.Hausdorff
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Basic
@@ -26,8 +27,8 @@ standard coordinate vectors are affinely independent and that their convex hulls
 common faces. The polyhedron carries the weak topology: the final topology for the inclusions of
 all its closed simplices. This avoids a finiteness or local-finiteness hypothesis on `K`.
 
-This is the first item of layer 11 of the geometric-topology roadmap: the polyhedron `|K|` of an
-abstract simplicial complex. It is the object used in the subsequent definition of a triangulation.
+The resulting space is the polyhedron `|K|` of the abstract simplicial complex `K`. It is the
+space used in the definition of a triangulation (`TauCeti.IsTriangulable`).
 
 ## Main definitions
 
@@ -108,6 +109,11 @@ theorem faceBarycenter_apply (K : AbstractSimplicialComplex ι) (σ : Face K) (v
 topologies used to define the weak topology on the whole realization. -/
 instance (σ : Finset ι) : TopologicalSpace (StandardSimplex σ) :=
   TopologicalSpace.induced (fun x : StandardSimplex σ => (x.1 : ι → ℝ)) inferInstance
+
+/-- Closed coordinate simplices are Hausdorff, including on an infinite vertex type. -/
+instance instT2SpaceStandardSimplex (σ : Finset ι) : T2Space (StandardSimplex σ) :=
+  (Topology.IsEmbedding.induced
+    (fun _ _ h => Subtype.ext (Finsupp.ext fun v => congrFun h v))).t2Space
 
 /-- Every closed coordinate simplex is compact, even in an infinite vertex set. -/
 instance instCompactSpaceStandardSimplex (σ : Finset ι) : CompactSpace (StandardSimplex σ) := by
@@ -231,7 +237,7 @@ theorem StandardSimplex.nonneg {σ : Finset ι} (x : StandardSimplex σ) (v : ι
       obtain ⟨w, _, rfl⟩ := hy
       by_cases h : w = v <;> simp [h])
     (by
-      intro y hy z hz a b ha hb hab
+      intro y hy z hz a b ha hb _
       simp only [Set.mem_ofPred_eq, Finsupp.add_apply, Finsupp.smul_apply] at hy hz ⊢
       exact add_nonneg (mul_nonneg ha hy) (mul_nonneg hb hz))
     x.2
@@ -318,6 +324,52 @@ theorem StandardSimplex.mem_convexHull_support {σ : Finset ι} (x : StandardSim
   rw [heq] at hx
   exact hx
 
+/-- Moving a point of a closed simplex towards a vertex stays in the enlarged simplex. -/
+theorem StandardSimplex.smul_add_single_mem [DecidableEq ι] {σ : Finset ι} (x : StandardSimplex σ)
+    (v : ι) (t : unitInterval) :
+    (1 - (t : ℝ)) • x.1 + (t : ℝ) • Finsupp.single v 1 ∈
+      convexHull ℝ ((insert v σ).image (fun w => Finsupp.single w (1 : ℝ)) :
+        Set (ι →₀ ℝ)) := by
+  apply (convex_convexHull ℝ _)
+  · exact convexHull_mono (Finset.coe_subset.mpr
+      (Finset.image_mono _ (Finset.subset_insert v σ))) (by
+        -- Set images remove the equality-instance choice in the finite image of `σ`.
+        simpa only [Finset.coe_image] using x.2)
+  · exact subset_convexHull ℝ _ (Finset.mem_coe.mpr
+      (Finset.mem_image.mpr ⟨v, Finset.mem_insert_self v σ, rfl⟩))
+  · exact sub_nonneg.mpr t.2.2
+  · exact t.2.1
+  · ring
+
+/-- The point at parameter `t ∈ [0, 1]` of the segment from `b` to `x` in a closed simplex. -/
+noncomputable def StandardSimplex.lineMap {σ : Finset ι} (b x : StandardSimplex σ)
+    (t : unitInterval) : StandardSimplex σ :=
+  ⟨AffineMap.lineMap (b : ι →₀ ℝ) x (t : ℝ), (convex_convexHull ℝ _).lineMap_mem b.2 x.2 t.2⟩
+
+/-- A point of a segment in a closed simplex has the affine-combination coordinates. -/
+@[simp]
+theorem StandardSimplex.coe_lineMap {σ : Finset ι} (b x : StandardSimplex σ) (t : unitInterval) :
+    (StandardSimplex.lineMap b x t : ι →₀ ℝ) = AffineMap.lineMap (b : ι →₀ ℝ) x (t : ℝ) :=
+  (rfl)
+
+/-- The segment from `b` to `x` in a closed simplex starts at `b`. -/
+@[simp]
+theorem StandardSimplex.lineMap_zero {σ : Finset ι} (b x : StandardSimplex σ) :
+    StandardSimplex.lineMap b x 0 = b :=
+  Subtype.ext (by simp)
+
+/-- The segment from `b` to `x` in a closed simplex ends at `x`. -/
+@[simp]
+theorem StandardSimplex.lineMap_one {σ : Finset ι} (b x : StandardSimplex σ) :
+    StandardSimplex.lineMap b x 1 = x :=
+  Subtype.ext (by simp)
+
+/-- The segment from `b` to itself in a closed simplex is constant. -/
+@[simp]
+theorem StandardSimplex.lineMap_same {σ : Finset ι} (b : StandardSimplex σ) (t : unitInterval) :
+    StandardSimplex.lineMap b b t = b :=
+  Subtype.ext (by simp)
+
 /-- The support of a realization point is an abstract face. -/
 theorem support_mem (K : AbstractSimplicialComplex ι) (x : Realization K) : x.1.support ∈ K := by
   obtain ⟨σ, hσ, hx⟩ := mem_realization_iff.1 x.2
@@ -370,6 +422,11 @@ theorem Realization.le_one (K : AbstractSimplicialComplex ι) (x : Realization K
   Convexity.StdSimplex.weights_apply_le_one
     ⟨x.1, Realization.nonneg K x, Realization.sum_eq_one K x⟩ v
 
+/-- The barycentric coordinates of a realization point are positive on its support. -/
+theorem Realization.pos_of_mem_support (K : AbstractSimplicialComplex ι) (x : Realization K)
+    {v : ι} (hv : v ∈ x.1.support) : 0 < x.1 v :=
+  (Realization.nonneg K x v).lt_of_ne' (Finsupp.mem_support_iff.mp hv)
+
 /-- The carrier is contained in every finite vertex set whose closed simplex contains the point. -/
 theorem carrier_minimal (K : AbstractSimplicialComplex ι) (x : Realization K) {σ : Finset ι}
     (hx : x.1 ∈ convexHull ℝ (σ.image (fun v => Finsupp.single v (1 : ℝ)) : Set (ι →₀ ℝ))) :
@@ -394,6 +451,13 @@ noncomputable def vertex (K : AbstractSimplicialComplex ι) (v : ι) : Realizati
 theorem vertex_val (K : AbstractSimplicialComplex ι) (v : ι) :
     (vertex K v : ι →₀ ℝ) = Finsupp.single v 1 :=
   (rfl)
+
+/-- The barycentric support of a realization vertex is its singleton vertex set. -/
+-- Simplify the support before vertex_val rewrites the vertex's coordinates.
+@[simp↓]
+theorem support_vertex (K : AbstractSimplicialComplex ι) (v : ι) :
+    (vertex K v : ι →₀ ℝ).support = {v} := by
+  rw [vertex_val, Finsupp.support_single _ one_ne_zero]
 
 /-- A realization point is a vertex exactly when its coordinate at that vertex is one. -/
 @[simp]
@@ -421,6 +485,16 @@ theorem Realization.eq_vertex_iff (K : AbstractSimplicialComplex ι) (x : Realiz
       simp only [Finsupp.support_erase, Finset.mem_erase]
       exact ⟨by simpa only [Finset.mem_singleton] using h, hw⟩
     exact (Finsupp.mem_support_iff.mp hw') (hzero w hw')
+
+/-- A realization point supported on a singleton is the corresponding vertex. -/
+theorem Realization.eq_vertex_of_support_eq (K : AbstractSimplicialComplex ι)
+    (x : Realization K) {v : ι} (h : x.1.support = {v}) : x = vertex K v := by
+  apply Subtype.ext
+  rw [vertex_val]
+  let w : Convexity.StdSimplex ℝ ι :=
+    ⟨x.1, Realization.nonneg K x, Realization.sum_eq_one K x⟩
+  exact congrArg Convexity.StdSimplex.weights
+    ((Convexity.StdSimplex.support_weights_eq_singleton (w := w)).mp h)
 
 /-- Distinct vertices give distinct points in the geometric realization. -/
 theorem vertex_injective (K : AbstractSimplicialComplex ι) :

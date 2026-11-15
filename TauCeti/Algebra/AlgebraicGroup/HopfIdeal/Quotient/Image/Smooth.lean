@@ -40,9 +40,9 @@ separate quotient-closure argument; it is not asserted here.
 * J. S. Milne, *Algebraic Groups* (2017), Sections 1 and 5.a.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Sections 11 and 16.
 
-This advances Layer 5, "The unipotent radical", of the ReductiveGroups roadmap. The binary
-product step uses the scheme-theoretic image of multiplication from a semidirect product; this
-file supplies smoothness of that image once the source product is known to be smooth.
+The binary-product step for the unipotent radical uses the scheme-theoretic image of multiplication
+from a semidirect product; this file supplies smoothness of that image once the source product is
+known to be smooth.
 -/
 
 public section

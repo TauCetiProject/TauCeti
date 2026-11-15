@@ -22,8 +22,7 @@ of the root table are the Bourbaki simple roots and the first eight entries of t
 are the corresponding simple coroots. The remaining positive entries are ordered by height, and
 the last 120 entries are the negatives of the first 120.
 
-The enumeration is the root-data input for Layer 6 of the root-systems roadmap. It follows
-Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate VII.
+The enumeration follows Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate VII.
 -/
 
 public section

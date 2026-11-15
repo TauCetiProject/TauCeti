@@ -93,7 +93,7 @@ theorem algebraMap_norm_eq_prod_norm (x : L) :
         Algebra.norm (v.adicCompletion K)
         (algebraMap L (w.1.adicCompletion L) x) := by
       apply Finset.prod_congr rfl
-      intro w hw
+      intro w _
       rw [semilocalEquiv_tmul]
       simp
 

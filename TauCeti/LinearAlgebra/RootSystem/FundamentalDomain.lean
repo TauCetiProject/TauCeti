@@ -62,10 +62,8 @@ fundamental-domain statement is a corollary of the finite-Weyl-group one.
 
 ## References
 
-This file completes the fundamental-domain item of Layer 4 in
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`, whose uniqueness half was previously
-proved only for weights interior to the chamber. The argument is the one in J. E. Humphreys,
-*Introduction to Lie Algebras and Representation Theory*, GTM 9, Ch. III, §10.3, Theorem (b).
+The argument is the one in J. E. Humphreys, *Introduction to Lie Algebras and Representation
+Theory*, GTM 9, Ch. III, §10.3, Theorem (b).
 -/
 
 public section
@@ -121,8 +119,9 @@ lemma wallReflections_subset_stabilizer (x : M) :
     wallReflections P b x ⊆ MulAction.stabilizer P.weylGroup x :=
   fun _ hw ↦ smul_eq_self_of_mem_wallReflections hw
 
-variable (P b) [LinearOrder R]
+variable (P b)
 
+variable [Preorder R] in
 /-- No wall of the dominant chamber passes through a weight interior to it. -/
 theorem wallReflections_eq_empty_of_mem_openDominantChamber {x : M}
     (hx : x ∈ openDominantChamber P b) : wallReflections P b x = ∅ :=
@@ -132,7 +131,8 @@ theorem wallReflections_eq_empty_of_mem_openDominantChamber {x : M}
 
 /-! ### The stabilizer of a dominant weight -/
 
-variable [IsStrictOrderedRing R] [Finite ι] [P.IsCrystallographic] [P.IsReduced] [P.flip.IsReduced]
+variable [LinearOrder R] [IsStrictOrderedRing R] [Finite ι] [P.IsCrystallographic] [P.IsReduced]
+  [P.flip.IsReduced]
 
 /-- The inductive step, isolated: a Weyl-group element carrying a dominant weight to a dominant
 weight and inverting the simple root `αᵢ` is killed by `αᵢ`, so the wall `αᵢ` passes through the

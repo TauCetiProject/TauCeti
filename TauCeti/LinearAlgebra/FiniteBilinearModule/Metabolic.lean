@@ -34,6 +34,15 @@ def IsMetabolic (A : FiniteQuadraticModule) : Prop :=
 theorem isMetabolic_def (A : FiniteQuadraticModule) :
     A.IsMetabolic ↔ ∃ H : AddSubgroup A, A.IsLagrangian H := Iff.rfl
 
+/-- A nondegenerate metabolic finite quadratic module has square order: a quadratic Lagrangian
+has order whose square is the order of the ambient group. -/
+theorem IsMetabolic.isSquare_natCard {A : FiniteQuadraticModule} (h : A.IsMetabolic)
+    (hA : A.IsNondegenerate) : IsSquare (Nat.card A) := by
+  obtain ⟨H, hH⟩ := A.isMetabolic_def.mp h
+  refine ⟨Nat.card H, ?_⟩
+  simpa only [pow_two] using
+    (FiniteBilinearModule.IsLagrangian.card_sq _ hH.toFiniteBilinearModule hA).symm
+
 /-- An isometry preserves the existence of a quadratic Lagrangian.
 The isometry must be supplied explicitly: it occurs in neither side of the equivalence. -/
 theorem Isometry.isMetabolic_iff {A B : FiniteQuadraticModule} (f : Isometry A B) :

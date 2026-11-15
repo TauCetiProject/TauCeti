@@ -57,7 +57,7 @@ nonarchimedean local field and `τ` its nontrivial automorphism. Then the local 
 theorem localArtinMap_quadratic_eq_nontrivial_iff_not_norm (L : Type*) [Field L] [Algebra K L]
     [FiniteDimensional K L] [IsGalois K L] (ι : L →ₐ[K] SeparableClosure K)
     (hdegree : finrank K L = 2) {τ : Gal(L/K)} (hτ : τ ≠ 1) (a : Kˣ) :
-    localArtinMap K L ι (Additive.ofMul a) = Additive.ofMul (Abelianization.of τ) ↔
+    localArtinMap K L ι (Additive.ofMul a) = Additive.ofMul (Group.Abelianization.of τ) ↔
       a ∉ normGroup K L := by
   have hcard : Nat.card Gal(L/K) = 2 := by
     rw [IsGalois.card_aut_eq_finrank, hdegree]
@@ -65,15 +65,15 @@ theorem localArtinMap_quadratic_eq_nontrivial_iff_not_norm (L : Type*) [Field L]
   have : IsCyclic Gal(L/K) := isCyclic_of_prime_card rfl
   let : CommGroup Gal(L/K) := IsCyclic.commGroup
   -- the symbol of `a` is the class of some `σ`, and `σ` is either `1` or `τ`
-  obtain ⟨σ, hσ⟩ := Abelianization.equivOfComm.surjective
+  obtain ⟨σ, hσ⟩ := Group.Abelianization.equivOfComm.surjective
     (localArtinMap K L ι (Additive.ofMul a)).toMul
   have hστ : σ ≠ 1 → σ = τ := fun h ↦ ((Nat.card_eq_two_iff' 1).1 hcard).unique h hτ
   rw [← localArtinMap_eq_zero_iff K L ι, ← ofMul_toMul (localArtinMap K L ι _), ← hσ]
-  have heq : Additive.ofMul (Abelianization.equivOfComm σ) =
-      Additive.ofMul (Abelianization.of τ) ↔ σ = τ := by
-    simp [← Abelianization.equivOfComm_apply]
-  have hone : Additive.ofMul (Abelianization.equivOfComm σ) = 0 ↔ σ = 1 := by
-    simp [-Abelianization.equivOfComm_apply]
+  have heq : Additive.ofMul (Group.Abelianization.equivOfComm σ) =
+      Additive.ofMul (Group.Abelianization.of τ) ↔ σ = τ := by
+    simp [← Group.Abelianization.equivOfComm_apply]
+  have hone : Additive.ofMul (Group.Abelianization.equivOfComm σ) = 0 ↔ σ = 1 := by
+    simp [-Group.Abelianization.equivOfComm_apply]
   rw [heq, hone]
   exact ⟨fun h ↦ h ▸ hτ, hστ⟩
 
@@ -89,11 +89,11 @@ theorem localArtinMap_quadratic_eq_hilbertSymbol {L : Type} [Field L] [Algebra K
     (hζ : IsPrimitiveRoot ζ 2) (tr : continuousCohomology 2 (muNRep 2 K) ≃+ ZMod 2) {d : Kˣ}
     {s : L} (hs : s ^ 2 = algebraMap K L d) (hgen : K⟮s⟯ = ⊤) {τ : Gal(L/K)} (hτ : τ ≠ 1)
     (a : Kˣ) :
-    localArtinMap K L ι (Additive.ofMul a) = Additive.ofMul (Abelianization.of τ) ↔
+    localArtinMap K L ι (Additive.ofMul a) = Additive.ofMul (Group.Abelianization.of τ) ↔
       localSymbol (kummerCupPairing ζ hζ) tr (kummerClass K hζ.neZero'.out.isUnit a)
         (kummerClass K hζ.neZero'.out.isUnit d) = 1 := by
   -- `[L : K]` divides `2`, and it is not `1` because `τ ≠ 1`
-  obtain ⟨-, -, hdvd, -⟩ := exists_forall_mem_zpowers_apply_eq hζ d.ne_zero hs hgen
+  obtain ⟨-, -, hdvd, -⟩ := exists_forall_mem_zpowers_apply_eq hζ hs hgen
   have hdegree : finrank K L = 2 := by
     refine ((Nat.dvd_prime Nat.prime_two).1 hdvd).resolve_left fun h ↦ hτ ?_
     have : Subsingleton Gal(L/K) := (Nat.card_eq_one_iff_unique.1 <| by

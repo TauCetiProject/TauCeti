@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.PermutationTriple.CycleData
 public import TauCeti.GroupTheory.Perm.SumCongr
+import TauCeti.GroupTheory.Perm.SigmaCongr
 
 /-!
 # Disjoint sums of permutation triples
@@ -182,6 +183,30 @@ variable (t : ∀ i, PermutationTriple (d i)) (e : (Σ i, Fin (d i)) ≃ Fin N)
 
 @[simp] theorem indexedDisjointSum_σinf : (indexedDisjointSum t e).σinf =
     e.permCongr (Equiv.Perm.sigmaCongrRight fun i ↦ (t i).σinf) := (rfl)
+
+variable [Fintype I]
+
+/-- The three full cycle partitions of an indexed disjoint sum concatenate independently
+at each branch point. -/
+@[simp]
+theorem cycleData_indexedDisjointSum :
+    (indexedDisjointSum t e).cycleData =
+      (∑ i, (t i).cycleData.1, ∑ i, (t i).cycleData.2.1,
+        ∑ i, (t i).cycleData.2.2) := by
+  classical
+  apply Prod.ext
+  · simp
+  · apply Prod.ext <;> simp
+
+/-- Cycle counts, including the fixed points, add over indexed disjoint sums. -/
+@[simp]
+theorem cycleCounts_indexedDisjointSum :
+    (indexedDisjointSum t e).cycleCounts =
+      (∑ i, (t i).cycleCounts.1, ∑ i, (t i).cycleCounts.2.1,
+        ∑ i, (t i).cycleCounts.2.2) := by
+  apply Prod.ext
+  · simp
+  · apply Prod.ext <;> simp
 
 end IndexedDisjointSum
 

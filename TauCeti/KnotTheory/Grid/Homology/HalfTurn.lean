@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Differential.HalfTurn
-public import TauCeti.KnotTheory.Grid.Homology.Tau
+public import TauCeti.KnotTheory.Grid.Homology.KnotAlexander
 public import TauCeti.KnotTheory.Grid.Grading.HalfTurn
 
 /-!
@@ -17,7 +17,9 @@ images under `GridState.halfTurn`, and it intertwines the unblocked differential
 variables are renamed along `Fin.rev` (`Differential/HalfTurn.lean`). This file descends that
 symmetry to unblocked grid homology: `GH⁻(G)` and `GH⁻(G.rotate)` are identified by a
 semilinear equivalence along the renaming of the variables. It preserves the Alexander
-grading, so it also preserves the knot invariant `τ`.
+grading, so for a knot grid the two homologies are isomorphic as Alexander-graded `R[U]`-modules.
+On chains the half-turn preserves the
+full `O`-Maslov--Alexander bigrading, including the coefficient-variable degrees.
 
 ## Main definitions
 
@@ -29,6 +31,8 @@ grading, so it also preserves the knot invariant `τ`.
 * `TauCeti.GridDiagram.unblockedHomologyRotateEquiv_unblockedHomologyClass`,
   `TauCeti.GridDiagram.unblockedHomologyRotateEquiv_symm_unblockedHomologyClass`: it and its
   inverse send the class of a cycle to the class of the half-turned cycle.
+* `TauCeti.GridDiagram.IsKnot.unblockedHomologyIsomorphic_rotate`: for a knot grid, `GH⁻` is
+  unchanged by the half-turn as an Alexander-graded `R[U]`-module.
 
 ## References
 
@@ -87,6 +91,28 @@ section Chains
 
 variable {n : ℕ} (G : OddComponentGridDiagram n) (R : Type*) [CommSemiring R]
 
+/-- The half-turn, including reversal of coefficient-variable indices, preserves the full
+`O`-Maslov--Alexander bigrading of unblocked chains. -/
+theorem halfTurnRenameEquiv_mem_bigradedChainMinusPiece {g : ℤ × ℤ} {c : GridChainMinus R n}
+    (hc : c ∈ G.bigradedChainMinusPiece R g) :
+    GridChain.halfTurnRenameEquiv R c ∈ G.rotate.bigradedChainMinusPiece R g := by
+  classical
+  rw [mem_bigradedChainMinusPiece] at hc ⊢
+  intro x e he
+  rw [GridChain.halfTurnRenameEquiv_apply,
+    support_rename_of_injective Fin.rev_injective, Finset.mem_image] at he
+  obtain ⟨e, he, rfl⟩ := he
+  have hM := G.1.maslovOℤ_rotate_halfTurn x.halfTurn
+  have hA := G.alexanderℤ_rotate_halfTurn x.halfTurn
+  rw [GridState.halfTurn_halfTurn] at hM hA
+  have hdegree : G.rotate.monomialBidegree x (e.mapDomain Fin.rev) =
+      G.monomialBidegree x.halfTurn e := by
+    apply Prod.ext <;>
+      simp only [monomialBidegree_fst, monomialBidegree_snd, hM, hA,
+        Finsupp.degree_mapDomain]
+  rw [hdegree]
+  exact hc x.halfTurn e he
+
 /-- The half-turn, including reversal of coefficient-variable indices, preserves the Alexander
 grading of unblocked chains. -/
 theorem halfTurnRenameEquiv_mem_alexanderChainMinusPiece {a : ℤ} {c : GridChainMinus R n}
@@ -121,11 +147,12 @@ namespace GridDiagram.IsKnot
 
 variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot) (K : Type*) [CommRing K] [CharP K 2]
 
-/-- The knot invariant `τ` is unchanged by the half-turn of the torus. -/
-theorem tau_rotate : ((G.isKnot_rotate).mpr hG).tau K = hG.tau K := by
-  refine (hG.tau_eq_of_semilinearMap K _ (fun p => ?_)
+/-- The half-turn of a knot grid preserves `GH⁻` as an Alexander-graded `K[U]`-module. -/
+theorem unblockedHomologyIsomorphic_rotate :
+    hG.UnblockedHomologyIsomorphic ((G.isKnot_rotate).mpr hG) K := by
+  refine .of_semilinearMap (fun p => ?_)
     (G.unblockedHomologyRotateEquiv K).toLinearMap
-    (G.unblockedHomologyRotateEquiv K).bijective fun a y hy => ?_).symm
+    (G.unblockedHomologyRotateEquiv K).bijective fun a y hy => ?_
   · simp [aeval_rename, Function.comp_def]
   · rw [mem_alexanderUnblockedHomologyGrading_piece_iff,
       ← OddComponentGridDiagram.mem_alexanderUnblockedHomologyGrading_piece_iff] at hy ⊢

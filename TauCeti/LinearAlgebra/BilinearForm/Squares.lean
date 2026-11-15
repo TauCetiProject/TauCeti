@@ -7,7 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.ExteriorPower.Basic
 public import Mathlib.LinearAlgebra.TensorPower.Symmetric
-public import TauCeti.LinearAlgebra.BilinearForm.Multilinear
+public import TauCeti.LinearAlgebra.BilinearMap.Multilinear
+import TauCeti.LinearAlgebra.SymmetricPower.Lift
 
 /-!
 # Bilinear forms from functionals on the second symmetric and exterior powers
@@ -20,8 +21,8 @@ tensors span the symmetric square, and on the exterior side the passage from a f
 alternating map is Mathlib's universal property, an equivalence.
 
 Nothing here is representation theory: this is the dictionary that
-`TauCeti.RepresentationTheory.CharacterTable.FrobeniusSchur.Trichotomy` runs the invariants of the
-two squares through to reach invariant forms.  The symmetric side is available over a commutative
+`TauCeti.RepresentationTheory.InvariantForm.Squares` runs the invariants of the two squares
+through to reach invariant forms.  The symmetric side is available over a commutative
 semiring, the exterior side over a commutative ring, which is where Mathlib's exterior power lives.
 
 ## Main definitions
@@ -37,17 +38,20 @@ semiring, the exterior side over a commutative ring, which is where Mathlib's ex
 * `TauCeti.BilinForm.ofSymmetricSquareDual_injective` and
   `TauCeti.BilinForm.ofExteriorSquareDual_injective`: a functional on either square is determined
   by the form it gives.
+* `LinearMap.BilinForm.IsSymm.exists_ofSymmetricSquareDual_eq` and
+  `LinearMap.BilinForm.IsAlt.exists_ofExteriorSquareDual_eq`: every symmetric, respectively
+  alternating, form is the form of a functional on the corresponding square.
 
 ## Implementation notes
 
 The two maps are built as plain linear maps rather than as equivalences onto the symmetric and the
-alternating forms.  On the exterior side that equivalence is available: `ofExteriorSquareDual` is
-`exteriorPower.alternatingMapLinearEquiv`, the universal property of the exterior power, followed
-by `TauCeti.MultilinearMap.toBilinForm`, and its injectivity is the injectivity of that
-equivalence.  On the symmetric side Mathlib has no universal property of the symmetric power -- it
-is an explicit TODO of `Mathlib/LinearAlgebra/TensorPower/Symmetric.lean` -- so surjectivity onto
-the symmetric forms is not proved here; injectivity is read off the pure tensors spanning instead,
-and is all the downstream counting needs.
+alternating forms; the surjectivity statements are existence results.  On the exterior side the
+equivalence is available: `ofExteriorSquareDual` is `exteriorPower.alternatingMapLinearEquiv`, the
+universal property of the exterior power, followed by `MultilinearMap.toBilinMap`, and both its
+injectivity and its surjectivity onto the alternating forms come from that equivalence.  On the
+symmetric side Mathlib has no universal property of the symmetric power -- it is an explicit TODO of
+`Mathlib/LinearAlgebra/TensorPower/Symmetric.lean` -- so surjectivity onto the symmetric forms uses
+`SymmetricPower.lift` from this repository, and injectivity is read off the pure tensors spanning.
 -/
 
 public section
@@ -72,7 +76,7 @@ variable {k : Type} [CommSemiring k] [AddCommMonoid V] [Module k V]
 noncomputable def ofSymmetricSquareDual :
     Module.Dual k (Sym[k]^2V) →ₗ[k] BilinForm k V where
   toFun ψ :=
-    MultilinearMap.toBilinForm
+    MultilinearMap.toBilinMap
       (ψ.compMultilinearMap (SymmetricPower.tprod k (ι := Fin 2) (M := V)))
   map_add' ψ φ := by ext x y; simp
   map_smul' c ψ := by ext x y; simp
@@ -86,7 +90,7 @@ theorem ofSymmetricSquareDual_apply (ψ : Module.Dual k (Sym[k]^2V)) (x y : V) :
 see the order of the two arguments. -/
 theorem isSymm_ofSymmetricSquareDual (ψ : Module.Dual k (Sym[k]^2V)) :
     (ofSymmetricSquareDual ψ).IsSymm :=
-  MultilinearMap.isSymm_toBilinForm fun x y => by
+  MultilinearMap.isSymm_toBilinMap fun x y => by
     have hswap : ![x, y] ∘ Equiv.swap (0 : Fin 2) 1 = ![y, x] := by simp
     simp only [LinearMap.compMultilinearMap_apply, ← hswap]
     exact congrArg ψ (SymmetricPower.tprod_equiv (Equiv.swap (0 : Fin 2) 1) ![x, y])
@@ -99,10 +103,25 @@ theorem ofSymmetricSquareDual_injective :
   intro ψ φ hψφ
   have h : ψ.compMultilinearMap (SymmetricPower.tprod k (ι := Fin 2) (M := V)) =
       φ.compMultilinearMap (SymmetricPower.tprod k (ι := Fin 2) (M := V)) :=
-    MultilinearMap.toBilinForm_injective hψφ
+    MultilinearMap.toBilinMap_injective hψφ
   refine LinearMap.ext_on (SymmetricPower.span_tprod_eq_top k (Fin 2) V) ?_
   rintro _ ⟨f, rfl⟩
   simpa using DFunLike.congr_fun h f
+
+/-- **Every symmetric form comes from a functional on the symmetric square.** -/
+theorem _root_.LinearMap.BilinForm.IsSymm.exists_ofSymmetricSquareDual_eq
+    {B : BilinForm k V} (hB : B.IsSymm) :
+    ∃ ψ : Module.Dual k (Sym[k]^2V), ofSymmetricSquareDual ψ = B := by
+  let f : (Fin 2 → V) →ₘₗ[k] k :=
+    { toFun v := B (v 0) (v 1)
+      map_update_add' v i x y := by fin_cases i <;> simp
+      map_update_smul' v i c x := by fin_cases i <;> simp }
+  have hf (e : Equiv.Perm (Fin 2)) : f.domDomCongr e = f := by
+    ext v
+    have key (a b : Fin 2) (hab : a ≠ b) : B (v a) (v b) = B (v 0) (v 1) := by
+      fin_cases a <;> fin_cases b <;> simp_all [hB.eq (v 1)]
+    exact key (e 0) (e 1) (e.injective.ne (by decide))
+  exact ⟨SymmetricPower.lift f hf, by ext x y; simp [f]⟩
 
 end CommSemiring
 
@@ -115,7 +134,7 @@ alternating map the universal property of `⋀[k]^2 V` attaches to the functiona
 noncomputable def ofExteriorSquareDual :
     Module.Dual k (⋀[k]^2 V) →ₗ[k] BilinForm k V where
   toFun ψ :=
-    MultilinearMap.toBilinForm
+    MultilinearMap.toBilinMap
       (exteriorPower.alternatingMapLinearEquiv.symm ψ).toMultilinearMap
   map_add' ψ φ := by ext x y; simp
   map_smul' c ψ := by ext x y; simp
@@ -129,16 +148,23 @@ theorem ofExteriorSquareDual_apply (ψ : Module.Dual k (⋀[k]^2 V)) (x y : V) :
 to zero. -/
 theorem isAlt_ofExteriorSquareDual (ψ : Module.Dual k (⋀[k]^2 V)) :
     (ofExteriorSquareDual ψ).IsAlt :=
-  MultilinearMap.isAlt_toBilinForm fun x =>
-    (exteriorPower.alternatingMapLinearEquiv.symm ψ).map_eq_zero_of_eq ![x, x]
-      (i := 0) (j := 1) (by simp) (by decide)
+  (exteriorPower.alternatingMapLinearEquiv.symm ψ).isAlt_toBilinMap
 
 /-- **A functional on the exterior square is determined by the form it gives.** A functional is
 the alternating map the universal property attaches to it, and that map is the form. -/
 theorem ofExteriorSquareDual_injective :
     Function.Injective (ofExteriorSquareDual (k := k) (V := V)) := fun _ _ hψφ =>
   exteriorPower.alternatingMapLinearEquiv.symm.injective
-    (AlternatingMap.coe_multilinearMap_injective (MultilinearMap.toBilinForm_injective hψφ))
+    (AlternatingMap.coe_multilinearMap_injective (MultilinearMap.toBilinMap_injective hψφ))
+
+/-- **Every alternating form comes from a functional on the exterior square.** -/
+theorem _root_.LinearMap.BilinForm.IsAlt.exists_ofExteriorSquareDual_eq
+    {B : BilinForm k V} (hB : B.IsAlt) :
+    ∃ ψ : Module.Dual k (⋀[k]^2 V), ofExteriorSquareDual ψ = B :=
+  ⟨exteriorPower.alternatingMapLinearEquiv (LinearMap.IsAlt.toAlternatingMap hB), by
+    ext x y
+    simp only [ofExteriorSquareDual_apply, exteriorPower.alternatingMapLinearEquiv_apply_ιMulti]
+    exact LinearMap.IsAlt.toAlternatingMap_apply hB ![x, y]⟩
 
 end CommRing
 

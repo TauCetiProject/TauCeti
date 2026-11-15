@@ -26,15 +26,15 @@ of the invariants in the symmetric and exterior squares. Reading the companion i
 `Representation.char_tensorSquare` the same way shows that those same two invariant dimensions sum
 to the dimension of the invariants of `V ⊗ V`.
 
-Both identities are proved wherever `|G|` is invertible in `k`, with **no hypothesis on
+Both identities are proved in `k` wherever `|G|` is invertible in `k`, with **no hypothesis on
 characteristic two**, because the two character identities they average hold over every field: the
 tensor square need not split for the two invariant counts to add up. The price is that a count of
 invariants only ever appears here through its image in `k`, so in characteristic `p` the additivity
-of the invariant dimensions is an identity of residues. Over a field of characteristic zero it
-upgrades to an equality of natural numbers, and there the indicator is an integer.
+of the invariant dimensions is an identity of residues. For any finite group over a field of
+characteristic zero it upgrades to an equality of natural numbers, and there the indicator is an
+integer.
 
-This is the module-level half of the roadmap's Layer 7 pair; the `FDRep`-level indicator and its
-agreement with this one are at the end of the file.
+The `FDRep`-level indicator and its agreement with this module-level one are at the end of the file.
 
 ## Main definitions
 
@@ -57,8 +57,11 @@ agreement with this one are at the end of the file.
 ## Implementation notes
 
 The definition asks only for a `Fintype G`: invertibility of `|G|` is a hypothesis of the theorems,
-not of the object. The two statements that do not mention the indicator ask only for `Finite G`,
-and build the `Fintype` they average over inside their proofs.
+not of the object. The two statements that do not mention the indicator build the `Fintype` they
+average over inside their proofs. The identity in `k` takes only `Invertible (Nat.card G : k)`,
+which already forces `G` to be finite since `Nat.card` of an infinite type is `0`; the
+natural-number form takes `Finite G` and `CharZero k` and builds that invertibility instance in its
+proof.
 
 The `FDRep`-level indicator is the module-level one applied to `V.ρ` rather than a second copy of
 the average, so `FDRep.frobeniusSchurIndicator_def` unfolds that one definition and nothing
@@ -72,13 +75,6 @@ bare `rfl` does not compile here.
 
 ## References
 
-* [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-  Layer 7, “The indicator on the module spine” and “The symmetric and exterior squares”. The
-  invariant bilinear forms of that layer, and the trichotomy `ν₂ ∈ {+1, 0, -1}` for an irreducible
-  representation over `ℂ`, are proved in the sibling module
-  `TauCeti/RepresentationTheory/CharacterTable/FrobeniusSchur/Trichotomy.lean`, which identifies
-  the invariant forms with the invariants of the duals of the symmetric and exterior squares.
-  What this file supplies is the counting identity those statements are read off from.
 * I. M. Isaacs, *Character Theory of Finite Groups* (1976), Lemma 4.4 and Theorem 4.5.
 * J.-P. Serre, *Linear Representations of Finite Groups*, GTM 42 (1977), §13.2.
 -/
@@ -158,6 +154,7 @@ section Finite
 variable [Field k] [Group G] [Finite G] [AddCommGroup V] [Module k V] [FiniteDimensional k V]
   [Invertible (Nat.card G : k)]
 
+omit [Finite G] in
 /-- **The two invariant dimensions add to that of the tensor square**, as an identity in `k`:
 averaging `Representation.char_tensorSquare` gives `dim (V ⊗ V)ᴳ = dim (Sym²V)ᴳ + dim (Λ²V)ᴳ`
 in `k`.
@@ -170,6 +167,8 @@ theorem finrank_invariants_tprod_self_cast (ρ : Representation k G V) :
     (finrank k (Representation.tprod ρ ρ).invariants : k) =
       (finrank k (ρ.symmetricPower 2).invariants : k) +
         (finrank k (ρ.exteriorPower 2).invariants : k) := by
+  have : Finite G := Nat.finite_of_card_ne_zero fun h ↦
+    Invertible.ne_zero (Nat.card G : k) (by simp [h])
   have : Fintype G := Fintype.ofFinite G
   rw [← Representation.card_inv_mul_sum_char_eq_finrank,
     ← Representation.card_inv_mul_sum_char_eq_finrank,
@@ -177,11 +176,14 @@ theorem finrank_invariants_tprod_self_cast (ρ : Representation k G V) :
   refine congrArg _ (Finset.sum_congr rfl fun g _ => ?_)
   rw [← Representation.char_tensorSquare ρ g, Representation.char_tensor, Pi.mul_apply, sq]
 
+omit [Invertible (Nat.card G : k)] in
 /-- **The two invariant dimensions add to that of the tensor square**, as natural numbers: over a
 field of characteristic zero, `dim (V ⊗ V)ᴳ = dim (Sym²V)ᴳ + dim (Λ²V)ᴳ`. -/
 theorem finrank_invariants_tprod_self [CharZero k] (ρ : Representation k G V) :
     finrank k (Representation.tprod ρ ρ).invariants =
       finrank k (ρ.symmetricPower 2).invariants + finrank k (ρ.exteriorPower 2).invariants := by
+  have : Invertible (Nat.card G : k) :=
+    invertibleOfNonzero (Nat.cast_ne_zero.2 Nat.card_pos.ne')
   exact_mod_cast finrank_invariants_tprod_self_cast (k := k) ρ
 
 end Finite

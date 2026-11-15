@@ -33,9 +33,6 @@ Finite presentation follows from the finite set of entries of the matrix equatio
 
 * SGA 3, Exposé XXII, for the split symplectic group scheme.
 * The Stacks Project, Tags 00TH, 00TI, 00T2, and 00TN, for formal smoothness and smooth algebras.
-
-This supplies the smoothness prerequisite for the `Sp_{2n}` reductivity worked example in Layer 6
-of the ReductiveGroups roadmap.
 -/
 
 public section
@@ -49,28 +46,6 @@ universe u v
 noncomputable section
 
 variable (R : Type u) [CommRing R] (m : Nat)
-
-private theorem pointsMulEquivGLSymplectic_mapValue
-    {A : Type u} {B : Type v} [CommRing A] [CommRing B]
-    [Algebra R A] [Algebra R B] (phi : A →ₐ[R] B)
-    (f : WithConv (coordinateHopfAlgebra R m →ₐ[R] A)) :
-    pointsMulEquivGLSymplectic R m (A := B)
-        (AlgHom.mapValue (H := coordinateHopfAlgebra R m) phi f) =
-      GLSymplectic.map (Fin m) (phi : A →+* B)
-        (pointsMulEquivGLSymplectic R m (A := A) f) := by
-  apply Subtype.ext
-  apply Matrix.GeneralLinearGroup.ext
-  intro i j
-  have hlhs := coe_pointsMulEquivGLSymplectic R m
-    (AlgHom.mapValue (H := coordinateHopfAlgebra R m) phi f)
-  have hrhs := coe_pointsMulEquivGLSymplectic R m f
-  rw [pointsMulEquiv_mapValue] at hlhs
-  rw [GLSymplecticFin.coe_map] at hlhs
-  rw [GLSymplectic.coe_map]
-  rw [hlhs, hrhs]
-  simp only [Equiv.coe_reindexGL, Equiv.symm_symm,
-    Matrix.GeneralLinearGroup.map_apply,
-    Matrix.submatrix_apply]
 
 /-- The symplectic coordinate algebra is formally smooth over its ground ring. -/
 private instance instFormallySmoothCoordinateHopfAlgebra :

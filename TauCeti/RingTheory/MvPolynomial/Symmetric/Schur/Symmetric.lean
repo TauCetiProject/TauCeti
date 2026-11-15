@@ -56,8 +56,6 @@ polynomials they generalize already live.
   involution is that of E. A. Bender and D. E. Knuth, *Enumeration of plane partitions*,
   J. Combinatorial Theory **13** (1972), 40--54.
 * [W. Fulton, *Young Tableaux*][fulton1997], Section 2.2.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 7.
 -/
 
 public section
@@ -157,6 +155,21 @@ theorem isSymmetric_diagramSchurPoly (N : ℕ) (R : Type*) [CommSemiring R] (μ 
     | one => simp
     | mul x y _ _ hx hy =>
       rw [Equiv.Perm.coe_mul, ← rename_rename, hy, hx]
+
+/-- Renaming a diagram Schur polynomial along a bijection of finite alphabets preserves it. -/
+@[simp]
+theorem rename_diagramSchurPoly {M N : ℕ} (μ : YoungDiagram) (e : Fin M ≃ Fin N) :
+    rename e (diagramSchurPoly M R μ) = diagramSchurPoly N R μ := by
+  have h : M = N := by simpa only [Fintype.card_fin] using Fintype.card_congr e
+  subst M
+  exact isSymmetric_diagramSchurPoly N R μ e
+
+/-- The partition-indexed Schur polynomial of a Young diagram in `Fin N` is its
+diagram-indexed Schur polynomial. -/
+@[simp]
+theorem schurPoly_fin_shapePartition (N : ℕ) (μ : YoungDiagram) :
+    schurPoly (Fin N) R (shapePartition μ) = diagramSchurPoly N R μ := by
+  rw [schurPoly_eq_rename, ofPartition_shapePartition, rename_diagramSchurPoly]
 
 /-- Renaming a symmetric polynomial along a bijection of alphabets keeps it symmetric. -/
 private theorem isSymmetric_rename {σ τ : Type*} {p : MvPolynomial τ R} (hp : p.IsSymmetric)

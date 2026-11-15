@@ -22,10 +22,11 @@ Induction from any subgroup `S` has image exactly the classes of dimension divis
 trivial subgroup if and only if the group order divides that integer. Thus the group order
 is the least positive induction multiplier for a `p`-group in characteristic `p`.
 
-The simple-module statement uses the invariant-vector theorem from
-`TauCeti/RepresentationTheory/PGroupInvariants.lean`. The Grothendieck-group statements specialize
-`TauCeti.eq_finrankK0_smul_of_finrank_eq_one` and `TauCeti.finrankK0Equiv`, using the trivial
-representation's existing `asModule` construction rather than another model of the trivial module.
+The simple-module statement specializes `TauCeti.nonempty_linearEquiv_trivial_of_forall_pow_eq_one`
+from `TauCeti/RepresentationTheory/GrothendieckGroup/GroupAlgebra/PowerOrder.lean`. The
+Grothendieck-group statements specialize `TauCeti.eq_finrankK0_smul_of_finrank_eq_one` and
+`TauCeti.finrankK0Equiv`, using the trivial representation's existing `asModule` construction
+rather than another model of the trivial module.
 
 ## Main results
 
@@ -56,8 +57,7 @@ variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G]
 is isomorphic to the trivial one-dimensional module. No finite-generation hypothesis on the
 module is necessary. -/
 theorem nonempty_linearEquiv_trivial_of_isPGroup (hG : IsPGroup p G)
-    (M : Type*) [AddCommGroup M] [Module k M] [Module k[G] M] [IsScalarTower k k[G] M]
-    [IsSimpleModule k[G] M] :
+    (M : Type*) [AddCommGroup M] [Module k[G] M] [IsSimpleModule k[G] M] :
     Nonempty (M ≃ₗ[k[G]] (Representation.trivial k G k).asModule) := by
   apply nonempty_linearEquiv_trivial_of_forall_pow_eq_one p M
   intro g

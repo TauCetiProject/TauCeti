@@ -13,8 +13,7 @@ public import TauCeti.Analysis.SpecialFunctions.Artanh
 # The triangle inequality for the hyperbolic distance on the unit disc
 
 This file proves the **triangle inequality** for the hyperbolic (Poincaré) distance
-`hyperbolicDist` on the complex open unit disc, the metric-completeness step deferred in
-`HyperbolicDistance.lean`.
+`hyperbolicDist` on the complex open unit disc.
 
 The core analytic input is the *strong* triangle-type inequality for the pseudo-hyperbolic
 expression `pseudoHyperbolicExpr z w = ‖(z - w) / (1 - conj w * z)‖`, taken here in its
@@ -69,10 +68,10 @@ Each of those five carries a hypothesis-free `Complex.UnitDisc` form, named by t
 `_unitDisc`.
 
 Together with the symmetry, nonnegativity and vanishing-on-the-diagonal lemmas already in
-`HyperbolicDistance.lean`, these give the metric-space axioms for `hyperbolicDist` on the open
+`Hyperbolic/Distance.lean`, these give the metric-space axioms for `hyperbolicDist` on the open
 unit disc. A `MetricSpace` *instance* is deliberately not registered on `Complex.UnitDisc`,
-which already carries the Euclidean subspace metric; recording the Poincaré metric as an
-instance would require a dedicated type synonym and is left to future work.
+which already carries the Euclidean subspace metric; the Poincaré metric is recorded as an
+instance on the type synonym `PoincareDisc` in `Poincare/MetricSpace.lean`.
 
 The origin plays no role in the pseudo-hyperbolic statements: the whole point of
 `pseudoHyperbolicExpr` is that it is invariant under the disc Moebius factors
@@ -86,11 +85,7 @@ formula `Real.artanh_add` is exactly the dictionary translating the additive law
 off `hyperbolicDist_triangle` — which is where the transport already happened — and their
 equality cases off the injectivity of `artanh`.
 
-This advances the conformal-mapping roadmap's L2 target "the hyperbolic / Poincaré metric on
-`𝔻`" (see `ConformalMapping/README.md`). It reuses Tau Ceti's pseudo-hyperbolic, Moebius and
-Schwarz--Pick API. As with the rest of the L0--L3 conformal-mapping material, it is
-coordinated with the upstream Mathlib RMT effort leanprover-community/mathlib4#33505 and should
-be refactored to upstream API if that work lands a human-curated Poincaré metric.
+This file reuses Tau Ceti's pseudo-hyperbolic, Moebius and Schwarz--Pick API.
 -/
 
 public section
@@ -126,7 +121,8 @@ inequality. -/
 theorem pseudoHyperbolicExpr_le_add_div_one_add_mul_of_norm_lt_one {z w : ℂ}
     (hz : ‖z‖ < 1) (hw : ‖w‖ < 1) :
     pseudoHyperbolicExpr z w ≤ (‖z‖ + ‖w‖) / (1 + ‖z‖ * ‖w‖) := by
-  have hDpos : 0 < ‖1 - (starRingEnd ℂ) w * z‖ := norm_one_sub_conj_mul_pos_of_norm_lt_one hz hw
+  have hDpos : 0 < ‖1 - (starRingEnd ℂ) w * z‖ :=
+    norm_one_sub_conj_mul_pos_of_norm_le_one_of_norm_lt_one hz.le hw
   have hABpos : (0 : ℝ) < 1 + ‖z‖ * ‖w‖ := by positivity
   have hdiff := sq_sub_sq_triangle z w
   have htabs : |(z * (starRingEnd ℂ) w).re| ≤ ‖z‖ * ‖w‖ := by
@@ -185,7 +181,8 @@ theorem pseudoHyperbolicExpr_eq_add_div_one_add_mul_iff_of_norm_lt_one {z w : �
     (hz : ‖z‖ < 1) (hw : ‖w‖ < 1) :
     pseudoHyperbolicExpr z w = (‖z‖ + ‖w‖) / (1 + ‖z‖ * ‖w‖) ↔
       (z * (starRingEnd ℂ) w).re = -(‖z‖ * ‖w‖) := by
-  have hDpos : 0 < ‖1 - (starRingEnd ℂ) w * z‖ := norm_one_sub_conj_mul_pos_of_norm_lt_one hz hw
+  have hDpos : 0 < ‖1 - (starRingEnd ℂ) w * z‖ :=
+    norm_one_sub_conj_mul_pos_of_norm_le_one_of_norm_lt_one hz.le hw
   have hABpos : (0 : ℝ) < 1 + ‖z‖ * ‖w‖ := by positivity
   have hdiff := sq_sub_sq_triangle z w
   have hposfac : 0 < (1 - ‖z‖ ^ 2) * (1 - ‖w‖ ^ 2) :=
@@ -217,7 +214,8 @@ of the one behind `pseudoHyperbolicExpr_le_add_div_one_add_mul_of_norm_lt_one`. 
 theorem abs_sub_div_one_sub_mul_le_pseudoHyperbolicExpr_of_norm_lt_one {z w : ℂ}
     (hz : ‖z‖ < 1) (hw : ‖w‖ < 1) :
     |‖z‖ - ‖w‖| / (1 - ‖z‖ * ‖w‖) ≤ pseudoHyperbolicExpr z w := by
-  have hDpos : 0 < ‖1 - (starRingEnd ℂ) w * z‖ := norm_one_sub_conj_mul_pos_of_norm_lt_one hz hw
+  have hDpos : 0 < ‖1 - (starRingEnd ℂ) w * z‖ :=
+    norm_one_sub_conj_mul_pos_of_norm_le_one_of_norm_lt_one hz.le hw
   have hABpos : (0 : ℝ) < 1 - ‖z‖ * ‖w‖ := by
     nlinarith [norm_nonneg z, norm_nonneg w]
   have hsq := sq_sub_sq_reverse_triangle z w
@@ -253,7 +251,8 @@ theorem pseudoHyperbolicExpr_eq_abs_sub_div_one_sub_mul_iff_of_norm_lt_one {z w 
     (hz : ‖z‖ < 1) (hw : ‖w‖ < 1) :
     pseudoHyperbolicExpr z w = |‖z‖ - ‖w‖| / (1 - ‖z‖ * ‖w‖) ↔
       (z * (starRingEnd ℂ) w).re = ‖z‖ * ‖w‖ := by
-  have hDpos : 0 < ‖1 - (starRingEnd ℂ) w * z‖ := norm_one_sub_conj_mul_pos_of_norm_lt_one hz hw
+  have hDpos : 0 < ‖1 - (starRingEnd ℂ) w * z‖ :=
+    norm_one_sub_conj_mul_pos_of_norm_le_one_of_norm_lt_one hz.le hw
   have hABpos : (0 : ℝ) < 1 - ‖z‖ * ‖w‖ := by
     nlinarith [norm_nonneg z, norm_nonneg w]
   have hsq := sq_sub_sq_reverse_triangle z w
@@ -396,8 +395,9 @@ theorem pseudoHyperbolicExpr_eq_add_div_one_add_mul_iff_unitDisc (z w u : Comple
 most the ordinary sum.
 
 With `TauCeti.pseudoHyperbolicExpr_comm`, `TauCeti.pseudoHyperbolicExpr_self` and
-`TauCeti.pseudoHyperbolicExpr_eq_zero_iff_of_norm_lt_one` this makes `pseudoHyperbolicExpr` a
-metric on the open unit disc in its own right, and not only a monotone reparametrisation of one.
+`TauCeti.pseudoHyperbolicExpr_eq_zero_iff_of_norm_le_one_of_norm_lt_one` this makes
+`pseudoHyperbolicExpr` a metric on the open unit disc in its own right, and not only a monotone
+reparametrisation of one.
 The Moebius sum is the sharp bound, so this weaker form is the one to quote when the denominator
 is a nuisance and the sharpness is not needed. -/
 theorem pseudoHyperbolicExpr_triangle {z w u : ℂ}

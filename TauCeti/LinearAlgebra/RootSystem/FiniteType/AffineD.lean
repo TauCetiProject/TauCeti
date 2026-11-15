@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.Matrix.Cartan.Chain
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Basic
-public import TauCeti.LinearAlgebra.RootSystem.Chain
 
 /-!
 # Affine type D̃ₘ for m ≥ 5 is not of finite type
@@ -24,7 +24,7 @@ is `1` on the four leaves and `2` on the middle chain is a nonzero null vector. 
 matrix has positive-definite symmetrization, it cannot admit this vector.
 
 The spine of the diagram is a chain, so its entries and the row sum along it come from
-`TauCeti.LinearAlgebra.RootSystem.Chain`, which the star obstructions of
+`TauCeti.LinearAlgebra.Matrix.Cartan.Chain`, which the star obstructions of
 `TauCeti.LinearAlgebra.RootSystem.FiniteType.Star` share.
 
 ## Main definitions
@@ -48,10 +48,10 @@ The spine of the diagram is a chain, so its entries and the row sum along it com
 
 ## References
 
-This is the affine-`D` obstruction needed by the “chain/fork length constraints” step in Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`.  See J. E. Humphreys,
-*Introduction to Lie Algebras and Representation Theory*, §11.4, and Bourbaki, *Lie Groups and
-Lie Algebras, Chapters 4--6*, Ch. VI, §4.
+This is the affine-`D` obstruction needed by the chain and fork length constraints of the
+classification of finite-type Cartan matrices. See J. E. Humphreys, *Introduction to Lie Algebras
+and Representation Theory*, §11.4, and Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*,
+Ch. VI, §4.
 -/
 
 public section

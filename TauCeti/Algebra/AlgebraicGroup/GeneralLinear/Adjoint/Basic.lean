@@ -33,10 +33,11 @@ product `g ⋆ d ⋆ g⁻¹` on `Xᵢⱼ` runs over `comul Xᵢⱼ = ∑ₖ Xᵢ
 of the conjugated tangent matrix is the double sum `∑ₖ ∑ₗ gᵢₗ dₗₖ (g⁻¹)ₖⱼ`, which is the
 `(i, j)` entry of the matrix product.
 
-Specializing to the diagonal torus computes the expected eigenvalues of the adjoint
-representation: conjugation by `diag(t)` multiplies the `(i, j)` entry by `tᵢ tⱼ⁻¹`. Thus the
-matrix units have the eigenvalue formulas needed for a future formal weight decomposition, and
-the diagonal matrices — the tangent space of the torus itself — are fixed.
+Specializing to the diagonal torus computes the expected eigenvalues of the adjoint representation:
+conjugation by `diag(t)` multiplies the `(i, j)` entry by `tᵢ tⱼ⁻¹`. Thus the matrix units have the
+eigenvalue formulas used for the adjoint weight decomposition in
+`TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Adjoint.RootSpace`, and the diagonal matrices — the
+tangent space of the torus itself — are fixed.
 
 ## Main declarations
 
@@ -59,12 +60,6 @@ the diagonal matrices — the tangent space of the torus itself — are fixed.
 * J. S. Milne, *Algebraic Groups* (2017), §§10.24 and 21.1.
 * J. E. Humphreys, *Linear Algebraic Groups* (1975), §26.3.
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.7.18.
-
-Layer 2 of `TauCetiRoadmap/ReductiveGroups/README.md` asks for the adjoint action
-`Ad : G → GL(Lie G)`, and Layer 7 asks for the root datum of a split pair `(G, T)`, read off the
-weight decomposition of `Lie G` under `T`. This file supplies the eigenvalue computations needed
-for that future decomposition in the worked example `GLₙ` with its diagonal torus, the roadmap's
-prescribed check that the definitions are honest.
 -/
 
 public section

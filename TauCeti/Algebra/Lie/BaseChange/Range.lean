@@ -9,11 +9,13 @@ public import Mathlib.Algebra.Lie.BaseChange
 public import TauCeti.LinearAlgebra.TensorProduct.Range
 
 /-!
-# Descent of membership and of bracket equations after extension of scalars
+# Extension of Lie submodules and descent of bracket equations
 
 Over a faithfully flat coefficient algebra, membership of `1 ⊗ₜ x` in the extension of a Lie
 submodule descends to membership of `x` in the submodule itself; this is the underlying
 `Submodule.one_tmul_mem_baseChange_iff` read through `LieSubmodule.coe_baseChange`.
+Extension of scalars preserves arbitrary suprema of Lie submodules, and under faithful flatness
+it also reflects their equality, by `LieSubmodule.baseChange_inj`.
 
 The adjoint endomorphism of a Lie algebra commutes with extension of scalars.  Consequently, a
 bracket equation `x = ⁅x, y⁆` that has a solution after a faithfully flat extension already has a
@@ -25,6 +27,10 @@ The compatibility with the adjoint action uses `LieModule.toEnd_baseChange` from
 
 ## Main results
 
+* `LieSubmodule.baseChange_iSup`: extension of scalars preserves arbitrary suprema of Lie
+  submodules.
+* `LieSubmodule.baseChange_inj`: faithfully flat extension of scalars reflects equality of Lie
+  submodules.
 * `LieSubmodule.one_tmul_mem_baseChange_iff`: **membership in a Lie submodule may be checked after
   a faithfully flat extension of scalars.**
 * `LieAlgebra.exists_eq_lie_of_one_tmul_mem_range_ad`: membership of `1 ⊗ₜ x` in the range of
@@ -44,6 +50,22 @@ variable {R : Type u} {A : Type v} {L : Type w} {M : Type x}
 variable [CommRing R] [CommRing A] [Algebra R A]
 variable [LieRing L] [LieAlgebra R L]
 variable [AddCommGroup M] [Module R M] [LieRingModule L M] [LieModule R L M]
+
+/-- Extension of scalars preserves arbitrary suprema of Lie submodules. -/
+@[simp]
+theorem baseChange_iSup {ι : Sort*} (N : ι → LieSubmodule R L M) :
+    (⨆ i, N i).baseChange A = ⨆ i, (N i).baseChange A := by
+  simp only [← toSubmodule_inj, coe_baseChange, iSup_toSubmodule]
+  rw [Submodule.iSup_eq_span, Submodule.baseChange_span, Set.image_iUnion,
+    Submodule.span_iUnion]
+  simp only [Submodule.baseChange_eq_span, Submodule.map_coe]
+
+/-- Faithfully flat extension of scalars reflects equality of Lie submodules. -/
+@[simp]
+theorem baseChange_inj [Module.FaithfullyFlat R A] (N P : LieSubmodule R L M) :
+    N.baseChange A = P.baseChange A ↔ N = P := by
+  rw [← toSubmodule_inj, coe_baseChange, coe_baseChange, Submodule.baseChange_inj,
+    toSubmodule_inj]
 
 /-- **Over a faithfully flat coefficient algebra, a vector lies in a Lie submodule exactly when
 its canonical image lies in the extension of that submodule.** -/

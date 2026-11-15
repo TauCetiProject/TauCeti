@@ -9,7 +9,7 @@ public import Mathlib.Topology.Algebra.Ring.Basic
 public import Mathlib.Topology.Connected.TotallyDisconnected
 public import Mathlib.Topology.Homeomorph.Lemmas
 public import Mathlib.Topology.Homeomorph.TransferInstance
-public import TauCeti.GroupTheory.SpecificGroups.Heisenberg
+public import TauCeti.GroupTheory.SpecificGroups.Heisenberg.Basic
 public import TauCeti.Topology.Algebra.Group.LowerCentralSeries.Closed
 
 /-!

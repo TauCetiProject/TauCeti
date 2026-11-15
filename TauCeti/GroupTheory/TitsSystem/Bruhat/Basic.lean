@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.DoubleCoset.Basic
 public import TauCeti.GroupTheory.DoubleCoset.Identity
 public import TauCeti.GroupTheory.TitsSystem.Basic
 
@@ -38,6 +39,8 @@ simple cells are developed in `TauCeti.GroupTheory.TitsSystem.Bruhat.Subword`.
   representative from `N`.
 * `TauCeti.TitsSystem.subgroupB_mul_bruhatCell` and `TauCeti.TitsSystem.bruhatCell_mul_subgroupB`:
   the identity cell `B` is absorbed by every cell.
+* `TauCeti.TitsSystem.subgroupB_le_of_bruhatCell_subset`: a subgroup containing a Bruhat cell
+  contains `B`.
 * `TauCeti.TitsSystem.bruhatCells_eq_univ`: the Bruhat cells cover the ambient group.
 * `TauCeti.TitsSystem.bruhatCell_mul_eq_or_eq_union_of_mem_simple`: multiplication on the left by
   a simple Bruhat cell gives either the adjacent cell or its union with the original cell.
@@ -47,6 +50,8 @@ simple cells are developed in `TauCeti.GroupTheory.TitsSystem.Bruhat.Subword`.
   cell does.
 * `TauCeti.TitsSystem.bruhatCell_mul_self_eq_union_of_mem_simple`: the square of a simple cell is
   its union with the identity cell.
+* `TauCeti.TitsSystem.subset_bruhatCell_mul_right`: the adjacent cell always occurs in the product
+  of cells on the right.
 * `TauCeti.TitsSystem.exists_mem_doubleCoset`: every group element lies in a cell represented
   by `N`.
 * `TauCeti.TitsSystem.doubleCosetMk_surjective`: the induced map `N → B \ G / B` is
@@ -56,9 +61,6 @@ simple cells are developed in `TauCeti.GroupTheory.TitsSystem.Bruhat.Subword`.
 
 * J. E. Humphreys, *Linear Algebraic Groups* (1975), Sections 29.1--29.2.
 * T. A. Springer, *Linear Algebraic Groups*, second edition (1998), Section 8.3.
-
-This supplies the abstract Bruhat decomposition in Layer 7, "Bruhat decomposition and BN-pairs /
-Tits systems", of the ReductiveGroups roadmap.
 -/
 
 public section
@@ -165,6 +167,16 @@ theorem bruhatCell_mul_subgroupB (w : T.WeylGroup) :
   simp only [QuotientGroup.mk'_apply, bruhatCell_mk, DoubleCoset.doubleCoset]
   rw [mul_assoc, coe_mul_coe]
 
+/-- A subgroup containing a Bruhat cell contains `B`. -/
+theorem subgroupB_le_of_bruhatCell_subset {P : Subgroup G} {w : T.WeylGroup}
+    (hw : T.bruhatCell w ⊆ P) : T.subgroupB ≤ P := by
+  obtain ⟨n, _, hn⟩ := T.exists_mem_bruhatCell w
+  intro b hb
+  have hnb : (n : G) * b ∈ T.bruhatCell w := by
+    rw [← T.bruhatCell_mul_subgroupB w]
+    exact Set.mul_mem_mul hn hb
+  simpa using P.mul_mem (P.inv_mem (hw hn)) (hw hnb)
+
 /-- The union over `N` defining `bruhatCells` can equivalently be indexed canonically by the Weyl
 group. -/
 theorem bruhatCells_eq_iUnion_bruhatCell :
@@ -188,18 +200,14 @@ private theorem doubleCoset_subset_mul_doubleCoset_of_mem (B C D : Subgroup G) {
     exact DoubleCoset.mem_doubleCoset.mpr
       ⟨c₁, hc₁, c₂ * b₂, D.mul_mem hc₂ hb₂, by simp [mul_assoc]⟩
 
-/-- The double coset of a product occurs in the product of the corresponding double cosets. -/
-private theorem doubleCoset_mul_subset_mul_doubleCoset (B C D : Subgroup G) (r w : G) :
-    DoubleCoset.doubleCoset (r * w) B D ⊆
-      DoubleCoset.doubleCoset r B C * DoubleCoset.doubleCoset w C D := by
-  rintro x hx
-  obtain ⟨b₁, hb₁, b₂, hb₂, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hx
-  refine ⟨b₁ * r, ?_, w * b₂, ?_, ?_⟩
-  · exact DoubleCoset.mem_doubleCoset.mpr
-      ⟨b₁, hb₁, 1, C.one_mem, by simp⟩
-  · exact DoubleCoset.mem_doubleCoset.mpr
-      ⟨1, C.one_mem, b₂, hb₂, by simp⟩
-  · simp only [mul_assoc]
+/-- The adjacent cell always occurs in the product of cells on the right. -/
+theorem subset_bruhatCell_mul_right (w s : T.WeylGroup) :
+    T.bruhatCell (w * s) ⊆ T.bruhatCell w * T.bruhatCell s := by
+  obtain ⟨n, rfl⟩ := QuotientGroup.mk_surjective w
+  obtain ⟨m, rfl⟩ := QuotientGroup.mk_surjective s
+  rw [← QuotientGroup.mk_mul, T.bruhatCell_mk, T.bruhatCell_mk, T.bruhatCell_mk]
+  exact DoubleCoset.doubleCoset_mul_subset_mul_doubleCoset (M := G) T.subgroupB T.subgroupB
+    T.subgroupB T.subgroupB.one_mem _ _
 
 /-- **Multiplication by a simple Bruhat cell.** If `r` represents a simple reflection and `w`
 lies in `N`, then `(B r B)(B w B)` is either the adjacent cell `B (r w) B` or the union of that
@@ -235,8 +243,8 @@ private theorem mul_doubleCoset_eq_or_eq_union_of_mem_simple {s : T.WeylGroup}
   let D := DoubleCoset.doubleCoset (w : G) T.subgroupB T.subgroupB
   have hC : C ⊆ A := by
     simpa only [C, A, Subgroup.coe_mul] using
-      doubleCoset_mul_subset_mul_doubleCoset T.subgroupB T.subgroupB T.subgroupB
-        (r₀ : G) (w : G)
+      DoubleCoset.doubleCoset_mul_subset_mul_doubleCoset (M := G) T.subgroupB T.subgroupB
+        T.subgroupB T.subgroupB.one_mem (r₀ : G) (w : G)
   have hsubset' : A ⊆ C ∪ D := hsubset w
   by_cases hw : (w : G) ∈ A
   · right
@@ -296,7 +304,7 @@ The nondegeneracy axiom rules out the smaller alternative in
 theorem bruhatCell_mul_self_eq_union_of_mem_simple {s : T.WeylGroup} (hs : s ∈ T.simple) :
     T.bruhatCell s * T.bruhatCell s = T.bruhatCell 1 ∪ T.bruhatCell s := by
   obtain ⟨r, hr, b, hb⟩ := T.exists_conj_not_mem s hs
-  have hs_inv : s⁻¹ = s := inv_eq_of_mul_eq_one_right (T.simple_sq_eq_one hs)
+  have hs_inv : s⁻¹ = s := T.inv_simple hs
   have hr_inv :
       (QuotientGroup.mk r⁻¹ : T.WeylGroup) = QuotientGroup.mk r := by
     calc
@@ -312,7 +320,7 @@ theorem bruhatCell_mul_self_eq_union_of_mem_simple {s : T.WeylGroup} (hs : s ∈
         DoubleCoset.doubleCoset (r : G) T.subgroupB T.subgroupB := by
     rw [← hr_inv_cell]
     exact DoubleCoset.mem_doubleCoset.mpr
-      ⟨b, b.property, 1, T.subgroupB.one_mem, by simp⟩
+      ⟨b, b.property, 1, (SetLike.mem_coe.2 T.subgroupB.one_mem), by simp⟩
   have hx_rep : (r : G) * (b : G) * (r : G)⁻¹ ∈
       DoubleCoset.doubleCoset (r : G) T.subgroupB T.subgroupB *
         DoubleCoset.doubleCoset (r : G) T.subgroupB T.subgroupB := by
@@ -325,9 +333,9 @@ theorem bruhatCell_mul_self_eq_union_of_mem_simple {s : T.WeylGroup} (hs : s ∈
   rcases T.bruhatCell_mul_eq_or_eq_union_of_mem_simple hs s with hsmall | hbig
   · exfalso
     have hx' := hx
-    rw [hsmall, T.simple_sq_eq_one hs, bruhatCell_one] at hx'
+    rw [hsmall, T.simple_mul_simple_self hs, bruhatCell_one] at hx'
     exact hb hx'
-  · simpa only [T.simple_sq_eq_one hs] using hbig
+  · simpa only [T.simple_mul_simple_self hs] using hbig
 
 /-- The identity Bruhat cell acts on the union of Bruhat cells by left multiplication. -/
 private theorem oneCell_mul_bruhatCells_subset :
@@ -387,10 +395,10 @@ private theorem MultipliesBruhatCells.mul {q₁ q₂ : T.WeylGroup}
   let x₂ : G := (n₂ : G) * b₂
   have hx₁ : x₁ ∈ DoubleCoset.doubleCoset (n₁ : G) T.subgroupB T.subgroupB :=
     DoubleCoset.mem_doubleCoset.mpr
-      ⟨b₁, hb₁, 1, T.subgroupB.one_mem, by simp [x₁]⟩
+      ⟨b₁, hb₁, 1, (SetLike.mem_coe.2 T.subgroupB.one_mem), by simp [x₁]⟩
   have hx₂ : x₂ ∈ DoubleCoset.doubleCoset (n₂ : G) T.subgroupB T.subgroupB :=
     DoubleCoset.mem_doubleCoset.mpr
-      ⟨1, T.subgroupB.one_mem, b₂, hb₂, by simp [x₂]⟩
+      ⟨1, (SetLike.mem_coe.2 T.subgroupB.one_mem), b₂, hb₂, by simp [x₂]⟩
   have hx₂y : x₂ * y ∈ T.bruhatCells :=
     hq₂ n₂ hn₂ w ⟨x₂, hx₂, y, hy, rfl⟩
   obtain ⟨v, hv⟩ := (T.mem_bruhatCells_iff (x₂ * y)).mp hx₂y
@@ -406,7 +414,7 @@ private theorem multipliesBruhatCells (q : T.WeylGroup) : T.MultipliesBruhatCell
   induction hq using Subgroup.closure_induction'' with
   | mem s hs => exact T.multipliesBruhatCells_simple s hs
   | inv_mem s hs =>
-      have hinv : s⁻¹ = s := inv_eq_of_mul_eq_one_right (T.simple_sq_eq_one hs)
+      have hinv : s⁻¹ = s := T.inv_simple hs
       rw [hinv]
       exact T.multipliesBruhatCells_simple s hs
   | one => exact T.multipliesBruhatCells_one
@@ -443,7 +451,7 @@ private theorem bruhatCells_inv_mem {x : G} (hx : x ∈ T.bruhatCells) :
     rintro g (hg | hg)
     · exact (T.mem_bruhatCells_iff g).mpr
         ⟨1, DoubleCoset.mem_doubleCoset.mpr
-          ⟨g, hg, 1, T.subgroupB.one_mem, by simp⟩⟩
+          ⟨g, hg, 1, (SetLike.mem_coe.2 T.subgroupB.one_mem), by simp⟩⟩
     · exact (T.mem_bruhatCells_iff g).mpr
         ⟨⟨g, hg⟩, DoubleCoset.mem_doubleCoset_self T.subgroupB T.subgroupB g⟩
   have htop : C = ⊤ := by

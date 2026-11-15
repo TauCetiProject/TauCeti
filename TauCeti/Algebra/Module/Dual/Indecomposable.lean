@@ -34,7 +34,7 @@ open TauCeti
 
 universe u v w z
 
-variable {k : Type u} [CommSemiring k] {A : Type v} [Ring A] [Algebra k A]
+variable {k : Type u} [CommSemiring k] {A : Type v} [Ring A] [SMul k A]
   {N : Type w} [AddCommGroup N] [Module Aᵐᵒᵖ N] [Module k N]
   [IsScalarTower k Aᵐᵒᵖ N] [Module.IsReflexive k N]
   {Q : Type z} [AddCommGroup Q] [Module A Q] [Module k Q]
@@ -45,16 +45,9 @@ theorem isIndecomposableModule_iff_of_dual (e : Q ≃ₗ[k] Module.Dual k N)
     (he : ∀ (a : A) (q : Q) (x : N), e (a • q) x = e q (MulOpposite.op a • x)) :
     IsIndecomposableModule A Q ↔ IsIndecomposableModule Aᵐᵒᵖ N := by
   have hnon : Nontrivial Q ↔ Nontrivial N := by
-    rw [← not_subsingleton_iff_nontrivial, ← not_subsingleton_iff_nontrivial]
-    apply not_congr
-    constructor
-    · intro h
-      let _ := h
-      let _ : Subsingleton (Module.Dual k N) := e.symm.toEquiv.subsingleton
-      exact (Module.evalEquiv k N).toEquiv.subsingleton
-    · intro h
-      let _ := h
-      exact e.toEquiv.subsingleton
+    rw [e.toEquiv.nontrivial_congr, ← not_subsingleton_iff_nontrivial,
+      ← not_subsingleton_iff_nontrivial, not_iff_not]
+    exact ⟨fun _ ↦ (Module.evalEquiv k N).toEquiv.subsingleton, fun _ ↦ inferInstance⟩
   rw [isIndecomposableModule_iff_nontrivial_and_forall_isIdempotentElem,
     isIndecomposableModule_iff_nontrivial_and_forall_isIdempotentElem]
   refine and_congr hnon ?_

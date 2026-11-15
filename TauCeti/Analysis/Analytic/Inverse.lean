@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Analytic
 public import Mathlib.Analysis.Calculus.ImplicitFunction.ProdDomain
 public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # The analytic inverse and implicit function theorems
@@ -109,7 +110,8 @@ theorem AnalyticAt.exists_openPartialHomeomorph {f : E → F} {a : E} (hf : Anal
   have hstrict : HasStrictFDerivAt f (L : E →L[𝕜] F) a := hL ▸ hf.hasStrictFDerivAt
   -- `F` is complete, being isomorphic to `E`
   have : CompleteSpace F :=
-    (completeSpace_congr (e := L.symm.toLinearEquiv.toEquiv) L.symm.isUniformEmbedding).2 ‹_›
+    ContinuousLinearMap.completeSpace_of_isInvertible
+      (ContinuousLinearMap.isInvertible_equiv (f := L.symm))
   -- restrict to the open set of points of `interior s` at which `f` is analytic
   have ht : IsOpen (interior s ∩ {x | AnalyticAt 𝕜 f x}) :=
     isOpen_interior.inter (isOpen_analyticAt 𝕜 f)

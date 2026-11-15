@@ -102,6 +102,25 @@ preserves the underlying matrix. -/
 noncomputable def carrierEquivSymplectic : d.AmbientGroup ≃* d.StandardGroup :=
   SpStd.pointsMulEquivGLSymplecticFin d.carrierRank d.1.Closure
 
+/-- The carrier equivalence leaves the underlying invertible matrix of a point unchanged. -/
+@[simp]
+theorem coe_carrierEquivSymplectic_apply (g : d.AmbientGroup) :
+    ((d.carrierEquivSymplectic g : d.StandardGroup) :
+        Matrix.GeneralLinearGroup (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.1.Closure) =
+      (g : Matrix.GeneralLinearGroup (Fin (d.carrierRank + 1 + (d.carrierRank + 1)))
+        d.1.Closure) :=
+  SpStd.coe_pointsMulEquivGLSymplecticFin_apply d.carrierRank g
+
+/-- The inverse of the carrier equivalence leaves the underlying invertible matrix of a symplectic
+matrix unchanged. -/
+@[simp]
+theorem coe_carrierEquivSymplectic_symm_apply (g : d.StandardGroup) :
+    ((d.carrierEquivSymplectic.symm g : d.AmbientGroup) :
+        Matrix.GeneralLinearGroup (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.1.Closure) =
+      (g : Matrix.GeneralLinearGroup (Fin (d.carrierRank + 1 + (d.carrierRank + 1)))
+        d.1.Closure) :=
+  SpStd.coe_pointsMulEquivGLSymplecticFin_symm_apply d.carrierRank g
+
 /-- **The explicit type-`C` carrier is equivalent to the points of the pinned `Sp_{2r}/ℤ` group
 scheme.** -/
 noncomputable def carrierEquivPinned : d.AmbientGroup ≃* d.PinnedGroup :=
@@ -176,6 +195,12 @@ the index records. -/
 noncomputable def symplecticFrobenius : d.StandardGroup →* d.StandardGroup :=
   GLSymplecticFin.map (d.carrierRank + 1) d.1.Closure
     (iterateFrobenius d.1.Closure d.1.characteristic d.1.fieldExponent)
+
+/-- The matrix Frobenius is the entrywise map along the `q`-power Frobenius of the closure. -/
+theorem symplecticFrobenius_def :
+    d.symplecticFrobenius = GLSymplecticFin.map (d.carrierRank + 1) d.1.Closure
+      (iterateFrobenius d.1.Closure d.1.characteristic d.1.fieldExponent) :=
+  (rfl)
 
 /-- **The `q`-power Frobenius on the pinned symplectic scheme points**, defined through their
 canonical matrix realization and independently of the explicit carrier. The type-`C` family is

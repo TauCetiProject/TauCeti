@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Symmetric.Specht.Ideal.Idempotent
+public import TauCeti.RepresentationTheory.Symmetric.Specht.Ideal.Dimension
+-- Non-public: the count of standard Young tableaux of an extreme shape is used inside a proof,
+-- never in the type of an exported declaration.
+import TauCeti.Combinatorics.Young.StandardTableau.Reading
 
 /-!
 # The Specht ideals of the one-row and the one-column shape
@@ -36,14 +39,18 @@ antisymmetrizer is `1`, so `c_t` is the sum of the whole group and every group e
 for a shape with at most one column the row symmetrizer is `1`, so `c_t` is the signed sum of the
 whole group and every group element scales it by its sign.  What is left for this file is that
 either way `c_t` spans a `ℚ`-line inside `ℚ[Sₙ]`, which is therefore the whole left ideal it
-generates, and that the action on that line is the character in question.
+generates, that the action on that line is the character in question, and that no other shape
+gives a line.
 
-Only the ideal presentation `ℚ[Sₙ] c_t` of the Specht module is available here, so that is what
-these results are about; the identification of `S^λ` with the span of the polytabloids inside the
-Young permutation module is a separate milestone and is not used or claimed.  The corresponding
-statements one level down, that the permutation module `M^{(n)}` is the trivial representation and
-`M^{(1ⁿ)}` the regular one, are in
-`TauCeti.RepresentationTheory.Symmetric.PermutationModule.Extremes`.
+The results below are about the ideal presentation `ℚ[Sₙ] c_t` of the Specht module, which is the
+presentation the symmetrizer identities live in.  The other presentation, the span of the
+polytabloids inside the Young permutation module, enters only through the converse: the dimension
+of the ideal is the number `f^μ` of standard Young tableaux
+(`TauCeti.YoungTableau.finrank_spechtIdeal` in
+`TauCeti.RepresentationTheory.Symmetric.Specht.Ideal.Dimension`, which compares the two
+presentations), and `f^μ = 1` exactly on the two extreme shapes.  The corresponding statements one
+level down, that the permutation module `M^{(n)}` is the trivial representation and `M^{(1ⁿ)}` the
+regular one, are in `TauCeti.RepresentationTheory.Symmetric.PermutationModule.Extremes`.
 
 ## Main results
 
@@ -53,6 +60,8 @@ statements one level down, that the permutation module `M^{(n)}` is the trivial 
   sign representation.
 * `YoungTableau.finrank_spechtIdeal_of_rowSubgroup_eq_top` and
   `YoungTableau.finrank_spechtIdeal_of_colSubgroup_eq_top`: both are lines.
+* `YoungTableau.finrank_spechtIdeal_eq_one_iff`: and no other shape is, so the Specht ideal is a
+  line exactly on the two extreme shapes.
 * `YoungTableau.youngSymmetrizer_sq_of_rowSubgroup_eq_top` and
   `YoungTableau.youngSymmetrizer_sq_of_colSubgroup_eq_top`: because both are lines, the scalar in
   the essential idempotence of `c_t` is the full `n!`.
@@ -60,8 +69,6 @@ statements one level down, that the permutation module `M^{(n)}` is the trivial 
 ## References
 
 * [W. Fulton, *Young Tableaux*][fulton1997], Section 7.2.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 4, "the named small irreducibles".
 -/
 
 public section
@@ -79,8 +86,9 @@ variable {χ : Equiv.Perm (Fin μ.card) → ℚ}
 /-- If every group element multiplies the Young symmetrizer by a scalar, then the left ideal it
 generates is already the `ℚ`-line through it: the whole group algebra acts through the scalars. -/
 private theorem restrictScalars_spechtIdeal_eq_span (t : YoungTableau μ)
-    (h : ∀ g, MonoidAlgebra.single g (1 : ℚ) * youngSymmetrizer t = χ g • youngSymmetrizer t) :
-    (spechtIdeal t).restrictScalars ℚ = ℚ ∙ youngSymmetrizer t := by
+    (h : ∀ g, MonoidAlgebra.single g (1 : ℚ) * youngSymmetrizer (R := ℚ) t = χ g •
+      youngSymmetrizer (R := ℚ) t) :
+    (spechtIdeal t).restrictScalars ℚ = ℚ ∙ youngSymmetrizer (R := ℚ) t := by
   refine le_antisymm (fun x hx => ?_) ?_
   · rw [Submodule.restrictScalars_mem] at hx
     obtain ⟨a, rfl⟩ := (mem_spechtIdeal_iff t x).mp hx
@@ -98,7 +106,8 @@ private theorem restrictScalars_spechtIdeal_eq_span (t : YoungTableau μ)
 
 /-- A Young symmetrizer scaled by the group generates a one-dimensional left ideal. -/
 private theorem finrank_spechtIdeal_eq_one (t : YoungTableau μ)
-    (h : ∀ g, MonoidAlgebra.single g (1 : ℚ) * youngSymmetrizer t = χ g • youngSymmetrizer t) :
+    (h : ∀ g, MonoidAlgebra.single g (1 : ℚ) * youngSymmetrizer (R := ℚ) t = χ g •
+      youngSymmetrizer (R := ℚ) t) :
     Module.finrank ℚ (spechtIdeal t) = 1 := by
   have hline : Module.finrank ℚ ((spechtIdeal t).restrictScalars ℚ) = 1 := by
     rw [restrictScalars_spechtIdeal_eq_span t h]
@@ -109,19 +118,20 @@ private theorem finrank_spechtIdeal_eq_one (t : YoungTableau μ)
 /-- A Young symmetrizer scaled by the group spans its left ideal, so the group acts on that ideal
 through the same scalars. -/
 private theorem spechtIdealRep_ρ_apply (t : YoungTableau μ)
-    (h : ∀ g, MonoidAlgebra.single g (1 : ℚ) * youngSymmetrizer t = χ g • youngSymmetrizer t)
+    (h : ∀ g, MonoidAlgebra.single g (1 : ℚ) * youngSymmetrizer (R := ℚ) t = χ g •
+      youngSymmetrizer (R := ℚ) t)
     (g : Equiv.Perm (Fin μ.card)) (x : spechtIdeal t) :
     (spechtIdealRep t).ρ g x = χ g • x := by
-  have hx : (x : MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card))) ∈ ℚ ∙ youngSymmetrizer t := by
+  have hx : (x : MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card))) ∈ ℚ ∙ youngSymmetrizer (R := ℚ) t := by
     rw [← restrictScalars_spechtIdeal_eq_span t h, Submodule.restrictScalars_mem]
     exact x.2
   obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp hx
   refine Subtype.ext ?_
   calc ((spechtIdealRep t).ρ g x : MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card)))
-      = MonoidAlgebra.single g (1 : ℚ) * (c • youngSymmetrizer t) := by
+      = MonoidAlgebra.single g (1 : ℚ) * (c • youngSymmetrizer (R := ℚ) t) := by
         rw [spechtIdealRep_ρ_apply_coe, hc]
-    _ = c • (χ g • youngSymmetrizer t) := by rw [mul_smul_comm, h g]
-    _ = χ g • (c • youngSymmetrizer t) := smul_comm c (χ g) _
+    _ = c • (χ g • youngSymmetrizer (R := ℚ) t) := by rw [mul_smul_comm, h g]
+    _ = χ g • (c • youngSymmetrizer (R := ℚ) t) := smul_comm c (χ g) _
     _ = ((χ g • x : spechtIdeal t) : MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card))) := by
         rw [hc, Submodule.coe_smul_of_tower]
 
@@ -179,7 +189,8 @@ can be read off directly, and they check the normalisation. -/
 /-- On a shape with at most one row the square of the Young symmetrizer is `n!` times itself. -/
 theorem youngSymmetrizer_sq_of_rowSubgroup_eq_top (t : YoungTableau μ)
     (h : rowSubgroup t = ⊤) :
-    youngSymmetrizer t * youngSymmetrizer t = (μ.card.factorial : ℚ) • youngSymmetrizer t := by
+    youngSymmetrizer (R := ℚ) t * youngSymmetrizer (R := ℚ) t = (μ.card.factorial : ℚ) •
+      youngSymmetrizer (R := ℚ) t := by
   rw [youngSymmetrizer_sq t, finrank_spechtIdeal_of_rowSubgroup_eq_top t h,
     Nat.cast_one, div_one]
 
@@ -187,9 +198,23 @@ theorem youngSymmetrizer_sq_of_rowSubgroup_eq_top (t : YoungTableau μ)
 itself. -/
 theorem youngSymmetrizer_sq_of_colSubgroup_eq_top (t : YoungTableau μ)
     (h : colSubgroup t = ⊤) :
-    youngSymmetrizer t * youngSymmetrizer t = (μ.card.factorial : ℚ) • youngSymmetrizer t := by
+    youngSymmetrizer (R := ℚ) t * youngSymmetrizer (R := ℚ) t = (μ.card.factorial : ℚ) •
+      youngSymmetrizer (R := ℚ) t := by
   rw [youngSymmetrizer_sq t, finrank_spechtIdeal_of_colSubgroup_eq_top t h,
     Nat.cast_one, div_one]
+
+/-! ### The extreme shapes are the only lines -/
+
+/-- **The Young-symmetrizer ideal is a line exactly on the extreme shapes**: the shapes with at
+most one column (`μ.rowLen 0 ≤ 1`) and those with at most one row (`μ.colLen 0 ≤ 1`), and no
+others.  The two implications for the shapes themselves are
+`TauCeti.YoungTableau.finrank_spechtIdeal_of_rowSubgroup_eq_top` and
+`TauCeti.YoungTableau.finrank_spechtIdeal_of_colSubgroup_eq_top` above, stated through the row and
+column groups of `t`; what is added here is the converse, which reads the dimension of the ideal as
+the number of standard Young tableaux of the shape. -/
+theorem finrank_spechtIdeal_eq_one_iff (t : YoungTableau μ) :
+    Module.finrank ℚ (spechtIdeal t) = 1 ↔ μ.rowLen 0 ≤ 1 ∨ μ.colLen 0 ≤ 1 := by
+  rw [finrank_spechtIdeal, standardCount_eq_one_iff]
 
 end YoungTableau
 

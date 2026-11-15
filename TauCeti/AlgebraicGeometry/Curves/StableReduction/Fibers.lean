@@ -7,12 +7,16 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.Family
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.Basic
+public import TauCeti.AlgebraicGeometry.Fibers.SchematicDensity
 
 /-!
 # Generic fibres of models over a discrete valuation ring
 
 This file defines the canonical inclusion of a model's chosen generic fibre into its total space.
-It records compatibility with the structure morphism and proves that the inclusion is open.
+It records compatibility with the structure morphism and proves that the inclusion is an open
+immersion and an affine morphism, with scheme-theoretically dense image. A morphism of total spaces
+over the base is compatible with the chosen generic fibres exactly when it commutes with these
+inclusions.
 When the model is a family of curves, so is its generic fibre.
 -/
 
@@ -91,6 +95,37 @@ lemma isOpenImmersion_genericι (M : Model R K C toK) : IsOpenImmersion M.generi
     inferInstanceAs (IsIso ((Over.forget _).map M.genericFiberIso.inv))
   rw [genericι]
   infer_instance
+
+/-- The inclusion of a model's chosen generic fibre is an affine morphism, being a base change of
+`Spec K ⟶ Spec R`. -/
+instance isAffineHom_genericι (M : Model R K C toK) : IsAffineHom M.genericι := by
+  have : IsIso M.genericFiberIso.inv.left :=
+    inferInstanceAs (IsIso ((Over.forget _).map M.genericFiberIso.inv))
+  have : IsAffineHom (genericFiberι R K M.toBase) :=
+    MorphismProperty.of_isPullback (P := @IsAffineHom) (IsPullback.of_hasPullback _ _).flip
+      (inferInstanceAs (IsAffineHom (Spec.map _)))
+  rw [genericι_def]
+  infer_instance
+
+/-- A model's chosen generic fibre is scheme-theoretically dense in its total space, since the
+total space is flat over the discrete valuation ring. -/
+instance isSchemeTheoreticallyDominant_genericι (M : Model R K C toK) :
+    IsSchemeTheoreticallyDominant M.genericι := by
+  have : IsIso M.genericFiberIso.inv.left :=
+    inferInstanceAs (IsIso ((Over.forget _).map M.genericFiberIso.inv))
+  have := isSchemeTheoreticallyDominant_genericFiberι R K (IsFractionRing.injective R K) M.toBase
+  rw [genericι_def]
+  infer_instance
+
+/-- A morphism of total spaces over the base respects the chosen identifications of generic fibres
+as soon as it carries the chosen generic fibre of `M` to that of `N`. This is the converse of
+`TauCeti.Model.genericι_hom`. -/
+lemma baseChangeHom_genericFiberIso_hom_left {M N : Model R K C toK} (f : M.total ⟶ N.total)
+    (overBase : f ≫ N.toBase = M.toBase) (h : M.genericι ≫ f = N.genericι) :
+    M.baseChangeHom f overBase ≫ N.genericFiberIso.hom.left = M.genericFiberIso.hom.left := by
+  have := N.isOpenImmersion_genericι
+  rw [← cancel_mono N.genericι, Category.assoc, genericFiberIso_hom_left_genericι,
+    baseChangeHom_genericFiberι, ← h, genericFiberIso_hom_left_genericι_assoc]
 
 /-- If a model is a family of curves, then so is its chosen generic fibre over the fraction
 field. -/

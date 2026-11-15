@@ -37,6 +37,8 @@ are distinct, and separability of `f` does not ensure that: here the six values 
 * `TauCeti.isRoot_resolventSextic_X_pow_five_sub_X`: `2` is an integral root.
 * `TauCeti.discr_resolventSextic_X_pow_five_sub_X`: the sextic has discriminant zero.
 * `TauCeti.not_separable_map_resolventSextic_X_pow_five_sub_X`: the sextic is inseparable over `ℚ`.
+* `TauCeti.not_resolventSeparationEvidence_quinticF20Spec_X_pow_five_sub_X`: the quintic has no
+  separation evidence for the `F₂₀` specification.
 * `TauCeti.isRoot_specialize_quinticF20Spec_X_pow_five_sub_X`: the `F₂₀` resolvent specialized
   over `ℚ` has the root `2`.
 * `TauCeti.not_exists_le_map_conj_quinticF20Spec_X_pow_five_sub_X`: the Galois image of `X⁵ - X`
@@ -117,6 +119,15 @@ theorem not_separable_map_resolventSextic_X_pow_five_sub_X :
   exact ((monic_resolventSextic _).discr_ne_zero_iff_separable_map ℚ).mpr hsep
     discr_resolventSextic_X_pow_five_sub_X
 
+/-- The separable quintic `X⁵ - X` does not carry separation evidence for the `F₂₀` resolvent:
+four symbolic orbit values collide at the rational root `2`. -/
+theorem not_resolventSeparationEvidence_quinticF20Spec_X_pow_five_sub_X :
+    ¬ ResolventSeparationEvidence quinticF20Spec (X ^ 5 - X : ℚ[X]) := by
+  intro h
+  apply not_separable_map_resolventSextic_X_pow_five_sub_X
+  rw [resolventSextic_def, ResolventSpec.specialize_map]
+  simpa using h.specializationSeparated
+
 /-- The `F₂₀` resolvent of `X⁵ - X`, specialized over `ℚ`, has the root `2`. -/
 theorem isRoot_specialize_quinticF20Spec_X_pow_five_sub_X :
     (quinticF20Spec.specialize ℚ (X ^ 5 - X : ℚ[X])).IsRoot 2 := by
@@ -195,7 +206,7 @@ specification, a rational root of the specialized resolvent of a monic separable
 counterexample. This is `TauCeti.ResolventSpec.exists_le_map_conj_of_isRoot_specialize` with
 its separability hypothesis on the specialized resolvent removed. -/
 theorem not_forall_exists_le_map_conj_of_isRoot_specialize_quinticF20Spec :
-    ¬ ∀ f : ℚ[X], f.Monic → f.Separable → f.natDegree = 5 →
+    ¬ ∀ f : ℚ[X], f.Monic → f.natDegree = 5 →
       ∀ e : f.rootSet ℂ ≃ Fin 5, ∀ a : ℚ, (quinticF20Spec.specialize ℚ f).IsRoot a →
         ∃ τ : Equiv.Perm (Fin 5),
           (Gal.galActionHom f ℂ).range.map (e.permCongrHom : _ →* Equiv.Perm (Fin 5)) ≤
@@ -206,7 +217,7 @@ theorem not_forall_exists_le_map_conj_of_isRoot_specialize_quinticF20Spec :
     rw [card_rootSet_eq_natDegree separable_X_pow_five_sub_X (IsAlgClosed.splits _), hdeg]
   let e := (Fintype.equivFin _).trans (finCongr hcard)
   exact not_exists_le_map_conj_quinticF20Spec_X_pow_five_sub_X e
-    (h _ (by monicity!) separable_X_pow_five_sub_X hdeg e 2
+    (h _ (by monicity!) hdeg e 2
       isRoot_specialize_quinticF20Spec_X_pow_five_sub_X)
 
 end TauCeti

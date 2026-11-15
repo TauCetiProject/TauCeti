@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Units.DirichletTheorem
+public import Mathlib.NumberTheory.Height.NumberField
+public import TauCeti.NumberTheory.NumberField.Units.Basic
 
 /-!
-# Units bounded at every infinite place
+# Bounded families of units
 
 Only finitely many units of the ring of integers of a number field have absolute value at most
 `B` at every infinite place: such a unit is an algebraic integer all of whose conjugates are
@@ -16,12 +18,20 @@ bounded by `B`, and there are finitely many of those
 (`NumberField.Embeddings.finite_of_norm_le`). This finiteness is what makes the certification
 of a fundamental unit a finite search.
 
+The relative multiplicative and logarithmic heights also have the Northcott property on units.
+This is inherited from the corresponding Northcott property on the ambient number field, since
+the coercion of units into the field is injective. In particular, a bound on height cuts out only
+finitely many units.
+
 ## Main results
 
 * `TauCeti.NumberField.Units.finite_setOf_forall_apply_le`: the set of units with absolute value at
   most `B` at every infinite place is finite.
 * `TauCeti.NumberField.Units.finite_setOf_norm_logEmbedding_le`: the set of units in a bounded
   region of logarithmic space is finite.
+* `TauCeti.NumberField.Units.finite_setOfPred_mulHeight₁_le` and
+  `TauCeti.NumberField.Units.finite_setOfPred_logHeight₁_le`: the sets of units of bounded
+  relative multiplicative or logarithmic height are finite.
 -/
 
 public section
@@ -32,6 +42,34 @@ open scoped NumberField
 namespace TauCeti.NumberField.Units
 
 variable {K : Type*} [Field K] [NumberField K]
+
+/-! ### Finiteness at bounded height -/
+
+/-- The relative multiplicative height has the Northcott property when restricted to the units
+of a number field. -/
+instance : Northcott (fun u : (𝓞 K)ˣ ↦ Height.mulHeight₁ (u : K)) := by
+  rw [← Function.comp_def]
+  exact Northcott.comp_of_finite_fibers ..
+
+/-- The relative logarithmic height has the Northcott property when restricted to the units of a
+number field. -/
+instance : Northcott (fun u : (𝓞 K)ˣ ↦ Height.logHeight₁ (u : K)) := by
+  rw [← Function.comp_def]
+  exact Northcott.comp_of_finite_fibers ..
+
+/-- Only finitely many units of a number field have relative multiplicative height at most a
+fixed bound. -/
+theorem finite_setOfPred_mulHeight₁_le (B : ℝ) :
+    {u : (𝓞 K)ˣ | Height.mulHeight₁ (u : K) ≤ B}.Finite :=
+  Northcott.finite_le B
+
+/-- Only finitely many units of a number field have relative logarithmic height at most a fixed
+bound. -/
+theorem finite_setOfPred_logHeight₁_le (B : ℝ) :
+    {u : (𝓞 K)ˣ | Height.logHeight₁ (u : K) ≤ B}.Finite :=
+  Northcott.finite_le B
+
+/-! ### Finiteness from bounds at the infinite places -/
 
 /-- **Finiteness of bounded units.** Only finitely many units have absolute value at most `B` at
 every infinite place. -/

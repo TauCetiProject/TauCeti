@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Compactification.OnePoint.Basic
+import TauCeti.Topology.Algebra.Group.OpenSubgroup.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.ProC
 public import TauCeti.Topology.Algebra.Group.Profinite.Generation
 public import TauCeti.Topology.Algebra.Group.Profinite.Limit
@@ -85,11 +86,11 @@ def IsAdmissible (U : OpenNormalSubgroup (freeProC C X)) : Prop :=
     freeProC.of x₀ ∈ U.toSubgroup
 
 /-- The whole group is admissible. -/
-private theorem isAdmissible_top : IsAdmissible C x₀ (openNormalSubgroupTop (freeProC C X)) := by
-  have : Subsingleton (freeProC C X ⧸ (openNormalSubgroupTop (freeProC C X)).toSubgroup) :=
-    QuotientGroup.subsingleton_iff.mpr (openNormalSubgroupTop_toSubgroup _)
+private theorem isAdmissible_top : IsAdmissible C x₀ ⊤ := by
+  have : Subsingleton (freeProC C X ⧸ (⊤ : OpenNormalSubgroup (freeProC C X)).toSubgroup) :=
+    QuotientGroup.subsingleton_iff.mpr OpenNormalSubgroup.toSubgroup_top
   refine ⟨(continuous_const (y := (1 : freeProC C X ⧸ _))).congr fun _ ↦ Subsingleton.elim _ _, ?_⟩
-  rw [openNormalSubgroupTop_toSubgroup]
+  rw [OpenNormalSubgroup.toSubgroup_top]
   exact Subgroup.mem_top _
 
 variable {C x₀}
@@ -97,7 +98,8 @@ variable {C x₀}
 /-- The intersection of two admissible open normal subgroups is admissible. -/
 private theorem IsAdmissible.inf {U V : OpenNormalSubgroup (freeProC C X)}
     (hU : IsAdmissible C x₀ U) (hV : IsAdmissible C x₀ V) : IsAdmissible C x₀ (U ⊓ V) :=
-  ⟨OpenNormalSubgroup.continuous_mk_inf hU.1 hV.1, Subgroup.mem_inf.mpr ⟨hU.2, hV.2⟩⟩
+  ⟨(OpenSubgroup.continuous_mk_inf_iff (U := U.toOpenSubgroup) (V := V.toOpenSubgroup)).mpr
+    ⟨hU.1, hV.1⟩, Subgroup.mem_inf.mpr ⟨hU.2, hV.2⟩⟩
 
 variable (C x₀)
 
@@ -161,21 +163,23 @@ namespace freeProCPointed
 /-- The canonical continuous quotient map from the free pro-`C` group on the type `X` to the free
 pro-`C` group on the pointed space `(X, x₀)`. -/
 noncomputable def mk : freeProC C X →ₜ* freeProCPointed C x₀ :=
-  ContinuousMonoidHom.quotientMk (kernel C x₀)
+  Subgroup.quotientMkContinuousMonoidHom (kernel C x₀)
 
 /-- The canonical quotient map sends an element to its class. -/
 theorem mk_apply (y : freeProC C X) : mk C x₀ y = (y : freeProCPointed C x₀) :=
-  (rfl)
+  Subgroup.quotientMkContinuousMonoidHom_apply (kernel C x₀) y
 
 /-- The canonical quotient map, as a monoid homomorphism, is the quotient projection. -/
 @[simp]
 theorem coe_mk :
     (mk C x₀ : freeProC C X →* freeProCPointed C x₀) = QuotientGroup.mk' (kernel C x₀) :=
-  (rfl)
+  Subgroup.coe_quotientMkContinuousMonoidHom (kernel C x₀)
 
 /-- The canonical quotient map is surjective. -/
-theorem mk_surjective : Function.Surjective (mk C x₀) :=
-  QuotientGroup.mk'_surjective _
+theorem mk_surjective : Function.Surjective (mk C x₀) := by
+  intro q
+  obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective q
+  exact ⟨g, mk_apply C x₀ g⟩
 
 /-- The canonical map from the pointed space to its free pro-`C` group. -/
 noncomputable def of (x : X) : freeProCPointed C x₀ :=
@@ -192,12 +196,16 @@ corresponding point. -/
 @[simp]
 theorem coe_freeProC_of (x : X) :
     ((freeProC.of x : freeProC C X) : freeProCPointed C x₀) = of C x₀ x :=
-  (rfl)
+  (mk_apply C x₀ (freeProC.of x)).symm
 
 /-- The canonical map kills the base point. -/
 @[simp]
-theorem of_basePoint : of C x₀ x₀ = 1 :=
-  (QuotientGroup.eq_one_iff _).mpr ((mem_kernel_iff C x₀).mpr fun _ hU ↦ hU.2)
+theorem of_basePoint : of C x₀ x₀ = 1 := by
+  -- Expand the local generator map of to exhibit the canonical projection mk.
+  -- The next public mk_apply rewrite computes it without unfolding the quotient map.
+  change mk C x₀ (freeProC.of x₀) = 1
+  rw [mk_apply]
+  exact (QuotientGroup.eq_one_iff _).mpr ((mem_kernel_iff C x₀).mpr fun _ hU ↦ hU.2)
 
 /-- **The canonical map from the pointed space to its free pro-`C` group is continuous.** -/
 theorem continuous_of : Continuous (of C x₀) := by
@@ -262,7 +270,8 @@ private theorem isAdmissible_comap_lift (hP : IsProC C P) {f : X → P} (hf : Co
     (hf₀ : f x₀ = 1) (V : OpenNormalSubgroup P) :
     IsAdmissible C x₀ (V.comap (freeProC.lift hP f : freeProC C X →* P)
       (freeProC.lift hP f).continuous) := by
-  refine ⟨OpenNormalSubgroup.continuous_mk_comap V _ _ (by
+  refine ⟨(OpenSubgroup.continuous_mk_comap_iff V.toOpenSubgroup
+    (freeProC.lift hP f : freeProC C X →* P) (freeProC.lift hP f).continuous).mpr (by
     simpa only [Function.comp_def, MonoidHom.coe_ofClass, freeProC.lift_of] using
       QuotientGroup.continuous_mk.comp hf), ?_⟩
   refine OpenNormalSubgroup.mem_comap.mpr ?_
@@ -284,7 +293,7 @@ private theorem kernel_le_ker_lift (hP : IsProC C P) {f : X → P} (hf : Continu
 pro-`C` group extending a continuous map that kills the base point. -/
 noncomputable def lift (hP : IsProC C P) (f : X → P) (hf : Continuous f) (hf₀ : f x₀ = 1) :
     freeProCPointed C x₀ →ₜ* P :=
-  ContinuousMonoidHom.quotientLift (kernel C x₀) (freeProC.lift hP f) (kernel_le_ker_lift hP hf hf₀)
+  ContinuousMonoidHom.quotientLift (freeProC.lift hP f) (kernel C x₀) (kernel_le_ker_lift hP hf hf₀)
 
 /-- The lift recovers the free pro-`C` lift along the quotient map. -/
 @[simp]

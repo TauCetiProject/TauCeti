@@ -35,6 +35,17 @@ open BraidGroup
 
 variable {n : ℕ}
 
+/-- After inserting two letters on generator `i`, a position is crossing-free exactly when
+it was crossing-free before the insertion and differs from both positions of `i`.
+The signs of the two letters are arbitrary. -/
+theorem crossingsAt_insert_same_index_eq_nil_iff (u v : BraidWord n)
+    (i : Fin (n - 1)) (ε η : ℤˣ) (p : Fin n) :
+    (u ++ [(i, ε), (i, η)] ++ v).crossingsAt p = [] ↔
+      (u ++ v).crossingsAt p = [] ∧ p ≠ strand i ∧ p ≠ strandSucc i := by
+  simp only [crossingsAt_append_eq_nil_iff, crossingsAt_cons_eq_nil_iff,
+    crossingsAt_nil]
+  tauto
+
 /-- Inserting two letters at the same generator positions removes exactly those positions
 from the set of crossing-free positions. The signs do not affect this set. -/
 private theorem filter_crossingsAt_insert_pair_eq_nil (u v : BraidWord n) (i : Fin (n - 1))
@@ -44,8 +55,7 @@ private theorem filter_crossingsAt_insert_pair_eq_nil (u v : BraidWord n) (i : F
         (strandSucc i) := by
   ext p
   simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_erase,
-    crossingsAt_append_eq_nil_iff, crossingsAt_cons_eq_nil_iff]
-  simp [crossingsAt_def]
+    crossingsAt_insert_same_index_eq_nil_iff]
   tauto
 
 /-- **Crossing-free component bookkeeping for a pair insertion.** Each affected position

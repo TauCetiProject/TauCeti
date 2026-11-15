@@ -22,14 +22,10 @@ namespace IntermediateField
 variable {F E L : Type*} [Field F] [Field E] [Field L] [Algebra F E] [Algebra F L]
 
 /-- The preimage of a finite intermediate field `M` of `E/F` under an `F`-algebra map `g` into `E`
-is finite over `F`: it is `F`-isomorphic to its image under `g`, which is contained in `M`. -/
+is finite over `F`: restricting `g` embeds it `F`-linearly into `M`. -/
 instance finiteDimensional_comap (M : IntermediateField F E) [FiniteDimensional F M]
     (g : L →ₐ[F] E) : FiniteDimensional F (M.comap g) :=
-  have hle : (M.comap g).map g ≤ M := IntermediateField.map_le_iff_le_comap.mpr le_rfl
-  Module.Finite.of_injective
-    (((IntermediateField.inclusion hle).comp
-      (IntermediateField.equivMap (M.comap g) g).toAlgHom).toLinearMap)
-    ((IntermediateField.inclusion_injective hle).comp
-      (IntermediateField.equivMap (M.comap g) g).injective)
+  .of_injective ((g.comp (val _)).codRestrict M.toSubalgebra fun x ↦ x.2).toLinearMap
+    (RingHom.injective _)
 
 end IntermediateField

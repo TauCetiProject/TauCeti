@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Consequences.GenusZero
-public import TauCeti.FieldTheory.FunctionField.Hyperelliptic.Genus
+public import TauCeti.FieldTheory.FunctionField.Hyperelliptic.Genus.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.Map
 -- Proof-only: `-(X ^ 2 + 1)` is squarefree away from characteristic two.
 import TauCeti.Algebra.Polynomial.Squarefree
@@ -183,7 +183,6 @@ theorem not_exists_divisor_degree_eq_one_of_sq_add_sq_add_one_eq_zero
   have h2 : (2 : k) ≠ 0 := fun h ↦ hk 1 0 (by linear_combination h)
   obtain ⟨P, hP⟩ := exists_place_degree_eq_one_of_genus_eq_zero_of_divisor_degree_eq_one
     (isFunctionField_of_sq_add_sq_add_one_eq_zero hgen hy)
-    (isIntegrallyClosedIn_of_sq_add_sq_add_one_eq_zero h2 hgen hy)
     (genus_eq_zero_of_sq_add_sq_add_one_eq_zero h2 hgen hy) hD
   exact Place.degree_ne_one_of_sq_add_sq_add_one_eq_zero hk hy P hP
 

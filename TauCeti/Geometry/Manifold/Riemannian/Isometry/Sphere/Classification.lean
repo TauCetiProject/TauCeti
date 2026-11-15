@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Sphere.FirstOrder
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Ext
 import TauCeti.Analysis.Normed.Module.FiniteDimension
-import Mathlib.Analysis.Normed.Module.Connected
+import TauCeti.Geometry.Sphere.Connected
 
 /-!
 # The full isometry group of the round sphere
@@ -82,8 +82,8 @@ theorem unitSphereRiemannianIsometry_surjective :
         exact (ne_neg_of_mem_unit_sphere ℝ ⟨x, hx⟩ (Φ.injective hbad).symm).elim
       · simpa using (congrArg Ψ heq).symm
   · let : PreconnectedSpace (sphere (0 : E) 1) :=
-      Subtype.preconnectedSpace (isPreconnected_sphere
-        (Module.one_lt_rank_of_one_lt_finrank (by omega)) (0 : E) 1)
+      Subtype.preconnectedSpace
+        (TauCeti.isConnected_sphere_of_one_le (E := E) (n := n) (by omega)).isPreconnected
     apply TauCeti.RiemannianIsometry.ext_of_mfderiv_eq Ψ Φ hvalue
     dsimp only [Ψ]
     rw [coe_unitSphereRiemannianIsometry]

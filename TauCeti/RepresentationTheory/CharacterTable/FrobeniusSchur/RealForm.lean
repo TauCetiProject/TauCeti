@@ -56,10 +56,6 @@ real-structure vocabulary of `TauCeti/RepresentationTheory/RealForm.lean`:
 
 ## References
 
-This is the "realizable" direction of the milestone `frobeniusSchurIndicatorRep_eq_one_realizable`
-pinned in the `Suggested.lean` accompanying Layer 7 of
-`TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md`.
-
 * J.-P. Serre, *Linear Representations of Finite Groups*, GTM 42 (1977), §13.2.
 * I. M. Isaacs, *Character Theory of Finite Groups* (1976), Chapter 4.
 -/
@@ -86,13 +82,13 @@ transporting it along the real form makes the complex representation carry one t
 exactly the orthogonal case of the Frobenius-Schur trichotomy.
 
 No finiteness is assumed of the real form: irreducibility over a finite group already makes `V`
-finite-dimensional (`Representation.IsIrreducible.finiteDimensional`), which `W` inherits
-(`Representation.IsRealForm.finiteDimensional_iff`), and a real form has the same dimension as the
-representation it is a form of (`Representation.IsRealForm.finrank_eq`), so `W` is nontrivial
-too. -/
+finite-dimensional (Mathlib's instance on `ρ.asModule`, read back on `V` along `ρ.asModuleEquiv`),
+which `W` inherits (`Representation.IsRealForm.finiteDimensional_iff`), and a real form has the
+same dimension as the representation it is a form of (`Representation.IsRealForm.finrank_eq`), so
+`W` is nontrivial too. -/
 theorem IsRealForm.frobeniusSchurIndicator_eq_one [ρ.IsIrreducible] (h : IsRealForm ρ σ) :
     frobeniusSchurIndicator ρ = 1 := by
-  have : FiniteDimensional ℂ V := IsIrreducible.finiteDimensional ‹ρ.IsIrreducible›
+  have : FiniteDimensional ℂ V := ρ.asModuleEquiv.finiteDimensional
   have : Nontrivial V := Representation.IsIrreducible.nontrivial ‹ρ.IsIrreducible›
   have : FiniteDimensional ℝ W := h.finiteDimensional_iff.mpr inferInstance
   have hrank : finrank ℝ W = finrank ℂ V := h.finrank_eq

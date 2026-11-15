@@ -12,6 +12,9 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.CoordinateRing.Basis
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Eval
 -- Proof-only: the Weierstrass equation under a change of variables.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableChange
+-- Proof-only: `VariableChange.toMatrix_injective`, a change of variables is determined by its
+-- matrix.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.VariableChange
 
 /-!
 # Changes of variables and the coordinate functions of a Weierstrass curve
@@ -37,6 +40,17 @@ unit, `u = γ / α` is then a unit with `u² = α` and `u³ = γ`, which puts th
 `(u²x + r, u³y + u²sx + t)`, and that case is reduced to the pair `(x, y)` by the transformation
 law `WeierstrassCurve.Affine.baseChange_variableChange_equation`.
 
+The first statement makes the substitution `(x', y') ↦ (u²x + r, u³y + u²sx + t)` a homomorphism
+`R[W'] → R[W]` whenever `C • W' = W`, and the substitution of `C⁻¹` inverts it: a change of
+variables identifies the coordinate rings, and changes of variables compose as these isomorphisms
+do. The second statement is the converse: a homomorphism `R[W'] → R[W]` of this shape, with `α` a
+unit, comes from a change of variables.
+
+## Main definitions
+
+* `WeierstrassCurve.Affine.CoordinateRing.variableChangeEquiv`: the isomorphism
+  `R[W'] ≃ₐ[R] R[W]` of a change of variables `C` with `C • W' = W`.
+
 ## Main results
 
 * `WeierstrassCurve.Affine.CoordinateRing.equation_X_root_iff`: the pair `(x, y)` satisfies
@@ -46,6 +60,11 @@ law `WeierstrassCurve.Affine.baseChange_variableChange_equation`.
 * `WeierstrassCurve.Affine.CoordinateRing.exists_variableChange_of_equation`: if moreover `α` is
   a unit, there is a change of variables `C` with `C • W' = W`, `u² = α`, `u³ = γ`, `r = β`,
   `u²s = δ` and `t = ε`.
+* `WeierstrassCurve.Affine.CoordinateRing.variableChangeEquiv_trans` and
+  `WeierstrassCurve.Affine.CoordinateRing.variableChangeEquiv_one`: the isomorphisms compose
+  as the changes of variables multiply.
+* `WeierstrassCurve.Affine.CoordinateRing.variableChangeEquiv_inj`: a change of variables is
+  determined by its isomorphism of coordinate rings.
 
 ## References
 
@@ -72,7 +91,8 @@ coefficient of `x³` of that relation is used, and `C • W' = W` follows from t
 `WeierstrassCurve.Affine.baseChange_variableChange_equation` and from `equation_X_root_iff`, in
 which the other five coefficients are compared for the pair `(x, y)` only. The equation satisfied
 by the pair `(x, y)`, `equation_X_root`, is used in the source as `coordY_mul_coordY`
-(`PoleFiltration.lean`), a formula for `y²`. `equation_X_root_iff` is not in the source.
+(`PoleFiltration.lean`), a formula for `y²`. `equation_X_root_iff` is not in the source, and
+neither is `variableChangeEquiv` with its lemmas.
 -/
 
 public section
@@ -178,6 +198,132 @@ theorem exists_variableChange_of_equation {α β γ δ ε : R} (hα : IsUnit α)
   exact ⟨⟨u, β, s, ε⟩,
     equation_X_root_iff.mp ((baseChange_variableChange_equation W' ⟨u, β, s, ε⟩ _ _).mp h),
     rfl, rfl, rfl, rfl, rfl⟩
+
+/-! ### The isomorphism of coordinate rings induced by a change of variables -/
+
+section VariableChangeEquiv
+
+variable {W'' : WeierstrassCurve R} (C C' : VariableChange R)
+
+/-- The pair `(u²x + r, u³y + u²sx + t)` of `R[W]` satisfies the Weierstrass equation of `W'` when
+`C • W' = W`: this is the transformation law, read at the coordinate functions of `W`. -/
+private theorem equation_variableChange (h : C • W' = W) :
+    (W'⁄W.toAffine.CoordinateRing).toAffine.Equation
+      (algebraMap R W.toAffine.CoordinateRing C.u ^ 2 * AdjoinRoot.of W.toAffine.polynomial X
+        + algebraMap R _ C.r)
+      (algebraMap R W.toAffine.CoordinateRing C.u ^ 3 * AdjoinRoot.root W.toAffine.polynomial
+        + algebraMap R _ C.u ^ 2 * algebraMap R _ C.s * AdjoinRoot.of W.toAffine.polynomial X
+        + algebraMap R _ C.t) :=
+  (baseChange_variableChange_equation W' C _ _).mpr (by rw [h]; exact equation_X_root W)
+
+/-- The homomorphism `R[W'] → R[W]` substituting `(u²x + r, u³y + u²sx + t)` for the coordinate
+functions of `W'`, for `C • W' = W`. -/
+private noncomputable def variableChangeAlgHom (h : C • W' = W) :
+    W'.toAffine.CoordinateRing →ₐ[R] W.toAffine.CoordinateRing :=
+  evalAlgHom (equation_variableChange C h)
+
+private theorem variableChangeAlgHom_comp (h : C • W' = W) (h' : C' • W'' = W') :
+    (variableChangeAlgHom C h).comp (variableChangeAlgHom C' h') =
+      variableChangeAlgHom (C * C') (by rw [mul_smul, h', h]) := by
+  -- both sides are substitutions; compare them on the two coordinate functions of `W''`
+  refine algHom_ext ?_ ?_ <;>
+  · simp only [variableChangeAlgHom, AlgHom.comp_apply, evalAlgHom_of_X, evalAlgHom_root, map_add,
+      map_mul, map_pow, AlgHom.commutes, VariableChange.mul_def, Units.val_mul]
+    ring
+
+private theorem variableChangeAlgHom_eq_id (h : C • W = W) (hC : C = 1) :
+    variableChangeAlgHom C h = AlgHom.id R W.toAffine.CoordinateRing := by
+  subst hC
+  refine algHom_ext ?_ ?_ <;>
+  · simp [variableChangeAlgHom, VariableChange.one_def]
+
+/-- **The isomorphism of coordinate rings induced by a change of variables.** If `C • W' = W`,
+the coordinate functions `x'` and `y'` of `W'` are sent to `u²x + r` and `u³y + u²sx + t`, where
+`x` and `y` are those of `W`; on points, this is the substitution
+`(x, y) ↦ (u²x + r, u³y + u²sx + t)` carrying the points of `W` to those of `W'`. The inverse is
+the isomorphism of `C⁻¹`. -/
+noncomputable def variableChangeEquiv (h : C • W' = W) :
+    W'.toAffine.CoordinateRing ≃ₐ[R] W.toAffine.CoordinateRing :=
+  AlgEquiv.ofAlgHom (variableChangeAlgHom C h)
+    (variableChangeAlgHom C⁻¹ (by rw [← h, inv_smul_smul]))
+    (by rw [variableChangeAlgHom_comp]; exact variableChangeAlgHom_eq_id _ _ (mul_inv_cancel C))
+    (by rw [variableChangeAlgHom_comp]; exact variableChangeAlgHom_eq_id _ _ (inv_mul_cancel C))
+
+/-- The isomorphism of a change of variables sends `x'` to `u²x + r`. -/
+@[simp]
+theorem variableChangeEquiv_of_X (h : C • W' = W) :
+    variableChangeEquiv C h (AdjoinRoot.of W'.toAffine.polynomial X) =
+      algebraMap R W.toAffine.CoordinateRing C.u ^ 2 * AdjoinRoot.of W.toAffine.polynomial X
+        + algebraMap R _ C.r :=
+  evalAlgHom_of_X _
+
+/-- The isomorphism of a change of variables sends `y'` to `u³y + u²sx + t`. -/
+@[simp]
+theorem variableChangeEquiv_root (h : C • W' = W) :
+    variableChangeEquiv C h (AdjoinRoot.root W'.toAffine.polynomial) =
+      algebraMap R W.toAffine.CoordinateRing C.u ^ 3 * AdjoinRoot.root W.toAffine.polynomial
+        + algebraMap R _ C.u ^ 2 * algebraMap R _ C.s * AdjoinRoot.of W.toAffine.polynomial X
+        + algebraMap R _ C.t :=
+  evalAlgHom_root _
+
+/-- The inverse of the isomorphism of `C` is the isomorphism of `C⁻¹`. -/
+theorem variableChangeEquiv_symm (h : C • W' = W) (h' : C⁻¹ • W = W') :
+    (variableChangeEquiv C h).symm = variableChangeEquiv C⁻¹ h' := by
+  -- both inverses are, by construction, the substitution `variableChangeAlgHom C⁻¹`
+  ext
+  rfl
+
+/-- The inverse of the isomorphism of a change of variables sends `x` to `u⁻²(x' - r)`, written
+through the components of `C⁻¹`. -/
+@[simp]
+theorem variableChangeEquiv_symm_of_X (h : C • W' = W) :
+    (variableChangeEquiv C h).symm (AdjoinRoot.of W.toAffine.polynomial X) =
+      algebraMap R W'.toAffine.CoordinateRing C⁻¹.u ^ 2 * AdjoinRoot.of W'.toAffine.polynomial X
+        + algebraMap R _ C⁻¹.r := by
+  rw [variableChangeEquiv_symm C h (by rw [← h, inv_smul_smul]), variableChangeEquiv_of_X]
+
+/-- The inverse of the isomorphism of a change of variables sends `y` to
+`u⁻³(y' - s(x' - r) - t)`, written through the components of `C⁻¹`. -/
+@[simp]
+theorem variableChangeEquiv_symm_root (h : C • W' = W) :
+    (variableChangeEquiv C h).symm (AdjoinRoot.root W.toAffine.polynomial) =
+      algebraMap R W'.toAffine.CoordinateRing C⁻¹.u ^ 3 * AdjoinRoot.root W'.toAffine.polynomial
+        + algebraMap R _ C⁻¹.u ^ 2 * algebraMap R _ C⁻¹.s * AdjoinRoot.of W'.toAffine.polynomial X
+        + algebraMap R _ C⁻¹.t := by
+  rw [variableChangeEquiv_symm C h (by rw [← h, inv_smul_smul]), variableChangeEquiv_root]
+
+/-- The isomorphisms of changes of variables compose as the changes of variables multiply. -/
+@[simp]
+theorem variableChangeEquiv_trans (h : C • W' = W) (h' : C' • W'' = W') :
+    (variableChangeEquiv C' h').trans (variableChangeEquiv C h) =
+      variableChangeEquiv (C * C') (by rw [mul_smul, h', h]) :=
+  AlgEquiv.coe_toAlgHom_injective (variableChangeAlgHom_comp C C' h h')
+
+/-- The isomorphism of the identity change of variables is the identity. -/
+@[simp]
+theorem variableChangeEquiv_one (h : (1 : VariableChange R) • W = W) :
+    variableChangeEquiv 1 h = AlgEquiv.refl :=
+  AlgEquiv.coe_toAlgHom_injective (variableChangeAlgHom_eq_id 1 h rfl)
+
+/-- **A change of variables is determined by its isomorphism of coordinate rings**: the images of
+`x'` and `y'` determine `u²`, `u³`, `r`, `u²s` and `t`, because `x`, `y` and `1` are linearly
+independent over `R` in `R[W]`. -/
+theorem variableChangeEquiv_inj (h : C • W' = W) (h' : C' • W' = W) :
+    variableChangeEquiv C h = variableChangeEquiv C' h' ↔ C = C' := by
+  refine ⟨fun he ↦ ?_, fun hC ↦ by subst hC; rfl⟩
+  have hX := congr($he (AdjoinRoot.of W'.toAffine.polynomial X))
+  have hY := congr($he (AdjoinRoot.root W'.toAffine.polynomial))
+  rw [variableChangeEquiv_of_X, variableChangeEquiv_of_X] at hX
+  rw [variableChangeEquiv_root, variableChangeEquiv_root] at hY
+  -- `x`, `y` and `1` are linearly independent over `R`, so the images of `x'` and `y'` determine
+  -- the first two rows of the matrices of `C` and `C'`; both third rows are `(0, 0, 1)`
+  have hli := linearIndependent_X_root_one (W := W.toAffine)
+  refine VariableChange.toMatrix_injective (Matrix.ext fun i ↦ hli.eq_coords_of_eq ?_)
+  fin_cases i <;> simp [VariableChange.toMatrix_def, Fin.sum_univ_three, Algebra.smul_def]
+  · linear_combination hX
+  · linear_combination hY
+
+end VariableChangeEquiv
 
 end WeierstrassCurve.Affine.CoordinateRing
 

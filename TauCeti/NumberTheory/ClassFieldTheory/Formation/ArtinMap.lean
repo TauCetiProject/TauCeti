@@ -11,8 +11,8 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.Naturality
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Character
 
 import TauCeti.Algebra.Module.CharacterModule
+import TauCeti.CategoryTheory.Monoidal.Braided.Basic
 import TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.Inflation
-import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Associativity
 import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Character
 import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.GradedComm
 
@@ -123,20 +123,20 @@ layer's sign-normalized identification of `H^{-2}(Γ, ℤ)` with `Γ^ab` (the ne
 one, so that the Artin map satisfies the character formula) and the canonical identification of
 `H^0(Γ, A^V)` with the norm quotient. The codomain `L.TateH F (-2 + 2)` of `cf.tateIso L (-2)`
 is `L.TateH F 0` because `-2 + 2` reduces to `0`. -/
-def nakayamaNegTwo : Additive (Abelianization L.Gal) ≃+ L.NormQuotient F :=
+def nakayamaNegTwo : Additive (Group.Abelianization L.Gal) ≃+ L.NormQuotient F :=
   L.tateHMinusTwoEquivAbelianization.symm.trans
     ((cf.tateIso L (-2)).trans (L.tateHZeroEquivNormQuotient F))
 
 /-- The Nakayama map sends `σ ∈ Γ^ab` to the class in the norm quotient of the cup product of the
 degree `-2` class of `σ` with the fundamental class. -/
-theorem nakayamaNegTwo_apply (σ : Additive (Abelianization L.Gal)) :
+theorem nakayamaNegTwo_apply (σ : Additive (Group.Abelianization L.Gal)) :
     cf.nakayamaNegTwo L σ = L.tateHZeroEquivNormQuotient F
       (cf.cupFundamentalClass L (-2) (L.tateHMinusTwoEquivAbelianization.symm σ)) := by
   rw [nakayamaNegTwo, AddEquiv.trans_apply, AddEquiv.trans_apply, tateIso_apply]
 
 /-- **Artin reciprocity** for a finite normal layer of a class formation,
 `A^U / N_{U/V}(A^V) ≃ Γ^ab`. It is, by definition, the inverse of the Nakayama map. -/
-def artinEquiv : L.NormQuotient F ≃+ Additive (Abelianization L.Gal) :=
+def artinEquiv : L.NormQuotient F ≃+ Additive (Group.Abelianization L.Gal) :=
   (cf.nakayamaNegTwo L).symm
 
 /-- Artin reciprocity is the inverse of the cup product with the fundamental class in degree
@@ -154,7 +154,7 @@ theorem artinEquiv_symm : (cf.artinEquiv L).symm = cf.nakayamaNegTwo L :=
 
 /-- Artin reciprocity inverts the Nakayama map. -/
 @[simp]
-theorem artinEquiv_nakayamaNegTwo (σ : Additive (Abelianization L.Gal)) :
+theorem artinEquiv_nakayamaNegTwo (σ : Additive (Group.Abelianization L.Gal)) :
     cf.artinEquiv L (cf.nakayamaNegTwo L σ) = σ :=
   (cf.nakayamaNegTwo L).symm_apply_apply σ
 
@@ -166,7 +166,7 @@ theorem nakayamaNegTwo_artinEquiv (x : L.NormQuotient F) :
 
 /-- The **Artin map** `A^U → Γ^ab` of a finite normal layer of a class formation: the class of an
 element of the ground level in the norm quotient, followed by Artin reciprocity. -/
-def artinMap : F.level L.ground →+ Additive (Abelianization L.Gal) :=
+def artinMap : F.level L.ground →+ Additive (Group.Abelianization L.Gal) :=
   (cf.artinEquiv L).toAddMonoidHom.comp (L.normQuotientMk F).toAddMonoidHom
 
 /-- The Artin map is Artin reciprocity applied to the class modulo norms. -/
@@ -191,7 +191,7 @@ theorem cupFundamentalClass_artinMap (a : F.level L.ground) :
 
 /-- **Characterization of the Artin symbol**: `artinMap a = σ` exactly when the degree `-2` class
 of `σ`, cupped with the fundamental class, is the zero-dimensional Tate class of `a`. -/
-theorem artinMap_eq_iff (a : F.level L.ground) (σ : Additive (Abelianization L.Gal)) :
+theorem artinMap_eq_iff (a : F.level L.ground) (σ : Additive (Group.Abelianization L.Gal)) :
     cf.artinMap L a = σ ↔
       cf.cupFundamentalClass L (-2) (L.tateHMinusTwoEquivAbelianization.symm σ) =
         L.zeroTateClass F a := by
@@ -222,7 +222,7 @@ include cf in
 /-- **Norm index**: the norm quotient `A^U / N_{U/V}(A^V)` of a finite normal layer of a class
 formation has as many elements as the abelianized Galois group of the layer. -/
 theorem natCard_normQuotient_eq_natCard_abelianization :
-    Nat.card (L.NormQuotient F) = Nat.card (Abelianization L.Gal) :=
+    Nat.card (L.NormQuotient F) = Nat.card (Group.Abelianization L.Gal) :=
   Nat.card_congr (cf.artinEquiv L).toEquiv
 
 /-- The Artin symbol of `a` generates the abelianized Galois group exactly when the class of `a`
@@ -240,7 +240,7 @@ theorem isGenerator_artinMap_iff (a : F.level L.ground) :
 `g` and conjugating the norm quotient by `g` are matched by the Nakayama maps of a layer and its
 conjugate. -/
 @[simp]
-theorem nakayamaNegTwo_conj (g : G) (σ : Additive (Abelianization L.Gal)) :
+theorem nakayamaNegTwo_conj (g : G) (σ : Additive (Group.Abelianization L.Gal)) :
     cf.nakayamaNegTwo (L.conjugate g)
         (Additive.ofMul ((L.conjugateGalEquiv g).abelianizationCongr (Additive.toMul σ))) =
       L.conjugateNormQuotientEquiv F g (cf.nakayamaNegTwo L σ) := by
@@ -355,7 +355,7 @@ group, `χ (artinMap a) = inv (a₀ ∪ δχ)`, where `a₀` is the zero-dimensi
 `δχ` is the connecting class of `χ`. -/
 @[simp]
 theorem character_artinMap (a : F.level L.ground)
-    (chi : Additive (Abelianization L.Gal) →+ AddCircle (1 : ℚ)) :
+    (chi : Additive (Group.Abelianization L.Gal) →+ AddCircle (1 : ℚ)) :
     cf.inv L (L.artinCharacterCup F a chi) = chi (cf.artinMap L a) := by
   let sigma := L.tateHMinusTwoEquivAbelianization.symm (cf.artinMap L a)
   let pairing :=
@@ -370,77 +370,25 @@ theorem character_artinMap (a : F.level L.ground)
     congr 1
     rw [cupFundamentalClass_apply, cupClass_apply]
     dsimp only [pairing, sigma]
-    have hstruct :
-        ((λ_ (L.rep F)).hom ▷ Rep.trivial ℤ L.Gal ℤ) ≫ (ρ_ (L.rep F)).hom =
-          (α_ (𝟙_ (Rep ℤ L.Gal)) (L.rep F) (Rep.trivial ℤ L.Gal ℤ)).hom ≫
-            ((𝟙_ (Rep ℤ L.Gal)) ◁ (β_ (L.rep F) (Rep.trivial ℤ L.Gal ℤ)).hom) ≫
-            (α_ (𝟙_ (Rep ℤ L.Gal)) (Rep.trivial ℤ L.Gal ℤ) (L.rep F)).inv ≫
-            ((λ_ (Rep.trivial ℤ L.Gal ℤ)).hom ▷ L.rep F) ≫ (λ_ (L.rep F)).hom := by
-      -- `Rep.trivial ℤ L.Gal ℤ` is the tensor unit, but the braided coherence tactic needs
-      -- that unit displayed as `𝟙_ (Rep ℤ L.Gal)` in order to recognize the unit braiding.
-      change ((λ_ (L.rep F)).hom ▷ (𝟙_ (Rep ℤ L.Gal))) ≫ (ρ_ (L.rep F)).hom =
-        (α_ (𝟙_ (Rep ℤ L.Gal)) (L.rep F) (𝟙_ (Rep ℤ L.Gal))).hom ≫
-          ((𝟙_ (Rep ℤ L.Gal)) ◁ (β_ (L.rep F) (𝟙_ (Rep ℤ L.Gal))).hom) ≫
-          (α_ (𝟙_ (Rep ℤ L.Gal)) (𝟙_ (Rep ℤ L.Gal)) (L.rep F)).inv ≫
-          ((λ_ (𝟙_ (Rep ℤ L.Gal))).hom ▷ L.rep F) ≫ (λ_ (L.rep F)).hom
-      rw [braiding_tensorUnit_right]
-      monoidal
+    -- `Rep.trivial ℤ L.Gal ℤ` is the tensor unit `𝟙_ (Rep ℤ L.Gal)` by definition, so the
+    -- unitor identity and the exchange lemma below apply to it directly.
+    have hstruct : ((λ_ (L.rep F)).hom ▷ Rep.trivial ℤ L.Gal ℤ) ≫ (ρ_ (L.rep F)).hom = _ :=
+      leftUnitor_whiskerRight_comp_rightUnitor_eq (L.rep F)
     simp only [Int.reduceAdd]
     rw [TateCohomology.cup_map_left, ← ModuleCat.comp_apply, ← Functor.map_comp, hstruct,
       Functor.map_comp, Functor.map_comp, Functor.map_comp, Functor.map_comp,
       ModuleCat.comp_apply, ModuleCat.comp_apply, ModuleCat.comp_apply, ModuleCat.comp_apply]
-    -- Reassociate so that graded commutativity can exchange the degree-two factors.
-    have hAssoc₁ := TateCohomology.cup_assoc
-      (𝟙_ (Rep ℤ L.Gal)) (L.rep F) (Rep.trivial ℤ L.Gal ℤ)
-      (p := -2) (q := 2) (s := 2) (r₁ := 0) (r₂ := 4) (r := 2)
-      (by omega) (by omega) (by omega) sigma
+    have key := TateCohomology.cup_right_comm (𝟙_ (Rep ℤ L.Gal)) (L.rep F) (𝟙_ (Rep ℤ L.Gal))
+      (p := -2) (q := 2) (s := 2) (r₁ := 0) (r₁' := 0) (r := 2)
+      (by omega) (by omega) (by omega) (by omega) sigma
       ((L.tateHIsoH F 2).inv (cf.fundamentalClass L)) (L.characterConnectingClass chi)
-    have hAssoc₁' :
-        (tateCohomologyFunctor 2).map
-            (α_ (𝟙_ (Rep ℤ L.Gal)) (L.rep F) (Rep.trivial ℤ L.Gal ℤ)).hom
-          (TateCohomology.cup ((𝟙_ (Rep ℤ L.Gal)) ⊗ L.rep F)
-            (Rep.trivial ℤ L.Gal ℤ) 0 2 2 (by omega)
-            (TateCohomology.cup (Rep.trivial ℤ L.Gal ℤ) (L.rep F) (-2) 2 0 (by omega)
-              sigma ((L.tateHIsoH F 2).inv (cf.fundamentalClass L)))
-            (L.characterConnectingClass chi)) =
-          TateCohomology.cup (𝟙_ (Rep ℤ L.Gal))
-            ((L.rep F) ⊗ Rep.trivial ℤ L.Gal ℤ) (-2) 4 2 (by omega) sigma
-            (TateCohomology.cup (L.rep F) (Rep.trivial ℤ L.Gal ℤ) 2 2 4 (by omega)
-              ((L.tateHIsoH F 2).inv (cf.fundamentalClass L))
-              (L.characterConnectingClass chi)) := by
-      exact hAssoc₁
-    rw [hAssoc₁', ← TateCohomology.cup_map_right, TateCohomology.cup_gradedComm]
-    rw [Int.negOnePow_even (2 * 2) ⟨2, rfl⟩, one_smul]
-    -- Reassociate back; the intervening associator and its inverse then cancel.
-    have hAssoc₂ := TateCohomology.cup_assoc
-      (𝟙_ (Rep ℤ L.Gal)) (Rep.trivial ℤ L.Gal ℤ) (L.rep F)
-      (p := -2) (q := 2) (s := 2) (r₁ := 0) (r₂ := 4) (r := 2)
-      (by omega) (by omega) (by omega) sigma (L.characterConnectingClass chi)
-      ((L.tateHIsoH F 2).inv (cf.fundamentalClass L))
-    have hAssoc₂' :
-        (tateCohomologyFunctor 2).map
-            (α_ (𝟙_ (Rep ℤ L.Gal)) (Rep.trivial ℤ L.Gal ℤ) (L.rep F)).hom
-          (TateCohomology.cup ((𝟙_ (Rep ℤ L.Gal)) ⊗ Rep.trivial ℤ L.Gal ℤ)
-            (L.rep F) 0 2 2 (by omega)
-            (TateCohomology.cup (Rep.trivial ℤ L.Gal ℤ) (Rep.trivial ℤ L.Gal ℤ)
-              (-2) 2 0 (by omega) sigma (L.characterConnectingClass chi))
-            ((L.tateHIsoH F 2).inv (cf.fundamentalClass L))) =
-          TateCohomology.cup (𝟙_ (Rep ℤ L.Gal))
-            (Rep.trivial ℤ L.Gal ℤ ⊗ L.rep F) (-2) 4 2 (by omega) sigma
-            (TateCohomology.cup (Rep.trivial ℤ L.Gal ℤ) (L.rep F) 2 2 4 (by omega)
-              (L.characterConnectingClass chi)
-              ((L.tateHIsoH F 2).inv (cf.fundamentalClass L))) := by
-      exact hAssoc₂
-    have hcancel (z : tateCohomology
-        (((𝟙_ (Rep ℤ L.Gal)) ⊗ Rep.trivial ℤ L.Gal ℤ) ⊗ L.rep F) 2) :
-        (tateCohomologyFunctor 2).map
-            (α_ (𝟙_ (Rep ℤ L.Gal)) (Rep.trivial ℤ L.Gal ℤ) (L.rep F)).inv
-          ((tateCohomologyFunctor 2).map
-            (α_ (𝟙_ (Rep ℤ L.Gal)) (Rep.trivial ℤ L.Gal ℤ) (L.rep F)).hom z) = z := by
-      rw [← ModuleCat.comp_apply, ← Functor.map_comp, Iso.hom_inv_id,
-        (tateCohomologyFunctor 2).map_id]
-      rfl
-    rw [← hAssoc₂', hcancel, ← TateCohomology.cup_map_left]
+    rw [Int.negOnePow_even (2 * 2) ⟨2, rfl⟩, one_smul] at key
+    -- The goal mixes `Rep.trivial ℤ L.Gal ℤ` with `𝟙_ (Rep ℤ L.Gal)`, which are definitionally
+    -- equal (Mathlib's `tensorUnit := Rep.trivial k G k`) but not syntactically: `erw` matches
+    -- `key` up to this unfolding, and the final `rfl` closes the goal by the same identification.
+    erw [key]
+    rw [← TateCohomology.cup_map_left]
+    rfl
   rw [hcup, cf.inv_cupFundamentalClass_zero]
   -- The layer's degree `-2` identification is the negative of the generic one, which turns the
   -- generic pairing `-χ(σ)` into `χ(σ)`.
@@ -456,8 +404,9 @@ theorem character_artinMap (a : F.level L.ground)
 /-- **Uniqueness of the Artin map**: a homomorphism `φ` from the ground level to the abelianized
 Galois group which satisfies the character formula `χ (φ a) = inv (a₀ ∪ δχ)` for every `a` and
 every character `χ` is the Artin map. -/
-theorem eq_artinMap_of_character (φ : F.level L.ground →+ Additive (Abelianization L.Gal))
-    (hφ : ∀ (a : F.level L.ground) (chi : Additive (Abelianization L.Gal) →+ AddCircle (1 : ℚ)),
+theorem eq_artinMap_of_character (φ : F.level L.ground →+ Additive (Group.Abelianization L.Gal))
+    (hφ : ∀ (a : F.level L.ground) (chi : Additive (Group.Abelianization L.Gal) →+ AddCircle (1 :
+        ℚ)),
       chi (φ a) = cf.inv L (L.artinCharacterCup F a chi)) :
     φ = cf.artinMap L := by
   refine AddMonoidHom.ext fun a ↦ sub_eq_zero.mp (CharacterModule.eq_zero_of_character_apply ?_)

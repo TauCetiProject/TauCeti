@@ -29,12 +29,10 @@ N(α, β) B(x(α + β), x(-α - β))
   = N(β, -α - β) B(x α, x(-α)).
 ```
 
-The Killing factors are nonzero and explicitly evaluated by the preceding `IsSl2System` API, so
-this is a genuine relation between the two constants rather than a vacuous equality. Together
-these are the symmetry relations used when a normalized root-vector system is rescaled coherently
-to a Chevalley basis. They advance the explicit Chevalley--Demazure construction in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`; the existence of the coherent rescaling is not asserted
-here.
+The Killing factors are nonzero and explicitly evaluated by the preceding `IsSl2System` API, so this
+is a genuine relation between the two constants rather than a vacuous equality. Together these are
+the symmetry relations used when a normalized root-vector system is rescaled coherently to a
+Chevalley basis; the existence of the coherent rescaling is not asserted here.
 
 ## Main results
 
@@ -145,6 +143,24 @@ theorem structureConstant_mul_killingForm_eq (hα : α.IsNonZero) :
     _ = hx.structureConstant β (-γ) (-α) hα.neg hβγ *
         killingForm K L (x α) (x (-α)) := by
       simp
+
+/-- Cyclic symmetry followed by skew-symmetry relates the opposite-root constant to the
+constant for the remaining step of the root string. -/
+theorem structureConstant_neg_neg_mul_killingForm_eq (hβ : β.IsNonZero) :
+    hx.structureConstant (-α) (-β) (-γ) hγ.neg (by
+        rw [Weight.coe_neg, Weight.coe_neg, Weight.coe_neg, hαβ]
+        abel) * killingForm K L (x γ) (x (-γ)) =
+      -(hx.structureConstant (-α) γ β hβ (by
+          rw [Weight.coe_neg, hαβ]
+          abel) * killingForm K L (x β) (x (-β))) := by
+  have hαγ : (β : H → K) = ((-α : Weight K H L) : H → K) + γ := by
+    rw [Weight.coe_neg, hαβ]
+    abel
+  have hγα : (β : H → K) = (γ : H → K) + ((-α : Weight K H L) : H → K) :=
+    hαγ.trans (add_comm _ _)
+  have h := hx.structureConstant_mul_killingForm_eq γ (-α) β hβ hγα hγ
+  rw [hx.structureConstant_skew (-α) γ β hβ hαγ, neg_mul] at h
+  exact h.symm
 
 end IsSl2System
 

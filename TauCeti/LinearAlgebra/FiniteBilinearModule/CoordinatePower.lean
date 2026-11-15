@@ -33,6 +33,8 @@ discriminant-module coordinates.
 * `TauCeti.FiniteQuadraticModule.coordinatePower`: the summed quadratic map on `ι → A`.
 * `TauCeti.FiniteQuadraticModule.isIsotropic_coordinatePower_iff`: the coordinate-sum criterion
   for quadratic isotropy.
+* `TauCeti.FiniteQuadraticModule.Isometry.coordinatePowerSigned`: the isometry of coordinate
+  powers given by signs and a relabelling of coordinates.
 
 ## References
 
@@ -266,6 +268,29 @@ theorem Isometry.coordinatePower_toFiniteBilinearModule (f : Isometry A B)
     _ = (f.toFiniteBilinearModule.coordinatePower ι x) i :=
       (FiniteBilinearModule.Isometry.coordinatePower_apply f.toFiniteBilinearModule ι x i).symm
     _ = ((f.toFiniteBilinearModule.coordinatePower ι).toAddEquiv x) i := (rfl)
+
+/-- **Signed coordinate changes are isometries.**  For signs `u : ι → ℤˣ` and a relabelling
+`e : ι ≃ κ` of coordinates, multiplying the `i`-th coordinate of a word by `u i` and placing it in
+coordinate `e i` is an isometry of coordinate powers, because `q(-x) = q(x)`. -/
+def Isometry.coordinatePowerSigned (A : FiniteQuadraticModule.{u}) {ι : Type v} {κ : Type w}
+    [Fintype ι] [Fintype κ] (u : ι → ℤˣ) (e : ι ≃ κ) :
+    Isometry (A.coordinatePower ι) (A.coordinatePower κ) where
+  toLinearEquiv := (LinearEquiv.piCongrRight fun i ↦ LinearEquiv.smulOfUnit (u i)).trans
+    (LinearEquiv.funCongrLeft ℤ A e.symm)
+  map_app' x := by
+    rw [coordinatePower_quadratic, coordinatePower_quadratic]
+    refine (e.symm.sum_comp fun i ↦ A.quadratic (u i • x i)).trans
+      (Finset.sum_congr rfl fun i _ ↦ ?_)
+    rw [Units.smul_def, QuadraticMap.map_smul, ← Units.val_mul, Int.units_mul_self, Units.val_one,
+      one_smul]
+
+/-- A signed coordinate change multiplies the source coordinate of each target coordinate by
+its sign. -/
+@[simp]
+theorem Isometry.coordinatePowerSigned_apply (A : FiniteQuadraticModule.{u}) {ι : Type v}
+    {κ : Type w} [Fintype ι] [Fintype κ] (u : ι → ℤˣ) (e : ι ≃ κ) (x : ι → A) (j : κ) :
+    Isometry.coordinatePowerSigned A u e x j = u (e.symm j) • x (e.symm j) :=
+  (rfl)
 
 end Isometry
 

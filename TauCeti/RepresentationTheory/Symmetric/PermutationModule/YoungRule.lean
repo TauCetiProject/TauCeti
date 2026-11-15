@@ -38,7 +38,7 @@ They also have the same Gram matrix. Expanding `ψ^ν` and `ψ^ξ` in the Specht
 coefficient at the monomial of `ξ` is `n! ⟨ψ^ν, ψ^ξ⟩` on the left and, by
 `h_ν = ∑_μ K_{μν} s_μ`, `n! ∑_μ K_{μν} K_{μξ}` on the right
 (`TauCeti.sum_char_permutationModule_mul_char_permutationModule`). A unitriangular matrix is
-determined by its Gram matrix (`TauCeti.eq_of_transpose_mul_self_eq`), so `m = K`.
+determined by its Gram matrix (`Matrix.transpose_mul_self_inj`), so `m = K`.
 
 ## Main results
 
@@ -73,18 +73,18 @@ read on the left through the monomial expansion of the power sums and on the rig
 Schur expansion `h_ν = ∑_μ K_{μν} s_μ`. -/
 theorem sum_char_permutationModule_mul_char_permutationModule (ν ξ : n.Partition) :
     ∑ π : Perm (Fin n),
-        (permutationModule ν).ρ.character π * (permutationModule ξ).ρ.character π =
+        (permutationModule (R := ℚ) ν).ρ.character π * (permutationModule (R := ℚ)
+          ξ).ρ.character π =
       n.factorial * ∑ μ : n.Partition, (kostkaNumber μ ν * kostkaNumber μ ξ : ℚ) := by
   -- a partition of `n` has at most `n` parts, so `n` letters record its sorted monomial
   have hξ : ξ.parts.card ≤ Fintype.card (Fin n) := by
-    have h := Multiset.card_nsmul_le_sum (s := ξ.parts) (a := 1) fun x hx => ξ.parts_pos hx
-    rw [smul_eq_mul, mul_one, ξ.parts_sum] at h
-    rwa [Fintype.card_fin]
+    rw [Fintype.card_fin]
+    exact ξ.card_parts_le
   have key := congrArg (fun p : MvPolynomial (Fin n) ℚ => p.coeff (partWeight (Fin n) ξ))
     (sum_card_fixedPoints_smul_psumPart_partition (σ := Fin n) ℚ ν)
   simp only [← Nat.cast_smul_eq_nsmul ℚ, coeff_sum, coeff_smul, smul_eq_mul,
     coeff_partWeight_psumPart_partition ℚ _ ξ hξ,
-    coeff_hsymmPart_partWeight ν ξ (by rwa [colLen_zero_diagramOf])] at key
+    coeff_hsymmPart_partWeight ν ξ (by rwa [YoungDiagram.colLen_zero_ofPartition])] at key
   rw [← key]
   exact Finset.sum_congr rfl fun π _ => by rw [char_permutationModule, char_permutationModule]
 
@@ -94,10 +94,10 @@ multiplicity**: for a Young diagram `D` and a partition `μ` of its size,
 the space of intertwiners from the Specht module of `D` to `M^μ`. -/
 theorem sum_spechtChar_shapePartition_mul_char_permutationModule (D : YoungDiagram)
     (μ : D.card.Partition) :
-    ∑ π, (spechtChar (shapePartition D) π : ℚ) * (permutationModule μ).ρ.character π =
+    ∑ π, (spechtChar (shapePartition D) π : ℚ) * (permutationModule (R := ℚ) μ).ρ.character π =
       D.card.factorial * spechtMultiplicity D μ := by
   have h := Representation.card_inv_mul_sum_char_mul_char_eq_finrank
-    (spechtSubrepresentation D).toRepresentation (permutationModule μ).ρ
+    (spechtSubrepresentation (R := ℚ) D).toRepresentation (permutationModule (R := ℚ) μ).ρ
   rw [← spechtMultiplicity_def, Nat.card_perm, Nat.card_fin] at h
   have hfac : (D.card.factorial : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_pos _).ne'
   rw [← h, mul_inv_cancel_left₀ hfac]
@@ -109,10 +109,10 @@ theorem sum_spechtChar_shapePartition_mul_char_permutationModule (D : YoungDiagr
 /-- The pairing of `χ^λ` with `ψ^ν` vanishes unless `λ` dominates `ν`: this is the vanishing of the
 Specht multiplicity outside the dominance cone. -/
 private theorem sum_spechtChar_mul_char_permutationModule_eq_zero {l ν : n.Partition}
-    (h : ¬Dominates l ν) :
-    ∑ π, (spechtChar l π : ℚ) * (permutationModule ν).ρ.character π = 0 := by
-  obtain ⟨D, hc, rfl⟩ : ∃ (D : YoungDiagram) (hc : D.card = n), toPartition D hc = l :=
-    ⟨_, _, toPartition_diagramOf l⟩
+    (h : ¬l.Dominates ν) :
+    ∑ π, (spechtChar l π : ℚ) * (permutationModule (R := ℚ) ν).ρ.character π = 0 := by
+  obtain ⟨D, hc, rfl⟩ : ∃ (D : YoungDiagram) (hc : D.card = n), D.toPartition hc = l :=
+    ⟨_, _, YoungDiagram.toPartition_ofPartition (p := l)⟩
   subst hc
   rw [toPartition_eq_shapePartition] at h ⊢
   rw [sum_spechtChar_shapePartition_mul_char_permutationModule,
@@ -121,9 +121,9 @@ private theorem sum_spechtChar_mul_char_permutationModule_eq_zero {l ν : n.Part
 /-- The pairing of `χ^λ` with `ψ^λ` is `1`, up to the factor `n!`: this is the diagonal Specht
 multiplicity. -/
 private theorem sum_spechtChar_mul_char_permutationModule_self (l : n.Partition) :
-    ∑ π, (spechtChar l π : ℚ) * (permutationModule l).ρ.character π = n.factorial := by
-  obtain ⟨D, hc, rfl⟩ : ∃ (D : YoungDiagram) (hc : D.card = n), toPartition D hc = l :=
-    ⟨_, _, toPartition_diagramOf l⟩
+    ∑ π, (spechtChar l π : ℚ) * (permutationModule (R := ℚ) l).ρ.character π = n.factorial := by
+  obtain ⟨D, hc, rfl⟩ : ∃ (D : YoungDiagram) (hc : D.card = n), D.toPartition hc = l :=
+    ⟨_, _, YoungDiagram.toPartition_ofPartition (p := l)⟩
   subst hc
   rw [toPartition_eq_shapePartition, sum_spechtChar_shapePartition_mul_char_permutationModule,
     spechtMultiplicity_self, Nat.cast_one, mul_one]
@@ -133,19 +133,20 @@ open scoped DominanceOrder in
 multiplicity `⟨χ^λ, ψ^ν⟩` of the Specht character `χ^λ` in the permutation character `ψ^ν` of
 `M^ν` is the Kostka number `K_{λν}`. -/
 theorem sum_spechtChar_mul_char_permutationModule (l ν : n.Partition) :
-    ∑ π, (spechtChar l π : ℚ) * (permutationModule ν).ρ.character π =
+    ∑ π, (spechtChar l π : ℚ) * (permutationModule (R := ℚ) ν).ρ.character π =
       n.factorial * kostkaNumber l ν := by
   have hfac : (n.factorial : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_pos n).ne'
   -- the matrix of multiplicities `m_{λν} = ⟨χ^λ, ψ^ν⟩` and the Kostka matrix
   let U : Matrix n.Partition n.Partition ℚ := Matrix.of fun l ν =>
-    (n.factorial : ℚ)⁻¹ * ∑ π, (permutationModule ν).ρ.character π * spechtChar l π
+    (n.factorial : ℚ)⁻¹ * ∑ π, (permutationModule (R := ℚ) ν).ρ.character π * spechtChar l π
   let V : Matrix n.Partition n.Partition ℚ := Matrix.of fun l ν => (kostkaNumber l ν : ℚ)
-  have hU : ∀ l ν : n.Partition, ∑ π, (spechtChar l π : ℚ) * (permutationModule ν).ρ.character π =
+  have hU : ∀ l ν : n.Partition, ∑ π, (spechtChar l π : ℚ) * (permutationModule (R := ℚ)
+    ν).ρ.character π =
       n.factorial * U l ν := fun l ν => by
     simp only [U, Matrix.of_apply, mul_inv_cancel_left₀ hfac, mul_comm]
   have hUV : U = V := by
-    refine eq_of_transpose_mul_self_eq (fun l ν h => ?_) (fun l ν h => ?_) (fun l => ?_)
-      (fun l => ?_) ?_
+    refine (Matrix.transpose_mul_self_inj (fun l ν h => ?_) (fun l ν h => ?_) (fun l => ?_)
+      (fun l => ?_)).1 ?_
     · rw [DominanceOrder.partition_le_iff]
       by_contra hd
       exact h (by rw [← mul_right_inj' hfac, ← hU, mul_zero,
@@ -158,15 +159,16 @@ theorem sum_spechtChar_mul_char_permutationModule (l ν : n.Partition) :
     · -- the Gram matrices agree: both are `⟨ψ^ν, ψ^ξ⟩`
       ext ν ξ
       simp only [Matrix.mul_apply, Matrix.transpose_apply]
-      have hE : ∀ π, ∑ l, U l ν * spechtChar l π = (permutationModule ν).ρ.character π :=
+      have hE : ∀ π, ∑ l, U l ν * spechtChar l π = (permutationModule (R := ℚ) ν).ρ.character π :=
         fun π => by
-          have h := eq_sum_spechtChar (ClassFunction.ofCharacter (permutationModule ν).ρ) π
+          have h := eq_sum_spechtChar (ClassFunction.ofCharacter (permutationModule (R := ℚ) ν).ρ) π
           simp only [ClassFunction.ofCharacter_apply] at h
           exact h.symm
       have hL : ∑ l, U l ν * U l ξ = (n.factorial : ℚ)⁻¹ * ∑ π,
-          (permutationModule ν).ρ.character π * (permutationModule ξ).ρ.character π := by
+          (permutationModule (R := ℚ) ν).ρ.character π * (permutationModule (R := ℚ)
+            ξ).ρ.character π := by
         have hUξ : ∀ l, U l ξ = (n.factorial : ℚ)⁻¹ *
-            ∑ π, (permutationModule ξ).ρ.character π * spechtChar l π := fun l => rfl
+            ∑ π, (permutationModule (R := ℚ) ξ).ρ.character π * spechtChar l π := fun l => rfl
         simp_rw [hUξ, Finset.mul_sum]
         rw [Finset.sum_comm]
         refine Finset.sum_congr rfl fun π _ => ?_
@@ -191,10 +193,10 @@ theorem spechtMultiplicity_eq_kostkaNumber (lam : YoungDiagram) (μ : lam.card.P
 `ψ^ν = ∑_λ K_{λν} χ^λ`. -/
 theorem char_permutationModule_eq_sum_kostkaNumber_mul_spechtChar (ν : n.Partition)
     (σ : Perm (Fin n)) :
-    (permutationModule ν).ρ.character σ =
+    (permutationModule (R := ℚ) ν).ρ.character σ =
       ∑ l : n.Partition, (kostkaNumber l ν : ℚ) * spechtChar l σ := by
   have hfac : (n.factorial : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_pos n).ne'
-  have h := eq_sum_spechtChar (ClassFunction.ofCharacter (permutationModule ν).ρ) σ
+  have h := eq_sum_spechtChar (ClassFunction.ofCharacter (permutationModule (R := ℚ) ν).ρ) σ
   simp only [ClassFunction.ofCharacter_apply] at h
   rw [h]
   refine Finset.sum_congr rfl fun l _ => ?_

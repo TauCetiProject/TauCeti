@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Fork
 import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Branch
+import TauCeti.Data.Fintype.Card.LT
 import TauCeti.LinearAlgebra.RootSystem.AffineDynkinType.Basic
 import Mathlib.Tactic.IntervalCases
 
@@ -28,6 +29,8 @@ family of components therefore rules out this configuration, which is
 
 * `IsSelfIntersectionMinusTwoChain.exists_weight_intersection_branch_eight_eq`: the finite `E₈`
   configuration is simply laced.
+* `IsSelfIntersectionMinusTwoChain.exists_weight_intersection_affineE8_eq`: the affine
+  configuration is simply laced, even when it exhausts the numerical type.
 * `TauCeti.NumericalType.IsSelfIntersectionMinusTwoChain.not_affineE8`: the affine `E₈`
   configuration cannot be a proper subgraph of `(-2)`-indices.
 -/
@@ -117,16 +120,23 @@ theorem exists_weight_intersection_branch_eight_eq
     · have : i = 6 := by omega
       simpa [this] using hz₆b
 
-/-- The affine `E₈` diagram cannot occur as a proper subgraph of `(-2)`-indices. Concretely,
-a chain of eight `(-2)`-indices cannot have a distinct ninth `(-2)`-index meeting the component
-`c₅` when the numerical type has any further component. This is
-[Stacks, Lemma 55.5.16](https://stacks.math.columbia.edu/tag/0C8P). -/
-theorem not_affineE8 {c : ℕ → T.Component}
-    (hc : T.IsSelfIntersectionMinusTwoChain 8 c)
-    (hcard : 9 < Fintype.card T.Component) {branch : T.Component}
+/-- Nine distinct components containing the affine `E₈` diagram are simply laced, whether
+or not they exhaust the numerical type: all their weights and displayed intersections agree,
+and there are no extra intersections. The chain is numbered from the long-arm endpoint,
+with the extra leaf meeting `c₅`. -/
+theorem exists_weight_intersection_affineE8_eq {c : ℕ → T.Component}
+    (hc : T.IsSelfIntersectionMinusTwoChain 8 c) {branch : T.Component}
     (hbranch_ne : ∀ i < 8, branch ≠ c i)
     (hbranch_self : T.intersection branch branch = -(2 * (T.weight branch : ℤ)))
-    (hbranch_pos : 0 < T.intersection (c 5) branch) : False := by
+    (hbranch_pos : 0 < T.intersection (c 5) branch) :
+    ∃ w : ℕ+, (∀ i < 8, (T.weight (c i) : ℤ) = w) ∧
+      (T.weight branch : ℤ) = w ∧
+      (∀ i, i + 1 < 8 → T.intersection (c i) (c (i + 1)) = w) ∧
+      T.intersection (c 5) branch = w ∧
+      ∀ i < 8, i ≠ 5 → T.intersection (c i) branch = 0 := by
+  have hcard : 8 < Fintype.card T.Component := by
+    have := hc.le_card_snoc hbranch_ne
+    omega
   -- The first seven chain components and the leaf form a proper fork, identifying all entries
   -- except those involving the right endpoint `c 7`.
   have hf : T.IsSelfIntersectionMinusTwoFork 7 c branch := {
@@ -171,11 +181,25 @@ theorem not_affineE8 {c : ℕ → T.Component}
     · exact hf.branch_intersection_eq_zero hi7 (by omega)
     · have : i = 7 := by omega
       simpa [this] using hbranch7
+  exact ⟨w, hweight, hwb, hedge', hab, hbranch_zero⟩
+
+/-- The affine `E₈` diagram cannot occur as a proper subgraph of `(-2)`-indices. Concretely,
+a chain of eight `(-2)`-indices cannot have a distinct ninth `(-2)`-index meeting the component
+`c₅` when the numerical type has any further component. This is
+[Stacks, Lemma 55.5.16](https://stacks.math.columbia.edu/tag/0C8P). -/
+theorem not_affineE8 {c : ℕ → T.Component}
+    (hc : T.IsSelfIntersectionMinusTwoChain 8 c)
+    (hcard : 9 < Fintype.card T.Component) {branch : T.Component}
+    (hbranch_ne : ∀ i < 8, branch ≠ c i)
+    (hbranch_self : T.intersection branch branch = -(2 * (T.weight branch : ℤ)))
+    (hbranch_pos : 0 < T.intersection (c 5) branch) : False := by
+  obtain ⟨w, hweight, hwb, -, hab, hbranch_zero⟩ :=
+    hc.exists_weight_intersection_affineE8_eq hbranch_ne hbranch_self hbranch_pos
   have hentry {i j : ℕ} (hi : i < 8) (hj : j < 8) :
       T.intersection (c i) (c j) =
         if i = j then -(2 * (w : ℤ))
         else if i + 1 = j ∨ j + 1 = i then w else 0 := by
-    exact hc.intersection_eq_ite (by omega) hweight hedge' hi hj
+    exact hc.intersection_eq_ite (by omega) hweight hi hj
   have hbranch_entry {i : ℕ} (hi : i < 8) :
       T.intersection (c i) branch = if i = 5 then (w : ℤ) else 0 := by
     split_ifs with h
@@ -188,9 +212,8 @@ theorem not_affineE8 {c : ℕ → T.Component}
   let e : Fin 9 → Fin AffineDynkinType.E8.nodes := ![8, 7, 6, 5, 4, 0, 2, 3, 1]
   let y : ℕ → ℤ := fun i ↦
     if hi : i < 9 then AffineDynkinType.E8.marks (e ⟨i, hi⟩) else 0
-  have hd_inj : ∀ i < 9, ∀ j < 9, d i = d j → i = j := by
-    simpa only [d] using hc.injOn_snoc hbranch_ne
-  refine T.not_forall_sum_intersection_mul_nonneg_of_pos hd_inj hcard (y := y) ?_ ?_ ?_
+  refine T.not_forall_sum_intersection_mul_nonneg_of_pos (c := d)
+    (Fintype.exists_forall_lt_ne_of_lt_card d hcard) (y := y) ?_ ?_ ?_
   · intro i hi
     simpa [y, hi] using (AffineDynkinType.marks_pos (e ⟨i, hi⟩)).le
   · refine ⟨0, by omega, ?_⟩

@@ -112,7 +112,8 @@ theorem affineRep_commutator_x_y :
     affineRep ω η hω hη hωη hωη₁ ⁅x a b c, y a b c⁆ =
       AffineEquiv.constVAdd K K (((ω : K) - 1) * (1 - η)) := by
   rw [map_commutatorElement, affineRep_x, affineRep_y,
-    AffineEquiv.commutatorElement_homothetyUnitsMulHom_zero_one]
+    AffineEquiv.commutatorElement_homothetyUnitsMulHom, vsub_eq_sub, sub_zero, smul_eq_mul,
+    mul_one]
 
 /-- If a field of characteristic zero has units `ω ≠ 1`, `η ≠ 1` with `ω * η ≠ 1` and
 `ω ^ a = η ^ b = (ω * η) ^ c = 1`, then the commutator of the generators `x` and `y` of the

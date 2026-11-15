@@ -5,31 +5,46 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.FundamentalGroupoid.Basic
+public import Mathlib.AlgebraicTopology.FundamentalGroupoid.InducedMaps
 public import Mathlib.CategoryTheory.Groupoid.Subgroupoid
+public import Mathlib.CategoryTheory.IsConnected
 
 /-!
 # Basic results on fundamental groupoids
 
-This file records basic facts about fundamental groupoids used when comparing the fundamental
-groupoid of a space with those of its subspaces: the functor induced by an injective continuous
-map is injective on objects (as `CategoryTheory.Subgroupoid.im` requires), membership of a
-path class in a subgroupoid is unchanged by transporting its endpoints along equalities, and
-the induced functor of a composite acts on a single morphism as the composite of the induced
-functors.
+This file records basic facts about fundamental groupoids: over a path-connected space every pair
+of objects is joined by a morphism so the fundamental groupoid is connected as a category, and
+when comparing the fundamental groupoid of a space with those of its subspaces, the functor
+induced by an injective continuous map is injective on objects (as
+`CategoryTheory.Subgroupoid.im` requires), membership of a path class in a subgroupoid is
+unchanged by transporting its endpoints along equalities, and the induced functor of a composite
+acts on a single morphism as the composite of the induced functors.
 
 ## Main declarations
 
+* `FundamentalGroupoid.nonempty_hom`, `FundamentalGroupoid.instIsConnected`: the fundamental
+  groupoid of a path-connected space has nonempty hom-sets and is connected as a category.
 * `ContinuousMap.fundamentalGroupoid_map_obj_injective`: an injective continuous map
   induces a functor of fundamental groupoids that is injective on objects.
 * `Path.Homotopic.Quotient.cast_mem_arrows_iff`: membership of a path class in a
   subgroupoid of the fundamental groupoid is unchanged by casting its endpoints along equalities.
 * `FundamentalGroupoid.map_comp_map`: the morphism-level form of `FundamentalGroupoid.map_comp`.
+* `FundamentalGroupoidFunctor.homotopicMapsNatIso_app`: the component at `x` of the natural
+  isomorphism induced by a homotopy is the class of its trace at `x`.
 -/
 
 public section
 
 open CategoryTheory
+
+/-- The component at `x` of the natural isomorphism `homotopicMapsNatIso H` induced by a homotopy
+`H` is the class of the trace `H.evalAt x.as` of the homotopy at `x`. -/
+@[simp]
+lemma _root_.FundamentalGroupoidFunctor.homotopicMapsNatIso_app {X Y : Type*}
+    [TopologicalSpace X] [TopologicalSpace Y] {f₀ f₁ : C(X, Y)} (H : f₀.Homotopy f₁)
+    (x : FundamentalGroupoid X) :
+    (FundamentalGroupoidFunctor.homotopicMapsNatIso H).app x = ⟦H.evalAt x.as⟧ :=
+  rfl
 
 namespace Path.Homotopic.Quotient
 
@@ -51,6 +66,17 @@ theorem cast_mem_arrows_iff
 end Path.Homotopic.Quotient
 
 namespace FundamentalGroupoid
+
+/-- In the fundamental groupoid of a path-connected space every object receives a morphism from
+every other one, so the groupoid is connected. -/
+theorem nonempty_hom {Y : Type*} [TopologicalSpace Y]
+    [PathConnectedSpace Y] (x y : FundamentalGroupoid Y) : Nonempty (x ⟶ y) :=
+  ⟨Path.Homotopic.Quotient.mk (PathConnectedSpace.somePath x.as y.as)⟩
+
+/-- The fundamental groupoid of a path-connected space is connected as a category. -/
+instance instIsConnected {Y : Type*} [TopologicalSpace Y] [PathConnectedSpace Y] :
+    CategoryTheory.IsConnected (FundamentalGroupoid Y) :=
+  zigzag_isConnected fun x y ↦ .of_hom (nonempty_hom x y).some
 
 /-- The morphism-level form of `FundamentalGroupoid.map_comp`. The source and target of the two
 sides agree definitionally, so unlike the equality of functors this form needs no `eqToHom`. -/

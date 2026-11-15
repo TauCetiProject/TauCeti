@@ -142,8 +142,7 @@ noncomputable instance instAddCommGroup [Fact (IsAdic I)] :
         ext
         simp only [coe_add, coe_neg, coe_zero]
         exact (W.formalAddEval_comm (-P).hasEval P.hasEval).trans
-          (W.formalAddEval_formalInverseEval P.hasEval
-            (W.hasEval_formalInverseEval (Fact.out : IsAdic I) P.property))) with
+          (W.formalAddEval_formalInverseEval P.hasEval)) with
     add_comm := fun P Q ↦ by
       ext
       simpa only [coe_add] using W.formalAddEval_comm P.hasEval Q.hasEval }

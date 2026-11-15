@@ -30,7 +30,8 @@ reflection tables.
 ## Main definitions
 
 * `TauCeti.E7Minuscule.cartanMatrix`, `raisingMatrix`, and `loweringMatrix`: the integral Cartan,
-  raising, and lowering matrices.
+  raising, and lowering matrices; `weightTable_raisingMatrix` and `weightTable_loweringMatrix`
+  identify them with the matrices of the weight table.
 * `TauCeti.E7Minuscule.isSl2Triple`: the three matrices at a simple node form an `sl₂` triple.
 * `TauCeti.E7Minuscule.isSerreSystem`: the Chevalley--Serre relations between them over `ℤ`.
 * `TauCeti.E7Minuscule.serreRepresentation`: the induced representation of the type-`E₇` Serre
@@ -41,11 +42,6 @@ reflection tables.
 The numbering and weight diagram follow Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*,
 Plate VI. The minuscule action follows J. E. Humphreys, *Introduction to Lie Algebras and
 Representation Theory*, §13.4, and J. C. Jantzen, *Representations of Algebraic Groups*, II.2.
-
-This advances the explicit Chevalley--Demazure construction in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`. Its consumer is milestone L0 of
-`TauCetiRoadmap/CFSGStatement/README.md`, which needs an explicit simply connected type-`E₇`
-carrier.
 -/
 
 public section
@@ -110,9 +106,21 @@ def cartanMatrix (i : Fin 7) : Matrix (Fin 56) (Fin 56) ℤ :=
 def raisingMatrix (i : Fin 7) : Matrix (Fin 56) (Fin 56) ℤ :=
   weightTable.raisingMatrix i
 
+/-- The raising matrices of the minuscule weight table are the named raising generators. -/
+@[simp]
+theorem weightTable_raisingMatrix (i : Fin 7) :
+    weightTable.raisingMatrix i = raisingMatrix i :=
+  (rfl)
+
 /-- The lowering generator `F_i` in the minuscule weight basis. -/
 def loweringMatrix (i : Fin 7) : Matrix (Fin 56) (Fin 56) ℤ :=
   weightTable.loweringMatrix i
+
+/-- The lowering matrices of the minuscule weight table are the named lowering generators. -/
+@[simp]
+theorem weightTable_loweringMatrix (i : Fin 7) :
+    weightTable.loweringMatrix i = loweringMatrix i :=
+  (rfl)
 
 /-- The entrywise formula for the diagonal Cartan generator matrix. -/
 @[simp]

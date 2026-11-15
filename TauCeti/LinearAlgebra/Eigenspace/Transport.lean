@@ -8,17 +8,28 @@ module
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 
 /-!
-# Transporting eigenspaces along linear equivalences
+# Transporting eigenspaces along intertwining maps
 
 If a linear equivalence `e : U ≃ₗ[R] W` intertwines endomorphisms `f` of `U` and `g` of `W`,
 then every eigenspace of `f` is the preimage under `e` of the corresponding eigenspace of `g`.
 Mathlib's `Module.End.map_genEigenspace_le` gives only the inclusion of the image; this file
-records the equality available for an equivalence.
+records the equality available for an equivalence, and its analogue for an injective map, whose
+image of a generalized eigenspace of `f` consists of the generalized eigenvectors of `g` in its
+range.
+
+Over a domain, a surjective intertwining map into a torsion-free module carries each maximal
+generalized eigenspace of `f` onto the corresponding one of `g`, provided `U` is the sum of the
+maximal generalized eigenspaces of `f` (for instance, when `U` is finite-dimensional over an
+algebraically closed field). In particular, taking generalized eigenspaces is exact on quotients.
 
 ## Main results
 
 * `TauCeti.eigenspace_eq_comap_of_intertwine`: an intertwining linear equivalence identifies the
   eigenspaces of the two endomorphisms.
+* `TauCeti.map_genEigenspace_eq_of_intertwine`: an injective intertwining map carries the
+  generalized eigenspaces of `f` onto the generalized eigenvectors of `g` in its range.
+* `TauCeti.map_maxGenEigenspace_eq_of_intertwine`: a surjective intertwining map carries the
+  maximal generalized eigenspaces of `f` onto those of `g`.
 -/
 
 public section
@@ -46,5 +57,35 @@ theorem eigenspace_eq_comap_of_intertwine {e : U ≃ₗ[R] W} {f : U →ₗ[R] U
       e (f x) = g (e x) := h x
       _ = μ • e x := hx
       _ = e (μ • x) := (map_smul e μ x).symm
+
+/-- An injective linear map intertwining `f` and `g` carries each generalized eigenspace of `f`
+onto the generalized eigenvectors of `g` for the same eigenvalue and exponent that lie in its
+range. -/
+theorem map_genEigenspace_eq_of_intertwine {e : U →ₗ[R] W} (he : Function.Injective e)
+    {f : Module.End R U} {g : Module.End R W} (h : ∀ x, e (f x) = g (e x)) (μ : R) (k : ℕ∞) :
+    (f.genEigenspace μ k).map e = LinearMap.range e ⊓ g.genEigenspace μ k := by
+  rw [← Submodule.map_comap_eq]
+  congr 1
+  -- `e` intertwines each power of `f - μ` with the same power of `g - μ`.
+  have hμ (l : ℕ) (x : U) : e (((f - μ • 1) ^ l) x) = ((g - μ • 1) ^ l) (e x) := by
+    simpa using congr($(Module.End.commute_pow_left_of_commute
+      (f := e) (g := f - μ • 1) (g₂ := g - μ • 1) (by ext; simp [h]) l) x).symm
+  ext x
+  simp only [Module.End.mem_genEigenspace, Submodule.mem_comap, LinearMap.mem_ker, ← hμ,
+    map_eq_zero_iff e he]
+
+/-- A surjective linear map intertwining `f` and `g` carries each maximal generalized eigenspace
+of `f` onto the maximal generalized eigenspace of `g` for the same eigenvalue, provided the
+maximal generalized eigenspaces of `f` span the source. -/
+theorem map_maxGenEigenspace_eq_of_intertwine [IsDomain R] [Module.IsTorsionFree R W]
+    {e : U →ₗ[R] W} (he : Function.Surjective e) {f : Module.End R U} {g : Module.End R W}
+    (h : ∀ x, e (f x) = g (e x)) (hf : ⨆ μ, f.maxGenEigenspace μ = ⊤) (μ : R) :
+    (f.maxGenEigenspace μ).map e = g.maxGenEigenspace μ := by
+  have hle : (fun ν => (f.maxGenEigenspace ν).map e) ≤ g.maxGenEigenspace := fun ν =>
+    Module.End.map_genEigenspace_le e (LinearMap.ext fun x => (h x).symm) ν ⊤
+  have htop : ⨆ ν, (f.maxGenEigenspace ν).map e = ⊤ := by
+    rw [← Submodule.map_iSup, hf, Submodule.map_top, LinearMap.range_eq_top.mpr he]
+  exact congrFun (((Module.End.independent_maxGenEigenspace g).le_iff_eq_of_iSup_eq_top
+    htop).mp hle) μ
 
 end TauCeti

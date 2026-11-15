@@ -7,13 +7,17 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Filtration
 public import Mathlib.Topology.Algebra.Valued.WithVal
+public import Mathlib.RingTheory.AdicCompletion.Noetherian
 
 /-!
 # Completion at a place
 
 The completion of a field at a place carries the same normalized valuation and constant field
 embedding. Its valuation ring is a complete discrete valuation ring, and a uniformizer of the
-original field is still a uniformizer after completion.
+original field is still a uniformizer after completion. Completeness can be read through the
+order filtration: a sequence whose terms agree to increasing order has a limit to which it agrees
+to the same orders. In particular the completed valuation ring is complete for the adic topology
+of its maximal ideal, hence a Henselian local ring.
 
 The inclusion identifies every finite interval of the order filtration with the corresponding
 interval in the completion. In particular, completion does not change the residue field. These
@@ -110,6 +114,56 @@ instance completeSpace_completionIntegers : CompleteSpace P.completionPlace.inte
       Valuation.mem_valuationSubring_iff]
   exact (h.symm ▸ Valued.isClosed_valuationSubring P.Completion).completeSpace_coe
 
+/-- Each step of the order filtration of the completed field is closed. -/
+theorem isClosed_completionPlace_filtration (a : ℤ) :
+    IsClosed (P.completionPlace.filtration a : Set P.Completion) := by
+  obtain ⟨s, hs0, hs⟩ := P.exists_ne_zero_ord_eq a
+  convert Valued.isClosed_closedBall P.Completion
+    (Valued.v.restrict (P.completionEmbedding s)) using 1
+  ext x
+  simp only [SetLike.mem_coe, mem_filtration_iff, completionPlace_valuation, Set.mem_ofPred_eq,
+    Valuation.restrict_le_iff, valuation_completionEmbedding, P.valuation_eq_exp_neg_ord hs0, hs]
+
+/-- Completeness of the completed field, read through the order filtration: if the terms of a
+sequence agree to increasing order, `g n ≡ g m` to order `m` whenever `m ≤ n`, then some completed
+function agrees with each term `g n` to order `n`. -/
+theorem exists_forall_sub_mem_completionPlace_filtration {g : ℕ → P.Completion}
+    (hg : ∀ ⦃m n : ℕ⦄, m ≤ n → g n - g m ∈ P.completionPlace.filtration m) :
+    ∃ x : P.Completion, ∀ n : ℕ, x - g n ∈ P.completionPlace.filtration n := by
+  have hcauchy : CauchySeq g := by
+    refine (Valued.hasBasis_uniformity P.Completion ℤᵐ⁰).cauchySeq_iff.mpr fun γ _ ↦ ?_
+    obtain ⟨n, hn⟩ := WithZero.exists_exp_neg_natCast_lt
+      (MonoidWithZeroHom.ValueGroup₀.embedding_unit_ne_zero γ)
+    refine ⟨n, fun m hm l hl ↦ ?_⟩
+    have hdiff : g l - g m ∈ P.completionPlace.filtration n := by
+      simpa using (P.completionPlace.filtration n).sub_mem (hg hl) (hg hm)
+    rw [Set.mem_ofPred_eq, Valuation.restrict_lt_iff_lt_embedding]
+    exact (P.completionPlace.mem_filtration_iff.mp hdiff).trans_lt hn
+  obtain ⟨x, hx⟩ := cauchySeq_tendsto_of_complete hcauchy
+  refine ⟨x, fun n ↦ ?_⟩
+  have hclosed := (P.isClosed_completionPlace_filtration n).preimage
+    (continuous_id.sub (continuous_const (y := g n)))
+  exact hclosed.mem_of_tendsto hx (Filter.eventually_ge_atTop n |>.mono fun m hm ↦ hg hm)
+
+/-- The completed valuation ring is complete for the adic topology of its maximal ideal. In
+particular it is a Henselian local ring (`TauCeti.IsAdicComplete.henselianLocalRing`). -/
+instance isAdicComplete_completionIntegers :
+    IsAdicComplete (IsLocalRing.maximalIdeal P.completionPlace.integers)
+      P.completionPlace.integers where
+  toIsHausdorff := inferInstance
+  prec' f hf := by
+    simp only [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top,
+      mem_maximalIdeal_pow_iff_coe_mem_filtration] at hf ⊢
+    obtain ⟨x, hx⟩ := P.exists_forall_sub_mem_completionPlace_filtration
+      (g := fun n ↦ (f n : P.Completion)) fun m n hmn ↦ by
+        simpa using (P.completionPlace.filtration m).neg_mem (hf hmn)
+    have hx0 : x ∈ P.completionPlace.integers := by
+      have h := (P.completionPlace.filtration 0).add_mem (hx 0)
+        (P.completionPlace.mem_filtration_zero_iff.mpr (f 0).2)
+      simpa [P.completionPlace.mem_filtration_zero_iff] using h
+    refine ⟨⟨x, hx0⟩, fun n ↦ ?_⟩
+    simpa using (P.completionPlace.filtration n).neg_mem (hx n)
+
 /-- A completed function can be approximated by a function in `F` to any prescribed order. -/
 theorem exists_sub_completionEmbedding_mem_filtration (x : P.Completion) (b : ℤ) :
     ∃ y : F, x - P.completionEmbedding y ∈ P.completionPlace.filtration b := by
@@ -127,11 +181,14 @@ theorem exists_sub_completionEmbedding_mem_filtration (x : P.Completion) (b : �
   exact hy.le
 
 /-- An element of the completed filtration has an approximation in the original filtration,
-with error in any smaller step. -/
-theorem exists_filtration_sub_completionEmbedding_mem {a b : ℤ} (hab : a ≤ b)
+with error in any step; for a step below the given one, `0` already approximates. -/
+theorem exists_filtration_sub_completionEmbedding_mem {a : ℤ} (b : ℤ)
     (x : P.completionPlace.filtration a) :
     ∃ y : P.filtration a,
       (x : P.Completion) - P.completionEmbedding y ∈ P.completionPlace.filtration b := by
+  by_cases hab : a ≤ b
+  swap
+  · exact ⟨0, by simpa using P.completionPlace.filtration_antitone (not_le.mp hab).le x.2⟩
   obtain ⟨y, hy⟩ := P.exists_sub_completionEmbedding_mem_filtration x b
   have hya : P.completionEmbedding y ∈ P.completionPlace.filtration a := by
     have h := (P.completionPlace.filtration a).sub_mem x.2
@@ -151,7 +208,7 @@ theorem completionFiltrationMap_apply (a : ℤ) (x : P.filtration a) :
 
 /-- Completion preserves every finite interval of the order filtration. The isomorphism is
 induced by the canonical embedding, rather than by choices of representatives. -/
-noncomputable def completionFiltrationQuotientEquiv {a b : ℤ} (hab : a ≤ b) :
+noncomputable def completionFiltrationQuotientEquiv (a b : ℤ) :
     (P.filtration a ⧸ (P.filtration b).submoduleOf (P.filtration a)) ≃ₗ[k]
       (P.completionPlace.filtration a ⧸
         (P.completionPlace.filtration b).submoduleOf (P.completionPlace.filtration a)) := by
@@ -174,7 +231,7 @@ noncomputable def completionFiltrationQuotientEquiv {a b : ℤ} (hab : a ≤ b) 
     exact P.completionEmbedding_mem_filtration_iff.mp h'
   · intro x
     obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective q' x
-    obtain ⟨y, hy⟩ := P.exists_filtration_sub_completionEmbedding_mem hab x
+    obtain ⟨y, hy⟩ := P.exists_filtration_sub_completionEmbedding_mem b x
     refine ⟨Submodule.Quotient.mk y, ?_⟩
     rw [Submodule.mapQ_apply, Submodule.Quotient.eq]
     have h := (P.completionPlace.filtration b).neg_mem hy
@@ -184,9 +241,8 @@ noncomputable def completionFiltrationQuotientEquiv {a b : ℤ} (hab : a ≤ b) 
 /-- The filtration quotient equivalence sends the class of a function to the class of its
 canonical image in the completion. -/
 @[simp]
-theorem completionFiltrationQuotientEquiv_apply_mk {a b : ℤ} (hab : a ≤ b)
-    (x : P.filtration a) :
-    P.completionFiltrationQuotientEquiv hab (Submodule.Quotient.mk x) =
+theorem completionFiltrationQuotientEquiv_apply_mk (a b : ℤ) (x : P.filtration a) :
+    P.completionFiltrationQuotientEquiv a b (Submodule.Quotient.mk x) =
       Submodule.Quotient.mk (P.completionFiltrationMap a x) := (rfl)
 
 /-- The canonical map of valuation rings induced by completion. -/
@@ -220,8 +276,7 @@ noncomputable def residueFieldEquivCompletion : P.ResidueField ≃ₐ[k]
   obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective (R := P.completionPlace.integers) x
   have hx : (x : P.Completion) ∈ P.completionPlace.filtration 0 :=
     P.completionPlace.mem_filtration_zero_iff.mpr x.2
-  obtain ⟨y, hy⟩ := P.exists_filtration_sub_completionEmbedding_mem (by norm_num : (0 : ℤ) ≤ 1)
-    ⟨x, hx⟩
+  obtain ⟨y, hy⟩ := P.exists_filtration_sub_completionEmbedding_mem 1 ⟨x, hx⟩
   let y' : P.integers := ⟨y, P.mem_filtration_zero_iff.mp y.2⟩
   refine ⟨IsLocalRing.residue P.integers y', ?_⟩
   rw [IsLocalRing.ResidueField.mapAlgHom_residue]
@@ -235,6 +290,14 @@ theorem residueFieldEquivCompletion_apply_residue (x : P.integers) :
     P.residueFieldEquivCompletion (IsLocalRing.residue P.integers x) =
       IsLocalRing.residue P.completionPlace.integers (P.completionIntegersEmbedding x) :=
   IsLocalRing.ResidueField.mapAlgHom_residue P.completionIntegersEmbedding x
+
+/-- Reading the residue of a function regular at `P` back in `F_P` gives its value at `P`. -/
+@[simp]
+theorem residueFieldEquivCompletion_symm_residue_completionIntegersEmbedding (x : P.integers) :
+    P.residueFieldEquivCompletion.symm
+        (IsLocalRing.residue P.completionPlace.integers (P.completionIntegersEmbedding x)) =
+      IsLocalRing.residue P.integers x := by
+  rw [← residueFieldEquivCompletion_apply_residue, AlgEquiv.symm_apply_apply]
 
 /-- Completing a place preserves its degree over the constants. -/
 @[simp]

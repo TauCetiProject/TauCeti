@@ -27,21 +27,24 @@ public section
 
 variable {ι ρ R : Type*}
 
-namespace TauCeti
+namespace Matrix
 
 /-- The matrix obtained from `G` by deleting the row indexed by `r`. -/
-def _root_.Matrix.deleteRow (G : Matrix ρ ι R) (r : ρ) : Matrix {s : ρ // s ≠ r} ι R :=
+def deleteRow (G : Matrix ρ ι R) (r : ρ) : Matrix {s : ρ // s ≠ r} ι R :=
   G.submatrix Subtype.val id
+
+/-- Deleting a row is taking the submatrix along the inclusion of the remaining row indices. -/
+theorem deleteRow_eq_submatrix (G : Matrix ρ ι R) (r : ρ) :
+    G.deleteRow r = G.submatrix Subtype.val id := (rfl)
 
 /-- Evaluation of a matrix after deleting a row. -/
 @[simp]
-theorem _root_.Matrix.deleteRow_apply (G : Matrix ρ ι R) (r : ρ) (s : {s : ρ // s ≠ r})
-    (i : ι) :
+theorem deleteRow_apply (G : Matrix ρ ι R) (r : ρ) (s : {s : ρ // s ≠ r}) (i : ι) :
     G.deleteRow r s i = G s i := (rfl)
 
 /-- A retained row of `deleteRow G r` is the corresponding row of `G`. -/
 @[simp]
-theorem _root_.Matrix.row_deleteRow (G : Matrix ρ ι R) (r : ρ) (s : {s : ρ // s ≠ r}) :
+theorem row_deleteRow (G : Matrix ρ ι R) (r : ρ) (s : {s : ρ // s ≠ r}) :
     (G.deleteRow r).row s = G.row s := (rfl)
 
-end TauCeti
+end Matrix

@@ -16,13 +16,14 @@ indecomposable exactly when `P / IP` is.
 
 Over a semiprimary ring with Jacobson radical `J`, the **top** of `P` is `P / JP`.  A projective
 module is indecomposable exactly when its top is simple.  For an indecomposable projective module
-`P`, the submodule `JP` is maximal and is the kernel of every surjection onto a simple module, and
-every such surjection is a projective cover.
+`P`, every surjection onto a nonzero module is a projective cover. The submodule `JP` is maximal
+and is the kernel of every surjection onto a nonzero semisimple module; such a target is necessarily
+simple and is canonically equivalent to the top of `P`.
 
 ## Main definitions
 
 * `TauCeti.IsIndecomposableModule.quotientJacobsonEquivOfSurjective`: the equivalence between the
-  top of an indecomposable projective module and any simple module it maps onto.
+  top of an indecomposable projective module and any nonzero semisimple module it maps onto.
 
 ## Main results
 
@@ -33,9 +34,11 @@ every such surjection is a projective cover.
   semiprimary ring, a projective module is indecomposable exactly when its top is simple.
 * `TauCeti.IsIndecomposableModule.isCoatom_jacobson_smul_top`: the radical of an
   indecomposable projective module is its unique maximal submodule, so it is the kernel of every
-  surjection onto a simple module (`TauCeti.ker_eq_jacobson_smul_top_of_surjective`).
-* `TauCeti.IsIndecomposableModule.isProjectiveCover_of_surjective`: such a surjection is a
-  projective cover.
+  nonzero map into a semisimple module (`TauCeti.ker_eq_jacobson_smul_top_of_ne_zero`).
+* `TauCeti.IsIndecomposableModule.isProjectiveCover_of_surjective`: every surjection onto a nonzero
+  module is a projective cover.
+* `TauCeti.IsIndecomposableModule.isSimpleModule_of_surjective`: every nonzero semisimple quotient
+  is simple.
 
 ## References
 
@@ -79,15 +82,11 @@ projective module `P` is indecomposable exactly when `P / IP` is. -/
 theorem isIndecomposableModule_quotient_smul_top_iff (hI : IsNilpotent I) :
     IsIndecomposableModule R (P ⧸ I • (⊤ : Submodule R P)) ↔ IsIndecomposableModule R P := by
   refine ⟨IsIndecomposableModule.of_quotient_smul_top hI, fun hP ↦ ?_⟩
-  let q := Ideal.endMapQ I P
-  have hker : ∀ f ∈ RingHom.ker q, IsNilpotent f :=
-    fun _ hf ↦ Ideal.isNilpotent_of_mem_ker_endMapQ I P hI hf
   rw [isIndecomposableModule_iff_nontrivial_and_forall_isIdempotentElem] at hP ⊢
   obtain ⟨_, h⟩ := hP
   refine ⟨Submodule.Quotient.nontrivial_iff.mpr
     (isSuperfluous_smul_top_of_isNilpotent hI).ne_top, fun g hg ↦ ?_⟩
-  obtain ⟨f, hf, rfl⟩ := exists_isIdempotentElem_eq_of_ker_isNilpotent q hker g
-    (RingHom.mem_range.mpr (Ideal.endMapQ_surjective I P g)) hg
+  obtain ⟨f, hf, rfl⟩ := Ideal.exists_isIdempotentElem_endMapQ_eq hI hg
   exact (h f hf).imp (fun hf0 ↦ by simp [hf0]) (fun hf1 ↦ by simp [hf1])
 
 /-- **A projective module is indecomposable exactly when its top is simple.**  Here `R` is
@@ -108,35 +107,44 @@ theorem IsIndecomposableModule.isCoatom_jacobson_smul_top [IsSemiprimaryRing R]
   rw [← isSimpleModule_iff_isCoatom]
   exact isIndecomposableModule_iff_isSimpleModule_quotient_jacobson_smul_top.mp h
 
-/-- **An indecomposable projective module is the projective cover of each of its simple
+/-- **An indecomposable projective module is the projective cover of each of its nonzero
 quotients.**  Over a semiprimary ring, any surjection from an indecomposable projective module onto
-a simple module is a projective cover. -/
+a nonzero module is a projective cover. -/
 theorem IsIndecomposableModule.isProjectiveCover_of_surjective [IsSemiprimaryRing R]
     (h : IsIndecomposableModule R P) (M : Type w) [AddCommGroup M] [Module R M]
-    [IsSimpleModule R M] (f : P →ₗ[R] M) (hf : Function.Surjective f) : IsProjectiveCover f where
-  projective := ‹_›
-  surjective := hf
-  isSuperfluous_ker :=
-    have := isIndecomposableModule_iff_isSimpleModule_quotient_jacobson_smul_top.mp h
-    ker_eq_jacobson_smul_top_of_surjective hf ▸
-      isSuperfluous_smul_top_of_isNilpotent IsSemiprimaryRing.isNilpotent
+    [Nontrivial M] (f : P →ₗ[R] M) (hf : Function.Surjective f) : IsProjectiveCover f := by
+  have := isIndecomposableModule_iff_isSimpleModule_quotient_jacobson_smul_top.mp h
+  have := (isProjectiveCover_mkQ_smul_top_of_isNilpotent
+    (P := P) (IsSemiprimaryRing.isNilpotent (R := R))).finite
+  exact isProjectiveCover_of_isSimpleModule_quotient_jacobson_smul_top hf
 
-/-- A surjection from an indecomposable projective module `P` onto a simple module induces the
-canonical equivalence from the simple top of `P` to that module. -/
+/-- A surjection from an indecomposable projective module `P` onto a nonzero semisimple module
+induces the canonical equivalence from the simple top of `P` to that module, which is therefore
+necessarily simple. -/
 noncomputable def IsIndecomposableModule.quotientJacobsonEquivOfSurjective [IsSemiprimaryRing R]
     (h : IsIndecomposableModule R P) (M : Type w) [AddCommGroup M] [Module R M]
-    [IsSimpleModule R M] (f : P →ₗ[R] M) (hf : Function.Surjective f) :
+    [IsSemisimpleModule R M] [Nontrivial M] (f : P →ₗ[R] M) (hf : Function.Surjective f) :
     (P ⧸ Ring.jacobson R • (⊤ : Submodule R P)) ≃ₗ[R] M :=
   have := isIndecomposableModule_iff_isSimpleModule_quotient_jacobson_smul_top.mp h
-  (Submodule.quotEquivOfEq _ _ (ker_eq_jacobson_smul_top_of_surjective hf).symm).trans
+  (Submodule.quotEquivOfEq _ _
+    (ker_eq_jacobson_smul_top_of_ne_zero (LinearMap.ne_zero_of_surjective hf)).symm).trans
     (f.quotKerEquivOfSurjective hf)
 
 @[simp]
 theorem IsIndecomposableModule.quotientJacobsonEquivOfSurjective_mk [IsSemiprimaryRing R]
     (h : IsIndecomposableModule R P) (M : Type w) [AddCommGroup M] [Module R M]
-    [IsSimpleModule R M] (f : P →ₗ[R] M) (hf : Function.Surjective f) (x : P) :
+    [IsSemisimpleModule R M] [Nontrivial M] (f : P →ₗ[R] M) (hf : Function.Surjective f) (x : P) :
     h.quotientJacobsonEquivOfSurjective M f hf (Submodule.Quotient.mk x) = f x := by
   simp [IsIndecomposableModule.quotientJacobsonEquivOfSurjective]
+
+/-- Every nonzero semisimple quotient of an indecomposable projective module over a semiprimary
+ring is simple. -/
+theorem IsIndecomposableModule.isSimpleModule_of_surjective [IsSemiprimaryRing R]
+    (h : IsIndecomposableModule R P) (M : Type w) [AddCommGroup M] [Module R M]
+    [IsSemisimpleModule R M] [Nontrivial M] (f : P →ₗ[R] M) (hf : Function.Surjective f) :
+    IsSimpleModule R M := by
+  have := isIndecomposableModule_iff_isSimpleModule_quotient_jacobson_smul_top.mp h
+  exact IsSimpleModule.congr (h.quotientJacobsonEquivOfSurjective M f hf).symm
 
 end Projective
 

@@ -16,10 +16,6 @@ For a commutative ring `R`, inversion of the generic upper-unitriangular matrix 
 coordinate bialgebra with an antipode. This file packages that structure as a commutative Hopf
 algebra and records that its polynomial coordinate ring is of finite type.
 
-This is the coordinate-Hopf-algebra part of the upper-unitriangular model in Layer 5,
-"Unipotent groups", of the ReductiveGroups roadmap. A subsequent closed-immersion module can
-identify its map to `GL_m` with the corresponding Hopf-ideal quotient.
-
 ## Main declarations
 
 * `TauCeti.UpperUnitriangular.antipode`: inverse-matrix evaluation on the coordinate ring.

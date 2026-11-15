@@ -39,6 +39,13 @@ that interval. Its smoothness in convex open subsets is developed in
 `TauCeti/Geometry/Manifold/ContMDiff/Subtype.lean`, and its Riemannian length in
 `TauCeti/Geometry/Manifold/Riemannian/Convex.lean`.
 
+In a linear ordered field, Mathlib identifies the segment between `a` and `b` with the unordered
+interval `[[a, b]]` (`segment_eq_uIcc`) and places the affine line map at times in `[0, 1]` on that
+segment (`lineMap_mem_segment`). The resulting membership statement is recorded here in the
+explicit affine form `t ↦ (b - a) * t + a`, which is how the oriented time reparametrization of
+the cylinder homotopy operator over `[[a, b]]` is written in
+`TauCeti/Analysis/Distribution/TestFunction/CylinderHomotopy.lean`.
+
 The affine half-open segment result is also recorded here: in an additive commutative group with a
 module structure over a linear ordered field, it identifies the image of a scalar interval under
 an affine parametrization with a segment whose terminal endpoint is removed.
@@ -46,14 +53,33 @@ an affine parametrization with a segment whose terminal endpoint is removed.
 ## Main results
 
 * `Set.convexSegment` — an affine segment in a convex set, clamped to `[0, 1]`.
+* `Set.sub_mul_add_mem_uIcc` — `(b - a) * t + a ∈ [[a, b]]` for `t ∈ [0, 1]`, in a linear
+  ordered field.
+* `Set.image_comp_lineMap_uIcc_zero_one` — reparametrizing a function on `[a, b]` by `lineMap a b`
+  from `[0, 1]` does not change its image, in a linear ordered field.
 * `TauCeti.mem_segment_zero_left_iff_sameRay_and_norm_le` —
   `m ∈ [0 -[ℝ] w] ↔ SameRay ℝ m w ∧ ‖m‖ ≤ ‖w‖`. Both conjuncts are needed.
 * `TauCeti.eq_of_mem_segment_zero_left_of_norm_eq` — the norm separates the points of `[0, w]`.
 * `TauCeti.mem_segment_zero_left_iff_real_inner_eq_norm_mul_and_norm_le` and
   `TauCeti.zero_mem_segment_iff_real_inner_eq_neg_norm_mul` — the two criteria in a real inner
   product space.
+* `TauCeti.add_smul_mem_segment` — a point `p + t • v` with `t` between `t₀` and `t₁` lies on
+  the segment from `p + t₀ • v` to `p + t₁ • v`.
 * `TauCeti.image_add_smul_Ico` — the affine image of `Ico 0 D` is a segment with its terminal
   endpoint removed.
+* `TauCeti.image_eq_segment_sdiff_of_forall_eq_add_smul` — a map equal to `c + d x • u` on a set
+  where `d` takes exactly the values in `Ico 0 D` has the half-open segment as its image.
+* `TauCeti.ne_neg_of_zero_notMem_segment_smul` — if the segment from `x` to `c • y` with `c > 0`
+  misses the origin, then `x ≠ -y`.
+* `TauCeti.mem_segment_lineMap_of_one_le` — a point `x` lies on the segment from `a` to any point
+  `lineMap a x T` with `1 ≤ T`, at or beyond `x` on the ray from `a` through `x`.
+* `TauCeti.exists_lineMap_endpoint` — the overlap of `[0, 1]` with its image under an affine map
+  `lineMap a b` of `𝕜`, when nondegenerate, has two ends each given by a point `u ∈ [0, 1]` with
+  `u` or `lineMap a b u` an end of `[0, 1]`.
+
+The overlap of `[0, 1]` with an affine image of itself, in a linear ordered field, is a closed
+interval whose ends come from ends of the two copies of `[0, 1]`. This is what an argument
+comparing two segments through their parameters needs.
 
 The origin-at-an-end and origin-in-the-middle criteria are consumed by
 `TauCeti/Analysis/Complex/Conformal/Poincare/Betweenness.lean`, which identifies the hyperbolic
@@ -63,6 +89,9 @@ is a real inner product space with `⟪w, z⟫_ℝ = (z * conj w).re`
 complex-number formulas.
 The affine half-open segment result is consumed by
 `TauCeti/Analysis/Complex/Conformal/SchwarzChristoffel/UnboundedEdge.lean`.
+The overlap result is consumed by `TauCeti/Geometry/Polygon/DoublePoint.lean`, which shows that
+two distinct edges of a simple polygon contain at most one pair of points with the same image
+under an affine regular projection.
 -/
 
 public section
@@ -109,6 +138,24 @@ theorem convexSegment_one (hs : Convex 𝕜 s) (x y : s) :
   simp
 
 end ClampedSegment
+
+section UIcc
+
+variable {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+
+/-- The affine map `t ↦ (b - a) * t + a` sends `[0, 1]` into the unordered interval `[[a, b]]`,
+whichever of `a` and `b` is larger. -/
+theorem sub_mul_add_mem_uIcc {a b t : 𝕜} (ht : t ∈ Icc (0 : 𝕜) 1) : (b - a) * t + a ∈ uIcc a b := by
+  simpa [← segment_eq_uIcc, AffineMap.lineMap_apply_ring', mul_comm] using
+    lineMap_mem_segment 𝕜 a b ht
+
+/-- Reparametrizing a function on `[a, b]` by `lineMap a b` from `[0, 1]` does not change the
+image. -/
+theorem image_comp_lineMap_uIcc_zero_one {α : Type*} (f : 𝕜 → α) (a b : 𝕜) :
+    (f ∘ AffineMap.lineMap a b) '' uIcc (0 : 𝕜) 1 = f '' uIcc a b := by
+  rw [image_comp, uIcc_of_le zero_le_one, ← segment_eq_image_lineMap, segment_eq_uIcc]
+
+end UIcc
 
 end Set
 
@@ -159,6 +206,20 @@ theorem eq_of_mem_segment_zero_left_of_norm_eq {m₁ m₂ : E} (h₁ : m₁ ∈ 
   · exact norm_injOn_ray_right hw (mem_segment_zero_left_iff_sameRay_and_norm_le.mp h₁).1
       (mem_segment_zero_left_iff_sameRay_and_norm_le.mp h₂).1 h
 
+/-- The broken path from `x` to `y'` through the meeting point of the segments `[x, x']` and
+`[y, y']` at time `t` is at most as long as the two pieces:
+`‖x - y'‖ ≤ t ‖x - x'‖ + (1 - t) ‖y - y'‖`. -/
+theorem norm_sub_le_of_smul_add_smul_eq {t : ℝ} (ht₀ : 0 ≤ t) (ht₁ : 0 ≤ 1 - t) {x x' y y' : E}
+    (he : (1 - t) • x + t • x' = (1 - t) • y + t • y') :
+    ‖x - y'‖ ≤ t * ‖x - x'‖ + (1 - t) * ‖y - y'‖ := by
+  have h₁ : x - ((1 - t) • x + t • x') = t • (x - x') := by module
+  have h₂ : ((1 - t) • x + t • x') - y' = (1 - t) • (y - y') := by rw [he]; module
+  calc ‖x - y'‖ = ‖(x - ((1 - t) • x + t • x')) + (((1 - t) • x + t • x') - y')‖ := by
+        rw [sub_add_sub_cancel]
+    _ ≤ ‖x - ((1 - t) • x + t • x')‖ + ‖((1 - t) • x + t • x') - y'‖ := norm_add_le _ _
+    _ = t * ‖x - x'‖ + (1 - t) * ‖y - y'‖ := by
+      rw [h₁, h₂, norm_smul, norm_smul, Real.norm_of_nonneg ht₀, Real.norm_of_nonneg ht₁]
+
 end Normed
 
 /-! ### Half-open affine segments -/
@@ -167,6 +228,15 @@ section HalfOpen
 
 variable {𝕜 E : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
   [AddCommGroup E] [Module 𝕜 E]
+
+/-- A point `p + t • v` of an affine line lies on the segment between its points of parameters
+`t₀` and `t₁` whenever `t` lies between `t₀` and `t₁`. -/
+theorem add_smul_mem_segment {p v : E} {t t₀ t₁ : 𝕜} (ht : t ∈ uIcc t₀ t₁) :
+    p + t • v ∈ segment 𝕜 (p + t₀ • v) (p + t₁ • v) := by
+  refine (mem_segment_translate 𝕜 p).2 ?_
+  rw [← segment_eq_uIcc] at ht
+  simpa using image_segment 𝕜 (LinearMap.toSpanSingleton 𝕜 E v).toAffineMap t₀ t₁ ▸
+    mem_image_of_mem _ ht
 
 /-- **A nonzero affine ray parametrizes a half-open segment.** If `y - x = D • u` with `D > 0`,
 then the points `x + t • u` for `0 ≤ t < D` are exactly the segment from `x` to `y` with `y`
@@ -203,7 +273,82 @@ theorem image_add_smul_Ico {x y u : E} {D : 𝕜} (hDpos : 0 < D) (hu : u ≠ 0)
     · rw [hdir]
       simp only [smul_smul]
 
+/-- **A map running along a nonzero ray is a half-open segment.** If `B x = c + d x • u` on `s` with
+`u ≠ 0`, where `d` maps `s` onto `Ico 0 D` with `0 < D` and `V - c = D • u`, then `B` maps `s` onto
+the segment from `c` to `V` with its endpoint `V` removed. -/
+theorem image_eq_segment_sdiff_of_forall_eq_add_smul {α : Type*} {s : Set α} {B : α → E}
+    {d : α → 𝕜} {D : 𝕜} {c u V : E} (hD : 0 < D) (hu : u ≠ 0) (hdimage : d '' s = Ico 0 D)
+    (hB : ∀ x ∈ s, B x = c + d x • u) (hV : V - c = D • u) :
+    B '' s = segment 𝕜 c V \ {V} := by
+  rw [← image_add_smul_Ico hD hu hV, ← hdimage, image_image]
+  exact image_congr hB
+
+/-- A point `x` lies on the segment from `a` to any point `lineMap a x T` with `1 ≤ T`, that is,
+to any point at or beyond `x` on the ray from `a` through `x`. -/
+theorem mem_segment_lineMap_of_one_le {a x : E} {T : 𝕜} (hT : 1 ≤ T) :
+    x ∈ segment 𝕜 a (AffineMap.lineMap a x T) := by
+  rw [segment_eq_image_lineMap]
+  refine ⟨T⁻¹, ⟨inv_nonneg.2 (zero_le_one.trans hT), inv_le_one_of_one_le₀ hT⟩, ?_⟩
+  rw [AffineMap.lineMap_lineMap_right, inv_mul_cancel₀ (zero_lt_one.trans_le hT).ne',
+    AffineMap.lineMap_apply_one]
+
 end HalfOpen
+
+/-! ### Overlaps of affine images of the unit interval -/
+
+section Overlap
+
+open AffineMap
+
+variable {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+
+/-- **The overlap of `[0, 1]` with an affine image of `[0, 1]`.** Let `f = lineMap a b` be an
+affine function on `𝕜` taking distinct values in `[0, 1]` at two points of `[0, 1]`. Then the
+overlap of `[0, 1]` with `f '' [0, 1]` is a nondegenerate interval, and its two ends are values
+`f u` at points `u ∈ [0, 1]` with `u` or `f u` an end of `[0, 1]`. -/
+theorem exists_lineMap_endpoint {a b t t' : 𝕜} (ht : t ∈ Icc 0 1) (ht' : t' ∈ Icc 0 1)
+    (hs : lineMap a b t ∈ Icc (0 : 𝕜) 1) (hs' : lineMap a b t' ∈ Icc (0 : 𝕜) 1)
+    (hne : lineMap a b t ≠ lineMap a b t') :
+    ∃ u₁ u₂ : 𝕜, lineMap a b u₁ ≠ lineMap a b u₂ ∧ ∀ u ∈ ({u₁, u₂} : Set 𝕜),
+      u ∈ Icc (0 : 𝕜) 1 ∧ lineMap a b u ∈ Icc (0 : 𝕜) 1 ∧
+        (u = 0 ∨ u = 1 ∨ lineMap a b u = 0 ∨ lineMap a b u = 1) := by
+  have hab : a ≠ b := by rintro rfl; simp at hne
+  have hI : Icc (0 : 𝕜) 1 ∩ lineMap a b '' Icc (0 : 𝕜) 1 = Icc (0 ⊔ (a ⊓ b)) (1 ⊓ (a ⊔ b)) := by
+    rw [← segment_eq_image_lineMap, segment_eq_uIcc, uIcc, Icc_inter_Icc]
+  have hmem {u : 𝕜} (hu : u ∈ Icc (0 : 𝕜) 1) (hfu : lineMap a b u ∈ Icc (0 : 𝕜) 1) :
+      lineMap a b u ∈ Icc (0 ⊔ (a ⊓ b)) (1 ⊓ (a ⊔ b)) :=
+    hI ▸ ⟨hfu, mem_image_of_mem _ hu⟩
+  have hlt : 0 ⊔ (a ⊓ b) < 1 ⊓ (a ⊔ b) := by
+    obtain ⟨h₁, h₂⟩ := hmem ht hs
+    obtain ⟨h₃, h₄⟩ := hmem ht' hs'
+    by_contra! hle
+    exact hne (le_antisymm (h₂.trans (hle.trans h₃)) (h₄.trans (hle.trans h₁)))
+  -- Each end of the overlap is `0`, `1`, `f 0 = a` or `f 1 = b`.
+  have key (e : 𝕜) (he : e ∈ Icc (0 ⊔ (a ⊓ b)) (1 ⊓ (a ⊔ b)))
+      (hcases : e = 0 ∨ e = 1 ∨ e = a ∨ e = b) :
+      ∃ u, lineMap a b u = e ∧ u ∈ Icc (0 : 𝕜) 1 ∧ lineMap a b u ∈ Icc (0 : 𝕜) 1 ∧
+        (u = 0 ∨ u = 1 ∨ lineMap a b u = 0 ∨ lineMap a b u = 1) := by
+    rw [← hI] at he
+    obtain ⟨he₁, u, hu, rfl⟩ := he
+    refine ⟨u, rfl, hu, he₁, ?_⟩
+    rcases hcases with h | h | h | h
+    · exact .inr (.inr (.inl h))
+    · exact .inr (.inr (.inr h))
+    · exact .inl ((lineMap_eq_left_iff.1 h).resolve_left hab)
+    · exact .inr (.inl ((lineMap_eq_right_iff.1 h).resolve_left hab))
+  obtain ⟨u₁, hu₁, h₁⟩ := key _ (left_mem_Icc.2 hlt.le) (by
+    rcases max_choice 0 (a ⊓ b) with h | h <;> rw [h]
+    · exact .inl rfl
+    · rcases min_choice a b with h' | h' <;> rw [h'] <;> simp)
+  obtain ⟨u₂, hu₂, h₂⟩ := key _ (right_mem_Icc.2 hlt.le) (by
+    rcases min_choice 1 (a ⊔ b) with h | h <;> rw [h]
+    · exact .inr (.inl rfl)
+    · rcases max_choice a b with h' | h' <;> rw [h'] <;> simp)
+  refine ⟨u₁, u₂, hu₁ ▸ hu₂ ▸ hlt.ne, ?_⟩
+  rintro u (rfl | rfl)
+  exacts [h₁, h₂]
+
+end Overlap
 
 /-! ### The inner-product forms -/
 
@@ -234,5 +379,25 @@ theorem zero_mem_segment_iff_real_inner_eq_neg_norm_mul :
     eq_comm, ← inner_eq_norm_mul_iff_real, inner_neg_right, norm_neg, neg_eq_iff_eq_neg]
 
 end InnerProduct
+
+/-! ### The antipode of a direction -/
+
+section Antipode
+
+variable {𝕜 E : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [AddCommGroup E]
+  [Module 𝕜 E] {x y : E} {c : 𝕜}
+
+/-- If the segment from `x` to a positive multiple `c • y` of `y` misses the origin, then `x` is
+not the antipode of `y`: the point of the segment with weights `c / (1 + c)` and `1 / (1 + c)`
+would be `0`. -/
+theorem ne_neg_of_zero_notMem_segment_smul (hc : 0 < c) (h : (0 : E) ∉ [x -[𝕜] c • y]) :
+    x ≠ -y := by
+  rintro rfl
+  refine h ⟨c / (1 + c), 1 / (1 + c), by positivity, by positivity, ?_, ?_⟩
+  · field_simp
+    ring
+  · rw [smul_neg, smul_smul, div_mul_eq_mul_div, one_mul, neg_add_cancel]
+
+end Antipode
 
 end TauCeti

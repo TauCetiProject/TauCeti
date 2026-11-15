@@ -41,11 +41,9 @@ inherited from `SemimoduleCat` along the faithful forgetful functor.
 
 ## References
 
-This is the monoidal-category part of Layer 1 of the Tau Ceti reductive-groups roadmap,
-`ReductiveGroups/README.md` in TauCetiRoadmap, which asks for the rigid monoidal category of
-finite-dimensional comodules. The construction is standard; see Sweedler, *Hopf Algebras*,
-Chapter 2. The categorical packaging follows Mathlib's monoidal structure on `SemimoduleCat`
-in `Mathlib.Algebra.Category.ModuleCat.Monoidal.Basic`.
+The construction is standard; see Sweedler, *Hopf Algebras*, Chapter 2. The categorical
+packaging follows Mathlib's monoidal structure on `SemimoduleCat` in
+`Mathlib.Algebra.Category.ModuleCat.Monoidal.Basic`.
 -/
 
 public section

@@ -19,9 +19,8 @@ real-linear changes of source and target coordinates. If `f : V → W` is consta
 `v' ↦ eW (f (eV.symm v'))` is constant-structure `J`-holomorphic for the transported almost complex
 structures.
 
-These are the chart-change lemmas needed before the analytic Heegaard Floer roadmap upgrades the
-normed-vector-space Cauchy--Riemann equation to tangent charts on almost complex manifolds. The
-almost complex structures themselves are transported by the linear-algebra API in
+These are linear coordinate-change lemmas for the flat constant-structure Cauchy--Riemann equation.
+The almost complex structures themselves are transported by the linear-algebra API in
 `TauCeti.Geometry.Symplectic.Transport`; this file adds the matching map-level calculus.
 
 ## Main declarations

@@ -44,6 +44,8 @@ the polynomial.
 * `TauCeti.IsGradedExtBoundedBy` and `TauCeti.IsGradedExtBounded`: a uniform cohomological
   vanishing bound across all internal degrees.
 * `TauCeti.IsGradedEulerAdmissible`: the two support conditions together.
+* `TauCeti.IsSlicewiseEulerAdmissible`: ordinary Euler-admissibility against every fixed target
+  shift `Y{j}`, without requiring finite internal support or a uniform cohomological bound.
 * `TauCeti.IsGradedEulerAdmissibleOn`: every pair in two object properties is graded
   Euler-admissible.
 * `TauCeti.gradedExtDimension`: the target-shift graded dimension in one cohomological degree.
@@ -51,13 +53,22 @@ the polynomial.
 
 ## Main results
 
-* `TauCeti.IsGradedEulerAdmissible.isEulerAdmissible`: a graded Euler-admissible pair is
+* `TauCeti.IsGradedEulerAdmissible.isEulerAdmissible` and
+  `TauCeti.IsGradedEulerAdmissible.isSlicewiseEulerAdmissible`: a graded Euler-admissible pair is
   ordinarily Euler-admissible against every fixed target shift.
-* `TauCeti.IsGradedEulerAdmissible.of_shortExact₂` and
-  `TauCeti.IsGradedEulerAdmissible.of_shortExact₂'`: graded Euler-admissibility is closed under
-  extensions in the second and the first variable.
+* `TauCeti.IsGradedEulerAdmissible.of_shortExact₂`,
+  `TauCeti.IsGradedEulerAdmissible.of_shortExact₂'`,
+  `TauCeti.IsSlicewiseEulerAdmissible.of_shortExact₂`, and
+  `TauCeti.IsSlicewiseEulerAdmissible.of_shortExact₂'`: graded and slicewise Euler-admissibility
+  are closed under extensions in the second and the first variable.
 * `TauCeti.gradedExtEuler_of_iso`: the q-Euler characteristic depends only on the isomorphism
   classes of the two objects.
+* `TauCeti.IsGradedEulerAdmissible.congr` and `TauCeti.gradedExtEuler_congr`: admissibility and
+  the q-Euler characteristic transport along linear equivalences of the bigraded `Ext` groups,
+  also between different graded categories.
+* `TauCeti.IsGradedEulerAdmissible.of_isZero_left` and
+  `TauCeti.IsGradedEulerAdmissible.of_isZero_right`: a pair with a zero entry is graded
+  Euler-admissible.
 * `TauCeti.isGradedEulerAdmissible_of_projective` and `TauCeti.gradedExtEuler_projective`:
   **graded projective evaluation**, `χ_q(P, Y) = ∑ j, q⁻ʲ dim_k Hom(P, Y{j})` for projective `P`.
 
@@ -66,8 +77,6 @@ the polynomial.
 * Zsuzsanna Dancso and Anthony Licata, "Koszul algebras and flow lattices", *Journal of
   Combinatorial Theory, Series A* 185 (2022), Section 2.2, for the bigraded Ext-Euler form and
   its q-antilinear/q-linear shift convention.
-* `TauCetiRoadmap/GrothendieckEulerForms/README.md`, Layers 5--6, "Graded Ext and graded descent"
-  and "q-Euler form".
 -/
 
 public section
@@ -76,7 +85,7 @@ namespace TauCeti
 
 open CategoryTheory CategoryTheory.Abelian LaurentPolynomial
 
-universe w v u t
+universe w w' v v' u u' t
 
 variable {C : Type u} [Category.{v} C] [Abelian C]
   (k : Type t) [Field k] [Linear k C] [HasExt.{w} C]
@@ -114,6 +123,14 @@ structure IsGradedEulerAdmissible (X Y : C) : Prop where
   /-- Uniform eventual vanishing in the cohomological degree. -/
   bounded : IsGradedExtBounded.{w} e X Y
 
+/-- A pair is **slicewise Euler-admissible** when it is ordinarily Euler-admissible against every
+fixed target shift `Y{j}`, with finite-dimensional `Ext` groups and a cohomological vanishing bound
+that may depend on `j`. Unlike `TauCeti.IsGradedEulerAdmissible`, neither finite internal support in
+a fixed cohomological degree nor a uniform cohomological bound across all shifts is required. -/
+structure IsSlicewiseEulerAdmissible (X Y : C) : Prop where
+  /-- Ordinary Euler-admissibility against each target shift `Y{j}`. -/
+  isEulerAdmissible (j : ℤ) : IsEulerAdmissible.{w} k X ((e ^ j).functor.obj Y)
+
 namespace IsGradedExtBoundedBy
 
 variable {e}
@@ -129,6 +146,16 @@ theorem isGradedExtBounded {X Y : C} {N : ℕ} (h : IsGradedExtBoundedBy.{w} e X
   ⟨N, h⟩
 
 end IsGradedExtBoundedBy
+
+variable {e} in
+/-- Finitely many pairs with eventually vanishing graded Ext have a common cohomological
+vanishing bound. -/
+theorem exists_forall_isGradedExtBoundedBy {ι : Type*} [Finite ι] {X Y : ι → C}
+    (h : ∀ i, IsGradedExtBounded.{w} e (X i) (Y i)) :
+    ∃ N, ∀ i, IsGradedExtBoundedBy.{w} e (X i) (Y i) N := by
+  choose N hN using fun i ↦ (h i).exists_bound
+  obtain ⟨M, hM⟩ := (Set.finite_range N).bddAbove
+  exact ⟨M, fun i ↦ (hN i).mono (hM ⟨i, rfl⟩)⟩
 
 /-! ### Admissibility on object properties -/
 
@@ -149,6 +176,34 @@ theorem IsGradedEulerAdmissibleOn.mono {P P' Q Q' : ObjectProperty C}
     (hP : P' ≤ P) (hQ : Q' ≤ Q) :
     IsGradedEulerAdmissibleOn.{w} (k := k) (e := e) P' Q' :=
   ⟨fun _ _ hX hY ↦ h.isGradedEulerAdmissible (hP _ hX) (hQ _ hY)⟩
+
+/-- One cohomological bound for all pairs in `P × Q` and all internal degrees. This does not
+require finite-dimensional Ext or finite internal support. -/
+structure IsGradedExtBoundedOn (e : C ≌ C) (P Q : ObjectProperty C) (N : ℕ) : Prop where
+  /-- Every selected pair has the same cohomological bound. -/
+  isGradedExtBoundedBy ⦃X Y : C⦄ (hX : P X) (hY : Q Y) :
+    IsGradedExtBoundedBy.{w} e X Y N
+
+/-- A uniform bound restricts to smaller object properties and may be raised. -/
+theorem IsGradedExtBoundedOn.mono {P P' Q Q' : ObjectProperty C} {N M : ℕ}
+    (h : IsGradedExtBoundedOn.{w} e P Q N) (hP : P' ≤ P) (hQ : Q' ≤ Q) (hNM : N ≤ M) :
+    IsGradedExtBoundedOn.{w} e P' Q' M :=
+  ⟨fun _ _ hX hY ↦ (h.isGradedExtBoundedBy (hP _ hX) (hQ _ hY)).mono hNM⟩
+
+/-- A uniform bound gives eventual graded Ext-vanishing for every selected pair. -/
+theorem IsGradedExtBoundedOn.isGradedExtBounded {P Q : ObjectProperty C} {N : ℕ}
+    (h : IsGradedExtBoundedOn.{w} e P Q N) {X Y : C} (hX : P X) (hY : Q Y) :
+    IsGradedExtBounded.{w} e X Y :=
+  (h.isGradedExtBoundedBy hX hY).isGradedExtBounded
+
+/-- A uniform cohomological bound and pointwise finite internal support give graded
+Euler-admissibility. -/
+theorem IsGradedExtBoundedOn.isGradedEulerAdmissibleOn
+    {P Q : ObjectProperty C} {N : ℕ}
+    (h : IsGradedExtBoundedOn.{w} e P Q N)
+    (hfin : ∀ ⦃X Y : C⦄, P X → Q Y → IsGradedExtInternallyFinite.{w} k e X Y) :
+    IsGradedEulerAdmissibleOn.{w} (k := k) (e := e) P Q :=
+  ⟨fun _ _ hX hY ↦ ⟨hfin hX hY, h.isGradedExtBounded hX hY⟩⟩
 
 /-! ### Passage to one internal degree -/
 
@@ -173,6 +228,12 @@ theorem IsGradedEulerAdmissible.isEulerAdmissible {X Y : C}
   ⟨h.internallyFinite.isExtFinite j,
     ⟨h.bounded.exists_bound.choose,
       h.bounded.exists_bound.choose_spec.isExtBoundedBy j⟩⟩
+
+/-- A graded Euler-admissible pair is slicewise Euler-admissible. -/
+theorem IsGradedEulerAdmissible.isSlicewiseEulerAdmissible {X Y : C}
+    (h : IsGradedEulerAdmissible.{w} k e X Y) :
+    IsSlicewiseEulerAdmissible.{w} k e X Y :=
+  ⟨h.isEulerAdmissible⟩
 
 /-! ### Closure under extensions -/
 
@@ -235,6 +296,21 @@ theorem IsGradedEulerAdmissible.of_shortExact₂' (hS : S.ShortExact) {Y : C}
   obtain ⟨N₃, hN₃⟩ := h₃.bounded.exists_bound
   exact ⟨h₁.internallyFinite.of_shortExact₂' hS h₃.internallyFinite,
     (hN₁.of_shortExact₂' hS hN₃).isGradedExtBounded⟩
+
+/-- Slicewise Euler-admissibility is closed under extensions in the second variable. -/
+theorem IsSlicewiseEulerAdmissible.of_shortExact₂ (hS : S.ShortExact) {X : C}
+    (h₁ : IsSlicewiseEulerAdmissible.{w} k e X S.X₁)
+    (h₃ : IsSlicewiseEulerAdmissible.{w} k e X S.X₃) :
+    IsSlicewiseEulerAdmissible.{w} k e X S.X₂ :=
+  ⟨fun j ↦ (h₁.isEulerAdmissible j).of_shortExact₂ (hS.map_of_exact (e ^ j).functor)
+    (h₃.isEulerAdmissible j)⟩
+
+/-- Slicewise Euler-admissibility is closed under extensions in the first variable. -/
+theorem IsSlicewiseEulerAdmissible.of_shortExact₂' (hS : S.ShortExact) {Y : C}
+    (h₁ : IsSlicewiseEulerAdmissible.{w} k e S.X₁ Y)
+    (h₃ : IsSlicewiseEulerAdmissible.{w} k e S.X₃ Y) :
+    IsSlicewiseEulerAdmissible.{w} k e S.X₂ Y :=
+  ⟨fun j ↦ (h₁.isEulerAdmissible j).of_shortExact₂' hS (h₃.isEulerAdmissible j)⟩
 
 end Admissibility
 
@@ -384,6 +460,12 @@ theorem IsGradedEulerAdmissible.of_iso (h : IsGradedEulerAdmissible.{w} k e X Y)
     (i : X ≅ X') (j : Y ≅ Y') : IsGradedEulerAdmissible.{w} k e X' Y' :=
   ⟨IsGradedExtInternallyFinite.of_iso k h.internallyFinite i j, h.bounded.of_iso i j⟩
 
+variable {k} in
+/-- Slicewise Euler-admissibility depends only on the isomorphism classes of the two objects. -/
+theorem IsSlicewiseEulerAdmissible.of_iso (h : IsSlicewiseEulerAdmissible.{w} k e X Y)
+    (i : X ≅ X') (j : Y ≅ Y') : IsSlicewiseEulerAdmissible.{w} k e X' Y' :=
+  ⟨fun d ↦ (h.isEulerAdmissible d).of_iso i ((e ^ d).functor.mapIso j)⟩
+
 /-- The graded Ext dimension in one cohomological degree is invariant under isomorphisms of the
 two objects. -/
 theorem gradedExtDimension_of_iso
@@ -414,6 +496,111 @@ theorem gradedExtEuler_of_iso (h : IsGradedEulerAdmissible.{w} k e X Y)
   obtain ⟨N, hN⟩ := h.bounded.exists_bound
   rw [gradedExtEuler_eq k e h hN, gradedExtEuler_eq k e h' (hN.of_iso i j)]
   exact truncatedGradedExtEuler_of_iso k h.internallyFinite h'.internallyFinite i j N
+
+/-! ### Invariance under linear equivalences -/
+
+section congr
+
+variable {D : Type u'} [Category.{v'} D] [Abelian D] [Linear k D] [HasExt.{w'} D] {e' : D ≌ D}
+  {X' Y' : D}
+
+/-- Finite internal support of bigraded `Ext` transports along linear equivalences of the bigraded
+`Ext` groups, including between pairs in different graded categories. -/
+theorem IsGradedExtInternallyFinite.congr (h : IsGradedExtInternallyFinite.{w} k e X Y)
+    (φ : ∀ n j, GradedExt.{w} e X Y n j ≃ₗ[k] GradedExt.{w'} e' X' Y' n j) :
+    IsGradedExtInternallyFinite.{w'} k e' X' Y' :=
+  ⟨fun n ↦ (h.finiteLaurentSupport n).of_equiv (φ n)⟩
+
+/-- A cohomological vanishing bound for bigraded `Ext` transports along bijections of the bigraded
+`Ext` groups from that degree on, including between pairs in different graded categories. -/
+theorem IsGradedExtBoundedBy.congr {N : ℕ} (h : IsGradedExtBoundedBy.{w} e X Y N)
+    (φ : ∀ ⦃n⦄, N ≤ n → ∀ j, GradedExt.{w} e X Y n j ≃ GradedExt.{w'} e' X' Y' n j) :
+    IsGradedExtBoundedBy.{w'} e' X' Y' N :=
+  ⟨fun _ hn j ↦ haveI := h.subsingleton hn j
+    (φ hn j).symm.subsingleton⟩
+
+/-- Eventual cohomological vanishing of bigraded `Ext` transports along bijections of the
+bigraded `Ext` groups in all large cohomological degrees, including between pairs in different
+graded categories. -/
+theorem IsGradedExtBounded.congr (h : IsGradedExtBounded.{w} e X Y)
+    (φ : ∀ᶠ n in Filter.atTop, ∀ j, Nonempty (GradedExt.{w} e X Y n j ≃
+      GradedExt.{w'} e' X' Y' n j)) :
+    IsGradedExtBounded.{w'} e' X' Y' := by
+  obtain ⟨N, hN⟩ := h.exists_bound
+  obtain ⟨M, hM⟩ := Filter.eventually_atTop.1 φ
+  exact ((hN.mono (le_max_left N M)).congr fun n hn j ↦
+    Classical.choice (hM n ((le_max_right N M).trans hn) j)).isGradedExtBounded
+
+/-- Graded Euler-admissibility transports along linear equivalences of the bigraded `Ext` groups,
+including between pairs in different graded categories. -/
+theorem IsGradedEulerAdmissible.congr (h : IsGradedEulerAdmissible.{w} k e X Y)
+    (φ : ∀ n j, GradedExt.{w} e X Y n j ≃ₗ[k] GradedExt.{w'} e' X' Y' n j) :
+    IsGradedEulerAdmissible.{w'} k e' X' Y' :=
+  ⟨h.internallyFinite.congr k φ, h.bounded.congr (.of_forall fun n j ↦ ⟨(φ n j).toEquiv⟩)⟩
+
+variable {k} in
+/-- Slicewise Euler-admissibility transports along linear equivalences of the bigraded `Ext`
+groups, including between pairs in different graded categories. -/
+theorem IsSlicewiseEulerAdmissible.congr (h : IsSlicewiseEulerAdmissible.{w} k e X Y)
+    (φ : ∀ n j, GradedExt.{w} e X Y n j ≃ₗ[k] GradedExt.{w'} e' X' Y' n j) :
+    IsSlicewiseEulerAdmissible.{w'} k e' X' Y' :=
+  ⟨fun j ↦ (h.isEulerAdmissible j).congr fun n ↦ φ n j⟩
+
+/-- Linear equivalences of the bigraded `Ext` groups preserve the q-Euler characteristic,
+including when the pairs lie in different graded categories. -/
+theorem gradedExtEuler_congr
+    (φ : ∀ n j, GradedExt.{w} e X Y n j ≃ₗ[k] GradedExt.{w'} e' X' Y' n j)
+    (h : IsGradedEulerAdmissible.{w} k e X Y) :
+    gradedExtEuler k e' (h.congr k φ) = gradedExtEuler k e h := by
+  obtain ⟨N, hN⟩ := h.bounded.exists_bound
+  rw [gradedExtEuler_eq k e h hN,
+    gradedExtEuler_eq k e' (h.congr k φ) (hN.congr fun n _ j ↦ (φ n j).toEquiv)]
+  exact Finset.sum_congr rfl fun n _ ↦ by
+    rw [gradedExtDimension_eq_targetShiftGradedDimension,
+      gradedExtDimension_eq_targetShiftGradedDimension,
+      targetShiftGradedDimension_congr _ _ fun j ↦ (φ n j).finrank_eq.symm]
+
+end congr
+
+/-! ### Zero entries -/
+
+section Zero
+
+variable (e)
+
+/-- A pair whose first entry is zero is graded Euler-admissible: every bigraded `Ext` group out
+of it vanishes. -/
+theorem IsGradedEulerAdmissible.of_isZero_left {X Y : C} (hX : Limits.IsZero X) :
+    IsGradedEulerAdmissible.{w} k e X Y := by
+  have hsub (n : ℕ) (j : ℤ) : Subsingleton (GradedExt.{w} e X Y n j) :=
+    subsingleton_ext_of_isZero_left hX ((e ^ j).functor.obj Y) n
+  refine ⟨⟨fun n ↦ HasFiniteLaurentSupport.of_finset (fun j ↦ ?_) ∅ fun j _ ↦ hsub n j⟩,
+    ⟨0, ⟨fun n _ j ↦ hsub n j⟩⟩⟩
+  have := hsub n j
+  infer_instance
+
+/-- A pair whose second entry is zero is graded Euler-admissible: every shift of the target is
+zero, so every bigraded `Ext` group vanishes. -/
+theorem IsGradedEulerAdmissible.of_isZero_right {X Y : C} (hY : Limits.IsZero Y) :
+    IsGradedEulerAdmissible.{w} k e X Y := by
+  have hsub (n : ℕ) (j : ℤ) : Subsingleton (GradedExt.{w} e X Y n j) :=
+    subsingleton_ext_of_isZero_right X ((e ^ j).functor.map_isZero hY) n
+  refine ⟨⟨fun n ↦ HasFiniteLaurentSupport.of_finset (fun j ↦ ?_) ∅ fun j _ ↦ hsub n j⟩,
+    ⟨0, ⟨fun n _ j ↦ hsub n j⟩⟩⟩
+  have := hsub n j
+  infer_instance
+
+/-- A pair whose first entry is zero is slicewise Euler-admissible. -/
+theorem IsSlicewiseEulerAdmissible.of_isZero_left {X Y : C} (hX : Limits.IsZero X) :
+    IsSlicewiseEulerAdmissible.{w} k e X Y :=
+  (IsGradedEulerAdmissible.of_isZero_left k e hX).isSlicewiseEulerAdmissible
+
+/-- A pair whose second entry is zero is slicewise Euler-admissible. -/
+theorem IsSlicewiseEulerAdmissible.of_isZero_right {X Y : C} (hY : Limits.IsZero Y) :
+    IsSlicewiseEulerAdmissible.{w} k e X Y :=
+  (IsGradedEulerAdmissible.of_isZero_right k e hY).isSlicewiseEulerAdmissible
+
+end Zero
 
 /-! ### Projective evaluation -/
 

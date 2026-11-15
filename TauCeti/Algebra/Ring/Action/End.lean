@@ -14,9 +14,9 @@ public import Mathlib.Algebra.Ring.Action.End
 
 A group `G` acting on a semiring `S` by ring automorphisms is represented by
 `MulSemiringAction.toRingAut G S`. This file reads off the kernel of that representation: an
-element lies in it exactly when it fixes every element of `S`, so the kernel is trivial precisely
-because the action is faithful. When `S` is moreover generated over a base ring `R` by a single
-element `ξ` and the action is by `R`-algebra maps, faithfulness can be tested at `ξ` alone.
+element lies in it exactly when it fixes every element of `S`, so a faithful action has trivial
+kernel. When `S` is moreover generated over a base ring `R` by a single element `ξ` and a monoid
+acts faithfully by `R`-algebra maps, the action is already determined by where it sends `ξ`.
 
 ## Main results
 
@@ -24,10 +24,10 @@ element `ξ` and the action is by `R`-algebra maps, faithfulness can be tested a
   on every element.
 * `TauCeti.MulSemiringAction.ker_toRingAut_eq_bot`: a faithful action is a faithful
   representation.
-* `TauCeti.eq_one_of_smul_eq_of_adjoin_singleton_eq_top`: for a faithful action by `R`-algebra
-  maps, only the identity fixes a single generator of `S` over `R`.
-* `TauCeti.smul_left_injective_of_adjoin_singleton_eq_top`: under the same hypotheses, distinct
-  group elements move the generator to distinct elements.
+* `TauCeti.smul_left_injective_of_adjoin_singleton_eq_top`: for a faithful action of a monoid by
+  `R`-algebra maps, distinct elements move a single generator of `S` over `R` to distinct elements.
+* `TauCeti.eq_one_of_smul_eq_of_adjoin_singleton_eq_top`: under the same hypotheses, only the
+  identity fixes the generator.
 -/
 
 public section
@@ -44,11 +44,9 @@ theorem mem_ker_toRingAut_iff {σ : G} :
 
 /-- A faithful action by ring automorphisms has trivial kernel. -/
 theorem ker_toRingAut_eq_bot [FaithfulSMul G S] :
-    MonoidHom.ker (_root_.MulSemiringAction.toRingAut G S) = ⊥ := by
-  ext σ
-  rw [mem_ker_toRingAut_iff, Subgroup.mem_bot]
-  exact ⟨fun h ↦ eq_of_smul_eq_smul fun x : S ↦ by rw [h x, one_smul],
-    fun h x ↦ by rw [h, one_smul]⟩
+    MonoidHom.ker (_root_.MulSemiringAction.toRingAut G S) = ⊥ :=
+  (Subgroup.eq_bot_iff_forall _).2 fun σ hσ ↦ eq_of_smul_eq_smul fun x : S ↦ by
+    rw [mem_ker_toRingAut_iff.1 hσ x, one_smul]
 
 end TauCeti.MulSemiringAction
 
@@ -57,29 +55,16 @@ namespace TauCeti
 variable {G : Type*} [Monoid G] {S : Type*} [Semiring S] [MulSemiringAction G S]
 variable {R : Type*} [CommSemiring R] [Algebra R S] [SMulCommClass G R S]
 
+/-- For a faithful action by `R`-algebra maps on `S = R[ξ]`, the orbit map at `ξ` is injective. -/
+theorem smul_left_injective_of_adjoin_singleton_eq_top [FaithfulSMul G S] {ξ : S}
+    (hξ : Algebra.adjoin R {ξ} = ⊤) : Function.Injective fun σ : G ↦ σ • ξ :=
+  fun _ _ h ↦ MulSemiringAction.toAlgHom_injective R S <|
+    AlgHom.ext_of_adjoin_eq_top hξ <| Set.eqOn_singleton.2 h
+
 /-- For a faithful action by `R`-algebra maps on `S = R[ξ]`, an element fixing the generator `ξ`
 is the identity. -/
 theorem eq_one_of_smul_eq_of_adjoin_singleton_eq_top [FaithfulSMul G S] {ξ : S}
-    (hξ : Algebra.adjoin R {ξ} = ⊤) {σ : G} (h : σ • ξ = ξ) : σ = 1 := by
-  refine eq_of_smul_eq_smul fun x : S ↦ ?_
-  have hx : x ∈ Algebra.adjoin R {ξ} := hξ ▸ Algebra.mem_top
-  rw [one_smul]
-  exact (Algebra.forall_mem_adjoin_smul_eq_self_iff {ξ} σ).2 (Set.forall_mem_singleton.2 h) x hx
-
-end TauCeti
-
-namespace TauCeti
-
-variable {G : Type*} [Group G] {S : Type*} [Semiring S] [MulSemiringAction G S]
-variable {R : Type*} [CommSemiring R] [Algebra R S] [SMulCommClass G R S]
-
-/-- For a faithful action by `R`-algebra maps on `S = R[ξ]`, the orbit map at `ξ` is injective. -/
-theorem smul_left_injective_of_adjoin_singleton_eq_top [FaithfulSMul G S] {ξ : S}
-    (hξ : Algebra.adjoin R {ξ} = ⊤) : Function.Injective fun σ : G ↦ σ • ξ := by
-  intro σ τ h
-  beta_reduce at h
-  apply (inv_mul_eq_one).1
-  apply eq_one_of_smul_eq_of_adjoin_singleton_eq_top hξ
-  rw [mul_smul, ← h, inv_smul_smul]
+    (hξ : Algebra.adjoin R {ξ} = ⊤) {σ : G} (h : σ • ξ = ξ) : σ = 1 :=
+  smul_left_injective_of_adjoin_singleton_eq_top hξ <| h.trans (one_smul G ξ).symm
 
 end TauCeti

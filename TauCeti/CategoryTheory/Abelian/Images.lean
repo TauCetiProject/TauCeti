@@ -28,24 +28,26 @@ variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] {X Y : C} (f : X ⟶
   [HasCokernel f] [HasKernel (cokernel.π f)] [HasKernel f]
   [HasKernel (CategoryTheory.Abelian.factorThruImage f)]
 
-/-- The kernel of a morphism is isomorphic to the kernel of its projection onto the abelian
-image, whenever the required kernels and cokernel exist. -/
-noncomputable def kernelFactorThruImageIso :
-    kernel f ≅ kernel (CategoryTheory.Abelian.factorThruImage f) :=
-  kernelIsoOfEq (CategoryTheory.Abelian.image.fac f).symm ≪≫ kernelCompMono _ _
+/-- The kernel of the projection of a morphism onto its abelian image is isomorphic to the kernel
+of the morphism, whenever the required kernels and cokernel exist. This is the abelian-image
+analogue of `CategoryTheory.Limits.kernelFactorThruImage`. -/
+noncomputable def kernelFactorThruImage :
+    kernel (CategoryTheory.Abelian.factorThruImage f) ≅ kernel f :=
+  (kernelCompMono _ (CategoryTheory.Abelian.image.ι f)).symm ≪≫
+    kernelIsoOfEq (CategoryTheory.Abelian.image.fac f)
 
 /-- The isomorphism with the kernel of the image projection preserves the kernel inclusion. -/
 @[reassoc (attr := simp)]
-theorem kernelFactorThruImageIso_hom_comp_ι :
-    (kernelFactorThruImageIso f).hom ≫ kernel.ι (CategoryTheory.Abelian.factorThruImage f)
-      = kernel.ι f := by
-  simp [kernelFactorThruImageIso]
+theorem kernelFactorThruImage_hom_comp_ι :
+    (kernelFactorThruImage f).hom ≫ kernel.ι f
+      = kernel.ι (CategoryTheory.Abelian.factorThruImage f) := by
+  simp [kernelFactorThruImage]
 
 /-- The inverse isomorphism with the kernel of the image projection preserves the inclusion. -/
 @[reassoc (attr := simp)]
-theorem kernelFactorThruImageIso_inv_comp_ι :
-    (kernelFactorThruImageIso f).inv ≫ kernel.ι f
-      = kernel.ι (CategoryTheory.Abelian.factorThruImage f) := by
-  simp [kernelFactorThruImageIso]
+theorem kernelFactorThruImage_inv_comp_ι :
+    (kernelFactorThruImage f).inv ≫ kernel.ι (CategoryTheory.Abelian.factorThruImage f)
+      = kernel.ι f := by
+  simp [kernelFactorThruImage]
 
 end TauCeti.Abelian

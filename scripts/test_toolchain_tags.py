@@ -16,6 +16,7 @@ import subprocess
 import sys
 import unittest
 from contextlib import redirect_stdout
+from unittest.mock import patch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -71,7 +72,7 @@ class CreateRefuses(unittest.TestCase):
 
     def test_dry_run_creates_nothing_and_says_what_it_would_do(self):
         out = io.StringIO()
-        with redirect_stdout(out):
+        with redirect_stdout(out), patch.object(tt, "require_security_coverage", return_value="a" * 40):
             self.assertFalse(tt.create_tag(dict(TagMessage.ROW), dry_run=True))
         self.assertIn("would tag v4.33.0-rc2", out.getvalue())
 
@@ -246,7 +247,7 @@ class UnreachableReleases(unittest.TestCase):
     def test_the_audit_covers_releases_main_never_ran_on(self):
         original = {name: getattr(tt, name)
                     for name in ("mathlib_releases", "eras", "existing_tags",
-                                 "mathlib_pin", "ci_passed", "cache_published")}
+                                 "mathlib_pin", "ci_passed", "cache_published", "security_snapshot")}
         for name, value in original.items():
             self.addCleanup(setattr, tt, name, value)
         tt.mathlib_releases = lambda: ["v4.33.0-rc1", "v4.33.0", "v4.34.0-rc1"]
@@ -260,6 +261,7 @@ class UnreachableReleases(unittest.TestCase):
         tt.mathlib_pin = lambda sha: "c" * 40
         tt.ci_passed = lambda sha: "success"
         tt.cache_published = lambda toolchain, sha: True
+        tt.security_snapshot = lambda: ("b" * 40, {"a" * 40, "b" * 40})
         rows = {r["release"]: r["status"] for r in tt.audit()}
         self.assertEqual(rows, {"v4.33.0-rc1": "tagged", "v4.33.0": "unreachable",
                                 "v4.34.0-rc1": "ready"})
@@ -548,6 +550,80 @@ class CommandLine(unittest.TestCase):
         with redirect_stdout(out), self.assertRaises(SystemExit):
             tt.main(["--help"])
         self.assertIn("first commit on `main`", out.getvalue())
+
+
+class SecurityCursor(unittest.TestCase):
+    def snapshot(self, cursor, order):
+        def git(*args, **kwargs):
+            if args[0] == "rev-parse":
+                return "false"
+            if args[0] == "rev-list":
+                return "\n".join(order)
+            return ""
+
+        with patch.object(tt, "gh_optional", return_value=cursor), \
+                patch.object(tt, "gh", return_value=order[-1]), patch.object(tt, "git", side_effect=git):
+            return tt.security_snapshot()
+
+    def test_cursor_covers_equal_and_older_first_parent_commits(self):
+        a, b, c = "a" * 40, "b" * 40, "c" * 40
+        self.assertEqual(self.snapshot(b, [a, b, c]), (b, {a, b}))
+        with patch.object(tt, "security_snapshot", return_value=(b, {a, b})):
+            self.assertEqual(tt.require_security_coverage(a), b)
+            self.assertEqual(tt.require_security_coverage(b), b)
+            for target in (c, "d" * 40):
+                with self.assertRaises(RuntimeError):
+                    tt.require_security_coverage(target)
+
+    def test_missing_and_off_main_cursor_fail_closed(self):
+        for cursor in (None, "", "not-a-sha", "d" * 40):
+            with self.subTest(cursor=cursor), self.assertRaises(RuntimeError):
+                self.snapshot(cursor, ["a" * 40, "b" * 40])
+
+    def test_creation_rechecks_even_a_ready_report(self):
+        with patch.object(tt, "require_security_coverage", side_effect=RuntimeError("cursor unavailable")), \
+                patch.object(tt.subprocess, "run") as mutate, self.assertRaises(RuntimeError):
+            tt.create_tag(dict(TagMessage.ROW))
+        mutate.assert_not_called()
+
+    def test_non_admin_cannot_create(self):
+        with patch.object(tt, "require_security_coverage", return_value="a" * 40), \
+                patch.object(tt, "gh", return_value="false"), patch.object(tt.subprocess, "run") as mutate, \
+                self.assertRaisesRegex(RuntimeError, "admin"):
+            tt.create_tag(dict(TagMessage.ROW))
+        mutate.assert_not_called()
+
+    def test_cursor_failure_before_ref_publication_leaves_no_tag(self):
+        with patch.object(tt, "require_security_coverage", side_effect=["a" * 40, RuntimeError("moved")]), \
+                patch.object(tt, "gh", return_value="true"), patch.object(tt, "git", return_value="Test"), \
+                patch.object(tt.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, "object", "")) as mutate, \
+                self.assertRaisesRegex(RuntimeError, "moved"):
+            tt.create_tag(dict(TagMessage.ROW))
+        self.assertEqual(mutate.call_count, 1)
+        self.assertTrue(mutate.call_args.args[0][4].endswith("/git/tags"))
+
+    def test_audit_waits_for_cursor_without_querying_ci(self):
+        era = {"release": "v4.35.0", "toolchain": "leanprover/lean4:v4.35.0", "commit": "c" * 40, "index": 3}
+        with patch.object(tt, "mathlib_releases", return_value=[era["release"]]), \
+                patch.object(tt, "eras", return_value=[era]), patch.object(tt, "existing_tags", return_value={}), \
+                patch.object(tt, "mathlib_pin", return_value="d" * 40), \
+                patch.object(tt, "security_snapshot", return_value=("b" * 40, {"a" * 40, "b" * 40})), \
+                patch.object(tt, "ci_passed") as ci:
+            rows = tt.audit()
+        self.assertEqual(rows[0]["status"], "pending-security-audit")
+        self.assertIn("Waiting for the security-audit", tt.render(rows))
+        ci.assert_not_called()
+
+    def test_existing_tags_are_retained_without_claiming_coverage(self):
+        era = {"release": "v4.35.0", "toolchain": "leanprover/lean4:v4.35.0", "commit": "c" * 40, "index": 3}
+        with patch.object(tt, "mathlib_releases", return_value=[era["release"]]), \
+                patch.object(tt, "eras", return_value=[era]), \
+                patch.object(tt, "existing_tags", return_value={era["release"]: era["commit"]}), \
+                patch.object(tt, "mathlib_pin", return_value="d" * 40), \
+                patch.object(tt, "security_snapshot", side_effect=RuntimeError("unavailable")):
+            rows = tt.audit()
+        self.assertEqual(rows[0]["status"], "tagged")
+        self.assertEqual(rows[0]["security_audit"], "historical-unverified")
 
 
 if __name__ == "__main__":

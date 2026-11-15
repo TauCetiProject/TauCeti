@@ -69,11 +69,11 @@ noncomputable def indSimpleFDRepClassesOver (V : FDRep k N) [Simple V] :
     (fun U _ h ↦ SimpleFDRepClassesOver.mk (indFDRep U)
       (hU := simple_indFDRep_of_inertia V U h) (liesOver_indFDRep_of_inertia V U h))
     fun U U' _ _ h h' e ↦
+      let _ := simple_indFDRep_of_inertia V U h
+      let _ := simple_indFDRep_of_inertia V U' h'
       (SimpleFDRepClassesOver.mk_eq_mk_iff (indFDRep U) (indFDRep U')
-          (hU := simple_indFDRep_of_inertia V U h)
-          (hU' := simple_indFDRep_of_inertia V U' h')
-          (liesOver_indFDRep_of_inertia V U h)
-          (liesOver_indFDRep_of_inertia V U' h')).mpr (e.elim nonempty_iso_indFDRep)
+        (liesOver_indFDRep_of_inertia V U h) (liesOver_indFDRep_of_inertia V U' h')).mpr
+        (e.elim nonempty_iso_indFDRep)
 
 @[simp]
 theorem indSimpleFDRepClassesOver_mk (V : FDRep k N) [Simple V] (U : FDRep k (inertia V))
@@ -106,10 +106,11 @@ theorem indSimpleFDRepClassesOver_surjective (V : FDRep k N) [Simple V] :
   | _ W hW hliesW =>
   obtain ⟨U, hU, hUlies, he⟩ :=
     exists_simple_liesOver_inertia_nonempty_iso_indFDRep V W hliesW
+  let _ := simple_indFDRep_of_inertia V U hUlies
   exact ⟨SimpleFDRepClassesOver.mk U (hU := hU) hUlies,
     (indSimpleFDRepClassesOver_mk V U hUlies).trans
       ((SimpleFDRepClassesOver.mk_eq_mk_iff (indFDRep U) W
-        (hU := simple_indFDRep_of_inertia V U hUlies) _ _).mpr he)⟩
+        (liesOver_indFDRep_of_inertia V U hUlies) hliesW).mpr he)⟩
 
 /-- **The Clifford correspondence.**  Let `N` be a normal subgroup of a finite group `G` and let
 `V` be an irreducible representation of `N` over an algebraically closed field of characteristic

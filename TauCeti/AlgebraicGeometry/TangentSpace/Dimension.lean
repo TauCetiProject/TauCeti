@@ -30,8 +30,6 @@ open AlgebraicGeometry IsLocalRing
 
 namespace AlgHom
 
-open TauCeti.AlgHom
-
 variable {k A : Type*} [Field k] [CommRing A] [Algebra k A] (f : A →ₐ[k] k)
 
 /-- The `Module.finrank` of the augmentation cotangent space over the ground field equals

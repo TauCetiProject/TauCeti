@@ -74,8 +74,7 @@ theorem cocharacterMap_id (T : MultiplicativeTypeCommHopfAlgCat k) :
     cocharacterMap (𝟙 T) = LinearMap.id := by
   apply LinearMap.ext
   intro y
-  apply (cocharacterLatticeLinearEquivDual T).injective
-  apply LinearMap.ext
+  apply cocharacterLattice_ext
   intro x
   simp
 
@@ -86,8 +85,7 @@ theorem cocharacterMap_comp {S T U : MultiplicativeTypeCommHopfAlgCat k}
     cocharacterMap (f ≫ g) = cocharacterMap f ∘ₗ cocharacterMap g := by
   apply LinearMap.ext
   intro y
-  apply (cocharacterLatticeLinearEquivDual S).injective
-  apply LinearMap.ext
+  apply cocharacterLattice_ext
   intro x
   simp
 
@@ -98,8 +96,7 @@ theorem cocharacterMap_smul
     (σ : Field.absoluteGaloisGroup k) (y : cocharacterLattice T) :
     cocharacterMap f (cocharacterGaloisRepresentation T σ y) =
       cocharacterGaloisRepresentation S σ (cocharacterMap f y) := by
-  apply (cocharacterLatticeLinearEquivDual S).injective
-  apply LinearMap.ext
+  apply cocharacterLattice_ext
   intro x
   rw [cocharacterLatticeLinearEquivDual_cocharacterMap_apply,
     cocharacterGaloisRepresentation_apply_apply,
@@ -137,8 +134,6 @@ noncomputable abbrev cocharacterLatticeRepresentation (T : TorusCommHopfAlgCat k
 /-- The cocharacter representation of a torus is a continuous integral Galois lattice. -/
 private theorem cocharacterLatticeFunctor_mem (T : TorusCommHopfAlgCat k) :
     galoisLatticeProperty k (cocharacterLatticeRepresentation T) := by
-  let _ : Module.Free ℤ (CommHopfAlgCat.additiveCharacterGroup T.obj.obj) :=
-    characterLattice_module_free_of_torus k T.obj T.property
   let _ : Module.Finite ℤ (CommHopfAlgCat.additiveCharacterGroup T.obj.obj) :=
     characterLattice_module_finite_of_torus k T.obj T.property
   apply galoisLatticeProperty_contragredient

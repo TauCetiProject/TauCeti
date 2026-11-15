@@ -63,12 +63,11 @@ theorem exists_uncross (A : TransportMatrix μ ν) {i₁ i₂ : ι} {j₁ j₂ :
     refine ⟨?_, ?_, ?_⟩
     -- Check entries directly so the proof also covers coincident rows or columns.
     · intro ⟨i, j⟩
-      have hfi := hfnonneg (i, j)
       by_cases h₁ : i = i₁ <;> by_cases h₂ : i = i₂ <;>
         by_cases h₃ : j = j₁ <;> by_cases h₄ : j = j₂
-      all_goals simp_all [g, Pi.single_apply, Prod.mk.injEq] <;>
-        linarith [hfnonneg i j, hfnonneg i₁ j₁, hfnonneg i₁ j₂,
-          hfnonneg i₂ j₁, hfnonneg i₂ j₂]
+      all_goals simp_all [g, Pi.single_apply, Prod.mk.injEq]
+      all_goals linarith [hfnonneg i j, hfnonneg i₁ j₁, hfnonneg i₁ j₂,
+        hfnonneg i₂ j₁, hfnonneg i₂ j₂]
     · intro i
       calc
         ∑ j, g (i, j) = ∑ j, f (i, j) + δ *

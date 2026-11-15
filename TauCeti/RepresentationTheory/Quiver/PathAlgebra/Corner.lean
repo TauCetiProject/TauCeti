@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Basic
-public import TauCeti.RingTheory.Idempotents.Corner
+public import TauCeti.RingTheory.Idempotents.Corner.Basic
 
 /-!
 # Corners of path-algebra images

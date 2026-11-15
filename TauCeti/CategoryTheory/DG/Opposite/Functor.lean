@@ -7,7 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Enriched.OppositeFunctor
 public import TauCeti.CategoryTheory.DG.Opposite.Basic
-public import TauCeti.CategoryTheory.DG.Functor
+public import TauCeti.CategoryTheory.DG.Functor.Basic
 
 /-!
 # Opposite differential graded functors

@@ -35,9 +35,6 @@ over a field rigidity transports back along the monoidal equivalence.
 
 * J. S. Milne, *Basic Theory of Affine Group Schemes*, Chapter VIII, §§2, 4, and 6.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 4(a), Remark 4.1 and Proposition 9.44.
-
-This completes the rigid monoidal refinement of the representation--comodule dictionary in
-Layer 1 of the ReductiveGroups roadmap.
 -/
 
 public section
