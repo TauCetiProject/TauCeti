@@ -8,18 +8,21 @@ module
 public import Mathlib.Topology.Algebra.Nonarchimedean.TotallyDisconnected
 public import TauCeti.NumberTheory.LocalField.NormedField
 public import TauCeti.Topology.Algebra.ValuativeRel.Nonarchimedean
+public import TauCeti.Topology.Algebra.ValuativeRel.PuncturedNhds
 
 /-!
 # Point-set topology of a nonarchimedean local field
 
-A nonarchimedean local field `K` is Hausdorff (Mathlib's `IsValuativeTopology.instT2Space`) and
-locally compact (part of `IsNonarchimedeanLocalField K`). This file adds that it is second
-countable, and records that it is totally disconnected: its valuative topology is nonarchimedean
+A nonarchimedean local field `K` is Hausdorff (Mathlib's `IsValuativeTopology.instT2Space`), has no
+isolated points (`TauCeti.instPuncturedNhdsNeBotOfIsValuativeTopology`), and is locally compact
+(part of `IsNonarchimedeanLocalField K`). This file adds that it is second countable, and records
+that it is totally disconnected: its valuative topology is nonarchimedean
 (`TauCeti.instNonarchimedeanRingOfIsValuativeTopology`), so Mathlib's
 `NonarchimedeanAddGroup.instTotallySeparated` applies.
 
-These four properties are what the point topology on the rational points of an affine group over
-`K` inherits (`TauCeti/Topology/Algebra/PointTopology/Separation.lean`).
+These properties are what the point topology on the rational points of an affine group over `K`
+inherits (`TauCeti/Topology/Algebra/PointTopology/Separation.lean`), and non-isolation of `0`
+supplies `MeasureTheory.Measure.IsAddHaarMeasure.nullSingletonClass` on `K`.
 
 Second countability is proved through the normalized absolute value
 (`TauCeti.normalizedNontriviallyNormedField`): a locally compact nontrivially normed field is a

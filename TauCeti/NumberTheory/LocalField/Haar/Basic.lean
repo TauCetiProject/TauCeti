@@ -1,0 +1,606 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.MeasureTheory.Measure.Haar.DistribChar
+public import TauCeti.MeasureTheory.Group.LocalFieldScaling
+public import TauCeti.NumberTheory.LocalField.MultiplicativeGroup
+public import TauCeti.NumberTheory.LocalField.Padic
+public import TauCeti.NumberTheory.LocalField.Topology
+public import TauCeti.NumberTheory.NumberField.Global.Places.PowerClasses
+public import TauCeti.RingTheory.LaurentSeries.LocalField
+import TauCeti.RingTheory.Valuation.ValuationRing
+
+/-!
+# Normalized additive Haar measure and character of a nonarchimedean local field
+
+Let `E` be a nonarchimedean local field with valuation ring `𝒪[E]`, maximal ideal `𝓂[E]`, and
+residue field `𝓀[E]` of cardinality `q = Nat.card 𝓀[E]`, and write `v_E : Eˣ → ℤ` for the additive
+reading of `TauCeti.normalizedValuation E` (`v_E(ϖ) = 1` on uniformizers). Because `𝒪[E]` is a
+compact open subring of `E`, Mathlib's `MeasureTheory.Measure.addHaarMeasure` attached to `𝒪[E]`
+defines a canonical regular additive Haar measure `TauCeti.localAddHaar E` normalized by
+`(localAddHaar E) 𝒪[E] = 1`, unique among regular additive Haar measures (and, by second
+countability of `E`, among all additive Haar measures) with that normalization.
+
+Left multiplication by `a ∈ Eˣ` rescales every additive Haar measure `μ` on `E` by the normalized
+absolute value `|a|_E = q ^ (-v_E(a))` (`TauCeti.normalizedAbsoluteValue E`):
+* the distributive Haar character `MeasureTheory.distribHaarChar E a` equals
+  `|a|_E = q ^ (-v_E(a))`;
+* for every `a : E` (including `a = 0`, where singletons are null by
+  `MeasureTheory.Measure.IsAddHaarMeasure.nullSingletonClass` and
+  `TauCeti.instPuncturedNhdsNeBotOfIsValuativeTopology`) and every `s : Set E`,
+  `μ ((a * ·) '' s) = |a|_E * μ s`;
+* for `a ≠ 0`, the pushforward measure satisfies `Measure.map (a * ·) μ = |a|_E⁻¹ • μ`, so on units
+  `Measure.map (a * ·) μ = q ^ (v_E(a)) • μ`.
+
+In particular, valuation-ring units have character `1` and preserve additive Haar measure, whereas a
+uniformizer has character `q⁻¹` and pushes `μ` forward to `q • μ`. Specializations are recorded for
+`v.adicCompletion K` at a finite place `v` of a number field `K` (where the character is the pinned
+norm `‖a‖₊` and a uniformizer at a prime of residue degree `f` above `p` has character `p ^ (-f)`),
+for `ℚ_[p]`, and for the equal-characteristic Laurent series field `F⸨X⸩` over a finite field `F`
+(including positive characteristic).
+
+## Main definitions
+
+* `TauCeti.integerPositiveCompacts E`: the valuation ring `𝒪[E]` packaged as a
+  `TopologicalSpace.PositiveCompacts E`.
+* `TauCeti.localAddHaar E`: the regular additive Haar measure on `E` normalized by `μ 𝒪[E] = 1`.
+* `TauCeti.LaurentSeries.XUnit F`: the indeterminate `X` as an explicit unit of `F⸨X⸩`.
+
+## Main results
+
+* `TauCeti.existsUnique_regular_addHaar_integer`, `TauCeti.existsUnique_addHaar_integer`:
+  uniqueness of the additive Haar measure giving `𝒪[E]` mass one.
+* `TauCeti.localAddHaar_image_maximalIdeal_pow`, `TauCeti.localAddHaar_setOf_valuation_eq_one`:
+  `𝓂[E] ^ n` has normalized measure `q ^ (-n)` and the unit sphere `{x | v(x) = 1}` has normalized
+  measure `1 - q⁻¹`.
+* `TauCeti.distribHaarChar_eq_normalizedAbsoluteValue`, `TauCeti.distribHaarChar_eq_zpow`:
+  `MeasureTheory.distribHaarChar E a = |a|_E = q ^ (-v_E(a))` for `a ∈ Eˣ`.
+* `MeasureTheory.Measure.addHaar_image_mul_left`, `MeasureTheory.Measure.map_mul_left_addHaar`,
+  `MeasureTheory.Measure.map_units_mul_left_addHaar`: image and pushforward scaling of any additive
+  Haar measure on `E` under multiplication.
+* `IsDedekindDomain.HeightOneSpectrum.distribHaarChar_adicCompletion`,
+  `IsDedekindDomain.HeightOneSpectrum.distribHaarChar_adicCompletion_of_isUniformizer`:
+  identification with `‖a‖₊` and the residue-degree formula `p ^ (-f)` on completions of number
+  fields.
+* `TauCeti.LaurentSeries.distribHaarChar_XUnit`: in `F⸨X⸩` over any finite field `F`, the
+  uniformizer `X` has distributive Haar character `(Nat.card F)⁻¹`.
+
+## References
+
+* V. Platonov, A. Rapinchuk and I. Rapinchuk, *Algebraic Groups and Number Theory*, 2nd ed.,
+  Vol. I, Cambridge University Press, 2023, §3.5, pp. 186–187.
+* A. Weil, *Basic Number Theory*, 3rd ed., Springer, 1974, Chapter I, §2.
+-/
+
+public section
+
+open MeasureTheory MeasureTheory.Measure Set TopologicalSpace ValuativeRel
+open scoped ENNReal NNReal NNRat Pointwise LaurentSeries PowerSeries WithZero
+
+namespace TauCeti
+
+section CompactOpenInteger
+
+variable (E : Type*) [Field E] [ValuativeRel E] [TopologicalSpace E] [IsValuativeTopology E]
+  [CompactSpace 𝒪[E]]
+
+/-- The valuation ring `𝒪[E]` of a topological valuative field with compact integer ring, packaged
+as a compact subset with nonempty interior. -/
+noncomputable def integerPositiveCompacts : PositiveCompacts E where
+  carrier := (𝒪[E] : Set E)
+  isCompact' := isCompact_iff_compactSpace.2 inferInstance
+  interior_nonempty' := by
+    rw [Valuation.isOpen_integer.interior_eq]
+    exact ⟨0, zero_mem _⟩
+
+/-- The underlying set of `TauCeti.integerPositiveCompacts E` is `(𝒪[E] : Set E)`. -/
+@[simp, grind =]
+theorem coe_integerPositiveCompacts : (integerPositiveCompacts E : Set E) = (𝒪[E] : Set E) :=
+  (rfl)
+
+variable [MeasurableSpace E] [BorelSpace E]
+
+/-- The canonical regular additive Haar measure on `E` normalized so that the valuation ring `𝒪[E]`
+has measure one. -/
+noncomputable def localAddHaar : Measure E :=
+  addHaarMeasure (integerPositiveCompacts E)
+
+/-- `TauCeti.localAddHaar E` is Mathlib's `addHaarMeasure` normalized at
+`TauCeti.integerPositiveCompacts E`. -/
+theorem localAddHaar_def : localAddHaar E = addHaarMeasure (integerPositiveCompacts E) :=
+  (rfl)
+
+instance isAddHaarMeasure_localAddHaar : (localAddHaar E).IsAddHaarMeasure := by
+  rw [localAddHaar_def]
+  infer_instance
+
+instance regular_localAddHaar : (localAddHaar E).Regular := by
+  rw [localAddHaar_def]
+  infer_instance
+
+/-- The normalized additive Haar measure gives the valuation ring `𝒪[E]` mass one. -/
+@[simp, grind =]
+theorem localAddHaar_integer : localAddHaar E (𝒪[E] : Set E) = 1 := by
+  rw [localAddHaar_def]
+  exact addHaarMeasure_self
+
+end CompactOpenInteger
+
+end TauCeti
+
+namespace MeasureTheory.Measure
+
+open TauCeti
+
+section RegularNormalization
+
+variable {E : Type*} [Field E] [ValuativeRel E] [TopologicalSpace E] [IsValuativeTopology E]
+  [CompactSpace 𝒪[E]] [LocallyCompactSpace E] [MeasurableSpace E] [BorelSpace E]
+
+/-- Any regular left-invariant measure on `E` is its mass on `𝒪[E]` times `TauCeti.localAddHaar E`,
+without assuming second countability. -/
+theorem eq_smul_localAddHaar_of_regular (μ : Measure E) [μ.IsAddLeftInvariant] [μ.Regular] :
+    μ = μ (𝒪[E] : Set E) • localAddHaar E := by
+  have h := isAddLeftInvariant_eq_smul_of_regular μ (localAddHaar E)
+  have hc : (addHaarScalarFactor μ (localAddHaar E) : ℝ≥0∞) = μ (𝒪[E] : Set E) := by
+    have h1 := congrArg (fun ν : Measure E ↦ ν (𝒪[E] : Set E)) h
+    rw [_root_.smul_apply, nnreal_smul_coe_apply, localAddHaar_integer, mul_one] at h1
+    exact h1.symm
+  conv_lhs => rw [h]
+  rw [ENNReal.smul_def, hc]
+
+/-- Among regular left-invariant measures on `E`, `TauCeti.localAddHaar E` is characterized by
+giving `𝒪[E]` measure one. -/
+theorem eq_localAddHaar_iff_of_regular (μ : Measure E) [μ.IsAddLeftInvariant] [μ.Regular] :
+    μ = localAddHaar E ↔ μ (𝒪[E] : Set E) = 1 := by
+  refine ⟨fun h ↦ h ▸ localAddHaar_integer E, fun h ↦ ?_⟩
+  rw [eq_smul_localAddHaar_of_regular μ, h, one_smul]
+
+end RegularNormalization
+
+section LocalFieldMeasures
+
+variable {E : Type*} [Field E] [ValuativeRel E] [TopologicalSpace E]
+  [IsNonarchimedeanLocalField E] [MeasurableSpace E] [BorelSpace E]
+
+instance sigmaFinite_localAddHaar : SigmaFinite (localAddHaar E) := by
+  rw [localAddHaar_def]
+  infer_instance
+
+/-- Every σ-finite translation-invariant measure on a nonarchimedean local field `E` is its mass on
+`𝒪[E]` times `TauCeti.localAddHaar E`. -/
+theorem eq_smul_localAddHaar (μ : Measure E) [SigmaFinite μ] [μ.IsAddLeftInvariant] :
+    μ = μ (𝒪[E] : Set E) • localAddHaar E := by
+  rw [localAddHaar_def]
+  exact addHaarMeasure_unique μ (integerPositiveCompacts E)
+
+/-- A σ-finite translation-invariant measure on `E` equals `TauCeti.localAddHaar E` if and only if
+it gives `𝒪[E]` mass one. -/
+theorem eq_localAddHaar_iff (μ : Measure E) [SigmaFinite μ] [μ.IsAddLeftInvariant] :
+    μ = localAddHaar E ↔ μ (𝒪[E] : Set E) = 1 := by
+  rw [localAddHaar_def, eq_comm]
+  exact addHaarMeasure_eq_iff (integerPositiveCompacts E) μ
+
+/-- **Volume of powers of the maximal ideal.** For any left-invariant measure `μ` on a
+nonarchimedean local field `E`, the `n`-th power `𝓂[E] ^ n` has `q ^ (-n)` times the measure of
+`𝒪[E]`, where `q = Nat.card 𝓀[E]`. -/
+theorem measure_image_maximalIdeal_pow (μ : Measure E) [μ.IsAddLeftInvariant] (n : ℕ) :
+    μ (((↑) : 𝒪[E] → E) '' ↑(𝓂[E] ^ n)) =
+      1 / (Nat.card 𝓀[E] : ℝ≥0∞) ^ n * μ (𝒪[E] : Set E) := by
+  -- Transport `μ` along `(Fin 1 → E) ≃L[E] E` and apply the coordinate-box formula.
+  let e : (Fin 1 → E) ≃L[E] E := ContinuousLinearEquiv.funUnique (Fin 1) E E
+  have he : MeasurableEmbedding (e.toAddMonoidHom : (Fin 1 → E) → E) :=
+    e.toHomeomorph.measurableEmbedding
+  let ν : Measure (Fin 1 → E) := μ.comap e.toAddMonoidHom
+  have _ : ν.IsAddLeftInvariant := IsAddLeftInvariant.comap μ he
+  have hpow : e.toAddMonoidHom '' (univ.pi fun _ : Fin 1 ↦ ((↑) : 𝒪[E] → E) '' ↑(𝓂[E] ^ n)) =
+      ((↑) : 𝒪[E] → E) '' ↑(𝓂[E] ^ n) := by
+    ext x
+    simp only [mem_image, mem_univ_pi]
+    exact ⟨fun ⟨_, hf, hfx⟩ ↦ hfx ▸ hf 0, fun hx ↦ ⟨fun _ ↦ x, fun _ ↦ hx, rfl⟩⟩
+  have hint : e.toAddMonoidHom '' integerBox E (Fin 1) = (𝒪[E] : Set E) := by
+    ext x
+    simp only [mem_image, mem_integerBox]
+    exact ⟨fun ⟨_, hf, hfx⟩ ↦ hfx ▸ hf 0, fun hx ↦ ⟨fun _ ↦ x, fun _ ↦ hx, rfl⟩⟩
+  have h := measure_univ_pi_image_maximalIdeal_pow ν (fun _ : Fin 1 ↦ n)
+  rw [he.comap_apply, he.comap_apply, hpow, hint, Finset.sum_const, Finset.card_fin,
+    one_smul] at h
+  exact h
+
+/-- **Volume of the unit sphere.** For any left-invariant locally finite measure `μ` on `E`, the
+elements of valuation one have `(1 - q⁻¹)` times the measure of `𝒪[E]`. -/
+theorem measure_setOf_valuation_eq_one (μ : Measure E) [μ.IsAddLeftInvariant]
+    [IsFiniteMeasureOnCompacts μ] :
+    μ {x : E | valuation E x = 1} =
+      (1 - 1 / (Nat.card 𝓀[E] : ℝ≥0∞)) * μ (𝒪[E] : Set E) := by
+  have hO_comp : IsCompact (𝒪[E] : Set E) :=
+    isCompact_iff_compactSpace.2 (inferInstance : CompactSpace 𝒪[E])
+  have hsphere : {x : E | valuation E x = 1} =
+      (𝒪[E] : Set E) \ (((↑) : 𝒪[E] → E) '' ↑(𝓂[E] ^ 1)) := by
+    ext x
+    rw [pow_one]
+    simp only [mem_ofPred_eq, mem_sdiff, SetLike.mem_coe, Valuation.mem_integer_iff,
+      mem_image, Subtype.exists, exists_and_right, exists_eq_right]
+    refine ⟨fun hx ↦ ⟨hx.le, fun ⟨_, hlt⟩ ↦ hx.not_lt ((Valuation.mem_maximalIdeal_iff _ _).1 hlt)⟩,
+      fun ⟨hle, hnot⟩ ↦ le_antisymm hle (not_lt.1 fun hlt ↦
+        hnot ⟨hle, (Valuation.mem_maximalIdeal_iff _ _).2 hlt⟩)⟩
+  have hsub : (((↑) : 𝒪[E] → E) '' ↑(𝓂[E] ^ 1)) ⊆ (𝒪[E] : Set E) := by
+    rintro _ ⟨y, -, rfl⟩
+    exact y.2
+  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[E]
+  have hclosed : IsClosed (((↑) : 𝒪[E] → E) '' ↑(𝓂[E] ^ 1)) := by
+    rw [hϖ.image_maximalIdeal_pow_eq_smul]
+    exact IsClosed.smul₀ _ Valuation.isClosed_integer
+  have hO : μ (𝒪[E] : Set E) ≠ ∞ := hO_comp.measure_lt_top.ne
+  have hfin : μ (((↑) : 𝒪[E] → E) '' ↑(𝓂[E] ^ 1)) ≠ ∞ :=
+    ((measure_mono hsub).trans_lt hO_comp.measure_lt_top).ne
+  rw [hsphere, measure_sdiff hsub hclosed.measurableSet.nullMeasurableSet hfin,
+    measure_image_maximalIdeal_pow μ 1, pow_one, ENNReal.sub_mul fun _ _ ↦ hO, one_mul]
+
+end LocalFieldMeasures
+
+end MeasureTheory.Measure
+
+namespace TauCeti
+
+section Uniqueness
+
+/-- **Uniqueness of normalized regular additive Haar measure.** There is a unique regular additive
+Haar measure on `E` assigning measure one to `𝒪[E]`. -/
+theorem existsUnique_regular_addHaar_integer (E : Type*) [Field E] [ValuativeRel E]
+    [TopologicalSpace E] [IsValuativeTopology E] [CompactSpace 𝒪[E]] [LocallyCompactSpace E]
+    [MeasurableSpace E] [BorelSpace E] :
+    ∃! μ : Measure E, μ.IsAddHaarMeasure ∧ μ.Regular ∧ μ (𝒪[E] : Set E) = 1 := by
+  refine ⟨localAddHaar E, ⟨inferInstance, inferInstance, localAddHaar_integer E⟩, ?_⟩
+  rintro μ ⟨_, _, h1⟩
+  exact (Measure.eq_localAddHaar_iff_of_regular μ).2 h1
+
+end Uniqueness
+
+section LocalHaarCharacter
+
+variable {E : Type*} [Field E] [ValuativeRel E] [TopologicalSpace E] [IsNonarchimedeanLocalField E]
+
+section Borel
+
+variable [MeasurableSpace E] [BorelSpace E]
+
+variable (E) in
+/-- **Uniqueness of normalized additive Haar measure** on a nonarchimedean local field: because `E`
+is second countable, every additive Haar measure is σ-finite and regular, so there is a unique
+additive Haar measure assigning mass one to `𝒪[E]`. -/
+theorem existsUnique_addHaar_integer :
+    ∃! μ : Measure E, μ.IsAddHaarMeasure ∧ μ (𝒪[E] : Set E) = 1 := by
+  refine ⟨localAddHaar E, ⟨inferInstance, localAddHaar_integer E⟩, ?_⟩
+  rintro μ ⟨_, h1⟩
+  have : IsLocallyFiniteMeasure μ := inferInstance
+  exact (Measure.eq_localAddHaar_iff μ).2 h1
+
+/-- Under `TauCeti.localAddHaar E`, the `n`-th power of the maximal ideal has measure `q ^ (-n)`. -/
+@[simp, grind =]
+theorem localAddHaar_image_maximalIdeal_pow (n : ℕ) :
+    localAddHaar E (((↑) : 𝒪[E] → E) '' ↑(𝓂[E] ^ n)) = ((Nat.card 𝓀[E] : ℝ≥0∞) ^ n)⁻¹ := by
+  rw [Measure.measure_image_maximalIdeal_pow, localAddHaar_integer, mul_one, one_div]
+
+/-- Under `TauCeti.localAddHaar E`, the maximal ideal `𝓂[E]` has measure `q⁻¹`. -/
+@[simp, grind =]
+theorem localAddHaar_image_maximalIdeal :
+    localAddHaar E (((↑) : 𝒪[E] → E) '' (𝓂[E] : Set 𝒪[E])) = (Nat.card 𝓀[E] : ℝ≥0∞)⁻¹ := by
+  simpa using localAddHaar_image_maximalIdeal_pow (E := E) 1
+
+/-- Under `TauCeti.localAddHaar E`, the valuation-one elements (the units of `𝒪[E]`) have measure
+`1 - q⁻¹`. -/
+@[simp, grind =]
+theorem localAddHaar_setOf_valuation_eq_one :
+    localAddHaar E {x : E | valuation E x = 1} = 1 - (Nat.card 𝓀[E] : ℝ≥0∞)⁻¹ := by
+  rw [Measure.measure_setOf_valuation_eq_one, localAddHaar_integer, mul_one, one_div]
+
+end Borel
+
+/-- Helper for `distribHaarChar_eq_zpow`: a unit of normalized valuation one preserves `𝒪[E]` and
+therefore has distributive Haar character one. -/
+private theorem distribHaarChar_eq_one_of_normalizedValuation_eq_one {u : Eˣ}
+    (hu : normalizedValuation E u = 1) : distribHaarChar E u = 1 := by
+  borelize E
+  have huO : (u : E) ∈ 𝒪[E] :=
+    (Valuation.mem_integer_iff _ _).2 ((normalizedValuation_eq_one_iff u).1 hu).le
+  have huinvO : ((u⁻¹ : Eˣ) : E) ∈ 𝒪[E] := by
+    have hinv : normalizedValuation E u⁻¹ = 1 := by rw [map_inv, hu, inv_one]
+    exact (Valuation.mem_integer_iff _ _).2 ((normalizedValuation_eq_one_iff u⁻¹).1 hinv).le
+  have hsmul : u • (𝒪[E] : Set E) = (𝒪[E] : Set E) := by
+    ext x
+    simp only [mem_smul_set, Units.smul_def, smul_eq_mul, SetLike.mem_coe]
+    exact ⟨fun ⟨y, hy, hxy⟩ ↦ hxy ▸ mul_mem huO hy,
+      fun hx ↦ ⟨(u⁻¹ : Eˣ) * x, mul_mem huinvO hx, by simp⟩⟩
+  refine distribHaarChar_eq_of_measure_smul_eq_mul (μ := localAddHaar E) (s := (𝒪[E] : Set E))
+    (by simp) (by simp) ?_
+  rw [hsmul, ENNReal.coe_one, one_mul]
+
+/-- An irreducible element `π` of `𝒪[E]` viewed as a unit of `E` has distributive Haar character
+`q⁻¹`. -/
+@[simp, grind =]
+theorem distribHaarChar_irreducible {π : 𝒪[E]} (hπ : Irreducible π) :
+    distribHaarChar E (Units.mk0 (π : E) fun h ↦ hπ.ne_zero (Subtype.ext h)) =
+      (Nat.card 𝓀[E] : ℝ≥0)⁻¹ := by
+  borelize E
+  set ϖ : Eˣ := Units.mk0 (π : E) fun h ↦ hπ.ne_zero (Subtype.ext h)
+  have hsmul : ϖ • (𝒪[E] : Set E) = ((↑) : 𝒪[E] → E) '' ↑(𝓂[E] ^ 1) := by
+    rw [hπ.image_maximalIdeal_pow_eq_smul, pow_one]
+    rfl
+  refine distribHaarChar_eq_of_measure_smul_eq_mul (μ := localAddHaar E) (s := (𝒪[E] : Set E))
+    (by simp) (by simp) ?_
+  rw [hsmul, localAddHaar_image_maximalIdeal_pow, pow_one, localAddHaar_integer, mul_one,
+    ENNReal.coe_inv (Nat.cast_ne_zero.2 Nat.card_pos.ne'), ENNReal.coe_natCast]
+
+/-- **Local Haar character formula (power form).** For a nonarchimedean local field `E` with
+residue field of cardinality `q = Nat.card 𝓀[E]`, left multiplication by `a ∈ Eˣ` has distributive
+Haar character `q ^ (-v_E(a))`. -/
+theorem distribHaarChar_eq_zpow (a : Eˣ) :
+    distribHaarChar E a = (Nat.card 𝓀[E] : ℝ≥0) ^ (-(normalizedValuation E a).toAdd) := by
+  obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[E]
+  set ϖ : Eˣ := Units.mk0 (π : E) fun h ↦ hπ.ne_zero (Subtype.ext h)
+  set k : ℤ := (normalizedValuation E a).toAdd
+  have hϖval : normalizedValuation E ϖ = Multiplicative.ofAdd 1 :=
+    normalizedValuation_irreducible hπ
+  -- Factor `a = u * ϖ ^ k` with `v_E(u) = 0`.
+  set u : Eˣ := a * ϖ ^ (-k)
+  have hu : normalizedValuation E u = 1 := by
+    rw [map_mul, map_zpow, hϖval, ← ofAdd_toAdd (normalizedValuation E a), ← ofAdd_zsmul,
+      ← ofAdd_add]
+    simp [k]
+  have ha : a = u * ϖ ^ k := by simp [u, zpow_neg]
+  rw [ha, map_mul, map_zpow, distribHaarChar_eq_one_of_normalizedValuation_eq_one hu, one_mul,
+    distribHaarChar_irreducible hπ, inv_zpow, ← zpow_neg]
+
+/-- **Local Haar character equals normalized absolute value.** For every `a ∈ Eˣ`,
+`MeasureTheory.distribHaarChar E a` coincides with `(TauCeti.normalizedAbsoluteValue E a : ℝ≥0)`. -/
+@[grind =]
+theorem distribHaarChar_eq_normalizedAbsoluteValue (a : Eˣ) :
+    distribHaarChar E a = (normalizedAbsoluteValue E (a : E) : ℝ≥0) := by
+  rw [distribHaarChar_eq_zpow, normalizedAbsoluteValue_coe]
+  push_cast
+  rfl
+
+/-- **Character of a uniformizer.** Any uniformizer `ϖ ∈ Eˣ` has distributive Haar character
+`q⁻¹`, where `q = Nat.card 𝓀[E]`. -/
+theorem distribHaarChar_of_isUniformizer {ϖ : Eˣ} (hϖ : IsUniformizer E ϖ) :
+    distribHaarChar E ϖ = (Nat.card 𝓀[E] : ℝ≥0)⁻¹ := by
+  rw [distribHaarChar_eq_zpow, (isUniformizer_def ϖ).1 hϖ, toAdd_ofAdd, zpow_neg_one]
+
+/-- A unit `a ∈ Eˣ` has distributive Haar character `1` if and only if its normalized valuation is
+trivial, i.e., `a` is a unit of `𝒪[E]`. -/
+@[simp, grind =]
+theorem distribHaarChar_eq_one_iff (a : Eˣ) :
+    distribHaarChar E a = 1 ↔ normalizedValuation E a = 1 := by
+  rw [distribHaarChar_eq_normalizedAbsoluteValue]
+  norm_cast
+  rw [normalizedAbsoluteValue_eq_one_iff, ← normalizedValuation_eq_one_iff]
+
+/-- **Character of a valuation-ring unit.** Every unit `u ∈ 𝒪[E]ˣ` has distributive Haar character
+`1` on `E`. -/
+@[simp, grind =]
+theorem distribHaarChar_integerUnits (u : 𝒪[E]ˣ) :
+    distribHaarChar E (Units.map (Subring.subtype 𝒪[E] : 𝒪[E] →* E) u) = 1 := by
+  rw [distribHaarChar_eq_one_iff]
+  exact normalizedValuation_integerUnits u
+
+/-- Every element of the depth-zero unit filtration `U(E, 0) = 𝒪[E]ˣ` has distributive Haar
+character `1`. -/
+@[grind =]
+theorem distribHaarChar_mem_unitFiltration_zero {u : Eˣ} (hu : u ∈ unitFiltration E 0) :
+    distribHaarChar E u = 1 :=
+  (distribHaarChar_eq_one_iff u).2 (normalizedValuation_coe_unitFiltration_zero (K := E) ⟨u, hu⟩)
+
+end LocalHaarCharacter
+
+end TauCeti
+
+namespace MeasureTheory.Measure
+
+open TauCeti
+
+section Scaling
+
+variable {E : Type*} [Field E] [ValuativeRel E] [TopologicalSpace E]
+  [IsNonarchimedeanLocalField E] [MeasurableSpace E] [BorelSpace E]
+  (μ : Measure E) [μ.IsAddHaarMeasure]
+
+/-- Scalar multiplication by `a : E` scales any additive Haar measure on `E` by `|a|_E`, including
+at `a = 0` where `0 • s` is at most `{0}` and singletons are null. -/
+@[simp, grind =]
+theorem addHaar_smul_of_isNonarchimedeanLocalField (a : E) (s : Set E) :
+    μ (a • s) = ((normalizedAbsoluteValue E a : ℝ≥0) : ℝ≥0∞) * μ s := by
+  rcases eq_or_ne a 0 with rfl | ha
+  · rcases s.eq_empty_or_nonempty with rfl | hs
+    · simp
+    · simp [zero_smul_set hs, ← Set.singleton_zero]
+  · let u : Eˣ := Units.mk0 a ha
+    have hsmul : a • s = u • s := rfl
+    rw [hsmul, ← distribHaarChar_mul μ u s, distribHaarChar_eq_normalizedAbsoluteValue]
+    rfl
+
+/-- Left multiplication by `a : E` multiplies the additive Haar measure of any subset of `E` by
+`|a|_E`. -/
+@[simp, grind =]
+theorem addHaar_image_mul_left (a : E) (s : Set E) :
+    μ ((a * ·) '' s) = ((normalizedAbsoluteValue E a : ℝ≥0) : ℝ≥0∞) * μ s :=
+  addHaar_smul_of_isNonarchimedeanLocalField μ a s
+
+/-- Preimage under `x ↦ a * x` (`a ≠ 0`) multiplies any additive Haar measure on `E` by
+`|a|_E⁻¹`. -/
+@[simp, grind =]
+theorem addHaar_preimage_mul_left {a : E} (ha : a ≠ 0) (s : Set E) :
+    μ ((a * ·) ⁻¹' s) = ((normalizedAbsoluteValue E a : ℝ≥0) : ℝ≥0∞)⁻¹ * μ s := by
+  have hpre : (a * ·) ⁻¹' s = (a⁻¹ * ·) '' s := by
+    ext x
+    simp [inv_mul_eq_iff_eq_mul₀ ha]
+  have h0 : (normalizedAbsoluteValue E a : ℝ≥0) ≠ 0 := by
+    exact_mod_cast (normalizedAbsoluteValue E).ne_zero_iff.2 ha
+  rw [hpre, addHaar_image_mul_left, map_inv₀, NNRat.cast_inv, ENNReal.coe_inv h0]
+
+/-- **Pushforward of additive Haar measure under multiplication.** For `a ≠ 0` in a nonarchimedean
+local field `E`, pushing an additive Haar measure `μ` forward by `x ↦ a * x` rescales `μ` by
+`|a|_E⁻¹`. -/
+theorem map_mul_left_addHaar {a : E} (ha : a ≠ 0) :
+    map (a * ·) μ = ((normalizedAbsoluteValue E a : ℝ≥0)⁻¹ : ℝ≥0) • μ := by
+  have h0 : (normalizedAbsoluteValue E a : ℝ≥0) ≠ 0 := by
+    exact_mod_cast (normalizedAbsoluteValue E).ne_zero_iff.2 ha
+  ext s hs
+  rw [map_apply (measurable_const_mul a) hs, addHaar_preimage_mul_left μ ha s, smul_apply,
+    nnreal_smul_coe_apply, ENNReal.coe_inv h0]
+
+/-- **Pushforward of additive Haar measure by a unit (valuation form).** For `a ∈ Eˣ` and any
+additive Haar measure `μ` on `E`, `Measure.map (a * ·) μ = q ^ (v_E(a)) • μ`, where
+`q = Nat.card 𝓀[E]`. -/
+theorem map_units_mul_left_addHaar (a : Eˣ) :
+    map ((a : E) * ·) μ =
+      ((Nat.card 𝓀[E] : ℝ≥0) ^ (normalizedValuation E a).toAdd) • μ := by
+  rw [map_mul_left_addHaar μ a.ne_zero, normalizedAbsoluteValue_coe]
+  congr 1
+  push_cast
+  rw [zpow_neg, inv_inv]
+
+/-- Multiplying by a uniformizer `ϖ ∈ Eˣ` pushes any additive Haar measure `μ` on `E` forward to
+`q • μ`. -/
+theorem map_mul_left_addHaar_of_isUniformizer {ϖ : Eˣ} (hϖ : IsUniformizer E ϖ) :
+    map ((ϖ : E) * ·) μ = (Nat.card 𝓀[E] : ℝ≥0) • μ := by
+  rw [map_units_mul_left_addHaar μ ϖ, (isUniformizer_def ϖ).1 hϖ, toAdd_ofAdd, zpow_one]
+
+/-- **Valuation-ring units preserve additive Haar measure.** Left multiplication by any `u ∈ 𝒪[E]ˣ`
+leaves every additive Haar measure on `E` invariant. -/
+@[simp, grind =]
+theorem map_integerUnits_mul_left_addHaar (u : 𝒪[E]ˣ) :
+    map (((u : 𝒪[E]) : E) * ·) μ = μ := by
+  have hcoe : ((u : 𝒪[E]) : E) = ((Units.map (Subring.subtype 𝒪[E] : 𝒪[E] →* E) u : Eˣ) : E) := rfl
+  rw [hcoe, map_units_mul_left_addHaar μ, normalizedValuation_integerUnits u, toAdd_one,
+    zpow_zero, one_smul]
+
+/-- Lower Lebesgue change of variables on `E` under `x ↦ a * x` (`a ≠ 0`). -/
+theorem lintegral_mul_left_addHaar {a : E} (ha : a ≠ 0) (f : E → ℝ≥0∞) :
+    ∫⁻ x, f (a * x) ∂μ = ((normalizedAbsoluteValue E a : ℝ≥0) : ℝ≥0∞)⁻¹ * ∫⁻ x, f x ∂μ := by
+  let e : E ≃ᵐ E := (Homeomorph.mulLeft₀ a ha).toMeasurableEquiv
+  have h := lintegral_map_equiv f e (μ := μ)
+  have he : ⇑e = (a * ·) := rfl
+  rw [he, map_mul_left_addHaar μ ha, lintegral_smul_measure, ENNReal.smul_def, smul_eq_mul,
+    ENNReal.coe_inv] at h
+  · exact h.symm
+  · exact_mod_cast (normalizedAbsoluteValue E).ne_zero_iff.2 ha
+
+/-- Bochner integral change of variables on `E` under `x ↦ a * x` (`a ≠ 0`). -/
+theorem integral_mul_left_addHaar {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {a : E} (ha : a ≠ 0) (f : E → F) :
+    ∫ x, f (a * x) ∂μ = ((normalizedAbsoluteValue E a : ℝ)⁻¹) • ∫ x, f x ∂μ := by
+  let e : E ≃ᵐ E := (Homeomorph.mulLeft₀ a ha).toMeasurableEquiv
+  have h := integral_map_equiv e f (μ := μ)
+  have he : ⇑e = (a * ·) := rfl
+  rw [he, map_mul_left_addHaar μ ha, integral_smul_nnreal_measure, NNReal.smul_def,
+    NNReal.coe_inv] at h
+  exact h.symm
+
+end Scaling
+
+end MeasureTheory.Measure
+
+/-! ### Specializations: completions of number fields, `p`-adic numbers, and `𝔽_q((X))` -/
+
+namespace IsDedekindDomain.HeightOneSpectrum
+
+open NumberField TauCeti
+
+variable {K : Type*} [Field K] [NumberField K] (v : HeightOneSpectrum (𝓞 K))
+
+/-- **Adic completion Haar character equals pinned `nnnorm`.** At a finite place `v` of a number
+field `K`, the distributive Haar character of `a ∈ (v.adicCompletion K)ˣ` coincides with `‖a‖₊`
+for the pinned norm using `Ideal.absNorm v.asIdeal`. -/
+@[simp, grind =]
+theorem distribHaarChar_adicCompletion (a : (v.adicCompletion K)ˣ) :
+    distribHaarChar (v.adicCompletion K) a = ‖(a : v.adicCompletion K)‖₊ := by
+  apply NNReal.coe_injective
+  rw [distribHaarChar_eq_normalizedAbsoluteValue, coe_nnNorm,
+    ← v.coe_normalizedAbsoluteValue_adicCompletion]
+  norm_cast
+
+/-- At a finite place `v` of a number field `K` whose residue field has degree `f` over `𝔽_p`, any
+uniformizer `ϖ` of `v.adicCompletion K` has distributive Haar character `p ^ (-f)`. -/
+theorem distribHaarChar_adicCompletion_of_isUniformizer (p : ℕ) [Fact p.Prime]
+    [Algebra (ZMod p) (𝓞 K ⧸ v.asIdeal)] {ϖ : (v.adicCompletion K)ˣ}
+    (hϖ : IsUniformizer (v.adicCompletion K) ϖ) :
+    distribHaarChar (v.adicCompletion K) ϖ =
+      ((p : ℝ≥0) ^ Module.finrank (ZMod p) (𝓞 K ⧸ v.asIdeal))⁻¹ := by
+  rw [distribHaarChar_of_isUniformizer hϖ, v.natCard_residueField_adicCompletion_eq_absNorm,
+    Ideal.absNorm_of_ne_bot v.ne_bot, Submodule.cardQuot_apply,
+    Module.natCard_eq_pow_finrank (K := ZMod p), Nat.card_zmod, Nat.cast_pow]
+
+/-- When `v` has residue degree `f > 1` over `𝔽_p`, a uniformizer of `v.adicCompletion K` has
+distributive Haar character strictly smaller than `p⁻¹` (namely `p ^ (-f) < p⁻¹`). -/
+theorem distribHaarChar_adicCompletion_lt_inv_of_one_lt_finrank (p : ℕ) [Fact p.Prime]
+    [Algebra (ZMod p) (𝓞 K ⧸ v.asIdeal)]
+    (hf : 1 < Module.finrank (ZMod p) (𝓞 K ⧸ v.asIdeal)) {ϖ : (v.adicCompletion K)ˣ}
+    (hϖ : IsUniformizer (v.adicCompletion K) ϖ) :
+    distribHaarChar (v.adicCompletion K) ϖ < (p : ℝ≥0)⁻¹ := by
+  rw [v.distribHaarChar_adicCompletion_of_isUniformizer p hϖ]
+  have hp1 : (1 : ℝ≥0) < p := by exact_mod_cast (Fact.out : p.Prime).one_lt
+  have hp0 : (0 : ℝ≥0) < p := zero_lt_one.trans hp1
+  exact inv_strictAnti₀ hp0 (by simpa using pow_lt_pow_right₀ hp1 hf)
+
+end IsDedekindDomain.HeightOneSpectrum
+
+namespace Padic
+
+/-- On `ℚ_[p]`, the distributive Haar character of a unit `a ∈ ℚ_[p]ˣ` coincides with its `p`-adic
+norm `‖a‖₊`. -/
+@[simp, grind =]
+theorem distribHaarChar_eq_nnnorm {p : ℕ} [Fact p.Prime] (a : ℚ_[p]ˣ) :
+    distribHaarChar ℚ_[p] a = ‖(a : ℚ_[p])‖₊ := by
+  rw [TauCeti.distribHaarChar_eq_normalizedAbsoluteValue, normalizedAbsoluteValue_eq_nnnorm]
+
+end Padic
+
+namespace TauCeti.LaurentSeries
+
+variable (F : Type*) [Field F]
+
+/-- The indeterminate `X` packaged as a unit of the formal Laurent series field `F⸨X⸩`, with
+inverse `X⁻¹`. -/
+noncomputable def XUnit : F⸨X⸩ˣ where
+  val := HahnSeries.single 1 1
+  inv := HahnSeries.single (-1) 1
+  val_inv := by simp [← HahnSeries.single_zero_one]
+  inv_val := by simp [← HahnSeries.single_zero_one]
+
+/-- The underlying series of `TauCeti.LaurentSeries.XUnit F` is `HahnSeries.single 1 1`. -/
+@[simp, grind =]
+theorem coe_XUnit : ((XUnit F : F⸨X⸩ˣ) : F⸨X⸩) = HahnSeries.single 1 1 :=
+  (rfl)
+
+/-- `X` is a uniformizer of `F⸨X⸩` when `F` is finite. -/
+theorem isUniformizer_XUnit [Finite F] : IsUniformizer F⸨X⸩ (XUnit F) := by
+  have hv : (Valued.v ((XUnit F : F⸨X⸩ˣ) : F⸨X⸩) : ℤᵐ⁰) = WithZero.exp (-1) := by
+    have h := _root_.LaurentSeries.valuation_X_pow F 1
+    simpa [coe_XUnit, PowerSeries.coe_X] using h
+  have hnorm : (normalizedValuation F⸨X⸩ (XUnit F) : ℤᵐ⁰) = WithZero.exp 1 := by
+    have h0 := Valuation.normalizedValuationWithZero_eq_inv_of_surjective
+      (Valued.v : Valuation F⸨X⸩ ℤᵐ⁰) (_root_.LaurentSeries.valuation_surjective F) (XUnit F)
+    rw [normalizedValuationWithZero_coe, hv, ← WithZero.exp_neg, neg_neg] at h0
+    exact h0
+  rw [isUniformizer_def, ← WithZero.coe_inj, hnorm, WithZero.exp_eq_coe_ofAdd]
+
+/-- **Equal-characteristic uniformizer character.** For any finite field `F` (including positive
+characteristic), the uniformizer `X` of `F⸨X⸩` has distributive Haar character `(Nat.card F)⁻¹`. -/
+@[simp, grind =]
+theorem distribHaarChar_XUnit [Finite F] :
+    distribHaarChar F⸨X⸩ (XUnit F) = (Nat.card F : ℝ≥0)⁻¹ := by
+  rw [distribHaarChar_of_isUniformizer (isUniformizer_XUnit F), natCard_residueField]
+
+/-- In `F⸨X⸩` over a finite field `F`, left multiplication by `X` pushes every additive Haar measure
+`μ` forward to `(Nat.card F) • μ`. -/
+theorem map_XUnit_mul_left_addHaar [Finite F] [MeasurableSpace F⸨X⸩] [BorelSpace F⸨X⸩]
+    (μ : Measure F⸨X⸩) [μ.IsAddHaarMeasure] :
+    Measure.map (((XUnit F : F⸨X⸩ˣ) : F⸨X⸩) * ·) μ = (Nat.card F : ℝ≥0) • μ := by
+  rw [Measure.map_mul_left_addHaar_of_isUniformizer μ (isUniformizer_XUnit F), natCard_residueField]
+
+end TauCeti.LaurentSeries
