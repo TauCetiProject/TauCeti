@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Order.Archimedean.Basic
 import Mathlib.Tactic.GCongr
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Positivity
 
 /-!
 # Choosing step counts in Archimedean ordered semifields
@@ -20,6 +22,9 @@ and a target `s < r`, it finds a number `M ≥ 1` of steps such that the startin
 stays below `1`. Moser's iteration uses it to pick the exponents `p₀ χ^k` along which a reverse
 Hölder inequality is iterated.
 
+Finally, it absorbs a halved term: a function `w` bounded above with
+`w y ≤ 1 / 2 * w (f y) + C` for every `y` is bounded by `2 * C`.
+
 ## Main results
 
 * `TauCeti.exists_pos_nat_mul_inv_lt`: for `0 < c` there is `n > 0` with `L * n⁻¹ < c`.
@@ -27,6 +32,8 @@ Hölder inequality is iterated.
   there is `M > 0` with `s / r ^ M < p` and `s / r ^ M * r ^ k < 1` for all `k < M`.
 * `TauCeti.exists_nat_ge_and_div_le`: for `0 < δ` and `n₀ : ℕ` there are `n ≥ n₀` and `N > 0`
   with `1 / (N + 1) ≤ δ` and `2 * n / N ≤ δ`.
+* `BddAbove.le_two_mul_of_le_half_mul_comp_add`: `w x ≤ 2 * C` for a function `w` bounded above
+  with `w y ≤ 1 / 2 * w (f y) + C` for every `y`, in an archimedean ordered field.
 -/
 
 public section
@@ -71,3 +78,23 @@ theorem exists_nat_ge_and_div_le {δ : K} (hδ : 0 < δ) (n₀ : ℕ) :
     _ ≤ δ := h2.le
 
 end TauCeti
+
+/-- Iterated absorption of a halved term: if `w` is bounded above and
+`w y ≤ 1 / 2 * w (f y) + C` for every `y`, then `w x ≤ 2 * C` for every `x`. -/
+theorem BddAbove.le_two_mul_of_le_half_mul_comp_add {α β : Type*} [Field α] [LinearOrder α]
+    [IsStrictOrderedRing α] [Archimedean α] {w : β → α} {f : β → β} {C : α}
+    (hw : BddAbove (Set.range w)) (h : ∀ y, w y ≤ 1 / 2 * w (f y) + C) (x : β) :
+    w x ≤ 2 * C := by
+  obtain ⟨B, hB⟩ := hw
+  -- Iterating `h` gives `(w y - 2 C) 2 ^ n ≤ B - 2 C` for every `n`.
+  have key (n : ℕ) : ∀ y, (w y - 2 * C) * 2 ^ n ≤ B - 2 * C := by
+    induction n with
+    | zero => exact fun y ↦ by linarith [hB ⟨y, rfl⟩]
+    | succ n ih =>
+      refine fun y ↦ le_trans ?_ (ih (f y))
+      rw [pow_succ, mul_comm (2 ^ n : α) 2, ← mul_assoc]
+      exact mul_le_mul_of_nonneg_right (by linarith [h y]) (by positivity)
+  by_contra! hx
+  obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt ((B - 2 * C) / (w x - 2 * C)) one_lt_two
+  rw [div_lt_iff₀ (by linarith)] at hn
+  linarith [key n x, mul_comm (w x - 2 * C) (2 ^ n)]

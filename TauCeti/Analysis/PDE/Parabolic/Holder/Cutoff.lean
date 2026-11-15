@@ -26,12 +26,12 @@ distance at least `2 ρ`, as used to patch local estimates into global ones.
 The construction uses Mathlib's `ContDiffBump` on ordinary product space, with the
 time coordinate rescaled by `ρ`.
 
-A time cutoff at scale `δ` (`TauCeti.ParabolicC2HolderSpace.IsTimeCutoff`) is a map of time
-alone on `E × [0, T]`, vanishing up to time `δ / 4` and equal to one from time `δ` on, whose
-time derivative is bounded by `A / δ` and has parabolic Hölder seminorm at most `B δ^(-1 - α/2)`.
-Such cutoffs exist with `A` and `B` independent of `δ` and `T`
-(`TauCeti.ParabolicC2HolderSpace.exists_timeCutoff`); they localize estimates away from the
-initial time.
+A time cutoff at scale `δ` after time `s` (`TauCeti.ParabolicC2HolderSpace.IsTimeCutoff`) is a
+map of time alone on `E × [a, b]`, vanishing up to time `s + δ / 4` and equal to one from time
+`s + δ` on, whose time derivative is bounded by `A / δ` and has parabolic Hölder seminorm at most
+`B δ^(-1 - α/2)`. Such cutoffs exist with `A` and `B` independent of the slab, of `s` and of `δ`
+(`TauCeti.ParabolicC2HolderSpace.exists_timeCutoff`); they localize estimates away from a given
+time. The construction is `t ↦ ψ(2 (t - s) / δ - 1)`, with `ψ` Mathlib's smooth transition.
 -/
 
 public section
@@ -140,37 +140,39 @@ end FiniteDimensional
 
 /-! ### Time cutoffs -/
 
-/-- A **time cutoff at scale `δ`** on `E × [0, T]`: a map `χ` of time alone, vanishing together
-with its time derivative up to time `δ/4` and equal to one from time `δ` on, with
-`‖χ‖ ≤ 1 + A / δ + [χ']_{α,par}`, `|χ'| ≤ A / δ` and `δ^(1 + α/2) [χ']_{α,par} ≤ B`. -/
-structure IsTimeCutoff {T : ℝ} {hT : 0 < T} (A B : ℝ≥0) (δ : ℝ)
-    (χ : ParabolicC2HolderSpace α E ℝ hT) : Prop where
+/-- A **time cutoff at scale `δ` after time `s`** on `E × [a, b]`: a map `χ` of time alone,
+vanishing together with its time derivative up to time `s + δ/4` and equal to one from time
+`s + δ` on, with `‖χ‖ ≤ 1 + A / δ + [χ']_{α,par}`, `|χ'| ≤ A / δ` and
+`δ^(1 + α/2) [χ']_{α,par} ≤ B`. -/
+structure IsTimeCutoff {a b : ℝ} {hab : a < b} (A B : ℝ≥0) (s δ : ℝ)
+    (χ : ParabolicC2HolderSpace α E ℝ hab) : Prop where
   spatialFDerivL_eq_zero : spatialFDerivL χ = 0
   eq_zero_of_time_le :
-    ∀ p : slab (E := E) 0 T, (p : ParabolicSpaceTime E).time ≤ δ / 4 → χ p = 0
+    ∀ p : slab (E := E) a b, (p : ParabolicSpaceTime E).time ≤ s + δ / 4 → χ p = 0
   timeDerivL_eq_zero_of_time_le :
-    ∀ p : slab (E := E) 0 T, (p : ParabolicSpaceTime E).time ≤ δ / 4 → timeDerivL χ p = 0
-  eq_one_of_le_time : ∀ p : slab (E := E) 0 T, δ ≤ (p : ParabolicSpaceTime E).time → χ p = 1
-  norm_le : ‖χ‖ ≤ 1 + A / δ + nnHolderNorm α (timeDerivL χ : slab (E := E) 0 T → ℝ)
+    ∀ p : slab (E := E) a b, (p : ParabolicSpaceTime E).time ≤ s + δ / 4 → timeDerivL χ p = 0
+  eq_one_of_le_time :
+    ∀ p : slab (E := E) a b, s + δ ≤ (p : ParabolicSpaceTime E).time → χ p = 1
+  norm_le : ‖χ‖ ≤ 1 + A / δ + nnHolderNorm α (timeDerivL χ : slab (E := E) a b → ℝ)
   norm_timeDerivL_apply_le : ∀ p, ‖timeDerivL χ p‖ ≤ A / δ
   rpow_mul_nnHolderNorm_timeDerivL_le :
-    δ ^ (1 + (α : ℝ) / 2) * nnHolderNorm α (timeDerivL χ : slab (E := E) 0 T → ℝ) ≤ B
+    δ ^ (1 + (α : ℝ) / 2) * nnHolderNorm α (timeDerivL χ : slab (E := E) a b → ℝ) ≤ B
 
 /-- **The rescaled transition profile.** If `ψ'` is bounded by `L₁` and `L₂`-Lipschitz, then for
-`δ ≥ 0` the function `t ↦ ψ'(2 t / δ - 1) (2 / δ)` is bounded by `2 L₁ / δ` and, for `α ≤ 2`,
-`(α/2)`-Hölder with constant `(4 L₂ + 4 L₁) δ^(-(1 + α/2))`. -/
+`δ ≥ 0` the function `t ↦ ψ'(2 (t - s) / δ - 1) (2 / δ)` is bounded by `2 L₁ / δ` and, for
+`α ≤ 2`, `(α/2)`-Hölder with constant `(4 L₂ + 4 L₁) δ^(-(1 + α/2))`. -/
 private theorem norm_le_and_holderWith_rescale {ψ' : ℝ → ℝ} {L₁ L₂ : ℝ≥0}
-    (hL₁ : ∀ x, ‖ψ' x‖ ≤ L₁) (hL₂ : LipschitzWith L₂ ψ') (hα : α ≤ 2) (δ : ℝ≥0) :
-    (∀ t : ℝ, ‖ψ' (2 * t / δ - 1) * (2 / δ)‖ ≤ 2 * L₁ / δ) ∧
+    (hL₁ : ∀ x, ‖ψ' x‖ ≤ L₁) (hL₂ : LipschitzWith L₂ ψ') (hα : α ≤ 2) (s : ℝ) (δ : ℝ≥0) :
+    (∀ t : ℝ, ‖ψ' (2 * (t - s) / δ - 1) * (2 / δ)‖ ≤ 2 * L₁ / δ) ∧
       HolderWith ((4 * L₂ + 4 * L₁) * δ ^ (-(1 + (α : ℝ) / 2))) (α / 2)
-        fun t : ℝ ↦ ψ' (2 * t / δ - 1) * (2 / δ) := by
+        fun t : ℝ ↦ ψ' (2 * (t - s) / δ - 1) * (2 / δ) := by
   -- At `δ = 0` the function is identically zero.
   rcases eq_zero_or_pos δ with rfl | hδ
   · refine ⟨fun t ↦ by simp, ?_⟩
     simp only [NNReal.coe_zero, div_zero, mul_zero]
     exact HolderWith.const
   have hδr : (0 : ℝ) < δ := hδ
-  have hbd (t : ℝ) : ‖ψ' (2 * t / δ - 1) * (2 / δ)‖ ≤ 2 * L₁ / δ := by
+  have hbd (t : ℝ) : ‖ψ' (2 * (t - s) / δ - 1) * (2 / δ)‖ ≤ 2 * L₁ / δ := by
     rw [norm_mul, Real.norm_of_nonneg (by positivity : (0 : ℝ) ≤ 2 / δ)]
     calc _ ≤ (L₁ : ℝ) * (2 / δ) := by gcongr; exact hL₁ _
       _ = _ := by ring
@@ -191,50 +193,51 @@ private theorem norm_le_and_holderWith_rescale {ψ' : ℝ → ℝ} {L₁ L₂ : 
     rw [e₁, e₂, Real.rpow_two, Real.rpow_one]
     field_simp
   rw [← hK]
-  refine holderOnWith_univ.1 (HolderOnWith.of_le_of_dist_le (fun t _ s _ _ ↦ ?_)
-    (fun t _ s _ ↦ ?_) ((div_le_one₀ two_pos).2 hα) hδ)
+  refine holderOnWith_univ.1 (HolderOnWith.of_le_of_dist_le (fun t _ t' _ _ ↦ ?_)
+    (fun t _ t' _ ↦ ?_) ((div_le_one₀ two_pos).2 hα) hδ)
   · rw [NNReal.coe_one, Real.rpow_one, dist_eq_norm, ← sub_mul, norm_mul,
       Real.norm_of_nonneg (by positivity : (0 : ℝ) ≤ 2 / δ)]
-    have h := hL₂.dist_le_mul (2 * t / δ - 1) (2 * s / δ - 1)
+    have h := hL₂.dist_le_mul (2 * (t - s) / δ - 1) (2 * (t' - s) / δ - 1)
     rw [dist_eq_norm, Real.dist_eq] at h
-    have hts : |2 * t / δ - 1 - (2 * s / δ - 1)| = 2 / δ * |t - s| := by
-      rw [show 2 * t / (δ : ℝ) - 1 - (2 * s / δ - 1) = 2 / δ * (t - s) by ring, abs_mul,
-        abs_of_pos (by positivity : (0 : ℝ) < 2 / δ)]
+    have hts : |2 * (t - s) / δ - 1 - (2 * (t' - s) / δ - 1)| = 2 / δ * |t - t'| := by
+      rw [show 2 * (t - s) / (δ : ℝ) - 1 - (2 * (t' - s) / δ - 1) = 2 / δ * (t - t') by ring,
+        abs_mul, abs_of_pos (by positivity : (0 : ℝ) < 2 / δ)]
     rw [hts] at h
     push_cast
     rw [Real.dist_eq]
-    calc _ ≤ ↑L₂ * (2 / δ * |t - s|) * (2 / δ) := mul_le_mul_of_nonneg_right h (by positivity)
+    calc _ ≤ ↑L₂ * (2 / δ * |t - t'|) * (2 / δ) := mul_le_mul_of_nonneg_right h (by positivity)
       _ = _ := by field_simp; ring
   · rw [dist_eq_norm]
     push_cast
-    calc _ ≤ ‖ψ' (2 * t / δ - 1) * (2 / δ)‖ + ‖ψ' (2 * s / δ - 1) * (2 / δ)‖ := norm_sub_le _ _
-      _ ≤ 2 * L₁ / δ + 2 * L₁ / δ := add_le_add (hbd t) (hbd s)
+    calc _ ≤ ‖ψ' (2 * (t - s) / δ - 1) * (2 / δ)‖ + ‖ψ' (2 * (t' - s) / δ - 1) * (2 / δ)‖ :=
+          norm_sub_le _ _
+      _ ≤ 2 * L₁ / δ + 2 * L₁ / δ := add_le_add (hbd t) (hbd t')
       _ = _ := by ring
 
 /-- **Time cutoffs.** For `α ≤ 2` there are constants `A`, `B` such that on every slab
-`E × [0, T]` and at every scale `δ > 0` there is a time cutoff at scale `δ` with these constants.
-The cutoff is `t ↦ ψ(2 t / δ - 1)`, with `ψ` Mathlib's smooth transition. -/
+`E × [a, b]`, after every time `s` and at every scale `δ > 0` there is a time cutoff at scale `δ`
+after time `s` with these constants. -/
 theorem exists_timeCutoff (hα : α ≤ 2) :
-    ∃ A B : ℝ≥0, ∀ {T : ℝ} (hT : 0 < T) {δ : ℝ}, 0 < δ →
-      ∃ χ : ParabolicC2HolderSpace α E ℝ hT, IsTimeCutoff A B δ χ := by
+    ∃ A B : ℝ≥0, ∀ {a b : ℝ} (hab : a < b) (s : ℝ) {δ : ℝ}, 0 < δ →
+      ∃ χ : ParabolicC2HolderSpace α E ℝ hab, IsTimeCutoff A B s δ χ := by
   obtain ⟨L₁, hL₁⟩ := Real.smoothTransition.exists_forall_norm_deriv_le
   lift L₁ to ℝ≥0 using (norm_nonneg _).trans (hL₁ 0)
   obtain ⟨L₂, hlip⟩ := ContDiff.lipschitzWith_of_hasCompactSupport
     Real.smoothTransition.hasCompactSupport_deriv
     (Real.smoothTransition.contDiff.iterate_deriv 1) (by simp)
-  refine ⟨2 * L₁, 4 * L₂ + 4 * L₁, fun {T} hT {δ} hδ ↦ ?_⟩
+  refine ⟨2 * L₁, 4 * L₂ + 4 * L₁, fun {a b} hab s {δ} hδ ↦ ?_⟩
   lift δ to ℝ≥0 using hδ.le
-  -- The cutoff is `φ(t) = ψ(2 t / δ - 1)`, with derivative `φ'`.
-  set φ : ℝ → ℝ := fun t ↦ Real.smoothTransition (2 * t / δ - 1)
-  set φ' : ℝ → ℝ := fun t ↦ deriv Real.smoothTransition (2 * t / δ - 1) * (2 / δ)
+  -- The cutoff is `φ(t) = ψ(2 (t - s) / δ - 1)`, with derivative `φ'`.
+  set φ : ℝ → ℝ := fun t ↦ Real.smoothTransition (2 * (t - s) / δ - 1)
+  set φ' : ℝ → ℝ := fun t ↦ deriv Real.smoothTransition (2 * (t - s) / δ - 1) * (2 / δ)
   have hφ (t : ℝ) : HasDerivAt φ (φ' t) t := by
     have h := HasDerivAt.smoothTransition
-      ((((hasDerivAt_id t).const_mul 2).div_const (δ : ℝ)).sub_const 1)
+      (((((hasDerivAt_id t).sub_const s).const_mul 2).div_const (δ : ℝ)).sub_const 1)
     rwa [mul_one] at h
-  obtain ⟨hbd, hH⟩ := norm_le_and_holderWith_rescale hL₁ hlip hα δ
+  obtain ⟨hbd, hH⟩ := norm_le_and_holderWith_rescale hL₁ hlip hα s δ
   have hφ'c : Continuous φ' := (hlip.continuous.comp (by fun_prop)).mul continuous_const
-  -- Before time `δ / 4` the argument `2 t / δ - 1` of the transition is negative.
-  have hneg {t : ℝ} (ht : t ≤ δ / 4) : 2 * t / δ - 1 < 0 := by
+  -- Before time `s + δ / 4` the argument `2 (t - s) / δ - 1` of the transition is negative.
+  have hneg {t : ℝ} (ht : t ≤ s + δ / 4) : 2 * (t - s) / δ - 1 < 0 := by
     rw [sub_neg, div_lt_one hδ]
     linarith
   refine ⟨ofTime φ φ' (fun t _ ↦ (hφ t).hasDerivWithinAt) hφ'c.continuousOn
@@ -248,12 +251,12 @@ theorem exists_timeCutoff (hα : α ≤ 2) :
     exact Real.smoothTransition.one_of_one_le (by rw [le_sub_iff_add_le, le_div_iff₀ hδ]; linarith)
   · -- The supremum of `χ` is at most one and that of `χ'` at most `A / δ`.
     rw [norm_ofTime, HolderSpace.norm_def, HolderSpace.coe_toBoundedContinuousFunction]
-    have hv : ‖valueL (ofTime (E := E) (hab := hT) φ φ' (fun t _ ↦ (hφ t).hasDerivWithinAt)
+    have hv : ‖valueL (ofTime (E := E) (hab := hab) φ φ' (fun t _ ↦ (hφ t).hasDerivWithinAt)
         hφ'c.continuousOn ⟨_, hH.holderOnWith _⟩)‖ ≤ 1 := by
       refine (BoundedContinuousFunction.norm_le zero_le_one).2 fun p ↦ ?_
       rw [valueL_apply, ofTime_apply, Real.norm_of_nonneg (Real.smoothTransition.nonneg _)]
       exact Real.smoothTransition.le_one _
-    have ht : ‖(timeDerivL (ofTime (E := E) (hab := hT) φ φ' (fun t _ ↦ (hφ t).hasDerivWithinAt)
+    have ht : ‖(timeDerivL (ofTime (E := E) (hab := hab) φ φ' (fun t _ ↦ (hφ t).hasDerivWithinAt)
         hφ'c.continuousOn ⟨_, hH.holderOnWith _⟩)).toBoundedContinuousFunction‖ ≤
         (2 * L₁ : ℝ≥0) / δ :=
       (BoundedContinuousFunction.norm_le (by positivity)).2 fun p ↦ by

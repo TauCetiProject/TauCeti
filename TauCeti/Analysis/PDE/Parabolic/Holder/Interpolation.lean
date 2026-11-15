@@ -397,22 +397,6 @@ theorem norm_spatialFDerivHolderL_le_mul (hα : α ≤ 1) (f : ParabolicC2Holder
   (le_add_of_nonneg_left (norm_nonneg _)).trans
     (norm_valueHolderL_add_norm_spatialFDerivHolderL_le_mul hα f)
 
-/-- The powers of `ε` and `r = ε²` occurring in `norm_valueHolderL_le_add_mul`, written in terms
-of `r^(-α/2) = ε^(-α)`. -/
-private theorem rpow_eq_of_sq_eq {ε r : ℝ} (hε : 0 < ε) (hεr : ε ^ 2 = r) (α : ℝ) :
-    ε ^ (-α) = r ^ (-α / 2) ∧ ε ^ (1 - α) = ε * r ^ (-α / 2) ∧
-      r ^ (1 - α / 2) = r * r ^ (-α / 2) ∧ ε ^ α * r ^ (-α / 2) = 1 := by
-  have hr : 0 < r := hεr ▸ by positivity
-  have hεq : ε ^ (-α) = r ^ (-α / 2) := by
-    rw [← hεr, ← Real.rpow_natCast, ← Real.rpow_mul hε.le]
-    congr 1
-    push_cast
-    ring
-  refine ⟨hεq, ?_, ?_, ?_⟩
-  · rw [sub_eq_add_neg, Real.rpow_add hε, Real.rpow_one, hεq]
-  · rw [sub_eq_add_neg, Real.rpow_add hr, Real.rpow_one, neg_div]
-  · rw [← hεq, ← Real.rpow_add hε, add_neg_cancel, Real.rpow_zero]
-
 /-- The arithmetic of `norm_valueHolderL_le_add_mul`: the interpolation bound `h` for the value
 seminorm `Hv` is combined with the supremum bounds `hD`, `hS` and `hT` on the gradient, the spatial
 Hessian and the time derivative at the scale `ε`, and with the bound `hN` on the top-order
@@ -457,7 +441,13 @@ theorem norm_valueHolderL_le_add_mul (hα : α ≤ 1) (f : ParabolicC2HolderSpac
   set ε := √r
   have hε : 0 < ε := Real.sqrt_pos.2 hr
   have hεr : ε ^ 2 = r := Real.sq_sqrt hr.le
-  obtain ⟨hεq, hq₁, hq₂, hq₃⟩ := rpow_eq_of_sq_eq hε hεr α
+  have hεq : ε ^ (-(α : ℝ)) = r ^ (-(α : ℝ) / 2) := (Real.rpow_div_two_eq_sqrt _ hr.le).symm
+  have hq₁ : ε ^ (1 - (α : ℝ)) = ε * r ^ (-(α : ℝ) / 2) := by
+    rw [sub_eq_add_neg, Real.rpow_add hε, Real.rpow_one, hεq]
+  have hq₂ : r ^ (1 - (α : ℝ) / 2) = r * r ^ (-(α : ℝ) / 2) := by
+    rw [sub_eq_add_neg, Real.rpow_add hr, Real.rpow_one, neg_div]
+  have hq₃ : ε ^ (α : ℝ) * r ^ (-(α : ℝ) / 2) = 1 := by
+    rw [← hεq, ← Real.rpow_add hε, add_neg_cancel, Real.rpow_zero]
   -- Interpolate between the Lipschitz bounds and the oscillation bound, at the spatial scale `ε`
   -- and the temporal scale `r = ε²`.
   obtain ⟨ε', hε'⟩ : ∃ ε' : ℝ≥0, (ε' : ℝ) = ε := ⟨⟨ε, hε.le⟩, rfl⟩

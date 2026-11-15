@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Restriction
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Schauder
-import TauCeti.Algebra.Order.Field.Basic
+import TauCeti.Algebra.Order.Archimedean.Basic
 import TauCeti.Analysis.Matrix.QuadraticBounds
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
@@ -37,8 +37,8 @@ data are only bounded and uniformly continuous.
 
 ## The argument
 
-Let `χ(t) = ψ(2 t / δ - 1)` with `ψ` Mathlib's smooth transition, so that `χ` vanishes for
-`t ≤ δ/2` and equals one for `t ≥ δ`, with `|χ'| ≤ A/δ` and `[χ']_{α,par} ≤ B δ^(-1 - α/2)`
+Let `χ` be a time cutoff of time alone that vanishes together with `χ'` for `t ≤ δ/4` and equals
+one for `t ≥ δ`, with `|χ'| ≤ A/δ` and `[χ']_{α,par} ≤ B δ^(-1 - α/2)`
 (`TauCeti.ParabolicC2HolderSpace.exists_timeCutoff`). The
 map `χ u` has vanishing initial slice and agrees with `u` on `[δ, T]`, and `P (χ u) = χ P u + χ' u`
 because `χ` has no spatial derivatives
@@ -52,7 +52,7 @@ of `u` by `(1 + 40 (τ δ)^(-α/2)) sup |u|` plus `2 τ δ ‖u‖_{2+α,par; [�
 multiplication by `δ^(1 + α/2)`, the last term is a multiple of `τ` times the weighted norm at
 `δ/4`; for `τ` small it is absorbed into the supremum over `δ` of the weighted norms, which is
 finite because `u` lies in the closed-slab space
-(`TauCeti.le_two_mul_of_le_half_mul_comp_add`). Finally the comparison principle
+(`BddAbove.le_two_mul_of_le_half_mul_comp_add`). Finally the comparison principle
 (`TauCeti.ParabolicC2HolderSpace.norm_valueL_le_exp_mul`) bounds `sup |u|` by `sup |u(·, 0)|`
 and `‖P u‖`.
 
@@ -146,7 +146,7 @@ private theorem norm_restrictL_le_of_timeCutoff (hα : α ≤ 1) {T δ : ℝ} {h
     (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
     (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
     (χ u : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hT) {A B : ℝ≥0}
-    (hχ : IsTimeCutoff A B δ χ) {C : ℝ} (hC₀ : 0 ≤ C)
+    (hχ : IsTimeCutoff A B 0 δ χ) {C : ℝ} (hC₀ : 0 ≤ C)
     (hC : ‖(ContinuousLinearMap.mul ℝ ℝ).compParabolicC2Holder₂ hα χ u‖ ≤
       C * (‖euclideanParabolicOperatorL hα a b c
           ((ContinuousLinearMap.mul ℝ ℝ).compParabolicC2Holder₂ hα χ u)‖ +
@@ -180,8 +180,8 @@ private theorem norm_restrictL_le_of_timeCutoff (hα : α ≤ 1) {T δ : ℝ} {h
     (ContinuousLinearMap.norm_compHolder₂_apply_le _ _ _).trans (by
       rw [mul_assoc]
       exact mul_le_of_le_one_left (by positivity) hmul)
-  have h₂ := norm_mul_timeDerivL_valueHolderL_le h₄ h₄T hα χ u hχ.timeDerivL_eq_zero_of_time_le
-    hχ.norm_timeDerivL_apply_le
+  have h₂ := norm_mul_timeDerivL_valueHolderL_le h₄ h₄T hα χ u
+    (fun p hp ↦ hχ.timeDerivL_eq_zero_of_time_le p (by rwa [zero_add])) hχ.norm_timeDerivL_apply_le
   rw [hrw]
   refine (norm_restrictL_apply_le w).trans ?_
   exact hC.trans (mul_le_mul_of_nonneg_left ((norm_add_le _ _).trans (add_le_add h₁ h₂)) hC₀)
@@ -263,7 +263,7 @@ private theorem weighted_step (hα₁ : α < 1) {T d T₀ : ℝ} {hT : 0 < T} (h
       ‖w‖ ≤ CS * (‖euclideanParabolicOperatorL hα₁.le a b c w‖ +
         ‖w.spatialTrace ⟨0, left_mem_Icc.2 hT.le⟩‖))
     {A B : ℝ≥0} {χ : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hT}
-    (hχ : IsTimeCutoff A B d χ)
+    (hχ : IsTimeCutoff A B 0 d χ)
     {τ : ℝ} (hτ₀ : 0 < τ) (hτ₄ : τ ≤ 1 / 4) (hτabs : CS * (32 * A * τ) ≤ 1 / 2)
     (hdT₀ : d ≤ T₀) :
     d ^ (1 + (α : ℝ) / 2) * ‖restrictL hd.le le_rfl hdT u‖ ≤
@@ -375,17 +375,16 @@ theorem exists_rpow_mul_norm_restrictL_le (hα₀ : 0 < α) (hα₁ : α < 1) (h
   have hM₀ : 0 ≤ M := (abs_nonneg _).trans (hM 0)
   have hT₀ : (T : ℝ) ≤ T₀ := by exact_mod_cast hTT₀
   have ha' : ∀ p (ξ : EuclideanSpace ℝ ι), (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ ≤
-      (∑ _i : ι, ∑ _j : ι, (K : ℝ)) * ‖ξ‖ ^ 2 := fun p ξ ↦
-    (Matrix.toQuadraticForm'_le_sum_abs_mul_sq _ ξ).trans (mul_le_mul_of_nonneg_right
-      (Finset.sum_le_sum fun i _ ↦ Finset.sum_le_sum fun j _ ↦
-        (HolderSpace.norm_apply_le (a i j) p).trans (hak i j)) (sq_nonneg _))
+      (∑ _i : ι, ∑ _j : ι, (K : ℝ)) * ‖ξ‖ ^ 2 := fun p ↦
+    Matrix.toQuadraticForm'_le_of_forall_abs_le fun i j ↦
+      (HolderSpace.norm_apply_le (a i j) p).trans (hak i j)
   -- The comparison principle bounds the supremum of `u` by its initial values and `P u`.
   have hV : V ≤ E₀ * (M + Pu) := norm_valueL_le_exp_mul hα₁.le (b := b)
     (fun q ξ ↦ (mul_nonneg hlam.le (sq_nonneg ‖ξ‖)).trans (ha q ξ))
     (fun q ↦ (le_abs_self _).trans ((HolderSpace.norm_apply_le c q).trans hck)) K.coe_nonneg
     (by rw [sub_zero]; exact hT₀) u hM
   -- Absorb the weighted norms `d^(1 + α/2) ‖u‖_{2+α,par; [d, T]}`, `0 < d < T`.
-  have hsup := le_two_mul_of_le_half_mul_comp_add (C := C₁ * (Pu + V))
+  have hsup := BddAbove.le_two_mul_of_le_half_mul_comp_add (C := C₁ * (Pu + V))
     (w := fun d : Ioo (0 : ℝ) T ↦ (d : ℝ) ^ (1 + (α : ℝ) / 2) *
       ‖restrictL d.2.1.le le_rfl d.2.2 u‖)
     (f := fun d ↦ ⟨d / 4, by linarith [d.2.1], by linarith [d.2.1, d.2.2]⟩)
@@ -394,7 +393,7 @@ theorem exists_rpow_mul_norm_restrictL_le (hα₀ : 0 < α) (hα₁ : α < 1) (h
       -- The restrictions differ only in proof terms.
       convert rpow_mul_norm_restrictL_le hα₂ hT₀ u hd hdT using 1⟩
     (fun ⟨d, hd, hdT⟩ ↦ by
-      obtain ⟨χ, hχ⟩ := hcut hT hd
+      obtain ⟨χ, hχ⟩ := hcut hT 0 hd
       have key := weighted_step hα₁ hd hdT (by positivity) (by linarith) a b c u hCS
         (hS T hT hTT₀ a b c ha ha' hak hbk hck) hχ hτ₀ hτ₄ hτabs (hdT.le.trans hT₀)
       -- The restrictions in `key` and in the goal differ only in proof terms.
