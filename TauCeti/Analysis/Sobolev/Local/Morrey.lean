@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.W1p.InteriorMorrey
 public import TauCeti.MeasureTheory.Function.PreciseRepresentative
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Sobolev.Local.W1p
+import TauCeti.Analysis.Sobolev.WeakDeriv.Classical
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -25,6 +26,7 @@ has a representative that is continuous on `Ω` and Hölder continuous with expo
 The representative is the precise representative `u*` of `u`, the limit of its averages over
 shrinking balls; it agrees with `u` almost everywhere on `Ω`. The constant `C` depends only on `p`
 and `F`. At the endpoint `p = ∞` the exponent is `1` and `u*` is Lipschitz on compact subsets.
+Applied to the weak derivative, this shows that a continuous map in `W^{2,p}_loc` is `C¹`.
 
 A real function in `MemWkpLoc p Ω 1` is represented by an element of `W1p volume W p` on every
 open `W` with compact closure in `Ω` (`TauCeti.MemWkpLoc.exists_w1p`). The scalar Morrey
@@ -40,6 +42,10 @@ applied on such a `W`; the vector-valued statement follows coordinatewise in a b
   with exponent `1 - 2 / p` on compact subsets of `Ω`.
 * `TauCeti.MemWkpLoc.exists_lipschitzOnWith_preciseRepresentative_of_isCompact`: the endpoint
   `p = ∞`.
+* `TauCeti.not_memWkpLoc_two_top_of_not_isBoundedUnder`: a `C¹` map whose classical second
+  derivative is unbounded near a point of `Ω` is not in `W^{2,∞}_loc`.
+* `TauCeti.MemWkpLoc.contDiffOn_one_of_continuousOn`: a continuous member of `W^{2,p}_loc` is `C¹`
+  on `Ω`.
 
 ## References
 
@@ -52,7 +58,7 @@ public section
 
 noncomputable section
 
-open Metric Set MeasureTheory Module TopologicalSpace TauCeti.MeasureTheory
+open Filter Metric Set MeasureTheory Module TopologicalSpace TauCeti.MeasureTheory
 open scoped ENNReal NNReal Topology
 
 namespace TauCeti
@@ -233,7 +239,7 @@ theorem MemWkpLoc.exists_holderOnWith_preciseRepresentative_of_isCompact (hp : 2
     (memLpLoc_iff.1 (hu.memLpLoc_of_hasWeakFDerivOn hD) _ hRK hRc).eLpNorm_ne_top
   set N := (eLpNorm D p (volume.restrict (cthickening R K))).toReal
   refine ⟨_, HolderOnWith.of_dist_lt_of_dist_le (K := (C * N).toNNReal) (D := (2 * M).toNNReal)
-    (Real.toNNReal_pos.2 (half_pos hR)) (fun x hx y hy hd => ?_) fun x hx y hy => ?_⟩
+    (Real.toNNReal_pos.2 (half_pos hR)) (fun x hx y _ hd => ?_) fun x hx y hy => ?_⟩
   · -- Nearby points: the local Morrey inequality on `closedBall x (2 |x - y|) ⊆ Ω`.
     rw [Real.coe_toNNReal _ (half_pos hR).le] at hd
     rw [Real.coe_toNNReal _ (mul_nonneg hC.le ENNReal.toReal_nonneg)]
@@ -257,6 +263,49 @@ theorem MemWkpLoc.exists_lipschitzOnWith_preciseRepresentative_of_isCompact
     hu.exists_holderOnWith_preciseRepresentative_of_isCompact ENNReal.ofNat_lt_top hK hKΩ
   simp only [ENNReal.div_top, tsub_zero, ENNReal.toNNReal_one] at hC
   exact ⟨C, holderOnWith_one.1 hC⟩
+
+/-- **Unbounded second derivatives rule out `W^{2,∞}_loc`.** A map that is `C¹` on an open set
+`Ω` and whose classical second derivative is unbounded near a point `z₀ ∈ Ω` is not in
+`W^{2,∞}_loc` on `Ω`: its derivative would be in `W^{1,∞}_loc`, hence Lipschitz near `z₀`. -/
+theorem not_memWkpLoc_two_top_of_not_isBoundedUnder {z₀ : ℂ} (hu : ContDiffOn ℝ 1 u Ω)
+    (hz₀ : z₀ ∈ Ω)
+    (hunb : ¬ IsBoundedUnder (· ≤ ·) (𝓝[≠] z₀) fun z ↦ ‖fderiv ℝ (fderiv ℝ u) z‖) :
+    ¬ MemWkpLoc ∞ Ω 2 u := by
+  intro h
+  have hloc : LocallyIntegrableOn (fderiv ℝ u) Ω volume :=
+    (hu.continuousOn_fderiv_of_isOpen Ω.isOpen le_rfl).locallyIntegrableOn
+      Ω.isOpen.measurableSet
+  obtain ⟨D, hD, hDk⟩ := h.exists_weakFDeriv_of_isOpen
+  have hdu : MemWkpLoc ∞ Ω 1 (fderiv ℝ u) := hDk.congr_ae (hD.ae_eq_fderiv hloc
+    fun z hz ↦ (hu.differentiableOn one_ne_zero).differentiableAt (Ω.isOpen.mem_nhds hz))
+  obtain ⟨r, hr, hrΩ⟩ := Metric.isOpen_iff.1 Ω.isOpen z₀ hz₀
+  have hK : closedBall z₀ (r / 2) ⊆ Ω :=
+    (closedBall_subset_ball (half_lt_self hr)).trans hrΩ
+  obtain ⟨C, hC⟩ := hdu.exists_lipschitzOnWith_preciseRepresentative_of_isCompact
+    (isCompact_closedBall z₀ (r / 2)) hK
+  have heq : EqOn (preciseRepresentative volume (fderiv ℝ u)) (fderiv ℝ u) (ball z₀ (r / 2)) :=
+    eqOn_preciseRepresentative_of_continuousOn isOpen_ball
+      (hloc.mono_set (ball_subset_closedBall.trans hK)) EventuallyEq.rfl
+      ((hu.continuousOn_fderiv_of_isOpen Ω.isOpen le_rfl).mono
+        (ball_subset_closedBall.trans hK))
+  have hlip : LipschitzOnWith C (fderiv ℝ u) (ball z₀ (r / 2)) := fun x hx y hy ↦ by
+    rw [← heq hx, ← heq hy]
+    exact hC (ball_subset_closedBall hx) (ball_subset_closedBall hy)
+  refine hunb (isBoundedUnder_of_eventually_le (a := (C : ℝ)) ?_)
+  filter_upwards [nhdsWithin_le_nhds (ball_mem_nhds z₀ (half_pos hr))] with z hz
+  exact norm_fderiv_le_of_lipschitzOn ℝ (isOpen_ball.mem_nhds hz) hlip
+
+/-- **Continuous `W^{2,p}_loc` maps are `C¹` for `p > 2`.** The weak derivative of
+`u ∈ MemWkpLoc p Ω 2` is in `W^{1,p}_loc`, so it agrees almost everywhere with its continuous
+precise representative, which is then a continuous weak derivative of `u`. If `u` itself is
+continuous on `Ω`, it is therefore `C¹` there. -/
+theorem MemWkpLoc.contDiffOn_one_of_continuousOn (hp : 2 < p) (hv : MemWkpLoc p Ω 2 u)
+    (hc : ContinuousOn u Ω) : ContDiffOn ℝ 1 u Ω := by
+  have : CompleteSpace F := FiniteDimensional.completeSpace ℝ F
+  obtain ⟨D, hD, hD1⟩ := hv.exists_weakFDeriv_of_isOpen
+  have hD' := hD.congr_ae_deriv (hD1.memLpLoc.ae_eq_preciseRepresentative (one_le_two.trans hp.le))
+  simpa using hD'.contDiffOn_succ hc (n := 0)
+    (contDiffOn_zero.2 (hD1.continuousOn_preciseRepresentative hp))
 
 end Planar
 

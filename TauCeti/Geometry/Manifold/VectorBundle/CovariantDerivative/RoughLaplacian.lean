@@ -228,7 +228,7 @@ theorem roughLaplacian_trivial (hf : ContMDiff I 𝓘(ℝ) ∞ f) (x : M) :
   set one : Π y : M, Trivial M ℝ y := fun _ ↦ (1 : ℝ)
   have hone : ContMDiff I (I.prod 𝓘(ℝ, ℝ)) ∞ (fun y ↦ (⟨y, one y⟩ : TotalSpace ℝ (Trivial M ℝ))) :=
     fun y ↦ by
-      simp only [contMDiffAt_section, Trivial.fiberBundle_trivializationAt',
+      simp only [contMDiffAt_section_iff, Trivial.fiberBundle_trivializationAt',
         Trivial.trivialization_apply]
       exact contMDiffAt_const
   have hpar (y : M) : trivial (I := I) ℝ one y = 0 := by

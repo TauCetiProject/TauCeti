@@ -217,7 +217,6 @@ theorem PosDef.conjTranspose_mul_relativeModularOperator_mul_partialTraceIsometr
     hrH]
   set s := CFC.sqrt ρ.partialTraceRight
   set r := CFC.sqrt ρ
-  have hs : IsUnit s.det := hρ.partialTraceRight.isUnit_det_sqrt
   have hss : s * s = ρ.partialTraceRight :=
     CFC.sqrt_mul_sqrt_self _ hρ.partialTraceRight.posSemidef.nonneg
   have hr : IsUnit r.det := hρ.isUnit_det_sqrt

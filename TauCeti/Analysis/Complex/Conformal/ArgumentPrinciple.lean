@@ -35,12 +35,10 @@ the winding number of the image about the origin being the winding-weighted numb
 poles. The holomorphic case is recorded separately, with the orders read off by
 `analyticOrderNatAt` instead of supplied by the caller.
 
-Nothing here re-proves the argument principle. Layer **L0** of the conformal-mapping roadmap is
-directed to *consume* the residue and argument-principle material of the sibling
-contour-integration roadmap, and that is what happens: the analytic content is
+Nothing here re-proves the argument principle: the analytic content is
 `TauCeti.Contour.argumentPrinciple_nullHomologous` and the corner-tolerant logarithmic-derivative
 regularity of `TauCeti.Analysis.Contour.LogDerivFTC`, and what is added on top is the
-conformal-geometric reading. `TauCeti/Analysis/Complex/Conformal/Rouche.lean` consumes it in turn
+conformal-geometric reading. `TauCeti/Analysis/Complex/Conformal/Rouche.lean` uses the same bridge
 to state Rouché's theorem as an equality of image winding numbers — the "dog on a leash" form.
 
 The generalized winding number of `TauCeti.Contour.windingNumber` is a *complex* number, defined by

@@ -129,7 +129,7 @@ theorem norm_iteratedFDeriv_inv_comp_le {p : E → ℝ} {k : ℕ} (hp : ContDiff
     (hD : ∀ i, 1 ≤ i → i ≤ k → ‖iteratedFDeriv ℝ i p x‖ ≤ C) :
     ‖iteratedFDeriv ℝ k (fun y ↦ (p y)⁻¹) x‖ ≤ (k ! : ℝ) ^ 2 * C ^ k / ε ^ (k + 1) := by
   -- Work on the open set where `p` is positive, which contains `x`.
-  set s : Set E := p ⁻¹' Set.Ioi 0 with hs
+  set s : Set E := p ⁻¹' Set.Ioi 0
   have hsopen : IsOpen s := isOpen_Ioi.preimage hp.continuous
   have hxs : x ∈ s := lt_of_lt_of_le hε hx
   have hinv : ContDiffOn ℝ k (fun y : ℝ ↦ y⁻¹) (Set.Ioi 0) :=

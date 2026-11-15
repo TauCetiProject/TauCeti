@@ -39,8 +39,6 @@ theorem norm_inner_map_self_sub_le {𝕜 E : Type*} [RCLike 𝕜] [NormedAddComm
     rw [map_sub]
     simp only [inner_sub_left, inner_sub_right]
     ring
-  have hTx : ‖T x‖ ≤ ‖T‖ := by
-    simpa using T.le_opNorm_of_le hx
   have hTy : ‖T y‖ ≤ ‖T‖ := by
     simpa using T.le_opNorm_of_le hy
   have hTxy : ‖T (x - y)‖ ≤ ‖T‖ * η := T.le_opNorm_of_le hxy
@@ -87,7 +85,6 @@ theorem norm_le_of_isSymmetric_of_abs_re_inner_map_self_le_of_isCover
     (hM : ∀ x ∈ N, |RCLike.re (Inner.inner 𝕜 (T x) x)| ≤ M)
     (hcover : IsCover η (sphere (0 : E) 1) N) :
     ‖T‖ ≤ (1 - 2 * (η : ℝ))⁻¹ * M := by
-  have hη0 : 0 ≤ (η : ℝ) := η.coe_nonneg
   have hηreal : (η : ℝ) < 1 / 2 := by exact_mod_cast hη
   have hden : 0 < 1 - 2 * (η : ℝ) := by nlinarith
   -- Transfer the net bound to every unit vector, with the quadratic-form error controlled by

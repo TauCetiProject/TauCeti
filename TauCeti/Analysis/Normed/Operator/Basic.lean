@@ -27,7 +27,13 @@ spaces. It lets an evaluation `T i (g i)` pass to the limit when the operators `
 uniformly bounded, their values at the limiting argument converge, and the arguments `g i` converge.
 In particular, it supplies the common continuity step for
 `StronglyContinuousSemigroup.tendsto_realOperator_apply` and
-`StronglyContinuousGroup.tendsto_apply`.
+`StronglyContinuousGroup.tendsto_apply`. It holds more generally for additive maps with a
+uniform pointwise bound `‖T i x‖ ≤ C * ‖x‖` (`AddMonoidHomClass.tendsto_apply_of_eventually_bound`).
+Consequently a strongly continuous family of such maps `T a` sends a continuous function `f` to
+the continuous function `a ↦ T a (f a)` (`AddMonoidHomClass.continuousOn_apply_of_bound`,
+`AddMonoidHomClass.continuous_apply_of_bound`). Operators whose norms tend to zero eventually map
+any ball about `0` into any neighbourhood of `0`
+(`ContinuousLinearMap.eventually_mapsTo_ball_of_tendsto_opNorm`).
 
 A left inverse `S` of `T` modulo an error term gives the estimate
 `‖x‖ ≤ ‖S‖ ‖T x‖ + ‖(S ∘ T - 1) x‖`
@@ -64,7 +70,12 @@ extend to bounds `(1 - 3 δ) ‖v‖ ≤ ‖T v‖ ≤ (1 + 3 δ) ‖v‖` on th
 
 If `J * J = -1` for a continuous linear operator `J` on a normed space over any nontrivially
 normed field, then the block-diagonal operator `diag(J, J)` on `V × V` also squares to `-1`
-(`TauCeti.prodMap_mul_self_eq_neg_one`).
+(`TauCeti.prodMap_mul_self_eq_neg_one`), and `a + J b = y` holds exactly when `b - J a = -J y`
+(`ContinuousLinearMap.add_apply_eq_iff_sub_apply_eq_neg_apply`).
+
+If `a₀ ‖w‖² ≤ g w` and `‖S‖ ≤ m`, then `‖p‖² + ‖q‖² + ‖v‖²` is bounded by
+`(2 + 2 m²) / a₀ (g p + g (q - S v) + g v)`, comparing an energy density with a perturbed middle
+term to the squared norms (`TauCeti.norm_sq_add_norm_sq_add_norm_sq_le`).
 
 A continuous bilinear map satisfies a Young-type bound
 `‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2)` for every `c > 0`
@@ -106,7 +117,55 @@ theorem eq_zero_of_forall_norm_apply_le {f : E →ₛₗ[σ] F} {C : ℝ} (h : �
 
 end LinearMap
 
+namespace AddMonoidHomClass
+
+variable {G X Y : Type*} [SeminormedAddCommGroup X] [SeminormedAddCommGroup Y] [FunLike G X Y]
+  [AddMonoidHomClass G X Y]
+
+/-- If the additive maps `T i` are eventually bounded by `‖T i x‖ ≤ C * ‖x‖`, `T i z` tends to
+`w`, and `g i` tends to `z`, then the moving evaluations `T i (g i)` tend to `w`. -/
+theorem tendsto_apply_of_eventually_bound {ι : Type*} {l : Filter ι} {T : ι → G} {C : ℝ}
+    {g : ι → X} {z : X} {w : Y} (hT : ∀ᶠ i in l, ∀ x, ‖T i x‖ ≤ C * ‖x‖)
+    (hz : Tendsto (fun i => T i z) l (𝓝 w)) (hg : Tendsto g l (𝓝 z)) :
+    Tendsto (fun i => T i (g i)) l (𝓝 w) := by
+  have hmove : Tendsto (fun i => T i (g i - z)) l (𝓝 0) := by
+    refine squeeze_zero_norm' (a := fun i => C * ‖g i - z‖) ?_ ?_
+    · filter_upwards [hT] with i hi
+      exact hi _
+    · simpa using (tendsto_iff_norm_sub_tendsto_zero.mp hg).const_mul C
+  simpa only [map_sub, sub_add_cancel, zero_add] using hmove.add hz
+
+/-- A family of additive maps `T a` that is strongly continuous on `s` and bounded there by
+`‖T a x‖ ≤ C * ‖x‖` sends a function continuous on `s` to a function continuous on `s`:
+`a ↦ T a (f a)`. -/
+theorem continuousOn_apply_of_bound {α : Type*} [TopologicalSpace α] {T : α → G} {f : α → X}
+    {s : Set α} {C : ℝ} (hT : ∀ x, ContinuousOn (fun a => T a x) s)
+    (hC : ∀ a ∈ s, ∀ x, ‖T a x‖ ≤ C * ‖x‖) (hf : ContinuousOn f s) :
+    ContinuousOn (fun a => T a (f a)) s :=
+  fun a ha => tendsto_apply_of_eventually_bound (eventually_mem_nhdsWithin.mono hC)
+    (hT (f a) a ha) (hf a ha)
+
+/-- A strongly continuous family of additive maps `T a` with a uniform bound
+`‖T a x‖ ≤ C * ‖x‖` sends a continuous function `f` to the continuous function
+`a ↦ T a (f a)`. -/
+theorem continuous_apply_of_bound {α : Type*} [TopologicalSpace α] {T : α → G} {f : α → X}
+    {C : ℝ} (hT : ∀ x, Continuous fun a => T a x) (hC : ∀ a x, ‖T a x‖ ≤ C * ‖x‖)
+    (hf : Continuous f) : Continuous fun a => T a (f a) :=
+  continuousOn_univ.1 <| continuousOn_apply_of_bound (fun x => (hT x).continuousOn)
+    (fun a _ => hC a) hf.continuousOn
+
+end AddMonoidHomClass
+
 namespace ContinuousLinearMap
+
+/-- The extended operator norm is continuous for the operator topology. This instance also
+fixes the standard extended norm when forming integrability statements for iterated operators. -/
+noncomputable instance instContinuousENorm {𝕜 𝕜₂ E F : Type*}
+    [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂]
+    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F]
+    {σ : 𝕜 →+* 𝕜₂} [RingHomIsometric σ] : ContinuousENorm (E →SL[σ] F) :=
+  (@SeminormedAddGroup.toESeminormedAddMonoid (E →SL[σ] F) inferInstance).toContinuousENorm
 
 section Semilinear
 
@@ -128,12 +187,12 @@ theorem opNorm_zero_iff' (f : E →SL[σ] F) : ‖f‖ = 0 ↔ f = 0 := by
 /-- The nonnegative operator norm vanishes exactly at zero, even for a seminormed source. -/
 @[simp]
 theorem opNNNorm_eq_zero_iff (f : E →SL[σ] F) : ‖f‖₊ = 0 ↔ f = 0 := by
-  simpa only [← NNReal.coe_eq_zero, coe_nnnorm] using f.opNorm_zero_iff'
+  simpa only [← NNReal.coe_eq_zero, coe_nnNorm] using f.opNorm_zero_iff'
 
 /-- The extended operator norm vanishes exactly at zero, even for a seminormed source. -/
 @[simp]
 theorem opENorm_eq_zero_iff (f : E →SL[σ] F) : ‖f‖ₑ = 0 ↔ f = 0 := by
-  simpa only [enorm_eq_nnnorm, ENNReal.coe_eq_zero] using f.opNNNorm_eq_zero_iff
+  simpa only [eNorm_eq_nnNorm, ENNReal.coe_eq_zero] using f.opNNNorm_eq_zero_iff
 
 /-- Continuous semilinear maps from a seminormed space to a normed space form a normed group
 for the operator norm. Use this construction locally when the source is only seminormed. -/
@@ -151,13 +210,17 @@ the moving evaluations `T i (g i)` tend to `w`. -/
 theorem tendsto_apply_of_eventually_norm_le {ι : Type*} {l : Filter ι}
     {T : ι → X →L[𝕜] Y} {C : ℝ} {g : ι → X} {z : X} {w : Y}
     (hT : ∀ᶠ i in l, ‖T i‖ ≤ C) (hz : Tendsto (fun i => T i z) l (𝓝 w))
-    (hg : Tendsto g l (𝓝 z)) : Tendsto (fun i => T i (g i)) l (𝓝 w) := by
-  have hmove : Tendsto (fun i => T i (g i - z)) l (𝓝 0) := by
-    refine squeeze_zero_norm' (a := fun i => C * ‖g i - z‖) ?_ ?_
-    · filter_upwards [hT] with i hi
-      exact (T i).le_of_opNorm_le hi _
-    · simpa using (tendsto_iff_norm_sub_tendsto_zero.mp hg).const_mul C
-  simpa only [map_sub, sub_add_cancel, zero_add] using hmove.add hz
+    (hg : Tendsto g l (𝓝 z)) : Tendsto (fun i => T i (g i)) l (𝓝 w) :=
+  AddMonoidHomClass.tendsto_apply_of_eventually_bound
+    (hT.mono fun i hi => (T i).le_of_opNorm_le hi) hz hg
+
+/-- If the operator norms `‖T i‖` tend to zero, then eventually `T i` maps the ball of radius `R`
+about `0` into any prescribed neighbourhood of `0`. -/
+theorem eventually_mapsTo_ball_of_tendsto_opNorm {ι : Type*} {l : Filter ι} {T : ι → X →L[𝕜] Y}
+    (hT : Tendsto (fun i ↦ ‖T i‖) l (𝓝 0)) {V : Set Y} (hV : V ∈ 𝓝 0) (R : ℝ) :
+    ∀ᶠ i in l, Set.MapsTo (T i) (Metric.ball 0 R) V :=
+  (tendsto_zero_iff_norm_tendsto_zero.mpr hT).eventually
+    (eventually_nhds_zero_mapsTo (NormedSpace.isVonNBounded_ball 𝕜 X R) hV)
 
 /-- The a priori estimate attached to a left inverse modulo an error term: since
 `x = S (T x) - (S ∘ T - 1) x`, the norm of `x` is controlled by `‖T x‖` and the error
@@ -183,7 +246,7 @@ theorem enorm_comp_sub_comp_le {Z : Type*} [SeminormedAddCommGroup Z] [NormedSpa
     abel
   rw [hsplit]
   calc _ ≤ ‖(A' - A).comp (B' - B)‖ₑ + ‖(A' - A).comp B‖ₑ + ‖A.comp (B' - B)‖ₑ :=
-        (enorm_add_le _ _).trans (add_le_add_left (enorm_add_le _ _) _)
+        (eNorm_add_le _ _).trans (add_le_add_left (eNorm_add_le _ _) _)
     _ ≤ _ := by gcongr <;> exact opENorm_comp_le _ _
 
 section Inverse
@@ -409,7 +472,7 @@ theorem image_ball_eq_ball {q : E →SL[σ₁₂] F} (h₁ : ‖q‖ ≤ 1)
     (h : ∀ r, Metric.ball (0 : F) r ⊆ q '' Metric.ball 0 r) (r : ℝ) :
     q '' Metric.ball 0 r = Metric.ball 0 r := by
   refine subset_antisymm ?_ (h r)
-  have h' : ‖q‖₊ ≤ 1 := by rwa [← NNReal.coe_le_one, coe_nnnorm]
+  have h' : ‖q‖₊ ≤ 1 := by rwa [← NNReal.coe_le_one, coe_nnNorm]
   simpa using ((q.lipschitzWith.weaken h').mapsTo_ball one_ne_zero 0 r).image_subset
 
 end MetricQuotient
@@ -551,6 +614,54 @@ theorem isTheta_clm_apply_of_isUnit (hΦ : ContinuousAt Φ a) (hΦa : IsUnit (Φ
 
 end
 
+section
+
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- **Comparison of energy densities.** If `a₀ ‖w‖² ≤ g w` for all `w`, with `a₀ > 0`, and
+`‖S‖ ≤ m`, then `‖p‖² + ‖q‖² + ‖v‖² ≤ (2 + 2 m²) / a₀ (g p + g (q - S v) + g v)`, since
+`‖q‖² ≤ 2 ‖q - S v‖² + 2 m² ‖v‖²`. -/
+theorem norm_sq_add_norm_sq_add_norm_sq_le {g : E → ℝ} {a₀ m : ℝ} (ha₀ : 0 < a₀)
+    (hg : ∀ w, a₀ * ‖w‖ ^ 2 ≤ g w) {S : E →L[𝕜] E} (hS : ‖S‖ ≤ m) (p q v : E) :
+    ‖p‖ ^ 2 + ‖q‖ ^ 2 + ‖v‖ ^ 2 ≤ (2 + 2 * m ^ 2) / a₀ * (g p + g (q - S v) + g v) := by
+  have hm₀ : 0 ≤ m := (norm_nonneg _).trans hS
+  have hq : ‖q‖ ≤ ‖q - S v‖ + m * ‖v‖ :=
+    calc ‖q‖ = ‖(q - S v) + S v‖ := by rw [sub_add_cancel]
+      _ ≤ ‖q - S v‖ + ‖S v‖ := norm_add_le _ _
+      _ ≤ ‖q - S v‖ + m * ‖v‖ := by gcongr; exact S.le_of_opNorm_le hS v
+  have hq₂ : ‖q‖ ^ 2 ≤ 2 * ‖q - S v‖ ^ 2 + 2 * m ^ 2 * ‖v‖ ^ 2 := by
+    nlinarith [norm_nonneg q, sq_nonneg (‖q - S v‖ - m * ‖v‖), mul_nonneg hm₀ (norm_nonneg v)]
+  calc _ ≤ (2 + 2 * m ^ 2) * (‖p‖ ^ 2 + ‖q - S v‖ ^ 2 + ‖v‖ ^ 2) := by
+        nlinarith [mul_nonneg (sq_nonneg m) (sq_nonneg ‖p‖),
+          mul_nonneg (sq_nonneg m) (sq_nonneg ‖q - S v‖), sq_nonneg ‖p‖, sq_nonneg ‖v‖]
+    _ = (2 + 2 * m ^ 2) / a₀ * (a₀ * ‖p‖ ^ 2 + a₀ * ‖q - S v‖ ^ 2 + a₀ * ‖v‖ ^ 2) := by
+        field_simp
+    _ ≤ _ := by gcongr <;> exact hg _
+
+end
+
 end TauCeti
+
+namespace ContinuousLinearMap
+
+variable {𝕜 V : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+
+/-- If `A² = -1`, then `a + A b = y` holds exactly when `b - A a = -A y`: apply `A`. For a complex
+structure `J` on the target of a map `u : ℂ → V` with derivative `D`, this rewrites the
+Cauchy–Riemann equation tested on `∂ₛ`, `D 1 + J D i = η`, as the one tested on `∂ₜ`,
+`D i - J D 1 = -J η`. -/
+theorem add_apply_eq_iff_sub_apply_eq_neg_apply {A : V →L[𝕜] V} (hA : A * A = -1) {a b y : V} :
+    a + A b = y ↔ b - A a = -A y := by
+  have hAA (x : V) : A (A x) = -x := by simpa using congr($hA x)
+  constructor
+  · rintro rfl
+    simp [hAA, sub_eq_add_neg]
+  · intro h
+    have h' := congrArg A h
+    simp only [map_sub, map_neg, hAA, neg_neg] at h'
+    rw [← h']
+    abel
+
+end ContinuousLinearMap
 
 end

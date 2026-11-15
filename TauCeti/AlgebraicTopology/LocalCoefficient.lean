@@ -10,6 +10,7 @@ import TauCeti.AlgebraicTopology.FundamentalGroupoid.Basic
 public import Mathlib.RepresentationTheory.Rep.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Basic
 public import Mathlib.CategoryTheory.Monoidal.FunctorCategory
+public import Mathlib.CategoryTheory.Preadditive.Projective.Basic
 
 /-!
 # Local coefficient systems on topological spaces
@@ -85,6 +86,14 @@ theorem pullback_obj_obj {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
     (x : FundamentalGroupoid X) :
     ((pullback (R := R) f).obj L).obj x = L.obj ((FundamentalGroupoid.map f).obj x) :=
   rfl
+
+/-- The fibres of a pulled-back local coefficient system are fibres of the original system, so
+they are projective when those are. -/
+instance projective_pullback_obj_obj {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
+    (L : LocalCoefficientSystem.{u, v₂, w} R Y) [∀ y, Projective (L.obj y)]
+    (x : FundamentalGroupoid X) :
+    Projective (((pullback (R := R) f).obj L).obj x) :=
+  inferInstanceAs (Projective (L.obj _))
 
 @[simp]
 theorem pullback_obj_map {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
@@ -204,6 +213,32 @@ theorem pullbackConstantIso_hom_app {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f :
 theorem pullbackConstantIso_inv_app {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
     (M : ModuleCat.{w} R) (x : FundamentalGroupoid X) :
     (pullbackConstantIso (R := R) f M).inv.app x = 𝟙 M :=
+  (rfl)
+
+/-- Pulling back along a constant map gives the constant system at the value: a constant map
+sends every path to a constant path. -/
+def pullbackConstIso (X : TopCat.{v₁}) {Y : TopCat.{v₂}} (y : Y)
+    (L : LocalCoefficientSystem.{u, v₂, w} R Y) :
+    (pullback (R := R) (ContinuousMap.const X y)).obj L ≅
+      (constantFunctor (R := R) X).obj (L.obj (FundamentalGroupoid.mk y)) :=
+  NatIso.ofComponents (fun _ ↦ Iso.refl _) fun {x x'} p ↦ by
+    have h : (FundamentalGroupoid.map (ContinuousMap.const X y)).map p = 𝟙 _ := by
+      induction p using Quotient.ind
+      exact congrArg (Quotient.mk _) (Path.ext rfl)
+    simp only [pullback_obj_map, constantFunctor_obj_map, Iso.refl_hom]
+    rw [h]
+    exact L.map_id _
+
+@[simp]
+theorem pullbackConstIso_hom_app (X : TopCat.{v₁}) {Y : TopCat.{v₂}} (y : Y)
+    (L : LocalCoefficientSystem.{u, v₂, w} R Y) (x : FundamentalGroupoid X) :
+    (pullbackConstIso (R := R) X y L).hom.app x = 𝟙 _ :=
+  (rfl)
+
+@[simp]
+theorem pullbackConstIso_inv_app (X : TopCat.{v₁}) {Y : TopCat.{v₂}} (y : Y)
+    (L : LocalCoefficientSystem.{u, v₂, w} R Y) (x : FundamentalGroupoid X) :
+    (pullbackConstIso (R := R) X y L).inv.app x = 𝟙 _ :=
   (rfl)
 
 section Tensor

@@ -24,7 +24,10 @@ Over an ordered field the construction also produces a *nonzero* invariant symme
 nontrivial finite-dimensional representation: sum the coordinate dot product read in a basis.
 Positivity is what makes the sum nonzero -- the sum of the nonnegative numbers
 `B₀ (σ g x) (σ g x)` is at least its term at `g = 1`, which is positive -- so it is the ordering of
-the field, not a division by `|G|`, that does the work.
+the field, not a division by `|G|`, that does the work.  For an irreducible complex representation
+of a finite group with a real form, this form on the real form, transported to the complex space,
+is the nonzero invariant symmetric form that gives Frobenius-Schur indicator `+1`
+(`Representation.IsRealForm.frobeniusSchurIndicator_eq_one`).
 
 ## Main definitions
 
@@ -46,9 +49,6 @@ the field, not a division by `|G|`, that does the work.
 
 ## References
 
-* [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-  Layer 7: the invariant symmetric form that the value `+1` of the Frobenius-Schur indicator is
-  characterized by, here for a representation realizable over `ℝ`.
 * J.-P. Serre, *Linear Representations of Finite Groups*, GTM 42 (1977), §13.2.
 -/
 

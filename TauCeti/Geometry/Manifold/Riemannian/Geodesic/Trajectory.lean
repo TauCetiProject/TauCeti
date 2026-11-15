@@ -53,8 +53,6 @@ to define the Riemannian exponential map by evaluation at time one.
 * J. M. Lee, *Introduction to Riemannian Manifolds*, Springer, 2018, Ch. 5.
 -/
 
--- Roadmap: HopfRinow
-
 public section
 
 open Bundle CovariantDerivative Function Manifold Set
@@ -84,6 +82,14 @@ the geodesic spray. -/
 theorem maximalGeodesic_def (p : M) (v : TangentSpace I p) (t : ℝ) :
     maximalGeodesic I M p v t =
       (maximalIntegralCurve (geodesicSpray I M) (TotalSpace.mk' E p v) t).proj := by
+  rfl
+
+/-- Maximal geodesics from equal base points with equal initial vectors agree. Both tangent spaces
+are the model space, so the initial vectors are compared there. -/
+theorem maximalGeodesic_congr {q p : M} (h : q = p) {w : TangentSpace I q}
+    {v : TangentSpace I p} (hw : (w : E) = v) (t : ℝ) :
+    maximalGeodesic I M q w t = maximalGeodesic I M p v t := by
+  subst h hw
   rfl
 
 variable [I.Boundaryless]

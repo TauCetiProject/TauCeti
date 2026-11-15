@@ -100,13 +100,13 @@ theorem abs_sum_ite_lt_sub (w : ℝ →₀ ℝ) (hw : 0 ≤ w) (a b : ℝ) :
   have hle : w.sum (fun t c => if t < a then c else 0) ≤
       w.sum (fun t c => if t < b then c else 0) := by
     apply Finset.sum_le_sum
-    intro t ht
+    intro t _
     dsimp
     split_ifs <;> grind [hw t]
   rw [abs_of_nonpos (sub_nonpos.2 hle), neg_sub]
   simp only [Finsupp.sum, ← Finset.sum_sub_distrib]
   apply Finset.sum_congr rfl
-  intro t ht
+  intro t _
   split_ifs <;> norm_num; grind
 
 end Finsupp

@@ -33,6 +33,8 @@ finite-level characters are continuous.
 * `TauCeti.zHat.map_toZMod_unitsLift`, `TauCeti.zHat.unitsLift_unique`: the characterizing
   property of the assembled character.
 * `TauCeti.zHat.continuous_unitsLift`: continuity is detected at the finite levels.
+* `TauCeti.zHat.surjective_of_forall_surjective_unitsMap_toZMod`: a continuous map from a compact
+  space into `(Additive zHat)ˣ` is surjective when it is surjective at every finite level.
 
 ## References
 
@@ -193,6 +195,21 @@ theorem continuous_unitsLift [TopologicalSpace G]
         congrArg Units.val (congrArg Inv.inv (map_toZMod_unitsLift χ hχ n g).symm)
 
 end UnitsLift
+
+/-- **Surjectivity onto the profinite units is detected at the finite levels.** A continuous map
+from a compact space into `(Additive zHat)ˣ` is surjective once each of its reductions onto
+`(ZMod n)ˣ` is surjective. -/
+theorem surjective_of_forall_surjective_unitsMap_toZMod {X : Type*} [TopologicalSpace X]
+    [CompactSpace X] {f : X → (Additive zHat.{u})ˣ} (hf : Continuous f)
+    (h : ∀ n : ℕ+, Function.Surjective fun x ↦ (Units.map (toZMod.{u} n) (f x) : (ZMod n)ˣ)) :
+    Function.Surjective f := by
+  intro a
+  refine (exists_eq_of_forall_exists_toZMod_eq (Units.continuous_val.comp hf) a fun n ↦ ?_).imp
+    fun x hx ↦ Units.ext hx
+  obtain ⟨x, hx⟩ := h n (Units.map (toZMod.{u} n) a)
+  refine ⟨x, ?_⟩
+  simpa only [Function.comp_apply, Units.coe_map, MonoidHom.coe_ofClass] using
+    congrArg Units.val hx
 
 end zHat
 

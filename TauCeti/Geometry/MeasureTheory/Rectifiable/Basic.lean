@@ -70,17 +70,17 @@ theorem empty : CountablyRectifiable k (∅ : Set X) := of_null measure_empty
 theorem mono_ae (hs : CountablyRectifiable k s) (ht : t ≤ᵐ[μHE[k]] s) :
     CountablyRectifiable k t := by
   obtain ⟨A, f, hf, hcover⟩ := hs
-  exact ⟨A, f, hf, ae_le_set.mp (ht.trans (ae_le_set.mpr hcover))⟩
+  exact ⟨A, f, hf, ae_subset.mp (ht.trans (ae_subset.mpr hcover))⟩
 
 /-- Arbitrary subsets of rectifiable sets are rectifiable; in particular this allows
 restriction to measurable sets without an additional measurability assumption. -/
 theorem mono (hs : CountablyRectifiable k s) (ht : t ⊆ s) : CountablyRectifiable k t :=
-  hs.mono_ae ht.eventuallyLE
+  hs.mono_ae ht.eventuallySubset
 
 /-- Countable rectifiability is independent of the representative modulo `μHE[k]`. -/
 theorem congr (hs : CountablyRectifiable k s) (hst : s =ᵐ[μHE[k]] t) :
     CountablyRectifiable k t :=
-  hs.mono_ae hst.symm.le
+  hs.mono_ae hst.symm.subset
 
 /-- A single Lipschitz patch is countably rectifiable. -/
 theorem of_lipschitzWith {A : Set (EuclideanSpace ℝ (Fin k))} {f : A → X} {K : ℝ≥0}
@@ -107,9 +107,9 @@ private theorem iUnion_nat {s : ℕ → Set X} (hs : ∀ n, CountablyRectifiable
   refine ⟨fun n ↦ A (Nat.unpair n).1 (Nat.unpair n).2,
     fun n ↦ f (Nat.unpair n).1 (Nat.unpair n).2,
     fun n ↦ hf (Nat.unpair n).1 (Nat.unpair n).2, ?_⟩
-  apply ae_le_set.mp
+  apply ae_subset.mp
   have hc : ∀ n, s n ≤ᵐ[μHE[k]] ⋃ i, Set.range (f n i) :=
-    fun n ↦ ae_le_set.mpr (hcover n)
+    fun n ↦ ae_subset.mpr (hcover n)
   rw [Set.iUnion_unpair (fun n i ↦ Set.range (f n i))]
   exact Filter.EventuallySubset.countable_iUnion hc
 

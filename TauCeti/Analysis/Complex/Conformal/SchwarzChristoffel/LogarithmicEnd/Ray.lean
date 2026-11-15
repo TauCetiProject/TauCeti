@@ -63,7 +63,6 @@ theorem tendsto_schwarzChristoffelBoundary_cobounded_of_prevertex_sum_eq_neg_one
     simp [Finset.filter_eq_empty_iff.mpr (fun i _ => hx i)]
   have hB := (tendsto_schwarzChristoffelPrimitive_boundary a e z₀ x
     (by rw [hsum]; norm_num)).norm
-  have := Real.nhdsWithin_upperHalfPlaneSet_neBot x
   have hbound : R + 1 ≤ ‖schwarzChristoffelBoundary a e z₀ x‖ := by
     apply ge_of_tendsto hB
     filter_upwards [self_mem_nhdsWithin,
@@ -223,7 +222,7 @@ theorem schwarzChristoffelBoundary_image_Ioo_eq_range_of_endpoint_sums_eq_neg_on
   -- The two opposite rays have the same origin and together exhaust the affine line.
   ext w
   constructor
-  · rintro (⟨t, ht, rfl⟩ | ⟨t, ht, rfl⟩)
+  · rintro (⟨t, _, rfl⟩ | ⟨t, _, rfl⟩)
     · exact ⟨-t, by simp [sub_eq_add_neg]⟩
     · exact ⟨t, rfl⟩
   · rintro ⟨t, rfl⟩

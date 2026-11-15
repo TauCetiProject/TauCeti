@@ -193,7 +193,7 @@ theorem lsCategoryCount_sublevel_le_encard (hf : ContMDiff I 𝓘(ℝ) ∞ f) {t
   have hbelow := ih _ hlt (by linarith) rfl
   -- Between `c + ε` and `t` there are no critical points.
   have habove : lsCategoryCount M {x | f x ≤ t} ≤ lsCategoryCount M {x | f x ≤ f p + ε} := by
-    rcases le_or_gt t (f p + ε) with h | h
+    rcases le_or_gt t (f p + ε) with h | _
     · exact lsCategoryCount_mono fun x (hx : f x ≤ t) ↦ hx.trans h
     · refine lsCategoryCount_sublevel_le_of_band hf (hcpt isClosed_Icc fun y hy ↦ hy.2.trans htb.le)
         fun x hx₁ hx₂ hx ↦ ?_

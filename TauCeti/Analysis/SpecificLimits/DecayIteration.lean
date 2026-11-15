@@ -205,7 +205,7 @@ private theorem oscillation_decay_bound_aux {C₁ K D β γ s R R₁ F Q M₀ B 
     rw [← Real.mul_rpow (by norm_num) (by positivity), hR₁def]
     congr 1
     field_simp
-  have hM₀ : 0 ≤ M₀ := by rw [hM₀def]; positivity
+  have _ : 0 ≤ M₀ := by rw [hM₀def]; positivity
   calc φs ≤ C₁ * ((s / R₁) ^ β * φR₁ + B * s ^ β) := hfin
     _ ≤ C₁ * ((s / R₁) ^ β * (2 * M₀) + K * F * R ^ γ * (s / R₁) ^ β) := by
         rw [hsβ]

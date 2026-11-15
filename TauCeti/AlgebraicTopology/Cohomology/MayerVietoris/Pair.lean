@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.ModuleCat.Biproducts
 public import TauCeti.Algebra.Homology.HomologySequenceLemmas
 public import TauCeti.AlgebraicTopology.Cohomology.MayerVietoris.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.Relative
@@ -384,14 +385,14 @@ def singularCohomologyPairMayerVietorisToBiprod (n : ℕ) :
     (TopPair.singularCohomologyMap (TopPair.ofInclusionMap hDB (Set.union_subset_union hCA hDB)
       (ContinuousMap.inclusion Set.subset_union_right) fun _ hx ↦ Set.subset_union_right hx) n)
 
-@[reassoc (attr := simp)]
+@[reassoc (attr := simp), elementwise (attr := simp)]
 lemma singularCohomologyPairMayerVietorisToBiprod_fst (n : ℕ) :
     singularCohomologyPairMayerVietorisToBiprod R k M hCA hDB n ≫ biprod.fst =
       TopPair.singularCohomologyMap (TopPair.ofInclusionMap hCA (Set.union_subset_union hCA hDB)
         (ContinuousMap.inclusion Set.subset_union_left) fun _ hx ↦ Set.subset_union_left hx) n :=
   biprod.lift_fst _ _
 
-@[reassoc (attr := simp)]
+@[reassoc (attr := simp), elementwise (attr := simp)]
 lemma singularCohomologyPairMayerVietorisToBiprod_snd (n : ℕ) :
     singularCohomologyPairMayerVietorisToBiprod R k M hCA hDB n ≫ biprod.snd =
       TopPair.singularCohomologyMap (TopPair.ofInclusionMap hDB (Set.union_subset_union hCA hDB)
@@ -411,14 +412,14 @@ def singularCohomologyPairMayerVietorisFromBiprod (n : ℕ) :
     (-TopPair.singularCohomologyMap (TopPair.ofInclusionMap (Set.inter_subset_inter hCA hDB) hDB
       (ContinuousMap.inclusion Set.inter_subset_right) fun _ hx ↦ Set.inter_subset_right hx) n)
 
-@[reassoc (attr := simp)]
+@[reassoc (attr := simp), elementwise (attr := simp)]
 lemma inl_singularCohomologyPairMayerVietorisFromBiprod (n : ℕ) :
     biprod.inl ≫ singularCohomologyPairMayerVietorisFromBiprod R k M hCA hDB n =
       TopPair.singularCohomologyMap (TopPair.ofInclusionMap (Set.inter_subset_inter hCA hDB) hCA
         (ContinuousMap.inclusion Set.inter_subset_left) fun _ hx ↦ Set.inter_subset_left hx) n :=
   biprod.inl_desc _ _
 
-@[reassoc (attr := simp)]
+@[reassoc (attr := simp), elementwise (attr := simp)]
 lemma inr_singularCohomologyPairMayerVietorisFromBiprod (n : ℕ) :
     biprod.inr ≫ singularCohomologyPairMayerVietorisFromBiprod R k M hCA hDB n =
       -TopPair.singularCohomologyMap (TopPair.ofInclusionMap (Set.inter_subset_inter hCA hDB) hDB
@@ -524,7 +525,7 @@ lemma singularCohomologyPairMayerVietorisδ_comp_homologyMap (n m : ℕ) (h : n 
   have := isIso_homologyMap_cochainComplexMap_smallSingularPairToUnion R k M hCA hDB hA hB hC hD m
   rw [singularCohomologyPairMayerVietorisδ, Category.assoc, IsIso.inv_hom_id, Category.comp_id]
 
-@[reassoc (attr := simp)]
+@[reassoc (attr := simp), elementwise (attr := simp)]
 lemma singularCohomologyPairMayerVietorisδ_toBiprod (n m : ℕ) (h : n + 1 = m := by lia) :
     singularCohomologyPairMayerVietorisδ R k M hCA hDB hA hB hC hD n m h ≫
       singularCohomologyPairMayerVietorisToBiprod R k M hCA hDB m = 0 := by
@@ -533,7 +534,7 @@ lemma singularCohomologyPairMayerVietorisδ_toBiprod (n m : ℕ) (h : n + 1 = m 
     singularCohomologyPairMayerVietorisδ_comp_homologyMap R k M hCA hDB hA hB hC hD n m h]
   exact SSetPair.mayerVietorisCochainδ_toBiprod R k M _ _ n m h
 
-@[reassoc (attr := simp)]
+@[reassoc (attr := simp), elementwise (attr := simp)]
 lemma singularCohomologyPairMayerVietorisFromBiprod_δ (n m : ℕ) (h : n + 1 = m := by lia) :
     singularCohomologyPairMayerVietorisFromBiprod R k M hCA hDB n ≫
       singularCohomologyPairMayerVietorisδ R k M hCA hDB hA hB hC hD n m h = 0 := by

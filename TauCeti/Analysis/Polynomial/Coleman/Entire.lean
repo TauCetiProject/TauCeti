@@ -217,8 +217,7 @@ theorem colemanDEntire_one_right (hB₀ : coeff 0 B = 0) :
   intro k
   have hD (p : ℕ × ℕ) :
       Polynomial.colemanDBounded (trunc (p.2 + 1) B) (trunc (p.1 + 1) (1 : R⟦X⟧)) p.1 p.2 = 1 := by
-    rw [trunc_one, Polynomial.colemanDBounded_one_right
-      (Nat.lt_succ_iff.mp (natDegree_trunc_lt _ _))]
+    rw [trunc_one, Polynomial.colemanDBounded_one_right]
     simp [coeff_trunc, hB₀]
   simpa only [hD, ← Polynomial.coeff_coe, Polynomial.coe_one] using
     (tendsto_const_nhds : Tendsto (fun _ : ℕ × ℕ ↦ coeff k (1 : R⟦X⟧)) atTop (𝓝 _))
@@ -274,7 +273,7 @@ theorem colemanDEntire_mul (hB : B.IsEntire) (hF : F.IsEntire) (hG : G.IsEntire)
   have hd (H : R⟦X⟧) : (trunc (p.1 + 1) H).natDegree ≤ p.1 :=
     Nat.lt_succ_iff.1 (natDegree_trunc_lt H p.1)
   rw [← Polynomial.colemanDBounded_mul (hd F) (hd G) hdB,
-    ← Polynomial.colemanDBounded_add_of_coeff_zero (hd (F * G)) hdB (by simp [coeff_trunc, hB₀]),
+    ← Polynomial.colemanDBounded_add_of_coeff_zero (hd (F * G)) (by simp [coeff_trunc, hB₀]),
     dist_comm, inv_pow, ← div_eq_mul_inv,
     le_div_iff₀ (by positivity)]
   exact dist_coeff_colemanDBounded_trunc_mul_trunc_le (fun i ↦ (hρ₀ i).le) hρ hFG one_le_two

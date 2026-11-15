@@ -16,8 +16,10 @@ direction `a`: its members are the `z` with `0 < (conj a * z).re`. Specializatio
 four axis-aligned half-planes cover the common cases. Points within distance `1` of `1` lie in
 the right half-plane, so this applies to quotients of nearly equal points. A relative
 displacement smaller than the distance to a pole also gives a slit-plane quotient; in particular
-`1 + a / z` lies in the slit plane when `‖a‖ < ‖z‖`. A product of two points in the right
-half-plane lies in the slit plane as well, and positive real scaling preserves it.
+`1 + a / z` lies in the slit plane when `‖a‖ < ‖z‖`. So does `b / a` when the triangle inequality
+`‖a - b‖ ≤ ‖a‖ + ‖b‖` is strict, the symmetric form of Rouché's hypothesis. A product of two
+points in the right half-plane lies in the slit plane as well, and positive real scaling preserves
+it.
 
 Translating a point of the slit plane by a nonnegative real number keeps it in the slit plane,
 and translating a point of `slitPlane ∪ {0}` by a positive one lands in the slit plane.
@@ -38,6 +40,8 @@ is a principal logarithm.
 
 * `Complex.one_sub_mul_ofReal_mem_slitPlane`
 * `TauCeti.div_sub_mem_slitPlane_of_dist_lt_dist`, `TauCeti.one_add_div_mem_slitPlane`
+* `TauCeti.mem_slitPlane_of_norm_one_sub_lt_one_add`,
+  `TauCeti.div_mem_slitPlane_of_norm_sub_lt_add`
 * `TauCeti.div_mem_slitPlane_of_re_conj_mul_pos`
 * `TauCeti.re_pos_of_norm_sub_one_lt_one`
 * `TauCeti.div_mem_slitPlane_of_re_pos`, `…_of_re_neg`, `…_of_im_pos`, `…_of_im_neg`
@@ -79,6 +83,40 @@ theorem div_sub_mem_slitPlane_of_dist_lt_dist
   have hsub : (y - w) / (x - w) = 1 + (y - x) / (x - w) := by field_simp; ring
   rw [hsub]
   exact one_add_div_mem_slitPlane (by simpa only [dist_eq_norm] using h)
+
+/-- If the triangle inequality `‖1 - w‖ ≤ 1 + ‖w‖` is strict at `w`, then `w` lies in the slit
+plane. Indeed equality holds exactly on the nonpositive reals, where `‖1 - w‖` and `1 + ‖w‖` are
+both `1 - w.re`, and those are exactly the points the slit plane omits. -/
+theorem mem_slitPlane_of_norm_one_sub_lt_one_add {w : ℂ} (h : ‖1 - w‖ < 1 + ‖w‖) :
+    w ∈ slitPlane := by
+  by_contra hw
+  rw [mem_slitPlane_iff] at hw
+  push Not at hw
+  obtain ⟨hre, him⟩ := hw
+  have hwe : w = (w.re : ℂ) := by
+    apply Complex.ext <;> simp [him]
+  rw [hwe] at h
+  have h1 : (1 : ℂ) - (w.re : ℂ) = ((1 - w.re : ℝ) : ℂ) := by push_cast; ring
+  rw [h1, Complex.norm_real, Complex.norm_real, Real.norm_eq_abs, Real.norm_eq_abs,
+    abs_of_nonneg (by linarith : (0 : ℝ) ≤ 1 - w.re), abs_of_nonpos hre] at h
+  linarith
+
+/-- **The symmetric Rouché condition.** If the triangle inequality `‖a - b‖ ≤ ‖a‖ + ‖b‖` is
+strict, then `b / a` lies in the slit plane: dividing by `‖a‖ > 0` gives the hypothesis of
+`TauCeti.mem_slitPlane_of_norm_one_sub_lt_one_add`. -/
+theorem div_mem_slitPlane_of_norm_sub_lt_add {a b : ℂ} (h : ‖a - b‖ < ‖a‖ + ‖b‖) :
+    b / a ∈ slitPlane := by
+  have ha : a ≠ 0 := by
+    rintro rfl
+    simp at h
+  have hpos : (0 : ℝ) < ‖a‖ := norm_pos_iff.2 ha
+  refine mem_slitPlane_of_norm_one_sub_lt_one_add ?_
+  have e : (1 : ℂ) - b / a = (a - b) / a := by field_simp
+  rw [e, norm_div, norm_div, div_lt_iff₀ hpos]
+  have e2 : (1 + ‖b‖ / ‖a‖) * ‖a‖ = ‖a‖ + ‖b‖ := by
+    field_simp
+  rw [e2]
+  exact h
 
 /-- The ratio of two members of an open half-plane through the origin lies in the slit
 plane. The half-plane with normal direction `a` is `{z | 0 < (conj a * z).re}`; degenerate
@@ -252,6 +290,10 @@ theorem exists_norm_inv_ofReal_add_le {p : ℂ} (hp : p ∈ slitPlane) :
 end TauCeti
 
 namespace Complex
+
+/-- A point off the slit plane is real. -/
+theorem im_eq_zero_of_notMem_slitPlane {z : ℂ} (hz : z ∉ slitPlane) : z.im = 0 :=
+  by_contra fun h => hz (mem_slitPlane_iff.mpr (Or.inr h))
 
 /-- Scaling `z` by a real number in `[0, 1]` preserves slit-plane membership of `1 - z`. -/
 theorem one_sub_mul_ofReal_mem_slitPlane {z : ℂ} (hz : 1 - z ∈ slitPlane)

@@ -57,8 +57,6 @@ hypothesis.
 
 ## References
 
-* [Semisimple algebras, Artin-Wedderburn, and the structure of their modules roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md),
-  Layers 4 and 6.
 * R. S. Pierce, *Associative Algebras*, Springer GTM 88 (1982), Chapter 12.
 -/
 

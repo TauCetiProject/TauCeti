@@ -49,8 +49,7 @@ appears in the resulting equivalences or in the equations characterizing them.
 
 ## References
 
-This is the rational-extension target in Layer 1 of
-`TauCetiRoadmap/IntegralLattices/README.md`. See W. Ebeling, *Lattices and Codes*, Chapter 1.
+* W. Ebeling, *Lattices and Codes*, Chapter 1.
 -/
 
 public section

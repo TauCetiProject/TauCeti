@@ -25,9 +25,6 @@ and the vanishing of every sheaf of modules over a sheaf of rings whose sections
   underlying presheaf, naturally (`SheafOfModules.sheafificationIso_inv_naturality`);
 * `SheafOfModules.unit_comp_val_sheafification_map_comp_sheafificationIso_hom`: the
   sheafification of a morphism to a sheaf restricts to that morphism along the sheafification map.
-
-This supports `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, item "Invertible sheaves on a
-scheme; the Picard group `Pic X` under `⊗`".
 -/
 
 public section

@@ -94,8 +94,8 @@ its proof consumes the two cancellations of this file together with
 ## Provenance
 
 Ported from D. K. Angdinata's `LutzNagell/EllipticDivisibilitySequence.lean` in the AINTLIB
-**NagellLutz** project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0), at the revision
-`TauCetiRoadmap` pins for that project, `dev/modular-curves @ 9fec8eba7652`. The reduced
+**NagellLutz** project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0), at
+`dev/modular-curves @ 9fec8eba7652`. The reduced
 invariant identity was ported later, read at `main @ 1c1c74664e40071c2c2165bc55ca2616a67ccd6b`:
 `reducedInvarNum_eq_reducedInvarDenom_mul` adapts that file's `redInvar_normEDS` (`:1514`) and
 its private `_of_mem` form adapts `redInvar_normEDS_of_mem_nonZeroDivisors` (`:1506`), respelt

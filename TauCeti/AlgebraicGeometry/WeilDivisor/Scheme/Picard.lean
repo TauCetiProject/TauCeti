@@ -141,7 +141,7 @@ private theorem exists_rationalTrivializationHom_app_eq_inf
     · simp [hq0]
     · have hb := (mem_sections_iff.mp hq).resolve_left hq0 y hy.1
       rw [← hqK, hD y hy.2, neg_neg] at hb
-      rw [X.ord_mul hq0 (inv_ne_zero (Units.ne_zero _)), Scheme.ord_inv]
+      rw [X.ord_mul hq0 (inv_ne_zero (Units.ne_zero _)), AlgebraicGeometry.Scheme.ord_inv]
       omega
   obtain ⟨r, hr⟩ := Scheme.exists_germToFunctionField_eq_of_ord_nonneg
     (fun _ _ ↦ inferInstance) (fun y _ ↦ hX y) hord

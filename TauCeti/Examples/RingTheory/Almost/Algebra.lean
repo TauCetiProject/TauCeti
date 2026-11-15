@@ -19,6 +19,16 @@ almostification functor `TauCeti.Almost.Algebra.toAlmost S`:
 * the inclusion `ℤ → ℚ` almostifies to an isomorphism for the zero setup but not for the classical
   setup, since it is not surjective.
 
+They also test the functor `TauCeti.Almost.Algebra.elements S` of almost elements and the
+adjunction `TauCeti.Almost.Algebra.adj S`:
+
+* for the zero setup, and for `(V ⧸ m)^a` in every setup, the algebra of almost elements is zero;
+* for the classical setup `(ℤ, ℤ)`, the unit `ℤ → (ℤ^a)_*` is bijective, so `(ℤ^a)_*` is nonzero,
+  and almostification of algebras is an equivalence;
+* every almost algebra is the almostification of its algebra of almost elements;
+* for the classical setup on `ℚ`, `homEquiv` distinguishes the identity of `(ℚ × ℚ)^a` from the
+  swap.
+
 ## References
 
 * O. Gabber, L. Ramero, *Almost ring theory*, Lecture Notes in Mathematics 1800, §2.2.
@@ -70,3 +80,46 @@ example : ¬ IsIso ((toAlmost (classical ℤ)).map
     norm_num
   norm_cast at h
   omega
+
+/-! ### Almost elements of almost algebras -/
+
+-- For the classical setup, almostification of algebras is an equivalence.
+example : (toAlmost (classical V)).IsEquivalence := inferInstance
+
+-- For the zero setup, the algebra of almost elements of every almost algebra is the zero ring.
+example (A : Algebra (zero V)) : Subsingleton ((elements (zero V)).obj A) :=
+  ⟨fun x y ↦ (Module.isZero_of_ideal_eq_bot _ zero_ideal A.X).eq_of_tgt x y⟩
+
+-- For every setup, the almost elements of `(V ⧸ m)^a` form the zero ring.
+example (S : BasicSetup V) :
+    Subsingleton ((elements S).obj ((toAlmost S).obj (CommAlgCat.of V (V ⧸ S.ideal)))) := by
+  have h : IsZero ((toAlmost S).obj (CommAlgCat.of V (V ⧸ S.ideal))).X := by
+    rw [isZero_toAlmost_obj_X_iff, Ideal.Quotient.algebraMap_eq, Ideal.mk_ker]
+  exact ⟨fun x y ↦ h.eq_of_tgt x y⟩
+
+-- For the classical setup `(ℤ, ℤ)`, the unit `ℤ → (ℤ^a)_*` is bijective, so the almost elements
+-- of `ℤ^a` form a nonzero ring.
+example : Function.Bijective ((adj (classical ℤ)).unit.app (CommAlgCat.of ℤ ℤ)) :=
+  (ConcreteCategory.isIso_iff_bijective _).mp inferInstance
+
+example : Nontrivial ((elements (classical ℤ)).obj ((toAlmost (classical ℤ)).obj
+    (CommAlgCat.of ℤ ℤ))) :=
+  haveI : Nontrivial ((𝟭 (CommAlgCat ℤ)).obj (CommAlgCat.of ℤ ℤ)) := inferInstanceAs (Nontrivial ℤ)
+  ((ConcreteCategory.isIso_iff_bijective ((adj (classical ℤ)).unit.app (CommAlgCat.of ℤ ℤ))).mp
+    inferInstance).1.nontrivial
+
+-- The counit `(A_*)^a → A` is an isomorphism, so every almost algebra is some `R^a`.
+example (S : BasicSetup V) (A : Algebra S) : IsIso ((adj S).counit.app A) := inferInstance
+
+example (S : BasicSetup V) (A : Algebra S) : (toAlmost S).essImage A :=
+  ⟨(elements S).obj A, ⟨(counitIso S).app A⟩⟩
+
+-- For the classical setup on `ℚ`, the identity and the swap of `(ℚ × ℚ)^a` are distinct
+-- endomorphisms, distinguished by `homEquiv`.
+example : homEquiv (classical ℚ) _ _ (𝟙 ((toAlmost (classical ℚ)).obj (CommAlgCat.of ℚ (ℚ × ℚ)))) ≠
+    homEquiv (classical ℚ) _ _ ((toAlmost (classical ℚ)).map
+      (CommAlgCat.ofHom ((AlgHom.snd ℚ ℚ ℚ).prod (AlgHom.fst ℚ ℚ ℚ)))) := by
+  rw [Ne, (homEquiv _ _ _).injective.eq_iff, ← (toAlmost (classical ℚ)).map_id]
+  intro h
+  have h' := congrArg (fun f ↦ f.hom ((1, 0) : ℚ × ℚ)) ((toAlmost (classical ℚ)).map_injective h)
+  simp at h'

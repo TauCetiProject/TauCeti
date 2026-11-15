@@ -184,11 +184,10 @@ element `μ³ - 1`, whose cube is `Δ / 27`, is a unit: with `d = μ³ - 1`, the
 theorem isUnit_mu_pow_three_sub_one (h3 : IsUnit (3 : R)) : IsUnit (mu R ^ 3 - 1) := by
   set d := mu R ^ 3 - 1
   set u := algebraMap R[X] (LevelThreeRing R) X
-  have h729 : IsUnit (729 : LevelThreeRing R) := by
-    convert (h3.map (algebraMap R (LevelThreeRing R))).pow 6 using 1
-    norm_num [map_ofNat]
   refine isUnit_of_mul_isUnit_left (y := -(d ^ 3 + (28 - u) * d ^ 2 + 270 * d + 972)) ?_
-  convert h729 using 1
+  -- by the defining identity, the product is `3⁶`
+  convert (h3.map (algebraMap R (LevelThreeRing R))).pow 6 using 1
+  rw [map_ofNat]
   linear_combination -mu_pow_three_mul_mu_pow_three_add_eight_pow_three R
 
 section lift
@@ -325,10 +324,11 @@ private theorem rotationAlgHom_mu (ω : R) (hω : ω ^ 3 = 1) :
 private theorem rotationAlgHom_comp_rotationAlgHom {ω ω' : R} (hω : ω ^ 3 = 1)
     (hω' : ω' ^ 3 = 1) (h : ω * ω' = 1) :
     (rotationAlgHom ω hω).comp (rotationAlgHom ω' hω') = AlgHom.id R[X] _ := by
+  have h' : algebraMap R (LevelThreeRing R) ω * algebraMap R (LevelThreeRing R) ω' = 1 := by
+    rw [← map_mul, h, map_one]
   refine algHom_ext' ?_
-  rw [AlgHom.comp_apply, rotationAlgHom_mu, map_mul, AlgHom.map_algebraMap,
-    rotationAlgHom_mu, AlgHom.id_apply, ← mul_assoc, ← map_mul, mul_comm ω' ω, h, map_one,
-    one_mul]
+  simp only [AlgHom.comp_apply, rotationAlgHom_mu, map_mul, AlgHom.map_algebraMap, AlgHom.id_apply]
+  linear_combination mu R * h'
 
 /-- The **rotation** `μ ↦ ζ μ` of the level-three line by an element `ζ` with `ζ³ = 1`, an
 automorphism of the level-three ring over the `u`-line. -/
@@ -361,14 +361,12 @@ private theorem isUnit_addTwoDivSubOne_pow_three_sub_one (h3 : IsUnit (3 : R)) :
     isUnit_of_mul_isUnit_right (x := mu R - 1) <| by
       convert isUnit_mu_pow_three_sub_one R h3 using 1
       ring
-  have h9 : IsUnit (9 : LevelThreeRing R) := by
-    convert (h3.map (algebraMap R (LevelThreeRing R))).pow 2 using 1
-    norm_num [map_ofNat]
-  have e : addTwoDivSubOne h3 ^ 3 - 1 = 9 * (mu R ^ 2 + mu R + 1) * i ^ 3 := by
-    rw [addTwoDivSubOne]
+  have e : addTwoDivSubOne h3 ^ 3 - 1 =
+      algebraMap R (LevelThreeRing R) 3 ^ 2 * (mu R ^ 2 + mu R + 1) * i ^ 3 := by
+    rw [addTwoDivSubOne, map_ofNat]
     linear_combination ((i * (mu R - 1)) ^ 2 + i * (mu R - 1) + 1) * hi
   rw [e]
-  exact (h9.mul hq).mul ((Units.isUnit _).pow 3)
+  exact (((h3.map _).pow 2).mul hq).mul ((Units.isUnit _).pow 3)
 
 /-- The substitution `μ ↦ (μ + 2) / (μ - 1)`, as an `R`-algebra endomorphism. -/
 private noncomputable def addTwoDivSubOneAlgHom (h3 : IsUnit (3 : R)) :
@@ -420,11 +418,10 @@ private theorem addTwoDivSubOneAlgHom_comp_addTwoDivSubOneAlgHom (h3 : IsUnit (3
     have h := congrArg (addTwoDivSubOneAlgHom h3) hx
     rwa [map_mul, map_sub, map_add, map_one, map_ofNat, addTwoDivSubOneAlgHom_mu] at h
   -- and `x - 1 = 3 / (μ - 1)` is a unit with `μ (x - 1) = x + 2`
-  have h3' : IsUnit (3 : LevelThreeRing R) := by
-    simpa [map_ofNat] using h3.map (algebraMap R (LevelThreeRing R))
   have hx1 : IsUnit (x - 1) := by
     refine isUnit_of_mul_isUnit_left (y := m - 1) ?_
-    convert h3' using 1
+    convert h3.map (algebraMap R (LevelThreeRing R)) using 1
+    rw [map_ofNat]
     linear_combination hx
   refine hx1.mul_right_cancel ?_
   rw [hσx]
@@ -661,14 +658,9 @@ private theorem rotationSum_addTwoDivSubOneAut_mu_pow_three_pow_mul :
     rw [hwm, hx]
     ring
   -- the rotation fixes every polynomial in `μ³`
-  have hA : τ A = A := by
-    simp only [A]; generalize m ^ 3 = ν at hν ⊢; simp [hν, map_ofNat]
-  have hB : τ B = B := by
-    simp only [B]; generalize m ^ 3 = ν at hν ⊢; simp [hν, map_ofNat]
-  have hC : τ C = C := by
-    simp only [C]; generalize m ^ 3 = ν at hν ⊢; simp [hν, map_ofNat]
-  have hDk (k : ℕ) : τ ((m ^ 3 - 1) ^ k) = (m ^ 3 - 1) ^ k := by
-    generalize m ^ 3 = ν at hν ⊢; simp [hν]
+  obtain ⟨hA, hB, hC, hDk⟩ : τ A = A ∧ τ B = B ∧ τ C = C ∧
+      ∀ k : ℕ, τ ((m ^ 3 - 1) ^ k) = (m ^ 3 - 1) ^ k := by
+    simp only [A, B, C]; generalize m ^ 3 = ν at hν ⊢; simp [hν, map_ofNat]
   have hw2 : w ^ 2 * (m ^ 3 - 1) ^ 6 = (w * (m ^ 3 - 1) ^ 3) ^ 2 := by ring
   have hw3 : w ^ 3 * (m ^ 3 - 1) ^ 9 = (w * (m ^ 3 - 1) ^ 3) ^ 3 := by ring
   refine ⟨?_, ?_, ?_⟩
@@ -737,7 +729,7 @@ private theorem orbitSum_mu_pow_mem {k : ℕ} (hk : k < 12) :
         3 * (rotationSum hζ ((addTwoDivSubOneAut h3 (mu R) ^ 3) ^ j) + (mu R ^ 3) ^ j) := by
       have h3mul (y : LevelThreeRing R) : rotationSum hζ (3 * y) = 3 * rotationSum hζ y := by
         rw [mul_comm, rotationSum_mul hζ h3fix, mul_comm]
-      rw [orbitSum_apply, hT, map_mul, map_ofNat, map_pow, map_pow, h3mul]
+      simp only [orbitSum_apply, hT, map_mul, map_ofNat, map_pow, h3mul]
       ring
     rw [hO]
     obtain ⟨h₁, h₂, h₃⟩ := rotationSum_addTwoDivSubOneAut_mu_pow_three_pow hζ h3

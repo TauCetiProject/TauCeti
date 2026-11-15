@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Weighted bounds and integrability of Schwartz functions
@@ -31,11 +32,17 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
 * `SchwartzMap.integrable_one_add_norm_smul_sq_rpow_mul_norm`: `⟨c x⟩ ^ m ‖f x‖` is integrable
   against any measure of temperate growth.
 * `SchwartzMap.integrable_norm_iteratedFDeriv`: `‖D^k f x‖` is integrable.
+* `SchwartzMap.exists_integrable_norm_iteratedFDeriv_add_le`: `‖D^n f (z + h)‖` has an integrable
+  envelope in `z`, uniformly for `‖h‖ ≤ 1`, so convolutions with `f` can be differentiated under
+  the integral.
 * `SchwartzMap.integrable_iteratedFDeriv_comp_left`,
   `SchwartzMap.integral_norm_iteratedFDeriv_comp_left_le`: for a continuous linear map `L`, the
   derivatives of `L ∘ f` are integrable, with `∫ ‖D^k (L ∘ f)‖ ≤ ‖L‖ ∫ ‖D^k f‖`.
 * `SchwartzMap.integral_norm_sq_eq_zero_iff`: a Schwartz function vanishes exactly when the
   integral of its squared norm does, for a measure charging every nonempty open set.
+* `IsOpen.eqOn_of_integral_clm_apply_eq`: two operator families continuous on an open set `U`
+  agree there if they have the same integrals against compactly supported Schwartz functions
+  supported in `U`.
 * `TauCeti.eq_zero_of_forall_integral_apply_eq_zero`: a continuous operator-valued function that
   integrates to zero against every Schwartz function vanishes.
 * `HasCompactSupport.toSchwartzMap_toLp`: the `Lᵖ` class of a smooth compactly supported function
@@ -186,6 +193,32 @@ theorem integrable_norm_iteratedFDeriv (f : 𝓢(E, F)) (k : ℕ) :
     Integrable (fun x ↦ ‖iteratedFDeriv ℝ k f x‖) μ := by
   simpa only [pow_zero, one_mul] using f.integrable_pow_mul_norm_iteratedFDeriv (μ := μ) 0 k
 
+omit [BorelSpace E] [SecondCountableTopology E] in
+/-- The derivatives of a Schwartz function have integrable envelopes on unit translates: for every
+order `n` there is an integrable `ψ` with `‖D^n f (z + h)‖ ≤ ψ z` whenever `‖h‖ ≤ 1`. This is the
+domination hypothesis under which a convolution with `f` is differentiated under the integral
+(`MeasureTheory.iteratedFDeriv_convolution_left_of_dominated`). -/
+theorem exists_integrable_norm_iteratedFDeriv_add_le (f : 𝓢(E, F)) (n : ℕ) :
+    ∃ ψ : E → ℝ, Integrable ψ μ ∧
+      ∀ z h, ‖h‖ ≤ 1 → ‖iteratedFDeriv ℝ n f (z + h)‖ ≤ ψ z := by
+  set p := μ.integrablePower
+  set S := (Finset.Iic (p, n)).sup (fun m ↦ SchwartzMap.seminorm ℝ m.1 m.2) f
+  refine ⟨fun z ↦ 2 ^ p * (2 ^ p * S) * (1 + ‖z‖) ^ (-(p : ℝ)),
+    (Measure.integrable_pow_neg_integrablePower μ).const_mul _, fun z h hh ↦ ?_⟩
+  have hz : 0 < 1 + ‖z‖ := by positivity
+  -- Decay at `z + h`, and `1 + ‖z‖ ≤ 2 (1 + ‖z + h‖)` since `‖h‖ ≤ 1`.
+  have hdecay := f.one_add_le_sup_seminorm_apply (𝕜 := ℝ) (m := (p, n)) le_rfl le_rfl (z + h)
+  have hcomp : 1 + ‖z‖ ≤ 2 * (1 + ‖z + h‖) := by
+    have := norm_sub_le (z + h) h
+    rw [add_sub_cancel_right] at this
+    linarith [norm_nonneg (z + h)]
+  dsimp only
+  rw [Real.rpow_neg hz.le, Real.rpow_natCast, ← div_eq_mul_inv, le_div_iff₀ (by positivity)]
+  calc ‖iteratedFDeriv ℝ n f (z + h)‖ * (1 + ‖z‖) ^ p
+      ≤ ‖iteratedFDeriv ℝ n f (z + h)‖ * (2 * (1 + ‖z + h‖)) ^ p := by gcongr
+    _ = 2 ^ p * ((1 + ‖z + h‖) ^ p * ‖iteratedFDeriv ℝ n f (z + h)‖) := by rw [mul_pow]; ring
+    _ ≤ 2 ^ p * (2 ^ p * S) := by gcongr
+
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
 
 /-- For a Schwartz function `f` and a continuous linear map `L`, the derivatives of `L ∘ f` are
@@ -207,6 +240,19 @@ theorem integral_norm_iteratedFDeriv_comp_left_le (L : F →L[ℝ] G) (f : 𝓢(
     ((f.integrable_norm_iteratedFDeriv k).const_mul ‖L‖)
     (.of_forall fun _ ↦ L.norm_iteratedFDeriv_comp_left (f.smooth ⊤).contDiffAt (mod_cast le_top))
 
+section Smul
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F]
+
+/-- Multiplication by a function which is not of temperate growth is the zero map: Mathlib's
+`smulLeftCLM` is defined to be `0` there. -/
+theorem smulLeftCLM_of_not_hasTemperateGrowth {g : E → 𝕜} (hg : ¬g.HasTemperateGrowth) :
+    smulLeftCLM F g = 0 := by
+  simp [smulLeftCLM, hg]
+
+end Smul
+
 end SchwartzMap
 
 namespace TauCeti
@@ -216,22 +262,44 @@ open scoped SchwartzMap
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [IsLocallyFiniteMeasure μ]
   [μ.IsOpenPosMeasure]
-  {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W]
-  [CompleteSpace W]
+  {𝕜 V W : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup V] [NormedSpace ℝ V]
+  [NormedSpace 𝕜 V] [NormedAddCommGroup W] [NormedSpace ℝ W] [NormedSpace 𝕜 W] [CompleteSpace W]
+  [LinearMap.CompatibleSMul V W ℝ 𝕜]
 
-/-- A continuous function `g : E → V →L[ℂ] W` such that `∫ g ζ (f ζ) ∂μ = 0` for every Schwartz
-function `f`, against a locally finite measure charging every nonempty open set, vanishes. -/
-theorem eq_zero_of_forall_integral_apply_eq_zero {g : E → V →L[ℂ] W} (hg : Continuous g)
-    (h : ∀ f : 𝓢(E, V), ∫ ζ, g ζ (f ζ) ∂μ = 0) (ζ : E) : g ζ = 0 := by
+/-- **Operator families are determined by Schwartz test functions.** Two families `K₁`, `K₂`
+continuous on an open set `U` agree on `U` if `∫ K₁(y) u(y) ∂μ = ∫ K₂(y) u(y) ∂μ` for every
+compactly supported Schwartz function `u` with support in `U`, against a locally finite measure
+charging every nonempty open set. -/
+theorem _root_.IsOpen.eqOn_of_integral_clm_apply_eq {K₁ K₂ : E → V →L[𝕜] W} {U : Set E}
+    (hU : IsOpen U) (hK₁ : ContinuousOn K₁ U) (hK₂ : ContinuousOn K₂ U)
+    (h : ∀ u : 𝓢(E, V), HasCompactSupport u → tsupport u ⊆ U →
+      ∫ y, K₁ y (u y) ∂μ = ∫ y, K₂ y (u y) ∂μ) :
+    Set.EqOn K₁ K₂ U := by
+  intro y hy
   ext v
-  -- Test against `f = φ • v` with `φ` real, smooth and compactly supported.
-  have hgv : Continuous fun ζ ↦ g ζ v := hg.clm_apply continuous_const
-  have hae : ∀ᵐ η ∂μ, g η v = 0 := by
-    refine ae_eq_zero_of_integral_contDiff_smul_eq_zero hgv.locallyIntegrable fun φ hφ hφc ↦ ?_
-    have hf : HasCompactSupport fun η ↦ φ η • v := hφc.smul_right
-    simpa [ContinuousLinearMap.map_smul_of_tower] using
-      h (hf.toSchwartzMap (hφ.smul contDiff_const))
-  exact congrFun ((hgv.ae_eq_iff_eq μ continuous_zero).1 hae) ζ
+  set f : E → W := fun z ↦ K₁ z v - K₂ z v
+  have hf : ContinuousOn f U :=
+    (hK₁.clm_apply continuousOn_const).sub (hK₂.clm_apply continuousOn_const)
+  have hae := hU.ae_eq_zero_of_integral_contDiff_smul_eq_zero
+    (hf.locallyIntegrableOn (μ := μ) hU.measurableSet) fun g hg hgs hgU ↦ ?_
+  · exact sub_eq_zero.1 (Measure.eqOn_open_of_ae_eq ((ae_restrict_iff' hU.measurableSet).2 hae)
+      hU hf continuousOn_const hy)
+  -- Test against `z ↦ g(z) • v`, a compactly supported Schwartz function with support in `U`.
+  have hgcs : HasCompactSupport fun z ↦ g z • v := hgs.smul_right
+  set u := hgcs.toSchwartzMap (hg.smul contDiff_const)
+  have huU : tsupport u ⊆ U := (tsupport_smul_subset_left _ _).trans hgU
+  have hpt (L : E → V →L[𝕜] W) (z : E) : g z • L z v = L z (u z) := by
+    rw [HasCompactSupport.toSchwartzMap_toFun, ContinuousLinearMap.map_smul_of_tower]
+  simp only [f, smul_sub, hpt K₁, hpt K₂]
+  rw [integral_sub (u.continuous.integrable_clm_apply_of_continuousOn hgcs huU hK₁)
+    (u.continuous.integrable_clm_apply_of_continuousOn hgcs huU hK₂), h u hgcs huU, sub_self]
+
+/-- A continuous function `g : E → V →L[𝕜] W` such that `∫ g ζ (f ζ) ∂μ = 0` for every Schwartz
+function `f`, against a locally finite measure charging every nonempty open set, vanishes. -/
+theorem eq_zero_of_forall_integral_apply_eq_zero {g : E → V →L[𝕜] W} (hg : Continuous g)
+    (h : ∀ f : 𝓢(E, V), ∫ ζ, g ζ (f ζ) ∂μ = 0) (ζ : E) : g ζ = 0 :=
+  isOpen_univ.eqOn_of_integral_clm_apply_eq (μ := μ) (K₂ := 0) hg.continuousOn continuousOn_const
+    (fun f _ _ ↦ by simp [h f]) (Set.mem_univ ζ)
 
 end TauCeti
 
