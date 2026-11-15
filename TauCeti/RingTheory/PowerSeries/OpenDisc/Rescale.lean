@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Ring.MulUnit
 public import TauCeti.RingTheory.PowerSeries.OpenDisc.Map
 public import TauCeti.RingTheory.PowerSeries.Restricted.Rescale
-import TauCeti.Analysis.Normed.Group.Basic
+import TauCeti.Algebra.Order.GroupWithZero.Basic
 
 /-!
 # Rescaling and affine coordinate changes on open discs
@@ -35,8 +35,7 @@ series on open discs:
    `‖(u : R)‖ * S₀ = R₀`, with inverse pulling back along `X ↦ -u⁻¹ a + u⁻¹ X`. Without requiring
    `NormOneClass R`, `affineAlgHom` agrees with `analyticSubst` on nonempty target open discs
    (`0 < S₀`), and `rescaleAlgHom` agrees with `analyticSubst` when both open discs are nonempty
-   (`0 < R₀` and `0 < S₀`), while `taylorHom` agrees with `analyticSubst` on nonempty open discs
-   when `NormOneClass R` holds.
+   (`0 < R₀` and `0 < S₀`).
 
 ## Main definitions
 
@@ -58,11 +57,9 @@ series on open discs:
   inversion of affine coordinate changes.
 * `TauCeti.PowerSeries.OnOpenDisc.mapHom_rescaleAlgHom` and
   `TauCeti.PowerSeries.OnOpenDisc.mapHom_affineAlgHom`: naturality with bounded coefficient maps.
-* `TauCeti.PowerSeries.OnOpenDisc.taylorHom_analyticSubst`,
-  `TauCeti.PowerSeries.OnOpenDisc.affineAlgHom_eq_analyticSubst`,
-  `TauCeti.PowerSeries.OnOpenDisc.taylorHom_eq_analyticSubst`, and
-  `TauCeti.PowerSeries.OnOpenDisc.rescaleAlgHom_eq_analyticSubst`: compatibility and agreement with
-  analytic substitution.
+* `TauCeti.PowerSeries.OnOpenDisc.affineAlgHom_eq_analyticSubst` and
+  `TauCeti.PowerSeries.OnOpenDisc.rescaleAlgHom_eq_analyticSubst`: agreement of affine pullbacks
+  and rescaling with analytic substitution.
 
 ## References
 
@@ -155,8 +152,8 @@ theorem mapHom_rescaleAlgHom {S : Type*} [NormedCommRing S] (φ : R →+* S) {C 
 /-- Evaluating a rescaled open-disc series at `b` evaluates the original series at `u • b`. -/
 theorem evalAt_rescaleAlgHom {A : Type*} [Semiring A] [Algebra R A] [TopologicalSpace A]
     {u : R} (hu : ‖u‖ * S₀ ≤ R₀) (f : OnOpenDisc.subring R R₀) (b : A) :
-    (rescaleAlgHom hu f : R⟦X⟧).evalAt b = (f : R⟦X⟧).evalAt (u • b) :=
-  PowerSeries.evalAt_rescale (f : R⟦X⟧) u b
+    (rescaleAlgHom hu f : R⟦X⟧).evalAt b = (f : R⟦X⟧).evalAt (u • b) := by
+  rw [coe_rescaleAlgHom, PowerSeries.evalAt_rescale]
 
 private theorem onOpenDisc_rescale_units_inv (u : Rˣ) (hu : IsNormMulUnit (u : R))
     (huS : ‖(u : R)‖ * S₀ = R₀) {g : R⟦X⟧} (hg : g.OnOpenDisc S₀) :
@@ -183,11 +180,6 @@ theorem rescaleEquiv_apply (u : Rˣ) (hu : IsNormMulUnit (u : R)) (huS : ‖(u :
     (f : OnOpenDisc.subring R R₀) :
     rescaleEquiv u hu huS f = rescaleAlgHom huS.le f := (rfl)
 
-/-- `rescaleEquiv` acts by `PowerSeries.rescale` on the underlying formal series. -/
-theorem coe_rescaleEquiv (u : Rˣ) (hu : IsNormMulUnit (u : R)) (huS : ‖(u : R)‖ * S₀ = R₀)
-    (f : OnOpenDisc.subring R R₀) :
-    (rescaleEquiv u hu huS f : R⟦X⟧) = PowerSeries.rescale (u : R) (f : R⟦X⟧) := (rfl)
-
 /-- The inverse of `rescaleEquiv` rescales by `u⁻¹` on the underlying formal series. -/
 @[simp]
 theorem coe_rescaleEquiv_symm (u : Rˣ) (hu : IsNormMulUnit (u : R)) (huS : ‖(u : R)‖ * S₀ = R₀)
@@ -201,7 +193,8 @@ theorem coe_rescaleEquiv_symm (u : Rˣ) (hu : IsNormMulUnit (u : R)) (huS : ‖(
 theorem rescaleEquiv_symm_apply [Fact (0 < R₀)] (u : Rˣ) (hu : IsNormMulUnit (u : R))
     (huS : ‖(u : R)‖ * S₀ = R₀) (g : OnOpenDisc.subring R S₀) :
     (rescaleEquiv u hu huS).symm g =
-      rescaleAlgHom (hu.norm_units_inv_mul_eq (Fact.out : 0 < R₀).ne' huS).le g := (rfl)
+      rescaleAlgHom (hu.norm_units_inv_mul_eq (Fact.out : 0 < R₀).ne' huS).le g :=
+  Subtype.ext (by simp)
 
 section UltrametricRescale
 
@@ -250,15 +243,17 @@ with the Gauss norm at `r = ‖(u : R)‖ * s < R₀`. -/
 theorem norm_restrict_rescaleEquiv (u : Rˣ) (hu : IsNormMulUnit (u : R))
     (huS : ‖(u : R)‖ * S₀ = R₀) (s : Set.Ioo (0 : ℝ) S₀) (r : Set.Ioo (0 : ℝ) R₀)
     (hr : (r : ℝ) = ‖(u : R)‖ * s) (f : OnOpenDisc.subring R R₀) :
-    ‖restrict s (rescaleEquiv u hu huS f)‖ = ‖restrict r f‖ :=
-  norm_restrict_rescaleAlgHom hu.norm_mul huS.le s r hr f
+    ‖restrict s (rescaleEquiv u hu huS f)‖ = ‖restrict r f‖ := by
+  rw [rescaleEquiv_apply]
+  exact norm_restrict_rescaleAlgHom hu.norm_mul huS.le s r hr f
 
 /-- Rescaling out of a nonempty open disc (`0 < R₀`) is uniformly continuous for the Gauss
 uniformities. -/
 theorem uniformContinuous_rescaleAlgHom [Fact (0 < R₀)] {u : R} (hu : ‖u‖ * S₀ ≤ R₀) :
     UniformContinuous (rescaleAlgHom hu) := by
   refine uniformContinuous_iff.mpr fun s ↦ ?_
-  obtain ⟨r, hsr, hrR⟩ := exists_between (norm_mul_lt_of_lt_of_mul_le Fact.out s.2.2 hu)
+  obtain ⟨r, hsr, hrR⟩ :=
+    exists_between (mul_lt_of_lt_of_mul_le (norm_nonneg u) Fact.out s.2.2 hu)
   let r' : Set.Ioo (0 : ℝ) R₀ := ⟨r, (mul_nonneg (norm_nonneg u) s.2.1.le).trans_lt hsr, hrR⟩
   have : Fact (0 < r) := ⟨r'.2.1⟩
   simp_rw [restrict_rescaleAlgHom hu s r' hsr.le]
@@ -282,23 +277,11 @@ variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [CompleteSpace R]
 
 attribute [local instance] radius_pos
 
-/-- **Translating an analytic substitution** translates the inner series:
-`(f(g))(X + b) = f(g(X + b))`. No `NormOneClass R` hypothesis is needed. -/
-theorem taylorHom_analyticSubst [Fact (0 < S₀)] {b : R} (hb : ‖b‖ < S₀)
-    (g : OnOpenDisc.subring R S₀)
-    (hg : ∀ s : Set.Ioo (0 : ℝ) S₀, ‖restrict s g‖ < R₀)
-    (f : OnOpenDisc.subring R R₀) :
-    taylorHom hb (analyticSubst g hg f) =
-      analyticSubst (taylorHom hb g) (norm_restrict_taylorHom_lt hb g hg) f := by
-  have heq : (taylorHom hb).comp (analyticSubst g hg) =
-      analyticSubst (taylorHom hb g) (norm_restrict_taylorHom_lt hb g hg) :=
-    eq_analyticSubst _ _ _ ((continuous_taylorHom hb).comp (continuous_analyticSubst g hg))
-      (by simp)
-  exact AlgHom.congr_fun heq f
-
 /-- **Affine pullback `f(X) ↦ f(a + u X)` on open discs**, defined as Taylor translation by `a`
 (`‖a‖ < R₀`) followed by rescaling by `u` (`‖u‖ * S₀ ≤ R₀`). Unlike a direct definition through
-`analyticSubst`, this requires neither `NormOneClass R` nor positivity of `S₀`. -/
+`analyticSubst`, this does not require positivity of `S₀`, and its Gauss-norm bound and composition
+law avoid the `NormOneClass R` hypothesis needed by `norm_restrict_analyticSubst_le` and
+`analyticSubst_comp_analyticSubst`. -/
 noncomputable def affineAlgHom {a u : R} (ha : ‖a‖ < R₀) (hu : ‖u‖ * S₀ ≤ R₀) :
     OnOpenDisc.subring R R₀ →ₐ[R] OnOpenDisc.subring R S₀ :=
   (rescaleAlgHom hu).comp (taylorHom ha)
@@ -320,8 +303,7 @@ theorem coe_affineAlgHom {a u : R} (ha : ‖a‖ < R₀) (hu : ‖u‖ * S₀ �
 theorem affineAlgHom_X {a u : R} (ha : ‖a‖ < R₀) (hu : ‖u‖ * S₀ ≤ R₀) :
     affineAlgHom ha hu (OnOpenDisc.polynomialHom Polynomial.X) =
       algebraMap R _ a + algebraMap R _ u * OnOpenDisc.polynomialHom Polynomial.X := by
-  rw [affineAlgHom_apply, taylorHom_polynomialHom, Polynomial.taylor_X, map_add, map_add,
-    rescaleAlgHom_X, OnOpenDisc.polynomialHom_C, AlgHom.commutes, add_comm]
+  simp [affineAlgHom_apply, polynomialHom_C, add_comm]
 
 /-- At centre `a = 0`, `affineAlgHom` reduces to `rescaleAlgHom`. -/
 @[simp]
@@ -372,7 +354,7 @@ theorem evalAt_affineAlgHom {A : Type*} [NormedRing A] [Algebra R A] [IsBoundedS
     (affineAlgHom ha hu f : R⟦X⟧).evalAt b =
       (f : R⟦X⟧).evalAt (u • b + algebraMap R A a) := by
   have hub : ‖u • b‖ < R₀ := (norm_smul_le u b).trans_lt
-    (norm_mul_lt_of_lt_of_mul_le ((norm_nonneg a).trans_lt ha) hb hu)
+    (mul_lt_of_lt_of_mul_le (norm_nonneg u) ((norm_nonneg a).trans_lt ha) hb hu)
   rw [affineAlgHom_apply, evalAt_rescaleAlgHom, evalAt_taylorHom ha hub]
 
 /-- On smaller closed discs with `‖a‖ ≤ r` and `‖u‖ * s ≤ r`, `affineAlgHom` does not increase the
@@ -397,7 +379,8 @@ theorem affineAlgHom_comp_affineAlgHom {a u b v : R} (ha : ‖a‖ < R₀) (hu :
     (hb : ‖b‖ < S₀) (hv : ‖v‖ * T₀ ≤ S₀)
     (haub : ‖a + u * b‖ < R₀) (huv : ‖u * v‖ * T₀ ≤ R₀) :
     (affineAlgHom hb hv).comp (affineAlgHom ha hu) = affineAlgHom haub huv := by
-  have hub : ‖u‖ * ‖b‖ < R₀ := norm_mul_lt_of_lt_of_mul_le ((norm_nonneg a).trans_lt ha) hb hu
+  have hub : ‖u‖ * ‖b‖ < R₀ :=
+    mul_lt_of_lt_of_mul_le (norm_nonneg u) ((norm_nonneg a).trans_lt ha) hb hu
   have hub' : ‖u * b‖ < R₀ := (norm_mul_le u b).trans_lt hub
   ext f : 1
   apply Subtype.ext
@@ -462,22 +445,10 @@ theorem norm_restrict_algebraMap_add_algebraMap_mul_X_lt {a u : R} (ha : ‖a‖
     (hu : ‖u‖ * S₀ ≤ R₀) (s : Set.Ioo (0 : ℝ) S₀) :
     ‖restrict s (algebraMap R (OnOpenDisc.subring R S₀) a +
       algebraMap R (OnOpenDisc.subring R S₀) u * OnOpenDisc.polynomialHom Polynomial.X)‖ < R₀ := by
-  have hus : ‖u‖ * s < R₀ := norm_mul_lt_of_lt_of_mul_le ((norm_nonneg a).trans_lt ha) s.2.2 hu
+  have hus : ‖u‖ * s < R₀ :=
+    mul_lt_of_lt_of_mul_le (norm_nonneg u) ((norm_nonneg a).trans_lt ha) s.2.2 hu
   refine (TauCeti.PowerSeries.norm_le_iff.mpr fun n ↦ ?_).trans_lt (max_lt ha hus)
-  rw [coe_restrict, Subring.coe_add, Subring.coe_mul, OnOpenDisc.coe_algebraMap,
-    OnOpenDisc.coe_algebraMap, Algebra.algebraMap_self, RingHom.id_apply, RingHom.id_apply,
-    OnOpenDisc.coe_polynomialHom, Polynomial.coe_X]
   rcases n with _ | _ | n <;> simp
-
-omit [CompleteSpace R] in
-/-- The translated coordinate `a + X` has smaller-disc Gauss norm strictly below `S₀` whenever
-`‖a‖ < S₀`. -/
-theorem norm_restrict_algebraMap_add_X_lt [NormOneClass R] {a : R} (ha : ‖a‖ < S₀)
-    (s : Set.Ioo (0 : ℝ) S₀) :
-    ‖restrict s (algebraMap R (OnOpenDisc.subring R S₀) a +
-      OnOpenDisc.polynomialHom Polynomial.X)‖ < S₀ := by
-  have h1 : ‖(1 : R)‖ * S₀ ≤ S₀ := by simp
-  simpa using norm_restrict_algebraMap_add_algebraMap_mul_X_lt ha h1 s
 
 omit [CompleteSpace R] in
 /-- The rescaled coordinate `u * X` has smaller-disc Gauss norm strictly below `R₀ > 0` whenever
@@ -499,15 +470,6 @@ theorem affineAlgHom_eq_analyticSubst {a u : R} (ha : ‖a‖ < R₀) (hu : ‖u
       analyticSubst (algebraMap R _ a + algebraMap R _ u * OnOpenDisc.polynomialHom Polynomial.X)
         (norm_restrict_algebraMap_add_algebraMap_mul_X_lt ha hu) :=
   eq_analyticSubst _ _ (affineAlgHom ha hu) (continuous_affineAlgHom ha hu) (affineAlgHom_X ha hu)
-
-/-- **Agreement of `taylorHom` with `analyticSubst`.** -/
-theorem taylorHom_eq_analyticSubst [NormOneClass R] {a : R} (ha : ‖a‖ < S₀) :
-    taylorHom ha =
-      analyticSubst (algebraMap R _ a + OnOpenDisc.polynomialHom Polynomial.X)
-        (norm_restrict_algebraMap_add_X_lt ha) := by
-  have h1 : ‖(1 : R)‖ * S₀ ≤ S₀ := by simp
-  rw [← affineAlgHom_one_right ha h1, affineAlgHom_eq_analyticSubst]
-  exact analyticSubst_congr (by simp) _ _
 
 /-- **Agreement of `rescaleAlgHom` with `analyticSubst`** between nonempty open discs, without
 requiring `NormOneClass R`. -/

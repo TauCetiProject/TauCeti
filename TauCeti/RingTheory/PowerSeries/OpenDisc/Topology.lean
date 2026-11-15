@@ -14,7 +14,8 @@ public import TauCeti.RingTheory.PowerSeries.GaussFamily
 For an ultrametric normed ring `R` and a positive radius `R₀`, the algebra of series on the
 open disc carries the topology of the Gauss norms at all radii `0 < r < R₀`. Convergence is
 convergence in each of these norms, rather than convergence of individual coefficients.
-The resulting uniform ring is Hausdorff and is complete when `R` is complete.
+The resulting uniform ring is Hausdorff, has continuous scalar multiplication, and is complete when
+`R` is complete.
 
 Restriction embeds the algebra into the product of the smaller closed-disc algebras. Its
 image consists of the families with the same formal coefficients at every radius. This
@@ -22,9 +23,9 @@ description proves completeness without choosing a sequence of radii or a single
 Convergence may also be tested along any family of radii tending to the boundary, so a
 cofinal sequence yields the same topology. Polynomial truncations converge in this topology,
 and coefficient maps, radius restrictions (`radiusHom`), and inclusions from the boundary
-closed-disc algebra (`ofIsRestricted`, `ofIsRestrictedAlgHom`) are uniformly continuous; the
-latter two have dense range. These are specializations of the Gauss topology
-of a family of radii in `TauCeti.RingTheory.PowerSeries.GaussFamily`.
+closed-disc algebra (`ofIsRestricted`) are uniformly continuous; the latter two have dense range.
+These are specializations of the Gauss topology of a family of radii in
+`TauCeti.RingTheory.PowerSeries.GaussFamily`.
 
 ## References
 
@@ -153,6 +154,29 @@ instance : IsUniformAddGroup (OnOpenDisc.subring R R₀) :=
 instance : IsTopologicalRing (OnOpenDisc.subring R R₀) :=
   GaussFamily.isTopologicalRing isUniformInducing_restrictFamily
 
+/-- Coefficient scalar multiplication on open-disc series is continuous for the Gauss topology. -/
+instance : ContinuousSMul R (OnOpenDisc.subring R R₀) where
+  continuous_smul := by
+    rw [continuous_iff]
+    intro r
+    let C_hom : R →+ IsRestricted.subring (R := R) (r : ℝ) :=
+      { toFun a := ⟨PowerSeries.C a, isRestricted_C (r : ℝ) a⟩
+        map_zero' := Subtype.ext (map_zero PowerSeries.C)
+        map_add' a b := Subtype.ext (map_add PowerSeries.C a b) }
+    have hC : Continuous C_hom :=
+      AddMonoidHomClass.continuous_of_bound C_hom 1 fun a ↦ by simp [C_hom]
+    have hmul : (fun p : R × OnOpenDisc.subring R R₀ ↦ restrict r (p.1 • p.2)) =
+        fun p ↦ C_hom p.1 * restrict r p.2 := funext fun ⟨a, f⟩ ↦
+      Subtype.ext (by simp [C_hom, PowerSeries.smul_eq_C_mul])
+    rw [hmul]
+    exact (hC.comp continuous_fst).mul
+      ((uniformContinuous_restrict (R := R) r).continuous.comp continuous_snd)
+
+/-- Any continuous algebra scalar action on `R` acts continuously on open-disc series. -/
+instance {S : Type*} [CommSemiring S] [TopologicalSpace S] [Algebra S R] [ContinuousSMul S R] :
+    ContinuousSMul S (OnOpenDisc.subring R R₀) :=
+  IsScalarTower.continuousSMul R
+
 /-- Polynomial truncations converge in every smaller-radius Gauss norm simultaneously. -/
 theorem tendsto_polynomialHom_trunc (f : OnOpenDisc.subring R R₀) :
     Tendsto (fun n ↦ OnOpenDisc.polynomialHom (R₀ := R₀) ((f : R⟦X⟧).trunc n)) atTop (𝓝 f) :=
@@ -241,57 +265,6 @@ theorem denseRange_radiusHom (h : R₁ ≤ R₀) : DenseRange (radiusHom (R := R
     funext (radiusHom_polynomialHom h)
   exact Dense.mono (hcomp ▸ Set.range_comp_subset_range _ _)
     (denseRange_polynomialHom (R := R) (R₀ := R₁))
-
-/-- Inclusion of series restricted at `R₀` into series on the open disc of radius `R₀`. -/
-noncomputable def ofIsRestricted :
-    IsRestricted.subring (R := R) R₀ →+* OnOpenDisc.subring R R₀ :=
-  Subring.inclusion (IsRestricted.subring_le_onOpenDiscSubring (R := R) R₀)
-
-/-- `ofIsRestricted` leaves the underlying formal power series unchanged. -/
-@[simp]
-theorem coe_ofIsRestricted (f : IsRestricted.subring (R := R) R₀) :
-    (ofIsRestricted f : R⟦X⟧) = f :=
-  Subring.coe_inclusion _ f
-
-/-- Inclusion of restricted series into the open-disc subring is injective. -/
-theorem ofIsRestricted_injective :
-    Function.Injective (ofIsRestricted (R := R) (R₀ := R₀)) :=
-  Subring.inclusion_injective _
-
-/-- `ofIsRestricted` fixes scalar constants from any base algebra. -/
-@[simp]
-theorem ofIsRestricted_algebraMap {S : Type*} [CommSemiring S] [Algebra S R] (s : S) :
-    ofIsRestricted (algebraMap S (IsRestricted.subring (R := R) R₀) s) =
-      algebraMap S (OnOpenDisc.subring R R₀) s :=
-  Subtype.ext (by simp)
-
-/-- Including a polynomial into the closed-disc algebra at `R₀` and then into the open-disc
-algebra agrees with `OnOpenDisc.polynomialHom`. -/
-@[simp]
-theorem ofIsRestricted_polynomialToRestricted {S : Type*} [NormedCommRing S]
-    [IsUltrametricDist S] (p : Polynomial S) :
-    ofIsRestricted (TauCeti.PowerSeries.polynomialToRestricted R₀ p) =
-      OnOpenDisc.polynomialHom p :=
-  Subtype.ext (by simp)
-
-/-- Inclusion of series restricted at `R₀` into series on the open disc of radius `R₀`, bundled as
-an `S`-algebra homomorphism. -/
-noncomputable def ofIsRestrictedAlgHom (S : Type*) [CommSemiring S] [Algebra S R] :
-    IsRestricted.subring (R := R) R₀ →ₐ[S] OnOpenDisc.subring R R₀ where
-  __ := ofIsRestricted
-  commutes' := ofIsRestricted_algebraMap
-
-/-- `ofIsRestrictedAlgHom` agrees with `ofIsRestricted` on each series. -/
-@[simp]
-theorem ofIsRestrictedAlgHom_apply (S : Type*) [CommSemiring S] [Algebra S R]
-    (f : IsRestricted.subring (R := R) R₀) :
-    ofIsRestrictedAlgHom S f = ofIsRestricted f := (rfl)
-
-/-- Forgetting `S`-linearity of `ofIsRestrictedAlgHom` gives `ofIsRestricted`. -/
-@[simp]
-theorem toRingHom_ofIsRestrictedAlgHom (S : Type*) [CommSemiring S] [Algebra S R] :
-    (ofIsRestrictedAlgHom (R := R) (R₀ := R₀) S :
-      IsRestricted.subring (R := R) R₀ →+* OnOpenDisc.subring R R₀) = ofIsRestricted := (rfl)
 
 /-- Restricting `ofIsRestricted f` to a smaller positive closed disc applies the closed-disc
 radius restriction `restrictedRadiusHom` from `R₀` to `r`. -/

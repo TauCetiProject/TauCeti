@@ -8,6 +8,8 @@ module
 public import TauCeti.RingTheory.PowerSeries.EvalAt
 public import TauCeti.RingTheory.PowerSeries.Rescale
 public import TauCeti.RingTheory.PowerSeries.TateAlgebra
+import TauCeti.Analysis.Normed.Ring.Basic
+import TauCeti.RingTheory.MvPowerSeries.Rescale
 
 /-!
 # Rescaling restricted univariate power series
@@ -132,8 +134,8 @@ theorem restrictedRescaleAlgHom_restrictedRescaleAlgHom (hs : 0 ≤ s) (hsr : �
 theorem evalAt_restrictedRescaleAlgHom {A : Type*} [Semiring A] [Algebra R A]
     [TopologicalSpace A] (hs : 0 ≤ s) (hsr : ‖u‖ * s ≤ r)
     (f : IsRestricted.subring (R := R) r) (b : A) :
-    (restrictedRescaleAlgHom hs hsr f : R⟦X⟧).evalAt b = (f : R⟦X⟧).evalAt (u • b) :=
-  PowerSeries.evalAt_rescale (f : R⟦X⟧) u b
+    (restrictedRescaleAlgHom hs hsr f : R⟦X⟧).evalAt b = (f : R⟦X⟧).evalAt (u • b) := by
+  rw [coe_restrictedRescaleAlgHom, PowerSeries.evalAt_rescale]
 
 section Norm
 
@@ -146,19 +148,15 @@ theorem norm_restrictedRescaleAlgHom_le (hs : 0 ≤ s) (hsr : ‖u‖ * s ≤ r)
     ‖restrictedRescaleAlgHom hs hsr f‖ ≤ ‖f‖ := by
   refine norm_le_iff.mpr fun n ↦ ?_
   rw [coe_restrictedRescaleAlgHom, coeff_rescale]
-  rcases eq_or_ne n 0 with rfl | hn
-  · simpa using norm_coeff_mul_pow_le f 0
-  · have hpow : ‖u ^ n * coeff n (f : R⟦X⟧)‖ ≤ ‖u‖ ^ n * ‖coeff n (f : R⟦X⟧)‖ :=
-      (norm_mul_le _ _).trans
-        (mul_le_mul_of_nonneg_right (norm_pow_le' u (Nat.pos_of_ne_zero hn)) (norm_nonneg _))
-    calc ‖u ^ n * coeff n (f : R⟦X⟧)‖ * s ^ n
-        ≤ (‖u‖ ^ n * ‖coeff n (f : R⟦X⟧)‖) * s ^ n :=
-          mul_le_mul_of_nonneg_right hpow (pow_nonneg hs n)
-      _ = ‖coeff n (f : R⟦X⟧)‖ * (‖u‖ * s) ^ n := by ring
-      _ ≤ ‖coeff n (f : R⟦X⟧)‖ * r ^ n :=
-          mul_le_mul_of_nonneg_left
-            (pow_le_pow_left₀ (mul_nonneg (norm_nonneg _) hs) hsr n) (norm_nonneg _)
-      _ ≤ ‖f‖ := norm_coeff_mul_pow_le f n
+  calc ‖u ^ n * coeff n (f : R⟦X⟧)‖ * s ^ n
+      = ‖coeff n (f : R⟦X⟧) * u ^ n‖ * s ^ n := by rw [mul_comm (u ^ n)]
+    _ ≤ (‖coeff n (f : R⟦X⟧)‖ * ‖u‖ ^ n) * s ^ n :=
+        mul_le_mul_of_nonneg_right (TauCeti.norm_mul_pow_le _ _ _) (pow_nonneg hs n)
+    _ = ‖coeff n (f : R⟦X⟧)‖ * (‖u‖ * s) ^ n := by ring
+    _ ≤ ‖coeff n (f : R⟦X⟧)‖ * r ^ n :=
+        mul_le_mul_of_nonneg_left
+          (pow_le_pow_left₀ (mul_nonneg (norm_nonneg _) hs) hsr n) (norm_nonneg _)
+    _ ≤ ‖f‖ := norm_coeff_mul_pow_le f n
 
 /-- Rescaling by a norm-multiplicative scalar `u` between positive-radius closed-disc algebras with
 `‖u‖ * s = r` preserves the Gauss norm. Neither invertibility of `u` nor `NormOneClass R` is
@@ -170,20 +168,11 @@ theorem norm_restrictedRescaleAlgHom (hu : ∀ x : R, ‖u * x‖ = ‖u‖ * �
   congr 1
   funext n
   rw [coe_restrictedRescaleAlgHom, coeff_rescale]
-  have hmul : ∀ m (a : R), ‖u ^ m * a‖ * s ^ m = ‖a‖ * r ^ m := fun m ↦ by
-    induction m with
-    | zero =>
-      intro a
-      simp
-    | succ m ih =>
-      intro a
-      calc ‖u ^ (m + 1) * a‖ * s ^ (m + 1)
-          = (‖u ^ m * a‖ * s ^ m) * (‖u‖ * s) := by
-            rw [pow_succ', mul_assoc, hu, pow_succ']
-            ring
-        _ = ‖a‖ * r ^ (m + 1) := by
-            rw [ih, hrs, mul_assoc, pow_succ]
-  exact hmul n (coeff n (f : R⟦X⟧))
+  simpa [Finsupp.prod_single_index] using
+    TauCeti.MvPowerSeries.norm_prod_pow_smul_mul_prod (σ := Unit) (E := R)
+      (r := fun _ ↦ r) (s := fun _ ↦ s) (fun _ ↦ u)
+      (fun _ e ↦ by rw [smul_eq_mul, hu, mul_right_comm, hrs, mul_comm])
+      (Finsupp.single () n) (coeff n (f : R⟦X⟧))
 
 /-- Rescaling between positive-radius closed-disc algebras with `‖u‖ * s ≤ r` is `1`-Lipschitz for
 the Gauss norms. -/

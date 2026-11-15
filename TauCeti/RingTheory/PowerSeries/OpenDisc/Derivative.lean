@@ -211,10 +211,8 @@ theorem coe_derivative (f : OnOpenDisc.subring R R₀) :
 /-- Iterated `derivative` acts as iterated `PowerSeries.derivative` on the underlying series. -/
 @[simp]
 theorem coe_iterate_derivative (k : ℕ) (f : OnOpenDisc.subring R R₀) :
-    ((derivative^[k] f : OnOpenDisc.subring R R₀) : R⟦X⟧) = d⁄dX^[k] (f : R⟦X⟧) := by
-  induction k generalizing f with
-  | zero => rfl
-  | succ k ih => rw [Function.iterate_succ_apply, ih, coe_derivative, Function.iterate_succ_apply]
+    ((derivative^[k] f : OnOpenDisc.subring R R₀) : R⟦X⟧) = d⁄dX^[k] (f : R⟦X⟧) :=
+  Function.Semiconj.iterate_right (f := Subtype.val) coe_derivative k f
 
 /-- Coefficient formula for `derivative` on an open disc. -/
 theorem coeff_derivative (f : OnOpenDisc.subring R R₀) (n : ℕ) :
@@ -225,15 +223,13 @@ theorem coeff_derivative (f : OnOpenDisc.subring R R₀) (n : ℕ) :
 @[simp]
 theorem hasseDeriv_one_apply (f : OnOpenDisc.subring R R₀) :
     hasseDeriv 1 f = derivative f :=
-  Subtype.ext (PowerSeries.hasseDeriv_one_apply (f : R⟦X⟧))
+  Subtype.ext (by simp)
 
 /-- `k.factorial` times the `k`th Hasse derivative on an open disc is the `k`th iterated
 derivative. -/
 theorem factorial_smul_hasseDeriv (k : ℕ) (f : OnOpenDisc.subring R R₀) :
-    k.factorial • hasseDeriv k f = derivative^[k] f := by
-  apply Subtype.ext
-  rw [← Subring.subtype_apply, map_nsmul, Subring.subtype_apply, coe_hasseDeriv,
-    coe_iterate_derivative, PowerSeries.factorial_smul_hasseDeriv]
+    k.factorial • hasseDeriv k f = derivative^[k] f :=
+  Subtype.ext (by simpa using PowerSeries.factorial_smul_hasseDeriv k (f : R⟦X⟧))
 
 /-- On polynomials, `derivative` agrees with `Polynomial.derivative`. -/
 @[simp]
@@ -241,16 +237,6 @@ theorem derivative_polynomialHom (p : Polynomial R) :
     derivative (OnOpenDisc.polynomialHom (R₀ := R₀) p) =
       OnOpenDisc.polynomialHom (Polynomial.derivative p) :=
   Subtype.ext (by simp [PowerSeries.derivative_coe])
-
-/-- The derivative of the coordinate `X` on an open disc is `1`. -/
-theorem derivative_X :
-    derivative (OnOpenDisc.polynomialHom Polynomial.X : OnOpenDisc.subring R R₀) = 1 :=
-  Subtype.ext (by simp)
-
-/-- The derivative of a polynomial constant `C a` on an open disc is `0`. -/
-theorem derivative_C (a : R) :
-    derivative (OnOpenDisc.polynomialHom (Polynomial.C a) : OnOpenDisc.subring R R₀) = 0 :=
-  Subtype.ext (by simp)
 
 /-- Over `[HasUniqueDiv R]`, an open-disc series is determined by its derivative and constant
 coefficient. -/

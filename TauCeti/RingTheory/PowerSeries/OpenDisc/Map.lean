@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.PowerSeries.Map
-public import TauCeti.RingTheory.PowerSeries.OpenDisc.AnalyticSubst
 public import TauCeti.RingTheory.PowerSeries.OpenDisc.Taylor
+import TauCeti.Topology.UniformSpace.AbstractCompletion
 
 /-!
 # Bounded coefficient maps on power series on an open disc
@@ -139,26 +139,24 @@ theorem radiusHom_mapHom {R₁ : ℝ} (h : R₁ ≤ R₀) (f : OnOpenDisc.subrin
     radiusHom h (mapHom φ hφ f) = mapHom φ hφ (radiusHom h f) :=
   Subtype.ext (by simp)
 
-/-- **Coefficientwise bounded lifts on an open disc.** If every element of `S` lifts along `φ`
-with norm bounded by `C'`, then every open-disc series over `S` lifts to an open-disc series over
-`R` with the same coefficientwise norm bound. Neither ultrametricity nor completeness is needed. -/
+/-- **Coefficientwise bounded lifts on an open disc.** If every `s ∈ S` lifts along `φ` to some
+`r ∈ R` with `‖r‖ ≤ C' * ‖s‖`, then every open-disc series `g` over `S` lifts to an open-disc
+series `f` over `R` with `‖coeff n f‖ ≤ C' * ‖coeff n g‖`. Neither ultrametricity nor completeness
+is needed. -/
 theorem exists_mapHom_eq_and_norm_coeff_le {C' : ℝ}
     (hlift : ∀ s, ∃ r, φ r = s ∧ ‖r‖ ≤ C' * ‖s‖) (g : OnOpenDisc.subring S R₀) :
     ∃ f : OnOpenDisc.subring R R₀, mapHom φ hφ f = g ∧
       ∀ n, ‖coeff n (f : R⟦X⟧)‖ ≤ C' * ‖coeff n (g : S⟦X⟧)‖ := by
   choose lift hφ_lift hnorm_lift using hlift
-  let f : R⟦X⟧ := PowerSeries.mk fun n ↦ lift (coeff n (g : S⟦X⟧))
-  have hf : f.OnOpenDisc R₀ := onOpenDisc_iff.mpr fun r hr hrR ↦ by
-    have hg_r := (isRestricted_iff' r (g : S⟦X⟧)).mp
+  -- Viewing `R⟦X⟧` as `MvPowerSeries Unit R` allows a nonlinear choice of coefficient lifts.
+  let f : R⟦X⟧ := fun t ↦ lift (MvPowerSeries.coeff t (g : S⟦X⟧))
+  have hcoeff (n : ℕ) : coeff n f = lift (coeff n (g : S⟦X⟧)) := (rfl)
+  have hf : f.OnOpenDisc R₀ := onOpenDisc_iff.mpr fun r hr hrR ↦
+    MvPowerSeries.isRestricted_map _ lift hnorm_lift
       (onOpenDisc_iff.mp (OnOpenDisc.mem_subring.mp g.2) r hr hrR)
-    rw [isRestricted_iff']
-    refine squeeze_zero (fun n ↦ by positivity) (fun n ↦ ?_)
-      (by simpa only [mul_zero] using hg_r.const_mul C')
-    rw [coeff_mk, ← mul_assoc]
-    exact mul_le_mul_of_nonneg_right (hnorm_lift _) (pow_nonneg hr.le n)
   refine ⟨⟨f, OnOpenDisc.mem_subring.mpr hf⟩, Subtype.ext (PowerSeries.ext fun n ↦ ?_),
-    fun n ↦ by simpa only [f, coeff_mk] using hnorm_lift _⟩
-  rw [coeff_mapHom, coeff_mk, hφ_lift]
+    fun n ↦ by simpa only [hcoeff] using hnorm_lift _⟩
+  rw [coeff_mapHom, hcoeff, hφ_lift]
 
 /-- **Strict surjections induce surjections on open-disc series.** If every `s ∈ S` lifts along
 `φ` to some `r ∈ R` with `‖r‖ ≤ C' * ‖s‖`, then `mapHom φ hφ` is surjective. -/
@@ -204,11 +202,10 @@ theorem restrict_mapHom (r : Set.Ioo (0 : ℝ) R₀) (f : OnOpenDisc.subring R R
 @[simp]
 theorem mapHom_ofIsRestricted (f : IsRestricted.subring (R := R) R₀) :
     mapHom φ hφ (ofIsRestricted f) =
-      ofIsRestricted (TauCeti.MvPowerSeries.restrictedMap φ hφ f) :=
-  Subtype.ext <| (coe_mapHom φ hφ _).trans <|
-    (congrArg (PowerSeries.map φ) (coe_ofIsRestricted f)).trans <|
-      (TauCeti.PowerSeries.coe_restrictedMap_powerSeries φ hφ f).symm.trans
-        (coe_ofIsRestricted _).symm
+      ofIsRestricted (TauCeti.MvPowerSeries.restrictedMap φ hφ f) := by
+  refine Subtype.ext ?_
+  rw [coe_mapHom, coe_ofIsRestricted, ← TauCeti.PowerSeries.coe_restrictedMap_powerSeries φ hφ f]
+  exact (coe_ofIsRestricted _).symm
 
 /-- On every smaller positive closed disc, `mapHom φ hφ` multiplies the Gauss norm by at
 most `C`. -/
@@ -240,32 +237,17 @@ theorem continuous_mapHom : Continuous (mapHom (R₀ := R₀) φ hφ) :=
 theorem isUniformInducing_mapHom (hφ' : ∀ x, ‖φ x‖ = ‖x‖) :
     IsUniformInducing (mapHom (R₀ := R₀) φ hφ) := by
   let θ (r : Set.Ioo (0 : ℝ) R₀) :
-      IsRestricted.subring (R := R) (r : ℝ) →+* IsRestricted.subring (R := S) (r : ℝ) :=
+      IsRestricted.subring (R := R) (r : ℝ) → IsRestricted.subring (R := S) (r : ℝ) :=
     TauCeti.MvPowerSeries.restrictedMap φ hφ
   have hθ (r : Set.Ioo (0 : ℝ) R₀) : IsUniformInducing (θ r) :=
-    ((AddMonoidHomClass.isometry_iff_norm (θ r)).mpr fun x ↦
-      TauCeti.MvPowerSeries.norm_restrictedMap φ hφ hφ' x).isUniformInducing
-  let ψ : (∀ r : Set.Ioo (0 : ℝ) R₀, IsRestricted.subring (R := R) (r : ℝ)) →
-      ∀ r : Set.Ioo (0 : ℝ) R₀, IsRestricted.subring (R := S) (r : ℝ) :=
-    fun g r ↦ θ r (g r)
-  have hψ : IsUniformInducing ψ := by
-    rw [isUniformInducing_iff_uniformSpace, Pi.uniformSpace_eq, Pi.uniformSpace_eq,
-      UniformSpace.comap_iInf]
-    refine iInf_congr fun r ↦ ?_
-    rw [← UniformSpace.comap_comap]
-    have hfun : Function.eval r ∘ ψ = θ r ∘ Function.eval r := rfl
-    rw [hfun, UniformSpace.comap_comap]
-    exact congrArg (UniformSpace.comap (Function.eval r)) (hθ r).comap_uniformSpace
-  have hcomp : restrictFamily ∘ mapHom (R₀ := R₀) φ hφ = ψ ∘ restrictFamily :=
-    funext fun f ↦ funext fun r ↦ Subtype.ext <|
-      (congrArg Subtype.val (restrictFamily_apply (mapHom φ hφ f) r)).trans <|
-        (coe_restrict r _).trans <| (coe_mapHom φ hφ f).trans <|
-          (congrArg (PowerSeries.map φ) (coe_restrict r f)).symm.trans <|
-            (TauCeti.PowerSeries.coe_restrictedMap_powerSeries φ hφ (restrict r f)).symm.trans <|
-              congrArg (fun x ↦ (θ r x : S⟦X⟧)) (restrictFamily_apply f r).symm
-  exact IsUniformInducing.of_comp (uniformContinuous_mapHom φ hφ)
-    isUniformInducing_restrictFamily.uniformContinuous
-    (hcomp ▸ hψ.comp isUniformInducing_restrictFamily)
+    (TauCeti.MvPowerSeries.isometry_restrictedMap
+      (c := fun _ : Unit ↦ (r : ℝ)) φ hφ hφ').isUniformInducing
+  have hcomp : restrictFamily ∘ mapHom (R₀ := R₀) φ hφ = Pi.map θ ∘ restrictFamily :=
+    funext fun f ↦ funext fun r ↦ by
+      simp only [Function.comp_apply, restrictFamily_apply, Pi.map, θ]
+      exact restrict_mapHom φ hφ r f
+  exact isUniformInducing_restrictFamily.of_comp_iff.mp
+    (hcomp ▸ (IsUniformInducing.piMap hθ).comp isUniformInducing_restrictFamily)
 
 /-- A norm-preserving ring homomorphism induces a uniform embedding on open-disc series. -/
 theorem isUniformEmbedding_mapHom (hφ' : ∀ x, ‖φ x‖ = ‖x‖) :
@@ -286,8 +268,9 @@ attribute [local instance] radius_pos
 omit [IsUltrametricDist R] [IsUltrametricDist S] [CompleteSpace S] in
 /-- Evaluating `mapHom φ hφ f` at `φ a` gives `φ (f(a))` for any point `a` of the open disc. -/
 theorem evalAt_mapHom {a : R} (ha : ‖a‖ < R₀) (f : OnOpenDisc.subring R R₀) :
-    (mapHom φ hφ f : S⟦X⟧).evalAt (φ a) = φ ((f : R⟦X⟧).evalAt a) :=
-  (OnOpenDisc.mem_subring.mp f.2).evalAt_map φ
+    (mapHom φ hφ f : S⟦X⟧).evalAt (φ a) = φ ((f : R⟦X⟧).evalAt a) := by
+  rw [coe_mapHom]
+  exact (OnOpenDisc.mem_subring.mp f.2).evalAt_map φ
     (AddMonoidHomClass.continuous_of_bound φ C hφ) ha
 
 /-- **Bounded coefficient maps commute with Taylor translation** on an open disc whenever the
@@ -296,9 +279,7 @@ theorem mapHom_taylorHom {a : R} (ha : ‖a‖ < R₀) (hφa : ‖φ a‖ < R₀
     (f : OnOpenDisc.subring R R₀) :
     mapHom φ hφ (taylorHom ha f) = taylorHom hφa (mapHom φ hφ f) := by
   refine Subtype.ext <| PowerSeries.ext fun n ↦ ?_
-  rw [coeff_mapHom, coe_taylorHom, coe_taylorHom, coeff_taylor, coeff_taylor, coe_mapHom,
-    hasseDeriv_map]
-  exact (((OnOpenDisc.mem_subring.mp f.2).hasseDeriv n).evalAt_map φ
+  simpa using (((OnOpenDisc.mem_subring.mp f.2).hasseDeriv n).evalAt_map φ
     (AddMonoidHomClass.continuous_of_bound φ C hφ) ha).symm
 
 /-- **Bounded coefficient maps commute with analytic substitution** on open discs whenever the

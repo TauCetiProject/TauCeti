@@ -105,8 +105,8 @@ noncomputable def analyticSubst (g : OnOpenDisc.subring R S₀)
     exact (OnOpenDisc.mem_subring.mp f.2).evalAt_add (OnOpenDisc.mem_subring.mp h.2) (hg s)
   commutes' a := by
     apply restrict_injective substRadius
-    rw [restrict_tsum_subst g hg, OnOpenDisc.coe_algebraMap, Algebra.algebraMap_self,
-      RingHom.id_apply, evalAt_C, restrict_algebraMap]
+    rw [restrict_tsum_subst g hg]
+    simp
 
 variable (g : OnOpenDisc.subring R S₀)
   (hg : ∀ s : Set.Ioo (0 : ℝ) S₀, ‖restrict s g‖ < R₀)
@@ -144,7 +144,7 @@ theorem norm_restrict_analyticSubst_le [NormOneClass R] (f : OnOpenDisc.subring 
 theorem analyticSubst_C (a : R) :
     analyticSubst g hg (OnOpenDisc.polynomialHom (Polynomial.C a)) =
       OnOpenDisc.polynomialHom (Polynomial.C a) := by
-  rw [OnOpenDisc.polynomialHom_C, AlgHom.commutes, ← OnOpenDisc.polynomialHom_C]
+  rw [polynomialHom_C, AlgHom.commutes, ← polynomialHom_C]
 
 /-- Analytic substitution depends only on the inner series, not on the proof of its radius bound
 or how the series is written. -/
@@ -196,7 +196,7 @@ theorem analyticSubst_zero_apply
     (f : OnOpenDisc.subring R R₀) :
     analyticSubst 0 h0 f = algebraMap R _ (constantCoeff (f : R⟦X⟧)) := by
   refine Subtype.ext ?_
-  rw [coe_analyticSubst_eq_subst 0 h0 PowerSeries.HasSubst.zero', OnOpenDisc.coe_algebraMap,
+  rw [coe_analyticSubst_eq_subst 0 h0 PowerSeries.HasSubst.zero', coe_algebraMap,
     Algebra.algebraMap_self, RingHom.id_apply]
   exact PowerSeries.subst_zero_eq_C_constantCoeff
 
@@ -221,9 +221,9 @@ theorem constantCoeff_analyticSubst (f : OnOpenDisc.subring R R₀) :
 @[simp low]
 theorem analyticSubst_polynomialHom (p : Polynomial R) :
     analyticSubst g hg (OnOpenDisc.polynomialHom p) = Polynomial.aeval g p := by
-  simpa only [AlgHom.comp_apply, OnOpenDisc.polynomialAlgHom_apply] using
+  simpa only [AlgHom.comp_apply, polynomialAlgHom_apply] using
     DFunLike.congr_fun (Polynomial.algHom_ext (by simp) :
-      (analyticSubst g hg).comp OnOpenDisc.polynomialAlgHom = Polynomial.aeval g) p
+      (analyticSubst g hg).comp polynomialAlgHom = Polynomial.aeval g) p
 
 /-- A continuous `R`-algebra homomorphism sending the variable to `g` is analytic substitution
 by `g`. -/
@@ -231,7 +231,7 @@ theorem eq_analyticSubst (φ : OnOpenDisc.subring R R₀ →ₐ[R] OnOpenDisc.su
     (hφ : Continuous φ)
     (hX : φ (OnOpenDisc.polynomialHom Polynomial.X) = g) : φ = analyticSubst g hg :=
   AlgHom.toRingHom_injective <| ringHom_ext hφ (continuous_analyticSubst g hg)
-    (fun a ↦ by simp [OnOpenDisc.polynomialHom_C]) (by simpa using hX)
+    (fun a ↦ by simp [polynomialHom_C]) (by simpa using hX)
 
 /-- A uniform strict bound for the source closed-disc norms also bounds every target
 closed-disc norm after substitution. -/

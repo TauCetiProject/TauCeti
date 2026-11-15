@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.PowerSeries.OpenDisc.Eval
+public import TauCeti.RingTheory.PowerSeries.OpenDisc.AnalyticSubst
 public import TauCeti.RingTheory.PowerSeries.Taylor
 import TauCeti.RingTheory.PowerSeries.Restricted.Taylor
 
@@ -58,6 +58,9 @@ radius `r` with `‖a‖ ≤ r < R₀`.
   `TauCeti.PowerSeries.OnOpenDisc.norm_restrict_taylorHom_lt`: translation preserves the Gauss norm
   on every smaller positive-radius closed disc containing the centre, and preserves strict uniform
   bounds across all smaller closed discs.
+* `TauCeti.PowerSeries.OnOpenDisc.taylorHom_analyticSubst` and
+  `TauCeti.PowerSeries.OnOpenDisc.taylorHom_eq_analyticSubst`: compatibility and agreement of
+  translation with analytic substitution.
 * `TauCeti.PowerSeries.OnOpenDisc.evalAt_taylorHom`: evaluation at an algebra point `b` after
   translation is evaluation at `b + algebraMap R A a`.
 
@@ -287,6 +290,38 @@ theorem norm_restrict_taylorHom_lt {S₀ : ℝ} (hb : ‖b‖ < S₀) (g : OnOpe
   let t' : Set.Ioo (0 : ℝ) S₀ := ⟨t, s.2.1.trans ((le_max_left _ _).trans_lt hst), htS⟩
   exact (norm_restrict_taylorHom_le hb s t'
     ((le_max_left _ _).trans hst.le) ((le_max_right _ _).trans hst.le) g).trans_lt (hg t')
+
+/-- **Translating an analytic substitution** translates the inner series:
+`(f(g))(X + b) = f(g(X + b))`. No `NormOneClass R` hypothesis is needed. -/
+theorem taylorHom_analyticSubst {S₀ : ℝ} [Fact (0 < S₀)] (hb : ‖b‖ < S₀)
+    (g : OnOpenDisc.subring R S₀)
+    (hg : ∀ s : Set.Ioo (0 : ℝ) S₀, ‖restrict s g‖ < R₀)
+    (f : OnOpenDisc.subring R R₀) :
+    taylorHom hb (analyticSubst g hg f) =
+      analyticSubst (taylorHom hb g) (norm_restrict_taylorHom_lt hb g hg) f := by
+  have heq : (taylorHom hb).comp (analyticSubst g hg) =
+      analyticSubst (taylorHom hb g) (norm_restrict_taylorHom_lt hb g hg) :=
+    eq_analyticSubst _ _ _ ((continuous_taylorHom hb).comp (continuous_analyticSubst g hg))
+      (by simp)
+  exact AlgHom.congr_fun heq f
+
+omit [CompleteSpace R] in
+/-- The translated coordinate `a + X` has smaller-disc Gauss norm strictly below `R₀` whenever
+`‖a‖ < R₀`. -/
+theorem norm_restrict_algebraMap_add_X_lt [NormOneClass R] (ha : ‖a‖ < R₀)
+    (s : Set.Ioo (0 : ℝ) R₀) :
+    ‖restrict s (algebraMap R (OnOpenDisc.subring R R₀) a +
+      OnOpenDisc.polynomialHom Polynomial.X)‖ < R₀ := by
+  refine (TauCeti.PowerSeries.norm_le_iff.mpr fun n ↦ ?_).trans_lt (max_lt ha s.2.2)
+  rcases n with _ | _ | n <;> simp [coeff_X]
+
+/-- **Agreement of `taylorHom` with `analyticSubst`.** -/
+theorem taylorHom_eq_analyticSubst [NormOneClass R] [Fact (0 < R₀)] (ha : ‖a‖ < R₀) :
+    taylorHom ha =
+      analyticSubst (algebraMap R _ a + OnOpenDisc.polynomialHom Polynomial.X)
+        (norm_restrict_algebraMap_add_X_lt ha) :=
+  eq_analyticSubst _ _ (taylorHom ha) (continuous_taylorHom ha)
+    (by simp [polynomialHom_C, add_comm])
 
 /-- Evaluating a translate at an algebra point `b` evaluates the original series at
 `b + algebraMap R A a`. -/
