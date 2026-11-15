@@ -86,8 +86,8 @@ vanishes identically near `z₀`, of order `⊤`, is its own `n`-th root.
   `n` divides its order of vanishing.
 * `TauCeti.deriv_eq_logDeriv_of_eqOn_exp_comp` — the derivative of a branch of the logarithm is the
   logarithmic derivative, and so does not depend on which branch was chosen.
-* `TauCeti.eqOn_of_eqOn_exp_comp` and `ContinuousOn.eqOn_of_eqOn_exp_comp` — on a preconnected set,
-  a continuous (or holomorphic) lift along `Complex.exp` is determined by its value at one point.
+* `ContinuousOn.eqOn_of_eqOn_exp_comp` — on a preconnected set, a continuous lift along
+  `Complex.exp` is determined by its value at one point.
 * `AnalyticOnNhd.exists_eqOn_exp_comp_closedBall` — a function analytic and zero-free near a closed
   disc `closedBall c R` admits an analytic logarithm near `closedBall c R` with prescribed value at
   the centre.
@@ -307,16 +307,15 @@ theorem deriv_eq_logDeriv_of_eqOn_exp_comp {U : Set ℂ} (hUo : IsOpen U) {f g :
     Complex.logDeriv_exp]
   simp
 
-/-- **A holomorphic branch of the logarithm is determined by one value.** On a preconnected open
-set, two holomorphic logarithms `f₁` and `f₂` of the same function `g` that agree at one point
-agree everywhere. -/
-theorem eqOn_of_eqOn_exp_comp {U : Set ℂ} (hUo : IsOpen U) (hUc : IsPreconnected U)
-    {f₁ f₂ g : ℂ → ℂ} (hf₁ : DifferentiableOn ℂ f₁ U) (hf₂ : DifferentiableOn ℂ f₂ U)
-    (h₁ : EqOn (Complex.exp ∘ f₁) g U) (h₂ : EqOn (Complex.exp ∘ f₂) g U) {z₀ : ℂ}
-    (hz₀ : z₀ ∈ U) (h : f₁ z₀ = f₂ z₀) : EqOn f₁ f₂ U :=
-  hUo.eqOn_of_deriv_eq hUc hf₁ hf₂ (fun _ hz ↦ by
-    rw [deriv_eq_logDeriv_of_eqOn_exp_comp hUo hf₁ h₁ hz,
-      deriv_eq_logDeriv_of_eqOn_exp_comp hUo hf₂ h₂ hz]) hz₀ h
+/-- **Uniqueness of continuous branches of the logarithm.** On a preconnected set `s`, two
+continuous maps `L₁, L₂ : X → ℂ` whose compositions with `Complex.exp` agree on `s` and that agree
+at one point `x₀ ∈ s` agree throughout `s`. -/
+theorem _root_.ContinuousOn.eqOn_of_eqOn_exp_comp {X : Type*} [TopologicalSpace X] {s : Set X}
+    {L₁ L₂ : X → ℂ} (hL₁ : ContinuousOn L₁ s) (hL₂ : ContinuousOn L₂ s) (hs : IsPreconnected s)
+    (heq : EqOn (Complex.exp ∘ L₁) (Complex.exp ∘ L₂) s) {x₀ : X} (hx₀ : x₀ ∈ s)
+    (hx₀_eq : L₁ x₀ = L₂ x₀) : EqOn L₁ L₂ s :=
+  Complex.isCoveringMap_exp.eqOn_of_comp_eqOn hs hL₁ hL₂ (fun _ hx ↦ Subtype.ext (heq hx))
+    hx₀ hx₀_eq
 
 /-- Reflecting `s` to the right of the line `re = a` does not change its distance to a point of
 that line. -/
@@ -382,11 +381,11 @@ private theorem exists_differentiableOn_eqOn_exp_comp_ball {a y r : ℝ} (hr : 0
       div_self (Complex.exp_ne_zero _), mul_one]
     exact hL₀ hs
   -- the right half of the disc is convex, and both logarithms agree at `p`
-  exact ⟨_, hLd, hLexp, eqOn_of_eqOn_exp_comp
-    (Metric.isOpen_ball.inter (isOpen_lt continuous_const Complex.continuous_re))
+  exact ⟨_, hLd, hLexp, (hLd.continuousOn.mono inter_subset_left).eqOn_of_eqOn_exp_comp
+    (hf.continuousOn.mono inter_subset_right)
     ((convex_ball _ _).inter (convex_halfSpace_re_gt a)).isPreconnected
-    (hLd.mono inter_subset_left) (hf.mono inter_subset_right) (hLexp.mono inter_subset_left)
-    (hfg.mono inter_subset_right) ⟨hpB, hpH⟩ (by simp)⟩
+    ((hLexp.mono inter_subset_left).trans (hfg.mono inter_subset_right).symm) ⟨hpB, hpH⟩
+    (by simp)⟩
 
 /-- **A logarithm on an open half-plane extends across its boundary line.** Let `g` be holomorphic
 on an open set `V` containing the closed half-plane `{s | a ≤ re s}` and zero-free on that closed
@@ -424,10 +423,10 @@ theorem exists_differentiableOn_eqOn_exp_comp_le_re {a : ℝ} {V : Set ℂ} {f g
   have hagree : ∀ y y', EqOn (L y) (L y') (B y ∩ B y') := by
     intro y y' s hs
     obtain ⟨q, hq, hqH⟩ := exists_mem_ball_inter_ball_lt_re hs
-    exact eqOn_of_eqOn_exp_comp (Metric.isOpen_ball.inter Metric.isOpen_ball)
+    exact ((hLd y).continuousOn.mono inter_subset_left).eqOn_of_eqOn_exp_comp
+      ((hLd y').continuousOn.mono inter_subset_right)
       ((convex_ball _ _).inter (convex_ball _ _)).isPreconnected
-      ((hLd y).mono inter_subset_left) ((hLd y').mono inter_subset_right)
-      ((hLexp y).mono inter_subset_left) ((hLexp y').mono inter_subset_right) hq
+      (((hLexp y).mono inter_subset_left).trans ((hLexp y').mono inter_subset_right).symm) hq
       (by rw [hLf y ⟨hq.1, hqH⟩, hLf y' ⟨hq.2, hqH⟩]) hs
   -- glue: `f` on the open half-plane, and the branch of some disc elsewhere
   let F : ℂ → ℂ := fun s ↦ if s ∈ H then f s else if h : ∃ y, s ∈ B y then L h.choose s else 0
@@ -461,16 +460,6 @@ theorem exists_differentiableOn_eqOn_exp_comp_le_re {a : ℝ} {V : Set ℂ} {f g
 end TauCeti
 
 open Complex Metric Set
-
-/-- **Uniqueness of continuous branches of the logarithm.** On a preconnected set `s`, two
-continuous maps `L₁, L₂ : X → ℂ` whose compositions with `Complex.exp` agree on `s` and that agree
-at one point `x₀ ∈ s` agree throughout `s`. -/
-theorem ContinuousOn.eqOn_of_eqOn_exp_comp {X : Type*} [TopologicalSpace X] {s : Set X}
-    {L₁ L₂ : X → ℂ} (hL₁ : ContinuousOn L₁ s) (hL₂ : ContinuousOn L₂ s) (hs : IsPreconnected s)
-    (heq : EqOn (Complex.exp ∘ L₁) (Complex.exp ∘ L₂) s) {x₀ : X} (hx₀ : x₀ ∈ s)
-    (hx₀_eq : L₁ x₀ = L₂ x₀) : EqOn L₁ L₂ s :=
-  Complex.isCoveringMap_exp.eqOn_of_comp_eqOn hs hL₁ hL₂ (fun _ hx ↦ Subtype.ext (heq hx))
-    hx₀ hx₀_eq
 
 /-- **Existence of an analytic logarithm on a closed disc.** If `g` is analytic and zero-free on a
 neighbourhood of `closedBall c R` and `Complex.exp w₀ = g c`, there exists `L` analytic on a

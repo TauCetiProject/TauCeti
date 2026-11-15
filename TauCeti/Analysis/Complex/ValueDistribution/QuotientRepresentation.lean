@@ -12,11 +12,11 @@ import Mathlib.Order.Interval.Set.Infinite
 import TauCeti.Analysis.Analytic.IsolatedZeros
 import TauCeti.Analysis.Complex.Conformal.BlaschkeProduct
 import TauCeti.Analysis.Complex.JensenFormula
-import TauCeti.Analysis.Complex.Poisson.Integral
+import TauCeti.Analysis.Complex.Poisson.Basic
 import TauCeti.Analysis.Complex.Poisson.Logarithm
 import TauCeti.Analysis.Complex.ValueDistribution.Proximity.Basic
 import TauCeti.Analysis.SpecialFunctions.Integrability.PosLog
-import TauCeti.Analysis.SpecialFunctions.Log.PosLog
+import TauCeti.Analysis.SpecialFunctions.Log.Basic
 
 /-!
 # Nevanlinna's quotient representation and its optimality
@@ -32,7 +32,7 @@ The construction proceeds in three steps:
 1. **Blaschke factorization on a zero-free circle**
    (`AnalyticOnNhd.exists_blaschkeProduct_div_mul_eq` in
    `TauCeti.Analysis.Complex.Conformal.BlaschkeProduct`).
-   When `g` is analytic on `closedBall 0 r` (`0 < r`) and has no zeros on `sphere 0 r`, `g` factors
+   When `g` is analytic near `closedBall 0 r` and has no zeros on `sphere 0 r`, `g` factors
    throughout `closedBall 0 r` as `g z = blaschkeProduct a n (z / r) * G z` with interior parameters
    `‖a i‖ < 1` and `G` analytic and zero-free on `closedBall 0 r`.
 2. **The radius-`r` quotient multiplier (`TauCeti.quotientMultiplier`).**
@@ -43,8 +43,8 @@ The construction proceeds in three steps:
    Herglotz formula for `G` with `log ‖g‖ = log⁺ ‖g‖ - log⁺ ‖g‖⁻¹` yields the complex product
    identity `AnalyticOnNhd.quotientMultiplier_mul_of_norm_eq` (exhibiting the unimodular centre
    phase `G 0 / ‖G 0‖`) and the interior bounds
-   `Real.log ‖quotientMultiplier g r z‖ ≤ m(r, g)` and
-   `Real.log ‖quotientMultiplier g r z * g z‖ ≤ m(r, g)` for `z ∈ ball 0 r`.
+   `Real.log ‖quotientMultiplier g r z‖ ≤ m(r, g)` (`z ∈ ball 0 |r|`) and
+   `Real.log ‖quotientMultiplier g r z * g z‖ ≤ m(r, g)` (`z ∈ ball 0 r`).
 3. **Radial smoothing across boundary zeros (`AnalyticOnNhd.exists_log_norm_le_proximity_add`).**
    When `g` has zeros on `sphere 0 R` (for instance `g z = z - 1` at `R = 1`), the zero-free
    Herglotz formula does not apply on `closedBall 0 R` directly. Extending `g` to a slightly larger
@@ -76,11 +76,10 @@ normalized multipliers (`AnalyticOnNhd.sInf_max_sSup_log_norm_eq_proximity_top`)
   `AnalyticOnNhd.exists_log_norm_le_proximity_add`, and
   `AnalyticOnNhd.exists_max_sSup_log_norm_le_proximity_add`: radial smoothing of
   `quotientMultiplier` across boundary zeros and Nevanlinna's quotient representation.
-* `MeromorphicOn.eventuallyEq_codiscreteWithin_log_norm_add_posLog`,
-  `AnalyticOnNhd.proximity_top_le_of_forall_mem_sphere_log_norm_le`,
+* `AnalyticOnNhd.proximity_top_le_of_forall_mem_sphere_log_norm_le`,
   `AnalyticOnNhd.proximity_top_le_max_sSup_log_norm`, and
-  `AnalyticOnNhd.sInf_max_sSup_log_norm_eq_proximity_top`: codiscrete log-norm splitting, optimality
-  of the quotient bound, and variational characterization of `m(R, g)`.
+  `AnalyticOnNhd.sInf_max_sSup_log_norm_eq_proximity_top`: optimality of the quotient bound and
+  variational characterization of `m(R, g)`.
 
 ## References
 
@@ -119,23 +118,83 @@ lemma quotientMultiplier_ne_zero (g : ℂ → ℂ) (r : ℝ) (z : ℂ) :
     quotientMultiplier g r z ≠ 0 :=
   Complex.exp_ne_zero _
 
+/-- Boundary data with equal norms on `sphere 0 |r|` have the same quotient multiplier. -/
+lemma quotientMultiplier_congr_sphere {g₁ g₂ : ℂ → ℂ} {r : ℝ}
+    (h : EqOn (fun w ↦ ‖g₁ w‖) (fun w ↦ ‖g₂ w‖) (sphere 0 |r|)) :
+    quotientMultiplier g₁ r = quotientMultiplier g₂ r := by
+  ext z
+  simp only [quotientMultiplier_apply, ValueDistribution.proximity_top]
+  have h₁ : circleAverage (fun w ↦ Real.posLog ‖g₁ w‖) 0 r =
+      circleAverage (fun w ↦ Real.posLog ‖g₂ w‖) 0 r :=
+    circleAverage_congr_sphere fun w hw ↦ by
+      have hgw : ‖g₁ w‖ = ‖g₂ w‖ := h hw
+      rw [hgw]
+  have h₂ : circleAverage (fun w ↦ herglotzRieszKernel 0 z w • (Real.posLog ‖g₁ w‖ : ℂ)) 0 r =
+      circleAverage (fun w ↦ herglotzRieszKernel 0 z w • (Real.posLog ‖g₂ w‖ : ℂ)) 0 r :=
+    circleAverage_congr_sphere fun w hw ↦ by
+      have hgw : ‖g₁ w‖ = ‖g₂ w‖ := h hw
+      simp [hgw]
+  rw [h₁, h₂]
+
+/-- Functions agreeing outside a discrete subset of `sphere 0 |r|` (`r ≠ 0`) have the same
+quotient multiplier. -/
+lemma quotientMultiplier_congr_codiscreteWithin {g₁ g₂ : ℂ → ℂ} {r : ℝ}
+    (h : g₁ =ᶠ[codiscreteWithin (sphere 0 |r|)] g₂) (hr : r ≠ 0) :
+    quotientMultiplier g₁ r = quotientMultiplier g₂ r := by
+  ext z
+  rw [quotientMultiplier_apply, quotientMultiplier_apply,
+    ValueDistribution.proximity_congr_codiscreteWithin h hr]
+  have h₂ : circleAverage (fun w ↦ herglotzRieszKernel 0 z w • (Real.posLog ‖g₁ w‖ : ℂ)) 0 r =
+      circleAverage (fun w ↦ herglotzRieszKernel 0 z w • (Real.posLog ‖g₂ w‖ : ℂ)) 0 r :=
+    circleAverage_congr_codiscreteWithin (h.mono fun w hw ↦ by dsimp; rw [hw]) hr
+  rw [h₂]
+
+/-- Replacing the radius by its negation leaves `quotientMultiplier` unchanged. -/
+@[simp]
+lemma quotientMultiplier_neg_radius (g : ℂ → ℂ) (r : ℝ) :
+    quotientMultiplier g (-r) = quotientMultiplier g r := by
+  ext z
+  simp [quotientMultiplier_apply, ValueDistribution.proximity_top]
+
+/-- Replacing the radius by its absolute value leaves `quotientMultiplier` unchanged. -/
+@[simp]
+lemma quotientMultiplier_abs_radius (g : ℂ → ℂ) (r : ℝ) :
+    quotientMultiplier g |r| = quotientMultiplier g r := by
+  ext z
+  simp [quotientMultiplier_apply, ValueDistribution.proximity_top]
+
 /-- For a constant `c` of norm at most `1`, `log⁺ ‖c‖ = 0` and the quotient multiplier is `1`. -/
-lemma quotientMultiplier_const_of_norm_le_one {c : ℂ} (hc : ‖c‖ ≤ 1) (r : ℝ) (z : ℂ) :
-    quotientMultiplier (fun _ ↦ c) r z = 1 := by
+lemma quotientMultiplier_const_of_norm_le_one {c : ℂ} (hc : ‖c‖ ≤ 1) (r : ℝ) :
+    quotientMultiplier (fun _ ↦ c) r = 1 := by
+  ext z
   have hlog : Real.posLog ‖c‖ = 0 := (Real.posLog_eq_zero_iff ‖c‖).mpr (by simpa using hc)
   simp [quotientMultiplier_apply, hlog, circleAverage_const]
 
+/-- The quotient multiplier of `0` is `1`. -/
 @[simp]
-lemma quotientMultiplier_zero_left (r : ℝ) (z : ℂ) :
-    quotientMultiplier 0 r z = 1 := by
+lemma quotientMultiplier_zero_left (r : ℝ) :
+    quotientMultiplier 0 r = 1 := by
   rw [Pi.zero_def]
-  exact quotientMultiplier_const_of_norm_le_one (by norm_num) r z
+  exact quotientMultiplier_const_of_norm_le_one (by norm_num) r
 
+/-- The quotient multiplier of the constant zero function is `1`. -/
 @[simp]
-lemma quotientMultiplier_one_left (r : ℝ) (z : ℂ) :
-    quotientMultiplier 1 r z = 1 := by
+lemma quotientMultiplier_fun_zero (r : ℝ) :
+    quotientMultiplier (fun _ ↦ 0) r = 1 :=
+  quotientMultiplier_const_of_norm_le_one (by norm_num) r
+
+/-- The quotient multiplier of `1` is `1`. -/
+@[simp]
+lemma quotientMultiplier_one_left (r : ℝ) :
+    quotientMultiplier 1 r = 1 := by
   rw [Pi.one_def]
-  exact quotientMultiplier_const_of_norm_le_one (by norm_num) r z
+  exact quotientMultiplier_const_of_norm_le_one (by norm_num) r
+
+/-- The quotient multiplier of the constant function `1` is `1`. -/
+@[simp]
+lemma quotientMultiplier_fun_one (r : ℝ) :
+    quotientMultiplier (fun _ ↦ 1) r = 1 :=
+  quotientMultiplier_const_of_norm_le_one (by norm_num) r
 
 /-- For any nonzero radius `r`, the quotient multiplier is normalized by `h_r(0) = 1`. -/
 @[simp]
@@ -167,44 +226,16 @@ lemma analyticOnNhd_quotientMultiplier {g : ℂ → ℂ} {r : ℝ}
   exact (analyticAt_const.sub
     (analyticOnNhd_circleAverage_herglotzRieszKernel_smul hg' z hz)).cexp'
 
-/-- Nonnegative circle-integrable boundary data have nonnegative Herglotz–Riesz real part on the
-open disc `ball 0 r`. -/
-private lemma re_circleAverage_herglotzRieszKernel_smul_nonneg {φ : ℂ → ℝ} {r : ℝ} {z : ℂ}
-    (hφ : CircleIntegrable φ 0 r) (hnonneg : ∀ w ∈ sphere (0 : ℂ) |r|, 0 ≤ φ w)
-    (hz : z ∈ ball 0 r) :
-    0 ≤ (circleAverage (fun w ↦ herglotzRieszKernel 0 z w • (φ w : ℂ)) 0 r).re := by
-  have hr : 0 < r := pos_of_mem_ball hz
-  have hz_abs : z ∈ ball (0 : ℂ) |r| := by rwa [abs_of_pos hr]
-  have hz_not : z ∉ sphere (0 : ℂ) |r| := Set.disjoint_right.mp sphere_disjoint_ball hz_abs
-  rw [re_circleAverage_herglotzRieszKernel_smul hφ hz_not,
-    ← poissonKernel_eq_re_herglotzRieszKernel, ← planarPoissonIntegral_def]
-  exact planarPoissonIntegral_nonneg hz_abs hnonneg
-
-/-- When `log⁺ ‖g‖` is circle-integrable on `sphere 0 |r|`, nonnegativity of the Poisson average of
-`log⁺ ‖g‖` bounds `Real.log ‖quotientMultiplier g r z‖` by `ValueDistribution.proximity g ⊤ r` for
-every `z ∈ ball 0 r`. -/
+/-- When `log⁺ ‖g‖` is circle-integrable on `sphere 0 |r|`, nonnegativity of the Herglotz–Riesz
+real part of `log⁺ ‖g‖` bounds `Real.log ‖quotientMultiplier g r z‖` by
+`ValueDistribution.proximity g ⊤ r` for every `z ∈ ball 0 |r|`. -/
 lemma log_norm_quotientMultiplier_le_proximity {g : ℂ → ℂ} {r : ℝ} {z : ℂ}
-    (hg : CircleIntegrable (fun w ↦ Real.posLog ‖g w‖) 0 r) (hz : z ∈ ball 0 r) :
+    (hg : CircleIntegrable (fun w ↦ Real.posLog ‖g w‖) 0 r) (hz : z ∈ ball 0 |r|) :
     Real.log ‖quotientMultiplier g r z‖ ≤ ValueDistribution.proximity g ⊤ r := by
   rw [quotientMultiplier_apply, Complex.norm_exp, Real.log_exp, Complex.sub_re, Complex.ofReal_re]
-  linarith [re_circleAverage_herglotzRieszKernel_smul_nonneg hg (fun _ _ ↦ Real.posLog_nonneg) hz]
+  linarith [hg.re_circleAverage_herglotzRieszKernel_smul_nonneg (fun _ _ ↦ Real.posLog_nonneg) hz]
 
 end TauCeti
-
-/-- For meromorphic functions `f, g : 𝕜 → 𝕜` of finite meromorphic order on `U`, off a discrete
-subset of `U` (where neither vanishes nor has a pole), `log ‖f z‖ + log⁺ ‖g z‖` agrees with
-`max (log ‖f z‖) (log ‖f z * g z‖)`. -/
-theorem MeromorphicOn.eventuallyEq_codiscreteWithin_log_norm_add_posLog
-    {𝕜 : Type*} [NontriviallyNormedField 𝕜] {U : Set 𝕜} {f g : 𝕜 → 𝕜}
-    (hf : MeromorphicOn f U) (hg : MeromorphicOn g U)
-    (hord_f : ∀ u ∈ U, meromorphicOrderAt f u ≠ ⊤)
-    (hord_g : ∀ u ∈ U, meromorphicOrderAt g u ≠ ⊤) :
-    ((fun z ↦ Real.log ‖f z‖) + fun z ↦ Real.posLog ‖g z‖) =ᶠ[codiscreteWithin U]
-      fun z ↦ max (Real.log ‖f z‖) (Real.log ‖f z * g z‖) := by
-  filter_upwards [hf.codiscreteWithin_setOfPred_ne_zero hord_f,
-    hg.codiscreteWithin_setOfPred_ne_zero hord_g] with z hzf hzg
-  simp [Pi.add_apply, Real.posLog_apply, add_max, norm_mul,
-    Real.log_mul (norm_ne_zero_iff.mpr hzf) (norm_ne_zero_iff.mpr hzg)]
 
 namespace AnalyticOnNhd
 
@@ -271,7 +302,7 @@ theorem log_norm_quotientMultiplier_mul_le_proximity {g : ℂ → ℂ} {r : ℝ}
     (hz : z ∈ ball 0 r) :
     Real.log ‖TauCeti.quotientMultiplier g r z * g z‖ ≤ ValueDistribution.proximity g ⊤ r := by
   have hr : 0 < r := pos_of_mem_ball hz
-  obtain ⟨ι, _, a, n, G, ha, hG, hG0, hg_eq⟩ := hg.exists_blaschkeProduct_div_mul_eq hr hs
+  obtain ⟨ι, _, a, n, G, ha, hG, hG0, hg_eq⟩ := hg.exists_blaschkeProduct_div_mul_eq hs
   have hgnorm : EqOn (fun w ↦ ‖g w‖) (fun w ↦ ‖G w‖) (sphere 0 r) := by
     intro w hw
     have hwr : ‖w / r‖ = 1 := by
@@ -296,8 +327,8 @@ theorem log_norm_quotientMultiplier_mul_le_proximity {g : ℂ → ℂ} {r : ℝ}
     (hg_abs.mono sphere_subset_closedBall).meromorphicOn.circleIntegrable_posLog_inv_norm
   have hnonneg : 0 ≤ (circleAverage
       (fun w ↦ herglotzRieszKernel 0 z w • (Real.posLog ‖g w‖⁻¹ : ℂ)) 0 r).re :=
-    TauCeti.re_circleAverage_herglotzRieszKernel_smul_nonneg hint_inv
-      (fun _ _ ↦ Real.posLog_nonneg) hz
+    hint_inv.re_circleAverage_herglotzRieszKernel_smul_nonneg (fun _ _ ↦ Real.posLog_nonneg)
+      (by rwa [abs_of_pos hr])
   have hexp_le : ‖TauCeti.quotientMultiplier g r z * g z‖ ≤
       Real.exp (ValueDistribution.proximity g ⊤ r) := by
     rw [hprod, hG.quotientMultiplier_mul_of_norm_eq hG0 hgnorm hz, norm_mul, norm_mul,
@@ -312,13 +343,13 @@ theorem log_norm_quotientMultiplier_mul_le_proximity {g : ℂ → ℂ} {r : ℝ}
 /-! ### Radial smoothing across boundary zeros -/
 
 /-- **Radial smoothing of the quotient multiplier across boundary zeros.** If `g` is analytic on a
-neighbourhood of `closedBall 0 R` (`0 < R`), does not vanish identically on `closedBall 0 R`, and
-`0 < ε`, there exists `r > R` such that `g` is analytic near `closedBall 0 r`, has no zeros on
-`sphere 0 r`, `quotientMultiplier g r` is analytic near `closedBall 0 R`, and both
+neighbourhood of `closedBall 0 R`, does not vanish identically on `closedBall 0 R`, and `0 < ε`,
+there exists `r > R` such that `g` is analytic near `closedBall 0 r`, has no zeros on `sphere 0 r`,
+`quotientMultiplier g r` is analytic near `closedBall 0 R`, and both
 `Real.log ‖quotientMultiplier g r z‖` and `Real.log ‖quotientMultiplier g r z * g z‖` are at most
 `ValueDistribution.proximity g ⊤ R + ε` on `closedBall 0 R`. -/
 theorem exists_gt_log_norm_quotientMultiplier_le_proximity_add {g : ℂ → ℂ} {R : ℝ}
-    (hg : AnalyticOnNhd ℂ g (closedBall 0 R)) (hR : 0 < R)
+    (hg : AnalyticOnNhd ℂ g (closedBall 0 R))
     (hne : ∃ z₀ ∈ closedBall (0 : ℂ) R, g z₀ ≠ 0) {ε : ℝ} (hε : 0 < ε) :
     ∃ r > R, AnalyticOnNhd ℂ g (closedBall 0 r) ∧ (∀ w ∈ sphere (0 : ℂ) r, g w ≠ 0) ∧
       AnalyticOnNhd ℂ (TauCeti.quotientMultiplier g r) (closedBall 0 R) ∧
@@ -327,13 +358,14 @@ theorem exists_gt_log_norm_quotientMultiplier_le_proximity_add {g : ℂ → ℂ}
         Real.log ‖TauCeti.quotientMultiplier g r z * g z‖ ≤
           ValueDistribution.proximity g ⊤ R + ε := by
   obtain ⟨z₀, hz₀, hgz₀⟩ := hne
+  have hR : 0 ≤ R := (norm_nonneg z₀).trans (mem_closedBall_zero_iff.mp hz₀)
   obtain ⟨δ, hδ, hsub⟩ := (isCompact_closedBall (0 : ℂ) R).exists_thickening_subset_open
     (isOpen_analyticAt ℂ g) hg
   have hg_ball : AnalyticOnNhd ℂ g (ball 0 (R + δ)) := by
-    rwa [thickening_closedBall hδ hR.le, add_comm] at hsub
+    rwa [thickening_closedBall hδ hR, add_comm] at hsub
   have hs_nhds : ball (0 : ℂ) (R + δ) ∈ 𝓝ˢ (sphere (0 : ℂ) |R|) :=
     isOpen_ball.mem_nhdsSet.mpr (by
-      rw [abs_of_pos hR]
+      rw [abs_of_nonneg hR]
       exact sphere_subset_closedBall.trans (closedBall_subset_ball (by linarith)))
   obtain ⟨δ₁, hδ₁, hprox⟩ :=
     Metric.continuousAt_iff.mp (hg_ball.continuousOn.continuousAt_proximity_top hs_nhds) ε hε
@@ -346,7 +378,7 @@ theorem exists_gt_log_norm_quotientMultiplier_le_proximity_add {g : ℂ → ℂ}
       (closedBall_subset_ball (by linarith) hz₀) hgz₀
       (isCompact_closedBall 0 (R + δ / 2)) (closedBall_subset_ball (by linarith))
   obtain ⟨r, hr_mem, hr_not⟩ := ((Set.Ioo_infinite hR_lt).sdiff (hZ_fin.image norm)).nonempty
-  have hr_pos : 0 < r := hR.trans hr_mem.1
+  have hr_pos : 0 < r := hR.trans_lt hr_mem.1
   have hg_r : AnalyticOnNhd ℂ g (closedBall 0 r) :=
     hg_ball.mono (closedBall_subset_ball (by linarith [hr_mem.2, min_le_left (δ / 2) δ₁]))
   have hs_r : ∀ w ∈ sphere (0 : ℂ) r, g w ≠ 0 := fun w hw hgw ↦
@@ -366,7 +398,8 @@ theorem exists_gt_log_norm_quotientMultiplier_le_proximity_add {g : ℂ → ℂ}
     rw [mem_compl_iff, mem_sphere_zero_iff_norm, abs_of_pos hr_pos]
     exact ((mem_closedBall_zero_iff.mp hz).trans_lt hr_mem.1).ne
   · have hzr : z ∈ ball (0 : ℂ) r := closedBall_subset_ball hr_mem.1 hz
-    exact ⟨(TauCeti.log_norm_quotientMultiplier_le_proximity hint_r hzr).trans hprox_le,
+    have hzr_abs : z ∈ ball (0 : ℂ) |r| := by rwa [abs_of_pos hr_pos]
+    exact ⟨(TauCeti.log_norm_quotientMultiplier_le_proximity hint_r hzr_abs).trans hprox_le,
       (hg_r.log_norm_quotientMultiplier_mul_le_proximity hs_r hzr).trans hprox_le⟩
 
 /-- **Nevanlinna's quotient representation** (Calegari–Dimitrov–Tang, Lemma 2.3.1).
@@ -380,23 +413,17 @@ theorem exists_log_norm_le_proximity_add {g : ℂ → ℂ} {R : ℝ}
       ∀ z ∈ closedBall (0 : ℂ) R,
         Real.log ‖h z‖ ≤ ValueDistribution.proximity g ⊤ R + ε ∧
         Real.log ‖h z * g z‖ ≤ ValueDistribution.proximity g ⊤ R + ε := by
-  rcases lt_trichotomy R 0 with hRneg | rfl | hRpos
+  rcases lt_or_ge R 0 with hRneg | hR
   · exact ⟨1, analyticOnNhd_const, rfl, fun _ hz ↦
       False.elim ((closedBall_eq_empty.mpr hRneg).subset hz)⟩
-  · refine ⟨1, analyticOnNhd_const, rfl, fun z hz ↦ ?_⟩
-    rw [closedBall_zero, mem_singleton_iff] at hz
-    subst hz
-    rw [ValueDistribution.proximity_top, circleAverage_zero]
-    exact ⟨by simp; linarith [Real.posLog_nonneg (x := ‖g 0‖)],
-      by simp [Real.posLog_apply]; linarith [le_max_right 0 (Real.log ‖g 0‖)]⟩
   · by_cases hall : ∀ z ∈ closedBall (0 : ℂ) R, g z = 0
     · refine ⟨1, analyticOnNhd_const, rfl, fun z hz ↦ ?_⟩
       simp [hall z hz, add_nonneg (ValueDistribution.proximity_nonneg R) hε.le]
     · push Not at hall
       obtain ⟨r, hr, -, -, hh, hbound⟩ :=
-        hg.exists_gt_log_norm_quotientMultiplier_le_proximity_add hRpos hall hε
+        hg.exists_gt_log_norm_quotientMultiplier_le_proximity_add hall hε
       exact ⟨TauCeti.quotientMultiplier g r, hh,
-        TauCeti.quotientMultiplier_apply_zero g (hRpos.trans hr).ne', hbound⟩
+        TauCeti.quotientMultiplier_apply_zero g (hR.trans_lt hr).ne', hbound⟩
 
 /-- Supremum form of **Nevanlinna's quotient representation** on `sphere 0 R`: if `g` is analytic on
 a neighbourhood of `closedBall 0 R` (`0 ≤ R`) and `0 < ε`, some normalized analytic multiplier `h`
@@ -442,16 +469,10 @@ theorem proximity_top_le_of_forall_mem_sphere_log_norm_le {g h : ℂ → ℂ} {R
     have hint_h : CircleIntegrable (fun z ↦ Real.log ‖h z‖) 0 R :=
       (hh_abs.mono sphere_subset_closedBall).meromorphicOn.circleIntegrable_log_norm
     by_cases hint_g : CircleIntegrable (fun z ↦ Real.posLog ‖g z‖) 0 R
-    · have h0_mem : (0 : ℂ) ∈ closedBall 0 |R| := mem_closedBall_self (abs_nonneg R)
-      have hord_0 : meromorphicOrderAt h 0 ≠ ⊤ := by
-        rw [(hh_abs 0 h0_mem).meromorphicOrderAt_eq,
-          (hh_abs 0 h0_mem).analyticOrderAt_eq_zero.mpr (norm_pos_iff.mp hh0_pos)]
-        simp
-      have hord_h : ∀ u ∈ closedBall (0 : ℂ) |R|, meromorphicOrderAt h u ≠ ⊤ := fun _ hu ↦
-        hh_abs.meromorphicOn.meromorphicOrderAt_ne_top_of_isPreconnected
-          (convex_closedBall 0 |R|).isPreconnected h0_mem hu hord_0
-      have hne_cod : ∀ᶠ z in codiscreteWithin (sphere (0 : ℂ) |R|), h z ≠ 0 :=
-        (hh_abs.meromorphicOn.codiscreteWithin_setOfPred_ne_zero hord_h).filter_mono
+    · have hne_cod : ∀ᶠ z in codiscreteWithin (sphere (0 : ℂ) |R|), h z ≠ 0 :=
+        ((hh_abs.eqOn_zero_or_eventually_ne_zero_of_preconnected
+          (convex_closedBall 0 |R|).isPreconnected).resolve_left fun h0 ↦
+            norm_pos_iff.mp hh0_pos (h0 (mem_closedBall_self (abs_nonneg R)))).filter_mono
           (codiscreteWithin_mono sphere_subset_closedBall)
       let φ : ℂ → ℝ := fun z ↦ if h z = 0 then M else Real.log ‖h z‖ + Real.posLog ‖g z‖
       have hcod : ((fun z ↦ Real.log ‖h z‖) + fun z ↦ Real.posLog ‖g z‖) =ᶠ[
@@ -497,9 +518,9 @@ theorem proximity_top_le_max_sSup_log_norm {g h : ℂ → ℂ} {R : ℝ}
         (sSup ((fun z ↦ Real.log ‖h z * g z‖) '' sphere (0 : ℂ) R)) := by
   have hh_cont : ContinuousOn h (sphere 0 R) := hh.continuousOn.mono sphere_subset_closedBall
   have hbdd_h : BddAbove ((fun z ↦ Real.log ‖h z‖) '' sphere (0 : ℂ) R) :=
-    (isCompact_sphere 0 R).bddAbove_image_log_norm hh_cont
+    (isCompact_sphere 0 R).bddAbove_image_log hh_cont.norm
   have hbdd_hg : BddAbove ((fun z ↦ Real.log ‖h z * g z‖) '' sphere (0 : ℂ) R) :=
-    (isCompact_sphere 0 R).bddAbove_image_log_norm (hh_cont.mul hg)
+    (isCompact_sphere 0 R).bddAbove_image_log (hh_cont.mul hg).norm
   refine hh.proximity_top_le_of_forall_mem_sphere_log_norm_le hR hh0 fun z hz ↦ ⟨?_, ?_⟩
   · exact (le_csSup hbdd_h ⟨z, hz, rfl⟩).trans (le_max_left _ _)
   · exact (le_csSup hbdd_hg ⟨z, hz, rfl⟩).trans (le_max_right _ _)
