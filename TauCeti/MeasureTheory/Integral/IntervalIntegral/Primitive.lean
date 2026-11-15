@@ -34,9 +34,10 @@ used to identify weak derivatives on an interval with ordinary primitives.
   continuous on the interval.
   Mathlib's `intervalIntegral.continuousOn_primitive_interval'` covers a compact interval on which
   `f` is integrable.
-* `TauCeti.intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo`: if `f` is
-  integrable on the open interval `(a, b)`, its primitive based at a point of `[a, b]` is
-  continuous on the closed interval `[a, b]`.
+* `TauCeti.intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo` and
+  `TauCeti.intervalIntegral.integrableOn_primitive_of_integrableOn_Ioo`: if `f` is integrable on
+  the open interval `(a, b)`, its primitive based at a point of `[a, b]` is continuous on the
+  closed interval `[a, b]`, hence integrable on `(a, b)`.
 * `TauCeti.intervalIntegral.eLpNorm_primitive_le` and
   `TauCeti.intervalIntegral.eLpNorm_primitive_le_mul_eLpNorm`: on a bounded interval `(a, b)`,
   the primitive based at a point of `[a, b]` is bounded by the `L¹(a, b)` norm of `f`, so its
@@ -95,6 +96,15 @@ theorem continuousOn_primitive_interval_of_integrableOn_Ioo {μ : Measure ℝ}
   have hab : a ≤ b := ht₀.1.trans ht₀.2
   simpa [uIcc_of_le hab] using _root_.intervalIntegral.continuousOn_primitive_interval'
     ((intervalIntegrable_iff_integrableOn_Ioo_of_le hab).2 hf) (uIcc_of_le hab ▸ ht₀)
+
+/-- The primitive `t ↦ ∫ s in t₀..t, f s ∂μ` of a function integrable on the open interval
+`Ioo a b`, based at a point `t₀` of `Icc a b`, is integrable on `Ioo a b`, being continuous on
+`Icc a b`. -/
+theorem integrableOn_primitive_of_integrableOn_Ioo {μ : Measure ℝ} [NullSingletonClass μ]
+    [IsLocallyFiniteMeasure μ] {t₀ : ℝ} (hf : IntegrableOn f (Ioo a b) μ) (ht₀ : t₀ ∈ Icc a b) :
+    IntegrableOn (fun t ↦ ∫ s in t₀..t, f s ∂μ) (Ioo a b) μ :=
+  (continuousOn_primitive_interval_of_integrableOn_Ioo hf ht₀).integrableOn_Icc.mono_set
+    Ioo_subset_Icc_self
 
 /-- The `Lᵖ(a, b)` norm of the primitive `t ↦ ∫ s in t₀..t, f s` of a function integrable on
 `(a, b)`, based at a point `t₀` of `[a, b]`, is at most `(b - a) ^ (1 / p)` times the `L¹(a, b)`
