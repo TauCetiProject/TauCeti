@@ -30,6 +30,8 @@ effective results on `S`-unit equations bound the exponents of the solutions.
 
 * `TauCeti.NumberField.SUnit.linearIndependent_logEmbedding`: multiplicatively independent
   `S`-units have `ℝ`-linearly independent `S`-logarithmic images.
+* `TauCeti.NumberField.SUnit.linearIndependent_logEmbedding_pi`: the corresponding
+  independence statement for tuples of `S`-units modulo coordinatewise torsion.
 * `TauCeti.NumberField.SUnit.abs_le_opNorm_mul_logHeight₁`: the exponent bound for a given left
   inverse `T`.
 * `TauCeti.NumberField.SUnit.exists_abs_le_mul_logHeight₁`: for multiplicatively independent
@@ -81,6 +83,46 @@ theorem linearIndependent_logEmbedding {γ : ι → (S : Set (HeightOneSpectrum 
   have hℝrank : Set.finrank ℝ (Set.range v) = Set.finrank ℤ (Set.range v) :=
     Real.finrank_eq_int_finrank_of_discrete hdisc
   exact linearIndependent_iff_card_eq_finrank_span.mpr (hℝrank.trans hℤrank).symm
+
+/-- Tuples of `S`-units independent modulo coordinatewise torsion have real-linearly
+independent logarithmic images. -/
+theorem linearIndependent_logEmbedding_pi {κ : Type*} [Finite κ]
+    (S : Finset (HeightOneSpectrum (𝓞 K)))
+    {γ : ι → κ → (S : Set (HeightOneSpectrum (𝓞 K))).unit K}
+    (hγ : ∀ z : ι → ℤ,
+      (∀ k, ∏ j, γ j k ^ z j ∈
+        CommGroup.torsion ((S : Set (HeightOneSpectrum (𝓞 K))).unit K)) → z = 0) :
+    LinearIndependent ℝ (fun j k ↦ logEmbedding S (Additive.ofMul (γ j k))) := by
+  classical
+  let := Fintype.ofFinite κ
+  let v := fun j k ↦ logEmbedding S (Additive.ofMul (γ j k))
+  have hℤ : LinearIndependent ℤ v := by
+    refine Fintype.linearIndependent_iff.mpr fun z hz ↦ ?_
+    have h0 : z = 0 := hγ z fun k ↦ (logEmbedding_eq_zero_iff S).mp <| by
+      have h := logEmbedding_mul_prod_zpow (γ := fun j ↦ γ j k) (one_mem _) z
+      have hz' : ∑ j, z j • logEmbedding S (Additive.ofMul (γ j k)) = 0 := by
+        simpa only [v, Finset.sum_apply, Pi.smul_apply, Pi.zero_apply] using congrFun hz k
+      simpa only [one_mul] using h.trans hz'
+    exact fun j ↦ congrFun h0 j
+  have hle : Submodule.span ℤ (Set.range v) ≤
+      Submodule.pi Set.univ (fun _ : κ ↦ unitLattice S) := by
+    refine Submodule.span_le.mpr (Set.range_subset_iff.mpr fun j k _ ↦ ?_)
+    exact logEmbedding_mem_unitLattice S (Additive.ofMul (γ j k))
+  -- The product lattice is discrete; the span inherits discreteness through its
+  -- continuous injection into that product.
+  let f : Submodule.span ℤ (Set.range v) → κ → unitLattice S :=
+    fun x k ↦ ⟨x.1 k, hle x.2 k (Set.mem_univ k)⟩
+  have hf : Continuous f := continuous_pi fun k ↦
+    ((continuous_apply k).comp continuous_subtype_val).subtype_mk _
+  have hinj : Function.Injective f := by
+    intro x y h
+    apply Subtype.ext
+    exact funext fun k ↦ congrArg Subtype.val (congrFun h k)
+  have hdisc : DiscreteTopology (Submodule.span ℤ (Set.range v)) :=
+    DiscreteTopology.of_continuous_injective hf hinj
+  apply linearIndependent_iff_card_eq_finrank_span.mpr
+  rw [Real.finrank_eq_int_finrank_of_discrete hdisc]
+  exact linearIndependent_iff_card_eq_finrank_span.mp hℤ
 
 open Classical in
 /-- **Exponent bound for `S`-units.** Let `T` be a continuous left inverse of the map
