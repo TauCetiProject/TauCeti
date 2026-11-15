@@ -33,6 +33,13 @@ non-injective `f` has image of infinite index (index `0`) and determinant `0`.
 * `LinearMap.index_range_eq_natAbs_det_toMatrix`: for any `ℤ`-linear map between free abelian
   groups with bases indexed by the same finite type, the index of the image is the absolute value
   of the determinant of its matrix.
+* `Module.Basis.mem_span_range_nsmul_iff`, `Module.Basis.quotientSpanNSMulEquiv`: rescaling the
+  vectors of a finite integral basis `b` by natural numbers `m k`, a vector lies in the span of the
+  `m k • b k` exactly when its `k`-th coordinate is divisible by `m k`, and the quotient by that
+  span is `Π k, ZMod (m k)`.
+* `LinearIndependent.card_quotient_span_range_nsmul`: rescaling a finite linearly independent
+  family `v` by natural numbers `m k` multiplies the order of the quotient by the span by
+  `∏ k, m k`.
 -/
 
 public section
@@ -100,3 +107,107 @@ theorem index_range_eq_natAbs_det_toMatrix {ι : Type*} [Fintype ι] [DecidableE
   exact congr(c.repr $(LinearEquiv.ofInjective_apply f (h := hf) (b j)) i)
 
 end LinearMap
+
+/-! ### Rescaled bases -/
+
+namespace Module.Basis
+
+variable {κ M : Type*} [AddCommGroup M] (b : Basis κ ℤ M) (m : κ → ℕ)
+
+/-- A vector lies in the span of the rescaled basis vectors `m k • b k` exactly when, for every
+`k`, its `k`-th coordinate in `b` is divisible by `m k`. -/
+theorem mem_span_range_nsmul_iff [Finite κ] {x : M} :
+    x ∈ Submodule.span ℤ (Set.range fun k ↦ m k • b k) ↔ ∀ k, (m k : ℤ) ∣ b.repr x k := by
+  constructor
+  · intro hx
+    induction hx using Submodule.span_induction with
+    | mem y hy =>
+      obtain ⟨k, rfl⟩ := hy
+      intro k'
+      rw [map_nsmul, b.repr_self, Finsupp.smul_apply]
+      rcases eq_or_ne k k' with rfl | h
+      · simp
+      · simp [Finsupp.single_eq_of_ne' h]
+    | zero => simp
+    | add y z _ _ hy hz => exact fun k ↦ by simpa using dvd_add (hy k) (hz k)
+    | smul a y _ hy => exact fun k ↦ by simpa using (hy k).mul_left a
+  · intro h
+    choose q hq using h
+    have := Fintype.ofFinite κ
+    rw [← b.sum_repr x]
+    refine Submodule.sum_mem _ fun k _ ↦ ?_
+    rw [hq k, mul_comm, mul_smul, natCast_zsmul]
+    exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨k, rfl⟩)
+
+/-- The coordinates in `b`, the `k`-th one reduced modulo `m k`. -/
+private noncomputable def coordModNSMul : M →ₗ[ℤ] (k : κ) → ZMod (m k) :=
+  LinearMap.pi fun k ↦ (Int.castAddHom (ZMod (m k))).toIntLinearMap ∘ₗ b.coord k
+
+private theorem coordModNSMul_apply (x : M) (k : κ) :
+    coordModNSMul b m x k = (b.repr x k : ZMod (m k)) :=
+  (rfl)
+
+private theorem ker_coordModNSMul [Finite κ] :
+    LinearMap.ker (coordModNSMul b m) = Submodule.span ℤ (Set.range fun k ↦ m k • b k) := by
+  ext x
+  simp [mem_span_range_nsmul_iff, funext_iff, coordModNSMul_apply,
+    ZMod.intCast_zmod_eq_zero_iff_dvd]
+
+private theorem coordModNSMul_surjective [Finite κ] : Function.Surjective (coordModNSMul b m) := by
+  classical
+  have := Fintype.ofFinite κ
+  intro y
+  refine ⟨∑ k, ((y k).cast : ℤ) • b k, funext fun k ↦ ?_⟩
+  simp [coordModNSMul_apply, Finsupp.single_apply]
+
+/-- **The quotient by a rescaled basis.** Reducing the `k`-th coordinate in `b` modulo `m k`
+identifies the quotient of `M` by the span of the vectors `m k • b k` with `Π k, ZMod (m k)`. -/
+noncomputable def quotientSpanNSMulEquiv [Finite κ] :
+    (M ⧸ Submodule.span ℤ (Set.range fun k ↦ m k • b k)) ≃ₗ[ℤ] ((k : κ) → ZMod (m k)) :=
+  (Submodule.quotEquivOfEq _ _ (ker_coordModNSMul b m).symm).trans
+    ((coordModNSMul b m).quotKerEquivOfSurjective (coordModNSMul_surjective b m))
+
+@[simp]
+theorem quotientSpanNSMulEquiv_mk [Finite κ] (x : M) (k : κ) :
+    b.quotientSpanNSMulEquiv m (Submodule.Quotient.mk x) k = (b.repr x k : ZMod (m k)) :=
+  (rfl)
+
+/-- The quotient of `M` by the span of the rescaled basis vectors `m k • b k` has `∏ k, m k`
+elements; it is infinite, of cardinality `0` in `Nat.card`, when some `m k` vanishes. -/
+theorem card_quotient_span_range_nsmul [Fintype κ] :
+    Nat.card (M ⧸ Submodule.span ℤ (Set.range fun k ↦ m k • b k)) = ∏ k, m k := by
+  simp [Nat.card_congr (b.quotientSpanNSMulEquiv m).toEquiv, Nat.card_pi]
+
+end Module.Basis
+
+/-- **Rescaling a linearly independent family.** Rescaling a finite linearly independent family
+`v` in an abelian group by natural numbers `m k` multiplies the order of the quotient by its span
+by `∏ k, m k`. Both sides are `0` when one of the quotients is infinite. -/
+theorem LinearIndependent.card_quotient_span_range_nsmul {κ M : Type*} [AddCommGroup M]
+    [Fintype κ] {v : κ → M} (hv : LinearIndependent ℤ v) (m : κ → ℕ) :
+    Nat.card (M ⧸ Submodule.span ℤ (Set.range fun k ↦ m k • v k)) =
+      (∏ k, m k) * Nat.card (M ⧸ Submodule.span ℤ (Set.range v)) := by
+  set Q := Submodule.span ℤ (Set.range v)
+  set P := Submodule.span ℤ (Set.range fun k ↦ m k • v k)
+  have hPQ : P ≤ Q := Submodule.span_le.2 <| by
+    rintro _ ⟨k, rfl⟩
+    exact Submodule.smul_of_tower_mem _ _ (Submodule.subset_span ⟨k, rfl⟩)
+  -- In the basis `b` of `Q` given by `v`, `P` is the span of the rescaled basis vectors.
+  let b := Module.Basis.span hv
+  have hcomap : P.comap Q.subtype = Submodule.span ℤ (Set.range fun k ↦ m k • b k) := by
+    rw [← Submodule.comap_map_eq_of_injective Q.injective_subtype
+      (Submodule.span ℤ (Set.range fun k ↦ m k • b k)), Submodule.map_span, ← Set.range_comp]
+    have hb : (Q.subtype ∘ fun k ↦ m k • b k) = fun k ↦ m k • v k := by
+      ext k
+      simp [b, Module.Basis.span_apply]
+    rw [hb]
+  -- The quotient of `Q` by `P` is the image of `Q` in `M ⧸ P`, by the first isomorphism theorem.
+  have hker : LinearMap.ker (P.mkQ ∘ₗ Q.subtype) = P.comap Q.subtype := by
+    rw [LinearMap.ker_comp, Submodule.ker_mkQ]
+  have hrange : LinearMap.range (P.mkQ ∘ₗ Q.subtype) = Q.map P.mkQ := by
+    rw [LinearMap.range_comp, Submodule.range_subtype]
+  rw [← Submodule.card_quotient_mul_card_quotient Q P hPQ, ← b.card_quotient_span_range_nsmul m,
+    ← hcomap]
+  congr 1
+  exact Nat.card_congr ((Submodule.quotEquivOfEq _ _ hker.symm).trans
+    ((P.mkQ ∘ₗ Q.subtype).quotKerEquivRange.trans (LinearEquiv.ofEq _ _ hrange))).toEquiv.symm
