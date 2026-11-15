@@ -25,11 +25,11 @@ uniform; for instance `ℚ_[p]` is uniform, and its power-bounded elements are t
 In a seminormed ring with a pseudouniformiser the converse holds as well: bounded sets are
 norm-bounded, so every power-bounded element has Gelfand radius at most one. If the norm is
 moreover power-multiplicative, `‖x ^ n‖ = ‖x‖ ^ n`, the power-bounded elements are again the
-closed unit ball and the ring is uniform; more generally, any normed algebra over a nontrivially
-normed field whose norm is bounded by a constant multiple of `gelfandRadius` (or `smoothingFun`)
-is uniform. This applies to rings normed by the maximum of finitely many multiplicative norms,
-such as the interval rings `B^I` of the Fargues–Fontaine curve, as well as Banach function
-algebras.
+closed unit ball and the ring is uniform; more generally, any seminormed ring with a
+pseudouniformiser (in particular, any seminormed algebra over a nontrivially normed field) whose
+norm is bounded by a constant multiple of `gelfandRadius` (or `smoothingFun`) is uniform. This
+applies to rings normed by the maximum of finitely many multiplicative norms, such as the interval
+rings `B^I` of the Fargues–Fontaine curve, as well as Banach function algebras.
 
 In a seminormed ring every unit of norm less than one is a pseudouniformiser. If the norm is
 moreover ultrametric with `‖1‖ = 1`, the closed unit ball is an open bounded subring, so such
@@ -56,7 +56,9 @@ the adic spectra of the Tate algebras `K⟨X₁, …, Xₙ⟩`.
 * `TauCeti.Huber.IsPseudoUniformizer.gelfandRadius_le_one_of_isPowerBounded` and
   `TauCeti.Huber.gelfandRadius_le_one_of_isPowerBounded`: power-bounded elements have Gelfand
   radius at most one.
-* `TauCeti.Huber.IsUniform.of_norm_le_mul_gelfandRadius` and
+* `TauCeti.Huber.IsPseudoUniformizer.isUniform_of_norm_le_mul_gelfandRadius`,
+  `TauCeti.Huber.IsPseudoUniformizer.isUniform_of_norm_le_mul_smoothingFun`,
+  `TauCeti.Huber.IsUniform.of_norm_le_mul_gelfandRadius`, and
   `TauCeti.Huber.IsUniform.of_norm_le_mul_smoothingFun`: uniformity from a linear bound by
   `gelfandRadius` or `smoothingFun`.
 * `TauCeti.Huber.IsPseudoUniformizer.of_norm_lt_one`: in a seminormed ring a unit of norm less
@@ -344,10 +346,10 @@ theorem gelfandRadius_le_one_of_isPowerBounded (K : Type*) [NontriviallyNormedFi
     (isUnit_iff_ne_zero.mpr (norm_pos_iff.mp hϖ0)) hϖ1).map (continuous_algebraMap K R)
   exact hϖ.gelfandRadius_le_one_of_isPowerBounded hx
 
-/-- Any seminormed algebra over a nontrivially normed field whose norm is bounded by a constant
-multiple of `gelfandRadius` is uniform (`TauCeti.Huber.IsUniform`). -/
-theorem IsUniform.of_norm_le_mul_gelfandRadius (K : Type*) [NontriviallyNormedField K]
-    {R : Type*} [SeminormedRing R] [NormedAlgebra K R]
+/-- A seminormed ring with a pseudouniformiser whose norm is bounded by a constant multiple of
+`gelfandRadius` is uniform (`TauCeti.Huber.IsUniform`). -/
+theorem IsPseudoUniformizer.isUniform_of_norm_le_mul_gelfandRadius {R : Type*} [SeminormedRing R]
+    {ϖ : R} (hϖ : IsPseudoUniformizer ϖ)
     (h : ∃ C : ℝ, ∀ x : R, ‖x‖ ≤ C * gelfandRadius x) :
     IsUniform R := by
   obtain ⟨C, hC⟩ := h
@@ -358,8 +360,31 @@ theorem IsUniform.of_norm_le_mul_gelfandRadius (K : Type*) [NontriviallyNormedFi
     _ ≤ max C 0 * gelfandRadius x :=
       mul_le_mul_of_nonneg_right (le_max_left C 0) (gelfandRadius_nonneg x)
     _ ≤ max C 0 * 1 :=
-      mul_le_mul_of_nonneg_left (gelfandRadius_le_one_of_isPowerBounded K hx) (le_max_right C 0)
+      mul_le_mul_of_nonneg_left (hϖ.gelfandRadius_le_one_of_isPowerBounded hx) (le_max_right C 0)
     _ = max C 0 := mul_one _
+
+/-- A seminormed commutative ring with a pseudouniformiser whose norm is bounded by a constant
+multiple of `smoothingFun (normRingSeminorm A)` is uniform (`TauCeti.Huber.IsUniform`). -/
+theorem IsPseudoUniformizer.isUniform_of_norm_le_mul_smoothingFun {A : Type*}
+    [SeminormedCommRing A] {ϖ : A} (hϖ : IsPseudoUniformizer ϖ)
+    (h : ∃ C : ℝ, ∀ a : A, ‖a‖ ≤ C * smoothingFun (normRingSeminorm A) a) :
+    IsUniform A := by
+  refine hϖ.isUniform_of_norm_le_mul_gelfandRadius ?_
+  obtain ⟨C, hC⟩ := h
+  refine ⟨C, fun a ↦ ?_⟩
+  rw [← smoothingFun_normRingSeminorm_eq_gelfandRadius]
+  exact hC a
+
+/-- Any seminormed algebra over a nontrivially normed field whose norm is bounded by a constant
+multiple of `gelfandRadius` is uniform (`TauCeti.Huber.IsUniform`). -/
+theorem IsUniform.of_norm_le_mul_gelfandRadius (K : Type*) [NontriviallyNormedField K]
+    {R : Type*} [SeminormedRing R] [NormedAlgebra K R]
+    (h : ∃ C : ℝ, ∀ x : R, ‖x‖ ≤ C * gelfandRadius x) :
+    IsUniform R := by
+  obtain ⟨ϖ, hϖ0, hϖ1⟩ := NormedField.exists_norm_lt_one K
+  have hϖ := (IsPseudoUniformizer.of_norm_lt_one
+    (isUnit_iff_ne_zero.mpr (norm_pos_iff.mp hϖ0)) hϖ1).map (continuous_algebraMap K R)
+  exact hϖ.isUniform_of_norm_le_mul_gelfandRadius h
 
 /-- Any seminormed commutative algebra over a nontrivially normed field whose norm is bounded by a
 constant multiple of `smoothingFun (normRingSeminorm A)` is uniform (`TauCeti.Huber.IsUniform`). -/
@@ -367,10 +392,9 @@ theorem IsUniform.of_norm_le_mul_smoothingFun (K : Type*) [NontriviallyNormedFie
     {A : Type*} [SeminormedCommRing A] [NormedAlgebra K A]
     (h : ∃ C : ℝ, ∀ a : A, ‖a‖ ≤ C * smoothingFun (normRingSeminorm A) a) :
     IsUniform A := by
-  refine IsUniform.of_norm_le_mul_gelfandRadius K ?_
-  obtain ⟨C, hC⟩ := h
-  refine ⟨C, fun a ↦ ?_⟩
-  rw [← smoothingFun_normRingSeminorm_eq_gelfandRadius]
-  exact hC a
+  obtain ⟨ϖ, hϖ0, hϖ1⟩ := NormedField.exists_norm_lt_one K
+  have hϖ := (IsPseudoUniformizer.of_norm_lt_one
+    (isUnit_iff_ne_zero.mpr (norm_pos_iff.mp hϖ0)) hϖ1).map (continuous_algebraMap K A)
+  exact hϖ.isUniform_of_norm_le_mul_smoothingFun h
 
 end TauCeti.Huber

@@ -11,7 +11,7 @@ public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Map
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Sum
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.UniversalProperty
 
-import TauCeti.RingTheory.Affinoid.FunctionAlgebra
+import TauCeti.RingTheory.Affinoid.PowerBounded
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Groebner
 
 /-!

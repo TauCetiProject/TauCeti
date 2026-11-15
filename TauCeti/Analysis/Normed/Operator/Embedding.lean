@@ -24,9 +24,9 @@ Noetherian Tate ring (`LinearMap.isStrictMap_of_module_finite`).
 
 * `LinearMap.exists_pos_norm_le_mul_norm_of_isEmbedding`: if `f : E →ₗ[𝕜] F` is a topological
   embedding, then `∃ C > 0, ∀ x, ‖x‖ ≤ C * ‖f x‖`.
-* `LinearMap.antilipschitzWith_of_isEmbedding`: the corresponding `AntilipschitzWith` bound.
-* `LinearMap.exists_pos_norm_le_mul_norm_of_isStrictMap`: the same bound for a strict injective
-  linear map.
+* `LinearMap.exists_antilipschitzWith_of_isEmbedding`: the corresponding `AntilipschitzWith` bound.
+* `LinearMap.exists_pos_norm_le_mul_norm_of_isStrictMap_of_injective`: the same bound for a strict
+  injective linear map.
 -/
 
 public section
@@ -52,10 +52,12 @@ theorem exists_pos_norm_le_mul_norm_of_isEmbedding (f : E →ₗ[𝕜] F) (hf : 
   obtain ⟨C, hC, hbound⟩ := SemilinearMapClass.bound_of_continuous e.symm.toLinearMap hsymm
   refine ⟨C, hC, fun x ↦ ?_⟩
   have hx := hbound (e x)
-  rwa [LinearEquiv.coe_toLinearMap, e.symm_apply_apply] at hx
+  rw [LinearEquiv.coe_toLinearMap, e.symm_apply_apply, ← Submodule.norm_coe] at hx
+  dsimp only [e] at hx
+  rwa [LinearEquiv.ofInjective_apply] at hx
 
 /-- A linear topological embedding over a nontrivially normed field is antilipschitz. -/
-theorem antilipschitzWith_of_isEmbedding (f : E →ₗ[𝕜] F) (hf : IsEmbedding f) :
+theorem exists_antilipschitzWith_of_isEmbedding (f : E →ₗ[𝕜] F) (hf : IsEmbedding f) :
     ∃ K : NNReal, 0 < K ∧ AntilipschitzWith K f := by
   obtain ⟨C, hC, hbound⟩ := f.exists_pos_norm_le_mul_norm_of_isEmbedding hf
   refine ⟨Real.toNNReal C, Real.toNNReal_pos.mpr hC, AntilipschitzWith.of_le_mul_dist fun x y ↦ ?_⟩
@@ -63,8 +65,8 @@ theorem antilipschitzWith_of_isEmbedding (f : E →ₗ[𝕜] F) (hf : IsEmbeddin
   exact hbound (x - y)
 
 /-- **A strict injective linear map over a nontrivially normed field is bounded below.** -/
-theorem exists_pos_norm_le_mul_norm_of_isStrictMap (f : E →ₗ[𝕜] F) (hf : IsStrictMap f)
-    (hinj : Function.Injective f) :
+theorem exists_pos_norm_le_mul_norm_of_isStrictMap_of_injective (f : E →ₗ[𝕜] F)
+    (hf : IsStrictMap f) (hinj : Function.Injective f) :
     ∃ C : ℝ, 0 < C ∧ ∀ x : E, ‖x‖ ≤ C * ‖f x‖ :=
   f.exists_pos_norm_le_mul_norm_of_isEmbedding
     (isEmbedding_iff_isStrictMap_injective.mpr ⟨hf, hinj⟩)

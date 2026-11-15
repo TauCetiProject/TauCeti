@@ -10,8 +10,6 @@ public import Mathlib.Analysis.Normed.Algebra.UnitizationL1
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.Normed.Unbundled.SmoothingSeminorm
 
-import TauCeti.Analysis.Normed.Ring.Ultra
-
 /-!
 # The Gelfand radius of idempotents, nonunital elements, and ultrametric rings
 
@@ -39,6 +37,8 @@ In any seminormed commutative ring `A`, `gelfandRadius` agrees with Mathlib's sm
   of elements of the corner `p R p`.
 * `TauCeti.spectralRadius_eq_gelfandRadius_toLp_inr`: Gelfand's formula for a nonunital complex
   Banach algebra, through its ℓ¹ unitization.
+* `TauCeti.le_gelfandRadius_of_bound`: lower bound `r ≤ gelfandRadius a` from
+  `∀ n ≠ 0, r ^ n ≤ C * ‖a ^ n‖`.
 * `Commute.gelfandRadius_add_le_max` and `TauCeti.isNonarchimedean_gelfandRadius`: ultrametric
   subadditivity of `gelfandRadius` without `‖1‖ ≤ 1`.
 * `TauCeti.smoothingFun_normRingSeminorm_eq_gelfandRadius` and
@@ -134,6 +134,28 @@ theorem spectralRadius_eq_gelfandRadius_toLp_inr (a : A) :
 
 end NonUnital
 
+/-- If `r ^ n ≤ C * ‖a ^ n‖` for all `n ≠ 0`, then `r ≤ gelfandRadius a`.
+Dual to Mathlib's `gelfandRadius_le_of_bound`. -/
+theorem le_gelfandRadius_of_bound {A : Type*} [SeminormedRing A] {a : A} {C r : ℝ}
+    (h : ∀ n ≠ 0, r ^ n ≤ C * ‖a ^ n‖) : r ≤ gelfandRadius a := by
+  by_cases hr : 0 ≤ r
+  · have hC : 0 < max C 1 := by positivity
+    have hlim : Tendsto (fun n : ℕ ↦ max C 1 ^ (n : ℝ)⁻¹ * ‖a ^ n‖ ^ (n : ℝ)⁻¹)
+        atTop (𝓝 (gelfandRadius a)) := by
+      simpa using (((Real.continuous_const_rpow hC.ne').tendsto' 0 1 (Real.rpow_zero _)).comp
+        tendsto_inv_atTop_nhds_zero_nat).mul (tendsto_gelfandRadius a)
+    refine ge_of_tendsto hlim ?_
+    filter_upwards [eventually_ne_atTop 0] with n hn
+    have hstep : r ^ n ≤ max C 1 * ‖a ^ n‖ :=
+      (h n hn).trans (mul_le_mul_of_nonneg_right (le_max_left C 1) (norm_nonneg _))
+    calc
+      r = (r ^ n) ^ (n : ℝ)⁻¹ := (Real.pow_rpow_inv_natCast hr hn).symm
+      _ ≤ (max C 1 * ‖a ^ n‖) ^ (n : ℝ)⁻¹ :=
+        Real.rpow_le_rpow (pow_nonneg hr n) hstep (by positivity)
+      _ = max C 1 ^ (n : ℝ)⁻¹ * ‖a ^ n‖ ^ (n : ℝ)⁻¹ :=
+        Real.mul_rpow hC.le (norm_nonneg _)
+  · exact (le_of_not_ge hr).trans (gelfandRadius_nonneg a)
+
 /-- In any seminormed commutative ring, `smoothingFun (normRingSeminorm A)` agrees with Mathlib's
 `gelfandRadius`, without requiring `‖(1 : A)‖ ≤ 1`. -/
 theorem smoothingFun_normRingSeminorm_eq_gelfandRadius {A : Type*} [SeminormedCommRing A] (a : A) :
@@ -141,19 +163,11 @@ theorem smoothingFun_normRingSeminorm_eq_gelfandRadius {A : Type*} [SeminormedCo
   have hnorm (x : A) : normRingSeminorm A x = ‖x‖ := rfl
   refine le_antisymm ?_ ?_
   · refine ge_of_tendsto' (tendsto_gelfandRadius' a) fun k ↦ ?_
-    have hk : smoothingFun (normRingSeminorm A) a ≤
-        normRingSeminorm A (a ^ (k : ℕ)) ^ (1 / (k : ℝ)) :=
-      ciInf_le (smoothingSeminormSeq_bddBelow (normRingSeminorm A) a) k
+    have hk := smoothingFun_le (normRingSeminorm A) a k
     rwa [hnorm, one_div] at hk
   · refine le_ciInf fun k ↦ ?_
     rw [hnorm, one_div]
     exact gelfandRadius_le_norm_pow a k.ne_zero
-
-/-- `smoothingFun (normRingSeminorm A) a ≤ ‖a‖` in any seminormed commutative ring. -/
-theorem smoothingFun_normRingSeminorm_le_norm {A : Type*} [SeminormedCommRing A] (a : A) :
-    smoothingFun (normRingSeminorm A) a ≤ ‖a‖ := by
-  rw [smoothingFun_normRingSeminorm_eq_gelfandRadius]
-  exact gelfandRadius_le_norm a
 
 /-- In an ultrametric seminormed commutative ring, `gelfandRadius` is nonarchimedean. -/
 theorem isNonarchimedean_gelfandRadius {A : Type*} [SeminormedCommRing A] [IsUltrametricDist A] :

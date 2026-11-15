@@ -12,7 +12,6 @@ import TauCeti.Analysis.Normed.Algebra.AutomaticContinuity.Basic
 import TauCeti.RingTheory.Ideal.KrullIntersection
 import TauCeti.RingTheory.Huber.ClosedSubmodule
 import TauCeti.RingTheory.Huber.Normed
-import TauCeti.RingTheory.Huber.OpenIdeal
 import TauCeti.Topology.Algebra.Ring.Ideal
 
 /-!

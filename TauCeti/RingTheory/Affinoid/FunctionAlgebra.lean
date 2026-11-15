@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.Affinoid.SpectralRadius
 import Mathlib.RingTheory.Polynomial.RationalRoot
 import Mathlib.Topology.UniformSpace.Equiv
 import TauCeti.Analysis.Normed.Operator.Embedding
+import TauCeti.RingTheory.Affinoid.Integral.Basic
 import TauCeti.RingTheory.Affinoid.NoetherNormalization
 import TauCeti.RingTheory.Huber.Normed
 import TauCeti.RingTheory.Huber.StrictMorphism
@@ -38,27 +39,26 @@ In particular:
   complete uniform ultrametric Banach `K`-algebra (`TauCeti.IsAffinoidAlgebra.SupNormModel`), and
   for any complete ultrametric `K`-algebra norm on `A` the identity is a topological `K`-algebra
   isomorphism (`TauCeti.IsAffinoidAlgebra.supNormContinuousAlgEquiv`).
-* Every `K`-algebra homomorphism `φ : B →ₐ[K] A` from an arbitrary Banach `K`-algebra `B` (not
-  assumed commutative, ultrametric, Noetherian, or unital-norm-normalized) into a completely normed
-  affinoid `K`-algebra `A` maps power-bounded elements to power-bounded elements
-  (`TauCeti.IsAffinoidAlgebra.isPowerBounded_map`), and when `A` is reduced `φ` is automatically
-  continuous (`TauCeti.IsAffinoidAlgebra.continuous_algHom_of_isReduced`).
+* Combining the equivalence with `AlgHom.supSeminorm_apply_le_gelfandRadius`, every `K`-algebra
+  homomorphism `φ : B →ₐ[K] A` from an arbitrary Banach `K`-algebra `B` (not assumed commutative,
+  ultrametric, Noetherian, or unital-norm-normalized) into a completely normed reduced affinoid
+  `K`-algebra `A` is automatically continuous
+  (`TauCeti.IsAffinoidAlgebra.continuous_algHom_of_isReduced`).
 
 ## Main definitions and results
 
-* `TauCeti.IsAffinoidAlgebra.supSeminorm_eq_spectralValue_minpoly` and
-  `TauCeti.IsAffinoidAlgebra.supSeminorm_eq_reducedSpectralAlgNorm`: minimal-polynomial and
-  base-change formulas for `supSeminorm K` along a finite torsion-free Tate normalization.
+* `TauCeti.supSeminorm_eq_spectralValue_minpoly` and
+  `TauCeti.supSeminorm_eq_reducedSpectralAlgNorm`: minimal-polynomial and base-change formulas for
+  `supSeminorm K` along a finite torsion-free Tate normalization.
 * `TauCeti.IsAffinoidAlgebra.banachFunctionAlgebra`: [BGR, §6.2.4, Theorem 1].
 * `TauCeti.IsAffinoidAlgebra.isUniform`: reduced completely normed affinoid algebras are uniform.
 * `TauCeti.IsAffinoidAlgebra.SupNormModel` and
   `TauCeti.IsAffinoidAlgebra.supNormContinuousAlgEquiv`: the canonical complete supremum-normed
   Banach algebra model of a reduced affinoid algebra.
-* `AlgHom.supSeminorm_apply_le_gelfandRadius`,
-  `TauCeti.IsAffinoidAlgebra.isPowerBounded_map`,
-  `TauCeti.IsAffinoidAlgebra.exists_pos_norm_apply_le_mul_gelfandRadius_of_isReduced`, and
-  `TauCeti.IsAffinoidAlgebra.continuous_algHom_of_isReduced`: spectral contraction,
-  power-boundedness preservation, and automatic continuity from arbitrary Banach `K`-algebras.
+* `TauCeti.IsAffinoidAlgebra.exists_pos_norm_apply_le_mul_gelfandRadius_of_isReduced` and
+  `TauCeti.IsAffinoidAlgebra.continuous_algHom_of_isReduced`: quantitative spectral-radius bound and
+  automatic continuity from arbitrary Banach `K`-algebras into completely normed reduced affinoid
+  algebras.
 
 ## References
 
@@ -70,42 +70,76 @@ public section
 
 open scoped TensorProduct
 
-section BanachSource
+namespace TauCeti
 
-variable {K B A : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
-  [NormedRing B] [NormedAlgebra K B] [CompleteSpace B]
-  [CommRing A] [Algebra K A]
+section TorsionFreeNormalization
 
-/-- Any `K`-algebra homomorphism from a Banach `K`-algebra `B` into a commutative `K`-algebra `A`
-is bounded at every classical point `x : MaximalSpectrum A` by the Gelfand radius on `B`. -/
-theorem AlgHom.pointNorm_apply_le_gelfandRadius (φ : B →ₐ[K] A) (x : MaximalSpectrum A) (b : B) :
-    TauCeti.pointNorm K x (φ b) ≤ gelfandRadius b := by
-  let := Ideal.Quotient.field x.asIdeal
-  rw [TauCeti.pointNorm_eq_spectralNorm (L := A ⧸ x.asIdeal)
-    (ψ := Ideal.Quotient.mkₐ K x.asIdeal) (Ideal.Quotient.mkₐ_ker K x.asIdeal).ge]
-  exact ((Ideal.Quotient.mkₐ K x.asIdeal).comp φ).spectralNorm_apply_le_gelfandRadius b
+variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
 
-/-- Any `K`-algebra homomorphism from a Banach `K`-algebra `B` into a commutative `K`-algebra `A`
-maps every `b : B` to an element of supremum seminorm at most `gelfandRadius b`. -/
-theorem AlgHom.supSeminorm_apply_le_gelfandRadius (φ : B →ₐ[K] A) (b : B) :
-    TauCeti.supSeminorm K (φ b) ≤ gelfandRadius b :=
-  TauCeti.supSeminorm_le (gelfandRadius_nonneg b) fun x ↦ φ.pointNorm_apply_le_gelfandRadius x b
+local notation "Tate " σ:max =>
+  _root_.MvPowerSeries.IsRestricted.subring (R := K) (fun _ : σ ↦ 1)
 
-/-- Any `K`-algebra homomorphism from a Banach `K`-algebra `B` into a commutative `K`-algebra `A`
-is contractive from the norm on `B` to `TauCeti.supSeminorm K` on `A`. -/
-theorem AlgHom.supSeminorm_apply_le_norm (φ : B →ₐ[K] A) (b : B) :
-    TauCeti.supSeminorm K (φ b) ≤ ‖b‖ :=
-  (φ.supSeminorm_apply_le_gelfandRadius b).trans (gelfandRadius_le_norm b)
+/-- **Bosch–Güntzer–Remmert, §6.2.2, Proposition 1 / §6.2.1, Proposition 4(iii).**
+Over a complete nontrivially normed ultrametric field `K`, let `A` be a commutative `K`-algebra
+(with no choice of norm or reducedness assumption) that is finite and torsion-free over a
+finite-variable Tate algebra `T = K⟨X₁, …, X_d⟩`. Then for every `f : A`,
+`supSeminorm K f = spectralValue (minpoly T f)`. -/
+theorem supSeminorm_eq_spectralValue_minpoly {σ : Type*} [Finite σ]
+    {A : Type*} [CommRing A] [Algebra K A] [Algebra (Tate σ) A] [IsScalarTower K (Tate σ) A]
+    [Module.Finite (Tate σ) A] [Module.IsTorsionFree (Tate σ) A] (f : A) :
+    supSeminorm K f = spectralValue (minpoly (Tate σ) f) := by
+  have hA : IsAffinoidAlgebra K A := (isAffinoidAlgebra_tate (K := K) (σ := σ)).of_finite
+  let _ := Fintype.ofFinite σ
+  have : Countable σ := Finite.to_countable
+  have : IsNoetherianRing (Tate σ) := (isAffinoidAlgebra_tate (K := K) (σ := σ)).isNoetherianRing
+  let : NormedCommRing A := hA.residueNormedCommRing
+  let : NormedAlgebra K A := hA.residueNormedAlgebra
+  have : IsUltrametricDist A := hA.isUltrametricDist_residueNormedCommRing
+  have : CompleteSpace A := hA.completeSpace_residueNormedCommRing
+  have hcont : Continuous (algebraMap (Tate σ) A) :=
+    hA.continuous_algHom (IsScalarTower.toAlgHom K (Tate σ) A)
+  rw [hA.supSeminorm_eq_smoothingFun, smoothingFun_normRingSeminorm_eq_gelfandRadius]
+  exact gelfandRadius_eq_spectralValue_minpoly K
+    (F := MvPowerSeries.GaussFractionField σ K (fun _ ↦ 1))
+    (MvPowerSeries.norm_algebraMap_gaussFractionField σ K (fun _ ↦ 1)) hcont f
 
-end BanachSource
+/-- Over a complete nontrivially normed ultrametric field `K`, when `A` is a reduced commutative
+`K`-algebra that is finite and torsion-free over a finite-variable Tate algebra
+`T = K⟨X₁, …, X_d⟩`, and `F` is any fraction field of `T` extending the Gauss norm isometrically
+(for instance `TauCeti.MvPowerSeries.GaussFractionField σ K (fun _ ↦ 1)`), the supremum norm on `A`
+agrees with `reducedSpectralAlgNorm` on `F ⊗[T] A`. -/
+theorem supSeminorm_eq_reducedSpectralAlgNorm {σ : Type*} [Finite σ]
+    {F : Type*} [NormedField F] [IsUltrametricDist F] [Algebra (Tate σ) F]
+    [IsFractionRing (Tate σ) F] (hF : ∀ t : Tate σ, ‖algebraMap (Tate σ) F t‖ = ‖t‖)
+    {A : Type*} [CommRing A] [IsReduced A] [Algebra K A] [Algebra (Tate σ) A]
+    [IsScalarTower K (Tate σ) A] [Module.Finite (Tate σ) A] [Module.IsTorsionFree (Tate σ) A]
+    (f : A) :
+    supSeminorm K f = reducedSpectralAlgNorm F (F ⊗[Tate σ] A) (1 ⊗ₜ[Tate σ] f) := by
+  have hA : IsAffinoidAlgebra K A := (isAffinoidAlgebra_tate (K := K) (σ := σ)).of_finite
+  let _ := Fintype.ofFinite σ
+  have : Countable σ := Finite.to_countable
+  have : IsNoetherianRing (Tate σ) := (isAffinoidAlgebra_tate (K := K) (σ := σ)).isNoetherianRing
+  let : NormedCommRing A := hA.residueNormedCommRing
+  let : NormedAlgebra K A := hA.residueNormedAlgebra
+  have : IsUltrametricDist A := hA.isUltrametricDist_residueNormedCommRing
+  have : CompleteSpace A := hA.completeSpace_residueNormedCommRing
+  have hcont : Continuous (algebraMap (Tate σ) A) :=
+    hA.continuous_algHom (IsScalarTower.toAlgHom K (Tate σ) A)
+  rw [hA.supSeminorm_eq_smoothingFun]
+  exact smoothingFun_eq_reducedSpectralAlgNorm K hF hcont f
 
-namespace TauCeti.IsAffinoidAlgebra
+end TorsionFreeNormalization
+
+namespace IsAffinoidAlgebra
 
 section SupNormModel
 
-/-- Type wrapper equipping an affinoid algebra `A` (with no prior norm) with its canonical supremum
-seminorm `supSeminorm K`. When `K` is moreover complete and nontrivially normed and `A` is reduced,
-`hA.SupNormModel` is a complete uniform ultrametric Banach `K`-algebra. -/
+/-- Type wrapper for an affinoid algebra `A` (with no prior norm) used to equip `A` with its
+canonical supremum seminorm `supSeminorm K`. Under `[NormedField K] [IsUltrametricDist K]`,
+`hA.SupNormModel` carries only algebraic instances (`CommRing`, `Algebra K`, `algEquiv`); when `K`
+is moreover complete and nontrivially normed it acquires the `supSeminorm K` seminormed-algebra
+instances, and when `A` is moreover reduced it becomes a complete uniform ultrametric Banach
+`K`-algebra. -/
 structure SupNormModel {K A : Type*} [NormedField K] [IsUltrametricDist K]
     [CommRing A] [Algebra K A] (_hA : IsAffinoidAlgebra K A) where
   /-- View an element of `A` in the supremum-normed model `hA.SupNormModel`. -/
@@ -167,6 +201,25 @@ instance : CommRing hA.SupNormModel where
   intCast_negSucc _ := ext (Int.cast_negSucc _)
   mul_comm _ _ := ext (mul_comm _ _)
 
+@[simp] theorem toSupNorm_zero : (toSupNorm (0 : A) : hA.SupNormModel) = 0 := (rfl)
+@[simp] theorem toSupNorm_one : (toSupNorm (1 : A) : hA.SupNormModel) = 1 := (rfl)
+@[simp] theorem toSupNorm_add (a b : A) :
+    (toSupNorm (a + b) : hA.SupNormModel) = toSupNorm a + toSupNorm b := (rfl)
+@[simp] theorem toSupNorm_neg (a : A) :
+    (toSupNorm (-a) : hA.SupNormModel) = -toSupNorm a := (rfl)
+@[simp] theorem toSupNorm_sub (a b : A) :
+    (toSupNorm (a - b) : hA.SupNormModel) = toSupNorm a - toSupNorm b := (rfl)
+@[simp] theorem toSupNorm_mul (a b : A) :
+    (toSupNorm (a * b) : hA.SupNormModel) = toSupNorm a * toSupNorm b := (rfl)
+@[simp] theorem toSupNorm_pow (a : A) (n : ℕ) :
+    (toSupNorm (a ^ n) : hA.SupNormModel) = toSupNorm a ^ n := (rfl)
+@[simp, norm_cast] theorem toSupNorm_natCast (n : ℕ) :
+    (toSupNorm (n : A) : hA.SupNormModel) = n := (rfl)
+@[simp] theorem toSupNorm_ofNat (n : ℕ) [n.AtLeastTwo] :
+    (toSupNorm (ofNat(n) : A) : hA.SupNormModel) = ofNat(n) := (rfl)
+@[simp, norm_cast] theorem toSupNorm_intCast (n : ℤ) :
+    (toSupNorm (n : A) : hA.SupNormModel) = n := (rfl)
+
 @[simp] theorem ofSupNorm_zero : (0 : hA.SupNormModel).ofSupNorm = 0 := (rfl)
 @[simp] theorem ofSupNorm_one : (1 : hA.SupNormModel).ofSupNorm = 1 := (rfl)
 @[simp] theorem ofSupNorm_add (x y : hA.SupNormModel) :
@@ -178,6 +231,12 @@ instance : CommRing hA.SupNormModel where
     (x * y).ofSupNorm = x.ofSupNorm * y.ofSupNorm := (rfl)
 @[simp] theorem ofSupNorm_pow (x : hA.SupNormModel) (n : ℕ) :
     (x ^ n).ofSupNorm = x.ofSupNorm ^ n := (rfl)
+@[simp, norm_cast] theorem ofSupNorm_natCast (n : ℕ) :
+    (n : hA.SupNormModel).ofSupNorm = n := (rfl)
+@[simp] theorem ofSupNorm_ofNat (n : ℕ) [n.AtLeastTwo] :
+    (ofNat(n) : hA.SupNormModel).ofSupNorm = ofNat(n) := (rfl)
+@[simp, norm_cast] theorem ofSupNorm_intCast (n : ℤ) :
+    (n : hA.SupNormModel).ofSupNorm = n := (rfl)
 
 instance : Algebra K hA.SupNormModel where
   algebraMap :=
@@ -190,6 +249,10 @@ instance : Algebra K hA.SupNormModel where
   smul := fun c x ↦ ⟨c • x.1⟩
   smul_def' c x := ext (Algebra.smul_def c x.1)
 
+@[simp] theorem toSupNorm_algebraMap (c : K) :
+    (toSupNorm (algebraMap K A c) : hA.SupNormModel) = algebraMap K hA.SupNormModel c := (rfl)
+@[simp] theorem toSupNorm_smul (c : K) (a : A) :
+    (toSupNorm (c • a) : hA.SupNormModel) = c • toSupNorm a := (rfl)
 @[simp] theorem ofSupNorm_algebraMap (c : K) :
     (algebraMap K hA.SupNormModel c).ofSupNorm = algebraMap K A c := (rfl)
 @[simp] theorem ofSupNorm_smul (c : K) (x : hA.SupNormModel) :
@@ -228,56 +291,6 @@ variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [Complete
 
 local notation "Tate " σ:max =>
   _root_.MvPowerSeries.IsRestricted.subring (R := K) (fun _ : σ ↦ 1)
-
-section TorsionFreeNormalization
-
-/-- **Bosch–Güntzer–Remmert, §6.2.2, Proposition 1 / §6.2.1, Proposition 4(iii).**
-Let `A` be an affinoid `K`-algebra (with no choice of norm or reducedness assumption) that is finite
-and torsion-free over a finite-variable Tate algebra `T = K⟨X₁, …, X_d⟩`. Then for every `f : A`,
-`supSeminorm K f = spectralValue (minpoly T f)`. -/
-theorem supSeminorm_eq_spectralValue_minpoly {σ : Type*} [Finite σ]
-    {A : Type*} [CommRing A] [Algebra K A] [Algebra (Tate σ) A] [IsScalarTower K (Tate σ) A]
-    [Module.Finite (Tate σ) A] [Module.IsTorsionFree (Tate σ) A]
-    (hA : IsAffinoidAlgebra K A) (f : A) :
-    supSeminorm K f = spectralValue (minpoly (Tate σ) f) := by
-  let _ := Fintype.ofFinite σ
-  have : Countable σ := Finite.to_countable
-  have : IsNoetherianRing (Tate σ) := (isAffinoidAlgebra_tate (K := K) (σ := σ)).isNoetherianRing
-  let : NormedCommRing A := hA.residueNormedCommRing
-  let : NormedAlgebra K A := hA.residueNormedAlgebra
-  have : IsUltrametricDist A := hA.isUltrametricDist_residueNormedCommRing
-  have : CompleteSpace A := hA.completeSpace_residueNormedCommRing
-  have hcont : Continuous (algebraMap (Tate σ) A) :=
-    hA.continuous_algHom (IsScalarTower.toAlgHom K (Tate σ) A)
-  rw [hA.supSeminorm_eq_smoothingFun, smoothingFun_normRingSeminorm_eq_gelfandRadius]
-  exact gelfandRadius_eq_spectralValue_minpoly K
-    (F := MvPowerSeries.GaussFractionField σ K (fun _ ↦ 1))
-    (MvPowerSeries.norm_algebraMap_gaussFractionField σ K (fun _ ↦ 1)) hcont f
-
-/-- When `A` is a reduced affinoid `K`-algebra that is finite and torsion-free over a
-finite-variable Tate algebra `T = K⟨X₁, …, X_d⟩`, and `F` is any fraction field of `T` extending the
-Gauss norm isometrically (for instance `GaussFractionField σ K 1`), the supremum norm on `A` agrees
-with `reducedSpectralAlgNorm` on `F ⊗[T] A`. -/
-theorem supSeminorm_eq_reducedSpectralAlgNorm {σ : Type*} [Finite σ]
-    {F : Type*} [NormedField F] [IsUltrametricDist F] [Algebra (Tate σ) F]
-    [IsFractionRing (Tate σ) F] (hF : ∀ t : Tate σ, ‖algebraMap (Tate σ) F t‖ = ‖t‖)
-    {A : Type*} [CommRing A] [IsReduced A] [Algebra K A] [Algebra (Tate σ) A]
-    [IsScalarTower K (Tate σ) A] [Module.Finite (Tate σ) A] [Module.IsTorsionFree (Tate σ) A]
-    (hA : IsAffinoidAlgebra K A) (f : A) :
-    supSeminorm K f = reducedSpectralAlgNorm F (F ⊗[Tate σ] A) (1 ⊗ₜ[Tate σ] f) := by
-  let _ := Fintype.ofFinite σ
-  have : Countable σ := Finite.to_countable
-  have : IsNoetherianRing (Tate σ) := (isAffinoidAlgebra_tate (K := K) (σ := σ)).isNoetherianRing
-  let : NormedCommRing A := hA.residueNormedCommRing
-  let : NormedAlgebra K A := hA.residueNormedAlgebra
-  have : IsUltrametricDist A := hA.isUltrametricDist_residueNormedCommRing
-  have : CompleteSpace A := hA.completeSpace_residueNormedCommRing
-  have hcont : Continuous (algebraMap (Tate σ) A) :=
-    hA.continuous_algHom (IsScalarTower.toAlgHom K (Tate σ) A)
-  rw [hA.supSeminorm_eq_smoothingFun]
-  exact smoothingFun_eq_reducedSpectralAlgNorm K hF hcont f
-
-end TorsionFreeNormalization
 
 section BanachFunctionAlgebra
 
@@ -334,11 +347,13 @@ theorem banachFunctionAlgebra {A : Type*} [NormedCommRing A] [NormedAlgebra K A]
     intro x y hxy
     refine Ideal.injective_pi_quotient_mk_minimalPrimes A ?_
     ext 𝔭
-    exact congrFun hxy 𝔭
+    have h𝔭 := congrFun hxy 𝔭
+    simpa only [RingHom.pi_apply, δ, LinearMap.pi_apply, AlgHom.toLinearMap_apply,
+      Ideal.Quotient.mkₐ_eq_mk] using h𝔭
   have : Huber.IsTateRing A := Huber.IsTateRing.of_normedAlgebra K A
   have hδ_strict : Topology.IsStrictMap δ := δ.isStrictMap_of_module_finite
   obtain ⟨D, hD, hδ_bound⟩ :=
-    (δ.restrictScalars K).exists_pos_norm_le_mul_norm_of_isStrictMap hδ_strict hδ_inj
+    (δ.restrictScalars K).exists_pos_norm_le_mul_norm_of_isStrictMap_of_injective hδ_strict hδ_inj
   let M : ℝ := Finset.univ.sup' Finset.univ_nonempty C𝔭
   have hM_pos : 0 < M :=
     let ⟨𝔭₀⟩ := ‹Nonempty (minimalPrimes A)›
@@ -348,7 +363,8 @@ theorem banachFunctionAlgebra {A : Type*} [NormedCommRing A] [NormedAlgebra K A]
     refine (pi_norm_le_iff_of_nonneg (mul_nonneg hM_pos.le (supSeminorm_nonneg f))).mpr fun 𝔭 ↦ ?_
     have := hclosed 𝔭
     calc
-      ‖δ f 𝔭‖ = ‖Ideal.Quotient.mk 𝔭.1 f‖ := rfl
+      ‖δ f 𝔭‖ = ‖Ideal.Quotient.mk 𝔭.1 f‖ := by
+        rw [LinearMap.pi_apply, AlgHom.toLinearMap_apply, Ideal.Quotient.mkₐ_eq_mk]
       _ ≤ C𝔭 𝔭 * supSeminorm K (Ideal.Quotient.mk 𝔭.1 f) := hC𝔭 𝔭 _
       _ ≤ M * supSeminorm K f :=
         mul_le_mul (Finset.le_sup' C𝔭 (Finset.mem_univ 𝔭))
@@ -359,9 +375,9 @@ theorem banachFunctionAlgebra {A : Type*} [NormedCommRing A] [NormedAlgebra K A]
     _ ≤ D * (M * supSeminorm K f) := mul_le_mul_of_nonneg_left hδ_le hD.le
     _ = (D * M) * supSeminorm K f := (mul_assoc D M _).symm
 
-/-- **Uniformity of reduced affinoid algebras.** Every reduced affinoid `K`-algebra carrying a
-complete ultrametric `K`-algebra norm has bounded power-bounded subring (`TauCeti.Huber.IsUniform`).
--/
+/-- **Uniformity of reduced affinoid algebras.** Every reduced affinoid `K`-algebra over a complete
+nontrivially normed ultrametric field `K` carrying a complete ultrametric `K`-algebra norm has
+bounded power-bounded subring (`TauCeti.Huber.IsUniform`). -/
 theorem isUniform {A : Type*} [NormedCommRing A] [NormedAlgebra K A]
     [IsUltrametricDist A] [CompleteSpace A] [IsReduced A] (hA : IsAffinoidAlgebra K A) :
     Huber.IsUniform A := by
@@ -378,18 +394,15 @@ namespace SupNormModel
 
 variable {A : Type*} [CommRing A] [Algebra K A] {hA : IsAffinoidAlgebra K A}
 
-/-- The `RingSeminorm` on `hA.SupNormModel` given by `supSeminorm K`. -/
-noncomputable def ringSeminorm (hA : IsAffinoidAlgebra K A) : RingSeminorm hA.SupNormModel where
-  toFun x := supSeminorm K x.ofSupNorm
-  map_zero' := supSeminorm_zero
-  add_le' x y := (hA.supSeminorm_add_le x.1 y.1).trans
-    (max_le_add_of_nonneg (supSeminorm_nonneg x.1) (supSeminorm_nonneg y.1))
-  neg' x := supSeminorm_neg x.1
-  mul_le' x y := hA.supSeminorm_mul_le x.1 y.1
-
 noncomputable instance : SeminormedCommRing hA.SupNormModel where
   __ := (inferInstance : CommRing hA.SupNormModel)
-  __ := (ringSeminorm hA).toSeminormedRing
+  __ := RingSeminorm.toSeminormedRing
+    { toFun := fun x : hA.SupNormModel ↦ supSeminorm K x.ofSupNorm
+      map_zero' := supSeminorm_zero
+      add_le' := fun x y ↦ (hA.supSeminorm_add_le x.1 y.1).trans
+        (max_le_add_of_nonneg (supSeminorm_nonneg x.1) (supSeminorm_nonneg y.1))
+      neg' := fun x ↦ supSeminorm_neg x.1
+      mul_le' := fun x y ↦ hA.supSeminorm_mul_le x.1 y.1 }
 
 /-- The norm on `hA.SupNormModel` is `supSeminorm K` of the underlying element. -/
 @[simp] theorem norm_def (x : hA.SupNormModel) : ‖x‖ = supSeminorm K x.ofSupNorm := (rfl)
@@ -447,9 +460,10 @@ instance [IsReduced A] : Huber.IsUniform hA.SupNormModel :=
 
 end SupNormModel
 
-/-- For any reduced affinoid `K`-algebra `A` carrying a complete ultrametric `K`-algebra norm, the
-identity map to `hA.SupNormModel` is a topological `K`-algebra isomorphism: `supSeminorm K` defines
-the canonical Banach topology on `A`. -/
+/-- For any reduced affinoid `K`-algebra `A` over a complete nontrivially normed ultrametric field
+`K` carrying a complete ultrametric `K`-algebra norm, the identity map to `hA.SupNormModel` is a
+topological `K`-algebra isomorphism: `supSeminorm K` defines the canonical Banach topology on `A`.
+-/
 noncomputable def supNormContinuousAlgEquiv {A : Type*} [NormedCommRing A] [NormedAlgebra K A]
     [IsUltrametricDist A] [CompleteSpace A] [IsReduced A] (hA : IsAffinoidAlgebra K A) :
     A ≃A[K] hA.SupNormModel :=
@@ -473,7 +487,7 @@ theorem toAlgEquiv_supNormContinuousAlgEquiv {A : Type*} [NormedCommRing A] [Nor
 
 /-- The inverse of `supNormContinuousAlgEquiv` extracts `SupNormModel.ofSupNorm`. -/
 @[simp]
-theorem symm_apply_supNormContinuousAlgEquiv {A : Type*} [NormedCommRing A] [NormedAlgebra K A]
+theorem supNormContinuousAlgEquiv_symm_apply {A : Type*} [NormedCommRing A] [NormedAlgebra K A]
     [IsUltrametricDist A] [CompleteSpace A] [IsReduced A] (hA : IsAffinoidAlgebra K A)
     (x : hA.SupNormModel) :
     hA.supNormContinuousAlgEquiv.symm x = x.ofSupNorm := by
@@ -485,22 +499,12 @@ end SupNormBanach
 section AutomaticContinuityFromBanach
 
 variable {B A : Type*} [NormedRing B] [NormedAlgebra K B] [CompleteSpace B]
-  [NormedCommRing A] [NormedAlgebra K A] [IsUltrametricDist A] [CompleteSpace A]
-
-/-- Every `K`-algebra homomorphism from an arbitrary Banach `K`-algebra `B` (not assumed
-commutative, ultrametric, Noetherian, or unital-norm-normalized) into a completely normed affinoid
-`K`-algebra `A` (not necessarily reduced) maps power-bounded elements to power-bounded elements. -/
-theorem isPowerBounded_map (hA : IsAffinoidAlgebra K A) (φ : B →ₐ[K] A) {b : B}
-    (hb : Huber.IsPowerBounded b) : Huber.IsPowerBounded (φ b) :=
-  hA.isPowerBounded_iff_supSeminorm_le_one.mpr <|
-    (φ.supSeminorm_apply_le_gelfandRadius b).trans
-      (Huber.gelfandRadius_le_one_of_isPowerBounded K hb)
-
-variable [IsReduced A]
+  [NormedCommRing A] [NormedAlgebra K A] [IsUltrametricDist A] [CompleteSpace A] [IsReduced A]
 
 /-- Quantitative bound for `K`-algebra homomorphisms from an arbitrary Banach `K`-algebra `B` into a
-completely normed reduced affinoid `K`-algebra `A`: there exists `C > 0` such that
-`‖φ b‖ ≤ C * gelfandRadius b ≤ C * ‖b‖` for every `b : B`. -/
+completely normed reduced affinoid `K`-algebra `A` over a complete nontrivially normed ultrametric
+field `K`: there exists `C > 0` such that `‖φ b‖ ≤ C * gelfandRadius b ≤ C * ‖b‖` for every
+`b : B`. -/
 theorem exists_pos_norm_apply_le_mul_gelfandRadius_of_isReduced
     (hA : IsAffinoidAlgebra K A) (φ : B →ₐ[K] A) :
     ∃ C : ℝ, 0 < C ∧ ∀ b : B, ‖φ b‖ ≤ C * gelfandRadius b ∧ ‖φ b‖ ≤ C * ‖b‖ := by
@@ -512,9 +516,10 @@ theorem exists_pos_norm_apply_le_mul_gelfandRadius_of_isReduced
   exact ⟨h1, h1.trans (mul_le_mul_of_nonneg_left (gelfandRadius_le_norm b) hC.le)⟩
 
 /-- **Automatic continuity from arbitrary Banach algebras into reduced affinoid algebras**
-([BGR, §3.8.3 / §6.2.4]). Every `K`-algebra homomorphism from a Banach `K`-algebra `B` (not assumed
-commutative, ultrametric, Noetherian, or unital-norm-normalized) into a completely normed reduced
-affinoid `K`-algebra `A` is continuous. -/
+([BGR, §3.8.3 / §6.2.4]). Over a complete nontrivially normed ultrametric field `K`, every
+`K`-algebra homomorphism from a Banach `K`-algebra `B` (not assumed commutative, ultrametric,
+Noetherian, or unital-norm-normalized) into a completely normed reduced affinoid `K`-algebra `A` is
+continuous. -/
 theorem continuous_algHom_of_isReduced (hA : IsAffinoidAlgebra K A) (φ : B →ₐ[K] A) :
     Continuous φ := by
   obtain ⟨C, _, hC⟩ := hA.exists_pos_norm_apply_le_mul_gelfandRadius_of_isReduced φ
@@ -522,4 +527,6 @@ theorem continuous_algHom_of_isReduced (hA : IsAffinoidAlgebra K A) (φ : B →�
 
 end AutomaticContinuityFromBanach
 
-end TauCeti.IsAffinoidAlgebra
+end IsAffinoidAlgebra
+
+end TauCeti

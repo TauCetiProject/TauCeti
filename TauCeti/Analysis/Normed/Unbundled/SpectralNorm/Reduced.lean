@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Basis
 
 import Mathlib.LinearAlgebra.Pi
 import Mathlib.RingTheory.Artinian.Module
+import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Basic
 
 /-!
 # Spectral norms on finite reduced algebras
@@ -37,9 +38,6 @@ restricting `E` to be a field.
 
 ## Main results
 
-* `Polynomial.Monic.spectralValue_mul` and `Polynomial.Monic.spectralValue_le_of_dvd`: over an
-  ultrametric normed field, `spectralValue (p * q) = max (spectralValue p) (spectralValue q)` for
-  monic polynomials, so monic divisors have smaller `spectralValue`.
 * `TauCeti.spectralValue_minpoly_eq_iSup_spectralNorm`: `spectralValue (minpoly K x)` is the
   supremum of the residue-field spectral norms across `MaximalSpectrum E`.
 * `TauCeti.isPowMul_reducedSpectralAlgNorm` and `TauCeti.isNonarchimedean_reducedSpectralAlgNorm`:
@@ -58,107 +56,6 @@ restricting `E` to be a field.
 public section
 
 open Polynomial
-
-namespace Polynomial
-
-/-- The constant polynomial `1` over a nontrivial seminormed ring has spectral value `0`. -/
-@[simp]
-theorem spectralValue_one {R : Type*} [SeminormedRing R] [Nontrivial R] :
-    spectralValue (1 : R[X]) = 0 := by
-  simpa using spectralValue_X_pow (R := R) 0
-
-section NormedField
-
-variable {K : Type*} [NormedField K] [IsUltrametricDist K]
-
-open scoped Classical in
-/-- Expresses `spectralValue p` for a monic polynomial `p : K[X]` as the maximum of
-`spectralAlgNorm` over the roots of `p` in `AlgebraicClosure K`. -/
-private theorem monic_spectralValue_eq_iSup_roots {p : K[X]} (hp : p.Monic) :
-    (⨆ x : AlgebraicClosure K,
-      if x ∈ (mapAlg K (AlgebraicClosure K) p).roots then
-        spectralAlgNorm K (AlgebraicClosure K) x
-      else 0) = spectralValue p := by
-  let L := AlgebraicClosure K
-  have hmap : mapAlg K L p = ((mapAlg K L p).roots.map fun a : L ↦ X - C a).prod := by
-    have hmon : (mapAlg K L p).Monic := by
-      rw [mapAlg_eq_map]
-      exact hp.map _
-    exact (prod_multiset_X_sub_C_of_monic_of_roots_card_eq hmon
-      (IsAlgClosed.splits (mapAlg K L p)).natDegree_eq_card_roots.symm).symm
-  exact max_norm_root_eq_spectralValue spectralAlgNorm_isPowMul
-    isNonarchimedean_spectralNorm spectralAlgNorm_one p _ hmap
-
-/-- Over an ultrametric normed field, the spectral value of a product of two monic polynomials is
-the maximum of their spectral values. -/
-theorem Monic.spectralValue_mul {p q : K[X]} (hp : p.Monic) (hq : q.Monic) :
-    spectralValue (p * q) = max (spectralValue p) (spectralValue q) := by
-  classical
-  let L := AlgebraicClosure K
-  let f : AlgebraNorm K L := spectralAlgNorm K L
-  have hp0 : mapAlg K L p ≠ 0 := by
-    rw [mapAlg_eq_map]
-    exact (hp.map _).ne_zero
-  have hq0 : mapAlg K L q ≠ 0 := by
-    rw [mapAlg_eq_map]
-    exact (hq.map _).ne_zero
-  have hroots : (mapAlg K L (p * q)).roots = (mapAlg K L p).roots + (mapAlg K L q).roots := by
-    rw [map_mul, roots_mul (mul_ne_zero hp0 hq0)]
-  rw [← monic_spectralValue_eq_iSup_roots (hp.mul hq), ← monic_spectralValue_eq_iSup_roots hp,
-    ← monic_spectralValue_eq_iSup_roots hq]
-  have hbdd (r : K[X]) (hr : r.Monic) : BddAbove
-      (Set.range fun x : L ↦ if x ∈ (mapAlg K L r).roots then f x else 0) := by
-    refine ⟨spectralValue r, ?_⟩
-    rintro _ ⟨x, rfl⟩
-    dsimp only
-    split_ifs with hx
-    · have hxr : aeval x r = 0 := by
-        have h0 := (mem_roots (by rw [mapAlg_eq_map]; exact (hr.map _).ne_zero)).mp hx
-        rwa [mapAlg_eq_map, IsRoot.def, eval_map_algebraMap] at h0
-      exact norm_root_le_spectralValue spectralAlgNorm_isPowMul isNonarchimedean_spectralNorm hr hxr
-    · exact spectralValue_nonneg r
-  have hterm (x : L) :
-      (if x ∈ (mapAlg K L (p * q)).roots then f x else 0) =
-        max (if x ∈ (mapAlg K L p).roots then f x else 0)
-          (if x ∈ (mapAlg K L q).roots then f x else 0) := by
-    have hfx : 0 ≤ f x := apply_nonneg f x
-    simp only [hroots, Multiset.mem_add]
-    by_cases hxp : x ∈ (mapAlg K L p).roots <;> by_cases hxq : x ∈ (mapAlg K L q).roots <;>
-      simp [hxp, hxq, hfx]
-  refine le_antisymm (ciSup_le fun x ↦ ?_) (max_le (ciSup_le fun x ↦ ?_) (ciSup_le fun x ↦ ?_))
-  · rw [hterm x]
-    exact max_le_max (le_ciSup (hbdd p hp) x) (le_ciSup (hbdd q hq) x)
-  · exact (le_max_left _ _).trans ((hterm x).symm.trans_le (le_ciSup (hbdd (p * q) (hp.mul hq)) x))
-  · exact (le_max_right _ _).trans ((hterm x).symm.trans_le (le_ciSup (hbdd (p * q) (hp.mul hq)) x))
-
-/-- Over an ultrametric normed field, if a monic polynomial `p` divides a monic polynomial `q`,
-then `spectralValue p ≤ spectralValue q`. -/
-theorem Monic.spectralValue_le_of_dvd {p q : K[X]} (hp : p.Monic) (hq : q.Monic) (hdvd : p ∣ q) :
-    spectralValue p ≤ spectralValue q := by
-  obtain ⟨r, rfl⟩ := hdvd
-  have hr : r.Monic := hp.of_mul_monic_left hq
-  rw [hp.spectralValue_mul hr]
-  exact le_max_left _ _
-
-/-- Over an ultrametric normed field, a uniform upper bound `r ≥ 0` on the spectral values of monic
-polynomials bounds the spectral value of their product. -/
-theorem Monic.spectralValue_prod_le {ι : Type*} {s : Finset ι} {f : ι → K[X]}
-    (hf : ∀ i ∈ s, (f i).Monic) {r : ℝ} (hr : 0 ≤ r)
-    (hle : ∀ i ∈ s, spectralValue (f i) ≤ r) :
-    spectralValue (∏ i ∈ s, f i) ≤ r := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simpa using hr
-  | insert a s ha ih =>
-    have hfa : (f a).Monic := hf a (Finset.mem_insert_self a s)
-    have hfs : ∀ i ∈ s, (f i).Monic := fun i hi ↦ hf i (Finset.mem_insert_of_mem hi)
-    rw [Finset.prod_insert ha, hfa.spectralValue_mul (monic_prod_of_monic s f hfs)]
-    exact max_le (hle a (Finset.mem_insert_self a s))
-      (ih hfs fun i hi ↦ hle i (Finset.mem_insert_of_mem hi))
-
-end NormedField
-
-end Polynomial
 
 namespace TauCeti
 
@@ -349,7 +246,7 @@ theorem reducedSpectralAlgNorm_eq_spectralAlgNorm (K L : Type*) [NormedField K]
     [IsUltrametricDist K] [Field L] [Algebra K L] [FiniteDimensional K L] :
     reducedSpectralAlgNorm K L = spectralAlgNorm K L := by
   ext x
-  rfl
+  rw [reducedSpectralAlgNorm_def, spectralAlgNorm_def, spectralNorm]
 
 end ReducedAlgebra
 
@@ -396,20 +293,8 @@ variable {K E ι : Type*} [NormedField K] [IsUltrametricDist K]
 coordinate norm of any finite `K`-basis. -/
 theorem reducedSpectralAlgNorm_le_sum_mul_norm (b : Basis ι K E) (x : E) :
     TauCeti.reducedSpectralAlgNorm K E x ≤
-      (∑ i, TauCeti.reducedSpectralAlgNorm K E (b i)) * b.norm x := by
-  calc
-    TauCeti.reducedSpectralAlgNorm K E x =
-        TauCeti.reducedSpectralAlgNorm K E (∑ i, b.repr x i • b i) := by
-      rw [b.sum_repr]
-    _ ≤ ∑ i, TauCeti.reducedSpectralAlgNorm K E (b.repr x i • b i) :=
-      Finset.le_sum_of_subadditive _ (map_zero _).le (map_add_le_add _) _ _
-    _ = ∑ i, ‖b.repr x i‖ * TauCeti.reducedSpectralAlgNorm K E (b i) := by
-      simp only [map_smul_eq_mul]
-    _ ≤ ∑ i, b.norm x * TauCeti.reducedSpectralAlgNorm K E (b i) :=
-      Finset.sum_le_sum fun i _ ↦ mul_le_mul_of_nonneg_right (b.norm_repr_le_norm i)
-        (apply_nonneg _ _)
-    _ = (∑ i, TauCeti.reducedSpectralAlgNorm K E (b i)) * b.norm x := by
-      rw [← Finset.mul_sum, mul_comm]
+      (∑ i, TauCeti.reducedSpectralAlgNorm K E (b i)) * b.norm x :=
+  b.apply_le_sum_mul_norm (TauCeti.reducedSpectralAlgNorm K E) x
 
 end Module.Basis
 
@@ -457,6 +342,8 @@ theorem exists_bound_reducedSpectralAlgNorm (hK : IsWeaklyStable K)
     _ ≤ ∑ m : MaximalSpectrum E, |C m| * reducedSpectralAlgNorm K E x := by
       refine Finset.sum_le_sum fun m _ ↦ mul_le_mul_of_nonneg_left ?_ (abs_nonneg _)
       rw [reducedSpectralAlgNorm_eq_iSup_spectralNorm]
+      dsimp only [e]
+      rw [AlgEquiv.coe_restrictScalars, IsArtinianRing.equivPi_apply]
       exact spectralNorm_quotient_le_iSup x m
     _ = (∑ m : MaximalSpectrum E, |C m|) * reducedSpectralAlgNorm K E x := by
       rw [← Finset.sum_mul]
@@ -471,17 +358,9 @@ theorem exists_basis_reducedSpectralAlgNorm_comparison (hK : IsWeaklyStable K)
     {ι : Type*} [Fintype ι] [Nonempty ι] (b : Module.Basis ι K E) :
     ∃ C D : ℝ, 0 < C ∧ 0 < D ∧ ∀ x : E,
       b.norm x ≤ C * reducedSpectralAlgNorm K E x ∧
-        reducedSpectralAlgNorm K E x ≤ D * b.norm x := by
-  choose C hCpos hC using fun i ↦ hK.exists_bound_reducedSpectralAlgNorm (b.coord i)
-  let Ctot := ∑ i, C i
-  have hCtot : 0 < Ctot := Finset.sum_pos (fun i _ ↦ hCpos i) Finset.univ_nonempty
-  have : 0 ≤ ∑ i, reducedSpectralAlgNorm K E (b i) :=
-    Finset.sum_nonneg fun i _ ↦ apply_nonneg _ _
-  refine ⟨Ctot, 1 + ∑ i, reducedSpectralAlgNorm K E (b i), hCtot, by positivity, fun x ↦ ⟨?_, ?_⟩⟩
-  · refine Finset.sup'_le _ _ fun i _ ↦ (hC i x).trans ?_
-    refine mul_le_mul_of_nonneg_right ?_ (apply_nonneg _ _)
-    exact Finset.single_le_sum (fun j _ ↦ (hCpos j).le) (Finset.mem_univ i)
-  · exact (b.reducedSpectralAlgNorm_le_sum_mul_norm x).trans
-      (mul_le_mul_of_nonneg_right (by linarith) (b.norm_nonneg x))
+        reducedSpectralAlgNorm K E x ≤ D * b.norm x :=
+  b.exists_norm_comparison_of_forall_exists_bound (reducedSpectralAlgNorm K E) fun φ ↦
+    let ⟨C, _, hC⟩ := hK.exists_bound_reducedSpectralAlgNorm φ
+    ⟨C, hC⟩
 
 end TauCeti.IsWeaklyStable
