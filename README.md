@@ -141,10 +141,10 @@ managed by their owning automation and cannot be changed by comment commands, ex
 
 The author of a pull request may also post `self-tested` to add the `self-tested` label,
 or `-self-tested` to remove it. Comments from anyone else, and comments on issues, are
-ignored for this label. Adding it attests only the PR head that was current when the
-comment was posted, and only while the PR is open: after a later push, post a new comment.
-The existing self-tested assessment still checks trusted-team membership and source scope;
-reviews and staging tests still run.
+ignored for this label. The label is a persistent declaration that the author runs local verification: leave it in
+place through fix and rebase pushes, and remove it if verification fails or is incomplete.
+Admission checks trusted-team membership and source scope directly; no separate Actions
+receipt is required. Reviews on the current head and staging tests still run.
 
 ## Mathlib dependency
 

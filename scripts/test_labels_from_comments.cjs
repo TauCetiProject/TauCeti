@@ -196,37 +196,20 @@ test('self-tested authorization is enforced even when an ordinary label admits t
   assert.equal(issueResult.calls.length, 0);
 });
 
-test('a comment before the current head or a force push never attests the new head', async () => {
-  for (const event of [
-    { __typename: 'PullRequestCommit', commit: { oid: 'a'.repeat(40) } },
-    { __typename: 'HeadRefForcePushedEvent', afterCommit: { oid: 'a'.repeat(40) } },
+test('persistent self-tested comments do not read timeline history', async () => {
+  for (const options of [
+    { timelineHead: 'b'.repeat(40) },
+    { freshPull: { head: { sha: 'b'.repeat(40) } } },
   ]) {
-    const result = await execute('self-tested', [], undefined, { pages: [[
-      { __typename: 'IssueComment', id: 'COMMENT' }, event,
-    ]] });
-    assert.equal(result.calls.length, 0);
+    const result = await execute('self-tested', [], undefined, options);
+    assert.deepEqual([...result.labels], ['self-tested']);
+    assert.equal(result.pageReads, 0);
   }
 });
 
-test('head binding follows paginated timeline order and exact comment identity', async () => {
-  const options = { pages: [
-    [{ __typename: 'IssueComment', id: 'COMMENT' }],
-    [{ __typename: 'PullRequestCommit', commit: { oid: 'a'.repeat(40) } }],
-  ] };
-  const result = await execute('self-tested', [], undefined, options);
-  assert.deepEqual([...result.labels], ['self-tested']);
-  assert.equal(result.pageReads, 2);
-  const other = await execute('self-tested', [], undefined, { pages: [[
-    { __typename: 'PullRequestCommit', commit: { oid: 'a'.repeat(40) } },
-    { __typename: 'IssueComment', id: 'OTHER-COMMENT' },
-  ]] });
-  assert.equal(other.calls.length, 0);
-});
-
-test('closed PRs and racing heads cannot receive a self-tested attestation', async () => {
+test('closed PRs cannot receive a self-tested declaration', async () => {
   for (const options of [
-    { state: 'closed' }, { timelineHead: 'b'.repeat(40) },
-    { freshPull: { state: 'closed' } }, { freshPull: { head: { sha: 'b'.repeat(40) } } },
+    { state: 'closed' }, { freshPull: { state: 'closed' } },
   ]) {
     const result = await execute('self-tested', [], undefined, options);
     assert.equal(result.calls.length, 0);
