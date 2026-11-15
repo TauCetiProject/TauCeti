@@ -465,19 +465,19 @@ theorem continuous_energyDensity_of_equation_eq_zero {x : ℂ → EuclideanSpace
     (hp : ContDiff ℝ 1 (fun w ↦ x w 2)) (hq : ContDiff ℝ 1 (fun w ↦ x w 3))
     (hsol : ∀ z, equation x z = 0) :
     Continuous (energyDensity x) := by
-  have heq : energyDensity x = fun z ↦ (-((1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) / 8)) ^ 2 +
+  have heq : energyDensity x = fun z ↦ (-((1 - ‖sectionValue x z‖ ^ 2) / 8)) ^ 2 +
       2 * ‖covariantDerivative x z 1‖ ^ 2 + (1 - ‖sectionValue x z‖ ^ 2) ^ 2 := by
     funext z
     rw [energyDensity_apply, curvature_apply, curvature_eq_of_equation_eq_zero (hsol z),
+      ← sq_norm_sectionValue,
       covariantDerivative_eq_mul_of_equation_eq_zero (hp.differentiable one_ne_zero z)
         (hq.differentiable one_ne_zero z) (by simp [hsol z]) (by simp [hsol z]) I, norm_mul,
       norm_I, one_mul]
     ring
   rw [heq]
-  exact (((continuous_const.sub (continuous_const.mul ((hp.continuous.pow 2).add
-    (hq.continuous.pow 2)))).div_const 8).neg.pow 2 |>.add
-    (((continuous_covariantDerivative_one hb hp hq).norm.pow 2).const_mul 2)).add
-    ((continuous_const.sub ((contDiff_sectionValue hp hq).continuous.norm.pow 2)).pow 2)
+  have := (contDiff_sectionValue hp hq).continuous
+  have := continuous_covariantDerivative_one hb hp hq
+  fun_prop
 
 /-- The squared modulus of `d_a α (1) = 2 ((∂_s p - b₁ q) + i (∂_s q + b₁ p))`. -/
 theorem sq_norm_covariantDerivative_one {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
