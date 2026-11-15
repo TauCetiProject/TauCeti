@@ -44,6 +44,8 @@ of its base set a trivialization is an equivalence between the fibre and the mod
 * `Bundle.Trivialization.map_mem_sheet_iff`, `Bundle.Trivialization.map_symm_eq_of_mem_sheet`:
   a continuous map `g` over the base, between two trivialized maps with discrete target fibre,
   carries the sheets of `p` over a preconnected set onto sheets of `q`.
+* `Homeomorph.toTrivialization`: a global homeomorphism `Z ≃ₜ B × F` over `p : Z → B` as a global
+  trivialization with `baseSet = univ`.
 -/
 
 public section
@@ -361,3 +363,38 @@ theorem map_symm_eq_of_mem_sheet (hg : Continuous g) (hqg : ∀ e, q (g e) = p e
 end SheetComparison
 
 end Bundle.Trivialization
+
+namespace Homeomorph
+
+variable {Z B F : Type*} [TopologicalSpace Z] [TopologicalSpace B] [TopologicalSpace F]
+  {p : Z → B}
+
+/-- A global homeomorphism `e : Z ≃ₜ B × F` over a projection `p : Z → B` (in the sense that
+`(e z).1 = p z` for all `z`) as a global trivialization of `p` with `baseSet = univ`. -/
+def toTrivialization (e : Z ≃ₜ B × F) (he : ∀ z, (e z).1 = p z) : Trivialization F p where
+  __ := e.toOpenPartialHomeomorph
+  baseSet := univ
+  open_baseSet := isOpen_univ
+  source_eq := rfl
+  target_eq := univ_prod_univ.symm
+  proj_toFun z _ := he z
+
+/-- The base set of `Homeomorph.toTrivialization` is `Set.univ`. -/
+@[simp]
+theorem toTrivialization_baseSet (e : Z ≃ₜ B × F) (he : ∀ z, (e z).1 = p z) :
+    (e.toTrivialization he).baseSet = univ :=
+  (rfl)
+
+/-- `Homeomorph.toTrivialization` agrees pointwise with the underlying homeomorphism. -/
+@[simp]
+theorem toTrivialization_apply (e : Z ≃ₜ B × F) (he : ∀ z, (e z).1 = p z) (z : Z) :
+    e.toTrivialization he z = e z :=
+  (rfl)
+
+/-- The inverse of `Homeomorph.toTrivialization` agrees with `e.symm`. -/
+@[simp]
+theorem toTrivialization_symm_apply (e : Z ≃ₜ B × F) (he : ∀ z, (e z).1 = p z) (q : B × F) :
+    (e.toTrivialization he).toOpenPartialHomeomorph.symm q = e.symm q :=
+  (rfl)
+
+end Homeomorph

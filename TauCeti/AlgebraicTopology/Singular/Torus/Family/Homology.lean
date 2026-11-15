@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Module.ZLattice.Family.BaseChange.Fiber
 public import TauCeti.Algebra.Module.ZLattice.Family.Remark
 public import TauCeti.AlgebraicTopology.Singular.Torus.Family.Basic
 public import TauCeti.AlgebraicTopology.Singular.Torus.ZLattice
+public import TauCeti.RepresentationTheory.ExteriorPower
 
 /-!
 # Canonical homology markings of the fibers of a family of tori
@@ -20,8 +21,12 @@ space `E`, this file extends `TauCeti.torusFamilyMarking : H₁(T_y; ℤ) ≃ₗ
 * `TauCeti.torusFamilyHomologyMarking`: the canonical marking `Hₙ(T_y; ℤ) ≃ₗ[ℤ] ⋀[ℤ]^n Λ` of the
   fiber over `y`, agreeing with `TauCeti.torusFamilyMarking` in degree `1`
   (`TauCeti.oneEquiv_torusFamilyHomologyMarking`).
-* `TauCeti.torusFamilyHomologyMarking_map`: fiberwise naturality along continuous additive maps
-  `φ : E₀ →ₗ[ℤ] E₁` intertwining the period maps with `α : Λ₀ →ₗ[ℤ] Λ₁`.
+* `TauCeti.torusFamilyHomologyMarking_map_of_affine`, `TauCeti.torusFamilyHomologyMarking_map`:
+  fiberwise naturality along continuous affine maps `v ↦ φ v + β` whose linear part
+  `φ : E₀ →ₗ[ℤ] E₁` intertwines the period maps with `α : Λ₀ →ₗ[ℤ] Λ₁`.
+* `TauCeti.torusFamilyHomologyMarking_singularHomologyMap_affineMap`: equivariance of the degree-`n`
+  marking under an affine group or monoid action `TauCeti.torusFamilyAffineMap`, which acts through
+  `ρ.exteriorPower n`.
 * `TauCeti.torusFamilyHomologyMarking_baseChange`, `TauCeti.torusFamilyMarking_baseChange`:
   invariance under continuous base change `f : C(Z, Y)`.
 * `TauCeti.torusFamilyHomologyMarking_comp_equiv`, `TauCeti.torusFamilyMarking_comp_equiv`:
@@ -153,6 +158,94 @@ theorem oneEquiv_torusFamilyHomologyMarking
 
 end HomologyMarking
 
+/-- **Affine fiberwise naturality of `torusFamilyHomologyMarking`.** If a continuous map `g` between
+torus fibers sends `[y₀, v]` to `[y₁, φ v + β]` for a continuous additive map `φ : E₀ →ₗ[ℤ] E₁`
+intertwining `P₀ y₀` and `P₁ y₁` along `α : Λ₀ →ₗ[ℤ] Λ₁` and a translation vector `β : E₁`, then `g`
+acts on `Hₙ(-; ℤ)` via `exteriorPower.map n α`: the translation part `β` acts trivially on homology
+because the target torus is path-connected. -/
+theorem torusFamilyHomologyMarking_map_of_affine {Y₀ Y₁ E₀ E₁ : Type}
+    [TopologicalSpace Y₀] [TopologicalSpace Y₁]
+    [NormedAddCommGroup E₀] [NormedSpace ℝ E₀] [FiniteDimensional ℝ E₀]
+    [NormedAddCommGroup E₁] [NormedSpace ℝ E₁] [FiniteDimensional ℝ E₁]
+    {Λ₀ Λ₁ : Type*} [AddCommGroup Λ₀] [AddCommGroup Λ₁]
+    (P₀ : Y₀ → Λ₀ →ₗ[ℤ] E₀) [∀ y, DiscreteTopology (LinearMap.range (P₀ y))]
+    [∀ y, IsZLattice ℝ (LinearMap.range (P₀ y))]
+    (hcont₀ : ∀ l, Continuous fun y ↦ P₀ y l) (hinj₀ : ∀ y, Injective (P₀ y)) (y₀ : Y₀)
+    (P₁ : Y₁ → Λ₁ →ₗ[ℤ] E₁) [∀ y, DiscreteTopology (LinearMap.range (P₁ y))]
+    [∀ y, IsZLattice ℝ (LinearMap.range (P₁ y))]
+    (hcont₁ : ∀ l, Continuous fun y ↦ P₁ y l) (hinj₁ : ∀ y, Injective (P₁ y)) (y₁ : Y₁)
+    (α : Λ₀ →ₗ[ℤ] Λ₁) {φ : E₀ →ₗ[ℤ] E₁} (hφ : Continuous φ)
+    (hP : ∀ l, φ (P₀ y₀ l) = P₁ y₁ (α l)) (β : E₁)
+    (g : letI := periodAddAction P₀; letI := periodAddAction P₁
+      C({z : AddAction.orbitRel.Quotient Λ₀ (Y₀ × E₀) | torusFamilyProjection P₀ z = y₀},
+        {z : AddAction.orbitRel.Quotient Λ₁ (Y₁ × E₁) | torusFamilyProjection P₁ z = y₁}))
+    (hg : letI := periodAddAction P₀; letI := periodAddAction P₁
+      ∀ v : E₀,
+        (g ⟨Quotient.mk _ (y₀, v), torusFamilyProjection_mk P₀ (y₀, v)⟩ :
+          AddAction.orbitRel.Quotient Λ₁ (Y₁ × E₁)) = Quotient.mk _ (y₁, φ v + β))
+    (n : ℕ)
+    (c : letI := periodAddAction P₀
+      ((singularChains ℤ).obj (TopCat.of
+        {z : AddAction.orbitRel.Quotient Λ₀ (Y₀ × E₀) |
+          torusFamilyProjection P₀ z = y₀})).homology n) :
+    letI := periodAddAction P₀; letI := periodAddAction P₁
+    torusFamilyHomologyMarking P₁ hcont₁ hinj₁ y₁ n (ContinuousMap.singularHomologyMap ℤ n g c) =
+      exteriorPower.map n α (torusFamilyHomologyMarking P₀ hcont₀ hinj₀ y₀ n c) := by
+  let _ := periodAddAction P₀; let _ := periodAddAction P₁
+  have hφL : LinearMap.range (P₀ y₀) ≤ (LinearMap.range (P₁ y₁)).comap φ := by
+    rintro _ ⟨l, rfl⟩
+    exact ⟨α l, (hP l).symm⟩
+  let e₀s : C({z : AddAction.orbitRel.Quotient Λ₀ (Y₀ × E₀) | torusFamilyProjection P₀ z = y₀},
+      AddAction.orbitRel.Quotient (LinearMap.range (P₀ y₀)) E₀) :=
+    (torusFamilyFiberHomeomorph P₀ y₀ hcont₀).symm
+  let e₁s : C({z : AddAction.orbitRel.Quotient Λ₁ (Y₁ × E₁) | torusFamilyProjection P₁ z = y₁},
+      AddAction.orbitRel.Quotient (LinearMap.range (P₁ y₁)) E₁) :=
+    (torusFamilyFiberHomeomorph P₁ y₁ hcont₁).symm
+  let b₁ : AddAction.orbitRel.Quotient (LinearMap.range (P₁ y₁)) E₁ := Quotient.mk _ β
+  have hcomp : e₁s.comp g =
+      (ContinuousMap.addRight b₁).comp
+        ((ContinuousMap.mk
+          ((LinearMap.range (P₀ y₀)).orbitRelQuotientMap (LinearMap.range (P₁ y₁)) φ hφL)
+          ((LinearMap.range (P₀ y₀)).continuous_orbitRelQuotientMap (LinearMap.range (P₁ y₁))
+            hφL hφ)).comp e₀s) := by
+    ext x
+    obtain ⟨w, rfl⟩ := (torusFamilyFiberHomeomorph P₀ y₀ hcont₀).surjective x
+    induction w using Quotient.inductionOn with | h v =>
+    simp only [ContinuousMap.comp_apply, ContinuousMap.coe_mk, ContinuousMap.coe_addRight,
+      e₀s, e₁s, b₁, Homeomorph.symm_apply_apply, Submodule.orbitRelQuotientMap_mk,
+      ← Submodule.orbitRelQuotient_mk_add]
+    refine (Homeomorph.symm_apply_eq (torusFamilyFiberHomeomorph P₁ y₁ hcont₁)).mpr ?_
+    apply Subtype.ext
+    rw [torusFamilyFiberHomeomorph_mk, coe_torusFamilyFiberHomeomorph, torusFamilyFiberMap_mk]
+    exact hg v
+  have hhom :
+      (LinearMap.range (P₁ y₁)).orbitRelQuotientHomologyEquiv n
+          (ContinuousMap.singularHomologyMap ℤ n e₁s
+            (ContinuousMap.singularHomologyMap ℤ n g c)) =
+        exteriorPower.map n (φ.restrict hφL)
+          ((LinearMap.range (P₀ y₀)).orbitRelQuotientHomologyEquiv n
+            (ContinuousMap.singularHomologyMap ℤ n e₀s c)) := by
+    rw [← ContinuousMap.singularHomologyMap_comp, hcomp, ContinuousMap.singularHomologyMap_comp,
+      ContinuousMap.singularHomologyMap_addRight, ContinuousMap.singularHomologyMap_comp,
+      Submodule.orbitRelQuotientHomologyEquiv_singularHomologyMap _ _ hφ hφL]
+  have hlin :
+      (LinearEquiv.ofInjective (P₁ y₁) (hinj₁ y₁)).symm.toLinearMap ∘ₗ φ.restrict hφL =
+        α ∘ₗ (LinearEquiv.ofInjective (P₀ y₀) (hinj₀ y₀)).symm.toLinearMap := by
+    refine LinearMap.ext fun x ↦ hinj₁ y₁ ?_
+    obtain ⟨l, rfl⟩ := (LinearEquiv.ofInjective (P₀ y₀) (hinj₀ y₀)).surjective x
+    simp [hP]
+  have hexterior :
+      ((LinearEquiv.ofInjective (P₁ y₁) (hinj₁ y₁)).symm.exteriorPower n).toLinearMap ∘ₗ
+          exteriorPower.map n (φ.restrict hφL) =
+        exteriorPower.map n α ∘ₗ
+          ((LinearEquiv.ofInjective (P₀ y₀) (hinj₀ y₀)).symm.exteriorPower n).toLinearMap := by
+    simp only [LinearEquiv.exteriorPower_toLinearMap, ← exteriorPower.map_comp, hlin]
+  have happ := LinearMap.congr_fun hexterior
+    ((LinearMap.range (P₀ y₀)).orbitRelQuotientHomologyEquiv n
+      (ContinuousMap.singularHomologyMap ℤ n e₀s c))
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe] at happ
+  rw [torusFamilyHomologyMarking_apply, torusFamilyHomologyMarking_apply, hhom, happ]
+
 /-- **Fiberwise naturality of `torusFamilyHomologyMarking`.** If a continuous map `g` between torus
 fibers sends `[y₀, v]` to `[y₁, φ v]` for a continuous additive map `φ : E₀ →ₗ[ℤ] E₁` intertwining
 `P₀ y₀` and `P₁ y₁` along `α : Λ₀ →ₗ[ℤ] Λ₁`, then `g` acts on `Hₙ(-; ℤ)` via
@@ -184,57 +277,51 @@ theorem torusFamilyHomologyMarking_map {Y₀ Y₁ E₀ E₁ : Type}
           torusFamilyProjection P₀ z = y₀})).homology n) :
     letI := periodAddAction P₀; letI := periodAddAction P₁
     torusFamilyHomologyMarking P₁ hcont₁ hinj₁ y₁ n (ContinuousMap.singularHomologyMap ℤ n g c) =
-      exteriorPower.map n α (torusFamilyHomologyMarking P₀ hcont₀ hinj₀ y₀ n c) := by
-  let _ := periodAddAction P₀; let _ := periodAddAction P₁
-  have hφL : LinearMap.range (P₀ y₀) ≤ (LinearMap.range (P₁ y₁)).comap φ := by
-    rintro _ ⟨l, rfl⟩
-    exact ⟨α l, (hP l).symm⟩
-  let e₀s : C({z : AddAction.orbitRel.Quotient Λ₀ (Y₀ × E₀) | torusFamilyProjection P₀ z = y₀},
-      AddAction.orbitRel.Quotient (LinearMap.range (P₀ y₀)) E₀) :=
-    (torusFamilyFiberHomeomorph P₀ y₀ hcont₀).symm
-  let e₁s : C({z : AddAction.orbitRel.Quotient Λ₁ (Y₁ × E₁) | torusFamilyProjection P₁ z = y₁},
-      AddAction.orbitRel.Quotient (LinearMap.range (P₁ y₁)) E₁) :=
-    (torusFamilyFiberHomeomorph P₁ y₁ hcont₁).symm
-  have hcomp : e₁s.comp g =
-      (ContinuousMap.mk
-        ((LinearMap.range (P₀ y₀)).orbitRelQuotientMap (LinearMap.range (P₁ y₁)) φ hφL)
-        ((LinearMap.range (P₀ y₀)).continuous_orbitRelQuotientMap (LinearMap.range (P₁ y₁))
-          hφL hφ)).comp e₀s := by
-    ext x
-    obtain ⟨w, rfl⟩ := (torusFamilyFiberHomeomorph P₀ y₀ hcont₀).surjective x
-    induction w using Quotient.inductionOn with | h v =>
-    simp only [ContinuousMap.comp_apply, ContinuousMap.coe_mk, e₀s, e₁s,
-      Homeomorph.symm_apply_apply, Submodule.orbitRelQuotientMap_mk]
-    refine (Homeomorph.symm_apply_eq (torusFamilyFiberHomeomorph P₁ y₁ hcont₁)).mpr ?_
-    apply Subtype.ext
-    rw [torusFamilyFiberHomeomorph_mk, coe_torusFamilyFiberHomeomorph, torusFamilyFiberMap_mk]
-    exact hg v
-  have hhom :
-      (LinearMap.range (P₁ y₁)).orbitRelQuotientHomologyEquiv n
-          (ContinuousMap.singularHomologyMap ℤ n e₁s
-            (ContinuousMap.singularHomologyMap ℤ n g c)) =
-        exteriorPower.map n (φ.restrict hφL)
-          ((LinearMap.range (P₀ y₀)).orbitRelQuotientHomologyEquiv n
-            (ContinuousMap.singularHomologyMap ℤ n e₀s c)) := by
-    rw [← ContinuousMap.singularHomologyMap_comp, hcomp, ContinuousMap.singularHomologyMap_comp,
-      Submodule.orbitRelQuotientHomologyEquiv_singularHomologyMap _ _ hφ hφL]
-  have hlin :
-      (LinearEquiv.ofInjective (P₁ y₁) (hinj₁ y₁)).symm.toLinearMap ∘ₗ φ.restrict hφL =
-        α ∘ₗ (LinearEquiv.ofInjective (P₀ y₀) (hinj₀ y₀)).symm.toLinearMap := by
-    refine LinearMap.ext fun x ↦ hinj₁ y₁ ?_
-    obtain ⟨l, rfl⟩ := (LinearEquiv.ofInjective (P₀ y₀) (hinj₀ y₀)).surjective x
-    simp [hP]
-  have hexterior :
-      ((LinearEquiv.ofInjective (P₁ y₁) (hinj₁ y₁)).symm.exteriorPower n).toLinearMap ∘ₗ
-          exteriorPower.map n (φ.restrict hφL) =
-        exteriorPower.map n α ∘ₗ
-          ((LinearEquiv.ofInjective (P₀ y₀) (hinj₀ y₀)).symm.exteriorPower n).toLinearMap := by
-    simp only [LinearEquiv.exteriorPower_toLinearMap, ← exteriorPower.map_comp, hlin]
-  have happ := LinearMap.congr_fun hexterior
-    ((LinearMap.range (P₀ y₀)).orbitRelQuotientHomologyEquiv n
-      (ContinuousMap.singularHomologyMap ℤ n e₀s c))
-  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe] at happ
-  rw [torusFamilyHomologyMarking_apply, torusFamilyHomologyMarking_apply, hhom, happ]
+      exteriorPower.map n α (torusFamilyHomologyMarking P₀ hcont₀ hinj₀ y₀ n c) :=
+  torusFamilyHomologyMarking_map_of_affine P₀ hcont₀ hinj₀ y₀ P₁ hcont₁ hinj₁ y₁ α hφ hP 0 g
+    (fun v ↦ by simpa only [add_zero] using hg v) n c
+
+/-- **Equivariance of `torusFamilyHomologyMarking` under an affine action.** Let `g` act on the
+family of tori by the affine map `[y, v] ↦ R g y v +ᵥ b g y` (`TauCeti.torusFamilyAffineMap`), with
+`R g y` continuous, and let `φ` be its restriction to a continuous map from the fiber over `y` to
+the fiber over `y'` (so `y' = g • y`). Then `φ` acts on `n`-th integral homology markings by
+`ρ.exteriorPower n g`. -/
+theorem torusFamilyHomologyMarking_singularHomologyMap_affineMap
+    {Y E : Type} [TopologicalSpace Y] [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] {Λ : Type*} [AddCommGroup Λ]
+    (P : Y → Λ →ₗ[ℤ] E) [∀ y, DiscreteTopology (LinearMap.range (P y))]
+    [∀ y, IsZLattice ℝ (LinearMap.range (P y))]
+    (hcont : ∀ l, Continuous fun y ↦ P y l) (hinj : ∀ y, Injective (P y))
+    {Γ : Type*} [Monoid Γ] [MulAction Γ Y] (R : Γ → Y → E →+ E)
+    (ρ : Representation ℤ Γ Λ) (hP : ∀ (g : Γ) (y : Y) (l : Λ), P (g • y) (ρ g l) = R g y (P y l))
+    (b : Γ → Y → letI := periodAddAction P; AddAction.orbitRel.Quotient Λ (Y × E))
+    (hb : ∀ (g : Γ) (y : Y), torusFamilyProjection P (b g y) = g • y)
+    {g : Γ} {y y' : Y}
+    (φ : letI := periodAddAction P
+      C({z : AddAction.orbitRel.Quotient Λ (Y × E) | torusFamilyProjection P z = y},
+        {z : AddAction.orbitRel.Quotient Λ (Y × E) | torusFamilyProjection P z = y'}))
+    (hφ : letI := periodAddAction P
+      ∀ x : {z : AddAction.orbitRel.Quotient Λ (Y × E) | torusFamilyProjection P z = y},
+        (φ x : AddAction.orbitRel.Quotient Λ (Y × E)) = torusFamilyAffineMap R P ρ hP b hb g x)
+    (hR : Continuous (R g y)) (n : ℕ)
+    (c : letI := periodAddAction P
+      ((singularChains ℤ).obj (TopCat.of
+        {z : AddAction.orbitRel.Quotient Λ (Y × E) | torusFamilyProjection P z = y})).homology n) :
+    letI := periodAddAction P
+    torusFamilyHomologyMarking P hcont hinj y' n (ContinuousMap.singularHomologyMap ℤ n φ c) =
+      ρ.exteriorPower n g (torusFamilyHomologyMarking P hcont hinj y n c) := by
+  let _ := periodAddAction P
+  have hy' : y' = g • y := by
+    have : torusFamilyProjection P
+        (φ ⟨Quotient.mk _ (y, 0), torusFamilyProjection_mk P (y, 0)⟩ : _) = y' := (φ _).2
+    rwa [hφ, torusFamilyProjection_affineMap, torusFamilyProjection_mk, eq_comm] at this
+  subst hy'
+  obtain ⟨⟨y₁, β⟩, hβ⟩ := Quotient.exists_rep (b g y)
+  obtain rfl : y₁ = g • y := by simpa [hb] using congrArg (torusFamilyProjection P) hβ
+  rw [Representation.exteriorPower_apply]
+  exact torusFamilyHomologyMarking_map_of_affine P hcont hinj y P hcont hinj (g • y) (ρ g)
+    (φ := (R g y).toIntLinearMap) hR (fun l ↦ (hP g y l).symm) β φ
+    (fun v ↦ by rw [hφ, torusFamilyAffineMap_mk_of_eq R P ρ hP b hb hβ.symm]; rfl) n c
 
 /-! ### Fiberwise naturality under base change and lattice re-marking -/
 

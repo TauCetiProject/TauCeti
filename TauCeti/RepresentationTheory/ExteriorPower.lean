@@ -18,7 +18,9 @@ exterior powers recover the trivial and original representations.
 
 ## Main definitions
 
-* `Representation.exteriorPower` is the induced action on `⋀[R]^d M`.
+* `Representation.exteriorPower` is the induced action on `⋀[R]^d M`, commuting with restriction of
+  scalars along a monoid homomorphism (`Representation.exteriorPower_comp`,
+  `Representation.exteriorPowerCompEquiv`).
 * `IntertwiningMap.exteriorPower` is the induced map between exterior-power representations.
 * `Representation.Equiv.exteriorPower` is the induced equivalence.
 
@@ -90,6 +92,41 @@ with the module itself. -/
 @[simp]
 theorem exteriorPowerOneEquiv_toLinearEquiv (ρ : Representation R G M) :
     ρ.exteriorPowerOneEquiv.toLinearEquiv = _root_.exteriorPower.oneEquiv R M :=
+  (rfl)
+
+/-- Applying `Representation.exteriorPowerOneEquiv` evaluates `exteriorPower.oneEquiv`. -/
+@[simp]
+theorem exteriorPowerOneEquiv_apply (ρ : Representation R G M) (x : ⋀[R]^1 M) :
+    ρ.exteriorPowerOneEquiv x = _root_.exteriorPower.oneEquiv R M x :=
+  (rfl)
+
+/-- Restricting a representation along a monoid homomorphism commutes with taking exterior
+powers. -/
+@[simp]
+theorem exteriorPower_comp {H : Type*} [Monoid H] (ρ : Representation R G M) (f : H →* G)
+    (d : ℕ) : Representation.exteriorPower (ρ.comp f) d = (ρ.exteriorPower d).comp f := by
+  ext
+  simp
+
+/-- The `H`-equivariant identity equivalence between the `d`th exterior power of `ρ.comp f` and the
+restriction of `ρ.exteriorPower d` along `f : H →* G`. -/
+noncomputable def exteriorPowerCompEquiv {H : Type*} [Monoid H] (ρ : Representation R G M)
+    (f : H →* G) (d : ℕ) :
+    (Representation.exteriorPower (ρ.comp f) d).Equiv ((ρ.exteriorPower d).comp f) :=
+  .mk (.refl R (⋀[R]^d M)) fun _ ↦ by ext; simp
+
+/-- The underlying linear equivalence of `Representation.exteriorPowerCompEquiv` is the identity. -/
+@[simp]
+theorem exteriorPowerCompEquiv_toLinearEquiv {H : Type*} [Monoid H] (ρ : Representation R G M)
+    (f : H →* G) (d : ℕ) :
+    (ρ.exteriorPowerCompEquiv f d).toLinearEquiv = LinearEquiv.refl R (⋀[R]^d M) :=
+  (rfl)
+
+/-- `Representation.exteriorPowerCompEquiv` is pointwise the identity on `⋀[R]^d M`. -/
+@[simp]
+theorem exteriorPowerCompEquiv_apply {H : Type*} [Monoid H] (ρ : Representation R G M)
+    (f : H →* G) (d : ℕ) (x : ⋀[R]^d M) :
+    ρ.exteriorPowerCompEquiv f d x = x :=
   (rfl)
 
 end CommRing
