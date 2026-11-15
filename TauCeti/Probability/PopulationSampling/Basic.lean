@@ -28,8 +28,6 @@ respectively on the injective ones (`TauCeti.Probability.sampleWithReplacement`,
 * `samplePopulation` — sample a random population along an independent random selection;
 * `samplePopulation_map` — measurable observations commute with sampling;
 * `samplePopulation_dirac_comp` — its deterministic-population composition form;
-* `samplePopulation_map_reindex`, `samplePopulation_dirac_comp_reindex` — reindexing a population
-  before sampling pushes the selection law forward;
 * `samplePopulation_assoc` — iterated population sampling composes selection laws via
   `samplePopulation`;
 * `samplePopulation_apply`, `samplePopulation_apply_population` — its evaluation by
@@ -178,36 +176,6 @@ theorem samplePopulation_apply_population {σ : Measure (ι → κ)} [SFinite σ
     Measure.prod_apply_symm (measurable_reindexPopulation hA)]
   -- The section of the joint preimage at `x` is, by definition, the reindexed preimage.
   rfl
-
-/-- Reindexing a random population before sampling is the same as pushing the selection law
-forward along that reindexing map. Neither normalization nor s-finiteness is required of the
-selection law. -/
-theorem samplePopulation_map_reindex {κ' : Type*} [MeasurableSpace κ'] [Countable κ']
-    [MeasurableSingletonClass κ'] (σ : Measure (ι → κ)) (ρ : Measure (κ' → α)) [SFinite ρ]
-    (g : κ → κ') :
-    samplePopulation σ (ρ.map fun x j => x (g j)) =
-      samplePopulation (σ.map fun k i => g (k i)) ρ := by
-  have hpop : Measurable (fun x : κ' → α => fun j : κ => x (g j)) := by fun_prop
-  have hsel : Measurable (fun k : ι → κ => fun i : ι => g (k i)) :=
-    Measurable.of_eval fun i => (measurable_of_countable g).comp (measurable_pi_apply i)
-  apply Measure.ext fun A hA => ?_
-  have hmeas : Measurable (fun k' : ι → κ' => ρ ((fun x : κ' → α => fun i => x (k' i)) ⁻¹' A)) :=
-    measurable_measure_prodMk_left (measurable_reindexPopulation hA)
-  rw [samplePopulation_apply hA, samplePopulation_apply hA, lintegral_map hmeas hsel]
-  refine lintegral_congr fun k => ?_
-  have hk : Measurable (fun y : κ → α => fun i : ι => y (k i)) := by fun_prop
-  rw [Measure.map_apply hpop (hk hA)]
-  rfl
-
-/-- Sampling a deterministic population reindexed along `g` is the same as sampling the original
-population along the pushed-forward selection law. -/
-theorem samplePopulation_dirac_comp_reindex {κ' : Type*} [MeasurableSpace κ'] [Countable κ']
-    [MeasurableSingletonClass κ'] (σ : Measure (ι → κ)) (x : κ' → α) (g : κ → κ') :
-    samplePopulation σ (Measure.dirac (x ∘ g)) =
-      samplePopulation (σ.map fun k i => g (k i)) (Measure.dirac x) := by
-  have hpop : Measurable (fun y : κ' → α => fun j : κ => y (g j)) := by fun_prop
-  simpa only [Measure.map_dirac' hpop, Function.comp_def] using
-    samplePopulation_map_reindex σ (Measure.dirac x) g
 
 /-- Iterated population sampling is associative: sampling along `σ` and then independently along
 `τ` is sampling once along the composite selection law `samplePopulation τ σ`. -/

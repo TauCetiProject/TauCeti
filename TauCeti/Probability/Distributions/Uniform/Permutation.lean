@@ -104,7 +104,9 @@ theorem map_uniformOn_perm {ι α : Type*} [Finite α]
     (TauCeti.Probability.map_smul_uniformOn_univ (G := Equiv.Perm α) e)
   rw [Measure.map_map (measurable_of_countable _) (measurable_of_countable _),
     hcoe.map_uniformOn] at h
-  exact h
+  convert h using 2
+  ext σ i
+  simp [Equiv.Perm.smul_def]
 
 end Function.Embedding
 
@@ -116,8 +118,8 @@ theorem map_coe_uniformOn_perm {α : Type*} [Finite α]
     [MeasurableSpace (Equiv.Perm α)] [MeasurableSingletonClass (Equiv.Perm α)]
     [MeasurableSpace α] [MeasurableSingletonClass α] :
     (uniformOn (Set.univ : Set (Equiv.Perm α))).map (fun σ : Equiv.Perm α ↦ (σ : α → α)) =
-      uniformOn {f : α → α | Function.Injective f} :=
-  (Function.Embedding.refl α).map_uniformOn_perm
+      uniformOn {f : α → α | Function.Injective f} := by
+  simpa only [Function.Embedding.refl_apply] using (Function.Embedding.refl α).map_uniformOn_perm
 
 end TauCeti.Probability
 

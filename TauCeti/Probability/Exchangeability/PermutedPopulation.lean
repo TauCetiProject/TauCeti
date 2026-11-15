@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Exchangeability.FiniteDeFinetti
+public import TauCeti.Probability.Exchangeability.Basic
 public import TauCeti.Probability.PopulationSampling.Distinct
 public import TauCeti.Probability.PopulationSampling.Reindex
 import Mathlib.Data.Fin.Embedding
@@ -82,7 +82,7 @@ theorem permutedPopulation_of_lt (x : Fin n → α) (d : α) {i : ℕ} (hi : i <
 
 /-- From `n` onwards, `permutedPopulation` takes the constant padding value `d`. -/
 @[simp]
-theorem permutedPopulation_of_le (x : Fin n → α) (d : α) {i : ℕ} (hi : n ≤ i)
+theorem permutedPopulation_of_ge (x : Fin n → α) (d : α) {i : ℕ} (hi : n ≤ i)
     (σ : Equiv.Perm (Fin n)) :
     permutedPopulation x d i σ = d :=
   dite_eq_right (Nat.not_lt.mpr hi)
