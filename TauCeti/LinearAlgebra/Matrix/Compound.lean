@@ -13,6 +13,7 @@ public import TauCeti.Order.Hom.PowersetCard
 import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.Plucker
 import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
+import TauCeti.Order.Hom.Basic
 
 /-!
 # Compound matrices and higher adjugates
@@ -488,15 +489,11 @@ theorem higherAdjugate_submatrix_orderIso {ι' : Type*} [LinearOrder ι'] [Finty
   have hlhs :=
     congr_fun (congr_fun (compound_submatrix_orderEmbedding e.toOrderEmbedding
       e.toOrderEmbedding A (Fintype.card ι' - r)) (compl hk' S)) (compl hk' T)
+  simp only [OrderIso.coe_toOrderEmbedding, OrderIso.toOrderEmbedding_toEmbedding,
+    Set.powersetCard.map_compl_equiv hk' e.toEquiv, submatrix_apply] at hlhs
   rw [higherAdjugate_apply_of_add_eq (A.submatrix e e) hk' T S, submatrix_apply,
-    higherAdjugate_apply_of_add_eq A hk]
-  simpa only [OrderIso.coe_toOrderEmbedding, submatrix_apply,
-    show e.toOrderEmbedding.toEmbedding = e.toEquiv.toEmbedding from rfl,
-    show e.toEmbedding = e.toEquiv.toEmbedding from rfl,
-    Set.powersetCard.map_compl_equiv hk' e.toEquiv,
-    ← show e.toEmbedding = e.toEquiv.toEmbedding from rfl,
-    Set.powersetCard.sign_map_orderIso] using
-    congrArg ((Set.powersetCard.sign S * Set.powersetCard.sign T) • ·) hlhs
+    higherAdjugate_apply_of_add_eq A hk, Set.powersetCard.sign_map_orderIso,
+    Set.powersetCard.sign_map_orderIso, hlhs]
 
 /-- Scaling `A` by `c` scales `A.higherAdjugate r` by `c ^ (Fintype.card ι - r)`. -/
 @[simp]
@@ -634,18 +631,6 @@ example (A : Matrix (Fin 3) (Fin 3) R) : A.higherAdjugate 3 = 1 :=
 example (r : ℕ) (_hr : r ≤ 3) : (1 : Matrix (Fin 3) (Fin 3) R).higherAdjugate r = 1 :=
   higherAdjugate_one r
 
-/-- For a square matrix `A` on a finite linearly ordered index type `ι`, `A.det` multiplies every
-element of `⋀[R]^r (ι → R)` into the range of `exteriorPower.map r A.toLin'`. -/
-theorem det_smul_mem_range_exteriorPower_map_toLin' (A : Matrix ι ι R) (r : ℕ)
-    (z : ⋀[R]^r (ι → R)) :
-    A.det • z ∈ LinearMap.range (exteriorPower.map r A.toLin') := by
-  let br := (Pi.basisFun R ι).exteriorPower r
-  refine ⟨Matrix.toLin br br (A.higherAdjugate r) z, ?_⟩
-  have h := congr(Matrix.toLin br br $(A.compound_mul_higherAdjugate r) z)
-  rw [Matrix.toLin_mul br br br, ← A.toMatrix_exteriorPower_map_toLin' r, Matrix.toLin_toMatrix,
-    map_smul, Matrix.toLin_one] at h
-  simpa using h
-
 end LaplaceAndHigherAdjugate
 
 end Matrix
@@ -673,3 +658,14 @@ theorem det_smul_mem_range_exteriorPower_map {R F : Type*} [CommRing R] [AddComm
     simpa using h
 
 end LinearMap
+
+namespace Matrix
+
+/-- For a square matrix `A` on a finite index type `ι`, `A.det` multiplies every element of
+`⋀[R]^r (ι → R)` into the range of `exteriorPower.map r A.toLin'`. -/
+theorem det_smul_mem_range_exteriorPower_map_toLin' {R ι : Type*} [CommRing R] [Fintype ι]
+    [DecidableEq ι] (A : Matrix ι ι R) (r : ℕ) (z : ⋀[R]^r (ι → R)) :
+    A.det • z ∈ LinearMap.range (exteriorPower.map r A.toLin') := by
+  simpa [LinearMap.det_toLin'] using LinearMap.det_smul_mem_range_exteriorPower_map A.toLin' r z
+
+end Matrix

@@ -37,10 +37,10 @@ of `⋀[R]^r N`.
 * `Submodule.minorsIdeal_finrank_le_colon_exteriorPower`: the maximal minors of a submodule `N` of
   a finite free module `F` multiply `⋀[R]^r F` into
   `LinearMap.range (exteriorPower.map r N.subtype)`.
-* `TauCeti.smul_mem_range_exteriorPower_map_of_mem_fittingIdeal`: elements of
+* `Submodule.smul_mem_range_exteriorPower_map_of_mem_fittingIdeal`: elements of
   `TauCeti.fittingIdeal R (M ⧸ N) 0` multiply `⋀[R]^r M` into
   `LinearMap.range (exteriorPower.map r N.subtype)`.
-* `TauCeti.fittingIdeal_le_annihilator_exteriorPower_cokernel`: `Fitt₀(M ⧸ N)` annihilates
+* `Submodule.fittingIdeal_le_annihilator_exteriorPower_cokernel`: `Fitt₀(M ⧸ N)` annihilates
   `↥(⋀[R]^r M) ⧸ LinearMap.range (exteriorPower.map r N.subtype)` (Dasgupta–Kakde, Lemma 3.9).
 * `LinearMap.fittingIdeal_coker_le_annihilator_exteriorPower_coker`: the linear-map form for any
   `f : P →ₗ[R] M` into a finite `R`-module `M`.
@@ -85,27 +85,25 @@ theorem minorsIdeal_finrank_le_colon_exteriorPower {R F : Type*} [CommRing R] [A
   rw [← LinearMap.comp_apply, ← exteriorPower.map_comp, hdet]
   exact hw
 
-end Submodule
-
-namespace TauCeti
+section Finite
 
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Module.Finite R M]
 
 /-- Every element of `TauCeti.fittingIdeal R (M ⧸ N) 0` multiplies every element of `⋀[R]^r M`
 into `LinearMap.range (exteriorPower.map r N.subtype)`. -/
 theorem smul_mem_range_exteriorPower_map_of_mem_fittingIdeal (N : Submodule R M) (r : ℕ)
-    {a : R} (ha : a ∈ fittingIdeal R (M ⧸ N) 0) (z : ⋀[R]^r M) :
+    {a : R} (ha : a ∈ TauCeti.fittingIdeal R (M ⧸ N) 0) (z : ⋀[R]^r M) :
     a • z ∈ LinearMap.range (exteriorPower.map r N.subtype) := by
   obtain ⟨n, π, hπ⟩ := Module.Finite.exists_fin' R M
-  have hsurj : Function.Surjective (N.mkQ ∘ₗ π) := (Submodule.mkQ_surjective N).comp hπ
+  have hsurj : Function.Surjective (N.mkQ ∘ₗ π) := (mkQ_surjective N).comp hπ
   have hker : LinearMap.ker (N.mkQ ∘ₗ π) = N.comap π := by
-    rw [LinearMap.ker_comp, Submodule.ker_mkQ]
-  rw [fittingIdeal_eq_minorsIdeal_ker hsurj, Nat.sub_zero, hker] at ha
+    rw [LinearMap.ker_comp, ker_mkQ]
+  rw [TauCeti.fittingIdeal_eq_minorsIdeal_ker hsurj, Nat.sub_zero, hker] at ha
   let K : Submodule R (Fin n → R) := N.comap π
   obtain ⟨y, rfl⟩ := exteriorPower.map_surjective hπ z
   obtain ⟨u, hu⟩ := mem_colon.1 (K.minorsIdeal_finrank_le_colon_exteriorPower r ha) y trivial
   refine ⟨exteriorPower.map r
-    ((π ∘ₗ K.subtype).codRestrict N fun x ↦ Submodule.mem_comap.mp x.prop) u, ?_⟩
+    ((π ∘ₗ K.subtype).codRestrict N fun x ↦ mem_comap.mp x.prop) u, ?_⟩
   rw [← LinearMap.comp_apply, ← exteriorPower.map_comp, LinearMap.subtype_comp_codRestrict,
     exteriorPower.map_comp, LinearMap.comp_apply, hu, map_smul]
 
@@ -113,16 +111,15 @@ theorem smul_mem_range_exteriorPower_map_of_mem_fittingIdeal (N : Submodule R M)
 finite `R`-module `M`, a submodule `N ≤ M`, and any `r : ℕ`, the zeroth Fitting ideal of `M ⧸ N`
 annihilates the cokernel of `exteriorPower.map r N.subtype : ⋀[R]^r N →ₗ[R] ⋀[R]^r M`. -/
 theorem fittingIdeal_le_annihilator_exteriorPower_cokernel (N : Submodule R M) (r : ℕ) :
-    fittingIdeal R (M ⧸ N) 0 ≤
+    TauCeti.fittingIdeal R (M ⧸ N) 0 ≤
       Module.annihilator R (↥(⋀[R]^r M) ⧸ LinearMap.range (exteriorPower.map r N.subtype)) := by
-  intro a ha
-  refine Module.mem_annihilator.2 fun q ↦ ?_
-  induction q using Submodule.Quotient.induction_on with
-  | H z =>
-    rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero]
-    exact smul_mem_range_exteriorPower_map_of_mem_fittingIdeal N r ha z
+  rw [annihilator_quotient]
+  exact fun _ ha ↦ mem_colon.2 fun z _ ↦
+    N.smul_mem_range_exteriorPower_map_of_mem_fittingIdeal r ha z
 
-end TauCeti
+end Finite
+
+end Submodule
 
 namespace LinearMap
 
@@ -142,7 +139,7 @@ theorem fittingIdeal_coker_le_annihilator_exteriorPower_coker {R P M : Type*} [C
       LinearMap.range_comp_of_range_eq_top _
         (LinearMap.range_eq_top.mpr (exteriorPower.map_surjective f.surjective_rangeRestrict))]
   rw [hrange]
-  exact TauCeti.fittingIdeal_le_annihilator_exteriorPower_cokernel (LinearMap.range f) r
+  exact (LinearMap.range f).fittingIdeal_le_annihilator_exteriorPower_cokernel r
 
 end LinearMap
 
@@ -166,20 +163,16 @@ example :
     rw [LinearMap.det_smul, LinearMap.det_id, Module.finrank_fin_fun]
     rfl
   refine ⟨?_, ?_, ?_⟩
-  · refine Module.mem_annihilator.2 fun q ↦ ?_
-    induction q using Submodule.Quotient.induction_on with
-    | H x =>
-      rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero]
-      exact ⟨x, by simp [φ]⟩
-  · apply TauCeti.fittingIdeal_le_annihilator_exteriorPower_cokernel N 2
+  · rw [Submodule.annihilator_quotient]
+    exact mem_colon.2 fun x _ ↦ ⟨x, by simp [φ]⟩
+  · apply N.fittingIdeal_le_annihilator_exteriorPower_cokernel 2
     rw [LinearMap.fittingIdeal_coker_zero_eq_span_det φ, hdet]
     exact Ideal.subset_span rfl
   · intro hmem
     let b := Pi.basisFun ℤ (Fin 2)
     let ω : ⋀[ℤ]^2 M := exteriorPower.ιMulti ℤ 2 ⇑b
-    have hq := Module.mem_annihilator.1 hmem (Submodule.Quotient.mk ω)
-    rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero] at hq
-    obtain ⟨u, hu⟩ := hq
+    rw [Submodule.annihilator_quotient] at hmem
+    obtain ⟨u, hu⟩ := mem_colon.1 hmem ω trivial
     -- Map along `N.subtype` factors through `φ = 2 • id`, so `exteriorPower.map 2 φ = 4 • id`.
     obtain ⟨v, rfl⟩ := exteriorPower.map_surjective φ.surjective_rangeRestrict u
     have hφ : exteriorPower.map 2 N.subtype (exteriorPower.map 2 φ.rangeRestrict v) =

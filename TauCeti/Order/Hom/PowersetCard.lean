@@ -14,6 +14,7 @@ import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Tactic.FinCases
 import TauCeti.Data.Finset.Sort
 import TauCeti.GroupTheory.Perm.Inversion
+import TauCeti.Order.Hom.Basic
 
 /-!
 # Fixed-cardinality subsets of linear orders
@@ -248,13 +249,13 @@ theorem sign_map_orderIso {J : Type*} [LinearOrder J] [Fintype I] [Fintype J] {n
   have hst : Disjoint s.val t.val := disjoint_compl_right
   have hst' : Disjoint (map n e.toEmbedding s).val
       (map (Fintype.card I - n) e.toEmbedding t).val := by
-    rw [show e.toEmbedding = e.toEquiv.toEmbedding from rfl, map_compl_equiv hm e.toEquiv]
+    rw [map_compl_equiv hm e.toEquiv]
     exact disjoint_compl_right
   have hunion : disjUnion hst' =
       map (n + (Fintype.card I - n)) e.toOrderEmbedding.toEmbedding (disjUnion hst) := by
     refine eq_iff_subset.mpr fun x hx ↦ ?_
     obtain ⟨a, rfl⟩ := e.surjective x
-    simpa [show e.toOrderEmbedding.toEmbedding = e.toEmbedding from rfl] using hx
+    simpa using hx
   rw [sign_eq_permOfDisjoint_sign hmn s t hst, sign_eq_permOfDisjoint_sign hmn' _ _ hst']
   congr 1
   apply Equiv.ext
@@ -268,7 +269,9 @@ theorem sign_map_orderIso {J : Type*} [LinearOrder J] [Fintype I] [Fintype J] {n
   rw [hunion, ofFinEmbEquiv_symm_map_orderEmbedding, RelEmbedding.trans_apply,
     OrderIso.coe_toOrderEmbedding, hrhs]
   rcases finSumFinEquiv.symm j with a | b <;>
-    simp [show e.toEmbedding = e.toOrderEmbedding.toEmbedding from rfl]
+  · dsimp only [Sum.elim_inl, Sum.elim_inr]
+    rw [← e.toOrderEmbedding_toEmbedding, ofFinEmbEquiv_symm_map_orderEmbedding,
+      RelEmbedding.trans_apply, OrderIso.coe_toOrderEmbedding]
 
 section Fin
 
