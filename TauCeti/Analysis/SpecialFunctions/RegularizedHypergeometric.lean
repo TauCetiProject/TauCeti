@@ -32,6 +32,8 @@ Because `1 / Γ` vanishes at the poles of `Γ`, none of these statements needs a
   derivative.
 * `Complex.regularizedHGFunCoeff_one_singleton` — the coefficients `1 / Γ(b + n)` of the Kummer
   function `𝐌(1, b, z) = ∑ zⁿ / Γ(b + n)`.
+* `Complex.regularizedHGFunCoeff_singleton` — the coefficients `(a)ₙ / (n! Γ(b + n))` of Kummer's
+  function `𝐌(a, b, z) = ∑ (a)ₙ zⁿ / (n! Γ(b + n))`.
 * `Complex.hasSum_regularizedHGFun_zero_singleton_ofReal_re` — the real series of `₀F₁` at real
   arguments.
 * `Complex.continuous_regularizedHGFun_zero_singleton_ofReal_re` — joint continuity in `(b, y)`.
@@ -110,6 +112,13 @@ theorem regularizedHGFunCoeff_one_singleton (b : ℂ) (n : ℕ) :
     regularizedHGFunCoeff {1} {b} n = (Gamma (b + n))⁻¹ := by
   simpa [regularizedHGFunCoeff] using div_mul_cancel_left₀ (Nat.cast_ne_zero.2 n.factorial_ne_zero)
     (Gamma (b + n))
+
+/-- The `n`-th power-series coefficient of Kummer's regularized function `𝐌(a, b, z)` is
+`(a)ₙ / (n! Γ(b + n))`. -/
+@[simp low]
+theorem regularizedHGFunCoeff_singleton (a b : ℂ) (n : ℕ) :
+    regularizedHGFunCoeff {a} {b} n = (ascPochhammer ℂ n).eval a / (n ! * Gamma (b + n)) := by
+  simp [regularizedHGFunCoeff]
 
 /-- The complex-valued `₀F₁` series at real parameters and arguments sums to its regularized
 hypergeometric value. -/

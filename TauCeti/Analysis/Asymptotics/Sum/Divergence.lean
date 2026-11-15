@@ -32,7 +32,7 @@ recessive solution implies divergence of the reduction-of-order series in Pinche
 * `Asymptotics.IsLittleO.eventually_norm_pos_of_succ`: if `u =o[atTop] fun m ↦ u (m + 1)` and
   `0 < ‖u m‖` frequently, then `0 < ‖u m‖` eventually.
 * `Asymptotics.IsLittleO.tendsto_norm_atTop_of_succ`: under the same hypotheses, `‖u n‖ → ∞`.
-* `Asymptotics.IsLittleO.tendsto_norm_sum_Ico_atTop`: under the same hypotheses,
+* `Asymptotics.IsLittleO.tendsto_norm_sum_Ico_atTop_of_succ`: under the same hypotheses,
   `‖∑ m ∈ Finset.Ico N n, u m‖ → ∞` for every `N`.
 -/
 
@@ -42,23 +42,17 @@ open Asymptotics Filter Finset
 
 namespace TauCeti
 
-/-- Along a sequence satisfying `c * ‖u m‖ ≤ ‖u (m + 1)‖` from `M` onwards with `1 ≤ c`, the norms
-grow at least geometrically as `c ^ (m - M) * ‖u M‖` and satisfy
-`(c - 1) * ∑ j ∈ Ico M m, ‖u j‖ ≤ ‖u m‖`. -/
-private theorem pow_mul_le_and_mul_sum_Ico_norm_le {E : Type*} [SeminormedAddCommGroup E]
-    {u : ℕ → E} {c : ℝ} (hc : 1 ≤ c) {M : ℕ}
+/-- Along a sequence satisfying `c * ‖u m‖ ≤ ‖u (m + 1)‖` from `M` onwards,
+`(c - 1) * ∑ j ∈ Ico M m, ‖u j‖ ≤ ‖u m‖` for all `m ≥ M`. -/
+private theorem mul_sum_Ico_norm_le {E : Type*} [SeminormedAddCommGroup E]
+    {u : ℕ → E} {c : ℝ} {M : ℕ}
     (hstep : ∀ m ≥ M, c * ‖u m‖ ≤ ‖u (m + 1)‖) {m : ℕ} (hm : M ≤ m) :
-    c ^ (m - M) * ‖u M‖ ≤ ‖u m‖ ∧ (c - 1) * ∑ j ∈ Ico M m, ‖u j‖ ≤ ‖u m‖ := by
+    (c - 1) * ∑ j ∈ Ico M m, ‖u j‖ ≤ ‖u m‖ := by
   induction m, hm using Nat.le_induction with
   | base => simp
   | succ m hm ih =>
-    have hc0 : 0 ≤ c := by linarith
-    have hstep_m := hstep m hm
-    refine ⟨?_, ?_⟩
-    · rw [Nat.succ_sub hm, pow_succ', mul_assoc]
-      exact (mul_le_mul_of_nonneg_left ih.1 hc0).trans hstep_m
-    · rw [sum_Ico_succ_top hm, mul_add]
-      linarith [ih.2]
+    rw [sum_Ico_succ_top hm, mul_add]
+    linarith [hstep m hm]
 
 /-- If `1 < c`, `c * ‖u m‖ ≤ ‖u (m + 1)‖` eventually, and `0 < ‖u m‖` frequently, then `‖u n‖ → +∞`
 as `n → ∞`. -/
@@ -69,11 +63,9 @@ theorem tendsto_norm_atTop_of_mul_norm_le {E : Type*} [SeminormedAddCommGroup E]
     Tendsto (fun n ↦ ‖u n‖) atTop atTop := by
   obtain ⟨M₀, hM₀⟩ := eventually_atTop.1 hstep
   obtain ⟨M, hpos, hM⟩ := (hne.and_eventually (eventually_ge_atTop M₀)).exists
-  refine tendsto_atTop_mono' atTop (f₁ := fun n ↦ c ^ (n - M) * ‖u M‖) ?_
-    (((tendsto_pow_atTop_atTop_of_one_lt hc).comp
-      (tendsto_sub_atTop_nat M)).atTop_mul_const hpos)
-  filter_upwards [eventually_ge_atTop M] with n hn
-  exact (pow_mul_le_and_mul_sum_Ico_norm_le hc.le (fun m hm ↦ hM₀ m (hM.trans hm)) hn).1
+  exact (tendsto_add_atTop_iff_nat M).1 <|
+    tendsto_atTop_of_geom_le (v := fun n ↦ ‖u (n + M)‖) (by simpa using hpos) hc
+      fun n ↦ by simpa only [Nat.add_right_comm] using hM₀ (n + M) (by omega)
 
 /-- If `c > 2`, `c * ‖u m‖ ≤ ‖u (m + 1)‖` eventually, and `0 < ‖u m‖` frequently, then the norms
 of the partial sums `∑ m ∈ Ico N n, u m` tend to `+∞` for every starting index `N`. -/
@@ -110,7 +102,7 @@ theorem tendsto_norm_sum_Ico_atTop_of_mul_norm_le {E : Type*} [SeminormedAddComm
             gcongr
             · exact norm_sub_le _ _
             · exact norm_sum_le _ _
-    have htail := (pow_mul_le_and_mul_sum_Ico_norm_le (by linarith) hstepM hm).2
+    have htail := mul_sum_Ico_norm_le hstepM hm
     rw [Nat.add_sub_cancel, div_le_iff₀ (by linarith)]
     nlinarith
   refine tendsto_atTop_mono' atTop hlower ?_
@@ -149,7 +141,7 @@ theorem tendsto_norm_atTop_of_succ {E : Type*} [SeminormedAddCommGroup E]
 
 /-- If `u =o[atTop] fun m ↦ u (m + 1)` and `0 < ‖u m‖` frequently, then the norms of the partial
 sums `∑ m ∈ Ico N n, u m` tend to `+∞` for every starting index `N`. -/
-theorem tendsto_norm_sum_Ico_atTop {E : Type*} [SeminormedAddCommGroup E]
+theorem tendsto_norm_sum_Ico_atTop_of_succ {E : Type*} [SeminormedAddCommGroup E]
     {u : ℕ → E} (hu : u =o[atTop] fun m ↦ u (m + 1))
     (hne : ∃ᶠ m in atTop, 0 < ‖u m‖) (N : ℕ) :
     Tendsto (fun n ↦ ‖∑ m ∈ Ico N n, u m‖) atTop atTop :=

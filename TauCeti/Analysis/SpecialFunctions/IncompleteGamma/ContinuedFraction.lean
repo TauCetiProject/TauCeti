@@ -22,7 +22,8 @@ $$
     = \cfrac{1}{1 - \cfrac{z}{a + 1 + \cfrac{z}{a + 2 - \cfrac{(a + 1)z}{a + 3 +
         \cfrac{2z}{a + 4 - \cdots}}}}},
 $$
-so that for `a ∉ -ℕ`, `γ(a, z) = (z^a e^{-z} / a) (Γ(a + 1) e^z γ*(a, z))`.
+so that `γ(a, z) = (z^a e^{-z} / a) (Γ(a + 1) e^z γ*(a, z))` for all complex `a` and `z` (including
+`a ∈ -ℕ` under Mathlib's conventions `x / 0 = 0` and `Γ(-n) = 0`).
 
 Dividing the first two levels of DLMF 8.9.1 by `a` removes the removable singularity at `a = 0`,
 yielding a generalized continued fraction `Complex.tricomiContFrac a z` with zero integer part,
@@ -33,7 +34,7 @@ At `z = 0`, all partial numerators from `a₂` onwards vanish, so every converge
 onwards has numerator and denominator `(a + 1)_{n - 1}` and equals `1 = Γ(a + 1) γ*(a, 0)` whenever
 `a ∉ {-1, -2, …}`.
 
-For `z ≠ 0` and `a ∉ {-1, -2, …}`, we construct the explicit recessive solution
+For `z ≠ 0` and `a ∉ {-1, -2, …}`, we construct an explicit solution
 `Complex.tricomiContFracSolution a z` of the three-term recurrence
 `f(n + 1) = b_n f(n) + a_n f(n - 1)` in terms of Kummer's regularized hypergeometric function:
 `f(0) = 1` and
@@ -63,7 +64,8 @@ in norm for every starting index `N`.
 * `Complex.neg_tricomiContFracSolution_one_div_zero`:
   `-(f(1) / f(0)) = Γ(a + 1) e^z γ*(a, z)`, with corollaries for `regularizedGamma` and
   `lowerIncompleteGamma`.
-* `Complex.tricomiContFrac_zero_convs_succ`, `Complex.tendsto_tricomiContFrac_zero_convs`:
+* `Complex.tricomiContFrac_zero_right_convs_succ`,
+  `Complex.tendsto_tricomiContFrac_zero_right_convs`:
   exact evaluation `(tricomiContFrac a 0).convs (k + 1) = 1` and convergence at `z = 0` for
   `a ∉ {-1, -2, …}`.
 * `Complex.prod_Icc_tricomiContFracPartNum`:
@@ -270,9 +272,21 @@ theorem tricomiContFrac_dens_two (a z : ℂ) : (tricomiContFrac a z).dens 2 = a 
 
 /-! ### Terminating evaluation at `z = 0` -/
 
+/-- For `a ∉ {-1, -2, …}`, `Γ(a + 1)` is nonzero. -/
+private theorem Gamma_add_one_ne_zero_of_ne_neg_succ {a : ℂ}
+    (ha : ∀ k : ℕ, a ≠ -(k + 1 : ℂ)) : Gamma (a + 1) ≠ 0 :=
+  Gamma_ne_zero fun k hk ↦ ha k (by linear_combination hk)
+
+/-- For `a ∉ {-1, -2, …}`, the rising factorial `(a + 1)ₙ` is nonzero for every `n : ℕ`. -/
+private theorem ascPochhammer_eval_add_one_ne_zero {a : ℂ}
+    (ha : ∀ k : ℕ, a ≠ -(k + 1 : ℂ)) (n : ℕ) :
+    (ascPochhammer ℂ n).eval (a + 1) ≠ 0 := fun h ↦ by
+  obtain ⟨j, -, hj⟩ := (ascPochhammer_eval_eq_zero_iff n (a + 1)).mp h
+  exact ha j (by linear_combination hj)
+
 /-- At `z = 0`, both the numerator and denominator of the `(k + 1)`-th continuant of
 `tricomiContFrac a 0` equal `(a + 1)_k`. -/
-theorem tricomiContFrac_zero_conts_succ (a : ℂ) (k : ℕ) :
+theorem tricomiContFrac_zero_right_conts_succ (a : ℂ) (k : ℕ) :
     (tricomiContFrac a 0).conts (k + 1) =
       ⟨(ascPochhammer ℂ k).eval (a + 1), (ascPochhammer ℂ k).eval (a + 1)⟩ := by
   induction k with
@@ -282,60 +296,55 @@ theorem tricomiContFrac_zero_conts_succ (a : ℂ) (k : ℕ) :
     obtain ⟨p₀, hp₀⟩ : ∃ p, (tricomiContFrac a 0).conts k = p := ⟨_, rfl⟩
     rw [GenContFract.conts_recurrence hs hp₀ ih,
       tricomiContFracPartNum_zero_right_of_two_le a (by omega),
-      tricomiContFracPartDen_of_two_le a (by omega), ascPochhammer_succ_right,
-      Polynomial.eval_mul, Polynomial.eval_add, Polynomial.eval_X, Polynomial.eval_natCast]
+      tricomiContFracPartDen_of_two_le a (by omega), ascPochhammer_succ_eval]
     push_cast
     congr 1 <;> ring
 
 /-- At `z = 0`, the `(k + 1)`-th continuant numerator of `tricomiContFrac a 0` is `(a + 1)_k`. -/
-theorem tricomiContFrac_zero_nums_succ (a : ℂ) (k : ℕ) :
+theorem tricomiContFrac_zero_right_nums_succ (a : ℂ) (k : ℕ) :
     (tricomiContFrac a 0).nums (k + 1) = (ascPochhammer ℂ k).eval (a + 1) := by
-  rw [GenContFract.num_eq_conts_a, tricomiContFrac_zero_conts_succ]
+  rw [GenContFract.num_eq_conts_a, tricomiContFrac_zero_right_conts_succ]
 
 /-- At `z = 0`, the `(k + 1)`-th continuant denominator of `tricomiContFrac a 0` is `(a + 1)_k`. -/
-theorem tricomiContFrac_zero_dens_succ (a : ℂ) (k : ℕ) :
+theorem tricomiContFrac_zero_right_dens_succ (a : ℂ) (k : ℕ) :
     (tricomiContFrac a 0).dens (k + 1) = (ascPochhammer ℂ k).eval (a + 1) := by
-  rw [GenContFract.den_eq_conts_b, tricomiContFrac_zero_conts_succ]
+  rw [GenContFract.den_eq_conts_b, tricomiContFrac_zero_right_conts_succ]
 
 /-- For `a ∉ {-1, -2, …}`, every continuant denominator of `tricomiContFrac a 0` is nonzero. -/
-theorem tricomiContFrac_zero_dens_ne_zero {a : ℂ} (ha : ∀ k : ℕ, a ≠ -(k + 1 : ℂ)) (n : ℕ) :
+theorem tricomiContFrac_zero_right_dens_ne_zero {a : ℂ} (ha : ∀ k : ℕ, a ≠ -(k + 1 : ℂ)) (n : ℕ) :
     (tricomiContFrac a 0).dens n ≠ 0 := by
   cases n with
   | zero => simp
   | succ k =>
-    rw [tricomiContFrac_zero_dens_succ]
-    rintro h
-    obtain ⟨j, -, hj⟩ := (ascPochhammer_eval_eq_zero_iff k (a + 1)).mp h
-    exact ha j (by linear_combination hj)
+    rw [tricomiContFrac_zero_right_dens_succ]
+    exact ascPochhammer_eval_add_one_ne_zero ha k
 
 /-- For `a ∉ {-1, -2, …}`, every convergent of `tricomiContFrac a 0` from index `1` onwards equals
 `1`. -/
-theorem tricomiContFrac_zero_convs_succ {a : ℂ} (ha : ∀ k : ℕ, a ≠ -(k + 1 : ℂ)) (k : ℕ) :
+theorem tricomiContFrac_zero_right_convs_succ {a : ℂ} (ha : ∀ k : ℕ, a ≠ -(k + 1 : ℂ)) (k : ℕ) :
     (tricomiContFrac a 0).convs (k + 1) = 1 := by
-  have hden := tricomiContFrac_zero_dens_ne_zero ha (k + 1)
-  rw [tricomiContFrac_zero_dens_succ] at hden
-  rw [GenContFract.conv_eq_num_div_den, tricomiContFrac_zero_nums_succ,
-    tricomiContFrac_zero_dens_succ, div_self hden]
+  rw [GenContFract.conv_eq_num_div_den, tricomiContFrac_zero_right_nums_succ,
+    tricomiContFrac_zero_right_dens_succ, div_self (ascPochhammer_eval_add_one_ne_zero ha k)]
 
 /-- At `z = 0` and `a ∉ {-1, -2, …}`, the convergents of `tricomiContFrac a 0` are eventually
 constant at `1 = Γ(a + 1) e^0 γ*(a, 0)` and therefore converge to DLMF 8.9.1's value. -/
-theorem tendsto_tricomiContFrac_zero_convs {a : ℂ} (ha : ∀ k : ℕ, a ≠ -(k + 1 : ℂ)) :
+theorem tendsto_tricomiContFrac_zero_right_convs {a : ℂ} (ha : ∀ k : ℕ, a ≠ -(k + 1 : ℂ)) :
     Tendsto (tricomiContFrac a 0).convs atTop
       (𝓝 (Gamma (a + 1) * cexp 0 * tricomiIncompleteGamma a 0)) := by
-  have hG : Gamma (a + 1) ≠ 0 := Gamma_ne_zero fun k hk ↦ ha k (by linear_combination hk)
   have hval : Gamma (a + 1) * cexp 0 * tricomiIncompleteGamma a 0 = 1 := by
-    rw [exp_zero, mul_one, tricomiIncompleteGamma_zero_right, mul_inv_cancel₀ hG]
+    rw [exp_zero, mul_one, tricomiIncompleteGamma_zero_right,
+      mul_inv_cancel₀ (Gamma_add_one_ne_zero_of_ne_neg_succ ha)]
   rw [hval]
   refine tendsto_const_nhds.congr' ?_
   filter_upwards [eventually_ge_atTop 1] with n hn
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hn
-  exact (tricomiContFrac_zero_convs_succ ha k).symm
+  exact (tricomiContFrac_zero_right_convs_succ ha k).symm
 
 /-! ### Normalization factors and partial-numerator products -/
 
-/-- The normalization factors `dₙ` in the explicit Kummer representation of the minimal solution of
-DLMF 8.9.1: `d₁ = 1`, `d_{2k} = (a + 1)_{k - 1} (k - 1)!` for `k ≥ 1`, and
-`d_{2k + 1} = (a + 1)_{k - 1} k!` for `k ≥ 1`. -/
+/-- The normalization factors `dₙ` in the explicit Kummer solution `Complex.tricomiContFracSolution`
+of the three-term recurrence of DLMF 8.9.1: `d₁ = 1`, `d_{2k} = (a + 1)_{k - 1} (k - 1)!` for
+`k ≥ 1`, and `d_{2k + 1} = (a + 1)_{k - 1} k!` for `k ≥ 1`. -/
 def tricomiContFracNorm (a : ℂ) (n : ℕ) : ℂ :=
   (ascPochhammer ℂ ((n - 2) / 2)).eval (a + 1) * (((n - 1) / 2)! : ℂ)
 
@@ -389,17 +398,15 @@ theorem tricomiContFracNorm_two_mul_succ_eq_mul (a : ℂ) {k : ℕ} (hk : 1 ≤ 
     tricomiContFracNorm a (2 * (k + 1)) = (a + k) * tricomiContFracNorm a (2 * k + 1) := by
   obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le' hk
   rw [tricomiContFracNorm_two_mul a (by omega), tricomiContFracNorm_two_mul_add_one,
-    show j + 1 + 1 - 1 = j + 1 by omega, Nat.add_sub_cancel, ascPochhammer_succ_right,
-    Polynomial.eval_mul, Polynomial.eval_add, Polynomial.eval_X, Polynomial.eval_natCast]
+    show j + 1 + 1 - 1 = j + 1 by omega, Nat.add_sub_cancel, ascPochhammer_succ_eval]
   push_cast
   ring
 
 /-- For `a ∉ {-1, -2, …}`, every normalization factor `dₙ` is nonzero. -/
 theorem tricomiContFracNorm_ne_zero {a : ℂ} (ha : ∀ k : ℕ, a ≠ -(k + 1 : ℂ)) (n : ℕ) :
-    tricomiContFracNorm a n ≠ 0 := by
-  refine mul_ne_zero (fun h ↦ ?_) (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _))
-  obtain ⟨j, -, hj⟩ := (ascPochhammer_eval_eq_zero_iff ((n - 2) / 2) (a + 1)).mp h
-  exact ha j (by linear_combination hj)
+    tricomiContFracNorm a n ≠ 0 :=
+  mul_ne_zero (ascPochhammer_eval_add_one_ne_zero ha _)
+    (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _))
 
 /-- For `a ∉ {-1, -2, …}` and `z ≠ 0`, every partial numerator `aₙ` (`n ≥ 1`) is nonzero. -/
 theorem tricomiContFracPartNum_ne_zero {a z : ℂ} (ha : ∀ k : ℕ, a ≠ -(k + 1 : ℂ)) (hz : z ≠ 0)
@@ -527,18 +534,18 @@ theorem mul_neg_tricomiContFracSolution_one_div_zero_eq_Gamma_mul_regularizedGam
     _ = Gamma (a + 1) * (z ^ a * tricomiIncompleteGamma a z) := by
           rw [← exp_add, neg_add_cancel, exp_zero, mul_one]
 
-/-- **DLMF 8.9.1** initial-ratio identity for the lower incomplete Gamma function `γ(a, z)`: for
-`a ∉ -ℕ` and every complex `z`,
-`(z^a e^{-z} / a) (-(f(1) / f(0))) = γ(a, z)`. -/
-theorem mul_neg_tricomiContFracSolution_one_div_zero_eq_lowerIncompleteGamma
-    {a : ℂ} (ha : ∀ k : ℕ, a ≠ -k) (z : ℂ) :
+/-- **DLMF 8.9.1** initial-ratio identity for the lower incomplete Gamma function `γ(a, z)`:
+`(z^a e^{-z} / a) (-(f(1) / f(0))) = γ(a, z)` for all complex `a` and `z` (at `a ∈ -ℕ` both sides
+vanish under Mathlib's conventions `x / 0 = 0` and `Γ(-n) = 0`). -/
+theorem mul_neg_tricomiContFracSolution_one_div_zero_eq_lowerIncompleteGamma (a z : ℂ) :
     z ^ a * cexp (-z) / a * -(tricomiContFracSolution a z 1 / tricomiContFracSolution a z 0) =
       lowerIncompleteGamma a z := by
-  have ha0 : a ≠ 0 := by simpa using ha 0
-  rw [div_mul_eq_mul_div,
-    mul_neg_tricomiContFracSolution_one_div_zero_eq_Gamma_mul_regularizedGamma,
-    Gamma_add_one a ha0, lowerIncompleteGamma_def]
-  field_simp
+  rcases eq_or_ne a 0 with rfl | ha0
+  · simp [lowerIncompleteGamma_def]
+  · rw [div_mul_eq_mul_div,
+      mul_neg_tricomiContFracSolution_one_div_zero_eq_Gamma_mul_regularizedGamma,
+      Gamma_add_one a ha0, lowerIncompleteGamma_def]
+    field_simp
 
 /-- Even-index step of the three-term recurrence: `f(2k + 1) = b_{2k} f(2k) + a_{2k} f(2k - 1)` for
 `k ≥ 1`, unconditionally on `a` and `z`. -/
@@ -629,9 +636,13 @@ theorem tricomiContFracSolution_add_one {a : ℂ} (ha : ∀ k : ℕ, a ≠ -(k +
       tricomiContFracPartDen a n * tricomiContFracSolution a z n +
         tricomiContFracPartNum a z n * tricomiContFracSolution a z (n - 1) := by
   rcases eq_or_lt_of_le hn with rfl | hn2
-  · have hG : Gamma (a + 1) ≠ 0 := Gamma_ne_zero fun k hk ↦ ha k (by linear_combination hk)
-    have hM := regularizedHGFun_one_singleton_eq (a + 1) z
-    rw [show a + 1 + 1 = a + 2 by ring] at hM
+  · have hG := Gamma_add_one_ne_zero_of_ne_neg_succ ha
+    have hM : regularizedHGFun {1} {a + 1} z =
+        (Gamma (a + 1))⁻¹ + z * regularizedHGFun {1} {a + 2} z := by
+      have h := tricomiIncompleteGamma_eq_mul_tricomiIncompleteGamma_add_one a z
+      simp only [tricomiIncompleteGamma_def, div_eq_mul_inv] at h
+      rw [show a + 1 + 1 = a + 2 by ring] at h
+      exact mul_left_cancel₀ (exp_ne_zero (-z)) (by linear_combination h)
     rw [tricomiContFracSolution_two, tricomiContFracSolution_one, tricomiContFracSolution_zero,
       tricomiContFracPartDen_one, tricomiContFracPartNum_one, hM]
     calc -Gamma (a + 1) * z * regularizedHGFun {1} {a + 2} z
@@ -667,7 +678,7 @@ private theorem tendsto_Gamma_mul_regularizedHGFun_odd (a z : ℂ) :
 theorem eventually_tricomiContFracSolution_ne_zero {a z : ℂ}
     (ha : ∀ k : ℕ, a ≠ -(k + 1 : ℂ)) (hz : z ≠ 0) :
     ∀ᶠ n in atTop, tricomiContFracSolution a z n ≠ 0 := by
-  have hG : Gamma (a + 1) ≠ 0 := Gamma_ne_zero fun k hk ↦ ha k (by linear_combination hk)
+  have hG := Gamma_add_one_ne_zero_of_ne_neg_succ ha
   have heven : ∀ᶠ k : ℕ in atTop, regularizedHGFun {(k : ℂ)} {a + (2 * k : ℕ)} z ≠ 0 := by
     filter_upwards [(tendsto_Gamma_mul_regularizedHGFun_even a z).eventually_ne
       (exp_ne_zero _)] with k hk h0
@@ -733,50 +744,133 @@ private theorem mul_div_Gamma_add_two_eq (w : ℂ) {s c M M' : ℂ} (hs : 0 < s.
   · simp [hM]
   · field_simp
 
+/-- Closed form of `-f(2k + 2) / (a_{2k + 1} f(2k))` in terms of `Γ · 𝐌` ratios for `k ≥ 1` and
+`0 < Re(a + 2k)`. -/
+private theorem neg_tricomiContFracSolution_div_even {a z : ℂ}
+    (ha : ∀ k : ℕ, a ≠ -(k + 1 : ℂ)) (hz : z ≠ 0) {k : ℕ} (hk1 : 1 ≤ k)
+    (hs : 0 < (a + (2 * k : ℕ)).re) :
+    -tricomiContFracSolution a z (2 * k + 2) /
+        (tricomiContFracPartNum a z (2 * k + 1) * tricomiContFracSolution a z (2 * k)) =
+      z * ((a + k) / (a + 2 * k)) * (1 / (a + 1 + 2 * k)) *
+        ((Gamma (a + (2 * (k + 1) : ℕ)) *
+            regularizedHGFun {((k + 1 : ℕ) : ℂ)} {a + (2 * (k + 1) : ℕ)} z) /
+          (Gamma (a + (2 * k : ℕ)) *
+            regularizedHGFun {(k : ℂ)} {a + (2 * k : ℕ)} z)) := by
+  -- First cancel `(-1)^k`, `Γ(a + 1)`, `z^{2k}`, `k`, and `d_{2k}`.
+  have hcancel :
+      -tricomiContFracSolution a z (2 * k + 2) /
+          (tricomiContFracPartNum a z (2 * k + 1) * tricomiContFracSolution a z (2 * k)) =
+        z * (a + k) * regularizedHGFun {((k + 1 : ℕ) : ℂ)} {a + (2 * (k + 1) : ℕ)} z /
+          regularizedHGFun {(k : ℂ)} {a + (2 * k : ℕ)} z := by
+    have hG := Gamma_add_one_ne_zero_of_ne_neg_succ ha
+    have hd := tricomiContFracNorm_ne_zero ha (2 * k)
+    have hknz : (k : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
+    have hzpow0 : z ^ (2 * k - 1) ≠ 0 := pow_ne_zero _ hz
+    have hp1 : (-1 : ℂ) ^ k ≠ 0 := pow_ne_zero _ (by norm_num)
+    rw [show 2 * k + 2 = 2 * (k + 1) by ring, tricomiContFracSolution_two_mul a z (by omega),
+      tricomiContFracSolution_two_mul a z hk1, tricomiContFracPartNum_two_mul_add_one a z hk1,
+      tricomiContFracNorm_two_mul_succ_eq_mul a hk1,
+      tricomiContFracNorm_two_mul_add_one_eq_mul a hk1,
+      show 2 * (k + 1) - 1 = (2 * k - 1) + 2 by omega, pow_add z (2 * k - 1) 2, sq,
+      pow_succ (-1 : ℂ) k]
+    by_cases hM : regularizedHGFun {(k : ℂ)} {a + (2 * k : ℕ)} z = 0
+    · rw [hM]; simp
+    · field_simp
+  -- Then insert `Γ(a + 2k + 2) / Γ(a + 2k) = (a + 2k + 1)(a + 2k)`.
+  rw [hcancel, show a + 2 * (k : ℂ) = a + (2 * k : ℕ) by push_cast; ring,
+    show a + 1 + 2 * (k : ℂ) = a + (2 * k : ℕ) + 1 by push_cast; ring,
+    show Gamma (a + (2 * (k + 1) : ℕ)) = Gamma (a + (2 * k : ℕ) + 2) by congr 1; push_cast; ring,
+    mul_div_Gamma_add_two_eq z hs]
+
+/-- Closed form of `-f(2k + 3) / (a_{2k + 2} f(2k + 1))` in terms of `Γ · 𝐌` ratios for `k ≥ 1`
+and `0 < Re(a + 2k + 1)`. -/
+private theorem neg_tricomiContFracSolution_div_odd {a z : ℂ}
+    (ha : ∀ k : ℕ, a ≠ -(k + 1 : ℂ)) (hz : z ≠ 0) {k : ℕ} (hk1 : 1 ≤ k)
+    (hs : 0 < (a + (2 * k + 1 : ℕ)).re) :
+    -tricomiContFracSolution a z (2 * k + 1 + 2) /
+        (tricomiContFracPartNum a z (2 * k + 1 + 1) *
+          tricomiContFracSolution a z (2 * k + 1)) =
+      -z * ((1 + k) / (a + 1 + 2 * k)) * (1 / (a + 2 + 2 * k)) *
+        ((Gamma (a + (2 * (k + 1) + 1 : ℕ)) *
+            regularizedHGFun {((k + 1 + 1 : ℕ) : ℂ)} {a + (2 * (k + 1) + 1 : ℕ)} z) /
+          (Gamma (a + (2 * k + 1 : ℕ)) *
+            regularizedHGFun {((k + 1 : ℕ) : ℂ)} {a + (2 * k + 1 : ℕ)} z)) := by
+  -- First cancel `(-1)^{k + 1}`, `Γ(a + 1)`, `z^{2k + 1}`, `a + k`, and `d_{2k + 1}`.
+  have hcancel :
+      -tricomiContFracSolution a z (2 * k + 1 + 2) /
+          (tricomiContFracPartNum a z (2 * k + 1 + 1) *
+            tricomiContFracSolution a z (2 * k + 1)) =
+        -z * (1 + k) *
+          regularizedHGFun {((k + 1 + 1 : ℕ) : ℂ)} {a + (2 * (k + 1) + 1 : ℕ)} z /
+          regularizedHGFun {((k + 1 : ℕ) : ℂ)} {a + (2 * k + 1 : ℕ)} z := by
+    have hG := Gamma_add_one_ne_zero_of_ne_neg_succ ha
+    have hd := tricomiContFracNorm_ne_zero ha (2 * k + 1)
+    have hzpow0 : z ^ (2 * k) ≠ 0 := pow_ne_zero _ hz
+    have hp1 : (-1 : ℂ) ^ (k + 1) ≠ 0 := pow_ne_zero _ (by norm_num)
+    have hak : a + k ≠ 0 := fun h ↦ ha (k - 1) (by
+      have : ((k - 1 : ℕ) : ℂ) + 1 = k := by rw [Nat.cast_sub hk1]; push_cast; ring
+      rw [this]; linear_combination h)
+    rw [show 2 * k + 1 + 2 = 2 * (k + 1) + 1 by ring,
+      tricomiContFracSolution_two_mul_add_one a z (k + 1),
+      tricomiContFracSolution_two_mul_add_one a z k,
+      show 2 * k + 1 + 1 = 2 * (k + 1) by ring,
+      tricomiContFracPartNum_two_mul a z (by omega),
+      tricomiContFracNorm_two_mul_add_one_eq_mul a (by omega),
+      tricomiContFracNorm_two_mul_succ_eq_mul a hk1,
+      show 2 * (k + 1) = 2 * k + 2 by ring, pow_add z (2 * k) 2, sq,
+      pow_succ (-1 : ℂ) (k + 1),
+      show ((k + 1 : ℕ) : ℂ) * ((a + k) * tricomiContFracNorm a (2 * k + 1)) =
+        (k + 1 : ℂ) * ((a + k) * tricomiContFracNorm a (2 * k + 1)) by push_cast; ring,
+      show a + ((k + 1 : ℕ) : ℂ) - 1 = a + k by push_cast; ring]
+    by_cases hM : regularizedHGFun {((k + 1 : ℕ) : ℂ)} {a + (2 * k + 1 : ℕ)} z = 0
+    · rw [hM]; simp
+    · generalize a + (k : ℂ) = qk at hak ⊢
+      field_simp
+      ring
+  -- Then insert `Γ(a + 2k + 3) / Γ(a + 2k + 1) = (a + 2k + 2)(a + 2k + 1)`.
+  rw [hcancel, show a + 1 + 2 * (k : ℂ) = a + (2 * k + 1 : ℕ) by push_cast; ring,
+    show a + 2 + 2 * (k : ℂ) = a + (2 * k + 1 : ℕ) + 1 by push_cast; ring,
+    show Gamma (a + (2 * (k + 1) + 1 : ℕ)) = Gamma (a + (2 * k + 1 : ℕ) + 2) by
+      congr 1; push_cast; ring,
+    mul_div_Gamma_add_two_eq (-z) hs]
+
+/-- Common `O(1 / k)` limit shape for the even and odd reduction-of-order ratios: if
+`g k → L ≠ 0`, then `w * ((c₀ + k) / (b₀ + 2k)) * (1 / (b₀ + 1 + 2k)) * (g (k + 1) / g k) → 0`. -/
+private theorem tendsto_mul_div_mul_inv_mul_div_nhds_zero (w c₀ b₀ : ℂ) {g : ℕ → ℂ} {L : ℂ}
+    (hg : Tendsto g atTop (𝓝 L)) (hL : L ≠ 0) :
+    Tendsto (fun k : ℕ ↦
+      w * ((c₀ + k) / (b₀ + 2 * k)) * (1 / (b₀ + 1 + 2 * k)) * (g (k + 1) / g k))
+      atTop (𝓝 0) := by
+  have hrat1 : Tendsto (fun k : ℕ ↦ (c₀ + k) / (b₀ + 2 * (k : ℂ))) atTop (𝓝 (1 / 2)) := by
+    convert tendsto_add_mul_div_add_mul_atTop_nhds c₀ b₀ (1 : ℂ) (d := 2) (by norm_num) using 2
+    ring
+  have hrat2 : Tendsto (fun k : ℕ ↦ (1 : ℂ) / (b₀ + 1 + 2 * k)) atTop (𝓝 0) := by
+    convert tendsto_add_mul_div_add_mul_atTop_nhds 1 (b₀ + 1) (0 : ℂ) (d := 2) (by norm_num)
+      using 2
+    · ring
+    · simp
+  have hquot : Tendsto (fun k : ℕ ↦ g (k + 1) / g k) atTop (𝓝 (L / L)) :=
+    (hg.comp (tendsto_add_atTop_nat 1)).div hg hL
+  convert ((hrat1.const_mul w).mul hrat2).mul hquot using 2
+  ring
+
 /-- Even-index consecutive ratio limit: `reductionTerm a z (2k) / reductionTerm a z (2k + 1) → 0`
 as `k → ∞` for `a ∉ {-1, -2, …}` and `z ≠ 0`. -/
 private theorem tendsto_reductionTerm_div_succ_even {a z : ℂ}
     (ha : ∀ k : ℕ, a ≠ -(k + 1 : ℂ)) (hz : z ≠ 0) :
     Tendsto (fun k : ℕ ↦ reductionTerm a z (2 * k) / reductionTerm a z (2 * k + 1))
       atTop (𝓝 0) := by
-  have hG : Gamma (a + 1) ≠ 0 := Gamma_ne_zero fun k hk ↦ ha k (by linear_combination hk)
-  have hE := tendsto_Gamma_mul_regularizedHGFun_even a z
-  have hrat1 := tendsto_add_mul_div_add_mul_atTop_nhds a a (1 : ℂ) (d := 2) (by norm_num)
-  have hrat2 := tendsto_add_mul_div_add_mul_atTop_nhds 1 (a + 1) (0 : ℂ) (d := 2) (by norm_num)
-  have hquot := (hE.comp (tendsto_add_atTop_nat 1)).div hE (exp_ne_zero _)
-  have hlim : Tendsto (fun k : ℕ ↦
-      z * ((a + 1 * (k : ℂ)) / (a + 2 * k)) * ((1 + 0 * (k : ℂ)) / (a + 1 + 2 * k)) *
-        ((Gamma (a + (2 * (k + 1) : ℕ)) *
-            regularizedHGFun {((k + 1 : ℕ) : ℂ)} {a + (2 * (k + 1) : ℕ)} z) /
-          (Gamma (a + (2 * k : ℕ)) * regularizedHGFun {(k : ℂ)} {a + (2 * k : ℕ)} z)))
-      atTop (𝓝 0) := by
-    simpa [div_self (exp_ne_zero (z / 2))] using ((hrat1.const_mul z).mul hrat2).mul hquot
-  refine hlim.congr' ?_
+  refine (tendsto_mul_div_mul_inv_mul_div_nhds_zero z a a
+    (tendsto_Gamma_mul_regularizedHGFun_even a z) (exp_ne_zero _)).congr' ?_
   obtain ⟨N₀, hN₀⟩ := eventually_atTop.1 (eventually_tricomiContFracSolution_ne_zero ha hz)
-  filter_upwards [eventually_ge_atTop (max N₀ 1), hE.eventually_ne (exp_ne_zero _),
-    tendsto_natCast_atTop_atTop.eventually (eventually_gt_atTop (-a.re))] with k hk hEk hre
+  filter_upwards [eventually_ge_atTop (max N₀ 1),
+    tendsto_natCast_atTop_atTop.eventually (eventually_gt_atTop (-a.re))] with k hk hre
   have hk1 : 1 ≤ k := (le_max_right N₀ 1).trans hk
   have hprod := prod_Icc_tricomiContFracPartNum_ne_zero ha hz (2 * k)
-  have hf1 : tricomiContFracSolution a z (2 * k + 1) ≠ 0 :=
-    hN₀ _ (by have := le_max_left N₀ 1; omega)
-  have hMk : regularizedHGFun {(k : ℂ)} {a + (2 * k : ℕ)} z ≠ 0 := right_ne_zero_of_mul hEk
+  have hf1 := hN₀ (2 * k + 1) (by have := le_max_left N₀ 1; omega)
   have hs : 0 < (a + (2 * k : ℕ)).re := by
     simp only [add_re, natCast_re]; push_cast; linarith [k.cast_nonneg (α := ℝ)]
-  rw [one_mul, zero_mul, add_zero,
-    show a + 2 * (k : ℂ) = a + (2 * k : ℕ) by push_cast; ring,
-    show a + 1 + 2 * (k : ℂ) = a + (2 * k : ℕ) + 1 by push_cast; ring,
-    show Gamma (a + (2 * (k + 1) : ℕ)) = Gamma (a + (2 * k : ℕ) + 2) by congr 1; push_cast; ring,
-    mul_div_Gamma_add_two_eq z hs, reductionTerm_div_succ hprod hf1,
-    show 2 * k + 2 = 2 * (k + 1) by ring, tricomiContFracSolution_two_mul a z (by omega),
-    tricomiContFracSolution_two_mul a z hk1, tricomiContFracPartNum_two_mul_add_one a z hk1,
-    tricomiContFracNorm_two_mul_succ_eq_mul a hk1, tricomiContFracNorm_two_mul_add_one_eq_mul a hk1,
-    show 2 * (k + 1) - 1 = (2 * k - 1) + 2 by omega, pow_add z (2 * k - 1) 2, sq,
-    pow_succ (-1 : ℂ) k]
-  have hd : tricomiContFracNorm a (2 * k) ≠ 0 := tricomiContFracNorm_ne_zero ha _
-  have hknz : (k : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
-  have hzpow0 : z ^ (2 * k - 1) ≠ 0 := pow_ne_zero _ hz
-  have hp1 : (-1 : ℂ) ^ k ≠ 0 := pow_ne_zero _ (by norm_num)
-  field_simp
+  rw [reductionTerm_div_succ hprod hf1, neg_tricomiContFracSolution_div_even ha hz hk1 hs]
 
 /-- Odd-index consecutive ratio limit: `reductionTerm a z (2k + 1) / reductionTerm a z (2k + 2) → 0`
 as `k → ∞` for `a ∉ {-1, -2, …}` and `z ≠ 0`. -/
@@ -784,52 +878,18 @@ private theorem tendsto_reductionTerm_div_succ_odd {a z : ℂ}
     (ha : ∀ k : ℕ, a ≠ -(k + 1 : ℂ)) (hz : z ≠ 0) :
     Tendsto (fun k : ℕ ↦ reductionTerm a z (2 * k + 1) / reductionTerm a z (2 * k + 2))
       atTop (𝓝 0) := by
-  have hG : Gamma (a + 1) ≠ 0 := Gamma_ne_zero fun k hk ↦ ha k (by linear_combination hk)
-  have hO := tendsto_Gamma_mul_regularizedHGFun_odd a z
-  have hrat1 := tendsto_add_mul_div_add_mul_atTop_nhds 1 (a + 1) (1 : ℂ) (d := 2) (by norm_num)
-  have hrat2 := tendsto_add_mul_div_add_mul_atTop_nhds 1 (a + 2) (0 : ℂ) (d := 2) (by norm_num)
-  have hquot := (hO.comp (tendsto_add_atTop_nat 1)).div hO (exp_ne_zero _)
-  have hlim : Tendsto (fun k : ℕ ↦
-      -z * ((1 + 1 * (k : ℂ)) / (a + 1 + 2 * k)) * ((1 + 0 * (k : ℂ)) / (a + 2 + 2 * k)) *
-        ((Gamma (a + (2 * (k + 1) + 1 : ℕ)) *
-            regularizedHGFun {((k + 1 + 1 : ℕ) : ℂ)} {a + (2 * (k + 1) + 1 : ℕ)} z) /
-          (Gamma (a + (2 * k + 1 : ℕ)) *
-            regularizedHGFun {((k + 1 : ℕ) : ℂ)} {a + (2 * k + 1 : ℕ)} z)))
-      atTop (𝓝 0) := by
-    simpa [div_self (exp_ne_zero (z / 2))] using ((hrat1.const_mul (-z)).mul hrat2).mul hquot
-  refine hlim.congr' ?_
+  refine (tendsto_mul_div_mul_inv_mul_div_nhds_zero (-z) 1 (a + 1)
+    (tendsto_Gamma_mul_regularizedHGFun_odd a z) (exp_ne_zero _)).congr' ?_
   obtain ⟨N₀, hN₀⟩ := eventually_atTop.1 (eventually_tricomiContFracSolution_ne_zero ha hz)
-  filter_upwards [eventually_ge_atTop (max N₀ 1), hO.eventually_ne (exp_ne_zero _),
-    tendsto_natCast_atTop_atTop.eventually (eventually_gt_atTop (-a.re))] with k hk hOk hre
+  filter_upwards [eventually_ge_atTop (max N₀ 1),
+    tendsto_natCast_atTop_atTop.eventually (eventually_gt_atTop (-a.re))] with k hk hre
   have hk1 : 1 ≤ k := (le_max_right N₀ 1).trans hk
   have hprod := prod_Icc_tricomiContFracPartNum_ne_zero ha hz (2 * k + 1)
-  have hf1 := hN₀ (2 * k + 2) (by have := le_max_left N₀ 1; omega)
-  have hMk := right_ne_zero_of_mul hOk
+  have hf1 := hN₀ (2 * k + 1 + 1) (by have := le_max_left N₀ 1; omega)
   have hs : 0 < (a + (2 * k + 1 : ℕ)).re := by
     simp only [add_re, natCast_re]; push_cast; linarith [k.cast_nonneg (α := ℝ)]
-  have hak : a + k ≠ 0 := fun h ↦ ha (k - 1) (by
-    have : ((k - 1 : ℕ) : ℂ) + 1 = k := by rw [Nat.cast_sub hk1]; push_cast; ring
-    rw [this]; linear_combination h)
-  rw [one_mul, zero_mul, add_zero,
-    show a + 1 + 2 * (k : ℂ) = a + (2 * k + 1 : ℕ) by push_cast; ring,
-    show a + 2 + 2 * (k : ℂ) = a + (2 * k + 1 : ℕ) + 1 by push_cast; ring,
-    show Gamma (a + (2 * (k + 1) + 1 : ℕ)) = Gamma (a + (2 * k + 1 : ℕ) + 2) by
-      congr 1; push_cast; ring,
-    mul_div_Gamma_add_two_eq (-z) hs, show 2 * k + 2 = 2 * k + 1 + 1 from rfl,
-    reductionTerm_div_succ hprod hf1, show 2 * k + 1 + 2 = 2 * (k + 1) + 1 by ring,
-    tricomiContFracSolution_two_mul_add_one a z (k + 1),
-    tricomiContFracSolution_two_mul_add_one a z k, show 2 * k + 1 + 1 = 2 * (k + 1) by ring,
-    tricomiContFracPartNum_two_mul a z (by omega),
-    tricomiContFracNorm_two_mul_add_one_eq_mul a (by omega),
-    tricomiContFracNorm_two_mul_succ_eq_mul a hk1,
-    show 2 * (k + 1) = 2 * k + 2 by ring, pow_add z (2 * k) 2, sq, pow_succ (-1 : ℂ) (k + 1),
-    show a + ((k + 1 : ℕ) : ℂ) - 1 = a + k by push_cast; ring]
-  have hd : tricomiContFracNorm a (2 * k + 1) ≠ 0 := tricomiContFracNorm_ne_zero ha _
-  have hzpow0 : z ^ (2 * k) ≠ 0 := pow_ne_zero _ hz
-  have hp1 : (-1 : ℂ) ^ (k + 1) ≠ 0 := pow_ne_zero _ (by norm_num)
-  generalize a + (k : ℂ) = qk at hak ⊢
-  field_simp
-  rw [show ((k + 1 : ℕ) : ℂ) = k + 1 by push_cast; ring]; ring
+  rw [show 2 * k + 2 = 2 * k + 1 + 1 by ring, show a + 1 + 1 = a + 2 by ring,
+    reductionTerm_div_succ hprod hf1, neg_tricomiContFracSolution_div_odd ha hz hk1 hs]
 
 /-- For `a ∉ {-1, -2, …}` and `z ≠ 0`, `reductionTerm a z m` is eventually nonzero. -/
 private theorem eventually_reductionTerm_ne_zero {a z : ℂ}
@@ -862,16 +922,16 @@ private theorem isLittleO_reductionTerm_succ {a z : ℂ}
 
 /-- **Reduction-of-order divergence for DLMF 8.9.1**: for `a ∉ {-1, -2, …}`, `z ≠ 0`, and every
 starting index `N`, the norms of the partial sums
-`∑_{m = N}^{n - 1} (-1)^m (∏_{j=1}^m a_j) / (f(m) f(m + 1))` tend to `+∞` as `n → ∞`, showing that
-`tricomiContFracSolution a z` is the minimal (recessive) solution of the three-term recurrence of
-`tricomiContFrac a z`. -/
+`∑_{m = N}^{n - 1} (-1)^m (∏_{j=1}^m a_j) / (f(m) f(m + 1))` tend to `+∞` as `n → ∞`. This is the
+reduction-of-order divergence condition for `tricomiContFracSolution a z` (which characterizes
+minimality via Pincherle's theorem, not yet formalized). -/
 theorem tendsto_norm_sum_tricomiContFrac_reductionOfOrder {a z : ℂ}
     (ha : ∀ k : ℕ, a ≠ -(k + 1 : ℂ)) (hz : z ≠ 0) (N : ℕ) :
     Tendsto (fun n ↦ ‖∑ m ∈ Ico N n,
       (-1) ^ m * (∏ j ∈ Icc 1 m, tricomiContFracPartNum a z j) /
         (tricomiContFracSolution a z m * tricomiContFracSolution a z (m + 1))‖)
       atTop atTop :=
-  (isLittleO_reductionTerm_succ ha hz).tendsto_norm_sum_Ico_atTop
+  (isLittleO_reductionTerm_succ ha hz).tendsto_norm_sum_Ico_atTop_of_succ
     ((eventually_reductionTerm_ne_zero ha hz).mono fun _ hm ↦ norm_pos_iff.mpr hm).frequently N
 
 end Complex

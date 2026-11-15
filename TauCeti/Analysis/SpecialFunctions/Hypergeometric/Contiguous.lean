@@ -18,25 +18,24 @@ vanishes at the nonpositive integer poles `s ∈ -ℕ` and satisfies the entire 
 for *all* complex parameters `a`, `b` and arguments `z`, with no pole exclusions.
 
 From two termwise series identities — the upper-parameter difference
-`𝐌(a + 1, b, z) - 𝐌(a, b, z) = z 𝐌(a + 1, b + 1, z)` and the mixed parameter relation
-`𝐌(a, b, z) = (b - a) 𝐌(a, b + 1, z) + a 𝐌(a + 1, b + 1, z)` (DLMF 13.3.3) — the remaining
-contiguous relations (DLMF 13.3.1, 13.3.2, 13.3.4) follow by pure linear elimination.
+`𝐌(a + 1, b, z) - 𝐌(a, b, z) = z 𝐌(a + 1, b + 1, z)` (DLMF 13.3.4) and the mixed parameter
+relation `𝐌(a, b, z) = (b - a) 𝐌(a, b + 1, z) + a 𝐌(a + 1, b + 1, z)` (DLMF 13.3.3) — the
+remaining contiguous relations (DLMF 13.3.1 and 13.3.2, together with two diagonal combinations)
+follow by pure linear elimination.
 
 ## Main results
 
-* `Complex.regularizedHGFunCoeff_singleton` — the coefficient `(a)ₙ / (n! Γ(b + n))` of
-  `𝐌(a, b, z)`.
 * `Complex.regularizedHGFun_singleton_zero_left` — `𝐌(0, b, z) = (Γ b)⁻¹`.
 * `Complex.hasDerivAt_regularizedHGFun_singleton`, `Complex.deriv_regularizedHGFun_singleton` —
   `∂𝐌(a, b, z)/∂z = a 𝐌(a + 1, b + 1, z)` (DLMF 13.3.15).
 * `Complex.regularizedHGFun_add_one_left_sub` —
-  `𝐌(a + 1, b, z) - 𝐌(a, b, z) = z 𝐌(a + 1, b + 1, z)` (DLMF 13.3.4, difference form).
+  `𝐌(a + 1, b, z) - 𝐌(a, b, z) = z 𝐌(a + 1, b + 1, z)` (DLMF 13.3.4).
 * `Complex.regularizedHGFun_singleton_eq_sub_mul_add_mul` —
   `𝐌(a, b, z) = (b - a) 𝐌(a, b + 1, z) + a 𝐌(a + 1, b + 1, z)` (DLMF 13.3.3).
 * `Complex.regularizedHGFun_singleton_eq_mul_add_mul` —
-  `𝐌(a, b, z) = b 𝐌(a, b + 1, z) + a z 𝐌(a + 1, b + 2, z)` (DLMF 13.3.4).
+  `𝐌(a, b, z) = b 𝐌(a, b + 1, z) + a z 𝐌(a + 1, b + 2, z)` (from DLMF 13.3.3–13.3.4).
 * `Complex.mul_regularizedHGFun_add_one_sub` —
-  `b 𝐌(a + 1, b + 1, z) - 𝐌(a, b, z) = (b - a) z 𝐌(a + 1, b + 2, z)`.
+  `b 𝐌(a + 1, b + 1, z) - 𝐌(a, b, z) = (b - a) z 𝐌(a + 1, b + 2, z)` (from DLMF 13.3.3–13.3.4).
 * `Complex.regularizedHGFun_singleton_eq_add_mul_sub_mul` — the three-term `b`-contiguous relation
   `𝐌(a, b, z) = (b + z) 𝐌(a, b + 1, z) - (b + 1 - a) z 𝐌(a, b + 2, z)` (DLMF 13.3.2).
 * `Complex.sub_mul_regularizedHGFun_add_mul_eq` — the three-term `a`-contiguous relation
@@ -57,26 +56,24 @@ open scoped Nat
 
 namespace Complex
 
-/-- The `n`-th power-series coefficient of Kummer's regularized function `𝐌(a, b, z)` is
-`(a)ₙ / (n! Γ(b + n))`. -/
-@[simp]
-theorem regularizedHGFunCoeff_singleton (a b : ℂ) (n : ℕ) :
-    regularizedHGFunCoeff {a} {b} n = (ascPochhammer ℂ n).eval a / (n ! * Gamma (b + n)) := by
-  simp [regularizedHGFunCoeff]
+/-- Rising-factorial shift from the left: `(a)_{n + 1} = a (a + 1)_n`. -/
+private theorem ascPochhammer_succ_eval_eq_mul_eval_add_one (n : ℕ) (a : ℂ) :
+    (ascPochhammer ℂ (n + 1)).eval a = a * (ascPochhammer ℂ n).eval (a + 1) :=
+  (ascPochhammer_succ_eval n a).trans (ascPochhammer_eval_succ n a).symm
 
 /-- At `a = 0`, Kummer's regularized function reduces to the constant `𝐌(0, b, z) = (Γ b)⁻¹`
-(DLMF 13.6.1), including at `b ∈ -ℕ` where both sides vanish. -/
+(directly from the series DLMF 13.2.4, since `(0)ₙ = 0` for `n ≥ 1`), including at `b ∈ -ℕ` where
+both sides vanish. -/
 @[simp]
 theorem regularizedHGFun_singleton_zero_left (b z : ℂ) :
     regularizedHGFun {0} {b} z = (Gamma b)⁻¹ := by
-  have h := (hasSum_nat_add_iff' 1).mpr (hasSum_regularizedHGFun (a := {0}) (b := {b}) (by simp) z)
-  rw [Finset.range_one, Finset.sum_singleton, pow_zero, mul_one,
-    regularizedHGFunCoeff_singleton, ascPochhammer_zero, Polynomial.eval_one, Nat.factorial_zero,
-    Nat.cast_one, one_mul, Nat.cast_zero, add_zero, one_div] at h
+  have h : HasSum (fun n : ℕ ↦ regularizedHGFunCoeff {0} {b} (n + 1) * z ^ (n + 1))
+      (regularizedHGFun {0} {b} z - (Gamma b)⁻¹) := by
+    simpa [one_div] using
+      (hasSum_nat_add_iff' 1).mpr (hasSum_regularizedHGFun (a := {0}) (b := {b}) (by simp) z)
   have hzero : HasSum (fun n : ℕ ↦ regularizedHGFunCoeff {0} {b} (n + 1) * z ^ (n + 1)) 0 := by
     convert hasSum_zero (α := ℂ) (β := ℕ) with n
-    rw [regularizedHGFunCoeff_singleton, ascPochhammer_succ_left, Polynomial.eval_mul,
-      Polynomial.eval_X, zero_mul, zero_div, zero_mul]
+    simp
   linear_combination h.unique hzero
 
 /-- The derivative of Kummer's regularized function in its argument (DLMF 13.3.15):
@@ -91,11 +88,8 @@ theorem hasDerivAt_regularizedHGFun_singleton (a b z : ℂ) :
   refine ((hasSum_regularizedHGFun (a := {a + 1}) (b := {b + 1}) (by simp) z).mul_left a).congr_fun
     fun n ↦ ?_
   have hn1 : (n : ℂ) + 1 ≠ 0 := by exact_mod_cast n.succ_ne_zero
-  have hp : (ascPochhammer ℂ (n + 1)).eval a = a * (ascPochhammer ℂ n).eval (a + 1) := by
-    rw [ascPochhammer_succ_left, Polynomial.eval_mul, Polynomial.eval_X, Polynomial.eval_comp,
-      Polynomial.eval_add, Polynomial.eval_X, Polynomial.eval_one]
   simp only [regularizedHGFunCoeff_singleton, Nat.factorial_succ, Nat.cast_mul, Nat.cast_add,
-    Nat.cast_one, hp]
+    Nat.cast_one, ascPochhammer_succ_eval_eq_mul_eval_add_one]
   rw [show b + ((n : ℂ) + 1) = b + 1 + n by ring]
   field_simp
 
@@ -123,24 +117,13 @@ theorem regularizedHGFun_add_one_left_sub (a b z : ℂ) :
   have hn1 : (n : ℂ) + 1 ≠ 0 := by exact_mod_cast n.succ_ne_zero
   have hp : (ascPochhammer ℂ (n + 1)).eval (a + 1) - (ascPochhammer ℂ (n + 1)).eval a =
       (n + 1 : ℂ) * (ascPochhammer ℂ n).eval (a + 1) := by
-    have h1 : (ascPochhammer ℂ (n + 1)).eval (a + 1) =
-        (ascPochhammer ℂ n).eval (a + 1) * (a + 1 + n) := by simp [ascPochhammer_succ_right]
-    have h2 : (ascPochhammer ℂ (n + 1)).eval a = a * (ascPochhammer ℂ n).eval (a + 1) := by
-      rw [ascPochhammer_succ_left, Polynomial.eval_mul, Polynomial.eval_X, Polynomial.eval_comp,
-        Polynomial.eval_add, Polynomial.eval_X, Polynomial.eval_one]
-    rw [h1, h2]; ring
+    rw [ascPochhammer_succ_eval n (a + 1), ascPochhammer_succ_eval_eq_mul_eval_add_one]
+    ring
   simp only [regularizedHGFunCoeff_singleton]
   rw [← sub_mul, ← sub_div, hp, Nat.factorial_succ,
     Nat.cast_mul, Nat.cast_add, Nat.cast_one, show b + ((n : ℂ) + 1) = b + 1 + n by ring,
     pow_succ']
   field_simp
-
-/-- At `a = 1`, `𝐌(1, b, z) = (Γ b)⁻¹ + z 𝐌(1, b + 1, z)` for all complex `b` and `z`. -/
-theorem regularizedHGFun_one_singleton_eq (b z : ℂ) :
-    regularizedHGFun {1} {b} z = (Gamma b)⁻¹ + z * regularizedHGFun {1} {b + 1} z := by
-  have h := regularizedHGFun_add_one_left_sub 0 b z
-  rw [zero_add, regularizedHGFun_singleton_zero_left] at h
-  linear_combination h
 
 /-- **DLMF 13.3.3** for Kummer's regularized function:
 `𝐌(a, b, z) = (b - a) 𝐌(a, b + 1, z) + a 𝐌(a + 1, b + 1, z)` for all complex `a`, `b`, `z`. -/
@@ -165,7 +148,7 @@ theorem regularizedHGFun_singleton_eq_sub_mul_add_mul (a b z : ℂ) :
     _ = (ascPochhammer ℂ n).eval a * ((n ! : ℂ)⁻¹ * (Gamma (b + n))⁻¹) * z ^ n := by
           rw [← hG]; ring
 
-/-- **DLMF 13.3.4** for Kummer's regularized function:
+/-- First diagonal contiguous relation for Kummer's regularized function (from DLMF 13.3.3–13.3.4):
 `𝐌(a, b, z) = b 𝐌(a, b + 1, z) + a z 𝐌(a + 1, b + 2, z)` for all complex `a`, `b`, `z`.
 This is the confluent `₁F₁` counterpart of `Complex.regularizedHGFun_zero_singleton_eq_mul_add_mul`
 for `₀F₁`. -/
