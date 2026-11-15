@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.Module.LocallyConvex
-public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
+public import Mathlib.Analysis.LocallyConvex.WithSeminorms
+public import Mathlib.Analysis.RCLike.Basic
 
 /-!
 # Final locally convex topologies
@@ -17,10 +17,14 @@ The source topologies need not themselves be vector topologies. No separation or
 assumption is imposed; in particular, this construction does not assert Hausdorffness.
 
 A linear map out of this topology into a locally convex space is continuous exactly when its
-composites with the generating maps are continuous. The comparison criterion permits replacing
-the generating family by another family through finite sums of continuous factorizations. This
-allows partition-of-unity decompositions when comparing chart-generated test-section topologies
-with fixed-support inductive limits.
+composites with the generating maps are continuous. When the source spaces are topological additive
+groups, a seminorm on the target is continuous for the final locally convex topology if and only if
+its composites with all generating maps are continuous (`continuous_seminorm_iff`), and scalar
+multiplication by `𝕜` (`[RCLike 𝕜]`) is jointly continuous as soon as multiplication by
+`RCLike.I` composed with each generating map is continuous (`continuousSMul_rclike_iff`). The
+comparison criterion permits replacing the generating family by another family through finite sums
+of continuous factorizations. This allows partition-of-unity decompositions when comparing
+chart-generated test-section topologies with fixed-support inductive limits.
 
 The construction and universal-property proof generalize Mathlib's
 `TestFunction.topologicalSpace` and `TestFunction.continuous_iff_continuous_comp` from a particular
@@ -83,6 +87,28 @@ theorem le_iff (t : TopologicalSpace F) [@IsTopologicalAddGroup F t _]
     exact sInf_le ⟨iSup_le fun i ↦ continuous_iff_coinduced_le.1 (h i),
       inferInstance, inferInstance, inferInstance⟩
 
+/-- When the source spaces are topological additive groups, a real seminorm on `F` is continuous
+for the final locally convex topology if and only if its composites with all generating maps are
+continuous. For a seminorm over another scalar ring, apply this to `q.restrictScalars ℝ`. -/
+theorem continuous_seminorm_iff [∀ i, IsTopologicalAddGroup (E i)] (q : Seminorm ℝ F) :
+    @Continuous F ℝ (finalLocallyConvexTopology f) inferInstance q ↔
+      ∀ i, Continuous (q ∘ f i) := by
+  refine ⟨fun hq i ↦ by
+    let := finalLocallyConvexTopology f
+    exact hq.comp (continuous f i), fun hq ↦ ?_⟩
+  let p : SeminormFamily ℝ F Unit := fun _ ↦ q
+  let t : TopologicalSpace F := p.moduleFilterBasis.topology
+  have hp : WithSeminorms p := ⟨rfl⟩
+  have : IsTopologicalAddGroup F := hp.isTopologicalAddGroup
+  have : ContinuousSMul ℝ F := hp.continuousSMul
+  have : LocallyConvexSpace ℝ F := hp.toLocallyConvexSpace
+  have hle : finalLocallyConvexTopology f ≤ t :=
+    (le_iff f t).2 fun i ↦ hp.continuous_of_continuous_comp (f i) fun _ ↦ hq i
+  exact @Continuous.comp F F ℝ (finalLocallyConvexTopology f) t inferInstance id q
+    (hp.continuous_seminorm ()) (@continuous_id_of_le F (finalLocallyConvexTopology f) t hle)
+
+section UniversalProperty
+
 variable {G : Type*} [AddCommGroup G] [Module ℝ G] [TopologicalSpace G]
   [IsTopologicalAddGroup G] [ContinuousSMul ℝ G] [LocallyConvexSpace ℝ G]
 
@@ -114,6 +140,33 @@ def lift (g : F →ₗ[𝕜] G) (hg : ∀ i, Continuous (g ∘ f i)) :
 @[simp]
 theorem lift_apply (g : F →ₗ[𝕜] G) (hg : ∀ i, Continuous (g ∘ f i)) (x : F) :
     lift f g hg x = g x := (rfl)
+
+end UniversalProperty
+
+/-- Over `ℝ` or `ℂ`, scalar multiplication on `F` is jointly continuous for the final locally
+convex topology if and only if multiplying each generating map by `RCLike.I` is continuous into
+that topology. For `𝕜`-linear maps from topological `𝕜`-modules, this follows from
+`(continuous f i).comp (continuous_const_smul _)`. -/
+theorem continuousSMul_rclike_iff {𝕜 : Type*} [RCLike 𝕜] [Module 𝕜 F] [IsScalarTower ℝ 𝕜 F] :
+    @ContinuousSMul 𝕜 F _ _ (finalLocallyConvexTopology f) ↔
+      ∀ i, @Continuous (E i) F inferInstance (finalLocallyConvexTopology f)
+        fun x ↦ (RCLike.I : 𝕜) • f i x := by
+  let := finalLocallyConvexTopology f
+  refine ⟨fun _ i ↦ (continuous_const_smul (RCLike.I : 𝕜)).comp (continuous f i), fun hI ↦ ?_⟩
+  let mI : F →ₗ[ℝ] F :=
+    { toFun x := (RCLike.I : 𝕜) • x
+      map_add' := smul_add _
+      map_smul' r x := by
+        rw [RingHom.id_apply, smul_comm] }
+  have hmI : Continuous mI := (continuous_iff_continuous_comp f mI).2 hI
+  refine ⟨?_⟩
+  have hdecomp (p : 𝕜 × F) : p.1 • p.2 = RCLike.re p.1 • p.2 + RCLike.im p.1 • mI p.2 := by
+    conv_lhs => rw [← RCLike.re_add_im p.1]
+    simp only [mI, add_smul, mul_smul, ← RCLike.real_smul_eq_coe_smul,
+      LinearMap.coe_mk, AddHom.coe_mk]
+  simp_rw [hdecomp]
+  exact ((RCLike.continuous_re.comp continuous_fst).smul continuous_snd).add
+    ((RCLike.continuous_im.comp continuous_fst).smul (hmI.comp continuous_snd))
 
 variable {κ : Type*} {H : κ → Type*} [∀ j, AddCommGroup (H j)]
   [∀ j, Module ℝ (H j)] [∀ j, TopologicalSpace (H j)]

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.LocallyConvex.Barrelled
 public import Mathlib.Topology.Baire.CompleteMetrizable
+public import TauCeti.Analysis.Normed.Operator.Compact.Adjoint
 public import TauCeti.Analysis.Normed.Operator.WeaklyCompact.Bidual
 
 /-!
@@ -24,8 +25,9 @@ dominated by later ones
 particular the modulus of every continuous functional, is bounded by a multiple of a single
 seminorm `f ↦ ‖f j‖` (`TauCeti.dualProjectiveLimit.exists_bound_of_continuous`).
 
-Each vector `x ∈ B j` defines the continuous functional `f ↦ f j x` on the projective limit
-(`TauCeti.dualProjectiveLimit.eval`), and these evaluations are compatible with the bonding maps.
+Each vector `x ∈ B j` defines the continuous functional `f ↦ f j x` on the projective limit, and
+sending `x` to this evaluation is a continuous linear map `B j →L[𝕜] StrongDual 𝕜
+(dualProjectiveLimit T)` (`TauCeti.dualProjectiveLimit.eval`) compatible with the bonding maps.
 When the bonding maps are weakly compact, in particular when they are compact, every continuous
 functional on the projective limit is such an evaluation
 (`TauCeti.dualProjectiveLimit.exists_eval_eq`). More precisely, a linear functional bounded by
@@ -35,8 +37,13 @@ image of the projection to `B j′`, where Hahn–Banach and Gantmacher's criter
 represent it (`ContinuousLinearMap.IsWeaklyCompact.exists_norm_le_forall_apply_eq`). Since the
 projective limit is barrelled, a pointwise bounded family of continuous functionals is bounded by
 a single coordinate norm, so it consists of evaluations at a norm-bounded set of vectors of one
-space `B j` (`TauCeti.dualProjectiveLimit.exists_forall_exists_norm_le_eval_eq`). No completeness
-or reflexivity of the spaces `B j` is needed.
+space `B j` (`TauCeti.dualProjectiveLimit.exists_forall_exists_norm_le_eval_eq`). Consequently,
+canonical evaluation is a topological linear isomorphism from `dualProjectiveLimit T` onto its
+strong bidual (`TauCeti.dualProjectiveLimit.strongBidualEquiv`), with inverse `Ψ ↦ (Ψ ∘ eval T j)`.
+When the bonding maps are compact, Schauder's theorem makes each adjoint compact, so every bounded
+subset of `dualProjectiveLimit T` has compact closure
+(`TauCeti.dualProjectiveLimit.isCompact_closure_of_isVonNBounded`), making `dualProjectiveLimit T`
+a Fréchet–Schwartz (and Montel) space. No completeness or reflexivity of the spaces `B j` is needed.
 
 Given a topological vector space `L` with compatible continuous linear maps `ι j : B j → L`,
 `ι (j + 1) ∘ T j = ι j`, precomposition with the maps `ι j` sends a continuous functional on `L`
@@ -56,7 +63,7 @@ identification of `L` with the strong dual of this Fréchet space.
 * `TauCeti.dualProjectiveLimit`: the projective limit `lim_j B j′` as a submodule of the product.
 * `TauCeti.dualProjectiveLimit.coord`: its coordinate projections to the spaces `B j′`.
 * `TauCeti.dualProjectiveLimit.withSeminorms`: its topology is given by the coordinate norms.
-* `TauCeti.dualProjectiveLimit.eval`: the evaluation map `B j → (lim_k B k′)′`.
+* `TauCeti.dualProjectiveLimit.eval`: the continuous evaluation map `B j →L[𝕜] (lim_k B k′)′_b`.
 * `TauCeti.dualProjectiveLimit.exists_norm_le_forall_apply_eq`: a functional bounded by the
   `j`-th coordinate norm is evaluation at a vector of `B (j + 1)`, with a norm bound.
 * `TauCeti.dualProjectiveLimit.exists_forall_exists_norm_le_eval_eq`: for weakly compact bonding
@@ -64,6 +71,10 @@ identification of `L` with the strong dual of this Fréchet space.
   set of vectors of a single space `B j`.
 * `TauCeti.dualProjectiveLimit.exists_eval_eq`: for weakly compact bonding maps, every continuous
   functional on the projective limit is an evaluation.
+* `TauCeti.dualProjectiveLimit.strongBidualEquiv`: for weakly compact bonding maps, canonical
+  evaluation is a topological linear isomorphism from `lim_j B j′` onto its strong bidual.
+* `TauCeti.dualProjectiveLimit.isCompact_closure_of_isVonNBounded`: for compact bonding maps,
+  every bounded subset of `lim_j B j′` has compact closure.
 * `TauCeti.dualProjectiveLimit.precomp`: precomposition `L′ → lim_j B j′` with compatible maps
   `ι j : B j → L`.
 
@@ -111,6 +122,11 @@ theorem isClosed_dualProjectiveLimit :
   rw [h]
   exact isClosed_iInter fun n ↦ isClosed_eq
     ((precomp 𝕜 (T n)).continuous.comp (continuous_apply (n + 1))) (continuous_apply n)
+
+/-- Shortcut instance avoiding typeclass search through ring instances on the dependent product
+`∀ n, StrongDual 𝕜 (B n)`. -/
+instance : AddCommGroup (dualProjectiveLimit T) :=
+  (dualProjectiveLimit T).addCommGroup
 
 /-- The projective limit is complete. -/
 instance : CompleteSpace (dualProjectiveLimit T) :=
@@ -198,23 +214,26 @@ theorem exists_bound_of_continuous (q : Seminorm 𝕜 (dualProjectiveLimit T)) (
   simpa [NNReal.smul_def, mul_assoc] using mul_le_mul_of_nonneg_left hsup C.coe_nonneg
 
 variable (T) in
-/-- Evaluation at a vector of `B j` as a continuous functional on the projective limit,
-`eval T j x f = f j x`. -/
-def eval (j : ℕ) : B j →ₗ[𝕜] StrongDual 𝕜 (dualProjectiveLimit T) where
-  toFun x := (ContinuousLinearMap.apply 𝕜 𝕜 x).comp (coord T j)
-  map_add' x y := by ext; simp
-  map_smul' c x := by ext; simp
+/-- Evaluation at a vector of `B j` as a continuous linear map into the strong dual of the
+projective limit, `eval T j x f = f j x`. -/
+def eval (j : ℕ) : B j →L[𝕜] StrongDual 𝕜 (dualProjectiveLimit T) :=
+  (ContinuousLinearMap.precomp 𝕜 (coord T j)).comp (NormedSpace.inclusionInDoubleDual 𝕜 (B j))
 
 @[simp]
 theorem eval_apply (j : ℕ) (x : B j) (f : dualProjectiveLimit T) :
     eval T j x f = (f : ∀ n, StrongDual 𝕜 (B n)) j x :=
   (rfl)
 
+/-- The continuous evaluation maps are compatible with the bonding maps. -/
+@[simp]
+theorem eval_succ_comp (j : ℕ) : (eval T (j + 1)).comp (T j) = eval T j := by
+  ext x f
+  simp
+
 /-- The evaluations are compatible with the bonding maps. -/
 @[simp]
-theorem eval_succ_apply (j : ℕ) (x : B j) : eval T (j + 1) (T j x) = eval T j x := by
-  ext f
-  simp
+theorem eval_succ_apply (j : ℕ) (x : B j) : eval T (j + 1) (T j x) = eval T j x :=
+  congr($(eval_succ_comp (T := T) j) x)
 
 /-- A linear functional on the projective limit that is bounded by `C` times the `j`-th
 coordinate norm is evaluation at a vector of the next stage `B (j + 1)` of norm at most
@@ -290,6 +309,94 @@ theorem exists_eval_eq (hT : ∀ n, (T n).IsWeaklyCompact)
     (Set.finite_range _).bddAbove
   obtain ⟨x, -, hx⟩ := h ()
   exact ⟨j, x, hx⟩
+
+/-- **Strong-bidual reflexivity of the dual projective limit.** When the bonding maps are weakly
+compact, in particular when they are compact, canonical evaluation is a topological linear
+isomorphism from `dualProjectiveLimit T` onto its strong bidual, with inverse `Ψ ↦ (Ψ ∘ eval T n)`.
+-/
+def strongBidualEquiv (hT : ∀ n, (T n).IsWeaklyCompact) :
+    dualProjectiveLimit T ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 (dualProjectiveLimit T)) where
+  toLinearMap := applyₗ 𝕜 (RingHom.id 𝕜)
+  invFun Ψ := ⟨fun n ↦ Ψ.comp (eval T n),
+    mem_dualProjectiveLimit.2 fun n ↦ by rw [comp_assoc, eval_succ_comp]⟩
+  left_inv f := by
+    ext n x
+    rfl
+  right_inv Ψ := by
+    ext φ
+    obtain ⟨n, x, rfl⟩ := exists_eval_eq hT φ
+    rfl
+  continuous_toFun := by
+    have : ContinuousAdd ((dualProjectiveLimit T →L[𝕜] 𝕜) →L[𝕜] 𝕜) :=
+      ContinuousLinearMap.isTopologicalAddGroup.toContinuousAdd
+    refine continuous_of_continuousAt_zero (applyₗ 𝕜 (RingHom.id 𝕜)).toAddMonoidHom ?_
+    rw [ContinuousAt, map_zero]
+    refine ((ContinuousLinearMap.hasBasis_nhds_zero_of_basis (σ := RingHom.id 𝕜)
+      Metric.nhds_basis_ball).tendsto_right_iff).2 fun ⟨S, ε⟩ ⟨hS, hε⟩ ↦ ?_
+    set q : S → Seminorm 𝕜 (dualProjectiveLimit T) :=
+      fun Φ ↦ (normSeminorm 𝕜 𝕜).comp (E := dualProjectiveLimit T) Φ.1.toLinearMap
+    have hbdd : BddAbove (Set.range q) := Seminorm.bddAbove_range_iff.2 fun f ↦ by
+      obtain ⟨C, hC⟩ := (NormedSpace.isVonNBounded_iff' 𝕜).1
+        (hS.image (applyₗ 𝕜 (RingHom.id 𝕜) f))
+      exact ⟨C, by rintro _ ⟨Φ, rfl⟩; exact hC _ (Set.mem_image_of_mem _ Φ.2)⟩
+    have hp : Continuous ⇑(⨆ Φ, q Φ : Seminorm 𝕜 (dualProjectiveLimit T)) := by
+      rw [Seminorm.coe_iSup_eq hbdd]
+      exact Seminorm.continuous_iSup q (fun Φ ↦ continuous_norm.comp Φ.1.continuous) hbdd
+    filter_upwards [(⨆ Φ, q Φ).ball_mem_nhds hp hε] with f hf Φ hΦ
+    rw [Seminorm.mem_ball_zero] at hf
+    simpa [q, mem_ball_zero_iff] using (Seminorm.le_def.1 (le_ciSup hbdd ⟨Φ, hΦ⟩) f).trans_lt hf
+  continuous_invFun :=
+    (continuous_pi fun n ↦ (ContinuousLinearMap.precomp 𝕜 (eval T n)).continuous).subtype_mk _
+
+@[simp]
+theorem strongBidualEquiv_apply_apply (hT : ∀ n, (T n).IsWeaklyCompact)
+    (f : dualProjectiveLimit T) (φ : StrongDual 𝕜 (dualProjectiveLimit T)) :
+    strongBidualEquiv hT f φ = φ f :=
+  (rfl)
+
+@[simp]
+theorem strongBidualEquiv_symm_apply (hT : ∀ n, (T n).IsWeaklyCompact)
+    (Ψ : StrongDual 𝕜 (StrongDual 𝕜 (dualProjectiveLimit T))) (n : ℕ) :
+    ((strongBidualEquiv hT).symm Ψ : ∀ k, StrongDual 𝕜 (B k)) n = Ψ.comp (eval T n) :=
+  (rfl)
+
+@[simp]
+theorem toLinearMap_strongBidualEquiv (hT : ∀ n, (T n).IsWeaklyCompact) :
+    (strongBidualEquiv hT).toLinearMap = applyₗ 𝕜 (RingHom.id 𝕜) :=
+  (rfl)
+
+/-- **Montel / Fréchet–Schwartz compactness of the dual projective limit.** When every bonding map
+`T n` is compact, every von Neumann bounded subset of `dualProjectiveLimit T` has compact closure.
+-/
+theorem isCompact_closure_of_isVonNBounded (hT : ∀ n, IsCompactOperator (T n))
+    {A : Set (dualProjectiveLimit T)} (hA : Bornology.IsVonNBounded 𝕜 A) :
+    IsCompact (closure A) := by
+  have hK (n : ℕ) : IsCompact (closure (coord T n '' A)) := by
+    have himg : coord T n '' A =
+        ContinuousLinearMap.precomp 𝕜 (T n) '' (coord T (n + 1) '' A) := by
+      ext g
+      simp only [Set.mem_image, exists_exists_and_eq_and, coord_apply,
+        ContinuousLinearMap.precomp_apply, apply_succ_comp]
+    rw [himg]
+    exact (hT n).precomp.isCompact_closure_image_of_isVonNBounded (hA.image (coord T (n + 1)))
+  exact ((isClosed_dualProjectiveLimit T).isClosedEmbedding_subtypeVal.isCompact_preimage
+    (isCompact_univ_pi hK)).of_isClosed_subset isClosed_closure <|
+      closure_minimal (fun f hf n _ ↦ subset_closure (Set.mem_image_of_mem (coord T n) hf))
+        ((isClosed_set_pi fun _ _ ↦ isClosed_closure).preimage continuous_subtype_val)
+
+/-- When every bonding map `T n` is compact, closed bounded subsets of `dualProjectiveLimit T` are
+compact. -/
+theorem isCompact_of_isClosed_of_isVonNBounded (hT : ∀ n, IsCompactOperator (T n))
+    {A : Set (dualProjectiveLimit T)} (hclosed : IsClosed A) (hA : Bornology.IsVonNBounded 𝕜 A) :
+    IsCompact A :=
+  (isCompact_closure_of_isVonNBounded hT hA).of_isClosed_subset hclosed subset_closure
+
+/-- When every bonding map `T n` is compact, bounded subsets of `dualProjectiveLimit T` are
+totally bounded. -/
+theorem totallyBounded_of_isVonNBounded (hT : ∀ n, IsCompactOperator (T n))
+    {A : Set (dualProjectiveLimit T)} (hA : Bornology.IsVonNBounded 𝕜 A) :
+    TotallyBounded A :=
+  (isCompact_closure_of_isVonNBounded hT hA).totallyBounded.subset subset_closure
 
 section Precomp
 
