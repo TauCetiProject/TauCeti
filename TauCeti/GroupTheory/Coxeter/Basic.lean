@@ -134,7 +134,7 @@ theorem isLiftable_iff [Monoid G] {f : B → G} :
     let u : B → Gˣ := fun i ↦ ⟨f i, f i, hsq i, hsq i⟩
     have hu : ∀ l : List B, (((l.map u).prod : Gˣ) : G) = (l.map f).prod := fun l ↦ by
       rw [← Units.coeHom_apply, map_list_prod, List.map_map]
-      rfl
+      simp [u, Function.comp_def]
     have h := isLiftable_of_braidWord M (f := u) (fun i ↦ Units.ext (hsq i))
       (fun i i' ↦ Units.ext (by rw [hu, hu, hbraid])) i i'
     simpa [u] using congrArg Units.val h

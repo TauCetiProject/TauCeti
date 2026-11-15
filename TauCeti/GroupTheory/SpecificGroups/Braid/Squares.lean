@@ -256,15 +256,14 @@ theorem ker_exponentParity_le_ker_iff {f : BraidGroup n →* G} :
 /-- From two strands on, the exponent parity is onto the group of order two. -/
 theorem exponentParity_surjective (hn : 2 ≤ n) :
     Function.Surjective (ArtinGroup.exponentParity (CoxeterMatrix.A (n - 1))) := by
-  intro x
-  refine ⟨sigma ⟨0, by omega⟩ ^ x.toAdd.val, ?_⟩
-  rw [map_pow, exponentParity_sigma, ← ofAdd_nsmul, nsmul_one, ZMod.natCast_zmod_val, ofAdd_toAdd]
+  have : Nonempty (Fin (n - 1)) := ⟨⟨0, by omega⟩⟩
+  exact ArtinGroup.exponentParity_surjective _
 
 /-- From two strands on, the braids of trivial exponent parity form a subgroup of index two. -/
 theorem index_ker_exponentParity (hn : 2 ≤ n) :
     (ArtinGroup.exponentParity (CoxeterMatrix.A (n - 1))).ker.index = 2 := by
-  rw [Subgroup.index_ker, MonoidHom.range_eq_top.2 (exponentParity_surjective hn),
-    Subgroup.card_top, Nat.card_congr Multiplicative.toAdd, Nat.card_zmod]
+  have : Nonempty (Fin (n - 1)) := ⟨⟨0, by omega⟩⟩
+  exact ArtinGroup.index_ker_exponentParity _
 
 /-! ### Comparing the two subgroups -/
 

@@ -417,9 +417,7 @@ theorem exponentParity_sigma (i : Fin (n - 1)) :
 Not `@[simp]`, for the reason given at `TauCeti.BraidGroup.exponentSum_strandIncl`. -/
 theorem exponentParity_strandIncl {n : ℕ} (b : BraidGroup (n + 1)) :
     ArtinGroup.exponentParity _ (strandIncl b) = ArtinGroup.exponentParity _ b := by
-  rw [← ofAdd_toAdd (ArtinGroup.exponentParity _ (strandIncl b)),
-    ArtinGroup.toAdd_exponentParity, exponentSum_strandIncl, ← ArtinGroup.toAdd_exponentParity,
-    ofAdd_toAdd]
+  rw [ArtinGroup.exponentParity_apply, ArtinGroup.exponentParity_apply, exponentSum_strandIncl]
 
 /-- The added strand does not interfere: on the old strands, `strandIncl b` permutes exactly as
 `b` does. -/
