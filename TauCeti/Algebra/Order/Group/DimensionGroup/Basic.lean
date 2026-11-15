@@ -13,6 +13,7 @@ public import Mathlib.Algebra.Order.Pi
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Data.Finset.Order
 import Mathlib.Tactic.Abel
+import TauCeti.Algebra.Order.Group.Lattice
 
 /-!
 # Dimension groups, Riesz interpolation, and unperforation
@@ -90,11 +91,16 @@ def HasRieszDecomposition (G : Type*) [AddCommMonoid G] [Preorder G] : Prop :=
 def IsUnperforated (G : Type*) [AddCommMonoid G] [Preorder G] : Prop :=
   ∀ (n : ℕ), 0 < n → ∀ g : G, 0 ≤ n • g → 0 ≤ g
 
-/-- A dimension group: a directed, unperforated partially ordered abelian group (with
-translation-invariant order `IsOrderedAddMonoid G`) satisfying Riesz interpolation. Countability
-and a scale are separate data. -/
-def IsDimensionGroup (G : Type*) [AddCommGroup G] [PartialOrder G] : Prop :=
-  IsOrderedAddMonoid G ∧ IsDirected G (· ≤ ·) ∧ IsUnperforated G ∧ HasRieszInterpolation G
+/-- A dimension group: a directed, unperforated partially ordered abelian group satisfying Riesz
+interpolation. Countability and a scale are separate data. -/
+structure IsDimensionGroup (G : Type*) [AddCommGroup G] [PartialOrder G]
+    [IsOrderedAddMonoid G] : Prop where
+  /-- A dimension group is upward-directed. -/
+  isDirected : IsDirected G (· ≤ ·)
+  /-- A dimension group is unperforated. -/
+  isUnperforated : IsUnperforated G
+  /-- A dimension group has the Riesz interpolation property. -/
+  hasRieszInterpolation : HasRieszInterpolation G
 
 end Definitions
 
@@ -395,64 +401,34 @@ end Unperforated
 
 section DimensionGroup
 
-variable {G : Type*} [AddCommGroup G] [PartialOrder G]
+variable {G : Type*} [AddCommGroup G] [PartialOrder G] [IsOrderedAddMonoid G]
 
 /-- Unfolding characterization of `IsDimensionGroup`. -/
 theorem isDimensionGroup_def :
     IsDimensionGroup G ↔
-      IsOrderedAddMonoid G ∧ IsDirected G (· ≤ ·) ∧ IsUnperforated G ∧ HasRieszInterpolation G :=
-  (Iff.rfl)
-
-/-- Characterization of `IsDimensionGroup` when `[IsOrderedAddMonoid G]` is already in scope. -/
-theorem isDimensionGroup_iff [IsOrderedAddMonoid G] :
-    IsDimensionGroup G ↔ IsDirected G (· ≤ ·) ∧ IsUnperforated G ∧ HasRieszInterpolation G :=
-  ⟨fun h => h.2, fun h => ⟨inferInstance, h⟩⟩
+      IsDirected G (· ≤ ·) ∧ IsUnperforated G ∧ HasRieszInterpolation G :=
+  ⟨fun h => ⟨h.isDirected, h.isUnperforated, h.hasRieszInterpolation⟩,
+    fun ⟨h₁, h₂, h₃⟩ => ⟨h₁, h₂, h₃⟩⟩
 
 namespace IsDimensionGroup
 
-/-- Build `IsDimensionGroup G` from directedness, unperforation, and Riesz interpolation in a
-partially ordered abelian group. -/
-theorem mk [IsOrderedAddMonoid G] (hdir : IsDirected G (· ≤ ·)) (hu : IsUnperforated G)
-    (hr : HasRieszInterpolation G) : IsDimensionGroup G :=
-  ⟨inferInstance, hdir, hu, hr⟩
-
-/-- A dimension group has translation-invariant order (`IsOrderedAddMonoid`). -/
-theorem isOrderedAddMonoid (hd : IsDimensionGroup G) : IsOrderedAddMonoid G :=
-  hd.1
-
-/-- A dimension group is upward-directed. -/
-theorem isDirected (hd : IsDimensionGroup G) : IsDirected G (· ≤ ·) :=
-  hd.2.1
-
 /-- A dimension group is downward-directed. -/
-theorem isCodirectedOrder (hd : IsDimensionGroup G) : IsCodirectedOrder G := by
-  have := hd.isOrderedAddMonoid
-  exact ⟨fun a b =>
+theorem isCodirectedOrder (hd : IsDimensionGroup G) : IsCodirectedOrder G :=
+  ⟨fun a b =>
     let ⟨c, ha, hb⟩ := hd.isDirected.directed (-a) (-b)
     ⟨-c, neg_le.mp ha, neg_le.mp hb⟩⟩
 
-/-- A dimension group is unperforated. -/
-theorem isUnperforated (hd : IsDimensionGroup G) : IsUnperforated G :=
-  hd.2.2.1
-
-/-- A dimension group has the Riesz interpolation property. -/
-theorem hasRieszInterpolation (hd : IsDimensionGroup G) : HasRieszInterpolation G :=
-  hd.2.2.2
-
 /-- A dimension group has the Riesz decomposition property. -/
-theorem hasRieszDecomposition (hd : IsDimensionGroup G) : HasRieszDecomposition G := by
-  have := hd.isOrderedAddMonoid
-  exact hd.hasRieszInterpolation.hasRieszDecomposition
+theorem hasRieszDecomposition (hd : IsDimensionGroup G) : HasRieszDecomposition G :=
+  hd.hasRieszInterpolation.hasRieszDecomposition
 
 /-- A dimension group has unique divisibility. -/
-theorem hasUniqueDiv (hd : IsDimensionGroup G) : HasUniqueDiv G := by
-  have := hd.isOrderedAddMonoid
-  exact hd.isUnperforated.hasUniqueDiv
+theorem hasUniqueDiv (hd : IsDimensionGroup G) : HasUniqueDiv G :=
+  hd.isUnperforated.hasUniqueDiv
 
 /-- A dimension group is torsion-free. -/
-theorem isAddTorsionFree (hd : IsDimensionGroup G) : IsAddTorsionFree G := by
-  have := hd.isOrderedAddMonoid
-  exact hd.isUnperforated.isAddTorsionFree
+theorem isAddTorsionFree (hd : IsDimensionGroup G) : IsAddTorsionFree G :=
+  hd.isUnperforated.isAddTorsionFree
 
 /-- Finite interpolation in a dimension group: for arbitrary finite subsets `A` and `B` of `G`
 with `a ≤ b` for all `a ∈ A` and `b ∈ B`, there exists `c : G` with `a ≤ c ≤ b` for all `a ∈ A`
@@ -504,39 +480,30 @@ theorem IsUnperforated.of_orderAddMonoidIso {F G H : Type*}
     (hu : IsUnperforated G)
     [EquivLike F G H] [AddEquivClass F G H] [OrderIsoClass F G H] (e : F) :
     IsUnperforated H := by
-  let e' : G ≃+o H :=
-    { AddEquivClass.toAddEquiv e with map_le_map_iff' := map_le_map_iff e }
+  let e' : G ≃+o H := e
   intro n hn g hg
   have hg' : 0 ≤ n • e'.symm g := by
     rw [← map_nsmul e'.symm, ← map_zero e'.symm]
     exact (map_le_map_iff e'.symm).mpr hg
-  have h0 : 0 ≤ e'.symm g := hu n hn (e'.symm g) hg'
-  simpa [map_zero] using (map_le_map_iff e').mpr h0
+  simpa [map_zero] using (map_le_map_iff e').mpr (hu n hn (e'.symm g) hg')
 
 /-- Ordered-monoid-isomorphic preordered additive commutative monoids simultaneously satisfy or
 fail unperforation. -/
 theorem isUnperforated_iff_of_orderAddMonoidIso {F G H : Type*}
     [AddCommMonoid G] [Preorder G] [AddCommMonoid H] [Preorder H]
     [EquivLike F G H] [AddEquivClass F G H] [OrderIsoClass F G H] (e : F) :
-    IsUnperforated G ↔ IsUnperforated H := by
-  let e' : G ≃+o H :=
-    { AddEquivClass.toAddEquiv e with map_le_map_iff' := map_le_map_iff e }
-  exact ⟨fun h => h.of_orderAddMonoidIso e', fun h => h.of_orderAddMonoidIso e'.symm⟩
+    IsUnperforated G ↔ IsUnperforated H :=
+  ⟨fun h => h.of_orderAddMonoidIso e, fun h => h.of_orderAddMonoidIso (e : G ≃+o H).symm⟩
 
 /-- Being a dimension group transfers across any ordered additive group isomorphism. -/
 theorem IsDimensionGroup.of_orderAddMonoidIso {F G H : Type*}
-    [AddCommGroup G] [PartialOrder G] [AddCommGroup H] [PartialOrder H]
+    [AddCommGroup G] [PartialOrder G] [IsOrderedAddMonoid G]
+    [AddCommGroup H] [PartialOrder H] [IsOrderedAddMonoid H]
     (hd : IsDimensionGroup G)
     [EquivLike F G H] [AddEquivClass F G H] [OrderIsoClass F G H] (e : F) :
     IsDimensionGroup H := by
-  have := hd.isOrderedAddMonoid
-  let e' : G ≃+o H :=
-    { AddEquivClass.toAddEquiv e with map_le_map_iff' := map_le_map_iff e }
-  have hord : IsOrderedAddMonoid H :=
-    { add_le_add_left := fun a b hab c => by
-        rw [← map_le_map_iff e'.symm, map_add, map_add]
-        exact add_le_add_left ((map_le_map_iff e'.symm).mpr hab) (e'.symm c) }
-  refine ⟨hord, ⟨fun a b => ?_⟩, hd.isUnperforated.of_orderAddMonoidIso e,
+  let e' : G ≃+o H := e
+  refine ⟨⟨fun a b => ?_⟩, hd.isUnperforated.of_orderAddMonoidIso e,
     hd.hasRieszInterpolation.of_orderIso e⟩
   obtain ⟨c, ha, hb⟩ := hd.isDirected.directed (e'.symm a) (e'.symm b)
   exact ⟨e' c, by simpa using (map_le_map_iff e').mpr ha,
@@ -545,12 +512,11 @@ theorem IsDimensionGroup.of_orderAddMonoidIso {F G H : Type*}
 /-- Ordered-group-isomorphic partially ordered abelian groups are simultaneously dimension
 groups. -/
 theorem isDimensionGroup_iff_of_orderAddMonoidIso {F G H : Type*}
-    [AddCommGroup G] [PartialOrder G] [AddCommGroup H] [PartialOrder H]
+    [AddCommGroup G] [PartialOrder G] [IsOrderedAddMonoid G]
+    [AddCommGroup H] [PartialOrder H] [IsOrderedAddMonoid H]
     [EquivLike F G H] [AddEquivClass F G H] [OrderIsoClass F G H] (e : F) :
-    IsDimensionGroup G ↔ IsDimensionGroup H := by
-  let e' : G ≃+o H :=
-    { AddEquivClass.toAddEquiv e with map_le_map_iff' := map_le_map_iff e }
-  exact ⟨fun h => h.of_orderAddMonoidIso e', fun h => h.of_orderAddMonoidIso e'.symm⟩
+    IsDimensionGroup G ↔ IsDimensionGroup H :=
+  ⟨fun h => h.of_orderAddMonoidIso e, fun h => h.of_orderAddMonoidIso (e : G ≃+o H).symm⟩
 
 end Isomorphism
 
@@ -565,47 +531,22 @@ theorem HasRieszInterpolation.of_semilatticeSup (G : Type*) [SemilatticeSup G] :
 /-- Every lattice-ordered abelian group is unperforated (Fuchs, *Partially Ordered Algebraic
 Systems*, Chapter V, §1.E). -/
 theorem IsUnperforated.of_lattice (G : Type*) [AddCommGroup G] [Lattice G]
-    [IsOrderedAddMonoid G] : IsUnperforated G := by
-  rintro (_ | n) hn g hg
-  · exact (lt_irrefl 0 hn).elim
-  have hstep : ∀ k : ℕ, (k + 1) • (g ⊓ 0) = ((k + 1) • g) ⊓ (k • (g ⊓ 0)) := by
-    intro k
-    induction k with
-    | zero => simp [one_nsmul]
-    | succ m ih =>
-      have hle : (m + 1) • (g ⊓ 0) ≤ m • (g ⊓ 0) + g := by
-        rw [succ_nsmul]
-        exact add_le_add_right inf_le_left _
-      calc
-        (m + 2) • (g ⊓ 0) = (m + 1) • (g ⊓ 0) + (g ⊓ 0) := succ_nsmul _ (m + 1)
-        _ = ((m + 1) • (g ⊓ 0) + g) ⊓ ((m + 1) • (g ⊓ 0) + 0) := add_inf _ _ _
-        _ = ((((m + 1) • g) ⊓ (m • (g ⊓ 0))) + g) ⊓ ((m + 1) • (g ⊓ 0)) := by
-          rw [add_zero]; conv_lhs => lhs; rw [ih]
-        _ = ((m + 2) • g) ⊓ ((m • (g ⊓ 0) + g) ⊓ ((m + 1) • (g ⊓ 0))) := by
-          rw [inf_add, ← succ_nsmul g (m + 1), inf_assoc]
-        _ = ((m + 2) • g) ⊓ ((m + 1) • (g ⊓ 0)) := by
-          rw [inf_eq_right.mpr hle]
-  have hle0 : n • (g ⊓ 0) ≤ (n + 1) • g :=
-    (nsmul_nonpos inf_le_right n).trans hg
-  have heq : n • (g ⊓ 0) + (g ⊓ 0) = n • (g ⊓ 0) + 0 := by
-    rw [← succ_nsmul, add_zero, hstep n, inf_eq_right.mpr hle0]
-  exact inf_eq_right.mp (add_left_cancel heq)
+    [IsOrderedAddMonoid G] : IsUnperforated G :=
+  fun _ hn _ hg => (nsmul_nonneg_iff_of_lattice hn.ne').mp hg
 
 /-- Every lattice-ordered abelian group is a dimension group. -/
 theorem IsDimensionGroup.of_lattice (G : Type*) [AddCommGroup G] [Lattice G]
     [IsOrderedAddMonoid G] : IsDimensionGroup G :=
-  IsDimensionGroup.mk inferInstance (IsUnperforated.of_lattice G)
-    (HasRieszInterpolation.of_semilatticeSup G)
+  ⟨inferInstance, IsUnperforated.of_lattice G, HasRieszInterpolation.of_semilatticeSup G⟩
 
-/-- Any subsingleton abelian group with a partial order is a dimension group. -/
+/-- Any subsingleton partially ordered abelian group is a dimension group. -/
 theorem IsDimensionGroup.of_subsingleton (G : Type*) [AddCommGroup G] [PartialOrder G]
-    [Subsingleton G] : IsDimensionGroup G :=
-  ⟨{ add_le_add_left := fun _ _ _ _ => le_of_eq (Subsingleton.elim _ _) },
-    ⟨fun a _ => ⟨a, le_of_eq (Subsingleton.elim _ _), le_of_eq (Subsingleton.elim _ _)⟩⟩,
-    fun _ _ _ _ => le_of_eq (Subsingleton.elim _ _),
+    [IsOrderedAddMonoid G] [Subsingleton G] : IsDimensionGroup G :=
+  ⟨⟨fun a _ => ⟨a, (Subsingleton.elim _ _).le, (Subsingleton.elim _ _).le⟩⟩,
+    fun _ _ _ _ => (Subsingleton.elim _ _).le,
     fun a _ _ _ _ _ _ _ =>
-      ⟨a, le_rfl, le_of_eq (Subsingleton.elim _ _), le_of_eq (Subsingleton.elim _ _),
-        le_of_eq (Subsingleton.elim _ _)⟩⟩
+      ⟨a, le_rfl, (Subsingleton.elim _ _).le, (Subsingleton.elim _ _).le,
+        (Subsingleton.elim _ _).le⟩⟩
 
 /-- Riesz interpolation passes to arbitrary products of preorders. -/
 theorem HasRieszInterpolation.pi {ι : Type*} {G : ι → Type*} [∀ i, Preorder (G i)]
@@ -623,12 +564,11 @@ theorem IsUnperforated.pi {ι : Type*} {G : ι → Type*}
 
 /-- Every product of dimension groups is a dimension group. -/
 theorem IsDimensionGroup.pi {ι : Type*} {G : ι → Type*}
-    [∀ i, AddCommGroup (G i)] [∀ i, PartialOrder (G i)]
+    [∀ i, AddCommGroup (G i)] [∀ i, PartialOrder (G i)] [∀ i, IsOrderedAddMonoid (G i)]
     (hd : ∀ i, IsDimensionGroup (G i)) : IsDimensionGroup (∀ i, G i) := by
-  have : ∀ i, IsOrderedAddMonoid (G i) := fun i => (hd i).isOrderedAddMonoid
-  refine IsDimensionGroup.mk ⟨fun a b => ?_⟩
-    (IsUnperforated.pi fun i => (hd i).isUnperforated)
-    (HasRieszInterpolation.pi fun i => (hd i).hasRieszInterpolation)
+  refine ⟨⟨fun a b => ?_⟩,
+    IsUnperforated.pi fun i => (hd i).isUnperforated,
+    HasRieszInterpolation.pi fun i => (hd i).hasRieszInterpolation⟩
   choose c ha hb using fun i => (hd i).isDirected.directed (a i) (b i)
   exact ⟨c, ha, hb⟩
 

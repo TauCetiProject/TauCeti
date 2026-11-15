@@ -100,33 +100,24 @@ theorem bondIter_mono {rank : ℕ → ℕ}
   | zero => exact monotone_id
   | succ k ih => exact (hbond (n + k)).comp ih
 
-private theorem bondIter_add_heq {rank : ℕ → ℕ}
+/-- Iterating `bond` for `d + l` steps from stage `n` agrees with iterating `d` steps from
+stage `n` and then `l` steps from stage `n + d`, up to `Fin.cast` along `Nat.add_assoc`. -/
+theorem bondIter_add_apply {rank : ℕ → ℕ}
     (bond : ∀ n, (Fin (rank n) → ℤ) →+ (Fin (rank (n + 1)) → ℤ))
     (n d l : ℕ) (u : Fin (rank n) → ℤ) :
-    HEq (bondIter bond (n + d) l (bondIter bond n d u))
-      (bondIter bond n (d + l) u) := by
-  have hcongr : ∀ {a b : ℕ}, a = b →
-      ∀ (x : Fin (rank a) → ℤ) (y : Fin (rank b) → ℤ),
-        HEq x y → HEq (bond a x) (bond b y) := by
-    rintro a _ rfl x _ hxy
-    cases eq_of_heq hxy
-    exact HEq.rfl
+    bondIter bond n (d + l) u =
+      bondIter bond (n + d) l (bondIter bond n d u) ∘
+        Fin.cast (congrArg rank (Nat.add_assoc n d l).symm) := by
+  have hstep : ∀ {a b : ℕ} (hab : a = b) (v : Fin (rank a) → ℤ),
+      bond b (v ∘ Fin.cast (congrArg rank hab.symm)) =
+        bond a v ∘ Fin.cast (congrArg rank (congrArg (· + 1) hab).symm) := by
+    rintro a _ rfl v
+    rfl
   induction l with
-  | zero => exact HEq.rfl
-  | succ l ih => exact hcongr (Nat.add_assoc n d l) _ _ ih
-
-private theorem bondIter_comp_nonneg_iff {rank : ℕ → ℕ}
-    (bond : ∀ n, (Fin (rank n) → ℤ) →+ (Fin (rank (n + 1)) → ℤ))
-    (n d l : ℕ) (u : Fin (rank n) → ℤ) :
-    0 ≤ bondIter bond (n + d) l (bondIter bond n d u) ↔
-      0 ≤ bondIter bond n (d + l) u := by
-  have hrel : ∀ {a b : ℕ}, a = b →
-      ∀ (x : Fin (rank a) → ℤ) (y : Fin (rank b) → ℤ),
-        HEq x y → (0 ≤ x ↔ 0 ≤ y) := by
-    rintro a _ rfl x _ hxy
-    cases eq_of_heq hxy
-    exact Iff.rfl
-  exact hrel (Nat.add_assoc n d l) _ _ (bondIter_add_heq bond n d l u)
+  | zero => simp [AddMonoidHom.id_apply]
+  | succ l ih =>
+    simp only [Nat.add_succ, bondIter_succ, AddMonoidHom.comp_apply, ih]
+    exact hstep (Nat.add_assoc n d l) _
 
 /-- An inequality between `k`-step iterates of monotone bonding maps persists at every later stage
 `K ≥ k`. -/
@@ -136,15 +127,11 @@ theorem bondIter_le_of_le {rank : ℕ → ℕ}
     {x y : Fin (rank n) → ℤ}
     (hxy : bondIter bond n k x ≤ bondIter bond n k y) :
     bondIter bond n K x ≤ bondIter bond n K y := by
-  obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hkK
-  have h0 : 0 ≤ bondIter bond n k (y - x) := by
-    rw [map_sub]
-    exact sub_nonneg.mpr hxy
-  have hd : 0 ≤ bondIter bond (n + k) d (bondIter bond n k (y - x)) := by
-    simpa using bondIter_mono hbond (n + k) d h0
-  have hKd : 0 ≤ bondIter bond n (k + d) (y - x) :=
-    (bondIter_comp_nonneg_iff bond n k d (y - x)).mp hd
-  exact sub_nonneg.mp (by rwa [← map_sub])
+  induction K, hkK using Nat.le_induction with
+  | base => exact hxy
+  | succ K _ ih =>
+    rw [bondIter_succ, AddMonoidHom.comp_apply, AddMonoidHom.comp_apply]
+    exact hbond (n + K) ih
 
 /-- A presentation of a partially ordered abelian group `G` as the sequential positive
 inductive limit of simplicial groups `(ℤ^{rₙ}, ℕ^{rₙ})`: positive bonding maps (not required to
@@ -288,7 +275,9 @@ theorem exists_bondIter_le (P : SimplicialPresentation G) (n : ℕ)
       rw [map_sub, sub_eq_zero] at hl
       rw [hl]
       simpa using P.bondIter_mono (n + d) l hz0
-    exact ⟨d + l, (bondIter_comp_nonneg_iff P.bond n d l (y - x)).mp hl'⟩
+    refine ⟨d + l, ?_⟩
+    rw [bondIter_add_apply]
+    exact fun _ => hl' _
   · obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hmn
     have hz'0 : 0 ≤ bondIter P.bond m d z := by
       simpa using P.bondIter_mono m d hz0
@@ -487,27 +476,23 @@ private theorem shenRawCard_lt {r : ℕ} {x : Fin r → ℤ} {M : ℕ}
     Sum.elim Subtype.val (Sum.elim (fun _ => k₀) Subtype.val)
   have hno_mid : ∀ j, Sum.inr (Sum.inl j) ∉ Sκ := fun j hj =>
     shenRawHom_mid_ne hbound hxk₀ j (Finset.mem_filter.mp hj).2
+  have hsep : ∀ (i : {i : Fin r // i ∈ Finset.univ.filter (fun i => i ≠ k₀ ∧ 0 ≤ x i)})
+      (j : {j : Fin r // j ∈ Finset.univ.filter (fun j => x j < 0)}),
+      proj (Sum.inl i) ≠ proj (Sum.inr (Sum.inr j)) := by
+    intro i j hp
+    have hi := (Finset.mem_filter.mp i.2).2.2
+    have hj := (Finset.mem_filter.mp j.2).2
+    simp only [proj, Sum.elim_inl, Sum.elim_inr] at hp
+    rw [hp] at hi
+    omega
   have hinj : Set.InjOn proj Sκ := by
-    rintro (i₁ | (j₁ | j₁)) hu₁ (i₂ | (j₂ | j₂)) hu₂ hp
-    · exact congrArg Sum.inl (Subtype.ext hp)
-    · exact (hno_mid j₂ hu₂).elim
-    · exfalso
-      have h1 := (Finset.mem_filter.mp i₁.2).2.2
-      have h2 := (Finset.mem_filter.mp j₂.2).2
-      simp only [proj, Sum.elim_inl, Sum.elim_inr] at hp
-      rw [hp] at h1
-      omega
-    · exact (hno_mid j₁ hu₁).elim
-    · exact (hno_mid j₁ hu₁).elim
-    · exact (hno_mid j₁ hu₁).elim
-    · exfalso
-      have h1 := (Finset.mem_filter.mp j₁.2).2
-      have h2 := (Finset.mem_filter.mp i₂.2).2.2
-      simp only [proj, Sum.elim_inl, Sum.elim_inr] at hp
-      rw [hp] at h1
-      omega
-    · exact (hno_mid j₂ hu₂).elim
-    · exact congrArg (Sum.inr ∘ Sum.inr) (Subtype.ext hp)
+    rintro (i₁ | (j₁ | j₁)) hu₁ (i₂ | (j₂ | j₂)) hu₂ hp <;>
+      first
+      | exact (hno_mid _ ‹_›).elim
+      | exact congrArg Sum.inl (Subtype.ext hp)
+      | exact congrArg (Sum.inr ∘ Sum.inr) (Subtype.ext hp)
+      | exact (hsep _ _ hp).elim
+      | exact (hsep _ _ hp.symm).elim
   have hssub : Sκ.image proj ⊂ Sr := by
     rw [Finset.ssubset_iff_of_subset]
     · refine ⟨k₀, by simp [Sr, hxk₀], fun hk₀_im => ?_⟩
@@ -728,11 +713,12 @@ private structure NextStage {n : ℕ} (S : SimplicialStage G n) (g : G)
   seqs_last : stage.seqs (Fin.last (n + 1)) = enumZVec stage.rank
   seqs_castSucc : ∀ (i : Fin (n + 1)) (j : ℕ), stage.seqs (Fin.castSucc i) j = bond (S.seqs i j)
 
+variable [IsOrderedAddMonoid G]
+
 private theorem exists_nextStage (hd : IsDimensionGroup G) {n : ℕ}
     (S : SimplicialStage G n) {g : G} (hg : 0 ≤ g)
     (enumZVec : ∀ r : ℕ, ℕ → (Fin r → ℤ)) :
     Nonempty (NextStage S g enumZVec) := by
-  have := hd.isOrderedAddMonoid
   have hK : ∀ y ∈ stageCandidates S, S.toLimit y = 0 := fun y hy => by
     classical exact (Finset.mem_filter.mp hy).2
   obtain ⟨s, α, β, hα, hβ, hcomp, hzero⟩ := exists_monotone_factorization_finset
@@ -771,8 +757,8 @@ private theorem exists_nextStage (hd : IsDimensionGroup G) {n : ℕ}
     exists_nonneg_toLimit_eq := ⟨Pi.single (Fin.last s) 1,
       fun j => by rcases eq_or_ne j (Fin.last s) with rfl | hj <;> simp [*], htoLim_last⟩
     bond_eq_zero := fun y hy => by rw [AddMonoidHom.comp_apply, hzero y hy, map_zero]
-    seqs_last := by dsimp only; exact Fin.lastCases_last
-    seqs_castSucc := fun i j => by dsimp only; rw [Fin.lastCases_castSucc]; rfl }⟩
+    seqs_last := by simp
+    seqs_castSucc := fun i j => by simp }⟩
 
 private noncomputable def nextStage (hd : IsDimensionGroup G)
     (posEnum : ℕ → G) (hpos : ∀ n, 0 ≤ posEnum n)
@@ -791,12 +777,59 @@ private noncomputable def stageSeq (hd : IsDimensionGroup G)
       seqs := fun _ => enumZVec 0 }
   | n + 1 => (nextStage hd posEnum hpos enumZVec n (stageSeq hd posEnum hpos enumZVec n)).stage
 
+@[simp]
+private theorem stageSeq_zero (hd : IsDimensionGroup G)
+    (posEnum : ℕ → G) (hpos : ∀ n, 0 ≤ posEnum n)
+    (enumZVec : ∀ r : ℕ, ℕ → (Fin r → ℤ)) :
+    stageSeq hd posEnum hpos enumZVec 0 =
+      { rank := 0
+        toLimit := 0
+        toLimit_mono := monotone_const
+        seqs := fun _ => enumZVec 0 } :=
+  rfl
+
+@[simp]
+private theorem stageSeq_succ (hd : IsDimensionGroup G)
+    (posEnum : ℕ → G) (hpos : ∀ n, 0 ≤ posEnum n)
+    (enumZVec : ∀ r : ℕ, ℕ → (Fin r → ℤ)) (n : ℕ) :
+    stageSeq hd posEnum hpos enumZVec (n + 1) =
+      (nextStage hd posEnum hpos enumZVec n (stageSeq hd posEnum hpos enumZVec n)).stage :=
+  rfl
+
 private noncomputable def stageBond (hd : IsDimensionGroup G)
     (posEnum : ℕ → G) (hpos : ∀ n, 0 ≤ posEnum n)
     (enumZVec : ∀ r : ℕ, ℕ → (Fin r → ℤ)) (n : ℕ) :
     (Fin (stageSeq hd posEnum hpos enumZVec n).rank → ℤ) →+
       (Fin (stageSeq hd posEnum hpos enumZVec (n + 1)).rank → ℤ) :=
   (nextStage hd posEnum hpos enumZVec n (stageSeq hd posEnum hpos enumZVec n)).bond
+
+@[simp]
+private theorem stageBond_eq (hd : IsDimensionGroup G)
+    (posEnum : ℕ → G) (hpos : ∀ n, 0 ≤ posEnum n)
+    (enumZVec : ∀ r : ℕ, ℕ → (Fin r → ℤ)) (n : ℕ) :
+    stageBond hd posEnum hpos enumZVec n =
+      (nextStage hd posEnum hpos enumZVec n (stageSeq hd posEnum hpos enumZVec n)).bond :=
+  rfl
+
+private theorem stageSeq_succ_seqs_castSucc (hd : IsDimensionGroup G)
+    (posEnum : ℕ → G) (hpos : ∀ n, 0 ≤ posEnum n)
+    (enumZVec : ∀ r : ℕ, ℕ → (Fin r → ℤ)) (n : ℕ) (i : Fin (n + 1)) (j : ℕ) :
+    (stageSeq hd posEnum hpos enumZVec (n + 1)).seqs (Fin.castSucc i) j =
+      stageBond hd posEnum hpos enumZVec n
+        ((stageSeq hd posEnum hpos enumZVec n).seqs i j) := by
+  simp only [stageSeq_succ, stageBond_eq]
+  exact (nextStage hd posEnum hpos enumZVec n
+    (stageSeq hd posEnum hpos enumZVec n)).seqs_castSucc i j
+
+private theorem stageSeq_toLimit_comp_stageBond (hd : IsDimensionGroup G)
+    (posEnum : ℕ → G) (hpos : ∀ n, 0 ≤ posEnum n)
+    (enumZVec : ∀ r : ℕ, ℕ → (Fin r → ℤ)) (n : ℕ) :
+    ((stageSeq hd posEnum hpos enumZVec (n + 1)).toLimit).comp
+        (stageBond hd posEnum hpos enumZVec n) =
+      (stageSeq hd posEnum hpos enumZVec n).toLimit := by
+  simp only [stageSeq_succ, stageBond_eq]
+  exact (nextStage hd posEnum hpos enumZVec n
+    (stageSeq hd posEnum hpos enumZVec n)).toLimit_comp_bond
 
 private theorem stageSeq_seqs (hd : IsDimensionGroup G)
     (posEnum : ℕ → G) (hpos : ∀ n, 0 ≤ posEnum n)
@@ -807,24 +840,22 @@ private theorem stageSeq_seqs (hd : IsDimensionGroup G)
         (enumZVec (stageSeq hd posEnum hpos enumZVec m).rank j) := by
   induction d with
   | zero =>
+    simp only [Nat.add_zero, bondIter_zero, AddMonoidHom.id_apply]
+    have hlast : (⟨m, Nat.lt_succ_of_le (Nat.le_refl m)⟩ : Fin (m + 1)) = Fin.last m :=
+      Fin.ext rfl
+    rw [hlast]
     cases m with
-    | zero => rfl
+    | zero => simp
     | succ m =>
-      have hlast :
-          (⟨m + 1, Nat.lt_succ_of_le (Nat.le_add_right (m + 1) 0)⟩ : Fin (m + 2)) =
-            Fin.last (m + 1) := rfl
-      dsimp only [Nat.add_zero, stageSeq, bondIter]
-      rw [hlast, (nextStage hd posEnum hpos enumZVec m
+      simp [(nextStage hd posEnum hpos enumZVec m
         (stageSeq hd posEnum hpos enumZVec m)).seqs_last]
-      rfl
   | succ d ih =>
     have hcast :
         (⟨m, Nat.lt_succ_of_le (Nat.le_add_right m (d + 1))⟩ : Fin (m + (d + 1) + 1)) =
-          Fin.castSucc ⟨m, Nat.lt_succ_of_le (Nat.le_add_right m d)⟩ := rfl
-    dsimp only [Nat.add_succ, stageSeq]
-    rw [hcast, (nextStage hd posEnum hpos enumZVec (m + d)
-      (stageSeq hd posEnum hpos enumZVec (m + d))).seqs_castSucc, ih]
-    rfl
+          Fin.castSucc ⟨m, Nat.lt_succ_of_le (Nat.le_add_right m d)⟩ := Fin.ext rfl
+    rw [hcast]
+    simp only [Nat.add_succ, bondIter_succ, AddMonoidHom.comp_apply, ← ih,
+      stageSeq_succ_seqs_castSucc]
 
 private theorem stageSeq_toLimit_comp_bondIter (hd : IsDimensionGroup G)
     (posEnum : ℕ → G) (hpos : ∀ n, 0 ≤ posEnum n)
@@ -835,13 +866,8 @@ private theorem stageSeq_toLimit_comp_bondIter (hd : IsDimensionGroup G)
   induction k with
   | zero => exact AddMonoidHom.comp_id _
   | succ k ih =>
-    have hcomp :
-        ((stageSeq hd posEnum hpos enumZVec (m + (k + 1))).toLimit).comp
-          (stageBond hd posEnum hpos enumZVec (m + k)) =
-        (stageSeq hd posEnum hpos enumZVec (m + k)).toLimit :=
-      (nextStage hd posEnum hpos enumZVec (m + k)
-        (stageSeq hd posEnum hpos enumZVec (m + k))).toLimit_comp_bond
-    rw [bondIter_succ, ← AddMonoidHom.comp_assoc, hcomp, ih]
+    simp only [Nat.add_succ, bondIter_succ, ← AddMonoidHom.comp_assoc,
+      stageSeq_toLimit_comp_stageBond, ih]
 
 private theorem stageSeq_eventually_zero (hd : IsDimensionGroup G)
     (posEnum : ℕ → G) (hpos : ∀ n, 0 ≤ posEnum n)
@@ -864,13 +890,12 @@ private theorem stageSeq_eventually_zero (hd : IsDimensionGroup G)
     exact (DFunLike.congr_fun
       (stageSeq_toLimit_comp_bondIter hd posEnum hpos enumZVec m d) _).trans hx
   refine ⟨d + 1, ?_⟩
-  rw [bondIter_succ, AddMonoidHom.comp_apply, ← stageSeq_seqs]
+  rw [bondIter_succ, AddMonoidHom.comp_apply, ← stageSeq_seqs, stageBond_eq]
   exact (nextStage hd posEnum hpos enumZVec (m + d) (S (m + d))).bond_eq_zero _ hmem_cand
 
 /-- Every countable dimension group admits a `SimplicialPresentation`. -/
 theorem IsDimensionGroup.nonempty_simplicialPresentation (hd : IsDimensionGroup G)
     [Countable G] : Nonempty (SimplicialPresentation G) := by
-  have := hd.isOrderedAddMonoid
   classical
   let enumG : ℕ → G := Classical.choose (exists_surjective_nat G)
   have henumG : Function.Surjective enumG := Classical.choose_spec (exists_surjective_nat G)
