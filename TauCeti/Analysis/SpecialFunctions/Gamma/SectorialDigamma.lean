@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.SpecialFunctions.Gamma.GaussSeries
 public import Mathlib.NumberTheory.AbelSummation
 public import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
-public import TauCeti.Analysis.Complex.SectorBounds
+public import TauCeti.Analysis.Complex.Sector.Bounds
 public import TauCeti.Analysis.Complex.SlitPlane
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 public import TauCeti.Analysis.Calculus.Deriv.Fract
