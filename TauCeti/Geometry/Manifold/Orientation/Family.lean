@@ -17,9 +17,10 @@ derivative at a fixed source point, its orientation behavior there is locally co
 parameter. On a preconnected parameter manifold it is therefore independent of the parameter.
 No compactness, global injectivity, or boundarylessness is required.
 
-This is the orientation step in moving embedded discs by a diffeotopy: a motion starting at
-the identity preserves orientation throughout, so moving the centre does not change the
-orientation class of the disc.
+This is the orientation step in moving embedded discs by a diffeotopy or along a smooth flow:
+a family of self-maps starting at the identity preserves orientation throughout
+(`TauCeti.Manifold.Orientation.isOrientationPreservingAt_family_of_id`), so moving the centre
+does not change the orientation class of the disc.
 
 The coordinate argument follows the relative-determinant method of
 `TauCeti.Manifold.Orientation.eventually_mapOrientation_map_symm_eq` in the pullback-orientation
@@ -122,5 +123,16 @@ theorem isOrientationPreservingAt_family_iff [PreconnectedSpace P]
       IsOrientationPreservingAt o o' (fun y => F (q, y)) x :=
   ((isLocallyConstant_isOrientationPreservingAt o o' hF x hD).apply_eq_of_preconnectedSpace
     p q).to_iff
+
+/-- In a preconnected smooth family of self-maps with invertible slice derivatives at `x`, if one
+slice is the identity, then every slice preserves orientation at `x`. -/
+theorem isOrientationPreservingAt_family_of_id [PreconnectedSpace P]
+    (o : Manifold.Orientation I M ι) {F : P × M → M} (hF : ContMDiff (L.prod I) I 1 F) (x : M)
+    (hD : ∀ p, (mfderiv I I (fun y => F (p, y)) x).IsInvertible) {p₀ : P}
+    (hp₀ : ∀ y, F (p₀, y) = y) (p : P) :
+    IsOrientationPreservingAt o o (fun y => F (p, y)) x := by
+  have hid : (fun y => F (p₀, y)) = id := funext hp₀
+  rw [isOrientationPreservingAt_family_iff o o hF x hD p p₀, hid]
+  exact isOrientationPreservingAt_id o x
 
 end TauCeti.Manifold.Orientation

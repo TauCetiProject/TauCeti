@@ -5,16 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Morse.Boundary.Basic
+public import TauCeti.Geometry.Manifold.Morse.Boundary.UniqueExtremum
 public import TauCeti.Geometry.Manifold.Morse.Sphere.PseudoGradient
 
 /-!
-# The mod-two Morse complex of the height function on the sphere
+# The Morse boundary and trajectory signs of the height function on the sphere
 
 Let `v` be a unit vector in an `(n + 1)`-dimensional real inner product space and `X` any
 pseudo-gradient adapted to the height function `sphereHeight v` on the unit sphere `Sⁿ`. The
 critical points of the height function are the north pole `v`, of index `n`, and the south pole
-`-v`, of index `0`. This file computes the mod-two Morse complex of the pair `(sphereHeight v, X)`.
+`-v`, of index `0`. This file computes the mod-two Morse complex and the signed trajectory counts
+of the pair `(sphereHeight v, X)`.
 
 * `X` is Morse–Smale, whatever its choice, since both critical points have extremal index.
 * The trajectories from the north pole to the south pole cross the middle level on the equator
@@ -22,9 +23,12 @@ critical points of the height function are the north pole `v`, of index `n`, and
 * The mod-two Morse boundary vanishes. For `n ≠ 1` the indices of the two poles do not differ by
   one, so no trajectory is counted. For `n = 1` the two trajectories from the north pole to the
   south pole cancel modulo two.
+* With orientations of the unstable manifolds, for `n = 1` the two trajectories on `S¹` from `v`
+  to `-v` carry opposite signs `+1` and `-1`, so the signed trajectory count vanishes for every
+  `n`.
 
-So the mod-two Morse complex of the height function is the free `ZMod 2`-module on the two poles,
-in degrees `n` and `0`, with zero differential. Its homology is the mod-two homology of `Sⁿ`.
+So both the mod-two and the integral Morse differentials of the height function vanish, recovering
+the homology of `Sⁿ` in degrees `n` and `0`.
 
 ## Main declarations
 
@@ -34,11 +38,18 @@ in degrees `n` and `0`, with zero differential. Its homology is the mod-two homo
   north pole to the south pole are read on the equator.
 * `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.morseBoundary_sphereHeight`: the mod-two Morse
   boundary of the height function is zero.
+* `TauCeti.IsAdaptedPseudoGradient.exists_trajectorySign_sphereHeight` and
+  `TauCeti.IsAdaptedPseudoGradient.signedTrajectoryCount_sphereHeight`: on `S¹` the two
+  trajectories from `v` to `-v` carry opposite signs `+1` and `-1`, and on `Sⁿ` every signed
+  trajectory count between consecutive-index critical points vanishes.
 
 ## References
 
 * M. Audin and M. Damian, *Morse Theory and Floer Homology*, Springer Universitext, 2014,
   Chapter 4 (the Morse complex, and its computation for the height function on the sphere).
+* M. Hutchings, *Lecture notes on Morse homology (with an eye towards Floer theory and
+  pseudoholomorphic curves)*, 2002, §2.3 (orientations and signed trajectory counts on `S¹` and
+  `Sⁿ`).
 -/
 
 public section
@@ -75,6 +86,69 @@ theorem morseTrajectorySlice_sphereHeight (hX : IsAdaptedPseudoGradient (sphereH
     mem_compl_iff, mem_singleton_iff, mem_ofPred_eq, sphereHeight_apply, coe_neg_sphere,
     inner_neg_left, hv, add_neg_cancel, zero_div]
   refine ⟨fun h ↦ h.2.2, fun h ↦ ⟨?_, ?_, h⟩⟩ <;> rintro rfl <;> simp_all
+
+/-- **Opposite trajectory signs on the circle.** When `ind v = ind (-v) + 1` (that is, `n = 1`),
+the two trajectories of `sphereHeight v` from the north pole `v` to the south pole `-v` carry
+opposite signs `+1` and `-1` for any Morse charts in which `X` is linear and any orientations. -/
+theorem exists_trajectorySign_sphereHeight (hX : IsAdaptedPseudoGradient (sphereHeight v) X)
+    {φp : MorseChart (EuclideanSpace ℝ (Fin n)) (sphereHeight v) v}
+    {φm : MorseChart (EuclideanSpace ℝ (Fin n)) (sphereHeight v) (-v)}
+    (hφp : ∀ y ∈ φp.toChart.source,
+      φp.coord (mfderiv (𝓡 n) 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) φp.toChart y (X y)) =
+        fun i ↦ -(φp.weight i * φp.coord (φp.toChart y) i))
+    (hφm : ∀ y ∈ φm.toChart.source,
+      φm.coord (mfderiv (𝓡 n) 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) φm.toChart y (X y)) =
+        fun i ↦ -(φm.weight i * φm.coord (φm.toChart y) i))
+    (op : Orientation ℝ ({i // φp.weight i < 0} → ℝ)
+      (Fin (manifoldMorseIndex (𝓡 n) (sphereHeight v) v)))
+    (om : Orientation ℝ ({i // φm.weight i < 0} → ℝ)
+      (Fin (manifoldMorseIndex (𝓡 n) (sphereHeight v) (-v))))
+    (hpq : manifoldMorseIndex (𝓡 n) (sphereHeight v) v =
+      manifoldMorseIndex (𝓡 n) (sphereHeight v) (-v) + 1) :
+    ∃ y₁ ∈ hX.morseTrajectorySlice v (-v), ∃ y₂ ∈ hX.morseTrajectorySlice v (-v),
+      hX.trajectorySign φp φm op om hpq y₁ = 1 ∧ hX.trajectorySign φp φm op om hpq y₂ = -1 := by
+  refine (hX.isMorseSmale_sphereHeight
+    ).exists_trajectorySign_eq_one_and_eq_neg_one_of_unique_index_zero
+    (isMorse_sphereHeight v) hφp hφm op om (manifoldMorseIndex_sphereHeight_neg v) hpq
+    fun y hy hy0 ↦ ?_
+  rcases (mfderiv_sphereHeight_eq_zero_iff v y).1 hy with rfl | rfl
+  · simp only [manifoldMorseIndex_sphereHeight_self, manifoldMorseIndex_sphereHeight_neg] at hpq hy0
+    omega
+  · rfl
+
+/-- **Signed trajectory counts of the height function on the sphere vanish.** Between any critical
+points `p` and `q` of consecutive index on `Sⁿ` (which occurs only for `n = 1`, `p = v`, and
+`q = -v`), the signed count of trajectories of `sphereHeight v` vanishes. -/
+@[simp]
+theorem signedTrajectoryCount_sphereHeight (hX : IsAdaptedPseudoGradient (sphereHeight v) X)
+    {p q : sphere (0 : E) 1}
+    {φp : MorseChart (EuclideanSpace ℝ (Fin n)) (sphereHeight v) p}
+    {φq : MorseChart (EuclideanSpace ℝ (Fin n)) (sphereHeight v) q}
+    (hφp : ∀ y ∈ φp.toChart.source,
+      φp.coord (mfderiv (𝓡 n) 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) φp.toChart y (X y)) =
+        fun i ↦ -(φp.weight i * φp.coord (φp.toChart y) i))
+    (hφq : ∀ y ∈ φq.toChart.source,
+      φq.coord (mfderiv (𝓡 n) 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) φq.toChart y (X y)) =
+        fun i ↦ -(φq.weight i * φq.coord (φq.toChart y) i))
+    (op : Orientation ℝ ({i // φp.weight i < 0} → ℝ)
+      (Fin (manifoldMorseIndex (𝓡 n) (sphereHeight v) p)))
+    (oq : Orientation ℝ ({i // φq.weight i < 0} → ℝ)
+      (Fin (manifoldMorseIndex (𝓡 n) (sphereHeight v) q)))
+    (hpq : manifoldMorseIndex (𝓡 n) (sphereHeight v) p =
+      manifoldMorseIndex (𝓡 n) (sphereHeight v) q + 1) :
+    hX.signedTrajectoryCount φp φq op oq hpq = 0 := by
+  have hp := (mfderiv_sphereHeight_eq_zero_iff v p).1 ((φp.mfderiv_eq_zero_iff φp.mem_source).2 rfl)
+  have hq := (mfderiv_sphereHeight_eq_zero_iff v q).1 ((φq.mfderiv_eq_zero_iff φq.mem_source).2 rfl)
+  rcases hp with hp | hp <;> rcases hq with hq | hq <;> subst p q <;>
+    try (simp only [manifoldMorseIndex_sphereHeight_self,
+      manifoldMorseIndex_sphereHeight_neg] at hpq; omega)
+  refine hX.isMorseSmale_sphereHeight.signedTrajectoryCount_eq_zero_of_unique_index_zero
+    (isMorse_sphereHeight v) hφp hφq op oq (manifoldMorseIndex_sphereHeight_neg v) hpq
+    fun y hy hy0 ↦ ?_
+  rcases (mfderiv_sphereHeight_eq_zero_iff v y).1 hy with rfl | rfl
+  · simp only [manifoldMorseIndex_sphereHeight_self, manifoldMorseIndex_sphereHeight_neg] at hpq hy0
+    omega
+  · rfl
 
 namespace IsMorseSmale
 

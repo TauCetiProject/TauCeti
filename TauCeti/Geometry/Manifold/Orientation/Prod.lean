@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.IsManifold.Prod
 public import TauCeti.Geometry.Manifold.Orientation.Basic
 public import TauCeti.LinearAlgebra.Orientation.Prod
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
@@ -30,6 +31,8 @@ when the product `m * n` of the dimensions is even, and reverses it when `m * n`
 
 A product `Prod.map f g` of maps preserving orientations at `p.1` and at `p.2` preserves the
 product orientations at `p` (`TauCeti.Manifold.Orientation.IsOrientationPreservingAt.prodMap`).
+Products of orientable manifolds are orientable both for `I.prod I'` on `ModelProd` and for
+`𝓘(ℝ, E × E')` under `TauCeti.chartedSpaceProd` (`TauCeti.orientable_chartedSpaceProd`).
 
 ## References
 
@@ -320,5 +323,25 @@ instance [Orientable I M] [Orientable I' M'] : Orientable (I.prod I') (M × M') 
   constructor
   rw [Module.finrank_prod]
   exact ⟨o.prod o'⟩
+
+section ChartedSpaceProd
+
+variable {N N' : Type*} [TopologicalSpace N] [ChartedSpace E N] [IsManifold 𝓘(ℝ, E) 1 N]
+  [TopologicalSpace N'] [ChartedSpace E' N'] [IsManifold 𝓘(ℝ, E') 1 N']
+
+attribute [local instance low] chartedSpaceProd
+
+/-- Products of orientable manifolds are orientable in the product charts with values in `E × E'`
+(`TauCeti.chartedSpaceProd`). -/
+theorem orientable_chartedSpaceProd [Orientable 𝓘(ℝ, E) N] [Orientable 𝓘(ℝ, E') N'] :
+    Orientable 𝓘(ℝ, E × E') (N × N') := by
+  obtain ⟨o⟩ := Orientable.nonempty_orientation (I := 𝓘(ℝ, E)) (M := N)
+  obtain ⟨o'⟩ := Orientable.nonempty_orientation (I := 𝓘(ℝ, E')) (M := N')
+  rw [modelWithCornersSelf_prod]
+  constructor
+  rw [Module.finrank_prod]
+  exact ⟨o.prod o'⟩
+
+end ChartedSpaceProd
 
 end TauCeti
