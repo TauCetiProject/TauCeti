@@ -39,6 +39,10 @@ triple `(X, Cₜ, ∂X)`: the collar coordinates deform `Cₜ` onto `∂X` relat
 set `ι⁻¹(Kₜ)`. Every interior point lies in `Kₜ` for `t` small enough, and these classes are
 compatible as `t` decreases.
 
+The same comparison holds for any coefficients
+(`TauCeti.IsCollar.isIso_localHomologyRestriction_compl_collarPart`), and it shows that
+`Hₖ(X, ∂X)` vanishes for `k > n` (`TauCeti.IsCollar.isZero_localHomology_range`).
+
 The relative cycles representing this class are the fundamental chains of `X` relative to its
 boundary. Through the cubical–singular comparison,
 `TopPair.exists_boundary_eq_of_singularHomologyδ_eq` lifts a relative class to a normalized
@@ -59,6 +63,9 @@ the connecting morphism.
 * `TauCeti.HomologicalOrientation.localHomologyRestriction_fundamentalClassRel_image`: its image
   along `ι(K)`, for compact `K ⊆ M`, is the fundamental class of `M` along `K`.
 * `TauCeti.HomologicalOrientation.fundamentalClassRel_neg`: reversing the orientation negates it.
+* `TauCeti.IsCollar.isIso_localHomologyRestriction_compl_collarPart`: the restriction
+  `Hₖ(X, ∂X) ⟶ Hₖ(X, Cₜ)` is an isomorphism, for any coefficients.
+* `TauCeti.IsCollar.isZero_localHomology_range`: `Hₖ(X, ∂X) = 0` for `k > n`.
 
 ## References
 
@@ -79,46 +86,48 @@ open CategoryTheory Limits Set Topology Module
 
 namespace TauCeti
 
-namespace HomologicalOrientation
+universe v u
 
 variable {X M : Type} {N : Type*} [TopologicalSpace X] [TopologicalSpace N] {ι : M → X}
   {f : N → X}
 
+/-! ### The collar comparison -/
+
 section Collar
 
-variable {c : N × Ico (0 : ℝ) 1 → X} (hc : IsCollar f c) (hιf : range ι = (range f)ᶜ)
+variable {C : Type u} [Category.{v} C] [HasCoproducts.{0} C] [Abelian C] (R : C)
+  {c : N × Ico (0 : ℝ) 1 → X} (hc : IsCollar f c) (hιf : range ι = (range f)ᶜ)
 include hc hιf
 
-private lemma compl_collarPart_subset_range {t : ℝ} (ht : 0 < t) :
+/-- If `ι(M)` is the complement of the boundary `f(N)`, then the complement `Kₜ` of the collar of
+positive depth `t` lies in `ι(M)`. -/
+theorem IsCollar.compl_collarPart_subset_range {t : ℝ} (ht : 0 < t) :
     (collarPart c t)ᶜ ⊆ range ι := by
   rw [hιf]
   exact compl_subset_compl.2 (hc.range_subset_collarPart ht)
 
 omit hιf in
-/-- The relative homology of a pair `(B, A)` with `A = ∂X = f(N)` and `B` the collar `Cₜ` of
+/-- The relative homology of a pair `(T, S)` with `S = ∂X = f(N)` and `T` the collar `Cₜ` of
 positive depth vanishes: the collar coordinates deform `Cₜ` onto `∂X` relative to `∂X`. -/
-private lemma isZero_singularHomology_of_eq_collarPart {A B : Set X} (hAB : A ⊆ B)
-    (hA : A = range f) {t : ℝ} (ht : 0 < t) (hB : B = collarPart c t) (k : ℕ) :
-    IsZero ((TopPair.ofInclusion (X := TopCat.of X) hAB).singularHomology
-      (C := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) k) := by
-  subst hA hB
+private lemma isZero_singularHomology_of_eq_collarPart {S T : Set X} (hST : S ⊆ T)
+    (hS : S = range f) {t : ℝ} (ht : 0 < t) (hT : T = collarPart c t) (k : ℕ) :
+    IsZero ((TopPair.ofInclusion (X := TopCat.of X) hST).singularHomology R k) := by
+  subst hS hT
   exact TopPair.isZero_singularHomology_ofInclusion_of_homotopyRel _ _
     (hc.collarDeformation ht) _ k
 
 /-- **Restriction to the complement of a collar is an isomorphism.** For `0 < t`, the restriction
 `Hₖ(X, ∂X) ⟶ Hₖ(X, Cₜ)` from the local homology along `ι(M)` to the local homology along
 `Kₜ = X ∖ Cₜ` is an isomorphism, by the long exact sequence of the triple `(X, Cₜ, ∂X)`. -/
-private lemma isIso_localHomologyRestriction_compl_collarPart {t : ℝ} (ht : 0 < t) (k : ℕ) :
-    IsIso (localHomologyRestriction (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ))
-      (compl_collarPart_subset_range hc hιf ht) k) := by
+theorem IsCollar.isIso_localHomologyRestriction_compl_collarPart {t : ℝ} (ht : 0 < t) (k : ℕ) :
+    IsIso (localHomologyRestriction R (hc.compl_collarPart_subset_range hιf ht) k) := by
   have hsub : (range ι)ᶜ ⊆ (collarPart c t)ᶜᶜ := by
     rw [compl_compl, hιf, compl_compl]
     exact hc.range_subset_collarPart ht
-  have hz (m : ℕ) := isZero_singularHomology_of_eq_collarPart hc hsub
+  have hz (m : ℕ) := isZero_singularHomology_of_eq_collarPart R hc hsub
     (by rw [hιf, compl_compl]) ht (compl_compl _) m
   have := TopTriple.isIso_singularHomologyMap_totalToOuter_of_isZero
-    (TopTriple.ofSubset (X := TopCat.of X) hsub) (ModuleCat.of ℤ (ULift.{0} ℤ)) k (hz k)
-    fun m _ ↦ hz m
+    (TopTriple.ofSubset (X := TopCat.of X) hsub) R k (hz k) fun m _ ↦ hz m
   rw [TopTriple.totalToOuter_app_ofSubset] at this
   rw [localHomologyRestriction_def]
   exact this
@@ -136,9 +145,30 @@ include hι hc hιf
 private lemma isCompact_preimage_compl_collarPart [CompactSpace X] {t : ℝ} (ht : 0 < t) :
     IsCompact (ι ⁻¹' (collarPart c t)ᶜ) :=
   hι.isInducing.isCompact_preimage' (hc.isOpen_collarPart t).isClosed_compl.isCompact
-    (compl_collarPart_subset_range hc hιf ht)
+    (hc.compl_collarPart_subset_range hιf ht)
+
+/-- **The relative homology vanishes above the dimension of the interior.** Let `ι : M → X` be an
+open embedding of a Hausdorff space modelled on a real normed space of dimension `n` into a compact
+Hausdorff space, whose complement `∂X` is collared. Then `Hₖ(X, ∂X) = 0` for `k > n`, written as
+the local homology `Hₖ(X, X ∖ ι(M))`. By the collar comparison and excision along `ι`, it is the
+local homology of `M` along the compact set `ι⁻¹(Kₜ)`, which vanishes above the dimension. -/
+theorem IsCollar.isZero_localHomology_range [CompactSpace X] [T2Space X] {E : Type}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E M]
+    {Λ : Type} [Ring Λ] (R : ModuleCat.{0} Λ) {n : ℕ} (hn : finrank ℝ E = n) {k : ℕ}
+    (hk : n < k) : IsZero (localHomology R (range ι) k) := by
+  have := hι.isEmbedding.t2Space
+  have ht : (0 : ℝ) < 1 := one_pos
+  have := hc.isIso_localHomologyRestriction_compl_collarPart R hιf ht k
+  have := isIso_localHomologyMap R ⟨ι, hι.continuous⟩ hι rfl
+    (hc.isOpen_collarPart 1).isClosed_compl (hc.compl_collarPart_subset_range hιf ht) k
+  exact (isZero_localHomology_of_isCompact R hn
+    (isCompact_preimage_compl_collarPart hι hc hιf ht) hk).of_iso
+    (asIso (localHomologyRestriction R _ k) ≪≫
+      (asIso (localHomologyMap R ⟨ι, hι.continuous⟩ (subset_refl _) k)).symm)
 
 end CollarInterior
+
+namespace HomologicalOrientation
 
 variable [T2Space X] [CompactSpace X] [T2Space M] {E : Type} [NormedAddCommGroup E]
   [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E M] {n : ℕ}
@@ -166,7 +196,7 @@ private lemma localHomologyRestriction_singleton_of_eq_collarFundamentalClass {t
     (ht : 0 < t) {γ : localHomology (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ))
       (range ι) n}
     (hγ : localHomologyRestriction (ModuleCat.of ℤ (ULift.{0} ℤ))
-      (compl_collarPart_subset_range hc hιf ht) n γ = o.collarFundamentalClass hn hι hιf hc ht)
+      (hc.compl_collarPart_subset_range hιf ht) n γ = o.collarFundamentalClass hn hι hιf hc ht)
     {x : M} (hx : ι x ∈ (collarPart c t)ᶜ) :
     localHomologyRestriction (ModuleCat.of ℤ (ULift.{0} ℤ))
         (singleton_subset_iff.2 (mem_range_self x)) n γ =
@@ -189,16 +219,18 @@ private lemma localHomologyRestriction_eq_collarFundamentalClass_of_le {s t : �
     (hst : s ≤ t) {γ : localHomology (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ))
       (range ι) n}
     (hγ : localHomologyRestriction (ModuleCat.of ℤ (ULift.{0} ℤ))
-      (compl_collarPart_subset_range hc hιf (hs.trans_le hst)) n γ =
+      (hc.compl_collarPart_subset_range hιf (hs.trans_le hst)) n γ =
         o.collarFundamentalClass hn hι hιf hc (hs.trans_le hst)) :
     localHomologyRestriction (ModuleCat.of ℤ (ULift.{0} ℤ))
-      (compl_collarPart_subset_range hc hιf hs) n γ = o.collarFundamentalClass hn hι hιf hc hs := by
+      (hc.compl_collarPart_subset_range hιf hs) n γ = o.collarFundamentalClass hn hι hιf hc hs := by
   have ht := hs.trans_le hst
   have hK : (collarPart c t)ᶜ ⊆ (collarPart c s)ᶜ := compl_subset_compl.2 (collarPart_mono hst)
   have hρ := localHomologyRestriction_comp (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ))
-    hK (compl_collarPart_subset_range hc hιf hs) n
-  have := isIso_localHomologyRestriction_compl_collarPart hc hιf hs n
-  have := isIso_localHomologyRestriction_compl_collarPart hc hιf ht n
+    hK (hc.compl_collarPart_subset_range hιf hs) n
+  have := hc.isIso_localHomologyRestriction_compl_collarPart
+    (ModuleCat.of ℤ (ULift.{0} ℤ)) hιf hs n
+  have := hc.isIso_localHomologyRestriction_compl_collarPart
+    (ModuleCat.of ℤ (ULift.{0} ℤ)) hιf ht n
   have := IsIso.of_isIso_fac_left hρ
   refine ConcreteCategory.injective_of_mono_of_preservesPullback
     (localHomologyRestriction (ModuleCat.of ℤ (ULift.{0} ℤ)) hK n) ?_
@@ -224,8 +256,9 @@ private theorem existsUnique_fundamentalClassRel (hf : IsCollared f) :
   -- Work at depth `1 / 2`, where `r : Hₙ(X, ∂X) ⟶ Hₙ(X, X ∖ K₁/₂)` is an isomorphism.
   have h₂ : (0 : ℝ) < 1 / 2 := by norm_num
   set r := localHomologyRestriction (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ))
-    (compl_collarPart_subset_range hc hιf h₂) n
-  have := isIso_localHomologyRestriction_compl_collarPart hc hιf h₂ n
+    (hc.compl_collarPart_subset_range hιf h₂) n
+  have := hc.isIso_localHomologyRestriction_compl_collarPart
+    (ModuleCat.of ℤ (ULift.{0} ℤ)) hιf h₂ n
   refine ⟨inv r (o.collarFundamentalClass hn hι hιf hc h₂), fun x ↦ ?_, fun γ hγ ↦ ?_⟩
   · -- The point `ι x` lies in `Kₜ` for some `t ≤ 1 / 2`.
     obtain ⟨t, ht, hxt⟩ := hc.exists_notMem_collarPart (x := ι x)
@@ -238,7 +271,7 @@ private theorem existsUnique_fundamentalClassRel (hf : IsCollared f) :
   · -- The image of `γ` in `Hₙ(X, X ∖ K₁/₂)` restricts to the local orientations along `K₁/₂`.
     have hγ' : r γ = o.collarFundamentalClass hn hι hιf hc h₂ := by
       refine o.eq_localHomologyMap_fundamentalClassOn hn hι _ rfl
-        (hc.isOpen_collarPart _).isClosed_compl (compl_collarPart_subset_range hc hιf h₂)
+        (hc.isOpen_collarPart _).isClosed_compl (hc.compl_collarPart_subset_range hιf h₂)
         fun x hx ↦ ?_
       rw [← ConcreteCategory.comp_apply, localHomologyRestriction_comp]
       exact hγ x
