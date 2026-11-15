@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
+public import TauCeti.Analysis.Calculus.BumpFunction.LatticePartition
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
@@ -47,6 +48,11 @@ Altogether the `(k, n)` seminorm of the difference is `O(R⁻¹)`.
   `𝓢(E, F)` for finite-dimensional `E`.
 * `IsCompact.exists_schwartzMap_cutoff`: a compact subset `K` of an open set `U` has a compactly
   supported Schwartz cutoff `χ : 𝓢(E, ℂ)` with support in `U` and equal to `1` near `K`.
+* `SchwartzMap.hasSum_smulLeftCLM_latticeBump_sub`: the partition of unity `∑ⱼ χ(· - j) = 1` by the
+  integer translates of `TauCeti.latticeBump n` cuts a Schwartz function on `ℝⁿ` into pieces whose
+  series converges to it in `𝓢(ℝⁿ, F)`. The partial sums are `f` times `∑_{j ∈ s} χ(· - j)`, which
+  equals `1` on a large ball and has derivatives bounded independently of `s`, so the same
+  estimate as for the truncations applies.
 
 ## References
 
@@ -231,6 +237,118 @@ theorem tendsto_smulLeftCLM_contDiffBump_two_pow (φ : ContDiffBump (0 : E)) (f 
     RCLike.ofReal_eq_complex_ofReal]
 
 end Truncation
+
+section Lattice
+
+open TauCeti
+
+/-- A Schwartz function times a smooth function `h` with bounded derivatives that vanishes on the
+ball of radius `ρ` about the origin has Schwartz seminorms of size `O(ρ⁻¹)`. -/
+private theorem seminorm_le_of_eq_smul_of_eq_zero {h : E → ℝ} (hh : ContDiff ℝ ∞ h)
+    {B : ℕ → ℝ} (hB : ∀ i y, ‖iteratedFDeriv ℝ i h y‖ ≤ B i) {ρ : ℝ} (hρ : 0 < ρ)
+    (h0 : ∀ y, ‖y‖ < ρ → h y = 0) {f g : 𝓢(E, F)} (hg : ∀ y, g y = h y • f y)
+    (k j : ℕ) :
+    SchwartzMap.seminorm ℝ k j g ≤ (∑ i ∈ Finset.range (j + 1),
+      (j.choose i : ℝ) * B i * SchwartzMap.seminorm ℝ (k + 1) (j - i) f) / ρ := by
+  have hB0 : ∀ i, 0 ≤ B i := fun i ↦ (norm_nonneg _).trans (hB i 0)
+  have hK : 0 ≤ ∑ i ∈ Finset.range (j + 1),
+      (j.choose i : ℝ) * B i * SchwartzMap.seminorm ℝ (k + 1) (j - i) f :=
+    Finset.sum_nonneg fun i _ ↦ by have := hB0 i; positivity
+  refine seminorm_le_bound ℝ k j g (div_nonneg hK hρ.le) fun y ↦ ?_
+  have hg' : ⇑g = fun y ↦ h y • f y := funext hg
+  rw [hg']
+  rcases lt_or_ge ‖y‖ ρ with hy | hy
+  · -- Near `y` the product vanishes.
+    have hzero : (fun y ↦ h y • f y) =ᶠ[𝓝 y] 0 := by
+      filter_upwards [isOpen_ball.mem_nhds (mem_ball_zero_iff.2 hy)] with y' hy'
+      simp [h0 y' (mem_ball_zero_iff.1 hy')]
+    rw [(hzero.iteratedFDeriv ℝ j).eq_of_nhds, iteratedFDeriv_zero, Pi.zero_apply, norm_zero,
+      mul_zero]
+    exact div_nonneg hK hρ.le
+  · refine (mul_le_mul_of_nonneg_left (norm_iteratedFDeriv_smul_le hh (f.smooth ⊤) y
+      (by exact_mod_cast le_top)) (by positivity)).trans ?_
+    rw [Finset.mul_sum, Finset.sum_div]
+    refine Finset.sum_le_sum fun i _ ↦ ?_
+    have hf : ‖y‖ ^ k * ‖iteratedFDeriv ℝ (j - i) f y‖ ≤
+        SchwartzMap.seminorm ℝ (k + 1) (j - i) f / ρ := by
+      rw [le_div_iff₀ hρ]
+      calc ‖y‖ ^ k * ‖iteratedFDeriv ℝ (j - i) f y‖ * ρ ≤
+            ‖y‖ ^ k * ‖iteratedFDeriv ℝ (j - i) f y‖ * ‖y‖ :=
+            mul_le_mul_of_nonneg_left hy (by positivity)
+        _ = ‖y‖ ^ (k + 1) * ‖iteratedFDeriv ℝ (j - i) f y‖ := by ring
+        _ ≤ _ := SchwartzMap.le_seminorm ℝ (k + 1) (j - i) f y
+    calc ‖y‖ ^ k * ((j.choose i : ℝ) * ‖iteratedFDeriv ℝ i h y‖ *
+          ‖iteratedFDeriv ℝ (j - i) f y‖)
+        = (j.choose i : ℝ) * ‖iteratedFDeriv ℝ i h y‖ *
+            (‖y‖ ^ k * ‖iteratedFDeriv ℝ (j - i) f y‖) := by ring
+      _ ≤ (j.choose i : ℝ) * B i * (SchwartzMap.seminorm ℝ (k + 1) (j - i) f / ρ) :=
+          mul_le_mul (mul_le_mul_of_nonneg_left (hB i y) (Nat.cast_nonneg _)) hf (by positivity)
+            (mul_nonneg (Nat.cast_nonneg _) (hB0 i))
+      _ = _ := by ring
+
+
+variable {n : ℕ}
+
+/-- The partial sums of the lattice partition of unity, minus `1`, have derivatives bounded
+independently of the finite set of lattice points. -/
+private theorem norm_iteratedFDeriv_sum_latticeBump_sub_sub_one_le {k : ℕ} {B : ℝ}
+    (hB : ∀ y, ‖iteratedFDeriv ℝ k (latticeBump n) y‖ ≤ B) (s : Finset (Fin n → ℤ))
+    (y : EuclideanSpace ℝ (Fin n)) :
+    ‖iteratedFDeriv ℝ k (fun y ↦ ∑ j ∈ s, latticeBump n (y - latticePoint j) - 1) y‖ ≤
+      B * (1 + (n : ℝ)) ^ n * (8 ^ n * ∑' d : Fin n → ℤ, latticeWeight d) + 1 := by
+  have hs : ContDiff ℝ k fun y ↦ ∑ j ∈ s, latticeBump n (y - latticePoint j) :=
+    ContDiff.sum fun j _ ↦ contDiff_latticeBump.comp (contDiff_id.sub contDiff_const)
+  have e : (fun y ↦ ∑ j ∈ s, latticeBump n (y - latticePoint j) - 1) =
+      (fun y ↦ ∑ j ∈ s, latticeBump n (y - latticePoint j)) - fun _ ↦ (1 : ℝ) := rfl
+  rw [e, iteratedFDeriv_sub_apply hs.contDiffAt contDiff_const.contDiffAt]
+  refine (norm_sub_le _ _).trans (add_le_add
+    (norm_iteratedFDeriv_sum_latticeBump_sub_le hB s y) ?_)
+  rcases eq_or_ne k 0 with rfl | hk
+  · simp
+  · simp [iteratedFDeriv_const_of_ne hk]
+
+/-- **The lattice partition of unity converges in Schwartz space:** for every Schwartz function
+`f`, the series `∑ⱼ χ(· - j) f` converges to `f` in `𝓢(ℝⁿ, F)`, where `χ = latticeBump n`. -/
+theorem hasSum_smulLeftCLM_latticeBump_sub (f : 𝓢(EuclideanSpace ℝ (Fin n), F)) :
+    HasSum (fun j : Fin n → ℤ ↦
+      SchwartzMap.smulLeftCLM F (fun y ↦ latticeBump n (y - latticePoint j)) f) f := by
+  set S := 8 ^ n * ∑' d : Fin n → ℤ, latticeWeight d
+  choose B hB using fun i : ℕ ↦ exists_norm_iteratedFDeriv_latticeBump_le (n := n) i
+  have hB0 : ∀ i, 0 ≤ B i := fun i ↦ (norm_nonneg _).trans (hB i 0)
+  have hS0 : 0 ≤ S := by
+    have : 0 ≤ ∑' d : Fin n → ℤ, latticeWeight d := tsum_nonneg fun d ↦ latticeWeight_nonneg d
+    positivity
+  have hsmooth (j : Fin n → ℤ) : ContDiff ℝ ∞ fun y ↦ latticeBump n (y - latticePoint j) :=
+    contDiff_latticeBump.comp (contDiff_id.sub contDiff_const)
+  have htg (j : Fin n → ℤ) : (fun y ↦ latticeBump n (y - latticePoint j)).HasTemperateGrowth :=
+    (hasCompactSupport_latticeBump.comp_homeomorph
+      (Homeomorph.subRight (latticePoint j))).hasTemperateGrowth (hsmooth j)
+  rw [HasSum, (schwartz_withSeminorms ℝ (EuclideanSpace ℝ (Fin n)) F).tendsto_nhds]
+  rintro ⟨k, j⟩ ε hε
+  set K := ∑ i ∈ Finset.range (j + 1),
+    (j.choose i : ℝ) * (B i * (1 + (n : ℝ)) ^ n * S + 1) * SchwartzMap.seminorm ℝ (k + 1) (j - i) f
+  have hK : 0 ≤ K := Finset.sum_nonneg fun i _ ↦ by have := hB0 i; positivity
+  set R := √n + K / ε + 1
+  have hRn : 0 < R - √n := by have := div_nonneg hK hε.le; simp only [R]; linarith
+  filter_upwards [Filter.eventually_ge_atTop (finite_setOf_norm_latticePoint_lt R).toFinset]
+    with s hs
+  rw [schwartzSeminormFamily_apply]
+  -- The partial sum is `f` times `∑_{j ∈ s} χ(· - j) - 1`, which vanishes on `‖y‖ < R - √n`.
+  refine (seminorm_le_of_eq_smul_of_eq_zero
+    (h := fun y ↦ ∑ j ∈ s, latticeBump n (y - latticePoint j) - 1)
+    ((ContDiff.sum fun j _ ↦ hsmooth j).sub contDiff_const)
+    (B := fun i ↦ B i * (1 + (n : ℝ)) ^ n * S + 1) (fun i y ↦ ?_) hRn (fun y hy ↦ ?_)
+    (f := f) (fun y ↦ ?_) k j).trans_lt ?_
+  · exact norm_iteratedFDeriv_sum_latticeBump_sub_sub_one_le (hB i) s y
+  · simp [sum_latticeBump_sub_eq_one (fun j hj ↦ hs ((Set.Finite.mem_toFinset _).2 hj))
+      (by linarith : ‖y‖ + √n < R)]
+  · simp [SchwartzMap.smulLeftCLM_apply_apply (htg _), Finset.sum_smul, sub_smul]
+  · rw [div_lt_iff₀ hRn]
+    calc K = K / ε * ε := by field_simp
+      _ < (R - √n) * ε := by gcongr; simp only [R]; linarith
+      _ = ε * (R - √n) := mul_comm _ _
+
+end Lattice
 
 end SchwartzMap
 

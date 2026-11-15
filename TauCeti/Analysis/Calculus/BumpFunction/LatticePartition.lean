@@ -8,9 +8,11 @@ module
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.Topology.Algebra.InfiniteSum.Defs
+import Mathlib.Analysis.PSeries
 import Mathlib.Data.Pi.Interval
 import Mathlib.Topology.Algebra.InfiniteSum.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+import TauCeti.Topology.Algebra.InfiniteSum.PiProd
 
 /-!
 # A smooth partition of unity by integer translates
@@ -39,6 +41,11 @@ The construction is a product of one-dimensional bumps
 * `TauCeti.tsupport_latticeBump_subset`: `χ` is supported in the closed ball of radius `√n`.
 * `TauCeti.abs_sub_le_one_of_latticeBump_mul_ne_zero`: two integer translates of `χ` overlap only
   if their centres differ by at most one in every coordinate.
+* `TauCeti.latticeWeight`: the summable weight `∏ᵢ (1 + |dᵢ|)⁻²` on `ℤⁿ`, which dominates the
+  lattice sums of `(1 + ‖x - j‖²)⁻ⁿ` uniformly in `x`
+  (`TauCeti.tsum_one_add_norm_sub_latticePoint_sq_pow_inv_le`).
+* `TauCeti.norm_iteratedFDeriv_sum_latticeBump_sub_le`: the finite sums of translates of `χ` have
+  derivatives bounded independently of the set of translates.
 -/
 
 public section
@@ -249,5 +256,143 @@ theorem hasSum_latticeBump_sub (x : EuclideanSpace ℝ (Fin n)) :
   refine hasSum_sum_of_ne_finset_zero fun j hj ↦ ?_
   obtain ⟨i, hi⟩ : ∃ i, j i ∉ t i := by simpa [Fintype.mem_piFinset] using hj
   exact prod_eq_zero (mem_univ i) (by simpa using latticeBump₁_sub_eq_zero (x i) hi)
+
+/-- A finite sum of integer translates of `latticeBump n` that contains every lattice point of
+norm less than `R` sums to `1` on the ball of radius `R - √n`. -/
+theorem sum_latticeBump_sub_eq_one {s : Finset (Fin n → ℤ)} {R : ℝ}
+    (hs : ∀ j, ‖latticePoint j‖ < R → j ∈ s) {y : EuclideanSpace ℝ (Fin n)} (hy : ‖y‖ + √n < R) :
+    ∑ j ∈ s, latticeBump n (y - latticePoint j) = 1 :=
+  ((hasSum_latticeBump_sub y).unique (hasSum_sum_of_ne_finset_zero fun j hj ↦ by
+    by_contra hne
+    have hy' := mem_closedBall_of_latticeBump_sub_ne_zero hne
+    rw [Metric.mem_closedBall, dist_eq_norm] at hy'
+    refine hj (hs j ?_)
+    calc ‖latticePoint j‖ = ‖y - (y - latticePoint j)‖ := by rw [sub_sub_cancel]
+      _ ≤ ‖y‖ + ‖y - latticePoint j‖ := norm_sub_le _ _
+      _ < R := by linarith)).symm
+
+/-! ### A summable weight on the lattice -/
+
+/-- The weight `∏ᵢ (1 + |dᵢ|)⁻²` on `ℤⁿ`, which is summable (`TauCeti.summable_latticeWeight`).
+It dominates the sums over the lattice of functions decaying like `(1 + ‖x - j‖)⁻²ⁿ`. -/
+noncomputable def latticeWeight (d : Fin n → ℤ) : ℝ :=
+  ∏ i, ((1 + |(d i : ℝ)|) ^ 2)⁻¹
+
+theorem latticeWeight_def (d : Fin n → ℤ) : latticeWeight d = ∏ i, ((1 + |(d i : ℝ)|) ^ 2)⁻¹ :=
+  (rfl)
+
+theorem latticeWeight_nonneg (d : Fin n → ℤ) : 0 ≤ latticeWeight d :=
+  prod_nonneg fun _ _ ↦ by positivity
+
+theorem summable_latticeWeight : Summable (latticeWeight (n := n)) := by
+  refine Summable.prod_pi_of_nonneg (ι := Fin n) (f := fun _ (m : ℤ) ↦ ((1 + |(m : ℝ)|) ^ 2)⁻¹)
+    (fun _ ↦ ?_) fun _ m ↦ by positivity
+  rw [summable_int_iff_summable_nat_and_neg]
+  have h : Summable fun m : ℕ ↦ (((m + 1 : ℕ) : ℝ) ^ 2)⁻¹ :=
+    (summable_nat_add_iff 1).2 (Real.summable_nat_pow_inv.2 one_lt_two)
+  have e : ∀ m : ℕ, (((m + 1 : ℕ) : ℝ) ^ 2)⁻¹ = ((1 + |((m : ℤ) : ℝ)|) ^ 2)⁻¹ := fun m ↦ by
+    rw [Int.cast_natCast, abs_of_nonneg (Nat.cast_nonneg m), Nat.cast_succ, add_comm]
+  have e' : ∀ m : ℕ, (((m + 1 : ℕ) : ℝ) ^ 2)⁻¹ = ((1 + |((-(m : ℤ) : ℤ) : ℝ)|) ^ 2)⁻¹ :=
+    fun m ↦ by rw [Int.cast_neg, abs_neg, ← e]
+  exact ⟨h.congr e, h.congr e'⟩
+
+/-- Decay like `(1 + ‖x - j‖²)⁻ⁿ` around a point `x` of `ℝⁿ` is dominated by the lattice weight of
+the displacement of `j` from the integer part `⌊x⌋` of `x`. -/
+theorem one_add_norm_sub_latticePoint_sq_pow_inv_le (x : EuclideanSpace ℝ (Fin n))
+    (j : Fin n → ℤ) :
+    ((1 + ‖x - latticePoint j‖ ^ 2) ^ n)⁻¹ ≤ 8 ^ n * latticeWeight (fun i ↦ ⌊x i⌋ - j i) := by
+  set y := x - latticePoint j
+  have hy : 0 < (1 + ‖y‖ ^ 2) ^ n := by positivity
+  have hfac (i : Fin n) : (1 + |((⌊x i⌋ - j i : ℤ) : ℝ)|) ^ 2 ≤ 8 * (1 + ‖y‖ ^ 2) := by
+    have hyi : |x i - j i| ≤ ‖y‖ := by
+      simpa [y, latticePoint_apply] using PiLp.norm_apply_le y i
+    have hd : |((⌊x i⌋ - j i : ℤ) : ℝ)| ≤ ‖y‖ + 1 := by
+      have h₁ := Int.floor_le (x i)
+      have h₂ := Int.lt_floor_add_one (x i)
+      rw [abs_le] at hyi ⊢
+      push_cast
+      constructor <;> linarith
+    calc (1 + |((⌊x i⌋ - j i : ℤ) : ℝ)|) ^ 2 ≤ (2 + ‖y‖) ^ 2 :=
+          pow_le_pow_left₀ (by positivity) (by linarith) 2
+      _ ≤ 8 * (1 + ‖y‖ ^ 2) := by nlinarith [sq_nonneg (‖y‖ - 1)]
+  have hprod : ∏ i, (1 + |((⌊x i⌋ - j i : ℤ) : ℝ)|) ^ 2 ≤ 8 ^ n * (1 + ‖y‖ ^ 2) ^ n := by
+    calc ∏ i, (1 + |((⌊x i⌋ - j i : ℤ) : ℝ)|) ^ 2 ≤ ∏ _i : Fin n, 8 * (1 + ‖y‖ ^ 2) :=
+          prod_le_prod₀ (fun _ _ ↦ by positivity) fun i _ ↦ hfac i
+      _ = 8 ^ n * (1 + ‖y‖ ^ 2) ^ n := by rw [prod_const, card_univ, Fintype.card_fin, mul_pow]
+  have hP : 0 < ∏ i, (1 + |((⌊x i⌋ - j i : ℤ) : ℝ)|) ^ 2 := prod_pos fun _ _ ↦ by positivity
+  rw [latticeWeight_def, prod_inv_distrib, ← div_eq_mul_inv, inv_eq_one_div,
+    div_le_div_iff₀ hy hP, one_mul]
+  exact hprod
+
+/-- The lattice sums of `(1 + ‖x - j‖²)⁻ⁿ` converge. -/
+theorem summable_one_add_norm_sub_latticePoint_sq_pow_inv (x : EuclideanSpace ℝ (Fin n)) :
+    Summable fun j : Fin n → ℤ ↦ ((1 + ‖x - latticePoint j‖ ^ 2) ^ n)⁻¹ :=
+  Summable.of_nonneg_of_le (fun _ ↦ by positivity)
+    (one_add_norm_sub_latticePoint_sq_pow_inv_le x)
+    (((Equiv.subLeft fun i ↦ ⌊x i⌋).summable_iff.2 summable_latticeWeight).mul_left _)
+
+/-- The lattice sums of `(1 + ‖x - j‖²)⁻ⁿ` are bounded independently of `x`. -/
+theorem tsum_one_add_norm_sub_latticePoint_sq_pow_inv_le (x : EuclideanSpace ℝ (Fin n)) :
+    ∑' j : Fin n → ℤ, ((1 + ‖x - latticePoint j‖ ^ 2) ^ n)⁻¹ ≤
+      8 ^ n * ∑' d : Fin n → ℤ, latticeWeight d := by
+  have hs := (Equiv.subLeft fun i ↦ ⌊x i⌋).summable_iff.2 (summable_latticeWeight (n := n))
+  refine ((summable_one_add_norm_sub_latticePoint_sq_pow_inv x).tsum_le_tsum
+    (one_add_norm_sub_latticePoint_sq_pow_inv_le x) (hs.mul_left _)).trans_eq ?_
+  rw [tsum_mul_left]
+  congr 1
+  exact (Equiv.subLeft fun i ↦ ⌊x i⌋).tsum_eq latticeWeight
+
+/-! ### Derivatives of the translates -/
+
+/-- The derivatives of `latticeBump n` are bounded. -/
+theorem exists_norm_iteratedFDeriv_latticeBump_le (k : ℕ) :
+    ∃ B, ∀ y, ‖iteratedFDeriv ℝ k (latticeBump n) y‖ ≤ B :=
+  ((contDiff_latticeBump (n := n) (k := ⊤)).continuous_iteratedFDeriv
+    (by exact_mod_cast le_top)).bounded_above_of_compact_support
+    (hasCompactSupport_latticeBump.iteratedFDeriv k)
+
+/-- A derivative of the translate of `latticeBump n` to the lattice point `j` is bounded by the
+weight `(1 + ‖y - j‖²)⁻ⁿ`, with a constant independent of `j`. -/
+theorem norm_iteratedFDeriv_latticeBump_sub_le {k : ℕ} {B : ℝ}
+    (hB : ∀ y, ‖iteratedFDeriv ℝ k (latticeBump n) y‖ ≤ B) (j : Fin n → ℤ)
+    (y : EuclideanSpace ℝ (Fin n)) :
+    ‖iteratedFDeriv ℝ k (fun y ↦ latticeBump n (y - latticePoint j)) y‖ ≤
+      B * (1 + (n : ℝ)) ^ n * ((1 + ‖y - latticePoint j‖ ^ 2) ^ n)⁻¹ := by
+  rw [iteratedFDeriv_comp_sub]
+  have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 0)
+  by_cases hy : y - latticePoint j ∈ tsupport (latticeBump n)
+  · have hn : ‖y - latticePoint j‖ ^ 2 ≤ n := by
+      have h := mem_closedBall_zero_iff.1 (tsupport_latticeBump_subset hy)
+      calc ‖y - latticePoint j‖ ^ 2 ≤ √n ^ 2 := pow_le_pow_left₀ (norm_nonneg _) h 2
+        _ = n := Real.sq_sqrt (Nat.cast_nonneg n)
+    have hpos : 0 < (1 + ‖y - latticePoint j‖ ^ 2) ^ n := by positivity
+    have h1 : 1 ≤ (1 + (n : ℝ)) ^ n * ((1 + ‖y - latticePoint j‖ ^ 2) ^ n)⁻¹ := by
+      rw [← div_eq_mul_inv, one_le_div hpos]
+      exact pow_le_pow_left₀ (by positivity) (by linarith) n
+    calc ‖iteratedFDeriv ℝ k (latticeBump n) (y - latticePoint j)‖ ≤ B * 1 :=
+          (hB _).trans (mul_one B).ge
+      _ ≤ B * ((1 + (n : ℝ)) ^ n * ((1 + ‖y - latticePoint j‖ ^ 2) ^ n)⁻¹) :=
+          mul_le_mul_of_nonneg_left h1 hB0
+      _ = _ := by ring
+  · rw [Function.notMem_support.1 fun h ↦ hy (support_iteratedFDeriv_subset k h), norm_zero]
+    positivity
+
+/-- The finite sums of translates of `latticeBump n` have derivatives bounded independently of the
+finite set of lattice points. -/
+theorem norm_iteratedFDeriv_sum_latticeBump_sub_le {k : ℕ} {B : ℝ}
+    (hB : ∀ y, ‖iteratedFDeriv ℝ k (latticeBump n) y‖ ≤ B) (s : Finset (Fin n → ℤ))
+    (y : EuclideanSpace ℝ (Fin n)) :
+    ‖iteratedFDeriv ℝ k (fun y ↦ ∑ j ∈ s, latticeBump n (y - latticePoint j)) y‖ ≤
+      B * (1 + (n : ℝ)) ^ n * (8 ^ n * ∑' d : Fin n → ℤ, latticeWeight d) := by
+  have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 0)
+  rw [iteratedFDeriv_sum (f := fun j y ↦ latticeBump n (y - latticePoint j)) fun j _ ↦
+    (contDiff_latticeBump (k := (k : ℕ∞))).comp (contDiff_id.sub contDiff_const),
+    Finset.sum_apply]
+  refine (norm_sum_le _ _).trans ?_
+  refine (Finset.sum_le_sum fun j _ ↦ norm_iteratedFDeriv_latticeBump_sub_le hB j y).trans ?_
+  rw [← Finset.mul_sum]
+  gcongr
+  exact ((summable_one_add_norm_sub_latticePoint_sq_pow_inv y).sum_le_tsum s
+    fun _ _ ↦ by positivity).trans (tsum_one_add_norm_sub_latticePoint_sq_pow_inv_le y)
 
 end TauCeti
