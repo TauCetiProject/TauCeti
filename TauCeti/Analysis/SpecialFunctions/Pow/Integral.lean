@@ -653,10 +653,11 @@ theorem lintegral_rpow_le_of_measure_lt_le_rpow_mul (ν : Measure β) {u : β �
             show p - 1 - ε + 1 = p - ε by ring, neg_div, ← div_neg, neg_sub]
   calc _ ≤ ENNReal.ofReal p * (ν univ * ENNReal.ofReal (m ^ p / p) +
         W * ENNReal.ofReal (m ^ (p - ε) / (ε - p))) := by gcongr
-    _ = _ := by
-      rw [mul_add, ← mul_assoc, ← mul_assoc, mul_comm _ (ν univ), mul_assoc, mul_comm _ W,
-        mul_assoc, ← ENNReal.ofReal_mul hp.le, ← ENNReal.ofReal_mul hp.le, mul_div_cancel₀ _ hp.ne',
-        mul_comm (ν univ), mul_comm W, mul_div_assoc', div_mul_eq_mul_div]
+    _ = ENNReal.ofReal (p * (m ^ p / p)) * ν univ +
+        ENNReal.ofReal (p * (m ^ (p - ε) / (ε - p))) * W := by
+      rw [ENNReal.ofReal_mul hp.le, ENNReal.ofReal_mul hp.le]
+      ring
+    _ = _ := by rw [mul_div_cancel₀ _ hp.ne', mul_div_assoc', div_mul_eq_mul_div]
 
 /-! ### A `C¹` primitive of a truncated power -/
 

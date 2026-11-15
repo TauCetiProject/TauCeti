@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.KrylovSafonov.PowerDecay
 import Mathlib.Analysis.SpecialFunctions.Log.Base
+import TauCeti.Algebra.Order.Archimedean.Basic
 import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Basic
+import TauCeti.MeasureTheory.Function.LpSeminorm.PosPart
 
 /-!
 # The interior Hölder estimate of Krylov and Safonov
@@ -175,11 +177,8 @@ private theorem ofReal_mul_eLpNorm_posPart_inv_mul_norm_le {X : Type*} [Measurab
     ENNReal.ofReal ρ * eLpNorm (fun x ↦ (s⁻¹ * ‖f x‖)⁺) p μ ≤ ENNReal.ofReal b := by
   have hfm : AEStronglyMeasurable f μ :=
     aestronglyMeasurable_of_eLpNorm_ne_top (hf.trans_lt ENNReal.ofReal_lt_top).ne
-  have h : (fun x ↦ (s⁻¹ * ‖f x‖)⁺) = s⁻¹ • fun x ↦ ‖f x‖ := by
-    funext x
-    simp only [Pi.smul_apply, smul_eq_mul]
-    exact posPart_eq_self.2 (by positivity)
-  rw [h, eLpNorm_const_smul, eLpNorm_norm _ hfm, Real.eNorm_eq_ofReal (by positivity)]
+  have h : (fun x ↦ (‖f x‖)⁺) = fun x ↦ ‖f x‖ := funext fun x ↦ posPart_eq_self.2 (norm_nonneg _)
+  rw [eLpNorm_posPart_const_mul (by positivity), h, eLpNorm_norm _ hfm]
   calc ENNReal.ofReal ρ * (ENNReal.ofReal s⁻¹ * eLpNorm f p μ) ≤
         ENNReal.ofReal ρ * (ENNReal.ofReal s⁻¹ * ENNReal.ofReal F) := by gcongr
     _ = ENNReal.ofReal (ρ * (s⁻¹ * F)) := by

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Regularity.KrylovSafonov.MeasureEstimate
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.KrylovSafonov
 import Mathlib.Analysis.SpecialFunctions.Log.Base
+import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Basic
 import TauCeti.Basic.ENNReal.Real
 import TauCeti.MeasureTheory.Measure.Lebesgue.DyadicCube.Euclidean
@@ -53,8 +54,6 @@ only makes the right-hand side smaller, so the smallness of `f` is needed at the
   superlevel sets `{u ≥ Mʲ⁺¹}` in a dyadic cube.
 * `TauCeti.PDE.exists_volume_setOf_le_inter_dyadicCube_le_rpow_mul`: the power decay
   `|{u ≥ t} ∩ Q₀| ≤ C t^(-ε) |Q₀|`.
-* `TauCeti.PDE.exists_four_mul_two_zpow_mul_le_and_lt`: the dyadic scale of a ball, a level `k`
-  with `4 · 2ᵏ n ≤ ρ < 8 · 2ᵏ n`.
 * `TauCeti.PDE.exists_volume_setOf_le_comp_add_inter_dyadicCube_le_rpow_mul`: the same power
   decay for a cube translated to be centred at an arbitrary point.
 
@@ -342,14 +341,6 @@ theorem exists_volume_setOf_le_inter_dyadicCube_le_rpow_mul {κ : ℝ} (hκ : 0 
         hMt.trans hx))).trans (H hc hR ha hLam hcont hu hnonneg hsuper hf hx j)
   exact hvol.trans (by gcongr)
 
-/-- A dyadic scale `2ᵏ` with `4 · 2ᵏ n ≤ ρ < 8 · 2ᵏ n`, for `ρ, n > 0`. -/
-theorem exists_four_mul_two_zpow_mul_le_and_lt {ρ n : ℝ} (hρ : 0 < ρ) (hn : 0 < n) :
-    ∃ k : ℤ, 4 * 2 ^ k * n ≤ ρ ∧ ρ / 4 < 2 * 2 ^ k * n := by
-  obtain ⟨k, hk1, hk2⟩ := exists_mem_Ico_zpow (x := ρ / (4 * n)) (by positivity) one_lt_two
-  rw [le_div_iff₀ (by positivity)] at hk1
-  rw [div_lt_iff₀ (by positivity), zpow_add_one₀ two_ne_zero] at hk2
-  exact ⟨k, by linarith, by linarith⟩
-
 /-- **The power decay about an arbitrary centre.** The power decay
 `TauCeti.PDE.exists_volume_setOf_le_inter_dyadicCube_le_rpow_mul`, stated for dyadic cubes about
 their own centres, transported by the translation `x ↦ x + d` that takes the centre
@@ -379,9 +370,7 @@ theorem exists_volume_setOf_le_comp_add_inter_dyadicCube_le_rpow_mul {κ : ℝ}
   intro lam Lam R k c a u f hR ha hLam hcont hu hnonneg hsuper hf hx t ht
   set c₀ : EuclideanSpace ℝ ι := WithLp.toLp 2 fun _ ↦ 2⁻¹ * 2 ^ k
   set d := c - c₀
-  have hd (x : EuclideanSpace ℝ ι) : dist (x + d) c = dist x c₀ := by
-    rw [← dist_add_right x c₀ d]
-    simp [d]
+  have hd (x : EuclideanSpace ℝ ι) : dist (x + d) c = dist x c₀ := dist_add_sub_eq x c c₀
   have hball : MapsTo (· + d) (ball c₀ R) (ball c R) := fun x hx ↦ by
     rw [mem_ball, hd]
     exact hx

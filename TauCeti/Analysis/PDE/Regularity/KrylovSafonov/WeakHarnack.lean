@@ -7,12 +7,16 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.KrylovSafonov.PowerDecay
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
+import TauCeti.Algebra.Order.Archimedean.Basic
 import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Sobolev
+import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.Normed.Lp.PiLp
 import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
+import TauCeti.MeasureTheory.Function.LpSeminorm.PosPart
 import TauCeti.MeasureTheory.Measure.Lebesgue.DyadicCube.Euclidean
+import TauCeti.Topology.Instances.ENNReal
 
 /-!
 # The weak Harnack inequality of Krylov and Safonov
@@ -110,21 +114,6 @@ private theorem volume_ball_div_sixteen_mul_sqrt_le [Nonempty ι] (c : Euclidean
         rw [mul_div_assoc', div_le_div_iff₀ (by positivity) (by positivity)]
         nlinarith
 
-/-- **Smallness of a rescaled right-hand side.** If `R ‖f⁺‖ ≤ b m` with `m > 0`, then
-`R ‖(f / m)⁺‖ ≤ b`. -/
-private theorem ofReal_mul_eLpNorm_posPart_inv_mul_le {X : Type*} [MeasurableSpace X]
-    {μ : Measure X} {q : ℝ≥0∞} {f : X → ℝ} {R b m : ℝ} (hm : 0 < m)
-    (hf : ENNReal.ofReal R * eLpNorm (fun x ↦ (f x)⁺) q μ ≤ ENNReal.ofReal (b * m)) :
-    ENNReal.ofReal R * eLpNorm (fun x ↦ (m⁻¹ * f x)⁺) q μ ≤ ENNReal.ofReal b := by
-  have hm' : 0 ≤ m⁻¹ := inv_nonneg.2 hm.le
-  have hpos : (fun x ↦ (m⁻¹ * f x)⁺) = m⁻¹ • fun x ↦ (f x)⁺ := by
-    funext x
-    simp only [Pi.smul_apply, smul_eq_mul, posPart_def, mul_max_of_nonneg _ _ hm', mul_zero]
-  rw [hpos, eLpNorm_const_smul, Real.eNorm_eq_ofReal hm', mul_left_comm]
-  calc _ ≤ ENNReal.ofReal m⁻¹ * ENNReal.ofReal (b * m) := by gcongr
-    _ = ENNReal.ofReal b := by
-        rw [← ENNReal.ofReal_mul hm', inv_mul_eq_div, mul_div_cancel_right₀ _ hm.ne']
-
 /-- **The power decay on a ball, at an arbitrary level.** There are `C > 0`, `ε > 0` and `ε₀ > 0`,
 depending only on the dimension and on `κ`, with the following property. Let `u ≥ 0` be a `C²`
 supersolution in `B(c, R)` with right-hand side `f`, and let `m > 0` be a level with
@@ -162,7 +151,10 @@ private theorem exists_volume_setOf_le_inter_ball_le [Nonempty ι] {κ : ℝ} (h
     (fun x hx ↦ by
       rw [sum_mul_fderiv_fderiv_const_mul]
       exact mul_le_mul_of_nonneg_left (hsuper x hx) hm')
-    (ofReal_mul_eLpNorm_posPart_inv_mul_le hm hf)
+    (by
+      rw [eLpNorm_posPart_const_mul hm', mul_left_comm]
+      calc _ ≤ ENNReal.ofReal m⁻¹ * ENNReal.ofReal (ε₀ * lam * m) := by gcongr
+        _ = _ := by rw [← ENNReal.ofReal_mul hm', inv_mul_eq_div, mul_div_cancel_right₀ _ hm.ne'])
     ⟨y, ball_subset_ball hRk.le hy, by rwa [inv_mul_le_one₀ hm]⟩ (div_pos ht hm)
   set c₀ : EuclideanSpace ℝ ι := WithLp.toLp 2 fun _ ↦ 2⁻¹ * 2 ^ k
   set d := c - c₀
@@ -175,11 +167,8 @@ private theorem exists_volume_setOf_le_inter_ball_le [Nonempty ι] {κ : ℝ} (h
       {x | t / m ≤ m⁻¹ * u (x + d)} ∩ Q := by
     rintro x ⟨hx1, hx2⟩
     refine ⟨by rw [mem_ofPred_eq, div_eq_inv_mul]; exact mul_le_mul_of_nonneg_left hx1 hm', ?_⟩
-    have hdist : dist (x + d) c = dist x c₀ := by
-      rw [← dist_add_right x c₀ d]
-      simp [d]
     have hx : x ∈ ball c₀ (2 ^ k / 2) := by
-      rw [mem_ball, ← hdist]
+      rw [mem_ball, ← dist_add_sub_eq x c c₀]
       refine (mem_ball.1 hx2).trans_le ?_
       rw [div_le_div_iff₀ (by positivity) two_pos]
       linarith
@@ -241,8 +230,8 @@ private theorem exists_lintegral_rpow_le_of_le [Nonempty ι] {κ : ℝ} (hκ : 0
   -- The layer-cake bound at `p = ε / 2`, where `p / (ε - p) = 1`.
   have hεp : p / (ε - p) = 1 := by rw [div_eq_one_iff_eq (by linarith)]; linarith
   have hmp : p / (ε - p) * m ^ (p - ε) * (C * m ^ ε * A ^ n) = m ^ p * (C * A ^ n) := by
-    rw [hεp, one_mul, ← mul_assoc, ← mul_assoc, mul_comm _ C, mul_assoc C,
-      ← Real.rpow_add hm, sub_add_cancel]
+    rw [hεp, one_mul, show m ^ (p - ε) * (C * m ^ ε * A ^ n) = C * A ^ n * (m ^ (p - ε) * m ^ ε)
+      by ring, ← Real.rpow_add hm, sub_add_cancel]
     ring
   refine (lintegral_rpow_le_of_measure_lt_le_rpow_mul _
     ((hcont.mono hBR).aestronglyMeasurable measurableSet_ball).eNorm (by positivity)
@@ -301,12 +290,6 @@ private theorem exists_eLpNorm_le_mul_rpow_mul_of_le [Nonempty ι] {κ : ℝ} (h
     ring
   · gcongr
     exact div_le_self hR.le (by linarith)
-
-/-- A bound by `ENNReal.ofReal (φ ζ)` for every `ζ > 0`, with `φ` continuous, passes to `ζ = 0`. -/
-private theorem le_ofReal_of_forall_pos_le_ofReal {X : ℝ≥0∞} {φ : ℝ → ℝ} (hφ : Continuous φ)
-    (h : ∀ ζ : ℝ, 0 < ζ → X ≤ ENNReal.ofReal (φ ζ)) : X ≤ ENNReal.ofReal (φ 0) :=
-  ge_of_tendsto (((ENNReal.continuous_ofReal.comp hφ).tendsto 0).mono_left
-    (nhdsWithin_le_nhds (s := Ioi 0))) (eventually_nhdsWithin_of_forall fun ζ hζ ↦ h ζ hζ)
 
 /-- If `E = ∞` and `D, r > 0`, then everything is bounded by `D (s + r E)`. -/
 private theorem le_ofReal_mul_add_ofReal_mul_top {X : ℝ≥0∞} {D r : ℝ} (hD : 0 < D) (hr : 0 < r)
