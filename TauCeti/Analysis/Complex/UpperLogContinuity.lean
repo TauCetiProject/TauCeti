@@ -15,16 +15,15 @@ half-plane `{z | 0 ≤ im z ∧ z ≠ 0}`. This strengthens Mathlib's continuity
 slit plane: the negative real axis is allowed because the approach is confined to
 nonnegative imaginary parts, where `arg` agrees with the continuous `arccos` formula.
 It is the boundary-tolerant ingredient for logarithmic primitives along contours that
-touch the slit-plane boundary, and along `w ↦ 1 - t * w` (`t ≥ 0`) for radial integrals
-whose parameter approaches the cut `[1, ∞)` from the closed lower half-plane.
+touch the slit-plane boundary.
 
 ## Main declarations
 
 * `TauCeti.continuousOn_arg_im_nonneg_ne_zero`.
 * `TauCeti.continuousOn_log_im_nonneg_ne_zero`.
+* `Filter.Tendsto.arg_of_im_nonneg`, `Filter.Tendsto.clog_of_im_nonneg`,
+  `ContinuousWithinAt.arg_of_im_nonneg`, and `ContinuousWithinAt.clog_of_im_nonneg`.
 * `TauCeti.continuousOn_cpow_const_im_nonneg`.
-* `TauCeti.tendsto_one_sub_ofReal_mul_nhdsWithin_im_nonpos`,
-  `TauCeti.tendsto_one_sub_nhdsWithin_im_nonpos`.
 
 ## References
 
@@ -35,7 +34,8 @@ whose parameter approaches the cut `[1, ∞)` from the closed lower half-plane.
 
 public section
 
-open Complex
+open Complex Filter
+open scoped Topology
 
 namespace TauCeti
 
@@ -56,6 +56,46 @@ theorem continuousOn_log_im_nonneg_ne_zero :
   unfold log
   fun_prop (disch := exact fun _ hz ↦ norm_ne_zero_iff.2 hz.2)
 
+/-- Limit rule for `Complex.arg` along a filter eventually mapped into the closed upper half-plane,
+when the limiting value is nonzero. -/
+theorem _root_.Filter.Tendsto.arg_of_im_nonneg {α : Type*} {l : Filter α} {f : α → ℂ} {z : ℂ}
+    (hf : Tendsto f l (𝓝 z)) (him : ∀ᶠ y in l, 0 ≤ (f y).im) (hne : z ≠ 0) :
+    Tendsto (fun y ↦ (f y).arg) l (𝓝 z.arg) := by
+  rcases eq_or_neBot l with rfl | _
+  · exact tendsto_bot
+  have hz : 0 ≤ z.im := ge_of_tendsto (continuous_im.continuousAt.tendsto.comp hf) him
+  refine (continuousOn_arg_im_nonneg_ne_zero z ⟨hz, hne⟩).tendsto.comp (tendsto_nhdsWithin_iff.mpr
+    ⟨hf, ?_⟩)
+  filter_upwards [him, hf.eventually_ne hne] with y hy hy0 using ⟨hy, hy0⟩
+
+/-- Limit rule for `Complex.log` along a filter eventually mapped into the closed upper half-plane,
+when the limiting value is nonzero. -/
+theorem _root_.Filter.Tendsto.clog_of_im_nonneg {α : Type*} {l : Filter α} {f : α → ℂ} {z : ℂ}
+    (hf : Tendsto f l (𝓝 z)) (him : ∀ᶠ y in l, 0 ≤ (f y).im) (hne : z ≠ 0) :
+    Tendsto (fun y ↦ log (f y)) l (𝓝 (log z)) := by
+  rcases eq_or_neBot l with rfl | _
+  · exact tendsto_bot
+  have hz : 0 ≤ z.im := ge_of_tendsto (continuous_im.continuousAt.tendsto.comp hf) him
+  refine (continuousOn_log_im_nonneg_ne_zero z ⟨hz, hne⟩).tendsto.comp (tendsto_nhdsWithin_iff.mpr
+    ⟨hf, ?_⟩)
+  filter_upwards [him, hf.eventually_ne hne] with y hy hy0 using ⟨hy, hy0⟩
+
+/-- Composition rule for `Complex.arg` when `f` eventually maps `𝓝[s] x` into the closed upper
+half-plane and `f x ≠ 0`. -/
+nonrec theorem _root_.ContinuousWithinAt.arg_of_im_nonneg {α : Type*} [TopologicalSpace α]
+    {f : α → ℂ} {s : Set α} {x : α} (hf : ContinuousWithinAt f s x)
+    (him : ∀ᶠ y in 𝓝[s] x, 0 ≤ (f y).im) (hne : f x ≠ 0) :
+    ContinuousWithinAt (fun y ↦ (f y).arg) s x :=
+  hf.arg_of_im_nonneg him hne
+
+/-- Composition rule for `Complex.log` when `f` eventually maps `𝓝[s] x` into the closed upper
+half-plane and `f x ≠ 0`. -/
+nonrec theorem _root_.ContinuousWithinAt.clog_of_im_nonneg {α : Type*} [TopologicalSpace α]
+    {f : α → ℂ} {s : Set α} {x : α} (hf : ContinuousWithinAt f s x)
+    (him : ∀ᶠ y in 𝓝[s] x, 0 ≤ (f y).im) (hne : f x ≠ 0) :
+    ContinuousWithinAt (fun y ↦ log (f y)) s x :=
+  hf.clog_of_im_nonneg him hne
+
 /-- A complex power whose exponent has positive real part is continuous on the closed upper
 half-plane. Unlike continuity on the open slit plane, this includes one-sided continuity at the
 negative real axis; positivity of the exponent's real part also supplies continuity at zero. -/
@@ -71,31 +111,6 @@ theorem continuousOn_cpow_const_im_nonneg {r : ℂ} (hr : 0 < r.re) :
         fun w hw ↦ cpow_def_of_ne_zero hw.2 r) z ⟨hz, hz0⟩
     · filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds (eventually_ne_nhds hz0)]
         with w hw hw0 using ⟨hw, hw0⟩
-
-open Filter in
-open scoped Topology in
-/-- For real `t ≥ 0` and `z : ℂ` with `1 - t * z ≠ 0`, the affine map `w ↦ 1 - t * w` sends
-`𝓝[{w | w.im ≤ 0}] z` into `𝓝[{u | 0 ≤ u.im ∧ u ≠ 0}] (1 - t * z)`. -/
-theorem tendsto_one_sub_ofReal_mul_nhdsWithin_im_nonpos {t : ℝ} (ht : 0 ≤ t) {z : ℂ}
-    (hz : 1 - (t : ℂ) * z ≠ 0) :
-    Tendsto (fun w : ℂ ↦ 1 - (t : ℂ) * w) (𝓝[{w : ℂ | w.im ≤ 0}] z)
-      (𝓝[{u : ℂ | 0 ≤ u.im ∧ u ≠ 0}] (1 - (t : ℂ) * z)) := by
-  have hcont : Continuous fun w : ℂ ↦ 1 - (t : ℂ) * w := by fun_prop
-  refine tendsto_nhdsWithin_iff.mpr ⟨hcont.continuousAt.tendsto.mono_left nhdsWithin_le_nhds, ?_⟩
-  filter_upwards [self_mem_nhdsWithin,
-    nhdsWithin_le_nhds (hcont.continuousAt.eventually_ne hz)] with w hw hw_ne
-  refine ⟨?_, hw_ne⟩
-  simp only [sub_im, one_im, mul_im, ofReal_re, ofReal_im, zero_mul, add_zero, zero_sub]
-  nlinarith [ht, hw]
-
-open Filter in
-open scoped Topology in
-/-- For `z : ℂ` with `1 - z ≠ 0`, `w ↦ 1 - w` sends `𝓝[{w | w.im ≤ 0}] z` into
-`𝓝[{u | 0 ≤ u.im ∧ u ≠ 0}] (1 - z)`. -/
-theorem tendsto_one_sub_nhdsWithin_im_nonpos {z : ℂ} (hz : 1 - z ≠ 0) :
-    Tendsto (fun w : ℂ ↦ 1 - w) (𝓝[{w : ℂ | w.im ≤ 0}] z)
-      (𝓝[{u : ℂ | 0 ≤ u.im ∧ u ≠ 0}] (1 - z)) := by
-  simpa using tendsto_one_sub_ofReal_mul_nhdsWithin_im_nonpos zero_le_one (by simpa using hz)
 
 end TauCeti
 

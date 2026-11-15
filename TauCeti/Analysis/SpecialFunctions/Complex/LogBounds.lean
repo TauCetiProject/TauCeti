@@ -55,7 +55,7 @@ singularity of `log (1 - t z)` along a real ray into `|log |t - Re(z⁻¹)||`.
   `‖z‖ < 1`.
 * `Complex.norm_neg_one_pow_div_add_one`: the coefficients of that series have norm
   `(n + 1)⁻¹`.
-* `Complex.norm_log_one_sub_ofReal_mul_le`: for `z ≠ 0` and real `t ≠ Re(z⁻¹)`, bounds
+* `Complex.norm_log_one_sub_ofReal_mul_le`: for `z : ℂ` and real `t ≠ Re(z⁻¹)`, bounds
   `‖log (1 - t * z)‖` in terms of `|log |t - Re(z⁻¹)||`.
 -/
 
@@ -188,12 +188,15 @@ theorem one_sub_div_natCast_ne_zero {p : ℕ} (hp : 1 < p) {w : ℂ} (hw : ‖w�
   rw [norm_div, norm_natCast, div_eq_one_iff_eq (by positivity)] at h1
   linarith
 
-/-- Away from `t = Re(z⁻¹)` (for `z ≠ 0`), the principal logarithm `log (1 - t * z)` has norm at
-most `log (1 + |t| * ‖z‖) + |log ‖z‖| + π + |log |t - Re(z⁻¹)||`, isolating the logarithmic
-singularity near `t = z⁻¹` into a single translated real logarithm. -/
-theorem norm_log_one_sub_ofReal_mul_le {z : ℂ} (hz : z ≠ 0) {t : ℝ} (ht : t ≠ (z⁻¹).re) :
+/-- Away from `t = Re(z⁻¹)`, the principal logarithm `log (1 - t * z)` has norm at most
+`log (1 + |t| * ‖z‖) + |log ‖z‖| + π + |log |t - Re(z⁻¹)||`, isolating the logarithmic singularity
+near `t = z⁻¹` into a single translated real logarithm. -/
+theorem norm_log_one_sub_ofReal_mul_le (z : ℂ) {t : ℝ} (ht : t ≠ (z⁻¹).re) :
     ‖log (1 - t * z)‖ ≤
       Real.log (1 + |t| * ‖z‖) + |Real.log ‖z‖| + Real.pi + |Real.log (|t - (z⁻¹).re|)| := by
+  obtain rfl | hz := eq_or_ne z 0
+  · simp only [mul_zero, sub_zero, log_one, norm_zero, Real.log_zero, abs_zero, add_zero]
+    positivity
   have hz_pos : 0 < ‖z‖ := norm_pos_iff.mpr hz
   have hfac : (1 : ℂ) - (t : ℂ) * z = -z * ((t : ℂ) - z⁻¹) := by
     field_simp
