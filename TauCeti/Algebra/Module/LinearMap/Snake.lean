@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Exact.Sequence
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.Algebra.Module.LinearMap.Index
 public import TauCeti.LinearAlgebra.Exact
+import TauCeti.LinearAlgebra.LinearMap.Ker
 
 /-!
 # Snake sequence and index additivity for linear maps
@@ -22,8 +23,8 @@ A morphism between two exact three-term rows of modules
       v          v          v
 0 ⟶ N₁ --g₁--> N₂ --g₂--> N₃
 ```
-induces maps on kernels `ker t₁ → ker t₂ → ker t₃` (`LinearMap.kerMap`) and on cokernels
-`coker t₁ → coker t₂ → coker t₃` (`LinearMap.cokerMap`), connected by a linear map
+induces maps on kernels `ker t₁ → ker t₂ → ker t₃` (`TauCeti.kerMap`) and on cokernels
+`coker t₁ → coker t₂ → coker t₃` (`TauCeti.cokerMap`), connected by a linear map
 `TauCeti.snakeδ : ker t₃ →ₗ[R] N₁ ⧸ range t₁` into a six-term exact sequence.
 
 When the six modules lie in a common universe, `TauCeti.moduleCatSnakeInput` packages the diagram
@@ -51,7 +52,7 @@ companions) and additivity of `LinearMap.index` along short exact sequences
 
 public section
 
-namespace LinearMap
+namespace TauCeti
 
 section KerMap
 
@@ -64,8 +65,7 @@ variable {R M₁ M₂ M₃ N₁ N₂ N₃ : Type*} [Semiring R]
 /-- A commuting square `g ∘ₗ t₁ = t₂ ∘ₗ f` restricts `f` to a linear map `ker t₁ →ₗ[R] ker t₂`. -/
 def kerMap {t₁ : M₁ →ₗ[R] N₁} {t₂ : M₂ →ₗ[R] N₂} {f : M₁ →ₗ[R] M₂} {g : N₁ →ₗ[R] N₂}
     (h : g ∘ₗ t₁ = t₂ ∘ₗ f) : t₁.ker →ₗ[R] t₂.ker :=
-  f.restrict fun x hx ↦ by
-    rw [mem_ker, ← comp_apply, ← h, comp_apply, mem_ker.mp hx, map_zero]
+  f.restrict fun _ ↦ LinearMap.map_mem_ker_of_comp_eq f h
 
 @[simp]
 theorem coe_kerMap_apply {t₁ : M₁ →ₗ[R] N₁} {t₂ : M₂ →ₗ[R] N₂} {f : M₁ →ₗ[R] M₂}
@@ -80,6 +80,13 @@ theorem subtype_comp_kerMap {t₁ : M₁ →ₗ[R] N₁} {t₂ : M₂ →ₗ[R] 
   (rfl)
 
 @[simp]
+theorem kerMap_zero {t₁ : M₁ →ₗ[R] N₁} {t₂ : M₂ →ₗ[R] N₂} {g : N₁ →ₗ[R] N₂}
+    (h : g ∘ₗ t₁ = t₂ ∘ₗ (0 : M₁ →ₗ[R] M₂)) :
+    kerMap h = 0 := by
+  ext
+  simp
+
+@[simp]
 theorem kerMap_id {t : M₁ →ₗ[R] N₁} (h : LinearMap.id ∘ₗ t = t ∘ₗ LinearMap.id := rfl) :
     kerMap h = LinearMap.id := by
   ext
@@ -89,7 +96,7 @@ theorem kerMap_comp {t₁ : M₁ →ₗ[R] N₁} {t₂ : M₂ →ₗ[R] N₂} {t
     {f₁ : M₁ →ₗ[R] M₂} {f₂ : M₂ →ₗ[R] M₃} {g₁ : N₁ →ₗ[R] N₂} {g₂ : N₂ →ₗ[R] N₃}
     (h₁₂ : g₁ ∘ₗ t₁ = t₂ ∘ₗ f₁) (h₂₃ : g₂ ∘ₗ t₂ = t₃ ∘ₗ f₂)
     (h₁₃ : (g₂ ∘ₗ g₁) ∘ₗ t₁ = t₃ ∘ₗ (f₂ ∘ₗ f₁) := by
-      rw [comp_assoc, h₁₂, ← comp_assoc, h₂₃, comp_assoc]) :
+      rw [LinearMap.comp_assoc, h₁₂, ← LinearMap.comp_assoc, h₂₃, LinearMap.comp_assoc]) :
     kerMap h₁₃ = kerMap h₂₃ ∘ₗ kerMap h₁₂ := by
   ext
   rfl
@@ -110,8 +117,8 @@ theorem exact_kerMap {t₁ : M₁ →ₗ[R] N₁} {t₂ : M₂ →ₗ[R] N₂} {
   rintro ⟨x₂, hx₂⟩
   refine ⟨fun hx ↦ ?_, ?_⟩
   · obtain ⟨x₁, rfl⟩ := (hf x₂).mp (congrArg Subtype.val hx)
-    have hx₁ : x₁ ∈ t₁.ker := mem_ker.mpr <| hg₁ <| by
-      rw [map_zero, ← comp_apply, h₁₂, comp_apply, mem_ker.mp hx₂]
+    have hx₁ : x₁ ∈ t₁.ker := LinearMap.mem_ker.mpr <| hg₁ <| by
+      rw [map_zero, ← LinearMap.comp_apply, h₁₂, LinearMap.comp_apply, LinearMap.mem_ker.mp hx₂]
     exact ⟨⟨x₁, hx₁⟩, rfl⟩
   · rintro ⟨⟨x₁, _⟩, h⟩
     have hx : f₁ x₁ = x₂ := congrArg Subtype.val h
@@ -133,7 +140,7 @@ def cokerMap {t₁ : M₁ →ₗ[R] N₁} {t₂ : M₂ →ₗ[R] N₂} {f : M₁
     (h : g ∘ₗ t₁ = t₂ ∘ₗ f) : (N₁ ⧸ t₁.range) →ₗ[R] (N₂ ⧸ t₂.range) :=
   t₁.range.mapQ t₂.range g <| by
     rintro _ ⟨x, rfl⟩
-    exact ⟨f x, by simpa only [comp_apply] using (LinearMap.congr_fun h x).symm⟩
+    exact ⟨f x, by simpa only [LinearMap.comp_apply] using (LinearMap.congr_fun h x).symm⟩
 
 @[simp]
 theorem cokerMap_mk {t₁ : M₁ →ₗ[R] N₁} {t₂ : M₂ →ₗ[R] N₂} {f : M₁ →ₗ[R] M₂}
@@ -148,6 +155,13 @@ theorem cokerMap_comp_mkQ {t₁ : M₁ →ₗ[R] N₁} {t₂ : M₂ →ₗ[R] N�
   (rfl)
 
 @[simp]
+theorem cokerMap_zero {t₁ : M₁ →ₗ[R] N₁} {t₂ : M₂ →ₗ[R] N₂} {f : M₁ →ₗ[R] M₂}
+    (h : (0 : N₁ →ₗ[R] N₂) ∘ₗ t₁ = t₂ ∘ₗ f) :
+    cokerMap h = 0 := by
+  ext
+  simp
+
+@[simp]
 theorem cokerMap_id {t : M₁ →ₗ[R] N₁} (h : LinearMap.id ∘ₗ t = t ∘ₗ LinearMap.id := rfl) :
     cokerMap h = LinearMap.id := by
   ext
@@ -157,7 +171,7 @@ theorem cokerMap_comp {t₁ : M₁ →ₗ[R] N₁} {t₂ : M₂ →ₗ[R] N₂} 
     {f₁ : M₁ →ₗ[R] M₂} {f₂ : M₂ →ₗ[R] M₃} {g₁ : N₁ →ₗ[R] N₂} {g₂ : N₂ →ₗ[R] N₃}
     (h₁₂ : g₁ ∘ₗ t₁ = t₂ ∘ₗ f₁) (h₂₃ : g₂ ∘ₗ t₂ = t₃ ∘ₗ f₂)
     (h₁₃ : (g₂ ∘ₗ g₁) ∘ₗ t₁ = t₃ ∘ₗ (f₂ ∘ₗ f₁) := by
-      rw [comp_assoc, h₁₂, ← comp_assoc, h₂₃, comp_assoc]) :
+      rw [LinearMap.comp_assoc, h₁₂, ← LinearMap.comp_assoc, h₂₃, LinearMap.comp_assoc]) :
     cokerMap h₁₃ = cokerMap h₂₃ ∘ₗ cokerMap h₁₂ := by
   ext
   rfl
@@ -178,27 +192,12 @@ theorem exact_cokerMap {t₁ : M₁ →ₗ[R] N₁} {t₂ : M₂ →ₗ[R] N₂}
     (hf₂ : Function.Surjective f₂) (hg : Function.Exact g₁ g₂)
     (h₁₂ : g₁ ∘ₗ t₁ = t₂ ∘ₗ f₁) (h₂₃ : g₂ ∘ₗ t₂ = t₃ ∘ₗ f₂) :
     Function.Exact (cokerMap h₁₂) (cokerMap h₂₃) := by
-  intro q
-  obtain ⟨y₂, rfl⟩ := Submodule.Quotient.mk_surjective _ q
-  refine ⟨fun hy ↦ ?_, ?_⟩
-  · obtain ⟨x₃, hx₃⟩ := (Submodule.Quotient.mk_eq_zero _).mp hy
-    obtain ⟨x₂, rfl⟩ := hf₂ x₃
-    have hker : g₂ (y₂ - t₂ x₂) = 0 := by
-      rw [map_sub, ← comp_apply, h₂₃, comp_apply, hx₃, sub_self]
-    obtain ⟨y₁, hy₁⟩ := (hg (y₂ - t₂ x₂)).mp hker
-    refine ⟨Submodule.Quotient.mk y₁, ?_⟩
-    rw [cokerMap_mk, eq_comm, Submodule.Quotient.eq]
-    exact ⟨x₂, by rw [hy₁]; abel⟩
-  · rintro ⟨q₁, hq₁⟩
-    rw [← hq₁]
-    obtain ⟨y₁, rfl⟩ := Submodule.Quotient.mk_surjective _ q₁
-    simp [hg.apply_apply_eq_zero]
+  refine (hg.exact_mapQ_iff _ _).2 ?_
+  rw [← LinearMap.range_comp, h₂₃,
+    LinearMap.range_comp_of_range_eq_top _ (LinearMap.range_eq_top.2 hf₂)]
+  exact inf_le_right
 
 end CokerMap
-
-end LinearMap
-
-namespace TauCeti
 
 section ModuleCat
 
@@ -223,11 +222,11 @@ noncomputable def moduleCatSnakeInput {t₁ : M₁ →ₗ[R] N₁} {t₂ : M₂ 
     (hg : Function.Exact g₁ g₂) (hg₁ : Function.Injective g₁)
     (h₁₂ : g₁ ∘ₗ t₁ = t₂ ∘ₗ f₁) (h₂₃ : g₂ ∘ₗ t₂ = t₃ ∘ₗ f₂) :
     ShortComplex.SnakeInput (ModuleCat.{v} R) where
-  L₀ := ModuleCat.shortComplexOfCompEqZero (LinearMap.kerMap h₁₂) (LinearMap.kerMap h₂₃)
+  L₀ := ModuleCat.shortComplexOfCompEqZero (kerMap h₁₂) (kerMap h₂₃)
     (by ext x; simp [hf.apply_apply_eq_zero])
   L₁ := ModuleCat.shortComplexOfCompEqZero f₁ f₂ hf.linearMap_comp_eq_zero
   L₂ := ModuleCat.shortComplexOfCompEqZero g₁ g₂ hg.linearMap_comp_eq_zero
-  L₃ := ModuleCat.shortComplexOfCompEqZero (LinearMap.cokerMap h₁₂) (LinearMap.cokerMap h₂₃)
+  L₃ := ModuleCat.shortComplexOfCompEqZero (cokerMap h₁₂) (cokerMap h₂₃)
     (by ext y; simp [hg.apply_apply_eq_zero])
   v₀₁ :=
     { τ₁ := ModuleCat.ofHom t₁.ker.subtype
@@ -292,19 +291,37 @@ private theorem uliftConj_comp_eq.{w, uR, uA, uB, uC, uD} {R : Type uR} [Ring R]
   ext ⟨x⟩
   exact LinearMap.congr_fun h x
 
-private theorem exact_of_conj {R A B C A' B' C' : Type*} [Semiring R]
-    [AddCommMonoid A] [AddCommMonoid B] [AddCommMonoid C]
-    [AddCommMonoid A'] [AddCommMonoid B'] [AddCommMonoid C']
-    [Module R A] [Module R B] [Module R C]
-    [Module R A'] [Module R B'] [Module R C']
-    {f : A → B} {g : B → C} {f' : A' → B'} {g' : B' → C'}
-    (eA : A ≃ₗ[R] A') (eB : B ≃ₗ[R] B') (eC : C' ≃ₗ[R] C)
-    (hf : ∀ a, f a = eB.symm (f' (eA a)))
-    (hg : ∀ b, g b = eC (g' (eB b)))
-    (hex : Function.Exact f' g') : Function.Exact f g := fun b ↦ by
-  rw [hg, LinearEquiv.map_eq_zero_iff, hex (eB b)]
-  exact ⟨fun ⟨a', ha'⟩ ↦ ⟨eA.symm a', by rw [hf, eA.apply_symm_apply, ha', eB.symm_apply_apply]⟩,
-    fun ⟨a, ha⟩ ↦ ⟨eA a, by rw [← ha, hf, eB.apply_symm_apply]⟩⟩
+private def uliftKerEquiv.{w, uR, uA, uB} {R : Type uR} [Ring R] {A : Type uA} {B : Type uB}
+    [AddCommGroup A] [AddCommGroup B] [Module R A] [Module R B] (t : A →ₗ[R] B) :
+    t.ker ≃ₗ[R] (uliftConj.{w} t).ker :=
+  ULift.moduleEquiv.symm.submoduleMap t.ker ≪≫ₗ
+    LinearEquiv.ofEq _ _ (by ext ⟨x⟩; simp [uliftConj])
+
+@[simp]
+private theorem coe_uliftKerEquiv_apply.{w, uR, uA, uB} {R : Type uR} [Ring R]
+    {A : Type uA} {B : Type uB} [AddCommGroup A] [AddCommGroup B] [Module R A] [Module R B]
+    (t : A →ₗ[R] B) (x : t.ker) :
+    (uliftKerEquiv.{w} t x : ULift.{w} A) = ULift.up (x : A) :=
+  rfl
+
+@[simp]
+private theorem coe_uliftKerEquiv_symm_apply.{w, uR, uA, uB} {R : Type uR} [Ring R]
+    {A : Type uA} {B : Type uB} [AddCommGroup A] [AddCommGroup B] [Module R A] [Module R B]
+    (t : A →ₗ[R] B) (x : (uliftConj.{w} t).ker) :
+    ((uliftKerEquiv.{w} t).symm x : A) = (x : ULift.{w} A).down :=
+  rfl
+
+private def uliftCokerEquiv.{w, uR, uA, uB} {R : Type uR} [Ring R] {A : Type uA} {B : Type uB}
+    [AddCommGroup A] [AddCommGroup B] [Module R A] [Module R B] (t : A →ₗ[R] B) :
+    (ULift.{w} B ⧸ (uliftConj.{w} t).range) ≃ₗ[R] B ⧸ t.range :=
+  Submodule.Quotient.equiv _ _ ULift.moduleEquiv (by ext y; simp [uliftConj])
+
+@[simp]
+private theorem uliftCokerEquiv_mk.{w, uR, uA, uB} {R : Type uR} [Ring R]
+    {A : Type uA} {B : Type uB} [AddCommGroup A] [AddCommGroup B] [Module R A] [Module R B]
+    (t : A →ₗ[R] B) (y : ULift.{w} B) :
+    uliftCokerEquiv.{w} t (Submodule.Quotient.mk y) = Submodule.Quotient.mk y.down :=
+  rfl
 
 universe u u₁ u₂ u₃ v₁ v₂ v₃
 
@@ -316,6 +333,33 @@ variable {R : Type u} [Ring R]
   [Module R M₁] [Module R M₂] [Module R M₃]
   [Module R N₁] [Module R N₂] [Module R N₃]
 
+private noncomputable def uliftSnakeInput
+    {t₁ : M₁ →ₗ[R] N₁} {t₂ : M₂ →ₗ[R] N₂} {t₃ : M₃ →ₗ[R] N₃}
+    {f₁ : M₁ →ₗ[R] M₂} {f₂ : M₂ →ₗ[R] M₃} {g₁ : N₁ →ₗ[R] N₂} {g₂ : N₂ →ₗ[R] N₃}
+    (hf : Function.Exact f₁ f₂) (hf₂ : Function.Surjective f₂)
+    (hg : Function.Exact g₁ g₂) (hg₁ : Function.Injective g₁)
+    (h₁₂ : g₁ ∘ₗ t₁ = t₂ ∘ₗ f₁) (h₂₃ : g₂ ∘ₗ t₂ = t₃ ∘ₗ f₂) :
+    CategoryTheory.ShortComplex.SnakeInput (ModuleCat.{max u₁ u₂ u₃ v₁ v₂ v₃} R) :=
+  moduleCatSnakeInput
+    (by simpa only [uliftConj, LinearEquiv.postcomp_exact_iff_exact,
+      LinearEquiv.conj_symm_exact_iff_exact, LinearEquiv.precomp_exact_iff_exact] using hf)
+    (by simpa [uliftConj] using hf₂)
+    (by simpa only [uliftConj, LinearEquiv.postcomp_exact_iff_exact,
+      LinearEquiv.conj_symm_exact_iff_exact, LinearEquiv.precomp_exact_iff_exact] using hg)
+    (by simpa [uliftConj] using hg₁)
+    (uliftConj_comp_eq.{max u₁ u₂ u₃ v₁ v₂ v₃} h₁₂)
+    (uliftConj_comp_eq.{max u₁ u₂ u₃ v₁ v₂ v₃} h₂₃)
+
+private noncomputable def uliftSnakeδ
+    {t₁ : M₁ →ₗ[R] N₁} {t₂ : M₂ →ₗ[R] N₂} {t₃ : M₃ →ₗ[R] N₃}
+    {f₁ : M₁ →ₗ[R] M₂} {f₂ : M₂ →ₗ[R] M₃} {g₁ : N₁ →ₗ[R] N₂} {g₂ : N₂ →ₗ[R] N₃}
+    (hf : Function.Exact f₁ f₂) (hf₂ : Function.Surjective f₂)
+    (hg : Function.Exact g₁ g₂) (hg₁ : Function.Injective g₁)
+    (h₁₂ : g₁ ∘ₗ t₁ = t₂ ∘ₗ f₁) (h₂₃ : g₂ ∘ₗ t₂ = t₃ ∘ₗ f₂) :
+    (uliftConj.{max u₁ u₂ u₃ v₁ v₂ v₃} t₃).ker →ₗ[R]
+      ULift.{max u₁ u₂ u₃ v₁ v₂ v₃} N₁ ⧸ (uliftConj.{max u₁ u₂ u₃ v₁ v₂ v₃} t₁).range :=
+  (uliftSnakeInput hf hf₂ hg hg₁ h₁₂ h₂₃).δ.hom
+
 /-- The **snake connecting linear map** `ker t₃ →ₗ[R] N₁ ⧸ range t₁` associated to a commuting
 diagram with exact rows `M₁ --f₁--> M₂ --f₂--> M₃ → 0` and `0 → N₁ --g₁--> N₂ --g₂--> N₃`,
 defined via `CategoryTheory.ShortComplex.SnakeInput` in `ModuleCat R` after lifting the six
@@ -325,32 +369,10 @@ noncomputable def snakeδ {t₁ : M₁ →ₗ[R] N₁} {t₂ : M₂ →ₗ[R] N�
     (hf : Function.Exact f₁ f₂) (hf₂ : Function.Surjective f₂)
     (hg : Function.Exact g₁ g₂) (hg₁ : Function.Injective g₁)
     (h₁₂ : g₁ ∘ₗ t₁ = t₂ ∘ₗ f₁) (h₂₃ : g₂ ∘ₗ t₂ = t₃ ∘ₗ f₂) :
-    t₃.ker →ₗ[R] N₁ ⧸ t₁.range := by
-  let f₁' := uliftConj.{max u₁ u₂ u₃ v₁ v₂ v₃} f₁
-  let f₂' := uliftConj.{max u₁ u₂ u₃ v₁ v₂ v₃} f₂
-  let g₁' := uliftConj.{max u₁ u₂ u₃ v₁ v₂ v₃} g₁
-  let g₂' := uliftConj.{max u₁ u₂ u₃ v₁ v₂ v₃} g₂
-  let t₁' := uliftConj.{max u₁ u₂ u₃ v₁ v₂ v₃} t₁
-  let t₃' := uliftConj.{max u₁ u₂ u₃ v₁ v₂ v₃} t₃
-  have hf' : Function.Exact f₁' f₂' := by
-    simpa only [f₁', f₂', uliftConj, LinearEquiv.postcomp_exact_iff_exact,
-      LinearEquiv.conj_symm_exact_iff_exact, LinearEquiv.precomp_exact_iff_exact] using hf
-  have hg' : Function.Exact g₁' g₂' := by
-    simpa only [g₁', g₂', uliftConj, LinearEquiv.postcomp_exact_iff_exact,
-      LinearEquiv.conj_symm_exact_iff_exact, LinearEquiv.precomp_exact_iff_exact] using hg
-  have hf₂' : Function.Surjective f₂' := by simpa [f₂', uliftConj] using hf₂
-  have hg₁' : Function.Injective g₁' := by simpa [g₁', uliftConj] using hg₁
-  let D := moduleCatSnakeInput hf' hf₂' hg' hg₁'
-    (uliftConj_comp_eq.{max u₁ u₂ u₃ v₁ v₂ v₃} h₁₂)
-    (uliftConj_comp_eq.{max u₁ u₂ u₃ v₁ v₂ v₃} h₂₃)
-  let ι : t₃.ker →ₗ[R] t₃'.ker :=
-    ULift.moduleEquiv.symm.toLinearMap.restrict fun x hx ↦ by
-      simpa [t₃', uliftConj] using hx
-  let π : (ULift.{max u₁ u₂ u₃ v₁ v₂ v₃} N₁ ⧸ t₁'.range) →ₗ[R] N₁ ⧸ t₁.range :=
-    t₁'.range.mapQ t₁.range ULift.moduleEquiv.toLinearMap <| by
-      rintro ⟨y⟩ ⟨⟨x⟩, hx⟩
-      exact ⟨x, congrArg ULift.down hx⟩
-  exact π ∘ₗ D.δ.hom ∘ₗ ι
+    t₃.ker →ₗ[R] N₁ ⧸ t₁.range :=
+  (uliftCokerEquiv.{max u₁ u₂ u₃ v₁ v₂ v₃} t₁).toLinearMap ∘ₗ
+    uliftSnakeδ hf hf₂ hg hg₁ h₁₂ h₂₃ ∘ₗ
+    (uliftKerEquiv.{max u₁ u₂ u₃ v₁ v₂ v₃} t₃).toLinearMap
 
 /-- Diagram-chase formula for `TauCeti.snakeδ`: if `f₂ x₂ = x₃` and `g₁ y₁ = t₂ x₂`, then
 `snakeδ` sends `x₃` to the class of `y₁` in `N₁ ⧸ range t₁`. -/
@@ -361,22 +383,15 @@ theorem snakeδ_eq {t₁ : M₁ →ₗ[R] N₁} {t₂ : M₂ →ₗ[R] N₂} {t�
     (h₁₂ : g₁ ∘ₗ t₁ = t₂ ∘ₗ f₁) (h₂₃ : g₂ ∘ₗ t₂ = t₃ ∘ₗ f₂)
     (x₃ : t₃.ker) (x₂ : M₂) (y₁ : N₁) (hx₂ : f₂ x₂ = x₃) (hy₁ : g₁ y₁ = t₂ x₂) :
     snakeδ hf hf₂ hg hg₁ h₁₂ h₂₃ x₃ = Submodule.Quotient.mk y₁ := by
-  let h₁₂' := uliftConj_comp_eq.{max u₁ u₂ u₃ v₁ v₂ v₃} h₁₂
-  let h₂₃' := uliftConj_comp_eq.{max u₁ u₂ u₃ v₁ v₂ v₃} h₂₃
-  have hδ := moduleCatSnakeInput_δ_apply
-    (by simpa only [uliftConj, LinearEquiv.postcomp_exact_iff_exact,
-      LinearEquiv.conj_symm_exact_iff_exact, LinearEquiv.precomp_exact_iff_exact] using hf)
-    (by simpa [uliftConj] using hf₂)
-    (by simpa only [uliftConj, LinearEquiv.postcomp_exact_iff_exact,
-      LinearEquiv.conj_symm_exact_iff_exact, LinearEquiv.precomp_exact_iff_exact] using hg)
-    (by simpa [uliftConj] using hg₁)
-    h₁₂' h₂₃'
-    ⟨ULift.up (x₃ : M₃), by simp [uliftConj]⟩
-    (ULift.up x₂) (ULift.up y₁)
-    (congrArg ULift.up hx₂) (congrArg ULift.up hy₁)
-  exact congrArg
-    ((uliftConj.{max u₁ u₂ u₃ v₁ v₂ v₃} t₁).range.mapQ t₁.range ULift.moduleEquiv.toLinearMap
-      (fun ⟨y⟩ ⟨⟨x⟩, hx⟩ ↦ ⟨x, congrArg ULift.down hx⟩)) hδ
+  have hδ : uliftSnakeδ hf hf₂ hg hg₁ h₁₂ h₂₃
+      (uliftKerEquiv.{max u₁ u₂ u₃ v₁ v₂ v₃} t₃ x₃) =
+      Submodule.Quotient.mk (ULift.up y₁) :=
+    moduleCatSnakeInput_δ_apply _ _ _ _ _ _
+      (uliftKerEquiv.{max u₁ u₂ u₃ v₁ v₂ v₃} t₃ x₃)
+      (ULift.up x₂) (ULift.up y₁)
+      (congrArg ULift.up hx₂)
+      (congrArg ULift.up hy₁)
+  simp [snakeδ, hδ]
 
 /-- When all six modules lie in a single universe `u₁`, `TauCeti.snakeδ` agrees with the underlying
 linear map of `(TauCeti.moduleCatSnakeInput ...).δ`. -/
@@ -426,33 +441,19 @@ theorem exact_kerMap_snakeδ {t₁ : M₁ →ₗ[R] N₁} {t₂ : M₂ →ₗ[R]
     (hf : Function.Exact f₁ f₂) (hf₂ : Function.Surjective f₂)
     (hg : Function.Exact g₁ g₂) (hg₁ : Function.Injective g₁)
     (h₁₂ : g₁ ∘ₗ t₁ = t₂ ∘ₗ f₁) (h₂₃ : g₂ ∘ₗ t₂ = t₃ ∘ₗ f₂) :
-    Function.Exact (LinearMap.kerMap h₂₃) (snakeδ hf hf₂ hg hg₁ h₁₂ h₂₃) := by
-  let f₁' := uliftConj.{max u₁ u₂ u₃ v₁ v₂ v₃} f₁
-  let f₂' := uliftConj.{max u₁ u₂ u₃ v₁ v₂ v₃} f₂
-  let g₁' := uliftConj.{max u₁ u₂ u₃ v₁ v₂ v₃} g₁
-  let g₂' := uliftConj.{max u₁ u₂ u₃ v₁ v₂ v₃} g₂
-  have hf' : Function.Exact f₁' f₂' := by
-    simpa only [f₁', f₂', uliftConj, LinearEquiv.postcomp_exact_iff_exact,
-      LinearEquiv.conj_symm_exact_iff_exact, LinearEquiv.precomp_exact_iff_exact] using hf
-  have hg' : Function.Exact g₁' g₂' := by
-    simpa only [g₁', g₂', uliftConj, LinearEquiv.postcomp_exact_iff_exact,
-      LinearEquiv.conj_symm_exact_iff_exact, LinearEquiv.precomp_exact_iff_exact] using hg
-  let h₁₂' := uliftConj_comp_eq.{max u₁ u₂ u₃ v₁ v₂ v₃} h₁₂
-  let h₂₃' := uliftConj_comp_eq.{max u₁ u₂ u₃ v₁ v₂ v₃} h₂₃
-  let D := moduleCatSnakeInput hf' (by simpa [f₂', uliftConj] using hf₂)
-    hg' (by simpa [g₁', uliftConj] using hg₁) h₁₂' h₂₃'
-  have hex : Function.Exact (LinearMap.kerMap h₂₃') D.δ.hom :=
-    (CategoryTheory.ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp D.L₁'_exact
-  let e₂ : t₂.ker ≃ₗ[R] (uliftConj.{max u₁ u₂ u₃ v₁ v₂ v₃} t₂).ker :=
-    ULift.moduleEquiv.symm.submoduleMap t₂.ker ≪≫ₗ
-      LinearEquiv.ofEq _ _ (by ext ⟨x⟩; simp [uliftConj])
-  let e₃ : t₃.ker ≃ₗ[R] (uliftConj.{max u₁ u₂ u₃ v₁ v₂ v₃} t₃).ker :=
-    ULift.moduleEquiv.symm.submoduleMap t₃.ker ≪≫ₗ
-      LinearEquiv.ofEq _ _ (by ext ⟨x⟩; simp [uliftConj])
-  let eQ : (ULift.{max u₁ u₂ u₃ v₁ v₂ v₃} N₁ ⧸
-      (uliftConj.{max u₁ u₂ u₃ v₁ v₂ v₃} t₁).range) ≃ₗ[R] N₁ ⧸ t₁.range :=
-    Submodule.Quotient.equiv _ _ ULift.moduleEquiv (by ext y; simp [uliftConj])
-  exact exact_of_conj e₂ e₃ eQ (fun _ ↦ rfl) (fun _ ↦ rfl) hex
+    Function.Exact (kerMap h₂₃) (snakeδ hf hf₂ hg hg₁ h₁₂ h₂₃) := by
+  have hex : Function.Exact (kerMap (uliftConj_comp_eq.{max u₁ u₂ u₃ v₁ v₂ v₃} h₂₃))
+      (uliftSnakeδ hf hf₂ hg hg₁ h₁₂ h₂₃) :=
+    (CategoryTheory.ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp
+      (uliftSnakeInput hf hf₂ hg hg₁ h₁₂ h₂₃).L₁'_exact
+  refine hex.of_ladder_linearEquiv_of_exact
+    (e₁ := (uliftKerEquiv.{max u₁ u₂ u₃ v₁ v₂ v₃} t₂).symm)
+    (e₂ := (uliftKerEquiv.{max u₁ u₂ u₃ v₁ v₂ v₃} t₃).symm)
+    (e₃ := uliftCokerEquiv.{max u₁ u₂ u₃ v₁ v₂ v₃} t₁) ?_ ?_
+  · ext x
+    simp [uliftConj]
+  · ext x
+    simp [snakeδ]
 
 /-- Exactness of the snake sequence at `N₁ ⧸ range t₁`:
 `ker t₃ --snakeδ--> N₁ ⧸ range t₁ --cokerMap h₁₂--> N₂ ⧸ range t₂` is exact. -/
@@ -461,34 +462,19 @@ theorem exact_snakeδ_cokerMap {t₁ : M₁ →ₗ[R] N₁} {t₂ : M₂ →ₗ[
     (hf : Function.Exact f₁ f₂) (hf₂ : Function.Surjective f₂)
     (hg : Function.Exact g₁ g₂) (hg₁ : Function.Injective g₁)
     (h₁₂ : g₁ ∘ₗ t₁ = t₂ ∘ₗ f₁) (h₂₃ : g₂ ∘ₗ t₂ = t₃ ∘ₗ f₂) :
-    Function.Exact (snakeδ hf hf₂ hg hg₁ h₁₂ h₂₃) (LinearMap.cokerMap h₁₂) := by
-  let f₁' := uliftConj.{max u₁ u₂ u₃ v₁ v₂ v₃} f₁
-  let f₂' := uliftConj.{max u₁ u₂ u₃ v₁ v₂ v₃} f₂
-  let g₁' := uliftConj.{max u₁ u₂ u₃ v₁ v₂ v₃} g₁
-  let g₂' := uliftConj.{max u₁ u₂ u₃ v₁ v₂ v₃} g₂
-  have hf' : Function.Exact f₁' f₂' := by
-    simpa only [f₁', f₂', uliftConj, LinearEquiv.postcomp_exact_iff_exact,
-      LinearEquiv.conj_symm_exact_iff_exact, LinearEquiv.precomp_exact_iff_exact] using hf
-  have hg' : Function.Exact g₁' g₂' := by
-    simpa only [g₁', g₂', uliftConj, LinearEquiv.postcomp_exact_iff_exact,
-      LinearEquiv.conj_symm_exact_iff_exact, LinearEquiv.precomp_exact_iff_exact] using hg
-  let h₁₂' := uliftConj_comp_eq.{max u₁ u₂ u₃ v₁ v₂ v₃} h₁₂
-  let h₂₃' := uliftConj_comp_eq.{max u₁ u₂ u₃ v₁ v₂ v₃} h₂₃
-  let D := moduleCatSnakeInput hf' (by simpa [f₂', uliftConj] using hf₂)
-    hg' (by simpa [g₁', uliftConj] using hg₁) h₁₂' h₂₃'
-  have hex : Function.Exact D.δ.hom (LinearMap.cokerMap h₁₂') :=
-    (CategoryTheory.ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp D.L₂'_exact
-  let e₃ : t₃.ker ≃ₗ[R] (uliftConj.{max u₁ u₂ u₃ v₁ v₂ v₃} t₃).ker :=
-    ULift.moduleEquiv.symm.submoduleMap t₃.ker ≪≫ₗ
-      LinearEquiv.ofEq _ _ (by ext ⟨x⟩; simp [uliftConj])
-  let eQ₁ : (ULift.{max u₁ u₂ u₃ v₁ v₂ v₃} N₁ ⧸
-      (uliftConj.{max u₁ u₂ u₃ v₁ v₂ v₃} t₁).range) ≃ₗ[R] N₁ ⧸ t₁.range :=
-    Submodule.Quotient.equiv _ _ ULift.moduleEquiv (by ext y; simp [uliftConj])
-  let eQ₂ : (ULift.{max u₁ u₂ u₃ v₁ v₂ v₃} N₂ ⧸
-      (uliftConj.{max u₁ u₂ u₃ v₁ v₂ v₃} t₂).range) ≃ₗ[R] N₂ ⧸ t₂.range :=
-    Submodule.Quotient.equiv _ _ ULift.moduleEquiv (by ext y; simp [uliftConj])
-  exact exact_of_conj e₃ eQ₁.symm eQ₂ (fun _ ↦ rfl)
-    (fun q ↦ Submodule.Quotient.induction_on _ q fun _ ↦ rfl) hex
+    Function.Exact (snakeδ hf hf₂ hg hg₁ h₁₂ h₂₃) (cokerMap h₁₂) := by
+  have hex : Function.Exact (uliftSnakeδ hf hf₂ hg hg₁ h₁₂ h₂₃)
+      (cokerMap (uliftConj_comp_eq.{max u₁ u₂ u₃ v₁ v₂ v₃} h₁₂)) :=
+    (CategoryTheory.ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp
+      (uliftSnakeInput hf hf₂ hg hg₁ h₁₂ h₂₃).L₂'_exact
+  refine hex.of_ladder_linearEquiv_of_exact
+    (e₁ := (uliftKerEquiv.{max u₁ u₂ u₃ v₁ v₂ v₃} t₃).symm)
+    (e₂ := uliftCokerEquiv.{max u₁ u₂ u₃ v₁ v₂ v₃} t₁)
+    (e₃ := uliftCokerEquiv.{max u₁ u₂ u₃ v₁ v₂ v₃} t₂) ?_ ?_
+  · ext x
+    simp [snakeδ]
+  · ext y
+    simp [uliftConj]
 
 end Snake
 
@@ -507,7 +493,7 @@ theorem finiteDimensional_ker_left {t₁ : M₁ →ₗ[𝕜] N₁} {t₂ : M₂ 
     (hf₁ : Function.Injective f₁) (h₁₂ : g₁ ∘ₗ t₁ = t₂ ∘ₗ f₁)
     [FiniteDimensional 𝕜 t₂.ker] :
     FiniteDimensional 𝕜 t₁.ker :=
-  Module.Finite.of_injective (LinearMap.kerMap h₁₂) (LinearMap.kerMap_injective h₁₂ hf₁)
+  Module.Finite.of_injective (kerMap h₁₂) (kerMap_injective h₁₂ hf₁)
 
 /-- If `M₁ --f₁--> M₂ --f₂--> M₃` is exact, `g₁` is injective, and both `ker t₁` and `ker t₃` are
 finite-dimensional, then `ker t₂` is finite-dimensional. -/
@@ -517,7 +503,7 @@ theorem finiteDimensional_ker_middle {t₁ : M₁ →ₗ[𝕜] N₁} {t₂ : M�
     (h₁₂ : g₁ ∘ₗ t₁ = t₂ ∘ₗ f₁) (h₂₃ : g₂ ∘ₗ t₂ = t₃ ∘ₗ f₂)
     [FiniteDimensional 𝕜 t₁.ker] [FiniteDimensional 𝕜 t₃.ker] :
     FiniteDimensional 𝕜 t₂.ker :=
-  finiteDimensional_of_exact (LinearMap.exact_kerMap hf hg₁ h₁₂ h₂₃)
+  finiteDimensional_of_exact (exact_kerMap hf hg₁ h₁₂ h₂₃)
 
 /-- If `ker t₂` and `coker t₁` are finite-dimensional in a snake diagram, then `ker t₃` is
 finite-dimensional. -/
@@ -549,7 +535,7 @@ theorem finiteDimensional_coker_middle {t₁ : M₁ →ₗ[𝕜] N₁} {t₂ : M
     (h₁₂ : g₁ ∘ₗ t₁ = t₂ ∘ₗ f₁) (h₂₃ : g₂ ∘ₗ t₂ = t₃ ∘ₗ f₂)
     [FiniteDimensional 𝕜 (N₁ ⧸ t₁.range)] [FiniteDimensional 𝕜 (N₃ ⧸ t₃.range)] :
     FiniteDimensional 𝕜 (N₂ ⧸ t₂.range) :=
-  finiteDimensional_of_exact (LinearMap.exact_cokerMap hf₂ hg h₁₂ h₂₃)
+  finiteDimensional_of_exact (exact_cokerMap hf₂ hg h₁₂ h₂₃)
 
 /-- If `g₂` is surjective in `g₂ ∘ₗ t₂ = t₃ ∘ₗ f₂` and `coker t₂` is finite-dimensional, then
 `coker t₃` is finite-dimensional. -/
@@ -558,7 +544,7 @@ theorem finiteDimensional_coker_right {t₂ : M₂ →ₗ[𝕜] N₂} {t₃ : M�
     (hg₂ : Function.Surjective g₂) (h₂₃ : g₂ ∘ₗ t₂ = t₃ ∘ₗ f₂)
     [FiniteDimensional 𝕜 (N₂ ⧸ t₂.range)] :
     FiniteDimensional 𝕜 (N₃ ⧸ t₃.range) :=
-  Module.Finite.of_surjective (LinearMap.cokerMap h₂₃) (LinearMap.cokerMap_surjective h₂₃ hg₂)
+  Module.Finite.of_surjective (cokerMap h₂₃) (cokerMap_surjective h₂₃ hg₂)
 
 /-- **Index additivity along a morphism of short exact sequences.** Given a commuting diagram of
 vector spaces over a division ring with short exact rows
@@ -576,15 +562,15 @@ theorem index_eq_add_of_shortExact {t₁ : M₁ →ₗ[𝕜] N₁} {t₂ : M₂ 
   have : FiniteDimensional 𝕜 t₂.ker := finiteDimensional_ker_middle hf hg₁ h₁₂ h₂₃
   have : FiniteDimensional 𝕜 (N₂ ⧸ t₂.range) := finiteDimensional_coker_middle hf₂ hg h₁₂ h₂₃
   have hsum := Module.sum_neg_one_pow_finrank_eq_zero_of_exact_six
-    (LinearMap.kerMap h₁₂) (LinearMap.kerMap h₂₃)
+    (kerMap h₁₂) (kerMap h₂₃)
     (snakeδ hf hf₂ hg hg₁ h₁₂ h₂₃)
-    (LinearMap.cokerMap h₁₂) (LinearMap.cokerMap h₂₃)
-    (LinearMap.kerMap_injective h₁₂ hf₁)
-    (LinearMap.exact_kerMap hf hg₁ h₁₂ h₂₃)
+    (cokerMap h₁₂) (cokerMap h₂₃)
+    (kerMap_injective h₁₂ hf₁)
+    (exact_kerMap hf hg₁ h₁₂ h₂₃)
     (exact_kerMap_snakeδ hf hf₂ hg hg₁ h₁₂ h₂₃)
     (exact_snakeδ_cokerMap hf hf₂ hg hg₁ h₁₂ h₂₃)
-    (LinearMap.exact_cokerMap hf₂ hg h₁₂ h₂₃)
-    (LinearMap.cokerMap_surjective h₂₃ hg₂)
+    (exact_cokerMap hf₂ hg h₁₂ h₂₃)
+    (cokerMap_surjective h₂₃ hg₂)
   simp only [LinearMap.index_eq_finrank_sub]
   omega
 
