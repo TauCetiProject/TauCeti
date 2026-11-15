@@ -55,25 +55,16 @@ noncomputable def componentDualEquiv :
   let _ : Fintype P.Component := Fintype.ofFinite P.Component
   exact
     { toFun := fun φ ↦ ∑ C : P.Component, (P.componentProj C).dualMap (φ C)
-      map_add' := fun φ ψ ↦ by
-        ext x
-        simp [Finset.sum_add_distrib]
-      map_smul' := fun c φ ↦ by
-        ext x
-        simp [Finset.mul_sum]
+      map_add' := fun _ _ ↦ by ext; simp [Finset.sum_add_distrib]
+      map_smul' := fun _ _ ↦ by ext; simp [Finset.mul_sum]
       invFun := fun ψ C ↦ ψ.comp (P.componentSpace C).subtype
-      left_inv := fun φ ↦ by
-        funext D
-        ext x
+      left_inv := fun φ ↦ funext fun D ↦ LinearMap.ext fun x ↦ by
         simp only [LinearMap.coe_comp, Submodule.coe_subtype, Function.comp_apply,
           LinearMap.sum_apply, LinearMap.dualMap_apply]
-        rw [Finset.sum_eq_single D]
-        · rw [componentProj_apply_of_mem x.2]
-        · intro C _ hCD
-          rw [componentProj_apply_of_ne hCD.symm x.2, map_zero]
-        · exact fun hD ↦ absurd (Finset.mem_univ D) hD
-      right_inv := fun ψ ↦ by
-        ext x
+        rw [Finset.sum_eq_single D (fun C _ hCD ↦ by
+            rw [componentProj_apply_of_ne hCD.symm x.2, map_zero])
+          (fun hD ↦ absurd (Finset.mem_univ D) hD), componentProj_apply_of_mem x.2]
+      right_inv := fun ψ ↦ LinearMap.ext fun x ↦ by
         simp only [LinearMap.sum_apply, LinearMap.dualMap_apply, LinearMap.coe_comp,
           Submodule.coe_subtype, Function.comp_apply, ← map_sum, P.sum_componentProj x] }
 
@@ -104,8 +95,7 @@ theorem componentDualEquiv_single [DecidableEq P.Component] (C : P.Component)
   ext x
   rw [P.componentDualEquiv_apply, Finset.sum_eq_single C]
   · simp [LinearMap.single_apply]
-  · intro D _ hDC
-    simp [LinearMap.single_apply, hDC]
+  · exact fun _ _ hDC ↦ by simp [LinearMap.single_apply, hDC]
   · exact fun hC ↦ absurd (Finset.mem_univ C) hC
 
 /-- `(P.componentProj C).dualMap` intertwines the contragredient Weyl representation of the
@@ -114,11 +104,10 @@ theorem isIntertwiningMap_dualMap_componentProj (C : P.Component) :
     Representation.IsIntertwiningMap
       ((P.componentPairing C).weylGroupRootRep.dual.comp (P.weylGroupComponentProj C))
       P.weylGroupRootRep.dual
-      (P.componentProj C).dualMap := by
-  refine ⟨fun w φ ↦ ?_⟩
-  ext x
-  simp [Representation.dual_apply, Module.Dual.transpose_apply, weylGroupRootRep,
-    P.componentProj_weylGroup_smul]
+      (P.componentProj C).dualMap :=
+  ⟨fun _ _ ↦ LinearMap.ext fun _ ↦ by
+    simp [Representation.dual_apply, Module.Dual.transpose_apply, weylGroupRootRep,
+      P.componentProj_weylGroup_smul]⟩
 
 /-- Pulling back a component-invariant polynomial along `(P.componentProj C).dualMap` yields a
 `P.weylGroup`-invariant polynomial on `M`. -/
@@ -130,10 +119,9 @@ theorem map_dualMap_componentProj_mem_symmetricAlgebraInvariants (C : P.Componen
   refine Representation.map_mem_symmetricAlgebraInvariants
     (P.isIntertwiningMap_dualMap_componentProj C) ?_
   rw [(P.componentPairing C).weylGroupRootRep.dual.symmetricAlgebraInvariants_comp_of_surjective
-    (P.weylGroupComponentProj C) (fun u ↦ by
-      classical
-      exact ⟨P.weylGroupComponentLift C u,
-        P.weylGroupComponentProj_weylGroupComponentLift_self C u⟩)]
+    (P.weylGroupComponentProj C) fun u ↦ by
+      classical exact ⟨P.weylGroupComponentLift C u,
+        P.weylGroupComponentProj_weylGroupComponentLift_self C u⟩]
   exact hp
 
 /-- **Basic invariants of a finite root system from its irreducible components.** If for each
@@ -153,28 +141,25 @@ theorem bijective_aeval_weylGroupRootRep_dual_of_componentPairing
   let _ : Fintype P.Component := Fintype.ofFinite P.Component
   let _ : ∀ C : P.Component, Finite (P.componentPairing C).weylGroup :=
     fun C ↦ (P.componentPairing C).finite_weylGroup
-  let G : P.Component → Type _ := fun C ↦ ↥(P.componentPairing C).weylGroup
+  let G (C : P.Component) := ↥(P.componentPairing C).weylGroup
   let V C := Module.Dual K (P.componentSpace C)
   let ρ C := (P.componentPairing C).weylGroupRootRep.dual
   let ρPi := Representation.pi fun C : P.Component ↦ (ρ C).comp (Pi.evalMonoidHom G C)
   let FPi : (Σ C : P.Component, κ C) → ρPi.symmetricAlgebraInvariants := fun ⟨C, k⟩ ↦
     ⟨SymmetricAlgebra.map K (LinearMap.single K V C) (f C k),
-      Representation.map_mem_symmetricAlgebraInvariants
-        (ρ := (ρ C).comp (Pi.evalMonoidHom G C)) (ρ' := ρPi)
-        ⟨fun g φ ↦ by
-          ext D
-          by_cases hDC : D = C
-          · subst hDC; simp [ρPi, V, LinearMap.single_apply]
-          · simp [ρPi, V, hDC, LinearMap.single_apply]⟩
+      Representation.map_mem_symmetricAlgebraInvariants (ρ := (ρ C).comp (Pi.evalMonoidHom G C))
+        ⟨fun _ _ ↦ funext fun D ↦ by
+          by_cases h : D = C
+          · subst h; simp [ρPi, V, LinearMap.single_apply]
+          · simp [ρPi, V, h, LinearMap.single_apply]⟩
         (by
-          rw [(ρ C).symmetricAlgebraInvariants_comp_of_surjective (Pi.evalMonoidHom G C)
+          rw [Representation.symmetricAlgebraInvariants_comp_of_surjective (ρ C) _
             (Function.surjective_eval C)]
           exact (f C k).2)⟩
-  have hFPi : Function.Bijective (MvPolynomial.aeval (R := K) FPi) :=
-    Representation.bijective_aeval_symmetricAlgebraInvariants_pi ρ hf (fun _ _ ↦ rfl)
   refine Representation.bijective_aeval_symmetricAlgebraInvariants_of_equiv
-    P.weylGroupComponentEquiv.symm P.componentDualEquiv (Equiv.refl _)
-    (fun g φ ↦ ?_) hFPi fun ⟨C, k⟩ ↦ ?_
+    P.weylGroupComponentEquiv.symm P.componentDualEquiv (Equiv.refl _) (fun g φ ↦ ?_)
+    (Representation.bijective_aeval_symmetricAlgebraInvariants_pi ρ hf (F := FPi) (fun _ _ ↦ rfl))
+    fun ⟨C, k⟩ ↦ ?_
   · ext x
     rw [P.componentDualEquiv_apply, Representation.dual_apply, Module.Dual.transpose_apply,
       LinearMap.comp_apply, P.componentDualEquiv_apply]
@@ -208,21 +193,12 @@ theorem map_univ_eq_bind_componentPairing_of_bijective_aeval
   let F : (Σ C : P.Component, κC C) → P.weylGroupRootRep.dual.symmetricAlgebraInvariants :=
     fun ⟨C, k⟩ ↦ ⟨SymmetricAlgebra.map K (P.componentProj C).dualMap (fC C k),
       P.map_dualMap_componentProj_mem_symmetricAlgebraInvariants C (fC C k).2⟩
-  have hF_hom : ∀ x : Σ C : P.Component, κC C,
-      (F x : SymmetricAlgebra K (Module.Dual K M)) ∈
-        homogeneousSubmodule K (Module.Dual K M) (dC x.1 x.2) :=
-    fun ⟨C, k⟩ ↦ map_mem_homogeneousSubmodule (P.componentProj C).dualMap (hfC C k)
-  have hF_bij : Function.Bijective (MvPolynomial.aeval (R := K) F) :=
-    P.bijective_aeval_weylGroupRootRep_dual_of_componentPairing hbijC (fun _ _ ↦ rfl)
-  rw [P.weylGroupRootRep.dual.map_univ_eq_of_bijective_aeval_symmetricAlgebraInvariants
-      hf hbij hF_hom hF_bij]
-  have huniv : (Finset.univ : Finset (Σ C : P.Component, κC C)) =
-      Finset.univ.sigma fun _ ↦ Finset.univ := by
-    ext ⟨C, k⟩
-    simp
-  rw [huniv, ← Finset.disjiUnion_map_sigma_mk, Finset.disjiUnion_val, Multiset.map_bind]
-  refine Multiset.bind_congr fun C _ ↦ ?_
-  rw [Finset.map_val, Multiset.map_map]
-  rfl
+  rw [P.weylGroupRootRep.dual.map_univ_eq_of_bijective_aeval_symmetricAlgebraInvariants hf hbij
+      (f' := F) (d' := fun x ↦ dC x.1 x.2)
+      (fun ⟨C, k⟩ ↦ map_mem_homogeneousSubmodule (P.componentProj C).dualMap (hfC C k))
+      (P.bijective_aeval_weylGroupRootRep_dual_of_componentPairing hbijC (fun _ _ ↦ rfl)),
+    show (Finset.univ : Finset (Σ C, κC C)) = Finset.univ.sigma fun _ ↦ Finset.univ by ext; simp,
+    ← Finset.disjiUnion_map_sigma_mk, Finset.disjiUnion_val, Multiset.map_bind]
+  exact Multiset.bind_congr fun _ _ ↦ by rw [Finset.map_val, Multiset.map_map]; rfl
 
 end RootPairing

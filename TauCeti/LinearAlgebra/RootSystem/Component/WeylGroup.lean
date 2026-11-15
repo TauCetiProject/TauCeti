@@ -58,29 +58,15 @@ graph. -/
 theorem componentEquiv_eq_of_mem_weylGroup {g : P.Aut} (hg : g ∈ P.weylGroup) (C : P.Component) :
     g.componentEquiv C = C := by
   induction C using SimpleGraph.ConnectedComponent.ind with | _ j => ?_
-  revert j
-  induction hg using weylGroup.induction with
-  | mem i =>
-    intro j
-    rw [Equiv.componentEquiv_componentOf]
-    exact componentOf_reflectionPerm i j
-  | one =>
-    intro j
-    rw [Equiv.componentEquiv_componentOf]
-    rfl
-  | mul x y _ _ hx hy =>
-    intro j
-    have hx' := hx (y.indexEquiv j)
-    rw [Equiv.componentEquiv_componentOf] at hx'
-    have hy' := hy j
-    rw [Equiv.componentEquiv_componentOf] at hy'
-    rw [Equiv.componentEquiv_componentOf]
-    exact hx'.trans hy'
+  refine (Equiv.componentEquiv_componentOf _ _).trans ?_
+  induction hg using weylGroup.induction generalizing j with
+  | mem i => exact componentOf_reflectionPerm i j
+  | one => rfl
+  | mul _ y _ _ hx hy => exact (hx (y.indexEquiv j)).trans (hy j)
 
 /-- Every component space is invariant under the weight-space representation of the Weyl group. -/
 theorem componentSpace_mem_invtSubmodule_weylGroupRootRep (C : P.Component) (w : P.weylGroup) :
-    P.componentSpace C ∈ Module.End.invtSubmodule (P.weylGroupRootRep w) := by
-  intro x hx
+    P.componentSpace C ∈ Module.End.invtSubmodule (P.weylGroupRootRep w) := fun _ hx ↦ by
   have hmap := w.1.map_componentSpace C
   rw [P.componentEquiv_eq_of_mem_weylGroup w.2 C] at hmap
   exact hmap ▸ Submodule.mem_map_of_mem hx
@@ -88,13 +74,6 @@ theorem componentSpace_mem_invtSubmodule_weylGroupRootRep (C : P.Component) (w :
 private theorem mem_componentSpace_weylGroup_smul (C : P.Component) (w : P.weylGroup) {x : M}
     (hx : x ∈ P.componentSpace C) : w.1.toHom.weightMap x ∈ P.componentSpace C :=
   P.componentSpace_mem_invtSubmodule_weylGroupRootRep C w hx
-
-private theorem mem_corootComponentSpace_coweightMap_of_mem_weylGroup {g : P.Aut}
-    (hg : g ∈ P.weylGroup) {C : P.Component} {y : N} (hy : y ∈ P.corootComponentSpace C) :
-    g.toHom.coweightMap y ∈ P.corootComponentSpace C := by
-  have hmap := g.map_corootComponentSpace C
-  rw [P.componentEquiv_eq_of_mem_weylGroup hg C] at hmap
-  exact hmap ▸ Submodule.mem_map_of_mem hy
 
 end CommRing
 
@@ -108,96 +87,68 @@ private noncomputable def weylGroupComponentEnd (C : P.Component) (w : P.weylGro
     End (P.componentPairing C) where
   weightMap := w.1.toHom.weightMap.restrict fun _ hx ↦
     P.mem_componentSpace_weylGroup_smul C w hx
-  coweightMap := w.1.toHom.coweightMap.restrict fun _ hy ↦
-    P.mem_corootComponentSpace_coweightMap_of_mem_weylGroup w.2 hy
+  coweightMap := w.1.toHom.coweightMap.restrict fun _ hy ↦ by
+    have hmap := w.1.map_corootComponentSpace C
+    rw [P.componentEquiv_eq_of_mem_weylGroup w.2 C] at hmap
+    exact hmap ▸ Submodule.mem_map_of_mem hy
   indexEquiv := w.1.indexEquiv.subtypeEquiv fun i ↦ by
-    have h := w.1.indexEquiv_mem_supp_iff (C := C) (i := i)
-    rw [P.componentEquiv_eq_of_mem_weylGroup w.2 C] at h
-    exact h.symm
+    simpa [P.componentEquiv_eq_of_mem_weylGroup w.2 C] using
+      (w.1.indexEquiv_mem_supp_iff (C := C) (i := i)).symm
   weight_coweight_transpose := by
-    ext ⟨y, hy⟩ ⟨x, hx⟩
-    simpa using congr($(Hom.weight_coweight_transpose_apply P P y w.1.toHom) x)
-  root_weightMap := by
-    funext i
-    apply Subtype.ext
+    ext ⟨y, _⟩ ⟨x, _⟩
+    simpa [LinearMap.coe_restrict_apply] using
+      congr($(Hom.weight_coweight_transpose_apply P P y w.1.toHom) x)
+  root_weightMap := funext fun _ ↦ Subtype.ext <| by
     rw [Function.comp_apply, LinearMap.coe_restrict_apply, coe_componentPairing_root,
-      Hom.root_weightMap_apply]
-    simp
-  coroot_coweightMap := by
-    funext i
-    apply Subtype.ext
+      Hom.root_weightMap_apply]; simp
+  coroot_coweightMap := funext fun _ ↦ Subtype.ext <| by
     rw [Function.comp_apply, LinearMap.coe_restrict_apply, coe_componentPairing_coroot,
-      Hom.coroot_coweightMap_apply]
-    simp
+      Hom.coroot_coweightMap_apply]; simp
 
 /-- Restriction of a Weyl-group element to an automorphism of the component root pairing. -/
 private noncomputable def weylGroupComponentAutHom (C : P.Component) :
     P.weylGroup →* Aut (P.componentPairing C) where
   toFun w :=
-    have hmul : (w.1 * (w⁻¹).1).toHom = 1 := by
-      rw [Subgroup.coe_inv, mul_inv_cancel]
-      rfl
-    have hmul' : ((w⁻¹).1 * w.1).toHom = 1 := by
-      rw [Subgroup.coe_inv, inv_mul_cancel]
-      rfl
+    have hmul : (w.1 * (w⁻¹).1).toHom = 1 := by rw [Subgroup.coe_inv, mul_inv_cancel]; rfl
+    have hmul' : ((w⁻¹).1 * w.1).toHom = 1 := by rw [Subgroup.coe_inv, inv_mul_cancel]; rfl
     { toHom := P.weylGroupComponentEnd C w
-      bijective_weightMap :=
-        _root_.Equiv.bijective
-          ⟨fun x ↦ (P.weylGroupComponentEnd C w).weightMap x,
-           fun x ↦ (P.weylGroupComponentEnd C w⁻¹).weightMap x,
-           fun x ↦ Subtype.ext (congrArg (fun h : End P ↦ h.weightMap x.1) hmul'),
-           fun x ↦ Subtype.ext (congrArg (fun h : End P ↦ h.weightMap x.1) hmul)⟩
-      bijective_coweightMap :=
-        _root_.Equiv.bijective
-          ⟨fun y ↦ (P.weylGroupComponentEnd C w).coweightMap y,
-           fun y ↦ (P.weylGroupComponentEnd C w⁻¹).coweightMap y,
-           fun y ↦ Subtype.ext (congrArg (fun h : End P ↦ h.coweightMap y.1) hmul),
-           fun y ↦ Subtype.ext (congrArg (fun h : End P ↦ h.coweightMap y.1) hmul')⟩ }
-  map_one' := by
-    apply Equiv.indexHom_injective
-    ext
-    rfl
-  map_mul' _ _ := by
-    apply Equiv.indexHom_injective
-    ext
-    rfl
+      bijective_weightMap := _root_.Equiv.bijective
+        ⟨(P.weylGroupComponentEnd C w).weightMap, (P.weylGroupComponentEnd C w⁻¹).weightMap,
+          fun x ↦ Subtype.ext (congrArg (fun h : End P ↦ h.weightMap x.1) hmul'),
+          fun x ↦ Subtype.ext (congrArg (fun h : End P ↦ h.weightMap x.1) hmul)⟩
+      bijective_coweightMap := _root_.Equiv.bijective
+        ⟨(P.weylGroupComponentEnd C w).coweightMap, (P.weylGroupComponentEnd C w⁻¹).coweightMap,
+          fun y ↦ Subtype.ext (congrArg (fun h : End P ↦ h.coweightMap y.1) hmul),
+          fun y ↦ Subtype.ext (congrArg (fun h : End P ↦ h.coweightMap y.1) hmul')⟩ }
+  map_one' := by apply Equiv.indexHom_injective; ext; rfl
+  map_mul' _ _ := by apply Equiv.indexHom_injective; ext; rfl
 
 private theorem weylGroupComponentAutHom_ofIdx_of_eq {C : P.Component} {i : ι}
     (hi : P.componentOf i = C) :
     P.weylGroupComponentAutHom C (weylGroup.ofIdx P i) =
       Equiv.reflection (P.componentPairing C) ⟨i, hi⟩ := by
-  apply Equiv.indexHom_injective
-  ext j
+  apply Equiv.indexHom_injective; ext j
   exact (coe_componentPairing_reflectionPerm P C ⟨i, hi⟩ j).symm
 
 private theorem weylGroupComponentAutHom_ofIdx_of_ne {C : P.Component} {i : ι}
     (hi : P.componentOf i ≠ C) :
     P.weylGroupComponentAutHom C (weylGroup.ofIdx P i) = 1 := by
-  apply Equiv.indexHom_injective
-  ext ⟨j, hj⟩
-  have horth : P.IsOrthogonal i j := isOrthogonal_of_componentOf_ne (hi.trans_eq hj.symm)
-  -- On `C.supp`, the LHS induces `P.reflectionPerm i` and `1` induces the identity.
-  change P.reflectionPerm i j = j
-  exact P.reflectionPerm_eq_of_pairing_eq_zero horth.2
-
-omit [Finite ι] [P.IsRootSystem] in
-private theorem mk_reflection_eq_ofIdx (i : ι) :
-    (⟨Equiv.reflection P i, P.reflection_mem_weylGroup i⟩ : P.weylGroup) =
-      weylGroup.ofIdx P i :=
-  (rfl)
+  apply Equiv.indexHom_injective; ext ⟨j, hj⟩
+  exact P.reflectionPerm_eq_of_pairing_eq_zero
+    (isOrthogonal_of_componentOf_ne (hi.trans_eq hj.symm)).2
 
 private theorem weylGroupComponentAutHom_mem (C : P.Component) (w : P.weylGroup) :
     P.weylGroupComponentAutHom C w ∈ (P.componentPairing C).weylGroup := by
   obtain ⟨g, hg⟩ := w
   induction hg using weylGroup.induction with
   | mem i =>
+    change P.weylGroupComponentAutHom C (weylGroup.ofIdx P i) ∈ _
     by_cases hi : P.componentOf i = C
-    · rw [P.mk_reflection_eq_ofIdx i, P.weylGroupComponentAutHom_ofIdx_of_eq hi]
-      exact (P.componentPairing C).reflection_mem_weylGroup ⟨i, hi⟩
-    · rw [P.mk_reflection_eq_ofIdx i, P.weylGroupComponentAutHom_ofIdx_of_ne hi]
-      exact one_mem _
+    · exact P.weylGroupComponentAutHom_ofIdx_of_eq hi ▸
+        (P.componentPairing C).reflection_mem_weylGroup ⟨i, hi⟩
+    · exact P.weylGroupComponentAutHom_ofIdx_of_ne hi ▸ one_mem _
   | one => exact (P.weylGroupComponentAutHom C).map_one ▸ one_mem _
-  | mul x y hx hy ihx ihy =>
+  | mul _ _ hx hy ihx ihy =>
     rw [← Submonoid.mk_mul_mk _ _ _ hx hy, map_mul]
     exact mul_mem ihx ihy
 
@@ -236,14 +187,12 @@ theorem componentProj_weylGroup_smul (C : P.Component) (w : P.weylGroup) (x : M)
   rw [Finset.smul_sum, map_sum, Finset.sum_eq_single C]
   · have hmem : w • (P.componentProj C x : M) ∈ P.componentSpace C :=
       P.componentSpace_mem_invtSubmodule_weylGroupRootRep C w (P.componentProj C x).2
-    rw [componentProj_apply_of_mem hmem]
-    rfl
+    rw [componentProj_apply_of_mem hmem]; rfl
   · intro D _ hDC
     have hmem : w • (P.componentProj D x : M) ∈ P.componentSpace D :=
       P.componentSpace_mem_invtSubmodule_weylGroupRootRep D w (P.componentProj D x).2
     exact componentProj_apply_of_ne hDC hmem
-  · intro hC
-    exact absurd (Finset.mem_univ C) hC
+  · exact fun hC ↦ absurd (Finset.mem_univ C) hC
 
 private theorem mulSingle_mem_range_pi_weylGroupComponentProj [DecidableEq P.Component]
     (C : P.Component) (u : (P.componentPairing C).weylGroup) :
@@ -253,15 +202,12 @@ private theorem mulSingle_mem_range_pi_weylGroupComponentProj [DecidableEq P.Com
   | mem i =>
     refine ⟨weylGroup.ofIdx P i.1, funext fun D ↦ ?_⟩
     by_cases hDC : D = C
-    · subst hDC
-      rw [MonoidHom.pi_apply, Pi.mulSingle_eq_same]
+    · subst hDC; rw [MonoidHom.pi_apply, Pi.mulSingle_eq_same]
       exact P.weylGroupComponentProj_ofIdx_of_eq i.2
     · rw [MonoidHom.pi_apply, Pi.mulSingle_eq_of_ne hDC]
       exact P.weylGroupComponentProj_ofIdx_of_ne (i.2.trans_ne (Ne.symm hDC))
-  | one =>
-    have h1 : (⟨1, one_mem _⟩ : (P.componentPairing C).weylGroup) = 1 := Subtype.ext rfl
-    exact ⟨1, by rw [map_one, h1, Pi.mulSingle_one]⟩
-  | mul x y hx hy ihx ihy =>
+  | one => exact ⟨1, by rw [map_one]; exact (Pi.mulSingle_one C).symm⟩
+  | mul _ _ hx hy ihx ihy =>
     rw [← Submonoid.mk_mul_mk _ _ _ hx hy, Pi.mulSingle_mul]
     exact mul_mem ihx ihy
 
@@ -274,32 +220,25 @@ noncomputable def weylGroupComponentEquiv :
       let _ : Fintype P.Component := Fintype.ofFinite P.Component
       rw [← P.sum_componentProj (u • x), ← P.sum_componentProj (v • x)]
       refine Finset.sum_congr rfl fun C _ ↦ congrArg Subtype.val ?_
-      have huvC : P.weylGroupComponentProj C u = P.weylGroupComponentProj C v := congrFun huv C
-      rw [componentProj_weylGroup_smul, componentProj_weylGroup_smul, huvC],
+      rw [componentProj_weylGroup_smul, componentProj_weylGroup_smul,
+        show P.weylGroupComponentProj C u = P.weylGroupComponentProj C v from congrFun huv C],
      fun f ↦ by
       classical
       let _ : Fintype P.Component := Fintype.ofFinite P.Component
       let φ := MonoidHom.pi P.weylGroupComponentProj
-      have hfinset : ∀ s : Finset P.Component, (fun D ↦ if D ∈ s then f D else 1) ∈ φ.range := by
-        intro s
-        induction s using Finset.induction_on with
-        | empty =>
-          have hemp : (fun D : P.Component ↦ if D ∈ (∅ : Finset P.Component) then f D else 1) = 1 :=
-            funext fun _ ↦ by simp
-          exact hemp ▸ one_mem φ.range
-        | insert C s hC ih =>
-          have heq : (fun D ↦ if D ∈ insert C s then f D else 1) =
-              Pi.mulSingle C (f C) * (fun D ↦ if D ∈ s then f D else 1) := by
-            funext D
-            by_cases hDC : D = C
-            · subst hDC; simp [hC]
-            · simp [hDC]
-          rw [heq]
-          exact mul_mem (P.mulSingle_mem_range_pi_weylGroupComponentProj C (f C)) ih
-      have huniv :
-          (fun D : P.Component ↦ if D ∈ (Finset.univ : Finset P.Component) then f D else 1) = f :=
-        funext fun _ ↦ by simp
-      exact huniv ▸ hfinset Finset.univ⟩
+      suffices ∀ s : Finset P.Component, (fun D ↦ if D ∈ s then f D else 1) ∈ φ.range by
+        simpa using this Finset.univ
+      intro s; induction s using Finset.induction_on with
+      | empty =>
+        exact (show (fun D : P.Component ↦ if D ∈ (∅ : Finset P.Component) then f D else 1) = 1 from
+          funext fun _ ↦ by simp) ▸ one_mem φ.range
+      | insert C s hC ih =>
+        have heq : (fun D ↦ if D ∈ insert C s then f D else 1) =
+            Pi.mulSingle C (f C) * (fun D ↦ if D ∈ s then f D else 1) := funext fun D ↦ by
+          by_cases hDC : D = C
+          · subst hDC; simp [hC]
+          · simp [hDC]
+        exact heq ▸ mul_mem (P.mulSingle_mem_range_pi_weylGroupComponentProj C (f C)) ih⟩
 
 /-- At component `C`, `P.weylGroupComponentEquiv w` is `P.weylGroupComponentProj C w`. -/
 @[simp]

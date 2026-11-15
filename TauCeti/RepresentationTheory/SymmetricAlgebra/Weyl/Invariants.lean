@@ -149,25 +149,20 @@ theorem two_le_of_injective_aeval_weylGroupRootRep_dual
       homogeneousSubmodule K (Module.Dual K M) (d k))
     (hinj : Function.Injective (MvPolynomial.aeval (R := K) f)) (k : κ) :
     2 ≤ d k := by
-  have hd0 : d k ≠ 0 :=
+  have hd0 :=
     P.weylGroupRootRep.dual.ne_zero_of_injective_aeval_symmetricAlgebraInvariants hf hinj k
-  have hd1 : d k ≠ 1 := by
-    intro hk1
-    have hmem1 : (f k : SymmetricAlgebra K (Module.Dual K M)) ∈
-        homogeneousSubmodule K (Module.Dual K M) 1 := hk1 ▸ hf k
-    let φ := homogeneousSubmoduleOneEquiv K (Module.Dual K M) ⟨f k, hmem1⟩
-    have hφ_ι : SymmetricAlgebra.ι K (Module.Dual K M) φ = f k :=
-      ι_homogeneousSubmoduleOneEquiv_apply K (Module.Dual K M) ⟨f k, hmem1⟩
-    have hφ_inv : φ ∈ P.weylGroupRootRep.dual.invariants := by
+  have hd1 : d k ≠ 1 := fun hk1 ↦ by
+    have hφ : homogeneousSubmoduleOneEquiv K (Module.Dual K M) ⟨f k, hk1 ▸ hf k⟩ ∈
+        P.weylGroupRootRep.dual.invariants := by
       rw [Representation.mem_invariants, ← Representation.ι_mem_symmetricAlgebraInvariants_iff,
-        hφ_ι]
+        ι_homogeneousSubmoduleOneEquiv_apply]
       exact (f k).2
     rw [P.invariants_weylGroupRootRep_dual, rootSpan, IsRootSystem.span_root_eq_top,
-      Submodule.dualAnnihilator_top, Submodule.mem_bot] at hφ_inv
-    have hfk0 : f k = 0 := Subtype.ext (by rw [← hφ_ι, hφ_inv, map_zero]; rfl)
-    have hX0 : (MvPolynomial.X k : MvPolynomial κ K) = 0 :=
-      hinj (by rw [MvPolynomial.aeval_X, hfk0, map_zero])
-    exact MvPolynomial.X_ne_zero k hX0
+      Submodule.dualAnnihilator_top, Submodule.mem_bot] at hφ
+    have hfk0 : f k = 0 := Subtype.ext <| by
+      simpa [hφ] using
+        (ι_homogeneousSubmoduleOneEquiv_apply K (Module.Dual K M) ⟨f k, hk1 ▸ hf k⟩).symm
+    exact MvPolynomial.X_ne_zero k (hinj (by rw [MvPolynomial.aeval_X, hfk0, map_zero]))
   omega
 
 end Field
@@ -244,37 +239,29 @@ theorem exists_jacobian_eq_algebraMap_mul_prod_posRootsFinset
   classical
   let _ : Finite P.weylGroup := P.finite_weylGroup_of_base b
   let _ := P.weylGroupRootRep.dual.symmetricAlgebraMulSemiringAction
-  let e : posRoots P b ≃ P.weylGroupRootRep.reflectingHyperplanes :=
-    P.posRootsEquivReflectingHyperplanes b
-  let ℓ : P.weylGroupRootRep.reflectingHyperplanes → Module.Dual K M :=
-    fun H ↦ P.coroot' (e.symm H).1
-  have hker : ∀ H, LinearMap.ker (ℓ H) = H.val := fun H ↦ by
-    have hcoe := P.coe_posRootsEquivReflectingHyperplanes b (e.symm H)
-    have happ : e (e.symm H) = H := e.apply_symm_apply H
-    exact hcoe.symm.trans (congrArg Subtype.val happ)
+  let e := P.posRootsEquivReflectingHyperplanes b
+  let ℓ (H : P.weylGroupRootRep.reflectingHyperplanes) : Module.Dual K M := P.coroot' (e.symm H).1
+  have hker (H : P.weylGroupRootRep.reflectingHyperplanes) : LinearMap.ker (ℓ H) = H.val :=
+    (P.coe_posRootsEquivReflectingHyperplanes b (e.symm H)).symm.trans
+      (congrArg Subtype.val (e.apply_symm_apply H))
   obtain ⟨c, hc, hJ⟩ :=
     P.weylGroupRootRep.exists_jacobian_eq_algebraMap_mul_prod_dual_inertia_sub_one
       P.weylGroupRootRep_injective B ℓ hker hf hbij
   refine ⟨c, hc, hJ.trans (congrArg (algebraMap K _ c * ·) ?_)⟩
-  let g : ι → SymmetricAlgebra K (Module.Dual K M) :=
-    fun α ↦ SymmetricAlgebra.ι K (Module.Dual K M) (P.coroot' α)
-  have hpow :
-      (∏ H : P.weylGroupRootRep.reflectingHyperplanes,
-          SymmetricAlgebra.ι K (Module.Dual K M) (ℓ H) ^
-            (Nat.card ((Ideal.span {SymmetricAlgebra.ι K (Module.Dual K M) (ℓ H)}).inertia
-              P.weylGroup) - 1)) =
-        ∏ H : P.weylGroupRootRep.reflectingHyperplanes, g (e.symm H).1 := by
-    refine Finset.prod_congr rfl fun H _ ↦ ?_
-    dsimp only [ℓ]
-    rw [P.natCard_inertia_coroot'_weylGroup (e.symm H).1]
-    exact pow_one _
+  let g (α : ι) := SymmetricAlgebra.ι K (Module.Dual K M) (P.coroot' α)
+  have hpow : (∏ H : P.weylGroupRootRep.reflectingHyperplanes,
+      SymmetricAlgebra.ι K (Module.Dual K M) (ℓ H) ^
+        (Nat.card ((Ideal.span {SymmetricAlgebra.ι K (Module.Dual K M) (ℓ H)}).inertia
+          P.weylGroup) - 1)) = ∏ H : P.weylGroupRootRep.reflectingHyperplanes, g (e.symm H).1 :=
+    Finset.prod_congr rfl fun H _ ↦ by
+      dsimp only [ℓ]
+      rw [P.natCard_inertia_coroot'_weylGroup (e.symm H).1, pow_one]
   let eFin : ↥(posRootsFinset P b) ≃ posRoots P b :=
     Equiv.subtypeEquivRight (mem_posRootsFinset P b)
   let _ : Fintype (posRoots P b) := Fintype.ofEquiv _ eFin
   rw [hpow, ← e.prod_comp]
   simp only [e.symm_apply_apply]
-  rw [← eFin.prod_comp]
-  exact Finset.prod_coe_sort (posRootsFinset P b) g
+  exact (eFin.prod_comp _).symm.trans (Finset.prod_coe_sort (posRootsFinset P b) g)
 
 /-- The Jacobian of homogeneous basic invariants of `Sym(M*)^W` vanishes at `x ∈ M` precisely when
 `x` is not a regular weight (that is, `x` lies on at least one root hyperplane). -/

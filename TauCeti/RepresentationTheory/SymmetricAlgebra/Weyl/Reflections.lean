@@ -73,11 +73,6 @@ section CommRing
 variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   (P : RootPairing ι R M N)
 
-private theorem mk_reflection_eq_ofIdx (i : ι) :
-    (⟨Equiv.reflection P i, P.reflection_mem_weylGroup i⟩ : P.weylGroup) =
-      weylGroup.ofIdx P i :=
-  (rfl)
-
 /-- The weight-space representation `P.weylGroupRootRep` acts by the Weyl-group scalar
 multiplication on `M`. -/
 @[simp]
@@ -98,21 +93,16 @@ theorem invariants_weylGroupRootRep [IsDomain R] [NeZero (2 : R)] :
   ext x
   simp only [Representation.mem_invariants, Submodule.mem_iInf, LinearMap.mem_ker]
   refine ⟨fun hx i ↦ ?_, fun hx ⟨g, hg⟩ ↦ ?_⟩
-  · have hfix : P.reflection i x = x := by
-      simpa [reflection_apply] using hx (weylGroup.ofIdx P i)
+  · have hfix : P.reflection i x = x := by simpa [reflection_apply] using hx (weylGroup.ofIdx P i)
     rw [reflection_apply, sub_eq_self, smul_eq_zero] at hfix
     exact hfix.resolve_right (P.ne_zero i)
-  · revert x
-    induction hg using weylGroup.induction with
-    | mem i =>
-      intro x hx
-      rw [P.mk_reflection_eq_ofIdx i, weylGroupRootRep_apply, weylGroup.ofIdx_smul,
-        Equiv.reflection_smul, reflection_apply, hx i, zero_smul, sub_zero]
-    | one => intro _ _; rfl
-    | mul u v hu hv ihu ihv =>
-      intro x hx
-      rw [← Submonoid.mk_mul_mk _ _ _ hu hv, map_mul,
-        Module.End.mul_eq_comp, LinearMap.comp_apply, ihv x hx, ihu x hx]
+  · induction hg using weylGroup.induction with
+    | mem i => simp [weylGroupRootRep_apply, Subgroup.smul_def, Equiv.reflection_smul,
+        reflection_apply, hx i]
+    | one => rfl
+    | mul _ _ hu hv ihu ihv =>
+      rw [← Submonoid.mk_mul_mk _ _ _ hu hv, map_mul, Module.End.mul_eq_comp,
+        LinearMap.comp_apply, ihv, ihu]
 
 /-- Over an integral domain in which `2 ≠ 0`, the `W`-invariant linear forms on `M` are the linear
 forms vanishing on the root span. -/
@@ -120,47 +110,34 @@ theorem invariants_weylGroupRootRep_dual [IsDomain R] [NeZero (2 : R)] :
     P.weylGroupRootRep.dual.invariants = (P.rootSpan R).dualAnnihilator := by
   ext φ
   rw [Representation.mem_invariants, Submodule.mem_dualAnnihilator]
-  refine ⟨fun hφ x hx ↦ ?_, fun hφ ⟨g, hg⟩ ↦ ?_⟩
+  refine ⟨fun hφ x hx ↦ ?_, fun hφ w ↦ ?_⟩
   · have hle : P.rootSpan R ≤ LinearMap.ker φ := by
-      rw [rootSpan, Submodule.span_le]
-      rintro _ ⟨i, rfl⟩
+      rw [rootSpan, Submodule.span_le]; rintro _ ⟨i, rfl⟩
       have hfix := congr($(hφ (weylGroup.ofIdx P i)) (P.root i))
-      have href : (P.weylGroupRootRep.dual (weylGroup.ofIdx P i) φ) (P.root i) = -φ (P.root i) := by
-        rw [Representation.dual_apply, Module.Dual.transpose_apply, LinearMap.comp_apply,
-          weylGroupRootRep_apply, weylGroup.ofIdx_inv_eq, weylGroup.ofIdx_smul,
-          Equiv.reflection_smul, reflection_apply_self, map_neg]
-      rw [href] at hfix
+      rw [Representation.dual_apply, Module.Dual.transpose_apply, LinearMap.comp_apply,
+        weylGroupRootRep_apply, weylGroup.ofIdx_inv_eq, weylGroup.ofIdx_smul,
+        Equiv.reflection_smul, reflection_apply_self, map_neg] at hfix
       have h2 : (2 : R) * φ (P.root i) = 0 := by linear_combination -hfix
       exact LinearMap.mem_ker.mpr ((mul_eq_zero.mp h2).resolve_left (NeZero.ne (2 : R)))
     exact hle hx
   · ext x
-    let w₀ : P.weylGroup := ⟨g, hg⟩
     rw [Representation.dual_apply, Module.Dual.transpose_apply, LinearMap.comp_apply,
-      weylGroupRootRep_apply]
-    suffices ∀ (w : P.weylGroup) (y : M), w • y - y ∈ P.rootSpan R by
-      rw [← sub_eq_zero, ← map_sub]
-      exact hφ _ (this w₀⁻¹ x)
-    rintro ⟨w, hw⟩ y
-    revert y
-    induction hw using weylGroup.induction with
+      weylGroupRootRep_apply, ← sub_eq_zero, ← map_sub]
+    suffices ∀ (u : P.weylGroup) (y : M), u • y - y ∈ P.rootSpan R from hφ _ (this w⁻¹ x)
+    rintro ⟨u, hu⟩ y
+    induction hu using weylGroup.induction generalizing y with
     | mem i =>
-      intro y
-      rw [P.mk_reflection_eq_ofIdx i, weylGroup.ofIdx_smul, Equiv.reflection_smul,
-        reflection_apply, sub_sub_cancel_left]
-      exact neg_mem (Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩))
-    | one =>
-      intro y
-      simp
-    | mul u v hu hv ihu ihv =>
-      intro y
-      let wu : P.weylGroup := ⟨u, hu⟩
-      let wv : P.weylGroup := ⟨v, hv⟩
-      have hsplit : (⟨u * v, mul_mem hu hv⟩ : P.weylGroup) • y - y =
-          (wu • (wv • y) - wv • y) + (wv • y - y) := by
-        rw [← Submonoid.mk_mul_mk _ _ _ hu hv, mul_smul]
-        abel
-      rw [hsplit]
-      exact add_mem (ihu (wv • y)) (ihv y)
+      simp only [Subgroup.smul_def, Equiv.reflection_smul, reflection_apply, sub_right_comm,
+        sub_self, zero_sub]
+      exact neg_mem (Submodule.smul_mem (P.rootSpan R) _
+        (Submodule.subset_span (Set.mem_range_self i)))
+    | one => simp
+    | mul a b ha hb iha ihb =>
+      let ua : P.weylGroup := ⟨a, ha⟩
+      let ub : P.weylGroup := ⟨b, hb⟩
+      change (ua * ub) • y - y ∈ P.rootSpan R
+      rw [mul_smul, ← sub_add_sub_cancel (ua • (ub • y)) (ub • y) y]
+      exact add_mem (iha (ub • y)) (ihb y)
 
 end CommRing
 
@@ -177,7 +154,7 @@ theorem fixedSubmodule_weylGroupRootRep_ofIdx (i : ι) :
   ext x
   rw [LinearMap.mem_fixedSubmodule_iff, weylGroupRootRep_apply, weylGroup.ofIdx_smul,
     Equiv.reflection_smul, LinearMap.mem_ker, reflection_apply, sub_eq_self, smul_eq_zero]
-  exact ⟨fun h ↦ h.resolve_right (P.ne_zero i), fun h ↦ Or.inl h⟩
+  exact ⟨fun h ↦ h.resolve_right (P.ne_zero i), Or.inl⟩
 
 /-- Every root reflection is a pseudoreflection on `M`: its fixed hyperplane has codimension `1`. -/
 @[simp]
@@ -202,13 +179,18 @@ theorem pseudoreflectionSubgroup_weylGroupRootRep_eq_top :
     exact P.weylGroupRootRep.mem_pseudoreflectionSubgroup_of_finrank_quotient_eq_one
       (P.finrank_quotient_fixedSubmodule_weylGroupRootRep_ofIdx i)
   | one => exact one_mem _
-  | mul u v hu hv ihu ihv =>
-    rw [← Submonoid.mk_mul_mk _ _ _ hu hv]
-    exact mul_mem ihu ihv
+  | mul _ _ hu hv ihu ihv => rw [← Submonoid.mk_mul_mk _ _ _ hu hv]; exact mul_mem ihu ihv
 
 section FlipReduced
 
 variable [P.flip.IsReduced]
+
+omit [P.flip.IsReduced] in
+private theorem sub_inv_two_coroot'_smul_mem_ker (α : ι) (x : M) :
+    x - (2⁻¹ * P.coroot' α x) • P.root α ∈ LinearMap.ker (P.coroot' α) := by
+  rw [LinearMap.mem_ker, map_sub, map_smul, P.coroot_root_two, smul_eq_mul]
+  ring_nf
+  rw [mul_assoc, inv_mul_cancel₀ (NeZero.ne (2 : K)), mul_one, sub_self]
 
 /-- If `ker (P.coroot' α) ≤ ker (P.coroot' β)`, then `β` is either `α` or its negated index
 `P.reflectionPerm α α`. -/
@@ -217,27 +199,19 @@ theorem eq_or_eq_reflectionPerm_self_of_ker_coroot'_le {α β : ι}
     β = α ∨ β = P.reflectionPerm α α := by
   have hprop : P.coroot' β = (2⁻¹ * P.coroot' β (P.root α)) • P.coroot' α := by
     ext x
-    have hx : x - (2⁻¹ * P.coroot' α x) • P.root α ∈ LinearMap.ker (P.coroot' α) := by
-      rw [LinearMap.mem_ker, map_sub, map_smul, P.coroot_root_two, smul_eq_mul]
-      ring_nf
-      rw [mul_assoc, inv_mul_cancel₀ (NeZero.ne (2 : K)), mul_one, sub_self]
-    have hβx : P.coroot' β (x - (2⁻¹ * P.coroot' α x) • P.root α) = 0 := h hx
+    have hβx : P.coroot' β (x - (2⁻¹ * P.coroot' α x) • P.root α) = 0 :=
+      h (P.sub_inv_two_coroot'_smul_mem_ker α x)
     rw [map_sub, map_smul, smul_eq_mul, sub_eq_zero] at hβx
-    rw [LinearMap.smul_apply, smul_eq_mul, hβx]
-    ring
-  have hcoroot : P.coroot β = (2⁻¹ * P.coroot' β (P.root α)) • P.coroot α := by
-    apply P.toLinearMap.flip.toPerfPair.injective
-    rw [map_smul]
-    exact hprop
+    rw [LinearMap.smul_apply, smul_eq_mul, hβx]; ring
+  have hcoroot : P.coroot β = (2⁻¹ * P.coroot' β (P.root α)) • P.coroot α :=
+    P.toLinearMap.flip.toPerfPair.injective (by rw [map_smul]; exact hprop)
   have hdep : ¬ LinearIndependent K ![P.coroot α, P.coroot β] := by
-    rw [LinearIndependent.pair_iff]
-    push Not
-    refine ⟨-(2⁻¹ * P.coroot' β (P.root α)), 1, ?_, fun _ h1 ↦ one_ne_zero h1⟩
-    rw [hcoroot, one_smul, neg_smul, neg_add_cancel]
+    rw [LinearIndependent.pair_iff]; push Not
+    exact ⟨-(2⁻¹ * P.coroot' β (P.root α)), 1,
+      by rw [hcoroot, one_smul, neg_smul, neg_add_cancel], fun _ ↦ one_ne_zero⟩
   rcases IsReduced.eq_or_eq_neg (P := P.flip) α β hdep with hpos | hneg
   · exact Or.inl (P.coroot.injective hpos.symm)
-  · right
-    apply P.coroot.injective
+  · refine Or.inr (P.coroot.injective ?_)
     simp only [flip_root] at hneg
     rw [coroot_reflectionPerm, coreflection_apply_self]
     exact neg_eq_iff_eq_neg.mp hneg.symm
@@ -249,37 +223,24 @@ theorem ker_coroot'_le_fixedSubmodule_weylGroupRootRep_iff {α : ι} {w : P.weyl
       w = 1 ∨ w = weylGroup.ofIdx P α := by
   refine ⟨fun h ↦ ?_, ?_⟩
   · let β := P.weylGroupToPerm w α
-    have hker : LinearMap.ker (P.coroot' α) ≤ LinearMap.ker (P.coroot' β) := by
-      intro y hy
-      rw [LinearMap.mem_ker] at hy ⊢
+    have hker : LinearMap.ker (P.coroot' α) ≤ LinearMap.ker (P.coroot' β) := fun y hy ↦ by
       have hwy : w • y = y := LinearMap.mem_fixedSubmodule_iff.mp (h hy)
-      rw [← hwy, coroot'_weylGroupToPerm_smul, hy]
-    have hdecomp : ∀ x : M,
+      rw [LinearMap.mem_ker, ← hwy, coroot'_weylGroupToPerm_smul, LinearMap.mem_ker.mp hy]
+    have hdecomp (x : M) :
         w • x = (x - (2⁻¹ * P.coroot' α x) • P.root α) + (2⁻¹ * P.coroot' α x) • P.root β := by
-      intro x
-      have hy : x - (2⁻¹ * P.coroot' α x) • P.root α ∈ LinearMap.ker (P.coroot' α) := by
-        rw [LinearMap.mem_ker, map_sub, map_smul, P.coroot_root_two, smul_eq_mul]
-        ring_nf
-        rw [mul_assoc, inv_mul_cancel₀ (NeZero.ne (2 : K)), mul_one, sub_self]
       have hwy : w • (x - (2⁻¹ * P.coroot' α x) • P.root α) =
           x - (2⁻¹ * P.coroot' α x) • P.root α :=
-        LinearMap.mem_fixedSubmodule_iff.mp (h hy)
-      have hx : x = (x - (2⁻¹ * P.coroot' α x) • P.root α) + (2⁻¹ * P.coroot' α x) • P.root α := by
-        abel
-      conv_lhs => rw [hx]
+        LinearMap.mem_fixedSubmodule_iff.mp (h (P.sub_inv_two_coroot'_smul_mem_ker α x))
+      conv_lhs => rw [← sub_add_cancel x ((2⁻¹ * P.coroot' α x) • P.root α)]
       rw [smul_add, hwy, smul_comm, weylGroup_apply_root]
     rcases P.eq_or_eq_reflectionPerm_self_of_ker_coroot'_le hker with hpos | hneg
-    · left
-      refine weylGroup.ext fun x ↦ ?_
-      rw [hdecomp x, hpos, sub_add_cancel, one_smul]
-    · right
-      refine weylGroup.ext fun x ↦ ?_
+    · exact Or.inl <| weylGroup.ext fun x ↦ by rw [hdecomp x, hpos, sub_add_cancel, one_smul]
+    · refine Or.inr <| weylGroup.ext fun x ↦ ?_
       rw [hdecomp x, hneg, root_reflectionPerm, reflection_apply_self, smul_neg, ← sub_eq_add_neg,
         sub_sub, ← add_smul, ← two_mul, ← mul_assoc, mul_inv_cancel₀ (NeZero.ne (2 : K)), one_mul,
         weylGroup.ofIdx_smul, Equiv.reflection_smul, reflection_apply]
   · rintro (rfl | rfl)
-    · intro x _
-      simp
+    · exact fun _ _ ↦ by simp
     · rw [fixedSubmodule_weylGroupRootRep_ofIdx]
 
 /-- Membership in the inertia group of the ideal `(ι (P.coroot' α))` of `Sym(M*)` in `P.weylGroup`:
@@ -299,24 +260,11 @@ theorem natCard_inertia_coroot'_weylGroup (α : ι) :
       ((Ideal.span {SymmetricAlgebra.ι K (Module.Dual K M) (P.coroot' α)}).inertia P.weylGroup) =
       2 := by
   let _ := P.weylGroupRootRep.dual.symmetricAlgebraMulSemiringAction
-  let e :
-      Bool ≃
-        (Ideal.span {SymmetricAlgebra.ι K (Module.Dual K M) (P.coroot' α)}).inertia P.weylGroup :=
-    { toFun := fun b ↦
-        if b then ⟨weylGroup.ofIdx P α, (P.mem_dual_inertia_coroot'_iff α _).2 (Or.inr rfl)⟩
-        else ⟨1, (P.mem_dual_inertia_coroot'_iff α _).2 (Or.inl rfl)⟩
-      invFun := fun w ↦ by
-        classical
-        exact decide (w.1 = weylGroup.ofIdx P α)
-      left_inv := fun b ↦ by
-        cases b
-        · simp [(P.weylGroup_ofIdx_ne_one α).symm]
-        · simp
-      right_inv := fun ⟨w, hw⟩ ↦ by
-        rcases (P.mem_dual_inertia_coroot'_iff α w).1 hw with rfl | rfl
-        · simp [(P.weylGroup_ofIdx_ne_one α).symm]
-        · simp }
-  simpa using (Nat.card_congr e).symm
+  have hset : ((Ideal.span {SymmetricAlgebra.ι K (Module.Dual K M) (P.coroot' α)}).inertia
+      P.weylGroup : Set P.weylGroup) = {1, weylGroup.ofIdx P α} :=
+    Set.ext (P.mem_dual_inertia_coroot'_iff α)
+  rw [← SetLike.coe_sort_coe, Nat.card_coe_set_eq, hset,
+    Set.ncard_pair (P.weylGroup_ofIdx_ne_one α).symm]
 
 end FlipReduced
 
@@ -355,47 +303,36 @@ private theorem exists_weylGroup_forall_mem_posRoots_pos (b : P.Base) {x : M}
   have : Finite P.weylGroup := P.finite_weylGroup_of_base b
   obtain ⟨φ, hφ⟩ := Module.exists_dual_forall_apply_ne_zero (K := ℚ)
     (fun i ↦ P.coroot' i x) ((P.isRegularWeight_iff x).mp hx)
-  have hφ_orb : ∀ (v : P.weylGroup) (i : ι), φ (P.coroot' i (v • x)) ≠ 0 := fun v i ↦ by
-    rw [Subgroup.smul_def, P.coroot'_smul v.1 i x]
-    exact hφ _
+  have hφ_orb (v : P.weylGroup) (i : ι) : φ (P.coroot' i (v • x)) ≠ 0 := by
+    rw [Subgroup.smul_def, P.coroot'_smul v.1 i x]; exact hφ _
   let posSum (y : M) : K := ∑ j ∈ posRootsFinset P b, P.coroot' j y
-  have hposSum_refl : ∀ {i : ι}, i ∈ b.support → ∀ y : M,
+  have hposSum_refl {i : ι} (hi : i ∈ b.support) (y : M) :
       posSum (P.reflection i y) = posSum y - 2 * P.coroot' i y := by
-    intro i hi y
     have his : i ∈ posRootsFinset P b :=
       (mem_posRootsFinset P b i).mpr (support_subset_posRoots P b hi)
-    have hreindex : posSum (P.reflection i y) =
-        ∑ j ∈ posRootsFinset P b, P.coroot' (P.reflectionPerm i j) y :=
-      Finset.sum_congr rfl fun _ _ ↦ P.coroot'_reflection y
-    have hself : P.coroot' (P.reflectionPerm i i) y = -P.coroot' i y := by
-      simp [coroot'_reflectionPerm_self]
-    have hpunctured : ∑ j ∈ (posRootsFinset P b).erase i, P.coroot' (P.reflectionPerm i j) y =
-        ∑ j ∈ (posRootsFinset P b).erase i, P.coroot' j y :=
-      sum_posRootsFinset_erase_comp_reflectionPerm P b hi fun j ↦ P.coroot' j y
-    have hexpand : posSum y =
-        P.coroot' i y + ∑ j ∈ (posRootsFinset P b).erase i, P.coroot' j y :=
-      (Finset.add_sum_erase _ _ his).symm
-    rw [hreindex, ← Finset.add_sum_erase _ _ his, hpunctured, hself, hexpand]
+    rw [show posSum (P.reflection i y) =
+          ∑ j ∈ posRootsFinset P b, P.coroot' (P.reflectionPerm i j) y
+        from Finset.sum_congr rfl fun _ _ ↦ P.coroot'_reflection y,
+      ← Finset.add_sum_erase _ _ his,
+      sum_posRootsFinset_erase_comp_reflectionPerm P b hi fun j ↦ P.coroot' j y,
+      coroot'_reflectionPerm_self, LinearMap.neg_apply,
+      show posSum y = P.coroot' i y + ∑ j ∈ (posRootsFinset P b).erase i, P.coroot' j y from
+        (Finset.add_sum_erase _ _ his).symm]
     ring
   obtain ⟨v, hv⟩ := Finite.exists_max fun v : P.weylGroup ↦ φ (posSum (v • x))
-  have hpos_supp : ∀ i ∈ b.support, 0 < φ (P.coroot' i (v • x)) := by
-    intro i hi
-    have hsmul : (weylGroup.ofIdx P i * v) • x = P.reflection i (v • x) := by simp [mul_smul]
-    have h2smul : (2 : K) * P.coroot' i (v • x) = (2 : ℚ) • P.coroot' i (v • x) := by
-      simp [Rat.smul_def]
+  have hpos_supp {i : ι} (hi : i ∈ b.support) : 0 < φ (P.coroot' i (v • x)) := by
     have hle := hv (weylGroup.ofIdx P i * v)
-    rw [hsmul, hposSum_refl hi, map_sub, h2smul, map_smul, smul_eq_mul] at hle
+    have h2 : (2 : K) * P.coroot' i (v • x) = (2 : ℚ) • P.coroot' i (v • x) := by
+      simp [Rat.smul_def]
+    rw [show (weylGroup.ofIdx P i * v) • x = P.reflection i (v • x) by simp [mul_smul],
+      hposSum_refl hi, map_sub, h2, map_smul, smul_eq_mul] at hle
     exact lt_of_le_of_ne (by linarith) (hφ_orb v i).symm
-  refine ⟨φ, v, fun k hk ↦ ?_⟩
+  refine ⟨φ, v, fun k hk ↦ lt_of_le_of_ne ?_ (hφ_orb v k).symm⟩
   obtain ⟨c, -, hc⟩ := exists_coroot'_eq_sum_nat_of_mem_posRoots P b hk
-  have hnonneg : 0 ≤ φ (P.coroot' k (v • x)) := by
-    have happly := congr($hc (v • x))
-    simp only [LinearMap.sum_apply, LinearMap.smul_apply, Nat.cast_smul_eq_nsmul] at happly
-    rw [happly, map_sum]
-    refine Finset.sum_nonneg fun i hi ↦ ?_
-    rw [map_nsmul]
-    exact nsmul_nonneg (hpos_supp i hi).le (c i)
-  exact lt_of_le_of_ne hnonneg (hφ_orb v k).symm
+  have happly := congr($hc (v • x))
+  simp only [LinearMap.sum_apply, LinearMap.smul_apply, Nat.cast_smul_eq_nsmul] at happly
+  rw [happly, map_sum]
+  exact Finset.sum_nonneg fun i hi ↦ by rw [map_nsmul]; exact nsmul_nonneg (hpos_supp hi).le (c i)
 
 /-- **The Weyl group acts freely on regular weights** over any field of characteristic zero: if
 `x` lies on no root hyperplane and `w • x = x`, then `w = 1`. No ordering on `K` or spanning
@@ -405,24 +342,17 @@ theorem eq_one_of_isRegularWeight_of_smul_eq (b : P.Base) {x : M} (hx : P.IsRegu
   obtain ⟨φ, v, hpos_all⟩ := P.exists_weylGroup_forall_mem_posRoots_pos b hx
   let u : P.weylGroup := v * w * v⁻¹
   have hu_fix : u • (v • x) = v • x := by simp [u, mul_smul, hw]
-  have hinv_empty : inversions P b u⁻¹ = ∅ := by
-    rw [Set.eq_empty_iff_forall_notMem]
-    intro k hk
+  have hinv_empty : inversions P b u⁻¹ = ∅ := Set.eq_empty_iff_forall_notMem.mpr fun k hk ↦ by
     let j := P.weylGroupToPerm u⁻¹ k
-    have hj_neg : j ∈ negRoots P b := mapsTo_inversions_negRoots P b u⁻¹ hk
     let j' := P.reflectionPerm j j
-    have hj'_pos : j' ∈ posRoots P b :=
-      (reflectionPerm_self_mem_posRoots_iff_mem_negRoots P b j).2 hj_neg
-    have hcor_eq : P.coroot' k (v • x) = -P.coroot' j' (v • x) := by
-      calc P.coroot' k (v • x)
-          = P.coroot' k (u • (v • x)) := by rw [hu_fix]
-        _ = P.coroot' j (v • x) := P.coroot'_smul u.1 k (v • x)
-        _ = -P.coroot' j' (v • x) := by simp [j', coroot'_reflectionPerm_self]
-    have h1 : 0 < φ (P.coroot' k (v • x)) :=
-      hpos_all k (inversions_subset_posRoots P b u⁻¹ hk)
-    have h2 : 0 < φ (P.coroot' j' (v • x)) := hpos_all j' hj'_pos
-    rw [hcor_eq, map_neg] at h1
-    linarith
+    have hcor : P.coroot' k (v • x) = -P.coroot' j' (v • x) := by
+      conv_lhs => rw [← hu_fix]
+      rw [Subgroup.smul_def, P.coroot'_smul u.1 k (v • x)]
+      simp [j', j, coroot'_reflectionPerm_self]
+    have h1 := hpos_all k (inversions_subset_posRoots P b u⁻¹ hk)
+    have h2 := hpos_all j' ((reflectionPerm_self_mem_posRoots_iff_mem_negRoots P b j).2
+      (mapsTo_inversions_negRoots P b u⁻¹ hk))
+    rw [hcor, map_neg] at h1; linarith
   have hu : v * w * v⁻¹ = 1 := inv_eq_one.mp (eq_one_of_inversions_eq_empty hinv_empty)
   calc w = v⁻¹ * (v * w * v⁻¹) * v := by group
     _ = 1 := by rw [hu]; group
@@ -435,49 +365,33 @@ theorem finrank_quotient_fixedSubmodule_weylGroupRootRep_eq_one_iff (b : P.Base)
     Module.finrank K (M ⧸ (P.weylGroupRootRep w).fixedSubmodule) = 1 ↔
       ∃ α ∈ posRoots P b, w = weylGroup.ofIdx P α := by
   refine ⟨fun hw ↦ ?_, ?_⟩
-  · have hw1 : w ≠ 1 :=
-      P.weylGroupRootRep.ne_one_of_finrank_quotient_fixedSubmodule_eq_one hw
-    -- Since `w ≠ 1`, its fixed hyperplane `H` contains no regular weight.
+  · have hw1 : w ≠ 1 := P.weylGroupRootRep.ne_one_of_finrank_quotient_fixedSubmodule_eq_one hw
     let H := (P.weylGroupRootRep w).fixedSubmodule
-    have hnoreg : ¬ ∃ x ∈ H, ∀ i, P.coroot' i x ≠ 0 := by
-      rintro ⟨x, hxH, hxreg⟩
-      exact hw1 (P.eq_one_of_isRegularWeight_of_smul_eq b
-        ((P.isRegularWeight_iff x).mpr hxreg)
-        (LinearMap.mem_fixedSubmodule_iff.mp hxH))
-    -- Over the infinite field `K`, hyperplane avoidance gives `H ≤ ker (P.coroot' i)` for some `i`.
-    have hexists : ∃ i, H ≤ LinearMap.ker (P.coroot' i) := by
+    obtain ⟨i, hi⟩ : ∃ i, H ≤ LinearMap.ker (P.coroot' i) := by
       by_contra! hnot
-      exact hnoreg (Module.Dual.exists_forall_mem_ne_zero_of_forall_exists H P.coroot' fun i ↦
-        IsConcreteLE.not_le_iff_exists.mp (hnot i))
-    obtain ⟨i, hi⟩ := hexists
-    have hroot_notMem : P.root i ∉ H := fun hmem ↦
+      obtain ⟨x, hxH, hxreg⟩ := Module.Dual.exists_forall_mem_ne_zero_of_forall_exists H P.coroot'
+        fun i ↦ IsConcreteLE.not_le_iff_exists.mp (hnot i)
+      exact hw1 (P.eq_one_of_isRegularWeight_of_smul_eq b
+        ((P.isRegularWeight_iff x).mpr hxreg) (LinearMap.mem_fixedSubmodule_iff.mp hxH))
+    have hmk_ne : H.mkQ (P.root i) ≠ 0 := (Submodule.Quotient.mk_eq_zero H).not.mpr fun hmem ↦
       NeZero.ne (2 : K) ((P.coroot_root_two i).symm.trans (LinearMap.mem_ker.mp (hi hmem)))
-    have hmk_ne : H.mkQ (P.root i) ≠ 0 :=
-      (Submodule.Quotient.mk_eq_zero H).not.mpr hroot_notMem
     have hspan := (finrank_eq_one_iff_of_ne_zero' (H.mkQ (P.root i)) hmk_ne).mp hw
-    have hHeq : H = LinearMap.ker (P.coroot' i) := by
-      refine le_antisymm hi fun y hy ↦ ?_
+    have hHeq : H = LinearMap.ker (P.coroot' i) := le_antisymm hi fun y hy ↦ by
       obtain ⟨c, hc⟩ := hspan (H.mkQ y)
       have hsub : y - c • P.root i ∈ H := by
         rw [← Submodule.Quotient.mk_eq_zero, ← Submodule.mkQ_apply, map_sub, map_smul, hc, sub_self]
       have hcor : P.coroot' i (y - c • P.root i) = 0 := hi hsub
       rw [map_sub, map_smul, LinearMap.mem_ker.mp hy, P.coroot_root_two, smul_eq_mul, zero_sub,
         neg_eq_zero, mul_eq_zero] at hcor
-      have hc0 : c = 0 := hcor.resolve_right (NeZero.ne (2 : K))
-      simpa [hc0] using hsub
+      simpa [hcor.resolve_right (NeZero.ne (2 : K))] using hsub
     have hw_eq : w = weylGroup.ofIdx P i :=
       (P.ker_coroot'_le_fixedSubmodule_weylGroupRootRep_iff.1 hHeq.symm.le).resolve_left hw1
     by_cases hpos : i ∈ posRoots P b
     · exact ⟨i, hpos, hw_eq⟩
-    · rw [not_mem_posRoots_iff_mem_negRoots] at hpos
-      let i' := P.reflectionPerm i i
-      have hi'_pos : i' ∈ posRoots P b :=
-        (reflectionPerm_self_mem_posRoots_iff_mem_negRoots P b i).2 hpos
-      refine ⟨i', hi'_pos, hw_eq.trans ?_⟩
-      refine weylGroup.ext fun x ↦ ?_
-      rw [weylGroup.ofIdx_smul, weylGroup.ofIdx_smul, Equiv.reflection_smul, Equiv.reflection_smul]
-      dsimp only [i']
-      rw [reflection_reflectionPerm, mul_apply_eq_comp, mul_apply_eq_comp, reflection_same]
+    · refine ⟨P.reflectionPerm i i, (reflectionPerm_self_mem_posRoots_iff_mem_negRoots P b i).2
+        ((not_mem_posRoots_iff_mem_negRoots P b i).1 hpos), hw_eq.trans <| weylGroup.ext fun x ↦ ?_⟩
+      rw [weylGroup.ofIdx_smul, weylGroup.ofIdx_smul, Equiv.reflection_smul, Equiv.reflection_smul,
+        reflection_reflectionPerm, mul_apply_eq_comp, mul_apply_eq_comp, reflection_same]
   · rintro ⟨α, -, rfl⟩
     exact P.finrank_quotient_fixedSubmodule_weylGroupRootRep_ofIdx α
 
@@ -490,9 +404,8 @@ noncomputable def posRootsEquivPseudoreflections (b : P.Base) :
       P.finrank_quotient_fixedSubmodule_weylGroupRootRep_ofIdx α.1⟩)
     ⟨fun α β h ↦ Subtype.ext <|
       (P.ofIdx_eq_ofIdx_iff_of_mem_posRoots b α.2 β.2).1 (congrArg Subtype.val h),
-     fun ⟨w, hw⟩ ↦ by
-      obtain ⟨α, hα, rfl⟩ :=
-        (P.finrank_quotient_fixedSubmodule_weylGroupRootRep_eq_one_iff b).1 hw
+     fun ⟨_, hw⟩ ↦ by
+      obtain ⟨α, hα, rfl⟩ := (P.finrank_quotient_fixedSubmodule_weylGroupRootRep_eq_one_iff b).1 hw
       exact ⟨⟨α, hα⟩, rfl⟩⟩
 
 /-- `posRootsEquivPseudoreflections` sends a positive root `α` to `weylGroup.ofIdx P α.1`. -/
@@ -526,11 +439,9 @@ theorem reflectingHyperplanes_weylGroupRootRep (b : P.Base) [DecidableEq (Submod
   ext H
   rw [Representation.mem_reflectingHyperplanes, Finset.mem_image]
   refine ⟨?_, ?_⟩
-  · rintro ⟨w, hw, rfl⟩
-    obtain ⟨α, hα, rfl⟩ :=
-      (P.finrank_quotient_fixedSubmodule_weylGroupRootRep_eq_one_iff b).1 hw
-    exact ⟨α, (mem_posRootsFinset P b α).2 hα,
-      (P.fixedSubmodule_weylGroupRootRep_ofIdx α).symm⟩
+  · rintro ⟨_, hw, rfl⟩
+    obtain ⟨α, hα, rfl⟩ := (P.finrank_quotient_fixedSubmodule_weylGroupRootRep_eq_one_iff b).1 hw
+    exact ⟨α, (mem_posRootsFinset P b α).2 hα, (P.fixedSubmodule_weylGroupRootRep_ofIdx α).symm⟩
   · rintro ⟨α, -, rfl⟩
     exact ⟨weylGroup.ofIdx P α, P.finrank_quotient_fixedSubmodule_weylGroupRootRep_ofIdx α,
       P.fixedSubmodule_weylGroupRootRep_ofIdx α⟩
@@ -548,10 +459,9 @@ noncomputable def posRootsEquivReflectingHyperplanes (b : P.Base) :
           P.fixedSubmodule_weylGroupRootRep_ofIdx α.1⟩⟩)
     ⟨fun α β h ↦ Subtype.ext <|
       (P.ker_coroot'_eq_iff_of_mem_posRoots b α.2 β.2).1 (congrArg Subtype.val h),
-     fun ⟨H, hH⟩ ↦ by
-      obtain ⟨w, hw, rfl⟩ := P.weylGroupRootRep.mem_reflectingHyperplanes.1 hH
-      obtain ⟨α, hα, rfl⟩ :=
-        (P.finrank_quotient_fixedSubmodule_weylGroupRootRep_eq_one_iff b).1 hw
+     fun ⟨_, hH⟩ ↦ by
+      obtain ⟨_, hw, rfl⟩ := P.weylGroupRootRep.mem_reflectingHyperplanes.1 hH
+      obtain ⟨α, hα, rfl⟩ := (P.finrank_quotient_fixedSubmodule_weylGroupRootRep_eq_one_iff b).1 hw
       exact ⟨⟨α, hα⟩, Subtype.ext (P.fixedSubmodule_weylGroupRootRep_ofIdx α).symm⟩⟩
 
 /-- `posRootsEquivReflectingHyperplanes` sends a positive root `α` to `ker (P.coroot' α.1)`. -/
@@ -590,18 +500,13 @@ theorem exists_mem_reflectingHyperplanes_weylGroupRootRep_iff (b : P.Base) (x : 
   classical
   rw [P.reflectingHyperplanes_weylGroupRootRep b, isRegularWeight_iff]
   simp only [Finset.mem_image, not_forall, not_not]
-  refine ⟨?_, ?_⟩
-  · rintro ⟨_, ⟨α, -, rfl⟩, hαx⟩
-    exact ⟨α, LinearMap.mem_ker.mp hαx⟩
-  · rintro ⟨i, hix⟩
-    by_cases hi : i ∈ posRoots P b
-    · exact ⟨_, ⟨i, (mem_posRootsFinset P b i).2 hi, rfl⟩, LinearMap.mem_ker.mpr hix⟩
-    · rw [not_mem_posRoots_iff_mem_negRoots] at hi
-      let i' := P.reflectionPerm i i
-      have hi'_pos : i' ∈ posRoots P b :=
-        (reflectionPerm_self_mem_posRoots_iff_mem_negRoots P b i).2 hi
-      refine ⟨_, ⟨i', (mem_posRootsFinset P b i').2 hi'_pos, rfl⟩, ?_⟩
-      simp [i', coroot'_reflectionPerm_self, hix]
+  refine ⟨fun ⟨_, ⟨α, _, rfl⟩, hαx⟩ ↦ ⟨α, LinearMap.mem_ker.mp hαx⟩, fun ⟨i, hix⟩ ↦ ?_⟩
+  by_cases hi : i ∈ posRoots P b
+  · exact ⟨_, ⟨i, (mem_posRootsFinset P b i).2 hi, rfl⟩, LinearMap.mem_ker.mpr hix⟩
+  · refine ⟨_, ⟨P.reflectionPerm i i, (mem_posRootsFinset P b _).2
+      ((reflectionPerm_self_mem_posRoots_iff_mem_negRoots P b i).2
+        ((not_mem_posRoots_iff_mem_negRoots P b i).1 hi)), rfl⟩, ?_⟩
+    simp [coroot'_reflectionPerm_self, hix]
 
 end CharZero
 
