@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.ContinuousMap.Bounded.Normed
 public import TauCeti.Analysis.Complex.VerticalStrip
 public import TauCeti.Analysis.Normed.Interpolation.CompatibleCouple
+public import TauCeti.Topology.ContinuousMap.Bounded.Normed
 import TauCeti.Analysis.Complex.PhragmenLindelof.VerticalStrip
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # Upper strip functions for Calderón's upper complex interpolation method
@@ -22,11 +23,12 @@ difference quotients `(t - s)⁻¹ • (G (j + t * I) - G (j + s * I))` (`j = 0,
 
 Because `X₀` and `X₁` inject into `X₀ + X₁`, the off-diagonal boundary difference quotients
 `q = (q₀, q₁)` in `(offDiag univ →ᵇ X₀) × (offDiag univ →ᵇ X₁)` are uniquely determined by `G`
-(`CompatibleCouple.IsUpperStripFunction.trace_unique`). Conversely, pinning at `t = 0` recovers
-Lipschitz boundary curves `t ↦ G (t * I) - G 0` in `X₀` and `t ↦ G (1 + t * I) - G 1` in `X₁`
-(`IsUpperStripFunction.fstBoundary`, `IsUpperStripFunction.sndBoundary`), while any strip function
-of finite exponential order with Lipschitz boundary curves defines an upper strip function
-(`IsUpperStripFunction.of_lipschitz`).
+(`CompatibleCouple.IsUpperStripFunction.trace_unique`). Conversely, pinning at `t = 0` via
+`BoundedContinuousFunction.pinnedCurve` recovers Lipschitz boundary curves `t ↦ G (t * I) - G 0` in
+`X₀` and `t ↦ G (1 + t * I) - G 1` in `X₁`
+(`IsUpperStripFunction.fstToSum_pinnedCurve`, `IsUpperStripFunction.sndToSum_pinnedCurve`), while
+any strip function of finite exponential order with Lipschitz boundary curves defines an upper strip
+function via `LipschitzWith.offDiagSlope` (`IsUpperStripFunction.of_lipschitz`).
 
 The main analytical estimates in this file establish Bergh–Löfström Lemma 4.1.3:
 
@@ -56,39 +58,6 @@ open scoped BoundedContinuousFunction NNReal
 namespace TauCeti
 
 open Complex.HadamardThreeLines
-
-/-- The bounded continuous difference-quotient function `(t, s) ↦ (t - s)⁻¹ • (g t - g s)` on
-`offDiag (univ : Set ℝ)` associated with a `K`-Lipschitz curve `g : ℝ → E`. -/
-def offDiagSlope {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {K : ℝ≥0}
-    {g : ℝ → E} (hg : LipschitzWith K g) : offDiag (univ : Set ℝ) →ᵇ E :=
-  BoundedContinuousFunction.ofNormedAddCommGroup
-    (fun p => ((p.1.1 - p.1.2 : ℝ) : ℂ)⁻¹ • (g p.1.1 - g p.1.2))
-    (by
-      have hc1 : Continuous fun p : offDiag (univ : Set ℝ) => p.1.1 :=
-        continuous_fst.comp continuous_subtype_val
-      have hc2 : Continuous fun p : offDiag (univ : Set ℝ) => p.1.2 :=
-        continuous_snd.comp continuous_subtype_val
-      refine ((continuous_ofReal.comp (hc1.sub hc2)).inv₀ fun p => ?_).smul
-        ((hg.continuous.comp hc1).sub (hg.continuous.comp hc2))
-      exact ofReal_ne_zero.2 (sub_ne_zero.2 p.2.2.2))
-    K fun p => by
-      have hne : 0 < |p.1.1 - p.1.2| := abs_pos.2 (sub_ne_zero.2 p.2.2.2)
-      have hlip : ‖g p.1.1 - g p.1.2‖ ≤ K * |p.1.1 - p.1.2| := by
-        simpa [dist_eq_norm, Real.dist_eq] using hg.dist_le_mul p.1.1 p.1.2
-      rw [norm_smul, norm_inv, Complex.norm_real, Real.norm_eq_abs, inv_mul_le_iff₀ hne, mul_comm]
-      exact hlip
-
-theorem norm_offDiagSlope_le {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {K : ℝ≥0}
-    {g : ℝ → E} (hg : LipschitzWith K g) : ‖offDiagSlope hg‖ ≤ K :=
-  BoundedContinuousFunction.norm_ofNormedAddCommGroup_le _ K.coe_nonneg _
-
-theorem smul_offDiagSlope_apply {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-    {K : ℝ≥0} {g : ℝ → E} (hg : LipschitzWith K g) {t s : ℝ} (h : t ≠ s) :
-    (t - s : ℂ) • offDiagSlope hg ⟨(t, s), ⟨trivial, trivial, h⟩⟩ = g t - g s := by
-  have hts : ((t - s : ℝ) : ℂ) ≠ 0 := ofReal_ne_zero.2 (sub_ne_zero.2 h)
-  have hcast : (t - s : ℂ) = ((t - s : ℝ) : ℂ) := by push_cast; rfl
-  rw [hcast]
-  exact smul_inv_smul₀ hts (g t - g s)
 
 namespace CompatibleCouple
 
@@ -232,55 +201,35 @@ theorem isBigO_exp_rpow (hG : C.IsUpperStripFunction G q) :
 
 /-! ### Pinned Lipschitz boundary curves -/
 
-/-- The left boundary curve `t ↦ G (t * I) - G 0` in `X₀`, pinned to vanish at `0`, recovered from
-the difference quotient `q₀`. -/
-def fstBoundary (q : (offDiag (univ : Set ℝ) →ᵇ X₀) × (offDiag (univ : Set ℝ) →ᵇ X₁)) (t : ℝ) :
-    X₀ :=
-  if h : t = 0 then 0 else (t : ℂ) • q.1 ⟨(t, 0), ⟨trivial, trivial, h⟩⟩
-
-/-- The right boundary curve `t ↦ G (1 + t * I) - G 1` in `X₁`, pinned to vanish at `0`, recovered
-from the difference quotient `q₁`. -/
-def sndBoundary (q : (offDiag (univ : Set ℝ) →ᵇ X₀) × (offDiag (univ : Set ℝ) →ᵇ X₁)) (t : ℝ) :
-    X₁ :=
-  if h : t = 0 then 0 else (t : ℂ) • q.2 ⟨(t, 0), ⟨trivial, trivial, h⟩⟩
-
-omit [NormedSpace ℂ X₁] in
-@[simp]
-theorem fstBoundary_zero (q : (offDiag (univ : Set ℝ) →ᵇ X₀) × (offDiag (univ : Set ℝ) →ᵇ X₁)) :
-    fstBoundary q 0 = 0 := by simp [fstBoundary]
-
-omit [NormedSpace ℂ X₀] in
-@[simp]
-theorem sndBoundary_zero (q : (offDiag (univ : Set ℝ) →ᵇ X₀) × (offDiag (univ : Set ℝ) →ᵇ X₁)) :
-    sndBoundary q 0 = 0 := by simp [sndBoundary]
-
-theorem fstToSum_fstBoundary (hG : C.IsUpperStripFunction G q) (t : ℝ) :
-    C.fstToSum (fstBoundary q t) = G (t * I) - G 0 := by
+theorem fstToSum_pinnedCurve (hG : C.IsUpperStripFunction G q) (t : ℝ) :
+    C.fstToSum (q.1.pinnedCurve t) = G (t * I) - G 0 := by
   by_cases ht : t = 0
   · subst ht; simp
-  · simpa [fstBoundary, ht] using (hG.sub_mul_I ht).symm
+  · rw [q.1.pinnedCurve_of_ne_zero ht, ← coe_smul, map_smul]
+    simpa using (hG.sub_mul_I ht).symm
 
-theorem sndToSum_sndBoundary (hG : C.IsUpperStripFunction G q) (t : ℝ) :
-    C.sndToSum (sndBoundary q t) = G (1 + t * I) - G 1 := by
+theorem sndToSum_pinnedCurve (hG : C.IsUpperStripFunction G q) (t : ℝ) :
+    C.sndToSum (q.2.pinnedCurve t) = G (1 + t * I) - G 1 := by
   by_cases ht : t = 0
   · subst ht; simp
-  · simpa [sndBoundary, ht] using (hG.sub_one_add_mul_I ht).symm
+  · rw [q.2.pinnedCurve_of_ne_zero ht, ← coe_smul, map_smul]
+    simpa using (hG.sub_one_add_mul_I ht).symm
 
-theorem fstToSum_fstBoundary_sub (hG : C.IsUpperStripFunction G q) (t s : ℝ) :
-    C.fstToSum (fstBoundary q t - fstBoundary q s) = G (t * I) - G (s * I) := by
-  rw [map_sub, hG.fstToSum_fstBoundary, hG.fstToSum_fstBoundary]; abel
+theorem fstToSum_pinnedCurve_sub (hG : C.IsUpperStripFunction G q) (t s : ℝ) :
+    C.fstToSum (q.1.pinnedCurve t - q.1.pinnedCurve s) = G (t * I) - G (s * I) := by
+  rw [map_sub, hG.fstToSum_pinnedCurve, hG.fstToSum_pinnedCurve]; abel
 
-theorem sndToSum_sndBoundary_sub (hG : C.IsUpperStripFunction G q) (t s : ℝ) :
-    C.sndToSum (sndBoundary q t - sndBoundary q s) = G (1 + t * I) - G (1 + s * I) := by
-  rw [map_sub, hG.sndToSum_sndBoundary, hG.sndToSum_sndBoundary]; abel
+theorem sndToSum_pinnedCurve_sub (hG : C.IsUpperStripFunction G q) (t s : ℝ) :
+    C.sndToSum (q.2.pinnedCurve t - q.2.pinnedCurve s) = G (1 + t * I) - G (1 + s * I) := by
+  rw [map_sub, hG.sndToSum_pinnedCurve, hG.sndToSum_pinnedCurve]; abel
 
-theorem fstBoundary_sub_eq_smul (hG : C.IsUpperStripFunction G q) {t s : ℝ} (h : t ≠ s) :
-    fstBoundary q t - fstBoundary q s = (t - s : ℂ) • q.1 ⟨(t, s), ⟨trivial, trivial, h⟩⟩ :=
-  C.fstToSum_injective <| by rw [hG.fstToSum_fstBoundary_sub, hG.sub_mul_I h, map_smul]
+theorem pinnedCurve_fst_sub_eq_smul (hG : C.IsUpperStripFunction G q) {t s : ℝ} (h : t ≠ s) :
+    q.1.pinnedCurve t - q.1.pinnedCurve s = (t - s : ℂ) • q.1 ⟨(t, s), ⟨trivial, trivial, h⟩⟩ :=
+  C.fstToSum_injective <| by rw [hG.fstToSum_pinnedCurve_sub, hG.sub_mul_I h, map_smul]
 
-theorem sndBoundary_sub_eq_smul (hG : C.IsUpperStripFunction G q) {t s : ℝ} (h : t ≠ s) :
-    sndBoundary q t - sndBoundary q s = (t - s : ℂ) • q.2 ⟨(t, s), ⟨trivial, trivial, h⟩⟩ :=
-  C.sndToSum_injective <| by rw [hG.sndToSum_sndBoundary_sub, hG.sub_one_add_mul_I h, map_smul]
+theorem pinnedCurve_snd_sub_eq_smul (hG : C.IsUpperStripFunction G q) {t s : ℝ} (h : t ≠ s) :
+    q.2.pinnedCurve t - q.2.pinnedCurve s = (t - s : ℂ) • q.2 ⟨(t, s), ⟨trivial, trivial, h⟩⟩ :=
+  C.sndToSum_injective <| by rw [hG.sndToSum_pinnedCurve_sub, hG.sub_one_add_mul_I h, map_smul]
 
 private theorem lipschitzWith_of_sub_eq_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
     {q₀ : offDiag (univ : Set ℝ) →ᵇ E} {c : ℝ → E}
@@ -293,79 +242,25 @@ private theorem lipschitzWith_of_sub_eq_smul {E : Type*} [NormedAddCommGroup E] 
         Real.norm_eq_abs, mul_comm]
       exact mul_le_mul_of_nonneg_right (q₀.norm_coe_le_norm _) (abs_nonneg _)
 
-/-- The left boundary curve `fstBoundary q` of an upper strip function is `‖q₀‖`-Lipschitz. -/
-theorem lipschitzWith_fstBoundary (hG : C.IsUpperStripFunction G q) :
-    LipschitzWith ‖q.1‖₊ (fstBoundary q) :=
-  lipschitzWith_of_sub_eq_smul hG.fstBoundary_sub_eq_smul
+/-- The left boundary curve `q.1.pinnedCurve` of an upper strip function is `‖q₀‖`-Lipschitz. -/
+theorem lipschitzWith_pinnedCurve_fst (hG : C.IsUpperStripFunction G q) :
+    LipschitzWith ‖q.1‖₊ q.1.pinnedCurve :=
+  lipschitzWith_of_sub_eq_smul hG.pinnedCurve_fst_sub_eq_smul
 
-/-- The right boundary curve `sndBoundary q` of an upper strip function is `‖q₁‖`-Lipschitz. -/
-theorem lipschitzWith_sndBoundary (hG : C.IsUpperStripFunction G q) :
-    LipschitzWith ‖q.2‖₊ (sndBoundary q) :=
-  lipschitzWith_of_sub_eq_smul hG.sndBoundary_sub_eq_smul
+/-- The right boundary curve `q.2.pinnedCurve` of an upper strip function is `‖q₁‖`-Lipschitz. -/
+theorem lipschitzWith_pinnedCurve_snd (hG : C.IsUpperStripFunction G q) :
+    LipschitzWith ‖q.2‖₊ q.2.pinnedCurve :=
+  lipschitzWith_of_sub_eq_smul hG.pinnedCurve_snd_sub_eq_smul
 
-theorem norm_fstBoundary_sub_le (hG : C.IsUpperStripFunction G q) (t s : ℝ) :
-    ‖fstBoundary q t - fstBoundary q s‖ ≤ ‖q.1‖ * |t - s| := by
-  simpa [dist_eq_norm, Real.dist_eq] using hG.lipschitzWith_fstBoundary.dist_le_mul t s
+theorem norm_pinnedCurve_fst_sub_le (hG : C.IsUpperStripFunction G q) (t s : ℝ) :
+    ‖q.1.pinnedCurve t - q.1.pinnedCurve s‖ ≤ ‖q.1‖ * |t - s| := by
+  simpa [dist_eq_norm, Real.dist_eq] using hG.lipschitzWith_pinnedCurve_fst.dist_le_mul t s
 
-theorem norm_sndBoundary_sub_le (hG : C.IsUpperStripFunction G q) (t s : ℝ) :
-    ‖sndBoundary q t - sndBoundary q s‖ ≤ ‖q.2‖ * |t - s| := by
-  simpa [dist_eq_norm, Real.dist_eq] using hG.lipschitzWith_sndBoundary.dist_le_mul t s
+theorem norm_pinnedCurve_snd_sub_le (hG : C.IsUpperStripFunction G q) (t s : ℝ) :
+    ‖q.2.pinnedCurve t - q.2.pinnedCurve s‖ ≤ ‖q.2‖ * |t - s| := by
+  simpa [dist_eq_norm, Real.dist_eq] using hG.lipschitzWith_pinnedCurve_snd.dist_le_mul t s
 
 /-! ### Bergh–Löfström Lemma 4.1.3: three-lines estimates on difference quotients and derivatives -/
-
-/-- Finite-order growth on the open strip is preserved under scaled vertical differences. -/
-private theorem isBigO_exp_rpow_verticalDiffQuot {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℂ E] {f : ℂ → E} {A B : ℝ}
-    (hf : f =O[cobounded ℂ ⊓ 𝓟 (verticalStrip 0 1)] fun w => Real.exp (B * ‖w‖ ^ A))
-    (h : ℝ) (c : ℂ) :
-    ∃ A' B' : ℝ, (fun z => c • (f (z + h * I) - f z)) =O[cobounded ℂ ⊓ 𝓟 (verticalStrip 0 1)]
-      fun w => Real.exp (B' * ‖w‖ ^ A') := by
-  let l := cobounded ℂ ⊓ 𝓟 (verticalStrip 0 1)
-  have htend : Tendsto (fun z : ℂ => z + h * I) l l := by
-    refine tendsto_inf.2 ⟨?_, tendsto_principal.2 ?_⟩
-    · rw [← tendsto_norm_atTop_iff_cobounded]
-      have hnorm : Tendsto (fun z : ℂ => ‖z‖ - ‖(h : ℂ) * I‖) l atTop :=
-        (tendsto_atTop_add_const_right _ (-‖(h : ℂ) * I‖)
-          (tendsto_norm_cobounded_atTop.mono_left inf_le_left)).congr fun _ =>
-            (sub_eq_add_neg _ _).symm
-      exact tendsto_atTop_mono (fun z => by
-        have htri := norm_sub_le (z + h * I) ((h : ℂ) * I)
-        rw [add_sub_cancel_right] at htri; linarith) hnorm
-    · filter_upwards [(eventually_mem_principal (verticalStrip 0 1)).filter_mono inf_le_right]
-        with z hz using by simpa using hz
-  set p := max A 0
-  have hlarge : ∀ᶠ z : ℂ in l, max 1 ‖(h : ℂ) * I‖ + 1 ≤ ‖z‖ :=
-    (tendsto_norm_cobounded_atTop.eventually
-      (eventually_ge_atTop (max 1 ‖(h : ℂ) * I‖ + 1))).filter_mono inf_le_left
-  have hshift : (fun z => f (z + h * I)) =O[l] fun w => Real.exp (|B| * 2 ^ p * ‖w‖ ^ p) := by
-    refine (hf.comp_tendsto htend).trans (IsBigO.of_norm_eventuallyLE ?_)
-    filter_upwards [hlarge] with z hz
-    have h1 : 1 ≤ ‖z + h * I‖ := by
-      have htri := norm_sub_le (z + h * I) ((h : ℂ) * I)
-      rw [add_sub_cancel_right] at htri; linarith [le_max_right 1 ‖(h : ℂ) * I‖]
-    have h2 : ‖z + h * I‖ ≤ 2 * ‖z‖ := by
-      linarith [norm_add_le z ((h : ℂ) * I), le_max_left 1 ‖(h : ℂ) * I‖,
-        le_max_right 1 ‖(h : ℂ) * I‖]
-    have hexp : B * ‖z + h * I‖ ^ A ≤ |B| * 2 ^ p * ‖z‖ ^ p :=
-      calc B * ‖z + h * I‖ ^ A
-          ≤ |B| * ‖z + h * I‖ ^ p :=
-            mul_le_mul (le_abs_self B) (Real.rpow_le_rpow_of_exponent_le h1 (le_max_left _ _))
-              (Real.rpow_nonneg (norm_nonneg _) _) (abs_nonneg B)
-        _ ≤ |B| * (2 * ‖z‖) ^ p := by gcongr
-        _ = |B| * 2 ^ p * ‖z‖ ^ p := by rw [Real.mul_rpow zero_le_two (norm_nonneg _)]; ring
-    simpa [Real.norm_eq_abs, Real.abs_exp, Real.exp_le_exp] using hexp
-  have hself : f =O[l] fun w => Real.exp (|B| * 2 ^ p * ‖w‖ ^ p) := by
-    refine hf.trans (IsBigO.of_norm_eventuallyLE ?_)
-    filter_upwards [hlarge] with z hz
-    have hz1 : 1 ≤ ‖z‖ := by linarith [le_max_left 1 ‖(h : ℂ) * I‖]
-    have h2p : |B| ≤ |B| * 2 ^ p :=
-      le_mul_of_one_le_right (abs_nonneg B) (Real.one_le_rpow one_le_two (le_max_right _ _))
-    have hexp : B * ‖z‖ ^ A ≤ |B| * 2 ^ p * ‖z‖ ^ p :=
-      mul_le_mul ((le_abs_self B).trans h2p)
-        (Real.rpow_le_rpow_of_exponent_le hz1 (le_max_left _ _))
-        (Real.rpow_nonneg (norm_nonneg _) _) (by positivity)
-    simpa [Real.norm_eq_abs, Real.abs_exp, Real.exp_le_exp] using hexp
-  exact ⟨p, |B| * 2 ^ p, (hshift.sub hself).const_smul_left c⟩
 
 private theorem norm_verticalDiffQuot_le {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
     {ι : E →L[ℂ] C.SumSpace} (hι : ∀ x, ‖ι x‖ ≤ ‖x‖) {q₀ : offDiag (univ : Set ℝ) →ᵇ E} {c h : ℝ}
@@ -403,7 +298,11 @@ private theorem norm_sub_add_mul_I_le_rpow_mul_rpow_of_isBigO
     ((hd.comp hshift.diffContOnCl fun w hw => by simpa using hw).sub hd).const_smul
       (((h : ℂ) * I)⁻¹)
   obtain ⟨A₁, B₁, hg₁⟩ := hgrowth
-  have hgD := isBigO_exp_rpow_verticalDiffQuot hg₁ h (((h : ℂ) * I)⁻¹)
+  have hgD : ∃ A B : ℝ, D =O[cobounded ℂ ⊓ 𝓟 (verticalStrip 0 1)]
+      fun w => Real.exp (B * ‖w‖ ^ A) :=
+    ⟨max A₁ 0, |B₁| * 2 ^ max A₁ 0,
+      (TauCeti.PhragmenLindelof.isBigO_exp_rpow_add_mul_I_sub h hg₁).const_smul_left
+        (((h : ℂ) * I)⁻¹)⟩
   have hD : ‖D z‖ ≤ ‖q.1‖ ^ (1 - z.re) * ‖q.2‖ ^ z.re := by
     simpa [sub_zero, div_one] using
       TauCeti.PhragmenLindelof.norm_le_interp_of_isBigO_exp_rpow zero_lt_one hdD hgD
@@ -413,14 +312,6 @@ private theorem norm_sub_add_mul_I_le_rpow_mul_rpow_of_isBigO
           (fun hne => by simpa using h₁ hne) hw) hz
   rw [← inv_mul_le_iff₀ (abs_pos.2 hh)]
   simpa [D, norm_smul, Real.norm_eq_abs] using hD
-
-private theorem rpow_mul_rpow_le_norm {A B : Type*} [SeminormedAddCommGroup A]
-    [SeminormedAddCommGroup B] (q : A × B) {x : ℝ} (hx : x ∈ Icc 0 1) :
-    ‖q.1‖ ^ (1 - x) * ‖q.2‖ ^ x ≤ ‖q‖ := by
-  calc ‖q.1‖ ^ (1 - x) * ‖q.2‖ ^ x
-      ≤ ‖q‖ ^ (1 - x) * ‖q‖ ^ x := by
-        gcongr; exacts [sub_nonneg.2 hx.2, norm_fst_le q, hx.1, norm_snd_le q]
-    _ = ‖q‖ := by rw [← Real.rpow_add' (norm_nonneg q) (by simp), sub_add_cancel, Real.rpow_one]
 
 /-- Finite-order growth on the open strip, combined with bounded boundary difference quotients,
 automatically upgrades to linear growth on the closed strip. -/
@@ -443,7 +334,8 @@ theorem of_isBigO_exp_rpow (hd : DiffContOnCl ℂ G (verticalStrip 0 1))
     have hvert : ‖G z - G z.re‖ ≤ |z.im| * ‖q‖ := by
       have h1 := norm_sub_add_mul_I_le_rpow_mul_rpow_of_isBigO hd hgrowth h₀ h₁ hz_re z.im
       rw [re_add_im] at h1
-      exact h1.trans (mul_le_mul_of_nonneg_left (rpow_mul_rpow_le_norm q hz_re) (abs_nonneg _))
+      exact h1.trans (mul_le_mul_of_nonneg_left (q.norm_fst_rpow_mul_norm_snd_rpow_le hz_re)
+        (abs_nonneg _))
     have hbase : ‖G z.re‖ ≤ max M 0 := (hM z.re hz).trans (le_max_left M 0)
     have htri : ‖G z‖ ≤ ‖G z.re‖ + ‖G z - G z.re‖ := norm_le_insert' (G z) (G z.re)
     nlinarith [abs_nonneg z.im, norm_nonneg q, le_max_right M 0]
@@ -488,7 +380,7 @@ theorem norm_deriv_le_rpow_mul_rpow (hG : C.IsUpperStripFunction G q) {z : ℂ}
 theorem norm_deriv_le (hG : C.IsUpperStripFunction G q) {z : ℂ} (hz : z ∈ verticalStrip 0 1) :
     ‖deriv G z‖ ≤ ‖q‖ :=
   (hG.norm_deriv_le_rpow_mul_rpow hz).trans
-    (rpow_mul_rpow_le_norm q (verticalStrip_subset_verticalClosedStrip 0 1 hz))
+    (q.norm_fst_rpow_mul_norm_snd_rpow_le (verticalStrip_subset_verticalClosedStrip 0 1 hz))
 
 /-- **Bergh–Löfström Lemma 4.1.3 (strip Lipschitz bound).** Every upper strip function with
 boundary difference quotients `q` is `‖q‖`-Lipschitz on the entire closed strip `0 ≤ re z ≤ 1`. -/
@@ -537,10 +429,12 @@ theorem of_lipschitz (hd : DiffContOnCl ℂ G (verticalStrip 0 1))
     (hg₀ : LipschitzWith K₀ g₀) (hg₁ : LipschitzWith K₁ g₁)
     (h₀ : ∀ t s : ℝ, G (t * I) - G (s * I) = C.fstToSum (g₀ t - g₀ s))
     (h₁ : ∀ t s : ℝ, G (1 + t * I) - G (1 + s * I) = C.sndToSum (g₁ t - g₁ s)) :
-    C.IsUpperStripFunction G (offDiagSlope hg₀, offDiagSlope hg₁) :=
+    C.IsUpperStripFunction G (hg₀.offDiagSlope, hg₁.offDiagSlope) :=
   of_isBigO_exp_rpow hd hgrowth
-    (fun {t s} h => by rw [h₀ t s, ← map_smul, smul_offDiagSlope_apply hg₀ h])
-    (fun {t s} h => by rw [h₁ t s, ← map_smul, smul_offDiagSlope_apply hg₁ h])
+    (fun {t s} h => by
+      rw [h₀ t s, ← ofReal_sub, ← map_smul, coe_smul, hg₀.smul_offDiagSlope_apply h])
+    (fun {t s} h => by
+      rw [h₁ t s, ← ofReal_sub, ← map_smul, coe_smul, hg₁.smul_offDiagSlope_apply h])
 
 end IsUpperStripFunction
 

@@ -37,8 +37,10 @@ range of `f₀`, is continuous at `f₀` (`BoundedContinuousFunction.apply_mem_o
 
 `BoundedContinuousFunction.compContinuousₗᵢ` is precomposition with a homeomorphism, as a linear
 isometry equivalence of a submodule of `α →ᵇ β` that it preserves, and
-`ContinuousLinearMap.compLeftContinuousBounded_compContinuous` says that postcomposition with a
-continuous linear map commutes with precomposition.
+`ContinuousLinearMap.compLeftContinuousBounded_compContinuous`,
+`ContinuousLinearMap.norm_compLeftContinuousBounded_apply_le`, and
+`ContinuousLinearMap.norm_compLeftContinuousBounded_le` record naturality and operator-norm bounds
+for postcomposition with a continuous linear map.
 
 `BoundedContinuousFunction.exists_finite_range_dist_lt` says that on a discrete space every bounded
 real function is a uniform limit of finite-valued bounded functions.
@@ -50,11 +52,16 @@ bounded continuous function `f` lies within `‖f‖` of the constant `‖f‖`.
 natural-number division; dilations compose multiplicatively and commute with the pointwise
 operations. They are the operators under which Dixmier's generalized limits are invariant, see
 `TauCeti.Analysis.Normed.Order.GeneralizedLimit`.
+
+`LipschitzWith.offDiagSlope` sends a `K`-Lipschitz map `g : 𝕜 → E` over a normed field `𝕜` to its
+bounded continuous difference-quotient `(t, s) ↦ (t - s)⁻¹ • (g t - g s)` on `offDiag univ` of norm
+at most `K`, and `BoundedContinuousFunction.pinnedCurve` recovers `t ↦ g t - g 0` from an
+off-diagonal difference quotient by pinning at `0`.
 -/
 
 public section
 
-open Metric
+open Metric Set
 open scoped NNReal BoundedContinuousFunction
 
 namespace TauCeti
@@ -144,15 +151,32 @@ end PseudoMetricSpace
 
 end BoundedContinuousFunction
 
+namespace ContinuousLinearMap
+
+variable {α δ 𝕜 β γ : Type*} [TopologicalSpace α] [TopologicalSpace δ] [NontriviallyNormedField 𝕜]
+  [SeminormedAddCommGroup β] [NormedSpace 𝕜 β] [SeminormedAddCommGroup γ] [NormedSpace 𝕜 γ]
+
 /-- Postcomposition with a continuous linear map commutes with precomposition with a continuous
 map. -/
-theorem ContinuousLinearMap.compLeftContinuousBounded_compContinuous {α δ 𝕜 β γ : Type*}
-    [TopologicalSpace α] [TopologicalSpace δ] [NontriviallyNormedField 𝕜]
-    [SeminormedAddCommGroup β] [NormedSpace 𝕜 β] [SeminormedAddCommGroup γ] [NormedSpace 𝕜 γ]
+theorem compLeftContinuousBounded_compContinuous
     (g : β →L[𝕜] γ) (f : α →ᵇ β) (a : C(δ, α)) :
     g.compLeftContinuousBounded δ (f.compContinuous a) =
       (g.compLeftContinuousBounded α f).compContinuous a :=
   (rfl)
+
+/-- Postcomposition of `f : α →ᵇ β` with `g : β →L[𝕜] γ` has sup norm at most `‖g‖ * ‖f‖`. -/
+theorem norm_compLeftContinuousBounded_apply_le (g : β →L[𝕜] γ) (f : α →ᵇ β) :
+    ‖g.compLeftContinuousBounded α f‖ ≤ ‖g‖ * ‖f‖ :=
+  (BoundedContinuousFunction.norm_le (mul_nonneg (norm_nonneg g) (norm_nonneg f))).2 fun x ↦
+    (g.le_opNorm (f x)).trans (mul_le_mul_of_nonneg_left (f.norm_coe_le_norm x) (norm_nonneg g))
+
+/-- Postcomposition with `g : β →L[𝕜] γ` on `α →ᵇ β` has operator norm at most `‖g‖`. -/
+theorem norm_compLeftContinuousBounded_le (g : β →L[𝕜] γ) (α : Type*) [TopologicalSpace α] :
+    ‖g.compLeftContinuousBounded α‖ ≤ ‖g‖ :=
+  (g.compLeftContinuousBounded α).opNorm_le_bound (norm_nonneg g)
+    (g.norm_compLeftContinuousBounded_apply_le)
+
+end ContinuousLinearMap
 
 namespace BoundedContinuousFunction
 
@@ -286,4 +310,71 @@ theorem neg_dilate {β : Type*} [SeminormedAddCommGroup β] (f : ℕ →ᵇ β) 
   ext n
   simp
 
+section PinnedCurve
+
+variable {𝕜 E : Type*} [PseudoMetricSpace 𝕜] [Zero 𝕜] [PseudoMetricSpace E] [Zero E] [SMul 𝕜 E]
+
+/-- From a bounded continuous off-diagonal function `q : offDiag univ →ᵇ E`, recover the curve
+`t ↦ t • q (t, 0)` pinned to vanish at `t = 0`. When `q` is the difference quotient of `g : 𝕜 → E`,
+`q.pinnedCurve t = g t - g 0` (`LipschitzWith.pinnedCurve_offDiagSlope`). -/
+noncomputable def pinnedCurve (q : offDiag (univ : Set 𝕜) →ᵇ E) (t : 𝕜) : E :=
+  open Classical in
+  if h : t = 0 then 0 else t • q ⟨(t, 0), ⟨trivial, trivial, h⟩⟩
+
+@[simp]
+theorem pinnedCurve_zero (q : offDiag (univ : Set 𝕜) →ᵇ E) : q.pinnedCurve 0 = 0 := by
+  simp [pinnedCurve]
+
+theorem pinnedCurve_of_ne_zero (q : offDiag (univ : Set 𝕜) →ᵇ E) {t : 𝕜} (ht : t ≠ 0) :
+    q.pinnedCurve t = t • q ⟨(t, 0), ⟨trivial, trivial, ht⟩⟩ := by
+  simp [pinnedCurve, ht]
+
+end PinnedCurve
+
 end BoundedContinuousFunction
+
+namespace LipschitzWith
+
+variable {𝕜 E : Type*} [NormedField 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {K : ℝ≥0} {g : 𝕜 → E}
+
+/-- The bounded continuous difference-quotient `(t, s) ↦ (t - s)⁻¹ • (g t - g s)` on
+`offDiag (univ : Set 𝕜)` associated with a `K`-Lipschitz map `g : 𝕜 → E`. -/
+noncomputable def offDiagSlope (hg : LipschitzWith K g) : offDiag (univ : Set 𝕜) →ᵇ E :=
+  BoundedContinuousFunction.ofNormedAddCommGroup
+    (fun p ↦ (p.1.1 - p.1.2)⁻¹ • (g p.1.1 - g p.1.2))
+    (by
+      have hc1 : Continuous fun p : offDiag (univ : Set 𝕜) ↦ p.1.1 :=
+        continuous_fst.comp continuous_subtype_val
+      have hc2 : Continuous fun p : offDiag (univ : Set 𝕜) ↦ p.1.2 :=
+        continuous_snd.comp continuous_subtype_val
+      exact ((hc1.sub hc2).inv₀ fun p ↦ sub_ne_zero.2 p.2.2.2).smul
+        ((hg.continuous.comp hc1).sub (hg.continuous.comp hc2)))
+    K fun p ↦ by
+      have hne : 0 < ‖p.1.1 - p.1.2‖ := norm_pos_iff.2 (sub_ne_zero.2 p.2.2.2)
+      have hlip : ‖g p.1.1 - g p.1.2‖ ≤ K * ‖p.1.1 - p.1.2‖ := by
+        simpa [dist_eq_norm] using hg.dist_le_mul p.1.1 p.1.2
+      rw [norm_smul, norm_inv, inv_mul_le_iff₀ hne, mul_comm]
+      exact hlip
+
+@[simp]
+theorem offDiagSlope_apply (hg : LipschitzWith K g) (p : offDiag (univ : Set 𝕜)) :
+    hg.offDiagSlope p = (p.1.1 - p.1.2)⁻¹ • (g p.1.1 - g p.1.2) :=
+  (rfl)
+
+theorem norm_offDiagSlope_le (hg : LipschitzWith K g) : ‖hg.offDiagSlope‖ ≤ K :=
+  BoundedContinuousFunction.norm_ofNormedAddCommGroup_le _ K.coe_nonneg _
+
+theorem smul_offDiagSlope_apply (hg : LipschitzWith K g) {t s : 𝕜} (h : t ≠ s) :
+    (t - s) • hg.offDiagSlope ⟨(t, s), ⟨trivial, trivial, h⟩⟩ = g t - g s :=
+  smul_inv_smul₀ (sub_ne_zero.2 h) (g t - g s)
+
+@[simp]
+theorem pinnedCurve_offDiagSlope (hg : LipschitzWith K g) (t : 𝕜) :
+    hg.offDiagSlope.pinnedCurve t = g t - g 0 := by
+  rcases eq_or_ne t 0 with rfl | ht
+  · simp
+  · simpa [BoundedContinuousFunction.pinnedCurve_of_ne_zero _ ht] using
+      hg.smul_offDiagSlope_apply ht
+
+end LipschitzWith

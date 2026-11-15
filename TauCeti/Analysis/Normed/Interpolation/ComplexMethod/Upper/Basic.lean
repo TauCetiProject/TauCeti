@@ -39,7 +39,7 @@ functions modulo constants by their boundary difference quotients:
   of `X₀ ∩ X₁` via `z ↦ z • x` without completeness assumptions, and isometric identification of
   `[X, X]^θ` with `X`.
 
-Functoriality, exact interpolation of exponent `θ` (Bergh–Löfström, Theorem 4.1.2), retracts, and
+Functoriality, exact interpolation of exponent `θ` (Bergh–Löfström, Theorem 4.1.4), retracts, and
 endpoint isomorphisms are proved in
 `TauCeti.Analysis.Normed.Interpolation.ComplexMethod.Upper.Map`.
 
@@ -115,7 +115,7 @@ theorem deriv_upperStripFunction_eq {g : C.upperStripTraces} {G : ℂ → C.SumS
   (C.isUpperStripFunction_upperStripFunction g).deriv_eq hG hz
 
 @[simp]
-theorem upperStripFunction_eq_zero (g : C.upperStripTraces) {z : ℂ}
+theorem upperStripFunction_apply_of_notMem (g : C.upperStripTraces) {z : ℂ}
     (hz : z ∉ verticalClosedStrip 0 1) : C.upperStripFunction g z = 0 :=
   indicator_of_notMem hz _
 
@@ -124,7 +124,7 @@ theorem upperStripFunction_zero : C.upperStripFunction 0 = 0 := by
   ext z
   by_cases hz : z ∈ verticalClosedStrip 0 1
   · simpa using upperStripFunction_eq (g := 0) IsUpperStripFunction.zero hz
-  · exact C.upperStripFunction_eq_zero _ hz
+  · exact C.upperStripFunction_apply_of_notMem _ hz
 
 @[simp]
 theorem upperStripFunction_add (g h : C.upperStripTraces) :
@@ -134,7 +134,7 @@ theorem upperStripFunction_add (g h : C.upperStripTraces) :
   · simpa using upperStripFunction_eq (g := g + h)
       ((C.isUpperStripFunction_upperStripFunction g).add
         (C.isUpperStripFunction_upperStripFunction h)) hz
-  · simp [C.upperStripFunction_eq_zero _ hz]
+  · simp [C.upperStripFunction_apply_of_notMem _ hz]
 
 @[simp]
 theorem upperStripFunction_smul (c : ℂ) (g : C.upperStripTraces) :
@@ -143,13 +143,13 @@ theorem upperStripFunction_smul (c : ℂ) (g : C.upperStripTraces) :
   by_cases hz : z ∈ verticalClosedStrip 0 1
   · simpa [smul_sub] using upperStripFunction_eq (g := c • g)
       ((C.isUpperStripFunction_upperStripFunction g).const_smul c) hz
-  · simp [C.upperStripFunction_eq_zero _ hz]
+  · simp [C.upperStripFunction_apply_of_notMem _ hz]
 
 theorem norm_upperStripFunction_le (g : C.upperStripTraces) (z : ℂ) :
     ‖C.upperStripFunction g z‖ ≤ ‖g‖ * ‖z‖ := by
   by_cases hz : z ∈ verticalClosedStrip 0 1
   · simpa using (C.isUpperStripFunction_upperStripFunction g).norm_sub_apply_zero_le hz
-  · rw [C.upperStripFunction_eq_zero g hz, norm_zero]
+  · rw [C.upperStripFunction_apply_of_notMem g hz, norm_zero]
     positivity
 
 /-- Complex derivative evaluation `g ↦ deriv G z` on `upperStripTraces` for `z ∈ verticalStrip 0 1`
@@ -239,6 +239,23 @@ private theorem tendstoLocallyUniformlyOn_upperStripFunction [CompleteSpace X₀
     _ < ε / (‖z₀‖ + 1) * (‖z₀‖ + 1) := mul_lt_mul_of_pos_right hn (by positivity)
     _ = ε := div_mul_cancel₀ ε (by positivity)
 
+variable {C} in
+private theorem sub_lim_eq_smul_of_tendsto {X : Type*} [SeminormedAddCommGroup X]
+    [NormedSpace ℂ X] {G : ℕ → ℂ → C.SumSpace} {L : ℂ → C.SumSpace}
+    (hloc : TendstoLocallyUniformlyOn G L atTop (verticalClosedStrip 0 1))
+    {qSeq : ℕ → offDiag (univ : Set ℝ) →ᵇ X} {qLim : offDiag (univ : Set ℝ) →ᵇ X}
+    (hq : Tendsto qSeq atTop (𝓝 qLim)) (ι : X →L[ℂ] C.SumSpace) (z w : ℂ)
+    (hz : z ∈ verticalClosedStrip 0 1) (hw : w ∈ verticalClosedStrip 0 1) {t s : ℝ} (h : t ≠ s)
+    (hsub : ∀ n, G n z - G n w = (t - s : ℂ) • ι (qSeq n ⟨(t, s), ⟨trivial, trivial, h⟩⟩)) :
+    L z - L w = (t - s : ℂ) • ι (qLim ⟨(t, s), ⟨trivial, trivial, h⟩⟩) := by
+  set p : offDiag (univ : Set ℝ) := ⟨(t, s), ⟨trivial, trivial, h⟩⟩
+  have hp : Tendsto (fun n => qSeq n p) atTop (𝓝 (qLim p)) := by
+    simpa [Function.comp_def] using
+      ((BoundedContinuousFunction.evalCLM ℂ p).continuous.tendsto _).comp hq
+  refine tendsto_nhds_unique ((hloc.tendsto_at hz).sub (hloc.tendsto_at hw)) ?_
+  simp_rw [hsub]
+  exact ((continuous_const_smul (t - s : ℂ)).tendsto _).comp ((ι.continuous.tendsto _).comp hp)
+
 /-- When `X₀` and `X₁` are complete, `upperStripTraces` is a closed subspace of
 `(offDiag univ →ᵇ X₀) × (offDiag univ →ᵇ X₁)`. -/
 theorem isClosed_upperStripTraces [CompleteSpace X₀] [CompleteSpace X₁] :
@@ -249,35 +266,20 @@ theorem isClosed_upperStripTraces [CompleteSpace X₀] [CompleteSpace X₁] :
   have hG (n : ℕ) : C.IsUpperStripFunction (C.upperStripFunction (v n)) (u n) :=
     C.isUpperStripFunction_upperStripFunction (v n)
   have hloc := C.tendstoLocallyUniformlyOn_upperStripFunction (u := v) hlim
-  have hlimz {z : ℂ} (hz : z ∈ verticalClosedStrip 0 1) := hloc.tendsto_at hz
   refine ⟨_, ⟨⟨(hloc.mono (verticalStrip_subset_verticalClosedStrip 0 1)).differentiableOn
       (.of_forall fun n => (hG n).diffContOnCl.differentiableOn) (isOpen_verticalStrip 0 1),
     closure_verticalStrip zero_lt_one ▸ hloc.continuousOn
       (.of_forall fun n => (hG n).diffContOnCl.continuousOn_verticalClosedStrip zero_lt_one)⟩,
     ⟨‖q‖, fun w hw => ?_⟩, fun {t s} h => ?_, fun {t s} h => ?_⟩⟩
-  · have hGw := le_of_tendsto_of_tendsto' (hlimz hw).norm (hlim.norm.mul_const ‖w‖) fun n => by
-      simpa using (hG n).norm_sub_apply_zero_le hw
+  · have hGw := le_of_tendsto_of_tendsto' (hloc.tendsto_at hw).norm (hlim.norm.mul_const ‖w‖)
+      fun n => by simpa using (hG n).norm_sub_apply_zero_le hw
     have hre : |w.re| ≤ 1 := abs_le.2 ⟨by linarith [hw.1], hw.2⟩
     exact hGw.trans (mul_le_mul_of_nonneg_left
       ((norm_le_abs_re_add_abs_im w).trans (add_le_add_left hre _)) (norm_nonneg q))
-  · set p : offDiag (univ : Set ℝ) := ⟨(t, s), ⟨trivial, trivial, h⟩⟩
-    have hp : Tendsto (fun n => (u n).1 p) atTop (𝓝 (q.1 p)) := by
-      simpa [Function.comp_def] using
-        ((BoundedContinuousFunction.evalCLM ℂ p).continuous.tendsto _).comp
-          ((continuous_fst.tendsto q).comp hlim)
-    refine tendsto_nhds_unique ((hlimz (by simp)).sub (hlimz (by simp))) ?_
-    simp_rw [(hG _).sub_mul_I h]
-    exact ((continuous_const_smul (t - s : ℂ)).tendsto _).comp
-      ((C.fstToSum.continuous.tendsto _).comp hp)
-  · set p : offDiag (univ : Set ℝ) := ⟨(t, s), ⟨trivial, trivial, h⟩⟩
-    have hp : Tendsto (fun n => (u n).2 p) atTop (𝓝 (q.2 p)) := by
-      simpa [Function.comp_def] using
-        ((BoundedContinuousFunction.evalCLM ℂ p).continuous.tendsto _).comp
-          ((continuous_snd.tendsto q).comp hlim)
-    refine tendsto_nhds_unique ((hlimz (by simp)).sub (hlimz (by simp))) ?_
-    simp_rw [(hG _).sub_one_add_mul_I h]
-    exact ((continuous_const_smul (t - s : ℂ)).tendsto _).comp
-      ((C.sndToSum.continuous.tendsto _).comp hp)
+  · exact sub_lim_eq_smul_of_tendsto hloc ((continuous_fst.tendsto q).comp hlim) C.fstToSum
+      (t * I) (s * I) (by simp) (by simp) h fun n => (hG n).sub_mul_I h
+  · exact sub_lim_eq_smul_of_tendsto hloc ((continuous_snd.tendsto q).comp hlim) C.sndToSum
+      (1 + t * I) (1 + s * I) (by simp) (by simp) h fun n => (hG n).sub_one_add_mul_I h
 
 instance [CompleteSpace X₀] [CompleteSpace X₁] : CompleteSpace C.upperStripTraces :=
   C.isClosed_upperStripTraces.completeSpace_coe
@@ -433,7 +435,7 @@ theorem norm_le_of_lipschitz (hθ : θ ∈ Ioo 0 1) {u : C.UpperComplexMethodSpa
     (h₁ : ∀ t s : ℝ, G (1 + t * I) - G (1 + s * I) = C.sndToSum (g₁ t - g₁ s))
     (hu : toSum u = deriv G θ) : ‖u‖ ≤ max (K₀ : ℝ) K₁ :=
   (norm_le_of_toSum_eq hθ (IsUpperStripFunction.of_lipschitz hd hgrowth hg₀ hg₁ h₀ h₁) hu).trans
-    (max_le_max (norm_offDiagSlope_le hg₀) (norm_offDiagSlope_le hg₁))
+    (max_le_max hg₀.norm_offDiagSlope_le hg₁.norm_offDiagSlope_le)
 
 end UpperComplexMethodSpace
 

@@ -133,6 +133,10 @@ function that does not need a derivative.
   `‖u r - c‖ ≤ K r ^ β` for `r ≥ 0`, when `a < 0`, respectively when `0 < a` and `b < a / 2`.
 * `TauCeti.norm_sub_le_three_mul_rpow_of_le_sub`: `‖x - y‖ ≤ 3 c (t - t') ^ β` from
   `‖x‖ ≤ c t ^ β`, `‖y‖ ≤ c t' ^ β` and `t' ≤ t - t'`, for `0 ≤ β ≤ 1`.
+* `TauCeti.rpow_mul_rpow_le_max`, `Prod.norm_fst_rpow_mul_norm_snd_rpow_le`, and
+  `TauCeti.le_rpow_mul_rpow_mul_of_forall_pos`: `a ^ (1 - x) * b ^ x ≤ max a b` on `[0, 1]`, its
+  product-seminorm corollary `‖p.1‖ ^ (1 - x) * ‖p.2‖ ^ x ≤ ‖p‖`, and right-continuity at `ε = 0`
+  of `(M₀ + ε) ^ (1 - θ) * (M₁ + ε) ^ θ * C` for `θ ∈ [0, 1]`.
 -/
 
 public section
@@ -644,4 +648,36 @@ theorem norm_sub_le_three_mul_rpow_of_le_sub {V : Type*} [SeminormedAddCommGroup
     _ ≤ c * (2 * (t - t') ^ β) + c * (t - t') ^ β := by gcongr
     _ = 3 * c * (t - t') ^ β := by ring
 
+/-- For `0 ≤ a`, `0 ≤ b`, and `x ∈ [0, 1]`, the geometric interpolant `a ^ (1 - x) * b ^ x` is at
+most `max a b`. -/
+theorem rpow_mul_rpow_le_max {a b x : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) (hx : x ∈ Set.Icc (0 : ℝ) 1) :
+    a ^ (1 - x) * b ^ x ≤ max a b := by
+  calc a ^ (1 - x) * b ^ x
+      ≤ max a b ^ (1 - x) * max a b ^ x :=
+        mul_le_mul (Real.rpow_le_rpow ha (le_max_left a b) (sub_nonneg.2 hx.2))
+          (Real.rpow_le_rpow hb (le_max_right a b) hx.1)
+          (Real.rpow_nonneg hb _) (Real.rpow_nonneg (ha.trans (le_max_left a b)) _)
+    _ = max a b := by
+        rw [← Real.rpow_add' (ha.trans (le_max_left a b)) (by simp), sub_add_cancel, Real.rpow_one]
+
+/-- Continuity from the right of `(M₀ + ε) ^ (1 - θ) * (M₁ + ε) ^ θ * C` at `ε = 0` for
+`θ ∈ [0, 1]`, used to pass Riesz–Thorin bounds from positive endpoint constants to nonnegative
+ones. -/
+theorem le_rpow_mul_rpow_mul_of_forall_pos {A M₀ M₁ θ C : ℝ} (hθ : θ ∈ Set.Icc (0 : ℝ) 1)
+    (hle : ∀ ε > 0, A ≤ (M₀ + ε) ^ (1 - θ) * (M₁ + ε) ^ θ * C) :
+    A ≤ M₀ ^ (1 - θ) * M₁ ^ θ * C := by
+  have hcont : Continuous fun ε : ℝ ↦ (M₀ + ε) ^ (1 - θ) * (M₁ + ε) ^ θ * C :=
+    (((continuous_const.add continuous_id).rpow_const fun _ ↦ Or.inr (sub_nonneg.2 hθ.2)).mul
+      ((continuous_const.add continuous_id).rpow_const fun _ ↦ Or.inr hθ.1)).mul continuous_const
+  have hlim := (hcont.tendsto 0).mono_left (nhdsWithin_le_nhds (s := Set.Ioi 0))
+  simp only [add_zero] at hlim
+  exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall hle)
+
 end TauCeti
+
+/-- For `p` in a product of seminormed groups and `x ∈ [0, 1]`,
+`‖p.1‖ ^ (1 - x) * ‖p.2‖ ^ x ≤ ‖p‖`. -/
+theorem Prod.norm_fst_rpow_mul_norm_snd_rpow_le {E F : Type*} [SeminormedAddGroup E]
+    [SeminormedAddGroup F] (p : E × F) {x : ℝ} (hx : x ∈ Set.Icc (0 : ℝ) 1) :
+    ‖p.1‖ ^ (1 - x) * ‖p.2‖ ^ x ≤ ‖p‖ :=
+  TauCeti.rpow_mul_rpow_le_max (norm_nonneg p.1) (norm_nonneg p.2) hx
