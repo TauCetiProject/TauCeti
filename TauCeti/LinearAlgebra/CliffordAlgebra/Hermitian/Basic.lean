@@ -27,12 +27,15 @@ by `‖v‖`.
 ## Main results
 
 * `CliffordAlgebra.map_ι_mul_map_ι`, `CliffordAlgebra.map_ι_apply_map_ι_apply`:
-  `c(v) c(v) = Q v`, as operators and pointwise.
+  `c(v) c(v) = Q v`, as operators and pointwise, and `CliffordAlgebra.map_ι_mul_map_ι_add_swap`,
+  `CliffordAlgebra.map_ι_apply_map_ι_apply_add_swap`: the polarized relation
+  `c(v) c(w) + c(w) c(v) = polar Q v w`.
 * `CliffordAlgebra.map_ι_injective`: `c(v)` is injective when `Q v ≠ 0`.
 * `CliffordAlgebra.map_ι_apply_left_injective`: `v ↦ c(v) ψ` is injective for `ψ ≠ 0` and an
   anisotropic `Q`.
-* `CliffordAlgebra.adjoint_map_eq_map_star`: `(ρ a)* = ρ (star a)` on a Hermitian Clifford
-  module.
+* `CliffordAlgebra.sesqForm_map_eq_map_star`, `CliffordAlgebra.adjoint_map_eq_map_star`:
+  `H (ρ a x) y = H x (ρ (star a) y)` and `(ρ a)* = ρ (star a)` when the generators act
+  skew-adjointly.
 * `CliffordAlgebra.norm_map_ι_apply_sq`: `‖c(v) ψ‖² = -Q v ‖ψ‖²` on a Hermitian Clifford module,
   and `CliffordAlgebra.norm_map_ι_apply`: `‖c(v) ψ‖ = ‖v‖ ‖ψ‖` when `Q v = -‖v‖²`.
 * `CliffordAlgebra.re_inner_map_ι_apply_map_ι_apply`: its polarization,
@@ -84,6 +87,46 @@ theorem map_ι_apply_left_injective (hQ : Q.Anisotropic) {ψ : W} (hψ : ψ ≠ 
   refine hψ (map_ι_injective ρ hne ?_)
   simp only [map_sub, LinearMap.sub_apply, map_zero]
   exact sub_eq_zero.2 h
+
+/-- The polarized Clifford relation in a module: `c(v) c(w) + c(w) c(v) = polar Q v w`. -/
+theorem map_ι_mul_map_ι_add_swap (v w : M) :
+    ρ (ι Q v) * ρ (ι Q w) + ρ (ι Q w) * ρ (ι Q v) =
+      ((QuadraticMap.polar Q v w : ℝ) : ℂ) • 1 := by
+  rw [← map_mul ρ, ← map_mul ρ, ← map_add ρ, ι_mul_ι_add_swap, AlgHom.commutes,
+    Algebra.algebraMap_eq_smul_one, Complex.coe_smul]
+
+/-- The polarized Clifford relation applied to a vector of the module:
+`c(v) (c(w) ψ) + c(w) (c(v) ψ) = polar Q v w ψ`. -/
+theorem map_ι_apply_map_ι_apply_add_swap (v w : M) (ψ : W) :
+    ρ (ι Q v) (ρ (ι Q w) ψ) + ρ (ι Q w) (ρ (ι Q v) ψ) =
+      ((QuadraticMap.polar Q v w : ℝ) : ℂ) • ψ := by
+  rw [← mul_apply_eq_comp, ← mul_apply_eq_comp, ← LinearMap.add_apply, map_ι_mul_map_ι_add_swap,
+    LinearMap.smul_apply, one_apply_eq_self]
+
+/-- Orthogonal vectors anticommute in a Clifford module: `c(v) c(w) = -c(w) c(v)`. -/
+theorem map_ι_mul_map_ι_of_isOrtho {v w : M} (h : Q.IsOrtho v w) :
+    ρ (ι Q v) * ρ (ι Q w) = -(ρ (ι Q w) * ρ (ι Q v)) := by
+  rw [← map_mul, ι_mul_ι_comm_of_isOrtho h, map_neg, map_mul]
+
+/-- Pointwise anticommutation of orthogonal vectors in a Clifford module:
+`c(v) (c(w) ψ) = -c(w) (c(v) ψ)`. -/
+theorem map_ι_apply_map_ι_apply_of_isOrtho {v w : M} (h : Q.IsOrtho v w) (ψ : W) :
+    ρ (ι Q v) (ρ (ι Q w) ψ) = -ρ (ι Q w) (ρ (ι Q v) ψ) := by
+  rw [← mul_apply_eq_comp, map_ι_mul_map_ι_of_isOrtho ρ h, LinearMap.neg_apply, mul_apply_eq_comp]
+
+/-- A sesquilinear form for which the generators act skew-adjointly satisfies
+`H (ρ a x) y = H x (ρ (star a) y)` for every Clifford element `a`. Neither positivity of `H` nor
+finite-dimensionality of `W` is required. -/
+theorem sesqForm_map_eq_map_star (H : W →ₗ⋆[ℂ] W →ₗ[ℂ] ℂ)
+    (hH : ∀ (v : M) (x y : W), H (ρ (ι Q v) x) y = -H x (ρ (ι Q v) y))
+    (a : CliffordAlgebra Q) (x y : W) :
+    H (ρ a x) y = H x (ρ (star a) y) := by
+  induction a using CliffordAlgebra.induction generalizing x y with
+  | algebraMap r =>
+    simp [AlgHom.commutes, Module.algebraMap_end_eq_smul_id, ← Complex.coe_smul]
+  | ι v => simp [hH]
+  | add a b ha hb => simp only [map_add, LinearMap.add_apply, star_add, ha, hb]
+  | mul a b ha hb => simp only [map_mul, mul_apply_eq_comp, star_mul, ha, hb]
 
 end Module
 
