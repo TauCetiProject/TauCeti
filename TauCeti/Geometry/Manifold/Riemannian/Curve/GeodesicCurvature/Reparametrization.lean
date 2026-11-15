@@ -22,7 +22,7 @@ This statement holds in any dimension and also at points where the velocity of `
 On an oriented surface, an orientation-preserving regular reparametrization preserves signed
 geodesic curvature relative to the oriented unit normal, while an orientation-reversing one
 negates it. In particular, the affine parameter reflection `r ↦ γ (d - r)` negates this curvature
-at each `C²` point of the original curve.
+without any regularity assumption on the original curve.
 
 ## Main results
 
@@ -113,13 +113,14 @@ theorem geodesicCurvature_orientedUnitNormal_comp_of_deriv_neg (o : Orientation 
   simp [hφ₀]
 
 /-- Reflecting the parameter via `r ↦ γ (d - r)` negates signed geodesic curvature relative to
-the oriented unit normal at each `C²` point `d - t` of the original curve. -/
+the oriented unit normal, without any regularity assumption on the original curve. -/
 theorem geodesicCurvature_orientedUnitNormal_comp_const_sub
-    (o : Orientation I M (Fin 2)) (d t : ℝ)
-    (hγ : ContMDiffAt 𝓘(ℝ) I 2 γ (d - t)) :
+    (o : Orientation I M (Fin 2)) (γ : ℝ → M) (d t : ℝ) :
     geodesicCurvature (fun r ↦ γ (d - r))
       (orientedUnitNormal o (fun r ↦ γ (d - r))) t =
         -geodesicCurvature γ (orientedUnitNormal o γ) (d - t) := by
-  exact geodesicCurvature_orientedUnitNormal_comp_of_deriv_neg o hγ (by fun_prop) (by simp)
+  rw [geodesicCurvature_def, geodesicCurvature_def, acceleration_comp_const_sub,
+    curveVelocity_comp_const_sub, orientedUnitNormal_comp_const_sub,
+    norm_neg, inner_neg_right, neg_div]
 
 end TauCeti.Manifold

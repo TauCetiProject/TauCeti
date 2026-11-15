@@ -208,6 +208,17 @@ theorem acceleration_comp {φ : 𝕜 → 𝕜} {t : 𝕜}
         (hasMFDerivAt_curveVelocity hγ.self_of_nhds)).differentiableAt hV,
     ← acceleration_def, smul_smul, ← sq]
 
+/-- Reflecting the parameter preserves covariant acceleration, without regularity assumptions
+on the curve. -/
+theorem acceleration_comp_const_sub (d t : 𝕜) :
+    acceleration cov (fun r ↦ γ (d - r)) t = acceleration cov γ (d - t) := by
+  have hv : curveVelocity I (fun r ↦ γ (d - r)) =
+      fun r ↦ (-1 : 𝕜) • curveVelocity I γ (d - r) := by
+    funext r
+    simpa only [neg_smul, one_smul] using curveVelocity_comp_const_sub γ d r
+  rw [acceleration_def, hv, alongCurve_const_smul,
+    alongCurve_comp_const_sub, neg_smul, one_smul, neg_neg, acceleration_def]
+
 end Basic
 
 section Chart

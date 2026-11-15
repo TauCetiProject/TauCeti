@@ -117,17 +117,7 @@ theorem orientedUnitNormal_comp (o : Orientation I M (Fin 2)) {γ : ℝ → M} {
 theorem orientedUnitNormal_comp_const_sub (o : Orientation I M (Fin 2)) (γ : ℝ → M) (d t : ℝ) :
     orientedUnitNormal o (fun r ↦ γ (d - r)) t = -orientedUnitNormal o γ (d - t) := by
   let := o.fact_finrank_tangentSpace (γ (d - t))
-  have hv : curveVelocity I (fun r ↦ γ (d - r)) t = -curveVelocity I γ (d - t) := by
-    by_cases hγ : MDifferentiableAt 𝓘(ℝ) I γ (d - t)
-    · simpa only [Function.comp_def, id_eq, neg_smul, one_smul] using
-        curveVelocity_comp ((hasDerivAt_id t).const_sub d) hγ
-    · have hγ' : ¬MDifferentiableAt 𝓘(ℝ) I (fun r ↦ γ (d - r)) t := fun h ↦ hγ <| by
-        simpa only [Function.comp_def, sub_sub_cancel, id_eq] using h.comp_of_eq (d - t)
-          (mdifferentiableAt_iff_differentiableAt.2 (differentiableAt_id.const_sub d))
-          (sub_sub_cancel d t)
-      rw [curveVelocity_apply, curveVelocity_apply, mfderiv_zero_of_not_mdifferentiableAt hγ,
-        mfderiv_zero_of_not_mdifferentiableAt hγ']
-      exact neg_zero.symm
-  rw [orientedUnitNormal_apply, orientedUnitNormal_apply, hv, NormedSpace.normalize_neg, map_neg]
+  rw [orientedUnitNormal_apply, orientedUnitNormal_apply, curveVelocity_comp_const_sub,
+    NormedSpace.normalize_neg, map_neg]
 
 end TauCeti.Manifold
