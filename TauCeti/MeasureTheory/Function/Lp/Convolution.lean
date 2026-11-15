@@ -41,10 +41,11 @@ convolution semigroup rests:
 * `TauCeti.convolutionLp_apply`: the defining `Lᵖ`-valued Bochner integral.
 * `TauCeti.norm_convolutionLp_le`: Young's inequality `‖k ⋆ f‖_p ≤ ‖k‖₁ ‖f‖_p`.
 * `TauCeti.convolutionLp_convolution`: `(k₁ ⋆ k₂) ⋆ f = k₁ ⋆ (k₂ ⋆ f)`.
-* `TauCeti.convolutionLp_add`, `TauCeti.convolutionLp_smul`, `TauCeti.convolutionLp_sub`: the
-  operator is linear in the integrable kernel, so Young's inequality also bounds the distance
+* `TauCeti.convolutionLp_zero`, `TauCeti.convolutionLp_add`, `TauCeti.convolutionLp_smul`,
+  `TauCeti.convolutionLp_neg`, `TauCeti.convolutionLp_sub`: the operator is linear in the
+  integrable kernel, so Young's inequality also bounds the distance
   between two convolution operators by the `L¹` distance of their kernels.
-* `TauCeti.convolutionLp_comp_comm`: convolution operators with integrable kernels commute.
+* `TauCeti.convolutionLp_comp_comm`: convolution operators commute.
 * `TauCeti.convolutionLp_ae_eq_convolution`: the operator is represented almost everywhere by the
   classical pointwise convolution `(k ⋆ f)(x) = ∫ y, k(y) • f(x - y) dμ(y)`;
   `TauCeti.convolutionLp_ae_eq_convolution_coeFn` is the same for an element of `Lᵖ`.
@@ -140,12 +141,19 @@ theorem convolutionLp_add (hp : p ≠ ∞) {k₁ k₂ : E → ℝ} (hk₁ : Inte
       (integrable_smul_translateLp hp hk₂ f)]
   simp only [Pi.add_apply, add_smul]
 
+/-- Convolution on `Lᵖ` with the zero kernel is the zero operator. -/
+@[simp]
+theorem convolutionLp_zero (hp : p ≠ ∞) : convolutionLp (F := F) hp (0 : E → ℝ) μ = 0 := by
+  ext1 f
+  simp [convolutionLp_apply hp (integrable_zero E ℝ μ)]
+
 /-- Convolution on `Lᵖ` is homogeneous in the kernel. -/
+@[simp]
 theorem convolutionLp_smul (hp : p ≠ ∞) (c : ℝ) (k : E → ℝ) :
     convolutionLp (F := F) hp (c • k) μ = c • convolutionLp hp k μ := by
   rcases eq_or_ne c 0 with rfl | hc
   · ext1 f
-    simp [convolutionLp_apply hp (integrable_zero E ℝ μ)]
+    simp
   by_cases hk : Integrable k μ
   · ext1 f
     rw [smul_apply, convolutionLp_apply hp (hk.smul c), convolutionLp_apply hp hk,
@@ -155,15 +163,19 @@ theorem convolutionLp_smul (hp : p ≠ ∞) (c : ℝ) (k : E → ℝ) :
     rw [convolutionLp_of_not_integrable hp hk, convolutionLp_of_not_integrable hp hck]
     exact (smul_zero (A := Lp F p μ →L[ℝ] Lp F p μ) c).symm
 
+/-- Convolution on `Lᵖ` with the negated kernel is the negated operator. -/
+@[simp]
+theorem convolutionLp_neg (hp : p ≠ ∞) (k : E → ℝ) :
+    convolutionLp (F := F) hp (-k) μ = -convolutionLp hp k μ := by
+  rw [← neg_one_smul ℝ k, convolutionLp_smul]
+  ext1 f
+  simp
+
 /-- Convolution on `Lᵖ` turns differences of integrable kernels into differences of operators. -/
 theorem convolutionLp_sub (hp : p ≠ ∞) {k₁ k₂ : E → ℝ} (hk₁ : Integrable k₁ μ)
     (hk₂ : Integrable k₂ μ) :
     convolutionLp (F := F) hp (k₁ - k₂) μ = convolutionLp hp k₁ μ - convolutionLp hp k₂ μ := by
-  ext1 f
-  rw [sub_apply, convolutionLp_apply hp (hk₁.sub hk₂), convolutionLp_apply hp hk₁,
-    convolutionLp_apply hp hk₂, ← integral_sub (integrable_smul_translateLp hp hk₁ f)
-      (integrable_smul_translateLp hp hk₂ f)]
-  simp only [Pi.sub_apply, sub_smul]
+  rw [sub_eq_add_neg, convolutionLp_add hp hk₁ hk₂.neg, convolutionLp_neg, ← sub_eq_add_neg]
 
 /-- **Associativity of convolution on `Lᵖ`.** For integrable kernels `k₁` and `k₂`, convolving
 an `Lᵖ` function with `k₁ ⋆ k₂` is convolving it with `k₂` and then with `k₁`. -/
@@ -201,11 +213,17 @@ theorem convolutionLp_convolution [CompleteSpace F] (hp : p ≠ ∞) {k₁ k₂ 
         rw [add_sub_cancel_right, ← LinearIsometryEquiv.trans_apply, ← Measure.translateLp_add,
           neg_add, add_comm (-z) (-y)]
 
-/-- Convolution operators with integrable kernels commute: `k₁ ⋆ (k₂ ⋆ f) = k₂ ⋆ (k₁ ⋆ f)`. -/
-theorem convolutionLp_comp_comm [CompleteSpace F] (hp : p ≠ ∞) {k₁ k₂ : E → ℝ}
-    (hk₁ : Integrable k₁ μ) (hk₂ : Integrable k₂ μ) :
+/-- Convolution operators commute: `k₁ ⋆ (k₂ ⋆ f) = k₂ ⋆ (k₁ ⋆ f)`. Both sides vanish when
+either kernel is not integrable. -/
+theorem convolutionLp_comp_comm [CompleteSpace F] (hp : p ≠ ∞) (k₁ k₂ : E → ℝ) :
     (convolutionLp (F := F) hp k₁ μ).comp (convolutionLp hp k₂ μ) =
       (convolutionLp hp k₂ μ).comp (convolutionLp hp k₁ μ) := by
+  by_cases hk₁ : Integrable k₁ μ
+  swap
+  · simp [convolutionLp_of_not_integrable hp hk₁]
+  by_cases hk₂ : Integrable k₂ μ
+  swap
+  · simp [convolutionLp_of_not_integrable hp hk₂]
   have hL : (lsmul ℝ ℝ : ℝ →L[ℝ] ℝ →L[ℝ] ℝ).flip = lsmul ℝ ℝ := by
     ext
     simp

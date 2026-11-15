@@ -27,8 +27,13 @@ has to control the set where `f` is positive, where `c · f ≥ 0` makes `f` sub
 
 The weak maximum principle is the drift-free case (`b = 0`, `β = 0`) of
 `TauCeti.le_of_mul_le_laplacian_add_fderiv_le_frontier` of
-`TauCeti.Analysis.InnerProductSpace.Laplacian.LowerOrderMaximumPrinciple`; the remaining statements
-are deduced from it.
+`TauCeti.Analysis.InnerProductSpace.Laplacian.LowerOrderMaximumPrinciple`; the remaining
+statements on compact sets are deduced from it.
+
+On the whole space `E` there is no frontier. For a **positive** constant `c`, a bound on the
+function replaces the boundary condition: a `C²` subsolution of `-Δ + c` that is bounded above is
+nonpositive, and a supersolution that is bounded below is nonnegative. These statements are proved
+directly, by the second-derivative test at a maximum of the perturbation `f - δ ‖·‖²`.
 
 ## Main declarations
 
@@ -47,6 +52,8 @@ are deduced from it.
   values agree on `K`.
 * `TauCeti.nonpos_of_mul_le_laplacian_of_bddAbove`: **maximum principle on the whole space for
   `-Δ + c`, `c > 0`**. A `C²` subsolution on all of `E` that is bounded above is nonpositive.
+* `TauCeti.nonneg_of_laplacian_le_mul_of_bddBelow`: the dual minimum principle on the whole space:
+  a `C²` supersolution of `-Δ + c`, `c > 0`, that is bounded below is nonnegative.
 * `TauCeti.eq_zero_of_laplacian_eq_mul_of_isBounded`: a bounded `C²` solution of `Δ f = c f` on
   all of `E`, `c > 0`, vanishes.
 -/
@@ -176,7 +183,7 @@ end Nontrivial
 
 /-! ### The whole space
 
-On all of `E` there is no frontier. For a positive constant `c` an upper bound replaces the
+On all of `E` there is no frontier. For a positive constant `c` a one-sided bound replaces the
 boundary condition: the perturbation `f - δ ‖·‖²` attains its maximum, where the second-derivative
 test bounds `c f` by `2 (dim E) δ`. -/
 
@@ -218,6 +225,20 @@ theorem nonpos_of_mul_le_laplacian_of_bddAbove {c : ℝ} (hc : 0 < c) {f : E →
   have hcont : Continuous fun δ : ℝ => δ * (2 * n / c + ‖x‖ ^ 2) := by fun_prop
   simpa using (hcont.tendsto 0).mono_left nhdsWithin_le_nhds
 
+/-- **Minimum principle on the whole space for `-Δ + c`, `c > 0`.** A `C²` function on all of `E`
+that is bounded below and a supersolution of `-Δ + c` (`Δ f ≤ c f`) for a positive constant `c` is
+nonnegative. -/
+theorem nonneg_of_laplacian_le_mul_of_bddBelow {c : ℝ} (hc : 0 < c) {f : E → ℝ}
+    (hf : ContDiff ℝ 2 f) (hbdd : BddBelow (Set.range f)) (hsup : ∀ x, Δ f x ≤ c * f x) (x : E) :
+    0 ≤ f x := by
+  have hneg : BddAbove (Set.range (-f)) := by
+    obtain ⟨m, hm⟩ := hbdd
+    exact ⟨-m, by rintro _ ⟨y, rfl⟩; simpa using hm ⟨y, rfl⟩⟩
+  have := nonpos_of_mul_le_laplacian_of_bddAbove (f := -f) hc hf.neg hneg (fun y => ?_) x
+  · simpa using this
+  · rw [laplacian_neg, Pi.neg_apply, Pi.neg_apply, mul_neg]
+    exact neg_le_neg (hsup y)
+
 /-- **Liouville theorem for `-Δ + c`, `c > 0`.** A bounded `C²` solution of `Δ f = c f` on all
 of `E`, for a positive constant `c`, vanishes. -/
 theorem eq_zero_of_laplacian_eq_mul_of_isBounded {c : ℝ} (hc : 0 < c) {f : E → ℝ}
@@ -225,14 +246,8 @@ theorem eq_zero_of_laplacian_eq_mul_of_isBounded {c : ℝ} (hc : 0 < c) {f : E �
     (hsol : ∀ x, Δ f x = c * f x) : f = 0 := by
   rw [isBounded_iff_bddBelow_bddAbove] at hbdd
   ext x
-  refine le_antisymm (nonpos_of_mul_le_laplacian_of_bddAbove hc hf hbdd.2 (fun y => (hsol y).ge) x)
-    ?_
-  have hneg : BddAbove (Set.range (-f)) := by
-    obtain ⟨m, hm⟩ := hbdd.1
-    exact ⟨-m, by rintro _ ⟨y, rfl⟩; simpa using hm ⟨y, rfl⟩⟩
-  have := nonpos_of_mul_le_laplacian_of_bddAbove (f := -f) hc hf.neg hneg (fun y => ?_) x
-  · simpa using this
-  · rw [laplacian_neg, Pi.neg_apply, Pi.neg_apply, hsol y, mul_neg]
+  exact le_antisymm (nonpos_of_mul_le_laplacian_of_bddAbove hc hf hbdd.2 (fun y => (hsol y).ge) x)
+    (nonneg_of_laplacian_le_mul_of_bddBelow hc hf hbdd.1 (fun y => (hsol y).le) x)
 
 end TauCeti
 

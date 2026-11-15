@@ -13,15 +13,15 @@ public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
 import Mathlib.Analysis.Calculus.ContDiff.Convolution
 import Mathlib.Analysis.Normed.Module.Dual
 import Mathlib.MeasureTheory.Measure.Haar.Unique
-import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.Convolution.Basic
+import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 import TauCeti.Analysis.Distribution.TestFunction.Lp
 import TauCeti.Analysis.Distribution.TestFunction.Translation
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Convolution
 import TauCeti.Analysis.InnerProductSpace.Laplacian.ZerothOrderMaximumPrinciple
-import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
+import TauCeti.LinearAlgebra.LinearPMap.SmulSub
 
 /-!
 # The Laplacian on `Lᵖ` in the sense of distributions
@@ -178,40 +178,46 @@ private theorem integral_smul_eq_zero_of_laplacian_eq_smul {c : ℝ} (hc : 0 < c
     (φ : 𝓓((⊤ : Opens E), ℝ)) : ∫ x, φ x • v x = 0 := by
   have hvl : LocallyIntegrable v volume := hv.locallyIntegrable Fact.out
   -- Mollify with the reflected test function `ρ = φ(-·)`.
-  set ρ : E → ℝ := fun z ↦ φ (-z) with hρ_def
-  have hρ : ContDiff ℝ (⊤ : ℕ∞) ρ := φ.contDiff_comp_neg
-  have hρ2 : ContDiff ℝ 2 ρ := hρ.of_le (WithTop.coe_le_coe.2 le_top)
-  have hρc : HasCompactSupport ρ := φ.hasCompactSupport_comp_neg
+  let ρ : 𝓓((⊤ : Opens E), ℝ) :=
+    (ContinuousLinearEquiv.neg ℝ).transportTestFunction (fun _ _ ↦ Opens.mem_top _) φ
+  have hρ_apply : (ρ : E → ℝ) = fun z ↦ φ (-z) := funext fun z ↦
+    (ContinuousLinearEquiv.transportTestFunction_apply _ _ φ z).trans <| by
+      rw [ContinuousLinearEquiv.symm_neg, ContinuousLinearEquiv.neg_apply]
+  have hρ2 : ContDiff ℝ 2 ρ := ρ.contDiff.of_le (WithTop.coe_le_coe.2 le_top)
+  have hΔρ : Δ (ρ : E → ℝ) = fun z ↦ Δ (φ : E → ℝ) (-z) := by
+    simpa only [hρ_apply, zero_sub] using laplacian_comp_sub_left (φ : E → ℝ) 0
   set u : E → ℝ := ρ ⋆[lsmul ℝ ℝ, volume] v with hu_def
   have hu : ContDiff ℝ 2 u :=
-    hρc.contDiff_convolution_left (lsmul ℝ ℝ) hρ2 hvl
-  -- `Δu(y)` is the pairing of `v` with the Laplacian of the test function `t ↦ ρ(y - t)`.
+    ρ.hasCompactSupport.contDiff_convolution_left (lsmul ℝ ℝ) hρ2 hvl
+  -- `Δu(y)` is the pairing of `v` with the Laplacian of the translate `ψ = φ(· - y)`, which is
+  -- the test function `t ↦ ρ(y - t)`.
   have hΔu : ∀ y, Δ u y = c * u y := by
     intro y
-    set g : E → ℝ := fun t ↦ ρ (y - t)
-    have hgd : ContDiff ℝ (⊤ : ℕ∞) g := hρ.comp (contDiff_const.sub contDiff_id)
-    have hgc : HasCompactSupport g := by
-      simpa [Function.comp_def, g, ← sub_eq_add_neg] using
-        hρc.comp_homeomorph ((Homeomorph.neg E).trans (Homeomorph.addLeft y))
-    let ψ : 𝓓((⊤ : Opens E), ℝ) := ⟨g, hgd, hgc, by simp⟩
-    have hΔg : ∀ t, Δ g t = Δ ρ (y - t) := fun t ↦ congrFun (laplacian_comp_sub_left ρ y) t
-    have hlap : Δ u y = ∫ t, Δ ρ (y - t) • v t := by
-      rw [hu_def, ← convolution_flip, HasCompactSupport.laplacian_convolution_right _ hρc hvl hρ2,
-        convolution_def]
+    let ψ : 𝓓((⊤ : Opens E), ℝ) := translateTestFunction (h := y) (fun _ _ ↦ Opens.mem_top _) φ
+    have hψ_apply : (ψ : E → ℝ) = fun t ↦ φ (t - y) :=
+      funext (translateTestFunction_apply _ φ)
+    have hΔψ : Δ (ψ : E → ℝ) = fun t ↦ Δ (φ : E → ℝ) (t - y) := by
+      simpa only [hψ_apply, ← sub_eq_add_neg] using laplacian_comp_add_right (φ : E → ℝ) (-y)
+    have hlap : Δ u y = ∫ t, Δ (φ : E → ℝ) (t - y) • v t := by
+      rw [hu_def, ← convolution_flip,
+        HasCompactSupport.laplacian_convolution_right _ ρ.hasCompactSupport hvl hρ2,
+        convolution_def, hΔρ]
       simp [mul_comm]
     have hψ := h ψ
-    simp only [ψ, TestFunction.coe_mk, hΔg] at hψ
+    rw [hΔψ, hψ_apply] at hψ
     rw [hlap, hψ, hu_def, convolution_lsmul_swap, ← smul_eq_mul, ← integral_smul]
-    exact integral_congr_ae (ae_of_all _ fun t ↦ by simp only [g, smul_eq_mul]; ring)
+    exact integral_congr_ae (ae_of_all _ fun t ↦ by
+      simp only [hρ_apply, neg_sub, smul_eq_mul]
+      ring)
   -- `u` is bounded since `ρ` lies in the Hölder-conjugate space `L^{p'}`.
   have : (ENNReal.conjExponent p).HolderConjugate p :=
     (ENNReal.HolderConjugate.conjExponent Fact.out).symm
   have hub : Bornology.IsBounded (range u) :=
     isBounded_range_convolution_of_memLp (p := ENNReal.conjExponent p) (lsmul ℝ ℝ)
-      (hρ.continuous.memLp_of_hasCompactSupport hρc) hv
+      (ρ.continuous.memLp_of_hasCompactSupport ρ.hasCompactSupport) hv
   -- The maximum principle makes `u` vanish, and `u 0` is the pairing of `v` with `φ`.
   have hu0 := congrFun (eq_zero_of_laplacian_eq_mul_of_isBounded hc hu hub hΔu) 0
-  rwa [hu_def, hρ_def, convolution_lsmul_comp_neg_apply_zero, Pi.zero_apply] at hu0
+  rwa [hu_def, hρ_apply, convolution_lsmul_comp_neg_apply_zero, Pi.zero_apply] at hu0
 
 /-- **An `Lᵖ` solution of `Δf = c f`, `c > 0`, vanishes.** If the distributional Laplacian of
 `f ∈ Lᵖ` is `c f` for a positive constant `c`, then `f = 0`. -/
@@ -239,15 +245,11 @@ theorem eq_zero_of_mem_graph_weakLaplacianLp_smul {c : ℝ} (hc : 0 < c)
 theorem smul_sub_weakLaplacianLp_injective {c : ℝ} (hc : 0 < c) :
     Function.Injective fun f : (weakLaplacianLp E F p).domain ↦
       c • (f : Lp F p (volume : Measure E)) - weakLaplacianLp E F p f := by
-  intro f₁ f₂ h12
-  have hmem := (weakLaplacianLp E F p).mem_graph (f₁ - f₂)
-  rw [LinearPMap.map_sub, Submodule.coe_sub] at hmem
-  have heq : weakLaplacianLp E F p f₁ - weakLaplacianLp E F p f₂ =
-      c • ((f₁ : Lp F p (volume : Measure E)) - f₂) := by
-    rw [smul_sub]
-    simp only at h12
-    linear_combination (norm := module) -h12
-  rw [heq] at hmem
-  exact Subtype.ext (sub_eq_zero.1 (eq_zero_of_mem_graph_weakLaplacianLp_smul hc hmem))
+  simp_rw [← LinearPMap.smulSub_apply]
+  refine (injective_iff_map_eq_zero ((weakLaplacianLp E F p).smulSub c)).2 fun f hf ↦ ?_
+  rw [LinearPMap.smulSub_apply, sub_eq_zero] at hf
+  have hmem := (weakLaplacianLp E F p).mem_graph f
+  rw [← hf] at hmem
+  exact Subtype.ext (eq_zero_of_mem_graph_weakLaplacianLp_smul hc hmem)
 
 end TauCeti

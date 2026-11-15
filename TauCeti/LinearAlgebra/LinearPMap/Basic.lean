@@ -54,11 +54,13 @@ theorem smul_neg {M : Type*} [Monoid M] [DistribMulAction M F] [SMulCommClass S 
 /-- **An operator has no proper extension on which a shift stays injective.** If `A ≤ B`,
 `lambda • I - A` maps `D(A)` onto `E` and `lambda • I - B` is injective on `D(B)`, then `A = B`.
 
-A vector `y ∈ D(B)` has `lambda • y - B y = lambda • x - A x` for some `x ∈ D(A)`, by
-surjectivity for `A`; injectivity for `B` then forces `y = x`, so `D(B) ⊆ D(A)`. -/
+Unlike `LinearPMap.eq_of_le_of_mem_resolventSet`, no continuity or bounded inverse is required,
+so it applies when injectivity of `lambda • I - B` is all that is known about the extension. -/
 theorem eq_of_le_of_smul_sub_surjective_of_injective {A B : E →ₗ.[R] E} {lambda : R}
     (hAB : A ≤ B) (hA : Function.Surjective fun x : A.domain => lambda • (x : E) - A x)
     (hB : Function.Injective fun x : B.domain => lambda • (x : E) - B x) : A = B := by
+  -- A vector `y ∈ D(B)` has `lambda • y - B y = lambda • x - A x` for some `x ∈ D(A)`;
+  -- injectivity for `B` then forces `y = x`, so `D(B) ⊆ D(A)`.
   refine eq_of_le_of_domain_eq hAB (le_antisymm hAB.1 fun y hy => ?_)
   obtain ⟨x, hx⟩ := hA (lambda • y - B ⟨y, hy⟩)
   obtain ⟨x', hx'coe, hx'val⟩ := exists_of_le hAB x

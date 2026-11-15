@@ -334,18 +334,6 @@ theorem laplacian_comp_add_right (f : E → F) (a : E) :
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [iteratedFDeriv_comp_add_right']
 
-/-- **Invariance of the Laplacian under point reflections.** Reflecting the argument through a
-point, `y ↦ a - y`, commutes with the Laplacian:
-`Δ (fun y ↦ f (a - y)) = fun y ↦ (Δ f) (a - y)`. No differentiability hypothesis is needed. -/
-theorem laplacian_comp_sub_left (f : E → F) (a : E) :
-    Δ (fun y ↦ f (a - y)) = fun y ↦ (Δ f) (a - y) := by
-  have hcomp : (fun y ↦ f (a - y)) = (fun s ↦ f (s + a)) ∘ LinearIsometryEquiv.neg ℝ (E := E) := by
-    ext y
-    simp [neg_add_eq_sub]
-  rw [hcomp, laplacian_comp_linearIsometryEquiv_right, laplacian_comp_add_right]
-  ext y
-  simp [neg_add_eq_sub]
-
 /-- **Geometric invariance of the Laplacian under affine isometries.** For an affine isometry
 equivalence `e`, the Laplacian commutes with right composition by `e`:
 `Δ (f ∘ e) = (Δ f) ∘ e`. No differentiability hypothesis is needed. -/
@@ -363,6 +351,13 @@ theorem laplacian_comp_affineIsometryEquiv_right (e : E ≃ᵃⁱ[ℝ] E') (f : 
   have hx : e x = e.linearIsometryEquiv x + e 0 := by
     simpa using e.map_vadd (0 : E) x
   simp [Function.comp_apply, hx]
+
+/-- **Invariance of the Laplacian under point reflections.** Reflecting the argument through a
+point, `y ↦ a - y`, commutes with the Laplacian:
+`Δ (fun y ↦ f (a - y)) = fun y ↦ (Δ f) (a - y)`. No differentiability hypothesis is needed. -/
+theorem laplacian_comp_sub_left (f : E → F) (a : E) :
+    Δ (fun y ↦ f (a - y)) = fun y ↦ (Δ f) (a - y) :=
+  laplacian_comp_affineIsometryEquiv_right (AffineIsometryEquiv.constVSub ℝ a) f
 
 /-- **Scaling law for the Laplacian under origin-centered dilation.**
 

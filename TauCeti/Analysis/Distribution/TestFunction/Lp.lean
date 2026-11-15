@@ -44,6 +44,8 @@ evaluation on integrable forms (`Distribution.extendL1`).
 * `HasCompactSupport.exists_testFunction_eLpNorm_sub_le`: a continuous compactly supported
   function on `Ω` is an `Lᵖ(μ)` limit of test functions for `p < ∞`.
 * `TestFunction.denseRange_toLp`: test functions are dense in `Lᵖ(μ)` for `p < ∞`.
+* `TestFunction.integrable_bilin_of_memLp`: a continuous bilinear map applied to a test function
+  and an `Lᵖ` function is integrable.
 * `TestFunction.integrable_smul_of_memLp`: a test function times an `Lᵖ` function is integrable.
 * `TestFunction.integrable_laplacian_smul_of_memLp`: so is the Laplacian of a test function
   times an `Lᵖ` function.
@@ -310,10 +312,23 @@ theorem denseRange_toLp [FiniteDimensional ℝ E] [CompleteSpace F] [μ.Regular]
     ← ENNReal.add_halves ε, ← sub_add_sub_cancel (⇑f) g]
   exact (eLpNorm_add_le Fact.out).trans (add_le_add hfg hφ)
 
+/-- A continuous bilinear map applied to a test function and an `Lᵖ` function, `1 ≤ p`, is
+integrable, for a measure that is finite on compact sets. -/
+theorem integrable_bilin_of_memLp {𝕜 F₁ F₂ F₃ : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup F₁] [NormedSpace ℝ F₁] [NormedSpace 𝕜 F₁] [NormedAddCommGroup F₂]
+    [NormedSpace 𝕜 F₂] [NormedAddCommGroup F₃] [NormedSpace 𝕜 F₃] (B : F₁ →L[𝕜] F₂ →L[𝕜] F₃)
+    {ν : Measure E} [IsFiniteMeasureOnCompacts ν] (φ : 𝓓^{n}(Ω, F₁)) {f : E → F₂}
+    (hf : MemLp f p ν) : Integrable (fun x ↦ B (φ x) (f x)) ν := by
+  have : (ENNReal.conjExponent p).HolderConjugate p :=
+    (ENNReal.HolderConjugate.conjExponent Fact.out).symm
+  exact memLp_one_iff_integrable.1 <|
+    B.memLp_of_bilin 1 (p := ENNReal.conjExponent p)
+      (φ.continuous.memLp_of_hasCompactSupport φ.hasCompactSupport) hf
+
 /-- A test function multiplied by an `Lᵖ` function, `1 ≤ p`, is integrable. -/
-theorem integrable_smul_of_memLp {ν : Measure E} [IsLocallyFiniteMeasure ν] (φ : 𝓓^{n}(Ω, ℝ))
-    {f : E → F} (hf : MemLp f p ν) : Integrable (fun x ↦ φ x • f x) ν :=
-  φ.integrable_smul ((hf.locallyIntegrable Fact.out).locallyIntegrableOn _)
+theorem integrable_smul_of_memLp {ν : Measure E} [IsFiniteMeasureOnCompacts ν]
+    (φ : 𝓓^{n}(Ω, ℝ)) {f : E → F} (hf : MemLp f p ν) : Integrable (fun x ↦ φ x • f x) ν :=
+  φ.integrable_bilin_of_memLp (ContinuousLinearMap.lsmul ℝ ℝ) hf
 
 /-- **An `Lᵖ` function is determined by its pairings with test functions.** If `1 ≤ p` and
 `∫ φ • g = 0` for every test function `φ` on a finite-dimensional space, then `g = 0` in `Lᵖ`. -/
@@ -329,7 +344,7 @@ open Laplacian in
 /-- The Laplacian of a test function multiplied by an `Lᵖ` function, `1 ≤ p`, is integrable. -/
 theorem integrable_laplacian_smul_of_memLp {E : Type*} [NormedAddCommGroup E]
     [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
-    {Ω : Opens E} {ν : Measure E} [IsLocallyFiniteMeasure ν] (φ : 𝓓(Ω, ℝ)) {f : E → F}
+    {Ω : Opens E} {ν : Measure E} [IsFiniteMeasureOnCompacts ν] (φ : 𝓓(Ω, ℝ)) {f : E → F}
     (hf : MemLp f p ν) : Integrable (fun x ↦ Δ (φ : E → ℝ) x • f x) ν := by
   simpa only [laplacianCLM_apply] using
     (LineDeriv.laplacianCLM ℝ E (𝓓(Ω, ℝ)) φ).integrable_smul_of_memLp hf
