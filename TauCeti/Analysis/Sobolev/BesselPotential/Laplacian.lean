@@ -7,10 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.Sobolev
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
-import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
-import TauCeti.Analysis.Distribution.TemperedDistribution.LaplacianResolvent
-import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
-import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
+import TauCeti.Analysis.PDE.Schrodinger.Stationary
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 
 /-!
@@ -22,11 +19,10 @@ its classical Laplacian `Δf` both lie in the Bessel-potential space `H^s(E)`, t
 
 The classical Laplacian of a `C²` function is its distributional Laplacian, by Green's second
 identity against compactly supported test functions
-(`ContDiffOn.integral_laplacian_smul_eq_integral_smul_laplacian`). So the tempered distribution
-`T` of `f` satisfies `-Δ T + T = f - Δf ∈ H^s`, and the resolvent of the Laplacian
-(`TemperedDistribution.memSobolev_add_two_iff_neg_laplacian_add_smul`) gives `T ∈ H^(s + 2)`.
-No decay of `f` beyond square integrability is needed: the test functions in Green's identity have
-compact support, and they determine a tempered distribution (`TauCeti.ext_real`).
+(`ContDiffOn.integral_laplacian_smul_eq_integral_smul_laplacian`). So `-Δf = -Δf` holds weakly,
+and elliptic regularity for weak solutions of `-Δh + P h = g`, here with `P = 0`
+(`TauCeti.mem_realSobolevFunctions_add_two_of_integral_mul_neg_laplacian_add_mul_eq`), gives
+`f ∈ H^(s + 2)`. No decay of `f` beyond square integrability is needed.
 
 This is the step that turns a classical semilinear equation `Δf = F(f)` into a gain of two
 Sobolev orders once `F(f) ∈ H^s` is known.
@@ -54,36 +50,16 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 theorem mem_realSobolevFunctions_add_two_of_laplacian {s : ℝ} {f : E → ℝ} (hf : ContDiff ℝ 2 f)
     (hmem : f ∈ realSobolevFunctions E s 2) (hΔ : Δ f ∈ realSobolevFunctions E s 2) :
     f ∈ realSobolevFunctions E (s + 2) 2 := by
-  have hf2 : MemLp f 2 volume := memLp_of_mem_realSobolevFunctions hmem
-  have hΔ2 : MemLp (Δ f) 2 volume := memLp_of_mem_realSobolevFunctions hΔ
-  obtain ⟨u, huf, hu⟩ := mem_realSobolevFunctions.1 (sub_mem hmem hΔ)
-  set T : 𝓢'(E, ℂ) := Lp.toTemperedDistribution (ofRealCLM.compLp (hf2.toLp f))
-  -- `-Δ T + T` is the distribution of `f - Δf`, tested on real compactly supported functions.
-  have hT : -Δ T + (1 : ℝ) • T = Lp.toTemperedDistribution (ofRealCLM.compLp u) := by
-    refine ext_real fun φ hφ ↦ ?_
-    let φ' : 𝓓((⊤ : TopologicalSpace.Opens E), ℝ) :=
-      ⟨φ, φ.smooth ⊤, hφ, by simp only [TopologicalSpace.Opens.coe_top, Set.subset_univ]⟩
-    have hcoe : (φ' : E → ℝ) = φ := TestFunction.coe_mk
-    have hgreen : ∫ x, Δ (φ : E → ℝ) x * f x = ∫ x, φ x * Δ f x := by
-      have h := hf.contDiffOn.integral_laplacian_smul_eq_integral_smul_laplacian (μ := volume) φ'
-      simpa only [smul_eq_mul, hcoe] using h
-    have hφ2 := φ.memLp 2 (μ := volume)
-    -- Pairing a real Schwartz function with the distribution of `f`.
-    have hpair (ψ : 𝓢(E, ℝ)) : T (ψ.postcompCLM ofRealCLM) = ((∫ x, ψ x * f x : ℝ) : ℂ) := by
-      rw [Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM,
-        integral_congr_ae (hf2.coeFn_toLp.mono fun x hx ↦ by rw [hx])]
-    have hu' : ∫ x, φ x * u x = (∫ x, φ x * f x) - ∫ x, φ x * Δ f x := by
-      rw [integral_congr_ae (huf.mono fun x hx ↦ by rw [hx, Pi.sub_apply, mul_sub])]
-      exact integral_sub (f := fun x ↦ φ x * f x) (g := fun x ↦ φ x * Δ f x)
-        (hφ2.integrable_mul hf2) (hφ2.integrable_mul hΔ2)
-    rw [add_apply, neg_apply, smul_apply, laplacian_apply_apply, TauCeti.laplacian_postcompCLM,
-      hpair, hpair, Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM, one_smul, hu']
-    simp only [SchwartzMap.laplacian_apply]
-    rw [hgreen]
-    push_cast
-    ring
-  have hT2 : MemSobolev (s + 2) 2 T :=
-    (memSobolev_add_two_iff_neg_laplacian_add_smul one_pos).2 (hT ▸ hu)
-  exact mem_realSobolevFunctions.2 ⟨hf2.toLp f, hf2.coeFn_toLp, hT2⟩
+  refine mem_realSobolevFunctions_add_two_of_integral_mul_neg_laplacian_add_mul_eq (P := 0) hmem
+    (by simp only [Pi.zero_apply, zero_mul]; exact zero_mem _) (neg_mem hΔ) fun φ hφ hφc ↦ ?_
+  -- Green's second identity against `φ`, viewed as a test function on `E`.
+  let φ' : 𝓓((⊤ : TopologicalSpace.Opens E), ℝ) :=
+    ⟨φ, hφ, hφc, by simp only [TopologicalSpace.Opens.coe_top, Set.subset_univ]⟩
+  have hcoe : (φ' : E → ℝ) = φ := TestFunction.coe_mk
+  have h := hf.contDiffOn.integral_laplacian_smul_eq_integral_smul_laplacian (μ := volume) φ'
+  simp only [smul_eq_mul, hcoe] at h
+  simp only [Pi.zero_apply, zero_mul, add_zero, mul_neg, Pi.neg_apply, neg_mul, integral_neg,
+    neg_inj]
+  simpa only [mul_comm] using h
 
 end TemperedDistribution

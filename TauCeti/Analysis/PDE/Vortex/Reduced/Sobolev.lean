@@ -102,7 +102,7 @@ private theorem laplacian_mem_realSobolevFunctions (hm : 0 < P.natDegree) {w : �
   have hΔeq : Δ w = (1 / 8 : ℝ) • E - (1 / 8 : ℝ) • (φ * E) - (1 / 8 : ℝ) • φ + (2 : ℝ) • g := by
     ext z
     rw [hΔ z, reduced_eq]
-    rfl
+    simp only [Pi.add_apply, Pi.sub_apply, Pi.smul_apply, Pi.mul_apply, smul_eq_mul, E, φ, g]
   have hφ := Polynomial.inv_one_add_norm_eval_sq_mem_realSobolevFunctions hm k
   have hg :=
     Polynomial.norm_derivative_eval_sq_div_one_add_norm_eval_sq_sq_mem_realSobolevFunctions P k
@@ -155,7 +155,10 @@ theorem mem_realSobolevFunctions_of_laplacian_eq_reduced (hm : 0 < P.natDegree) 
         rw [Complex.finrank_real_complex]; push_cast [k]; linarith [(j.cast_nonneg : (0 : ℝ) ≤ j)]
       obtain ⟨v, hv, hvs⟩ := exists_memSobolev_ae_eq_exp_mul_sub_one hs ih 2
       have hE : (fun z ↦ Real.exp (2 * w z) - 1) ∈ realSobolevFunctions ℂ k 2 :=
-        mem_realSobolevFunctions_of_ae_eq_ofReal hvs (hv.mono fun z hz ↦ by rw [hz]; push_cast; rfl)
+        mem_realSobolevFunctions_of_ae_eq_ofReal hvs (hv.mono fun z hz ↦ by
+          rw [hz]
+          simp only [Complex.ofReal_sub, Complex.ofReal_exp, Complex.ofReal_mul,
+            Complex.ofReal_ofNat, Complex.ofReal_one])
       have h := mem_realSobolevFunctions_add_two_of_laplacian hw ih
         (laplacian_mem_realSobolevFunctions hm hΔ (Or.inl (by omega)) hE)
       have hk2 : (k : ℝ) + 2 = ((2 * (j + 1) + 2 : ℕ) : ℝ) := by push_cast [k]; ring

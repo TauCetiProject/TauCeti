@@ -13,10 +13,8 @@ import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Calculus.Deriv.Star
 import Mathlib.Analysis.Complex.RealDeriv
 import Mathlib.Analysis.InnerProductSpace.Calculus
-import Mathlib.Analysis.Polynomial.Basic
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Analysis.Polynomial.AtInfinity
 import TauCeti.Analysis.Sobolev.BesselPotential.Basic
-import TauCeti.MeasureTheory.Integral.Asymptotics
 
 /-!
 # Sobolev regularity of rational functions of `1 + ‖P‖²`
@@ -29,10 +27,10 @@ and `n : ℕ`, the function
 decays at infinity like `‖z‖ ^ (deg A + deg B - 2 m n)`. Its directional derivatives are again of
 this form, with the decay improved by one power: differentiating `φ ^ n` gives
 `-n φ ^ (n + 1) (conj P P' v + P conj P' conj v)`, and differentiating `A` or `B` lowers its
-degree. So if `deg A + deg B + 2 ≤ 2 m n`, so that the function is square integrable on the plane,
-every derivative is square integrable as well, and the real part of the function lies in the
-Bessel-potential space `H^k(ℂ)` for every `k`
-(`Polynomial.re_mem_realSobolevFunctions_of_add_two_le`).
+degree. So if `deg A + deg B + 2 ≤ 2 m n`, so that the function is square integrable on the plane
+(`Polynomial.memLp_norm_eval_mul_norm_eval_div_one_add_norm_eval_sq_pow`), every derivative is
+square integrable as well, and the real part of the function lies in the Bessel-potential space
+`H^k(ℂ)` for every `k` (`Polynomial.re_mem_realSobolevFunctions_of_add_two_le`).
 
 In particular, for a nonconstant `P`, the defect `(1 + ‖P‖²)⁻¹` of the squared modulus
 `‖P‖² / (1 + ‖P‖²)` from `1` (`Polynomial.inv_one_add_norm_eval_sq_mem_realSobolevFunctions`) and,
@@ -53,7 +51,7 @@ noncomputable section
 
 namespace Polynomial
 
-open ComplexConjugate Asymptotics Filter MeasureTheory TemperedDistribution Topology
+open ComplexConjugate Filter MeasureTheory TemperedDistribution Topology
 open scoped ContDiff
 
 variable {P : ℂ[X]}
@@ -129,96 +127,19 @@ private theorem fderiv_re_weightTerm (P : ℂ[X]) (n : ℕ) (A B : ℂ[X]) (z v 
   rw [hre, ContinuousLinearMap.comp_apply, Complex.reCLM_apply, hline]
   simp only [Complex.add_re]
 
-/-- The decay bound `‖φ ^ n conj A B‖ (1 + ‖z‖)² ≤ K` at infinity when
-`deg A + deg B + 2 ≤ 2 m n`. -/
-private theorem exists_eventually_norm_weightTerm_mul_le {n : ℕ} {A B : ℂ[X]}
-    (h : A.natDegree + B.natDegree + 2 ≤ 2 * P.natDegree * n) :
-    ∃ K : ℝ, ∀ᶠ z : ℂ in cocompact ℂ, ‖weightTerm P n A B z‖ * (1 + ‖z‖) ^ 2 ≤ K := by
-  have hm : 0 < P.natDegree := by
-    rcases Nat.eq_zero_or_pos P.natDegree with h0 | h0
-    · rw [h0] at h; omega
-    · exact h0
-  have hP : P ≠ 0 := Polynomial.ne_zero_of_natDegree_gt hm
-  have hlow : (fun z : ℂ ↦ z ^ P.natDegree) =O[cocompact ℂ] P.eval := by
-    have he := (Polynomial.isEquivalent_cobounded_leading_monomial (P := P)).symm.isBigO
-    rw [Metric.cobounded_eq_cocompact] at he
-    exact (isBigO_self_const_mul (Polynomial.leadingCoeff_ne_zero.mpr hP) _ _).trans he
-  have hup (Q : ℂ[X]) : Q.eval =O[cocompact ℂ] fun z : ℂ ↦ z ^ Q.natDegree := by
-    have h := Polynomial.isBigO_cobounded_pow_natDegree Q
-    rwa [Metric.cobounded_eq_cocompact] at h
-  obtain ⟨c₁, hc₁⟩ := hlow.bound
-  obtain ⟨c₂, hc₂⟩ := (hup A).bound
-  obtain ⟨c₃, hc₃⟩ := (hup B).bound
-  set c := max (max c₁ c₂) (max c₃ 1)
-  refine ⟨4 * c ^ (2 * n + 2), ?_⟩
-  filter_upwards [hc₁, hc₂, hc₃, tendsto_norm_cocompact_atTop.eventually_ge_atTop 1]
-    with z h₁ h₂ h₃ hz
-  rw [norm_pow] at h₁ h₂ h₃
-  set r := ‖z‖
-  set N := 1 + ‖P.eval z‖ ^ 2
-  have hN : 0 < N := by positivity
-  have hpz : r ^ P.natDegree ≤ c * ‖P.eval z‖ :=
-    h₁.trans (by gcongr; exact (le_max_left _ _).trans (le_max_left _ _))
-  have haz : ‖A.eval z‖ ≤ c * r ^ A.natDegree :=
-    h₂.trans (by gcongr; exact (le_max_right _ _).trans (le_max_left _ _))
-  have hbz : ‖B.eval z‖ ≤ c * r ^ B.natDegree :=
-    h₃.trans (by gcongr; exact (le_max_left _ _).trans (le_max_right _ _))
-  -- `r ^ (2 m n) ≤ c ^ (2 n) N ^ n`, from `r ^ m ≤ c ‖P z‖`.
-  have hpow : r ^ (2 * P.natDegree * n) ≤ c ^ (2 * n) * N ^ n := by
-    have hsq : (r ^ P.natDegree) ^ 2 ≤ c ^ 2 * N := by
-      calc (r ^ P.natDegree) ^ 2 ≤ (c * ‖P.eval z‖) ^ 2 := by gcongr
-        _ = c ^ 2 * ‖P.eval z‖ ^ 2 := by ring
-        _ ≤ c ^ 2 * N := by gcongr; simp [N]
-    calc r ^ (2 * P.natDegree * n) = ((r ^ P.natDegree) ^ 2) ^ n := by
-          rw [← pow_mul, ← pow_mul]; congr 1; ring
-      _ ≤ (c ^ 2 * N) ^ n := by gcongr
-      _ = c ^ (2 * n) * N ^ n := by rw [mul_pow, ← pow_mul]
-  have hnorm : ‖weightTerm P n A B z‖ * N ^ n = ‖A.eval z‖ * ‖B.eval z‖ := by
-    have habs : |1 + ‖P.eval z‖ ^ 2| = N := abs_of_pos hN
-    simp only [weightTerm, norm_mul, Complex.norm_real, Complex.norm_conj, norm_pow,
-      Real.norm_eq_abs, abs_inv, habs]
-    rw [inv_pow, mul_right_comm, inv_mul_cancel₀ (pow_ne_zero n hN.ne'), one_mul]
-  -- `‖w‖ r ^ (2 m n) ≤ c ^ (2 n + 2) r ^ (deg A + deg B)`.
-  have hmain : ‖weightTerm P n A B z‖ * r ^ (2 * P.natDegree * n) ≤
-      c ^ (2 * n + 2) * r ^ (A.natDegree + B.natDegree) := by
-    calc ‖weightTerm P n A B z‖ * r ^ (2 * P.natDegree * n)
-        ≤ ‖weightTerm P n A B z‖ * (c ^ (2 * n) * N ^ n) := by gcongr
-      _ = c ^ (2 * n) * (‖A.eval z‖ * ‖B.eval z‖) := by rw [← hnorm]; ring
-      _ ≤ c ^ (2 * n) * ((c * r ^ A.natDegree) * (c * r ^ B.natDegree)) := by gcongr
-      _ = c ^ (2 * n + 2) * r ^ (A.natDegree + B.natDegree) := by ring
-  have hr0 : 0 < r ^ (A.natDegree + B.natDegree) := by positivity
-  have hrr : r ^ (A.natDegree + B.natDegree) * r ^ 2 ≤ r ^ (2 * P.natDegree * n) := by
-    rw [← pow_add]
-    exact pow_le_pow_right₀ hz h
-  have hw2 : ‖weightTerm P n A B z‖ * r ^ 2 ≤ c ^ (2 * n + 2) := by
-    refine le_of_mul_le_mul_right ?_ hr0
-    calc ‖weightTerm P n A B z‖ * r ^ 2 * r ^ (A.natDegree + B.natDegree)
-        = ‖weightTerm P n A B z‖ * (r ^ (A.natDegree + B.natDegree) * r ^ 2) := by ring
-      _ ≤ ‖weightTerm P n A B z‖ * r ^ (2 * P.natDegree * n) := by gcongr
-      _ ≤ c ^ (2 * n + 2) * r ^ (A.natDegree + B.natDegree) := hmain
-  calc ‖weightTerm P n A B z‖ * (1 + r) ^ 2 ≤ ‖weightTerm P n A B z‖ * (4 * r ^ 2) := by
-        gcongr; nlinarith
-    _ = 4 * (‖weightTerm P n A B z‖ * r ^ 2) := by ring
-    _ ≤ 4 * c ^ (2 * n + 2) := by gcongr
-
-/-- The real part of `φ ^ n conj A B` is square integrable when `deg A + deg B + 2 ≤ 2 m n`. -/
+/-- The real part of `φ ^ n conj A B` is square integrable when `deg A + deg B + 2 ≤ 2 m n`, since
+its absolute value is at most `‖A‖ ‖B‖ / (1 + ‖P‖²) ^ n`. -/
 private theorem memLp_re_weightTerm {n : ℕ} {A B : ℂ[X]}
     (h : A.natDegree + B.natDegree + 2 ≤ 2 * P.natDegree * n) :
     MemLp (fun z ↦ (weightTerm P n A B z).re) 2 := by
-  have hcont : Continuous fun z ↦ (weightTerm P n A B z).re :=
-    Complex.continuous_re.comp (contDiff_weightTerm P n A B).continuous
-  rw [memLp_two_iff_integrable_sq hcont.aestronglyMeasurable]
-  obtain ⟨K, hK⟩ := exists_eventually_norm_weightTerm_mul_le h
-  refine (hcont.pow 2).locallyIntegrable.integrable_of_isBigO_one_add_norm_rpow_neg (r := 4)
-    (by simp [Complex.finrank_real_complex]; norm_num) (IsBigO.of_bound (K ^ 2) ?_)
-  filter_upwards [hK] with z hz
-  have hre : |(weightTerm P n A B z).re| ≤ ‖weightTerm P n A B z‖ := Complex.abs_re_le_norm _
-  rw [Pi.pow_apply, Real.norm_eq_abs, abs_pow, Real.norm_of_nonneg (by positivity),
-    Real.rpow_neg (by positivity), Real.rpow_ofNat, ← div_eq_mul_inv, le_div_iff₀ (by positivity)]
-  calc |(weightTerm P n A B z).re| ^ 2 * (1 + ‖z‖) ^ 4
-      ≤ ‖weightTerm P n A B z‖ ^ 2 * (1 + ‖z‖) ^ 4 := by gcongr
-    _ = (‖weightTerm P n A B z‖ * (1 + ‖z‖) ^ 2) ^ 2 := by ring
-    _ ≤ K ^ 2 := by gcongr
+  refine (memLp_norm_eval_mul_norm_eval_div_one_add_norm_eval_sq_pow h).of_le
+    (Complex.continuous_re.comp (contDiff_weightTerm P n A B).continuous).aestronglyMeasurable
+    (.of_forall fun z ↦ ?_)
+  have hN : |1 + ‖P.eval z‖ ^ 2| = 1 + ‖P.eval z‖ ^ 2 := abs_of_pos (by positivity)
+  refine (Complex.abs_re_le_norm _).trans (le_of_eq ?_)
+  simp only [weightTerm, norm_mul, Complex.norm_real, Complex.norm_conj, norm_pow,
+    Real.norm_eq_abs, abs_inv, abs_pow, hN, abs_div, abs_mul, abs_norm]
+  rw [inv_pow, div_eq_inv_mul]
 
 /-- **Rational functions of `1 + ‖P‖²` lie in every Sobolev space.** Let `P`, `A`, `B` be complex
 polynomials and `n : ℕ` with `deg A + deg B + 2 ≤ 2 (deg P) n`. Then the real part of
@@ -233,10 +154,7 @@ theorem re_mem_realSobolevFunctions_of_add_two_le {n : ℕ} {A B : ℂ[X]}
     rw [Nat.cast_zero, mem_realSobolevFunctions_zero_iff]
     exact memLp_re_weightTerm h
   | succ k ih =>
-    have hm : 0 < P.natDegree := by
-      rcases Nat.eq_zero_or_pos P.natDegree with h0 | h0
-      · rw [h0] at h; omega
-      · exact h0
+    have hm : 0 < P.natDegree := Nat.pos_of_ne_zero fun h0 ↦ by simp [h0] at h
     have hdP := natDegree_derivative_le P
     have hdA := natDegree_derivative_le A
     have hdB := natDegree_derivative_le B
