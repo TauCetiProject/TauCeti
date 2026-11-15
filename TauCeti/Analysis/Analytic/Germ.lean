@@ -5,16 +5,24 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Analytic.Constructions
-public import Mathlib.Order.Filter.Germ.Basic
+public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import Mathlib.Algebra.Ring.Subring.Basic
+public import Mathlib.Analysis.Analytic.Constructions
+public import Mathlib.Analysis.RCLike.Basic
+public import Mathlib.Order.Filter.Germ.Basic
+public import TauCeti.Order.Filter.Germ.MvPolynomial
+import Mathlib.Analysis.Analytic.Polynomial
+import TauCeti.Analysis.Analytic.Uniqueness
 
 /-!
 # Rings of analytic function germs
 
 `TauCeti.analyticGerms 𝕜 a` is the subring of function germs at `a` represented by functions
 analytic at `a`. Equality is ordinary equality of germs, so restriction to smaller neighborhoods
-requires no additional identifications. Analytic maps induce ring homomorphisms by pullback.
+requires no additional identifications. Over `ℝ` or `ℂ` it is an integral domain, and on finite
+coordinate spaces `σ → 𝕜` it forms an `MvPolynomial σ 𝕜`-subalgebra of `Germ (𝓝 a) 𝕜`
+(`TauCeti.analyticGerms.mvPolynomialSubalgebra`). Analytic maps induce ring homomorphisms by
+pullback.
 These rings allow operations on local analytic functions to be compared independently of the
 representatives and neighborhoods used to construct them. Locally inverse analytic maps give
 ring equivalences (`TauCeti.analyticGerms.equivOfInverse`), without choosing representatives.
@@ -28,6 +36,8 @@ public section
 open Filter Topology
 
 namespace TauCeti
+
+section NontriviallyNormedField
 
 variable (𝕜 : Type*) [NontriviallyNormedField 𝕜]
   {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -224,6 +234,73 @@ theorem equivOfInverse_symm_apply (g : E → F) (h : F → E)
     (φ : analyticGerms 𝕜 a) :
     (equivOfInverse g h hg hh hga hleft hright).symm φ =
       pullback h hh (hga ▸ hleft.self_of_nhds) φ := (rfl)
+
+end analyticGerms
+
+end NontriviallyNormedField
+
+namespace analyticGerms
+
+/-- Over `ℝ` or `ℂ`, the ring of scalar analytic germs at a point is an integral domain. -/
+instance instIsDomain {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    (a : E) : IsDomain (analyticGerms 𝕜 a) := by
+  have : NoZeroDivisors (analyticGerms 𝕜 a) := ⟨fun {φ ψ} h ↦ by
+    obtain ⟨f, hf, hφ⟩ := φ.2
+    obtain ⟨g, hg, hψ⟩ := ψ.2
+    have hfg : f * g =ᶠ[𝓝 a] 0 :=
+      Germ.coe_eq.1 (by
+        simpa only [Subring.coe_mul, Subring.coe_zero, ← hφ, ← hψ, ← Germ.coe_mul,
+          ← Germ.coe_zero] using congrArg Subtype.val h)
+    exact (hf.eventuallyEq_zero_or_eventuallyEq_zero_of_mul hg hfg).imp
+      (fun hf0 ↦ Subtype.ext (by
+        rw [← hφ, Subring.coe_zero, ← Germ.coe_zero, Germ.coe_eq]; exact hf0))
+      (fun hg0 ↦ Subtype.ext (by
+        rw [← hψ, Subring.coe_zero, ← Germ.coe_zero, Germ.coe_eq]; exact hg0))⟩
+  exact NoZeroDivisors.to_isDomain _
+
+section MvPolynomial
+
+attribute [local instance] Germ.mvPolynomialAlgebra
+
+/-- For `a : σ → 𝕜` with `σ` finite, the analytic germs at `a` form an `MvPolynomial σ 𝕜`-subalgebra
+of `Germ (𝓝 a) 𝕜`, where polynomials act as polynomial functions via
+`Filter.Germ.mvPolynomialAlgebra`. -/
+noncomputable def mvPolynomialSubalgebra (𝕜 : Type*) [NontriviallyNormedField 𝕜]
+    {σ : Type*} [Fintype σ] (a : σ → 𝕜) :
+    Subalgebra (MvPolynomial σ 𝕜) (Germ (𝓝 a) 𝕜) :=
+  { analyticGerms 𝕜 a with
+    algebraMap_mem' p := ⟨fun y ↦ MvPolynomial.eval y p,
+      AnalyticOnNhd.eval_continuousLinearMap (.id 𝕜 (σ → 𝕜)) p a (Set.mem_univ a),
+      (Germ.mvPolynomialAlgebra_algebraMap_apply (𝓝 a) p).symm⟩ }
+
+/-- The underlying subring of `TauCeti.analyticGerms.mvPolynomialSubalgebra` is
+`TauCeti.analyticGerms`. -/
+@[simp]
+theorem mvPolynomialSubalgebra_toSubring {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {σ : Type*} [Fintype σ] (a : σ → 𝕜) :
+    (mvPolynomialSubalgebra 𝕜 a).toSubring = analyticGerms 𝕜 a :=
+  (rfl)
+
+/-- Membership in `TauCeti.analyticGerms.mvPolynomialSubalgebra` agrees with membership in
+`TauCeti.analyticGerms`. -/
+@[simp]
+theorem mem_mvPolynomialSubalgebra {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {σ : Type*} [Fintype σ] {a : σ → 𝕜} {φ : Germ (𝓝 a) 𝕜} :
+    φ ∈ mvPolynomialSubalgebra 𝕜 a ↔ φ ∈ analyticGerms 𝕜 a :=
+  Iff.rfl
+
+/-- Over `ℝ` or `ℂ`, the `MvPolynomial` subalgebra of analytic germs at `a` is an integral
+domain. -/
+instance instIsDomainMvPolynomialSubalgebra {𝕜 : Type*} [RCLike 𝕜] {σ : Type*} [Fintype σ]
+    (a : σ → 𝕜) : IsDomain (mvPolynomialSubalgebra 𝕜 a) := by
+  have : NoZeroDivisors (mvPolynomialSubalgebra 𝕜 a) := ⟨fun {φ ψ} h ↦ by
+    have h' : (⟨φ.1, φ.2⟩ : analyticGerms 𝕜 a) * ⟨ψ.1, ψ.2⟩ = 0 :=
+      Subtype.ext (congrArg Subtype.val h)
+    exact (mul_eq_zero.1 h').imp (fun h0 ↦ Subtype.ext (congrArg Subtype.val h0))
+      (fun h0 ↦ Subtype.ext (congrArg Subtype.val h0))⟩
+  exact NoZeroDivisors.to_isDomain _
+
+end MvPolynomial
 
 end analyticGerms
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Analytic.Basic
 public import Mathlib.Analysis.Analytic.Order
 public import Mathlib.Analysis.RCLike.Basic
+public import Mathlib.Topology.Connected.Basic
 
 -- Proof-only: the identity principle
 -- `AnalyticOnNhd.eqOn_zero_of_preconnected_of_eventuallyEq_zero` and its analytic inputs, and
@@ -35,6 +36,10 @@ some direction `v` has a restriction that does not vanish identically, and in li
 whose last axis is `v` the germ becomes regular in the last variable, as Weierstrass preparation
 requires (`AnalyticAt.exists_continuousLinearEquiv_analyticOrderAt_ne_top`).
 
+By the same identity principle, analytic functions on a preconnected open set and analytic germs
+over `ℝ` or `ℂ` have no zero divisors (`AnalyticOnNhd.eqOn_zero_or_eqOn_zero_of_mul`,
+`AnalyticAt.eventuallyEq_zero_or_eventuallyEq_zero_of_mul`).
+
 The name follows Mathlib's `Mathlib.Analysis.Analytic.Uniqueness`, where the identity principle
 lives.
 
@@ -44,6 +49,12 @@ lives.
   vanishes near `p` exactly when all its restrictions to lines through `p` vanish near `0`.
 * `AnalyticAt.exists_continuousLinearEquiv_analyticOrderAt_ne_top`: after a linear change of
   coordinates, a function on `E × 𝕜` not vanishing near `p` has finite order in the last variable.
+* `AnalyticOnNhd.eqOn_zero_or_eqOn_zero_of_smul`, `AnalyticOnNhd.eqOn_zero_or_eqOn_zero_of_mul`:
+  if `f • g` (or `f * g`) vanishes on a preconnected open set where `f` and `g` are analytic, then
+  `f` or `g` vanishes there.
+* `AnalyticAt.eventuallyEq_zero_or_eventuallyEq_zero_of_smul`,
+  `AnalyticAt.eventuallyEq_zero_or_eventuallyEq_zero_of_mul`: the corresponding germ statements
+  over `ℝ` or `ℂ`.
 
 ## References
 
@@ -134,5 +145,65 @@ theorem AnalyticAt.exists_continuousLinearEquiv_analyticOrderAt_ne_top {f : E ×
     rw [← hL, ← L.map_smul, ← L.map_add]
     simp
   simpa [hLt] using ht
+
+/-- On a preconnected open set, if `f : E → 𝕜` and `g : E → F` are analytic and `f • g` vanishes
+on `U`, then either `f` vanishes on `U` or `g` vanishes on `U`. -/
+theorem AnalyticOnNhd.eqOn_zero_or_eqOn_zero_of_smul {𝕜 E F : Type*}
+    [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : E → 𝕜} {g : E → F} {U : Set E}
+    (hf : AnalyticOnNhd 𝕜 f U) (hg : AnalyticOnNhd 𝕜 g U) (hUo : IsOpen U)
+    (hU : IsPreconnected U) (hfg : Set.EqOn (f • g) 0 U) :
+    Set.EqOn f 0 U ∨ Set.EqOn g 0 U := by
+  by_cases hf0 : Set.EqOn f 0 U
+  · exact Or.inl hf0
+  · right
+    obtain ⟨z₀, hz₀, hfz₀⟩ : ∃ z₀ ∈ U, f z₀ ≠ 0 := by
+      by_contra! hall
+      exact hf0 hall
+    have hgz₀ : g =ᶠ[𝓝 z₀] 0 := by
+      filter_upwards [hUo.mem_nhds hz₀, (hf z₀ hz₀).continuousAt.eventually_ne hfz₀] with z hz hfz
+      exact (smul_eq_zero.1 (hfg hz)).resolve_left hfz
+    exact hg.eqOn_zero_of_preconnected_of_eventuallyEq_zero hU hz₀ hgz₀
+
+/-- On a preconnected open set, analytic scalar functions have no zero divisors: if `f * g`
+vanishes on `U`, then `f` vanishes on `U` or `g` vanishes on `U`. -/
+theorem AnalyticOnNhd.eqOn_zero_or_eqOn_zero_of_mul {𝕜 E : Type*}
+    [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {f g : E → 𝕜} {U : Set E}
+    (hf : AnalyticOnNhd 𝕜 f U) (hg : AnalyticOnNhd 𝕜 g U) (hUo : IsOpen U)
+    (hU : IsPreconnected U) (hfg : Set.EqOn (f * g) 0 U) :
+    Set.EqOn f 0 U ∨ Set.EqOn g 0 U :=
+  hf.eqOn_zero_or_eqOn_zero_of_smul hg hUo hU hfg
+
+/-- Over `ℝ` or `ℂ`, if `f : E → 𝕜` and `g : E → F` are analytic at `p` and `f • g =ᶠ[𝓝 p] 0`,
+then `f =ᶠ[𝓝 p] 0` or `g =ᶠ[𝓝 p] 0`. -/
+theorem AnalyticAt.eventuallyEq_zero_or_eventuallyEq_zero_of_smul
+    {f : E → 𝕜} {g : E → F} {p : E}
+    (hf : AnalyticAt 𝕜 f p) (hg : AnalyticAt 𝕜 g p) (hfg : f • g =ᶠ[𝓝 p] 0) :
+    f =ᶠ[𝓝 p] 0 ∨ g =ᶠ[𝓝 p] 0 := by
+  let : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ 𝕜 E
+  let e : F →L[𝕜] UniformSpace.Completion F := UniformSpace.Completion.toComplL
+  have heg : AnalyticAt 𝕜 (e ∘ g) p := (e.analyticAt _).comp hg
+  have hfg' : f • (e ∘ g) =ᶠ[𝓝 p] 0 :=
+    hfg.mono fun x hx ↦ by
+      change f x • e (g x) = 0
+      rw [← e.map_smul]
+      simpa using congrArg e hx
+  obtain ⟨r, hr, hball⟩ := Metric.mem_nhds_iff.1
+    ((hf.eventually_analyticAt.and heg.eventually_analyticAt).and hfg')
+  have hU := AnalyticOnNhd.eqOn_zero_or_eqOn_zero_of_smul
+    (fun x hx ↦ (hball hx).1.1) (fun x hx ↦ (hball hx).1.2)
+    isOpen_ball (convex_ball p r).isPreconnected fun x hx ↦ (hball hx).2
+  exact hU.imp (eventually_of_mem (ball_mem_nhds p hr)) fun hg0 ↦
+    (eventually_of_mem (ball_mem_nhds p hr) hg0).mono fun x hx ↦
+      UniformSpace.Completion.coe_injective F (by simpa [e] using hx)
+
+/-- Over `ℝ` or `ℂ`, analytic scalar germs have no zero divisors: if `f * g =ᶠ[𝓝 p] 0`, then
+`f =ᶠ[𝓝 p] 0` or `g =ᶠ[𝓝 p] 0`. -/
+theorem AnalyticAt.eventuallyEq_zero_or_eventuallyEq_zero_of_mul
+    {f g : E → 𝕜} {p : E}
+    (hf : AnalyticAt 𝕜 f p) (hg : AnalyticAt 𝕜 g p) (hfg : f * g =ᶠ[𝓝 p] 0) :
+    f =ᶠ[𝓝 p] 0 ∨ g =ᶠ[𝓝 p] 0 :=
+  hf.eventuallyEq_zero_or_eventuallyEq_zero_of_smul hg hfg
 
 end

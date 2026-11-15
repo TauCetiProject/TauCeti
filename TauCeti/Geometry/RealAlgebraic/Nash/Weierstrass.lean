@@ -8,20 +8,18 @@ module
 public import Mathlib.Analysis.Analytic.Order
 public import TauCeti.Geometry.RealAlgebraic.Nash.Basic
 public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
-import Mathlib.Algebra.Polynomial.Splits
-import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.FieldTheory.IsAlgClosed.Basic
 import TauCeti.Algebra.Polynomial.Taylor
+import TauCeti.Analysis.Analytic.Complexification.Basic
 import TauCeti.Analysis.Analytic.Complexification.Weierstrass
 import TauCeti.Analysis.Calculus.Deriv.Polynomial
 import TauCeti.Analysis.Polynomial.Monic.RootBound
 import TauCeti.Analysis.Polynomial.Order
-import TauCeti.Geometry.RealAlgebraic.Nash.Comp
-import TauCeti.Geometry.RealAlgebraic.Nash.Complexification
-import TauCeti.Geometry.RealAlgebraic.Nash.Derivative
+import TauCeti.Geometry.RealAlgebraic.Nash.Holomorphic
 import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Complex
+import TauCeti.RingTheory.Polynomial.Monic.Roots
 
 /-!
 # The Nash Weierstrass preparation and division theorems
@@ -45,24 +43,27 @@ Separating the roots belonging to the chosen analytic branch requires working in
 and isolating the local root cluster on a disk:
 
 1. **Holomorphic-Nash extension.** Complexifying `f`, `c i`, and `u` gives a complex Weierstrass
-   factorization `F (z, w) = P_z (w - w₀) * U (z, w)` near `(z₀, w₀)` in which `F` has Nash real
-   and imaginary parts in `TauCeti.complexToRealPi` coordinates
-   (`TauCeti.IsNashAt.complexification_re_im`), as do all iterated vertical derivatives of `F`
-   (`TauCeti.IsNashAt.fderiv_apply`).
+   factorization `F (z, w) = P_z (w - w₀) * U (z, w)` near `(z₀, w₀)` in which `F` is
+   holomorphic-Nash (`TauCeti.IsHolomorphicNashAt`, `TauCeti.IsNashAt.exists_isHolomorphicNashAt`),
+   as are all iterated vertical derivatives of `F`
+   (`TauCeti.IsHolomorphicNashAt.iteratedDeriv_vertical`).
 2. **Root-cluster isolation and first-order characterization.** After translating `w₀` to `0`,
    choose a disk `ball 0 R ⊆ ℂ` on which `U (z, ·)` is nonvanishing and shrink the base
    neighbourhood `B_X` so that `‖c i z‖ ≤ (R / 4) ^ (d - i)`. By Fujiwara's root bound
-   (`Polynomial.IsRoot.norm_le_two_mul`), every complex root of `P_z` lies in `ball 0 R`. Because
-   `ℂ` is algebraically closed, a monic degree-`d` polynomial `monicOfCoeff a` coincides with
-   `P_z` if and only if all of its roots lie in `ball 0 R` and, at every `w ∈ ball 0 R`, its Hasse
-   derivatives below each order `k ≤ d` vanish simultaneously with the vertical derivatives of
-   `F (z, ·)`.
+   (`TauCeti.Polynomial.mem_ball_of_isRoot_monicOfCoeff`), every complex root of `P_z` lies in
+   `ball 0 R`. Because `ℂ` is algebraically closed, a monic degree-`d` polynomial `monicOfCoeff a`
+   coincides with `P_z` if and only if all of its roots lie in `ball 0 R` and, at every
+   `w ∈ ball 0 R`, its Hasse derivatives below each order `k ≤ d` vanish simultaneously with the
+   vertical derivatives of `F (z, ·)`
+   (`TauCeti.Polynomial.eq_of_monicOfCoeff_forall_hasseDeriv_iff`).
 3. **Elimination and exact division.** Universal quantifier elimination over the real and imaginary
    parts of `w` (`TauCeti.IsSemialgebraic.setOf_forall_sumElim`) makes the graph of `z ↦ c · z`
-   semialgebraic on `B_X`, so the local Nash graph criterion upgrades each `c i` to Nash. Exact
-   analytic division of Nash germs (`TauCeti.IsNashAt.of_mul_eventuallyEq`) then upgrades `U`.
+   semialgebraic on `B_X`, so the local holomorphic-Nash graph criterion
+   (`TauCeti.forall_isHolomorphicNashAt_apply_iff_exists_isSemialgebraicOn`) upgrades each `c i`.
+   Exact analytic division (`TauCeti.IsHolomorphicNashAt.of_mul_eventuallyEq`) then upgrades `U`.
    Weierstrass division is proved analogously: matching Taylor jets at every root of `P_z` inside
-   `ball 0 R` characterizes the degree-`< d` remainder uniquely over `ℂ`.
+   `ball 0 R` characterizes the degree-`< d` remainder uniquely over `ℂ`
+   (`TauCeti.Polynomial.eq_of_sum_monomial_forall_hasseDeriv_eq`).
 
 ## Main results
 
@@ -89,124 +90,9 @@ open Filter Metric Polynomial Topology
 
 namespace TauCeti
 
-/-! ### Polynomial characterization on a root-isolating set -/
+/-! ### Semialgebraicity of complex polynomial Hasse derivatives and jet intersections -/
 
-section PolynomialCharacterization
-
-/-- Over an algebraically closed field, two monic polynomials `monicOfCoeff a` and `monicOfCoeff c`
-of degree `d` whose roots all lie in `s` agree whenever, at every `w ∈ s` and for every
-`k ≤ d`, their Hasse derivatives of order `< k` vanish together. -/
-private theorem eq_of_monicOfCoeff_forall_hasseDeriv_iff {K : Type*} [Field K] [IsAlgClosed K]
-    {d : ℕ} {a c : Fin d → K} {s : Set K}
-    (ha : ∀ w, (Polynomial.monicOfCoeff a).IsRoot w → w ∈ s)
-    (hc : ∀ w, (Polynomial.monicOfCoeff c).IsRoot w → w ∈ s)
-    (hderiv : ∀ w ∈ s, ∀ k : Fin (d + 1),
-      (∀ j : Fin (k : ℕ), (hasseDeriv (j : ℕ) (Polynomial.monicOfCoeff a)).eval w = 0) ↔
-        (∀ j : Fin (k : ℕ), (hasseDeriv (j : ℕ) (Polynomial.monicOfCoeff c)).eval w = 0)) :
-    a = c := by
-  let P := Polynomial.monicOfCoeff a
-  let Q := Polynomial.monicOfCoeff c
-  have hPm : P.Monic := Polynomial.monic_monicOfCoeff a
-  have hQm : Q.Monic := Polynomial.monic_monicOfCoeff c
-  have hle_iff (p : K[X]) (hp : p ≠ 0) (w : K) (n : ℕ) :
-      n ≤ p.rootMultiplicity w ↔ ∀ j : Fin n, (hasseDeriv (j : ℕ) p).eval w = 0 := by
-    rw [Polynomial.le_rootMultiplicity_iff_forall_eval_hasseDeriv_eq_zero hp]
-    exact ⟨fun h j ↦ h j j.2, fun h j hj ↦ h ⟨j, hj⟩⟩
-  have hroots : P.roots = Q.roots := by
-    classical
-    ext w
-    rw [Polynomial.count_roots, Polynomial.count_roots]
-    by_cases hw : w ∈ s
-    · have hmP : P.rootMultiplicity w ≤ d := by
-        rw [← Polynomial.count_roots, ← Polynomial.natDegree_monicOfCoeff a]
-        exact (Multiset.count_le_card w _).trans P.card_roots'
-      have hmQ : Q.rootMultiplicity w ≤ d := by
-        rw [← Polynomial.count_roots, ← Polynomial.natDegree_monicOfCoeff c]
-        exact (Multiset.count_le_card w _).trans Q.card_roots'
-      refine le_antisymm ?_ ?_
-      · exact (hle_iff Q hQm.ne_zero w _).2
-          ((hderiv w hw ⟨_, Nat.lt_succ_of_le hmP⟩).1 ((hle_iff P hPm.ne_zero w _).1 le_rfl))
-      · exact (hle_iff P hPm.ne_zero w _).2
-          ((hderiv w hw ⟨_, Nat.lt_succ_of_le hmQ⟩).2 ((hle_iff Q hQm.ne_zero w _).1 le_rfl))
-    · rw [Polynomial.rootMultiplicity_eq_zero (mt (ha w) hw),
-        Polynomial.rootMultiplicity_eq_zero (mt (hc w) hw)]
-  have hPQ : P = Q := by
-    rw [(IsAlgClosed.splits P).eq_prod_roots_of_monic hPm,
-      (IsAlgClosed.splits Q).eq_prod_roots_of_monic hQm, hroots]
-  exact (Polynomial.monicOfCoeff_inj a c).1 hPQ
-
-/-- Over an algebraically closed field, if every root of `P = monicOfCoeff c` lies in `s`, then two
-degree-`< d` polynomials `∑ i, monomial i (b i)` and `∑ i, monomial i (r i)` agree whenever their
-Hasse derivatives agree up to the multiplicity of `P` at every point of `s`. -/
-private theorem eq_of_sum_monomial_forall_hasseDeriv_eq {K : Type*} [Field K] [IsAlgClosed K]
-    {d : ℕ} {c b r : Fin d → K} {s : Set K}
-    (hc : ∀ w, (Polynomial.monicOfCoeff c).IsRoot w → w ∈ s)
-    (hderiv : ∀ w ∈ s, ∀ k : Fin (d + 1),
-      (∀ j : Fin (k : ℕ), (hasseDeriv (j : ℕ) (Polynomial.monicOfCoeff c)).eval w = 0) →
-        ∀ j : Fin (k : ℕ),
-          (hasseDeriv (j : ℕ) (∑ i : Fin d, monomial (i : ℕ) (b i))).eval w =
-            (hasseDeriv (j : ℕ) (∑ i : Fin d, monomial (i : ℕ) (r i))).eval w) :
-    b = r := by
-  let P := Polynomial.monicOfCoeff c
-  let B := ∑ i : Fin d, monomial (i : ℕ) (b i)
-  let R := ∑ i : Fin d, monomial (i : ℕ) (r i)
-  have hPm : P.Monic := Polynomial.monic_monicOfCoeff c
-  have hBR : B - R = 0 := by
-    by_contra hne
-    have hle : P.roots ≤ (B - R).roots := by
-      classical
-      rw [Multiset.le_iff_count]
-      intro w
-      rw [Polynomial.count_roots, Polynomial.count_roots]
-      by_cases hw : P.IsRoot w
-      · have hm : P.rootMultiplicity w ≤ d := by
-          rw [← Polynomial.count_roots, ← Polynomial.natDegree_monicOfCoeff c]
-          exact (Multiset.count_le_card w _).trans P.card_roots'
-        have hP0 : ∀ j : Fin (P.rootMultiplicity w), (hasseDeriv (j : ℕ) P).eval w = 0 :=
-          fun j ↦ (Polynomial.le_rootMultiplicity_iff_forall_eval_hasseDeriv_eq_zero hPm.ne_zero).1
-            le_rfl j j.2
-        have hBR0 := hderiv w (hc w hw) ⟨_, Nat.lt_succ_of_le hm⟩ hP0
-        rw [Polynomial.le_rootMultiplicity_iff_forall_eval_hasseDeriv_eq_zero hne]
-        intro j hj
-        rw [map_sub, eval_sub, sub_eq_zero]
-        exact hBR0 ⟨j, hj⟩
-      · simp [Polynomial.rootMultiplicity_eq_zero hw]
-    have hdvd : P ∣ B - R := (IsAlgClosed.splits P).dvd_of_roots_le_roots hPm.ne_zero hle
-    have hdeg_ge : d ≤ (B - R).natDegree := by
-      simpa only [P, Polynomial.natDegree_monicOfCoeff] using
-        Polynomial.natDegree_le_of_dvd hdvd hne
-    have hsub_eq : B - R = ∑ i : Fin d, monomial (i : ℕ) (b i - r i) := by
-      simp [B, R, ← Finset.sum_sub_distrib, monomial_sub]
-    have hdeg_lt : (B - R).degree < (d : WithBot ℕ) := by
-      rw [hsub_eq]
-      simpa only [C_mul_X_pow_eq_monomial] using Polynomial.degree_sum_fin_lt (fun i ↦ b i - r i)
-    rw [Polynomial.degree_eq_natDegree hne, Nat.cast_lt] at hdeg_lt
-    omega
-  have heq : B = R := sub_eq_zero.1 hBR
-  funext i
-  simpa [B, R, Polynomial.finsetSum_coeff, Polynomial.coeff_monomial, Finsupp.single_apply,
-    Fin.val_eq_val] using congrArg (fun p : K[X] ↦ p.coeff (i : ℕ)) heq
-
-/-- If `‖a i‖ ≤ (R / 4) ^ (d - i)` for every `i : Fin d` and `0 < R`, then every root of
-`monicOfCoeff a` lies in `ball 0 R`. -/
-private theorem mem_ball_of_isRoot_monicOfCoeff {K : Type*} [NormedField K] {d : ℕ}
-    {a : Fin d → K} {R : ℝ} (hR : 0 < R)
-    (ha : ∀ i : Fin d, ‖a i‖ ≤ (R / 4) ^ (d - (i : ℕ))) {w : K}
-    (hw : (Polynomial.monicOfCoeff a).IsRoot w) : w ∈ ball (0 : K) R := by
-  have hle : ‖w‖ ≤ 2 * (R / 4) := by
-    refine hw.norm_le_two_mul (Polynomial.monic_monicOfCoeff a) fun m hm ↦ ?_
-    rw [Polynomial.natDegree_monicOfCoeff] at hm ⊢
-    have hm' : m = (⟨m, hm⟩ : Fin d) := rfl
-    rw [hm', Polynomial.coeff_monicOfCoeff]
-    exact ha ⟨m, hm⟩
-  rw [mem_ball_zero_iff]
-  linarith
-
-end PolynomialCharacterization
-
-/-! ### Holomorphic functions with Nash real and imaginary parts -/
-
-section HolomorphicNash
+section SemialgebraicComplexPoly
 
 private theorem continuous_sumElim_const {σ : Type*} (z : σ → ℂ) :
     Continuous fun w : ℂ ↦ Sum.elim z (fun _ : Unit ↦ w) :=
@@ -216,262 +102,9 @@ private theorem analyticAt_sumElim_const {σ : Type*} [Fintype σ] (z : σ → �
     AnalyticAt ℂ (fun w : ℂ ↦ Sum.elim z (fun _ : Unit ↦ w)) w₀ :=
   AnalyticAt.pi (Sum.rec (fun _ ↦ analyticAt_const) (fun _ ↦ analyticAt_id))
 
-/-- A complex-valued function `F` on `τ → ℂ` is *holomorphic-Nash* at `z₀` when it is complex
-analytic at `z₀` and its real and imaginary parts in `complexToRealPi τ` coordinates are real Nash
-germs at `complexToRealPi τ z₀`. -/
-private structure IsHolomorphicNashAt {τ : Type*} [Fintype τ]
-    (F : (τ → ℂ) → ℂ) (z₀ : τ → ℂ) : Prop where
-  analyticAt : AnalyticAt ℂ F z₀
-  re : IsNashAt (fun a ↦ (F ((complexToRealPi τ).symm a)).re) (complexToRealPi τ z₀)
-  im : IsNashAt (fun a ↦ (F ((complexToRealPi τ).symm a)).im) (complexToRealPi τ z₀)
-
-private theorem IsHolomorphicNashAt.congr {τ : Type*} [Fintype τ]
-    {F G : (τ → ℂ) → ℂ} {z₀ : τ → ℂ} (hF : IsHolomorphicNashAt F z₀) (h : F =ᶠ[𝓝 z₀] G) :
-    IsHolomorphicNashAt G z₀ := by
-  let e := complexToRealPi τ
-  have he : Tendsto e.symm (𝓝 (e z₀)) (𝓝 z₀) := by
-    simpa only [e.symm_apply_apply] using e.symm.continuous.tendsto (e z₀)
-  exact ⟨hF.analyticAt.congr h,
-    hF.re.congr ((he.eventually h).mono fun a ha ↦ congrArg Complex.re ha),
-    hF.im.congr ((he.eventually h).mono fun a ha ↦ congrArg Complex.im ha)⟩
-
-private theorem isHolomorphicNashAt_const {τ : Type*} [Fintype τ] (c : ℂ) (z₀ : τ → ℂ) :
-    IsHolomorphicNashAt (fun _ : τ → ℂ ↦ c) z₀ :=
-  ⟨analyticAt_const, isNashAt_const c.re, isNashAt_const c.im⟩
-
-private theorem isHolomorphicNashAt_apply {τ : Type*} [Fintype τ] (i : τ) (z₀ : τ → ℂ) :
-    IsHolomorphicNashAt (fun z : τ → ℂ ↦ z i) z₀ :=
-  ⟨(ContinuousLinearMap.proj (R := ℂ) (φ := fun _ : τ ↦ ℂ) i).analyticAt z₀,
-    by simpa using isNashAt_apply (x := complexToRealPi τ z₀) (Sum.inl i),
-    by simpa using isNashAt_apply (x := complexToRealPi τ z₀) (Sum.inr i)⟩
-
-private theorem IsHolomorphicNashAt.add {τ : Type*} [Fintype τ]
-    {F G : (τ → ℂ) → ℂ} {z₀ : τ → ℂ}
-    (hF : IsHolomorphicNashAt F z₀) (hG : IsHolomorphicNashAt G z₀) :
-    IsHolomorphicNashAt (fun z ↦ F z + G z) z₀ :=
-  ⟨hF.analyticAt.fun_add hG.analyticAt,
-    (hF.re.add hG.re).congr (.of_forall fun _ ↦ rfl),
-    (hF.im.add hG.im).congr (.of_forall fun _ ↦ rfl)⟩
-
-private theorem IsHolomorphicNashAt.sub {τ : Type*} [Fintype τ]
-    {F G : (τ → ℂ) → ℂ} {z₀ : τ → ℂ}
-    (hF : IsHolomorphicNashAt F z₀) (hG : IsHolomorphicNashAt G z₀) :
-    IsHolomorphicNashAt (fun z ↦ F z - G z) z₀ :=
-  ⟨hF.analyticAt.fun_sub hG.analyticAt,
-    (hF.re.sub hG.re).congr (.of_forall fun _ ↦ rfl),
-    (hF.im.sub hG.im).congr (.of_forall fun _ ↦ rfl)⟩
-
-private theorem IsHolomorphicNashAt.mul {τ : Type*} [Fintype τ]
-    {F G : (τ → ℂ) → ℂ} {z₀ : τ → ℂ}
-    (hF : IsHolomorphicNashAt F z₀) (hG : IsHolomorphicNashAt G z₀) :
-    IsHolomorphicNashAt (fun z ↦ F z * G z) z₀ :=
-  ⟨hF.analyticAt.fun_mul hG.analyticAt,
-    ((hF.re.mul hG.re).sub (hF.im.mul hG.im)).congr (.of_forall fun _ ↦ (Complex.mul_re _ _).symm),
-    ((hF.re.mul hG.im).add (hF.im.mul hG.re)).congr (.of_forall fun _ ↦ (Complex.mul_im _ _).symm)⟩
-
-private theorem IsHolomorphicNashAt.pow {τ : Type*} [Fintype τ]
-    {F : (τ → ℂ) → ℂ} {z₀ : τ → ℂ} (hF : IsHolomorphicNashAt F z₀) (n : ℕ) :
-    IsHolomorphicNashAt (fun z ↦ F z ^ n) z₀ := by
-  induction n with
-  | zero => simpa only [pow_zero] using isHolomorphicNashAt_const 1 z₀
-  | succ n ih => simpa only [pow_succ] using ih.mul hF
-
-private theorem IsHolomorphicNashAt.sum {ι τ : Type*} [Fintype τ]
-    {F : ι → (τ → ℂ) → ℂ} {z₀ : τ → ℂ} (s : Finset ι)
-    (h : ∀ i ∈ s, IsHolomorphicNashAt (F i) z₀) :
-    IsHolomorphicNashAt (fun z ↦ ∑ i ∈ s, F i z) z₀ := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simpa using isHolomorphicNashAt_const 0 z₀
-  | insert a s ha ih =>
-    have hhead := h a (Finset.mem_insert_self a s)
-    have htail := ih fun i hi ↦ h i (Finset.mem_insert_of_mem hi)
-    exact (hhead.add htail).congr (.of_forall fun z ↦ by simp [Finset.sum_insert ha])
-
-/-- Composing a holomorphic-Nash germ with a holomorphic map whose coordinates are holomorphic-Nash
-produces a holomorphic-Nash germ. -/
-private theorem IsHolomorphicNashAt.comp {σ τ : Type*} [Fintype σ] [Fintype τ]
-    {F : (τ → ℂ) → ℂ} {Φ : (σ → ℂ) → (τ → ℂ)} {z₀ : σ → ℂ}
-    (hF : IsHolomorphicNashAt F (Φ z₀)) (hΦ : ∀ j, IsHolomorphicNashAt (fun z ↦ Φ z j) z₀) :
-    IsHolomorphicNashAt (F ∘ Φ) z₀ := by
-  let eσ := complexToRealPi σ
-  let eτ := complexToRealPi τ
-  have hΦ_an : AnalyticAt ℂ Φ z₀ := AnalyticAt.pi fun j ↦ (hΦ j).analyticAt
-  have hcoords : ∀ k : τ ⊕ τ, IsNashAt (fun a ↦ eτ (Φ (eσ.symm a)) k) (eσ z₀) := by
-    intro k
-    cases k with
-    | inl j => simpa [eσ, eτ] using (hΦ j).re
-    | inr j => simpa [eσ, eτ] using (hΦ j).im
-  have heq (a : σ ⊕ σ → ℝ) : eτ.symm (eτ (Φ (eσ.symm a))) = Φ (eσ.symm a) :=
-    eτ.symm_apply_apply _
-  have hre0 : IsNashAt (fun b ↦ (F (eτ.symm b)).re) (eτ (Φ (eσ.symm (eσ z₀)))) := by
-    simpa only [eσ.symm_apply_apply] using hF.re
-  have him0 : IsNashAt (fun b ↦ (F (eτ.symm b)).im) (eτ (Φ (eσ.symm (eσ z₀)))) := by
-    simpa only [eσ.symm_apply_apply] using hF.im
-  have hre := hre0.comp hcoords
-  have him := him0.comp hcoords
-  exact ⟨hF.analyticAt.comp hΦ_an,
-    hre.congr (.of_forall fun a ↦ congrArg (fun w ↦ (F w).re) (heq a)),
-    him.congr (.of_forall fun a ↦ congrArg (fun w ↦ (F w).im) (heq a))⟩
-
-/-- Exact holomorphic division preserves `IsHolomorphicNashAt`: multiplying `P * Q = H` by `star P`
-reduces to real exact division by `|P|²`. -/
-private theorem IsHolomorphicNashAt.of_mul_eventuallyEq {τ : Type*} [Fintype τ]
-    {P Q H : (τ → ℂ) → ℂ} {z₀ : τ → ℂ}
-    (hP : IsHolomorphicNashAt P z₀) (hH : IsHolomorphicNashAt H z₀)
-    (hQ : AnalyticAt ℂ Q z₀) (hP0 : ¬ P =ᶠ[𝓝 z₀] (0 : (τ → ℂ) → ℂ))
-    (hmul : P * Q =ᶠ[𝓝 z₀] H) :
-    IsHolomorphicNashAt Q z₀ := by
-  let e := complexToRealPi τ
-  let nP : (τ ⊕ τ → ℝ) → ℝ := fun a ↦ (P (e.symm a)).re ^ 2 + (P (e.symm a)).im ^ 2
-  have hnP : IsNashAt nP (e z₀) := (hP.re.pow 2).add (hP.im.pow 2)
-  have hnP0 : ¬ nP =ᶠ[𝓝 (e z₀)] (0 : (τ ⊕ τ → ℝ) → ℝ) := fun h0 ↦
-    hP0 <| (e.continuous.tendsto z₀).eventually h0 |>.mono fun z hz ↦
-      Complex.normSq_eq_zero.1
-        (by simpa [nP, e.symm_apply_apply, Complex.normSq_apply, sq] using hz)
-  have hQ_real : AnalyticAt ℝ (fun a ↦ Q (e.symm a)) (e z₀) :=
-    (hQ.restrictScalars (𝕜 := ℝ)).comp_of_eq (e.symm.analyticAt _) (e.symm_apply_apply z₀)
-  have he : Tendsto e.symm (𝓝 (e z₀)) (𝓝 z₀) := by
-    simpa only [e.symm_apply_apply] using e.symm.continuous.tendsto (e z₀)
-  have hmul_star : ∀ᶠ a in 𝓝 (e z₀),
-      (nP a : ℂ) * Q (e.symm a) = star (P (e.symm a)) * H (e.symm a) := by
-    filter_upwards [he.eventually hmul] with a ha
-    have hnorm : star (P (e.symm a)) * P (e.symm a) = (nP a : ℂ) := by
-      rw [Complex.ext_iff]
-      simp [nP, sq]
-      ring
-    calc (nP a : ℂ) * Q (e.symm a)
-        = star (P (e.symm a)) * (P (e.symm a) * Q (e.symm a)) := by rw [← mul_assoc, hnorm]
-      _ = star (P (e.symm a)) * H (e.symm a) := by rw [← Pi.mul_apply, ha]
-  refine ⟨hQ, ?_, ?_⟩
-  · refine hnP.of_mul_eventuallyEq ((hP.re.mul hH.re).add (hP.im.mul hH.im))
-      ((Complex.reCLM.analyticAt _).comp hQ_real) hnP0 ?_
-    exact hmul_star.mono fun a ha ↦ by simpa [Complex.mul_re] using congrArg Complex.re ha
-  · refine hnP.of_mul_eventuallyEq ((hP.re.mul hH.im).sub (hP.im.mul hH.re))
-      ((Complex.imCLM.analyticAt _).comp hQ_real) hnP0 ?_
-    exact hmul_star.mono fun a ha ↦ by
-      simpa [Complex.mul_im, sub_eq_add_neg] using congrArg Complex.im ha
-
-/-- Restricting a holomorphic-Nash germ to the real locus produces a real Nash germ whenever it
-takes real values `f y` near `x₀`. -/
-private theorem IsHolomorphicNashAt.isNashAt_of_eventually_real {τ : Type*} [Fintype τ]
-    {F : (τ → ℂ) → ℂ} {f : (τ → ℝ) → ℝ} {x₀ : τ → ℝ}
-    (hF : IsHolomorphicNashAt F (fun j ↦ (x₀ j : ℂ)))
-    (hf : ∀ᶠ y in 𝓝 x₀, F (fun j ↦ (y j : ℂ)) = f y) :
-    IsNashAt f x₀ := by
-  let e := complexToRealPi τ
-  let ι : (τ → ℝ) → (τ ⊕ τ → ℝ) := fun y ↦ Sum.elim y 0
-  have hι_eq (y : τ → ℝ) : e.symm (ι y) = fun j ↦ (y j : ℂ) := by
-    ext j; simp [e, ι]
-  have hι_z₀ : ι x₀ = e (fun j ↦ (x₀ j : ℂ)) := by
-    ext k; cases k <;> simp [e, ι]
-  have hι_nash : ∀ k : τ ⊕ τ, IsNashAt (fun y ↦ ι y k) x₀ := by
-    rintro (j | _)
-    · exact isNashAt_apply j
-    · exact isNashAt_const 0
-  refine ((hι_z₀ ▸ hF.re).comp hι_nash).congr ?_
-  filter_upwards [hf] with y hy
-  simp [Function.comp_apply, e, hι_eq, hy]
-
-/-- Directional differentiation in the vertical coordinate `Sum.inr ()` preserves
-`IsHolomorphicNashAt`. -/
-private theorem IsHolomorphicNashAt.fderiv_vertical {σ : Type*} [Fintype σ]
-    {F : (σ ⊕ Unit → ℂ) → ℂ} {z₀ : σ ⊕ Unit → ℂ} (hF : IsHolomorphicNashAt F z₀) :
-    IsHolomorphicNashAt (fun z ↦ fderiv ℂ F z (Sum.elim 0 1)) z₀ := by
-  let v : σ ⊕ Unit → ℂ := Sum.elim 0 1
-  let e := complexToRealPi (σ ⊕ Unit)
-  have hF'_an : AnalyticAt ℂ (fun z ↦ fderiv ℂ F z v) z₀ :=
-    ((ContinuousLinearMap.apply ℂ ℂ v).analyticAt _).comp hF.analyticAt.fderiv
-  have he : Tendsto e.symm (𝓝 (e z₀)) (𝓝 z₀) := by
-    simpa only [e.symm_apply_apply] using e.symm.continuous.tendsto (e z₀)
-  have hfderiv_eq : ∀ᶠ a in 𝓝 (e z₀),
-      fderiv ℝ (fun b ↦ (F (e.symm b)).re) a (e v) = (fderiv ℂ F (e.symm a) v).re ∧
-        fderiv ℝ (fun b ↦ (F (e.symm b)).im) a (e v) = (fderiv ℂ F (e.symm a) v).im := by
-    filter_upwards [he.eventually hF.analyticAt.eventually_analyticAt] with a ha
-    have hF_diff : HasFDerivAt (fun b ↦ F (e.symm b))
-        (((fderiv ℂ F (e.symm a)).restrictScalars ℝ).comp (e.symm : _ →L[ℝ] _)) a :=
-      (ha.differentiableAt.hasFDerivAt.restrictScalars ℝ).comp a e.symm.hasFDerivAt
-    have hre := (Complex.reCLM.hasFDerivAt.comp a hF_diff).fderiv
-    have him := (Complex.imCLM.hasFDerivAt.comp a hF_diff).fderiv
-    exact ⟨by simpa [Function.comp_def, e.symm_apply_apply] using congrArg (fun L ↦ L (e v)) hre,
-      by simpa [Function.comp_def, e.symm_apply_apply] using congrArg (fun L ↦ L (e v)) him⟩
-  exact ⟨hF'_an,
-    (hF.re.fderiv_apply (e v)).congr (hfderiv_eq.mono fun _ h ↦ h.1),
-    (hF.im.fderiv_apply (e v)).congr (hfderiv_eq.mono fun _ h ↦ h.2)⟩
-
-/-- Every iterated vertical slice derivative of a holomorphic-Nash germ is holomorphic-Nash. -/
-private theorem IsHolomorphicNashAt.iteratedDeriv_vertical {σ : Type*} [Fintype σ]
-    {F : (σ ⊕ Unit → ℂ) → ℂ} {z₀ : σ ⊕ Unit → ℂ} (hF : IsHolomorphicNashAt F z₀) :
-    ∀ n : ℕ, IsHolomorphicNashAt
-      (fun z ↦ iteratedDeriv n (fun w ↦ F (Sum.elim (z ∘ Sum.inl) (fun _ ↦ w))) (z (.inr ()))) z₀
-  | 0 => hF.congr (.of_forall fun z ↦ by
-      have hz : Sum.elim (z ∘ Sum.inl) (fun _ ↦ z (.inr ())) = z := by
-        ext k; rcases k with s | ⟨⟩ <;> rfl
-      simp [hz])
-  | n + 1 => by
-    let F' : (σ ⊕ Unit → ℂ) → ℂ := fun z ↦ fderiv ℂ F z (Sum.elim 0 1)
-    obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1 (isOpen_analyticAt ℂ F) z₀ hF.analyticAt
-    refine (hF.fderiv_vertical.iteratedDeriv_vertical n).congr ?_
-    filter_upwards [ball_mem_nhds z₀ (half_pos hr)] with z hz
-    have hz_lt : dist z z₀ < r := (mem_ball.1 hz).trans (half_lt_self hr)
-    have hz_eq : Sum.elim (z ∘ Sum.inl) (fun _ : Unit ↦ z (.inr ())) = z := by
-      ext k; rcases k with s | ⟨⟩ <;> rfl
-    have hw_open : {w : ℂ | Sum.elim (z ∘ Sum.inl) (fun _ ↦ w) ∈ ball z₀ r} ∈ 𝓝 (z (.inr ())) :=
-      ((continuous_sumElim_const (z ∘ Sum.inl)).tendsto (z (.inr ()))).eventually
-        (isOpen_ball.mem_nhds (hz_eq.symm ▸ mem_ball.2 hz_lt))
-    have hderiv_eq : (fun w ↦ F' (Sum.elim (z ∘ Sum.inl) (fun _ ↦ w))) =ᶠ[𝓝 (z (.inr ()))]
-        deriv (fun w ↦ F (Sum.elim (z ∘ Sum.inl) (fun _ ↦ w))) := by
-      filter_upwards [hw_open] with w hw
-      have hγ : HasDerivAt (fun w' : ℂ ↦ Sum.elim (z ∘ Sum.inl) (fun _ : Unit ↦ w'))
-          (Sum.elim 0 1) w :=
-        hasDerivAt_pi.2 fun k ↦ by
-          rcases k with s | ⟨⟩
-          · exact hasDerivAt_const w (z (Sum.inl s))
-          · exact hasDerivAt_id w
-      exact (((hball hw).differentiableAt.hasFDerivAt.comp_hasDerivAt w hγ).deriv).symm
-    rw [iteratedDeriv_succ']
-    exact hderiv_eq.iteratedDeriv_eq n
-
-end HolomorphicNash
-
-/-! ### Semialgebraicity of complex polynomial Hasse derivatives -/
-
-section SemialgebraicComplexPoly
-
 /-- Real coordinates `(x_ℝ, a_ℝ, w_ℝ)` for base `σ → ℂ`, coefficients `Fin d → ℂ`, and fiber `ℂ`. -/
 private abbrev ElimCoord (σ : Type*) (d : ℕ) : Type _ :=
   ((σ ⊕ σ) ⊕ (Fin d ⊕ Fin d)) ⊕ (Unit ⊕ Unit) → ℝ
-
-/-- Evaluating a complex multivariate polynomial defines a semialgebraic map in `complexToRealPi`
-coordinates. -/
-private theorem isSemialgebraicMap_complexToRealPi_eval {κ : Type*} [Fintype κ]
-    (P : MvPolynomial κ ℂ) :
-    IsSemialgebraicMap (fun u : κ ⊕ κ → ℝ ↦
-      complexToRealPi Unit (fun _ ↦ MvPolynomial.eval ((complexToRealPi κ).symm u) P)) := by
-  rw [← isSemialgebraicOn_univ]
-  have hpre : (complexToRealPi κ).symm ⁻¹' (Set.univ : Set (κ → ℂ)) = Set.univ := rfl
-  rw [← hpre]
-  refine isSemialgebraicOn_complexToRealPi_of_forall_eq_iff
-    (g := fun z _ ↦ MvPolynomial.eval z P) (s := Set.univ) (ι := Unit)
-    isSemialgebraic_univ
-    (fun _ ↦ MvPolynomial.rename (Sum.inl ∘ Sum.inl) P - MvPolynomial.X (Sum.inl (Sum.inr ())))
-    fun z _ y ↦ ?_
-  simp [funext_iff, Unique.forall_iff, sub_eq_zero, MvPolynomial.eval_rename, Function.comp_def]
-
-private theorem monicOfCoeff_eq_X_pow_add_sum {d : ℕ} (a : Fin d → ℂ) :
-    Polynomial.monicOfCoeff a =
-      _root_.Polynomial.X ^ d + ∑ i : Fin d, monomial (i : ℕ) (a i) := by
-  let q : ℂ[X] := _root_.Polynomial.X ^ d + ∑ i : Fin d, monomial (i : ℕ) (a i)
-  have hdeg_lt : (∑ i : Fin d, monomial (i : ℕ) (a i)).degree < (d : WithBot ℕ) := by
-    simpa only [C_mul_X_pow_eq_monomial] using Polynomial.degree_sum_fin_lt a
-  have hq_monic : q.Monic := monic_X_pow_add hdeg_lt
-  have hq_deg : q.natDegree = d := by
-    rw [natDegree_add_eq_left_of_degree_lt (by rwa [degree_X_pow]), natDegree_X_pow]
-  have hq_coeff : (fun i : Fin d ↦ q.coeff (i : ℕ)) = a := by
-    ext i
-    simp [q, coeff_X_pow, i.2.ne, coeff_monomial, Finsupp.single_apply, Fin.val_eq_val]
-  conv_lhs => rw [← hq_coeff]
-  exact Polynomial.monicOfCoeff_coeff hq_monic hq_deg
 
 /-- The complex multivariate polynomial representing the `j`-th Hasse derivative of
 `monicOfCoeff a` evaluated at `w`, in coordinates `Sum.elim a (fun _ : Unit ↦ w)`. -/
@@ -485,7 +118,7 @@ private theorem eval_hasseDerivMonicMvPoly {d : ℕ} (j : ℕ) (a : Fin d → �
       (hasseDeriv j (Polynomial.monicOfCoeff a)).eval w := by
   have hXd : (_root_.Polynomial.X ^ d : ℂ[X]) = monomial d 1 := by
     rw [← C_mul_X_pow_eq_monomial, C_1, one_mul]
-  rw [monicOfCoeff_eq_X_pow_add_sum, hXd, map_add, map_sum, eval_add, eval_finsetSum]
+  rw [Polynomial.monicOfCoeff_def, hXd, map_add, map_sum, eval_add, eval_finsetSum]
   simp only [hasseDeriv_monomial, mul_one, eval_monomial, hasseDerivMonicMvPoly, map_add, map_mul,
     map_pow, map_sum, MvPolynomial.eval_C, MvPolynomial.eval_X, Sum.elim_inl, Sum.elim_inr]
 
@@ -524,6 +157,14 @@ private theorem mem_realDiskSet_iff {R : ℝ} (hR : 0 < R) (w_ℝ : Unit ⊕ Uni
     simp [w, sq]
   rw [realDiskSet, Set.mem_ofPred, hsq, mem_ball_zero_iff, sq_lt_sq₀ (norm_nonneg w) hR.le]
 
+private theorem complexToRealPi_unit_symm_const (w : ℂ) :
+    (complexToRealPi Unit).symm (complexToRealPi Unit (fun _ ↦ w)) () = w := by
+  simp
+
+private theorem mem_ball_iff_complexToRealPi_mem_realDiskSet {R : ℝ} (hR : 0 < R) (w : ℂ) :
+    w ∈ ball (0 : ℂ) R ↔ complexToRealPi Unit (fun _ ↦ w) ∈ realDiskSet R := by
+  rw [mem_realDiskSet_iff hR, complexToRealPi_unit_symm_const]
+
 /-- Regroup `ElimCoord σ d` onto the base-and-vertical real coordinates
 `(σ ⊕ Unit) ⊕ (σ ⊕ Unit)`. -/
 private def projXW (σ : Type*) (d : ℕ) :
@@ -546,13 +187,13 @@ private theorem symm_comp_projXW {σ : Type*} [Fintype σ] {d : ℕ} (u : ElimCo
     (complexToRealPi (σ ⊕ Unit)).symm (u ∘ projXW σ d) =
       Sum.elim ((complexToRealPi σ).symm ((u ∘ Sum.inl) ∘ Sum.inl))
         (fun _ ↦ (complexToRealPi Unit).symm (u ∘ Sum.inr) ()) := by
-  ext k; rcases k with s | ⟨⟩ <;> simp [projXW]
+  ext (_ | ⟨⟩) <;> simp [projXW]
 
 private theorem symm_comp_projAW {σ : Type*} {d : ℕ} (u : ElimCoord σ d) :
     (complexToRealPi (Fin d ⊕ Unit)).symm (u ∘ projAW σ d) =
       Sum.elim ((complexToRealPi (Fin d)).symm ((u ∘ Sum.inl) ∘ Sum.inr))
         (fun _ ↦ (complexToRealPi Unit).symm (u ∘ Sum.inr) ()) := by
-  ext k; rcases k with i | ⟨⟩ <;> simp [projAW]
+  ext (_ | ⟨⟩) <;> simp [projAW]
 
 /-- Cylinder inside `ElimCoord σ d` over `B_X : Set (σ ⊕ σ → ℝ)` and `realDiskSet R`. -/
 private abbrev elimCylSet (σ : Type*) (d : ℕ) (B_X : Set (σ ⊕ σ → ℝ)) (R : ℝ) :
@@ -605,9 +246,54 @@ private theorem isSemialgebraicOn_eval_comp_projAW {σ : Type*} {d : ℕ}
   have hproj : IsSemialgebraicMap (fun u : ElimCoord σ d ↦ u ∘ projAW σ d) := by
     simpa [Function.comp_def] using
       isSemialgebraicMap_eval (fun t ↦ (MvPolynomial.X (projAW σ d t) : MvPolynomial _ ℝ))
-  convert ((isSemialgebraicMap_complexToRealPi_eval P).comp hproj).isSemialgebraicOn hS using 1
+  convert ((isSemialgebraicMap_complexToRealPi_eval (fun _ : Unit ↦ P)).comp
+    hproj).isSemialgebraicOn hS using 1
   funext u
   simp only [Function.comp_apply, symm_comp_projAW]
+
+/-- Finite intersection over `j : Fin k` of the locus inside `U` where two `(d + 1)`-jets of
+complex-valued functions agree at order `j`. -/
+private def jetEqOnSet {κ : Type*} {d : ℕ} (U : Set (κ → ℝ))
+    (L M : Fin (d + 1) → (κ → ℝ) → ℂ) (k : Fin (d + 1)) : Set (κ → ℝ) :=
+  ⋂ j : Fin (k : ℕ), U ∩ {u | L ⟨j, j.2.trans k.2⟩ u = M ⟨j, j.2.trans k.2⟩ u}
+
+private theorem isSemialgebraic_jetEqOnSet {κ : Type*} {d : ℕ} {U : Set (κ → ℝ)}
+    {L M : Fin (d + 1) → (κ → ℝ) → ℂ}
+    (hL : ∀ j, IsSemialgebraicOn (fun u ↦ complexToRealPi Unit (fun _ ↦ L j u)) U)
+    (hM : ∀ j, IsSemialgebraicOn (fun u ↦ complexToRealPi Unit (fun _ ↦ M j u)) U)
+    (k : Fin (d + 1)) :
+    IsSemialgebraic (jetEqOnSet U L M k) := by
+  refine .iInter fun j ↦ ?_
+  let j' : Fin (d + 1) := ⟨j, j.2.trans k.2⟩
+  convert (hL j').isSemialgebraic_inter_setOf_eq (hM j') using 1
+  ext u
+  simp [j', funext_iff, Complex.ext_iff]
+
+private theorem forall_eq_iff_mem_jetEqOnSet {κ : Type*} {d : ℕ} {U : Set (κ → ℝ)}
+    {L M : Fin (d + 1) → (κ → ℝ) → ℂ} {k : Fin (d + 1)} {u : κ → ℝ} (hu : u ∈ U) :
+    (∀ j : Fin (k : ℕ), L ⟨j, j.2.trans k.2⟩ u = M ⟨j, j.2.trans k.2⟩ u) ↔
+      u ∈ jetEqOnSet U L M k := by
+  simp [jetEqOnSet, hu]
+
+/-- Finite intersection over `j : Fin k` of the common zero locus inside `U` of a `(d + 1)`-jet of
+complex-valued functions. -/
+private def jetZeroOnSet {κ : Type*} {d : ℕ} (U : Set (κ → ℝ))
+    (L : Fin (d + 1) → (κ → ℝ) → ℂ) (k : Fin (d + 1)) : Set (κ → ℝ) :=
+  jetEqOnSet U L (fun _ _ ↦ 0) k
+
+private theorem isSemialgebraic_jetZeroOnSet {κ : Type*} {d : ℕ} {U : Set (κ → ℝ)}
+    {L : Fin (d + 1) → (κ → ℝ) → ℂ} (hU : IsSemialgebraic U)
+    (hL : ∀ j, IsSemialgebraicOn (fun u ↦ complexToRealPi Unit (fun _ ↦ L j u)) U)
+    (k : Fin (d + 1)) :
+    IsSemialgebraic (jetZeroOnSet U L k) := by
+  refine isSemialgebraic_jetEqOnSet hL (fun _ ↦ ?_) k
+  convert isSemialgebraicOn_const (0 : Unit ⊕ Unit → ℝ) hU using 1
+  ext _ (_ | _) <;> simp
+
+private theorem forall_eq_zero_iff_mem_jetZeroOnSet {κ : Type*} {d : ℕ} {U : Set (κ → ℝ)}
+    {L : Fin (d + 1) → (κ → ℝ) → ℂ} {k : Fin (d + 1)} {u : κ → ℝ} (hu : u ∈ U) :
+    (∀ j : Fin (k : ℕ), L ⟨j, j.2.trans k.2⟩ u = 0) ↔ u ∈ jetZeroOnSet U L k := by
+  simp [jetZeroOnSet, jetEqOnSet, hu]
 
 end SemialgebraicComplexPoly
 
@@ -656,17 +342,7 @@ private theorem exists_isolating_cylinder {σ ι : Type*} [Fintype σ] [Finite �
           (u ∘ Sum.inl) ∘ Sum.inl ∈ B_X → u ∘ Sum.inr ∈ realDiskSet R → u ∘ projXW σ d ∈ W) := by
   let eσ := complexToRealPi σ
   let e := complexToRealPi (σ ⊕ Unit)
-  have hcoords : ∀ p : ι × (Unit ⊕ Unit),
-      IsNashAt (fun q ↦ complexToRealPi Unit (fun _ ↦ H p.1 (e.symm q)) p.2)
-        (e (Sum.elim z₀ 0)) := by
-    rintro ⟨k, b⟩
-    cases b with
-    | inl _ => simpa [e] using (hH k).re
-    | inr _ => simpa [e] using (hH k).im
-  obtain ⟨W, hWo, hzW, hW_semi, hHW_coord⟩ := exists_isSemialgebraicOn_of_forall_isNashAt hcoords
-  have hHW (k : ι) : IsSemialgebraicOn
-      (fun q ↦ complexToRealPi Unit (fun _ ↦ H k (e.symm q))) W :=
-    isSemialgebraicOn_pi_iff.2 ⟨hW_semi, fun b ↦ hHW_coord (k, b)⟩
+  obtain ⟨W, hWo, hzW, -, hHW⟩ := exists_isSemialgebraicOn_of_forall_isHolomorphicNashAt hH
   obtain ⟨R, hR, hR_ball⟩ := Metric.mem_nhds_iff.1
     (inter_mem (e.continuousAt.preimage_mem_nhds (hWo.mem_nhds hzW)) hP)
   have hc_bound : ∀ᶠ x in 𝓝 z₀, ∀ i : Fin d, ‖c i x‖ ≤ (R / 4) ^ (d - (i : ℕ)) := by
@@ -699,25 +375,6 @@ private theorem exists_isolating_cylinder {σ ι : Type*} [Fintype σ] [Finite �
       rw [← symm_comp_projXW, e.apply_symm_apply]
     exact he_eq ▸ (hR_ball hp_mem).1
 
-/-- Upgrading a holomorphic tuple `a : Fin d → (σ → ℂ) → ℂ` whose realified map is semialgebraic on
-an open neighbourhood of `complexToRealPi σ z₀` to `IsHolomorphicNashAt`. -/
-private theorem isHolomorphicNashAt_of_isSemialgebraicOn {σ : Type*} [Fintype σ] {d : ℕ}
-    {a : Fin d → (σ → ℂ) → ℂ} {z₀ : σ → ℂ} {B_X : Set (σ ⊕ σ → ℝ)}
-    (ha : ∀ i, AnalyticAt ℂ (a i) z₀)
-    (hBX_open : IsOpen B_X) (hzBX : complexToRealPi σ z₀ ∈ B_X)
-    (hsemi : IsSemialgebraicOn
-      (fun x_ℝ ↦ complexToRealPi (Fin d) (fun i ↦ a i ((complexToRealPi σ).symm x_ℝ))) B_X) :
-    ∀ i, IsHolomorphicNashAt (a i) z₀ := by
-  let eσ := complexToRealPi σ
-  let ed := complexToRealPi (Fin d)
-  have ha_real : AnalyticAt ℝ (fun x_ℝ ↦ ed (fun i ↦ a i (eσ.symm x_ℝ))) (eσ z₀) :=
-    (ed.analyticAt _).comp <| AnalyticAt.pi fun i ↦
-      ((ha i).restrictScalars (𝕜 := ℝ)).comp_of_eq (eσ.symm.analyticAt _) (eσ.symm_apply_apply z₀)
-  have hcoords := forall_isNashAt_apply_iff_exists_isSemialgebraicOn.2
-    ⟨ha_real, B_X, hBX_open, hzBX, hsemi⟩
-  exact fun i ↦
-    ⟨ha i, by simpa [ed] using hcoords (Sum.inl i), by simpa [ed] using hcoords (Sum.inr i)⟩
-
 /-- Evaluating the `j`-th Hasse derivative of `monicOfCoeff` at holomorphic-Nash coefficient germs
 gives a holomorphic-Nash germ on `σ ⊕ Unit → ℂ`. -/
 private theorem isHolomorphicNashAt_eval_hasseDeriv_monicOfCoeff {σ : Type*} [Fintype σ] {d : ℕ}
@@ -726,18 +383,15 @@ private theorem isHolomorphicNashAt_eval_hasseDeriv_monicOfCoeff {σ : Type*} [F
       (fun p : σ ⊕ Unit → ℂ ↦
         (hasseDeriv j (Polynomial.monicOfCoeff (fun i ↦ c i (p ∘ Sum.inl)))).eval (p (.inr ())))
       (Sum.elim z₀ 0) := by
-  have hw_nash : IsHolomorphicNashAt (fun p : σ ⊕ Unit → ℂ ↦ p (.inr ())) (Sum.elim z₀ 0) :=
-    isHolomorphicNashAt_apply (Sum.inr ()) _
-  have hc_pull (i : Fin d) :
-      IsHolomorphicNashAt (fun p : σ ⊕ Unit → ℂ ↦ c i (p ∘ Sum.inl)) (Sum.elim z₀ 0) :=
-    (hc i).comp fun s ↦ isHolomorphicNashAt_apply (Sum.inl s) _
-  have hlead := (isHolomorphicNashAt_const (d.choose j : ℂ) _).mul (hw_nash.pow (d - j))
-  have hsum := IsHolomorphicNashAt.sum Finset.univ fun (i : Fin d) _ ↦
-    ((isHolomorphicNashAt_const ((i : ℕ).choose j : ℂ) _).mul (hc_pull i)).mul
-      (hw_nash.pow ((i : ℕ) - j))
-  refine (hlead.add hsum).congr (.of_forall fun p ↦ ?_)
-  simpa [hasseDerivMonicMvPoly] using
-    eval_hasseDerivMonicMvPoly j (fun i ↦ c i (p ∘ Sum.inl)) (p (.inr ()))
+  let Φ : (σ ⊕ Unit → ℂ) → (Fin d ⊕ Unit → ℂ) :=
+    fun p ↦ Sum.elim (fun i ↦ c i (p ∘ Sum.inl)) (fun _ ↦ p (.inr ()))
+  have hΦ : ∀ k, IsHolomorphicNashAt (fun p ↦ Φ p k) (Sum.elim z₀ 0) := by
+    rintro (i | ⟨⟩)
+    · exact (hc i).comp fun s ↦ isHolomorphicNashAt_apply (Sum.inl s)
+    · exact isHolomorphicNashAt_apply (Sum.inr ())
+  refine ((hasseDerivMonicMvPoly d j).isHolomorphicNashAt_eval.comp hΦ).congr
+    (.of_forall fun p ↦ ?_)
+  exact eval_hasseDerivMonicMvPoly j (fun i ↦ c i (p ∘ Sum.inl)) (p (.inr ()))
 
 /-- Evaluating `monicOfCoeff` at holomorphic-Nash coefficient germs gives a holomorphic-Nash germ
 on `σ ⊕ Unit → ℂ`. -/
@@ -757,9 +411,9 @@ private theorem isHolomorphicNashAt_sum_mul_pow {σ : Type*} [Fintype σ] {d : �
     IsHolomorphicNashAt
       (fun p : σ ⊕ Unit → ℂ ↦ ∑ i : Fin d, r i (p ∘ Sum.inl) * p (.inr ()) ^ (i : ℕ))
       (Sum.elim z₀ 0) :=
-  .sum Finset.univ fun i _ ↦
-    ((hr i).comp fun s ↦ isHolomorphicNashAt_apply (Sum.inl s) _).mul
-      ((isHolomorphicNashAt_apply (Sum.inr ()) _).pow (i : ℕ))
+  Finset.fun_isHolomorphicNashAt_sum Finset.univ fun i _ ↦
+    ((hr i).comp fun s ↦ isHolomorphicNashAt_apply (Sum.inl s)).fun_mul
+      ((isHolomorphicNashAt_apply (Sum.inr ())).fun_pow (i : ℕ))
 
 /-- Along a vertical slice where `F (x, w) = P.eval w * u (x, w)` and `u (x, w₀) ≠ 0`, the Hasse
 derivatives of `P = monicOfCoeff c` below `k` vanish at `w₀` iff the iterated derivatives of `F`
@@ -812,6 +466,27 @@ private theorem imp_forall_iff_mem_compl_union {α : Type*} {n : ℕ} {U : Set �
   exact ⟨fun h ↦ if hu : u ∈ U then .inr fun k ↦ (hS hu k).1 (h hu k) else .inl hu,
     fun h hu k ↦ (hS hu k).2 ((h.resolve_left (Classical.not_not.2 hu)) k)⟩
 
+/-- Semialgebraicity on `B_X` of a realified coefficient map via universal quantifier elimination
+over the fiber coordinate `w_ℝ : Unit ⊕ Unit → ℝ`. -/
+private theorem isSemialgebraicOn_complexToRealPi_of_forall_elimCoord {σ : Type*} [Fintype σ]
+    {d : ℕ} {B_X : Set (σ ⊕ σ → ℝ)} {g : Fin d → (σ → ℂ) → ℂ}
+    {S : Set (ElimCoord σ d)}
+    (hBX : IsSemialgebraic B_X) (hS : IsSemialgebraic S)
+    (hchar : ∀ v : (σ ⊕ σ) ⊕ (Fin d ⊕ Fin d) → ℝ, v ∘ Sum.inl ∈ B_X →
+      ((fun i ↦ g i ((complexToRealPi σ).symm (v ∘ Sum.inl))) =
+        (complexToRealPi (Fin d)).symm (v ∘ Sum.inr) ↔
+          ∀ w_ℝ, Sum.elim v w_ℝ ∈ S)) :
+    IsSemialgebraicOn
+      (fun x_ℝ ↦ complexToRealPi (Fin d) (fun i ↦ g i ((complexToRealPi σ).symm x_ℝ))) B_X := by
+  rw [isSemialgebraicOn_iff_graph]
+  convert (hBX.preimage_comp Sum.inl).inter hS.setOf_forall_sumElim using 1
+  ext v
+  rw [mem_preimage_sumArrowEquivProdArrow_graphOn]
+  simp only [Set.mem_inter_iff, Set.mem_preimage, Set.mem_ofPred]
+  refine and_congr_right fun hvBX ↦ ?_
+  rw [← ContinuousLinearEquiv.eq_symm_apply]
+  exact hchar v hvBX
+
 /-- Semialgebraicity of the fiberwise root-and-multiplicity relation cutting out the Weierstrass
 polynomial coefficients before universal elimination of `w_ℝ`. -/
 private theorem isSemialgebraic_prepElimSet {σ : Type*} [Fintype σ] {d : ℕ}
@@ -840,50 +515,55 @@ private theorem isSemialgebraic_prepElimSet {σ : Type*} [Fintype σ] {d : ℕ}
                     (fun _ ↦ (complexToRealPi Unit).symm (u ∘ Sum.inr) ())) = 0))} := by
   let U_cyl := elimCylSet σ d B_X R
   have hU_cyl : IsSemialgebraic U_cyl := isSemialgebraic_elimCylSet hBX R
-  let Z_P (j : ℕ) : Set (ElimCoord σ d) :=
-    {u | (hasseDeriv j (Polynomial.monicOfCoeff
-      ((complexToRealPi (Fin d)).symm ((u ∘ Sum.inl) ∘ Sum.inr)))).eval
+  -- First conjunct: every root of the candidate monic polynomial lies in `realDiskSet R`.
+  let Z_P0 : Set (ElimCoord σ d) :=
+    {u | (Polynomial.monicOfCoeff
+      ((complexToRealPi (Fin d)).symm ((u ∘ Sum.inl) ∘ Sum.inr))).eval
         ((complexToRealPi Unit).symm (u ∘ Sum.inr) ()) = 0}
-  have hZ_P (j : ℕ) : IsSemialgebraic (Z_P j) := by
-    convert (isSemialgebraicOn_eval_comp_projAW (σ := σ) (hasseDerivMonicMvPoly d j)
+  have hZ_P0 : IsSemialgebraic Z_P0 := by
+    convert (isSemialgebraicOn_eval_comp_projAW (σ := σ) (hasseDerivMonicMvPoly d 0)
       isSemialgebraic_univ).isSemialgebraic_inter_setOf_eq
         (isSemialgebraicOn_const 0 isSemialgebraic_univ) using 1
-    ext u; simp [Z_P, eval_hasseDerivMonicMvPoly, funext_iff, Complex.ext_iff]
-  let Z_F (j : Fin (d + 1)) : Set (ElimCoord σ d) :=
-    U_cyl ∩ {u | DF j (Sum.elim ((complexToRealPi σ).symm ((u ∘ Sum.inl) ∘ Sum.inl))
-      (fun _ ↦ (complexToRealPi Unit).symm (u ∘ Sum.inr) ())) = 0}
-  have hZ_F (j : Fin (d + 1)) : IsSemialgebraic (Z_F j) := by
-    convert (isSemialgebraicOn_comp_projXW hBX (hDF_W j) hsub).isSemialgebraic_inter_setOf_eq
-      (isSemialgebraicOn_const 0 hU_cyl) using 1
-    ext u; simp [Z_F, U_cyl, funext_iff, Complex.ext_iff]
-  let A_P (k : Fin (d + 1)) : Set (ElimCoord σ d) := ⋂ j : Fin (k : ℕ), Z_P (j : ℕ)
-  let A_F (k : Fin (d + 1)) : Set (ElimCoord σ d) :=
-    ⋂ j : Fin (k : ℕ), Z_F ⟨j, j.2.trans k.2⟩
-  have hA_P (k : Fin (d + 1)) : IsSemialgebraic (A_P k) := .iInter fun j ↦ hZ_P (j : ℕ)
-  have hA_F (k : Fin (d + 1)) : IsSemialgebraic (A_F k) :=
-    .iInter fun j ↦ hZ_F ⟨j, j.2.trans k.2⟩
-  have hC1 :
-      IsSemialgebraic ((Z_P 0)ᶜ ∪ ((fun u : ElimCoord σ d ↦ u ∘ Sum.inr) ⁻¹' realDiskSet R)) :=
-    (hZ_P 0).compl.union ((isSemialgebraic_realDiskSet R).preimage_comp Sum.inr)
-  have hC2 : IsSemialgebraic
-      (U_cylᶜ ∪ ⋂ k : Fin (d + 1), ((A_P k)ᶜ ∪ A_F k) ∩ ((A_F k)ᶜ ∪ A_P k)) :=
+    ext u
+    simp [Z_P0, eval_hasseDerivMonicMvPoly, funext_iff, Complex.ext_iff]
+  have hC1 : IsSemialgebraic (Z_P0ᶜ ∪ ((fun u : ElimCoord σ d ↦ u ∘ Sum.inr) ⁻¹' realDiskSet R)) :=
+    hZ_P0.compl.union ((isSemialgebraic_realDiskSet R).preimage_comp Sum.inr)
+  -- Second conjunct: on `U_cyl`, the Hasse jet of `monicOfCoeff` and the vertical derivative jet
+  -- `DF` vanish below each order `k ≤ d` simultaneously.
+  let P_jet (j : Fin (d + 1)) (u : ElimCoord σ d) : ℂ :=
+    (hasseDeriv (j : ℕ) (Polynomial.monicOfCoeff
+      ((complexToRealPi (Fin d)).symm ((u ∘ Sum.inl) ∘ Sum.inr)))).eval
+        ((complexToRealPi Unit).symm (u ∘ Sum.inr) ())
+  let F_jet (j : Fin (d + 1)) (u : ElimCoord σ d) : ℂ :=
+    DF j (Sum.elim ((complexToRealPi σ).symm ((u ∘ Sum.inl) ∘ Sum.inl))
+      (fun _ ↦ (complexToRealPi Unit).symm (u ∘ Sum.inr) ()))
+  have hP_jet (j : Fin (d + 1)) :
+      IsSemialgebraicOn (fun u ↦ complexToRealPi Unit (fun _ ↦ P_jet j u)) U_cyl := by
+    convert isSemialgebraicOn_eval_comp_projAW (σ := σ) (hasseDerivMonicMvPoly d (j : ℕ)) hU_cyl
+      using 1
+    funext u
+    simp only [P_jet, eval_hasseDerivMonicMvPoly]
+  have hF_jet (j : Fin (d + 1)) :
+      IsSemialgebraicOn (fun u ↦ complexToRealPi Unit (fun _ ↦ F_jet j u)) U_cyl :=
+    isSemialgebraicOn_comp_projXW hBX (hDF_W j) hsub
+  have hAP (k : Fin (d + 1)) : IsSemialgebraic (jetZeroOnSet U_cyl P_jet k) :=
+    isSemialgebraic_jetZeroOnSet hU_cyl hP_jet k
+  have hAF (k : Fin (d + 1)) : IsSemialgebraic (jetZeroOnSet U_cyl F_jet k) :=
+    isSemialgebraic_jetZeroOnSet hU_cyl hF_jet k
+  have hC2 : IsSemialgebraic (U_cylᶜ ∪ ⋂ k : Fin (d + 1),
+      ((jetZeroOnSet U_cyl P_jet k)ᶜ ∪ jetZeroOnSet U_cyl F_jet k) ∩
+        ((jetZeroOnSet U_cyl F_jet k)ᶜ ∪ jetZeroOnSet U_cyl P_jet k)) :=
     hU_cyl.compl.union (.iInter fun k ↦
-      ((hA_P k).compl.union (hA_F k)).inter ((hA_F k).compl.union (hA_P k)))
+      ((hAP k).compl.union (hAF k)).inter ((hAF k).compl.union (hAP k)))
   convert hC1.inter hC2 using 1
   ext u
   rw [Set.mem_ofPred, Set.mem_inter_iff, mem_elimCylSet_iff]
   refine and_congr ?_ (imp_forall_iff_mem_compl_union fun hu k ↦ ?_)
-  · simpa only [Z_P, Set.mem_ofPred, Set.mem_preimage, hasseDeriv_zero, LinearMap.id_apply] using
-      imp_iff_mem_compl_union (A := Z_P 0) (B := (fun u ↦ u ∘ Sum.inr) ⁻¹' realDiskSet R) u
-  · have hAP : (∀ j : Fin (k : ℕ), (hasseDeriv (j : ℕ) (Polynomial.monicOfCoeff
-        ((complexToRealPi (Fin d)).symm ((u ∘ Sum.inl) ∘ Sum.inr)))).eval
-          ((complexToRealPi Unit).symm (u ∘ Sum.inr) ()) = 0) ↔ u ∈ A_P k := by
-      simp [A_P, Z_P]
-    have hAF : (∀ j : Fin (k : ℕ), DF ⟨j, j.2.trans k.2⟩
-        (Sum.elim ((complexToRealPi σ).symm ((u ∘ Sum.inl) ∘ Sum.inl))
-          (fun _ ↦ (complexToRealPi Unit).symm (u ∘ Sum.inr) ())) = 0) ↔ u ∈ A_F k := by
-      simp [A_F, Z_F, U_cyl, hu]
-    rw [hAP, hAF, Set.mem_inter_iff, ← imp_iff_mem_compl_union, ← imp_iff_mem_compl_union]
+  · simpa only [Z_P0, Set.mem_ofPred, Set.mem_preimage] using
+      imp_iff_mem_compl_union (A := Z_P0) (B := (fun u ↦ u ∘ Sum.inr) ⁻¹' realDiskSet R) u
+  · rw [forall_eq_zero_iff_mem_jetZeroOnSet (L := P_jet) hu,
+      forall_eq_zero_iff_mem_jetZeroOnSet (L := F_jet) hu,
+      Set.mem_inter_iff, ← imp_iff_mem_compl_union, ← imp_iff_mem_compl_union]
     exact iff_def
 
 /-- Upgrading a complex Weierstrass preparation at `(z₀, 0)` to `IsHolomorphicNashAt`. -/
@@ -895,48 +575,50 @@ private theorem isHolomorphicNashAt_of_weierstrassPreparation_zero {σ : Type*} 
     (hfac : F =ᶠ[𝓝 (Sum.elim z₀ 0)] fun p ↦
       (Polynomial.monicOfCoeff (fun i ↦ c i (p ∘ Sum.inl))).eval (p (.inr ())) * u p) :
     (∀ i, IsHolomorphicNashAt (c i) z₀) ∧ IsHolomorphicNashAt u (Sum.elim z₀ 0) := by
-  let eσ := complexToRealPi σ
-  let ed := complexToRealPi (Fin d)
   let DF : Fin (d + 1) → (σ ⊕ Unit → ℂ) → ℂ := fun j p ↦
     iteratedDeriv (j : ℕ) (fun w ↦ F (Sum.elim (p ∘ Sum.inl) (fun _ ↦ w))) (p (.inr ()))
+  -- Step 1: Shrink to a common isolating cylinder where the vertical derivatives `DF` are
+  -- semialgebraic, `u` is nonvanishing, and Fujiwara's coefficient bound holds.
   obtain ⟨R, B_X, hR, hBX_open, hzBX, hBX_semi, hc_bound, hprop, W, hDF_W, hsub⟩ :=
     exists_isolating_cylinder (H := DF) hc hc0 (fun j ↦ hF.iteratedDeriv_vertical (j : ℕ))
       (((hF.analyticAt.eventually_analyticAt.and hu.eventually_analyticAt).and
         (hu.continuousAt.eventually_ne hu0)).and hfac)
+  have h2R4 : 2 * (R / 4) < R := by linarith
   have horder (x_ℝ : σ ⊕ σ → ℝ) (hx : x_ℝ ∈ B_X) (w : ℂ) (hw : w ∈ ball (0 : ℂ) R)
       (k : Fin (d + 1)) :=
     hasseDeriv_iff_iteratedDeriv_of_weierstrassPreparation hw
       (hprop x_ℝ hx w hw).1.1.1 (hprop x_ℝ hx w hw).1.1.2 (hprop x_ℝ hx w hw).1.2
       (fun w' hw' ↦ by simpa only [Sum.elim_comp_inl, Sum.elim_inr] using (hprop x_ℝ hx w' hw').2) k
-  have hc_semi : IsSemialgebraicOn (fun x_ℝ ↦ ed (fun i ↦ c i (eσ.symm x_ℝ))) B_X := by
-    rw [isSemialgebraicOn_iff_graph]
-    convert (hBX_semi.preimage_comp Sum.inl).inter
-      (isSemialgebraic_prepElimSet hBX_semi hDF_W hsub).setOf_forall_sumElim using 1
-    ext v
-    rw [mem_preimage_sumArrowEquivProdArrow_graphOn]
-    simp only [Set.mem_inter_iff, Set.mem_preimage, Set.mem_ofPred, Sum.elim_comp_inl,
-      Sum.elim_comp_inr]
-    refine and_congr_right fun hvBX ↦ ?_
-    rw [← ContinuousLinearEquiv.eq_symm_apply]
-    refine ⟨fun hvc w_ℝ ↦ ?_, fun hall ↦ symm <| eq_of_monicOfCoeff_forall_hasseDeriv_iff
-      (fun w hw ↦ ?_) (fun w hw ↦ mem_ball_of_isRoot_monicOfCoeff hR (hc_bound _ hvBX) hw)
-      (fun w hw k ↦ ?_)⟩
-    · have hvc' : (complexToRealPi (Fin d)).symm (v ∘ Sum.inr) =
-          fun i ↦ c i (eσ.symm (v ∘ Sum.inl)) := hvc.symm
-      rw [hvc']
+  -- Step 2: Show the realified coefficient map is semialgebraic on `B_X` by eliminating `w_ℝ`.
+  have hc_semi : IsSemialgebraicOn
+      (fun x_ℝ ↦ complexToRealPi (Fin d) (fun i ↦ c i ((complexToRealPi σ).symm x_ℝ))) B_X := by
+    refine isSemialgebraicOn_complexToRealPi_of_forall_elimCoord hBX_semi
+      (isSemialgebraic_prepElimSet hBX_semi hDF_W hsub) fun v hvBX ↦ ?_
+    simp only [Set.mem_ofPred, Sum.elim_comp_inl, Sum.elim_comp_inr]
+    refine ⟨fun hvc w_ℝ ↦ ?_, fun hall ↦ symm <|
+      Polynomial.eq_of_monicOfCoeff_forall_hasseDeriv_iff
+        (IsAlgClosed.splits _) (IsAlgClosed.splits _)
+        (fun w hw ↦ ?_)
+        (fun w hw ↦ Polynomial.mem_ball_of_isRoot_monicOfCoeff h2R4 (hc_bound _ hvBX) hw)
+        (fun w hw k hk ↦ ?_)⟩
+    · -- Forward direction: the true coefficients isolate all roots in `ball 0 R` by Fujiwara's
+      -- bound and match the vanishing orders of `F` on `ball 0 R`.
+      rw [hvc.symm]
       exact ⟨fun hw ↦ (mem_realDiskSet_iff hR w_ℝ).2
-        (mem_ball_of_isRoot_monicOfCoeff hR (hc_bound _ hvBX) hw),
+        (Polynomial.mem_ball_of_isRoot_monicOfCoeff h2R4 (hc_bound _ hvBX) hw),
         fun ⟨_, hwD⟩ k ↦ horder _ hvBX _ ((mem_realDiskSet_iff hR w_ℝ).1 hwD) k⟩
-    · let w_ℝ := complexToRealPi Unit (fun _ ↦ w)
-      have hw_eq : (complexToRealPi Unit).symm w_ℝ () = w := by simp [w_ℝ]
-      exact hw_eq ▸ (mem_realDiskSet_iff hR w_ℝ).1 ((hall w_ℝ).1 (hw_eq.symm ▸ hw))
-    · let w_ℝ := complexToRealPi Unit (fun _ ↦ w)
-      have hw_eq : (complexToRealPi Unit).symm w_ℝ () = w := by simp [w_ℝ]
-      have hwD : w_ℝ ∈ realDiskSet R := (mem_realDiskSet_iff hR w_ℝ).2 (hw_eq.symm ▸ hw)
-      have h2 := (hall w_ℝ).2 ⟨hvBX, hwD⟩ k
-      rw [hw_eq] at h2
-      exact h2.trans (horder _ hvBX w hw k).symm
-  have hc_nash := isHolomorphicNashAt_of_isSemialgebraicOn hc hBX_open hzBX hc_semi
+    · -- Converse root containment: instantiate `w_ℝ = complexToRealPi Unit (fun _ ↦ w)`.
+      exact (mem_ball_iff_complexToRealPi_mem_realDiskSet hR w).2
+        ((hall (complexToRealPi Unit (fun _ ↦ w))).1 (by simpa using hw))
+    · -- Converse jet matching: compare both Hasse vanishing conditions through `DF` at `w`.
+      have hwD := (mem_ball_iff_complexToRealPi_mem_realDiskSet hR w).1 hw
+      have h2 := (hall (complexToRealPi Unit (fun _ ↦ w))).2 ⟨hvBX, hwD⟩ ⟨k, Nat.lt_succ_of_le hk⟩
+      simp only [complexToRealPi_unit_symm_const] at h2
+      simpa only [Fin.forall_iff] using h2.trans (horder _ hvBX w hw ⟨k, Nat.lt_succ_of_le hk⟩).symm
+  -- Step 3: Upgrade the coefficients via the graph criterion, then upgrade `u` by exact division.
+  have hc_nash : ∀ i, IsHolomorphicNashAt (c i) z₀ :=
+    forall_isHolomorphicNashAt_apply_iff_exists_isSemialgebraicOn.mpr
+      ⟨AnalyticAt.pi hc, B_X, hBX_open, hzBX, hc_semi⟩
   exact ⟨hc_nash, (isHolomorphicNashAt_eval_monicOfCoeff hc_nash).of_mul_eventuallyEq
     hF hu (not_eventuallyEq_zero_eval_monicOfCoeff hc0) hfac.symm⟩
 
@@ -1018,51 +700,42 @@ private theorem isSemialgebraic_divElimSet {σ : Type*} [Fintype σ] {d : ℕ}
                       ((complexToRealPi Unit).symm (u ∘ Sum.inr) ())} := by
   let U_cyl := elimCylSet σ d B_X R
   have hU_cyl : IsSemialgebraic U_cyl := isSemialgebraic_elimCylSet hBX R
-  let Z_HP (j : Fin (d + 1)) : Set (ElimCoord σ d) :=
-    U_cyl ∩ {u | HP j (Sum.elim ((complexToRealPi σ).symm ((u ∘ Sum.inl) ∘ Sum.inl))
-      (fun _ ↦ (complexToRealPi Unit).symm (u ∘ Sum.inr) ())) = 0}
-  have hZ_HP (j : Fin (d + 1)) : IsSemialgebraic (Z_HP j) := by
-    have hcomp := isSemialgebraicOn_comp_projXW hBX (hHW (Sum.inr j)) hsub
-    convert hcomp.isSemialgebraic_inter_setOf_eq (isSemialgebraicOn_const 0 hU_cyl) using 1
-    ext u; simp [Z_HP, U_cyl, funext_iff, Complex.ext_iff]
-  let Eq_DG (j : Fin (d + 1)) : Set (ElimCoord σ d) :=
-    U_cyl ∩ {u | DG j (Sum.elim ((complexToRealPi σ).symm ((u ∘ Sum.inl) ∘ Sum.inl))
-      (fun _ ↦ (complexToRealPi Unit).symm (u ∘ Sum.inr) ())) =
-        (Nat.factorial (j : ℕ) : ℂ) *
-          (hasseDeriv (j : ℕ) (∑ i : Fin d, monomial (i : ℕ)
-            ((complexToRealPi (Fin d)).symm ((u ∘ Sum.inl) ∘ Sum.inr) i))).eval
-              ((complexToRealPi Unit).symm (u ∘ Sum.inr) ())}
-  have hEq_DG (j : Fin (d + 1)) : IsSemialgebraic (Eq_DG j) := by
-    have hcomp := isSemialgebraicOn_comp_projXW hBX (hHW (Sum.inl j)) hsub
-    convert hcomp.isSemialgebraic_inter_setOf_eq
-      (isSemialgebraicOn_eval_comp_projAW (σ := σ)
-        (factorialHasseDerivSumMvPoly d (j : ℕ)) hU_cyl) using 1
-    ext u; simp [Eq_DG, U_cyl, eval_factorialHasseDerivSumMvPoly, funext_iff, Complex.ext_iff]
-  let A_HP (k : Fin (d + 1)) : Set (ElimCoord σ d) :=
-    ⋂ j : Fin (k : ℕ), Z_HP ⟨j, j.2.trans k.2⟩
-  let B_DG (k : Fin (d + 1)) : Set (ElimCoord σ d) :=
-    ⋂ j : Fin (k : ℕ), Eq_DG ⟨j, j.2.trans k.2⟩
-  have hA_HP (k : Fin (d + 1)) : IsSemialgebraic (A_HP k) :=
-    .iInter fun j ↦ hZ_HP ⟨j, j.2.trans k.2⟩
-  have hB_DG (k : Fin (d + 1)) : IsSemialgebraic (B_DG k) :=
-    .iInter fun j ↦ hEq_DG ⟨j, j.2.trans k.2⟩
-  convert hU_cyl.compl.union (.iInter fun k ↦ (hA_HP k).compl.union (hB_DG k)) using 1
+  -- On `U_cyl`, express the vanishing of `HP` below `k` as `jetZeroOnSet` and the matching of
+  -- `DG` with `j! * hasseDeriv j Rem` below `k` as `jetEqOnSet`.
+  let HP_jet (j : Fin (d + 1)) (u : ElimCoord σ d) : ℂ :=
+    HP j (Sum.elim ((complexToRealPi σ).symm ((u ∘ Sum.inl) ∘ Sum.inl))
+      (fun _ ↦ (complexToRealPi Unit).symm (u ∘ Sum.inr) ()))
+  let DG_jet (j : Fin (d + 1)) (u : ElimCoord σ d) : ℂ :=
+    DG j (Sum.elim ((complexToRealPi σ).symm ((u ∘ Sum.inl) ∘ Sum.inl))
+      (fun _ ↦ (complexToRealPi Unit).symm (u ∘ Sum.inr) ()))
+  let Rem_jet (j : Fin (d + 1)) (u : ElimCoord σ d) : ℂ :=
+    (Nat.factorial (j : ℕ) : ℂ) *
+      (hasseDeriv (j : ℕ) (∑ i : Fin d, monomial (i : ℕ)
+        ((complexToRealPi (Fin d)).symm ((u ∘ Sum.inl) ∘ Sum.inr) i))).eval
+          ((complexToRealPi Unit).symm (u ∘ Sum.inr) ())
+  have hHP_jet (j : Fin (d + 1)) :
+      IsSemialgebraicOn (fun u ↦ complexToRealPi Unit (fun _ ↦ HP_jet j u)) U_cyl :=
+    isSemialgebraicOn_comp_projXW hBX (hHW (Sum.inr j)) hsub
+  have hDG_jet (j : Fin (d + 1)) :
+      IsSemialgebraicOn (fun u ↦ complexToRealPi Unit (fun _ ↦ DG_jet j u)) U_cyl :=
+    isSemialgebraicOn_comp_projXW hBX (hHW (Sum.inl j)) hsub
+  have hRem_jet (j : Fin (d + 1)) :
+      IsSemialgebraicOn (fun u ↦ complexToRealPi Unit (fun _ ↦ Rem_jet j u)) U_cyl := by
+    convert isSemialgebraicOn_eval_comp_projAW (σ := σ)
+      (factorialHasseDerivSumMvPoly d (j : ℕ)) hU_cyl using 1
+    funext u
+    simp only [Rem_jet, eval_factorialHasseDerivSumMvPoly]
+  have hAHP (k : Fin (d + 1)) : IsSemialgebraic (jetZeroOnSet U_cyl HP_jet k) :=
+    isSemialgebraic_jetZeroOnSet hU_cyl hHP_jet k
+  have hBDG (k : Fin (d + 1)) : IsSemialgebraic (jetEqOnSet U_cyl DG_jet Rem_jet k) :=
+    isSemialgebraic_jetEqOnSet hDG_jet hRem_jet k
+  convert hU_cyl.compl.union (.iInter fun k ↦ (hAHP k).compl.union (hBDG k)) using 1
   ext u
   rw [Set.mem_ofPred, mem_elimCylSet_iff]
   refine imp_forall_iff_mem_compl_union fun hu k ↦ ?_
-  have hAHP : (∀ j : Fin (k : ℕ), HP ⟨j, j.2.trans k.2⟩
-      (Sum.elim ((complexToRealPi σ).symm ((u ∘ Sum.inl) ∘ Sum.inl))
-        (fun _ ↦ (complexToRealPi Unit).symm (u ∘ Sum.inr) ())) = 0) ↔ u ∈ A_HP k := by
-    simp [A_HP, Z_HP, U_cyl, hu]
-  have hBDG : (∀ j : Fin (k : ℕ), DG ⟨j, j.2.trans k.2⟩
-      (Sum.elim ((complexToRealPi σ).symm ((u ∘ Sum.inl) ∘ Sum.inl))
-        (fun _ ↦ (complexToRealPi Unit).symm (u ∘ Sum.inr) ())) =
-        (Nat.factorial (j : ℕ) : ℂ) *
-          (hasseDeriv (j : ℕ) (∑ i : Fin d, monomial (i : ℕ)
-            ((complexToRealPi (Fin d)).symm ((u ∘ Sum.inl) ∘ Sum.inr) i))).eval
-              ((complexToRealPi Unit).symm (u ∘ Sum.inr) ())) ↔ u ∈ B_DG k := by
-    simp [B_DG, Eq_DG, U_cyl, hu]
-  rw [hAHP, hBDG, imp_iff_mem_compl_union]
+  rw [forall_eq_zero_iff_mem_jetZeroOnSet (L := HP_jet) hu,
+    forall_eq_iff_mem_jetEqOnSet (L := DG_jet) (M := Rem_jet) hu,
+    imp_iff_mem_compl_union]
 
 /-- Upgrading a complex Weierstrass division at `(z₀, 0)` to `IsHolomorphicNashAt`. -/
 private theorem isHolomorphicNashAt_of_weierstrassDivision_zero {σ : Type*} [Fintype σ]
@@ -1075,11 +748,12 @@ private theorem isHolomorphicNashAt_of_weierstrassDivision_zero {σ : Type*} [Fi
         ∑ i : Fin d, r i (p ∘ Sum.inl) * p (.inr ()) ^ (i : ℕ)) :
     IsHolomorphicNashAt q (Sum.elim z₀ 0) ∧ ∀ i, IsHolomorphicNashAt (r i) z₀ := by
   let eσ := complexToRealPi σ
-  let ed := complexToRealPi (Fin d)
   let DG : Fin (d + 1) → (σ ⊕ Unit → ℂ) → ℂ := fun j p ↦
     iteratedDeriv (j : ℕ) (fun w ↦ G (Sum.elim (p ∘ Sum.inl) (fun _ ↦ w))) (p (.inr ()))
   let HP : Fin (d + 1) → (σ ⊕ Unit → ℂ) → ℂ := fun j p ↦
     (hasseDeriv (j : ℕ) (Polynomial.monicOfCoeff (fun i ↦ c i (p ∘ Sum.inl)))).eval (p (.inr ()))
+  -- Step 1: Shrink to a common isolating cylinder where `DG` and `HP` are semialgebraic and
+  -- Fujiwara's coefficient bound holds for `c`.
   obtain ⟨R, B_X, hR, hBX_open, hzBX, hBX_semi, hc_bound, hprop, W, hHW, hsub⟩ :=
     exists_isolating_cylinder (H := Sum.elim DG HP) (fun i ↦ (hc i).analyticAt) hc0
       (by
@@ -1087,51 +761,71 @@ private theorem isHolomorphicNashAt_of_weierstrassDivision_zero {σ : Type*} [Fi
         · exact hG.iteratedDeriv_vertical (j : ℕ)
         · exact isHolomorphicNashAt_eval_hasseDeriv_monicOfCoeff hc (j : ℕ))
       ((hG.analyticAt.eventually_analyticAt.and hq.eventually_analyticAt).and hdiv)
+  have h2R4 : 2 * (R / 4) < R := by linarith
   have hjet (x_ℝ : σ ⊕ σ → ℝ) (hx : x_ℝ ∈ B_X) (w : ℂ) (hw : w ∈ ball (0 : ℂ) R)
       (k : Fin (d + 1)) :=
     jet_eq_of_weierstrassDivision hw (hprop x_ℝ hx w hw).1.1 (hprop x_ℝ hx w hw).1.2
       (fun w' hw' ↦ by simpa only [Sum.elim_comp_inl, Sum.elim_inr] using (hprop x_ℝ hx w' hw').2) k
-  have hr_semi : IsSemialgebraicOn (fun x_ℝ ↦ ed (fun i ↦ r i (eσ.symm x_ℝ))) B_X := by
-    rw [isSemialgebraicOn_iff_graph]
-    convert (hBX_semi.preimage_comp Sum.inl).inter
-      (isSemialgebraic_divElimSet hBX_semi hHW hsub).setOf_forall_sumElim using 1
-    ext v
-    rw [mem_preimage_sumArrowEquivProdArrow_graphOn]
-    simp only [Set.mem_inter_iff, Set.mem_preimage, Set.mem_ofPred, Sum.elim_comp_inl,
-      Sum.elim_comp_inr]
-    refine and_congr_right fun hvBX ↦ ?_
-    rw [← ContinuousLinearEquiv.eq_symm_apply]
+  -- Step 2: Show the realified remainder coefficient map is semialgebraic on `B_X` by eliminating
+  -- `w_ℝ`.
+  have hr_semi : IsSemialgebraicOn
+      (fun x_ℝ ↦ complexToRealPi (Fin d) (fun i ↦ r i (eσ.symm x_ℝ))) B_X := by
+    refine isSemialgebraicOn_complexToRealPi_of_forall_elimCoord hBX_semi
+      (isSemialgebraic_divElimSet hBX_semi hHW hsub) fun v hvBX ↦ ?_
+    simp only [Set.mem_ofPred, Sum.elim_comp_inl, Sum.elim_comp_inr]
     refine ⟨fun hvr w_ℝ ⟨_, hwD⟩ k hP0 j ↦ ?_,
-      fun hall ↦ symm <| eq_of_sum_monomial_forall_hasseDeriv_eq
-        (fun w hw ↦ mem_ball_of_isRoot_monicOfCoeff hR (hc_bound _ hvBX) hw)
-        (fun w hw k hP0 j ↦ ?_)⟩
-    · have hvr' : ∀ i, (complexToRealPi (Fin d)).symm (v ∘ Sum.inr) i =
+      fun hall ↦ symm <| Polynomial.eq_of_sum_monomial_forall_hasseDeriv_eq
+        (IsAlgClosed.splits _)
+        (fun w hw ↦ Polynomial.mem_ball_of_isRoot_monicOfCoeff h2R4 (hc_bound _ hvBX) hw)
+        (fun w hw k hk hP0 j hj ↦ ?_)⟩
+    · -- Forward direction: the true remainder matches the Taylor jet of `G` wherever `P` vanishes
+      -- to order `k`.
+      have hvr' : ∀ i, (complexToRealPi (Fin d)).symm (v ∘ Sum.inr) i =
           r i (eσ.symm (v ∘ Sum.inl)) := fun i ↦ (congrFun hvr i).symm
       simp only [hvr']
       exact hjet _ hvBX _ ((mem_realDiskSet_iff hR w_ℝ).1 hwD) k hP0 j
-    · let w_ℝ := complexToRealPi Unit (fun _ ↦ w)
-      have hw_eq : (complexToRealPi Unit).symm w_ℝ () = w := by simp [w_ℝ]
-      have hwD : w_ℝ ∈ realDiskSet R := (mem_realDiskSet_iff hR w_ℝ).2 (hw_eq.symm ▸ hw)
-      have h2 := hall w_ℝ ⟨hvBX, hwD⟩ k
-      rw [hw_eq] at h2
-      exact mul_left_cancel₀ (Nat.cast_ne_zero.2 (Nat.factorial_ne_zero (j : ℕ)))
-        ((h2 hP0 j).symm.trans (hjet _ hvBX w hw k hP0 j))
-  have hr_nash := isHolomorphicNashAt_of_isSemialgebraicOn hr hBX_open hzBX hr_semi
+    · -- Converse direction: any candidate remainder matching `DG` at every root of `P` inside
+      -- `ball 0 R` has the same Hasse derivatives as `r` up to each root multiplicity, hence
+      -- equals `r`.
+      let k' : Fin (d + 1) := ⟨k, Nat.lt_succ_of_le hk⟩
+      let j' : Fin k := ⟨j, hj⟩
+      have hP0' : ∀ m : Fin (k' : ℕ),
+          (hasseDeriv (m : ℕ) (Polynomial.monicOfCoeff
+            (fun i ↦ c i (eσ.symm (v ∘ Sum.inl))))).eval w = 0 := fun m ↦ hP0 m m.2
+      have hwD := (mem_ball_iff_complexToRealPi_mem_realDiskSet hR w).1 hw
+      have h2 := hall (complexToRealPi Unit (fun _ ↦ w)) ⟨hvBX, hwD⟩ k'
+      simp only [complexToRealPi_unit_symm_const] at h2
+      have hHP0 : ∀ m : Fin (k' : ℕ),
+          HP ⟨m, m.2.trans k'.2⟩ (Sum.elim (eσ.symm (v ∘ Sum.inl)) (fun _ ↦ w)) = 0 :=
+        fun m ↦ by simpa [HP] using hP0' m
+      exact mul_left_cancel₀ (Nat.cast_ne_zero.2 (Nat.factorial_ne_zero j))
+        ((h2 hHP0 j').symm.trans (hjet _ hvBX w hw k' hP0' j'))
+  -- Step 3: Upgrade `r` via the graph criterion, then upgrade `q` by exact holomorphic division.
+  have hr_nash : ∀ i, IsHolomorphicNashAt (r i) z₀ :=
+    forall_isHolomorphicNashAt_apply_iff_exists_isSemialgebraicOn.mpr
+      ⟨AnalyticAt.pi hr, B_X, hBX_open, hzBX, hr_semi⟩
   exact ⟨(isHolomorphicNashAt_eval_monicOfCoeff hc).of_mul_eventuallyEq
-    (hG.sub (isHolomorphicNashAt_sum_mul_pow hr_nash)) hq
+    (hG.fun_sub (isHolomorphicNashAt_sum_mul_pow hr_nash)) hq
     (not_eventuallyEq_zero_eval_monicOfCoeff hc0) (hdiv.mono fun _ hp ↦ eq_sub_of_add_eq hp.symm),
     hr_nash⟩
+
+/-! #### Vertical shift transport between `0` and `w₀` -/
 
 /-- Vertical coordinate translation `p ↦ Sum.elim (p ∘ Sum.inl) (fun _ ↦ p (.inr ()) + c₀)`. -/
 private def verticalShift {σ : Type*} (c₀ : ℂ) (p : σ ⊕ Unit → ℂ) : σ ⊕ Unit → ℂ :=
   Sum.elim (p ∘ Sum.inl) (fun _ ↦ p (.inr ()) + c₀)
 
 private theorem isHolomorphicNashAt_verticalShift {σ : Type*} [Fintype σ]
-    (c₀ : ℂ) (z₀ : σ ⊕ Unit → ℂ) (k : σ ⊕ Unit) :
-    IsHolomorphicNashAt (fun p ↦ verticalShift c₀ p k) z₀ := by
+    (c₀ : ℂ) (p₀ : σ ⊕ Unit → ℂ) (k : σ ⊕ Unit) :
+    IsHolomorphicNashAt (fun p ↦ verticalShift c₀ p k) p₀ := by
   rcases k with s | ⟨⟩
-  · exact isHolomorphicNashAt_apply (Sum.inl s) z₀
-  · exact (isHolomorphicNashAt_apply (Sum.inr ()) z₀).add (isHolomorphicNashAt_const c₀ z₀)
+  · exact isHolomorphicNashAt_apply (Sum.inl s)
+  · exact (isHolomorphicNashAt_apply (Sum.inr ())).fun_add (isHolomorphicNashAt_const c₀)
+
+private theorem analyticAt_verticalShift {σ : Type*} [Fintype σ]
+    (c₀ : ℂ) (p₀ : σ ⊕ Unit → ℂ) :
+    AnalyticAt ℂ (verticalShift c₀) p₀ :=
+  AnalyticAt.pi fun k ↦ (isHolomorphicNashAt_verticalShift c₀ p₀ k).analyticAt
 
 private theorem verticalShift_zero_right {σ : Type*} (z₀ : σ → ℂ) (w₀ : ℂ) :
     verticalShift w₀ (Sum.elim z₀ 0) = Sum.elim z₀ (fun _ ↦ w₀) := by
@@ -1145,6 +839,34 @@ private theorem verticalShift_neg_cancel {σ : Type*} (w₀ : ℂ) (p : σ ⊕ U
     verticalShift w₀ (verticalShift (-w₀) p) = p := by
   ext (_ | ⟨⟩) <;> simp [verticalShift]
 
+private theorem continuous_verticalShift {σ : Type*} (c₀ : ℂ) :
+    Continuous (verticalShift (σ := σ) c₀) :=
+  continuous_pi <| Sum.rec (fun s ↦ continuous_apply (Sum.inl s))
+    (fun _ ↦ (continuous_apply (Sum.inr ())).add continuous_const)
+
+private theorem tendsto_verticalShift_zero_right {σ : Type*} (z₀ : σ → ℂ) (w₀ : ℂ) :
+    Tendsto (verticalShift w₀) (𝓝 (Sum.elim z₀ 0)) (𝓝 (Sum.elim z₀ (fun _ ↦ w₀))) :=
+  verticalShift_zero_right z₀ w₀ ▸ (continuous_verticalShift w₀).tendsto (Sum.elim z₀ 0)
+
+private theorem analyticAt_comp_verticalShift_zero_right {σ : Type*} [Fintype σ]
+    {u : (σ ⊕ Unit → ℂ) → ℂ} {z₀ : σ → ℂ} {w₀ : ℂ}
+    (hu : AnalyticAt ℂ u (Sum.elim z₀ (fun _ ↦ w₀))) :
+    AnalyticAt ℂ (u ∘ verticalShift w₀) (Sum.elim z₀ 0) :=
+  hu.comp_of_eq (analyticAt_verticalShift w₀ (Sum.elim z₀ 0)) (verticalShift_zero_right z₀ w₀)
+
+private theorem isHolomorphicNashAt_comp_verticalShift_iff {σ : Type*} [Fintype σ]
+    {F : (σ ⊕ Unit → ℂ) → ℂ} {z₀ : σ → ℂ} {w₀ : ℂ} :
+    IsHolomorphicNashAt (F ∘ verticalShift w₀) (Sum.elim z₀ 0) ↔
+      IsHolomorphicNashAt F (Sum.elim z₀ (fun _ ↦ w₀)) := by
+  constructor
+  · intro hF0
+    have hcomp := ((verticalShift_neg_self z₀ w₀).symm ▸ hF0).comp
+      (isHolomorphicNashAt_verticalShift (-w₀) (Sum.elim z₀ (fun _ ↦ w₀)))
+    exact hcomp.congr (.of_forall fun _ ↦ by simp [verticalShift_neg_cancel])
+  · intro hF
+    exact ((verticalShift_zero_right z₀ w₀).symm ▸ hF).comp
+      (isHolomorphicNashAt_verticalShift w₀ (Sum.elim z₀ 0))
+
 /-- Upgrading a complex Weierstrass preparation at `Sum.elim z₀ (fun _ ↦ w₀)` to
 `IsHolomorphicNashAt`. -/
 private theorem isHolomorphicNashAt_of_weierstrassPreparation {σ : Type*} [Fintype σ]
@@ -1156,19 +878,13 @@ private theorem isHolomorphicNashAt_of_weierstrassPreparation {σ : Type*} [Fint
     (hfac : F =ᶠ[𝓝 (Sum.elim z₀ (fun _ ↦ w₀))] fun p ↦
       (Polynomial.monicOfCoeff (fun i ↦ c i (p ∘ Sum.inl))).eval (p (.inr ()) - w₀) * u p) :
     (∀ i, IsHolomorphicNashAt (c i) z₀) ∧ IsHolomorphicNashAt u (Sum.elim z₀ (fun _ ↦ w₀)) := by
-  have hshift0 := verticalShift_zero_right z₀ w₀
-  have hshift_an : AnalyticAt ℂ (verticalShift w₀) (Sum.elim z₀ 0) :=
-    AnalyticAt.pi fun k ↦ (isHolomorphicNashAt_verticalShift w₀ (Sum.elim z₀ 0) k).analyticAt
-  have hF0 : IsHolomorphicNashAt (F ∘ verticalShift w₀) (Sum.elim z₀ 0) :=
-    (hshift0.symm ▸ hF).comp (isHolomorphicNashAt_verticalShift w₀ _)
-  have hT : Tendsto (verticalShift w₀) (𝓝 (Sum.elim z₀ 0)) (𝓝 (Sum.elim z₀ (fun _ ↦ w₀))) :=
-    hshift0 ▸ hshift_an.continuousAt.tendsto
-  obtain ⟨hc_nash, hu0_nash⟩ := isHolomorphicNashAt_of_weierstrassPreparation_zero hF0 hc hc0
-    (hu.comp_of_eq hshift_an hshift0) (by simpa only [Function.comp_apply, hshift0] using hu0)
-    ((hT.eventually hfac).mono fun p hp ↦ by simpa [verticalShift, Function.comp_def] using hp)
-  have hu_nash := ((verticalShift_neg_self z₀ w₀).symm ▸ hu0_nash).comp
-    (isHolomorphicNashAt_verticalShift (-w₀) (Sum.elim z₀ (fun _ ↦ w₀)))
-  exact ⟨hc_nash, hu_nash.congr (.of_forall fun _ ↦ by simp [verticalShift_neg_cancel])⟩
+  obtain ⟨hc_nash, hu0_nash⟩ := isHolomorphicNashAt_of_weierstrassPreparation_zero
+    (isHolomorphicNashAt_comp_verticalShift_iff.2 hF) hc hc0
+    (analyticAt_comp_verticalShift_zero_right hu)
+    (by simpa only [Function.comp_apply, verticalShift_zero_right] using hu0)
+    (((tendsto_verticalShift_zero_right z₀ w₀).eventually hfac).mono fun p hp ↦ by
+      simpa [verticalShift, Function.comp_def] using hp)
+  exact ⟨hc_nash, isHolomorphicNashAt_comp_verticalShift_iff.1 hu0_nash⟩
 
 /-- Upgrading a complex Weierstrass division at `Sum.elim z₀ (fun _ ↦ w₀)` to
 `IsHolomorphicNashAt`. -/
@@ -1182,19 +898,12 @@ private theorem isHolomorphicNashAt_of_weierstrassDivision {σ : Type*} [Fintype
       (Polynomial.monicOfCoeff (fun i ↦ c i (p ∘ Sum.inl))).eval (p (.inr ()) - w₀) * q p +
         ∑ i : Fin d, r i (p ∘ Sum.inl) * (p (.inr ()) - w₀) ^ (i : ℕ)) :
     IsHolomorphicNashAt q (Sum.elim z₀ (fun _ ↦ w₀)) ∧ ∀ i, IsHolomorphicNashAt (r i) z₀ := by
-  have hshift0 := verticalShift_zero_right z₀ w₀
-  have hshift_an : AnalyticAt ℂ (verticalShift w₀) (Sum.elim z₀ 0) :=
-    AnalyticAt.pi fun k ↦ (isHolomorphicNashAt_verticalShift w₀ (Sum.elim z₀ 0) k).analyticAt
-  have hG0 : IsHolomorphicNashAt (G ∘ verticalShift w₀) (Sum.elim z₀ 0) :=
-    (hshift0.symm ▸ hG).comp (isHolomorphicNashAt_verticalShift w₀ _)
-  have hT : Tendsto (verticalShift w₀) (𝓝 (Sum.elim z₀ 0)) (𝓝 (Sum.elim z₀ (fun _ ↦ w₀))) :=
-    hshift0 ▸ hshift_an.continuousAt.tendsto
-  obtain ⟨hq0_nash, hr_nash⟩ := isHolomorphicNashAt_of_weierstrassDivision_zero hG0 hc hc0
-    (hq.comp_of_eq hshift_an hshift0) hr
-    ((hT.eventually hdiv).mono fun p hp ↦ by simpa [verticalShift, Function.comp_def] using hp)
-  have hq_nash := ((verticalShift_neg_self z₀ w₀).symm ▸ hq0_nash).comp
-    (isHolomorphicNashAt_verticalShift (-w₀) (Sum.elim z₀ (fun _ ↦ w₀)))
-  exact ⟨hq_nash.congr (.of_forall fun _ ↦ by simp [verticalShift_neg_cancel]), hr_nash⟩
+  obtain ⟨hq0_nash, hr_nash⟩ := isHolomorphicNashAt_of_weierstrassDivision_zero
+    (isHolomorphicNashAt_comp_verticalShift_iff.2 hG) hc hc0
+    (analyticAt_comp_verticalShift_zero_right hq) hr
+    (((tendsto_verticalShift_zero_right z₀ w₀).eventually hdiv).mono fun p hp ↦ by
+      simpa [verticalShift, Function.comp_def] using hp)
+  exact ⟨isHolomorphicNashAt_comp_verticalShift_iff.1 hq0_nash, hr_nash⟩
 
 end ComplexWeierstrassUpgrade
 
@@ -1202,25 +911,35 @@ end ComplexWeierstrassUpgrade
 
 section RealNashWeierstrass
 
-variable {σ : Type*} [Fintype σ]
-
-private theorem complexify_nash {τ : Type*} [Fintype τ] {f : (τ → ℝ) → ℝ} {x₀ : τ → ℝ}
-    (hf : IsNashAt f x₀) :
-    ∃ F : (τ → ℂ) → ℂ, IsHolomorphicNashAt F (fun j ↦ (x₀ j : ℂ)) ∧
-      ∀ᶠ y in 𝓝 x₀, F (fun j ↦ (y j : ℂ)) = f y := by
-  obtain ⟨r, hr, F, hF, hFf, _⟩ := hf.analyticAt.exists_complexification
-  have hF_an : AnalyticAt ℂ F (fun j ↦ (x₀ j : ℂ)) := hF _ (mem_ball_self hr)
-  have hFf' : ∀ᶠ y in 𝓝 x₀, F (fun j ↦ (y j : ℂ)) = f y :=
-    eventually_of_mem (ball_mem_nhds x₀ hr) hFf
-  obtain ⟨hre, him⟩ := hf.complexification_re_im hF_an hFf'
-  exact ⟨F, ⟨hF_an, hre, him⟩, hFf'⟩
-
 private theorem complexify_analytic {τ : Type*} [Fintype τ] {f : (τ → ℝ) → ℝ} {x₀ : τ → ℝ}
     (hf : AnalyticAt ℝ f x₀) :
     ∃ F : (τ → ℂ) → ℂ, AnalyticAt ℂ F (fun j ↦ (x₀ j : ℂ)) ∧
       ∀ᶠ y in 𝓝 x₀, F (fun j ↦ (y j : ℂ)) = f y := by
   obtain ⟨r, hr, F, hF, hFf, _⟩ := hf.exists_complexification
   exact ⟨F, hF _ (mem_ball_self hr), eventually_of_mem (ball_mem_nhds x₀ hr) hFf⟩
+
+private theorem ofReal_sumElim {σ : Type*} (x₀ : σ → ℝ) (t₀ : ℝ) :
+    (fun k : σ ⊕ Unit ↦ ((Sum.elim x₀ (fun _ : Unit ↦ t₀) k : ℝ) : ℂ)) =
+      Sum.elim (fun s ↦ (x₀ s : ℂ)) (fun _ ↦ (t₀ : ℂ)) := by
+  ext (_ | ⟨⟩) <;> simp
+
+private theorem ofReal_comp_inl {σ : Type*} (p : σ ⊕ Unit → ℝ) :
+    ((fun k ↦ (p k : ℂ)) ∘ Sum.inl) = fun s ↦ ((p ∘ Sum.inl) s : ℂ) := by
+  ext s; simp
+
+private theorem eventually_forall_complex_comp_inl {σ ι : Type*} [Finite ι]
+    {c : ι → (σ → ℝ) → ℝ} {C : ι → (σ → ℂ) → ℂ} {x₀ : σ → ℝ} (t₀ : ℝ)
+    (hCc : ∀ i, ∀ᶠ x in 𝓝 x₀, C i (fun s ↦ (x s : ℂ)) = c i x) :
+    ∀ᶠ p in 𝓝 (Sum.elim x₀ (fun _ : Unit ↦ t₀)),
+      ∀ i, C i ((fun k ↦ (p k : ℂ)) ∘ Sum.inl) = c i (p ∘ Sum.inl) := by
+  have hinl : Tendsto (fun p : σ ⊕ Unit → ℝ ↦ p ∘ Sum.inl)
+      (𝓝 (Sum.elim x₀ (fun _ : Unit ↦ t₀))) (𝓝 x₀) :=
+    (continuous_pi fun s ↦ continuous_apply (Sum.inl s)).tendsto (Sum.elim x₀ (fun _ ↦ t₀))
+  refine (hinl.eventually (eventually_all.2 hCc)).mono fun p hp i ↦ ?_
+  rw [ofReal_comp_inl]
+  exact hp i
+
+variable {σ : Type*} [Fintype σ]
 
 private theorem analyticAt_sum_mul_sub_pow_sumElim {d : ℕ} {B : Fin d → (σ → ℂ) → ℂ}
     {z₀ : σ → ℂ} {w₀ : ℂ} (hB : ∀ i, AnalyticAt ℂ (B i) z₀) :
@@ -1265,36 +984,33 @@ theorem IsNashAt.of_weierstrassPreparation {f u : (σ ⊕ Unit → ℝ) → ℝ}
     (hfac : f =ᶠ[𝓝 (Sum.elim x₀ (fun _ ↦ t₀))] fun p ↦
       (Polynomial.monicOfCoeff (fun i ↦ c i (p ∘ Sum.inl))).eval (p (.inr ()) - t₀) * u p) :
     (∀ i, IsNashAt (c i) x₀) ∧ IsNashAt u (Sum.elim x₀ (fun _ ↦ t₀)) := by
-  let p₀ : σ ⊕ Unit → ℝ := Sum.elim x₀ (fun _ ↦ t₀)
   let z₀ : σ → ℂ := fun s ↦ (x₀ s : ℂ)
-  have hp₀_eq : (fun k ↦ (p₀ k : ℂ)) = Sum.elim z₀ (fun _ ↦ (t₀ : ℂ)) := by ext (_ | ⟨⟩) <;> rfl
-  obtain ⟨F, hF, hFf⟩ := complexify_nash hf
+  have hp₀_eq := ofReal_sumElim x₀ t₀
+  obtain ⟨F, hF, hFf⟩ := hf.exists_isHolomorphicNashAt
   obtain ⟨U, hU, hUu⟩ := complexify_analytic hu
   choose C hC hCc using fun i ↦ complexify_analytic (hc i)
   have hC0 (i : Fin d) : C i z₀ = 0 := by
     rw [(hCc i).self_of_nhds, hc0 i, Complex.ofReal_zero]
   have hU0 : U (Sum.elim z₀ (fun _ ↦ (t₀ : ℂ))) ≠ 0 := by
     rw [← hp₀_eq, hUu.self_of_nhds]; exact_mod_cast hu0
-  have hinl : Tendsto (fun p : σ ⊕ Unit → ℝ ↦ p ∘ Sum.inl) (𝓝 p₀) (𝓝 x₀) :=
-    (continuous_pi fun s ↦ continuous_apply (Sum.inl s)).tendsto p₀
-  have hC_ev : ∀ᶠ x in 𝓝 x₀, ∀ i, C i (fun s ↦ (x s : ℂ)) = c i x := eventually_all.2 hCc
   have hfac_C : F =ᶠ[𝓝 (Sum.elim z₀ (fun _ ↦ (t₀ : ℂ)))] fun p ↦
       (Polynomial.monicOfCoeff (fun i ↦ C i (p ∘ Sum.inl))).eval
         (p (.inr ()) - (t₀ : ℂ)) * U p := by
     rw [← hp₀_eq]
     refine hF.analyticAt.eventuallyEq_of_eventually_real
       (hp₀_eq ▸ ((analyticAt_eval_monicOfCoeff_sumElim hC).fun_mul (hp₀_eq ▸ hU))) ?_
-    filter_upwards [hFf, hfac, hUu, hinl.eventually hC_ev] with p hFp hp hUp hCp
-    have hinl_eq : ((fun k ↦ (p k : ℂ)) ∘ Sum.inl) = fun s ↦ (p (Sum.inl s) : ℂ) := rfl
-    have hCp' (i : Fin d) : C i (fun s ↦ (p (Sum.inl s) : ℂ)) = c i (p ∘ Sum.inl) := hCp i
+    filter_upwards [hFf, hfac, hUu, eventually_forall_complex_comp_inl t₀ hCc]
+      with p hFp hp hUp hCp
     rw [hFp]
     simp only [Polynomial.eval_monicOfCoeff] at hp ⊢
-    simp only [hinl_eq, hCp', hUp]
+    simp only [hCp, hUp]
     exact_mod_cast hp
   obtain ⟨hC_nash, hU_nash⟩ :=
     isHolomorphicNashAt_of_weierstrassPreparation (hp₀_eq ▸ hF) hC hC0 (hp₀_eq ▸ hU) hU0 hfac_C
   exact ⟨fun i ↦ (hC_nash i).isNashAt_of_eventually_real (hCc i),
     (hp₀_eq.symm ▸ hU_nash).isNashAt_of_eventually_real hUu⟩
+
+/-! #### Coordinate transport between `σ ⊕ Unit → ℝ` and `(Fin n → ℝ) × ℝ` -/
 
 private noncomputable def finJoin (q : (Fin (Fintype.card σ) → ℝ) × ℝ) : σ ⊕ Unit → ℝ :=
   Sum.elim (q.1 ∘ Fintype.equivFin σ) (fun _ ↦ q.2)
@@ -1318,7 +1034,42 @@ private theorem analyticAt_finSplit (p₀ : σ ⊕ Unit → ℝ) :
     ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : σ ⊕ Unit ↦ ℝ) (Sum.inr ())).analyticAt _)
 
 private theorem finJoin_finSplit (p : σ ⊕ Unit → ℝ) : finJoin (finSplit p) = p := by
-  ext k; rcases k with s | ⟨⟩ <;> simp [finJoin, finSplit]
+  ext (_ | ⟨⟩) <;> simp [finJoin, finSplit]
+
+@[simp]
+private theorem comp_equivFin_symm_comp_equivFin (x : σ → ℝ) :
+    (x ∘ (Fintype.equivFin σ).symm) ∘ Fintype.equivFin σ = x := by
+  ext; simp
+
+private theorem finJoin_equivFin_symm (x₀ : σ → ℝ) (t : ℝ) :
+    finJoin (x₀ ∘ (Fintype.equivFin σ).symm, t) = Sum.elim x₀ (fun _ ↦ t) := by
+  ext (_ | ⟨⟩) <;> simp [finJoin]
+
+private theorem analyticAt_comp_equivFin_symm {h : (Fin (Fintype.card σ) → ℝ) → ℝ} {x₀ : σ → ℝ}
+    (hh : AnalyticAt ℝ h (x₀ ∘ (Fintype.equivFin σ).symm)) :
+    AnalyticAt ℝ (fun x ↦ h (x ∘ (Fintype.equivFin σ).symm)) x₀ :=
+  hh.comp_of_eq (AnalyticAt.pi fun j ↦
+    (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : σ ↦ ℝ)
+      ((Fintype.equivFin σ).symm j)).analyticAt x₀) rfl
+
+private theorem analyticAt_comp_equivFin {h : (σ → ℝ) → ℝ} {x₀ : σ → ℝ}
+    (hh : AnalyticAt ℝ h x₀) :
+    AnalyticAt ℝ (fun y ↦ h (y ∘ Fintype.equivFin σ)) (x₀ ∘ (Fintype.equivFin σ).symm) :=
+  hh.comp_of_eq (AnalyticAt.pi fun s ↦
+    (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ ↦ ℝ)
+      (Fintype.equivFin σ s)).analyticAt _) (comp_equivFin_symm_comp_equivFin x₀)
+
+private theorem eventuallyEq_of_comp_finJoin {f : (σ ⊕ Unit → ℝ) → ℝ}
+    {H : (Fin (Fintype.card σ) → ℝ) × ℝ → ℝ} {x₀ : σ → ℝ} {t₀ : ℝ}
+    (h : f ∘ finJoin =ᶠ[𝓝 (x₀ ∘ (Fintype.equivFin σ).symm, t₀)] H) :
+    f =ᶠ[𝓝 (Sum.elim x₀ (fun _ ↦ t₀))] H ∘ finSplit := by
+  have hsplit : finSplit (Sum.elim x₀ (fun _ : Unit ↦ t₀)) =
+      (x₀ ∘ (Fintype.equivFin σ).symm, t₀) := by
+    simp [finSplit]
+  have hT : Tendsto finSplit (𝓝 (Sum.elim x₀ (fun _ ↦ t₀)))
+      (𝓝 (x₀ ∘ (Fintype.equivFin σ).symm, t₀)) :=
+    hsplit ▸ (analyticAt_finSplit _).continuousAt.tendsto
+  exact (hT.eventually h).mono fun p hp ↦ by simpa [Function.comp_apply, finJoin_finSplit] using hp
 
 /-- **Nash Weierstrass preparation theorem.** Let `f : (σ ⊕ Unit → ℝ) → ℝ` be a Nash germ at
 `p₀ = Sum.elim x₀ (fun _ ↦ t₀)`, with `σ` finite, and suppose the vertical slice
@@ -1336,27 +1087,20 @@ theorem IsNashAt.exists_weierstrassPreparation {f : (σ ⊕ Unit → ℝ) → �
       IsNashAt u (Sum.elim x₀ (fun _ ↦ t₀)) ∧ u (Sum.elim x₀ (fun _ ↦ t₀)) ≠ 0 ∧
       f =ᶠ[𝓝 (Sum.elim x₀ (fun _ ↦ t₀))] fun p ↦
         (Polynomial.monicOfCoeff (fun i ↦ c i (p ∘ Sum.inl))).eval (p (.inr ()) - t₀) * u p := by
-  let e : σ ≃ Fin (Fintype.card σ) := Fintype.equivFin σ
-  have hjoin_x₀ (t : ℝ) : finJoin (x₀ ∘ e.symm, t) = Sum.elim x₀ (fun _ ↦ t) := by
-    ext k; rcases k with s | ⟨⟩ <;> simp [finJoin, e]
-  have hf_prod : AnalyticAt ℝ (f ∘ finJoin) (x₀ ∘ e.symm, t₀) :=
-    hf.analyticAt.comp_of_eq (analyticAt_finJoin (x₀ ∘ e.symm) t₀) (hjoin_x₀ t₀)
-  have hd_prod : analyticOrderAt (fun t ↦ (f ∘ finJoin) (x₀ ∘ e.symm, t)) t₀ = d := by
-    simpa only [Function.comp_apply, hjoin_x₀] using hd
+  have hf_prod : AnalyticAt ℝ (f ∘ finJoin) (x₀ ∘ (Fintype.equivFin σ).symm, t₀) :=
+    hf.analyticAt.comp_of_eq (analyticAt_finJoin _ t₀) (finJoin_equivFin_symm x₀ t₀)
+  have hd_prod :
+      analyticOrderAt (fun t ↦ (f ∘ finJoin) (x₀ ∘ (Fintype.equivFin σ).symm, t)) t₀ = d := by
+    simpa only [Function.comp_apply, finJoin_equivFin_symm] using hd
   obtain ⟨c', u', hc', hc'0, hu', hu'0, hfac'⟩ := hf_prod.exists_weierstrassPreparation_real hd_prod
-  let c : Fin d → (σ → ℝ) → ℝ := fun i x ↦ c' i (x ∘ e.symm)
+  let c : Fin d → (σ → ℝ) → ℝ := fun i x ↦ c' i (x ∘ (Fintype.equivFin σ).symm)
   let u : (σ ⊕ Unit → ℝ) → ℝ := u' ∘ finSplit
-  have hc_an (i : Fin d) : AnalyticAt ℝ (c i) x₀ :=
-    (hc' i).comp_of_eq (AnalyticAt.pi fun j ↦
-      (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : σ ↦ ℝ) (e.symm j)).analyticAt x₀) rfl
-  have hsplit_an := analyticAt_finSplit (Sum.elim x₀ (fun _ ↦ t₀))
   have hfac : f =ᶠ[𝓝 (Sum.elim x₀ (fun _ ↦ t₀))] fun p ↦
-      (Polynomial.monicOfCoeff (fun i ↦ c i (p ∘ Sum.inl))).eval (p (.inr ()) - t₀) * u p := by
-    filter_upwards [hsplit_an.continuousAt.tendsto.eventually hfac'] with p hp
-    rw [Function.comp_apply, finJoin_finSplit] at hp
-    simpa only [Function.comp_apply, c, u, finSplit, e] using hp
-  obtain ⟨hc_nash, hu_nash⟩ :=
-    hf.of_weierstrassPreparation hc_an (fun i ↦ hc'0 i) (hu'.comp_of_eq hsplit_an rfl) hu'0 hfac
+      (Polynomial.monicOfCoeff (fun i ↦ c i (p ∘ Sum.inl))).eval (p (.inr ()) - t₀) * u p :=
+    (eventuallyEq_of_comp_finJoin hfac').mono fun p hp ↦ by simpa [c, u, finSplit] using hp
+  obtain ⟨hc_nash, hu_nash⟩ := hf.of_weierstrassPreparation
+    (fun i ↦ analyticAt_comp_equivFin_symm (hc' i)) (fun i ↦ hc'0 i)
+    (hu'.comp_of_eq (analyticAt_finSplit _) rfl) hu'0 hfac
   exact ⟨c, u, hc_nash, fun i ↦ hc'0 i, hu_nash, hu'0, hfac⟩
 
 /-- **Nash upgrading of a real Weierstrass division by a Weierstrass polynomial.** If
@@ -1373,19 +1117,14 @@ theorem IsNashAt.of_weierstrassDivision_monicOfCoeff {g q : (σ ⊕ Unit → ℝ
       (Polynomial.monicOfCoeff (fun i ↦ c i (p ∘ Sum.inl))).eval (p (.inr ()) - t₀) * q p +
         ∑ i : Fin d, r i (p ∘ Sum.inl) * (p (.inr ()) - t₀) ^ (i : ℕ)) :
     IsNashAt q (Sum.elim x₀ (fun _ ↦ t₀)) ∧ ∀ i, IsNashAt (r i) x₀ := by
-  let p₀ : σ ⊕ Unit → ℝ := Sum.elim x₀ (fun _ ↦ t₀)
   let z₀ : σ → ℂ := fun s ↦ (x₀ s : ℂ)
-  have hp₀_eq : (fun k ↦ (p₀ k : ℂ)) = Sum.elim z₀ (fun _ ↦ (t₀ : ℂ)) := by ext (_ | ⟨⟩) <;> rfl
-  obtain ⟨G, hG, hGg⟩ := complexify_nash hg
-  choose C hC hCc using fun i ↦ complexify_nash (hc i)
+  have hp₀_eq := ofReal_sumElim x₀ t₀
+  obtain ⟨G, hG, hGg⟩ := hg.exists_isHolomorphicNashAt
+  choose C hC hCc using fun i ↦ (hc i).exists_isHolomorphicNashAt
   obtain ⟨Q, hQ, hQq⟩ := complexify_analytic hq
   choose R hR hRr using fun i ↦ complexify_analytic (hr i)
   have hC0 (i : Fin d) : C i z₀ = 0 := by
     rw [(hCc i).self_of_nhds, hc0 i, Complex.ofReal_zero]
-  have hinl : Tendsto (fun p : σ ⊕ Unit → ℝ ↦ p ∘ Sum.inl) (𝓝 p₀) (𝓝 x₀) :=
-    (continuous_pi fun s ↦ continuous_apply (Sum.inl s)).tendsto p₀
-  have hC_ev : ∀ᶠ x in 𝓝 x₀, ∀ i, C i (fun s ↦ (x s : ℂ)) = c i x := eventually_all.2 hCc
-  have hR_ev : ∀ᶠ x in 𝓝 x₀, ∀ i, R i (fun s ↦ (x s : ℂ)) = r i x := eventually_all.2 hRr
   have hdiv_C : G =ᶠ[𝓝 (Sum.elim z₀ (fun _ ↦ (t₀ : ℂ)))] fun p ↦
       (Polynomial.monicOfCoeff (fun i ↦ C i (p ∘ Sum.inl))).eval (p (.inr ()) - (t₀ : ℂ)) * Q p +
         ∑ i : Fin d, R i (p ∘ Sum.inl) * (p (.inr ()) - (t₀ : ℂ)) ^ (i : ℕ) := by
@@ -1393,14 +1132,11 @@ theorem IsNashAt.of_weierstrassDivision_monicOfCoeff {g q : (σ ⊕ Unit → ℝ
     refine hG.analyticAt.eventuallyEq_of_eventually_real
       (hp₀_eq ▸ (((analyticAt_eval_monicOfCoeff_sumElim fun i ↦ (hC i).analyticAt).fun_mul
         (hp₀_eq ▸ hQ)).fun_add (analyticAt_sum_mul_sub_pow_sumElim hR))) ?_
-    filter_upwards [hGg, hdiv, hQq, hinl.eventually hC_ev, hinl.eventually hR_ev]
-      with p hGp hp hQp hCp hRp
-    have hinl_eq : ((fun k ↦ (p k : ℂ)) ∘ Sum.inl) = fun s ↦ (p (Sum.inl s) : ℂ) := rfl
-    have hCp' (i : Fin d) : C i (fun s ↦ (p (Sum.inl s) : ℂ)) = c i (p ∘ Sum.inl) := hCp i
-    have hRp' (i : Fin d) : R i (fun s ↦ (p (Sum.inl s) : ℂ)) = r i (p ∘ Sum.inl) := hRp i
+    filter_upwards [hGg, hdiv, hQq, eventually_forall_complex_comp_inl t₀ hCc,
+      eventually_forall_complex_comp_inl t₀ hRr] with p hGp hp hQp hCp hRp
     rw [hGp]
     simp only [Polynomial.eval_monicOfCoeff] at hp ⊢
-    simp only [hinl_eq, hCp', hQp, hRp']
+    simp only [hCp, hQp, hRp]
     exact_mod_cast hp
   obtain ⟨hQ_nash, hR_nash⟩ :=
     isHolomorphicNashAt_of_weierstrassDivision (hp₀_eq ▸ hG) hC hC0 (hp₀_eq ▸ hQ) hR hdiv_C
@@ -1422,34 +1158,23 @@ theorem IsNashAt.exists_weierstrassDivision_monicOfCoeff {g : (σ ⊕ Unit → �
       g =ᶠ[𝓝 (Sum.elim x₀ (fun _ ↦ t₀))] fun p ↦
         (Polynomial.monicOfCoeff (fun i ↦ c i (p ∘ Sum.inl))).eval (p (.inr ()) - t₀) * q p +
           ∑ i : Fin d, r i (p ∘ Sum.inl) * (p (.inr ()) - t₀) ^ (i : ℕ) := by
-  let e : σ ≃ Fin (Fintype.card σ) := Fintype.equivFin σ
-  have hjoin_x₀ : finJoin (x₀ ∘ e.symm, t₀) = Sum.elim x₀ (fun _ ↦ t₀) := by
-    ext k; rcases k with s | ⟨⟩ <;> simp [finJoin, e]
-  have hg_prod : AnalyticAt ℝ (g ∘ finJoin) (x₀ ∘ e.symm, t₀) :=
-    hg.analyticAt.comp_of_eq (analyticAt_finJoin (x₀ ∘ e.symm) t₀) hjoin_x₀
-  have hc_fin (i : Fin d) : AnalyticAt ℝ (fun y ↦ c i (y ∘ e)) (x₀ ∘ e.symm) :=
-    (hc i).analyticAt.comp_of_eq (AnalyticAt.pi fun s ↦
-      (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ ↦ ℝ) (e s)).analyticAt _) (by ext; simp)
-  have hc0_fin (i : Fin d) : c i ((x₀ ∘ e.symm) ∘ e) = 0 := by
-    have hx : (x₀ ∘ e.symm) ∘ e = x₀ := by ext; simp
-    rw [hx]; exact hc0 i
+  have hg_prod : AnalyticAt ℝ (g ∘ finJoin) (x₀ ∘ (Fintype.equivFin σ).symm, t₀) :=
+    hg.analyticAt.comp_of_eq (analyticAt_finJoin _ t₀) (finJoin_equivFin_symm x₀ t₀)
+  have hc0_fin (i : Fin d) : c i ((x₀ ∘ (Fintype.equivFin σ).symm) ∘ Fintype.equivFin σ) = 0 := by
+    rw [comp_equivFin_symm_comp_equivFin]; exact hc0 i
   obtain ⟨q', r', hq', hr', hdiv'⟩ :=
-    hg_prod.exists_weierstrassDivision_monicOfCoeff_real hc_fin hc0_fin
+    hg_prod.exists_weierstrassDivision_monicOfCoeff_real
+      (fun i ↦ analyticAt_comp_equivFin (hc i).analyticAt) hc0_fin
   let q : (σ ⊕ Unit → ℝ) → ℝ := q' ∘ finSplit
-  let r : Fin d → (σ → ℝ) → ℝ := fun i x ↦ r' i (x ∘ e.symm)
-  have hsplit_an := analyticAt_finSplit (Sum.elim x₀ (fun _ ↦ t₀))
-  have hr_an (i : Fin d) : AnalyticAt ℝ (r i) x₀ :=
-    (hr' i).comp_of_eq (AnalyticAt.pi fun j ↦
-      (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : σ ↦ ℝ) (e.symm j)).analyticAt x₀) rfl
+  let r : Fin d → (σ → ℝ) → ℝ := fun i x ↦ r' i (x ∘ (Fintype.equivFin σ).symm)
   have hdiv : g =ᶠ[𝓝 (Sum.elim x₀ (fun _ ↦ t₀))] fun p ↦
       (Polynomial.monicOfCoeff (fun i ↦ c i (p ∘ Sum.inl))).eval (p (.inr ()) - t₀) * q p +
-        ∑ i : Fin d, r i (p ∘ Sum.inl) * (p (.inr ()) - t₀) ^ (i : ℕ) := by
-    filter_upwards [hsplit_an.continuousAt.tendsto.eventually hdiv'] with p hp
-    have hinl : ((p ∘ Sum.inl) ∘ e.symm) ∘ e = p ∘ Sum.inl := by ext; simp
-    rw [Function.comp_apply, finJoin_finSplit] at hp
-    simpa only [Function.comp_apply, hinl, q, r, finSplit, e] using hp
-  obtain ⟨hq_nash, hr_nash⟩ :=
-    hg.of_weierstrassDivision_monicOfCoeff hc hc0 (hq'.comp_of_eq hsplit_an rfl) hr_an hdiv
+        ∑ i : Fin d, r i (p ∘ Sum.inl) * (p (.inr ()) - t₀) ^ (i : ℕ) :=
+    (eventuallyEq_of_comp_finJoin hdiv').mono fun p hp ↦ by
+      simpa only [Function.comp_apply, comp_equivFin_symm_comp_equivFin, q, r, finSplit] using hp
+  obtain ⟨hq_nash, hr_nash⟩ := hg.of_weierstrassDivision_monicOfCoeff hc hc0
+    (hq'.comp_of_eq (analyticAt_finSplit _) rfl)
+    (fun i ↦ analyticAt_comp_equivFin_symm (hr' i)) hdiv
   exact ⟨q, r, hq_nash, hr_nash, hdiv⟩
 
 /-- **Nash upgrading of a general real Weierstrass division.** Let `f, g : (σ ⊕ Unit → ℝ) → ℝ` be

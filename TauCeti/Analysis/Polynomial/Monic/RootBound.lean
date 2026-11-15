@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Field.Basic
 public import Mathlib.Algebra.Polynomial.Degree.Defs
 public import Mathlib.Algebra.Polynomial.Eval.Defs
+public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
 import Mathlib.Algebra.Field.GeomSum
 import Mathlib.Algebra.Polynomial.Degree.Operations
 import Mathlib.Algebra.Polynomial.Eval.Degree
@@ -18,10 +19,13 @@ import Mathlib.Tactic.LinearCombination
 
 Let `p = Xᵈ + a_{d-1} X^{d-1} + ⋯ + a₀` be a monic polynomial over a normed field whose
 coefficients satisfy `‖aᵢ‖ ≤ c^(d - i)`. Then every root `z` of `p` satisfies `‖z‖ ≤ 2 c`
-(`Polynomial.IsRoot.norm_le_two_mul`). Unlike Cauchy's bound `‖z‖ < 1 + maxᵢ ‖aᵢ‖`
-(`Polynomial.IsRoot.norm_lt_cauchyBound`), this bound is homogeneous: replacing the roots `z` by
-`t z` multiplies `aᵢ` by `t^(d - i)`, and the bound by `‖t‖`. It is a form of Fujiwara's bound
-`‖z‖ ≤ 2 maxᵢ ‖aᵢ‖^(1 / (d - i))`, stated without fractional powers.
+(`Polynomial.IsRoot.norm_le_two_mul`, and
+`TauCeti.Polynomial.norm_le_two_mul_of_isRoot_monicOfCoeff`,
+`TauCeti.Polynomial.mem_ball_of_isRoot_monicOfCoeff` in prescribed-coefficient coordinates). Unlike
+Cauchy's bound `‖z‖ < 1 + maxᵢ ‖aᵢ‖` (`Polynomial.IsRoot.norm_lt_cauchyBound`), this bound is
+homogeneous: replacing the roots `z` by `t z` multiplies `aᵢ` by `t^(d - i)`, and the bound by
+`‖t‖`. It is a form of Fujiwara's bound `‖z‖ ≤ 2 maxᵢ ‖aᵢ‖^(1 / (d - i))`, stated without
+fractional powers.
 
 If `‖z‖ > 2 c`, then `‖aᵢ zⁱ‖ ≤ 2^-(d - i) ‖z‖ᵈ`, and these weights sum to less than one, which
 contradicts `zᵈ = -∑_{i < d} aᵢ zⁱ`.
@@ -84,3 +88,31 @@ theorem IsRoot.norm_le_two_mul {p : K[X]} (hp : p.Monic) {c : ℝ}
   linarith
 
 end Polynomial
+
+namespace TauCeti.Polynomial
+
+open _root_.Polynomial
+
+/-- **A Fujiwara-type root bound in monic coefficient coordinates.** If `‖a i‖ ≤ c ^ (d - i)` for
+every `i : Fin d`, then every root `z` of `TauCeti.Polynomial.monicOfCoeff a` satisfies
+`‖z‖ ≤ 2 * c`. -/
+theorem norm_le_two_mul_of_isRoot_monicOfCoeff {K : Type*} [NormedField K] {d : ℕ}
+    {a : Fin d → K} {c : ℝ} (ha : ∀ i : Fin d, ‖a i‖ ≤ c ^ (d - (i : ℕ))) {z : K}
+    (hz : (monicOfCoeff a).IsRoot z) : ‖z‖ ≤ 2 * c := by
+  refine hz.norm_le_two_mul (monic_monicOfCoeff a) fun m hm ↦ ?_
+  rw [natDegree_monicOfCoeff] at hm ⊢
+  have hcoeff : (monicOfCoeff a).coeff m = a ⟨m, hm⟩ := by
+    simpa using coeff_monicOfCoeff a ⟨m, hm⟩
+  rw [hcoeff]
+  exact ha ⟨m, hm⟩
+
+/-- If `‖a i‖ ≤ c ^ (d - i)` for every `i : Fin d` and `2 * c < R`, then every root of
+`TauCeti.Polynomial.monicOfCoeff a` lies in `Metric.ball 0 R`. -/
+theorem mem_ball_of_isRoot_monicOfCoeff {K : Type*} [NormedField K] {d : ℕ}
+    {a : Fin d → K} {c R : ℝ} (hcR : 2 * c < R)
+    (ha : ∀ i : Fin d, ‖a i‖ ≤ c ^ (d - (i : ℕ))) {z : K}
+    (hz : (monicOfCoeff a).IsRoot z) : z ∈ Metric.ball (0 : K) R := by
+  rw [Metric.mem_ball, dist_eq_norm, sub_zero]
+  exact (norm_le_two_mul_of_isRoot_monicOfCoeff ha hz).trans_lt hcR
+
+end TauCeti.Polynomial
