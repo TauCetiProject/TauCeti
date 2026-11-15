@@ -23,21 +23,21 @@ Unit length is therefore the same over `ℝ` and over `ℂ`, while `⟪x, y⟫_�
 the imaginary parts of its complex inner products vanish (`Orthonormal.complex_iff`). Since
 `Im ⟪x, x⟫_ℂ = 0` holds unconditionally by Hermitian symmetry, the imaginary condition may be
 written either pairwise for `i ≠ j` or for all `i, j`
-(`Orthonormal.complex_iff_forall_im_eq_zero`), and pairwise vanishing on any generating set `s`
-extends by `ℝ`-bilinearity to all pairs in `Submodule.span ℝ s`
+(`Orthonormal.complex_iff_forall_im_inner_eq_zero`), and pairwise vanishing on any generating set
+`s` extends by `ℝ`-bilinearity to all pairs in `Submodule.span ℝ s`
 (`Set.Pairwise.im_inner_eq_zero_of_mem_span`). Geometrically, this expresses isotropy of the real
-span for the symplectic form `-Im ⟪·, ·⟫_ℂ`, which becomes the Lagrangian condition when the real
+span for the symplectic form `Im ⟪·, ·⟫_ℂ`, which becomes the Lagrangian condition when the real
 span has half the ambient real dimension.
 
 ## Main results
 
 * `TauCeti.real_inner_eq_re_inner`: `⟪x, y⟫_ℝ = (⟪x, y⟫_ℂ).re` whenever both inner products share
   the same seminormed group structure.
-* `Set.Pairwise.im_inner_eq_zero_of_mem_span`: if `Im ⟪x, y⟫_ℂ = 0` for distinct elements of `s`,
-  then `Im ⟪x, y⟫_ℂ = 0` for all `x, y ∈ Submodule.span ℝ s`.
+* `Set.Pairwise.im_inner_eq_zero_of_mem_span`: if `Im ⟪x, y⟫_ℂ` vanishes for distinct elements of
+  `s`, then `Im ⟪x, y⟫_ℂ = 0` for all `x, y ∈ Submodule.span ℝ s`.
 * `Orthonormal.real`: every `ℂ`-orthonormal family is `ℝ`-orthonormal.
-* `Orthonormal.complex_iff`, `Orthonormal.complex_iff_forall_im_eq_zero`: an `ℝ`-orthonormal family
-  is `ℂ`-orthonormal if and only if `Im ⟪v i, v j⟫_ℂ = 0` (pairwise for `i ≠ j`, or for all
+* `Orthonormal.complex_iff`, `Orthonormal.complex_iff_forall_im_inner_eq_zero`: an `ℝ`-orthonormal
+  family is `ℂ`-orthonormal if and only if `Im ⟪v i, v j⟫_ℂ = 0` (pairwise for `i ≠ j`, or for all
   `i, j`).
 -/
 
@@ -61,7 +61,7 @@ namespace Set.Pairwise
 
 /-- If the imaginary part of a complex inner product vanishes on distinct elements of `s`, then by
 Hermitian symmetry (`Im ⟪u, u⟫_ℂ = 0`) and `ℝ`-bilinearity it vanishes on all pairs in the real
-span of `s`: the real span of `s` is isotropic for `-Im ⟪·, ·⟫_ℂ`. -/
+span of `s`: the real span of `s` is isotropic for `Im ⟪·, ·⟫_ℂ`. -/
 theorem im_inner_eq_zero_of_mem_span {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℂ E]
     {s : Set E} (hs : s.Pairwise fun x y ↦ (⟪x, y⟫_ℂ).im = 0)
     {x y : E} (hx : x ∈ Submodule.span ℝ s) (hy : y ∈ Submodule.span ℝ s) :
@@ -109,7 +109,7 @@ theorem complex_iff {v : ι → E} (hv : Orthonormal ℝ v) :
 
 /-- An `ℝ`-orthonormal family is `ℂ`-orthonormal if and only if `Im ⟪v i, v j⟫_ℂ = 0` for all
 `i, j`, including `i = j`. -/
-theorem complex_iff_forall_im_eq_zero {v : ι → E} (hv : Orthonormal ℝ v) :
+theorem complex_iff_forall_im_inner_eq_zero {v : ι → E} (hv : Orthonormal ℝ v) :
     Orthonormal ℂ v ↔ ∀ i j, (⟪v i, v j⟫_ℂ).im = 0 := by
   rw [hv.complex_iff]
   refine ⟨fun hp i j ↦ ?_, fun hall _ _ _ ↦ hall _ _⟩

@@ -116,13 +116,15 @@ theorem det_gram_eq_norm_det_sq (b : OrthonormalBasis ι 𝕜 E) (v : ι → E) 
     ext; simp [Module.Basis.toMatrix_apply]
   rw [hM]
 
-/-- Equality in Hadamard's inequality for nonzero vectors in `Fin n`-indexed coordinates: if
-`‖b.toBasis.det v‖ = ∏ i, ‖v i‖`, each Cauchy–Schwarz factor `‖⟪e i, v i⟫‖ ≤ ‖v i‖` against the
-Gram–Schmidt basis `e` of `v` must be an equality, so `v i` is a scalar multiple of `e i`. -/
+/-- For a family of nonzero vectors in `Fin n`-indexed coordinates, equality
+`‖b.toBasis.det v‖ = ∏ i, ‖v i‖` in Hadamard's inequality implies that `v` is pairwise
+orthogonal. -/
 private theorem pairwise_inner_eq_zero_of_norm_det_eq_prod_norm_fin {n : ℕ}
     (b : OrthonormalBasis (Fin n) 𝕜 E) {v : Fin n → E} (hv : ∀ i, v i ≠ 0)
     (heq : ‖b.toBasis.det v‖ = ∏ i, ‖v i‖) :
     Pairwise fun i j ↦ ⟪v i, v j⟫_𝕜 = 0 := by
+  -- Each Cauchy–Schwarz factor `‖⟪e i, v i⟫‖ ≤ ‖v i‖` against the Gram–Schmidt basis `e` of `v`
+  -- must be an equality, so `v i` is a scalar multiple of `e i`.
   have : FiniteDimensional 𝕜 E := Module.Finite.of_basis b.toBasis
   have h : finrank 𝕜 E = Fintype.card (Fin n) := finrank_eq_card_basis b.toBasis
   set e := InnerProductSpace.gramSchmidtOrthonormalBasis h v
@@ -147,50 +149,6 @@ private theorem pairwise_inner_eq_zero_of_norm_det_eq_prod_norm_fin {n : ℕ}
   obtain ⟨rᵢ, _, hrᵢ⟩ := (norm_inner_eq_norm_iff (e.orthonormal.ne_zero i) (hv i)).mp (hterm i)
   obtain ⟨rⱼ, _, hrⱼ⟩ := (norm_inner_eq_norm_iff (e.orthonormal.ne_zero j) (hv j)).mp (hterm j)
   rw [hrᵢ, hrⱼ, inner_smul_left, inner_smul_right, e.orthonormal.2 hij, mul_zero, mul_zero]
-
-/-- **Equality in Hadamard's inequality.** In the coordinates of an orthonormal basis, the
-determinant of `v` has norm `∏ i, ‖v i‖` if and only if some vector is zero or the vectors are
-pairwise orthogonal. -/
-theorem norm_det_eq_prod_norm_iff (b : OrthonormalBasis ι 𝕜 E) (v : ι → E) :
-    ‖b.toBasis.det v‖ = ∏ i, ‖v i‖ ↔ (∃ i, v i = 0) ∨ Pairwise fun i j ↦ ⟪v i, v j⟫_𝕜 = 0 := by
-  refine ⟨fun heq ↦ ?_, fun h ↦ ?_⟩
-  · by_cases h0 : ∃ i, v i = 0
-    · exact Or.inl h0
-    push Not at h0
-    set σ := Fintype.equivFin ι
-    have heq' : ‖(b.reindex σ).toBasis.det (v ∘ σ.symm)‖ = ∏ i, ‖(v ∘ σ.symm) i‖ := by
-      rw [reindex_toBasis, Module.Basis.det_reindex]
-      simpa [Function.comp_assoc, Equiv.prod_comp σ.symm fun i ↦ ‖v i‖] using heq
-    have hp := pairwise_inner_eq_zero_of_norm_det_eq_prod_norm_fin (b.reindex σ)
-      (fun i ↦ h0 (σ.symm i)) heq'
-    refine Or.inr fun i j hij ↦ ?_
-    simpa using hp (σ.injective.ne hij)
-  · rcases h with ⟨i, hi⟩ | hp
-    · have hnot : ¬ LinearIndependent 𝕜 v := fun hli ↦ hli.ne_zero i hi
-      rw [b.toBasis.det.map_linearDependent v hnot, norm_zero, eq_comm]
-      exact Finset.prod_eq_zero (Finset.mem_univ i) (by simp [hi])
-    · have hgram : Matrix.gram 𝕜 v = Matrix.diagonal fun i ↦ (‖v i‖ : 𝕜) ^ 2 := by
-        ext i j
-        by_cases hij : i = j
-        · subst hij; simp [Matrix.gram_apply, inner_self_eq_norm_sq_to_K]
-        · simp [Matrix.gram_apply, Matrix.diagonal_apply_ne _ hij, hp hij]
-      have hsq : ((‖b.toBasis.det v‖ ^ 2 : ℝ) : 𝕜) = ((∏ i, ‖v i‖ ^ 2 : ℝ) : 𝕜) := by
-        simpa [b.det_gram_eq_norm_det_sq v, Matrix.det_diagonal] using congrArg Matrix.det hgram
-      have hre : ‖b.toBasis.det v‖ ^ 2 = (∏ i, ‖v i‖) ^ 2 := by
-        rw [← Finset.prod_pow]
-        exact RCLike.ofReal_inj.mp hsq
-      exact (sq_eq_sq₀ (norm_nonneg _) (Finset.prod_nonneg fun _ _ ↦ norm_nonneg _)).mp hre
-
-/-- For a family of unit vectors, the coordinate determinant in an orthonormal basis has norm one
-if and only if the family is orthonormal. -/
-theorem norm_det_eq_one_iff_orthonormal (b : OrthonormalBasis ι 𝕜 E) {v : ι → E}
-    (hv : ∀ i, ‖v i‖ = 1) : ‖b.toBasis.det v‖ = 1 ↔ Orthonormal 𝕜 v := by
-  have hprod : ∏ i, ‖v i‖ = 1 := by simp [hv]
-  have hne : ¬ ∃ i, v i = 0 := by
-    rintro ⟨i, hi⟩
-    simpa [hi] using hv i
-  rw [← hprod, b.norm_det_eq_prod_norm_iff v]
-  exact ⟨fun h ↦ ⟨hv, h.resolve_left hne⟩, fun h ↦ Or.inr h.2⟩
 
 end OrthonormalBasis
 
@@ -322,19 +280,24 @@ theorem det_gram_eq_prod_norm_sq_iff (v : ι → E) :
     set W := span 𝕜 (Set.range v)
     have : FiniteDimensional 𝕜 W := FiniteDimensional.span_of_finite 𝕜 (Set.finite_range v)
     let w : ι → W := fun i ↦ ⟨v i, subset_span (Set.mem_range_self i)⟩
-    have hgram : gram 𝕜 w = gram 𝕜 v := by
+    let τ : Fin (finrank 𝕜 W) ≃ ι :=
+      (finCongr (finrank_span_eq_card hv)).trans (Fintype.equivFin ι).symm
+    let b : OrthonormalBasis (Fin (finrank 𝕜 W)) 𝕜 W := stdOrthonormalBasis 𝕜 W
+    have hgram : gram 𝕜 (w ∘ τ) = (gram 𝕜 v).submatrix τ τ := by
       ext i j; simp [w]
-    let b : OrthonormalBasis ι 𝕜 W := (stdOrthonormalBasis 𝕜 W).reindex
-      ((finCongr (finrank_span_eq_card hv)).trans (Fintype.equivFin ι).symm)
-    have hsq : ((‖b.toBasis.det w‖ ^ 2 : ℝ) : 𝕜) = ((∏ i, ‖w i‖ ^ 2 : ℝ) : 𝕜) := by
-      simpa [← hgram, b.det_gram_eq_norm_det_sq w, w] using heq
-    have hdet : ‖b.toBasis.det w‖ = ∏ i, ‖w i‖ :=
+    have hsq : ((‖b.toBasis.det (w ∘ τ)‖ ^ 2 : ℝ) : 𝕜) =
+        ((∏ k, ‖(w ∘ τ) k‖ ^ 2 : ℝ) : 𝕜) := by
+      rw [RCLike.ofReal_pow, ← b.det_gram_eq_norm_det_sq, hgram, det_submatrix_equiv_self, heq]
+      simpa [w, Function.comp_def] using
+        (Equiv.prod_comp τ fun i ↦ (‖v i‖ : 𝕜) ^ 2).symm
+    have hdet : ‖b.toBasis.det (w ∘ τ)‖ = ∏ k, ‖(w ∘ τ) k‖ :=
       (sq_eq_sq₀ (norm_nonneg _) (Finset.prod_nonneg fun _ _ ↦ norm_nonneg _)).mp <| by
         rw [← Finset.prod_pow]
         exact RCLike.ofReal_inj.mp hsq
-    rcases (b.norm_det_eq_prod_norm_iff w).mp hdet with ⟨i, hi⟩ | hp
-    · exact Or.inl ⟨i, by simpa [w] using congrArg Subtype.val hi⟩
-    · exact Or.inr fun i j hij ↦ by simpa [w] using hp hij
+    have hp := b.pairwise_inner_eq_zero_of_norm_det_eq_prod_norm_fin
+      (fun k h ↦ h0 (τ k) (congrArg Subtype.val h)) hdet
+    refine Or.inr fun i j hij ↦ ?_
+    simpa [w] using hp (τ.symm.injective.ne hij)
   · rcases h with ⟨i, hi⟩ | hp
     · rw [det_eq_zero_of_row_eq_zero i (fun j ↦ by simp [hi]), eq_comm]
       exact Finset.prod_eq_zero (Finset.mem_univ i) (by simp [hi])
@@ -364,6 +327,31 @@ theorem det_gram_eq_one_iff_orthonormal {v : ι → E} (hv : ∀ i, ‖v i‖ = 
     simpa [hi] using hv i
   rw [← hprod, det_gram_eq_prod_norm_sq_iff v]
   exact ⟨fun h ↦ ⟨hv, h.resolve_left hne⟩, fun h ↦ Or.inr h.2⟩
+
+end Matrix
+
+namespace OrthonormalBasis
+
+/-- **Equality in Hadamard's inequality.** In the coordinates of an orthonormal basis, the
+determinant of `v` has norm `∏ i, ‖v i‖` if and only if some vector is zero or the vectors are
+pairwise orthogonal. -/
+theorem norm_det_eq_prod_norm_iff (b : OrthonormalBasis ι 𝕜 E) (v : ι → E) :
+    ‖b.toBasis.det v‖ = ∏ i, ‖v i‖ ↔ (∃ i, v i = 0) ∨ Pairwise fun i j ↦ ⟪v i, v j⟫_𝕜 = 0 := by
+  rw [← sq_eq_sq₀ (norm_nonneg _) (Finset.prod_nonneg fun _ _ ↦ norm_nonneg _), ← Finset.prod_pow,
+    ← Matrix.re_det_gram_eq_prod_norm_sq_iff (𝕜 := 𝕜) v, b.det_gram_eq_norm_det_sq,
+    ← RCLike.ofReal_pow, RCLike.ofReal_re]
+
+/-- For a family of unit vectors, the coordinate determinant in an orthonormal basis has norm one
+if and only if the family is orthonormal. -/
+theorem norm_det_eq_one_iff_orthonormal (b : OrthonormalBasis ι 𝕜 E) {v : ι → E}
+    (hv : ∀ i, ‖v i‖ = 1) : ‖b.toBasis.det v‖ = 1 ↔ Orthonormal 𝕜 v := by
+  rw [← Matrix.det_gram_eq_one_iff_orthonormal hv, b.det_gram_eq_norm_det_sq,
+    ← RCLike.ofReal_pow, ← RCLike.ofReal_one (K := 𝕜), RCLike.ofReal_inj]
+  simpa using (sq_eq_sq₀ (norm_nonneg _) zero_le_one).symm
+
+end OrthonormalBasis
+
+namespace Matrix
 
 /-- **Hadamard's inequality for a square matrix.** The determinant of `A` has norm at most the
 product of the Euclidean norms of its rows. -/

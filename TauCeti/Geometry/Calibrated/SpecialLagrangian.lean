@@ -7,12 +7,12 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Alternating
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import Mathlib.Topology.Instances.Matrix
 import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
 import TauCeti.Analysis.InnerProductSpace.GramSchmidtOrtho
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Complex
-import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
+import TauCeti.Analysis.Normed.Module.Alternating.TopDegree
+import TauCeti.LinearAlgebra.Determinant.Basic
+import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
 /-!
 # Special Lagrangian linear algebra on complex Euclidean space
@@ -95,27 +95,25 @@ namespace TauCeti
 coordinate vectors of `v`. -/
 def standardComplexVolume (n : ℕ) : EuclideanSpace ℂ (Fin n) [⋀^Fin n]→L[ℝ] ℂ :=
   ContinuousAlternatingMap.restrictScalars ℝ
-    { toAlternatingMap := (Matrix.detRowAlternating : (Fin n → ℂ) [⋀^Fin n]→ₗ[ℂ] ℂ).compLinearMap
-        (WithLp.linearEquiv 2 ℂ (Fin n → ℂ)).toLinearMap
-      cont := by
-        refine Continuous.matrix_det (continuous_pi fun i ↦ ?_)
-        exact (PiLp.continuous_ofLp 2 _).comp (continuous_apply i) }
-
-/-- Evaluating `standardComplexVolume n` on an `n`-tuple gives the determinant of the complex
-matrix of its row coordinates. -/
-theorem standardComplexVolume_apply (n : ℕ) (v : Fin n → EuclideanSpace ℂ (Fin n)) :
-    standardComplexVolume n v = (Matrix.of fun i j ↦ v i j).det :=
-  (rfl)
+    (EuclideanSpace.basisFun (Fin n) ℂ).toBasis.continuousDet
 
 /-- `standardComplexVolume n` agrees with the complex coordinate determinant in the standard
 orthonormal basis `EuclideanSpace.basisFun (Fin n) ℂ`. -/
 theorem standardComplexVolume_eq_det_basisFun (n : ℕ)
     (v : Fin n → EuclideanSpace ℂ (Fin n)) :
     standardComplexVolume n v = (EuclideanSpace.basisFun (Fin n) ℂ).toBasis.det v := by
+  rw [standardComplexVolume, ContinuousAlternatingMap.coe_restrictScalars,
+    Module.Basis.continuousDet_apply]
+
+/-- Evaluating `standardComplexVolume n` on an `n`-tuple gives the determinant of the complex
+matrix of its row coordinates. -/
+theorem standardComplexVolume_apply (n : ℕ) (v : Fin n → EuclideanSpace ℂ (Fin n)) :
+    standardComplexVolume n v = (Matrix.of fun i j ↦ v i j).det := by
   have hv : v = fun i ↦ WithLp.toLp 2 (fun j ↦ v i j) := by
     ext i j; rfl
-  conv_rhs => rw [hv]
-  exact (Matrix.basisFun_toBasis_det_toLp (Matrix.of fun i j ↦ v i j)).symm
+  rw [standardComplexVolume_eq_det_basisFun]
+  conv_lhs => rw [hv]
+  exact Matrix.basisFun_toBasis_det_toLp (Matrix.of fun i j ↦ v i j)
 
 /-- On the standard complex orthonormal basis of `ℂⁿ`, the complex volume form evaluates to `1`. -/
 @[simp]
@@ -147,7 +145,7 @@ theorem standardComplexVolume_update_smul (n : ℕ) (v : Fin n → EuclideanSpac
 
 /-- Scaling each vector of an `n`-frame by a complex scalar multiplies `standardComplexVolume n` by
 the product of the scalars. -/
-theorem standardComplexVolume_smul_fun (n : ℕ) (c : Fin n → ℂ)
+theorem standardComplexVolume_smul_univ (n : ℕ) (c : Fin n → ℂ)
     (v : Fin n → EuclideanSpace ℂ (Fin n)) :
     standardComplexVolume n (fun i ↦ c i • v i) = (∏ i, c i) * standardComplexVolume n v := by
   rw [standardComplexVolume_eq_det_basisFun, standardComplexVolume_eq_det_basisFun,
@@ -186,11 +184,15 @@ theorem norm_standardComplexVolume_apply_eq_one_iff_orthonormal_complex (n : ℕ
   rw [standardComplexVolume_eq_det_basisFun]
   exact (EuclideanSpace.basisFun (Fin n) ℂ).norm_det_eq_one_iff_orthonormal hv
 
-/-- On any `ℝ`-orthonormal `n`-frame in `ℂⁿ`, the complex volume form has modulus at most `1`. -/
+/-- When every vector of `v` has norm at most `1`, the complex volume form has modulus at most
+`1`. -/
 theorem norm_standardComplexVolume_apply_le_one (n : ℕ)
-    {v : Fin n → EuclideanSpace ℂ (Fin n)} (hv : Orthonormal ℝ v) :
+    {v : Fin n → EuclideanSpace ℂ (Fin n)} (hv : ∀ i, ‖v i‖ ≤ 1) :
     ‖standardComplexVolume n v‖ ≤ 1 := by
-  simpa [hv.1] using norm_standardComplexVolume_apply_le_prod_norm n v
+  calc ‖standardComplexVolume n v‖
+      ≤ ∏ i, ‖v i‖ := norm_standardComplexVolume_apply_le_prod_norm n v
+    _ ≤ ∏ _i : Fin n, (1 : ℝ) := by gcongr with i; exact hv i
+    _ = 1 := by simp
 
 /-- On an `ℝ`-orthonormal `n`-frame `v` in `ℂⁿ`, `‖Ω v‖ = 1` if and only if the span of `v` is
 Lagrangian (`Im ⟪v i, v j⟫_ℂ = 0` for all `i, j`). -/
@@ -198,7 +200,7 @@ theorem norm_standardComplexVolume_apply_eq_one_iff (n : ℕ)
     {v : Fin n → EuclideanSpace ℂ (Fin n)} (hv : Orthonormal ℝ v) :
     ‖standardComplexVolume n v‖ = 1 ↔ ∀ i j, (⟪v i, v j⟫_ℂ).im = 0 := by
   rw [norm_standardComplexVolume_apply_eq_one_iff_orthonormal_complex n hv.1,
-    hv.complex_iff_forall_im_eq_zero]
+    hv.complex_iff_forall_im_inner_eq_zero]
 
 /-- The operator norm (comass) of `standardComplexVolume n` equals `1` in every dimension `n`,
 including `n = 0`. -/
@@ -206,7 +208,7 @@ including `n = 0`. -/
 theorem norm_standardComplexVolume (n : ℕ) : ‖standardComplexVolume n‖ = 1 := by
   refine le_antisymm ?_ ?_
   · exact (ContinuousAlternatingMap.opNorm_le_iff_le_orthonormal zero_le_one).mpr fun v hv ↦
-      norm_standardComplexVolume_apply_le_one n hv
+      norm_standardComplexVolume_apply_le_one n fun i ↦ (hv.1 i).le
   · let b : Fin n → EuclideanSpace ℂ (Fin n) := EuclideanSpace.basisFun (Fin n) ℂ
     have hb : ∀ i, ‖b i‖ = 1 := (EuclideanSpace.basisFun (Fin n) ℂ).orthonormal.1
     simpa [b, hb] using (standardComplexVolume n).le_opNorm b
@@ -359,7 +361,7 @@ theorem norm_standardSpecialLagrangianForm_le_one (n : ℕ) (θ : ℝ) :
   refine (ContinuousAlternatingMap.opNorm_le_iff_le_orthonormal zero_le_one).mpr fun v hv ↦ ?_
   rw [Real.norm_eq_abs]
   exact (abs_standardSpecialLagrangianForm_apply_le_norm_standardComplexVolume n θ v).trans
-    (norm_standardComplexVolume_apply_le_one n hv)
+    (norm_standardComplexVolume_apply_le_one n fun i ↦ (hv.1 i).le)
 
 /-- In dimension zero, `standardSpecialLagrangianForm 0 θ` has operator norm `|cos θ|`, showing that
 `1 ≤ n` is required in `norm_standardSpecialLagrangianForm`. -/
@@ -371,12 +373,13 @@ theorem norm_standardSpecialLagrangianForm_zero (θ : ℝ) :
     simp
   · simpa using (standardSpecialLagrangianForm 0 θ).le_opNorm ![]
 
-/-- When `1 ≤ n`, rotating the first vector of the standard complex basis by `e^(iθ)` produces a
-`ℂ`-orthonormal (and hence `ℝ`-orthonormal) `n`-frame calibrated by `φ_θ`. -/
+/-- When `1 ≤ n`, there exists a `ℂ`-orthonormal `n`-frame in `ℂⁿ` on which
+`standardSpecialLagrangianForm n θ` evaluates to `1`. -/
 theorem exists_orthonormal_complex_standardSpecialLagrangianForm_apply_eq_one
     {n : ℕ} (hn : 1 ≤ n) (θ : ℝ) :
     ∃ v : Fin n → EuclideanSpace ℂ (Fin n),
       Orthonormal ℂ v ∧ standardSpecialLagrangianForm n θ v = 1 := by
+  -- Rotate the first vector of the standard complex basis by `e^(iθ)`.
   let b : Fin n → EuclideanSpace ℂ (Fin n) := EuclideanSpace.basisFun (Fin n) ℂ
   have hb : Orthonormal ℂ b := (EuclideanSpace.basisFun (Fin n) ℂ).orthonormal
   let i₀ : Fin n := ⟨0, hn⟩
@@ -420,10 +423,10 @@ theorem norm_standardSpecialLagrangianForm_succ (n : ℕ) (θ : ℝ) :
 
 /-! ### Characterization of special Lagrangian frames and planes -/
 
-/-- An `ℝ`-orthonormal `n`-frame `v` in `ℂⁿ` satisfies `φ_θ v = 1` if and only if its complex
-determinant `Ω v` equals `e^(iθ)`. Holds in every dimension `n`, including `n = 0`. -/
+/-- For an `n`-tuple `v` in `ℂⁿ` of vectors of norm at most `1`, `φ_θ v = 1` if and only if its
+complex determinant `Ω v` equals `e^(iθ)`. Holds in every dimension `n`, including `n = 0`. -/
 theorem standardSpecialLagrangianForm_apply_eq_one_iff_standardComplexVolume_eq (n : ℕ) (θ : ℝ)
-    {v : Fin n → EuclideanSpace ℂ (Fin n)} (hv : Orthonormal ℝ v) :
+    {v : Fin n → EuclideanSpace ℂ (Fin n)} (hv : ∀ i, ‖v i‖ ≤ 1) :
     standardSpecialLagrangianForm n θ v = 1 ↔
       standardComplexVolume n v = Complex.exp ((θ : ℂ) * Complex.I) := by
   set z : ℂ := Complex.exp (-(θ : ℂ) * Complex.I) * standardComplexVolume n v
@@ -442,14 +445,9 @@ theorem standardSpecialLagrangianForm_apply_eq_one_iff_standardComplexVolume_eq 
       dsimp only [z]
       rw [norm_mul, hnorm, one_mul]
       exact norm_standardComplexVolume_apply_le_one n hv
-    have hsq : z.re ^ 2 + z.im ^ 2 ≤ 1 := by
-      have h1 : Complex.normSq z ≤ 1 := by
-        rw [Complex.normSq_eq_norm_sq]
-        nlinarith [norm_nonneg z]
-      simpa [Complex.normSq_apply, sq] using h1
     have hre' : z.re = 1 := by simpa [standardSpecialLagrangianForm_apply, z] using hre
-    have him : z.im = 0 := by nlinarith [sq_nonneg z.im]
-    have hz : z = 1 := Complex.ext (by simpa using hre') (by simpa using him)
+    have hz : z = 1 := by
+      simpa [hre'] using (RCLike.re_eq_self_of_le (K := ℂ) (hnorm_z.trans_eq hre'.symm)).symm
     calc
       standardComplexVolume n v
         = Complex.exp ((θ : ℂ) * Complex.I) * z := by
@@ -474,7 +472,8 @@ theorem specialLagrangianFrame_iff (n : ℕ) (θ : ℝ)
     simpa using Complex.norm_exp_ofReal_mul_I (-θ)
   refine ⟨fun h1 ↦ ?_, fun ⟨hlag, him, hpos⟩ ↦ ?_⟩
   · have hΩ :=
-      (standardSpecialLagrangianForm_apply_eq_one_iff_standardComplexVolume_eq n θ hv).mp h1
+      (standardSpecialLagrangianForm_apply_eq_one_iff_standardComplexVolume_eq n θ
+        fun i ↦ (hv.1 i).le).mp h1
     have hnorm_Ω : ‖standardComplexVolume n v‖ = 1 := by
       rw [hΩ]
       exact Complex.norm_exp_ofReal_mul_I θ
@@ -487,11 +486,8 @@ theorem specialLagrangianFrame_iff (n : ℕ) (θ : ℝ)
       (norm_standardComplexVolume_apply_eq_one_iff n hv).mpr hlag
     have hnorm_z : ‖z‖ = 1 := by
       rw [hz_def, norm_mul, hnorm_exp, hnorm_Ω, mul_one]
-    have hsq : z.re ^ 2 + z.im ^ 2 = 1 := by
-      simpa [Complex.normSq_apply, sq, Complex.normSq_eq_norm_sq, hnorm_z] using
-        (Complex.normSq_eq_norm_sq z)
     rw [standardSpecialLagrangianForm_apply, ← hz_def]
-    nlinarith [him, hpos]
+    simpa [abs_of_pos hpos, hnorm_z] using Complex.abs_re_eq_norm.mpr him
 
 /-- **Calibrated-plane criterion for arbitrary linearly independent frames**: an `ℝ`-linearly
 independent `n`-frame `v` in `ℂⁿ` achieves equality `φ_θ v = ‖v₁ ∧ ⋯ ∧ vₙ‖` in the calibration
@@ -525,66 +521,48 @@ theorem standardSpecialLagrangianForm_apply_eq_norm_ιMulti_iff (n : ℕ) (θ : 
     refine (pow_left_inj₀ hdet_nonneg (norm_nonneg _) two_ne_zero).mp ?_
     rw [exteriorPower.norm_ιMulti_sq, ← hgram]
     simpa [Real.norm_eq_abs, sq_abs] using (e.det_gram_eq_norm_det_sq w).symm
-  have hdet_pos : 0 < ‖exteriorPower.ιMulti ℝ n v‖ := by
-    have hpos : 0 < (Matrix.gram ℝ v).det := Matrix.det_gram_pos_iff.mpr hv
-    have hsq : ‖exteriorPower.ιMulti ℝ n v‖ ^ 2 = (Matrix.gram ℝ v).det :=
-      exteriorPower.norm_ιMulti_sq v
-    nlinarith [norm_nonneg (exteriorPower.ιMulti ℝ n v)]
-  -- Both `Ω` and `φ_θ` restrict to top-degree `ℝ`-alternating forms on `W`, so their values on `v`
-  -- equal `e.toBasis.det w` times their values on `u`.
-  let ΩW : W [⋀^Fin n]→L[ℝ] ℂ :=
-    (standardComplexVolume n).compContinuousLinearMap W.subtypeL
+  have hdet_pos : 0 < ‖exteriorPower.ιMulti ℝ n v‖ :=
+    norm_pos_iff.mpr ((exteriorPower.ιMulti_ne_zero_iff v).mpr hv)
+  -- `Ω` restricts to a top-degree `ℝ`-alternating form on `W`, scaling by `e.toBasis.det w`.
+  let ΩW : W [⋀^Fin n]→ₗ[ℝ] ℂ :=
+    (standardComplexVolume n).toAlternatingMap.compLinearMap W.subtype
   have hΩ_scale : standardComplexVolume n v =
       (‖exteriorPower.ιMulti ℝ n v‖ : ℂ) * standardComplexVolume n u := by
-    apply Complex.ext
-    · simpa [ΩW, w, u, hdet_eq, e.coe_toBasis, Function.comp_def] using
-        (Complex.reCLM.compContinuousAlternatingMap ΩW).apply_eq_det_mul e.toBasis w
-    · simpa [ΩW, w, u, hdet_eq, e.coe_toBasis, Function.comp_def] using
-        (Complex.imCLM.compContinuousAlternatingMap ΩW).apply_eq_det_mul e.toBasis w
-  have hφ_scale : standardSpecialLagrangianForm n θ v =
-      ‖exteriorPower.ιMulti ℝ n v‖ * standardSpecialLagrangianForm n θ u := by
-    simp only [standardSpecialLagrangianForm_apply, hΩ_scale]
-    have hmul :
-        Complex.exp (-(θ : ℂ) * Complex.I) *
-            ((‖exteriorPower.ιMulti ℝ n v‖ : ℂ) * standardComplexVolume n u) =
-          (‖exteriorPower.ιMulti ℝ n v‖ : ℂ) *
-            (Complex.exp (-(θ : ℂ) * Complex.I) * standardComplexVolume n u) := by ring
-    rw [hmul, Complex.mul_re]
-    simp
-  have hspan_vu : ∀ i, v i ∈ Submodule.span ℝ (Set.range u) := by
-    intro i
-    have hmem : w i ∈ Submodule.span ℝ (Set.range e) := by
-      rw [← e.coe_toBasis, e.toBasis.span_eq]
-      trivial
-    have hmap := Submodule.mem_map_of_mem (f := W.subtype) hmem
-    rwa [Submodule.map_span, ← Set.range_comp] at hmap
-  have hspan_uv : ∀ i, u i ∈ Submodule.span ℝ (Set.range v) := fun i ↦ (e i).2
-  have hlag_iff : (∀ i j, (⟪v i, v j⟫_ℂ).im = 0) ↔ ∀ i j, (⟪u i, u j⟫_ℂ).im = 0 :=
-    ⟨fun h i j ↦ (Pairwise.range_pairwise (f := v) fun a b _ ↦ h a b).im_inner_eq_zero_of_mem_span
-        (hspan_uv i) (hspan_uv j),
-      fun h i j ↦ (Pairwise.range_pairwise (f := u) fun a b _ ↦ h a b).im_inner_eq_zero_of_mem_span
-        (hspan_vu i) (hspan_vu j)⟩
+    have h :=
+      congrFun (congrArg DFunLike.coe (AlternatingMap.eq_basis_det_smulRight e.toBasis ΩW)) w
+    simpa [ΩW, w, u, hdet_eq, e.coe_toBasis, Function.comp_def, Complex.real_smul] using h
   have hz_scale :
       Complex.exp (-(θ : ℂ) * Complex.I) * standardComplexVolume n v =
         (‖exteriorPower.ιMulti ℝ n v‖ : ℂ) *
           (Complex.exp (-(θ : ℂ) * Complex.I) * standardComplexVolume n u) := by
     rw [hΩ_scale]; ring
+  have hspan : Submodule.span ℝ (Set.range u) = W := by
+    have hu_range : Set.range u = W.subtype '' Set.range e.toBasis := by
+      rw [e.coe_toBasis, ← Set.range_comp]
+      rfl
+    rw [hu_range, ← Submodule.map_span, e.toBasis.span_eq, Submodule.map_top, W.range_subtype]
+  have hlag_iff : (∀ i j, (⟪v i, v j⟫_ℂ).im = 0) ↔ ∀ i j, (⟪u i, u j⟫_ℂ).im = 0 :=
+    ⟨fun h i j ↦ (Pairwise.range_pairwise (f := v) fun a b _ ↦ h a b).im_inner_eq_zero_of_mem_span
+        (e i).2 (e j).2,
+      fun h i j ↦ (Pairwise.range_pairwise (f := u) fun a b _ ↦ h a b).im_inner_eq_zero_of_mem_span
+        (hspan.symm ▸ Submodule.subset_span (Set.mem_range_self i))
+        (hspan.symm ▸ Submodule.subset_span (Set.mem_range_self j))⟩
+  have hφ_scale : standardSpecialLagrangianForm n θ v =
+      ‖exteriorPower.ιMulti ℝ n v‖ * standardSpecialLagrangianForm n θ u := by
+    rw [standardSpecialLagrangianForm_apply, standardSpecialLagrangianForm_apply, hz_scale,
+      Complex.mul_re, Complex.ofReal_re, Complex.ofReal_im, zero_mul, sub_zero]
   have him_iff :
       (Complex.exp (-(θ : ℂ) * Complex.I) * standardComplexVolume n v).im = 0 ↔
         (Complex.exp (-(θ : ℂ) * Complex.I) * standardComplexVolume n u).im = 0 := by
-    rw [hz_scale, Complex.mul_im]
-    simp [hdet_pos.ne']
+    rw [hz_scale, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im, zero_mul, add_zero,
+      mul_eq_zero_iff_left hdet_pos.ne']
   have hre_iff :
       0 < (Complex.exp (-(θ : ℂ) * Complex.I) * standardComplexVolume n v).re ↔
         0 < (Complex.exp (-(θ : ℂ) * Complex.I) * standardComplexVolume n u).re := by
-    rw [hz_scale, Complex.mul_re]
-    simp [mul_pos_iff_of_pos_left hdet_pos]
-  have lhs_iff :
-      standardSpecialLagrangianForm n θ v = ‖exteriorPower.ιMulti ℝ n v‖ ↔
-        standardSpecialLagrangianForm n θ u = 1 := by
-    rw [hφ_scale]
-    exact ⟨fun h ↦ mul_left_cancel₀ hdet_pos.ne' (by linarith), fun h ↦ by rw [h, mul_one]⟩
-  rw [lhs_iff, specialLagrangianFrame_iff n θ u hu_orth, hlag_iff, him_iff, hre_iff]
+    rw [hz_scale, Complex.mul_re, Complex.ofReal_re, Complex.ofReal_im, zero_mul, sub_zero,
+      mul_pos_iff_of_pos_left hdet_pos]
+  rw [hφ_scale, mul_eq_left₀ hdet_pos.ne', specialLagrangianFrame_iff n θ u hu_orth,
+    hlag_iff, him_iff, hre_iff]
 
 end TauCeti
 
