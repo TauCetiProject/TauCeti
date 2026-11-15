@@ -46,8 +46,9 @@ with invertible derivative has a density, so preimages of null sets are null.
 * `TauCeti.isWeakCauchyRiemannOn_image_iff_comp_openPartialHomeomorph`: for a holomorphic open
   partial homeomorphism `φ`, the invariance is an equivalence, since the inverse is holomorphic
   with derivative `1 / φ'` (`OpenPartialHomeomorph.hasDerivAt_symm_of_differentiableOn`)
-  and, when `J² = -1`, the map `a + b i ↦ a - b J` is multiplicative, so the two transformations
-  of `η` compose to multiplication by `φ'(z) · (1 / φ'(z)) = 1`.
+  and, when `J² = -1`, the map `a + b i ↦ a - b J` is multiplicative
+  (`ContinuousLinearMap.re_smul_sub_im_smul_apply_mul`), so the two transformations of `η` compose
+  to multiplication by `φ'(z) · (1 / φ'(z)) = 1`.
 * `TauCeti.IsWeakCauchyRiemannOn.comp_differentiableOn_homogeneous`: the homogeneous equation is
   invariant.
 * `TauCeti.IsWeakCauchyRiemannOn.comp_real_mul_add`: real dilations and translations, with the
@@ -141,15 +142,6 @@ theorem IsWeakCauchyRiemannOn.comp_differentiableOn_of_isOpen {Ω Ω' : Opens �
   h.comp_differentiableOn Ω.isOpen hφ subset_rfl hinj hφ' hmaps fun z hz =>
     hJ z (interior_subset hz)
 
-/-- When `J ∘ J = -1`, the map `a + b i ↦ a - b J` is multiplicative: transforming by `d` and
-then by `c` is transforming by `c * d`. -/
-private theorem re_smul_sub_im_smul_apply_mul {J : V →L[ℝ] V} (hJ : J * J = -1) (c d : ℂ) (x : V) :
-    c.re • (d.re • x - d.im • J x) - c.im • J (d.re • x - d.im • J x) =
-      (c * d).re • x - (c * d).im • J x := by
-  have hJJ : J (J x) = -x := by simpa using congrArg (fun T : V →L[ℝ] V => T x) hJ
-  rw [map_sub, map_smul, map_smul, hJJ, mul_re, mul_im]
-  module
-
 /-- **Invariance under a biholomorphic change of the domain chart, as an equivalence.** Let `φ`
 be an open partial homeomorphism of `ℂ`, holomorphic on its source, with `φ' = a + b i`, let `U` be
 a subset of its source, and let `J(w, u w)` square to `-1` on the interior of `φ '' U`. Then `u` is
@@ -193,7 +185,8 @@ theorem isWeakCauchyRiemannOn_image_iff_comp_openPartialHomeomorph
       refine (ae_restrict_iff' measurableSet_interior).2 (.of_forall fun w hw => ?_)
     · simp only [φ.right_inv (hUt (interior_subset hw))]
     · have hwt := hUt (interior_subset hw)
-      rw [(hsd hwt).deriv, φ.right_inv hwt, re_smul_sub_im_smul_apply_mul (hJ w hw),
+      rw [(hsd hwt).deriv, φ.right_inv hwt,
+        ContinuousLinearMap.re_smul_sub_im_smul_apply_mul (hJ w hw),
         inv_mul_cancel₀ (hφ' _ (φ.map_target hwt)), one_re, one_im, one_smul, zero_smul,
         sub_zero]
 

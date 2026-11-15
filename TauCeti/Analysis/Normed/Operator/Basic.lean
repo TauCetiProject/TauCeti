@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Module.RCLike.Basic
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.Normed.Ring.Units
+public import Mathlib.Basic.Complex.Basic
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Analysis.Normed.Operator.NNNorm
@@ -65,7 +66,9 @@ extend to bounds `(1 - 3 δ) ‖v‖ ≤ ‖T v‖ ≤ (1 + 3 δ) ‖v‖` on th
 If `J * J = -1` for a continuous linear operator `J` on a normed space over any nontrivially
 normed field, then the block-diagonal operator `diag(J, J)` on `V × V` also squares to `-1`
 (`TauCeti.prodMap_mul_self_eq_neg_one`), and `a + J b = y` holds exactly when `b - J a = -J y`
-(`ContinuousLinearMap.add_apply_eq_iff_sub_apply_eq_neg_apply`).
+(`ContinuousLinearMap.add_apply_eq_iff_sub_apply_eq_neg_apply`). For a real operator `J` with
+`J * J = -1`, the map `a + b i ↦ a - b J` from `ℂ` is multiplicative
+(`ContinuousLinearMap.re_smul_sub_im_smul_apply_mul`).
 
 A continuous bilinear map satisfies a Young-type bound
 `‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2)` for every `c > 0`
@@ -573,6 +576,21 @@ theorem add_apply_eq_iff_sub_apply_eq_neg_apply {A : V →L[𝕜] V} (hA : A * A
     simp only [map_sub, map_neg, hAA, neg_neg] at h'
     rw [← h']
     abel
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearMap
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+
+/-- When `J ∘ J = -1`, the map `a + b i ↦ a - b J` is multiplicative: transforming by `d` and
+then by `c` is transforming by `c * d`. -/
+theorem re_smul_sub_im_smul_apply_mul {J : V →L[ℝ] V} (hJ : J * J = -1) (c d : ℂ) (x : V) :
+    c.re • (d.re • x - d.im • J x) - c.im • J (d.re • x - d.im • J x) =
+      (c * d).re • x - (c * d).im • J x := by
+  have hJJ : J (J x) = -x := by simpa using congr($hJ x)
+  rw [map_sub, map_smul, map_smul, hJJ, Complex.mul_re, Complex.mul_im]
+  module
 
 end ContinuousLinearMap
 
