@@ -8,8 +8,8 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.AlgebraicTopology.Singular.AddCircle
+public import TauCeti.Topology.VectorBundle.Contractible
 public import TauCeti.Topology.VectorBundle.IdempotentRange
-public import TauCeti.Topology.VectorBundle.SphereBundle
 import TauCeti.AlgebraicTopology.Singular.Reduced
 import TauCeti.Analysis.Complex.Circle
 
