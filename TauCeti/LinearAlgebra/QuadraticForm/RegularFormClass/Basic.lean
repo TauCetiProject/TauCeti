@@ -592,7 +592,8 @@ theorem RegularFormClass.mk_succ_eq_mk_rankOne_add {n : ℕ} (w : Fin (n + 1) �
   exact (congrFun (Fin.cons_self_tail w) i).symm
 
 /-- The diagonal form `⟨a, …, a⟩` with `n` equal weights is the orthogonal sum of `n` copies
-of the line `⟨a⟩`. -/
+of the line `⟨a⟩`. This is not a `simp` lemma: at `n = 1` its right side contains its left
+side, so `simp` would loop. -/
 theorem RegularFormClass.mk_const (n : ℕ) (a : Kˣ) :
     Quotient.mk (regularFormSetoid K) ⟨n, fun _ => a⟩ =
       n • Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ := by

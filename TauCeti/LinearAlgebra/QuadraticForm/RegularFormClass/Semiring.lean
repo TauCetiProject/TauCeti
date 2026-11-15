@@ -132,6 +132,7 @@ theorem RegularFormClass.rank_ofNat (n : ℕ) [n.AtLeastTwo] :
 /-! ### Sums of squares -/
 
 /-- The diagonal form `⟨1, …, 1⟩` of rank `n` is the sum of `n` squares `n⟨1⟩`. -/
+@[simp]
 theorem RegularFormClass.mk_const_one (n : ℕ) :
     Quotient.mk (regularFormSetoid K) ⟨n, fun _ => 1⟩ = (n : RegularFormClass K) := by
   rw [RegularFormClass.mk_const, RegularFormClass.mk_rankOne_one, nsmul_one]
