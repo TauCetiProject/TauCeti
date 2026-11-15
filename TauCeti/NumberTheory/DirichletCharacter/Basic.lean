@@ -29,7 +29,8 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
 
 ## Main results
 
-* `DirichletCharacter.sum_range_eq_zero_of_ne_one`: cancellation over a full period.
+* `DirichletCharacter.sum_range_eq_zero_of_ne_one`,
+  `DirichletCharacter.sum_Icc_one_level_eq_zero`: cancellation over a full period.
 * `DirichletCharacter.exists_alt_unit_in_coset_with_char_separation`: character separation within
   a fibre of the reduction map.
 * `DirichletCharacter.factorsThrough_gcd_of_changeLevel_factorsThrough`: a factorisation of the
@@ -62,6 +63,9 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
   criterion at a prime-power level, obtained by comparing values on congruent units, and its
   specialisations `DirichletCharacter.conductor_eq_four_of_apply_one_ne_apply_three` and
   `DirichletCharacter.conductor_eq_eight_of_apply_one_ne_apply_five`.
+* `DirichletCharacter.level_two`, `DirichletCharacter.three_le_level_of_ne_one`,
+  `DirichletCharacter.three_le_conductor_of_ne_one`: every character of level two is principal,
+  so any nonprincipal character of nonzero level has level and conductor at least three.
 * `DirichletCharacter.ext_of_level_four`, `DirichletCharacter.ext_of_level_eight`: a character of
   level four is determined by its value at `3`, and one of level eight by its values at `3`
   and `5`.
@@ -96,19 +100,34 @@ public section
 namespace DirichletCharacter
 
 /-- A nonprincipal Dirichlet character sums to zero over a full period. -/
-theorem sum_range_eq_zero_of_ne_one {R : Type*} [CommRing R] [IsDomain R] {N : ℕ}
+theorem sum_range_eq_zero_of_ne_one {R : Type*} [CommSemiring R] [IsCancelMulZero R] {N : ℕ}
     (χ : DirichletCharacter R N) (hχ : χ ≠ 1) :
     ∑ n ∈ Finset.range N, χ n = 0 := by
   rcases N.eq_zero_or_pos with rfl | hN
   · simp
   have : NeZero N := ⟨hN.ne'⟩
-  calc
-    _ = ∑ a : ZMod N, χ a := by
-      exact Finset.sum_nbij' (Nat.cast : ℕ → ZMod N) ZMod.val
-        (by simp) (fun a _ ↦ Finset.mem_range.mpr a.val_lt)
-        (fun n hn ↦ ZMod.val_natCast_of_lt (Finset.mem_range.mp hn))
-        (fun a _ ↦ ZMod.natCast_zmod_val a) (by intros; rfl)
-    _ = 0 := χ.sum_eq_zero_of_ne_one hχ
+  have hbij : ∑ n ∈ Finset.range N, χ n = ∑ a : ZMod N, χ a :=
+    Finset.sum_nbij' (Nat.cast : ℕ → ZMod N) ZMod.val
+      (by simp) (fun a _ ↦ Finset.mem_range.mpr a.val_lt)
+      (fun n hn ↦ ZMod.val_natCast_of_lt (Finset.mem_range.mp hn))
+      (fun a _ ↦ ZMod.natCast_zmod_val a) (by intros; rfl)
+  rw [hbij]
+  rcases MulChar.ne_one_iff.mp hχ with ⟨b, hb⟩
+  refine eq_zero_of_mul_eq_self_left hb ?_
+  simpa only [Finset.mul_sum, ← map_mul] using b.mulLeft_bijective.sum_comp _
+
+/-- A nonprincipal Dirichlet character sums to zero over `1 ≤ k ≤ N`. -/
+theorem sum_Icc_one_level_eq_zero {R : Type*} [CommSemiring R] [IsCancelMulZero R] {N : ℕ}
+    (χ : DirichletCharacter R N) (hχ : χ ≠ 1) :
+    ∑ k ∈ Finset.Icc 1 N, χ k = 0 := by
+  rcases N.eq_zero_or_pos with rfl | hN
+  · simp
+  have h1 : ∑ k ∈ Finset.Icc 1 N, χ k = χ (0 : ZMod N) + ∑ k ∈ Finset.Ico 1 N, χ k := by
+    rw [← Finset.insert_right_Ico hN, Finset.sum_insert Finset.right_notMem_Ico, ZMod.natCast_self]
+  have h2 : ∑ k ∈ Finset.range N, χ k = χ (0 : ZMod N) + ∑ k ∈ Finset.Ico 1 N, χ k := by
+    rw [Finset.range_eq_Ico, ← Finset.insert_Ico_add_one_left_eq_Ico hN, zero_add,
+      Finset.sum_insert (by simp), Nat.cast_zero]
+  exact h1.trans (h2.symm.trans (χ.sum_range_eq_zero_of_ne_one hχ))
 
 /-- A character which factors through `d` takes the same value on level-units congruent modulo
 `d`. -/
@@ -149,6 +168,31 @@ theorem conductor_eq_eight_of_apply_one_ne_apply_five {R : Type*} [CommMonoidWit
     chi.conductor = 8 :=
   conductor_eq_prime_pow_of_emod_eq_of_apply_ne_apply (p := 2) (k := 3) Nat.prime_two chi
     isCoprime_one_left ⟨5, -3, by norm_num⟩ (by norm_num) hdist
+
+/-- Every Dirichlet character of level two is principal, since `(ZMod 2)ˣ` is trivial. -/
+theorem level_two {R : Type*} [CommMonoidWithZero R] (χ : DirichletCharacter R 2) : χ = 1 := by
+  refine MulChar.ext fun u ↦ ?_
+  simp [(by decide : ∀ u : (ZMod 2)ˣ, u = 1) u]
+
+/-- There is at most one Dirichlet character of level two. -/
+instance {R : Type*} [CommMonoidWithZero R] : Subsingleton (DirichletCharacter R 2) :=
+  subsingleton_iff.mpr fun χ ψ ↦ by rw [level_two χ, level_two ψ]
+
+/-- A nonprincipal Dirichlet character of nonzero level has level at least three. -/
+theorem three_le_level_of_ne_one {R : Type*} [CommMonoidWithZero R] {N : ℕ} [NeZero N]
+    {χ : DirichletCharacter R N} (hχ : χ ≠ 1) : 3 ≤ N := by
+  by_contra! hN
+  have hN0 : 0 < N := NeZero.pos N
+  interval_cases N
+  · exact hχ (level_one χ)
+  · exact hχ (level_two χ)
+
+/-- A nonprincipal Dirichlet character of nonzero level has conductor at least three. -/
+theorem three_le_conductor_of_ne_one {R : Type*} [CommMonoidWithZero R] {N : ℕ} [NeZero N]
+    {χ : DirichletCharacter R N} (hχ : χ ≠ 1) : 3 ≤ χ.conductor := by
+  have : NeZero χ.conductor := ⟨χ.conductor_ne_zero⟩
+  refine three_le_level_of_ne_one (χ := χ.primitiveCharacter) fun h ↦ hχ ?_
+  rw [← χ.changeLevel_primitiveCharacter, h, changeLevel_one]
 
 /-- Two characters of level four agreeing at `3` are equal. -/
 theorem ext_of_level_four {R : Type*} [CommMonoidWithZero R] {χ ψ : DirichletCharacter R 4}

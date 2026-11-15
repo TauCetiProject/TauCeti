@@ -7,9 +7,12 @@ module
 
 public import Mathlib.NumberTheory.LSeries.Nonvanishing
 public import Mathlib.NumberTheory.NumberField.DedekindZeta
+public import Mathlib.NumberTheory.Real.GoldenRatio
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.Character
 public import TauCeti.NumberTheory.NumberField.Discriminant.Basic
+import Mathlib.Analysis.Complex.ExponentialBounds
+import Mathlib.Analysis.Real.Pi.Bounds
 import Mathlib.Tactic.NormNum.RealSqrt
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Bounds
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Basic
@@ -17,6 +20,7 @@ import TauCeti.NumberTheory.NumberField.Units.Regulator.Basic
 import TauCeti.NumberTheory.LSeries.ZetaMul
 import TauCeti.NumberTheory.LSeries.Quadratic.Character
 import TauCeti.NumberTheory.NumberField.PrimeIdeal
+import TauCeti.NumberTheory.NumberField.Quadratic.Regulator
 import TauCeti.NumberTheory.NumberField.Quadratic.TotalRamification
 import TauCeti.NumberTheory.NumberField.Quadratic.Units
 import TauCeti.NumberTheory.NumberField.SplitsCompletely.Basic
@@ -30,11 +34,16 @@ regarded as a complex character. This file proves the factorization
 
 `ζ_K(s) = ζ(s) L(s, χ_D)` for `Re s > 1`
 
-and deduces the analytic class number formula of an imaginary quadratic field,
+and deduces the analytic class number formulas of imaginary and real quadratic fields:
 
-`h(D) = w_D √|D| L(1, χ_D) / (2π)`,
+* `h(D) = w_D √|D| L(1, χ_D) / (2π)` when `K` is imaginary quadratic, where `w_D` is the number of
+  units of `𝓞 K`;
+* `h(D) R_K = √D L(1, χ_D) / 2` when `K` is real quadratic, where `R_K` is the regulator of `K`.
 
-where `w_D` is the number of units of `𝓞 K`.
+Combining both formulas with `h(D) ≥ 1`, `w_D ≤ 6`, and the regulator bound
+`log ((1 + √5) / 2) ≤ R_K` (`TauCeti.NumberField.Units.log_goldenRatio_le_regulator`) gives the
+sharp sign-independent lower bound `2 log ((1 + √5) / 2) / √|D| ≤ (L(1, χ_D)).re`, attained by
+`K = ℚ(√5)`.
 
 The factorization is an identity of Dirichlet coefficients: the number of integral ideals of `𝓞 K`
 of norm `n` is `∑_{d ∣ n} χ_D(d)`. Both sides are multiplicative in `n`, so it suffices to compare
@@ -47,12 +56,8 @@ if `p` is inert (`χ_D(p) = -1`). In each case the count is `∑_{i ≤ k} χ_D(
 Multiplying by `s - 1` and letting `s → 1⁺`, the residue of `ζ_K` at `1` is `L(1, χ_D)`, since
 `ζ` has residue `1` and `L(s, χ_D)` is entire. Mathlib's `NumberField.dedekindZeta_residue`
 expresses the residue as `2 ^ r₁ (2π) ^ r₂ R h / (w √|D|)`. For an imaginary quadratic field the
-signature is `(r₁, r₂) = (0, 1)` and the regulator is `1`, which gives the class number formula.
-The number of units is `6` for `D = -3`, `4` for `D = -4` and `2` otherwise
-(`TauCeti.NumberField.Units.card_units_of_isTotallyComplex_of_discr`), and the formula is also
-stated in each of these three cases. Solved for the `L`-value, the formula shows that `L(1, χ_D)` is
-the real number `2π h / (w √|D|)`; since `w ≥ 2`, this gives the lower bound
-`h ≥ √|D| L(1, χ_D) / π`, through which lower bounds for `L(1, χ_D)` bound the class number.
+signature is `(r₁, r₂) = (0, 1)` and the regulator is `1`, while for a real quadratic field the
+signature is `(r₁, r₂) = (2, 0)` and `w = 2`.
 
 ## Main results
 
@@ -78,11 +83,19 @@ the real number `2π h / (w √|D|)`; since `w ≥ 2`, this gives the lower boun
   `h ≤ w √|D| (1 + log |D|) / (2π)`, from `‖L(1, χ_D)‖ ≤ 1 + log |D|`
   (`DirichletCharacter.norm_LFunction_one_le_one_add_log`), with the specialization
   `TauCeti.NumberField.classNumber_le_sqrt_mul_one_add_log_of_discr_ne`.
+* `TauCeti.NumberField.LFunction_one_eq_two_mul_regulator_mul_classNumber_div` and
+  `TauCeti.NumberField.classNumber_mul_regulator_eq_sqrt_mul_LFunction_one`: the analytic class
+  number formula `L(1, χ_D) = 2 R h / √D` (equivalently `h R = √D L(1, χ_D) / 2`) for a real
+  quadratic field, with upper bound `classNumber_mul_regulator_le_sqrt_mul_one_add_log`.
+* `TauCeti.NumberField.two_mul_log_goldenRatio_div_sqrt_abs_discr_le_LFunction_one_re`: the sharp
+  sign-independent lower bound `2 log φ / √|D| ≤ (L(1, χ_D)).re` for every quadratic field.
 
 ## References
 
 * H. Davenport, *Multiplicative Number Theory*, Chapter 6.
 * J. Neukirch, *Algebraic Number Theory*, Chapter VII, §5.
+* P. Koymans and C. Pagano, *A sharp upper bound for the 2-torsion of class groups of
+  multiquadratic fields*, Mathematika **68** (2022), §7.2.
 -/
 
 public section
@@ -271,6 +284,8 @@ theorem LFunction_one_pos :
 
 /-! ### The class number formula of an imaginary quadratic field -/
 
+section Imaginary
+
 variable [IsTotallyComplex K]
 
 /-- **The analytic class number formula of an imaginary quadratic field.** If `K` is imaginary
@@ -398,5 +413,134 @@ theorem classNumber_le_sqrt_mul_one_add_log_of_discr_ne (h3 : discr K ≠ -3)
   convert h using 1
   push_cast
   field_simp
+
+end Imaginary
+
+/-! ### The class number formula of a real quadratic field -/
+
+section Real
+
+variable [IsTotallyReal K]
+
+/-- **The analytic class number formula of a real quadratic field, solved for `L(1, χ_D)`.** If
+`K` is real quadratic of discriminant `D`, then `L(1, χ_D)` is the positive real number
+`2 R h / √D`, where `R` is the regulator of `K` and `h` is its class number. -/
+theorem LFunction_one_eq_two_mul_regulator_mul_classNumber_div :
+    DirichletCharacter.LFunction
+      ((fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK)).ringHomComp
+        (Int.castRingHom ℂ)) 1 =
+      ((2 * Units.regulator K * classNumber K / √(discr K : ℝ) : ℝ) : ℂ) := by
+  have hD5 : 5 ≤ discr K := five_le_discr_of_isTotallyReal hK
+  have hDpos : (0 : ℝ) < discr K := by exact_mod_cast (by omega : 0 < discr K)
+  have hr : nrRealPlaces K = 2 := by
+    rw [← IsTotallyReal.finrank, hK]
+  have hw : Units.torsionOrder K = 2 := by
+    rw [Units.torsionOrder_eq_of_finrank_eq_two hK]
+    split_ifs <;> omega
+  rw [← dedekindZeta_residue_eq_LFunction_one hK, dedekindZeta_residue_def,
+    hr, IsTotallyReal.nrComplexPlaces_eq_zero, hw, abs_of_pos hDpos]
+  have hsqrt : (√(discr K : ℝ) : ℂ) ≠ 0 :=
+    Complex.ofReal_ne_zero.mpr (Real.sqrt_pos.mpr hDpos).ne'
+  push_cast
+  field_simp
+
+/-- **The analytic class number formula of a real quadratic field.** If `K` is real quadratic of
+discriminant `D`, then `h R = √D L(1, χ_D) / 2`, where `h` is the class number of `K` and `R` is
+its regulator. -/
+theorem classNumber_mul_regulator_eq_sqrt_mul_LFunction_one :
+    (classNumber K : ℂ) * Units.regulator K = √(discr K : ℝ) * DirichletCharacter.LFunction
+      ((fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK)).ringHomComp
+        (Int.castRingHom ℂ)) 1 / 2 := by
+  have hD5 : 5 ≤ discr K := five_le_discr_of_isTotallyReal hK
+  have hsqrt : (√(discr K : ℝ) : ℂ) ≠ 0 :=
+    Complex.ofReal_ne_zero.mpr (Real.sqrt_pos.mpr (by exact_mod_cast (by omega : 0 < discr K))).ne'
+  rw [LFunction_one_eq_two_mul_regulator_mul_classNumber_div hK]
+  push_cast
+  field_simp
+
+/-- **An upper bound for `h R` in a real quadratic field.** If `K` is real quadratic of
+discriminant `D`, then `h R ≤ √D (1 + log D) / 2`. -/
+theorem classNumber_mul_regulator_le_sqrt_mul_one_add_log :
+    (classNumber K : ℝ) * Units.regulator K ≤
+      √(discr K : ℝ) * (1 + Real.log (discr K : ℝ)) / 2 := by
+  have hDpos : (0 : ℝ) < discr K :=
+    by exact_mod_cast (by linarith [five_le_discr_of_isTotallyReal hK] : 0 < discr K)
+  have hL := DirichletCharacter.norm_LFunction_one_le_one_add_log _
+    (ringHomComp_fundamentalDiscriminantChar_discr_ne_one hK)
+  rw [Nat.cast_natAbs, Int.cast_abs, abs_of_pos hDpos] at hL
+  have h := congrArg norm (classNumber_mul_regulator_eq_sqrt_mul_LFunction_one hK)
+  simp only [norm_mul, Complex.norm_natCast, Complex.norm_real, Real.norm_eq_abs,
+    abs_of_pos (Units.regulator_pos K), norm_div, abs_of_nonneg (Real.sqrt_nonneg _),
+    Complex.norm_ofNat] at h
+  rw [h]
+  gcongr
+
+end Real
+
+/-! ### Uniform lower bound for `L(1, χ_D)` -/
+
+omit [Field K] [NumberField K] hK in
+/-- Numerical comparison `2 log ((1 + √5) / 2) ≤ π / 3` comparing the minimal real-quadratic
+contribution `2 log φ` (`D = 5`) against the minimal imaginary-quadratic contribution `π / 3`
+(`D = -3`, `w = 6`). -/
+private theorem two_mul_log_goldenRatio_le_pi_div_three :
+    2 * Real.log Real.goldenRatio ≤ π / 3 := by
+  have hsqrt5 : √5 < 9 / 4 := (Real.sqrt_lt' (by norm_num)).mpr (by norm_num)
+  have hsq : Real.goldenRatio ^ 2 < 21 / 8 := by
+    rw [Real.goldenRatio_sq, Real.goldenRatio]
+    linarith
+  have hexp : Real.goldenRatio ^ 2 < Real.exp (π / 3) :=
+    calc Real.goldenRatio ^ 2 < 21 / 8 := hsq
+      _ < Real.exp 1 := by linarith [Real.exp_one_gt_d9]
+      _ < Real.exp (π / 3) := Real.exp_lt_exp.mpr (by linarith [Real.pi_gt_three])
+  have hlog := Real.log_lt_log (pow_pos Real.goldenRatio_pos 2) hexp
+  rw [Real.log_pow, Nat.cast_ofNat, Real.log_exp] at hlog
+  exact hlog.le
+
+/-- **Sharp sign-independent lower bound on `L(1, χ_D)` for a quadratic number field.** For every
+quadratic number field `K` (real or imaginary) of discriminant `D`,
+`2 log ((1 + √5) / 2) / √|D| ≤ (L(1, χ_D)).re`, with equality for `K = ℚ(√5)`. -/
+theorem two_mul_log_goldenRatio_div_sqrt_abs_discr_le_LFunction_one_re :
+    2 * Real.log Real.goldenRatio / √|(discr K : ℝ)| ≤
+      (DirichletCharacter.LFunction
+        ((fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK)).ringHomComp
+          (Int.castRingHom ℂ)) 1).re := by
+  have hcls : (1 : ℝ) ≤ classNumber K :=
+    Nat.one_le_cast.mpr (classNumber_pos K)
+  rcases lt_trichotomy (discr K) 0 with hneg | hzero | hpos
+  · -- Imaginary quadratic case (`D < 0`): `L(1, χ_D) = 2π h / (w √|D|) ≥ π / (3 √|D|)`.
+    have hdeg := InfinitePlace.card_add_two_mul_card_eq_rank K
+    have hc : nrComplexPlaces K = 1 :=
+      InfinitePlace.nrComplexPlaces_eq_one_of_discr_lt_zero hneg (by omega)
+    have : IsTotallyComplex K := nrRealPlaces_eq_zero_iff.mp (by omega)
+    rw [LFunction_one_eq_two_mul_pi_mul_classNumber_div hK, Complex.ofReal_re]
+    have hw_le : (Nat.card (𝓞 K)ˣ : ℝ) ≤ 6 := by
+      rw [Units.card_units_of_isTotallyComplex_of_discr hK]
+      split_ifs <;> norm_num
+    have hw_pos : (0 : ℝ) < Nat.card (𝓞 K)ˣ := by
+      rw [Units.card_units_of_isTotallyComplex_of_discr hK]
+      split_ifs <;> norm_num
+    have hD_pos : 0 < √|(discr K : ℝ)| :=
+      Real.sqrt_pos.mpr (abs_pos.mpr (Int.cast_ne_zero.mpr hneg.ne))
+    have hpi : 2 * Real.log Real.goldenRatio ≤ 2 * π * classNumber K / Nat.card (𝓞 K)ˣ := by
+      rw [le_div_iff₀ hw_pos]
+      have h1 := two_mul_log_goldenRatio_le_pi_div_three
+      have h2 : π ≤ π * classNumber K := le_mul_of_one_le_right Real.pi_pos.le hcls
+      have hlog_pos : 0 < Real.log Real.goldenRatio := Real.log_pos Real.one_lt_goldenRatio
+      nlinarith
+    calc 2 * Real.log Real.goldenRatio / √|(discr K : ℝ)|
+        ≤ (2 * π * classNumber K / Nat.card (𝓞 K)ˣ) / √|(discr K : ℝ)| := by gcongr
+      _ = 2 * π * classNumber K / (Nat.card (𝓞 K)ˣ * √|(discr K : ℝ)|) := div_div _ _ _
+  · exact absurd hzero (discr_ne_zero K)
+  · -- Real quadratic case (`D > 0`): `L(1, χ_D) = 2 R h / √D ≥ 2 log φ / √D`.
+    have : IsTotallyReal K := IsTotallyReal.of_zero_lt_discr hpos (by omega)
+    rw [LFunction_one_eq_two_mul_regulator_mul_classNumber_div hK, Complex.ofReal_re,
+      abs_of_pos (Int.cast_pos.mpr hpos)]
+    have hreg : Real.log Real.goldenRatio ≤ Units.regulator K :=
+      Units.log_goldenRatio_le_regulator hK
+    have hnum : 2 * Real.log Real.goldenRatio ≤ 2 * Units.regulator K * classNumber K := by
+      have := Units.regulator_pos K
+      nlinarith
+    gcongr
 
 end TauCeti.NumberField
