@@ -182,6 +182,7 @@ theorem injective_fderiv_stereoInvFunAux_comp_coe {v : E} (hv : ‖v‖ = 1) (w 
 
 /-- Inverse stereographic projection from a unit vector `v` sends a point `w` of the hyperplane
 `vᗮ` to `(‖w‖² + 4)⁻¹ • (4 • w + (‖w‖² - 4) • v)`. -/
+@[simp]
 theorem coe_stereographic_symm_apply {v : E} (hv : ‖v‖ = 1) (w : (ℝ ∙ v)ᗮ) :
     ((stereographic hv).symm w : E) =
       (‖w‖ ^ 2 + 4)⁻¹ • ((4 : ℝ) • (w : E) + (‖w‖ ^ 2 - 4) • v) :=
