@@ -168,10 +168,10 @@ theorem pow_finrank_le_card_mul_pow_of_isCover_closedBall {N : Finset E}
       measure_ball_lt_top.ne).1 key)
   rwa [ENNReal.toReal_ofReal (by positivity)] at h
 
-/-- **Volumetric external covering lower bound.** At scale `ε > 0`, the external covering number
-of a closed ball of radius `r` in a finite-dimensional real normed space is at least
+/-- **Volumetric external covering lower bound.** At scale `ε`, the external covering number of a
+closed ball of radius `r` in a finite-dimensional real normed space is at least
 `(r / ε) ^ dim E`. -/
-theorem div_pow_finrank_le_externalCoveringNumber_closedBall (x : E) (r : ℝ≥0) (hε : ε ≠ 0) :
+theorem div_pow_finrank_le_externalCoveringNumber_closedBall (x : E) (r ε : ℝ≥0) :
     ((r : ℝ≥0∞) / ε) ^ finrank ℝ E ≤ externalCoveringNumber ε (closedBall x r) := by
   rcases eq_top_or_lt_top (externalCoveringNumber ε (closedBall x r)) with htop | hlt
   · simp [htop]
@@ -179,12 +179,21 @@ theorem div_pow_finrank_le_externalCoveringNumber_closedBall (x : E) (r : ℝ≥
   rw [← hk]
   obtain ⟨N, hNk, hcov⟩ := externalCoveringNumber_le_natCast_iff.mp hk.ge
   have hcard := pow_finrank_le_card_mul_pow_of_isCover_closedBall hcov
-  have hdiv : ((r / ε : ℝ) ^ finrank ℝ E) ≤ k := by
-    refine ((div_pow (r : ℝ) (ε : ℝ) (finrank ℝ E)).trans_le ?_).trans (Nat.cast_le.mpr hNk)
-    rwa [div_le_iff₀ (by positivity)]
-  rw [ENat.toENNReal_coe, ← ENNReal.ofReal_natCast]
-  refine (le_of_eq ?_).trans (ENNReal.ofReal_le_ofReal hdiv)
-  rw [ENNReal.ofReal_pow (by positivity), ← NNReal.coe_div, ENNReal.ofReal_coe_nnreal,
-    ENNReal.coe_div hε]
+  rcases eq_or_ne ε 0 with rfl | hε
+  · rcases eq_or_ne (finrank ℝ E) 0 with hd | hd
+    · obtain ⟨y, hy, -⟩ := mem_iUnion₂.mp
+        (hcov.subset_iUnion_closedBall (mem_closedBall_self r.2))
+      have hk1 : 1 ≤ k := (Finset.card_pos.mpr ⟨y, hy⟩).trans_le hNk
+      simpa [hd] using hk1
+    · have hr0 : (r : ℝ) = 0 :=
+        eq_zero_of_pow_eq_zero (le_antisymm (by simpa [zero_pow hd] using hcard) (by positivity))
+      simp [NNReal.coe_eq_zero.mp hr0, hd]
+  · have hdiv : ((r / ε : ℝ) ^ finrank ℝ E) ≤ k := by
+      refine ((div_pow (r : ℝ) (ε : ℝ) (finrank ℝ E)).trans_le ?_).trans (Nat.cast_le.mpr hNk)
+      rwa [div_le_iff₀ (by positivity)]
+    rw [ENat.toENNReal_coe, ← ENNReal.ofReal_natCast]
+    refine (le_of_eq ?_).trans (ENNReal.ofReal_le_ofReal hdiv)
+    rw [ENNReal.ofReal_pow (by positivity), ← NNReal.coe_div, ENNReal.ofReal_coe_nnreal,
+      ENNReal.coe_div hε]
 
 end TauCeti

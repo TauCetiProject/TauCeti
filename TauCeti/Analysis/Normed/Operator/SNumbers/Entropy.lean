@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import Mathlib.Topology.MetricSpace.CoveringNumbers
+public import TauCeti.Analysis.Normed.Operator.Basic
 public import TauCeti.Analysis.Normed.Operator.SNumbers.Basic
 -- Private: finite-dimensional volume bounds, total-boundedness characterizations of compactness,
 -- and metric covering/separation helpers are used only inside proofs.
@@ -27,24 +28,25 @@ they satisfy the norm, monotonicity, perturbation, and two-sided ideal laws toge
 mixed-index additive and multiplicative inequalities
 `e_{m+n}(S + T) ≤ eₘ(S) + eₙ(T)` and `e_{m+n}(B ∘L S) ≤ eₘ(B) * eₙ(S)`,
 and they detect compactness (`IsCompactOperator T ↔ eₙ(T) → 0` when `F` is complete), yet they
-fail the finite-rank vanishing axiom because `eₙ(T) ≥ ‖T‖₊ / 2 ^ n > 0` for every nonzero operator
-into a normed space over `ℝ` or `ℂ`.
+fail the finite-rank vanishing axiom because `eₙ(T) > 0` for every nonzero operator into a normed
+space (with the quantitative bound `‖T‖₊ / 2 ^ n ≤ eₙ(T)` over `ℝ` or `ℂ`).
 
 The hypotheses track the exact scalar-field and norm geometry each law needs:
 * Over any `NontriviallyNormedField 𝕜`, we establish the covering-number characterizations,
   monotonicity, `eₙ(T) ≤ ‖T‖₊`, additivity `e_{m+n}(S + T) ≤ eₘ(S) + eₙ(T)`, the perturbation and
   `1`-Lipschitz bounds, postcomposition `eₙ(B ∘L T) ≤ ‖B‖₊ * eₙ(T)`, scalar homogeneity, the
-  metric separation lower bound, and the characterization of total boundedness and compactness.
+  metric separation lower bounds, `eₙ(T) = 0 ↔ ‖T‖₊ = 0` (hence `eₙ(T) > 0` for `T ≠ 0` and
+  `¬ IsSNumberSequence entropy` when the target is a `NormedAddCommGroup`), and the
+  characterization of total boundedness and compactness.
 * Over a `DenselyNormedField 𝕜`, rescaling balls into the unit ball yields multiplicativity
   `e_{m+n}(B ∘L S) ≤ eₘ(B) * eₙ(S)`, precomposition `eₙ(T ∘L A) ≤ eₙ(T) * ‖A‖₊`, and the
   two-sided ideal inequality `eₙ(B ∘L T ∘L A) ≤ ‖B‖₊ * eₙ(T) * ‖A‖₊`. Over a non-densely normed
-  field such as `ℚ₂` with rescaled norm, precomposition can fail because unit balls ignore scalar
-  gaps in the value group.
+  field such as `ℚ₂`, precomposition can fail on normed spaces equipped with a rescaled module norm
+  (such as `(3 / 2) |·|₂` on `ℚ₂`) because unit balls ignore scalar gaps in the value group.
 * Over `RCLike 𝕜`, symmetry and convexity of real segments give `‖T‖₊ / 2 ^ n ≤ eₙ(T)` and hence
-  `e₀(T) = ‖T‖₊` on seminormed spaces. When the target is a `NormedAddCommGroup` (so nonzero
-  vectors have positive norm; a space with the zero seminorm has `e₀(id) = 0`), this yields
-  `eₙ(T) > 0` for `T ≠ 0`, `¬ IsSNumberSequence entropy`, and—by comparing Haar volumes in finite
-  dimension and applying Riesz's lemma in infinite dimension—the lower bound `1 / 2 ≤ eₙ(id_X)`
+  `e₀(T) = ‖T‖₊` on seminormed spaces. On a `NormedAddCommGroup` (so nonzero vectors have positive
+  norm; a space with the zero seminorm has `e₀(id) = 0`), comparing Haar volumes in finite
+  dimension and applying Riesz's lemma in infinite dimension give the lower bound `1 / 2 ≤ eₙ(id_X)`
   for every index `n` strictly below `Module.rank 𝕜 X`.
 
 ## Main declarations
@@ -61,10 +63,12 @@ The hypotheses track the exact scalar-field and norm geometry each law needs:
   `ContinuousLinearMap.isCompactOperator_iff_tendsto_entropyNumber`: total boundedness and
   compactness via `eₙ(T) → 0`.
 * `ContinuousLinearMap.div_two_le_entropyNumber_of_subset_image`,
+  `ContinuousLinearMap.div_two_le_entropyNumber_of_pairwise_le_dist`,
   `ContinuousLinearMap.div_two_le_entropyNumber_of_le_dist`: separation lower bounds `δ / 2 ≤ eₙ(T)`
   from more than `2 ^ n` separated points.
-* `ContinuousLinearMap.div_two_pow_le_entropyNumber`, `ContinuousLinearMap.entropyNumber_pos`:
-  `‖T‖₊ / 2 ^ n ≤ eₙ(T)` and strict positivity on nonzero operators.
+* `ContinuousLinearMap.nnnorm_div_two_pow_le_entropyNumber`,
+  `ContinuousLinearMap.entropyNumber_pos`: `‖T‖₊ / 2 ^ n ≤ eₙ(T)` and strict positivity on nonzero
+  operators.
 * `ContinuousLinearMap.one_half_le_entropyNumber_id`: `1 / 2 ≤ eₙ(id_X)` for `n < Module.rank 𝕜 X`.
 * `TauCeti.SNumbers.entropy`, `TauCeti.SNumbers.not_isSNumberSequence_entropy`: the family
   wrapper and proof that entropy numbers fail Pietsch's s-number axioms.
@@ -90,7 +94,11 @@ namespace ContinuousLinearMap
 
 section NontriviallyNormedField
 
-variable {𝕜 E F G H : Type*} [NontriviallyNormedField 𝕜]
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+
+section Seminormed
+
+variable {E F G H : Type*}
   [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
   [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
   [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
@@ -114,7 +122,7 @@ theorem entropyNumber_def (T : E →L[𝕜] F) (n : ℕ) :
         ε.1 := (rfl)
 
 /-- The singleton `{0}` covers `T '' closedBall 0 1` at radius `‖T‖₊`. -/
-theorem isCover_image_closedBall_nnnorm (T : E →L[𝕜] F) :
+private theorem isCover_image_closedBall_nnnorm (T : E →L[𝕜] F) :
     IsCover ‖T‖₊ ((T : E → F) '' closedBall 0 1) ({0} : Finset F) := by
   rw [isCover_iff_subset_iUnion_closedBall]
   rintro _ ⟨x, hx, rfl⟩
@@ -149,6 +157,7 @@ theorem entropyNumber_le_of_isCover (T : E →L[𝕜] F) {n : ℕ} {ε : ℝ≥0
 theorem entropyNumber_le_of_externalCoveringNumber_le (T : E →L[𝕜] F) {n : ℕ} {ε : ℝ≥0}
     (h : externalCoveringNumber ε ((T : E → F) '' closedBall 0 1) ≤ 2 ^ n) :
     T.entropyNumber n ≤ ε := by
+  rw [← Nat.cast_ofNat, ← Nat.cast_pow] at h
   obtain ⟨N, hcard, hcov⟩ := externalCoveringNumber_le_natCast_iff.mp h
   exact T.entropyNumber_le_of_isCover hcard hcov
 
@@ -190,15 +199,19 @@ theorem entropyNumber_eq_iInf_externalCoveringNumber (T : E →L[𝕜] F) (n : �
     T.entropyNumber n =
       ⨅ ε : {ε : ℝ≥0 // externalCoveringNumber ε ((T : E → F) '' closedBall 0 1) ≤ 2 ^ n},
         ε.1 := by
+  have hcov_le {ε : ℝ≥0} {N : Finset F} (hcard : N.card ≤ 2 ^ n)
+      (hcov : IsCover ε ((T : E → F) '' closedBall 0 1) N) :
+      externalCoveringNumber ε ((T : E → F) '' closedBall 0 1) ≤ 2 ^ n := by
+    rw [← Nat.cast_ofNat, ← Nat.cast_pow]
+    exact externalCoveringNumber_le_natCast_iff.mpr ⟨N, hcard, hcov⟩
   have : Nonempty {ε : ℝ≥0 // externalCoveringNumber ε ((T : E → F) '' closedBall 0 1) ≤ 2 ^ n} :=
-    ⟨⟨‖T‖₊, externalCoveringNumber_le_natCast_iff.mpr
-      ⟨{0}, by simpa using Nat.one_le_two_pow, T.isCover_image_closedBall_nnnorm⟩⟩⟩
+    ⟨⟨‖T‖₊, hcov_le (by simpa using Nat.one_le_two_pow) T.isCover_image_closedBall_nnnorm⟩⟩
   refine le_antisymm ?_ ?_
   · refine le_ciInf fun ε ↦ T.entropyNumber_le_of_externalCoveringNumber_le ε.2
   · refine le_entropyNumber_iff_isCover.mpr fun ε N hcard hcov ↦ ?_
     exact ciInf_le (f := fun x : {ε : ℝ≥0 //
         externalCoveringNumber ε ((T : E → F) '' closedBall 0 1) ≤ 2 ^ n} ↦ x.1)
-      (OrderBot.bddBelow _) ⟨ε, externalCoveringNumber_le_natCast_iff.mpr ⟨N, hcard, hcov⟩⟩
+      (OrderBot.bddBelow _) ⟨ε, hcov_le hcard hcov⟩
 
 /-! ### Monotonicity, norm bound, additivity, and Lipschitz continuity -/
 
@@ -231,11 +244,11 @@ theorem entropyNumber_eq_zero_of_nnnorm_eq_zero {T : E →L[𝕜] F} (hT : ‖T�
 theorem zero_entropyNumber (n : ℕ) : (0 : E →L[𝕜] F).entropyNumber n = 0 :=
   entropyNumber_eq_zero_of_nnnorm_eq_zero nnNorm_zero n
 
-/-- **Mixed-index additive inequality.** Covering `S(B_E)` by `2 ^ m` balls and `T(B_E)` by `2 ^ n`
-balls and taking pairwise sums of centers yields `e_{m+n}(S + T) ≤ eₘ(S) + eₙ(T)`. -/
+/-- **Mixed-index additive inequality.** `e_{m+n}(S + T) ≤ eₘ(S) + eₙ(T)`. -/
 theorem entropyNumber_add_index_le (S T : E →L[𝕜] F) (m n : ℕ) :
     (S + T).entropyNumber (m + n) ≤ S.entropyNumber m + T.entropyNumber n := by
   classical
+  -- Cover `S(B_E)` and `T(B_E)` separately, then take pairwise sums of centers.
   rw [entropyNumber_def S, entropyNumber_def T]
   refine NNReal.le_iInf_add_iInf fun ε₁ ε₂ ↦ ?_
   obtain ⟨N₁, hN₁, hcov₁⟩ := ε₁.2
@@ -359,26 +372,100 @@ theorem div_two_le_entropyNumber_of_subset_image {T : E →L[𝕜] F} {n : ℕ} 
       exact_mod_cast hcov.div_two_le_of_card_lt hs hsep (hN.trans_lt hcard)
   exact_mod_cast hnn
 
+/-- **Indexed separation lower bound.** If `f : ι → E` maps a finite index type of cardinality
+strictly greater than `2 ^ n` into `closedBall 0 1` and the images `T (f i)` lie at mutual distance
+at least `δ`, then `δ / 2 ≤ eₙ(T)`. -/
+theorem div_two_le_entropyNumber_of_pairwise_le_dist {ι : Type*} [Fintype ι] {T : E →L[𝕜] F}
+    {n : ℕ} {f : ι → E} {δ : ℝ} (hf : ∀ i, f i ∈ closedBall 0 1)
+    (hsep : Pairwise fun i j ↦ δ ≤ dist (T (f i)) (T (f j))) (hcard : 2 ^ n < Fintype.card ι) :
+    δ / 2 ≤ T.entropyNumber n := by
+  classical
+  rcases le_or_gt δ 0 with hδ | hδ
+  · exact (div_nonpos_of_nonpos_of_nonneg hδ zero_le_two).trans (T.entropyNumber n).coe_nonneg
+  have hinj : Function.Injective (T ∘ f) := fun i j hij ↦ by
+    by_contra hne
+    have hle : δ ≤ dist (T (f i)) (T (f j)) := hsep hne
+    have hij' : T (f i) = T (f j) := hij
+    simp [hij', hδ.not_ge] at hle
+  refine div_two_le_entropyNumber_of_subset_image (s := Finset.univ.image (T ∘ f)) ?_ ?_ ?_
+  · rw [Finset.coe_image, Finset.coe_univ, image_univ]
+    rintro _ ⟨i, rfl⟩
+    exact ⟨f i, hf i, rfl⟩
+  · rw [Finset.coe_image]
+    rintro _ ⟨i, -, rfl⟩ _ ⟨j, -, rfl⟩ hne
+    exact hsep (ne_of_apply_ne (T ∘ f) hne)
+  · rwa [Finset.card_image_of_injective _ hinj, Finset.card_univ]
+
 /-- **Separation lower bound via preimages.** If `s ⊆ closedBall 0 1` has strictly more than
 `2 ^ n` points whose images under `T` lie at mutual distance at least `δ`, then `δ / 2 ≤ eₙ(T)`. -/
 theorem div_two_le_entropyNumber_of_le_dist {T : E →L[𝕜] F} {n : ℕ} {s : Finset E} {δ : ℝ}
     (hs : (s : Set E) ⊆ closedBall 0 1)
     (hsep : (s : Set E).Pairwise fun x y ↦ δ ≤ dist (T x) (T y)) (hcard : 2 ^ n < s.card) :
-    δ / 2 ≤ T.entropyNumber n := by
-  classical
-  rcases le_or_gt δ 0 with hδ | hδ
-  · exact (div_nonpos_of_nonpos_of_nonneg hδ zero_le_two).trans (T.entropyNumber n).coe_nonneg
-  have hinj : Set.InjOn T s := fun x hx y hy hxy ↦ by
-    by_contra hne
-    have := hsep hx hy hne
-    simp [hxy, hδ.not_ge] at this
-  refine div_two_le_entropyNumber_of_subset_image (s := s.image T) ?_ ?_ ?_
-  · rw [Finset.coe_image]
-    exact image_mono hs
-  · rw [Finset.coe_image]
-    rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩ hne
-    exact hsep hx hy (ne_of_apply_ne T hne)
-  · rwa [Finset.card_image_of_injOn hinj]
+    δ / 2 ≤ T.entropyNumber n :=
+  div_two_le_entropyNumber_of_pairwise_le_dist (ι := s) (f := Subtype.val) (fun x ↦ hs x.2)
+    (fun _ _ hne ↦ hsep (Subtype.prop _) (Subtype.prop _) (Subtype.coe_ne_coe.mpr hne))
+    (by simpa only [Fintype.card_coe] using hcard)
+
+/-! ### Vanishing and positivity -/
+
+/-- Sampling `(a ^ k) • u` for `0 ≤ k ≤ 2 ^ n` bounds `eₙ(T)` below on any unit-ball vector `u` and
+contractive scalar `a`. -/
+private theorem pow_mul_one_sub_mul_div_two_le_entropyNumber {T : E →L[𝕜] F} {u : E}
+    (hu : u ∈ closedBall 0 1) {a : 𝕜} (ha : ‖a‖ ≤ 1) (n : ℕ) :
+    ‖a‖ ^ (2 ^ n) * (1 - ‖a‖) * ‖T u‖ / 2 ≤ T.entropyNumber n := by
+  let f : Fin (2 ^ n + 1) → E := fun k ↦ (a ^ (k : ℕ)) • u
+  let δ : ℝ := ‖a‖ ^ (2 ^ n) * (1 - ‖a‖) * ‖T u‖
+  have hsep_lt : ∀ {i j : Fin (2 ^ n + 1)}, (i : ℕ) < j → δ ≤ dist (T (f i)) (T (f j)) := by
+    intro i j hij
+    set m : ℕ := (j : ℕ) - (i : ℕ)
+    have hj_eq : (j : ℕ) = (i : ℕ) + m := (Nat.add_sub_of_le hij.le).symm
+    have hsub : T (f i) - T (f j) = (a ^ (i : ℕ) * (1 - a ^ m)) • T u := by
+      simp only [f, map_smul, ← sub_smul, hj_eq, pow_add, mul_sub, mul_one]
+    have hpow_i : ‖a‖ ^ (2 ^ n) ≤ ‖a‖ ^ (i : ℕ) :=
+      pow_le_pow_of_le_one (norm_nonneg a) ha (Nat.lt_succ_iff.mp i.isLt)
+    have h1_sub : 1 - ‖a‖ ≤ ‖(1 : 𝕜) - a ^ m‖ := by
+      have hpow_m : ‖a ^ m‖ ≤ ‖a‖ := by
+        simpa [norm_pow] using pow_le_pow_of_le_one (norm_nonneg a) ha (Nat.sub_pos_of_lt hij)
+      have htri := norm_sub_norm_le (1 : 𝕜) (a ^ m)
+      rw [norm_one] at htri
+      linarith
+    rw [dist_eq_norm, hsub, norm_smul, norm_mul, norm_pow]
+    dsimp only [δ]
+    have : 0 ≤ 1 - ‖a‖ := sub_nonneg.mpr ha
+    gcongr
+  refine div_two_le_entropyNumber_of_pairwise_le_dist (T := T) (n := n) (f := f)
+    (fun k ↦ ?_) (fun i j hij ↦ ?_) (by simp)
+  · rw [mem_closedBall_zero_iff, norm_smul, norm_pow]
+    calc ‖a‖ ^ (k : ℕ) * ‖u‖
+        ≤ 1 * 1 := by
+          gcongr
+          · exact pow_le_one₀ (norm_nonneg a) ha
+          · exact mem_closedBall_zero_iff.mp hu
+      _ = 1 := one_mul 1
+  · dsimp only
+    rcases lt_or_gt_of_ne (Fin.val_ne_of_ne hij) with hlt | hgt
+    · exact hsep_lt hlt
+    · rw [dist_comm]; exact hsep_lt hgt
+
+/-- The `n`-th entropy number vanishes if and only if `‖T‖₊ = 0`. -/
+theorem entropyNumber_eq_zero_iff_nnnorm_eq_zero {T : E →L[𝕜] F} {n : ℕ} :
+    T.entropyNumber n = 0 ↔ ‖T‖₊ = 0 := by
+  refine ⟨fun h0 ↦ ?_, fun h ↦ entropyNumber_eq_zero_of_nnnorm_eq_zero h n⟩
+  rw [← NNReal.coe_eq_zero, coe_nnNorm]
+  obtain ⟨a, ha0, ha1⟩ := NormedField.exists_norm_lt_one 𝕜
+  refine le_antisymm (T.opNorm_le_bound le_rfl fun x ↦ ?_) (norm_nonneg T)
+  obtain ⟨c, hc⟩ := NormedField.exists_lt_norm 𝕜 ‖x‖
+  have hc_pos : 0 < ‖c‖ := (norm_nonneg x).trans_lt hc
+  have hu : c⁻¹ • x ∈ closedBall (0 : E) 1 := by
+    rw [mem_closedBall_zero_iff, norm_smul, norm_inv]
+    exact (inv_mul_le_iff₀ hc_pos).mpr (by simpa using hc.le)
+  have hle := pow_mul_one_sub_mul_div_two_le_entropyNumber (T := T) hu ha1.le n
+  rw [h0, NNReal.coe_zero, map_smul, norm_smul, norm_inv] at hle
+  have hpos : 0 < ‖a‖ ^ (2 ^ n) * (1 - ‖a‖) * ‖c‖⁻¹ / 2 := by
+    have : 0 < 1 - ‖a‖ := sub_pos.mpr ha1
+    positivity
+  have hTx : ‖T x‖ ≤ 0 := nonpos_of_mul_nonpos_right (by linarith) hpos
+  simpa using hTx
 
 /-! ### Total boundedness and compactness -/
 
@@ -419,6 +506,26 @@ theorem isCompactOperator_iff_tendsto_entropyNumber [CompleteSpace F] (T : E →
     IsCompactOperator T ↔ Tendsto T.entropyNumber atTop (𝓝 0) :=
   (isCompactOperator_iff_totallyBounded_image_closedBall T.toLinearMap one_pos).trans
     T.tendsto_entropyNumber_atTop_nhds_zero_iff_totallyBounded.symm
+
+end Seminormed
+
+section NormedCodomain
+
+variable {E F : Type*} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- With a normed codomain, `eₙ(T) = 0` if and only if `T = 0`. -/
+@[simp]
+theorem entropyNumber_eq_zero_iff {T : E →L[𝕜] F} {n : ℕ} :
+    T.entropyNumber n = 0 ↔ T = 0 :=
+  entropyNumber_eq_zero_iff_nnnorm_eq_zero.trans T.opNNNorm_eq_zero_iff
+
+/-- **Failure of the rank axiom.** Every nonzero operator into a normed space has strictly
+positive entropy numbers at all indices. -/
+theorem entropyNumber_pos {T : E →L[𝕜] F} (hT : T ≠ 0) (n : ℕ) : 0 < T.entropyNumber n :=
+  pos_iff_ne_zero.mpr (entropyNumber_eq_zero_iff.not.mpr hT)
+
+end NormedCodomain
 
 end NontriviallyNormedField
 
@@ -507,7 +614,6 @@ number of the identity map is at least `1 / 2`. -/
 theorem one_half_le_entropyNumber_id_of_not_finiteDimensional [CompleteSpace 𝕜]
     {X : Type*} [NormedAddCommGroup X] [NormedSpace 𝕜 X] (hX : ¬ FiniteDimensional 𝕜 X) (n : ℕ) :
     (1 / 2 : ℝ≥0) ≤ (ContinuousLinearMap.id 𝕜 X).entropyNumber n := by
-  classical
   by_contra! hlt
   set e : ℝ := ((ContinuousLinearMap.id 𝕜 X).entropyNumber n : ℝ)
   have he0 : 0 ≤ e := NNReal.coe_nonneg _
@@ -520,33 +626,19 @@ theorem one_half_le_entropyNumber_id_of_not_finiteDimensional [CompleteSpace �
   have hdpos : 0 < ‖d‖ := norm_pos_iff.mpr hd0
   -- Riesz's lemma gives an infinite `1`-separated sequence inside `closedBall 0 ‖d‖`.
   obtain ⟨f, hf_norm, hf_sep⟩ := exists_seq_norm_le_one_le_norm_sub' hc1 hcd hX
-  let g : ℕ → X := fun k ↦ d⁻¹ • f k
-  let s : Finset X := (Finset.range (2 ^ n + 1)).image g
-  have hginj : Function.Injective g := fun i j hij ↦ by
-    by_contra hne
-    have h1le : 1 ≤ ‖f i - f j‖ := hf_sep hne
-    have heq : f i = f j := by simpa [g, hd0] using congrArg (d • ·) hij
-    rw [heq, sub_self, norm_zero] at h1le
-    linarith
   have hbound : ‖d‖⁻¹ / 2 ≤ e := by
-    refine div_two_le_entropyNumber_of_le_dist (T := ContinuousLinearMap.id 𝕜 X) (s := s) ?_ ?_ ?_
-    · rw [Finset.coe_image]
-      rintro _ ⟨k, -, rfl⟩
-      rw [mem_closedBall_zero_iff, norm_smul, norm_inv]
+    refine div_two_le_entropyNumber_of_pairwise_le_dist (T := ContinuousLinearMap.id 𝕜 X)
+      (f := fun k : Fin (2 ^ n + 1) ↦ d⁻¹ • f k) (fun k ↦ ?_) (fun i j hij ↦ ?_) (by simp)
+    · rw [mem_closedBall_zero_iff, norm_smul, norm_inv]
       exact (inv_mul_le_iff₀ hdpos).mpr (by simpa using hf_norm k)
-    · rw [Finset.coe_image]
-      rintro _ ⟨i, -, rfl⟩ _ ⟨j, -, rfl⟩ hne
-      have hij : i ≠ j := ne_of_apply_ne g hne
-      simp only [id_apply, dist_eq_norm, g, ← smul_sub, norm_smul, norm_inv]
-      exact le_mul_of_one_le_right (inv_nonneg.mpr hdpos.le) (hf_sep hij)
-    · rw [Finset.card_image_of_injective _ hginj, Finset.card_range]
-      exact Nat.lt_succ_self _
+    · simp only [id_apply, dist_eq_norm, ← smul_sub, norm_smul, norm_inv]
+      exact le_mul_of_one_le_right (inv_nonneg.mpr hdpos.le) (hf_sep (Fin.val_ne_of_ne hij))
   have hlt_inv : 1 / 2 + e < ‖d‖⁻¹ := (lt_inv_comm₀ hpe hdpos).mpr hd
   linarith
 
 end DenselyNormedField
 
-/-! ### Zeroth term, positivity, and the identity lower bound over `ℝ` and `ℂ` -/
+/-! ### Segment lower bound, zeroth term, and the identity lower bound over `ℝ` and `ℂ` -/
 
 section RCLike
 
@@ -557,79 +649,43 @@ section Seminormed
 variable {E F : Type*} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
   [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
 
-/-- **Segment lower bound.** Over `ℝ` or `ℂ`, placing `2 ^ n + 1` equally spaced points along each
-diameter `[-x, x]` of the unit ball yields `‖T‖₊ / 2 ^ n ≤ eₙ(T)`. -/
-theorem div_two_pow_le_entropyNumber (T : E →L[𝕜] F) (n : ℕ) :
+/-- **Segment lower bound.** Over `ℝ` or `ℂ`, `‖T‖₊ / 2 ^ n ≤ eₙ(T)`. -/
+theorem nnnorm_div_two_pow_le_entropyNumber (T : E →L[𝕜] F) (n : ℕ) :
     ‖T‖₊ / 2 ^ n ≤ T.entropyNumber n := by
-  classical
   rw [← NNReal.coe_le_coe]
   push_cast
   rw [div_le_iff₀ (by positivity)]
-  refine T.opNorm_le_bound (mul_nonneg (NNReal.coe_nonneg _) (by positivity)) fun x ↦ ?_
-  rcases eq_or_ne ‖x‖ 0 with hx0 | hx0
-  · simpa [hx0] using T.le_opNorm x
-  have hxpos : 0 < ‖x‖ := lt_of_le_of_ne (norm_nonneg x) (Ne.symm hx0)
-  set c : 𝕜 := algebraMap ℝ 𝕜 ‖x‖
-  have hc_norm : ‖c‖ = ‖x‖ := by simp [c]
-  have hc0 : c ≠ 0 := norm_ne_zero_iff.mp (hc_norm.symm ▸ hx0)
-  set u : E := c⁻¹ • x
-  have hu_norm : ‖u‖ = 1 := by rw [norm_smul, norm_inv, hc_norm, inv_mul_cancel₀ hx0]
-  suffices hTu : ‖T u‖ ≤ T.entropyNumber n * 2 ^ n by
-    have hx_eq : x = c • u := (smul_inv_smul₀ hc0 x).symm
-    calc ‖T x‖ = ‖c • T u‖ := by rw [← map_smul, ← hx_eq]
-      _ = ‖T u‖ * ‖x‖ := by rw [norm_smul, hc_norm, mul_comm]
-      _ ≤ T.entropyNumber n * 2 ^ n * ‖x‖ := mul_le_mul_of_nonneg_right hTu hxpos.le
-  rcases eq_or_lt_of_le (norm_nonneg (T u)) with hTu0 | hTu_pos
-  · rw [← hTu0]
-    exact mul_nonneg (NNReal.coe_nonneg _) (by positivity)
+  refine T.opNorm_le_of_unit_norm (by positivity) fun u hu_norm ↦ ?_
   -- Sample `2 ^ n + 1` equally spaced points along the segment `[-u, u]`.
   let f : Fin (2 ^ n + 1) → E := fun k ↦ ((-1 + 2 * (k : ℝ) / 2 ^ n : ℝ) : 𝕜) • u
-  have hf_sep : ∀ {i j : Fin (2 ^ n + 1)}, i ≠ j →
-      2 * ‖T u‖ / 2 ^ n ≤ dist (T (f i)) (T (f j)) := by
-    intro i j hij
-    have hsub : T (f i) - T (f j) = ((2 * ((i : ℝ) - (j : ℝ)) / 2 ^ n : ℝ) : 𝕜) • T u := by
-      simp only [f, map_smul, ← sub_smul]
-      congr 1
-      push_cast
-      ring
-    have h1 : (1 : ℝ) ≤ |(i : ℝ) - (j : ℝ)| := by
-      rcases lt_or_gt_of_ne (Fin.val_ne_of_ne hij) with hlt | hgt
-      · have : (i : ℝ) + 1 ≤ (j : ℝ) := by exact_mod_cast hlt
-        rw [abs_of_neg (by linarith)]; linarith
-      · have : (j : ℝ) + 1 ≤ (i : ℝ) := by exact_mod_cast hgt
-        rw [abs_of_pos (by linarith)]; linarith
-    rw [dist_eq_norm, hsub, norm_smul, RCLike.norm_ofReal, abs_div, abs_mul,
-      abs_of_pos zero_lt_two, abs_of_pos (by positivity : (0 : ℝ) < 2 ^ n)]
-    calc 2 * ‖T u‖ / 2 ^ n
-        = (2 * 1 / 2 ^ n) * ‖T u‖ := by ring
-      _ ≤ (2 * |(i : ℝ) - (j : ℝ)| / 2 ^ n) * ‖T u‖ := by gcongr
-  have hf_inj : Function.Injective f := fun i j hij ↦ by
-    by_contra hne
-    have hle := hf_sep hne
-    have hpos : 0 < 2 * ‖T u‖ / 2 ^ n := by positivity
-    simp [hij, hpos.not_ge] at hle
-  have hbound := div_two_le_entropyNumber_of_le_dist (T := T) (n := n)
-    (s := Finset.univ.image f) (δ := 2 * ‖T u‖ / 2 ^ n) ?_ ?_ ?_
-  · refine (div_le_iff₀ (by positivity : (0 : ℝ) < 2 ^ n)).mp ?_
-    calc ‖T u‖ / 2 ^ n = 2 * ‖T u‖ / 2 ^ n / 2 := by ring
-      _ ≤ T.entropyNumber n := hbound
-  · rw [Finset.coe_image]
-    rintro _ ⟨k, -, rfl⟩
-    rw [mem_closedBall_zero_iff, norm_smul, RCLike.norm_ofReal, hu_norm, mul_one, abs_le]
-    have hk : (k : ℝ) ≤ 2 ^ n := by exact_mod_cast Nat.lt_succ_iff.mp k.isLt
-    have hdiv0 : (0 : ℝ) ≤ 2 * (k : ℝ) / 2 ^ n := by positivity
-    have hdiv2 : 2 * (k : ℝ) / 2 ^ n ≤ 2 := (div_le_iff₀ (by positivity)).mpr (by linarith)
-    constructor <;> linarith
-  · rw [Finset.coe_image]
-    rintro _ ⟨i, -, rfl⟩ _ ⟨j, -, rfl⟩ hne
-    exact hf_sep (ne_of_apply_ne f hne)
-  · rw [Finset.card_image_of_injective _ hf_inj, Finset.card_univ, Fintype.card_fin]
-    exact Nat.lt_succ_self _
+  have hbound : (2 * ‖T u‖ / 2 ^ n) / 2 ≤ T.entropyNumber n := by
+    refine div_two_le_entropyNumber_of_pairwise_le_dist (T := T) (n := n) (f := f)
+      (fun k ↦ ?_) (fun i j hij ↦ ?_) (by simp)
+    · rw [mem_closedBall_zero_iff, norm_smul, RCLike.norm_ofReal, hu_norm, mul_one, abs_le]
+      have hk : (k : ℝ) ≤ 2 ^ n := by exact_mod_cast Nat.lt_succ_iff.mp k.isLt
+      have hdiv0 : (0 : ℝ) ≤ 2 * (k : ℝ) / 2 ^ n := by positivity
+      have hdiv2 : 2 * (k : ℝ) / 2 ^ n ≤ 2 := (div_le_iff₀ (by positivity)).mpr (by linarith)
+      constructor <;> linarith
+    · dsimp only
+      have hsub : T (f i) - T (f j) = ((2 * ((i : ℝ) - (j : ℝ)) / 2 ^ n : ℝ) : 𝕜) • T u := by
+        simp only [f, map_smul, ← sub_smul]
+        congr 1; push_cast; ring
+      have h1 : (1 : ℝ) ≤ |(i : ℝ) - (j : ℝ)| := by
+        have hne : ((i : ℕ) : ℤ) - (j : ℕ) ≠ 0 :=
+          sub_ne_zero.mpr (Int.ofNat_inj.not.mpr (Fin.val_ne_of_ne hij))
+        exact_mod_cast Int.one_le_abs hne
+      rw [dist_eq_norm, hsub, norm_smul, RCLike.norm_ofReal, abs_div, abs_mul,
+        abs_of_pos zero_lt_two, abs_of_pos (by positivity : (0 : ℝ) < 2 ^ n)]
+      calc 2 * ‖T u‖ / 2 ^ n
+          = (2 * 1 / 2 ^ n) * ‖T u‖ := by ring
+        _ ≤ (2 * |(i : ℝ) - (j : ℝ)| / 2 ^ n) * ‖T u‖ := by gcongr
+  have hdiv : ‖T u‖ / 2 ^ n ≤ T.entropyNumber n := (le_of_eq (by ring)).trans hbound
+  exact (div_le_iff₀ (by positivity : (0 : ℝ) < 2 ^ n)).mp hdiv
 
 /-- Over `ℝ` or `ℂ`, the zeroth entropy number equals the operator norm. -/
 @[simp]
 theorem entropyNumber_zero (T : E →L[𝕜] F) : T.entropyNumber 0 = ‖T‖₊ :=
-  (T.entropyNumber_le_nnnorm 0).antisymm (by simpa using T.div_two_pow_le_entropyNumber 0)
+  (T.entropyNumber_le_nnnorm 0).antisymm (by simpa using T.nnnorm_div_two_pow_le_entropyNumber 0)
 
 /-- Over `ℝ` or `ℂ`, the supremum of all entropy numbers is the operator norm. -/
 @[simp]
@@ -637,34 +693,11 @@ theorem iSup_entropyNumber (T : E →L[𝕜] F) : ⨆ n, T.entropyNumber n = ‖
   (ciSup_le T.entropyNumber_le_nnnorm).antisymm
     (T.entropyNumber_zero ▸ le_ciSup T.bddAbove_range_entropyNumber 0)
 
-/-- Over `ℝ` or `ℂ`, the `n`-th entropy number vanishes if and only if `‖T‖₊ = 0`. -/
-theorem entropyNumber_eq_zero_iff_nnnorm_eq_zero {T : E →L[𝕜] F} {n : ℕ} :
-    T.entropyNumber n = 0 ↔ ‖T‖₊ = 0 := by
-  refine ⟨fun h ↦ ?_, fun h ↦ entropyNumber_eq_zero_of_nnnorm_eq_zero h n⟩
-  have hle := (T.div_two_pow_le_entropyNumber n).trans_eq h
-  rw [nonpos_iff_eq_zero, div_eq_zero_iff] at hle
-  exact hle.resolve_right (by positivity)
-
 end Seminormed
 
 section Normed
 
-variable {E F X : Type*} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  [NormedAddCommGroup X] [NormedSpace 𝕜 X]
-
-/-- Over `ℝ` or `ℂ` with a normed codomain, `eₙ(T) = 0` if and only if `T = 0`. -/
-@[simp]
-theorem entropyNumber_eq_zero_iff {T : E →L[𝕜] F} {n : ℕ} :
-    T.entropyNumber n = 0 ↔ T = 0 := by
-  rw [entropyNumber_eq_zero_iff_nnnorm_eq_zero]
-  refine ⟨fun h ↦ ext fun x ↦ norm_eq_zero.mp ?_, fun h ↦ by simp [h]⟩
-  exact le_antisymm ((T.le_opNorm x).trans (by simp [← coe_nnNorm, h])) (norm_nonneg _)
-
-/-- **Failure of the rank axiom.** Every nonzero operator into a normed space over `ℝ` or `ℂ` has
-strictly positive entropy numbers at all indices. -/
-theorem entropyNumber_pos {T : E →L[𝕜] F} (hT : T ≠ 0) (n : ℕ) : 0 < T.entropyNumber n :=
-  pos_iff_ne_zero.mpr (entropyNumber_eq_zero_iff.not.mpr hT)
+variable {X : Type*} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
 
 /-- **Identity lower bound.** Over `ℝ` or `ℂ`, `1 / 2 ≤ eₙ(id_X)` for every index `n` strictly
 below the dimension of `X`. -/
@@ -712,8 +745,6 @@ universe u
 
 namespace TauCeti.SNumbers
 
-section General
-
 variable {𝕜 : Type u} [NontriviallyNormedField 𝕜]
 
 /-- The family of dyadic entropy numbers on bounded operators between normed spaces. They form a
@@ -727,17 +758,12 @@ theorem entropy_apply {X Y : Type u}
     [NormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
     (T : X →L[𝕜] Y) (n : ℕ) : entropy T n = T.entropyNumber n := (rfl)
 
-end General
-
-section RCLike
-
-variable {𝕜 : Type u} [RCLike 𝕜]
-
-/-- Over `ℝ` or `ℂ`, entropy numbers do not form an s-number sequence, since `id_{Fin 1 → 𝕜}` has
-rank `1` yet `e₁(id_{Fin 1 → 𝕜}) > 0`. -/
+/-- Entropy numbers do not form an s-number sequence, because they fail the finite-rank vanishing
+axiom. -/
 theorem not_isSNumberSequence_entropy :
     ¬ IsSNumberSequence (entropy (𝕜 := 𝕜)) := by
   intro hs
+  -- Witness: `id_{Fin 1 → 𝕜}` has rank `1` yet `e₁(id_{Fin 1 → 𝕜}) > 0`.
   let I := ContinuousLinearMap.id 𝕜 (Fin 1 → 𝕜)
   have hrank : I.rank ≤ (1 : ℕ) := by
     simpa [I] using (LinearMap.rank_le_domain I.toLinearMap).trans_eq (rank_fin_fun 1)
@@ -746,7 +772,5 @@ theorem not_isSNumberSequence_entropy :
     have h1 := congrFun (ContinuousLinearMap.ext_iff.mp h (fun _ : Fin 1 ↦ (1 : 𝕜))) (0 : Fin 1)
     simp [I] at h1
   exact (I.entropyNumber_pos hne 1).ne' hzero
-
-end RCLike
 
 end TauCeti.SNumbers
