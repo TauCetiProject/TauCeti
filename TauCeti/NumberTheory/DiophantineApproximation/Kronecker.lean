@@ -50,8 +50,6 @@ solution with a large positive multiplier.
 
 public section
 
-open Filter Topology Module
-
 namespace TauCeti
 
 variable {ι : Type*} [Fintype ι]
