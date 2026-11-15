@@ -353,6 +353,7 @@ theorem gradedLift_apply (f : V →ₗ[R] A) (hr hf) (a : ParitySignedSym G) :
     gradedLift G 𝒜 f hr hf a = lift G f hr a := (rfl)
 
 -- Not `@[simp]`: `simp` already reduces the LHS via `gradedLift_apply` and `lift_generator`.
+/-- The graded lift extends the given assignment on every generator. -/
 theorem gradedLift_generator (f : V →ₗ[R] A) (hr hf) (x : V) :
     gradedLift G 𝒜 f hr hf (generator G x) = f x :=
   lift_generator G f hr x
@@ -405,8 +406,7 @@ theorem paritySignedSymPiece_map_congr (e : V ≃ₗ[R] W)
   simp only [Submodule.mem_map, AlgEquiv.toLinearMap_apply]
   exact ⟨fun ⟨a, ha, hab⟩ ↦ hab ▸ (congr_mem_paritySignedSymPiece_iff G H e he).2 ha,
     fun hb ↦ ⟨(congr G H e he).symm b,
-      by simpa [congr_symm] using
-        (congr_mem_paritySignedSymPiece_iff H G e.symm he.linearEquiv_symm).2 hb,
+      (congr_mem_paritySignedSymPiece_iff G H e he).1 (by simpa using hb),
       (congr G H e he).apply_symm_apply b⟩⟩
 
 /-- A parity-preserving linear map induces a `ZMod 2`-graded algebra map of parity signed

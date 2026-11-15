@@ -8,7 +8,6 @@ module
 public import Mathlib.Data.ZMod.IntUnitsPower
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.LinearAlgebra.Graded.LinearMap
-import Mathlib.GroupTheory.GroupAction.Ring
 import TauCeti.Algebra.DirectSum.Internal
 
 /-!

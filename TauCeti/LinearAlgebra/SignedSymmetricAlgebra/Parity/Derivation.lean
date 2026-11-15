@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.DG.Algebra.Parity
 public import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Derivation
 public import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Parity.Grading
 public import TauCeti.RingTheory.GradedAlgebra.GradeInvolution
 import Mathlib.Data.Matrix.Basic
 import Mathlib.GroupTheory.GroupAction.Ring
+import TauCeti.Algebra.Homology.DG.Algebra.Parity
 
 /-!
 # Odd derivations of the parity signed algebra

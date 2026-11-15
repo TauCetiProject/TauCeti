@@ -41,6 +41,7 @@ super (parity-graded) object, for example when Koszul signs only depend on parit
 * `TauCeti.LinearMap.IsHomogeneous.coarsenGrading`: a homogeneous linear map of degree `q` is
   homogeneous of degree `f q` for gradings coarsened along an additive homomorphism `f`.
 * `TauCeti.parityGrading_zero` and `TauCeti.parityGrading_one`: the even and odd pieces.
+* `TauCeti.InternalGrading.parity_ofParity`: reducing `G.ofParity` modulo two recovers `G`.
 -/
 
 public section
