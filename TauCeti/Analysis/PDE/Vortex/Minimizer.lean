@@ -49,7 +49,11 @@ the quadratic growth bound `I(u) + ‖∇(v - u)‖₂² / 4 ≤ I(v)` for every
 the same weak gradient, so they differ by a constant, which vanishes because both are square
 integrable on the plane (`TauCeti.Vortex.eq_of_forall_sobolevReducedFunctional_le`,
 `TauCeti.Vortex.existsUnique_forall_sobolevReducedFunctional_le`). The solution of the reduced
-equation obtained by minimization is thus determined by `P` alone.
+equation obtained by minimization is thus a function of `P`, `TauCeti.Vortex.reducedMinimizer`,
+characterized by `TauCeti.Vortex.eq_reducedMinimizer_iff`; it depends on `P` only through `I`
+(`TauCeti.Vortex.reducedMinimizer_eq_of_forall_sobolevReducedFunctional_eq`). Its laws under
+translations, rotations and constant changes of the line frame are in
+`TauCeti.Analysis.PDE.Vortex.Equivariance`.
 
 Since `I(0) = 0`, the minimum is at most `0`; in particular the potential of a minimizer is
 integrable. The weak Euler–Lagrange equation of the minimizer is in
@@ -255,5 +259,38 @@ theorem existsUnique_forall_sobolevReducedFunctional_le {P : Polynomial ℂ}
       ∀ v, sobolevReducedFunctional P u ≤ sobolevReducedFunctional P v := by
   obtain ⟨u, hu⟩ := exists_forall_sobolevReducedFunctional_le hm
   exact ⟨u, hu, fun v hv ↦ eq_of_forall_sobolevReducedFunctional_le hm hv hu⟩
+
+/-! ### The minimizer -/
+
+variable (P : Polynomial ℂ) in
+/-- **The minimizer of Taubes's functional** `TauCeti.Vortex.sobolevReducedFunctional P` on
+`H¹(ℂ)`. When `P` has degree at least one, it is the unique minimizer
+(`TauCeti.Vortex.eq_reducedMinimizer_iff`); its smooth representative corrects the background
+amplitude of `P` to the amplitude of a vortex with zero divisor `P`
+(`TauCeti.Vortex.exists_contDiff_ae_eq_and_laplacian_eq_of_forall_sobolevReducedFunctional_le`).
+For constant `P` it is an arbitrary element of `H¹(ℂ)`. -/
+def reducedMinimizer : W1p (volume : Measure ℂ) ⊤ 2 :=
+  Classical.epsilon fun u ↦ ∀ v, sobolevReducedFunctional P u ≤ sobolevReducedFunctional P v
+
+/-- The minimizer minimizes Taubes's functional. -/
+theorem forall_sobolevReducedFunctional_reducedMinimizer_le {P : Polynomial ℂ}
+    (hm : 0 < P.natDegree) (v : W1p (volume : Measure ℂ) ⊤ 2) :
+    sobolevReducedFunctional P (reducedMinimizer P) ≤ sobolevReducedFunctional P v :=
+  Classical.epsilon_spec (exists_forall_sobolevReducedFunctional_le hm) v
+
+/-- An element of `H¹(ℂ)` is the minimizer of Taubes's functional exactly when it minimizes it. -/
+theorem eq_reducedMinimizer_iff {P : Polynomial ℂ} (hm : 0 < P.natDegree)
+    {u : W1p (volume : Measure ℂ) ⊤ 2} :
+    u = reducedMinimizer P ↔ ∀ v, sobolevReducedFunctional P u ≤ sobolevReducedFunctional P v :=
+  ⟨fun h ↦ h ▸ forall_sobolevReducedFunctional_reducedMinimizer_le hm,
+    fun hu ↦ eq_of_forall_sobolevReducedFunctional_le hm hu
+      (forall_sobolevReducedFunctional_reducedMinimizer_le hm)⟩
+
+/-- The minimizer depends on `P` only through Taubes's functional: polynomials with the same
+functional have the same minimizer. -/
+theorem reducedMinimizer_eq_of_forall_sobolevReducedFunctional_eq {P Q : Polynomial ℂ}
+    (h : ∀ u, sobolevReducedFunctional Q u = sobolevReducedFunctional P u) :
+    reducedMinimizer Q = reducedMinimizer P := by
+  simp only [reducedMinimizer, h]
 
 end TauCeti.Vortex

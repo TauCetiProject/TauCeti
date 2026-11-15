@@ -67,7 +67,8 @@ is constant along the fibres.
 * `TauCeti.IsRiemannianSubmersion.mlieBracket_horizontalLift`,
   `TauCeti.IsRiemannianSubmersion.leviCivitaConnection_horizontalLift`, and
   `TauCeti.IsRiemannianSubmersion.leviCivitaConnection_horizontalLift_of_mem_ker`: the Lie bracket
-  and Levi-Civita derivative of basic horizontal lifts.
+  and Levi-Civita derivative of basic horizontal lifts (`[X', Y'] = [X, Y]^~ + 2 A_X' Y'` and
+  `∇_X' Y' = (∇_X Y)^~ + A_X' Y'`).
 
 ## References
 
