@@ -656,6 +656,12 @@ variable {P' : Type u} [TopologicalSpace P'] (g : C(P', P))
   (he' : ∀ i p w, ((h' i (p, w)).down : EuclideanSpace ℝ (Fin (k i))) = e' i p w.down)
   (hα₀ : ∀ i p s, α₀' i (p, s) = α₀ i (g p, s)) (hα₁ : ∀ i p s, α₁' i (p, s) = α₁ i (g p, s))
 
+private theorem fiberwiseDiskInv_comp_prodMap (he'e : ∀ i p, e' i p = e i (g p)) (i : ι) (p : P')
+    (x : TopCat.disk.{u} (k i)) :
+    fiberwiseDiskInv h' e' he' i (p, x) = fiberwiseDiskInv h e he i (g p, x) :=
+  ULift.ext (Subtype.ext (by
+    rw [coe_fiberwiseDiskInv_apply_down, coe_fiberwiseDiskInv_apply_down, he'e]))
+
 /-- **The inverse of a fiberwise reattachment map is natural in the parameter space.** For data
 restricted along a continuous map `g : P' → P`, with isometries `e' i p = e i (g p)` and homotopies
 `K' i (t, (p, x)) = K i (t, (g p, x))`, the inverse over `P'` followed by the map of fiberwise
@@ -667,14 +673,33 @@ theorem fiberwiseCellReattachmentInv_comp_fiberwiseCellAttachmentMap
         fiberwiseCellAttachmentMap g α₁ α₁' hα₁ =
       fiberwiseCellAttachmentMap g α₀ α₀' hα₀ ≫
         fiberwiseCellReattachmentInv α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ h K hK e he := by
-  have hd : ∀ i p x, fiberwiseDiskInv h' e' he' i (p, x) = fiberwiseDiskInv h e he i (g p, x) :=
-    fun i p x ↦ ULift.ext (Subtype.ext (by
-      rw [coe_fiberwiseDiskInv_apply_down, coe_fiberwiseDiskInv_apply_down, he'e]))
+  have hd := fiberwiseDiskInv_comp_prodMap h e he g h' e' he' he'e
   exact fiberwiseCellReattachment_comp_fiberwiseCellAttachmentMap g α₁ α₀ χ₁ χ₀ hχ₁ hχ₀ _
     (mapsTo_fiberwiseDiskInv h e he) _ (fiberwiseReversedHomotopy_mem χ₀ χ₁ h K hK e he)
     α₁' α₀' χ₁' χ₀' hχ₁' hχ₀' _ (mapsTo_fiberwiseDiskInv h' e' he') _
     (fiberwiseReversedHomotopy_mem χ₀' χ₁' h' K' hK' e' he') hα₁ hα₀ hd fun i t p x ↦ by
       rw [fiberwiseReversedHomotopy_apply, fiberwiseReversedHomotopy_apply, hK'K, hd]
+
+/-- **The homotopy `Φ₁ ∘ E⁻¹ ≃ Φ₀` is natural in the parameter space.** For data restricted along a
+continuous map `g : P' → P`, with isometries `e' i p = e i (g p)` and homotopies
+`K' i (t, (p, x)) = K i (t, (g p, x))`, the homotopy over `P` read on the image of the map of
+fiberwise adjunction spaces over `g` is the homotopy over `P'` followed by `g × id`. -/
+theorem fiberwiseCellReattachmentInvHomotopy_fiberwiseCellAttachmentMap
+    (he'e : ∀ i p, e' i p = e i (g p))
+    (hK'K : ∀ i t p x, K' i (t, (p, x)) = K i (t, (g p, x))) (t : I)
+    (y : fiberwiseCellAttachment α₀') :
+    fiberwiseCellReattachmentInvHomotopy α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ h K hK e he
+        (t, fiberwiseCellAttachmentMap g α₀ α₀' hα₀ y) =
+      (g (fiberwiseCellReattachmentInvHomotopy α₀' α₁' χ₀' χ₁' hχ₀' hχ₁' h' K' hK' e' he'
+          (t, y)).1,
+        (fiberwiseCellReattachmentInvHomotopy α₀' α₁' χ₀' χ₁' hχ₀' hχ₁' h' K' hK' e' he'
+          (t, y)).2) := by
+  have hd := fiberwiseDiskInv_comp_prodMap h e he g h' e' he' he'e
+  exact fiberwiseCellReattachmentHomotopy_fiberwiseCellAttachmentMap g α₁ α₀ χ₁ χ₀ hχ₁ hχ₀ _
+    (mapsTo_fiberwiseDiskInv h e he) _ (fiberwiseReversedHomotopy_mem χ₀ χ₁ h K hK e he)
+    α₁' α₀' χ₁' χ₀' hχ₁' hχ₀' _ (mapsTo_fiberwiseDiskInv h' e' he') _
+    (fiberwiseReversedHomotopy_mem χ₀' χ₁' h' K' hK' e' he') hα₀ (fun i t p x ↦ by
+      rw [fiberwiseReversedHomotopy_apply, fiberwiseReversedHomotopy_apply, hK'K, hd]) t y
 
 end BaseChange
 
