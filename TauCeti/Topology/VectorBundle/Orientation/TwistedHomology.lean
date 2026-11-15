@@ -73,7 +73,7 @@ open scoped Pointwise
 universe u uB uE uι
 
 variable {B : Type uB} [TopologicalSpace B]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {E : B → Type uE} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
   [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
   {ι : Type uι} [Fintype ι] {R : Type u} [CommRing R] (hι : Fintype.card ι = finrank ℝ F)
@@ -114,6 +114,8 @@ theorem monodromyRepresentation_signLocalSystem_eq_neg_one {b : B}
     signLocalSystemFiberEquiv_neg] at h
   rw [LinearMap.neg_apply, Module.End.one_eq_id, LinearMap.id_apply, map_neg,
     monodromyRepresentation_apply, ← h, neg_neg]
+
+variable [FiniteDimensional ℝ F]
 
 /-- Transport around a loop in the orientation local system is `1` or `-1`: the lift of the loop
 to the orientation double cover ends at the orientation it starts from, or at the opposite one. -/
