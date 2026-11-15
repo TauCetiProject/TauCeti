@@ -33,8 +33,9 @@ by closed stopping-time rays `[τ, ∞)`. Consequently, `F.optional` equals the 
 closed stopping-time rays (`MeasureTheory.Filtration.optional_eq_generateFrom_le`) and equally by
 half-open stochastic intervals `[σ, τ)` (`optional_eq_generateFrom_Ico`). Every adapted càdlàg
 process in a second-countable pseudometrizable Borel space (in particular `ℝ^d` and
-finite-dimensional real vector spaces) is optional, and every strongly adapted càdlàg process in an
-arbitrary pseudometrizable space is strongly optional. No section theorem is asserted here.
+finite-dimensional real normed spaces with their Borel σ-algebra) is optional, and every strongly
+adapted càdlàg process in an arbitrary pseudometrizable space is strongly optional. No section
+theorem is asserted here.
 
 ## References
 

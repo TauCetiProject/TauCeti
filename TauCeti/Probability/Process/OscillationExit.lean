@@ -136,21 +136,27 @@ theorem oscillationApprox_eq_stoppedValue {X : ι → Ω → E} {ε : ℝ} {t : 
   have hchoose : hex.choose = n := eq_of_mem_Ico_oscillationExit hex.choose_spec ⟨hle, hlt⟩
   simp only [oscillationApprox, hex, ↓reduceDIte, hchoose]
 
+/-- Outside the half-open oscillation intervals `[τ_n(ω), τ_{n+1}(ω))`, `oscillationApprox X ε`
+falls back to `X`. -/
+theorem oscillationApprox_eq_of_not_exists {X : ι → Ω → E} {ε : ℝ} {t : ι} {ω : Ω}
+    (h : ¬ ∃ n, oscillationExit (X · ω) ε n ≤ (t : WithTop ι) ∧
+      (t : WithTop ι) < oscillationExit (X · ω) ε (n + 1)) :
+    oscillationApprox X ε t ω = X t ω := by
+  simp only [oscillationApprox, h, ↓reduceDIte]
+
 /-- At the initial time `⊥`, the oscillation step approximation agrees with `X`. -/
 @[simp]
 theorem oscillationApprox_bot (X : ι → Ω → E) (ε : ℝ) (ω : Ω) :
     oscillationApprox X ε ⊥ ω = X ⊥ ω := by
   by_cases hex : ∃ n, oscillationExit (X · ω) ε n ≤ ((⊥ : ι) : WithTop ι) ∧
       ((⊥ : ι) : WithTop ι) < oscillationExit (X · ω) ε (n + 1)
-  · have hbot : oscillationExit (X · ω) ε hex.choose = ((⊥ : ι) : WithTop ι) := by
-      cases hτ : oscillationExit (X · ω) ε hex.choose with
-      | top => exact absurd (hτ ▸ hex.choose_spec.1) (WithTop.not_top_le_coe ⊥)
-      | coe a =>
-        exact WithTop.coe_eq_coe.mpr
-          (le_bot_iff.mp (WithTop.coe_le_coe.mp (hτ ▸ hex.choose_spec.1)))
-    simp only [oscillationApprox, hex, ↓reduceDIte, stoppedValue, hbot]
-    rfl
-  · simp only [oscillationApprox, hex, ↓reduceDIte]
+  · obtain ⟨n, hle, hlt⟩ := hex
+    have hbot : oscillationExit (X · ω) ε n = ((⊥ : ι) : WithTop ι) :=
+      le_antisymm hle
+        (oscillationExit_zero (X · ω) ε ▸ oscillationExit_mono (X · ω) ε (Nat.zero_le n))
+    rw [oscillationApprox_eq_stoppedValue hle hlt]
+    simp only [stoppedValue, hbot, WithTop.untopD_coe]
+  · exact oscillationApprox_eq_of_not_exists hex
 
 end Approx
 
