@@ -100,7 +100,9 @@ Hamiltonians, it is `∂_s H_{(s, t)}`, and in particular for a continuation per
   `SymplecticForm.perturbedFDeriv_comp_add_right`) and the energy density
   (`SymplecticForm.floerEnergyDensity_congr_of_eventuallyEq`,
   `SymplecticForm.floerEnergyDensity_comp_add_right`,
-  `SymplecticForm.floerEnergyDensity_cylindrical_comp_add_right`); hence translations preserve the
+  `SymplecticForm.floerEnergyDensity_cylindrical_comp_add_right`), so that data and maps invariant
+  under a translation have invariant energy density
+  (`SymplecticForm.periodic_floerEnergyDensity`); hence translations preserve the
   energy
   (`SymplecticForm.lintegral_floerEnergyDensity_comp_add_right`).
 
@@ -428,6 +430,16 @@ theorem floerEnergyDensity_comp_add_right (ω : SymplecticForm V) (Ks Kt : ℝ �
     ω.floerEnergyDensity (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v)) (fun w ↦ u (w + v)) z =
       ω.floerEnergyDensity Ks Kt u (z + v) := by
   rw [floerEnergyDensity_def, floerEnergyDensity_def, perturbedFDeriv_comp_add_right]
+
+/-- If the perturbation and the map are invariant under the translation of the domain by `v`, then
+so is the Floer energy density. -/
+theorem periodic_floerEnergyDensity (ω : SymplecticForm V) {Ks Kt : ℝ × ℝ → V → ℝ}
+    {u : ℝ × ℝ → V} {v : ℝ × ℝ} (hKs : Function.Periodic Ks v) (hKt : Function.Periodic Kt v)
+    (hu : Function.Periodic u v) : Function.Periodic (ω.floerEnergyDensity Ks Kt u) v := fun z ↦ by
+  have hKs' : (fun w ↦ Ks (w + v)) = Ks := funext hKs
+  have hKt' : (fun w ↦ Kt (w + v)) = Kt := funext hKt
+  have hu' : (fun w ↦ u (w + v)) = u := funext hu
+  rw [← ω.floerEnergyDensity_comp_add_right, hKs', hKt', hu']
 
 /-- For the cylindrical perturbation `K = H_t dt`, the energy density of the translate
 `(s, t) ↦ u(s + c, t)` at `z` is the energy density of `u` at `z + (c, 0)`. -/
