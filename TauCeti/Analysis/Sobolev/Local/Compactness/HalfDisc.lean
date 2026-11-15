@@ -26,9 +26,10 @@ The proof reduces to the interior statement on one open set. The reflection core
 `TopologicalSpace.Opens.reflectionCore V` of an open set `V` consists of the points of `V` in the
 open upper half-plane together with the points `z` of `V` whose vertical segment
 `{z.re + c * z.im * I | -1 ≤ c ≤ 1}` lies in `V`. It is open, lies between `V ∩ {0 ≤ im}` and
-`V`, and is stable under the normal dilations below the real axis, so the order-`k + 1` higher
-reflection `TauCeti.planarReflection (higherReflectionCoeff (k + 1))` extends a map in
-`W^{k+1,p}_loc` of its closed upper half to a map in `W^{k+1,p}_loc` of the core, with every
+`V`, and is stable under the normal dilations by factors in `[-1, 1]` of points below the real
+axis, so the order-`k + 1` higher reflection `TauCeti.planarReflection (higherReflectionCoeff
+(k + 1))` extends a map in `W^{k+1,p}_loc` of its closed upper half to a map in `W^{k+1,p}_loc` of
+the core, with every
 derivative bounded by `TauCeti.higherReflectionBound (k + 1) p` times the corresponding derivative
 of the original map
 (`TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_reflectionCore_bound`). Each

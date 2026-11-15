@@ -23,8 +23,8 @@ The representative is `TauCeti.halfPlanePreciseRepresentative u`, the precise re
 the even reflection `TauCeti.planarReflection (higherReflectionCoeff 1) u` of `u` across the real
 axis. In the open upper half-plane it is the precise representative of `u` itself
 (`TauCeti.halfPlanePreciseRepresentative_of_im_pos`). The proof reflects: the reflection is in
-`W^{k,p}_loc` of the reflection core of `Ω`, an open neighbourhood of `U` in `Ω` that is stable
-under the reflection
+`W^{1,p}_loc` of the reflection core of `Ω`, an open neighbourhood of `U` in `Ω` that is stable
+under the node dilations of points below the real axis
 (`TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_reflectionCore`, in
 `TauCeti.Analysis.Sobolev.Local.Reflection`). The interior Morrey theorems of
 `TauCeti.Analysis.Sobolev.Local.Morrey` then apply to the reflection.

@@ -60,8 +60,6 @@ statement.
   `Ω ∩ {0 ≤ im}` such a map agrees on the closed upper half-plane with a map in the class of a disc
   (`TauCeti.MemWkpLoc.exists_ball_extension`). Local `Lᵖ` membership extends in the same way,
   `TauCeti.MemLpLoc.planarReflection` and `TauCeti.MemLpLoc.planarReflection_ball`.
-* `TauCeti.MemWkpLoc.exists_opens_memWkpLoc_planarReflection`: without any symmetry of `Ω`, the
-  reflection is in `W^{k,p}_loc(V)` for an open `V` with `Ω ∩ {0 ≤ im} ⊆ V ⊆ Ω`.
 * `TopologicalSpace.Opens.reflectionCore`: the reflection core of an open set `V`, an open set
   between `V ∩ {0 ≤ im}` and `V` that is stable under the node dilations below the real axis
   (`TopologicalSpace.Opens.imDilation_higherReflectionNode_mem_reflectionCore`).
