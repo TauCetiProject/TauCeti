@@ -15,9 +15,6 @@ import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Product
 Over an algebraic closure, a product of diagonalizable groups has the product character group.
 The tensor-product comparison for scalar extension therefore proves closure of finite-type
 groups of multiplicative type under products.
-
-This supplies product closure for the ReductiveGroups roadmap Layer 4 target
-"Diagonalizable groups and groups of multiplicative type".
 -/
 
 public section

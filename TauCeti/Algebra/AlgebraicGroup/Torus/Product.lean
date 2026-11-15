@@ -16,9 +16,6 @@ import TauCeti.Algebra.AlgebraicGroup.Torus.Characterization
 Products of split tori are split over any commutative base ring: the product of their character
 groups is still finitely generated and torsion-free. After extending scalars to an algebraic
 closure, this also proves that products of tori over a field are tori.
-
-This supplies product closure for the ReductiveGroups roadmap Layer 4 target
-"Tori: split and non-split".
 -/
 
 public section

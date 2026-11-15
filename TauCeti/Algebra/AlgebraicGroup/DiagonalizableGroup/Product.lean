@@ -13,9 +13,8 @@ import TauCeti.Algebra.Bialgebra.MonoidAlgebra.Product
 # Products of diagonalizable groups
 
 The coordinate Hopf algebra of `D(G × H)` is the tensor product of the coordinate Hopf
-algebras of `D(G)` and `D(H)`. This bundles the group-algebra product equivalence in the
-finite-type category, for the ReductiveGroups roadmap Layer 4 target
-"Diagonalizable groups and groups of multiplicative type".
+algebras of `D(G)` and `D(H)`. This bundles the group-algebra product equivalence
+`TauCeti.MonoidAlgebra.prodTensorBialgEquiv` in the finite-type category.
 -/
 
 public section
@@ -42,6 +41,6 @@ theorem productCoordinateRingIso_hom_single (R : Type u) [CommRing R]
     FiniteTypeCommHopfAlgCat.toBialgHom (productCoordinateRingIso R G H).hom
         (_root_.MonoidAlgebra.single (g, h) 1) =
       _root_.MonoidAlgebra.single g 1 ⊗ₜ[R] _root_.MonoidAlgebra.single h 1 :=
-  MonoidAlgebra.prodTensorBialgEquiv_single R g h
+  MonoidAlgebra.prodTensorBialgEquiv_single R (g, h) 1
 
 end TauCeti.DiagonalizableGroup
