@@ -11,6 +11,7 @@ import Mathlib.Topology.Instances.Real.Lemmas
 import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
 import TauCeti.Topology.Algebra.Group.LocallyProfinite
 import TauCeti.Topology.Algebra.Group.Perm
+import TauCeti.Topology.Algebra.MulAction.Stabilizer
 
 /-!
 # Examples of locally profinite groups and set stabilizers
@@ -44,17 +45,20 @@ example : LocallyCompactSpace ℚ_[2] ∧ TotallyDisconnectedSpace ℚ_[2] ∧
     NonarchimedeanAddGroup ℚ_[2] ∧ ¬ CompactSpace ℚ_[2] :=
   ⟨inferInstance, inferInstance, inferInstance, not_compactSpace_iff.mpr inferInstance⟩
 
-/-- In `ℚ_[2]`, `C = ℤ_[2]` and `C = 2 • ℤ_[2]` are compact open subsets whose additive translation
-stabilizers are `ℤ_[2]` and `2 • ℤ_[2]` respectively, and the scaled compact open additive
-subgroups `(2 : ℚ_[2]) ^ m • ℤ_[2]` (`m : ℤ`) form a filter basis of `𝓝 (0 : ℚ_[2])`. -/
+/-- In `ℚ_[2]`, the scaled lattices `(2 : ℚ_[2]) ^ m • ℤ_[2]` (`m : ℤ`) — in particular `ℤ_[2]`
+(`m = 0`) and `2 • ℤ_[2]` (`m = 1`) — are compact open additive subgroups equal to their own
+additive translation stabilizers, and form a filter basis of `𝓝 (0 : ℚ_[2])`. -/
 example :
-    ∃ (hC : IsCompact (PadicInt.subring 2 : Set ℚ_[2]))
-      (hO : IsOpen (PadicInt.subring 2 : Set ℚ_[2])),
-      (OpenAddSubgroup.stabilizer ℚ_[2] hC hO : Set ℚ_[2]) = (PadicInt.subring 2 : Set ℚ_[2]) ∧
-      (AddAction.stabilizer ℚ_[2] ((2 : ℚ_[2]) • (PadicInt.subring 2 : Set ℚ_[2])) : Set ℚ_[2]) =
+    ∃ (L : ℤ → OpenAddSubgroup ℚ_[2]) (hL : ∀ m, IsCompact (L m : Set ℚ_[2])),
+      (∀ m, (L m : Set ℚ_[2]) = (2 : ℚ_[2]) ^ m • (PadicInt.subring 2 : Set ℚ_[2])) ∧
+      (L 0 : Set ℚ_[2]) = (PadicInt.subring 2 : Set ℚ_[2]) ∧
+      (L 1 : Set ℚ_[2]) = (2 : ℚ_[2]) • (PadicInt.subring 2 : Set ℚ_[2]) ∧
+      (∀ m, OpenAddSubgroup.stabilizer ℚ_[2] (hL m) (L m).isOpen = L m) ∧
+      (OpenAddSubgroup.stabilizer ℚ_[2] (hL 0) (L 0).isOpen : Set ℚ_[2]) =
+        (PadicInt.subring 2 : Set ℚ_[2]) ∧
+      (OpenAddSubgroup.stabilizer ℚ_[2] (hL 1) (L 1).isOpen : Set ℚ_[2]) =
         (2 : ℚ_[2]) • (PadicInt.subring 2 : Set ℚ_[2]) ∧
-      (𝓝 (0 : ℚ_[2])).HasBasis (fun _ : ℤ ↦ True)
-        fun m : ℤ ↦ (2 : ℚ_[2]) ^ m • (PadicInt.subring 2 : Set ℚ_[2]) := by
+      (𝓝 (0 : ℚ_[2])).HasBasis (fun _ : ℤ ↦ True) fun m : ℤ ↦ (L m : Set ℚ_[2]) := by
   have hnorm (k : ℤ) : ‖(2 : ℚ_[2]) ^ k‖ = (2 : ℝ) ^ (-k) := by
     simpa using Padic.norm_p_zpow (p := 2) k
   have hball (m : ℤ) : (2 : ℚ_[2]) ^ m • (PadicInt.subring 2 : Set ℚ_[2]) =
@@ -68,22 +72,32 @@ example :
       exact mul_le_of_le_one_right (zpow_nonneg zero_le_two (-m)) hy
     · rw [norm_mul, hnorm, neg_neg]
       exact (mul_le_mul_of_nonneg_left hx (zpow_nonneg zero_le_two m)).trans_eq
-        (by rw [← zpow_add₀ two_ne_zero, add_neg_cancel, zpow_zero])
-    · rw [← mul_assoc, ← zpow_add₀ (two_ne_zero : (2 : ℚ_[2]) ≠ 0), add_neg_cancel, zpow_zero,
-        one_mul]
-  have hZ2 : (PadicInt.subring 2 : Set ℚ_[2]) = Metric.closedBall (0 : ℚ_[2]) 1 := by
-    simpa using hball 0
-  let twoZ2 : AddSubgroup ℚ_[2] :=
-    (PadicInt.subring 2).toAddSubgroup.map (AddMonoidHom.mulLeft (2 : ℚ_[2]))
-  have htwoZ2 : (twoZ2 : Set ℚ_[2]) = (2 : ℚ_[2]) • (PadicInt.subring 2 : Set ℚ_[2]) := by
-    ext x; simp [twoZ2, mem_smul_set, smul_eq_mul]
-  refine ⟨hZ2 ▸ isCompact_closedBall (0 : ℚ_[2]) 1,
-    hZ2 ▸ (IsUltrametricDist.isClopen_closedBall (0 : ℚ_[2]) one_ne_zero).isOpen, ?_, ?_, ?_⟩
-  · simpa using congrArg ((↑) : AddSubgroup ℚ_[2] → Set ℚ_[2])
-      (AddAction.stabilizer_addSubgroup (PadicInt.subring 2).toAddSubgroup)
-  · simpa [htwoZ2] using congrArg ((↑) : AddSubgroup ℚ_[2] → Set ℚ_[2])
-      (AddAction.stabilizer_addSubgroup twoZ2)
-  · simp_rw [hball]
+        (by simp; field_simp)
+    · simp; field_simp
+  let L_sub (m : ℤ) : AddSubgroup ℚ_[2] :=
+    (PadicInt.subring 2).toAddSubgroup.map (AddMonoidHom.mulLeft ((2 : ℚ_[2]) ^ m))
+  have hL_coe (m : ℤ) : (L_sub m : Set ℚ_[2]) =
+      (2 : ℚ_[2]) ^ m • (PadicInt.subring 2 : Set ℚ_[2]) := by
+    ext x
+    simp [L_sub, mem_smul_set, smul_eq_mul]
+  let L (m : ℤ) : OpenAddSubgroup ℚ_[2] :=
+    ⟨L_sub m, by
+      change IsOpen (L_sub m : Set ℚ_[2])
+      rw [hL_coe, hball]
+      exact (IsUltrametricDist.isClopen_closedBall (0 : ℚ_[2])
+        (zpow_ne_zero (-m) two_ne_zero)).isOpen⟩
+  have hL_set (m : ℤ) : (L m : Set ℚ_[2]) =
+      (2 : ℚ_[2]) ^ m • (PadicInt.subring 2 : Set ℚ_[2]) := hL_coe m
+  have hL_compact (m : ℤ) : IsCompact (L m : Set ℚ_[2]) := by
+    rw [hL_set, hball]
+    exact isCompact_closedBall (0 : ℚ_[2]) ((2 : ℝ) ^ (-m))
+  have hL0 : (L 0 : Set ℚ_[2]) = (PadicInt.subring 2 : Set ℚ_[2]) := by simp [hL_set]
+  have hL1 : (L 1 : Set ℚ_[2]) = (2 : ℚ_[2]) • (PadicInt.subring 2 : Set ℚ_[2]) := by simp [hL_set]
+  refine ⟨L, hL_compact, hL_set, hL0, hL1,
+    fun m ↦ OpenAddSubgroup.stabilizer_coe (L m) (hL_compact m), ?_, ?_, ?_⟩
+  · rw [OpenAddSubgroup.stabilizer_coe, hL0]
+  · rw [OpenAddSubgroup.stabilizer_coe, hL1]
+  · simp_rw [hL_set, hball]
     refine Metric.nhds_basis_closedBall.to_hasBasis'
       (fun ε hε ↦ ?_) (fun m _ ↦ Metric.closedBall_mem_nhds 0 (zpow_pos two_pos (-m)))
     obtain ⟨k, hk⟩ := PadicInt.exists_pow_neg_lt 2 hε
@@ -125,7 +139,7 @@ singleton forms a filter basis of `𝓝 (1 : Unit)`. -/
 example : {H : OpenSubgroup Unit | IsCompact (H : Set Unit)} = {⊤} ∧
     (𝓝 (1 : Unit)).HasBasis (fun H : OpenSubgroup Unit ↦ IsCompact (H : Set Unit))
       fun H ↦ (H : Set Unit) := by
-  refine ⟨?_, IsTopologicalGroup.nhds_one_hasBasis_isCompact_openSubgroup Unit⟩
+  refine ⟨?_, NonarchimedeanGroup.nhds_one_hasBasis_isCompact_openSubgroup Unit⟩
   ext H
   refine ⟨fun _ ↦ mem_singleton_iff.mpr ?_, ?_⟩
   · ext x

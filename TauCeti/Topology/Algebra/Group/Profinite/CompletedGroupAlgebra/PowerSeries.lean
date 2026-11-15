@@ -23,7 +23,6 @@ public import TauCeti.Topology.Algebra.Group.Profinite.CompletedGroupAlgebra.Bas
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicInt.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Procyclic
 public import TauCeti.Topology.Algebra.Module.Compact
-public import TauCeti.Topology.Algebra.Nonarchimedean.Profinite
 
 /-!
 # Power series in the completed group algebra of a pro-`p` group
