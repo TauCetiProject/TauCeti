@@ -234,7 +234,8 @@ theorem exists_pos_lt_forall_setIntegral_norm_fderiv_one_sq_ball_lt
   refine ⟨r, hr, hrb.trans_lt (half_lt_self hρ), fun u z hu hCR huK hint hE ↦ ?_⟩
   have hball : ∫ y in ball z (ρ / 2), ‖fderiv ℝ u y 1‖ ^ 2 ≤ max E 0 :=
     (setIntegral_mono_set hint (Eventually.of_forall fun _ ↦ sq_nonneg _)
-      (ball_subset_ball (half_lt_self hρ).le).eventuallyLE).trans (hE.trans (le_max_left _ _))
+      (Eventually.of_forall (ball_subset_ball (half_lt_self hρ).le))).trans
+        (hE.trans (le_max_left _ _))
   exact ((setIntegral_ball_le_rpow_of_mapsTo hg hc htame hM' hu hCR huK hint hr hrb
     (half_lt_self hρ)).trans (mul_le_mul_of_nonneg_right hball
       (Real.rpow_nonneg (by positivity) _))).trans_lt hrδ
@@ -302,7 +303,7 @@ theorem exists_tendstoLocallyUniformlyOn_subseq
     exact (hsmall (((hu (φ n)).mono hρΩ).of_le (by norm_num)) (fun y hy ↦ hCR _ y (hρΩ hy))
       ((huK (φ n)).mono_left hρΩ) ((hint (φ n)).mono_set hρΩ)
       ((setIntegral_mono_set (hint (φ n)) (Eventually.of_forall fun _ ↦ sq_nonneg _)
-        hρΩ.eventuallyLE).trans (hE _))).not_ge hn
+        (Eventually.of_forall hρΩ)).trans (hE _))).not_ge hn
   subst hZ
   simp only [Finset.coe_empty, sdiff_empty] at hbound hv hvK hlim
   exact ⟨φ, v, hφ, hbound, hv, hvK, hlim⟩
