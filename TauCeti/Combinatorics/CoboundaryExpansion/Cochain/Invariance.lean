@@ -486,11 +486,21 @@ theorem isCoboundary_comapComplete_iff [Fintype V] [Fintype W] (α : Cochain (co
   simpa only [Function.surjInv_eq hf, Function.comp_apply] using
     hβ (Function.surjInv hf u) (Function.surjInv hf v)
 
+@[simp] theorem comapComplete_id [Fintype V] (α : Cochain (complete V) G) :
+    α.comapComplete id = α := by ext u v _; rfl
+
+@[simp] theorem comapComplete_comapComplete {U : Type*} [Fintype V] [Fintype W] [Fintype U]
+    (α : Cochain (complete V) G) (f : W → V) (g : U → W) :
+    (α.comapComplete f).comapComplete g = α.comapComplete (f ∘ g) := by ext u v _; rfl
+
 /-- Transport a cochain on `complete V` along `e : V ≃ W` directly to `complete W`, avoiding casts
 along `relabel_complete`. -/
 def relabelComplete [Fintype V] [Fintype W] (α : Cochain (complete V) G) (e : V ≃ W) :
     Cochain (complete W) G :=
   α.comapComplete e.symm
+
+theorem relabelComplete_eq_comapComplete [Fintype V] [Fintype W] (α : Cochain (complete V) G)
+    (e : V ≃ W) : α.relabelComplete e = α.comapComplete e.symm := (rfl)
 
 @[simp, grind =] theorem relabelComplete_apply [Fintype V] [Fintype W] (α : Cochain (complete V) G)
     (e : V ≃ W) (u v : W) : α.relabelComplete e u v = α (e.symm u) (e.symm v) := (rfl)
@@ -597,6 +607,10 @@ theorem map_relabel {W : Type*} (φ : G →* H) (α : Cochain X G) (e : V ≃ W)
 theorem map_relabelComplete {W : Type*} [Fintype V] [Fintype W] (φ : G →* H)
     (α : Cochain (complete V) G) (e : V ≃ W) :
     (α.relabelComplete e).map φ = (α.map φ).relabelComplete e := by ext u v _; rfl
+
+theorem map_comapComplete {W : Type*} [Fintype V] [Fintype W] (φ : G →* H)
+    (α : Cochain (complete V) G) (f : W → V) :
+    (α.comapComplete f).map φ = (α.map φ).comapComplete f := by ext u v _; rfl
 
 @[simp, grind =] theorem holonomy_map (φ : G →* H) (α : Cochain X G) (u v w : V) :
     (α.map φ).holonomy u v w = φ (α.holonomy u v w) := by simp [holonomy_def]
