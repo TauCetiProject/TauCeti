@@ -360,10 +360,8 @@ instance faithful_toEffectiveQuotient :
   have hrel : ∀ (x y : EffectiveQuotient C) (f g : x ⟶ y),
       germRel (EffectiveQuotient C) f g →
         (𝟭 (EffectiveQuotient C)).map f = (𝟭 (EffectiveQuotient C)).map g := by
-    rintro ⟨x₀⟩ ⟨y₀⟩
-    change ∀ (f g : (toEffectiveQuotient C).obj x₀ ⟶ (toEffectiveQuotient C).obj y₀),
-      germRel (EffectiveQuotient C) f g →
-        (𝟭 (EffectiveQuotient C)).map f = (𝟭 (EffectiveQuotient C)).map g
+    refine (objEquiv C).surjective.forall₂.mpr fun x₀ y₀ ↦ ?_
+    rw [objEquiv_apply, objEquiv_apply]
     intro f g hfg
     obtain ⟨f₀, rfl⟩ := (toEffectiveQuotient C).map_surjective f
     obtain ⟨g₀, rfl⟩ := (toEffectiveQuotient C).map_surjective g
