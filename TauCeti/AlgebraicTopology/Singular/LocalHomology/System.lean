@@ -41,6 +41,8 @@ compatibility with composition characterizes the transport
   `Hₖ(M, M ∖ S) ⟶ Hₖ(N, N ∖ T)` induced by `j`. It is functorial, is the restriction map for `j`
   the identity, and is compatible with restriction on both sides.
 * `TauCeti.isZero_localHomology_empty`: `Hₖ(M, M) = 0`.
+* `TauCeti.isZero_localHomology_of_homotopy`: `Hₖ(M, M ∖ S) = 0` when the identity of `M`
+  deforms off `S` without moving points outside `S` into it.
 * `TauCeti.isIso_localHomologyRestriction_symm_image`: the restriction from a compact set in a
   chart, star-convex about one of its points, to that point is an isomorphism.
 * `TauCeti.localHomologyTransport`: the transport of local homology along a path class.
@@ -200,6 +202,11 @@ lemma localHomologyMap_id {S T : Set M} (h : ContinuousMap.id M ⁻¹' T ⊆ S) 
   rw [localHomologyMap, localHomologyRestriction_def]
   exact congrArg (TopPair.singularHomologyMap · R k) (TopPair.hom_ext_of_fst _ (rfl))
 
+/-- The map of local homology induced by the identity, along a single set, is the identity. -/
+lemma localHomologyMap_id_self {S : Set M} (h : ContinuousMap.id M ⁻¹' S ⊆ S) (k : ℕ) :
+    localHomologyMap R (ContinuousMap.id M) h k = 𝟙 _ :=
+  (localHomologyMap_id R h k).trans (localHomologyRestriction_refl R S k)
+
 /-- The maps of local homology are functorial. -/
 @[reassoc (attr := simp)]
 lemma localHomologyMap_comp (j' : C(N, P)) {S : Set M} {T : Set N} {W : Set P}
@@ -242,6 +249,19 @@ theorem localHomologyMap_eq_of_homotopy {j₀ j₁ : C(M, N)} (F : j₀.Homotopy
   (TopPair.ofSubsetHomotopy (g₀ := TopCat.ofHom j₀) (g₁ := TopCat.ofHom j₁)
     (B := (Sᶜ : Set (TopCat.of M))) (B' := (Tᶜ : Set (TopCat.of N))) F
     fun τ y hy ↦ hF τ y hy).congr_singularHomologyMap R k
+
+/-- **Deforming off a set kills local homology.** If a homotopy from the identity of `M` to a map
+`g` never moves a point outside `S` into `S`, and `g` misses `S` altogether, then
+`Hₖ(M, M ∖ S)` vanishes: the identity of the pair `(M, M ∖ S)` is homotopic to a map into
+`M ∖ S`. -/
+theorem isZero_localHomology_of_homotopy {S : Set M} {g : C(M, M)}
+    (F : (ContinuousMap.id M).Homotopy g) (hF : ∀ (τ : unitInterval) (y : M), y ∉ S → F (τ, y) ∉ S)
+    (hg : ∀ y, g y ∉ S) (k : ℕ) : IsZero (localHomology R S k) := by
+  have hg' : g ⁻¹' S ⊆ ∅ := fun y hy ↦ hg y hy
+  rw [IsZero.iff_id_eq_zero, ← localHomologyMap_id_self R (S := S) subset_rfl k,
+    localHomologyMap_eq_of_homotopy R F hF subset_rfl (hg'.trans (empty_subset _)) k,
+    ← localHomologyRestriction_comp_localHomologyMap R g (empty_subset _) hg' k,
+    (isZero_localHomology_empty R k).eq_zero_of_tgt (localHomologyRestriction R _ k), zero_comp]
 
 end Map
 

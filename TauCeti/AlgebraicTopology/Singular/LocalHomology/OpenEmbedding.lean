@@ -141,8 +141,7 @@ lemma localHomologyIsoOfIsOpenEmbedding_id [T1Space M] (x : M) (k : ℕ) :
     localHomologyIsoOfIsOpenEmbedding R IsOpenEmbedding.id x k = Iso.refl _ := by
   ext : 1
   rw [localHomologyIsoOfIsOpenEmbedding_hom, Iso.refl_hom]
-  exact (localHomologyMap_id R (S := {x}) (T := {x}) subset_rfl k).trans
-    (localHomologyRestriction_refl R {x} k)
+  exact localHomologyMap_id_self R (S := {x}) subset_rfl k
 
 /-- The isomorphisms of local homology induced by open embeddings are functorial. -/
 @[simp]

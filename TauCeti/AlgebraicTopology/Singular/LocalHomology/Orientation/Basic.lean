@@ -93,14 +93,15 @@ lemma LocalOrientation.coe_neg {M : Type w} [TopologicalSpace M] {x : M} {d : �
       (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d) = -z.val :=
   (rfl)
 
-/-- An isomorphism of integral local homology groups preserves the generator condition. -/
+/-- An isomorphism of integral local homology groups, possibly in different degrees, preserves the
+generator condition. -/
 theorem IsLocalOrientation.map {M N : Type w} [TopologicalSpace M] [TopologicalSpace N]
-    {x : M} {y : N} {d : ℕ}
+    {x : M} {y : N} {d d' : ℕ}
     {z : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d}
     (hz : IsLocalOrientation x d z)
     (e : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d ≅
-      localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({y} : Set N) d) :
-    IsLocalOrientation y d (e.hom z) := by
+      localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({y} : Set N) d') :
+    IsLocalOrientation y d' (e.hom z) := by
   intro a
   obtain ⟨c, hc⟩ := hz (e.inv a)
   refine ⟨c, ?_⟩
