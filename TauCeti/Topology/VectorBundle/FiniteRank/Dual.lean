@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.VectorBundle.FiniteRank.Biproduct
+public import TauCeti.Topology.VectorBundle.FiniteRank.Pullback
 public import TauCeti.Analysis.Normed.Operator.PiTranspose
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 public import Mathlib.CategoryTheory.Preadditive.Opposite
@@ -23,7 +23,8 @@ A bundle map `f : A ⟶ D` has the transposed bundle map `dualMap f : D.dual ⟶
 fibre maps are the transposes of those of `f`. This gives the contravariant additive functor
 `dualFunctor`. Transposition is an involution, so the double dual is naturally isomorphic to
 the identity (`dualDualNatIso`), with identity fibre maps, and `dualFunctor` is an
-anti-equivalence. The dual of a trivial core is the trivial core of the same rank, and the
+anti-equivalence. The dual of a trivial core is the trivial core of the same rank, dualization
+commutes strictly with pullback (`pullback_dual`, `dualFunctor_comp_pullbackFunctor`), and the
 transposed Whitney-sum inclusions and projections identify the dual of a Whitney sum with the
 Whitney sum of the duals (`dualWhitneySumIso`).
 
@@ -403,5 +404,47 @@ theorem dualFiberEquiv_fiberMap_dualMap (f : A ⟶ D) (x : B) (w : Fin D.rank �
   exact ContinuousLinearMap.piRing_symm_piTranspose _ _
 
 end MathlibDual
+
+section Pullback
+
+variable {X : Type*} [TopologicalSpace X]
+
+/-- Pulling back commutes strictly with dualization of finite-rank cores. -/
+@[simp] theorem pullback_dual (A : FiniteRankBundleCore 𝕜 B) (f : C(X, B)) :
+    A.dual.pullback f = (A.pullback f).dual := (rfl)
+
+/-- Pulling back commutes with transposition of bundle maps. -/
+@[simp] theorem pullbackMap_dualMap (a : A ⟶ D) (f : C(X, B)) :
+    pullbackMap (dualMap a) f = dualMap (pullbackMap a f) :=
+  hom_ext fun x => (fiberMap_pullbackMap _ _ _).trans <|
+    (fiberMap_dualMap a (f x)).trans <|
+      (congrArg ContinuousLinearMap.piTranspose (fiberMap_pullbackMap a f x)).symm.trans
+        (fiberMap_dualMap (pullbackMap a f) x).symm
+
+/-- Dualization commutes strictly with pullback as contravariant functors. -/
+theorem dualFunctor_comp_pullbackFunctor (f : C(X, B)) :
+    dualFunctor 𝕜 B ⋙ pullbackFunctor f = (pullbackFunctor f).op ⋙ dualFunctor 𝕜 X :=
+  Functor.hext (fun A => pullback_dual A.unop f)
+    fun _ _ a => heq_of_eq (pullbackMap_dualMap a.unop f)
+
+/-- Pulling back preserves the double-dual identification. -/
+@[simp] theorem pullbackMap_dualDualHom (A : FiniteRankBundleCore 𝕜 B) (f : C(X, B)) :
+    pullbackMap (dualDualHom A) f = dualDualHom (A.pullback f) :=
+  hom_ext fun x => (fiberMap_pullbackMap _ _ _).trans <|
+    (fiberMap_dualDualHom A (f x)).trans (fiberMap_dualDualHom (A.pullback f) x).symm
+
+/-- Pulling back preserves the inverse double-dual identification. -/
+@[simp] theorem pullbackMap_dualDualInv (A : FiniteRankBundleCore 𝕜 B) (f : C(X, B)) :
+    pullbackMap (dualDualInv A) f = dualDualInv (A.pullback f) :=
+  hom_ext fun x => (fiberMap_pullbackMap _ _ _).trans <|
+    (fiberMap_dualDualInv A (f x)).trans (fiberMap_dualDualInv (A.pullback f) x).symm
+
+/-- Reading a dual coordinate vector as a functional over `x` in `A.pullback f` evaluates the
+same pairing as over `f x` in `A`. -/
+@[simp] theorem dualFiberEquiv_pullback_apply (A : FiniteRankBundleCore 𝕜 B) (f : C(X, B))
+    (x : X) (w v : Fin A.rank → 𝕜) :
+    dualFiberEquiv (A.pullback f) x w v = dualFiberEquiv A (f x) w v := (rfl)
+
+end Pullback
 
 end TauCeti.FiniteRankBundleCore

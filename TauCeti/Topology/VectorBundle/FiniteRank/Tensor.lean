@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.VectorBundle.FiniteRank.Basic
+public import TauCeti.Topology.VectorBundle.FiniteRank.Pullback
 public import TauCeti.Analysis.Normed.Operator.Kronecker
 
 /-!
@@ -20,7 +20,8 @@ exactly the cocycle condition, so this is again a Mathlib `VectorBundleCore`.
 Two bundle morphisms have the Kronecker product of their chart operators as tensor product,
 a continuous fibrewise linear map whose fibre maps are the Kronecker products of the fibre maps
 (`FiniteRankBundleCore.fiberMap_tensorHom`). The construction is a bifunctor: it preserves
-identities and composition, is additive in each variable, and preserves isomorphisms.
+identities and composition, is additive in each variable, preserves isomorphisms, and commutes
+strictly with pullback (`pullback_tensor`, `pullbackMap_tensorHom`).
 The base is arbitrary, and the scalar field need not be complete.
 
 The construction uses Mathlib's coordinate cores and the coordinate morphisms
@@ -192,5 +193,24 @@ commutes with forming the tensor product. -/
 /-- The tensor product of two bundle isomorphisms is an isomorphism. -/
 instance (f : A ⟶ A') (g : D ⟶ D') [IsIso f] [IsIso g] : IsIso (tensorHom f g) :=
   ⟨tensorHom (inv f) (inv g), by simp, by simp⟩
+
+section Pullback
+
+variable {X : Type*} [TopologicalSpace X]
+
+/-- Pulling back commutes strictly with tensor products of finite-rank cores. -/
+@[simp] theorem pullback_tensor (A D : FiniteRankBundleCore 𝕜 B) (f : C(X, B)) :
+    (tensor A D).pullback f = tensor (A.pullback f) (D.pullback f) := (rfl)
+
+/-- Pulling back commutes with tensor products of bundle maps. -/
+@[simp] theorem pullbackMap_tensorHom (a : A ⟶ A') (b : D ⟶ D') (f : C(X, B)) :
+    pullbackMap (tensorHom a b) f = tensorHom (pullbackMap a f) (pullbackMap b f) :=
+  hom_ext fun x => (fiberMap_pullbackMap _ _ _).trans <|
+    (fiberMap_tensorHom a b (f x)).trans <|
+      (congrArg₂ ContinuousLinearMap.kronecker
+        (fiberMap_pullbackMap a f x) (fiberMap_pullbackMap b f x)).symm.trans
+        (fiberMap_tensorHom (pullbackMap a f) (pullbackMap b f) x).symm
+
+end Pullback
 
 end TauCeti.FiniteRankBundleCore
