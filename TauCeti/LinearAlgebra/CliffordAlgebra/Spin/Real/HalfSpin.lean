@@ -113,26 +113,15 @@ private theorem quaternionAlgHom_map_smul {S : Type*} [AddCommGroup S] [Module �
 private theorem trace_quaternionAlgHom {S : Type*} [AddCommGroup S] [Module ℂ S]
     [FiniteDimensional ℂ S] (ψ : ℍ[ℝ] →ₐ[ℝ] Module.End ℂ S) (q : ℍ[ℝ]) :
     LinearMap.trace ℂ S (ψ q) = (q.re : ℂ) * finrank ℂ S := by
-  have hcomm (x y : ℍ[ℝ]) : LinearMap.trace ℂ S (ψ (x * y - y * x)) = 0 := by
-    rw [map_sub, map_mul, map_mul, map_sub, LinearMap.trace_mul_comm, sub_self]
-  have hi : LinearMap.trace ℂ S (ψ ⟨0, 1, 0, 0⟩) = 0 := by
-    have hq : (⟨0, 1, 0, 0⟩ : ℍ[ℝ]) =
-        (2⁻¹ : ℝ) • ((⟨0, 0, 1, 0⟩ : ℍ[ℝ]) * ⟨0, 0, 0, 1⟩ -
-          (⟨0, 0, 0, 1⟩ : ℍ[ℝ]) * ⟨0, 0, 1, 0⟩) := by ext <;> norm_num
-    rw [hq, quaternionAlgHom_map_smul, map_smul, hcomm, smul_zero]
-  have hj : LinearMap.trace ℂ S (ψ ⟨0, 0, 1, 0⟩) = 0 := by
-    have hq : (⟨0, 0, 1, 0⟩ : ℍ[ℝ]) =
-        (2⁻¹ : ℝ) • ((⟨0, 0, 0, 1⟩ : ℍ[ℝ]) * ⟨0, 1, 0, 0⟩ -
-          (⟨0, 1, 0, 0⟩ : ℍ[ℝ]) * ⟨0, 0, 0, 1⟩) := by ext <;> norm_num
-    rw [hq, quaternionAlgHom_map_smul, map_smul, hcomm, smul_zero]
-  have hk : LinearMap.trace ℂ S (ψ ⟨0, 0, 0, 1⟩) = 0 := by
-    have hq : (⟨0, 0, 0, 1⟩ : ℍ[ℝ]) =
-        (2⁻¹ : ℝ) • ((⟨0, 1, 0, 0⟩ : ℍ[ℝ]) * ⟨0, 0, 1, 0⟩ -
-          (⟨0, 0, 1, 0⟩ : ℍ[ℝ]) * ⟨0, 1, 0, 0⟩) := by ext <;> norm_num
-    rw [hq, quaternionAlgHom_map_smul, map_smul, hcomm, smul_zero]
+  have h0 {a b c : ℍ[ℝ]} (h : c = (2⁻¹ : ℝ) • (a * b - b * a)) :
+      LinearMap.trace ℂ S (ψ c) = 0 := by
+    rw [h, quaternionAlgHom_map_smul, map_smul, map_sub, map_mul, map_mul, map_sub,
+      LinearMap.trace_mul_comm, sub_self, smul_zero]
+  have hi := h0 (a := ⟨0, 0, 1, 0⟩) (b := ⟨0, 0, 0, 1⟩) (c := ⟨0, 1, 0, 0⟩) (by ext <;> norm_num)
+  have hj := h0 (a := ⟨0, 0, 0, 1⟩) (b := ⟨0, 1, 0, 0⟩) (c := ⟨0, 0, 1, 0⟩) (by ext <;> norm_num)
+  have hk := h0 (a := ⟨0, 1, 0, 0⟩) (b := ⟨0, 0, 1, 0⟩) (c := ⟨0, 0, 0, 1⟩) (by ext <;> norm_num)
   have hdecomp : q = algebraMap ℝ ℍ[ℝ] q.re + q.imI • (⟨0, 1, 0, 0⟩ : ℍ[ℝ]) +
-      q.imJ • (⟨0, 0, 1, 0⟩ : ℍ[ℝ]) + q.imK • (⟨0, 0, 0, 1⟩ : ℍ[ℝ]) := by
-    ext <;> simp
+      q.imJ • (⟨0, 0, 1, 0⟩ : ℍ[ℝ]) + q.imK • (⟨0, 0, 0, 1⟩ : ℍ[ℝ]) := by ext <;> simp
   conv_lhs => rw [hdecomp]
   simp only [map_add, Algebra.algebraMap_eq_smul_one, quaternionAlgHom_map_smul]
   simp [hi, hj, hk]
@@ -144,34 +133,23 @@ private theorem exists_unit_eigenvector_quaternionAlgHom_i
   let A : Module.End ℂ S := (-Complex.I) • ψ ⟨0, 1, 0, 0⟩
   have hA_inv (x : S) : A (A x) = x := by
     have hmul : (⟨0, 1, 0, 0⟩ : ℍ[ℝ]) * ⟨0, 1, 0, 0⟩ = -1 := by ext <;> simp
-    have hsq : A * A = 1 := by
-      simp only [A, smul_mul_smul_comm, ← map_mul, hmul, map_neg, map_one]
-      have hI : (-Complex.I) * (-Complex.I) = (-1 : ℂ) := by simp
-      rw [hI, smul_neg, neg_one_smul, neg_neg]
+    have hsq : A * A = 1 := by simp [A, ← map_mul, hmul, smul_smul]
     exact LinearMap.congr_fun hsq x
-  have hcompl : IsCompl (eigenspace A 1) (eigenspace A (-1)) :=
-    TauCeti.isCompl_eigenspace_one_neg_one (two_ne_zero : (2 : ℂ) ≠ 0).isUnit hA_inv
-  have hne : eigenspace A 1 ≠ ⊥ := by
-    intro hbot
-    have htop : eigenspace A (-1) = ⊤ := by
-      simpa [hbot] using hcompl.sup_eq_top
-    have hA_neg : A = -1 := by
-      ext x
-      have hx : x ∈ eigenspace A (-1) := htop ▸ Submodule.mem_top
-      simpa [mem_eigenspace_iff] using hx
-    have htr₀ : LinearMap.trace ℂ S A = 0 := by
-      simp [A, trace_quaternionAlgHom]
+  have hcompl := TauCeti.isCompl_eigenspace_one_neg_one (two_ne_zero : (2 : ℂ) ≠ 0).isUnit hA_inv
+  have hne : eigenspace A 1 ≠ ⊥ := fun hbot ↦ by
+    have htop : eigenspace A (-1) = ⊤ := by simpa [hbot] using hcompl.sup_eq_top
+    have hA_neg : A = -1 := LinearMap.ext fun x ↦ by
+      simpa [mem_eigenspace_iff] using (htop ▸ Submodule.mem_top : x ∈ eigenspace A (-1))
+    have htr₀ : LinearMap.trace ℂ S A = 0 := by simp [A, trace_quaternionAlgHom]
     rw [hA_neg, map_neg, LinearMap.trace_one, hS] at htr₀
     norm_num at htr₀
   have : Nontrivial (eigenspace A 1) := Submodule.nontrivial_iff_ne_bot.mpr hne
   let := NormedSpace.restrictScalars ℝ ℂ (eigenspace A 1)
   obtain ⟨u, hu⟩ := exists_norm_eq (eigenspace A 1) zero_le_one
-  refine ⟨u, by simpa using hu, ?_⟩
   have huA : (-Complex.I) • ψ ⟨0, 1, 0, 0⟩ u = (u : S) := by
     simpa [A, mem_eigenspace_iff] using u.2
-  calc
-    ψ ⟨0, 1, 0, 0⟩ u = Complex.I • ((-Complex.I) • ψ ⟨0, 1, 0, 0⟩ u) := by
-      rw [smul_smul]; simp
+  refine ⟨u, by simpa using hu, ?_⟩
+  calc ψ ⟨0, 1, 0, 0⟩ u = Complex.I • ((-Complex.I) • ψ ⟨0, 1, 0, 0⟩ u) := by simp [smul_smul]
     _ = Complex.I • (u : S) := by rw [huA]
 
 private theorem orthonormal_pair_of_quaternionAlgHom
@@ -184,28 +162,23 @@ private theorem orthonormal_pair_of_quaternionAlgHom
   set e₁ : S := -(ψ ⟨0, 0, 1, 0⟩ e₀)
   have he₁_j : ψ ⟨0, 0, 1, 0⟩ e₁ = e₀ := by
     have hjj : (⟨0, 0, 1, 0⟩ : ℍ[ℝ]) * ⟨0, 0, 1, 0⟩ = -1 := by ext <;> simp
-    simp only [e₁, map_neg, ← mul_apply_eq_comp, ← map_mul, hjj, map_one, LinearMap.neg_apply,
-      one_apply_eq_self, neg_neg]
+    simp [e₁, ← mul_apply_eq_comp, ← map_mul, hjj]
   have he₁_i : ψ ⟨0, 1, 0, 0⟩ e₁ = -Complex.I • e₁ := by
     have hij : (⟨0, 1, 0, 0⟩ : ℍ[ℝ]) * ⟨0, 0, 1, 0⟩ =
         -((⟨0, 0, 1, 0⟩ : ℍ[ℝ]) * ⟨0, 1, 0, 0⟩) := by ext <;> simp
-    calc
-      ψ ⟨0, 1, 0, 0⟩ e₁ = -((ψ ⟨0, 1, 0, 0⟩ * ψ ⟨0, 0, 1, 0⟩) e₀) := by
-        simp [e₁, mul_apply_eq_comp]
+    calc ψ ⟨0, 1, 0, 0⟩ e₁ = -((ψ ⟨0, 1, 0, 0⟩ * ψ ⟨0, 0, 1, 0⟩) e₀) := by
+          simp [e₁, mul_apply_eq_comp]
       _ = (ψ ⟨0, 0, 1, 0⟩ * ψ ⟨0, 1, 0, 0⟩) e₀ := by
-        rw [← map_mul, hij, map_neg, LinearMap.neg_apply, neg_neg, map_mul]
-      _ = -Complex.I • e₁ := by
-        rw [mul_apply_eq_comp, he₀_i, map_smul]
-        simp [e₁]
+          rw [← map_mul, hij, map_neg, LinearMap.neg_apply, neg_neg, map_mul]
+      _ = -Complex.I • e₁ := by simp [mul_apply_eq_comp, he₀_i, e₁]
   have hadj_i : LinearMap.adjoint (ψ ⟨0, 1, 0, 0⟩) = -ψ ⟨0, 1, 0, 0⟩ := by
     rw [hstar, show star (⟨0, 1, 0, 0⟩ : ℍ[ℝ]) = -⟨0, 1, 0, 0⟩ by ext <;> simp, map_neg]
   have hadj_j : LinearMap.adjoint (ψ ⟨0, 0, 1, 0⟩) = -ψ ⟨0, 0, 1, 0⟩ := by
     rw [hstar, show star (⟨0, 0, 1, 0⟩ : ℍ[ℝ]) = -⟨0, 0, 1, 0⟩ by ext <;> simp, map_neg]
   have horth : ⟪e₀, e₁⟫_ℂ = 0 := by
     have h₁ : Complex.I * ⟪e₀, e₁⟫_ℂ = -Complex.I * ⟪e₀, e₁⟫_ℂ := calc
-      Complex.I * ⟪e₀, e₁⟫_ℂ = ⟪-Complex.I • e₀, e₁⟫_ℂ := by simp [inner_smul_left]
-      _ = ⟪LinearMap.adjoint (ψ ⟨0, 1, 0, 0⟩) e₀, e₁⟫_ℂ := by
-        rw [hadj_i, LinearMap.neg_apply, he₀_i, neg_smul]
+      Complex.I * ⟪e₀, e₁⟫_ℂ = ⟪LinearMap.adjoint (ψ ⟨0, 1, 0, 0⟩) e₀, e₁⟫_ℂ := by
+        rw [hadj_i, LinearMap.neg_apply, he₀_i]; simp [inner_smul_left]
       _ = -Complex.I * ⟪e₀, e₁⟫_ℂ := by
         rw [LinearMap.adjoint_inner_left, he₁_i, inner_smul_right]
     have h₂ : (2 * Complex.I) * ⟪e₀, e₁⟫_ℂ = 0 := by linear_combination h₁
@@ -213,15 +186,12 @@ private theorem orthonormal_pair_of_quaternionAlgHom
   have he₁_norm : ‖e₁‖ = 1 := by
     refine (sq_eq_sq₀ (norm_nonneg _) zero_le_one).mp ?_
     rw [← RCLike.ofReal_inj (K := ℂ), RCLike.ofReal_pow, ← inner_self_eq_norm_sq_to_K]
-    calc
-      ⟪e₁, e₁⟫_ℂ = ⟪ψ ⟨0, 0, 1, 0⟩ e₀, ψ ⟨0, 0, 1, 0⟩ e₀⟫_ℂ := by simp [e₁]
+    calc ⟪e₁, e₁⟫_ℂ = ⟪ψ ⟨0, 0, 1, 0⟩ e₀, ψ ⟨0, 0, 1, 0⟩ e₀⟫_ℂ := by simp [e₁]
       _ = ⟪e₀, e₀⟫_ℂ := by
         rw [← LinearMap.adjoint_inner_right, hadj_j, LinearMap.neg_apply,
           show ψ ⟨0, 0, 1, 0⟩ (ψ ⟨0, 0, 1, 0⟩ e₀) = -e₀ by
-            rw [← neg_neg (ψ ⟨0, 0, 1, 0⟩ e₀), map_neg, he₁_j],
-          neg_neg]
-      _ = (((1 : ℝ) ^ 2 : ℝ) : ℂ) := by
-        rw [inner_self_eq_norm_sq_to_K, he₀_norm]; simp
+            rw [← neg_neg (ψ ⟨0, 0, 1, 0⟩ e₀), map_neg, he₁_j], neg_neg]
+      _ = (((1 : ℝ) ^ 2 : ℝ) : ℂ) := by simp [inner_self_eq_norm_sq_to_K, he₀_norm]
   refine ⟨orthonormal_iff_ite.mpr fun a b ↦ ?_, he₁_i, he₁_j⟩
   fin_cases a <;> fin_cases b
   · simp [inner_self_eq_norm_sq_to_K, he₀_norm]
@@ -240,35 +210,27 @@ private theorem exists_orthonormalBasis_toMatrix_eq_toComplexMatrix
   let c : OrthonormalBasis (Fin 2) ℂ S :=
     (basisOfOrthonormalOfCardEqFinrank hon (by simp [hS])).toOrthonormalBasis
       (by rwa [coe_basisOfOrthonormalOfCardEqFinrank])
-  have hc₀ : c 0 = e₀ := by
+  have hc (i : Fin 2) : c i = ![e₀, -(ψ ⟨0, 0, 1, 0⟩ e₀)] i := by
     rw [← c.coe_toBasis, Module.Basis.toBasis_toOrthonormalBasis,
       coe_basisOfOrthonormalOfCardEqFinrank]
-    rfl
-  have hc₁ : c 1 = -(ψ ⟨0, 0, 1, 0⟩ e₀) := by
-    rw [← c.coe_toBasis, Module.Basis.toBasis_toOrthonormalBasis,
-      coe_basisOfOrthonormalOfCardEqFinrank]
-    rfl
-  have h_i₀ : ψ ⟨0, 1, 0, 0⟩ (c 0) = Complex.I • c 0 := by rw [hc₀, he₀_i]
-  have h_i₁ : ψ ⟨0, 1, 0, 0⟩ (c 1) = (-Complex.I) • c 1 := by rw [hc₁, he₁_i, neg_smul]
-  have h_j₀ : ψ ⟨0, 0, 1, 0⟩ (c 0) = -(c 1) := by rw [hc₀, hc₁, neg_neg]
-  have h_j₁ : ψ ⟨0, 0, 1, 0⟩ (c 1) = c 0 := by rw [hc₁, he₁_j, hc₀]
+  have h_i₀ : ψ ⟨0, 1, 0, 0⟩ (c 0) = Complex.I • c 0 := by rw [hc 0]; exact he₀_i
+  have h_i₁ : ψ ⟨0, 1, 0, 0⟩ (c 1) = (-Complex.I) • c 1 := by simpa [hc 1, neg_smul] using he₁_i
+  have h_j₀ : ψ ⟨0, 0, 1, 0⟩ (c 0) = -(c 1) := by rw [hc 0, hc 1]; simp
+  have h_j₁ : ψ ⟨0, 0, 1, 0⟩ (c 1) = c 0 := by rw [hc 1, hc 0]; exact he₁_j
   let Φ : ℍ[ℝ] →ₐ[ℝ] Matrix (Fin 2) (Fin 2) ℂ :=
     ((LinearMap.toMatrixAlgEquiv c.toBasis).toAlgHom.restrictScalars ℝ).comp ψ
   have hΦ_i : Φ ⟨0, 1, 0, 0⟩ = Quaternion.toComplexMatrix ⟨0, 1, 0, 0⟩ := by
-    ext a b
-    fin_cases a <;> fin_cases b <;>
+    ext a b; fin_cases a <;> fin_cases b <;>
       simp [Φ, LinearMap.toMatrixAlgEquiv_apply, h_i₀, h_i₁, Quaternion.toComplexMatrix_apply]
   have hΦ_j : Φ ⟨0, 0, 1, 0⟩ = Quaternion.toComplexMatrix ⟨0, 0, 1, 0⟩ := by
-    ext a b
-    fin_cases a <;> fin_cases b <;>
+    ext a b; fin_cases a <;> fin_cases b <;>
       simp [Φ, LinearMap.toMatrixAlgEquiv_apply, h_j₀, h_j₁, Quaternion.toComplexMatrix_apply]
   have hΦ_k : Φ ⟨0, 0, 0, 1⟩ = Quaternion.toComplexMatrix ⟨0, 0, 0, 1⟩ := by
-    have hk : (⟨0, 0, 0, 1⟩ : ℍ[ℝ]) = (⟨0, 1, 0, 0⟩ : ℍ[ℝ]) * ⟨0, 0, 1, 0⟩ := by ext <;> simp
-    rw [hk, map_mul, map_mul, hΦ_i, hΦ_j]
+    rw [show (⟨0, 0, 0, 1⟩ : ℍ[ℝ]) = ⟨0, 1, 0, 0⟩ * ⟨0, 0, 1, 0⟩ by ext <;> simp,
+      map_mul, map_mul, hΦ_i, hΦ_j]
   refine ⟨c, fun q ↦ ?_⟩
   have hdecomp : q = algebraMap ℝ ℍ[ℝ] q.re + q.imI • (⟨0, 1, 0, 0⟩ : ℍ[ℝ]) +
-      q.imJ • (⟨0, 0, 1, 0⟩ : ℍ[ℝ]) + q.imK • (⟨0, 0, 0, 1⟩ : ℍ[ℝ]) := by
-    ext <;> simp
+      q.imJ • (⟨0, 0, 1, 0⟩ : ℍ[ℝ]) + q.imK • (⟨0, 0, 0, 1⟩ : ℍ[ℝ]) := by ext <;> simp
   change Φ q = Quaternion.toComplexMatrix.toAlgHom q
   conv_lhs => rw [hdecomp]
   conv_rhs => rw [hdecomp]
@@ -511,6 +473,15 @@ section Hermitian
 variable {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℂ W] [FiniteDimensional ℂ W]
   {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W}
 
+private theorem reverseEven_symm_quaternionProd (p q : ℍ[ℝ]) :
+    reverseEven (realCliffordForm 4 0)
+        (realCliffordFourZeroEvenEquivQuaternionProd.symm (p, q)) =
+      realCliffordFourZeroEvenEquivQuaternionProd.symm (star p, star q) :=
+  realCliffordFourZeroEvenEquivQuaternionProd.injective <| by
+    rw [realCliffordFourZeroEvenEquivQuaternionProd_reverseEven,
+      AlgEquiv.apply_symm_apply, AlgEquiv.apply_symm_apply]
+    exact Prod.ext rfl rfl
+
 include hQ in
 /-- On a Hermitian Clifford module, `positiveQuaternionAction` carries quaternion conjugation to
 the Hilbert-space adjoint. -/
@@ -519,15 +490,9 @@ theorem adjoint_positiveQuaternionAction
     (hb : b.toBasis.orientation = o) (q : ℍ[ℝ]) :
     LinearMap.adjoint (positiveQuaternionAction o hQ b ρ hb q) =
       positiveQuaternionAction o hQ b ρ hb (star q) := by
-  have hsymm : reverseEven (realCliffordForm 4 0)
-      (realCliffordFourZeroEvenEquivQuaternionProd.symm (0, q)) =
-      realCliffordFourZeroEvenEquivQuaternionProd.symm (0, star q) := by
-    apply realCliffordFourZeroEvenEquivQuaternionProd.injective
-    rw [realCliffordFourZeroEvenEquivQuaternionProd_reverseEven,
-      AlgEquiv.apply_symm_apply, AlgEquiv.apply_symm_apply]
-    exact Prod.ext (by simp) rfl
   rw [positiveQuaternionAction_apply, adjoint_evenHalfSpinAction o hρ,
-    ← realEvenCliffordEquiv_reverseEven hQ b, hsymm, ← positiveQuaternionAction_apply]
+    ← realEvenCliffordEquiv_reverseEven hQ b, reverseEven_symm_quaternionProd, star_zero,
+    ← positiveQuaternionAction_apply]
 
 include hQ in
 /-- On a Hermitian Clifford module, `negativeQuaternionAction` carries quaternion conjugation to
@@ -537,15 +502,9 @@ theorem adjoint_negativeQuaternionAction
     (hb : b.toBasis.orientation = o) (q : ℍ[ℝ]) :
     LinearMap.adjoint (negativeQuaternionAction o hQ b ρ hb q) =
       negativeQuaternionAction o hQ b ρ hb (star q) := by
-  have hsymm : reverseEven (realCliffordForm 4 0)
-      (realCliffordFourZeroEvenEquivQuaternionProd.symm (q, 0)) =
-      realCliffordFourZeroEvenEquivQuaternionProd.symm (star q, 0) := by
-    apply realCliffordFourZeroEvenEquivQuaternionProd.injective
-    rw [realCliffordFourZeroEvenEquivQuaternionProd_reverseEven,
-      AlgEquiv.apply_symm_apply, AlgEquiv.apply_symm_apply]
-    exact Prod.ext rfl (by simp)
   rw [negativeQuaternionAction_apply, adjoint_evenHalfSpinAction o hρ,
-    ← realEvenCliffordEquiv_reverseEven hQ b, hsymm, ← negativeQuaternionAction_apply]
+    ← realEvenCliffordEquiv_reverseEven hQ b, reverseEven_symm_quaternionProd, star_zero,
+    ← negativeQuaternionAction_apply]
 
 include hQ in
 /-- **Orthonormal half-spinor basis for `W⁺`**: on a Hermitian Clifford module of half-spin rank

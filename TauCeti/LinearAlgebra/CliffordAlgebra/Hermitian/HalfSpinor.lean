@@ -172,24 +172,15 @@ private theorem commute_complexifyAction_of_forall_ι [AddCommGroup W] [Module �
     (hA : ∀ v, A ∘ₗ ρ (ι Q v) = ρ (ι Q v) ∘ₗ A) (a : CliffordAlgebra (Q.baseChange ℂ)) :
     Commute A (complexifyAction ρ a) := by
   induction a using CliffordAlgebra.induction with
-  | algebraMap z =>
-    rw [AlgHom.commutes]
-    exact (Algebra.commutes z A).symm
+  | algebraMap z => rw [AlgHom.commutes]; exact (Algebra.commutes z A).symm
   | ι w =>
     induction w using TensorProduct.inductionOn with
     | tmul z v =>
       rw [complexifyAction_ι_tmul]
-      exact Commute.smul_right
-        ((mul_eq_comp A _).trans ((hA v).trans (mul_eq_comp _ A).symm)) z
-    | add x y hx hy =>
-      rw [map_add, map_add]
-      exact hx.add_right hy
-  | mul x y hx hy =>
-    rw [map_mul]
-    exact hx.mul_right hy
-  | add x y hx hy =>
-    rw [map_add]
-    exact hx.add_right hy
+      exact Commute.smul_right ((mul_eq_comp A _).trans ((hA v).trans (mul_eq_comp _ A).symm)) z
+    | add x y hx hy => simpa only [map_add] using hx.add_right hy
+  | mul x y hx hy => simpa only [map_mul] using hx.mul_right hy
+  | add x y hx hy => simpa only [map_add] using hx.add_right hy
 
 /-- **Uniqueness of unitary Clifford intertwiners up to `Circle`.** If `complexifyAction ρ` is
 surjective onto `Module.End ℂ W` on a nontrivial complex inner product space `W`, any two unitary
@@ -211,39 +202,27 @@ theorem existsUnique_circle_smul_intertwiner [NormedAddCommGroup W] [InnerProduc
   have hcomm_ι (v : V) : L.toLinearEquiv.toLinearMap ∘ₗ ρ (ι Q v) =
       ρ (ι Q v) ∘ₗ L.toLinearEquiv.toLinearMap := by
     ext w
-    apply U₁.injective
+    refine U₁.injective ?_
     change U₁ (L (ρ (ι Q v) w)) = U₁ (ρ (ι Q v) (L w))
-    have h₁ : U₁ (ρ (ι Q v) (L w)) = ρ' (ι Q' (f v)) (U₁ (L w)) :=
-      LinearMap.congr_fun (hU₁ v) (L w)
-    have h₂ : U₂ (ρ (ι Q v) w) = ρ' (ι Q' (f v)) (U₂ w) :=
-      LinearMap.congr_fun (hU₂ v) w
-    rw [hU₁L, h₂, h₁, hU₁L]
-  have hcenter : L.toLinearEquiv.toLinearMap ∈ Subalgebra.center ℂ (Module.End ℂ W) := by
-    rw [Subalgebra.mem_center_iff]
-    intro B
-    obtain ⟨a, rfl⟩ := hsurj B
-    exact (commute_complexifyAction_of_forall_ι hcomm_ι a).symm
+    rw [hU₁L, show U₂ _ = _ from LinearMap.congr_fun (hU₂ v) w,
+      show U₁ _ = _ from LinearMap.congr_fun (hU₁ v) (L w)]
+    exact congrArg (ρ' (ι Q' (f v))) (hU₁L w).symm
+  have hcenter : L.toLinearEquiv.toLinearMap ∈ Subalgebra.center ℂ (Module.End ℂ W) :=
+    Subalgebra.mem_center_iff.mpr fun B ↦ by
+      obtain ⟨a, rfl⟩ := hsurj B
+      exact (commute_complexifyAction_of_forall_ι hcomm_ι a).symm
   obtain ⟨c, hc⟩ := (Algebra.IsCentral.mem_center_iff ℂ).mp hcenter
   have hLw (w : W) : L w = c • w := by
-    have hcw := LinearMap.congr_fun hc w
-    rwa [Algebra.algebraMap_eq_smul_one, LinearMap.smul_apply, one_apply_eq_self] at hcw
+    simpa [Algebra.algebraMap_eq_smul_one] using LinearMap.congr_fun hc w
   let := NormedSpace.restrictScalars ℝ ℂ W
   obtain ⟨u, hu⟩ := exists_norm_eq W zero_le_one
-  have hc_norm : ‖c‖ = 1 := by
-    have hnorm := L.norm_map u
-    rwa [hLw, norm_smul, hu, mul_one] at hnorm
-  refine ⟨⟨c, mem_sphere_zero_iff_norm.mpr hc_norm⟩, fun w ↦ ?_, fun z hz ↦ ?_⟩
-  · calc
-      U₂ w = U₁ (L w) := (hU₁L w).symm
-      _ = c • U₁ w := by rw [hLw, map_smul]
-  · ext
-    have hzu : ((z : ℂ) - c) • U₁ u = 0 := by
-      rw [sub_smul, ← hz u, ← map_smul, ← hLw u, hU₁L, sub_self]
-    have hu₁ : U₁ u ≠ 0 := by
-      intro h0
-      have hnorm₁ := U₁.norm_map u
-      simp [h0, hu] at hnorm₁
-    exact sub_eq_zero.mp ((smul_eq_zero.mp hzu).resolve_right hu₁)
+  have hc_norm : ‖c‖ = 1 := by simpa [hLw, norm_smul, hu] using L.norm_map u
+  refine ⟨⟨c, mem_sphere_zero_iff_norm.mpr hc_norm⟩,
+    fun w ↦ by rw [← hU₁L, hLw, map_smul], fun z hz ↦ Subtype.ext ?_⟩
+  have hzu : ((z : ℂ) - c) • U₁ u = 0 := by
+    rw [sub_smul, ← hz u, ← map_smul, ← hLw u, hU₁L, sub_self]
+  have hu₁ : U₁ u ≠ 0 := fun h0 ↦ by simpa [h0, hu] using U₁.norm_map u
+  exact sub_eq_zero.mp ((smul_eq_zero.mp hzu).resolve_right hu₁)
 
 /-- Rescaling a linear equivalence that scales the inner product by a positive real constant `r`
 yields a linear isometry equivalence. -/
@@ -255,26 +234,20 @@ private def rescaleLinearIsometryEquiv [NormedAddCommGroup W] [InnerProductSpace
   map_add' x y := by simp [smul_add]
   map_smul' c x := by simp [smul_smul, mul_comm]
   left_inv x := by
-    have hne : (Real.sqrt r : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr (Real.sqrt_ne_zero'.mpr hr)
     dsimp only
     rw [T.symm.map_smul, T.symm_apply_apply, smul_smul, Complex.ofReal_inv,
-      mul_inv_cancel₀ hne, one_smul]
+      mul_inv_cancel₀ (Complex.ofReal_ne_zero.mpr (Real.sqrt_ne_zero'.mpr hr)), one_smul]
   right_inv y := by
-    have hne : (Real.sqrt r : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr (Real.sqrt_ne_zero'.mpr hr)
     dsimp only
     rw [T.map_smul, T.apply_symm_apply, smul_smul, Complex.ofReal_inv,
-      inv_mul_cancel₀ hne, one_smul]
+      inv_mul_cancel₀ (Complex.ofReal_ne_zero.mpr (Real.sqrt_ne_zero'.mpr hr)), one_smul]
   norm_map' x := by
     refine (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp ?_
-    have hinner := hT x x
-    rw [inner_self_eq_norm_sq_to_K, inner_self_eq_norm_sq_to_K] at hinner
-    have hreal : ‖T x‖ ^ 2 = r * ‖x‖ ^ 2 := Complex.ofReal_injective (by simpa using hinner)
-    calc
-      ‖(((Real.sqrt r)⁻¹ : ℝ) : ℂ) • T x‖ ^ 2 = ((Real.sqrt r)⁻¹) ^ 2 * ‖T x‖ ^ 2 := by
-        rw [norm_smul, Complex.norm_real, Real.norm_eq_abs, mul_pow, sq_abs]
-      _ = ((Real.sqrt r)⁻¹) ^ 2 * (r * ‖x‖ ^ 2) := by rw [hreal]
-      _ = ‖x‖ ^ 2 := by
-        rw [inv_pow, Real.sq_sqrt hr.le, inv_mul_cancel_left₀ hr.ne']
+    have hreal : ‖T x‖ ^ 2 = r * ‖x‖ ^ 2 := Complex.ofReal_injective <| by
+      simpa [inner_self_eq_norm_sq_to_K] using hT x x
+    change ‖(((Real.sqrt r)⁻¹ : ℝ) : ℂ) • T x‖ ^ 2 = ‖x‖ ^ 2
+    rw [norm_smul, Complex.norm_real, Real.norm_eq_abs, mul_pow, sq_abs, hreal, inv_pow,
+      Real.sq_sqrt hr.le, inv_mul_cancel_left₀ hr.ne']
 
 /-- **Existence of unitary Clifford intertwiners.** Let `V` and `V'` be real inner product spaces
 of even dimension `2 * m` with negative norm-square forms `Q` and `Q'`, and let `f : V ≃ₗᵢ[ℝ] V'`
@@ -351,14 +324,6 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (fin
 /-- The dimension `Fact` makes the oriented four-space finite-dimensional. -/
 local instance : FiniteDimensional ℝ V := .of_fact_finrank_eq_succ 3
 
-/-- `positiveHalfSpinors o ρ` is the `+1`-eigenspace of `ρ (chirality Q o)`. -/
-theorem positiveHalfSpinors_eq_eigenspace {K W : Type*} [CommRing K] [Algebra ℝ K]
-    [AddCommGroup W] [Module ℝ W] [Module K W] [IsScalarTower ℝ K W]
-    (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End K W) :
-    positiveHalfSpinors o ρ = eigenspace (ρ (chirality Q o)) 1 := by
-  ext ψ
-  rw [mem_positiveHalfSpinors, mem_eigenspace_iff, one_smul]
-
 /-- **The chirality decomposition on a real Clifford module**: when `Q v = -‖v‖²`, every complex
 Clifford module `W` splits as the direct sum of `positiveHalfSpinors o ρ` and the `-1`-eigenspace
 of `Γ`. -/
@@ -416,17 +381,14 @@ theorem coe_adjoint_halfSpinCliffordMul_apply
   let A : eigenspace (ρ (chirality Q o)) (-ε) →ₗ[ℂ] eigenspace (ρ (chirality Q o)) ε :=
     { toFun η := ⟨-ρ (ι Q v) η, Submodule.neg_mem _
         (by simpa only [neg_neg] using map_ι_apply_mem_eigenspace_chirality_neg o η.2 v)⟩
-      map_add' η₁ η₂ := Subtype.ext (by simp only [Submodule.coe_add, map_add, neg_add])
-      map_smul' c η := Subtype.ext (by simp only [SetLike.val_smul, map_smul, smul_neg,
+      map_add' _ _ := Subtype.ext (by simp only [Submodule.coe_add, map_add, neg_add])
+      map_smul' _ _ := Subtype.ext (by simp only [SetLike.val_smul, map_smul, smul_neg,
         RingHom.id_apply]) }
-  have hA : LinearMap.adjoint (halfSpinCliffordMul o ρ ε v) = A := by
-    symm
-    refine (LinearMap.eq_adjoint_iff A (halfSpinCliffordMul o ρ ε v)).mpr fun η ψ ↦ ?_
+  rw [← (LinearMap.eq_adjoint_iff A (halfSpinCliffordMul o ρ ε v)).mpr fun η ψ ↦ by
     rw [Submodule.coe_inner, Submodule.coe_inner, coe_halfSpinCliffordMul_apply_apply]
     change ⟪-ρ (ι Q v) (η : W), (ψ : W)⟫_ℂ = ⟪(η : W), ρ (ι Q v) (ψ : W)⟫_ℂ
     rw [inner_neg_left, ← LinearMap.adjoint_inner_right, hρ, LinearMap.neg_apply, inner_neg_right,
-      neg_neg]
-  rw [hA]
+      neg_neg]]
   rfl
 
 /-- **Norm law for chiral Clifford multiplication**: for `Q v = -‖v‖²` and skew-adjoint generators,
