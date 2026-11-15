@@ -38,8 +38,9 @@ at infinitely many finite places (in sharp contrast to
   local-to-global isotropy in dimension `≤ 2` away from a finite set of finite places.
 * `QuadraticForm.not_anisotropic_iff_isLocallyIsotropic_of_finrank_le_two`: Hasse–Minkowski for
   isotropy in dimension `≤ 2`.
-* `QuadraticForm.infinite_setOf_anisotropic_atFinitePlace_iff_of_finrank_le_two`: a quadratic form
-  of dimension `≤ 2` is anisotropic over `K` iff it is anisotropic at infinitely many finite places.
+* `QuadraticForm.infinite_setOfPred_anisotropic_atFinitePlace_iff_of_finrank_le_two`: a quadratic
+  form of dimension `≤ 2` is anisotropic over `K` iff it is anisotropic at infinitely many finite
+  places.
 
 ## References
 
@@ -100,7 +101,7 @@ theorem not_anisotropic_iff_isLocallyIsotropic_of_finrank_le_two
 
 /-- A quadratic form of dimension `≤ 2` over a number field is anisotropic at infinitely many finite
 places if and only if it is anisotropic over `K`. -/
-theorem infinite_setOf_anisotropic_atFinitePlace_iff_of_finrank_le_two
+theorem infinite_setOfPred_anisotropic_atFinitePlace_iff_of_finrank_le_two
     (Q : _root_.QuadraticForm K V) (hV : Module.finrank K V ≤ 2) :
     {v : HeightOneSpectrum (𝓞 K) | (Q.atFinitePlace v).Anisotropic}.Infinite ↔ Q.Anisotropic := by
   refine ⟨fun hinf ↦ by_contra fun hiso ↦ ?_, fun hani hfin ↦ ?_⟩

@@ -34,7 +34,8 @@ and `FinitePlace.exists_apply_eq_one_forall_mul_mem_range` clears denominators o
 
 The file also records that a number field has infinitely many finite places: contraction
 `HeightOneSpectrum (𝓞 K) → HeightOneSpectrum ℤ` is surjective and `HeightOneSpectrum ℤ` corresponds
-to the rational primes. Recording `Nonempty` and `Infinite` instances lets local-global arguments
+to the rational primes. Recording `Infinite` instances for `HeightOneSpectrum (𝓞 K)` (for any
+characteristic-zero field `K`) and `FinitePlace K`—and hence `Nonempty`—lets local-global arguments
 pick a finite place with `Classical.arbitrary` (or `Finset.exists_notMem` outside a finite
 exceptional set) whenever an invariant that is the same at every place must be read off at one
 place.
@@ -76,11 +77,6 @@ open IsDedekindDomain NumberField
 namespace TauCeti
 
 variable {K : Type*} [Field K]
-
-/-- A number field has a finite place: its ring of integers is not a field. -/
-instance [NumberField K] : Nonempty (HeightOneSpectrum (𝓞 K)) :=
-  ⟨(HeightOneSpectrum.equivMaximalSpectrum (RingOfIntegers.not_isField K)).symm
-    (Classical.choice (inferInstance : Nonempty (MaximalSpectrum (𝓞 K))))⟩
 
 /-- The ring of integers of a field of characteristic zero has infinitely many height-one primes:
 every rational prime lies under one. -/

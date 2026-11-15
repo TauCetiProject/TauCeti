@@ -41,12 +41,12 @@ universe:
   with a finite exceptional set `S` of finite places.
 * `Units.isSquare_iff_forall_isSquare_unitAtFinitePlace`: a unit of `K` is a square iff its
   localization at every finite place is a square.
-* `Units.infinite_setOf_not_isSquare_unitAtFinitePlace_iff`: a unit of `K` is a nonsquare iff it
+* `Units.infinite_setOfPred_not_isSquare_unitAtFinitePlace_iff`: a unit of `K` is a nonsquare iff it
   is a nonsquare at infinitely many finite places.
 * `TauCeti.isSquare_of_isSquare_algebraMap_adicCompletion_of_notMem`,
   `TauCeti.isSquare_iff_forall_isSquare_algebraMap_adicCompletion`,
-  `TauCeti.infinite_setOf_not_isSquare_algebraMap_adicCompletion_iff`: the corresponding statements
-  for arbitrary elements of `K`.
+  `TauCeti.infinite_setOfPred_not_isSquare_algebraMap_adicCompletion_iff`: the corresponding
+  statements for arbitrary elements of `K`.
 * `TauCeti.eq_zero_of_squareClassMap_adicCompletion_eq_zero_of_notMem`,
   `TauCeti.eq_of_squareClassMap_adicCompletion_eq_of_notMem`,
   `TauCeti.forall_squareClassMap_adicCompletion_eq_zero_iff`,
@@ -150,7 +150,7 @@ theorem isSquare_iff_forall_isSquare_unitAtFinitePlace (a : Kˣ) :
 /-- A unit of a number field fails to be a square at infinitely many finite places if and only if
 it is not a global square. -/
 @[simp]
-theorem infinite_setOf_not_isSquare_unitAtFinitePlace_iff (a : Kˣ) :
+theorem infinite_setOfPred_not_isSquare_unitAtFinitePlace_iff (a : Kˣ) :
     {v : HeightOneSpectrum (𝓞 K) | ¬IsSquare (v.unitAtFinitePlace a)}.Infinite ↔ ¬IsSquare a := by
   refine ⟨fun hinf ha ↦ ?_, fun ha hfin ↦ ha ?_⟩
   · obtain ⟨v, hv⟩ := hinf.nonempty
@@ -190,7 +190,7 @@ theorem isSquare_iff_forall_isSquare_algebraMap_adicCompletion (x : K) :
 /-- An element of a number field fails to be a square in infinitely many finite completions if and
 only if it is not a square in `K`. -/
 @[simp]
-theorem infinite_setOf_not_isSquare_algebraMap_adicCompletion_iff (x : K) :
+theorem infinite_setOfPred_not_isSquare_algebraMap_adicCompletion_iff (x : K) :
     {v : HeightOneSpectrum (𝓞 K) | ¬IsSquare (algebraMap K (v.adicCompletion K) x)}.Infinite ↔
       ¬IsSquare x := by
   refine ⟨fun hinf hx ↦ ?_, fun hx hfin ↦ hx ?_⟩
