@@ -51,6 +51,14 @@ theorem coordinateSwapCLE_symm : coordinateSwapCLE.symm = coordinateSwapCLE := b
   ext z
   rfl
 
+/-- Coordinate interchange sends `1` to `I`. -/
+theorem coordinateSwapCLE_one : coordinateSwapCLE 1 = I :=
+  Complex.ext (by simp) (by simp)
+
+/-- Coordinate interchange sends `I` to `1`. -/
+theorem coordinateSwapCLE_I : coordinateSwapCLE I = 1 :=
+  Complex.ext (by simp) (by simp)
+
 /-- Interchanging the coordinates twice returns the original point. -/
 theorem coordinateSwapCLE_coordinateSwapCLE (z : ℂ) :
     coordinateSwapCLE (coordinateSwapCLE z) = z := (rfl)

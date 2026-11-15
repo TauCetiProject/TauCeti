@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Manifold
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import Mathlib.Geometry.Manifold.ContMDiff.Constructions
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Periodic
 
 /-!
 # The curvature and the energy identity of the perturbation on a PSS plane
@@ -429,10 +429,8 @@ private theorem intervalIntegral_realChart {X : Type*} {H : ℝ → X → ℝ} (
   have hper : Periodic (fun t : ℝ ↦ H t (u (Complex.equivRealProdCLM
       (p.cylindricalEndLift (↑c + ↑t * Complex.I))))) 1 := fun t ↦ by
     simp only [p.periodic_cylindricalEndLift c t, hH t]
-  have h := hper.intervalIntegral_add_eq (-1 / 2) 0
-  norm_num at h
   simp only [realChart_apply, Complex.equivRealProdCLM_symm_apply]
-  convert h using 1 <;> norm_num
+  exact hper.intervalIntegral_neg_div_two_eq
 
 /-- In end coordinates, the curvature of the perturbation along `u`, times the Jacobian of the end
 lift, is `ε β'(ε s - 1) H(t)`. -/
