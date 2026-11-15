@@ -231,7 +231,7 @@ def normalizedCharG2MFRaise (t : ℕ) (htuv : t * (u * v) ∣ N) :
 
 /-- The raised normalized series is the degeneracy image of the normalized series at its
 natural level. -/
-theorem normalizedCharG2MFRaise_eq_levelRaise (t : ℕ) (htuv : t * (u * v) ∣ N) :
+theorem normalizedCharG2MFRaise_eq_levelRaise {t : ℕ} (htuv : t * (u * v) ∣ N) :
     haveI : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
     haveI : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
     normalizedCharG2MFRaise ψ φ t htuv =
@@ -337,6 +337,8 @@ theorem qExpansion_normalizedCharG2MFRaise_coeff_self_of_gaussSum_ne_zero [NeZer
   exact qExpansion_normalizedCharG2MF_coeff_one_of_gaussSum_ne_zero ψ φ dvd_rfl h hpar hg
 
 /-- The coefficient of `E₂^{ψ,φ,t}` at `t` is `1`. -/
+-- Rewrite before simplification turns the q-expansion into `expand t (...)`.
+@[simp↓]
 theorem qExpansion_normalizedCharG2MFRaise_coeff_self (htuv : t * (u * v) ∣ N)
     (h : ψ ≠ 1 ∨ φ ≠ 1) (hpar : ψ (-1) * φ (-1) = 1) (hφ : φ.IsPrimitive) :
     (qExpansion 1 (normalizedCharG2MFRaise ψ φ t htuv)).coeff t = 1 :=

@@ -133,19 +133,14 @@ theorem inner_dyadicProj_eq {𝕜 : Type*} [RCLike 𝕜] (N : ℕ)
     ⟪dyadicProj 𝕜 2 N f, g⟫_𝕜 = ⟪f, dyadicProj 𝕜 2 N g⟫_𝕜 := by
   have : ENNReal.HolderConjugate 2 2 := by simpa using Real.HolderConjugate.two_two.ennrealOfReal
   let conjL : 𝕜 →L[ℝ] 𝕜 := RCLike.conjCLE.toContinuousLinearMap
-  have h1 : ⟪dyadicProj 𝕜 2 N f, g⟫_𝕜 =
-      ∫ x, (conjL.compLpL 2 volume (dyadicProj 𝕜 2 N f)) x * g x := by
+  have hinner (u v : Lp 𝕜 2 (volume : Measure I)) :
+      ⟪u, v⟫_𝕜 = ∫ x, (conjL.compLpL 2 volume u) x * v x := by
     rw [L2.inner_def]
     refine integral_congr_ae ?_
-    filter_upwards [conjL.coeFn_compLpL (dyadicProj 𝕜 2 N f)] with x hx
-    simp [conjL, hx, RCLike.inner_apply, mul_comm]
-  have h2 : ⟪f, dyadicProj 𝕜 2 N g⟫_𝕜 =
-      ∫ x, (conjL.compLpL 2 volume f) x * dyadicProj 𝕜 2 N g x := by
-    rw [L2.inner_def]
-    refine integral_congr_ae ?_
-    filter_upwards [conjL.coeFn_compLpL f] with x hx
-    simp [conjL, hx, RCLike.inner_apply, mul_comm]
-  rw [h1, h2, compLpL_dyadicProj]
+    filter_upwards [conjL.coeFn_compLpL u] with x hx
+    rw [hx]
+    simp [conjL, RCLike.inner_apply, mul_comm]
+  rw [hinner, hinner, compLpL_dyadicProj]
   exact integral_dyadicProj_mul N (conjL.compLpL 2 volume f) g
 
 /-- **Orthogonality of dyadic martingale differences in `L²`.** -/
