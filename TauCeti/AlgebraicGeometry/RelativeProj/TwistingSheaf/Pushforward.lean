@@ -142,7 +142,7 @@ private theorem affineHom_naturality {U V : X.AffineZariskiSite} (i : V ⟶ U)
   refine ((A.relativeProjTwistingSheafGlueData n).transition_app_apply i _ _).trans ?_
   refine (congrArg _ (Proj.twistingSheafMap_app_toTwistingSheaf
     (A.restrictGradedSectionsGradedHom ((toOpensFunctor X).map i))
-    (A.irrelevant_le_map_restrictGradedSectionsGradedHom_toOpensFunctor i) _ h _)).trans ?_
+    (A.irrelevant_le_map_restrictGradedSections_toOpensFunctor i) _ h _)).trans ?_
   exact (Proj.res_toTwistingSheaf h _ _).trans (congrArg _ (Subtype.ext
     ((A.restrictGradedSectionsGradedHom_apply _ _).trans
       (A.restrictGradedSections_of ((toOpensFunctor X).map i) j a))))

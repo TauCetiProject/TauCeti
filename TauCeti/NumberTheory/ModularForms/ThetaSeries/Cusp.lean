@@ -49,8 +49,9 @@ divisible by `8`.
   `q`-expansion of `Θ_L` is `1`; `ZLattice.IsIntegral.qExpansion_two_thetaSeries_coeff_zero` is
   the same statement in `exp (π i τ)` for integral `L`.
 * `ZLattice.thetaCoset_eq_ofReal_of_re_eq_zero`, `ZLattice.re_thetaCoset_pos`,
-  `ZLattice.one_le_re_thetaSeries`: on the imaginary axis `θ_{γ+L}` is real and positive, and
-  `Θ_L ≥ 1`.
+  `ZLattice.one_le_re_thetaSeries`, `ZLattice.thetaSeries_ne_zero`,
+  `ZLattice.ne_zero_of_coe_eq_thetaSeries`: on the imaginary axis `θ_{γ+L}` is real and positive
+  and `Θ_L ≥ 1`, so `Θ_L` and any bundled form with underlying function `Θ_L` are nonzero.
 
 ## References
 
@@ -262,6 +263,18 @@ theorem one_le_re_thetaSeries {τ : ℍ} (hτ : τ.re = 0) : 1 ≤ (thetaSeries 
 /-- The theta series of a discrete subgroup does not vanish on the imaginary axis. -/
 theorem thetaSeries_ne_zero_of_re_eq_zero {τ : ℍ} (hτ : τ.re = 0) : thetaSeries L τ ≠ 0 :=
   fun h => (one_le_re_thetaSeries L hτ).not_gt (by rw [h, zero_re]; exact one_pos)
+
+/-- The theta series of a discrete subgroup is not the zero function: its real part on the
+imaginary axis is at least `1`. -/
+@[simp]
+theorem thetaSeries_ne_zero : thetaSeries L ≠ 0 := fun h =>
+  thetaSeries_ne_zero_of_re_eq_zero L UpperHalfPlane.I_re <|
+    (congrFun h UpperHalfPlane.I).trans (Pi.zero_apply _)
+
+/-- Any bundled function on `ℍ` whose underlying function is `Θ_L` is nonzero. -/
+theorem ne_zero_of_coe_eq_thetaSeries {F : Type*} [FunLike F ℍ ℂ] [Zero F] [IsZeroApply F]
+    {f : F} (hf : ⇑f = thetaSeries L) : f ≠ 0 := fun h =>
+  thetaSeries_ne_zero L <| hf.symm.trans <| (congrArg DFunLike.coe h).trans FunLike.coe_zero
 
 end ImaginaryAxis
 

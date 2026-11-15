@@ -64,6 +64,9 @@ Hecke pair `(Γ₁(N), Δ₁(N))` from the same source file is not ported here.
 * `diamondOp_coe_cuspForm`, `coe_mem_modFormCharSpace_iff`: the diamond operators, and hence the
   character spaces, commute with the coercion `S_k(Γ₁(N)) → M_k(Γ₁(N))`; a cusp form is a
   `χ`-form exactly when the modular form underlying it is.
+* `diamondOpNat_apply_of_mem_modFormCharSpace`, `diamondOpCuspNat_apply_of_mem_cuspFormCharSpace`:
+  natural-number diamond operators act by `χ(n)` when `n` is coprime to `N` and vanish otherwise on
+  `M_k(Γ₁(N), χ)` and `S_k(Γ₁(N), χ)`.
 * `eq_of_mem_modFormCharSpace_of_ne_zero`, `eq_of_mem_cuspFormCharSpace_of_ne_zero`: a nonzero
   modular or cusp form determines its nebentypus.
 * `slash_mapGL_eq_self_of_comp_of_mem_modFormCharSpace`,
@@ -459,6 +462,28 @@ lemma diamondOpCuspNat_of_coprime (k : ℤ) {n : ℕ} (h : Nat.Coprime n N) :
 lemma diamondOpCuspNat_of_not_coprime (k : ℤ) {n : ℕ} (h : ¬ Nat.Coprime n N) :
     diamondOpCuspNat (N := N) k n = 0 :=
   dite_eq_right_of_eq_false (by simpa using h)
+
+/-- Natural-number diamond operators act by `χ(n)` when `n` is coprime to `N` and vanish
+otherwise on elements of `M_k(Γ₁(N), χ)`. Not `@[simp]`: `χ` occurs only in the hypothesis and
+the right-hand side, so `simp` cannot infer it. -/
+theorem diamondOpNat_apply_of_mem_modFormCharSpace (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ) (n : ℕ)
+    {f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ modFormCharSpace k χ) :
+    diamondOpNat k n f =
+      if h : Nat.Coprime n N then (↑(χ (ZMod.unitOfCoprime n h)) : ℂ) • f else 0 := by
+  split_ifs with h
+  · rw [diamondOpNat_of_coprime k h, diamondOp_apply_of_mem_modFormCharSpace k χ _ hf]
+  · rw [diamondOpNat_of_not_coprime k h, LinearMap.zero_apply]
+
+/-- Natural-number diamond operators act by `χ(n)` when `n` is coprime to `N` and vanish
+otherwise on elements of `S_k(Γ₁(N), χ)`. Not `@[simp]`: `χ` occurs only in the hypothesis and
+the right-hand side, so `simp` cannot infer it. -/
+theorem diamondOpCuspNat_apply_of_mem_cuspFormCharSpace (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ) (n : ℕ)
+    {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ cuspFormCharSpace k χ) :
+    diamondOpCuspNat k n f =
+      if h : Nat.Coprime n N then (↑(χ (ZMod.unitOfCoprime n h)) : ℂ) • f else 0 := by
+  split_ifs with h
+  · rw [diamondOpCuspNat_of_coprime k h, diamondOpCusp_apply_of_mem_cuspFormCharSpace k χ _ hf]
+  · rw [diamondOpCuspNat_of_not_coprime k h, LinearMap.zero_apply]
 
 /-- Slashing by a `Γ₀(N)` representative with lower-right unit `n` is the zero-extended
 diamond operator `⟨n⟩` on modular forms. -/

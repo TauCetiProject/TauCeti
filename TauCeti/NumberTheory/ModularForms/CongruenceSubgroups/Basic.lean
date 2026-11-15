@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 Chris Birkbeck. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Chris Birkbeck
+Authors: Chris Birkbeck, The Tau Ceti contributors
 -/
 module
 
@@ -80,12 +80,14 @@ infrastructure independent of the diamond operators.
   right coset of `Γ₁(N)` exactly when their lower rows agree modulo `N`.
 * `CongruenceSubgroup.mem_Gamma1_of_mul_eq`: a matrix of `SL(2, ℤ)` carrying an integral matrix
   that is `!![1, *; 0, *]` modulo `N` to another such matrix lies in `Γ₁(N)`.
-* `CongruenceSubgroup.isUnit_intCast_apply_zero_zero_of_mem_Gamma0`: a `Γ₀(N)` matrix has
-  unit upper-left entry modulo `N`.
+* `CongruenceSubgroup.isUnit_intCast_apply_zero_zero_of_mem_Gamma0`,
+  `CongruenceSubgroup.isUnit_intCast_apply_one_one_of_mem_Gamma0`, and
+  `CongruenceSubgroup.isCoprime_apply_one_one_of_mem_Gamma0`: a `Γ₀(N)` matrix has unit diagonal
+  entries modulo `N`, and in particular lower-right entry coprime to `N`.
 * `CongruenceSubgroup.intCast_apply_zero_zero_mul_apply_one_one_of_mem_Gamma0`: modulo its
   level, a `Γ₀(N)` matrix has mutually inverse diagonal entries.
-* `CongruenceSubgroup.intCast_apply_zero_zero_add_natCast_mul_apply_one_zero_of_mem_Gamma0` and
-  `CongruenceSubgroup.isUnit_intCast_apply_zero_zero_add_natCast_mul_apply_one_zero_of_mem_Gamma0`:
+* `CongruenceSubgroup.intCast_add_natCast_mul_of_mem_Gamma0` and
+  `CongruenceSubgroup.isUnit_intCast_add_natCast_mul_of_mem_Gamma0`:
   shearing the first column by a natural-number multiple of the lower-left entry changes nothing
   modulo the level, so the sheared entry is a unit too.
 * `CongruenceSubgroup.mem_Gamma1_iff_toHomUnits_eq_one`: inside `Γ₀(N)`, `Γ₁(N)` is the kernel of
@@ -346,22 +348,37 @@ theorem isUnit_intCast_apply_zero_zero_of_mem_Gamma0 {N : ℕ} {σ : SL(2, ℤ)}
   rw [h10, mul_zero, sub_zero] at hcast
   exact IsUnit.of_mul_eq_one _ hcast
 
+/-- The lower-right entry of a `Γ₀(N)` matrix is a unit modulo `N`: the determinant is one
+and the lower-left entry vanishes modulo `N`, so `ad ≡ 1`. -/
+theorem isUnit_intCast_apply_one_one_of_mem_Gamma0 {N : ℕ} {σ : SL(2, ℤ)} (hσ : σ ∈ Gamma0 N) :
+    IsUnit ((σ 1 1 : ℤ) : ZMod N) :=
+  IsUnit.of_mul_eq_one ((σ 0 0 : ℤ) : ZMod N)
+    (by rw [mul_comm]; exact intCast_apply_zero_zero_mul_apply_one_one_of_mem_Gamma0 hσ)
+
+/-- The lower-right entry of a `Γ₀(N)` matrix is coprime to `N`: the determinant identity
+`ad - bc = 1` combined with `(N : ℤ) ∣ c` gives a Bézout relation for `d` and `N`. -/
+theorem isCoprime_apply_one_one_of_mem_Gamma0 {N : ℕ} {σ : SL(2, ℤ)} (hσ : σ ∈ Gamma0 N) :
+    IsCoprime (σ 1 1) (N : ℤ) := by
+  obtain ⟨q, hq⟩ := mem_Gamma0_iff_dvd.mp hσ
+  exact ⟨σ 0 0, -(σ 0 1 * q),
+    by linear_combination Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one σ + σ 0 1 * hq⟩
+
 /-- **The first column of a `Γ₀(N)` matrix collapses under a natural-number shear**:
 `a + j c ≡ a` modulo `N` for every `j : ℕ`, because `c ≡ 0`. Stated with the casts already
 distributed, since that — not the cast of the sum — is the `simp` normal form. -/
-@[simp] theorem intCast_apply_zero_zero_add_natCast_mul_apply_one_zero_of_mem_Gamma0 {N : ℕ}
+@[simp] theorem intCast_add_natCast_mul_of_mem_Gamma0 {N : ℕ}
     {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) (j : ℕ) :
     ((γ 0 0 : ℤ) : ZMod N) + (j : ZMod N) * ((γ 1 0 : ℤ) : ZMod N) = ((γ 0 0 : ℤ) : ZMod N) := by
   rw [Gamma0_mem.mp hγ, mul_zero, add_zero]
 
 /-- **The sheared entry is still a unit**, for every `j : ℕ`: it *is* the upper-left entry modulo
 `N`, which `isUnit_intCast_apply_zero_zero_of_mem_Gamma0` knows to be a unit. -/
-theorem isUnit_intCast_apply_zero_zero_add_natCast_mul_apply_one_zero_of_mem_Gamma0 {N : ℕ}
+theorem isUnit_intCast_add_natCast_mul_of_mem_Gamma0 {N : ℕ}
     {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) (j : ℕ) :
     IsUnit (((γ 0 0 + (j : ℕ) * γ 1 0 : ℤ) : ZMod N)) := by
   have h : ((γ 0 0 + (j : ℕ) * γ 1 0 : ℤ) : ZMod N) = ((γ 0 0 : ℤ) : ZMod N) := by
     push_cast
-    exact intCast_apply_zero_zero_add_natCast_mul_apply_one_zero_of_mem_Gamma0 hγ j
+    exact intCast_add_natCast_mul_of_mem_Gamma0 hγ j
   rw [h]
   exact isUnit_intCast_apply_zero_zero_of_mem_Gamma0 hγ
 
@@ -701,11 +718,7 @@ private lemma Gamma0_prime_index_surj :
   · refine ⟨⟨p, p.lt_succ_self⟩, ?_⟩
     rw [QuotientGroup.eq, Gamma0_mem]
     simpa [Gamma0Rep] using h
-  · have hunit : IsUnit ((σ.1 1 0 : ℤ) : ZMod p) := by
-      have : Fact (Nat.Prime p) := ⟨hp⟩
-      obtain ⟨j, hj⟩ : ∃ j : ZMod p, j * ((σ.1 1 0 : ℤ) : ZMod p) = 1 :=
-        Finite.surjective_of_injective (mul_left_injective₀ h) 1
-      exact IsUnit.of_mul_eq_one _ (by rwa [mul_comm] at hj)
+  · have hunit : IsUnit ((σ.1 1 0 : ℤ) : ZMod p) := Ne.isUnit h
     obtain ⟨j₀, hj₀⟩ := ZMod.exists_dvd_sub_val_mul p (σ.1 0 0) (σ.1 1 0) hunit
     refine ⟨⟨j₀.val, Nat.lt_succ_of_lt (ZMod.val_lt j₀)⟩, ?_⟩
     rw [QuotientGroup.eq, mem_Gamma0_iff_dvd]
