@@ -106,13 +106,13 @@ private theorem enorm_le_lintegral_enorm_deriv
     (hg : ∀ t, HasDerivAt g (g' t) t) (hg' : Continuous g') (hga : g a = 0)
     {t : ℝ} (ht : t ∈ Icc a b) : ‖g t‖ₑ ≤ ∫⁻ s in Ioc a b, ‖g' s‖ₑ := by
   -- Completeness would only be needed for the fundamental theorem of calculus, and
-  -- `enorm_sub_le_lintegral_deriv_of_contDiffOn_Icc` passes to the completion itself.
+  -- `eNorm_sub_le_lintegral_deriv_of_contDiffOn_Icc` passes to the completion itself.
   have hderiv : deriv g = g' := funext fun x => (hg x).deriv
   have hC1 : ContDiff ℝ 1 g :=
     contDiff_one_iff_deriv.2 ⟨fun x => (hg x).differentiableAt, hderiv ▸ hg'⟩
   calc ‖g t‖ₑ = ‖g t - g a‖ₑ := by rw [hga, sub_zero]
     _ ≤ ∫⁻ s in Icc a t, ‖deriv g s‖ₑ :=
-        enorm_sub_le_lintegral_deriv_of_contDiffOn_Icc hC1.contDiffOn ht.1
+        eNorm_sub_le_lintegral_deriv_of_contDiffOn_Icc hC1.contDiffOn ht.1
     _ = ∫⁻ s in Ioc a t, ‖g' s‖ₑ := by rw [hderiv, setLIntegral_congr Ioc_ae_eq_Icc]
     _ ≤ ∫⁻ s in Ioc a b, ‖g' s‖ₑ := lintegral_mono_set (Ioc_subset_Ioc_right ht.2)
 
@@ -196,9 +196,9 @@ theorem eLpNorm_le_eLpNorm_deriv_of_support_subset_Icc
   have hgc : Continuous g := continuous_iff_continuousAt.2 fun t => (hg t).continuousAt
   obtain rfl | hp' := eq_or_ne p ∞
   · rw [eLpNorm_exponent_top hgc.aestronglyMeasurable]
-    refine eLpNormEssSup_le_of_ae_enorm_bound (.of_forall ?_)
+    refine eLpNormEssSup_le_of_ae_eNorm_bound (.of_forall ?_)
     exact enorm_le_mul_of_support_subset_Icc hg hg' hsupp
-      ((enorm_ae_le_eLpNormEssSup g' volume).mono fun _ ht =>
+      ((eNorm_ae_le_eLpNormEssSup g' volume).mono fun _ ht =>
         ht.trans eLpNormEssSup_le_eLpNorm_top)
   rcases lt_or_ge b a with hba | hab
   · rw [Icc_eq_empty_of_lt hba, subset_empty_iff, Function.support_eq_empty_iff] at hsupp
@@ -292,13 +292,13 @@ private theorem eLpNorm_top_le_eLpNorm_top_fderiv_of_support_subset_slab
   have hfc : Continuous (fderiv ℝ u) := hu.continuous_fderiv one_ne_zero
   have hbound : ∀ x, ‖fderiv ℝ u x‖ₑ ≤ eLpNorm (fderiv ℝ u) ∞ volume := by
     have hsub := (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))).support_subset_of_isClosed
-      (isClosed_le hfc.enorm continuous_const)
-      ((enorm_ae_le_eLpNormEssSup (fderiv ℝ u) volume).mono fun _ hx =>
+      (isClosed_le hfc.eNorm continuous_const)
+      ((eNorm_ae_le_eLpNormEssSup (fderiv ℝ u) volume).mono fun _ hx =>
         hx.trans eLpNormEssSup_le_eLpNorm_top)
     simpa only [Measure.support_eq_univ, subset_def, mem_univ, true_implies, mem_ofPred_eq]
       using hsub
   rw [eLpNorm_exponent_top hu.continuous.aestronglyMeasurable]
-  refine eLpNormEssSup_le_of_ae_enorm_bound (.of_forall fun x => ?_)
+  refine eLpNormEssSup_le_of_ae_eNorm_bound (.of_forall fun x => ?_)
   let y := i.removeNth (WithLp.ofLp x)
   have hchart : slabChart i (x i, y) = x := by simp [slabChart, y]
   rw [← hchart]
@@ -340,9 +340,9 @@ theorem eLpNorm_le_eLpNorm_fderiv_of_support_subset_slab (hu : ContDiff ℝ 1 u)
     hp' hu.continuous.aestronglyMeasurable ?_
   set r := p.toReal
   have hmu : Measurable fun x : EuclideanSpace ℝ (Fin (n + 1)) => ‖u x‖ₑ ^ r :=
-    (ENNReal.continuous_rpow_const.comp hu.continuous.enorm).measurable
+    (ENNReal.continuous_rpow_const.comp hu.continuous.eNorm).measurable
   have hmf : Measurable fun x : EuclideanSpace ℝ (Fin (n + 1)) => ‖fderiv ℝ u x‖ₑ ^ r :=
-    (ENNReal.continuous_rpow_const.comp hfc.enorm).measurable
+    (ENNReal.continuous_rpow_const.comp hfc.eNorm).measurable
   have hline : ∀ y : Fin n → ℝ, ∫⁻ t, ‖u (slabChart i (t, y))‖ₑ ^ r
       ≤ ENNReal.ofReal ((b - a) ^ r) * ∫⁻ t, ‖fderiv ℝ u (slabChart i (t, y))‖ₑ ^ r := fun y =>
     lintegral_enorm_rpow_comp_slabChart_le

@@ -74,7 +74,8 @@ exactly when `ℓ ≡ ±1 (mod 5)`. -/
 private lemma globalArtinMap_Qsqrt5_prime_apply_eq_self_iff (ι : E →ₐ[ℚ] SeparableClosure ℚ)
     (hs : s ^ 2 = 5) (hgen : IntermediateField.adjoin ℚ {s} = ⊤) (v : HeightOneSpectrum (𝓞 ℚ))
     (hv : (5 : 𝓞 ℚ) ∉ v.asIdeal) {σ : E ≃ₐ[ℚ] E}
-    (hσ : globalArtinMap ℚ E ι (.ofMul (primeIdeleClass ℚ v)) = .ofMul (Abelianization.of σ)) :
+    (hσ : globalArtinMap ℚ E ι (.ofMul (primeIdeleClass ℚ v)) = .ofMul (Group.Abelianization.of
+        σ)) :
     σ s = s ↔ Ideal.absNorm v.asIdeal % 5 = 1 ∨ Ideal.absNorm v.asIdeal % 5 = 4 := by
   have hr : ∀ _ : Unit, s ^ 2 = algebraMap ℤ E 5 := fun _ ↦ by simpa using hs
   have htop : IntermediateField.adjoin ℚ (Set.range fun _ : Unit ↦ s) = ⊤ := by
@@ -113,7 +114,8 @@ negates it otherwise. -/
 theorem globalArtinMap_Qsqrt5_prime_apply (ι : E →ₐ[ℚ] SeparableClosure ℚ) (hs : s ^ 2 = 5)
     (hgen : IntermediateField.adjoin ℚ {s} = ⊤) (v : HeightOneSpectrum (𝓞 ℚ))
     (hv : (5 : 𝓞 ℚ) ∉ v.asIdeal) {σ : E ≃ₐ[ℚ] E}
-    (hσ : globalArtinMap ℚ E ι (.ofMul (primeIdeleClass ℚ v)) = .ofMul (Abelianization.of σ)) :
+    (hσ : globalArtinMap ℚ E ι (.ofMul (primeIdeleClass ℚ v)) = .ofMul (Group.Abelianization.of
+        σ)) :
     σ s = if Ideal.absNorm v.asIdeal % 5 = 1 ∨ Ideal.absNorm v.asIdeal % 5 = 4 then s else -s := by
   have h := globalArtinMap_Qsqrt5_prime_apply_eq_self_iff ι hs hgen v hv hσ
   split_ifs with hc
@@ -127,7 +129,8 @@ automorphism representing the Artin symbol of a prime `ℓ ≠ 5` is the identit
 theorem globalArtinMap_Qsqrt5_prime (ι : E →ₐ[ℚ] SeparableClosure ℚ) (hs : s ^ 2 = 5)
     (hgen : IntermediateField.adjoin ℚ {s} = ⊤) (v : HeightOneSpectrum (𝓞 ℚ))
     (hv : (5 : 𝓞 ℚ) ∉ v.asIdeal) {σ : E ≃ₐ[ℚ] E}
-    (hσ : globalArtinMap ℚ E ι (.ofMul (primeIdeleClass ℚ v)) = .ofMul (Abelianization.of σ)) :
+    (hσ : globalArtinMap ℚ E ι (.ofMul (primeIdeleClass ℚ v)) = .ofMul (Group.Abelianization.of
+        σ)) :
     (Ideal.absNorm v.asIdeal % 5 = 1 ∨ Ideal.absNorm v.asIdeal % 5 = 4 → σ = 1) ∧
       (Ideal.absNorm v.asIdeal % 5 = 2 ∨ Ideal.absNorm v.asIdeal % 5 = 3 → σ s = -s) := by
   have h := globalArtinMap_Qsqrt5_prime_apply ι hs hgen v hv hσ
@@ -146,7 +149,7 @@ theorem globalArtinMap_Qsqrt5_prime_eq_zero_iff (ι : E →ₐ[ℚ] SeparableClo
       Ideal.absNorm v.asIdeal % 5 = 1 ∨ Ideal.absNorm v.asIdeal % 5 = 4 := by
   refine ⟨fun h ↦ (globalArtinMap_Qsqrt5_prime_apply_eq_self_iff ι hs hgen v hv (σ := 1)
     (by rw [h, map_one, ofMul_one])).mp rfl, fun hc ↦ ?_⟩
-  obtain ⟨σ, hσ⟩ := Abelianization.exists_eq_ofMul_of
+  obtain ⟨σ, hσ⟩ := Group.Abelianization.exists_eq_ofMul_of
     (globalArtinMap ℚ E ι (.ofMul (primeIdeleClass ℚ v)))
   rw [hσ, (globalArtinMap_Qsqrt5_prime ι hs hgen v hv hσ).1 hc, map_one, ofMul_one]
 
@@ -164,7 +167,8 @@ the fifth cyclotomic field. An automorphism representing the global Artin symbol
 theorem globalArtinMap_zeta5_restrict_Qsqrt5 (ι : E →ₐ[ℚ] SeparableClosure ℚ)
     {M : IntermediateField ℚ E} (hM : Module.finrank ℚ M = 2) (v : HeightOneSpectrum (𝓞 ℚ))
     (hv : (5 : 𝓞 ℚ) ∉ v.asIdeal) {σ : E ≃ₐ[ℚ] E}
-    (hσ : globalArtinMap ℚ E ι (.ofMul (primeIdeleClass ℚ v)) = .ofMul (Abelianization.of σ)) :
+    (hσ : globalArtinMap ℚ E ι (.ofMul (primeIdeleClass ℚ v)) = .ofMul (Group.Abelianization.of
+        σ)) :
     (∀ x ∈ M, σ x = x) ↔ Ideal.absNorm v.asIdeal % 5 = 1 ∨ Ideal.absNorm v.asIdeal % 5 = 4 := by
   rw [← IntermediateField.mem_fixingSubgroup_iff]
   have hH : M.fixingSubgroup.index = 2 :=

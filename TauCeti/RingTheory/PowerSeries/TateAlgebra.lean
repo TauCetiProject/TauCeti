@@ -155,7 +155,7 @@ theorem tendsto_trunc_atTop (f : PowerSeries.IsRestricted.subring (R := R) c) :
 theorem nnnorm_eq_gaussValuation [NormMulClass R] [NormOneClass R]
     (f : PowerSeries.IsRestricted.subring (R := R) c) :
     ‖f‖₊ = gaussValuation hc.out f :=
-  NNReal.eq <| by rw [coe_nnnorm, coe_gaussValuation, norm_eq_gaussNorm]
+  NNReal.eq <| by rw [coe_nnNorm, coe_gaussValuation, norm_eq_gaussNorm]
 
 variable (c)
 

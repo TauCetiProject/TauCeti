@@ -610,3 +610,38 @@ theorem center_eq_bot_of_isCompl_center {R L : Type*} [CommRing R] [LieRing L]
   exact Subtype.ext ((LieSubmodule.mem_bot _).mp hzero)
 
 end LieIdeal
+
+namespace TauCeti
+
+variable {R L M : Type*} {ι κ : Sort*} [Semiring R] [LieRing L] [Module R L]
+  [AddCommGroup M] [Module R M] [LieRingModule L M]
+
+/-- Brackets of two submodule sums lie in a submodule if all brackets of summands do. -/
+theorem lie_mem_of_mem_iSup (A : ι → Submodule R L) (B : κ → Submodule R M)
+    (K : Submodule R M)
+    (h : ∀ i j, ∀ x ∈ A i, ∀ y ∈ B j, ⁅x, y⁆ ∈ K)
+    {x : L} {y : M} (hx : x ∈ ⨆ i, A i) (hy : y ∈ ⨆ j, B j) : ⁅x, y⁆ ∈ K := by
+  refine Submodule.iSup_induction _ (motive := fun x => ⁅x, y⁆ ∈ K) hx
+    (fun i x hx => ?_) (by simp) (fun x z hx hz => by simpa [add_lie] using K.add_mem hx hz)
+  exact Submodule.iSup_induction _ (motive := fun y => ⁅x, y⁆ ∈ K) hy
+    (fun j y hy => h i j x hx y hy) (by simp)
+    (fun y z hy hz => by simpa [lie_add] using K.add_mem hy hz)
+
+/-- Brackets between two submodule sums vanish if all brackets of summands vanish. -/
+theorem lie_eq_zero_of_mem_iSup (A : ι → Submodule R L) (B : κ → Submodule R M)
+    (h : ∀ i j, ∀ x ∈ A i, ∀ y ∈ B j, ⁅x, y⁆ = 0)
+    {x : L} {y : M} (hx : x ∈ ⨆ i, A i) (hy : y ∈ ⨆ j, B j) : ⁅x, y⁆ = 0 :=
+  (Submodule.mem_bot R).mp (lie_mem_of_mem_iSup A B ⊥
+    (fun i j x hx y hy => (Submodule.mem_bot R).mpr (h i j x hx y hy)) hx hy)
+
+end TauCeti
+
+/-- The underlying submodule of a Lie subalgebra image is its linear image. -/
+@[simp]
+theorem LieSubalgebra.map_toSubmodule {R L L' : Type*} [CommRing R]
+    [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L']
+    (K : LieSubalgebra R L) (f : L →ₗ⁅R⁆ L') :
+    (K.map f).toSubmodule = K.toSubmodule.map f.toLinearMap := by
+  ext x
+  simp only [LieSubalgebra.mem_toSubmodule, LieSubalgebra.mem_map, Submodule.mem_map,
+    LieHom.coe_toLinearMap]

@@ -59,7 +59,6 @@ division shows that every ideal has a generator. -/
 theorem isPrincipalIdealRing_restrictedMvPowerSeriesCompletion_one :
     IsPrincipalIdealRing (restrictedMvPowerSeriesCompletion 1 K) := by
   have := TauCeti.PowerSeries.isPrincipalIdealRing_isRestricted_subring (K := K) (c := 1)
-    zero_lt_one
   exact IsPrincipalIdealRing.of_surjective _
     (restrictedMvPowerSeriesCompletionOneEquiv (R := K)).symm.surjective
 

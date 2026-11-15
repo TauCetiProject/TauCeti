@@ -74,7 +74,7 @@ def orbitRelQuotientFirstHomologyEquiv :
   ((hurewiczHomologyAddEquiv (X := TopCat.of (AddAction.orbitRel.Quotient L E))
       (_root_.Quotient.mk _ 0)).symm.trans
     (MulEquiv.toAdditiveLeft ((L.orbitRelQuotientFundamentalGroupEquiv _).abelianizationCongr.trans
-      Abelianization.equivOfComm.symm))).toIntLinearEquiv
+      Group.Abelianization.equivOfComm.symm))).toIntLinearEquiv
 
 /-- The Hurewicz class of a loop class `γ` at any point `x` of `E / L` corresponds to the element
 of `L` attached to `γ` by `L.orbitRelQuotientFundamentalGroupEquiv`. -/
@@ -84,7 +84,7 @@ theorem orbitRelQuotientFirstHomologyEquiv_hurewiczHomologyAddEquiv
     (γ : FundamentalGroup (AddAction.orbitRel.Quotient L E) x) :
     L.orbitRelQuotientFirstHomologyEquiv
         (hurewiczHomologyAddEquiv (X := TopCat.of (AddAction.orbitRel.Quotient L E)) x
-          (Additive.ofMul (Abelianization.of γ))) =
+          (Additive.ofMul (Group.Abelianization.of γ))) =
       (L.orbitRelQuotientFundamentalGroupEquiv x γ).toAdd := by
   -- Move the loop class to the base point of the definition, which changes neither its Hurewicz
   -- class nor its image in `L`.
@@ -102,7 +102,7 @@ theorem orbitRelQuotientFirstHomologyEquiv_symm_apply (x : AddAction.orbitRel.Qu
     (l : L) :
     L.orbitRelQuotientFirstHomologyEquiv.symm l =
       hurewiczHomologyAddEquiv (X := TopCat.of (AddAction.orbitRel.Quotient L E)) x
-        (Additive.ofMul (Abelianization.of
+        (Additive.ofMul (Group.Abelianization.of
           ((L.orbitRelQuotientFundamentalGroupEquiv x).symm (Multiplicative.ofAdd l)))) := by
   rw [LinearEquiv.symm_apply_eq, orbitRelQuotientFirstHomologyEquiv_hurewiczHomologyAddEquiv,
     MulEquiv.apply_symm_apply, toAdd_ofAdd]
@@ -133,11 +133,13 @@ theorem orbitRelQuotientFirstHomologyEquiv_singularHomologyMap {E' : Type} [AddC
   obtain ⟨a, rfl⟩ := (hurewiczHomologyAddEquiv (X := TopCat.of (AddAction.orbitRel.Quotient L E))
     x).surjective c
   obtain ⟨a, rfl⟩ := Additive.ofMul.surjective a
-  -- `Abelianization G` is the quotient of `G` by its commutator subgroup and `Abelianization.of`
-  -- is `QuotientGroup.mk'`; Mathlib states no surjectivity lemma for `Abelianization.of` itself.
-  obtain ⟨γ, rfl⟩ : ∃ γ, Abelianization.of γ = a := QuotientGroup.mk'_surjective _ a
+  -- `Group.Abelianization G` is the quotient of `G` by its commutator subgroup and
+  -- `Group.Abelianization.of`
+  -- is `QuotientGroup.mk'`; Mathlib states no surjectivity lemma for `Group.Abelianization.of`
+  -- itself.
+  obtain ⟨γ, rfl⟩ : ∃ γ, Group.Abelianization.of γ = a := QuotientGroup.mk'_surjective _ a
   rw [ContinuousMap.singularHomologyMap, homologyMap_hurewiczHomologyAddEquiv, toMul_ofMul,
-    Abelianization.map_of, orbitRelQuotientFirstHomologyEquiv_hurewiczHomologyAddEquiv,
+    Group.Abelianization.map_of, orbitRelQuotientFirstHomologyEquiv_hurewiczHomologyAddEquiv,
     orbitRelQuotientFirstHomologyEquiv_hurewiczHomologyAddEquiv]
   exact L.orbitRelQuotientFundamentalGroupEquiv_map L' f hf φ hφ x γ
 

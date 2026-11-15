@@ -76,7 +76,7 @@ theorem wassersteinEDist_one_bernoulliMeasure_le {X : Type*} [MeasurableSpace X]
   rw [hs, ht]
   refine (wassersteinEDist_add_smul_dirac_le hd 1 commonMass movedMass x).trans_eq ?_
   have hmeas : Measurable fun z ↦ edist z x := hd.comp (measurable_id.prodMk measurable_const)
-  rw [eLpNorm_one_eq_lintegral_enorm hmeas.aestronglyMeasurable]
+  rw [eLpNorm_one_eq_lintegral_eNorm hmeas.aestronglyMeasurable]
   simp [movedMass, lintegral_smul_measure, lintegral_dirac' y hmeas, edist_comm y x]
 
 end TauCeti

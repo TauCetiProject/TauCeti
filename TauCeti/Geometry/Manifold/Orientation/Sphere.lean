@@ -46,6 +46,7 @@ antipodal preimage, the antipodal map has degree `(-1)^(n+1)` at every value.
 ## Main declarations
 
 * `Orientation.sphereVolumeForm`: the nowhere-vanishing top form `vol(u, ·)` of the unit sphere.
+* `Orientation.sphereVolumeForm_neg`: reversing the orientation of `E` negates it.
 * `Orientation.mpullback_neg_sphereVolumeForm`: the antipodal map pulls the volume form of `Sⁿ`
   back to `(-1)^(n+1)` times itself.
 * `Orientation.sphereOrientation`: the outward-normal orientation of the unit sphere.
@@ -130,6 +131,14 @@ theorem _root_.Orientation.sphereVolumeForm_apply_ne_zero (o : Orientation ℝ E
   rw [Orientation.sphereVolumeForm_apply] at hb
   exact Orientation.volumeForm_apply_ne_zero_iff.2
     (LinearIndependent.finCons_mvfderiv_coe_sphere u b.linearIndependent) (by simpa using hb)
+
+/-- Reversing the orientation of `E` negates the volume form of its unit sphere. -/
+@[simp]
+theorem _root_.Orientation.sphereVolumeForm_neg (o : Orientation ℝ E (Fin (n + 1))) :
+    (-o).sphereVolumeForm = -o.sphereVolumeForm := by
+  refine Subtype.ext (funext fun u ↦ ?_)
+  ext v
+  simp [Orientation.volumeForm_neg_orientation]
 
 /-- The **outward-normal orientation** of the unit sphere `Sⁿ` of an oriented real inner product
 space `E` of dimension `n + 1`: a tangent basis `v₁, …, vₙ` at `u` is positive exactly when
