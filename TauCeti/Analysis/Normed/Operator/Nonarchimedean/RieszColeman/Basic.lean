@@ -8,8 +8,8 @@ module
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.RieszProjection.Basic
 public import TauCeti.Analysis.Normed.Operator.RowCompact.Idempotent
 public import Mathlib.Topology.Algebra.Module.Complement
-import Mathlib.Algebra.Polynomial.Div
 import Mathlib.RingTheory.Adjoin.Polynomial.Basic
+import TauCeti.Algebra.Polynomial.AlgebraMap
 import TauCeti.Algebra.Polynomial.Reverse
 import TauCeti.Algebra.Ring.Commute
 import TauCeti.Algebra.Ring.SpectralIdempotent
@@ -27,9 +27,10 @@ commuting with `u` and lying in the operator-norm closure of `R[u]`, such that `
 
 It splits `M` topologically into `range E = ker Q*(u)` and `ker E = range Q*(u)`, is unique, is
 invariant under unit scaling of `Q`, agrees for `Q = (X - a) ^ h` (`h > 0`) with Serre's Riesz
-projection, and restricts `u` to an automorphism of `range E` whenever `IsUnit Q.leadingCoeff`. On
-`C₀(I, R)`, any Riesz–Coleman projection of a row-compact operator with `IsUnit Q.leadingCoeff` is
-row compact, making `ker Q*(u)` finite projective over `R` when `R` is complete.
+projection, and restricts `u` to an automorphism of `range E` whenever `IsUnit Q.leadingCoeff`. When
+`R` is ultrametric, any Riesz–Coleman projection on `C₀(I, R)` of a row-compact operator with
+`IsUnit Q.leadingCoeff` is row compact, making `ker Q*(u)` finite projective over `R` when `R` is
+also complete.
 
 ## Main definitions
 
@@ -37,28 +38,19 @@ row compact, making `ker Q*(u)` finite projective over `R` when `R` is complete.
   topological complement on which `Q*(u)` is invertible.
 * `ContinuousLinearMap.IsRieszColemanProjection.inverse`: inverse of `Q*(u)` on `ker E`, zero on
   `range E`.
-* `ContinuousLinearMap.IsRieszColemanProjection.equivKer`,
-  `ContinuousLinearMap.IsRieszColemanProjection.equivRange`: `Q*(u)` on `ker E` and `u` on `range E`
-  as continuous linear automorphisms.
+* `ContinuousLinearMap.IsRieszColemanProjection.equivKer` and `equivRange`: `Q*(u)` on `ker E` and
+  `u` on `range E` as continuous linear automorphisms.
 
 ## Main results
 
-* `ContinuousLinearMap.isRieszColemanProjection_X_sub_C_iff`,
-  `ContinuousLinearMap.isRieszColemanProjection_X_sub_C_pow_iff`: comparison with
+* `ContinuousLinearMap.isRieszColemanProjection_X_sub_C_pow_iff`: comparison with
   `ContinuousLinearMap.IsRieszProjection`.
-* `ContinuousLinearMap.IsRieszColemanProjection.range_eq_ker`,
-  `ContinuousLinearMap.IsRieszColemanProjection.range_aeval_reverse_eq_ker`,
-  `ContinuousLinearMap.IsRieszColemanProjection.isTopCompl_ker_range`,
-  `ContinuousLinearMap.IsRieszColemanProjection.isClosed_range_aeval_reverse`: the topological
-  splitting `M = ker Q*(u) ⊕ range Q*(u)`, with closed summands when `[T1Space M]`.
-* `ContinuousLinearMap.IsRieszColemanProjection.unique`,
-  `ContinuousLinearMap.IsRieszColemanProjection.semiconj`,
-  `ContinuousLinearMap.IsRieszColemanProjection.comp_comp_of_retract`: uniqueness, intertwining,
-  and retract compression.
-* `ContinuousLinearMap.IsRieszColemanProjection.isRowCompact`,
-  `ContinuousLinearMap.IsRieszColemanProjection.finite_ker_aeval_reverse`,
-  `ContinuousLinearMap.IsRieszColemanProjection.projective_ker_aeval_reverse`: row compactness and
-  finite projectivity of `ker Q*(u)` on `C₀(I, R)`.
+* `ContinuousLinearMap.IsRieszColemanProjection.range_eq_ker`, `range_aeval_reverse_eq_ker`, and
+  `isTopCompl_ker_range`: topological splitting `M = ker Q*(u) ⊕ range Q*(u)`.
+* `ContinuousLinearMap.IsRieszColemanProjection.unique`, `semiconj`, and `comp_comp_of_retract`:
+  uniqueness, intertwining, and retract compression.
+* `ContinuousLinearMap.IsRieszColemanProjection.isRowCompact`, `finite_ker_aeval_reverse`, and
+  `projective_ker_aeval_reverse`: row compactness and finite projectivity on `C₀(I, R)`.
 
 ## References
 
@@ -140,17 +132,17 @@ theorem units_smul (hE : IsRieszColemanProjection u Q E) (c : Rˣ) :
   refine ⟨hE.isIdempotentElem, hE.commute, hE.mem_closure_adjoin, ?_, ⟨(↑c⁻¹ : R) • w, ?_, ?_, ?_,
     ?_, by rw [← Subalgebra.topologicalClosure_coe, SetLike.mem_coe] at hw ⊢
            exact Subalgebra.smul_mem _ hw _⟩⟩
-  · rw [reverse_units_smul, Units.smul_def, map_smul, smul_mul_assoc, hE.aeval_reverse_mul_eq_zero,
+  · rw [reverse_smul, Units.smul_def, map_smul, smul_mul_assoc, hE.aeval_reverse_mul_eq_zero,
       smul_zero]
-  · rw [reverse_units_smul, Units.smul_def, map_smul, smul_mul_smul_comm, c.mul_inv, one_smul, hw₁]
-  · rw [reverse_units_smul, Units.smul_def, map_smul, smul_mul_smul_comm, c.inv_mul, one_smul, hw₂]
+  · rw [reverse_smul, Units.smul_def, map_smul, smul_mul_smul_comm, c.mul_inv, one_smul, hw₁]
+  · rw [reverse_smul, Units.smul_def, map_smul, smul_mul_smul_comm, c.inv_mul, one_smul, hw₂]
   · rw [mul_smul_comm, hw₃, smul_zero]
   · rw [smul_mul_assoc, hw₄, smul_zero]
 
 /-- The operator preserves the kernel of its Riesz–Coleman projection. -/
 theorem mapsTo_ker (hE : IsRieszColemanProjection u Q E) : Set.MapsTo u E.ker E.ker := fun x hx ↦
   LinearMap.mem_ker.mpr <| by
-    have hx' : E x = 0 := hx
+    have hx' : E x = 0 := LinearMap.mem_ker.mp hx
     simpa [hx'] using congr($(hE.commute.eq.symm) x)
 
 /-- The operator preserves the range of its Riesz–Coleman projection. -/
@@ -162,7 +154,7 @@ theorem mapsTo_range (hE : IsRieszColemanProjection u Q E) : Set.MapsTo u E.rang
 theorem mapsTo_ker_aeval (hE : IsRieszColemanProjection u Q E) (P : R[X]) :
     Set.MapsTo (Polynomial.aeval u P : M →L[R] M) E.ker E.ker := fun x hx ↦
   LinearMap.mem_ker.mpr <| by
-    have hx' : E x = 0 := hx
+    have hx' : E x = 0 := LinearMap.mem_ker.mp hx
     simpa [hx'] using congr($((hE.commute_aeval P).eq.symm) x)
 
 /-- Every polynomial in `u` preserves the range of a Riesz–Coleman projection. -/
@@ -173,16 +165,14 @@ theorem mapsTo_range_aeval (hE : IsRieszColemanProjection u Q E) (P : R[X]) :
 
 /-- `Q*(u)` preserves the kernel of its Riesz–Coleman projection. -/
 theorem mapsTo_ker_aeval_reverse (hE : IsRieszColemanProjection u Q E) :
-    Set.MapsTo (Polynomial.aeval u Q.reverse : M →L[R] M) E.ker E.ker :=
-  hE.mapsTo_ker_aeval Q.reverse
+    Set.MapsTo (Polynomial.aeval u Q.reverse : M →L[R] M) E.ker E.ker := hE.mapsTo_ker_aeval _
 
 /-- `Q*(u)` preserves the range of its Riesz–Coleman projection. -/
 theorem mapsTo_range_aeval_reverse (hE : IsRieszColemanProjection u Q E) :
     Set.MapsTo (Polynomial.aeval u Q.reverse : M →L[R] M) E.range E.range :=
-  hE.mapsTo_range_aeval Q.reverse
+  hE.mapsTo_range_aeval _
 
-/-- The **complementary inverse** of `Q*(u)` on `ker E = range (1 - E)`, extended by zero on
-`range E`. -/
+/-- Complementary inverse of `Q*(u)` on `ker E = range (1 - E)`, extended by zero on `range E`. -/
 noncomputable def inverse (hE : IsRieszColemanProjection u Q E) : M →L[R] M :=
   hE.exists_inverse.choose
 
@@ -211,8 +201,7 @@ theorem inverse_mem_closure_adjoin (hE : IsRieszColemanProjection u Q E) :
 theorem eq_inverse (hE : IsRieszColemanProjection u Q E) {w : M →L[R] M}
     (hw : Polynomial.aeval u Q.reverse * w = 1 - E) (hEw : E * w = 0) : w = hE.inverse := by
   calc w = (1 - E) * w := by rw [sub_mul (α := M →L[R] M), one_mul, hEw, sub_zero w]
-    _ = hE.inverse * (Polynomial.aeval u Q.reverse * w) := by
-        rw [← mul_assoc, hE.inverse_mul_aeval_reverse]
+    _ = hE.inverse * (aeval u Q.reverse * w) := by rw [← mul_assoc, hE.inverse_mul_aeval_reverse]
     _ = hE.inverse := by
         rw [hw, mul_sub (α := M →L[R] M), mul_one, hE.inverse_mul_eq_zero, sub_zero hE.inverse]
 
@@ -224,13 +213,13 @@ theorem mapsTo_ker_inverse (hE : IsRieszColemanProjection u Q E) :
 /-- On `ker E`, the complementary inverse is a left inverse of `Q*(u)`. -/
 theorem inverse_aeval_reverse_apply (hE : IsRieszColemanProjection u Q E) {x : M} (hx : x ∈ E.ker) :
     hE.inverse (Polynomial.aeval u Q.reverse x) = x := by
-  have hx' : E x = 0 := hx
+  have hx' : E x = 0 := LinearMap.mem_ker.mp hx
   simpa [hx'] using congr($(hE.inverse_mul_aeval_reverse) x)
 
 /-- On `ker E`, the complementary inverse is a right inverse of `Q*(u)`. -/
 theorem aeval_reverse_apply_inverse (hE : IsRieszColemanProjection u Q E) {x : M} (hx : x ∈ E.ker) :
     Polynomial.aeval u Q.reverse (hE.inverse x) = x := by
-  have hx' : E x = 0 := hx
+  have hx' : E x = 0 := LinearMap.mem_ker.mp hx
   simpa [hx'] using congr($(hE.aeval_reverse_mul_inverse) x)
 
 /-- **The range of a Riesz–Coleman projection is the polynomial kernel** `ker Q*(u)`. -/
@@ -280,18 +269,14 @@ noncomputable def equivKer (hE : IsRieszColemanProjection u Q E) : E.ker ≃L[R]
 @[simp] theorem coe_equivKer_symm_apply (hE : IsRieszColemanProjection u Q E) (x : E.ker) :
     (hE.equivKer.symm x : M) = hE.inverse x := (rfl)
 
-/-- When `IsUnit Q.leadingCoeff`, `B = 1 - c Q*` (`c = Ring.inverse Q.leadingCoeff`) satisfies
-`B(0) = 0`, so `u * (divX B)(u) * E = E`. -/
+/-- When `IsUnit Q.leadingCoeff`, `B = 1 - c Q*` has `B(0) = 0`, so `u * (divX B)(u) * E = E`. -/
 theorem mul_aeval_divX_mul_eq_self (hE : IsRieszColemanProjection u Q E)
     (hQ : IsUnit Q.leadingCoeff) :
     u * Polynomial.aeval u
       (Polynomial.divX (1 - C (Ring.inverse Q.leadingCoeff) * Q.reverse)) * E = E := by
   set B := 1 - C (Ring.inverse Q.leadingCoeff) * Q.reverse
-  have hB0 : B.coeff 0 = 0 := by simp [B, coeff_zero_reverse, Ring.inverse_mul_cancel _ hQ]
-  have huB : u * Polynomial.aeval u B.divX = Polynomial.aeval u B := by
-    conv_rhs => rw [← show X * B.divX = B by simpa [hB0] using X_mul_divX_add B]
-    rw [map_mul, aeval_X]
-  rw [huB]
+  rw [mul_aeval_divX_of_coeff_zero u
+    (by simp [B, coeff_zero_reverse, Ring.inverse_mul_cancel _ hQ])]
   simp [B, Algebra.algebraMap_eq_smul_one, sub_mul, hE.aeval_reverse_mul_eq_zero]
 
 /-- **Invertibility of `u` on the Riesz–Coleman summand.** When `IsUnit Q.leadingCoeff`, `u`
@@ -318,11 +303,9 @@ noncomputable def equivRange (hE : IsRieszColemanProjection u Q E) (hQ : IsUnit 
 @[simp] theorem coe_equivRange_symm_apply (hE : IsRieszColemanProjection u Q E)
     (hQ : IsUnit Q.leadingCoeff) (x : E.range) :
     ((hE.equivRange hQ).symm x : M) =
-      Polynomial.aeval u (Polynomial.divX (1 - C (Ring.inverse Q.leadingCoeff) * Q.reverse)) x :=
-  (rfl)
+      Polynomial.aeval u (divX (1 - C (Ring.inverse Q.leadingCoeff) * Q.reverse)) x := (rfl)
 
-/-- **Uniqueness of the Riesz–Coleman projection.** Two Riesz–Coleman projections of `u` for the
-same polynomial `Q` are equal. -/
+/-- **Uniqueness of the Riesz–Coleman projection** of `u` for a given polynomial `Q`. -/
 theorem unique {E' : M →L[R] M} (hE : IsRieszColemanProjection u Q E)
     (hE' : IsRieszColemanProjection u Q E') : E = E' := by
   obtain ⟨w, hw, hw', -⟩ := hE.exists_inverse
@@ -333,14 +316,12 @@ theorem unique {E' : M →L[R] M} (hE : IsRieszColemanProjection u Q E)
 
 section Intertwining
 
-variable {N : Type*} [SeminormedAddCommGroup N] [Module R N] [IsBoundedSMul R N]
-  {v F : N →L[R] N}
+variable {N : Type*} [SeminormedAddCommGroup N] [Module R N] [IsBoundedSMul R N] {v F : N →L[R] N}
 
 /-- A linear map intertwining two operators intertwines their Riesz–Coleman projections for `Q`. -/
 theorem semiconj (hE : IsRieszColemanProjection u Q E) (hF : IsRieszColemanProjection v Q F)
     (f : M →ₗ[R] N) (hf : Function.Semiconj f u v) : Function.Semiconj f E F := by
-  have hfQ : Function.Semiconj f (Polynomial.aeval u Q.reverse) (Polynomial.aeval v Q.reverse) :=
-    hf.aeval Q.reverse
+  have hfQ := hf.aeval Q.reverse
   intro x
   have hfixed : F (f (E x)) = f (E x) := by
     refine IsIdempotentElem.apply_coe_range hF.isIdempotentElem ⟨f (E x), ?_⟩
@@ -367,7 +348,7 @@ theorem mapsTo_ker_of_semiconj (hE : IsRieszColemanProjection u Q E)
     (hF : IsRieszColemanProjection v Q F) (f : M →ₗ[R] N) (hf : Function.Semiconj f u v) :
     Set.MapsTo f E.ker F.ker := fun x hx ↦
   LinearMap.mem_ker.mpr <| by
-    have hx' : E x = 0 := hx
+    have hx' : E x = 0 := LinearMap.mem_ker.mp hx
     rw [coe_coe, ← hE.semiconj hF f hf x, hx', map_zero]
 
 /-- Linear intertwiners also intertwine the complementary inverses of `Q*(u)` and `Q*(v)`. -/
@@ -375,8 +356,7 @@ theorem semiconj_inverse (hE : IsRieszColemanProjection u Q E)
     (hF : IsRieszColemanProjection v Q F) (f : M →ₗ[R] N) (hf : Function.Semiconj f u v) :
     Function.Semiconj f hE.inverse hF.inverse := by
   have hEF := hE.semiconj hF f hf
-  have hfQ : Function.Semiconj f (Polynomial.aeval u Q.reverse) (Polynomial.aeval v Q.reverse) :=
-    hf.aeval Q.reverse
+  have hfQ := hf.aeval Q.reverse
   intro x
   have hker : f (hE.inverse x) ∈ F.ker := LinearMap.mem_ker.mpr <| by
     rw [coe_coe, ← hEF (hE.inverse x), ← mul_apply_eq_comp, hE.mul_inverse_eq_zero, zero_apply,
@@ -419,13 +399,11 @@ end IsRieszColemanProjection
     IsRieszColemanProjection u (c • Q) E ↔ IsRieszColemanProjection u Q E :=
   ⟨fun h ↦ by simpa using h.units_smul c⁻¹, fun h ↦ h.units_smul c⟩
 
-/-- Every Riesz projection of `u` at `a` of order `h` is a Riesz–Coleman projection for
-`(X - C a) ^ h`. -/
+/-- Every Riesz projection of `u` at `a` of order `h` is Riesz–Coleman for `(X - C a) ^ h`. -/
 theorem IsRieszProjection.isRieszColemanProjection_X_sub_C_pow {u E : M →L[R] M} {a : R} {h : ℕ}
     (hE : IsRieszProjection u a h E) : IsRieszColemanProjection u ((X - C a) ^ h) E := by
   rcases Nat.eq_zero_or_pos h with rfl | hh
   · simp [hE.eq_zero_of_order_zero]
-  have := NormOneClass.nontrivial (G := R)
   have hrev : Polynomial.aeval u ((X - C a) ^ h).reverse = (1 - a • u) ^ h := by
     simp [Algebra.algebraMap_eq_smul_one]
   obtain ⟨w, hw₁, hw₂, hw₃, hw₄, hw⟩ := hE.exists_inverse
@@ -439,12 +417,10 @@ theorem IsRieszProjection.isRieszColemanProjection_X_sub_C_pow {u E : M →L[R] 
   · rw [pow_succ', ← mul_assoc, hw₃, zero_mul]
   · rw [pow_succ, mul_assoc, hw₄, mul_zero]
 
-/-- For `0 < h`, Riesz–Coleman projections for `(X - C a) ^ h` coincide with Riesz projections at
-`a` of order `h`. -/
+/-- For `0 < h`, Riesz–Coleman projections for `(X - C a) ^ h` are Riesz projections at `a`. -/
 theorem isRieszColemanProjection_X_sub_C_pow_iff {u E : M →L[R] M} {a : R} {h : ℕ} (hh : 0 < h) :
     IsRieszColemanProjection u ((X - C a) ^ h) E ↔ IsRieszProjection u a h E := by
   refine ⟨fun hE ↦ ?_, fun hE ↦ hE.isRieszColemanProjection_X_sub_C_pow⟩
-  have := NormOneClass.nontrivial (G := R)
   have hrev : Polynomial.aeval u ((X - C a) ^ h).reverse = (1 - a • u) ^ h := by
     simp [Algebra.algebraMap_eq_smul_one]
   obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hh.ne'
@@ -483,8 +459,8 @@ end Module
 
 section Retract
 
-variable {R : Type*} [NormedCommRing R] [TauCeti.NormedRing.IsTate R]
-  {M N : Type*} [SeminormedAddCommGroup M] [Module R M] [IsBoundedSMul R M]
+variable {R M N : Type*} [NormedCommRing R] [TauCeti.NormedRing.IsTate R]
+  [SeminormedAddCommGroup M] [Module R M] [IsBoundedSMul R M]
   [SeminormedAddCommGroup N] [Module R N] [IsBoundedSMul R N]
   {i : M →L[R] N} {r : N →L[R] M} {u : M →L[R] M}
 
@@ -528,8 +504,8 @@ variable {I R : Type*} [TopologicalSpace I] [DiscreteTopology I] [DecidableEq I]
   [NormedCommRing R] [TauCeti.NormedRing.IsTate R] [IsUltrametricDist R]
   {u E : C₀(I, R) →L[R] C₀(I, R)} {Q : R[X]}
 
-/-- Every Riesz–Coleman projection of a row-compact operator on `C₀(I, R)` for `Q` with
-`IsUnit Q.leadingCoeff` is row compact. -/
+/-- Over an ultrametric Tate ring `R`, every Riesz–Coleman projection of a row-compact operator on
+`C₀(I, R)` for `Q` with `IsUnit Q.leadingCoeff` is row compact. -/
 theorem IsRieszColemanProjection.isRowCompact (hE : IsRieszColemanProjection u Q E)
     (hQ : IsUnit Q.leadingCoeff) (hu : u.IsRowCompact) : E.IsRowCompact := by
   rw [← hE.mul_aeval_divX_mul_eq_self hQ]
@@ -537,20 +513,19 @@ theorem IsRieszColemanProjection.isRowCompact (hE : IsRieszColemanProjection u Q
 
 variable [CompleteSpace R]
 
-/-- The polynomial kernel `ker Q*(u)` of a row-compact operator on `C₀(I, R)` admitting a
-Riesz–Coleman projection with `IsUnit Q.leadingCoeff` is finitely generated over `R`. -/
+/-- Over a complete ultrametric Tate ring `R`, `ker Q*(u)` for a row-compact operator on `C₀(I, R)`
+admitting a Riesz–Coleman projection with `IsUnit Q.leadingCoeff` is finitely generated over `R`. -/
 theorem IsRieszColemanProjection.finite_ker_aeval_reverse (hE : IsRieszColemanProjection u Q E)
     (hQ : IsUnit Q.leadingCoeff) (hu : u.IsRowCompact) :
     Module.Finite R (LinearMap.ker (Polynomial.aeval u Q.reverse : C₀(I, R) →ₗ[R] C₀(I, R))) := by
   rw [← hE.range_eq_ker]
   exact (hE.isRowCompact hQ hu).finite_range_of_isIdempotentElem hE.isIdempotentElem
 
-/-- The polynomial kernel `ker Q*(u)` of a row-compact operator on `C₀(I, R)` admitting a
-Riesz–Coleman projection with `IsUnit Q.leadingCoeff` is projective over `R`. -/
+/-- Over a complete ultrametric Tate ring `R`, `ker Q*(u)` for a row-compact operator on `C₀(I, R)`
+admitting a Riesz–Coleman projection with `IsUnit Q.leadingCoeff` is projective over `R`. -/
 theorem IsRieszColemanProjection.projective_ker_aeval_reverse (hE : IsRieszColemanProjection u Q E)
     (hQ : IsUnit Q.leadingCoeff) (hu : u.IsRowCompact) :
-    Module.Projective R
-      (LinearMap.ker (Polynomial.aeval u Q.reverse : C₀(I, R) →ₗ[R] C₀(I, R))) := by
+    Module.Projective R (LinearMap.ker (aeval u Q.reverse : C₀(I, R) →ₗ[R] C₀(I, R))) := by
   rw [← hE.range_eq_ker]
   exact (hE.isRowCompact hQ hu).projective_range_of_isIdempotentElem hE.isIdempotentElem
 

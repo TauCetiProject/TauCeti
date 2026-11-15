@@ -79,14 +79,14 @@ theorem aeval_mul_of_coeff_zero {R B : Type*} [CommSemiring R] [Semiring B] [Alg
   obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero fun h0 : i = 0 ↦ mem_support_iff.mp hi (h0 ▸ hP)
   simp only [map_mul, aeval_C, map_pow, aeval_X, hub.mul_pow, hb.pow_succ_eq, mul_assoc]
 
-variable {R B : Type*} [CommRing R] [Ring B] [Algebra R B] {b : B}
-
 /-- Evaluating a polynomial with zero constant term at `u * (1 - b)`, where `b` is an idempotent
 commuting with `u`, multiplies evaluation at `u` on the right by `1 - b`. -/
-theorem aeval_mul_one_sub_of_coeff_zero {u : B} (hb : IsIdempotentElem b) (hub : Commute u b)
-    {P : R[X]} (hP : P.coeff 0 = 0) :
+theorem aeval_mul_one_sub_of_coeff_zero {R B : Type*} [CommSemiring R] [Ring B] [Algebra R B]
+    {u b : B} (hb : IsIdempotentElem b) (hub : Commute u b) {P : R[X]} (hP : P.coeff 0 = 0) :
     aeval (u * (1 - b)) P = aeval u P * (1 - b) :=
   hb.one_sub.aeval_mul_of_coeff_zero ((Commute.one_right u).sub_right hub) hP
+
+variable {R B : Type*} [CommRing R] [Ring B] [Algebra R B] {b : B}
 
 /-- A polynomial evaluated at an idempotent `b`, multiplied by `b`, is `Q(1) b`. -/
 theorem aeval_mul_self (hb : IsIdempotentElem b) (Q : R[X]) :

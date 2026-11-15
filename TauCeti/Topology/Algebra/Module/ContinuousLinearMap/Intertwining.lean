@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
+public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 public import TauCeti.LinearAlgebra.End.Aeval
-import Mathlib.Algebra.Polynomial.Div
 
 /-!
 # Intertwining linear maps
@@ -28,8 +28,8 @@ an endomorphism along a continuous linear retract; no complement is needed.
 * `ContinuousLinearMap.aeval_comp_comp_of_retract`: polynomial evaluation with zero constant
   coefficient commutes with extension along a retract.
 * `ContinuousLinearMap.kerAevalCompCompEquiv`: along a continuous linear retract, the kernel of a
-  polynomial with invertible constant coefficient in the extended endomorphism is linearly
-  equivalent to the original kernel.
+  polynomial with invertible constant coefficient in the extended endomorphism is continuously
+  linearly equivalent to the original kernel.
 -/
 
 public section
@@ -151,12 +151,19 @@ variable {R M N : Type*} [CommRing R]
 coefficient, the retraction and section identify `ker P(i ∘ u ∘ r)` with `ker P(u)`. -/
 noncomputable def kerAevalCompCompEquiv {i : M →L[R] N} {r : N →L[R] M}
     (hri : r.comp i = .id R M) (u : M →L[R] M) {P : Polynomial R} (hP : IsUnit (P.coeff 0)) :
-    LinearMap.ker (Polynomial.aeval (i.comp (u.comp r)) P : N →ₗ[R] N) ≃ₗ[R]
+    LinearMap.ker (Polynomial.aeval (i.comp (u.comp r)) P : N →ₗ[R] N) ≃L[R]
       LinearMap.ker (Polynomial.aeval u P : M →ₗ[R] M) :=
-  (LinearEquiv.ofEq _ _ (by simp only [toLinearMap_aeval, toLinearMap_comp])).trans
-    ((LinearMap.kerAevalCompCompEquiv
-      (LinearMap.ext fun x ↦ DFunLike.congr_fun hri x) u.toLinearMap hP).trans
-      (LinearEquiv.ofEq _ _ (by simp only [toLinearMap_aeval])))
+  let e : LinearMap.ker (Polynomial.aeval (i.comp (u.comp r)) P : N →ₗ[R] N) ≃ₗ[R]
+      LinearMap.ker (Polynomial.aeval u P : M →ₗ[R] M) :=
+    (LinearEquiv.ofEq _ _ (by simp only [toLinearMap_aeval, toLinearMap_comp])).trans
+      ((LinearMap.kerAevalCompCompEquiv
+        (LinearMap.ext fun x ↦ DFunLike.congr_fun hri x) u.toLinearMap hP).trans
+        (LinearEquiv.ofEq _ _ (by simp only [toLinearMap_aeval])))
+  ContinuousLinearEquiv.equivOfInverse
+    ((r.comp (Submodule.subtypeL _)).codRestrict _ fun y ↦ by simpa [e] using (e y).property)
+    ((i.comp (Submodule.subtypeL _)).codRestrict _ fun x ↦ by simpa [e] using (e.symm x).property)
+    (fun y ↦ SetLike.coe_eq_coe.mp (by simpa [e] using congrArg Subtype.val (e.symm_apply_apply y)))
+    (fun x ↦ SetLike.coe_eq_coe.mp (by simpa [e] using congrArg Subtype.val (e.apply_symm_apply x)))
 
 /-- The polynomial-kernel equivalence along a continuous linear retract applies the retraction. -/
 @[simp]

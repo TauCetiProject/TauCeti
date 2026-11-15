@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.BaseChange
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.RieszColeman.Factorization
 import TauCeti.RingTheory.Polynomial.Resultant.Coleman
+import TauCeti.RingTheory.PowerSeries.Dvd
 
 /-!
 # Coefficientwise base change of Riesz–Coleman projections
@@ -23,12 +24,10 @@ commutes with `mapCoeffs`, and bounded field extensions preserve `finrank K (ker
 
 ## Main results
 
-* `ContinuousLinearMap.IsRieszColemanProjection.mapCoeffs`,
-  `ContinuousLinearMap.IsRieszColemanProjection.mapCoeffs_of_isUnit_leadingCoeff`: Riesz–Coleman
-  projections commute with bounded coefficient extension without compactness.
+* `ContinuousLinearMap.IsRieszColemanProjection.mapCoeffs` and `mapCoeffs_of_isUnit_leadingCoeff`:
+  Riesz–Coleman projections commute with bounded coefficient extension without compactness.
 * `ContinuousLinearMap.IsRowCompact.rieszColemanProjection_mapCoeffs`: the explicit projector
-  commutes with bounded coefficient extension under a coprime Fredholm factorization with
-  `IsUnit Q.leadingCoeff`.
+  commutes with bounded coefficient extension under a coprime Fredholm factorization.
 * `ContinuousLinearMap.IsRowCompact.finrank_ker_aeval_reverse_mapCoeffs`: bounded field extension
   preserves the dimension of `ker Q*(u)`.
 
@@ -57,9 +56,8 @@ variable {I R S : Type*} [TopologicalSpace I] [DiscreteTopology I] [DecidableEq 
 /-- **Riesz–Coleman projections under bounded base change.** Whenever `Q` preserves its degree under
 a bounded ring homomorphism `f : R →+* S`, `E.mapCoeffs f hf` is a Riesz–Coleman projection of
 `u.mapCoeffs f hf` for `Q.map f`, with no compactness of `u` or completeness of `R` needed. -/
-theorem IsRieszColemanProjection.mapCoeffs
-    {u E : C₀(I, R) →L[R] C₀(I, R)} {Q : R[X]} (hE : IsRieszColemanProjection u Q E)
-    (f : R →+* S) (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖)
+theorem IsRieszColemanProjection.mapCoeffs {u E : C₀(I, R) →L[R] C₀(I, R)} {Q : R[X]}
+    (hE : IsRieszColemanProjection u Q E) (f : R →+* S) (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖)
     (hdeg : (Q.map f).natDegree = Q.natDegree) :
     IsRieszColemanProjection (u.mapCoeffs f hf) (Q.map f) (E.mapCoeffs f hf) := by
   have hrev : (Q.map f).reverse = Q.reverse.map f := by rw [reverse, hdeg, reflect_map, ← reverse]
@@ -83,27 +81,23 @@ theorem IsRieszColemanProjection.mapCoeffs_of_isUnit_leadingCoeff
   have := NormOneClass.nontrivial (G := S)
   exact hE.mapCoeffs f hf (natDegree_map_eq_of_isUnit_leadingCoeff f hQ)
 
-/-- **Bounded base change of the explicit Riesz–Coleman projector.** Under a coprime Fredholm
-factorization `H_u = Q * S₀` with `IsUnit Q.leadingCoeff`, `rieszColemanProjection` commutes with
-`mapCoeffs`. -/
+/-- **Bounded base change of the explicit Riesz–Coleman projector.** Over a complete ultrametric
+Tate ring `R`, under a coprime Fredholm factorization `H_u = Q * S₀` with `IsUnit Q.leadingCoeff`,
+`rieszColemanProjection` commutes with `mapCoeffs`. -/
 theorem IsRowCompact.rieszColemanProjection_mapCoeffs [IsUltrametricDist R] [CompleteSpace R]
     {u : C₀(I, R) →L[R] C₀(I, R)} (hu : u.IsRowCompact) (f : R →+* S)
     (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) {Q : R[X]} {S₀ : R⟦X⟧} (hQ : IsUnit Q.leadingCoeff)
     (hS₀ : S₀.IsEntire) (hfac : u.matrixCoeff.charPowerSeries = (Q : R⟦X⟧) * S₀)
-    (hcop : IsCoprime
-      (⟨Q, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe Q)⟩ : IsEntire.subring R)
-      ⟨S₀, IsEntire.mem_subring.mpr hS₀⟩) :
+    (hcop : IsCoprime (⟨Q, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe Q)⟩ :
+      IsEntire.subring R) ⟨S₀, IsEntire.mem_subring.mpr hS₀⟩) :
     (u.mapCoeffs f hf).rieszColemanProjection (Q.map f) =
       (u.rieszColemanProjection Q).mapCoeffs f hf := by
   have := NormOneClass.nontrivial (G := S)
   have hdeg : (Q.map f).natDegree = Q.natDegree := natDegree_map_eq_of_isUnit_leadingCoeff f hQ
   have hrev : (Q.map f).reverse = Q.reverse.map f := by rw [reverse, hdeg, reflect_map, ← reverse]
-  have hlc : (Q.map f).leadingCoeff = f Q.leadingCoeff := by
-    rw [leadingCoeff, hdeg, coeff_map, ← leadingCoeff]
   set B := 1 - C (Ring.inverse Q.leadingCoeff) * Q.reverse with hB_def
   have hB_map : 1 - C (Ring.inverse (Q.map f).leadingCoeff) * (Q.map f).reverse = B.map f := by
-    rw [hlc, ← hQ.map_ringInverse f, hrev, hB_def, Polynomial.map_sub, Polynomial.map_one,
-      Polynomial.map_mul, map_C]
+    simp [hB_def, hrev, leadingCoeff_map_eq_of_isUnit_leadingCoeff f hQ, ← hQ.map_ringInverse f]
   have hB0 : B.coeff 0 = 0 := coeff_zero_one_sub_C_mul_reverse (Ring.inverse_mul_cancel _ hQ)
   have hGood := hu.isGoodZero_charPowerSeries_aeval_one_sub_C_mul_reverse hQ hS₀ hfac hcop
   rw [rieszColemanProjection_def, rieszColemanProjection_def, hdeg, hB_map, ← hB_def,
@@ -122,35 +116,23 @@ variable {I K L : Type*} [TopologicalSpace I] [DiscreteTopology I] [DecidableEq 
 
 /-- Bounded field extension preserves the dimension of `ker Q*(u)` under a coprime Fredholm
 factorization `H_u = Q * S₀`. -/
-theorem IsRowCompact.finrank_ker_aeval_reverse_mapCoeffs
-    {u : C₀(I, K) →L[K] C₀(I, K)} (hu : u.IsRowCompact) (f : K →+* L)
-    (hf : ∃ C : ℝ≥0, ∀ x, ‖f x‖ ≤ C * ‖x‖) {Q : K[X]} {S₀ : K⟦X⟧} (hS₀ : S₀.IsEntire)
-    (hfac : u.matrixCoeff.charPowerSeries = (Q : K⟦X⟧) * S₀)
-    (hcop : IsCoprime
-      (⟨Q, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe Q)⟩ : IsEntire.subring K)
-      ⟨S₀, IsEntire.mem_subring.mpr hS₀⟩) :
-    Module.finrank L (LinearMap.ker
-      (Polynomial.aeval (u.mapCoeffs f hf) (Q.map f).reverse : Module.End L C₀(I, L))) =
+theorem IsRowCompact.finrank_ker_aeval_reverse_mapCoeffs {u : C₀(I, K) →L[K] C₀(I, K)}
+    (hu : u.IsRowCompact) (f : K →+* L) (hf : ∃ C : ℝ≥0, ∀ x, ‖f x‖ ≤ C * ‖x‖) {Q : K[X]}
+    {S₀ : K⟦X⟧} (hS₀ : S₀.IsEntire) (hfac : u.matrixCoeff.charPowerSeries = (Q : K⟦X⟧) * S₀)
+    (hcop : IsCoprime (⟨Q, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe Q)⟩ :
+      IsEntire.subring K) ⟨S₀, IsEntire.mem_subring.mpr hS₀⟩) :
+    Module.finrank L (LinearMap.ker (Polynomial.aeval (u.mapCoeffs f hf) (Q.map f).reverse :
+      Module.End L C₀(I, L))) =
     Module.finrank K (LinearMap.ker (Polynomial.aeval u Q.reverse : Module.End K C₀(I, K))) := by
-  have hQ : IsUnit Q.leadingCoeff := (leadingCoeff_ne_zero.mpr fun h0 ↦ by
-    simpa [h0, u.matrixCoeff.constantCoeff_charPowerSeries] using
-      congrArg (PowerSeries.constantCoeff (R := K)) hfac).isUnit
-  have hEf :=
-    (hu.isRieszColemanProjection_rieszColemanProjection hQ hS₀ hfac
-      hcop).mapCoeffs_of_isUnit_leadingCoeff hQ f hf
-  set B := 1 - C (Ring.inverse Q.leadingCoeff) * Q.reverse with hB_def
-  have hB0 : B.coeff 0 = 0 := coeff_zero_one_sub_C_mul_reverse (Ring.inverse_mul_cancel _ hQ)
-  have hv := hu.aeval hB0
+  have hQ := PowerSeries.isUnit_leadingCoeff_of_coe_dvd
+    (mt (congrArg PowerSeries.constantCoeff) (by simp)) ⟨S₀, hfac⟩
+  have hEf := (hu.isRieszColemanProjection_rieszColemanProjection hQ hS₀ hfac
+    hcop).mapCoeffs_of_isUnit_leadingCoeff hQ f hf
+  have hv := hu.aeval (coeff_zero_one_sub_C_mul_reverse (Ring.inverse_mul_cancel _ hQ))
   have hGood := hu.isGoodZero_charPowerSeries_aeval_one_sub_C_mul_reverse hQ hS₀ hfac hcop
-  rw [← hB_def] at hGood
-  have hEv : IsRieszProjection (Polynomial.aeval u B) 1 Q.natDegree
-      (u.rieszColemanProjection Q) := by
-    rw [rieszColemanProjection_def, ← hB_def]
-    exact hv.isRieszProjection_rieszProjection (fun _ ↦ hGood.evalAt_hasseDeriv_eq_zero)
-      hGood.isUnit_evalAt_hasseDeriv
-  have hEvf : IsRieszProjection ((Polynomial.aeval u B).mapCoeffs f hf) 1 Q.natDegree
-      ((u.rieszColemanProjection Q).mapCoeffs f hf) := by
-    simpa only [map_one] using hEv.mapCoeffs f hf
+  have hEvf := by
+    simpa only [map_one] using
+      (hu.isRieszProjection_rieszColemanProjection hQ hS₀ hfac hcop).mapCoeffs f hf
   have hGoodf := by simpa only [map_one] using hv.isGoodZero_charPowerSeries_mapCoeffs f hf hGood
   rw [← hEf.range_eq_ker, hEvf.finrank_range (hv.mapCoeffs f hf) hGoodf,
     hu.finrank_ker_aeval_reverse hS₀ hfac hcop]

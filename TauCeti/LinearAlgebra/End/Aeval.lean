@@ -103,9 +103,7 @@ private theorem ker_aeval_eq_ker_one_sub_aeval {E : Type*} [AddCommGroup E] [Mod
   simp [Algebra.algebraMap_eq_smul_one, hP.unit⁻¹.isUnit.smul_eq_zero]
 
 /-- Along a linear retract `π ∘ₗ σ = id`, for any polynomial `P` with invertible constant
-coefficient, the retraction and section identify `ker P(σ ∘ₗ u ∘ₗ π)` with `ker P(u)`:
-`1 - P(0)⁻¹ P` vanishes at `0`, so `1 - (1 - P(0)⁻¹ P)(σ ∘ₗ u ∘ₗ π)` is the identity extension
-`splitEnd π σ h (1 - (1 - P(0)⁻¹ P)(u))`. -/
+coefficient, the retraction and section identify `ker P(σ ∘ₗ u ∘ₗ π)` with `ker P(u)`. -/
 noncomputable def kerAevalCompCompEquiv {π : F →ₗ[R] M} {σ : M →ₗ[R] F}
     (h : π ∘ₗ σ = LinearMap.id) (u : Module.End R M) {P : R[X]} (hP : IsUnit (P.coeff 0)) :
     ker (aeval (σ ∘ₗ u ∘ₗ π) P) ≃ₗ[R] ker (aeval u P) :=

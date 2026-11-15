@@ -377,17 +377,6 @@ theorem isUnit_eval_one_colemanDBounded_one_sub_C_mul_reverse_iff
     isUnit_resultant_iff_isCoprime hq,
     isCoprime_mul_unit_left_left (isUnit_C.2 (IsUnit.of_mul_eq_one _ hc))]
 
-/-- Scaling `Q` by a unit leaves the Riesz–Coleman functional polynomial
-`1 - lc(Q)⁻¹ Q*` unchanged. -/
-theorem one_sub_C_inverse_mul_reverse_units_smul (Q : R[X]) (c : Rˣ) :
-    1 - C (Ring.inverse (c • Q).leadingCoeff) * (c • Q).reverse =
-      1 - C (Ring.inverse Q.leadingCoeff) * Q.reverse := by
-  have hlc : (c • Q).leadingCoeff = (c : R) * Q.leadingCoeff := by
-    rw [leadingCoeff, leadingCoeff, natDegree_smul_of_smul_regular Q (IsSMulRegular.all c),
-      Units.smul_def, smul_eq_C_mul, coeff_C_mul]
-  rw [hlc, reverse_units_smul, Units.smul_def, smul_eq_C_mul, ← mul_assoc, ← C_mul,
-    Ring.inverse_mul (.inl c.isUnit), Ring.inverse_unit, mul_assoc, c.inv_mul, mul_one]
-
 end RieszColeman
 
 /-- An entry of the Sylvester matrix defining Coleman's transform `D_(n,m)(B, P)` with `B(0) = 0`,

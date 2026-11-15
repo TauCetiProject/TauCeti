@@ -146,8 +146,8 @@ theorem HasPr.range_of_isIdempotentElem (h : HasPr R M) {e : M →L[R] M}
 property (Pr). -/
 theorem HasPr.ker_of_isIdempotentElem (h : HasPr R M) {e : M →L[R] M}
     (he : IsIdempotentElem e) : HasPr R e.ker :=
-  h.of_retract e.ker.subtypeL (ContinuousLinearMap.IsIdempotentElem.kerRestrict he)
-    (ContinuousLinearMap.IsIdempotentElem.kerRestrict_comp_subtypeL he)
+  h.of_retract e.ker.subtypeL (ContinuousLinearMap.IsIdempotentElem.projectionOntoKer he)
+    (ContinuousLinearMap.IsIdempotentElem.projectionOntoKer_comp_subtypeL he)
 
 /-- A finite product of potentially orthonormalisable modules is potentially orthonormalisable. -/
 theorem IsPotentiallyONable.prod (hM : IsPotentiallyONable R M) (hN : IsPotentiallyONable R N) :

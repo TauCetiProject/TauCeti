@@ -306,14 +306,23 @@ theorem IsPrCompact.aeval [ContinuousConstSMul R M] {u : M →L[R] M} (hu : u.Is
   rw [map_mul, Polynomial.aeval_X, mul_def]
   exact hu.comp_clm _ hu.hasPr_source
 
+/-- Restricting a row-compact endomorphism of a (Pr) module to an invariant range of an idempotent
+continuous linear endomorphism gives a row-compact endomorphism. -/
+theorem IsPrCompact.restrict_range_of_isIdempotentElem {u e : M →L[R] M} (hu : u.IsPrCompact)
+    (he : IsIdempotentElem e) (hm : Set.MapsTo u e.range e.range) :
+    (u.restrict hm).IsPrCompact := by
+  have hRange := hu.hasPr_source.range_of_isIdempotentElem he
+  rw [← IsIdempotentElem.rangeRestrict_comp_comp_subtypeL he hm]
+  exact (hu.comp_clm e.range.subtypeL hRange).clm_comp e.rangeRestrict hRange
+
 /-- Restricting a row-compact endomorphism of a (Pr) module to an invariant kernel of an idempotent
 continuous linear endomorphism gives a row-compact endomorphism. -/
 theorem IsPrCompact.restrict_ker_of_isIdempotentElem {u e : M →L[R] M} (hu : u.IsPrCompact)
     (he : IsIdempotentElem e) (hm : Set.MapsTo u e.ker e.ker) :
     (u.restrict hm).IsPrCompact := by
   have hKer := hu.hasPr_source.ker_of_isIdempotentElem he
-  rw [← IsIdempotentElem.kerRestrict_comp_comp_subtypeL he hm]
-  exact (hu.comp_clm e.ker.subtypeL hKer).clm_comp (IsIdempotentElem.kerRestrict he) hKer
+  rw [← IsIdempotentElem.projectionOntoKer_comp_comp_subtypeL he hm]
+  exact (hu.comp_clm e.ker.subtypeL hKer).clm_comp (IsIdempotentElem.projectionOntoKer he) hKer
 
 end Ideal
 
