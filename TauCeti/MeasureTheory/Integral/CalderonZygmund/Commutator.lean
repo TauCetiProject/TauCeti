@@ -11,11 +11,16 @@ public import TauCeti.MeasureTheory.Integral.SharpMaximalFunction
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.DistRpow
+import TauCeti.MeasureTheory.Function.BoundedMeanOscillation.Truncation
+import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
+import TauCeti.MeasureTheory.Function.LpSeminorm.Clipping
+import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
+import Mathlib.MeasureTheory.Function.LpSpace.Complete
 
 /-!
-# The sharp maximal function of a commutator with a function of bounded mean oscillation
+# Commutators of singular integral operators with functions of bounded mean oscillation
 
-Let `T` be a singular integral operator on `ℝⁿ = ι → ℝ`, `n ≥ 1`, and let `b` have bounded mean
+Let `T` be a singular integral operator on `ℝⁿ = ι → ℝ`, and let `b` have bounded mean
 oscillation. The **commutator** of `T` with multiplication by `b` is
 
 `[b, T] f = b T f - T (b f)`.
@@ -25,8 +30,8 @@ Coifman, Rochberg and Weiss proved that `[b, T]` is bounded on `Lᵖ` for `1 < p
 equations whose coefficients have vanishing mean oscillation: freezing a coefficient `a` at a
 point leaves an error that is a commutator `[a, T]` of a Calderón–Zygmund operator with `a`.
 
-This file proves the pointwise estimate on which Janson's proof of that theorem rests: for
-`1 < q < ∞`,
+This file proves that theorem (`TauCeti.exists_eLpNorm_smul_sub_le_of_norm_sub_le_mul_rpow`),
+following Janson's proof. Its core is a pointwise estimate: for `1 < q < ∞` and `n ≥ 1`,
 
 `([b, T] f)^# x ≤ C ‖b‖_{BMO} ((M(‖T f‖^q) x)^{1/q} + (M(‖f‖^q) x)^{1/q})`
 
@@ -38,7 +43,7 @@ with the standard smoothness estimate in its first variable, and bounded in some
 `s = 1` requires an additional strong `L¹` bound. Balls are taken in the sup distance, so that they
 are cubes.
 
-## The proof
+## The pointwise estimate
 
 Fix a ball `B = B(c, r)` containing `x`, let `2B = B(c, 2 r)` and `a = b_{2B}`. Split
 `(b - a) f = h₁ + h₂` with `h₁` supported on `2B` and `h₂` vanishing there. Then
@@ -60,17 +65,25 @@ and the three terms are compared with the constant `-∫ K c z (h₂ z) dz` on `
   `O(2^(-kδ) / |2^(k+2) B|)`, while `|b_{2^(k+2) B} - b_{2B}| ≤ (k + 3) 2ⁿ ‖b‖_{BMO}`. The sum over
   `k` converges.
 
-Integrating this estimate, with the `Lᵖ` bounds for the maximal function for `q < p`, leads to the
-Coifman–Rochberg–Weiss theorem. The case `p₀ = p` of the Fefferman–Stein inequality
-`TauCeti.eLpNorm_le_eLpNorm_sharpMaximalFunction`, for functions in `Lᵖ`, is the form needed there:
-for bounded truncations `b_k` of `b` and `f ∈ L² ∩ Lᵖ`, the commutator `[b_k, T] f` lies in `Lᵖ`, so
-it gives an `Lᵖ` bound uniform in `k`, which passes to `b` and to all `f ∈ Lᵖ` by Fatou's lemma and
-density.
+## The `Lᵖ` bound
+
+Fix `s < q < p`. The Fefferman–Stein inequality `TauCeti.eLpNorm_le_eLpNorm_sharpMaximalFunction`
+bounds `‖h‖_p` by `‖h^#‖_p` for `h ∈ Lᵖ`, and `(M(‖·‖^q))^{1/q}` is bounded on `Lᵖ`
+(`TauCeti.eLpNorm_maximalFunction_rpow_rpow_inv_le`). Together with the pointwise estimate and the
+`Lᵖ` bound for `T` they give `‖[b, T] f‖_p ≤ C ‖b‖_{BMO} ‖f‖_p` as soon as `[b, T] f ∈ Lᵖ`. This a
+priori integrability holds for the clipped multipliers `bₖ = max (-k) (min k b)`, whose BMO
+seminorm is at most `2 ‖b‖_{BMO}` (`TauCeti.bmoSeminorm_max_min_le`), and for the bounded
+truncations `fₖ = 1_{Sₖ} f` with `Sₖ = B(0, k) ∩ {‖f‖ ≤ k}`. As `k → ∞`, `fₖ → f` and `bₖ fₖ → b f`
+in `L²` by dominated convergence, so `T fₖ → T f` and `T (bₖ fₖ) → T (b f)` almost everywhere along
+a subsequence, and the uniform bound passes to `[b, T] f` by Fatou's lemma. In dimension `0` the
+commutator vanishes.
 
 ## Main declarations
 
 * `TauCeti.exists_sharpMaximalFunction_smul_sub_le_of_norm_sub_le_mul_rpow`: the sharp maximal
   function estimate for `[b, T] f`.
+* `TauCeti.exists_eLpNorm_smul_sub_le_of_norm_sub_le_mul_rpow`: the Coifman–Rochberg–Weiss
+  theorem, `‖[b, T] f‖_p ≤ C ‖b‖_{BMO} ‖f‖_p` for `f ∈ L²` with `b f ∈ L²`.
 
 ## References
 
@@ -84,7 +97,7 @@ density.
 public section
 
 open Filter MeasureTheory Metric Set
-open scoped ENNReal NNReal
+open scoped ENNReal NNReal Topology
 
 namespace TauCeti
 
@@ -519,10 +532,9 @@ where `^#` is the sharp maximal function and `M` the centred Hardy–Littlewood 
 
 Calderón–Zygmund operators with a standard kernel satisfy the hypotheses for `1 < s < q`, with the
 `Lˢ` bound supplied by the Calderón–Zygmund theorem; the case `s = 1` requires an additional strong
-`L¹` bound. Combined with an a priori form of the Fefferman–Stein inequality, an approximation
-argument and the `Lᵖ` bounds for the maximal function, this is the route to the
-Coifman–Rochberg–Weiss theorem that `[b, T]` is bounded on `Lᵖ`, `1 < p < ∞`, with norm
-`O(‖b‖_{BMO})`. -/
+`L¹` bound. Combined with the Fefferman–Stein inequality, an approximation argument and the `Lᵖ`
+bounds for the maximal function, it gives the Coifman–Rochberg–Weiss theorem
+`TauCeti.exists_eLpNorm_smul_sub_le_of_norm_sub_le_mul_rpow`. -/
 theorem exists_sharpMaximalFunction_smul_sub_le_of_norm_sub_le_mul_rpow {F : Type*}
     [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F] {s q : ℝ} (hs : 1 ≤ s)
     (hsq : s < q) (A C₀ : ℝ≥0) {δ : ℝ} (hδ : 0 < δ) :
@@ -545,5 +557,307 @@ theorem exists_sharpMaximalFunction_smul_sub_le_of_norm_sub_le_mul_rpow {F : Typ
     fun T K hKm hK hrep hT b M hb hM f g hg x => sharpMaximalFunction_le fun c r hx => ?_⟩
   rw [ENNReal.coe_toNNReal hC]
   exact setLAverage_enorm_smul_sub_sub_setAverage_le T hKm hδ hK hrep hs hsq hT hb hM f g hg hx
+
+/-- **Integrating a sharp function estimate.** Let `1 < p` and `0 < q < p`. If `h ∈ Lᵖ` satisfies
+
+`h^# ≤ c ((M(‖u‖^q))^{1/q} + (M(‖v‖^q))^{1/q})`
+
+everywhere, then `‖h‖_p` is at most `c (‖u‖_p + ‖v‖_p)` times the Fefferman–Stein constant and
+the constant of the `Lᵖ` bound for `(M(‖·‖^q))^{1/q}`. -/
+private theorem eLpNorm_le_of_sharpMaximalFunction_le {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [CompleteSpace F] {p q : ℝ} (hp : 1 < p) (hq : 0 < q) (hqp : q < p)
+    {h u : (ι → ℝ) → F} {v : (ι → ℝ) → G} (hh : MemLp h (ENNReal.ofReal p) volume)
+    (hu : AEStronglyMeasurable u volume) (hv : AEStronglyMeasurable v volume) (c : ℝ≥0∞)
+    (hbound : ∀ x, sharpMaximalFunction volume h x ≤
+      c * (maximalFunction volume (fun y => ‖u y‖ₑ ^ q) x ^ q⁻¹ +
+        maximalFunction volume (fun y => ‖v y‖ₑ ^ q) x ^ q⁻¹)) :
+    eLpNorm h (ENNReal.ofReal p) volume ≤
+      ENNReal.ofReal (2 ^ (p + 1) * 2 ^ ((p + 2 * Fintype.card ι + 2) * p)) ^ (1 / p) * c *
+        maximalFunctionConst (Fintype.card ι) (p / q) ^ (1 / p) *
+          (eLpNorm u (ENNReal.ofReal p) volume + eLpNorm v (ENNReal.ofReal p) volume) := by
+  have hpR : (ENNReal.ofReal p).toReal = p := ENNReal.toReal_ofReal (by linarith)
+  have hp' : 1 < ENNReal.ofReal p := by simpa using hp
+  set Mu : (ι → ℝ) → ℝ≥0∞ := fun x => maximalFunction volume (fun y => ‖u y‖ₑ ^ q) x ^ q⁻¹
+  set Mv : (ι → ℝ) → ℝ≥0∞ := fun x => maximalFunction volume (fun y => ‖v y‖ₑ ^ q) x ^ q⁻¹
+  have hcard : Module.finrank ℝ (ι → ℝ) = Fintype.card ι := Module.finrank_fintype_fun_eq_card ℝ
+  calc eLpNorm h (ENNReal.ofReal p) volume
+      ≤ ENNReal.ofReal (2 ^ (p + 1) * 2 ^ ((p + 2 * Fintype.card ι + 2) * p)) ^ (1 / p) *
+          eLpNorm (sharpMaximalFunction volume h) (ENNReal.ofReal p) volume := by
+        simpa only [hpR] using
+          eLpNorm_le_eLpNorm_sharpMaximalFunction hh hp'.le le_rfl hp' ENNReal.ofReal_ne_top
+    _ ≤ ENNReal.ofReal (2 ^ (p + 1) * 2 ^ ((p + 2 * Fintype.card ι + 2) * p)) ^ (1 / p) *
+          eLpNorm (fun x => c * (Mu + Mv) x) (ENNReal.ofReal p) volume := by
+        gcongr
+        exact eLpNorm_mono_eNorm (measurable_sharpMaximalFunction _ _).aestronglyMeasurable
+          fun x => by simpa only [eNorm_eq_self, Pi.add_apply, Mu, Mv] using hbound x
+    _ ≤ ENNReal.ofReal (2 ^ (p + 1) * 2 ^ ((p + 2 * Fintype.card ι + 2) * p)) ^ (1 / p) *
+          (c * (eLpNorm Mu (ENNReal.ofReal p) volume + eLpNorm Mv (ENNReal.ofReal p) volume)) := by
+        rw [eLpNorm_const_mul_ennreal_of_pos (by positivity)]
+        gcongr
+        exact eLpNorm_add_le hp'.le
+    _ ≤ ENNReal.ofReal (2 ^ (p + 1) * 2 ^ ((p + 2 * Fintype.card ι + 2) * p)) ^ (1 / p) *
+          (c * (maximalFunctionConst (Fintype.card ι) (p / q) ^ (1 / p) *
+              eLpNorm u (ENNReal.ofReal p) volume +
+            maximalFunctionConst (Fintype.card ι) (p / q) ^ (1 / p) *
+              eLpNorm v (ENNReal.ofReal p) volume)) := by
+        gcongr
+        · simpa only [hcard] using
+            eLpNorm_maximalFunction_rpow_rpow_inv_le volume hu.eNorm hq hqp
+        · simpa only [hcard] using
+            eLpNorm_maximalFunction_rpow_rpow_inv_le volume hv.eNorm hq hqp
+    _ = _ := by ring
+
+/-- **The commutator estimate for data in `Lᵖ`.** Let `1 < p`, `0 < q < p`, let `T` be bounded in
+the `Lᵖ` norm with constant `Aₚ` on `L²`, let `b` be essentially bounded, and let `f, g ∈ L² ∩ Lᵖ`.
+If `([b, T] f)^# ≤ c ((M(‖T f‖^q))^{1/q} + (M(‖f‖^q))^{1/q})`, where `[b, T] f = b T f - T g`,
+then `‖[b, T] f‖_p ≤ C c (Aₚ + 1) ‖f‖_p`. The boundedness of `b` and the integrability of `f` and
+`g` make `[b, T] f` an `Lᵖ` function, as the Fefferman–Stein inequality requires. -/
+private theorem eLpNorm_smul_sub_le_of_sharpMaximalFunction_le {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [CompleteSpace F] (T : Lp E 2 (volume : Measure (ι → ℝ)) →L[ℝ] Lp F 2 volume)
+    {p q : ℝ} (hp : 1 < p) (hq : 0 < q) (hqp : q < p) {Aₚ : ℝ≥0}
+    (hTp : ∀ h : Lp E 2 (volume : Measure (ι → ℝ)),
+      eLpNorm (T h) (ENNReal.ofReal p) volume ≤ Aₚ * eLpNorm h (ENNReal.ofReal p) volume)
+    {b : (ι → ℝ) → ℝ} (hb : MemLp b ∞ volume) {f g : Lp E 2 (volume : Measure (ι → ℝ))}
+    (hf : MemLp f (ENNReal.ofReal p) volume) (hg : MemLp g (ENNReal.ofReal p) volume) (c : ℝ≥0∞)
+    (hbound : ∀ x, sharpMaximalFunction volume (fun y => b y • T f y - T g y) x ≤
+      c * (maximalFunction volume (fun y => ‖T f y‖ₑ ^ q) x ^ q⁻¹ +
+        maximalFunction volume (fun y => ‖f y‖ₑ ^ q) x ^ q⁻¹)) :
+    eLpNorm (fun y => b y • T f y - T g y) (ENNReal.ofReal p) volume ≤
+      ENNReal.ofReal (2 ^ (p + 1) * 2 ^ ((p + 2 * Fintype.card ι + 2) * p)) ^ (1 / p) * c *
+        maximalFunctionConst (Fintype.card ι) (p / q) ^ (1 / p) * (Aₚ + 1) *
+          eLpNorm f (ENNReal.ofReal p) volume := by
+  have hTmem (u : Lp E 2 (volume : Measure (ι → ℝ))) (hu : MemLp u (ENNReal.ofReal p) volume) :
+      MemLp (T u) (ENNReal.ofReal p) volume :=
+    (hTp u).trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top hu.eLpNorm_lt_top)
+  calc eLpNorm (fun y => b y • T f y - T g y) (ENNReal.ofReal p) volume
+      ≤ ENNReal.ofReal (2 ^ (p + 1) * 2 ^ ((p + 2 * Fintype.card ι + 2) * p)) ^ (1 / p) * c *
+          maximalFunctionConst (Fintype.card ι) (p / q) ^ (1 / p) *
+            (eLpNorm (T f) (ENNReal.ofReal p) volume + eLpNorm f (ENNReal.ofReal p) volume) :=
+        eLpNorm_le_of_sharpMaximalFunction_le hp hq hqp ((hb.smul (hTmem f hf)).sub (hTmem g hg))
+          (Lp.aestronglyMeasurable _) (Lp.aestronglyMeasurable _) c hbound
+    _ ≤ ENNReal.ofReal (2 ^ (p + 1) * 2 ^ ((p + 2 * Fintype.card ι + 2) * p)) ^ (1 / p) * c *
+          maximalFunctionConst (Fintype.card ι) (p / q) ^ (1 / p) *
+            (Aₚ * eLpNorm f (ENNReal.ofReal p) volume + eLpNorm f (ENNReal.ofReal p) volume) := by
+        gcongr
+        exact hTp f
+    _ = _ := by ring
+
+omit [Nonempty ι] [NormedSpace ℝ E] in
+/-- **Dominated convergence in `L²`.** If `uₖ → u` pointwise, eventually at every point, with
+`‖uₖ‖ ≤ ‖u‖`, and `v ∈ L²` is a representative of `u`, then `uₖ → v` in `L²`. -/
+private theorem tendsto_toLp_of_norm_le {us : ℕ → (ι → ℝ) → E}
+    (hus : ∀ k, MemLp (us k) 2 volume) {v : Lp E 2 (volume : Measure (ι → ℝ))}
+    {u : (ι → ℝ) → E} (hv : v =ᵐ[volume] u) (hle : ∀ k y, ‖us k y‖ ≤ ‖u y‖)
+    (hlim : ∀ y, ∀ᶠ k in atTop, us k y = u y) :
+    Tendsto (fun k => (hus k).toLp (us k)) atTop (𝓝 v) := by
+  rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm']
+  refine (tendsto_eLpNorm_sub_of_ae_tendsto (C := 2) (by simp)
+    (.of_forall fun k => (hus k).aestronglyMeasurable) ((Lp.memLp v).ae_eq hv)
+    (.of_forall fun k => .of_forall fun y => ?_)
+    (.of_forall fun y => tendsto_const_nhds.congr' ((hlim y).mono fun k hk => hk.symm))).congr
+    fun k => eLpNorm_congr_ae ((hus k).coeFn_toLp.sub hv).symm
+  calc ‖us k y - u y‖ₑ ≤ ‖us k y‖ₑ + ‖u y‖ₑ := eNorm_sub_le
+    _ ≤ (2 : ℝ≥0) * ‖u y‖ₑ := by
+      rw [ENNReal.coe_ofNat, two_mul]
+      gcongr
+      exact eNorm_le_iff_norm_le.2 (hle k y)
+
+omit [Nonempty ι] in
+/-- **Passing to the limit in commutators.** Let `bₖ → b` pointwise and `fₖ → f`, `gₖ → g` in
+`L²`. If the functions `bₖ T fₖ - T gₖ` all have `Lᵖ` seminorm at most `B`, then so does
+`b T f - T g`, by Fatou's lemma along a subsequence on which `T fₖ` and `T gₖ` converge almost
+everywhere. -/
+private theorem eLpNorm_smul_sub_le_of_tendsto {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] (T : Lp E 2 (volume : Measure (ι → ℝ)) →L[ℝ] Lp F 2 volume)
+    {p : ℝ≥0∞} {bs : ℕ → (ι → ℝ) → ℝ} {b : (ι → ℝ) → ℝ}
+    (hbs : ∀ k, AEStronglyMeasurable (bs k) volume) (hb : AEStronglyMeasurable b volume)
+    (hbs_lim : ∀ y, Tendsto (fun k => bs k y) atTop (𝓝 (b y)))
+    {fs gs : ℕ → Lp E 2 (volume : Measure (ι → ℝ))} {f g : Lp E 2 (volume : Measure (ι → ℝ))}
+    (hfs : Tendsto fs atTop (𝓝 f)) (hgs : Tendsto gs atTop (𝓝 g)) {B : ℝ≥0∞}
+    (hB : ∀ k, eLpNorm (fun y => bs k y • T (fs k) y - T (gs k) y) p volume ≤ B) :
+    eLpNorm (fun y => b y • T f y - T g y) p volume ≤ B := by
+  obtain ⟨ns₁, hns₁, h₁⟩ :=
+    (tendstoInMeasure_of_tendsto_Lp ((T.continuous.tendsto f).comp hfs)).exists_seq_tendsto_ae
+  obtain ⟨ns₂, hns₂, h₂⟩ := ((tendstoInMeasure_of_tendsto_Lp
+    ((T.continuous.tendsto g).comp hgs)).comp hns₁.tendsto_atTop).exists_seq_tendsto_ae
+  have hφ : Tendsto (fun k => ns₁ (ns₂ k)) atTop atTop :=
+    hns₁.tendsto_atTop.comp hns₂.tendsto_atTop
+  refine Lp.eLpNorm_le_of_ae_tendsto (u := atTop)
+    (f := fun k y => bs (ns₁ (ns₂ k)) y • T (fs (ns₁ (ns₂ k))) y - T (gs (ns₁ (ns₂ k))) y)
+    (.of_forall fun k => hB _)
+    (fun k => ((hbs _).smul (Lp.aestronglyMeasurable _)).sub (Lp.aestronglyMeasurable _))
+    ((hb.smul (Lp.aestronglyMeasurable _)).sub (Lp.aestronglyMeasurable _)) ?_
+  filter_upwards [h₁, h₂] with y hy₁ hy₂
+  exact (((hbs_lim y).comp hφ).smul (hy₁.comp hns₂.tendsto_atTop)).sub hy₂
+
+omit [Nonempty ι] in
+/-- In dimension `0` the space is a point, so `g = b f` is a scalar multiple of `f` and the
+commutator `b T f - T g` vanishes. -/
+private theorem smul_sub_ae_eq_zero_of_isEmpty [IsEmpty ι] {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] (T : Lp E 2 (volume : Measure (ι → ℝ)) →L[ℝ] Lp F 2 volume)
+    {b : (ι → ℝ) → ℝ} {f g : Lp E 2 (volume : Measure (ι → ℝ))}
+    (hg : g =ᵐ[volume] (fun y => b y • f y)) :
+    (fun y => b y • T f y - T g y) =ᵐ[volume] 0 := by
+  obtain ⟨x₀⟩ : Nonempty (ι → ℝ) := inferInstance
+  have hgf : g = b x₀ • f := by
+    refine Lp.ext (hg.trans ?_)
+    filter_upwards [Lp.coeFn_smul (b x₀) f] with y hy
+    rw [hy, Pi.smul_apply, Subsingleton.elim y x₀]
+  have hTg : T g = b x₀ • T f := by rw [hgf, map_smul]
+  filter_upwards [Lp.coeFn_smul (b x₀) (T f)] with y hy
+  rw [hTg, hy, Pi.smul_apply, Subsingleton.elim y x₀, sub_self, Pi.zero_apply]
+
+omit [Nonempty ι] [NormedSpace ℝ E] in
+/-- **Bounded truncations of an `L²` function.** The functions `fₖ = 1_{Sₖ} f`, where
+`Sₖ = B(0, k) ∩ {‖f‖ ≤ k}`, are bounded by `k`, vanish off `B(0, k)`, are dominated by `‖f‖`, and
+eventually equal `f` at every point. -/
+private theorem exists_seq_norm_le_eventually_eq (f : Lp E 2 (volume : Measure (ι → ℝ))) :
+    ∃ fs : ℕ → (ι → ℝ) → E, (∀ k, AEStronglyMeasurable (fs k) volume) ∧
+      (∀ (k : ℕ) y, ‖fs k y‖ ≤ k) ∧ (∀ (k : ℕ) y, y ∉ ball (0 : ι → ℝ) k → fs k y = 0) ∧
+      (∀ k y, ‖fs k y‖ ≤ ‖f y‖) ∧ ∀ y, ∀ᶠ k : ℕ in atTop, fs k y = f y := by
+  have hfm : StronglyMeasurable f := Lp.stronglyMeasurable f
+  set S : ℕ → Set (ι → ℝ) := fun k => ball 0 k ∩ {y | ‖f y‖ ≤ k}
+  refine ⟨fun k => (S k).indicator f, fun k => (hfm.indicator (measurableSet_ball.inter
+    (measurableSet_le hfm.norm.measurable measurable_const))).aestronglyMeasurable,
+    fun k y => ?_, fun k y hy => indicator_of_notMem (s := S k) (fun h => hy h.1) _,
+    fun k y => norm_indicator_le_norm_self _ _, fun y => ?_⟩
+  · by_cases hy : y ∈ S k
+    · simpa [indicator_of_mem hy] using hy.2
+    · simp [indicator_of_notMem hy]
+  · refine (eventually_gt_atTop ⌈max ‖y‖ ‖f y‖⌉₊).mono fun k hk => ?_
+    have hk' := Nat.lt_of_ceil_lt hk
+    exact indicator_of_mem (s := S k) ⟨mem_ball_zero_iff.2 ((le_max_left _ _).trans_lt hk'),
+      ((le_max_right _ _).trans_lt hk').le⟩ _
+
+omit [Nonempty ι] in
+/-- **Reduction to bounded data.** Let `g = b f` with `f, g ∈ L²`. If, for every `k`, the
+commutator with the clipped multiplier `bₖ = max (-k) (min k b)` satisfies
+`‖bₖ T F - T G‖_p ≤ B ‖F‖_p` for all `F, G ∈ L² ∩ Lᵖ` with `G = bₖ F`, then
+`‖b T f - T g‖_p ≤ B ‖f‖_p`. The data are approximated by bounded truncations supported in balls,
+and the estimate passes to the limit by `eLpNorm_smul_sub_le_of_tendsto`. -/
+private theorem eLpNorm_smul_sub_le_of_forall_max_min {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] (T : Lp E 2 (volume : Measure (ι → ℝ)) →L[ℝ] Lp F 2 volume)
+    {p : ℝ≥0∞} {b : (ι → ℝ) → ℝ} (hb : AEStronglyMeasurable b volume)
+    {f g : Lp E 2 (volume : Measure (ι → ℝ))} (hg : g =ᵐ[volume] (fun y => b y • f y))
+    {B : ℝ≥0∞} (hB : ∀ (k : ℕ) (F G : Lp E 2 (volume : Measure (ι → ℝ))), MemLp F p volume →
+      MemLp G p volume → G =ᵐ[volume] (fun y => max (-(k : ℝ)) (min k (b y)) • F y) →
+      eLpNorm (fun y => max (-(k : ℝ)) (min k (b y)) • T F y - T G y) p volume ≤
+        B * eLpNorm F p volume) :
+    eLpNorm (fun y => b y • T f y - T g y) p volume ≤ B * eLpNorm f p volume := by
+  set bs : ℕ → (ι → ℝ) → ℝ := fun k y => max (-(k : ℝ)) (min k (b y))
+  have hbsm (k : ℕ) : AEStronglyMeasurable (bs k) volume :=
+    (by fun_prop : Continuous fun t : ℝ => max (-(k : ℝ)) (min k t)).comp_aestronglyMeasurable hb
+  have hbs_lim (y : ι → ℝ) : ∀ᶠ k : ℕ in atTop, bs k y = b y :=
+    (eventually_ge_atTop ⌈|b y|⌉₊).mono fun k hk =>
+      max_neg_min_eq_self_of_abs_le (Nat.ceil_le.1 hk)
+  obtain ⟨fs, hfsm, hfs_bd, hfs_supp, hfs_le, hfs_lim⟩ := exists_seq_norm_le_eventually_eq f
+  -- A bounded function supported in a ball lies in every `Lʳ`.
+  have hmem {u : (ι → ℝ) → E} (k : ℕ) (c : ℝ) (hu : AEStronglyMeasurable u volume)
+      (hc : ∀ y, ‖u y‖ ≤ c) (hsupp : ∀ y, y ∉ ball (0 : ι → ℝ) k → u y = 0) (r : ℝ≥0∞) :
+      MemLp u r volume :=
+    (memLp_top_of_bound hu c (.of_forall hc)).mono_exponent_of_measure_support_ne_top hsupp
+      measure_ball_lt_top.ne le_top
+  have hfs (k : ℕ) (r : ℝ≥0∞) : MemLp (fs k) r volume :=
+    hmem k k (hfsm k) (hfs_bd k) (hfs_supp k) r
+  have hgs (k : ℕ) (r : ℝ≥0∞) : MemLp (fun y => bs k y • fs k y) r volume := by
+    refine hmem (u := fun y => bs k y • fs k y) k (k * k) ((hbsm k).smul (hfsm k))
+      (fun y => ?_) (fun y hy => ?_) r
+    · rw [norm_smul, Real.norm_eq_abs]
+      exact mul_le_mul ((abs_max_min_le _ _).trans_eq (Nat.abs_cast k)) (hfs_bd k y)
+        (norm_nonneg _) (Nat.cast_nonneg _)
+    · simp [hfs_supp k y hy]
+  refine eLpNorm_smul_sub_le_of_tendsto T hbsm hb
+    (fun y => tendsto_const_nhds.congr' ((hbs_lim y).mono fun k hk => hk.symm))
+    (tendsto_toLp_of_norm_le (fun k => hfs k 2) EventuallyEq.rfl hfs_le hfs_lim)
+    (tendsto_toLp_of_norm_le (fun k => hgs k 2) hg (fun k y => ?_)
+      (fun y => ((hbs_lim y).and (hfs_lim y)).mono fun k hk => by simp only [hk.1, hk.2]))
+    fun k => ?_
+  · simp only [norm_smul, Real.norm_eq_abs]
+    exact mul_le_mul (abs_max_min_le_abs (Nat.cast_nonneg k) (b y)) (hfs_le k y)
+      (norm_nonneg _) (abs_nonneg _)
+  calc _ ≤ B * eLpNorm ((hfs k 2).toLp (fs k)) p volume :=
+        hB k _ _ ((hfs k _).ae_eq (hfs k 2).coeFn_toLp.symm)
+          ((hgs k _).ae_eq (hgs k 2).coeFn_toLp.symm)
+          ((hgs k 2).coeFn_toLp.trans ((hfs k 2).coeFn_toLp.mono fun y hy => by simp only [hy, bs]))
+    _ ≤ B * eLpNorm f p volume := by
+        gcongr
+        rw [eLpNorm_congr_ae (hfs k 2).coeFn_toLp]
+        exact eLpNorm_mono_eNorm (hfsm k) fun y => eNorm_le_iff_norm_le.2 (hfs_le k y)
+
+omit [Nonempty ι] in
+/-- **The Coifman–Rochberg–Weiss theorem.** Let `1 ≤ s < p`, `δ > 0`, and let `A`, `Aₚ`, `C₀` be
+constants. There is a constant `C`, depending only on these and the dimension `n`, with the
+following property on `ℝⁿ = ι → ℝ` with the sup distance.
+
+Let `T` be a bounded linear operator on `L²` such that `T h x = ∫ K x z (h z) dz` for almost every
+`x` in any ball on which `h` vanishes, where the kernel satisfies the standard smoothness estimate
+in its first variable,
+
+`‖K x y - K x' y‖ ≤ C₀ dist x x' ^ δ dist y x' ^ (-(n + δ))` whenever `dist y x' > 2 dist x x'`,
+
+and such that `‖T h‖_s ≤ A ‖h‖_s` and `‖T h‖_p ≤ Aₚ ‖h‖_p` for `h ∈ L²`. Let `b` be locally
+integrable with `‖b‖_{BMO} ≤ M`, and let `f, g ∈ L²` with `g = b f`. Then the commutator
+`[b, T] f = b T f - T (b f)` satisfies
+
+`‖[b, T] f‖_p ≤ C M ‖f‖_p`.
+
+Calderón–Zygmund operators with a standard kernel whose adjoint also has one satisfy the hypotheses
+for every `1 < s < p < ∞`, with the `Lˢ` and `Lᵖ` bounds supplied by the Calderón–Zygmund theorem.
+Since `T` is only given on `L²`, the commutator is stated for `f ∈ L²` with `b f ∈ L²`; neither
+`f ∈ Lᵖ` nor any integrability of the commutator is assumed. -/
+theorem exists_eLpNorm_smul_sub_le_of_norm_sub_le_mul_rpow {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F] {s p : ℝ} (hs : 1 ≤ s)
+    (hsp : s < p) (A Aₚ C₀ : ℝ≥0) {δ : ℝ} (hδ : 0 < δ) :
+    ∃ C : ℝ≥0, ∀ (T : Lp E 2 (volume : Measure (ι → ℝ)) →L[ℝ] Lp F 2 volume)
+      {K : (ι → ℝ) → (ι → ℝ) → E →L[ℝ] F}, (∀ x, AEStronglyMeasurable (K x) volume) →
+      (∀ x x' y, 2 * dist x x' < dist y x' →
+        ‖K x y - K x' y‖ ≤ C₀ * (dist x x' ^ δ * dist y x' ^ (-(Fintype.card ι + δ)))) →
+      (∀ (h : Lp E 2 (volume : Measure (ι → ℝ))) (y : ι → ℝ) (ρ : ℝ),
+        (∀ᵐ z, z ∈ ball y ρ → h z = 0) → ∀ᵐ x, x ∈ ball y ρ → T h x = ∫ z, K x z (h z)) →
+      (∀ h : Lp E 2 (volume : Measure (ι → ℝ)),
+        eLpNorm (T h) (ENNReal.ofReal s) volume ≤ A * eLpNorm h (ENNReal.ofReal s) volume) →
+      (∀ h : Lp E 2 (volume : Measure (ι → ℝ)),
+        eLpNorm (T h) (ENNReal.ofReal p) volume ≤ Aₚ * eLpNorm h (ENNReal.ofReal p) volume) →
+      ∀ {b : (ι → ℝ) → ℝ} {M : ℝ≥0}, LocallyIntegrable b volume → bmoSeminorm b volume ≤ M →
+      ∀ (f g : Lp E 2 (volume : Measure (ι → ℝ))), g =ᵐ[volume] (fun y => b y • f y) →
+        eLpNorm (fun y => b y • T f y - T g y) (ENNReal.ofReal p) volume ≤
+          C * M * eLpNorm f (ENNReal.ofReal p) volume := by
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · refine ⟨0, fun T K _ _ _ _ _ b M _ _ f g hg => ?_⟩
+    rw [eLpNorm_congr_ae (smul_sub_ae_eq_zero_of_isEmpty T hg), eLpNorm_zero]
+    exact zero_le
+  -- Janson's estimate, with an auxiliary exponent `s < q < p`, runs through the Fefferman–Stein
+  -- inequality for clipped multipliers and bounded data, and the estimate passes to the limit.
+  set q := (s + p) / 2
+  have hsq : s < q := by simp only [q]; linarith
+  have hqp : q < p := by simp only [q]; linarith
+  obtain ⟨C₁, hC₁⟩ := exists_sharpMaximalFunction_smul_sub_le_of_norm_sub_le_mul_rpow
+    (ι := ι) (E := E) (F := F) hs hsq A C₀ hδ
+  set C : ℝ≥0∞ := ENNReal.ofReal (2 ^ (p + 1) * 2 ^ ((p + 2 * Fintype.card ι + 2) * p)) ^ (1 / p) *
+    C₁ * 2 * maximalFunctionConst (Fintype.card ι) (p / q) ^ (1 / p) * (Aₚ + 1)
+  have hC : C ≠ ∞ := by
+    have hp0 : 0 ≤ 1 / p := one_div_nonneg.2 (by linarith)
+    simp only [C]
+    refine ENNReal.mul_ne_top (ENNReal.mul_ne_top (ENNReal.mul_ne_top (ENNReal.mul_ne_top
+      (ENNReal.rpow_ne_top_of_nonneg hp0 ENNReal.ofReal_ne_top) (by simp)) (by simp))
+      (ENNReal.rpow_ne_top_of_nonneg hp0 (maximalFunctionConst_ne_top _ _))) (by simp)
+  refine ⟨C.toNNReal, fun T K hKm hK hrep hT hTp b M hb hM f g hg => ?_⟩
+  rw [ENNReal.coe_toNNReal hC]
+  have hbm := hb.aestronglyMeasurable
+  refine eLpNorm_smul_sub_le_of_forall_max_min T hbm hg fun k F G hF hG hGF => ?_
+  -- The clipped multiplier has `‖bₖ‖_{BMO} ≤ 2 M`.
+  have hbk : bmoSeminorm (fun y => max (-(k : ℝ)) (min k (b y))) volume ≤
+      ((2 * M : ℝ≥0) : ℝ≥0∞) :=
+    (bmoSeminorm_max_min_le hbm k).trans (by push_cast; gcongr)
+  calc _ ≤ ENNReal.ofReal (2 ^ (p + 1) * 2 ^ ((p + 2 * Fintype.card ι + 2) * p)) ^ (1 / p) *
+          (C₁ * ((2 * M : ℝ≥0) : ℝ≥0∞)) * maximalFunctionConst (Fintype.card ι) (p / q) ^ (1 / p) *
+            (Aₚ + 1) * eLpNorm F (ENNReal.ofReal p) volume :=
+        eLpNorm_smul_sub_le_of_sharpMaximalFunction_le T (by linarith) (by linarith) hqp hTp
+          (hbm.memLp_top_max_min k) hF hG _
+          (hC₁ T hKm hK hrep hT ((hbm.memLp_top_max_min k).locallyIntegrable le_top) hbk _ _ hGF)
+    _ = C * M * eLpNorm F (ENNReal.ofReal p) volume := by
+        simp only [C]
+        push_cast
+        ring
 
 end TauCeti
