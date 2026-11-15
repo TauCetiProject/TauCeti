@@ -52,8 +52,8 @@ Specializing the number-field Mertens theorems of `TauCeti.NumberTheory.LFunctio
   `TauCeti.tendsto_prod_primesLE_one_sub_inv_inv_div_log`, and
   `TauCeti.tendsto_prod_primesLE_one_sub_inv_mul_log`: Mertens's third theorem.
 * `TauCeti.exists_pos_mul_inv_log_le_prod_primesLE_one_sub_inv_le`,
-  `TauCeti.exists_pos_mul_inv_log_le_prod_primesLE_filter_notMem_one_sub_inv_le`, and
-  `TauCeti.exists_pos_mul_log_le_prod_primesLE_filter_notMem_one_sub_inv_inv_le`: two-sided
+  `Finset.exists_pos_mul_inv_log_le_prod_primesLE_filter_notMem_one_sub_inv_le`, and
+  `Finset.exists_pos_mul_log_le_prod_primesLE_filter_notMem_one_sub_inv_inv_le`: two-sided
   Euler-product comparison on `2 ≤ x`.
 
 ## References
@@ -83,6 +83,9 @@ theorem absNorm_asIdeal_rat_injective :
   rw [Rat.HeightOneSpectrum.absNorm_asIdeal, Rat.HeightOneSpectrum.absNorm_asIdeal] at h
   exact Rat.HeightOneSpectrum.primesEquiv.injective (Subtype.ext h)
 
+-- Not `@[simp]`: `Rat.HeightOneSpectrum.absNorm_asIdeal` is `@[simp]` and rewrites
+-- `Ideal.absNorm v.asIdeal` to `Rat.HeightOneSpectrum.natGenerator v` on the left-hand sides of
+-- the `Ideal.absNorm` transport lemmas below (`simpNF`).
 /-- The norms of the height-one primes of `𝓞 ℚ` bounded by `x` are the rational primes `p ≤ ⌊x⌋₊`.
 For `x < 2` both sides are empty. -/
 theorem image_absNorm_primesLE_rat (x : ℝ) :
@@ -108,7 +111,7 @@ theorem prod_primesLE_rat_eq_prod_primesLE {M : Type*} [CommMonoid M] (f : ℕ �
 
 /-- The prime summatory function over `ℚ` of a function of the ideal norm is the finite sum over
 rational primes `p ≤ ⌊x⌋₊`. -/
-theorem primeSummatory_rat_eq_sum_primesLE (f : ℕ → ℝ) (x : ℝ) :
+theorem primeSummatory_rat_eq_sum_primesLE {M : Type*} [AddCommMonoid M] (f : ℕ → M) (x : ℝ) :
     primeSummatory ℚ (fun v ↦ f (Ideal.absNorm v.asIdeal)) x = ∑ p ∈ Nat.primesLE ⌊x⌋₊, f p := by
   rw [primeSummatory_apply, sum_primesLE_rat_eq_sum_primesLE]
 
@@ -381,6 +384,10 @@ theorem exists_pos_mul_inv_log_le_prod_primesLE_one_sub_inv_le :
   · rw [div_eq_mul_inv, ← Real.exp_log hlogx, ← Real.exp_neg, ← Real.exp_add, hexp_prod]
     exact Real.exp_le_exp.mpr (by linarith [(abs_le.mp herr).1])
 
+end TauCeti
+
+namespace Finset
+
 /-- **Two-sided Mertens comparison with finite prime deletion.** For every finite set
 `S : Finset ℕ`, there exist positive constants `c₁, c₂ > 0` such that
 `c₁ / log x ≤ ∏_{p ≤ x, p ∉ S} (1 - 1 / p) ≤ c₂ / log x` for all `x ≥ 2`. Elements of `S` need
@@ -389,41 +396,42 @@ theorem exists_pos_mul_inv_log_le_prod_primesLE_filter_notMem_one_sub_inv_le (S 
     ∃ c₁ > 0, ∃ c₂ > 0, ∀ x, 2 ≤ x →
       c₁ / Real.log x ≤ ∏ p ∈ Nat.primesLE ⌊x⌋₊ with p ∉ S, (1 - (p : ℝ)⁻¹) ∧
         ∏ p ∈ Nat.primesLE ⌊x⌋₊ with p ∉ S, (1 - (p : ℝ)⁻¹) ≤ c₂ / Real.log x := by
-  obtain ⟨c₁, hc₁, c₂, hc₂, hfull⟩ := exists_pos_mul_inv_log_le_prod_primesLE_one_sub_inv_le
+  obtain ⟨c₁, hc₁, c₂, hc₂, hfull⟩ :=
+    TauCeti.exists_pos_mul_inv_log_le_prod_primesLE_one_sub_inv_le
   set D : ℝ := ∏ p ∈ S with p.Prime, (1 - (p : ℝ)⁻¹)⁻¹
   have hfac_pos (p : ℕ) (hp : p.Prime) : 0 < 1 - (p : ℝ)⁻¹ :=
     sub_pos.mpr (inv_lt_one_of_one_lt₀ (mod_cast hp.one_lt))
   have hfac_inv_ge (p : ℕ) (hp : p.Prime) : 1 ≤ (1 - (p : ℝ)⁻¹)⁻¹ :=
     (one_le_inv₀ (hfac_pos p hp)).mpr (sub_le_self _ (by positivity))
-  have hD1 : 1 ≤ D := Finset.one_le_prod₀ fun p hp ↦ hfac_inv_ge p (Finset.mem_filter.mp hp).2
+  have hD1 : 1 ≤ D := one_le_prod₀ fun p hp ↦ hfac_inv_ge p (mem_filter.mp hp).2
   refine ⟨c₁, hc₁, D * c₂, mul_pos (zero_lt_one.trans_le hD1) hc₂, fun x hx2 ↦ ?_⟩
   obtain ⟨hlo, hhi⟩ := hfull x hx2
-  have hsplit := Finset.prod_filter_mul_prod_filter_not (Nat.primesLE ⌊x⌋₊) (· ∈ S)
+  have hsplit := prod_filter_mul_prod_filter_not (Nat.primesLE ⌊x⌋₊) (· ∈ S)
     fun p ↦ 1 - (p : ℝ)⁻¹
   constructor
   · refine hlo.trans ?_
     rw [← hsplit]
     exact mul_le_of_le_one_left
-      (Finset.prod_nonneg fun p hp ↦ (hfac_pos p (Nat.prime_of_mem_primesLE
-        (Finset.mem_filter.mp hp).1)).le)
-      (Finset.prod_le_one₀ (fun p hp ↦ (hfac_pos p (Nat.prime_of_mem_primesLE
-        (Finset.mem_filter.mp hp).1)).le) fun _ _ ↦ sub_le_self _ (by positivity))
+      (prod_nonneg fun p hp ↦ (hfac_pos p (Nat.prime_of_mem_primesLE
+        (mem_filter.mp hp).1)).le)
+      (prod_le_one₀ (fun p hp ↦ (hfac_pos p (Nat.prime_of_mem_primesLE
+        (mem_filter.mp hp).1)).le) fun _ _ ↦ sub_le_self _ (by positivity))
   · have hdel : ∏ p ∈ Nat.primesLE ⌊x⌋₊ with p ∈ S, (1 - (p : ℝ)⁻¹)⁻¹ ≤ D :=
-      Finset.prod_le_prod_of_subset_of_one_le₀
-        (fun p hp ↦ Finset.mem_filter.mpr ⟨(Finset.mem_filter.mp hp).2,
-          Nat.prime_of_mem_primesLE (Finset.mem_filter.mp hp).1⟩)
+      prod_le_prod_of_subset_of_one_le₀
+        (fun p hp ↦ mem_filter.mpr ⟨(mem_filter.mp hp).2,
+          Nat.prime_of_mem_primesLE (mem_filter.mp hp).1⟩)
         (fun p hp ↦ zero_le_one.trans
-          (hfac_inv_ge p (Nat.prime_of_mem_primesLE (Finset.mem_filter.mp hp).1)))
-        fun p hp _ ↦ hfac_inv_ge p (Finset.mem_filter.mp hp).2
+          (hfac_inv_ge p (Nat.prime_of_mem_primesLE (mem_filter.mp hp).1)))
+        fun p hp _ ↦ hfac_inv_ge p (mem_filter.mp hp).2
     have hprod_in_pos : 0 < ∏ p ∈ Nat.primesLE ⌊x⌋₊ with p ∈ S, (1 - (p : ℝ)⁻¹) :=
-      Finset.prod_pos fun p hp ↦ hfac_pos p
-        (Nat.prime_of_mem_primesLE (Finset.mem_filter.mp hp).1)
+      prod_pos fun p hp ↦ hfac_pos p
+        (Nat.prime_of_mem_primesLE (mem_filter.mp hp).1)
     have hfilt_eq : ∏ p ∈ Nat.primesLE ⌊x⌋₊ with p ∉ S, (1 - (p : ℝ)⁻¹) =
         (∏ p ∈ Nat.primesLE ⌊x⌋₊ with p ∈ S, (1 - (p : ℝ)⁻¹)⁻¹) *
           ∏ p ∈ Nat.primesLE ⌊x⌋₊, (1 - (p : ℝ)⁻¹) := by
-      rw [Finset.prod_inv_distrib, ← hsplit, inv_mul_cancel_left₀ hprod_in_pos.ne']
+      rw [prod_inv_distrib, ← hsplit, inv_mul_cancel_left₀ hprod_in_pos.ne']
     have hfull_nonneg : 0 ≤ ∏ p ∈ Nat.primesLE ⌊x⌋₊, (1 - (p : ℝ)⁻¹) :=
-      Finset.prod_nonneg fun p hp ↦ (hfac_pos p (Nat.prime_of_mem_primesLE hp)).le
+      prod_nonneg fun p hp ↦ (hfac_pos p (Nat.prime_of_mem_primesLE hp)).le
     calc ∏ p ∈ Nat.primesLE ⌊x⌋₊ with p ∉ S, (1 - (p : ℝ)⁻¹)
         ≤ D * ∏ p ∈ Nat.primesLE ⌊x⌋₊, (1 - (p : ℝ)⁻¹) := by
           rw [hfilt_eq]
@@ -439,13 +447,13 @@ theorem exists_pos_mul_log_le_prod_primesLE_filter_notMem_one_sub_inv_inv_le (S 
       c₁ * Real.log x ≤ ∏ p ∈ Nat.primesLE ⌊x⌋₊ with p ∉ S, (1 - (p : ℝ)⁻¹)⁻¹ ∧
         ∏ p ∈ Nat.primesLE ⌊x⌋₊ with p ∉ S, (1 - (p : ℝ)⁻¹)⁻¹ ≤ c₂ * Real.log x := by
   obtain ⟨c₁, hc₁, c₂, hc₂, h⟩ :=
-    exists_pos_mul_inv_log_le_prod_primesLE_filter_notMem_one_sub_inv_le S
+    S.exists_pos_mul_inv_log_le_prod_primesLE_filter_notMem_one_sub_inv_le
   refine ⟨c₂⁻¹, inv_pos.mpr hc₂, c₁⁻¹, inv_pos.mpr hc₁, fun x hx2 ↦ ?_⟩
   obtain ⟨hlo, hhi⟩ := h x hx2
   have hlogx : 0 < Real.log x := Real.log_pos (one_lt_two.trans_le hx2)
   have hprod_pos : 0 < ∏ p ∈ Nat.primesLE ⌊x⌋₊ with p ∉ S, (1 - (p : ℝ)⁻¹) :=
     (div_pos hc₁ hlogx).trans_le hlo
-  rw [Finset.prod_inv_distrib]
+  rw [prod_inv_distrib]
   constructor
   · calc c₂⁻¹ * Real.log x = (c₂ / Real.log x)⁻¹ := by rw [inv_div, div_eq_inv_mul]
       _ ≤ (∏ p ∈ Nat.primesLE ⌊x⌋₊ with p ∉ S, (1 - (p : ℝ)⁻¹))⁻¹ := inv_anti₀ hprod_pos hhi
@@ -453,4 +461,4 @@ theorem exists_pos_mul_log_le_prod_primesLE_filter_notMem_one_sub_inv_inv_le (S 
         ≤ (c₁ / Real.log x)⁻¹ := inv_anti₀ (div_pos hc₁ hlogx) hlo
       _ = c₁⁻¹ * Real.log x := by rw [inv_div, div_eq_inv_mul]
 
-end TauCeti
+end Finset

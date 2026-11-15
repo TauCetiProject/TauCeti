@@ -134,12 +134,13 @@ theorem sum_primesLE_inv_pow_log_succ_le (N : ℕ) :
         le_of_mem_primesLE (mem_filter.mp hp).1⟩) fun _ _ _ ↦ by positivity
     _ ≤ (M : ℝ)⁻¹ := sum_Ioc_inv_sq_le_inv hM1
     _ ≤ 2 / √(N : ℝ) := by
+      have hM1_real : (1 : ℝ) ≤ M := Nat.one_le_cast.mpr hM1
       have hNle : (N : ℝ) ≤ ((M + 1 : ℕ) : ℝ) ^ 2 := by
         rw [sq]
         exact_mod_cast (lt_succ_sqrt N).le
       have h2M : √(N : ℝ) ≤ 2 * (M : ℝ) := Real.sqrt_le_iff.mpr ⟨by positivity,
-        hNle.trans (by push_cast; nlinarith [show (1 : ℝ) ≤ M from mod_cast hM1])⟩
-      rw [inv_eq_one_div, div_le_div_iff₀ (mod_cast hM1 : (0 : ℝ) < M) hsN]
+        hNle.trans (by push_cast; nlinarith)⟩
+      rw [inv_eq_one_div, div_le_div_iff₀ (zero_lt_one.trans_le hM1_real) hsN]
       linarith
   rw [← sum_filter_add_sum_filter_not (primesLE N) (· ≤ M)]
   calc _ ≤ 1 / √(N : ℝ) + 2 / √(N : ℝ) := _root_.add_le_add hsmall hlarge

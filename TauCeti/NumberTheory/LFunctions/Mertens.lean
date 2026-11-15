@@ -14,12 +14,12 @@ import Mathlib.Algebra.Order.Floor.Semifield
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.NumberTheory.Harmonic.GammaDeriv
-import TauCeti.Analysis.Asymptotics.Lemmas
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.Analysis.SpecialFunctions.Integrability.Log
 import TauCeti.Analysis.SpecialFunctions.Log.NegLogOneSub
 import TauCeti.Analysis.SpecialFunctions.LogIntegral
+import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convergence
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.DedekindZeta.Basic
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.DedekindZeta.Tail
@@ -952,12 +952,9 @@ theorem isBigO_primeSummatory_neg_log_one_sub_inv_absNorm_sub_log_log_sub :
     rw [mertensConstant_eq, add_assoc,
       ← (summable_log_one_sub_inv_absNorm_add_inv_absNorm K).tsum_add hr]
     simp [r]
-  have hrpow_log : (fun x : ℝ ↦ x ^ (-(1 / 2 : ℝ))) =O[atTop] fun x ↦ (Real.log x)⁻¹ :=
-    ((isLittleO_log_rpow_atTop (by norm_num : (0 : ℝ) < 1 / 2)).inv_rev
-      ((eventually_gt_atTop (1 : ℝ)).mono fun _ hx h ↦
-        absurd h (Real.log_pos hx).ne')).isBigO.congr'
-      ((eventually_ge_atTop (0 : ℝ)).mono fun _ hx ↦ (Real.rpow_neg hx _).symm) .rfl
-  have htail := (isBigO_tsum_sub_primeSummatory_neg_log_one_sub_sub_inv_absNorm K).trans hrpow_log
+  have htail :=
+    ((isBigO_tsum_sub_primeSummatory_neg_log_one_sub_sub_inv_absNorm K).trans_isLittleO
+      (Real.isLittleO_rpow_inv_log_atTop (by norm_num))).isBigO
   refine ((isBigO_primeSummatory_inv_absNorm_sub_log_log_sub_mertensConstant K).sub
     htail).congr_left fun x ↦ ?_
   rw [hconst, primeSummatory_apply, primeSummatory_apply, primeSummatory_apply]

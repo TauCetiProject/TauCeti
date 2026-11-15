@@ -42,6 +42,11 @@ tends to zero. This is how valuation bounds on coefficients give convergence of 
 
 If `(n + 1) ^ a ≤ C (n + 1) ^ b` for every natural number `n`, then `a ≤ b`: a power with a
 larger exponent outgrows every constant multiple of a smaller one.
+
+## Logarithmic comparisons
+
+At positive infinity, `(1 + r) log (2 + r)` is `o(r ^ p)` for every `p > 1`, and any negative real
+power `x ^ r` (`r < 0`) is `o((log x)⁻¹)`.
 -/
 
 public section
@@ -196,5 +201,15 @@ theorem add_one_mul_log_add_two_le {r t A : ℝ} (hr : 0 ≤ r) (ht : 0 ≤ t)
     _ ≤ (M * (1 + r)) * ((2 * M + 1) * log (2 + r)) :=
       mul_le_mul h1 hlog' (log_nonneg (by linarith)) (by positivity)
     _ = _ := by dsimp [M]; ring
+
+/-- Any negative real power `x ^ r` (`r < 0`) is negligible compared with `(log x)⁻¹` as
+`x → ∞`. -/
+theorem isLittleO_rpow_inv_log_atTop {r : ℝ} (hr : r < 0) :
+    (fun x : ℝ ↦ x ^ r) =o[atTop] fun x ↦ (log x)⁻¹ := by
+  refine ((isLittleO_log_rpow_atTop (neg_pos.mpr hr)).inv_rev ?_).congr' ?_ .rfl
+  · filter_upwards [eventually_gt_atTop (1 : ℝ)] with x hx h
+    exact absurd h (log_pos hx).ne'
+  · filter_upwards [eventually_ge_atTop (0 : ℝ)] with x hx
+    rw [← rpow_neg hx, neg_neg]
 
 end Real
