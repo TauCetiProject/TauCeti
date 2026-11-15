@@ -331,8 +331,6 @@ theorem weightReesSymbol_weightReesAevalLift {σ ι R : Type*} [CommSemiring R]
       aeval (fun i ↦ weightedHomogeneousComponent w (d i) (c i)) (f.coeff 0) := by
   let := coeffSubalgebra.algebra (A.weightFiltration w) (A.one_mem_weightFiltration_one w)
   let := coeffSubalgebra.isScalarTower (A.weightFiltration w) (A.one_mem_weightFiltration_one w)
-  let : IsScalarTower R R[X] (MvPolynomial ι R)[X] := IsScalarTower.of_algebraMap_eq fun r ↦ by
-    simp [Polynomial.algebraMap_apply, MvPolynomial.algebraMap_eq]
   have h : (A.weightReesSymbol w).comp ((weightReesAevalLift hcA hc).restrictScalars R) =
       (aeval fun i ↦ weightedHomogeneousComponent w (d i) (c i)).comp
         ((Polynomial.aeval (0 : MvPolynomial ι R)).restrictScalars R) := by
@@ -346,41 +344,6 @@ namespace Subalgebra
 section Fibres
 
 variable {σ R : Type*} [CommRing R]
-
-/-- **Special fibre at `t = 0`, quotient form.** Quotienting `A.weightReesAlgebra w` by the Rees
-parameter gives the weight-initial algebra of `A`. -/
-noncomputable def quotientSpanXWeightReesAlgebraEquiv (A : Subalgebra R (MvPolynomial σ R))
-    (w : σ → ℕ) :
-    (A.weightReesAlgebra w ⧸
-      Ideal.span {coeffSubalgebra.X (A.weightFiltration w) (A.one_mem_weightFiltration_one w)})
-      ≃ₐ[R] A.weightInitialAlgebra w :=
-  have hker : RingHom.ker (A.weightReesSymbol w).rangeRestrict =
-      Ideal.span {coeffSubalgebra.X (A.weightFiltration w) (A.one_mem_weightFiltration_one w)} := by
-    rw [← A.ker_weightReesSymbol w]
-    ext x
-    simp [RingHom.mem_ker, Subtype.ext_iff]
-  (Ideal.quotientEquivAlgOfEq R hker.symm).trans <|
-    (Ideal.quotientKerAlgEquivOfSurjective (A.weightReesSymbol w).rangeRestrict_surjective).trans <|
-      Subalgebra.equivOfEq _ _ (A.range_weightReesSymbol w)
-
-@[simp]
-theorem coe_quotientSpanXWeightReesAlgebraEquiv_mk (A : Subalgebra R (MvPolynomial σ R))
-    (w : σ → ℕ) (g : A.weightReesAlgebra w) :
-    (A.quotientSpanXWeightReesAlgebraEquiv w (Ideal.Quotient.mk _ g) : MvPolynomial σ R) =
-      A.weightReesSymbol w g := by
-  simp [quotientSpanXWeightReesAlgebraEquiv]
-
-@[simp]
-theorem quotientSpanXWeightReesAlgebraEquiv_symm_weightInitialForm
-    (A : Subalgebra R (MvPolynomial σ R)) (w : σ → ℕ) {f : MvPolynomial σ R} (hf : f ∈ A) :
-    (A.quotientSpanXWeightReesAlgebraEquiv w).symm
-      ⟨weightInitialForm w f, A.weightInitialForm_mem_weightInitialAlgebra w hf⟩ =
-      Ideal.Quotient.mk _ (coeffSubalgebra.monomial (A.weightFiltration w)
-        (f.weightedTotalDegree w) ⟨f, hf⟩
-        ((A.mem_weightFiltration_iff w).mpr
-          (mem_weightFiltration_iff_weightedTotalDegree_le.mpr le_rfl))) := by
-  rw [AlgEquiv.symm_apply_eq, Subtype.ext_iff]
-  simp [weightInitialForm_def]
 
 /-- The symbol map restricted to its image `A.weightInitialAlgebra w`. -/
 private noncomputable def weightReesSymbolToInitial (A : Subalgebra R (MvPolynomial σ R))
@@ -404,6 +367,36 @@ private theorem ker_weightReesSymbolToInitial (A : Subalgebra R (MvPolynomial σ
     RingHom.ker (A.weightReesSymbolToInitial w) = RingHom.ker (A.weightReesSymbol w) := by
   ext g
   simp [RingHom.mem_ker, Subtype.ext_iff]
+
+/-- **Special fibre at `t = 0`, quotient form.** Quotienting `A.weightReesAlgebra w` by the Rees
+parameter gives the weight-initial algebra of `A`. -/
+noncomputable def quotientSpanXWeightReesAlgebraEquiv (A : Subalgebra R (MvPolynomial σ R))
+    (w : σ → ℕ) :
+    (A.weightReesAlgebra w ⧸
+      Ideal.span {coeffSubalgebra.X (A.weightFiltration w) (A.one_mem_weightFiltration_one w)})
+      ≃ₐ[R] A.weightInitialAlgebra w :=
+  (Ideal.quotientEquivAlgOfEq R
+    ((A.ker_weightReesSymbolToInitial w).trans (A.ker_weightReesSymbol w)).symm).trans
+    (Ideal.quotientKerAlgEquivOfSurjective (A.weightReesSymbolToInitial_surjective w))
+
+@[simp]
+theorem coe_quotientSpanXWeightReesAlgebraEquiv_mk (A : Subalgebra R (MvPolynomial σ R))
+    (w : σ → ℕ) (g : A.weightReesAlgebra w) :
+    (A.quotientSpanXWeightReesAlgebraEquiv w (Ideal.Quotient.mk _ g) : MvPolynomial σ R) =
+      A.weightReesSymbol w g := by
+  simp [quotientSpanXWeightReesAlgebraEquiv]
+
+@[simp]
+theorem quotientSpanXWeightReesAlgebraEquiv_symm_weightInitialForm
+    (A : Subalgebra R (MvPolynomial σ R)) (w : σ → ℕ) {f : MvPolynomial σ R} (hf : f ∈ A) :
+    (A.quotientSpanXWeightReesAlgebraEquiv w).symm
+      ⟨weightInitialForm w f, A.weightInitialForm_mem_weightInitialAlgebra w hf⟩ =
+      Ideal.Quotient.mk _ (coeffSubalgebra.monomial (A.weightFiltration w)
+        (f.weightedTotalDegree w) ⟨f, hf⟩
+        ((A.mem_weightFiltration_iff w).mpr
+          (mem_weightFiltration_iff_weightedTotalDegree_le.mpr le_rfl))) := by
+  rw [AlgEquiv.symm_apply_eq, Subtype.ext_iff]
+  simp [weightInitialForm_def]
 
 /-- **Special fibre at `t = 0`, base-change form.** Tensor base change of `A.weightReesAlgebra w`
 along evaluation `R[t] → R` at `0` recovers the weight-initial algebra of `A`. -/

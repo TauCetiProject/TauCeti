@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.Ideal.Operations
 public import TauCeti.Algebra.Polynomial.LinearFactor
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.TensorProduct.Maps
+import TauCeti.Algebra.Polynomial.AlgHom
 
 /-!
 # The fibres at units of a filtered coefficient algebra
@@ -136,12 +137,10 @@ private noncomputable def paramAlgHom {C : Type*} [Ring C] [Algebra R C] {a : R}
     coeffSubalgebra M →ₐ[R[X]] C :=
   letI := algebra M h1
   letI := Algebra.compHom C (Polynomial.evalRingHom a)
-  AlgHom.mk φ.toRingHom fun p ↦ by
-    let := isScalarTower M h1
-    have h : φ.comp (IsScalarTower.toAlgHom R R[X] (coeffSubalgebra M)) =
-        (Algebra.ofId R C).comp (Polynomial.aeval a) :=
-      Polynomial.algHom_ext (by simpa using hX)
-    simpa [Algebra.compHom_algebraMap_apply] using congr($h p)
+  letI := isScalarTower M h1
+  letI : IsScalarTower R R[X] C := IsScalarTower.of_algebraMap_eq fun r ↦ by
+    simp [Algebra.compHom_algebraMap_apply]
+  φ.toPolynomialAlgHom (by simpa [Algebra.compHom_algebraMap_apply] using hX)
 
 /-- The tensor base-change comparison along evaluation at `a` induced by `φ`, before proving
 bijectivity. -/
@@ -168,7 +167,7 @@ private theorem baseChangeAlgHom_tmul {C : Type*} [Ring C] [Algebra R C] {a : R}
   let := Algebra.compHom C (Polynomial.evalRingHom a)
   let : IsScalarTower R[X] R C := IsScalarTower.of_algebraMap_eq fun p ↦ by
     simp [Algebra.compHom_algebraMap_apply]
-  exact AlgHom.liftEquiv_tmul (paramAlgHom M h1 φ hX) r p
+  exact (AlgHom.liftEquiv_tmul (paramAlgHom M h1 φ hX) r p).trans (by simp [paramAlgHom])
 
 private theorem baseChangeAlgHom_bijective {C : Type*} [Ring C] [Algebra R C] {a : R}
     (φ : coeffSubalgebra M →ₐ[R] C) (hX : φ (X M h1) = algebraMap R C a)
