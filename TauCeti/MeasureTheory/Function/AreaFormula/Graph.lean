@@ -199,4 +199,62 @@ theorem _root_.LipschitzWith.euclideanHausdorffMeasure_normalGraphEmbedding_imag
 
 end TauCeti
 
+namespace LipschitzOnWith
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] {K : ℝ≥0} {φ : E → ℝ}
+
+/-- An almost-everywhere assertion on a Lipschitz graph is equivalent to its pullback
+holding almost everywhere for any Haar measure on the parameter set.
+Neither set need be measurable. -/
+theorem ae_normalGraphEmbedding_image_iff {s : Set E} (hφ : LipschitzOnWith K φ s)
+    {p : WithLp 2 (ℝ × E) → Prop} (μ : Measure E := by volume_tac) [μ.IsAddHaarMeasure] :
+    (∀ᵐ y ∂(μHE[Module.finrank ℝ E] : Measure (WithLp 2 (ℝ × E))),
+      y ∈ TauCeti.normalGraphEmbedding φ '' s → p y) ↔
+      ∀ᵐ x ∂μ, x ∈ s → p (TauCeti.normalGraphEmbedding φ x) := by
+  have hset : {y | ¬(y ∈ TauCeti.normalGraphEmbedding φ '' s → p y)} =
+      TauCeti.normalGraphEmbedding φ '' {x | ¬(x ∈ s → p (TauCeti.normalGraphEmbedding φ x))} := by
+    ext y
+    simp only [mem_ofPred_eq, not_imp, mem_image]
+    constructor
+    · rintro ⟨⟨x, hx, rfl⟩, hp⟩
+      exact ⟨x, ⟨hx, hp⟩, rfl⟩
+    · rintro ⟨x, ⟨hx, hp⟩, rfl⟩
+      exact ⟨⟨x, hx, rfl⟩, hp⟩
+  rw [ae_iff, ae_iff, hset]
+  let t := {x | ¬(x ∈ s → p (TauCeti.normalGraphEmbedding φ x))}
+  have ht : t ⊆ s := fun x hx => (not_imp.mp hx).1
+  have hπ : LipschitzWith 1 (WithLp.snd : WithLp 2 (ℝ × E) → E) :=
+    LipschitzWith.of_edist_le WithLp.edist_snd_le
+  constructor
+  · intro h
+    have hbound := hπ.lipschitzOnWith.euclideanHausdorffMeasure_image_le
+      (Module.finrank ℝ E) (s := TauCeti.normalGraphEmbedding φ '' t)
+    have himage : WithLp.snd '' (TauCeti.normalGraphEmbedding φ '' t) = t := by
+      rw [image_image]
+      simp only [TauCeti.normalGraphEmbedding_snd, image_id']
+    rw [himage, h, mul_zero] at hbound
+    exact Measure.absolutelyContinuous_isAddHaarMeasure μ μHE[Module.finrank ℝ E]
+      (nonpos_iff_eq_zero.mp hbound)
+  · intro h
+    have hz := Measure.absolutelyContinuous_isAddHaarMeasure
+      (μHE[Module.finrank ℝ E] : Measure E) μ h
+    exact nonpos_iff_eq_zero.mp <|
+      ((hφ.mono ht).normalGraphEmbedding.euclideanHausdorffMeasure_image_le
+        (Module.finrank ℝ E)).trans_eq (by rw [hz, mul_zero])
+
+end LipschitzOnWith
+
+/-- An almost-everywhere assertion on the full Lipschitz graph is equivalent to its
+pullback holding almost everywhere for any Haar measure on the parameter space. -/
+theorem LipschitzWith.ae_range_normalGraphEmbedding_iff
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] {K : ℝ≥0} {φ : E → ℝ} (hφ : LipschitzWith K φ)
+    {p : WithLp 2 (ℝ × E) → Prop} (μ : Measure E := by volume_tac) [μ.IsAddHaarMeasure] :
+    (∀ᵐ y ∂(μHE[Module.finrank ℝ E] : Measure (WithLp 2 (ℝ × E))),
+      y ∈ range (TauCeti.normalGraphEmbedding φ) → p y) ↔
+      ∀ᵐ x ∂μ, p (TauCeti.normalGraphEmbedding φ x) := by
+  simpa only [image_univ, mem_univ, true_implies] using
+    hφ.lipschitzOnWith.ae_normalGraphEmbedding_image_iff (s := univ) (p := p) μ
+
 end

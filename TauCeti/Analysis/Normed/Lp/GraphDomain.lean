@@ -34,7 +34,7 @@ public section
 namespace TauCeti
 
 open Set TopologicalSpace Filter Topology
-open scoped NNReal
+open scoped ENNReal NNReal
 
 variable {E : Type*}
 
@@ -121,30 +121,33 @@ theorem antilipschitzWith_normalGraphEmbedding [PseudoMetricSpace E] (φ : E →
   simpa only [NNReal.coe_one, one_mul, normalGraphEmbedding_snd] using
     WithLp.dist_snd_le (normalGraphEmbedding φ x) (normalGraphEmbedding φ y)
 
-/-- A `K`-Lipschitz function has a `(K + 1)`-Lipschitz normal graph parametrization. -/
-theorem _root_.LipschitzWith.normalGraphEmbedding [SeminormedAddCommGroup E] {K : ℝ≥0} {φ : E → ℝ}
-    (hφ : LipschitzWith K φ) :
-    LipschitzWith (K + 1) (TauCeti.normalGraphEmbedding φ) := by
-  refine LipschitzWith.of_dist_le_mul fun x y ↦ ?_
-  calc
-    dist (TauCeti.normalGraphEmbedding φ x) (TauCeti.normalGraphEmbedding φ y) ≤
-        dist (TauCeti.normalGraphEmbedding φ x) (WithLp.toLp 2 (φ y, x)) +
-          dist (WithLp.toLp 2 (φ y, x)) (TauCeti.normalGraphEmbedding φ y) :=
-      dist_triangle _ _ _
-    _ = dist (φ x) (φ y) + dist x y := by
-      simp [TauCeti.normalGraphEmbedding, WithLp.prod_dist_eq_of_L2]
-    _ ≤ K * dist x y + dist x y := add_le_add (hφ.dist_le_mul x y) le_rfl
-    _ = (K + 1) * dist x y := by ring
-
 /-- A graphing function Lipschitz on a parameter set has a Lipschitz parametrization
 on that set, with no regularity required outside it. -/
-theorem _root_.LipschitzOnWith.normalGraphEmbedding [SeminormedAddCommGroup E]
+theorem _root_.LipschitzOnWith.normalGraphEmbedding [PseudoEMetricSpace E]
     {K : ℝ≥0} {φ : E → ℝ} {s : Set E} (hφ : LipschitzOnWith K φ s) :
     LipschitzOnWith (K + 1) (TauCeti.normalGraphEmbedding φ) s := by
-  obtain ⟨ψ, hψ, heq⟩ := hφ.extend_real
   intro x hx y hy
-  simpa only [TauCeti.normalGraphEmbedding, heq hx, heq hy] using
-    hψ.normalGraphEmbedding x y
+  calc
+    edist (TauCeti.normalGraphEmbedding φ x) (TauCeti.normalGraphEmbedding φ y) ≤
+        edist (TauCeti.normalGraphEmbedding φ x) (WithLp.toLp 2 (φ y, x)) +
+          edist (WithLp.toLp 2 (φ y, x)) (TauCeti.normalGraphEmbedding φ y) :=
+      edist_triangle _ _ _
+    _ = edist (φ x) (φ y) + edist x y := by
+      simp only [TauCeti.normalGraphEmbedding,
+        WithLp.prod_edist_eq_add (by norm_num : 0 < (2 : ℝ≥0∞).toReal),
+        WithLp.toLp_fst, WithLp.toLp_snd, edist_self]
+      norm_num
+      rw [← ENNReal.rpow_two, ← ENNReal.rpow_two,
+        ← ENNReal.rpow_mul, ← ENNReal.rpow_mul]
+      norm_num
+    _ ≤ K * edist x y + edist x y := add_le_add (hφ hx hy) le_rfl
+    _ = (↑(K + 1) : ℝ≥0∞) * edist x y := by simp [add_mul]
+
+/-- A `K`-Lipschitz function has a `(K + 1)`-Lipschitz normal graph parametrization. -/
+theorem _root_.LipschitzWith.normalGraphEmbedding [PseudoEMetricSpace E]
+    {K : ℝ≥0} {φ : E → ℝ} (hφ : LipschitzWith K φ) :
+    LipschitzWith (K + 1) (TauCeti.normalGraphEmbedding φ) :=
+  lipschitzOnWith_univ.mp hφ.lipschitzOnWith.normalGraphEmbedding
 
 section
 
