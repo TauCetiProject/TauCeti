@@ -7,12 +7,13 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import TauCeti.Analysis.ODE.LyapunovPerron.Basic
--- Private: the improper integrals, the exponential identities and the two-sided exponential
--- kernel bound are used only inside the proofs below.
+-- Private: the improper integrals, the exponential identities, the two-sided exponential kernel
+-- bound and the measurability of truncated integrals are used only inside the proofs below.
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.Normed.Operator.Exponential
 import TauCeti.MeasureTheory.Integral.Exp.Decay
+import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
 # The whole-line Green integral of an exponential dichotomy
@@ -39,7 +40,9 @@ forcing term it solves `u' = A u + g` (`ContinuousLinearMap.hasDerivAt_greenInte
 (`ContinuousLinearMap.greenIntegral_deriv_sub_eq`).
 
 The application to the trajectory operator `d/ds - A` on `W^{1,p}(ℝ, X)` is in
-`TauCeti.Analysis.ODE.TrajectoryOperator.Hyperbolic`.
+`TauCeti.Analysis.ODE.TrajectoryOperator.Hyperbolic`. The Green integral of a time-dependent scalar
+coefficient whose fundamental solution grows exponentially is
+`TauCeti.Analysis.ODE.GreenIntegral.Scalar`.
 
 ## Main declarations
 
@@ -48,7 +51,8 @@ The application to the trajectory operator `d/ds - A` on `W^{1,p}(ℝ, X)` is in
   the forcing term (additivity for continuous bounded forcing terms under a dichotomy).
 * `ContinuousLinearMap.enorm_greenIntegral_le`: the pointwise bound by the kernel
   `K exp (-α |t - s|)`.
-* `ContinuousLinearMap.eLpNorm_greenIntegral_le`: the bound `‖G g‖_{Lᵖ} ≤ 2 K / α ‖g‖_{Lᵖ}`.
+* `ContinuousLinearMap.eLpNorm_greenIntegral_le`: the bound `‖G g‖_{Lᵖ} ≤ 2 K / α ‖g‖_{Lᵖ}` for
+  every a.e.-strongly measurable `g`.
 * `ContinuousLinearMap.hasDerivAt_greenIntegral`: `G g` solves `u' = A u + g`.
 * `ContinuousLinearMap.greenIntegral_deriv_sub_eq`: `G (u' - A u) = u` for compactly supported
   `C¹` paths `u`.
@@ -234,6 +238,23 @@ theorem continuous_greenIntegral
 
 /-! ### Pointwise and `Lᵖ` bounds -/
 
+/-- The Green integral of an a.e.-strongly measurable forcing term is a.e.-strongly measurable. -/
+theorem aestronglyMeasurable_greenIntegral (hg : AEStronglyMeasurable g) :
+    AEStronglyMeasurable (greenIntegral A P g) := by
+  have hexp : Continuous fun z : ℝ × ℝ ↦ exp ((z.1 - z.2) • A) :=
+    (differentiable_exp_smul_const ℝ A).continuous.comp (continuous_fst.sub continuous_snd)
+  have hF (Q : X →L[ℝ] X) : AEStronglyMeasurable (fun z : ℝ × ℝ ↦ exp ((z.1 - z.2) • A) (Q (g z.2)))
+      (volume.prod volume) :=
+    (ContinuousLinearMap.id ℝ (X →L[ℝ] X)).aestronglyMeasurable_comp₂ hexp.aestronglyMeasurable
+      (Q.continuous.comp_aestronglyMeasurable hg).comp_snd
+  have hP := TauCeti.aestronglyMeasurable_setIntegral_of_measurableSet (R := fun t s ↦ s ≤ t)
+    (measurableSet_le measurable_snd measurable_fst) (hF P)
+  have hQ := TauCeti.aestronglyMeasurable_setIntegral_of_measurableSet (R := fun t s ↦ t < s)
+    (measurableSet_lt measurable_fst measurable_snd) (hF (ContinuousLinearMap.id ℝ X - P))
+  simp only [sub_apply, ContinuousLinearMap.id_apply] at hQ
+  exact hP.sub hQ
+
+
 section Bounds
 
 variable (hs : ∀ t : ℝ, 0 ≤ t → ∀ v : X, ‖exp (t • A) (P v)‖ ≤ K * Real.exp (-α * t) * ‖v‖)
@@ -273,15 +294,14 @@ theorem enorm_greenIntegral_le (g : ℝ → X) (t : ℝ) :
     _ = ∫⁻ s, k s := by rw [← compl_Iic, lintegral_add_compl _ measurableSet_Iic]
 
 /-- **The Green integral is bounded on `Lᵖ`.** Under an exponential dichotomy with constant `K`
-and rate `α > 0`, `‖G g‖_{Lᵖ} ≤ 2 K / α ‖g‖_{Lᵖ}` for every continuous bounded `g` and every
-`1 ≤ p ≤ ∞`. This is Schur's test for
+and rate `α > 0`, `‖G g‖_{Lᵖ} ≤ 2 K / α ‖g‖_{Lᵖ}` for every a.e.-strongly measurable `g` and
+every `1 ≤ p ≤ ∞`. This is Schur's test for
 the kernel `K exp (-α |t - s|)`, whose row and column integrals are `2 K / α`. -/
-theorem eLpNorm_greenIntegral_le (hα : 0 < α) (hg : Continuous g) (hgM : ∀ s, ‖g s‖ ≤ M)
-    {p : ℝ≥0∞} (hp : 1 ≤ p) :
+theorem eLpNorm_greenIntegral_le (hα : 0 < α) (hg : AEStronglyMeasurable g) {p : ℝ≥0∞}
+    (hp : 1 ≤ p) :
     eLpNorm (greenIntegral A P g) p volume ≤ ENNReal.ofReal (2 * K / α) * eLpNorm g p volume :=
   TauCeti.eLpNorm_le_of_enorm_le_lintegral_exp_neg_mul_abs (NNReal.coe_pos.2 hα) K
-    (continuous_greenIntegral hs hu hα hg hgM).aestronglyMeasurable hg.aestronglyMeasurable
-    (enorm_greenIntegral_le hs hu g) hp
+    (aestronglyMeasurable_greenIntegral hg) hg (ae_of_all _ (enorm_greenIntegral_le hs hu g)) hp
 
 end Bounds
 

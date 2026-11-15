@@ -40,17 +40,16 @@ The equation `v' = a_R v` has the explicit positive solution
 
 (`TauCeti.neckSolution`), with `F_R(s) / exp s → exp (∓ 2 R)` as `s → ±∞`, and the adjoint
 equation `v' = -a_R v` has the solution `1 / F_R`. Neither is square integrable, so neither
-equation has a nonzero square-integrable solution; by the kernel description of
-`TauCeti.WeakDerivStep.kerTrajectoryOperatorEquiv`, `D_R` is injective on `W^{1,2}(ℝ, E)` for
-every real Banach space `E`.
+equation has a nonzero square-integrable solution. More precisely `F_R` grows like `exp s` at
+`+∞`, so `D_R` is injective on `W^{1,p}(ℝ, E)` for every real Banach space `E` and every
+`1 ≤ p ≤ ∞` (`TauCeti.WeakDerivStep.injective_trajectoryOperator_of_scalarGrowth`).
 
 The inverse of `D_R` is explicit. Since `F_R(s) = exp s * cosh (s - R) / cosh (s + R)` and the
 second factor lies between `exp (-2 |R|)` and `exp (2 |R|)`, the solution grows at rate `1` up to
 a factor: `F_R(s) ≤ exp (4 |R|) exp (-(t - s)) F_R(t)` for all `s` and `t`. So the Green integral
 of `TauCeti.Analysis.ODE.TrajectoryOperator.ScalarGreen` applies: for a finite-dimensional real
 normed space `E` and `1 ≤ p < ∞`, `D_R` is a bijection from `W^{1,p}(ℝ, E)` onto `Lᵖ(ℝ, E)` with
-`‖u‖_{Lᵖ} ≤ 2 exp (4 |R|) ‖D_R u‖_{Lᵖ}`, and its inverse sends a continuous compactly supported
-`f` to
+`‖u‖_{Lᵖ} ≤ 2 exp (4 |R|) ‖D_R u‖_{Lᵖ}`, and its inverse sends every `f ∈ Lᵖ(ℝ, E)` to
 
 `u(s) = -F_R(s) ∫_{t > s} f(t) / F_R(t) dt`.
 
@@ -89,7 +88,7 @@ are carried by the zero mode alone.
   `TauCeti.WeakDerivStep.norm_le_mul_norm_trajectoryOperator_of_scalarGrowth` the graph-norm
   constant is `1 + (1 + ‖a_R‖_{L^∞}) 2 exp (4 |R|)`).
 * `TauCeti.WeakDerivStep.prev_ae_eq_scalarGreenIntegral_neckSolution_of_trajectoryOperator_ae_eq`:
-  the inverse of `D_R` is the integral `-F_R(s) ∫_{t > s} f(t) / F_R(t) dt`.
+  the inverse of `D_R` is the integral `-F_R(s) ∫_{t > s} f(t) / F_R(t) dt` on all of `Lᵖ`.
 * `TauCeti.WeakDerivStep.exists_norm_trajectoryOperator_neg_neckCoeff_smul_id_le`: the test path
   `sech (s + R)` has `‖D_R u‖ ≤ 2 exp (-2 R) ‖u‖`.
 * `TauCeti.WeakDerivStep.exp_div_two_le_of_forall_norm_le_mul_norm_trajectoryOperator_neckCoeff`:
@@ -380,6 +379,12 @@ theorem neckSolution_le_mul_exp_mul_neckSolution (R s t : ℝ) :
         rw [← hexp]
         field_simp
 
+/-- The growth bound of `F_R`, in the form taken by the Green integral of
+`TauCeti.Analysis.ODE.TrajectoryOperator.ScalarGreen`. -/
+private theorem neckSolution_growth (R : ℝ) :
+    ∀ s t, s ≤ t → neckSolution R s ≤ exp (4 * |R|) * exp (-1 * (t - s)) * neckSolution R t :=
+  fun s t _ ↦ by simpa using neckSolution_le_mul_exp_mul_neckSolution R s t
+
 /-! ### Neither `F_R` nor `1 / F_R` is square integrable -/
 
 section Banach
@@ -478,16 +483,16 @@ section Banach
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
 
-/-- **The glued operator is injective.** The trajectory operator `D_R u = u' - a_R u` on
-`W^{1,2}(ℝ, F)`, with coefficient `A(s) = -a_R(s) • id` in the convention `u' + A u`, has zero
-kernel: the kernel of `d/ds + tanh` has cancelled. -/
-theorem ker_trajectoryOperator_neg_neckCoeff_smul_id (R : ℝ)
+/-- **The glued operator is injective.** For every `1 ≤ p ≤ ∞`, the trajectory operator
+`D_R u = u' - a_R u` on `W^{1,p}(ℝ, F)`, with coefficient `A(s) = -a_R(s) • id` in the convention
+`u' + A u`, has zero kernel: the kernel of `d/ds + tanh` has cancelled. -/
+theorem ker_trajectoryOperator_neg_neckCoeff_smul_id (R : ℝ) {p : ℝ≥0∞} [Fact (1 ≤ p)]
     (AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
       fun s ↦ -neckCoeff R s • ContinuousLinearMap.id ℝ F) :
-    (trajectoryOperator (p := 2) AL).ker = ⊥ :=
-  (ker_trajectoryOperator_eq_bot_iff ((continuous_neckCoeff R).neg.smul continuous_const) AL
-    hAL).2 (squareIntegrableSolutions_neg_neckCoeff_smul_id R)
+    (trajectoryOperator (p := p) AL).ker = ⊥ :=
+  LinearMap.ker_eq_bot.2 (injective_trajectoryOperator_of_scalarGrowth (hasDerivAt_neckSolution R)
+    (neckSolution_pos R) (neckSolution_growth R) one_pos hAL (continuous_neckCoeff R))
 
 /-- **The inverse of the glued operator is not uniformly bounded.** For every `R` and every
 nonzero `e`, there is a path `u ∈ W^{1,2}(ℝ, F)` with `u ≠ 0` and
@@ -573,12 +578,6 @@ section FiniteDimensional
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-- The growth bound of `F_R`, in the form taken by the Green integral of
-`TauCeti.Analysis.ODE.TrajectoryOperator.ScalarGreen`. -/
-private theorem neckSolution_growth (R : ℝ) :
-    ∀ s t, s ≤ t → neckSolution R s ≤ exp (4 * |R|) * exp (-1 * (t - s)) * neckSolution R t :=
-  fun s t _ ↦ by simpa using neckSolution_le_mul_exp_mul_neckSolution R s t
-
 /-- **The `Lᵖ` value bound for the inverse of the glued operator.** On a finite-dimensional real
 normed space `E` and for `1 ≤ p < ∞`, every `u ∈ W^{1,p}(ℝ, E)` satisfies
 `‖u‖_{Lᵖ} ≤ 2 exp (4 |R|) ‖u' - a_R u‖_{Lᵖ}`. This bounds only the `Lᵖ` norm of `u`, not its
@@ -621,8 +620,8 @@ theorem range_trajectoryOperator_neg_neckCoeff_smul_id (R : ℝ) (hp : p ≠ ∞
   LinearMap.range_eq_top.2 (bijective_trajectoryOperator_neg_neckCoeff_smul_id R hp AL hAL).2
 
 /-- **The inverse of the glued operator, explicitly.** On a finite-dimensional real normed
-space `E` and for `1 ≤ p < ∞`, if `u ∈ W^{1,p}(ℝ, E)` solves `u' - a_R u = f` for a continuous
-compactly supported `f`, then
+space `E` and for `1 ≤ p < ∞`, if `u ∈ W^{1,p}(ℝ, E)` solves `u' - a_R u = f`, for any
+representative `f` of an element of `Lᵖ(ℝ, E)`, then
 
 `u(s) = -F_R(s) ∫_{t > s} f(t) / F_R(t) dt`
 
@@ -632,14 +631,14 @@ theorem prev_ae_eq_scalarGreenIntegral_neckSolution_of_trajectoryOperator_ae_eq 
     (hp : p ≠ ∞) (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
       fun s ↦ -neckCoeff R s • ContinuousLinearMap.id ℝ E)
-    {f : ℝ → E} (hf : Continuous f) (hfc : HasCompactSupport f)
+    {f : ℝ → E}
     {u : WeakDerivStep volume ⊤ p
       (ContinuousLinearMap.id ℝ (Lp E p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))}
     (hu : ⇑(trajectoryOperator AL u) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] f) :
     ⇑(prev _ u) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
       scalarGreenIntegral (neckSolution R) f :=
   prev_ae_eq_scalarGreenIntegral_of_trajectoryOperator_ae_eq (hasDerivAt_neckSolution R)
-    (neckSolution_pos R) (neckSolution_growth R) one_pos hAL (continuous_neckCoeff R) hp hf hfc hu
+    (neckSolution_pos R) (neckSolution_growth R) one_pos hAL (continuous_neckCoeff R) hp hu
 
 end FiniteDimensional
 

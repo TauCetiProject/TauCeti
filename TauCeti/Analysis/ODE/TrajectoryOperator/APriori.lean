@@ -22,7 +22,8 @@ supported paths, where `D_A` acts classically:
   both sides are continuous
   (`TauCeti.WeakDerivStep.norm_prev_le_mul_norm_trajectoryOperator_of_forall_contDiff`);
 * such an estimate on the value of `u` controls its whole graph norm, because `u' = D_A u - A u`
-  (`TauCeti.WeakDerivStep.norm_le_mul_norm_trajectoryOperator_of_norm_prev_le`);
+  (`TauCeti.WeakDerivStep.norm_le_mul_norm_trajectoryOperator_of_norm_prev_le`, in
+  `TauCeti.Analysis.ODE.TrajectoryOperator`);
 * a graph-norm estimate makes the range of `D_A` closed, so `D_A` is onto as soon as its range
   contains every smooth compactly supported path, these being dense in `Lᵖ`
   (`TauCeti.WeakDerivStep.surjective_trajectoryOperator_of_forall_norm_le`).
@@ -50,23 +51,6 @@ namespace TauCeti.WeakDerivStep
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
   {p : ℝ≥0∞} [Fact (1 ≤ p)]
   {AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
-
-/-- **An estimate on the value controls the graph norm.** If `u ∈ W^{1,p}(ℝ, E)` satisfies
-`‖u‖_{Lᵖ} ≤ C ‖D_A u‖_{Lᵖ}`, then its graph norm satisfies
-`‖u‖ ≤ (1 + (1 + ‖A‖) C) ‖D_A u‖_{Lᵖ}`, since its weak derivative is `D_A u - A u`. -/
-theorem norm_le_mul_norm_trajectoryOperator_of_norm_prev_le {C : ℝ}
-    (u : WeakDerivStep volume ⊤ p
-      (ContinuousLinearMap.id ℝ (Lp E p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))))
-    (h : ‖prev _ u‖ ≤ C * ‖trajectoryOperator AL u‖) :
-    ‖u‖ ≤ (1 + (1 + ‖AL‖) * C) * ‖trajectoryOperator AL u‖ := by
-  have hweak := norm_weakFDeriv_le_norm_trajectoryOperator_add AL u
-  have hsum : ‖u‖ ≤ ‖prev _ u‖ + ‖weakFDeriv _ u‖ := by
-    refine (pow_le_pow_iff_left₀ (norm_nonneg u) (by positivity) two_ne_zero).mp ?_
-    rw [norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq]
-    nlinarith [norm_nonneg (prev _ u), norm_nonneg (weakFDeriv _ u)]
-  calc ‖u‖ ≤ ‖trajectoryOperator AL u‖ + (1 + ‖AL‖) * ‖prev _ u‖ := by linarith
-    _ ≤ ‖trajectoryOperator AL u‖ + (1 + ‖AL‖) * (C * ‖trajectoryOperator AL u‖) := by gcongr
-    _ = (1 + (1 + ‖AL‖) * C) * ‖trajectoryOperator AL u‖ := by ring
 
 /-- **A priori estimates extend from smooth compactly supported paths.** Let `E` be
 finite-dimensional, `1 ≤ p < ∞`, `C ≥ 0`, and `AL` the `L∞` class of a coefficient `A`. If

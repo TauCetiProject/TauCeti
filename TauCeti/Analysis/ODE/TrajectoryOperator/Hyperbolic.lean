@@ -103,7 +103,8 @@ theorem exists_prev_ae_eq_greenIntegral_and_trajectoryOperator_ae_eq [CompleteSp
   have hvc : Continuous v := continuous_iff_continuousAt.2 fun s ↦ (hv s).continuousAt
   have hfp : MemLp f p volume := hf.memLp_of_hasCompactSupport hfc
   have hvp : MemLp v p volume :=
-    (ContinuousLinearMap.eLpNorm_greenIntegral_le hs hu hα hf hM Fact.out).trans_lt
+    (ContinuousLinearMap.eLpNorm_greenIntegral_le hs hu hα hf.aestronglyMeasurable
+      Fact.out).trans_lt
       (ENNReal.mul_lt_top ENNReal.ofReal_lt_top hfp.eLpNorm_lt_top)
   have hvp' : MemLp v p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) := by simpa using hvp
   have hfp' : MemLp f p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) := by simpa using hfp
@@ -138,11 +139,10 @@ theorem norm_prev_le_mul_norm_trajectoryOperator_of_dichotomy (hp : p ≠ ∞) (
   have hφ1 : ContDiff ℝ 1 φ := hφ.of_le (by exact_mod_cast le_top)
   set g : ℝ → E := fun s ↦ deriv φ s - A (φ s) with g_def
   have hgc : Continuous g := (hφ1.continuous_deriv le_rfl).sub (A.continuous.comp hφ1.continuous)
-  have hgs : HasCompactSupport g := hφc.deriv.sub (hφc.comp_left (map_zero A))
   have hG : ContinuousLinearMap.greenIntegral A P g = φ :=
     funext (ContinuousLinearMap.greenIntegral_deriv_sub_eq hAP hφ1 hφc)
-  obtain ⟨M, hM⟩ := hgc.bounded_above_of_compact_support hgs
-  have key := ContinuousLinearMap.eLpNorm_greenIntegral_le hs hu hα hgc hM (p := p) Fact.out
+  have key := ContinuousLinearMap.eLpNorm_greenIntegral_le hs hu hα hgc.aestronglyMeasurable
+    (p := p) Fact.out
   have hg : (fun s ↦ deriv φ s + (-A) (φ s)) = g := by
     funext s
     rw [g_def, neg_apply, ← sub_eq_add_neg]

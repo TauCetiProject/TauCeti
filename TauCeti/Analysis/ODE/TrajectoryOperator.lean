@@ -19,9 +19,12 @@ both the value and its weak derivative. No new Sobolev carrier is introduced.
 
 `WeakDerivStep.trajectoryOperator` is a continuous linear map. Its operator norm is at most
 `1 + ‖A‖`, and changing the coefficient changes the operator by at most the `L∞` distance
-between coefficients. Solving `D_A u = f` is equivalent to the weak ordinary differential
-equation `u' = f - A u`. For differentiable representatives with locally integrable derivative,
-the operator agrees almost everywhere with the classical expression `u' + A u`. In particular,
+between coefficients. Conversely, an estimate `‖u‖_{Lᵖ} ≤ C ‖D_A u‖` on the value of a path
+controls its graph norm by `(1 + (1 + ‖A‖) C) ‖D_A u‖`
+(`TauCeti.WeakDerivStep.norm_le_mul_norm_trajectoryOperator_of_norm_prev_le`). Solving
+`D_A u = f` is equivalent to the weak ordinary differential equation `u' = f - A u`. For
+differentiable representatives with locally integrable derivative, the operator agrees almost
+everywhere with the classical expression `u' + A u`. In particular,
 for a path in `W^{1,2}(ℝ, F)` with a `C¹` representative `φ`, the squared norms of the path, of
 its weak derivative and of its image under `D_A` are `∫ ‖φ‖²`, `∫ ‖φ'‖²` and `∫ ‖φ' + A φ‖²`
 (`TauCeti.WeakDerivStep.norm_prev_sq_eq_integral`,
@@ -163,6 +166,20 @@ theorem norm_weakFDeriv_le_norm_trajectoryOperator_add (A : Lp (F →L[ℝ] F) �
   rw [hw, show (ContinuousLinearMap.apply ℝ F (1 : ℝ)).compLp w = trajectoryOperator A u -
     (ContinuousLinearMap.id ℝ (F →L[ℝ] F)).holder p A (prev base u) from eq_sub_of_add_eq hT.symm]
   exact (norm_sub_le _ _).trans (by gcongr)
+
+/-- **An estimate on the value controls the graph norm.** If `u` satisfies
+`‖u‖_{Lᵖ} ≤ C ‖D_A u‖_{Lᵖ}`, then its graph norm satisfies
+`‖u‖ ≤ (1 + (1 + ‖A‖) C) ‖D_A u‖_{Lᵖ}`, since its weak derivative is `D_A u - A u`. -/
+theorem norm_le_mul_norm_trajectoryOperator_of_norm_prev_le
+    {A : Lp (F →L[ℝ] F) ∞ (mu.restrict Omega)} {C : ℝ}
+    (u : WeakDerivStep mu Omega p (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))))
+    (h : ‖prev _ u‖ ≤ C * ‖trajectoryOperator A u‖) :
+    ‖u‖ ≤ (1 + (1 + ‖A‖) * C) * ‖trajectoryOperator A u‖ := by
+  have hweak := norm_weakFDeriv_le_norm_trajectoryOperator_add A u
+  have hsum := norm_le_norm_prev_add_norm_weakFDeriv _ u
+  calc ‖u‖ ≤ ‖trajectoryOperator A u‖ + (1 + ‖A‖) * ‖prev _ u‖ := by linarith
+    _ ≤ ‖trajectoryOperator A u‖ + (1 + ‖A‖) * (C * ‖trajectoryOperator A u‖) := by gcongr
+    _ = (1 + (1 + ‖A‖) * C) * ‖trajectoryOperator A u‖ := by ring
 
 /-- Subtracting two trajectory operators cancels the derivative part and leaves multiplication
 by the difference of their coefficients. -/

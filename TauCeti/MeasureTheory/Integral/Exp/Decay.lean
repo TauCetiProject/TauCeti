@@ -165,14 +165,14 @@ theorem lintegral_ofReal_mul_exp_neg_mul_abs {a : ℝ} (ha : 0 < a) (c : ℝ) :
       lintegral_zero]
 
 /-- **Integral operators with a two-sided exponential kernel are bounded on `Lᵖ`.** If `‖u t‖ₑ` is
-at most the integral of `‖f‖ₑ` against the kernel `c * exp (-(a * |t - s|))` for every `t`, then
-`‖u‖_{Lᵖ} ≤ 2 c / a * ‖f‖_{Lᵖ}` for every `1 ≤ p ≤ ∞`. This is Schur's test
+at most the integral of `‖f‖ₑ` against the kernel `c * exp (-(a * |t - s|))` for almost every `t`,
+then `‖u‖_{Lᵖ} ≤ 2 c / a * ‖f‖_{Lᵖ}` for every `1 ≤ p ≤ ∞`. This is Schur's test
 (`TauCeti.eLpNorm_lintegral_mul_le`) for a kernel whose row and column integrals are both
 `2 c / a`. -/
-theorem eLpNorm_le_of_enorm_le_lintegral_exp_neg_mul_abs {E F : Type*} [NormedAddCommGroup E]
-    [NormedAddCommGroup F] {a : ℝ} (ha : 0 < a) (c : ℝ) {u : ℝ → E} {f : ℝ → F}
-    (hu : AEStronglyMeasurable u) (hf : AEStronglyMeasurable f)
-    (h : ∀ t, ‖u t‖ₑ ≤ ∫⁻ s, ENNReal.ofReal (c * Real.exp (-(a * |t - s|))) * ‖f s‖ₑ)
+theorem eLpNorm_le_of_enorm_le_lintegral_exp_neg_mul_abs {E F : Type*} [TopologicalSpace E]
+    [ENorm E] [TopologicalSpace F] [ContinuousENorm F] {a : ℝ} (ha : 0 < a) (c : ℝ) {u : ℝ → E}
+    {f : ℝ → F} (hu : AEStronglyMeasurable u) (hf : AEStronglyMeasurable f)
+    (h : ∀ᵐ t, ‖u t‖ₑ ≤ ∫⁻ s, ENNReal.ofReal (c * Real.exp (-(a * |t - s|))) * ‖f s‖ₑ)
     {p : ℝ≥0∞} (hp : 1 ≤ p) :
     eLpNorm u p volume ≤ ENNReal.ofReal (2 * c / a) * eLpNorm f p volume := by
   set k : ℝ → ℝ → ℝ≥0∞ := fun t s ↦ ENNReal.ofReal (c * Real.exp (-(a * |t - s|)))
@@ -188,7 +188,7 @@ theorem eLpNorm_le_of_enorm_le_lintegral_exp_neg_mul_abs {E F : Type*} [NormedAd
   have hexp : (1 - p.toReal⁻¹) + p.toReal⁻¹ = 1 := sub_add_cancel _ _
   calc eLpNorm u p volume
       ≤ eLpNorm (fun t ↦ ∫⁻ s, k t s * ‖f s‖ₑ) p volume :=
-        eLpNorm_mono_eNorm hu fun t ↦ by simpa only [eNorm_eq_self] using h t
+        eLpNorm_mono_eNorm_ae hu (h.mono fun t ht ↦ by simpa only [eNorm_eq_self] using ht)
     _ ≤ ENNReal.ofReal (2 * c / a) ^ (1 - p.toReal⁻¹) *
           ENNReal.ofReal (2 * c / a) ^ p.toReal⁻¹ * eLpNorm (fun s ↦ ‖f s‖ₑ) p volume :=
         eLpNorm_lintegral_mul_le hk hf.eNorm hp (ae_of_all _ hrow) (ae_of_all _ hcol)
